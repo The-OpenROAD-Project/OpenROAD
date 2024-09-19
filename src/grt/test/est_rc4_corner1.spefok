@@ -8,9 +8,10 @@
 *DIVIDER /
 *DELIMITER :
 *BUS_DELIMITER []
-*T_UNIT 1 S
-*C_UNIT 1 F
-*R_UNIT 1 OHM
+*T_UNIT 1 NS
+*C_UNIT 1 FF
+*R_UNIT 1 KOHM
+*L_UNIT 1 HENRY
 
 *PORTS
 clk I
@@ -11129,461 +11130,461 @@ resp_val O
 3 _860_/Q ctrl.state.out\[2\]:1 9125
 *END
 
-*D_NET dpath.a_lt_b$in0\[0\] 7.74e-15
+*D_NET dpath.a_lt_b\$in0\[0\] 7.74e-15
 *CONN
 *I _753_/A I *D CLKBUF_X1
 *I _861_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in0\[0\]:1 2.74e-15
-2 dpath.a_lt_b$in0\[0\]:2 3.23e-15
+1 dpath.a_lt_b\$in0\[0\]:1 2.74e-15
+2 dpath.a_lt_b\$in0\[0\]:2 3.23e-15
 *RES
-1 dpath.a_lt_b$in0\[0\]:1 dpath.a_lt_b$in0\[0\]:2 8400
-2 _753_/A dpath.a_lt_b$in0\[0\]:2 4525
-3 _861_/Q dpath.a_lt_b$in0\[0\]:1 2565
+1 dpath.a_lt_b\$in0\[0\]:1 dpath.a_lt_b\$in0\[0\]:2 8400
+2 _753_/A dpath.a_lt_b\$in0\[0\]:2 4525
+3 _861_/Q dpath.a_lt_b\$in0\[0\]:1 2565
 *END
 
-*D_NET dpath.a_lt_b$in0\[10\] 3.19e-15
+*D_NET dpath.a_lt_b\$in0\[10\] 3.19e-15
 *CONN
 *I _733_/A I *D CLKBUF_X1
 *I _871_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in0\[10\]:1 1.595e-15
+1 dpath.a_lt_b\$in0\[10\]:1 1.595e-15
 *RES
-1 dpath.a_lt_b$in0\[10\]:1 dpath.a_lt_b$in0\[10\]:1 5
-2 _733_/A dpath.a_lt_b$in0\[10\]:1 4505
-3 _871_/Q dpath.a_lt_b$in0\[10\]:1 1885
+1 dpath.a_lt_b\$in0\[10\]:1 dpath.a_lt_b\$in0\[10\]:1 5
+2 _733_/A dpath.a_lt_b\$in0\[10\]:1 4505
+3 _871_/Q dpath.a_lt_b\$in0\[10\]:1 1885
 *END
 
-*D_NET dpath.a_lt_b$in0\[11\] 5.7e-15
+*D_NET dpath.a_lt_b\$in0\[11\] 5.7e-15
 *CONN
 *I _731_/A I *D CLKBUF_X1
 *I _872_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in0\[11\]:1 2.85e-15
+1 dpath.a_lt_b\$in0\[11\]:1 2.85e-15
 *RES
-1 dpath.a_lt_b$in0\[11\]:1 dpath.a_lt_b$in0\[11\]:1 5
-2 _731_/A dpath.a_lt_b$in0\[11\]:1 7045
-3 _872_/Q dpath.a_lt_b$in0\[11\]:1 4365
+1 dpath.a_lt_b\$in0\[11\]:1 dpath.a_lt_b\$in0\[11\]:1 5
+2 _731_/A dpath.a_lt_b\$in0\[11\]:1 7045
+3 _872_/Q dpath.a_lt_b\$in0\[11\]:1 4365
 *END
 
-*D_NET dpath.a_lt_b$in0\[12\] 1.005e-14
+*D_NET dpath.a_lt_b\$in0\[12\] 1.005e-14
 *CONN
 *I _729_/A I *D CLKBUF_X1
 *I _873_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in0\[12\]:1 1.005e-15
-2 dpath.a_lt_b$in0\[12\]:2 2.1e-15
-3 dpath.a_lt_b$in0\[12\]:3 2.1e-15
-4 dpath.a_lt_b$in0\[12\]:4 1.92e-15
+1 dpath.a_lt_b\$in0\[12\]:1 1.005e-15
+2 dpath.a_lt_b\$in0\[12\]:2 2.1e-15
+3 dpath.a_lt_b\$in0\[12\]:3 2.1e-15
+4 dpath.a_lt_b\$in0\[12\]:4 1.92e-15
 *RES
-1 dpath.a_lt_b$in0\[12\]:1 dpath.a_lt_b$in0\[12\]:2 5
-2 dpath.a_lt_b$in0\[12\]:2 dpath.a_lt_b$in0\[12\]:3 8400
-3 dpath.a_lt_b$in0\[12\]:3 dpath.a_lt_b$in0\[12\]:4 5
-4 _729_/A dpath.a_lt_b$in0\[12\]:1 4025
-5 _873_/Q dpath.a_lt_b$in0\[12\]:4 7685
+1 dpath.a_lt_b\$in0\[12\]:1 dpath.a_lt_b\$in0\[12\]:2 5
+2 dpath.a_lt_b\$in0\[12\]:2 dpath.a_lt_b\$in0\[12\]:3 8400
+3 dpath.a_lt_b\$in0\[12\]:3 dpath.a_lt_b\$in0\[12\]:4 5
+4 _729_/A dpath.a_lt_b\$in0\[12\]:1 4025
+5 _873_/Q dpath.a_lt_b\$in0\[12\]:4 7685
 *END
 
-*D_NET dpath.a_lt_b$in0\[13\] 8.02e-15
+*D_NET dpath.a_lt_b\$in0\[13\] 8.02e-15
 *CONN
 *I _727_/A I *D BUF_X1
 *I _874_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in0\[13\]:1 3.02e-15
-2 dpath.a_lt_b$in0\[13\]:2 3.09e-15
+1 dpath.a_lt_b\$in0\[13\]:1 3.02e-15
+2 dpath.a_lt_b\$in0\[13\]:2 3.09e-15
 *RES
-1 dpath.a_lt_b$in0\[13\]:1 dpath.a_lt_b$in0\[13\]:2 8400
-2 _727_/A dpath.a_lt_b$in0\[13\]:2 3965
-3 _874_/Q dpath.a_lt_b$in0\[13\]:1 3685
+1 dpath.a_lt_b\$in0\[13\]:1 dpath.a_lt_b\$in0\[13\]:2 8400
+2 _727_/A dpath.a_lt_b\$in0\[13\]:2 3965
+3 _874_/Q dpath.a_lt_b\$in0\[13\]:1 3685
 *END
 
-*D_NET dpath.a_lt_b$in0\[14\] 9.8e-15
+*D_NET dpath.a_lt_b\$in0\[14\] 9.8e-15
 *CONN
 *I _725_/A I *D CLKBUF_X1
 *I _875_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in0\[14\]:1 3.63e-15
-2 dpath.a_lt_b$in0\[14\]:2 3.37e-15
+1 dpath.a_lt_b\$in0\[14\]:1 3.63e-15
+2 dpath.a_lt_b\$in0\[14\]:2 3.37e-15
 *RES
-1 dpath.a_lt_b$in0\[14\]:1 dpath.a_lt_b$in0\[14\]:2 8400
-2 _725_/A dpath.a_lt_b$in0\[14\]:2 5085
-3 _875_/Q dpath.a_lt_b$in0\[14\]:1 6125
+1 dpath.a_lt_b\$in0\[14\]:1 dpath.a_lt_b\$in0\[14\]:2 8400
+2 _725_/A dpath.a_lt_b\$in0\[14\]:2 5085
+3 _875_/Q dpath.a_lt_b\$in0\[14\]:1 6125
 *END
 
-*D_NET dpath.a_lt_b$in0\[15\] 1.381e-14
+*D_NET dpath.a_lt_b\$in0\[15\] 1.381e-14
 *CONN
 *I _723_/A I *D CLKBUF_X1
 *I _876_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in0\[15\]:1 3.655e-15
-2 dpath.a_lt_b$in0\[15\]:2 2.1e-15
-3 dpath.a_lt_b$in0\[15\]:3 2.1e-15
-4 dpath.a_lt_b$in0\[15\]:4 2.1e-15
-5 dpath.a_lt_b$in0\[15\]:5 1.15e-15
+1 dpath.a_lt_b\$in0\[15\]:1 3.655e-15
+2 dpath.a_lt_b\$in0\[15\]:2 2.1e-15
+3 dpath.a_lt_b\$in0\[15\]:3 2.1e-15
+4 dpath.a_lt_b\$in0\[15\]:4 2.1e-15
+5 dpath.a_lt_b\$in0\[15\]:5 1.15e-15
 *RES
-1 dpath.a_lt_b$in0\[15\]:1 dpath.a_lt_b$in0\[15\]:2 8400
-2 dpath.a_lt_b$in0\[15\]:2 dpath.a_lt_b$in0\[15\]:3 5
-3 dpath.a_lt_b$in0\[15\]:3 dpath.a_lt_b$in0\[15\]:4 8400
-4 dpath.a_lt_b$in0\[15\]:4 dpath.a_lt_b$in0\[15\]:5 5
-5 _723_/A dpath.a_lt_b$in0\[15\]:1 6225
-6 _876_/Q dpath.a_lt_b$in0\[15\]:5 4605
+1 dpath.a_lt_b\$in0\[15\]:1 dpath.a_lt_b\$in0\[15\]:2 8400
+2 dpath.a_lt_b\$in0\[15\]:2 dpath.a_lt_b\$in0\[15\]:3 5
+3 dpath.a_lt_b\$in0\[15\]:3 dpath.a_lt_b\$in0\[15\]:4 8400
+4 dpath.a_lt_b\$in0\[15\]:4 dpath.a_lt_b\$in0\[15\]:5 5
+5 _723_/A dpath.a_lt_b\$in0\[15\]:1 6225
+6 _876_/Q dpath.a_lt_b\$in0\[15\]:5 4605
 *END
 
-*D_NET dpath.a_lt_b$in0\[1\] 3.18e-15
+*D_NET dpath.a_lt_b\$in0\[1\] 3.18e-15
 *CONN
 *I _751_/A I *D BUF_X1
 *I _862_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in0\[1\]:1 1.59e-15
+1 dpath.a_lt_b\$in0\[1\]:1 1.59e-15
 *RES
-1 dpath.a_lt_b$in0\[1\]:1 dpath.a_lt_b$in0\[1\]:1 5
-2 _751_/A dpath.a_lt_b$in0\[1\]:1 4725
-3 _862_/Q dpath.a_lt_b$in0\[1\]:1 1645
+1 dpath.a_lt_b\$in0\[1\]:1 dpath.a_lt_b\$in0\[1\]:1 5
+2 _751_/A dpath.a_lt_b\$in0\[1\]:1 4725
+3 _862_/Q dpath.a_lt_b\$in0\[1\]:1 1645
 *END
 
-*D_NET dpath.a_lt_b$in0\[2\] 4.2e-15
+*D_NET dpath.a_lt_b\$in0\[2\] 4.2e-15
 *CONN
 *I _749_/A I *D CLKBUF_X1
 *I _863_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in0\[2\]:1 2.1e-15
+1 dpath.a_lt_b\$in0\[2\]:1 2.1e-15
 *RES
-1 dpath.a_lt_b$in0\[2\]:1 dpath.a_lt_b$in0\[2\]:1 5
-2 _749_/A dpath.a_lt_b$in0\[2\]:1 7645
-3 _863_/Q dpath.a_lt_b$in0\[2\]:1 765
+1 dpath.a_lt_b\$in0\[2\]:1 dpath.a_lt_b\$in0\[2\]:1 5
+2 _749_/A dpath.a_lt_b\$in0\[2\]:1 7645
+3 _863_/Q dpath.a_lt_b\$in0\[2\]:1 765
 *END
 
-*D_NET dpath.a_lt_b$in0\[3\] 1.163e-14
+*D_NET dpath.a_lt_b\$in0\[3\] 1.163e-14
 *CONN
 *I _747_/A I *D BUF_X1
 *I _864_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in0\[3\]:1 4.56e-15
-2 dpath.a_lt_b$in0\[3\]:2 3.355e-15
+1 dpath.a_lt_b\$in0\[3\]:1 4.56e-15
+2 dpath.a_lt_b\$in0\[3\]:2 3.355e-15
 *RES
-1 dpath.a_lt_b$in0\[3\]:2 dpath.a_lt_b$in0\[3\]:1 8400
-2 _747_/A dpath.a_lt_b$in0\[3\]:2 5025
-3 _864_/Q dpath.a_lt_b$in0\[3\]:1 9845
+1 dpath.a_lt_b\$in0\[3\]:2 dpath.a_lt_b\$in0\[3\]:1 8400
+2 _747_/A dpath.a_lt_b\$in0\[3\]:2 5025
+3 _864_/Q dpath.a_lt_b\$in0\[3\]:1 9845
 *END
 
-*D_NET dpath.a_lt_b$in0\[4\] 1.514e-14
+*D_NET dpath.a_lt_b\$in0\[4\] 1.514e-14
 *CONN
 *I _745_/A I *D CLKBUF_X1
 *I _865_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in0\[4\]:1 1.79e-15
-2 dpath.a_lt_b$in0\[4\]:2 2.1e-15
-3 dpath.a_lt_b$in0\[4\]:3 2.1e-15
-4 dpath.a_lt_b$in0\[4\]:4 2.1e-15
-5 dpath.a_lt_b$in0\[4\]:5 3.68e-15
+1 dpath.a_lt_b\$in0\[4\]:1 1.79e-15
+2 dpath.a_lt_b\$in0\[4\]:2 2.1e-15
+3 dpath.a_lt_b\$in0\[4\]:3 2.1e-15
+4 dpath.a_lt_b\$in0\[4\]:4 2.1e-15
+5 dpath.a_lt_b\$in0\[4\]:5 3.68e-15
 *RES
-1 dpath.a_lt_b$in0\[4\]:1 dpath.a_lt_b$in0\[4\]:2 5
-2 dpath.a_lt_b$in0\[4\]:2 dpath.a_lt_b$in0\[4\]:3 8400
-3 dpath.a_lt_b$in0\[4\]:3 dpath.a_lt_b$in0\[4\]:4 5
-4 dpath.a_lt_b$in0\[4\]:5 dpath.a_lt_b$in0\[4\]:4 8400
-5 _745_/A dpath.a_lt_b$in0\[4\]:1 7165
-6 _865_/Q dpath.a_lt_b$in0\[4\]:5 6325
+1 dpath.a_lt_b\$in0\[4\]:1 dpath.a_lt_b\$in0\[4\]:2 5
+2 dpath.a_lt_b\$in0\[4\]:2 dpath.a_lt_b\$in0\[4\]:3 8400
+3 dpath.a_lt_b\$in0\[4\]:3 dpath.a_lt_b\$in0\[4\]:4 5
+4 dpath.a_lt_b\$in0\[4\]:5 dpath.a_lt_b\$in0\[4\]:4 8400
+5 _745_/A dpath.a_lt_b\$in0\[4\]:1 7165
+6 _865_/Q dpath.a_lt_b\$in0\[4\]:5 6325
 *END
 
-*D_NET dpath.a_lt_b$in0\[5\] 7.63e-15
+*D_NET dpath.a_lt_b\$in0\[5\] 7.63e-15
 *CONN
 *I _743_/A I *D CLKBUF_X1
 *I _866_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in0\[5\]:1 3.23e-15
-2 dpath.a_lt_b$in0\[5\]:2 2.685e-15
+1 dpath.a_lt_b\$in0\[5\]:1 3.23e-15
+2 dpath.a_lt_b\$in0\[5\]:2 2.685e-15
 *RES
-1 dpath.a_lt_b$in0\[5\]:2 dpath.a_lt_b$in0\[5\]:1 8400
-2 _743_/A dpath.a_lt_b$in0\[5\]:2 2345
-3 _866_/Q dpath.a_lt_b$in0\[5\]:1 4525
+1 dpath.a_lt_b\$in0\[5\]:2 dpath.a_lt_b\$in0\[5\]:1 8400
+2 _743_/A dpath.a_lt_b\$in0\[5\]:2 2345
+3 _866_/Q dpath.a_lt_b\$in0\[5\]:1 4525
 *END
 
-*D_NET dpath.a_lt_b$in0\[6\] 8.4e-15
+*D_NET dpath.a_lt_b\$in0\[6\] 8.4e-15
 *CONN
 *I _741_/A I *D CLKBUF_X1
 *I _867_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in0\[6\]:1 3.68e-15
-2 dpath.a_lt_b$in0\[6\]:2 2.62e-15
+1 dpath.a_lt_b\$in0\[6\]:1 3.68e-15
+2 dpath.a_lt_b\$in0\[6\]:2 2.62e-15
 *RES
-1 dpath.a_lt_b$in0\[6\]:1 dpath.a_lt_b$in0\[6\]:2 8400
-2 _741_/A dpath.a_lt_b$in0\[6\]:2 2085
-3 _867_/Q dpath.a_lt_b$in0\[6\]:1 6325
+1 dpath.a_lt_b\$in0\[6\]:1 dpath.a_lt_b\$in0\[6\]:2 8400
+2 _741_/A dpath.a_lt_b\$in0\[6\]:2 2085
+3 _867_/Q dpath.a_lt_b\$in0\[6\]:1 6325
 *END
 
-*D_NET dpath.a_lt_b$in0\[7\] 6.6e-15
+*D_NET dpath.a_lt_b\$in0\[7\] 6.6e-15
 *CONN
 *I _739_/A I *D BUF_X1
 *I _868_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in0\[7\]:1 2.9e-16
-2 dpath.a_lt_b$in0\[7\]:2 2.1e-15
-3 dpath.a_lt_b$in0\[7\]:3 2.1e-15
-4 dpath.a_lt_b$in0\[7\]:4 9.1e-16
+1 dpath.a_lt_b\$in0\[7\]:1 2.9e-16
+2 dpath.a_lt_b\$in0\[7\]:2 2.1e-15
+3 dpath.a_lt_b\$in0\[7\]:3 2.1e-15
+4 dpath.a_lt_b\$in0\[7\]:4 9.1e-16
 *RES
-1 dpath.a_lt_b$in0\[7\]:1 dpath.a_lt_b$in0\[7\]:2 5
-2 dpath.a_lt_b$in0\[7\]:2 dpath.a_lt_b$in0\[7\]:3 8400
-3 dpath.a_lt_b$in0\[7\]:3 dpath.a_lt_b$in0\[7\]:4 5
-4 _739_/A dpath.a_lt_b$in0\[7\]:4 3645
-5 _868_/Q dpath.a_lt_b$in0\[7\]:1 1165
+1 dpath.a_lt_b\$in0\[7\]:1 dpath.a_lt_b\$in0\[7\]:2 5
+2 dpath.a_lt_b\$in0\[7\]:2 dpath.a_lt_b\$in0\[7\]:3 8400
+3 dpath.a_lt_b\$in0\[7\]:3 dpath.a_lt_b\$in0\[7\]:4 5
+4 _739_/A dpath.a_lt_b\$in0\[7\]:4 3645
+5 _868_/Q dpath.a_lt_b\$in0\[7\]:1 1165
 *END
 
-*D_NET dpath.a_lt_b$in0\[8\] 5.29e-15
+*D_NET dpath.a_lt_b\$in0\[8\] 5.29e-15
 *CONN
 *I _737_/A I *D CLKBUF_X1
 *I _869_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in0\[8\]:1 2.645e-15
+1 dpath.a_lt_b\$in0\[8\]:1 2.645e-15
 *RES
-1 dpath.a_lt_b$in0\[8\]:1 dpath.a_lt_b$in0\[8\]:1 5
-2 _737_/A dpath.a_lt_b$in0\[8\]:1 5985
-3 _869_/Q dpath.a_lt_b$in0\[8\]:1 4605
+1 dpath.a_lt_b\$in0\[8\]:1 dpath.a_lt_b\$in0\[8\]:1 5
+2 _737_/A dpath.a_lt_b\$in0\[8\]:1 5985
+3 _869_/Q dpath.a_lt_b\$in0\[8\]:1 4605
 *END
 
-*D_NET dpath.a_lt_b$in0\[9\] 6.6e-15
+*D_NET dpath.a_lt_b\$in0\[9\] 6.6e-15
 *CONN
 *I _735_/A I *D CLKBUF_X1
 *I _870_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in0\[9\]:1 9e-17
-2 dpath.a_lt_b$in0\[9\]:2 2.1e-15
-3 dpath.a_lt_b$in0\[9\]:3 2.1e-15
-4 dpath.a_lt_b$in0\[9\]:4 1.11e-15
+1 dpath.a_lt_b\$in0\[9\]:1 9e-17
+2 dpath.a_lt_b\$in0\[9\]:2 2.1e-15
+3 dpath.a_lt_b\$in0\[9\]:3 2.1e-15
+4 dpath.a_lt_b\$in0\[9\]:4 1.11e-15
 *RES
-1 dpath.a_lt_b$in0\[9\]:1 dpath.a_lt_b$in0\[9\]:2 5
-2 dpath.a_lt_b$in0\[9\]:2 dpath.a_lt_b$in0\[9\]:3 8400
-3 dpath.a_lt_b$in0\[9\]:3 dpath.a_lt_b$in0\[9\]:4 5
-4 _735_/A dpath.a_lt_b$in0\[9\]:4 4445
-5 _870_/Q dpath.a_lt_b$in0\[9\]:1 365
+1 dpath.a_lt_b\$in0\[9\]:1 dpath.a_lt_b\$in0\[9\]:2 5
+2 dpath.a_lt_b\$in0\[9\]:2 dpath.a_lt_b\$in0\[9\]:3 8400
+3 dpath.a_lt_b\$in0\[9\]:3 dpath.a_lt_b\$in0\[9\]:4 5
+4 _735_/A dpath.a_lt_b\$in0\[9\]:4 4445
+5 _870_/Q dpath.a_lt_b\$in0\[9\]:1 365
 *END
 
-*D_NET dpath.a_lt_b$in1\[0\] 6.98e-15
+*D_NET dpath.a_lt_b\$in1\[0\] 6.98e-15
 *CONN
 *I _754_/A I *D BUF_X1
 *I _877_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in1\[0\]:1 2.58e-15
-2 dpath.a_lt_b$in1\[0\]:2 3.01e-15
+1 dpath.a_lt_b\$in1\[0\]:1 2.58e-15
+2 dpath.a_lt_b\$in1\[0\]:2 3.01e-15
 *RES
-1 dpath.a_lt_b$in1\[0\]:1 dpath.a_lt_b$in1\[0\]:2 8400
-2 _754_/A dpath.a_lt_b$in1\[0\]:2 3645
-3 _877_/Q dpath.a_lt_b$in1\[0\]:1 1925
+1 dpath.a_lt_b\$in1\[0\]:1 dpath.a_lt_b\$in1\[0\]:2 8400
+2 _754_/A dpath.a_lt_b\$in1\[0\]:2 3645
+3 _877_/Q dpath.a_lt_b\$in1\[0\]:1 1925
 *END
 
-*D_NET dpath.a_lt_b$in1\[10\] 8.15e-15
+*D_NET dpath.a_lt_b\$in1\[10\] 8.15e-15
 *CONN
 *I _734_/A I *D BUF_X1
 *I _887_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in1\[10\]:1 3.68e-15
-2 dpath.a_lt_b$in1\[10\]:2 2.495e-15
+1 dpath.a_lt_b\$in1\[10\]:1 3.68e-15
+2 dpath.a_lt_b\$in1\[10\]:2 2.495e-15
 *RES
-1 dpath.a_lt_b$in1\[10\]:1 dpath.a_lt_b$in1\[10\]:2 8400
-2 _734_/A dpath.a_lt_b$in1\[10\]:2 1585
-3 _887_/Q dpath.a_lt_b$in1\[10\]:1 6325
+1 dpath.a_lt_b\$in1\[10\]:1 dpath.a_lt_b\$in1\[10\]:2 8400
+2 _734_/A dpath.a_lt_b\$in1\[10\]:2 1585
+3 _887_/Q dpath.a_lt_b\$in1\[10\]:1 6325
 *END
 
-*D_NET dpath.a_lt_b$in1\[11\] 1.072e-14
+*D_NET dpath.a_lt_b\$in1\[11\] 1.072e-14
 *CONN
 *I _732_/A I *D BUF_X1
 *I _888_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in1\[11\]:1 4.3e-16
-2 dpath.a_lt_b$in1\[11\]:2 2.1e-15
-3 dpath.a_lt_b$in1\[11\]:3 2.1e-15
-4 dpath.a_lt_b$in1\[11\]:4 2.1e-15
-5 dpath.a_lt_b$in1\[11\]:5 2.83e-15
+1 dpath.a_lt_b\$in1\[11\]:1 4.3e-16
+2 dpath.a_lt_b\$in1\[11\]:2 2.1e-15
+3 dpath.a_lt_b\$in1\[11\]:3 2.1e-15
+4 dpath.a_lt_b\$in1\[11\]:4 2.1e-15
+5 dpath.a_lt_b\$in1\[11\]:5 2.83e-15
 *RES
-1 dpath.a_lt_b$in1\[11\]:1 dpath.a_lt_b$in1\[11\]:2 5
-2 dpath.a_lt_b$in1\[11\]:2 dpath.a_lt_b$in1\[11\]:3 8400
-3 dpath.a_lt_b$in1\[11\]:3 dpath.a_lt_b$in1\[11\]:4 5
-4 dpath.a_lt_b$in1\[11\]:5 dpath.a_lt_b$in1\[11\]:4 8400
-5 _732_/A dpath.a_lt_b$in1\[11\]:1 1725
-6 _888_/Q dpath.a_lt_b$in1\[11\]:5 2925
+1 dpath.a_lt_b\$in1\[11\]:1 dpath.a_lt_b\$in1\[11\]:2 5
+2 dpath.a_lt_b\$in1\[11\]:2 dpath.a_lt_b\$in1\[11\]:3 8400
+3 dpath.a_lt_b\$in1\[11\]:3 dpath.a_lt_b\$in1\[11\]:4 5
+4 dpath.a_lt_b\$in1\[11\]:5 dpath.a_lt_b\$in1\[11\]:4 8400
+5 _732_/A dpath.a_lt_b\$in1\[11\]:1 1725
+6 _888_/Q dpath.a_lt_b\$in1\[11\]:5 2925
 *END
 
-*D_NET dpath.a_lt_b$in1\[12\] 7.26e-15
+*D_NET dpath.a_lt_b\$in1\[12\] 7.26e-15
 *CONN
 *I _730_/A I *D BUF_X1
 *I _889_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in1\[12\]:1 2.77e-15
-2 dpath.a_lt_b$in1\[12\]:2 2.96e-15
+1 dpath.a_lt_b\$in1\[12\]:1 2.77e-15
+2 dpath.a_lt_b\$in1\[12\]:2 2.96e-15
 *RES
-1 dpath.a_lt_b$in1\[12\]:1 dpath.a_lt_b$in1\[12\]:2 8400
-2 _730_/A dpath.a_lt_b$in1\[12\]:2 3445
-3 _889_/Q dpath.a_lt_b$in1\[12\]:1 2685
+1 dpath.a_lt_b\$in1\[12\]:1 dpath.a_lt_b\$in1\[12\]:2 8400
+2 _730_/A dpath.a_lt_b\$in1\[12\]:2 3445
+3 _889_/Q dpath.a_lt_b\$in1\[12\]:1 2685
 *END
 
-*D_NET dpath.a_lt_b$in1\[13\] 6.62e-15
+*D_NET dpath.a_lt_b\$in1\[13\] 6.62e-15
 *CONN
 *I _728_/A I *D CLKBUF_X2
 *I _890_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in1\[13\]:1 2.29e-15
-2 dpath.a_lt_b$in1\[13\]:2 3.12e-15
+1 dpath.a_lt_b\$in1\[13\]:1 2.29e-15
+2 dpath.a_lt_b\$in1\[13\]:2 3.12e-15
 *RES
-1 dpath.a_lt_b$in1\[13\]:1 dpath.a_lt_b$in1\[13\]:2 8400
-2 _728_/A dpath.a_lt_b$in1\[13\]:2 4085
-3 _890_/Q dpath.a_lt_b$in1\[13\]:1 765
+1 dpath.a_lt_b\$in1\[13\]:1 dpath.a_lt_b\$in1\[13\]:2 8400
+2 _728_/A dpath.a_lt_b\$in1\[13\]:2 4085
+3 _890_/Q dpath.a_lt_b\$in1\[13\]:1 765
 *END
 
-*D_NET dpath.a_lt_b$in1\[14\] 4.92e-15
+*D_NET dpath.a_lt_b\$in1\[14\] 4.92e-15
 *CONN
 *I _726_/A I *D BUF_X1
 *I _891_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in1\[14\]:1 2.46e-15
+1 dpath.a_lt_b\$in1\[14\]:1 2.46e-15
 *RES
-1 dpath.a_lt_b$in1\[14\]:1 dpath.a_lt_b$in1\[14\]:1 5
-2 _726_/A dpath.a_lt_b$in1\[14\]:1 2805
-3 _891_/Q dpath.a_lt_b$in1\[14\]:1 7045
+1 dpath.a_lt_b\$in1\[14\]:1 dpath.a_lt_b\$in1\[14\]:1 5
+2 _726_/A dpath.a_lt_b\$in1\[14\]:1 2805
+3 _891_/Q dpath.a_lt_b\$in1\[14\]:1 7045
 *END
 
-*D_NET dpath.a_lt_b$in1\[15\] 1.376e-14
+*D_NET dpath.a_lt_b\$in1\[15\] 1.376e-14
 *CONN
 *I _724_/A I *D BUF_X1
 *I _892_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in1\[15\]:1 3.12e-15
-2 dpath.a_lt_b$in1\[15\]:2 2.1e-15
-3 dpath.a_lt_b$in1\[15\]:3 2.1e-15
-4 dpath.a_lt_b$in1\[15\]:4 2.1e-15
-5 dpath.a_lt_b$in1\[15\]:5 1.66e-15
+1 dpath.a_lt_b\$in1\[15\]:1 3.12e-15
+2 dpath.a_lt_b\$in1\[15\]:2 2.1e-15
+3 dpath.a_lt_b\$in1\[15\]:3 2.1e-15
+4 dpath.a_lt_b\$in1\[15\]:4 2.1e-15
+5 dpath.a_lt_b\$in1\[15\]:5 1.66e-15
 *RES
-1 dpath.a_lt_b$in1\[15\]:1 dpath.a_lt_b$in1\[15\]:2 8400
-2 dpath.a_lt_b$in1\[15\]:2 dpath.a_lt_b$in1\[15\]:3 5
-3 dpath.a_lt_b$in1\[15\]:3 dpath.a_lt_b$in1\[15\]:4 8400
-4 dpath.a_lt_b$in1\[15\]:4 dpath.a_lt_b$in1\[15\]:5 5
-5 _724_/A dpath.a_lt_b$in1\[15\]:1 4085
-6 _892_/Q dpath.a_lt_b$in1\[15\]:5 6645
+1 dpath.a_lt_b\$in1\[15\]:1 dpath.a_lt_b\$in1\[15\]:2 8400
+2 dpath.a_lt_b\$in1\[15\]:2 dpath.a_lt_b\$in1\[15\]:3 5
+3 dpath.a_lt_b\$in1\[15\]:3 dpath.a_lt_b\$in1\[15\]:4 8400
+4 dpath.a_lt_b\$in1\[15\]:4 dpath.a_lt_b\$in1\[15\]:5 5
+5 _724_/A dpath.a_lt_b\$in1\[15\]:1 4085
+6 _892_/Q dpath.a_lt_b\$in1\[15\]:5 6645
 *END
 
-*D_NET dpath.a_lt_b$in1\[1\] 8.15e-15
+*D_NET dpath.a_lt_b\$in1\[1\] 8.15e-15
 *CONN
 *I _752_/A I *D BUF_X1
 *I _878_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in1\[1\]:1 2.69e-15
-2 dpath.a_lt_b$in1\[1\]:2 3.485e-15
+1 dpath.a_lt_b\$in1\[1\]:1 2.69e-15
+2 dpath.a_lt_b\$in1\[1\]:2 3.485e-15
 *RES
-1 dpath.a_lt_b$in1\[1\]:2 dpath.a_lt_b$in1\[1\]:1 8400
-2 _752_/A dpath.a_lt_b$in1\[1\]:2 5545
-3 _878_/Q dpath.a_lt_b$in1\[1\]:1 2365
+1 dpath.a_lt_b\$in1\[1\]:2 dpath.a_lt_b\$in1\[1\]:1 8400
+2 _752_/A dpath.a_lt_b\$in1\[1\]:2 5545
+3 _878_/Q dpath.a_lt_b\$in1\[1\]:1 2365
 *END
 
-*D_NET dpath.a_lt_b$in1\[2\] 7.68e-15
+*D_NET dpath.a_lt_b\$in1\[2\] 7.68e-15
 *CONN
 *I _750_/A I *D CLKBUF_X1
 *I _879_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in1\[2\]:1 3.38e-15
-2 dpath.a_lt_b$in1\[2\]:2 2.56e-15
+1 dpath.a_lt_b\$in1\[2\]:1 3.38e-15
+2 dpath.a_lt_b\$in1\[2\]:2 2.56e-15
 *RES
-1 dpath.a_lt_b$in1\[2\]:2 dpath.a_lt_b$in1\[2\]:1 8400
-2 _750_/A dpath.a_lt_b$in1\[2\]:2 1845
-3 _879_/Q dpath.a_lt_b$in1\[2\]:1 5125
+1 dpath.a_lt_b\$in1\[2\]:2 dpath.a_lt_b\$in1\[2\]:1 8400
+2 _750_/A dpath.a_lt_b\$in1\[2\]:2 1845
+3 _879_/Q dpath.a_lt_b\$in1\[2\]:1 5125
 *END
 
-*D_NET dpath.a_lt_b$in1\[3\] 4.02e-15
+*D_NET dpath.a_lt_b\$in1\[3\] 4.02e-15
 *CONN
 *I _748_/A I *D CLKBUF_X1
 *I _880_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in1\[3\]:1 2.01e-15
+1 dpath.a_lt_b\$in1\[3\]:1 2.01e-15
 *RES
-1 dpath.a_lt_b$in1\[3\]:1 dpath.a_lt_b$in1\[3\]:1 5
-2 _748_/A dpath.a_lt_b$in1\[3\]:1 1605
-3 _880_/Q dpath.a_lt_b$in1\[3\]:1 6445
+1 dpath.a_lt_b\$in1\[3\]:1 dpath.a_lt_b\$in1\[3\]:1 5
+2 _748_/A dpath.a_lt_b\$in1\[3\]:1 1605
+3 _880_/Q dpath.a_lt_b\$in1\[3\]:1 6445
 *END
 
-*D_NET dpath.a_lt_b$in1\[4\] 4.57e-15
+*D_NET dpath.a_lt_b\$in1\[4\] 4.57e-15
 *CONN
 *I _746_/A I *D CLKBUF_X1
 *I _881_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in1\[4\]:1 2.285e-15
+1 dpath.a_lt_b\$in1\[4\]:1 2.285e-15
 *RES
-1 dpath.a_lt_b$in1\[4\]:1 dpath.a_lt_b$in1\[4\]:1 5
-2 _746_/A dpath.a_lt_b$in1\[4\]:1 3625
-3 _881_/Q dpath.a_lt_b$in1\[4\]:1 5525
+1 dpath.a_lt_b\$in1\[4\]:1 dpath.a_lt_b\$in1\[4\]:1 5
+2 _746_/A dpath.a_lt_b\$in1\[4\]:1 3625
+3 _881_/Q dpath.a_lt_b\$in1\[4\]:1 5525
 *END
 
-*D_NET dpath.a_lt_b$in1\[5\] 1.153e-14
+*D_NET dpath.a_lt_b\$in1\[5\] 1.153e-14
 *CONN
 *I _744_/A I *D BUF_X1
 *I _882_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in1\[5\]:1 1.065e-15
-2 dpath.a_lt_b$in1\[5\]:2 2.1e-15
-3 dpath.a_lt_b$in1\[5\]:3 2.1e-15
-4 dpath.a_lt_b$in1\[5\]:4 2.1e-15
-5 dpath.a_lt_b$in1\[5\]:5 2.6e-15
+1 dpath.a_lt_b\$in1\[5\]:1 1.065e-15
+2 dpath.a_lt_b\$in1\[5\]:2 2.1e-15
+3 dpath.a_lt_b\$in1\[5\]:3 2.1e-15
+4 dpath.a_lt_b\$in1\[5\]:4 2.1e-15
+5 dpath.a_lt_b\$in1\[5\]:5 2.6e-15
 *RES
-1 dpath.a_lt_b$in1\[5\]:1 dpath.a_lt_b$in1\[5\]:2 5
-2 dpath.a_lt_b$in1\[5\]:2 dpath.a_lt_b$in1\[5\]:3 8400
-3 dpath.a_lt_b$in1\[5\]:3 dpath.a_lt_b$in1\[5\]:4 5
-4 dpath.a_lt_b$in1\[5\]:5 dpath.a_lt_b$in1\[5\]:4 8400
-5 _744_/A dpath.a_lt_b$in1\[5\]:1 4265
-6 _882_/Q dpath.a_lt_b$in1\[5\]:5 2005
+1 dpath.a_lt_b\$in1\[5\]:1 dpath.a_lt_b\$in1\[5\]:2 5
+2 dpath.a_lt_b\$in1\[5\]:2 dpath.a_lt_b\$in1\[5\]:3 8400
+3 dpath.a_lt_b\$in1\[5\]:3 dpath.a_lt_b\$in1\[5\]:4 5
+4 dpath.a_lt_b\$in1\[5\]:5 dpath.a_lt_b\$in1\[5\]:4 8400
+5 _744_/A dpath.a_lt_b\$in1\[5\]:1 4265
+6 _882_/Q dpath.a_lt_b\$in1\[5\]:5 2005
 *END
 
-*D_NET dpath.a_lt_b$in1\[6\] 5.85e-15
+*D_NET dpath.a_lt_b\$in1\[6\] 5.85e-15
 *CONN
 *I _742_/A I *D BUF_X1
 *I _883_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in1\[6\]:1 2.925e-15
+1 dpath.a_lt_b\$in1\[6\]:1 2.925e-15
 *RES
-1 dpath.a_lt_b$in1\[6\]:1 dpath.a_lt_b$in1\[6\]:1 5
-2 _742_/A dpath.a_lt_b$in1\[6\]:1 4905
-3 _883_/Q dpath.a_lt_b$in1\[6\]:1 6805
+1 dpath.a_lt_b\$in1\[6\]:1 dpath.a_lt_b\$in1\[6\]:1 5
+2 _742_/A dpath.a_lt_b\$in1\[6\]:1 4905
+3 _883_/Q dpath.a_lt_b\$in1\[6\]:1 6805
 *END
 
-*D_NET dpath.a_lt_b$in1\[7\] 8.4e-15
+*D_NET dpath.a_lt_b\$in1\[7\] 8.4e-15
 *CONN
 *I _740_/A I *D BUF_X1
 *I _884_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in1\[7\]:1 1e-16
-2 dpath.a_lt_b$in1\[7\]:2 2.1e-15
-3 dpath.a_lt_b$in1\[7\]:3 2.1e-15
-4 dpath.a_lt_b$in1\[7\]:4 2e-15
+1 dpath.a_lt_b\$in1\[7\]:1 1e-16
+2 dpath.a_lt_b\$in1\[7\]:2 2.1e-15
+3 dpath.a_lt_b\$in1\[7\]:3 2.1e-15
+4 dpath.a_lt_b\$in1\[7\]:4 2e-15
 *RES
-1 dpath.a_lt_b$in1\[7\]:1 dpath.a_lt_b$in1\[7\]:2 5
-2 dpath.a_lt_b$in1\[7\]:2 dpath.a_lt_b$in1\[7\]:3 8400
-3 dpath.a_lt_b$in1\[7\]:3 dpath.a_lt_b$in1\[7\]:4 5
-4 _740_/A dpath.a_lt_b$in1\[7\]:4 8005
-5 _884_/Q dpath.a_lt_b$in1\[7\]:1 405
+1 dpath.a_lt_b\$in1\[7\]:1 dpath.a_lt_b\$in1\[7\]:2 5
+2 dpath.a_lt_b\$in1\[7\]:2 dpath.a_lt_b\$in1\[7\]:3 8400
+3 dpath.a_lt_b\$in1\[7\]:3 dpath.a_lt_b\$in1\[7\]:4 5
+4 _740_/A dpath.a_lt_b\$in1\[7\]:4 8005
+5 _884_/Q dpath.a_lt_b\$in1\[7\]:1 405
 *END
 
-*D_NET dpath.a_lt_b$in1\[8\] 7.07e-15
+*D_NET dpath.a_lt_b\$in1\[8\] 7.07e-15
 *CONN
 *I _738_/A I *D CLKBUF_X1
 *I _885_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in1\[8\]:1 2.9e-16
-2 dpath.a_lt_b$in1\[8\]:2 2.1e-15
-3 dpath.a_lt_b$in1\[8\]:3 2.1e-15
-4 dpath.a_lt_b$in1\[8\]:4 1.145e-15
+1 dpath.a_lt_b\$in1\[8\]:1 2.9e-16
+2 dpath.a_lt_b\$in1\[8\]:2 2.1e-15
+3 dpath.a_lt_b\$in1\[8\]:3 2.1e-15
+4 dpath.a_lt_b\$in1\[8\]:4 1.145e-15
 *RES
-1 dpath.a_lt_b$in1\[8\]:1 dpath.a_lt_b$in1\[8\]:2 5
-2 dpath.a_lt_b$in1\[8\]:2 dpath.a_lt_b$in1\[8\]:3 8400
-3 dpath.a_lt_b$in1\[8\]:3 dpath.a_lt_b$in1\[8\]:4 5
-4 _738_/A dpath.a_lt_b$in1\[8\]:4 4585
-5 _885_/Q dpath.a_lt_b$in1\[8\]:1 1165
+1 dpath.a_lt_b\$in1\[8\]:1 dpath.a_lt_b\$in1\[8\]:2 5
+2 dpath.a_lt_b\$in1\[8\]:2 dpath.a_lt_b\$in1\[8\]:3 8400
+3 dpath.a_lt_b\$in1\[8\]:3 dpath.a_lt_b\$in1\[8\]:4 5
+4 _738_/A dpath.a_lt_b\$in1\[8\]:4 4585
+5 _885_/Q dpath.a_lt_b\$in1\[8\]:1 1165
 *END
 
-*D_NET dpath.a_lt_b$in1\[9\] 7.71e-15
+*D_NET dpath.a_lt_b\$in1\[9\] 7.71e-15
 *CONN
 *I _736_/A I *D BUF_X1
 *I _886_/Q O *D DFF_X1
 *CAP
-1 dpath.a_lt_b$in1\[9\]:1 3.09e-15
-2 dpath.a_lt_b$in1\[9\]:2 2.865e-15
+1 dpath.a_lt_b\$in1\[9\]:1 3.09e-15
+2 dpath.a_lt_b\$in1\[9\]:2 2.865e-15
 *RES
-1 dpath.a_lt_b$in1\[9\]:2 dpath.a_lt_b$in1\[9\]:1 8400
-2 _736_/A dpath.a_lt_b$in1\[9\]:2 3065
-3 _886_/Q dpath.a_lt_b$in1\[9\]:1 3965
+1 dpath.a_lt_b\$in1\[9\]:2 dpath.a_lt_b\$in1\[9\]:1 8400
+2 _736_/A dpath.a_lt_b\$in1\[9\]:2 3065
+3 _886_/Q dpath.a_lt_b\$in1\[9\]:1 3965
 *END
 
 *D_NET net1 5.569e-14
