@@ -94,11 +94,11 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
 
 void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
-  frLayerNum layerNum;
+  frLayerNum layer_num;
   if (!shapes_.empty()) {
-    layerNum = layer_map_.at(layer->getNumber()).first;
+    layer_num = layer_map_.at(layer->getNumber()).first;
     for (auto& b : shapes_) {
-      if (b.second != layerNum) {
+      if (b.second != layer_num) {
         continue;
       }
       painter.drawRect(
@@ -110,8 +110,8 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     return;
   }
 
-  layerNum = layer_map_.at(layer->getNumber()).first;
-  if (layerNum < 0) {
+  layer_num = layer_map_.at(layer->getNumber()).first;
+  if (layer_num < 0) {
     return;
   }
 
@@ -119,9 +119,9 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     auto* via_def = via->getViaDef();
     Rect bbox;
     bool skip = false;
-    if (via_def->getLayer1Num() == layerNum) {
+    if (via_def->getLayer1Num() == layer_num) {
       bbox = via->getLayer1BBox();
-    } else if (via_def->getLayer2Num() == layerNum) {
+    } else if (via_def->getLayer2Num() == layer_num) {
       bbox = via->getLayer2BBox();
     } else {
       skip = true;
@@ -134,7 +134,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 
   for (auto seg : pa_segs_) {
-    if (seg->getLayerNum() == layerNum) {
+    if (seg->getLayerNum() == layer_num) {
       Rect bbox = seg->getBBox();
       painter.setPen(layer, /* cosmetic */ true);
       painter.setBrush(layer);
@@ -146,14 +146,14 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
     painter.setBrush(gui::Painter::transparent);
     for (auto& marker : *pa_markers_) {
-      if (marker->getLayerNum() == layerNum) {
+      if (marker->getLayerNum() == layer_num) {
         painter.drawRect(marker->getBBox());
       }
     }
   }
 
   for (const auto& ap : aps_) {
-    if (ap.getLayerNum() != layerNum) {
+    if (ap.getLayerNum() != layer_num) {
       continue;
     }
     auto color = ap.hasAccess() ? gui::Painter::green : gui::Painter::red;
@@ -166,7 +166,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
 void FlexPAGraphics::startPin(frMPin* pin,
                               frInstTerm* inst_term,
-                              std::set<frInst*, frBlockObjectComp>* instClass)
+                              std::set<frInst*, frBlockObjectComp>* inst_class)
 {
   pin_ = nullptr;
 
@@ -175,7 +175,7 @@ void FlexPAGraphics::startPin(frMPin* pin,
     if (term_name_ != "*" && term->getName() != term_name_) {
       return;
     }
-    if (instClass->find(inst_) == instClass->end()) {
+    if (inst_class->find(inst_) == inst_class->end()) {
       return;
     }
   }
@@ -195,7 +195,7 @@ void FlexPAGraphics::startPin(frMPin* pin,
 
 void FlexPAGraphics::startPin(frBPin* pin,
                               frInstTerm* inst_term,
-                              std::set<frInst*, frBlockObjectComp>* instClass)
+                              std::set<frInst*, frBlockObjectComp>* inst_class)
 {
   pin_ = nullptr;
 

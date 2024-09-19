@@ -77,16 +77,16 @@ class UniqueInsts
   bool isNDRInst(frInst& inst);
   bool hasTrackPattern(frTrackPattern* tp, const Rect& box) const;
 
-  void getPrefTrackPatterns(std::vector<frTrackPattern*>& prefTrackPatterns);
+  void getPrefTrackPatterns(std::vector<frTrackPattern*>& pref_track_patterns);
   void applyPatternsFile(const char* file_path);
 
   void initUniqueInstance();
-  void initPinAccess();
+  void prepPoint_pin();
 
-  void initMaster2PinLayerRange(MasterLayerRange& master2PinLayerRange);
+  void initMaster2PinLayerRange(MasterLayerRange& master_to_pin_layer_range);
 
-  void computeUnique(const MasterLayerRange& master2PinLayerRange,
-                     const std::vector<frTrackPattern*>& prefTrackPatterns);
+  void computeUnique(const MasterLayerRange& master_to_pin_layer_range,
+                     const std::vector<frTrackPattern*>& pref_track_patterns);
   void checkFigsOnGrid(const frMPin* pin);
 
   frDesign* design_;
@@ -96,18 +96,18 @@ class UniqueInsts
   // All the unique instances
   std::vector<frInst*> unique_;
   // Mapp all instances to their representative unique instance
-  std::map<frInst*, frInst*, frBlockObjectComp> inst2unique_;
+  std::map<frInst*, frInst*, frBlockObjectComp> inst_to_unique_;
   // Maps all instances to the set of instances with the same unique inst
-  std::unordered_map<frInst*, InstSet*> inst2Class_;
+  std::unordered_map<frInst*, InstSet*> inst_to_class_;
   // Maps a unique instance to its pin access index
-  std::map<frInst*, int, frBlockObjectComp> unique2paidx_;
+  std::map<frInst*, int, frBlockObjectComp> unique_to_pa_idx_;
   // Maps a unique instance to its index in unique_
-  std::map<frInst*, int, frBlockObjectComp> unique2Idx_;
+  std::map<frInst*, int, frBlockObjectComp> unique_to_idx_;
   // master orient track-offset to instances
   std::map<frMaster*,
            std::map<dbOrientType, std::map<std::vector<frCoord>, InstSet>>,
            frBlockObjectComp>
-      masterOT2Insts_;
+      master_orient_trackoffset_to_insts_;
 };
 
 }  // namespace drt

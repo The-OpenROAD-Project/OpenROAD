@@ -45,5 +45,6 @@ class FindObjectDialog : public QDialog, public Ui::FindObjDialog
  public slots:
   void accept();
   void reject();
+  int exec() override;
 };
 }  // namespace gui
