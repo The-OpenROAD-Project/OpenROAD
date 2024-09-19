@@ -50,6 +50,7 @@ class FlexGridGraph
   FlexGridGraph(frTechObject* techIn, Logger* loggerIn, FlexDRWorker* workerIn)
       : tech_(techIn), logger_(loggerIn), drWorker_(workerIn)
   {
+    ap_locs_.resize(tech_->getTopLayerNum() + 1);
   }
   // getters
   frTechObject* getTech() const { return tech_; }
@@ -1096,10 +1097,8 @@ class FlexGridGraph
   const frBox3D* dstTaperBox
       = nullptr;  // taper box for the current dest pin in the search
 
-  // locations of access points. The vector is indixed by layer number. The map
-  // key is the track location on that layer. the map value is the set of
-  // locations where accesspoints exist
-  frVector<std::map<frCoord, std::set<frCoord>>> ap_locs_;
+  // locations of access points. The vector is indixed by layer number.
+  frVector<std::set<Point>> ap_locs_;
 
   FlexGridGraph() = default;
 

@@ -39,13 +39,7 @@ void FlexGridGraph::addAccessPointLocation(frLayerNum layer_num,
                                            frCoord x_coord,
                                            frCoord y_coord)
 {
-  ap_locs_.resize(layer_num + 1);
-  if (getTech()->getLayer(layer_num)->getDir() == odb::horizontal) {
-    // horizontal layer, horizontal tracks indexed by y coordinate
-    ap_locs_[layer_num][y_coord].insert(x_coord);
-  } else {
-    ap_locs_[layer_num][x_coord].insert(y_coord);
-  }
+  ap_locs_[layer_num].insert(Point(x_coord, y_coord));
 }
 
 bool FlexGridGraph::isAccessPointLocation(frLayerNum layer_num,
@@ -56,19 +50,7 @@ bool FlexGridGraph::isAccessPointLocation(frLayerNum layer_num,
     return false;
   }
   const auto& layer_maze_locs = ap_locs_[layer_num];
-  if (getTech()->getLayer(layer_num)->getDir() == odb::horizontal) {
-    auto it = layer_maze_locs.find(y_coord);
-    if (it == layer_maze_locs.end()) {
-      return false;
-    }
-    return it->second.find(x_coord) != it->second.end();
-  } else {
-    auto it = layer_maze_locs.find(x_coord);
-    if (it == layer_maze_locs.end()) {
-      return false;
-    }
-    return it->second.find(y_coord) != it->second.end();
-  }
+  return layer_maze_locs.find(Point(x_coord, y_coord)) != layer_maze_locs.end();
 }
 void FlexGridGraph::initGrids(
     const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
@@ -279,9 +261,7 @@ void FlexGridGraph::initEdges(
                   || isAccessPointLocation(layerNum, xCoord, yCoord);
             if (is_on_grid || allow_off_grid) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
-              bool condition
-                  = (yIt->second == nullptr || xIt2->second == nullptr);
-              if (condition) {
+              if (!is_on_grid) {
                 setGridCostU(xIdx, yIdx, zIdx);
               }
             }
@@ -308,9 +288,7 @@ void FlexGridGraph::initEdges(
 
             if (is_on_grid || allow_off_grid) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
-              bool condition
-                  = (yIt2->second == nullptr || xIt->second == nullptr);
-              if (condition) {
+              if (!is_on_grid) {
                 setGridCostU(xIdx, yIdx, zIdx);
               }
             }
