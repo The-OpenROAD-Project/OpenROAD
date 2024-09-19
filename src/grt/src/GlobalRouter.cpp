@@ -65,6 +65,8 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/wOrder.h"
+#include "rsz/Resizer.hh"
+#include "rsz/SpefWriter.hh"
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
 #include "sta/Parasitics.hh"
@@ -227,6 +229,7 @@ void GlobalRouter::saveCongestion()
 
 bool GlobalRouter::haveRoutes()
 {
+  loadGuidesFromDB();
   if (routes_.empty()) {
     logger_->warn(GRT, 97, "No global routing found for nets.");
   }
@@ -357,6 +360,7 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
   if (diode_mterm == nullptr) {
     diode_mterm = repair_antennas_->findDiodeMTerm();
     if (diode_mterm == nullptr) {
+      logger_->metric("antenna_diodes_count", total_diodes_count_);
       logger_->warn(
           GRT, 246, "No diode with LEF class CORE ANTENNACELL found.");
       return;
@@ -393,15 +397,6 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       total_diodes_count_ += repair_antennas_->getDiodesCount();
       logger_->info(
           GRT, 15, "Inserted {} diodes.", repair_antennas_->getDiodesCount());
-      int illegal_diode_placement_count
-          = repair_antennas_->illegalDiodePlacementCount();
-      if (illegal_diode_placement_count > 0) {
-        logger_->info(GRT,
-                      54,
-                      "Using detailed placer to place {} diodes.",
-                      illegal_diode_placement_count);
-      }
-      repair_antennas_->legalizePlacedCells();
       nets_to_repair.clear();
       for (const Net* net : incr_groute.updateRoutes()) {
         nets_to_repair.push_back(net->getDbNet());
@@ -461,7 +456,7 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
   return routes;
 }
 
-void GlobalRouter::estimateRC()
+void GlobalRouter::estimateRC(rsz::SpefWriter* spef_writer)
 {
   // Remove any existing parasitics.
   sta_->deleteParasitics();
@@ -471,12 +466,11 @@ void GlobalRouter::estimateRC()
 
   MakeWireParasitics builder(
       logger_, resizer_, sta_, db_->getTech(), block_, this);
-  for (auto& net_route : routes_) {
-    odb::dbNet* db_net = net_route.first;
-    GRoute& route = net_route.second;
+
+  for (auto& [db_net, route] : routes_) {
     if (!route.empty()) {
       Net* net = getNet(db_net);
-      builder.estimateParasitcs(db_net, net->getPins(), route);
+      builder.estimateParasitcs(db_net, net->getPins(), route, spef_writer);
     }
   }
 }
@@ -634,6 +628,8 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     if (pinPositionsChanged(net, last_pos)
         && (!net->isMergedNet() || !netIsCovered(db_net, pins_not_covered))) {
       dirty_nets.push_back(db_net_map_[db_net]);
+      routes_[db_net].clear();
+      db_net->clearGuides();
       fastroute_->clearNetRoute(db_net);
     } else if (net->isMergedNet()) {
       if (!isConnected(db_net)) {
@@ -1899,6 +1895,10 @@ void GlobalRouter::checkOverflow()
 
 void GlobalRouter::readGuides(const char* file_name)
 {
+  logger_->warn(GRT,
+                8,
+                "The read_guides command does not allow parasitics estimation "
+                "from the guides file.");
   if (db_->getChip() == nullptr || db_->getChip()->getBlock() == nullptr
       || db_->getTech() == nullptr) {
     logger_->error(GRT, 249, "Load design before reading guides");
@@ -1963,7 +1963,8 @@ void GlobalRouter::readGuides(const char* file_name)
       odb::Rect rect(
           stoi(tokens[0]), stoi(tokens[1]), stoi(tokens[2]), stoi(tokens[3]));
       guides[net].push_back(std::make_pair(layer->getRoutingLevel(), rect));
-      boxToGlobalRouting(rect, layer->getRoutingLevel(), routes_[net]);
+      int layer_idx = layer->getRoutingLevel();
+      boxToGlobalRouting(rect, layer_idx, layer_idx, routes_[net]);
     } else {
       logger_->error(GRT, 236, "Error reading guide file {}.", file_name);
     }
@@ -1986,15 +1987,18 @@ void GlobalRouter::readGuides(const char* file_name)
 
 void GlobalRouter::loadGuidesFromDB()
 {
+  if (!routes_.empty()) {
+    return;
+  }
   initGridAndNets();
   for (odb::dbNet* net : block_->getNets()) {
     for (odb::dbGuide* guide : net->getGuides()) {
+      int layer_idx = guide->getLayer()->getRoutingLevel();
+      int via_layer_idx = guide->getViaLayer()->getRoutingLevel();
       boxToGlobalRouting(
-          guide->getBox(), guide->getLayer()->getRoutingLevel(), routes_[net]);
+          guide->getBox(), layer_idx, via_layer_idx, routes_[net]);
     }
   }
-
-  updateVias();
 
   for (auto& net_route : routes_) {
     std::vector<Pin>& pins = db_net_map_[net_route.first]->getPins();
@@ -2204,7 +2208,8 @@ void GlobalRouter::saveGuidesFromFile(
     if (!guide_boxes.empty()) {
       for (const auto& guide : guide_boxes) {
         ph_layer_final = routing_layers_[guide.first];
-        odb::dbGuide::create(db_net, ph_layer_final, guide.second);
+        odb::dbGuide::create(
+            db_net, ph_layer_final, ph_layer_final, guide.second);
       }
     }
   }
@@ -2241,12 +2246,15 @@ void GlobalRouter::saveGuides()
             int layer_idx2 = segment.final_layer;
             odb::dbTechLayer* layer1 = routing_layers_[layer_idx1];
             odb::dbTechLayer* layer2 = routing_layers_[layer_idx2];
-            odb::dbGuide::create(db_net, layer1, box);
-            odb::dbGuide::create(db_net, layer2, box);
+            odb::dbGuide::create(db_net, layer1, layer2, box);
+            odb::dbGuide::create(db_net, layer2, layer1, box);
           } else {
             int layer_idx = std::min(segment.init_layer, segment.final_layer);
-            odb::dbTechLayer* layer1 = routing_layers_[layer_idx];
-            odb::dbGuide::create(db_net, layer1, box);
+            int via_layer_idx
+                = std::max(segment.init_layer, segment.final_layer);
+            odb::dbTechLayer* layer = routing_layers_[layer_idx];
+            odb::dbTechLayer* via_layer = routing_layers_[via_layer_idx];
+            odb::dbGuide::create(db_net, layer, via_layer, box);
           }
         } else if (segment.init_layer == segment.final_layer) {
           if (segment.init_layer < min_routing_layer_
@@ -2259,7 +2267,7 @@ void GlobalRouter::saveGuides()
           }
 
           odb::dbTechLayer* layer = routing_layers_[segment.init_layer];
-          odb::dbGuide::create(db_net, layer, box);
+          odb::dbGuide::create(db_net, layer, layer, box);
         }
       }
     }
@@ -2645,63 +2653,15 @@ void GlobalRouter::connectPadPins(NetRouteMap& routes)
   }
 }
 
-void GlobalRouter::mergeBox(std::vector<odb::Rect>& guide_box,
-                            const std::set<odb::Point>& via_positions)
-{
-  std::vector<odb::Rect> final_box;
-  if (guide_box.empty()) {
-    logger_->error(GRT, 78, "Guides vector is empty.");
-  }
-  final_box.push_back(guide_box[0]);
-  for (size_t i = 1; i < guide_box.size(); i++) {
-    odb::Rect box = guide_box[i];
-    odb::Rect& lastBox = final_box.back();
-
-    GRoute segs;
-    boxToGlobalRouting(box, 0, segs);
-    odb::Point seg_init(segs[0].init_x, segs[0].init_y);
-    odb::Point seg_final(segs.back().init_x, segs.back().init_y);
-
-    if (lastBox.overlaps(box)
-        && (via_positions.find(seg_init) == via_positions.end()
-            || via_positions.find(seg_final) == via_positions.end())) {
-      int lowerX = std::min(lastBox.xMin(), box.xMin());
-      int lowerY = std::min(lastBox.yMin(), box.yMin());
-      int upperX = std::max(lastBox.xMax(), box.xMax());
-      int upperY = std::max(lastBox.yMax(), box.yMax());
-      lastBox = odb::Rect(lowerX, lowerY, upperX, upperY);
-    } else
-      final_box.push_back(box);
-  }
-  guide_box.clear();
-  guide_box = std::move(final_box);
-}
-
 odb::Rect GlobalRouter::globalRoutingToBox(const GSegment& route)
 {
   odb::Rect die_bounds = grid_->getGridArea();
-  int init_x, init_y;
-  int final_x, final_y;
 
-  if (route.init_x < route.final_x) {
-    init_x = route.init_x;
-    final_x = route.final_x;
-  } else {
-    init_x = route.final_x;
-    final_x = route.init_x;
-  }
-
-  if (route.init_y < route.final_y) {
-    init_y = route.init_y;
-    final_y = route.final_y;
-  } else {
-    init_y = route.final_y;
-    final_y = route.init_y;
-  }
+  const auto [init_x, final_x] = std::minmax(route.init_x, route.final_x);
+  const auto [init_y, final_y] = std::minmax(route.init_y, route.final_y);
 
   int llX = init_x - (grid_->getTileSize() / 2);
   int llY = init_y - (grid_->getTileSize() / 2);
-
   int urX = final_x + (grid_->getTileSize() / 2);
   int urY = final_y + (grid_->getTileSize() / 2);
 
@@ -2721,6 +2681,7 @@ odb::Rect GlobalRouter::globalRoutingToBox(const GSegment& route)
 
 void GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds,
                                       int layer,
+                                      int via_layer,
                                       GRoute& route)
 {
   const int tile_size = grid_->getTileSize();
@@ -2730,8 +2691,9 @@ void GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds,
   const int x1 = (tile_size * (route_bds.xMax() / tile_size)) - (tile_size / 2);
   const int y1 = (tile_size * (route_bds.yMax() / tile_size)) - (tile_size / 2);
 
-  if (x0 == x1 && y0 == y1)
-    route.push_back(GSegment(x0, y0, layer, x1, y1, layer));
+  if (x0 == x1 && y0 == y1) {
+    route.push_back(GSegment(x0, y0, layer, x1, y1, via_layer));
+  }
 
   while (y0 == y1 && (x0 + tile_size) <= x1) {
     route.push_back(GSegment(x0, y0, layer, x0 + tile_size, y0, layer));

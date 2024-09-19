@@ -66,6 +66,8 @@
 #include "layoutViewer.h"
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
+#include "sta/Liberty.hh"
+#include "staDescriptors.h"
 #include "staGui.h"
 #include "timingWidget.h"
 #include "utl/Logger.h"
@@ -180,12 +182,10 @@ MainWindow::MainWindow(QWidget* parent)
           qOverload<const Selected&, bool>(&MainWindow::setSelected));
   connect(viewers_,
           qOverload<const Selected&>(&LayoutTabs::addSelected),
-          this,
-          qOverload<const Selected&>(&MainWindow::addSelected));
+          [this](const Selected& selection) { addSelected(selection); });
   connect(viewers_,
           qOverload<const SelectionSet&>(&LayoutTabs::addSelected),
-          this,
-          qOverload<const SelectionSet&>(&MainWindow::addSelected));
+          [this](const SelectionSet& selections) { addSelected(selections); });
 
   connect(
       viewers_, &LayoutTabs::addRuler, [this](int x0, int y0, int x1, int y1) {
@@ -208,8 +208,7 @@ MainWindow::MainWindow(QWidget* parent)
           qOverload<const Selected&, bool>(&MainWindow::setSelected));
   connect(inspector_,
           &Inspector::addSelected,
-          this,
-          qOverload<const Selected&>(&MainWindow::addSelected));
+          [this](const Selected& selection) { addSelected(selection); });
   connect(inspector_,
           &Inspector::removeSelected,
           this,
@@ -292,8 +291,15 @@ MainWindow::MainWindow(QWidget* parent)
           &SelectHighlightWindow::updateHighlightModel);
   connect(clock_viewer_,
           &ClockWidget::selected,
-          this,
-          qOverload<const Selected&>(&MainWindow::addSelected));
+          [this](const Selected& selection) { addSelected(selection); });
+  connect(this,
+          qOverload<const Selected&>(&MainWindow::findInCts),
+          clock_viewer_,
+          qOverload<const Selected&>(&ClockWidget::findInCts));
+  connect(this,
+          qOverload<const SelectionSet&>(&MainWindow::findInCts),
+          clock_viewer_,
+          qOverload<const SelectionSet&>(&ClockWidget::findInCts));
 
   connect(selection_browser_,
           &SelectHighlightWindow::clearAllSelections,
@@ -517,6 +523,15 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbTech*>(new DbTechDescriptor(db_));
   gui->registerDescriptor<odb::dbMetalWidthViaMap*>(
       new DbMetalWidthViaMapDescriptor(db_));
+
+  gui->registerDescriptor<sta::LibertyLibrary*>(
+      new LibertyLibraryDescriptor(db_, sta));
+  gui->registerDescriptor<sta::LibertyCell*>(
+      new LibertyCellDescriptor(db_, sta));
+  gui->registerDescriptor<sta::LibertyPort*>(
+      new LibertyPortDescriptor(db_, sta));
+  gui->registerDescriptor<sta::LibertyPgPort*>(
+      new LibertyPgPortDescriptor(db_, sta));
 
   gui->registerDescriptor<BufferTree>(
       new BufferTreeDescriptor(db_,
@@ -988,11 +1003,14 @@ void MainWindow::updateSelectedStatus(const Selected& selection)
   status(selection ? selection.getName() : "");
 }
 
-void MainWindow::addSelected(const Selected& selection)
+void MainWindow::addSelected(const Selected& selection, bool find_in_cts)
 {
   if (selection) {
     selected_.emplace(selection);
     emit selectionChanged(selection);
+    if (find_in_cts) {
+      emit findInCts(selection);
+    }
   }
   emit updateSelectedStatus(selection);
 }
@@ -1036,7 +1054,7 @@ void MainWindow::removeSelectedByType(const std::string& type)
   }
 }
 
-void MainWindow::addSelected(const SelectionSet& selections)
+void MainWindow::addSelected(const SelectionSet& selections, bool find_in_cts)
 {
   int prev_selected_size = selected_.size();
   for (const auto& selection : selections) {
@@ -1047,6 +1065,10 @@ void MainWindow::addSelected(const SelectionSet& selections)
   status(std::string("Added ")
          + std::to_string(selected_.size() - prev_selected_size));
   emit selectionChanged();
+
+  if (find_in_cts) {
+    emit findInCts(selections);
+  }
 }
 
 void MainWindow::setSelected(const SelectionSet& selections)
@@ -1576,7 +1598,7 @@ std::string MainWindow::convertDBUToString(int value, bool add_units) const
   auto str = utl::to_numeric_string(micron_value, precision);
 
   if (add_units) {
-    str += " \u03BCm";  // micro meter
+    str += " μm";
   }
 
   return str;
@@ -1590,8 +1612,8 @@ int MainWindow::convertStringToDBU(const std::string& value, bool* ok) const
     new_value = new_value.left(new_value.indexOf(" "));
   } else if (new_value.contains("u")) {
     new_value = new_value.left(new_value.indexOf("u"));
-  } else if (new_value.contains("\u03BC")) {
-    new_value = new_value.left(new_value.indexOf("\u03BC"));
+  } else if (new_value.contains("μ")) {
+    new_value = new_value.left(new_value.indexOf("μ"));
   }
 
   if (show_dbu_->isChecked()) {

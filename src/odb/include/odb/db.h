@@ -3561,6 +3561,7 @@ class dbITerm : public dbObject
 
   ///
   /// Disconnect this iterm from the net it is connected to.
+  /// Will remove from both mod net and dbNet.
   ///
   void disconnect();
 
@@ -5362,22 +5363,22 @@ class dbSite : public dbObject
   ///
   /// Get the width of this site
   ///
-  uint getWidth();
+  int getWidth();
 
   ///
   /// Set the width of this site
   ///
-  void setWidth(uint width);
+  void setWidth(int width);
 
   ///
   /// Get the height of this site
   ///
-  uint getHeight() const;
+  int getHeight() const;
 
   ///
   /// Set the height of this site
   ///
-  void setHeight(uint height);
+  void setHeight(int height);
 
   ///
   /// Get the class of this site.
@@ -5503,6 +5504,11 @@ class dbMaster : public dbObject
   /// Set the height of this master cell.
   ///
   void setHeight(uint height);
+
+  ///
+  /// Get the area of this master cell.
+  ///
+  int64_t getArea() const;
 
   ///
   /// is filler cell
@@ -7495,7 +7501,12 @@ class dbGuide : public dbObject
 
   dbTechLayer* getLayer() const;
 
-  static dbGuide* create(dbNet* net, dbTechLayer* layer, Rect box);
+  dbTechLayer* getViaLayer() const;
+
+  static dbGuide* create(dbNet* net,
+                         dbTechLayer* layer,
+                         dbTechLayer* via_layer,
+                         Rect box);
 
   static dbGuide* getGuide(dbBlock* block, uint dbid);
 

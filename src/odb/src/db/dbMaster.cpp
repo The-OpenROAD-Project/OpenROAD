@@ -526,6 +526,11 @@ void dbMaster::setHeight(uint h)
   master->_height = h;
 }
 
+int64_t dbMaster::getArea() const
+{
+  return getWidth() * static_cast<int64_t>(getHeight());
+}
+
 dbMasterType dbMaster::getType() const
 {
   _dbMaster* master = (_dbMaster*) this;

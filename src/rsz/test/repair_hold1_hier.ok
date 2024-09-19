@@ -1,0 +1,6 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+ (clk ^) r -0.03:1.91 f -0.03:1.91
+[INFO RSZ-0046] Found 1 endpoints with hold violations.
+[INFO RSZ-0032] Inserted 2 hold buffers.
+ (clk ^) r 0.02:1.89 f 0.02:1.88
+No differences found.

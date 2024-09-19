@@ -179,9 +179,3 @@ target_link_libraries(db
         utl_lib
         ${TCL_LIBRARY}
 )
-
-messages(
-  TARGET db
-  OUTPUT_DIR ../..
-  SOURCE_DIR ../..
-)

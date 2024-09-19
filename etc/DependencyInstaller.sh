@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+CMAKE_PACKAGE_ROOT_ARGS=""
+
 _versionCompare() {
     local a b IFS=. ; set -f
     printf -v a %08d $1; printf -v b %08d $3
@@ -21,7 +23,7 @@ _equivalenceDeps() {
         git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/yosys
         cd yosys
         # use of no-register flag is required for some compilers,
-        # e.g., gcc and clang fron RHEL8
+        # e.g., gcc and clang from RHEL8
         make -j $(nproc) PREFIX="${yosysPrefix}" ABC_ARCHFLAGS=-Wno-register
         make install
     ) fi
@@ -127,6 +129,7 @@ _installCommonDev() {
     else
         echo "Swig already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D SWIG_ROOT=$(realpath $swigPrefix) "
 
     # boost
     boostPrefix=${PREFIX:-"/usr/local"}
@@ -143,6 +146,7 @@ _installCommonDev() {
     else
         echo "Boost already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D Boost_ROOT=$(realpath $boostPrefix) "
 
     # eigen
     eigenPrefix=${PREFIX:-"/usr/local"}
@@ -155,10 +159,11 @@ _installCommonDev() {
     else
         echo "Eigen already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D Eigen3_ROOT=$(realpath $eigenPrefix) "
 
     # cudd
     cuddPrefix=${PREFIX:-"/usr/local"}
-    if [[ ! -d ${cuddPrefix}/include/cudd.h ]]; then
+    if [[ ! -f ${cuddPrefix}/include/cudd.h ]]; then
         cd "${baseDir}"
         git clone --depth=1 -b ${cuddVersion} https://github.com/The-OpenROAD-Project/cudd.git
         cd cudd
@@ -191,6 +196,7 @@ _installCommonDev() {
     else
         echo "Lemon already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D LEMON_ROOT=$(realpath $lemonPrefix) "
 
     # spdlog
     spdlogPrefix=${PREFIX:-"/usr/local"}
@@ -203,6 +209,7 @@ _installCommonDev() {
     else
         echo "spdlog already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D spdlog_ROOT=$(realpath $spdlogPrefix) "
 
     # gtest
     gtestPrefix=${PREFIX:-"/usr/local"}
@@ -217,6 +224,7 @@ _installCommonDev() {
     else
         echo "gtest already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D GTest_ROOT=$(realpath $gtestPrefix) "
 
     if [[ ${equivalenceDeps} == "yes" ]]; then
         _equivalenceDeps
@@ -264,23 +272,28 @@ _installOrTools() {
     if [[ ! -z "${PREFIX}" ]]; then mkdir -p "${PREFIX}"; fi
     cd "${baseDir}"
 
+    # Disable exit on error for 'find' command, as it might return non zero
+    set +euo pipefail
+    LIST=($(find / -type f -name "libortools.so*" 2>/dev/null))
+    # Bring back exit on error
+    set -euo pipefail
+    # Return if right version of or-tools is installed
+    for lib in ${LIST[@]}; do
+        if [[ "$lib" =~ .*"/libortools.so.${orToolsVersionSmall}" ]]; then
+            echo "OR-Tools is already installed"
+            CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=$(realpath $(dirname $lib)/..) "
+            return
+        fi
+    done
+
     orToolsPath=${PREFIX:-"/opt/or-tools"}
     if [ "$(uname -m)" == "aarch64" ]; then
-        # Disable exit on error for 'find' command, as it might return non zero
-        set +euo pipefail
-        LIST=($(find / -type f -name "libortools.so*" 2>/dev/null))
-        # Bring back exit on error
-        set -euo pipefail
-        if [ ${#LIST[@]} -eq 0 ]; then
-            echo "OR-TOOLS NOT FOUND"
-            echo "Installing  OR-Tools for aarch64..."
-            git clone --depth=1 -b "v${orToolsVersionBig}" https://github.com/google/or-tools.git
-            cd or-tools
-            ${cmakePrefix}/bin/cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_SAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_INSTALL_PREFIX=${orToolsPath} -DCMAKE_CXX_FLAGS="-w" -DCMAKE_C_FLAGS="-w"
-            ${cmakePrefix}/bin/cmake --build build --config Release --target install -v -j $(nproc)
-        else
-            echo "OR-Tools is already installed"
-        fi
+        echo "OR-TOOLS NOT FOUND"
+        echo "Installing  OR-Tools for aarch64..."
+        git clone --depth=1 -b "v${orToolsVersionBig}" https://github.com/google/or-tools.git
+        cd or-tools
+        ${cmakePrefix}/bin/cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_SAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_INSTALL_PREFIX=${orToolsPath} -DCMAKE_CXX_FLAGS="-w" -DCMAKE_C_FLAGS="-w"
+        ${cmakePrefix}/bin/cmake --build build --config Release --target install -v -j $(nproc)
     else
         if [[ $version == rodete ]]; then
             version=11
@@ -295,6 +308,7 @@ _installOrTools() {
         tar --strip 1 --dir ${orToolsPath} -xf ${orToolsFile}
         rm -rf ${baseDir}
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=$(realpath $orToolsPath) "
 }
 
 _installUbuntuCleanUp() {
@@ -571,7 +585,7 @@ EOF
     fi
     brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pyqt5 python spdlog tcl-tk zlib
 
-    # Some systems neeed this to correclty find OpenMP package during build
+    # Some systems need this to correctly find OpenMP package during build
     brew link --force libomp
 
     # Lemon is not in the homebrew-core repo
@@ -721,6 +735,16 @@ Usage: $0
                                 # Installs dependencies required to run CI
        $0 -nocert
                                 # Disable certificate checks
+                                #    WARNING: Do not use without a good reason,
+                                #    like working around a firewall. This opens
+                                #    vulnerability to man-in-the-middle (MITM)
+                                #    attacks.
+       $0 -save-deps-prefixes=FILE
+                                # Dumps OpenROAD build arguments and variables
+                                # to FILE
+       $0 -constant-build-dir
+                                # Use constant build directory, instead of
+                                #    random one.
 
 EOF
     exit "${1:-1}"
@@ -732,6 +756,7 @@ option="all"
 isLocal="false"
 equivalenceDeps="no"
 CI="no"
+saveDepsPrefixes=""
 # temp dir to download and compile
 baseDir=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
 
@@ -776,6 +801,14 @@ while [ "$#" -gt 0 ]; do
             export PREFIX="${HOME}/.local"
             export isLocal="true"
             ;;
+        -constant-build-dir)
+            if [[ -d "$baseDir" ]]; then
+                echo "INFO: removing old building directory $baseDir"
+                rm -r "$baseDir"
+            fi
+            baseDir="/tmp/DependencyInstaller-OpenROAD"
+            mkdir -p "$baseDir"
+            ;;
         -prefix=*)
             if [[ ! -z ${PREFIX} ]]; then
                 echo "WARNING: previous argument -local will be overwritten with -prefix"
@@ -784,9 +817,15 @@ while [ "$#" -gt 0 ]; do
             export PREFIX="$(realpath $(echo $1 | sed -e 's/^[^=]*=//g'))"
             ;;
         -nocert)
+            echo "WARNING: security certificates for downloaded packages will not be checked. Do not use" >&2
+            echo "         -nocert without a good reason, like working around a firewall. This opens" >&2
+            echo "         vulnerability to man-in-the-middle (MITM) attacks." >&2
             shopt -s expand_aliases
             alias wget="wget --no-check-certificate"
             export GIT_SSL_NO_VERIFY=true
+            ;;
+        -save-deps-prefixes=*)
+            saveDepsPrefixes=$(realpath ${1#-save-deps-prefixes=})
             ;;
         *)
             echo "unknown option: ${1}" >&2
@@ -795,6 +834,11 @@ while [ "$#" -gt 0 ]; do
     esac
     shift 1
 done
+
+if [[ -z "${saveDepsPrefixes}" ]]; then
+    DIR="$(dirname $(readlink -f $0))"
+    saveDepsPrefixes="$DIR/openroad_deps_prefixes.txt"
+fi
 
 platform="$(uname -s)"
 case "${platform}" in
@@ -931,3 +975,7 @@ EOF
         _help
         ;;
 esac
+if [[ ! -z ${saveDepsPrefixes} ]]; then
+    mkdir -p "$(dirname $saveDepsPrefixes)"
+    echo "$CMAKE_PACKAGE_ROOT_ARGS" > $saveDepsPrefixes
+fi

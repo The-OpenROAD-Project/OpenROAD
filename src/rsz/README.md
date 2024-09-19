@@ -110,9 +110,13 @@ After the `global_route` command has been called, the global routing topology
 and layers can be used to estimate parasitics  with the `-global_routing`
 flag.
 
+The optional argument `-spef_file` can be used to write the estimated parasitics using 
+Standard Parasitic Exchange Format.
+
 ```tcl
 estimate_parasitics
     -placement|-global_routing
+    [-spef_file spef_file]
 ```
 
 #### Options
@@ -120,6 +124,7 @@ estimate_parasitics
 | Switch Name | Description |
 | ----- | ----- |
 | `-placement` or `-global_routing` | Either of these flags must be set. Parasitics are estimated based after placement stage versus after global routing stage. |
+| `-spef_file` | Optional. File name to write SPEF files. If more than one corner is available for the design, the files will be written as filename_corner.spef. |
 
 ### Set Don't Use
 

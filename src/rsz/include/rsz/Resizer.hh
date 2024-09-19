@@ -136,6 +136,8 @@ class RepairDesign;
 class RepairSetup;
 class RepairHold;
 
+class SpefWriter;
+
 class NetHash
 {
  public:
@@ -235,9 +237,13 @@ class Resizer : public dbStaState
   double wireClkHCapacitance(const Corner* corner) const;
   double wireClkVCapacitance(const Corner* corner) const;
   void estimateParasitics(ParasiticsSrc src);
-  void estimateWireParasitics();
-  void estimateWireParasitic(const Net* net);
-  void estimateWireParasitic(const Pin* drvr_pin, const Net* net);
+  void estimateParasitics(ParasiticsSrc src,
+                          std::map<Corner*, std::ostream*>& spef_streams_);
+  void estimateWireParasitics(SpefWriter* spef_writer = nullptr);
+  void estimateWireParasitic(const Net* net, SpefWriter* spef_writer = nullptr);
+  void estimateWireParasitic(const Pin* drvr_pin,
+                             const Net* net,
+                             SpefWriter* spef_writer = nullptr);
   bool haveEstimatedParasitics() const;
   void parasiticsInvalid(const Net* net);
   void parasiticsInvalid(const dbNet* net);
@@ -571,12 +577,14 @@ class Resizer : public dbStaState
   void updateParasitics(bool save_guides = false);
   void ensureWireParasitic(const Pin* drvr_pin);
   void ensureWireParasitic(const Pin* drvr_pin, const Net* net);
-  void estimateWireParasiticSteiner(const Pin* drvr_pin, const Net* net);
+  void estimateWireParasiticSteiner(const Pin* drvr_pin,
+                                    const Net* net,
+                                    SpefWriter* spef_writer);
   float totalLoad(SteinerTree* tree) const;
   float subtreeLoad(SteinerTree* tree,
                     float cap_per_micron,
                     SteinerPt pt) const;
-  void makePadParasitic(const Net* net);
+  void makePadParasitic(const Net* net, SpefWriter* spef_writer);
   bool isPadNet(const Net* net) const;
   bool isPadPin(const Pin* pin) const;
   bool isPad(const Instance* inst) const;
@@ -599,6 +607,8 @@ class Resizer : public dbStaState
                          const char* name,
                          Instance* parent,
                          const Point& loc);
+  void getBufferPins(Instance* buffer, Pin*& ip_pin, Pin*& op_pin);
+
   Instance* makeBuffer(LibertyCell* cell,
                        const char* name,
                        Instance* parent,

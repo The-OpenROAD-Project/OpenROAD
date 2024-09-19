@@ -202,25 +202,25 @@ const char* dbSite::getConstName()
   return site->_name;
 }
 
-uint dbSite::getWidth()
+int dbSite::getWidth()
 {
   _dbSite* site = (_dbSite*) this;
   return site->_width;
 }
 
-void dbSite::setWidth(uint w)
+void dbSite::setWidth(int w)
 {
   _dbSite* site = (_dbSite*) this;
   site->_width = w;
 }
 
-uint dbSite::getHeight() const
+int dbSite::getHeight() const
 {
   _dbSite* site = (_dbSite*) this;
   return site->_height;
 }
 
-void dbSite::setHeight(uint h)
+void dbSite::setHeight(int h)
 {
   _dbSite* site = (_dbSite*) this;
   site->_height = h;

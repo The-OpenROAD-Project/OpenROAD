@@ -78,7 +78,8 @@ class Opendp;
 
 namespace rsz {
 class Resizer;
-}
+class SpefWriter;
+}  // namespace rsz
 
 namespace sta {
 class dbSta;
@@ -199,7 +200,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   bool isCoveringPin(Net* net, GSegment& segment);
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
   void initFastRouteIncr(std::vector<Net*>& nets);
-  void estimateRC();
+  void estimateRC(rsz::SpefWriter* spef_writer = nullptr);
   void estimateRC(odb::dbNet* db_net);
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing
   // layer.
@@ -276,7 +277,10 @@ class GlobalRouter : public ant::GlobalRouteSource
   void reportNetLayerWirelengths(odb::dbNet* db_net, std::ofstream& out);
   void reportLayerWireLengths();
   odb::Rect globalRoutingToBox(const GSegment& route);
-  void boxToGlobalRouting(const odb::Rect& route_bds, int layer, GRoute& route);
+  void boxToGlobalRouting(const odb::Rect& route_bds,
+                          int layer,
+                          int via_layer,
+                          GRoute& route);
   void updateVias();
 
   // Report wire length
@@ -371,8 +375,6 @@ class GlobalRouter : public ant::GlobalRouteSource
                           int min_routing_layer,
                           int max_routing_layer);
   void connectPadPins(NetRouteMap& routes);
-  void mergeBox(std::vector<odb::Rect>& guide_box,
-                const std::set<odb::Point>& via_positions);
   bool segmentsConnect(const GSegment& seg0,
                        const GSegment& seg1,
                        GSegment& new_seg,

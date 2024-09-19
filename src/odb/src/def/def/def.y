@@ -50,7 +50,7 @@
 //  6170 - defiTimingDisable.cpp
 //  6180 - defiVia.cpp
 //  6500 - def parser, error, def.y
-%pure-parser
+%define api.pure
 %lex-param {defrData *defData}
 %parse-param {defrData *defData}
 
