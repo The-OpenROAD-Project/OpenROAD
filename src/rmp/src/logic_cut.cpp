@@ -110,7 +110,8 @@ std::unordered_map<sta::Instance*, abc::Abc_Obj_t*> CreateStandardCells(
     if (cell_name_to_mio.find(cell_name) == cell_name_to_mio.end()) {
       logger->error(utl::RMP,
                     1001,
-                    "cell: {} was not found in the ABC library, this is a bug.",
+                    "cell: {} was not found in the ABC library. Please report "
+                    "this internal error.",
                     cell_name);
     }
     abc::Abc_ObjSetData(abc_cell, cell_name_to_mio.at(cell_name));
@@ -145,7 +146,8 @@ void ConnectPinToDriver(
     if (abc_instances.find(instance) == abc_instances.end()) {
       logger->error(utl::RMP,
                     1018,
-                    "bug: cannot find instance {} in abc instance map",
+                    "Cannot find instance {} in abc instance map. Please "
+                    "report this internal error.",
                     network->name(instance));
     }
     abc_fanin_reciever = abc_instances.at(instance);
@@ -162,7 +164,8 @@ void ConnectPinToDriver(
   if (drivers->size() != 1) {
     logger->error(utl::RMP,
                   1002,
-                  "bug: output_pin: {} has the wrong number of drivers {}",
+                  "output_pin: {} has the wrong number of drivers {}. Please "
+                  "report this internal error.",
                   network->name(output_pin),
                   drivers->size());
   }
@@ -177,7 +180,8 @@ void ConnectPinToDriver(
   if (abc_instances.find(driver_instance) == abc_instances.end()) {
     logger->error(utl::RMP,
                   1003,
-                  "bug: ABC version of instance {} not found.",
+                  "ABC version of instance {} not found. Please report this "
+                  "internal error.",
                   network->name(driver_instance));
   }
   abc::Abc_ObjAddFanin(abc_net, abc_instances.at(driver_instance));
@@ -220,10 +224,11 @@ void CreateNets(
     abc::Mio_Gate_t* gate
         = static_cast<abc::Mio_Gate_t*>(abc::Abc_ObjData(abc_instance));
     if (port_order.find(gate) == port_order.end()) {
-      logger->error(utl::RMP,
-                    1007,
-                    "bug: Can't find gate for {}",
-                    network->name(sta_instance));
+      logger->error(
+          utl::RMP,
+          1007,
+          "Can't find gate for {}. Please report this internal error.",
+          network->name(sta_instance));
     }
 
     std::vector<std::string> port_order_vec = port_order.at(gate);

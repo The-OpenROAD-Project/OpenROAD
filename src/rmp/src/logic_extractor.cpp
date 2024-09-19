@@ -110,15 +110,16 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryOutputs(
 {
   sta::dbNetwork* network = open_sta_->getDbNetwork();
 
-  sta::PinSet cut_set_vertices(network);
+  std::unordered_set<const sta::Pin*> cut_set_vertices;
   for (sta::Vertex* vertex : cut_vertices) {
     cut_set_vertices.insert(vertex->pin());
   }
 
-  sta::PinSet primary_outputs(network);
+  std::vector<sta::Pin*> primary_outputs;
+  primary_outputs.reserve(endpoints_.size());
   // Append any and all endpoints to the primary outputs.
   for (sta::Vertex* vertex : endpoints_) {
-    primary_outputs.insert(vertex->pin());
+    primary_outputs.push_back(vertex->pin());
   }
 
   for (sta::Vertex* vertex : cut_vertices) {
@@ -127,26 +128,20 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryOutputs(
     if (!direction->isOutput()) {
       continue;
     }
-
     auto pin_iterator = std::unique_ptr<sta::PinConnectedPinIterator>(
         network->connectedPinIterator(pin));
     while (pin_iterator->hasNext()) {
       const sta::Pin* connected_pin = pin_iterator->next();
-
       // Pin is not in our cutset, and therefore is a primary output.
       if (cut_set_vertices.find(connected_pin) == cut_set_vertices.end()) {
         sta::VertexId vertex_id = network->vertexId(connected_pin);
         sta::Vertex* vertex = network->graph()->vertex(vertex_id);
-        primary_outputs.insert(vertex->pin());
+        primary_outputs.push_back(vertex->pin());
       }
     }
   }
 
-  std::vector<sta::Pin*> final_output;
-  for (const sta::Pin* pin : primary_outputs) {
-    final_output.push_back(const_cast<sta::Pin*>(pin));
-  }
-  return final_output;
+  return primary_outputs;
 }
 
 std::unordered_set<sta::Instance*> LogicExtractorFactory::GetCutInstances(
