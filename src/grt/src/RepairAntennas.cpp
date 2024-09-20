@@ -1036,19 +1036,22 @@ void addSegmentHorizontal(const int& seg_id,
                           const int& final_x,
                           const int& layer_level)
 {
+  const int seg_init_x = route[seg_id].init_x;
+  const int seg_init_y = route[seg_id].init_y;
+  const int seg_final_y = route[seg_id].final_y;
   // Add vias and jumper in the position
   addSegments(route,
               init_x,
-              route[seg_id].init_y,
+              seg_init_y,
               final_x,
-              route[seg_id].final_y,
+              seg_final_y,
               layer_level);
   // Divide segment (new segment is added before jumper insertion)
-  route.push_back(GSegment(route[seg_id].init_x,
-                           route[seg_id].init_y,
+  route.push_back(GSegment(seg_init_x,
+                           seg_init_y,
                            layer_level,
                            init_x,
-                           route[seg_id].init_y,
+                           seg_init_y,
                            layer_level));
   // old segment is reduced (after jumper)
   route[seg_id].init_x = final_x;
@@ -1060,18 +1063,21 @@ void addSegmentVertical(const int& seg_id,
                         const int& final_y,
                         const int& layer_level)
 {
+  const int seg_init_x = route[seg_id].init_x;
+  const int seg_final_x = route[seg_id].final_x;
+  const int seg_init_y = route[seg_id].init_y;
   // Add vias and jumper in the position
   addSegments(route,
-              route[seg_id].init_x,
+              seg_init_x,
               init_y,
-              route[seg_id].final_x,
+              seg_final_x,
               final_y,
               layer_level);
   // Divide segment (new segment is added before jumper insertion)
-  route.push_back(GSegment(route[seg_id].init_x,
-                           route[seg_id].init_y,
+  route.push_back(GSegment(seg_init_x,
+                           seg_init_y,
                            layer_level,
-                           route[seg_id].init_x,
+                           seg_init_x,
                            init_y,
                            layer_level));
   // old segment is reduced (after jumper)
@@ -1477,9 +1483,9 @@ void RepairAntennas::jumperInsertion(NetRouteMap& routing,
       violation_id++;
     }
 
-    // Iterate route of net (get segments)
     GRoute& route = routing[db_net];
 
+    // Get segments with violation in each layer
     SegmentIdByViolation segment_with_violations_id;
     if (routing_layer_with_violations.size()) {
       segment_with_violations_id = getSegmentsWithViolation(
@@ -1488,6 +1494,9 @@ void RepairAntennas::jumperInsertion(NetRouteMap& routing,
     // add jumpers in segments for each layer
     for (auto it : routing_layer_with_violations) {
       ViolationInfo info;
+      if (segment_with_violations_id[it.second].size() == 0) {
+        continue;
+      }
       getPinNumberNearEndPoint(segment_with_violations_id[it.second],
                                violations[it.second].gates,
                                route,
