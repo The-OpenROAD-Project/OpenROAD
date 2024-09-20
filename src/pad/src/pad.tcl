@@ -260,7 +260,8 @@ proc place_pad {args} {
     [info exists flags(-mirror)]
 }
 
-sta::define_cmd_args "place_pads" {-row row_name pad0 pad1 ...}
+sta::define_cmd_args "place_pads" {-row row_name \
+                                   pads}
 
 proc place_pads {args} {
   sta::parse_key_args "place_pads" args \
