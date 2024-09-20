@@ -36,6 +36,8 @@ record_tests {
   skywater130_caravel
   skywater130_coyote_tc
 
+  place_pads_uniform
+
   #pad_man_tcl_check
   #pad_readme_msgs_check
 }
