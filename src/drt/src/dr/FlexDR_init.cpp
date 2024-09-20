@@ -2174,6 +2174,8 @@ void FlexDRWorker::initTrackCoords_pin(
         std::cout << "Error: initTrackCoords cannot add non-pref track"
                   << std::endl;
       }
+      gridGraph_.addAccessPointLocation(lNum, pt.x(), pt.y());
+      gridGraph_.addAccessPointLocation(lNum2, pt.x(), pt.y());
       if (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
         yMap[pt.y()][lNum] = nullptr;
       } else {
