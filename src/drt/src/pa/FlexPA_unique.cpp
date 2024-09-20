@@ -45,10 +45,14 @@ std::vector<frTrackPattern*> UniqueInsts::getPrefTrackPatterns()
     const bool is_vertical_track = track_pattern->isHorizontal();
     const frLayerNum layer_num = track_pattern->getLayerNum();
     const frLayer* layer = getTech()->getLayer(layer_num);
-    const bool is_vertical_layer
-        = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
-    if (is_vertical_layer == is_vertical_track) {
-      pref_track_patterns.push_back(track_pattern);
+    if (layer->getDir() == dbTechLayerDir::HORIZONTAL) {
+      if (!is_vertical_track) {
+        pref_track_patterns.push_back(track_pattern);
+      }
+    } else {
+      if (is_vertical_track) {
+        pref_track_patterns.push_back(track_pattern);
+      }
     }
   }
   return pref_track_patterns;
@@ -61,7 +65,7 @@ UniqueInsts::MasterLayerRange UniqueInsts::initMasterToPinLayerRange()
   for (odb::dbInst* inst : target_insts_) {
     masters.insert(inst->getMaster()->getName());
   }
-  const int numLayers = getTech()->getLayers().size();
+  const int num_layers = getTech()->getLayers().size();
   const frLayerNum bottom_layer_num = getTech()->getBottomLayerNum();
   for (auto& uMaster : design_->getMasters()) {
     auto master = uMaster.get();
@@ -83,7 +87,7 @@ UniqueInsts::MasterLayerRange UniqueInsts::initMasterToPinLayerRange()
           } else if (pin_fig->typeId() == frcPolygon) {
             lNum = static_cast<frPolygon*>(pin_fig)->getLayerNum();
           } else {
-            logger_->error(DRT, 65, "instAnalysis unsupported pinFig.");
+            logger_->error(DRT, 65, "instAnalysis unsupported pin_fig.");
           }
           min_layer_num
               = std::min(min_layer_num, std::max(bottom_layer_num, lNum));
@@ -99,7 +103,7 @@ UniqueInsts::MasterLayerRange UniqueInsts::initMasterToPinLayerRange()
                     master->getName());
       continue;
     }
-    max_layer_num = std::min(max_layer_num + 2, numLayers);
+    max_layer_num = std::min(max_layer_num + 2, num_layers);
     master_to_pin_layer_range[master] = {min_layer_num, max_layer_num};
   }
   return master_to_pin_layer_range;
@@ -107,9 +111,10 @@ UniqueInsts::MasterLayerRange UniqueInsts::initMasterToPinLayerRange()
 
 bool UniqueInsts::hasTrackPattern(frTrackPattern* tp, const Rect& box) const
 {
+  const bool is_vertical_track = tp->isHorizontal();
   const frCoord low = tp->getStartCoord();
   const frCoord high = low + tp->getTrackSpacing() * (tp->getNumTracks() - 1);
-  if (tp->isHorizontal()) {
+  if (is_vertical_track) {
     return !(low > box.xMax() || high < box.xMin());
   }
   return !(low > box.yMax() || high < box.yMin());
@@ -126,7 +131,7 @@ bool UniqueInsts::isNDRInst(frInst& inst)
 }
 
 // must init all unique, including filler, macro, etc. to ensure frInst
-// pin_accessIdx is active
+// pin_access_idx is active
 void UniqueInsts::computeUnique(
     const MasterLayerRange& master_to_pin_layer_range,
     const std::vector<frTrackPattern*>& pref_track_patterns)
@@ -148,9 +153,8 @@ void UniqueInsts::computeUnique(
       continue;
     }
     const Point origin = inst->getOrigin();
-    const Rect boundary_boundary_box = inst->getBoundaryBBox();
+    const Rect boundary_bbox = inst->getBoundaryBBox();
     const dbOrientType orient = inst->getOrient();
-
     auto it = master_to_pin_layer_range.find(inst->getMaster());
     if (it == master_to_pin_layer_range.end()) {
       logger_->error(DRT,
@@ -163,7 +167,7 @@ void UniqueInsts::computeUnique(
     for (auto& tp : pref_track_patterns) {
       if (tp->getLayerNum() >= min_layer_num
           && tp->getLayerNum() <= max_layer_num) {
-        if (hasTrackPattern(tp, boundary_boundary_box)) {
+        if (hasTrackPattern(tp, boundary_bbox)) {
           // vertical track
           if (tp->isHorizontal()) {
             offset.push_back(origin.x() % tp->getTrackSpacing());
@@ -177,10 +181,11 @@ void UniqueInsts::computeUnique(
         offset.push_back(tp->getTrackSpacing());
       }
     }
-    master_OT_to_insts_[inst->getMaster()][orient][offset].insert(inst.get());
+    master_orient_trackoffset_to_insts_[inst->getMaster()][orient][offset]
+        .insert(inst.get());
   }
 
-  for (auto& [master, orientMap] : master_OT_to_insts_) {
+  for (auto& [master, orientMap] : master_orient_trackoffset_to_insts_) {
     for (auto& [orient, offsetMap] : orientMap) {
       for (auto& [vec, insts] : offsetMap) {
         auto unique_inst = *(insts.begin());
@@ -240,7 +245,7 @@ void UniqueInsts::checkFigsOnGrid(const frMPin* pin)
         }
       }
     } else {
-      logger_->error(DRT, 322, "checkFigsOnGrid unsupported pinFig.");
+      logger_->error(DRT, 322, "checkFigsOnGrid unsupported pin_fig.");
     }
   }
 }

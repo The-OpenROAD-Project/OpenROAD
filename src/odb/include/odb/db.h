@@ -3561,6 +3561,7 @@ class dbITerm : public dbObject
 
   ///
   /// Disconnect this iterm from the net it is connected to.
+  /// Will remove from both mod net and dbNet.
   ///
   void disconnect();
 

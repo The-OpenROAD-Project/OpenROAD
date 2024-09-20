@@ -60,13 +60,11 @@ ViaRawPriorityTuple FlexPA::getViaRawPriority(frViaDef* via_def)
   gtl::polygon_90_set_data<frCoord> via_layer_PS1;
 
   for (auto& fig : via_def->getLayer1Figs()) {
-    const Rect boundary_box = fig->getBBox();
-    gtl::rectangle_data<frCoord> boundary_box_rect(boundary_box.xMin(),
-                                                   boundary_box.yMin(),
-                                                   boundary_box.xMax(),
-                                                   boundary_box.yMax());
+    const Rect bbox = fig->getBBox();
+    gtl::rectangle_data<frCoord> bbox_rect(
+        bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     using boost::polygon::operators::operator+=;
-    via_layer_PS1 += boundary_box_rect;
+    via_layer_PS1 += bbox_rect;
   }
   gtl::rectangle_data<frCoord> layer1_rect;
   gtl::extents(layer1_rect, via_layer_PS1);
@@ -85,13 +83,11 @@ ViaRawPriorityTuple FlexPA::getViaRawPriority(frViaDef* via_def)
 
   gtl::polygon_90_set_data<frCoord> via_layer_PS2;
   for (auto& fig : via_def->getLayer2Figs()) {
-    const Rect boundary_box = fig->getBBox();
-    const gtl::rectangle_data<frCoord> boundary_box_rect(boundary_box.xMin(),
-                                                         boundary_box.yMin(),
-                                                         boundary_box.xMax(),
-                                                         boundary_box.yMax());
+    const Rect bbox = fig->getBBox();
+    const gtl::rectangle_data<frCoord> bbox_rect(
+        bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     using boost::polygon::operators::operator+=;
-    via_layer_PS2 += boundary_box_rect;
+    via_layer_PS2 += bbox_rect;
   }
   gtl::rectangle_data<frCoord> layer2_rect;
   gtl::extents(layer2_rect, via_layer_PS2);
@@ -146,7 +142,7 @@ void FlexPA::initTrackCoords()
   }
 
   // half coords
-  std::vector<std::vector<frCoord>> halfTrackCoords(num_layers);
+  std::vector<std::vector<frCoord>> half_track_coords(num_layers);
   for (int i = 0; i < num_layers; i++) {
     frCoord prev_full_coord = std::numeric_limits<frCoord>::max();
 
@@ -156,12 +152,12 @@ void FlexPA::initTrackCoords()
             = (curr_full_coord + prev_full_coord) / 2 / manu_grid * manu_grid;
         if (curr_half_grid != curr_full_coord
             && curr_half_grid != prev_full_coord) {
-          halfTrackCoords[i].push_back(curr_half_grid);
+          half_track_coords[i].push_back(curr_half_grid);
         }
       }
       prev_full_coord = curr_full_coord;
     }
-    for (auto half_coord : halfTrackCoords[i]) {
+    for (auto half_coord : half_track_coords[i]) {
       track_coords_[i][half_coord] = frAccessPointEnum::HalfGrid;
     }
   }

@@ -111,7 +111,8 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
       using boost::polygon::operators::operator+=;
       pin_shapes[layer_num] += poly;
     } else {
-      logger_->error(DRT, 67, "FlexPA mergePinShapes unsupported shape.");
+      logger_->error(
+          DRT, 67, "FlexPA prepPoint_pin_mergePinShapes unsupported shape.");
       exit(1);
     }
   }
@@ -712,10 +713,10 @@ void FlexPA::genAPsFromLayerShapes(
   }
   std::vector<gtl::rectangle_data<frCoord>> maxrects;
   gtl::get_max_rectangles(maxrects, layer_shapes);
-  for (auto& boundary_boxRect : maxrects) {
+  for (auto& bbox_rect : maxrects) {
     genAPsFromRect(aps,
                    apset,
-                   boundary_boxRect,
+                   bbox_rect,
                    layer_num,
                    allow_planar,
                    allow_via,
@@ -1018,13 +1019,13 @@ void FlexPA::addViaAccess(
   }
 
   // check if ap is on the left/right boundary of the cell
-  Rect boundary_boundary_box;
+  Rect boundary_bbox;
   bool is_side_bound = false;
   if (inst_term) {
-    boundary_boundary_box = inst_term->getInst()->getBoundaryBBox();
+    boundary_bbox = inst_term->getInst()->getBoundaryBBox();
     frCoord width = getDesign()->getTech()->getLayer(layer_num)->getWidth();
-    if (begin_point.x() <= boundary_boundary_box.xMin() + 3 * width
-        || begin_point.x() >= boundary_boundary_box.xMax() - 3 * width) {
+    if (begin_point.x() <= boundary_bbox.xMin() + 3 * width
+        || begin_point.x() >= boundary_bbox.xMax() - 3 * width) {
       is_side_bound = true;
     }
   }
@@ -1049,11 +1050,11 @@ void FlexPA::addViaAccess(
     via->setOrigin(begin_point);
     const Rect box = via->getLayer1BBox();
     if (inst_term) {
-      if (!boundary_boundary_box.contains(box)) {
+      if (!boundary_bbox.contains(box)) {
         continue;
       }
       Rect layer2_boundary_box = via->getLayer2BBox();
-      if (!boundary_boundary_box.contains(layer2_boundary_box)) {
+      if (!boundary_bbox.contains(layer2_boundary_box)) {
         continue;
       }
     }
@@ -1923,7 +1924,7 @@ void FlexPA::genInstRowPattern(std::vector<frInst*>& insts)
 
   genInstRowPatternInit(nodes, insts);
   genInstRowPatternPerform(nodes, insts);
-  genInstRowPatternCommit(nodes, insts);
+  genInstRowPattern_commit(nodes, insts);
 }
 
 // init dp node array for valid access patterns
@@ -1987,8 +1988,8 @@ void FlexPA::genInstRowPatternPerform(std::vector<FlexDPNode>& nodes,
   }
 }
 
-void FlexPA::genInstRowPatternCommit(std::vector<FlexDPNode>& nodes,
-                                     const std::vector<frInst*>& insts)
+void FlexPA::genInstRowPattern_commit(std::vector<FlexDPNode>& nodes,
+                                      const std::vector<frInst*>& insts)
 {
   const bool is_debug_mode = false;
   int curr_node_idx
@@ -2047,12 +2048,12 @@ void FlexPA::genInstRowPatternCommit(std::vector<FlexDPNode>& nodes,
   }
 
   if (is_debug_mode) {
-    genInstRowPatternPrint(nodes, insts);
+    genInstRowPattern_print(nodes, insts);
   }
 }
 
-void FlexPA::genInstRowPatternPrint(std::vector<FlexDPNode>& nodes,
-                                    const std::vector<frInst*>& insts)
+void FlexPA::genInstRowPattern_print(std::vector<FlexDPNode>& nodes,
+                                     const std::vector<frInst*>& insts)
 {
   int curr_node_idx
       = getFlatIdx(insts.size(), 0, ACCESS_PATTERN_END_ITERATION_NUM);
@@ -2136,8 +2137,8 @@ int FlexPA::getEdgeCost(const int prev_node_idx,
   // push the vias from prev inst access pattern and curr inst access pattern
   const auto prev_inst = insts[prev_idx_1];
   const auto prev_unique_inst_idx = unique_insts_.getIndex(prev_inst);
-  const auto currInst = insts[curr_idx_1];
-  const auto curr_unique_inst_idx = unique_insts_.getIndex(currInst);
+  const auto curr_inst = insts[curr_idx_1];
+  const auto curr_unique_inst_idx = unique_insts_.getIndex(curr_inst);
   const auto prev_pin_access_pattern
       = unique_inst_patterns_[prev_unique_inst_idx][prev_idx_2].get();
   const auto curr_pin_access_pattern
@@ -2145,13 +2146,13 @@ int FlexPA::getEdgeCost(const int prev_node_idx,
   addAccessPatternObj(
       prev_inst, prev_pin_access_pattern, objs, temp_vias, true);
   addAccessPatternObj(
-      currInst, curr_pin_access_pattern, objs, temp_vias, false);
+      curr_inst, curr_pin_access_pattern, objs, temp_vias, false);
 
-  const bool has_vio = !genPatternsGC({prev_inst, currInst}, objs, Edge);
+  const bool has_vio = !genPatterns_gc({prev_inst, curr_inst}, objs, Edge);
   if (!has_vio) {
-    const int prev_nodeCost = nodes[prev_node_idx].getNodeCost();
-    const int curr_nodeCost = nodes[curr_node_idx].getNodeCost();
-    edge_cost = (prev_nodeCost + curr_nodeCost) / 2;
+    const int prev_node_cost = nodes[prev_node_idx].getNodeCost();
+    const int curr_node_cost = nodes[curr_node_idx].getNodeCost();
+    edge_cost = (prev_node_cost + curr_node_cost) / 2;
   } else {
     edge_cost = 1000;
   }
@@ -2356,23 +2357,23 @@ int FlexPA::genPatterns(
                   max_access_point_size);
   int num_valid_pattern = 0;
   for (int i = 0; i < ACCESS_PATTERN_END_ITERATION_NUM; i++) {
-    genPatternsReset(nodes, pins, max_access_point_size);
-    genPatternsPerform(nodes,
-                       pins,
-                       vioEdge,
-                       used_access_points,
-                       viol_access_points,
-                       curr_unique_inst_idx,
-                       max_access_point_size);
+    genPatterns_reset(nodes, pins, max_access_point_size);
+    genPatterns_perform(nodes,
+                        pins,
+                        vioEdge,
+                        used_access_points,
+                        viol_access_points,
+                        curr_unique_inst_idx,
+                        max_access_point_size);
     bool is_valid = false;
-    if (genPatternsCommit(nodes,
-                          pins,
-                          is_valid,
-                          inst_access_patterns,
-                          used_access_points,
-                          viol_access_points,
-                          curr_unique_inst_idx,
-                          max_access_point_size)) {
+    if (genPatterns_commit(nodes,
+                           pins,
+                           is_valid,
+                           inst_access_patterns,
+                           used_access_points,
+                           viol_access_points,
+                           curr_unique_inst_idx,
+                           max_access_point_size)) {
       if (is_valid) {
         num_valid_pattern++;
       } else {
@@ -2397,23 +2398,23 @@ int FlexPA::genPatterns(
                     viol_access_points,
                     max_access_point_size);
     for (int i = 0; i < ACCESS_PATTERN_END_ITERATION_NUM; i++) {
-      genPatternsReset(nodes, reversed_pins, max_access_point_size);
-      genPatternsPerform(nodes,
-                         reversed_pins,
-                         vioEdge,
-                         used_access_points,
-                         viol_access_points,
-                         curr_unique_inst_idx,
-                         max_access_point_size);
+      genPatterns_reset(nodes, reversed_pins, max_access_point_size);
+      genPatterns_perform(nodes,
+                          reversed_pins,
+                          vioEdge,
+                          used_access_points,
+                          viol_access_points,
+                          curr_unique_inst_idx,
+                          max_access_point_size);
       bool is_valid = false;
-      if (genPatternsCommit(nodes,
-                            reversed_pins,
-                            is_valid,
-                            inst_access_patterns,
-                            used_access_points,
-                            viol_access_points,
-                            curr_unique_inst_idx,
-                            max_access_point_size)) {
+      if (genPatterns_commit(nodes,
+                             reversed_pins,
+                             is_valid,
+                             inst_access_patterns,
+                             used_access_points,
+                             viol_access_points,
+                             curr_unique_inst_idx,
+                             max_access_point_size)) {
         if (is_valid) {
           num_valid_pattern++;
         } else {
@@ -2463,7 +2464,7 @@ void FlexPA::genPatternsInit(
   }
 }
 
-void FlexPA::genPatternsReset(
+void FlexPA::genPatterns_reset(
     std::vector<FlexDPNode>& nodes,
     const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
     int max_access_point_size)
@@ -2480,7 +2481,7 @@ void FlexPA::genPatternsReset(
   nodes[end_node_Idx].setNodeCost(0);
 }
 
-bool FlexPA::genPatternsGC(
+bool FlexPA::genPatterns_gc(
     const std::set<frBlockObject*>& target_objs,
     const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
     const PatternType pattern_type,
@@ -2493,53 +2494,54 @@ bool FlexPA::genPatternsGC(
     return true;
   }
 
-  FlexGCWorker gc_worker(getTech(), logger_);
-  gc_worker.setIgnoreMinArea();
-  gc_worker.setIgnoreLongSideEOL();
-  gc_worker.setIgnoreCornerSpacing();
+  FlexGCWorker design_rule_checker(getTech(), logger_);
+  design_rule_checker.setIgnoreMinArea();
+  design_rule_checker.setIgnoreLongSideEOL();
+  design_rule_checker.setIgnoreCornerSpacing();
 
   frCoord llx = std::numeric_limits<frCoord>::max();
   frCoord lly = std::numeric_limits<frCoord>::max();
   frCoord urx = std::numeric_limits<frCoord>::min();
   frCoord ury = std::numeric_limits<frCoord>::min();
   for (auto& [connFig, owner] : objs) {
-    Rect boundary_box = connFig->getBBox();
-    llx = std::min(llx, boundary_box.xMin());
-    lly = std::min(lly, boundary_box.yMin());
-    urx = std::max(urx, boundary_box.xMax());
-    ury = std::max(ury, boundary_box.yMax());
+    Rect bbox = connFig->getBBox();
+    llx = std::min(llx, bbox.xMin());
+    lly = std::min(lly, bbox.yMin());
+    urx = std::max(urx, bbox.xMax());
+    ury = std::max(ury, bbox.yMax());
   }
   const Rect ext_box(llx - 3000, lly - 3000, urx + 3000, ury + 3000);
-  gc_worker.setExtBox(ext_box);
-  gc_worker.setDrcBox(ext_box);
+  design_rule_checker.setExtBox(ext_box);
+  design_rule_checker.setDrcBox(ext_box);
 
-  gc_worker.setTargetObjs(target_objs);
+  design_rule_checker.setTargetObjs(target_objs);
   if (target_objs.empty()) {
-    gc_worker.setIgnoreDB();
+    design_rule_checker.setIgnoreDB();
   }
-  gc_worker.initPA0(getDesign());
+  design_rule_checker.initPA0(getDesign());
   for (auto& [connFig, owner] : objs) {
-    gc_worker.addPAObj(connFig, owner);
+    design_rule_checker.addPAObj(connFig, owner);
   }
-  gc_worker.initPA1();
-  gc_worker.main();
-  gc_worker.end();
+  design_rule_checker.initPA1();
+  design_rule_checker.main();
+  design_rule_checker.end();
 
-  const bool sol = gc_worker.getMarkers().empty();
+  const bool no_drv = design_rule_checker.getMarkers().empty();
   if (owners) {
-    for (auto& marker : gc_worker.getMarkers()) {
+    for (auto& marker : design_rule_checker.getMarkers()) {
       for (auto& src : marker->getSrcs()) {
         owners->insert(src);
       }
     }
   }
   if (graphics_) {
-    graphics_->setObjsAndMakers(objs, gc_worker.getMarkers(), pattern_type);
+    graphics_->setObjsAndMakers(
+        objs, design_rule_checker.getMarkers(), pattern_type);
   }
-  return sol;
+  return no_drv;
 }
 
-void FlexPA::genPatternsPerform(
+void FlexPA::genPatterns_perform(
     std::vector<FlexDPNode>& nodes,
     const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
     std::vector<int>& vio_edges,
@@ -2649,7 +2651,7 @@ int FlexPA::getEdgeCost(
       }
     }
 
-    has_vio = !genPatternsGC({target_obj}, objs, Edge);
+    has_vio = !genPatterns_gc({target_obj}, objs, Edge);
     vio_edges[edge_idx] = has_vio;
 
     // look back for GN14
@@ -2663,13 +2665,13 @@ int FlexPA::getEdgeCost(
                      prev_prev_idx_2,
                      max_access_point_size);
         if (prev_prev_idx_1 != -1) {
-          const auto& [pin3, inst_term_3] = pins[prev_prev_idx_1];
-          auto pa3 = pin3->getPinAccess(pin_access_idx);
+          const auto& [pin_3, inst_term_3] = pins[prev_prev_idx_1];
+          auto pa_3 = pin_3->getPinAccess(pin_access_idx);
           std::unique_ptr<frVia> via3;
-          if (pa3->getAccessPoint(prev_prev_idx_2)->hasAccess(frDirEnum::U)) {
+          if (pa_3->getAccessPoint(prev_prev_idx_2)->hasAccess(frDirEnum::U)) {
             via3 = std::make_unique<frVia>(
-                pa3->getAccessPoint(prev_prev_idx_2)->getViaDef());
-            Point pt3(pa3->getAccessPoint(prev_prev_idx_2)->getPoint());
+                pa_3->getAccessPoint(prev_prev_idx_2)->getViaDef());
+            Point pt3(pa_3->getAccessPoint(prev_prev_idx_2)->getPoint());
             xform.apply(pt3);
             via3->setOrigin(pt3);
             if (inst_term_3->hasNet()) {
@@ -2679,7 +2681,7 @@ int FlexPA::getEdgeCost(
             }
           }
 
-          has_vio = !genPatternsGC({target_obj}, objs, Edge);
+          has_vio = !genPatterns_gc({target_obj}, objs, Edge);
         }
       }
     }
@@ -2700,9 +2702,9 @@ int FlexPA::getEdgeCost(
                       != viol_access_points.end()) {
       edge_cost = 1000;
     } else if (prev_node_idx >= 0) {
-      const int prev_nodeCost = nodes[prev_node_idx].getNodeCost();
-      const int curr_nodeCost = nodes[curr_node_idx].getNodeCost();
-      edge_cost = (prev_nodeCost + curr_nodeCost) / 2;
+      const int prev_node_cost = nodes[prev_node_idx].getNodeCost();
+      const int curr_node_cost = nodes[curr_node_idx].getNodeCost();
+      edge_cost = (prev_node_cost + curr_node_cost) / 2;
     }
   } else {
     edge_cost = 1000 /*violation cost*/;
@@ -2711,7 +2713,7 @@ int FlexPA::getEdgeCost(
   return edge_cost;
 }
 
-bool FlexPA::genPatternsCommit(
+bool FlexPA::genPatterns_commit(
     const std::vector<FlexDPNode>& nodes,
     const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
     bool& is_valid,
@@ -2824,11 +2826,11 @@ bool FlexPA::genPatternsCommit(
 
     std::set<frBlockObject*> owners;
     if (target_obj != nullptr
-        && genPatternsGC({target_obj}, objs, Commit, &owners)) {
+        && genPatterns_gc({target_obj}, objs, Commit, &owners)) {
       pin_access_pattern->updateCost();
       unique_inst_patterns_[curr_unique_inst_idx].push_back(
           std::move(pin_access_pattern));
-      // genPatternsPrint(nodes, pins, max_access_point_size);
+      // genPatterns_print(nodes, pins, max_access_point_size);
       is_valid = true;
     } else {
       for (int idx_1 = 0; idx_1 < (int) pins.size(); idx_1++) {
@@ -2900,7 +2902,7 @@ void FlexPA::genPatternsPrintDebug(
   }
 }
 
-void FlexPA::genPatternsPrint(
+void FlexPA::genPatterns_print(
     std::vector<FlexDPNode>& nodes,
     const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
     const int max_access_point_size)
