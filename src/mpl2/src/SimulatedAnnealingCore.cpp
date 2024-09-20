@@ -99,6 +99,26 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
 }
 
 template <class T>
+void SimulatedAnnealingCore<T>::setBlockedBoundariesForIOs()
+{
+  if (boundaryIsBlocked(Boundary::L)) {
+    left_is_blocked_ = true;
+  }
+
+  if (boundaryIsBlocked(Boundary::R)) {
+    right_is_blocked_ = true;
+  }
+
+  if (boundaryIsBlocked(Boundary::B)) {
+    bottom_is_blocked_ = true;
+  }
+
+  if (boundaryIsBlocked(Boundary::T)) {
+    top_is_blocked_ = true;
+  }
+}
+
+template <class T>
 void SimulatedAnnealingCore<T>::initSequencePair()
 {
   if (has_initial_sequence_pair_) {
@@ -336,16 +356,27 @@ void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
   const float y1 = macro.getPinY();
 
   if (constraint_boundary == NONE) {
+    const float die_hpwl = die.getWidth() + die.getHeight();
 
-    /*
-      TO DO: Use information of which boundary is forbidden based on
-      the global exclude constraints for the edges
-    */
+    float dist_to_left = die_hpwl;
+    if (!left_is_blocked_) {
+      dist_to_left = std::abs(x1 - die.xMin());
+    }
 
-    const float dist_to_left = std::abs(x1 - die.xMin());
-    const float dist_to_right = std::abs(x1 - die.xMax());
-    const float dist_to_bottom = std::abs(y1 - die.yMin());
-    const float dist_to_top = std::abs(y1 - die.yMax());
+    float dist_to_right = die_hpwl;
+    if (!right_is_blocked_) {
+      dist_to_right = std::abs(x1 - die.xMax());
+    }
+
+    float dist_to_bottom = die_hpwl;
+    if (!bottom_is_blocked_) {
+      dist_to_right = std::abs(y1 - die.yMin());
+    }
+
+    float dist_to_top = die_hpwl;
+    if (!top_is_blocked_) {
+      dist_to_top = std::abs(y1 - die.yMax());
+    }
 
     wirelength_
         += net_weight
@@ -359,6 +390,12 @@ void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
     const float y2 = io.getPinY();
     wirelength_ += net_weight * std::abs(y2 - y1);
   }
+}
+
+template <class T>
+bool SimulatedAnnealingCore<T>::boundaryIsBlocked(Boundary boundary)
+{
+  return blocked_boundaries_.find(boundary) != blocked_boundaries_.end();
 }
 
 // We consider the macro outside the outline based on the location of

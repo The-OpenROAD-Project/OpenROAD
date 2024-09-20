@@ -91,6 +91,7 @@ class SimulatedAnnealingCore
       Mpl2Observer* graphics,
       utl::Logger* logger);
 
+  void setBlockedBoundariesForIOs();
   void setNumberOfMacrosToPlace(int macros_to_place)
   {
     macros_to_place_ = macros_to_place;
@@ -145,6 +146,7 @@ class SimulatedAnnealingCore
                                    Cluster* io_cluster,
                                    const Rect& die,
                                    Boundary constraint_boundary);
+  bool boundaryIsBlocked(Boundary boundary);
   bool isOutsideTheOutline(const T& macro) const;
   void calGuidancePenalty();
   void calFencePenalty();
@@ -257,6 +259,13 @@ class SimulatedAnnealingCore
   bool has_initial_sequence_pair_ = false;
   bool centralization_on_ = false;
   bool centralization_was_reverted_ = false;
+
+  // Blocked boundaries data is kept in bools to avoid overhead
+  // during SA steps.
+  bool left_is_blocked_ = false;
+  bool right_is_blocked_ = false;
+  bool bottom_is_blocked_ = false;
+  bool top_is_blocked_ = false;
 };
 
 // SACore wrapper function
