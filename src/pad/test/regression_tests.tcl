@@ -37,6 +37,7 @@ record_tests {
   skywater130_coyote_tc
 
   place_pads_uniform
+  place_pads_too_many
 
   #pad_man_tcl_check
   #pad_readme_msgs_check
