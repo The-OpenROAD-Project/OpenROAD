@@ -1091,9 +1091,6 @@ NetRouteMap FastRouteCore::run()
     }
   }
 
-  // check and fix invalid embedded trees
-  fixEmbeddedTrees();
-
   //  past_cong = getOverflow2Dmaze( &maxOverflow);
 
   InitEstUsage();

@@ -122,7 +122,7 @@ std::string Descriptor::convertUnits(const double value, const bool area)
     unit = "n";
   } else if (log_units <= -6) {
     unit_scale = 1e6;
-    const char* micron = "\u03BC";
+    const char* micron = "μ";
     unit = micron;
   } else if (log_units <= -3) {
     unit_scale = 1e3;
@@ -2475,26 +2475,23 @@ Descriptor::Properties DbTechLayerDescriptor::getProperties(
     props.push_back(
         {"Minimum spacing", Property::convert_dbu(layer->getSpacing(), true)});
   }
-  const char* micron = "\u03BC";
   if (layer->hasArea()) {
-    props.push_back({"Minimum area",
-                     convertUnits(layer->getArea() * 1e-6 * 1e-6, true)
-                         + "m\u00B2"});  // m^2
+    props.push_back(
+        {"Minimum area",
+         convertUnits(layer->getArea() * 1e-6 * 1e-6, true) + "m²"});
   }
   if (layer->getResistance() != 0.0) {
     props.push_back(
-        {"Resistance",
-         convertUnits(layer->getResistance()) + "\u03A9/sq"});  // ohm/sq
+        {"Resistance", convertUnits(layer->getResistance()) + "Ω/sq"});
   }
   if (layer->getCapacitance() != 0.0) {
     props.push_back({"Capacitance",
-                     convertUnits(layer->getCapacitance() * 1e-12) + "F/"
-                         + micron + "m\u00B2"});  // F/um^2
+                     convertUnits(layer->getCapacitance() * 1e-12) + "F/μm²"});
   }
   if (layer->getEdgeCapacitance() != 0.0) {
-    props.push_back({"Edge capacitance",
-                     convertUnits(layer->getEdgeCapacitance() * 1e-12) + "F/"
-                         + micron + "m"});  // F/um
+    props.push_back(
+        {"Edge capacitance",
+         convertUnits(layer->getEdgeCapacitance() * 1e-12) + "F/μm"});
   }
 
   for (auto* width_table : layer->getTechLayerWidthTableRules()) {
@@ -3274,7 +3271,7 @@ Descriptor::Properties DbTechViaDescriptor::getProperties(std::any object) const
 
   if (via->getResistance() != 0.0) {
     props.push_back(
-        {"Resistance", convertUnits(via->getResistance()) + "\u03A9/sq"});
+        {"Resistance", convertUnits(via->getResistance()) + "Ω/sq"});
   }
 
   auto* ndr = via->getNonDefaultRule();
@@ -3489,9 +3486,8 @@ Descriptor::Properties DbTechViaLayerRuleDescriptor::getProperties(
   }
 
   if (via_layer_rule->hasResistance()) {
-    props.push_back({"Resistance",
-                     convertUnits(via_layer_rule->getResistance())
-                         + "\u03A9/sq"});  // ohm/sq
+    props.push_back(
+        {"Resistance", convertUnits(via_layer_rule->getResistance()) + "Ω/sq"});
   }
 
   return props;

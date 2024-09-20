@@ -128,12 +128,10 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryOutputs(
     if (!direction->isOutput()) {
       continue;
     }
-
     auto pin_iterator = std::unique_ptr<sta::PinConnectedPinIterator>(
         network->connectedPinIterator(pin));
     while (pin_iterator->hasNext()) {
       const sta::Pin* connected_pin = pin_iterator->next();
-
       // Pin is not in our cutset, and therefore is a primary output.
       if (cut_set_vertices.find(connected_pin) == cut_set_vertices.end()) {
         sta::VertexId vertex_id = network->vertexId(connected_pin);
@@ -181,21 +179,24 @@ std::vector<sta::Pin*> LogicExtractorFactory::FilterUndrivenOutputs(
     std::vector<sta::Pin*>& primary_outputs,
     std::unordered_set<sta::Instance*>& cut_instances)
 {
-  std::vector<sta::Pin*> filtered_output_pins;
-
   sta::dbNetwork* network = open_sta_->getDbNetwork();
-  for (sta::Pin* pin : primary_outputs) {
-    auto pin_iterator = std::unique_ptr<sta::PinConnectedPinIterator>(
-        network->connectedPinIterator(pin));
-    while (pin_iterator->hasNext()) {
-      const sta::Pin* connected_pin = pin_iterator->next();
-      sta::Instance* connected_instance = network->instance(connected_pin);
+  sta::PinSet filtered_pin_set(network);
 
+  for (sta::Pin* pin : primary_outputs) {
+    sta::PinSet* pin_iterator = network->drivers(pin);
+    for (const sta::Pin* connected_pin : *pin_iterator) {
+      sta::Instance* connected_instance = network->instance(connected_pin);
       // Output pin is driven by something in the cutset. Keep it.
       if (cut_instances.find(connected_instance) != cut_instances.end()) {
-        filtered_output_pins.push_back(pin);
+        filtered_pin_set.insert(pin);
       }
     }
+  }
+
+  std::vector<sta::Pin*> filtered_output_pins;
+  filtered_output_pins.reserve(filtered_pin_set.size());
+  for (const sta::Pin* pin : filtered_pin_set) {
+    filtered_output_pins.push_back(const_cast<sta::Pin*>(pin));
   }
 
   return filtered_output_pins;

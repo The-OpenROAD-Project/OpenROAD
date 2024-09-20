@@ -272,7 +272,11 @@ bool MBFF::IsInvertingQPin(odb::dbITerm* iterm)
 
   sta::Pin* pin = network_->dbToSta(iterm);
   sta::LibertyPort* lib_port = network_->libertyPort(pin);
-  sta::LibertyPort* func_port = getFunction(lib_port)->port();
+  sta::FuncExpr* func = getFunction(lib_port);
+  if (!func) {
+    return false;
+  }
+  sta::LibertyPort* func_port = func->port();
   if (!func_port) {
     return false;
   }
