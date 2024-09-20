@@ -381,19 +381,6 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     nets_to_repair.push_back(db_net);
   }
 
-  violations = repair_antennas_->checkAntennaViolations(routes_,
-                                                        nets_to_repair,
-                                                        max_routing_layer_,
-                                                        diode_mterm,
-                                                        ratio_margin,
-                                                        num_threads);
-
-  if (violations) {
-    repair_antennas_->jumperInsertion(
-        routes_, grid_->getTileSize(), max_routing_layer_);
-    repair_antennas_->clearViolations();
-  }
-
   while (violations && itr < iterations) {
     if (verbose_) {
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
