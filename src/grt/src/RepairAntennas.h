@@ -128,12 +128,12 @@ class RepairAntennas
                                const int& final_y,
                                const int& layer_level);
   int getSegmentIdToAdd(std::vector<int>& segments,
-                    const GRoute& route,
-                    int& req_size,
-                    const int& bridge_size,
-                    const int& tile_size,
-                    bool is_horizontal,
-                    bool in_start);
+                        const GRoute& route,
+                        int& req_size,
+                        const int& bridge_size,
+                        const int& tile_size,
+                        bool is_horizontal,
+                        bool in_start);
   SegmentIdByViolation getSegmentsWithViolation(
       odb::dbNet* db_net,
       const GRoute& route,
