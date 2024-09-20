@@ -60,7 +60,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void saStep(const std::vector<HardMacro>& macros) override;
   void endSA() override;
   void drawResult() override;
-  void finishedClustering(Cluster* root) override;
+  void finishedClustering(PhysicalHierarchy* tree) override;
 
   void setMaxLevel(int max_level) override;
   void setAreaPenalty(float area) override;
@@ -103,9 +103,12 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   template <typename T>
   bool isOutsideTheOutline(const T& macro) const;
   template <typename T>
-  odb::Point getClosestBoundaryPoint(const T& macro, Cluster* io_cluster);
+  odb::Point getClosestBoundaryPoint(const T& macro,
+                                     const Rect& die,
+                                     Boundary closest_boundary);
   template <typename T>
   Boundary getClosestBoundary(const T& macro, const Rect& die);
+  bool boundaryIsBlocked(Boundary boundary);
   void addOutlineOffsetToLine(odb::Point& from, odb::Point& to);
   void setSoftMacroBrush(gui::Painter& painter, const SoftMacro& soft_macro);
   void fetchSoftAndHard(Cluster* parent,
@@ -124,6 +127,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   std::vector<BundledNet> bundled_nets_;
   odb::Rect outline_;
   std::vector<std::vector<odb::Rect>> outlines_;
+  std::set<Boundary> blocked_boundaries_;
 
   bool active_ = true;
   bool coarse_;

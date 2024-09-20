@@ -303,7 +303,7 @@ void HierRTLMP::runMultilevelAutoclustering()
   }
 
   if (graphics_) {
-    graphics_->finishedClustering(tree_->root.get());
+    graphics_->finishedClustering(tree_.get());
   }
 }
 

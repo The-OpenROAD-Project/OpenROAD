@@ -288,9 +288,10 @@ void Graphics::setMaxLevel(const int max_level)
   max_level_ = max_level;
 }
 
-void Graphics::finishedClustering(Cluster* root)
+void Graphics::finishedClustering(PhysicalHierarchy* tree)
 {
-  root_ = root;
+  root_ = tree->root.get();
+  blocked_boundaries_ = tree->blocked_boundaries;
 }
 
 void Graphics::drawCluster(Cluster* cluster, gui::Painter& painter)
@@ -534,7 +535,15 @@ void Graphics::drawDistToIoConstraintBoundary(gui::Painter& painter,
     to.setX(x2);
     to.setY(y2);
   } else {
-    to = getClosestBoundaryPoint(macro, io_cluster);
+    // For NONE, the shape of the io cluster is the die area.
+    const Rect die = io_cluster->getBBox();
+    Boundary closest_boundary = getClosestBoundary(macro, die);
+
+    if (boundaryIsBlocked(closest_boundary)) {
+      return;
+    }
+
+    to = getClosestBoundaryPoint(macro, die, closest_boundary);
   }
 
   addOutlineOffsetToLine(from, to);
@@ -553,25 +562,24 @@ bool Graphics::isOutsideTheOutline(const T& macro) const
          || block_->micronsToDbu(macro.getPinY()) > outline_.dy();
 }
 
+/*
+  TO DO:
+    1. See if some sort of offset dark magic interferes
+  with the annealing internals.
+    2. Guarantee that when the macros are outside the
+    outline we'll have no problems.
+    3. Draw Xs in the blocked boundaries
+*/
+
+// Here, we have to manually decompensate the offset of the
+// coordinates that come from the cluster.
 template <typename T>
 odb::Point Graphics::getClosestBoundaryPoint(const T& macro,
-                                             Cluster* io_cluster)
+                                             const Rect& die,
+                                             Boundary closest_boundary)
 {
-  // For NONE, the shape of the io cluster is the die area.
-  const Rect die = io_cluster->getBBox();
-  Boundary closest_boundary = getClosestBoundary(macro, die);
   odb::Point to;
 
-  /*
-    TO DO:
-      1. See if some sort of offset dark magic interferes
-    with the annealing internals.  
-      2. Guarantee that when the macros are outside the 
-      outline we'll have no problems.
-  */
-
-  // We have to manually decompensate the offset of the coordinate
-  // that comes from the cluster.
   if (closest_boundary == Boundary::L) {
     to.setX(block_->micronsToDbu(die.xMin()));
     to.setY(block_->micronsToDbu(macro.getPinY()));
@@ -584,10 +592,10 @@ odb::Point Graphics::getClosestBoundaryPoint(const T& macro,
     to.setX(block_->micronsToDbu(macro.getPinX()));
     to.setY(block_->micronsToDbu(die.yMin()));
     to.addY(-outline_.yMin());
-  } else { // Top
+  } else {  // Top
     to.setX(block_->micronsToDbu(macro.getPinX()));
     to.setY(block_->micronsToDbu(die.yMax()));
-    to.addY(-outline_.yMin());    
+    to.addY(-outline_.yMin());
   }
 
   return to;
@@ -598,7 +606,7 @@ void Graphics::addOutlineOffsetToLine(odb::Point& from, odb::Point& to)
   from.addX(outline_.xMin());
   from.addY(outline_.yMin());
   to.addX(outline_.xMin());
-  to.addY(outline_.yMin());  
+  to.addY(outline_.yMin());
 }
 
 template <typename T>
@@ -606,7 +614,7 @@ Boundary Graphics::getClosestBoundary(const T& macro, const Rect& die)
 {
   const float macro_x = macro.getPinX();
   const float macro_y = macro.getPinY();
-  
+
   const float dist_to_left = std::abs(macro_x - die.xMin());
   float shortest_distance = dist_to_left;
   Boundary closest_boundary = Boundary::L;
@@ -628,6 +636,11 @@ Boundary Graphics::getClosestBoundary(const T& macro, const Rect& die)
   }
 
   return closest_boundary;
+}
+
+bool Graphics::boundaryIsBlocked(Boundary boundary)
+{
+  return blocked_boundaries_.find(boundary) != blocked_boundaries_.end();
 }
 
 // Give some transparency to mixed and hard so we can see overlap with
