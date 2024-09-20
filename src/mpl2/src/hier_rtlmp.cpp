@@ -362,7 +362,7 @@ void HierRTLMP::runCoarseShaping()
 
   calculateChildrenTilings(tree_->root.get());
 
-  // setIOClustersBlockages();
+  setIOClustersBlockages();
   setPlacementBlockages();
 }
 
@@ -926,142 +926,105 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
   macro_array->setMacroTilings(tight_packing_tilings);
 }
 
+// The blockages must cover the entire boundary that they represent.
 void HierRTLMP::setIOClustersBlockages()
 {
   if (!tree_->maps.bterm_to_inst.empty()) {
     return;
   }
 
-  IOSpans io_spans = computeIOSpans();
-  const float depth = computeIOBlockagesDepth(io_spans);
+  std::vector<Cluster*> io_clusters = getIOClusters();
+  const Rect die = dbuToMicrons(block_->getDieArea());
 
-  const Rect root(tree_->root->getX(),
-                  tree_->root->getY(),
-                  tree_->root->getX() + tree_->root->getWidth(),
-                  tree_->root->getY() + tree_->root->getHeight());
+  const float depth = computeIOBlockagesDepth(io_clusters, die);
 
-  // Note that the range can be larger than the respective core dimension.
-  // As SA only sees what is inside its current outline, this is not a problem.
-  if (io_spans[L].second > io_spans[L].first) {
-    const Rect left_io_blockage(root.xMin(),
-                                io_spans[L].first,
-                                root.xMin() + depth,
-                                io_spans[L].second);
-
-    boundary_to_io_blockage_[L] = left_io_blockage;
-    macro_blockages_.push_back(left_io_blockage);
+  bool design_has_none_constraint = false;
+  for (Cluster* io_cluster : io_clusters) {
+    if (io_cluster->getConstraintBoundary() == NONE) {
+      design_has_none_constraint = true;
+      break;
+    }
   }
 
-  if (io_spans[T].second > io_spans[T].first) {
-    const Rect top_io_blockage(io_spans[T].first,
-                               root.yMax() - depth,
-                               io_spans[T].second,
-                               root.yMax());
+  /*
+    TO DO: This should be a combination of both constraint types.
+  */
+  for (Cluster* io_cluster : io_clusters) {
+    Boundary constraint_boundary = io_cluster->getConstraintBoundary();
 
-    boundary_to_io_blockage_[T] = top_io_blockage;
-    macro_blockages_.push_back(top_io_blockage);
-  }
+    if (constraint_boundary == L || design_has_none_constraint) {
+      const Rect left_io_blockage(
+          die.xMin(), die.yMin(), die.xMin() + depth, die.yMax());
 
-  if (io_spans[R].second > io_spans[R].first) {
-    const Rect right_io_blockage(root.xMax() - depth,
-                                 io_spans[R].first,
-                                 root.xMax(),
-                                 io_spans[R].second);
+      boundary_to_io_blockage_[L] = left_io_blockage;
+      macro_blockages_.push_back(left_io_blockage);
+    }
 
-    boundary_to_io_blockage_[R] = right_io_blockage;
-    macro_blockages_.push_back(right_io_blockage);
-  }
+    if (constraint_boundary == T || design_has_none_constraint) {
+      const Rect top_io_blockage(
+          die.xMin(), die.yMax() - depth, die.xMax(), die.yMax());
 
-  if (io_spans[B].second > io_spans[B].first) {
-    const Rect bottom_io_blockage(io_spans[B].first,
-                                  root.yMin(),
-                                  io_spans[B].second,
-                                  root.yMin() + depth);
+      boundary_to_io_blockage_[T] = top_io_blockage;
+      macro_blockages_.push_back(top_io_blockage);
+    }
 
-    boundary_to_io_blockage_[B] = bottom_io_blockage;
-    macro_blockages_.push_back(bottom_io_blockage);
+    if (constraint_boundary == R || design_has_none_constraint) {
+      const Rect right_io_blockage(
+          die.xMax() - depth, die.yMin(), die.xMax(), die.yMax());
+
+      boundary_to_io_blockage_[R] = right_io_blockage;
+      macro_blockages_.push_back(right_io_blockage);
+    }
+
+    if (constraint_boundary == B || design_has_none_constraint) {
+      const Rect bottom_io_blockage(
+          die.xMin(), die.yMin(), die.xMax(), die.yMin() + depth);
+
+      boundary_to_io_blockage_[B] = bottom_io_blockage;
+      macro_blockages_.push_back(bottom_io_blockage);
+    }
+
+    // Ensure we don't stack blockages.
+    if (design_has_none_constraint) {
+      break;
+    }
   }
 }
 
-// Determine the range of IOs in each boundary of the die.
-HierRTLMP::IOSpans HierRTLMP::computeIOSpans()
+std::vector<Cluster*> HierRTLMP::getIOClusters()
 {
-  IOSpans io_spans;
+  std::vector<Cluster*> io_clusters;
 
-  odb::Rect die = block_->getDieArea();
-
-  // Initialize spans based on the dimensions of the die area.
-  io_spans[L]
-      = {block_->dbuToMicrons(die.yMax()), block_->dbuToMicrons(die.yMin())};
-  io_spans[T]
-      = {block_->dbuToMicrons(die.xMax()), block_->dbuToMicrons(die.xMin())};
-  io_spans[R] = io_spans[L];
-  io_spans[B] = io_spans[T];
-
-  for (auto term : block_->getBTerms()) {
-    if (term->getSigType().isSupply()) {
-      continue;
-    }
-
-    int lx = std::numeric_limits<int>::max();
-    int ly = std::numeric_limits<int>::max();
-    int ux = 0;
-    int uy = 0;
-
-    for (const auto pin : term->getBPins()) {
-      for (const auto box : pin->getBoxes()) {
-        lx = std::min(lx, box->xMin());
-        ly = std::min(ly, box->yMin());
-        ux = std::max(ux, box->xMax());
-        uy = std::max(uy, box->yMax());
-      }
-    }
-
-    // Modify ranges based on the position of the IO pins.
-    if (lx <= die.xMin()) {
-      io_spans[L].first = std::min(
-          io_spans[L].first, static_cast<float>(block_->dbuToMicrons(ly)));
-      io_spans[L].second = std::max(
-          io_spans[L].second, static_cast<float>(block_->dbuToMicrons(uy)));
-    } else if (uy >= die.yMax()) {
-      io_spans[T].first = std::min(
-          io_spans[T].first, static_cast<float>(block_->dbuToMicrons(lx)));
-      io_spans[T].second = std::max(
-          io_spans[T].second, static_cast<float>(block_->dbuToMicrons(ux)));
-    } else if (ux >= die.xMax()) {
-      io_spans[R].first = std::min(
-          io_spans[R].first, static_cast<float>(block_->dbuToMicrons(ly)));
-      io_spans[R].second = std::max(
-          io_spans[R].second, static_cast<float>(block_->dbuToMicrons(uy)));
-    } else {
-      io_spans[B].first = std::min(
-          io_spans[B].first, static_cast<float>(block_->dbuToMicrons(lx)));
-      io_spans[B].second = std::max(
-          io_spans[B].second, static_cast<float>(block_->dbuToMicrons(ux)));
+  for (const auto& child : tree_->root->getChildren()) {
+    if (child->isIOCluster()) {
+      io_clusters.push_back(child.get());
     }
   }
 
-  return io_spans;
+  return io_clusters;
 }
 
 // The depth of IO clusters' blockages is generated based on:
-// 1) How many vertical or horizontal boundaries have signal IO pins.
-// 2) The total length of the io spans in all used boundaries.
-float HierRTLMP::computeIOBlockagesDepth(const IOSpans& io_spans)
+// 1) Amount of std cell area in the design.
+// 2) Extension of the IO clusters across the design's boundaries.
+float HierRTLMP::computeIOBlockagesDepth(std::vector<Cluster*> io_clusters,
+                                         const Rect& die)
 {
-  float sum_length = 0.0;
-  int num_hor_access = 0;
-  int num_ver_access = 0;
+  float io_clusters_extension = 0.0;
 
-  for (auto& [pin_access, length] : io_spans) {
-    if (length.second > length.first) {
-      sum_length += std::abs(length.second - length.first);
+  for (Cluster* io_cluster : io_clusters) {
+    if (io_cluster->getConstraintBoundary() == NONE) {
+      const Rect die = io_cluster->getBBox();
+      io_clusters_extension = die.getPerimeter();
+      break;
+    }
 
-      if (pin_access == R || pin_access == L) {
-        num_hor_access++;
-      } else {
-        num_ver_access++;
-      }
+    Boundary constraint_boundary = io_cluster->getConstraintBoundary();
+
+    if (constraint_boundary == L || constraint_boundary == R) {
+      io_clusters_extension += die.getWidth();
+    } else {  // Bottom or Top
+      io_clusters_extension += die.getHeight();
     }
   }
 
@@ -1075,14 +1038,14 @@ float HierRTLMP::computeIOBlockagesDepth(const IOSpans& io_spans)
   const float macro_dominance_factor
       = tree_->macro_with_halo_area
         / (tree_->root->getWidth() * tree_->root->getHeight());
-  const float depth = (std_cell_area / sum_length)
+  const float depth = (std_cell_area / io_clusters_extension)
                       * std::pow((1 - macro_dominance_factor), 2);
 
   debugPrint(logger_,
              MPL,
              "coarse_shaping",
              1,
-             "Bundled IO clusters blokaged depth = {}",
+             "IO clusters blokaged depth = {}",
              depth);
 
   return depth;
@@ -4117,6 +4080,14 @@ odb::Rect HierRTLMP::micronsToDbu(const Rect& micron_rect)
                    block_->micronsToDbu(micron_rect.yMin()),
                    block_->micronsToDbu(micron_rect.xMax()),
                    block_->micronsToDbu(micron_rect.yMax()));
+}
+
+Rect HierRTLMP::dbuToMicrons(const odb::Rect& dbu_rect)
+{
+  return Rect(block_->dbuToMicrons(dbu_rect.xMin()),
+              block_->dbuToMicrons(dbu_rect.yMin()),
+              block_->dbuToMicrons(dbu_rect.xMax()),
+              block_->dbuToMicrons(dbu_rect.yMax()));
 }
 
 //////// Pusher ////////

@@ -140,7 +140,6 @@ class HierRTLMP
  private:
   using SoftSAVector = std::vector<std::unique_ptr<SACoreSoftMacro>>;
   using HardSAVector = std::vector<std::unique_ptr<SACoreHardMacro>>;
-  using IOSpans = std::map<Boundary, std::pair<float, float>>;
 
   void runMultilevelAutoclustering();
   void runHierarchicalMacroPlacement();
@@ -164,8 +163,9 @@ class HierRTLMP
   void calculateMacroTilings(Cluster* cluster);
   void setTightPackingTilings(Cluster* macro_array);
   void setIOClustersBlockages();
-  IOSpans computeIOSpans();
-  float computeIOBlockagesDepth(const IOSpans& io_spans);
+  std::vector<Cluster*> getIOClusters();
+  float computeIOBlockagesDepth(std::vector<Cluster*> io_clusters,
+                                const Rect& die);
   void setPlacementBlockages();
 
   // Fine Shaping
@@ -231,6 +231,7 @@ class HierRTLMP
 
   // Aux for conversion
   odb::Rect micronsToDbu(const Rect& micron_rect);
+  Rect dbuToMicrons(const odb::Rect& dbu_rect);
 
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
