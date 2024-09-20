@@ -98,6 +98,7 @@ class ICeWall
                 odb::dbRow* row,
                 int location,
                 bool mirror);
+  void placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row);
   void placeCorner(odb::dbMaster* master, int ring_index);
   void placeFiller(const std::vector<odb::dbMaster*>& masters,
                    odb::dbRow* row,

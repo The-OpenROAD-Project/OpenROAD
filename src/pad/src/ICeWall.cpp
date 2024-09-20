@@ -589,6 +589,88 @@ void ICeWall::placePad(odb::dbMaster* master,
   placeInstance(row, snapToRowSite(row, location), inst, orient.getOrient());
 }
 
+void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
+{
+  auto* block = getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  const odb::Rect row_bbox = row->getBBox();
+  const odb::dbTransform xform(row->getOrient());
+  const odb::Direction2D::Value row_dir = getRowEdge(row);
+
+  // Check total width
+  int total_width = 0;
+  for (auto* inst : insts) {
+    auto* master = inst->getMaster();
+    odb::Rect inst_bbox;
+    master->getPlacementBoundary(inst_bbox);
+    xform.apply(inst_bbox);
+
+    switch (row_dir) {
+      case odb::Direction2D::North:
+      case odb::Direction2D::South:
+        total_width += inst_bbox.dx();
+        break;
+      case odb::Direction2D::West:
+      case odb::Direction2D::East:
+        total_width += inst_bbox.dy();
+        break;
+    }
+  }
+
+  int row_width = 0;
+  int row_start = 0;
+  switch (row_dir) {
+    case odb::Direction2D::North:
+    case odb::Direction2D::South:
+      row_width = row_bbox.dx();
+      row_start = row_bbox.xMin();
+      break;
+    case odb::Direction2D::West:
+    case odb::Direction2D::East:
+      row_width = row_bbox.dy();
+      row_start = row_bbox.yMin();
+      break;
+  }
+
+  if (total_width > row_width) {
+    const double dbus = block->getDbUnitsPerMicron();
+    logger_->error(
+        utl::PAD,
+        40,
+        "Total pad width ({:.4f}um) cannot fit into {} with width {:.4f}um.",
+        total_width / dbus,
+        row->getName(),
+        row_width / dbus);
+  }
+
+  const int target_spacing = (row_width - total_width) / (insts.size() + 1);
+  int offset = row_start + target_spacing;
+  for (auto* inst : insts) {
+    placeInstance(row, snapToRowSite(row, offset), inst, odb::dbOrientType::R0);
+
+    const odb::Rect inst_bbox = inst->getBBox()->getBox();
+
+    switch (row_dir) {
+      case odb::Direction2D::North:
+      case odb::Direction2D::South:
+        offset += inst_bbox.dx();
+        break;
+      case odb::Direction2D::West:
+      case odb::Direction2D::East:
+        offset += inst_bbox.dy();
+        break;
+    }
+
+    offset += target_spacing;
+  }
+
+  logger_->info(
+      utl::PAD, 41, "Placed {} pads in {}.", insts.size(), row->getName());
+}
+
 int ICeWall::snapToRowSite(odb::dbRow* row, int location) const
 {
   const odb::Point origin = row->getOrigin();
