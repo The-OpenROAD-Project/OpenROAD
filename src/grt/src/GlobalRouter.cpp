@@ -388,9 +388,9 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                                         ratio_margin,
                                                         num_threads);
 
-
   if (violations) {
-    repair_antennas_->jumperInsertion(routes_, grid_->getTileSize(), max_routing_layer_);
+    repair_antennas_->jumperInsertion(
+        routes_, grid_->getTileSize(), max_routing_layer_);
     repair_antennas_->clearViolations();
   }
 
@@ -1579,15 +1579,20 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
   }
 }
 
-bool GlobalRouter::hasCapacity(bool is_horizontal, const int& pos_x, const int& pos_y, const int& layer_level)
+bool GlobalRouter::hasCapacity(bool is_horizontal,
+                               const int& pos_x,
+                               const int& pos_y,
+                               const int& layer_level)
 {
   int grid_x = (int) ((pos_x - grid_->getXMin()) / grid_->getTileSize());
   int grid_y = (int) ((pos_y - grid_->getYMin()) / grid_->getTileSize());
   int cap = 0;
   if (is_horizontal) {
-    cap = fastroute_->getEdgeCapacity(grid_x, grid_y, grid_x + 1, grid_y, layer_level);
+    cap = fastroute_->getEdgeCapacity(
+        grid_x, grid_y, grid_x + 1, grid_y, layer_level);
   } else {
-    cap = fastroute_->getEdgeCapacity(grid_x, grid_y, grid_x, grid_y + 1, layer_level);
+    cap = fastroute_->getEdgeCapacity(
+        grid_x, grid_y, grid_x, grid_y + 1, layer_level);
   }
   return (cap >= 1);
 }
