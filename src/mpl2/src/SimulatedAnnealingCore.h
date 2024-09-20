@@ -142,10 +142,7 @@ class SimulatedAnnealingCore
   void calWirelength();
   void addBoundaryDistToWirelength(const T& macro,
                                    const T& io,
-                                   const float net_weight,
-                                   Cluster* io_cluster,
-                                   const Rect& die,
-                                   Boundary constraint_boundary);
+                                   const float net_weight);
   bool boundaryIsBlocked(Boundary boundary);
   bool isOutsideTheOutline(const T& macro) const;
   void calGuidancePenalty();

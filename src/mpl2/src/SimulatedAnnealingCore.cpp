@@ -299,28 +299,7 @@ void SimulatedAnnealingCore<T>::calWirelength()
     T& target = macros_[net.terminals.second];
 
     if (target.isIOCluster()) {
-      Cluster* io_cluster = target.getCluster();
-      const Rect die = io_cluster->getBBox();
-      const float die_hpwl = die.getWidth() + die.getHeight();
-
-      if (isOutsideTheOutline(source)) {
-        wirelength_ += net.weight * die_hpwl;
-        continue;
-      }
-
-      const Boundary constraint_boundary = io_cluster->getConstraintBoundary();
-      const bool constraint_boundary_is_blocked
-          = blocked_boundaries_.find(constraint_boundary)
-            != blocked_boundaries_.end();
-
-      if (constraint_boundary_is_blocked
-          && constraint_boundary != Boundary::NONE) {
-        wirelength_ += net.weight * die_hpwl;
-        continue;
-      }
-
-      addBoundaryDistToWirelength(
-          source, target, net.weight, io_cluster, die, constraint_boundary);
+      addBoundaryDistToWirelength(source, target, net.weight);
       continue;
     }
 
@@ -341,23 +320,30 @@ void SimulatedAnnealingCore<T>::calWirelength()
 }
 
 /*
-  TO DO: test this
+  TO DO: 1. Test this
+         2. See if graphics has every check that this has.
 */
 template <class T>
 void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
     const T& macro,
     const T& io,
-    const float net_weight,
-    Cluster* io_cluster,
-    const Rect& die,
-    Boundary constraint_boundary)
+    const float net_weight)
 {
+  Cluster* io_cluster = io.getCluster();
+  const Rect die = io_cluster->getBBox();
+  const float die_hpwl = die.getWidth() + die.getHeight();
+
+  if (isOutsideTheOutline(macro)) {
+    wirelength_ += net_weight * die_hpwl;
+    return;
+  }
+
   const float x1 = macro.getPinX();
   const float y1 = macro.getPinY();
 
-  if (constraint_boundary == NONE) {
-    const float die_hpwl = die.getWidth() + die.getHeight();
+  Boundary constraint_boundary = io_cluster->getConstraintBoundary();
 
+  if (constraint_boundary == NONE) {
     float dist_to_left = die_hpwl;
     if (!left_is_blocked_) {
       dist_to_left = std::abs(x1 - die.xMin());
