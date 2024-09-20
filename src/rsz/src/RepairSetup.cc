@@ -243,6 +243,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
           resizer_->journalRestore(resize_count_,
                                    inserted_buffer_count_,
                                    cloned_gate_count_,
+                                   swap_pin_count_,
                                    removed_buffer_count_);
           resizer_->updateParasitics();
           sta_->findRequireds();
@@ -282,6 +283,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
           resizer_->journalRestore(resize_count_,
                                    inserted_buffer_count_,
                                    cloned_gate_count_,
+                                   swap_pin_count_,
                                    removed_buffer_count_);
           resizer_->updateParasitics();
           sta_->findRequireds();
@@ -344,6 +346,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
           resizer_->journalRestore(resize_count_,
                                    inserted_buffer_count_,
                                    cloned_gate_count_,
+                                   swap_pin_count_,
                                    removed_buffer_count_);
           resizer_->updateParasitics();
           sta_->findRequireds();
@@ -1832,6 +1835,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
           resizer_->journalRestore(resize_count_,
                                    inserted_buffer_count_,
                                    cloned_gate_count_,
+                                   swap_pin_count_,
                                    removed_buffer_count_);
           resizer_->updateParasitics();
           sta_->findRequireds();
@@ -1866,6 +1870,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
         resizer_->journalRestore(resize_count_,
                                  inserted_buffer_count_,
                                  cloned_gate_count_,
+                                 swap_pin_count_,
                                  removed_buffer_count_);
         resizer_->updateParasitics();
         sta_->findRequireds();

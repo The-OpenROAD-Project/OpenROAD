@@ -493,6 +493,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                 resizer_->journalRestore(resize_count_,
                                          inserted_buffer_count_,
                                          cloned_gate_count_,
+                                         swap_pin_count_,
                                          removed_buffer_count_);
               }
               resizer_->journalEnd();
