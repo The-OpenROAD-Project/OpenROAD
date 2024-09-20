@@ -602,6 +602,7 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
 
   // Check total width
   int total_width = 0;
+  std::map<odb::dbInst*, int> inst_widths;
   for (auto* inst : insts) {
     auto* master = inst->getMaster();
     odb::Rect inst_bbox;
@@ -612,10 +613,12 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
       case odb::Direction2D::North:
       case odb::Direction2D::South:
         total_width += inst_bbox.dx();
+        inst_widths[inst] = inst_bbox.dx();
         break;
       case odb::Direction2D::West:
       case odb::Direction2D::East:
         total_width += inst_bbox.dy();
+        inst_widths[inst] = inst_bbox.dy();
         break;
     }
   }
@@ -646,25 +649,124 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
         row_width / dbus);
   }
 
-  const int target_spacing = (row_width - total_width) / (insts.size() + 1);
-  int offset = row_start + target_spacing;
+  // Check if bumps are present and have assignments
+  std::map<odb::dbInst*, std::set<odb::dbITerm*>> iterm_connections;
   for (auto* inst : insts) {
-    placeInstance(row, snapToRowSite(row, offset), inst, odb::dbOrientType::R0);
+    for (auto* iterm : inst->getITerms()) {
+      odb::dbNet* net = iterm->getNet();
+      if (net == nullptr) {
+        continue;
+      }
+      if (net->getSigType().isSupply()) {
+        // ignore supply nets as these can likely be connected via the power
+        // grid
+        continue;
+      }
+      for (auto* net_iterm : net->getITerms()) {
+        auto* master = net_iterm->getInst()->getMaster();
+        if (master->isCover()) {
+          iterm_connections[inst].insert(net_iterm);
+        }
+      }
+    }
+  }
+
+  auto place_inst =
+      [this, row, &row_dir](
+          int pos, odb::dbInst* inst, const odb::dbOrientType& orient) -> int {
+    placeInstance(row, snapToRowSite(row, pos), inst, orient);
 
     const odb::Rect inst_bbox = inst->getBBox()->getBox();
 
     switch (row_dir) {
       case odb::Direction2D::North:
       case odb::Direction2D::South:
-        offset += inst_bbox.dx();
+        pos += inst_bbox.dx();
         break;
       case odb::Direction2D::West:
       case odb::Direction2D::East:
-        offset += inst_bbox.dy();
+        pos += inst_bbox.dy();
         break;
     }
 
-    offset += target_spacing;
+    return pos;
+  };
+
+  if (!iterm_connections.empty()) {
+    // attempt to align the pads with the bumps
+    const double dbus = block->getDbUnitsPerMicron();
+    int offset = row_start;
+
+    const odb::Point row_center = row_bbox.center();
+
+    auto iterm_distance
+        = [&offset, &row_dir, &row_center, &inst_widths](
+              odb::dbInst* inst, odb::dbITerm* iterm) -> odb::int64 {
+      const odb::Point center = iterm->getBBox().center();
+
+      switch (row_dir) {
+        case odb::Direction2D::North:
+        case odb::Direction2D::South:
+          return odb::Point::squaredDistance(
+              odb::Point(offset + inst_widths[inst] / 2, row_center.y()),
+              center);
+        case odb::Direction2D::West:
+        case odb::Direction2D::East:
+          return odb::Point::squaredDistance(
+              odb::Point(row_center.x(), offset + inst_widths[inst] / 2),
+              center);
+      }
+
+      return std::numeric_limits<odb::int64>::max();
+    };
+
+    int max_travel = row_width - total_width;
+    for (auto* inst : insts) {
+      int select_pos = offset;
+      auto find_assignment = iterm_connections.find(inst);
+      if (find_assignment != iterm_connections.end()) {
+        odb::dbITerm* min_dist = *find_assignment->second.begin();
+        for (auto* iterm : find_assignment->second) {
+          if (iterm_distance(inst, min_dist) > iterm_distance(inst, iterm)) {
+            min_dist = iterm;
+          }
+        }
+
+        const odb::Point term_center = min_dist->getBBox().center();
+        int delta_pos;
+        switch (row_dir) {
+          case odb::Direction2D::North:
+          case odb::Direction2D::South:
+            delta_pos = (term_center.x() - inst_widths[inst] / 2) - offset;
+            break;
+          case odb::Direction2D::West:
+          case odb::Direction2D::East:
+            delta_pos = (term_center.y() - inst_widths[inst] / 2) - offset;
+            break;
+        }
+        select_pos = offset + std::min(max_travel, std::max(delta_pos, 0));
+      }
+      max_travel -= select_pos - offset;
+
+      debugPrint(logger_,
+                 utl::PAD,
+                 "Place",
+                 1,
+                 "Placing {} at {:.4f}um with a remaining spare gap {:.4f}um",
+                 inst->getName(),
+                 select_pos / dbus,
+                 max_travel / dbus);
+
+      offset = place_inst(select_pos, inst, odb::dbOrientType::R0);
+    }
+  } else {
+    // place pads unformly
+    const int target_spacing = (row_width - total_width) / (insts.size() + 1);
+    int offset = row_start + target_spacing;
+    for (auto* inst : insts) {
+      offset = place_inst(offset, inst, odb::dbOrientType::R0);
+      offset += target_spacing;
+    }
   }
 
   logger_->info(
