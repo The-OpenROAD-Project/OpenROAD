@@ -38,6 +38,7 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "point.h"
@@ -54,6 +55,68 @@ class Logger;
 }
 
 namespace gpl {
+class Instance;
+class Die;
+class PlacerBaseCommon;
+class PlacerBase;
+
+class Instance;
+class Pin;
+class Net;
+class FFT;
+class GCell;
+class GNet;
+class GPin;
+
+template <typename T>
+struct HashById
+{
+  std::size_t operator()(const std::unique_ptr<T>& obj) const
+  {
+    return std::hash<int>()(obj->getId());
+  }
+};
+
+template <typename T>
+struct EqualById
+{
+  bool operator()(const std::unique_ptr<T>& lhs,
+                  const std::unique_ptr<T>& rhs) const
+  {
+    return lhs->getId() == rhs->getId();
+  }
+};
+
+template <typename T>
+struct PtrHashById
+{
+  std::size_t operator()(const T* obj) const
+  {
+    return std::hash<int>()(obj->getId());
+  }
+};
+
+template <typename T>
+struct PtrEqualById
+{
+  bool operator()(const T* lhs, const T* rhs) const
+  {
+    return lhs->getId() == rhs->getId();
+  }
+};
+
+using GCellSet = std::
+    unordered_set<std::unique_ptr<GCell>, HashById<GCell>, EqualById<GCell>>;
+using GPinSet = std::
+    unordered_set<std::unique_ptr<GPin>, HashById<GPin>, EqualById<GPin>>;
+using GNetSet = std::
+    unordered_set<std::unique_ptr<GNet>, HashById<GNet>, EqualById<GNet>>;
+
+using GCellPtrSet
+    = std::unordered_set<GCell*, PtrHashById<GCell>, PtrEqualById<GCell>>;
+using GPinPtrSet
+    = std::unordered_set<GPin*, PtrHashById<GPin>, PtrEqualById<GPin>>;
+
 struct GCellState
 {
   FloatPoint curSLPCoordi;
@@ -82,18 +145,6 @@ struct GCellState
   FloatPoint snapshotSLPSumGrads;
   std::pair<int, int> minRcCellSize;
 };
-
-class Instance;
-class Die;
-class PlacerBaseCommon;
-class PlacerBase;
-
-class Instance;
-class Pin;
-class Net;
-class FFT;
-class GCell;
-class GNet;
 
 class GPin
 {
@@ -355,7 +406,7 @@ class GNet
 
   Net* net() const;
   const std::vector<Net*>& nets() const { return nets_; }
-  const std::set<GPin*, GPinComparator>& gPins() const { return gPins_; }
+  const GPinPtrSet& gPins() const { return gPins_; }
 
   int lx() const;
   int ly() const;
@@ -407,7 +458,7 @@ class GNet
 
  private:
   uint id = 0;
-  std::set<GPin*, GPinComparator> gPins_;
+  GPinPtrSet gPins_;
   std::vector<Net*> nets_;
   int lx_ = 0;
   int ly_ = 0;
@@ -745,8 +796,7 @@ class BinGrid
   void setCorePoints(const Die* die);
   void setBinCnt(int binCntX, int binCntY);
   void setTargetDensity(float density);
-  void updateBinsGCellDensityArea(
-      const std::set<GCell*, GCellComparator>& cells);
+  void updateBinsGCellDensityArea(const GCellPtrSet& cells);
   void setNumThreads(int num_threads) { num_threads_ = num_threads; }
 
   void initBins();
@@ -857,18 +907,9 @@ class NesterovBaseCommon
                      std::shared_ptr<PlacerBaseCommon> pb,
                      utl::Logger* log,
                      int num_threads);
-  std::set<std::unique_ptr<GCell>, GCellComparator>& gCells()
-  {
-    return gCells_;
-  }
-  const std::set<std::unique_ptr<GNet>, GNetComparator>& gNets() const
-  {
-    return gNets_;
-  }
-  const std::set<std::unique_ptr<GPin>, GPinComparator>& gPins() const
-  {
-    return gPins_;
-  }
+  GCellSet& gCells() { return gCells_; }
+  const GNetSet& gNets() const { return gNets_; }
+  const GPinSet& gPins() const { return gPins_; }
 
   //
   // placerBase To NesterovBase functions
@@ -922,9 +963,9 @@ class NesterovBaseCommon
   std::shared_ptr<PlacerBaseCommon> pbc_;
   utl::Logger* log_ = nullptr;
 
-  std::set<std::unique_ptr<GCell>, GCellComparator> gCells_;
-  std::set<std::unique_ptr<GPin>, GPinComparator> gPins_;
-  std::set<std::unique_ptr<GNet>, GNetComparator> gNets_;
+  GCellSet gCells_;
+  GPinSet gPins_;
+  GNetSet gNets_;
 
   std::unordered_map<Instance*, GCell*> gCellMap_;
   std::unordered_map<Pin*, GPin*> gPinMap_;
@@ -949,7 +990,7 @@ class NesterovBase
                utl::Logger* log);
   ~NesterovBase();
 
-  const std::set<GCell*, GCellComparator>& gCells() const { return gCells_; }
+  const GCellPtrSet& gCells() const { return gCells_; }
 
   float getSumOverflow() const { return sumOverflow_; }
   float getSumOverflowUnscaled() const { return sumOverflowUnscaled_; }
@@ -1096,8 +1137,8 @@ class NesterovBase
   int64_t stdInstsArea_ = 0;
   int64_t macroInstsArea_ = 0;
 
-  std::set<GCell*, GCellComparator> gCells_;
-  std::set<std::unique_ptr<GCell>> fillerGCells_;
+  GCellPtrSet gCells_;
+  GCellSet fillerGCells_;
   int fillersCount = 0;
 
   float sumPhi_ = 0;

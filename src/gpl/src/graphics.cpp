@@ -39,7 +39,6 @@
 #include <limits>
 #include <utility>
 
-#include "nesterovBase.h"
 #include "nesterovPlace.h"
 #include "placerBase.h"
 #include "utl/Logger.h"
@@ -218,17 +217,14 @@ void Graphics::drawCell(GCell* gCell, gui::Painter& painter)
   painter.drawRect({xl, yl, xh, yh});
 }
 
-void Graphics::drawCells(const std::set<GCell*, GCellComparator>& cells,
-                         gui::Painter& painter)
+void Graphics::drawCells(const GCellPtrSet& cells, gui::Painter& painter)
 {
   for (const auto& gCell : cells) {
     drawCell(gCell, painter);
   }
 }
 
-void Graphics::drawCells(
-    const std::set<std::unique_ptr<GCell>, GCellComparator>& cells,
-    gui::Painter& painter)
+void Graphics::drawCells(const GCellSet& cells, gui::Painter& painter)
 {
   for (const auto& shared_gCell : cells) {
     drawCell(shared_gCell.get(), painter);

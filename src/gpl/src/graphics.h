@@ -37,6 +37,7 @@
 
 #include "gui/gui.h"
 #include "gui/heatMap.h"
+#include "nesterovBase.h"
 
 namespace utl {
 class Logger;
@@ -124,10 +125,8 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
 
   void drawForce(gui::Painter& painter);
   void drawCell(GCell* gCell, gui::Painter& painter);
-  void drawCells(const std::set<std::unique_ptr<GCell>, GCellComparator>& cells,
-                 gui::Painter& painter);
-  void drawCells(const std::set<GCell*, GCellComparator>& cells,
-                 gui::Painter& painter);
+  void drawCells(const GCellSet& cells, gui::Painter& painter);
+  void drawCells(const GCellPtrSet& cells, gui::Painter& painter);
 
   std::shared_ptr<PlacerBaseCommon> pbc_;
   std::shared_ptr<NesterovBaseCommon> nbc_;

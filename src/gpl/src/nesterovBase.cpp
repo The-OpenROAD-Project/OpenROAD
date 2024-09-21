@@ -64,11 +64,11 @@ static int64_t getOverlapArea(const Bin* bin,
 
 static int64_t getOverlapAreaUnscaled(const Bin* bin, const Instance* inst);
 
-static float getDistance(const std::set<GCell*, GCellComparator>& cells,
+static float getDistance(const GCellPtrSet& cells,
                          FloatPoint GCellState::*aCoord,
                          FloatPoint GCellState::*bCoord);
 
-static float getSecondNorm(const std::set<GCell*, GCellComparator>& cells,
+static float getSecondNorm(const GCellPtrSet& cells,
                            FloatPoint GCellState::*coordPtr);
 
 // Note that
@@ -739,8 +739,7 @@ void BinGrid::updateBinsNonPlaceArea()
   }
 }
 
-void BinGrid::updateBinsGCellDensityArea(
-    const std::set<GCell*, GCellComparator>& cells)
+void BinGrid::updateBinsGCellDensityArea(const GCellPtrSet& cells)
 {
   for (Bin& bin : bins_) {
     bin.setInstPlacedAreaUnscaled(0);
@@ -2353,7 +2352,7 @@ static float fastExp(float exp)
   return exp;
 }
 
-static float getDistance(const std::set<GCell*, GCellComparator>& cells,
+static float getDistance(const GCellPtrSet& cells,
                          FloatPoint GCellState::*aCoord,
                          FloatPoint GCellState::*bCoord)
 {
@@ -2380,7 +2379,7 @@ static float getDistance(const std::set<GCell*, GCellComparator>& cells,
   return std::sqrt(sumDistance / (2.0 * count));
 }
 
-static float getSecondNorm(const std::set<GCell*, GCellComparator>& cells,
+static float getSecondNorm(const GCellPtrSet& cells,
                            FloatPoint GCellState::*coordPtr)
 {
   float norm = 0.0;
