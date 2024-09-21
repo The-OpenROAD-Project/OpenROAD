@@ -857,10 +857,9 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   auto ps = std::make_unique<frPathSeg>();
   auto style = layer->getDefaultSegStyle();
   const bool vert_dir = (dir == frDirEnum::S || dir == frDirEnum::N);
-  const bool horz_dir = (dir == frDirEnum::W || dir == frDirEnum::E);
   const bool wrong_dir
       = (layer->getDir() == dbTechLayerDir::HORIZONTAL && vert_dir)
-        || (layer->getDir() == dbTechLayerDir::VERTICAL && horz_dir);
+        || (layer->getDir() == dbTechLayerDir::VERTICAL && !vert_dir);
   if (dir == frDirEnum::W || dir == frDirEnum::S) {
     ps->setPoints(end_point, begin_point);
     style.setEndStyle(frcTruncateEndStyle, 0);
@@ -1134,10 +1133,9 @@ bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
     frDirEnum dir)
 {
   auto upper_layer = getTech()->getLayer(via->getViaDef()->getLayer2Num());
-  const bool horz_dir = (dir == frDirEnum::W || dir == frDirEnum::E);
   const bool vert_dir = (dir == frDirEnum::S || dir == frDirEnum::N);
   const bool wrong_dir = (upper_layer->isHorizontal() && vert_dir)
-                         || (upper_layer->isVertical() && horz_dir);
+                         || (upper_layer->isVertical() && !vert_dir);
   auto style = upper_layer->getDefaultSegStyle();
 
   if (wrong_dir) {
