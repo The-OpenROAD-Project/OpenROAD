@@ -720,6 +720,28 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
       return std::numeric_limits<odb::int64>::max();
     };
 
+    auto iterm_wirelengths
+        = [](odb::dbInst* inst,
+             const std::set<odb::dbITerm*>& iterms) -> odb::int64 {
+      std::map<odb::dbITerm*, odb::dbITerm*> terms;
+      for (auto* iterm : iterms) {
+        for (auto* net_iterm : iterm->getNet()->getITerms()) {
+          if (net_iterm->getInst() == inst) {
+            terms[net_iterm] = iterm;
+          }
+        }
+      }
+
+      odb::int64 dist = 0;
+
+      for (const auto& [term0, term1] : terms) {
+        dist += odb::Point::manhattanDistance(term0->getBBox().center(),
+                                              term1->getBBox().center());
+      }
+
+      return dist;
+    };
+
     int max_travel = row_width - total_width;
     for (auto itr = insts.begin(); itr != insts.end();) {
       odb::dbInst* inst = *itr;
@@ -824,6 +846,45 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
                    max_travel / dbus);
 
         offset = place_inst(select_pos, ginst, odb::dbOrientType::R0);
+
+        // check if flipping improves wirelength
+        auto find_assignment = iterm_connections.find(ginst);
+        if (find_assignment != iterm_connections.end()) {
+          const auto& pins = find_assignment->second;
+          if (pins.size() > 1) {
+            const odb::int64 start_wirelength = iterm_wirelengths(ginst, pins);
+            const auto start_orient = ginst->getOrient();
+            // try flip
+            ginst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+            switch (row_dir) {
+              case odb::Direction2D::North:
+              case odb::Direction2D::South:
+                ginst->setLocationOrient(odb::dbOrientType::MY);
+                break;
+              case odb::Direction2D::West:
+              case odb::Direction2D::East:
+                ginst->setLocationOrient(odb::dbOrientType::MX);
+                break;
+            }
+            const odb::int64 flipped_wirelength
+                = iterm_wirelengths(ginst, pins);
+            const bool undo = flipped_wirelength > start_wirelength;
+            if (undo) {
+              ginst->setLocationOrient(start_orient);
+            }
+            debugPrint(logger_,
+                       utl::PAD,
+                       "Place",
+                       1,
+                       "Flip check for {}: non flipped wirelength {:.4f}um: "
+                       "flipped wirelength {:.4f}um: {}",
+                       inst->getName(),
+                       start_wirelength / dbus,
+                       flipped_wirelength / dbus,
+                       undo ? "undo" : "keep");
+            ginst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+          }
+        }
       }
 
       std::advance(itr, inst_pos.size());
