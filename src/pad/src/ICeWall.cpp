@@ -880,28 +880,37 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
       std::advance(itr, inst_pos.size());
     }
   } else {
-    // place pads unformly
-    const double dbus = block->getDbUnitsPerMicron();
-    const int target_spacing = (row_width - total_width) / (insts.size() + 1);
-    int offset = row_start + target_spacing;
-    for (auto* inst : insts) {
-      debugPrint(logger_,
-                 utl::PAD,
-                 "Place",
-                 1,
-                 "Placing {} at {:.4f}um",
-                 inst->getName(),
-                 offset / dbus);
-
-      placeInstance(
-          row, snapToRowSite(row, offset), inst, odb::dbOrientType::R0);
-      offset += inst_widths[inst];
-      offset += target_spacing;
-    }
+    placePadsUniform(
+        insts, row, inst_widths, total_width, row_width, row_start);
   }
 
   logger_->info(
       utl::PAD, 41, "Placed {} pads in {}.", insts.size(), row->getName());
+}
+
+void ICeWall::placePadsUniform(const std::vector<odb::dbInst*> insts,
+                               odb::dbRow* row,
+                               const std::map<odb::dbInst*, int>& inst_widths,
+                               int pads_width,
+                               int row_width,
+                               int row_start) const
+{
+  const double dbus = getBlock()->getDbUnitsPerMicron();
+  const int target_spacing = (row_width - pads_width) / (insts.size() + 1);
+  int offset = row_start + target_spacing;
+  for (auto* inst : insts) {
+    debugPrint(logger_,
+               utl::PAD,
+               "Place",
+               1,
+               "Placing {} at {:.4f}um",
+               inst->getName(),
+               offset / dbus);
+
+    placeInstance(row, snapToRowSite(row, offset), inst, odb::dbOrientType::R0);
+    offset += inst_widths.at(inst);
+    offset += target_spacing;
+  }
 }
 
 int ICeWall::snapToRowSite(odb::dbRow* row, int location) const
