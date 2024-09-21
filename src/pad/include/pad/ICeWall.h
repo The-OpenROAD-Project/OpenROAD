@@ -164,6 +164,12 @@ class ICeWall
                                     odb::dbITerm* bump,
                                     odb::dbRow* row,
                                     int center_pos) const;
+  void placePadsUniform(const std::vector<odb::dbInst*> insts,
+                        odb::dbRow* row,
+                        const std::map<odb::dbInst*, int>& inst_widths,
+                        int pads_width,
+                        int row_width,
+                        int row_start) const;
 
   // Data members
   odb::dbDatabase* db_ = nullptr;
