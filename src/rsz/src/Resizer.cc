@@ -2867,6 +2867,7 @@ void Resizer::recoverPower(float recover_power_percent)
 void Resizer::journalBegin()
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
+  incrementalParasiticsBegin();
   db_->beginEco(block_);
   if (isCallBackRegistered()) {
     db_cbk_->removeOwner();
@@ -2884,6 +2885,11 @@ void Resizer::journalBegin()
 void Resizer::journalEnd()
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal end");
+  if (!db_->ecoEmpty(block_)) {
+    updateParasitics();
+    sta_->findRequireds();
+  }
+  incrementalParasiticsEnd();
   db_->endEco(block_);
   resized_inst_map_.clear();
   inserted_buffers_.clear();
@@ -3233,6 +3239,10 @@ bool Resizer::canRestoreBuffer(const BufferData& data)
   return true;
 }
 
+// This restores previously saved checkpoint by
+// using odb undoEco.  Parasitics on relevant nets
+// are invalidated and parasitics are updated.
+// STA findRequireds() is performed also.
 void Resizer::journalRestore(int& resize_count,
                              int& inserted_buffer_count,
                              int& cloned_gate_count,
@@ -3252,6 +3262,7 @@ void Resizer::journalRestore(int& resize_count,
     return;
   }
 
+  incrementalParasiticsEnd();
   incrementalParasiticsBegin();
 
   // Observe netlist changes to invalidate relevant net parasitics

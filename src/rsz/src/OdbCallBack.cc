@@ -86,30 +86,6 @@ void OdbCallBack::inDbInstCreate(dbInst* inst)
   delete pin_iter;
 }
 
-void OdbCallBack::inDbInstDestroy(dbInst* inst)
-{
-  debugPrint(resizer_->logger(),
-             utl::RSZ,
-             "odb",
-             1,
-             "inDbInstDestroy {}",
-             inst->getName());
-  /*
-  Instance* sta_inst = db_network_->dbToSta(inst);
-  if (sta_inst) {
-    std::unique_ptr<InstancePinIterator> pin_iter{
-        network_->pinIterator(sta_inst)};
-    while (pin_iter->hasNext()) {
-      Pin* pin = pin_iter->next();
-      Net* net = network_->net(pin);
-      if (net) {
-        resizer_->invalidateParasitics(pin, net);
-      }
-    }
-  }
-  */
-}
-
 void OdbCallBack::inDbNetCreate(dbNet* net)
 {
   debugPrint(resizer_->logger(),

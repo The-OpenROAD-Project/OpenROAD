@@ -113,16 +113,13 @@ void RecoverPower::recoverPower(const float recover_power_percent)
   // As long as we are here fix at least one path
   max_end_count = std::max(max_end_count, 1);
 
-  resizer_->incrementalParasiticsBegin();
-  resizer_->updateParasitics();
-  sta_->findRequireds();
-
   Slack worst_slack_before;
   Vertex* worst_vertex;
   sta_->worstSlack(max_, worst_slack_before, worst_vertex);
 
   int end_index = 0;
   int failed_move_threshold = 0;
+  resizer_->journalBegin();
   for (Vertex* end : ends_with_slack) {
     const Slack end_slack_before = sta_->vertexSlack(end, max_);
     Slack worst_slack_after;
@@ -137,10 +134,10 @@ void RecoverPower::recoverPower(const float recover_power_percent)
                end_index,
                max_end_count);
     if (end_index > max_end_count) {
+      resizer_->journalEnd();
       break;
     }
     //=====================================================================
-    resizer_->journalBegin();
     PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
     Vertex* const changed = recoverPower(end_path, end_slack_before);
     if (changed) {
@@ -168,6 +165,7 @@ void RecoverPower::recoverPower(const float recover_power_percent)
 
       if (better) {
         failed_move_threshold = 0;
+        resizer_->journalEnd();
         resizer_->journalBegin();
         debugPrint(logger_,
                    RSZ,
@@ -189,7 +187,7 @@ void RecoverPower::recoverPower(const float recover_power_percent)
                         "{} successive tries yielded negative slack. Ending "
                         "power recovery",
                         failed_move_threshold_limit_);
-
+          resizer_->journalEnd();
           break;
         }
         int resize_count = 100;
@@ -202,8 +200,6 @@ void RecoverPower::recoverPower(const float recover_power_percent)
                                  cloned_gate_count,
                                  swap_pin_count,
                                  removed_buffer_count);
-        resizer_->updateParasitics();
-        sta_->findRequireds();
         debugPrint(logger_,
                    RSZ,
                    "recover_power",
@@ -215,13 +211,13 @@ void RecoverPower::recoverPower(const float recover_power_percent)
                    worst_slack_after);
       }
       if (resizer_->overMaxArea()) {
+        resizer_->journalEnd();
         break;
       }
     }
   }
   bad_vertices_.clear();
 
-  resizer_->incrementalParasiticsEnd();
   // TODO: Add the appropriate metric here
   // logger_->metric("design__instance__count__setup_buffer",
   // inserted_buffer_count_);

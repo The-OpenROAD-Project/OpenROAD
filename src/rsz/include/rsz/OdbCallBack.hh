@@ -56,7 +56,6 @@ class OdbCallBack : public dbBlockCallBackObj
   OdbCallBack(Resizer* resizer, Network* network, dbNetwork* db_network);
 
   void inDbInstCreate(dbInst* inst) override;
-  void inDbInstDestroy(dbInst* inst) override;
   void inDbNetCreate(dbNet* net) override;
   void inDbNetDestroy(dbNet* net) override;
   void inDbITermPostConnect(dbITerm* iterm) override;

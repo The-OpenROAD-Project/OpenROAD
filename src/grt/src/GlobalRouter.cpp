@@ -3294,12 +3294,12 @@ Net* GlobalRouter::addNet(odb::dbNet* db_net)
 void GlobalRouter::removeNet(odb::dbNet* db_net)
 {
   Net* net = db_net_map_[db_net];
-  if (net->isMergedNet()) {
+  if (net != nullptr && net->isMergedNet()) {
     fastroute_->mergeNet(db_net);
+    delete net;
   } else {
     fastroute_->removeNet(db_net);
   }
-  delete net;
   db_net_map_.erase(db_net);
   dirty_nets_.erase(db_net);
   routes_.erase(db_net);
