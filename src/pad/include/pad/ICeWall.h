@@ -157,6 +157,9 @@ class ICeWall
   std::string getRowName(const std::string& name, int ring_index) const;
   odb::Direction2D::Value getRowEdge(odb::dbRow* row) const;
 
+  odb::int64 estimateWirelengths(odb::dbInst* inst,
+                                 const std::set<odb::dbITerm*>& iterms) const;
+
   // Data members
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;

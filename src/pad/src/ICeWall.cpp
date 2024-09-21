@@ -589,6 +589,29 @@ void ICeWall::placePad(odb::dbMaster* master,
   placeInstance(row, snapToRowSite(row, location), inst, orient.getOrient());
 }
 
+odb::int64 ICeWall::estimateWirelengths(
+    odb::dbInst* inst,
+    const std::set<odb::dbITerm*>& iterms) const
+{
+  std::map<odb::dbITerm*, odb::dbITerm*> terms;
+  for (auto* iterm : iterms) {
+    for (auto* net_iterm : iterm->getNet()->getITerms()) {
+      if (net_iterm->getInst() == inst) {
+        terms[net_iterm] = iterm;
+      }
+    }
+  }
+
+  odb::int64 dist = 0;
+
+  for (const auto& [term0, term1] : terms) {
+    dist += odb::Point::manhattanDistance(term0->getBBox().center(),
+                                          term1->getBBox().center());
+  }
+
+  return dist;
+}
+
 void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
 {
   auto* block = getBlock();
@@ -697,28 +720,6 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
       }
 
       return std::numeric_limits<odb::int64>::max();
-    };
-
-    auto iterm_wirelengths
-        = [](odb::dbInst* inst,
-             const std::set<odb::dbITerm*>& iterms) -> odb::int64 {
-      std::map<odb::dbITerm*, odb::dbITerm*> terms;
-      for (auto* iterm : iterms) {
-        for (auto* net_iterm : iterm->getNet()->getITerms()) {
-          if (net_iterm->getInst() == inst) {
-            terms[net_iterm] = iterm;
-          }
-        }
-      }
-
-      odb::int64 dist = 0;
-
-      for (const auto& [term0, term1] : terms) {
-        dist += odb::Point::manhattanDistance(term0->getBBox().center(),
-                                              term1->getBBox().center());
-      }
-
-      return dist;
     };
 
     int max_travel = row_width - total_width;
@@ -836,7 +837,8 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
         if (find_assignment != iterm_connections.end()) {
           const auto& pins = find_assignment->second;
           if (pins.size() > 1) {
-            const odb::int64 start_wirelength = iterm_wirelengths(ginst, pins);
+            const odb::int64 start_wirelength
+                = estimateWirelengths(ginst, pins);
             const auto start_orient = ginst->getOrient();
             // try flip
             ginst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
@@ -851,7 +853,7 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
                 break;
             }
             const odb::int64 flipped_wirelength
-                = iterm_wirelengths(ginst, pins);
+                = estimateWirelengths(ginst, pins);
             const bool undo = flipped_wirelength > start_wirelength;
             if (undo) {
               ginst->setLocationOrient(start_orient);
