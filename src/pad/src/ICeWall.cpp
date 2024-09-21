@@ -859,11 +859,11 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
             switch (row_dir) {
               case odb::Direction2D::North:
               case odb::Direction2D::South:
-                ginst->setLocationOrient(odb::dbOrientType::MY);
+                ginst->setLocationOrient(start_orient.flipY());
                 break;
               case odb::Direction2D::West:
               case odb::Direction2D::East:
-                ginst->setLocationOrient(odb::dbOrientType::MX);
+                ginst->setLocationOrient(start_orient.flipX());
                 break;
             }
             const odb::int64 flipped_wirelength
