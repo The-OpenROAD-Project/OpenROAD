@@ -206,7 +206,7 @@ place_corners sky130_fd_io__corner_bus_overlay
 
 ### Placing Pads Automatically
 
-To place a set pads into the pad ring.
+To place a set pads into the pad ring. If bumps have been placed and ports placed, the placer will attempt to align the pads with the bumps, while still preserving the order of the pads.
 
 Example usage:
 
