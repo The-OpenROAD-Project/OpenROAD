@@ -159,6 +159,11 @@ class ICeWall
 
   odb::int64 estimateWirelengths(odb::dbInst* inst,
                                  const std::set<odb::dbITerm*>& iterms) const;
+  odb::int64 computePadBumpDistance(odb::dbInst* inst,
+                                    int inst_width,
+                                    odb::dbITerm* bump,
+                                    odb::dbRow* row,
+                                    int center_pos) const;
 
   // Data members
   odb::dbDatabase* db_ = nullptr;
