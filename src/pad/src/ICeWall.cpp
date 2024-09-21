@@ -612,6 +612,29 @@ odb::int64 ICeWall::estimateWirelengths(
   return dist;
 }
 
+odb::int64 ICeWall::computePadBumpDistance(odb::dbInst* inst,
+                                           int inst_width,
+                                           odb::dbITerm* bump,
+                                           odb::dbRow* row,
+                                           int center_pos) const
+{
+  const odb::Point row_center = row->getBBox().center();
+  const odb::Point center = bump->getBBox().center();
+
+  switch (getRowEdge(row)) {
+    case odb::Direction2D::North:
+    case odb::Direction2D::South:
+      return odb::Point::squaredDistance(
+          odb::Point(center_pos + inst_width / 2, row_center.y()), center);
+    case odb::Direction2D::West:
+    case odb::Direction2D::East:
+      return odb::Point::squaredDistance(
+          odb::Point(row_center.x(), center_pos + inst_width / 2), center);
+  }
+
+  return std::numeric_limits<odb::int64>::max();
+}
+
 void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
 {
   auto* block = getBlock();
@@ -701,27 +724,6 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
 
     const odb::Point row_center = row_bbox.center();
 
-    auto iterm_distance
-        = [&offset, &row_dir, &row_center, &inst_widths](
-              odb::dbInst* inst, odb::dbITerm* iterm) -> odb::int64 {
-      const odb::Point center = iterm->getBBox().center();
-
-      switch (row_dir) {
-        case odb::Direction2D::North:
-        case odb::Direction2D::South:
-          return odb::Point::squaredDistance(
-              odb::Point(offset + inst_widths[inst] / 2, row_center.y()),
-              center);
-        case odb::Direction2D::West:
-        case odb::Direction2D::East:
-          return odb::Point::squaredDistance(
-              odb::Point(row_center.x(), offset + inst_widths[inst] / 2),
-              center);
-      }
-
-      return std::numeric_limits<odb::int64>::max();
-    };
-
     int max_travel = row_width - total_width;
     for (auto itr = insts.begin(); itr != insts.end();) {
       odb::dbInst* inst = *itr;
@@ -735,8 +737,10 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
         if (find_assignment != iterm_connections.end()) {
           odb::dbITerm* min_dist = *find_assignment->second.begin();
           for (auto* iterm : find_assignment->second) {
-            if (iterm_distance(check_inst, min_dist)
-                > iterm_distance(check_inst, iterm)) {
+            if (computePadBumpDistance(
+                    check_inst, inst_widths[check_inst], min_dist, row, offset)
+                > computePadBumpDistance(
+                    check_inst, inst_widths[check_inst], iterm, row, offset)) {
               min_dist = iterm;
             }
           }
