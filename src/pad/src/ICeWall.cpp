@@ -671,27 +671,6 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
     }
   }
 
-  auto place_inst =
-      [this, row, &row_dir](
-          int pos, odb::dbInst* inst, const odb::dbOrientType& orient) -> int {
-    placeInstance(row, snapToRowSite(row, pos), inst, orient);
-
-    const odb::Rect inst_bbox = inst->getBBox()->getBox();
-
-    switch (row_dir) {
-      case odb::Direction2D::North:
-      case odb::Direction2D::South:
-        pos += inst_bbox.dx();
-        break;
-      case odb::Direction2D::West:
-      case odb::Direction2D::East:
-        pos += inst_bbox.dy();
-        break;
-    }
-
-    return pos;
-  };
-
   if (!iterm_connections.empty()) {
     // attempt to align the pads with the bumps
     const double dbus = block->getDbUnitsPerMicron();
@@ -845,7 +824,12 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
                    select_pos / dbus,
                    max_travel / dbus);
 
-        offset = place_inst(select_pos, ginst, odb::dbOrientType::R0);
+        offset = row_start;
+        offset += placeInstance(row,
+                                snapToRowSite(row, select_pos),
+                                ginst,
+                                odb::dbOrientType::R0)
+                  * row->getSpacing();
 
         // check if flipping improves wirelength
         auto find_assignment = iterm_connections.find(ginst);
@@ -891,10 +875,21 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
     }
   } else {
     // place pads unformly
+    const double dbus = block->getDbUnitsPerMicron();
     const int target_spacing = (row_width - total_width) / (insts.size() + 1);
     int offset = row_start + target_spacing;
     for (auto* inst : insts) {
-      offset = place_inst(offset, inst, odb::dbOrientType::R0);
+      debugPrint(logger_,
+                 utl::PAD,
+                 "Place",
+                 1,
+                 "Placing {} at {:.4f}um",
+                 inst->getName(),
+                 offset / dbus);
+
+      placeInstance(
+          row, snapToRowSite(row, offset), inst, odb::dbOrientType::R0);
+      offset += inst_widths[inst];
       offset += target_spacing;
     }
   }
@@ -953,11 +948,11 @@ odb::Direction2D::Value ICeWall::getRowEdge(odb::dbRow* row) const
   logger_->error(utl::PAD, 29, "{} is not a recognized IO row.", row_name);
 }
 
-void ICeWall::placeInstance(odb::dbRow* row,
-                            int index,
-                            odb::dbInst* inst,
-                            const odb::dbOrientType& base_orient,
-                            bool allow_overlap) const
+int ICeWall::placeInstance(odb::dbRow* row,
+                           int index,
+                           odb::dbInst* inst,
+                           const odb::dbOrientType& base_orient,
+                           bool allow_overlap) const
 {
   const int origin_offset = index * row->getSpacing();
 
@@ -968,8 +963,10 @@ void ICeWall::placeInstance(odb::dbRow* row,
   inst->setOrient(xform.getOrient());
   const odb::Rect inst_bbox = inst->getBBox()->getBox();
 
+  const auto row_edge = getRowEdge(row);
+
   odb::Point index_pt;
-  switch (getRowEdge(row)) {
+  switch (row_edge) {
     case odb::Direction2D::North:
       index_pt = odb::Point(row_bbox.xMin() + origin_offset,
                             row_bbox.yMax() - inst_bbox.dy());
@@ -993,7 +990,7 @@ void ICeWall::placeInstance(odb::dbRow* row,
 
   // Check if its in the row
   bool outofrow = false;
-  switch (getRowEdge(row)) {
+  switch (row_edge) {
     case odb::Direction2D::North:
     case odb::Direction2D::South:
       if (row_bbox.xMin() > inst_rect.xMin()
@@ -1067,6 +1064,21 @@ void ICeWall::placeInstance(odb::dbRow* row,
     }
   }
   inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+
+  int next_pos = index;
+  switch (row_edge) {
+    case odb::Direction2D::North:
+    case odb::Direction2D::South:
+      next_pos += static_cast<int>(
+          std::ceil(static_cast<double>(inst_bbox.dx()) / row->getSpacing()));
+      break;
+    case odb::Direction2D::West:
+    case odb::Direction2D::East:
+      next_pos += static_cast<int>(
+          std::ceil(static_cast<double>(inst_bbox.dy()) / row->getSpacing()));
+      break;
+  }
+  return next_pos;
 }
 
 void ICeWall::placeFiller(

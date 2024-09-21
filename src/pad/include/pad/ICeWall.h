@@ -136,11 +136,11 @@ class ICeWall
   std::vector<odb::dbInst*> getPadInstsInRow(odb::dbRow* row) const;
   std::vector<odb::dbInst*> getPadInsts() const;
 
-  void placeInstance(odb::dbRow* row,
-                     int index,
-                     odb::dbInst* inst,
-                     const odb::dbOrientType& base_orient,
-                     bool allow_overlap = false) const;
+  int placeInstance(odb::dbRow* row,
+                    int index,
+                    odb::dbInst* inst,
+                    const odb::dbOrientType& base_orient,
+                    bool allow_overlap = false) const;
 
   void makeBTerm(odb::dbNet* net,
                  odb::dbTechLayer* layer,
