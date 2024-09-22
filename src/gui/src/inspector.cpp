@@ -628,10 +628,8 @@ Inspector::Inspector(const SelectionSet& selected,
       selected_(selected),
       selected_itr_(selected.begin()),
       button_frame_(new QFrame(this)),
-      button_next_(
-          new QPushButton("Next \u2192", this)),  // \u2192 = right arrow
-      button_prev_(
-          new QPushButton("\u2190 Previous", this)),  // \u2190 = left arrow
+      button_next_(new QPushButton("Next →", this)),
+      button_prev_(new QPushButton("← Previous", this)),
       selected_itr_label_(new QLabel(this)),
       commands_menu_(new QMenu("Commands Menu", this)),
       highlighted_(highlighted)
@@ -906,7 +904,7 @@ void Inspector::makeAction(const Descriptor::Action& action)
       {"De-focus", ":/defocus.png"},
       {"Navigate back", ":/undo.png"}};
   std::vector<std::pair<std::string, QString>> symbol_replacements{
-      {"Fanin Cone", "\u25B7"}, {"Fanout Cone", "\u25C1"}};
+      {"Fanin Cone", "▷"}, {"Fanout Cone", "◁"}};
 
   const std::string& name = action.name;
 

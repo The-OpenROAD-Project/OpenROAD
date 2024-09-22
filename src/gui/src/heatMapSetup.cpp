@@ -93,7 +93,7 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
     grid_x_size_ = new QDoubleSpinBox(this);
     grid_y_size_ = new QDoubleSpinBox(this);
 
-    const QString grid_suffix(" \u03BCm");  // micro meters
+    const QString grid_suffix(" μm");
     grid_x_size_->setRange(source_.getGridSizeMinimumValue(),
                            source_.getGridSizeMaximumValue());
     grid_x_size_->setSuffix(grid_suffix);

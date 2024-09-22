@@ -894,7 +894,7 @@ void RealValueHeatMapDataSource::determineUnits()
     units_ = "m";
     scale_ = 1e3;
   } else if (range > 1e-6) {
-    units_ = "\u03BC";  // micro
+    units_ = "μ";
     scale_ = 1e6;
   } else if (range > 1e-9) {
     units_ = "n";
