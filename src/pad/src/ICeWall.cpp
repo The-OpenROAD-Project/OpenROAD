@@ -718,167 +718,13 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
   }
 
   if (!iterm_connections.empty()) {
-    // attempt to align the pads with the bumps
-    const double dbus = block->getDbUnitsPerMicron();
-    int offset = row_start;
-
-    const odb::Point row_center = row_bbox.center();
-
-    int max_travel = row_width - total_width;
-    for (auto itr = insts.begin(); itr != insts.end();) {
-      odb::dbInst* inst = *itr;
-
-      std::map<odb::dbInst*, odb::dbITerm*> min_terms;
-      auto sitr = itr;
-      for (; sitr != insts.end(); sitr++) {
-        odb::dbInst* check_inst = *sitr;
-
-        auto find_assignment = iterm_connections.find(check_inst);
-        if (find_assignment != iterm_connections.end()) {
-          odb::dbITerm* min_dist = *find_assignment->second.begin();
-          for (auto* iterm : find_assignment->second) {
-            if (computePadBumpDistance(
-                    check_inst, inst_widths[check_inst], min_dist, row, offset)
-                > computePadBumpDistance(
-                    check_inst, inst_widths[check_inst], iterm, row, offset)) {
-              min_dist = iterm;
-            }
-          }
-
-          if (sitr != itr) {
-            // no longer the first pad in group, check if bumps are in same
-            // column/row
-            bool keep = true;
-            switch (row_dir) {
-              case odb::Direction2D::North:
-              case odb::Direction2D::South:
-                keep = min_terms[inst]->getBBox().xCenter()
-                       == min_dist->getBBox().xCenter();
-                break;
-              case odb::Direction2D::West:
-              case odb::Direction2D::East:
-                keep = min_terms[inst]->getBBox().yCenter()
-                       == min_dist->getBBox().yCenter();
-                break;
-            }
-
-            if (!keep) {
-              break;
-            }
-          }
-
-          min_terms[check_inst] = min_dist;
-        } else {
-          break;
-        }
-      }
-
-      if (logger_->debugCheck(utl::PAD, "Place", 1)) {
-        logger_->debug(
-            utl::PAD, "Place", "Pad group size {}", min_terms.size());
-        for (const auto& [dinst, diterm] : min_terms) {
-          logger_->debug(utl::PAD,
-                         "Place",
-                         " {} -> {}",
-                         dinst->getName(),
-                         diterm->getName());
-        }
-      }
-
-      std::map<odb::dbInst*, int> inst_pos;
-      if (!min_terms.empty()) {
-        int group_center = 0;
-        switch (row_dir) {
-          case odb::Direction2D::North:
-          case odb::Direction2D::South:
-            group_center = min_terms[inst]->getBBox().xCenter();
-            break;
-          case odb::Direction2D::West:
-          case odb::Direction2D::East:
-            group_center = min_terms[inst]->getBBox().yCenter();
-            break;
-        }
-
-        // group width
-        int group_width = 0;
-        for (const auto& [ginst, giterm] : min_terms) {
-          group_width += inst_widths[ginst];
-        }
-
-        int target_offset = group_center - group_width / 2;
-
-        for (const auto& [ginst, giterm] : min_terms) {
-          inst_pos[ginst] = target_offset;
-          target_offset += inst_widths[ginst];
-        }
-      } else {
-        inst_pos[inst] = 0;
-      }
-
-      for (const auto& [ginst, pos] : inst_pos) {
-        const int select_pos
-            = offset + std::min(max_travel, std::max(pos - offset, 0));
-        max_travel -= select_pos - offset;
-
-        debugPrint(logger_,
-                   utl::PAD,
-                   "Place",
-                   1,
-                   "Placing {} at {:.4f}um with a remaining spare gap {:.4f}um",
-                   inst->getName(),
-                   select_pos / dbus,
-                   max_travel / dbus);
-
-        offset = row_start;
-        offset += placeInstance(row,
-                                snapToRowSite(row, select_pos),
-                                ginst,
-                                odb::dbOrientType::R0)
-                  * row->getSpacing();
-
-        // check if flipping improves wirelength
-        auto find_assignment = iterm_connections.find(ginst);
-        if (find_assignment != iterm_connections.end()) {
-          const auto& pins = find_assignment->second;
-          if (pins.size() > 1) {
-            const odb::int64 start_wirelength
-                = estimateWirelengths(ginst, pins);
-            const auto start_orient = ginst->getOrient();
-            // try flip
-            ginst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-            switch (row_dir) {
-              case odb::Direction2D::North:
-              case odb::Direction2D::South:
-                ginst->setLocationOrient(start_orient.flipY());
-                break;
-              case odb::Direction2D::West:
-              case odb::Direction2D::East:
-                ginst->setLocationOrient(start_orient.flipX());
-                break;
-            }
-            const odb::int64 flipped_wirelength
-                = estimateWirelengths(ginst, pins);
-            const bool undo = flipped_wirelength > start_wirelength;
-            if (undo) {
-              ginst->setLocationOrient(start_orient);
-            }
-            debugPrint(logger_,
-                       utl::PAD,
-                       "Place",
-                       1,
-                       "Flip check for {}: non flipped wirelength {:.4f}um: "
-                       "flipped wirelength {:.4f}um: {}",
-                       inst->getName(),
-                       start_wirelength / dbus,
-                       flipped_wirelength / dbus,
-                       undo ? "undo" : "keep");
-            ginst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
-          }
-        }
-      }
-
-      std::advance(itr, inst_pos.size());
-    }
+    placePadsBumpAligned(insts,
+                         row,
+                         inst_widths,
+                         total_width,
+                         row_width,
+                         row_start,
+                         iterm_connections);
   } else {
     placePadsUniform(
         insts, row, inst_widths, total_width, row_width, row_start);
@@ -886,6 +732,179 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
 
   logger_->info(
       utl::PAD, 41, "Placed {} pads in {}.", insts.size(), row->getName());
+}
+
+void ICeWall::placePadsBumpAligned(
+    const std::vector<odb::dbInst*> insts,
+    odb::dbRow* row,
+    const std::map<odb::dbInst*, int>& inst_widths,
+    int pads_width,
+    int row_width,
+    int row_start,
+    const std::map<odb::dbInst*, std::set<odb::dbITerm*>>& iterm_connections)
+    const
+{
+  const double dbus = getBlock()->getDbUnitsPerMicron();
+  const odb::Direction2D::Value row_dir = getRowEdge(row);
+
+  int offset = row_start;
+
+  const odb::Point row_center = row->getBBox().center();
+
+  int max_travel = row_width - pads_width;
+  for (auto itr = insts.begin(); itr != insts.end();) {
+    odb::dbInst* inst = *itr;
+
+    std::map<odb::dbInst*, odb::dbITerm*> min_terms;
+    auto sitr = itr;
+    for (; sitr != insts.end(); sitr++) {
+      odb::dbInst* check_inst = *sitr;
+
+      auto find_assignment = iterm_connections.find(check_inst);
+      if (find_assignment != iterm_connections.end()) {
+        odb::dbITerm* min_dist = *find_assignment->second.begin();
+        for (auto* iterm : find_assignment->second) {
+          if (computePadBumpDistance(
+                  check_inst, inst_widths.at(check_inst), min_dist, row, offset)
+              > computePadBumpDistance(
+                  check_inst, inst_widths.at(check_inst), iterm, row, offset)) {
+            min_dist = iterm;
+          }
+        }
+
+        if (sitr != itr) {
+          // no longer the first pad in group, check if bumps are in same
+          // column/row
+          bool keep = true;
+          switch (row_dir) {
+            case odb::Direction2D::North:
+            case odb::Direction2D::South:
+              keep = min_terms[inst]->getBBox().xCenter()
+                     == min_dist->getBBox().xCenter();
+              break;
+            case odb::Direction2D::West:
+            case odb::Direction2D::East:
+              keep = min_terms[inst]->getBBox().yCenter()
+                     == min_dist->getBBox().yCenter();
+              break;
+          }
+
+          if (!keep) {
+            break;
+          }
+        }
+
+        min_terms[check_inst] = min_dist;
+      } else {
+        break;
+      }
+    }
+
+    if (logger_->debugCheck(utl::PAD, "Place", 1)) {
+      logger_->debug(utl::PAD, "Place", "Pad group size {}", min_terms.size());
+      for (const auto& [dinst, diterm] : min_terms) {
+        logger_->debug(utl::PAD,
+                       "Place",
+                       " {} -> {}",
+                       dinst->getName(),
+                       diterm->getName());
+      }
+    }
+
+    // build position map
+    std::map<odb::dbInst*, int> inst_pos;
+    if (!min_terms.empty()) {
+      int group_center = 0;
+      switch (row_dir) {
+        case odb::Direction2D::North:
+        case odb::Direction2D::South:
+          group_center = min_terms[inst]->getBBox().xCenter();
+          break;
+        case odb::Direction2D::West:
+        case odb::Direction2D::East:
+          group_center = min_terms[inst]->getBBox().yCenter();
+          break;
+      }
+
+      // group width
+      int group_width = 0;
+      for (const auto& [ginst, giterm] : min_terms) {
+        group_width += inst_widths.at(ginst);
+      }
+
+      int target_offset = group_center - group_width / 2;
+
+      for (const auto& [ginst, giterm] : min_terms) {
+        inst_pos[ginst] = target_offset;
+        target_offset += inst_widths.at(ginst);
+      }
+    } else {
+      inst_pos[inst] = 0;
+    }
+
+    for (const auto& [ginst, pos] : inst_pos) {
+      const int select_pos
+          = offset + std::min(max_travel, std::max(pos - offset, 0));
+      max_travel -= select_pos - offset;
+
+      debugPrint(logger_,
+                 utl::PAD,
+                 "Place",
+                 1,
+                 "Placing {} at {:.4f}um with a remaining spare gap {:.4f}um",
+                 inst->getName(),
+                 select_pos / dbus,
+                 max_travel / dbus);
+
+      offset = row_start;
+      offset += placeInstance(row,
+                              snapToRowSite(row, select_pos),
+                              ginst,
+                              odb::dbOrientType::R0)
+                * row->getSpacing();
+
+      // check if flipping improves wirelength
+      auto find_assignment = iterm_connections.find(ginst);
+      if (find_assignment != iterm_connections.end()) {
+        const auto& pins = find_assignment->second;
+        if (pins.size() > 1) {
+          const odb::int64 start_wirelength = estimateWirelengths(ginst, pins);
+          const auto start_orient = ginst->getOrient();
+          // try flip
+          ginst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+          switch (row_dir) {
+            case odb::Direction2D::North:
+            case odb::Direction2D::South:
+              ginst->setLocationOrient(start_orient.flipY());
+              break;
+            case odb::Direction2D::West:
+            case odb::Direction2D::East:
+              ginst->setLocationOrient(start_orient.flipX());
+              break;
+          }
+          const odb::int64 flipped_wirelength
+              = estimateWirelengths(ginst, pins);
+          const bool undo = flipped_wirelength > start_wirelength;
+          if (undo) {
+            ginst->setLocationOrient(start_orient);
+          }
+          debugPrint(logger_,
+                     utl::PAD,
+                     "Place",
+                     1,
+                     "Flip check for {}: non flipped wirelength {:.4f}um: "
+                     "flipped wirelength {:.4f}um: {}",
+                     inst->getName(),
+                     start_wirelength / dbus,
+                     flipped_wirelength / dbus,
+                     undo ? "undo" : "keep");
+          ginst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+        }
+      }
+    }
+
+    std::advance(itr, inst_pos.size());
+  }
 }
 
 void ICeWall::placePadsUniform(const std::vector<odb::dbInst*> insts,
