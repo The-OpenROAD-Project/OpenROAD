@@ -180,12 +180,16 @@ class ICeWall
       const std::map<odb::dbInst*, std::set<odb::dbITerm*>>& iterm_connections)
       const;
   std::map<odb::dbInst*, odb::dbITerm*> getBumpAlignmentGroup(
-      const std::vector<odb::dbInst*>& insts,
       odb::dbRow* row,
       int offset,
       const std::map<odb::dbInst*, int>& inst_widths,
       const std::map<odb::dbInst*, std::set<odb::dbITerm*>>& iterm_connections,
-      const std::vector<odb::dbInst*>::const_iterator& itr) const;
+      const std::vector<odb::dbInst*>::const_iterator& itr,
+      const std::vector<odb::dbInst*>::const_iterator& inst_end) const;
+  void performPadFlip(odb::dbRow* row,
+                      odb::dbInst* inst,
+                      const std::map<odb::dbInst*, std::set<odb::dbITerm*>>&
+                          iterm_connections) const;
 
   // Data members
   odb::dbDatabase* db_ = nullptr;

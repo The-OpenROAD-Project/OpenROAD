@@ -735,12 +735,12 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
 }
 
 std::map<odb::dbInst*, odb::dbITerm*> ICeWall::getBumpAlignmentGroup(
-    const std::vector<odb::dbInst*>& insts,
     odb::dbRow* row,
     int offset,
     const std::map<odb::dbInst*, int>& inst_widths,
     const std::map<odb::dbInst*, std::set<odb::dbITerm*>>& iterm_connections,
-    const std::vector<odb::dbInst*>::const_iterator& itr) const
+    const std::vector<odb::dbInst*>::const_iterator& itr,
+    const std::vector<odb::dbInst*>::const_iterator& inst_end) const
 {
   const odb::Direction2D::Value row_dir = getRowEdge(row);
   odb::dbInst* inst = *itr;
@@ -749,7 +749,7 @@ std::map<odb::dbInst*, odb::dbITerm*> ICeWall::getBumpAlignmentGroup(
   // or column)
   std::map<odb::dbInst*, odb::dbITerm*> min_terms;
   auto sitr = itr;
-  for (; sitr != insts.end(); sitr++) {
+  for (; sitr != inst_end; sitr++) {
     odb::dbInst* check_inst = *sitr;
 
     auto find_assignment = iterm_connections.find(check_inst);
@@ -805,6 +805,59 @@ std::map<odb::dbInst*, odb::dbITerm*> ICeWall::getBumpAlignmentGroup(
   return min_terms;
 }
 
+void ICeWall::performPadFlip(
+    odb::dbRow* row,
+    odb::dbInst* inst,
+    const std::map<odb::dbInst*, std::set<odb::dbITerm*>>& iterm_connections)
+    const
+{
+  const double dbus = getBlock()->getDbUnitsPerMicron();
+
+  // check if flipping improves wirelength
+  auto find_assignment = iterm_connections.find(inst);
+  if (find_assignment != iterm_connections.end()) {
+    const auto& pins = find_assignment->second;
+    if (pins.size() > 1) {
+      // only need to check if pad has more than one connection
+      const odb::int64 start_wirelength = estimateWirelengths(inst, pins);
+      const auto start_orient = inst->getOrient();
+
+      // try flipping pad
+      inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+      switch (getRowEdge(row)) {
+        case odb::Direction2D::North:
+        case odb::Direction2D::South:
+          inst->setLocationOrient(start_orient.flipY());
+          break;
+        case odb::Direction2D::West:
+        case odb::Direction2D::East:
+          inst->setLocationOrient(start_orient.flipX());
+          break;
+      }
+
+      // get new wirelength
+      const odb::int64 flipped_wirelength = estimateWirelengths(inst, pins);
+      const bool undo = flipped_wirelength > start_wirelength;
+
+      if (undo) {
+        // since new wirelength was longer, restore the original orientation
+        inst->setLocationOrient(start_orient);
+      }
+      debugPrint(logger_,
+                 utl::PAD,
+                 "Place",
+                 1,
+                 "Flip check for {}: non flipped wirelength {:.4f}um: "
+                 "flipped wirelength {:.4f}um: {}",
+                 inst->getName(),
+                 start_wirelength / dbus,
+                 flipped_wirelength / dbus,
+                 undo ? "undo" : "keep");
+      inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+    }
+  }
+}
+
 void ICeWall::placePadsBumpAligned(
     const std::vector<odb::dbInst*>& insts,
     odb::dbRow* row,
@@ -826,7 +879,7 @@ void ICeWall::placePadsBumpAligned(
     // get bump aligned pad group
     const std::map<odb::dbInst*, odb::dbITerm*> min_terms
         = getBumpAlignmentGroup(
-            insts, row, offset, inst_widths, iterm_connections, itr);
+            row, offset, inst_widths, iterm_connections, itr, insts.end());
 
     // build position map
     // for pads connected to bumps, this will ensure they are centered by the
@@ -889,50 +942,7 @@ void ICeWall::placePadsBumpAligned(
                               odb::dbOrientType::R0)
                 * row->getSpacing();
 
-      // check if flipping improves wirelength
-      auto find_assignment = iterm_connections.find(ginst);
-      if (find_assignment != iterm_connections.end()) {
-        const auto& pins = find_assignment->second;
-        if (pins.size() > 1) {
-          // only need to check if pad has more than one connection
-          const odb::int64 start_wirelength = estimateWirelengths(ginst, pins);
-          const auto start_orient = ginst->getOrient();
-
-          // try flipping pad
-          ginst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-          switch (row_dir) {
-            case odb::Direction2D::North:
-            case odb::Direction2D::South:
-              ginst->setLocationOrient(start_orient.flipY());
-              break;
-            case odb::Direction2D::West:
-            case odb::Direction2D::East:
-              ginst->setLocationOrient(start_orient.flipX());
-              break;
-          }
-
-          // get new wirelength
-          const odb::int64 flipped_wirelength
-              = estimateWirelengths(ginst, pins);
-          const bool undo = flipped_wirelength > start_wirelength;
-
-          if (undo) {
-            // since new wirelength was longer, restore the original orientation
-            ginst->setLocationOrient(start_orient);
-          }
-          debugPrint(logger_,
-                     utl::PAD,
-                     "Place",
-                     1,
-                     "Flip check for {}: non flipped wirelength {:.4f}um: "
-                     "flipped wirelength {:.4f}um: {}",
-                     inst->getName(),
-                     start_wirelength / dbus,
-                     flipped_wirelength / dbus,
-                     undo ? "undo" : "keep");
-          ginst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
-        }
-      }
+      performPadFlip(row, ginst, iterm_connections);
     }
 
     // more iterator to next unplaced pad
