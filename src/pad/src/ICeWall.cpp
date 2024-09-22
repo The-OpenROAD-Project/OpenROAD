@@ -734,6 +734,77 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
       utl::PAD, 41, "Placed {} pads in {}.", insts.size(), row->getName());
 }
 
+std::map<odb::dbInst*, odb::dbITerm*> ICeWall::getBumpAlignmentGroup(
+    const std::vector<odb::dbInst*>& insts,
+    odb::dbRow* row,
+    int offset,
+    const std::map<odb::dbInst*, int>& inst_widths,
+    const std::map<odb::dbInst*, std::set<odb::dbITerm*>>& iterm_connections,
+    const std::vector<odb::dbInst*>::const_iterator& itr) const
+{
+  const odb::Direction2D::Value row_dir = getRowEdge(row);
+  odb::dbInst* inst = *itr;
+
+  // build map of bump aligned pads (ie. pads connected to bumps in the same row
+  // or column)
+  std::map<odb::dbInst*, odb::dbITerm*> min_terms;
+  auto sitr = itr;
+  for (; sitr != insts.end(); sitr++) {
+    odb::dbInst* check_inst = *sitr;
+
+    auto find_assignment = iterm_connections.find(check_inst);
+    if (find_assignment != iterm_connections.end()) {
+      odb::dbITerm* min_dist = *find_assignment->second.begin();
+
+      // find closest bump to the current offset in the row
+      for (auto* iterm : find_assignment->second) {
+        if (computePadBumpDistance(
+                check_inst, inst_widths.at(check_inst), min_dist, row, offset)
+            > computePadBumpDistance(
+                check_inst, inst_widths.at(check_inst), iterm, row, offset)) {
+          min_dist = iterm;
+        }
+      }
+
+      if (sitr != itr) {
+        // no longer the first pad in group, check if bumps are in same
+        // column/row
+        bool keep = true;
+        switch (row_dir) {
+          case odb::Direction2D::North:
+          case odb::Direction2D::South:
+            keep = min_terms[inst]->getBBox().xCenter()
+                   == min_dist->getBBox().xCenter();
+            break;
+          case odb::Direction2D::West:
+          case odb::Direction2D::East:
+            keep = min_terms[inst]->getBBox().yCenter()
+                   == min_dist->getBBox().yCenter();
+            break;
+        }
+
+        if (!keep) {
+          break;
+        }
+      }
+
+      min_terms[check_inst] = min_dist;
+    } else {
+      break;
+    }
+  }
+
+  if (logger_->debugCheck(utl::PAD, "Place", 1)) {
+    logger_->debug(utl::PAD, "Place", "Pad group size {}", min_terms.size());
+    for (const auto& [dinst, diterm] : min_terms) {
+      logger_->debug(
+          utl::PAD, "Place", " {} -> {}", dinst->getName(), diterm->getName());
+    }
+  }
+
+  return min_terms;
+}
+
 void ICeWall::placePadsBumpAligned(
     const std::vector<odb::dbInst*>& insts,
     odb::dbRow* row,
@@ -750,77 +821,29 @@ void ICeWall::placePadsBumpAligned(
   int offset = row_start;
 
   int max_travel = row_width - pads_width;
+  // iterate over pads in order
   for (auto itr = insts.begin(); itr != insts.end();) {
-    odb::dbInst* inst = *itr;
-
-    std::map<odb::dbInst*, odb::dbITerm*> min_terms;
-    auto sitr = itr;
-    for (; sitr != insts.end(); sitr++) {
-      odb::dbInst* check_inst = *sitr;
-
-      auto find_assignment = iterm_connections.find(check_inst);
-      if (find_assignment != iterm_connections.end()) {
-        odb::dbITerm* min_dist = *find_assignment->second.begin();
-        for (auto* iterm : find_assignment->second) {
-          if (computePadBumpDistance(
-                  check_inst, inst_widths.at(check_inst), min_dist, row, offset)
-              > computePadBumpDistance(
-                  check_inst, inst_widths.at(check_inst), iterm, row, offset)) {
-            min_dist = iterm;
-          }
-        }
-
-        if (sitr != itr) {
-          // no longer the first pad in group, check if bumps are in same
-          // column/row
-          bool keep = true;
-          switch (row_dir) {
-            case odb::Direction2D::North:
-            case odb::Direction2D::South:
-              keep = min_terms[inst]->getBBox().xCenter()
-                     == min_dist->getBBox().xCenter();
-              break;
-            case odb::Direction2D::West:
-            case odb::Direction2D::East:
-              keep = min_terms[inst]->getBBox().yCenter()
-                     == min_dist->getBBox().yCenter();
-              break;
-          }
-
-          if (!keep) {
-            break;
-          }
-        }
-
-        min_terms[check_inst] = min_dist;
-      } else {
-        break;
-      }
-    }
-
-    if (logger_->debugCheck(utl::PAD, "Place", 1)) {
-      logger_->debug(utl::PAD, "Place", "Pad group size {}", min_terms.size());
-      for (const auto& [dinst, diterm] : min_terms) {
-        logger_->debug(utl::PAD,
-                       "Place",
-                       " {} -> {}",
-                       dinst->getName(),
-                       diterm->getName());
-      }
-    }
+    // get bump aligned pad group
+    const std::map<odb::dbInst*, odb::dbITerm*> min_terms
+        = getBumpAlignmentGroup(
+            insts, row, offset, inst_widths, iterm_connections, itr);
 
     // build position map
+    // for pads connected to bumps, this will ensure they are centered by the
+    // bump if pad is not connected to a bump, place in the next available
+    // position
+    odb::dbInst* inst = *itr;
     std::map<odb::dbInst*, int> inst_pos;
     if (!min_terms.empty()) {
       int group_center = 0;
       switch (row_dir) {
         case odb::Direction2D::North:
         case odb::Direction2D::South:
-          group_center = min_terms[inst]->getBBox().xCenter();
+          group_center = min_terms.at(inst)->getBBox().xCenter();
           break;
         case odb::Direction2D::West:
         case odb::Direction2D::East:
-          group_center = min_terms[inst]->getBBox().yCenter();
+          group_center = min_terms.at(inst)->getBBox().yCenter();
           break;
       }
 
@@ -830,19 +853,24 @@ void ICeWall::placePadsBumpAligned(
         group_width += inst_widths.at(ginst);
       }
 
+      // build positions with bump as the center
       int target_offset = group_center - group_width / 2;
-
       for (const auto& [ginst, giterm] : min_terms) {
         inst_pos[ginst] = target_offset;
         target_offset += inst_widths.at(ginst);
       }
     } else {
+      // request next availble position
       inst_pos[inst] = 0;
     }
 
+    // place pads
     for (const auto& [ginst, pos] : inst_pos) {
+      // compute next available position
       const int select_pos
           = offset + std::min(max_travel, std::max(pos - offset, 0));
+
+      // adjust max travel to remove the slack used by this pad
       max_travel -= select_pos - offset;
 
       debugPrint(logger_,
@@ -866,9 +894,11 @@ void ICeWall::placePadsBumpAligned(
       if (find_assignment != iterm_connections.end()) {
         const auto& pins = find_assignment->second;
         if (pins.size() > 1) {
+          // only need to check if pad has more than one connection
           const odb::int64 start_wirelength = estimateWirelengths(ginst, pins);
           const auto start_orient = ginst->getOrient();
-          // try flip
+
+          // try flipping pad
           ginst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
           switch (row_dir) {
             case odb::Direction2D::North:
@@ -880,10 +910,14 @@ void ICeWall::placePadsBumpAligned(
               ginst->setLocationOrient(start_orient.flipX());
               break;
           }
+
+          // get new wirelength
           const odb::int64 flipped_wirelength
               = estimateWirelengths(ginst, pins);
           const bool undo = flipped_wirelength > start_wirelength;
+
           if (undo) {
+            // since new wirelength was longer, restore the original orientation
             ginst->setLocationOrient(start_orient);
           }
           debugPrint(logger_,
@@ -901,6 +935,7 @@ void ICeWall::placePadsBumpAligned(
       }
     }
 
+    // more iterator to next unplaced pad
     std::advance(itr, inst_pos.size());
   }
 }

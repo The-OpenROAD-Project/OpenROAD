@@ -179,6 +179,13 @@ class ICeWall
       int row_start,
       const std::map<odb::dbInst*, std::set<odb::dbITerm*>>& iterm_connections)
       const;
+  std::map<odb::dbInst*, odb::dbITerm*> getBumpAlignmentGroup(
+      const std::vector<odb::dbInst*>& insts,
+      odb::dbRow* row,
+      int offset,
+      const std::map<odb::dbInst*, int>& inst_widths,
+      const std::map<odb::dbInst*, std::set<odb::dbITerm*>>& iterm_connections,
+      const std::vector<odb::dbInst*>::const_iterator& itr) const;
 
   // Data members
   odb::dbDatabase* db_ = nullptr;
