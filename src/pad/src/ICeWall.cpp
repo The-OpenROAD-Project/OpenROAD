@@ -735,7 +735,7 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
 }
 
 void ICeWall::placePadsBumpAligned(
-    const std::vector<odb::dbInst*> insts,
+    const std::vector<odb::dbInst*>& insts,
     odb::dbRow* row,
     const std::map<odb::dbInst*, int>& inst_widths,
     int pads_width,
@@ -748,8 +748,6 @@ void ICeWall::placePadsBumpAligned(
   const odb::Direction2D::Value row_dir = getRowEdge(row);
 
   int offset = row_start;
-
-  const odb::Point row_center = row->getBBox().center();
 
   int max_travel = row_width - pads_width;
   for (auto itr = insts.begin(); itr != insts.end();) {
@@ -907,7 +905,7 @@ void ICeWall::placePadsBumpAligned(
   }
 }
 
-void ICeWall::placePadsUniform(const std::vector<odb::dbInst*> insts,
+void ICeWall::placePadsUniform(const std::vector<odb::dbInst*>& insts,
                                odb::dbRow* row,
                                const std::map<odb::dbInst*, int>& inst_widths,
                                int pads_width,
