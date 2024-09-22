@@ -858,10 +858,9 @@ void FlexPA::addPlanarAccess(
   auto ps = std::make_unique<frPathSeg>();
   auto style = layer->getDefaultSegStyle();
   const bool vert_dir = (dir == frDirEnum::S || dir == frDirEnum::N);
-  const bool horz_dir = (dir == frDirEnum::W || dir == frDirEnum::E);
   const bool wrong_dir
       = (layer->getDir() == dbTechLayerDir::HORIZONTAL && vert_dir)
-        || (layer->getDir() == dbTechLayerDir::VERTICAL && horz_dir);
+        || (layer->getDir() == dbTechLayerDir::VERTICAL && !vert_dir);
   if (dir == frDirEnum::W || dir == frDirEnum::S) {
     ps->setPoints(end_point, begin_point);
     style.setEndStyle(frcTruncateEndStyle, 0);
@@ -1128,10 +1127,9 @@ bool FlexPA::checkDirectionalViaAccess(
     frDirEnum dir)
 {
   auto upper_layer = getTech()->getLayer(via->getViaDef()->getLayer2Num());
-  const bool horz_dir = (dir == frDirEnum::W || dir == frDirEnum::E);
   const bool vert_dir = (dir == frDirEnum::S || dir == frDirEnum::N);
   const bool wrong_dir = (upper_layer->isHorizontal() && vert_dir)
-                         || (upper_layer->isVertical() && horz_dir);
+                         || (upper_layer->isVertical() && !vert_dir);
   auto style = upper_layer->getDefaultSegStyle();
 
   if (wrong_dir) {
@@ -1140,6 +1138,7 @@ bool FlexPA::checkDirectionalViaAccess(
     }
     style.setWidth(upper_layer->getWrongDirWidth());
   }
+
   const Point begin_point = ap->getPoint();
   const bool is_block
       = inst_term
@@ -1166,7 +1165,6 @@ bool FlexPA::checkDirectionalViaAccess(
     ps->setPoints(begin_point, end_point);
     style.setBeginStyle(frcTruncateEndStyle, 0);
   }
-
   ps->setLayerNum(upper_layer->getLayerNum());
   ps->setStyle(style);
   if (inst_term && inst_term->hasNet()) {
@@ -1185,10 +1183,10 @@ bool FlexPA::checkDirectionalViaAccess(
   Rect tmp_box(begin_point, begin_point);
   Rect ext_box;
   tmp_box.bloat(extension, ext_box);
-  design_rule_checker.setExtBox(ext_box);
-  design_rule_checker.setDrcBox(ext_box);
   auto pin_term = pin->getTerm();
   auto pin_net = pin_term->getNet();
+  design_rule_checker.setExtBox(ext_box);
+  design_rule_checker.setDrcBox(ext_box);
   if (inst_term) {
     if (!inst_term->getNet() || !inst_term->getNet()->getNondefaultRule()
         || AUTO_TAPER_NDR_NETS) {

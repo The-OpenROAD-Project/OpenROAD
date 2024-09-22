@@ -65,7 +65,10 @@ BOOST_FIXTURE_TEST_CASE(test_undo_inst_destroy, F_DEFAULT)
 
 BOOST_FIXTURE_TEST_CASE(test_undo_net_create, F_DEFAULT)
 {
-  in_eco([&]() { dbNet::create(block, "n"); });
+  in_eco([&]() {
+    auto net = dbNet::create(block, "n");
+    net->setSigType(dbSigType::SIGNAL);
+  });
   BOOST_TEST(block->findNet("n") == nullptr);
 }
 
@@ -90,7 +93,7 @@ BOOST_FIXTURE_TEST_CASE(test_undo_net_destroy_guides, F_DEFAULT)
   auto net = dbNet::create(block, "n");
   auto l1 = db->getTech()->findLayer("L1");
   const Rect box{0, 0, 100, 100};
-  dbGuide::create(net, l1, box);
+  dbGuide::create(net, l1, l1, box);
 
   in_eco([&]() { dbNet::destroy(net); });
 
@@ -98,6 +101,7 @@ BOOST_FIXTURE_TEST_CASE(test_undo_net_destroy_guides, F_DEFAULT)
   const auto guide = *net->getGuides().begin();
   BOOST_TEST(guide->getLayer() == l1);
   BOOST_TEST(guide->getBox() == box);
+  BOOST_TEST(guide->getViaLayer() == l1);
 }
 
 BOOST_FIXTURE_TEST_CASE(test_undo_guide_create, F_DEFAULT)
@@ -106,7 +110,7 @@ BOOST_FIXTURE_TEST_CASE(test_undo_guide_create, F_DEFAULT)
   auto l1 = db->getTech()->findLayer("L1");
   const Rect box{0, 0, 100, 100};
 
-  in_eco([&]() { dbGuide::create(net, l1, box); });
+  in_eco([&]() { dbGuide::create(net, l1, l1, box); });
 
   BOOST_TEST(net->getGuides().size() == 0);
 }
