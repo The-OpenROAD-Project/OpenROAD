@@ -77,6 +77,16 @@ class UniqueInsts
   bool isNDRInst(frInst& inst);
   bool hasTrackPattern(frTrackPattern* tp, const Rect& box) const;
 
+  /**
+   * @brief Creates a vector of preferred track patterns.
+   *
+   * Not every track pattern is a preferred one,
+   * this function acts as filter of design_->getTopBlock()->getTrackPatterns()
+   * to only take the preferred ones, which are the ones in the routing
+   * direction of the layer.
+   *
+   * @return A vector of track patterns objects.
+   */
   std::vector<frTrackPattern*> getPrefTrackPatterns();
   void applyPatternsFile(const char* file_path);
 
