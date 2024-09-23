@@ -213,10 +213,9 @@ void FlexPA::gen_createAccessPoint(
   auto ap = std::make_unique<frAccessPoint>(fpt, layer_num);
   if (allow_planar) {
     const auto lower_layer = getDesign()->getTech()->getLayer(layer_num);
-    ap->setAccess(frDirEnum::W, true);
-    ap->setAccess(frDirEnum::E, true);
-    ap->setAccess(frDirEnum::S, true);
-    ap->setAccess(frDirEnum::N, true);
+    for (const frDirEnum dir : frDirEnumPlanar) {
+      ap->setAccess(dir, true);
+    }
     // rectonly forbid wrongway planar access
     // rightway on grid only forbid off track rightway planar access
     // horz layer
@@ -244,17 +243,13 @@ void FlexPA::gen_createAccessPoint(
       }
     }
   } else {
-    ap->setAccess(frDirEnum::W, false);
-    ap->setAccess(frDirEnum::E, false);
-    ap->setAccess(frDirEnum::S, false);
-    ap->setAccess(frDirEnum::N, false);
+    for (const frDirEnum dir : frDirEnumPlanar) {
+      ap->setAccess(dir, false);
+    }
   }
   ap->setAccess(frDirEnum::D, false);
-  if (allow_via) {
-    ap->setAccess(frDirEnum::U, true);
-  } else {
-    ap->setAccess(frDirEnum::U, false);
-  }
+  ap->setAccess(frDirEnum::U, allow_via);
+
   ap->setAllowVia(allow_via);
   ap->setType((frAccessPointEnum) low_cost, true);
   ap->setType((frAccessPointEnum) high_cost, false);
@@ -1110,14 +1105,12 @@ bool FlexPA::checkViaAccess(
     frInstTerm* inst_term,
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys)
 {
-  return checkDirectionalViaAccess(
-             ap, via, pin, inst_term, layer_polys, frDirEnum::E)
-         || checkDirectionalViaAccess(
-             ap, via, pin, inst_term, layer_polys, frDirEnum::W)
-         || checkDirectionalViaAccess(
-             ap, via, pin, inst_term, layer_polys, frDirEnum::S)
-         || checkDirectionalViaAccess(
-             ap, via, pin, inst_term, layer_polys, frDirEnum::N);
+  for (const frDirEnum dir : frDirEnumPlanar) {
+    if (checkDirectionalViaAccess(ap, via, pin, inst_term, layer_polys, dir)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 template <typename T>
@@ -1243,10 +1236,9 @@ void FlexPA::check_addAccess(
     bool deep_search)
 {
   if (!deep_search) {
-    check_addPlanarAccess(ap, polys, frDirEnum::W, pin, inst_term);
-    check_addPlanarAccess(ap, polys, frDirEnum::E, pin, inst_term);
-    check_addPlanarAccess(ap, polys, frDirEnum::S, pin, inst_term);
-    check_addPlanarAccess(ap, polys, frDirEnum::N, pin, inst_term);
+    for (const frDirEnum dir : frDirEnumPlanar) {
+      check_addPlanarAccess(ap, polys, dir, pin, inst_term);
+    }
   }
   check_addViaAccess(
       ap, polys, polyset, frDirEnum::U, pin, inst_term, deep_search);
