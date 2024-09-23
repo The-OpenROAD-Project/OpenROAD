@@ -108,6 +108,11 @@ void place_pad(odb::dbMaster* master, const char* name, odb::dbRow* row, int loc
   ord::getICeWall()->placePad(master, name, row, location, mirror);
 }
 
+void place_pads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
+{
+  ord::getICeWall()->placePads(insts, row);
+}
+
 void place_corner(odb::dbMaster* master, int ring_index)
 {
   ord::getICeWall()->placeCorner(master, ring_index);

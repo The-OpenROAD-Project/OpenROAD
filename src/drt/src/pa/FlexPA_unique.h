@@ -71,7 +71,7 @@ class UniqueInsts
   void setDesign(frDesign* design) { design_ = design; }
 
  private:
-  using LayerRange = std::tuple<frLayerNum, frLayerNum>;
+  using LayerRange = std::pair<frLayerNum, frLayerNum>;
   using MasterLayerRange = std::map<frMaster*, LayerRange, frBlockObjectComp>;
 
   frDesign* getDesign() const { return design_; }
@@ -88,7 +88,17 @@ class UniqueInsts
   bool isNDRInst(frInst& inst);
   bool hasTrackPattern(frTrackPattern* tp, const Rect& box) const;
 
-  void getPrefTrackPatterns(std::vector<frTrackPattern*>& pref_track_patterns);
+  /**
+   * @brief Creates a vector of preferred track patterns.
+   *
+   * Not every track pattern is a preferred one,
+   * this function acts as filter of design_->getTopBlock()->getTrackPatterns()
+   * to only take the preferred ones, which are the ones in the routing
+   * direction of the layer.
+   *
+   * @return A vector of track patterns objects.
+   */
+  std::vector<frTrackPattern*> getPrefTrackPatterns();
   void applyPatternsFile(const char* file_path);
 
   /**
@@ -113,7 +123,7 @@ class UniqueInsts
    *
    * @return A map from Master instance to LayerRange.
    */
-  void initMaster2PinLayerRange(MasterLayerRange& master_to_pin_layer_range);
+  MasterLayerRange initMasterToPinLayerRange();
 
   /**
    * @brief Computes all unique instances data structures.

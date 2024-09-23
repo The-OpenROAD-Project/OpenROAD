@@ -260,6 +260,33 @@ proc place_pad {args} {
     [info exists flags(-mirror)]
 }
 
+sta::define_cmd_args "place_pads" {-row row_name \
+                                   pads}
+
+proc place_pads {args} {
+  sta::parse_key_args "place_pads" args \
+    keys {-row} \
+    flags {}
+
+  if { $args == {} } {
+    utl::error PAD 39 "place_pads requires a list of instances."
+  }
+
+  if { [llength $args] == 1 } {
+    set args [lindex $args 0]
+  }
+
+  set insts []
+  foreach inst $args {
+    lappend insts [pad::find_instance $inst]
+  }
+
+  pad::assert_required place_pads -row
+  pad::place_pads \
+    $insts \
+    [pad::get_row $keys(-row)]
+}
+
 sta::define_cmd_args "place_io_fill" {-row row_name \
                                       [-permit_overlaps masters] \
                                       masters}

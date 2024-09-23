@@ -204,7 +204,33 @@ Example usage:
 place_corners sky130_fd_io__corner_bus_overlay
 ```
 
-### Placing Pads
+### Placing Pads Automatically
+
+To place a set of pads into an IO row in the order specified.
+If bumps have been placed and ports placed, the placer will attempt to align the pads with the bumps (excluding rhe supply nets), while still preserving the order of the pads.
+Otherwise, the default behavior is to place the pads uniformly.
+
+Example usage:
+
+```
+place_pads -row IO_SOUTH u_reset.u_in u_reset.u_out
+```
+
+```tcl
+place_pads
+    -row row_name
+    pads
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-row` | Name of the row to place the pad into, examples include: `IO_NORTH`, `IO_SOUTH`, `IO_WEST`, `IO_EAST`, `IO_NORTH_0`, `IO_NORTH_1`. |
+| `pads` | Name of the instances in the order they should be placed (left to right for `IO_SOUTH` and `IO_NORTH` and bottom to top for `IO_WEST` and `IO_EAST`). |
+
+
+### Placing Pads Manually
 
 To place a pad into the pad ring.
 
