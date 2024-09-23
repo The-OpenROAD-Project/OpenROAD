@@ -160,11 +160,23 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
     edge_rows.insert(rows.begin(), rows.end());
   }
 
+  std::vector<odb::dbInst*> fixed_insts;
+  for (auto* inst : db_->getChip()->getBlock()->getInsts()) {
+    if (inst->isFixed()) {
+      fixed_insts.push_back(inst);
+    }
+  }
+  InstTree instancetree(fixed_insts.begin(), fixed_insts.end());
+
   int inst = 0;
   for (auto* row : db_->getChip()->getBlock()->getRows()) {
     const bool is_edge = edge_rows.find(row) != edge_rows.end();
-    inst += placeTapcells(
-        tapcell_master, dist, row, is_edge, disallow_one_site_gaps);
+    inst += placeTapcells(tapcell_master,
+                          dist,
+                          row,
+                          is_edge,
+                          disallow_one_site_gaps,
+                          instancetree);
   }
   logger_->info(utl::TAP, 5, "Inserted {} tapcells.", inst);
   return inst;
@@ -174,7 +186,8 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
                            const int dist,
                            odb::dbRow* row,
                            const bool is_edge,
-                           const bool disallow_one_site_gaps)
+                           const bool disallow_one_site_gaps,
+                           const InstTree& fixed_instances)
 {
   if (row->getSite()->getName() != tapcell_master->getSite()->getName()) {
     return 0;
@@ -202,16 +215,9 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
 
   const odb::Rect row_bb = row->getBBox();
 
-  std::set<odb::dbInst*> row_insts;
-  for (auto* inst : db_->getChip()->getBlock()->getInsts()) {
-    if (!inst->isFixed()) {
-      continue;
-    }
-
-    if (row_bb.contains(inst->getBBox()->getBox())) {
-      row_insts.insert(inst);
-    }
-  }
+  std::set<odb::dbInst*> row_insts(
+      fixed_instances.qbegin(boost::geometry::index::covered_by(row_bb)),
+      fixed_instances.qend());
 
   const int llx = row_bb.xMin();
   const int urx = row_bb.xMax();
