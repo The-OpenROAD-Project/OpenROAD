@@ -420,9 +420,21 @@ proc rdl_route {args} {
     keys {-layer -width -spacing -bump_via -pad_via -turn_penalty} \
     flags {-allow45}
 
+  sta::parse_port_net_args $args sta_ports sta_nets
   set nets []
-  foreach net [get_nets {*}$args] {
-    lappend nets [sta::sta_to_db_net $net]
+  foreach net $sta_nets {
+    lappend [sta::sta_to_db_net $net]
+  }
+  foreach port $sta_ports {
+    set bterm [sta::sta_to_db_port $port]
+    set net [$bterm getNet]
+    if { $net != "NULL" } {
+      lappend nets $net
+    }
+  }
+
+  if { [llength $nets] == 0 } {
+    utl::error PAD 42 "No nets found to route"
   }
 
   pad::assert_required rdl_route -layer
