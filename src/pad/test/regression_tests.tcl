@@ -23,6 +23,7 @@ record_tests {
   connect_by_abutment_with_single_pinnet
 
   rdl_route
+  rdl_route_ports
   rdl_route_failed
   rdl_route_assignments
   rdl_route_45
@@ -30,6 +31,7 @@ record_tests {
   rdl_route_45_separate
   rdl_route_via
   rdl_route_bump_via
+  rdl_route_invalid
 
   skywater130_overlapping_filler
 
