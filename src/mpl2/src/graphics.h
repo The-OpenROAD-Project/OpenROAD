@@ -90,8 +90,10 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void eraseDrawing() override;
 
  private:
+  void setXMarksSizeAndPosition(const std::set<Boundary>& blocked_boundaries);
   void resetPenalties();
   void drawCluster(Cluster* cluster, gui::Painter& painter);
+  void drawBlockedBoundariesIndication(gui::Painter& painter);
   void drawAllBlockages(gui::Painter& painter);
   void drawBlockage(const Rect& blockage, gui::Painter& painter);
   template <typename T>
@@ -126,7 +128,9 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   std::vector<BundledNet> bundled_nets_;
   odb::Rect outline_;
   std::vector<std::vector<odb::Rect>> outlines_;
-  std::set<Boundary> blocked_boundaries_;
+  std::map<Boundary, odb::Point> blocked_boundary_to_mark_;
+
+  int x_mark_size_ = 0;
 
   bool active_ = true;
   bool coarse_;

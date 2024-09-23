@@ -291,7 +291,45 @@ void Graphics::setMaxLevel(const int max_level)
 void Graphics::finishedClustering(PhysicalHierarchy* tree)
 {
   root_ = tree->root.get();
-  blocked_boundaries_ = tree->blocked_boundaries;
+  setXMarksSizeAndPosition(tree->blocked_boundaries);
+}
+
+void Graphics::setXMarksSizeAndPosition(
+    const std::set<Boundary>& blocked_boundaries)
+{
+  const odb::Rect die = block_->getDieArea();
+
+  // Not too big/small
+  x_mark_size_ = (die.dx() + die.dy()) * 0.03;
+
+  for (Boundary boundary : blocked_boundaries) {
+    logger_->report("{} is blocked", toString(boundary));
+
+    odb::Point x_mark_point;
+
+    switch (boundary) {
+      case L: {
+        x_mark_point = odb::Point(die.xMin(), die.yCenter());
+        break;
+      }
+      case R: {
+        x_mark_point = odb::Point(die.xMax(), die.yCenter());
+        break;
+      }
+      case B: {
+        x_mark_point = odb::Point(die.xCenter(), die.yMin());
+        break;
+      }
+      case T: {
+        x_mark_point = odb::Point(die.xCenter(), die.yMax());
+        break;
+      }
+      case NONE:
+        break;
+    }
+
+    blocked_boundary_to_mark_[boundary] = x_mark_point;
+  }
 }
 
 void Graphics::drawCluster(Cluster* cluster, gui::Painter& painter)
@@ -353,6 +391,8 @@ void Graphics::drawObjects(gui::Painter& painter)
     drawCluster(root_, painter);
   }
 
+  drawBlockedBoundariesIndication(painter);
+
   // Draw blockages only during SA for SoftMacros
   if (!soft_macros_.empty()) {
     drawAllBlockages(painter);
@@ -364,7 +404,7 @@ void Graphics::drawObjects(gui::Painter& painter)
   for (const auto& macro : soft_macros_) {
     Cluster* cluster = macro.getCluster();
 
-    if (!cluster) {
+    if (!cluster) {  // fixed terminals
       continue;
     }
 
@@ -478,6 +518,16 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 }
 
+void Graphics::drawBlockedBoundariesIndication(gui::Painter& painter)
+{
+  painter.setPen(gui::Painter::red, true);
+  painter.setBrush(gui::Painter::transparent);
+
+  for (const auto [boundary, x_mark_point] : blocked_boundary_to_mark_) {
+    painter.drawX(x_mark_point.getX(), x_mark_point.getY(), x_mark_size_);
+  }
+}
+
 template <typename T>
 void Graphics::drawBundledNets(gui::Painter& painter,
                                const std::vector<T>& macros)
@@ -539,8 +589,8 @@ void Graphics::drawDistToIoConstraintBoundary(gui::Painter& painter,
     const Rect die = io_cluster->getBBox();
     Boundary closest_boundary = getClosestBoundary(macro, die);
 
-    if (blocked_boundaries_.find(closest_boundary)
-        != blocked_boundaries_.end()) {
+    if (blocked_boundary_to_mark_.find(closest_boundary)
+        != blocked_boundary_to_mark_.end()) {
       return;
     }
 
@@ -567,9 +617,6 @@ bool Graphics::isOutsideTheOutline(const T& macro) const
   TO DO:
     1. See if some sort of offset dark magic interferes
   with the annealing internals.
-    2. Guarantee that when the macros are outside the
-    outline we'll have no problems.
-    3. Draw Xs in the blocked boundaries
 */
 
 // Here, we have to manually decompensate the offset of the
@@ -644,10 +691,6 @@ Boundary Graphics::getClosestBoundary(const T& macro, const Rect& die)
 void Graphics::setSoftMacroBrush(gui::Painter& painter,
                                  const SoftMacro& soft_macro)
 {
-  if (soft_macro.getCluster() == nullptr) {  // fixed terminals
-    return;
-  }
-
   if (soft_macro.getCluster()->getClusterType() == StdCellCluster) {
     painter.setBrush(gui::Painter::dark_blue);
   } else if (soft_macro.getCluster()->getClusterType() == HardMacroCluster) {

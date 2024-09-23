@@ -319,10 +319,6 @@ void SimulatedAnnealingCore<T>::calWirelength()
   }
 }
 
-/*
-  TO DO: 1. Test this
-         2. See if graphics has every check that this has.
-*/
 template <class T>
 void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
     const T& macro,
