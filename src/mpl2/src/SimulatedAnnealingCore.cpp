@@ -303,10 +303,10 @@ void SimulatedAnnealingCore<T>::calWirelength()
       continue;
     }
 
-    const float x1 = macros_[net.terminals.first].getPinX();
-    const float y1 = macros_[net.terminals.first].getPinY();
-    const float x2 = macros_[net.terminals.second].getPinX();
-    const float y2 = macros_[net.terminals.second].getPinY();
+    const float x1 = source.getPinX();
+    const float y1 = source.getPinY();
+    const float x2 = target.getPinX();
+    const float y2 = target.getPinY();
     wirelength_ += net.weight * (std::abs(x2 - x1) + std::abs(y2 - y1));
   }
 
