@@ -926,7 +926,9 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
   macro_array->setMacroTilings(tight_packing_tilings);
 }
 
-// The blockages must cover the entire boundary that they represent.
+/*
+  TO DO: Change name to pin_access blockages
+*/
 void HierRTLMP::setIOClustersBlockages()
 {
   if (!tree_->maps.bterm_to_inst.empty()) {
@@ -938,56 +940,74 @@ void HierRTLMP::setIOClustersBlockages()
 
   const float depth = computeIOBlockagesDepth(io_clusters, die);
 
-  bool design_has_none_constraint = false;
-  for (Cluster* io_cluster : io_clusters) {
-    if (io_cluster->getConstraintBoundary() == NONE) {
-      design_has_none_constraint = true;
-      break;
-    }
-  }
-
-  /*
-    TO DO: This should be a combination of both constraint types.
-  */
   for (Cluster* io_cluster : io_clusters) {
     Boundary constraint_boundary = io_cluster->getConstraintBoundary();
+    createPinAccessBlockage(constraint_boundary, depth, die);
+  }
 
-    if (constraint_boundary == L || design_has_none_constraint) {
-      const Rect left_io_blockage(
-          die.xMin(), die.yMin(), die.xMin() + depth, die.yMax());
-
-      boundary_to_io_blockage_[L] = left_io_blockage;
-      macro_blockages_.push_back(left_io_blockage);
+  if (boundary_to_io_blockage_.empty()) {
+    // If there are no constraints at all, give freedom to SA so it 
+    // doesn't have to deal with pin access blockages in all boundaries.
+    // This will help SA not relying on extreme utilizations to
+    // converge for designs such as sky130hd/uW.
+    if (tree_->blocked_boundaries.empty()) {
+      return;
     }
 
-    if (constraint_boundary == T || design_has_none_constraint) {
-      const Rect top_io_blockage(
-          die.xMin(), die.yMax() - depth, die.xMax(), die.yMax());
-
-      boundary_to_io_blockage_[T] = top_io_blockage;
-      macro_blockages_.push_back(top_io_blockage);
+    // There are only -exclude constraints, so we create pin access
+    // blockages based on the boundaries that are not blocked.
+    if (tree_->blocked_boundaries.find(L)
+        == tree_->blocked_boundaries.end()) {
+      createPinAccessBlockage(L, depth, die);
     }
 
-    if (constraint_boundary == R || design_has_none_constraint) {
-      const Rect right_io_blockage(
-          die.xMax() - depth, die.yMin(), die.xMax(), die.yMax());
-
-      boundary_to_io_blockage_[R] = right_io_blockage;
-      macro_blockages_.push_back(right_io_blockage);
+    if (tree_->blocked_boundaries.find(R)
+        == tree_->blocked_boundaries.end()) {
+      createPinAccessBlockage(R, depth, die);
     }
 
-    if (constraint_boundary == B || design_has_none_constraint) {
-      const Rect bottom_io_blockage(
-          die.xMin(), die.yMin(), die.xMax(), die.yMin() + depth);
-
-      boundary_to_io_blockage_[B] = bottom_io_blockage;
-      macro_blockages_.push_back(bottom_io_blockage);
+    if (tree_->blocked_boundaries.find(B)
+        == tree_->blocked_boundaries.end()) {
+      createPinAccessBlockage(B, depth, die);
     }
 
-    // Ensure we don't stack blockages.
-    if (design_has_none_constraint) {
-      break;
+    if (tree_->blocked_boundaries.find(T)
+        == tree_->blocked_boundaries.end()) {
+      createPinAccessBlockage(T, depth, die);
     }
+  }
+}
+
+void HierRTLMP::createPinAccessBlockage(Boundary constraint_boundary,
+                             const float depth,
+                             const Rect& die)
+{
+  if (constraint_boundary == L) {
+    const Rect left_io_blockage(
+        die.xMin(), die.yMin(), die.xMin() + depth, die.yMax());
+    boundary_to_io_blockage_[L] = left_io_blockage;
+    macro_blockages_.push_back(left_io_blockage);
+  }
+
+  if (constraint_boundary == T) {
+    const Rect top_io_blockage(
+        die.xMin(), die.yMax() - depth, die.xMax(), die.yMax());
+    boundary_to_io_blockage_[T] = top_io_blockage;
+    macro_blockages_.push_back(top_io_blockage);
+  }
+
+  if (constraint_boundary == R) {
+    const Rect right_io_blockage(
+        die.xMax() - depth, die.yMin(), die.xMax(), die.yMax());
+    boundary_to_io_blockage_[R] = right_io_blockage;
+    macro_blockages_.push_back(right_io_blockage);
+  }
+
+  if (constraint_boundary == B) {
+    const Rect bottom_io_blockage(
+        die.xMin(), die.yMin(), die.xMax(), die.yMin() + depth);
+    boundary_to_io_blockage_[B] = bottom_io_blockage;
+    macro_blockages_.push_back(bottom_io_blockage);
   }
 }
 

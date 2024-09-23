@@ -166,6 +166,9 @@ class HierRTLMP
   std::vector<Cluster*> getIOClusters();
   float computeIOBlockagesDepth(std::vector<Cluster*> io_clusters,
                                 const Rect& die);
+  void createPinAccessBlockage(Boundary constraint_boundary,
+                               float depth,
+                               const Rect& die);
   void setPlacementBlockages();
 
   // Fine Shaping
