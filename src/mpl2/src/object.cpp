@@ -263,7 +263,7 @@ std::string Cluster::getClusterTypeString() const
   std::string cluster_type;
 
   if (is_io_cluster_) {
-    return "BundledIO";
+    return "IO";
   }
 
   switch (type_) {

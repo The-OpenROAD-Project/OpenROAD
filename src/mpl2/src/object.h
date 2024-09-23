@@ -300,7 +300,11 @@ class Cluster
   // all the macros in the cluster
   std::vector<HardMacro*> hard_macros_;
 
-  // We model bundled IOS (Pads) as a cluster with no area
+  /*
+    TO DO: CHECK THIS COMMENT BELOW
+  */
+
+  // We model pads as clusters with no area
   // The position be the center of IOs
   bool is_io_cluster_ = false;
   Boundary constraint_boundary_ = NONE;

@@ -25,7 +25,6 @@ rtl_macro_placer
     [-tolerance tolerance]     
     [-max_num_level max_num_level] 
     [-coarsening_ratio coarsening_ratio]
-    [-num_bundled_ios num_bundled_ios]
     [-large_net_threshold large_net_threshold]
     [-signature_net_threshold signature_net_threshold]
     [-halo_width halo_width] 
@@ -61,7 +60,6 @@ rtl_macro_placer
 | `-tolerance` | Add a margin to the minimum and maximum number of macros/std cells in a cluster. For min, we multiply by (1 - `tol`), and for the max (1 + `tol`). This is to improve the robustness of hierarchical clustering. The allowed values are floats `[0, 1)`, and the default value is `0.1`. |
 | `-max_num_level` | Maximum depth of physical hierarchical tree. The default value is `2`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-coarsening_ratio` | The larger the coarsening_ratio, the faster the convergence process. The allowed values are floats, and the default value is `10.0`. |
-| `-num_bundled_ios` | Specifies the number of bundled pins for the left, right, top, and bottom boundaries. The default value is `3`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-large_net_threshold` | Ignore nets with many connections during clustering, such as global nets. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-signature_net_threshold` | Minimum number of connections between two clusters to be identified as connected. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-halo_width` | Horizontal/vertical halo around macros (microns). The allowed values are floats, and the default value is `0.0`. |

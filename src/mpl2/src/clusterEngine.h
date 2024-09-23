@@ -131,7 +131,6 @@ struct PhysicalHierarchy
   int base_min_std_cell{0};
 
   int max_level{0};
-  int bundled_ios_per_edge{0};
   int large_net_threshold{0};  // used to ignore global nets
   int min_net_count_for_connection{0};
   float cluster_size_ratio{0.0f};

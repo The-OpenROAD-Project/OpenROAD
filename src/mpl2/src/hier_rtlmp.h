@@ -103,7 +103,6 @@ class HierRTLMP
   void setHaloHeight(float halo_height);
 
   // Hierarchical Clustering Related Options
-  void setNumBundledIOsPerBoundary(int num_bundled_ios);
   void setClusterSize(int max_num_macro,
                       int min_num_macro,
                       int max_num_inst,
@@ -162,10 +161,10 @@ class HierRTLMP
   void calculateChildrenTilings(Cluster* parent);
   void calculateMacroTilings(Cluster* cluster);
   void setTightPackingTilings(Cluster* macro_array);
-  void setIOClustersBlockages();
+  void setPinAccessBlockages();
   std::vector<Cluster*> getIOClusters();
-  float computeIOBlockagesDepth(std::vector<Cluster*> io_clusters,
-                                const Rect& die);
+  float computePinAccessBlockagesDepth(std::vector<Cluster*> io_clusters,
+                                       const Rect& die);
   void createPinAccessBlockage(Boundary constraint_boundary,
                                float depth,
                                const Rect& die);

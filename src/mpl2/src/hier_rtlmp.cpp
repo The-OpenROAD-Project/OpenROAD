@@ -147,10 +147,6 @@ void HierRTLMP::setHaloHeight(float halo_height)
 }
 
 // Options related to clustering
-void HierRTLMP::setNumBundledIOsPerBoundary(int num_bundled_ios)
-{
-  tree_->bundled_ios_per_edge = num_bundled_ios;
-}
 
 void HierRTLMP::setClusterSize(int max_num_macro,
                                int min_num_macro,
@@ -244,7 +240,7 @@ void HierRTLMP::setReportDirectory(const char* report_directory)
 //      b) Placement of Macros (one macro cluster at a time).
 // 5) Boundary Pushing
 //      Push macro clusters to the boundaries of the design if they don't
-//      overlap with either bundled IOs' blockages or other macros.
+//      overlap with either pin access blockages or other macros.
 // 6) Orientation Improvement
 //      Attempts macro flipping to improve WR.
 void HierRTLMP::run()
@@ -362,7 +358,7 @@ void HierRTLMP::runCoarseShaping()
 
   calculateChildrenTilings(tree_->root.get());
 
-  setIOClustersBlockages();
+  setPinAccessBlockages();
   setPlacementBlockages();
 }
 
@@ -926,10 +922,7 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
   macro_array->setMacroTilings(tight_packing_tilings);
 }
 
-/*
-  TO DO: Change name to pin_access blockages
-*/
-void HierRTLMP::setIOClustersBlockages()
+void HierRTLMP::setPinAccessBlockages()
 {
   if (!tree_->maps.bterm_to_inst.empty()) {
     return;
@@ -938,7 +931,7 @@ void HierRTLMP::setIOClustersBlockages()
   std::vector<Cluster*> io_clusters = getIOClusters();
   const Rect die = dbuToMicrons(block_->getDieArea());
 
-  const float depth = computeIOBlockagesDepth(io_clusters, die);
+  const float depth = computePinAccessBlockagesDepth(io_clusters, die);
 
   for (Cluster* io_cluster : io_clusters) {
     Boundary constraint_boundary = io_cluster->getConstraintBoundary();
@@ -946,7 +939,7 @@ void HierRTLMP::setIOClustersBlockages()
   }
 
   if (boundary_to_io_blockage_.empty()) {
-    // If there are no constraints at all, give freedom to SA so it 
+    // If there are no constraints at all, give freedom to SA so it
     // doesn't have to deal with pin access blockages in all boundaries.
     // This will help SA not relying on extreme utilizations to
     // converge for designs such as sky130hd/uW.
@@ -956,31 +949,27 @@ void HierRTLMP::setIOClustersBlockages()
 
     // There are only -exclude constraints, so we create pin access
     // blockages based on the boundaries that are not blocked.
-    if (tree_->blocked_boundaries.find(L)
-        == tree_->blocked_boundaries.end()) {
+    if (tree_->blocked_boundaries.find(L) == tree_->blocked_boundaries.end()) {
       createPinAccessBlockage(L, depth, die);
     }
 
-    if (tree_->blocked_boundaries.find(R)
-        == tree_->blocked_boundaries.end()) {
+    if (tree_->blocked_boundaries.find(R) == tree_->blocked_boundaries.end()) {
       createPinAccessBlockage(R, depth, die);
     }
 
-    if (tree_->blocked_boundaries.find(B)
-        == tree_->blocked_boundaries.end()) {
+    if (tree_->blocked_boundaries.find(B) == tree_->blocked_boundaries.end()) {
       createPinAccessBlockage(B, depth, die);
     }
 
-    if (tree_->blocked_boundaries.find(T)
-        == tree_->blocked_boundaries.end()) {
+    if (tree_->blocked_boundaries.find(T) == tree_->blocked_boundaries.end()) {
       createPinAccessBlockage(T, depth, die);
     }
   }
 }
 
 void HierRTLMP::createPinAccessBlockage(Boundary constraint_boundary,
-                             const float depth,
-                             const Rect& die)
+                                        const float depth,
+                                        const Rect& die)
 {
   if (constraint_boundary == L) {
     const Rect left_io_blockage(
@@ -1024,11 +1013,12 @@ std::vector<Cluster*> HierRTLMP::getIOClusters()
   return io_clusters;
 }
 
-// The depth of IO clusters' blockages is generated based on:
+// The depth of pin access blockages is computed based on:
 // 1) Amount of std cell area in the design.
 // 2) Extension of the IO clusters across the design's boundaries.
-float HierRTLMP::computeIOBlockagesDepth(std::vector<Cluster*> io_clusters,
-                                         const Rect& die)
+float HierRTLMP::computePinAccessBlockagesDepth(
+    std::vector<Cluster*> io_clusters,
+    const Rect& die)
 {
   float io_clusters_extension = 0.0;
 
@@ -1065,7 +1055,7 @@ float HierRTLMP::computeIOBlockagesDepth(std::vector<Cluster*> io_clusters,
              MPL,
              "coarse_shaping",
              1,
-             "IO clusters blokaged depth = {}",
+             "Pin access blockages depth = {}",
              depth);
 
   return depth;
@@ -1213,7 +1203,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
 
   findOverlappingBlockages(macro_blockages, placement_blockages, outline);
 
-  // We store the bundled io clusters to push them into the macros' vector
+  // We store the io clusters to push them into the macros' vector
   // only after it is already populated with the clusters we're trying to
   // place. This will facilitate how we deal with fixed terminals in SA moves.
   std::vector<Cluster*> io_clusters;
@@ -2197,7 +2187,7 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
 
   findOverlappingBlockages(macro_blockages, placement_blockages, outline);
 
-  // We store the bundled io clusters to push them into the macros' vector
+  // We store the io clusters to push them into the macros' vector
   // only after it is already populated with the clusters we're trying to
   // place. This will facilitate how we deal with fixed terminals in SA moves.
   std::vector<Cluster*> io_clusters;
@@ -2695,7 +2685,7 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
 
   findOverlappingBlockages(macro_blockages, placement_blockages, outline);
 
-  // We store the bundled io clusters to push them into the macros' vector
+  // We store the io clusters to push them into the macros' vector
   // only after it is already populated with the clusters we're trying to
   // place. This will facilitate how we deal with fixed terminals in SA moves.
   std::vector<Cluster*> io_clusters;
