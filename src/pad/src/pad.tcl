@@ -420,6 +420,10 @@ proc rdl_route {args} {
     keys {-layer -width -spacing -bump_via -pad_via -turn_penalty} \
     flags {-allow45}
 
+  if { [llength $args] == 1 } {
+    set args [lindex $args 0]
+  }
+
   sta::parse_port_net_args $args sta_ports sta_nets
   set nets []
   foreach net $sta_nets {
