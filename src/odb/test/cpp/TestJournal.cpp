@@ -65,7 +65,10 @@ BOOST_FIXTURE_TEST_CASE(test_undo_inst_destroy, F_DEFAULT)
 
 BOOST_FIXTURE_TEST_CASE(test_undo_net_create, F_DEFAULT)
 {
-  in_eco([&]() { dbNet::create(block, "n"); });
+  in_eco([&]() {
+    auto net = dbNet::create(block, "n");
+    net->setSigType(dbSigType::SIGNAL);
+  });
   BOOST_TEST(block->findNet("n") == nullptr);
 }
 

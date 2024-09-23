@@ -50,12 +50,10 @@ namespace drt {
 using utl::ThreadException;
 
 template <typename T>
-void FlexPA::prepPoint_pin_mergePinShapes(
-    std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
-    T* pin,
-    frInstTerm* inst_term,
-    const bool is_shrink)
+std::vector<gtl::polygon_90_set_data<frCoord>>
+FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
 {
+  std::vector<gtl::polygon_90_set_data<frCoord>> pin_shapes;
   frInst* inst = nullptr;
   if (inst_term) {
     inst = inst_term->getInst();
@@ -113,11 +111,10 @@ void FlexPA::prepPoint_pin_mergePinShapes(
       using boost::polygon::operators::operator+=;
       pin_shapes[layer_num] += poly;
     } else {
-      logger_->error(
-          DRT, 67, "FlexPA prepPoint_pin_mergePinShapes unsupported shape.");
-      exit(1);
+      logger_->error(DRT, 67, "FlexPA mergePinShapes unsupported shape.");
     }
   }
+  return pin_shapes;
 }
 
 void FlexPA::prepPoint_pin_genPoints_rect_genGrid(
@@ -198,10 +195,9 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
   auto ap = std::make_unique<frAccessPoint>(fpt, layer_num);
   if (allow_planar) {
     const auto lower_layer = getDesign()->getTech()->getLayer(layer_num);
-    ap->setAccess(frDirEnum::W, true);
-    ap->setAccess(frDirEnum::E, true);
-    ap->setAccess(frDirEnum::S, true);
-    ap->setAccess(frDirEnum::N, true);
+    for (const frDirEnum dir : frDirEnumPlanar) {
+      ap->setAccess(dir, true);
+    }
     // rectonly forbid wrongway planar access
     // rightway on grid only forbid off track rightway planar access
     // horz layer
@@ -229,17 +225,13 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
       }
     }
   } else {
-    ap->setAccess(frDirEnum::W, false);
-    ap->setAccess(frDirEnum::E, false);
-    ap->setAccess(frDirEnum::S, false);
-    ap->setAccess(frDirEnum::N, false);
+    for (const frDirEnum dir : frDirEnumPlanar) {
+      ap->setAccess(dir, false);
+    }
   }
   ap->setAccess(frDirEnum::D, false);
-  if (allow_via) {
-    ap->setAccess(frDirEnum::U, true);
-  } else {
-    ap->setAccess(frDirEnum::U, false);
-  }
+  ap->setAccess(frDirEnum::U, allow_via);
+
   ap->setAllowVia(allow_via);
   ap->setType((frAccessPointEnum) low_cost, true);
   ap->setType((frAccessPointEnum) high_cost, false);
@@ -856,6 +848,10 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   auto layer = getDesign()->getTech()->getLayer(ap->getLayerNum());
   auto ps = std::make_unique<frPathSeg>();
   auto style = layer->getDefaultSegStyle();
+  const bool vert_dir = (dir == frDirEnum::S || dir == frDirEnum::N);
+  const bool wrong_dir
+      = (layer->getDir() == dbTechLayerDir::HORIZONTAL && vert_dir)
+        || (layer->getDir() == dbTechLayerDir::VERTICAL && !vert_dir);
   if (dir == frDirEnum::W || dir == frDirEnum::S) {
     ps->setPoints(end_point, begin_point);
     style.setEndStyle(frcTruncateEndStyle, 0);
@@ -863,14 +859,8 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
     ps->setPoints(begin_point, end_point);
     style.setBeginStyle(frcTruncateEndStyle, 0);
   }
-  if (layer->getDir() == dbTechLayerDir::VERTICAL) {
-    if (dir == frDirEnum::W || dir == frDirEnum::E) {
-      style.setWidth(layer->getWrongDirWidth());
-    }
-  } else {
-    if (dir == frDirEnum::S || dir == frDirEnum::N) {
-      style.setWidth(layer->getWrongDirWidth());
-    }
+  if (wrong_dir) {
+    style.setWidth(layer->getWrongDirWidth());
   }
   ps->setLayerNum(ap->getLayerNum());
   ps->setStyle(style);
@@ -897,6 +887,7 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
     design_rule_checker.addTargetObj(pin->getTerm());
   }
   design_rule_checker.initPA0(getDesign());
+  auto pin_term = pin->getTerm();
   frBlockObject* owner;
   if (inst_term) {
     if (inst_term->hasNet()) {
@@ -905,10 +896,10 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
       owner = inst_term;
     }
   } else {
-    if (pin->getTerm()->hasNet()) {
-      owner = pin->getTerm()->getNet();
+    if (pin_term->hasNet()) {
+      owner = pin_term->getNet();
     } else {
-      owner = pin->getTerm();
+      owner = pin_term;
     }
   }
   design_rule_checker.addPAObj(ps.get(), owner);
@@ -919,11 +910,8 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   design_rule_checker.main();
   design_rule_checker.end();
 
-  if (design_rule_checker.getMarkers().empty()) {
-    ap->setAccess(dir, true);
-  } else {
-    ap->setAccess(dir, false);
-  }
+  const bool no_drv = design_rule_checker.getMarkers().empty();
+  ap->setAccess(dir, no_drv);
 
   if (graphics_) {
     graphics_->setPlanarAP(ap, ps.get(), design_rule_checker.getMarkers());
@@ -1117,14 +1105,13 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(
     frInstTerm* inst_term,
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys)
 {
-  return prepPoint_pin_checkPoint_viaDir_helper(
-             ap, via, pin, inst_term, layer_polys, frDirEnum::E)
-         || prepPoint_pin_checkPoint_viaDir_helper(
-             ap, via, pin, inst_term, layer_polys, frDirEnum::W)
-         || prepPoint_pin_checkPoint_viaDir_helper(
-             ap, via, pin, inst_term, layer_polys, frDirEnum::S)
-         || prepPoint_pin_checkPoint_viaDir_helper(
-             ap, via, pin, inst_term, layer_polys, frDirEnum::N);
+  for (const frDirEnum dir : frDirEnumPlanar) {
+    if (prepPoint_pin_checkPoint_viaDir_helper(
+            ap, via, pin, inst_term, layer_polys, dir)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 template <typename T>
@@ -1136,17 +1123,19 @@ bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     frDirEnum dir)
 {
-  auto upperlayer = getTech()->getLayer(via->getViaDef()->getLayer2Num());
-  if (!USENONPREFTRACKS || upperlayer->isUnidirectional()) {
-    if (upperlayer->isHorizontal()
-        && (dir == frDirEnum::S || dir == frDirEnum::N)) {
+  auto upper_layer = getTech()->getLayer(via->getViaDef()->getLayer2Num());
+  const bool vert_dir = (dir == frDirEnum::S || dir == frDirEnum::N);
+  const bool wrong_dir = (upper_layer->isHorizontal() && vert_dir)
+                         || (upper_layer->isVertical() && !vert_dir);
+  auto style = upper_layer->getDefaultSegStyle();
+
+  if (wrong_dir) {
+    if (!USENONPREFTRACKS || upper_layer->isUnidirectional()) {
       return false;
     }
-    if (!upperlayer->isHorizontal()
-        && (dir == frDirEnum::W || dir == frDirEnum::E)) {
-      return false;
-    }
+    style.setWidth(upper_layer->getWrongDirWidth());
   }
+
   const Point begin_point = ap->getPoint();
   const bool is_block
       = inst_term
@@ -1166,7 +1155,6 @@ bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
   }
   // PS
   auto ps = std::make_unique<frPathSeg>();
-  auto style = upperlayer->getDefaultSegStyle();
   if (dir == frDirEnum::W || dir == frDirEnum::S) {
     ps->setPoints(end_point, begin_point);
     style.setEndStyle(frcTruncateEndStyle, 0);
@@ -1174,16 +1162,7 @@ bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
     ps->setPoints(begin_point, end_point);
     style.setBeginStyle(frcTruncateEndStyle, 0);
   }
-  if (upperlayer->getDir() == dbTechLayerDir::VERTICAL) {
-    if (dir == frDirEnum::W || dir == frDirEnum::E) {
-      style.setWidth(upperlayer->getWrongDirWidth());
-    }
-  } else {
-    if (dir == frDirEnum::S || dir == frDirEnum::N) {
-      style.setWidth(upperlayer->getWrongDirWidth());
-    }
-  }
-  ps->setLayerNum(upperlayer->getLayerNum());
+  ps->setLayerNum(upper_layer->getLayerNum());
   ps->setStyle(style);
   if (inst_term && inst_term->hasNet()) {
     ps->addToNet(inst_term->getNet());
@@ -1200,6 +1179,8 @@ bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
   Rect tmp_box(begin_point, begin_point);
   Rect ext_box;
   tmp_box.bloat(extension, ext_box);
+  auto pin_term = pin->getTerm();
+  auto pin_net = pin_term->getNet();
   design_rule_checker.setExtBox(ext_box);
   design_rule_checker.setDrcBox(ext_box);
   if (inst_term) {
@@ -1208,10 +1189,8 @@ bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
       design_rule_checker.addTargetObj(inst_term->getInst());
     }
   } else {
-    if (!pin->getTerm()->getNet()
-        || !pin->getTerm()->getNet()->getNondefaultRule()
-        || AUTO_TAPER_NDR_NETS) {
-      design_rule_checker.addTargetObj(pin->getTerm());
+    if (!pin_net || !pin_net->getNondefaultRule() || AUTO_TAPER_NDR_NETS) {
+      design_rule_checker.addTargetObj(pin_term);
     }
   }
 
@@ -1224,10 +1203,10 @@ bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
       owner = inst_term;
     }
   } else {
-    if (pin->getTerm()->hasNet()) {
-      owner = pin->getTerm()->getNet();
+    if (pin_term->hasNet()) {
+      owner = pin_net;
     } else {
-      owner = pin->getTerm();
+      owner = pin_term;
     }
   }
   design_rule_checker.addPAObj(ps.get(), owner);
@@ -1239,10 +1218,8 @@ bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
   design_rule_checker.main();
   design_rule_checker.end();
 
-  bool no_drv = false;
-  if (design_rule_checker.getMarkers().empty()) {
-    no_drv = true;
-  }
+  const bool no_drv = design_rule_checker.getMarkers().empty();
+
   if (graphics_) {
     graphics_->setViaAP(ap, via, design_rule_checker.getMarkers());
   }
@@ -1259,10 +1236,9 @@ void FlexPA::prepPoint_pin_checkPoint(
     bool deep_search)
 {
   if (!deep_search) {
-    prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::W, pin, inst_term);
-    prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::E, pin, inst_term);
-    prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::S, pin, inst_term);
-    prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::N, pin, inst_term);
+    for (const frDirEnum dir : frDirEnumPlanar) {
+      prepPoint_pin_checkPoint_planar(ap, polys, dir, pin, inst_term);
+    }
   }
   prepPoint_pin_checkPoint_via(
       ap, polys, polyset, frDirEnum::U, pin, inst_term, deep_search);
@@ -1488,8 +1464,8 @@ int FlexPA::prepPoint_pin(T* pin, frInstTerm* inst_term)
     graphics_->startPin(pin, inst_term, inst_class);
   }
 
-  std::vector<gtl::polygon_90_set_data<frCoord>> pin_shapes;
-  prepPoint_pin_mergePinShapes(pin_shapes, pin, inst_term);
+  std::vector<gtl::polygon_90_set_data<frCoord>> pin_shapes
+      = mergePinShapes(pin, inst_term);
 
   for (auto upper : {frAccessPointEnum::OnGrid,
                      frAccessPointEnum::HalfGrid,

@@ -122,7 +122,7 @@ class FlexPA
     unique_insts_.setDesign(in);
   }
   void applyPatternsFile(const char* file_path);
-  void getViaRawPriority(frViaDef* via_def, ViaRawPriorityTuple& priority);
+  ViaRawPriorityTuple getViaRawPriority(frViaDef* via_def);
   bool isSkipInstTermLocal(frInstTerm* in);
   bool isSkipInstTerm(frInstTerm* in);
   bool isDistributed() const { return !remote_host_.empty(); }
@@ -143,11 +143,8 @@ class FlexPA
   template <typename T>
   int prepPoint_pin(T* pin, frInstTerm* inst_term = nullptr);
   template <typename T>
-  void prepPoint_pin_mergePinShapes(
-      std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
-      T* pin,
-      frInstTerm* inst_term,
-      bool is_shrink = false);
+  std::vector<gtl::polygon_90_set_data<frCoord>>
+  mergePinShapes(T* pin, frInstTerm* inst_term, bool is_shrink = false);
   // type 0 -- on-grid; 1 -- half-grid; 2 -- center; 3 -- via-enc-opt
   template <typename T>
   void prepPoint_pin_genPoints(

@@ -260,6 +260,33 @@ proc place_pad {args} {
     [info exists flags(-mirror)]
 }
 
+sta::define_cmd_args "place_pads" {-row row_name \
+                                   pads}
+
+proc place_pads {args} {
+  sta::parse_key_args "place_pads" args \
+    keys {-row} \
+    flags {}
+
+  if { $args == {} } {
+    utl::error PAD 39 "place_pads requires a list of instances."
+  }
+
+  if { [llength $args] == 1 } {
+    set args [lindex $args 0]
+  }
+
+  set insts []
+  foreach inst $args {
+    lappend insts [pad::find_instance $inst]
+  }
+
+  pad::assert_required place_pads -row
+  pad::place_pads \
+    $insts \
+    [pad::get_row $keys(-row)]
+}
+
 sta::define_cmd_args "place_io_fill" {-row row_name \
                                       [-permit_overlaps masters] \
                                       masters}
@@ -393,9 +420,21 @@ proc rdl_route {args} {
     keys {-layer -width -spacing -bump_via -pad_via -turn_penalty} \
     flags {-allow45}
 
+  sta::parse_port_net_args $args sta_ports sta_nets
   set nets []
-  foreach net [get_nets {*}$args] {
-    lappend nets [sta::sta_to_db_net $net]
+  foreach net $sta_nets {
+    lappend [sta::sta_to_db_net $net]
+  }
+  foreach port $sta_ports {
+    set bterm [sta::sta_to_db_port $port]
+    set net [$bterm getNet]
+    if { $net != "NULL" } {
+      lappend nets $net
+    }
+  }
+
+  if { [llength $nets] == 0 } {
+    utl::error PAD 42 "No nets found to route"
   }
 
   pad::assert_required rdl_route -layer

@@ -38,9 +38,9 @@ UniqueInsts::UniqueInsts(frDesign* design,
 {
 }
 
-void UniqueInsts::getPrefTrackPatterns(
-    std::vector<frTrackPattern*>& pref_track_patterns)
+std::vector<frTrackPattern*> UniqueInsts::getPrefTrackPatterns()
 {
+  std::vector<frTrackPattern*> pref_track_patterns;
   for (const auto& track_pattern : design_->getTopBlock()->getTrackPatterns()) {
     const bool is_vertical_track = track_pattern->isHorizontal();
     const frLayerNum layer_num = track_pattern->getLayerNum();
@@ -55,11 +55,12 @@ void UniqueInsts::getPrefTrackPatterns(
       }
     }
   }
+  return pref_track_patterns;
 }
 
-void UniqueInsts::initMaster2PinLayerRange(
-    MasterLayerRange& master_to_pin_layer_range)
+UniqueInsts::MasterLayerRange UniqueInsts::initMasterToPinLayerRange()
 {
+  MasterLayerRange master_to_pin_layer_range;
   std::set<frString> masters;
   for (odb::dbInst* inst : target_insts_) {
     masters.insert(inst->getMaster()->getName());
@@ -105,6 +106,7 @@ void UniqueInsts::initMaster2PinLayerRange(
     max_layer_num = std::min(max_layer_num + 2, num_layers);
     master_to_pin_layer_range[master] = {min_layer_num, max_layer_num};
   }
+  return master_to_pin_layer_range;
 }
 
 bool UniqueInsts::hasTrackPattern(frTrackPattern* tp, const Rect& box) const
@@ -209,11 +211,9 @@ void UniqueInsts::computeUnique(
 
 void UniqueInsts::initUniqueInstance()
 {
-  std::vector<frTrackPattern*> pref_track_patterns;
-  getPrefTrackPatterns(pref_track_patterns);
+  std::vector<frTrackPattern*> pref_track_patterns = getPrefTrackPatterns();
 
-  MasterLayerRange master_to_pin_layer_range;
-  initMaster2PinLayerRange(master_to_pin_layer_range);
+  MasterLayerRange master_to_pin_layer_range = initMasterToPinLayerRange();
 
   computeUnique(master_to_pin_layer_range, pref_track_patterns);
 }

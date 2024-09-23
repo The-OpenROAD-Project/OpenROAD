@@ -1747,12 +1747,19 @@ void dbJournal::undo_updateNetField()
 {
   uint net_id;
   _log.pop(net_id);
-  //_dbNet * net = (_dbNet *) dbNet::getNet(_block, net_id );
+  _dbNet* net = (_dbNet*) dbNet::getNet(_block, net_id);
 
   int field;
   _log.pop(field);
 
   switch ((_dbNet::Field) field) {
+    case _dbNet::FLAGS: {
+      uint* flags = (uint*) &net->_flags;
+      _log.pop(*flags);
+      uint new_flags;
+      _log.pop(new_flags);
+      break;
+    }
     default: {
       _logger->critical(
           utl::ODB, 408, "No undo_updateNetField support for field {}", field);
