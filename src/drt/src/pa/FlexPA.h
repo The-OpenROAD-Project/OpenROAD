@@ -171,7 +171,6 @@ class FlexPA
   template <typename T>
   std::vector<gtl::polygon_90_set_data<frCoord>>
   mergePinShapes(T* pin, frInstTerm* inst_term, bool is_shrink = false);
-
   // type 0 -- on-grid; 1 -- half-grid; 2 -- center; 3 -- via-enc-opt
   /**
    * @brief Generates all necessary access points from all pin_shapes (pin)

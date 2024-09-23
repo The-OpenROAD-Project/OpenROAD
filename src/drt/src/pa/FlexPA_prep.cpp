@@ -111,9 +111,7 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
       using boost::polygon::operators::operator+=;
       pin_shapes[layer_num] += poly;
     } else {
-      logger_->error(
-          DRT, 67, "FlexPA prepPoint_pin_mergePinShapes unsupported shape.");
-      exit(1);
+      logger_->error(DRT, 67, "FlexPA mergePinShapes unsupported shape.");
     }
   }
   return pin_shapes;

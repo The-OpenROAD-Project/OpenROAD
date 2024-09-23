@@ -93,7 +93,8 @@ class UniqueInsts
    *
    * Not every track pattern is a preferred one,
    * this function acts as filter of design_->getTopBlock()->getTrackPatterns()
-   * to only take the preferred ones.
+   * to only take the preferred ones, which are the ones in the routing
+   * direction of the layer.
    *
    * @return A vector of track patterns objects.
    */
