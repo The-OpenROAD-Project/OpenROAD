@@ -1105,12 +1105,13 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(
     frInstTerm* inst_term,
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys)
 {
-  bool some_dir_is_legal = false;
   for (const frDirEnum dir : frDirEnumPlanar) {
-    some_dir_is_legal |= prepPoint_pin_checkPoint_viaDir_helper(
-        ap, via, pin, inst_term, layer_polys, dir);
+    if (prepPoint_pin_checkPoint_viaDir_helper(
+            ap, via, pin, inst_term, layer_polys, dir)) {
+      return true;
+    }
   }
-  return some_dir_is_legal;
+  return false;
 }
 
 template <typename T>
