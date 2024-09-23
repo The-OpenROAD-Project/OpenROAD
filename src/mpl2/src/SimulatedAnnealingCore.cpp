@@ -101,19 +101,19 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
 template <class T>
 void SimulatedAnnealingCore<T>::setBlockedBoundariesForIOs()
 {
-  if (boundaryIsBlocked(Boundary::L)) {
+  if (blocked_boundaries_.find(Boundary::L) != blocked_boundaries_.end()) {
     left_is_blocked_ = true;
   }
 
-  if (boundaryIsBlocked(Boundary::R)) {
+  if (blocked_boundaries_.find(Boundary::R) != blocked_boundaries_.end()) {
     right_is_blocked_ = true;
   }
 
-  if (boundaryIsBlocked(Boundary::B)) {
+  if (blocked_boundaries_.find(Boundary::B) != blocked_boundaries_.end()) {
     bottom_is_blocked_ = true;
   }
 
-  if (boundaryIsBlocked(Boundary::T)) {
+  if (blocked_boundaries_.find(Boundary::T) != blocked_boundaries_.end()) {
     top_is_blocked_ = true;
   }
 }
@@ -376,12 +376,6 @@ void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
     const float y2 = io.getPinY();
     wirelength_ += net_weight * std::abs(y2 - y1);
   }
-}
-
-template <class T>
-bool SimulatedAnnealingCore<T>::boundaryIsBlocked(Boundary boundary)
-{
-  return blocked_boundaries_.find(boundary) != blocked_boundaries_.end();
 }
 
 // We consider the macro outside the outline based on the location of

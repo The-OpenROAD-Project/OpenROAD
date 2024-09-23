@@ -539,7 +539,8 @@ void Graphics::drawDistToIoConstraintBoundary(gui::Painter& painter,
     const Rect die = io_cluster->getBBox();
     Boundary closest_boundary = getClosestBoundary(macro, die);
 
-    if (boundaryIsBlocked(closest_boundary)) {
+    if (blocked_boundaries_.find(closest_boundary)
+        != blocked_boundaries_.end()) {
       return;
     }
 
@@ -636,11 +637,6 @@ Boundary Graphics::getClosestBoundary(const T& macro, const Rect& die)
   }
 
   return closest_boundary;
-}
-
-bool Graphics::boundaryIsBlocked(Boundary boundary)
-{
-  return blocked_boundaries_.find(boundary) != blocked_boundaries_.end();
 }
 
 // Give some transparency to mixed and hard so we can see overlap with

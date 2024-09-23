@@ -108,7 +108,6 @@ class Graphics : public gui::Renderer, public Mpl2Observer
                                      Boundary closest_boundary);
   template <typename T>
   Boundary getClosestBoundary(const T& macro, const Rect& die);
-  bool boundaryIsBlocked(Boundary boundary);
   void addOutlineOffsetToLine(odb::Point& from, odb::Point& to);
   void setSoftMacroBrush(gui::Painter& painter, const SoftMacro& soft_macro);
   void fetchSoftAndHard(Cluster* parent,
