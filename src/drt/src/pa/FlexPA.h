@@ -82,8 +82,6 @@ class FlexPA
   frDesign* design_;
   Logger* logger_;
   dst::Distributed* dist_;
-  const std::array<frDirEnum, 4> cardinal_dirs_
-      = {frDirEnum::E, frDirEnum::W, frDirEnum::S, frDirEnum::N};
 
   std::unique_ptr<FlexPAGraphics> graphics_;
   std::string debugPinName_;

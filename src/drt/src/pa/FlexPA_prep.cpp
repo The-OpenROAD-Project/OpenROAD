@@ -277,7 +277,7 @@ void FlexPA::createAccessPoint(std::vector<std::unique_ptr<frAccessPoint>>& aps,
   auto ap = std::make_unique<frAccessPoint>(fpt, layer_num);
   if (allow_planar) {
     const auto lower_layer = getDesign()->getTech()->getLayer(layer_num);
-    for (frDirEnum dir : cardinal_dirs_) {
+    for (const frDirEnum dir : frDirEnumPlanar) {
       ap->setAccess(dir, true);
     }
     // rectonly forbid wrongway planar access
@@ -307,7 +307,7 @@ void FlexPA::createAccessPoint(std::vector<std::unique_ptr<frAccessPoint>>& aps,
       }
     }
   } else {
-    for (auto dir : cardinal_dirs_) {
+    for (const frDirEnum dir : frDirEnumPlanar) {
       ap->setAccess(dir, false);
     }
   }
@@ -1107,12 +1107,12 @@ bool FlexPA::checkViaAccess(
     frInstTerm* inst_term,
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys)
 {
-  bool some_dir_is_legal = false;
-  for (frDirEnum dir : cardinal_dirs_) {
-    some_dir_is_legal
-        |= checkDirectionalViaAccess(ap, via, pin, inst_term, layer_polys, dir);
+  for (const frDirEnum dir : frDirEnumPlanar) {
+    if (checkDirectionalViaAccess(ap, via, pin, inst_term, layer_polys, dir)) {
+      return true;
+    }
   }
-  return some_dir_is_legal;
+  return false;
 }
 
 template <typename T>
@@ -1237,7 +1237,7 @@ void FlexPA::addAccess(frAccessPoint* ap,
                        bool deep_search)
 {
   if (!deep_search) {
-    for (frDirEnum dir : cardinal_dirs_) {
+    for (const frDirEnum dir : frDirEnumPlanar) {
       addPlanarAccess(ap, polys, dir, pin, inst_term);
     }
   }
