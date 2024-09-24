@@ -2868,7 +2868,7 @@ void Resizer::journalBegin()
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
   incrementalParasiticsBegin();
-  db_->beginEco(block_);
+  odb::dbDatabase::beginEco(block_);
   if (isCallBackRegistered()) {
     db_cbk_->removeOwner();
     setCallBackRegistered(false);
@@ -2885,12 +2885,12 @@ void Resizer::journalBegin()
 void Resizer::journalEnd()
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal end");
-  if (!db_->ecoEmpty(block_)) {
+  if (!odb::dbDatabase::ecoEmpty(block_)) {
     updateParasitics();
     sta_->findRequireds();
   }
   incrementalParasiticsEnd();
-  db_->endEco(block_);
+  odb::dbDatabase::endEco(block_);
   resized_inst_map_.clear();
   inserted_buffers_.clear();
   inserted_buffer_set_.clear();
@@ -3252,8 +3252,8 @@ void Resizer::journalRestore(int& resize_count,
   debugPrint(logger_, RSZ, "journal", 1, "journal restore starts >>>");
   init();
 
-  if (db_->ecoEmpty(block_)) {
-    db_->endEco(block_);
+  if (odb::dbDatabase::ecoEmpty(block_)) {
+    odb::dbDatabase::endEco(block_);
     debugPrint(logger_,
                RSZ,
                "journal",
@@ -3274,8 +3274,8 @@ void Resizer::journalRestore(int& resize_count,
   }
 
   // Odb callbacks invalidate parasitics
-  db_->endEco(block_);
-  db_->undoEco(block_);
+  odb::dbDatabase::endEco(block_);
+  odb::dbDatabase::undoEco(block_);
 
   // Done with restore.  Disable netlist observer.
   db_cbk_->removeOwner();

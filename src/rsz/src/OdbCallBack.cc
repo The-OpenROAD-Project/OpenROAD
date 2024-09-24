@@ -57,7 +57,6 @@ using sta::Net;
 using sta::NetConnectedPinIterator;
 using sta::Network;
 using sta::Pin;
-using utl::Logger;
 
 OdbCallBack::OdbCallBack(Resizer* resizer,
                          Network* network,

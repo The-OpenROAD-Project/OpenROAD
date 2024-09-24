@@ -41,10 +41,10 @@
 
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
+#include "rsz/OdbCallBack.hh"
 #include "sta/Path.hh"
 #include "sta/UnorderedSet.hh"
 #include "utl/Logger.h"
-#include "rsz/OdbCallBack.hh"
 
 namespace grt {
 class GlobalRouter;
