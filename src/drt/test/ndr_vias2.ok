@@ -38,6 +38,10 @@
 [INFO DRT-0033] met4 shape region query size = 0.
 [INFO DRT-0033] via4 shape region query size = 0.
 [INFO DRT-0033] met5 shape region query size = 0.
+[INFO DRT-1000] Pin clkbuf_0_clk/X not in any guide. Attempting to patch guides to cover (at least part of) the pin.
+[INFO DRT-1000] Pin _443_/CLK not in any guide. Attempting to patch guides to cover (at least part of) the pin.
+[INFO DRT-1000] Pin clkbuf_2_2__f_clk/X not in any guide. Attempting to patch guides to cover (at least part of) the pin.
+[INFO DRT-1000] Pin _284_/A not in any guide. Attempting to patch guides to cover (at least part of) the pin.
 [INFO DRT-0178] Init guide query.
 [INFO DRT-0036] FR_MASTERSLICE guide region query size = 0.
 [INFO DRT-0036] FR_VIA guide region query size = 0.
@@ -45,12 +49,12 @@
 [INFO DRT-0036] mcon guide region query size = 0.
 [INFO DRT-0036] met1 guide region query size = 49.
 [INFO DRT-0036] via guide region query size = 0.
-[INFO DRT-0036] met2 guide region query size = 48.
+[INFO DRT-0036] met2 guide region query size = 47.
 [INFO DRT-0036] via2 guide region query size = 0.
-[INFO DRT-0036] met3 guide region query size = 47.
+[INFO DRT-0036] met3 guide region query size = 46.
 [INFO DRT-0036] via3 guide region query size = 0.
-[INFO DRT-0036] met4 guide region query size = 53.
+[INFO DRT-0036] met4 guide region query size = 52.
 [INFO DRT-0036] via4 guide region query size = 0.
-[INFO DRT-0036] met5 guide region query size = 31.
+[INFO DRT-0036] met5 guide region query size = 30.
 [INFO DRT-0179] Init gr pin query.
 No differences found.

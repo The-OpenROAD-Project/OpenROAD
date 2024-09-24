@@ -63,18 +63,6 @@ std::vector<frRect> getPinShapes(const frBlockObject* pin)
 }
 
 /**
- * @brief Returns bounding box of the given pin.
- * @note Assumes pin's typeId() is either frcBTerm or frcInstTerm
- */
-Rect getPinBBox(const frBlockObject* pin)
-{
-  if (pin->typeId() == frcBTerm) {
-    return static_cast<const frBTerm*>(pin)->getBBox();
-  } else {
-    return static_cast<const frInstTerm*>(pin)->getBBox(true);
-  }
-}
-/**
  * @brief Returns name of the given pin.
  * @note Assumes pin's typeId() is either frcBTerm or frcInstTerm
  */
@@ -86,17 +74,79 @@ std::string getPinName(const frBlockObject* pin)
     return static_cast<const frInstTerm*>(pin)->getName();
   }
 }
+/**
+ * Returns the preferred access point for required pin.
+ *
+ * The function returns the preferred acces point of the iterm from the
+ * required pin index. If there is no preferred access point set for that pin,
+ * then the first access point for that pin is returned.
+ *
+ * @param iterm The ITerm we are considering.
+ * @param pin_idx The pin index of the pin we are considering.
+ * @returns The preferred access point if found, and nullptr otherwise.
+ */
+frAccessPoint* getPrefAp(const frInstTerm* iterm, const int pin_idx)
+{
+  const int pin_access_idx = iterm->getInst()->getPinAccessIdx();
+  const auto pin = iterm->getTerm()->getPins().at(pin_idx).get();
+  if (!pin->hasPinAccess()) {
+    return nullptr;
+  }
+  frAccessPoint* pref_ap = (iterm->getAccessPoints())[pin_idx];
 
+  if (!pref_ap) {
+    auto pa = pin->getPinAccess(pin_access_idx);
+    if (pa->getNumAccessPoints() != 0) {
+      pref_ap = pin->getPinAccess(pin_access_idx)->getAccessPoint(0);
+    }
+  }
+  return pref_ap;
+}
+/**
+ * @brief Checks if any of the pins' accesspoints is covered by the net's guides
+ *
+ * @param pin The pin we are checking.
+ * @param guides The list of the net guides.
+ * @returns True if any access point is covered by any guide.
+ */
 bool isPinCoveredByGuides(const frBlockObject* pin,
                           const std::vector<frRect>& guides)
 {
   std::vector<frRect> pin_shapes = getPinShapes(pin);
   // checks if there is a guide that overlaps with any of the pin shapes
-  for (const auto& pin_rect : pin_shapes) {
-    for (const auto& guide : guides) {
-      if (guide.getLayerNum() == pin_rect.getLayerNum()
-          && guide.getBBox().overlaps(pin_rect.getBBox())) {
-        return true;
+  if (pin->typeId() == frcInstTerm) {
+    auto iterm = static_cast<const frInstTerm*>(pin);
+    auto transform = iterm->getInst()->getTransform();
+    transform.setOrient(dbOrientType(dbOrientType::R0));
+    for (int i = 0; i < iterm->getTerm()->getPins().size(); i++) {
+      auto pref_ap = getPrefAp(iterm, i);
+      if (pref_ap) {
+        Point ap_loc = pref_ap->getPoint();
+        transform.apply(ap_loc);
+        for (const auto& guide : guides) {
+          if (guide.getLayerNum() == pref_ap->getLayerNum()
+              && guide.getBBox().overlaps(ap_loc)) {
+            return true;
+          }
+        }
+      }
+    }
+  } else {
+    auto bterm = static_cast<const frBTerm*>(pin);
+    for (const auto& bpin : bterm->getPins()) {
+      if (!bpin->hasPinAccess()) {
+        continue;
+      }
+      const auto& access_points = bpin->getPinAccess(0)->getAccessPoints();
+      if (access_points.empty()) {
+        continue;
+      }
+      const frAccessPoint* pref_ap = access_points[0].get();
+      for (const auto& guide : guides) {
+        if (guide.getLayerNum() == pref_ap->getLayerNum()
+            && guide.getBBox().overlaps(pref_ap->getPoint())) {
+          return true;
+        }
       }
     }
   }
@@ -129,11 +179,11 @@ void findIntersectingGuides(const int x,
 }
 
 /**
- * @brief Returns the best pin shape location to later use for patching guides.
+ * @brief Returns the best gcell location to later use for patching guides.
  *
- * This function iterates over all the pin shapes and finds the one with the
- * highest intersection area with a single gcell. It also returns the list of
- * guides that intersect with the pin's gcells.
+ * The function returns the gcell location with the highest number of access
+ * points. It also returns the list of guides that intersect with the chosen
+ * gcell.
  *
  * @param candidate_guides_indices The resulting list of indices of the
  * intersecting guides with all gcells the pin touches
@@ -144,56 +194,67 @@ Point3D findBestPinLocation(frDesign* design,
                             const std::vector<frRect>& guides,
                             std::set<int>& candidate_guides_indices)
 {
-  Rect pin_bbox = getPinBBox(pin);
-  // adjusting pin bounding box as pins tangent to gcell aren't considered as
-  // part of them
-  pin_bbox.init(pin_bbox.xMin() + 1,
-                pin_bbox.yMin() + 1,
-                pin_bbox.xMax() - 1,
-                pin_bbox.yMax() - 1);
-
-  // set pin_bbox to gCell coords
-  const Point ll_gcell = design->getTopBlock()->getGCellIdx(pin_bbox.ll());
-  const Point ur_gcell = design->getTopBlock()->getGCellIdx(pin_bbox.ur());
-
-  // finds the gCell with higher pinShape overlapping area (approximate)
-  frArea best_area = 0, area = 0;
-  Point3D best_pin_loc_idx;
-  std::vector<frRect> pin_shapes = getPinShapes(pin);
-  for (int x = ll_gcell.x(); x <= ur_gcell.x(); x++) {
-    for (int y = ll_gcell.y(); y <= ur_gcell.y(); y++) {
-      const Point gcell_center(x, y);
-      const Rect gcell_box = design->getTopBlock()->getGCellBox(gcell_center);
-      for (int z = 0; z < (int) design->getTech()->getLayers().size(); z++) {
-        if (design->getTech()->getLayer(z)->getType()
-            != dbTechLayerType::ROUTING) {
-          continue;
-        }
-        area = 0;
-        for (const auto& pinRect : pin_shapes) {
-          if (pinRect.getLayerNum() != z) {
-            continue;
-          }
-          Rect intersection;
-          gcell_box.intersection(pinRect.getBBox(), intersection);
-          area += intersection.area();
-        }
-        if (area > best_area) {
-          best_area = area;
-          best_pin_loc_idx.set(x, y, z);
-        }
+  std::map<Point3D, int> gcell_to_ap_count;  // map from gcell index to number
+                                             // of accesspoints it holds.
+  if (pin->typeId() == frcInstTerm) {
+    auto iterm = static_cast<const frInstTerm*>(pin);
+    auto transform = iterm->getInst()->getTransform();
+    transform.setOrient(odb::dbOrientType::R0);
+    for (int pin_idx = 0; pin_idx < iterm->getTerm()->getPins().size();
+         pin_idx++) {
+      auto pref_ap = getPrefAp(iterm, pin_idx);
+      if (!pref_ap) {
+        continue;
       }
-      // finds guides in the neighboring gCells
-      findIntersectingGuides(
-          x - 1, y, candidate_guides_indices, guides, design);
-      findIntersectingGuides(
-          x + 1, y, candidate_guides_indices, guides, design);
-      findIntersectingGuides(
-          x, y - 1, candidate_guides_indices, guides, design);
-      findIntersectingGuides(
-          x, y + 1, candidate_guides_indices, guides, design);
+      auto ap_loc = pref_ap->getPoint();
+      transform.apply(ap_loc);
+      auto ap_gcell_idx = design->getTopBlock()->getGCellIdx(ap_loc);
+      gcell_to_ap_count[Point3D(ap_gcell_idx, pref_ap->getLayerNum())]++;
+    }
+  } else {
+    auto bterm = static_cast<const frBTerm*>(pin);
+    for (const auto& bpin : bterm->getPins()) {
+      if (!bpin->hasPinAccess()) {
+        continue;
+      }
+      const auto& access_points = bpin->getPinAccess(0)->getAccessPoints();
+      if (access_points.empty()) {
+        continue;
+      }
+      auto pref_ap = access_points[0].get();
+      auto ap_gcell_idx
+          = design->getTopBlock()->getGCellIdx(pref_ap->getPoint());
+      gcell_to_ap_count[Point3D(ap_gcell_idx, pref_ap->getLayerNum())]++;
     }
   }
+  Point3D best_pin_loc_idx;
+  int highest_count = 0;
+  for (const auto& [gcell_idx, count] : gcell_to_ap_count) {
+    if (count > highest_count) {
+      best_pin_loc_idx = gcell_idx;
+      highest_count = count;
+    }
+  }
+  findIntersectingGuides(best_pin_loc_idx.x() - 1,
+                         best_pin_loc_idx.y(),
+                         candidate_guides_indices,
+                         guides,
+                         design);
+  findIntersectingGuides(best_pin_loc_idx.x() + 1,
+                         best_pin_loc_idx.y(),
+                         candidate_guides_indices,
+                         guides,
+                         design);
+  findIntersectingGuides(best_pin_loc_idx.x(),
+                         best_pin_loc_idx.y() - 1,
+                         candidate_guides_indices,
+                         guides,
+                         design);
+  findIntersectingGuides(best_pin_loc_idx.x(),
+                         best_pin_loc_idx.y() + 1,
+                         candidate_guides_indices,
+                         guides,
+                         design);
   return best_pin_loc_idx;
 }
 /**
@@ -226,11 +287,12 @@ int findClosestGuide(const Point3D& best_pin_loc_coords,
   return closest_guide_idx;
 }
 /**
- * @brief Adjusts the guide point to the coordinate of the nearest gcell center.
+ * @brief Adjusts the guide point to the coordinate of the nearest gcell
+ * center.
  *
- * Given a point X on a guide perimeter, this function adjust it to X' which is
- * the center of the nearest gcell from the most left, right, north, or south
- * gcells of the guide. See the following figure for more clarification
+ * Given a point X on a guide perimeter, this function adjust it to X' which
+ * is the center of the nearest gcell from the most left, right, north, or
+ * south gcells of the guide. See the following figure for more clarification
  *
  * =========================X===========
  * |        |        |        |        |
@@ -239,7 +301,8 @@ int findClosestGuide(const Point3D& best_pin_loc_coords,
  * |        |        |        |        |
  * |        |        |        |        |
  * =====================================
- * @param guide_pt A point on the guide perimeter that is adjusted from X to X'
+ * @param guide_pt A point on the guide perimeter that is adjusted from X to
+ * X'
  * @param guide_bbox The bounding box of the guide on which relies guide_pt
  * @param gcell_half_size_horz Half the horizontal size of the gcell
  * @param gcell_half_size_vert Half the vertical size of the gcell
@@ -267,8 +330,8 @@ void adjustGuidePoint(Point3D& guide_pt,
  * @brief Extends the chosen guide to cover the best_pin_loc_coords.
  *
  * The function extends the chosen guide to cover the best_pin_loc_coords if
- * possible. The function also adjusts the guide_pt to the new extension. Check
- * the following figure where X is the original guide_pt, b_pt is the
+ * possible. The function also adjusts the guide_pt to the new extension.
+ * Check the following figure where X is the original guide_pt, b_pt is the
  * best_pin_loc_coords. X' = b_pt should be the resulting guide_pt.
  *
  * =====================================---------------------
@@ -285,8 +348,8 @@ void adjustGuidePoint(Point3D& guide_pt,
  * @param guide The guide we are attempting to extend to cover
  * best_pin_loc_coords
  * @param guide_pt The center of the gcell on the guide from which we should
- * extend. See `adjustGuidePoint()` as this guide_pt is after adjustment. It is
- * updated if the guide is extended.
+ * extend. See `adjustGuidePoint()` as this guide_pt is after adjustment. It
+ * is updated if the guide is extended.
  * @see adjustGuidePoint()
  */
 void extendGuide(frDesign* design,
@@ -323,8 +386,8 @@ void extendGuide(frDesign* design,
  * guides and the pin z coordinate.
  *
  * The function creates guides of 1-gcell size centered at best_pin_loc_coords
- * on all layers in the range ]start_z, best_pin_loc_coords.z()]. start_z is the
- * layerNum of the chosen closest guide.
+ * on all layers in the range ]start_z, best_pin_loc_coords.z()]. start_z is
+ * the layerNum of the chosen closest guide.
  *
  * @param best_pin_loc_coords The gcell center point of the chosen pin shape
  * @param start_z The layerNum of the chosen closest guide.
@@ -351,8 +414,8 @@ void fillGuidesUpToZ(const Point3D& best_pin_loc_coords,
   }
 }
 /**
- * @brief Connects the guides with the best pin shape location (on the 2D plane
- * only)
+ * @brief Connects the guides with the best pin shape location (on the 2D
+ * plane only)
  *
  * The function creates a patch guide that connects the closest guide to
  * best_pin_loc_coords (without consideration to different layers)
@@ -413,8 +476,8 @@ void logGuidesRead(const int num_guides, utl::Logger* logger)
  * - Above the sepecified top routing layer
  * - Below the specified bottom routing layer and the via access layer
  * @note If a layer is invalid, this produces an error unless it is above the
- * top routing layer for a net that has pins above the top routing layer. In the
- * latest case, we just ignore the guide and the pin is handled by
+ * top routing layer for a net that has pins above the top routing layer. In
+ * the latest case, we just ignore the guide and the pin is handled by
  * io::Parser::setBTerms_addPinFig_helper
  * @param layer_num The layer_num of the guide returned by this function if it
  * is a valid layer
@@ -506,7 +569,8 @@ void initGuideIntervals(const std::vector<frRect>& rects,
   }
 }
 /**
- * @brief Checks if there exists an interval with the specified passed arguments
+ * @brief Checks if there exists an interval with the specified passed
+ * arguments
  *
  * The function checks if there exists an interval on layer_num with any track
  * index from begin_idx to end_idx that contains both indices; track_idx1 and
@@ -616,34 +680,6 @@ void addTouchingGuidesBridges(TrackIntervalsByLayer& intvs, utl::Logger* logger)
     intvs[bridge.layer_num][bridge.track_idx].insert(
         Interval::closed(bridge.begin_idx, bridge.end_idx));
   }
-}
-/**
- * Returns the preferred access point for required pin.
- *
- * The function returns the preferred acces point of the iterm from the required
- * pin index. If there is no preferred access point set for that pin, then the
- * first access point for that pin is returned.
- *
- * @param iterm The ITerm we are considering.
- * @param pin_idx The pin index of the pin we are considering.
- * @returns The preferred access point if found, and nullptr otherwise.
- */
-frAccessPoint* getPrefAp(const frInstTerm* iterm, const int pin_idx)
-{
-  const int pin_access_idx = iterm->getInst()->getPinAccessIdx();
-  const auto pin = iterm->getTerm()->getPins().at(pin_idx).get();
-  if (!pin->hasPinAccess()) {
-    return nullptr;
-  }
-  frAccessPoint* pref_ap = (iterm->getAccessPoints())[pin_idx];
-
-  if (!pref_ap) {
-    auto pa = pin->getPinAccess(pin_access_idx);
-    if (pa->getNumAccessPoints() != 0) {
-      pref_ap = pin->getPinAccess(pin_access_idx)->getAccessPoint(0);
-    }
-  }
-  return pref_ap;
 }
 
 }  // namespace
@@ -1234,18 +1270,10 @@ void GuideProcessor::initGCellPinMap(
     std::map<Point3D, frBlockObjectSet>& gcell_pin_map) const
 {
   for (auto instTerm : net->getInstTerms()) {
-    if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB"
-        && mapITermAccessPointsToGCells(gcell_pin_map, instTerm)) {
-      continue;
-    }
-    mapPinShapesToGCells(gcell_pin_map, instTerm);
+    mapITermAccessPointsToGCells(gcell_pin_map, instTerm);
   }
   for (auto term : net->getBTerms()) {
-    if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB"
-        && mapBTermAccessPointsToGCells(gcell_pin_map, term)) {
-      continue;
-    }
-    mapPinShapesToGCells(gcell_pin_map, term);
+    mapBTermAccessPointsToGCells(gcell_pin_map, term);
   }
 }
 
