@@ -2023,20 +2023,17 @@ void TritonCTS::balanceMacroRegisterLatencies()
   openSta_->ensureGraph();
   openSta_->searchPreamble();
   openSta_->ensureClkNetwork();
-  openSta_->updateTiming(false);
   sta::Graph* graph = openSta_->graph();
   for (auto iter = builders_->rbegin(); iter != builders_->rend(); ++iter) {
     TreeBuilder* registerBuilder = *iter;
     if (registerBuilder->getTreeType() == TreeType::RegisterTree) {
       TreeBuilder* macroBuilder = registerBuilder->getParent();
       if (macroBuilder) {
-        computeAveSinkArrivals(registerBuilder, graph);// -> computeSinkArrivalRecur -> getVertexClkArrival
+        // Update graph information after possible buffers inserted
+        openSta_->updateTiming(false);
+        computeAveSinkArrivals(registerBuilder, graph);
         computeAveSinkArrivals(macroBuilder, graph);
         adjustLatencies(macroBuilder, registerBuilder);
-        // Update graph information after possible buffers inserted
-        openSta_->ensureClkNetwork();
-        openSta_->ensureClkArrivals();
-        openSta_->updateTiming(false);
       }
     }
   }
@@ -2137,13 +2134,8 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
         // either register or macro input pin
         sta::Pin* pin = network_->dbToSta(iterm);
         if (pin) {
-          sta::Vertex* regVertex = graph->pinDrvrVertex(pin);
-          float arrival = getVertexClkArrival(regVertex, topClokcNet, iterm);
-          float inputArrival = openSta_->pinArrival(
-              pin, sta::RiseFall::rise(), sta::MinMax::max());
-          if(arrival != inputArrival) {
-            logger_->report("arrival: {}, pin Arrival: {}", arrival, inputArrival);
-          }
+          sta::Vertex* sinkVertex = graph->pinDrvrVertex(pin);
+          float arrival = getVertexClkArrival(sinkVertex, topClokcNet, iterm);
           // add insertion delay
           float insDelay = 0.0;
           sta::LibertyCell* libCell
