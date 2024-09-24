@@ -432,7 +432,7 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin)
       if (inst->getMaster()->getSite() == site) {
         continue;
       }
-      if (inst->getPlacementStatus().isFixed()) {
+      if (inst->getPlacementStatus().isFixed() || inst->isDoNotTouch()) {
         continue;
       }
       Instance* sta_inst = db_network_->dbToSta(inst);
