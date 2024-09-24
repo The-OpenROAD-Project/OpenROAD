@@ -106,7 +106,7 @@ proc rtl_macro_placer { args } {
   set fence_uy 100000000.0
 
   set area_weight 0.1
-  set outline_weight 100.0
+  set outline_weight 200.0
   set wirelength_weight 100.0
   set guidance_weight 10.0
   set fence_weight 10.0
