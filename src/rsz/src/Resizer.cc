@@ -432,6 +432,9 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin)
       if (inst->getMaster()->getSite() == site) {
         continue;
       }
+      if (inst->getPlacementStatus().isFixed()) {
+        continue;
+      }
       Instance* sta_inst = db_network_->dbToSta(inst);
       LibertyCell* cell = network_->libertyCell(sta_inst);
       LibertyCellSeq* equiv_cells = sta_->equivCells(cell);
