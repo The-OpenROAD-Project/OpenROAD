@@ -1239,10 +1239,6 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
 
   const std::string topRegBufferName = "clkbuf_regs_0_" + clockNet.getSdcName();
   odb::dbInst* topRegBuffer = block_->findInst(topRegBufferName.c_str());
-  odb::dbNet* topNet = nullptr;
-  if (topRegBuffer) {
-    topNet = getFirstInput(topRegBuffer)->getNet();
-  }
 
   disconnectAllSinksFromNet(topClockNet);
 
@@ -1252,7 +1248,6 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
         = block_->findInst(builder->getTopBufferName().c_str());
     if (topRegBuffer) {
       odb::dbITerm* topRegBufferInputPin = getFirstInput(topRegBuffer);
-      odb::dbITerm* topRegBufferOutPin = topRegBuffer->getFirstOutput();
       topRegBufferInputPin->connect(builder->getDrivingNet());
     }
   }
