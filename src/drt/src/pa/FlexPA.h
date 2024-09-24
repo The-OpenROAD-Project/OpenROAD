@@ -237,13 +237,35 @@ class FlexPA
       frDirEnum dir,
       T* pin,
       frInstTerm* inst_term);
-  bool prepPoint_pin_checkPoint_planar_ep(
-      Point& end_point,
+
+  /**
+   * @brief Generates an end_point given an begin_point in the direction
+   *
+   * @param layer_polys Pin Polygons on the layer (used for a check)
+   * TODO: maybe the check can be moves to isPointOusideShapes, but not sure
+   * @param begin_point The begin reference point
+   * @param layer_num layer where the point is being created
+   * @param dir direction where the layer will be created
+   * @param is_block wether the begin_point is from a macro block
+   *
+   * @returns the generated end point
+   */
+  Point genEndPoint(
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       const Point& begin_point,
-      frLayerNum layer_num,
-      frDirEnum dir,
-      bool is_block);
+      const frLayerNum layer_num,
+      const frDirEnum dir,
+      const bool is_block);
+
+  /**
+   * @brief Checks if a point is outside the layer_polygons
+   *
+   * @return if the point is outside the pin shapes
+   */
+  bool isPointOutsideShapes(
+      Point& point,
+      const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys);
+
   template <typename T>
   void prepPoint_pin_checkPoint_via(
       frAccessPoint* ap,

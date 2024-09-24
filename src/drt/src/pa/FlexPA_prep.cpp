@@ -754,8 +754,7 @@ void FlexPA::prepPoint_pin_genPoints(
   }
 }
 
-bool FlexPA::prepPoint_pin_checkPoint_planar_ep(
-    Point& end_point,
+Point FlexPA::genEndPoint(
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     const Point& begin_point,
     const frLayerNum layer_num,
@@ -807,17 +806,21 @@ bool FlexPA::prepPoint_pin_checkPoint_planar_ep(
     default:
       logger_->error(DRT, 70, "Unexpected direction in getPlanarEP.");
   }
-  end_point = {x, y};
-  const gtl::point_data<frCoord> pt(x, y);
-  bool outside = true;
+  return {x, y};
+}
+
+bool FlexPA::isPointOutsideShapes(
+    Point& point,
+    const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys)
+{
+  const gtl::point_data<frCoord> pt(point.getX(), point.getY());
   for (auto& layer_poly : layer_polys) {
     if (gtl::contains(layer_poly, pt)) {
-      outside = false;
+      return false;
       break;
     }
   }
-
-  return outside;
+  return true;
 }
 
 template <typename T>
@@ -836,9 +839,9 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   const bool is_block
       = inst_term
         && inst_term->getInst()->getMaster()->getMasterType().isBlock();
-  Point end_point;
-  const bool is_outside = prepPoint_pin_checkPoint_planar_ep(
-      end_point, layer_polys, begin_point, ap->getLayerNum(), dir, is_block);
+  Point end_point
+      = genEndPoint(layer_polys, begin_point, ap->getLayerNum(), dir, is_block);
+  const bool is_outside = isPointOutsideShapes(end_point, layer_polys);
   // skip if two width within shape for standard cell
   if (!is_outside) {
     ap->setAccess(dir, false);
@@ -1140,13 +1143,11 @@ bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
   const bool is_block
       = inst_term
         && inst_term->getInst()->getMaster()->getMasterType().isBlock();
-  Point end_point;
-  prepPoint_pin_checkPoint_planar_ep(end_point,
-                                     layer_polys,
-                                     begin_point,
-                                     via->getViaDef()->getLayer2Num(),
-                                     dir,
-                                     is_block);
+  Point end_point = genEndPoint(layer_polys,
+                                begin_point,
+                                via->getViaDef()->getLayer2Num(),
+                                dir,
+                                is_block);
 
   if (inst_term && inst_term->hasNet()) {
     via->addToNet(inst_term->getNet());
