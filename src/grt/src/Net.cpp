@@ -35,7 +35,6 @@
 
 #include "Net.h"
 
-#include "grt/GlobalRouter.h"
 #include "odb/dbShape.h"
 
 namespace grt {
@@ -110,26 +109,6 @@ bool Net::isLocal()
 void Net::destroyPins()
 {
   pins_.clear();
-}
-
-void Net::destroyITermPin(odb::dbITerm* iterm)
-{
-  pins_.erase(std::remove_if(pins_.begin(),
-                             pins_.end(),
-                             [&](const Pin& pin) {
-                               return pin.getName() == getITermName(iterm);
-                             }),
-              pins_.end());
-}
-
-void Net::destroyBTermPin(odb::dbBTerm* bterm)
-{
-  pins_.erase(std::remove_if(pins_.begin(),
-                             pins_.end(),
-                             [&](const Pin& pin) {
-                               return pin.getName() == bterm->getName();
-                             }),
-              pins_.end());
 }
 
 int Net::getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer)
