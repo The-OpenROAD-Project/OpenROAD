@@ -4730,9 +4730,10 @@ void GRouteDbCbk::inDbNetPreMerge(odb::dbNet* preserved_net,
 
 void GRouteDbCbk::inDbITermPreDisconnect(odb::dbITerm* iterm)
 {
-  // missing net pin update
-  odb::dbNet* net = iterm->getNet();
-  if (net != nullptr && !net->isSpecial()) {
+  odb::dbNet* db_net = iterm->getNet();
+  if (db_net != nullptr && !db_net->isSpecial()) {
+    Net* net = grouter_->getNet(db_net);
+    net->destroyITermPin(iterm);
     grouter_->addDirtyNet(iterm->getNet());
   }
 }
@@ -4757,9 +4758,10 @@ void GRouteDbCbk::inDbBTermPostConnect(odb::dbBTerm* bterm)
 
 void GRouteDbCbk::inDbBTermPreDisconnect(odb::dbBTerm* bterm)
 {
-  // missing net pin update
-  odb::dbNet* net = bterm->getNet();
-  if (net != nullptr && !net->isSpecial()) {
+  odb::dbNet* db_net = bterm->getNet();
+  if (db_net != nullptr && !db_net->isSpecial()) {
+    Net* net = grouter_->getNet(db_net);
+    net->destroyBTermPin(bterm);
     grouter_->addDirtyNet(bterm->getNet());
   }
 }
