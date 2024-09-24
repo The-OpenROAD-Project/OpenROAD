@@ -102,6 +102,42 @@ frAccessPoint* getPrefAp(const frInstTerm* iterm, const int pin_idx)
   }
   return pref_ap;
 }
+std::vector<Point3D> getAccessPoints(const frBlockObject* pin)
+{
+  std::vector<Point3D> result;
+  if (pin->typeId() == frcInstTerm) {
+    auto iterm = static_cast<const frInstTerm*>(pin);
+    auto transform = iterm->getInst()->getTransform();
+    transform.setOrient(odb::dbOrientType::R0);
+    const int pin_access_idx = iterm->getInst()->getPinAccessIdx();
+    for (const auto& mpin : iterm->getTerm()->getPins()) {
+      if (!mpin->hasPinAccess()) {
+        continue;
+      }
+      for (const auto& ap :
+           mpin->getPinAccess(pin_access_idx)->getAccessPoints()) {
+        auto ap_loc = ap->getPoint();
+        transform.apply(ap_loc);
+        result.emplace_back(ap_loc, ap->getLayerNum());
+      }
+    }
+  } else {
+    auto bterm = static_cast<const frBTerm*>(pin);
+    for (const auto& bpin : bterm->getPins()) {
+      if (!bpin->hasPinAccess()) {
+        continue;
+      }
+      for (int i = 0; i < bpin->getNumPinAccess(); i++) {
+        auto pa = bpin->getPinAccess(i);
+        for (const auto& ap : pa->getAccessPoints()) {
+          result.emplace_back(ap->getPoint(), ap->getLayerNum());
+        }
+      }
+    }
+  }
+  return result;
+}
+
 /**
  * @brief Checks if any of the pins' accesspoints is covered by the net's guides
  *
@@ -112,41 +148,11 @@ frAccessPoint* getPrefAp(const frInstTerm* iterm, const int pin_idx)
 bool isPinCoveredByGuides(const frBlockObject* pin,
                           const std::vector<frRect>& guides)
 {
-  std::vector<frRect> pin_shapes = getPinShapes(pin);
-  // checks if there is a guide that overlaps with any of the pin shapes
-  if (pin->typeId() == frcInstTerm) {
-    auto iterm = static_cast<const frInstTerm*>(pin);
-    auto transform = iterm->getInst()->getTransform();
-    transform.setOrient(dbOrientType(dbOrientType::R0));
-    for (int i = 0; i < iterm->getTerm()->getPins().size(); i++) {
-      auto pref_ap = getPrefAp(iterm, i);
-      if (pref_ap) {
-        Point ap_loc = pref_ap->getPoint();
-        transform.apply(ap_loc);
-        for (const auto& guide : guides) {
-          if (guide.getLayerNum() == pref_ap->getLayerNum()
-              && guide.getBBox().overlaps(ap_loc)) {
-            return true;
-          }
-        }
-      }
-    }
-  } else {
-    auto bterm = static_cast<const frBTerm*>(pin);
-    for (const auto& bpin : bterm->getPins()) {
-      if (!bpin->hasPinAccess()) {
-        continue;
-      }
-      const auto& access_points = bpin->getPinAccess(0)->getAccessPoints();
-      if (access_points.empty()) {
-        continue;
-      }
-      const frAccessPoint* pref_ap = access_points[0].get();
-      for (const auto& guide : guides) {
-        if (guide.getLayerNum() == pref_ap->getLayerNum()
-            && guide.getBBox().overlaps(pref_ap->getPoint())) {
-          return true;
-        }
+  for (const auto& ap_loc : getAccessPoints(pin)) {
+    for (const auto& guide : guides) {
+      if (guide.getLayerNum() == ap_loc.z()
+          && guide.getBBox().overlaps(ap_loc)) {
+        return true;
       }
     }
   }
@@ -196,35 +202,19 @@ Point3D findBestPinLocation(frDesign* design,
 {
   std::map<Point3D, int> gcell_to_ap_count;  // map from gcell index to number
                                              // of accesspoints it holds.
-  if (pin->typeId() == frcInstTerm) {
-    auto iterm = static_cast<const frInstTerm*>(pin);
-    auto transform = iterm->getInst()->getTransform();
-    transform.setOrient(odb::dbOrientType::R0);
-    for (int pin_idx = 0; pin_idx < iterm->getTerm()->getPins().size();
-         pin_idx++) {
-      auto pref_ap = getPrefAp(iterm, pin_idx);
-      if (!pref_ap) {
-        continue;
+  frCoord min_dist_to_guides = std::numeric_limits<frCoord>::max();
+  for (const auto& ap_loc : getAccessPoints(pin)) {
+    auto ap_gcell_idx = design->getTopBlock()->getGCellIdx(ap_loc);
+    auto gcell_center = design->getTopBlock()->getGCellCenter(ap_gcell_idx);
+    for (const auto& guide : guides) {
+      auto dist = odb::manhattanDistance(guide.getBBox(), gcell_center);
+      if (dist < min_dist_to_guides) {
+        gcell_to_ap_count.clear();
+        min_dist_to_guides = dist;
+        gcell_to_ap_count[Point3D(ap_gcell_idx, ap_loc.z())]++;
+      } else if (dist == min_dist_to_guides) {
+        gcell_to_ap_count[Point3D(ap_gcell_idx, ap_loc.z())]++;
       }
-      auto ap_loc = pref_ap->getPoint();
-      transform.apply(ap_loc);
-      auto ap_gcell_idx = design->getTopBlock()->getGCellIdx(ap_loc);
-      gcell_to_ap_count[Point3D(ap_gcell_idx, pref_ap->getLayerNum())]++;
-    }
-  } else {
-    auto bterm = static_cast<const frBTerm*>(pin);
-    for (const auto& bpin : bterm->getPins()) {
-      if (!bpin->hasPinAccess()) {
-        continue;
-      }
-      const auto& access_points = bpin->getPinAccess(0)->getAccessPoints();
-      if (access_points.empty()) {
-        continue;
-      }
-      auto pref_ap = access_points[0].get();
-      auto ap_gcell_idx
-          = design->getTopBlock()->getGCellIdx(pref_ap->getPoint());
-      gcell_to_ap_count[Point3D(ap_gcell_idx, pref_ap->getLayerNum())]++;
     }
   }
   Point3D best_pin_loc_idx;
@@ -235,26 +225,15 @@ Point3D findBestPinLocation(frDesign* design,
       highest_count = count;
     }
   }
-  findIntersectingGuides(best_pin_loc_idx.x() - 1,
-                         best_pin_loc_idx.y(),
-                         candidate_guides_indices,
-                         guides,
-                         design);
-  findIntersectingGuides(best_pin_loc_idx.x() + 1,
-                         best_pin_loc_idx.y(),
-                         candidate_guides_indices,
-                         guides,
-                         design);
-  findIntersectingGuides(best_pin_loc_idx.x(),
-                         best_pin_loc_idx.y() - 1,
-                         candidate_guides_indices,
-                         guides,
-                         design);
-  findIntersectingGuides(best_pin_loc_idx.x(),
-                         best_pin_loc_idx.y() + 1,
-                         candidate_guides_indices,
-                         guides,
-                         design);
+  for (int x = -1; x <= 1; x++) {
+    for (int y = -1; y <= 1; y++) {
+      findIntersectingGuides(best_pin_loc_idx.x() + x,
+                             best_pin_loc_idx.y() + y,
+                             candidate_guides_indices,
+                             guides,
+                             design);
+    }
+  }
   return best_pin_loc_idx;
 }
 /**
@@ -977,6 +956,10 @@ void GuideProcessor::patchGuides(frNet* net,
   const Point3D best_pin_loc_coords(
       getDesign()->getTopBlock()->getGCellCenter(best_pin_loc_idx),
       best_pin_loc_idx.z());
+  // logger_->report("BestPinLocation {} {} {}",
+  //                 getPinName(pin),
+  //                 best_pin_loc_coords,
+  //                 getTech()->getLayer(best_pin_loc_idx.z())->getName());
   if (candidate_guides_indices.empty()) {
     logger_->warn(DRT, 1001, "No guide in the pin neighborhood");
     return;
@@ -985,6 +968,7 @@ void GuideProcessor::patchGuides(frNet* net,
   // TODO: test passing layer_change_penalty = gcell size
   const int closest_guide_idx = findClosestGuide(
       best_pin_loc_coords, guides, candidate_guides_indices, 1);
+
   // gets the point in the closer guide that is closer to the bestPinLoc
   patchGuides_helper(
       net, guides, best_pin_loc_idx, best_pin_loc_coords, closest_guide_idx);
@@ -1270,58 +1254,21 @@ void GuideProcessor::initGCellPinMap(
     std::map<Point3D, frBlockObjectSet>& gcell_pin_map) const
 {
   for (auto instTerm : net->getInstTerms()) {
-    mapITermAccessPointsToGCells(gcell_pin_map, instTerm);
+    mapTermAccessPointsToGCells(gcell_pin_map, instTerm);
   }
   for (auto term : net->getBTerms()) {
-    mapBTermAccessPointsToGCells(gcell_pin_map, term);
+    mapTermAccessPointsToGCells(gcell_pin_map, term);
   }
 }
 
-bool GuideProcessor::mapITermAccessPointsToGCells(
+void GuideProcessor::mapTermAccessPointsToGCells(
     std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
-    frInstTerm* inst_term) const
+    frBlockObject* pin) const
 {
-  const size_t num_pins = inst_term->getTerm()->getPins().size();
-  const frInst* inst = inst_term->getInst();
-  dbTransform transform = inst->getTransform();
-  transform.setOrient(dbOrientType(dbOrientType::R0));
-
-  int pins_covered = 0;
-  for (int pin_idx = 0; pin_idx < num_pins; pin_idx++) {
-    const frAccessPoint* pref_ap = getPrefAp(inst_term, pin_idx);
-    if (pref_ap) {
-      Point bp = pref_ap->getPoint();
-      transform.apply(bp);
-      const frLayerNum layer_num = pref_ap->getLayerNum();
-      const Point idx = getDesign()->getTopBlock()->getGCellIdx(bp);
-      gcell_pin_map[Point3D(idx, layer_num)].insert(inst_term);
-      pins_covered++;
-    }
+  for (auto ap_loc : getAccessPoints(pin)) {
+    const Point idx = getDesign()->getTopBlock()->getGCellIdx(ap_loc);
+    gcell_pin_map[Point3D(idx, ap_loc.z())].insert(pin);
   }
-  return (pins_covered == num_pins);
-}
-
-bool GuideProcessor::mapBTermAccessPointsToGCells(
-    std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
-    frBTerm* term) const
-{
-  int pins_covered = 0;
-  for (const auto& pin : term->getPins()) {
-    if (!pin->hasPinAccess()) {
-      continue;
-    }
-    const auto& access_points = pin->getPinAccess(0)->getAccessPoints();
-    if (access_points.empty()) {
-      continue;
-    }
-    const frAccessPoint* pref_ap = access_points[0].get();
-    const Point& bp = pref_ap->getPoint();
-    const frLayerNum layer_num = pref_ap->getLayerNum();
-    const Point idx = getDesign()->getTopBlock()->getGCellIdx(bp);
-    gcell_pin_map[Point3D(idx, layer_num)].insert(term);
-    pins_covered++;
-  }
-  return pins_covered == term->getPins().size();
 }
 
 void GuideProcessor::initPinGCellMap(
