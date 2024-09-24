@@ -3269,7 +3269,11 @@ void Resizer::journalRestore(int& resize_count,
   if (!isCallBackRegistered()) {
     db_cbk_->addOwner(block_);
     setCallBackRegistered(true);
-    debugPrint(logger_, RSZ, "odb", 1, "ODB callback registered for block {}",
+    debugPrint(logger_,
+               RSZ,
+               "odb",
+               1,
+               "ODB callback registered for block {}",
                reinterpret_cast<uintptr_t>(block_));
   }
 

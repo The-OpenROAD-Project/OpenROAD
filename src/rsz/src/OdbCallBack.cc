@@ -74,7 +74,8 @@ void OdbCallBack::inDbInstCreate(dbInst* inst)
              "inDbInstCreate {}",
              inst->getName());
   Instance* sta_inst = db_network_->dbToSta(inst);
-  InstancePinIterator* pin_iter = network_->pinIterator(sta_inst);
+  std::unique_ptr<InstancePinIterator> pin_iter{
+      network_->pinIterator(sta_inst)};
   while (pin_iter->hasNext()) {
     Pin* pin = pin_iter->next();
     Net* net = network_->net(pin);
@@ -82,7 +83,6 @@ void OdbCallBack::inDbInstCreate(dbInst* inst)
       resizer_->parasiticsInvalid(net);
     }
   }
-  delete pin_iter;
 }
 
 void OdbCallBack::inDbNetCreate(dbNet* net)
@@ -145,13 +145,13 @@ void OdbCallBack::inDbInstSwapMasterAfter(dbInst* inst)
              "inDbInstSwapMasterAfter {}",
              inst->getName());
   Instance* sta_inst = db_network_->dbToSta(inst);
-  InstancePinIterator* pin_iter = network_->pinIterator(sta_inst);
+  std::unique_ptr<InstancePinIterator> pin_iter{
+      network_->pinIterator(sta_inst)};
   while (pin_iter->hasNext()) {
     Pin* pin = pin_iter->next();
     Net* net = network_->net(pin);
     resizer_->parasiticsInvalid(net);
   }
-  delete pin_iter;
 }
 
 }  // namespace rsz
