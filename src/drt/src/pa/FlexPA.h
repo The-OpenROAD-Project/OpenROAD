@@ -86,7 +86,6 @@ class FlexPA
   std::unique_ptr<FlexPAGraphics> graphics_;
   std::string debugPinName_;
 
-  // TODO: Check if all this variables are relevant, they are used like, thrice
   int std_cell_pin_gen_ap_cnt_ = 0;
   int std_cell_pin_valid_planar_ap_cnt_ = 0;
   int std_cell_pin_valid_via_ap_cnt_ = 0;
@@ -178,11 +177,11 @@ class FlexPA
    * @param pin pin object
    * @param inst_term instance terminal, owner of the access points
    * @param pin_shapes vector of pin shapes in every layer
-   * @param lower_type TODO: not sure
-   * @param upper_type TODO: not sure
+   * @param lower_type lowest access cost considered
+   * @param upper_type highest access cost considered
    */
   template <typename T>
-  void getAPsFromPinShapes(
+  void genAPsFromPinShapes(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       T* pin,
@@ -190,8 +189,7 @@ class FlexPA
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
       frAccessPointEnum lower_type,
       frAccessPointEnum upper_type);
-  bool enclosesOnTrackPlanarAccess(const gtl::rectangle_data<frCoord>& rect,
-                                   frLayerNum layer_num);
+
   /**
    * @brief Generates all necessary access points from all layer_shapes (pin)
    *
@@ -201,8 +199,8 @@ class FlexPA
    * @param layer_shapes pin shapes on that layer
    * @param layer_num layer in which the shapes exists
    * @param allow_via if via access is allowed
-   * @param lower_type TODO: not sure
-   * @param upper_type TODO: not sure
+   * @param lower_type lowest access cost considered
+   * @param upper_type highest access cost considered
    */
   void genAPsFromLayerShapes(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
@@ -213,6 +211,10 @@ class FlexPA
       bool allow_via,
       frAccessPointEnum lower_type,
       frAccessPointEnum upper_type);
+
+  bool enclosesOnTrackPlanarAccess(const gtl::rectangle_data<frCoord>& rect,
+                                   frLayerNum layer_num);
+
   /**
    * @brief Generates all necessary access points from a rectangle shape (pin
    * fig)
@@ -222,8 +224,8 @@ class FlexPA
    * @param layer_num layer in which the rectangle exists
    * @param allow_planar if planar access is allowed
    * @param allow_via if via access is allowed
-   * @param lower_type TODO: not sure
-   * @param upper_type TODO: not sure
+   * @param lower_type lowest access cost considered
+   * @param upper_type highest access cost considered
    * @param is_macro_cell_pin TODO: not sure
    */
   void genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
@@ -235,6 +237,7 @@ class FlexPA
                       frAccessPointEnum lower_type,
                       frAccessPointEnum upper_type,
                       bool is_macro_cell_pin);
+
   /**
    * @brief Generates an OnGrid access point (on or half track)
    *
@@ -264,6 +267,7 @@ class FlexPA
                      frLayerNum layer_num,
                      frCoord low,
                      frCoord high);
+
   /**
    * @brief Generates an Enclosed Boundary access point
    *
@@ -275,7 +279,8 @@ class FlexPA
                              const gtl::rectangle_data<frCoord>& rect,
                              frLayerNum layer_num,
                              bool is_curr_layer_horz);
-  void initializeAccessPoints(
+
+  void gen_initializeAccessPoints(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       const gtl::rectangle_data<frCoord>& rect,
@@ -300,19 +305,19 @@ class FlexPA
    * @param layer_num access point layer
    * @param allow_planar if the access point allows planar access
    * @param allow_via if the access point allows via access
-   * @param low_cost TODO: not sure
-   * @param high_cost TODO: not sure
+   * @param low_cost lowest access cost considered
+   * @param high_cost highest access cost considered
    */
-  void createAccessPoint(std::vector<std::unique_ptr<frAccessPoint>>& aps,
-                         std::set<std::pair<Point, frLayerNum>>& apset,
-                         const gtl::rectangle_data<frCoord>& maxrect,
-                         frCoord x,
-                         frCoord y,
-                         frLayerNum layer_num,
-                         bool allow_planar,
-                         bool allow_via,
-                         frAccessPointEnum low_cost,
-                         frAccessPointEnum high_cost);
+  void gen_createAccessPoint(std::vector<std::unique_ptr<frAccessPoint>>& aps,
+                             std::set<std::pair<Point, frLayerNum>>& apset,
+                             const gtl::rectangle_data<frCoord>& maxrect,
+                             frCoord x,
+                             frCoord y,
+                             frLayerNum layer_num,
+                             bool allow_planar,
+                             bool allow_via,
+                             frAccessPointEnum low_cost,
+                             frAccessPointEnum high_cost);
 
   /**
    * @brief Sets the allowed accesses of the access points of a given pin.
@@ -324,7 +329,7 @@ class FlexPA
    * @param is_std_cell_pin if the pin if from a standard cell
    */
   template <typename T>
-  void setAPsAccesses(
+  void check_setAPsAccesses(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
       T* pin,
@@ -342,12 +347,12 @@ class FlexPA
    * @param deep_search TODO: not sure
    */
   template <typename T>
-  void addAccess(frAccessPoint* ap,
-                 const gtl::polygon_90_set_data<frCoord>& polyset,
-                 const std::vector<gtl::polygon_90_data<frCoord>>& polys,
-                 T* pin,
-                 frInstTerm* inst_term,
-                 bool deep_search = false);
+  void check_addAccess(frAccessPoint* ap,
+                       const gtl::polygon_90_set_data<frCoord>& polyset,
+                       const std::vector<gtl::polygon_90_data<frCoord>>& polys,
+                       T* pin,
+                       frInstTerm* inst_term,
+                       bool deep_search = false);
 
   /**
    * @brief Tries to add a planar access to in the direction.
@@ -359,7 +364,7 @@ class FlexPA
    * @param inst_term terminal
    */
   template <typename T>
-  void addPlanarAccess(
+  void check_addPlanarAccess(
       frAccessPoint* ap,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       frDirEnum dir,
@@ -378,15 +383,16 @@ class FlexPA
    *
    * @return if any polygon on the layer contains the End Point
    */
-  bool endPointIsOutside(
+  bool check_endPointIsOutside(
       Point& end_point,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       const Point& begin_point,
       frLayerNum layer_num,
       frDirEnum dir,
       bool is_block);
+
   template <typename T>
-  void addViaAccess(
+  void check_addViaAccess(
       frAccessPoint* ap,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       const gtl::polygon_90_set_data<frCoord>& polyset,
@@ -435,6 +441,7 @@ class FlexPA
       frInstTerm* inst_term,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       frDirEnum dir);
+
   template <typename T>
   void updatePinStats(
       const std::vector<std::unique_ptr<frAccessPoint>>& tmp_aps,
@@ -456,6 +463,21 @@ class FlexPA
    * @return if the initialization was sucessful
    */
   template <typename T>
+
+  /**
+   * @brief initializes the accesses of a given pin but only considered
+   * acccesses costed bounded between lower and upper cost.
+   *
+   * @param aps access points of the pin
+   * @param apset data of the access points (auxilary)
+   * @param pin_shapes shapes of the pin
+   * @param pin the pin
+   * @param inst_term terminal
+   * @param lower_type lower bound cost
+   * @param upper_type upper bound cost
+   *
+   * @return if the initialization was sucessful
+   */
   bool initPinAccessCostBounded(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,

@@ -77,14 +77,15 @@ class UniqueInsts
 
   frDesign* getDesign() const { return design_; }
   frTechObject* getTech() const { return design_->getTech(); }
+
   /**
-   * @brief Checks if any terminal has a NonDefaultRule.
+   * @brief Checks if any net related to the instance has a NonDefaultRule.
    *
    * @param inst A cell instance.
    *
    * @return If instance contains a NonDefaultRule net connected to any
    * terminal.
-   * */
+   */
   bool isNDRInst(frInst& inst);
   bool hasTrackPattern(frTrackPattern* tp, const Rect& box) const;
 
@@ -104,7 +105,7 @@ class UniqueInsts
   /**
    * @brief Computes all unique instances data structures
    *
-   * Proxies computeUnique, only starting the input data strcutures before.
+   * Proxies computeUnique, only initializing the input data strcutures before.
    *
    * @todo This function can probably be eliminated
    */
@@ -135,8 +136,9 @@ class UniqueInsts
    */
   void computeUnique(const MasterLayerRange& master_to_pin_layer_range,
                      const std::vector<frTrackPattern*>& pref_track_patterns);
+
   /**
-   * @brief Error Raiser for pin shape
+   * @brief Raises an error if pin shape is illegal.
    *
    * @throws DRT 320/321 if the term has offgrid pin shape
    * @throws DRT 322 if the pin figure is unsuported (not Rect of Polygon)
