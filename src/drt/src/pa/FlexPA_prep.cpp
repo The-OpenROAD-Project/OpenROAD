@@ -502,148 +502,87 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
   }
 
   // gen all full/half grid coords
+  int offset = is_macro_cell_pin ? hwidth : 0;
+  int layer1_rect_min = is_layer1_horz ? gtl::yl(rect) : gtl::xl(rect);
+  int layer1_rect_max = is_layer1_horz ? gtl::yh(rect) : gtl::xh(rect);
+  int layer2_rect_min = is_layer1_horz ? gtl::xl(rect) : gtl::yl(rect);
+  int layer2_rect_max = is_layer1_horz ? gtl::xh(rect) : gtl::yh(rect);
+  std::map<frCoord, frAccessPointEnum>& layer1_coords
+      = is_layer1_horz ? y_coords : x_coords;
+  std::map<frCoord, frAccessPointEnum>& layer2_coords
+      = is_layer1_horz ? x_coords : y_coords;
+
   if (!is_macro_cell_pin || !use_center_line) {
-    if (is_layer1_horz) {
-      genAPOnTrack(y_coords, layer1_track_coords, gtl::yl(rect), gtl::yh(rect));
-      genAPOnTrack(x_coords,
+    genAPOnTrack(
+        layer1_coords, layer1_track_coords, layer1_rect_min, layer1_rect_max);
+    genAPOnTrack(layer2_coords,
+                 layer2_track_coords,
+                 layer2_rect_min + offset,
+                 layer2_rect_max - offset);
+    if (lower_type >= frAccessPointEnum::Center) {
+      genAPCentered(layer1_coords, layer_num, layer1_rect_min, layer1_rect_max);
+    }
+    if (lower_type >= frAccessPointEnum::EncOpt) {
+      genAPEnclosedBoundary(layer1_coords, rect, layer_num, is_layer1_horz);
+    }
+    if (upper_type >= frAccessPointEnum::Center) {
+      genAPCentered(layer2_coords,
+                    layer_num,
+                    layer2_rect_min + offset,
+                    layer2_rect_max - offset);
+    }
+    if (upper_type >= frAccessPointEnum::EncOpt) {
+      genAPEnclosedBoundary(layer2_coords, rect, layer_num, !is_layer1_horz);
+    }
+    if (lower_type >= frAccessPointEnum::NearbyGrid) {
+      genAPOnTrack(layer1_coords,
+                   layer1_track_coords,
+                   layer1_rect_max,
+                   layer1_rect_max + min_width_layer1,
+                   true);
+      genAPOnTrack(layer1_coords,
+                   layer1_track_coords,
+                   layer1_rect_min - min_width_layer1,
+                   layer1_rect_min,
+                   true);
+    }
+    if (upper_type >= frAccessPointEnum::NearbyGrid) {
+      genAPOnTrack(layer2_coords,
                    layer2_track_coords,
-                   gtl::xl(rect) + (is_macro_cell_pin ? hwidth : 0),
-                   gtl::xh(rect) - (is_macro_cell_pin ? hwidth : 0));
-      if (lower_type >= frAccessPointEnum::Center) {
-        genAPCentered(y_coords, layer_num, gtl::yl(rect), gtl::yh(rect));
-      }
-      if (lower_type >= frAccessPointEnum::EncOpt) {
-        genAPEnclosedBoundary(y_coords, rect, layer_num, is_layer1_horz);
-      }
-      if (upper_type >= frAccessPointEnum::Center) {
-        genAPCentered(x_coords,
-                      layer_num,
-                      gtl::xl(rect) + (is_macro_cell_pin ? hwidth : 0),
-                      gtl::xh(rect) - (is_macro_cell_pin ? hwidth : 0));
-      }
-      if (upper_type >= frAccessPointEnum::EncOpt) {
-        genAPEnclosedBoundary(x_coords, rect, layer_num, !is_layer1_horz);
-      }
-      if (lower_type >= frAccessPointEnum::NearbyGrid) {
-        genAPOnTrack(y_coords,
-                     layer1_track_coords,
-                     gtl::yh(rect),
-                     gtl::yh(rect) + min_width_layer1,
-                     true);
-        genAPOnTrack(y_coords,
-                     layer1_track_coords,
-                     gtl::yl(rect) - min_width_layer1,
-                     gtl::yl(rect),
-                     true);
-      }
-      if (upper_type >= frAccessPointEnum::NearbyGrid) {
-        genAPOnTrack(x_coords,
-                     layer2_track_coords,
-                     gtl::xh(rect),
-                     gtl::xh(rect) + min_width_layer2,
-                     true);
-        genAPOnTrack(x_coords,
-                     layer2_track_coords,
-                     gtl::xl(rect) - min_width_layer2,
-                     gtl::xl(rect),
-                     true);
-      }
-    } else {
-      genAPOnTrack(x_coords, layer1_track_coords, gtl::xl(rect), gtl::xh(rect));
-      genAPOnTrack(y_coords,
+                   layer2_rect_max,
+                   layer2_rect_max + min_width_layer2,
+                   true);
+      genAPOnTrack(layer2_coords,
                    layer2_track_coords,
-                   gtl::yl(rect) + (is_macro_cell_pin ? hwidth : 0),
-                   gtl::yh(rect) - (is_macro_cell_pin ? hwidth : 0));
-      if (lower_type >= frAccessPointEnum::Center) {
-        genAPCentered(x_coords, layer_num, gtl::xl(rect), gtl::xh(rect));
-      }
-      if (lower_type >= frAccessPointEnum::EncOpt) {
-        genAPEnclosedBoundary(x_coords, rect, layer_num, is_layer1_horz);
-      }
-      if (upper_type >= frAccessPointEnum::Center) {
-        genAPCentered(y_coords,
-                      layer_num,
-                      gtl::yl(rect) + (is_macro_cell_pin ? hwidth : 0),
-                      gtl::yh(rect) - (is_macro_cell_pin ? hwidth : 0));
-      }
-      if (upper_type >= frAccessPointEnum::EncOpt) {
-        genAPEnclosedBoundary(y_coords, rect, layer_num, !is_layer1_horz);
-      }
-      if (lower_type >= frAccessPointEnum::NearbyGrid) {
-        genAPOnTrack(x_coords,
-                     layer1_track_coords,
-                     gtl::xh(rect),
-                     gtl::xh(rect) + min_width_layer1,
-                     true);
-        genAPOnTrack(x_coords,
-                     layer1_track_coords,
-                     gtl::xl(rect) - min_width_layer1,
-                     gtl::xl(rect),
-                     true);
-      }
-      if (upper_type >= frAccessPointEnum::NearbyGrid) {
-        genAPOnTrack(y_coords,
-                     layer2_track_coords,
-                     gtl::yh(rect),
-                     gtl::yh(rect) + min_width_layer2,
-                     true);
-        genAPOnTrack(y_coords,
-                     layer2_track_coords,
-                     gtl::yl(rect) - min_width_layer2,
-                     gtl::yl(rect),
-                     true);
-      }
+                   layer2_rect_min - min_width_layer2,
+                   layer2_rect_min,
+                   true);
     }
   } else {
-    if (is_layer1_horz) {
-      lower_type = frAccessPointEnum::OnGrid;
-      genAPOnTrack(x_coords, layer2_track_coords, gtl::xl(rect), gtl::xh(rect));
-      if (upper_type >= frAccessPointEnum::Center) {
-        genAPCentered(x_coords, layer_num, gtl::xl(rect), gtl::xh(rect));
-      }
-      if (upper_type >= frAccessPointEnum::EncOpt) {
-        genAPEnclosedBoundary(x_coords, rect, layer_num, !is_layer1_horz);
-      }
-      if (upper_type >= frAccessPointEnum::NearbyGrid) {
-        genAPOnTrack(x_coords,
-                     layer2_track_coords,
-                     gtl::xh(rect),
-                     gtl::xh(rect) + min_width_layer2,
-                     true);
-        genAPOnTrack(x_coords,
-                     layer2_track_coords,
-                     gtl::xl(rect) - min_width_layer2,
-                     gtl::xl(rect),
-                     true);
-      }
-      genAPCentered(y_coords, layer_num, gtl::yl(rect), gtl::yh(rect));
-      for (auto& [y_coord, cost] : y_coords) {
-        y_coords[y_coord] = frAccessPointEnum::OnGrid;
-      }
-    } else {
-      genAPOnTrack(y_coords, layer2_track_coords, gtl::yl(rect), gtl::yh(rect));
-      if (upper_type >= frAccessPointEnum::Center) {
-        genAPCentered(y_coords, layer_num, gtl::yl(rect), gtl::yh(rect));
-      }
-      if (upper_type >= frAccessPointEnum::EncOpt) {
-        genAPEnclosedBoundary(y_coords, rect, layer_num, !is_layer1_horz);
-      }
-      if (upper_type >= frAccessPointEnum::NearbyGrid) {
-        genAPOnTrack(y_coords,
-                     layer2_track_coords,
-                     gtl::yh(rect),
-                     gtl::yh(rect) + min_width_layer2,
-                     true);
-        genAPOnTrack(y_coords,
-                     layer2_track_coords,
-                     gtl::yl(rect) - min_width_layer2,
-                     gtl::yl(rect),
-                     true);
-      }
-      genAPCentered(x_coords, layer_num, gtl::xl(rect), gtl::xh(rect));
-      for (auto& [x_coord, cost] : x_coords) {
-        x_coords[x_coord] = frAccessPointEnum::OnGrid;
-      }
+    lower_type = frAccessPointEnum::OnGrid;
+    genAPOnTrack(
+        layer2_coords, layer2_track_coords, layer2_rect_min, layer2_rect_max);
+    if (upper_type >= frAccessPointEnum::Center) {
+      genAPCentered(layer2_coords, layer_num, layer2_rect_min, layer2_rect_max);
+    }
+    if (upper_type >= frAccessPointEnum::EncOpt) {
+      genAPEnclosedBoundary(layer2_coords, rect, layer_num, !is_layer1_horz);
+    }
+    if (upper_type >= frAccessPointEnum::NearbyGrid) {
+      genAPOnTrack(layer2_coords,
+                   layer2_track_coords,
+                   layer2_rect_max,
+                   layer2_rect_max + min_width_layer2,
+                   true);
+      genAPOnTrack(layer2_coords,
+                   layer2_track_coords,
+                   layer2_rect_min - min_width_layer2,
+                   layer2_rect_min,
+                   true);
+    }
+    genAPCentered(layer1_coords, layer_num, layer1_rect_min, layer1_rect_max);
+    for (auto& [layer1_coord, cost] : layer1_coords) {
+      layer1_coords[layer1_coord] = frAccessPointEnum::OnGrid;
     }
   }
   gen_initializeAccessPoints(aps,
