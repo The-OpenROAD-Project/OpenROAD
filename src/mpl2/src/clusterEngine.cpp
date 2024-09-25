@@ -2086,18 +2086,31 @@ void ClusteringEngine::printPhysicalHierarchyTree(Cluster* parent, int level)
   for (int i = 0; i < level; i++) {
     line += "+---";
   }
-  line += fmt::format(
-      "{}  ({})  num_macro :  {}   num_std_cell :  {}"
-      "  macro_area :  {}  std_cell_area : {}  cluster type: {} {}",
-      parent->getName(),
-      parent->getId(),
-      parent->getNumMacro(),
-      parent->getNumStdCell(),
-      parent->getMacroArea(),
-      parent->getStdCellArea(),
-      parent->getIsLeafString(),
-      parent->getClusterTypeString());
-  logger_->report("{}", line);
+
+  line += fmt::format("{}  ({}) Type: {}",
+                      parent->getName(),
+                      parent->getId(),
+                      parent->getClusterTypeString());
+
+  if (parent->isIOCluster()) {
+    int number_of_pins = 0;
+    for (const auto [pin, cluster_id] : tree_->maps.bterm_to_cluster_id) {
+      if (cluster_id == parent->getId()) {
+        ++number_of_pins;
+      }
+    }
+
+    line += fmt::format(" Pins: {}", number_of_pins);
+  } else {
+    line += fmt::format(" {}, StdCells: {} ({} μ²), Macros: {} ({} μ²)",
+                        parent->getIsLeafString(),
+                        parent->getNumStdCell(),
+                        parent->getStdCellArea(),
+                        parent->getNumMacro(),
+                        parent->getMacroArea());
+  }
+
+   logger_->report("{}", line);
 
   for (auto& cluster : parent->getChildren()) {
     printPhysicalHierarchyTree(cluster.get(), level + 1);

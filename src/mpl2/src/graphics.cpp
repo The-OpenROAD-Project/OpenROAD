@@ -613,12 +613,6 @@ bool Graphics::isOutsideTheOutline(const T& macro) const
          || block_->micronsToDbu(macro.getPinY()) > outline_.dy();
 }
 
-/*
-  TO DO:
-    1. See if some sort of offset dark magic interferes
-  with the annealing internals.
-*/
-
 // Here, we have to manually decompensate the offset of the
 // coordinates that come from the cluster.
 template <typename T>

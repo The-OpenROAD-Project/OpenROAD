@@ -46,11 +46,6 @@ namespace mpl2 {
 
 using Point = std::pair<float, float>;
 
-/*
-  TO DO: What can be done here now that bundled IOs are gone? (Perhaps,
-  there's no problem, because the vertex idea is still the same)
-*/
-
 // Each point in the hanan grid is represented by a vertex (with no size)
 // And each bundled IO pin is represented by a vertex
 struct Vertex
@@ -71,10 +66,6 @@ struct Vertex
 
   // position of the vertex
   Point pos;
-
-  /*
-    TO DO: Ditto
-  */
 
   // The weight of the vertex : macro utilization of the SoftMacro
   // which the vertex belongs to.  For bundled IO pin, we set the
