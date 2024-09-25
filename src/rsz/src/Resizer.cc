@@ -3254,6 +3254,7 @@ void Resizer::journalRestore(int& resize_count,
 
   if (odb::dbDatabase::ecoEmpty(block_)) {
     odb::dbDatabase::endEco(block_);
+    incrementalParasiticsEnd();
     debugPrint(logger_,
                RSZ,
                "journal",

@@ -374,7 +374,6 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
       debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out of setup fixing"
                  "due to no TNS progress for two opto cycles");
       // clang-format on
-      resizer_->journalEnd();
       break;
     }
   }  // for each violating endpoint
@@ -1881,7 +1880,6 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
       debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out of last gasp fixing"
                  "due to no TNS progress for two opto cycles");
       // clang-format on
-      resizer_->journalEnd();
       break;
     }
   }  // for each violating endpoint
