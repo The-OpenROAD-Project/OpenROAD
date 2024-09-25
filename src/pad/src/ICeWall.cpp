@@ -447,8 +447,8 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
                                   const odb::dbRowDir& direction,
                                   int site_width) {
           const std::string row_name = getRowName(name, ring_index);
-          odb::dbTransform rotation(orient);
-          rotation.concat(row_rotation);
+          odb::dbTransform rotation(row_rotation);
+          rotation.concat(orient);
           odb::dbRow::create(block,
                              row_name.c_str(),
                              site,
@@ -459,19 +459,22 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
                              sites,
                              site_width);
         };
+  const odb::dbOrientType south_rotation_ver = odb::dbOrientType::R0;
+  const odb::dbOrientType north_rotation_ver = south_rotation_ver.flipX();
+  odb::dbOrientType west_rotation_hor = odb::dbOrientType::MXR90;
+  if (vertical_site != horizontal_site) {
+    west_rotation_hor = odb::dbOrientType::R0;
+  }
+  const odb::dbOrientType east_rotation_hor = west_rotation_hor.flipY();
   create_row(row_north_,
              vertical_site,
              x_sites,
              {nw->getBBox().xMax(),
               outer_io.yMax() - static_cast<int>(vertical_box.maxDXDY())},
-             odb::dbOrientType::MX,
+             north_rotation_ver,
              rotation_ver,
              odb::dbRowDir::HORIZONTAL,
              vertical_box.minDXDY());
-  odb::dbOrientType east_rotation_hor = odb::dbOrientType::R90;
-  if (vertical_site != horizontal_site) {
-    east_rotation_hor = odb::dbOrientType::R0;
-  }
   create_row(row_east_,
              horizontal_site,
              y_sites,
@@ -485,11 +488,10 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
              vertical_site,
              x_sites,
              {sw->getBBox().xMax(), outer_io.yMin()},
-             odb::dbOrientType::R0,
+             south_rotation_ver,
              rotation_ver,
              odb::dbRowDir::HORIZONTAL,
              vertical_box.minDXDY());
-  const odb::dbOrientType west_rotation_hor = east_rotation_hor.flipY();
   create_row(row_west_,
              horizontal_site,
              y_sites,
