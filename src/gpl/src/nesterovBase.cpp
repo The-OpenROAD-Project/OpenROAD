@@ -114,6 +114,7 @@ void GCell::setInstance(Instance* inst)
   dUx_ = ux_ = inst->ux();
   dUy_ = uy_ = inst->uy();
 }
+
 Instance* GCell::instance() const
 {
   return insts_.empty() ? nullptr : *insts_.begin();
@@ -1268,6 +1269,124 @@ int64_t NesterovBaseCommon::getHpwl()
   return hpwl;
 }
 
+GCell* NesterovBaseCommon::getGCellByIndex(size_t i) {
+  if (i >= gCellStor_.size()) {
+      return nullptr;
+  }
+  return &gCellStor_[i];
+}
+
+
+//TODO this function should be related to call backs.
+std::vector<size_t> NesterovBaseCommon::insertGCells(){
+  std::vector<size_t> new_gcells;
+//  for (auto& inst : pbc_->placeInsts()) {
+//    GCell new_gcell = GCell(inst);
+//    gCellStor_.push_back(new_gcell);
+//    new_gcells.push_back(&gCellStor_.back());
+//  }
+  std::mt19937 randVal(0);
+  for (int i = 0; i < 5000; i++) {
+    auto randX = randVal();
+    auto randY = randVal();
+    GCell myGCell(randX % pbc_->die().coreDx() + pbc_->die().coreLx(),
+                  randY % pbc_->die().coreDy() + pbc_->die().coreLy(),
+                  gCellStor_[0].dx(),
+                  gCellStor_[0].dy());
+    gCellStor_.push_back(myGCell);
+    new_gcells.push_back(gCellStor_.size() - 1);
+  }
+  log_->report("finished insertGCells()!");
+  return new_gcells;
+}
+
+void NesterovBaseCommon::fixPointers(std::vector<size_t> new_gcells){
+  gCells_.clear();
+  gCellMap_.clear();
+  gCells_.reserve(gCellStor_.size());
+  for (auto& gCell : gCellStor_) {
+    if (!gCell.isInstance()) {
+      continue;
+    }
+    gCells_.push_back(&gCell);
+    gCellMap_[gCell.instance()] = &gCell;
+  }
+  
+//Add pins only for new cells.
+for (size_t gCellIndex : new_gcells) {
+    GCell* gCell = getGCellByIndex(gCellIndex);
+    if (gCell->isFiller()) {
+      continue;
+    }
+    for (auto& pin : gCell->instance()->pins()) {
+      gCell->addGPin(pbToNb(pin));
+    }
+  }    
+}
+
+void NesterovBase::fixPointers(std::vector<size_t> new_gcells){
+  log_->report("gCells_ size: {}", gCells_.size());
+  log_->report("pb_->insts size: {}", pb_->insts().size());
+  log_->report("fillerStor_ size: {}", fillerStor_.size());
+  log_->report("new_gcells: {}", new_gcells.size());
+  log_->report("curSLPCoordi_ size: {}", curSLPCoordi_.size());
+  gCells_.clear();
+  gCells_.reserve(pb_->insts().size() + fillerStor_.size() + new_gcells.size());
+  for (auto& inst : pb_->placeInsts()) {
+    GCell* gCell = nbc_->pbToNb(inst);
+    gCells_.push_back(gCell);
+  }
+
+  for (auto& gCell : fillerStor_) {
+    gCells_.push_back(&gCell);
+  }
+  
+  for (size_t gCellIndex : new_gcells) {
+    GCell* gCell = nbc_->getGCellByIndex(gCellIndex);
+    gCells_.push_back(gCell);
+  }
+    
+  curSLPCoordi_.resize(gCells_.size());
+  curSLPWireLengthGrads_.resize(gCells_.size());
+  curSLPDensityGrads_.resize(gCells_.size());
+  curSLPSumGrads_.resize(gCells_.size());
+  nextSLPCoordi_.resize(gCells_.size());
+  nextSLPWireLengthGrads_.resize(gCells_.size());
+  nextSLPDensityGrads_.resize(gCells_.size());
+  nextSLPSumGrads_.resize(gCells_.size());
+  prevSLPCoordi_.resize(gCells_.size());
+  prevSLPWireLengthGrads_.resize(gCells_.size());
+  prevSLPDensityGrads_.resize(gCells_.size());
+  prevSLPSumGrads_.resize(gCells_.size());
+  curCoordi_.resize(gCells_.size());
+  nextCoordi_.resize(gCells_.size());
+  initCoordi_.resize(gCells_.size());   
+  snapshotCoordi_.resize(gCells_.size());
+  snapshotSLPCoordi_.resize(gCells_.size());
+  snapshotSLPSumGrads_.resize(gCells_.size());    
+    
+  log_->report("\n\ngCells_ size: {}", gCells_.size());
+  log_->report("curSLPCoordi_ size: {}", curSLPCoordi_.size());
+  log_->report("curSLPWireLengthGrads_ size: {}", curSLPWireLengthGrads_.size());
+  log_->report("curSLPDensityGrads_ size: {}", curSLPDensityGrads_.size());
+  log_->report("curSLPSumGrads_ size: {}", curSLPSumGrads_.size());
+  log_->report("nextSLPCoordi_ size: {}", nextSLPCoordi_.size());
+  log_->report("nextSLPWireLengthGrads_ size: {}", nextSLPWireLengthGrads_.size());
+  log_->report("nextSLPDensityGrads_ size: {}", nextSLPDensityGrads_.size());
+  log_->report("nextSLPSumGrads_ size: {}", nextSLPSumGrads_.size());
+  log_->report("prevSLPCoordi_ size: {}", prevSLPCoordi_.size());
+  log_->report("prevSLPWireLengthGrads_ size: {}", prevSLPWireLengthGrads_.size());
+  log_->report("prevSLPDensityGrads_ size: {}", prevSLPDensityGrads_.size());
+  log_->report("prevSLPSumGrads_ size: {}", prevSLPSumGrads_.size());
+  log_->report("curCoordi_ size: {}", curCoordi_.size());
+  log_->report("nextCoordi_ size: {}", nextCoordi_.size());
+  log_->report("initCoordi_ size: {}", initCoordi_.size());
+  //TOOD how to update this? This function update everything.
+  // do we want to update only the new cells, or everything?
+//  updateDensitySize();
+}
+
+
 ////////////////////////////////////////////////
 // NesterovBase
 
@@ -1292,7 +1411,10 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   // update gFillerCells
   initFillerGCells();
 
-  gCells_.reserve(pb_->insts().size() + gCellStor_.size());
+  log_->report("constructor: gCells_ size: {}", gCells_.size());
+  log_->report("pb_->insts size: {}", pb_->insts().size());
+  log_->report("fillerStor_ size: {}", fillerStor_.size());
+  gCells_.reserve(pb_->insts().size() + fillerStor_.size());
 
   // add place instances
   for (auto& inst : pb_->placeInsts()) {
@@ -1309,7 +1431,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   }
 
   // add filler cells to gCells_
-  for (auto& gCell : gCellStor_) {
+  for (auto& gCell : fillerStor_) {
     gCells_.push_back(&gCell);
   }
 
@@ -1472,7 +1594,8 @@ void NesterovBase::initFillerGCells()
                   fillerDx_,
                   fillerDy_);
 
-    gCellStor_.push_back(myGCell);
+//    gCellStor_.push_back(myGCell);
+    fillerStor_.push_back(myGCell);
   }
 }
 
@@ -2229,7 +2352,6 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
   if (isConverged_) {
     return;
   }
-
   // fill in nextCoordinates with given stepLength_
   for (size_t k = 0; k < gCells_.size(); k++) {
     FloatPoint nextCoordi(

@@ -201,6 +201,8 @@ class RouteBase
   int inflationIterCnt() const;
 
   void revertGCellSizeToMinRc();
+  
+  void resizeMinRcCellSize(size_t n) { minRcCellSize_.resize(n);}
 
  private:
   RouteBaseVars rbVars_;

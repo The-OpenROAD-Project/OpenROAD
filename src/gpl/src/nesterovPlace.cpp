@@ -438,6 +438,16 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       if (!shouldTdProceed) {
         npVars_.timingDrivenMode = false;
       }
+      
+      auto ret = nbc_->insertGCells();
+//      nbVec_[0]->insertGCells(ret);
+      
+      //TODO track capacity to know if fixPointers is required.
+      nbc_->fixPointers(ret);
+      nbVec_[0]->fixPointers(ret);
+      
+      //TODO can send rb_ ref to fixPointer
+      rb_->resizeMinRcCellSize(nbVec_[0]->gCells().size());
     }
 
     // diverge detection on

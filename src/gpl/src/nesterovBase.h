@@ -828,6 +828,10 @@ class NesterovBaseCommon
 
   // Number of threads of execution
   size_t getNumThreads() { return num_threads_; }
+  
+  GCell* getGCellByIndex(size_t i);
+  std::vector<size_t> insertGCells();
+  void fixPointers(std::vector<size_t> new_gcells);
 
  private:
   NesterovBaseVars nbVars_;
@@ -1002,7 +1006,10 @@ class NesterovBase
   void printStepLength() { printf("stepLength = %f\n", stepLength_); }
 
   bool isDiverged() const { return isDiverged_; }
-
+  
+//  void insertGCells(std::vector<GCell*> new_gcells);
+  void fixPointers(std::vector<size_t> new_gcells);
+  
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
@@ -1021,7 +1028,8 @@ class NesterovBase
   int64_t stdInstsArea_ = 0;
   int64_t macroInstsArea_ = 0;
 
-  std::vector<GCell> gCellStor_;
+//  std::vector<GCell> gCellStor_;
+  std::vector<GCell> fillerStor_;
 
   std::vector<GCell*> gCells_;
   std::vector<GCell*> gCellInsts_;
