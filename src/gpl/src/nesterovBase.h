@@ -829,6 +829,13 @@ class NesterovBaseCommon
   // Number of threads of execution
   size_t getNumThreads() { return num_threads_; }
 
+  GCell& getGCell(size_t index) { return gCellStor_[index]; }
+
+  size_t getGCellIndex(const GCell* gCell) const
+  {
+    return std::distance(gCellStor_.data(), gCell);
+  }
+
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBaseCommon> pbc_;
@@ -847,6 +854,7 @@ class NesterovBaseCommon
   std::unordered_map<Net*, GNet*> gNetMap_;
 
   int num_threads_;
+  friend class NesterovBase;
 };
 
 // Stores instances belonging to a specific power domain
@@ -855,6 +863,38 @@ class NesterovBaseCommon
 // Used to calculate density gradient
 class NesterovBase
 {
+  struct GCellPointer
+  {
+    enum class StorageType
+    {
+      NBC,
+      NB
+    } storageType;
+    NesterovBaseCommon* nbc;
+    NesterovBase* nb;
+    size_t index;
+
+    GCell* operator->() { return &(getGCell()); }
+
+    GCell& operator*() { return getGCell(); }
+
+    const GCell& operator*() const { return getGCell(); }
+
+    operator GCell*() { return &(getGCell()); }
+
+    operator const GCell*() const { return &(getGCell()); }
+
+   private:
+    GCell& getGCell() const
+    {
+      if (storageType == StorageType::NBC) {
+        return nbc->gCellStor_[index];
+      } else {
+        return nb->gCellStor_[index];
+      }
+    }
+  };
+
  public:
   NesterovBase(NesterovBaseVars nbVars,
                std::shared_ptr<PlacerBase> pb,
@@ -862,7 +902,6 @@ class NesterovBase
                utl::Logger* log);
   ~NesterovBase();
 
-  const std::vector<GCell*>& gCells() const { return gCells_; }
   const std::vector<GCell*>& gCellInsts() const { return gCellInsts_; }
   const std::vector<GCell*>& gCellFillers() const { return gCellFillers_; }
 
@@ -1003,6 +1042,20 @@ class NesterovBase
 
   bool isDiverged() const { return isDiverged_; }
 
+  // Use this momentarily to avoid circular dependencies between NB, NBC,
+  // BinGrid, and GCellPointer
+  std::vector<GCell*> convertGCellPointersToGCellPtrs(
+      const std::vector<GCellPointer>& gCellPointers) const
+  {
+    std::vector<GCell*> gCellPtrs;
+    gCellPtrs.reserve(gCellPointers.size());
+
+    for (const auto& gCellPointer : gCellPointers) {
+      gCellPtrs.push_back(&(const_cast<GCell&>(*gCellPointer)));
+    }
+    return gCellPtrs;
+  }
+
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
@@ -1023,7 +1076,7 @@ class NesterovBase
 
   std::vector<GCell> gCellStor_;
 
-  std::vector<GCell*> gCells_;
+  std::vector<GCellPointer> gCells_;
   std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
 

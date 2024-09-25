@@ -249,9 +249,9 @@ void Graphics::drawNesterov(gui::Painter& painter)
   // Draw the placeable objects
   painter.setPen(gui::Painter::white);
   drawCells(nbc_->gCells(), painter);
-  for (const auto& nb : nbVec_) {
-    drawCells(nb->gCells(), painter);
-  }
+  //  for (const auto& nb : nbVec_) {
+  //    drawCells(nb->gCells(), painter);
+  //  }
 
   painter.setBrush(gui::Painter::Color(gui::Painter::light_gray, 50));
   for (const auto& pb : pbVec_) {
