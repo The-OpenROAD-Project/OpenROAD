@@ -3927,8 +3927,30 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
 
     odb::dbNet* net = iterm->getNet();
     if (net != nullptr) {
-      const odb::Rect bbox = net->getTermBBox();
-      wirelength += block_->dbuToMicrons(bbox.dx() + bbox.dy());
+      // Mimic dbNet::getTermBBox() behavior, but considering
+      // the pin constraint region instead of its position.
+      odb::Rect net_box;
+      net_box.mergeInit();
+
+      for (odb::dbITerm* iterm : net->getITerms()) {
+        int x, y;
+        if (iterm->getAvgXY(&x, &y)) {
+          odb::Rect iterm_rect(x, y, x , y);
+          net_box.merge(iterm_rect);
+        }
+      }
+
+      for (odb::dbBTerm* bterm : net->getBTerms()) {
+        auto constraint_region = bterm->getConstraintRegion();
+        if (constraint_region) {
+          int x = constraint_region->xCenter();
+          int y = constraint_region->yCenter();
+          odb::Rect region_rect(x, y, x, y);
+          net_box.merge(region_rect);
+        }
+      }
+
+      wirelength += block_->dbuToMicrons(net_box.dx() + net_box.dy());
     }
   }
 
