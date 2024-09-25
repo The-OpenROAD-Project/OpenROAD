@@ -114,19 +114,34 @@ class RepairAntennas
                           odb::dbMTerm* diode_mterm,
                           float ratio_margin);
   void repairAntennas(odb::dbMTerm* diode_mterm);
+  void addJumperAndVias(GRoute& route,
+                        const int& init_x,
+                        const int& init_y,
+                        const int& final_x,
+                        const int& final_y,
+                        const int& layer_level);
+  void addJumperHorizontal(const int& seg_id,
+                           GRoute& route,
+                           const int& bridge_init_x,
+                           const int& bridge_final_x,
+                           const int& layer_level);
+  void addJumperVertical(const int& seg_id,
+                         GRoute& route,
+                         const int& bridge_init_y,
+                         const int& bridge_final_y,
+                         const int& layer_level);
   int addJumpers(std::vector<int>& segment_ids,
                  GRoute& route,
                  odb::dbTechLayer* violation_layer,
                  const int& tile_size,
                  const double& ratio,
                  const ViolationInfo& info);
-  bool verifyCapacityForJumper(bool is_horizontal,
-                               const int& tile_size,
-                               const int& init_x,
-                               const int& init_y,
-                               const int& final_x,
-                               const int& final_y,
-                               const int& layer_level);
+  int searchViaAware(bool is_reversed,
+                     bool is_horizontal,
+                     const GSegment& seg,
+                     const std::set<std::pair<int, int>>& vias_pos,
+                     const int& bridge_size,
+                     const int& tile_size);
   int getSegmentIdToAdd(std::vector<int>& segments,
                         const GRoute& route,
                         int& req_size,

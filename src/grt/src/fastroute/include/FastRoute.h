@@ -177,6 +177,7 @@ class FastRouteCore
 
   const std::vector<short>& getVerticalCapacities() { return v_capacity_3D_; }
   const std::vector<short>& getHorizontalCapacities() { return h_capacity_3D_; }
+  int getAvailableResources(int x1, int y1, int x2, int y2, int layer);
   int getEdgeCapacity(int x1, int y1, int x2, int y2, int layer);
   const multi_array<Edge3D, 3>& getHorizontalEdges3D() { return h_edges_3D_; }
   const multi_array<Edge3D, 3>& getVerticalEdges3D() { return v_edges_3D_; }
@@ -198,7 +199,7 @@ class FastRouteCore
   }
   void setRegularX(bool regular_x) { regular_x_ = regular_x; }
   void setRegularY(bool regular_y) { regular_y_ = regular_y; }
-  void incrementEdge3DUsage(int x1, int y1, int x2, int y2, int layer);
+  void updateEdge3DUsage(int x1, int y1, int x2, int y2, int layer, int used);
   void setMaxNetDegree(int);
   void setVerbose(bool v);
   void setCriticalNetsPercentage(float u);

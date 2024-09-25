@@ -858,37 +858,13 @@ double RepairAntennas::diffArea(odb::dbMTerm* mterm)
 }
 
 // Jumper insertion functions
-bool RepairAntennas::verifyCapacityForJumper(bool is_horizontal,
-                                             const int& tile_size,
-                                             const int& init_x,
-                                             const int& init_y,
-                                             const int& final_x,
-                                             const int& final_y,
-                                             const int& layer_level)
-{
-  int it_pos_x, it_pos_y;
-  it_pos_x = init_x;
-  it_pos_y = init_y;
-  bool has_resource = true;
-  while (it_pos_x <= final_x && it_pos_y <= final_y) {
-    // Check available resources in the position
-    has_resource &= grouter_->hasCapacity(
-        is_horizontal, it_pos_x, it_pos_y, layer_level);
-    if (is_horizontal) {
-      it_pos_x += tile_size;
-    } else {
-      it_pos_y += tile_size;
-    }
-  }
-  return has_resource;
-}
 
-void addJumperAndVias(GRoute& route,
-                      const int& init_x,
-                      const int& init_y,
-                      const int& final_x,
-                      const int& final_y,
-                      const int& layer_level)
+void RepairAntennas::addJumperAndVias(GRoute& route,
+                                      const int& init_x,
+                                      const int& init_y,
+                                      const int& final_x,
+                                      const int& final_y,
+                                      const int& layer_level)
 {
   // create vias (2 by end)
   route.push_back(
@@ -902,6 +878,11 @@ void addJumperAndVias(GRoute& route,
   // Create segment in upper layer (jumper)
   route.push_back(GSegment(
       init_x, init_y, layer_level + 2, final_x, final_y, layer_level + 2));
+  // Reduce resources in layer level
+  grouter_->updateReources(init_x, init_y, final_x, final_y, layer_level, -1);
+  // Increase resources in layer level + 2
+  grouter_->updateReources(
+      init_x, init_y, final_x, final_y, layer_level + 2, 1);
 }
 
 // validate position when iterating from min to max position and vice versa
@@ -917,12 +898,13 @@ bool validatePos(bool is_reversed,
   return pos_x <= final_x && pos_y <= final_y;
 }
 
-int searchViaAware(bool is_reversed,
-                   bool is_horizontal,
-                   const GSegment& seg,
-                   const std::set<std::pair<int, int>>& vias_pos,
-                   const int& bridge_size,
-                   const int& tile_size)
+int RepairAntennas::searchViaAware(
+    bool is_reversed,
+    bool is_horizontal,
+    const GSegment& seg,
+    const std::set<std::pair<int, int>>& vias_pos,
+    const int& bridge_size,
+    const int& tile_size)
 {
   // Get init and final position of segment
   int req_space_to_add = -1;
@@ -939,23 +921,25 @@ int searchViaAware(bool is_reversed,
   }
   int pos_x = seg_init_x;
   int pos_y = seg_init_y;
-  int last_x = pos_x;
-  int last_y = pos_y;
+  int last_via_x = pos_x;
+  int last_via_y = pos_y;
   // iterate all position of segment
   while (validatePos(is_reversed, pos_x, pos_y, seg_final_x, seg_final_y)) {
     // check if there are vias in the position
-    if (vias_pos.find(std::make_pair(pos_x, pos_y)) != vias_pos.end()) {
+    if (vias_pos.find(std::make_pair(pos_x, pos_y)) != vias_pos.end()
+        || !grouter_->hasCapacity(
+            is_horizontal, pos_x, pos_y, seg.init_layer + 2)) {
       // get size from last vias to the position
       const int free_via_size
-          = std::abs(pos_x - last_x) + std::abs(pos_y - last_y);
+          = std::abs(pos_x - last_via_x) + std::abs(pos_y - last_via_y);
       // check if the jumper can be added in the sub segment
       if (free_via_size > 0 && free_via_size >= bridge_size + 2 * tile_size) {
         // calculate the size from init position to add jumper
-        req_space_to_add = std::abs(last_x - seg_init_x)
-                           + std::abs(last_y - seg_init_y) + tile_size;
-        last_x = pos_x;
-        last_y = pos_y;
+        req_space_to_add = std::abs(last_via_x - seg_init_x)
+                           + std::abs(last_via_y - seg_init_y) + tile_size;
       }
+      last_via_x = pos_x;
+      last_via_y = pos_y;
     }
     if (is_horizontal) {
       pos_x += step;
@@ -964,12 +948,12 @@ int searchViaAware(bool is_reversed,
     }
   }
   // if the segment has no vias in the end, verify last sub segment
-  if (last_x != seg_final_x || last_y != seg_final_y) {
-    const int free_via_size
-        = std::abs(seg_final_x - last_x) + std::abs(seg_final_y - last_y);
+  if (last_via_x != seg_final_x || last_via_y != seg_final_y) {
+    const int free_via_size = std::abs(seg_final_x - last_via_x)
+                              + std::abs(seg_final_y - last_via_y);
     if (free_via_size > 0 && free_via_size >= bridge_size + 2 * tile_size) {
-      req_space_to_add = std::abs(last_x - seg_init_x)
-                         + std::abs(last_y - seg_init_y) + tile_size;
+      req_space_to_add = std::abs(last_via_x - seg_init_x)
+                         + std::abs(last_via_y - seg_init_y) + tile_size;
     }
   }
   return req_space_to_add;
@@ -1033,11 +1017,11 @@ int RepairAntennas::getSegmentIdToAdd(std::vector<int>& segment_ids,
   return best_seg_id;
 }
 
-void addJumperHorizontal(const int& seg_id,
-                         GRoute& route,
-                         const int& bridge_init_x,
-                         const int& bridge_final_x,
-                         const int& layer_level)
+void RepairAntennas::addJumperHorizontal(const int& seg_id,
+                                         GRoute& route,
+                                         const int& bridge_init_x,
+                                         const int& bridge_final_x,
+                                         const int& layer_level)
 {
   const int seg_init_x = route[seg_id].init_x;
   const int seg_init_y = route[seg_id].init_y;
@@ -1060,11 +1044,11 @@ void addJumperHorizontal(const int& seg_id,
   route[seg_id].init_x = bridge_final_x;
 }
 
-void addJumperVertical(const int& seg_id,
-                       GRoute& route,
-                       const int& bridge_init_y,
-                       const int& bridge_final_y,
-                       const int& layer_level)
+void RepairAntennas::addJumperVertical(const int& seg_id,
+                                       GRoute& route,
+                                       const int& bridge_init_y,
+                                       const int& bridge_final_y,
+                                       const int& layer_level)
 {
   const int seg_init_x = route[seg_id].init_x;
   const int seg_final_x = route[seg_id].final_x;
@@ -1127,35 +1111,22 @@ int RepairAntennas::addJumpers(std::vector<int>& segment_ids,
     // if has valid segment to add jumper
     if (seg_pos != -1) {
       auto& seg = route[seg_pos];
-      jumper_count++;
       if (is_horizontal) {
         // get jumper position
         const int bridge_init_x = seg.init_x + req_size;
         const int bridge_final_x = bridge_init_x + bridge_size;
-        if (verifyCapacityForJumper(is_horizontal,
-                                    tile_size,
-                                    bridge_init_x,
-                                    seg.init_y,
-                                    bridge_final_x,
-                                    seg.final_y,
-                                    layer_level)) {
-          addJumperHorizontal(
-              seg_pos, route, bridge_init_x, bridge_final_x, layer_level);
-        }
+
+        jumper_count++;
+        addJumperHorizontal(
+            seg_pos, route, bridge_init_x, bridge_final_x, layer_level);
       } else {
         // Get jumper position
         const int bridge_init_y = seg.init_y + req_size;
         const int bridge_final_y = bridge_init_y + bridge_size;
-        if (verifyCapacityForJumper(is_horizontal,
-                                    tile_size,
-                                    seg.init_x,
-                                    bridge_init_y,
-                                    seg.final_x,
-                                    bridge_final_y,
-                                    layer_level)) {
-          addJumperVertical(
-              seg_pos, route, bridge_init_y, bridge_final_y, layer_level);
-        }
+
+        jumper_count++;
+        addJumperVertical(
+            seg_pos, route, bridge_init_y, bridge_final_y, layer_level);
       }
     }
   }
@@ -1173,35 +1144,22 @@ int RepairAntennas::addJumpers(std::vector<int>& segment_ids,
     // if has valid segment to add jumper
     if (seg_pos != -1) {
       auto& seg = route[seg_pos];
-      jumper_count++;
       if (is_horizontal) {
         // Get jumper position
         const int bridge_init_x = seg.final_x - req_size - bridge_size;
         const int bridge_final_x = bridge_init_x + bridge_size;
-        if (verifyCapacityForJumper(is_horizontal,
-                                    tile_size,
-                                    bridge_init_x,
-                                    seg.init_y,
-                                    bridge_final_x,
-                                    seg.final_y,
-                                    layer_level)) {
-          addJumperHorizontal(
-              seg_pos, route, bridge_init_x, bridge_final_x, layer_level);
-        }
+
+        jumper_count++;
+        addJumperHorizontal(
+            seg_pos, route, bridge_init_x, bridge_final_x, layer_level);
       } else {
         // Get jumper position
         const int bridge_init_y = seg.final_y - req_size - bridge_size;
         const int bridge_final_y = bridge_init_y + bridge_size;
-        if (verifyCapacityForJumper(is_horizontal,
-                                    tile_size,
-                                    seg.init_x,
-                                    bridge_init_y,
-                                    seg.final_x,
-                                    bridge_final_y,
-                                    layer_level)) {
-          addJumperVertical(
-              seg_pos, route, bridge_init_y, bridge_final_y, layer_level);
-        }
+
+        jumper_count++;
+        addJumperVertical(
+            seg_pos, route, bridge_init_y, bridge_final_y, layer_level);
       }
     }
   }

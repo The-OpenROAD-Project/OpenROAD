@@ -1571,17 +1571,36 @@ bool GlobalRouter::hasCapacity(bool is_horizontal,
                                const int& pos_y,
                                const int& layer_level)
 {
+  // transform from real position to grid pos of fastrouter
   int grid_x = (int) ((pos_x - grid_->getXMin()) / grid_->getTileSize());
   int grid_y = (int) ((pos_y - grid_->getYMin()) / grid_->getTileSize());
   int cap = 0;
   if (is_horizontal) {
-    cap = fastroute_->getEdgeCapacity(
+    cap = fastroute_->getAvailableResources(
         grid_x, grid_y, grid_x + 1, grid_y, layer_level);
   } else {
-    cap = fastroute_->getEdgeCapacity(
+    cap = fastroute_->getAvailableResources(
         grid_x, grid_y, grid_x, grid_y + 1, layer_level);
   }
-  return (cap >= 1);
+  return cap > 0;
+}
+
+void GlobalRouter::updateReources(const int& init_x,
+                                  const int& init_y,
+                                  const int& final_x,
+                                  const int& final_y,
+                                  const int& layer_level,
+                                  int used)
+{
+  // transform from real position to grid pos of fastrouter
+  int grid_init_x = (int) ((init_x - grid_->getXMin()) / grid_->getTileSize());
+  int grid_init_y = (int) ((init_y - grid_->getYMin()) / grid_->getTileSize());
+  int grid_final_x
+      = (int) ((final_x - grid_->getXMin()) / grid_->getTileSize());
+  int grid_final_y
+      = (int) ((final_y - grid_->getYMin()) / grid_->getTileSize());
+  fastroute_->updateEdge3DUsage(
+      grid_init_x, grid_init_y, grid_final_x, grid_final_y, layer_level, used);
 }
 
 void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
@@ -2076,7 +2095,7 @@ void GlobalRouter::updateEdgesUsage()
       x1 = std::min(x1, grid_->getXGrids() - 1);
       y1 = std::min(y1, grid_->getYGrids() - 1);
 
-      fastroute_->incrementEdge3DUsage(x0, y0, x1, y1, l0);
+      fastroute_->updateEdge3DUsage(x0, y0, x1, y1, l0, 1);
     }
   }
 }
