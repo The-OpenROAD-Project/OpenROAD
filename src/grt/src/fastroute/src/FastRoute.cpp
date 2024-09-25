@@ -661,17 +661,18 @@ int FastRouteCore::getAvailableResources(int x1,
                                          int layer)
 {
   const int k = layer - 1;
+  int available_cap = 0;
   if (y1 == y2) {  // horizontal edge
-    return h_edges_3D_[k][y1][x1].cap - h_edges_3D_[k][y1][x1].usage;
+    available_cap = h_edges_3D_[k][y1][x1].cap - h_edges_3D_[k][y1][x1].usage;
   } else if (x1 == x2) {  // vertical edge
-    return v_edges_3D_[k][y1][x1].cap - v_edges_3D_[k][y1][x1].usage;
+    available_cap = v_edges_3D_[k][y1][x1].cap - v_edges_3D_[k][y1][x1].usage;
   } else {
     logger_->error(
         GRT,
         213,
         "Cannot get available resources: edge is not vertical or horizontal.");
-    return 0;
   }
+  return available_cap;
 }
 
 int FastRouteCore::getEdgeCapacity(int x1, int y1, int x2, int y2, int layer)

@@ -1401,7 +1401,7 @@ SegmentIdByViolation RepairAntennas::getSegmentsWithViolation(
 }
 
 void RepairAntennas::jumperInsertion(NetRouteMap& routing,
-                                     const int tile_size,
+                                     const int& tile_size,
                                      const int& max_routing_layer)
 {
   odb::dbTech* tech = db_->getTech();

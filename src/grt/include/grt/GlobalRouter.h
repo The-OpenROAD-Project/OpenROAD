@@ -225,7 +225,7 @@ class GlobalRouter : public ant::GlobalRouteSource
                    const int& layer_level);
 
   void updateReources(const int& init_x,
-                      const int& int_y,
+                      const int& init_y,
                       const int& final_x,
                       const int& final_y,
                       const int& layer_level,

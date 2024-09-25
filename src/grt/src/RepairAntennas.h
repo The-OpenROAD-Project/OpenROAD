@@ -159,7 +159,7 @@ class RepairAntennas
                                 const GRoute& route,
                                 ViolationInfo& info);
   void jumperInsertion(NetRouteMap& routing,
-                       const int tile_size,
+                       const int& tile_size,
                        const int& max_routing_layer);
   int illegalDiodePlacementCount() const
   {
