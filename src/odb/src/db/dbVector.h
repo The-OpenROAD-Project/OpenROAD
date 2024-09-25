@@ -150,7 +150,7 @@ inline dbIStream& operator>>(dbIStream& stream, dbVector<T>& v)
   stream >> sz;
   v.reserve(sz);
 
-  T t;
+  T t{};
   unsigned int i;
   for (i = 0; i < sz; ++i) {
     stream >> t;

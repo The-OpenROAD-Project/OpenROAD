@@ -36,6 +36,7 @@
 #include <boost/polygon/polygon.hpp>
 
 #include "odb/db.h"
+#include "odb/geom_boost.h"
 
 namespace ord {
 class OpenRoad;
@@ -163,6 +164,19 @@ class Tapcell
   using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
   using CornerMap = std::map<odb::dbRow*, std::set<odb::dbInst*>>;
 
+  struct InstIndexableGetter
+  {
+    using result_type = odb::Rect;
+    odb::Rect operator()(odb::dbInst* inst) const
+    {
+      return inst->getBBox()->getBox();
+    }
+  };
+  using InstTree
+      = boost::geometry::index::rtree<odb::dbInst*,
+                                      boost::geometry::index::quadratic<16>,
+                                      InstIndexableGetter>;
+
   std::vector<odb::dbBox*> findBlockages();
   bool checkSymmetry(odb::dbMaster* master, const odb::dbOrientType& ori);
   odb::dbInst* makeInstance(odb::dbBlock* block,
@@ -190,7 +204,8 @@ class Tapcell
                     int dist,
                     odb::dbRow* row,
                     bool is_edge,
-                    bool disallow_one_site_gaps);
+                    bool disallow_one_site_gaps,
+                    const InstTree& fixed_instances);
 
   int defaultDistance() const;
 
