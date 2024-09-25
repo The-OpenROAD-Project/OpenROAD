@@ -14,10 +14,6 @@ create_clock -period 5 clk
 
 set_wire_rc -clock -layer metal5
 
-clock_tree_synthesis -library NangateOpenCellLibrary_lvt \
-  -wire_unit 20 \
-  -sink_clustering_enable \
-  -distance_between_buffers 100 \
-  -num_static_layers 1 \
-  -obstruction_aware \
+clock_tree_synthesis -library NangateOpenCellLibrary_lvt 
+
 
