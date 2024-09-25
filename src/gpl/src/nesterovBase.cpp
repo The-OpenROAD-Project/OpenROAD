@@ -1305,20 +1305,16 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
 
     gCell->clearInstances();
     gCell->setInstance(inst);
-    gCells_.push_back(gCell);
+    gCells_.emplace_back(GCellPointer{GCellPointer::StorageType::NBC,
+                                      nbc_.get(),
+                                      nullptr,
+                                      nbc_->getGCellIndex(gCell)});
   }
 
   // add filler cells to gCells_
-  for (auto& gCell : gCellStor_) {
-    gCells_.push_back(&gCell);
-  }
-
-  for (auto& gCell : gCells_) {
-    if (gCell->isInstance()) {
-      gCellInsts_.push_back(gCell);
-    } else if (gCell->isFiller()) {
-      gCellFillers_.push_back(gCell);
-    }
+  for (size_t i = 0; i < gCellStor_.size(); ++i) {
+    gCells_.emplace_back(
+        GCellPointer{GCellPointer::StorageType::NB, nullptr, this, i});
   }
 
   log_->info(GPL, 31, "{:20} {:9}", "FillerInit:NumGCells:", gCells_.size());
@@ -1495,7 +1491,8 @@ void NesterovBase::updateGCellDensityCenterLocation(
     int idx = &coordi - &coordis[0];
     gCells_[idx]->setDensityCenterLocation(coordi.x, coordi.y);
   }
-  bg_.updateBinsGCellDensityArea(gCells_);
+  std::vector<GCell*> gCellPtrs = convertGCellPointersToGCellPtrs(gCells_);
+  bg_.updateBinsGCellDensityArea(gCellPtrs);
 }
 
 void NesterovBase::setTargetDensity(float density)
@@ -1675,42 +1672,6 @@ void NesterovBase::updateAreas()
   }
 }
 
-// cut the filler cells
-void NesterovBase::cutFillerCells(int64_t targetFillerArea)
-{
-  std::vector<GCell*> newGCells = gCellInsts_;
-  std::vector<GCell*> newGCellFillers;
-
-  int64_t curFillerArea = 0;
-  log_->info(GPL, 34, "{:20} {:10.3f}", "gCellFiller:", gCellFillers_.size());
-
-  for (auto& gCellFiller : gCellFillers_) {
-    curFillerArea += static_cast<int64_t>(gCellFiller->dx())
-                     * static_cast<int64_t>(gCellFiller->dy());
-
-    if (curFillerArea >= targetFillerArea) {
-      curFillerArea -= static_cast<int64_t>(gCellFiller->dx())
-                       * static_cast<int64_t>(gCellFiller->dy());
-      break;
-    }
-
-    newGCells.push_back(gCellFiller);
-    newGCellFillers.push_back(gCellFiller);
-  }
-
-  // update totalFillerArea_
-  totalFillerArea_ = curFillerArea;
-  dbBlock* block = pb_->db()->getChip()->getBlock();
-  log_->info(GPL,
-             35,
-             "{:20} {:10.3f} um^2",
-             "NewTotalFillerArea:",
-             block->dbuAreaToMicrons(totalFillerArea_));
-
-  gCells_.swap(newGCells);
-  gCellFillers_.swap(newGCellFillers);
-}
-
 void NesterovBase::updateDensityCoordiLayoutInside(GCell* gCell)
 {
   float targetLx = gCell->dLx();
@@ -1855,9 +1816,9 @@ void NesterovBase::initDensity1()
 
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto it = gCells_.begin(); it < gCells_.end(); ++it) {
-    auto& gCell = *it;  // old-style loop for old OpenMP
+    GCell* gCell = &(**it);  // old-style loop for old OpenMP
     updateDensityCoordiLayoutInside(gCell);
-    int idx = &gCell - &gCells_[0];
+    int idx = std::distance(gCells_.begin(), it);
     curSLPCoordi_[idx] = prevSLPCoordi_[idx] = curCoordi_[idx]
         = initCoordi_[idx] = FloatPoint(gCell->dCx(), gCell->dCy());
 
