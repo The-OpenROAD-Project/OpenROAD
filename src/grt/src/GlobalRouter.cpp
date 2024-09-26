@@ -3982,9 +3982,9 @@ void GlobalRouter::findBufferPinPostions(Net* net1,
                                          odb::Point& pin_pos2)
 {
   for (const Pin& pin1 : net1->getPins()) {
-    if (!pin1.isPort()) {
+    if (!pin1.isPort() && !pin1.isDeleted()) {
       for (const Pin& pin2 : net2->getPins()) {
-        if (!pin2.isPort()) {
+        if (!pin2.isPort() && !pin2.isDeleted()) {
           if (pin1.getITerm()->getInst() == pin2.getITerm()->getInst()) {
             pin_pos1 = pin1.getOnGridPosition();
             pin_pos2 = pin2.getOnGridPosition();
@@ -4733,7 +4733,7 @@ void GRouteDbCbk::inDbITermPreDisconnect(odb::dbITerm* iterm)
   odb::dbNet* db_net = iterm->getNet();
   if (db_net != nullptr && !db_net->isSpecial()) {
     Net* net = grouter_->getNet(db_net);
-    net->destroyITermPin(iterm);
+    net->deleteITermPin(iterm);
     grouter_->addDirtyNet(iterm->getNet());
   }
 }
@@ -4761,7 +4761,7 @@ void GRouteDbCbk::inDbBTermPreDisconnect(odb::dbBTerm* bterm)
   odb::dbNet* db_net = bterm->getNet();
   if (db_net != nullptr && !db_net->isSpecial()) {
     Net* net = grouter_->getNet(db_net);
-    net->destroyBTermPin(bterm);
+    net->deleteBTermPin(bterm);
     grouter_->addDirtyNet(bterm->getNet());
   }
 }
