@@ -21,6 +21,7 @@ record_tests {
   gcd_sky130_separate
   jpeg_gf180
   aes_gf180
+  region1
   #tap_man_tcl_check
   #tap_readme_msgs_check
 }
