@@ -462,7 +462,6 @@ class FlexPA
    *
    * @return if the initialization was sucessful
    */
-  template <typename T>
 
   /**
    * @brief initializes the accesses of a given pin but only considered
@@ -478,6 +477,7 @@ class FlexPA
    *
    * @return if the initialization was sucessful
    */
+  template <typename T>
   bool initPinAccessCostBounded(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,

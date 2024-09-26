@@ -80,7 +80,9 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
     if (shape->typeId() == frcRect) {
       auto obj = static_cast<frRect*>(shape.get());
       auto layer_num = obj->getLayerNum();
-      if (tech->getLayer(layer_num)->getType() != dbTechLayerType::ROUTING) {
+      auto layer = tech->getLayer(layer_num);
+      dbTechLayerDir dir = layer->getDir();
+      if (layer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
       Rect box = obj->getBBox();
@@ -88,10 +90,9 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
       gtl::rectangle_data<frCoord> rect(
           box.xMin(), box.yMin(), box.xMax(), box.yMax());
       if (is_shrink) {
-        if (tech->getLayer(layer_num)->getDir() == dbTechLayerDir::HORIZONTAL) {
+        if (dir == dbTechLayerDir::HORIZONTAL) {
           gtl::shrink(rect, gtl::VERTICAL, layer_widths[layer_num] / 2);
-        } else if (tech->getLayer(layer_num)->getDir()
-                   == dbTechLayerDir::VERTICAL) {
+        } else if (dir == dbTechLayerDir::VERTICAL) {
           gtl::shrink(rect, gtl::HORIZONTAL, layer_widths[layer_num] / 2);
         }
       }
@@ -121,7 +122,10 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
  *
  * @details This follows the Tao of PAO paper cost structure.
  * On track and half track are the preffered access points,
- * this function is responsible for generating them
+ * this function is responsible for generating them.
+ * It iterates over every track coord in the range [low, high]
+ * and inserts one of its coordinates on the coords map.
+ * if use_nearby_grid is true it changes the access point cost to it.
  *
  * TODO:
  * This function doesn't seem to be getting the best access point.
@@ -154,7 +158,9 @@ void FlexPA::genAPOnTrack(
 // will not generate center for wider edge
 /**
  * @details This follows the Tao of PAO paper cost structure.
- * Centered Access points are on the center of their pin shape (low, high)
+ * First it iterates through the range [low, high] to check if there are
+ * at least 3 possible OnTrack access points as those take priority.
+ * If false it created and access points in the middle point between [low, high]
  */
 
 void FlexPA::genAPCentered(std::map<frCoord, frAccessPointEnum>& coords,
@@ -451,7 +457,7 @@ bool FlexPA::enclosesOnTrackPlanarAccess(
 }
 
 /**
- * @details Generates all necessary access points from an rectangle shape
+ * @details Generates all necessary access points from a rectangle shape
  * In this case a rectangle is one of the pin shapes of the pin
  */
 void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,

@@ -57,17 +57,17 @@ void FlexPA::initViaRawPriority()
 ViaRawPriorityTuple FlexPA::getViaRawPriority(frViaDef* via_def)
 {
   const bool is_not_default_via = !(via_def->getDefault());
-  gtl::polygon_90_set_data<frCoord> via_layer_PS1;
+  gtl::polygon_90_set_data<frCoord> via_layer_ps1;
 
   for (auto& fig : via_def->getLayer1Figs()) {
     const Rect bbox = fig->getBBox();
     gtl::rectangle_data<frCoord> bbox_rect(
         bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     using boost::polygon::operators::operator+=;
-    via_layer_PS1 += bbox_rect;
+    via_layer_ps1 += bbox_rect;
   }
   gtl::rectangle_data<frCoord> layer1_rect;
-  gtl::extents(layer1_rect, via_layer_PS1);
+  gtl::extents(layer1_rect, via_layer_ps1);
   const bool is_layer1_horz = (gtl::xh(layer1_rect) - gtl::xl(layer1_rect))
                               > (gtl::yh(layer1_rect) - gtl::yl(layer1_rect));
   const frCoord layer1_width
@@ -104,7 +104,7 @@ ViaRawPriorityTuple FlexPA::getViaRawPriority(frViaDef* via_def)
       = (is_layer2_horz && (dir2 == dbTechLayerDir::VERTICAL))
         || (!is_layer2_horz && (dir2 == dbTechLayerDir::HORIZONTAL));
 
-  const frCoord layer1_area = gtl::area(via_layer_PS1);
+  const frCoord layer1_area = gtl::area(via_layer_ps1);
   const frCoord layer2_area = gtl::area(via_layer_PS2);
 
   return std::make_tuple(is_not_default_via,
