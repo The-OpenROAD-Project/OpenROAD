@@ -176,6 +176,13 @@ set_routability_check_overflow_cmd(float overflow)
 }
 
 void
+set_timing_driven_check_overflow_cmd(float overflow) 
+{
+  Replace* replace = getReplace();
+  replace->setTimingDrivenCheckOverflow(overflow);
+}
+ 
+void
 set_routability_max_density_cmd(float density) 
 {
   Replace* replace = getReplace();

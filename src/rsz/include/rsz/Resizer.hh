@@ -136,8 +136,6 @@ class RepairDesign;
 class RepairSetup;
 class RepairHold;
 
-class SpefWriter;
-
 class NetHash
 {
  public:
@@ -237,13 +235,9 @@ class Resizer : public dbStaState
   double wireClkHCapacitance(const Corner* corner) const;
   double wireClkVCapacitance(const Corner* corner) const;
   void estimateParasitics(ParasiticsSrc src);
-  void estimateParasitics(ParasiticsSrc src,
-                          std::map<Corner*, std::ostream*>& spef_streams_);
-  void estimateWireParasitics(SpefWriter* spef_writer = nullptr);
-  void estimateWireParasitic(const Net* net, SpefWriter* spef_writer = nullptr);
-  void estimateWireParasitic(const Pin* drvr_pin,
-                             const Net* net,
-                             SpefWriter* spef_writer = nullptr);
+  void estimateWireParasitics();
+  void estimateWireParasitic(const Net* net);
+  void estimateWireParasitic(const Pin* drvr_pin, const Net* net);
   bool haveEstimatedParasitics() const;
   void parasiticsInvalid(const Net* net);
   void parasiticsInvalid(const dbNet* net);
@@ -343,9 +337,9 @@ class Resizer : public dbStaState
       double max_wire_length,  // max_wire_length zero for none (meters)
       double slew_margin,      // 0.0-1.0
       double cap_margin,       // 0.0-1.0
-      double buffer_gain,
       bool verbose);
   int repairDesignBufferCount() const;
+  int repairDesignResizedCount() const;
   // for debugging
   void repairNet(Net* net,
                  double max_wire_length,  // meters
@@ -383,7 +377,7 @@ class Resizer : public dbStaState
   //  restore resized gates
   // resizeSlackPreamble must be called before the first findResizeSlacks.
   void resizeSlackPreamble();
-  void findResizeSlacks();
+  void findResizeSlacks(bool run_journal_restore);
   // Return nets with worst slack.
   NetSeq& resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).
@@ -406,6 +400,7 @@ class Resizer : public dbStaState
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
   void makeEquivCells();
+  float getTotalNegativeSlack();
 
   ////////////////////////////////////////////////////////////////
   void journalBeginTest();
@@ -577,14 +572,12 @@ class Resizer : public dbStaState
   void updateParasitics(bool save_guides = false);
   void ensureWireParasitic(const Pin* drvr_pin);
   void ensureWireParasitic(const Pin* drvr_pin, const Net* net);
-  void estimateWireParasiticSteiner(const Pin* drvr_pin,
-                                    const Net* net,
-                                    SpefWriter* spef_writer);
+  void estimateWireParasiticSteiner(const Pin* drvr_pin, const Net* net);
   float totalLoad(SteinerTree* tree) const;
   float subtreeLoad(SteinerTree* tree,
                     float cap_per_micron,
                     SteinerPt pt) const;
-  void makePadParasitic(const Net* net, SpefWriter* spef_writer);
+  void makePadParasitic(const Net* net);
   bool isPadNet(const Net* net) const;
   bool isPadPin(const Pin* pin) const;
   bool isPad(const Instance* inst) const;
@@ -607,8 +600,6 @@ class Resizer : public dbStaState
                          const char* name,
                          Instance* parent,
                          const Point& loc);
-  void getBufferPins(Instance* buffer, Pin*& ip_pin, Pin*& op_pin);
-
   Instance* makeBuffer(LibertyCell* cell,
                        const char* name,
                        Instance* parent,
@@ -752,6 +743,8 @@ class Resizer : public dbStaState
 
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
+  // Prim/Dijkstra gets out of hand with bigger nets.
+  static constexpr int max_steiner_pin_count_ = 200000;
 
   // Use actual input slews for accurate delay/slew estimation
   sta::UnorderedMap<LibertyPort*, InputSlews> input_slew_map_;

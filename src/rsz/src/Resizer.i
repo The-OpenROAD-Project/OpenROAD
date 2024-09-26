@@ -39,7 +39,6 @@
 
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
-#include "sta/Corner.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
@@ -49,8 +48,6 @@ namespace ord {
 // Defined in OpenRoad.i
 rsz::Resizer *
 getResizer();
-utl::Logger* 
-getLogger();
 void
 ensureLinked();
 }
@@ -334,47 +331,12 @@ wire_clk_capacitance(const Corner *corner)
   return resizer->wireClkCapacitance(corner);
 }
 
-void 
-estimate_parasitics_cmd(ParasiticsSrc src, const char* path)
+void
+estimate_parasitics_cmd(ParasiticsSrc src)
 {
   ensureLinked();
-  Resizer* resizer = getResizer();
-  std::map<Corner*, std::ostream*> spef_files;
-  if (path != nullptr && std::strlen(path) > 0) {
-    std::string file_path(path);
-    if (!file_path.empty()) {
-      for (Corner* corner : *resizer->getDbNetwork()->corners()) {
-        file_path = path;
-        std::string suffix("_");
-        suffix.append(corner->name());
-        if (file_path.find(".spef") != std::string::npos
-            || file_path.find(".SPEF") != std::string::npos) {
-          file_path.insert(file_path.size() - 5, suffix);
-        } else {
-          file_path.append(suffix);
-        }
-
-        std::ofstream* file = new std::ofstream(file_path);
-
-        if (file->is_open()) {
-          spef_files[corner] = std::move(file);
-        } else {
-          Logger* logger = ord::getLogger();
-          logger->error(utl::RSZ,
-                        7,
-                        "Can't open file " + file_path);
-        }
-      }
-    }
-  }
-
-  resizer->estimateParasitics(src, spef_files);
-
-  for (auto [_, file] : spef_files) {
-    file->flush();
-    delete file;
-  }
-  spef_files.clear();
+  Resizer *resizer = getResizer();
+  resizer->estimateParasitics(src);
 }
 
 // For debugging. Does not protect against annotating power/gnd.
@@ -541,12 +503,11 @@ void
 repair_design_cmd(double max_length,
                   double slew_margin,
                   double cap_margin,
-                  double buffer_gain,
                   bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairDesign(max_length, slew_margin, cap_margin, buffer_gain, verbose);
+  resizer->repairDesign(max_length, slew_margin, cap_margin, verbose);
 }
 
 int
@@ -697,7 +658,7 @@ void
 find_resize_slacks()
 {
   Resizer *resizer = getResizer();
-  resizer->findResizeSlacks();
+  resizer->findResizeSlacks(true);
 }
 
 NetSeq *

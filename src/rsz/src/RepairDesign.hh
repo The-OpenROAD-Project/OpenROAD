@@ -88,12 +88,10 @@ class RepairDesign : dbStaState
   void repairDesign(double max_wire_length,
                     double slew_margin,
                     double cap_margin,
-                    double buffer_gain,
                     bool verbose);
   void repairDesign(double max_wire_length,  // zero for none (meters)
                     double slew_margin,
                     double cap_margin,
-                    double buffer_gain,
                     bool verbose,
                     int& repaired_net_count,
                     int& slew_violations,
@@ -101,6 +99,7 @@ class RepairDesign : dbStaState
                     int& fanout_violations,
                     int& length_violations);
   int insertedBufferCount() const { return inserted_buffer_count_; }
+  int resizedCount() const { return resize_count_; }
   void repairNet(Net* net,
                  double max_wire_length,
                  double slew_margin,
@@ -110,11 +109,6 @@ class RepairDesign : dbStaState
 
  protected:
   void init();
-
-  bool getCin(const Pin* drvr_pin, float& cin);
-  void findBufferSizes();
-  bool performGainBuffering(Net* net, const Pin* drvr_pin, int max_fanout);
-
   void repairNet(Net* net,
                  const Pin* drvr_pin,
                  Vertex* drvr,
@@ -255,16 +249,12 @@ class RepairDesign : dbStaState
   int dbu_ = 0;
   ParasiticsSrc parasitics_src_ = ParasiticsSrc::none;
 
-  // Gain buffering
-  std::vector<LibertyCell*> buffer_sizes_;
-
   // Implicit arguments to repairNet bnet recursion.
   const Pin* drvr_pin_ = nullptr;
   float max_cap_ = 0;
   int max_length_ = 0;
   double slew_margin_ = 0;
   double cap_margin_ = 0;
-  double buffer_gain_ = 0;
   const Corner* corner_ = nullptr;
 
   int resize_count_ = 0;
