@@ -5,11 +5,13 @@
       {
         "name":"_layer",
         "type":"int16_t",
+        "default":"0",
         "flags":[]
       },
       {
         "name":"_datatype",
         "type":"int16_t",
+        "default":"0",
         "flags":[]
       },
       {
