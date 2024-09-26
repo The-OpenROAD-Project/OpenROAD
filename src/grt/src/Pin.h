@@ -94,8 +94,6 @@ class Pin
     on_grid_position_ = on_grid_pos;
   }
   bool isDriver();
-  void deleteITerm() { iterm_ = nullptr; }
-  void deleteBTerm() { bterm_ = nullptr; }
 
  private:
   void determineEdge(const odb::Rect& bounds,

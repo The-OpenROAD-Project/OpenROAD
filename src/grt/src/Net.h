@@ -41,6 +41,7 @@
 
 #include "Pin.h"
 #include "grt/GRoute.h"
+#include "grt/RoutePt.h"
 #include "odb/db.h"
 
 namespace grt {
@@ -71,10 +72,16 @@ class Net
   std::vector<std::vector<SegmentIndex>> buildSegmentsGraph();
   bool isLocal();
   void destroyPins();
-  void deleteITermPin(odb::dbITerm* iterm);
-  void deleteBTermPin(odb::dbBTerm* bterm);
+  void destroyITermPin(odb::dbITerm* iterm);
+  void destroyBTermPin(odb::dbBTerm* bterm);
   bool hasWires() const { return has_wires_; }
   bool hasStackedVias(odb::dbTechLayer* max_routing_layer);
+  void saveLastPinPositions();
+  void clearLastPinPositions() { last_pin_positions_.clear(); }
+  const std::multiset<RoutePt>& getLastPinPositions()
+  {
+    return last_pin_positions_;
+  }
   void setMergedNet(bool merged_net) { merged_net_ = merged_net; }
   bool isMergedNet() const { return merged_net_; }
   void setDirtyNet(bool is_dirty_net) { is_dirty_net_ = is_dirty_net; }
@@ -88,6 +95,7 @@ class Net
   float slack_;
   bool has_wires_;
   std::vector<SegmentIndex> parent_segment_indices_;
+  std::multiset<RoutePt> last_pin_positions_;
   bool merged_net_;
   bool is_dirty_net_;
 };

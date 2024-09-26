@@ -112,29 +112,24 @@ void Net::destroyPins()
   pins_.clear();
 }
 
-void Net::deleteITermPin(odb::dbITerm* iterm)
+void Net::destroyITermPin(odb::dbITerm* iterm)
 {
-  std::vector<Pin>::iterator pin_iter
-      = std::find_if(pins_.begin(), pins_.end(), [&](const Pin& pin) {
-          return pin.getITerm() != nullptr
-                 && pin.getName() == getITermName(iterm);
-        });
-
-  if (pin_iter != pins_.end()) {
-    pin_iter->deleteITerm();
-  }
+  pins_.erase(std::remove_if(pins_.begin(),
+                             pins_.end(),
+                             [&](const Pin& pin) {
+                               return pin.getName() == getITermName(iterm);
+                             }),
+              pins_.end());
 }
 
-void Net::deleteBTermPin(odb::dbBTerm* bterm)
+void Net::destroyBTermPin(odb::dbBTerm* bterm)
 {
-  std::vector<Pin>::iterator pin_iter
-      = std::find_if(pins_.begin(), pins_.end(), [&](const Pin& pin) {
-          return pin.getBTerm() != nullptr && pin.getName() == bterm->getName();
-        });
-
-  if (pin_iter != pins_.end()) {
-    pin_iter->deleteBTerm();
-  }
+  pins_.erase(std::remove_if(pins_.begin(),
+                             pins_.end(),
+                             [&](const Pin& pin) {
+                               return pin.getName() == bterm->getName();
+                             }),
+              pins_.end());
 }
 
 int Net::getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer)
@@ -183,6 +178,17 @@ bool Net::hasStackedVias(odb::dbTechLayer* max_routing_layer)
   }
 
   return true;
+}
+
+void Net::saveLastPinPositions()
+{
+  if (last_pin_positions_.empty()) {
+    for (const Pin& pin : pins_) {
+      last_pin_positions_.insert(RoutePt(pin.getOnGridPosition().getX(),
+                                         pin.getOnGridPosition().getY(),
+                                         pin.getConnectionLayer()));
+    }
+  }
 }
 
 }  // namespace grt
