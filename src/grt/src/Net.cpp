@@ -112,24 +112,28 @@ void Net::destroyPins()
   pins_.clear();
 }
 
-void Net::destroyITermPin(odb::dbITerm* iterm)
+void Net::deleteITermPin(odb::dbITerm* iterm)
 {
-  pins_.erase(std::remove_if(pins_.begin(),
-                             pins_.end(),
-                             [&](const Pin& pin) {
-                               return pin.getName() == getITermName(iterm);
-                             }),
-              pins_.end());
+  std::vector<Pin>::iterator pin_iter
+      = std::find_if(pins_.begin(), pins_.end(), [&](const Pin& pin) {
+          return !pin.isDeleted() && pin.getName() == getITermName(iterm);
+        });
+
+  if (pin_iter != pins_.end()) {
+    pin_iter->setDeleted(true);
+  }
 }
 
-void Net::destroyBTermPin(odb::dbBTerm* bterm)
+void Net::deleteBTermPin(odb::dbBTerm* bterm)
 {
-  pins_.erase(std::remove_if(pins_.begin(),
-                             pins_.end(),
-                             [&](const Pin& pin) {
-                               return pin.getName() == bterm->getName();
-                             }),
-              pins_.end());
+  std::vector<Pin>::iterator pin_iter
+      = std::find_if(pins_.begin(), pins_.end(), [&](const Pin& pin) {
+          return !pin.isDeleted() && pin.getName() == bterm->getName();
+        });
+
+  if (pin_iter != pins_.end()) {
+    pin_iter->setDeleted(true);
+  }
 }
 
 int Net::getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer)

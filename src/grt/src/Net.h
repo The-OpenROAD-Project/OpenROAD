@@ -71,8 +71,8 @@ class Net
   std::vector<std::vector<SegmentIndex>> buildSegmentsGraph();
   bool isLocal();
   void destroyPins();
-  void destroyITermPin(odb::dbITerm* iterm);
-  void destroyBTermPin(odb::dbBTerm* bterm);
+  void deleteITermPin(odb::dbITerm* iterm);
+  void deleteBTermPin(odb::dbBTerm* bterm);
   bool hasWires() const { return has_wires_; }
   bool hasStackedVias(odb::dbTechLayer* max_routing_layer);
   void setMergedNet(bool merged_net) { merged_net_ = merged_net; }
