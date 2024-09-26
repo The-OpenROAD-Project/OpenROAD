@@ -926,6 +926,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
     }
     gCells_.push_back(&gCell);
     gCellMap_[gCell.instance()] = &gCell;
+    db_inst_map_[gCell->instance()->dbInst()] = gCell;
   }
 
   // gPin ptr init
@@ -933,6 +934,8 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   for (auto& gPin : gPinStor_) {
     gPins_.push_back(&gPin);
     gPinMap_[gPin.pin()] = &gPin;
+    if(gPin->pin()->isITerm())
+      db_iterm_map_[gPin->pin()->dbITerm()] = gPin;
   }
 
   // gNet ptr init
@@ -940,6 +943,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   for (auto& gNet : gNetStor_) {
     gNets_.push_back(&gNet);
     gNetMap_[gNet.net()] = &gNet;
+    db_net_map_[gNet->net()->dbNet()] = gNet;
   }
 
   // gCellStor_'s pins_ fill
@@ -1239,6 +1243,8 @@ FloatPoint NesterovBaseCommon::getWireLengthPreconditioner(
 
 void NesterovBaseCommon::updateDbGCells()
 {
+  if(db_cbk_)
+    db_cbk_->removeOwner();
   assert(omp_get_thread_num() == 0);
 #pragma omp parallel for num_threads(num_threads_)
   for (auto it = gCells().begin(); it < gCells().end(); ++it) {
@@ -1254,6 +1260,8 @@ void NesterovBaseCommon::updateDbGCells()
                         gCell->dCy() - replInst->dy() / 2);
     }
   }
+  if(db_cbk_)
+    db_cbk_->addOwner(pbc_->db()->getChip()->getBlock());
 }
 
 int64_t NesterovBaseCommon::getHpwl()
@@ -1346,6 +1354,9 @@ void NesterovBase::fixPointers(std::vector<size_t> new_gcells){
     gCells_.push_back(gCell);
   }
     
+  //TODO how to initiate values for new gcells?
+  // maybe replicate the closest cell with the same type or number of iterms?
+  //TODO this should not go here, we need to push back for each new one and swap delete accordinly
   curSLPCoordi_.resize(gCells_.size());
   curSLPWireLengthGrads_.resize(gCells_.size());
   curSLPDensityGrads_.resize(gCells_.size());
@@ -1428,6 +1439,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     gCell->clearInstances();
     gCell->setInstance(inst);
     gCells_.push_back(gCell);
+    db_inst_map_[gCell->instance()->dbInst()] = gCell;
   }
 
   // add filler cells to gCells_

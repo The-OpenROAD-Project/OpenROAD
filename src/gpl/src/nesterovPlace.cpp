@@ -70,6 +70,13 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
   rb_ = std::move(rb);
   tb_ = std::move(tb);
   log_ = log;
+  //TODO maybe set db_cbk to replace.cpp, this way it can reach all classes, including pb and pbc.
+  // We can also use smart pointer for db_cbk_.
+  if(npVars_.timingDrivenMode) {
+    db_cbk_ = std::make_unique<nesterovDbCbk>(this);
+//    db_cbk_->addOwner(pbc_->db()->getChip()->getBlock());
+    nbc_->setCbk(db_cbk_.get());
+  }
 
   if (npVars.debug && Graphics::guiActive()) {
     graphics_ = std::make_unique<Graphics>(log_,
@@ -431,7 +438,19 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       // See timingBase.cpp in detail
       log_->info(
           GPL, 100, "Timing-driven: executing resizer for reweighting nets.");
-      bool shouldTdProceed = tb_->updateGNetWeights(average_overflow_);
+
+      bool run_journal_restore = (average_overflow_ > npVars_.timingDrivenCheckOverflow);
+      log_->report("current overflow: {}, TD check overflow: {}, virtual rsz: {}",average_overflow_, npVars_.timingDrivenCheckOverflow,run_journal_restore);
+      if(!run_journal_restore)
+        db_cbk_->addOwner(pbc_->db()->getChip()->getBlock());
+      else
+        db_cbk_->removeOwner();
+      log_->report("before TD - nbVec_[0]->nesterovInstsArea():{}", nbVec_[0]->nesterovInstsArea());
+      bool shouldTdProceed = tb_->updateGNetWeights(run_journal_restore);
+      nbVec_[0]->updateAreas();
+      db_cbk_->printCallCounts();
+      db_cbk_->resetCallCounts();
+      log_->report("after TD - nbVec_[0]->nesterovInstsArea():{}", nbVec_[0]->nesterovInstsArea());
 
       // problem occured
       // escape timing driven later
@@ -440,7 +459,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
       
       auto ret = nbc_->insertGCells();
-//      nbVec_[0]->insertGCells(ret);
       
       //TODO track capacity to know if fixPointers is required.
       nbc_->fixPointers(ret);
@@ -561,6 +579,12 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     graphics_->cellPlot(true);
   }
 
+  if(db_cbk_ != nullptr)
+  {
+    log_->report("NesterovPlace::doNesteroPlace() remove owner");
+    db_cbk_->removeOwner();
+    db_cbk_ = nullptr;
+  }
   return iter;
 }
 
@@ -601,6 +625,338 @@ void NesterovPlace::updateNextIter(const int iter)
 void NesterovPlace::updateDb()
 {
   nbc_->updateDbGCells();
+}
+
+nesterovDbCbk::nesterovDbCbk(NesterovPlace* nesterov_place) : nesterov_place_(nesterov_place)
+{
+}
+
+void NesterovPlace::resizeGCell(odb::dbInst* db_inst) {
+  log_->report("start resizing cell: {}", db_inst->getName());
+  auto gcell = nbc_->dbInstMap().find(db_inst)->second;
+  if(gcell){
+    gcell->setSize(db_inst->getBBox()->getDX(), db_inst->getBBox()->getDY());
+//    for(auto& nesterov : nbVec_){
+//      nesterov->createGCell(db_inst, gcell);
+//    }
+  }
+  log_->report("done resizing cell: {}", db_inst->getName());
+}
+
+// If placer base and placer base common also have their vector replaced,
+// the gcell parameter is not necessary, and can be accessed with dbToNb()
+void NesterovPlace::createGCell(odb::dbInst* db_inst) {
+  log_->report("start create new cell: {}", db_inst->getName());
+  auto gcell = nbc_->createGCell(db_inst);
+  for(auto& nesterov : nbVec_){
+    nesterov->createGCell(db_inst, gcell);
+  }
+  log_->report("done create new cell: {}", db_inst->getName());
+}
+
+void NesterovPlace::destroyGCell(odb::dbInst* db_inst) {
+  log_->report("start detroy cell: {}", db_inst->getName());
+  for(auto& nesterov : nbVec_){
+    nesterov->destroyGCell(db_inst);
+  }  
+  nbc_->destroyGCell(db_inst);
+  log_->report("done detroy cell: {}", db_inst->getName());
+}
+
+void NesterovPlace::createGNet(odb::dbNet* db_net) {
+  log_->report("start create new net: {}", db_net->getName());
+  // Only process SIGNAL or CLOCK nets, escape nets with VDD/VSS/reset nets
+  odb::dbSigType netType = db_net->getSigType();
+  if (netType != odb::dbSigType::SIGNAL && netType != odb::dbSigType::CLOCK) {
+    log_->report("db_net:{} is not signal or clock: {}",db_net->getName(),db_net->getSigType().getString());
+    return;
+  }
+  nbc_->createGNet(db_net,pbc_->skipIoMode());
+  // no GNet in nesterovBase
+  log_->report("done create new net: {}", db_net->getName());
+}
+
+void NesterovPlace::destroyGNet(odb::dbNet* db_net) {
+  log_->report("start destroy net: {}", db_net->getName());
+  nbc_->destroyGNet(db_net);
+  // no GNet in nesterovBase
+  log_->report("done destroy new net: {}", db_net->getName());
+}
+
+void NesterovPlace::createITerm(odb::dbITerm* iterm) {
+  log_->report("start create new Iterm: {}", iterm->getName('|'));
+  // Only process SIGNAL or CLOCK, escape with VDD/VSS/reset
+  odb::dbSigType itermType = iterm->getSigType();
+  if (itermType != odb::dbSigType::SIGNAL && itermType != odb::dbSigType::CLOCK) {
+    log_->report("iterm:{} is not signal or clock: {}",iterm->getName('|'),iterm->getSigType().getString());
+    return;
+  }
+  nbc_->createITerm(iterm);
+  // no GPin in nesterovBase
+  log_->report("end create new Iterm: {}", iterm->getName('|'));
+}
+
+void NesterovPlace::destroyITerm(odb::dbITerm* iterm) {
+  log_->report("start destroy net: {}", iterm->getName());
+  nbc_->destroyITerm(iterm);
+  // no GNet in nesterovBase
+  log_->report("done destroy new net: {}", iterm->getName());
+}
+
+void NesterovPlace::disconnectIterm(odb::dbITerm* iterm, odb::dbNet* db_net) {
+  nbc_->disconnectITerm(iterm, db_net);
+}
+
+void NesterovPlace::connectIterm(odb::dbITerm* iterm) {
+  nbc_->connectITerm(iterm);
+}
+
+void NesterovPlace::moveGCell(odb::dbInst* db_inst) {
+  auto bbox = db_inst->getBBox();
+  log_->report("db_inst in moveGCell:{}, BBOX:({},{}), ({},{})",db_inst->getName(),bbox->xMin(),bbox->yMin(),bbox->xMax(),bbox->yMax());
+//  nbc_->moveGCell(db_inst);
+  GCell* gcell = nbc_->dbInstMap().find(db_inst)->second;
+  gcell->print(log_);
+
+}
+
+void nesterovDbCbk::inDbInstCreate(odb::dbInst* db_inst){
+  ++inDbInstCreateCount;
+  nesterov_place_->createGCell(db_inst);
+}
+
+//TODO: actually use the region to create new gcell. Find the region among nbVec?
+void nesterovDbCbk::inDbInstCreate(odb::dbInst* db_inst, odb::dbRegion*){
+  ++inDbInstCreateCount;
+  nesterov_place_->createGCell(db_inst);
+}
+
+void nesterovDbCbk::inDbInstSwapMasterAfter(odb::dbInst* db_inst) {
+  ++inDbInstSwapMasterAfterCount;
+  nesterov_place_->resizeGCell(db_inst);
+}
+
+void nesterovDbCbk::inDbInstDestroy(odb::dbInst* db_inst) {
+    ++inDbInstDestroyCount;
+    nesterov_place_->destroyGCell(db_inst);
+}
+
+void nesterovDbCbk::inDbITermCreate(odb::dbITerm* iterm) {
+    ++inDbITermCreateCount;
+    log_.report("Check: inDbITermCreate, iterm create:{}",iterm->getName('|'));
+    nesterov_place_->createITerm(iterm);
+}
+
+void nesterovDbCbk::inDbITermDestroy(odb::dbITerm* iterm) {
+    ++inDbITermDestroyCount;
+    log_.report("Check: inDbITermDestroy,iterm:{}",iterm->getName('|'));
+    nesterov_place_->destroyITerm(iterm);
+}
+
+//void nesterovDbCbk::inDbITermPreDisconnect(odb::dbITerm* iterm) {
+//    ++inDbITermPreDisconnectCount;
+//    log_.report("Check: inDbITermPreDisconnect, iterm: {}", iterm->getName('|'));
+//}
+
+void nesterovDbCbk::inDbITermPostDisconnect(odb::dbITerm* iterm, odb::dbNet* net) {
+  ++inDbITermPostDisconnectCount;
+  log_.report("Check: inDbITermPostDisconnect, net: {}, iterm: {}", net->getName(), iterm->getName('|'));
+  nesterov_place_->disconnectIterm(iterm, net);  
+}
+
+//void nesterovDbCbk::inDbITermPreConnect(odb::dbITerm* iterm, odb::dbNet* net) {
+//    ++inDbITermPreConnectCount;
+//    log_.report("Check: inDbITermPreConnect, net: {}, iterm: {}", net->getName(), iterm->getName('|'));
+//}
+
+void nesterovDbCbk::inDbITermPostConnect(odb::dbITerm* iterm) {
+  ++inDbITermPostConnectCount;
+  log_.report("Check: inDbITermPostConnect iterm: {}", iterm->getName('|'));
+  nesterov_place_->connectIterm(iterm);
+}
+
+void nesterovDbCbk::inDbPreMoveInst(odb::dbInst* db_inst) {
+    ++inDbPreMoveInstCount;
+    log_.report("Check: inDbPreMoveInst called");
+    nesterov_place_->moveGCell(db_inst);
+}
+
+void nesterovDbCbk::inDbPostMoveInst(odb::dbInst* db_inst) {
+    ++inDbPostMoveInstCount;
+    log_.report("Check: inDbPostMoveInst called, inst:{}", db_inst->getName());
+    nesterov_place_->moveGCell(db_inst);
+}
+
+void nesterovDbCbk::inDbNetCreate(odb::dbNet* db_net) {
+    ++inDbNetCreateCount;
+    log_.report("Check: inDbNetCreate, net:{}", db_net->getName());
+    nesterov_place_->createGNet(db_net);
+}
+
+void nesterovDbCbk::inDbNetDestroy(odb::dbNet* db_net) {
+    ++inDbNetDestroyCount;
+    log_.report("Check: inDbNetDestroy, net:{}", db_net->getName());
+    nesterov_place_->destroyGNet(db_net);
+}
+
+void nesterovDbCbk::inDbNetPreMerge(odb::dbNet* net1, odb::dbNet* net2) {
+    ++inDbNetPreMergeCount;
+    log_.report("Check: inDbNetPreMerge, net1:{}, net2:{}", net1->getName(), net2->getName());
+}
+
+void nesterovDbCbk::inDbBTermCreate(odb::dbBTerm* bterm) {
+    ++inDbBTermCreateCount;
+    log_.report("Check: inDbBTermCreate called");
+}
+
+void nesterovDbCbk::inDbBTermDestroy(odb::dbBTerm* bterm) {
+    ++inDbBTermDestroyCount;
+    log_.report("Check: inDbBTermDestroy called");
+}
+
+void nesterovDbCbk::inDbBTermPreConnect(odb::dbBTerm* bterm, odb::dbNet* net) {
+    ++inDbBTermPreConnectCount;
+    log_.report("Check: inDbBTermPreConnect called");
+}
+
+void nesterovDbCbk::inDbBTermPostConnect(odb::dbBTerm* bterm) {
+    ++inDbBTermPostConnectCount;
+    log_.report("Check: inDbBTermPostConnect called");
+}
+
+void nesterovDbCbk::inDbBTermPreDisconnect(odb::dbBTerm* bterm) {
+    ++inDbBTermPreDisconnectCount;
+    log_.report("Check: inDbBTermPreDisconnect called");
+}
+
+void nesterovDbCbk::inDbBTermPostDisConnect(odb::dbBTerm* bterm, odb::dbNet* net) {
+    ++inDbBTermPostDisConnectCount;
+    log_.report("Check: inDbBTermPostDisConnect called");
+}
+
+void nesterovDbCbk::inDbBTermSetIoType(odb::dbBTerm* bterm, const odb::dbIoType& ioType) {
+    ++inDbBTermSetIoTypeCount;
+    log_.report("Check: inDbBTermSetIoType called");
+}
+
+void nesterovDbCbk::inDbBPinCreate(odb::dbBPin* bpin) {
+    ++inDbBPinCreateCount;
+    log_.report("Check: inDbBPinCreate called");
+}
+
+void nesterovDbCbk::inDbBPinDestroy(odb::dbBPin* bpin) {
+    ++inDbBPinDestroyCount;
+    log_.report("Check: inDbBPinDestroy called");
+}
+
+void nesterovDbCbk::inDbBlockageCreate(odb::dbBlockage* blockage) {
+    ++inDbBlockageCreateCount;
+    log_.report("Check: inDbBlockageCreate called");
+}
+
+void nesterovDbCbk::inDbObstructionCreate(odb::dbObstruction* obstruction) {
+    ++inDbObstructionCreateCount;
+    log_.report("Check: inDbObstructionCreate called");
+}
+
+void nesterovDbCbk::inDbObstructionDestroy(odb::dbObstruction* obstruction) {
+    ++inDbObstructionDestroyCount;
+    log_.report("Check: inDbObstructionDestroy called");
+}
+
+void nesterovDbCbk::inDbRegionCreate(odb::dbRegion* region) {
+    ++inDbRegionCreateCount;
+    log_.report("Check: inDbRegionCreate called");
+}
+
+void nesterovDbCbk::inDbRegionAddBox(odb::dbRegion* region, odb::dbBox* box) {
+    ++inDbRegionAddBoxCount;
+    log_.report("Check: inDbRegionAddBox called");
+}
+
+void nesterovDbCbk::inDbRegionDestroy(odb::dbRegion* region) {
+    ++inDbRegionDestroyCount;
+    log_.report("Check: inDbRegionDestroy called");
+}
+
+void nesterovDbCbk::inDbRowCreate(odb::dbRow* row) {
+    ++inDbRowCreateCount;
+    log_.report("Check: inDbRowCreate called");
+}
+
+void nesterovDbCbk::inDbRowDestroy(odb::dbRow* row) {
+    ++inDbRowDestroyCount;
+    log_.report("Check: inDbRowDestroy called");
+}
+
+void nesterovDbCbk::printCallCounts() {
+    log_.report("Call Counts:");    
+    log_.report("inDbInstCreate: " + std::to_string(inDbInstCreateCount));
+    log_.report("inDbInstDestroy: " + std::to_string(inDbInstDestroyCount));
+    log_.report("inDbInstSwapMasterAfter: " + std::to_string(inDbInstSwapMasterAfterCount));
+    log_.report("inDbITermCreate: " + std::to_string(inDbITermCreateCount));
+    log_.report("inDbITermDestroy: " + std::to_string(inDbITermDestroyCount));
+    log_.report("inDbITermPreDisconnect: " + std::to_string(inDbITermPreDisconnectCount));
+    log_.report("inDbITermPostDisconnect: " + std::to_string(inDbITermPostDisconnectCount));
+    log_.report("inDbITermPreConnect: " + std::to_string(inDbITermPreConnectCount));
+    log_.report("inDbITermPostConnect: " + std::to_string(inDbITermPostConnectCount));
+    log_.report("inDbPreMoveInst: " + std::to_string(inDbPreMoveInstCount));
+    log_.report("inDbPostMoveInst: " + std::to_string(inDbPostMoveInstCount));
+    log_.report("inDbNetCreate: " + std::to_string(inDbNetCreateCount));
+    log_.report("inDbNetDestroy: " + std::to_string(inDbNetDestroyCount));
+    log_.report("inDbNetPreMerge: " + std::to_string(inDbNetPreMergeCount));
+    log_.report("inDbBTermCreate: " + std::to_string(inDbBTermCreateCount));
+    log_.report("inDbBTermDestroy: " + std::to_string(inDbBTermDestroyCount));
+    log_.report("inDbBTermPreConnect: " + std::to_string(inDbBTermPreConnectCount));
+    log_.report("inDbBTermPostConnect: " + std::to_string(inDbBTermPostConnectCount));
+    log_.report("inDbBTermPreDisconnect: " + std::to_string(inDbBTermPreDisconnectCount));
+    log_.report("inDbBTermPostDisConnect: " + std::to_string(inDbBTermPostDisConnectCount));
+    log_.report("inDbBTermSetIoType: " + std::to_string(inDbBTermSetIoTypeCount));
+    log_.report("inDbBPinCreate: " + std::to_string(inDbBPinCreateCount));
+    log_.report("inDbBPinDestroy: " + std::to_string(inDbBPinDestroyCount));
+    log_.report("inDbBlockageCreate: " + std::to_string(inDbBlockageCreateCount));
+    log_.report("inDbObstructionCreate: " + std::to_string(inDbObstructionCreateCount));
+    log_.report("inDbObstructionDestroy: " + std::to_string(inDbObstructionDestroyCount));
+    log_.report("inDbRegionCreate: " + std::to_string(inDbRegionCreateCount));
+    log_.report("inDbRegionAddBox: " + std::to_string(inDbRegionAddBoxCount));
+    log_.report("inDbRegionDestroy: " + std::to_string(inDbRegionDestroyCount));
+    log_.report("inDbRowCreate: " + std::to_string(inDbRowCreateCount));
+    log_.report("inDbRowDestroy: " + std::to_string(inDbRowDestroyCount));
+}
+
+
+void nesterovDbCbk::resetCallCounts() {
+    inDbInstCreateCount = 0;
+    inDbInstDestroyCount = 0;
+    inDbInstSwapMasterAfterCount = 0;
+    inDbITermCreateCount = 0;
+    inDbITermDestroyCount = 0;
+    inDbITermPreDisconnectCount = 0;
+    inDbITermPostDisconnectCount = 0;
+    inDbITermPreConnectCount = 0;
+    inDbITermPostConnectCount = 0;
+    inDbPreMoveInstCount = 0;
+    inDbPostMoveInstCount = 0;
+    inDbNetCreateCount = 0;
+    inDbNetDestroyCount = 0;
+    inDbNetPreMergeCount = 0;
+    inDbBTermCreateCount = 0;
+    inDbBTermDestroyCount = 0;
+    inDbBTermPreConnectCount = 0;
+    inDbBTermPostConnectCount = 0;
+    inDbBTermPreDisconnectCount = 0;
+    inDbBTermPostDisConnectCount = 0;
+    inDbBTermSetIoTypeCount = 0;
+    inDbBPinCreateCount = 0;
+    inDbBPinDestroyCount = 0;
+    inDbBlockageCreateCount = 0;
+    inDbObstructionCreateCount = 0;
+    inDbObstructionDestroyCount = 0;
+    inDbRegionCreateCount = 0;
+    inDbRegionAddBoxCount = 0;
+    inDbRegionDestroyCount = 0;
+    inDbRowCreateCount = 0;
+    inDbRowDestroyCount = 0;
 }
 
 }  // namespace gpl
