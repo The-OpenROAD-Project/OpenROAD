@@ -1286,7 +1286,7 @@ GCell* NesterovBaseCommon::getGCellByIndex(size_t i) {
 
 
 //TODO this function should be related to call backs.
-std::vector<size_t> NesterovBaseCommon::insertGCells(){
+std::vector<size_t> NesterovBaseCommon::insertGCellsTestOnly(){
   std::vector<size_t> new_gcells;
 //  for (auto& inst : pbc_->placeInsts()) {
 //    GCell new_gcell = GCell(inst);

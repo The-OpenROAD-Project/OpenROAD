@@ -847,7 +847,7 @@ class NesterovBaseCommon
   size_t getNumThreads() { return num_threads_; }
   
   GCell* getGCellByIndex(size_t i);
-  std::vector<size_t> insertGCells();
+  std::vector<size_t> insertGCellsTestOnly();
   void fixPointers(std::vector<size_t> new_gcells);
 
   void setCbk(nesterovDbCbk* cbk) { db_cbk_ = cbk; }

@@ -458,7 +458,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         npVars_.timingDrivenMode = false;
       }
       
-      auto ret = nbc_->insertGCells();
+      auto ret = nbc_->insertGCellsTestOnly();
       
       //TODO track capacity to know if fixPointers is required.
       nbc_->fixPointers(ret);
