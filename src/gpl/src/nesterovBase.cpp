@@ -926,7 +926,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
     }
     gCells_.push_back(&gCell);
     gCellMap_[gCell.instance()] = &gCell;
-    db_inst_map_[gCell->instance()->dbInst()] = gCell;
+    db_inst_map_[gCell.instance()->dbInst()] = &gCell;
   }
 
   // gPin ptr init
@@ -934,8 +934,8 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   for (auto& gPin : gPinStor_) {
     gPins_.push_back(&gPin);
     gPinMap_[gPin.pin()] = &gPin;
-    if(gPin->pin()->isITerm())
-      db_iterm_map_[gPin->pin()->dbITerm()] = gPin;
+    if(gPin.pin()->isITerm())
+      db_iterm_map_[gPin.pin()->dbITerm()] = &gPin;
   }
 
   // gNet ptr init
@@ -943,7 +943,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   for (auto& gNet : gNetStor_) {
     gNets_.push_back(&gNet);
     gNetMap_[gNet.net()] = &gNet;
-    db_net_map_[gNet->net()->dbNet()] = gNet;
+    db_net_map_[gNet.net()->dbNet()] = &gNet;
   }
 
   // gCellStor_'s pins_ fill
@@ -2506,6 +2506,199 @@ bool NesterovBase::revertDivergence()
   divergeMsg_ = "";
 
   return true;
+}
+
+void NesterovBase::destroyGCell(odb::dbInst* db_inst) {
+  // auto db_it = db_inst_map_.find(db_inst);
+  // if (db_it != db_inst_map_.end()) {
+  //   GCell* gcell = db_it->second;
+  //   db_inst_map_.erase(db_it);
+
+  //   auto gcell_it = newGCells_.find(gcell);
+  //   if(gcell_it != newGCells_.end()){
+  //     newGCells_.erase(gcell_it);
+  //   }        
+  // } else {
+  //   log_->report("error: db_inst not found in db_inst_map_ for instance: {}", db_inst->getName());
+  // }
+}
+
+void NesterovBaseCommon::destroyGCell(odb::dbInst* db_inst) {
+  // auto db_it = db_inst_map_.find(db_inst);
+  // if (db_it != db_inst_map_.end()) {
+  //   GCell* gcell = db_it->second;
+  //   db_inst_map_.erase(db_it);
+
+  //   auto inst_it = gCellMap_.find(gcell->instance());
+  //   if (inst_it != gCellMap_.end()) {
+  //     gCellMap_.erase(inst_it);
+  //   }
+
+  //   auto gcell_it = newGCells_.find(gcell);
+  //   if(gcell_it != newGCells_.end()){
+  //     newGCells_.erase(gcell_it);
+  //   }
+  //   delete gcell;
+  // } else {
+  //   log_->report("error: db_inst not found in db_inst_map_ for instance: {}", db_inst->getName());
+  // }
+}
+
+void NesterovBaseCommon::destroyGNet(odb::dbNet* db_net) {
+  // auto db_it = db_net_map_.find(db_net);
+  // if (db_it != db_net_map_.end()) {
+  //   GNet* gNet = db_it->second;
+  //   db_net_map_.erase(db_it);
+
+  //   auto net_it = gNetMap_.find(gNet->net());
+  //   if (net_it != gNetMap_.end()) {
+  //     gNetMap_.erase(net_it);
+  //   }
+
+  //   auto gNet_it = gNets_.find(gNet);
+  //   if(gNet_it != gNets_.end()){
+  //     gNets_.erase(gNet_it);
+  //   }
+  //   delete gNet;
+  // } else {
+  //   log_->report("error: db_net not found in db_net_map_ for net: {}", db_net->getName());
+  // }
+}
+
+void NesterovBaseCommon::destroyITerm(odb::dbITerm* db_iterm) {
+  // auto db_it = db_iterm_map_.find(db_iterm);
+  // if (db_it != db_iterm_map_.end()) {
+  //   GPin* gPin = db_it->second;
+  //   db_iterm_map_.erase(db_it);
+
+  //   auto pin_it = gPinMap_.find(gPin->pin());
+  //   if (pin_it != gPinMap_.end()) {
+  //     gPinMap_.erase(pin_it);
+  //   }
+
+  //   auto gPin_it = gPins_.find(gPin);
+  //   if(gPin_it != gPins_.end()){
+  //     gPins_.erase(gPin_it);
+  //   }
+  //   delete gPin;
+  // } else {
+  //   log_->report("error: db_iterm not found in db_iterm_map_ for iterm: {}", db_iterm->getMTerm()->getName());
+  // }
+}
+
+
+void NesterovBaseCommon::disconnectITerm(odb::dbITerm* iterm, odb::dbNet* db_net) {
+    // auto iterm_it = db_iterm_map_.find(iterm);
+    // if (iterm_it == db_iterm_map_.end()) {
+    //     log_->report("ITerm not found in db_iterm_map_ for ITerm: {}", iterm->getName('|'));
+    //     return;
+    // }
+
+    // auto db_net_it = db_net_map_.find(db_net);
+    // if (db_net_it == db_net_map_.end()) {
+    //     log_->report("error: Net not found in db_net_map_ for Net: {}", db_net->getName());
+    //     return;
+    // }
+    // iterm_it->second->disconnectNet();
+    // db_net_it->second->disconnectPin(iterm_it->second);
+}
+
+void NesterovBaseCommon::connectITerm(odb::dbITerm* iterm) {
+  // auto db_inst = iterm->getInst();
+  // auto db_net = iterm->getNet();
+
+  // auto inst_it = db_inst_map_.find(db_inst);
+  // if (inst_it == db_inst_map_.end()) {
+  //   log_->report("error: db_inst not found in db_inst_map_ for db_inst: {}", db_inst->getName());
+  //   return;
+  // }
+  // auto iterm_it = db_iterm_map_.find(iterm);
+  // if (iterm_it == db_iterm_map_.end()) {
+  //     log_->report("error: ITerm not found in db_iterm_map_ for ITerm: {}", iterm->getName('|'));
+  //     return;
+  // }
+  // auto db_net_it = db_net_map_.find(db_net);
+  // if (db_net_it == db_net_map_.end()) {
+  //     log_->report("error: Net not found in db_net_map_ for Net: {}", db_net->getName());
+  //     return;
+  // }  
+  // iterm_it->second->setGNet(db_net_it->second);
+  // log_->report("NET of GPin after setGnet:{}", iterm_it->second->gNet()->net()->dbNet()->getName());
+
+  // log_->report("before addGPin, GNet pins: db_net_it->second->gPins().size():{}", db_net_it->second->gPins().size());
+  // db_net_it->second->addGPin(iterm_it->second);
+  // log_->report("after addGPin, GNet pins: db_net_it->second->gPins().size():{}", db_net_it->second->gPins().size());
+
+  // log_->report("before addGPin, GCell pins: inst_it->second->gPins().size():{}", inst_it->second->gPins().size());
+  // inst_it->second->addGPin(iterm_it->second);
+  // log_->report("after addGPin, GCell pins: inst_it->second->gPins().size():{}", inst_it->second->gPins().size());
+}
+
+
+// If placer base and placer base common also have their vector replaced,
+// the gcell parameter is not necessary, and can be accessed with dbToNb()
+void NesterovBase::createGCell(odb::dbInst* db_inst, GCell* gCell){
+//   //TODO: for now pbc and pb does not support dynamic creation of instances 
+// //  GCell* gCell = new GCell(gpl_inst);
+// //  GCell* gCell = nbc_->dbToNb(db_inst);
+//   if(gCell!=nullptr){
+//     GCellState emptyState;    
+//     newGCells_[gCell] = emptyState;
+//     db_inst_map_[db_inst] = gCell;
+//   //  log_->report("nbc: newGCells_.size(): {}", newGCells_.size());
+//   } else {
+//     log_->report("Error! gCell is nullptr!");
+//   }
+}
+
+GCell* NesterovBaseCommon::createGCell(odb::dbInst* db_inst){
+  // //TODO: for now pbc and pb does not support dynamic creation of instances
+  // Instance* gpl_inst = new Instance(db_inst,
+  //                   pbc_->padLeft() * pbc_->siteSizeX(),
+  //                   pbc_->padRight() * pbc_->siteSizeX(),
+  //                   pbc_->siteSizeY(),
+  //                   log_);  
+  // GCell* gCell = new GCell(gpl_inst);
+  // GCellState emptyState;    
+  // newGCells_[gCell] = emptyState;
+  // gCellMap_[gCell->instance()] = gCell;
+  // db_inst_map_[db_inst] = gCell;
+
+  // //TODO how to implement updateDensitySize() here?
+  // return gCell;
+}
+
+void NesterovBaseCommon::createGNet(odb::dbNet* db_net, bool skip_io_mode) {
+  // log_->report("NBC: createGNet called"); 
+  // log_->report("before createGnet: db_net->getITerms().size():{}", db_net->getITerms().size());
+
+  // //gpl_net avoiding the need for placerBase container
+  // Net* gpl_net = new Net(db_net, skip_io_mode);
+  // GNet* gNet = new GNet(gpl_net);
+  // gNets_.insert(gNet);
+  // gNetMap_[gNet->net()] = gNet;
+  // db_net_map_[gNet->net()->dbNet()] = gNet;
+  // log_->report("after createGnet: gNet->gPins().size():{}", gNet->gPins().size());
+}
+
+
+void NesterovBaseCommon::createITerm(odb::dbITerm* iTerm) {
+  // log_->report("NBC: createIterm called");    
+  // Pin* gpl_pin = new Pin(iTerm); 
+
+  // // This can also be done using dbToPb as in placerBase.
+  // auto gpl_inst_it = db_inst_map_.find(iTerm->getInst());
+  // if(gpl_inst_it != db_inst_map_.end()) {    
+  //   gpl_pin->setInstance(gpl_inst_it->second->instance());
+  // }
+  // else
+  //   log_->report("ERROR! Net not found creating pin");
+
+  // GPin* gPin = new GPin(gpl_pin);
+  // gPins_.insert(gPin);
+  // gPinMap_[gPin->pin()] = gPin;
+  // if(gPin->pin()->isITerm())
+  //   db_iterm_map_[gPin->pin()->dbITerm()] = gPin;
 }
 
 // https://stackoverflow.com/questions/33333363/built-in-mod-vs-custom-mod-function-improve-the-performance-of-modulus-op

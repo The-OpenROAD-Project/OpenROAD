@@ -39,6 +39,8 @@
 #include <vector>
 
 #include "point.h"
+#include "placerBase.h"
+#include "odb/db.h"
 
 namespace odb {
 class dbInst;
@@ -64,6 +66,7 @@ class Net;
 
 class GPin;
 class FFT;
+class nesterovDbCbk;
 
 class GCell
 {
@@ -802,6 +805,8 @@ class NesterovBaseCommon
   const std::vector<GCell*>& gCells() const { return gCells_; }
   const std::vector<GNet*>& gNets() const { return gNets_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
+
+  std::unordered_map<odb::dbInst*, GCell*>& dbInstMap() { return db_inst_map_; }
 
   //
   // placerBase To NesterovBase functions
