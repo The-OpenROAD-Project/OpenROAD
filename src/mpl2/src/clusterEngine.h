@@ -188,11 +188,11 @@ class ClusteringEngine
   Boundary getConstraintBoundary(const odb::Rect& die,
                                  const odb::Rect& constraint_region);
   void createIOCluster(const odb::Rect& die,
-                       const Boundary constraint_boundary,
+                       Boundary constraint_boundary,
                        std::map<Boundary, Cluster*>& boundary_to_cluster,
                        odb::dbBTerm* bterm);
   void setIOClusterDimensions(const odb::Rect& die,
-                              const Boundary boundary,
+                              Boundary boundary,
                               int& x,
                               int& y,
                               int& width,

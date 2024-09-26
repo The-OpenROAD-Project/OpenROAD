@@ -1007,7 +1007,7 @@ std::vector<Cluster*> HierRTLMP::getIOClusters()
 // 1) Amount of std cell area in the design.
 // 2) Extension of the IO clusters across the design's boundaries.
 float HierRTLMP::computePinAccessBlockagesDepth(
-    std::vector<Cluster*> io_clusters,
+    const std::vector<Cluster*>& io_clusters,
     const Rect& die)
 {
   float io_clusters_extension = 0.0;
@@ -3925,7 +3925,7 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
       for (odb::dbITerm* iterm : net->getITerms()) {
         int x, y;
         if (iterm->getAvgXY(&x, &y)) {
-          odb::Rect iterm_rect(x, y, x , y);
+          odb::Rect iterm_rect(x, y, x, y);
           net_box.merge(iterm_rect);
         }
       }

@@ -369,19 +369,21 @@ Boundary ClusteringEngine::getConstraintBoundary(
     const odb::Rect& die,
     const odb::Rect& constraint_region)
 {
+  Boundary constraint_boundary = NONE;
   if (constraint_region.xMin() == constraint_region.xMax()) {
     if (constraint_region.xMin() == die.xMin()) {
-      return L;
+      constraint_boundary = L;
     } else {
-      return R;
+      constraint_boundary = R;
     }
   } else {
     if (constraint_region.yMin() == die.yMin()) {
-      return B;
+      constraint_boundary = B;
     } else {
-      return T;
+      constraint_boundary = T;
     }
   }
+  return constraint_boundary;
 }
 
 void ClusteringEngine::createIOCluster(
@@ -2110,7 +2112,7 @@ void ClusteringEngine::printPhysicalHierarchyTree(Cluster* parent, int level)
                         parent->getMacroArea());
   }
 
-   logger_->report("{}", line);
+  logger_->report("{}", line);
 
   for (auto& cluster : parent->getChildren()) {
     printPhysicalHierarchyTree(cluster.get(), level + 1);
