@@ -3982,9 +3982,9 @@ void GlobalRouter::findBufferPinPostions(Net* net1,
                                          odb::Point& pin_pos2)
 {
   for (const Pin& pin1 : net1->getPins()) {
-    if (!pin1.isPort() && !pin1.isDeleted()) {
+    if (!pin1.isPort() && pin1.getITerm() != nullptr) {
       for (const Pin& pin2 : net2->getPins()) {
-        if (!pin2.isPort() && !pin2.isDeleted()) {
+        if (!pin2.isPort() && pin2.getITerm() != nullptr) {
           if (pin1.getITerm()->getInst() == pin2.getITerm()->getInst()) {
             pin_pos1 = pin1.getOnGridPosition();
             pin_pos2 = pin2.getOnGridPosition();

@@ -49,8 +49,7 @@ Pin::Pin(
       position_(position),
       edge_(PinEdge::none),
       is_port_(false),
-      connected_to_pad_or_macro_(connected_to_pad_or_macro),
-      deleted_(false)
+      connected_to_pad_or_macro_(connected_to_pad_or_macro)
 {
   for (auto layer : layers) {
     layers_.push_back(layer->getRoutingLevel());

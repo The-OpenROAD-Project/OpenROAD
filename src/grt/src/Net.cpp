@@ -116,11 +116,12 @@ void Net::deleteITermPin(odb::dbITerm* iterm)
 {
   std::vector<Pin>::iterator pin_iter
       = std::find_if(pins_.begin(), pins_.end(), [&](const Pin& pin) {
-          return !pin.isDeleted() && pin.getName() == getITermName(iterm);
+          return pin.getITerm() != nullptr
+                 && pin.getName() == getITermName(iterm);
         });
 
   if (pin_iter != pins_.end()) {
-    pin_iter->setDeleted(true);
+    pin_iter->deleteITerm();
   }
 }
 
@@ -128,11 +129,11 @@ void Net::deleteBTermPin(odb::dbBTerm* bterm)
 {
   std::vector<Pin>::iterator pin_iter
       = std::find_if(pins_.begin(), pins_.end(), [&](const Pin& pin) {
-          return !pin.isDeleted() && pin.getName() == bterm->getName();
+          return pin.getBTerm() != nullptr && pin.getName() == bterm->getName();
         });
 
   if (pin_iter != pins_.end()) {
-    pin_iter->setDeleted(true);
+    pin_iter->deleteBTerm();
   }
 }
 
