@@ -1,0 +1,6 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO ODB-0128] Design: dual_spm
+[INFO TAP-0004] Inserted 272 endcaps.
+[INFO TAP-0005] Inserted 844 tapcells.
+No differences found.

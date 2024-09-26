@@ -52,17 +52,6 @@ namespace odb {
 
 namespace gds {
 
-GDSReader::GDSReader() : _lib(nullptr)
-{
-}
-
-GDSReader::~GDSReader()
-{
-  if (_file.is_open()) {
-    _file.close();
-  }
-}
-
 dbGDSLib* GDSReader::read_gds(const std::string& filename, dbDatabase* db)
 {
   _db = db;

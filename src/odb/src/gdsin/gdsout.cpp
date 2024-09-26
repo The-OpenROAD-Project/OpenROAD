@@ -236,8 +236,6 @@ void GDSWriter::writeElement(dbGDSElement* el)
     writeBoundary((dbGDSBoundary*) _el);
   } else if (dynamic_cast<_dbGDSPath*>(_el) != nullptr) {
     writePath((dbGDSPath*) _el);
-  } else if (dynamic_cast<_dbGDSSRef*>(_el) != nullptr) {
-    writeSRef((dbGDSSRef*) _el);
   } else if (dynamic_cast<_dbGDSSRef*>(_el)) {
     writeSRef((dbGDSSRef*) el);
   } else if (dynamic_cast<_dbGDSText*>(_el)) {
@@ -257,7 +255,7 @@ void GDSWriter::writeElement(dbGDSElement* el)
 void GDSWriter::writePropAttr(dbGDSElement* el)
 {
   auto& props = el->getPropattr();
-  for (auto pair : props) {
+  for (const auto& pair : props) {
     record_t r;
     r.type = RecordType::PROPATTR;
     r.dataType = DataType::INT_2;

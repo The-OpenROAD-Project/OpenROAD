@@ -89,6 +89,7 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-sink_buffer_max_cap_derate] \
                                              [-dont_use_dummy_load] \
                                              [-delay_buffer_derate] \
+                                             [-library] \
 };# checker off
 
 proc clock_tree_synthesis { args } {
@@ -99,12 +100,17 @@ proc clock_tree_synthesis { args } {
           -clustering_exponent \
           -clustering_unbalance_ratio -sink_clustering_max_diameter \
           -sink_clustering_levels -tree_buf \
-          -sink_buffer_max_cap_derate -delay_buffer_derate} \
+          -sink_buffer_max_cap_derate -delay_buffer_derate -library} \
     flags {-post_cts_disable -sink_clustering_enable -balance_levels \
            -obstruction_aware -apply_ndr -dont_use_dummy_load
   };# checker off
 
   sta::check_argc_eq0 "clock_tree_synthesis" $args
+
+  if { [info exists keys(-library)] } {
+    set cts_library $keys(-library)
+    cts::set_cts_library $cts_library
+  }
 
   if { [info exists flags(-post_cts_disable)] } {
     utl::warn CTS 115 "-post_cts_disable is obsolete."
@@ -195,7 +201,7 @@ proc clock_tree_synthesis { args } {
 
   if { [info exists keys(-sink_buffer_max_cap_derate)] } {
     set derate $keys(-sink_buffer_max_cap_derate)
-    if {[expr {$derate > 1.0 || $derate < 0.0 }]} {
+    if { $derate > 1.0 || $derate < 0.0 } {
       utl::error CTS 109 "sink_buffer_max_cap_derate needs to be between 0 and 1.0."
     }
     cts::set_sink_buffer_max_cap_derate $derate
@@ -203,7 +209,7 @@ proc clock_tree_synthesis { args } {
 
   if { [info exists keys(-delay_buffer_derate)] } {
     set buffer_derate $keys(-delay_buffer_derate)
-    if {[expr {$buffer_derate < 0.0 }]} {
+    if { $buffer_derate < 0.0 } {
       utl::error CTS 123 "delay_buffer_derate needs to be greater than or equal to 0."
     }
     cts::set_delay_buffer_derate $buffer_derate
@@ -218,7 +224,6 @@ proc clock_tree_synthesis { args } {
   }
 
   cts::set_apply_ndr [info exists flags(-apply_ndr)]
-
 
   if { [ord::get_db_block] == "NULL" } {
     utl::error CTS 103 "No design block found."

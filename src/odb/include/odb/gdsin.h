@@ -55,19 +55,6 @@ class GDSReader
 {
  public:
   /**
-   * Constructor for GDSReader
-   * No operations are performed in the constructor
-   */
-  GDSReader();
-
-  /**
-   * Destructor
-   *
-   * Does not free the dbGDSLib objects, as they are owned by the database
-   */
-  ~GDSReader();
-
-  /**
    * Reads a GDS file and returns a dbGDSLib object
    *
    * @param filename The path to the GDS file
@@ -192,9 +179,9 @@ class GDSReader
   /** Most recently read record */
   record_t _r;
   /** Current ODB Database */
-  dbDatabase* _db;
+  dbDatabase* _db = nullptr;
   /** Current GDS Lib object */
-  dbGDSLib* _lib;
+  dbGDSLib* _lib = nullptr;
 };
 
 }  // namespace gds
