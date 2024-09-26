@@ -610,13 +610,6 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
   initRoutingLayers(min_layer, max_layer);
   for (odb::dbNet* db_net : dirty_nets_) {
     Net* net = db_net_map_[db_net];
-    // get last pin positions
-    std::multiset<RoutePt> last_pos;
-    for (const Pin& pin : net->getPins()) {
-      last_pos.insert(RoutePt(pin.getOnGridPosition().getX(),
-                              pin.getOnGridPosition().getY(),
-                              pin.getConnectionLayer()));
-    }
     net->destroyPins();
     // update pin positions
     makeItermPins(net, db_net, grid_->getGridArea());
@@ -625,7 +618,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     destroyNetWire(net);
     std::string pins_not_covered;
     // compare new positions with last positions & add on vector
-    if (pinPositionsChanged(net, last_pos)
+    if (pinPositionsChanged(net)
         && (!net->isMergedNet() || !netIsCovered(db_net, pins_not_covered))) {
       dirty_nets.push_back(db_net_map_[db_net]);
       routes_[db_net].clear();
@@ -639,6 +632,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     }
     net->setMergedNet(false);
     net->setDirtyNet(false);
+    net->clearLastPinPositions();
   }
   dirty_nets_.clear();
 }
@@ -1061,11 +1055,11 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets)
   }
 }
 
-bool GlobalRouter::pinPositionsChanged(Net* net,
-                                       std::multiset<RoutePt>& last_pos)
+bool GlobalRouter::pinPositionsChanged(Net* net)
 {
   bool is_diferent = false;
   std::map<RoutePt, int> cnt_pos;
+  const std::multiset<RoutePt>& last_pos = net->getLastPinPositions();
   for (const Pin& pin : net->getPins()) {
     cnt_pos[RoutePt(pin.getOnGridPosition().getX(),
                     pin.getOnGridPosition().getY(),
@@ -4591,6 +4585,7 @@ AbstractGrouteRenderer* GlobalRouter::getRenderer()
 void GlobalRouter::addDirtyNet(odb::dbNet* net)
 {
   db_net_map_[net]->setDirtyNet(true);
+  db_net_map_[net]->saveLastPinPositions();
   dirty_nets_.insert(net);
 }
 
@@ -4730,10 +4725,11 @@ void GRouteDbCbk::inDbNetPreMerge(odb::dbNet* preserved_net,
 
 void GRouteDbCbk::inDbITermPreDisconnect(odb::dbITerm* iterm)
 {
-  // missing net pin update
-  odb::dbNet* net = iterm->getNet();
-  if (net != nullptr && !net->isSpecial()) {
+  odb::dbNet* db_net = iterm->getNet();
+  if (db_net != nullptr && !db_net->isSpecial()) {
+    Net* net = grouter_->getNet(db_net);
     grouter_->addDirtyNet(iterm->getNet());
+    net->destroyITermPin(iterm);
   }
 }
 
@@ -4757,10 +4753,11 @@ void GRouteDbCbk::inDbBTermPostConnect(odb::dbBTerm* bterm)
 
 void GRouteDbCbk::inDbBTermPreDisconnect(odb::dbBTerm* bterm)
 {
-  // missing net pin update
-  odb::dbNet* net = bterm->getNet();
-  if (net != nullptr && !net->isSpecial()) {
+  odb::dbNet* db_net = bterm->getNet();
+  if (db_net != nullptr && !db_net->isSpecial()) {
+    Net* net = grouter_->getNet(db_net);
     grouter_->addDirtyNet(bterm->getNet());
+    net->destroyBTermPin(bterm);
   }
 }
 
