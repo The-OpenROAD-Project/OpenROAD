@@ -1271,6 +1271,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
   repair_design_->repairDesign(max_wire_length_,
                                0.0,
                                0.0,
+                               0.0,
                                false,
                                repaired_net_count,
                                slew_violations,
@@ -1278,7 +1279,6 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
                                fanout_violations,
                                length_violations);
   findResizeSlacks1();
-
   debugPrint(logger_,utl::GPL,"timing",1,"--> Before journalRestore:");
   debugPrint(logger_,utl::GPL,"timing",1,"repaired_net_count:        {:5}", repaired_net_count);
   debugPrint(logger_,utl::GPL,"timing",1,"inserted_buffer_count_:    {:5}", inserted_buffer_count_);
@@ -2635,6 +2635,7 @@ bool Resizer::isFuncOneZero(const Pin* drvr_pin)
 void Resizer::repairDesign(double max_wire_length,
                            double slew_margin,
                            double cap_margin,
+                           double buffer_gain,
                            bool verbose)
 {
   resizePreamble();
@@ -2642,7 +2643,7 @@ void Resizer::repairDesign(double max_wire_length,
     opendp_->initMacrosAndGrid();
   }
   repair_design_->repairDesign(
-      max_wire_length, slew_margin, cap_margin, verbose);
+      max_wire_length, slew_margin, cap_margin, buffer_gain, verbose);
 }
 
 int Resizer::repairDesignBufferCount() const
@@ -3337,6 +3338,24 @@ void Resizer::journalRestoreTest()
       inserted_buffer_count_old - inserted_buffer_count_,
       cloned_gate_count_old - cloned_gate_count_,
       removed_buffer_count_old - removed_buffer_count_);
+}
+
+void Resizer::getBufferPins(Instance* buffer, Pin*& ip, Pin*& op)
+{
+  ip = nullptr;
+  op = nullptr;
+  auto pin_iter
+      = std::unique_ptr<InstancePinIterator>(network_->pinIterator(buffer));
+  while (pin_iter->hasNext()) {
+    Pin* pin = pin_iter->next();
+    sta::PortDirection* dir = network_->direction(pin);
+    if (dir->isAnyOutput()) {
+      op = pin;
+    }
+    if (dir->isAnyInput()) {
+      ip = pin;
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////
