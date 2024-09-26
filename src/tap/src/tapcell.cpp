@@ -35,6 +35,7 @@
 
 #include "tap/tapcell.h"
 
+#include <algorithm>
 #include <map>
 #include <optional>
 #include <string>
@@ -550,6 +551,8 @@ void Tapcell::placeEndcaps(const EndcapCellOptions& options)
   if (endcaps > 0) {
     logger_->info(utl::TAP, 4, "Inserted {} endcaps.", endcaps);
   }
+  
+  filled_edges_.clear();
 }
 
 std::vector<Tapcell::Edge> Tapcell::getBoundaryEdges(const Polygon& area,
@@ -909,7 +912,11 @@ std::pair<int, int> Tapcell::placeEndcaps(const Tapcell::Polygon90& area,
   }
 
   for (const auto& edge : getBoundaryEdges(area, outer)) {
-    endcaps += placeEndcapEdge(edge, corners, options);
+    if (std::find(filled_edges_.begin(), filled_edges_.end(), edge)
+        == filled_edges_.end()) {
+      endcaps += placeEndcapEdge(edge, corners, options);
+      filled_edges_.push_back(edge);
+    }
   }
 
   return {corner_count, endcaps};
@@ -1502,6 +1509,13 @@ void Tapcell::placeTapcells(const Options& options)
 odb::dbBlock* Tapcell::getBlock() const
 {
   return db_->getChip()->getBlock();
+}
+
+bool Tapcell::Edge::operator==(const Edge& edge) const
+{
+  return type == edge.type
+         && ((pt0 == edge.pt0 && pt1 == edge.pt1)
+             || (pt0 == edge.pt1 && pt1 == edge.pt0));
 }
 
 }  // namespace tap
