@@ -4,12 +4,14 @@
     "fields":[
       {
         "name":"_width",
+        "default":"0",
         "type":"int",
         "flags":[]
       },
       {
         "name":"_pathType",
         "type":"int16_t",
+        "default":"0",
         "flags":[]
       }
     ],
