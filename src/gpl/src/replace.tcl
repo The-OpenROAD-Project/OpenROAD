@@ -186,7 +186,7 @@ proc global_placement { args } {
     set uniform_mode 1
   } else {
     sta::check_positive_float "-density" $target_density
-    if {$target_density > 1.0} {
+    if { $target_density > 1.0 } {
       utl::error GPL 135 "Target density must be in \[0, 1\]."
     }
     gpl::set_density_cmd $target_density
@@ -372,7 +372,7 @@ proc cluster_flops { args } {
 proc global_placement_debug { args } {
   sta::parse_key_args "global_placement_debug" args \
     keys {-pause -update -inst} \
-    flags {-draw_bins -initial};# checker off
+    flags {-draw_bins -initial} ;# checker off
 
   if { [ord::get_db_block] == "NULL" } {
     utl::error GPL 105 "No design block found."
@@ -403,14 +403,13 @@ proc global_placement_debug { args } {
 
 namespace eval gpl {
 proc get_global_placement_uniform_density { args } {
-
   if { [ord::get_db_block] == "NULL" } {
     utl::error GPL 106 "No design block found."
   }
 
   sta::parse_key_args "get_global_placement_uniform_density" args \
     keys { -pad_left -pad_right } \
-    flags {};# checker off
+    flags {} ;# checker off
 
   # no need for init IP, TD and RD
   gpl::set_initial_place_max_iter_cmd 0
@@ -436,11 +435,9 @@ proc get_global_placement_uniform_density { args } {
 
     set uniform_density [gpl::get_global_placement_uniform_density_cmd]
     gpl::replace_reset_cmd
-
   } else {
     utl::error GPL 131 "No rows defined in design. Use initialize_floorplan to add rows."
   }
   return $uniform_density
 }
-
 }
