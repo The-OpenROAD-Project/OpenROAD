@@ -551,7 +551,7 @@ void Tapcell::placeEndcaps(const EndcapCellOptions& options)
   if (endcaps > 0) {
     logger_->info(utl::TAP, 4, "Inserted {} endcaps.", endcaps);
   }
-  
+
   filled_edges_.clear();
 }
 
