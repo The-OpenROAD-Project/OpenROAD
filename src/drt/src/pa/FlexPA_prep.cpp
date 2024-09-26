@@ -557,7 +557,6 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
                    true);
     }
   } else {
-    lower_type = frAccessPointEnum::OnGrid;
     genAPOnTrack(
         layer2_coords, layer2_track_coords, layer2_rect_min, layer2_rect_max);
     if (upper_type >= frAccessPointEnum::Center) {
@@ -583,6 +582,11 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
       layer1_coords[layer1_coord] = frAccessPointEnum::OnGrid;
     }
   }
+
+  if (is_macro_cell_pin && use_center_line && is_layer1_horz) {
+    lower_type = frAccessPointEnum::OnGrid;
+  }
+
   gen_initializeAccessPoints(aps,
                              apset,
                              rect,
