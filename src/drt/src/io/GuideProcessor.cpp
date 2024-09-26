@@ -509,6 +509,28 @@ void initGuideIntervals(const std::vector<frRect>& rects,
     }
   }
 }
+
+bool gcellHasGuide(frCoord pivot_idx,
+                   frCoord other_idx,
+                   const frLayerNum curr_layer_num,
+                   const TrackIntervalsByLayer& intvs)
+{
+  if (curr_layer_num % 4 == 2) {
+    std::swap(pivot_idx, other_idx);
+  }
+  for (frLayerNum layer_num = 0; layer_num < intvs.size(); layer_num += 2) {
+    const auto& layer_intvs = intvs[layer_num];
+    auto it = layer_intvs.find(pivot_idx);
+    if (it != layer_intvs.end()
+        && boost::icl::contains(it->second, other_idx)) {
+      return true;
+    }
+    if (curr_layer_num % 2 == 0) {
+      std::swap(pivot_idx, other_idx);
+    }
+  }
+  return false;
+}
 /**
  * @brief Checks if there exists an interval with the specified passed
  * arguments
@@ -529,6 +551,9 @@ bool hasGuideInterval(const frCoord begin_idx,
                       const frLayerNum layer_num,
                       const TrackIntervalsByLayer& intvs)
 {
+  if (layer_num < 0 || layer_num >= intvs.size()) {
+    return false;
+  }
   for (auto it = intvs[layer_num].lower_bound(begin_idx);
        it != intvs[layer_num].end() && it->first <= end_idx;
        it++) {
@@ -566,6 +591,40 @@ void addTouchingGuidesBridges(TrackIntervalsByLayer& intvs, utl::Logger* logger)
     {
     }
   };
+  // connect corner edges
+  for (int layer_num = intvs.size() - 1; layer_num >= 0; layer_num--) {
+    const auto& curr_layer_intvs = intvs[layer_num];
+    int prev_track_idx = -2;
+    for (const auto& [curr_track_idx, curr_track_intvs] : curr_layer_intvs) {
+      if (curr_track_idx == prev_track_idx + 1) {
+        const auto& prev_track_intvs = curr_layer_intvs.at(prev_track_idx);
+
+        for (auto intv1 : curr_track_intvs) {
+          for (auto intv2 : prev_track_intvs) {
+            if (boost::icl::intersects(intv1, intv2)) {
+              continue;
+            }
+            if (intv1.upper() + 1 == intv2.lower()
+                && !gcellHasGuide(
+                    curr_track_idx, intv1.upper() + 1, layer_num, intvs)
+                && !gcellHasGuide(
+                    prev_track_idx, intv1.upper(), layer_num, intvs)) {
+              intvs[layer_num][curr_track_idx].insert(
+                  Interval::closed(intv1.upper(), intv1.upper() + 1));
+            } else if (intv2.upper() + 1 == intv1.lower()
+                       && !gcellHasGuide(
+                           prev_track_idx, intv2.upper() + 1, layer_num, intvs)
+                       && !gcellHasGuide(
+                           curr_track_idx, intv2.upper(), layer_num, intvs)) {
+              intvs[layer_num][prev_track_idx].insert(
+                  Interval::closed(intv2.upper(), intv2.upper() + 1));
+            }
+          }
+        }
+      }
+      prev_track_idx = curr_track_idx;
+    }
+  }
 
   std::vector<BridgeGuide> bridge_guides;
   // append touching edges
