@@ -94,6 +94,8 @@ class Pin
     on_grid_position_ = on_grid_pos;
   }
   bool isDriver();
+  bool isDeleted() const { return deleted_; }
+  void setDeleted(bool deleted) { deleted_ = deleted; }
 
  private:
   void determineEdge(const odb::Rect& bounds,
@@ -112,6 +114,7 @@ class Pin
   std::map<int, std::vector<odb::Rect>> boxes_per_layer_;
   bool is_port_;
   bool connected_to_pad_or_macro_;
+  bool deleted_;
 };
 
 }  // namespace grt
