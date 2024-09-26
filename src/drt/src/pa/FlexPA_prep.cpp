@@ -1500,6 +1500,9 @@ int FlexPA::initPinAccess(T* pin, frInstTerm* inst_term)
       macro_cell_pin_no_ap_cnt_++;
     }
   } else {
+    if (inst_term == nullptr) {
+      logger_->error(DRT, 254, "inst_term can not be nullptr");
+    }
     // write to pa
     const int pin_access_idx = unique_insts_.getPAIndex(inst_term->getInst());
     for (auto& ap : aps) {
