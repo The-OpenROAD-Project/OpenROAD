@@ -502,15 +502,13 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
   }
 
   // gen all full/half grid coords
-  int offset = is_macro_cell_pin ? hwidth : 0;
-  int layer1_rect_min = is_layer1_horz ? gtl::yl(rect) : gtl::xl(rect);
-  int layer1_rect_max = is_layer1_horz ? gtl::yh(rect) : gtl::xh(rect);
-  int layer2_rect_min = is_layer1_horz ? gtl::xl(rect) : gtl::yl(rect);
-  int layer2_rect_max = is_layer1_horz ? gtl::xh(rect) : gtl::yh(rect);
-  std::map<frCoord, frAccessPointEnum>& layer1_coords
-      = is_layer1_horz ? y_coords : x_coords;
-  std::map<frCoord, frAccessPointEnum>& layer2_coords
-      = is_layer1_horz ? x_coords : y_coords;
+  const int offset = is_macro_cell_pin ? hwidth : 0;
+  const int layer1_rect_min = is_layer1_horz ? gtl::yl(rect) : gtl::xl(rect);
+  const int layer1_rect_max = is_layer1_horz ? gtl::yh(rect) : gtl::xh(rect);
+  const int layer2_rect_min = is_layer1_horz ? gtl::xl(rect) : gtl::yl(rect);
+  const int layer2_rect_max = is_layer1_horz ? gtl::xh(rect) : gtl::yh(rect);
+  auto& layer1_coords = is_layer1_horz ? y_coords : x_coords;
+  auto& layer2_coords = is_layer1_horz ? x_coords : y_coords;
 
   if (!is_macro_cell_pin || !use_center_line) {
     genAPOnTrack(
