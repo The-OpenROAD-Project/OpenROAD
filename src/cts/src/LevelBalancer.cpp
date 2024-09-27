@@ -101,16 +101,16 @@ void LevelBalancer::addBufferLevels(TreeBuilder* builder,
   const double centroidY = totalY / cluster.size();
   int x = prevLevelSubNet->getDriver()->getX();
   int y = prevLevelSubNet->getDriver()->getY();
-  
-  int steps = std::max((int)((centroidY - y) / height), 1);
-  int buffPerStep = std::ceil((float)bufLevels / (float)steps);
+
+  int steps = std::max((int) ((centroidY - y) / height), 1);
+  int buffPerStep = std::ceil((float) bufLevels / (float) steps);
 
   for (unsigned level = 0; level < bufLevels; level++) {
     // Add buffer
-    if(level % buffPerStep) {
-      x = (x + width) ;
+    if (level % buffPerStep) {
+      x = (x + width);
     } else {
-      y = (y + height) ;
+      y = (y + height);
     }
     Point<double> bufferLoc(x / wireSegmentUnit_, y / wireSegmentUnit_);
     Point<double> legalBufferLoc
