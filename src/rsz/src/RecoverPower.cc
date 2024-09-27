@@ -119,8 +119,8 @@ void RecoverPower::recoverPower(const float recover_power_percent)
 
   int end_index = 0;
   int failed_move_threshold = 0;
-  resizer_->journalBegin();
   for (Vertex* end : ends_with_slack) {
+    resizer_->journalBegin();
     const Slack end_slack_before = sta_->vertexSlack(end, max_);
     Slack worst_slack_after;
     //=====================================================================
