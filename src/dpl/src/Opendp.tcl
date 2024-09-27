@@ -266,7 +266,7 @@ proc get_inst_grid_bbox { inst_name } {
 }
 
 proc format_grid { x w } {
-  if { [expr $x % $w] == 0 } {
+  if { $x % $w == 0 } {
     return [expr $x / $w]
   } else {
     return [format "%.2f" [expr $x / double($w)]]
