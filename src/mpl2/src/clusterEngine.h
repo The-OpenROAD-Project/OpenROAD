@@ -184,7 +184,7 @@ class ClusteringEngine
   void setBaseThresholds();
   void createIOClusters();
   void setBlockedBoundariesForIOs();
-  std::map<Boundary, float> getBlockageExtensionMap();
+  std::map<Boundary, float> computeBlockageExtensionMap();
   Boundary getConstraintBoundary(const odb::Rect& die,
                                  const odb::Rect& constraint_region);
   void createIOCluster(const odb::Rect& die,

@@ -417,7 +417,8 @@ void ClusteringEngine::createIOCluster(
 void ClusteringEngine::setBlockedBoundariesForIOs()
 {
   const float blocked_boundary_threshold = 0.7;
-  std::map<Boundary, float> blockage_extension_map = getBlockageExtensionMap();
+  std::map<Boundary, float> blockage_extension_map
+      = computeBlockageExtensionMap();
 
   for (const auto [boundary, blockage_extension] : blockage_extension_map) {
     if (blockage_extension >= blocked_boundary_threshold) {
@@ -428,7 +429,7 @@ void ClusteringEngine::setBlockedBoundariesForIOs()
 
 // Computes how much blocked each boundary is for IOs base on PPL exclude
 // contraints.
-std::map<Boundary, float> ClusteringEngine::getBlockageExtensionMap()
+std::map<Boundary, float> ClusteringEngine::computeBlockageExtensionMap()
 {
   std::map<Boundary, float> blockage_extension_map;
 
