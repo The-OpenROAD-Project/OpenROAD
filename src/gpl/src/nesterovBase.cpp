@@ -1292,7 +1292,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   // update gFillerCells
   initFillerGCells();
 
-  gCells_.reserve(pb_->insts().size() + gCellStor_.size());
+  gCells_.reserve(pb_->insts().size() + fillerStor_.size());
 
   // add place instances
   for (auto& inst : pb_->placeInsts()) {
@@ -1312,7 +1312,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   }
 
   // add filler cells to gCells_
-  for (size_t i = 0; i < gCellStor_.size(); ++i) {
+  for (size_t i = 0; i < fillerStor_.size(); ++i) {
     gCells_.emplace_back(
         GCellPointer{GCellPointer::StorageType::NB, nullptr, this, i});
   }
@@ -1468,7 +1468,7 @@ void NesterovBase::initFillerGCells()
                   fillerDx_,
                   fillerDy_);
 
-    gCellStor_.push_back(myGCell);
+    fillerStor_.push_back(myGCell);
   }
 }
 

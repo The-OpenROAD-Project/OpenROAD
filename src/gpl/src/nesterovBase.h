@@ -890,7 +890,7 @@ class NesterovBase
       if (storageType == StorageType::NBC) {
         return nbc->gCellStor_[index];
       } else {
-        return nb->gCellStor_[index];
+        return nb->fillerStor_[index];
       }
     }
   };
@@ -1074,7 +1074,7 @@ class NesterovBase
   int64_t stdInstsArea_ = 0;
   int64_t macroInstsArea_ = 0;
 
-  std::vector<GCell> gCellStor_;
+  std::vector<GCell> fillerStor_;
 
   std::vector<GCellPointer> gCells_;
   std::vector<GCell*> gCellInsts_;
