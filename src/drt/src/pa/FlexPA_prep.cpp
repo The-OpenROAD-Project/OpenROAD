@@ -2335,15 +2335,49 @@ int FlexPA::genPatterns(
   if (max_access_point_size == 0) {
     return 0;
   }
-  int numNode = (pins.size() + 2) * max_access_point_size;
-  int numEdge = numNode * max_access_point_size;
 
-  std::vector<FlexDPNode> nodes(numNode);
-  std::vector<int> vioEdge(numEdge, -1);
   // moved for mt
   std::set<std::vector<int>> inst_access_patterns;
   std::set<std::pair<int, int>> used_access_points;
   std::set<std::pair<int, int>> viol_access_points;
+  int num_valid_pattern = 0;
+
+  num_valid_pattern += FlexPA::genPatterns_helper(pins,
+                                                  inst_access_patterns,
+                                                  used_access_points,
+                                                  viol_access_points,
+                                                  curr_unique_inst_idx,
+                                                  max_access_point_size);
+  // try reverse order if no valid pattern
+  if (num_valid_pattern == 0) {
+    auto reversed_pins = pins;
+    reverse(reversed_pins.begin(), reversed_pins.end());
+
+    num_valid_pattern += FlexPA::genPatterns_helper(reversed_pins,
+                                                    inst_access_patterns,
+                                                    used_access_points,
+                                                    viol_access_points,
+                                                    curr_unique_inst_idx,
+                                                    max_access_point_size);
+  }
+
+  return num_valid_pattern;
+}
+
+int FlexPA::genPatterns_helper(
+    const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
+    std::set<std::vector<int>>& inst_access_patterns,
+    std::set<std::pair<int, int>>& used_access_points,
+    std::set<std::pair<int, int>>& viol_access_points,
+    const int curr_unique_inst_idx,
+    const int max_access_point_size)
+{
+  int numNode = (pins.size() + 2) * max_access_point_size;
+  int numEdge = numNode * max_access_point_size;
+  int num_valid_pattern = 0;
+
+  std::vector<FlexDPNode> nodes(numNode);
+  std::vector<int> vioEdge(numEdge, -1);
 
   genPatternsInit(nodes,
                   pins,
@@ -2351,7 +2385,6 @@ int FlexPA::genPatterns(
                   used_access_points,
                   viol_access_points,
                   max_access_point_size);
-  int num_valid_pattern = 0;
   for (int i = 0; i < ACCESS_PATTERN_END_ITERATION_NUM; i++) {
     genPatterns_reset(nodes, pins, max_access_point_size);
     genPatterns_perform(nodes,
@@ -2378,49 +2411,6 @@ int FlexPA::genPatterns(
       break;
     }
   }
-
-  // try reverse order if no valid pattern
-  if (num_valid_pattern == 0) {
-    auto reversed_pins = pins;
-    reverse(reversed_pins.begin(), reversed_pins.end());
-
-    std::vector<FlexDPNode> nodes(numNode);
-    std::vector<int> vioEdge(numEdge, -1);
-
-    genPatternsInit(nodes,
-                    reversed_pins,
-                    inst_access_patterns,
-                    used_access_points,
-                    viol_access_points,
-                    max_access_point_size);
-    for (int i = 0; i < ACCESS_PATTERN_END_ITERATION_NUM; i++) {
-      genPatterns_reset(nodes, reversed_pins, max_access_point_size);
-      genPatterns_perform(nodes,
-                          reversed_pins,
-                          vioEdge,
-                          used_access_points,
-                          viol_access_points,
-                          curr_unique_inst_idx,
-                          max_access_point_size);
-      bool is_valid = false;
-      if (genPatterns_commit(nodes,
-                             reversed_pins,
-                             is_valid,
-                             inst_access_patterns,
-                             used_access_points,
-                             viol_access_points,
-                             curr_unique_inst_idx,
-                             max_access_point_size)) {
-        if (is_valid) {
-          num_valid_pattern++;
-        } else {
-        }
-      } else {
-        break;
-      }
-    }
-  }
-
   return num_valid_pattern;
 }
 
