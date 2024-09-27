@@ -211,40 +211,32 @@ void FlexPA::gen_createAccessPoint(
     return;
   }
   auto ap = std::make_unique<frAccessPoint>(fpt, layer_num);
+
+  ap->setMultipleAccesses(frDirEnumPlanar, allow_planar);
+
   if (allow_planar) {
     const auto lower_layer = getDesign()->getTech()->getLayer(layer_num);
-    for (const frDirEnum dir : frDirEnumPlanar) {
-      ap->setAccess(dir, true);
-    }
     // rectonly forbid wrongway planar access
     // rightway on grid only forbid off track rightway planar access
     // horz layer
     if (lower_layer->getDir() == dbTechLayerDir::HORIZONTAL) {
       if (lower_layer->isUnidirectional()) {
-        ap->setAccess(frDirEnum::S, false);
-        ap->setAccess(frDirEnum::N, false);
+        ap->setMultipleAccesses(frDirEnumVert, false);
       }
       if (lower_layer->getLef58RightWayOnGridOnlyConstraint()
           && low_cost != frAccessPointEnum::OnGrid) {
-        ap->setAccess(frDirEnum::W, false);
-        ap->setAccess(frDirEnum::E, false);
+        ap->setMultipleAccesses(frDirEnumHorz, false);
       }
     }
     // vert layer
     if (lower_layer->getDir() == dbTechLayerDir::VERTICAL) {
       if (lower_layer->isUnidirectional()) {
-        ap->setAccess(frDirEnum::W, false);
-        ap->setAccess(frDirEnum::E, false);
+        ap->setMultipleAccesses(frDirEnumHorz, false);
       }
       if (lower_layer->getLef58RightWayOnGridOnlyConstraint()
           && low_cost != frAccessPointEnum::OnGrid) {
-        ap->setAccess(frDirEnum::S, false);
-        ap->setAccess(frDirEnum::N, false);
+        ap->setMultipleAccesses(frDirEnumVert, false);
       }
-    }
-  } else {
-    for (const frDirEnum dir : frDirEnumPlanar) {
-      ap->setAccess(dir, false);
     }
   }
   ap->setAccess(frDirEnum::D, false);
