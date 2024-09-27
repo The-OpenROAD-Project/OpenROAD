@@ -588,7 +588,9 @@ proc place_pins { args } {
       if { [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] } {
         set edge_ [ppl::parse_edge "-exclude" $edge]
 
-        if { [regexp -all {([0-9]+[.]*[0-9]*|[*]+)-([0-9]+[.]*[0-9]*|[*]+)} $interval - begin end] } {
+        if {
+          [regexp -all {([0-9]+[.]*[0-9]*|[*]+)-([0-9]+[.]*[0-9]*|[*]+)} $interval - begin end]
+        } {
           if { $begin == "*" } {
             set begin [ppl::get_edge_extreme "-exclude" 1 $edge]
           }
