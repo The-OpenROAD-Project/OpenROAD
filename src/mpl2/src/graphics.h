@@ -60,7 +60,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void saStep(const std::vector<HardMacro>& macros) override;
   void endSA() override;
   void drawResult() override;
-  void finishedClustering(Cluster* root) override;
+  void finishedClustering(PhysicalHierarchy* tree) override;
 
   void setMaxLevel(int max_level) override;
   void setAreaPenalty(float area) override;
@@ -90,12 +90,27 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void eraseDrawing() override;
 
  private:
+  void setXMarksSizeAndPosition(const std::set<Boundary>& blocked_boundaries);
   void resetPenalties();
   void drawCluster(Cluster* cluster, gui::Painter& painter);
+  void drawBlockedBoundariesIndication(gui::Painter& painter);
   void drawAllBlockages(gui::Painter& painter);
   void drawBlockage(const Rect& blockage, gui::Painter& painter);
   template <typename T>
   void drawBundledNets(gui::Painter& painter, const std::vector<T>& macros);
+  template <typename T>
+  void drawDistToIoConstraintBoundary(gui::Painter& painter,
+                                      const T& macro,
+                                      const T& io);
+  template <typename T>
+  bool isOutsideTheOutline(const T& macro) const;
+  template <typename T>
+  odb::Point getClosestBoundaryPoint(const T& macro,
+                                     const Rect& die,
+                                     Boundary closest_boundary);
+  template <typename T>
+  Boundary getClosestBoundary(const T& macro, const Rect& die);
+  void addOutlineOffsetToLine(odb::Point& from, odb::Point& to);
   void setSoftMacroBrush(gui::Painter& painter, const SoftMacro& soft_macro);
   void fetchSoftAndHard(Cluster* parent,
                         std::vector<HardMacro>& hard,
@@ -113,6 +128,9 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   std::vector<BundledNet> bundled_nets_;
   odb::Rect outline_;
   std::vector<std::vector<odb::Rect>> outlines_;
+  std::map<Boundary, odb::Point> blocked_boundary_to_mark_;
+
+  int x_mark_size_ = 0;
 
   bool active_ = true;
   bool coarse_;

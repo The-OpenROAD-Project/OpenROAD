@@ -113,6 +113,9 @@ struct PhysicalHierarchy
   std::unique_ptr<Cluster> root;
   PhysicalHierarchyMaps maps;
 
+  // This is set according to the ppl -exclude constraints
+  std::set<Boundary> blocked_boundaries;
+
   float halo_width{0.0f};
   float halo_height{0.0f};
   float macro_with_halo_area{0.0f};
@@ -128,7 +131,6 @@ struct PhysicalHierarchy
   int base_min_std_cell{0};
 
   int max_level{0};
-  int bundled_ios_per_edge{0};
   int large_net_threshold{0};  // used to ignore global nets
   int min_net_count_for_connection{0};
   float cluster_size_ratio{0.0f};
@@ -181,6 +183,20 @@ class ClusteringEngine
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();
+  void setBlockedBoundariesForIOs();
+  std::map<Boundary, float> computeBlockageExtensionMap();
+  Boundary getConstraintBoundary(const odb::Rect& die,
+                                 const odb::Rect& constraint_region);
+  void createIOCluster(const odb::Rect& die,
+                       Boundary constraint_boundary,
+                       std::map<Boundary, Cluster*>& boundary_to_cluster,
+                       odb::dbBTerm* bterm);
+  void setIOClusterDimensions(const odb::Rect& die,
+                              Boundary boundary,
+                              int& x,
+                              int& y,
+                              int& width,
+                              int& height);
   void mapIOPads();
   void treatEachMacroAsSingleCluster();
   void incorporateNewCluster(std::unique_ptr<Cluster> cluster, Cluster* parent);

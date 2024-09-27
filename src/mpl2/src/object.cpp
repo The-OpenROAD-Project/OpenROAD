@@ -263,7 +263,7 @@ std::string Cluster::getClusterTypeString() const
   std::string cluster_type;
 
   if (is_io_cluster_) {
-    return "BundledIO";
+    return "IO";
   }
 
   switch (type_) {
@@ -325,14 +325,13 @@ void Cluster::copyInstances(const Cluster& cluster)
   }
 }
 
-// Bundled IO (Pads) cluster support
-// The position is the center of IO pads in the cluster
 void Cluster::setAsIOCluster(const std::pair<float, float>& pos,
                              const float width,
-                             const float height)
+                             const float height,
+                             const Boundary constraint_boundary)
 {
   is_io_cluster_ = true;
-  // Create a SoftMacro representing the IO cluster
+  constraint_boundary_ = constraint_boundary;
   soft_macro_ = std::make_unique<SoftMacro>(pos, name_, width, height, this);
 }
 
@@ -860,6 +859,17 @@ bool HardMacro::operator==(const HardMacro& macro) const
   return (width_ == macro.width_) && (height_ == macro.height_);
 }
 
+// Cluster support to identify if a fixed terminal correponds
+// to an IO cluster when running HardMacro SA.
+bool HardMacro::isIOCluster() const
+{
+  if (!cluster_) {
+    return false;
+  }
+
+  return cluster_->isIOCluster();
+}
+
 // Get Physical Information
 // Note that the default X and Y include halo_width
 void HardMacro::setLocation(const std::pair<float, float>& location)
@@ -1351,6 +1361,15 @@ bool SoftMacro::isMixedCluster() const
   }
 
   return (cluster_->getClusterType() == MixedCluster);
+}
+
+bool SoftMacro::isIOCluster() const
+{
+  if (!cluster_) {
+    return false;
+  }
+
+  return cluster_->isIOCluster();
 }
 
 void SoftMacro::setLocationF(float x, float y)
