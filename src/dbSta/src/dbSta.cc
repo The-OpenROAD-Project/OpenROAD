@@ -189,6 +189,7 @@ void dbSta::initVars(Tcl_Interp* tcl_interp,
   db_report_->setLogger(logger);
   db_network_->init(db, logger);
   db_cbk_ = std::make_unique<dbStaCbk>(this, logger);
+  buffer_use_analyser_ = std::make_unique<BufferUseAnalyser>();
 }
 
 void dbSta::updateComponentsState()
@@ -542,7 +543,7 @@ void dbSta::report_cell_usage(const bool verbose)
 
 BufferUse dbSta::getBufferUse(sta::LibertyCell* buffer)
 {
-  return buffer_use_analyser_.getBufferUse(buffer);
+  return buffer_use_analyser_->getBufferUse(buffer);
 }
 
 ////////////////////////////////////////////////////////////////

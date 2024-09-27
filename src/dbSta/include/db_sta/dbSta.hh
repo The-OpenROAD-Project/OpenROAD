@@ -212,7 +212,7 @@ class dbSta : public Sta, public ord::OpenRoadObserver
   std::unique_ptr<dbStaCbk> db_cbk_;
   std::set<dbStaState*> sta_states_;
 
-  BufferUseAnalyser buffer_use_analyser_;
+  std::unique_ptr<BufferUseAnalyser> buffer_use_analyser_;
 
   std::unique_ptr<AbstractPathRenderer> path_renderer_;
   std::unique_ptr<AbstractPowerDensityDataSource> power_density_data_source_;
