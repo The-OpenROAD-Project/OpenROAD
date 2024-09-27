@@ -94,22 +94,25 @@ void LevelBalancer::addBufferLevels(TreeBuilder* builder,
     totalX += clockInstObj->getX();
     totalY += clockInstObj->getY();
   }
+  double height = builder->getBufferHeight() * wireSegmentUnit_;
+  double width = builder->getBufferWidth() * wireSegmentUnit_;
+
   const double centroidX = totalX / cluster.size();
   const double centroidY = totalY / cluster.size();
-  const int driverX = prevLevelSubNet->getDriver()->getX();
-  const int driverY = prevLevelSubNet->getDriver()->getY();
+  int x = prevLevelSubNet->getDriver()->getX();
+  int y = prevLevelSubNet->getDriver()->getY();
+  
+  int steps = std::max((int)((centroidY - y) / height), 1);
+  int buffPerStep = std::ceil((float)bufLevels / (float)steps);
 
   for (unsigned level = 0; level < bufLevels; level++) {
     // Add buffer
-    double x
-        = (driverX
-           + (centroidX - driverX) * (double) (level + 1) / (bufLevels + 1))
-          / wireSegmentUnit_;
-    double y
-        = (driverY
-           + (centroidY - driverY) * (double) (level + 1) / (bufLevels + 1))
-          / wireSegmentUnit_;
-    Point<double> bufferLoc(x, y);
+    if(level % buffPerStep) {
+      x = (x + width) ;
+    } else {
+      y = (y + height) ;
+    }
+    Point<double> bufferLoc(x / wireSegmentUnit_, y / wireSegmentUnit_);
     Point<double> legalBufferLoc
         = builder->legalizeOneBuffer(bufferLoc, options_->getSinkBuffer());
     ClockInst& levelBuffer = builder->getClock().addClockBuffer(
