@@ -332,6 +332,7 @@ class PlacerBaseCommon
 
   int padLeft() const { return pbVars_.padLeft; }
   int padRight() const { return pbVars_.padRight; }
+  bool skipIoMode() const { return pbVars_.skipIoMode; }
 
   int64_t hpwl() const;
   void printInfo() const;

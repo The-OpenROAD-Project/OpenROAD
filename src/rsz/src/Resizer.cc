@@ -1025,6 +1025,10 @@ void Resizer::makeEquivCells()
   sta_->makeEquivCells(&libs, nullptr);
 }
 
+float Resizer::getTotalNegativeSlack(){
+  return sta_->totalNegativeSlack(max_);
+}
+
 int Resizer::resizeToTargetSlew(const Pin* drvr_pin)
 {
   Instance* inst = network_->instance(drvr_pin);
@@ -1258,7 +1262,7 @@ void Resizer::resizeSlackPreamble()
 
 // Run repair_design to repair long wires and max slew, capacitance and fanout
 // violations. Find the slacks, and then undo all changes to the netlist.
-void Resizer::findResizeSlacks()
+void Resizer::findResizeSlacks(bool run_journal_restore)
 {
   journalBegin();
   estimateWireParasitics();
@@ -1275,10 +1279,22 @@ void Resizer::findResizeSlacks()
                                fanout_violations,
                                length_violations);
   findResizeSlacks1();
-  journalRestore(resize_count_,
-                 inserted_buffer_count_,
-                 cloned_gate_count_,
-                 removed_buffer_count_);
+  debugPrint(logger_,utl::GPL,"timing",1,"--> Before journalRestore:");
+  debugPrint(logger_,utl::GPL,"timing",1,"repaired_net_count:        {:5}", repaired_net_count);
+  debugPrint(logger_,utl::GPL,"timing",1,"inserted_buffer_count_:    {:5}", inserted_buffer_count_);
+  debugPrint(logger_,utl::GPL,"timing",1,"inserted_buffer_set_.size: {:5}", inserted_buffer_set_.size());
+  debugPrint(logger_,utl::GPL,"timing",1,"resize_count_:             {:5}", resize_count_);
+  debugPrint(logger_,utl::GPL,"timing",1,"cloned_gate_count_:        {:5}", cloned_gate_count_);
+
+  if(run_journal_restore)  
+    journalRestore(resize_count_, inserted_buffer_count_, cloned_gate_count_, removed_buffer_count_); //these get a negative counting because of restoring
+
+  debugPrint(logger_,utl::GPL,"timing",1,"--> After journalRestore:");
+  debugPrint(logger_,utl::GPL,"timing",1,"repaired_net_count:        {:5}", repaired_net_count);
+  debugPrint(logger_,utl::GPL,"timing",1,"inserted_buffer_count_:    {:5}", inserted_buffer_count_);
+  debugPrint(logger_,utl::GPL,"timing",1,"inserted_buffer_set_.size: {:5}", inserted_buffer_set_.size());
+  debugPrint(logger_,utl::GPL,"timing",1,"resize_count_:             {:5}", resize_count_);
+  debugPrint(logger_,utl::GPL,"timing",1,"cloned_gate_count_:        {:5}", cloned_gate_count_);
 }
 
 void Resizer::findResizeSlacks1()
@@ -2633,6 +2649,11 @@ void Resizer::repairDesign(double max_wire_length,
 int Resizer::repairDesignBufferCount() const
 {
   return repair_design_->insertedBufferCount();
+}
+
+int Resizer::repairDesignResizedCount() const
+{
+  return repair_design_->resizedCount();
 }
 
 void Resizer::repairNet(Net* net,

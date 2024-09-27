@@ -317,7 +317,7 @@ proc mpl_debug { args } {
 
   set coarse [info exists flags(-coarse)]
   set fine [info exists flags(-fine)]
-  if { [expr !$coarse && !$fine] } {
+  if { !$coarse && !$fine } {
     set coarse true
     set fine true
   }

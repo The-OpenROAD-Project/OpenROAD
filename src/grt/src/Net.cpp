@@ -180,4 +180,15 @@ bool Net::hasStackedVias(odb::dbTechLayer* max_routing_layer)
   return true;
 }
 
+void Net::saveLastPinPositions()
+{
+  if (last_pin_positions_.empty()) {
+    for (const Pin& pin : pins_) {
+      last_pin_positions_.insert(RoutePt(pin.getOnGridPosition().getX(),
+                                         pin.getOnGridPosition().getY(),
+                                         pin.getConnectionLayer()));
+    }
+  }
+}
+
 }  // namespace grt

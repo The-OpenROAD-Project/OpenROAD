@@ -81,6 +81,8 @@ void _dbGDSPath::out(dbDiff& diff, char side, const char* field) const
 
 _dbGDSPath::_dbGDSPath(_dbDatabase* db)
 {
+  _width = 0;
+  _pathType = 0;
 }
 
 _dbGDSPath::_dbGDSPath(_dbDatabase* db, const _dbGDSPath& r)

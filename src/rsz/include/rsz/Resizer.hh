@@ -346,6 +346,7 @@ class Resizer : public dbStaState
       double buffer_gain,
       bool verbose);
   int repairDesignBufferCount() const;
+  int repairDesignResizedCount() const;
   // for debugging
   void repairNet(Net* net,
                  double max_wire_length,  // meters
@@ -383,7 +384,7 @@ class Resizer : public dbStaState
   //  restore resized gates
   // resizeSlackPreamble must be called before the first findResizeSlacks.
   void resizeSlackPreamble();
-  void findResizeSlacks();
+  void findResizeSlacks(bool run_journal_restore);
   // Return nets with worst slack.
   NetSeq& resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).
@@ -406,6 +407,7 @@ class Resizer : public dbStaState
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
   void makeEquivCells();
+  float getTotalNegativeSlack();
 
   ////////////////////////////////////////////////////////////////
   void journalBeginTest();

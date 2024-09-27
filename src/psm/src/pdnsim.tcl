@@ -136,7 +136,7 @@ proc insert_decap { args } {
 
   # Check even size
   set cells_and_decap $keys(-cells)
-  if { [expr [llength $cells_and_decap] % 2] != 0 } {
+  if { [llength $cells_and_decap] % 2 != 0 } {
     utl::error PSM 181 "-cells must be a list of cell and decap pairs"
   }
 

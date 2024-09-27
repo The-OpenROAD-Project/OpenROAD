@@ -114,6 +114,7 @@ void GCell::setInstance(Instance* inst)
   dUx_ = ux_ = inst->ux();
   dUy_ = uy_ = inst->uy();
 }
+
 Instance* GCell::instance() const
 {
   return insts_.empty() ? nullptr : *insts_.begin();
@@ -925,6 +926,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
     }
     gCells_.push_back(&gCell);
     gCellMap_[gCell.instance()] = &gCell;
+    db_inst_map_[gCell.instance()->dbInst()] = &gCell;
   }
 
   // gPin ptr init
@@ -932,6 +934,8 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   for (auto& gPin : gPinStor_) {
     gPins_.push_back(&gPin);
     gPinMap_[gPin.pin()] = &gPin;
+    if(gPin.pin()->isITerm())
+      db_iterm_map_[gPin.pin()->dbITerm()] = &gPin;
   }
 
   // gNet ptr init
@@ -939,6 +943,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   for (auto& gNet : gNetStor_) {
     gNets_.push_back(&gNet);
     gNetMap_[gNet.net()] = &gNet;
+    db_net_map_[gNet.net()->dbNet()] = &gNet;
   }
 
   // gCellStor_'s pins_ fill
@@ -1238,6 +1243,8 @@ FloatPoint NesterovBaseCommon::getWireLengthPreconditioner(
 
 void NesterovBaseCommon::updateDbGCells()
 {
+  if(db_cbk_)
+    db_cbk_->removeOwner();
   assert(omp_get_thread_num() == 0);
 #pragma omp parallel for num_threads(num_threads_)
   for (auto it = gCells().begin(); it < gCells().end(); ++it) {
@@ -1253,6 +1260,8 @@ void NesterovBaseCommon::updateDbGCells()
                         gCell->dCy() - replInst->dy() / 2);
     }
   }
+  if(db_cbk_)
+    db_cbk_->addOwner(pbc_->db()->getChip()->getBlock());
 }
 
 int64_t NesterovBaseCommon::getHpwl()
@@ -1267,6 +1276,127 @@ int64_t NesterovBaseCommon::getHpwl()
   }
   return hpwl;
 }
+
+GCell* NesterovBaseCommon::getGCellByIndex(size_t i) {
+  if (i >= gCellStor_.size()) {
+      return nullptr;
+  }
+  return &gCellStor_[i];
+}
+
+
+//TODO this function should be related to call backs.
+std::vector<size_t> NesterovBaseCommon::insertGCellsTestOnly(){
+  std::vector<size_t> new_gcells;
+//  for (auto& inst : pbc_->placeInsts()) {
+//    GCell new_gcell = GCell(inst);
+//    gCellStor_.push_back(new_gcell);
+//    new_gcells.push_back(&gCellStor_.back());
+//  }
+  std::mt19937 randVal(0);
+  for (int i = 0; i < 5000; i++) {
+    auto randX = randVal();
+    auto randY = randVal();
+    GCell myGCell(randX % pbc_->die().coreDx() + pbc_->die().coreLx(),
+                  randY % pbc_->die().coreDy() + pbc_->die().coreLy(),
+                  gCellStor_[0].dx(),
+                  gCellStor_[0].dy());
+    gCellStor_.push_back(myGCell);
+    new_gcells.push_back(gCellStor_.size() - 1);
+  }
+  log_->report("finished insertGCells()!");
+  return new_gcells;
+}
+
+void NesterovBaseCommon::fixPointers(std::vector<size_t> new_gcells){
+  gCells_.clear();
+  gCellMap_.clear();
+  gCells_.reserve(gCellStor_.size());
+  for (auto& gCell : gCellStor_) {
+    if (!gCell.isInstance()) {
+      continue;
+    }
+    gCells_.push_back(&gCell);
+    gCellMap_[gCell.instance()] = &gCell;
+  }
+  
+//Add pins only for new cells.
+for (size_t gCellIndex : new_gcells) {
+    GCell* gCell = getGCellByIndex(gCellIndex);
+    if (gCell->isFiller()) {
+      continue;
+    }
+    for (auto& pin : gCell->instance()->pins()) {
+      gCell->addGPin(pbToNb(pin));
+    }
+  }    
+}
+
+void NesterovBase::fixPointers(std::vector<size_t> new_gcells){
+  log_->report("gCells_ size: {}", gCells_.size());
+  log_->report("pb_->insts size: {}", pb_->insts().size());
+  log_->report("fillerStor_ size: {}", fillerStor_.size());
+  log_->report("new_gcells: {}", new_gcells.size());
+  log_->report("curSLPCoordi_ size: {}", curSLPCoordi_.size());
+  gCells_.clear();
+  gCells_.reserve(pb_->insts().size() + fillerStor_.size() + new_gcells.size());
+  for (auto& inst : pb_->placeInsts()) {
+    GCell* gCell = nbc_->pbToNb(inst);
+    gCells_.push_back(gCell);
+  }
+
+  for (auto& gCell : fillerStor_) {
+    gCells_.push_back(&gCell);
+  }
+  
+  for (size_t gCellIndex : new_gcells) {
+    GCell* gCell = nbc_->getGCellByIndex(gCellIndex);
+    gCells_.push_back(gCell);
+  }
+    
+  //TODO how to initiate values for new gcells?
+  // maybe replicate the closest cell with the same type or number of iterms?
+  //TODO this should not go here, we need to push back for each new one and swap delete accordinly
+  curSLPCoordi_.resize(gCells_.size());
+  curSLPWireLengthGrads_.resize(gCells_.size());
+  curSLPDensityGrads_.resize(gCells_.size());
+  curSLPSumGrads_.resize(gCells_.size());
+  nextSLPCoordi_.resize(gCells_.size());
+  nextSLPWireLengthGrads_.resize(gCells_.size());
+  nextSLPDensityGrads_.resize(gCells_.size());
+  nextSLPSumGrads_.resize(gCells_.size());
+  prevSLPCoordi_.resize(gCells_.size());
+  prevSLPWireLengthGrads_.resize(gCells_.size());
+  prevSLPDensityGrads_.resize(gCells_.size());
+  prevSLPSumGrads_.resize(gCells_.size());
+  curCoordi_.resize(gCells_.size());
+  nextCoordi_.resize(gCells_.size());
+  initCoordi_.resize(gCells_.size());   
+  snapshotCoordi_.resize(gCells_.size());
+  snapshotSLPCoordi_.resize(gCells_.size());
+  snapshotSLPSumGrads_.resize(gCells_.size());    
+    
+  log_->report("\n\ngCells_ size: {}", gCells_.size());
+  log_->report("curSLPCoordi_ size: {}", curSLPCoordi_.size());
+  log_->report("curSLPWireLengthGrads_ size: {}", curSLPWireLengthGrads_.size());
+  log_->report("curSLPDensityGrads_ size: {}", curSLPDensityGrads_.size());
+  log_->report("curSLPSumGrads_ size: {}", curSLPSumGrads_.size());
+  log_->report("nextSLPCoordi_ size: {}", nextSLPCoordi_.size());
+  log_->report("nextSLPWireLengthGrads_ size: {}", nextSLPWireLengthGrads_.size());
+  log_->report("nextSLPDensityGrads_ size: {}", nextSLPDensityGrads_.size());
+  log_->report("nextSLPSumGrads_ size: {}", nextSLPSumGrads_.size());
+  log_->report("prevSLPCoordi_ size: {}", prevSLPCoordi_.size());
+  log_->report("prevSLPWireLengthGrads_ size: {}", prevSLPWireLengthGrads_.size());
+  log_->report("prevSLPDensityGrads_ size: {}", prevSLPDensityGrads_.size());
+  log_->report("prevSLPSumGrads_ size: {}", prevSLPSumGrads_.size());
+  log_->report("curCoordi_ size: {}", curCoordi_.size());
+  log_->report("nextCoordi_ size: {}", nextCoordi_.size());
+  log_->report("initCoordi_ size: {}", initCoordi_.size());
+  //TOOD how to update this? This function update everything.
+  // do we want to update only the new cells, or everything?
+//  updateDensitySize();
+}
+
 
 ////////////////////////////////////////////////
 // NesterovBase
@@ -1292,6 +1422,9 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   // update gFillerCells
   initFillerGCells();
 
+  log_->report("constructor: gCells_ size: {}", gCells_.size());
+  log_->report("pb_->insts size: {}", pb_->insts().size());
+  log_->report("fillerStor_ size: {}", fillerStor_.size());
   gCells_.reserve(pb_->insts().size() + fillerStor_.size());
 
   // add place instances
@@ -2190,7 +2323,6 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
   if (isConverged_) {
     return;
   }
-
   // fill in nextCoordinates with given stepLength_
   for (size_t k = 0; k < gCells_.size(); k++) {
     FloatPoint nextCoordi(
@@ -2333,6 +2465,199 @@ bool NesterovBase::revertDivergence()
   divergeMsg_ = "";
 
   return true;
+}
+
+void NesterovBase::destroyGCell(odb::dbInst* db_inst) {
+  // auto db_it = db_inst_map_.find(db_inst);
+  // if (db_it != db_inst_map_.end()) {
+  //   GCell* gcell = db_it->second;
+  //   db_inst_map_.erase(db_it);
+
+  //   auto gcell_it = newGCells_.find(gcell);
+  //   if(gcell_it != newGCells_.end()){
+  //     newGCells_.erase(gcell_it);
+  //   }        
+  // } else {
+  //   log_->report("error: db_inst not found in db_inst_map_ for instance: {}", db_inst->getName());
+  // }
+}
+
+void NesterovBaseCommon::destroyGCell(odb::dbInst* db_inst) {
+  // auto db_it = db_inst_map_.find(db_inst);
+  // if (db_it != db_inst_map_.end()) {
+  //   GCell* gcell = db_it->second;
+  //   db_inst_map_.erase(db_it);
+
+  //   auto inst_it = gCellMap_.find(gcell->instance());
+  //   if (inst_it != gCellMap_.end()) {
+  //     gCellMap_.erase(inst_it);
+  //   }
+
+  //   auto gcell_it = newGCells_.find(gcell);
+  //   if(gcell_it != newGCells_.end()){
+  //     newGCells_.erase(gcell_it);
+  //   }
+  //   delete gcell;
+  // } else {
+  //   log_->report("error: db_inst not found in db_inst_map_ for instance: {}", db_inst->getName());
+  // }
+}
+
+void NesterovBaseCommon::destroyGNet(odb::dbNet* db_net) {
+  // auto db_it = db_net_map_.find(db_net);
+  // if (db_it != db_net_map_.end()) {
+  //   GNet* gNet = db_it->second;
+  //   db_net_map_.erase(db_it);
+
+  //   auto net_it = gNetMap_.find(gNet->net());
+  //   if (net_it != gNetMap_.end()) {
+  //     gNetMap_.erase(net_it);
+  //   }
+
+  //   auto gNet_it = gNets_.find(gNet);
+  //   if(gNet_it != gNets_.end()){
+  //     gNets_.erase(gNet_it);
+  //   }
+  //   delete gNet;
+  // } else {
+  //   log_->report("error: db_net not found in db_net_map_ for net: {}", db_net->getName());
+  // }
+}
+
+void NesterovBaseCommon::destroyITerm(odb::dbITerm* db_iterm) {
+  // auto db_it = db_iterm_map_.find(db_iterm);
+  // if (db_it != db_iterm_map_.end()) {
+  //   GPin* gPin = db_it->second;
+  //   db_iterm_map_.erase(db_it);
+
+  //   auto pin_it = gPinMap_.find(gPin->pin());
+  //   if (pin_it != gPinMap_.end()) {
+  //     gPinMap_.erase(pin_it);
+  //   }
+
+  //   auto gPin_it = gPins_.find(gPin);
+  //   if(gPin_it != gPins_.end()){
+  //     gPins_.erase(gPin_it);
+  //   }
+  //   delete gPin;
+  // } else {
+  //   log_->report("error: db_iterm not found in db_iterm_map_ for iterm: {}", db_iterm->getMTerm()->getName());
+  // }
+}
+
+
+void NesterovBaseCommon::disconnectITerm(odb::dbITerm* iterm, odb::dbNet* db_net) {
+    // auto iterm_it = db_iterm_map_.find(iterm);
+    // if (iterm_it == db_iterm_map_.end()) {
+    //     log_->report("ITerm not found in db_iterm_map_ for ITerm: {}", iterm->getName('|'));
+    //     return;
+    // }
+
+    // auto db_net_it = db_net_map_.find(db_net);
+    // if (db_net_it == db_net_map_.end()) {
+    //     log_->report("error: Net not found in db_net_map_ for Net: {}", db_net->getName());
+    //     return;
+    // }
+    // iterm_it->second->disconnectNet();
+    // db_net_it->second->disconnectPin(iterm_it->second);
+}
+
+void NesterovBaseCommon::connectITerm(odb::dbITerm* iterm) {
+  // auto db_inst = iterm->getInst();
+  // auto db_net = iterm->getNet();
+
+  // auto inst_it = db_inst_map_.find(db_inst);
+  // if (inst_it == db_inst_map_.end()) {
+  //   log_->report("error: db_inst not found in db_inst_map_ for db_inst: {}", db_inst->getName());
+  //   return;
+  // }
+  // auto iterm_it = db_iterm_map_.find(iterm);
+  // if (iterm_it == db_iterm_map_.end()) {
+  //     log_->report("error: ITerm not found in db_iterm_map_ for ITerm: {}", iterm->getName('|'));
+  //     return;
+  // }
+  // auto db_net_it = db_net_map_.find(db_net);
+  // if (db_net_it == db_net_map_.end()) {
+  //     log_->report("error: Net not found in db_net_map_ for Net: {}", db_net->getName());
+  //     return;
+  // }  
+  // iterm_it->second->setGNet(db_net_it->second);
+  // log_->report("NET of GPin after setGnet:{}", iterm_it->second->gNet()->net()->dbNet()->getName());
+
+  // log_->report("before addGPin, GNet pins: db_net_it->second->gPins().size():{}", db_net_it->second->gPins().size());
+  // db_net_it->second->addGPin(iterm_it->second);
+  // log_->report("after addGPin, GNet pins: db_net_it->second->gPins().size():{}", db_net_it->second->gPins().size());
+
+  // log_->report("before addGPin, GCell pins: inst_it->second->gPins().size():{}", inst_it->second->gPins().size());
+  // inst_it->second->addGPin(iterm_it->second);
+  // log_->report("after addGPin, GCell pins: inst_it->second->gPins().size():{}", inst_it->second->gPins().size());
+}
+
+
+// If placer base and placer base common also have their vector replaced,
+// the gcell parameter is not necessary, and can be accessed with dbToNb()
+void NesterovBase::createGCell(odb::dbInst* db_inst, GCell* gCell){
+//   //TODO: for now pbc and pb does not support dynamic creation of instances 
+// //  GCell* gCell = new GCell(gpl_inst);
+// //  GCell* gCell = nbc_->dbToNb(db_inst);
+//   if(gCell!=nullptr){
+//     GCellState emptyState;    
+//     newGCells_[gCell] = emptyState;
+//     db_inst_map_[db_inst] = gCell;
+//   //  log_->report("nbc: newGCells_.size(): {}", newGCells_.size());
+//   } else {
+//     log_->report("Error! gCell is nullptr!");
+//   }
+}
+
+GCell* NesterovBaseCommon::createGCell(odb::dbInst* db_inst){
+  // //TODO: for now pbc and pb does not support dynamic creation of instances
+  // Instance* gpl_inst = new Instance(db_inst,
+  //                   pbc_->padLeft() * pbc_->siteSizeX(),
+  //                   pbc_->padRight() * pbc_->siteSizeX(),
+  //                   pbc_->siteSizeY(),
+  //                   log_);  
+  // GCell* gCell = new GCell(gpl_inst);
+  // GCellState emptyState;    
+  // newGCells_[gCell] = emptyState;
+  // gCellMap_[gCell->instance()] = gCell;
+  // db_inst_map_[db_inst] = gCell;
+
+  // //TODO how to implement updateDensitySize() here?
+  // return gCell;
+}
+
+void NesterovBaseCommon::createGNet(odb::dbNet* db_net, bool skip_io_mode) {
+  // log_->report("NBC: createGNet called"); 
+  // log_->report("before createGnet: db_net->getITerms().size():{}", db_net->getITerms().size());
+
+  // //gpl_net avoiding the need for placerBase container
+  // Net* gpl_net = new Net(db_net, skip_io_mode);
+  // GNet* gNet = new GNet(gpl_net);
+  // gNets_.insert(gNet);
+  // gNetMap_[gNet->net()] = gNet;
+  // db_net_map_[gNet->net()->dbNet()] = gNet;
+  // log_->report("after createGnet: gNet->gPins().size():{}", gNet->gPins().size());
+}
+
+
+void NesterovBaseCommon::createITerm(odb::dbITerm* iTerm) {
+  // log_->report("NBC: createIterm called");    
+  // Pin* gpl_pin = new Pin(iTerm); 
+
+  // // This can also be done using dbToPb as in placerBase.
+  // auto gpl_inst_it = db_inst_map_.find(iTerm->getInst());
+  // if(gpl_inst_it != db_inst_map_.end()) {    
+  //   gpl_pin->setInstance(gpl_inst_it->second->instance());
+  // }
+  // else
+  //   log_->report("ERROR! Net not found creating pin");
+
+  // GPin* gPin = new GPin(gpl_pin);
+  // gPins_.insert(gPin);
+  // gPinMap_[gPin->pin()] = gPin;
+  // if(gPin->pin()->isITerm())
+  //   db_iterm_map_[gPin->pin()->dbITerm()] = gPin;
 }
 
 // https://stackoverflow.com/questions/33333363/built-in-mod-vs-custom-mod-function-improve-the-performance-of-modulus-op

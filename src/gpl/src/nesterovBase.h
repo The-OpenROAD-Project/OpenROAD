@@ -39,6 +39,8 @@
 #include <vector>
 
 #include "point.h"
+#include "placerBase.h"
+#include "odb/db.h"
 
 namespace odb {
 class dbInst;
@@ -64,6 +66,7 @@ class Net;
 
 class GPin;
 class FFT;
+class nesterovDbCbk;
 
 class GCell
 {
@@ -126,6 +129,18 @@ class GCell
   bool isFiller() const;
   bool isMacroInstance() const;
   bool isStdInstance() const;
+
+    void print(utl::Logger* logger) const
+  {
+    if(insts_.size()>0)
+      logger->report("print gcell:{}",insts_[0]->dbInst()->getName());
+    else
+      logger->report("print gcell insts_ empty! (filler cell)");
+    logger->report("insts_ size: {}, gPins_ size: {}",  insts_.size(), gPins_.size());
+    logger->report("lx_: {} ly_: {} ux_: {} uy_: {}", lx_, ly_, ux_, uy_);
+    logger->report("dLx_: {} dLy_: {} dUx_: {} dUy_: {}", dLx_, dLy_, dUx_, dUy_);
+    logger->report("densityScale_: {} gradientX_: {} gradientY_: {}", densityScale_, gradientX_, gradientY_);
+  }
 
  private:
   std::vector<Instance*> insts_;
@@ -279,6 +294,8 @@ class GNet
 
   float waExpMaxSumY() const;
   float waYExpMaxSumY() const;
+
+  void disconnectPin(GPin* gPin);
 
  private:
   std::vector<GPin*> gPins_;
@@ -471,6 +488,8 @@ class GPin
   void setCenterLocation(int cx, int cy);
   void updateLocation(const GCell* gCell);
   void updateDensityLocation(const GCell* gCell);
+
+  void disconnectNet() { gNet_ = nullptr; }
 
  private:
   GCell* gCell_ = nullptr;
@@ -756,7 +775,8 @@ class NesterovPlaceVars
   float minPreconditioner = 1.0;            // MIN_PRE
   float initialPrevCoordiUpdateCoef = 100;  // z_ref_alpha
   float referenceHpwl = 446000000;          // refDeltaHpwl
-  float routabilityCheckOverflow = 0.20;
+  float routabilityCheckOverflow = 0.30;
+  float timingDrivenCheckOverflow = 0.0;
 
   static const int maxRecursionWlCoef = 10;
   static const int maxRecursionInitSLPCoef = 10;
@@ -785,6 +805,8 @@ class NesterovBaseCommon
   const std::vector<GCell*>& gCells() const { return gCells_; }
   const std::vector<GNet*>& gNets() const { return gNets_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
+
+  std::unordered_map<odb::dbInst*, GCell*>& dbInstMap() { return db_inst_map_; }
 
   //
   // placerBase To NesterovBase functions
@@ -828,6 +850,23 @@ class NesterovBaseCommon
 
   // Number of threads of execution
   size_t getNumThreads() { return num_threads_; }
+  
+  GCell* getGCellByIndex(size_t i);
+  std::vector<size_t> insertGCellsTestOnly();
+  void fixPointers(std::vector<size_t> new_gcells);
+
+  void setCbk(nesterovDbCbk* cbk) { db_cbk_ = cbk; }
+
+  void createGNet(odb::dbNet* net, bool skip_io_mode);
+  void createITerm(odb::dbITerm* iTerm);
+  GCell* createGCell(odb::dbInst* db_inst);
+
+  void destroyGCell(odb::dbInst*);
+  void destroyGNet(odb::dbNet*);
+  void destroyITerm(odb::dbITerm*);
+
+  void disconnectITerm(odb::dbITerm*, odb::dbNet*);
+  void connectITerm(odb::dbITerm*);
 
   GCell& getGCell(size_t index) { return gCellStor_[index]; }
 
@@ -853,7 +892,12 @@ class NesterovBaseCommon
   std::unordered_map<Pin*, GPin*> gPinMap_;
   std::unordered_map<Net*, GNet*> gNetMap_;
 
+  std::unordered_map<odb::dbInst*, GCell*> db_inst_map_;
+  std::unordered_map<odb::dbNet*, GNet*> db_net_map_;
+  std::unordered_map<odb::dbITerm*, GPin*> db_iterm_map_;
+
   int num_threads_;
+  nesterovDbCbk* db_cbk_;
   friend class NesterovBase;
 };
 
@@ -1042,6 +1086,13 @@ class NesterovBase
 
   bool isDiverged() const { return isDiverged_; }
 
+  //  void resizeGCell();
+  void createGCell(odb::dbInst* db_inst, GCell* gcell);
+  void destroyGCell(odb::dbInst* db_inst);
+  
+//  void insertGCells(std::vector<GCell*> new_gcells);
+  void fixPointers(std::vector<size_t> new_gcells);
+  
   // Use this momentarily to avoid circular dependencies between NB, NBC,
   // BinGrid, and GCellPointer
   std::vector<GCell*> convertGCellPointersToGCellPtrs(
@@ -1079,6 +1130,8 @@ class NesterovBase
   std::vector<GCellPointer> gCells_;
   std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
+
+  std::unordered_map<odb::dbInst*, GCell*> db_inst_map_;
 
   float sumPhi_ = 0;
   float targetDensity_ = 0;

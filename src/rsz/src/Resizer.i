@@ -697,7 +697,7 @@ void
 find_resize_slacks()
 {
   Resizer *resizer = getResizer();
-  resizer->findResizeSlacks();
+  resizer->findResizeSlacks(true);
 }
 
 NetSeq *

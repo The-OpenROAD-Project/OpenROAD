@@ -80,6 +80,8 @@ void _dbGDSElement::out(dbDiff& diff, char side, const char* field) const
 
 _dbGDSElement::_dbGDSElement(_dbDatabase* db)
 {
+  _layer = 0;
+  _datatype = 0;
 }
 
 _dbGDSElement::_dbGDSElement(_dbDatabase* db, const _dbGDSElement& r)
