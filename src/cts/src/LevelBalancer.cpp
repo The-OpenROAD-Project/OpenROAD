@@ -94,15 +94,17 @@ void LevelBalancer::addBufferLevels(TreeBuilder* builder,
     totalX += clockInstObj->getX();
     totalY += clockInstObj->getY();
   }
-  double height = builder->getBufferHeight() * wireSegmentUnit_;
-  double width = builder->getBufferWidth() * wireSegmentUnit_;
 
   const double centroidX = totalX / cluster.size();
   const double centroidY = totalY / cluster.size();
   int x = prevLevelSubNet->getDriver()->getX();
   int y = prevLevelSubNet->getDriver()->getY();
 
-  int steps = std::max((int) ((centroidY - y) / height), 1);
+  int dir = (centroidY - y) / std::abs(centroidY - y);
+  double height = builder->getBufferHeight() * wireSegmentUnit_ * dir;
+  double width = builder->getBufferWidth() * wireSegmentUnit_ * dir;
+
+  int steps = std::max((int) (std::abs((centroidY - y) / height)), 1);
   int buffPerStep = std::ceil((float) bufLevels / (float) steps);
 
   for (unsigned level = 0; level < bufLevels; level++) {
