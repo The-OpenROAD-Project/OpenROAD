@@ -534,6 +534,7 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<sta::LibertyPgPort*>(
       new LibertyPgPortDescriptor(db_, sta));
   gui->registerDescriptor<sta::Instance*>(new StaInstanceDescriptor(db_, sta));
+  gui->registerDescriptor<sta::Clock*>(new ClockDescriptor(db_, sta));
 
   gui->registerDescriptor<BufferTree>(
       new BufferTreeDescriptor(db_,

@@ -764,12 +764,17 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
   PropertyList port_power_activity;
   PropertyList port_arrival_hold;
   PropertyList port_arrival_setup;
+  SelectionSet clocks;
   std::unique_ptr<sta::CellPortIterator> port_itr(
       network->portIterator(network->cell(inst)));
   while (port_itr->hasNext()) {
     sta::Port* port = port_itr->next();
     sta::Pin* pin = network->findPin(inst, port);
     has_sdc_constraint |= sdc->isConstrained(pin);
+
+    for (auto* clock : sta_->clocks(pin)) {
+      clocks.insert(gui->makeSelected(clock));
+    }
 
     auto power = sta_->findClkedActivity(pin);
 
@@ -822,6 +827,8 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
   }
   props.push_back({"Total power", power});
 
+  props.push_back({"Clocks", clocks});
+
   props.push_back({"Has SDC constraint", has_sdc_constraint});
 
   return props;
@@ -854,6 +861,140 @@ bool StaInstanceDescriptor::getAllObjects(SelectionSet& objects) const
   }
 
   return true;
+}
+
+ClockDescriptor::ClockDescriptor(odb::dbDatabase* db, sta::dbSta* sta)
+    : db_(db), sta_(sta)
+{
+}
+
+std::string ClockDescriptor::getName(std::any object) const
+{
+  return std::any_cast<sta::Clock*>(object)->name();
+}
+
+std::string ClockDescriptor::getTypeName() const
+{
+  return "Clock";
+}
+
+bool ClockDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  return false;
+}
+
+void ClockDescriptor::highlight(std::any object, Painter& painter) const
+{
+  auto clock = std::any_cast<sta::Clock*>(object);
+  auto* network = sta_->getDbNetwork();
+
+  auto* iterm_desc = Gui::get()->getDescriptor<odb::dbITerm*>();
+  auto* bterm_desc = Gui::get()->getDescriptor<odb::dbBTerm*>();
+  for (auto* pin : getAllClockPins(clock)) {
+    odb::dbITerm* iterm;
+    odb::dbBTerm* bterm;
+    odb::dbModITerm* moditerm;
+    odb::dbModBTerm* modbterm;
+
+    network->staToDb(pin, iterm, bterm, moditerm, modbterm);
+
+    if (iterm != nullptr) {
+      iterm_desc->highlight(iterm, painter);
+    } else if (bterm != nullptr) {
+      bterm_desc->highlight(bterm, painter);
+    }
+  }
+}
+
+std::set<const sta::Pin*> ClockDescriptor::getAllClockPins(
+    sta::Clock* clock) const
+{
+  std::set<const sta::Pin*> pins;
+
+  for (auto* pin : clock->pins()) {
+    pins.insert(pin);
+  }
+
+  for (auto* pin : sta_->startpointPins()) {
+    const auto pin_clocks = sta_->clocks(pin);
+    if (std::find(pin_clocks.begin(), pin_clocks.end(), clock)
+        != pin_clocks.end()) {
+      pins.insert(pin);
+    }
+  }
+  for (auto* pin : sta_->endpointPins()) {
+    const auto pin_clocks = sta_->clocks(pin);
+    if (std::find(pin_clocks.begin(), pin_clocks.end(), clock)
+        != pin_clocks.end()) {
+      pins.insert(pin);
+    }
+  }
+
+  return pins;
+}
+
+Descriptor::Properties ClockDescriptor::getProperties(std::any object) const
+{
+  auto clock = std::any_cast<sta::Clock*>(object);
+  auto* network = sta_->getDbNetwork();
+
+  auto gui = Gui::get();
+
+  Properties props;
+
+  auto* timeunit = sta_->units()->timeUnit();
+  props.push_back({"Period",
+                   fmt::format("{} {}",
+                               timeunit->asString(clock->period()),
+                               timeunit->scaledSuffix())});
+
+  props.push_back({"Is virtual", clock->isVirtual()});
+  props.push_back({"Is generated", clock->isGenerated()});
+  props.push_back({"Is propagated", clock->isPropagated()});
+
+  auto* master_clk = clock->masterClk();
+  if (master_clk != nullptr) {
+    props.push_back({"Master clock", gui->makeSelected(master_clk)});
+  }
+
+  SelectionSet pins;
+  for (auto* pin : getAllClockPins(clock)) {
+    odb::dbITerm* iterm;
+    odb::dbBTerm* bterm;
+    odb::dbModITerm* moditerm;
+    odb::dbModBTerm* modbterm;
+
+    network->staToDb(pin, iterm, bterm, moditerm, modbterm);
+
+    if (iterm != nullptr) {
+      pins.insert(gui->makeSelected(iterm));
+    } else if (bterm != nullptr) {
+      pins.insert(gui->makeSelected(bterm));
+    }
+  }
+  props.push_back({"Pins", pins});
+
+  return props;
+}
+
+Selected ClockDescriptor::makeSelected(std::any object) const
+{
+  if (auto clock = std::any_cast<sta::Clock*>(&object)) {
+    return Selected(*clock, this);
+  }
+  return Selected();
+}
+
+bool ClockDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_clock = std::any_cast<sta::Clock*>(l);
+  auto r_clock = std::any_cast<sta::Clock*>(r);
+  return strcmp(l_clock->name(), r_clock->name()) < 0;
+}
+
+bool ClockDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  return false;
 }
 
 }  // namespace gui
