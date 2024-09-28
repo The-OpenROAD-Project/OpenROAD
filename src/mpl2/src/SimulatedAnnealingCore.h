@@ -89,6 +89,8 @@ class SimulatedAnnealingCore
       Mpl2Observer* graphics,
       utl::Logger* logger);
 
+  virtual ~SimulatedAnnealingCore() = default;
+
   void setNumberOfMacrosToPlace(int macros_to_place)
   {
     macros_to_place_ = macros_to_place;

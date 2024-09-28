@@ -30,7 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin Cpp
 #include "dbGDSLib.h"
 
 #include "dbDatabase.h"
@@ -122,6 +121,8 @@ _dbGDSLib::_dbGDSLib(_dbDatabase* db)
       db, this, (GetObjTbl_t) &_dbGDSLib::getObjectTable, dbGDSStructureObj);
 
   _structure_hash.setTable(_structure_tbl);
+  std::mktime(&_lastAccessed);
+  std::mktime(&_lastModified);
 }
 
 _dbGDSLib::_dbGDSLib(_dbDatabase* db, const _dbGDSLib& r)
@@ -132,7 +133,8 @@ _dbGDSLib::_dbGDSLib(_dbDatabase* db, const _dbGDSLib& r)
       _srfName(r._srfName),
       _uu_per_dbu(r._uu_per_dbu),
       _dbu_per_meter(r._dbu_per_meter),
-      _structure_hash(r._structure_hash)
+      _structure_hash(r._structure_hash),
+      _structure_tbl(r._structure_tbl)
 {
 }
 
@@ -299,4 +301,3 @@ dbSet<dbGDSStructure> dbGDSLib::getGDSStructures()
   return dbSet<dbGDSStructure>(obj, obj->_structure_tbl);
 }
 }  // namespace odb
-   // Generator Code End Cpp

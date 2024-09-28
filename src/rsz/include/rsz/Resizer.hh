@@ -41,6 +41,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
+#include "rsz/OdbCallBack.hh"
 #include "sta/Path.hh"
 #include "sta/UnorderedSet.hh"
 #include "utl/Logger.h"
@@ -178,6 +179,8 @@ struct BufferData
   Instance* parent;
   Point location;
 };
+
+class OdbCallBack;
 
 class Resizer : public dbStaState
 {
@@ -412,13 +415,15 @@ class Resizer : public dbStaState
   void makeEquivCells();
 
   ////////////////////////////////////////////////////////////////
+  void initBlock();
   void journalBeginTest();
   void journalRestoreTest();
   Logger* logger() const { return logger_; }
+  void invalidateParasitics(const Pin* pin, const Net* net);
+  void eraseParasitics(const Net* net);
 
  protected:
   void init();
-  void initBlock();
   void initDesignArea();
   void ensureLevelDrvrVertices();
   Instance* bufferInput(const Pin* top_pin, LibertyCell* buffer_cell);
@@ -641,7 +646,6 @@ class Resizer : public dbStaState
                       const Corner*& corner);
   void warnBufferMovedIntoCore();
   bool isLogicStdCell(const Instance* inst);
-  void invalidateParasitics(const Pin* pin, const Net* net);
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
   // during repair timing.
@@ -650,6 +654,7 @@ class Resizer : public dbStaState
   void journalRestore(int& resize_count,
                       int& inserted_buffer_count,
                       int& cloned_gate_count,
+                      int& swap_pin_count,
                       int& removed_buffer_count);
   void journalUndoGateCloning(int& cloned_gate_count);
   void journalSwapPins(Instance* inst, LibertyPort* port1, LibertyPort* port2);
@@ -729,6 +734,7 @@ class Resizer : public dbStaState
   int resize_count_ = 0;
   int inserted_buffer_count_ = 0;
   int cloned_gate_count_ = 0;
+  int swap_pin_count_ = 0;
   int removed_buffer_count_ = 0;
   bool exclude_clock_buffers_ = true;
   bool buffer_moved_into_core_ = false;
@@ -763,6 +769,11 @@ class Resizer : public dbStaState
 
   // Use actual input slews for accurate delay/slew estimation
   sta::UnorderedMap<LibertyPort*, InputSlews> input_slew_map_;
+
+  std::unique_ptr<OdbCallBack> db_cbk_;
+  bool is_callback_registered_ = false;
+  bool isCallBackRegistered() { return is_callback_registered_; }
+  void setCallBackRegistered(bool val) { is_callback_registered_ = val; }
 
   friend class BufferedNet;
   friend class GateCloner;

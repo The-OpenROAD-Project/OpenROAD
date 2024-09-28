@@ -339,6 +339,8 @@ void ScanReplace::scanReplace()
 void ScanReplace::scanReplace(odb::dbBlock* block)
 {
   std::unordered_set<odb::dbInst*> already_replaced;
+  std::unordered_set<odb::dbMaster*> no_lib_warned;
+
   for (odb::dbInst* inst : block->getInsts()) {
     // The instances already scan replaced are skipped
     if (already_replaced.find(inst) != already_replaced.end()) {
@@ -360,14 +362,28 @@ void ScanReplace::scanReplace(odb::dbBlock* block)
       continue;
     }
 
-    if (!utils::IsSequentialCell(db_network_, inst)) {
-      // If the cell is not sequential, then there is nothing to replace
-      continue;
-    }
-
     odb::dbMaster* master = inst->getMaster();
     sta::Cell* master_cell = db_network_->dbToSta(master);
     sta::LibertyCell* from_liberty_cell = db_network_->libertyCell(master_cell);
+
+    if (from_liberty_cell == nullptr) {
+      // cell doesn't exist in lib, no timing info
+      if (master->getType() == odb::dbMasterType::CORE
+          && no_lib_warned.find(master) == no_lib_warned.end()) {
+        logger_->warn(
+            utl::DFT,
+            12,
+            "Cell master '{:s}' has no lib info. Can't create scan cell(s)",
+            master->getName());
+        no_lib_warned.insert(master);
+      }
+      continue;
+    }
+
+    if (!from_liberty_cell->hasSequentials()) {
+      // If the cell is not sequential, then there is nothing to replace
+      continue;
+    }
 
     if (available_scan_lib_cells_.find(from_liberty_cell)
         != available_scan_lib_cells_.end()) {

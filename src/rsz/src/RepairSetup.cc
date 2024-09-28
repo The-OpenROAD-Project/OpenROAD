@@ -101,6 +101,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   split_load_buffer_count_ = 0;
   resize_count_ = 0;
   cloned_gate_count_ = 0;
+  swap_pin_count_ = 0;
   removed_buffer_count_ = 0;
   resizer_->buffer_moved_into_core_ = false;
 
@@ -163,7 +164,6 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   sta_->checkCapacitanceLimitPreamble();
   sta_->checkFanoutLimitPreamble();
 
-  resizer_->incrementalParasiticsBegin();
   int opto_iteration = 0;
   bool prev_termination = false;
   bool two_cons_terminations = false;
@@ -223,6 +223,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
         } else {
           prev_termination = true;
         }
+        resizer_->journalEnd();
         break;
       }
       if (opto_iteration % opto_small_interval_ == 0) {
@@ -242,9 +243,10 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
           resizer_->journalRestore(resize_count_,
                                    inserted_buffer_count_,
                                    cloned_gate_count_,
+                                   swap_pin_count_,
                                    removed_buffer_count_);
-          resizer_->updateParasitics();
-          sta_->findRequireds();
+        } else {
+          resizer_->journalEnd();
         }
         // clang-format off
         debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out at {}/{} "
@@ -279,9 +281,10 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
           resizer_->journalRestore(resize_count_,
                                    inserted_buffer_count_,
                                    cloned_gate_count_,
+                                   swap_pin_count_,
                                    removed_buffer_count_);
-          resizer_->updateParasitics();
-          sta_->findRequireds();
+        } else {
+          resizer_->journalEnd();
         }
         // clang-format off
         debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out {} no changes"
@@ -314,6 +317,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
         prev_end_slack = end_slack;
         prev_worst_slack = worst_slack;
         decreasing_slack_passes = 0;
+        resizer_->journalEnd();
         // Progress, Save checkpoint so we can back up to here.
         resizer_->journalBegin();
       } else {
@@ -338,9 +342,8 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
           resizer_->journalRestore(resize_count_,
                                    inserted_buffer_count_,
                                    cloned_gate_count_,
+                                   swap_pin_count_,
                                    removed_buffer_count_);
-          resizer_->updateParasitics();
-          sta_->findRequireds();
           // clang-format off
           debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out {} decreasing"
                      " passes {} > decreasig pass limit {}", end->name(network_),
@@ -355,6 +358,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
         debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out {} resizer"
                    " over max area", end->name(network_));
         // clang-format on
+        resizer_->journalEnd();
         break;
       }
       if (end_index == 1) {
@@ -383,9 +387,6 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   if (verbose) {
     printProgress(opto_iteration, true, true, false, num_viols);
   }
-  // Leave the parasitics up to date.
-  resizer_->updateParasitics();
-  resizer_->incrementalParasiticsEnd();
 
   if (removed_buffer_count_ > 0) {
     logger_->info(RSZ, 59, "Removed {} buffers.", removed_buffer_count_);
@@ -1796,6 +1797,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
         } else {
           prev_termination = true;
         }
+        resizer_->journalEnd();
         break;
       }
       if (opto_iteration % opto_small_interval_ == 0) {
@@ -1806,6 +1808,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
       }
       if (end_slack > params.setup_slack_margin) {
         --num_viols;
+        resizer_->journalEnd();
         break;
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
@@ -1822,9 +1825,10 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
           resizer_->journalRestore(resize_count_,
                                    inserted_buffer_count_,
                                    cloned_gate_count_,
+                                   swap_pin_count_,
                                    removed_buffer_count_);
-          resizer_->updateParasitics();
-          sta_->findRequireds();
+        } else {
+          resizer_->journalEnd();
         }
         break;
       }
@@ -1848,18 +1852,19 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
         if (end_slack > params.setup_slack_margin) {
           --num_viols;
         }
+        resizer_->journalEnd();
         resizer_->journalBegin();
       } else {
         resizer_->journalRestore(resize_count_,
                                  inserted_buffer_count_,
                                  cloned_gate_count_,
+                                 swap_pin_count_,
                                  removed_buffer_count_);
-        resizer_->updateParasitics();
-        sta_->findRequireds();
         break;
       }
 
       if (resizer_->overMaxArea()) {
+        resizer_->journalEnd();
         break;
       }
       if (end_index == 1) {
