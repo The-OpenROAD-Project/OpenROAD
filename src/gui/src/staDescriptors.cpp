@@ -50,6 +50,7 @@
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Sdc.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 
@@ -739,6 +740,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
 {
   auto inst = std::any_cast<sta::Instance*>(object);
   auto* network = sta_->getDbNetwork();
+  auto* sdc = sta_->sdc();
 
   auto gui = Gui::get();
 
@@ -751,6 +753,47 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
   if (lib_cell != nullptr) {
     props.push_back({"Liberty cell", gui->makeSelected(lib_cell)});
   }
+
+  bool has_sdc_constraint = sdc->isConstrained(inst);
+  PropertyList port_power_activity;
+  std::unique_ptr<sta::CellPortIterator> port_itr(
+      network->portIterator(network->cell(inst)));
+  while (port_itr->hasNext()) {
+    sta::Port* port = port_itr->next();
+    sta::Pin* pin = network->findPin(inst, port);
+    has_sdc_constraint |= sdc->isConstrained(pin);
+
+    auto power = sta_->findClkedActivity(pin);
+
+    std::any port_id;
+    if (lib_cell != nullptr) {
+      auto* lib_port = network->libertyPort(port);
+      if (lib_port != nullptr) {
+        port_id = gui->makeSelected(lib_port);
+      }
+    }
+    if (!port_id.has_value()) {
+      port_id = network->name(port);
+    }
+
+    const std::string freq = Descriptor::convertUnits(power.activity());
+    const std::string activity_info = fmt::format("{:.4f}% at {}Hz from {}",
+                                                  100 * power.duty(),
+                                                  freq,
+                                                  power.originName());
+    port_power_activity.push_back({port_id, activity_info});
+  }
+  props.push_back({"Port power activity", port_power_activity});
+
+  PropertyList power;
+  for (auto* corner : *sta_->corners()) {
+    const auto power_info = sta_->power(inst, corner);
+    power.push_back({gui->makeSelected(corner),
+                     Descriptor::convertUnits(power_info.total()) + "W"});
+  }
+  props.push_back({"Total power", power});
+
+  props.push_back({"Has SDC constraint", has_sdc_constraint});
 
   return props;
 }
