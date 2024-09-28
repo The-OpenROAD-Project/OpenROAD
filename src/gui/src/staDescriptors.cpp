@@ -37,14 +37,18 @@
 #include <boost/algorithm/string.hpp>
 #include <iomanip>
 #include <limits>
+#include <memory>
 #include <queue>
 #include <regex>
 #include <sstream>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "sta/Corner.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
+#include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
@@ -116,6 +120,22 @@ bool LibertyLibraryDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 void LibertyLibraryDescriptor::highlight(std::any object,
                                          Painter& painter) const
 {
+  auto library = std::any_cast<sta::LibertyLibrary*>(object);
+  auto network = sta_->getDbNetwork();
+
+  sta::LibertyCellIterator cell_iter(library);
+  std::set<odb::dbMaster*> masters;
+  while (cell_iter.hasNext()) {
+    auto* master = network->staToDb(cell_iter.next());
+    if (master != nullptr) {
+      masters.insert(master);
+    }
+  }
+
+  auto* master_desc = Gui::get()->getDescriptor<odb::dbMaster*>();
+  for (auto* master : masters) {
+    master_desc->highlight(master, painter);
+  }
 }
 
 Descriptor::Properties LibertyLibraryDescriptor::getProperties(
@@ -123,9 +143,75 @@ Descriptor::Properties LibertyLibraryDescriptor::getProperties(
 {
   auto library = std::any_cast<sta::LibertyLibrary*>(object);
 
+  auto gui = Gui::get();
   Properties props;
 
-  auto gui = Gui::get();
+  const char* delay_model = "";
+  switch (library->delayModelType()) {
+    case sta::DelayModelType::cmos2:
+      delay_model = "cmos2";
+      break;
+    case sta::DelayModelType::cmos_linear:
+      delay_model = "cmos linear";
+      break;
+    case sta::DelayModelType::cmos_pwl:
+      delay_model = "cmos pwl";
+      break;
+    case sta::DelayModelType::table:
+      delay_model = "table";
+      break;
+    case sta::DelayModelType::polynomial:
+      delay_model = "polynomial";
+      break;
+    case sta::DelayModelType::dcm:
+      delay_model = "dcm";
+      break;
+  }
+  props.push_back({"Delay model", delay_model});
+
+  auto format_unit = [](float value, const sta::Unit* unit) -> std::string {
+    return fmt::format("{} {}", unit->asString(value), unit->scaledSuffix());
+  };
+
+  props.push_back(
+      {"Nominal voltage",
+       format_unit(library->nominalVoltage(), sta_->units()->voltageUnit())});
+  props.push_back({"Nominal temperature",
+                   fmt::format("{} deg C", library->nominalTemperature())});
+  props.push_back({"Nominal process", library->nominalProcess()});
+
+  bool exists;
+  float cap, fanout, load, slew;
+  library->defaultMaxSlew(slew, exists);
+  if (exists) {
+    props.push_back(
+        {"Default max slew", format_unit(slew, sta_->units()->timeUnit())});
+  }
+  library->defaultMaxCapacitance(cap, exists);
+  if (exists) {
+    props.push_back({"Default max capacitance",
+                     format_unit(cap, sta_->units()->capacitanceUnit())});
+  }
+  library->defaultMaxFanout(fanout, exists);
+  if (exists) {
+    props.push_back({"Default max fanout", fanout});
+  }
+  library->defaultFanoutLoad(load, exists);
+  if (exists) {
+    props.push_back({"Default fanout load", load});
+  }
+
+  SelectionSet corners;
+  for (auto* corner : *sta_->corners()) {
+    for (const auto min_max : {sta::MinMax::min(), sta::MinMax::max()}) {
+      const auto libs = corner->libertyLibraries(min_max);
+      if (std::find(libs.begin(), libs.end(), library) != libs.end()) {
+        corners.insert(gui->makeSelected(corner));
+      }
+    }
+  }
+  props.push_back({"Corners", corners});
+
   SelectionSet cells;
   sta::LibertyCellIterator cell_iter(library);
   while (cell_iter.hasNext()) {
@@ -190,6 +276,12 @@ bool LibertyCellDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 
 void LibertyCellDescriptor::highlight(std::any object, Painter& painter) const
 {
+  auto cell = std::any_cast<sta::LibertyCell*>(object);
+  auto* network = sta_->getDbNetwork();
+  odb::dbMaster* master = network->staToDb(cell);
+
+  auto* master_desc = Gui::get()->getDescriptor<odb::dbMaster*>();
+  master_desc->highlight(master, painter);
 }
 
 Descriptor::Properties LibertyCellDescriptor::getProperties(
@@ -197,10 +289,13 @@ Descriptor::Properties LibertyCellDescriptor::getProperties(
 {
   auto cell = std::any_cast<sta::LibertyCell*>(object);
 
+  auto* network = sta_->getDbNetwork();
   auto gui = Gui::get();
   Properties props;
 
   sta::LibertyLibrary* library = cell->libertyLibrary();
+
+  props.push_back({"DB Master", gui->makeSelected(network->staToDb(cell))});
 
   if (auto area = cell->area()) {
     props.push_back({"Area", fmt::format("{} μm²", area)});
@@ -247,6 +342,14 @@ Descriptor::Properties LibertyCellDescriptor::getProperties(
     pg_ports.insert(gui->makeSelected(pg_port_iter.next()));
   }
   props.push_back({"PG Ports", pg_ports});
+
+  SelectionSet insts;
+  for (auto* inst : network->leafInstances()) {
+    if (network->libertyCell(inst) == cell) {
+      insts.insert(gui->makeSelected(inst));
+    }
+  }
+  props.push_back({"Instances", insts});
 
   return props;
 }
@@ -309,14 +412,25 @@ bool LibertyPortDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 
 void LibertyPortDescriptor::highlight(std::any object, Painter& painter) const
 {
+  auto port = std::any_cast<sta::LibertyPort*>(object);
+  auto* network = sta_->getDbNetwork();
+  odb::dbMTerm* mterm = network->staToDb(port);
+
+  auto* mterm_desc = Gui::get()->getDescriptor<odb::dbMTerm*>();
+  mterm_desc->highlight(mterm, painter);
 }
 
 Descriptor::Properties LibertyPortDescriptor::getProperties(
     std::any object) const
 {
   auto port = std::any_cast<sta::LibertyPort*>(object);
+  auto* network = sta_->getDbNetwork();
 
   Properties props;
+
+  auto gui = Gui::get();
+  props.push_back({"DB MTerm", gui->makeSelected(network->staToDb(port))});
+
   props.push_back({"Direction", port->direction()->name()});
   if (auto function = port->function()) {
     props.push_back({"Function", function->asString()});
@@ -449,6 +563,12 @@ bool LibertyPgPortDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 
 void LibertyPgPortDescriptor::highlight(std::any object, Painter& painter) const
 {
+  odb::dbMTerm* mterm = getMTerm(object);
+
+  if (mterm != nullptr) {
+    auto* mterm_desc = Gui::get()->getDescriptor<odb::dbMTerm*>();
+    mterm_desc->highlight(mterm, painter);
+  }
 }
 
 Descriptor::Properties LibertyPgPortDescriptor::getProperties(
@@ -462,6 +582,11 @@ Descriptor::Properties LibertyPgPortDescriptor::getProperties(
   props.push_back({"Cell", gui->makeSelected(port->cell())});
   props.push_back({"Type", typeNameStr(port->pgType())});
   props.push_back({"Voltage name", port->voltageName()});
+
+  odb::dbMTerm* mterm = getMTerm(object);
+  if (mterm != nullptr) {
+    props.push_back({"DB Terminal", gui->makeSelected(mterm)});
+  }
 
   return props;
 }
@@ -498,6 +623,162 @@ bool LibertyPgPortDescriptor::getAllObjects(SelectionSet& objects) const
         objects.insert(makeSelected(port));
       }
     }
+  }
+
+  return true;
+}
+
+odb::dbMTerm* LibertyPgPortDescriptor::getMTerm(std::any object) const
+{
+  auto port = std::any_cast<sta::LibertyPgPort*>(object);
+  odb::dbMaster* master = sta_->getDbNetwork()->staToDb(port->cell());
+  odb::dbMTerm* mterm = master->findMTerm(port->name());
+
+  return mterm;
+}
+
+CornerDescriptor::CornerDescriptor(odb::dbDatabase* db, sta::dbSta* sta)
+    : db_(db), sta_(sta)
+{
+}
+
+std::string CornerDescriptor::getName(std::any object) const
+{
+  return std::any_cast<sta::Corner*>(object)->name();
+}
+
+std::string CornerDescriptor::getTypeName() const
+{
+  return "Timing corner";
+}
+
+bool CornerDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  return false;
+}
+
+void CornerDescriptor::highlight(std::any object, Painter& painter) const
+{
+}
+
+Descriptor::Properties CornerDescriptor::getProperties(std::any object) const
+{
+  auto corner = std::any_cast<sta::Corner*>(object);
+
+  auto gui = Gui::get();
+
+  Properties props;
+
+  SelectionSet libs;
+  for (auto* min_max : {sta::MinMax::min(), sta::MinMax::max()}) {
+    for (auto* lib : corner->libertyLibraries(min_max)) {
+      libs.insert(gui->makeSelected(lib));
+    }
+  }
+  props.push_back({"Libraries", libs});
+
+  return props;
+}
+
+Selected CornerDescriptor::makeSelected(std::any object) const
+{
+  if (auto corner = std::any_cast<sta::Corner*>(&object)) {
+    return Selected(*corner, this);
+  }
+  return Selected();
+}
+
+bool CornerDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_corner = std::any_cast<sta::Corner*>(l);
+  auto r_corner = std::any_cast<sta::Corner*>(r);
+  return strcmp(l_corner->name(), r_corner->name()) < 0;
+}
+
+bool CornerDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  for (auto* corner : *sta_->corners()) {
+    objects.insert(makeSelected(corner));
+  }
+
+  return true;
+}
+
+StaInstanceDescriptor::StaInstanceDescriptor(odb::dbDatabase* db,
+                                             sta::dbSta* sta)
+    : db_(db), sta_(sta)
+{
+}
+
+std::string StaInstanceDescriptor::getName(std::any object) const
+{
+  return sta_->network()->name(std::any_cast<sta::Instance*>(object));
+}
+
+std::string StaInstanceDescriptor::getTypeName() const
+{
+  return "STA Instance";
+}
+
+bool StaInstanceDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  return false;
+}
+
+void StaInstanceDescriptor::highlight(std::any object, Painter& painter) const
+{
+  auto inst = std::any_cast<sta::Instance*>(object);
+  odb::dbInst* db_inst = sta_->getDbNetwork()->staToDb(inst);
+
+  auto* inst_desc = Gui::get()->getDescriptor<odb::dbInst*>();
+  inst_desc->highlight(db_inst, painter);
+}
+
+Descriptor::Properties StaInstanceDescriptor::getProperties(
+    std::any object) const
+{
+  auto inst = std::any_cast<sta::Instance*>(object);
+  auto* network = sta_->getDbNetwork();
+
+  auto gui = Gui::get();
+
+  Properties props;
+
+  odb::dbInst* db_inst = network->staToDb(inst);
+  props.push_back({"DB Instance", gui->makeSelected(db_inst)});
+
+  auto* lib_cell = network->libertyCell(inst);
+  if (lib_cell != nullptr) {
+    props.push_back({"Liberty cell", gui->makeSelected(lib_cell)});
+  }
+
+  return props;
+}
+
+Selected StaInstanceDescriptor::makeSelected(std::any object) const
+{
+  if (auto inst = std::any_cast<sta::Instance*>(&object)) {
+    return Selected(*inst, this);
+  }
+  return Selected();
+}
+
+bool StaInstanceDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto* network = sta_->getDbNetwork();
+  auto l_inst = std::any_cast<sta::Instance*>(l);
+  auto r_inst = std::any_cast<sta::Instance*>(r);
+  return network->id(l_inst) < network->id(r_inst);
+}
+
+bool StaInstanceDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  std::unique_ptr<sta::LeafInstanceIterator> lib_iter(
+      network->leafInstanceIterator());
+
+  while (lib_iter->hasNext()) {
+    objects.insert(makeSelected(lib_iter->next()));
   }
 
   return true;
