@@ -229,11 +229,11 @@ void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
     if (via_width > rect_width || via_height > rect_height) {
       continue;
     }
-    int coord_top = is_curr_layer_horz ? gtl::yh(rect) - box.yMax()
-                                       : gtl::xh(rect) - box.xMax();
-    int coord_low = is_curr_layer_horz ? gtl::yl(rect) - box.yMin()
-                                       : gtl::xl(rect) - box.xMin();
-    for (int coord : {coord_top, coord_low}) {
+    const int coord_top = is_curr_layer_horz ? gtl::yh(rect) - box.yMax()
+                                             : gtl::xh(rect) - box.xMax();
+    const int coord_low = is_curr_layer_horz ? gtl::yl(rect) - box.yMin()
+                                             : gtl::xl(rect) - box.xMin();
+    for (const int coord : {coord_top, coord_low}) {
       if (coords.find(coord) == coords.end()) {
         coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
       } else {
