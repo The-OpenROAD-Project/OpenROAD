@@ -296,7 +296,10 @@ Descriptor::Properties LibertyCellDescriptor::getProperties(
 
   sta::LibertyLibrary* library = cell->libertyLibrary();
 
-  props.push_back({"DB Master", gui->makeSelected(network->staToDb(cell))});
+  auto* db_master = network->staToDb(cell);
+  if (db_master != nullptr) {
+    props.push_back({"DB Master", gui->makeSelected(db_master)});
+  }
 
   if (auto area = cell->area()) {
     props.push_back({"Area", fmt::format("{} μm²", area)});
@@ -345,7 +348,10 @@ Descriptor::Properties LibertyCellDescriptor::getProperties(
   props.push_back({"PG Ports", pg_ports});
 
   SelectionSet insts;
-  for (auto* inst : network->leafInstances()) {
+  std::unique_ptr<sta::LeafInstanceIterator> lib_iter(
+      network->leafInstanceIterator());
+  while (lib_iter->hasNext()) {
+    auto* inst = lib_iter->next();
     if (network->libertyCell(inst) == cell) {
       insts.insert(gui->makeSelected(inst));
     }
