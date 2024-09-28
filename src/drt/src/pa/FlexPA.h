@@ -294,14 +294,14 @@ class FlexPA
    * @param is_curr_layer_horz if the current layer is horizontal
    * @param offset TODO: not sure, something to do with macro cells
    */
-  void genAPCosted(const frAccessPointEnum cost,
+  void genAPCosted(frAccessPointEnum cost,
                    std::map<frCoord, frAccessPointEnum>& coords,
                    const std::map<frCoord, frAccessPointEnum>& track_coords,
-                   const frLayerNum base_layer_num,
-                   const frLayerNum layer_num,
+                   frLayerNum base_layer_num,
+                   frLayerNum layer_num,
                    const gtl::rectangle_data<frCoord>& rect,
-                   const bool is_curr_layer_horz,
-                   const int offset = 0);
+                   bool is_curr_layer_horz,
+                   int offset = 0);
 
   void gen_initializeAccessPoints(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
