@@ -298,7 +298,7 @@ Descriptor::Properties LibertyCellDescriptor::getProperties(
 
   auto* db_master = network->staToDb(cell);
   if (db_master != nullptr) {
-    props.push_back({"DB Master", gui->makeSelected(db_master)});
+    props.push_back({"Master", gui->makeSelected(db_master)});
   }
 
   if (auto area = cell->area()) {
@@ -436,7 +436,7 @@ Descriptor::Properties LibertyPortDescriptor::getProperties(
   Properties props;
 
   auto gui = Gui::get();
-  props.push_back({"DB MTerm", gui->makeSelected(network->staToDb(port))});
+  props.push_back({"MTerm", gui->makeSelected(network->staToDb(port))});
 
   props.push_back({"Direction", port->direction()->name()});
   if (auto function = port->function()) {
@@ -592,7 +592,7 @@ Descriptor::Properties LibertyPgPortDescriptor::getProperties(
 
   odb::dbMTerm* mterm = getMTerm(object);
   if (mterm != nullptr) {
-    props.push_back({"DB Terminal", gui->makeSelected(mterm)});
+    props.push_back({"Terminal", gui->makeSelected(mterm)});
   }
 
   return props;
@@ -724,7 +724,7 @@ std::string StaInstanceDescriptor::getName(std::any object) const
 
 std::string StaInstanceDescriptor::getTypeName() const
 {
-  return "STA Instance";
+  return "Timing/Power";
 }
 
 bool StaInstanceDescriptor::getBBox(std::any object, odb::Rect& bbox) const
@@ -753,7 +753,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
   Properties props;
 
   odb::dbInst* db_inst = network->staToDb(inst);
-  props.push_back({"DB Instance", gui->makeSelected(db_inst)});
+  props.push_back({"Instance", gui->makeSelected(db_inst)});
 
   auto* lib_cell = network->libertyCell(inst);
   if (lib_cell != nullptr) {
@@ -762,6 +762,8 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
 
   bool has_sdc_constraint = sdc->isConstrained(inst);
   PropertyList port_power_activity;
+  PropertyList port_arrival_hold;
+  PropertyList port_arrival_setup;
   std::unique_ptr<sta::CellPortIterator> port_itr(
       network->portIterator(network->cell(inst)));
   while (port_itr->hasNext()) {
@@ -771,10 +773,12 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
 
     auto power = sta_->findClkedActivity(pin);
 
+    bool is_lib_port = false;
     std::any port_id;
     if (lib_cell != nullptr) {
       auto* lib_port = network->libertyPort(port);
       if (lib_port != nullptr) {
+        is_lib_port = true;
         port_id = gui->makeSelected(lib_port);
       }
     }
@@ -788,7 +792,26 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
                                                   freq,
                                                   power.originName());
     port_power_activity.push_back({port_id, activity_info});
+
+    if (is_lib_port) {
+      const sta::Unit* timeunit = sta_->units()->timeUnit();
+      const auto setup_arrival
+          = sta_->pinArrival(pin, nullptr, sta::MinMax::max());
+      port_arrival_setup.push_back(
+          {port_id,
+           fmt::format("{} {}",
+                       timeunit->asString(setup_arrival),
+                       timeunit->scaledSuffix())});
+      const auto hold_arrival
+          = sta_->pinArrival(pin, nullptr, sta::MinMax::min());
+      port_arrival_hold.push_back({port_id,
+                                   fmt::format("{} {}",
+                                               timeunit->asString(hold_arrival),
+                                               timeunit->scaledSuffix())});
+    }
   }
+  props.push_back({"Setup times", port_arrival_setup});
+  props.push_back({"Hold times", port_arrival_hold});
   props.push_back({"Port power activity", port_power_activity});
 
   PropertyList power;

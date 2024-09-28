@@ -547,10 +547,6 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
   }
   props.push_back({"Master", gui->makeSelected(inst->getMaster())});
 
-  auto* sta_inst = sta_->getDbNetwork()->dbToSta(inst);
-  if (sta_inst != nullptr) {
-    props.push_back({"STA Instance", gui->makeSelected(sta_inst)});
-  }
   props.push_back(
       {"Description", sta_->getInstanceTypeText(sta_->getInstanceType(inst))});
   props.push_back({"Placement status", placed.getString()});
@@ -585,6 +581,11 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
   auto* region = inst->getRegion();
   if (region != nullptr) {
     props.push_back({"Region", gui->makeSelected(region)});
+  }
+
+  auto* sta_inst = sta_->getDbNetwork()->dbToSta(inst);
+  if (sta_inst != nullptr) {
+    props.push_back({"Timing/Power", gui->makeSelected(sta_inst)});
   }
 
   populateODBProperties(props, inst);
