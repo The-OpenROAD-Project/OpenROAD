@@ -890,7 +890,21 @@ void ClockDescriptor::highlight(std::any object, Painter& painter) const
 
   auto* iterm_desc = Gui::get()->getDescriptor<odb::dbITerm*>();
   auto* bterm_desc = Gui::get()->getDescriptor<odb::dbBTerm*>();
-  for (auto* pin : getAllClockPins(clock)) {
+  for (auto* pin : getClockPins(clock)) {
+    odb::dbITerm* iterm;
+    odb::dbBTerm* bterm;
+    odb::dbModITerm* moditerm;
+    odb::dbModBTerm* modbterm;
+
+    network->staToDb(pin, iterm, bterm, moditerm, modbterm);
+
+    if (iterm != nullptr) {
+      iterm_desc->highlight(iterm, painter);
+    } else if (bterm != nullptr) {
+      bterm_desc->highlight(bterm, painter);
+    }
+  }
+  for (auto* pin : clock->pins()) {
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
     odb::dbModITerm* moditerm;
@@ -906,15 +920,9 @@ void ClockDescriptor::highlight(std::any object, Painter& painter) const
   }
 }
 
-std::set<const sta::Pin*> ClockDescriptor::getAllClockPins(
-    sta::Clock* clock) const
+std::set<const sta::Pin*> ClockDescriptor::getClockPins(sta::Clock* clock) const
 {
   std::set<const sta::Pin*> pins;
-
-  for (auto* pin : clock->pins()) {
-    pins.insert(pin);
-  }
-
   for (auto* pin : sta_->startpointPins()) {
     const auto pin_clocks = sta_->clocks(pin);
     if (std::find(pin_clocks.begin(), pin_clocks.end(), clock)
@@ -957,8 +965,56 @@ Descriptor::Properties ClockDescriptor::getProperties(std::any object) const
     props.push_back({"Master clock", gui->makeSelected(master_clk)});
   }
 
+  if (clock->isGenerated()) {
+    props.push_back(
+        {"Duty cycle", fmt::format("{:.2f}%", clock->dutyCycle() * 100)});
+
+    if (clock->divideBy() > 0) {
+      props.push_back({"Divide by", clock->divideBy()});
+    }
+    if (clock->multiplyBy() > 0) {
+      props.push_back({"Multiply by", clock->multiplyBy()});
+    }
+    props.push_back({"Is inverted", clock->invert()});
+
+    sta::Pin* src_pin = clock->srcPin();
+    odb::dbITerm* iterm;
+    odb::dbBTerm* bterm;
+    odb::dbModITerm* moditerm;
+    odb::dbModBTerm* modbterm;
+
+    network->staToDb(src_pin, iterm, bterm, moditerm, modbterm);
+
+    std::any source;
+    if (iterm != nullptr) {
+      source = gui->makeSelected(iterm);
+    } else if (bterm != nullptr) {
+      source = gui->makeSelected(bterm);
+    }
+    if (source.has_value()) {
+      props.push_back({"Source", source});
+    }
+  }
+
+  SelectionSet source_pins;
+  for (auto* pin : clock->pins()) {
+    odb::dbITerm* iterm;
+    odb::dbBTerm* bterm;
+    odb::dbModITerm* moditerm;
+    odb::dbModBTerm* modbterm;
+
+    network->staToDb(pin, iterm, bterm, moditerm, modbterm);
+
+    if (iterm != nullptr) {
+      source_pins.insert(gui->makeSelected(iterm));
+    } else if (bterm != nullptr) {
+      source_pins.insert(gui->makeSelected(bterm));
+    }
+  }
+  props.push_back({"Sources", source_pins});
+
   SelectionSet pins;
-  for (auto* pin : getAllClockPins(clock)) {
+  for (auto* pin : getClockPins(clock)) {
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
     odb::dbModITerm* moditerm;

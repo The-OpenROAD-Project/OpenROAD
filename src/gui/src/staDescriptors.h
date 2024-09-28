@@ -203,7 +203,7 @@ class ClockDescriptor : public Descriptor
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
 
-  std::set<const sta::Pin*> getAllClockPins(sta::Clock* clock) const;
+  std::set<const sta::Pin*> getClockPins(sta::Clock* clock) const;
 };
 
 };  // namespace gui
