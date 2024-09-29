@@ -153,7 +153,7 @@ RDLRoute::RDLRoute(odb::dbITerm* source,
   const odb::Point iterm_center = iterm_->getBBox().center();
   std::stable_sort(terminals_.begin(),
                    terminals_.end(),
-                   [this, &iterm_center](odb::dbITerm* lhs, odb::dbITerm* rhs) {
+                   [&iterm_center](odb::dbITerm* lhs, odb::dbITerm* rhs) {
                      const bool lhs_cover = RDLRouter::isCoverTerm(lhs);
                      const bool rhs_cover = RDLRouter::isCoverTerm(rhs);
                      // sort non-cover terms first
@@ -433,7 +433,7 @@ int RDLRouter::reportFailedRoutes(
         }
 
         const size_t max_print_length = 5;
-        std::string terms = "";
+        std::string terms;
         for (size_t i = 0; i < no_routes_to.size() && i < max_print_length;
              i++) {
           if (!terms.empty()) {

@@ -164,7 +164,7 @@ class RDLRoute
   const RouteTarget* getRouteTargetSource() const { return route_source_; }
   const RouteTarget* getRouteTargetDestination() const { return route_dest_; }
 
-  bool isIntersecting(RDLRoute* route, int extent) const;
+  bool isIntersecting(RDLRoute* other, int extent) const;
 
  private:
   odb::dbITerm* iterm_;
