@@ -481,6 +481,17 @@ Descriptor::Properties LibertyPortDescriptor::getProperties(
   add_limit<sta::RiseFall>(
       props, port, "Min Pulse Width", &sta::LibertyPort::minPulseWidth, "s");
 
+  if (port->hasMembers()) {
+    SelectionSet members;
+    for (auto* member : *port->memberPorts()) {
+      auto lib_port = member->libertyPort();
+      if (lib_port != nullptr) {
+        members.insert(makeSelected(lib_port));
+      }
+    }
+    props.push_back({"Member ports", members});
+  }
+
   std::any power_pin;
   std::any ground_pin;
   const char* power_pin_name = port->relatedPowerPin();
@@ -796,8 +807,8 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
   PropertyList port_arrival_hold;
   PropertyList port_arrival_setup;
   SelectionSet clocks;
-  std::unique_ptr<sta::CellPortIterator> port_itr(
-      network->portIterator(network->cell(inst)));
+  std::unique_ptr<sta::CellPortBitIterator> port_itr(
+      network->portBitIterator(network->cell(inst)));
   while (port_itr->hasNext()) {
     sta::Port* port = port_itr->next();
     sta::Pin* pin = network->findPin(inst, port);
