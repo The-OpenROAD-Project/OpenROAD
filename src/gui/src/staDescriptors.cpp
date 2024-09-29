@@ -424,7 +424,9 @@ void LibertyPortDescriptor::highlight(std::any object, Painter& painter) const
   odb::dbMTerm* mterm = network->staToDb(port);
 
   auto* mterm_desc = Gui::get()->getDescriptor<odb::dbMTerm*>();
-  mterm_desc->highlight(mterm, painter);
+  if (mterm != nullptr) {
+    mterm_desc->highlight(mterm, painter);
+  }
 }
 
 Descriptor::Properties LibertyPortDescriptor::getProperties(
@@ -436,7 +438,10 @@ Descriptor::Properties LibertyPortDescriptor::getProperties(
   Properties props;
 
   auto gui = Gui::get();
-  props.push_back({"MTerm", gui->makeSelected(network->staToDb(port))});
+  odb::dbMTerm* mterm = network->staToDb(port);
+  if (mterm != nullptr) {
+    props.push_back({"MTerm", gui->makeSelected(network->staToDb(port))});
+  }
 
   props.push_back({"Direction", port->direction()->name()});
   if (auto function = port->function()) {
@@ -475,6 +480,32 @@ Descriptor::Properties LibertyPortDescriptor::getProperties(
       props, port, "Fanout Limit", &sta::LibertyPort::fanoutLimit, "");
   add_limit<sta::RiseFall>(
       props, port, "Min Pulse Width", &sta::LibertyPort::minPulseWidth, "s");
+
+  std::any power_pin;
+  std::any ground_pin;
+  const char* power_pin_name = port->relatedPowerPin();
+  const char* ground_pin_name = port->relatedGroundPin();
+  sta::LibertyCellPgPortIterator pg_port_iter(port->libertyCell());
+  while (pg_port_iter.hasNext()) {
+    auto* pg_port = pg_port_iter.next();
+    if (strcmp(pg_port->name(), power_pin_name) == 0) {
+      power_pin = gui->makeSelected(pg_port);
+    } else if (strcmp(pg_port->name(), ground_pin_name) == 0) {
+      ground_pin = gui->makeSelected(pg_port);
+    }
+  }
+  if (!power_pin.has_value() && power_pin_name != nullptr) {
+    power_pin = power_pin_name;
+  }
+  if (power_pin.has_value()) {
+    props.push_back({"Related power pin", power_pin});
+  }
+  if (!ground_pin.has_value() && ground_pin_name != nullptr) {
+    ground_pin = ground_pin_name;
+  }
+  if (ground_pin.has_value()) {
+    props.push_back({"Related ground pin", ground_pin});
+  }
 
   return props;
 }
