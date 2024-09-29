@@ -413,11 +413,12 @@ sta::define_cmd_args "rdl_route" {-layer layer \
                                   [-spacing spacing] \
                                   [-turn_penalty penalty] \
                                   [-allow45] \
+                                  [-max_iterations iterations] \
                                   nets}
 
 proc rdl_route {args} {
   sta::parse_key_args "rdl_route" args \
-    keys {-layer -width -spacing -bump_via -pad_via -turn_penalty} \
+    keys {-layer -width -spacing -bump_via -pad_via -turn_penalty -max_iterations} \
     flags {-allow45}
 
   if { [llength $args] == 1 } {
@@ -478,12 +479,19 @@ proc rdl_route {args} {
   }
   sta::check_positive_float "-turn_penalty" $penalty
 
+  set max_iterations 10
+  if {[info exists keys(-max_iterations)]} {
+    set max_iterations $keys(-max_iterations)
+  }
+  sta::check_positive_int "-max_iterations" $max_iterations
+
   pad::route_rdl $layer \
     $bump_via $pad_via \
     $nets \
     $width $spacing \
     [info exists flags(-allow45)] \
-    $penalty
+    $penalty \
+    $max_iterations
 }
 
 namespace eval pad {
