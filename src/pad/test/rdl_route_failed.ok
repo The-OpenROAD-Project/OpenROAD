@@ -1,83 +1,95 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[INFO ODB-0227] LEF file: Nangate45_io/dummy_pads.lef, created 25 library cells
+[INFO ODB-0227] LEF file: Nangate45_io/dummy_pads.lef, created 26 library cells
 [INFO ODB-0128] Design: soc_bsg_black_parrot
 [INFO ODB-0130]     Created 139 pins.
 [INFO ODB-0131]     Created 1452 components and 8011 component-terminals.
 [INFO ODB-0132]     Created 4 special nets and 4706 connections.
 [INFO ODB-0133]     Created 354 nets and 627 connections.
 [INFO PAD-0005] Routing 139 nets
-[WARNING PAD-0006] Failed to route the following 30 nets:
+[INFO PAD-0037] End of routing iteration 1: 86.1% complete
+[INFO PAD-0037] End of routing iteration 2: 84.4% complete
+[INFO PAD-0037] End of routing iteration 3: 82.3% complete
+[INFO PAD-0037] End of routing iteration 4: 85.2% complete
+[INFO PAD-0037] End of routing iteration 5: 88.6% complete
+[INFO PAD-0037] End of routing iteration 6: 87.3% complete
+[INFO PAD-0037] End of routing iteration 7: 90.7% complete
+[INFO PAD-0037] End of routing iteration 8: 87.8% complete
+[INFO PAD-0037] End of routing iteration 9: 83.5% complete
+[INFO PAD-0037] End of routing iteration 10: 83.1% complete
+[WARNING PAD-0006] Failed to route the following 35 nets:
   DVDD
-    BUMP_14_12/PAD -> u_v18_16/DVDD
-    BUMP_5_13/PAD -> u_v18_23/DVDD
-    BUMP_11_13/PAD -> u_v18_19/DVDD
-    BUMP_7_12/PAD -> u_v18_22/DVDD
+    BUMP_14_12/PAD -> u_v18_16/DVDD, u_v18_15/DVDD, u_v18_14/DVDD, u_v18_13/DVDD, u_v18_18/DVDD, ... (67 possible terminals)
+    BUMP_14_8/PAD -> u_v18_13/DVDD, u_v18_12/DVDD, u_v18_14/DVDD, u_v18_11/DVDD, u_v18_15/DVDD, ... (67 possible terminals)
+    BUMP_1_6/PAD -> u_v18_31/DVDD, u_v18_32/DVDD, u_v18_30/DVDD, u_v18_29/DVDD, u_v18_33/DVDD, ... (67 possible terminals)
+    BUMP_2_8/PAD -> u_v18_30/DVDD, u_v18_29/DVDD, u_v18_31/DVDD, u_v18_28/DVDD, u_v18_32/DVDD, ... (67 possible terminals)
   DVSS
-    BUMP_7_14/PAD -> u_vzz_22/DVSS
-    BUMP_10_14/PAD -> u_vzz_20/DVSS
-    BUMP_4_13/PAD -> u_vzz_24/DVSS
-    BUMP_13_3/PAD -> u_vzz_9/DVSS
-    BUMP_13_10/PAD -> u_vzz_14/DVSS
-    BUMP_4_3/PAD -> u_vzz_1/DVSS
-    BUMP_6_12/PAD -> u_vzz_23/DVSS
-    BUMP_12_12/PAD -> u_vzz_19/DVSS
-    BUMP_10_4/PAD -> u_vzz_6/DVSS
+    BUMP_1_9/PAD -> u_vzz_29/DVSS, u_vzz_30/DVSS, u_vzz_28/DVSS, u_vzz_31/DVSS, u_vzz_27/DVSS, ... (67 possible terminals)
   VDD
-    BUMP_4_14/PAD -> u_vdd_11/VDD
-    BUMP_11_12/PAD -> u_vdd_9/VDD
+    BUMP_9_3/PAD -> u_vdd_2/VDD, u_vdd_3/VDD, u_vdd_1/VDD, u_vdd_4/VDD, u_vdd_0/VDD, ... (33 possible terminals)
   VSS
-    BUMP_10_13/PAD -> u_vss_9/VSS
-  p_bsg_tag_data_i
-    BUMP_12_8/PAD -> u_bsg_tag_data_i/PAD
-  p_ci2_2_o
-    u_ci2_2_o/PAD -> BUMP_12_14/PAD
-  p_ci2_clk_o
-    BUMP_12_13/PAD -> u_ci2_clk_o/PAD
-  p_ci_3_i
-    BUMP_13_12/PAD -> u_ci_3_i/PAD
-  p_ci_4_i
-    BUMP_12_11/PAD -> u_ci_4_i/PAD
-  p_ci_7_i
-    BUMP_12_9/PAD -> u_ci_7_i/PAD
-  p_ci_tkn_o
-    BUMP_13_11/PAD -> u_ci_tkn_o/PAD
+    BUMP_10_13/PAD -> u_vss_9/VSS, u_vss_pll/VSS, u_vss_10/VSS, u_vss_8/VSS, u_vss_7/VSS, ... (33 possible terminals)
+    BUMP_9_1/PAD -> u_vss_2/VSS, u_vss_3/VSS, u_vss_1/VSS, u_vss_0/VSS, u_vss_4/VSS, ... (33 possible terminals)
+  p_bsg_tag_clk_o
+    BUMP_3_10/PAD -> u_bsg_tag_clk_o/PAD
   p_ci_v_i
     BUMP_12_10/PAD -> u_ci_v_i/PAD
-  p_clk_A_i
-    BUMP_7_13/PAD -> u_clk_A_i/PAD
-  p_clk_B_i
-    u_clk_B_i/PAD -> BUMP_8_12/PAD
+  p_clk_async_reset_i
+    BUMP_9_14/PAD -> u_clk_async_reset_i/PAD
+  p_co2_2_o
+    BUMP_3_11/PAD -> u_co2_2_o/PAD
+  p_co2_3_o
+    BUMP_4_12/PAD -> u_co2_3_o/PAD
   p_co2_clk_o
-    u_co2_clk_o/PAD -> BUMP_3_12/PAD
-  p_co_4_i
-    u_co_4_i/PAD -> BUMP_5_12/PAD
-  p_co_5_i
-    BUMP_6_14/PAD -> u_co_5_i/PAD
-  p_co_8_i
-    BUMP_6_13/PAD -> u_co_8_i/PAD
-  p_co_clk_i
-    BUMP_5_14/PAD -> u_co_clk_i/PAD
-  p_core_async_reset_i
-    BUMP_11_14/PAD -> u_core_async_reset_i/PAD
-  p_ddr_addr_1_o
-    BUMP_8_4/PAD -> u_ddr_addr_1_o/PAD
-  p_ddr_ck_n_o
-    BUMP_11_4/PAD -> u_ddr_ck_n_o/PAD
+    BUMP_3_12/PAD -> u_co2_clk_o/PAD
+  p_ddr_addr_12_o
+    BUMP_5_3/PAD -> u_ddr_addr_12_o/PAD
+  p_ddr_addr_13_o
+    BUMP_4_4/PAD -> u_ddr_addr_13_o/PAD
+  p_ddr_ba_2_o
+    BUMP_3_1/PAD -> u_ddr_ba_2_o/PAD
+  p_ddr_dm_3_o
+    BUMP_13_8/PAD -> u_ddr_dm_3_o/PAD
+  p_ddr_dq_0_io
+    BUMP_3_7/PAD -> u_ddr_dq_0_io/PAD
+  p_ddr_dq_10_io
+    BUMP_3_4/PAD -> u_ddr_dq_10_io/PAD
   p_ddr_dq_11_io
-    u_ddr_dq_11_io/PAD -> BUMP_4_5/PAD
-  p_ddr_dq_14_io
-    u_ddr_dq_14_io/PAD -> BUMP_4_6/PAD
+    BUMP_4_5/PAD -> u_ddr_dq_11_io/PAD
+  p_ddr_dq_13_io
+    BUMP_3_5/PAD -> u_ddr_dq_13_io/PAD
+  p_ddr_dq_16_io
+    BUMP_15_4/PAD -> u_ddr_dq_16_io/PAD
   p_ddr_dq_17_io
     BUMP_13_4/PAD -> u_ddr_dq_17_io/PAD
+  p_ddr_dq_18_io
+    BUMP_14_3/PAD -> u_ddr_dq_18_io/PAD
+  p_ddr_dq_19_io
+    BUMP_16_3/PAD -> u_ddr_dq_19_io/PAD
+  p_ddr_dq_24_io
+    BUMP_13_7/PAD -> u_ddr_dq_24_io/PAD
   p_ddr_dq_25_io
     BUMP_12_6/PAD -> u_ddr_dq_25_io/PAD
+  p_ddr_dq_26_io
+    BUMP_14_6/PAD -> u_ddr_dq_26_io/PAD
+  p_ddr_dq_27_io
+    BUMP_13_6/PAD -> u_ddr_dq_27_io/PAD
+  p_ddr_dq_28_io
+    BUMP_16_5/PAD -> u_ddr_dq_28_io/PAD
+  p_ddr_dq_29_io
+    BUMP_15_5/PAD -> u_ddr_dq_29_io/PAD
+  p_ddr_dq_2_io
+    BUMP_1_8/PAD -> u_ddr_dq_2_io/PAD
+  p_ddr_dq_30_io
+    BUMP_13_5/PAD -> u_ddr_dq_30_io/PAD
   p_ddr_dq_31_io
     BUMP_12_4/PAD -> u_ddr_dq_31_io/PAD
-  p_ddr_dqs_n_0_io
-    u_ddr_dqs_n_0_io/PAD -> BUMP_4_7/PAD
-  p_sel_0_i
-    BUMP_9_13/PAD -> u_sel_0_i/PAD
-  p_sel_1_i
-    u_sel_1_i/PAD -> BUMP_10_12/PAD
-[ERROR PAD-0007] Failed to route 30 nets.
+  p_ddr_dq_5_io
+    BUMP_2_9/PAD -> u_ddr_dq_5_io/PAD
+  p_ddr_dqs_n_3_io
+    BUMP_14_7/PAD -> u_ddr_dqs_n_3_io/PAD
+  p_ddr_dqs_p_0_io
+    BUMP_0_6/PAD -> u_ddr_dqs_p_0_io/PAD
+  p_ddr_dqs_p_3_io
+    BUMP_12_7/PAD -> u_ddr_dqs_p_3_io/PAD
+[ERROR PAD-0007] Failed to route 35 nets.
 PAD-0007
