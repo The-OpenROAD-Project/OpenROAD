@@ -62,50 +62,6 @@ void FastRouteCore::ripupSegL(const Segment* seg)
   }
 }
 
-void FastRouteCore::ripupSegZ(const Segment* seg)
-{
-  const int edgeCost = nets_[seg->netID]->getEdgeCost();
-
-  const int ymin = std::min(seg->y1, seg->y2);
-  const int ymax = std::max(seg->y1, seg->y2);
-
-  if (seg->x1 == seg->x2) {
-    // remove V routing
-    for (int i = ymin; i < ymax; i++)
-      v_edges_[i][seg->x1].est_usage -= edgeCost;
-  } else if (seg->y1 == seg->y2) {
-    // remove H routing
-    for (int i = seg->x1; i < seg->x2; i++)
-      h_edges_[seg->y1][i].est_usage -= edgeCost;
-  } else {
-    // remove Z routing
-    if (seg->HVH) {
-      for (int i = seg->x1; i < seg->Zpoint; i++)
-        h_edges_[seg->y1][i].est_usage -= edgeCost;
-      for (int i = seg->Zpoint; i < seg->x2; i++)
-        h_edges_[seg->y2][i].est_usage -= edgeCost;
-      for (int i = ymin; i < ymax; i++)
-        v_edges_[i][seg->Zpoint].est_usage -= edgeCost;
-    } else {
-      if (seg->y1 < seg->y2) {
-        for (int i = seg->y1; i < seg->Zpoint; i++)
-          v_edges_[i][seg->x1].est_usage -= edgeCost;
-        for (int i = seg->Zpoint; i < seg->y2; i++)
-          v_edges_[i][seg->x2].est_usage -= edgeCost;
-        for (int i = seg->x1; i < seg->x2; i++)
-          h_edges_[seg->Zpoint][i].est_usage -= 1;
-      } else {
-        for (int i = seg->y2; i < seg->Zpoint; i++)
-          v_edges_[i][seg->x2].est_usage -= edgeCost;
-        for (int i = seg->Zpoint; i < seg->y1; i++)
-          v_edges_[i][seg->x1].est_usage -= edgeCost;
-        for (int i = seg->x1; i < seg->x2; i++)
-          h_edges_[seg->Zpoint][i].est_usage -= 1;
-      }
-    }
-  }
-}
-
 void FastRouteCore::newRipup(const TreeEdge* treeedge,
                              const int x1,
                              const int y1,

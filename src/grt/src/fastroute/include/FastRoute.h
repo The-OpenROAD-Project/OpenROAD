@@ -136,16 +136,6 @@ class FastRouteCore
                      int layer,
                      uint16_t reducedCap,
                      bool isReduce);
-  void applyVerticalAdjustments(const odb::Point& first_tile,
-                                const odb::Point& last_tile,
-                                int layer,
-                                int first_tile_reduce,
-                                int last_tile_reduce);
-  void applyHorizontalAdjustments(const odb::Point& first_tile,
-                                  const odb::Point& last_tile,
-                                  int layer,
-                                  int first_tile_reduce,
-                                  int last_tile_reduce);
   void addVerticalAdjustments(
       const odb::Point& first_tile,
       const odb::Point& last_tile,
@@ -282,7 +272,6 @@ class FastRouteCore
   void InitLastUsage(const int upType);
   void InitEstUsage();
   void SaveLastRouteLen();
-  void fixEmbeddedTrees();
   void checkAndFixEmbeddedTree(const int net_id);
   bool areEdgesOverlapping(const int net_id,
                            const int edge_id,
@@ -291,11 +280,6 @@ class FastRouteCore
       const int net_id,
       const int edge,
       std::vector<std::pair<short, short>>& blocked_positions);
-  void bendEdge(TreeEdge* treeedge,
-                std::vector<TreeNode>& treenodes,
-                std::vector<short>& new_route_x,
-                std::vector<short>& new_route_y,
-                std::vector<std::pair<short, short>>& blocked_positions);
   void routeLShape(const TreeNode& startpoint,
                    const TreeNode& endpoint,
                    std::vector<std::pair<short, short>>& blocked_positions,
@@ -452,7 +436,6 @@ class FastRouteCore
 
   // ripup functions
   void ripupSegL(const Segment* seg);
-  void ripupSegZ(const Segment* seg);
   void newRipup(const TreeEdge* treeedge,
                 const int x1,
                 const int y1,
