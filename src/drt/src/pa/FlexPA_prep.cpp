@@ -811,7 +811,7 @@ Point FlexPA::genEndPoint(
 }
 
 bool FlexPA::isPointOutsideShapes(
-    Point& point,
+    const Point& point,
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys)
 {
   const gtl::point_data<frCoord> pt(point.getX(), point.getY());
@@ -840,7 +840,7 @@ void FlexPA::check_addPlanarAccess(
   const bool is_block
       = inst_term
         && inst_term->getInst()->getMaster()->getMasterType().isBlock();
-  Point end_point
+  const Point end_point
       = genEndPoint(layer_polys, begin_point, ap->getLayerNum(), dir, is_block);
   const bool is_outside = isPointOutsideShapes(end_point, layer_polys);
   // skip if two width within shape for standard cell
@@ -1142,11 +1142,11 @@ bool FlexPA::checkDirectionalViaAccess(
   const bool is_block
       = inst_term
         && inst_term->getInst()->getMaster()->getMasterType().isBlock();
-  Point end_point = genEndPoint(layer_polys,
-                                begin_point,
-                                via->getViaDef()->getLayer2Num(),
-                                dir,
-                                is_block);
+  const Point end_point = genEndPoint(layer_polys,
+                                      begin_point,
+                                      via->getViaDef()->getLayer2Num(),
+                                      dir,
+                                      is_block);
 
   if (inst_term && inst_term->hasNet()) {
     via->addToNet(inst_term->getNet());

@@ -377,7 +377,7 @@ class FlexPA
    * TODO: maybe the check can be moves to isPointOusideShapes, but not sure
    * @param begin_point The begin reference point
    * @param layer_num layer where the point is being created
-   * @param dir direction where the layer will be created
+   * @param dir direction where the point will be created
    * @param is_block wether the begin_point is from a macro block
    *
    * @returns the generated end point
@@ -395,7 +395,7 @@ class FlexPA
    * @return if the point is outside the pin shapes
    */
   bool isPointOutsideShapes(
-      Point& point,
+      const Point& point,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys);
 
   template <typename T>
