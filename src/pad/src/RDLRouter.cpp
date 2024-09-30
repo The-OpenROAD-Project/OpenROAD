@@ -516,7 +516,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
 
     if (routed_covers.find(src->getInst()) != routed_covers.end()) {
       // we've already routed this cover once (indicates the cover has multiple
-      // iterms)
+      // iterms), so go ahead and mark is as complete and skip.
 
       debugPrint(logger_,
                  utl::PAD,
