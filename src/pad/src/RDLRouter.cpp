@@ -163,10 +163,7 @@ RDLRoute::RDLRoute(odb::dbITerm* source,
                               < odb::Point::squaredDistance(
                                   iterm_center, rhs->getBBox().center());
                      }
-                     if (rhs_cover) {
-                       return true;
-                     }
-                     return false;
+                     return rhs_cover;
                    });
 
   resetRoute();
