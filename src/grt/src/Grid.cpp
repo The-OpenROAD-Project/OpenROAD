@@ -139,9 +139,9 @@ interval<int>::type Grid::computeTileReduceInterval(
     const odb::Rect& tile,
     int track_space,
     bool first,
-    odb::dbTechLayerDir direction,
+    const odb::dbTechLayerDir& direction,
     const int layer_cap,
-    bool is_macro)
+    const bool is_macro)
 {
   int start_point, end_point;
   if (direction == odb::dbTechLayerDir::VERTICAL) {
