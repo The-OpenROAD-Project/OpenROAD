@@ -121,25 +121,6 @@ proc set_global_routing_region_adjustment { args } {
   }
 }
 
-sta::define_cmd_args "set_routing_layers" { [-signal min-max] \
-                                            [-clock min-max] \
-};# checker off
-
-proc set_routing_layers { args } {
-  sta::parse_key_args "set_routing_layers" args \
-    keys {-signal -clock} flags {};# checker off
-
-  sta::check_argc_eq0 "set_routing_layers" $args
-
-  if { [info exists keys(-signal)] } {
-    grt::define_layer_range $keys(-signal)
-  }
-
-  if { [info exists keys(-clock)] } {
-    grt::define_clock_layer_range $keys(-clock)
-  }
-}
-
 sta::define_cmd_args "set_macro_extension" { extension }
 
 proc set_macro_extension { args } {
@@ -576,40 +557,6 @@ proc check_region { lower_x lower_y upper_x upper_y } {
 
   if {$upper_y < [$core_area yMin] || $upper_y > [$core_area yMax]} {
     utl::error GRT 67 "Upper right y is outside die area."
-  }
-}
-
-proc define_layer_range { layers } {
-  set layer_range [grt::parse_layer_range "-layers" $layers]
-  lassign $layer_range min_layer max_layer
-  grt::check_routing_layer $min_layer
-  grt::check_routing_layer $max_layer
-
-  grt::set_min_layer $min_layer
-  grt::set_max_layer $max_layer
-
-  set tech [ord::get_db_tech]
-  for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
-    set db_layer [$tech findRoutingLayer $layer]
-    if { !([ord::db_layer_has_hor_tracks $db_layer] && \
-         [ord::db_layer_has_ver_tracks $db_layer]) } {
-      set layer_name [$db_layer getName]
-      utl::error GRT 57 "Missing track structure for layer $layer_name."
-    }
-  }
-}
-
-proc define_clock_layer_range { layers } {
-  set layer_range [grt::parse_layer_range "-clock_layers" $layers]
-  lassign $layer_range min_clock_layer max_clock_layer
-  grt::check_routing_layer $min_clock_layer
-  grt::check_routing_layer $max_clock_layer
-
-  if { $min_clock_layer < $max_clock_layer } {
-    grt::set_clock_layer_range $min_clock_layer $max_clock_layer
-  } else {
-    utl::error GRT 56 "In argument -clock_layers, min routing layer is\
-      greater than max routing layer."
   }
 }
 
