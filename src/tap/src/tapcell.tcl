@@ -155,7 +155,7 @@ proc tapcell { args } {
     utl::warn TAP 15 "tbtie_cpp option is deprecated."
   }
 
-  if {[info exists flags(-no_cell_at_top_bottom)]} {
+  if { [info exists flags(-no_cell_at_top_bottom)] } {
     utl::warn TAP 16 "no_cell_at_top_bottom option is deprecated."
   }
 
@@ -329,7 +329,7 @@ proc place_endcaps { args } {
   sta::check_argc_eq0 "place_endcaps" $args
 
   set prefix "PHY_"
-  if { [info exists keys(-prefix)]} {
+  if { [info exists keys(-prefix)] } {
     set prefix $keys(-prefix)
   }
 
@@ -382,8 +382,7 @@ sta::define_cmd_args "place_tapcells" {
   -distance dist
 }
 
-proc place_tapcells {args } {
-
+proc place_tapcells { args } {
   sta::parse_key_args "place_tapcells" args \
     keys {-master -distance} \
     flags {}
@@ -403,13 +402,12 @@ proc place_tapcells {args } {
 }
 
 namespace eval tap {
-
 proc find_master { master } {
   if { $master == "" } {
     return "NULL"
   }
   set m [[ord::get_db] findMaster $master]
-  if {$m == "NULL"} {
+  if { $m == "NULL" } {
     utl::error TAP 102 "Unable to find $master"
   }
   return $m
@@ -423,16 +421,16 @@ proc find_masters { masters } {
   return $ms
 }
 
-proc parse_endcap_key { cmdargs key0 key1 key2 {optional true} } {
+proc parse_endcap_key { cmdargs key0 key1 key2 { optional true } } {
   upvar keys $cmdargs
 
-  if { [info exists keys($key0) ]} {
+  if { [info exists keys($key0)] } {
     return $keys($key0)
   }
-  if { [info exists keys($key1) ]} {
+  if { [info exists keys($key1)] } {
     return $keys($key1)
   }
-  if { [info exists keys($key2) ]} {
+  if { [info exists keys($key2)] } {
     return $keys($key2)
   }
 
@@ -442,5 +440,4 @@ proc parse_endcap_key { cmdargs key0 key1 key2 {optional true} } {
 
   return ""
 }
-
 }

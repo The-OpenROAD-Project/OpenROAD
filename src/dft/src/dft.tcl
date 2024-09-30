@@ -79,19 +79,19 @@ proc set_dft_config { args } {
 
   sta::check_argc_eq0 "set_dft_config" $args
 
-  if {[info exists keys(-max_length)]} {
+  if { [info exists keys(-max_length)] } {
     set max_length $keys(-max_length)
     sta::check_positive_integer "-max_length" $max_length
     dft::set_dft_config_max_length $max_length
   }
 
-  if {[info exists keys(-max_chains)]} {
+  if { [info exists keys(-max_chains)] } {
     set max_chains $keys(-max_chains)
     sta::check_positive_integer "-max_chains" $max_chains
     dft::set_dft_config_max_chains $max_chains
   }
 
-  if {[info exists keys(-clock_mixing)]} {
+  if { [info exists keys(-clock_mixing)] } {
     set clock_mixing $keys(-clock_mixing)
     puts $clock_mixing
     dft::set_dft_config_clock_mixing $clock_mixing
@@ -99,7 +99,7 @@ proc set_dft_config { args } {
 }
 
 sta::define_cmd_args "report_dft_config" { }
-proc report_dft_config {} {
+proc report_dft_config { } {
   sta::parse_key_args "report_dft_config" args keys {} flags {}
   dft::report_dft_config
 }

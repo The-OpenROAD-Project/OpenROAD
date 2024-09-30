@@ -339,4 +339,3 @@ proc write_rules { args } {
 
   rcx::write_rules $filename $dir $name $pattern
 }
-
