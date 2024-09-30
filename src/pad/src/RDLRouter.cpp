@@ -231,17 +231,15 @@ bool RDLRoute::isIntersecting(RDLRoute* other, int extent) const
 {
   // check current next_
   // if at end of next, select begin + priority offset (modulo)
+  // this ensures the ripup does something different (by checking
+  // different destinations, where possible) if a route fails to
+  // route more than one time.
   const int dst_idx = priority_ % terminals_.size();
   odb::dbITerm* dst = terminals_[dst_idx];
 
   // create line with width (extent * (priority + 1))
   const odb::Point pt0 = iterm_->getBBox().center();
   const odb::Point pt1 = dst->getBBox().center();
-  const odb::Point center = odb::Rect(pt0, pt1).center();
-  const odb::Point pt2(center.x() + 1, center.y() + 1);
-  const odb::Point pt3(center.x() - 1, center.y() - 1);
-  // const odb::Polygon poly({pt0, pt2, pt1, pt3, pt0});
-  // const odb::Polygon bloated_poly = poly.bloat(extent);
   const std::vector<odb::Point> line_segment = {pt0, pt1};
 
   const int margin = (priority_ + 1) * extent;
