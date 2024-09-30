@@ -211,6 +211,7 @@ class FlexPA
       bool allow_via,
       frAccessPointEnum lower_type,
       frAccessPointEnum upper_type);
+
   bool enclosesOnTrackPlanarAccess(const gtl::rectangle_data<frCoord>& rect,
                                    frLayerNum layer_num);
 
@@ -399,7 +400,6 @@ class FlexPA
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys);
 
   template <typename T>
-
   void check_addViaAccess(
       frAccessPoint* ap,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
@@ -408,7 +408,6 @@ class FlexPA
       T* pin,
       frInstTerm* inst_term,
       bool deep_search = false);
-  template <typename T>
 
   /**
    * @brief Checks if a Via Access Point is legal
@@ -421,13 +420,13 @@ class FlexPA
    *
    * @return If the Via Access Point is legal
    */
+  template <typename T>
   bool checkViaAccess(
       frAccessPoint* ap,
       frVia* via,
       T* pin,
       frInstTerm* inst_term,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys);
-  template <typename T>
 
   /**
    * @brief Checks if a the Via Access can be subsequently accesses from the
@@ -442,6 +441,7 @@ class FlexPA
    *
    * @return If an access from that direction causes no DRV
    */
+  template <typename T>
   bool checkDirectionalViaAccess(
       frAccessPoint* ap,
       frVia* via,
@@ -449,13 +449,12 @@ class FlexPA
       frInstTerm* inst_term,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       frDirEnum dir);
-  template <typename T>
 
+  template <typename T>
   void updatePinStats(
       const std::vector<std::unique_ptr<frAccessPoint>>& tmp_aps,
       T* pin,
       frInstTerm* inst_term);
-  template <typename T>
 
   /**
    * @brief initializes the accesses of a given pin but only considered
@@ -471,6 +470,22 @@ class FlexPA
    *
    * @return if the initialization was sucessful
    */
+
+  /**
+   * @brief initializes the accesses of a given pin but only considered
+   * acccesses costed bounded between lower and upper cost.
+   *
+   * @param aps access points of the pin
+   * @param apset data of the access points (auxilary)
+   * @param pin_shapes shapes of the pin
+   * @param pin the pin
+   * @param inst_term terminal
+   * @param lower_type lower bound cost
+   * @param upper_type upper bound cost
+   *
+   * @return if the initialization was sucessful
+   */
+  template <typename T>
   bool initPinAccessCostBounded(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,

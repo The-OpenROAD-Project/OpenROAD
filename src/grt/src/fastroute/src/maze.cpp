@@ -55,17 +55,6 @@ static int right_index(int i)
   return 2 * i + 2;
 }
 
-void FastRouteCore::fixEmbeddedTrees()
-{
-  // check embedded trees only when maze router is called
-  // i.e., when running overflow iterations
-  if (overflow_iterations_ > 0) {
-    for (const int& netID : net_ids_) {
-      checkAndFixEmbeddedTree(netID);
-    }
-  }
-}
-
 void FastRouteCore::checkAndFixEmbeddedTree(const int net_id)
 {
   const auto& treeedges = sttrees_[net_id].edges;
@@ -209,69 +198,6 @@ void FastRouteCore::fixOverlappingEdge(
     treeedge->route.routelen = new_route_x.size() - 1;
     treeedge->route.gridsX = std::move(new_route_x);
     treeedge->route.gridsY = std::move(new_route_y);
-  }
-}
-
-void FastRouteCore::bendEdge(
-    TreeEdge* treeedge,
-    std::vector<TreeNode>& treenodes,
-    std::vector<short>& new_route_x,
-    std::vector<short>& new_route_y,
-    std::vector<std::pair<short, short>>& blocked_positions)
-{
-  const std::vector<short>& gridsX = treeedge->route.gridsX;
-  const std::vector<short>& gridsY = treeedge->route.gridsY;
-
-  for (int i = 0; i <= treeedge->route.routelen; i++) {
-    std::pair<short, short> pos = {gridsX[i], gridsY[i]};
-    if (pos == blocked_positions.front()) {
-      break;
-    } else {
-      new_route_x.push_back(pos.first);
-      new_route_y.push_back(pos.second);
-    }
-  }
-
-  short x_min = std::min(treenodes[treeedge->n1].x, treenodes[treeedge->n2].x);
-  short y_min = std::min(treenodes[treeedge->n1].y, treenodes[treeedge->n2].y);
-
-  const TreeNode& endpoint = treenodes[treeedge->n2];
-  if (blocked_positions.front().second == blocked_positions.back().second) {
-    // blocked positions are horizontally aligned
-    short y = (new_route_y.back() == y_min) ? new_route_y.back() + 1
-                                            : new_route_y.back() - 1;
-    new_route_x.push_back(new_route_x.back());
-    new_route_y.push_back(y);
-
-    for (short x = new_route_x.back(); x < endpoint.x; x++) {
-      new_route_x.push_back(x + 1);
-      new_route_y.push_back(y);
-    }
-
-    new_route_x.push_back(endpoint.x);
-    new_route_y.push_back(endpoint.y);
-  } else if (blocked_positions.front().first
-             == blocked_positions.back().first) {
-    // blocked positions are vertically aligned
-    short x = (new_route_x.back() == x_min) ? new_route_x.back() + 1
-                                            : new_route_x.back() - 1;
-    new_route_x.push_back(x);
-    new_route_y.push_back(new_route_y.back());
-
-    if (new_route_y.back() < endpoint.y) {
-      for (short y = new_route_y.back(); y < endpoint.y; y++) {
-        new_route_x.push_back(x);
-        new_route_y.push_back(y + 1);
-      }
-    } else {
-      for (short y = new_route_y.back(); y > endpoint.y; y--) {
-        new_route_x.push_back(x);
-        new_route_y.push_back(y - 1);
-      }
-    }
-
-    new_route_x.push_back(endpoint.x);
-    new_route_y.push_back(endpoint.y);
   }
 }
 

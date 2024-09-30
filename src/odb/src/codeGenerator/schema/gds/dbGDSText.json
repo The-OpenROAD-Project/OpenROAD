@@ -10,6 +10,7 @@
       {
         "name":"_width",
         "type":"int",
+        "default":"0",
         "flags":[]
       },
       {

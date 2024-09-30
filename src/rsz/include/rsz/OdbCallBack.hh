@@ -1,8 +1,9 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
+/////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2022, The Regents of the University of California
+// Copyright (c) 2024, Precision Innonvations, Inc.
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -29,54 +30,42 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-#include <ctime>
-
-#include "dbCore.h"
-#include "dbGDSStructure.h"
-#include "dbHashTable.hpp"
-#include "dbTable.hpp"
+#include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
-#include "odb/odb.h"
+#include "odb/dbBlockCallBackObj.h"
 
-namespace odb {
-class dbIStream;
-class dbOStream;
-class dbDiff;
-class _dbDatabase;
-class _dbGDSStructure;
+namespace rsz {
 
-class _dbGDSLib : public _dbObject
+using odb::dbBlockCallBackObj;
+using odb::dbInst;
+using odb::dbITerm;
+using odb::dbNet;
+using sta::dbNetwork;
+using sta::Network;
+
+class Resizer;
+
+class OdbCallBack : public dbBlockCallBackObj
 {
  public:
-  std::string _libname;
-  std::tm _lastAccessed;
-  std::tm _lastModified;
-  int16_t _libDirSize;
-  std::string _srfName;
-  double _uu_per_dbu, _dbu_per_meter;
-  dbHashTable<_dbGDSStructure> _structure_hash;
+  OdbCallBack(Resizer* resizer, Network* network, dbNetwork* db_network);
 
-  dbTable<_dbGDSStructure>* _structure_tbl;
+  void inDbInstCreate(dbInst* inst) override;
+  void inDbNetCreate(dbNet* net) override;
+  void inDbNetDestroy(dbNet* net) override;
+  void inDbITermPostConnect(dbITerm* iterm) override;
+  void inDbITermPostDisconnect(dbITerm* iterm, dbNet* net) override;
+  void inDbInstSwapMasterAfter(dbInst* inst) override;
 
-  _dbGDSLib(_dbDatabase*, const _dbGDSLib& r);
-  _dbGDSLib(_dbDatabase*);
-  ~_dbGDSLib();
-
-  bool operator==(const _dbGDSLib& rhs) const;
-  bool operator!=(const _dbGDSLib& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff, const char* field, const _dbGDSLib& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  dbObjectTable* getObjectTable(dbObjectType type);
-
-  _dbGDSStructure* findStructure(const char* name);
+ private:
+  Resizer* resizer_;
+  Network* network_;
+  dbNetwork* db_network_;
 };
 
-dbIStream& operator>>(dbIStream& stream, std::tm& tm);
-dbOStream& operator<<(dbOStream& stream, const std::tm& tm);
-
-dbIStream& operator>>(dbIStream& stream, _dbGDSLib& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbGDSLib& obj);
-}  // namespace odb
+}  // namespace rsz

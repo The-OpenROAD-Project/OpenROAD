@@ -50,7 +50,7 @@ proc read_lef { args } {
 
   set make_tech [info exists flags(-tech)]
   set make_lib [info exists flags(-library)]
-  if { !$make_tech && !$make_lib} {
+  if { !$make_tech && !$make_lib } {
     set make_lib 1
     if { [info exists keys(-tech_name)] } {
       set make_tech 1
@@ -100,7 +100,7 @@ proc read_def { args } {
   set floorplan_init [info exists flags(-floorplan_initialize)]
   set incremental [info exists flags(-incremental)]
   set child [info exists flags(-child)]
-  if { $floorplan_init + $incremental + $child > 1} {
+  if { $floorplan_init + $incremental + $child > 1 } {
     utl::error ORD 16 "Options -incremental, -floorplan_initialization,\
       and -child are mutually exclusive."
   }
@@ -116,12 +116,14 @@ proc write_def { args } {
   set version "5.8"
   if { [info exists keys(-version)] } {
     set version $keys(-version)
-    if { !($version == "5.8" \
-        || $version == "5.7" \
-        || $version == "5.6" \
-        || $version == "5.5" \
-        || $version == "5.4" \
-        || $version == "5.3") } {
+    if {
+      !($version == "5.8"
+        || $version == "5.7"
+        || $version == "5.6"
+        || $version == "5.5"
+        || $version == "5.4"
+        || $version == "5.3")
+    } {
       utl::error "ORD" 6 "DEF versions 5.8, 5.7, 5.6, 5.5, 5.4, 5.3 supported."
     }
   }
@@ -166,11 +168,10 @@ sta::define_cmd_args "write_cdl" {[-include_fillers]
     -masters masters_filenames out_filename }
 
 proc write_cdl { args } {
-
   sta::parse_key_args "write_cdl" args keys {-masters} flags {-include_fillers}
   set fillers [info exists flags(-include_fillers)]
   sta::check_argc_eq1 "write_cdl" $args
-  if {![info exists keys(-masters)]} {
+  if { ![info exists keys(-masters)] } {
     utl::error ORD 1013 "-masters is required."
   }
   set out_filename [file nativename [lindex $args 0]]
@@ -235,7 +236,7 @@ proc assign_ndr { args } {
 }
 
 sta::define_cmd_args "set_debug_level" { tool group level }
-proc set_debug_level {args} {
+proc set_debug_level { args } {
   sta::check_argc_eq3 "set_debug_level" $args
   lassign $args tool group level
   sta::check_integer "set_debug_level" $level
@@ -243,7 +244,7 @@ proc set_debug_level {args} {
 }
 
 sta::define_cmd_args "suppress_message" { tool id }
-proc suppress_message {args} {
+proc suppress_message { args } {
   sta::check_argc_eq2 "suppress_message" $args
   lassign $args tool id
   sta::check_integer "suppress_message_level" $id
@@ -251,7 +252,7 @@ proc suppress_message {args} {
 }
 
 sta::define_cmd_args "unsuppress_message" { tool id }
-proc unsuppress_message {args} {
+proc unsuppress_message { args } {
   sta::check_argc_eq2 "unsuppress_message" $args
   lassign $args tool id
   sta::check_integer "unsuppress_message_level" $id
@@ -267,17 +268,17 @@ proc thread_count { } {
 }
 
 sta::define_cmd_args "global_connect" {}
-proc global_connect {} {
+proc global_connect { } {
   [ord::get_db_block] globalConnect
 }
 
 sta::define_cmd_args "clear_global_connect" {}
-proc clear_global_connect {} {
+proc clear_global_connect { } {
   [ord::get_db_block] clearGlobalConnect
 }
 
 sta::define_cmd_args "report_global_connect" {}
-proc report_global_connect {} {
+proc report_global_connect { } {
   [ord::get_db_block] reportGlobalConnect
 }
 
@@ -288,57 +289,57 @@ sta::define_cmd_args "add_global_connection" {[-net net_name] \
                                               [-region region_name] \
                                               [-defer_connection]
 }
-proc add_global_connection {args} {
+proc add_global_connection { args } {
   sta::parse_key_args "add_global_connection" args \
     keys {-net -inst_pattern -pin_pattern -region} \
     flags {-power -ground -defer_connection}
 
   sta::check_argc_eq0 "add_global_connection" $args
 
-  if {[info exists flags(-power)] && [info exists flags(-ground)]} {
+  if { [info exists flags(-power)] && [info exists flags(-ground)] } {
     utl::error ORD 41 "The flags -power and -ground of the\
       add_global_connection command are mutually exclusive."
   }
 
-  if {![info exists keys(-net)]} {
+  if { ![info exists keys(-net)] } {
     utl::error ORD 42 "The -net option of the add_global_connection command is required."
   }
 
-  if {![info exists keys(-inst_pattern)]} {
+  if { ![info exists keys(-inst_pattern)] } {
     set keys(-inst_pattern) {.*}
   }
 
-  if {![info exists keys(-pin_pattern)]} {
+  if { ![info exists keys(-pin_pattern)] } {
     utl::error ORD 43 "The -pin_pattern option of the add_global_connection command is required."
   }
 
   set net [[ord::get_db_block] findNet $keys(-net)]
-  if {$net == "NULL"} {
+  if { $net == "NULL" } {
     set net [odb::dbNet_create [ord::get_db_block] $keys(-net)]
-    if {![info exists flags(-power)] && ![info exists flags(-ground)]} {
+    if { ![info exists flags(-power)] && ![info exists flags(-ground)] } {
       utl::warn ORD 44 "Net created for $keys(-net), if intended as power\
         or ground net add the -power/-ground switch as appropriate."
     }
   }
 
-  if {[info exists flags(-power)]} {
+  if { [info exists flags(-power)] } {
     $net setSpecial
     $net setSigType POWER
-  } elseif {[info exists flags(-ground)]} {
+  } elseif { [info exists flags(-ground)] } {
     $net setSpecial
     $net setSigType GROUND
   }
 
   set do_connect 1
-  if {[info exists flags(-defer_connection)]} {
+  if { [info exists flags(-defer_connection)] } {
     utl::warn ORD 46 "-defer_connection has been deprecated."
     set do_connect 0
   }
 
   set region "NULL"
-  if {[info exists keys(-region)]} {
+  if { [info exists keys(-region)] } {
     set region [[ord::get_db_block] findRegion $keys(-region)]
-    if {$region == "NULL"} {
+    if { $region == "NULL" } {
       utl::error ORD 45 "Region \"$keys(-region)\" not defined"
     }
   }
@@ -350,7 +351,6 @@ proc add_global_connection {args} {
 ################################################################
 
 namespace eval ord {
-
 proc ensure_units_initialized { } {
   if { ![units_initialized] } {
     utl::error "ORD" 13 "Command units uninitialized. Use the\
@@ -358,17 +358,17 @@ proc ensure_units_initialized { } {
   }
 }
 
-proc clear {} {
+proc clear { } {
   sta::clear_network
   sta::clear_sta
   grt::clear
   [get_db] clear
 }
 
-proc profile_cmd {filename args} {
+proc profile_cmd { filename args } {
   utl::info 99 "Profiling $args > $filename."
   profile -commands on
-  if {[catch "{*}$args"]} { ;# tclint-disable-line command-args
+  if { [catch "{*}$args"] } { # tclint-disable-line command-args
     global errorInfo
     puts $errorInfo
   }
@@ -396,7 +396,7 @@ proc get_core_area { } {
   return $area
 }
 
-proc parse_list_args {cmd arg_var list_var lists_args} {
+proc parse_list_args { cmd arg_var list_var lists_args } {
   upvar 1 $arg_var args
   upvar 1 $list_var list
 
@@ -404,7 +404,7 @@ proc parse_list_args {cmd arg_var list_var lists_args} {
     set remaining_args []
 
     set list($arg_opt) []
-    for {set i 0} {$i < [llength $args]} {incr i} {
+    for { set i 0 } { $i < [llength $args] } { incr i } {
       set arg [lindex $args $i]
       if { [sta::is_keyword_arg $arg] } {
         if { $arg == $arg_opt } {
