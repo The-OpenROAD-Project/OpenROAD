@@ -480,7 +480,7 @@ proc rdl_route { args } {
   sta::check_positive_float "-turn_penalty" $penalty
 
   set max_iterations 10
-  if {[info exists keys(-max_iterations)]} {
+  if { [info exists keys(-max_iterations)] } {
     set max_iterations $keys(-max_iterations)
   }
   sta::check_positive_int "-max_iterations" $max_iterations
