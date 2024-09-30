@@ -70,8 +70,10 @@ struct NodeInfo
   double diff_CAR;
   double diff_CSR;
 
-  double ratio_PAR;
-  double ratio_PSR;
+  // Defines the ratio between the current PAR and the allowed PAR
+  double excess_ratio_PAR;
+  // Defines the ratio between the current PSR and the allowed PSR
+  double excess_ratio_PSR;
 
   std::vector<odb::dbITerm*> iterms;
 
@@ -102,8 +104,8 @@ struct NodeInfo
     diff_CAR = 0.0;
     diff_CSR = 0.0;
 
-    ratio_PAR = 1.0;
-    ratio_PSR = 1.0;
+    excess_ratio_PAR = 1.0;
+    excess_ratio_PSR = 1.0;
   }
 };
 
@@ -129,7 +131,7 @@ struct Violation
   int routing_level;
   std::vector<odb::dbITerm*> gates;
   int diode_count_per_gate;
-  double ratio;
+  double excess_ratio;
 };
 
 using LayerToNodeInfo = std::map<odb::dbTechLayer*, NodeInfo>;

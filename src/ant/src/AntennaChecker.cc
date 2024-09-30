@@ -544,7 +544,8 @@ bool AntennaChecker::checkPAR(odb::dbNet* db_net,
   // check PAR or diff_PAR
   if (PAR_ratio != 0) {
     violation = info.PAR > PAR_ratio;
-    info.ratio_PAR = std::max(info.ratio_PAR, info.PAR / PAR_ratio);
+    info.excess_ratio_PAR
+        = std::max(info.excess_ratio_PAR, info.PAR / PAR_ratio);
     if (report) {
       std::string par_report = fmt::format(
           "      Partial area ratio: {:7.2f}\n      Required ratio: "
@@ -558,8 +559,8 @@ bool AntennaChecker::checkPAR(odb::dbNet* db_net,
   } else {
     if (diff_PAR_PWL_ratio != 0) {
       violation = info.diff_PAR > diff_PAR_PWL_ratio;
-      info.ratio_PAR
-          = std::max(info.ratio_PAR, info.diff_PAR / diff_PAR_PWL_ratio);
+      info.excess_ratio_PAR
+          = std::max(info.excess_ratio_PAR, info.diff_PAR / diff_PAR_PWL_ratio);
     }
     if (report) {
       std::string diff_par_report = fmt::format(
@@ -598,7 +599,8 @@ bool AntennaChecker::checkPSR(odb::dbNet* db_net,
   // check PSR or diff_PSR
   if (PSR_ratio != 0) {
     violation = info.PSR > PSR_ratio;
-    info.ratio_PSR = std::max(info.ratio_PSR, info.PSR / PSR_ratio);
+    info.excess_ratio_PSR
+        = std::max(info.excess_ratio_PSR, info.PSR / PSR_ratio);
     if (report) {
       std::string psr_report = fmt::format(
           "      Partial area ratio: {:7.2f}\n      Required ratio: "
@@ -612,8 +614,8 @@ bool AntennaChecker::checkPSR(odb::dbNet* db_net,
   } else {
     if (diff_PSR_PWL_ratio != 0) {
       violation = info.diff_PSR > diff_PSR_PWL_ratio;
-      info.ratio_PSR
-          = std::max(info.ratio_PSR, info.diff_PSR / diff_PSR_PWL_ratio);
+      info.excess_ratio_PSR
+          = std::max(info.excess_ratio_PSR, info.diff_PSR / diff_PSR_PWL_ratio);
     }
     if (report) {
       std::string diff_psr_report = fmt::format(
@@ -839,10 +841,10 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
                                         false,
                                         false);
           bool violated = par_violation || psr_violation;
-          double ratio = 1.0;
+          double excess_ratio = 1.0;
           if (violated) {
-            ratio
-                = std::max(violation_info.ratio_PAR, violation_info.ratio_PSR);
+            excess_ratio = std::max(violation_info.excess_ratio_PAR,
+                                    violation_info.excess_ratio_PSR);
           }
           // while it has violation, increase iterm_diff_area
           if (diode_mterm) {
@@ -886,7 +888,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
             antenna_violations.push_back({layer->getRoutingLevel(),
                                           gates_for_diode_insertion,
                                           diode_count_per_gate,
-                                          ratio});
+                                          excess_ratio});
           }
 
           bool car_violation
