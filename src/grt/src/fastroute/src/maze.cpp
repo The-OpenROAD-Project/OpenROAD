@@ -55,17 +55,6 @@ static int right_index(int i)
   return 2 * i + 2;
 }
 
-// void FastRouteCore::fixEmbeddedTrees()
-// {
-//   // check embedded trees only when maze router is called
-//   // i.e., when running overflow iterations
-//   if (overflow_iterations_ > 0) {
-//     for (const int& netID : net_ids_) {
-//       checkAndFixEmbeddedTree(netID);
-//     }
-//   }
-// }
-
 void FastRouteCore::checkAndFixEmbeddedTree(const int net_id)
 {
   const auto& treeedges = sttrees_[net_id].edges;

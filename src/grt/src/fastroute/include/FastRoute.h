@@ -500,8 +500,8 @@ class FastRouteCore
    * @brief Validates the routing of edges for a specified net.
    *
    * Checks various aspects of the routing, including edge lengths,
-   * grid positions, and the distances between routing points. Warnings are logged
-   * if verbose_ is set.
+   * grid positions, and the distances between routing points. Warnings are
+   * logged if verbose_ is set.
    *
    * @param netID The ID of the net to be validated.
    *
@@ -516,18 +516,20 @@ class FastRouteCore
   void printTree3D(int netID);
   void check2DEdgesUsage();
   /**
-   * @brief Compares edges used by routing and usage in h/v edges of the routing graph.
+   * @brief Compares edges used by routing and usage in h/v edges of the routing
+   * graph.
    *
    * Performs a full comparison between edges used by routing and
-   * usage in the h/v edges of the routing graph. 
+   * usage in the h/v edges of the routing graph.
    * Somewhat expensive but helpful for finding usage errors.
    */
   void verify2DEdgesUsage();
-    /**
-   * @brief Compares edges used by routing and usage in h/v edges of the routing graph.
+  /**
+   * @brief Compares edges used by routing and usage in h/v edges of the routing
+   * graph.
    *
    * Perfmorms a full comparison between edges used by routing and
-   * usage in the h/v edges of the routing graph. 
+   * usage in the h/v edges of the routing graph.
    * Somewhat expensive but helpful for finding usage errors.
    */
   void verify3DEdgesUsage();

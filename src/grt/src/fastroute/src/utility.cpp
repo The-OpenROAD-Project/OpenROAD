@@ -1572,9 +1572,9 @@ void FastRouteCore::verify3DEdgesUsage()
 
     for (int edgeID = 0; edgeID < num_edges; edgeID++) {
       const TreeEdge* treeedge = &(treeedges[edgeID]);
-      const std::vector<short>& gridsX = treeedge->route.gridsX;
-      const std::vector<short>& gridsY = treeedge->route.gridsY;
-      const std::vector<short>& gridsL = treeedge->route.gridsL;
+      const std::vector<int16_t>& gridsX = treeedge->route.gridsX;
+      const std::vector<int16_t>& gridsY = treeedge->route.gridsY;
+      const std::vector<int16_t>& gridsL = treeedge->route.gridsL;
       const int routeLen = treeedge->route.routelen;
 
       for (int i = 0; i < routeLen; i++) {
