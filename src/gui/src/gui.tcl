@@ -105,16 +105,16 @@ sta::define_cmd_args "save_image" {[-area {x0 y0 x1 y1}] \
                                    [-resolution microns_per_pixel] \
                                    [-display_option option] \
                                    path
-}; # checker off
+} ;# checker off
 
 proc save_image { args } {
   ord::parse_list_args "save_image" args list {-display_option}
   sta::parse_key_args "save_image" args \
-    keys {-area -width -resolution} flags {}; # checker off
+    keys {-area -width -resolution} flags {} ;# checker off
 
   set options [gui::DisplayControlMap]
   foreach opt $list(-display_option) {
-    if {[llength $opt] != 2} {
+    if { [llength $opt] != 2 } {
       utl::error GUI 19 "Display option must have 2 elements {control name} {value}."
     }
 
@@ -128,11 +128,11 @@ proc save_image { args } {
   if { [info exists keys(-resolution)] } {
     sta::check_positive_float "-resolution" $keys(-resolution)
     set tech [ord::get_db_tech]
-    if {$tech == "NULL"} {
+    if { $tech == "NULL" } {
       utl::error GUI 17 "No technology loaded."
     }
     set resolution [expr $keys(-resolution) * [$tech getLefUnits]]
-    if {$resolution < 1} {
+    if { $resolution < 1 } {
       set resolution 1.0
       set res_per_pixel [expr $resolution / [$tech getLefUnits]]
       utl::warn GUI 31 "Resolution too high for design, defaulting to ${res_per_pixel}um per pixel"
@@ -142,14 +142,14 @@ proc save_image { args } {
   set area "0 0 0 0"
   if { [info exists keys(-area)] } {
     set area $keys(-area)
-    if {[llength $area] != 4} {
+    if { [llength $area] != 4 } {
       utl::error GUI 18 "Area must contain 4 elements."
     }
   }
 
   set width 0
   if { [info exists keys(-width)] } {
-    if {$resolution != 0} {
+    if { $resolution != 0 } {
       utl::error GUI 96 "Cannot set -width if -resolution has already been specified."
     }
     sta::check_positive_int "-width" $keys(-width)
@@ -239,7 +239,7 @@ proc select { args } {
   if { [info exists keys(-filter)] } {
     set filter $keys(-filter)
     set filter [split $filter "="]
-    if {[llength $filter] != 2} {
+    if { [llength $filter] != 2 } {
       utl::error GUI 56 "Invalid syntax for -filter. Use -filter attribute=value."
     }
     set attribute [lindex $filter 0]
@@ -291,10 +291,10 @@ proc display_timing_cone { args } {
   foreach net $nets {
     lappend pins [sta::net_load_pins $net]
   }
-  if {[llength $pins] == 0} {
+  if { [llength $pins] == 0 } {
     utl::error GUI 68 "Pin not found."
   }
-  if {[llength $pins] != 1} {
+  if { [llength $pins] != 1 } {
     utl::error GUI 69 "Multiple pin timing cones are not supported."
   }
 

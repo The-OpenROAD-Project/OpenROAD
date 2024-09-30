@@ -59,9 +59,18 @@ sta::LibertyCell* GetLibertyCell(odb::dbMaster* master,
   return db_network->libertyCell(master_cell);
 }
 
-sta::TestCell* GetTestCell(odb::dbMaster* master, sta::dbNetwork* db_network)
+sta::TestCell* GetTestCell(odb::dbMaster* master,
+                           sta::dbNetwork* db_network,
+                           utl::Logger* logger)
 {
   sta::LibertyCell* liberty_cell = GetLibertyCell(master, db_network);
+  if (liberty_cell == nullptr) {
+    logger->warn(utl::DFT,
+                 11,
+                 "Cell master '{:s}' has no lib info. Can't find scan cell",
+                 master->getName());
+    return nullptr;
+  }
   sta::TestCell* test_cell = liberty_cell->testCell();
   if (test_cell && test_cell->scanIn() != nullptr
       && test_cell->scanEnable() != nullptr) {
@@ -131,7 +140,7 @@ std::unique_ptr<OneBitScanCell> CreateOneBitCell(odb::dbInst* inst,
   sta::dbNetwork* db_network = sta->getDbNetwork();
   std::unique_ptr<ClockDomain> clock_domain
       = FindOneBitCellClockDomain(inst, sta);
-  sta::TestCell* test_cell = GetTestCell(inst->getMaster(), db_network);
+  sta::TestCell* test_cell = GetTestCell(inst->getMaster(), db_network, logger);
 
   if (!clock_domain) {
     logger->warn(utl::DFT,

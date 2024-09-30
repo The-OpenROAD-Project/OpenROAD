@@ -354,6 +354,7 @@ proc read_guides { args } {
     keys {} \
     flags {}
   set file_name $args
+
   grt::read_guides $file_name
 }
 

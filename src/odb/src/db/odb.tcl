@@ -589,7 +589,7 @@ proc define_clock_layer_range { layers } {
     set db [ord::get_db]
     set chip [$db getChip]
     if { $chip == "NULL" } {
-      utl::error ODB 355 "please load the design before trying to use this command"
+      utl::error ODB 363 "please load the design before trying to use this command"
     }
     set block [$chip getBlock]
     
@@ -628,7 +628,7 @@ proc set_min_layer { args } {
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
-    utl::error ODB 355 "please load the design before trying to use this command"
+    utl::error ODB 365 "please load the design before trying to use this command"
   }
   set block [$chip getBlock]
   $block setMinRoutingLayer $minLayer
@@ -643,7 +643,7 @@ proc set_max_layer { args } {
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
-    utl::error ODB 355 "please load the design before trying to use this command"
+    utl::error ODB 366 "please load the design before trying to use this command"
   }
   set block [$chip getBlock]
   $block setMaxRoutingLayer $maxLayer

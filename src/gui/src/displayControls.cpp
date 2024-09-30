@@ -569,9 +569,9 @@ void DisplayControls::createLayerMenu()
           [this]() { layerShowOnlySelectedNeighbors(0, 0); });
 
   const QString show_range = "Show layer range ";
-  const QString updown_arrow = "\u2195";
-  const QString down_arrow = "\u2193";
-  const QString up_arrow = "\u2191";
+  const QString updown_arrow = "↕";
+  const QString down_arrow = "↓";
+  const QString up_arrow = "↑";
   auto add_range_action = [&](int up, int down) {
     QString arrows;
     for (int n = 1; n < down; n++) {

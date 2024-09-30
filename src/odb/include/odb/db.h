@@ -7541,7 +7541,12 @@ class dbGuide : public dbObject
 
   dbTechLayer* getLayer() const;
 
-  static dbGuide* create(dbNet* net, dbTechLayer* layer, Rect box);
+  dbTechLayer* getViaLayer() const;
+
+  static dbGuide* create(dbNet* net,
+                         dbTechLayer* layer,
+                         dbTechLayer* via_layer,
+                         Rect box);
 
   static dbGuide* getGuide(dbBlock* block, uint dbid);
 
@@ -8600,15 +8605,15 @@ class dbTechLayerAreaRule : public dbObject
 
   int getExceptEdgeLength() const;
 
-  void setExceptEdgeLengths(std::pair<int, int> except_edge_lengths);
+  void setExceptEdgeLengths(const std::pair<int, int>& except_edge_lengths);
 
   std::pair<int, int> getExceptEdgeLengths() const;
 
-  void setExceptMinSize(std::pair<int, int> except_min_size);
+  void setExceptMinSize(const std::pair<int, int>& except_min_size);
 
   std::pair<int, int> getExceptMinSize() const;
 
-  void setExceptStep(std::pair<int, int> except_step);
+  void setExceptStep(const std::pair<int, int>& except_step);
 
   std::pair<int, int> getExceptStep() const;
 
@@ -9599,7 +9604,7 @@ class dbTechLayerEolKeepOutRule : public dbObject
 class dbTechLayerForbiddenSpacingRule : public dbObject
 {
  public:
-  void setForbiddenSpacing(std::pair<int, int> forbidden_spacing);
+  void setForbiddenSpacing(const std::pair<int, int>& forbidden_spacing);
 
   std::pair<int, int> getForbiddenSpacing() const;
 
@@ -10389,7 +10394,7 @@ class dbGDSSRef : public dbGDSElement
 
   dbGDSSTrans getTransform() const;
 
-  void set_colRow(std::pair<int16_t, int16_t> colRow);
+  void set_colRow(const std::pair<int16_t, int16_t>& colRow);
 
   std::pair<int16_t, int16_t> get_colRow() const;
 

@@ -1655,7 +1655,7 @@ void LayoutViewer::drawScaleBar(QPainter* painter, const QRect& rect)
       unit_text = "mm";
     } else if (bar_size > 1) {
       scale_unit = 1;
-      unit_text = "\u03bcm";  // um
+      unit_text = "μm";
     } else if (bar_size > 0.001) {
       scale_unit = 1000;
       unit_text = "nm";
