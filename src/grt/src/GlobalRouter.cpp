@@ -1566,12 +1566,12 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
   }
 }
 
-bool GlobalRouter::hasCapacity(bool is_horizontal,
-                               const int& pos_x,
-                               const int& pos_y,
-                               const int& layer_level)
+bool GlobalRouter::hasAvailableResources(bool is_horizontal,
+                                         const int& pos_x,
+                                         const int& pos_y,
+                                         const int& layer_level)
 {
-  // transform from real position to grid pos of fastrouter
+  // transform from real position to grid pos of fastroute
   int grid_x = (int) ((pos_x - grid_->getXMin()) / grid_->getTileSize());
   int grid_y = (int) ((pos_y - grid_->getYMin()) / grid_->getTileSize());
   int cap = 0;
@@ -1585,12 +1585,12 @@ bool GlobalRouter::hasCapacity(bool is_horizontal,
   return cap > 0;
 }
 
-void GlobalRouter::updateReources(const int& init_x,
-                                  const int& init_y,
-                                  const int& final_x,
-                                  const int& final_y,
-                                  const int& layer_level,
-                                  int used)
+void GlobalRouter::updateResources(const int& init_x,
+                                   const int& init_y,
+                                   const int& final_x,
+                                   const int& final_y,
+                                   const int& layer_level,
+                                   int used)
 {
   // transform from real position to grid pos of fastrouter
   int grid_init_x = (int) ((init_x - grid_->getXMin()) / grid_->getTileSize());
@@ -1599,7 +1599,7 @@ void GlobalRouter::updateReources(const int& init_x,
       = (int) ((final_x - grid_->getXMin()) / grid_->getTileSize());
   int grid_final_y
       = (int) ((final_y - grid_->getYMin()) / grid_->getTileSize());
-  fastroute_->updateEdge3DUsage(
+  fastroute_->updateEdge2DAnd3DUsage(
       grid_init_x, grid_init_y, grid_final_x, grid_final_y, layer_level, used);
 }
 
@@ -2095,7 +2095,7 @@ void GlobalRouter::updateEdgesUsage()
       x1 = std::min(x1, grid_->getXGrids() - 1);
       y1 = std::min(y1, grid_->getYGrids() - 1);
 
-      fastroute_->updateEdge3DUsage(x0, y0, x1, y1, l0, 1);
+      fastroute_->incrementEdge3DUsage(x0, y0, x1, y1, l0);
     }
   }
 }

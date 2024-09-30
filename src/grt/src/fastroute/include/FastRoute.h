@@ -199,7 +199,13 @@ class FastRouteCore
   }
   void setRegularX(bool regular_x) { regular_x_ = regular_x; }
   void setRegularY(bool regular_y) { regular_y_ = regular_y; }
-  void updateEdge3DUsage(int x1, int y1, int x2, int y2, int layer, int used);
+  void incrementEdge3DUsage(int x1, int y1, int x2, int y2, int layer);
+  void updateEdge2DAnd3DUsage(int x1,
+                              int y1,
+                              int x2,
+                              int y2,
+                              int layer,
+                              int used);
   void setMaxNetDegree(int);
   void setVerbose(bool v);
   void setCriticalNetsPercentage(float u);
