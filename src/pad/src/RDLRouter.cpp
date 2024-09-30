@@ -187,7 +187,8 @@ bool RDLRoute::compare(const std::shared_ptr<RDLRoute>& other) const
 {
   const auto lhs_priority = -getPriority();
   const auto rhs_priority = -other->getPriority();
-  if (!hasNextTerminal() || !other->hasNextTerminal()) {
+  if (!hasNextTerminal() || !other->hasNextTerminal()
+      || lhs_priority != rhs_priority) {
     return lhs_priority > rhs_priority;
   }
 
@@ -200,7 +201,7 @@ bool RDLRoute::compare(const std::shared_ptr<RDLRoute>& other) const
       = odb::Point::squaredDistance(other->getTerminal()->getBBox().center(),
                                     rhs_shortest->getBBox().center());
 
-  return std::tie(lhs_priority, lhs_dist) > std::tie(rhs_priority, rhs_dist);
+  return lhs_dist > rhs_dist;
 }
 
 void RDLRoute::setRoute(
