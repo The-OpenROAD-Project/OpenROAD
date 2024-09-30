@@ -154,16 +154,16 @@ RDLRoute::RDLRoute(odb::dbITerm* source,
   std::stable_sort(terminals_.begin(),
                    terminals_.end(),
                    [&iterm_center](odb::dbITerm* lhs, odb::dbITerm* rhs) {
-                     const bool lhs_cover = RDLRouter::isCoverTerm(lhs);
-                     const bool rhs_cover = RDLRouter::isCoverTerm(rhs);
+                     const int lhs_cover = RDLRouter::isCoverTerm(lhs) ? 1 : 0;
+                     const int rhs_cover = RDLRouter::isCoverTerm(rhs) ? 1 : 0;
+
+                     const auto lhs_dist = odb::Point::squaredDistance(
+                         iterm_center, lhs->getBBox().center());
+                     const auto rhs_dist = odb::Point::squaredDistance(
+                         iterm_center, rhs->getBBox().center());
                      // sort non-cover terms first
-                     if (lhs_cover == rhs_cover) {
-                       return odb::Point::squaredDistance(
-                                  iterm_center, lhs->getBBox().center())
-                              < odb::Point::squaredDistance(
-                                  iterm_center, rhs->getBBox().center());
-                     }
-                     return rhs_cover;
+                     return std::tie(lhs_cover, lhs_dist)
+                            < std::tie(rhs_cover, rhs_dist);
                    });
 
   resetRoute();
