@@ -575,14 +575,14 @@ static void removeMin(std::vector<double*>& array)
  * round : the number of maze route stages runned
  */
 
-int FastRouteCore::updateCongestionHistory(const int upType,
-                                           bool stopDEC,
+int FastRouteCore::updateCongestionHistory(const int up_type,
+                                           bool stop_decreasing,
                                            int max_adj)
 {
   int maxlimit = 0;
 
-  if (upType == 2) {
-    stopDEC = max_adj < ahth_;
+  if (up_type == 2) {
+    stop_decreasing = max_adj < ahth_;
   }
 
   auto updateEdges = [&](const auto& grid, auto& edges) {
@@ -591,11 +591,11 @@ int FastRouteCore::updateCongestionHistory(const int upType,
       if (overflow > 0) {
         edges[i][j].congCNT++;
         edges[i][j].last_usage += overflow;
-      } else if (!stopDEC) {
-        if (upType != 1) {
+      } else if (!stop_decreasing) {
+        if (up_type != 1) {
           edges[i][j].congCNT = std::max<int>(0, edges[i][j].congCNT - 1);
         }
-        if (upType != 3) {
+        if (up_type != 3) {
           edges[i][j].last_usage *= 0.9;
         } else {
           edges[i][j].last_usage
