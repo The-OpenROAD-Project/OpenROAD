@@ -148,6 +148,7 @@ static const char* name_tbl[] = {"dbDatabase",
 
                                  // Lib Objects
                                  "dbLib",
+                                 "dbGDSLib",
                                  "dbSite",
                                  "dbMaster",
                                  "dbMPin",

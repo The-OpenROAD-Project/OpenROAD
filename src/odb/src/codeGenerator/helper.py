@@ -137,7 +137,7 @@ def is_pass_by_ref(type_name):
 
 
 def is_set_by_ref(type_name):
-    return type_name == "std::string"
+    return type_name == "std::string" or type_name.startswith("std::pair")
 
 
 def _is_template_type(type_name):

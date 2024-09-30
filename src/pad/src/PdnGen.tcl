@@ -29,6 +29,7 @@
 #OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # tclint-disable
+# tclfmt-disable
 namespace eval pdngen {
 variable block_masters {}
 variable logical_viarules {}
@@ -6912,3 +6913,4 @@ proc apply {args} {
 }
 }
 # tclint-enable
+# tclfmt-enable

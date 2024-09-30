@@ -8,6 +8,7 @@ record_tests {
   make_corner_sites
   make_io_sites
   make_io_sites_different_sites
+  make_io_sites_rotations
   non_top_layer
   place_pad
   place_pad_with_bumps

@@ -167,9 +167,9 @@ make_io_sites
 | `-vertical_site` | Name of the site for the vertical pads (north and south). |
 | `-corner_site` | Name of the site for the corner cells. |
 | `-offset` | Offset from the die edge to place the rows. |
-| `-rotation_horizontal` | Rotation to apply to the horizontal sites to ensure pads are placed correctly. The default value is `R0`. |
-| `-rotation_vertical` | Rotation to apply to the vertical sites to ensure pads are placed correctly. The default value is `R0`. |
-| `-rotation_corner` | Rotation to apply to the corner sites to ensure pads are placed correctly. The default value is `R0`. |
+| `-rotation_horizontal` | Rotation to apply to the horizontal sites to ensure pads are placed correctly. The default value is `R0` for the western (left) row when different sites are specified for hortizontal and vertical rows, the default value is `MXR90` when the same site is specified. |
+| `-rotation_vertical` | Rotation to apply to the vertical sites to ensure pads are placed correctly. The default value is `R0` for the southern (bottom) row. |
+| `-rotation_corner` | Rotation to apply to the corner sites to ensure pads are placed correctly. The default value is `R0` for the south west (lower left) corner. |
 | `-ring_index` | Used to specify the index of the ring in case of multiple rings. |
 
 
