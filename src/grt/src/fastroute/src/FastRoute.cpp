@@ -1147,17 +1147,15 @@ NetRouteMap FastRouteCore::run()
     if (total_overflow_ > 2000) {
       enlarge_ += ESTEP1;  // ENLARGE+(i-1)*ESTEP;
       cost_step = CSTEP1;
-      updateCongestionHistory(upType, stopDEC, max_adj);
     } else if (total_overflow_ < 500) {
       cost_step = CSTEP3;
       enlarge_ += ESTEP3;
       ripup_threshold = -1;
-      updateCongestionHistory(upType, stopDEC, max_adj);
     } else {
       cost_step = CSTEP2;
       enlarge_ += ESTEP2;
-      updateCongestionHistory(upType, stopDEC, max_adj);
     }
+    max_adj = updateCongestionHistory(upType, stopDEC, max_adj);
 
     if (total_overflow_ > 15000 && maxOverflow > 400) {
       enlarge_ = std::max(x_grid_, y_grid_) / 30;

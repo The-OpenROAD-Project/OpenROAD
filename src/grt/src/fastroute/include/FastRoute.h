@@ -269,7 +269,7 @@ class FastRouteCore
                      const int L,
                      float& slack_th);
   void convertToMazeroute();
-  void updateCongestionHistory(const int upType, bool stopDEC, int& max_adj);
+  int updateCongestionHistory(const int upType, bool stopDEC, int max_adj);
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
   int getOverflow3D();
