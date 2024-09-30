@@ -36,7 +36,6 @@
 ]
 
 ignore = [
-    "spaces-in-braces",
     "unbraced-expr",
 ]
 

@@ -51,7 +51,7 @@ proc man { args } {
   set exec_output [info nameofexecutable]
 
   # Check if the output contains 'build/src'
-  if {[string match "*build/src*" $exec_output]} {
+  if { [string match "*build/src*" $exec_output] } {
     set executable_path [file normalize [file dirname [info nameofexecutable]]]
     set man_path [file normalize [file dirname [file dirname $executable_path]]]
     set DEFAULT_MAN_PATH [file join $man_path "docs" "cat"]
@@ -60,7 +60,7 @@ proc man { args } {
   }
 
   global MAN_PATH
-  if { [info exists keys(-manpath) ]} {
+  if { [info exists keys(-manpath)] } {
     set MAN_PATH $keys(-manpath)
     if { [utl::check_valid_man_path $MAN_PATH] == false } {
       puts "Using default manpath."
@@ -71,7 +71,7 @@ proc man { args } {
   }
 
   set no_pager 0
-  if { [info exists flags(-no_pager) ]} {
+  if { [info exists flags(-no_pager)] } {
     set no_pager 1
   }
 
@@ -90,7 +90,7 @@ proc man { args } {
   foreach man_section $man_sections {
     set length [string length $man_section]
     # Get suffix for man section
-    set man_suffix [string range $man_section [expr {$length - 1}] $length]
+    set man_suffix [string range $man_section [expr { $length - 1 }] $length]
     # Replace all "::" with "_"
     set name1 [string map { "::" "_" } $name]
     append name1 ".$man_suffix"
@@ -106,16 +106,16 @@ proc man { args } {
       set num_lines [llength $lines]
       set page_size 40
 
-      for {set i 0} {$i < $num_lines} {incr i $page_size} {
-        set page [lrange $lines $i [expr {$i + $page_size - 1}]]
+      for { set i 0 } { $i < $num_lines } { incr i $page_size } {
+        set page [lrange $lines $i [expr { $i + $page_size - 1 }]]
         puts [join $page "\n"]
 
         # Ask user to continue or quit
-        if {!$no_pager && [llength $lines] > $page_size} {
+        if { !$no_pager && [llength $lines] > $page_size } {
           puts -nonewline "---\nPress 'q' to quit or any other key to continue: \n---"
-          flush stdout;
+          flush stdout
           set input [gets stdin]
-          if {$input == "q"} {
+          if { $input == "q" } {
             break
           }
         }
@@ -129,7 +129,6 @@ proc man { args } {
 }
 
 namespace eval utl {
-
 proc get_input { } {
   # Get the relative path from the user
   puts "Please enter an optional relative path to the cat folders:"
@@ -148,7 +147,7 @@ proc get_input { } {
 }
 
 proc check_valid_path { path } {
-  if {[file isdirectory $path]} {
+  if { [file isdirectory $path] } {
     return true
   } else {
     puts "Invalid path, please retry."
@@ -157,7 +156,7 @@ proc check_valid_path { path } {
 }
 
 proc check_valid_man_path { path } {
-  if {[file isdirectory "$path/cat1"]} {
+  if { [file isdirectory "$path/cat1"] } {
     return true
   } else {
     puts "Invalid man path, please retry."

@@ -17,6 +17,6 @@ post repair_timing QoR
 worst slack -0.44
 tns -2.156
 post undo repair_timing QoR
-worst slack -1.95
-tns -6.294
+worst slack -0.44
+tns -2.156
 Repair timing output passed/skipped equivalence test

@@ -80,6 +80,7 @@ void _dbGDSText::out(dbDiff& diff, char side, const char* field) const
 
 _dbGDSText::_dbGDSText(_dbDatabase* db)
 {
+  _width = 0;
 }
 
 _dbGDSText::_dbGDSText(_dbDatabase* db, const _dbGDSText& r)
