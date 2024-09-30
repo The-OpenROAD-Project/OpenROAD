@@ -229,27 +229,11 @@ void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
     if (via_width > rect_width || via_height > rect_height) {
       continue;
     }
-    if (is_curr_layer_horz) {
-      auto coord = gtl::yh(rect) - (box.yMax() - 0);
-      if (coords.find(coord) == coords.end()) {
-        coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
-      } else {
-        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
-      }
-      coord = gtl::yl(rect) + (0 - box.yMin());
-      if (coords.find(coord) == coords.end()) {
-        coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
-      } else {
-        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
-      }
-    } else {
-      auto coord = gtl::xh(rect) - (box.xMax() - 0);
-      if (coords.find(coord) == coords.end()) {
-        coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
-      } else {
-        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
-      }
-      coord = gtl::xl(rect) + (0 - box.xMin());
+    const int coord_top = is_curr_layer_horz ? gtl::yh(rect) - box.yMax()
+                                             : gtl::xh(rect) - box.xMax();
+    const int coord_low = is_curr_layer_horz ? gtl::yl(rect) - box.yMin()
+                                             : gtl::xl(rect) - box.xMin();
+    for (const int coord : {coord_top, coord_low}) {
       if (coords.find(coord) == coords.end()) {
         coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
       } else {
