@@ -344,7 +344,8 @@ class GlobalRouter : public ant::GlobalRouteSource
                                 int layer,
                                 float reduction_percentage);
   void applyObstructionAdjustment(const odb::Rect& obstruction,
-                                  odb::dbTechLayer* tech_layer);
+                                  odb::dbTechLayer* tech_layer,
+                                  bool is_macro = false);
   void addResourcesForPinAccess();
   int computeNetWirelength(odb::dbNet* db_net);
   void computeWirelength();

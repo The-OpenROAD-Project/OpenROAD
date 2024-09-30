@@ -1561,7 +1561,8 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
 }
 
 void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
-                                              odb::dbTechLayer* tech_layer)
+                                              odb::dbTechLayer* tech_layer,
+                                              bool is_macro)
 {
   // compute the intersection between obstruction and the die area
   // only when they are overlapping to avoid assert error during
@@ -1587,18 +1588,25 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
 
   int track_space = grid_->getTrackPitches()[layer - 1];
 
+  const int layer_capacity = vertical ? vertical_capacities_[layer - 1]
+                                      : horizontal_capacities_[layer - 1];
+
   interval<int>::type first_tile_reduce_interval
       = grid_->computeTileReduceInterval(obstruction_rect,
                                          first_tile_box,
                                          track_space,
                                          true,
-                                         tech_layer->getDirection());
+                                         tech_layer->getDirection(),
+                                         layer_capacity,
+                                         is_macro);
   interval<int>::type last_tile_reduce_interval
       = grid_->computeTileReduceInterval(obstruction_rect,
                                          last_tile_box,
                                          track_space,
                                          false,
-                                         tech_layer->getDirection());
+                                         tech_layer->getDirection(),
+                                         layer_capacity,
+                                         is_macro);
 
   if (!vertical) {
     fastroute_->addHorizontalAdjustments(first_tile,
@@ -3694,13 +3702,13 @@ int GlobalRouter::findInstancesObstructions(
 
     const odb::dbTransform transform = inst->getTransform();
 
-    bool isMacro = false;
+    bool is_macro = false;
     if (master->isBlock()) {
       macros_cnt++;
-      isMacro = true;
+      is_macro = true;
     }
 
-    if (isMacro) {
+    if (is_macro) {
       std::unordered_map<int, std::vector<odb::Rect>> macro_obs_per_layer;
       int bottom_layer = std::numeric_limits<int>::max();
       int top_layer = std::numeric_limits<int>::min();
@@ -3736,7 +3744,8 @@ int GlobalRouter::findInstancesObstructions(
             cur_obs.set_xhi(cur_obs.xMax() + layer_extension);
           }
           layer_obs_map[layer].push_back(cur_obs);
-          applyObstructionAdjustment(cur_obs, tech->findRoutingLayer(layer));
+          applyObstructionAdjustment(
+              cur_obs, tech->findRoutingLayer(layer), is_macro);
         }
       }
     } else {

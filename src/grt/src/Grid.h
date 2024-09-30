@@ -134,7 +134,9 @@ class Grid
                                                 const odb::Rect& tile,
                                                 int track_space,
                                                 bool first,
-                                                odb::dbTechLayerDir direction);
+                                                odb::dbTechLayerDir direction,
+                                                const int layer_cap,
+                                                bool is_macro);
 
   odb::Point getMiddle();
   const odb::Rect& getGridArea() const;
