@@ -575,9 +575,9 @@ static void removeMin(std::vector<double*>& array)
  * round : the number of maze route stages runned
  */
 
-int FastRouteCore::updateCongestionHistory(const int up_type,
-                                           bool stop_decreasing,
-                                           int max_adj)
+void FastRouteCore::updateCongestionHistory(const int up_type,
+                                            bool stop_decreasing,
+                                            int& max_adj)
 {
   int maxlimit = 0;
 
@@ -609,7 +609,7 @@ int FastRouteCore::updateCongestionHistory(const int up_type,
   updateEdges(h_used_ggrid_, h_edges_);
   updateEdges(v_used_ggrid_, v_edges_);
 
-  return maxlimit;
+  max_adj = maxlimit;
 }
 
 // ripup a tree edge according to its ripup type and Z-route it

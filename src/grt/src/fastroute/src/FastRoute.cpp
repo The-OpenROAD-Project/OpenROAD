@@ -1155,7 +1155,7 @@ NetRouteMap FastRouteCore::run()
       cost_step = CSTEP2;
       enlarge_ += ESTEP2;
     }
-    max_adj = updateCongestionHistory(upType, stopDEC, max_adj);
+    updateCongestionHistory(upType, stopDEC, max_adj);
 
     if (total_overflow_ > 15000 && maxOverflow > 400) {
       enlarge_ = std::max(x_grid_, y_grid_) / 30;
