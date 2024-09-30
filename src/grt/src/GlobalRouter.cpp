@@ -1653,28 +1653,28 @@ void GlobalRouter::setAdjustment(const float adjustment)
   adjustment_ = adjustment;
 }
 
-int GlobalRouter::getMinRoutingLayer() 
-{ 
-  if (block_ == nullptr) {
-    block_ = db_->getChip()->getBlock();
-  }
-  return block_->getMinRoutingLayer(); 
-}
-
-int GlobalRouter::getMaxRoutingLayer() 
+int GlobalRouter::getMinRoutingLayer()
 {
   if (block_ == nullptr) {
     block_ = db_->getChip()->getBlock();
   }
-  return block_->getMaxRoutingLayer(); 
+  return block_->getMinRoutingLayer();
 }
 
-int GlobalRouter::getMinLayerForClock()  
-{ 
+int GlobalRouter::getMaxRoutingLayer()
+{
   if (block_ == nullptr) {
     block_ = db_->getChip()->getBlock();
   }
-  return block_->getMinLayerForClock(); 
+  return block_->getMaxRoutingLayer();
+}
+
+int GlobalRouter::getMinLayerForClock()
+{
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
+  return block_->getMinLayerForClock();
 }
 
 int GlobalRouter::getMaxLayerForClock()
