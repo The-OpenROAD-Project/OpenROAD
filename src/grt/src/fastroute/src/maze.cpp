@@ -154,7 +154,7 @@ bool FastRouteCore::areEdgesOverlapping(const int net_id,
 void FastRouteCore::fixOverlappingEdge(
     const int net_id,
     const int edge,
-    std::vector<std::pair<short, short>>& blocked_positions)
+    std::vector<std::pair<int16_t, int16_t>>& blocked_positions)
 {
   TreeEdge* treeedge = &(sttrees_[net_id].edges[edge]);
   auto& treenodes = sttrees_[net_id].nodes;

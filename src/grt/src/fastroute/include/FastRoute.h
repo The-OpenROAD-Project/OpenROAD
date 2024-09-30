@@ -291,8 +291,8 @@ class FastRouteCore
                            const std::vector<int>& edges);
   void fixOverlappingEdge(
       const int net_id,
-      const int edge,
-      std::vector<std::pair<short, short>>& blocked_positions);
+      int edge,
+      std::vector<std::pair<int16_t, int16_t>>& blocked_positions);
   void bendEdge(TreeEdge* treeedge,
                 std::vector<TreeNode>& treenodes,
                 std::vector<short>& new_route_x,
