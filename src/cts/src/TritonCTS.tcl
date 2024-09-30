@@ -90,7 +90,7 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-dont_use_dummy_load] \
                                              [-delay_buffer_derate] \
                                              [-library] \
-};# checker off
+} ;# checker off
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
@@ -103,7 +103,7 @@ proc clock_tree_synthesis { args } {
           -sink_buffer_max_cap_derate -delay_buffer_derate -library} \
     flags {-post_cts_disable -sink_clustering_enable -balance_levels \
            -obstruction_aware -apply_ndr -dont_use_dummy_load
-  };# checker off
+  } ;# checker off
 
   sta::check_argc_eq0 "clock_tree_synthesis" $args
 
@@ -175,7 +175,7 @@ proc clock_tree_synthesis { args } {
   if { [info exists keys(-clk_nets)] } {
     set clk_nets $keys(-clk_nets)
     set fail [cts::set_clock_nets $clk_nets]
-    if {$fail} {
+    if { $fail } {
       utl::error CTS 56 "Error when finding -clk_nets in DB."
     }
   }
@@ -250,7 +250,7 @@ proc report_cts { args } {
 namespace eval cts {
 proc clock_tree_synthesis_debug { args } {
   sta::parse_key_args "clock_tree_synthesis_debug" args \
-    keys {} flags {-plot}; # checker off
+    keys {} flags {-plot} ;# checker off
 
   sta::check_argc_eq0 "clock_tree_synthesis_debug" $args
   cts::set_plot_option [info exists flags(-plot)]

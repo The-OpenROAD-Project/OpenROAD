@@ -61,7 +61,7 @@ proc detailed_placement { args } {
     set max_displacement_y 0
   }
   set file_name ""
-  if { [info exists keys(-report_file_name) ] } {
+  if { [info exists keys(-report_file_name)] } {
     set file_name $keys(-report_file_name)
   }
 
@@ -70,9 +70,9 @@ proc detailed_placement { args } {
     set site [dpl::get_row_site]
     # Convert displacement from microns to sites.
     set max_displacement_x [expr [ord::microns_to_dbu $max_displacement_x] \
-                              / [$site getWidth]]
+      / [$site getWidth]]
     set max_displacement_y [expr [ord::microns_to_dbu $max_displacement_y] \
-                              / [$site getHeight]]
+      / [$site getHeight]]
     dpl::detailed_placement_cmd $max_displacement_x $max_displacement_y \
       $disallow_one_site_gaps $file_name
     dpl::report_legalization_stats
@@ -152,7 +152,6 @@ sta::define_cmd_args "check_placement" {[-verbose] \
                                         [-report_file_name file_name]}
 
 proc check_placement { args } {
-
   if { [ord::get_db_block] == "NULL" } {
     utl::error DPL 103 "No design block found."
   }
@@ -163,7 +162,7 @@ proc check_placement { args } {
   set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
   sta::check_argc_eq0 "check_placement" $args
   set file_name ""
-  if { [info exists keys(-report_file_name) ] } {
+  if { [info exists keys(-report_file_name)] } {
     set file_name $keys(-report_file_name)
   }
   dpl::check_placement_cmd $verbose $disallow_one_site_gaps $file_name
@@ -172,7 +171,6 @@ proc check_placement { args } {
 sta::define_cmd_args "optimize_mirroring" {}
 
 proc optimize_mirroring { args } {
-
   sta::parse_key_args "optimize_mirroring" args keys {} flags {}
 
   if { [ord::get_db_block] == "NULL" } {
@@ -184,7 +182,6 @@ proc optimize_mirroring { args } {
 }
 
 namespace eval dpl {
-
 # min_displacement is the smallest displacement to draw
 # measured as a multiple of row_height.
 proc detailed_placement_debug { args } {
@@ -202,7 +199,7 @@ proc detailed_placement_debug { args } {
     set instance_name $keys(-instance)
     set block [ord::get_db_block]
     set debug_instance [$block findInst $instance_name]
-    if {$debug_instance == "NULL"} {
+    if { $debug_instance == "NULL" } {
       utl::error DPL 32 "Debug instance $instance_name not found."
     }
   } else {
@@ -273,8 +270,7 @@ proc format_grid { x w } {
   }
 }
 
-proc get_row_site {} {
+proc get_row_site { } {
   return [[lindex [[ord::get_db_block] getRows] 0] getSite]
 }
-
 }

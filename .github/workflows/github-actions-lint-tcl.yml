@@ -16,4 +16,5 @@ jobs:
 
       - name: Lint
         run: |
-          tclint .
+          tclfmt --check .
+          tclint --no-check-style .
