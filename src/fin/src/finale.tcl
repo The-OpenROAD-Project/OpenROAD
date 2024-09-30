@@ -66,4 +66,3 @@ proc density_fill { args } {
 
   fin::density_fill_cmd $rules_file $fill_area
 }
-

@@ -1441,87 +1441,6 @@ void FastRouteCore::removeLoops()
   }
 }
 
-void FastRouteCore::verifyEdgeUsage()
-{
-  multi_array<std::set<int>, 2> s_v_edges(boost::extents[y_grid_ - 1][x_grid_]);
-  multi_array<std::set<int>, 2> s_h_edges(boost::extents[y_grid_][x_grid_ - 1]);
-
-  multi_array<int, 2> v_edges(boost::extents[y_grid_ - 1][x_grid_]);
-  multi_array<int, 2> h_edges(boost::extents[y_grid_][x_grid_ - 1]);
-
-  multi_array<int, 3> v_edges_3D(
-      boost::extents[num_layers_][y_grid_ - 1][x_grid_]);
-  multi_array<int, 3> h_edges_3D(
-      boost::extents[num_layers_][y_grid_][x_grid_ - 1]);
-
-  for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID] == nullptr) {
-      continue;
-    }
-    const auto& treeedges = sttrees_[netID].edges;
-    const int num_edges = sttrees_[netID].num_edges();
-
-    const int edgeCost = nets_[netID]->getEdgeCost();
-
-    for (int edgeID = 0; edgeID < num_edges; edgeID++) {
-      const TreeEdge* treeedge = &(treeedges[edgeID]);
-      const std::vector<short>& gridsX = treeedge->route.gridsX;
-      const std::vector<short>& gridsY = treeedge->route.gridsY;
-      const std::vector<short>& gridsL = treeedge->route.gridsL;
-      const int routeLen = treeedge->route.routelen;
-
-      for (int i = 0; i < routeLen; i++) {
-        if (gridsL[i] != gridsL[i + 1]) {
-          continue;
-        }
-        if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
-          const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-          s_v_edges[ymin][gridsX[i]].insert(netID);
-          v_edges[ymin][gridsX[i]] += edgeCost;
-          v_edges_3D[gridsL[i]][ymin][gridsX[i]]
-              += nets_[netID]->getLayerEdgeCost(gridsL[i]);
-        } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
-          const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-          s_h_edges[gridsY[i]][xmin].insert(netID);
-          h_edges[gridsY[i]][xmin] += edgeCost;
-          h_edges_3D[gridsL[i]][gridsY[i]][xmin]
-              += nets_[netID]->getLayerEdgeCost(gridsL[i]);
-        }
-      }
-    }
-  }
-
-  for (int k = 0; k < num_layers_; k++) {
-    for (int y = 0; y < y_grid_ - 1; ++y) {
-      for (int x = 0; x < x_grid_; ++x) {
-        if (v_edges_3D[k][y][x] != v_edges_3D_[k][y][x].usage) {
-          logger_->error(GRT,
-                         1247,
-                         "v_edge mismatch {} vs {}",
-                         v_edges_3D[k][y][x],
-                         v_edges_3D_[k][y][x].usage);
-        }
-      }
-    }
-  }
-  for (int k = 0; k < num_layers_; k++) {
-    for (int y = 0; y < y_grid_; ++y) {
-      for (int x = 0; x < x_grid_ - 1; ++x) {
-        if (h_edges_3D[k][y][x] != h_edges_3D_[k][y][x].usage) {
-          logger_->error(GRT,
-                         1248,
-                         "h_edge mismatch {} vs {}",
-                         h_edges_3D[k][y][x],
-                         h_edges_3D_[k][y][x].usage);
-        }
-      }
-    }
-  }
-}
-
-// This is a full comparison between edges used by the routing and
-// the usage in the h/v edges of the routing graph.  It is somewhat
-// expensive but helpful for finding usage errors.
 void FastRouteCore::verify2DEdgesUsage()
 {
   multi_array<int, 2> v_edges(boost::extents[y_grid_ - 1][x_grid_]);
@@ -1624,6 +1543,84 @@ void FastRouteCore::verify2DEdgesUsage()
                        "h_edge mismatch {} vs {}",
                        h_edges[y][x],
                        h_edges_[y][x].est_usage);
+      }
+    }
+  }
+}
+
+void FastRouteCore::verify3DEdgesUsage()
+{
+  multi_array<std::set<int>, 2> s_v_edges(boost::extents[y_grid_ - 1][x_grid_]);
+  multi_array<std::set<int>, 2> s_h_edges(boost::extents[y_grid_][x_grid_ - 1]);
+
+  multi_array<int, 2> v_edges(boost::extents[y_grid_ - 1][x_grid_]);
+  multi_array<int, 2> h_edges(boost::extents[y_grid_][x_grid_ - 1]);
+
+  multi_array<int, 3> v_edges_3D(
+      boost::extents[num_layers_][y_grid_ - 1][x_grid_]);
+  multi_array<int, 3> h_edges_3D(
+      boost::extents[num_layers_][y_grid_][x_grid_ - 1]);
+
+  for (int netID = 0; netID < netCount(); netID++) {
+    if (nets_[netID] == nullptr) {
+      continue;
+    }
+    const auto& treeedges = sttrees_[netID].edges;
+    const int num_edges = sttrees_[netID].num_edges();
+
+    const int edgeCost = nets_[netID]->getEdgeCost();
+
+    for (int edgeID = 0; edgeID < num_edges; edgeID++) {
+      const TreeEdge* treeedge = &(treeedges[edgeID]);
+      const std::vector<int16_t>& gridsX = treeedge->route.gridsX;
+      const std::vector<int16_t>& gridsY = treeedge->route.gridsY;
+      const std::vector<int16_t>& gridsL = treeedge->route.gridsL;
+      const int routeLen = treeedge->route.routelen;
+
+      for (int i = 0; i < routeLen; i++) {
+        if (gridsL[i] != gridsL[i + 1]) {
+          continue;
+        }
+        if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
+          const int ymin = std::min(gridsY[i], gridsY[i + 1]);
+          s_v_edges[ymin][gridsX[i]].insert(netID);
+          v_edges[ymin][gridsX[i]] += edgeCost;
+          v_edges_3D[gridsL[i]][ymin][gridsX[i]]
+              += nets_[netID]->getLayerEdgeCost(gridsL[i]);
+        } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
+          const int xmin = std::min(gridsX[i], gridsX[i + 1]);
+          s_h_edges[gridsY[i]][xmin].insert(netID);
+          h_edges[gridsY[i]][xmin] += edgeCost;
+          h_edges_3D[gridsL[i]][gridsY[i]][xmin]
+              += nets_[netID]->getLayerEdgeCost(gridsL[i]);
+        }
+      }
+    }
+  }
+
+  for (int k = 0; k < num_layers_; k++) {
+    for (int y = 0; y < y_grid_ - 1; ++y) {
+      for (int x = 0; x < x_grid_; ++x) {
+        if (v_edges_3D[k][y][x] != v_edges_3D_[k][y][x].usage) {
+          logger_->error(GRT,
+                         1247,
+                         "v_edge mismatch {} vs {}",
+                         v_edges_3D[k][y][x],
+                         v_edges_3D_[k][y][x].usage);
+        }
+      }
+    }
+  }
+  for (int k = 0; k < num_layers_; k++) {
+    for (int y = 0; y < y_grid_; ++y) {
+      for (int x = 0; x < x_grid_ - 1; ++x) {
+        if (h_edges_3D[k][y][x] != h_edges_3D_[k][y][x].usage) {
+          logger_->error(GRT,
+                         1248,
+                         "h_edge mismatch {} vs {}",
+                         h_edges_3D[k][y][x],
+                         h_edges_3D_[k][y][x].usage);
+        }
       }
     }
   }

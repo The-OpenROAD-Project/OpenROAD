@@ -140,7 +140,7 @@ dbOStream& operator<<(dbOStream& stream,
 ////////////////////////////////////////////////////////////////////
 
 void dbTechLayerForbiddenSpacingRule::setForbiddenSpacing(
-    std::pair<int, int> forbidden_spacing)
+    const std::pair<int, int>& forbidden_spacing)
 {
   _dbTechLayerForbiddenSpacingRule* obj
       = (_dbTechLayerForbiddenSpacingRule*) this;

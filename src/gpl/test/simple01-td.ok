@@ -71,25 +71,27 @@
 [INFO GPL-0101] Timing-driven: worst slack 1.39e-09
 [INFO GPL-0103] Timing-driven: weighted 35 nets.
 [NesterovSolve] Iter:  250 overflow: 0.431 HPWL: 4430170
-[NesterovSolve] Iter:  260 overflow: 0.381 HPWL: 4441333
-[NesterovSolve] Iter:  270 overflow: 0.326 HPWL: 4458862
-[NesterovSolve] Iter:  280 overflow: 0.290 HPWL: 4480268
+[NesterovSolve] Iter:  260 overflow: 0.381 HPWL: 4441328
+[NesterovSolve] Iter:  270 overflow: 0.326 HPWL: 4458893
+[NesterovSolve] Iter:  280 overflow: 0.290 HPWL: 4480286
 [INFO GPL-0100] Timing-driven: executing resizer for reweighting nets.
 [INFO GPL-0101] Timing-driven: worst slack 1.39e-09
 [INFO GPL-0103] Timing-driven: weighted 35 nets.
-[NesterovSolve] Iter:  290 overflow: 0.270 HPWL: 4517654
+[NesterovSolve] Iter:  290 overflow: 0.270 HPWL: 4517633
 [NesterovSolve] Iter:  300 overflow: 0.235 HPWL: 4553354
-[NesterovSolve] Iter:  310 overflow: 0.204 HPWL: 4579957
+[NesterovSolve] Iter:  310 overflow: 0.204 HPWL: 4579926
 [INFO GPL-0100] Timing-driven: executing resizer for reweighting nets.
 [INFO GPL-0101] Timing-driven: worst slack 1.39e-09
 [INFO GPL-0103] Timing-driven: weighted 35 nets.
-[NesterovSolve] Iter:  320 overflow: 0.176 HPWL: 4601768
-[NesterovSolve] Iter:  330 overflow: 0.150 HPWL: 4633587
+[NesterovSolve] Iter:  320 overflow: 0.176 HPWL: 4601752
+[NesterovSolve] Iter:  330 overflow: 0.150 HPWL: 4633637
 [INFO GPL-0100] Timing-driven: executing resizer for reweighting nets.
 [INFO GPL-0101] Timing-driven: worst slack 1.39e-09
 [INFO GPL-0103] Timing-driven: weighted 35 nets.
-[NesterovSolve] Iter:  340 overflow: 0.122 HPWL: 4652410
-[NesterovSolve] Iter:  350 overflow: 0.101 HPWL: 4673183
-[NesterovSolve] Finished with Overflow: 0.098980
+[NesterovSolve] Iter:  340 overflow: 0.122 HPWL: 4652399
+[NesterovSolve] Iter:  350 overflow: 0.101 HPWL: 4673168
+[NesterovSolve] Finished with Overflow: 0.098904
 worst slack 1.37
-No differences found.
+Differences found at line 63.
+    - _276_ NOR2_X2 + PLACED ( 42145 10005 ) N ;
+    - _276_ NOR2_X2 + PLACED ( 42138 10000 ) N ;

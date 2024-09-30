@@ -82,6 +82,7 @@ void _dbGDSStructure::out(dbDiff& diff, char side, const char* field) const
 
 _dbGDSStructure::_dbGDSStructure(_dbDatabase* db)
 {
+  _name = nullptr;
 }
 
 _dbGDSStructure::_dbGDSStructure(_dbDatabase* db, const _dbGDSStructure& r)
