@@ -1666,6 +1666,9 @@ void dbNetwork::readDbNetlistAfter()
   makeTopCell();
   findConstantNets();
   checkLibertyCorners();
+  // we post process build hash maps to allow
+  // fast access to key data.
+  makeAccessHashes();
 }
 
 void dbNetwork::makeTopCell()
@@ -1692,6 +1695,32 @@ void dbNetwork::makeTopCell()
   while (port_iter->hasNext()) {
     Port* cur_port = port_iter->next();
     registerConcretePort(cur_port);
+  }
+}
+
+//
+// For fast access we set up hash tables
+// These are not part of the db schema and we build them on the fly
+// after reading in the database.
+//
+
+void dbNetwork::makeAccessHashes()
+{
+  for (auto dbm : block_->getModules()) {
+    for (auto mbt : dbm->getModBTerms()) {
+      dbm->addModBTermToHash(mbt);
+    }
+  }
+  for (auto mi : block_->getModInsts()) {
+    dbModule* module = mi->getParent();
+    module->addInstToHash(mi);
+    for (auto mit : mi->getModITerms()) {
+      mi->addModITermToHash(mit);
+    }
+  }
+  for (auto dbi : block_->getInsts()) {
+    dbModule* module = dbi->getModule();
+    module->addInstToHash(dbi);
   }
 }
 

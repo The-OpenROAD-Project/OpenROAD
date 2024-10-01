@@ -7763,6 +7763,8 @@ class dbModInst : public dbObject
 
   void RemoveUnusedPortsAndPins();
 
+  void addModITermToHash(dbModITerm* mod_iterm);
+
   static dbModInst* create(dbModule* parentModule,
                            dbModule* masterModule,
                            const char* name);
@@ -7830,6 +7832,10 @@ class dbModule : public dbObject
   // Adding an inst to a new module will remove it from its previous
   // module.
   void addInst(dbInst* inst);
+  // For performance look up
+  void addInstToHash(dbInst* inst);
+  void addInstToHash(dbModInst* inst);
+  void addModBTermToHash(dbModBTerm* modbterm);
 
   dbBlock* getOwner();
 

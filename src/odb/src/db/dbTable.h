@@ -111,6 +111,9 @@ class dbTable : public dbObjectTable, public dbIterator
     uint page = (uint) id >> _page_shift;
     uint offset = (uint) id & _page_mask;
 
+    if (!((((uint) id != 0) && (page < _page_cnt)))) {
+      printf("At error point\n");
+    }
     assert(((uint) id != 0) && (page < _page_cnt));
     T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
     assert(p->_oid & DB_ALLOC_BIT);

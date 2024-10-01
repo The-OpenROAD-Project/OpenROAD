@@ -437,7 +437,7 @@ void OpenRoad::writeCdl(const char* outFilename,
   }
 }
 
-void OpenRoad::readDb(const char* filename)
+void OpenRoad::readDb(const char* filename, bool hierarchy)
 {
   std::ifstream stream;
   stream.open(filename, std::ios::binary);
@@ -445,6 +445,11 @@ void OpenRoad::readDb(const char* filename)
     readDb(stream);
   } catch (const std::ios_base::failure& f) {
     logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
+  }
+  // treat this as a hierarchical network.
+  if (hierarchy) {
+    sta::dbSta* sta = getSta();
+    sta->getDbNetwork()->setHierarchy();
   }
 }
 

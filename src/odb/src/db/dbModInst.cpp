@@ -155,13 +155,11 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
   stream >> obj._master;
   stream >> obj._group_next;
   stream >> obj._group;
-  // User Code Begin >>
   dbBlock* block = (dbBlock*) (obj.getOwner());
   _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
   if (db->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._moditerms;
   }
-  // User Code End >>
   return stream;
 }
 
@@ -262,6 +260,8 @@ dbModInst* dbModInst::create(dbModule* parentModule,
   module->_modinsts = modinst->getOID();
   master->_mod_inst = modinst->getOID();
   block->_modinst_hash.insert(modinst);
+  // For fast access.
+  module->_modinst_hash[modinst->_name] = modinst->getOID();
   return (dbModInst*) modinst;
 }
 
@@ -305,6 +305,8 @@ void dbModInst::destroy(dbModInst* modinst)
     modinst->getGroup()->removeModInst(modinst);
   }
   dbProperty::destroyProperties(_modinst);
+  _dbModule* parent = (_dbModule*) (modinst->getParent());
+  parent->_modinst_hash.erase(modinst->getName());
   block->_modinst_hash.remove(_modinst);
   block->_modinst_tbl->destroy(_modinst);
 }
@@ -342,13 +344,20 @@ std::string dbModInst::getHierarchicalName() const
   return parent->getModInst()->getHierarchicalName() + "/" + inst_name;
 }
 
+void dbModInst::addModITermToHash(dbModITerm* mit)
+{
+  _dbModInst* obj = (_dbModInst*) this;
+  obj->_moditerm_hash[mit->getName()] = mit->getId();
+}
+
 dbModITerm* dbModInst::findModITerm(const char* name)
 {
-  dbSet<dbModITerm> moditerms = getModITerms();
-  for (dbModITerm* mod_iterm : moditerms) {
-    if (!strcmp(mod_iterm->getName(), name)) {
-      return mod_iterm;
-    }
+  _dbModInst* obj = (_dbModInst*) this;
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+  auto it = obj->_moditerm_hash.find(name);
+  if (it != obj->_moditerm_hash.end()) {
+    uint db_id = (*it).second;
+    return (dbModITerm*) par->_moditerm_tbl->getPtr(db_id);
   }
   return nullptr;
 }

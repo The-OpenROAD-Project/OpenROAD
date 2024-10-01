@@ -344,7 +344,7 @@ void Verilog2db::makeDbModule(
     if (last_idx != string::npos) {
       module_inst_name = module_inst_name.substr(last_idx + 1);
     }
-
+    // locally scoped name
     dbModInst* modinst
         = dbModInst::create(parent, module, module_inst_name.c_str());
 
