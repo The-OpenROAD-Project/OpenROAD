@@ -60,6 +60,7 @@
 #include "sta/Liberty.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PathRef.hh"
+#include "sta/PatternMatch.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
@@ -188,6 +189,7 @@ void dbSta::initVars(Tcl_Interp* tcl_interp,
   db_report_->setLogger(logger);
   db_network_->init(db, logger);
   db_cbk_ = std::make_unique<dbStaCbk>(this, logger);
+  buffer_use_analyser_ = std::make_unique<BufferUseAnalyser>();
 }
 
 void dbSta::updateComponentsState()
@@ -539,6 +541,11 @@ void dbSta::report_cell_usage(const bool verbose)
   }
 }
 
+BufferUse dbSta::getBufferUse(sta::LibertyCell* buffer)
+{
+  return buffer_use_analyser_->getBufferUse(buffer);
+}
+
 ////////////////////////////////////////////////////////////////
 
 // Network edit functions.
@@ -867,6 +874,28 @@ void dbStaCbk::inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type)
 void dbSta::highlight(PathRef* path)
 {
   path_renderer_->highlight(path);
+}
+
+////////////////////////////////////////////////////////////////
+
+BufferUseAnalyser::BufferUseAnalyser()
+{
+  clkbuf_pattern_
+      = std::make_unique<sta::PatternMatch>(".*CLKBUF.*",
+                                            /* is_regexp */ true,
+                                            /* nocase */ true,
+                                            /* Tcl_interp* */ nullptr);
+}
+
+BufferUse BufferUseAnalyser::getBufferUse(sta::LibertyCell* buffer)
+{
+  // is_clock_cell is a custom lib attribute that may not exist,
+  // so we also use the name pattern to help
+  if (buffer->isClockCell() || clkbuf_pattern_->match(buffer->name())) {
+    return CLOCK;
+  }
+
+  return DATA;
 }
 
 }  // namespace sta

@@ -104,7 +104,7 @@ using sta::Term;
 using sta::TimingArcSet;
 using sta::TimingArcSetSeq;
 using sta::TimingRole;
-;
+
 using sta::ArcDcalcResult;
 using sta::ArcDelayCalc;
 using sta::BfsBkwdIterator;
@@ -124,6 +124,9 @@ using sta::SearchPredNonReg2;
 using sta::stringPrint;
 using sta::VertexIterator;
 using sta::VertexOutEdgeIterator;
+
+using sta::BufferUse;
+using sta::CLOCK;
 
 Resizer::Resizer()
     : recover_power_(new RecoverPower(this)),
@@ -505,14 +508,25 @@ void Resizer::findBuffers()
 {
   if (buffer_cells_.empty()) {
     LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+
     while (lib_iter->hasNext()) {
       LibertyLibrary* lib = lib_iter->next();
+
       for (LibertyCell* buffer : *lib->buffers()) {
+        if (exclude_clock_buffers_) {
+          BufferUse buffer_use = sta_->getBufferUse(buffer);
+
+          if (buffer_use == CLOCK) {
+            continue;
+          }
+        }
+
         if (!dontUse(buffer) && isLinkCell(buffer)) {
           buffer_cells_.emplace_back(buffer);
         }
       }
     }
+
     delete lib_iter;
 
     if (buffer_cells_.empty()) {
@@ -523,6 +537,7 @@ void Resizer::findBuffers()
              return bufferDriveResistance(buffer1)
                     > bufferDriveResistance(buffer2);
            });
+
       buffer_lowest_drive_ = buffer_cells_[0];
     }
   }
@@ -2657,7 +2672,14 @@ void Resizer::repairNet(Net* net,
 void Resizer::repairClkNets(double max_wire_length)
 {
   resizePreamble();
+
+  // Use the buffers that were selected by CTS.
+  buffer_cells_ = clk_buffers_;
+
   repair_design_->repairClkNets(max_wire_length);
+
+  // Reset so that the next preamble select data buffers again.
+  buffer_cells_.clear();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2823,6 +2845,14 @@ void Resizer::repairHold(
     int max_passes,
     bool verbose)
 {
+  buffer_cells_.clear();
+
+  // Some technologies such as nangate45 don't have delay cells. Hence,
+  // until we have a better approach, it's better to consider clock buffers
+  // for hold violation repairing as these buffers' delay may be slighty
+  // higher and we'll need fewer insertions.
+  exclude_clock_buffers_ = false;
+
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
     opendp_->initMacrosAndGrid();
@@ -2833,6 +2863,10 @@ void Resizer::repairHold(
                            max_buffer_percent,
                            max_passes,
                            verbose);
+
+  // Reset buffer selection strategy for the subsequent RSZ operation.
+  exclude_clock_buffers_ = true;
+  buffer_cells_.clear();
 }
 
 void Resizer::repairHold(const Pin* end_pin,
@@ -2842,6 +2876,11 @@ void Resizer::repairHold(const Pin* end_pin,
                          float max_buffer_percent,
                          int max_passes)
 {
+  buffer_cells_.clear();
+
+  // See comments on previous method.
+  exclude_clock_buffers_ = false;
+
   resizePreamble();
   repair_hold_->repairHold(end_pin,
                            setup_margin,
@@ -2849,6 +2888,10 @@ void Resizer::repairHold(const Pin* end_pin,
                            allow_setup_violations,
                            max_buffer_percent,
                            max_passes);
+
+  // Ditto.
+  exclude_clock_buffers_ = true;
+  buffer_cells_.clear();
 }
 
 int Resizer::holdBufferCount() const

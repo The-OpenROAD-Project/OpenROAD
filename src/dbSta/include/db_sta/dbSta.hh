@@ -58,6 +58,7 @@ class dbStaReport;
 class dbStaCbk;
 class AbstractPathRenderer;
 class AbstractPowerDensityDataSource;
+class PatternMatch;
 
 using utl::Logger;
 
@@ -81,6 +82,23 @@ class dbStaState : public sta::StaState
 
  protected:
   dbSta* sta_ = nullptr;
+};
+
+enum BufferUse
+{
+  DATA,
+  CLOCK
+};
+
+class BufferUseAnalyser
+{
+ public:
+  BufferUseAnalyser();
+
+  BufferUse getBufferUse(sta::LibertyCell* buffer);
+
+ private:
+  std::unique_ptr<sta::PatternMatch> clkbuf_pattern_;
 };
 
 class dbSta : public Sta, public ord::OpenRoadObserver
@@ -172,6 +190,8 @@ class dbSta : public Sta, public ord::OpenRoadObserver
   InstType getInstanceType(odb::dbInst* inst);
   void report_cell_usage(bool verbose);
 
+  BufferUse getBufferUse(sta::LibertyCell* buffer);
+
   using Sta::netSlack;
   using Sta::replaceCell;
 
@@ -191,6 +211,8 @@ class dbSta : public Sta, public ord::OpenRoadObserver
   dbStaReport* db_report_ = nullptr;
   std::unique_ptr<dbStaCbk> db_cbk_;
   std::set<dbStaState*> sta_states_;
+
+  std::unique_ptr<BufferUseAnalyser> buffer_use_analyser_;
 
   std::unique_ptr<AbstractPathRenderer> path_renderer_;
   std::unique_ptr<AbstractPowerDensityDataSource> power_density_data_source_;
