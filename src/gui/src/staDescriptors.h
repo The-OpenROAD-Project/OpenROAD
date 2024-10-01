@@ -135,7 +135,7 @@ class LibertyPgPortDescriptor : public Descriptor
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
 
-  odb::dbMTerm* getMTerm(std::any object) const;
+  odb::dbMTerm* getMTerm(const std::any& object) const;
 };
 
 class CornerDescriptor : public Descriptor

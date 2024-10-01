@@ -204,7 +204,8 @@ Descriptor::Properties LibertyLibraryDescriptor::getProperties(
 
   SelectionSet corners;
   for (auto* corner : *sta_->corners()) {
-    for (const auto min_max : {sta::MinMax::min(), sta::MinMax::max()}) {
+    for (const sta::MinMax* min_max :
+         {sta::MinMax::min(), sta::MinMax::max()}) {
       const auto libs = corner->libertyLibraries(min_max);
       if (std::find(libs.begin(), libs.end(), library) != libs.end()) {
         corners.insert(gui->makeSelected(corner));
@@ -511,13 +512,13 @@ Descriptor::Properties LibertyPortDescriptor::getProperties(
     power_pin = power_pin_name;
   }
   if (power_pin.has_value()) {
-    props.push_back({"Related power pin", power_pin});
+    props.push_back({"Related power pin", std::move(power_pin)});
   }
   if (!ground_pin.has_value() && ground_pin_name != nullptr) {
     ground_pin = ground_pin_name;
   }
   if (ground_pin.has_value()) {
-    props.push_back({"Related ground pin", ground_pin});
+    props.push_back({"Related ground pin", std::move(ground_pin)});
   }
 
   return props;
@@ -679,7 +680,7 @@ bool LibertyPgPortDescriptor::getAllObjects(SelectionSet& objects) const
   return true;
 }
 
-odb::dbMTerm* LibertyPgPortDescriptor::getMTerm(std::any object) const
+odb::dbMTerm* LibertyPgPortDescriptor::getMTerm(const std::any& object) const
 {
   auto port = std::any_cast<sta::LibertyPgPort*>(object);
   odb::dbMaster* master = sta_->getDbNetwork()->staToDb(port->cell());
@@ -1052,7 +1053,7 @@ Descriptor::Properties ClockDescriptor::getProperties(std::any object) const
       source = gui->makeSelected(bterm);
     }
     if (source.has_value()) {
-      props.push_back({"Source", source});
+      props.push_back({"Source", std::move(source)});
     }
   }
 
