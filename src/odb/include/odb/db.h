@@ -1452,7 +1452,7 @@ class dbBlock : public dbObject
   ///
   /// Set the minimum routing layer
   ///
-  void setMinRoutingLayer(const int min_routing_layer);
+  void setMinRoutingLayer(int min_routing_layer);
 
   ///
   /// Get the maximum routing layer
@@ -1462,7 +1462,7 @@ class dbBlock : public dbObject
   ///
   /// Set the maximum routing layer
   ///
-  void setMaxRoutingLayer(const int max_routing_layer);
+  void setMaxRoutingLayer(int max_routing_layer);
 
   ///
   /// Set the minimum layer for clock
@@ -1472,7 +1472,7 @@ class dbBlock : public dbObject
   ///
   /// Set the minimum layer for clock
   ///
-  void setMinLayerForClock(const int min_layer_for_clock);
+  void setMinLayerForClock(int min_layer_for_clock);
 
   ///
   /// Set the maximum layer for clock
@@ -1482,7 +1482,7 @@ class dbBlock : public dbObject
   ///
   /// Set the maximum layer for clock
   ///
-  void setMaxLayerForClock(const int max_layer_for_clock);
+  void setMaxLayerForClock(int max_layer_for_clock);
 
   ///
   /// Get the extraction corner names
