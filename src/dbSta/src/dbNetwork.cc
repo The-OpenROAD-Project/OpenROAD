@@ -699,10 +699,25 @@ const char* dbNetwork::name(const Instance* instance) const
   dbInst* db_inst;
   dbModInst* mod_inst;
   staToDb(instance, db_inst, mod_inst);
+  std::string name;
   if (db_inst) {
-    return tmpStringCopy(db_inst->getConstName());
+    name = db_inst->getName();
   }
-  return tmpStringCopy(mod_inst->getName());
+  if (mod_inst) {
+    name = mod_inst->getName();
+  }
+  // TODO: remove long form of instance name.
+  // requires porting over pathName from Network.cc
+  // to dbNetwork.cc
+  /*
+  if (hierarchy_){
+    size_t last_idx = name.find_last_of('/');
+    if (last_idx != string::npos) {
+      name = name.substr(last_idx + 1);
+    }
+  }
+  */
+  return tmpStringCopy(name.c_str());
 }
 
 const char* dbNetwork::name(const Cell* cell) const
@@ -1347,13 +1362,22 @@ const char* dbNetwork::name(const Net* net) const
   dbModNet* modnet = nullptr;
   dbNet* dnet = nullptr;
   staToDb(net, dnet, modnet);
+  std::string name;
   if (dnet) {
-    const char* name = dnet->getConstName();
-    return tmpStringCopy(name);
+    name = dnet->getName();
   }
   if (modnet) {
-    std::string net_name = modnet->getName();
-    return tmpStringCopy(net_name.c_str());
+    name = modnet->getName();
+  }
+  if (hierarchy_) {
+    size_t last_idx = name.find_last_of('/');
+    if (last_idx != string::npos) {
+      name = name.substr(last_idx + 1);
+    }
+    return tmpStringCopy(name.c_str());
+  }
+  if (dnet || modnet) {
+    return tmpStringCopy(name.c_str());
   }
   return nullptr;
 }
@@ -1434,7 +1458,9 @@ void dbNetwork::visitConnectedPins(const Net* net,
       visitor(below_pin);
       // traverse along rest of net
       Net* below_net = this->net(below_pin);
-      visitConnectedPins(below_net, visitor, visited_nets);
+      if (below_net) {
+        visitConnectedPins(below_net, visitor, visited_nets);
+      }
     }
 
     // visit above nets

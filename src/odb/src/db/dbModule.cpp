@@ -369,10 +369,12 @@ dbSet<dbModNet> dbModule::getModNets()
 
 dbModNet* dbModule::getModNet(const char* net_name)
 {
-  for (auto mnet : getModNets()) {
-    if (!strcmp(net_name, mnet->getName())) {
-      return mnet;
-    }
+  _dbModule* module = (_dbModule*) this;
+  _dbBlock* block = (_dbBlock*) module->getOwner();
+  auto it = module->_modnet_hash.find(net_name);
+  if (it != module->_modnet_hash.end()) {
+    uint db_id = (*it).second;
+    return (dbModNet*) block->_modnet_tbl->getPtr(db_id);
   }
   return nullptr;
 }

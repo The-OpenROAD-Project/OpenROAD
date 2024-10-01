@@ -58,18 +58,6 @@ module clockgen (clk_i,
  output clk1_o;
  output clk2_o;
 
- wire _19_;
- wire _20_;
- wire _21_;
- wire _06_;
- wire _15_;
- wire _05_;
- wire _14_;
- wire _13_;
- wire _12_;
- wire _03_;
- wire _22_;
- wire _11_;
  wire [3:0] counter_q;
 
  INV_X1 \U1/_28_  (.A(rst_n_i),
@@ -133,25 +121,7 @@ module counter (clk_i,
  output [3:0] count_value_o;
  output count_valid_o;
 
- wire _38_;
- wire _39_;
- wire _40_;
- wire _42_;
  wire count_valid_q;
- wire _16_;
- wire _36_;
- wire _35_;
- wire _33_;
- wire _32_;
- wire _14_;
- wire _31_;
- wire _30_;
- wire _29_;
- wire _13_;
- wire _28_;
- wire _27_;
- wire _26_;
- wire _41_;
  wire [3:0] counter_q;
 
  INV_X1 \U2/_49_  (.A(_41_),
@@ -243,26 +213,7 @@ module counter-1 (clk_i,
  output [3:0] count_value_o;
  output count_valid_o;
 
- wire _38_;
- wire _39_;
- wire _40_;
- wire _42_;
  wire count_valid_q;
- wire _16_;
- wire _36_;
- wire _35_;
- wire _15_;
- wire _33_;
- wire _32_;
- wire _14_;
- wire _31_;
- wire _30_;
- wire _29_;
- wire _13_;
- wire _28_;
- wire _12_;
- wire _26_;
- wire _41_;
  wire [3:0] counter_q;
 
  INV_X1 \U3/_49_  (.A(_41_),

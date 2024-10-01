@@ -1,9 +1,8 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[INFO ODB-0128] Design: top
-[INFO ODB-0130]     Created 4 pins.
-[INFO ODB-0131]     Created 13 components and 59 component-terminals.
-[INFO ODB-0133]     Created 16 nets and 30 connections.
- (clk ^) r -0.03:1.91 f -0.04:1.91
+ (clk ^) r -0.03:1.91 f -0.03:1.91
 [INFO RSZ-0046] Found 1 endpoints with hold violations.
 [INFO RSZ-0032] Inserted 2 hold buffers.
- (clk ^) r 0.02:1.89 f 0.01:1.88
+ (clk ^) r 0.02:1.89 f 0.02:1.88
+Differences found at line 12.
+    .Z(net2));
+    .Z(u2z));

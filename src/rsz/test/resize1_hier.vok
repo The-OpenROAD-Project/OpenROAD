@@ -32,10 +32,6 @@ module u1 (in1,
  input clk3;
  output out;
 
- wire r2q;
- wire u2z;
- wire u1z;
- wire r1q;
 
  DFF_X2 \u1/r1  (.D(in1),
     .CK(clk1),

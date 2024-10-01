@@ -88,6 +88,7 @@ class _dbModule : public _dbObject
   std::unordered_map<std::string, uint> _dbinst_hash;
   std::unordered_map<std::string, uint> _modinst_hash;
   std::unordered_map<std::string, uint> _modbterm_hash;
+  std::unordered_map<std::string, uint> _modnet_hash;
   dbModulePortItr* _port_iter = nullptr;
   // User Code End Fields
 };
