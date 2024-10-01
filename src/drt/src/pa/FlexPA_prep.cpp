@@ -263,9 +263,7 @@ void FlexPA::genAPCosted(
       genAPOnTrack(coords, track_coords, rect_min + offset, rect_max - offset);
       break;
 
-    case (frAccessPointEnum::HalfGrid):
-      genAPOnTrack(coords, track_coords, rect_min + offset, rect_max - offset);
-      break;
+      // frAccessPointEnum::Halfgrid not defined
 
     case (frAccessPointEnum::Center):
       genAPCentered(
@@ -529,8 +527,7 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
   }
 
   // gen all full/half grid coords
-  int offset = is_macro_cell_pin ? hwidth : 0;
-  offset = !is_macro_cell_pin || !use_center_line ? offset : 0;
+  const int offset = is_macro_cell_pin && !use_center_line ? hwidth : 0;
   const int layer1_rect_min = is_layer1_horz ? gtl::yl(rect) : gtl::xl(rect);
   const int layer1_rect_max = is_layer1_horz ? gtl::yh(rect) : gtl::xh(rect);
   auto& layer1_coords = is_layer1_horz ? y_coords : x_coords;
@@ -553,7 +550,7 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
                   offset);
     }
   }
-  if (!is_macro_cell_pin || !use_center_line) {
+  if (!(is_macro_cell_pin && use_center_line)) {
     for (const auto cost : frDirEnums) {
       if (lower_type >= cost) {
         genAPCosted(cost,
