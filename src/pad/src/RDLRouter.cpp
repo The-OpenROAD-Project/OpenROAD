@@ -154,8 +154,8 @@ RDLRoute::RDLRoute(odb::dbITerm* source,
   std::stable_sort(terminals_.begin(),
                    terminals_.end(),
                    [&iterm_center](odb::dbITerm* lhs, odb::dbITerm* rhs) {
-                     const int lhs_cover = RDLRouter::isCoverTerm(lhs) ? 1 : 0;
-                     const int rhs_cover = RDLRouter::isCoverTerm(rhs) ? 1 : 0;
+                     const bool lhs_cover = RDLRouter::isCoverTerm(lhs);
+                     const bool rhs_cover = RDLRouter::isCoverTerm(rhs);
 
                      const auto lhs_dist = odb::Point::squaredDistance(
                          iterm_center, lhs->getBBox().center());
