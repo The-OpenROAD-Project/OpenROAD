@@ -37,6 +37,7 @@ record_tests {
   abstract_origin
   write_macro_placement
   smash_vias
+  floorplan_initialize
   #odb_man_tcl_check
   #odb_readme_msgs_check
 }
