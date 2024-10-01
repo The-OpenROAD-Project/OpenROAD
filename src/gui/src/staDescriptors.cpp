@@ -499,9 +499,11 @@ Descriptor::Properties LibertyPortDescriptor::getProperties(
   sta::LibertyCellPgPortIterator pg_port_iter(port->libertyCell());
   while (pg_port_iter.hasNext()) {
     auto* pg_port = pg_port_iter.next();
-    if (strcmp(pg_port->name(), power_pin_name) == 0) {
+    if (power_pin_name != nullptr
+        && strcmp(pg_port->name(), power_pin_name) == 0) {
       power_pin = gui->makeSelected(pg_port);
-    } else if (strcmp(pg_port->name(), ground_pin_name) == 0) {
+    } else if (ground_pin_name != nullptr
+               && strcmp(pg_port->name(), ground_pin_name) == 0) {
       ground_pin = gui->makeSelected(pg_port);
     }
   }
