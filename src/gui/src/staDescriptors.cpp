@@ -804,6 +804,12 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
     props.push_back({"Liberty cell", gui->makeSelected(lib_cell)});
   }
 
+  auto is_inf = [](double value) -> bool {
+    // mirrored from:
+    // https://github.com/The-OpenROAD-Project/OpenSTA/blob/20925bb00965c1199c45aca0318c2baeb4042c5a/liberty/Units.cc#L153
+    return abs(value) >= 0.1 * sta::INF;
+  };
+
   bool has_sdc_constraint = sdc->isConstrained(inst);
   PropertyList port_power_activity;
   PropertyList port_arrival_hold;
@@ -835,32 +841,36 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
       port_id = network->name(port);
     }
 
-    const std::string freq = Descriptor::convertUnits(power.activity());
-    const std::string activity_info = fmt::format("{:.4f}% at {}Hz from {}",
-                                                  100 * power.duty(),
-                                                  freq,
-                                                  power.originName());
-    port_power_activity.push_back({port_id, activity_info});
-
     if (is_lib_port) {
+      const std::string freq = Descriptor::convertUnits(power.activity());
+      const std::string activity_info = fmt::format("{:.2f}% at {}Hz from {}",
+                                                    100 * power.duty(),
+                                                    freq,
+                                                    power.originName());
+      port_power_activity.push_back({port_id, activity_info});
+
       const sta::Unit* timeunit = sta_->units()->timeUnit();
       const auto setup_arrival
           = sta_->pinArrival(pin, nullptr, sta::MinMax::max());
       port_arrival_setup.push_back(
           {port_id,
-           fmt::format("{} {}",
-                       timeunit->asString(setup_arrival),
-                       timeunit->scaledSuffix())});
+           is_inf(setup_arrival)
+               ? "None"
+               : fmt::format("{} {}",
+                             timeunit->asString(setup_arrival),
+                             timeunit->scaledSuffix())});
       const auto hold_arrival
           = sta_->pinArrival(pin, nullptr, sta::MinMax::min());
-      port_arrival_hold.push_back({port_id,
-                                   fmt::format("{} {}",
+      port_arrival_hold.push_back(
+          {port_id,
+           is_inf(setup_arrival) ? "None"
+                                 : fmt::format("{} {}",
                                                timeunit->asString(hold_arrival),
                                                timeunit->scaledSuffix())});
     }
   }
-  props.push_back({"Setup times", port_arrival_setup});
-  props.push_back({"Hold times", port_arrival_hold});
+  props.push_back({"Max arrival times", port_arrival_setup});
+  props.push_back({"Min arrival times", port_arrival_hold});
   props.push_back({"Port power activity", port_power_activity});
 
   PropertyList power;
