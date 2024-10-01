@@ -213,15 +213,6 @@ dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
   stream >> inst._iterms;
   stream >> inst._halo;
   stream >> inst.pin_access_idx_;
-  /*
-  // User Code Begin >>
-  if (inst.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    _dbBlock* block = (_dbBlock*) inst.getOwner();
-    _dbModule* module = ((_dbBlock*)block) -> _module_tbl ->
-  getPtr(inst._module); module -> _dbinst_hash[inst._name]=inst.getId();
-  }
-  */
-  // User Code End >>
 
   return stream;
 }

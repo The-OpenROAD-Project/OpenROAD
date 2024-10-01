@@ -340,10 +340,10 @@ std::string dbModInst::getHierarchicalName() const
   return parent->getModInst()->getHierarchicalName() + "/" + inst_name;
 }
 
-void dbModInst::addModITermToHash(dbModITerm* mit)
+void dbModInst::addModITermToHash(dbModITerm* mod_iterm)
 {
   _dbModInst* obj = (_dbModInst*) this;
-  obj->_moditerm_hash[mit->getName()] = mit->getId();
+  obj->_moditerm_hash[mod_iterm->getName()] = mod_iterm->getId();
 }
 
 dbModITerm* dbModInst::findModITerm(const char* name)
