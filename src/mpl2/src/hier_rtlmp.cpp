@@ -1035,6 +1035,14 @@ float HierRTLMP::computePinAccessBlockagesDepth(
     }
   }
 
+  if (std_cell_area == 0.0) {
+    for (auto& cluster : tree_->root->getChildren()) {
+      if (cluster->getClusterType() == MixedCluster) {
+        std_cell_area += cluster->getArea();
+      }
+    }
+  }
+
   const float macro_dominance_factor
       = tree_->macro_with_halo_area
         / (tree_->root->getWidth() * tree_->root->getHeight());
