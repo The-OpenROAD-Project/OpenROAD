@@ -524,6 +524,7 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbMetalWidthViaMap*>(
       new DbMetalWidthViaMapDescriptor(db_));
 
+  gui->registerDescriptor<sta::Corner*>(new CornerDescriptor(db_, sta));
   gui->registerDescriptor<sta::LibertyLibrary*>(
       new LibertyLibraryDescriptor(db_, sta));
   gui->registerDescriptor<sta::LibertyCell*>(
@@ -532,6 +533,8 @@ void MainWindow::init(sta::dbSta* sta)
       new LibertyPortDescriptor(db_, sta));
   gui->registerDescriptor<sta::LibertyPgPort*>(
       new LibertyPgPortDescriptor(db_, sta));
+  gui->registerDescriptor<sta::Instance*>(new StaInstanceDescriptor(db_, sta));
+  gui->registerDescriptor<sta::Clock*>(new ClockDescriptor(db_, sta));
 
   gui->registerDescriptor<BufferTree>(
       new BufferTreeDescriptor(db_,
