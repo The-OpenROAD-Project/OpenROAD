@@ -164,10 +164,12 @@ class GlobalRouter : public ant::GlobalRouteSource
   void setAdjustment(const float adjustment);
   void setMinRoutingLayer(const int min_layer);
   void setMaxRoutingLayer(const int max_layer);
-  int getMinRoutingLayer() const { return min_routing_layer_; }
-  int getMaxRoutingLayer() const { return max_routing_layer_; }
+  int getMinRoutingLayer();
+  int getMaxRoutingLayer();
   void setMinLayerForClock(const int min_layer);
   void setMaxLayerForClock(const int max_layer);
+  int getMinLayerForClock();
+  int getMaxLayerForClock();
   void setCriticalNetsPercentage(float critical_nets_percentage);
   void addLayerAdjustment(int layer, float reduction_percentage);
   void addRegionAdjustment(int min_x,
@@ -327,7 +329,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   void setCapacities(int min_routing_layer, int max_routing_layer);
   void initNetlist(std::vector<Net*>& nets);
   bool makeFastrouteNet(Net* net);
-  bool pinPositionsChanged(Net* net, std::multiset<RoutePt>& last_pos);
+  bool pinPositionsChanged(Net* net);
   bool newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos);
   std::vector<LayerId> findTransitionLayers();
   void adjustTransitionLayers(
@@ -344,7 +346,8 @@ class GlobalRouter : public ant::GlobalRouteSource
                                 int layer,
                                 float reduction_percentage);
   void applyObstructionAdjustment(const odb::Rect& obstruction,
-                                  odb::dbTechLayer* tech_layer);
+                                  odb::dbTechLayer* tech_layer,
+                                  bool is_macro = false);
   void addResourcesForPinAccess();
   int computeNetWirelength(odb::dbNet* db_net);
   void computeWirelength();
@@ -473,8 +476,6 @@ class GlobalRouter : public ant::GlobalRouteSource
 
   // Flow variables
   float adjustment_;
-  int min_routing_layer_;
-  int max_routing_layer_;
   int layer_for_guide_dimension_;
   int overflow_iterations_;
   int congestion_report_iter_step_;
@@ -489,8 +490,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   std::vector<RegionAdjustment> region_adjustments_;
 
   bool verbose_;
-  int min_layer_for_clock_;
-  int max_layer_for_clock_;
 
   // variables for random grt
   int seed_;

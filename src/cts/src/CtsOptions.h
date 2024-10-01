@@ -249,6 +249,9 @@ class CtsOptions
   float getDelayBufferDerate() const { return delayBufferDerate_; }
   void enableDummyLoad(bool dummyLoad) { dummyLoad_ = dummyLoad; }
   bool dummyLoadEnabled() const { return dummyLoad_; }
+  void setCtsLibrary(const char* name) { ctsLibrary_ = name; }
+  const char* getCtsLibrary() { return ctsLibrary_.c_str(); }
+  bool isCtsLibrarySet() { return !ctsLibrary_.empty(); }
 
  private:
   std::string clockNets_ = "";
@@ -307,6 +310,7 @@ class CtsOptions
   float sinkBufferMaxCapDerate_ = sinkBufferMaxCapDerateDefault_;
   bool dummyLoad_ = true;
   float delayBufferDerate_ = 1.0;  // no derate
+  std::string ctsLibrary_;
 };
 
 }  // namespace cts

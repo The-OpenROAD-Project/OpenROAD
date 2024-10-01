@@ -99,7 +99,9 @@ static void populateODBProperties(Descriptor::Properties& props,
   }
 }
 
-std::string Descriptor::convertUnits(const double value, const bool area)
+std::string Descriptor::convertUnits(const double value,
+                                     const bool area,
+                                     int digits)
 {
   double log_value = value;
   if (area) {
@@ -139,8 +141,7 @@ std::string Descriptor::convertUnits(const double value, const bool area)
     unit_scale *= unit_scale;
   }
 
-  const int precision = 3;
-  auto str = utl::to_numeric_string(value * unit_scale, precision);
+  auto str = utl::to_numeric_string(value * unit_scale, digits);
   str += " " + unit;
 
   return str;
@@ -546,6 +547,7 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
     props.push_back({"Module", gui->makeSelected(module)});
   }
   props.push_back({"Master", gui->makeSelected(inst->getMaster())});
+
   props.push_back(
       {"Description", sta_->getInstanceTypeText(sta_->getInstanceType(inst))});
   props.push_back({"Placement status", placed.getString()});
@@ -580,6 +582,11 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
   auto* region = inst->getRegion();
   if (region != nullptr) {
     props.push_back({"Region", gui->makeSelected(region)});
+  }
+
+  auto* sta_inst = sta_->getDbNetwork()->dbToSta(inst);
+  if (sta_inst != nullptr) {
+    props.push_back({"Timing/Power", gui->makeSelected(sta_inst)});
   }
 
   populateODBProperties(props, inst);

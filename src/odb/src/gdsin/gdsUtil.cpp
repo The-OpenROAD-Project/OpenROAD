@@ -166,7 +166,7 @@ std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(
     }
     int16_t layerNum = std::stoi(source.substr(0, slash_pos));
     int16_t dataType = std::stoi(source.substr(slash_pos + 1, at_pos));
-    layerMap[std::make_pair(layerNum, dataType)] = name;
+    layerMap[std::make_pair(layerNum, dataType)] = std::move(name);
   }
 
   return layerMap;

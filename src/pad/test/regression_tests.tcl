@@ -8,6 +8,7 @@ record_tests {
   make_corner_sites
   make_io_sites
   make_io_sites_different_sites
+  make_io_sites_rotations
   non_top_layer
   place_pad
   place_pad_with_bumps
@@ -25,6 +26,7 @@ record_tests {
   rdl_route
   rdl_route_ports
   rdl_route_failed
+  rdl_route_max_iterations
   rdl_route_assignments
   rdl_route_45
   rdl_route_45_cost
@@ -32,6 +34,9 @@ record_tests {
   rdl_route_via
   rdl_route_bump_via
   rdl_route_invalid
+  rdl_route_45_with_2port_bump
+  rdl_route_45_with_oct_bump
+  rdl_route_single_target
 
   skywater130_overlapping_filler
 

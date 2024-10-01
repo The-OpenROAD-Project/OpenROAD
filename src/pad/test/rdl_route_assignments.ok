@@ -1,5 +1,5 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[INFO ODB-0227] LEF file: Nangate45_io/dummy_pads.lef, created 25 library cells
+[INFO ODB-0227] LEF file: Nangate45_io/dummy_pads.lef, created 26 library cells
 [INFO ODB-0128] Design: soc_bsg_black_parrot
 [INFO ODB-0130]     Created 135 pins.
 [INFO ODB-0131]     Created 267 components and 2277 component-terminals.
@@ -288,4 +288,5 @@
 [INFO PAD-0116] Creating terminal for DVDD on metal10 at (2610.000um, 1815.000um) - (2655.000um, 1860.000um)
 [INFO PAD-0116] Creating terminal for DVDD on metal10 at (2450.000um, 2135.000um) - (2495.000um, 2180.000um)
 [INFO PAD-0005] Routing 1 nets
+[INFO PAD-0037] End of routing iteration 1: 100.0% complete
 No differences found.

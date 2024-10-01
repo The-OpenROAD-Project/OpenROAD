@@ -507,60 +507,6 @@ void FastRouteCore::addAdjustment(int x1,
   }
 }
 
-void FastRouteCore::applyVerticalAdjustments(const odb::Point& first_tile,
-                                             const odb::Point& last_tile,
-                                             int layer,
-                                             int first_tile_reduce,
-                                             int last_tile_reduce)
-{
-  for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
-    for (int y = first_tile.getY(); y < last_tile.getY(); y++) {
-      if (x == first_tile.getX()) {
-        int edge_cap = getEdgeCapacity(x, y, x, y + 1, layer);
-        edge_cap -= first_tile_reduce;
-        if (edge_cap < 0)
-          edge_cap = 0;
-        addAdjustment(x, y, x, y + 1, layer, edge_cap, true);
-      } else if (x == last_tile.getX()) {
-        int edge_cap = getEdgeCapacity(x, y, x, y + 1, layer);
-        edge_cap -= last_tile_reduce;
-        if (edge_cap < 0)
-          edge_cap = 0;
-        addAdjustment(x, y, x, y + 1, layer, edge_cap, true);
-      } else {
-        addAdjustment(x, y, x, y + 1, layer, 0, true);
-      }
-    }
-  }
-}
-
-void FastRouteCore::applyHorizontalAdjustments(const odb::Point& first_tile,
-                                               const odb::Point& last_tile,
-                                               int layer,
-                                               int first_tile_reduce,
-                                               int last_tile_reduce)
-{
-  for (int x = first_tile.getX(); x < last_tile.getX(); x++) {
-    for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
-      if (y == first_tile.getY()) {
-        int edge_cap = getEdgeCapacity(x, y, x + 1, y, layer);
-        edge_cap -= first_tile_reduce;
-        if (edge_cap < 0)
-          edge_cap = 0;
-        addAdjustment(x, y, x + 1, y, layer, edge_cap, true);
-      } else if (y == last_tile.getY()) {
-        int edge_cap = getEdgeCapacity(x, y, x + 1, y, layer);
-        edge_cap -= last_tile_reduce;
-        if (edge_cap < 0)
-          edge_cap = 0;
-        addAdjustment(x, y, x + 1, y, layer, edge_cap, true);
-      } else {
-        addAdjustment(x, y, x + 1, y, layer, 0, true);
-      }
-    }
-  }
-}
-
 void FastRouteCore::addVerticalAdjustments(
     const odb::Point& first_tile,
     const odb::Point& last_tile,
@@ -1147,17 +1093,15 @@ NetRouteMap FastRouteCore::run()
     if (total_overflow_ > 2000) {
       enlarge_ += ESTEP1;  // ENLARGE+(i-1)*ESTEP;
       cost_step = CSTEP1;
-      updateCongestionHistory(upType, stopDEC, max_adj);
     } else if (total_overflow_ < 500) {
       cost_step = CSTEP3;
       enlarge_ += ESTEP3;
       ripup_threshold = -1;
-      updateCongestionHistory(upType, stopDEC, max_adj);
     } else {
       cost_step = CSTEP2;
       enlarge_ += ESTEP2;
-      updateCongestionHistory(upType, stopDEC, max_adj);
     }
+    updateCongestionHistory(upType, stopDEC, max_adj);
 
     if (total_overflow_ > 15000 && maxOverflow > 400) {
       enlarge_ = std::max(x_grid_, y_grid_) / 30;
