@@ -155,11 +155,6 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
   stream >> obj._master;
   stream >> obj._group_next;
   stream >> obj._group;
-  dbBlock* block = (dbBlock*) (obj.getOwner());
-  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
-  if (db->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._moditerms;
-  }
   return stream;
 }
 
@@ -259,8 +254,10 @@ dbModInst* dbModInst::create(dbModule* parentModule,
   modinst->_module_next = module->_modinsts;
   module->_modinsts = modinst->getOID();
   master->_mod_inst = modinst->getOID();
-  block->_modinst_hash.insert(modinst);
-  // For fast access.
+  //
+  // Redundant (original code).
+  //  block->_modinst_hash.insert(modinst);
+  // For fast access we has name in module
   module->_modinst_hash[modinst->_name] = modinst->getOID();
   return (dbModInst*) modinst;
 }
@@ -307,7 +304,6 @@ void dbModInst::destroy(dbModInst* modinst)
   dbProperty::destroyProperties(_modinst);
   _dbModule* parent = (_dbModule*) (modinst->getParent());
   parent->_modinst_hash.erase(modinst->getName());
-  block->_modinst_hash.remove(_modinst);
   block->_modinst_tbl->destroy(_modinst);
 }
 

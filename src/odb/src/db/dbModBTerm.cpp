@@ -175,16 +175,14 @@ dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
   if (obj.getDatabase()->isSchema(db_schema_hier_port_removal)) {
     stream >> obj._prev_entry;
   }
-  /*
   // User Code Begin >>
   dbBlock* block = (dbBlock*) (obj.getOwner());
-  _dbModule* module = ((_dbBlock*)block) -> _module_tbl -> getPtr(obj._parent);
+  _dbModule* module = ((_dbBlock*) block)->_module_tbl->getPtr(obj._parent);
   _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
   if (db->isSchema(db_schema_update_hierarchy)) {
-    module -> _modbterm_hash[obj._name]=obj.getId();
+    module->_modbterm_hash[obj._name] = obj.getId();
   }
   // User Code End >>
-  */
   return stream;
 }
 

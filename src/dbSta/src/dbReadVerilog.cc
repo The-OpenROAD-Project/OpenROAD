@@ -336,15 +336,18 @@ void Verilog2db::makeDbModule(
   if (parent == nullptr) {
     module = block_->getTopModule();
   } else {
+    // This uniquifies the cell
     module = makeUniqueDbModule(network_->name(cell));
     inst_module_vec.emplace_back(inst, parent);
-
+    // Strip out the full hiearchical name. We are now
+    // storing the module instances in the scope of their
+    // owner
     std::string module_inst_name = network_->name(inst);
     size_t last_idx = module_inst_name.find_last_of('/');
     if (last_idx != string::npos) {
       module_inst_name = module_inst_name.substr(last_idx + 1);
     }
-    // locally scoped name
+
     dbModInst* modinst
         = dbModInst::create(parent, module, module_inst_name.c_str());
 
