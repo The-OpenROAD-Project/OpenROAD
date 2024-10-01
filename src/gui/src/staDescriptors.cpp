@@ -857,9 +857,9 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
           = is_inf(setup_arrival)
                 ? "None"
                 : fmt::format(
-                      "{} {}",
-                      timeunit->asString(setup_arrival, float_precision_),
-                      timeunit->scaledSuffix());
+                    "{} {}",
+                    timeunit->asString(setup_arrival, float_precision_),
+                    timeunit->scaledSuffix());
       port_arrival_setup.push_back({port_id, setup_text});
       const auto hold_arrival
           = sta_->pinArrival(pin, nullptr, sta::MinMax::min());
@@ -867,9 +867,9 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
           = is_inf(hold_arrival)
                 ? "None"
                 : fmt::format(
-                      "{} {}",
-                      timeunit->asString(hold_arrival, float_precision_),
-                      timeunit->scaledSuffix());
+                    "{} {}",
+                    timeunit->asString(hold_arrival, float_precision_),
+                    timeunit->scaledSuffix());
       port_arrival_hold.push_back({port_id, hold_text});
     }
   }
