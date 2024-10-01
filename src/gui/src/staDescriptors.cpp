@@ -853,23 +853,24 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
       const sta::Unit* timeunit = sta_->units()->timeUnit();
       const auto setup_arrival
           = sta_->pinArrival(pin, nullptr, sta::MinMax::max());
-      port_arrival_setup.push_back(
-          {port_id,
-           is_inf(setup_arrival)
-               ? "None"
-               : fmt::format(
-                     "{} {}",
-                     timeunit->asString(setup_arrival, float_precision_),
-                     timeunit->scaledSuffix())});
+      const std::string setup_text
+          = is_inf(setup_arrival)
+                ? "None"
+                : fmt::format(
+                      "{} {}",
+                      timeunit->asString(setup_arrival, float_precision_),
+                      timeunit->scaledSuffix());
+      port_arrival_setup.push_back({port_id, setup_text});
       const auto hold_arrival
           = sta_->pinArrival(pin, nullptr, sta::MinMax::min());
-      port_arrival_hold.push_back(
-          {port_id,
-           is_inf(setup_arrival)
-               ? "None"
-               : fmt::format("{} {}",
-                             timeunit->asString(hold_arrival, float_precision_),
-                             timeunit->scaledSuffix())});
+      const std::string hold_text
+          = is_inf(hold_arrival)
+                ? "None"
+                : fmt::format(
+                      "{} {}",
+                      timeunit->asString(hold_arrival, float_precision_),
+                      timeunit->scaledSuffix());
+      port_arrival_hold.push_back({port_id, hold_text});
     }
   }
   props.push_back({"Max arrival times", port_arrival_setup});
