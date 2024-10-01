@@ -173,7 +173,7 @@ bool MBFF::IsClockPin(odb::dbITerm* iterm)
 {
   const bool yes = (iterm->getSigType() == odb::dbSigType::CLOCK);
   const sta::Pin* pin = network_->dbToSta(iterm);
-  return yes || sta_->isClock(pin);
+  return yes || network_->isRegClkPin(pin);
 }
 
 bool MBFF::ClockOn(odb::dbInst* inst)
