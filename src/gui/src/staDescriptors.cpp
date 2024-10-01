@@ -842,7 +842,8 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
     }
 
     if (is_lib_port) {
-      const std::string freq = Descriptor::convertUnits(power.activity());
+      const std::string freq
+          = Descriptor::convertUnits(power.activity(), false, float_precision_);
       const std::string activity_info = fmt::format("{:.2f}% at {}Hz from {}",
                                                     100 * power.duty(),
                                                     freq,
@@ -856,17 +857,19 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
           {port_id,
            is_inf(setup_arrival)
                ? "None"
-               : fmt::format("{} {}",
-                             timeunit->asString(setup_arrival),
-                             timeunit->scaledSuffix())});
+               : fmt::format(
+                     "{} {}",
+                     timeunit->asString(setup_arrival, float_precision_),
+                     timeunit->scaledSuffix())});
       const auto hold_arrival
           = sta_->pinArrival(pin, nullptr, sta::MinMax::min());
       port_arrival_hold.push_back(
           {port_id,
-           is_inf(setup_arrival) ? "None"
-                                 : fmt::format("{} {}",
-                                               timeunit->asString(hold_arrival),
-                                               timeunit->scaledSuffix())});
+           is_inf(setup_arrival)
+               ? "None"
+               : fmt::format("{} {}",
+                             timeunit->asString(hold_arrival, float_precision_),
+                             timeunit->scaledSuffix())});
     }
   }
   props.push_back({"Max arrival times", port_arrival_setup});
@@ -876,8 +879,10 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
   PropertyList power;
   for (auto* corner : *sta_->corners()) {
     const auto power_info = sta_->power(inst, corner);
-    power.push_back({gui->makeSelected(corner),
-                     Descriptor::convertUnits(power_info.total()) + "W"});
+    power.push_back(
+        {gui->makeSelected(corner),
+         Descriptor::convertUnits(power_info.total(), false, float_precision_)
+             + "W"});
   }
   props.push_back({"Total power", power});
 

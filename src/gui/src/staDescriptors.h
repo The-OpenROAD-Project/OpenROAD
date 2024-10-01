@@ -180,6 +180,8 @@ class StaInstanceDescriptor : public Descriptor
  private:
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
+
+  static constexpr int float_precision_ = 2;
 };
 
 class ClockDescriptor : public Descriptor

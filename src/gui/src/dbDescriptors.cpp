@@ -99,7 +99,9 @@ static void populateODBProperties(Descriptor::Properties& props,
   }
 }
 
-std::string Descriptor::convertUnits(const double value, const bool area)
+std::string Descriptor::convertUnits(const double value,
+                                     const bool area,
+                                     int digits)
 {
   double log_value = value;
   if (area) {
@@ -139,8 +141,7 @@ std::string Descriptor::convertUnits(const double value, const bool area)
     unit_scale *= unit_scale;
   }
 
-  const int precision = 3;
-  auto str = utl::to_numeric_string(value * unit_scale, precision);
+  auto str = utl::to_numeric_string(value * unit_scale, digits);
   str += " " + unit;
 
   return str;
