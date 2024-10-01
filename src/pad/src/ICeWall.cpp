@@ -1824,7 +1824,8 @@ void ICeWall::routeRDL(odb::dbTechLayer* layer,
                        int width,
                        int spacing,
                        bool allow45,
-                       float turn_penalty)
+                       float turn_penalty,
+                       int max_iterations)
 {
   if (layer == nullptr) {
     logger_->error(utl::PAD, 22, "Layer must be specified to perform routing.");
@@ -1839,7 +1840,8 @@ void ICeWall::routeRDL(odb::dbTechLayer* layer,
                                         width,
                                         spacing,
                                         allow45,
-                                        turn_penalty);
+                                        turn_penalty,
+                                        max_iterations);
   if (router_gui_ != nullptr) {
     router_gui_->setRouter(router_.get());
   }
