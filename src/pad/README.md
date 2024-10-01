@@ -369,6 +369,7 @@ rdl_route
     [-spacing spacing]
     [-turn_penalty penalty]
     [-allow45]
+    [-max_iterations max_iterations]
     nets
 ```
 

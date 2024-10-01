@@ -37,6 +37,7 @@
 
 #include <boost/icl/interval_set.hpp>
 
+#include "RDLGui.h"
 #include "RDLRouter.h"
 #include "Utilities.h"
 #include "odb/db.h"
