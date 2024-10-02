@@ -557,7 +557,7 @@ class FlexPA
 
   int getFlatIdx(int idx_1, int idx_2, int idx_2_dim);
 
-  void getNestedIdx(int flat_idx, int& idx_1, int& idx_2, int idx_2_dim);
+  std::pair<int, int> getNestedIdx(int flat_idx, int idx_2_dim);
 
   int getFlatEdgeIdx(int prev_idx_1,
                      int prev_idx_2,
