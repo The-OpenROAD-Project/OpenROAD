@@ -45,6 +45,7 @@
 
 #include <algorithm>  // min
 #include <mutex>
+#include <regex>
 
 #include "AbstractPathRenderer.h"
 #include "AbstractPowerDensityDataSource.h"
@@ -505,6 +506,14 @@ std::map<dbSta::InstType, dbSta::TypeStats> dbSta::countInstancesByType()
   return inst_type_stats;
 }
 
+std::string toLowerCase(std::string str)
+{
+  std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
+    return std::tolower(c);
+  });
+  return str;
+}
+
 void dbSta::report_cell_usage(const bool verbose)
 {
   auto instances_types = countInstancesByType();
@@ -522,6 +531,11 @@ void dbSta::report_cell_usage(const bool verbose)
     logger_->report(
         format, type_name, stats.count, stats.area / area_to_microns);
     total_area += stats.area;
+
+    std::regex regexp(" |/|-");
+    logger_->metric("design__instance__count__class:"
+                        + toLowerCase(regex_replace(type_name, regexp, "_")),
+                    stats.count);
   }
   logger_->report(format, "Total", total_usage, total_area / area_to_microns);
 
