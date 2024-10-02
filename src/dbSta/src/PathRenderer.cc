@@ -34,11 +34,11 @@ void PathRenderer::drawObjects(gui::Painter& painter)
   }
   dbNetwork* network = sta_->getDbNetwork();
   for (unsigned int i = 0; i < path_->size(); i++) {
-    PathRef* path = path_->path(i);
+    const PathRef* path = path_->path(i);
     TimingArc* prev_arc = path_->prevArc(i);
     // Draw lines for wires on the path.
     if (prev_arc && prev_arc->role()->isWire()) {
-      PathRef* prev_path = path_->path(i - 1);
+      const PathRef* prev_path = path_->path(i - 1);
       const Pin* pin = path->pin(sta_);
       const Pin* prev_pin = prev_path->pin(sta_);
       odb::Point pt1 = network->location(pin);
