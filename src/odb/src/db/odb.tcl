@@ -555,7 +555,7 @@ proc write_macro_placement { args } {
   close $file
 }
 
-sta::define_cmd_args "define_layer_range" { layers }
+sta::define_cmd_args "define_layer_range" { layers };# checker off
 
 proc define_layer_range { layers } {
   set layer_range [grt::parse_layer_range "-layers" $layers]
@@ -577,7 +577,7 @@ proc define_layer_range { layers } {
   }
 }
 
-sta::define_cmd_args "define_clock_layer_range" { layers }
+sta::define_cmd_args "define_clock_layer_range" { layers };# checker off
 
 proc define_clock_layer_range { layers } {
   set layer_range [grt::parse_layer_range "-clock_layers" $layers]
