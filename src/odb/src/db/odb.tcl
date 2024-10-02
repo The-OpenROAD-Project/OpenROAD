@@ -555,7 +555,7 @@ proc write_macro_placement { args } {
   close $file
 }
 
-sta::define_cmd_args "define_layer_range" { layers }
+sta::define_cmd_args "define_layer_range" { layers };# checker off
 
 proc define_layer_range { layers } {
   set layer_range [grt::parse_layer_range "-layers" $layers]
@@ -577,7 +577,7 @@ proc define_layer_range { layers } {
   }
 }
 
-sta::define_cmd_args "define_clock_layer_range" { layers }
+sta::define_cmd_args "define_clock_layer_range" { layers };# checker off
 
 proc define_clock_layer_range { layers } {
   set layer_range [grt::parse_layer_range "-clock_layers" $layers]
@@ -619,7 +619,7 @@ proc set_routing_layers { args } {
   }
 }
 
-sta::define_cmd_args "set_min_layer" { minLayer }
+sta::define_cmd_args "set_min_layer" { minLayer };# checker off
 
 proc set_min_layer { args } {
   sta::parse_key_args "set_min_layer" args keys {} flags {}
@@ -634,7 +634,7 @@ proc set_min_layer { args } {
   $block setMinRoutingLayer $minLayer
 }
 
-sta::define_cmd_args "set_max_layer" { maxLayer }
+sta::define_cmd_args "set_max_layer" { maxLayer };# checker off
 
 proc set_max_layer { args } {
   sta::parse_key_args "set_max_layer" args keys {} flags {}

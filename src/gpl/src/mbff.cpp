@@ -2383,11 +2383,11 @@ void MBFF::ReadPaths()
   for (auto& path_end : path_ends) {
     sta::Path* path = path_end->path();
     sta::PathExpanded expanded(path, sta_);
-    sta::PathRef* pathref_front = expanded.path(expanded.startIndex());
+    const sta::PathRef* pathref_front = expanded.path(expanded.startIndex());
     sta::Vertex* pathvertex_front = pathref_front->vertex(sta_);
     sta::Pin* pathpin_front = pathvertex_front->pin();
 
-    sta::PathRef* pathref_back
+    const sta::PathRef* pathref_back
         = expanded.path(static_cast<int>(expanded.size()) - 1);
     sta::Vertex* pathvertex_back = pathref_back->vertex(sta_);
     sta::Pin* pathpin_back = pathvertex_back->pin();
