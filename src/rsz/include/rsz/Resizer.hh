@@ -434,7 +434,8 @@ class Resizer : public dbStaState
   void findBuffers();
   bool isLinkCell(LibertyCell* cell);
   void findTargetLoads();
-  void balanceBin(const vector<odb::dbInst*>& bin);
+  void balanceBin(const vector<odb::dbInst*>& bin,
+                  const std::set<odb::dbSite*>& base_sites);
 
   //==============================
   // APIs for gate cloning

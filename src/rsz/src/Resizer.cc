@@ -414,7 +414,8 @@ void Resizer::ensureLevelDrvrVertices()
   }
 }
 
-void Resizer::balanceBin(const vector<odb::dbInst*>& bin)
+void Resizer::balanceBin(const vector<odb::dbInst*>& bin,
+                         const std::set<odb::dbSite*>& base_sites)
 {
   // Maps sites to the total width of all instances using that site
   map<odb::dbSite*, uint64_t> sites;
@@ -423,6 +424,13 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin)
     auto master = inst->getMaster();
     sites[master->getSite()] += master->getWidth();
     total_width += master->getWidth();
+  }
+
+  // Add empty base_sites
+  for (odb::dbSite* site : base_sites) {
+    if (sites.find(site) == sites.end()) {
+      sites[site] = 0;
+    }
   }
 
   const double imbalance_factor = 0.8;
@@ -481,6 +489,15 @@ void Resizer::balanceRowUsage()
   const int x_step = core_width / num_bins + 1;
   const int y_step = core_height / num_bins + 1;
 
+  std::set<odb::dbSite*> base_sites;
+  for (odb::dbRow* row : block_->getRows()) {
+    odb::dbSite* site = row->getSite();
+    if (site->hasRowPattern()) {
+      continue;
+    }
+    base_sites.insert(site);
+  }
+
   for (auto inst : block_->getInsts()) {
     auto master = inst->getMaster();
     auto site = master->getSite();
@@ -497,7 +514,7 @@ void Resizer::balanceRowUsage()
 
   for (int x = 0; x < num_bins; ++x) {
     for (int y = 0; y < num_bins; ++y) {
-      balanceBin(grid[x][y]);
+      balanceBin(grid[x][y], base_sites);
     }
   }
 }
