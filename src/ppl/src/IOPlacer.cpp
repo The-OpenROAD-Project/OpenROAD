@@ -2242,9 +2242,9 @@ void IOPlacer::checkPinPlacement()
     if (layer_positions_map[layer].empty()) {
       layer_positions_map[layer].push_back(pin.getPosition());
     } else {
-      odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
       for (odb::Point& pos : layer_positions_map[layer]) {
         if (pos == pin.getPosition()) {
+          odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
           logger_->warn(
               PPL,
               106,
