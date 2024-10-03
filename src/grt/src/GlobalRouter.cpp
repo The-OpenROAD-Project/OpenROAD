@@ -341,10 +341,10 @@ void GlobalRouter::updateDbCongestion()
   heatmap_->update();
 }
 
-void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
-                                  int iterations,
-                                  float ratio_margin,
-                                  const int num_threads)
+int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
+                                 int iterations,
+                                 float ratio_margin,
+                                 const int num_threads)
 {
   if (!initialized_ || haveDetailedRoutes()) {
     int min_layer, max_layer;
@@ -362,7 +362,7 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       logger_->metric("antenna_diodes_count", total_diodes_count_);
       logger_->warn(
           GRT, 246, "No diode with LEF class CORE ANTENNACELL found.");
-      return;
+      return 0;
     }
   }
   if (repair_antennas_->diffArea(diode_mterm) == 0.0) {
@@ -412,6 +412,7 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
   }
   logger_->metric("antenna_diodes_count", total_diodes_count_);
   saveGuides();
+  return total_diodes_count_;
 }
 
 void GlobalRouter::makeNetWires()

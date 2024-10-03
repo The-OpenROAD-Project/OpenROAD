@@ -184,11 +184,11 @@ route_layer_lengths(odb::dbNet* db_net)
   return getGlobalRouter()->routeLayerLengths(db_net);
 }
 
-void
+int
 repair_antennas(odb::dbMTerm* diode_mterm, int iterations, float ratio_margin)
 {
   const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
-  getGlobalRouter()->repairAntennas(diode_mterm, iterations, ratio_margin, num_threads);
+  return getGlobalRouter()->repairAntennas(diode_mterm, iterations, ratio_margin, num_threads);
 }
 
 void
