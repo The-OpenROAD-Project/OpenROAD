@@ -104,7 +104,7 @@ using sta::Term;
 using sta::TimingArcSet;
 using sta::TimingArcSetSeq;
 using sta::TimingRole;
-;
+
 using sta::ArcDcalcResult;
 using sta::ArcDelayCalc;
 using sta::BfsBkwdIterator;
@@ -124,6 +124,9 @@ using sta::SearchPredNonReg2;
 using sta::stringPrint;
 using sta::VertexIterator;
 using sta::VertexOutEdgeIterator;
+
+using sta::BufferUse;
+using sta::CLOCK;
 
 Resizer::Resizer()
     : recover_power_(new RecoverPower(this)),
@@ -411,7 +414,8 @@ void Resizer::ensureLevelDrvrVertices()
   }
 }
 
-void Resizer::balanceBin(const vector<odb::dbInst*>& bin)
+void Resizer::balanceBin(const vector<odb::dbInst*>& bin,
+                         const std::set<odb::dbSite*>& base_sites)
 {
   // Maps sites to the total width of all instances using that site
   map<odb::dbSite*, uint64_t> sites;
@@ -420,6 +424,13 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin)
     auto master = inst->getMaster();
     sites[master->getSite()] += master->getWidth();
     total_width += master->getWidth();
+  }
+
+  // Add empty base_sites
+  for (odb::dbSite* site : base_sites) {
+    if (sites.find(site) == sites.end()) {
+      sites[site] = 0;
+    }
   }
 
   const double imbalance_factor = 0.8;
@@ -431,6 +442,9 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin)
         break;
       }
       if (inst->getMaster()->getSite() == site) {
+        continue;
+      }
+      if (inst->getPlacementStatus().isFixed() || inst->isDoNotTouch()) {
         continue;
       }
       Instance* sta_inst = db_network_->dbToSta(inst);
@@ -475,6 +489,15 @@ void Resizer::balanceRowUsage()
   const int x_step = core_width / num_bins + 1;
   const int y_step = core_height / num_bins + 1;
 
+  std::set<odb::dbSite*> base_sites;
+  for (odb::dbRow* row : block_->getRows()) {
+    odb::dbSite* site = row->getSite();
+    if (site->hasRowPattern()) {
+      continue;
+    }
+    base_sites.insert(site);
+  }
+
   for (auto inst : block_->getInsts()) {
     auto master = inst->getMaster();
     auto site = master->getSite();
@@ -491,7 +514,7 @@ void Resizer::balanceRowUsage()
 
   for (int x = 0; x < num_bins; ++x) {
     for (int y = 0; y < num_bins; ++y) {
-      balanceBin(grid[x][y]);
+      balanceBin(grid[x][y], base_sites);
     }
   }
 }
@@ -502,14 +525,25 @@ void Resizer::findBuffers()
 {
   if (buffer_cells_.empty()) {
     LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+
     while (lib_iter->hasNext()) {
       LibertyLibrary* lib = lib_iter->next();
+
       for (LibertyCell* buffer : *lib->buffers()) {
+        if (exclude_clock_buffers_) {
+          BufferUse buffer_use = sta_->getBufferUse(buffer);
+
+          if (buffer_use == CLOCK) {
+            continue;
+          }
+        }
+
         if (!dontUse(buffer) && isLinkCell(buffer)) {
           buffer_cells_.emplace_back(buffer);
         }
       }
     }
+
     delete lib_iter;
 
     if (buffer_cells_.empty()) {
@@ -520,6 +554,7 @@ void Resizer::findBuffers()
              return bufferDriveResistance(buffer1)
                     > bufferDriveResistance(buffer2);
            });
+
       buffer_lowest_drive_ = buffer_cells_[0];
     }
   }
@@ -2654,7 +2689,14 @@ void Resizer::repairNet(Net* net,
 void Resizer::repairClkNets(double max_wire_length)
 {
   resizePreamble();
+
+  // Use the buffers that were selected by CTS.
+  buffer_cells_ = clk_buffers_;
+
   repair_design_->repairClkNets(max_wire_length);
+
+  // Reset so that the next preamble select data buffers again.
+  buffer_cells_.clear();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2820,6 +2862,14 @@ void Resizer::repairHold(
     int max_passes,
     bool verbose)
 {
+  buffer_cells_.clear();
+
+  // Some technologies such as nangate45 don't have delay cells. Hence,
+  // until we have a better approach, it's better to consider clock buffers
+  // for hold violation repairing as these buffers' delay may be slighty
+  // higher and we'll need fewer insertions.
+  exclude_clock_buffers_ = false;
+
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
     opendp_->initMacrosAndGrid();
@@ -2830,6 +2880,10 @@ void Resizer::repairHold(
                            max_buffer_percent,
                            max_passes,
                            verbose);
+
+  // Reset buffer selection strategy for the subsequent RSZ operation.
+  exclude_clock_buffers_ = true;
+  buffer_cells_.clear();
 }
 
 void Resizer::repairHold(const Pin* end_pin,
@@ -2839,6 +2893,11 @@ void Resizer::repairHold(const Pin* end_pin,
                          float max_buffer_percent,
                          int max_passes)
 {
+  buffer_cells_.clear();
+
+  // See comments on previous method.
+  exclude_clock_buffers_ = false;
+
   resizePreamble();
   repair_hold_->repairHold(end_pin,
                            setup_margin,
@@ -2846,6 +2905,10 @@ void Resizer::repairHold(const Pin* end_pin,
                            allow_setup_violations,
                            max_buffer_percent,
                            max_passes);
+
+  // Ditto.
+  exclude_clock_buffers_ = true;
+  buffer_cells_.clear();
 }
 
 int Resizer::holdBufferCount() const

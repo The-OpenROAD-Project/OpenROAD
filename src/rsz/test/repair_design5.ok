@@ -4,7 +4,7 @@
 [INFO ODB-0131]     Created 36 components and 216 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 72 connections.
 [INFO ODB-0133]     Created 2 nets and 72 connections.
-[INFO RSZ-0058] Using max wire length 527um.
+[INFO RSZ-0058] Using max wire length 530um.
 [INFO RSZ-0035] Found 1 fanout violations.
 [INFO RSZ-0038] Inserted 4 buffers in 1 nets.
 [INFO RSZ-0039] Resized 3 instances.
@@ -18,7 +18,7 @@ Instance drvr
  Output pins:
   Q output net0
   QN output (unconnected)
-[INFO RSZ-0058] Using max wire length 527um.
+[INFO RSZ-0058] Using max wire length 530um.
 [INFO RSZ-0039] Resized 1 instances.
 Instance drvr
  Cell: DFF_X2

@@ -94,13 +94,14 @@ class MBFF
     sta::LibertyPort* q;
     sta::LibertyPort* qn;
   };
+  using Mask = std::array<int, 7>;
   using DataToOutputsMap = std::map<sta::LibertyPort*, FlopOutputs>;
   DataToOutputsMap GetPinMapping(odb::dbInst* tray);
 
   // MBFF functions
   float GetDist(const Point& a, const Point& b);
   float GetDistAR(const Point& a, const Point& b, float AR);
-  int GetRows(int slot_cnt, std::vector<int> array_mask);
+  int GetRows(int slot_cnt, const Mask& array_mask);
   int GetBitCnt(int bit_idx);
   int GetBitIdx(int bit_cnt);
 
@@ -143,16 +144,16 @@ class MBFF
               sta::FuncExpr* expr2,
               odb::dbInst* inst2);
   int GetMatchingFunc(sta::FuncExpr* expr, odb::dbInst* inst, bool create_new);
-  std::vector<int> GetArrayMask(odb::dbInst* inst, bool isTray);
+  Mask GetArrayMask(odb::dbInst* inst, bool isTray);
 
   Tray GetOneBit(const Point& pt);
-  Point GetTrayCenter(std::vector<int> array_mask, int idx);
+  Point GetTrayCenter(const Mask& array_mask, int idx);
   // get slots w.r.t. tray center
   void GetSlots(const Point& tray,
                 int rows,
                 int cols,
                 std::vector<Point>& slots,
-                std::vector<int> array_mask);
+                const Mask& array_mask);
 
   // one iteration of K-Means++ for starting tray generation
   Flop GetNewFlop(const std::vector<Flop>& prob_dist, float tot_dist);
@@ -165,7 +166,7 @@ class MBFF
   void RunMultistart(std::vector<std::vector<Tray>>& trays,
                      const std::vector<Flop>& flops,
                      std::vector<std::vector<std::vector<Tray>>>& start_trays,
-                     std::vector<int> array_mask);
+                     const Mask& array_mask);
 
   // get silhouette metric for a run of multistart
   float GetSilh(const std::vector<Flop>& flops,
@@ -195,7 +196,7 @@ class MBFF
                             int sz,
                             int iter,
                             std::vector<std::pair<int, int>>& cluster,
-                            std::vector<int> array_mask);
+                            const Mask& array_mask);
 
   /* MODIFIED ILP for fast MBFF clustering (compliments pointset decomposition
   results) minimize sum(alpha * tray_costs + occ(i) * (slot_disp_x(i) +
@@ -205,24 +206,24 @@ class MBFF
                 std::vector<std::pair<int, int>>& final_flop_to_slot,
                 float alpha,
                 float beta,
-                std::vector<int> array_mask);
+                const Mask& array_mask);
   // calculate beta (1.00) * sum(relative displacements)
   float GetPairDisplacements();
   // place trays and modify nets
   void ModifyPinConnections(const std::vector<Flop>& flops,
                             const std::vector<Tray>& trays,
                             const std::vector<std::pair<int, int>>& mapping,
-                            std::vector<int> array_mask);
+                            const Mask& array_mask);
 
   // seperate flops by clock net and ArrayMask
   void SeparateFlops(std::vector<std::vector<Flop>>& ffs);
   void SetVars(const std::vector<Flop>& flops);
-  void SetRatios(std::vector<int> array_mask);
+  void SetRatios(const Mask& array_mask);
   float RunClustering(const std::vector<Flop>& flops,
                       int mx_sz,
                       float alpha,
                       float beta,
-                      std::vector<int> array_mask);
+                      const Mask& array_mask);
 
   void ReadFFs();
   void ReadPaths();
@@ -262,7 +263,7 @@ class MBFF
   /* ArrayMaskVector[i] = a vector for a certain (MB)FF structure.
   See GetArrayMask for details on how the structure of an instance is described.
 */
-  using ArrayMaskVector = std::map<std::vector<int>, std::vector<T>>;
+  using ArrayMaskVector = std::map<Mask, std::vector<T>>;
   ArrayMaskVector<odb::dbMaster*> best_master_;
   ArrayMaskVector<DataToOutputsMap> pin_mappings_;
   ArrayMaskVector<float> tray_area_;
