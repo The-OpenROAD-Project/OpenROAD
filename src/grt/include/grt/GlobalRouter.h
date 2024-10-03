@@ -217,10 +217,10 @@ class GlobalRouter : public ant::GlobalRouteSource
   bool isNonLeafClock(odb::dbNet* db_net);
 
   // repair antenna public functions
-  void repairAntennas(odb::dbMTerm* diode_mterm,
-                      int iterations,
-                      float ratio_margin,
-                      int num_threads = 1);
+  int repairAntennas(odb::dbMTerm* diode_mterm,
+                     int iterations,
+                     float ratio_margin,
+                     int num_threads = 1);
 
   // Incremental global routing functions.
   // See class IncrementalGRoute.
