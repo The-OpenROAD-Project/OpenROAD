@@ -381,6 +381,7 @@ struct SnapParameters
   int offset = 0;
   int pitch = 0;
   int pin_width = 0;
+  int pin_offset = 0;
   int lower_left_to_first_pin = 0;
 };
 

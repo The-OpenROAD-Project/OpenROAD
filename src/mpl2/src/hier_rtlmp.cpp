@@ -4508,34 +4508,6 @@ odb::Point Snapper::computeSnapOrigin()
     }
   }
 
-  // The distance between the pins and the lower-left corner of the master of
-  // a macro instance may not be a multiple of the track-grid, in these cases,
-  // we need to compensate a small offset.
-  const int mterm_offset_x
-      = x.pitch != 0
-            ? x.lower_left_to_first_pin
-                  - std::floor(x.lower_left_to_first_pin / x.pitch) * x.pitch
-            : 0;
-  const int mterm_offset_y
-      = y.pitch != 0
-            ? y.lower_left_to_first_pin
-                  - std::floor(y.lower_left_to_first_pin / y.pitch) * y.pitch
-            : 0;
-
-  int pin_offset_x = x.pin_width / 2 + mterm_offset_x;
-  int pin_offset_y = y.pin_width / 2 + mterm_offset_y;
-
-  odb::dbOrientType orientation = inst_->getOrient();
-
-  if (orientation == odb::dbOrientType::MX) {
-    pin_offset_y = -pin_offset_y;
-  } else if (orientation == odb::dbOrientType::MY) {
-    pin_offset_x = -pin_offset_x;
-  } else if (orientation == odb::dbOrientType::R180) {
-    pin_offset_x = -pin_offset_x;
-    pin_offset_y = -pin_offset_y;
-  }
-
   // This may NOT be the lower-left corner.
   int origin_x = inst_->getOrigin().x();
   int origin_y = inst_->getOrigin().y();
@@ -4545,11 +4517,11 @@ odb::Point Snapper::computeSnapOrigin()
   // compensate the necessary offset.
   if (x.pin_width != 0) {
     origin_x = std::round(origin_x / x.pitch) * x.pitch + x.offset;
-    origin_x -= pin_offset_x;
+    origin_x -= x.pin_offset;
   }
   if (y.pin_width != 0) {
     origin_y = std::round(origin_y / y.pitch) * y.pitch + y.offset;
-    origin_y -= pin_offset_y;
+    origin_y -= y.pin_offset;
   }
 
   const int manufacturing_grid
@@ -4587,6 +4559,28 @@ SnapParameters Snapper::computeSnapParameters(odb::dbTechLayer* layer,
   params.lower_left_to_first_pin
       = getPinToLowerLeftDistance(box, vertical_layer);
 
+  // The distance between the pins and the lower-left corner
+  // of the master of a macro instance may not be a multiple
+  // of the track-grid, in these cases, we need to compensate
+  // a small offset.
+  int mterm_offset = 0;
+  if (params.pitch != 0) {
+    mterm_offset = params.lower_left_to_first_pin
+                   - std::floor(params.lower_left_to_first_pin / params.pitch)
+                         * params.pitch;
+  }
+  params.pin_offset = params.pin_width / 2 + mterm_offset;
+
+  const odb::dbOrientType& orientation = inst_->getOrient();
+  if (vertical_layer) {
+    if (orientation == odb::dbOrientType::MY
+        || orientation == odb::dbOrientType::R180) {
+      params.pin_offset = -params.pin_offset;
+    }
+  } else if (orientation == odb::dbOrientType::MX
+             || orientation == odb::dbOrientType::R180) {
+    params.pin_offset = -params.pin_offset;
+  }
   return params;
 }
 
