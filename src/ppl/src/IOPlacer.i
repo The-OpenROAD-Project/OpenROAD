@@ -357,9 +357,9 @@ run_annealing(bool random)
 }
 
 void
-write_pin_placement(const char* file_name)
+write_pin_placement(const char* file_name, bool placed)
 {
-  getIOPlacer()->writePinPlacement(file_name);
+  getIOPlacer()->writePinPlacement(file_name, placed);
 }
 
 } // namespace

@@ -689,7 +689,7 @@ void IOPlacer::getBlockedRegionsFromDbObstructions()
   }
 }
 
-void IOPlacer::writePinPlacement(const char* file_name)
+void IOPlacer::writePinPlacement(const char* file_name, const bool placed)
 {
   std::string filename = file_name;
   if (filename.empty()) {
@@ -704,18 +704,54 @@ void IOPlacer::writePinPlacement(const char* file_name)
 
   std::vector<Edge> edges_list
       = {Edge::bottom, Edge::right, Edge::top, Edge::left};
-  for (const Edge& edge : edges_list) {
-    out << "#Edge: " << getEdgeString(edge) << "\n";
-    for (const IOPin& io_pin : netlist_io_pins_->getIOPins()) {
-      if (io_pin.getEdge() == edge) {
-        const int layer = io_pin.getLayer();
-        odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
-        const odb::Point& pos = io_pin.getPosition();
-        out << "place_pin -pin_name " << io_pin.getName() << " -layer "
+  if (!netlist_io_pins_->getIOPins().empty()) {
+    for (const Edge& edge : edges_list) {
+      out << "#Edge: " << getEdgeString(edge) << "\n";
+      for (const IOPin& io_pin : netlist_io_pins_->getIOPins()) {
+        if (io_pin.getEdge() == edge) {
+          const int layer = io_pin.getLayer();
+          odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
+          const odb::Point& pos = io_pin.getPosition();
+          out << "place_pin -pin_name " << io_pin.getName() << " -layer "
+              << tech_layer->getName() << " -location {"
+              << getBlock()->dbuToMicrons(pos.x()) << " "
+              << getBlock()->dbuToMicrons(pos.y())
+              << "} -force_to_die_boundary\n";
+        }
+      }
+    }
+  } else {
+    for (odb::dbBTerm* bterm : getBlock()->getBTerms()) {
+      int x_pos = 0;
+      int y_pos = 0;
+      bterm->getFirstPinLocation(x_pos, y_pos);
+      odb::dbTechLayer* tech_layer = nullptr;
+      for (odb::dbBPin* bterm_pin : bterm->getBPins()) {
+        if (!bterm_pin->getPlacementStatus().isPlaced()) {
+          logger_->error(
+              PPL, 49, "Pin {} is not placed.", bterm->getConstName());
+        }
+        for (odb::dbBox* bpin_box : bterm_pin->getBoxes()) {
+          tech_layer = bpin_box->getTechLayer();
+          break;
+        }
+      }
+
+      if (tech_layer != nullptr) {
+        out << "place_pin -pin_name " << bterm->getName() << " -layer "
             << tech_layer->getName() << " -location {"
-            << getBlock()->dbuToMicrons(pos.x()) << " "
-            << getBlock()->dbuToMicrons(pos.y())
-            << "} -force_to_die_boundary\n";
+            << getBlock()->dbuToMicrons(x_pos) << " "
+            << getBlock()->dbuToMicrons(y_pos) << "}";
+        if (placed) {
+          out << " -placed_status\n";
+        } else {
+          out << "\n";
+        }
+      } else {
+        logger_->error(PPL,
+                       14,
+                       "Pin {} does not have layer assignment.",
+                       bterm->getName());
       }
     }
   }
@@ -2163,7 +2199,7 @@ void IOPlacer::run(bool random_mode)
 
   checkPinPlacement();
   commitIOPlacementToDB(assignment_);
-  writePinPlacement(parms_->getPinPlacementFile().c_str());
+  writePinPlacement(parms_->getPinPlacementFile().c_str(), false);
   clear();
 }
 
@@ -2244,7 +2280,7 @@ void IOPlacer::runAnnealing(bool random)
 
   checkPinPlacement();
   commitIOPlacementToDB(assignment_);
-  writePinPlacement(parms_->getPinPlacementFile().c_str());
+  writePinPlacement(parms_->getPinPlacementFile().c_str(), false);
   clear();
 }
 
