@@ -4479,9 +4479,10 @@ void Snapper::snapMacro()
 
 odb::Point Snapper::computeSnapOrigin()
 {
-  SnapParameters x, y;
-
-  std::set<odb::dbTechLayer*> snap_layers;
+  LayersWithPinsMap hor_layer_to_pin_box;
+  LayersWithPinsMap vert_layer_to_pin_box;
+  odb::dbTechLayer* hor_snap_layer = nullptr;
+  odb::dbTechLayer* vert_snap_layer = nullptr;
 
   odb::dbMaster* master = inst_->getMaster();
   for (odb::dbMTerm* mterm : master->getMTerms()) {
@@ -4492,21 +4493,19 @@ odb::Point Snapper::computeSnapOrigin()
     for (odb::dbMPin* mpin : mterm->getMPins()) {
       for (odb::dbBox* box : mpin->getGeometry()) {
         odb::dbTechLayer* layer = box->getTechLayer();
-
-        if (snap_layers.find(layer) != snap_layers.end()) {
-          continue;
-        }
-
-        snap_layers.insert(layer);
-
         if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-          y = computeSnapParameters(layer, box, false);
+          updateLayerMap(hor_layer_to_pin_box, layer, hor_snap_layer, box);
         } else {
-          x = computeSnapParameters(layer, box, true);
+          updateLayerMap(vert_layer_to_pin_box, layer, vert_snap_layer, box);
         }
       }
     }
   }
+
+  SnapParameters x = computeSnapParameters(
+      vert_snap_layer, vert_layer_to_pin_box.at(vert_snap_layer), true);
+  SnapParameters y = computeSnapParameters(
+      hor_snap_layer, hor_layer_to_pin_box.at(hor_snap_layer), false);
 
   // This may NOT be the lower-left corner.
   int origin_x = inst_->getOrigin().x();
@@ -4533,6 +4532,22 @@ odb::Point Snapper::computeSnapOrigin()
   const odb::Point snap_origin(origin_x, origin_y);
 
   return snap_origin;
+}
+
+void Snapper::updateLayerMap(LayersWithPinsMap& layer_to_pin_box,
+                             odb::dbTechLayer* current_layer,
+                             odb::dbTechLayer*& snap_layer,
+                             odb::dbBox* pin_box)
+{
+  const auto itr = layer_to_pin_box.find(current_layer);
+  if (itr != layer_to_pin_box.end()) {
+    return;
+  }
+
+  if (layer_to_pin_box.empty()) {
+    snap_layer = current_layer;
+  }
+  layer_to_pin_box[current_layer] = pin_box;
 }
 
 SnapParameters Snapper::computeSnapParameters(odb::dbTechLayer* layer,

@@ -395,10 +395,16 @@ class Snapper
   void snapMacro();
 
  private:
+  using LayersWithPinsMap = std::map<odb::dbTechLayer*, odb::dbBox*>;
+
   odb::Point computeSnapOrigin();
   SnapParameters computeSnapParameters(odb::dbTechLayer* layer,
                                        odb::dbBox* box,
                                        bool vertical_layer);
+  void updateLayerMap(LayersWithPinsMap& layer_to_pin_box,
+                             odb::dbTechLayer* current_layer,
+                             odb::dbTechLayer*& snap_layer,
+                             odb::dbBox* pin_box);
   void getTrackGrid(odb::dbTrackGrid* track_grid,
                     std::vector<int>& coordinate_grid,
                     bool vertical_layer);
