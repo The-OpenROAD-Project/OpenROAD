@@ -98,6 +98,7 @@ GlobalRouter::GlobalRouter()
       macro_extension_(0),
       initialized_(false),
       total_diodes_count_(0),
+      incremental_(false),
       verbose_(false),
       seed_(0),
       caps_perturbation_percentage_(0),
@@ -282,6 +283,7 @@ void GlobalRouter::globalRoute(bool save_guides,
   } else if (start_incremental) {
     grouter_cbk_ = new GRouteDbCbk(this);
     grouter_cbk_->addOwner(block_);
+    incremental_ = true;
   } else {
     try {
       if (end_incremental) {
@@ -289,6 +291,7 @@ void GlobalRouter::globalRoute(bool save_guides,
         grouter_cbk_->removeOwner();
         delete grouter_cbk_;
         grouter_cbk_ = nullptr;
+        incremental_ = false;
       } else {
         clear();
         block_ = db_->getChip()->getBlock();
@@ -377,6 +380,12 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     nets_to_repair.push_back(db_net);
   }
 
+  if (haveDetailedRoutes(nets_to_repair) && iterations != 1) {
+    logger_->warn(GRT,
+                  121,
+                  "repair_antennas should perform only one iteration when the "
+                  "routing source is detailed routing.");
+  }
   while (violations && itr < iterations) {
     if (verbose_) {
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
@@ -888,7 +897,11 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(
 {
   std::vector<std::pair<odb::Point, odb::Point>> ap_positions;
 
-  has_access_points = findPinAccessPointPositions(pin, ap_positions);
+  // temporarily ignore odb access points when incremental changes
+  // are made, in order to avoid getting invalid APs
+  // TODO: remove the !incremental_ flag and update APs incrementally in odb
+  has_access_points
+      = findPinAccessPointPositions(pin, ap_positions) && !incremental_;
 
   std::vector<odb::Point> positions_on_grid;
 
