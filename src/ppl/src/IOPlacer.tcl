@@ -433,8 +433,8 @@ proc place_pin { args } {
   set layer [ppl::parse_layer_name $layer]
 
   ppl::place_pin $pin $layer $x $y $width $height \
-                 [info exists flags(-force_to_die_boundary)] \
-                 [info exists flags(-placed_status)]
+    [info exists flags(-force_to_die_boundary)] \
+    [info exists flags(-placed_status)]
 }
 
 sta::define_cmd_args "write_pin_placement" { file_name \
