@@ -240,6 +240,7 @@ def place_pin(
     location=None,
     pin_size=None,
     force_to_die_boundary=False,
+    placed_status=False
 ):
     x = design.micronToDBU(location[0])
     y = design.micronToDBU(location[1])
@@ -248,7 +249,7 @@ def place_pin(
     pin = parse_pin_names(design, pin_name)
     lay = parse_layer_name(design, layer)
     design.getIOPlacer().placePin(
-        pin[0], lay, x, y, width, height, force_to_die_boundary
+        pin[0], lay, x, y, width, height, force_to_die_boundary, placed_status
     )
 
 

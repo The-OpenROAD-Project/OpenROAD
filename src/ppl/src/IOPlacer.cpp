@@ -2298,7 +2298,8 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
                         int y,
                         int width,
                         int height,
-                        bool force_to_die_bound)
+                        bool force_to_die_bound,
+                        bool placed_status)
 {
   if (width == 0 && height == 0) {
     const int database_unit = getTech()->getLefUnits();
@@ -2411,7 +2412,9 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
   odb::Point ll = odb::Point(pos.x() - width / 2, pos.y() - height / 2);
   odb::Point ur = odb::Point(pos.x() + width / 2, pos.y() + height / 2);
 
-  odb::dbPlacementStatus placement_status = odb::dbPlacementStatus::FIRM;
+  odb::dbPlacementStatus placement_status = placed_status
+                                                ? odb::dbPlacementStatus::PLACED
+                                                : odb::dbPlacementStatus::FIRM;
   IOPin io_pin
       = IOPin(bterm, pos, Direction::invalid, ll, ur, placement_status);
   io_pin.setLayer(layer_level);
