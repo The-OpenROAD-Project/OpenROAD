@@ -240,7 +240,7 @@ def place_pin(
     location=None,
     pin_size=None,
     force_to_die_boundary=False,
-    placed_status=False
+    placed_status=False,
 ):
     x = design.micronToDBU(location[0])
     y = design.micronToDBU(location[1])
