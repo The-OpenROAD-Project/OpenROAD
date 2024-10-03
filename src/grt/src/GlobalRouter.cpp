@@ -897,6 +897,9 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(
 {
   std::vector<std::pair<odb::Point, odb::Point>> ap_positions;
 
+  // temporarily ignore odb access points when incremental changes
+  // are made, in order to avoid getting invalid APs
+  // TODO: remove the !incremental_ flag and update APs incrementally in odb
   has_access_points
       = findPinAccessPointPositions(pin, ap_positions) && !incremental_;
 
