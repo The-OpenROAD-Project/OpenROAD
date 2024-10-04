@@ -229,9 +229,9 @@ bool Design::isInClock(odb::dbInst* inst)
 
 bool Design::isInClock(odb::dbITerm* iterm)
 {
-    auto* net = iterm->getNet();
-    if (net != nullptr && net->getSigType() == odb::dbSigType::CLOCK) {
-      return true;
+  auto* net = iterm->getNet();
+  if (net != nullptr && net->getSigType() == odb::dbSigType::CLOCK) {
+    return true;
   }
   return false;
 }
