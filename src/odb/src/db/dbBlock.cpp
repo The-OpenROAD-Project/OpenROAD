@@ -4101,8 +4101,8 @@ bool dbBlock::designIsRouted()
 {
   for (dbNet* net : getNets()) {
     const int pin_count = net->getBTermCount() + net->getITerms().size();
-    if (pin_count > 1 && net->getSWires().empty()
-        && net->getWire() == nullptr) {
+    if (pin_count > 1 && net->getSWires().empty() && net->getWire() == nullptr
+        && !net->isConnectedByAbutment()) {
       return false;
     }
   }
