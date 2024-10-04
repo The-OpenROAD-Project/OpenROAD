@@ -36,6 +36,7 @@
 #include <memory>
 
 #include "extRCap.h"
+#include "rcx/extModelGen.h"
 
 namespace utl {
 class Logger;
@@ -58,6 +59,14 @@ class Ext
       const std::function<void()>& rcx_init = []() {});
   void setLogger(Logger* logger);
 
+  // ---------------------------- dkf 092524 ---------------------------------
+  bool gen_solver_patterns(const char* process_file, const char* process_name, int version, int wire_cnt, int len, int over_dist, int under_dist, const char* w_list, const char* s_list);
+
+  // ---------------------------- dkf 092024 ---------------------------------
+  bool init_rcx_model(const char* corner_names, int metal_cnt);
+  bool read_rcx_tables(const char* corner, const char* filename, int wire, bool over, bool under, bool over_under, bool diag);
+  bool write_rcx_model(const char* filename);
+  
   void write_rules(const std::string& name,
                    const std::string& dir,
                    const std::string& file,
@@ -225,6 +234,16 @@ class Ext
                  bool m_map,
                  float upper_limit,
                  float lower_limit);
+bool read_process(const std::string& name, const std::string& file);
+bool rules_gen(const std::string& name, const std::string& dir,
+                    const std::string& file, bool write_to_solver,
+                    bool read_from_solver, bool run_solver, int pattern,
+                    bool keep_file, int len, int version, bool win);
+bool metal_rules_gen(const std::string& name, const std::string& dir,
+                          const std::string& file, bool write_to_solver,
+                          bool read_from_solver, bool run_solver, int pattern,
+                          bool keep_file, int metal);
+bool run_solver(const std::string& dir, int net, int shape);
 
  private:
   odb::dbDatabase* _db = nullptr;
