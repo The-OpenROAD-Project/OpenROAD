@@ -2655,21 +2655,18 @@ int FlexPA::getEdgeCost(
   return edge_cost;
 }
 
-bool FlexPA::genPatterns_commit(
+std::vector<int> FlexPA::extractAccessPatternFromNodes(
     const std::vector<FlexDPNode>& nodes,
     const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
-    bool& is_valid,
-    std::set<std::vector<int>>& inst_access_patterns,
     std::set<std::pair<int, int>>& used_access_points,
-    std::set<std::pair<int, int>>& viol_access_points,
-    const int curr_unique_inst_idx,
     const int max_access_point_size)
 {
+  std::vector<int> access_pattern(pins.size(), -1);
+
   const int source_node_idx = getFlatIdx(-1, 0, max_access_point_size);
   const int drain_node_idx = getFlatIdx(pins.size(), 0, max_access_point_size);
   auto drain_node = &(nodes[drain_node_idx]);
   int curr_node_idx = drain_node->getPrevNodeIdx();
-  std::vector<int> access_pattern(pins.size(), -1);
 
   while (curr_node_idx != source_node_idx) {
     if (curr_node_idx == -1) {
@@ -2688,7 +2685,21 @@ bool FlexPA::genPatterns_commit(
 
     curr_node_idx = curr_node->getPrevNodeIdx();
   }
+  return access_pattern;
+}
 
+bool FlexPA::genPatterns_commit(
+    const std::vector<FlexDPNode>& nodes,
+    const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
+    bool& is_valid,
+    std::set<std::vector<int>>& inst_access_patterns,
+    std::set<std::pair<int, int>>& used_access_points,
+    std::set<std::pair<int, int>>& viol_access_points,
+    const int curr_unique_inst_idx,
+    const int max_access_point_size)
+{
+  std::vector<int> access_pattern = extractAccessPatternFromNodes(
+      nodes, pins, used_access_points, max_access_point_size);
   // not a new access pattern
   if (inst_access_patterns.find(access_pattern) != inst_access_patterns.end()) {
     return false;
