@@ -1,0 +1,1034 @@
+PATTERN TYP/Over1/M1oM0/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  0.650  0.650 height 
+# Layout/Eff  0.250  0.250 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M2oM0/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.170  1.170 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M2oM1/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.170  1.170 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M3oM0/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.740  1.740 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M3oM1/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.740  1.740 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M3oM2/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.740  1.740 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M4oM0/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.310  2.310 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M4oM1/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.310  2.310 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M4oM2/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.310  2.310 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M4oM3/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.310  2.310 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M5oM0/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.880  2.880 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M5oM1/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.880  2.880 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M5oM2/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.880  2.880 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M5oM3/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.880  2.880 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M5oM4/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.880  2.880 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M6oM0/W0.42_W0.42/S0.42_S0.42_L10
+
+# Layout params w= 0.42 s= 0.42 r= 0
+
+# Layout/Eff  0.420  0.420 top_width
+# Layout/Eff  0.420 0.42 bot_width
+# Layout/Eff  0.420  0.420 spacing
+# Layout/Eff  3.780  3.780 height 
+# Layout/Eff  0.900  0.900 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M6oM2/W0.42_W0.42/S0.42_S0.42_L10
+
+# Layout params w= 0.42 s= 0.42 r= 0
+
+# Layout/Eff  0.420  0.420 top_width
+# Layout/Eff  0.420 0.42 bot_width
+# Layout/Eff  0.420  0.420 spacing
+# Layout/Eff  3.780  3.780 height 
+# Layout/Eff  0.900  0.900 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M6oM3/W0.42_W0.42/S0.42_S0.42_L10
+
+# Layout params w= 0.42 s= 0.42 r= 0
+
+# Layout/Eff  0.420  0.420 top_width
+# Layout/Eff  0.420 0.42 bot_width
+# Layout/Eff  0.420  0.420 spacing
+# Layout/Eff  3.780  3.780 height 
+# Layout/Eff  0.900  0.900 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M6oM4/W0.42_W0.42/S0.42_S0.42_L10
+
+# Layout params w= 0.42 s= 0.42 r= 0
+
+# Layout/Eff  0.420  0.420 top_width
+# Layout/Eff  0.420 0.42 bot_width
+# Layout/Eff  0.420  0.420 spacing
+# Layout/Eff  3.780  3.780 height 
+# Layout/Eff  0.900  0.900 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M6oM5/W0.42_W0.42/S0.42_S0.42_L10
+
+# Layout params w= 0.42 s= 0.42 r= 0
+
+# Layout/Eff  0.420  0.420 top_width
+# Layout/Eff  0.420 0.42 bot_width
+# Layout/Eff  0.420  0.420 spacing
+# Layout/Eff  3.780  3.780 height 
+# Layout/Eff  0.900  0.900 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M7oM0/W1.6_W1.6/S1.76_S1.76_L10
+
+# Layout params w= 1.6 s= 1.76 r= 0
+
+# Layout/Eff  1.600  1.600 top_width
+# Layout/Eff  1.600 1.6 bot_width
+# Layout/Eff  1.760  1.760 spacing
+# Layout/Eff  5.530  5.530 height 
+# Layout/Eff  1.200  1.200 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M7oM3/W1.6_W1.6/S1.76_S1.76_L10
+
+# Layout params w= 1.6 s= 1.76 r= 0
+
+# Layout/Eff  1.600  1.600 top_width
+# Layout/Eff  1.600 1.6 bot_width
+# Layout/Eff  1.760  1.760 spacing
+# Layout/Eff  5.530  5.530 height 
+# Layout/Eff  1.200  1.200 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M7oM4/W1.6_W1.6/S1.76_S1.76_L10
+
+# Layout params w= 1.6 s= 1.76 r= 0
+
+# Layout/Eff  1.600  1.600 top_width
+# Layout/Eff  1.600 1.6 bot_width
+# Layout/Eff  1.760  1.760 spacing
+# Layout/Eff  5.530  5.530 height 
+# Layout/Eff  1.200  1.200 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M7oM5/W1.6_W1.6/S1.76_S1.76_L10
+
+# Layout params w= 1.6 s= 1.76 r= 0
+
+# Layout/Eff  1.600  1.600 top_width
+# Layout/Eff  1.600 1.6 bot_width
+# Layout/Eff  1.760  1.760 spacing
+# Layout/Eff  5.530  5.530 height 
+# Layout/Eff  1.200  1.200 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Over1/M7oM6/W1.6_W1.6/S1.76_S1.76_L10
+
+# Layout params w= 1.6 s= 1.76 r= 0
+
+# Layout/Eff  1.600  1.600 top_width
+# Layout/Eff  1.600 1.6 bot_width
+# Layout/Eff  1.760  1.760 spacing
+# Layout/Eff  5.530  5.530 height 
+# Layout/Eff  1.200  1.200 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Under1/M1uM2/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  0.650  0.650 height 
+# Layout/Eff  0.250  0.250 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Under1/M1uM3/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  0.650  0.650 height 
+# Layout/Eff  0.250  0.250 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Under1/M1uM4/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  0.650  0.650 height 
+# Layout/Eff  0.250  0.250 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Under1/M1uM5/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  0.650  0.650 height 
+# Layout/Eff  0.250  0.250 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Under1/M2uM3/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.170  1.170 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Under1/M2uM4/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.170  1.170 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Under1/M2uM5/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.170  1.170 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Under1/M2uM6/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.170  1.170 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Under1/M3uM4/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.740  1.740 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Under1/M3uM5/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.740  1.740 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Under1/M3uM6/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.740  1.740 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Under1/M3uM7/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.740  1.740 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Under1/M4uM5/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.310  2.310 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Under1/M4uM6/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.310  2.310 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Under1/M4uM7/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.310  2.310 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Under1/M5uM6/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.880  2.880 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Under1/M5uM7/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.880  2.880 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/Under1/M6uM7/W0.42_W0.42/S0.42_S0.42_L10
+
+# Layout params w= 0.42 s= 0.42 r= 0
+
+# Layout/Eff  0.420  0.420 top_width
+# Layout/Eff  0.420 0.42 bot_width
+# Layout/Eff  0.420  0.420 spacing
+# Layout/Eff  3.780  3.780 height 
+# Layout/Eff  0.900  0.900 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M2oM1uM3/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.170  1.170 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M2oM1uM4/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.170  1.170 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M2oM1uM5/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.170  1.170 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M2oM1uM6/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.170  1.170 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M3oM1uM4/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.740  1.740 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M3oM1uM5/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.740  1.740 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M3oM1uM6/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.740  1.740 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M3oM1uM7/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.740  1.740 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M3oM2uM4/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.740  1.740 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M3oM2uM5/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.740  1.740 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M3oM2uM6/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.740  1.740 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M3oM2uM7/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.740  1.740 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M4oM1uM5/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.310  2.310 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M4oM1uM6/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.310  2.310 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M4oM1uM7/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.310  2.310 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M4oM2uM5/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.310  2.310 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M4oM2uM6/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.310  2.310 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M4oM2uM7/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.310  2.310 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M4oM3uM5/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.310  2.310 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M4oM3uM6/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.310  2.310 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M4oM3uM7/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.310  2.310 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M5oM1uM6/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.880  2.880 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M5oM1uM7/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.880  2.880 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M5oM2uM6/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.880  2.880 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M5oM2uM7/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.880  2.880 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M5oM3uM6/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.880  2.880 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M5oM3uM7/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.880  2.880 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M5oM4uM6/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.880  2.880 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M5oM4uM7/W0.14_W0.14/S0.14_S0.14_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.880  2.880 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M6oM2uM7/W0.42_W0.42/S0.42_S0.42_L10
+
+# Layout params w= 0.42 s= 0.42 r= 0
+
+# Layout/Eff  0.420  0.420 top_width
+# Layout/Eff  0.420 0.42 bot_width
+# Layout/Eff  0.420  0.420 spacing
+# Layout/Eff  3.780  3.780 height 
+# Layout/Eff  0.900  0.900 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M6oM3uM7/W0.42_W0.42/S0.42_S0.42_L10
+
+# Layout params w= 0.42 s= 0.42 r= 0
+
+# Layout/Eff  0.420  0.420 top_width
+# Layout/Eff  0.420 0.42 bot_width
+# Layout/Eff  0.420  0.420 spacing
+# Layout/Eff  3.780  3.780 height 
+# Layout/Eff  0.900  0.900 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M6oM4uM7/W0.42_W0.42/S0.42_S0.42_L10
+
+# Layout params w= 0.42 s= 0.42 r= 0
+
+# Layout/Eff  0.420  0.420 top_width
+# Layout/Eff  0.420 0.42 bot_width
+# Layout/Eff  0.420  0.420 spacing
+# Layout/Eff  3.780  3.780 height 
+# Layout/Eff  0.900  0.900 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/OverUnder1/M6oM5uM7/W0.42_W0.42/S0.42_S0.42_L10
+
+# Layout params w= 0.42 s= 0.42 r= 0
+
+# Layout/Eff  0.420  0.420 top_width
+# Layout/Eff  0.420 0.42 bot_width
+# Layout/Eff  0.420  0.420 spacing
+# Layout/Eff  3.780  3.780 height 
+# Layout/Eff  0.900  0.900 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/UnderDiag1/M1duM2/W0.14_W0.14/S0.14_S0_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  0.650  0.650 height 
+# Layout/Eff  0.250  0.250 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/UnderDiag1/M1duM3/W0.14_W0.14/S0.14_S0_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  0.650  0.650 height 
+# Layout/Eff  0.250  0.250 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/UnderDiag1/M1duM4/W0.14_W0.14/S0.14_S0_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  0.650  0.650 height 
+# Layout/Eff  0.250  0.250 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/UnderDiag1/M1duM5/W0.14_W0.14/S0.14_S0_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  0.650  0.650 height 
+# Layout/Eff  0.250  0.250 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/UnderDiag1/M2duM3/W0.14_W0.14/S0.14_S0_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.170  1.170 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/UnderDiag1/M2duM4/W0.14_W0.14/S0.14_S0_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.170  1.170 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/UnderDiag1/M2duM5/W0.14_W0.14/S0.14_S0_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.170  1.170 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/UnderDiag1/M2duM6/W0.14_W0.42/S0.14_S0_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.170  1.170 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/UnderDiag1/M3duM4/W0.14_W0.14/S0.14_S0_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.740  1.740 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/UnderDiag1/M3duM5/W0.14_W0.14/S0.14_S0_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.740  1.740 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/UnderDiag1/M3duM6/W0.14_W0.42/S0.14_S0_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.740  1.740 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/UnderDiag1/M3duM7/W0.14_W1.6/S0.14_S0_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  1.740  1.740 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/UnderDiag1/M4duM5/W0.14_W0.14/S0.14_S0_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.310  2.310 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/UnderDiag1/M4duM6/W0.14_W0.42/S0.14_S0_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.310  2.310 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/UnderDiag1/M4duM7/W0.14_W1.6/S0.14_S0_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.310  2.310 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/UnderDiag1/M5duM6/W0.14_W0.42/S0.14_S0_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.880  2.880 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/UnderDiag1/M5duM7/W0.14_W1.6/S0.14_S0_L10
+
+# Layout params w= 0.14 s= 0.14 r= 0
+
+# Layout/Eff  0.140  0.140 top_width
+# Layout/Eff  0.140 0.14 bot_width
+# Layout/Eff  0.140  0.140 spacing
+# Layout/Eff  2.880  2.880 height 
+# Layout/Eff  0.300  0.300 thicknes
+
+$ 0 thicknessChange
+PATTERN TYP/UnderDiag1/M6duM7/W0.42_W1.6/S0.42_S0_L10
+
+# Layout params w= 0.42 s= 0.42 r= 0
+
+# Layout/Eff  0.420  0.420 top_width
+# Layout/Eff  0.420 0.42 bot_width
+# Layout/Eff  0.420  0.420 spacing
+# Layout/Eff  3.780  3.780 height 
+# Layout/Eff  0.900  0.900 thicknes
+
+$ 0 thicknessChange
