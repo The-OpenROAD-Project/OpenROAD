@@ -37,7 +37,7 @@
 sta::define_cmd_args "read_lef" {[-tech] [-library] [-tech_name name] filename}
 
 proc read_lef { args } {
-  sta::parse_key_args "read_lef" args keys {-tech_name} flags {-tech -library}
+  sta::parse_key_args "read_lef" $args keys {-tech_name} flags {-tech -library}
   sta::check_argc_eq1 "read_lef" $args
 
   set filename [file nativename [lindex $args 0]]
