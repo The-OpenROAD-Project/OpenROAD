@@ -22,6 +22,7 @@ add_subdirectory(src/def)
 add_subdirectory(src/zutil)
 add_subdirectory(src/cdl)
 add_subdirectory(src/gdsin)
+add_subdirectory(src/gdsout)
 
 if(ENABLE_TESTS)
   add_subdirectory(test)
@@ -39,6 +40,7 @@ target_link_libraries(odb
     zutil
     utl_lib
     gdsin
+    gdsout
     ${TCL_LIBRARY}
 )
 
@@ -95,6 +97,7 @@ add_custom_command(
     lefout
     zutil
     gdsin
+    gdsout
 )
 
 add_custom_target(odb_messages DEPENDS messages_checked)
