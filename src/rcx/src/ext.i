@@ -195,6 +195,71 @@ read_spef(const char* file)
   ext->read_spef(opts);
 }
 
+void
+read_process(const char* name, const char* file) 
+{
+  Ext* ext = getOpenRCX();
+
+  ext->read_process(name, file);
+}
+
+void
+rules_gen(const char* name, const char* dir, const char* file, bool write_to_solver,
+                    bool read_from_solver, bool run_solver, int pattern, bool keep_file, int len, int version, bool win) 
+{
+  Ext* ext = getOpenRCX();
+  bool delete_files=  !keep_file;
+
+  ext->rules_gen(name, dir, file,
+                 write_to_solver, read_from_solver, run_solver, pattern, delete_files, len, version, win);
+}
+
+void
+metal_rules_gen(const char* name, const char* dir, const char* file, bool write_to_solver,
+                          bool read_from_solver, bool run_solver, int pattern,
+                          bool keep_file, int metal) 
+{
+  Ext* ext = getOpenRCX();
+  bool delete_files=  !keep_file;
+
+  ext->metal_rules_gen(name, dir, file, pattern,
+                    write_to_solver, read_from_solver, run_solver, delete_files, metal);
+}
+
+void
+run_solver(const char* dir, int net, int shape) 
+{
+  Ext* ext = getOpenRCX();
+  ext->run_solver(dir, net, shape);
+}
+
+// ------------------------------- dkf 09192024 -------------------------------
+void
+init_rcx_model(const char* corner_names, int metal_cnt)
+{
+  Ext* ext = getOpenRCX();
+  ext->init_rcx_model(corner_names, metal_cnt);
+}
+void
+read_rcx_tables(const char* corner, const char* filename, int wire, bool over, bool under, bool over_under, bool diag)
+{
+  Ext* ext = getOpenRCX();
+  ext->read_rcx_tables(corner, filename, wire, over, under, over_under, diag);
+}
+void
+write_rcx_model(const char* filename)
+{
+  Ext* ext = getOpenRCX();
+  ext->write_rcx_model(filename);
+}
+// ------------------------------- dkf 09252024 -------------------------------
+void gen_solver_patterns(const char *process_file, const char * process_name, int version, int wire_cnt, int len, int over_dist, int under_dist, const char* w_list, const char* s_list)
+{
+  Ext* ext = getOpenRCX();
+
+  ext->gen_solver_patterns(process_file, process_name, version, wire_cnt, len, over_dist, under_dist, w_list, s_list);
+
+}
 
 %} // inline
 
