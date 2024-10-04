@@ -186,7 +186,7 @@ proc write_cdl { args } {
 sta::define_cmd_args "read_db" {[-hier] filename}
 
 proc read_db { args } {
-  sta::parse_key_args "read_db" args keys {} flags {-hier}
+  sta::parse_key_args "read_db" $args keys {} flags {-hier}
   sta::check_argc_eq1or2 "read_db" $args    
   set filename [file nativename [lindex $args 0]]
   if { ![file exists $filename] } {
