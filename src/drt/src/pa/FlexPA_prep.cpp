@@ -2674,14 +2674,14 @@ bool FlexPA::genPatterns_commit(
     std::vector<std::pair<frConnFig*, frBlockObject*>> objs;
     std::vector<std::unique_ptr<frVia>> temp_vias;
     frInst* target_obj = nullptr;
-    for (int idx_1 = 0; idx_1 < (int) pins.size(); idx_1++) {
-      auto idx_2 = access_pattern[idx_1];
-      auto& [pin, inst_term] = pins[idx_1];
+    for (int pin_idx = 0; pin_idx < (int) pins.size(); pin_idx++) {
+      auto acc_point_idx = access_pattern[pin_idx];
+      auto& [pin, inst_term] = pins[pin_idx];
       auto inst = inst_term->getInst();
       target_obj = inst;
       const int pin_access_idx = unique_insts_.getPAIndex(inst);
       const auto pa = pin->getPinAccess(pin_access_idx);
-      const auto access_point = pa->getAccessPoint(idx_2);
+      const auto access_point = pa->getAccessPoint(acc_point_idx);
       pin_to_access_pattern[pin] = access_point;
 
       // add objs
