@@ -34,8 +34,8 @@ Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
 u1/ZN                                  10.47   15.05   -4.58 (VIOLATED)
 
-[INFO RSZ-0058] Using max wire length 1229um.
-[INFO RSZ-0039] Resized 3 instances.
+[INFO RSZ-0058] Using max wire length 1247um.
+[INFO RSZ-0039] Resized 1 instances.
 Startpoint: u1/A4 (internal pin)
 Endpoint: out1 (output port)
 Path Group: unconstrained
@@ -46,9 +46,9 @@ Corner: slow
 -----------------------------------------------------------------------
            0.00    0.00    0.00 v u1/A4 (NOR4_X4)
   14.64    0.24    0.40    0.40 ^ u1/ZN (NOR4_X4)
-   1.44    0.06    0.14    0.54 v u2/ZN (NAND4_X1)
-   0.77    0.02    0.11    0.65 v x2/Z (CLKBUF_X1)
-           0.02    0.00    0.65 v out1 (out)
+   1.61    0.06    0.14    0.54 v u2/ZN (NAND4_X1)
+   0.77    0.01    0.11    0.65 v x2/Z (BUF_X1)
+           0.01    0.00    0.65 v out1 (out)
                            0.65   data arrival time
 -----------------------------------------------------------------------
 (Path is unconstrained)

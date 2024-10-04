@@ -149,9 +149,10 @@ void route_rdl(odb::dbTechLayer* layer,
                odb::dbTechVia* pad_via,
                const std::vector<odb::dbNet*>& nets,
                int width = 0, int spacing = 0, bool allow45 = false,
-               float penalty = 2.0)
+               float penalty = 2.0,
+               int max_iterations = 10)
 {
-  ord::getICeWall()->routeRDL(layer, bump_via, pad_via, nets, width, spacing, allow45, penalty);
+  ord::getICeWall()->routeRDL(layer, bump_via, pad_via, nets, width, spacing, allow45, penalty, max_iterations);
 }
 
 void route_rdl_gui(bool enable)
