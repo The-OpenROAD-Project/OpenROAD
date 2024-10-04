@@ -1,0 +1,55 @@
+Dependencies/Instructions:
+	cd rcx/test/rcx_v2/FasterCapModel
+	copy or link executables: openroad, FasterCap into ./bin
+	Use make <test_goal> to run
+	Use bash script: scripts/makeGold.bash to create .GOLD dir from an existing dir
+
+
+Test List:
+
+---------------------------------------
+Pattern Generation for Field Solvers:
+---------------------------------------
+		NOTE: Makefile goals are named as <wire_cnt>v<version>
+			wire_cnt is number of wires in the pattern
+			version is 1 or 2; 
+			version 2 creates normalized heights for the process stack based on the height of the lower metal plane
+			version 1 or 2 generate the same format but accuracy of capacitance can be different
+			version 2 can be faster than version 1 when running FasterCap
+
+	1-Wire Patterns : to measure open ended wires in the layout
+		make 1v1 1v2
+	2-Wire Patterns : to measure open ended wires on one side in the layout
+		make 2v1 2v2
+	3-Wire Patterns : to measure total and coupling caps for the mid wire (#2)
+		make 3v1 3v2
+	5-Wire Patterns : to measure total and coupling caps for the mid wire (#3)
+		make 5v1 5v2
+
+---------------------------------------
+Run fasterCap
+---------------------------------------
+		NOTE 1: this tests can take hours
+		NOTE 2: A Python script <UniversalFormat2FasterCap_923> converts RCX solver format to FasterCap format
+		
+	1-Wire All Patterns       : make 1v1_fc 1v2_fc
+	2-Wire OverUnder Patterns : make 2v1_fc_overUnder 2v2_fc_overUnder
+	3-Wire Over Patterns      : make 3v1_fc_over3 3v2_fc_over3
+	3-Wire M3oM2uM6 Patterns  : make 3v2_fc_M3oM2uM6
+
+---------------------------------------
+Parse fasterCap Files
+---------------------------------------
+	NOTE: Python Script <fasterCapParse> parse all FasterCap files in the running directory and creates a single file
+
+	OverUnder Pattern: make ou_parse
+	DiagUnder Pattern: make du_parse
+	Under Pattern:     make M1uM3_parse
+
+---------------------------------------
+Model Generation
+---------------------------------------
+	NOTE: openroad(rcx) reads multiple parsed fasterCap files and create a model file
+
+	model file from multiple corners and multiple files : make gen24
+
