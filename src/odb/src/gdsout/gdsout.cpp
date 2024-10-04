@@ -359,7 +359,6 @@ void GDSWriter::writeSRef(dbGDSSRef* sref)
   } else {
     r.type = RecordType::AREF;
   }
-  r.type = RecordType::SREF;
   r.dataType = DataType::NO_DATA;
   writeRecord(r);
 

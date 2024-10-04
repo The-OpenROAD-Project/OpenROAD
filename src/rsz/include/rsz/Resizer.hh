@@ -361,6 +361,10 @@ class Resizer : public dbStaState
   // Use max_wire_length zero for none (meters)
   void repairClkNets(
       double max_wire_length);  // max_wire_length zero for none (meters)
+  void setClockBuffersList(const LibertyCellSeq& clk_buffers)
+  {
+    clk_buffers_ = clk_buffers;
+  }
   // Clone inverters next to the registers they drive to remove them
   // from the clock network.
   // yosys is too stupid to use the inverted clock registers
@@ -430,7 +434,8 @@ class Resizer : public dbStaState
   void findBuffers();
   bool isLinkCell(LibertyCell* cell);
   void findTargetLoads();
-  void balanceBin(const vector<odb::dbInst*>& bin);
+  void balanceBin(const vector<odb::dbInst*>& bin,
+                  const std::set<odb::dbSite*>& base_sites);
 
   //==============================
   // APIs for gate cloning
@@ -713,6 +718,9 @@ class Resizer : public dbStaState
   const MinMax* max_ = MinMax::max();
   LibertyCellSeq buffer_cells_;
   LibertyCell* buffer_lowest_drive_ = nullptr;
+  // Buffer list created by CTS kept here so that we use the
+  // exact same buffers when reparing clock nets.
+  LibertyCellSeq clk_buffers_;
 
   CellTargetLoadMap* target_load_map_ = nullptr;
   VertexSeq level_drvr_vertices_;
@@ -729,6 +737,7 @@ class Resizer : public dbStaState
   int cloned_gate_count_ = 0;
   int swap_pin_count_ = 0;
   int removed_buffer_count_ = 0;
+  bool exclude_clock_buffers_ = true;
   bool buffer_moved_into_core_ = false;
   // Slack map variables.
   // This is the minimum length of wire that is worth while to split and

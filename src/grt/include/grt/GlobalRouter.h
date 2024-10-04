@@ -217,10 +217,10 @@ class GlobalRouter : public ant::GlobalRouteSource
   bool isNonLeafClock(odb::dbNet* db_net);
 
   // repair antenna public functions
-  void repairAntennas(odb::dbMTerm* diode_mterm,
-                      int iterations,
-                      float ratio_margin,
-                      int num_threads = 1);
+  int repairAntennas(odb::dbMTerm* diode_mterm,
+                     int iterations,
+                     float ratio_margin,
+                     int num_threads = 1);
 
   // Incremental global routing functions.
   // See class IncrementalGRoute.
@@ -485,6 +485,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   int macro_extension_;
   bool initialized_;
   int total_diodes_count_;
+  bool incremental_;
 
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;

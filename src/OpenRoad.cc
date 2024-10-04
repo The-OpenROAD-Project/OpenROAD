@@ -406,7 +406,7 @@ void OpenRoad::writeLef(const char* filename)
         } else {
           name += "_" + std::to_string(cnt);
         }
-        utl::StreamHandler stream_handler(filename);
+        utl::StreamHandler stream_handler(name.c_str());
         odb::lefout lef_writer(logger_, stream_handler.getStream());
         lef_writer.writeLib(lib);
       } else {
