@@ -54,11 +54,17 @@ add_library(rcx_lib
   grids.cpp
   gs.cpp
   dbUtil.cpp
+  process_ext.cpp
+  extRCmodel_process.cpp
+  extRCmodel_solver.cpp
+  extSolverGen.cpp
+  extModelGen.cpp
 )
 
 target_include_directories(rcx_lib
   PUBLIC
     ../include
+    ../include/rcx
 )
 
 target_link_libraries(rcx_lib
@@ -70,7 +76,7 @@ target_link_libraries(rcx_lib
 swig_lib(NAME      rcx
          NAMESPACE rcx
          I_FILE    ext.i
-         SCRIPTS   OpenRCX.tcl
+         SCRIPTS   OpenRCX.tcl OpenRCX_process.tcl
 )
 
 target_sources(rcx
@@ -81,6 +87,7 @@ target_sources(rcx
 target_include_directories(rcx
   PUBLIC
     ../include
+    ../include/rcx
 )
 
 target_link_libraries(rcx
