@@ -3,6 +3,7 @@
 ## BSD 3-Clause License
 ##
 # Copyright (c) 2020, The Regents of the University of California
+# Copyright (c) 2024, Dimitris Fotakis
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
