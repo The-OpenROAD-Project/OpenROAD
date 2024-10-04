@@ -4473,8 +4473,8 @@ Snapper::Snapper(odb::dbInst* inst) : inst_(inst)
 
 void Snapper::snapMacro()
 {
-  const int origin_x = computeNewOriginCoordinate(true /* y */);
-  const int origin_y = computeNewOriginCoordinate(false /* y */);
+  const int origin_x = computeNewOriginCoordinate(true /*horizontal snap*/);
+  const int origin_y = computeNewOriginCoordinate(false /*horizontal snap*/);
 
   inst_->setOrigin(origin_x, origin_y);
 }
@@ -4553,7 +4553,7 @@ SameDirectionLayersData Snapper::computeSameDirectionLayersData(
 
 SnapParameters Snapper::computeSnapParameters(odb::dbTechLayer* layer,
                                               odb::dbBox* box,
-                                              const bool vertical_layer)
+                                              const bool horizontal_snap)
 {
   SnapParameters params;
 
@@ -4562,18 +4562,18 @@ SnapParameters Snapper::computeSnapParameters(odb::dbTechLayer* layer,
 
   if (track_grid) {
     std::vector<int> coordinate_grid;
-    getTrackGrid(track_grid, coordinate_grid, vertical_layer);
+    getTrackGrid(track_grid, coordinate_grid, horizontal_snap);
 
     params.offset = coordinate_grid[0];
     params.pitch = coordinate_grid[1] - coordinate_grid[0];
   } else {
-    params.pitch = getPitch(layer, vertical_layer);
-    params.offset = getOffset(layer, vertical_layer);
+    params.pitch = getPitch(layer);
+    params.offset = getOffset(layer);
   }
 
-  params.pin_width = getPinWidth(box, vertical_layer);
+  params.pin_width = getPinWidth(box, horizontal_snap);
   params.lower_left_to_first_pin
-      = getPinToLowerLeftDistance(box, vertical_layer);
+      = getPinToLowerLeftDistance(box, horizontal_snap);
 
   // The distance between the pins and the lower-left corner
   // of the master of a macro instance may not be a multiple
@@ -4588,7 +4588,7 @@ SnapParameters Snapper::computeSnapParameters(odb::dbTechLayer* layer,
   params.pin_offset = params.pin_width / 2 + mterm_offset;
 
   const odb::dbOrientType& orientation = inst_->getOrient();
-  if (vertical_layer) {
+  if (horizontal_snap) {
     if (orientation == odb::dbOrientType::MY
         || orientation == odb::dbOrientType::R180) {
       params.pin_offset = -params.pin_offset;
@@ -4600,10 +4600,10 @@ SnapParameters Snapper::computeSnapParameters(odb::dbTechLayer* layer,
   return params;
 }
 
-int Snapper::getPitch(odb::dbTechLayer* layer, const bool vertical_layer)
+int Snapper::getPitch(odb::dbTechLayer* layer)
 {
   int pitch = 0;
-  if (vertical_layer) {
+  if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
     pitch = layer->getPitchX();
   } else {
     pitch = layer->getPitchY();
@@ -4611,10 +4611,10 @@ int Snapper::getPitch(odb::dbTechLayer* layer, const bool vertical_layer)
   return pitch;
 }
 
-int Snapper::getOffset(odb::dbTechLayer* layer, const bool vertical_layer)
+int Snapper::getOffset(odb::dbTechLayer* layer)
 {
   int offset = 0;
-  if (vertical_layer) {
+  if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
     offset = layer->getOffsetX();
   } else {
     offset = layer->getOffsetY();
@@ -4622,10 +4622,10 @@ int Snapper::getOffset(odb::dbTechLayer* layer, const bool vertical_layer)
   return offset;
 }
 
-int Snapper::getPinWidth(odb::dbBox* box, const bool vertical_layer)
+int Snapper::getPinWidth(odb::dbBox* box, const bool horizontal_snap)
 {
   int pin_width = 0;
-  if (vertical_layer) {
+  if (horizontal_snap) {
     pin_width = box->getDX();
   } else {
     pin_width = box->getDY();
@@ -4635,19 +4635,19 @@ int Snapper::getPinWidth(odb::dbBox* box, const bool vertical_layer)
 
 void Snapper::getTrackGrid(odb::dbTrackGrid* track_grid,
                            std::vector<int>& coordinate_grid,
-                           const bool vertical_layer)
+                           const bool horizontal_snap)
 {
-  if (vertical_layer) {
+  if (horizontal_snap) {
     track_grid->getGridX(coordinate_grid);
   } else {
     track_grid->getGridY(coordinate_grid);
   }
 }
 
-int Snapper::getPinToLowerLeftDistance(odb::dbBox* box, bool vertical_layer)
+int Snapper::getPinToLowerLeftDistance(odb::dbBox* box, bool horizontal_snap)
 {
   int pin_to_origin = 0;
-  if (vertical_layer) {
+  if (horizontal_snap) {
     pin_to_origin = box->getBox().xMin();
   } else {
     pin_to_origin = box->getBox().yMin();

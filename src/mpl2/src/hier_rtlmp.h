@@ -409,18 +409,18 @@ class Snapper
   odb::Point computeSnapOrigin();
   SnapParameters computeSnapParameters(odb::dbTechLayer* layer,
                                        odb::dbBox* box,
-                                       bool vertical_layer);
+                                       bool horizontal_snap);
   void updateLayerMap(LayersWithPinsMap& layer_to_pin_box,
                              odb::dbTechLayer* current_layer,
                              odb::dbTechLayer*& snap_layer,
                              odb::dbBox* pin_box);
   void getTrackGrid(odb::dbTrackGrid* track_grid,
                     std::vector<int>& coordinate_grid,
-                    bool vertical_layer);
-  int getPitch(odb::dbTechLayer* layer, bool vertical_layer);
-  int getOffset(odb::dbTechLayer* layer, bool vertical_layer);
-  int getPinWidth(odb::dbBox* box, bool vertical_layer);
-  int getPinToLowerLeftDistance(odb::dbBox* box, bool vertical_layer);
+                    bool horizontal_snap);
+  int getPitch(odb::dbTechLayer* layer);
+  int getOffset(odb::dbTechLayer* layer);
+  int getPinWidth(odb::dbBox* box, bool horizontal_snap);
+  int getPinToLowerLeftDistance(odb::dbBox* box, bool horizontal_snap);
 
   odb::dbInst* inst_;
 };
