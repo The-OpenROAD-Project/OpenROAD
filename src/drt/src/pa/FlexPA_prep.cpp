@@ -2666,30 +2666,32 @@ bool FlexPA::genPatterns_commit(
     const int max_access_point_size)
 {
   bool has_new_pattern = false;
-  int curr_node_idx = getFlatIdx(pins.size(), 0, max_access_point_size);
-  auto curr_node = &(nodes[curr_node_idx]);
-  int pin_cnt = pins.size();
-  std::vector<int> access_pattern(pin_cnt, -1);
-  while (curr_node->getPrevNodeIdx() != -1) {
-    // non-virtual node
-    if (pin_cnt != (int) pins.size()) {
-      int curr_pin_idx, curr_acc_point_idx;
-      getNestedIdx(curr_node_idx,
-                   curr_pin_idx,
-                   curr_acc_point_idx,
-                   max_access_point_size);
-      access_pattern[curr_pin_idx] = curr_acc_point_idx;
-      used_access_points.insert(
-          std::make_pair(curr_pin_idx, curr_acc_point_idx));
+
+  const int source_node_idx = getFlatIdx(-1, 0, max_access_point_size);
+  const int drain_node_idx = getFlatIdx(pins.size(), 0, max_access_point_size);
+  auto drain_node = &(nodes[drain_node_idx]);
+  int curr_node_idx = drain_node->getPrevNodeIdx();
+
+  std::vector<int> access_pattern(pins.size(), -1);
+
+  while (curr_node_idx != source_node_idx) {
+    if (curr_node_idx == -1) {
+      // Some node has no previous node
+      // This means there is no path from source to drain
+      logger_->error(DRT, 90, "Valid access pattern not found.");
     }
 
-    curr_node_idx = curr_node->getPrevNodeIdx();
-    curr_node = &(nodes[curr_node->getPrevNodeIdx()]);
-    pin_cnt--;
-  }
+    auto curr_node = &(nodes[curr_node_idx]);
 
-  if (pin_cnt != -1) {
-    logger_->error(DRT, 90, "Valid access pattern not found.");
+    int curr_pin_idx, curr_acc_point_idx;
+    getNestedIdx(curr_node_idx,
+                  curr_pin_idx,
+                  curr_acc_point_idx,
+                  max_access_point_size);
+    access_pattern[curr_pin_idx] = curr_acc_point_idx;
+    used_access_points.insert({curr_pin_idx, curr_acc_point_idx});
+
+    curr_node_idx = curr_node->getPrevNodeIdx();
   }
 
   // add to pattern set if unique
