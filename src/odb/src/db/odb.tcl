@@ -652,7 +652,7 @@ proc set_max_layer { args } {
 sta::define_cmd_args "design_is_routed" {}
 
 proc design_is_routed { args } {
-  sta::parse_key_args "set_max_layer" args keys {} flags {}
+  sta::parse_key_args "design_is_routed" args keys {} flags {}
 
   set db [ord::get_db]
   set chip [$db getChip]
