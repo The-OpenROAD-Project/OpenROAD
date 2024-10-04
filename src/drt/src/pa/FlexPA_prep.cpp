@@ -2669,7 +2669,7 @@ bool FlexPA::genPatterns_commit(
     inst_access_patterns.insert(access_pattern);
     // create new access pattern and push to uniqueInstances
     auto pin_access_pattern = std::make_unique<FlexPinAccessPattern>();
-    std::map<frMPin*, frAccessPoint*> pin_to_access_pattern;
+    std::map<frMPin*, frAccessPoint*> pin_to_access_point;
     // check DRC for the whole pattern
     std::vector<std::pair<frConnFig*, frBlockObject*>> objs;
     std::vector<std::unique_ptr<frVia>> temp_vias;
@@ -2682,7 +2682,7 @@ bool FlexPA::genPatterns_commit(
       const int pin_access_idx = unique_insts_.getPAIndex(inst);
       const auto pa = pin->getPinAccess(pin_access_idx);
       const auto access_point = pa->getAccessPoint(acc_point_idx);
-      pin_to_access_pattern[pin] = access_point;
+      pin_to_access_point[pin] = access_point;
 
       // add objs
       std::unique_ptr<frVia> via;
@@ -2716,12 +2716,11 @@ bool FlexPA::genPatterns_commit(
       }
       uint64_t n_no_ap_pins = 0;
       for (auto& pin : inst_term->getTerm()->getPins()) {
-        if (pin_to_access_pattern.find(pin.get())
-            == pin_to_access_pattern.end()) {
+        if (pin_to_access_point.find(pin.get()) == pin_to_access_point.end()) {
           n_no_ap_pins++;
           pin_access_pattern->addAccessPoint(nullptr);
         } else {
-          const auto& ap = pin_to_access_pattern[pin.get()];
+          const auto& ap = pin_to_access_point[pin.get()];
           const Point tmpPt = ap->getPoint();
           if (tmpPt.x() < leftPt) {
             leftAP = ap;
