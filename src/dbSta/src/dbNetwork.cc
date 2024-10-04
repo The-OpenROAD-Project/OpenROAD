@@ -658,10 +658,10 @@ const char* dbNetwork::name(const Port* port) const
     staToDb(port, bterm, mterm, modbterm);
     std::string name;
     if (bterm) {
-      name = bterm->getName().c_str();
+      name = bterm->getName();
     }
     if (mterm) {
-      name = mterm->getName().c_str();
+      name = mterm->getName();
     }
     if (modbterm) {
       name = modbterm->getName();
