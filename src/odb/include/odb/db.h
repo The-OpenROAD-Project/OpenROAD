@@ -1591,7 +1591,7 @@ class dbBlock : public dbObject
   void preExttreeMergeRC(double max_cap, uint corner);
 
   ///
-  /// check if all signal and clock nets are routed
+  /// check if signal, clock and special nets are routed
   ///
   bool designIsRouted();
 
