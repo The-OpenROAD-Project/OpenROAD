@@ -95,7 +95,6 @@ void LevelBalancer::addBufferLevels(TreeBuilder* builder,
     totalY += clockInstObj->getY();
   }
 
-  const double centroidX = totalX / cluster.size();
   const double centroidY = totalY / cluster.size();
   int x = prevLevelSubNet->getDriver()->getX();
   int y = prevLevelSubNet->getDriver()->getY();
