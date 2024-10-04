@@ -155,6 +155,13 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
   stream >> obj._master;
   stream >> obj._group_next;
   stream >> obj._group;
+  // User Code Begin >>
+  dbBlock* block = (dbBlock*) (obj.getOwner());
+  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream >> obj._moditerms;
+  }
+  // User Code End >>
   return stream;
 }
 

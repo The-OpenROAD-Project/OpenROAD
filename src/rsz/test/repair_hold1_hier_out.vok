@@ -51,7 +51,7 @@ module hier1 (in1,
 
  CLKBUF_X1 hold1 (.A(r1q),
     .Z(op));
- DFF_X1 \h1/r1  (.D(in1),
+ DFF_X1 r1 (.D(in1),
     .CK(i1z),
     .Q(r1q));
 endmodule

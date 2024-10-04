@@ -656,15 +656,28 @@ const char* dbNetwork::name(const Port* port) const
     dbModBTerm* modbterm = nullptr;
     dbBTerm* bterm = nullptr;
     staToDb(port, bterm, mterm, modbterm);
+    std::string name;
     if (bterm) {
-      return tmpStringCopy(bterm->getName().c_str());
+      name = bterm->getName().c_str();
     }
     if (mterm) {
-      return tmpStringCopy(mterm->getName().c_str());
+      name = mterm->getName().c_str();
     }
     if (modbterm) {
-      return tmpStringCopy(modbterm->getName());
+      name = modbterm->getName();
     }
+
+    if (name.empty()) {
+      return nullptr;
+    }
+
+    if (hierarchy_) {
+      size_t last_idx = name.find_last_of('/');
+      if (last_idx != string::npos) {
+        name = name.substr(last_idx + 1);
+      }
+    }
+    return tmpStringCopy(name.c_str());
   }
   return nullptr;
 }
@@ -706,17 +719,13 @@ const char* dbNetwork::name(const Instance* instance) const
   if (mod_inst) {
     name = mod_inst->getName();
   }
-  // TODO: remove long form of instance name.
-  // requires porting over pathName from Network.cc
-  // to dbNetwork.cc
-  /*
-  if (hierarchy_){
+
+  if (hierarchy_) {
     size_t last_idx = name.find_last_of('/');
     if (last_idx != string::npos) {
       name = name.substr(last_idx + 1);
     }
   }
-  */
   return tmpStringCopy(name.c_str());
 }
 
@@ -843,7 +852,12 @@ Instance* dbNetwork::parent(const Instance* instance) const
       return dbToSta(parent_inst);
     }
   }
-
+  if (db_inst) {
+    auto parent_module = db_inst->getModule();
+    if (auto parent_inst = parent_module->getModInst()) {
+      return dbToSta(parent_inst);
+    }
+  }
   return top_instance_;
 }
 
@@ -1369,13 +1383,13 @@ const char* dbNetwork::name(const Net* net) const
   if (modnet) {
     name = modnet->getName();
   }
-  if (hierarchy_) {
-    size_t last_idx = name.find_last_of('/');
-    if (last_idx != string::npos) {
-      name = name.substr(last_idx + 1);
-    }
-    return tmpStringCopy(name.c_str());
-  }
+  //  if (hierarchy_) {
+  //    size_t last_idx = name.find_last_of('/');
+  //    if (last_idx != string::npos) {
+  //      name = name.substr(last_idx + 1);
+  //    }
+  //    return tmpStringCopy(name.c_str());
+  //  }
   if (dnet || modnet) {
     return tmpStringCopy(name.c_str());
   }
@@ -1692,8 +1706,6 @@ void dbNetwork::readDbNetlistAfter()
   makeTopCell();
   findConstantNets();
   checkLibertyCorners();
-  // we post process build hash maps to allow
-  // fast access to key data.
   makeAccessHashes();
 }
 

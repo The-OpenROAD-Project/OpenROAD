@@ -60,50 +60,50 @@ module clockgen (clk_i,
 
  wire [3:0] counter_q;
 
- INV_X1 \U1/_28_  (.A(rst_n_i),
+ INV_X1 _28_ (.A(rst_n_i),
     .ZN(_11_));
- AND2_X1 \U1/_29_  (.A1(_22_),
+ AND2_X1 _29_ (.A1(_22_),
     .A2(rst_n_i),
     .ZN(_03_));
- OAI21_X1 \U1/_30_  (.A(rst_n_i),
+ OAI21_X1 _30_ (.A(rst_n_i),
     .B1(counter_q[1]),
     .B2(counter_q[0]),
     .ZN(_12_));
- AOI21_X1 \U1/_31_  (.A(_12_),
+ AOI21_X1 _31_ (.A(_12_),
     .B1(counter_q[1]),
     .B2(counter_q[0]),
     .ZN(_04_));
- AND3_X1 \U1/_32_  (.A1(counter_q[0]),
+ AND3_X1 _32_ (.A1(counter_q[0]),
     .A2(counter_q[1]),
     .A3(counter_q[2]),
     .ZN(_13_));
- AOI21_X1 \U1/_33_  (.A(counter_q[2]),
+ AOI21_X1 _33_ (.A(counter_q[2]),
     .B1(counter_q[1]),
     .B2(counter_q[0]),
     .ZN(_14_));
- NOR3_X1 \U1/_34_  (.A1(_11_),
+ NOR3_X1 _34_ (.A1(_11_),
     .A2(_13_),
     .A3(_14_),
     .ZN(_05_));
- XNOR2_X1 \U1/_35_  (.A(counter_q[3]),
+ XNOR2_X1 _35_ (.A(counter_q[3]),
     .B(_13_),
     .ZN(_15_));
- NOR2_X1 \U1/_36_  (.A1(_11_),
+ NOR2_X1 _36_ (.A1(_11_),
     .A2(_15_),
     .ZN(_06_));
- DFF_X1 \U1/_37_  (.D(_03_),
+ DFF_X1 _37_ (.D(_03_),
     .CK(clk_i),
     .Q(counter_q[0]),
     .QN(_22_));
- DFF_X1 \U1/_38_  (.D(_04_),
+ DFF_X1 _38_ (.D(_04_),
     .CK(clk_i),
     .Q(counter_q[1]),
     .QN(_21_));
- DFF_X1 \U1/_39_  (.D(_05_),
+ DFF_X1 _39_ (.D(_05_),
     .CK(clk_i),
     .Q(counter_q[2]),
     .QN(_20_));
- DFF_X1 \U1/_40_  (.D(_06_),
+ DFF_X1 _40_ (.D(_06_),
     .CK(clk_i),
     .Q(counter_q[3]),
     .QN(_19_));
@@ -124,78 +124,78 @@ module counter (clk_i,
  wire count_valid_q;
  wire [3:0] counter_q;
 
- INV_X1 \U2/_49_  (.A(_41_),
+ INV_X1 _49_ (.A(_41_),
     .ZN(_26_));
- INV_X1 \U2/_50_  (.A(load_i),
+ INV_X1 _50_ (.A(load_i),
     .ZN(_27_));
- AND2_X1 \U2/_51_  (.A1(_27_),
+ AND2_X1 _51_ (.A1(_27_),
     .A2(rst_n_i),
     .ZN(_12_));
- OAI21_X1 \U2/_52_  (.A(rst_n_i),
+ OAI21_X1 _52_ (.A(rst_n_i),
     .B1(_27_),
     .B2(load_value_i[0]),
     .ZN(_28_));
- AOI21_X1 \U2/_53_  (.A(_28_),
+ AOI21_X1 _53_ (.A(_28_),
     .B1(_27_),
     .B2(_26_),
     .ZN(_13_));
- NAND2_X1 \U2/_54_  (.A1(counter_q[0]),
+ NAND2_X1 _54_ (.A1(counter_q[0]),
     .A2(counter_q[1]),
     .ZN(_29_));
- XNOR2_X1 \U2/_55_  (.A(counter_q[0]),
+ XNOR2_X1 _55_ (.A(counter_q[0]),
     .B(counter_q[1]),
     .ZN(_30_));
- OAI21_X1 \U2/_56_  (.A(rst_n_i),
+ OAI21_X1 _56_ (.A(rst_n_i),
     .B1(load_value_i[1]),
     .B2(_27_),
     .ZN(_31_));
- AOI21_X1 \U2/_57_  (.A(_31_),
+ AOI21_X1 _57_ (.A(_31_),
     .B1(_30_),
     .B2(_27_),
     .ZN(_14_));
- NAND3_X1 \U2/_58_  (.A1(counter_q[0]),
+ NAND3_X1 _58_ (.A1(counter_q[0]),
     .A2(counter_q[1]),
     .A3(counter_q[2]),
     .ZN(_32_));
- XOR2_X1 \U2/_59_  (.A(counter_q[2]),
+ XOR2_X1 _59_ (.A(counter_q[2]),
     .B(_29_),
     .Z(_33_));
- OAI21_X1 \U2/_60_  (.A(rst_n_i),
+ OAI21_X1 _60_ (.A(rst_n_i),
     .B1(load_value_i[2]),
     .B2(_27_),
     .ZN(_34_));
- AOI21_X1 \U2/_61_  (.A(_34_),
+ AOI21_X1 _61_ (.A(_34_),
     .B1(_33_),
     .B2(_27_),
     .ZN(_15_));
- XOR2_X1 \U2/_62_  (.A(counter_q[3]),
+ XOR2_X1 _62_ (.A(counter_q[3]),
     .B(_32_),
     .Z(_35_));
- OAI21_X1 \U2/_63_  (.A(rst_n_i),
+ OAI21_X1 _63_ (.A(rst_n_i),
     .B1(load_value_i[3]),
     .B2(_27_),
     .ZN(_36_));
- AOI21_X1 \U2/_64_  (.A(_36_),
+ AOI21_X1 _64_ (.A(_36_),
     .B1(_35_),
     .B2(_27_),
     .ZN(_16_));
- DFF_X1 \U2/_65_  (.D(_12_),
+ DFF_X1 _65_ (.D(_12_),
     .CK(clk_i),
     .Q(count_valid_q),
     .QN(_42_));
- DFF_X1 \U2/_66_  (.D(_13_),
+ DFF_X1 _66_ (.D(_13_),
     .CK(clk_i),
     .Q(counter_q[0]),
     .QN(_41_));
- DFF_X1 \U2/_67_  (.D(_14_),
+ DFF_X1 _67_ (.D(_14_),
     .CK(clk_i),
     .Q(counter_q[1]),
     .QN(_40_));
- DFF_X1 \U2/_68_  (.D(_15_),
+ DFF_X1 _68_ (.D(_15_),
     .CK(clk_i),
     .Q(counter_q[2]),
     .QN(_39_));
- DFF_X1 \U2/_69_  (.D(_16_),
+ DFF_X1 _69_ (.D(_16_),
     .CK(clk_i),
     .Q(counter_q[3]),
     .QN(_38_));
@@ -216,78 +216,78 @@ module counter-1 (clk_i,
  wire count_valid_q;
  wire [3:0] counter_q;
 
- INV_X1 \U3/_49_  (.A(_41_),
+ INV_X1 _49_ (.A(_41_),
     .ZN(_26_));
- INV_X1 \U3/_50_  (.A(load_i),
+ INV_X1 _50_ (.A(load_i),
     .ZN(_27_));
- AND2_X1 \U3/_51_  (.A1(_27_),
+ AND2_X1 _51_ (.A1(_27_),
     .A2(rst_n_i),
     .ZN(_12_));
- OAI21_X1 \U3/_52_  (.A(rst_n_i),
+ OAI21_X1 _52_ (.A(rst_n_i),
     .B1(_27_),
     .B2(load_value_i[0]),
     .ZN(_28_));
- AOI21_X1 \U3/_53_  (.A(_28_),
+ AOI21_X1 _53_ (.A(_28_),
     .B1(_27_),
     .B2(_26_),
     .ZN(_13_));
- NAND2_X1 \U3/_54_  (.A1(counter_q[0]),
+ NAND2_X1 _54_ (.A1(counter_q[0]),
     .A2(counter_q[1]),
     .ZN(_29_));
- XNOR2_X1 \U3/_55_  (.A(counter_q[0]),
+ XNOR2_X1 _55_ (.A(counter_q[0]),
     .B(counter_q[1]),
     .ZN(_30_));
- OAI21_X1 \U3/_56_  (.A(rst_n_i),
+ OAI21_X1 _56_ (.A(rst_n_i),
     .B1(load_value_i[1]),
     .B2(_27_),
     .ZN(_31_));
- AOI21_X1 \U3/_57_  (.A(_31_),
+ AOI21_X1 _57_ (.A(_31_),
     .B1(_30_),
     .B2(_27_),
     .ZN(_14_));
- NAND3_X1 \U3/_58_  (.A1(counter_q[0]),
+ NAND3_X1 _58_ (.A1(counter_q[0]),
     .A2(counter_q[1]),
     .A3(counter_q[2]),
     .ZN(_32_));
- XOR2_X1 \U3/_59_  (.A(counter_q[2]),
+ XOR2_X1 _59_ (.A(counter_q[2]),
     .B(_29_),
     .Z(_33_));
- OAI21_X1 \U3/_60_  (.A(rst_n_i),
+ OAI21_X1 _60_ (.A(rst_n_i),
     .B1(load_value_i[2]),
     .B2(_27_),
     .ZN(_34_));
- AOI21_X1 \U3/_61_  (.A(_34_),
+ AOI21_X1 _61_ (.A(_34_),
     .B1(_33_),
     .B2(_27_),
     .ZN(_15_));
- XOR2_X1 \U3/_62_  (.A(counter_q[3]),
+ XOR2_X1 _62_ (.A(counter_q[3]),
     .B(_32_),
     .Z(_35_));
- OAI21_X1 \U3/_63_  (.A(rst_n_i),
+ OAI21_X1 _63_ (.A(rst_n_i),
     .B1(load_value_i[3]),
     .B2(_27_),
     .ZN(_36_));
- AOI21_X1 \U3/_64_  (.A(_36_),
+ AOI21_X1 _64_ (.A(_36_),
     .B1(_35_),
     .B2(_27_),
     .ZN(_16_));
- DFF_X1 \U3/_65_  (.D(_12_),
+ DFF_X1 _65_ (.D(_12_),
     .CK(clk_i),
     .Q(count_valid_q),
     .QN(_42_));
- DFF_X1 \U3/_66_  (.D(_13_),
+ DFF_X1 _66_ (.D(_13_),
     .CK(clk_i),
     .Q(counter_q[0]),
     .QN(_41_));
- DFF_X1 \U3/_67_  (.D(_14_),
+ DFF_X1 _67_ (.D(_14_),
     .CK(clk_i),
     .Q(counter_q[1]),
     .QN(_40_));
- DFF_X1 \U3/_68_  (.D(_15_),
+ DFF_X1 _68_ (.D(_15_),
     .CK(clk_i),
     .Q(counter_q[2]),
     .QN(_39_));
- DFF_X1 \U3/_69_  (.D(_16_),
+ DFF_X1 _69_ (.D(_16_),
     .CK(clk_i),
     .Q(counter_q[3]),
     .QN(_38_));

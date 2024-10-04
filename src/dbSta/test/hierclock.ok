@@ -10,13 +10,13 @@ Fanout     Cap    Slew   Delay    Time   Description
                           0.00    0.00   clock network delay (ideal)
                   0.00    0.00    0.00 ^ U2/_66_/CK (DFF_X1)
      1    1.55    0.01    0.06    0.06 v U2/_66_/QN (DFF_X1)
-                                         _41_ (net)
+                                         U2/_41_ (net)
                   0.01    0.00    0.06 v U2/_49_/A (INV_X1)
      1    1.68    0.01    0.01    0.08 ^ U2/_49_/ZN (INV_X1)
-                                         _26_ (net)
+                                         U2/_26_ (net)
                   0.01    0.00    0.08 ^ U2/_53_/B2 (AOI21_X1)
      1    1.06    0.01    0.01    0.09 v U2/_53_/ZN (AOI21_X1)
-                                         _13_ (net)
+                                         U2/_13_ (net)
                   0.01    0.00    0.09 v U2/_66_/D (DFF_X1)
                                   0.09   data arrival time
 
@@ -44,13 +44,13 @@ Fanout     Cap    Slew   Delay    Time   Description
                           0.00    0.00   clock network delay (ideal)
                   0.00    0.00    0.00 ^ U3/_66_/CK (DFF_X1)
      1    1.55    0.01    0.06    0.06 v U3/_66_/QN (DFF_X1)
-                                         _41_ (net)
+                                         U3/_41_ (net)
                   0.01    0.00    0.06 v U3/_49_/A (INV_X1)
      1    1.68    0.01    0.01    0.08 ^ U3/_49_/ZN (INV_X1)
-                                         _26_ (net)
+                                         U3/_26_ (net)
                   0.01    0.00    0.08 ^ U3/_53_/B2 (AOI21_X1)
      1    1.06    0.01    0.01    0.09 v U3/_53_/ZN (AOI21_X1)
-                                         _13_ (net)
+                                         U3/_13_ (net)
                   0.01    0.00    0.09 v U3/_66_/D (DFF_X1)
                                   0.09   data arrival time
 
@@ -67,4 +67,6 @@ Fanout     Cap    Slew   Delay    Time   Description
                                   0.09   slack (MET)
 
 
-No differences found.
+Differences found at line 64.
+    .ZN(\U1/_11_ ));
+    .ZN(_11_));
