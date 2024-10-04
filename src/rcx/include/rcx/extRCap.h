@@ -35,7 +35,8 @@
 #include <map>
 
 #include "ext2dBox.h"
-#include "extprocess.h"
+// #include "extprocess.h"
+#include "rcx/extSolverGen.h"
 #include "odb/db.h"
 #include "odb/dbExtControl.h"
 #include "odb/dbShape.h"
@@ -223,6 +224,12 @@ class extDistWidthRCTable
   void createWidthMap();
   void makeWSmapping();
 
+  // ------------------------------------ DKF 09212024 -------------------------------------
+  uint writeRulesOver(FILE* fp, const char *keyword, bool bin);
+  uint writeRulesUnder(FILE* fp, const char *keyword, bool bin);
+  uint writeRulesOverUnder(FILE* fp, const char *keyword, bool bin);
+
+
   ~extDistWidthRCTable();
   void setDiagUnderTables(uint met,
                           Ath__array1D<double>* diagWidthTable,
@@ -322,6 +329,14 @@ class extMetRCTable
  public:
   extMetRCTable(uint layerCnt, AthPool<extDistRC>* rcPool, Logger* logger_);
   ~extMetRCTable();
+
+  // ---------------------- DKF 092024 -----------------------------------
+  void allocOverUnderTable(uint met, bool open, Ath__array1D<double>* wTable, double dbFactor) ;
+  void allocUnderTable(uint met, bool open, Ath__array1D<double>* wTable, double dbFactor);
+  extDistWidthRCTable*** allocTable();
+  void deleteTable(extDistWidthRCTable*** table);
+  
+
   void allocateInitialTables(uint layerCnt,
                              uint widthCnt,
                              bool over,
@@ -363,16 +378,24 @@ class extMetRCTable
 
  public:
   uint _layerCnt;
+  uint _wireCnt;
   char _name[128];
+  extDistWidthRCTable*** _capOver_open;
   extDistWidthRCTable** _resOver;
   extDistWidthRCTable** _capOver;
   extDistWidthRCTable** _capUnder;
+  extDistWidthRCTable*** _capUnder_open;
   extDistWidthRCTable** _capOverUnder;
+  extDistWidthRCTable*** _capOverUnder_open;
   extDistWidthRCTable** _capDiagUnder;
 
   AthPool<extDistRC>* _rcPoolPtr;
   double _rate;
   Logger* logger_;
+
+    // dkf 092024
+  // TODO  Ath__array1D<extViaModel*> _viaModel;
+  // TODO  AthHash<int> _viaModelHash;
 };
 
 class extRCTable
@@ -398,7 +421,69 @@ class extMainOptions;
 
 class extRCModel
 {
+
  public:
+
+  // --------------------------- DKF 092024 -------------------------
+  // dkf 03232024
+
+  extMain *get_extMain() { return _extMain; };
+  bool getDiagFlag() { return _diag; };
+
+  static int getMetIndexOverUnder(int met, int mUnder, int mOver, int layerCnt, int maxCnt=1000);
+
+  void clear_corners();
+  bool addCorner(std::string w, int ii) ;
+  uint initModel(std::list<std::string> &corners, int met_cnt);
+  uint readRCvalues(const char* corner, const char* filename, int wire, bool over, bool under, bool over_under, bool diag);
+  bool getAllowedPatternWireNums(Ath__parser& p, extMeasure& m, const char* fullPatternName, int input_target_wire, int& pattern_num);
+  uint defineCorners(std::list<std::string> &corners);
+  uint allocateTables(uint m, uint ii, uint diagModel);
+  static int getMaxMetIndexOverUnder(int met, int layerCnt);
+
+  bool parseMets(Ath__parser &parser, extMeasure &m);
+  double parseWidthDistLen(Ath__parser& parser, extMeasure& m);
+
+  uint writeRulesPattern(uint ou, uint layer, int modelIndex, extDistWidthRCTable* table_m, extDistWidthRCTable* table_0, const char *patternKeyword, FILE *fp, bool binary);
+  uint getCorners(std::list<std::string>& corners);
+  uint GenExtModel(std::list<std::string> &corner_list, const char *out_file, const char *comment, const char *version, int pattern);
+
+  // --------------------------- DKF 092024 -------------------------
+
+
+  // DKF 7/25/2024 -- 3d pattern generation
+  bool _winDirFlat;
+  int _len;
+  int _simVersion;
+  int _maxLevelDist;
+  FILE *_filesFP;
+  uint measureWithVar(extMeasure* measure);
+  uint measureDiagWithVar(extMeasure* measure);
+  uint linesOver(uint wireCnt, uint widthCnt, uint spaceCnt, uint dCnt, uint metLevel=0);
+  uint linesOverUnder(uint wireCnt, uint widthCnt, uint spaceCnt, uint dCnt, uint metLevel=0);
+  uint linesDiagUnder(uint wireCnt, uint widthCnt, uint spaceCnt, uint dCnt, uint metLevel=0);
+  uint linesUnder(uint wireCnt, uint widthCnt, uint spaceCnt, uint dCnt, uint metLevel=0);
+  void setOptions(const char* topDir, const char* pattern,
+                            bool writeFiles, bool readFiles, bool runSolver,
+                            bool keepFile, uint metLevel);
+  void writeRuleWires(FILE* fp, extMeasure* measure, uint wireCnt) ;
+  void writeRuleWires_3D(FILE* fp, extMeasure* measure, uint wireCnt);
+  void writeWires2_3D(FILE* fp, extMeasure* measure, uint wireCnt);
+  void writeRaphaelCaps(FILE* fp, extMeasure* measure, uint wireCnt) ;
+  void writeWires(FILE* fp, extMeasure* measure, uint wireCnt) ;
+  uint getCapMatrixValues3D(uint lastNode, extMeasure* m);
+  uint readCapacitanceBench3D(bool readCapLog, extMeasure* m, bool skipPrintWires);
+uint getCapValues3D(uint lastNode, double& cc1, double& cc2,
+                                double& fr, double& tot, extMeasure* m);
+void writeRaphaelCaps3D(FILE* fp, extMeasure* measure, uint wireCnt);
+bool measurePatternVar_3D(extMeasure* m, double top_width, double bot_width,double thickness,
+                                   uint wireCnt,
+                                   char* wiresNameSuffix,
+                                   double res);
+     double writeWirePatterns(FILE* fp, extMeasure* measure, uint wireCnt, double height_offset, double &len, double &max_x);
+double writeWirePatterns_w3(FILE* fp, extMeasure* measure, uint wireCnt, double height_offset, double &len, double &max_x) ;
+   // ------------------------------------------------------------------
+
   extMetRCTable* getMetRCTable(uint ii) { return _modelTable[ii]; };
 
   int getModelCnt() { return _modelCnt; };
@@ -606,6 +691,12 @@ class extRCModel
   extDistRC* getMaxRC(int met, int width, int dist);
 
  private:
+
+    // -------------------------------------- DKF 092024 -------------------------------------
+    std::map<std::string, int> _cornerMap;
+    std::vector<std::string> _cornerTable;
+    // -------------------------------------- DKF 092024 -------------------------------------
+
   bool _ouReadReverse;
   uint _layerCnt;
   char _name[128];
@@ -639,6 +730,7 @@ class extRCModel
 
   FILE* _capLogFP;
   FILE* _logFP;
+  FILE* _dbg_logFP;
 
   bool _writeFiles;
   bool _readSolver;
@@ -675,6 +767,13 @@ class extLenOU  // assume cross-section on the z-direction
 class extMeasure
 {
  public:
+   // DKF 7/25/2024 -- 3d pattern generation
+   bool _3dFlag;
+   bool _benchFlag;
+   bool _rcValid;
+   int _simVersion;
+  double getCCfringe3D(uint lastNode, uint n, uint start, uint end) ;
+
   extMeasure(utl::Logger* logger);
   ~extMeasure();
 
@@ -1043,6 +1142,8 @@ class extMeasure
   double _seff;
 
   bool _varFlag;
+  bool _open;
+  bool _over1;
   bool _over;
   bool _res;
   bool _overUnder;
@@ -1232,7 +1333,29 @@ class extCorner
 
 class extMain
 {
- public:
+  // --------------------- dkf 092024 ------------------------
+  private:
+    extSolverGen *_currentSolverGen;
+
+public:
+  extSolverGen* getCurrentSolverGen() { return _currentSolverGen; }
+  void setCurrentSolverGen(extSolverGen* p) { _currentSolverGen= p; }
+
+// --------------------- dkf 092024 ------------------------
+  extRCModel* getCurrentModel() { return _currentModel; }
+  void setCurrentModel(extRCModel* m) { _currentModel= m; }
+  uint GenExtModel(std::list<std::string> spef_file_list, std::list<std::string> corner_list, const char *out_file, const char *comment, const char *version, int pattern);
+  // --------------------- dkf 092024 ------------------------
+   // DKF 07/25/24 -- 3d pattern generation
+   uint metRulesGen(const char* name, const char* topDir,
+                          const char* rulesFile, int pattern, bool writeFiles,
+                          bool readFiles, bool runSolver, bool keepFile,
+                          uint met);
+   uint  rulesGen(const char* name, const char* topDir,
+                       const char* rulesFile, int pattern, bool writeFiles,
+                       bool readFiles, bool runSolver, bool keepFile, int wLen, int version, bool win);
+    uint readProcess(const char* name, const char* filename);
+
   void init(odb::dbDatabase* db, Logger* logger);
   double getTotalCouplingCap(odb::dbNet* net,
                              const char* filterNet,
