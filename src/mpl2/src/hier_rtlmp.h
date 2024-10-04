@@ -72,6 +72,8 @@ class Snapper;
 class SACoreSoftMacro;
 class SACoreHardMacro;
 
+using LayersWithPinsMap = std::map<odb::dbTechLayer*, odb::dbBox*>;
+
 // Hierarchical RTL-MP
 // Support Multi-Level Clustering.
 // Support designs with IO Pads.
@@ -385,6 +387,12 @@ struct SnapParameters
   int lower_left_to_first_pin = 0;
 };
 
+struct SameDirectionLayersData
+{
+  LayersWithPinsMap layer_to_pin_box;
+  odb::dbTechLayer* snap_layer = nullptr;
+};
+
 class Snapper
 {
  public:
@@ -395,8 +403,9 @@ class Snapper
   void snapMacro();
 
  private:
-  using LayersWithPinsMap = std::map<odb::dbTechLayer*, odb::dbBox*>;
-
+  int computeNewOriginCoordinate(const bool horizontal_snap);
+  SameDirectionLayersData computeSameDirectionLayersData(
+      bool horizontal_snap);
   odb::Point computeSnapOrigin();
   SnapParameters computeSnapParameters(odb::dbTechLayer* layer,
                                        odb::dbBox* box,

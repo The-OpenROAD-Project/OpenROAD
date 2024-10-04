@@ -4473,16 +4473,55 @@ Snapper::Snapper(odb::dbInst* inst) : inst_(inst)
 
 void Snapper::snapMacro()
 {
-  const odb::Point snap_origin = computeSnapOrigin();
-  inst_->setOrigin(snap_origin.x(), snap_origin.y());
+  const int origin_x = computeNewOriginCoordinate(true /* y */);
+  const int origin_y = computeNewOriginCoordinate(false /* y */);
+
+  inst_->setOrigin(origin_x, origin_y);
 }
 
-odb::Point Snapper::computeSnapOrigin()
+int Snapper::computeNewOriginCoordinate(const bool horizontal_snap)
 {
-  LayersWithPinsMap hor_layer_to_pin_box;
-  LayersWithPinsMap vert_layer_to_pin_box;
-  odb::dbTechLayer* hor_snap_layer = nullptr;
-  odb::dbTechLayer* vert_snap_layer = nullptr;
+  SameDirectionLayersData layers_data
+      = computeSameDirectionLayersData(horizontal_snap);
+
+  SnapParameters params = computeSnapParameters(
+      layers_data.snap_layer,
+      layers_data.layer_to_pin_box.at(layers_data.snap_layer),
+      horizontal_snap);
+
+  int origin;
+  if (horizontal_snap) {
+    origin = inst_->getOrigin().x();
+  } else {
+    origin = inst_->getOrigin().y();
+  }
+
+  // Compute trackgrid alignment only if there are pins in the grid's
+  // direction.Note that we first align the macro origin with the track
+  // grid and then, we compensate the necessary offset.
+  if (params.pin_width != 0) {
+    origin = std::round(origin / params.pitch) * params.pitch + params.offset;
+    origin -= params.pin_offset;
+  }
+
+  const int manufacturing_grid
+      = inst_->getDb()->getTech()->getManufacturingGrid();
+  origin = std::round(origin / manufacturing_grid) * manufacturing_grid;
+
+  return origin;
+}
+
+SameDirectionLayersData Snapper::computeSameDirectionLayersData(
+    const bool horizontal_snap)
+{
+  SameDirectionLayersData data;
+
+  // Note that, for a layer whose preferred track is vertical, i.e.,
+  // an arrangement of vertical lines, we'll move horizontally the
+  // macro to try aligning its pins.
+  const odb::dbTechLayerDir target_direction
+      = horizontal_snap ? odb::dbTechLayerDir::VERTICAL
+                        : odb::dbTechLayerDir::HORIZONTAL;
 
   odb::dbMaster* master = inst_->getMaster();
   for (odb::dbMTerm* mterm : master->getMTerms()) {
@@ -4493,61 +4532,23 @@ odb::Point Snapper::computeSnapOrigin()
     for (odb::dbMPin* mpin : mterm->getMPins()) {
       for (odb::dbBox* box : mpin->getGeometry()) {
         odb::dbTechLayer* layer = box->getTechLayer();
-        if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-          updateLayerMap(hor_layer_to_pin_box, layer, hor_snap_layer, box);
-        } else {
-          updateLayerMap(vert_layer_to_pin_box, layer, vert_snap_layer, box);
+        if (layer->getDirection() == target_direction) {
+          const auto itr = data.layer_to_pin_box.find(layer);
+          if (itr != data.layer_to_pin_box.end()) {
+            continue;
+          }
+
+          if (data.layer_to_pin_box.empty()) {
+            data.snap_layer = layer;
+          }
+
+          data.layer_to_pin_box[layer] = box;
         }
       }
     }
   }
 
-  SnapParameters x = computeSnapParameters(
-      vert_snap_layer, vert_layer_to_pin_box.at(vert_snap_layer), true);
-  SnapParameters y = computeSnapParameters(
-      hor_snap_layer, hor_layer_to_pin_box.at(hor_snap_layer), false);
-
-  // This may NOT be the lower-left corner.
-  int origin_x = inst_->getOrigin().x();
-  int origin_y = inst_->getOrigin().y();
-
-  // Compute trackgrid alignment only if there are pins in the grid's direction.
-  // Note that we first align the macro origin with the track grid and then, we
-  // compensate the necessary offset.
-  if (x.pin_width != 0) {
-    origin_x = std::round(origin_x / x.pitch) * x.pitch + x.offset;
-    origin_x -= x.pin_offset;
-  }
-  if (y.pin_width != 0) {
-    origin_y = std::round(origin_y / y.pitch) * y.pitch + y.offset;
-    origin_y -= y.pin_offset;
-  }
-
-  const int manufacturing_grid
-      = inst_->getDb()->getTech()->getManufacturingGrid();
-
-  origin_x = std::round(origin_x / manufacturing_grid) * manufacturing_grid;
-  origin_y = std::round(origin_y / manufacturing_grid) * manufacturing_grid;
-
-  const odb::Point snap_origin(origin_x, origin_y);
-
-  return snap_origin;
-}
-
-void Snapper::updateLayerMap(LayersWithPinsMap& layer_to_pin_box,
-                             odb::dbTechLayer* current_layer,
-                             odb::dbTechLayer*& snap_layer,
-                             odb::dbBox* pin_box)
-{
-  const auto itr = layer_to_pin_box.find(current_layer);
-  if (itr != layer_to_pin_box.end()) {
-    return;
-  }
-
-  if (layer_to_pin_box.empty()) {
-    snap_layer = current_layer;
-  }
-  layer_to_pin_box[current_layer] = pin_box;
+  return data;
 }
 
 SnapParameters Snapper::computeSnapParameters(odb::dbTechLayer* layer,
