@@ -109,9 +109,9 @@ BOOST_AUTO_TEST_CASE(edit)
   std::string libname = "test_lib";
   dbGDSLib* lib = createEmptyGDSLib(db, libname);
 
-  dbGDSStructure* str1 = createEmptyGDSStructure(lib, "str1");
-  dbGDSStructure* str2 = createEmptyGDSStructure(lib, "str2");
-  dbGDSStructure* str3 = createEmptyGDSStructure(lib, "str3");
+  dbGDSStructure* str1 = dbGDSStructure::create(lib, "str1");
+  dbGDSStructure* str2 = dbGDSStructure::create(lib, "str2");
+  dbGDSStructure* str3 = dbGDSStructure::create(lib, "str3");
 
   dbGDSStructure::destroy(str2);
 
