@@ -190,11 +190,6 @@ void stampGDSLib(dbGDSLib* lib, bool modified)
   }
 }
 
-dbGDSStructure* createEmptyGDSStructure(dbGDSLib* lib, const std::string& name)
-{
-  return dbGDSStructure::create(lib, name.c_str());
-}
-
 dbGDSBoundary* createEmptyGDSBoundary(dbDatabase* db)
 {
   return (dbGDSBoundary*) (new _dbGDSBoundary((_dbDatabase*) db));
