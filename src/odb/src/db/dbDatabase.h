@@ -70,7 +70,7 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 90;  // Current revision number
+const uint db_schema_minor = 91;  // Current revision number
 
 // Revision where unused hashes removed
 const uint db_schema_db_remove_hash = 91;
