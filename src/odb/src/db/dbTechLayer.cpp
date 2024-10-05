@@ -855,6 +855,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> flags_bit_field;
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
+  if (obj.getDatabase()->isSchema(db_schema_orth_spc_tbl)) {
+    stream >> obj.orth_spacing_tbl_;
+  }
   stream >> *obj.cut_class_rules_tbl_;
   stream >> obj.cut_class_rules_hash_;
   stream >> *obj.spacing_eol_rules_tbl_;
@@ -955,6 +958,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
   stream << flags_bit_field;
+  if (obj.getDatabase()->isSchema(db_schema_orth_spc_tbl)) {
+    stream << obj.orth_spacing_tbl_;
+  }
   stream << *obj.cut_class_rules_tbl_;
   stream << obj.cut_class_rules_hash_;
   stream << *obj.spacing_eol_rules_tbl_;
@@ -1204,6 +1210,12 @@ float dbTechLayer::getLayerAdjustment() const
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
   return obj->layer_adjustment_;
+}
+
+std::vector<std::pair<int, int>> dbTechLayer::getOrthSpacingTable() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return obj->orth_spacing_tbl_;
 }
 
 dbSet<dbTechLayerCutClassRule> dbTechLayer::getTechLayerCutClassRules() const
@@ -2473,6 +2485,18 @@ dbTechLayer* dbTechLayer::getUpperLayer()
 dbTech* dbTechLayer::getTech() const
 {
   return (dbTech*) getImpl()->getOwner();
+}
+
+bool dbTechLayer::hasOrthSpacingTable() const
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  return !layer->orth_spacing_tbl_.empty();
+}
+
+void dbTechLayer::addOrthSpacingTableEntry(const int within, const int spacing)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  layer->orth_spacing_tbl_.emplace_back(within, spacing);
 }
 
 dbTechLayer* dbTechLayer::create(dbTech* tech_,
