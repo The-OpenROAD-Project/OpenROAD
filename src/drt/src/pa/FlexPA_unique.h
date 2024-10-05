@@ -50,6 +50,7 @@ class UniqueInsts
   UniqueInsts(frDesign* design,
               const frCollection<odb::dbInst*>& target_insts,
               Logger* logger);
+
   /**
    * @brief Initializes Unique Instances and Pin Acess data.
    */

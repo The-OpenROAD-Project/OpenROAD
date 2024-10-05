@@ -7,7 +7,7 @@
 [INFO ODB-0133]     Created 2 nets and 105 connections.
 Found 105 slew violations
 Found 1 cap violations
-[INFO RSZ-0058] Using max wire length 2393um.
+[INFO RSZ-0058] Using max wire length 2406um.
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0038] Inserted 2 buffers in 1 nets.

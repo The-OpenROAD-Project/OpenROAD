@@ -509,8 +509,9 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
       } else
         repair_failures = true;
     }
-    if (inserted_diodes)
+    if (inserted_diodes) {
       grouter_->addDirtyNet(db_net);
+    }
   }
   if (repair_failures) {
     logger_->warn(GRT, 243, "Unable to repair antennas on net with diodes.");

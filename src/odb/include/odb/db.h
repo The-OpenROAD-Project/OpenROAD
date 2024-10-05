@@ -1445,6 +1445,46 @@ class dbBlock : public dbObject
   dbDft* getDft() const;
 
   ///
+  /// Get the minimum routing layer
+  ///
+  int getMinRoutingLayer() const;
+
+  ///
+  /// Set the minimum routing layer
+  ///
+  void setMinRoutingLayer(int min_routing_layer);
+
+  ///
+  /// Get the maximum routing layer
+  ///
+  int getMaxRoutingLayer() const;
+
+  ///
+  /// Set the maximum routing layer
+  ///
+  void setMaxRoutingLayer(int max_routing_layer);
+
+  ///
+  /// Set the minimum layer for clock
+  ///
+  int getMinLayerForClock() const;
+
+  ///
+  /// Set the minimum layer for clock
+  ///
+  void setMinLayerForClock(int min_layer_for_clock);
+
+  ///
+  /// Set the maximum layer for clock
+  ///
+  int getMaxLayerForClock() const;
+
+  ///
+  /// Set the maximum layer for clock
+  ///
+  void setMaxLayerForClock(int max_layer_for_clock);
+
+  ///
   /// Get the extraction corner names
   ///
   void getExtCornerNames(std::list<std::string>& ecl);
@@ -8571,15 +8611,15 @@ class dbTechLayerAreaRule : public dbObject
 
   int getExceptEdgeLength() const;
 
-  void setExceptEdgeLengths(std::pair<int, int> except_edge_lengths);
+  void setExceptEdgeLengths(const std::pair<int, int>& except_edge_lengths);
 
   std::pair<int, int> getExceptEdgeLengths() const;
 
-  void setExceptMinSize(std::pair<int, int> except_min_size);
+  void setExceptMinSize(const std::pair<int, int>& except_min_size);
 
   std::pair<int, int> getExceptMinSize() const;
 
-  void setExceptStep(std::pair<int, int> except_step);
+  void setExceptStep(const std::pair<int, int>& except_step);
 
   std::pair<int, int> getExceptStep() const;
 
@@ -9570,7 +9610,7 @@ class dbTechLayerEolKeepOutRule : public dbObject
 class dbTechLayerForbiddenSpacingRule : public dbObject
 {
  public:
-  void setForbiddenSpacing(std::pair<int, int> forbidden_spacing);
+  void setForbiddenSpacing(const std::pair<int, int>& forbidden_spacing);
 
   std::pair<int, int> getForbiddenSpacing() const;
 
@@ -10360,7 +10400,7 @@ class dbGDSSRef : public dbGDSElement
 
   dbGDSSTrans getTransform() const;
 
-  void set_colRow(std::pair<int16_t, int16_t> colRow);
+  void set_colRow(const std::pair<int16_t, int16_t>& colRow);
 
   std::pair<int16_t, int16_t> get_colRow() const;
 

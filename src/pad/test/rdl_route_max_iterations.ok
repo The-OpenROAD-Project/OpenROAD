@@ -1,0 +1,66 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45_io/dummy_pads.lef, created 26 library cells
+[INFO ODB-0128] Design: soc_bsg_black_parrot
+[INFO ODB-0130]     Created 139 pins.
+[INFO ODB-0131]     Created 1452 components and 8011 component-terminals.
+[INFO ODB-0132]     Created 4 special nets and 4706 connections.
+[INFO ODB-0133]     Created 354 nets and 627 connections.
+[INFO PAD-0005] Routing 139 nets
+[INFO PAD-0037] End of routing iteration 1: 86.1% complete
+[INFO PAD-0037] End of routing iteration 2: 84.4% complete
+[INFO PAD-0037] End of routing iteration 3: 82.3% complete
+[INFO PAD-0037] End of routing iteration 4: 85.2% complete
+[WARNING PAD-0006] Failed to route the following 24 nets:
+  DVDD
+    BUMP_8_14/PAD -> u_v18_21/DVDD, u_v18_22/DVDD, u_v18_20/DVDD, u_v18_23/DVDD, u_v18_19/DVDD, ... (67 possible terminals)
+  DVSS
+    BUMP_12_12/PAD -> u_vzz_19/DVSS, u_vzz_16/DVSS, u_vzz_18/DVSS, u_vzz_15/DVSS, u_vzz_20/DVSS, ... (67 possible terminals)
+    BUMP_12_3/PAD -> u_vzz_7/DVSS, u_vzz_6/DVSS, u_vzz_8/DVSS, u_vzz_9/DVSS, u_vzz_10/DVSS, ... (67 possible terminals)
+    BUMP_3_6/PAD -> u_vzz_31/DVSS, u_vzz_32/DVSS, u_vzz_30/DVSS, u_vzz_33/DVSS, u_vzz_29/DVSS, ... (67 possible terminals)
+  VDD
+    BUMP_2_4/PAD -> u_vdd_15/VDD, u_vdd_14/VDD, u_vdd_0/VDD, u_vdd_1/VDD, u_vdd_13/VDD, ... (33 possible terminals)
+    BUMP_7_15/PAD -> u_vdd_10/VDD, u_vdd_pll/VDD, u_vdd_11/VDD, u_vdd_9/VDD, u_vdd_8/VDD, ... (32 possible terminals)
+  VSS
+    BUMP_0_10/PAD -> u_vss_13/VSS, u_vss_14/VSS, u_vss_12/VSS, u_vss_15/VSS, u_vss_11/VSS, ... (33 possible terminals)
+  p_bsg_tag_data_i
+    BUMP_12_8/PAD -> u_bsg_tag_data_i/PAD
+  p_bsg_tag_en_i
+    BUMP_13_9/PAD -> u_bsg_tag_en_i/PAD
+  p_ci_clk_i
+    BUMP_14_11/PAD -> u_ci_clk_i/PAD
+  p_clk_B_i
+    BUMP_8_12/PAD -> u_clk_B_i/PAD
+  p_co2_clk_o
+    BUMP_3_12/PAD -> u_co2_clk_o/PAD
+  p_ddr_addr_10_o
+    BUMP_5_4/PAD -> u_ddr_addr_10_o/PAD
+  p_ddr_addr_15_o
+    BUMP_4_0/PAD -> u_ddr_addr_15_o/PAD
+  p_ddr_addr_1_o
+    BUMP_8_4/PAD -> u_ddr_addr_1_o/PAD
+  p_ddr_addr_6_o
+    BUMP_7_0/PAD -> u_ddr_addr_6_o/PAD
+  p_ddr_addr_7_o
+    BUMP_7_1/PAD -> u_ddr_addr_7_o/PAD
+  p_ddr_cas_n_o
+    BUMP_10_2/PAD -> u_ddr_cas_n_o/PAD
+  p_ddr_dq_10_io
+    BUMP_3_4/PAD -> u_ddr_dq_10_io/PAD
+  p_ddr_dq_1_io
+    BUMP_4_8/PAD -> u_ddr_dq_1_io/PAD
+  p_ddr_dq_25_io
+    BUMP_12_6/PAD -> u_ddr_dq_25_io/PAD
+  p_ddr_dq_4_io
+    BUMP_4_9/PAD -> u_ddr_dq_4_io/PAD
+  p_ddr_dq_7_io
+    BUMP_4_10/PAD -> u_ddr_dq_7_io/PAD
+  p_ddr_dqs_n_0_io
+    BUMP_4_7/PAD -> u_ddr_dqs_n_0_io/PAD
+  p_ddr_dqs_p_3_io
+    BUMP_12_7/PAD -> u_ddr_dqs_p_3_io/PAD
+  p_ddr_reset_n_o
+    BUMP_10_1/PAD -> u_ddr_reset_n_o/PAD
+  p_sel_1_i
+    BUMP_10_12/PAD -> u_sel_1_i/PAD
+[ERROR PAD-0007] Failed to route 24 nets.
+PAD-0007

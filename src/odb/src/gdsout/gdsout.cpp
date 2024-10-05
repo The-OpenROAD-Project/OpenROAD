@@ -44,19 +44,7 @@
 #include "../db/dbGDSStructure.h"
 #include "../db/dbGDSText.h"
 
-namespace odb {
-namespace gds {
-
-GDSWriter::GDSWriter() : _lib(nullptr)
-{
-}
-
-GDSWriter::~GDSWriter()
-{
-  if (_file.is_open()) {
-    _file.close();
-  }
-}
+namespace odb::gds {
 
 void GDSWriter::write_gds(dbGDSLib* lib, const std::string& filename)
 {
@@ -236,8 +224,6 @@ void GDSWriter::writeElement(dbGDSElement* el)
     writeBoundary((dbGDSBoundary*) _el);
   } else if (dynamic_cast<_dbGDSPath*>(_el) != nullptr) {
     writePath((dbGDSPath*) _el);
-  } else if (dynamic_cast<_dbGDSSRef*>(_el) != nullptr) {
-    writeSRef((dbGDSSRef*) _el);
   } else if (dynamic_cast<_dbGDSSRef*>(_el)) {
     writeSRef((dbGDSSRef*) el);
   } else if (dynamic_cast<_dbGDSText*>(_el)) {
@@ -257,7 +243,7 @@ void GDSWriter::writeElement(dbGDSElement* el)
 void GDSWriter::writePropAttr(dbGDSElement* el)
 {
   auto& props = el->getPropattr();
-  for (auto pair : props) {
+  for (const auto& pair : props) {
     record_t r;
     r.type = RecordType::PROPATTR;
     r.dataType = DataType::INT_2;
@@ -361,7 +347,6 @@ void GDSWriter::writeSRef(dbGDSSRef* sref)
   } else {
     r.type = RecordType::AREF;
   }
-  r.type = RecordType::SREF;
   r.dataType = DataType::NO_DATA;
   writeRecord(r);
 
@@ -499,6 +484,4 @@ void GDSWriter::writeTextPres(const dbGDSTextPres& pres)
   writeRecord(r);
 }
 
-}  // namespace gds
-
-}  // namespace odb
+}  // namespace odb::gds

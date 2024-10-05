@@ -58,7 +58,7 @@ void Opendp::addDecapMaster(dbMaster* decap_master, double decap_cap)
 }
 
 // Return list of decap indices to fill gap
-vector<int> Opendp::findDecapCellIndices(const int& gap_width,
+vector<int> Opendp::findDecapCellIndices(const DbuX& gap_width,
                                          const double& current,
                                          const double& target)
 {
@@ -90,7 +90,9 @@ void Opendp::mapToVectorIRDrops(IRDropByPoint& psm_ir_drops,
 {
   // Sort the IR DROP point in descending order
   for (auto& it : psm_ir_drops) {
-    ir_drops.emplace_back(it.first, it.second);
+    const odb::Point pt = it.first;
+    DbuPt dbu_pt{DbuX{pt.getX()}, DbuY{pt.getY()}};
+    ir_drops.emplace_back(dbu_pt, it.second);
   }
 
   std::sort(ir_drops.begin(),
@@ -144,43 +146,42 @@ void Opendp::insertDecapCells(const double target, IRDropByPoint& psm_ir_drops)
     logger_->error(DPL, 54, "Run remove_fillers before inserting decap cells");
   }
 
-  if (!grid_->infoMapEmpty()) {
-    // Sort Decap cells and Gaps
-    prepareDecapAndGaps();
+  // Sort Decap cells and Gaps
+  prepareDecapAndGaps();
 
-    // Get IR DROP of net VDD on the lowest layer
-    std::vector<IRDrop> ir_drops;
-    mapToVectorIRDrops(psm_ir_drops, ir_drops);
+  // Get IR DROP of net VDD on the lowest layer
+  std::vector<IRDrop> ir_drops;
+  mapToVectorIRDrops(psm_ir_drops, ir_drops);
 
-    for (auto& irdrop_it : ir_drops) {
-      // Find gaps in same row
-      auto it_gapY = gaps_.find(irdrop_it.position.getY());
-      if (it_gapY != gaps_.end()) {
-        // Find and insert decap in this row
+  for (auto& irdrop_it : ir_drops) {
+    // Find gaps in same row
+    auto it_gapY = gaps_.find(irdrop_it.position.y);
+    if (it_gapY != gaps_.end()) {
+      // Find and insert decap in this row
+      insertDecapInRow(it_gapY->second,
+                       it_gapY->first,
+                       irdrop_it.position.x,
+                       irdrop_it.position.y,
+                       total_cap,
+                       target);
+    }
+
+    // if row is not first, then get lower row
+    if (it_gapY != gaps_.begin()) {
+      it_gapY--;
+      // verify if row + height >= ypoint
+      if (it_gapY->first + (*(it_gapY->second).begin())->height
+          <= irdrop_it.position.y) {
         insertDecapInRow(it_gapY->second,
                          it_gapY->first,
-                         irdrop_it.position.getX(),
-                         irdrop_it.position.getY(),
+                         irdrop_it.position.x,
+                         irdrop_it.position.y,
                          total_cap,
                          target);
       }
-
-      // if row is not first, then get lower row
-      if (it_gapY != gaps_.begin()) {
-        it_gapY--;
-        // verify if row + height >= ypoint
-        if (it_gapY->first + (*(it_gapY->second).begin())->height
-            <= irdrop_it.position.getY()) {
-          insertDecapInRow(it_gapY->second,
-                           it_gapY->first,
-                           irdrop_it.position.getX(),
-                           irdrop_it.position.getY(),
-                           total_cap,
-                           target);
-        }
-      }
     }
   }
+
   logger_->info(DPL,
                 56,
                 "Placed {} decap cells. Total capacitance: {:6.6f}",
@@ -189,9 +190,9 @@ void Opendp::insertDecapCells(const double target, IRDropByPoint& psm_ir_drops)
 }
 
 void Opendp::insertDecapInRow(const vector<GapInfo*>& gaps,
-                              const int gap_y,
-                              const int irdrop_x,
-                              const int irdrop_y,
+                              const DbuY gap_y,
+                              const DbuX irdrop_x,
+                              const DbuY irdrop_y,
                               double& total,
                               const double& target)
 {
@@ -200,7 +201,7 @@ void Opendp::insertDecapInRow(const vector<GapInfo*>& gaps,
       gaps.begin(),
       gaps.end(),
       irdrop_x,
-      [](const GapInfo* elem, const int& value) { return elem->x < value; });
+      [](const GapInfo* elem, const DbuX& value) { return elem->x < value; });
   // if this row has free gap with x <= xpoint <= x + width
   if (find_gap != gaps.end()
       && ((*find_gap)->x + (*find_gap)->width) >= irdrop_x
@@ -209,11 +210,10 @@ void Opendp::insertDecapInRow(const vector<GapInfo*>& gaps,
     if (!ids.empty()) {
       gaps_[gap_y][find_gap - gaps.begin()]->is_filled = true;
     }
-    int gap_x = (*find_gap)->x;
+    DbuX gap_x = (*find_gap)->x;
     for (const int& it_decap : ids) {
       // insert decap inst in this pos
-      insertDecapInPos(
-          decap_masters_[it_decap]->master, (*find_gap)->orient, gap_x, gap_y);
+      insertDecapInPos(decap_masters_[it_decap]->master, gap_x, gap_y);
 
       gap_x += decap_masters_[it_decap]->master->getWidth();
       total += decap_masters_[it_decap]->capacitance;
@@ -223,9 +223,8 @@ void Opendp::insertDecapInRow(const vector<GapInfo*>& gaps,
 }
 
 void Opendp::insertDecapInPos(dbMaster* master,
-                              const odb::dbOrientType& orient,
-                              const int& pos_x,
-                              const int& pos_y)
+                              const DbuX& pos_x,
+                              const DbuY& pos_y)
 {
   // insert decap inst
   string inst_name = "DECAP_" + to_string(decap_count_);
@@ -233,71 +232,45 @@ void Opendp::insertDecapInPos(dbMaster* master,
                                 master,
                                 inst_name.c_str(),
                                 /* physical_only */ true);
+  const Rect core = grid_->getCore();
+  const GridX grid_x = grid_->gridX(pos_x - core.xMin());
+  const GridY grid_y = grid_->gridSnapDownY(pos_y - core.yMin());
+  const Pixel* pixel = grid_->gridPixel(grid_x, grid_y);
+  const dbOrientType orient = pixel->sites.at(master->getSite());
   inst->setOrient(orient);
-  inst->setLocation(pos_x, pos_y);
+  inst->setLocation(pos_x.v, pos_y.v);
   inst->setPlacementStatus(dbPlacementStatus::PLACED);
   inst->setSourceType(odb::dbSourceType::DIST);
 }
 
 void Opendp::findGaps()
 {
-  DbuY min_height{std::numeric_limits<int>::max()};
-  GridMapKey chosen_grid_key = {0};
-  // we will first try to find the grid with min height that is non hybrid, if
-  // that doesn't exist, we will pick the first hybrid grid.
-  for (auto [grid_idx, itr_grid_info] : grid_->getInfoMap()) {
-    dbSite* site = itr_grid_info.getSites()[0].site;
-    DbuY site_height{static_cast<int>(site->getHeight())};
-    if (!itr_grid_info.isHybrid() && site_height < min_height) {
-      min_height = site_height;
-      chosen_grid_key = grid_idx;
-    }
-  }
-  const auto& chosen_grid_info = grid_->getInfoMap().at(chosen_grid_key);
-  GridY chosen_row_count = chosen_grid_info.getRowCount();
-  if (!chosen_grid_info.isHybrid()) {
-    DbuY site_height = min_height;
-    for (GridY row{0}; row < chosen_row_count; row++) {
-      findGapsInRow(row, site_height, chosen_grid_info);
-    }
-  } else {
-    const auto& hybrid_sites_vec = chosen_grid_info.getSites();
-    const int hybrid_sites_num = hybrid_sites_vec.size();
-    for (GridY row{0}; row < chosen_row_count; row++) {
-      const int index = row.v % hybrid_sites_num;
-      dbSite* site = hybrid_sites_vec[index].site;
-      DbuY row_height{static_cast<int>(site->getHeight())};
-      findGapsInRow(row, row_height, chosen_grid_info);
-    }
+  GridY chosen_row_count = grid_->getRowCount();
+  for (GridY row{0}; row < chosen_row_count; row++) {
+    DbuY site_height = grid_->rowHeight(row);
+    findGapsInRow(row, site_height);
   }
 }
 
-void Opendp::findGapsInRow(GridY row,
-                           DbuY row_height,
-                           const GridInfo& grid_info)
+void Opendp::findGapsInRow(GridY row, DbuY row_height)
 {
-  GridX j{0};
-
   const DbuX site_width = grid_->getSiteWidth();
-  GridX row_site_count{divFloor(grid_->getCore().dx(), site_width.v)};
+  const GridX row_site_count = grid_->getRowSiteCount();
+  GridX j{0};
   while (j < row_site_count) {
-    Pixel* pixel = grid_->gridPixel(grid_info.getGridIndex(), j, row);
-    const dbOrientType orient = pixel->orient_;
+    Pixel* pixel = grid_->gridPixel(j, row);
     if (pixel->cell == nullptr && pixel->is_valid) {
       GridX k = j;
-      while (k < row_site_count
-             && grid_->gridPixel(grid_info.getGridIndex(), k, row)->cell
-                    == nullptr
-             && grid_->gridPixel(grid_info.getGridIndex(), k, row)->is_valid) {
+      while (k < row_site_count && grid_->gridPixel(k, row)->cell == nullptr
+             && grid_->gridPixel(k, row)->is_valid) {
         k++;
       }
       const Rect core = grid_->getCore();
       // Save gap information (pos in dbu)
       DbuX gap_x{core.xMin() + gridToDbu(j, site_width)};
-      DbuY gap_y{core.yMin() + gridToDbu(row, DbuY{row_height})};
+      DbuY gap_y{core.yMin() + gridToDbu(row, row_height)};
       DbuX gap_width{gridToDbu(k, site_width) - gridToDbu(j, site_width)};
-      gaps_[gap_y.v].emplace_back(
-          new GapInfo(gap_x.v, orient, gap_width.v, row_height.v));
+      gaps_[gap_y].emplace_back(new GapInfo(gap_x, gap_width, row_height));
 
       j += (k - j);
     } else {

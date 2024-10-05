@@ -1,7 +1,6 @@
 add_library(gdsin
     gdsin.cpp
     gdsUtil.cpp
-    gdsout.cpp
 )
 
 target_include_directories(gdsin

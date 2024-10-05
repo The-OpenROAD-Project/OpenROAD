@@ -392,7 +392,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
     const int path_length = expanded.size();
     if (path_length > 1) {
       for (int i = expanded.startIndex(); i < path_length; i++) {
-        PathRef* path = expanded.path(i);
+        const PathRef* path = expanded.path(i);
         Vertex* path_vertex = path->vertex(sta_);
         Pin* path_pin = path_vertex->pin();
         Net* path_net = network_->isTopLevelPort(path_pin)
@@ -473,6 +473,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
               // reduce setup slack in ways that are too expensive to
               // predict. Use the journal to back out the change if
               // the hold buffer blows through the setup margin.
+              resizer_->incrementalParasiticsEnd();
               resizer_->journalBegin();
               Slack setup_slack_before = sta_->worstSlack(max_);
               Slew slew_before = sta_->vertexSlew(path_vertex, max_);
@@ -493,9 +494,12 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                 resizer_->journalRestore(resize_count_,
                                          inserted_buffer_count_,
                                          cloned_gate_count_,
+                                         swap_pin_count_,
                                          removed_buffer_count_);
+              } else {
+                resizer_->journalEnd();
               }
-              resizer_->journalEnd();
+              resizer_->incrementalParasiticsBegin();
             }
           }
         }

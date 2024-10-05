@@ -30,8 +30,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin Header
 #pragma once
+
+#include <ctime>
 
 #include "dbCore.h"
 #include "dbGDSStructure.h"
@@ -39,9 +40,6 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/odb.h"
-// User Code Begin Includes
-#include <ctime>
-// User Code End Includes
 
 namespace odb {
 class dbIStream;

@@ -274,6 +274,12 @@ static constexpr frDirEnum frDirEnumAll[] = {frDirEnum::D,
 static constexpr frDirEnum frDirEnumPlanar[]
     = {frDirEnum::S, frDirEnum::W, frDirEnum::E, frDirEnum::N};
 
+static constexpr frDirEnum frDirEnumVia[] = {frDirEnum::U, frDirEnum::D};
+
+static constexpr frDirEnum frDirEnumVert[] = {frDirEnum::N, frDirEnum::S};
+
+static constexpr frDirEnum frDirEnumHorz[] = {frDirEnum::W, frDirEnum::E};
+
 enum class AccessPointTypeEnum
 {
   Ideal,

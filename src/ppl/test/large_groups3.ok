@@ -12,5 +12,5 @@ Found 0 macro blocks.
 [WARNING PPL-0042] Unsuccessfully assigned I/O groups.
 [WARNING PPL-0097] The max contiguous slots (35) is smaller than the group size (71).
 [WARNING PPL-0097] The max contiguous slots (35) is smaller than the group size (71).
-[ERROR PPL-0093] Pin group of size 71 does not fit in the constrained region 0.00-100.13 at TOP edge. First pin of the group is pin300.
+[ERROR PPL-0093] Pin group of size 71 does not fit in the constrained region 0.00-100.13 at TOP edge on a single metal layer. First pin of the group is pin300.
 PPL-0093

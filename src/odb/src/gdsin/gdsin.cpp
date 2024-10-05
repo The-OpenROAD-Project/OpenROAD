@@ -52,17 +52,6 @@ namespace odb {
 
 namespace gds {
 
-GDSReader::GDSReader() : _lib(nullptr)
-{
-}
-
-GDSReader::~GDSReader()
-{
-  if (_file.is_open()) {
-    _file.close();
-  }
-}
-
 dbGDSLib* GDSReader::read_gds(const std::string& filename, dbDatabase* db)
 {
   _db = db;
@@ -397,9 +386,9 @@ dbGDSElement* GDSReader::processSRef()
     sref->_transform = processSTrans();
   }
 
-  readRecord();
   if (_r.type == RecordType::COLROW) {
     sref->_colRow = {_r.data16[0], _r.data16[1]};
+    readRecord();
   } else {
     sref->_colRow = {1, 1};
   }

@@ -687,7 +687,7 @@ void ClockTree::addPath(sta::PathExpanded& path,
     return;
   }
 
-  sta::PathRef* ref = path.path(idx);
+  const sta::PathRef* ref = path.path(idx);
   sta::Vertex* vertex = ref->vertex(sta);
   sta::Pin* pin = vertex->pin();
   sta::Net* net = getNet(pin);

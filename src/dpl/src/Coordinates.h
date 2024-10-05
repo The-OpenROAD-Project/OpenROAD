@@ -140,6 +140,38 @@ struct GridPt
   GridY y{0};
 };
 
+struct GridRect
+{
+  GridX xlo;
+  GridY ylo;
+  GridX xhi;
+  GridY yhi;
+  GridRect intersect(const GridRect& r) const;
+  GridPt closestPtInside(GridPt pt) const;
+  Rect toRect() const;
+};
+
+inline Rect GridRect::toRect() const
+{
+  return Rect(xlo.v, ylo.v, xhi.v, yhi.v);
+}
+
+inline GridPt GridRect::closestPtInside(GridPt pt) const
+{
+  auto closest = toRect().closestPtInside({pt.x.v, pt.y.v});
+  return {GridX{closest.x()}, GridY{closest.y()}};
+}
+
+inline GridRect GridRect::intersect(const GridRect& r) const
+{
+  GridRect result;
+  result.xlo = std::max(xlo, r.xlo);
+  result.ylo = std::max(ylo, r.ylo);
+  result.xhi = std::min(xhi, r.xhi);
+  result.yhi = std::min(yhi, r.yhi);
+  return result;
+}
+
 struct DbuPt
 {
   DbuPt() = default;
