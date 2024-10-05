@@ -966,6 +966,19 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._inst_hash;
   stream << block._module_hash;
   stream << block._modinst_hash;
+
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    if (!db->isSchema(db_schema_db_remove_hash)) {
+      dbHashTable<_dbModBTerm> unused_modbterm_hash;
+      dbHashTable<_dbModITerm> unused_moditerm_hash;
+      dbHashTable<_dbModNet> unused_modnet_hash;
+      dbHashTable<_dbBusPort> unused_busport_hash;
+      stream << unused_modbterm_hash;
+      stream << unused_moditerm_hash;
+      stream << unused_modnet_hash;
+      stream << unused_busport_hash;
+    }
+  }
   stream << block._powerdomain_hash;
   stream << block._logicport_hash;
   stream << block._powerswitch_hash;
@@ -1084,6 +1097,18 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._inst_hash;
   stream >> block._module_hash;
   stream >> block._modinst_hash;
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    if (!db->isSchema(db_schema_db_remove_hash)) {
+      dbHashTable<_dbModBTerm> unused_modbterm_hash;
+      dbHashTable<_dbModITerm> unused_moditerm_hash;
+      dbHashTable<_dbModNet> unused_modnet_hash;
+      dbHashTable<_dbBusPort> unused_busport_hash;
+      stream >> unused_modbterm_hash;
+      stream >> unused_moditerm_hash;
+      stream >> unused_modnet_hash;
+      stream >> unused_busport_hash;
+    }
+  }
   stream >> block._powerdomain_hash;
   stream >> block._logicport_hash;
   stream >> block._powerswitch_hash;
