@@ -70,7 +70,10 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 91;  // Current revision number
+const uint db_schema_minor = 92;  // Current revision number
+
+// Revision where the dbMarkerGroup/Categories were added to dbBlock
+const uint db_schema_dbmarkergroup = 92;
 
 // Revision where the layers ranges, for signals and clock nets,
 // were moved from GlobalRouter to dbBlock

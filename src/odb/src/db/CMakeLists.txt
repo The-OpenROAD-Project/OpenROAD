@@ -105,6 +105,9 @@ add_library(db
     dbIsolation.cpp
     dbLevelShifter.cpp
     dbLogicPort.cpp
+    dbMarker.cpp
+    dbMarkerCategory.cpp
+    dbMarkerGroup.cpp
     dbMetalWidthViaMap.cpp
     dbModBTerm.cpp
     dbModInst.cpp

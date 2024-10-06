@@ -311,6 +311,19 @@
       "second": "dbScanChain",
       "type": "1_n",
       "tbl_name": "scan_chains_"
+    },
+    {
+      "first":"dbMarkerGroup",
+      "second":"dbMarkerCategory",
+      "type":"1_n",
+      "tbl_name":"categories_tbl_",
+      "hash":true
+    },
+    {
+      "first":"dbMarkerCategory",
+      "second":"dbMarker",
+      "type":"1_n",
+      "tbl_name":"marker_tbl_"
     }
   ]
 }

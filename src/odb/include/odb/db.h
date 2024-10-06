@@ -146,6 +146,9 @@ class dbGuide;
 class dbIsolation;
 class dbLevelShifter;
 class dbLogicPort;
+class dbMarker;
+class dbMarkerCategory;
+class dbMarkerGroup;
 class dbMetalWidthViaMap;
 class dbModBTerm;
 class dbModInst;
@@ -1619,6 +1622,21 @@ class dbBlock : public dbObject
   ///  Get the non-default-rules specific to this block.
   ///
   dbSet<dbTechNonDefaultRule> getNonDefaultRules();
+
+  ///
+  ///  Get marker groups for this block.
+  ///
+  dbSet<dbMarkerGroup> getMarkerGroups();
+
+  ///
+  ///  Find marker group for this block.
+  ///
+  dbMarkerGroup* findMarkerGroup(const char* name);
+
+  //
+  //  Write marker information to file
+  //
+  void writeMarkerGroups(const std::string& file);
 
   ///
   ///  Levelelize from set of insts
@@ -7705,6 +7723,100 @@ class dbLogicPort : public dbObject
                              const std::string& direction);
   static void destroy(dbLogicPort* lp);
   // User Code End dbLogicPort
+};
+
+class dbMarker : public dbObject
+{
+ public:
+  void setComment(const std::string& comment);
+
+  std::string getComment() const;
+
+  void setLineNumber(int line_number);
+
+  int getLineNumber() const;
+
+  // User Code Begin dbMarker
+
+  using MarkerShape = std::variant<Point, Line, Rect, Polygon>;
+
+  dbMarkerGroup* getGroup() const;
+  dbMarkerCategory* getCategory() const;
+  std::vector<MarkerShape> getShapes() const;
+  dbTechLayer* getTechLayer() const;
+  Rect getBBox() const;
+
+  std::set<dbNet*> getNets() const;
+  std::set<dbInst*> getInsts() const;
+  std::set<dbObstruction*> getObstructions() const;
+  std::set<dbITerm*> getITerms() const;
+  std::set<dbBTerm*> getBTerms() const;
+
+  void addShape(const Point& pt);
+  void addShape(const Line& line);
+  void addShape(const Rect& rect);
+  void addShape(const Polygon& polygon);
+
+  void setTechLayer(dbTechLayer* layer);
+
+  void addNet(dbNet* net);
+  void addInst(dbInst* inst);
+  void addObstruction(dbObstruction* obs);
+  void addITerm(dbITerm* iterm);
+  void addBTerm(dbBTerm* bterm);
+
+  static dbMarker* create(dbMarkerCategory* group);
+  static void destroy(dbMarker* marker);
+
+  // User Code End dbMarker
+};
+
+class dbMarkerCategory : public dbObject
+{
+ public:
+  const char* getName() const;
+
+  void setDescription(const std::string& description);
+
+  std::string getDescription() const;
+
+  dbSet<dbMarker> getMarkers() const;
+
+  // User Code Begin dbMarkerCategory
+
+  dbMarkerGroup* getGroup() const;
+
+  static dbMarkerCategory* create(dbMarkerGroup* group, const char* name);
+  static void destroy(dbMarkerCategory* category);
+
+  // User Code End dbMarkerCategory
+};
+
+class dbMarkerGroup : public dbObject
+{
+ public:
+  const char* getName() const;
+
+  void setSource(const std::string& source);
+
+  std::string getSource() const;
+
+  dbSet<dbMarkerCategory> getMarkerCategorys() const;
+
+  dbMarkerCategory* findMarkerCategory(const char* name) const;
+
+  // User Code Begin dbMarkerGroup
+
+  void writeJSON(const std::string& path) const;
+  void writeTR(const std::string& path) const;
+
+  static void fromJSON(dbBlock* block, const std::string& path);
+  static void fromTR(dbBlock* block, const char* name, const std::string& path);
+
+  static dbMarkerGroup* create(dbBlock* block, const char* name);
+  static void destroy(dbMarkerGroup* group);
+
+  // User Code End dbMarkerGroup
 };
 
 class dbMetalWidthViaMap : public dbObject
