@@ -353,6 +353,33 @@ class Polygon
   std::vector<Point> points_;
 };
 
+class Line
+{
+ public:
+  Line() = default;
+  Line(const Point& pt0, const Point& pt1);
+  Line(int x0, int y0, int x1, int y1);
+
+  Line& operator=(const Line& r) = default;
+  bool operator==(const Line& r) const;
+  bool operator!=(const Line& r) const { return !(*this == r); };
+  bool operator<(const Line& r) const;
+  bool operator>(const Line& r) const { return r < *this; }
+  bool operator<=(const Line& r) const { return !(*this > r); }
+  bool operator>=(const Line& r) const { return !(*this < r); }
+
+  std::vector<Point> getPoints() const;
+  Point pt0() const;
+  Point pt1() const;
+
+  friend dbIStream& operator>>(dbIStream& stream, Line& p);
+  friend dbOStream& operator<<(dbOStream& stream, const Line& p);
+
+ private:
+  Point pt0_;
+  Point pt1_;
+};
+
 std::ostream& operator<<(std::ostream& os, const Rect& box);
 
 inline Point::Point(int x, int y)
@@ -933,6 +960,40 @@ inline bool Polygon::operator==(const Polygon& p) const
 inline bool Polygon::operator<(const Polygon& p) const
 {
   return points_ < p.points_;
+}
+
+inline Line::Line(const Point& pt0, const Point& pt1) : pt0_(pt0), pt1_(pt1)
+{
+}
+
+inline Line::Line(int x0, int y0, int x1, int y1) : pt0_(Point(x0, y0)), pt1_(Point(x1, y1))
+{
+}
+
+inline Point Line::pt0() const
+{
+  return pt0_;
+}
+
+inline Point Line::pt1() const
+{
+  return pt1_;
+}
+
+inline bool Line::operator==(const Line& r) const
+{
+  return pt0_ == r.pt0_ && pt1_ == r.pt1_;
+}
+
+inline bool Line::operator<(const Line& r) const
+{
+  return std::tie(pt0_, pt1_) < std::tie(r.pt0_, r.pt1_);
+}
+
+inline std::vector<Point> Line::getPoints() const
+{
+  std::vector<Point> pts{pt0_, pt1_};
+  return pts;
 }
 
 // Returns the manhattan distance from Point p to Rect r
