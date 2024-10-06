@@ -34,7 +34,6 @@
 #pragma once
 
 #include "dbCore.h"
-#include "dbGDSElement.h"
 #include "dbGDSStructure.h"
 #include "odb/odb.h"
 
@@ -44,7 +43,7 @@ class dbOStream;
 class dbDiff;
 class _dbDatabase;
 
-class _dbGDSSRef : public _dbGDSElement
+class _dbGDSSRef : public _dbObject
 {
  public:
   _dbGDSSRef(_dbDatabase*, const _dbGDSSRef& r);
@@ -61,20 +60,14 @@ class _dbGDSSRef : public _dbGDSElement
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
 
-  std::string to_string() override
-  {
-    if (_colRow.first == 1 && _colRow.second == 1) {
-      return "SREF " + _sName + " " + _transform.to_string();
-    }
-    return "AREF " + _sName + " " + _transform.to_string() + " COL "
-           + std::to_string(_colRow.first) + " ROW "
-           + std::to_string(_colRow.second);
-  }
-
   dbGDSStructure* _stucture = nullptr;
 
   // User Code End Methods
 
+  int16_t _layer;
+  int16_t _datatype;
+  std::vector<Point> _xy;
+  std::vector<std::pair<std::int16_t, std::string>> _propattr;
   std::string _sName;
   dbGDSSTrans _transform;
   std::pair<int16_t, int16_t> _colRow;

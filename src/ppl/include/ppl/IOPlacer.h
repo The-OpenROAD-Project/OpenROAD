@@ -156,7 +156,8 @@ class IOPlacer
                 int y,
                 int width,
                 int height,
-                bool force_to_die_bound);
+                bool force_to_die_bound,
+                bool placed_status);
 
   static Direction getDirection(const std::string& direction);
   static Edge getEdge(const std::string& edge);
@@ -177,7 +178,7 @@ class IOPlacer
   void setAnnealingDebugPaintInterval(int iters_between_paintings);
   void setAnnealingDebugNoPauseMode(bool no_pause_mode);
 
-  void writePinPlacement(const char* file_name);
+  void writePinPlacement(const char* file_name, bool placed);
 
  private:
   void createTopLayerPinPattern();

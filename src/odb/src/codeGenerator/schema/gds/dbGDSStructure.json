@@ -9,11 +9,6 @@
         "flags":["no-set"]
       },
       {
-        "name":"_elements",
-        "type":"dbVector<_dbGDSElement*>",
-        "flags":["no-set", "no-get", "no-template"]
-      },
-      {
         "name":"_next_entry",
         "type":"dbId<_dbGDSStructure>",
         "flags":["no-set", "no-get"]
@@ -21,7 +16,6 @@
     ],
     "h_includes": [
       "dbVector.h",
-      "dbGDSElement.h",
       "odb/db.h",
       "dbTable.h"
     ],

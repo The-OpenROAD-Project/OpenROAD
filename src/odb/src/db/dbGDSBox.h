@@ -34,7 +34,7 @@
 #pragma once
 
 #include "dbCore.h"
-#include "dbGDSElement.h"
+#include "dbGDSStructure.h"
 #include "odb/odb.h"
 
 namespace odb {
@@ -43,7 +43,7 @@ class dbOStream;
 class dbDiff;
 class _dbDatabase;
 
-class _dbGDSBox : public _dbGDSElement
+class _dbGDSBox : public _dbObject
 {
  public:
   _dbGDSBox(_dbDatabase*, const _dbGDSBox& r);
@@ -56,16 +56,11 @@ class _dbGDSBox : public _dbGDSElement
   bool operator<(const _dbGDSBox& rhs) const;
   void differences(dbDiff& diff, const char* field, const _dbGDSBox& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
 
-  std::string to_string() override
-  {
-    std::string str = "BOX BOXTYPE " + std::to_string(_datatype);
-    str += _dbGDSElement::to_string();
-    return str;
-  }
-
-  // User Code End Methods
+  int16_t _layer;
+  int16_t _datatype;
+  std::vector<Point> _xy;
+  std::vector<std::pair<std::int16_t, std::string>> _propattr;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSBox& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSBox& obj);

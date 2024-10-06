@@ -300,4 +300,20 @@ dbSet<dbGDSStructure> dbGDSLib::getGDSStructures()
   _dbGDSLib* obj = (_dbGDSLib*) this;
   return dbSet<dbGDSStructure>(obj, obj->_structure_tbl);
 }
+
+dbGDSLib* dbGDSLib::create(dbDatabase* db, const std::string& name)
+{
+  auto* obj = (_dbDatabase*) db;
+  auto lib = (dbGDSLib*) obj->_gds_lib_tbl->create();
+  lib->setLibname(name);
+  return lib;
+}
+
+void dbGDSLib::destroy(dbGDSLib* node)
+{
+  auto* obj = (_dbGDSLib*) node;
+  auto* db = (_dbDatabase*) obj->getOwner();
+  db->_gds_lib_tbl->destroy(obj);
+}
+
 }  // namespace odb

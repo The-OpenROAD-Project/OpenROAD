@@ -34,7 +34,7 @@
 #pragma once
 
 #include "dbCore.h"
-#include "dbGDSElement.h"
+#include "dbGDSStructure.h"
 #include "odb/odb.h"
 
 namespace odb {
@@ -43,7 +43,7 @@ class dbOStream;
 class dbDiff;
 class _dbDatabase;
 
-class _dbGDSText : public _dbGDSElement
+class _dbGDSText : public _dbObject
 {
  public:
   _dbGDSText(_dbDatabase*, const _dbGDSText& r);
@@ -58,23 +58,11 @@ class _dbGDSText : public _dbGDSElement
                    const char* field,
                    const _dbGDSText& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
 
-  std::string to_string() override
-  {
-    std::string str = "TEXT TEXTTYPE " + std::to_string(_datatype) + " PRES "
-                      + _presentation.to_string() + " WIDTH "
-                      + std::to_string(_width);
-    if (!_transform.identity()) {
-      str += " STRANS " + _transform.to_string();
-    }
-    str += _dbGDSElement::to_string();
-    str += " STRING " + _text;
-    return str;
-  }
-
-  // User Code End Methods
-
+  int16_t _layer;
+  int16_t _datatype;
+  std::vector<Point> _xy;
+  std::vector<std::pair<std::int16_t, std::string>> _propattr;
   dbGDSTextPres _presentation;
   int _width;
   dbGDSSTrans _transform;
