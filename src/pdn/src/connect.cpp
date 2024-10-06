@@ -915,9 +915,17 @@ void Connect::addFailedVia(failedViaReason reason,
   failed_vias_[reason].insert({net, rect});
 }
 
-void Connect::writeFailedVias(std::ofstream& file) const
+void Connect::recordFailedVias() const
 {
-  const double dbumicrons = layer0_->getTech()->getLefUnits();
+  if (failed_vias_.empty()) {
+    return;
+  }
+
+  odb::dbMarkerGroup* group = grid_->getBlock()->findMarkerGroup("PDN");
+  if (group == nullptr) {
+    group = odb::dbMarkerGroup::create(grid_->getBlock(), "PDN");
+    group->setSource("PDN");
+  }
 
   for (const auto& [reason, shapes] : failed_vias_) {
     std::string reason_str;
@@ -941,14 +949,20 @@ void Connect::writeFailedVias(std::ofstream& file) const
         reason_str = "Other";
         break;
     }
+
     reason_str += " - " + grid_->getLongName();
     reason_str += " - " + layer0_->getName() + " -> " + layer1_->getName();
 
+    odb::dbMarkerCategory* category
+        = group->findMarkerCategory(reason_str.c_str());
+    if (category == nullptr) {
+      category = odb::dbMarkerCategory::create(group, reason_str.c_str());
+    }
+
     for (const auto& [net, shape] : shapes) {
-      file << "violation type: " << reason_str << std::endl;
-      file << "\tsrcs: net:" << net->getName() << std::endl;
-      file << "\tbbox = " << Shape::getRectText(shape, dbumicrons)
-           << " on Layer -" << std::endl;
+      odb::dbMarker* marker = odb::dbMarker::create(category);
+      marker->addNet(net);
+      marker->addShape(shape);
     }
   }
 }
