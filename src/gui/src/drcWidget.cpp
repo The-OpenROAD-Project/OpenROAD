@@ -40,13 +40,8 @@
 #include <QHeaderView>
 #include <QVBoxLayout>
 #include <array>
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/regex.hpp>
-#include <fstream>
 #include <iomanip>
 #include <map>
-#include <regex>
-#include <sstream>
 
 #include "utl/Logger.h"
 
@@ -56,55 +51,10 @@ namespace gui {
 
 ///////
 
-DRCViolation::DRCViolation(const std::string& name,
-                           const std::string& type,
-                           const std::vector<std::any>& srcs,
-                           const std::vector<DRCShape>& shapes,
-                           odb::dbTechLayer* layer,
-                           const std::string& comment,
-                           int file_line)
-    : name_(name),
-      type_(type),
-      srcs_(srcs),
-      shapes_(shapes),
-      layer_(layer),
-      comment_(comment),
-      file_line_(file_line),
-      viewed_(false),
-      visible_(true)
+DRCViolation::DRCViolation(const std::string& name, odb::dbMarker* marker)
+    : name_(name), marker_(marker), viewed_(false), visible_(true)
 {
-  computeBBox();
-}
-
-DRCViolation::DRCViolation(const std::string& name,
-                           const std::string& type,
-                           const std::vector<DRCShape>& shapes,
-                           const std::string& comment,
-                           int file_line)
-    : DRCViolation(name, type, {}, shapes, nullptr, comment, file_line)
-{
-}
-
-void DRCViolation::computeBBox()
-{
-  QPolygon outline;
-  for (const auto& shape : shapes_) {
-    if (auto s = std::get_if<DRCLine>(&shape)) {
-      outline << QPoint((*s).first.x(), (*s).first.y());
-      outline << QPoint((*s).second.x(), (*s).second.y());
-    } else if (auto s = std::get_if<DRCRect>(&shape)) {
-      outline = outline.united(
-          QRect((*s).xMin(), (*s).yMin(), (*s).dx(), (*s).dy()));
-    } else if (auto s = std::get_if<DRCPoly>(&shape)) {
-      for (const auto& pt : *s) {
-        outline << QPoint(pt.x(), pt.y());
-      }
-    }
-  }
-
-  QRect bounds = outline.boundingRect();
-  bbox_
-      = odb::Rect(bounds.left(), bounds.bottom(), bounds.right(), bounds.top());
+  bbox_ = marker_->getBBox();
 }
 
 void DRCViolation::paint(Painter& painter)
@@ -117,15 +67,18 @@ void DRCViolation::paint(Painter& painter)
     odb::Point center(box.xMin() + box.dx() / 2, box.yMin() + box.dy() / 2);
     painter.drawX(center.x(), center.y(), min_box);
   } else {
-    for (const auto& shape : shapes_) {
-      if (auto s = std::get_if<DRCLine>(&shape)) {
-        const odb::Point& p1 = (*s).first;
-        const odb::Point& p2 = (*s).second;
-        painter.drawLine(p1.x(), p1.y(), p2.x(), p2.y());
-      } else if (auto s = std::get_if<DRCRect>(&shape)) {
-        painter.drawRect(*s);
-      } else if (auto s = std::get_if<DRCPoly>(&shape)) {
-        painter.drawPolygon(*s);
+    for (const auto& shape : marker_->getShapes()) {
+      if (std::holds_alternative<odb::Point>(shape)) {
+        const odb::Point pt = std::get<odb::Point>(shape);
+        painter.drawX(pt.x(), pt.y(), min_box);
+      } else if (std::holds_alternative<odb::Line>(shape)) {
+        const odb::Line line = std::get<odb::Line>(shape);
+        painter.drawLine(line.pt0(), line.pt1());
+      } else if (std::holds_alternative<odb::Rect>(shape)) {
+        painter.drawRect(std::get<odb::Rect>(shape));
+      } else {
+        painter.drawPolygon(std::get<odb::Polygon>(shape));
+        ;
       }
     }
   }
@@ -142,7 +95,7 @@ DRCDescriptor::DRCDescriptor(
 std::string DRCDescriptor::getName(std::any object) const
 {
   auto vio = std::any_cast<DRCViolation*>(object);
-  return vio->getType();
+  return vio->getMarker()->getCategory()->getName();
 }
 
 std::string DRCDescriptor::getTypeName() const
@@ -166,34 +119,58 @@ void DRCDescriptor::highlight(std::any object, Painter& painter) const
 Descriptor::Properties DRCDescriptor::getProperties(std::any object) const
 {
   auto vio = std::any_cast<DRCViolation*>(object);
+  odb::dbMarker* marker = vio->getMarker();
   Properties props;
 
   auto gui = Gui::get();
 
-  auto layer = vio->getLayer();
+  auto layer = marker->getTechLayer();
   if (layer != nullptr) {
     props.push_back({"Layer", gui->makeSelected(layer)});
   }
 
-  auto srcs = vio->getSources();
-  if (!srcs.empty()) {
-    SelectionSet sources;
-    for (auto& src : srcs) {
-      auto select = gui->makeSelected(src);
-      if (select) {
-        sources.insert(select);
-      }
+  SelectionSet sources;
+  for (auto* net : marker->getNets()) {
+    auto select = gui->makeSelected(net);
+    if (select) {
+      sources.insert(select);
     }
+  }
+  for (auto* inst : marker->getInsts()) {
+    auto select = gui->makeSelected(inst);
+    if (select) {
+      sources.insert(select);
+    }
+  }
+  for (auto* iterm : marker->getITerms()) {
+    auto select = gui->makeSelected(iterm);
+    if (select) {
+      sources.insert(select);
+    }
+  }
+  for (auto* bterm : marker->getBTerms()) {
+    auto select = gui->makeSelected(bterm);
+    if (select) {
+      sources.insert(select);
+    }
+  }
+  for (auto* obs : marker->getObstructions()) {
+    auto select = gui->makeSelected(obs);
+    if (select) {
+      sources.insert(select);
+    }
+  }
+  if (!sources.empty()) {
     props.push_back({"Sources", sources});
   }
 
-  auto& comment = vio->getComment();
+  const auto& comment = marker->getComment();
   if (!comment.empty()) {
-    props.push_back({"Comment", vio->getComment()});
+    props.push_back({"Comment", comment});
   }
 
-  int line_number = vio->getFileLine();
-  if (line_number != 0) {
+  int line_number = marker->getLineNumber();
+  if (line_number > 0) {
     props.push_back({"Line number:", line_number});
   }
 
@@ -248,6 +225,8 @@ DRCWidget::DRCWidget(QWidget* parent)
       view_(new ObjectTree(this)),
       model_(new DRCItemModel(this)),
       block_(nullptr),
+      marker_groups_(new QComboBox(this)),
+      update_(new QPushButton("Update...", this)),
       load_(new QPushButton("Load...", this)),
       renderer_(std::make_unique<DRCRenderer>(violations_))
 {
@@ -260,10 +239,15 @@ DRCWidget::DRCWidget(QWidget* parent)
   header->setSectionResizeMode(0, QHeaderView::ResizeToContents);
   header->setSectionResizeMode(1, QHeaderView::Stretch);
 
+  QHBoxLayout* selection_layout = new QHBoxLayout;
+  selection_layout->addWidget(marker_groups_);
+  selection_layout->addWidget(load_);
+  selection_layout->addWidget(update_);
+
   QWidget* container = new QWidget(this);
   QVBoxLayout* layout = new QVBoxLayout;
+  layout->addLayout(selection_layout);
   layout->addWidget(view_);
-  layout->addWidget(load_);
 
   container->setLayout(layout);
   setWidget(container);
@@ -274,6 +258,12 @@ DRCWidget::DRCWidget(QWidget* parent)
           this,
           &DRCWidget::selectionChanged);
   connect(load_, &QPushButton::released, this, &DRCWidget::selectReport);
+  connect(
+      update_, &QPushButton::released, this, &DRCWidget::updateMarkerGroups);
+  connect(marker_groups_,
+          qOverload<int>(&QComboBox::currentIndexChanged),
+          this,
+          &DRCWidget::updateModel);
 
   view_->setMouseTracking(true);
   connect(view_, &ObjectTree::entered, this, &DRCWidget::focusIndex);
@@ -408,10 +398,12 @@ void DRCWidget::clicked(const QModelIndex& index)
 void DRCWidget::setBlock(odb::dbBlock* block)
 {
   block_ = block;
+  updateMarkerGroups();
 }
 
 void DRCWidget::showEvent(QShowEvent* event)
 {
+  updateMarkerGroups();
   toggleRenderer(true);
 }
 
@@ -436,6 +428,19 @@ void DRCWidget::toggleRenderer(bool visible)
 
 void DRCWidget::updateModel()
 {
+  violations_.clear();
+
+  if (marker_groups_->currentIndex() > 0) {
+    const std::string group_name = marker_groups_->currentText().toStdString();
+    odb::dbMarkerGroup* group = block_->findMarkerGroup(group_name.c_str());
+    for (auto* category : group->getMarkerCategorys()) {
+      for (auto* marker : category->getMarkers()) {
+        violations_.push_back(
+            std::make_unique<DRCViolation>(category->getName(), marker));
+      }
+    }
+  }
+
   auto makeItem = [](const QString& text) {
     QStandardItem* item = new QStandardItem(text);
     item->setEditable(false);
@@ -447,7 +452,8 @@ void DRCWidget::updateModel()
 
   std::map<std::string, std::vector<DRCViolation*>> violation_by_type;
   for (const auto& violation : violations_) {
-    violation_by_type[violation->getType()].push_back(violation.get());
+    violation_by_type[violation->getMarker()->getCategory()->getName()]
+        .push_back(violation.get());
   }
 
   for (const auto& [type, violation_list] : violation_by_type) {
@@ -493,8 +499,6 @@ void DRCWidget::loadReport(const QString& filename)
 {
   Gui::get()->removeSelected<DRCViolation*>();
 
-  violations_.clear();
-
   try {
     // OpenLane uses .drc and OpenROAD-flow-scripts uses .rpt
     if (filename.endsWith(".rpt") || filename.endsWith(".drc")) {
@@ -517,384 +521,27 @@ void DRCWidget::loadReport(const QString& filename)
 
 void DRCWidget::loadTRReport(const QString& filename)
 {
-  std::ifstream report(filename.toStdString());
-  if (!report.is_open()) {
-    logger_->error(utl::GUI,
-                   30,
-                   "Unable to open TritonRoute DRC report: {}",
-                   filename.toStdString());
-  }
-
-  std::regex violation_type("\\s*violation type: (.*)");
-  boost::regex srcs("\\s*srcs: (.*)");
-  std::regex congestion_line("\\s*congestion information: (.*)");
-  std::regex bbox_layer("\\s*bbox = (.*) on Layer (.*)");
-  std::regex bbox_corners(
-      "\\s*\\(\\s*(.*),\\s*(.*)\\s*\\)\\s*-\\s*\\(\\s*(.*),\\s*(.*)\\s*\\)");
-
-  int line_number = 0;
-  auto tech = block_->getDataBase()->getTech();
-  while (!report.eof()) {
-    std::string line;
-    std::smatch base_match;
-
-    // type of violation
-    line_number++;
-    std::getline(report, line);
-    if (line.empty()) {
-      continue;
-    }
-
-    int violation_line_number = line_number;
-    std::string type;
-    if (std::regex_match(line, base_match, violation_type)) {
-      type = base_match[1].str();
-    } else {
-      logger_->error(utl::GUI,
-                     45,
-                     "Unable to parse line as violation type (line: {}): {}",
-                     line_number,
-                     line);
-    }
-
-    // sources of violation
-    line_number++;
-    int source_line_number = line_number;
-    std::getline(report, line);
-    std::string sources;
-    boost::smatch sources_match;
-    if (boost::regex_match(line, sources_match, srcs)) {
-      sources = sources_match[1].str();
-    } else {
-      logger_->error(utl::GUI,
-                     46,
-                     "Unable to parse line as violation source (line: {}): {}",
-                     line_number,
-                     line);
-    }
-
-    line_number++;
-    std::getline(report, line);
-    std::string congestion_information;
-
-    // congestion information (optional)
-    if (std::regex_match(line, base_match, congestion_line)) {
-      congestion_information = base_match[1].str();
-      line_number++;
-      std::getline(report, line);
-    }
-
-    // bounding box and layer
-    if (!std::regex_match(line, base_match, bbox_layer)) {
-      logger_->error(
-          utl::GUI,
-          47,
-          "Unable to parse line as violation location (line: {}): {}",
-          line_number,
-          line);
-    }
-
-    std::string bbox = base_match[1].str();
-    odb::dbTechLayer* layer = tech->findLayer(base_match[2].str().c_str());
-    if (layer == nullptr && base_match[2].str() != "-") {
-      logger_->warn(utl::GUI,
-                    40,
-                    "Unable to find tech layer (line: {}): {}",
-                    line_number,
-                    base_match[2].str());
-    }
-
-    odb::Rect rect;
-    if (std::regex_match(bbox, base_match, bbox_corners)) {
-      try {
-        rect.set_xlo(std::stod(base_match[1].str())
-                     * block_->getDbUnitsPerMicron());
-        rect.set_ylo(std::stod(base_match[2].str())
-                     * block_->getDbUnitsPerMicron());
-        rect.set_xhi(std::stod(base_match[3].str())
-                     * block_->getDbUnitsPerMicron());
-        rect.set_yhi(std::stod(base_match[4].str())
-                     * block_->getDbUnitsPerMicron());
-      } catch (std::invalid_argument&) {
-        logger_->error(utl::GUI,
-                       48,
-                       "Unable to parse bounding box (line: {}): {}",
-                       line_number,
-                       bbox);
-      } catch (std::out_of_range&) {
-        logger_->error(utl::GUI,
-                       49,
-                       "Unable to parse bounding box (line: {}): {}",
-                       line_number,
-                       bbox);
-      }
-    } else {
-      logger_->error(utl::GUI,
-                     50,
-                     "Unable to parse bounding box (line: {}): {}",
-                     line_number,
-                     bbox);
-    }
-
-    std::vector<std::any> srcs_list;
-    std::stringstream srcs_stream(sources);
-    std::string single_source;
-    std::string comment;
-
-    // split sources list
-    while (getline(srcs_stream, single_source, ' ')) {
-      if (single_source.empty()) {
-        continue;
-      }
-
-      auto ident = single_source.find(':');
-      std::string item_type = single_source.substr(0, ident);
-      std::string item_name = single_source.substr(ident + 1);
-
-      std::any item;
-
-      if (item_type == "net") {
-        odb::dbNet* net = block_->findNet(item_name.c_str());
-        if (net != nullptr) {
-          item = net;
-        } else {
-          logger_->warn(utl::GUI,
-                        44,
-                        "Unable to find net (line: {}): {}",
-                        source_line_number,
-                        item_name);
-        }
-      } else if (item_type == "inst") {
-        odb::dbInst* inst = block_->findInst(item_name.c_str());
-        if (inst != nullptr) {
-          item = inst;
-        } else {
-          logger_->warn(utl::GUI,
-                        43,
-                        "Unable to find instance (line: {}): {}",
-                        source_line_number,
-                        item_name);
-        }
-      } else if (item_type == "iterm") {
-        odb::dbITerm* iterm = block_->findITerm(item_name.c_str());
-        if (iterm != nullptr) {
-          item = iterm;
-        } else {
-          logger_->warn(utl::GUI,
-                        42,
-                        "Unable to find iterm (line: {}): {}",
-                        source_line_number,
-                        item_name);
-        }
-      } else if (item_type == "bterm") {
-        odb::dbBTerm* bterm = block_->findBTerm(item_name.c_str());
-        if (bterm != nullptr) {
-          item = bterm;
-        } else {
-          logger_->warn(utl::GUI,
-                        41,
-                        "Unable to find bterm (line: {}): {}",
-                        source_line_number,
-                        item_name);
-        }
-      } else if (item_type == "obstruction") {
-        bool found = false;
-        if (layer != nullptr) {
-          for (const auto obs : block_->getObstructions()) {
-            auto obs_bbox = obs->getBBox();
-            if (obs_bbox->getTechLayer() == layer) {
-              odb::Rect obs_rect = obs_bbox->getBox();
-              if (obs_rect.intersects(rect)) {
-                srcs_list.emplace_back(obs);
-                found = true;
-              }
-            }
-          }
-        }
-        if (!found) {
-          logger_->warn(utl::GUI,
-                        52,
-                        "Unable to find obstruction (line: {})",
-                        source_line_number);
-        }
-      } else {
-        logger_->warn(utl::GUI,
-                      51,
-                      "Unknown source type (line: {}): {}",
-                      source_line_number,
-                      item_type);
-      }
-
-      if (item.has_value()) {
-        srcs_list.push_back(item);
-      } else {
-        if (!item_name.empty()) {
-          comment += single_source + " ";
-        }
-      }
-    }
-
-    std::string name = "Layer: ";
-    if (layer != nullptr) {
-      name += layer->getName();
-    } else {
-      name += "<unknown>";
-    }
-    name += ", Sources: " + sources;
-
-    comment += congestion_information;
-
-    std::vector<DRCViolation::DRCShape> shapes({rect});
-    violations_.push_back(std::make_unique<DRCViolation>(
-        name, type, srcs_list, shapes, layer, comment, violation_line_number));
-  }
-
-  report.close();
+  const std::string file = filename.toStdString();
+  odb::dbMarkerGroup::fromTR(block_, "DRC", file.c_str());
 }
 
 void DRCWidget::loadJSONReport(const QString& filename)
 {
-  boost::property_tree::ptree tree;
-  try {
-    boost::property_tree::json_parser::read_json(filename.toStdString(), tree);
-  } catch (const boost::property_tree::json_parser_error& e1) {
-    logger_->error(utl::GUI,
-                   55,
-                   "Unable to parse JSON file {}: {}",
-                   filename.toStdString(),
-                   e1.what());
+  const std::string file = filename.toStdString();
+  odb::dbMarkerGroup::fromJSON(block_, file.c_str());
+}
+
+void DRCWidget::updateMarkerGroups()
+{
+  if (block_ == nullptr) {
+    return;
   }
-  auto tech = block_->getDataBase()->getTech();
-  int dbUnits = block_->getDataBase()->getTech()->getDbUnitsPerMicron();
-  // check if DRC key exists
-  if (tree.find("DRC") == tree.not_found()) {
-    logger_->error(utl::GUI,
-                   87,
-                   "Unable to find the DRC key in JSON file {}",
-                   filename.toStdString());
-  }
-  for (const auto& rule : tree.get_child("DRC")) {
-    auto& drc_rule = rule.second;
 
-    const std::string violation_type = drc_rule.get<std::string>("name", "");
-    const std::string violation_text
-        = drc_rule.get<std::string>("description", "");
-    int i = 0;
-    auto violations_arr = drc_rule.get_child_optional("violations");
-    if (!violations_arr) {
-      logger_->error(utl::GUI,
-                     86,
-                     "Unable to find the violations key in JSON file {}",
-                     filename.toStdString());
-    }
-    for (const auto& [_, violation] : violations_arr.value()) {
-      std::string layer_str = violation.get<std::string>("layer", "-");
-      const std::string shape_type = violation.get<std::string>("type", "-");
-      odb::dbTechLayer* layer = nullptr;
-      if (!layer_str.empty()) {
-        layer = tech->findLayer(layer_str.c_str());
-        if (layer == nullptr && layer_str != "-") {
-          logger_->warn(
-              utl::GUI, 79, "Unable to find tech layer: {}", layer_str);
-        }
-      }
+  marker_groups_->clear();
 
-      std::vector<odb::Point> shape_points;
-      auto shape = violation.get_child_optional("shape");
-      if (shape) {
-        for (const auto& [_, pt] : shape.value()) {
-          double x = pt.get<double>("x", 0.0);
-          double y = pt.get<double>("y", 0.0);
-          shape_points.emplace_back(x * dbUnits, y * dbUnits);
-        }
-      } else {
-        logger_->warn(utl::GUI, 99, "Unable to find shape of violation");
-      }
-
-      std::vector<DRCViolation::DRCShape> shapes;
-      if (shape_type == "box") {
-        shapes.emplace_back(
-            DRCViolation::DRCRect(shape_points[0], shape_points[1]));
-      } else if (shape_type == "edge") {
-        shapes.emplace_back(
-            DRCViolation::DRCLine(shape_points[0], shape_points[1]));
-      } else if (shape_type == "edge_pair") {
-        shapes.emplace_back(
-            DRCViolation::DRCLine(shape_points[0], shape_points[1]));
-        shapes.emplace_back(
-            DRCViolation::DRCLine(shape_points[2], shape_points[3]));
-      } else if (shape_type == "polygon") {
-        shapes.emplace_back(DRCViolation::DRCPoly(std::move(shape_points)));
-      } else {
-        logger_->error(
-            utl::GUI, 58, "Unable to parse violation shape: {}", shape_type);
-      }
-      std::vector<std::any> srcs_list;
-      auto sources_arr = violation.get_child_optional("sources");
-      if (sources_arr) {
-        for (const auto& [_, src] : sources_arr.value()) {
-          std::string src_type = src.get<std::string>("type", "-");
-          std::string src_name = src.get<std::string>("name", "-");
-
-          std::any item = nullptr;
-          if (src_type == "net") {
-            odb::dbNet* net = block_->findNet(src_name.c_str());
-            if (net != nullptr) {
-              item = net;
-            } else {
-              logger_->warn(utl::GUI, 85, "Unable to find net: {}", src_name);
-            }
-          } else if (src_type == "inst") {
-            odb::dbInst* inst = block_->findInst(src_name.c_str());
-            if (inst != nullptr) {
-              item = inst;
-            } else {
-              logger_->warn(
-                  utl::GUI, 84, "Unable to find instance: {}", src_name);
-            }
-          } else if (src_type == "iterm") {
-            odb::dbITerm* iterm = block_->findITerm(src_name.c_str());
-            if (iterm != nullptr) {
-              item = iterm;
-            } else {
-              logger_->warn(utl::GUI, 83, "Unable to find iterm: {}", src_name);
-            }
-          } else if (src_type == "bterm") {
-            odb::dbBTerm* bterm = block_->findBTerm(src_name.c_str());
-            if (bterm != nullptr) {
-              item = bterm;
-            } else {
-              logger_->warn(utl::GUI, 82, "Unable to find bterm: {}", src_name);
-            }
-          } else if (src_type == "obstruction") {
-            if (layer != nullptr) {
-              for (const auto obs : block_->getObstructions()) {
-                auto obs_bbox = obs->getBBox();
-                if (obs_bbox->getTechLayer() == layer) {
-                  // TODO: check if obs_rect is inside shape
-                  srcs_list.emplace_back(obs);
-                }
-              }
-            }
-          } else {
-            logger_->warn(utl::GUI, 81, "Unknown source type: {}", src_type);
-          }
-
-          if (item.has_value()) {
-            srcs_list.push_back(item);
-          } else {
-            if (!src_name.empty()) {
-              logger_->warn(
-                  utl::GUI, 80, "Failed to add source item: {}", src_name);
-            }
-          }
-        }
-      }
-
-      std::string name = violation_type + " - " + std::to_string(++i);
-      violations_.push_back(std::make_unique<DRCViolation>(
-          name, violation_type, srcs_list, shapes, layer, violation_text, 0));
-    }
+  marker_groups_->addItem("");
+  for (auto* group : block_->getMarkerGroups()) {
+    marker_groups_->addItem(QString::fromStdString(group->getName()));
   }
 }
 

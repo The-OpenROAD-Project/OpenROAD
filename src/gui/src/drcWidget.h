@@ -36,6 +36,7 @@
 #pragma once
 
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDockWidget>
 #include <QPushButton>
 #include <QSettings>
@@ -57,33 +58,13 @@ namespace gui {
 class DRCViolation
 {
  public:
-  using DRCLine = std::pair<odb::Point, odb::Point>;
-  using DRCRect = odb::Rect;
-  using DRCPoly = std::vector<odb::Point>;
-  using DRCShape = std::variant<DRCLine, DRCRect, DRCPoly>;
-
-  DRCViolation(const std::string& name,
-               const std::string& type,
-               const std::vector<std::any>& srcs,
-               const std::vector<DRCShape>& shapes,
-               odb::dbTechLayer* layer,
-               const std::string& comment,
-               int file_line);
-  DRCViolation(const std::string& name,
-               const std::string& type,
-               const std::vector<DRCShape>& shapes,
-               const std::string& comment,
-               int file_line);
+  DRCViolation(const std::string& name, odb::dbMarker* marker);
   ~DRCViolation() {}
 
-  const std::string& getName() { return name_; }
-  const std::string& getType() { return type_; }
-  const std::vector<std::any>& getSources() { return srcs_; }
-  const std::vector<DRCShape>& getShapes() { return shapes_; }
+  const std::string& getName() const { return name_; }
+  odb::dbMarker* getMarker() const { return marker_; }
+
   const odb::Rect& getBBox() { return bbox_; }
-  const std::string getComment() { return comment_; }
-  odb::dbTechLayer* getLayer() { return layer_; }
-  int getFileLine() { return file_line_; }
 
   bool isViewed() { return viewed_; }
   void setViewed() { viewed_ = true; }
@@ -95,16 +76,10 @@ class DRCViolation
   void paint(Painter& painter);
 
  private:
-  void computeBBox();
-
   std::string name_;
-  std::string type_;
-  std::vector<std::any> srcs_;
-  std::vector<DRCShape> shapes_;
-  odb::dbTechLayer* layer_;
-  std::string comment_;
+  odb::dbMarker* marker_;
+
   odb::Rect bbox_;
-  int file_line_;
 
   bool viewed_;
   bool visible_;
@@ -180,6 +155,8 @@ class DRCWidget : public QDockWidget
  private slots:
   void focusIndex(const QModelIndex& index);
   void defocus();
+  void updateMarkerGroups();
+  void updateModel();
 
  protected:
   void showEvent(QShowEvent* event) override;
@@ -188,7 +165,6 @@ class DRCWidget : public QDockWidget
  private:
   void loadTRReport(const QString& filename);
   void loadJSONReport(const QString& filename);
-  void updateModel();
 
   utl::Logger* logger_;
 
@@ -197,6 +173,8 @@ class DRCWidget : public QDockWidget
 
   odb::dbBlock* block_;
 
+  QComboBox* marker_groups_;
+  QPushButton* update_;
   QPushButton* load_;
 
   std::unique_ptr<DRCRenderer> renderer_;
