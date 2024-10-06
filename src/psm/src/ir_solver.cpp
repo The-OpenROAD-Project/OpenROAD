@@ -257,25 +257,56 @@ void IRSolver::reportUnconnectedNodes() const
   const double dbu = getBlock()->getDbUnitsPerMicron();
   const auto results = getConnectivityResults();
 
-  for (auto* node : results.unconnected_nodes_) {
-    logger_->warn(utl::PSM,
-                  38,
-                  "Unconnected node on net {} at location ({:4.3f}um, "
-                  "{:4.3f}um), layer: {}.",
-                  net_->getName(),
-                  node->getPoint().getX() / dbu,
-                  node->getPoint().getY() / dbu,
-                  node->getLayer()->getName());
+  if (results.unconnected_nodes_.empty()
+      && results.unconnected_iterms_.empty()) {
+    return;
   }
 
-  for (const auto& node : results.unconnected_iterms_) {
-    logger_->warn(utl::PSM,
-                  39,
-                  "Unconnected instance {} at location ({:4.3f}um, "
-                  "{:4.3f}um).",
-                  node->getITerm()->getName(),
-                  node->getPoint().getX() / dbu,
-                  node->getPoint().getY() / dbu);
+  odb::dbMarkerGroup* group = odb::dbMarkerGroup::create(getBlock(), "PSM");
+  group->setSource("PSM");
+
+  if (!results.unconnected_nodes_.empty()) {
+    odb::dbMarkerCategory* category
+        = odb::dbMarkerCategory::create(group, "Unconnected node");
+    for (auto* node : results.unconnected_nodes_) {
+      odb::dbMarker* marker = odb::dbMarker::create(category);
+      marker->addNet(net_);
+      marker->setTechLayer(node->getLayer());
+      marker->addShape(odb::Rect(node->getPoint(), node->getPoint()));
+
+      logger_->warn(utl::PSM,
+                    38,
+                    "Unconnected node on net {} at location ({:4.3f}um, "
+                    "{:4.3f}um), layer: {}.",
+                    net_->getName(),
+                    node->getPoint().getX() / dbu,
+                    node->getPoint().getY() / dbu,
+                    node->getLayer()->getName());
+    }
+  }
+
+  if (!results.unconnected_iterms_.empty()) {
+    std::set<odb::dbInst*> insts;
+    for (const auto& node : results.unconnected_iterms_) {
+      insts.insert(node->getITerm()->getInst());
+      logger_->warn(utl::PSM,
+                    39,
+                    "Unconnected instance {} at location ({:4.3f}um, "
+                    "{:4.3f}um).",
+                    node->getITerm()->getName(),
+                    node->getPoint().getX() / dbu,
+                    node->getPoint().getY() / dbu);
+    }
+
+    odb::dbMarkerCategory* category
+        = odb::dbMarkerCategory::create(group, "Unconnected instance");
+    for (auto* inst : insts) {
+      const odb::Rect inst_rect = inst->getBBox()->getBox();
+
+      odb::dbMarker* marker = odb::dbMarker::create(category);
+      marker->addInst(inst);
+      marker->addShape(inst_rect);
+    }
   }
 }
 
@@ -1295,49 +1326,12 @@ void IRSolver::writeErrorFile(const std::string& error_file) const
     return;
   }
 
-  std::ofstream report(error_file);
-  if (!report) {
-    logger_->error(
-        utl::PSM, 92, "Unable to open {} to write error file", error_file);
+  odb::dbMarkerGroup* group = getBlock()->findMarkerGroup("PSM");
+  if (group == nullptr) {
+    return;
   }
 
-  const auto results = getConnectivityResults();
-
-  const double bbox_size = 0.05;
-  const double dbus = getBlock()->getDbUnitsPerMicron();
-  for (auto* node : results.unconnected_nodes_) {
-    const odb::Point& pt = node->getPoint();
-    const double pt_x = pt.getX() / dbus;
-    const double pt_y = pt.getY() / dbus;
-
-    report << "violation type: Unconnected node\n";
-    report << "  srcs: net:" << net_->getName() << '\n';
-    report << fmt::format(
-        "    bbox = ({:.4f}, {:.4f}) - ({:.4f}, {:.4f}) on Layer {}",
-        pt_x - bbox_size,
-        pt_y - bbox_size,
-        pt_x + bbox_size,
-        pt_y + bbox_size,
-        node->getLayer()->getName())
-           << '\n';
-  }
-
-  std::set<odb::dbInst*> insts;
-  for (const auto& node : results.unconnected_iterms_) {
-    insts.insert(node->getITerm()->getInst());
-  }
-  for (auto* inst : insts) {
-    const odb::Rect inst_rect = inst->getBBox()->getBox();
-    report << "violation type: Unconnected instance\n";
-    report << "  srcs: inst:" << inst->getName() << '\n';
-    report << fmt::format(
-        "    bbox = ({:.4f}, {:.4f}) - ({:.4f}, {:.4f}) on Layer -",
-        inst_rect.xMin() / dbus,
-        inst_rect.yMin() / dbus,
-        inst_rect.xMax() / dbus,
-        inst_rect.yMax() / dbus)
-           << '\n';
-  }
+  group->writeTR(error_file);
 }
 
 void IRSolver::writeInstanceVoltageFile(const std::string& voltage_file,
