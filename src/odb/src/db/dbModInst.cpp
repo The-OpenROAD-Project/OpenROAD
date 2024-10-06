@@ -157,9 +157,15 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
   stream >> obj._group;
   // User Code Begin >>
   dbBlock* block = (dbBlock*) (obj.getOwner());
-  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
-  if (db->isSchema(db_schema_update_hierarchy)) {
+  _dbDatabase* _db = (_dbDatabase*) (block->getDataBase());
+  if (_db->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._moditerms;
+  }
+  if (_db->isSchema(db_schema_db_remove_hash)) {
+    dbDatabase* db = (dbDatabase*) _db;
+    _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
+    _dbModule* module = block->_module_tbl->getPtr(obj._parent);
+    module->_modinst_hash[obj._name] = obj.getId();
   }
   // User Code End >>
   return stream;

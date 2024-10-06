@@ -155,6 +155,14 @@ dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
   if (obj.getDatabase()->isSchema(db_schema_hier_port_removal)) {
     stream >> obj._prev_entry;
   }
+  // User Code Begin >>
+  if (obj.getDatabase()->isSchema(db_schema_db_remove_hash)) {
+    dbDatabase* db = (dbDatabase*) (obj.getDatabase());
+    _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
+    _dbModInst* mod_inst = block->_modinst_tbl->getPtr(obj._parent);
+    mod_inst->_moditerm_hash[obj._name] = obj.getId();
+  }
+  // User Code End >>
   return stream;
 }
 

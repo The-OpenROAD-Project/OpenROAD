@@ -67,6 +67,4 @@ Fanout     Cap    Slew   Delay    Time   Description
                                   0.09   slack (MET)
 
 
-Differences found at line 64.
-    .ZN(\U1/_11_ ));
-    .ZN(_11_));
+No differences found.
