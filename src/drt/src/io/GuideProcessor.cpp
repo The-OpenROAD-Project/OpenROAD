@@ -564,6 +564,35 @@ bool hasGuideInterval(const frCoord begin_idx,
   }
   return false;
 }
+struct BridgeGuide
+{
+  frCoord track_idx{-1};
+  frCoord begin_idx{-1};
+  frCoord end_idx{-1};
+  frLayerNum layer_num{-1};
+  BridgeGuide(frCoord track_idx_in = -1,
+              frCoord idx1 = -1,
+              frCoord idx2 = -1,
+              frLayerNum layer_num_in = -1)
+      : track_idx(track_idx_in),
+        begin_idx(std::min(idx1, idx2)),
+        end_idx(std::max(idx1, idx2)),
+        layer_num(layer_num_in)
+  {
+  }
+  frCoord getDist() const
+  {
+    return layer_num == -1 ? std::numeric_limits<frCoord>::max()
+                           : end_idx - begin_idx;
+  }
+  bool operator<(const BridgeGuide& rhs) const
+  {
+    if (getDist() == rhs.getDist()) {
+      return layer_num < rhs.layer_num;
+    }
+    return getDist() < rhs.getDist();
+  }
+};
 /**
  * @brief Adds Bridge guides for touching guides on the same layer if needed.
  *
@@ -574,23 +603,6 @@ bool hasGuideInterval(const frCoord begin_idx,
  */
 void addTouchingGuidesBridges(TrackIntervalsByLayer& intvs, utl::Logger* logger)
 {
-  struct BridgeGuide
-  {
-    frCoord track_idx{-1};
-    frCoord begin_idx{-1};
-    frCoord end_idx{-1};
-    frLayerNum layer_num{-1};
-    BridgeGuide(frCoord track_idx_in,
-                frCoord begin_idx_in,
-                frCoord end_idx_in,
-                frLayerNum layer_num_in)
-        : track_idx(track_idx_in),
-          begin_idx(begin_idx_in),
-          end_idx(end_idx_in),
-          layer_num(layer_num_in)
-    {
-    }
-  };
   // connect corner edges
   for (int layer_num = intvs.size() - 1; layer_num >= 0; layer_num--) {
     const auto& curr_layer_intvs = intvs[layer_num];
@@ -1140,7 +1152,7 @@ void GuideProcessor::genGuides_split(
     const TrackIntervalsByLayer& intvs,
     const std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
     frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
-    bool first_iter) const
+    bool via_access_only) const
 {
   rects.clear();
   // layer_num->track_idx->routing_dir_track_idx->set of pins
@@ -1165,7 +1177,7 @@ void GuideProcessor::genGuides_split(
         auto end_idx = intv.upper();
         std::set<frCoord> split_indices;
         // hardcode layerNum <= VIA_ACCESS_LAYERNUM not used for GR
-        if (first_iter && layer_num <= VIA_ACCESS_LAYERNUM) {
+        if (via_access_only && layer_num <= VIA_ACCESS_LAYERNUM) {
           // split by pin
           split::splitByPins(pin_helper,
                              layer_num,
@@ -1360,16 +1372,18 @@ void GuideProcessor::genGuides(frNet* net, std::vector<frRect>& rects)
 
   bool path_found = false;
   // Run for 3 iterations max
-  for (int i = 0; i < 3; i++) {
-    const bool is_first_iter = (i == 0);
-    const bool is_last_iter = (i == 2);
-    if (!is_last_iter) {
+  for (int i = 0; i < 4; i++) {
+    const bool force_pin_feed_through = (i >= 2);
+    const bool via_access_only = (i == 0);
+    const bool patch_guides_on_failure = (i == 2);
+    if (i != 2)  // no change in rects in this iteration
+    {
       genGuides_split(
           rects,
           intvs,
           gcell_pin_map,
           pin_gcell_map,
-          is_first_iter);  // split on LU intersecting guides and pins
+          via_access_only);  // split on LU intersecting guides and pins
       if (pin_gcell_map.empty()) {
         logger_->warn(DRT, 214, "genGuides empty gcell_pin_map.");
         debugPrint(logger_,
@@ -1406,12 +1420,14 @@ void GuideProcessor::genGuides(frNet* net, std::vector<frRect>& rects)
       }
     }
     GuidePathFinder path_finder(
-        design_, logger_, net, is_last_iter, rects, pin_gcell_map);
-    path_finder.setAllowWarnings(!is_first_iter);
+        design_, logger_, net, force_pin_feed_through, rects, pin_gcell_map);
+    path_finder.setAllowWarnings(i != 0);
     if (path_finder.traverseGraph()) {
       path_found = true;
       path_finder.commitPathToGuides(rects, pin_gcell_map, tmpGRPins_);
       break;
+    } else if (patch_guides_on_failure) {
+      path_finder.connectDisconnectedComponents(rects, intvs);
     }
   }
   if (!path_found) {
@@ -1752,6 +1768,85 @@ bool GuidePathFinder::traverseGraph()
   return success;
 }
 
+void GuidePathFinder::bfs(int node_idx)
+{
+  visited_.clear();
+  visited_.resize(getNodeCount(), false);
+  std::queue<Wavefront> queue;
+  queue.push({node_idx, -1, 0});
+  while (!queue.empty()) {
+    auto curr_wavefront = queue.front();
+    queue.pop();
+    visited_[curr_wavefront.node_idx] = true;
+    for (auto neighbor_idx : adj_list_[curr_wavefront.node_idx]) {
+      if (!visited_[neighbor_idx]) {
+        queue.push(
+            {neighbor_idx, curr_wavefront.node_idx, curr_wavefront.cost + 1});
+      }
+    }
+  }
+}
+
+void GuidePathFinder::connectDisconnectedComponents(
+    const std::vector<frRect>& rects,
+    TrackIntervalsByLayer& intvs)
+{
+  const int unvisited_pin_idx
+      = std::distance(visited_.begin(),
+                      std::find_if(visited_.begin() + getGuideCount() + 1,
+                                   visited_.end(),
+                                   [](bool x) { return !x; }));
+  auto getVisitedIndices = [this]() {
+    std::vector<int> indices;
+    for (int i = 0; i < getGuideCount(); i++) {
+      if (visited_[i]) {
+        indices.push_back(i);
+      }
+    }
+    return indices;
+  };
+  bfs(getGuideCount());
+  const auto component1 = getVisitedIndices();
+  bfs(unvisited_pin_idx);
+  const auto component2 = getVisitedIndices();
+  BridgeGuide best_bridge;
+
+  for (const auto idx1 : component1) {
+    for (const auto idx2 : component2) {
+      if (rects[idx1].getLayerNum() != rects[idx2].getLayerNum()) {
+        continue;
+      }
+      const auto layer_num = rects[idx1].getLayerNum();
+      const bool is_horizontal = getTech()->getLayer(layer_num)->isHorizontal();
+      const frCoord track_idx1 = is_horizontal ? rects[idx1].getBBox().yMin()
+                                               : rects[idx1].getBBox().xMin();
+      const frCoord track_idx2 = is_horizontal ? rects[idx2].getBBox().yMin()
+                                               : rects[idx2].getBBox().xMin();
+      if (track_idx1 != track_idx2) {
+        continue;
+      }
+
+      const frCoord begin_idx1 = is_horizontal ? rects[idx1].getBBox().xMin()
+                                               : rects[idx1].getBBox().yMin();
+      const frCoord end_idx1 = is_horizontal ? rects[idx1].getBBox().xMax()
+                                             : rects[idx1].getBBox().yMax();
+      const frCoord begin_idx2 = is_horizontal ? rects[idx2].getBBox().xMin()
+                                               : rects[idx2].getBBox().yMin();
+      const frCoord end_idx2 = is_horizontal ? rects[idx2].getBBox().xMax()
+                                             : rects[idx2].getBBox().yMax();
+
+      const BridgeGuide bridge1(track_idx1, end_idx1, begin_idx2, layer_num);
+      const BridgeGuide bridge2(track_idx1, end_idx2, begin_idx1, layer_num);
+      best_bridge = std::min(best_bridge, bridge1);
+      best_bridge = std::min(best_bridge, bridge2);
+    }
+  }
+  if (best_bridge.layer_num == -1) {
+    return;
+  }
+  intvs[best_bridge.layer_num][best_bridge.track_idx].insert(
+      Interval::closed(best_bridge.begin_idx, best_bridge.end_idx));
+}
 void GuideProcessor::saveGuidesUpdates()
 {
   auto block = db_->getChip()->getBlock();

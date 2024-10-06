@@ -164,14 +164,16 @@ class GuideProcessor
    * @param intvs The track intervals calculated by genGuides_prep
    * @param gcell_pin_map Map from gcell index to pins.
    * @param pin_gcell_map Map from pin object to gcell indices.
-   * @param first_iter True if this the first iteration.
+   * @param via_access_only True if this the first iteration. Indicates that
+   * splitting is gonna consider Guides on VIA_ACCESS_LAYER_NUM or below as via
+   * guides only.
    *
    */
   void genGuides_split(std::vector<frRect>& rects,
                        const TrackIntervalsByLayer& intvs,
                        const std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
                        frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
-                       bool first_iter) const;
+                       bool via_access_only) const;
   /**
    * Initializes a map of gcell location to set of pins
    *
@@ -265,6 +267,13 @@ class GuidePathFinder
    * @return True if all pins are visited, false otherwise.
    */
   bool traverseGraph();
+
+  /**
+   * @brief Connects disconnected guides through adding a patch bridge guide.
+   */
+  void connectDisconnectedComponents(const std::vector<frRect>& rects,
+                                     TrackIntervalsByLayer& intvs);
+
   /**
    * @brief Writes the final resulting set of guides to the net and updates the
    * GRPins.
@@ -396,7 +405,12 @@ class GuidePathFinder
       const std::vector<frBlockObject*>& pins,
       const std::vector<std::vector<Point3D>>& pin_to_gcell,
       std::vector<std::pair<frBlockObject*, Point>>& gr_pins) const;
+  /**
+   * @brief Does a bfs search from the given node idx.
+   */
+  void bfs(int node_idx);
   frDesign* getDesign() const { return design_; }
+  frTechObject* getTech() const { return design_->getTech(); }
 
   frDesign* design_{nullptr};
   Logger* logger_{nullptr};
@@ -410,5 +424,7 @@ class GuidePathFinder
   std::vector<bool> visited_;
   std::vector<bool> is_on_path_;
   std::vector<int> prev_idx_;
+  frBlockObjectMap<std::set<Point3D>> pin_gcell_map_;
+  std::vector<frRect> rects_;
 };
 }  // namespace drt::io
