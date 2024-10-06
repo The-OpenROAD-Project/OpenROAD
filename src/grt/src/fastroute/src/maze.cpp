@@ -1098,40 +1098,36 @@ void FastRouteCore::reInitTree(const int netID)
 }
 
 float getCost(const int i,
-              const float logis_cof,
-              const float cost_height,
-              const int slope,
               const int capacity,
-              const int cost_type)
+              const CostParams& cost_params,
+              std::vector<double>& cost_table)
 {
-  float cost;
-  if (cost_type == 2) {
-    if (i < capacity - 1)
-      cost = cost_height / (std::exp((capacity - i - 1) * logis_cof) + 1) + 1;
-    else
-      cost = cost_height / (std::exp((capacity - i - 1) * logis_cof) + 1) + 1
-             + cost_height / slope * (i - capacity);
-  } else {
-    if (i < capacity)
-      cost = cost_height / (std::exp((capacity - i) * logis_cof) + 1) + 1;
-    else
-      cost = cost_height / (std::exp((capacity - i) * logis_cof) + 1) + 1
-             + cost_height / slope * (i - capacity);
+  if (i < cost_table.size()) {
+    return cost_table[i];
   }
+
+  float cost = 0;
+  const int slope = cost_params.slope;
+  const float logis_cof = cost_params.logis_cof;
+  const float cost_height = cost_params.cost_height;
+  int adjust = cost_params.cost_type == 2;
+
+  cost = cost_height / (std::exp((capacity - i - adjust) * logis_cof) + 1) + 1;
+  if (i >= capacity - adjust) {
+    cost += (cost_height / slope * (i - capacity));
+  }
+
   return cost;
 }
 
 void FastRouteCore::mazeRouteMSMD(const int iter,
                                   const int expand,
-                                  const float cost_height,
                                   const int ripup_threshold,
                                   const int maze_edge_threshold,
                                   const bool ordering,
-                                  const int cost_type,
-                                  const float logis_cof,
                                   const int via,
-                                  const int slope,
                                   const int L,
+                                  const CostParams& cost_params,
                                   float& slack_th)
 {
   // maze routing for multi-source, multi-destination
@@ -1140,16 +1136,16 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
   const int max_usage_multiplier = 40;
 
   // allocate memory for distance and parent and pop_heap
-  h_cost_table_.resize(max_usage_multiplier * h_capacity_);
-  v_cost_table_.resize(max_usage_multiplier * v_capacity_);
+  // h_cost_table_.resize(max_usage_multiplier * h_capacity_);
+  // v_cost_table_.resize(max_usage_multiplier * v_capacity_);
 
   for (int i = 0; i < max_usage_multiplier * h_capacity_; i++) {
-    h_cost_table_[i]
-        = getCost(i, logis_cof, cost_height, slope, h_capacity_, cost_type);
+    h_cost_table_.push_back(
+        getCost(i, h_capacity_, cost_params, h_cost_table_));
   }
   for (int i = 0; i < max_usage_multiplier * v_capacity_; i++) {
-    v_cost_table_[i]
-        = getCost(i, logis_cof, cost_height, slope, v_capacity_, cost_type);
+    v_cost_table_.push_back(
+        getCost(i, v_capacity_, cost_params, v_cost_table_));
   }
 
   for (int i = 0; i < y_grid_; i++) {
@@ -1296,11 +1292,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           const int pos1 = h_edges_[curY][curX - 1].usage_red()
                            + L * h_edges_[curY][(curX - 1)].last_usage;
 
-          if (pos1 < h_cost_table_.size())
-            cost1 = h_cost_table_.at(pos1);
-          else
-            cost1 = getCost(
-                pos1, logis_cof, cost_height, slope, h_capacity_, cost_type);
+          cost1 = getCost(pos1, h_capacity_, cost_params, h_cost_table_);
 
           if ((preY == curY) || (d1[curY][curX] == 0)) {
             tmp = d1[curY][curX] + cost1;
@@ -1309,15 +1301,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               const int pos2 = h_edges_[curY][curX].usage_red()
                                + L * h_edges_[curY][curX].last_usage;
 
-              if (pos2 < h_cost_table_.size())
-                cost2 = h_cost_table_.at(pos2);
-              else
-                cost2 = getCost(pos2,
-                                logis_cof,
-                                cost_height,
-                                slope,
-                                h_capacity_,
-                                cost_type);
+              cost2 = getCost(pos2, h_capacity_, cost_params, h_cost_table_);
 
               const int tmp_cost = d1[curY][curX + 1] + cost2;
 
@@ -1365,11 +1349,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           const int pos1 = h_edges_[curY][curX].usage_red()
                            + L * h_edges_[curY][curX].last_usage;
 
-          if (pos1 < h_cost_table_.size())
-            cost1 = h_cost_table_.at(pos1);
-          else
-            cost1 = getCost(
-                pos1, logis_cof, cost_height, slope, h_capacity_, cost_type);
+          cost1 = getCost(pos1, h_capacity_, cost_params, h_cost_table_);
 
           if ((preY == curY) || (d1[curY][curX] == 0)) {
             tmp = d1[curY][curX] + cost1;
@@ -1378,15 +1358,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               const int pos2 = h_edges_[curY][curX - 1].usage_red()
                                + L * h_edges_[curY][curX - 1].last_usage;
 
-              if (pos2 < h_cost_table_.size())
-                cost2 = h_cost_table_.at(pos2);
-              else
-                cost2 = getCost(pos2,
-                                logis_cof,
-                                cost_height,
-                                slope,
-                                h_capacity_,
-                                cost_type);
+              cost2 = getCost(pos2, h_capacity_, cost_params, h_cost_table_);
+
               const int tmp_cost = d1[curY][curX - 1] + cost2;
 
               if (tmp_cost < d1[curY][curX] + via) {
@@ -1433,11 +1406,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           const int pos1 = v_edges_[curY - 1][curX].usage_red()
                            + L * v_edges_[curY - 1][curX].last_usage;
 
-          if (pos1 < v_cost_table_.size())
-            cost1 = v_cost_table_.at(pos1);
-          else
-            cost1 = getCost(
-                pos1, logis_cof, cost_height, slope, v_capacity_, cost_type);
+          cost1 = getCost(pos1, v_capacity_, cost_params, v_cost_table_);
 
           if ((preX == curX) || (d1[curY][curX] == 0)) {
             tmp = d1[curY][curX] + cost1;
@@ -1446,15 +1415,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               const int pos2 = v_edges_[curY][curX].usage_red()
                                + L * v_edges_[curY][curX].last_usage;
 
-              if (pos2 < v_cost_table_.size())
-                cost2 = v_cost_table_.at(pos2);
-              else
-                cost2 = getCost(pos2,
-                                logis_cof,
-                                cost_height,
-                                slope,
-                                v_capacity_,
-                                cost_type);
+              cost2 = getCost(pos2, v_capacity_, cost_params, v_cost_table_);
+
               const int tmp_cost = d1[curY + 1][curX] + cost2;
 
               if (tmp_cost < d1[curY][curX] + via) {
@@ -1500,11 +1462,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           const int pos1 = v_edges_[curY][curX].usage_red()
                            + L * v_edges_[curY][curX].last_usage;
 
-          if (pos1 < v_cost_table_.size())
-            cost1 = v_cost_table_.at(pos1);
-          else
-            cost1 = getCost(
-                pos1, logis_cof, cost_height, slope, v_capacity_, cost_type);
+          cost1 = getCost(pos1, v_capacity_, cost_params, v_cost_table_);
 
           if ((preX == curX) || (d1[curY][curX] == 0)) {
             tmp = d1[curY][curX] + cost1;
@@ -1513,15 +1471,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               const int pos2 = v_edges_[curY - 1][curX].usage_red()
                                + L * v_edges_[curY - 1][curX].last_usage;
 
-              if (pos2 < v_cost_table_.size())
-                cost2 = v_cost_table_.at(pos2);
-              else
-                cost2 = getCost(pos2,
-                                logis_cof,
-                                cost_height,
-                                slope,
-                                v_capacity_,
-                                cost_type);
+              cost2 = getCost(pos2, v_capacity_, cost_params, v_cost_table_);
 
               const int tmp_cost = d1[curY - 1][curX] + cost2;
 

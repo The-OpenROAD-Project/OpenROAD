@@ -1153,17 +1153,15 @@ NetRouteMap FastRouteCore::run()
       L = 0;
     }
 
+    auto cost_params = CostParams(LOGIS_COF, costheight_, slope, cost_type);
     mazeRouteMSMD(i,
                   enlarge_,
-                  costheight_,
                   ripup_threshold,
                   mazeedge_threshold_,
                   !(i % 3),
-                  cost_type,
-                  LOGIS_COF,
                   VIA,
-                  slope,
                   L,
+                  cost_params,
                   slack_th);
     int last_cong = past_cong;
     past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
@@ -1193,17 +1191,15 @@ NetRouteMap FastRouteCore::run()
         upType = 3;
         stopDEC = true;
         slope = 5;
+        auto cost_params = CostParams(LOGIS_COF, costheight_, slope, cost_type);
         mazeRouteMSMD(i,
                       enlarge_,
-                      costheight_,
                       ripup_threshold,
                       mazeedge_threshold_,
                       !(i % 3),
-                      cost_type,
-                      LOGIS_COF,
                       VIA,
-                      slope,
                       L,
+                      cost_params,
                       slack_th);
         last_cong = past_cong;
         past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
@@ -1244,17 +1240,15 @@ NetRouteMap FastRouteCore::run()
         bmfl = past_cong;
 
         L = 0;
+        auto cost_params = CostParams(LOGIS_COF, costheight_, slope, cost_type);
         mazeRouteMSMD(i,
                       enlarge_,
-                      costheight_,
                       ripup_threshold,
                       mazeedge_threshold_,
                       !(i % 3),
-                      cost_type,
-                      LOGIS_COF,
                       VIA,
-                      slope,
                       L,
+                      cost_params,
                       slack_th);
         last_cong = past_cong;
         past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
