@@ -184,13 +184,6 @@ class BufRemTest : public ::testing::Test
     sta::Graph* graph = sta_->ensureGraph();
     sta::Pin* outStaPin = db_network_->dbToSta(outPort);
     outVertex_ = graph->pinLoadVertex(outStaPin);
-
-    // initializer resizer
-    resizer_ = new rsz::Resizer;
-    stt::SteinerTreeBuilder* stt = new stt::SteinerTreeBuilder;
-    grt::GlobalRouter* grt = new grt::GlobalRouter;
-    dpl::Opendp* dp = new dpl::Opendp;
-    resizer_->init(&logger_, db_.get(), sta_.get(), stt, grt, dp, nullptr);
   }
 
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const
@@ -217,6 +210,13 @@ class BufRemTest : public ::testing::Test
 
 TEST_F(BufRemTest, SlackImproves)
 {
+  // initializer resizer
+  resizer_ = new rsz::Resizer;
+  stt::SteinerTreeBuilder* stt = new stt::SteinerTreeBuilder;
+  grt::GlobalRouter* grt = new grt::GlobalRouter;
+  dpl::Opendp* dp = new dpl::Opendp;
+  resizer_->init(&logger_, db_.get(), sta_.get(), stt, grt, dp, nullptr);
+
   float origArrival
       = sta_->vertexArrival(outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
 
@@ -224,7 +224,10 @@ TEST_F(BufRemTest, SlackImproves)
   odb::dbChip* chip = db_->getChip();
   odb::dbBlock* block = chip->getBlock();
 
+  resizer_->initBlock();
+  db_->setLogger(&logger_);
   resizer_->journalBeginTest();
+  resizer_->logger()->setDebugLevel(utl::RSZ, "journal", 1);
 
   auto insts = std::make_unique<sta::InstanceSeq>();
   odb::dbInst* inst1 = block->findInst("b2");
@@ -237,7 +240,6 @@ TEST_F(BufRemTest, SlackImproves)
 
   resizer_->removeBuffers(*insts, /* recordJournal */ true);
 
-  resizer_->logger()->setDebugLevel(utl::RSZ, "journal", 1);
   resizer_->journalRestoreTest();
 
   float newArrival

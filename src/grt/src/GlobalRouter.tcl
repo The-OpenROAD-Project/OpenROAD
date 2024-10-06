@@ -40,16 +40,16 @@ proc set_global_routing_layer_adjustment { args } {
     keys {} \
     flags {}
 
-  if {[llength $args] == 2} {
+  if { [llength $args] == 2 } {
     lassign $args layer adj
 
-    if {$layer == "*"} {
+    if { $layer == "*" } {
       sta::check_positive_float "adjustment" $adj
       grt::set_capacity_adjustment $adj
-    } elseif {[regexp -all {([^-]+)-([^ ]+)} $layer]} {
+    } elseif { [regexp -all {([^-]+)-([^ ]+)} $layer] } {
       lassign [grt::parse_layer_range "set_global_routing_layer_adjustment" \
         $layer] first_layer last_layer
-      for {set l $first_layer} {$l <= $last_layer} {incr l} {
+      for { set l $first_layer } { $l <= $last_layer } { incr l } {
         grt::check_routing_layer $l
         sta::check_positive_float "adjustment" $adj
 
@@ -97,7 +97,7 @@ proc set_global_routing_region_adjustment { args } {
 
   sta::check_argc_eq1 "set_global_routing_region_adjustment" $args
   set region [lindex $args 0]
-  if {[llength $region] == 4} {
+  if { [llength $region] == 4 } {
     lassign $region lower_x lower_y upper_x upper_y
     sta::check_positive_float "lower_left_x" $lower_x
     sta::check_positive_float "lower_left_y" $lower_y
@@ -121,32 +121,13 @@ proc set_global_routing_region_adjustment { args } {
   }
 }
 
-sta::define_cmd_args "set_routing_layers" { [-signal min-max] \
-                                            [-clock min-max] \
-};# checker off
-
-proc set_routing_layers { args } {
-  sta::parse_key_args "set_routing_layers" args \
-    keys {-signal -clock} flags {};# checker off
-
-  sta::check_argc_eq0 "set_routing_layers" $args
-
-  if { [info exists keys(-signal)] } {
-    grt::define_layer_range $keys(-signal)
-  }
-
-  if { [info exists keys(-clock)] } {
-    grt::define_clock_layer_range $keys(-clock)
-  }
-}
-
 sta::define_cmd_args "set_macro_extension" { extension }
 
 proc set_macro_extension { args } {
   sta::parse_key_args "set_macro_extension" args \
     keys {} \
     flags {}
-  if {[llength $args] == 1} {
+  if { [llength $args] == 1 } {
     lassign $args extension
     sta::check_positive_integer "macro_extension" $extension
     grt::set_macro_extension $extension
@@ -234,7 +215,7 @@ proc global_route { args } {
     grt::set_grid_origin 0 0
   }
 
-  if { [info exists keys(-congestion_iterations) ] } {
+  if { [info exists keys(-congestion_iterations)] } {
     set iterations $keys(-congestion_iterations)
     sta::check_positive_integer "-congestion_iterations" $iterations
     grt::set_overflow_iterations $iterations
@@ -242,12 +223,12 @@ proc global_route { args } {
     grt::set_overflow_iterations 50
   }
 
-  if { [info exists keys(-congestion_report_file) ] } {
+  if { [info exists keys(-congestion_report_file)] } {
     set file_name $keys(-congestion_report_file)
     grt::set_congestion_report_file $file_name
   }
 
-  if { [info exists keys(-congestion_report_iter_step) ] } {
+  if { [info exists keys(-congestion_report_iter_step)] } {
     set steps $keys(-congestion_report_iter_step)
     grt::set_congestion_report_iter_step $steps
   } else {
@@ -298,7 +279,6 @@ proc repair_antennas { args } {
   }
 
   if { [grt::have_routes] || [grt::have_detailed_routes] } {
-
     if { [llength $args] == 0 } {
       # repairAntennas locates diode
       set diode_mterm "NULL"
@@ -341,7 +321,7 @@ proc repair_antennas { args } {
       }
     }
 
-    grt::repair_antennas $diode_mterm $iterations $ratio_margin
+    return [grt::repair_antennas $diode_mterm $iterations $ratio_margin]
   } else {
     utl::error GRT 45 "Run global_route before repair_antennas."
   }
@@ -433,7 +413,6 @@ sta::define_cmd_args "global_route_debug" {
 }
 
 proc global_route_debug { args } {
-
   sta::parse_key_args "global_route_debug" args \
     keys {-saveSttInput -net} \
     flags {-st -rst -tree2D -tree3D}
@@ -479,7 +458,7 @@ proc report_wire_length { args } {
   set detailed_route_wl [info exists flags(-detailed_route)]
   set verbose [info exists flags(-verbose)]
 
-  if {!$global_route_wl && !$detailed_route_wl} {
+  if { !$global_route_wl && !$detailed_route_wl } {
     set global_route_wl [grt::have_routes]
     set detailed_route_wl [grt::have_detailed_route $block]
   }
@@ -493,9 +472,11 @@ proc report_wire_length { args } {
   if { [info exists keys(-net)] } {
     foreach net [get_nets $keys(-net)] {
       set db_net [sta::sta_to_db_net $net]
-      if { [$db_net getSigType] != "POWER" && \
-           [$db_net getSigType] != "GROUND" && \
-           ![$db_net isSpecial]} {
+      if {
+        [$db_net getSigType] != "POWER" &&
+        [$db_net getSigType] != "GROUND" &&
+        ![$db_net isSpecial]
+      } {
         grt::report_net_wire_length $db_net $global_route_wl $detailed_route_wl $verbose $file
       }
     }
@@ -505,7 +486,6 @@ proc report_wire_length { args } {
 }
 
 namespace eval grt {
-
 proc check_routing_layer { layer } {
   if { ![ord::db_has_tech] } {
     utl::error GRT 59 "Missing technology file."
@@ -519,11 +499,11 @@ proc check_routing_layer { layer } {
   set min_tech_layer [$tech findRoutingLayer 1]
   set max_tech_layer [$tech findRoutingLayer $max_routing_layer]
 
-  if {$layer > $max_routing_layer} {
+  if { $layer > $max_routing_layer } {
     utl::error GRT 60 "Layer [$tech_layer getConstName] is greater than\
       the max routing layer ([$max_tech_layer getConstName])."
   }
-  if {$layer < 1} {
+  if { $layer < 1 } {
     utl::error GRT 61 "Layer [$tech_layer getConstName] is less than the\
       min routing layer ([$min_tech_layer getConstName])."
   }
@@ -544,7 +524,7 @@ proc parse_layer_name { layer_name } {
 }
 
 proc parse_layer_range { cmd layer_range } {
-  if {[regexp -all {([^-]+)-([^ ]+)} $layer_range - min_layer_name max_layer_name]} {
+  if { [regexp -all {([^-]+)-([^ ]+)} $layer_range - min_layer_name max_layer_name] } {
     set min_layer [parse_layer_name $min_layer_name]
     set max_layer [parse_layer_name $max_layer_name]
 
@@ -563,54 +543,20 @@ proc check_region { lower_x lower_y upper_x upper_y } {
 
   set core_area [$block getDieArea]
 
-  if {$lower_x < [$core_area xMin] || $lower_x > [$core_area xMax]} {
+  if { $lower_x < [$core_area xMin] || $lower_x > [$core_area xMax] } {
     utl::error GRT 64 "Lower left x is outside die area."
   }
 
-  if {$lower_y < [$core_area yMin] || $lower_y > [$core_area yMax]} {
+  if { $lower_y < [$core_area yMin] || $lower_y > [$core_area yMax] } {
     utl::error GRT 65 "Lower left y is outside die area."
   }
 
-  if {$upper_x < [$core_area xMin] || $upper_x > [$core_area xMax]} {
+  if { $upper_x < [$core_area xMin] || $upper_x > [$core_area xMax] } {
     utl::error GRT 66 "Upper right x is outside die area."
   }
 
-  if {$upper_y < [$core_area yMin] || $upper_y > [$core_area yMax]} {
+  if { $upper_y < [$core_area yMin] || $upper_y > [$core_area yMax] } {
     utl::error GRT 67 "Upper right y is outside die area."
-  }
-}
-
-proc define_layer_range { layers } {
-  set layer_range [grt::parse_layer_range "-layers" $layers]
-  lassign $layer_range min_layer max_layer
-  grt::check_routing_layer $min_layer
-  grt::check_routing_layer $max_layer
-
-  grt::set_min_layer $min_layer
-  grt::set_max_layer $max_layer
-
-  set tech [ord::get_db_tech]
-  for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
-    set db_layer [$tech findRoutingLayer $layer]
-    if { !([ord::db_layer_has_hor_tracks $db_layer] && \
-         [ord::db_layer_has_ver_tracks $db_layer]) } {
-      set layer_name [$db_layer getName]
-      utl::error GRT 57 "Missing track structure for layer $layer_name."
-    }
-  }
-}
-
-proc define_clock_layer_range { layers } {
-  set layer_range [grt::parse_layer_range "-clock_layers" $layers]
-  lassign $layer_range min_clock_layer max_clock_layer
-  grt::check_routing_layer $min_clock_layer
-  grt::check_routing_layer $max_clock_layer
-
-  if { $min_clock_layer < $max_clock_layer } {
-    grt::set_clock_layer_range $min_clock_layer $max_clock_layer
-  } else {
-    utl::error GRT 56 "In argument -clock_layers, min routing layer is\
-      greater than max routing layer."
   }
 }
 

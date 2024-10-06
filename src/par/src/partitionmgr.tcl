@@ -596,11 +596,13 @@ proc triton_part_design { args } {
     set placement_flag $keys(-placement_flag)
   }
 
-  if { [info exists keys(-fence_flag)] &&
-       [info exists keys(-fence_lx)] &&
-       [info exists keys(-fence_ly)] &&
-       [info exists keys(-fence_ux)] &&
-       [info exists keys(-fence_uy)] } {
+  if {
+    [info exists keys(-fence_flag)] &&
+    [info exists keys(-fence_lx)] &&
+    [info exists keys(-fence_ly)] &&
+    [info exists keys(-fence_ux)] &&
+    [info exists keys(-fence_uy)]
+  } {
     set fence_flag $keys(-fence_flag)
     set fence_lx $keys(-fence_lx)
     set fence_ly $keys(-fence_ly)
@@ -889,11 +891,13 @@ proc evaluate_part_design_solution { args } {
     set top_n $keys(-top_n)
   }
 
-  if { [info exists keys(-fence_flag)] &&
-       [info exists keys(-fence_lx)] &&
-       [info exists keys(-fence_ly)] &&
-       [info exists keys(-fence_ux)] &&
-       [info exists keys(-fence_uy)] } {
+  if {
+    [info exists keys(-fence_flag)] &&
+    [info exists keys(-fence_lx)] &&
+    [info exists keys(-fence_ly)] &&
+    [info exists keys(-fence_ux)] &&
+    [info exists keys(-fence_uy)]
+  } {
     set fence_flag $keys(-fence_flag)
     set fence_lx $keys(-fence_lx)
     set fence_ly $keys(-fence_ly)

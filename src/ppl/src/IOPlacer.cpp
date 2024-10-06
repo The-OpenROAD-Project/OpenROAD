@@ -285,8 +285,25 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
 
       int b = io_pin_indices[io_idx];
       int slot_idx = slot_indices[floor(b * shift)];
-      while (slots[slot_idx].used == true || slots[slot_idx].blocked == true) {
-        slot_idx++;
+
+      if (assign_mirrored && !top_layer) {
+        odb::Point mirrored_pos
+            = core_->getMirroredPosition(slots[slot_idx].pos);
+        int mirrored_slot_idx
+            = getSlotIdxByPosition(mirrored_pos, slots[slot_idx].layer, slots_);
+        while (slots[slot_idx].used || slots[slot_idx].blocked
+               || slots[mirrored_slot_idx].blocked
+               || slots[mirrored_slot_idx].used) {
+          slot_idx++;
+          mirrored_pos = core_->getMirroredPosition(slots[slot_idx].pos);
+          mirrored_slot_idx = getSlotIdxByPosition(
+              mirrored_pos, slots[slot_idx].layer, slots_);
+        }
+      } else {
+        while (slots[slot_idx].used == true
+               || slots[slot_idx].blocked == true) {
+          slot_idx++;
+        }
       }
       io_pin.setPos(slots[slot_idx].pos);
       io_pin.setPlaced();
@@ -305,9 +322,9 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
 
         odb::Point mirrored_pos = core_->getMirroredPosition(io_pin.getPos());
         mirrored_pin.setPos(mirrored_pos);
-        mirrored_pin.setLayer(slots_[slot_idx].layer);
+        mirrored_pin.setLayer(slots[slot_idx].layer);
         mirrored_pin.setPlaced();
-        mirrored_pin.setEdge(slots_[slot_idx].edge);
+        mirrored_pin.setEdge(slots[slot_idx].edge);
         assignment_.push_back(mirrored_pin);
         slot_idx = getSlotIdxByPosition(
             mirrored_pos, mirrored_pin.getLayer(), slots);
@@ -385,7 +402,8 @@ int IOPlacer::placeFallbackPins(bool random)
             logger_->error(PPL,
                            93,
                            "Pin group of size {} does not fit in the "
-                           "constrained region {:.2f}-{:.2f} at {} edge. "
+                           "constrained region {:.2f}-{:.2f} at {} edge on a "
+                           "single metal layer. "
                            "First pin of the group is {}.",
                            group.first.size(),
                            getBlock()->dbuToMicrons(interval.getBegin()),
@@ -2241,9 +2259,9 @@ void IOPlacer::checkPinPlacement()
     if (layer_positions_map[layer].empty()) {
       layer_positions_map[layer].push_back(pin.getPosition());
     } else {
-      odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
       for (odb::Point& pos : layer_positions_map[layer]) {
         if (pos == pin.getPosition()) {
+          odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
           logger_->warn(
               PPL,
               106,

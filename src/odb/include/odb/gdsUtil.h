@@ -149,7 +149,7 @@ extern const char* recordNames[];
  */
 enum class DataType : uint8_t
 {
-  NO_DATA = 0,
+  NO_DATA,
   BIT_ARRAY,
   INT_2,
   INT_4,
@@ -220,17 +220,6 @@ dbGDSLib* createEmptyGDSLib(dbDatabase* db, const std::string& libname);
  * Sets timestamp on a GDSII library object to the current time
  */
 void stampGDSLib(dbGDSLib* lib, bool modified = true);
-
-/**
- * Create an empty GDSII structure object and add it to a library
- *
- * Equivalent to: dbGDSStructure::create(), to remove a struct from a library,
- * use dbGDSStructure::destroy()
- *
- * @param lib The dbGDSLib object to add the structure to
- * @param name The name of the structure
- */
-dbGDSStructure* createEmptyGDSStructure(dbGDSLib* lib, const std::string& name);
 
 /**
  * Create an empty GDSII element (boundary, box, text, path, sref, node)

@@ -167,9 +167,9 @@ make_io_sites
 | `-vertical_site` | Name of the site for the vertical pads (north and south). |
 | `-corner_site` | Name of the site for the corner cells. |
 | `-offset` | Offset from the die edge to place the rows. |
-| `-rotation_horizontal` | Rotation to apply to the horizontal sites to ensure pads are placed correctly. The default value is `R0`. |
-| `-rotation_vertical` | Rotation to apply to the vertical sites to ensure pads are placed correctly. The default value is `R0`. |
-| `-rotation_corner` | Rotation to apply to the corner sites to ensure pads are placed correctly. The default value is `R0`. |
+| `-rotation_horizontal` | Rotation to apply to the horizontal sites to ensure pads are placed correctly. The default value is `R0` for the western (left) row when different sites are specified for hortizontal and vertical rows, the default value is `MXR90` when the same site is specified. |
+| `-rotation_vertical` | Rotation to apply to the vertical sites to ensure pads are placed correctly. The default value is `R0` for the southern (bottom) row. |
+| `-rotation_corner` | Rotation to apply to the corner sites to ensure pads are placed correctly. The default value is `R0` for the south west (lower left) corner. |
 | `-ring_index` | Used to specify the index of the ring in case of multiple rings. |
 
 
@@ -204,7 +204,33 @@ Example usage:
 place_corners sky130_fd_io__corner_bus_overlay
 ```
 
-### Placing Pads
+### Placing Pads Automatically
+
+To place a set of pads into an IO row in the order specified.
+If bumps have been placed and ports placed, the placer will attempt to align the pads with the bumps (excluding rhe supply nets), while still preserving the order of the pads.
+Otherwise, the default behavior is to place the pads uniformly.
+
+Example usage:
+
+```
+place_pads -row IO_SOUTH u_reset.u_in u_reset.u_out
+```
+
+```tcl
+place_pads
+    -row row_name
+    pads
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-row` | Name of the row to place the pad into, examples include: `IO_NORTH`, `IO_SOUTH`, `IO_WEST`, `IO_EAST`, `IO_NORTH_0`, `IO_NORTH_1`. |
+| `pads` | Name of the instances in the order they should be placed (left to right for `IO_SOUTH` and `IO_NORTH` and bottom to top for `IO_WEST` and `IO_EAST`). |
+
+
+### Placing Pads Manually
 
 To place a pad into the pad ring.
 
@@ -343,6 +369,7 @@ rdl_route
     [-spacing spacing]
     [-turn_penalty penalty]
     [-allow45]
+    [-max_iterations max_iterations]
     nets
 ```
 
@@ -356,6 +383,7 @@ rdl_route
 | `-width` | Width of the routing. Defaults to minimum width for each respective layer. |
 | `-spacing` | Spacing of the routing. Defaults to minimum spacing for each respective layer. |
 | `-turn_penalty` | Scaling factor to apply to discurage turning to allow for straighter routes. The default value is `2.0`, and the allowed values are floats. |
+| `-max_iterations` | Maximum number of router iterations. The default value is `10`. |
 | `-allow45` | Specifies that 45 degree routing is permitted. |
 | `nets` | Nets to route. |
 
