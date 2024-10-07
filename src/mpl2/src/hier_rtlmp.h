@@ -72,7 +72,19 @@ class Snapper;
 class SACoreSoftMacro;
 class SACoreHardMacro;
 
-using LayersWithPinsMap = std::map<odb::dbTechLayer*, odb::dbBox*>;
+// The parameters necessary to compute one coordinate of the new
+// origin for aligning the macros' pins to the track-grid
+struct LayerParameters
+{
+  int offset = 0;
+  int pitch = 0;
+  int pin_width = 0;
+  int pin_offset = 0;
+  int lower_left_to_first_pin = 0;
+};
+
+using LayersWithPinsMap = std::map<odb::dbTechLayer*, odb::dbITerm*>;
+using LayerParametersMap = std::map<odb::dbTechLayer*, LayerParameters>;
 
 // Hierarchical RTL-MP
 // Support Multi-Level Clustering.
@@ -376,52 +388,51 @@ class Pusher
   std::vector<HardMacro*> hard_macros_;
 };
 
-// The parameters necessary to compute one coordinate of the new
-// origin for aligning the macros' pins to the track-grid
-struct SnapParameters
-{
-  int offset = 0;
-  int pitch = 0;
-  int pin_width = 0;
-  int pin_offset = 0;
-  int lower_left_to_first_pin = 0;
-};
-
 struct SameDirectionLayersData
 {
-  LayersWithPinsMap layer_to_pin_box;
+  LayersWithPinsMap layer_to_pin;
+  LayerParametersMap layer_to_params;
   odb::dbTechLayer* snap_layer = nullptr;
 };
 
 class Snapper
 {
  public:
-  Snapper();
-  Snapper(odb::dbInst* inst);
+  Snapper(utl::Logger* logger);
+  Snapper(utl::Logger* logger, odb::dbInst* inst);
 
   void setMacro(odb::dbInst* inst) { inst_ = inst; }
   void snapMacro();
 
  private:
-  int computeNewOriginCoordinate(const bool horizontal_snap);
-  SameDirectionLayersData computeSameDirectionLayersData(
-      bool horizontal_snap);
+  void snap(bool horizontal_snap);
+  void setOrigin(int origin, bool horizontal_snap);
+  bool pinsAreAlignedWithTrackGrid(odb::dbITerm* pin,
+                                   const LayerParameters& layer_params,
+                                   const bool horizontal_snap);
+
+  SameDirectionLayersData computeSameDirectionLayersData(bool horizontal_snap);
   odb::Point computeSnapOrigin();
-  SnapParameters computeSnapParameters(odb::dbTechLayer* layer,
-                                       odb::dbBox* box,
-                                       bool horizontal_snap);
-  void updateLayerMap(LayersWithPinsMap& layer_to_pin_box,
-                             odb::dbTechLayer* current_layer,
-                             odb::dbTechLayer*& snap_layer,
-                             odb::dbBox* pin_box);
+  LayerParameters computeLayerParameters(odb::dbTechLayer* layer,
+                                         odb::dbITerm* pin,
+                                         bool horizontal_snap);
+  void updateLayerMap(LayersWithPinsMap& layer_to_pin,
+                      odb::dbTechLayer* current_layer,
+                      odb::dbTechLayer*& snap_layer,
+                      odb::dbBox* pin_box);
   void getTrackGrid(odb::dbTrackGrid* track_grid,
                     std::vector<int>& coordinate_grid,
                     bool horizontal_snap);
   int getPitch(odb::dbTechLayer* layer);
   int getOffset(odb::dbTechLayer* layer);
-  int getPinWidth(odb::dbBox* box, bool horizontal_snap);
-  int getPinToLowerLeftDistance(odb::dbBox* box, bool horizontal_snap);
+  int getPinWidth(odb::dbITerm* pin, bool horizontal_snap);
+  int getPinToLowerLeftDistance(odb::dbITerm* pin, bool horizontal_snap);
+  void attemptSnapToExtraLayers(int origin,
+                                const SameDirectionLayersData& layers_data,
+                                const LayerParameters& snap_layer_params,
+                                bool horizontal_snap);
 
+  utl::Logger* logger_;
   odb::dbInst* inst_;
 };
 
