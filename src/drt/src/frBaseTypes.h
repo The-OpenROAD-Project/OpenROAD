@@ -297,13 +297,6 @@ enum class frAccessPointEnum
   NearbyGrid = 4  // nearby grid or 1/2 grid
 };
 
-static constexpr frAccessPointEnum frAccessPointEnumAll[]
-    = {frAccessPointEnum::OnGrid,
-       frAccessPointEnum::HalfGrid,
-       frAccessPointEnum::Center,
-       frAccessPointEnum::EncOpt,
-       frAccessPointEnum::NearbyGrid};
-
 enum class RipUpMode
 {
   DRC = 0,
