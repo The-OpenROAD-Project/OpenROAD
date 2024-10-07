@@ -161,7 +161,7 @@ dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
     _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
     _dbModInst* mod_inst = block->_modinst_tbl->getPtr(obj._parent);
     if (obj._name) {
-      mod_inst->_moditerm_hash[obj._name] = dbId<dbModITerm>(obj.getId());
+      mod_inst->_moditerm_hash[obj._name] = dbId<_dbModITerm>(obj.getId());
     }
   }
   // User Code End >>
@@ -282,7 +282,7 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
     new_next->_prev_entry = moditerm->getOID();
   }
   parent->_moditerms = moditerm->getOID();
-  parent->_moditerm_hash[name] = moditerm->getOID();
+  parent->_moditerm_hash[name] = dbId<_dbModITerm>(moditerm->getOID());
   return (dbModITerm*) moditerm;
 }
 

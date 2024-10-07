@@ -7803,8 +7803,6 @@ class dbModInst : public dbObject
 
   void RemoveUnusedPortsAndPins();
 
-  void addModITermToHash(dbModITerm* mod_iterm);
-
   static dbModInst* create(dbModule* parentModule,
                            dbModule* masterModule,
                            const char* name);

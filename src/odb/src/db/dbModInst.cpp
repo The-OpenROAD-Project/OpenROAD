@@ -350,19 +350,13 @@ std::string dbModInst::getHierarchicalName() const
   return parent->getModInst()->getHierarchicalName() + "/" + inst_name;
 }
 
-void dbModInst::addModITermToHash(dbModITerm* mod_iterm)
-{
-  _dbModInst* obj = (_dbModInst*) this;
-  obj->_moditerm_hash[mod_iterm->getName()] = mod_iterm->getId();
-}
-
 dbModITerm* dbModInst::findModITerm(const char* name)
 {
   _dbModInst* obj = (_dbModInst*) this;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   auto it = obj->_moditerm_hash.find(name);
   if (it != obj->_moditerm_hash.end()) {
-    uint db_id = (*it).second;
+    auto db_id = (*it).second;
     return (dbModITerm*) par->_moditerm_tbl->getPtr(db_id);
   }
   return nullptr;
