@@ -432,16 +432,19 @@ proc place_pin { args } {
 
   set layer [ppl::parse_layer_name $layer]
 
-  ppl::place_pin $pin $layer $x $y $width $height [info exists flags(-force_to_die_boundary)]
+  ppl::place_pin $pin $layer $x $y $width $height \
+    [info exists flags(-force_to_die_boundary)] \
+    [info exists flags(-placed_status)]
 }
 
-sta::define_cmd_args "write_pin_placement" { file_name }
+sta::define_cmd_args "write_pin_placement" { file_name \
+                                             [-placed_status] }
 
 proc write_pin_placement { args } {
   sta::parse_key_args "write_pin_placement" args \
-    keys {} flags {}
+    keys {} flags {-placed_status}
   set file_name $args
-  ppl::write_pin_placement $file_name
+  ppl::write_pin_placement $file_name [info exists flags(-placed_status)]
 }
 
 sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\

@@ -230,6 +230,7 @@ place_pin
 | `-location` | The center of the pin (in microns). |
 | `-pin_size` | The width and height of the pin (in microns). |
 | `-force_to_die_boundary` | When this flag is enabled, the pin will be snapped to the nearest routing track, next to the die boundary. |
+| `-placed_status` | When this flag is enabled, the pin will have PLACED as its placement status, instead of the FIXED status. |
 
 ### Place all Pins
 
@@ -288,6 +289,7 @@ The `write_pin_placement` command writes a file with the pin placement in the fo
 ```tcl
 write_pin_placement 
     file_name
+    -placed_status
 ```
 
 #### Options
@@ -295,6 +297,7 @@ write_pin_placement
 | Switch Name | Description |
 | ----- | ----- |
 | `file_name` | The name of the file with the pin placement. |
+| `-placed_status` | When this flag is enabled, the file will be generated´with the `-placed_status` flag in each `place_pin` command call. |
 
 ## Useful Developer Commands
 
