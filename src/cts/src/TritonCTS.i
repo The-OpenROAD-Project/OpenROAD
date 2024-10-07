@@ -255,6 +255,12 @@ set_delay_buffer_derate(float derate)
 }
 
 void
+set_cts_library(const char* name)
+{
+  getTritonCts()->getParms()->setCtsLibrary(name);
+}
+
+void
 run_triton_cts()
 {
   getTritonCts()->runTritonCts();

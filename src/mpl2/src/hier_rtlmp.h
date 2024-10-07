@@ -178,6 +178,10 @@ class HierRTLMP
   // Hierarchical Macro Placement 1st stage: Cluster Placement
   void runHierarchicalMacroPlacement(Cluster* parent);
   void adjustMacroBlockageWeight();
+  void setWeightsForConvergence(int& outline_weight,
+                                int& boundary_weight,
+                                const std::vector<BundledNet>& nets,
+                                int number_of_placeable_macros);
   void reportSAWeights();
   void runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent);
   void runEnhancedHierarchicalMacroPlacement(Cluster* parent);

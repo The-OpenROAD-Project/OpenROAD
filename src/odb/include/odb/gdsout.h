@@ -55,19 +55,6 @@ class GDSWriter
 {
  public:
   /**
-   * Constructor for GDSReader
-   * No operations are performed in the constructor
-   */
-  GDSWriter();
-
-  /**
-   * Destructor
-   *
-   * Does not free the dbGDSLib objects, as they are owned by the database
-   */
-  ~GDSWriter();
-
-  /**
    * Writes a dbGDSLib object to a GDS file
    *
    * @param filename The path to the output file
@@ -146,7 +133,7 @@ class GDSWriter
   /** Output filestream */
   std::ofstream _file;
   /** Current dbGDSLib object */
-  dbGDSLib* _lib;
+  dbGDSLib* _lib{nullptr};
 };
 
 }  // namespace gds

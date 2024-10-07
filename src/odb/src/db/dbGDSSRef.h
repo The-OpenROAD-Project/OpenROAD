@@ -71,7 +71,7 @@ class _dbGDSSRef : public _dbGDSElement
            + std::to_string(_colRow.second);
   }
 
-  dbGDSStructure* _stucture;
+  dbGDSStructure* _stucture = nullptr;
 
   // User Code End Methods
 

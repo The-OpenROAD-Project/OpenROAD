@@ -29,6 +29,7 @@
 #OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # tclint-disable
+# tclfmt-disable
 sta::define_cmd_args "set_bump_options" {[-pitch pitch] \
                                            [-bump_pin_name pin_name] \
                                            [-spacing_to_edge spacing] \
@@ -6683,3 +6684,4 @@ proc place_cell {args} {
   $inst setPlacementStatus $placement_status
 }
 # tclint-enable
+# tclfmt-enable

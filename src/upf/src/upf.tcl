@@ -120,14 +120,14 @@ sta::define_cmd_args "create_power_switch" { \
     [-control_port control_port] \
     [-on_state on_state] \
     name
-}; # checker off
+} ;# checker off
 proc create_power_switch { args } {
   upf::check_block_exists
 
   ord::parse_list_args "create_power_switch" args \
     list {-input_supply_port -control_port -ack_port -on_state}
   sta::parse_key_args "create_power_switch" args \
-    keys {-domain -output_supply_port} flags {}; # checker off
+    keys {-domain -output_supply_port} flags {} ;# checker off
 
   sta::check_argc_eq1 "create_power_switch" $args
 
@@ -204,13 +204,14 @@ proc set_isolation { args } {
   set applies_to ""
   set clamp_value ""
   set isolation_signal ""
-  set isolation_sense ""
-  set location ""
+  set isolation_sense "high"
+  set location "self"
   set update 0
 
-  if { [info exists keys(-domain)] } {
-    set domain $keys(-domain)
+  if { ![info exists keys(-domain)] } {
+    utl::error UPF 73 "-domain is required for set_isolation"
   }
+  set domain $keys(-domain)
 
   if { [info exists keys(-applies_to)] } {
     set applies_to $keys(-applies_to)
@@ -238,7 +239,6 @@ proc set_isolation { args } {
 
   upf::set_isolation_cmd $name $domain $update $applies_to $clamp_value \
     $isolation_signal $isolation_sense $location
-
 }
 
 # Specifies the cells to be used for an isolation strategy
@@ -369,7 +369,7 @@ proc map_power_switch { args } {
     upf::set_power_switch_cell $switch $cell
 
     foreach {port} $port_map {
-      if {[llength $port] != 2} {
+      if { [llength $port] != 2 } {
         utl::error UPF 40 "The port map should be a list of exactly 2 elements"
       }
       upf::set_power_switch_port $switch [lindex $port 0] [lindex $port 1]
@@ -525,9 +525,9 @@ proc set_level_shifter { args } {
   }
 
   set ok [upf::create_or_update_level_shifter_cmd $name $domain $source \
-          $sink $use_functional_equivalence $applies_to $applies_to_boundary \
-          $rule $threshold $no_shift $force_shift $location $input_supply \
-          $output_supply $internal_supply $name_prefix $name_suffix $update]
+    $sink $use_functional_equivalence $applies_to $applies_to_boundary \
+    $rule $threshold $no_shift $force_shift $location $input_supply \
+    $output_supply $internal_supply $name_prefix $name_suffix $update]
 
   if { $ok == 0 } {
     return
@@ -645,5 +645,4 @@ proc check_block_exists { } {
     utl::error UPF 34 "No block exists"
   }
 }
-
 }
