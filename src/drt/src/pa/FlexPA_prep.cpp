@@ -1515,8 +1515,8 @@ void FlexPA::initAllAccessPoints()
       for (int i = 0; i < inst_terms_cnt; i++, pin_count++) {
         pin_count++;
         if (pin_count % pin_count_inform == 0) {
-          logger_->info(DRT, 76, "  Complete {} pins.", cnt);
-          if (cnt >= 10000) {
+          logger_->info(DRT, 76, "  Complete {} pins.", pin_count);
+          if (pin_count >= 10000) {
             pin_count_inform = 10000;
           }
         }
@@ -1559,7 +1559,7 @@ void FlexPA::initAllAccessPoints()
   }
 
   if (VERBOSE > 0) {
-    logger_->info(DRT, 78, "  Complete {} pins.", cnt);
+    logger_->info(DRT, 78, "  Complete {} pins.", pin_count);
   }
 }
 
