@@ -249,12 +249,12 @@ void RepairHold::repairHold(VertexSeq& ends,
   VertexSeq hold_failures;
   Slack worst_slack;
   findHoldViolations(ends, hold_margin, worst_slack, hold_failures);
+  inserted_buffer_count_ = 0;
   if (!hold_failures.empty()) {
     logger_->info(RSZ,
                   46,
                   "Found {} endpoints with hold violations.",
                   hold_failures.size());
-    inserted_buffer_count_ = 0;
     bool progress = true;
     if (verbose) {
       printProgress(0, true, false);
