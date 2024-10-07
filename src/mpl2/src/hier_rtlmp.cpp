@@ -4474,8 +4474,8 @@ Snapper::Snapper(utl::Logger* logger, odb::dbInst* inst)
 
 void Snapper::snapMacro()
 {
-  snap(true /*horizontal snap*/);
-  snap(false /*horizontal snap*/);
+  snap(true);   // Horizontal snap
+  snap(false);  // Vertical snap
 }
 
 void Snapper::snap(const bool horizontal_snap)
