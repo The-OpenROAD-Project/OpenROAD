@@ -405,27 +405,29 @@ class Snapper
   void snapMacro();
 
  private:
-  void snap(odb::dbTechLayerDir layer_direction);
-  void setOrigin(int origin, odb::dbTechLayerDir target_direction);
+  void snap(const odb::dbTechLayerDir& target_direction);
+  void setOrigin(int origin, const odb::dbTechLayerDir& target_direction);
   bool pinsAreAlignedWithTrackGrid(odb::dbITerm* pin,
                                    const LayerParameters& layer_params,
-                                   odb::dbTechLayerDir target_direction);
+                                   const odb::dbTechLayerDir& target_direction);
 
   SameDirectionLayersData computeSameDirectionLayersData(
-      odb::dbTechLayerDir target_direction);
-  LayerParameters computeLayerParameters(odb::dbTechLayer* layer,
-                                         odb::dbITerm* pin,
-                                         odb::dbTechLayerDir target_direction);
+      const odb::dbTechLayerDir& target_direction);
+  LayerParameters computeLayerParameters(
+      odb::dbTechLayer* layer,
+      odb::dbITerm* pin,
+      const odb::dbTechLayerDir& target_direction);
   void getTrackGrid(odb::dbTrackGrid* track_grid,
                     std::vector<int>& coordinate_grid,
-                    odb::dbTechLayerDir target_direction);
-  int getPinWidth(odb::dbITerm* pin, odb::dbTechLayerDir target_direction);
+                    const odb::dbTechLayerDir& target_direction);
+  int getPinWidth(odb::dbITerm* pin,
+                  const odb::dbTechLayerDir& target_direction);
   int getPinToLowerLeftDistance(odb::dbITerm* pin,
-                                odb::dbTechLayerDir target_direction);
+                                const odb::dbTechLayerDir& target_direction);
   void attemptSnapToExtraLayers(int origin,
                                 const SameDirectionLayersData& layers_data,
                                 const LayerParameters& snap_layer_params,
-                                odb::dbTechLayerDir target_direction);
+                                const odb::dbTechLayerDir& target_direction);
 
   utl::Logger* logger_;
   odb::dbInst* inst_;
