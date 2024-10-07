@@ -4693,6 +4693,7 @@ void Snapper::attemptSnapToExtraLayers(
     }
 
     if (curr_number_of_snapped_layers > best_number_of_snapped_layers) {
+      best_number_of_snapped_layers = curr_number_of_snapped_layers;
       best_origin = new_origin;
     }
 
