@@ -4483,6 +4483,10 @@ void Snapper::snap(const bool horizontal_snap)
   SameDirectionLayersData layers_data
       = computeSameDirectionLayersData(horizontal_snap);
 
+  if (!layers_data.snap_layer) {
+    return;
+  }
+
   int origin
       = horizontal_snap ? inst_->getOrigin().x() : inst_->getOrigin().y();
 
