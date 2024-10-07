@@ -49,6 +49,24 @@ namespace drt {
 
 using utl::ThreadException;
 
+// TODO there should be a better way to get this info by getting the master
+// terms from OpenDB
+bool FlexPA::isStdCellPin(frInst* inst)
+{
+  dbMasterType masterType = inst->getMaster()->getMasterType();
+  return (masterType == dbMasterType::CORE
+          || masterType == dbMasterType::CORE_TIEHIGH
+          || masterType == dbMasterType::CORE_TIELOW
+          || masterType == dbMasterType::CORE_ANTENNACELL);
+}
+
+bool FlexPA::isMacroCellPin(frInst* inst)
+{
+  dbMasterType masterType = inst->getMaster()->getMasterType();
+  return (masterType.isBlock() || masterType.isPad()
+          || masterType == dbMasterType::RING);
+}
+
 template <typename T>
 std::vector<gtl::polygon_90_set_data<frCoord>>
 FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
@@ -601,21 +619,14 @@ void FlexPA::genAPsFromLayerShapes(
   bool allow_planar = true;
   bool is_macro_cell_pin = false;
   if (inst_term) {
-    dbMasterType masterType
-        = inst_term->getInst()->getMaster()->getMasterType();
-    if (masterType == dbMasterType::CORE
-        || masterType == dbMasterType::CORE_TIEHIGH
-        || masterType == dbMasterType::CORE_TIELOW
-        || masterType == dbMasterType::CORE_ANTENNACELL) {
+    if (isStdCellPin(inst_term->getInst())) {
       if ((layer_num >= VIAINPIN_BOTTOMLAYERNUM
            && layer_num <= VIAINPIN_TOPLAYERNUM)
           || layer_num <= VIA_ACCESS_LAYERNUM) {
         allow_planar = false;
       }
-    } else if (masterType.isBlock() || masterType.isPad()
-               || masterType == dbMasterType::RING) {
-      is_macro_cell_pin = true;
     }
+    is_macro_cell_pin = isMacroCellPin(inst_term->getInst());
   } else {
     // IO term is treated as the MacroCellPin as the top block
     is_macro_cell_pin = true;
@@ -1220,17 +1231,8 @@ void FlexPA::updatePinStats(
   bool is_std_cell_pin = false;
   bool is_macro_cell_pin = false;
   if (inst_term) {
-    // TODO there should be a better way to get this info by getting the master
-    // terms from OpenDB
-    dbMasterType masterType
-        = inst_term->getInst()->getMaster()->getMasterType();
-    is_std_cell_pin = masterType == dbMasterType::CORE
-                      || masterType == dbMasterType::CORE_TIEHIGH
-                      || masterType == dbMasterType::CORE_TIELOW
-                      || masterType == dbMasterType::CORE_ANTENNACELL;
-
-    is_macro_cell_pin = masterType.isBlock() || masterType.isPad()
-                        || masterType == dbMasterType::RING;
+    is_std_cell_pin = isStdCellPin(inst_term->getInst());
+    is_macro_cell_pin = isMacroCellPin(inst_term->getInst());
   }
   for (auto& ap : tmp_aps) {
     if (ap->hasAccess(frDirEnum::W) || ap->hasAccess(frDirEnum::E)
@@ -1270,17 +1272,8 @@ bool FlexPA::initPinAccessCostBounded(
   bool is_std_cell_pin = false;
   bool is_macro_cell_pin = false;
   if (inst_term) {
-    // TODO there should be a better way to get this info by getting the master
-    // terms from OpenDB
-    dbMasterType masterType
-        = inst_term->getInst()->getMaster()->getMasterType();
-    is_std_cell_pin = masterType == dbMasterType::CORE
-                      || masterType == dbMasterType::CORE_TIEHIGH
-                      || masterType == dbMasterType::CORE_TIELOW
-                      || masterType == dbMasterType::CORE_ANTENNACELL;
-
-    is_macro_cell_pin = masterType.isBlock() || masterType.isPad()
-                        || masterType == dbMasterType::RING;
+    is_std_cell_pin = isStdCellPin(inst_term->getInst());
+    is_macro_cell_pin = isMacroCellPin(inst_term->getInst());
   }
   const bool is_io_pin = (inst_term == nullptr);
   std::vector<std::unique_ptr<frAccessPoint>> tmp_aps;
@@ -1367,17 +1360,8 @@ int FlexPA::initPinAccess(T* pin, frInstTerm* inst_term)
   bool is_std_cell_pin = false;
   bool is_macro_cell_pin = false;
   if (inst_term) {
-    // TODO there should be a better way to get this info by getting the master
-    // terms from OpenDB
-    dbMasterType masterType
-        = inst_term->getInst()->getMaster()->getMasterType();
-    is_std_cell_pin = masterType == dbMasterType::CORE
-                      || masterType == dbMasterType::CORE_TIEHIGH
-                      || masterType == dbMasterType::CORE_TIELOW
-                      || masterType == dbMasterType::CORE_ANTENNACELL;
-
-    is_macro_cell_pin = masterType.isBlock() || masterType.isPad()
-                        || masterType == dbMasterType::RING;
+    is_std_cell_pin = isStdCellPin(inst_term->getInst());
+    is_macro_cell_pin = isMacroCellPin(inst_term->getInst());
   }
 
   if (graphics_) {
@@ -1391,15 +1375,8 @@ int FlexPA::initPinAccess(T* pin, frInstTerm* inst_term)
   std::vector<gtl::polygon_90_set_data<frCoord>> pin_shapes
       = mergePinShapes(pin, inst_term);
 
-  for (auto upper : {frAccessPointEnum::OnGrid,
-                     frAccessPointEnum::HalfGrid,
-                     frAccessPointEnum::Center,
-                     frAccessPointEnum::EncOpt,
-                     frAccessPointEnum::NearbyGrid}) {
-    for (auto lower : {frAccessPointEnum::OnGrid,
-                       frAccessPointEnum::HalfGrid,
-                       frAccessPointEnum::Center,
-                       frAccessPointEnum::EncOpt}) {
+  for (auto upper : frAccessPointEnumAll) {
+    for (auto lower : frAccessPointEnumAll) {
       if (upper == frAccessPointEnum::NearbyGrid && !aps.empty()) {
         // Only use NearbyGrid as a last resort (at least until
         // nangate45/aes is resolved).
@@ -1470,13 +1447,7 @@ void FlexPA::initAllAccessPoints()
     try {
       auto& inst = unique[i];
       // only do for core and block cells
-      dbMasterType masterType = inst->getMaster()->getMasterType();
-      if (masterType != dbMasterType::CORE
-          && masterType != dbMasterType::CORE_TIEHIGH
-          && masterType != dbMasterType::CORE_TIELOW
-          && masterType != dbMasterType::CORE_ANTENNACELL
-          && !masterType.isBlock() && !masterType.isPad()
-          && masterType != dbMasterType::RING) {
+      if (!isStdCellPin(inst) && !isMacroCellPin(inst)) {
         continue;
       }
       ProfileTask profile("PA:uniqueInstance");
@@ -1688,11 +1659,7 @@ void FlexPA::prepPattern()
       // only do for core and block cells
       // TODO the above comment says "block cells" but that's not what the code
       // does?
-      dbMasterType masterType = inst->getMaster()->getMasterType();
-      if (masterType != dbMasterType::CORE
-          && masterType != dbMasterType::CORE_TIEHIGH
-          && masterType != dbMasterType::CORE_TIELOW
-          && masterType != dbMasterType::CORE_ANTENNACELL) {
+      if (!isStdCellPin(inst)) {
         continue;
       }
 
@@ -2144,11 +2111,7 @@ void FlexPA::getInsts(std::vector<frInst*>& insts)
     if (!unique_insts_.hasUnique(inst.get())) {
       continue;
     }
-    dbMasterType masterType = inst->getMaster()->getMasterType();
-    if (masterType != dbMasterType::CORE
-        && masterType != dbMasterType::CORE_TIEHIGH
-        && masterType != dbMasterType::CORE_TIELOW
-        && masterType != dbMasterType::CORE_ANTENNACELL) {
+    if (!isStdCellPin(inst.get())) {
       continue;
     }
     bool is_skip = true;
