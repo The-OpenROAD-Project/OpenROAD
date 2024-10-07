@@ -409,7 +409,7 @@ class Snapper
   void setOrigin(int origin, bool horizontal_snap);
   bool pinsAreAlignedWithTrackGrid(odb::dbITerm* pin,
                                    const LayerParameters& layer_params,
-                                   const bool horizontal_snap);
+                                   bool horizontal_snap);
 
   SameDirectionLayersData computeSameDirectionLayersData(bool horizontal_snap);
   odb::Point computeSnapOrigin();
