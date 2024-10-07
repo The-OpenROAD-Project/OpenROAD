@@ -1278,9 +1278,6 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
   odb::dbModule* top_module
       = network_->getNetDriverParentModule(network_->dbToSta(topClockNet));
 
-  const std::string topRegBufferName = "clkbuf_regs_0_" + clockNet.getSdcName();
-  odb::dbInst* topRegBuffer = block_->findInst(topRegBufferName.c_str());
-
   disconnectAllSinksFromNet(topClockNet);
 
   // re-connect top buffer that separates macros from registers
@@ -2123,7 +2120,7 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex, odb::dbNet* topNet
   }
   if (pathsAccepted > 1 || pathsAccepted == 0) {
     
-    logger_->report("Number of clock paths is not 1 for pin {}. Number of clock paths: {}",
+    logger_->warn(CTS, 1, "Number of clock paths is not 1 for pin {}. Number of clock paths: {}",
                    iterm->getName(),
                    pathsAccepted);
   }

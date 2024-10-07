@@ -7,6 +7,5 @@ set_wire_rc -clock -layer metal5
 catch {clock_tree_synthesis \
          -root_buf CLKBUF_X3 \
          -buf_list CLKBUF_X3 \
-         -wire_unit 20 \
-         -obstruction_aware} error
+         -wire_unit 20} error
 puts $error
