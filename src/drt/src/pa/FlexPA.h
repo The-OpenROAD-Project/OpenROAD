@@ -136,6 +136,13 @@ class FlexPA
   void prep();
 
   /**
+   * @brief initializes all access points of a single unique instance
+   *
+   * @param inst the unique instance
+   */
+  void initInstAccessPoints(frInst* inst);
+
+  /**
    * @brief initializes all access points of all unique instances
    */
   void initAllAccessPoints();

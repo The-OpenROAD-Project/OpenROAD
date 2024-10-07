@@ -1457,6 +1457,28 @@ static inline void serializeInstRows(
   paUpdate::serialize(update, file_name);
 }
 
+void FlexPA::initInstAccessPoints(frInst* inst)
+{
+  ProfileTask profile("PA:uniqueInstance");
+  for (auto& inst_term : inst->getInstTerms()) {
+    // only do for normal and clock terms
+    if (isSkipInstTerm(inst_term.get())) {
+      continue;
+    }
+    int n_aps = 0;
+    for (auto& pin : inst_term->getTerm()->getPins()) {
+      n_aps += initPinAccess(pin.get(), inst_term.get());
+    }
+    if (!n_aps) {
+      logger_->error(DRT,
+                     73,
+                     "No access point for {}/{}.",
+                     inst_term->getInst()->getName(),
+                     inst_term->getTerm()->getName());
+    }
+  }
+}
+
 void FlexPA::initAllAccessPoints()
 {
   ProfileTask profile("PA:point");
@@ -1464,11 +1486,13 @@ void FlexPA::initAllAccessPoints()
 
   omp_set_num_threads(MAX_THREADS);
   ThreadException exception;
-  const auto& unique = unique_insts_.getUnique();
+
+  const std::vector<frInst*>& unique = unique_insts_.getUnique();
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < (int) unique.size(); i++) {  // NOLINT
     try {
-      auto& inst = unique[i];
+      frInst* inst = unique[i];
+
       // only do for core and block cells
       dbMasterType masterType = inst->getMaster()->getMasterType();
       if (masterType != dbMasterType::CORE
@@ -1479,35 +1503,20 @@ void FlexPA::initAllAccessPoints()
           && masterType != dbMasterType::RING) {
         continue;
       }
-      ProfileTask profile("PA:uniqueInstance");
-      for (auto& inst_term : inst->getInstTerms()) {
-        // only do for normal and clock terms
-        if (isSkipInstTerm(inst_term.get())) {
-          continue;
-        }
-        int n_aps = 0;
-        for (auto& pin : inst_term->getTerm()->getPins()) {
-          n_aps += initPinAccess(pin.get(), inst_term.get());
-        }
-        if (!n_aps) {
-          logger_->error(DRT,
-                         73,
-                         "No access point for {}/{}.",
-                         inst_term->getInst()->getName(),
-                         inst_term->getTerm()->getName());
-        }
+
+      initInstAccessPoints(inst);
+      int inst_terms_cnt = static_cast<int>(inst->getInstTerms().size());
 #pragma omp critical
-        {
-          cnt++;
-          if (VERBOSE > 0) {
-            if (cnt < 10000) {
-              if (cnt % 1000 == 0) {
-                logger_->info(DRT, 76, "  Complete {} pins.", cnt);
-              }
-            } else {
-              if (cnt % 10000 == 0) {
-                logger_->info(DRT, 77, "  Complete {} pins.", cnt);
-              }
+      for (int i = 0; i < inst_terms_cnt; i++, cnt++) {
+        cnt++;
+        if (VERBOSE > 0) {
+          if (cnt < 10000) {
+            if (cnt % 1000 == 0) {
+              logger_->info(DRT, 76, "  Complete {} pins.", cnt);
+            }
+          } else {
+            if (cnt % 10000 == 0) {
+              logger_->info(DRT, 77, "  Complete {} pins.", cnt);
             }
           }
         }
