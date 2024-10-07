@@ -364,7 +364,7 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
     new_next->_prev_entry = modbterm->getOID();
   }
   module->_modbterms = modbterm->getOID();
-  module->_modbterm_hash[name] = modbterm->getOID();
+  module->_modbterm_hash[name] = dbId<_dbModBTerm>(modbterm->getOID());
   return (dbModBTerm*) modbterm;
 }
 

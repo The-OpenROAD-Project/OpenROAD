@@ -85,10 +85,10 @@ class _dbModule : public _dbObject
   // User Code Begin Fields
   // custom iterator for traversing ports
   // fast access
-  std::unordered_map<std::string, uint> _dbinst_hash;
-  std::unordered_map<std::string, uint> _modinst_hash;
-  std::unordered_map<std::string, uint> _modbterm_hash;
-  std::unordered_map<std::string, uint> _modnet_hash;
+  std::unordered_map<std::string, dbId<_dbInst>> _dbinst_hash;
+  std::unordered_map<std::string, dbId<_dbModInst>> _modinst_hash;
+  std::unordered_map<std::string, dbId<_dbModBTerm>> _modbterm_hash;
+  std::unordered_map<std::string, dbId<_dbModNet>> _modnet_hash;
   dbModulePortItr* _port_iter = nullptr;
   // User Code End Fields
 };

@@ -1383,13 +1383,6 @@ const char* dbNetwork::name(const Net* net) const
   if (modnet) {
     name = modnet->getName();
   }
-  //  if (hierarchy_) {
-  //    size_t last_idx = name.find_last_of('/');
-  //    if (last_idx != string::npos) {
-  //      name = name.substr(last_idx + 1);
-  //    }
-  //    return tmpStringCopy(name.c_str());
-  //  }
   if (dnet || modnet) {
     return tmpStringCopy(name.c_str());
   }

@@ -457,7 +457,7 @@ void Verilog2db::makeDbModule(
       Instance* parent_instance = network_->parent(child);
       dbModule* parent_module = nullptr;
       Cell* parent_cell = nullptr;
-      if (parent_instance == network_->topInstance()) {
+      if (parent_instance == network_->topInstance() || hierarchy_ == false) {
         parent_module = block_->getTopModule();
         parent_cell = network_->cell(parent_instance);
       } else {
@@ -509,8 +509,7 @@ void Verilog2db::makeDbModule(
           dont_touch_insts.push_back(db_inst);
         }
       }
-      // No need to harvest db instances,
-      //      inst_module_vec.emplace_back(child, module);
+
       if (db_inst == nullptr) {
         logger_->warn(ORD,
                       2015,

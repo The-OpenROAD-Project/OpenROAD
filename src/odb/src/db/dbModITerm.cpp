@@ -161,7 +161,7 @@ dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
     _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
     _dbModInst* mod_inst = block->_modinst_tbl->getPtr(obj._parent);
     if (obj._name) {
-      mod_inst->_moditerm_hash[obj._name] = obj.getId();
+      mod_inst->_moditerm_hash[obj._name] = dbId<dbModITerm>(obj.getId());
     }
   }
   // User Code End >>

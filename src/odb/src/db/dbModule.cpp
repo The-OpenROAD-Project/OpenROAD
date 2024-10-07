@@ -245,24 +245,6 @@ int dbModule::getDbInstCount()
   return (int) (dbSet<dbInst>(module, block->_module_inst_itr).size());
 }
 
-void dbModule::addInstToHash(dbInst* inst)
-{
-  _dbModule* module = (_dbModule*) this;
-  module->_dbinst_hash[inst->getName()] = inst->getId();
-}
-
-void dbModule::addInstToHash(dbModInst* inst)
-{
-  _dbModule* module = (_dbModule*) this;
-  module->_modinst_hash[inst->getName()] = inst->getId();
-}
-
-void dbModule::addModBTermToHash(dbModBTerm* modbterm)
-{
-  _dbModule* module = (_dbModule*) this;
-  module->_modbterm_hash[modbterm->getName()] = modbterm->getId();
-}
-
 void dbModule::addInst(dbInst* inst)
 {
   _dbModule* module = (_dbModule*) this;
@@ -296,7 +278,7 @@ void dbModule::addInst(dbInst* inst)
   }
 
   _inst->_module = module->getOID();
-  module->_dbinst_hash[inst->getName()] = _inst->getOID();
+  module->_dbinst_hash[inst->getName()] = dbId<_dbInst>(_inst->getOID());
 
   if (module->_insts == 0) {
     _inst->_module_next = 0;
@@ -493,7 +475,7 @@ dbModInst* dbModule::findModInst(const char* name)
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   auto it = obj->_modinst_hash.find(name);
   if (it != obj->_modinst_hash.end()) {
-    uint db_id = (*it).second;
+    auto db_id = (*it).second;
     return (dbModInst*) par->_modinst_tbl->getPtr(db_id);
   }
   return nullptr;
@@ -505,7 +487,7 @@ dbInst* dbModule::findDbInst(const char* name)
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   auto it = obj->_dbinst_hash.find(name);
   if (it != obj->_dbinst_hash.end()) {
-    uint db_id = (*it).second;
+    auto db_id = (*it).second;
     return (dbInst*) par->_inst_tbl->getPtr(db_id);
   }
   return nullptr;
@@ -540,7 +522,7 @@ dbModBTerm* dbModule::findModBTerm(const char* name)
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   auto it = obj->_modbterm_hash.find(name);
   if (it != obj->_modbterm_hash.end()) {
-    uint db_id = (*it).second;
+    auto db_id = (*it).second;
     return (dbModBTerm*) par->_modbterm_tbl->getPtr(db_id);
   }
   return nullptr;

@@ -219,7 +219,7 @@ dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
     _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
     _dbModule* module = block->_module_tbl->getPtr(inst._module);
     if (inst._name) {
-      module->_dbinst_hash[inst._name] = inst.getId();
+      module->_dbinst_hash[inst._name] = dbId<_dbInst>(inst.getId());
     }
   }
   return stream;

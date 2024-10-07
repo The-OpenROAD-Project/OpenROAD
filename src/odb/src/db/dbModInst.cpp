@@ -157,13 +157,12 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
   stream >> obj._group;
   // User Code Begin >>
   dbBlock* block = (dbBlock*) (obj.getOwner());
-  _dbDatabase* _db = (_dbDatabase*) (block->getDataBase());
-  if (_db->isSchema(db_schema_update_hierarchy)) {
+  _dbDatabase* db_ = (_dbDatabase*) (block->getDataBase());
+  if (db_->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._moditerms;
   }
-  if (_db->isSchema(db_schema_db_remove_hash)) {
-    dbDatabase* db = (dbDatabase*) _db;
-    _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
+  if (db_->isSchema(db_schema_db_remove_hash)) {
+    _dbBlock* block = (_dbBlock*) (((dbDatabase*) db_)->getChip()->getBlock());
     _dbModule* module = block->_module_tbl->getPtr(obj._parent);
     if (obj._name) {
       module->_modinst_hash[obj._name] = obj.getId();
@@ -184,8 +183,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbModInst& obj)
   stream << obj._group;
   // User Code Begin <<
   dbBlock* block = (dbBlock*) (obj.getOwner());
-  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
-  if (db->isSchema(db_schema_update_hierarchy)) {
+  auto db_ = (_dbDatabase*) (block->getDataBase());
+  if (db_->isSchema(db_schema_update_hierarchy)) {
     stream << obj._moditerms;
   }
   // User Code End <<
@@ -269,10 +268,6 @@ dbModInst* dbModInst::create(dbModule* parentModule,
   modinst->_module_next = module->_modinsts;
   module->_modinsts = modinst->getOID();
   master->_mod_inst = modinst->getOID();
-  //
-  // Redundant (original code).
-  //  block->_modinst_hash.insert(modinst);
-  // For fast access we has name in module
   module->_modinst_hash[modinst->_name] = modinst->getOID();
   return (dbModInst*) modinst;
 }

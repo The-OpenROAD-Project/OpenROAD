@@ -72,6 +72,4 @@ delta HPWL                    0 %
 [INFO CTS-0101]  Average sink wire length 23.08 um
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Leaf load cells 1
-Differences found at line 34.
- DFF_X1 \U1/ff1  (.CK(clknet_1_1__leaf_clk_i));
- DFF_X1 ff1 (.CK(clknet_1_1__leaf_clk_i));
+No differences found.
