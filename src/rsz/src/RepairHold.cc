@@ -392,7 +392,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
     const int path_length = expanded.size();
     if (path_length > 1) {
       for (int i = expanded.startIndex(); i < path_length; i++) {
-        PathRef* path = expanded.path(i);
+        const PathRef* path = expanded.path(i);
         Vertex* path_vertex = path->vertex(sta_);
         Pin* path_pin = path_vertex->pin();
         Net* path_net = network_->isTopLevelPort(path_pin)

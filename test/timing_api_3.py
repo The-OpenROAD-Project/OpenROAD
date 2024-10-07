@@ -12,6 +12,7 @@ timing = Timing(design)
 
 for inst in design.getBlock().getInsts():
     for iTerm in inst.getITerms():
+        print(iTerm.getName(), "  ", design.isInClock(iTerm))
         if not iTerm.getNet():
             continue
         if design.isInSupply(iTerm):

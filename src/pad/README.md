@@ -369,6 +369,7 @@ rdl_route
     [-spacing spacing]
     [-turn_penalty penalty]
     [-allow45]
+    [-max_iterations max_iterations]
     nets
 ```
 
@@ -382,6 +383,7 @@ rdl_route
 | `-width` | Width of the routing. Defaults to minimum width for each respective layer. |
 | `-spacing` | Spacing of the routing. Defaults to minimum spacing for each respective layer. |
 | `-turn_penalty` | Scaling factor to apply to discurage turning to allow for straighter routes. The default value is `2.0`, and the allowed values are floats. |
+| `-max_iterations` | Maximum number of router iterations. The default value is `10`. |
 | `-allow45` | Specifies that 45 degree routing is permitted. |
 | `nets` | Nets to route. |
 

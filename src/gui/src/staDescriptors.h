@@ -40,7 +40,9 @@
 
 namespace sta {
 class dbSta;
-}
+class Clock;
+class Pin;
+}  // namespace sta
 
 namespace gui {
 
@@ -132,6 +134,78 @@ class LibertyPgPortDescriptor : public Descriptor
  private:
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
+
+  odb::dbMTerm* getMTerm(const std::any& object) const;
+};
+
+class CornerDescriptor : public Descriptor
+{
+ public:
+  CornerDescriptor(odb::dbDatabase* db, sta::dbSta* sta);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object, Painter& painter) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+ private:
+  odb::dbDatabase* db_;
+  sta::dbSta* sta_;
+};
+
+class StaInstanceDescriptor : public Descriptor
+{
+ public:
+  StaInstanceDescriptor(odb::dbDatabase* db, sta::dbSta* sta);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object, Painter& painter) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+ private:
+  odb::dbDatabase* db_;
+  sta::dbSta* sta_;
+
+  static constexpr int float_precision_ = 2;
+};
+
+class ClockDescriptor : public Descriptor
+{
+ public:
+  ClockDescriptor(odb::dbDatabase* db, sta::dbSta* sta);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object, Painter& painter) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+ private:
+  odb::dbDatabase* db_;
+  sta::dbSta* sta_;
+
+  std::set<const sta::Pin*> getClockPins(sta::Clock* clock) const;
 };
 
 };  // namespace gui

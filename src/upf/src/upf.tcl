@@ -204,13 +204,14 @@ proc set_isolation { args } {
   set applies_to ""
   set clamp_value ""
   set isolation_signal ""
-  set isolation_sense ""
-  set location ""
+  set isolation_sense "high"
+  set location "self"
   set update 0
 
-  if { [info exists keys(-domain)] } {
-    set domain $keys(-domain)
+  if { ![info exists keys(-domain)] } {
+    utl::error UPF 73 "-domain is required for set_isolation"
   }
+  set domain $keys(-domain)
 
   if { [info exists keys(-applies_to)] } {
     set applies_to $keys(-applies_to)

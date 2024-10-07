@@ -298,7 +298,7 @@ Vertex* RecoverPower::recoverPower(const PathRef& path, const Slack path_slack)
                  || (pair1.second == pair2.second && pair1.first < pair2.first);
         });
     for (const auto& [drvr_index, ignored] : load_delays) {
-      PathRef* drvr_path = expanded.path(drvr_index);
+      const PathRef* drvr_path = expanded.path(drvr_index);
       Vertex* drvr_vertex = drvr_path->vertex(sta_);
       // If we already tried this vertex and got a worse result, skip it.
       if (bad_vertices_.find(drvr_vertex) != bad_vertices_.end()) {

@@ -130,11 +130,14 @@ class Grid
                         bool first,
                         odb::dbTechLayerDir direction);
 
-  interval<int>::type computeTileReduceInterval(const odb::Rect& obs,
-                                                const odb::Rect& tile,
-                                                int track_space,
-                                                bool first,
-                                                odb::dbTechLayerDir direction);
+  interval<int>::type computeTileReduceInterval(
+      const odb::Rect& obs,
+      const odb::Rect& tile,
+      int track_space,
+      bool first,
+      const odb::dbTechLayerDir& direction,
+      int layer_cap,
+      bool is_macro);
 
   odb::Point getMiddle();
   const odb::Rect& getGridArea() const;
