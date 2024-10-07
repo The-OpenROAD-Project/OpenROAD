@@ -135,8 +135,8 @@ class FlexPA
   // prep
   void prep();
 
-  bool isStdCellPin(frInst* inst);
-  bool isMacroCellPin(frInst* inst);
+  bool isStdCell(frInst* inst);
+  bool isMacroCell(frInst* inst);
   /**
    * @brief initializes all access points of all unique instances
    */

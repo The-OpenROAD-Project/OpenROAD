@@ -51,7 +51,7 @@ using utl::ThreadException;
 
 // TODO there should be a better way to get this info by getting the master
 // terms from OpenDB
-bool FlexPA::isStdCellPin(frInst* inst)
+bool FlexPA::isStdCell(frInst* inst)
 {
   // dbMasterType masterType = inst->getMaster()->getMasterType();
   // return (masterType == dbMasterType::CORE
@@ -61,7 +61,7 @@ bool FlexPA::isStdCellPin(frInst* inst)
   return inst->getMaster()->getMasterType().isCore();
 }
 
-bool FlexPA::isMacroCellPin(frInst* inst)
+bool FlexPA::isMacroCell(frInst* inst)
 {
   dbMasterType masterType = inst->getMaster()->getMasterType();
   return (masterType.isBlock() || masterType.isPad()
@@ -620,14 +620,14 @@ void FlexPA::genAPsFromLayerShapes(
   bool allow_planar = true;
   bool is_macro_cell_pin = false;
   if (inst_term) {
-    if (isStdCellPin(inst_term->getInst())) {
+    if (isStdCell(inst_term->getInst())) {
       if ((layer_num >= VIAINPIN_BOTTOMLAYERNUM
            && layer_num <= VIAINPIN_TOPLAYERNUM)
           || layer_num <= VIA_ACCESS_LAYERNUM) {
         allow_planar = false;
       }
     }
-    is_macro_cell_pin = isMacroCellPin(inst_term->getInst());
+    is_macro_cell_pin = isMacroCell(inst_term->getInst());
   } else {
     // IO term is treated as the MacroCellPin as the top block
     is_macro_cell_pin = true;
@@ -1232,8 +1232,8 @@ void FlexPA::updatePinStats(
   bool is_std_cell_pin = false;
   bool is_macro_cell_pin = false;
   if (inst_term) {
-    is_std_cell_pin = isStdCellPin(inst_term->getInst());
-    is_macro_cell_pin = isMacroCellPin(inst_term->getInst());
+    is_std_cell_pin = isStdCell(inst_term->getInst());
+    is_macro_cell_pin = isMacroCell(inst_term->getInst());
   }
   for (auto& ap : tmp_aps) {
     if (ap->hasAccess(frDirEnum::W) || ap->hasAccess(frDirEnum::E)
@@ -1273,8 +1273,8 @@ bool FlexPA::initPinAccessCostBounded(
   bool is_std_cell_pin = false;
   bool is_macro_cell_pin = false;
   if (inst_term) {
-    is_std_cell_pin = isStdCellPin(inst_term->getInst());
-    is_macro_cell_pin = isMacroCellPin(inst_term->getInst());
+    is_std_cell_pin = isStdCell(inst_term->getInst());
+    is_macro_cell_pin = isMacroCell(inst_term->getInst());
   }
   const bool is_io_pin = (inst_term == nullptr);
   std::vector<std::unique_ptr<frAccessPoint>> tmp_aps;
@@ -1361,8 +1361,8 @@ int FlexPA::initPinAccess(T* pin, frInstTerm* inst_term)
   bool is_std_cell_pin = false;
   bool is_macro_cell_pin = false;
   if (inst_term) {
-    is_std_cell_pin = isStdCellPin(inst_term->getInst());
-    is_macro_cell_pin = isMacroCellPin(inst_term->getInst());
+    is_std_cell_pin = isStdCell(inst_term->getInst());
+    is_macro_cell_pin = isMacroCell(inst_term->getInst());
   }
 
   if (graphics_) {
@@ -1376,8 +1376,15 @@ int FlexPA::initPinAccess(T* pin, frInstTerm* inst_term)
   std::vector<gtl::polygon_90_set_data<frCoord>> pin_shapes
       = mergePinShapes(pin, inst_term);
 
-  for (auto upper : frAccessPointEnumAll) {
-    for (auto lower : frAccessPointEnumAll) {
+  for (auto upper : {frAccessPointEnum::OnGrid,
+                     frAccessPointEnum::HalfGrid,
+                     frAccessPointEnum::Center,
+                     frAccessPointEnum::EncOpt,
+                     frAccessPointEnum::NearbyGrid}) {
+    for (auto lower : {frAccessPointEnum::OnGrid,
+                       frAccessPointEnum::HalfGrid,
+                       frAccessPointEnum::Center,
+                       frAccessPointEnum::EncOpt}) {
       if (upper == frAccessPointEnum::NearbyGrid && !aps.empty()) {
         // Only use NearbyGrid as a last resort (at least until
         // nangate45/aes is resolved).
@@ -1448,7 +1455,7 @@ void FlexPA::initAllAccessPoints()
     try {
       auto& inst = unique[i];
       // only do for core and block cells
-      if (!isStdCellPin(inst) && !isMacroCellPin(inst)) {
+      if (!isStdCell(inst) && !isMacroCell(inst)) {
         continue;
       }
       ProfileTask profile("PA:uniqueInstance");
@@ -1660,7 +1667,7 @@ void FlexPA::prepPattern()
       // only do for core and block cells
       // TODO the above comment says "block cells" but that's not what the code
       // does?
-      if (!isStdCellPin(inst)) {
+      if (!isStdCell(inst)) {
         continue;
       }
 
@@ -2112,7 +2119,7 @@ void FlexPA::getInsts(std::vector<frInst*>& insts)
     if (!unique_insts_.hasUnique(inst.get())) {
       continue;
     }
-    if (!isStdCellPin(inst.get())) {
+    if (!isStdCell(inst.get())) {
       continue;
     }
     bool is_skip = true;
