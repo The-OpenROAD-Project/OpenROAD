@@ -4496,15 +4496,14 @@ void Snapper::snap(const bool horizontal_snap)
 
   if (!pinsAreAlignedWithTrackGrid(
           snap_pin, snap_layer_params, horizontal_snap)) {
-    // Compute trackgrid alignment only if there are pins in the grid's
-    // direction. Note that we first align the macro origin with the track
-    // grid and then, we compensate the necessary offset.
-    if (snap_layer_params.pin_width != 0) {
-      origin = std::round(origin / snap_layer_params.pitch)
-                   * snap_layer_params.pitch
-               + snap_layer_params.offset;
-      origin -= snap_layer_params.pin_offset;
-    }
+    // The idea here is to first align the origin of the macro with
+    // the track-grid taking into account that the grid has a certain
+    // offset with regards to (0,0) and, then, compensate the offset
+    // of the pins themselves so that the lines of the grid cross
+    // their center.
+    origin
+        = std::round(origin / snap_layer_params.pitch) * snap_layer_params.pitch
+          + snap_layer_params.offset - snap_layer_params.pin_offset;
 
     const int manufacturing_grid
         = inst_->getDb()->getTech()->getManufacturingGrid();
