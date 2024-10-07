@@ -4474,28 +4474,29 @@ Snapper::Snapper(utl::Logger* logger, odb::dbInst* inst)
 
 void Snapper::snapMacro()
 {
-  snap(true);   // Horizontal snap
-  snap(false);  // Vertical snap
+  snap(odb::dbTechLayerDir::VERTICAL);
+  snap(odb::dbTechLayerDir::HORIZONTAL);
 }
 
-void Snapper::snap(const bool horizontal_snap)
+void Snapper::snap(const odb::dbTechLayerDir target_direction)
 {
   SameDirectionLayersData layers_data
-      = computeSameDirectionLayersData(horizontal_snap);
+      = computeSameDirectionLayersData(target_direction);
 
   if (!layers_data.snap_layer) {
     return;
   }
 
-  int origin
-      = horizontal_snap ? inst_->getOrigin().x() : inst_->getOrigin().y();
+  int origin = target_direction == odb::dbTechLayerDir::VERTICAL
+                   ? inst_->getOrigin().x()
+                   : inst_->getOrigin().y();
 
   odb::dbITerm* snap_pin = layers_data.layer_to_pin.at(layers_data.snap_layer);
   const LayerParameters& snap_layer_params
       = layers_data.layer_to_params.at(layers_data.snap_layer);
 
   if (!pinsAreAlignedWithTrackGrid(
-          snap_pin, snap_layer_params, horizontal_snap)) {
+          snap_pin, snap_layer_params, target_direction)) {
     // The idea here is to first align the origin of the macro with
     // the track-grid taking into account that the grid has a certain
     // offset with regards to (0,0) and, then, compensate the offset
@@ -4509,16 +4510,17 @@ void Snapper::snap(const bool horizontal_snap)
         = inst_->getDb()->getTech()->getManufacturingGrid();
     origin = std::round(origin / manufacturing_grid) * manufacturing_grid;
 
-    setOrigin(origin, horizontal_snap);
+    setOrigin(origin, target_direction);
   }
 
   attemptSnapToExtraLayers(
-      origin, layers_data, snap_layer_params, horizontal_snap);
+      origin, layers_data, snap_layer_params, target_direction);
 }
 
-void Snapper::setOrigin(const int origin, const bool horizontal_snap)
+void Snapper::setOrigin(const int origin,
+                        const odb::dbTechLayerDir target_direction)
 {
-  if (horizontal_snap) {
+  if (target_direction == odb::dbTechLayerDir::VERTICAL) {
     inst_->setOrigin(origin, inst_->getOrigin().y());
   } else {
     inst_->setOrigin(inst_->getOrigin().x(), origin);
@@ -4526,16 +4528,9 @@ void Snapper::setOrigin(const int origin, const bool horizontal_snap)
 }
 
 SameDirectionLayersData Snapper::computeSameDirectionLayersData(
-    const bool horizontal_snap)
+    odb::dbTechLayerDir target_direction)
 {
   SameDirectionLayersData data;
-
-  // Note that, for a layer whose preferred track is vertical, i.e.,
-  // an arrangement of vertical lines, we'll move horizontally the
-  // macro to try aligning its pins.
-  const odb::dbTechLayerDir target_direction
-      = horizontal_snap ? odb::dbTechLayerDir::VERTICAL
-                        : odb::dbTechLayerDir::HORIZONTAL;
 
   for (odb::dbITerm* iterm : inst_->getITerms()) {
     if (iterm->getSigType() != odb::dbSigType::SIGNAL) {
@@ -4556,7 +4551,7 @@ SameDirectionLayersData Snapper::computeSameDirectionLayersData(
 
           data.layer_to_pin[layer] = iterm;
           data.layer_to_params[layer]
-              = computeLayerParameters(layer, iterm, horizontal_snap);
+              = computeLayerParameters(layer, iterm, target_direction);
         }
       }
     }
@@ -4565,9 +4560,10 @@ SameDirectionLayersData Snapper::computeSameDirectionLayersData(
   return data;
 }
 
-LayerParameters Snapper::computeLayerParameters(odb::dbTechLayer* layer,
-                                                odb::dbITerm* pin,
-                                                const bool horizontal_snap)
+LayerParameters Snapper::computeLayerParameters(
+    odb::dbTechLayer* layer,
+    odb::dbITerm* pin,
+    const odb::dbTechLayerDir target_direction)
 {
   LayerParameters params;
 
@@ -4576,7 +4572,7 @@ LayerParameters Snapper::computeLayerParameters(odb::dbTechLayer* layer,
 
   if (track_grid) {
     std::vector<int> coordinate_grid;
-    getTrackGrid(track_grid, coordinate_grid, horizontal_snap);
+    getTrackGrid(track_grid, coordinate_grid, target_direction);
 
     params.offset = coordinate_grid[0];
     params.pitch = coordinate_grid[1] - coordinate_grid[0];
@@ -4585,9 +4581,9 @@ LayerParameters Snapper::computeLayerParameters(odb::dbTechLayer* layer,
         MPL, 39, "No track-grid found for layer {}", layer->getName());
   }
 
-  params.pin_width = getPinWidth(pin, horizontal_snap);
+  params.pin_width = getPinWidth(pin, target_direction);
   params.lower_left_to_first_pin
-      = getPinToLowerLeftDistance(pin, horizontal_snap);
+      = getPinToLowerLeftDistance(pin, target_direction);
 
   // The distance between the pins and the lower-left corner
   // of the master of a macro instance may not be a multiple
@@ -4602,7 +4598,7 @@ LayerParameters Snapper::computeLayerParameters(odb::dbTechLayer* layer,
   params.pin_offset = params.pin_width / 2 + mterm_offset;
 
   const odb::dbOrientType& orientation = inst_->getOrient();
-  if (horizontal_snap) {
+  if (target_direction == odb::dbTechLayerDir::VERTICAL) {
     if (orientation == odb::dbOrientType::MY
         || orientation == odb::dbOrientType::R180) {
       params.pin_offset = -params.pin_offset;
@@ -4614,10 +4610,11 @@ LayerParameters Snapper::computeLayerParameters(odb::dbTechLayer* layer,
   return params;
 }
 
-int Snapper::getPinWidth(odb::dbITerm* pin, const bool horizontal_snap)
+int Snapper::getPinWidth(odb::dbITerm* pin,
+                         const odb::dbTechLayerDir target_direction)
 {
   int pin_width = 0;
-  if (horizontal_snap) {
+  if (target_direction == odb::dbTechLayerDir::VERTICAL) {
     pin_width = pin->getBBox().dx();
   } else {
     pin_width = pin->getBBox().dy();
@@ -4627,21 +4624,23 @@ int Snapper::getPinWidth(odb::dbITerm* pin, const bool horizontal_snap)
 
 void Snapper::getTrackGrid(odb::dbTrackGrid* track_grid,
                            std::vector<int>& coordinate_grid,
-                           const bool horizontal_snap)
+                           const odb::dbTechLayerDir target_direction)
 {
-  if (horizontal_snap) {
+  if (target_direction == odb::dbTechLayerDir::VERTICAL) {
     track_grid->getGridX(coordinate_grid);
   } else {
     track_grid->getGridY(coordinate_grid);
   }
 }
 
-int Snapper::getPinToLowerLeftDistance(odb::dbITerm* pin, bool horizontal_snap)
+int Snapper::getPinToLowerLeftDistance(
+    odb::dbITerm* pin,
+    const odb::dbTechLayerDir target_direction)
 {
   int pin_to_origin = 0;
 
   odb::dbMTerm* mterm = pin->getMTerm();
-  if (horizontal_snap) {
+  if (target_direction == odb::dbTechLayerDir::VERTICAL) {
     pin_to_origin = mterm->getBBox().xMin();
   } else {
     pin_to_origin = mterm->getBBox().yMin();
@@ -4654,7 +4653,7 @@ void Snapper::attemptSnapToExtraLayers(
     const int origin,
     const SameDirectionLayersData& layers_data,
     const LayerParameters& snap_layer_params,
-    const bool horizontal_snap)
+    const odb::dbTechLayerDir target_direction)
 {
   const int total_number_of_layers
       = static_cast<int>(layers_data.layer_to_pin.size());
@@ -4669,7 +4668,7 @@ void Snapper::attemptSnapToExtraLayers(
   while (remaining_attempts > 0) {
     // Move one track ahead.
     new_origin += snap_layer_params.pitch;
-    setOrigin(new_origin, horizontal_snap);
+    setOrigin(new_origin, target_direction);
 
     int curr_number_of_snapped_layers = 1;
     for (const auto [layer, pin] : layers_data.layer_to_pin) {
@@ -4678,7 +4677,7 @@ void Snapper::attemptSnapToExtraLayers(
       }
 
       if (pinsAreAlignedWithTrackGrid(
-              pin, layers_data.layer_to_params.at(layer), horizontal_snap)) {
+              pin, layers_data.layer_to_params.at(layer), target_direction)) {
         ++curr_number_of_snapped_layers;
       }
 
@@ -4700,15 +4699,17 @@ void Snapper::attemptSnapToExtraLayers(
     --remaining_attempts;
   }
 
-  setOrigin(best_origin, horizontal_snap);
+  setOrigin(best_origin, target_direction);
 }
 
-bool Snapper::pinsAreAlignedWithTrackGrid(odb::dbITerm* pin,
-                                          const LayerParameters& layer_params,
-                                          const bool horizontal_snap)
+bool Snapper::pinsAreAlignedWithTrackGrid(
+    odb::dbITerm* pin,
+    const LayerParameters& layer_params,
+    const odb::dbTechLayerDir target_direction)
 {
-  int pin_center
-      = horizontal_snap ? pin->getBBox().xCenter() : pin->getBBox().yCenter();
+  int pin_center = target_direction == odb::dbTechLayerDir::VERTICAL
+                       ? pin->getBBox().xCenter()
+                       : pin->getBBox().yCenter();
   return (pin_center - layer_params.offset) % layer_params.pitch == 0;
 }
 

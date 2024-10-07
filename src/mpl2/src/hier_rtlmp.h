@@ -405,25 +405,27 @@ class Snapper
   void snapMacro();
 
  private:
-  void snap(bool horizontal_snap);
-  void setOrigin(int origin, bool horizontal_snap);
+  void snap(odb::dbTechLayerDir layer_direction);
+  void setOrigin(int origin, odb::dbTechLayerDir target_direction);
   bool pinsAreAlignedWithTrackGrid(odb::dbITerm* pin,
                                    const LayerParameters& layer_params,
-                                   bool horizontal_snap);
+                                   odb::dbTechLayerDir target_direction);
 
-  SameDirectionLayersData computeSameDirectionLayersData(bool horizontal_snap);
+  SameDirectionLayersData computeSameDirectionLayersData(
+      odb::dbTechLayerDir target_direction);
   LayerParameters computeLayerParameters(odb::dbTechLayer* layer,
                                          odb::dbITerm* pin,
-                                         bool horizontal_snap);
+                                         odb::dbTechLayerDir target_direction);
   void getTrackGrid(odb::dbTrackGrid* track_grid,
                     std::vector<int>& coordinate_grid,
-                    bool horizontal_snap);
-  int getPinWidth(odb::dbITerm* pin, bool horizontal_snap);
-  int getPinToLowerLeftDistance(odb::dbITerm* pin, bool horizontal_snap);
+                    odb::dbTechLayerDir target_direction);
+  int getPinWidth(odb::dbITerm* pin, odb::dbTechLayerDir target_direction);
+  int getPinToLowerLeftDistance(odb::dbITerm* pin,
+                                odb::dbTechLayerDir target_direction);
   void attemptSnapToExtraLayers(int origin,
                                 const SameDirectionLayersData& layers_data,
                                 const LayerParameters& snap_layer_params,
-                                bool horizontal_snap);
+                                odb::dbTechLayerDir target_direction);
 
   utl::Logger* logger_;
   odb::dbInst* inst_;
