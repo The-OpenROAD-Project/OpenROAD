@@ -4615,17 +4615,6 @@ LayerParameters Snapper::computeLayerParameters(odb::dbTechLayer* layer,
   return params;
 }
 
-int Snapper::getPitch(odb::dbTechLayer* layer)
-{
-  int pitch = 0;
-  if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-    pitch = layer->getPitchX();
-  } else {
-    pitch = layer->getPitchY();
-  }
-  return pitch;
-}
-
 int Snapper::getPinWidth(odb::dbITerm* pin, const bool horizontal_snap)
 {
   int pin_width = 0;

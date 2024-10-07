@@ -412,19 +412,12 @@ class Snapper
                                    bool horizontal_snap);
 
   SameDirectionLayersData computeSameDirectionLayersData(bool horizontal_snap);
-  odb::Point computeSnapOrigin();
   LayerParameters computeLayerParameters(odb::dbTechLayer* layer,
                                          odb::dbITerm* pin,
                                          bool horizontal_snap);
-  void updateLayerMap(LayersWithPinsMap& layer_to_pin,
-                      odb::dbTechLayer* current_layer,
-                      odb::dbTechLayer*& snap_layer,
-                      odb::dbBox* pin_box);
   void getTrackGrid(odb::dbTrackGrid* track_grid,
                     std::vector<int>& coordinate_grid,
                     bool horizontal_snap);
-  int getPitch(odb::dbTechLayer* layer);
-  int getOffset(odb::dbTechLayer* layer);
   int getPinWidth(odb::dbITerm* pin, bool horizontal_snap);
   int getPinToLowerLeftDistance(odb::dbITerm* pin, bool horizontal_snap);
   void attemptSnapToExtraLayers(int origin,
