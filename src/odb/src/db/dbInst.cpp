@@ -218,7 +218,9 @@ dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
   if (((_dbDatabase*) db)->isSchema(db_schema_db_remove_hash)) {
     _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
     _dbModule* module = block->_module_tbl->getPtr(inst._module);
-    module->_dbinst_hash[inst._name] = inst.getId();
+    if (inst._name) {
+      module->_dbinst_hash[inst._name] = inst.getId();
+    }
   }
   return stream;
 }

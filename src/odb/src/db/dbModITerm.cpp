@@ -160,7 +160,9 @@ dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
     dbDatabase* db = (dbDatabase*) (obj.getDatabase());
     _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
     _dbModInst* mod_inst = block->_modinst_tbl->getPtr(obj._parent);
-    mod_inst->_moditerm_hash[obj._name] = obj.getId();
+    if (obj._name) {
+      mod_inst->_moditerm_hash[obj._name] = obj.getId();
+    }
   }
   // User Code End >>
   return stream;
