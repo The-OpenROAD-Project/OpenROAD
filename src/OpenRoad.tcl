@@ -55,7 +55,7 @@ proc read_lef { args } {
     if { [info exists keys(-tech_name)] } {
       set make_tech 1
     } else {
-      set make_tech [expr { ![ord::db_has_tech] }]
+      set make_tech [expr ![ord::db_has_tech]]
     }
   }
 
@@ -124,8 +124,7 @@ proc write_def { args } {
         || $version == "5.4"
         || $version == "5.3")
     } {
-      utl::error "ORD" 6 \
-        "DEF versions 5.8, 5.7, 5.6, 5.5, 5.4, 5.3 supported."
+      utl::error "ORD" 6 "DEF versions 5.8, 5.7, 5.6, 5.5, 5.4, 5.3 supported."
     }
   }
 
@@ -134,9 +133,7 @@ proc write_def { args } {
   ord::write_def_cmd $filename $version
 }
 
-sta::define_cmd_args "write_abstract_lef" \
-  {[-bloat_factor amount|\
-          -bloat_occupied_layers] filename}
+sta::define_cmd_args "write_abstract_lef" {[-bloat_factor amount|-bloat_occupied_layers] filename}
 sta::define_cmd_args "write_lef" {filename}
 
 proc write_lef { args } {
@@ -148,8 +145,7 @@ proc write_lef { args } {
 }
 
 proc write_abstract_lef { args } {
-  sta::parse_key_args "write_abstract_lef" \
-    args keys {-bloat_factor} flags {-bloat_occupied_layers}
+  sta::parse_key_args "write_abstract_lef" args keys {-bloat_factor} flags {-bloat_occupied_layers}
 
   set bloat_factor 10
   if { [info exists keys(-bloat_factor)] } {
@@ -172,8 +168,7 @@ sta::define_cmd_args "write_cdl" {[-include_fillers]
     -masters masters_filenames out_filename }
 
 proc write_cdl { args } {
-  sta::parse_key_args "write_cdl" \
-    args keys {-masters} flags {-include_fillers}
+  sta::parse_key_args "write_cdl" args keys {-masters} flags {-include_fillers}
   set fillers [info exists flags(-include_fillers)]
   sta::check_argc_eq1 "write_cdl" $args
   if { ![info exists keys(-masters)] } {
@@ -289,10 +284,8 @@ proc report_global_connect { } {
 }
 
 sta::define_cmd_args "add_global_connection" {[-net net_name] \
-                                                  [-inst_pattern \
-                                                       inst_name_pattern] \
-                                                  [-pin_pattern \
-                                                       pin_name_pattern] \
+                                              [-inst_pattern inst_name_pattern] \
+                                              [-pin_pattern pin_name_pattern] \
                                               [(-power|-ground)] \
                                               [-region region_name] \
                                               [-defer_connection]
@@ -310,8 +303,7 @@ proc add_global_connection { args } {
   }
 
   if { ![info exists keys(-net)] } {
-    utl::error ORD 42 "The -net option of \
-    the add_global_connection command is required."
+    utl::error ORD 42 "The -net option of the add_global_connection command is required."
   }
 
   if { ![info exists keys(-inst_pattern)] } {
@@ -319,8 +311,7 @@ proc add_global_connection { args } {
   }
 
   if { ![info exists keys(-pin_pattern)] } {
-    utl::error ORD 43 "The -pin_pattern \
-    option of the add_global_connection command is required."
+    utl::error ORD 43 "The -pin_pattern option of the add_global_connection command is required."
   }
 
   set net [[ord::get_db_block] findNet $keys(-net)]
