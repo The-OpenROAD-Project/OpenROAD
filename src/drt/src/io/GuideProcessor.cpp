@@ -1822,7 +1822,7 @@ void GuidePathFinder::connectDisconnectedComponents(
                                                : rects[idx1].getBBox().xMin();
       const frCoord track_idx2 = is_horizontal ? rects[idx2].getBBox().yMin()
                                                : rects[idx2].getBBox().xMin();
-      if (track_idx1 != track_idx2) {
+      if (std::abs(track_idx1 - track_idx2) > 1) {
         continue;
       }
 
@@ -1836,7 +1836,7 @@ void GuidePathFinder::connectDisconnectedComponents(
                                              : rects[idx2].getBBox().yMax();
 
       const BridgeGuide bridge1(track_idx1, end_idx1, begin_idx2, layer_num);
-      const BridgeGuide bridge2(track_idx1, end_idx2, begin_idx1, layer_num);
+      const BridgeGuide bridge2(track_idx2, end_idx2, begin_idx1, layer_num);
       best_bridge = std::min(best_bridge, bridge1);
       best_bridge = std::min(best_bridge, bridge2);
     }
@@ -1846,6 +1846,7 @@ void GuidePathFinder::connectDisconnectedComponents(
   }
   intvs[best_bridge.layer_num][best_bridge.track_idx].insert(
       Interval::closed(best_bridge.begin_idx, best_bridge.end_idx));
+  addTouchingGuidesBridges(intvs, logger_);
 }
 void GuideProcessor::saveGuidesUpdates()
 {
