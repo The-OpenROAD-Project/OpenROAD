@@ -262,9 +262,11 @@ void IRSolver::reportUnconnectedNodes() const
     return;
   }
 
-  odb::dbMarkerCategory* tool_category = odb::dbMarkerCategory::createOrGet(getBlock(), "PSM");
+  odb::dbMarkerCategory* tool_category
+      = odb::dbMarkerCategory::createOrGet(getBlock(), "PSM");
   tool_category->setSource("PSM");
-  odb::dbMarkerCategory* net_category = odb::dbMarkerCategory::createOrReplace(tool_category, net_->getName().c_str());
+  odb::dbMarkerCategory* net_category = odb::dbMarkerCategory::createOrReplace(
+      tool_category, net_->getName().c_str());
 
   if (!results.unconnected_nodes_.empty()) {
     odb::dbMarkerCategory* category
@@ -1332,8 +1334,7 @@ void IRSolver::writeErrorFile(const std::string& error_file) const
     return;
   }
 
-  odb::dbMarkerCategory* group
-      = getBlock()->findMarkerCategory("PSM");
+  odb::dbMarkerCategory* group = getBlock()->findMarkerCategory("PSM");
   if (group == nullptr) {
     return;
   }
