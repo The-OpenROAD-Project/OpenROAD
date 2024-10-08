@@ -372,6 +372,20 @@ write_macro_placement file_name
 | ----- | ----- |
 | `file_name` | Macro placement file name. |
 
+### Design Is Routed
+
+This command checks if the design is completely routed.
+
+```tcl
+design_is_routed [-verbose]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `verbose` | Flag that allow the command to show all the nets that are not routed. |
+
 
 
 

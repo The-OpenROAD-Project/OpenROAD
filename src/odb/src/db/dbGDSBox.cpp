@@ -44,6 +44,13 @@ template class dbTable<_dbGDSBox>;
 
 bool _dbGDSBox::operator==(const _dbGDSBox& rhs) const
 {
+  if (_layer != rhs._layer) {
+    return false;
+  }
+  if (_datatype != rhs._datatype) {
+    return false;
+  }
+
   return true;
 }
 
@@ -57,29 +64,47 @@ void _dbGDSBox::differences(dbDiff& diff,
                             const _dbGDSBox& rhs) const
 {
   DIFF_BEGIN
+  DIFF_FIELD(_layer);
+  DIFF_FIELD(_datatype);
   DIFF_END
 }
 
-void _dbGDSBox::out(dbDiff& diff, char side, const char* field) const {
-    DIFF_OUT_BEGIN
+void _dbGDSBox::out(dbDiff& diff, char side, const char* field) const
+{
+  DIFF_OUT_BEGIN
+  DIFF_OUT_FIELD(_layer);
+  DIFF_OUT_FIELD(_datatype);
 
-        DIFF_END}
+  DIFF_END
+}
 
 _dbGDSBox::_dbGDSBox(_dbDatabase* db)
 {
+  _layer = 0;
+  _datatype = 0;
 }
 
 _dbGDSBox::_dbGDSBox(_dbDatabase* db, const _dbGDSBox& r)
 {
+  _layer = r._layer;
+  _datatype = r._datatype;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSBox& obj)
 {
+  stream >> obj._layer;
+  stream >> obj._datatype;
+  stream >> obj._xy;
+  stream >> obj._propattr;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSBox& obj)
 {
+  stream << obj._layer;
+  stream << obj._datatype;
+  stream << obj._xy;
+  stream << obj._propattr;
   return stream;
 }
 
@@ -89,5 +114,70 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSBox& obj)
 //
 ////////////////////////////////////////////////////////////////////
 
+void dbGDSBox::setLayer(int16_t layer)
+{
+  _dbGDSBox* obj = (_dbGDSBox*) this;
+
+  obj->_layer = layer;
+}
+
+int16_t dbGDSBox::getLayer() const
+{
+  _dbGDSBox* obj = (_dbGDSBox*) this;
+  return obj->_layer;
+}
+
+void dbGDSBox::setDatatype(int16_t datatype)
+{
+  _dbGDSBox* obj = (_dbGDSBox*) this;
+
+  obj->_datatype = datatype;
+}
+
+int16_t dbGDSBox::getDatatype() const
+{
+  _dbGDSBox* obj = (_dbGDSBox*) this;
+  return obj->_datatype;
+}
+
+void dbGDSBox::setXy(const std::vector<Point>& xy)
+{
+  _dbGDSBox* obj = (_dbGDSBox*) this;
+
+  obj->_xy = xy;
+}
+
+void dbGDSBox::getXy(std::vector<Point>& tbl) const
+{
+  _dbGDSBox* obj = (_dbGDSBox*) this;
+  tbl = obj->_xy;
+}
+
+// User Code Begin dbGDSBoxPublicMethods
+std::vector<std::pair<std::int16_t, std::string>>& dbGDSBox::getPropattr()
+{
+  auto* obj = (_dbGDSBox*) this;
+  return obj->_propattr;
+}
+
+const std::vector<Point>& dbGDSBox::getXY()
+{
+  auto obj = (_dbGDSBox*) this;
+  return obj->_xy;
+}
+
+dbGDSBox* dbGDSBox::create(dbGDSStructure* structure)
+{
+  auto* obj = (_dbGDSStructure*) structure;
+  return (dbGDSBox*) obj->boxes_->create();
+}
+
+void dbGDSBox::destroy(dbGDSBox* box)
+{
+  auto* obj = (_dbGDSBox*) box;
+  auto* structure = (_dbGDSStructure*) obj->getOwner();
+  structure->boxes_->destroy(obj);
+}
+// User Code End dbGDSBoxPublicMethods
 }  // namespace odb
    // Generator Code End Cpp
