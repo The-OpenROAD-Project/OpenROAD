@@ -379,6 +379,12 @@ dbMarkerCategory* dbMarkerCategory::getTopCategory() const
   return (dbMarkerCategory*) top;
 }
 
+dbObject* dbMarkerCategory::getParent() const
+{
+  _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
+  return obj->getOwner();
+}
+
 std::string dbMarkerCategory::getSource() const
 {
   _dbMarkerCategory* obj = (_dbMarkerCategory*) this;

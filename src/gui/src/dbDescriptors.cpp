@@ -4143,6 +4143,116 @@ bool DbRowDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
+DbMarkerCategoryDescriptor::DbMarkerCategoryDescriptor(odb::dbDatabase* db) : db_(db)
+{
+}
+
+std::string DbMarkerCategoryDescriptor::getName(std::any object) const
+{
+  auto* category = std::any_cast<odb::dbMarkerCategory*>(object);
+  return category->getName();
+}
+
+std::string DbMarkerCategoryDescriptor::getTypeName() const
+{
+  return "Marker Category";
+}
+
+bool DbMarkerCategoryDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto* category = std::any_cast<odb::dbMarkerCategory*>(object);
+  bbox.mergeInit();
+  bool has_bbox = false;
+  for (odb::dbMarker* marker : category->getAllMarkers()) {
+    bbox.merge(marker->getBBox());
+    has_bbox = true;
+  }
+  return has_bbox;
+}
+
+void DbMarkerCategoryDescriptor::highlight(std::any object, Painter& painter) const
+{
+  auto* category = std::any_cast<odb::dbMarkerCategory*>(object);
+
+  const Descriptor* desc = Gui::get()->getDescriptor<odb::dbMarker*>();
+  for (odb::dbMarker* marker : category->getAllMarkers()) {
+    desc->highlight(marker, painter);
+  }
+}
+
+Descriptor::Properties DbMarkerCategoryDescriptor::getProperties(std::any object) const
+{
+  auto* category = std::any_cast<odb::dbMarkerCategory*>(object);
+  auto* gui = Gui::get();
+
+  Properties props;
+
+  props.push_back({"Description", category->getDescription()});
+  props.push_back({"Source", category->getSource()});
+  props.push_back({"Max markers", category->getMaxMarkers()});
+
+  odb::dbMarkerCategory* top = category->getTopCategory();
+  if (category != top) {
+    props.push_back({"Top category", gui->makeSelected(top)});
+  }
+
+  odb::dbObject* parent = category->getParent();
+  if (parent != top) {
+    if (parent->getObjectType() == odb::dbObjectType::dbBlockObj) {
+      props.push_back({"Parent", gui->makeSelected(static_cast<odb::dbBlock*>(parent))});
+    } else {
+      props.push_back({"Parent", gui->makeSelected(static_cast<odb::dbMarkerCategory*>(parent))});
+    }
+  }
+
+  SelectionSet subcategories;
+  for (odb::dbMarkerCategory* subcat : category->getMarkerCategorys()) {
+    subcategories.insert(gui->makeSelected(subcat));
+  }
+  if (!subcategories.empty()) {
+    props.push_back({"Categories", subcategories});
+  }
+
+  SelectionSet markers;
+  for (odb::dbMarker* marker : category->getMarkers()) {
+    markers.insert(gui->makeSelected(marker));
+  }
+  if (!markers.empty()) {
+    props.push_back({"Markers", markers});
+  }
+
+  return props;
+}
+
+Selected DbMarkerCategoryDescriptor::makeSelected(std::any object) const
+{
+  if (auto category = std::any_cast<odb::dbMarkerCategory*>(&object)) {
+    return Selected(*category, this);
+  }
+  return Selected();
+}
+
+bool DbMarkerCategoryDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_category = std::any_cast<odb::dbMarkerCategory*>(l);
+  auto r_category = std::any_cast<odb::dbMarkerCategory*>(r);
+
+  return l_category->getId() < r_category->getId();
+}
+
+bool DbMarkerCategoryDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* block = db_->getChip()->getBlock();
+
+  for (auto* category : block->getMarkerCategories()) {
+    objects.insert(makeSelected(category));
+  }
+
+  return true;
+}
+
+//////////////////////////////////////////////////
+
 DbMarkerDescriptor::DbMarkerDescriptor(odb::dbDatabase* db) : db_(db)
 {
 }
@@ -4177,6 +4287,8 @@ Descriptor::Properties DbMarkerDescriptor::getProperties(std::any object) const
   auto* gui = Gui::get();
 
   Properties props;
+
+  props.push_back({"Category", gui->makeSelected(marker->getCategory())});
 
   auto layer = marker->getTechLayer();
   if (layer != nullptr) {

@@ -7796,6 +7796,7 @@ class dbMarkerCategory : public dbObject
   // User Code Begin dbMarkerCategory
 
   dbMarkerCategory* getTopCategory() const;
+  dbObject* getParent() const;
   std::string getSource() const;
 
   std::set<dbMarker*> getAllMarkers() const;

@@ -523,6 +523,8 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbTech*>(new DbTechDescriptor(db_));
   gui->registerDescriptor<odb::dbMetalWidthViaMap*>(
       new DbMetalWidthViaMapDescriptor(db_));
+  gui->registerDescriptor<odb::dbMarkerCategory*>(
+      new DbMarkerCategoryDescriptor(db_));
   gui->registerDescriptor<odb::dbMarker*>(
       new DbMarkerDescriptor(db_));
 
