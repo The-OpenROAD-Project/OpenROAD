@@ -313,9 +313,11 @@ void DRCWidget::populateCategory(odb::dbMarkerCategory* category, QStandardItem*
   }
 
   int violation_idx = 1;
+  QStandardItem* marker_item_child = nullptr;
   for (odb::dbMarker* marker : category->getMarkers()) {
     QStandardItem* marker_item
         = makeItem(QString::fromStdString(marker->getName()));
+    marker_item_child = marker_item;
     marker_item->setSelectable(true);
     marker_item->setData(QVariant::fromValue(marker));
     QStandardItem* marker_index
@@ -326,6 +328,10 @@ void DRCWidget::populateCategory(odb::dbMarkerCategory* category, QStandardItem*
                                                           : Qt::Unchecked);
 
     type_group->appendRow({marker_index, marker_item});
+  }
+
+  if (marker_item_child != nullptr) {
+    toggleParent(marker_item_child);
   }
 
   model->appendRow({type_group, makeItem(QString::number(category->getMarkerCount()) + " markers")});
