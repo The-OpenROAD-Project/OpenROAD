@@ -669,16 +669,23 @@ class FlexDPNode
   // getters
   int getPathCost() const { return pathCost_; }
   int getNodeCost() const { return nodeCost_; }
-  int getPrevNodeIdx() const { return prev_node_idx_; }
+  FlexDPNode* getPrevNode() const { return prev_node_; }
+  std::pair<int, int> getIdx() const { return idx_; }
 
   // setters
   void setPathCost(int in) { pathCost_ = in; }
   void setNodeCost(int in) { nodeCost_ = in; }
-  void setPrevNodeIdx(int in) { prev_node_idx_ = in; }
+  void setPrevNode(FlexDPNode* in) { prev_node_ = in; }
+  void setIdx(std::pair<int, int> in) { idx_ = in; }
+
+  bool hasPrevNode() const { return prev_node_ != nullptr; }
 
  private:
   int pathCost_ = std::numeric_limits<int>::max();
   int nodeCost_ = std::numeric_limits<int>::max();
-  int prev_node_idx_ = -1;
+  /*either {pin_idx, acc_point_idx} or {inst_idx, acc_pattern_idx} depending on
+   * context*/
+  std::pair<int, int> idx_ = {-1, -1};
+  FlexDPNode* prev_node_ = nullptr;
 };
 }  // namespace drt
