@@ -34,26 +34,18 @@
 
 #include <cstdint>
 #include <fstream>
-#include <iostream>
 #include <vector>
 
 #include "odb/db.h"
 #include "odb/gdsUtil.h"
 
-namespace odb {
-
-class dbGDSLib;
-class dbGDSElement;
-class dbGDSBoundary;
-class dbGDSPath;
-class dbGDSSRef;
-class dbGDSStructure;
-
-namespace gds {
+namespace odb::gds {
 
 class GDSReader
 {
  public:
+  GDSReader(utl::Logger* logger);
+
   /**
    * Reads a GDS file and returns a dbGDSLib object
    *
@@ -73,10 +65,9 @@ class GDSReader
    * Used after readRecord() to check if the record type is the expected type.
    *
    * @param expect The expected record type
-   * @return true if the record type is the expected type
    * @throws std::runtime_error if the record type is not the expected type
    */
-  bool checkRType(RecordType expect);
+  void checkRType(RecordType expect);
 
   /**
    * Checks if the read record is the expected data type
@@ -87,10 +78,9 @@ class GDSReader
    *
    * @param eType The expected data type
    * @param eSize The expected data size
-   * @return true if the data type is the expected type
    * @throws std::runtime_error if the data type is not the expected type
    */
-  bool checkRData(DataType eType, size_t eSize);
+  void checkRData(DataType eType, size_t eSize);
 
   /**
    * Reads a real8 from _file
@@ -131,22 +121,23 @@ class GDSReader
    *
    * @param str The GDS Structure to add the GDS Element to
    */
-  bool processElement(dbGDSStructure& str);
+  bool processElement(dbGDSStructure* structure);
 
   // Specific element types, same as processElement
-  dbGDSElement* processBoundary();
-  dbGDSElement* processPath();
-  dbGDSElement* processSRef();
-  dbGDSElement* processText();
-  dbGDSElement* processBox();
-  dbGDSElement* processNode();
+  dbGDSBoundary* processBoundary(dbGDSStructure* structure);
+  dbGDSPath* processPath(dbGDSStructure* structure);
+  dbGDSSRef* processSRef(dbGDSStructure* structure);
+  dbGDSText* processText(dbGDSStructure* structure);
+  dbGDSBox* processBox(dbGDSStructure* structure);
+  dbGDSNode* processNode(dbGDSStructure* structure);
 
   /**
    * Parses special attributes of a GDS Element
    *
    * @param elem The GDS Element to add the attributes to
    */
-  void processPropAttr(dbGDSElement* elem);
+  template <typename T>
+  void processPropAttr(T* elem);
 
   /**
    * Parses the XY data of a GDS Element
@@ -154,7 +145,8 @@ class GDSReader
    * @param elem The GDS Element to add the XY data to
    * @return true if the XY data was successfully read
    */
-  bool processXY(dbGDSElement* elem);
+  template <typename T>
+  bool processXY(T* elem);
 
   /**
    * Parses a GDS STrans from the GDS file
@@ -182,7 +174,8 @@ class GDSReader
   dbDatabase* _db = nullptr;
   /** Current GDS Lib object */
   dbGDSLib* _lib = nullptr;
+
+  utl::Logger* _logger{nullptr};
 };
 
-}  // namespace gds
-}  // namespace odb
+}  // namespace odb::gds
