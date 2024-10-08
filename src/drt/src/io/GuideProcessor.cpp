@@ -587,10 +587,12 @@ struct BridgeGuide
   }
   bool operator<(const BridgeGuide& rhs) const
   {
-    if (getDist() == rhs.getDist()) {
-      return layer_num < rhs.layer_num;
+    const auto curr_dist = getDist();
+    const auto rhs_dis = rhs.getDist();
+    if (curr_dist == rhs_dis) {
+      return layer_num > rhs.layer_num;
     }
-    return getDist() < rhs.getDist();
+    return curr_dist < rhs_dis;
   }
 };
 /**
