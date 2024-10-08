@@ -880,7 +880,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
 void FlexDR::end(bool done)
 {
   if (done) {
-    router_->reportDRC(DRC_RPT_FILE, design_->getTopBlock()->getMarkers(), "DRC");
+    router_->reportDRC(
+        DRC_RPT_FILE, design_->getTopBlock()->getMarkers(), "DRC");
   }
   if (done && VERBOSE > 0) {
     logger_->info(DRT, 198, "Complete detail routing.");

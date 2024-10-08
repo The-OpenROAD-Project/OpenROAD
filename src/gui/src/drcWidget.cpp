@@ -240,7 +240,7 @@ void DRCWidget::clicked(const QModelIndex& index)
 void DRCWidget::setBlock(odb::dbBlock* block)
 {
   block_ = block;
-  
+
   addOwner(block_);
   updateMarkerGroups();
 }
@@ -291,7 +291,8 @@ void DRCWidget::updateModel()
   renderer_->setCategory(category);
 }
 
-void DRCWidget::populateCategory(odb::dbMarkerCategory* category, QStandardItem* model)
+void DRCWidget::populateCategory(odb::dbMarkerCategory* category,
+                                 QStandardItem* model)
 {
   if (category == nullptr) {
     return;
@@ -320,12 +321,11 @@ void DRCWidget::populateCategory(odb::dbMarkerCategory* category, QStandardItem*
     marker_item_child = marker_item;
     marker_item->setSelectable(true);
     marker_item->setData(QVariant::fromValue(marker));
-    QStandardItem* marker_index
-        = makeItem(QString::number(violation_idx++));
+    QStandardItem* marker_index = makeItem(QString::number(violation_idx++));
     marker_index->setData(QVariant::fromValue(marker));
     marker_index->setCheckable(true);
     marker_index->setCheckState(marker->isVisible() ? Qt::Checked
-                                                          : Qt::Unchecked);
+                                                    : Qt::Unchecked);
 
     type_group->appendRow({marker_index, marker_item});
   }
@@ -334,7 +334,9 @@ void DRCWidget::populateCategory(odb::dbMarkerCategory* category, QStandardItem*
     toggleParent(marker_item_child);
   }
 
-  model->appendRow({type_group, makeItem(QString::number(category->getMarkerCount()) + " markers")});
+  model->appendRow(
+      {type_group,
+       makeItem(QString::number(category->getMarkerCount()) + " markers")});
 }
 
 void DRCWidget::updateSelection(const Selected& selection)
@@ -408,7 +410,8 @@ void DRCWidget::updateMarkerGroupsWithIgnore(odb::dbMarkerCategory* ignore)
   }
 
   const std::string currentText = categories_->currentText().toStdString();
-  const bool remove_current = ignore != nullptr && ignore->getName() == currentText;
+  const bool remove_current
+      = ignore != nullptr && ignore->getName() == currentText;
 
   categories_->clear();
 
@@ -459,8 +462,7 @@ void DRCWidget::inDbMarkerDestroy(odb::dbMarker* marker)
 
 ////////
 
-DRCRenderer::DRCRenderer()
-    : category_(nullptr)
+DRCRenderer::DRCRenderer() : category_(nullptr)
 {
 }
 
@@ -470,7 +472,8 @@ void DRCRenderer::drawObjects(Painter& painter)
     return;
   }
 
-  DbMarkerDescriptor* desc = (DbMarkerDescriptor*) Gui::get()->getDescriptor<odb::dbMarker*>();
+  DbMarkerDescriptor* desc
+      = (DbMarkerDescriptor*) Gui::get()->getDescriptor<odb::dbMarker*>();
 
   Painter::Color pen_color = Painter::white;
   Painter::Color brush_color = pen_color;

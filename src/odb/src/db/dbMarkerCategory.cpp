@@ -1034,4 +1034,4 @@ void dbMarkerCategory::destroy(dbMarkerCategory* category)
 
 // User Code End dbMarkerCategoryPublicMethods
 }  // namespace odb
-// Generator Code End Cpp
+   // Generator Code End Cpp

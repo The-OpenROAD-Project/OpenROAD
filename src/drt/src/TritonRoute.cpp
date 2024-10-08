@@ -290,8 +290,10 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
              worker->getBestNumMarkers(),
              updated);
   if (updated) {
-    reportDRC(
-        drcRpt, design_->getTopBlock()->getMarkers(), "DRC - debug single worker", worker->getDrcBox());
+    reportDRC(drcRpt,
+              design_->getTopBlock()->getMarkers(),
+              "DRC - debug single worker",
+              worker->getDrcBox());
   }
 }
 
@@ -1117,7 +1119,12 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
   }
 }
 
-void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2, const std::string& marker_name)
+void TritonRoute::checkDRC(const char* filename,
+                           int x1,
+                           int y1,
+                           int x2,
+                           int y2,
+                           const std::string& marker_name)
 {
   GC_IGNORE_PDN_LAYER_NUM = -1;
   REPAIR_PDN_LAYER_NUM = -1;
@@ -1391,7 +1398,8 @@ void TritonRoute::reportDRC(const std::string& file_name,
                             Rect drcBox)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
-  odb::dbMarkerCategory* tool_category = odb::dbMarkerCategory::createOrReplace(block, marker_name.c_str());
+  odb::dbMarkerCategory* tool_category
+      = odb::dbMarkerCategory::createOrReplace(block, marker_name.c_str());
   tool_category->setSource("DRT");
 
   // Obstructions Rtree
@@ -1399,7 +1407,9 @@ void TritonRoute::reportDRC(const std::string& file_name,
   for (odb::dbObstruction* obs : block->getObstructions()) {
     obstructions.emplace_back(obs->getBBox()->getBox(), obs);
   }
-  const boost::geometry::index::rtree<std::pair<odb::Rect, odb::dbObstruction*>, boost::geometry::index::quadratic<16UL>> obs_rtree(obstructions.begin(), obstructions.end());
+  const boost::geometry::index::rtree<std::pair<odb::Rect, odb::dbObstruction*>,
+                                      boost::geometry::index::quadratic<16UL>>
+      obs_rtree(obstructions.begin(), obstructions.end());
 
   for (const auto& marker : markers) {
     // get violation bbox
@@ -1424,7 +1434,8 @@ void TritonRoute::reportDRC(const std::string& file_name,
       violName = "unknown";
     }
 
-    odb::dbMarkerCategory* category = odb::dbMarkerCategory::createOrGet(tool_category, violName.c_str());
+    odb::dbMarkerCategory* category
+        = odb::dbMarkerCategory::createOrGet(tool_category, violName.c_str());
 
     odb::dbMarker* db_marker = odb::dbMarker::create(category);
     if (db_marker == nullptr) {
@@ -1464,7 +1475,10 @@ void TritonRoute::reportDRC(const std::string& file_name,
             break;
           }
           case frcBlockage: {
-            for (auto itr = obs_rtree.qbegin(boost::geometry::index::intersects(bbox)); itr != obs_rtree.qend(); itr++) {
+            for (auto itr
+                 = obs_rtree.qbegin(boost::geometry::index::intersects(bbox));
+                 itr != obs_rtree.qend();
+                 itr++) {
               db_marker->addSource(itr->second);
             }
             break;
@@ -1491,7 +1505,7 @@ void TritonRoute::reportDRC(const std::string& file_name,
     }
     return;
   }
-  
+
   tool_category->writeTR(file_name);
 }
 

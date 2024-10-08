@@ -525,8 +525,7 @@ void MainWindow::init(sta::dbSta* sta)
       new DbMetalWidthViaMapDescriptor(db_));
   gui->registerDescriptor<odb::dbMarkerCategory*>(
       new DbMarkerCategoryDescriptor(db_));
-  gui->registerDescriptor<odb::dbMarker*>(
-      new DbMarkerDescriptor(db_));
+  gui->registerDescriptor<odb::dbMarker*>(new DbMarkerDescriptor(db_));
 
   gui->registerDescriptor<sta::Corner*>(new CornerDescriptor(db_, sta));
   gui->registerDescriptor<sta::LibertyLibrary*>(

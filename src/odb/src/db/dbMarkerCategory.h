@@ -97,4 +97,4 @@ class _dbMarkerCategory : public _dbObject
 dbIStream& operator>>(dbIStream& stream, _dbMarkerCategory& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbMarkerCategory& obj);
 }  // namespace odb
-// Generator Code End Header
+   // Generator Code End Header

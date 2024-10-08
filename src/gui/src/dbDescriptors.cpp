@@ -4143,7 +4143,8 @@ bool DbRowDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbMarkerCategoryDescriptor::DbMarkerCategoryDescriptor(odb::dbDatabase* db) : db_(db)
+DbMarkerCategoryDescriptor::DbMarkerCategoryDescriptor(odb::dbDatabase* db)
+    : db_(db)
 {
 }
 
@@ -4170,7 +4171,8 @@ bool DbMarkerCategoryDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   return has_bbox;
 }
 
-void DbMarkerCategoryDescriptor::highlight(std::any object, Painter& painter) const
+void DbMarkerCategoryDescriptor::highlight(std::any object,
+                                           Painter& painter) const
 {
   auto* category = std::any_cast<odb::dbMarkerCategory*>(object);
 
@@ -4180,7 +4182,8 @@ void DbMarkerCategoryDescriptor::highlight(std::any object, Painter& painter) co
   }
 }
 
-Descriptor::Properties DbMarkerCategoryDescriptor::getProperties(std::any object) const
+Descriptor::Properties DbMarkerCategoryDescriptor::getProperties(
+    std::any object) const
 {
   auto* category = std::any_cast<odb::dbMarkerCategory*>(object);
   auto* gui = Gui::get();
@@ -4199,9 +4202,12 @@ Descriptor::Properties DbMarkerCategoryDescriptor::getProperties(std::any object
   odb::dbObject* parent = category->getParent();
   if (parent != top) {
     if (parent->getObjectType() == odb::dbObjectType::dbBlockObj) {
-      props.push_back({"Parent", gui->makeSelected(static_cast<odb::dbBlock*>(parent))});
+      props.push_back(
+          {"Parent", gui->makeSelected(static_cast<odb::dbBlock*>(parent))});
     } else {
-      props.push_back({"Parent", gui->makeSelected(static_cast<odb::dbMarkerCategory*>(parent))});
+      props.push_back(
+          {"Parent",
+           gui->makeSelected(static_cast<odb::dbMarkerCategory*>(parent))});
     }
   }
 
@@ -4367,7 +4373,8 @@ bool DbMarkerDescriptor::getAllObjects(SelectionSet& objects) const
   return true;
 }
 
-void DbMarkerDescriptor::paintMarker(odb::dbMarker* marker, Painter& painter) const
+void DbMarkerDescriptor::paintMarker(odb::dbMarker* marker,
+                                     Painter& painter) const
 {
   const int min_box = 20.0 / painter.getPixelsPerDBU();
 

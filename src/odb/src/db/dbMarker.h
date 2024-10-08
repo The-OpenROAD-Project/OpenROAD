@@ -114,4 +114,4 @@ dbIStream& operator>>(dbIStream& stream, _dbMarker::ShapeType& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbMarker::ShapeType& obj);
 // User Code End General
 }  // namespace odb
-// Generator Code End Header
+   // Generator Code End Header

@@ -2196,8 +2196,8 @@ int FastRouteCore::edgeShift(Tree& t, int net)
                 }
                 costH[j] += std::min(cost1, cost2);
               }  // if(n3!=n1)
-            }  // loop l
-          }    // loop j
+            }    // loop l
+          }      // loop j
           bestCost = BIG_INT;
           Pos = t.branch[n1].y;
           for (j = minY; j <= maxY; j++) {
@@ -2503,12 +2503,14 @@ void FastRouteCore::saveCongestion(const int iter)
       "Global route{}", iter == -1 ? "" : fmt::format(" - iter {}", iter));
 
   if (!congestionGridsV.empty() || !congestionGridsH.empty()) {
-    odb::dbMarkerCategory* tool_category = odb::dbMarkerCategory::createOrReplace(db_->getChip()->getBlock(), marker_group_name.c_str());
+    odb::dbMarkerCategory* tool_category
+        = odb::dbMarkerCategory::createOrReplace(db_->getChip()->getBlock(),
+                                                 marker_group_name.c_str());
     tool_category->setSource("GRT");
 
     if (!congestionGridsH.empty()) {
-      odb::dbMarkerCategory* category
-          = odb::dbMarkerCategory::create(tool_category, "Horizontal congestion");
+      odb::dbMarkerCategory* category = odb::dbMarkerCategory::create(
+          tool_category, "Horizontal congestion");
 
       for (const auto& [seg, tile, srcs] : congestionGridsH) {
         odb::dbMarker* marker = odb::dbMarker::create(category);
@@ -2570,7 +2572,8 @@ void FastRouteCore::saveCongestion(const int iter)
   }
 
   odb::dbMarkerCategory* tool_category
-      = db_->getChip()->getBlock()->findMarkerCategory(marker_group_name.c_str());
+      = db_->getChip()->getBlock()->findMarkerCategory(
+          marker_group_name.c_str());
   if (tool_category != nullptr) {
     tool_category->writeTR(file_name);
   }

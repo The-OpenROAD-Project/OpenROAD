@@ -691,4 +691,4 @@ dbOStream& operator<<(dbOStream& stream, const _dbMarker::ShapeType& obj)
 
 // User Code End dbMarkerPublicMethods
 }  // namespace odb
-// Generator Code End Cpp
+   // Generator Code End Cpp

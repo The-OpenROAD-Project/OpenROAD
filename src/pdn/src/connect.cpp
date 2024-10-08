@@ -921,7 +921,8 @@ void Connect::recordFailedVias() const
     return;
   }
 
-  odb::dbMarkerCategory* tool_category = grid_->getBlock()->findMarkerCategory("PDN");
+  odb::dbMarkerCategory* tool_category
+      = grid_->getBlock()->findMarkerCategory("PDN");
   if (tool_category == nullptr) {
     tool_category = odb::dbMarkerCategory::create(grid_->getBlock(), "PDN");
     tool_category->setSource("PDN");
@@ -953,7 +954,8 @@ void Connect::recordFailedVias() const
     reason_str += " - " + grid_->getLongName();
     reason_str += " - " + layer0_->getName() + " -> " + layer1_->getName();
 
-    odb::dbMarkerCategory* category = odb::dbMarkerCategory::createOrGet(tool_category, reason_str.c_str());
+    odb::dbMarkerCategory* category
+        = odb::dbMarkerCategory::createOrGet(tool_category, reason_str.c_str());
 
     for (const auto& [net, shape] : shapes) {
       odb::dbMarker* marker = odb::dbMarker::create(category);
