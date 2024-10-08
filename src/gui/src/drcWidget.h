@@ -106,6 +106,7 @@ class DRCWidget : public QDockWidget, public odb::dbBlockCallBackObj
   void selectReport();
   void toggleRenderer(bool visible);
   void updateSelection(const Selected& selection);
+  void selectCategory(odb::dbMarkerCategory* category);
 
   void selectionChanged(const QItemSelection& selected,
                         const QItemSelection& deselected);
@@ -133,7 +134,6 @@ class DRCWidget : public QDockWidget, public odb::dbBlockCallBackObj
   odb::dbBlock* block_;
 
   QComboBox* categories_;
-  QPushButton* update_;
   QPushButton* load_;
 
   std::unique_ptr<DRCRenderer> renderer_;

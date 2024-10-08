@@ -74,7 +74,6 @@ DRCWidget::DRCWidget(QWidget* parent)
       model_(new DRCItemModel(this)),
       block_(nullptr),
       categories_(new QComboBox(this)),
-      update_(new QPushButton("Update...", this)),
       load_(new QPushButton("Load...", this)),
       renderer_(std::make_unique<DRCRenderer>())
 {
@@ -90,7 +89,6 @@ DRCWidget::DRCWidget(QWidget* parent)
   QHBoxLayout* selection_layout = new QHBoxLayout;
   selection_layout->addWidget(categories_);
   selection_layout->addWidget(load_);
-  selection_layout->addWidget(update_);
 
   QWidget* container = new QWidget(this);
   QVBoxLayout* layout = new QVBoxLayout;
@@ -106,8 +104,6 @@ DRCWidget::DRCWidget(QWidget* parent)
           this,
           &DRCWidget::selectionChanged);
   connect(load_, &QPushButton::released, this, &DRCWidget::selectReport);
-  connect(
-      update_, &QPushButton::released, this, &DRCWidget::updateMarkerGroups);
   connect(categories_,
           qOverload<int>(&QComboBox::currentIndexChanged),
           this,
@@ -342,6 +338,20 @@ void DRCWidget::updateSelection(const Selected& selection)
     (*s)->setVisited(true);
     emit update();
   }
+}
+
+void DRCWidget::selectCategory(odb::dbMarkerCategory* category)
+{
+  if (category == nullptr) {
+    categories_->setCurrentText("");
+  } else {
+    category = category->getTopCategory();
+    categories_->setCurrentText(category->getName());
+  }
+
+  updateModel();
+  show();
+  raise();
 }
 
 void DRCWidget::loadReport(const QString& filename)
