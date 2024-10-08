@@ -1171,10 +1171,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                             const int cur_y,
                             const int adj_x,
                             const int adj_y,
-                            double cost) {
+                            double cost,
+                            const int net_id) {
     double adj_cost = d1[adj_y][adj_x];
     if (adj_cost <= cost) {
-      return true;
+      return;
     }
 
     d1[adj_y][adj_x] = cost;
@@ -1200,10 +1201,13 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         const int pos = it - src_heap.begin();
         updateHeap(src_heap, pos);
       } else {
-        return false;
+        logger_->error(
+            GRT,
+            607,
+            "Unable to update: position not found in 2D heap for net {}.",
+            nets_[net_id]->getName());
       }
     }
-    return true;
   };
 
   auto relaxAdjacent = [&](const int cur_x,
@@ -1244,13 +1248,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         }
       }
     }
-    if (!updateAdjacent(cur_x, cur_y, cur_x + d_x, cur_y + d_y, tmp)) {
-      logger_->error(
-          GRT,
-          607,
-          "Unable to update: position not found in 2D heap for net {}.",
-          nets_[net_id]->getName());
-    }
+
+    updateAdjacent(cur_x, cur_y, cur_x + d_x, cur_y + d_y, tmp, net_id);
   };
 
   for (int nidRPC = 0; nidRPC < net_ids_.size(); nidRPC++) {
