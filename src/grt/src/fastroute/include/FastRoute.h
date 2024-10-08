@@ -265,13 +265,7 @@ class FastRouteCore
 
   // maze functions
   // Maze-routing in different orders
-  bool updateHeapNeighbour(std::vector<double*>& src_heap,
-                           multi_array<double, 2>& d1,
-                           int cur_x,
-                           int cur_y,
-                           int neigh_x,
-                           int neigh_y,
-                           double cost);
+  float getCost(const int i, bool is_horizontal, const CostParams& cost_params);
   void mazeRouteMSMD(const int iter,
                      const int expand,
                      const int ripup_threshold,

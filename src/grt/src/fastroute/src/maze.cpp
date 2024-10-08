@@ -1098,11 +1098,13 @@ void FastRouteCore::reInitTree(const int netID)
   checkAndFixEmbeddedTree(netID);
 }
 
-float getCost(const int i,
-              const int capacity,
-              const CostParams& cost_params,
-              std::vector<double>& cost_table)
+float FastRouteCore::getCost(const int i,
+                             bool is_horizontal,
+                             const CostParams& cost_params)
 {
+  const auto& cost_table = is_horizontal ? h_cost_table_ : v_cost_table_;
+  const auto& capacity = is_horizontal ? h_capacity_ : v_capacity_;
+
   if (i < cost_table.size()) {
     return cost_table[i];
   }
@@ -1121,48 +1123,6 @@ float getCost(const int i,
   return cost;
 }
 
-bool FastRouteCore::updateHeapNeighbour(std::vector<double*>& src_heap,
-                                        multi_array<double, 2>& d1,
-                                        int cur_x,
-                                        int cur_y,
-                                        int neigh_x,
-                                        int neigh_y,
-                                        double cost)
-{
-  double neigh_cost = d1[neigh_y][neigh_x];
-  if (neigh_cost <= cost) {
-    return true;
-  }
-
-  d1[neigh_y][neigh_x] = cost;
-
-  if (cur_x != neigh_x) {
-    parent_x3_[neigh_y][neigh_x] = cur_x;
-    parent_y3_[neigh_y][neigh_x] = cur_y;
-    hv_[neigh_y][neigh_x] = false;
-  } else {
-    parent_x1_[neigh_y][neigh_x] = cur_x;
-    parent_y1_[neigh_y][neigh_x] = cur_y;
-    hv_[neigh_y][neigh_x] = true;
-  }
-
-  if (neigh_cost >= BIG_INT) {  // neighbor has not been put into src_heap
-    src_heap.push_back(&d1[neigh_y][neigh_x]);
-    updateHeap(src_heap, src_heap.size() - 1);
-  } else if (neigh_cost
-             > cost) {  // neighbor has been put into src_heap but needs update
-    double* dtmp = &d1[neigh_y][neigh_x];
-    const auto it = std::find(src_heap.begin(), src_heap.end(), dtmp);
-    if (it != src_heap.end()) {
-      const int pos = it - src_heap.begin();
-      updateHeap(src_heap, pos);
-    } else {
-      return false;
-    }
-  }
-  return true;
-}
-
 void FastRouteCore::mazeRouteMSMD(const int iter,
                                   const int expand,
                                   const int ripup_threshold,
@@ -1179,12 +1139,10 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
   const int max_usage_multiplier = 40;
 
   for (int i = 0; i < max_usage_multiplier * h_capacity_; i++) {
-    h_cost_table_.push_back(
-        getCost(i, h_capacity_, cost_params, h_cost_table_));
+    h_cost_table_.push_back(getCost(i, true, cost_params));
   }
   for (int i = 0; i < max_usage_multiplier * v_capacity_; i++) {
-    v_cost_table_.push_back(
-        getCost(i, v_capacity_, cost_params, v_cost_table_));
+    v_cost_table_.push_back(getCost(i, false, cost_params));
   }
 
   for (int i = 0; i < y_grid_; i++) {
@@ -1208,6 +1166,92 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
   multi_array<double, 2> d2(boost::extents[y_range_][x_range_]);
 
   std::vector<bool> pop_heap2(y_grid_ * x_range_, false);
+
+  auto updateAdjacent = [&](const int cur_x,
+                            const int cur_y,
+                            const int adj_x,
+                            const int adj_y,
+                            double cost) {
+    double adj_cost = d1[adj_y][adj_x];
+    if (adj_cost <= cost) {
+      return true;
+    }
+
+    d1[adj_y][adj_x] = cost;
+
+    if (cur_x != adj_x) {
+      parent_x3_[adj_y][adj_x] = cur_x;
+      parent_y3_[adj_y][adj_x] = cur_y;
+      hv_[adj_y][adj_x] = false;
+    } else {
+      parent_x1_[adj_y][adj_x] = cur_x;
+      parent_y1_[adj_y][adj_x] = cur_y;
+      hv_[adj_y][adj_x] = true;
+    }
+
+    if (adj_cost >= BIG_INT) {  // neighbor has not been put into src_heap
+      src_heap.push_back(&d1[adj_y][adj_x]);
+      updateHeap(src_heap, src_heap.size() - 1);
+    } else if (adj_cost > cost) {  // neighbor has been put into src_heap
+                                   // but needs update
+      double* dtmp = &d1[adj_y][adj_x];
+      const auto it = std::find(src_heap.begin(), src_heap.end(), dtmp);
+      if (it != src_heap.end()) {
+        const int pos = it - src_heap.begin();
+        updateHeap(src_heap, pos);
+      } else {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  auto relaxAdjacent = [&](const int cur_x,
+                           const int cur_y,
+                           const int d_x,
+                           const int d_y,
+                           const bool add_via,
+                           const bool maybe_hyper,
+                           const int net_id) {
+    const bool is_horizontal = d_x != 0;
+    const auto& edges = is_horizontal ? h_edges_ : v_edges_;
+    auto& hyper = is_horizontal ? hyper_h_ : hyper_v_;
+
+    const int p1_x = cur_x - (d_x == -1);
+    const int p1_y = cur_y - (d_y == -1);
+    const int p2_x = cur_x - (d_x == 1);
+    const int p2_y = cur_y - (d_y == 1);
+
+    const int pos1
+        = edges[p1_y][p1_x].usage_red() + L * edges[p1_y][p1_x].last_usage;
+
+    double cost1 = getCost(pos1, is_horizontal, cost_params);
+
+    double tmp = d1[cur_y][cur_x] + cost1;
+
+    if (add_via && d1[cur_y][cur_x] != 0) {
+      tmp += via;
+
+      if (maybe_hyper) {
+        const int pos2
+            = edges[p2_y][p2_x].usage_red() + L * edges[p2_y][p2_x].last_usage;
+
+        double cost2 = getCost(pos2, is_horizontal, cost_params);
+
+        const int tmp_cost = d1[cur_y - d_y][cur_x - d_x] + cost2;
+        if (tmp_cost < d1[cur_y][cur_x] + via) {
+          hyper[cur_y][cur_x] = true;
+        }
+      }
+    }
+    if (!updateAdjacent(cur_x, cur_y, cur_x + d_x, cur_y + d_y, tmp)) {
+      logger_->error(
+          GRT,
+          607,
+          "Unable to update: position not found in 2D heap for net {}.",
+          nets_[net_id]->getName());
+    }
+  };
 
   for (int nidRPC = 0; nidRPC < net_ids_.size(); nidRPC++) {
     const int netID
@@ -1310,154 +1354,32 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         const int curX = ind1 % x_range_;
         const int curY = ind1 / x_range_;
 
-        int preX = d1[curY][curX] != 0
-                       ? (hv_[curY][curX] ? parent_x1_[curY][curX]
-                                          : parent_x3_[curY][curX])
-                       : curX;
-        int preY = d1[curY][curX] != 0
-                       ? (hv_[curY][curX] ? parent_y1_[curY][curX]
-                                          : parent_y3_[curY][curX])
-                       : curY;
+        int preX = curX;
+        int preY = curY;
+        if (d1[curY][curX] != 0) {
+          preX = hv_[curY][curX] ? parent_x1_[curY][curX]
+                                 : parent_x3_[curY][curX];
+          preY = hv_[curY][curX] ? parent_y1_[curY][curX]
+                                 : parent_y3_[curY][curX];
+        }
 
         removeMin(src_heap);
 
-        // left
-        if (curX > regionX1) {
-          const int pos1 = h_edges_[curY][curX - 1].usage_red()
-                           + L * h_edges_[curY][curX - 1].last_usage;
-
-          float cost1 = getCost(pos1, h_capacity_, cost_params, h_cost_table_);
-
-          float tmp = d1[curY][curX] + cost1;
-
-          if (preY != curY && d1[curY][curX] != 0) {
-            tmp += via;
-
-            if (curX < regionX2 - 1) {
-              const int pos2 = h_edges_[curY][curX].usage_red()
-                               + L * h_edges_[curY][curX].last_usage;
-
-              float cost2
-                  = getCost(pos2, h_capacity_, cost_params, h_cost_table_);
-
-              const int tmp_cost = d1[curY][curX + 1] + cost2;
-              if (tmp_cost < d1[curY][curX] + via) {
-                hyper_h_[curY][curX] = true;
-              }
-            }
-          }
-          if (!updateHeapNeighbour(
-                  src_heap, d1, curX, curY, curX - 1, curY, tmp)) {
-            logger_->error(
-                GRT,
-                607,
-                "Unable to update: position not found in 2D heap for net {}.",
-                nets_[netID]->getName());
-          }
+        if (curX > regionX1) {  // left
+          relaxAdjacent(
+              curX, curY, -1, 0, preY != curY, curX < regionX2 - 1, netID);
         }
-        // right
-        if (curX < regionX2) {
-          const int pos1 = h_edges_[curY][curX].usage_red()
-                           + L * h_edges_[curY][curX].last_usage;
-
-          double cost1 = getCost(pos1, h_capacity_, cost_params, h_cost_table_);
-
-          double tmp = d1[curY][curX] + cost1;
-
-          if (preY != curY && d1[curY][curX] != 0) {
-            tmp += via;
-
-            if (curX > regionX1 + 1) {
-              const int pos2 = h_edges_[curY][curX - 1].usage_red()
-                               + L * h_edges_[curY][curX - 1].last_usage;
-
-              double cost2
-                  = getCost(pos2, h_capacity_, cost_params, h_cost_table_);
-
-              const int tmp_cost = d1[curY][curX - 1] + cost2;
-              if (tmp_cost < d1[curY][curX] + via) {
-                hyper_h_[curY][curX] = true;
-              }
-            }
-          }
-          if (!updateHeapNeighbour(
-                  src_heap, d1, curX, curY, curX + 1, curY, tmp)) {
-            logger_->error(
-                GRT,
-                608,
-                "Unable to update: position not found in 2D heap for net {}.",
-                nets_[netID]->getName());
-          }
+        if (curX < regionX2) {  // right
+          relaxAdjacent(
+              curX, curY, 1, 0, preY != curY, curX > regionX1 + 1, netID);
         }
-        // bottom
-        if (curY > regionY1) {
-          const int pos1 = v_edges_[curY - 1][curX].usage_red()
-                           + L * v_edges_[curY - 1][curX].last_usage;
-
-          double cost1 = getCost(pos1, v_capacity_, cost_params, v_cost_table_);
-
-          double tmp = d1[curY][curX] + cost1;
-
-          if (preX != curX && d1[curY][curX] != 0) {
-            tmp += via;
-
-            if (curY < regionY2 - 1) {
-              const int pos2 = v_edges_[curY][curX].usage_red()
-                               + L * v_edges_[curY][curX].last_usage;
-
-              double cost2
-                  = getCost(pos2, v_capacity_, cost_params, v_cost_table_);
-
-              const int tmp_cost = d1[curY + 1][curX] + cost2;
-              if (tmp_cost < d1[curY][curX] + via) {
-                hyper_v_[curY][curX] = true;
-              }
-            }
-          }
-          if (!updateHeapNeighbour(
-                  src_heap, d1, curX, curY, curX, curY - 1, tmp))
-
-          {
-            logger_->error(
-                GRT,
-                609,
-                "Unable to update: position not found in 2D heap for net {}.",
-                nets_[netID]->getName());
-          }
+        if (curY > regionY1) {  // bottom
+          relaxAdjacent(
+              curX, curY, 0, -1, preX != curX, curY < regionY2 - 1, netID);
         }
-        // top
-        if (curY < regionY2) {
-          const int pos1 = v_edges_[curY][curX].usage_red()
-                           + L * v_edges_[curY][curX].last_usage;
-
-          double cost1 = getCost(pos1, v_capacity_, cost_params, v_cost_table_);
-
-          double tmp = d1[curY][curX] + cost1;
-
-          if (preX != curX && d1[curY][curX] != 0) {
-            tmp += via;
-
-            if (curY > regionY1 + 1) {
-              const int pos2 = v_edges_[curY - 1][curX].usage_red()
-                               + L * v_edges_[curY - 1][curX].last_usage;
-
-              double cost2
-                  = getCost(pos2, v_capacity_, cost_params, v_cost_table_);
-
-              const int tmp_cost = d1[curY - 1][curX] + cost2;
-              if (tmp_cost < d1[curY][curX] + via) {
-                hyper_v_[curY][curX] = true;
-              }
-            }
-          }
-          if (!updateHeapNeighbour(
-                  src_heap, d1, curX, curY, curX, curY + 1, tmp)) {
-            logger_->error(
-                GRT,
-                610,
-                "Unable to update: position not found in 2D heap for net {}.",
-                nets_[netID]->getName());
-          }
+        if (curY < regionY2) {  // top
+          relaxAdjacent(
+              curX, curY, 0, 1, preX != curX, curY > regionY1 + 1, netID);
         }
 
         // update ind1 for next loop
