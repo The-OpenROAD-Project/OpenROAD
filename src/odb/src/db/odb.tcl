@@ -619,7 +619,7 @@ proc set_routing_layers { args } {
   }
 }
 
-sta::define_cmd_args "set_min_layer" { minLayer }
+sta::define_cmd_args "set_min_layer" { minLayer };# checker off
 
 proc set_min_layer { args } {
   sta::parse_key_args "set_min_layer" args keys {} flags {}
@@ -634,7 +634,7 @@ proc set_min_layer { args } {
   $block setMinRoutingLayer $minLayer
 }
 
-sta::define_cmd_args "set_max_layer" { maxLayer }
+sta::define_cmd_args "set_max_layer" { maxLayer };# checker off
 
 proc set_max_layer { args } {
   sta::parse_key_args "set_max_layer" args keys {} flags {}
@@ -647,4 +647,19 @@ proc set_max_layer { args } {
   }
   set block [$chip getBlock]
   $block setMaxRoutingLayer $maxLayer
+}
+
+sta::define_cmd_args "design_is_routed" { [-verbose] }
+
+proc design_is_routed { args } {
+  sta::parse_key_args "design_is_routed" args keys {} flags {-verbose}
+
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::error ODB 223 "please load the design before trying to use this command."
+  }
+  set block [$chip getBlock]
+
+  return [$block designIsRouted [info exists flags(-verbose)]]
 }

@@ -34,38 +34,17 @@
 
 #include <cstdint>
 #include <fstream>
-#include <iostream>
 #include <vector>
 
 #include "gdsin.h"
 #include "odb/db.h"
 
-namespace odb {
-
-class dbGDSLib;
-class dbGDSElement;
-class dbGDSBoundary;
-class dbGDSPath;
-class dbGDSSRef;
-class dbGDSStructure;
-
-namespace gds {
+namespace odb::gds {
 
 class GDSWriter
 {
  public:
-  /**
-   * Constructor for GDSReader
-   * No operations are performed in the constructor
-   */
-  GDSWriter();
-
-  /**
-   * Destructor
-   *
-   * Does not free the dbGDSLib objects, as they are owned by the database
-   */
-  ~GDSWriter();
+  GDSWriter(utl::Logger* logger);
 
   /**
    * Writes a dbGDSLib object to a GDS file
@@ -109,25 +88,23 @@ class GDSWriter
   void writeInt8(int8_t i);
 
   /** Helper function to write layer record of a dbGDSElement to _file */
-  void writeLayer(dbGDSElement* el);
+  void writeLayer(int16_t layer);
   /** Helper function to write XY record  of a dbGDSElement to _file */
-  void writeXY(dbGDSElement* el);
+  void writeXY(const std::vector<Point>& points);
   /** Helper function to write the datatype record of a dbGDSElement to _file */
-  void writeDataType(dbGDSElement* el);
+  void writeDataType(int16_t data_type);
   /** Helper function to end an element in _file */
   void writeEndel();
 
   /** Helper function a property attribute to _file */
-  void writePropAttr(dbGDSElement* el);
+  template <typename T>
+  void writePropAttr(T* el);
 
   /** Writes _lib to the _file */
   void writeLib();
 
   /** Writes a dbGDSStructure to _file */
   void writeStruct(dbGDSStructure* str);
-
-  /** Writes a dbGDSElement to _file */
-  void writeElement(dbGDSElement* el);
 
   /** Writes different variants of dbGDSElement to _file */
   void writeBoundary(dbGDSBoundary* bnd);
@@ -146,8 +123,9 @@ class GDSWriter
   /** Output filestream */
   std::ofstream _file;
   /** Current dbGDSLib object */
-  dbGDSLib* _lib;
+  dbGDSLib* _lib{nullptr};
+
+  utl::Logger* _logger{nullptr};
 };
 
-}  // namespace gds
-}  // namespace odb
+}  // namespace odb::gds
