@@ -75,8 +75,8 @@ const uint db_schema_minor = 93;  // Current revision number
 // Revision where the dbGDSLib is added to dbDatabase
 const uint db_schema_gds_lib_in_block = 93;
 
-// Revision where unused hashes removed
-const uint db_schema_db_remove_hash = 92;
+// Reverted Revision where unused hashes removed
+const uint reverted_db_schema_db_remove_hash = 92;
 
 // Revision where the layers ranges, for signals and clock nets,
 // were moved from GlobalRouter to dbBlock

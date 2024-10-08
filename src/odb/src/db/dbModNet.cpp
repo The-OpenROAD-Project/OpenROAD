@@ -243,7 +243,6 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* name)
     new_next->_prev_entry = modnet->getOID();
   }
   parent->_modnets = modnet->getOID();
-  parent->_modnet_hash[name] = modnet->getOID();
   return (dbModNet*) modnet;
 }
 
@@ -267,7 +266,6 @@ void dbModNet::destroy(dbModNet* mod_net)
   }
   _modnet->_prev_entry = 0;
   _modnet->_next_entry = 0;
-  module->_modnet_hash.erase(mod_net->getName());
   block->_modnet_tbl->destroy(_modnet);
 }
 

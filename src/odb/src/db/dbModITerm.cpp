@@ -155,16 +155,6 @@ dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
   if (obj.getDatabase()->isSchema(db_schema_hier_port_removal)) {
     stream >> obj._prev_entry;
   }
-  // User Code Begin >>
-  if (obj.getDatabase()->isSchema(db_schema_db_remove_hash)) {
-    dbDatabase* db = (dbDatabase*) (obj.getDatabase());
-    _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
-    _dbModInst* mod_inst = block->_modinst_tbl->getPtr(obj._parent);
-    if (obj._name) {
-      mod_inst->_moditerm_hash[obj._name] = dbId<_dbModITerm>(obj.getId());
-    }
-  }
-  // User Code End >>
   return stream;
 }
 
@@ -282,7 +272,7 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
     new_next->_prev_entry = moditerm->getOID();
   }
   parent->_moditerms = moditerm->getOID();
-  parent->_moditerm_hash[name] = dbId<_dbModITerm>(moditerm->getOID());
+
   return (dbModITerm*) moditerm;
 }
 
@@ -360,7 +350,6 @@ void dbModITerm::destroy(dbModITerm* val)
   }
   _moditerm->_prev_entry = 0;
   _moditerm->_next_entry = 0;
-  mod_inst->_moditerm_hash.erase(val->getName());
   block->_moditerm_tbl->destroy(_moditerm);
 }
 

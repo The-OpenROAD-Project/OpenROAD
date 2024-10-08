@@ -656,28 +656,15 @@ const char* dbNetwork::name(const Port* port) const
     dbModBTerm* modbterm = nullptr;
     dbBTerm* bterm = nullptr;
     staToDb(port, bterm, mterm, modbterm);
-    std::string name;
     if (bterm) {
-      name = bterm->getName();
+      return tmpStringCopy(bterm->getName().c_str());
     }
     if (mterm) {
-      name = mterm->getName();
+      return tmpStringCopy(mterm->getName().c_str());
     }
     if (modbterm) {
-      name = modbterm->getName();
+      return tmpStringCopy(modbterm->getName());
     }
-
-    if (name.empty()) {
-      return nullptr;
-    }
-
-    if (hierarchy_) {
-      size_t last_idx = name.find_last_of('/');
-      if (last_idx != string::npos) {
-        name = name.substr(last_idx + 1);
-      }
-    }
-    return tmpStringCopy(name.c_str());
   }
   return nullptr;
 }
@@ -712,21 +699,10 @@ const char* dbNetwork::name(const Instance* instance) const
   dbInst* db_inst;
   dbModInst* mod_inst;
   staToDb(instance, db_inst, mod_inst);
-  std::string name;
   if (db_inst) {
-    name = db_inst->getName();
+    return tmpStringCopy(db_inst->getConstName());
   }
-  if (mod_inst) {
-    name = mod_inst->getName();
-  }
-
-  if (hierarchy_) {
-    size_t last_idx = name.find_last_of('/');
-    if (last_idx != string::npos) {
-      name = name.substr(last_idx + 1);
-    }
-  }
-  return tmpStringCopy(name.c_str());
+  return tmpStringCopy(mod_inst->getName());
 }
 
 const char* dbNetwork::name(const Cell* cell) const
@@ -852,12 +828,7 @@ Instance* dbNetwork::parent(const Instance* instance) const
       return dbToSta(parent_inst);
     }
   }
-  if (db_inst) {
-    auto parent_module = db_inst->getModule();
-    if (auto parent_inst = parent_module->getModInst()) {
-      return dbToSta(parent_inst);
-    }
-  }
+
   return top_instance_;
 }
 
@@ -1376,15 +1347,13 @@ const char* dbNetwork::name(const Net* net) const
   dbModNet* modnet = nullptr;
   dbNet* dnet = nullptr;
   staToDb(net, dnet, modnet);
-  std::string name;
   if (dnet) {
-    name = dnet->getName();
+    const char* name = dnet->getConstName();
+    return tmpStringCopy(name);
   }
   if (modnet) {
-    name = modnet->getName();
-  }
-  if (dnet || modnet) {
-    return tmpStringCopy(name.c_str());
+    std::string net_name = modnet->getName();
+    return tmpStringCopy(net_name.c_str());
   }
   return nullptr;
 }
@@ -1465,9 +1434,7 @@ void dbNetwork::visitConnectedPins(const Net* net,
       visitor(below_pin);
       // traverse along rest of net
       Net* below_net = this->net(below_pin);
-      if (below_net) {
-        visitConnectedPins(below_net, visitor, visited_nets);
-      }
+      visitConnectedPins(below_net, visitor, visited_nets);
     }
 
     // visit above nets

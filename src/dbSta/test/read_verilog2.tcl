@@ -3,7 +3,7 @@ source "helpers.tcl"
 read_lef liberty1.lef
 read_liberty liberty1.lib
 read_verilog hier1.v
-link_design top -hier
+link_design top
 
 report_object_names [get_cells b1/r1]
 report_object_names [get_nets b1out]
