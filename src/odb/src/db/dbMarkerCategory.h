@@ -38,6 +38,7 @@
 #include "odb/odb.h"
 // User Code Begin Includes
 #include <boost/property_tree/json_parser.hpp>
+#include <fstream>
 #include <set>
 // User Code End Includes
 
@@ -73,16 +74,19 @@ class _dbMarkerCategory : public _dbObject
   // User Code Begin Methods
   using PropertyTree = boost::property_tree::ptree;
   bool isTopCategory() const;
-  ;
+  bool hasMaxMarkerLimit() const;
+
   _dbBlock* getBlock() const;
   void populatePTree(PropertyTree& tree) const;
-  static void writeJSON(const std::string& path,
-                        const std::set<_dbMarkerCategory*>& groups);
+  static void writeJSON(std::ofstream& report,
+                        const std::set<_dbMarkerCategory*>& categories);
+  void writeTR(std::ofstream& report) const;
   // User Code End Methods
 
   char* _name;
   std::string description_;
   std::string source_;
+  int max_markers_;
 
   dbTable<_dbMarker>* marker_tbl_;
 

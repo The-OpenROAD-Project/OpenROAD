@@ -37,8 +37,11 @@
 #include "dbVector.h"
 #include "odb/odb.h"
 // User Code Begin Includes
+#include <fstream>
+#include <set>
 #include <variant>
 
+#include "dbMarkerCategory.h"
 #include "odb/db.h"
 // User Code End Includes
 
@@ -88,6 +91,9 @@ class _dbMarker : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
   _dbBlock* getBlock() const;
+
+  void populatePTree(_dbMarkerCategory::PropertyTree& tree) const;
+  void writeTR(std::ofstream& report) const;
   // User Code End Methods
 
   dbMarkerFlags flags_;
@@ -97,7 +103,7 @@ class _dbMarker : public _dbObject
   int line_number_;
 
   // User Code Begin Fields
-  std::vector<std::pair<dbObjectType, uint>> sources_;
+  std::set<std::pair<dbObjectType, uint>> sources_;
   std::vector<dbMarker::MarkerShape> shapes_;
   // User Code End Fields
 };

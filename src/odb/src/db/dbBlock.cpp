@@ -4297,12 +4297,29 @@ dbMarkerCategory* dbBlock::findMarkerCategory(const char* name)
 
 void dbBlock::writeMarkerCategories(const std::string& file)
 {
+  std::ofstream report(file);
+
+  if (!report) {
+    _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
+    utl::Logger* logger = obj->getLogger();
+
+    logger->error(
+        utl::ODB, 272, "Unable to open {} to write markers", file);
+  }
+
+  writeMarkerCategories(report);
+
+  report.close();
+}
+
+void dbBlock::writeMarkerCategories(std::ofstream& report)
+{
   std::set<_dbMarkerCategory*> groups;
   for (dbMarkerCategory* group : getMarkerCategories()) {
     groups.insert((_dbMarkerCategory*) group);
   }
 
-  _dbMarkerCategory::writeJSON(file, groups);
+  _dbMarkerCategory::writeJSON(report, groups);
 }
 
 }  // namespace odb

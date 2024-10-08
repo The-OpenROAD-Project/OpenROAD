@@ -1636,6 +1636,7 @@ class dbBlock : public dbObject
   //  Write marker information to file
   //
   void writeMarkerCategories(const std::string& file);
+  void writeMarkerCategories(std::ofstream& reports);
 
   ///
   ///  Levelelize from set of insts
@@ -7745,6 +7746,8 @@ class dbMarker : public dbObject
 
   // User Code Begin dbMarker
 
+  std::string getName() const;
+
   using MarkerShape = std::variant<Point, Line, Rect, Polygon>;
 
   dbMarkerCategory* getCategory() const;
@@ -7780,6 +7783,10 @@ class dbMarkerCategory : public dbObject
 
   void setSource(const std::string& source);
 
+  void setMaxMarkers(int max_markers);
+
+  int getMaxMarkers() const;
+
   dbSet<dbMarker> getMarkers() const;
 
   dbSet<dbMarkerCategory> getMarkerCategorys() const;
@@ -7796,14 +7803,25 @@ class dbMarkerCategory : public dbObject
   int getMarkerCount() const;
 
   void writeJSON(const std::string& path) const;
+  void writeJSON(std::ofstream& report) const;
   void writeTR(const std::string& path) const;
+  void writeTR(std::ofstream& report) const;
 
   static void fromJSON(dbBlock* block, const std::string& path);
+  static void fromJSON(dbBlock* block,
+                       const char* source,
+                       std::ifstream& report);
   static void fromTR(dbBlock* block, const char* name, const std::string& path);
+  static void fromTR(dbBlock* block,
+                     const char* name,
+                     const char* source,
+                     std::ifstream& report);
 
   static dbMarkerCategory* create(dbBlock* block, const char* name);
-  static dbMarkerCategory* createorReplace(dbBlock* block, const char* name);
+  static dbMarkerCategory* createOrReplace(dbBlock* block, const char* name);
   static dbMarkerCategory* create(dbMarkerCategory* category, const char* name);
+  static dbMarkerCategory* createOrGet(dbMarkerCategory* category,
+                                       const char* name);
   static void destroy(dbMarkerCategory* category);
 
   // User Code End dbMarkerCategory

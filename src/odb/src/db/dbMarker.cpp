@@ -169,8 +169,8 @@ dbIStream& operator>>(dbIStream& stream, _dbMarker& obj)
     uint db_id;
     stream >> db_id;
 
-    obj.sources_.emplace_back(
-        dbObject::getType(db_type.c_str(), obj.getLogger()), db_id);
+    obj.sources_.emplace(dbObject::getType(db_type.c_str(), obj.getLogger()),
+                         db_id);
   }
 
   stream >> item_count;
@@ -257,6 +257,164 @@ _dbBlock* _dbMarker::getBlock() const
   return category->getBlock();
 }
 
+void _dbMarker::writeTR(std::ofstream& report) const
+{
+  dbBlock* block = (dbBlock*) getBlock();
+  const double dbus = block->getDbUnitsPerMicron();
+
+  dbMarker* marker = (dbMarker*) this;
+
+  report << "violation type: " << marker->getCategory()->getName() << std::endl;
+  report << "\tsrcs:";
+  for (dbObject* src : marker->getSources()) {
+    switch (src->getObjectType()) {
+      case dbNetObj:
+        report << " net:" << static_cast<dbNet*>(src)->getName();
+        break;
+      case dbInstObj:
+        report << " inst:" << static_cast<dbInst*>(src)->getName();
+        break;
+      case dbITermObj:
+        report << " iterm:" << static_cast<dbITerm*>(src)->getName();
+        break;
+      case dbBTermObj:
+        report << " bterm:" << static_cast<dbBTerm*>(src)->getName();
+        break;
+      case dbObstructionObj:
+        report << " obstruction: ";
+        break;
+      default:
+        getLogger()->error(
+            utl::ODB, 273, "Unsupported object type: {}", src->getTypeName());
+    }
+  }
+  report << std::endl;
+
+  if (!marker->getComment().empty()) {
+    report << "\tcomment: " << marker->getComment() << std::endl;
+  }
+
+  const Rect bbox = marker->getBBox();
+  report << "\tbbox = (";
+  report << fmt::format("{:.4f}", bbox.xMin() / dbus) << ", ";
+  report << fmt::format("{:.4f}", bbox.yMin() / dbus) << ") - (";
+  report << fmt::format("{:.4f}", bbox.xMax() / dbus) << ", ";
+  report << fmt::format("{:.4f}", bbox.yMax() / dbus) << ") on Layer ";
+  if (marker->getTechLayer() != nullptr) {
+    report << marker->getTechLayer()->getName();
+  } else {
+    report << "-";
+  }
+  report << std::endl;
+}
+
+void _dbMarker::populatePTree(_dbMarkerCategory::PropertyTree& tree) const
+{
+  dbBlock* block = (dbBlock*) getBlock();
+  dbMarker* marker = (dbMarker*) this;
+
+  _dbMarkerCategory::PropertyTree marker_tree;
+
+  const double dbus = block->getDbUnitsPerMicron();
+  auto add_point = [dbus](_dbMarkerCategory::PropertyTree& tree,
+                          const Point& pt) {
+    _dbMarkerCategory::PropertyTree pt_tree;
+
+    pt_tree.put("x", fmt::format("{:.4f}", pt.x() / dbus));
+    pt_tree.put("y", fmt::format("{:.4f}", pt.y() / dbus));
+
+    tree.push_back(_dbMarkerCategory::PropertyTree::value_type("", pt_tree));
+  };
+
+  if (!marker->getComment().empty()) {
+    marker_tree.put("comment", marker->getComment());
+  }
+
+  marker_tree.put("visited", marker->isVisited());
+  marker_tree.put("visible", marker->isVisible());
+
+  if (marker->getLineNumber() > 0) {
+    marker_tree.put("line_number", marker->getLineNumber());
+  }
+
+  if (!marker->getComment().empty()) {
+    marker_tree.put("comment", marker->getComment());
+  }
+
+  dbTechLayer* layer = marker->getTechLayer();
+  if (layer != nullptr) {
+    marker_tree.put("layer", layer->getName());
+  }
+
+  _dbMarkerCategory::PropertyTree shapes_tree;
+  for (const dbMarker::MarkerShape& shape : marker->getShapes()) {
+    _dbMarkerCategory::PropertyTree shape_tree;
+
+    if (std::holds_alternative<Point>(shape)) {
+      shape_tree.put("type", "point");
+      add_point(shape_tree, std::get<Point>(shape));
+    } else if (std::holds_alternative<Line>(shape)) {
+      shape_tree.put("type", "line");
+      for (const Point& pt : std::get<Line>(shape).getPoints()) {
+        add_point(shape_tree, pt);
+      }
+    } else if (std::holds_alternative<Rect>(shape)) {
+      shape_tree.put("type", "box");
+      const Rect rect = std::get<Rect>(shape);
+      for (const Point& pt : {rect.ll(), rect.ur()}) {
+        add_point(shape_tree, pt);
+      }
+    } else {
+      shape_tree.put("type", "polygon");
+      for (const Point& pt : std::get<Polygon>(shape).getPoints()) {
+        add_point(shape_tree, pt);
+      }
+    }
+
+    shapes_tree.push_back(
+        _dbMarkerCategory::PropertyTree::value_type("", shape_tree));
+  }
+
+  marker_tree.add_child("shape", shapes_tree);
+
+  _dbMarkerCategory::PropertyTree sources_tree;
+  for (dbObject* src : marker->getSources()) {
+    _dbMarkerCategory::PropertyTree source_info_tree;
+
+    switch (src->getObjectType()) {
+      case dbNetObj:
+        source_info_tree.put("type", "net");
+        source_info_tree.put("name", static_cast<dbNet*>(src)->getName());
+        break;
+      case dbInstObj:
+        source_info_tree.put("type", "inst");
+        source_info_tree.put("name", static_cast<dbInst*>(src)->getName());
+        break;
+      case dbITermObj:
+        source_info_tree.put("type", "iterm");
+        source_info_tree.put("name", static_cast<dbITerm*>(src)->getName());
+        break;
+      case dbBTermObj:
+        source_info_tree.put("type", "bterm");
+        source_info_tree.put("name", static_cast<dbBTerm*>(src)->getName());
+        break;
+      case dbObstructionObj:
+        source_info_tree.put("type", "obstruction");
+        break;
+      default:
+        getLogger()->error(
+            utl::ODB, 278, "Unsupported object type: {}", src->getTypeName());
+    }
+
+    sources_tree.push_back(
+        _dbMarkerCategory::PropertyTree::value_type("", source_info_tree));
+  }
+
+  marker_tree.add_child("sources", sources_tree);
+
+  tree.push_back(_dbMarkerCategory::PropertyTree::value_type("", marker_tree));
+}
+
 // User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
@@ -321,6 +479,11 @@ bool dbMarker::isVisible() const
 
 // User Code Begin dbMarkerPublicMethods
 
+std::string dbMarker::getName() const
+{
+  return getCategory()->getName();
+}
+
 dbMarkerCategory* dbMarker::getCategory() const
 {
   _dbMarker* marker = (_dbMarker*) this;
@@ -374,7 +537,7 @@ void dbMarker::addSource(dbObject* obj)
     return;
   }
   _dbMarker* marker = (_dbMarker*) this;
-  marker->sources_.emplace_back(obj->getObjectType(), obj->getId());
+  marker->sources_.emplace(obj->getObjectType(), obj->getId());
 }
 
 dbTechLayer* dbMarker::getTechLayer() const
@@ -430,6 +593,11 @@ std::set<dbObject*> dbMarker::getSources() const
 dbMarker* dbMarker::create(dbMarkerCategory* category)
 {
   _dbMarkerCategory* _category = (_dbMarkerCategory*) category;
+
+  if (_category->hasMaxMarkerLimit()
+      && _category->marker_tbl_->size() >= _category->max_markers_) {
+    return nullptr;
+  }
 
   _dbMarker* marker = _category->marker_tbl_->create();
 

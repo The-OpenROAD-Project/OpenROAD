@@ -16,6 +16,11 @@
       "name":"source_",
       "type":"std::string",
       "flags":["no-get"]
+    },
+    {
+      "name": "max_markers_",
+      "type": "int",
+      "default": "10000"
     }
   ],
   "cpp_includes":["dbBlock.h"]

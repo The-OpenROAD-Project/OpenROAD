@@ -64,6 +64,9 @@ bool _dbMarkerCategory::operator==(const _dbMarkerCategory& rhs) const
   if (source_ != rhs.source_) {
     return false;
   }
+  if (max_markers_ != rhs.max_markers_) {
+    return false;
+  }
   if (*marker_tbl_ != *rhs.marker_tbl_) {
     return false;
   }
@@ -93,6 +96,7 @@ void _dbMarkerCategory::differences(dbDiff& diff,
   DIFF_FIELD(_name);
   DIFF_FIELD(description_);
   DIFF_FIELD(source_);
+  DIFF_FIELD(max_markers_);
   DIFF_TABLE(marker_tbl_);
   DIFF_TABLE(categories_tbl_);
   DIFF_HASH_TABLE(categories_hash_);
@@ -106,6 +110,7 @@ void _dbMarkerCategory::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(description_);
   DIFF_OUT_FIELD(source_);
+  DIFF_OUT_FIELD(max_markers_);
   DIFF_OUT_TABLE(marker_tbl_);
   DIFF_OUT_TABLE(categories_tbl_);
   DIFF_OUT_HASH_TABLE(categories_hash_);
@@ -117,6 +122,7 @@ void _dbMarkerCategory::out(dbDiff& diff, char side, const char* field) const
 _dbMarkerCategory::_dbMarkerCategory(_dbDatabase* db)
 {
   _name = nullptr;
+  max_markers_ = 10000;
   marker_tbl_ = new dbTable<_dbMarker>(
       db, this, (GetObjTbl_t) &_dbMarkerCategory::getObjectTable, dbMarkerObj);
   categories_tbl_ = new dbTable<_dbMarkerCategory>(
@@ -133,6 +139,7 @@ _dbMarkerCategory::_dbMarkerCategory(_dbDatabase* db,
   _name = r._name;
   description_ = r.description_;
   source_ = r.source_;
+  max_markers_ = r.max_markers_;
   marker_tbl_ = new dbTable<_dbMarker>(db, this, *r.marker_tbl_);
   categories_tbl_
       = new dbTable<_dbMarkerCategory>(db, this, *r.categories_tbl_);
@@ -145,6 +152,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMarkerCategory& obj)
   stream >> obj._name;
   stream >> obj.description_;
   stream >> obj.source_;
+  stream >> obj.max_markers_;
   stream >> *obj.marker_tbl_;
   stream >> *obj.categories_tbl_;
   stream >> obj.categories_hash_;
@@ -157,6 +165,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMarkerCategory& obj)
   stream << obj._name;
   stream << obj.description_;
   stream << obj.source_;
+  stream << obj.max_markers_;
   stream << *obj.marker_tbl_;
   stream << *obj.categories_tbl_;
   stream << obj.categories_hash_;
@@ -201,136 +210,42 @@ _dbBlock* _dbMarkerCategory::getBlock() const
   return (_dbBlock*) top_category->getOwner();
 }
 
+bool _dbMarkerCategory::hasMaxMarkerLimit() const
+{
+  return max_markers_ > 0;
+}
+
 void _dbMarkerCategory::populatePTree(
     _dbMarkerCategory::PropertyTree& tree) const
 {
   dbMarkerCategory* category = (dbMarkerCategory*) this;
-  _dbMarkerCategory* _top_category
-      = (_dbMarkerCategory*) category->getTopCategory();
-  dbBlock* block = (dbBlock*) _top_category->getOwner();
 
-  const double dbus = block->getDbUnitsPerMicron();
+  _dbMarkerCategory::PropertyTree category_tree;
 
-  boost::property_tree::ptree group_tree;
-
-  auto add_point = [dbus](boost::property_tree::ptree& tree, const Point& pt) {
-    boost::property_tree::ptree pt_tree;
-
-    pt_tree.put("x", fmt::format("{:.4f}", pt.x() / dbus));
-    pt_tree.put("y", fmt::format("{:.4f}", pt.y() / dbus));
-
-    tree.push_back(boost::property_tree::ptree::value_type("", pt_tree));
-  };
-
-  for (dbMarkerCategory* category : category->getMarkerCategorys()) {
-    boost::property_tree::ptree category_tree;
-
-    category_tree.put("name", category->getName());
-    category_tree.put("description", category->getDescription());
-
-    boost::property_tree::ptree violations_tree;
-    for (dbMarker* marker : category->getMarkers()) {
-      boost::property_tree::ptree violation_tree;
-
-      if (!marker->getComment().empty()) {
-        violation_tree.put("comment", marker->getComment());
-      }
-
-      dbTechLayer* layer = marker->getTechLayer();
-      if (layer != nullptr) {
-        violation_tree.put("layer", layer->getName());
-      }
-
-      std::string shape_type;
-      boost::property_tree::ptree shapes_tree;
-      for (const dbMarker::MarkerShape& shape : marker->getShapes()) {
-        boost::property_tree::ptree shape_tree;
-
-        if (std::holds_alternative<Point>(shape)) {
-          add_point(shape_tree, std::get<Point>(shape));
-          shape_type = "point";
-        } else if (std::holds_alternative<Line>(shape)) {
-          for (const Point& pt : std::get<Line>(shape).getPoints()) {
-            add_point(shape_tree, pt);
-          }
-          if (shape_type == "edge") {
-            shape_type = "edge_pair";
-          } else {
-            shape_type = "edge";
-          }
-        } else if (std::holds_alternative<Rect>(shape)) {
-          const Rect rect = std::get<Rect>(shape);
-          for (const Point& pt : {rect.ll(), rect.ur()}) {
-            add_point(shape_tree, pt);
-          }
-          shape_type = "box";
-        } else {
-          for (const Point& pt : std::get<Polygon>(shape).getPoints()) {
-            add_point(shape_tree, pt);
-          }
-          shape_type = "polygon";
-        }
-
-        shapes_tree.push_back(
-            boost::property_tree::ptree::value_type("", shape_tree));
-      }
-
-      violation_tree.put("type", shape_type);
-
-      violation_tree.add_child("shape", shapes_tree);
-
-      boost::property_tree::ptree sources_tree;
-      for (dbObject* src : marker->getSources()) {
-        boost::property_tree::ptree source_info_tree;
-
-        switch (src->getObjectType()) {
-          case dbNetObj:
-            source_info_tree.put("type", "net");
-            source_info_tree.put("name", static_cast<dbNet*>(src)->getName());
-            break;
-          case dbInstObj:
-            source_info_tree.put("type", "inst");
-            source_info_tree.put("name", static_cast<dbInst*>(src)->getName());
-            break;
-          case dbITermObj:
-            source_info_tree.put("type", "iterm");
-            source_info_tree.put("name", static_cast<dbITerm*>(src)->getName());
-            break;
-          case dbBTermObj:
-            source_info_tree.put("type", "bterm");
-            source_info_tree.put("name", static_cast<dbBTerm*>(src)->getName());
-            break;
-          case dbObstructionObj:
-            source_info_tree.put("type", "obstruction");
-            break;
-          default:
-            getLogger()->error(utl::ODB,
-                               272,
-                               "Unsupported object type: {}",
-                               src->getTypeName());
-        }
-
-        sources_tree.push_back(
-            boost::property_tree::ptree::value_type("", source_info_tree));
-      }
-
-      violation_tree.add_child("sources", sources_tree);
-
-      violations_tree.push_back(
-          boost::property_tree::ptree::value_type("", violation_tree));
-    }
-
-    category_tree.add_child("violations", violations_tree);
-
-    group_tree.push_back(
-        boost::property_tree::ptree::value_type("", category_tree));
+  category_tree.put("name", category->getName());
+  category_tree.put("description", category->getDescription());
+  if (hasMaxMarkerLimit()) {
+    category_tree.put("max_markers", category->getMaxMarkers());
   }
 
-  tree.add_child(_name, group_tree);
+  for (dbMarkerCategory* category : category->getMarkerCategorys()) {
+    _dbMarkerCategory* category_ = (_dbMarkerCategory*) category;
+    category_->populatePTree(category_tree);
+  }
+
+  _dbMarkerCategory::PropertyTree violations_tree;
+  for (dbMarker* marker : category->getMarkers()) {
+    _dbMarker* marker_ = (_dbMarker*) marker;
+    marker_->populatePTree(violations_tree);
+  }
+
+  category_tree.add_child("violations", violations_tree);
+
+  tree.add_child(_name, category_tree);
 }
 
 void _dbMarkerCategory::writeJSON(
-    const std::string& path,
+    std::ofstream& report,
     const std::set<_dbMarkerCategory*>& categories)
 {
   if (categories.empty()) {
@@ -349,18 +264,29 @@ void _dbMarkerCategory::writeJSON(
   }
 
   try {
-    boost::property_tree::json_parser::write_json(path, tree);
+    boost::property_tree::json_parser::write_json(report, tree);
   } catch (const boost::property_tree::json_parser_error& e1) {
     _dbMarkerCategory* _top_category
         = (_dbMarkerCategory*) (*ordered_categories.begin())->getTopCategory();
     _dbBlock* block = (_dbBlock*) _top_category->getOwner();
     utl::Logger* logger = block->getLogger();
 
-    logger->error(utl::ODB,
-                  268,
-                  "Unable to open {} to write markers: {}",
-                  path,
-                  e1.what());
+    logger->error(utl::ODB, 268, "Unable to write markers: {}", e1.what());
+  }
+}
+
+void _dbMarkerCategory::writeTR(std::ofstream& report) const
+{
+  dbMarkerCategory* marker_category = (dbMarkerCategory*) this;
+
+  for (dbMarker* marker : marker_category->getMarkers()) {
+    _dbMarker* marker_ = (_dbMarker*) marker;
+    marker_->writeTR(report);
+  }
+
+  for (dbMarkerCategory* category : marker_category->getMarkerCategorys()) {
+    _dbMarkerCategory* category_ = (_dbMarkerCategory*) category;
+    category_->writeTR(report);
   }
 }
 
@@ -398,6 +324,19 @@ void dbMarkerCategory::setSource(const std::string& source)
   obj->source_ = source;
 }
 
+void dbMarkerCategory::setMaxMarkers(int max_markers)
+{
+  _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
+
+  obj->max_markers_ = max_markers;
+}
+
+int dbMarkerCategory::getMaxMarkers() const
+{
+  _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
+  return obj->max_markers_;
+}
+
 dbSet<dbMarker> dbMarkerCategory::getMarkers() const
 {
   _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
@@ -421,7 +360,7 @@ dbMarkerCategory* dbMarkerCategory::findMarkerCategory(const char* name) const
 int dbMarkerCategory::getMarkerCount() const
 {
   _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
-  int count = obj->categories_tbl_->size();
+  int count = obj->marker_tbl_->size();
 
   for (dbMarkerCategory* category : getMarkerCategorys()) {
     count += category->getMarkerCount();
@@ -488,109 +427,76 @@ bool dbMarkerCategory::rename(const char* name)
 
 void dbMarkerCategory::writeJSON(const std::string& path) const
 {
-  _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
-  _dbMarkerCategory::writeJSON(path, {obj});
-}
-
-void dbMarkerCategory::writeTR(const std::string& path) const
-{
-  _dbMarkerCategory* top_category = (_dbMarkerCategory*) getTopCategory();
-  _dbBlock* block_ = (_dbBlock*) top_category->getOwner();
-  dbBlock* block = (dbBlock*) block_;
-
   std::ofstream report(path);
 
   if (!report) {
-    utl::Logger* logger = block_->getLogger();
+    _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
+    utl::Logger* logger = obj->getLogger();
 
-    logger->error(
-        utl::ODB, 269, "Unable to open {} to write markers: {}", path);
+    logger->error(utl::ODB, 281, "Unable to open {} to write markers", path);
   }
 
-  const double dbus = block->getDbUnitsPerMicron();
-
-  for (dbMarkerCategory* category : getMarkerCategorys()) {
-    for (dbMarker* marker : category->getMarkers()) {
-      report << "violation type: " << category->getName() << std::endl;
-      report << "\tsrcs:";
-      for (dbObject* src : marker->getSources()) {
-        switch (src->getObjectType()) {
-          case dbNetObj:
-            report << " net:" << static_cast<dbNet*>(src)->getName();
-            break;
-          case dbInstObj:
-            report << " inst:" << static_cast<dbInst*>(src)->getName();
-            break;
-          case dbITermObj:
-            report << " iterm:" << static_cast<dbITerm*>(src)->getName();
-            break;
-          case dbBTermObj:
-            report << " bterm:" << static_cast<dbBTerm*>(src)->getName();
-            break;
-          case dbObstructionObj:
-            report << " obstruction: ";
-            break;
-          default:
-            top_category->getLogger()->error(utl::ODB,
-                                             273,
-                                             "Unsupported object type: {}",
-                                             src->getTypeName());
-        }
-      }
-      report << std::endl;
-
-      if (!marker->getComment().empty()) {
-        report << "\tcomment: " << marker->getComment() << std::endl;
-      }
-
-      const Rect bbox = marker->getBBox();
-      report << "\tbbox = (";
-      report << fmt::format("{:.4f}", bbox.xMin() / dbus) << ", ";
-      report << fmt::format("{:.4f}", bbox.yMin() / dbus) << ") - (";
-      report << fmt::format("{:.4f}", bbox.xMax() / dbus) << ", ";
-      report << fmt::format("{:.4f}", bbox.yMax() / dbus) << ") on Layer ";
-      if (marker->getTechLayer() != nullptr) {
-        report << marker->getTechLayer()->getName();
-      } else {
-        report << "-";
-      }
-      report << std::endl;
-    }
-  }
+  writeJSON(report);
 
   report.close();
 }
 
-dbMarkerCategory* dbMarkerCategory::create(dbMarkerCategory* category,
-                                           const char* name)
+void dbMarkerCategory::writeJSON(std::ofstream& report) const
 {
-  _dbMarkerCategory* parent = (_dbMarkerCategory*) category;
+  _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
+  _dbMarkerCategory::writeJSON(report, {obj});
+}
 
-  if (parent->categories_hash_.hasMember(name)) {
-    return nullptr;
+void dbMarkerCategory::writeTR(const std::string& path) const
+{
+  std::ofstream report(path);
+
+  if (!report) {
+    _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
+    utl::Logger* logger = obj->getLogger();
+
+    logger->error(utl::ODB, 269, "Unable to open {} to write markers", path);
   }
 
-  _dbMarkerCategory* _category = parent->categories_tbl_->create();
+  writeTR(report);
 
-  _category->_name = strdup(name);
-  ZALLOCATED(_category->_name);
+  report.close();
+}
 
-  parent->categories_hash_.insert(_category);
+void dbMarkerCategory::writeTR(std::ofstream& report) const
+{
+  _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
 
-  return (dbMarkerCategory*) category;
+  obj->writeTR(report);
 }
 
 void dbMarkerCategory::fromJSON(dbBlock* block, const std::string& path)
+{
+  std::ifstream report(path);
+  if (!report.is_open()) {
+    _dbBlock* _block = (_dbBlock*) block;
+    utl::Logger* logger = _block->getLogger();
+
+    logger->error(utl::ODB, 31, "Unable to open marker report: {}", path);
+  }
+
+  fromJSON(block, path.c_str(), report);
+
+  report.close();
+}
+
+void dbMarkerCategory::fromJSON(dbBlock* block,
+                                const char* source,
+                                std::ifstream& report)
 {
   _dbBlock* _block = (_dbBlock*) block;
   utl::Logger* logger = _block->getLogger();
 
   boost::property_tree::ptree tree;
   try {
-    boost::property_tree::json_parser::read_json(path, tree);
+    boost::property_tree::json_parser::read_json(report, tree);
   } catch (const boost::property_tree::json_parser_error& e1) {
-    logger->error(
-        utl::ODB, 238, "Unable to parse JSON file {}: {}", path, e1.what());
+    logger->error(utl::ODB, 238, "Unable to parse JSON file: {}", e1.what());
   }
 
   dbTech* tech = block->getTech();
@@ -603,7 +509,6 @@ void dbMarkerCategory::fromJSON(dbBlock* block, const std::string& path)
       dbMarkerCategory::destroy(marker_category);
     }
     marker_category = create(block, name.c_str());
-    marker_category->setSource(path);
 
     for (const auto& rule : subtree) {
       auto& drc_rule = rule.second;
@@ -613,10 +518,8 @@ void dbMarkerCategory::fromJSON(dbBlock* block, const std::string& path)
           = drc_rule.get<std::string>("description", "");
       auto violations_arr = drc_rule.get_child_optional("violations");
       if (!violations_arr) {
-        logger->error(utl::ODB,
-                      239,
-                      "Unable to find the violations key in JSON file {}",
-                      path);
+        logger->error(
+            utl::ODB, 239, "Unable to find the violations key in JSON file");
       }
 
       dbMarkerCategory* category
@@ -754,21 +657,30 @@ void dbMarkerCategory::fromTR(dbBlock* block,
                               const char* name,
                               const std::string& path)
 {
-  dbMarkerCategory* marker_category = block->findMarkerCategory(name);
-  if (marker_category != nullptr) {
-    dbMarkerCategory::destroy(marker_category);
-  }
-  marker_category = create(block, name);
-  marker_category->setSource(path);
-
-  _dbBlock* _block = (_dbBlock*) block;
-  utl::Logger* logger = _block->getLogger();
-
   std::ifstream report(path);
   if (!report.is_open()) {
+    _dbBlock* _block = (_dbBlock*) block;
+    utl::Logger* logger = _block->getLogger();
+
     logger->error(
         utl::ODB, 30, "Unable to open TritonRoute DRC report: {}", path);
   }
+
+  fromTR(block, name, path.c_str(), report);
+
+  report.close();
+}
+
+void dbMarkerCategory::fromTR(dbBlock* block,
+                              const char* name,
+                              const char* source,
+                              std::ifstream& report)
+{
+  dbMarkerCategory* marker_category = createOrReplace(block, name);
+  marker_category->setSource(source);
+
+  _dbBlock* _block = (_dbBlock*) block;
+  utl::Logger* logger = _block->getLogger();
 
   const std::regex violation_type("\\s*violation type: (.*)");
   const boost::regex srcs("\\s*srcs: (.*)");
@@ -991,8 +903,6 @@ void dbMarkerCategory::fromTR(dbBlock* block,
     comment += comment_information;
     marker->setComment(comment);
   }
-
-  report.close();
 }
 
 dbMarkerCategory* dbMarkerCategory::create(dbBlock* block, const char* name)
@@ -1013,7 +923,7 @@ dbMarkerCategory* dbMarkerCategory::create(dbBlock* block, const char* name)
   return (dbMarkerCategory*) _category;
 }
 
-dbMarkerCategory* dbMarkerCategory::createorReplace(dbBlock* block,
+dbMarkerCategory* dbMarkerCategory::createOrReplace(dbBlock* block,
                                                     const char* name)
 {
   _dbBlock* parent = (_dbBlock*) block;
@@ -1023,6 +933,37 @@ dbMarkerCategory* dbMarkerCategory::createorReplace(dbBlock* block,
   }
 
   return create(block, name);
+}
+
+dbMarkerCategory* dbMarkerCategory::create(dbMarkerCategory* category,
+                                           const char* name)
+{
+  _dbMarkerCategory* parent = (_dbMarkerCategory*) category;
+
+  if (parent->categories_hash_.hasMember(name)) {
+    return nullptr;
+  }
+
+  _dbMarkerCategory* _category = parent->categories_tbl_->create();
+
+  _category->_name = strdup(name);
+  ZALLOCATED(_category->_name);
+
+  parent->categories_hash_.insert(_category);
+
+  return (dbMarkerCategory*) _category;
+}
+
+dbMarkerCategory* dbMarkerCategory::createOrGet(dbMarkerCategory* category,
+                                                const char* name)
+{
+  _dbMarkerCategory* parent = (_dbMarkerCategory*) category;
+
+  if (parent->categories_hash_.hasMember(name)) {
+    return (dbMarkerCategory*) parent->categories_hash_.find(name);
+  }
+
+  return create(category, name);
 }
 
 void dbMarkerCategory::destroy(dbMarkerCategory* category)
