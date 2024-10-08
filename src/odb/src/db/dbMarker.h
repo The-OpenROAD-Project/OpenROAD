@@ -93,6 +93,7 @@ class _dbMarker : public _dbObject
   _dbBlock* getBlock() const;
 
   void populatePTree(_dbMarkerCategory::PropertyTree& tree) const;
+  void fromPTree(const _dbMarkerCategory::PropertyTree& tree);
   void writeTR(std::ofstream& report) const;
   // User Code End Methods
 

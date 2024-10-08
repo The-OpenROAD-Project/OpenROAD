@@ -78,6 +78,7 @@ class _dbMarkerCategory : public _dbObject
 
   _dbBlock* getBlock() const;
   void populatePTree(PropertyTree& tree) const;
+  void fromPTree(const PropertyTree& tree);
   static void writeJSON(std::ofstream& report,
                         const std::set<_dbMarkerCategory*>& categories);
   void writeTR(std::ofstream& report) const;

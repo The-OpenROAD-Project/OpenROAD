@@ -7993,9 +7993,12 @@ class dbMarkerCategory : public dbObject
 
   static dbMarkerCategory* create(dbBlock* block, const char* name);
   static dbMarkerCategory* createOrReplace(dbBlock* block, const char* name);
+  static dbMarkerCategory* createOrGet(dbBlock* block, const char* name);
   static dbMarkerCategory* create(dbMarkerCategory* category, const char* name);
   static dbMarkerCategory* createOrGet(dbMarkerCategory* category,
                                        const char* name);
+  static dbMarkerCategory* createOrReplace(dbMarkerCategory* category,
+                                           const char* name);
   static void destroy(dbMarkerCategory* category);
 
   // User Code End dbMarkerCategory

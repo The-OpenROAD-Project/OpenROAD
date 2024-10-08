@@ -223,15 +223,19 @@ void _dbMarkerCategory::populatePTree(
 
   _dbMarkerCategory::PropertyTree category_tree;
 
-  category_tree.put("name", category->getName());
   category_tree.put("description", category->getDescription());
+  category_tree.put("source", category->getSource());
   if (hasMaxMarkerLimit()) {
     category_tree.put("max_markers", category->getMaxMarkers());
   }
 
+  _dbMarkerCategory::PropertyTree subcategory_tree;
   for (dbMarkerCategory* category : category->getMarkerCategorys()) {
     _dbMarkerCategory* category_ = (_dbMarkerCategory*) category;
-    category_->populatePTree(category_tree);
+    category_->populatePTree(subcategory_tree);
+  }
+  if (!category->getMarkerCategorys().empty()) {
+    category_tree.add_child("category", subcategory_tree);
   }
 
   _dbMarkerCategory::PropertyTree violations_tree;
@@ -239,10 +243,41 @@ void _dbMarkerCategory::populatePTree(
     _dbMarker* marker_ = (_dbMarker*) marker;
     marker_->populatePTree(violations_tree);
   }
+  if (!category->getMarkers().empty()) {
+    category_tree.add_child("violations", violations_tree);
+  }
 
-  category_tree.add_child("violations", violations_tree);
+  tree.add_child(category->getName(), category_tree);
+}
 
-  tree.add_child(_name, category_tree);
+void _dbMarkerCategory::fromPTree(const PropertyTree& tree)
+{
+  description_ = tree.get<std::string>("description", "");
+  source_ = tree.get<std::string>("source", "");
+  max_markers_ = tree.get<int>("max_markers", 0);
+
+  auto child_category = tree.get_child_optional("category");
+  if (child_category) {
+    for (const auto& [name, subtree] : child_category.value()) {
+      dbMarkerCategory* category = dbMarkerCategory::createOrReplace((dbMarkerCategory*) this, name.c_str());
+      _dbMarkerCategory* category_ = (_dbMarkerCategory*) category;
+
+      category_->fromPTree(subtree);
+    }
+  }
+
+  auto child_violations = tree.get_child_optional("violations");
+  if (child_violations) {
+    for (const auto& [name, subtree] : child_violations.value()) {
+      dbMarker* marker = dbMarker::create((dbMarkerCategory*) this);
+      if (marker == nullptr) {
+        continue;
+      }
+
+      _dbMarker* marker_ = (_dbMarker*) marker;
+      marker_->fromPTree(subtree);
+    }
+  }
 }
 
 void _dbMarkerCategory::writeJSON(
@@ -499,164 +534,18 @@ void dbMarkerCategory::fromJSON(dbBlock* block,
   _dbBlock* _block = (_dbBlock*) block;
   utl::Logger* logger = _block->getLogger();
 
-  boost::property_tree::ptree tree;
+  _dbMarkerCategory::PropertyTree tree;
   try {
     boost::property_tree::json_parser::read_json(report, tree);
   } catch (const boost::property_tree::json_parser_error& e1) {
     logger->error(utl::ODB, 238, "Unable to parse JSON file: {}", e1.what());
   }
 
-  dbTech* tech = block->getTech();
-  const int dbUnits = block->getDbUnitsPerMicron();
-
-  // check if DRC key exists
   for (const auto& [name, subtree] : tree) {
-    dbMarkerCategory* marker_category = block->findMarkerCategory(name.c_str());
-    if (marker_category != nullptr) {
-      dbMarkerCategory::destroy(marker_category);
-    }
-    marker_category = create(block, name.c_str());
+    dbMarkerCategory* top_category = dbMarkerCategory::createOrReplace(block, name.c_str());
+    _dbMarkerCategory* top_category_ = (_dbMarkerCategory*) top_category;
 
-    for (const auto& rule : subtree) {
-      auto& drc_rule = rule.second;
-
-      const std::string violation_type = drc_rule.get<std::string>("name", "");
-      const std::string violation_text
-          = drc_rule.get<std::string>("description", "");
-      auto violations_arr = drc_rule.get_child_optional("violations");
-      if (!violations_arr) {
-        logger->error(
-            utl::ODB, 239, "Unable to find the violations key in JSON file");
-      }
-
-      dbMarkerCategory* category
-          = marker_category->findMarkerCategory(violation_type.c_str());
-      if (category == nullptr) {
-        category
-            = dbMarkerCategory::create(marker_category, violation_type.c_str());
-      }
-      category->setDescription(violation_text);
-
-      for (const auto& [_, violation] : violations_arr.value()) {
-        dbMarker* marker = dbMarker::create(category);
-
-        std::string layer_str = violation.get<std::string>("layer", "-");
-        const std::string shape_type = violation.get<std::string>("type", "-");
-        odb::dbTechLayer* layer = nullptr;
-        if (!layer_str.empty()) {
-          layer = tech->findLayer(layer_str.c_str());
-          if (layer == nullptr && layer_str != "-") {
-            logger->warn(
-                utl::ODB, 255, "Unable to find tech layer: {}", layer_str);
-          }
-        }
-        marker->setTechLayer(layer);
-
-        auto comment = violation.get_optional<std::string>("comment");
-        if (comment) {
-          marker->setComment(comment.value());
-        }
-
-        std::vector<odb::Point> shape_points;
-        auto shape = violation.get_child_optional("shape");
-        if (shape) {
-          for (const auto& [_, pt] : shape.value()) {
-            double x = pt.get<double>("x", 0.0);
-            double y = pt.get<double>("y", 0.0);
-            shape_points.emplace_back(x * dbUnits, y * dbUnits);
-          }
-        } else {
-          logger->warn(utl::ODB, 256, "Unable to find shape of violation");
-        }
-
-        if (shape_type == "point") {
-          marker->addShape(shape_points[0]);
-        } else if (shape_type == "box") {
-          marker->addShape(Rect(shape_points[0], shape_points[1]));
-        } else if (shape_type == "edge") {
-          marker->addShape(Line(shape_points[0], shape_points[1]));
-        } else if (shape_type == "edge_pair") {
-          marker->addShape(Line(shape_points[0], shape_points[1]));
-          marker->addShape(Line(shape_points[2], shape_points[3]));
-        } else if (shape_type == "polygon") {
-          marker->addShape(shape_points);
-        } else {
-          logger->error(
-              utl::ODB, 266, "Unable to parse violation shape: {}", shape_type);
-        }
-
-        auto sources_arr = violation.get_child_optional("sources");
-        if (sources_arr) {
-          for (const auto& [_, src] : sources_arr.value()) {
-            std::string src_type = src.get<std::string>("type", "-");
-            std::string src_name = src.get<std::string>("name", "-");
-
-            bool src_found = false;
-            if (src_type == "net") {
-              odb::dbNet* net = block->findNet(src_name.c_str());
-              if (net != nullptr) {
-                marker->addSource(net);
-                src_found = true;
-              } else {
-                logger->warn(utl::ODB, 257, "Unable to find net: {}", src_name);
-              }
-            } else if (src_type == "inst") {
-              odb::dbInst* inst = block->findInst(src_name.c_str());
-              if (inst != nullptr) {
-                marker->addSource(inst);
-                src_found = true;
-              } else {
-                logger->warn(
-                    utl::ODB, 258, "Unable to find instance: {}", src_name);
-              }
-            } else if (src_type == "iterm") {
-              odb::dbITerm* iterm = block->findITerm(src_name.c_str());
-              if (iterm != nullptr) {
-                marker->addSource(iterm);
-                src_found = true;
-              } else {
-                logger->warn(
-                    utl::ODB, 259, "Unable to find iterm: {}", src_name);
-              }
-            } else if (src_type == "bterm") {
-              odb::dbBTerm* bterm = block->findBTerm(src_name.c_str());
-              if (bterm != nullptr) {
-                marker->addSource(bterm);
-                src_found = true;
-              } else {
-                logger->warn(
-                    utl::ODB, 262, "Unable to find bterm: {}", src_name);
-              }
-            } else if (src_type == "obstruction") {
-              if (layer != nullptr) {
-                bool found = false;
-                for (const auto obs : block->getObstructions()) {
-                  auto obs_bbox = obs->getBBox();
-                  if (obs_bbox->getTechLayer() == layer) {
-                    odb::Rect obs_rect = obs_bbox->getBox();
-                    if (obs_rect.intersects(marker->getBBox())) {
-                      marker->addSource(obs);
-                      src_found = true;
-                      found = true;
-                    }
-                  }
-                }
-                if (!found) {
-                  logger->warn(utl::ODB, 263, "Unable to find obstruction");
-                }
-              }
-            } else {
-              logger->warn(utl::ODB, 264, "Unknown source type: {}", src_type);
-            }
-
-            if (!src_found && !src_name.empty()) {
-              logger->warn(
-                  utl::ODB, 265, "Failed to add source item: {}", src_name);
-            }
-          }
-        }
-      }
-    }
+    top_category_->fromPTree(subtree);
   }
 }
 
@@ -803,13 +692,13 @@ void dbMarkerCategory::fromTR(dbBlock* block,
     std::string single_source;
     std::string comment;
 
-    dbMarkerCategory* category
-        = marker_category->findMarkerCategory(type.c_str());
-    if (category == nullptr) {
-      category = dbMarkerCategory::create(marker_category, type.c_str());
-    }
+    dbMarkerCategory* category = odb::dbMarkerCategory::createOrGet(marker_category, type.c_str());
 
     dbMarker* marker = dbMarker::create(category);
+    if (marker == nullptr) {
+      continue;
+    }
+
     marker->setTechLayer(layer);
     marker->setLineNumber(violation_line_number);
     marker->addShape(rect);
@@ -952,6 +841,18 @@ dbMarkerCategory* dbMarkerCategory::create(dbBlock* block, const char* name)
   return (dbMarkerCategory*) _category;
 }
 
+dbMarkerCategory* dbMarkerCategory::createOrGet(dbBlock* block,
+                                                const char* name)
+{
+  _dbBlock* parent = (_dbBlock*) block;
+
+  if (parent->_marker_category_hash.hasMember(name)) {
+    return (dbMarkerCategory*) parent->_marker_category_hash.find(name);
+  }
+
+  return create(block, name);
+}
+
 dbMarkerCategory* dbMarkerCategory::createOrReplace(dbBlock* block,
                                                     const char* name)
 {
@@ -997,6 +898,18 @@ dbMarkerCategory* dbMarkerCategory::createOrGet(dbMarkerCategory* category,
 
   if (parent->categories_hash_.hasMember(name)) {
     return (dbMarkerCategory*) parent->categories_hash_.find(name);
+  }
+
+  return create(category, name);
+}
+
+dbMarkerCategory* dbMarkerCategory::createOrReplace(dbMarkerCategory* category,
+                                                    const char* name)
+{
+  _dbMarkerCategory* parent = (_dbMarkerCategory*) category;
+
+  if (parent->categories_hash_.hasMember(name)) {
+    destroy((dbMarkerCategory*) parent->categories_hash_.find(name));
   }
 
   return create(category, name);

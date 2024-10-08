@@ -343,10 +343,6 @@ void _dbMarker::populatePTree(_dbMarkerCategory::PropertyTree& tree) const
     marker_tree.put("line_number", marker->getLineNumber());
   }
 
-  if (!marker->getComment().empty()) {
-    marker_tree.put("comment", marker->getComment());
-  }
-
   dbTechLayer* layer = marker->getTechLayer();
   if (layer != nullptr) {
     marker_tree.put("layer", layer->getName());
@@ -355,27 +351,30 @@ void _dbMarker::populatePTree(_dbMarkerCategory::PropertyTree& tree) const
   _dbMarkerCategory::PropertyTree shapes_tree;
   for (const dbMarker::MarkerShape& shape : marker->getShapes()) {
     _dbMarkerCategory::PropertyTree shape_tree;
+    _dbMarkerCategory::PropertyTree point_tree;
 
     if (std::holds_alternative<Point>(shape)) {
       shape_tree.put("type", "point");
-      add_point(shape_tree, std::get<Point>(shape));
+      add_point(point_tree, std::get<Point>(shape));
     } else if (std::holds_alternative<Line>(shape)) {
       shape_tree.put("type", "line");
       for (const Point& pt : std::get<Line>(shape).getPoints()) {
-        add_point(shape_tree, pt);
+        add_point(point_tree, pt);
       }
     } else if (std::holds_alternative<Rect>(shape)) {
       shape_tree.put("type", "box");
       const Rect rect = std::get<Rect>(shape);
       for (const Point& pt : {rect.ll(), rect.ur()}) {
-        add_point(shape_tree, pt);
+        add_point(point_tree, pt);
       }
     } else {
       shape_tree.put("type", "polygon");
       for (const Point& pt : std::get<Polygon>(shape).getPoints()) {
-        add_point(shape_tree, pt);
+        add_point(point_tree, pt);
       }
     }
+
+    shape_tree.add_child("points", point_tree);
 
     shapes_tree.push_back(
         _dbMarkerCategory::PropertyTree::value_type("", shape_tree));
@@ -419,6 +418,126 @@ void _dbMarker::populatePTree(_dbMarkerCategory::PropertyTree& tree) const
   marker_tree.add_child("sources", sources_tree);
 
   tree.push_back(_dbMarkerCategory::PropertyTree::value_type("", marker_tree));
+}
+
+void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
+{
+  dbBlock* block = (dbBlock*) getBlock();
+  const int dbus = block->getDbUnitsPerMicron();
+
+  const auto comment = tree.get_optional<std::string>("comment");
+  if (comment) {
+    comment_ = comment.value();
+  }
+
+  flags_.visited_ = tree.get<bool>("visited");
+  flags_.visible_ = tree.get<bool>("visible");
+
+  const auto line_number = tree.get_optional<int>("line_number");
+  if (line_number) {
+    line_number_ = line_number.value();
+  }
+
+  const auto layer_name = tree.get_optional<std::string>("layer");
+  dbTechLayer* layer = nullptr;
+  if (layer_name) {
+    dbTech* tech = block->getTech();
+    layer = tech->findLayer(layer_name.value().c_str());
+    if (layer == nullptr) {
+      getLogger()->warn(utl::ODB, 255, "Unable to find tech layer: {}", layer_name.value());
+    } else {
+      layer_ = layer->getId();
+    }
+  }
+
+  for (const auto& [ignore, shape] : tree.get_child("shape")) {
+    const std::string shape_type = shape.get<std::string>("type");
+    std::vector<Point> pts;
+    for (const auto& [ignore1, pt] : shape.get_child("points")) {
+      pts.emplace_back(dbus * pt.get<double>("x"), dbus * pt.get<double>("y"));
+    }
+
+    if (shape_type == "point") {
+      shapes_.emplace_back(pts[0]);
+    } else if (shape_type == "line") {
+      shapes_.emplace_back(Line(pts[0], pts[1]));
+    } else if (shape_type == "box") {
+      shapes_.emplace_back(Rect(pts[0], pts[1]));
+    } else if (shape_type == "box") {
+      shapes_.emplace_back(Polygon(pts));
+    } else {
+      getLogger()->warn(utl::ODB, 256, "Unable to find shape of violation: {}", shape_type);
+    }
+  }
+
+  dbMarker* marker = (dbMarker*) this;
+  const Rect bbox = marker->getBBox();
+
+  for (const auto& [ignore, source] : tree.get_child("sources")) {
+    const std::string src_type = source.get<std::string>("type");
+    const auto src_name = source.get_optional<std::string>("name");
+
+    bool src_found = false;
+    if (src_type == "net") {
+      odb::dbNet* net = block->findNet(src_name.value().c_str());
+      if (net != nullptr) {
+        marker->addSource(net);
+        src_found = true;
+      } else {
+        getLogger()->warn(utl::ODB, 257, "Unable to find net: {}", src_name.value());
+      }
+    } else if (src_type == "inst") {
+      odb::dbInst* inst = block->findInst(src_name.value().c_str());
+      if (inst != nullptr) {
+        marker->addSource(inst);
+        src_found = true;
+      } else {
+        getLogger()->warn(
+            utl::ODB, 258, "Unable to find instance: {}", src_name.value());
+      }
+    } else if (src_type == "iterm") {
+      odb::dbITerm* iterm = block->findITerm(src_name.value().c_str());
+      if (iterm != nullptr) {
+        marker->addSource(iterm);
+        src_found = true;
+      } else {
+        getLogger()->warn(
+            utl::ODB, 259, "Unable to find iterm: {}", src_name.value());
+      }
+    } else if (src_type == "bterm") {
+      odb::dbBTerm* bterm = block->findBTerm(src_name.value().c_str());
+      if (bterm != nullptr) {
+        marker->addSource(bterm);
+        src_found = true;
+      } else {
+        getLogger()->warn(
+            utl::ODB, 262, "Unable to find bterm: {}", src_name);
+      }
+    } else if (src_type == "obstruction") {
+      bool found = false;
+      for (const auto obs : block->getObstructions()) {
+        auto obs_bbox = obs->getBBox();
+        if (obs_bbox->getTechLayer() == layer) {
+          odb::Rect obs_rect = obs_bbox->getBox();
+          if (obs_rect.intersects(bbox)) {
+            marker->addSource(obs);
+            src_found = true;
+            found = true;
+          }
+        }
+      }
+      if (!found) {
+        getLogger()->warn(utl::ODB, 263, "Unable to find obstruction");
+      }
+    } else {
+      getLogger()->warn(utl::ODB, 264, "Unknown source type: {}", src_type);
+    }
+
+    if (!src_found && !src_name) {
+      getLogger()->warn(
+          utl::ODB, 265, "Failed to add source item: {}", src_name.value());
+    }
+  }
 }
 
 // User Code End PrivateMethods
