@@ -33,6 +33,9 @@
 // Generator Code Begin Cpp
 #include "dbMarker.h"
 
+#include <cstdint>
+#include <cstring>
+
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
@@ -40,7 +43,6 @@
 #include "dbITerm.h"
 #include "dbInst.h"
 #include "dbMarkerCategory.h"
-#include "dbMarkerGroup.h"
 #include "dbNet.h"
 #include "dbObstruction.h"
 #include "dbTable.h"
@@ -54,19 +56,22 @@ template class dbTable<_dbMarker>;
 
 bool _dbMarker::operator==(const _dbMarker& rhs) const
 {
-  if (_parent != rhs._parent) {
+  if (flags_.visited_ != rhs.flags_.visited_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (flags_.visible_ != rhs.flags_.visible_) {
     return false;
   }
-  if (_layer != rhs._layer) {
+  if (parent_ != rhs.parent_) {
     return false;
   }
-  if (_comment != rhs._comment) {
+  if (layer_ != rhs.layer_) {
     return false;
   }
-  if (_line_number != rhs._line_number) {
+  if (comment_ != rhs.comment_) {
+    return false;
+  }
+  if (line_number_ != rhs.line_number_) {
     return false;
   }
 
@@ -80,6 +85,14 @@ bool _dbMarker::operator==(const _dbMarker& rhs) const
 
 bool _dbMarker::operator<(const _dbMarker& rhs) const
 {
+  // User Code Begin <
+  if (sources_ >= rhs.sources_) {
+    return false;
+  }
+  if (shapes_ >= rhs.shapes_) {
+    return false;
+  }
+  // User Code End <
   return true;
 }
 
@@ -88,38 +101,49 @@ void _dbMarker::differences(dbDiff& diff,
                             const _dbMarker& rhs) const
 {
   DIFF_BEGIN
-  DIFF_FIELD(_parent);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_layer);
-  DIFF_FIELD(_comment);
-  DIFF_FIELD(_line_number);
+  DIFF_FIELD(flags_.visited_);
+  DIFF_FIELD(flags_.visible_);
+  DIFF_FIELD(parent_);
+  DIFF_FIELD(layer_);
+  DIFF_FIELD(comment_);
+  DIFF_FIELD(line_number_);
+  // User Code Begin Differences
+  // DIFF_FIELD(sources_);
+  // User Code End Differences
   DIFF_END
 }
 
 void _dbMarker::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_parent);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_layer);
-  DIFF_OUT_FIELD(_comment);
-  DIFF_OUT_FIELD(_line_number);
+  DIFF_OUT_FIELD(flags_.visited_);
+  DIFF_OUT_FIELD(flags_.visible_);
+  DIFF_OUT_FIELD(parent_);
+  DIFF_OUT_FIELD(layer_);
+  DIFF_OUT_FIELD(comment_);
+  DIFF_OUT_FIELD(line_number_);
 
+  // User Code Begin Out
+  // DIFF_FIELD(sources_);
+  // User Code End Out
   DIFF_END
 }
 
 _dbMarker::_dbMarker(_dbDatabase* db)
 {
-  _line_number = -1;
+  flags_ = {};
+  line_number_ = -1;
 }
 
 _dbMarker::_dbMarker(_dbDatabase* db, const _dbMarker& r)
 {
-  _parent = r._parent;
-  _next_entry = r._next_entry;
-  _layer = r._layer;
-  _comment = r._comment;
-  _line_number = r._line_number;
+  flags_.visited_ = r.flags_.visited_;
+  flags_.visible_ = r.flags_.visible_;
+  flags_.spare_bits_ = r.flags_.spare_bits_;
+  parent_ = r.parent_;
+  layer_ = r.layer_;
+  comment_ = r.comment_;
+  line_number_ = r.line_number_;
   // User Code Begin CopyConstructor
   shapes_ = r.shapes_;
   // User Code End CopyConstructor
@@ -127,21 +151,30 @@ _dbMarker::_dbMarker(_dbDatabase* db, const _dbMarker& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbMarker& obj)
 {
-  stream >> obj._parent;
-  stream >> obj._next_entry;
-  stream >> obj._layer;
-  stream >> obj._member_insts;
-  stream >> obj._member_nets;
-  stream >> obj._member_obstructions;
-  stream >> obj._member_iterms;
-  stream >> obj._member_bterms;
-  stream >> obj._comment;
-  stream >> obj._line_number;
+  uint32_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
+  stream >> obj.parent_;
+  stream >> obj.layer_;
+  stream >> obj.comment_;
+  stream >> obj.line_number_;
   // User Code Begin >>
   // handle shapes
-  std::size_t shapes;
-  stream >> shapes;
-  for (std::size_t i = 0; i < shapes; i++) {
+  std::size_t item_count;
+  stream >> item_count;
+  for (std::size_t i = 0; i < item_count; i++) {
+    std::string db_type;
+    stream >> db_type;
+    uint db_id;
+    stream >> db_id;
+
+    obj.sources_.emplace_back(
+        dbObject::getType(db_type.c_str(), obj.getLogger()), db_id);
+  }
+
+  stream >> item_count;
+  for (std::size_t i = 0; i < item_count; i++) {
     int type;
     stream >> type;
 
@@ -178,17 +211,22 @@ dbIStream& operator>>(dbIStream& stream, _dbMarker& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbMarker& obj)
 {
-  stream << obj._parent;
-  stream << obj._next_entry;
-  stream << obj._layer;
-  stream << obj._member_insts;
-  stream << obj._member_nets;
-  stream << obj._member_obstructions;
-  stream << obj._member_iterms;
-  stream << obj._member_bterms;
-  stream << obj._comment;
-  stream << obj._line_number;
+  uint32_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
+  stream << obj.parent_;
+  stream << obj.layer_;
+  stream << obj.comment_;
+  stream << obj.line_number_;
   // User Code Begin <<
+  // handle sources
+  stream << obj.sources_.size();
+  for (const auto& [db_type, dbid] : obj.sources_) {
+    stream << std::string(dbObject::getTypeName(db_type));
+    stream << dbid;
+  }
+
   // handle shapes
   stream << obj.shapes_.size();
   for (const dbMarker::MarkerShape& shape : obj.shapes_) {
@@ -215,8 +253,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbMarker& obj)
 _dbBlock* _dbMarker::getBlock() const
 {
   dbMarker* marker = (dbMarker*) this;
-  _dbMarkerGroup* group = (_dbMarkerGroup*) marker->getGroup();
-  return (_dbBlock*) group->getOwner();
+  _dbMarkerCategory* category = (_dbMarkerCategory*) marker->getCategory();
+  return category->getBlock();
 }
 
 // User Code End PrivateMethods
@@ -231,34 +269,57 @@ void dbMarker::setComment(const std::string& comment)
 {
   _dbMarker* obj = (_dbMarker*) this;
 
-  obj->_comment = comment;
+  obj->comment_ = comment;
 }
 
 std::string dbMarker::getComment() const
 {
   _dbMarker* obj = (_dbMarker*) this;
-  return obj->_comment;
+  return obj->comment_;
 }
 
 void dbMarker::setLineNumber(int line_number)
 {
   _dbMarker* obj = (_dbMarker*) this;
 
-  obj->_line_number = line_number;
+  obj->line_number_ = line_number;
 }
 
 int dbMarker::getLineNumber() const
 {
   _dbMarker* obj = (_dbMarker*) this;
-  return obj->_line_number;
+  return obj->line_number_;
+}
+
+void dbMarker::setVisited(bool visited)
+{
+  _dbMarker* obj = (_dbMarker*) this;
+
+  obj->flags_.visited_ = visited;
+}
+
+bool dbMarker::isVisited() const
+{
+  _dbMarker* obj = (_dbMarker*) this;
+
+  return obj->flags_.visited_;
+}
+
+void dbMarker::setVisible(bool visible)
+{
+  _dbMarker* obj = (_dbMarker*) this;
+
+  obj->flags_.visible_ = visible;
+}
+
+bool dbMarker::isVisible() const
+{
+  _dbMarker* obj = (_dbMarker*) this;
+
+  return obj->flags_.visible_;
 }
 
 // User Code Begin dbMarkerPublicMethods
-
-dbMarkerGroup* dbMarker::getGroup() const
-{
-  return getCategory()->getGroup();
-}
 
 dbMarkerCategory* dbMarker::getCategory() const
 {
@@ -300,73 +361,32 @@ void dbMarker::setTechLayer(dbTechLayer* layer)
 {
   _dbMarker* marker = (_dbMarker*) this;
   if (layer == nullptr) {
-    marker->_layer = 0;
+    marker->layer_ = 0;
   } else {
     _dbTechLayer* _layer = (_dbTechLayer*) layer;
-    marker->_layer = _layer->getId();
+    marker->layer_ = _layer->getId();
   }
 }
 
-void dbMarker::addNet(dbNet* net)
+void dbMarker::addSource(dbObject* obj)
 {
-  if (net == nullptr) {
+  if (obj == nullptr) {
     return;
   }
   _dbMarker* marker = (_dbMarker*) this;
-  _dbNet* _net = (_dbNet*) net;
-  marker->_member_nets.push_back(_net->getId());
-}
-
-void dbMarker::addInst(dbInst* inst)
-{
-  if (inst == nullptr) {
-    return;
-  }
-  _dbMarker* marker = (_dbMarker*) this;
-  _dbInst* _inst = (_dbInst*) inst;
-  marker->_member_insts.push_back(_inst->getId());
-}
-
-void dbMarker::addITerm(dbITerm* iterm)
-{
-  if (iterm == nullptr) {
-    return;
-  }
-  _dbMarker* marker = (_dbMarker*) this;
-  _dbITerm* _iterm = (_dbITerm*) iterm;
-  marker->_member_iterms.push_back(_iterm->getId());
-}
-
-void dbMarker::addBTerm(dbBTerm* bterm)
-{
-  if (bterm == nullptr) {
-    return;
-  }
-  _dbMarker* marker = (_dbMarker*) this;
-  _dbBTerm* _bterm = (_dbBTerm*) bterm;
-  marker->_member_bterms.push_back(_bterm->getId());
-}
-
-void dbMarker::addObstruction(dbObstruction* obs)
-{
-  if (obs == nullptr) {
-    return;
-  }
-  _dbMarker* marker = (_dbMarker*) this;
-  _dbObstruction* _obs = (_dbObstruction*) obs;
-  marker->_member_obstructions.push_back(_obs->getId());
+  marker->sources_.emplace_back(obj->getObjectType(), obj->getId());
 }
 
 dbTechLayer* dbMarker::getTechLayer() const
 {
   _dbMarker* marker = (_dbMarker*) this;
-  if (marker->_layer == 0) {
+  if (marker->layer_ == 0) {
     return nullptr;
   }
 
   dbBlock* block = (dbBlock*) marker->getBlock();
   _dbTech* tech = (_dbTech*) block->getTech();
-  return (dbTechLayer*) tech->_layer_tbl->getPtr(marker->_layer);
+  return (dbTechLayer*) tech->_layer_tbl->getPtr(marker->layer_);
 }
 
 Rect dbMarker::getBBox() const
@@ -392,74 +412,19 @@ Rect dbMarker::getBBox() const
   return bbox;
 }
 
-std::set<dbNet*> dbMarker::getNets() const
+std::set<dbObject*> dbMarker::getSources() const
 {
   _dbMarker* marker = (_dbMarker*) this;
   _dbBlock* block = marker->getBlock();
 
-  std::set<dbNet*> nets;
-  for (dbId<_dbNet>& id : marker->_member_nets) {
-    if (block->_net_tbl->validId(id)) {
-      nets.insert((dbNet*) block->_net_tbl->getPtr(id));
+  std::set<dbObject*> objs;
+  for (const auto& [db_type, id] : marker->sources_) {
+    dbObjectTable* table = block->getObjectTable(db_type);
+    if (table != nullptr && table->validObject(id)) {
+      objs.insert(table->getObject(id));
     }
   }
-  return nets;
-}
-
-std::set<dbInst*> dbMarker::getInsts() const
-{
-  _dbMarker* marker = (_dbMarker*) this;
-  _dbBlock* block = marker->getBlock();
-
-  std::set<dbInst*> insts;
-  for (dbId<_dbInst>& id : marker->_member_insts) {
-    if (block->_inst_tbl->validId(id)) {
-      insts.insert((dbInst*) block->_inst_tbl->getPtr(id));
-    }
-  }
-  return insts;
-}
-
-std::set<dbObstruction*> dbMarker::getObstructions() const
-{
-  _dbMarker* marker = (_dbMarker*) this;
-  _dbBlock* block = marker->getBlock();
-
-  std::set<dbObstruction*> obstructions;
-  for (dbId<_dbObstruction>& id : marker->_member_obstructions) {
-    if (block->_obstruction_tbl->validId(id)) {
-      obstructions.insert((dbObstruction*) block->_obstruction_tbl->getPtr(id));
-    }
-  }
-  return obstructions;
-}
-
-std::set<dbITerm*> dbMarker::getITerms() const
-{
-  _dbMarker* marker = (_dbMarker*) this;
-  _dbBlock* block = marker->getBlock();
-
-  std::set<dbITerm*> iterms;
-  for (dbId<_dbITerm>& id : marker->_member_iterms) {
-    if (block->_iterm_tbl->validId(id)) {
-      iterms.insert((dbITerm*) block->_iterm_tbl->getPtr(id));
-    }
-  }
-  return iterms;
-}
-
-std::set<dbBTerm*> dbMarker::getBTerms() const
-{
-  _dbMarker* marker = (_dbMarker*) this;
-  _dbBlock* block = marker->getBlock();
-
-  std::set<dbBTerm*> bterms;
-  for (dbId<_dbBTerm>& id : marker->_member_bterms) {
-    if (block->_bterm_tbl->validId(id)) {
-      bterms.insert((dbBTerm*) block->_bterm_tbl->getPtr(id));
-    }
-  }
-  return bterms;
+  return objs;
 }
 
 dbMarker* dbMarker::create(dbMarkerCategory* category)

@@ -11,7 +11,12 @@
     {
       "name":"description_",
       "type":"std::string"
+    },
+    {
+      "name":"source_",
+      "type":"std::string",
+      "flags":["no-get"]
     }
   ],
-  "cpp_includes":["dbBlock.h", "dbMarkerGroup.h"]
+  "cpp_includes":["dbBlock.h"]
 }

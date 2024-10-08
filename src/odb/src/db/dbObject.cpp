@@ -110,7 +110,6 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbLogicPort",
                                  "dbMarker",
                                  "dbMarkerCategory",
-                                 "dbMarkerGroup",
                                  "dbMetalWidthViaMap",
                                  "dbModBTerm",
                                  "dbModInst",
@@ -185,6 +184,23 @@ const char* dbObject::getTypeName() const
 const char* dbObject::getTypeName(dbObjectType type)
 {
   return name_tbl[type];
+}
+
+dbObjectType dbObject::getType(const char* name, utl::Logger* logger)
+{
+  std::size_t i = 0;
+  for (const char* type_name : name_tbl) {
+    if (strcmp(type_name, name) == 0) {
+      return (dbObjectType) i;
+    }
+
+    i++;
+  }
+
+  logger->error(utl::ODB, 267, "Unable to find {} object type", name);
+
+  // should not get here
+  return (dbObjectType) 0;
 }
 
 // We have to compare the id not only of this object but all its

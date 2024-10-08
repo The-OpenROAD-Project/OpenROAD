@@ -677,16 +677,6 @@ struct less<odb::dbMarkerCategory*>
 };
 
 template <>
-struct less<odb::dbMarkerGroup*>
-{
-  bool operator()(const odb::dbMarkerGroup* lhs,
-                  const odb::dbMarkerGroup* rhs) const
-  {
-    return odb::compare_by_id(lhs, rhs);
-  }
-};
-
-template <>
 struct less<odb::dbMetalWidthViaMap*>
 {
   bool operator()(const odb::dbMetalWidthViaMap* lhs,

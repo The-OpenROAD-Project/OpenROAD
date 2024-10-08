@@ -34,7 +34,12 @@
 #pragma once
 
 #include "dbCore.h"
+#include "dbHashTable.h"
 #include "odb/odb.h"
+// User Code Begin Includes
+#include <boost/property_tree/json_parser.hpp>
+#include <set>
+// User Code End Includes
 
 namespace odb {
 class dbIStream;
@@ -44,6 +49,7 @@ class _dbDatabase;
 class _dbMarker;
 template <class T>
 class dbTable;
+class _dbMarkerCategory;
 
 class _dbMarkerCategory : public _dbObject
 {
@@ -64,12 +70,25 @@ class _dbMarkerCategory : public _dbObject
                    const _dbMarkerCategory& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  // User Code Begin Methods
+  using PropertyTree = boost::property_tree::ptree;
+  bool isTopCategory() const;
+  ;
+  _dbBlock* getBlock() const;
+  void populatePTree(PropertyTree& tree) const;
+  static void writeJSON(const std::string& path,
+                        const std::set<_dbMarkerCategory*>& groups);
+  // User Code End Methods
 
   char* _name;
   std::string description_;
-  dbId<_dbMarkerCategory> _next_entry;
+  std::string source_;
 
   dbTable<_dbMarker>* marker_tbl_;
+
+  dbTable<_dbMarkerCategory>* categories_tbl_;
+  dbHashTable<_dbMarkerCategory> categories_hash_;
+  dbId<_dbMarkerCategory> _next_entry;
 };
 dbIStream& operator>>(dbIStream& stream, _dbMarkerCategory& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbMarkerCategory& obj);

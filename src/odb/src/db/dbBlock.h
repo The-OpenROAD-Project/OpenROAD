@@ -99,7 +99,7 @@ class _dbAccessPoint;
 class _dbGlobalConnect;
 class _dbGuide;
 class _dbNetTrack;
-class _dbMarkerGroup;
+class _dbMarkerCategory;
 class dbJournal;
 
 class dbNetBTermItr;
@@ -189,7 +189,7 @@ class _dbBlock : public _dbObject
   dbHashTable<_dbModITerm> _moditerm_hash;
   dbHashTable<_dbModNet> _modnet_hash;
   dbHashTable<_dbBusPort> _busport_hash;
-  dbHashTable<_dbMarkerGroup> _marker_group_hash;
+  dbHashTable<_dbMarkerCategory> _marker_category_hash;
 
   dbHashTable<_dbLevelShifter> _levelshifter_hash;
   dbHashTable<_dbGroup> _group_hash;
@@ -244,7 +244,7 @@ class _dbBlock : public _dbObject
   dbTable<_dbNetTrack>* _net_tracks_tbl;
   _dbNameCache* _name_cache;
   dbTable<_dbDft>* _dft_tbl;
-  dbTable<_dbMarkerGroup>* _marker_group_tbl;
+  dbTable<_dbMarkerCategory>* _marker_categories_tbl;
 
   dbPagedVector<float, 4096, 12>* _r_val_tbl;
   dbPagedVector<float, 4096, 12>* _c_val_tbl;

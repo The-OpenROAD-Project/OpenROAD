@@ -3,51 +3,31 @@
   "type":"dbObject",
   "fields":[
     {
-      "name":"_parent",
+      "name":"parent_",
       "type":"dbId<_dbMarkerCategory>",
       "flags":["no-set", "no-get"]
     },
     {
-      "name":"_next_entry",
-      "type":"dbId<_dbMarker>",
-      "flags":["no-set", "no-get"]
-    },
-    {
-      "name":"_layer",
+      "name":"layer_",
       "type":"dbId<_dbTechLayer>",
       "flags":["no-set", "no-get"]
     },
     {
-      "name":"_member_insts",
-      "type":"dbVector<dbId<_dbInst>>",
-      "flags":["no-set", "no-get"]
+      "name":"visited_",
+      "type":"bool",
+      "bits":1
     },
     {
-      "name":"_member_nets",
-      "type":"dbVector<dbId<_dbNet>>",
-      "flags":["no-set", "no-get"]
+      "name":"visible_",
+      "type":"bool",
+      "bits":1
     },
     {
-      "name":"_member_obstructions",
-      "type":"dbVector<dbId<_dbObstruction>>",
-      "flags":["no-set", "no-get"]
-    },
-    {
-      "name":"_member_iterms",
-      "type":"dbVector<dbId<_dbITerm>>",
-      "flags":["no-set", "no-get"]
-    },
-    {
-      "name":"_member_bterms",
-      "type":"dbVector<dbId<_dbBTerm>>",
-      "flags":["no-set", "no-get"]
-    },
-    {
-      "name":"_comment",
+      "name":"comment_",
       "type":"std::string"
     },
     {
-      "name":"_line_number",
+      "name":"line_number_",
       "type":"int",
       "default": -1
     }
@@ -55,7 +35,6 @@
   "cpp_includes":[
     "dbVector.h",
     "dbMarkerCategory.h",
-    "dbMarkerGroup.h",
     "dbBlock.h",
     "dbTech.h",
     "dbTechLayer.h",

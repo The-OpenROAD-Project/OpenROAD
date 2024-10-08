@@ -49,20 +49,33 @@ class dbDiff;
 class _dbDatabase;
 class _dbMarkerCategory;
 class _dbTechLayer;
-class _dbInst;
-class _dbNet;
-class _dbObstruction;
-class _dbITerm;
-class _dbBTerm;
 // User Code Begin Classes
 class Line;
 class Rect;
 class Polygon;
 // User Code End Classes
 
+struct dbMarkerFlags
+{
+  bool visited_ : 1;
+  bool visible_ : 1;
+  uint spare_bits_ : 30;
+};
+
 class _dbMarker : public _dbObject
 {
  public:
+  // User Code Begin Enums
+  // Order of these enum must be preserved
+  enum class ShapeType
+  {
+    Point,
+    Line,
+    Rect,
+    Polygon
+  };
+  // User Code End Enums
+
   _dbMarker(_dbDatabase*, const _dbMarker& r);
   _dbMarker(_dbDatabase*);
 
@@ -77,18 +90,14 @@ class _dbMarker : public _dbObject
   _dbBlock* getBlock() const;
   // User Code End Methods
 
-  dbId<_dbMarkerCategory> _parent;
-  dbId<_dbMarker> _next_entry;
-  dbId<_dbTechLayer> _layer;
-  dbVector<dbId<_dbInst>> _member_insts;
-  dbVector<dbId<_dbNet>> _member_nets;
-  dbVector<dbId<_dbObstruction>> _member_obstructions;
-  dbVector<dbId<_dbITerm>> _member_iterms;
-  dbVector<dbId<_dbBTerm>> _member_bterms;
-  std::string _comment;
-  int _line_number;
+  dbMarkerFlags flags_;
+  dbId<_dbMarkerCategory> parent_;
+  dbId<_dbTechLayer> layer_;
+  std::string comment_;
+  int line_number_;
 
   // User Code Begin Fields
+  std::vector<std::pair<dbObjectType, uint>> sources_;
   std::vector<dbMarker::MarkerShape> shapes_;
   // User Code End Fields
 };
