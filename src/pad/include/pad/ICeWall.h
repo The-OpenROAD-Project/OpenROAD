@@ -119,7 +119,8 @@ class ICeWall
                 int width = 0,
                 int spacing = 0,
                 bool allow45 = false,
-                float turn_penalty = 2.0);
+                float turn_penalty = 2.0,
+                int max_iterations = 10);
   void routeRDLDebugGUI(bool enable);
 
   void connectByAbutment();

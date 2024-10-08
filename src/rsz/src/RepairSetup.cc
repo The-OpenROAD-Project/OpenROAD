@@ -490,7 +490,7 @@ bool RepairSetup::repairPath(PathRef& path,
     const int lib_ap = dcalc_ap->libertyIndex();
     // Find load delay for each gate in the path.
     for (int i = start_index; i < path_length; i++) {
-      PathRef* path = expanded.path(i);
+      const PathRef* path = expanded.path(i);
       Vertex* path_vertex = path->vertex(sta_);
       const Pin* path_pin = path->pin(sta_);
       if (i > 0 && network_->isDriver(path_pin)
@@ -523,7 +523,7 @@ bool RepairSetup::repairPath(PathRef& path,
         });
     // Attack gates with largest load delays first.
     for (const auto& [drvr_index, ignored] : load_delays) {
-      PathRef* drvr_path = expanded.path(drvr_index);
+      const PathRef* drvr_path = expanded.path(drvr_index);
       Vertex* drvr_vertex = drvr_path->vertex(sta_);
       const Pin* drvr_pin = drvr_vertex->pin();
       const Net* net = network_->net(drvr_pin);
@@ -621,7 +621,7 @@ void RepairSetup::debugCheckMultipleBuffers(PathRef& path,
     const int path_length = expanded->size();
     const int start_index = expanded->startIndex();
     for (int i = start_index; i < path_length; i++) {
-      PathRef* path = expanded->path(i);
+      const PathRef* path = expanded->path(i);
       const Pin* path_pin = path->pin(sta_);
       if (i > 0 && network_->isDriver(path_pin)
           && !network_->isTopLevelPort(path_pin)) {
@@ -636,7 +636,7 @@ void RepairSetup::debugCheckMultipleBuffers(PathRef& path,
   printf("done\n");
 }
 
-bool RepairSetup::swapPins(PathRef* drvr_path,
+bool RepairSetup::swapPins(const PathRef* drvr_path,
                            const int drvr_index,
                            PathExpanded* expanded)
 {
@@ -658,7 +658,7 @@ bool RepairSetup::swapPins(PathRef* drvr_path,
   // int lib_ap = dcalc_ap->libertyIndex(); : check cornerPort
   const float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
   const int in_index = drvr_index - 1;
-  PathRef* in_path = expanded->path(in_index);
+  const PathRef* in_path = expanded->path(in_index);
   Pin* in_pin = in_path->pin(sta_);
 
   if (!resizer_->dontTouch(drvr)) {
@@ -719,7 +719,7 @@ bool RepairSetup::swapPins(PathRef* drvr_path,
 // 2) it doesn't create new max fanout violations
 // 3) it doesn't create new max cap violations
 // 4) it doesn't worsen slack
-bool RepairSetup::removeDrvr(PathRef* drvr_path,
+bool RepairSetup::removeDrvr(const PathRef* drvr_path,
                              LibertyCell* drvr_cell,
                              const int drvr_index,
                              PathExpanded* expanded,
@@ -756,7 +756,7 @@ bool RepairSetup::removeDrvr(PathRef* drvr_path,
 
     // Don't remove buffer if new max fanout violations are created
     Vertex* drvr_vertex = drvr_path->vertex(sta_);
-    PathRef* prev_drvr_path = expanded->path(drvr_index - 2);
+    const PathRef* prev_drvr_path = expanded->path(drvr_index - 2);
     Vertex* prev_drvr_vertex = prev_drvr_path->vertex(sta_);
     Pin* prev_drvr_pin = prev_drvr_vertex->pin();
     float curr_fanout, max_fanout, fanout_slack;
@@ -829,7 +829,7 @@ bool RepairSetup::removeDrvr(PathRef* drvr_path,
       }
     }
 
-    PathRef* drvr_input_path = expanded->path(drvr_index - 1);
+    const PathRef* drvr_input_path = expanded->path(drvr_index - 1);
     Vertex* drvr_input_vertex = drvr_input_path->vertex(sta_);
     SlackEstimatorParams params(setup_slack_margin, corner);
     params.driver_pin = drvr_pin;
@@ -1047,7 +1047,7 @@ bool RepairSetup::estimateInputSlewImpact(
   return true;
 }
 
-bool RepairSetup::upsizeDrvr(PathRef* drvr_path,
+bool RepairSetup::upsizeDrvr(const PathRef* drvr_path,
                              const int drvr_index,
                              PathExpanded* expanded)
 {
@@ -1056,7 +1056,7 @@ bool RepairSetup::upsizeDrvr(PathRef* drvr_path,
   const DcalcAnalysisPt* dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
   const float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
   const int in_index = drvr_index - 1;
-  PathRef* in_path = expanded->path(in_index);
+  const PathRef* in_path = expanded->path(in_index);
   Pin* in_pin = in_path->pin(sta_);
   LibertyPort* in_port = network_->libertyPort(in_pin);
   if (!resizer_->dontTouch(drvr)
@@ -1065,7 +1065,7 @@ bool RepairSetup::upsizeDrvr(PathRef* drvr_path,
     float prev_drive;
     if (drvr_index >= 2) {
       const int prev_drvr_index = drvr_index - 2;
-      PathRef* prev_drvr_path = expanded->path(prev_drvr_index);
+      const PathRef* prev_drvr_path = expanded->path(prev_drvr_index);
       Pin* prev_drvr_pin = prev_drvr_path->pin(sta_);
       prev_drive = 0.0;
       LibertyPort* prev_drvr_port = network_->libertyPort(prev_drvr_pin);
@@ -1167,13 +1167,13 @@ Point RepairSetup::computeCloneGateLocation(
   return {centroid_x / count, centroid_y / count};
 }
 
-bool RepairSetup::cloneDriver(PathRef* drvr_path,
+bool RepairSetup::cloneDriver(const PathRef* drvr_path,
                               const int drvr_index,
                               const Slack drvr_slack,
                               PathExpanded* expanded)
 {
   Pin* drvr_pin = drvr_path->pin(this);
-  PathRef* load_path = expanded->path(drvr_index + 1);
+  const PathRef* load_path = expanded->path(drvr_index + 1);
   Vertex* load_vertex = load_path->vertex(sta_);
   Pin* load_pin = load_vertex->pin();
   // Divide and conquer.
@@ -1311,13 +1311,13 @@ bool RepairSetup::cloneDriver(PathRef* drvr_path,
   return true;
 }
 
-void RepairSetup::splitLoads(PathRef* drvr_path,
+void RepairSetup::splitLoads(const PathRef* drvr_path,
                              const int drvr_index,
                              const Slack drvr_slack,
                              PathExpanded* expanded)
 {
   Pin* drvr_pin = drvr_path->pin(this);
-  PathRef* load_path = expanded->path(drvr_index + 1);
+  const PathRef* load_path = expanded->path(drvr_index + 1);
   Vertex* load_vertex = load_path->vertex(sta_);
   Pin* load_pin = load_vertex->pin();
   // Divide and conquer.

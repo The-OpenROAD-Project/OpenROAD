@@ -800,6 +800,8 @@ int Inspector::getSelectedIteratorPosition()
 
 void Inspector::inspect(const Selected& object)
 {
+  QApplication::setOverrideCursor(Qt::WaitCursor);
+
   if (deselect_action_) {
     deselect_action_();
   }
@@ -830,6 +832,8 @@ void Inspector::inspect(const Selected& object)
   }
 
   adjustHeaders();
+
+  QApplication::restoreOverrideCursor();
 }
 
 void Inspector::reload()

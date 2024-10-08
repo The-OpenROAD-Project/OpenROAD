@@ -1625,7 +1625,7 @@ void TritonPart::BuildTimingPaths()
     expand.path(expand.size() - 1);
     for (size_t i = 0; i < expand.size(); i++) {
       // PathRef is reference to a path vertex
-      sta::PathRef* ref = expand.path(i);
+      const sta::PathRef* ref = expand.path(i);
       sta::Pin* pin = ref->vertex(sta_)->pin();
       // Nets connect pins at a level of the hierarchy
       auto net = network_->net(pin);  // sta::Net*

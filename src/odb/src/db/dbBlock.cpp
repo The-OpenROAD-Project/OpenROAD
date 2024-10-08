@@ -181,6 +181,10 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _maxCapNodeId = 0;
   _maxRSegId = 0;
   _maxCCSegId = 0;
+  _min_routing_layer = 1;
+  _max_routing_layer = -1;
+  _min_layer_for_clock = -1;
+  _max_layer_for_clock = -2;
 
   _currentCcAdjOrder = 0;
   _bterm_tbl = new dbTable<_dbBTerm>(
@@ -463,7 +467,11 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       _children(block._children),
       _component_mask_shift(block._component_mask_shift),
       _currentCcAdjOrder(block._currentCcAdjOrder),
-      _dft(block._dft)
+      _dft(block._dft),
+      _min_routing_layer(block._min_routing_layer),
+      _max_routing_layer(block._max_routing_layer),
+      _min_layer_for_clock(block._min_layer_for_clock),
+      _max_layer_for_clock(block._max_layer_for_clock)
 {
   if (block._name) {
     _name = strdup(block._name);
@@ -1041,6 +1049,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._extControl;
   stream << block._dft;
   stream << *block._dft_tbl;
+  if (block.getDatabase()->isSchema(db_schema_dbblock_layers_ranges)) {
+    stream << block._min_routing_layer;
+    stream << block._max_routing_layer;
+    stream << block._min_layer_for_clock;
+    stream << block._max_layer_for_clock;
+  }
 
   //---------------------------------------------------------- stream out
   // properties
@@ -1179,6 +1193,12 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   if (db->isSchema(db_schema_add_scan)) {
     stream >> block._dft;
     stream >> *block._dft_tbl;
+  }
+  if (db->isSchema(db_schema_dbblock_layers_ranges)) {
+    stream >> block._min_routing_layer;
+    stream >> block._max_routing_layer;
+    stream >> block._min_layer_for_clock;
+    stream >> block._max_layer_for_clock;
   }
 
   //---------------------------------------------------------- stream in
@@ -1644,6 +1664,10 @@ void _dbBlock::differences(dbDiff& diff,
   DIFF_NAME_CACHE(_name_cache);
   DIFF_FIELD(_dft);
   DIFF_TABLE(_dft_tbl);
+  DIFF_FIELD(_min_routing_layer);
+  DIFF_FIELD(_max_routing_layer);
+  DIFF_FIELD(_min_layer_for_clock);
+  DIFF_FIELD(_max_layer_for_clock);
 
   if (*_r_val_tbl != *rhs._r_val_tbl) {
     _r_val_tbl->differences(diff, "_r_val_tbl", *rhs._r_val_tbl);
@@ -1745,6 +1769,10 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_NAME_CACHE(_name_cache);
   DIFF_OUT_FIELD(_dft);
   DIFF_OUT_TABLE(_dft_tbl);
+  DIFF_OUT_FIELD(_min_routing_layer);
+  DIFF_OUT_FIELD(_max_routing_layer);
+  DIFF_OUT_FIELD(_min_layer_for_clock);
+  DIFF_OUT_FIELD(_max_layer_for_clock);
 
   _r_val_tbl->out(diff, side, "_r_val_tbl");
   _c_val_tbl->out(diff, side, "_c_val_tbl");
@@ -2501,6 +2529,54 @@ dbDft* dbBlock::getDft() const
 {
   _dbBlock* block = (_dbBlock*) this;
   return (dbDft*) block->_dft_tbl->getPtr(block->_dft);
+}
+
+int dbBlock::getMinRoutingLayer() const
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return block->_min_routing_layer;
+}
+
+void dbBlock::setMinRoutingLayer(const int min_routing_layer)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  block->_min_routing_layer = min_routing_layer;
+}
+
+int dbBlock::getMaxRoutingLayer() const
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return block->_max_routing_layer;
+}
+
+void dbBlock::setMaxRoutingLayer(const int max_routing_layer)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  block->_max_routing_layer = max_routing_layer;
+}
+
+int dbBlock::getMinLayerForClock() const
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return block->_min_layer_for_clock;
+}
+
+void dbBlock::setMinLayerForClock(const int min_layer_for_clock)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  block->_min_layer_for_clock = min_layer_for_clock;
+}
+
+int dbBlock::getMaxLayerForClock() const
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return block->_max_layer_for_clock;
+}
+
+void dbBlock::setMaxLayerForClock(const int max_layer_for_clock)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  block->_max_layer_for_clock = max_layer_for_clock;
 }
 
 void dbBlock::getExtCornerNames(std::list<std::string>& ecl)

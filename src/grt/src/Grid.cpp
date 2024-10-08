@@ -139,7 +139,9 @@ interval<int>::type Grid::computeTileReduceInterval(
     const odb::Rect& tile,
     int track_space,
     bool first,
-    odb::dbTechLayerDir direction)
+    const odb::dbTechLayerDir& direction,
+    const int layer_cap,
+    const bool is_macro)
 {
   int start_point, end_point;
   if (direction == odb::dbTechLayerDir::VERTICAL) {
@@ -163,6 +165,15 @@ interval<int>::type Grid::computeTileReduceInterval(
     } else {
       start_point = tile.yMin();
       end_point = obs.yMax();
+    }
+  }
+  int interval_length = std::abs(end_point - start_point);
+  if (is_macro) {
+    int blocked_tracks
+        = std::ceil(static_cast<float>(interval_length) / track_space);
+    const int resources_left = layer_cap - blocked_tracks;
+    if (resources_left == 1) {
+      end_point += track_space;
     }
   }
   interval<int>::type reduce_interval(start_point, end_point);

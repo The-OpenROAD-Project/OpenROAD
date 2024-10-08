@@ -44,19 +44,7 @@
 #include "../db/dbGDSStructure.h"
 #include "../db/dbGDSText.h"
 
-namespace odb {
-namespace gds {
-
-GDSWriter::GDSWriter() : _lib(nullptr)
-{
-}
-
-GDSWriter::~GDSWriter()
-{
-  if (_file.is_open()) {
-    _file.close();
-  }
-}
+namespace odb::gds {
 
 void GDSWriter::write_gds(dbGDSLib* lib, const std::string& filename)
 {
@@ -359,7 +347,6 @@ void GDSWriter::writeSRef(dbGDSSRef* sref)
   } else {
     r.type = RecordType::AREF;
   }
-  r.type = RecordType::SREF;
   r.dataType = DataType::NO_DATA;
   writeRecord(r);
 
@@ -497,6 +484,4 @@ void GDSWriter::writeTextPres(const dbGDSTextPres& pres)
   writeRecord(r);
 }
 
-}  // namespace gds
-
-}  // namespace odb
+}  // namespace odb::gds

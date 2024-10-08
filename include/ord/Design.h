@@ -172,6 +172,7 @@ class Design
   bool isInSupply(odb::dbITerm* pin);
   std::string getITermName(odb::dbITerm* pin);
   bool isInClock(odb::dbInst* inst);
+  bool isInClock(odb::dbITerm* iterm);
   std::uint64_t getNetRoutedLength(odb::dbNet* net);
 
   // Services
