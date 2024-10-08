@@ -291,7 +291,7 @@ void _dbMarker::writeTR(std::ofstream& report) const
         break;
       default:
         getLogger()->error(
-            utl::ODB, 273, "Unsupported object type: {}", src->getTypeName());
+            utl::ODB, 295, "Unsupported object type: {}", src->getTypeName());
     }
   }
   report << std::endl;
