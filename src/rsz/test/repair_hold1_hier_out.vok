@@ -9,7 +9,7 @@ module top (clk,
 
 
  CLKBUF_X1 hold2 (.A(u2z),
-    .Z(u2z));
+    .Z(net2));
  BUF_X1 i1 (.A(clk),
     .Z(i1z));
  BUF_X1 i2 (.A(i1z),
@@ -29,7 +29,7 @@ module top (clk,
  DFF_X1 r2 (.D(in2),
     .CK(i4z),
     .Q(r2q));
- DFF_X1 r3 (.D(u2z),
+ DFF_X1 r3 (.D(net2),
     .CK(i8z),
     .Q(out));
  BUF_X1 u1 (.A(r2q),
@@ -51,7 +51,7 @@ module hier1 (in1,
 
  CLKBUF_X1 hold1 (.A(r1q),
     .Z(op));
- DFF_X1 \h1/r1  (.D(in1),
+ DFF_X1 r1 (.D(in1),
     .CK(i1z),
     .Q(r1q));
 endmodule
