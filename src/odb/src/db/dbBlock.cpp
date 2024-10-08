@@ -4122,6 +4122,29 @@ void dbBlock::preExttreeMergeRC(double max_cap, uint corner)
   }
 }
 
+bool dbBlock::designIsRouted(bool verbose)
+{
+  bool design_is_routed = true;
+  for (dbNet* net : getNets()) {
+    const int pin_count = net->getBTermCount() + net->getITerms().size();
+
+    odb::uint wire_cnt = 0, via_cnt = 0;
+    net->getWireCount(wire_cnt, via_cnt);
+    bool has_wires = wire_cnt != 0 || via_cnt != 0;
+
+    if (pin_count > 1 && !has_wires && !net->isConnectedByAbutment()) {
+      if (verbose) {
+        getImpl()->getLogger()->warn(
+            utl::ODB, 232, "Net {} is not routed.", net->getName());
+        design_is_routed = false;
+      } else {
+        return false;
+      }
+    }
+  }
+  return design_is_routed;
+}
+
 int dbBlock::globalConnect()
 {
   dbSet<dbGlobalConnect> gcs = getGlobalConnects();
