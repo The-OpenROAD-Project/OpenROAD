@@ -16,5 +16,7 @@ jobs:
 
       - name: Lint
         run: |
+          tclfmt --version
           tclfmt --in-place .
+          git diff --exit-code
           tclint --no-check-style .
