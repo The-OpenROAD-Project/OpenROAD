@@ -72,10 +72,10 @@ class _dbMarker : public _dbObject
   // Order of these enum must be preserved
   enum class ShapeType
   {
-    Point,
-    Line,
-    Rect,
-    Polygon
+    Point = 0,
+    Line = 1,
+    Rect = 2,
+    Polygon = 3
   };
   // User Code End Enums
 
@@ -109,5 +109,9 @@ class _dbMarker : public _dbObject
 };
 dbIStream& operator>>(dbIStream& stream, _dbMarker& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbMarker& obj);
+// User Code Begin General
+dbIStream& operator>>(dbIStream& stream, _dbMarker::ShapeType& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbMarker::ShapeType& obj);
+// User Code End General
 }  // namespace odb
 // Generator Code End Header

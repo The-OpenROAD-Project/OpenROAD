@@ -905,6 +905,22 @@ void dbMarkerCategory::fromTR(dbBlock* block,
   }
 }
 
+std::set<dbMarker*> dbMarkerCategory::getAllMarkers() const
+{
+  std::set<dbMarker*> markers;
+
+  for (dbMarkerCategory* category : getMarkerCategorys()) {
+    const std::set<dbMarker*> category_markers = category->getAllMarkers();
+    markers.insert(category_markers.begin(), category_markers.end());
+  }
+
+  for (dbMarker* marker : getMarkers()) {
+    markers.insert(marker);
+  }
+
+  return markers;
+}
+
 dbMarkerCategory* dbMarkerCategory::create(dbBlock* block, const char* name)
 {
   _dbBlock* parent = (_dbBlock*) block;

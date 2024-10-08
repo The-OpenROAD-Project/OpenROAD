@@ -7798,6 +7798,8 @@ class dbMarkerCategory : public dbObject
   dbMarkerCategory* getTopCategory() const;
   std::string getSource() const;
 
+  std::set<dbMarker*> getAllMarkers() const;
+
   bool rename(const char* name);
 
   int getMarkerCount() const;

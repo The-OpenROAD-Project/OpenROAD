@@ -133,6 +133,9 @@ _dbMarker::_dbMarker(_dbDatabase* db)
 {
   flags_ = {};
   line_number_ = -1;
+  // User Code Begin Constructor
+  flags_.visible_ = true;
+  // User Code End Constructor
 }
 
 _dbMarker::_dbMarker(_dbDatabase* db, const _dbMarker& r)
@@ -175,29 +178,29 @@ dbIStream& operator>>(dbIStream& stream, _dbMarker& obj)
 
   stream >> item_count;
   for (std::size_t i = 0; i < item_count; i++) {
-    int type;
+    _dbMarker::ShapeType type;
     stream >> type;
 
     switch (type) {
-      case 0: {
+      case _dbMarker::ShapeType::Point: {
         Point pt;
         stream >> pt;
         obj.shapes_.push_back(pt);
         break;
       }
-      case 1: {
+      case _dbMarker::ShapeType::Line: {
         Line l;
         stream >> l;
         obj.shapes_.push_back(l);
         break;
       }
-      case 2: {
+      case _dbMarker::ShapeType::Rect: {
         Rect r;
         stream >> r;
         obj.shapes_.push_back(r);
         break;
       }
-      case 3: {
+      case _dbMarker::ShapeType::Polygon: {
         Polygon p;
         stream >> p;
         obj.shapes_.push_back(p);
@@ -231,16 +234,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbMarker& obj)
   stream << obj.shapes_.size();
   for (const dbMarker::MarkerShape& shape : obj.shapes_) {
     if (std::holds_alternative<Point>(shape)) {
-      stream << 0;  // write 0 for Point
+      stream << _dbMarker::ShapeType::Point;
       stream << std::get<Point>(shape);
     } else if (std::holds_alternative<Line>(shape)) {
-      stream << 1;  // write 1 for Line
+      stream << _dbMarker::ShapeType::Line;
       stream << std::get<Line>(shape);
     } else if (std::holds_alternative<Rect>(shape)) {
-      stream << 2;  // write 2 for Rect
+      stream << _dbMarker::ShapeType::Rect;
       stream << std::get<Rect>(shape);
     } else {
-      stream << 3;  // write 3 for Polygon
+      stream << _dbMarker::ShapeType::Polygon;
       stream << std::get<Polygon>(shape);
     }
   }
@@ -609,6 +612,20 @@ void dbMarker::destroy(dbMarker* marker)
   _dbMarker* _marker = (_dbMarker*) marker;
   _dbMarkerCategory* category = (_dbMarkerCategory*) _marker->getOwner();
   category->marker_tbl_->destroy(_marker);
+}
+
+dbIStream& operator>>(dbIStream& stream, _dbMarker::ShapeType& obj)
+{
+  int type;
+  stream >> type;
+  obj = (_dbMarker::ShapeType) type;
+  return stream;
+}
+
+dbOStream& operator<<(dbOStream& stream, const _dbMarker::ShapeType& obj)
+{
+  stream << (int) obj;
+  return stream;
 }
 
 // User Code End dbMarkerPublicMethods
