@@ -20,7 +20,7 @@ module gate1 (a1,
  output zn;
 
 
- AND2_X1 _5_ (.ZN(zn),
+ AND2_X1 \gate2_inst/_5_  (.ZN(zn),
     .A1(a1),
     .A2(a2));
 endmodule
