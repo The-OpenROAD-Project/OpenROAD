@@ -2058,6 +2058,7 @@ void TritonCTS::balanceMacroRegisterLatencies()
   openSta_->ensureGraph();
   openSta_->searchPreamble();
   openSta_->ensureClkNetwork();
+  openSta_->ensureClkArrivals();
   sta::Graph* graph = openSta_->graph();
   for (auto iter = builders_->rbegin(); iter != builders_->rend(); ++iter) {
     TreeBuilder* registerBuilder = *iter;
