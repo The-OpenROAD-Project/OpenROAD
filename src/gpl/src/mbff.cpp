@@ -46,6 +46,7 @@
 #include "db_sta/dbSta.hh"
 #include "graphics.h"
 #include "odb/dbTransform.h"
+#include "spdlog/fmt/ranges.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/DcalcAnalysisPt.hh"
