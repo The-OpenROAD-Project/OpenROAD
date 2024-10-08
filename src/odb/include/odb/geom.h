@@ -372,8 +372,8 @@ class Line
   Point pt0() const;
   Point pt1() const;
 
-  friend dbIStream& operator>>(dbIStream& stream, Line& p);
-  friend dbOStream& operator<<(dbOStream& stream, const Line& p);
+  friend dbIStream& operator>>(dbIStream& stream, Line& l);
+  friend dbOStream& operator<<(dbOStream& stream, const Line& l);
 
  private:
   Point pt0_;

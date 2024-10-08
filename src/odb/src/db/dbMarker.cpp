@@ -487,7 +487,50 @@ bool dbMarker::isVisible() const
 
 std::string dbMarker::getName() const
 {
-  return getCategory()->getName();
+  _dbMarker* obj = (_dbMarker*) this;
+
+  dbTechLayer* layer = getTechLayer();
+  std::string name;
+  if (layer != nullptr) {
+    name += "Layer: " + layer->getName();
+  }
+  std::string sources;
+  for (dbObject* src : getSources()) {
+    if (!sources.empty()) {
+      sources += ", ";
+    }
+    switch (src->getObjectType()) {
+      case dbNetObj:
+        sources += static_cast<dbNet*>(src)->getName();
+        break;
+      case dbInstObj:
+        sources += static_cast<dbInst*>(src)->getName();
+        break;
+      case dbITermObj:
+        sources += static_cast<dbITerm*>(src)->getName();
+        break;
+      case dbBTermObj:
+        sources += static_cast<dbBTerm*>(src)->getName();
+        break;
+      case dbObstructionObj:
+        sources += "obstruction";
+        break;
+      default:
+        obj->getLogger()->error(
+            utl::ODB, 290, "Unsupported object type: {}", src->getTypeName());
+    }
+  }
+  if (!name.empty() && !sources.empty()) {
+    name += " ";
+  }
+  name += sources;
+
+  if (name.empty()) {
+    name = getCategory()->getName();
+    name += " " + std::to_string(obj->getId());
+  }
+
+  return name;
 }
 
 dbMarkerCategory* dbMarker::getCategory() const

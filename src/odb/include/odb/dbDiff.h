@@ -130,7 +130,7 @@ class dbDiff : public dbObject
   dbDiff& operator<<(const Rect& r);
   dbDiff& operator<<(const Oct& o);
   dbDiff& operator<<(const Polygon& p);
-  dbDiff& operator<<(const Line& p);
+  dbDiff& operator<<(const Line& l);
 
   void diff(const char* field, bool lhs, bool rhs);
   void diff(const char* field, char lhs, char rhs);

@@ -371,13 +371,13 @@ void DRCWidget::loadReport(const QString& filename)
 void DRCWidget::loadTRReport(const QString& filename)
 {
   const std::string file = filename.toStdString();
-  odb::dbMarkerCategory::fromTR(block_, "DRC", file.c_str());
+  odb::dbMarkerCategory::fromTR(block_, "DRC", file);
 }
 
 void DRCWidget::loadJSONReport(const QString& filename)
 {
   const std::string file = filename.toStdString();
-  odb::dbMarkerCategory::fromJSON(block_, file.c_str());
+  odb::dbMarkerCategory::fromJSON(block_, file);
 }
 
 void DRCWidget::updateMarkerGroups()
