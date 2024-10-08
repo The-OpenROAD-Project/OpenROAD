@@ -266,6 +266,10 @@ check_antennas
 utl::clear_metrics_stage
 utl::metric "DRT::ANT::errors" [ant::antenna_violation_count]
 
+if {![design_is_routed]} {
+  error "Design has unrouted nets."
+}
+
 set repair_antennas_db [make_result_file ${design}_${platform}_repaired_route.odb]
 write_db $repair_antennas_db
 
