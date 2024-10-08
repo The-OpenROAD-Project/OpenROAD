@@ -38,8 +38,6 @@
 #include "odb/dbSet.h"
 #include "odb/odb.h"
 // User Code Begin Includes
-#include <unordered_map>
-
 #include "dbHashTable.h"
 #include "dbModulePortItr.h"
 // User Code End Includes
@@ -84,11 +82,6 @@ class _dbModule : public _dbObject
 
   // User Code Begin Fields
   // custom iterator for traversing ports
-  // fast access
-  std::unordered_map<std::string, dbId<_dbInst>> _dbinst_hash;
-  std::unordered_map<std::string, dbId<_dbModInst>> _modinst_hash;
-  std::unordered_map<std::string, dbId<_dbModBTerm>> _modbterm_hash;
-  std::unordered_map<std::string, dbId<_dbModNet>> _modnet_hash;
   dbModulePortItr* _port_iter = nullptr;
   // User Code End Fields
 };

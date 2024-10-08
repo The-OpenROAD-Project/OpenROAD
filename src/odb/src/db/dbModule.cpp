@@ -278,7 +278,6 @@ void dbModule::addInst(dbInst* inst)
   }
 
   _inst->_module = module->getOID();
-  module->_dbinst_hash[inst->getName()] = dbId<_dbInst>(_inst->getOID());
 
   if (module->_insts == 0) {
     _inst->_module_next = 0;
@@ -351,12 +350,10 @@ dbSet<dbModNet> dbModule::getModNets()
 
 dbModNet* dbModule::getModNet(const char* net_name)
 {
-  _dbModule* module = (_dbModule*) this;
-  _dbBlock* block = (_dbBlock*) module->getOwner();
-  auto it = module->_modnet_hash.find(net_name);
-  if (it != module->_modnet_hash.end()) {
-    uint db_id = (*it).second;
-    return (dbModNet*) block->_modnet_tbl->getPtr(db_id);
+  for (auto mnet : getModNets()) {
+    if (!strcmp(net_name, mnet->getName())) {
+      return mnet;
+    }
   }
   return nullptr;
 }
@@ -471,24 +468,20 @@ dbModule* dbModule::getModule(dbBlock* block_, uint dbid_)
 
 dbModInst* dbModule::findModInst(const char* name)
 {
-  _dbModule* obj = (_dbModule*) this;
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  auto it = obj->_modinst_hash.find(name);
-  if (it != obj->_modinst_hash.end()) {
-    auto db_id = (*it).second;
-    return (dbModInst*) par->_modinst_tbl->getPtr(db_id);
+  for (dbModInst* mod_inst : getModInsts()) {
+    if (!strcmp(mod_inst->getName(), name)) {
+      return mod_inst;
+    }
   }
   return nullptr;
 }
 
 dbInst* dbModule::findDbInst(const char* name)
 {
-  _dbModule* obj = (_dbModule*) this;
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  auto it = obj->_dbinst_hash.find(name);
-  if (it != obj->_dbinst_hash.end()) {
-    auto db_id = (*it).second;
-    return (dbInst*) par->_inst_tbl->getPtr(db_id);
+  for (dbInst* inst : getInsts()) {
+    if (!strcmp(inst->getName().c_str(), name)) {
+      return inst;
+    }
   }
   return nullptr;
 }
@@ -513,17 +506,16 @@ std::vector<dbInst*> dbModule::getLeafInsts()
 
 dbModBTerm* dbModule::findModBTerm(const char* name)
 {
-  std::string modbterm_name(name);
-  size_t last_idx = modbterm_name.find_last_of('/');
+  std::string bterm_name(name);
+  size_t last_idx = bterm_name.find_last_of('/');
   if (last_idx != std::string::npos) {
-    modbterm_name = modbterm_name.substr(last_idx + 1);
+    bterm_name = bterm_name.substr(last_idx + 1);
   }
-  _dbModule* obj = (_dbModule*) this;
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  auto it = obj->_modbterm_hash.find(name);
-  if (it != obj->_modbterm_hash.end()) {
-    auto db_id = (*it).second;
-    return (dbModBTerm*) par->_modbterm_tbl->getPtr(db_id);
+
+  for (dbModBTerm* mod_bterm : getModBTerms()) {
+    if (!strcmp(mod_bterm->getName(), bterm_name.c_str())) {
+      return mod_bterm;
+    }
   }
   return nullptr;
 }

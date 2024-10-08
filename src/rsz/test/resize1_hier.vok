@@ -32,19 +32,23 @@ module u1 (in1,
  input clk3;
  output out;
 
+ wire r2q;
+ wire u2z;
+ wire u1z;
+ wire r1q;
 
- DFF_X2 r1 (.D(in1),
+ DFF_X2 \u1/r1  (.D(in1),
     .CK(clk1),
-    .Q(\u1/r1q ));
- DFF_X1 r2 (.D(in2),
+    .Q(r1q));
+ DFF_X1 \u1/r2  (.D(in2),
     .CK(clk2),
-    .Q(\u1/r2q ));
- DFF_X1 r3 (.D(\u1/u2z ),
+    .Q(r2q));
+ DFF_X1 \u1/r3  (.D(u2z),
     .CK(clk3),
     .Q(out));
- BUF_X1 u1 (.A(\u1/r2q ),
-    .Z(\u1/u1z ));
- AND2_X1 u2 (.A1(\u1/r1q ),
-    .A2(\u1/u1z ),
-    .ZN(\u1/u2z ));
+ BUF_X1 \u1/u1  (.A(r2q),
+    .Z(u1z));
+ AND2_X1 \u1/u2  (.A1(r1q),
+    .A2(u1z),
+    .ZN(u2z));
 endmodule
