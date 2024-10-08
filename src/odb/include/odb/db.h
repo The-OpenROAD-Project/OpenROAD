@@ -7937,7 +7937,7 @@ class dbMarker : public dbObject
 
   void addSource(dbObject* obj);
 
-  static dbMarker* create(dbMarkerCategory* group);
+  static dbMarker* create(dbMarkerCategory* category);
   static void destroy(dbMarker* marker);
 
   // User Code End dbMarker
