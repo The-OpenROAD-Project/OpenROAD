@@ -921,10 +921,10 @@ void Connect::recordFailedVias() const
     return;
   }
 
-  odb::dbMarkerGroup* group = grid_->getBlock()->findMarkerGroup("PDN");
-  if (group == nullptr) {
-    group = odb::dbMarkerGroup::create(grid_->getBlock(), "PDN");
-    group->setSource("PDN");
+  odb::dbMarkerCategory* tool_category = grid_->getBlock()->findMarkerCategory("PDN");
+  if (tool_category == nullptr) {
+    tool_category = odb::dbMarkerCategory::create(grid_->getBlock(), "PDN");
+    tool_category->setSource("PDN");
   }
 
   for (const auto& [reason, shapes] : failed_vias_) {
@@ -953,15 +953,15 @@ void Connect::recordFailedVias() const
     reason_str += " - " + grid_->getLongName();
     reason_str += " - " + layer0_->getName() + " -> " + layer1_->getName();
 
-    odb::dbMarkerCategory* category
-        = group->findMarkerCategory(reason_str.c_str());
-    if (category == nullptr) {
-      category = odb::dbMarkerCategory::create(group, reason_str.c_str());
-    }
+    odb::dbMarkerCategory* category = odb::dbMarkerCategory::createOrGet(tool_category, reason_str.c_str());
 
     for (const auto& [net, shape] : shapes) {
       odb::dbMarker* marker = odb::dbMarker::create(category);
-      marker->addNet(net);
+      if (marker == nullptr) {
+        continue;
+      }
+
+      marker->addSource(net);
       marker->addShape(shape);
     }
   }

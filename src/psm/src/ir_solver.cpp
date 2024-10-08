@@ -251,6 +251,11 @@ IRSolver::ConnectivityResults IRSolver::getConnectivityResults() const
   return results;
 }
 
+std::string IRSolver::getMarkerName() const
+{
+  return fmt::format("PSM - {}", net_->getName());
+}
+
 void IRSolver::reportUnconnectedNodes() const
 {
   // report unconnected nodes
@@ -262,18 +267,14 @@ void IRSolver::reportUnconnectedNodes() const
     return;
   }
 
-  odb::dbMarkerGroup* group = odb::dbMarkerGroup::create(getBlock(), "PSM");
-  group->setSource("PSM");
+  const std::string tool_category_name = getMarkerName();
+  odb::dbMarkerCategory* tool_category = odb::dbMarkerCategory::createOrReplace(getBlock(), tool_category_name.c_str());
+  tool_category->setSource("PSM");
 
   if (!results.unconnected_nodes_.empty()) {
     odb::dbMarkerCategory* category
-        = odb::dbMarkerCategory::create(group, "Unconnected node");
+        = odb::dbMarkerCategory::create(tool_category, "Unconnected node");
     for (auto* node : results.unconnected_nodes_) {
-      odb::dbMarker* marker = odb::dbMarker::create(category);
-      marker->addNet(net_);
-      marker->setTechLayer(node->getLayer());
-      marker->addShape(odb::Rect(node->getPoint(), node->getPoint()));
-
       logger_->warn(utl::PSM,
                     38,
                     "Unconnected node on net {} at location ({:4.3f}um, "
@@ -282,6 +283,14 @@ void IRSolver::reportUnconnectedNodes() const
                     node->getPoint().getX() / dbu,
                     node->getPoint().getY() / dbu,
                     node->getLayer()->getName());
+
+      odb::dbMarker* marker = odb::dbMarker::create(category);
+      if (marker == nullptr) {
+        continue;
+      }
+      marker->addSource(net_);
+      marker->setTechLayer(node->getLayer());
+      marker->addShape(odb::Rect(node->getPoint(), node->getPoint()));
     }
   }
 
@@ -299,13 +308,15 @@ void IRSolver::reportUnconnectedNodes() const
     }
 
     odb::dbMarkerCategory* category
-        = odb::dbMarkerCategory::create(group, "Unconnected instance");
+        = odb::dbMarkerCategory::create(tool_category, "Unconnected instance");
     for (auto* inst : insts) {
-      const odb::Rect inst_rect = inst->getBBox()->getBox();
-
       odb::dbMarker* marker = odb::dbMarker::create(category);
-      marker->addInst(inst);
-      marker->addShape(inst_rect);
+      if (marker == nullptr) {
+        continue;
+      }
+
+      marker->addSource(inst);
+      marker->addShape(inst->getBBox()->getBox());
     }
   }
 }
@@ -1326,7 +1337,8 @@ void IRSolver::writeErrorFile(const std::string& error_file) const
     return;
   }
 
-  odb::dbMarkerGroup* group = getBlock()->findMarkerGroup("PSM");
+  const std::string tool_category_name = getMarkerName();
+  odb::dbMarkerCategory* group = getBlock()->findMarkerCategory(tool_category_name.c_str());
   if (group == nullptr) {
     return;
   }

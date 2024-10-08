@@ -221,6 +221,8 @@ class IRSolver
       const std::map<Connection*, Connection::Conductance>& cond,
       const std::string& name) const;
 
+  std::string getMarkerName() const;
+
   odb::dbNet* net_;
 
   utl::Logger* logger_;

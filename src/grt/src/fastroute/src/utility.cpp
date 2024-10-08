@@ -2503,21 +2503,18 @@ void FastRouteCore::saveCongestion(const int iter)
       "Global route{}", iter == -1 ? "" : fmt::format(" - iter {}", iter));
 
   if (!congestionGridsV.empty() || !congestionGridsH.empty()) {
-    odb::dbMarkerGroup* group = db_->getChip()->getBlock()->findMarkerGroup(
-        marker_group_name.c_str());
-    if (group != nullptr) {
-      odb::dbMarkerGroup::destroy(group);
-    }
-    group = odb::dbMarkerGroup::create(db_->getChip()->getBlock(),
-                                       marker_group_name.c_str());
-    group->setSource("GRT");
+    odb::dbMarkerCategory* tool_category = odb::dbMarkerCategory::createOrReplace(db_->getChip()->getBlock(), marker_group_name.c_str());
+    tool_category->setSource("GRT");
 
     if (!congestionGridsH.empty()) {
       odb::dbMarkerCategory* category
-          = odb::dbMarkerCategory::create(group, "Horizontal congestion");
+          = odb::dbMarkerCategory::create(tool_category, "Horizontal congestion");
 
       for (const auto& [seg, tile, srcs] : congestionGridsH) {
         odb::dbMarker* marker = odb::dbMarker::create(category);
+        if (marker == nullptr) {
+          continue;
+        }
 
         marker->addShape(globalRoutingToBox(seg));
 
@@ -2528,17 +2525,20 @@ void FastRouteCore::saveCongestion(const int iter)
                                        usage,
                                        usage - capacity));
         for (const auto& net : srcs) {
-          marker->addNet(net);
+          marker->addSource(net);
         }
       }
     }
 
     if (!congestionGridsV.empty()) {
       odb::dbMarkerCategory* category
-          = odb::dbMarkerCategory::create(group, "Vertical congestion");
+          = odb::dbMarkerCategory::create(tool_category, "Vertical congestion");
 
       for (const auto& [seg, tile, srcs] : congestionGridsV) {
         odb::dbMarker* marker = odb::dbMarker::create(category);
+        if (marker == nullptr) {
+          continue;
+        }
 
         marker->addShape(globalRoutingToBox(seg));
 
@@ -2549,7 +2549,7 @@ void FastRouteCore::saveCongestion(const int iter)
                                        usage,
                                        usage - capacity));
         for (const auto& net : srcs) {
-          marker->addNet(net);
+          marker->addSource(net);
         }
       }
     }
@@ -2569,10 +2569,10 @@ void FastRouteCore::saveCongestion(const int iter)
     file_name += "-" + std::to_string(iter) + ".rpt";
   }
 
-  odb::dbMarkerGroup* group
-      = db_->getChip()->getBlock()->findMarkerGroup(marker_group_name.c_str());
-  if (group != nullptr) {
-    group->writeTR(file_name);
+  odb::dbMarkerCategory* tool_category
+      = db_->getChip()->getBlock()->findMarkerCategory(marker_group_name.c_str());
+  if (tool_category != nullptr) {
+    tool_category->writeTR(file_name);
   }
 }
 

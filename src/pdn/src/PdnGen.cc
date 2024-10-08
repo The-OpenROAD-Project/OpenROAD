@@ -795,9 +795,9 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
   }
 
   // remove stale results
-  odb::dbMarkerGroup* group = block->findMarkerGroup("PDN");
-  if (group != nullptr) {
-    odb::dbMarkerGroup::destroy(group);
+  odb::dbMarkerCategory* category = block->findMarkerCategory("PDN");
+  if (category != nullptr) {
+    odb::dbMarkerCategory::destroy(category);
   }
 
   for (auto* grid : getGrids()) {
@@ -807,9 +807,9 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
   }
 
   if (!report_file.empty()) {
-    odb::dbMarkerGroup* group = block->findMarkerGroup("PDN");
-    if (group != nullptr) {
-      group->writeTR(report_file);
+    odb::dbMarkerCategory* category = block->findMarkerCategory("PDN");
+    if (category != nullptr) {
+      category->writeTR(report_file);
     }
   }
 }
