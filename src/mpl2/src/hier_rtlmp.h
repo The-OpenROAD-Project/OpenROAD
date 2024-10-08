@@ -406,6 +406,7 @@ class Snapper
 
  private:
   void snap(const odb::dbTechLayerDir& target_direction);
+  void alignWithManufacturingGrid(int& origin);
   void setOrigin(int origin, const odb::dbTechLayerDir& target_direction);
   bool pinsAreAlignedWithTrackGrid(odb::dbITerm* pin,
                                    const LayerParameters& layer_params,

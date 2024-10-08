@@ -4483,13 +4483,16 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
   SameDirectionLayersData layers_data
       = computeSameDirectionLayersData(target_direction);
 
-  if (!layers_data.snap_layer) {
-    return;
-  }
-
   int origin = target_direction == odb::dbTechLayerDir::VERTICAL
                    ? inst_->getOrigin().x()
                    : inst_->getOrigin().y();
+
+  if (!layers_data.snap_layer) {
+    // There are no pins to align with the track-grid.
+    alignWithManufacturingGrid(origin);
+    setOrigin(origin, target_direction);
+    return;
+  }
 
   odb::dbITerm* snap_pin = layers_data.layer_to_pin.at(layers_data.snap_layer);
   const LayerParameters& snap_layer_params
@@ -4506,10 +4509,7 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
         = std::round(origin / snap_layer_params.pitch) * snap_layer_params.pitch
           + snap_layer_params.offset - snap_layer_params.pin_offset;
 
-    const int manufacturing_grid
-        = inst_->getDb()->getTech()->getManufacturingGrid();
-    origin = std::round(origin / manufacturing_grid) * manufacturing_grid;
-
+    alignWithManufacturingGrid(origin);
     setOrigin(origin, target_direction);
   }
 
@@ -4711,6 +4711,14 @@ bool Snapper::pinsAreAlignedWithTrackGrid(
                        ? pin->getBBox().xCenter()
                        : pin->getBBox().yCenter();
   return (pin_center - layer_params.offset) % layer_params.pitch == 0;
+}
+
+void Snapper::alignWithManufacturingGrid(int& origin)
+{
+  const int manufacturing_grid
+      = inst_->getDb()->getTech()->getManufacturingGrid();
+
+  origin = std::round(origin / manufacturing_grid) * manufacturing_grid;
 }
 
 }  // namespace mpl2
