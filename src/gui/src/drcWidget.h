@@ -55,57 +55,6 @@ class Logger;
 
 namespace gui {
 
-class DRCViolation
-{
- public:
-  DRCViolation(const std::string& name, odb::dbMarker* marker);
-  ~DRCViolation() {}
-
-  const std::string& getName() const { return name_; }
-  odb::dbMarker* getMarker() const { return marker_; }
-
-  const odb::Rect& getBBox() { return bbox_; }
-
-  bool isViewed() { return viewed_; }
-  void setViewed() { viewed_ = true; }
-  void clearViewed() { viewed_ = false; }
-
-  void setIsVisible(bool visible) { visible_ = visible; }
-  bool isVisible() const { return visible_; }
-
-  void paint(Painter& painter);
-
- private:
-  std::string name_;
-  odb::dbMarker* marker_;
-
-  odb::Rect bbox_;
-
-  bool viewed_;
-  bool visible_;
-};
-
-class DRCDescriptor : public Descriptor
-{
- public:
-  DRCDescriptor(const std::vector<std::unique_ptr<DRCViolation>>& violations);
-
-  std::string getName(std::any object) const override;
-  std::string getTypeName() const override;
-  bool getBBox(std::any object, odb::Rect& bbox) const override;
-
-  void highlight(std::any object, Painter& painter) const override;
-
-  Properties getProperties(std::any object) const override;
-  Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;
-
-  bool getAllObjects(SelectionSet& objects) const override;
-
- private:
-  const std::vector<std::unique_ptr<DRCViolation>>& violations_;
-};
-
 class DRCItemModel : public QStandardItemModel
 {
  public:
@@ -116,7 +65,9 @@ class DRCItemModel : public QStandardItemModel
 class DRCRenderer : public Renderer
 {
  public:
-  DRCRenderer(const std::vector<std::unique_ptr<DRCViolation>>& violations);
+  DRCRenderer();
+
+  void setCategory(odb::dbMarkerCategory* category);
 
   // Renderer
   void drawObjects(Painter& painter) override;
@@ -124,7 +75,7 @@ class DRCRenderer : public Renderer
                       const odb::Rect& region) override;
 
  private:
-  const std::vector<std::unique_ptr<DRCViolation>>& violations_;
+  odb::dbMarkerCategory* category_;
 };
 
 class DRCWidget : public QDockWidget
@@ -173,16 +124,15 @@ class DRCWidget : public QDockWidget
 
   odb::dbBlock* block_;
 
-  QComboBox* marker_groups_;
+  QComboBox* categories_;
   QPushButton* update_;
   QPushButton* load_;
 
   std::unique_ptr<DRCRenderer> renderer_;
 
-  std::vector<std::unique_ptr<DRCViolation>> violations_;
-
   void toggleParent(QStandardItem* child);
   bool setVisibleDRC(QStandardItem* item, bool visible, bool announce_parent);
+  void populateCategory(odb::dbMarkerCategory* category, QStandardItem* model);
 };
 
 }  // namespace gui

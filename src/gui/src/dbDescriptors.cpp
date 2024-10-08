@@ -4141,4 +4141,144 @@ bool DbRowDescriptor::getAllObjects(SelectionSet& objects) const
   return true;
 }
 
+//////////////////////////////////////////////////
+
+DbMarkerDescriptor::DbMarkerDescriptor(odb::dbDatabase* db) : db_(db)
+{
+}
+
+std::string DbMarkerDescriptor::getName(std::any object) const
+{
+  auto* marker = std::any_cast<odb::dbMarker*>(object);
+  return marker->getName();
+}
+
+std::string DbMarkerDescriptor::getTypeName() const
+{
+  return "Marker";
+}
+
+bool DbMarkerDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto* marker = std::any_cast<odb::dbMarker*>(object);
+  bbox = marker->getBBox();
+  return true;
+}
+
+void DbMarkerDescriptor::highlight(std::any object, Painter& painter) const
+{
+  auto* marker = std::any_cast<odb::dbMarker*>(object);
+  paintMarker(marker, painter);
+}
+
+Descriptor::Properties DbMarkerDescriptor::getProperties(std::any object) const
+{
+  auto* marker = std::any_cast<odb::dbMarker*>(object);
+  auto* gui = Gui::get();
+
+  Properties props;
+
+  auto layer = marker->getTechLayer();
+  if (layer != nullptr) {
+    props.push_back({"Layer", gui->makeSelected(layer)});
+  }
+
+  SelectionSet sources;
+  for (odb::dbObject* src : marker->getSources()) {
+    Selected select;
+    switch (src->getObjectType()) {
+      case odb::dbNetObj:
+        select = gui->makeSelected(static_cast<odb::dbNet*>(src));
+        break;
+      case odb::dbInstObj:
+        select = gui->makeSelected(static_cast<odb::dbInst*>(src));
+        break;
+      case odb::dbITermObj:
+        select = gui->makeSelected(static_cast<odb::dbITerm*>(src));
+        break;
+      case odb::dbBTermObj:
+        select = gui->makeSelected(static_cast<odb::dbBTerm*>(src));
+        break;
+      case odb::dbObstructionObj:
+        select = gui->makeSelected(static_cast<odb::dbObstruction*>(src));
+        break;
+      default:
+        break;
+    }
+    if (select) {
+      sources.insert(select);
+    }
+  }
+  if (!sources.empty()) {
+    props.push_back({"Sources", sources});
+  }
+
+  const auto& comment = marker->getComment();
+  if (!comment.empty()) {
+    props.push_back({"Comment", comment});
+  }
+
+  int line_number = marker->getLineNumber();
+  if (line_number > 0) {
+    props.push_back({"Line number:", line_number});
+  }
+
+  return props;
+}
+
+Selected DbMarkerDescriptor::makeSelected(std::any object) const
+{
+  if (auto marker = std::any_cast<odb::dbMarker*>(&object)) {
+    return Selected(*marker, this);
+  }
+  return Selected();
+}
+
+bool DbMarkerDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_marker = std::any_cast<odb::dbMarker*>(l);
+  auto r_marker = std::any_cast<odb::dbMarker*>(r);
+
+  return l_marker->getId() < r_marker->getId();
+}
+
+bool DbMarkerDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* block = db_->getChip()->getBlock();
+
+  for (auto* category : block->getMarkerCategories()) {
+    for (odb::dbMarker* marker : category->getAllMarkers()) {
+      objects.insert(makeSelected(marker));
+    }
+  }
+
+  return true;
+}
+
+void DbMarkerDescriptor::paintMarker(odb::dbMarker* marker, Painter& painter) const
+{
+  const int min_box = 20.0 / painter.getPixelsPerDBU();
+
+  const odb::Rect& box = marker->getBBox();
+  if (box.maxDXDY() < min_box) {
+    // box is too small to be useful, so draw X instead
+    odb::Point center(box.xMin() + box.dx() / 2, box.yMin() + box.dy() / 2);
+    painter.drawX(center.x(), center.y(), min_box);
+  } else {
+    for (const auto& shape : marker->getShapes()) {
+      if (std::holds_alternative<odb::Point>(shape)) {
+        const odb::Point pt = std::get<odb::Point>(shape);
+        painter.drawX(pt.x(), pt.y(), min_box);
+      } else if (std::holds_alternative<odb::Line>(shape)) {
+        const odb::Line line = std::get<odb::Line>(shape);
+        painter.drawLine(line.pt0(), line.pt1());
+      } else if (std::holds_alternative<odb::Rect>(shape)) {
+        painter.drawRect(std::get<odb::Rect>(shape));
+      } else {
+        painter.drawPolygon(std::get<odb::Polygon>(shape));
+      }
+    }
+  }
+}
+
 }  // namespace gui

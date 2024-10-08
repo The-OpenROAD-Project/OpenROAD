@@ -713,4 +713,28 @@ class DbRowDescriptor : public Descriptor
   odb::dbDatabase* db_;
 };
 
+class DbMarkerDescriptor : public Descriptor
+{
+ public:
+  DbMarkerDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object, Painter& painter) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+  void paintMarker(odb::dbMarker* marker, Painter& painter) const;
+
+ private:
+  odb::dbDatabase* db_;
+};
+
 };  // namespace gui
