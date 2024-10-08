@@ -577,7 +577,8 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
 
   _dft_tbl = new dbTable<_dbDft>(db, this, *block._dft_tbl);
 
-  _marker_categories_tbl = new dbTable<_dbMarkerCategory>(db, this, *block._marker_categories_tbl);
+  _marker_categories_tbl
+      = new dbTable<_dbMarkerCategory>(db, this, *block._marker_categories_tbl);
 
   _net_hash.setTable(_net_tbl);
   _inst_hash.setTable(_inst_tbl);
@@ -4326,8 +4327,7 @@ void dbBlock::writeMarkerCategories(const std::string& file)
     _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
     utl::Logger* logger = obj->getLogger();
 
-    logger->error(
-        utl::ODB, 272, "Unable to open {} to write markers", file);
+    logger->error(utl::ODB, 272, "Unable to open {} to write markers", file);
   }
 
   writeMarkerCategories(report);
