@@ -872,14 +872,15 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       || logger_->debugCheck(DRT, "autotuner", 1)
       || logger_->debugCheck(DRT, "report", 1)) {
     router_->reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt",
-                       design_->getTopBlock()->getMarkers());
+                       design_->getTopBlock()->getMarkers(),
+                       "DRC - iter " + std::to_string(iter));
   }
 }
 
 void FlexDR::end(bool done)
 {
-  if (done && DRC_RPT_FILE != std::string("")) {
-    router_->reportDRC(DRC_RPT_FILE, design_->getTopBlock()->getMarkers());
+  if (done) {
+    router_->reportDRC(DRC_RPT_FILE, design_->getTopBlock()->getMarkers(), "DRC");
   }
   if (done && VERBOSE > 0) {
     logger_->info(DRT, 198, "Complete detail routing.");

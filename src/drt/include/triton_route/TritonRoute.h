@@ -182,8 +182,9 @@ class TritonRoute
                           const std::string& serializedViaData);
   void reportDRC(const std::string& file_name,
                  const std::list<std::unique_ptr<frMarker>>& markers,
+                 const std::string& marker_name,
                  odb::Rect drcBox = odb::Rect(0, 0, 0, 0));
-  void checkDRC(const char* filename, int x1, int y1, int x2, int y2);
+  void checkDRC(const char* filename, int x1, int y1, int x2, int y2, const std::string& marker_name);
   bool initGuide();
   void prep();
   void processBTermsAboveTopLayer(bool has_routing = false);
