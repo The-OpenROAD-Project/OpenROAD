@@ -2123,7 +2123,7 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex,
   if (pathsAccepted > 1 || pathsAccepted == 0) {
     logger_->warn(
         CTS,
-        1,
+        2,
         "Number of clock paths is not 1 for pin {}. Number of clock paths: {}",
         iterm->getName(),
         pathsAccepted);
