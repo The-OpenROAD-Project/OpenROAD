@@ -2676,10 +2676,8 @@ std::vector<int> FlexPA::extractAccessPatternFromNodes(
     auto curr_node = &(nodes[curr_node_idx]);
 
     int curr_pin_idx, curr_acc_point_idx;
-    getNestedIdx(curr_node_idx,
-                  curr_pin_idx,
-                  curr_acc_point_idx,
-                  max_access_point_size);
+    getNestedIdx(
+        curr_node_idx, curr_pin_idx, curr_acc_point_idx, max_access_point_size);
     access_pattern[curr_pin_idx] = curr_acc_point_idx;
     used_access_points.insert({curr_pin_idx, curr_acc_point_idx});
 
