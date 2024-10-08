@@ -249,12 +249,12 @@ void RepairHold::repairHold(VertexSeq& ends,
   VertexSeq hold_failures;
   Slack worst_slack;
   findHoldViolations(ends, hold_margin, worst_slack, hold_failures);
+  inserted_buffer_count_ = 0;
   if (!hold_failures.empty()) {
     logger_->info(RSZ,
                   46,
                   "Found {} endpoints with hold violations.",
                   hold_failures.size());
-    inserted_buffer_count_ = 0;
     bool progress = true;
     if (verbose) {
       printProgress(0, true, false);
@@ -392,7 +392,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
     const int path_length = expanded.size();
     if (path_length > 1) {
       for (int i = expanded.startIndex(); i < path_length; i++) {
-        PathRef* path = expanded.path(i);
+        const PathRef* path = expanded.path(i);
         Vertex* path_vertex = path->vertex(sta_);
         Pin* path_pin = path_vertex->pin();
         Net* path_net = network_->isTopLevelPort(path_pin)
