@@ -1861,11 +1861,13 @@ void FlexPA::genInstRowPatternInit(std::vector<FlexDPNode>& nodes,
   nodes[start_node_idx].setNodeCost(0);
   nodes[start_node_idx].setPathCost(0);
   nodes[start_node_idx].setIdx({-1, 0});
+  nodes[start_node_idx].setAsSource();
 
   const int end_node_idx
       = getFlatIdx(insts.size(), 0, ACCESS_PATTERN_END_ITERATION_NUM);
   nodes[end_node_idx].setNodeCost(0);
   nodes[end_node_idx].setIdx({insts.size(), 0});
+  nodes[end_node_idx].setAsDrain();
 
   // init inst nodes
   for (int inst_idx = 0; inst_idx < (int) insts.size(); inst_idx++) {
@@ -1894,8 +1896,8 @@ void FlexPA::genInstRowPatternPerform(std::vector<FlexDPNode>& nodes,
       const auto curr_node_idx = getFlatIdx(curr_inst_idx,
                                             curr_acc_pattern_idx,
                                             ACCESS_PATTERN_END_ITERATION_NUM);
-      auto& curr_node = nodes[curr_node_idx];
-      if (curr_node.getNodeCost() == std::numeric_limits<int>::max()) {
+      auto curr_node = &(nodes[curr_node_idx]);
+      if (curr_node->getNodeCost() == std::numeric_limits<int>::max()) {
         continue;
       }
       const int prev_inst_idx = curr_inst_idx - 1;
@@ -1905,18 +1907,18 @@ void FlexPA::genInstRowPatternPerform(std::vector<FlexDPNode>& nodes,
         const int prev_node_idx = getFlatIdx(prev_inst_idx,
                                              prev_acc_pattern_idx,
                                              ACCESS_PATTERN_END_ITERATION_NUM);
-        const auto& prev_node = nodes[prev_node_idx];
-        if (prev_node.getPathCost() == std::numeric_limits<int>::max()) {
+        auto prev_node = &(nodes[prev_node_idx]);
+        if (prev_node->getPathCost() == std::numeric_limits<int>::max()) {
           continue;
         }
 
-        const int edge_cost
-            = getEdgeCost(prev_node_idx, curr_node_idx, nodes, insts);
-        if (curr_node.getPathCost() == std::numeric_limits<int>::max()
-            || curr_node.getPathCost() > prev_node.getPathCost() + edge_cost) {
-          curr_node.setPathCost(prev_node.getPathCost() + edge_cost);
+        const int edge_cost = getEdgeCost(prev_node, curr_node, nodes, insts);
+        if (curr_node->getPathCost() == std::numeric_limits<int>::max()
+            || curr_node->getPathCost()
+                   > prev_node->getPathCost() + edge_cost) {
+          curr_node->setPathCost(prev_node->getPathCost() + edge_cost);
           auto prev_node = &(nodes[prev_node_idx]);
-          curr_node.setPrevNode(prev_node);
+          curr_node->setPrevNode(prev_node);
         }
       }
     }
@@ -2041,17 +2043,15 @@ void FlexPA::genInstRowPattern_print(std::vector<FlexDPNode>& nodes,
   }
 }
 
-int FlexPA::getEdgeCost(const int prev_node_idx,
-                        const int curr_node_idx,
+int FlexPA::getEdgeCost(FlexDPNode* prev_node,
+                        FlexDPNode* curr_node,
                         const std::vector<FlexDPNode>& nodes,
                         const std::vector<frInst*>& insts)
 {
   int edge_cost = 0;
-  auto [prev_inst_idx, prev_acc_pattern_idx]
-      = getNestedIdx(prev_node_idx, ACCESS_PATTERN_END_ITERATION_NUM);
-  auto [curr_inst_idx, curr_acc_pattern_idx]
-      = getNestedIdx(curr_node_idx, ACCESS_PATTERN_END_ITERATION_NUM);
-  if (prev_inst_idx == -1 || curr_inst_idx == (int) insts.size()) {
+  auto [prev_inst_idx, prev_acc_pattern_idx] = prev_node->getIdx();
+  auto [curr_inst_idx, curr_acc_pattern_idx] = curr_node->getIdx();
+  if (prev_node->isSource() || curr_node->isDrain()) {
     return edge_cost;
   }
 
@@ -2074,8 +2074,8 @@ int FlexPA::getEdgeCost(const int prev_node_idx,
 
   const bool has_vio = !genPatterns_gc({prev_inst, curr_inst}, objs, Edge);
   if (!has_vio) {
-    const int prev_node_cost = nodes[prev_node_idx].getNodeCost();
-    const int curr_node_cost = nodes[curr_node_idx].getNodeCost();
+    const int prev_node_cost = prev_node->getNodeCost();
+    const int curr_node_cost = curr_node->getNodeCost();
     edge_cost = (prev_node_cost + curr_node_cost) / 2;
   } else {
     edge_cost = 1000;
@@ -2362,10 +2362,12 @@ void FlexPA::genPatternsInit(
   nodes[start_node_idx].setNodeCost(0);
   nodes[start_node_idx].setIdx({-1, 0});
   nodes[start_node_idx].setPathCost(0);
+  nodes[start_node_idx].setAsSource();
 
   int end_node_Idx = getFlatIdx(pins.size(), 0, max_access_point_size);
   nodes[end_node_Idx].setNodeCost(0);
   nodes[end_node_Idx].setIdx({pins.size(), 0});
+  nodes[end_node_Idx].setAsDrain();
   // init pin nodes
   int pin_idx = 0;
   int ap_idx = 0;
@@ -2475,8 +2477,8 @@ void FlexPA::genPatterns_perform(
          curr_acc_point_idx++) {
       auto curr_node_idx
           = getFlatIdx(curr_pin_idx, curr_acc_point_idx, max_access_point_size);
-      auto& curr_node = nodes[curr_node_idx];
-      if (curr_node.getNodeCost() == std::numeric_limits<int>::max()) {
+      auto curr_node = &(nodes[curr_node_idx]);
+      if (curr_node->getNodeCost() == std::numeric_limits<int>::max()) {
         continue;
       }
       int prev_pin_idx = curr_pin_idx - 1;
@@ -2485,13 +2487,13 @@ void FlexPA::genPatterns_perform(
            prev_acc_point_idx++) {
         const int prev_node_idx = getFlatIdx(
             prev_pin_idx, prev_acc_point_idx, max_access_point_size);
-        auto& prev_node = nodes[prev_node_idx];
-        if (prev_node.getPathCost() == std::numeric_limits<int>::max()) {
+        auto prev_node = &(nodes[prev_node_idx]);
+        if (prev_node->getPathCost() == std::numeric_limits<int>::max()) {
           continue;
         }
 
-        const int edge_cost = getEdgeCost(prev_node_idx,
-                                          curr_node_idx,
+        const int edge_cost = getEdgeCost(prev_node,
+                                          curr_node,
                                           nodes,
                                           pins,
                                           vio_edges,
@@ -2499,11 +2501,12 @@ void FlexPA::genPatterns_perform(
                                           viol_access_points,
                                           curr_unique_inst_idx,
                                           max_access_point_size);
-        if (curr_node.getPathCost() == std::numeric_limits<int>::max()
-            || curr_node.getPathCost() > prev_node.getPathCost() + edge_cost) {
-          curr_node.setPathCost(prev_node.getPathCost() + edge_cost);
+        if (curr_node->getPathCost() == std::numeric_limits<int>::max()
+            || curr_node->getPathCost()
+                   > prev_node->getPathCost() + edge_cost) {
+          curr_node->setPathCost(prev_node->getPathCost() + edge_cost);
           auto prev_node = &(nodes[prev_node_idx]);
-          curr_node.setPrevNode(prev_node);
+          curr_node->setPrevNode(prev_node);
         }
       }
     }
@@ -2511,8 +2514,8 @@ void FlexPA::genPatterns_perform(
 }
 
 int FlexPA::getEdgeCost(
-    const int prev_node_idx,
-    const int curr_node_idx,
+    FlexDPNode* prev_node,
+    FlexDPNode* curr_node,
     const std::vector<FlexDPNode>& nodes,
     const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
     std::vector<int>& vio_edges,
@@ -2522,11 +2525,10 @@ int FlexPA::getEdgeCost(
     const int max_access_point_size)
 {
   int edge_cost = 0;
-  auto [prev_pin_idx, prev_acc_point_idx]
-      = getNestedIdx(prev_node_idx, max_access_point_size);
-  auto [curr_pin_idx, curr_acc_point_idx]
-      = getNestedIdx(curr_node_idx, max_access_point_size);
-  if (prev_pin_idx == -1 || curr_pin_idx == (int) pins.size()) {
+  auto [prev_pin_idx, prev_acc_point_idx] = prev_node->getIdx();
+  auto [curr_pin_idx, curr_acc_point_idx] = curr_node->getIdx();
+
+  if (prev_node->isSource() || curr_node->isDrain()) {
     return edge_cost;
   }
 
@@ -2581,9 +2583,8 @@ int FlexPA::getEdgeCost(
     vio_edges[edge_idx] = has_vio;
 
     // look back for GN14
-    if (!has_vio && prev_node_idx != -1) {
+    if (!has_vio && prev_node != nullptr) {
       // check one more back
-      auto prev_node = &(nodes[prev_node_idx]);
       if (prev_node->hasPrevNode()) {
         auto prev_prev_node = prev_node->getPrevNode();
         auto [prev_prev_pin_idx, prev_prev_acc_point_idx]
@@ -2630,9 +2631,9 @@ int FlexPA::getEdgeCost(
                       std::make_pair(curr_pin_idx, curr_acc_point_idx))
                       != viol_access_points.end()) {
       edge_cost = 1000;
-    } else if (prev_node_idx >= 0) {
-      const int prev_node_cost = nodes[prev_node_idx].getNodeCost();
-      const int curr_node_cost = nodes[curr_node_idx].getNodeCost();
+    } else if (prev_node != nullptr) {
+      const int prev_node_cost = prev_node->getNodeCost();
+      const int curr_node_cost = curr_node->getNodeCost();
       edge_cost = (prev_node_cost + curr_node_cost) / 2;
     }
   } else {
@@ -2875,15 +2876,6 @@ void FlexPA::genPatterns_print(
 int FlexPA::getFlatIdx(const int idx_1, const int idx_2, const int idx_2_dim)
 {
   return ((idx_1 + 1) * idx_2_dim + idx_2);
-}
-
-// get idx_1 and idx_2 from flat index
-std::pair<int, int> FlexPA::getNestedIdx(const int flat_idx,
-                                         const int idx_2_dim)
-{
-  const int idx_1 = flat_idx / idx_2_dim - 1;
-  const int idx_2 = flat_idx % idx_2_dim;
-  return {idx_1, idx_2};
 }
 
 // get flat edge index

@@ -525,8 +525,8 @@ class FlexPA
       int curr_unique_inst_idx,
       int max_access_point_size);
 
-  int getEdgeCost(int prev_node_idx,
-                  int curr_node_idx,
+  int getEdgeCost(FlexDPNode* prev_node_idx,
+                  FlexDPNode* curr_node_idx,
                   const std::vector<FlexDPNode>& nodes,
                   const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                   std::vector<int>& vio_edges,
@@ -576,8 +576,6 @@ class FlexPA
 
   int getFlatIdx(int idx_1, int idx_2, int idx_2_dim);
 
-  std::pair<int, int> getNestedIdx(int flat_idx, int idx_2_dim);
-
   int getFlatEdgeIdx(int prev_idx_1,
                      int prev_idx_2,
                      int curr_idx_2,
@@ -605,8 +603,8 @@ class FlexPA
   void genInstRowPattern_print(std::vector<FlexDPNode>& nodes,
                                const std::vector<frInst*>& insts);
 
-  int getEdgeCost(int prev_node_idx,
-                  int curr_node_idx,
+  int getEdgeCost(FlexDPNode* prev_node_idx,
+                  FlexDPNode* curr_node_idx,
                   const std::vector<FlexDPNode>& nodes,
                   const std::vector<frInst*>& insts);
 
@@ -671,16 +669,23 @@ class FlexDPNode
   int getNodeCost() const { return nodeCost_; }
   FlexDPNode* getPrevNode() const { return prev_node_; }
   std::pair<int, int> getIdx() const { return idx_; }
+  bool isSource() const { return virtual_source_; }
+  bool isDrain() const { return virtual_drain_; }
+  bool isVirtual() const { return (virtual_source_ || virtual_drain_); }
 
   // setters
   void setPathCost(int in) { pathCost_ = in; }
   void setNodeCost(int in) { nodeCost_ = in; }
   void setPrevNode(FlexDPNode* in) { prev_node_ = in; }
   void setIdx(std::pair<int, int> in) { idx_ = in; }
+  void setAsSource() { virtual_source_ = true; }
+  void setAsDrain() { virtual_drain_ = true; }
 
   bool hasPrevNode() const { return prev_node_ != nullptr; }
 
  private:
+  bool virtual_source_ = false;
+  bool virtual_drain_ = false;
   int pathCost_ = std::numeric_limits<int>::max();
   int nodeCost_ = std::numeric_limits<int>::max();
   /*either {pin_idx, acc_point_idx} or {inst_idx, acc_pattern_idx} depending on
