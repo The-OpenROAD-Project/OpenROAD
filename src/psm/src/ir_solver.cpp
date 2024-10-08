@@ -251,11 +251,6 @@ IRSolver::ConnectivityResults IRSolver::getConnectivityResults() const
   return results;
 }
 
-std::string IRSolver::getMarkerName() const
-{
-  return fmt::format("PSM - {}", net_->getName());
-}
-
 void IRSolver::reportUnconnectedNodes() const
 {
   // report unconnected nodes
@@ -267,14 +262,13 @@ void IRSolver::reportUnconnectedNodes() const
     return;
   }
 
-  const std::string tool_category_name = getMarkerName();
-  odb::dbMarkerCategory* tool_category = odb::dbMarkerCategory::createOrReplace(
-      getBlock(), tool_category_name.c_str());
+  odb::dbMarkerCategory* tool_category = odb::dbMarkerCategory::createOrGet(getBlock(), "PSM");
   tool_category->setSource("PSM");
+  odb::dbMarkerCategory* net_category = odb::dbMarkerCategory::createOrReplace(tool_category, net_->getName().c_str());
 
   if (!results.unconnected_nodes_.empty()) {
     odb::dbMarkerCategory* category
-        = odb::dbMarkerCategory::create(tool_category, "Unconnected node");
+        = odb::dbMarkerCategory::create(net_category, "Unconnected node");
     for (auto* node : results.unconnected_nodes_) {
       logger_->warn(utl::PSM,
                     38,
@@ -291,7 +285,7 @@ void IRSolver::reportUnconnectedNodes() const
       }
       marker->addSource(net_);
       marker->setTechLayer(node->getLayer());
-      marker->addShape(odb::Rect(node->getPoint(), node->getPoint()));
+      marker->addShape(node->getPoint());
     }
   }
 
@@ -309,7 +303,7 @@ void IRSolver::reportUnconnectedNodes() const
     }
 
     odb::dbMarkerCategory* category
-        = odb::dbMarkerCategory::create(tool_category, "Unconnected instance");
+        = odb::dbMarkerCategory::create(net_category, "Unconnected instance");
     for (auto* inst : insts) {
       odb::dbMarker* marker = odb::dbMarker::create(category);
       if (marker == nullptr) {
@@ -1338,9 +1332,13 @@ void IRSolver::writeErrorFile(const std::string& error_file) const
     return;
   }
 
-  const std::string tool_category_name = getMarkerName();
   odb::dbMarkerCategory* group
-      = getBlock()->findMarkerCategory(tool_category_name.c_str());
+      = getBlock()->findMarkerCategory("PSM");
+  if (group == nullptr) {
+    return;
+  }
+
+  group = group->findMarkerCategory(net_->getName().c_str());
   if (group == nullptr) {
     return;
   }
