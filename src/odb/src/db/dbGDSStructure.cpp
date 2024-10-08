@@ -35,11 +35,18 @@
 
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
+#include "dbGDSBoundary.h"
+#include "dbGDSBox.h"
 #include "dbGDSLib.h"
+#include "dbGDSNode.h"
+#include "dbGDSPath.h"
+#include "dbGDSSRef.h"
+#include "dbGDSText.h"
 #include "dbHashTable.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 namespace odb {
 template class dbTable<_dbGDSStructure>;
@@ -50,6 +57,24 @@ bool _dbGDSStructure::operator==(const _dbGDSStructure& rhs) const
     return false;
   }
   if (_next_entry != rhs._next_entry) {
+    return false;
+  }
+  if (*boundaries_ != *rhs.boundaries_) {
+    return false;
+  }
+  if (*boxes_ != *rhs.boxes_) {
+    return false;
+  }
+  if (*nodes_ != *rhs.nodes_) {
+    return false;
+  }
+  if (*paths_ != *rhs.paths_) {
+    return false;
+  }
+  if (*srefs_ != *rhs.srefs_) {
+    return false;
+  }
+  if (*texts_ != *rhs.texts_) {
     return false;
   }
 
@@ -68,6 +93,12 @@ void _dbGDSStructure::differences(dbDiff& diff,
   DIFF_BEGIN
   DIFF_FIELD(_name);
   DIFF_FIELD(_next_entry);
+  DIFF_TABLE(boundaries_);
+  DIFF_TABLE(boxes_);
+  DIFF_TABLE(nodes_);
+  DIFF_TABLE(paths_);
+  DIFF_TABLE(srefs_);
+  DIFF_TABLE(texts_);
   DIFF_END
 }
 
@@ -76,6 +107,12 @@ void _dbGDSStructure::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(_next_entry);
+  DIFF_OUT_TABLE(boundaries_);
+  DIFF_OUT_TABLE(boxes_);
+  DIFF_OUT_TABLE(nodes_);
+  DIFF_OUT_TABLE(paths_);
+  DIFF_OUT_TABLE(srefs_);
+  DIFF_OUT_TABLE(texts_);
 
   DIFF_END
 }
@@ -83,28 +120,80 @@ void _dbGDSStructure::out(dbDiff& diff, char side, const char* field) const
 _dbGDSStructure::_dbGDSStructure(_dbDatabase* db)
 {
   _name = nullptr;
+  boundaries_ = new dbTable<_dbGDSBoundary>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbGDSStructure::getObjectTable,
+      dbGDSBoundaryObj);
+  boxes_ = new dbTable<_dbGDSBox>(
+      db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSBoxObj);
+  nodes_ = new dbTable<_dbGDSNode>(
+      db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSNodeObj);
+  paths_ = new dbTable<_dbGDSPath>(
+      db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSPathObj);
+  srefs_ = new dbTable<_dbGDSSRef>(
+      db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSSRefObj);
+  texts_ = new dbTable<_dbGDSText>(
+      db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSTextObj);
 }
 
 _dbGDSStructure::_dbGDSStructure(_dbDatabase* db, const _dbGDSStructure& r)
 {
   _name = r._name;
   _next_entry = r._next_entry;
+  boundaries_ = new dbTable<_dbGDSBoundary>(db, this, *r.boundaries_);
+  boxes_ = new dbTable<_dbGDSBox>(db, this, *r.boxes_);
+  nodes_ = new dbTable<_dbGDSNode>(db, this, *r.nodes_);
+  paths_ = new dbTable<_dbGDSPath>(db, this, *r.paths_);
+  srefs_ = new dbTable<_dbGDSSRef>(db, this, *r.srefs_);
+  texts_ = new dbTable<_dbGDSText>(db, this, *r.texts_);
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj)
 {
   stream >> obj._name;
-  stream >> obj._elements;
   stream >> obj._next_entry;
+  stream >> *obj.boundaries_;
+  stream >> *obj.boxes_;
+  stream >> *obj.nodes_;
+  stream >> *obj.paths_;
+  stream >> *obj.srefs_;
+  stream >> *obj.texts_;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj)
 {
   stream << obj._name;
-  stream << obj._elements;
   stream << obj._next_entry;
+  stream << *obj.boundaries_;
+  stream << *obj.boxes_;
+  stream << *obj.nodes_;
+  stream << *obj.paths_;
+  stream << *obj.srefs_;
+  stream << *obj.texts_;
   return stream;
+}
+
+dbObjectTable* _dbGDSStructure::getObjectTable(dbObjectType type)
+{
+  switch (type) {
+    case dbGDSBoundaryObj:
+      return boundaries_;
+    case dbGDSBoxObj:
+      return boxes_;
+    case dbGDSNodeObj:
+      return nodes_;
+    case dbGDSPathObj:
+      return paths_;
+    case dbGDSSRefObj:
+      return srefs_;
+    case dbGDSTextObj:
+      return texts_;
+    default:
+      break;
+  }
+  return getTable()->getObjectTable(type);
 }
 
 _dbGDSStructure::~_dbGDSStructure()
@@ -112,6 +201,12 @@ _dbGDSStructure::~_dbGDSStructure()
   if (_name) {
     free((void*) _name);
   }
+  delete boundaries_;
+  delete boxes_;
+  delete nodes_;
+  delete paths_;
+  delete srefs_;
+  delete texts_;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -126,19 +221,43 @@ char* dbGDSStructure::getName() const
   return obj->_name;
 }
 
+dbSet<dbGDSBoundary> dbGDSStructure::getGDSBoundarys() const
+{
+  _dbGDSStructure* obj = (_dbGDSStructure*) this;
+  return dbSet<dbGDSBoundary>(obj, obj->boundaries_);
+}
+
+dbSet<dbGDSBox> dbGDSStructure::getGDSBoxs() const
+{
+  _dbGDSStructure* obj = (_dbGDSStructure*) this;
+  return dbSet<dbGDSBox>(obj, obj->boxes_);
+}
+
+dbSet<dbGDSNode> dbGDSStructure::getGDSNodes() const
+{
+  _dbGDSStructure* obj = (_dbGDSStructure*) this;
+  return dbSet<dbGDSNode>(obj, obj->nodes_);
+}
+
+dbSet<dbGDSPath> dbGDSStructure::getGDSPaths() const
+{
+  _dbGDSStructure* obj = (_dbGDSStructure*) this;
+  return dbSet<dbGDSPath>(obj, obj->paths_);
+}
+
+dbSet<dbGDSSRef> dbGDSStructure::getGDSSRefs() const
+{
+  _dbGDSStructure* obj = (_dbGDSStructure*) this;
+  return dbSet<dbGDSSRef>(obj, obj->srefs_);
+}
+
+dbSet<dbGDSText> dbGDSStructure::getGDSTexts() const
+{
+  _dbGDSStructure* obj = (_dbGDSStructure*) this;
+  return dbSet<dbGDSText>(obj, obj->texts_);
+}
+
 // User Code Begin dbGDSStructurePublicMethods
-
-dbIStream& operator>>(dbIStream& stream, _dbGDSElement* obj)
-{
-  stream >> *obj;
-  return stream;
-}
-
-dbOStream& operator<<(dbOStream& stream, const _dbGDSElement* obj)
-{
-  stream << *obj;
-  return stream;
-}
 
 dbGDSStructure* dbGDSStructure::create(dbGDSLib* lib_, const char* name_)
 {
@@ -168,32 +287,6 @@ void dbGDSStructure::destroy(dbGDSStructure* structure)
 dbGDSLib* dbGDSStructure::getGDSLib()
 {
   return (dbGDSLib*) getImpl()->getOwner();
-}
-
-void dbGDSStructure::removeElement(int index)
-{
-  auto& elements = ((_dbGDSStructure*) this)->_elements;
-  elements.erase(elements.begin() + index);
-}
-
-void dbGDSStructure::addElement(dbGDSElement* element)
-{
-  ((_dbGDSStructure*) this)->_elements.push_back((_dbGDSElement*) element);
-}
-
-dbGDSElement* dbGDSStructure::getElement(int index)
-{
-  return (dbGDSElement*) ((_dbGDSStructure*) this)->_elements[index];
-}
-
-dbGDSElement* dbGDSStructure::operator[](int index)
-{
-  return getElement(index);
-}
-
-int dbGDSStructure::getNumElements()
-{
-  return ((_dbGDSStructure*) this)->_elements.size();
 }
 
 // User Code End dbGDSStructurePublicMethods
