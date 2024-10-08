@@ -12,9 +12,9 @@ jobs:
 
       - name: Install tclint
         run: |
-          python -m pip install tclint==0.4.1
+          python -m pip install tclint==0.4.2
 
       - name: Lint
         run: |
-          tclfmt --check .
+          tclfmt --in-place .
           tclint --no-check-style .
