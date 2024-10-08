@@ -444,7 +444,8 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
     dbTech* tech = block->getTech();
     layer = tech->findLayer(layer_name.value().c_str());
     if (layer == nullptr) {
-      getLogger()->warn(utl::ODB, 255, "Unable to find tech layer: {}", layer_name.value());
+      getLogger()->warn(
+          utl::ODB, 255, "Unable to find tech layer: {}", layer_name.value());
     } else {
       layer_ = layer->getId();
     }
@@ -466,7 +467,8 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
     } else if (shape_type == "box") {
       shapes_.emplace_back(Polygon(pts));
     } else {
-      getLogger()->warn(utl::ODB, 256, "Unable to find shape of violation: {}", shape_type);
+      getLogger()->warn(
+          utl::ODB, 256, "Unable to find shape of violation: {}", shape_type);
     }
   }
 
@@ -484,7 +486,8 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
         marker->addSource(net);
         src_found = true;
       } else {
-        getLogger()->warn(utl::ODB, 257, "Unable to find net: {}", src_name.value());
+        getLogger()->warn(
+            utl::ODB, 257, "Unable to find net: {}", src_name.value());
       }
     } else if (src_type == "inst") {
       odb::dbInst* inst = block->findInst(src_name.value().c_str());
@@ -510,8 +513,7 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
         marker->addSource(bterm);
         src_found = true;
       } else {
-        getLogger()->warn(
-            utl::ODB, 262, "Unable to find bterm: {}", src_name);
+        getLogger()->warn(utl::ODB, 262, "Unable to find bterm: {}", src_name);
       }
     } else if (src_type == "obstruction") {
       bool found = false;

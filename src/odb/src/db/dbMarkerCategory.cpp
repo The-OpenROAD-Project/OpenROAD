@@ -37,7 +37,6 @@
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbMarker.h"
-#include "dbMarkerCategory.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -259,7 +258,8 @@ void _dbMarkerCategory::fromPTree(const PropertyTree& tree)
   auto child_category = tree.get_child_optional("category");
   if (child_category) {
     for (const auto& [name, subtree] : child_category.value()) {
-      dbMarkerCategory* category = dbMarkerCategory::createOrReplace((dbMarkerCategory*) this, name.c_str());
+      dbMarkerCategory* category = dbMarkerCategory::createOrReplace(
+          (dbMarkerCategory*) this, name.c_str());
       _dbMarkerCategory* category_ = (_dbMarkerCategory*) category;
 
       category_->fromPTree(subtree);
@@ -542,7 +542,8 @@ void dbMarkerCategory::fromJSON(dbBlock* block,
   }
 
   for (const auto& [name, subtree] : tree) {
-    dbMarkerCategory* top_category = dbMarkerCategory::createOrReplace(block, name.c_str());
+    dbMarkerCategory* top_category
+        = dbMarkerCategory::createOrReplace(block, name.c_str());
     _dbMarkerCategory* top_category_ = (_dbMarkerCategory*) top_category;
 
     top_category_->fromPTree(subtree);
@@ -692,7 +693,8 @@ void dbMarkerCategory::fromTR(dbBlock* block,
     std::string single_source;
     std::string comment;
 
-    dbMarkerCategory* category = odb::dbMarkerCategory::createOrGet(marker_category, type.c_str());
+    dbMarkerCategory* category
+        = odb::dbMarkerCategory::createOrGet(marker_category, type.c_str());
 
     dbMarker* marker = dbMarker::create(category);
     if (marker == nullptr) {
