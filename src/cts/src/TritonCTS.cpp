@@ -2081,7 +2081,7 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex,
 {
   sta::VertexPathIterator pathIter(sinkVertex, openSta_);
   float clkPathArrival = 0.0;
-  int pathsAccepted = 0;
+
   while (pathIter.hasNext()) {
     sta::Path* path = pathIter.next();
 
@@ -2116,19 +2116,11 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex,
       }
       if (pathStartNet == topNet) {
         clkPathArrival = path->arrival(openSta_);
-        pathsAccepted += 1;
         return clkPathArrival;
       }
     }
   }
-  if (pathsAccepted > 1 || pathsAccepted == 0) {
-    logger_->warn(
-        CTS,
-        2,
-        "Number of clock paths is not 1 for pin {}. Number of clock paths: {}",
-        iterm->getName(),
-        pathsAccepted);
-  }
+  logger_->warn(CTS, 2, "No paths found for pin {}.", iterm->getName());
   return clkPathArrival;
 }
 
@@ -2197,7 +2189,6 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
           sumArrivals += (arrival + insDelay);
           numSinks++;
         }
-        return;
       } else {
         // not a sink, but a clock gater
         odb::dbITerm* outTerm = inst->getFirstOutput();
