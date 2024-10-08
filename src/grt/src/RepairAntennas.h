@@ -39,6 +39,7 @@
 #include <boost/geometry/index/rtree.hpp>
 #include <boost/iterator/function_output_iterator.hpp>
 #include <string>
+#include <unordered_set>
 
 #include "ant/AntennaChecker.hh"
 #include "dpl/Opendp.h"
@@ -103,6 +104,11 @@ struct SegmentData
     rect = rect_;
   }
 };
+
+using LayerToSegmentDataVector
+    = std::unordered_map<odb::dbTechLayer*, std::vector<SegmentData>>;
+using PinNameToSegmentIds
+    = std::unordered_map<std::string, std::unordered_set<int>>;
 
 enum class RoutingSource
 {
@@ -171,6 +177,13 @@ class RepairAntennas
                         const int& tile_size,
                         bool is_horizontal,
                         bool near_to_start);
+  int getSegmentByLayer(const GRoute& route,
+                        const int& max_layer,
+                        LayerToSegmentDataVector& segment_by_layer);
+  void setAdjacentSegments(LayerToSegmentDataVector& segment_by_layer);
+  void getSegmentsConnectedToPins(odb::dbNet* db_net,
+                                  LayerToSegmentDataVector& segment_by_layer,
+                                  PinNameToSegmentIds& seg_connected_to_pin);
   ViolationIdToSegmentIds getSegmentsWithViolation(
       odb::dbNet* db_net,
       const GRoute& route,

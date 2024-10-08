@@ -1208,14 +1208,10 @@ void RepairAntennas::getPinCountNearEndPoints(
   for (const auto& iterm : gates) {
     odb::dbInst* sink_inst = iterm->getInst();
     odb::Rect sink_bbox = getInstRect(sink_inst, iterm);
-    const odb::Point gate_minX_minY
-        = odb::Point(sink_bbox.xMin(), sink_bbox.yMin());
-    const odb::Point gate_minX_maxY
-        = odb::Point(sink_bbox.xMin(), sink_bbox.yMax());
-    const odb::Point gate_maxX_minY
-        = odb::Point(sink_bbox.xMax(), sink_bbox.yMin());
-    const odb::Point gate_maxX_maxY
-        = odb::Point(sink_bbox.xMax(), sink_bbox.yMax());
+    const odb::Point gate_minX_minY(sink_bbox.xMin(), sink_bbox.yMin());
+    const odb::Point gate_minX_maxY(sink_bbox.xMin(), sink_bbox.yMax());
+    const odb::Point gate_maxX_minY(sink_bbox.xMax(), sink_bbox.yMin());
+    const odb::Point gate_maxX_maxY(sink_bbox.xMax(), sink_bbox.yMax());
     // Get the distance to min/max position
     const int dist_to_min = std::min(
         std::min(odb::Point::manhattanDistance(gate_minX_minY, seg_min),
@@ -1249,19 +1245,23 @@ void getSegmentsWithOverlap(SegmentData& seg_info,
   }
 }
 
-ViolationIdToSegmentIds RepairAntennas::getSegmentsWithViolation(
-    odb::dbNet* db_net,
+std::string getPinName(odb::dbITerm* iterm, odb::dbMTerm* mterm)
+{
+  std::string pin_name = fmt::format("  {}/{} ({})",
+                                     iterm->getInst()->getConstName(),
+                                     mterm->getConstName(),
+                                     mterm->getMaster()->getConstName());
+  return pin_name;
+}
+
+int RepairAntennas::getSegmentByLayer(
     const GRoute& route,
     const int& max_layer,
-    std::map<int, int>& layer_with_violation)
+    LayerToSegmentDataVector& segment_by_layer)
 {
-  odb::dbTech* tech = db_->getTech();
-  int min_layer = 1;
-  // get segments information
-  std::unordered_map<odb::dbTechLayer*, std::vector<SegmentData>>
-      segment_by_layer;
-  int added_seg_count = 0;
   vias_pos_.clear();
+  int added_seg_count = 0;
+  odb::dbTech* tech = db_->getTech();
   int seg_pos = 0;
   for (const GSegment& seg : route) {
     // add only segments in lower layer of violation layer
@@ -1292,7 +1292,12 @@ ViolationIdToSegmentIds RepairAntennas::getSegmentsWithViolation(
     }
     seg_pos++;
   }
+  return added_seg_count;
+}
 
+void RepairAntennas::setAdjacentSegments(
+    LayerToSegmentDataVector& segment_by_layer)
+{
   // Set adjacents segments (neighbor)
   for (auto& layer_it : segment_by_layer) {
     odb::dbTechLayer* tech_layer = layer_it.first;
@@ -1311,15 +1316,17 @@ ViolationIdToSegmentIds RepairAntennas::getSegmentsWithViolation(
       }
     }
   }
+}
 
+void RepairAntennas::getSegmentsConnectedToPins(
+    odb::dbNet* db_net,
+    LayerToSegmentDataVector& segment_by_layer,
+    PinNameToSegmentIds& seg_connected_to_pin)
+{
   // iterate all instance pins to get segments with overlap
-  std::unordered_map<std::string, std::unordered_set<int>> seg_connected_to_pin;
   for (odb::dbITerm* iterm : db_net->getITerms()) {
     odb::dbMTerm* mterm = iterm->getMTerm();
-    std::string pin_name = fmt::format("  {}/{} ({})",
-                                       iterm->getInst()->getConstName(),
-                                       mterm->getConstName(),
-                                       mterm->getMaster()->getConstName());
+    std::string pin_name = getPinName(iterm, mterm);
     odb::dbInst* inst = iterm->getInst();
     const odb::dbTransform transform = inst->getTransform();
     for (odb::dbMPin* mterm : mterm->getMPins()) {
@@ -1341,10 +1348,29 @@ ViolationIdToSegmentIds RepairAntennas::getSegmentsWithViolation(
       }
     }
   }
+}
+
+ViolationIdToSegmentIds RepairAntennas::getSegmentsWithViolation(
+    odb::dbNet* db_net,
+    const GRoute& route,
+    const int& max_layer,
+    std::map<int, int>& layer_with_violation)
+{
+  // Get segment data by layer below max layer
+  LayerToSegmentDataVector segment_by_layer;
+  int added_seg_count = getSegmentByLayer(route, max_layer, segment_by_layer);
+
+  // Set connection to adjacent segments (colliding segments)
+  setAdjacentSegments(segment_by_layer);
+
+  // Get segments connect to pins
+  PinNameToSegmentIds seg_connected_to_pin;
+  getSegmentsConnectedToPins(db_net, segment_by_layer, seg_connected_to_pin);
 
   // Get violation info
   const auto& violations = antenna_violations_[db_net];
   ViolationIdToSegmentIds segment_with_violations;
+  odb::dbTech* tech = db_->getTech();
 
   // Init DSU
   std::vector<int> dsu_parent(added_seg_count);
@@ -1356,6 +1382,7 @@ ViolationIdToSegmentIds RepairAntennas::getSegmentsWithViolation(
   boost::disjoint_sets<int*, int*> dsu(&dsu_size[0], &dsu_parent[0]);
 
   // Run DSU
+  int min_layer = 1;
   odb::dbTechLayer* layer_iter = tech->findRoutingLayer(min_layer);
   for (; layer_iter; layer_iter = layer_iter->getUpperLayer()) {
     // iterate each node of this layer to union set
@@ -1379,11 +1406,7 @@ ViolationIdToSegmentIds RepairAntennas::getSegmentsWithViolation(
         const int& violation_id = layer_with_violation[iter_layer_level];
         for (const auto& iterm : violations[violation_id].gates) {
           odb::dbMTerm* mterm = iterm->getMTerm();
-          std::string pin_name
-              = fmt::format("  {}/{} ({})",
-                            iterm->getInst()->getConstName(),
-                            mterm->getConstName(),
-                            mterm->getMaster()->getConstName());
+          std::string pin_name = getPinName(iterm, mterm);
           bool is_conected = false;
           // iterate all segment with overlap with pin
           for (const int& nbr_id : seg_connected_to_pin[pin_name]) {
