@@ -309,9 +309,9 @@ dbGDSLib* dbGDSLib::create(dbDatabase* db, const std::string& name)
   return lib;
 }
 
-void dbGDSLib::destroy(dbGDSLib* node)
+void dbGDSLib::destroy(dbGDSLib* lib)
 {
-  auto* obj = (_dbGDSLib*) node;
+  auto* obj = (_dbGDSLib*) lib;
   auto* db = (_dbDatabase*) obj->getOwner();
   db->_gds_lib_tbl->destroy(obj);
 }

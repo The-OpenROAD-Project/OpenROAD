@@ -45,7 +45,7 @@ class GDSWriter
 {
  public:
   GDSWriter(utl::Logger* logger);
-  
+
   /**
    * Writes a dbGDSLib object to a GDS file
    *

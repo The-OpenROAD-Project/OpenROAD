@@ -7454,7 +7454,7 @@ class dbGDSBox : public dbObject
   std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
 
   static dbGDSBox* create(dbGDSStructure* structure);
-  static void destroy(dbGDSBox* node);
+  static void destroy(dbGDSBox* box);
   // User Code End dbGDSBox
 };
 
