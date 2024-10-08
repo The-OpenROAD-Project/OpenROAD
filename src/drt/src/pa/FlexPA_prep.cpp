@@ -527,6 +527,10 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
   }
 
   // gen all full/half grid coords
+  /** offset used to only be used after an if (!is_macro_cell_pin ||
+   * !use_center_line), so this logic was combined with offset is_macro_cell_pin
+   * ? hwidth : 0;
+   */
   const int offset = is_macro_cell_pin && !use_center_line ? hwidth : 0;
   const int layer1_rect_min = is_layer1_horz ? gtl::yl(rect) : gtl::xl(rect);
   const int layer1_rect_max = is_layer1_horz ? gtl::yh(rect) : gtl::xh(rect);
