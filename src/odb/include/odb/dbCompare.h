@@ -544,16 +544,6 @@ struct less<odb::dbGDSBox*>
 };
 
 template <>
-struct less<odb::dbGDSElement*>
-{
-  bool operator()(const odb::dbGDSElement* lhs,
-                  const odb::dbGDSElement* rhs) const
-  {
-    return odb::compare_by_id(lhs, rhs);
-  }
-};
-
-template <>
 struct less<odb::dbGDSNode*>
 {
   bool operator()(const odb::dbGDSNode* lhs, const odb::dbGDSNode* rhs) const

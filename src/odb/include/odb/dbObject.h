@@ -63,6 +63,7 @@ enum dbObjectType
 
   // Design Objects
   dbChipObj,
+  dbGdsLibObj,
   dbBlockObj,
   dbInstHdrObj,
   dbInstObj,
@@ -92,7 +93,6 @@ enum dbObjectType
   dbGCellGridObj,
   dbGDSBoundaryObj,
   dbGDSBoxObj,
-  dbGDSElementObj,
   dbGDSNodeObj,
   dbGDSPathObj,
   dbGDSSRefObj,
