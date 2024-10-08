@@ -313,9 +313,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& db)
   stream << *db._gds_lib_tbl;
   stream << NamedTable("prop_tbl", db._prop_tbl);
   stream << *db._name_cache;
-  if (db.isSchema(db_schema_gds_lib_in_block)) {
-    stream << *db._gds_lib_tbl;
-  }
+  stream << *db._gds_lib_tbl;
   return stream;
 }
 
@@ -364,7 +362,9 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& db)
   stream >> *db._tech_tbl;
   stream >> *db._lib_tbl;
   stream >> *db._chip_tbl;
-  stream >> *db._gds_lib_tbl;
+  if (db.isSchema(db_schema_gds_lib_in_block)) {
+    stream >> *db._gds_lib_tbl;
+  }
   stream >> *db._prop_tbl;
   stream >> *db._name_cache;
 
