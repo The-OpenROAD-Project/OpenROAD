@@ -552,7 +552,7 @@ class FlexPA
       const std::vector<FlexDPNode>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::set<std::pair<int, int>>& used_access_points,
-      const int max_access_point_size);
+      int max_access_point_size);
 
   bool genPatterns_commit(
       const std::vector<FlexDPNode>& nodes,
