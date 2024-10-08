@@ -649,10 +649,10 @@ proc set_max_layer { args } {
   $block setMaxRoutingLayer $maxLayer
 }
 
-sta::define_cmd_args "design_is_routed" {}
+sta::define_cmd_args "design_is_routed" { [-verbose] }
 
 proc design_is_routed { args } {
-  sta::parse_key_args "design_is_routed" args keys {} flags {}
+  sta::parse_key_args "design_is_routed" args keys {} flags {-verbose}
 
   set db [ord::get_db]
   set chip [$db getChip]
@@ -661,5 +661,5 @@ proc design_is_routed { args } {
   }
   set block [$chip getBlock]
 
-  return [$block designIsRouted]
+  return [$block designIsRouted [info exists flags(-verbose)]]
 }

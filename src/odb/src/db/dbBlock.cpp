@@ -4097,8 +4097,9 @@ void dbBlock::preExttreeMergeRC(double max_cap, uint corner)
   }
 }
 
-bool dbBlock::designIsRouted()
+bool dbBlock::designIsRouted(bool verbose)
 {
+  bool design_is_routed = true;
   for (dbNet* net : getNets()) {
     const int pin_count = net->getBTermCount() + net->getITerms().size();
 
@@ -4107,10 +4108,16 @@ bool dbBlock::designIsRouted()
     bool has_wires = wire_cnt != 0 || via_cnt != 0;
 
     if (pin_count > 1 && !has_wires && !net->isConnectedByAbutment()) {
-      return false;
+      if (verbose) {
+        getImpl()->getLogger()->warn(
+            utl::ODB, 232, "Net {} is not routed.", net->getName());
+        design_is_routed = false;
+      } else {
+        return false;
+      }
     }
   }
-  return true;
+  return design_is_routed;
 }
 
 int dbBlock::globalConnect()

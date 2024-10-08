@@ -1593,7 +1593,7 @@ class dbBlock : public dbObject
   ///
   /// check if signal, clock and special nets are routed
   ///
-  bool designIsRouted();
+  bool designIsRouted(bool verbose);
 
   ///
   /// clear
