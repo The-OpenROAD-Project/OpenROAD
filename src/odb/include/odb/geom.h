@@ -966,7 +966,8 @@ inline Line::Line(const Point& pt0, const Point& pt1) : pt0_(pt0), pt1_(pt1)
 {
 }
 
-inline Line::Line(int x0, int y0, int x1, int y1) : pt0_(Point(x0, y0)), pt1_(Point(x1, y1))
+inline Line::Line(int x0, int y0, int x1, int y1)
+    : pt0_(Point(x0, y0)), pt1_(Point(x1, y1))
 {
 }
 
