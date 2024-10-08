@@ -751,7 +751,7 @@ void dbMarkerCategory::fromTR(dbBlock* block,
     // bounding box and layer
     if (!std::regex_match(line, base_match, bbox_layer)) {
       logger->error(utl::ODB,
-                    223,
+                    291,
                     "Unable to parse line as violation location (line: {}): {}",
                     line_number,
                     line);
@@ -890,7 +890,7 @@ void dbMarkerCategory::fromTR(dbBlock* block,
         }
         if (!found) {
           logger->warn(utl::ODB,
-                       232,
+                       294,
                        "Unable to find obstruction (line: {})",
                        source_line_number);
         }
