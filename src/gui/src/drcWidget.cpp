@@ -244,17 +244,23 @@ void DRCWidget::clicked(const QModelIndex& index)
 void DRCWidget::setBlock(odb::dbBlock* block)
 {
   block_ = block;
+  
+  addOwner(block_);
   updateMarkerGroups();
 }
 
 void DRCWidget::showEvent(QShowEvent* event)
 {
+  addOwner(block_);
+
   updateMarkerGroups();
   toggleRenderer(true);
 }
 
 void DRCWidget::hideEvent(QHideEvent* event)
 {
+  removeOwner();
+
   toggleRenderer(false);
 }
 
@@ -274,11 +280,8 @@ void DRCWidget::toggleRenderer(bool visible)
 
 void DRCWidget::updateModel()
 {
-  odb::dbMarkerCategory* category = nullptr;
-  if (categories_->currentIndex() > 0) {
-    const std::string name = categories_->currentText().toStdString();
-    category = block_->findMarkerCategory(name.c_str());
-  }
+  const std::string name = categories_->currentText().toStdString();
+  odb::dbMarkerCategory* category = block_->findMarkerCategory(name.c_str());
 
   model_->removeRows(0, model_->rowCount());
 
@@ -379,15 +382,62 @@ void DRCWidget::loadJSONReport(const QString& filename)
 
 void DRCWidget::updateMarkerGroups()
 {
+  updateMarkerGroupsWithIgnore(nullptr);
+}
+
+void DRCWidget::updateMarkerGroupsWithIgnore(odb::dbMarkerCategory* ignore)
+{
   if (block_ == nullptr) {
     return;
   }
+
+  const std::string currentText = categories_->currentText().toStdString();
+  const bool remove_current = ignore != nullptr && ignore->getName() == currentText;
 
   categories_->clear();
 
   categories_->addItem("");
   for (auto* category : block_->getMarkerCategories()) {
+    if (ignore == category) {
+      continue;
+    }
     categories_->addItem(QString::fromStdString(category->getName()));
+  }
+
+  if (remove_current) {
+    categories_->setCurrentText("");
+  } else {
+    categories_->setCurrentText(QString::fromStdString(currentText));
+  }
+}
+
+void DRCWidget::inDbMarkerCategoryCreate(odb::dbMarkerCategory* category)
+{
+  updateMarkerGroups();
+}
+
+void DRCWidget::inDbMarkerCategoryDestroy(odb::dbMarkerCategory* category)
+{
+  updateMarkerGroupsWithIgnore(category);
+}
+
+void DRCWidget::inDbMarkerCreate(odb::dbMarker* marker)
+{
+  const std::string name = categories_->currentText().toStdString();
+  odb::dbMarkerCategory* category = block_->findMarkerCategory(name.c_str());
+
+  if (marker->getCategory()->getTopCategory() == category) {
+    updateModel();
+  }
+}
+
+void DRCWidget::inDbMarkerDestroy(odb::dbMarker* marker)
+{
+  const std::string name = categories_->currentText().toStdString();
+  odb::dbMarkerCategory* category = block_->findMarkerCategory(name.c_str());
+
+  if (marker->getCategory()->getTopCategory() == category) {
+    updateModel();
   }
 }
 

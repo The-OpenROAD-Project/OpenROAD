@@ -48,6 +48,7 @@
 #include "gui/gui.h"
 #include "inspector.h"
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 
 namespace utl {
 class Logger;
@@ -78,7 +79,7 @@ class DRCRenderer : public Renderer
   odb::dbMarkerCategory* category_;
 };
 
-class DRCWidget : public QDockWidget
+class DRCWidget : public QDockWidget, public odb::dbBlockCallBackObj
 {
   Q_OBJECT
 
@@ -87,6 +88,12 @@ class DRCWidget : public QDockWidget
   ~DRCWidget() {}
 
   void setLogger(utl::Logger* logger);
+
+  // from dbBlockCallBackObj
+  void inDbMarkerCategoryCreate(odb::dbMarkerCategory* category) override;
+  void inDbMarkerCategoryDestroy(odb::dbMarkerCategory* category) override;
+  void inDbMarkerCreate(odb::dbMarker* marker) override;
+  void inDbMarkerDestroy(odb::dbMarker* marker) override;
 
  signals:
   void selectDRC(const Selected& selected);
@@ -116,6 +123,7 @@ class DRCWidget : public QDockWidget
  private:
   void loadTRReport(const QString& filename);
   void loadJSONReport(const QString& filename);
+  void updateMarkerGroupsWithIgnore(odb::dbMarkerCategory* ignore);
 
   utl::Logger* logger_;
 

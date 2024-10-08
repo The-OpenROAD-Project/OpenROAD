@@ -51,6 +51,9 @@
 #include "dbTechLayer.h"
 #include "dbVector.h"
 #include "odb/db.h"
+// User Code Begin Includes
+#include "odb/dbBlockCallBackObj.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbMarker>;
 
@@ -604,12 +607,27 @@ dbMarker* dbMarker::create(dbMarkerCategory* category)
 
   _dbMarker* marker = _category->marker_tbl_->create();
 
+  _dbBlock* block = marker->getBlock();
+  std::list<dbBlockCallBackObj*>::iterator cbitr;
+  for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
+       ++cbitr) {
+    (**cbitr)().inDbMarkerCreate((dbMarker*) marker);
+  }
+
   return (dbMarker*) marker;
 }
 
 void dbMarker::destroy(dbMarker* marker)
 {
   _dbMarker* _marker = (_dbMarker*) marker;
+
+  _dbBlock* block = _marker->getBlock();
+  std::list<dbBlockCallBackObj*>::iterator cbitr;
+  for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
+       ++cbitr) {
+    (**cbitr)().inDbMarkerDestroy(marker);
+  }
+
   _dbMarkerCategory* category = (_dbMarkerCategory*) _marker->getOwner();
   category->marker_tbl_->destroy(_marker);
 }
