@@ -13,3 +13,4 @@
 [DEBUG ODB-dbReadVerilog] Created module iterm in 
 [DEBUG ODB-dbReadVerilog] Created module iterm clk 
 [DEBUG ODB-dbReadVerilog] Created module iterm out 
+[DEBUG ODB-dbReadVerilog] Created 8 modules and 15 module nets

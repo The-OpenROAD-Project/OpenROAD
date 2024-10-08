@@ -397,10 +397,10 @@ write_cdl_cmd(const char *outFilename,
 }
 
 void
-read_db_cmd(const char *filename, bool hierarchy)
+read_db_cmd(const char *filename)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->readDb(filename,hierarchy);
+  ord->readDb(filename);
 }
 
 void

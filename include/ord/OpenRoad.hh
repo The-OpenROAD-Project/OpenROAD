@@ -235,7 +235,7 @@ class OpenRoad
   void designCreated();
 
   void readDb(std::istream& stream);
-  void readDb(const char* filename, bool hierarchy = false);
+  void readDb(const char* filename);
   void writeDb(std::ostream& stream);
   void writeDb(const char* filename);
 

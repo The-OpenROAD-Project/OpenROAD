@@ -31,8 +31,8 @@ module flop_pair (clknet_1_1__leaf_clk_i,
  input clknet_1_0__leaf_clk_i;
 
 
- DFF_X1 ff1 (.CK(clknet_1_1__leaf_clk_i));
- DFF_X1 ff2 (.CK(clknet_1_0__leaf_clk_i));
+ DFF_X1 \U1/ff1  (.CK(clknet_1_1__leaf_clk_i));
+ DFF_X1 \U1/ff2  (.CK(clknet_1_0__leaf_clk_i));
 endmodule
 module flop_pair-1 (clknet_1_1__leaf_clk_i,
     clknet_1_0__leaf_clk_i);
@@ -40,8 +40,8 @@ module flop_pair-1 (clknet_1_1__leaf_clk_i,
  input clknet_1_0__leaf_clk_i;
 
 
- DFF_X1 ff1 (.CK(clknet_1_1__leaf_clk_i));
- DFF_X1 ff2 (.CK(clknet_1_0__leaf_clk_i));
+ DFF_X1 \U2/ff1  (.CK(clknet_1_1__leaf_clk_i));
+ DFF_X1 \U2/ff2  (.CK(clknet_1_0__leaf_clk_i));
 endmodule
 module flop_pair-2 (clknet_1_1__leaf_clk_i,
     clknet_1_0__leaf_clk_i);
@@ -49,8 +49,8 @@ module flop_pair-2 (clknet_1_1__leaf_clk_i,
  input clknet_1_0__leaf_clk_i;
 
 
- DFF_X1 ff1 (.CK(clknet_1_1__leaf_clk_i));
- DFF_X1 ff2 (.CK(clknet_1_0__leaf_clk_i));
+ DFF_X1 \U3/ff1  (.CK(clknet_1_1__leaf_clk_i));
+ DFF_X1 \U3/ff2  (.CK(clknet_1_0__leaf_clk_i));
 endmodule
 module flop_pair-3 (clknet_1_1__leaf_clk_i,
     clknet_1_0__leaf_clk_i);
@@ -58,15 +58,15 @@ module flop_pair-3 (clknet_1_1__leaf_clk_i,
  input clknet_1_0__leaf_clk_i;
 
 
- DFF_X1 ff1 (.CK(clknet_1_0__leaf_clk_i));
- DFF_X1 ff2 (.CK(clknet_1_1__leaf_clk_i));
+ DFF_X1 \U4/ff1  (.CK(clknet_1_0__leaf_clk_i));
+ DFF_X1 \U4/ff2  (.CK(clknet_1_1__leaf_clk_i));
 endmodule
 module flop_pair-4 (clknet_1_0__leaf_clk_i);
  input clknet_1_0__leaf_clk_i;
 
 
- DFF_X1 ff1 (.CK(clknet_1_0__leaf_clk_i));
- DFF_X1 ff2 (.CK(clknet_1_0__leaf_clk_i));
+ DFF_X1 \U5/ff1  (.CK(clknet_1_0__leaf_clk_i));
+ DFF_X1 \U5/ff2  (.CK(clknet_1_0__leaf_clk_i));
 endmodule
 module flop_pair-5 (clknet_1_1__leaf_clk_i,
     clknet_1_0__leaf_clk_i);
@@ -74,8 +74,8 @@ module flop_pair-5 (clknet_1_1__leaf_clk_i,
  input clknet_1_0__leaf_clk_i;
 
 
- DFF_X1 ff1 (.CK(clknet_1_1__leaf_clk_i));
- DFF_X1 ff2 (.CK(clknet_1_0__leaf_clk_i));
+ DFF_X1 \U6/ff1  (.CK(clknet_1_1__leaf_clk_i));
+ DFF_X1 \U6/ff2  (.CK(clknet_1_0__leaf_clk_i));
 endmodule
 module flop_pair-6 (clknet_1_1__leaf_clk_i,
     clknet_1_0__leaf_clk_i);
@@ -83,8 +83,8 @@ module flop_pair-6 (clknet_1_1__leaf_clk_i,
  input clknet_1_0__leaf_clk_i;
 
 
- DFF_X1 ff1 (.CK(clknet_1_0__leaf_clk_i));
- DFF_X1 ff2 (.CK(clknet_1_1__leaf_clk_i));
+ DFF_X1 \U7/ff1  (.CK(clknet_1_0__leaf_clk_i));
+ DFF_X1 \U7/ff2  (.CK(clknet_1_1__leaf_clk_i));
 endmodule
 module flop_pair-7 (clknet_1_1__leaf_clk_i,
     clknet_1_0__leaf_clk_i);
@@ -92,6 +92,6 @@ module flop_pair-7 (clknet_1_1__leaf_clk_i,
  input clknet_1_0__leaf_clk_i;
 
 
- DFF_X1 ff1 (.CK(clknet_1_1__leaf_clk_i));
- DFF_X1 ff2 (.CK(clknet_1_0__leaf_clk_i));
+ DFF_X1 \U8/ff1  (.CK(clknet_1_1__leaf_clk_i));
+ DFF_X1 \U8/ff2  (.CK(clknet_1_0__leaf_clk_i));
 endmodule
