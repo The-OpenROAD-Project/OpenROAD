@@ -135,7 +135,7 @@ for relation in schema["relations"]:
         inParentField["schema"] = relation["schema"]
 
     schema["classes"][parent]["fields"].append(inParentField)
-    if relation["first"] != relation['second']:
+    if relation["first"] != relation["second"]:
         schema["classes"][parent]["cpp_includes"].extend(
             [f"{relation['second']}.h", "odb/dbSet.h"]
         )
