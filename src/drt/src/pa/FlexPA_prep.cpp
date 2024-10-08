@@ -53,11 +53,6 @@ using utl::ThreadException;
 // terms from OpenDB
 bool FlexPA::isStdCell(frInst* inst)
 {
-  // dbMasterType masterType = inst->getMaster()->getMasterType();
-  // return (masterType == dbMasterType::CORE
-  //         || masterType == dbMasterType::CORE_TIEHIGH
-  //         || masterType == dbMasterType::CORE_TIELOW
-  //         || masterType == dbMasterType::CORE_ANTENNACELL);
   return inst->getMaster()->getMasterType().isCore();
 }
 
