@@ -1052,7 +1052,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
     stream << block._min_layer_for_clock;
     stream << block._max_layer_for_clock;
   }
-  
+
   //---------------------------------------------------------- stream out
   // properties
   // TOM

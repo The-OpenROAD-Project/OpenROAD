@@ -72,7 +72,6 @@ const uint db_schema_initial = 57;
 
 const uint db_schema_minor = 93;  // Current revision number
 
-
 // Revision where the dbGDSLib is added to dbDatabase
 const uint db_schema_gds_lib_in_block = 93;
 
