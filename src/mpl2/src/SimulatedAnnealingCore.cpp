@@ -628,16 +628,22 @@ void SimulatedAnnealingCore<T>::fastSA()
     }
   }
 
-  if (!isValid()) {
-    pos_seq_ = best_valid_result.pos_sequence;
-    neg_seq_ = best_valid_result.neg_sequence;
-  }
-
   packFloorplan();
   if (graphics_) {
     graphics_->doNotSkip();
   }
   calPenalty();
+
+  if (!isValid() && !best_valid_result.pos_sequence.empty()) {
+    pos_seq_ = best_valid_result.pos_sequence;
+    neg_seq_ = best_valid_result.neg_sequence;
+
+    packFloorplan();
+    if (graphics_) {
+      graphics_->doNotSkip();
+    }
+    calPenalty();
+  }
 
   if (centralization_on_) {
     attemptCentralization(calNormCost());
