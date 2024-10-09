@@ -218,6 +218,11 @@ void SACoreHardMacro::initialize()
   std::vector<float> fence_penalty_list;
   std::vector<float> width_list;
   std::vector<float> height_list;
+
+  // We don't want to stop in the normalization factor setup
+  Mpl2Observer* save_graphics = graphics_;
+  graphics_ = nullptr;
+
   for (int i = 0; i < num_perturb_per_step_; i++) {
     perturb();
     // store current penalties
@@ -229,6 +234,7 @@ void SACoreHardMacro::initialize()
     guidance_penalty_list.push_back(guidance_penalty_);
     fence_penalty_list.push_back(fence_penalty_);
   }
+  graphics_ = save_graphics;
 
   norm_area_penalty_ = calAverage(area_penalty_list);
   norm_outline_penalty_ = calAverage(outline_penalty_list);
