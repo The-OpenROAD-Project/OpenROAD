@@ -63,7 +63,7 @@ class Parser
 {
  public:
   // constructors
-  Parser(odb::dbDatabase* dbIn, frDesign* designIn, Logger* loggerIn);
+  Parser(odb::dbDatabase* dbIn, drt::TritonRoute* router, Logger* loggerIn);
 
   // others
   void readDesign(odb::dbDatabase*);
@@ -90,7 +90,9 @@ class Parser
   void updateDesign();
 
  private:
-  frBlock* getBlock() const { return design_->getTopBlock(); }
+  frDesign* getDesign() const;
+  frBlock* getBlock() const;
+  frTechObject* getTech() const;
   void setMasters(odb::dbDatabase*);
   void setTechVias(odb::dbTech*);
   void setTechViaRules(odb::dbTech*);
@@ -151,8 +153,7 @@ class Parser
   void addFakeNets();
 
   odb::dbDatabase* db_;
-  frDesign* design_;
-  frTechObject* tech_;
+  drt::TritonRoute* router_;
   Logger* logger_;
   // temporary variables
   int readLayerCnt_;
