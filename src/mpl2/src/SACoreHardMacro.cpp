@@ -119,7 +119,7 @@ void SACoreHardMacro::calPenalty()
   calGuidancePenalty();
   calFencePenalty();
   if (graphics_) {
-    graphics_->setAreaPenalty(getAreaPenalty());
+    graphics_->setAreaPenalty({area_weight_, getAreaPenalty()});
     graphics_->penaltyCalculated(calNormCost());
   }
 }
