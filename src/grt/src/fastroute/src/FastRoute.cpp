@@ -600,6 +600,27 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
   }
 }
 
+int FastRouteCore::getAvailableResources(int x1,
+                                         int y1,
+                                         int x2,
+                                         int y2,
+                                         int layer)
+{
+  const int k = layer - 1;
+  int available_cap = 0;
+  if (y1 == y2) {  // horizontal edge
+    available_cap = h_edges_3D_[k][y1][x1].cap - h_edges_3D_[k][y1][x1].usage;
+  } else if (x1 == x2) {  // vertical edge
+    available_cap = v_edges_3D_[k][y1][x1].cap - v_edges_3D_[k][y1][x1].usage;
+  } else {
+    logger_->error(
+        GRT,
+        213,
+        "Cannot get available resources: edge is not vertical or horizontal.");
+  }
+  return available_cap;
+}
+
 int FastRouteCore::getEdgeCapacity(int x1, int y1, int x2, int y2, int layer)
 {
   const int k = layer - 1;
@@ -651,6 +672,28 @@ void FastRouteCore::incrementEdge3DUsage(int x1,
   } else if (x1 == x2) {  // vertical edge
     for (int y = y1; y < y2; y++) {
       v_edges_3D_[k][y][x1].usage++;
+    }
+  }
+}
+
+void FastRouteCore::updateEdge2DAnd3DUsage(int x1,
+                                           int y1,
+                                           int x2,
+                                           int y2,
+                                           int layer,
+                                           int used)
+{
+  const int k = layer - 1;
+
+  if (y1 == y2) {  // horizontal edge
+    for (int x = x1; x < x2; x++) {
+      h_edges_[y1][x].usage += used;
+      h_edges_3D_[k][y1][x].usage += used;
+    }
+  } else if (x1 == x2) {  // vertical edge
+    for (int y = y1; y < y2; y++) {
+      v_edges_[y][x1].usage += used;
+      v_edges_3D_[k][y][x1].usage += used;
     }
   }
 }
