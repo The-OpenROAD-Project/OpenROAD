@@ -44,6 +44,13 @@ template class dbTable<_dbGDSNode>;
 
 bool _dbGDSNode::operator==(const _dbGDSNode& rhs) const
 {
+  if (_layer != rhs._layer) {
+    return false;
+  }
+  if (_datatype != rhs._datatype) {
+    return false;
+  }
+
   return true;
 }
 
@@ -57,29 +64,47 @@ void _dbGDSNode::differences(dbDiff& diff,
                              const _dbGDSNode& rhs) const
 {
   DIFF_BEGIN
+  DIFF_FIELD(_layer);
+  DIFF_FIELD(_datatype);
   DIFF_END
 }
 
-void _dbGDSNode::out(dbDiff& diff, char side, const char* field) const {
-    DIFF_OUT_BEGIN
+void _dbGDSNode::out(dbDiff& diff, char side, const char* field) const
+{
+  DIFF_OUT_BEGIN
+  DIFF_OUT_FIELD(_layer);
+  DIFF_OUT_FIELD(_datatype);
 
-        DIFF_END}
+  DIFF_END
+}
 
 _dbGDSNode::_dbGDSNode(_dbDatabase* db)
 {
+  _layer = 0;
+  _datatype = 0;
 }
 
 _dbGDSNode::_dbGDSNode(_dbDatabase* db, const _dbGDSNode& r)
 {
+  _layer = r._layer;
+  _datatype = r._datatype;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSNode& obj)
 {
+  stream >> obj._layer;
+  stream >> obj._datatype;
+  stream >> obj._xy;
+  stream >> obj._propattr;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSNode& obj)
 {
+  stream << obj._layer;
+  stream << obj._datatype;
+  stream << obj._xy;
+  stream << obj._propattr;
   return stream;
 }
 
@@ -89,5 +114,70 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSNode& obj)
 //
 ////////////////////////////////////////////////////////////////////
 
+void dbGDSNode::setLayer(int16_t layer)
+{
+  _dbGDSNode* obj = (_dbGDSNode*) this;
+
+  obj->_layer = layer;
+}
+
+int16_t dbGDSNode::getLayer() const
+{
+  _dbGDSNode* obj = (_dbGDSNode*) this;
+  return obj->_layer;
+}
+
+void dbGDSNode::setDatatype(int16_t datatype)
+{
+  _dbGDSNode* obj = (_dbGDSNode*) this;
+
+  obj->_datatype = datatype;
+}
+
+int16_t dbGDSNode::getDatatype() const
+{
+  _dbGDSNode* obj = (_dbGDSNode*) this;
+  return obj->_datatype;
+}
+
+void dbGDSNode::setXy(const std::vector<Point>& xy)
+{
+  _dbGDSNode* obj = (_dbGDSNode*) this;
+
+  obj->_xy = xy;
+}
+
+void dbGDSNode::getXy(std::vector<Point>& tbl) const
+{
+  _dbGDSNode* obj = (_dbGDSNode*) this;
+  tbl = obj->_xy;
+}
+
+// User Code Begin dbGDSNodePublicMethods
+std::vector<std::pair<std::int16_t, std::string>>& dbGDSNode::getPropattr()
+{
+  auto* obj = (_dbGDSNode*) this;
+  return obj->_propattr;
+}
+
+const std::vector<Point>& dbGDSNode::getXY()
+{
+  auto obj = (_dbGDSNode*) this;
+  return obj->_xy;
+}
+
+dbGDSNode* dbGDSNode::create(dbGDSStructure* structure)
+{
+  auto* obj = (_dbGDSStructure*) structure;
+  return (dbGDSNode*) obj->nodes_->create();
+}
+
+void dbGDSNode::destroy(dbGDSNode* node)
+{
+  auto* obj = (_dbGDSNode*) node;
+  auto* structure = (_dbGDSStructure*) obj->getOwner();
+  structure->nodes_->destroy(obj);
+}
+// User Code End dbGDSNodePublicMethods
 }  // namespace odb
    // Generator Code End Cpp

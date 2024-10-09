@@ -2411,6 +2411,9 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, const bool isAddPathCost)
       for (auto& ap : pin->getAccessPatterns()) {
         const frLayerNum lNum = ap->getBeginLayerNum();
         if (ap->hasValidAccess(frDirEnum::U)) {
+          if (lNum + 2 > getTech()->getTopLayerNum()) {
+            continue;
+          }
           if (getTech()->getLayer(lNum + 2)->getDir()
                   == dbTechLayerDir::HORIZONTAL
               && ap->isOnTrack(true)) {
