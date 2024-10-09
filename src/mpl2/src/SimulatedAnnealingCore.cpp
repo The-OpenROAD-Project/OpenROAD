@@ -576,10 +576,20 @@ void SimulatedAnnealingCore<T>::fastSA()
   int num_restart = 1;
   const int max_num_restart = 2;
 
+  SequencePair best_valid_result;
+  if (isValid()) {
+    updateBestValidResult(best_valid_result);
+  }
+
   while (step <= max_num_step_) {
     for (int i = 0; i < num_perturb_per_step_; i++) {
       perturb();
       cost = calNormCost();
+
+      if (cost < pre_cost && isValid()) {
+        updateBestValidResult(best_valid_result);
+      }
+
       delta_cost = cost - pre_cost;
       const float num = distribution_(generator_);
       const float prob
@@ -616,6 +626,11 @@ void SimulatedAnnealingCore<T>::fastSA()
       calPenalty();
       pre_cost = calNormCost();
     }
+  }
+
+  if (!isValid()) {
+    pos_seq_ = best_valid_result.pos_sequence;
+    neg_seq_ = best_valid_result.neg_sequence;
   }
 
   packFloorplan();
@@ -684,6 +699,14 @@ void SimulatedAnnealingCore<T>::moveFloorplan(
   }
 
   calPenalty();
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::updateBestValidResult(
+    SequencePair& best_valid_result)
+{
+  best_valid_result.pos_sequence = pos_seq_;
+  best_valid_result.neg_sequence = neg_seq_;
 }
 
 template <class T>
