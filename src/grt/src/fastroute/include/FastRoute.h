@@ -265,7 +265,9 @@ class FastRouteCore
 
   // maze functions
   // Maze-routing in different orders
-  float getCost(const int i, bool is_horizontal, const CostParams& cost_params);
+  double getCost(const int i,
+                 bool is_horizontal,
+                 const CostParams& cost_params);
   void mazeRouteMSMD(const int iter,
                      const int expand,
                      const int ripup_threshold,
