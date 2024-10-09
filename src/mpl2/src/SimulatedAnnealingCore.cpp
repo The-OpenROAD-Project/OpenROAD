@@ -560,7 +560,6 @@ void SimulatedAnnealingCore<T>::fastSA()
     graphics_->startSA();
   }
 
-  // record the previous status
   float cost = calNormCost();
   float pre_cost = cost;
   float delta_cost = 0.0;
@@ -569,12 +568,14 @@ void SimulatedAnnealingCore<T>::fastSA()
   const float min_t = 1e-10;
   const float t_factor
       = std::exp(std::log(min_t / init_temperature_) / max_num_step_);
-  notch_weight_ = 0.0;  // notch pealty is too expensive, we try to avoid
-                        // calculating notch penalty at very beginning
-  // const for restart
+
+  // Used to ensure notch penalty is used only in the latter steps
+  // as it is too expensive
+  notch_weight_ = 0.0;
+
   int num_restart = 1;
   const int max_num_restart = 2;
-  // SA process
+
   while (step <= max_num_step_) {
     for (int i = 0; i < num_perturb_per_step_; i++) {
       perturb();
@@ -589,13 +590,13 @@ void SimulatedAnnealingCore<T>::fastSA()
         restore();
       }
     }
-    // temperature *= 0.985;
+
     temperature *= t_factor;
+    step++;
+
     cost_list_.push_back(pre_cost);
     T_list_.push_back(temperature);
-    // increase step
-    step++;
-    // check if restart condition
+
     if ((num_restart <= max_num_restart)
         && (step == std::floor(max_num_step_ / max_num_restart)
             && (outline_penalty_ > 0.0))) {
@@ -607,16 +608,15 @@ void SimulatedAnnealingCore<T>::fastSA()
       step = 1;
       num_perturb_per_step_ *= 2;
       temperature = init_temperature_;
-    }  // end if
-    // only consider the last step to optimize notch weight
+    }
+
     if (step == max_num_step_ - macros_.size() * 2) {
       notch_weight_ = original_notch_weight_;
       packFloorplan();
       calPenalty();
       pre_cost = calNormCost();
     }
-  }  // end while
-  // update the final results
+  }
 
   packFloorplan();
   if (graphics_) {
