@@ -248,7 +248,8 @@ void SimulatedAnnealingCore<T>::calOutlinePenalty()
   // normalization
   outline_penalty_ = outline_penalty_ / (outline_area);
   if (graphics_) {
-    graphics_->setOutlinePenalty(outline_penalty_);
+    graphics_->setOutlinePenalty(
+        {outline_weight_, outline_penalty_ / norm_outline_penalty_});
   }
 }
 
@@ -284,7 +285,8 @@ void SimulatedAnnealingCore<T>::calWirelength()
                 / (outline_.getHeight() + outline_.getWidth());
 
   if (graphics_) {
-    graphics_->setWirelength(wirelength_);
+    graphics_->setWirelengthPenalty(
+        {wirelength_weight_, wirelength_ / norm_wirelength_});
   }
 }
 
@@ -328,7 +330,8 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
   // normalization
   fence_penalty_ = fence_penalty_ / fences_.size();
   if (graphics_) {
-    graphics_->setFencePenalty(fence_penalty_);
+    graphics_->setFencePenalty(
+        {fence_weight_, fence_penalty_ / norm_fence_penalty_});
   }
 }
 
@@ -361,7 +364,8 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
   }
   guidance_penalty_ = guidance_penalty_ / guides_.size();
   if (graphics_) {
-    graphics_->setGuidancePenalty(guidance_penalty_);
+    graphics_->setGuidancePenalty(
+        {guidance_weight_, guidance_penalty_ / norm_guidance_penalty_});
   }
 }
 
