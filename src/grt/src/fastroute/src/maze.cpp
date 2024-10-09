@@ -55,17 +55,6 @@ static int right_index(int i)
   return 2 * i + 2;
 }
 
-void FastRouteCore::fixEmbeddedTrees()
-{
-  // check embedded trees only when maze router is called
-  // i.e., when running overflow iterations
-  if (overflow_iterations_ > 0) {
-    for (const int& netID : net_ids_) {
-      checkAndFixEmbeddedTree(netID);
-    }
-  }
-}
-
 void FastRouteCore::checkAndFixEmbeddedTree(const int net_id)
 {
   const auto& treeedges = sttrees_[net_id].edges;
@@ -154,7 +143,7 @@ bool FastRouteCore::areEdgesOverlapping(const int net_id,
 void FastRouteCore::fixOverlappingEdge(
     const int net_id,
     const int edge,
-    std::vector<std::pair<short, short>>& blocked_positions)
+    std::vector<std::pair<int16_t, int16_t>>& blocked_positions)
 {
   TreeEdge* treeedge = &(sttrees_[net_id].edges[edge]);
   auto& treenodes = sttrees_[net_id].nodes;
@@ -209,69 +198,6 @@ void FastRouteCore::fixOverlappingEdge(
     treeedge->route.routelen = new_route_x.size() - 1;
     treeedge->route.gridsX = std::move(new_route_x);
     treeedge->route.gridsY = std::move(new_route_y);
-  }
-}
-
-void FastRouteCore::bendEdge(
-    TreeEdge* treeedge,
-    std::vector<TreeNode>& treenodes,
-    std::vector<short>& new_route_x,
-    std::vector<short>& new_route_y,
-    std::vector<std::pair<short, short>>& blocked_positions)
-{
-  const std::vector<short>& gridsX = treeedge->route.gridsX;
-  const std::vector<short>& gridsY = treeedge->route.gridsY;
-
-  for (int i = 0; i <= treeedge->route.routelen; i++) {
-    std::pair<short, short> pos = {gridsX[i], gridsY[i]};
-    if (pos == blocked_positions.front()) {
-      break;
-    } else {
-      new_route_x.push_back(pos.first);
-      new_route_y.push_back(pos.second);
-    }
-  }
-
-  short x_min = std::min(treenodes[treeedge->n1].x, treenodes[treeedge->n2].x);
-  short y_min = std::min(treenodes[treeedge->n1].y, treenodes[treeedge->n2].y);
-
-  const TreeNode& endpoint = treenodes[treeedge->n2];
-  if (blocked_positions.front().second == blocked_positions.back().second) {
-    // blocked positions are horizontally aligned
-    short y = (new_route_y.back() == y_min) ? new_route_y.back() + 1
-                                            : new_route_y.back() - 1;
-    new_route_x.push_back(new_route_x.back());
-    new_route_y.push_back(y);
-
-    for (short x = new_route_x.back(); x < endpoint.x; x++) {
-      new_route_x.push_back(x + 1);
-      new_route_y.push_back(y);
-    }
-
-    new_route_x.push_back(endpoint.x);
-    new_route_y.push_back(endpoint.y);
-  } else if (blocked_positions.front().first
-             == blocked_positions.back().first) {
-    // blocked positions are vertically aligned
-    short x = (new_route_x.back() == x_min) ? new_route_x.back() + 1
-                                            : new_route_x.back() - 1;
-    new_route_x.push_back(x);
-    new_route_y.push_back(new_route_y.back());
-
-    if (new_route_y.back() < endpoint.y) {
-      for (short y = new_route_y.back(); y < endpoint.y; y++) {
-        new_route_x.push_back(x);
-        new_route_y.push_back(y + 1);
-      }
-    } else {
-      for (short y = new_route_y.back(); y > endpoint.y; y--) {
-        new_route_x.push_back(x);
-        new_route_y.push_back(y - 1);
-      }
-    }
-
-    new_route_x.push_back(endpoint.x);
-    new_route_y.push_back(endpoint.y);
   }
 }
 
@@ -575,147 +501,39 @@ static void removeMin(std::vector<double*>& array)
  * round : the number of maze route stages runned
  */
 
-void FastRouteCore::updateCongestionHistory(const int upType,
-                                            bool stopDEC,
+void FastRouteCore::updateCongestionHistory(const int up_type,
+                                            bool stop_decreasing,
                                             int& max_adj)
 {
   int maxlimit = 0;
 
-  if (upType == 1) {
-    for (const auto& [i, j] : h_used_ggrid_) {
-      const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
-
-      if (overflow > 0) {
-        h_edges_[i][j].last_usage += overflow;
-        h_edges_[i][j].congCNT++;
-      } else {
-        if (!stopDEC) {
-          h_edges_[i][j].last_usage = h_edges_[i][j].last_usage * 0.9;
-        }
-      }
-      maxlimit = std::max<int>(maxlimit, h_edges_[i][j].last_usage);
-    }
-
-    for (const auto& [i, j] : v_used_ggrid_) {
-      const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
-
-      if (overflow > 0) {
-        v_edges_[i][j].last_usage += overflow;
-        v_edges_[i][j].congCNT++;
-      } else {
-        if (!stopDEC) {
-          v_edges_[i][j].last_usage = v_edges_[i][j].last_usage * 0.9;
-        }
-      }
-      maxlimit = std::max<int>(maxlimit, v_edges_[i][j].last_usage);
-    }
-  } else if (upType == 2) {
-    if (max_adj < ahth_) {
-      stopDEC = true;
-    } else {
-      stopDEC = false;
-    }
-    for (const auto& [i, j] : h_used_ggrid_) {
-      const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
-
-      if (overflow > 0) {
-        h_edges_[i][j].congCNT++;
-        h_edges_[i][j].last_usage += overflow;
-      } else {
-        if (!stopDEC) {
-          h_edges_[i][j].congCNT--;
-          h_edges_[i][j].congCNT = std::max<int>(0, h_edges_[i][j].congCNT);
-          h_edges_[i][j].last_usage = h_edges_[i][j].last_usage * 0.9;
-        }
-      }
-      maxlimit = std::max<int>(maxlimit, h_edges_[i][j].last_usage);
-    }
-
-    for (const auto& [i, j] : v_used_ggrid_) {
-      const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
-
-      if (overflow > 0) {
-        v_edges_[i][j].congCNT++;
-        v_edges_[i][j].last_usage += overflow;
-      } else {
-        if (!stopDEC) {
-          v_edges_[i][j].congCNT--;
-          v_edges_[i][j].congCNT = std::max<int>(0, v_edges_[i][j].congCNT);
-          v_edges_[i][j].last_usage = v_edges_[i][j].last_usage * 0.9;
-        }
-      }
-      maxlimit = std::max<int>(maxlimit, v_edges_[i][j].last_usage);
-    }
-
-  } else if (upType == 3) {
-    for (const auto& [i, j] : h_used_ggrid_) {
-      const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
-
-      if (overflow > 0) {
-        h_edges_[i][j].congCNT++;
-        h_edges_[i][j].last_usage += overflow;
-      } else {
-        if (!stopDEC) {
-          h_edges_[i][j].congCNT--;
-          h_edges_[i][j].congCNT = std::max<int>(0, h_edges_[i][j].congCNT);
-          h_edges_[i][j].last_usage += overflow;
-          h_edges_[i][j].last_usage
-              = std::max<int>(h_edges_[i][j].last_usage, 0);
-        }
-      }
-      maxlimit = std::max<int>(maxlimit, h_edges_[i][j].last_usage);
-    }
-
-    for (const auto& [i, j] : v_used_ggrid_) {
-      const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
-
-      if (overflow > 0) {
-        v_edges_[i][j].congCNT++;
-        v_edges_[i][j].last_usage += overflow;
-      } else {
-        if (!stopDEC) {
-          v_edges_[i][j].congCNT--;
-          v_edges_[i][j].last_usage += overflow;
-          v_edges_[i][j].last_usage
-              = std::max<int>(v_edges_[i][j].last_usage, 0);
-        }
-      }
-      maxlimit = std::max<int>(maxlimit, v_edges_[i][j].last_usage);
-    }
-
-  } else if (upType == 4) {
-    for (const auto& [i, j] : h_used_ggrid_) {
-      const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
-
-      if (overflow > 0) {
-        h_edges_[i][j].congCNT++;
-        h_edges_[i][j].last_usage += overflow;
-      } else {
-        if (!stopDEC) {
-          h_edges_[i][j].congCNT--;
-          h_edges_[i][j].congCNT = std::max<int>(0, h_edges_[i][j].congCNT);
-          h_edges_[i][j].last_usage = h_edges_[i][j].last_usage * 0.9;
-        }
-      }
-      maxlimit = std::max<int>(maxlimit, h_edges_[i][j].last_usage);
-    }
-
-    for (const auto& [i, j] : v_used_ggrid_) {
-      const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
-
-      if (overflow > 0) {
-        v_edges_[i][j].congCNT++;
-        v_edges_[i][j].last_usage += overflow;
-      } else {
-        if (!stopDEC) {
-          v_edges_[i][j].congCNT--;
-          v_edges_[i][j].congCNT = std::max<int>(0, v_edges_[i][j].congCNT);
-          v_edges_[i][j].last_usage = v_edges_[i][j].last_usage * 0.9;
-        }
-      }
-      maxlimit = std::max<int>(maxlimit, v_edges_[i][j].last_usage);
-    }
+  if (up_type == 2) {
+    stop_decreasing = max_adj < ahth_;
   }
+
+  auto updateEdges = [&](const auto& grid, auto& edges) {
+    for (const auto& [i, j] : grid) {
+      const int overflow = edges[i][j].usage - edges[i][j].cap;
+      if (overflow > 0) {
+        edges[i][j].congCNT++;
+        edges[i][j].last_usage += overflow;
+      } else if (!stop_decreasing) {
+        if (up_type != 1) {
+          edges[i][j].congCNT = std::max<int>(0, edges[i][j].congCNT - 1);
+        }
+        if (up_type != 3) {
+          edges[i][j].last_usage *= 0.9;
+        } else {
+          edges[i][j].last_usage
+              = std::max<int>(edges[i][j].last_usage + overflow, 0);
+        }
+      }
+      maxlimit = std::max<int>(maxlimit, edges[i][j].last_usage);
+    }
+  };
+
+  updateEdges(h_used_ggrid_, h_edges_);
+  updateEdges(v_used_ggrid_, v_edges_);
 
   max_adj = maxlimit;
 }

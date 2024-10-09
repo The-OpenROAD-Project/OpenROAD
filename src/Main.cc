@@ -382,13 +382,14 @@ static int tclAppInit(int& argc,
 
     ord::initOpenRoad(interp);
 
-    if (!findCmdLineFlag(argc, argv, "-no_splash")) {
+    bool no_splash = findCmdLineFlag(argc, argv, "-no_splash");
+    if (!no_splash) {
       showSplash();
     }
 
     const char* threads = findCmdLineKey(argc, argv, "-threads");
     if (threads) {
-      ord::OpenRoad::openRoad()->setThreadCount(threads);
+      ord::OpenRoad::openRoad()->setThreadCount(threads, !no_splash);
     } else {
       // set to default number of threads
       ord::OpenRoad::openRoad()->setThreadCount(

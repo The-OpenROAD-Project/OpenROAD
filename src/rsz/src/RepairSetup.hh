@@ -87,8 +87,8 @@ struct SlackEstimatorParams
   Pin* prev_driver_pin;
   Pin* driver_input_pin;
   Instance* driver;
-  PathRef* driver_path;
-  PathRef* prev_driver_path;
+  const PathRef* driver_path;
+  const PathRef* prev_driver_path;
   LibertyCell* driver_cell;
   const float setup_slack_margin;
   const Corner* corner;
@@ -166,8 +166,10 @@ class RepairSetup : public sta::dbStaState
   void equivCellPins(const LibertyCell* cell,
                      LibertyPort* input_port,
                      sta::LibertyPortSet& ports);
-  bool swapPins(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
-  bool removeDrvr(PathRef* drvr_path,
+  bool swapPins(const PathRef* drvr_path,
+                int drvr_index,
+                PathExpanded* expanded);
+  bool removeDrvr(const PathRef* drvr_path,
                   LibertyCell* drvr_cell,
                   int drvr_index,
                   PathExpanded* expanded,
@@ -181,15 +183,17 @@ class RepairSetup : public sta::dbStaState
                                float delay_adjust,
                                SlackEstimatorParams params,
                                bool accept_if_slack_improves);
-  bool upsizeDrvr(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
+  bool upsizeDrvr(const PathRef* drvr_path,
+                  int drvr_index,
+                  PathExpanded* expanded);
   Point computeCloneGateLocation(
       const Pin* drvr_pin,
       const vector<pair<Vertex*, Slack>>& fanout_slacks);
-  bool cloneDriver(PathRef* drvr_path,
+  bool cloneDriver(const PathRef* drvr_path,
                    int drvr_index,
                    Slack drvr_slack,
                    PathExpanded* expanded);
-  void splitLoads(PathRef* drvr_path,
+  void splitLoads(const PathRef* drvr_path,
                   int drvr_index,
                   Slack drvr_slack,
                   PathExpanded* expanded);

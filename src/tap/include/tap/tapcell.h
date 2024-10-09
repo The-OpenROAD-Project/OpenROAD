@@ -135,6 +135,7 @@ class Tapcell
     EdgeType type;
     odb::Point pt0;
     odb::Point pt1;
+    bool operator==(const Edge& edge) const;
   };
   enum class CornerType
   {
@@ -255,6 +256,7 @@ class Tapcell
   int phy_idx_ = 0;
   std::string tap_prefix_;
   std::string endcap_prefix_;
+  std::vector<Edge> filled_edges_;
 };
 
 }  // namespace tap

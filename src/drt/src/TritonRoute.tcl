@@ -118,7 +118,7 @@ proc detailed_route { args } {
   }
   if { [info exists keys(-droute_end_iter)] } {
     sta::check_positive_integer "-droute_end_iter" $keys(-droute_end_iter)
-    if {$keys(-droute_end_iter) > 64} {
+    if { $keys(-droute_end_iter) > 64 } {
       utl::warn "-droute_end_iter cannot be greater than 64. Setting -droute_end_iter to 64."
       set droute_end_iter 64
     } else {
@@ -266,7 +266,7 @@ proc detailed_route_debug { args } {
   set box_y1 -1
   set box_x2 -1
   set box_y2 -1
-  if {[info exists keys(-box)]} {
+  if { [info exists keys(-box)] } {
     set box $keys(-box)
     if { [llength $box] != 4 } {
       utl::error DRT 118 "-box is a list of 4 coordinates."
@@ -305,7 +305,7 @@ proc pin_access { args } {
           -min_access_points -remote_host -remote_port -shared_volume -cloud_size } \
     flags {-distributed}
   sta::check_argc_eq0 "detailed_route_debug" $args
-  if {[info exists keys(-db_process_node)]} {
+  if { [info exists keys(-db_process_node)] } {
     set db_process_node $keys(-db_process_node)
   } else {
     set db_process_node ""
@@ -363,12 +363,12 @@ sta::define_cmd_args "detailed_route_run_worker" {
     [-dump_dir dir]
     [-worker_dir dir]
     [-drc_rpt drc]
-};# checker off
+} ;# checker off
 
 proc detailed_route_run_worker { args } {
   sta::parse_key_args "detailed_route_run_worker" args \
     keys {-dump_dir -worker_dir -drc_rpt} \
-    flags {};# checker off
+    flags {} ;# checker off
   sta::check_argc_eq0 "detailed_route_run_worker" $args
   if { [info exists keys(-dump_dir)] } {
     set dump_dir $keys(-dump_dir)
@@ -398,50 +398,50 @@ sta::define_cmd_args "detailed_route_worker_debug" {
     [-marker_decay m_decay]
     [-ripup_mode mode]
     [-follow_guide f_guide]
-};# checker off
+} ;# checker off
 
 proc detailed_route_worker_debug { args } {
   sta::parse_key_args "detailed_route_worker_debug" args \
     keys {-maze_end_iter -drc_cost -marker_cost -fixed_shape_cost \
           -marker_decay -ripup_mode -follow_guide} \
-    flags {};# checker off
-  if {[info exists keys(-maze_end_iter)]} {
+    flags {} ;# checker off
+  if { [info exists keys(-maze_end_iter)] } {
     set maze_end_iter $keys(-maze_end_iter)
   } else {
     set maze_end_iter -1
   }
 
-  if {[info exists keys(-drc_cost)]} {
+  if { [info exists keys(-drc_cost)] } {
     set drc_cost $keys(-drc_cost)
   } else {
     set drc_cost -1
   }
 
-  if {[info exists keys(-marker_cost)]} {
+  if { [info exists keys(-marker_cost)] } {
     set marker_cost $keys(-marker_cost)
   } else {
     set marker_cost -1
   }
 
-  if {[info exists keys(-fixed_shape_cost)]} {
+  if { [info exists keys(-fixed_shape_cost)] } {
     set fixed_shape_cost $keys(-fixed_shape_cost)
   } else {
     set fixed_shape_cost -1
   }
 
-  if {[info exists keys(-marker_decay)]} {
+  if { [info exists keys(-marker_decay)] } {
     set marker_decay $keys(-marker_decay)
   } else {
     set marker_decay -1
   }
 
-  if {[info exists keys(-ripup_mode)]} {
+  if { [info exists keys(-ripup_mode)] } {
     set ripup_mode $keys(-ripup_mode)
   } else {
     set ripup_mode -1
   }
 
-  if {[info exists keys(-follow_guide)]} {
+  if { [info exists keys(-follow_guide)] } {
     set follow_guide $keys(-follow_guide)
   } else {
     set follow_guide -1
@@ -461,7 +461,6 @@ proc detailed_route_set_unidirectional_layer { args } {
 }
 
 namespace eval drt {
-
 proc step_dr { args } {
   # args match FlexDR::SearchRepairArgs
   if { [llength $args] != 9 } {
@@ -474,14 +473,14 @@ proc step_dr { args } {
 sta::define_cmd_args "check_drc" {
     [-box box]
     [-output_file filename]
-};# checker off
+} ;# checker off
 proc check_drc { args } {
   sta::parse_key_args "check_drc" args \
     keys { -box -output_file } \
-    flags {};# checker off
+    flags {} ;# checker off
   sta::check_argc_eq0 "check_drc" $args
   set box { 0 0 0 0 }
-  if {[info exists keys(-box)]} {
+  if { [info exists keys(-box)] } {
     set box $keys(-box)
     if { [llength $box] != 4 } {
       utl::error DRT 612 "-box is a list of 4 coordinates."
@@ -500,5 +499,4 @@ proc fix_max_spacing { args } {
   sta::check_argc_eq0 "fix_max_spacing" $args
   drt::fix_max_spacing_cmd
 }
-
 }

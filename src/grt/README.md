@@ -368,8 +368,6 @@ If you are a developer, you might find these useful. More details can be found i
 | `parse_layer_name` | Get routing layer number from layer name |
 | `parse_layer_range` | Parses a range from `layer_range` argument of format (%s-%s). `cmd` argument is not used. |
 | `check_region` | Checks the defined region if its within the die area. |
-| `define_layer_range` | Provide a Tcl list of layers and automatically generate the min and max layers for signal routing. |
-| `define_clock_layer_range` | Provide a Tcl list of layers and automatically generate the min and max layers for clock routing. |
 | `have_detailed_route` | Checks if block has detailed route already. |
 
 ## Regression tests

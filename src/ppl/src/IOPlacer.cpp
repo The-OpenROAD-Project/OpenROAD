@@ -285,8 +285,25 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
 
       int b = io_pin_indices[io_idx];
       int slot_idx = slot_indices[floor(b * shift)];
-      while (slots[slot_idx].used == true || slots[slot_idx].blocked == true) {
-        slot_idx++;
+
+      if (assign_mirrored && !top_layer) {
+        odb::Point mirrored_pos
+            = core_->getMirroredPosition(slots[slot_idx].pos);
+        int mirrored_slot_idx
+            = getSlotIdxByPosition(mirrored_pos, slots[slot_idx].layer, slots_);
+        while (slots[slot_idx].used || slots[slot_idx].blocked
+               || slots[mirrored_slot_idx].blocked
+               || slots[mirrored_slot_idx].used) {
+          slot_idx++;
+          mirrored_pos = core_->getMirroredPosition(slots[slot_idx].pos);
+          mirrored_slot_idx = getSlotIdxByPosition(
+              mirrored_pos, slots[slot_idx].layer, slots_);
+        }
+      } else {
+        while (slots[slot_idx].used == true
+               || slots[slot_idx].blocked == true) {
+          slot_idx++;
+        }
       }
       io_pin.setPos(slots[slot_idx].pos);
       io_pin.setPlaced();
@@ -305,9 +322,9 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
 
         odb::Point mirrored_pos = core_->getMirroredPosition(io_pin.getPos());
         mirrored_pin.setPos(mirrored_pos);
-        mirrored_pin.setLayer(slots_[slot_idx].layer);
+        mirrored_pin.setLayer(slots[slot_idx].layer);
         mirrored_pin.setPlaced();
-        mirrored_pin.setEdge(slots_[slot_idx].edge);
+        mirrored_pin.setEdge(slots[slot_idx].edge);
         assignment_.push_back(mirrored_pin);
         slot_idx = getSlotIdxByPosition(
             mirrored_pos, mirrored_pin.getLayer(), slots);
@@ -385,7 +402,8 @@ int IOPlacer::placeFallbackPins(bool random)
             logger_->error(PPL,
                            93,
                            "Pin group of size {} does not fit in the "
-                           "constrained region {:.2f}-{:.2f} at {} edge. "
+                           "constrained region {:.2f}-{:.2f} at {} edge on a "
+                           "single metal layer. "
                            "First pin of the group is {}.",
                            group.first.size(),
                            getBlock()->dbuToMicrons(interval.getBegin()),
@@ -671,7 +689,7 @@ void IOPlacer::getBlockedRegionsFromDbObstructions()
   }
 }
 
-void IOPlacer::writePinPlacement(const char* file_name)
+void IOPlacer::writePinPlacement(const char* file_name, const bool placed)
 {
   std::string filename = file_name;
   if (filename.empty()) {
@@ -686,18 +704,54 @@ void IOPlacer::writePinPlacement(const char* file_name)
 
   std::vector<Edge> edges_list
       = {Edge::bottom, Edge::right, Edge::top, Edge::left};
-  for (const Edge& edge : edges_list) {
-    out << "#Edge: " << getEdgeString(edge) << "\n";
-    for (const IOPin& io_pin : netlist_io_pins_->getIOPins()) {
-      if (io_pin.getEdge() == edge) {
-        const int layer = io_pin.getLayer();
-        odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
-        const odb::Point& pos = io_pin.getPosition();
-        out << "place_pin -pin_name " << io_pin.getName() << " -layer "
+  if (!netlist_io_pins_->getIOPins().empty()) {
+    for (const Edge& edge : edges_list) {
+      out << "#Edge: " << getEdgeString(edge) << "\n";
+      for (const IOPin& io_pin : netlist_io_pins_->getIOPins()) {
+        if (io_pin.getEdge() == edge) {
+          const int layer = io_pin.getLayer();
+          odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
+          const odb::Point& pos = io_pin.getPosition();
+          out << "place_pin -pin_name " << io_pin.getName() << " -layer "
+              << tech_layer->getName() << " -location {"
+              << getBlock()->dbuToMicrons(pos.x()) << " "
+              << getBlock()->dbuToMicrons(pos.y())
+              << "} -force_to_die_boundary\n";
+        }
+      }
+    }
+  } else {
+    for (odb::dbBTerm* bterm : getBlock()->getBTerms()) {
+      int x_pos = 0;
+      int y_pos = 0;
+      bterm->getFirstPinLocation(x_pos, y_pos);
+      odb::dbTechLayer* tech_layer = nullptr;
+      for (odb::dbBPin* bterm_pin : bterm->getBPins()) {
+        if (!bterm_pin->getPlacementStatus().isPlaced()) {
+          logger_->error(
+              PPL, 49, "Pin {} is not placed.", bterm->getConstName());
+        }
+        for (odb::dbBox* bpin_box : bterm_pin->getBoxes()) {
+          tech_layer = bpin_box->getTechLayer();
+          break;
+        }
+      }
+
+      if (tech_layer != nullptr) {
+        out << "place_pin -pin_name " << bterm->getName() << " -layer "
             << tech_layer->getName() << " -location {"
-            << getBlock()->dbuToMicrons(pos.x()) << " "
-            << getBlock()->dbuToMicrons(pos.y())
-            << "} -force_to_die_boundary\n";
+            << getBlock()->dbuToMicrons(x_pos) << " "
+            << getBlock()->dbuToMicrons(y_pos) << "}";
+        if (placed) {
+          out << " -placed_status\n";
+        } else {
+          out << "\n";
+        }
+      } else {
+        logger_->error(PPL,
+                       14,
+                       "Pin {} does not have layer assignment.",
+                       bterm->getName());
       }
     }
   }
@@ -2145,7 +2199,7 @@ void IOPlacer::run(bool random_mode)
 
   checkPinPlacement();
   commitIOPlacementToDB(assignment_);
-  writePinPlacement(parms_->getPinPlacementFile().c_str());
+  writePinPlacement(parms_->getPinPlacementFile().c_str(), false);
   clear();
 }
 
@@ -2226,7 +2280,7 @@ void IOPlacer::runAnnealing(bool random)
 
   checkPinPlacement();
   commitIOPlacementToDB(assignment_);
-  writePinPlacement(parms_->getPinPlacementFile().c_str());
+  writePinPlacement(parms_->getPinPlacementFile().c_str(), false);
   clear();
 }
 
@@ -2241,9 +2295,9 @@ void IOPlacer::checkPinPlacement()
     if (layer_positions_map[layer].empty()) {
       layer_positions_map[layer].push_back(pin.getPosition());
     } else {
-      odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
       for (odb::Point& pos : layer_positions_map[layer]) {
         if (pos == pin.getPosition()) {
+          odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
           logger_->warn(
               PPL,
               106,
@@ -2280,7 +2334,8 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
                         int y,
                         int width,
                         int height,
-                        bool force_to_die_bound)
+                        bool force_to_die_bound,
+                        bool placed_status)
 {
   if (width == 0 && height == 0) {
     const int database_unit = getTech()->getLefUnits();
@@ -2393,7 +2448,9 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
   odb::Point ll = odb::Point(pos.x() - width / 2, pos.y() - height / 2);
   odb::Point ur = odb::Point(pos.x() + width / 2, pos.y() + height / 2);
 
-  odb::dbPlacementStatus placement_status = odb::dbPlacementStatus::FIRM;
+  odb::dbPlacementStatus placement_status = placed_status
+                                                ? odb::dbPlacementStatus::PLACED
+                                                : odb::dbPlacementStatus::FIRM;
   IOPin io_pin
       = IOPin(bterm, pos, Direction::invalid, ll, ur, placement_status);
   io_pin.setLayer(layer_level);

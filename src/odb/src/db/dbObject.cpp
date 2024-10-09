@@ -67,6 +67,7 @@ static const char* name_tbl[] = {"dbDatabase",
 
                                  // Design Objects
                                  "dbChip",
+                                 "dbGDSLib",
                                  "dbBlock",
                                  "dbInstHdr",
                                  "dbInst",
@@ -96,7 +97,6 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbGCellGrid",
                                  "dbGDSBoundary",
                                  "dbGDSBox",
-                                 "dbGDSElement",
                                  "dbGDSNode",
                                  "dbGDSPath",
                                  "dbGDSSRef",
@@ -148,6 +148,7 @@ static const char* name_tbl[] = {"dbDatabase",
 
                                  // Lib Objects
                                  "dbLib",
+                                 "dbGDSLib",
                                  "dbSite",
                                  "dbMaster",
                                  "dbMPin",

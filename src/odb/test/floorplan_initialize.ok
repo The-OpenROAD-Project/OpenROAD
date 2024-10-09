@@ -1,0 +1,20 @@
+[INFO ODB-0388] unsupported contactResistance property for layer contact :"10.5"
+[INFO ODB-0388] unsupported contactResistance property for layer via1 :"5.69"
+[WARNING ODB-0423] LEF58_REGION layer via1R1 ignored
+[INFO ODB-0388] unsupported contactResistance property for layer via2 :"11.39"
+[INFO ODB-0388] unsupported contactResistance property for layer via3 :"16.73"
+[INFO ODB-0388] unsupported contactResistance property for layer via4 :"21.44"
+[INFO ODB-0388] unsupported contactResistance property for layer via5 :"24.08"
+[INFO ODB-0388] unsupported contactResistance property for layer via6 :"11.39"
+[INFO ODB-0388] unsupported contactResistance property for layer via7 :"5.69"
+[INFO ODB-0388] unsupported contactResistance property for layer via8 :"16.73"
+[INFO ODB-0388] unsupported contactResistance property for layer via9 :"21.44"
+[INFO ODB-0227] LEF file: data/gscl45nm.lef, created 22 layers, 14 vias, 33 library cells
+[WARNING ORD-2011] LEF master DFFPOSX1 has no liberty cell.
+[INFO ODB-0128] Design: counter
+[WARNING ODB-0437] Pin directions are ignored from floorplan DEF files.
+[WARNING ODB-0275] skipping undefined net out[0] encountered in FLOORPLAN DEF
+[INFO ODB-0252]     Updated 1 pins.
+[INFO ODB-0253]     Updated 1 components.
+No differences found.
+pass
