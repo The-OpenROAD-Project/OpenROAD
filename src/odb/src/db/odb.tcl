@@ -648,3 +648,18 @@ proc set_max_layer { args } {
   set block [$chip getBlock]
   $block setMaxRoutingLayer $maxLayer
 }
+
+sta::define_cmd_args "design_is_routed" { [-verbose] }
+
+proc design_is_routed { args } {
+  sta::parse_key_args "design_is_routed" args keys {} flags {-verbose}
+
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::error ODB 223 "please load the design before trying to use this command."
+  }
+  set block [$chip getBlock]
+
+  return [$block designIsRouted [info exists flags(-verbose)]]
+}

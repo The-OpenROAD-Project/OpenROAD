@@ -145,7 +145,8 @@ std::string recordTypeToString(RecordType recordType);
 extern const char* recordNames[];
 
 /**
- * Enum representing the different datatypes in a GDSII file
+ * Enum representing the different datatypes in a GDSII file.
+ * The values are determined by the format.
  */
 enum class DataType : uint8_t
 {
@@ -220,20 +221,6 @@ dbGDSLib* createEmptyGDSLib(dbDatabase* db, const std::string& libname);
  * Sets timestamp on a GDSII library object to the current time
  */
 void stampGDSLib(dbGDSLib* lib, bool modified = true);
-
-/**
- * Create an empty GDSII element (boundary, box, text, path, sref, node)
- *
- * The element is not added to a structure upon creation, use
- * dbGDSStructure::addElement() to add the element to a structure and
- * dbGDSStructure::removeElement() to remove it
- */
-dbGDSBoundary* createEmptyGDSBoundary(dbDatabase* db);
-dbGDSBox* createEmptyGDSBox(dbDatabase* db);
-dbGDSText* createEmptyGDSText(dbDatabase* db);
-dbGDSPath* createEmptyGDSPath(dbDatabase* db);
-dbGDSSRef* createEmptyGDSSRef(dbDatabase* db);
-dbGDSNode* createEmptyGDSNode(dbDatabase* db);
 
 }  // namespace gds
 }  // namespace odb

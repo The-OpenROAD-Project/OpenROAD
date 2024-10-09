@@ -34,7 +34,7 @@
 #pragma once
 
 #include "dbCore.h"
-#include "dbGDSElement.h"
+#include "dbGDSStructure.h"
 #include "odb/odb.h"
 
 namespace odb {
@@ -43,7 +43,7 @@ class dbOStream;
 class dbDiff;
 class _dbDatabase;
 
-class _dbGDSPath : public _dbGDSElement
+class _dbGDSPath : public _dbObject
 {
  public:
   _dbGDSPath(_dbDatabase*, const _dbGDSPath& r);
@@ -58,16 +58,11 @@ class _dbGDSPath : public _dbGDSElement
                    const char* field,
                    const _dbGDSPath& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
 
-  std::string to_string() override
-  {
-    return "PATH " + _dbGDSElement::to_string() + " WIDTH "
-           + std::to_string(_width) + " PATHTYPE " + std::to_string(_pathType);
-  }
-
-  // User Code End Methods
-
+  int16_t _layer;
+  int16_t _datatype;
+  std::vector<Point> _xy;
+  std::vector<std::pair<std::int16_t, std::string>> _propattr;
   int _width;
   int16_t _pathType;
 };

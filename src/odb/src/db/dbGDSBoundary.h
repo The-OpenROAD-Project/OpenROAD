@@ -34,7 +34,7 @@
 #pragma once
 
 #include "dbCore.h"
-#include "dbGDSElement.h"
+#include "dbGDSStructure.h"
 #include "odb/odb.h"
 
 namespace odb {
@@ -43,7 +43,7 @@ class dbOStream;
 class dbDiff;
 class _dbDatabase;
 
-class _dbGDSBoundary : public _dbGDSElement
+class _dbGDSBoundary : public _dbObject
 {
  public:
   _dbGDSBoundary(_dbDatabase*, const _dbGDSBoundary& r);
@@ -58,14 +58,11 @@ class _dbGDSBoundary : public _dbGDSElement
                    const char* field,
                    const _dbGDSBoundary& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
 
-  std::string to_string() override
-  {
-    return "BOUNDARY " + _dbGDSElement::to_string();
-  }
-
-  // User Code End Methods
+  int16_t _layer;
+  int16_t _datatype;
+  std::vector<Point> _xy;
+  std::vector<std::pair<std::int16_t, std::string>> _propattr;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSBoundary& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSBoundary& obj);

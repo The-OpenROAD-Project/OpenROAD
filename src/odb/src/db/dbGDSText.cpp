@@ -44,6 +44,12 @@ template class dbTable<_dbGDSText>;
 
 bool _dbGDSText::operator==(const _dbGDSText& rhs) const
 {
+  if (_layer != rhs._layer) {
+    return false;
+  }
+  if (_datatype != rhs._datatype) {
+    return false;
+  }
   if (_width != rhs._width) {
     return false;
   }
@@ -64,6 +70,8 @@ void _dbGDSText::differences(dbDiff& diff,
                              const _dbGDSText& rhs) const
 {
   DIFF_BEGIN
+  DIFF_FIELD(_layer);
+  DIFF_FIELD(_datatype);
   DIFF_FIELD(_width);
   DIFF_FIELD(_text);
   DIFF_END
@@ -72,6 +80,8 @@ void _dbGDSText::differences(dbDiff& diff,
 void _dbGDSText::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
+  DIFF_OUT_FIELD(_layer);
+  DIFF_OUT_FIELD(_datatype);
   DIFF_OUT_FIELD(_width);
   DIFF_OUT_FIELD(_text);
 
@@ -80,17 +90,25 @@ void _dbGDSText::out(dbDiff& diff, char side, const char* field) const
 
 _dbGDSText::_dbGDSText(_dbDatabase* db)
 {
+  _layer = 0;
+  _datatype = 0;
   _width = 0;
 }
 
 _dbGDSText::_dbGDSText(_dbDatabase* db, const _dbGDSText& r)
 {
+  _layer = r._layer;
+  _datatype = r._datatype;
   _width = r._width;
   _text = r._text;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSText& obj)
 {
+  stream >> obj._layer;
+  stream >> obj._datatype;
+  stream >> obj._xy;
+  stream >> obj._propattr;
   stream >> obj._presentation;
   stream >> obj._width;
   stream >> obj._transform;
@@ -100,6 +118,10 @@ dbIStream& operator>>(dbIStream& stream, _dbGDSText& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSText& obj)
 {
+  stream << obj._layer;
+  stream << obj._datatype;
+  stream << obj._xy;
+  stream << obj._propattr;
   stream << obj._presentation;
   stream << obj._width;
   stream << obj._transform;
@@ -112,6 +134,45 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSText& obj)
 // dbGDSText - Methods
 //
 ////////////////////////////////////////////////////////////////////
+
+void dbGDSText::setLayer(int16_t layer)
+{
+  _dbGDSText* obj = (_dbGDSText*) this;
+
+  obj->_layer = layer;
+}
+
+int16_t dbGDSText::getLayer() const
+{
+  _dbGDSText* obj = (_dbGDSText*) this;
+  return obj->_layer;
+}
+
+void dbGDSText::setDatatype(int16_t datatype)
+{
+  _dbGDSText* obj = (_dbGDSText*) this;
+
+  obj->_datatype = datatype;
+}
+
+int16_t dbGDSText::getDatatype() const
+{
+  _dbGDSText* obj = (_dbGDSText*) this;
+  return obj->_datatype;
+}
+
+void dbGDSText::setXy(const std::vector<Point>& xy)
+{
+  _dbGDSText* obj = (_dbGDSText*) this;
+
+  obj->_xy = xy;
+}
+
+void dbGDSText::getXy(std::vector<Point>& tbl) const
+{
+  _dbGDSText* obj = (_dbGDSText*) this;
+  tbl = obj->_xy;
+}
 
 void dbGDSText::setPresentation(dbGDSTextPres presentation)
 {
@@ -165,5 +226,31 @@ std::string dbGDSText::getText() const
   return obj->_text;
 }
 
+// User Code Begin dbGDSTextPublicMethods
+std::vector<std::pair<std::int16_t, std::string>>& dbGDSText::getPropattr()
+{
+  auto* obj = (_dbGDSText*) this;
+  return obj->_propattr;
+}
+
+const std::vector<Point>& dbGDSText::getXY()
+{
+  auto obj = (_dbGDSText*) this;
+  return obj->_xy;
+}
+
+dbGDSText* dbGDSText::create(dbGDSStructure* structure)
+{
+  auto* obj = (_dbGDSStructure*) structure;
+  return (dbGDSText*) obj->texts_->create();
+}
+
+void dbGDSText::destroy(dbGDSText* text)
+{
+  auto* obj = (_dbGDSText*) text;
+  auto* structure = (_dbGDSStructure*) obj->getOwner();
+  structure->texts_->destroy(obj);
+}
+// User Code End dbGDSTextPublicMethods
 }  // namespace odb
    // Generator Code End Cpp
