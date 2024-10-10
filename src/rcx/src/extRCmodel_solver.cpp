@@ -369,7 +369,7 @@ uint extRCModel::readRCvalues(const char* corner,
     // fprintf(dbg_logFP, "Metal %d Over %d Under %d Width %g -- ", m._met,
     // m._underMet, m._overMet,  m._w_nm); rc->writeRC(dbg_logFP, false);
   }
-  logger_->info(RCX, 442, "{} lines parsed, {} lines skipped not starting with <Metal>, {} lines skipped for wrong wire number, filename: {}\n",
+  logger_->info(RCX, 446, "{} lines parsed, {} lines skipped not starting with <Metal>, {} lines skipped for wrong wire number, filename: {}\n",
                         cnt, skippedCnt, skippedWireCnt, filename);
   return cnt;
 }
