@@ -134,6 +134,7 @@ class SimulatedAnnealingCore
   void initSequencePair();
   void attemptCentralization(float pre_cost);
   void moveFloorplan(const std::pair<float, float>& offset);
+  void updateBestValidResult(SequencePair& best_valid_result);
 
   virtual float calNormCost() const = 0;
   virtual void calPenalty() = 0;
