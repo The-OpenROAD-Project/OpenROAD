@@ -186,6 +186,8 @@ class Pin
   Net* net() const { return net_; }
   std::string name() const;
 
+  void updateCoordi(odb::dbITerm* iTerm);
+
  private:
   void* term_ = nullptr;
   Instance* inst_ = nullptr;
@@ -209,8 +211,7 @@ class Pin
   unsigned char minPinYField_ : 1;
   unsigned char maxPinXField_ : 1;
   unsigned char maxPinYField_ : 1;
-
-  void updateCoordi(odb::dbITerm* iTerm);
+  
   void updateCoordi(odb::dbBTerm* bTerm, utl::Logger* logger);
 };
 

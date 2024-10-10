@@ -102,6 +102,8 @@ class NesterovPlace
   void destroyGNet(odb::dbNet*);
   void destroyITerm(odb::dbITerm*);
 
+  // These two may not be required to implement since we are updating the connections when refreshing pointers with fixPointers().
+  // And when refresh happens, all connections are already settled in the db.
   void disconnectIterm(odb::dbITerm* iterm, odb::dbNet* net);
   void connectIterm(odb::dbITerm* iterm);
 
@@ -170,7 +172,7 @@ class nesterovDbCbk : public odb::dbBlockCallBackObj
   virtual void inDbITermPostConnect(odb::dbITerm*) ;
 
 
-virtual void inDbPreMoveInst(odb::dbInst*) override;
+// virtual void inDbPreMoveInst(odb::dbInst*) override;
 virtual void inDbPostMoveInst(odb::dbInst*) override;
 virtual void inDbNetCreate(odb::dbNet*) override;
 virtual void inDbNetDestroy(odb::dbNet*) override;

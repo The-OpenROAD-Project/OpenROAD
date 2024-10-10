@@ -66,6 +66,7 @@
 #include "sta/TimingModel.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
+#include "odb/db.h" //TODO remove after testings
 
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
@@ -1288,6 +1289,13 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
 
   if(run_journal_restore)  
     journalRestore(resize_count_, inserted_buffer_count_, cloned_gate_count_, removed_buffer_count_); //these get a negative counting because of restoring
+
+  if(!run_journal_restore) {
+    //destroy for testing only. copied from TestCallBacks.cpp
+    // auto inst_to_destroy = *block_->getInsts().begin();
+    // logger_->report("destroying inst:{}", inst_to_destroy->getName());
+    // odb::dbInst::destroy(inst_to_destroy);
+  }  
 
   debugPrint(logger_,utl::GPL,"timing",1,"--> After journalRestore:");
   debugPrint(logger_,utl::GPL,"timing",1,"repaired_net_count:        {:5}", repaired_net_count);
