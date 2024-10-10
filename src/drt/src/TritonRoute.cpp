@@ -546,7 +546,7 @@ bool TritonRoute::initGuide()
   io::GuideProcessor guide_processor(getDesign(), db_, logger_);
   bool guideOk = guide_processor.readGuides();
   guide_processor.processGuides();
-  io::Parser parser(db_, getDesign(), logger_);
+  io::Parser parser(db_, this, logger_);
   parser.initRPin();
   return guideOk;
 }
@@ -556,13 +556,12 @@ void TritonRoute::initDesign()
       || db_->getChip()->getBlock() == nullptr) {
     logger_->error(utl::DRT, 151, "Database, chip or block not initialized.");
   }
-  io::Parser parser(db_, getDesign(), logger_);
+  io::Parser parser(db_, this, logger_);
   if (getDesign()->getTopBlock() != nullptr) {
     parser.updateDesign();
     return;
   }
   parser.readTechAndLibs(db_);
-  processBTermsAboveTopLayer();
   parser.readDesign(db_);
   auto tech = getDesign()->getTech();
 
@@ -1168,6 +1167,79 @@ void TritonRoute::processBTermsAboveTopLayer(bool has_routing)
   }
 }
 
+namespace {
+std::vector<int> getTracksInRange(const frTrackPattern* tp,
+                                  int range_start,
+                                  int range_end)
+{
+  const auto start = tp->getStartCoord();
+  const auto spacing = tp->getTrackSpacing();
+  const auto num_tracks = tp->getNumTracks();
+  std::vector<int> tracks;
+
+  int first_track_idx = (range_start - start + spacing - 1) / spacing;
+  first_track_idx = std::max(first_track_idx, 0);  // Ensure valid index
+
+  int last_track_idx = (range_end - start) / spacing;
+  last_track_idx = std::min(
+      last_track_idx,
+      (int) (num_tracks - 1));  // Ensure it doesn't exceed total tracks
+
+  // Generate tracks only in the valid range
+  for (int i = first_track_idx; i <= last_track_idx; ++i) {
+    int track = start + i * spacing;
+    tracks.push_back(track);
+  }
+
+  return tracks;
+}
+/**
+ * Finds the best track on the TOP_ROUTING_LAYER to be the via position
+ *
+ * This function iterates over all preferred tracks that pass through the passed
+ * pin_rect and chooses the one that is closest to the center. If no tracks are
+ * found, it chooses the pin center point as the via location.
+ *
+ * @param pin_rect The BTerm pin rectange shape.
+ * @param design The design object
+ * @returns The chosen via location for stacking the vias up to the
+ * TOP_ROUTING_LAYER
+ */
+Point getBestViaPosition(Rect pin_rect, frDesign* design)
+{
+  Point center_pt = pin_rect.center();
+  const auto top_routing_layer = design->getTech()->getLayer(TOP_ROUTING_LAYER);
+  const bool is_horizontal = top_routing_layer->isHorizontal();
+  const auto track_patterns = design->getTopBlock()->getTrackPatterns(
+      TOP_ROUTING_LAYER, !is_horizontal);
+  std::vector<frCoord> valid_tracks;
+  for (const auto tp : track_patterns) {
+    const auto result
+        = getTracksInRange(tp,
+                           is_horizontal ? pin_rect.yMin() : pin_rect.xMin(),
+                           is_horizontal ? pin_rect.yMax() : pin_rect.xMax());
+    valid_tracks.insert(valid_tracks.end(), result.begin(), result.end());
+  }
+  if (valid_tracks.empty()) {
+    return center_pt;
+  }
+  frCoord min_dist = std::numeric_limits<frCoord>::max();
+  frCoord best_track = -1;
+  for (const auto& track : valid_tracks) {
+    const auto dist
+        = std::abs(track - (is_horizontal ? center_pt.y() : center_pt.x()));
+    if (dist < min_dist) {
+      min_dist = dist;
+      best_track = track;
+    }
+  }
+  if (!is_horizontal) {
+    return {best_track, center_pt.y()};
+  }
+  return {center_pt.x(), best_track};
+}
+}  // namespace
+
 void TritonRoute::stackVias(odb::dbBTerm* bterm,
                             int top_layer_idx,
                             int bterm_bottom_layer_idx,
@@ -1207,7 +1279,7 @@ void TritonRoute::stackVias(odb::dbBTerm* bterm,
   }
 
   // set the via position as the first AP in the same layer of the bterm
-  odb::Point via_position = odb::Point(pin_rect.xCenter(), pin_rect.yCenter());
+  odb::Point via_position = getBestViaPosition(pin_rect, getDesign());
 
   // insert the vias from the top routing layer to the bterm bottom layer
   odb::dbWire* wire = net->getWire();
