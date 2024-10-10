@@ -2031,7 +2031,7 @@ void IOPlacer::updateSlots()
   }
 }
 
-void IOPlacer::run(bool random_mode)
+void IOPlacer::runHungarianMatching(bool random_mode)
 {
   slots_per_section_ = parms_->getSlotsPerSection();
 

@@ -218,9 +218,9 @@ add_pin_group(PinList *pin_list, bool order)
 }
 
 void
-run_io_placement(bool randomMode)
+run_hungarian_matching(bool randomMode)
 {
-  getIOPlacer()->run(randomMode);
+  getIOPlacer()->runHungarianMatching(randomMode);
 }
 
 void

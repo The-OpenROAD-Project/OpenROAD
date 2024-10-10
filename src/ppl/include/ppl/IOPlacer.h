@@ -125,7 +125,7 @@ class IOPlacer
   void init(odb::dbDatabase* db, Logger* logger);
   void clear();
   void clearConstraints();
-  void run(bool random_mode);
+  void runHungarianMatching(bool random_mode);
   void runAnnealing(bool random);
   void reportHPWL();
   void printConfig(bool annealing = false);
