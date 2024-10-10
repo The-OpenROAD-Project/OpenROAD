@@ -20,9 +20,12 @@ def extract_parasitics(
     lef_res=False,
     cc_model=10,
     context_depth=5,
-    no_merge_via_res=False
+    no_merge_via_res=False,
+    lef_rc=False,
+    skip_over_cell=False,
+    version=1.0,
+    dbg=0
 ):
-
     opts = rcx.ExtractOptions()
 
     opts.ext_model_file = ext_model_file
@@ -36,7 +39,6 @@ def extract_parasitics(
     opts.no_merge_via_res = no_merge_via_res
 
     design.getOpenRCX().extract(opts)
-
 
 def write_spef(design, *, filename="", nets="", net_id=0, coordinates=False):
     opts = rcx.SpefOptions()
@@ -67,7 +69,8 @@ def bench_wires(
     w_list="1",
     s_list="1 2 2.5 3 3.5 4 4.5 5 6 8 10 12",
     over_dist=100,
-    under_dist=100
+    under_dist=100,
+    v1=True
 ):
     opts = rcx.BenchWiresOptions()
     opts.w_list = w_list
@@ -82,8 +85,8 @@ def bench_wires(
     opts.db_only = db_only
     opts.over_dist = over_dist
     opts.under_dist = under_dist
+    opts.v1= v1
     design.getOpenRCX().bench_wires(opts)
-
 
 def adjust_rc(design, *, res_factor=1.0, cc_factor=1.0, gndc_factor=1.0):
     design.getOpenRCX().adjust_rc(res_factor, cc_factor, gndc_factor)
