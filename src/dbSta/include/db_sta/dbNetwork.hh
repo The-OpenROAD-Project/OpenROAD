@@ -335,6 +335,7 @@ class dbNetwork : public ConcreteNetwork
   void readDbNetlistAfter();
   void makeTopCell();
   void findConstantNets();
+  void makeAccessHashes();
   void visitConnectedPins(const Net* net,
                           PinVisitor& visitor,
                           NetSet& visited_nets) const override;
