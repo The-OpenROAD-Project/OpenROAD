@@ -1,8 +1,9 @@
- /////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2021, The Regents of the University of California
+// Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Antmicro
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,85 +34,67 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-%include <std_string.i>
-%include <std_vector.i>
-%include <stdint.i>
+#pragma once
 
-%{
+#include <memory>
+#include <vector>
 
-#include "odb/db.h"
-#include "ord/Tech.h"
-#include "ord/Design.h"
-#include "ord/Timing.h"
-
-using odb::dbDatabase;
-using odb::dbBlock;
-using odb::dbTech;
-
-// Defined by OpenRoad.i inlines
-const char *
-openroad_version();
-
-const char *
-openroad_git_describe();
-
-const bool
-openroad_dg_compiled();
-
-const bool 
-openroad_python_compiled();
-
-const bool
-openroad_gui_compiled();
-
-odb::dbDatabase *
-get_db();
-
-odb::dbTech *
-get_db_tech();
-
-bool
-db_has_tech();
-
-odb::dbBlock *
-get_db_block();
-
-%}
-
-%template(Corners) std::vector<sta::Corner*>;
-%template(MTerms) std::vector<odb::dbMTerm*>;
-%template(Masters) std::vector<odb::dbMaster*>;
-
-%include "Exception-py.i"
-%include "ord/Tech.h"
-%include "ord/Design.h"
-%include "ord/Timing.h"
-
-%newobject Design::getFloorplan();
-
-const char *
-openroad_version();
-
-const char *
-openroad_git_describe();
-
-odb::dbDatabase *
-get_db();
-
-odb::dbTech *
-get_db_tech();
-
-bool
-db_has_tech();
-
-odb::dbBlock *
-get_db_block();
-
-%inline %{
-
-namespace ord {
-  void set_thread_count(int threads);
-  int thread_count();
+namespace odb {
+class dbDatabase;
 }
 
-%}
+namespace grt {
+class GlobalRouter;
+}
+
+namespace utl {
+class Logger;
+}
+
+namespace gpl2 {
+
+class PlacerBaseCommon;
+class PlacerBase;
+
+class RouteBaseVars
+{
+ public:
+  float inflationRatioCoef;
+  float maxInflationRatio;
+  float maxDensity;
+  float targetRC;
+  float ignoreEdgeRatio;
+  float minInflationRatio;
+
+  // targetRC metric coefficients.
+  float rcK1, rcK2, rcK3, rcK4;
+
+  int maxBloatIter;
+  int maxInflationIter;
+
+  RouteBaseVars();
+  void reset();
+};
+
+class RouteBase
+{
+ public:
+  RouteBase();
+  RouteBase(RouteBaseVars rbVars,
+               odb::dbDatabase* db,
+               grt::GlobalRouter* grouter,
+               std::shared_ptr<PlacerBaseCommon> nbc,
+               std::vector<std::shared_ptr<PlacerBase>> nbVec,
+               utl::Logger* log);
+  ~RouteBase();
+
+ private:
+  RouteBaseVars rbVars_;
+  odb::dbDatabase* db_;
+  grt::GlobalRouter* grouter_;
+
+  std::shared_ptr<PlacerBaseCommon> nbc_;
+  std::vector<std::shared_ptr<PlacerBase>> nbVec_;
+  utl::Logger* log_;
+};
+}  // namespace gpl2
