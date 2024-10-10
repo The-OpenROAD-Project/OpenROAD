@@ -172,8 +172,8 @@ void IOPlacer::randomPlacement()
         = getValidSlots(first_slot, last_slot, top_layer);
     std::vector<int> pin_indices;
     for (bool mirrored_pins : {true, false}) {
-      std::vector<int> indices = findPinsForConstraint(
-          constraint, netlist_.get(), mirrored_pins);
+      std::vector<int> indices
+          = findPinsForConstraint(constraint, netlist_.get(), mirrored_pins);
       pin_indices.insert(pin_indices.end(), indices.begin(), indices.end());
     }
     randomPlacement(
@@ -919,8 +919,8 @@ void IOPlacer::defineSlots()
 
   findSlotsForTopLayer();
 
-  int regular_pin_count = static_cast<int>(netlist_->getIOPins().size())
-                          - top_layer_pins_count_;
+  int regular_pin_count
+      = static_cast<int>(netlist_->getIOPins().size()) - top_layer_pins_count_;
   if (regular_pin_count > slots_.size()) {
     int min_dist = std::numeric_limits<int>::min();
     for (int layer_idx : ver_layers_) {
@@ -1106,8 +1106,8 @@ std::vector<Section> IOPlacer::assignConstrainedPinsToSections(
   assignConstrainedGroupsToSections(
       constraint, constraint.sections, mirrored_pins_cnt, mirrored_only);
 
-  std::vector<int> pin_indices = findPinsForConstraint(
-      constraint, netlist_.get(), mirrored_only);
+  std::vector<int> pin_indices
+      = findPinsForConstraint(constraint, netlist_.get(), mirrored_only);
 
   for (int idx : pin_indices) {
     IOPin& io_pin = netlist_->getIoPin(idx);
@@ -1391,6 +1391,10 @@ void IOPlacer::printConfig(bool annealing)
                 "Number of I/O w/sink      {}",
                 netlist_->numIOPins() - zero_sink_ios_.size());
   logger_->info(PPL, 4, "Number of I/O w/o sink    {}", zero_sink_ios_.size());
+  if (!netlist_->getIOGroups().empty()) {
+    logger_->info(
+        PPL, 6, "Number of I/O Groups    {}", netlist_->getIOGroups().size());
+  }
   if (!annealing) {
     logger_->info(PPL, 5, "Slots per section         {}", slots_per_section_);
   }
@@ -2825,8 +2829,7 @@ void IOPlacer::commitConstraintsToDB()
       bterm->setConstraintRegion(constraint_region);
 
       if (io_pin.isMirrored()) {
-        IOPin& mirrored_pin
-            = netlist_->getIoPin(io_pin.getMirrorPinIdx());
+        IOPin& mirrored_pin = netlist_->getIoPin(io_pin.getMirrorPinIdx());
         odb::dbBTerm* mirrored_bterm
             = getBlock()->findBTerm(mirrored_pin.getName().c_str());
         Edge mirrored_edge = getMirroredEdge(interval.getEdge());
