@@ -4114,6 +4114,10 @@ bool dbBlock::designIsRouted(bool verbose)
 {
   bool design_is_routed = true;
   for (dbNet* net : getNets()) {
+    if (net->isSpecial()) {
+      continue;
+    }
+
     const int pin_count = net->getBTermCount() + net->getITerms().size();
 
     odb::uint wire_cnt = 0, via_cnt = 0;
