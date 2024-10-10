@@ -80,7 +80,7 @@ void Graphics::startSA()
   skipped_ = 0;
 }
 
-void Graphics::endSA()
+void Graphics::endSA(const float norm_cost)
 {
   if (!active_) {
     return;
@@ -94,6 +94,7 @@ void Graphics::endSA()
     logger_->report("Skipped to end: {}", skipped_);
   }
   logger_->report("------ End ------");
+  report(norm_cost);
   gui::Gui::get()->pause();
 }
 
@@ -131,6 +132,19 @@ void Graphics::report(const char* name, const std::optional<T>& value)
         penalty.weight,
         penalty.norm_penalty * penalty.weight);
   }
+}
+
+void Graphics::report(const float norm_cost)
+{
+  report("Area", area_penalty_);
+  report("Outline Penalty", outline_penalty_);
+  report("Wirelength", wirelength_penalty_);
+  report("Fence Penalty", fence_penalty_);
+  report("Guidance Penalty", guidance_penalty_);
+  report("Boundary Penalty", boundary_penalty_);
+  report("Macro Blockage Penalty", macro_blockage_penalty_);
+  report("Notch Penalty", notch_penalty_);
+  report("Normalized Cost", std::optional<Penalty>({1.0f, norm_cost}));
 }
 
 void Graphics::drawResult()
@@ -206,16 +220,8 @@ void Graphics::penaltyCalculated(float norm_cost)
 
   if (norm_cost < best_norm_cost_ || drawing_last_step) {
     logger_->report("------ Penalty ------");
+    report(norm_cost);
 
-    report("Area", area_penalty_);
-    report("Outline Penalty", outline_penalty_);
-    report("Wirelength", wirelength_penalty_);
-    report("Fence Penalty", fence_penalty_);
-    report("Guidance Penalty", guidance_penalty_);
-    report("Boundary Penalty", boundary_penalty_);
-    report("Macro Blockage Penalty", macro_blockage_penalty_);
-    report("Notch Penalty", notch_penalty_);
-    report("Normalized Cost", std::optional<Penalty>({1.0f, norm_cost}));
     if (skipped_ > 0) {
       logger_->report("Skipped: {}", skipped_);
       skipped_ = 0;
