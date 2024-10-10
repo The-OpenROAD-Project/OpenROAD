@@ -586,7 +586,10 @@ void SimulatedAnnealingCore<T>::fastSA()
       perturb();
       cost = calNormCost();
 
-      if (cost < pre_cost && isValid()) {
+      const bool keep_result
+          = cost < pre_cost || best_valid_result.pos_sequence.empty();
+
+      if (isValid() && keep_result) {
         updateBestValidResult(best_valid_result);
       }
 
