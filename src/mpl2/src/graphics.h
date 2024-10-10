@@ -105,7 +105,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
 
   template <typename T>
   void report(const char* name, const std::optional<T>& value);
-  void report(const float norm_cost);
+  void report(float norm_cost);
 
   std::vector<SoftMacro> soft_macros_;
   std::vector<HardMacro> hard_macros_;
