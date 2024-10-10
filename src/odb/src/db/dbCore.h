@@ -117,6 +117,7 @@ class dbObjectTable
   }
 
   virtual dbObject* getObject(uint id, ...) = 0;
+  virtual bool validObject(uint id, ...) = 0;
 
   dbObjectTable* getObjectTable(dbObjectType type)
   {

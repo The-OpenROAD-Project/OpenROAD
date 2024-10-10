@@ -135,9 +135,10 @@ for relation in schema["relations"]:
         inParentField["schema"] = relation["schema"]
 
     schema["classes"][parent]["fields"].append(inParentField)
-    schema["classes"][parent]["cpp_includes"].extend(
-        [f"{relation['second']}.h", "odb/dbSet.h"]
-    )
+    if relation["first"] != relation["second"]:
+        schema["classes"][parent]["cpp_includes"].extend(
+            [f"{relation['second']}.h", "odb/dbSet.h"]
+        )
     logging.debug(f"Add relation field {inParentField['name']} to {relation['first']}")
 
     child_type_name = f"_{relation['second']}"

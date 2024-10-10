@@ -2496,6 +2496,67 @@ double FastRouteCore::dbuToMicrons(int dbu)
 
 void FastRouteCore::saveCongestion(const int iter)
 {
+  std::vector<CongestionInformation> congestionGridsV, congestionGridsH;
+  getCongestionGrid(congestionGridsV, congestionGridsH);
+
+  const std::string marker_group_name = fmt::format(
+      "Global route{}", iter == -1 ? "" : fmt::format(" - iter {}", iter));
+
+  if (!congestionGridsV.empty() || !congestionGridsH.empty()) {
+    odb::dbMarkerCategory* tool_category
+        = odb::dbMarkerCategory::createOrReplace(db_->getChip()->getBlock(),
+                                                 marker_group_name.c_str());
+    tool_category->setSource("GRT");
+
+    if (!congestionGridsH.empty()) {
+      odb::dbMarkerCategory* category = odb::dbMarkerCategory::create(
+          tool_category, "Horizontal congestion");
+
+      for (const auto& [seg, tile, srcs] : congestionGridsH) {
+        odb::dbMarker* marker = odb::dbMarker::create(category);
+        if (marker == nullptr) {
+          continue;
+        }
+
+        marker->addShape(globalRoutingToBox(seg));
+
+        const int capacity = tile.capacity;
+        const int usage = tile.usage;
+        marker->setComment(fmt::format("capacity:{} usage:{} overflow:{}",
+                                       capacity,
+                                       usage,
+                                       usage - capacity));
+        for (const auto& net : srcs) {
+          marker->addSource(net);
+        }
+      }
+    }
+
+    if (!congestionGridsV.empty()) {
+      odb::dbMarkerCategory* category
+          = odb::dbMarkerCategory::create(tool_category, "Vertical congestion");
+
+      for (const auto& [seg, tile, srcs] : congestionGridsV) {
+        odb::dbMarker* marker = odb::dbMarker::create(category);
+        if (marker == nullptr) {
+          continue;
+        }
+
+        marker->addShape(globalRoutingToBox(seg));
+
+        const int capacity = tile.capacity;
+        const int usage = tile.usage;
+        marker->setComment(fmt::format("capacity:{} usage:{} overflow:{}",
+                                       capacity,
+                                       usage,
+                                       usage - capacity));
+        for (const auto& net : srcs) {
+          marker->addSource(net);
+        }
+      }
+    }
+  }
+
   // check if the file name is defined
   if (congestion_file_name_.empty()) {
     return;
@@ -2510,56 +2571,11 @@ void FastRouteCore::saveCongestion(const int iter)
     file_name += "-" + std::to_string(iter) + ".rpt";
   }
 
-  std::ofstream out(file_name);
-
-  if (out.is_open()) {
-    std::vector<CongestionInformation> congestionGridsV, congestionGridsH;
-    getCongestionGrid(congestionGridsV, congestionGridsH);
-
-    for (auto& it : congestionGridsH) {
-      const auto& [seg, tile, srcs] = it;
-      out << "violation type: Horizontal congestion\n";
-      const int capacity = tile.capacity;
-      const int usage = tile.usage;
-
-      out << "\tsrcs: ";
-      for (const auto& net : srcs) {
-        out << "net:" << net->getName() << " ";
-      }
-      out << "\n";
-      out << "\tcongestion information: capacity:" << capacity
-          << " usage:" << usage << " overflow:" << usage - capacity << "\n";
-      odb::Rect rect = globalRoutingToBox(seg);
-      out << "\tbbox = ";
-      out << "( " << dbuToMicrons(rect.xMin()) << ", "
-          << dbuToMicrons(rect.yMin()) << " ) - ";
-      out << "( " << dbuToMicrons(rect.xMax()) << ", "
-          << dbuToMicrons(rect.yMax()) << ") on Layer -\n";
-    }
-
-    for (auto& it : congestionGridsV) {
-      const auto& [seg, tile, srcs] = it;
-      out << "violation type: Vertical congestion\n";
-      const int capacity = tile.capacity;
-      const int usage = tile.usage;
-
-      out << "\tsrcs: ";
-      for (const auto& net : srcs) {
-        out << "net:" << net->getName() << " ";
-      }
-      out << "\n";
-      out << "\tcongestion information: capacity:" << capacity
-          << " usage:" << usage << " overflow:" << usage - capacity << "\n";
-      odb::Rect rect = globalRoutingToBox(seg);
-      out << "\tbbox = ";
-      out << "( " << dbuToMicrons(rect.xMin()) << ", "
-          << dbuToMicrons(rect.yMin()) << " ) - ";
-      out << "( " << dbuToMicrons(rect.xMax()) << ", "
-          << dbuToMicrons(rect.yMax()) << ") on Layer -\n";
-    }
-  } else {
-    logger_->error(
-        GRT, 600, "Error: Fail to open DRC report file {}", file_name);
+  odb::dbMarkerCategory* tool_category
+      = db_->getChip()->getBlock()->findMarkerCategory(
+          marker_group_name.c_str());
+  if (tool_category != nullptr) {
+    tool_category->writeTR(file_name);
   }
 }
 

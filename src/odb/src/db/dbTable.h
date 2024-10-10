@@ -169,6 +169,7 @@ class dbTable : public dbObjectTable, public dbIterator
   uint end(dbObject* parent) override;
   uint next(uint id, ...) override;
   dbObject* getObject(uint id, ...) override;
+  bool validObject(uint id, ...) override { return validId(id); }
   void getObjects(std::vector<T*>& objects);
 
  private:

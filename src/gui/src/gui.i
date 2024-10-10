@@ -442,13 +442,18 @@ void gui_pause(int timeout = 0)
   return gui->pause(timeout);
 }
 
-void load_drc(const char* filename)
+void select_marker_category(odb::dbMarkerCategory* category)
 {
-  if (!check_gui("load_drc")) {
+  if (!check_gui("select_marker_category")) {
     return;
   }
   auto gui = gui::Gui::get();
-  gui->loadDRC(filename);
+  gui->selectMarkers(category);
+}
+
+void select_marker_category(const char* name)
+{
+  select_marker_category(get_block()->findMarkerCategory(name));
 }
 
 void show_widget(const char* name)

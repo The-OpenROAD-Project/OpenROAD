@@ -95,6 +95,20 @@ dbIStream& operator>>(dbIStream& stream, Polygon& p)
   return stream;
 }
 
+dbOStream& operator<<(dbOStream& stream, const Line& l)
+{
+  stream << l.pt0_;
+  stream << l.pt1_;
+  return stream;
+}
+
+dbIStream& operator>>(dbIStream& stream, Line& l)
+{
+  stream >> l.pt0_;
+  stream >> l.pt1_;
+  return stream;
+}
+
 dbOStream& operator<<(dbOStream& stream, const Point& p)
 {
   stream << p.x_;

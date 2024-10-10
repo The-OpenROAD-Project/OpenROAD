@@ -2,6 +2,7 @@ _comparable = [
     "Point",
     "Rect",
     "Polygon",
+    "Line",
     "bool",
     "char *",
     "char",

@@ -915,9 +915,18 @@ void Connect::addFailedVia(failedViaReason reason,
   failed_vias_[reason].insert({net, rect});
 }
 
-void Connect::writeFailedVias(std::ofstream& file) const
+void Connect::recordFailedVias() const
 {
-  const double dbumicrons = layer0_->getTech()->getLefUnits();
+  if (failed_vias_.empty()) {
+    return;
+  }
+
+  odb::dbMarkerCategory* tool_category
+      = grid_->getBlock()->findMarkerCategory("PDN");
+  if (tool_category == nullptr) {
+    tool_category = odb::dbMarkerCategory::create(grid_->getBlock(), "PDN");
+    tool_category->setSource("PDN");
+  }
 
   for (const auto& [reason, shapes] : failed_vias_) {
     std::string reason_str;
@@ -941,14 +950,21 @@ void Connect::writeFailedVias(std::ofstream& file) const
         reason_str = "Other";
         break;
     }
+
     reason_str += " - " + grid_->getLongName();
     reason_str += " - " + layer0_->getName() + " -> " + layer1_->getName();
 
+    odb::dbMarkerCategory* category
+        = odb::dbMarkerCategory::createOrGet(tool_category, reason_str.c_str());
+
     for (const auto& [net, shape] : shapes) {
-      file << "violation type: " << reason_str << std::endl;
-      file << "\tsrcs: net:" << net->getName() << std::endl;
-      file << "\tbbox = " << Shape::getRectText(shape, dbumicrons)
-           << " on Layer -" << std::endl;
+      odb::dbMarker* marker = odb::dbMarker::create(category);
+      if (marker == nullptr) {
+        continue;
+      }
+
+      marker->addSource(net);
+      marker->addShape(shape);
     }
   }
 }
