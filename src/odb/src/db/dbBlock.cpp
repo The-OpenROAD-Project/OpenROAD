@@ -358,10 +358,6 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _inst_hash.setTable(_inst_tbl);
   _module_hash.setTable(_module_tbl);
   _modinst_hash.setTable(_modinst_tbl);
-  _modbterm_hash.setTable(_modbterm_tbl);
-  _moditerm_hash.setTable(_moditerm_tbl);
-  _modnet_hash.setTable(_modnet_tbl);
-  _busport_hash.setTable(_busport_tbl);
   _powerdomain_hash.setTable(_powerdomain_tbl);
   _logicport_hash.setTable(_logicport_tbl);
   _powerswitch_hash.setTable(_powerswitch_tbl);
@@ -992,12 +988,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._inst_hash;
   stream << block._module_hash;
   stream << block._modinst_hash;
-  if (db->isSchema(db_schema_update_hierarchy)) {
-    stream << block._modbterm_hash;
-    stream << block._moditerm_hash;
-    stream << block._modnet_hash;
-    stream << block._busport_hash;
-  }
+
   stream << block._powerdomain_hash;
   stream << block._logicport_hash;
   stream << block._powerswitch_hash;
@@ -1017,11 +1008,19 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._iterm_tbl;
   stream << *block._net_tbl;
   stream << *block._inst_hdr_tbl;
-  stream << *block._inst_tbl;
-  stream << *block._module_tbl;
+  if (db->isSchema(db_schema_db_remove_hash)) {
+    stream << *block._module_tbl;
+    stream << *block._inst_tbl;
+  } else {
+    stream << *block._inst_tbl;
+    stream << *block._module_tbl;
+  }
   stream << *block._modinst_tbl;
   if (db->isSchema(db_schema_update_hierarchy)) {
     stream << *block._modbterm_tbl;
+    if (db->isSchema(db_schema_db_remove_hash)) {
+      stream << *block._busport_tbl;
+    }
     stream << *block._moditerm_tbl;
     stream << *block._modnet_tbl;
   }
@@ -1124,10 +1123,16 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._module_hash;
   stream >> block._modinst_hash;
   if (db->isSchema(db_schema_update_hierarchy)) {
-    stream >> block._modbterm_hash;
-    stream >> block._moditerm_hash;
-    stream >> block._modnet_hash;
-    stream >> block._busport_hash;
+    if (!db->isSchema(db_schema_db_remove_hash)) {
+      dbHashTable<_dbModBTerm> unused_modbterm_hash;
+      dbHashTable<_dbModITerm> unused_moditerm_hash;
+      dbHashTable<_dbModNet> unused_modnet_hash;
+      dbHashTable<_dbBusPort> unused_busport_hash;
+      stream >> unused_modbterm_hash;
+      stream >> unused_moditerm_hash;
+      stream >> unused_modnet_hash;
+      stream >> unused_busport_hash;
+    }
   }
   stream >> block._powerdomain_hash;
   stream >> block._logicport_hash;
@@ -1157,11 +1162,19 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block._iterm_tbl;
   stream >> *block._net_tbl;
   stream >> *block._inst_hdr_tbl;
-  stream >> *block._inst_tbl;
-  stream >> *block._module_tbl;
+  if (db->isSchema(db_schema_db_remove_hash)) {
+    stream >> *block._module_tbl;
+    stream >> *block._inst_tbl;
+  } else {
+    stream >> *block._inst_tbl;
+    stream >> *block._module_tbl;
+  }
   stream >> *block._modinst_tbl;
   if (db->isSchema(db_schema_update_hierarchy)) {
     stream >> *block._modbterm_tbl;
+    if (db->isSchema(db_schema_db_remove_hash)) {
+      stream >> *block._busport_tbl;
+    }
     stream >> *block._moditerm_tbl;
     stream >> *block._modnet_tbl;
   }
@@ -4127,6 +4140,10 @@ bool dbBlock::designIsRouted(bool verbose)
 {
   bool design_is_routed = true;
   for (dbNet* net : getNets()) {
+    if (net->isSpecial()) {
+      continue;
+    }
+
     const int pin_count = net->getBTermCount() + net->getITerms().size();
 
     odb::uint wire_cnt = 0, via_cnt = 0;

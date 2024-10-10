@@ -70,10 +70,13 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 94;  // Current revision number
+const uint db_schema_minor = 95;  // Current revision number
 
 // Revision where the dbMarkerGroup/Categories were added to dbBlock
-const uint db_schema_dbmarkergroup = 94;
+const uint db_schema_dbmarkergroup = 95;
+
+// Revision where unused hashes removed
+const uint db_schema_db_remove_hash = 94;
 
 // Revision where the dbGDSLib is added to dbDatabase
 const uint db_schema_gds_lib_in_block = 93;

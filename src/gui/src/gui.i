@@ -624,12 +624,12 @@ double get_heatmap_double(const std::string& name, const std::string& option)
   return 0.0;
 }
 
-const char* get_heatmap_string(const std::string& name, const std::string& option)
+std::string get_heatmap_string(const std::string& name, const std::string& option)
 {
   auto gui = gui::Gui::get();
   auto value = gui->getHeatMapSetting(name, option);
   if (std::holds_alternative<std::string>(value)) {
-    return std::get<std::string>(value).c_str();
+    return std::get<std::string>(value);
   } else {
     auto logger = ord::OpenRoad::openRoad()->getLogger();
     logger->error(GUI, 93, "Heatmap setting \"{}\" is not a string", option);
