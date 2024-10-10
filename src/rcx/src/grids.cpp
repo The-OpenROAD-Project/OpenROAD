@@ -3062,6 +3062,57 @@ void Ath__gridTable::setExtControl(dbBlock* block,
   _dgContextTrackBase = dgContextTrackBase;
   _seqPool = seqPool;
 }
+void Ath__gridTable::setExtControl_v2(dbBlock* block,
+                                   bool useDbSdb,
+                                   uint adj,
+                                   uint npsrc,
+                                   uint nptgt,
+                                   uint ccUp,
+                                   bool allNet,
+                                   uint contextDepth,
+                                   Ath__array1D<int>** contextArray,
+                                   uint* contextLength,
+                                   Ath__array1D<SEQ*>*** dgContextArray,
+                                   uint* dgContextDepth,
+                                   uint* dgContextPlanes,
+                                   uint* dgContextTracks,
+                                   uint* dgContextBaseLvl,
+                                   int* dgContextLowLvl,
+                                   int* dgContextHiLvl,
+                                   uint* dgContextBaseTrack,
+                                   int* dgContextLowTrack,
+                                   int* dgContextHiTrack,
+                                   int** dgContextTrackBase,
+                                   AthPool<SEQ>* seqPool)
+{
+  _block = block;
+  _useDbSdb = useDbSdb;
+  _overlapAdjust = adj;
+  _noPowerSource = npsrc;
+  _noPowerTarget = nptgt;
+  _CCtargetHighTracks = ccUp;
+  if (ccUp == 2)
+    _CCtargetHighMarkedNet = 1;
+  else
+    _CCtargetHighMarkedNet = 0;
+  _targetTrackReversed = false;
+  _ccContextDepth = contextDepth;
+  _ccContextArray = contextArray;
+  _ccContextLength = contextLength;
+  _allNet = allNet;
+  _dgContextArray = dgContextArray;
+  _dgContextDepth = dgContextDepth;
+  _dgContextPlanes = dgContextPlanes;
+  _dgContextTracks = dgContextTracks;
+  _dgContextBaseLvl = dgContextBaseLvl;
+  _dgContextLowLvl = dgContextLowLvl;
+  _dgContextHiLvl = dgContextHiLvl;
+  _dgContextBaseTrack = dgContextBaseTrack;
+  _dgContextLowTrack = dgContextLowTrack;
+  _dgContextHiTrack = dgContextHiTrack;
+  _dgContextTrackBase = dgContextTrackBase;
+  _seqPool = seqPool;
+}
 void Ath__gridTable::reverseTargetTrack()
 {
   _CCtargetHighTracks = _CCtargetHighTracks == 2 ? 0 : 2;
@@ -3111,7 +3162,7 @@ uint Ath__gridTable::addBox(int x1,
   bb.setType(wireType);
 
   uint dir = bb.getDir();
-  uint trackNum = getGrid(dir, level)->placeWire(&bb);
+  uint trackNum = !_v2 ? getGrid(dir, level)->placeWire(&bb) : getGrid(dir, level)->placeWire_v2(&bb);
   _wireCnt++;
   return trackNum;
 }
