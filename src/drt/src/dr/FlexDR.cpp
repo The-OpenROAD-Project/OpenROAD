@@ -1431,10 +1431,6 @@ int FlexDR::main()
     if (logger_->debugCheck(DRT, "snapshot", 1)) {
       io::Writer writer(router_, logger_);
       writer.updateDb(db_, false, true);
-      // insert the stack of vias for bterms above max layer again.
-      // all routing is deleted in updateDb, so it is necessary to insert the
-      // stack again.
-      router_->processBTermsAboveTopLayer(true);
       ord::OpenRoad::openRoad()->writeDb(
           fmt::format("drt_iter{}.odb", iter_ - 1).c_str());
     }
