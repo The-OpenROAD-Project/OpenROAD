@@ -633,7 +633,7 @@ void SimulatedAnnealingCore<T>::fastSA()
   }
 
   if (graphics_) {
-    graphics_->endSA();
+    graphics_->endSA(calNormCost());
   }
 }
 

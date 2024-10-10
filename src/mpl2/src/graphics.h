@@ -58,7 +58,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void startSA() override;
   void saStep(const std::vector<SoftMacro>& macros) override;
   void saStep(const std::vector<HardMacro>& macros) override;
-  void endSA() override;
+  void endSA(float norm_cost) override;
   void drawResult() override;
   void finishedClustering(Cluster* root) override;
 
@@ -105,6 +105,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
 
   template <typename T>
   void report(const char* name, const std::optional<T>& value);
+  void report(const float norm_cost);
 
   std::vector<SoftMacro> soft_macros_;
   std::vector<HardMacro> hard_macros_;
