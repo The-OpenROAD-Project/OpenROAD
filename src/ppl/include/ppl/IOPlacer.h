@@ -184,7 +184,6 @@ class IOPlacer
   void createTopLayerPinPattern();
   void initNetlistAndCore(const std::set<int>& hor_layer_idx,
                           const std::set<int>& ver_layer_idx);
-  void initIOLists();
   void initParms();
   std::vector<int> getValidSlots(int first, int last, bool top_layer);
   void randomPlacement();
@@ -310,7 +309,6 @@ class IOPlacer
 
   Logger* logger_ = nullptr;
   std::unique_ptr<Parameters> parms_;
-  std::unique_ptr<Netlist> netlist_io_pins_;
   std::vector<Slot> slots_;
   std::vector<Slot> top_layer_slots_;
   std::vector<Section> sections_;
