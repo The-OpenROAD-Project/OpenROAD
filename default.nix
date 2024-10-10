@@ -67,6 +67,7 @@
   # or-tools
   stdenv,
   overrideSDK,
+  git,
 }: let
   or-tools' =
     (or-tools.override {
@@ -100,6 +101,10 @@
     
     postPatch = ''
       patchShebangs .
+    '';
+    
+    shellHook = ''
+      alias ord-format-changed="${git}/bin/git diff --name-only | grep -E '\.(cpp|cc|c|h|hh)$' | xargs clang-format -i -style=file:.clang-format"; 
     '';
     
     qt5Libs = [

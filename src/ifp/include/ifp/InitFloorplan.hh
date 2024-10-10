@@ -78,7 +78,8 @@ class InitFloorplan
                      int core_space_right,
                      odb::dbSite* base_site,
                      const std::vector<odb::dbSite*>& additional_sites = {},
-                     RowParity row_parity = RowParity::NONE);
+                     RowParity row_parity = RowParity::NONE,
+                     const std::vector<odb::dbSite*>& flipped_sites = {});
 
   // The base_site determines the single-height rows.  For hybrid rows it is
   // a site containing a row pattern.
@@ -86,7 +87,8 @@ class InitFloorplan
                      const odb::Rect& core,
                      odb::dbSite* base_site,
                      const std::vector<odb::dbSite*>& additional_sites = {},
-                     RowParity row_parity = RowParity::NONE);
+                     RowParity row_parity = RowParity::NONE,
+                     const std::vector<odb::dbSite*>& flipped_sites = {});
 
   void insertTiecells(odb::dbMTerm* tie_term,
                       const std::string& prefix = "TIEOFF_");
@@ -115,7 +117,8 @@ class InitFloorplan
   void makeUniformRows(odb::dbSite* base_site,
                        const SitesByName& sites_by_name,
                        const odb::Rect& core,
-                       RowParity row_parity);
+                       RowParity row_parity,
+                       const std::set<odb::dbSite*>& flipped_sites);
   void makeHybridRows(odb::dbSite* base_hybrid_site,
                       const SitesByName& sites_by_name,
                       const odb::Rect& core);

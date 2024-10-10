@@ -60,6 +60,7 @@ initialize_floorplan
   [-additional_sites site_names]
   [-site site_name]
   [-row_parity NONE|EVEN|ODD]
+  [-flip_sites site_names]
 ```
 
 #### Options
@@ -74,6 +75,7 @@ initialize_floorplan
 | `-die_area` | Die area coordinates in microns (lower left x/y and upper right x/y coordinates). |
 | `-core_area` | Core area coordinates in microns (lower left x/y and upper right x/y coordinates). |
 | `-row_parity` | Snap to either an odd (`ODD`) or even (`EVEN`) number of rows. Defaults to `NONE` (no constraint on parity). |
+| `-flip_sites` | Flip the orientations of rows matching these sites. Sites listed under this option will create `FS`-oriented rows at even indices and `N`-oriented rows at odd ones, and vice versa for sites not listed under this option. (e.g. `{SITEXX, SITEYY}`) |
 
 ### Make Tracks
 
