@@ -437,7 +437,7 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
     const uint site_dy = site->getHeight();
     int rows_y = core_dy / site_dy;
     bool flip = flipped_sites.find(site) != flipped_sites.end();
-    bool flipNum = flip ? 1 : 0;
+    int flipNum = flip ? 1 : 0;
     switch (row_parity) {
       case RowParity::NONE:
         break;
