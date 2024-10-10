@@ -19,7 +19,6 @@ try:
         buf_list="CLKBUF_X3",
         wire_unit=20,
         clk_nets="clk",
-        obstruction_aware=True,
     )
 except Exception as inst:
     print(inst.args[0])

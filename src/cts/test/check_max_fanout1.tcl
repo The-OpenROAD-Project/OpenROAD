@@ -17,8 +17,7 @@ clock_tree_synthesis -root_buf sg13g2_buf_4 \
                      -distance_between_buffers 100 \
                      -sink_clustering_size 10 \
                      -sink_clustering_max_diameter 60 \
-                     -num_static_layers 1 \
-                     -obstruction_aware
+                     -num_static_layers 1
 
 set_propagated_clock [all_clocks]
 estimate_parasitics -placement
