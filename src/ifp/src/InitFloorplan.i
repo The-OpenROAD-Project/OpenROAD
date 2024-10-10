@@ -102,37 +102,40 @@ namespace ifp {
 
 void
 init_floorplan_core(int die_lx,
-		    int die_ly,
-		    int die_ux,
-		    int die_uy,
-		    int core_lx,
-		    int core_ly,
-		    int core_ux,
-		    int core_uy,
-		    odb::dbSite* site,
-		    const std::vector<odb::dbSite*>& additional_sites,
-		    ifp::RowParity row_parity)
+                    int die_ly,
+                    int die_ux,
+                    int die_uy,
+                    int core_lx,
+                    int core_ly,
+                    int core_ux,
+                    int core_uy,
+                    odb::dbSite* site,
+                    const std::vector<odb::dbSite*>& additional_sites,
+                    ifp::RowParity row_parity,
+                    const std::vector<odb::dbSite*>& flipped_sites)
 {
   get_floorplan().initFloorplan({die_lx, die_ly, die_ux, die_uy},
                                 {core_lx, core_ly, core_ux, core_uy},
-                                site, additional_sites, row_parity);
+                                site, additional_sites, row_parity, flipped_sites); 
 }
 
 void
 init_floorplan_util(double util,
                     double aspect_ratio,
                     int core_space_bottom,
-                     int core_space_top,
+                    int core_space_top,
                     int core_space_left,
                     int core_space_right,
-		    odb::dbSite* site,
-		    const std::vector<odb::dbSite*>& additional_sites,
-		    ifp::RowParity row_parity)
+                    odb::dbSite* site,
+                    const std::vector<odb::dbSite*>& additional_sites,
+                    ifp::RowParity row_parity,
+                    const std::vector<odb::dbSite*>& flipped_sites)
 {
   get_floorplan().initFloorplan(util, aspect_ratio,
                                 core_space_bottom, core_space_top,
                                 core_space_left, core_space_right,
-                                site, additional_sites, row_parity);
+                                site, additional_sites, row_parity,
+                                flipped_sites);
 }
 
 void
