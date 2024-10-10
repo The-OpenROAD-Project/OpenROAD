@@ -44,7 +44,9 @@ namespace rcx {
 #ifdef DEBUG_NET_ID
 FILE* fp;
 #endif
+using namespace odb;
 
+/* DELETE 
 using odb::dbBlock;
 using odb::dbBox;
 using odb::dbBTerm;
@@ -69,7 +71,7 @@ using odb::MAX_INT;
 using odb::Point;
 using odb::Rect;
 using utl::RCX;
-
+*/
 void extMain::print_RC(dbRSeg* rc)
 {
   dbShape s;
@@ -301,13 +303,28 @@ void extMain::getViaCapacitance(dbShape svia, dbNet* net)
 
 void extMain::getShapeRC(dbNet* net,
                          const dbShape& s,
-                         const Point& prevPoint,
+                         Point& prevPoint,
                          const dbWirePathShape& pshape)
 {
+    double viaResTable[1000];
+  bool viaModelFound= false;
+    double areaCap;
+
   if (s.isVia()) {
     double res = 0.0;
     uint level = 0;
     if (dbTechVia* tvia = s.getTechVia()) {
+      const char* viaName = tvia->getConstName();
+      // find res from ViaModelTable
+      for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
+        extMetRCTable* rcTable = _metRCTable.get(ii);
+       /* FIXME extViaModel* viaModel = rcTable->getViaModel((char*) viaName);
+        if (viaModel != NULL) {
+          viaResTable[ii] = viaModel->_res;
+          viaModelFound = true;
+        }
+        */
+      }
       level = tvia->getBottomLayer()->getRoutingLevel();
       res = tvia->getResistance();
       if (res == 0) {
@@ -322,26 +339,52 @@ void extMain::getShapeRC(dbNet* net,
       }
     } else {
       dbVia* bvia = s.getVia();
-      level = bvia->getBottomLayer()->getRoutingLevel();
-      res = getViaResistance_b(bvia, net);
+      if (bvia != NULL) {
+        level = bvia->getBottomLayer()->getRoutingLevel();
+        res = getViaResistance_b(bvia, net);
 
-      if (res <= 0.0) {
-        const uint width = bvia->getBottomLayer()->getWidth();
-        res = getResistance(level, width, width, 0);
+        if (res <= 0.0) {
+          const uint width = bvia->getBottomLayer()->getWidth();
+          res = getResistance(level, width, width, 0);
+        }
       }
     }
     if (level > 0) {
-      getViaCapacitance(s, net);
-      for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
-        _tmpResTable[ii] = res;
+      if (_lefRC) {
+        dbVia* bvia = s.getVia();
+        uint width = bvia->getBottomLayer()->getWidth();
+          double areaCap;
+        _tmpCapTable[0] = width * 2 * getFringe(level, width, 0, areaCap);
+        _tmpCapTable[0] += 2 * areaCap * width * width;
+        _tmpResTable[0] = res;
+      } else {
+        getViaCapacitance(s, net);
+        for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
+          if (viaModelFound)
+            _tmpResTable[ii] = viaResTable[ii];
+          else
+            _tmpResTable[ii] = res;
+        }
       }
     }
   } else {
-    const uint level = s.getTechLayer()->getRoutingLevel();
-    const auto [width, len]
-        = std::minmax({pshape.shape.getDX(), pshape.shape.getDY()});
+    uint len;
+    computePathDir(prevPoint, pshape.point, &len);
 
-    if (_lef_res) {
+    const uint level = s.getTechLayer()->getRoutingLevel();
+    uint width= std::min(pshape.shape.getDX(), pshape.shape.getDY());
+    len= std::max(pshape.shape.getDX(), pshape.shape.getDY());
+    //    const auto [width, len]= std::minmax({pshape.shape.getDX(), pshape.shape.getDY()});
+    if (_lefRC) {
+      double res = getResistance(level, width, len, 0);
+      double unitCap = getFringe(level, width, 0, areaCap);
+      double frTot = len * 2 * unitCap;
+
+      _tmpCapTable[0] = frTot;
+      _tmpCapTable[0] += 2 * areaCap * len * width;
+      _tmpResTable[0] = res;
+
+    } else if (_lef_res) {
       const double res = getResistance(level, width, len, 0);
       _tmpResTable[0] = res;
     } else {
@@ -350,8 +393,16 @@ void extMain::getShapeRC(dbNet* net,
         getFringe(level, width, ii, areaCap);
 
         _tmpCapTable[ii] = 0;
-        const double r = getResistance(level, width, len, ii);
-        _tmpResTable[ii] = r;
+        getResistance(level, width, len, ii);
+        bool newResModel = true;
+        if (!newResModel) {
+          double r = getResistance(level, width, len, ii);
+          _tmpResTable[ii] = r;
+          //  _tmpResTable[ii] = 0;
+        } else {
+          double r = getResistance(level, width, len, ii);
+          _tmpResTable[ii] = r;
+        }
       }
     }
     if (!_allNet && _couplingFlag > 0) {
@@ -361,6 +412,7 @@ void extMain::getShapeRC(dbNet* net,
       _ccMaxY = std::max(s.yMax(), _ccMaxY);
     }
   }
+    prevPoint= pshape.point;
 }
 
 void extMain::setResCapFromLef(dbRSeg* rc,
@@ -399,6 +451,15 @@ void extMain::setResAndCap(dbRSeg* rc,
                            const double* restbl,
                            const double* captbl)
 {
+  if (_lefRC) {
+    double res, cap;
+    res = _resModify ? restbl[0] * _resFactor : restbl[0];
+    rc->setResistance(res, 0);
+    cap = _gndcModify ? captbl[0] * _gndcFactor : captbl[0];
+    cap = _netGndcCalibration ? cap * _netGndcCalibFactor : cap;
+    rc->setCapacitance(cap, 0);
+    return;
+  }
   for (uint ii = 0; ii < _extDbCnt; ii++) {
     const int pcdbIdx = getProcessCornerDbIndex(ii);
     double res = _resModify ? restbl[ii] * _resFactor : restbl[ii];
@@ -425,6 +486,7 @@ void extMain::resetMapping(dbBTerm* bterm, dbITerm* iterm, uint junction)
   }
   _nodeTable->set(junction, 0);
 }
+
 
 bool extMain::isTermPathEnded(dbBTerm* bterm, dbITerm* iterm)
 {
@@ -1781,6 +1843,7 @@ void extMain::makeBlockRCsegs(const char* netNames,
     _ccMaxY = -MAX_INT;
   }
   if (_couplingFlag > 1) {
+    // FIXME getResCapTable(true);
     getResCapTable();
   }
 
@@ -1892,8 +1955,12 @@ void extMain::makeBlockRCsegs(const char* netNames,
     }
 
     Rect maxRect = _block->getDieArea();
-
-    couplingFlow(maxRect, _couplingFlag, &m, extCompute1);
+/* FIXME
+    if (_v2)
+       couplingFlow_v2(maxRect, _couplingFlag, &m);
+    else
+    */
+       couplingFlow(maxRect, _couplingFlag, &m, extCompute1);
 
     if (m._debugFP != nullptr) {
       fclose(m._debugFP);
@@ -2150,7 +2217,7 @@ void extMain::writeSPEF(char* filename,
 
   _writeNameMap = noNameMap ? false : true;
   _spef->_writeNameMap = _writeNameMap;
-  _spef->setUseIdsFlag();
+  _spef->setUseIdsFlag(false);
   int cntnet, cntrseg, cntcapn, cntcc;
   _block->getExtCount(cntnet, cntrseg, cntcapn, cntcc);
   if (cntrseg == 0 || cntcapn == 0) {
@@ -2246,7 +2313,7 @@ uint extMain::readSPEF(char* filename,
   _spef->_moreToRead = moreToRead;
   _spef->incr_rRun();
 
-  _spef->setUseIdsFlag(diff, calib);
+  // FIXME _spef->setUseIdsFlag(false, diff, calib);
   if (_extRun == 0) {
     getPrevControl();
   }
@@ -2256,7 +2323,7 @@ uint extMain::readSPEF(char* filename,
   }
   if (diff) {
     if (!_extracted) {
-      logger_->warn(RCX, 4, "There is no extraction db!");
+      logger_->warn(RCX, 8, "There is no extraction db!");
       return 0;
     }
   } else if (_extracted && !force && !keepLoadedCorner) {
