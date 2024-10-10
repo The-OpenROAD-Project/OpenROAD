@@ -19,7 +19,11 @@ def extract_parasitics(
     lef_res=False,
     cc_model=10,
     context_depth=5,
-    no_merge_via_res=False
+    no_merge_via_res=False,
+    lef_rc=False,
+    skip_over_cell=False,
+    version=1.0,
+    dbg=0
 ):
     # NOTE: This is position dependent
     rcx.extract(
@@ -32,6 +36,10 @@ def extract_parasitics(
         debug_net_id,
         lef_res,
         no_merge_via_res,
+    	lef_rc,
+    	skip_over_cell,
+    	version,
+    	dbg
     )
 
 
@@ -56,7 +64,8 @@ def bench_wires(
     w_list="1",
     s_list="1 2 2.5 3 3.5 4 4.5 5 6 8 10 12",
     over_dist=100,
-    under_dist=100
+    under_dist=100,
+    v1=True
 ):
     rcx.bench_wires(
         db_only,
@@ -71,6 +80,7 @@ def bench_wires(
         s_list,
         over_dist,
         under_dist,
+	v1
     )
 
 
