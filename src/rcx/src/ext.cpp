@@ -30,6 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "rcx/extRCap.h"
 #include "rcx/ext.h"
 
 #include "odb/wOrder.h"
@@ -64,7 +65,17 @@ void Ext::setLogger(Logger* logger)
     logger_ = logger;
   }
 }
-
+bool Ext::write_rules(const std::string& name, const std::string& dir,
+                      const std::string& file, int pattern, bool read_from_db,
+                      bool read_from_solver) {
+  _ext->setBlockFromChip();
+  /* FIXME
+  _ext->writeRules(name.c_str(), dir.c_str(), file.c_str(), pattern,
+                   read_from_db, read_from_solver);
+                   */
+  return true;
+}
+/* DELETE 
 void Ext::write_rules(const std::string& name,
                       const std::string& dir,
                       const std::string& file,
@@ -73,11 +84,12 @@ void Ext::write_rules(const std::string& name,
   _ext->setBlockFromChip();
   _ext->writeRules(name.c_str(), dir.c_str(), file.c_str(), pattern);
 }
-
+*/
 void Ext::bench_wires(const BenchWiresOptions& bwo)
 {
   extMainOptions opt;
 
+  // FIXME opt._v1= bwo.v1;
   opt._topDir = bwo.dir;
   opt._met_cnt = bwo.met_cnt;
   opt._met = bwo.met;
@@ -238,7 +250,37 @@ void Ext::extract(ExtractOptions options)
   odb::orderWires(logger_, block);
 
   _ext->set_debug_nets(options.debug_net);
+  
   _ext->_lef_res = options.lef_res;
+  if (options.lef_rc) {
+    if (!_ext->checkLayerResistance())
+      return;
+    // FIXME _ext->addExtModel();
+    logger_->info(RCX, 375, "Using LEF RC values to extract!");
+  }
+  _ext->skip_via_wires(options.skip_via_wires);
+  _ext->skip_via_wires(true); // DEBUG
+  _ext->_lef_res = options.lef_res;
+
+ _ext->_wire_extracted_progress_count= options._wire_extracted_progress_count;
+  _ext->_version= options._version;
+  _ext->_metal_flag_22= 0;
+  // fprintf(stdout, "RC Flow Version %5.3f enabled\n", _ext->_version);
+  // notice(0, "RC Flow Version %5.3f enabled\n", _ext->_version);
+  if (abs(options._version-2.2)<0.001)
+  {
+    _ext->_metal_flag_22= 2;
+    fprintf(stdout, "Version %5.3f enabled new RC calc flow for lower 2 metals\n", options._version);
+  }
+  if (abs(options._version-2.3)<0.001)
+  {
+    _ext->_metal_flag_22= 3;
+    fprintf(stdout, "Version %5.3f enabled new RC calc flow for lower 2 metals\n", options._version);
+  }
+  _ext->_v2= options._v2;
+  if (options._v2>=2.2)
+	_ext->_v2= true;
+  _ext->_dbgOption= options._dbg;
 
   _ext->makeBlockRCsegs(options.net,
                         options.cc_up,
@@ -433,4 +475,127 @@ void Ext::calibrate(const std::string& spef_file,
                   spef_corner);
 }
 
+
+bool Ext::gen_rcx_model( 
+                    const std::string& spef_file_list,
+                    const std::string& corner_list,
+                    const std::string& out_file,
+                    const std::string& comment,
+                    const std::string& version,
+                    int pattern)
+{
+    _ext->setBlockFromChip();
+
+    if (spef_file_list.empty())
+    	logger_->error(RCX, 144, "\nSpef List option -spef_file_list is required\n");
+    if (corner_list.empty())
+    	logger_->error(RCX, 145, "\nCorner List option -corner_list  is required\n");
+    
+    Ath__parser parser(NULL);
+    int n= parser.mkWords(spef_file_list.c_str());
+
+    std::list<std::string> file_list;
+    for (int ii= 0; ii<n; ii++) {
+	    std::string name(parser.get(ii));
+    	file_list.push_back(name);
+    }
+    int n1= parser.mkWords(corner_list.c_str());
+    if (n!=n1)
+    	logger_->error(RCX, 150, "\nMismatch of number Corners and Spef Files\n");
+
+    std::list<std::string> corners_list;
+    for (int ii= 0; ii<n; ii++) {
+	    std::string name(parser.get(ii));
+    	corners_list.push_back(name);
+    }
+    _ext->GenExtModel(file_list, corners_list, out_file.c_str(), comment.c_str(), version.c_str(), pattern);
+    return true;
+}
+bool Ext::define_rcx_corners(const std::string& corner_list)
+{
+    if (corner_list.empty())
+        logger_->error(RCX, 146, "\nCorner List option -corner_list  is required\n");
+
+    _ext->setBlockFromChip();
+
+    Ath__parser parser(NULL);
+    int n1 = parser.mkWords(corner_list.c_str());
+    for (int ii = 0; ii < n1; ii++)
+    {
+        const char *name = parser.get(ii);
+        // char *cornerName = _ext->addRCCorner(name, ii);
+        _ext->addRCCorner(name, ii);
+    }
+    return true;
+}
+bool Ext::rc_estimate(const std::string& ext_model_file,  const std::string& out_file_prefix)
+{
+
+    extRCModel* m = new extRCModel("MINTYPMAX", NULL);
+    
+    double version = 0.0;
+    std::list<std::string> corner_list = extModelGen::GetCornerNames(ext_model_file.c_str(), version);
+    uint extDbCnt = corner_list.size();
+
+    uint cornerTable[10];
+    for (uint ii=0; ii<extDbCnt; ii++)
+        cornerTable[ii]= ii;
+
+    dbTech* tech= _db->getTech();
+
+    int dbunit = tech->getDbUnitsPerMicron();
+    double dbFactor = 1;
+    if (dbunit > 1000)
+      dbFactor = dbunit * 0.001;
+
+    if (!(m->readRules((char *) ext_model_file.c_str(), false, true, true, true, true, extDbCnt, cornerTable, dbFactor))) {
+        fprintf(stderr, "Failed to parse %s\n",  ext_model_file.c_str());
+    }
+    /* FIXME
+    char buff[1000];
+    sprintf(buff, "%s.estimate.wire.rc", out_file_prefix.c_str());
+    uint metCnt= m->calcMinMaxRC(tech, buff);
+    sprintf(buff, "%s.via.res", out_file_prefix.c_str());
+    uint viaCnt= m->getViaTechRes(tech, buff);
+    fprintf(stdout, "model file stats: %d corners, %d metal levels, %d vias\n", extDbCnt, metCnt, viaCnt);
+*/
+
+/*
+    for (uint ii=0; ii<m->getModelCnt(); ii++)
+    {
+        extMetRCTable met_rc= m->getMetRCTable(ii);
+    }
+    */
+    return true;
+}
+bool Ext::get_model_corners(const std::string& ext_model_file)
+{
+    double version = 0.0;
+    std::list<std::string> corner_list = extModelGen::GetCornerNames(ext_model_file.c_str(), version);
+    // out_args->corner_list(corner_list);
+
+    std::list<std::string>::iterator it;
+    uint cnt = 0;
+    // notice(0, "List of Corners (%d) -- Model Version %g\n", corner_list.size(), version);
+
+    fprintf(stdout, "List of Corners (%d) -- Model Version %g\n", (int) corner_list.size(), version);
+    for (it = corner_list.begin(); it != corner_list.end(); ++it)
+    {
+        std::string str = *it;
+        // notice(0, "\t%d %s\n", cnt++, str.c_str())
+        fprintf(stdout, "\t%d %s\n", cnt++, str.c_str());
+    }    
+    return true;
+}
+/*
+bool Ext::rules_gen(const std::string& name, const std::string& dir,
+                    const std::string& file, bool write_to_solver,
+                    bool read_from_solver, bool run_solver, int pattern,
+                    bool keep_file) {
+  _ext->rulesGen(name.c_str(), dir.c_str(), file.c_str(), pattern,
+                 write_to_solver, read_from_solver, run_solver, keep_file);
+
+  return TCL_OK;
+}
+*/
 }  // namespace rcx
