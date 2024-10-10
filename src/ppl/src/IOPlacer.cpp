@@ -60,7 +60,6 @@ IOPlacer::IOPlacer() : ioplacer_renderer_(nullptr)
   netlist_ = std::make_unique<Netlist>();
   core_ = std::make_unique<Core>();
   parms_ = std::make_unique<Parameters>();
-  netlist_ = std::make_unique<Netlist>();
   top_grid_ = std::make_unique<TopLayerGrid>();
 }
 
@@ -127,23 +126,8 @@ std::string IOPlacer::getEdgeString(Edge edge)
 void IOPlacer::initNetlistAndCore(const std::set<int>& hor_layer_idx,
                                   const std::set<int>& ver_layer_idx)
 {
-  populateIOPlacer(hor_layer_idx, ver_layer_idx);
-}
-
-void IOPlacer::initParms()
-{
-  slots_per_section_ = parms_->getSlotsPerSection();
-  slots_increase_factor_ = 0.01f;
-  netlist_ = std::make_unique<Netlist>();
-  netlist_ = std::make_unique<Netlist>();
-
-  if (parms_->getNumSlots() > -1) {
-    slots_per_section_ = parms_->getNumSlots();
-  }
-
-  if (parms_->getSlotsFactor() > -1) {
-    slots_increase_factor_ = parms_->getSlotsFactor();
-  }
+  initCore(hor_layer_idx, ver_layer_idx);
+  initNetlist();
 }
 
 std::vector<int> IOPlacer::getValidSlots(int first, int last, bool top_layer)
@@ -1409,42 +1393,7 @@ void IOPlacer::printConfig(bool annealing)
   logger_->info(PPL, 4, "Number of I/O w/o sink    {}", zero_sink_ios_.size());
   if (!annealing) {
     logger_->info(PPL, 5, "Slots per section         {}", slots_per_section_);
-    logger_->info(
-        PPL, 6, "Slots increase factor     {:.1}", slots_increase_factor_);
   }
-}
-
-void IOPlacer::setupSections(int assigned_pins_count)
-{
-  bool all_assigned;
-  int i = 0;
-
-  do {
-    logger_->info(PPL, 10, "Tentative {} to set up sections.", i++);
-    printConfig();
-
-    all_assigned = assignPinsToSections(assigned_pins_count);
-
-    slots_per_section_ *= (1 + slots_increase_factor_);
-    if (sections_.size() > MAX_SECTIONS_RECOMMENDED) {
-      logger_->warn(PPL,
-                    36,
-                    "Number of sections is {}"
-                    " while the maximum recommended value is {}"
-                    " this may negatively affect performance.",
-                    sections_.size(),
-                    MAX_SECTIONS_RECOMMENDED);
-    }
-    if (slots_per_section_ > MAX_SLOTS_RECOMMENDED) {
-      logger_->warn(PPL,
-                    37,
-                    "Number of slots per sections is {}"
-                    " while the maximum recommended value is {}"
-                    " this may negatively affect performance.",
-                    slots_per_section_,
-                    MAX_SLOTS_RECOMMENDED);
-    }
-  } while (!all_assigned);
 }
 
 void IOPlacer::updateOrientation(IOPin& pin)
@@ -2080,7 +2029,7 @@ void IOPlacer::updateSlots()
 
 void IOPlacer::run(bool random_mode)
 {
-  initParms();
+  slots_per_section_ = parms_->getSlotsPerSection();
 
   initNetlistAndCore(hor_layers_, ver_layers_);
   getBlockedRegionsFromMacros();
@@ -2097,6 +2046,7 @@ void IOPlacer::run(bool random_mode)
   } else {
     int constrained_pins_cnt = 0;
     int mirrored_pins_cnt = 0;
+    printConfig();
 
     // add groups to fallback
     for (const auto& io_group : netlist_->getIOGroups()) {
@@ -2153,7 +2103,7 @@ void IOPlacer::run(bool random_mode)
     }
     constrained_pins_cnt += placeFallbackPins(false);
 
-    setupSections(constrained_pins_cnt);
+    assignPinsToSections(constrained_pins_cnt);
     findPinAssignment(sections_, false);
   }
 
@@ -2224,8 +2174,7 @@ void IOPlacer::setAnnealingDebugNoPauseMode(const bool no_pause_mode)
 
 void IOPlacer::runAnnealing(bool random)
 {
-  initParms();
-
+  slots_per_section_ = parms_->getSlotsPerSection();
   initNetlistAndCore(hor_layers_, ver_layers_);
   getBlockedRegionsFromMacros();
 
@@ -2517,14 +2466,6 @@ Interval IOPlacer::getIntervalFromPin(IOPin& io_pin, const Rect& die_boundary)
   layer = io_pin.getLayer();
 
   return Interval(edge, begin, end, layer);
-}
-
-// db functions
-void IOPlacer::populateIOPlacer(const std::set<int>& hor_layer_idx,
-                                const std::set<int>& ver_layer_idx)
-{
-  initCore(hor_layer_idx, ver_layer_idx);
-  initNetlist();
 }
 
 void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
