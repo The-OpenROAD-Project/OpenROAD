@@ -9,6 +9,7 @@ build:
   os: ubuntu-22.04
   apt_packages:
     - libasound2
+    - graphviz
   tools:
     python: "3.7"
     nodejs: "16"
