@@ -45,14 +45,12 @@ OpenRoad *
 getOpenRoad();
 
 }
-
+using namespace rcx;
 using ord::getOpenRCX;
 using rcx::Ext;
 %}
 
 %include "../../Exception.i"
-%include "../../Design.i"
-
 %inline %{
 
 void
@@ -71,20 +69,34 @@ extract(const char* ext_model_file,
         int context_depth,
         const char* debug_net_id,
         bool lef_res,
-        bool no_merge_via_res)
+        bool no_merge_via_res,
+        bool  lef_rc,
+        bool skip_over_cell,
+        float version,
+        int dbg
+        )
 {
   Ext* ext = getOpenRCX();
-  Ext::ExtractOptions opts;
+  ExtractOptions opts;
 
   opts.ext_model_file = ext_model_file;
   opts.corner_cnt = corner_cnt;
   opts.max_res = max_res;
   opts.coupling_threshold = coupling_threshold;
+  opts.signal_table = 3;
   opts.cc_model = cc_model;
   opts.context_depth = context_depth;
   opts.lef_res = lef_res;
+  opts.lef_rc = lef_rc;
   opts.debug_net = debug_net_id;
   opts.no_merge_via_res = no_merge_via_res;
+  opts.over_cell = !skip_over_cell;
+
+  if (version>=2.0)
+    opts._v2= true;
+  opts._version= version;
+
+  opts._dbg= dbg;
   
   ext->extract(opts);
 }
@@ -93,16 +105,17 @@ void
 write_spef(const char* file,
            const char* nets,
            int net_id,
-           bool write_coordinates)
+           bool coordinates)
 {
   Ext* ext = getOpenRCX();
-  Ext::SpefOptions opts;
+
+  SpefOptions opts;
+
   opts.file = file;
+  // opts.corner= corner;
   opts.nets = nets;
   opts.net_id = net_id;
-  if (write_coordinates) {
-    opts.N = "Y";
-  }
+  opts.coordinates= coordinates;
   
   ext->write_spef(opts);
 }
@@ -121,15 +134,21 @@ diff_spef(const char* file,
           bool r_conn,
           bool r_res,
           bool r_cap,
-          bool r_cc_cap)
+          bool r_cc_cap,
+          int spef_corner,
+          int ext_corner
+          )
 {
   Ext* ext = getOpenRCX();
-  Ext::DiffOptions opts;
+  
+  DiffOptions opts;
   opts.file = file;
   opts.r_res = r_res;
   opts.r_cap = r_cap;
   opts.r_cc_cap = r_cc_cap;
   opts.r_conn = r_conn;
+  opts.spef_corner = spef_corner;
+  opts.ext_corner = ext_corner;
   
   ext->diff_spef(opts);
 }
@@ -145,11 +164,13 @@ bench_wires(bool db_only,
             int under_met,
             const char* w_list,
             const char* s_list,
-            int over_dist,
-            int under_dist)
+            bool over_dist,
+            bool under_dist,
+            bool v1)
 {
   Ext* ext = getOpenRCX();
-  Ext::BenchWiresOptions opts;
+  
+  BenchWiresOptions opts;
   
   opts.w_list = w_list;
   opts.s_list = s_list;
@@ -161,8 +182,8 @@ bench_wires(bool db_only,
   opts.under_met = under_met;
   opts.met_cnt = met_cnt;
   opts.db_only = db_only;
-  opts.over_dist = over_dist;
-  opts.under_dist = under_dist;
+  // FIXME 100824 opts.v1 = v1;
+  opts.v1 = false;
 
   ext->bench_wires(opts);
 }
@@ -178,59 +199,124 @@ void
 write_rules(const char* file,
             const char* dir,
             const char* name,
-            int pattern)
+            int pattern,
+            bool read_from_db,
+            bool read_from_solver)
 {
   Ext* ext = getOpenRCX();
   
-  ext->write_rules(name, dir, file, pattern);
+  ext->write_rules(name, dir, file, pattern, read_from_db,
+                   read_from_solver);
+}
+
+void
+gen_rcx_model( const char *spef_file_list,
+                    const char *corner_list,
+                    const char *out_file,
+                    const char *const comment,
+                    const char *const version,
+                    int pattern)
+{
+  Ext* ext = getOpenRCX();
+  
+  ext->gen_rcx_model(spef_file_list, corner_list, out_file, comment, version, pattern);
+}
+void
+define_rcx_corners(const char *corner_list)
+{
+  Ext* ext = getOpenRCX();
+  
+  ext->define_rcx_corners(corner_list);
+}
+void
+get_model_corners(const char *ext_model_file)
+{
+  Ext* ext = getOpenRCX();
+  
+  ext->get_model_corners(ext_model_file);
+}
+void
+rc_estimate(const char *ext_model_file, const char *out_file_prefix)
+{
+  Ext* ext = getOpenRCX();
+  
+  ext->rc_estimate(ext_model_file, out_file_prefix);
 }
 
 void 
 read_spef(const char* file)
 {
   Ext* ext = getOpenRCX();
-  Ext::ReadSpefOpts opts;
+  
+  ReadSpefOpts opts;
   opts.file = file;
   
   ext->read_spef(opts);
 }
 
-void
-read_process(const char* name, const char* file) 
-{
-  Ext* ext = getOpenRCX();
 
-  ext->read_process(name, file);
-}
+//   rcx::bench_wires_gen $width  $spacing  $couple_width  $couple_spacing  $over_width  $over_spacing  $under_width  $under_spacing  $over2_width  $over2_spacing  $under2_width  $under2_spacing  $dbg  $wire_cnt  $mlist  $len  $offset_over  $offset_under  
 
 void
-rules_gen(const char* name, const char* dir, const char* file, bool write_to_solver,
-                    bool read_from_solver, bool run_solver, int pattern, bool keep_file, int len, int version, bool win) 
+bench_wires_gen(
+const char* width,
+const char* spacing,
+const char* couple_width,
+const char* couple_spacing,
+const char* over_width,
+const char* over_spacing,
+const char* under_width,
+const char* under_spacing,
+const char* over2_width,
+const char* over2_spacing,
+const char* under2_width,
+const char* under2_spacing,
+int dbg,
+int wire_cnt,
+const char* mlist,
+int len,
+const char* offset_over,
+const char* offset_under,
+int under_dist,
+int over_dist,
+bool over,
+bool under,
+bool over_under,
+int met
+)
 {
   Ext* ext = getOpenRCX();
-  bool delete_files=  !keep_file;
+  
+  PatternOptions opts;
 
-  ext->rules_gen(name, dir, file,
-                 write_to_solver, read_from_solver, run_solver, pattern, delete_files, len, version, win);
-}
+ opts.width= width;
+opts.spacing= spacing;
+opts.couple_width= couple_width;
+opts.couple_spacing= couple_spacing;
+opts.over_width= over_width;
+opts.over_spacing= over_spacing;
+opts.under_width= under_width;
+opts.under_spacing= under_spacing;
+opts.over2_width= over2_width;
+opts.over2_spacing= over2_spacing;
+opts.under2_width= under2_width;
+opts.under2_spacing= under2_spacing;
+opts.dbg= dbg;
+opts.wire_cnt= wire_cnt;
+opts.mlist= mlist;
+opts.len= len;
+opts.offset_over= offset_over;
+opts.offset_under= offset_under;
+opts.over_dist= over_dist;
+opts.under_dist= under_dist;
+opts.over= over;
+opts.under= under;
+opts.over_under= over_under;
+opts.met= met;
 
-void
-metal_rules_gen(const char* name, const char* dir, const char* file, bool write_to_solver,
-                          bool read_from_solver, bool run_solver, int pattern,
-                          bool keep_file, int metal) 
-{
-  Ext* ext = getOpenRCX();
-  bool delete_files=  !keep_file;
-
-  ext->metal_rules_gen(name, dir, file, pattern,
-                    write_to_solver, read_from_solver, run_solver, delete_files, metal);
-}
-
-void
-run_solver(const char* dir, int net, int shape) 
-{
-  Ext* ext = getOpenRCX();
-  ext->run_solver(dir, net, shape);
+// printf("spacing= %s", spacing);
+// FIXME
+// ext->bench_wires_gen(opts);
 }
 
 // ------------------------------- dkf 09192024 -------------------------------
@@ -260,7 +346,6 @@ void gen_solver_patterns(const char *process_file, const char * process_name, in
   ext->gen_solver_patterns(process_file, process_name, version, wire_cnt, len, over_dist, under_dist, w_list, s_list);
 
 }
-
 %} // inline
 
 

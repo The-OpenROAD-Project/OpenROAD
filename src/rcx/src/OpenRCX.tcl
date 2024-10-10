@@ -59,9 +59,11 @@ sta::define_cmd_args "extract_parasitics" {
     [-coupling_threshold fF]
     [-debug_net_id id]
     [-lef_res]
+    [-lef_rc]
     [-cc_model track]
     [-context_depth depth]
     [-no_merge_via_res]
+    [ -skip_over_cell ]
 }
 
 proc extract_parasitics { args } {
@@ -73,8 +75,8 @@ proc extract_parasitics { args } {
            -debug_net_id
            -context_depth
            -cc_model } \
-    flags { -lef_res
-            -no_merge_via_res }
+    flags { -lef_res -lef_rc
+            -no_merge_via_res -skip_over_cell }
 
   set ext_model_file ""
   if { [info exists keys(-ext_model_file)] } {
@@ -99,8 +101,10 @@ proc extract_parasitics { args } {
     sta::check_positive_float "-coupling_threshold" $coupling_threshold
   }
 
+  set lef_rc [info exists flags(-lef_rc)]
   set lef_res [info exists flags(-lef_res)]
   set no_merge_via_res [info exists flags(-no_merge_via_res)]
+  set skip_over_cell [info exists flags(-skip_over_cell)]
 
   set cc_model 10
   if { [info exists keys(-cc_model)] } {
@@ -117,10 +121,14 @@ proc extract_parasitics { args } {
   if { [info exists keys(-debug_net_id)] } {
     set debug_net_id $keys(-debug_net_id)
   }
+  set dbg 0
+  set version "1.0"
 
   rcx::extract $ext_model_file $corner_cnt $max_res \
     $coupling_threshold $cc_model \
-    $depth $debug_net_id $lef_res $no_merge_via_res
+    $depth $debug_net_id $lef_res $no_merge_via_res \
+    $lef_rc $skip_over_cell $version $dbg
+
 }
 
 sta::define_cmd_args "write_spef" {
@@ -219,6 +227,7 @@ sta::define_cmd_args "bench_wires" {
     [-diag]
     [-all]
     [-db_only]
+    [-v1]
     [-under_met layer]
     [-w_list width]
     [-s_list space]
@@ -230,7 +239,7 @@ proc bench_wires { args } {
   sta::parse_key_args "bench_wires" args \
     keys { -met_cnt -cnt -len -under_met
            -w_list -s_list -over_dist -under_dist } \
-    flags { -diag -over -all -db_only }
+    flags { -diag -over -all -db_only -v1 }
 
   if { ![ord::db_has_tech] } {
     utl::error RCX 357 "No LEF technology has been read."
@@ -240,6 +249,7 @@ proc bench_wires { args } {
   set all [info exists flags(-all)]
   set diag [info exists flags(-diag)]
   set db_only [info exists flags(-db_only)]
+  set v1 [info exists flags(-v1)]
 
   set met_cnt 1000
   if { [info exists keys(-met_cnt)] } {
@@ -282,7 +292,7 @@ proc bench_wires { args } {
   }
 
   rcx::bench_wires $db_only $over $diag $all $met_cnt $cnt $len \
-    $under_met $w_list $s_list $over_dist $under_dist
+    $under_met $w_list $s_list $over_dist $under_dist $v1
 }
 
 sta::define_cmd_args "bench_verilog" { filename }
