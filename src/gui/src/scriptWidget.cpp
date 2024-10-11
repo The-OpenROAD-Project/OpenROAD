@@ -68,6 +68,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   output_->setReadOnly(true);
   pauser_->setEnabled(false);
   pauser_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding);
+  pause_timer_->setSingleShot(true);
 
   QHBoxLayout* inner_layout = new QHBoxLayout;
   inner_layout->addWidget(pauser_);
@@ -359,10 +360,12 @@ void ScriptWidget::updatePauseTimeout()
 
   const int one_second = 1000;
 
-  int seconds = pause_timer_->remainingTime() / one_second;
-  pauser_->setText("Continue (" + QString::number(seconds) + "s)");
+  if (pause_timer_->isActive()) {
+    const int seconds = pause_timer_->remainingTime() / one_second;
+    pauser_->setText("Continue (" + QString::number(seconds) + "s)");
 
-  QTimer::singleShot(one_second, this, &ScriptWidget::updatePauseTimeout);
+    QTimer::singleShot(one_second, this, &ScriptWidget::updatePauseTimeout);
+  }
 }
 
 void ScriptWidget::pauserClicked()

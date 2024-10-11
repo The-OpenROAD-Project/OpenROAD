@@ -178,7 +178,7 @@ class Opendp
 
   using MasterByImplant = std::map<dbTechLayer*, dbMasterSeq>;
 
-  using YCoordToGap = std::map<int, vector<GapInfo*>>;
+  using YCoordToGap = std::map<DbuY, vector<GapInfo*>>;
 
   friend class OpendpTest_IsPlaced_Test;
   friend class Graphics;
@@ -317,30 +317,26 @@ class Opendp
                           GridX gap,
                           const MasterByImplant& filler_masters_by_implant);
   void placeRowFillers(GridY row,
-                       const char* prefix,
-                       const MasterByImplant& filler_masters,
-                       DbuY row_height,
-                       const GridInfo& grid_info);
+                       const std::string& prefix,
+                       const MasterByImplant& filler_masters);
+  std::pair<odb::dbSite*, odb::dbOrientType> fillSite(Pixel* pixel);
   static bool isFiller(odb::dbInst* db_inst);
   bool isOneSiteCell(odb::dbMaster* db_master) const;
-  const char* gridInstName(GridY row, GridX col, const GridInfo& grid_info);
+  const char* gridInstName(GridY row, GridX col);
 
   // Place decaps
-  vector<int> findDecapCellIndices(const int& gap_width,
+  vector<int> findDecapCellIndices(const DbuX& gap_width,
                                    const double& current,
                                    const double& target);
-  void insertDecapInPos(dbMaster* master,
-                        const odb::dbOrientType& orient,
-                        const int& pos_x,
-                        const int& pos_y);
+  void insertDecapInPos(dbMaster* master, const DbuX& pos_x, const DbuY& pos_y);
   void insertDecapInRow(const vector<GapInfo*>& gaps,
-                        int gap_y,
-                        int irdrop_x,
-                        int irdrop_y,
+                        DbuY gap_y,
+                        DbuX irdrop_x,
+                        DbuY irdrop_y,
                         double& total,
                         const double& target);
   void findGaps();
-  void findGapsInRow(GridY row, DbuY row_height, const GridInfo& grid_info);
+  void findGapsInRow(GridY row, DbuY row_height);
   void mapToVectorIRDrops(IRDropByPoint& psm_ir_drops,
                           std::vector<IRDrop>& ir_drops);
   void prepareDecapAndGaps();
@@ -362,7 +358,7 @@ class Opendp
   bool disallow_one_site_gaps_ = false;
   vector<Cell*> placement_failures_;
 
-  // 3D pixel grid
+  // 2D pixel grid
   std::unique_ptr<Grid> grid_;
   RtreeBox regions_rtree_;
 

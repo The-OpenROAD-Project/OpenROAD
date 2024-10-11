@@ -33,19 +33,19 @@
 
 #pragma once
 
+#include "Coordinates.h"
 #include "dpl/Opendp.h"
 
 namespace dpl {
 
 struct GapInfo
 {
-  int x;
-  odb::dbOrientType orient;
-  int width;
-  int height;
+  DbuX x;
+  DbuX width;
+  DbuY height;
   bool is_filled{false};
-  GapInfo(int x, const odb::dbOrientType& orient, int width, int height)
-      : x(x), orient(orient), width(width), height(height)
+  GapInfo(const DbuX& x, const DbuX& width, const DbuY& height)
+      : x(x), width(width), height(height)
   {
   }
 };
@@ -62,9 +62,9 @@ struct DecapCell
 
 struct IRDrop
 {
-  odb::Point position;
+  DbuPt position;
   double value;
-  IRDrop(const odb::Point& position, double& value)
+  IRDrop(const DbuPt& position, double& value)
       : position(position), value(value)
   {
   }

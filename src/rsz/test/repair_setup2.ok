@@ -15,11 +15,10 @@ worst slack -0.28
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |            | Endpts | Endpt
 ---------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |   -0.117 |       -0.2 |      2 | y2
-        5 |       0 |       0 |        0 |      0 |     2 |   -0.117 |       -0.2 |      2 | y2
-        7 |       0 |       0 |        0 |      0 |     3 |   -0.117 |       -0.2 |      2 | y2
-    final |       0 |       0 |        0 |      0 |     3 |   -0.117 |       -0.2 |      2 | y2
+        5 |       0 |       0 |        0 |      0 |     0 |   -0.117 |       -0.2 |      2 | y2
+        8 |       0 |       0 |        0 |      0 |     0 |   -0.117 |       -0.2 |      2 | y2
+    final |       0 |       0 |        0 |      0 |     0 |   -0.117 |       -0.2 |      2 | y2
 ---------------------------------------------------------------------------------------------------
-[INFO RSZ-0043] Swapped pins on 3 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
 worst slack -0.12

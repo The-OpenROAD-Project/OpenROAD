@@ -102,18 +102,6 @@ add_region_adjustment(int minX,
 }
 
 void
-set_min_layer(int minLayer)
-{
-  getGlobalRouter()->setMinRoutingLayer(minLayer);
-}
-
-void
-set_max_layer(int maxLayer)
-{
-  getGlobalRouter()->setMaxRoutingLayer(maxLayer);
-}
-
-void
 set_verbose(bool v)
 {
   getGlobalRouter()->setVerbose(v);
@@ -146,13 +134,6 @@ void
 set_allow_congestion(bool allowCongestion)
 {
   getGlobalRouter()->setAllowCongestion(allowCongestion);
-}
-
-void
-set_clock_layer_range(int minLayer, int maxLayer)
-{
-  getGlobalRouter()->setMinLayerForClock(minLayer);
-  getGlobalRouter()->setMaxLayerForClock(maxLayer);
 }
 
 void
@@ -203,11 +184,11 @@ route_layer_lengths(odb::dbNet* db_net)
   return getGlobalRouter()->routeLayerLengths(db_net);
 }
 
-void
+int
 repair_antennas(odb::dbMTerm* diode_mterm, int iterations, float ratio_margin)
 {
   const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
-  getGlobalRouter()->repairAntennas(diode_mterm, iterations, ratio_margin, num_threads);
+  return getGlobalRouter()->repairAntennas(diode_mterm, iterations, ratio_margin, num_threads);
 }
 
 void

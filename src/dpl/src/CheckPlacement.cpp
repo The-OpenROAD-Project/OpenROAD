@@ -325,11 +325,7 @@ bool Opendp::isPlaced(const Cell* cell)
 
 bool Opendp::checkInRows(const Cell& cell) const
 {
-  auto grid_info = grid_->getRowInfo(&cell);
-  const GridX x_ll = grid_->gridX(&cell);
-  const GridX x_ur = grid_->gridEndX(&cell);
-  const GridY y_ll = grid_->gridY(&cell);
-  const GridY y_ur = grid_->gridEndY(&cell);
+  const auto grid_rect = grid_->gridCovering(&cell);
   debugPrint(logger_,
              DPL,
              "hybrid",
@@ -339,18 +335,19 @@ bool Opendp::checkInRows(const Cell& cell) const
              cell.name(),
              cell.getSite()->getName(),
              cell.height_,
-             y_ll,
-             y_ur);
+             grid_rect.ylo,
+             grid_rect.yhi);
 
-  for (GridY y = y_ll; y < y_ur; y++) {
-    for (GridX x = x_ll; x < x_ur; x++) {
-      const Pixel* pixel
-          = grid_->gridPixel(grid_info.second.getGridIndex(), x, y);
-      if (pixel == nullptr  // outside core
-          || !pixel->is_valid) {
+  for (GridY y = grid_rect.ylo; y < grid_rect.yhi; y++) {
+    const bool first_row = (y == grid_rect.ylo);
+    for (GridX x = grid_rect.xlo; x < grid_rect.xhi; x++) {
+      const Pixel* pixel = grid_->gridPixel(x, y);
+      // outside core or invalid
+      if (pixel == nullptr || !pixel->is_valid) {
         return false;
       }
-      if (pixel->site != cell.getSite()) {
+      if (first_row
+          && pixel->sites.find(cell.getSite()) == pixel->sites.end()) {
         return false;
       }
     }
@@ -420,8 +417,6 @@ bool Opendp::overlap(const Cell* cell1, const Cell* cell2) const
 Cell* Opendp::checkOneSiteGaps(Cell& cell) const
 {
   Cell* gap_cell = nullptr;
-  const auto row_info = grid_->getRowInfo(&cell);
-  const int grid_index = row_info.second.getGridIndex();
   grid_->visitCellBoundaryPixels(
       cell, true, [&](Pixel* pixel, const Direction2D& edge, GridX x, GridY y) {
         GridX abut_x{0};
@@ -438,12 +433,11 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
             return;
         }
         // check the abutting pixel
-        const Pixel* abut_pixel = grid_->gridPixel(grid_index, x + abut_x, y);
+        const Pixel* abut_pixel = grid_->gridPixel(x + abut_x, y);
         const bool abuttment_exists = (abut_pixel && abut_pixel->cell);
         if (!abuttment_exists) {
           // check the 1 site gap pixel
-          const Pixel* gap_pixel
-              = grid_->gridPixel(grid_index, x + GridX{2 * abut_x.v}, y);
+          const Pixel* gap_pixel = grid_->gridPixel(x + GridX{2 * abut_x.v}, y);
           if (gap_pixel) {
             gap_cell = gap_pixel->cell;
           }

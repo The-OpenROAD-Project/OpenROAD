@@ -111,10 +111,7 @@ void Opendp::makeMacros()
 
 void Opendp::makeMaster(Master* master, dbMaster* db_master)
 {
-  const DbuY master_height{static_cast<int>(db_master->getHeight())};
-  const DbuY row_height = grid_->getRowHeight();
-  master->is_multi_row
-      = (master_height != row_height && master_height % row_height == 0);
+  master->is_multi_row = grid_->isMultiHeight(db_master);
 }
 
 void Opendp::makeCells()

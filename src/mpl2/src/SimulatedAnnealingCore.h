@@ -89,6 +89,8 @@ class SimulatedAnnealingCore
       Mpl2Observer* graphics,
       utl::Logger* logger);
 
+  virtual ~SimulatedAnnealingCore() = default;
+
   void setNumberOfMacrosToPlace(int macros_to_place)
   {
     macros_to_place_ = macros_to_place;
@@ -132,6 +134,7 @@ class SimulatedAnnealingCore
   void initSequencePair();
   void attemptCentralization(float pre_cost);
   void moveFloorplan(const std::pair<float, float>& offset);
+  void updateBestValidResult(SequencePair& best_valid_result);
 
   virtual float calNormCost() const = 0;
   virtual void calPenalty() = 0;

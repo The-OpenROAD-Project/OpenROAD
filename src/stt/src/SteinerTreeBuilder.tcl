@@ -38,13 +38,13 @@ sta::define_cmd_args "set_routing_alpha" { alpha \
                                           [-min_fanout fanout] \
                                           [-min_hpwl hpwl] \
                                           [-clock_nets]
-}; # checker off
+} ;# checker off
 
 proc set_routing_alpha { args } {
   ord::parse_list_args "set_routing_alpha" args list {-net}
   sta::parse_key_args "set_routing_alpha" args \
     keys {-min_fanout -min_hpwl} \
-    flags {-clock_nets}; # checker off
+    flags {-clock_nets} ;# checker off
 
   sta::check_argc_eq1 "set_routing_alpha" $args
 
@@ -74,21 +74,20 @@ proc set_routing_alpha { args } {
 }
 
 namespace eval stt {
-
-proc find_net {name} {
+proc find_net { name } {
   return [sta::sta_to_db_net [get_nets $name]]
 }
 
-proc filter_clk_nets {cmd} {
+proc filter_clk_nets { cmd } {
   set dbBlock [ord::get_db_block]
   set net_list {}
   foreach net [$dbBlock getNets] {
-    if {[$net getSigType] == "CLOCK"} {
+    if { [$net getSigType] == "CLOCK" } {
       lappend net_list $net
     }
   }
 
-  if {[llength $net_list] == 0} {
+  if { [llength $net_list] == 0 } {
     utl::error STT 6 "Clock nets for $cmd command were not found"
   }
 
