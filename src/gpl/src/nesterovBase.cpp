@@ -1306,9 +1306,9 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     gCell->clearInstances();
     gCell->setInstance(inst);
     gCells_.emplace_back(GCellIndexHandle{GCellIndexHandle::StorageType::NBC,
-                                      nbc_.get(),
-                                      nullptr,
-                                      nbc_->getGCellIndex(gCell)});
+                                          nbc_.get(),
+                                          nullptr,
+                                          nbc_->getGCellIndex(gCell)});
   }
 
   // add filler cells to gCells_
@@ -1491,7 +1491,8 @@ void NesterovBase::updateGCellDensityCenterLocation(
     int idx = &coordi - &coordis[0];
     gCells_[idx]->setDensityCenterLocation(coordi.x, coordi.y);
   }
-  // std::vector<GCell*> gCellPtrs = convertGCellIndexHandleToGCellPtrs(gCells_);
+  // std::vector<GCell*> gCellPtrs =
+  // convertGCellIndexHandleToGCellPtrs(gCells_);
   // bg_.updateBinsGCellDensityArea(gCellPtrs);
   bg_.updateBinsGCellDensityArea(gCells_);
 }

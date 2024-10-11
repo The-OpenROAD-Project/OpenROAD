@@ -192,44 +192,50 @@ void Graphics::drawForce(gui::Painter& painter)
   }
 }
 
-void Graphics::drawCells(const std::vector<GCellIndexHandle>& cells, gui::Painter& painter) {
-    for (const auto& handle : cells) {
-        const GCell* gCell = handle;  // Uses the conversion operator to get a GCell*
-        drawSingleGCell(gCell, painter);
-    }
+void Graphics::drawCells(const std::vector<GCellIndexHandle>& cells,
+                         gui::Painter& painter)
+{
+  for (const auto& handle : cells) {
+    const GCell* gCell
+        = handle;  // Uses the conversion operator to get a GCell*
+    drawSingleGCell(gCell, painter);
+  }
 }
 
-void Graphics::drawCells(const std::vector<GCell*>& cells, gui::Painter& painter) {
-    for (const auto& gCell : cells) {
-        drawSingleGCell(gCell, painter);
-    }
+void Graphics::drawCells(const std::vector<GCell*>& cells,
+                         gui::Painter& painter)
+{
+  for (const auto& gCell : cells) {
+    drawSingleGCell(gCell, painter);
+  }
 }
 
-void Graphics::drawSingleGCell(const GCell* gCell, gui::Painter& painter) {
-    const int gcx = gCell->dCx();
-    const int gcy = gCell->dCy();
+void Graphics::drawSingleGCell(const GCell* gCell, gui::Painter& painter)
+{
+  const int gcx = gCell->dCx();
+  const int gcy = gCell->dCy();
 
-    int xl = gcx - gCell->dx() / 2;
-    int yl = gcy - gCell->dy() / 2;
-    int xh = gcx + gCell->dx() / 2;
-    int yh = gcy + gCell->dy() / 2;
+  int xl = gcx - gCell->dx() / 2;
+  int yl = gcy - gCell->dy() / 2;
+  int xh = gcx + gCell->dx() / 2;
+  int yh = gcy + gCell->dy() / 2;
 
-    gui::Painter::Color color;
-    if (gCell->isInstance()) {
-        color = gCell->instance()->isLocked() ? gui::Painter::dark_cyan : gui::Painter::dark_green;
-    } else if (gCell->isFiller()) {
-        color = gui::Painter::dark_magenta;
-    }
+  gui::Painter::Color color;
+  if (gCell->isInstance()) {
+    color = gCell->instance()->isLocked() ? gui::Painter::dark_cyan
+                                          : gui::Painter::dark_green;
+  } else if (gCell->isFiller()) {
+    color = gui::Painter::dark_magenta;
+  }
 
-    if (gCell == selected_) {
-        color = gui::Painter::yellow;
-    }
+  if (gCell == selected_) {
+    color = gui::Painter::yellow;
+  }
 
-    color.a = 180;
-    painter.setBrush(color);
-    painter.drawRect({xl, yl, xh, yh});
+  color.a = 180;
+  painter.setBrush(color);
+  painter.drawRect({xl, yl, xh, yh});
 }
-
 
 void Graphics::drawNesterov(gui::Painter& painter)
 {
@@ -258,9 +264,9 @@ void Graphics::drawNesterov(gui::Painter& painter)
   // Draw the placeable objects
   painter.setPen(gui::Painter::white);
   drawCells(nbc_->gCells(), painter);
-   for (const auto& nb : nbVec_) {
-     drawCells(nb->gCells(), painter);
-   }
+  for (const auto& nb : nbVec_) {
+    drawCells(nb->gCells(), painter);
+  }
 
   painter.setBrush(gui::Painter::Color(gui::Painter::light_gray, 50));
   for (const auto& pb : pbVec_) {

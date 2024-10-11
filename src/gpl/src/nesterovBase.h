@@ -1046,8 +1046,10 @@ class NesterovBase
 
   std::vector<GCell> fillerStor_;
 
-  //Using the handle here allows to access both the gcell from NB and to go to it in NBC, when needed.
-  // it also allows for modifications on vector storages (both NB and NBC) while maintaining consistency among parallel vectors in NB.
+  // Using the handle here allows to access both the gcell from NB and to go to
+  // it in NBC, when needed.
+  //  it also allows for modifications on vector storages (both NB and NBC)
+  //  while maintaining consistency among parallel vectors in NB.
   std::vector<GCellIndexHandle> gCells_;
   std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
@@ -1149,34 +1151,37 @@ class biNormalParameters
   float uy;
 };
 
-struct GCellIndexHandle {
-    enum class StorageType {
-        NBC,
-        NB
-    } storageType;
-    
-    NesterovBaseCommon* nbc;
-    NesterovBase* nb;
-    size_t index;
+struct GCellIndexHandle
+{
+  enum class StorageType
+  {
+    NBC,
+    NB
+  } storageType;
 
-    // Non-const versions
-    GCell* operator->() { return &getGCell(); }
-    GCell& operator*() { return getGCell(); }
-    operator GCell*() { return &getGCell(); }
+  NesterovBaseCommon* nbc;
+  NesterovBase* nb;
+  size_t index;
 
-    // Const versions
-    const GCell* operator->() const { return &getGCell(); }
-    const GCell& operator*() const { return getGCell(); }
-    operator const GCell*() const { return &getGCell(); }
+  // Non-const versions
+  GCell* operator->() { return &getGCell(); }
+  GCell& operator*() { return getGCell(); }
+  operator GCell*() { return &getGCell(); }
 
-private:
-    GCell& getGCell() const {
-        if (storageType == StorageType::NBC) {
-            return nbc->gCellStor_[index];
-        } else {
-            return nb->fillerStor_[index];
-        }
+  // Const versions
+  const GCell* operator->() const { return &getGCell(); }
+  const GCell& operator*() const { return getGCell(); }
+  operator const GCell*() const { return &getGCell(); }
+
+ private:
+  GCell& getGCell() const
+  {
+    if (storageType == StorageType::NBC) {
+      return nbc->gCellStor_[index];
+    } else {
+      return nb->fillerStor_[index];
     }
+  }
 };
 
 }  // namespace gpl
