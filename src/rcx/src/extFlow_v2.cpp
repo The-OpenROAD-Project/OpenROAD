@@ -215,7 +215,6 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m)
         mrc->PrintAllGrids(dir, mrc->OpenPrintFile(dir, "wires"), 0);
 
       mrc->FindCouplingNeighbors(dir, 10, 5);
-      /*
       mrc->CouplingFlow(dir,
                         10,
                         5,
@@ -223,7 +222,7 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m)
                         totalWiresExtracted,
                         previous_percent_extracted); 
       float tmpCnt = -10;
-      mrc->printProgress(totalWiresExtracted, totWireCnt, tmpCnt); */
+      mrc->printProgress(totalWiresExtracted, totWireCnt, tmpCnt);
     }
   }
   if (_printBandInfo) {
@@ -248,15 +247,6 @@ void extMain::printUpdateCoup(uint netId1, uint netId2, double v, double org, do
             fprintf(stdout, "updateCoupCap: Nets %d %d -- add_cc= %10.6f  org  %10.6f  totCC  %10.6f\n", 
                 netId1, netId2, org, v, totCC);
         }
-}
-void extDistRC::Reset()
-{
-  _fringe= 0;
-  _fringeW= 0;
-  _coupling= 0;
-  _res= 0;
-  _diag= 0;
-  _sep= 0;
 }
 bool extMeasure::IsDebugNet1()
 {
@@ -372,52 +362,15 @@ uint Ath__grid::placeWire_v2(Ath__searchBox* bb)
 */
   return trackNum1;
 }
-const char *extMeasureRC::srcWord(int &rsegId)
+extDistRC* extMeasureRC::getDiagUnderCC(extMetRCTable* rcModel, uint dist, uint overMet) 
 {
-  rsegId = _netSrcId;
-  if (_netTgtId == _netId)
-  {
-    rsegId = rsegId;
-    return "TGT";
-  }
-  return "SRC";  
+  if (rcModel->_capDiagUnder[_met] == NULL)
+    return NULL;
+
+  uint n = getUnderIndex(overMet);
+  extDistRC* rc = rcModel->_capDiagUnder[_met]->getRC(n, _width, dist);
+  return rc;
 }
-const char *extMeasureRC::GetSrcWord(int rsegId)
-{
-  if (_rsegTgtId == rsegId)
-    return "TGT";
-  
-  return "SRC";  
-}
-void extMeasureRC::PrintCoord(FILE *fp, int x, const char *xy)
-{
-  fprintf(fp,"%s %5d %7.3f ", xy, x, GetDBcoords(x));
-}
-void extMeasureRC::PrintCoords(FILE *fp, int x, int y, const char *xy)
-{
-  PrintCoord(fp, x, xy);
-  PrintCoord(fp, y, "");
-}
-void extMeasureRC::PrintCoords(FILE *fp, int ll[2], const char *xy)
-{
-  PrintCoords(fp, ll[0], ll[1], xy);
-}
-void extMeasureRC::DebugStart_res(FILE *fp)
-{
-  fprintf(fp, "\tBEGIN_res ");
-  PrintCoords(fp, _ll, "x");
-  PrintCoords(fp, _ur, "y");
-  dbNet* net1 = dbNet::getNet(_block, _netId);
-
-  fprintf(fp, " M%d  D%d  L%d   N%d N%d %s\n", _met, _dist, _len, _netSrcId, _netTgtId, net1->getConstName());
-}
-
-
-
-
-
-
-
 
 /* CHRECK if called in v2 flow
 void extMeasure::OverSubRC(dbRSeg * rseg1,

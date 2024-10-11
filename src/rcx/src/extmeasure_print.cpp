@@ -276,6 +276,43 @@ bool extMeasureRC::DebugCoords(FILE *fp, int rsegId, int ll[2], int ur[2], const
 
   return true;
 }
+bool extMeasureRC::DebugDiagCoords(int met, int targetMet, int len1, int diagDist, int ll[2], int ur[2])
+{
+  if (!IsDebugNet()) {
+    return false;
+  }
+
+  /* FIXME
+  debugPrint(
+      logger_,
+      RCX,
+      "debug_net",
+      1,
+      "[DIAG_EXT:C]"
+      "\t----- Diagonal Coupling Coords ----- \n\tDiag: M{} to M{}\n\tDist: {} {:.3f}\n\tLen : {} {:.3f} \
+        \n\tloX : {} {:.3f} \n\thiX : {} {:.3f} \n\tloY : {} {:.3f} \n\thiY : {} {:.3f} \
+        \n\tDX  : {} {:.3f} \n\tDY  : {} {:.3f} \n",
+      met,
+      targetMet,
+      diagDist,
+      GetDBcoords(diagDist),
+      len1,
+      GetDBcoords(len1),
+      ll[0],
+      GetDBcoords(ll[0]),
+      ur[0],
+      GetDBcoords(ur[0]),
+      ll[1],
+      GetDBcoords(ll[1]),
+      ur[1],
+      GetDBcoords(ur[1]),
+      ur[0] - ll[0],
+      GetDBcoords(ur[0]) - GetDBcoords(ll[0]),
+      ur[1] - ll[1],
+      GetDBcoords(ur[1]) - GetDBcoords(ll[1]));
+      */
+  return true;
+}
 void extMeasureRC::DebugEnd_res(FILE *fp, int rseg1, int len_covered, const char *msg)
 {
   dbRSeg* rseg = dbRSeg::getRSeg(_block, rseg1);

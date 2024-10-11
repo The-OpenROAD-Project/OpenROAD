@@ -435,7 +435,7 @@ bool extMeasure::DebugStart(bool allNets)
              GetDBcoords(_ur[1]) - GetDBcoords(_ll[1]));
   return true;
 }
-
+/* DELETE ???
 bool extMeasure::DebugDiagCoords(int met,
                                  int targetMet,
                                  int len1,
@@ -475,7 +475,7 @@ bool extMeasure::DebugDiagCoords(int met,
       GetDBcoords(ur[1]) - GetDBcoords(ll[1]));
   return true;
 }
-
+*/
 // -----------------------------------------------------------------
 //
 // from extRCmodel.cpp

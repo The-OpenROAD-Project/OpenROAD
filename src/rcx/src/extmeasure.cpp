@@ -1354,7 +1354,7 @@ uint extMeasure::computeDiag(SEQ* s,
     uint tgWidth = tgt->_ur[_dir] - tgt->_ll[_dir];
     uint len1 = getLength(tgt, !_dir);
 
-    DebugDiagCoords(_met, targetMet, len1, diagDist, tgt->_ll, tgt->_ur);
+    // FIXME DebugDiagCoords(_met, targetMet, len1, diagDist, tgt->_ll, tgt->_ur);
     len += len1;
     bool skip_high_acc = true;
     bool verticalOverlap = false;

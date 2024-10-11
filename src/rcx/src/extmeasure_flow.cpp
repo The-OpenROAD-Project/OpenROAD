@@ -611,7 +611,7 @@ namespace rcx
                 break;
         }
     }
-    void extMeasure::OverSubRC_dist_new(dbRSeg *rseg1, dbRSeg *rseg2, int ouCovered, int diagCovered, int srcCovered)
+    void extMeasureRC::OverSubRC_dist_new(dbRSeg *rseg1, dbRSeg *rseg2, int ouCovered, int diagCovered, int srcCovered)
     {
         int lenOverSub = _len - ouCovered;
         if (!(lenOverSub > 0))
@@ -752,7 +752,7 @@ namespace rcx
              const char *msg = "OverSubRC_dist (With Neighbor)";
         }
     }
-    int extMeasure::computeAndStoreRC_new(dbRSeg *rseg1, dbRSeg *rseg2, int srcCovered)
+    int extMeasureRC::computeAndStoreRC_new(dbRSeg *rseg1, dbRSeg *rseg2, int srcCovered)
     {
         ResetRCs();
         _tmpRC->Reset();
@@ -760,8 +760,8 @@ namespace rcx
         bool DEBUG1 = false;
         if (DEBUG1)
         {
-            segInfo("SRC", _netSrcId, _rsegSrcId);
-            segInfo("DST", _netTgtId, _rsegTgtId);
+            extMeasure::segInfo("SRC", _netSrcId, _rsegSrcId);
+            extMeasure::segInfo("DST", _netTgtId, _rsegTgtId);
         }
         // Copy from computeAndStore om 09212023
         bool SUBTRACT_DIAG = false;
@@ -769,12 +769,13 @@ namespace rcx
         bool COMPUTE_OVER_SUB = true;
 
         rcSegInfo();
+        /* FIXME
         if (IsDebugNet())
             debugPrint(logger_, RCX, "debug_net", 1,
                        "measureRC:"
                        "C"
                        "\t[BEGIN-OUD] ----- OverUnder/Diagonal RC ----- BEGIN");
-
+*/
         //_diagLen = 0;
         int totLenCovered = 0;
         _lenOUtable->resetCnt();
@@ -953,12 +954,13 @@ namespace rcx
                 tot2 += _rc[jj]->_coupling;
             }
             rcSegInfo();
+            /* FIXME
             if (IsDebugNet())
                 debugPrint(logger_, RCX, "debug_net", 1,
                            "measureRC:"
                            "C"
                            "\t[END-OUD] ------ OverUnder/Diagonal RC ------ END");
-
+            */
             OverSubRC_dist_new(rseg1, rseg2, totLenCovered, _diagLen, _len);
         }
         if (IsDebugNet())
