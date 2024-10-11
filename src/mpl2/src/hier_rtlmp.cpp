@@ -2270,7 +2270,10 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
               cluster->getName(),
               0.0,
               0.0,
-              nullptr);
+              // The information of whether or not a cluster is an IO cluster is
+              // needed inside the SA Core, so if a fixed terminal corresponds
+              // to an IO Cluster it needs to contains that cluster data.
+              cluster->isIOCluster() ? cluster.get() : nullptr);
           debugPrint(
               logger_,
               MPL,
@@ -2767,7 +2770,10 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
               cluster->getName(),
               0.0,
               0.0,
-              nullptr);
+              // The information of whether or not a cluster is an IO cluster is
+              // needed inside the SA Core, so if a fixed terminal corresponds
+              // to an IO Cluster it needs to contains that cluster data.
+              cluster->isIOCluster() ? cluster.get() : nullptr);
           debugPrint(
               logger_,
               MPL,
