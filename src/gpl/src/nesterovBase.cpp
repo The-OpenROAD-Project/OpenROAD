@@ -1816,9 +1816,9 @@ void NesterovBase::initDensity1()
 
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto it = gCells_.begin(); it < gCells_.end(); ++it) {
-    GCell* gCell = &(**it);  // old-style loop for old OpenMP
+    GCell* gCell = *it;  // old-style loop for old OpenMP
     updateDensityCoordiLayoutInside(gCell);
-    int idx = std::distance(gCells_.begin(), it);
+    int idx = it - gCells_.begin();
     curSLPCoordi_[idx] = prevSLPCoordi_[idx] = curCoordi_[idx]
         = initCoordi_[idx] = FloatPoint(gCell->dCx(), gCell->dCy());
 
