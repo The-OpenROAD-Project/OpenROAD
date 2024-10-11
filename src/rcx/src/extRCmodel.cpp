@@ -2555,329 +2555,6 @@ FILE* extRCModel::openFile(const char* topDir,
   return fp;
 }
 
-uint extRCModel::getCapValues(uint lastNode,
-                              double& cc1,
-                              double& cc2,
-                              double& fr,
-                              double& tot,
-                              extMeasure* m)
-{
-  double totCap = 0.0;
-  if (m->_diag && _diagModel == 2) {
-    fr = m->_capMatrix[1][0];   // diag
-    cc1 = m->_capMatrix[1][1];  // left cc in diag side
-    cc2 = m->_capMatrix[1][2];  // right cc
-    fprintf(_capLogFP, "\n");
-    m->printMets(_capLogFP);
-    fprintf(_capLogFP, " diag= %g, cc1=%g, cc2=%g  ", fr, cc1, cc2);
-    m->printStats(_capLogFP);
-    fprintf(_capLogFP, "\n\nEND\n\n");
-    return lastNode;
-  }
-  if (m->_diag && _diagModel == 1) {
-    cc1 = m->_capMatrix[1][0];
-    fprintf(_capLogFP, "\n");
-    m->printMets(_capLogFP);
-    fprintf(_capLogFP, " diag= %g  ", cc1);
-    m->printStats(_capLogFP);
-    fprintf(_capLogFP, "\n\nEND\n\n");
-    return lastNode;
-  }
-
-  if (lastNode == 1) {
-    totCap = m->_capMatrix[1][0];
-    fr = totCap;
-    if (m->_plate) {
-      fr /= 100000;
-    }
-    fprintf(_capLogFP, "\n");
-    m->printMets(_capLogFP);
-    tot = cc1 + cc2 + fr;
-
-    fprintf(
-        _capLogFP, " cc1= %g  cc2= %g  fr= %g  tot= %g  ", cc1, cc2, fr, tot);
-
-    m->printStats(_capLogFP);
-    fprintf(_capLogFP, "\n\nEND\n\n");
-
-    return lastNode;
-  }
-  if (lastNode > 1) {
-    totCap = m->_capMatrix[1][0];
-    cc1 = m->_capMatrix[1][1];  // left cc
-    cc2 = m->_capMatrix[1][2];
-  }
-
-  if (lastNode != m->_wireCnt) {
-    logger_->warn(
-        RCX, 418, "Reads only {} nodes from {}", lastNode, _wireDirName);
-  }
-
-  fprintf(_capLogFP, "\n");
-  m->printMets(_capLogFP);
-  fr = totCap - cc1 - cc2;
-
-  fprintf(
-      _capLogFP, " cc1= %g  cc2= %g  fr= %g  tot= %g  ", cc1, cc2, fr, totCap);
-
-  m->printStats(_capLogFP);
-  fprintf(_capLogFP, "\n\nEND\n\n");
-
-  return lastNode;
-}
-
-uint extRCModel::getCapMatrixValues(uint lastNode, extMeasure* m)
-{
-  uint ccCnt = 0;
-  for (uint n = 1; n <= lastNode; n++) {
-    double frCap = m->_capMatrix[n][0] * m->_len;
-    m->_capMatrix[n][0] = 0.0;
-
-    logger_->info(RCX,
-                  417,
-                  "FrCap for netId {} (nodeId= {})  {}",
-                  m->_idTable[n],
-                  n,
-                  frCap);
-
-    double res
-        = _extMain->getLefResistance(m->_met, m->_w_nm, m->_len, m->_rIndex);
-
-    dbRSeg* rseg1 = m->getFirstDbRseg(m->_idTable[n]);
-    rseg1->setResistance(res);
-
-    uint k = n + 1;
-    if (k <= lastNode) {
-      double cc1 = m->_capMatrix[n][k] * m->_len;
-      m->_capMatrix[n][k] = 0.0;
-
-      logger_->info(RCX,
-                    416,
-                    "\tccCap for netIds {}({}), {}({}) {}",
-                    m->_idTable[n],
-                    n,
-                    m->_idTable[k],
-                    k,
-                    cc1);
-      ccCnt++;
-
-      dbRSeg* rseg2 = m->getFirstDbRseg(m->_idTable[k]);
-      m->_extMain->updateCCCap(rseg1, rseg2, cc1);
-    }
-    double ccFr = m->getCCfringe(lastNode, n, 2, 3) * m->_len;
-
-    frCap += ccFr;
-    rseg1->setCapacitance(frCap);
-
-    logger_->info(RCX,
-                  414,
-                  "\tfrCap from CC for netId {}({}) {}",
-                  m->_idTable[n],
-                  n,
-                  ccFr);
-    logger_->info(
-        RCX, 411, "\ttotFrCap for netId {}({}) {}", m->_idTable[n], n, frCap);
-  }
-  m->printStats(_capLogFP);
-  fprintf(_capLogFP, "\n\nEND\n\n");
-
-  for (uint ii = 1; ii <= lastNode; ii++) {
-    for (uint jj = ii + 1; jj <= lastNode; jj++) {
-      m->_capMatrix[ii][jj] = 0.0;
-    }
-  }
-  return ccCnt;
-}
-
-uint extRCModel::readCapacitanceBench(bool readCapLog, extMeasure* m)
-{
-  FILE* solverFP = nullptr;
-  if (!readCapLog) {
-    solverFP = openSolverFile();
-    if (solverFP == nullptr) {
-      return 0;
-    }
-    _parser->setInputFP(solverFP);
-  }
-
-  Ath__parser wParser(logger_);
-
-  bool matrixFlag = false;
-  /*
-   C_1_2 M1_w1 M1_w2 6.367907e-17
-   C_1_3 M1_w1 M1_w3 4.394765e-18
-   C_1_0 M1_w1 GROUND_RC2 4.842417e-17
-   C_2_3 M1_w2 M1_w3 6.367920e-17
-   C_2_0 M1_w2 GROUND_RC2 2.877861e-17
-   C_3_0 M1_w3 GROUND_RC2 4.842436e-17
-  */
-
-  uint cnt = 0;
-  m->_capMatrix[1][0] = 0.0;
-  m->_capMatrix[1][1] = 0.0;
-  m->_capMatrix[1][2] = 0.0;
-  while (true) {
-    if (!_parser->isKeyword(0, "BEGIN") || matrixFlag) {
-      if (!(_parser->parseNextLine() > 0)) {
-        break;
-      }
-    }
-    if (matrixFlag) {
-      if (_parser->isKeyword(0, "END")) {
-        break;
-      }
-
-      if (!_parser->isKeyword(0, "Charge")) {
-        continue;
-      }
-
-      _parser->printWords(_capLogFP);
-
-      _parser->getDouble(4);
-
-      wParser.mkWords(_parser->get(2), "M");
-      continue;
-    }
-
-    if (_parser->isKeyword(0, "***") && _parser->isKeyword(1, "POTENTIAL")) {
-      matrixFlag = true;
-
-      fprintf(_capLogFP, "BEGIN %s\n", _wireDirName);
-      fprintf(_capLogFP, "%s\n", _commentLine);
-      if (_keepFile && m != nullptr) {
-        writeWires2(_capLogFP, m, m->_wireCnt);
-      }
-      continue;
-    }
-    if (_parser->isKeyword(0, "BEGIN")
-        && (strcmp(_parser->get(1), _wireDirName) == 0)) {
-      matrixFlag = true;
-
-      fprintf(_capLogFP, "BEGIN %s\n", _wireDirName);
-
-      continue;
-    }
-    if (_parser->isKeyword(0, "BEGIN")
-        && (strcmp(_parser->get(1), _wireDirName) != 0)) {
-      break;
-    }
-  }
-  if (solverFP != nullptr) {
-    fclose(solverFP);
-  }
-
-  return cnt;
-}
-
-uint extRCModel::readCapacitanceBenchDiag(bool readCapLog, extMeasure* m)
-{
-  int met = 0;
-  if (m->_overMet > 0) {
-    met = m->_overMet;
-  } else if (m->_underMet > 0) {
-    met = m->_underMet;
-  }
-  uint n = m->_wireCnt / 2 + 1;
-
-  double units = 1.0e+12;
-
-  FILE* solverFP = nullptr;
-  if (!readCapLog) {
-    solverFP = openSolverFile();
-    if (solverFP == nullptr) {
-      return 0;
-    }
-    _parser->setInputFP(solverFP);
-  }
-
-  Ath__parser wParser(logger_);
-
-  bool matrixFlag = false;
-  uint cnt = 0;
-  m->_capMatrix[1][0] = 0.0;
-  m->_capMatrix[1][1] = 0.0;
-  m->_capMatrix[1][2] = 0.0;
-  while (true) {
-    if (!_parser->isKeyword(0, "BEGIN") || matrixFlag) {
-      if (!(_parser->parseNextLine() > 0)) {
-        break;
-      }
-    }
-    if (matrixFlag) {
-      if (_parser->isKeyword(0, "END")) {
-        break;
-      }
-
-      if (!_parser->isKeyword(0, "Charge")) {
-        continue;
-      }
-
-      _parser->printWords(_capLogFP);
-      double cap = _parser->getDouble(4);
-      if (cap < 0.0) {
-        cap = -cap;
-      }
-      cap *= units;
-
-      wParser.mkWords(_parser->get(2), "M");
-      if (_diagModel == 1) {
-        if (wParser.getInt(0) != met) {
-          continue;
-        }
-        wParser.mkWords(_parser->get(2), "w");
-        uint n1 = wParser.getInt(1);
-        if (n1 != n) {
-          continue;
-        }
-        m->_capMatrix[1][0] = cap;
-        m->_idTable[cnt] = n1;
-        cnt++;
-      }
-      if (_diagModel == 2) {
-        if (wParser.getInt(0) == met) {
-          wParser.mkWords(_parser->get(2), "w");
-          uint n1 = wParser.getInt(1);
-          if (n1 != n) {
-            continue;
-          }
-          m->_capMatrix[1][0] = cap;  // diag
-          m->_idTable[cnt] = n1;
-          cnt++;
-        }
-      }
-      continue;
-    }
-
-    if (_parser->isKeyword(0, "***") && _parser->isKeyword(1, "POTENTIAL")) {
-      matrixFlag = true;
-
-      fprintf(_capLogFP, "BEGIN %s\n", _wireDirName);
-      fprintf(_capLogFP, "%s\n", _commentLine);
-      if (_keepFile && m != nullptr) {
-        writeWires2(_capLogFP, m, m->_wireCnt);
-      }
-      continue;
-    }
-    if (_parser->isKeyword(0, "BEGIN")
-        && (strcmp(_parser->get(1), _wireDirName) == 0)) {
-      matrixFlag = true;
-
-      fprintf(_capLogFP, "BEGIN %s\n", _wireDirName);
-      continue;
-    }
-    if (_parser->isKeyword(0, "BEGIN")
-        && (strcmp(_parser->get(1), _wireDirName) != 0)) {
-      break;
-    }
-  }
-
-  if (solverFP != nullptr) {
-    fclose(solverFP);
-  }
-
-  return cnt;
-}
-
 void extRCModel::mkFileNames(extMeasure* m, char* wiresNameSuffix)
 {
   char overUnder[128];
@@ -3586,7 +3263,7 @@ void extRCModel::writeRules(char* name, bool binary)
           _modelTable[0]->_resOver[ii]->writeRulesOver_res(fp, binary);
         } else if (m == 0) {
           logger_->info(RCX,
-                        410,
+                        413,
                         "Cannot write <OVER> Res rules for <DensityModel> {} "
                         "and layer {}",
                         m,
@@ -3600,7 +3277,7 @@ void extRCModel::writeRules(char* name, bool binary)
       } else if (m == 0) {
         logger_->info(
             RCX,
-            234,
+            412,
             "Cannot write <OVER> rules for <DensityModel> {} and layer {}",
             m,
             ii);
@@ -3636,7 +3313,7 @@ void extRCModel::writeRules(char* name, bool binary)
       } else if (m == 0) {
         logger_->info(
             RCX,
-            233,
+            249,
             "Cannot write <DIAGUNDER> rules for <DensityModel> {} and layer {}",
             m,
             ii);
@@ -4182,58 +3859,13 @@ bool extRCModel::measurePatternVar(extMeasure* m,
     double maxHeight
         = _process->adjustMasterDielectricsForHeight(m->_met, thicknessChange);
     maxHeight *= 1.2;
-    if (m->_3dFlag) {
-      double len = top_width * _len;
-      if (len <= 0)
-        len = top_width * 10 * 0.001;
-      //                        double W = (m->_ur[m->_dir] -
-      // m->_ll[m->_dir])*10;
-      double W = 40;
-      _process->writeProcessAndGround3D(wfp,
-                                        "GND",
-                                        m->_underMet,
-                                        m->_overMet,
-                                        -30.0,
-                                        60.0,
-                                        len,
-                                        maxHeight,
-                                        W);
-    } else {
-      if (m->_diag) {
-        int met = -1;
-        if (m->_overMet + 1 < (int) _layerCnt)
-          met = m->_overMet + 1;
-        _process->writeProcessAndGround(
-            wfp, "GND", m->_met - 1, met, -50.0, 100.0, maxHeight, m->_diag);
-      } else
-        _process->writeProcessAndGround(wfp,
-                                        "GND",
-                                        m->_underMet,
-                                        m->_overMet,
-                                        -50.0,
-                                        100.0,
-                                        maxHeight,
-                                        m->_diag);
-    }
 
     if (_commentFlag)
       fprintf(wfp, "%s\n", _commentLine);
 
     if (m->_benchFlag) {
       writeBenchWires(wfp, m);
-    } else {
-      if (m->_3dFlag) {  // 3d based extraction rules
-                         //                             writeWires2_3D(wfp,
-                         //                             m,
-                         // wireCnt);
-        writeRuleWires_3D(wfp, m, wireCnt);
-        writeRaphaelCaps3D(wfp, m, wireCnt);
-      } else {
-        //                              writeWires2(wfp, m, wireCnt);
-        writeRuleWires(wfp, m, wireCnt);
-        writeRaphaelCaps(wfp, m, wireCnt);
-      }
-    }
+    } else
 
       fprintf(_filesFP, "%s/wires\n", _wireDirName);
 
@@ -4241,72 +3873,7 @@ bool extRCModel::measurePatternVar(extMeasure* m,
   }
   solverStep(m);
 
-  // if (!m->_benchFlag && _readSolver) {
-  if (_readSolver) {
-    uint lineCnt = 0;
 
-    if (m->_3dFlag)
-      lineCnt = readCapacitanceBench3D(_readCapLog, m, true);
-    else {
-      if (m->_diag)
-        lineCnt = readCapacitanceBenchDiag(_readCapLog, m);
-      else
-        lineCnt = readCapacitanceBench(_readCapLog, m);
-    }
-    if (lineCnt <= 0 && _keepFile) {
-      _readCapLog = false;
-
-      solverStep(m);
-
-      if (m->_3dFlag)
-        lineCnt = readCapacitanceBench3D(_readCapLog, m, true);
-      else {
-        if (m->_diag)
-          lineCnt = readCapacitanceBenchDiag(_readCapLog, m);
-        else
-          lineCnt = readCapacitanceBench(_readCapLog, m);
-      }
-    }
-    if (!m->_benchFlag && (lineCnt > 0)) {
-      double cc1 = 0.0, cc2 = 0.0, fr = 0.0, tot = 0.0;
-      if (m->_3dFlag)
-        getCapValues3D(lineCnt, cc1, cc2, fr, tot, m);
-      else
-        getCapValues(lineCnt, cc1, cc2, fr, tot, m);
-
-      m->_rcValid = false;
-
-      if (wiresNameSuffix != NULL)
-        return true;
-
-      if (lineCnt <= 0) {
-        logger_->info(
-            RCX, 224, "Not valid cap values from solver dir {}", _wireDirName);
-        return true;
-      }
-
-      extDistRC* rc = _rcPoolPtr->alloc();
-
-      if (m->_diag && _diagModel == 2)
-        rc->set(m->_s_nm, (cc1 + cc2) * 0.5, fr, 0.0, 0.001 * res);
-      else
-        rc->set(m->_s_nm, cc1, 0.5 * fr, 0.0, 0.001 * res);
-      m->_tmpRC = rc;
-
-      m->_rcValid = true;
-
-      // m->addCap();
-      addRC(m);
-    }
-    if (m->_benchFlag && (lineCnt > 0)) {
-      if (m->_3dFlag)
-        getCapMatrixValues3D(lineCnt, m);
-      else
-        getCapMatrixValues(lineCnt, m);
-    }
-  }
-  if (!_keepFile)
-    cleanFiles();
   return true;
 }
 void extRCModel::printCommentLine(char commentChar, extMeasure* m)
