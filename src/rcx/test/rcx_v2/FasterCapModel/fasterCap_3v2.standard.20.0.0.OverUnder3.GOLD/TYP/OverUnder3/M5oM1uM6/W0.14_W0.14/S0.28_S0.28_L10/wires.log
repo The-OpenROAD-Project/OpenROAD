@@ -1,0 +1,506 @@
+Running FasterCap version 6.0.7
+Copyright 2019 FastFieldSolvers S.R.L. http://www.fastfieldsolvers.com, All Rights reserved
+Starting capacitance extraction with the following parameters:
+Input file: fasterCap_3v2.standard.20.0.0.OverUnder3/./TYP/OverUnder3/M5oM1uM6/W0.14_W0.14/S0.28_S0.28_L10/wires.lst
+Auto calculation with max error: 0.01
+Remark: Auto option overrides all other Manual settings
+
+3D Solver Engine invoked
+Solution scheme (-g): Galerkin, GMRES tolerance (-t): 0.005
+Out-of-core free memory to link memory condition (-f): 1
+Potential interaction coefficient to mesh refinement ratio (-d): 1
+Mesh curvature (-mc): 3
+Number of input panels to solver engine: 17580
+***************************************
+Iteration number #0 
+***************************************
+Refining the geometry.. 
+Refinement completed
+Mesh refinement (-m): 1e+32
+***************************************
+Computing the links.. 
+Number of panels after refinement: 17580
+Number of links to be computed: 40270
+Done computing links
+***************************************
+Precond Type(s) (-p): Jacobi 
+GMRES Iterations: 10 
+GMRES Iterations: 12 
+GMRES Iterations: 9 
+GMRES Iterations: 9 
+GMRES Iterations: 9 
+Capacitance matrix is:
+Dimension 5 x 5
+g1_wire_M1_w1  9.28661e-15 -9.10382e-15 -2.37075e-17 1.12515e-17 -3.08096e-17 
+g2_wire_M6_w6  -9.29015e-15 1.11603e-14 -1.50106e-16 -7.12522e-18 -1.4821e-16 
+g3_wire_M5_w1  9.65886e-16 -8.57066e-16 4.41294e-16 -3.11321e-16 1.04716e-16 
+g4_wire_M5_w2  3.23141e-17 5.07119e-19 -3.66273e-16 7.41862e-16 -3.72029e-16 
+g5_wire_M5_w3  -8.1089e-16 4.00301e-16 4.30345e-17 -4.30777e-16 3.89879e-16 
+
+
+Solve statistics:
+Number of input panels: 227 of which 54 conductors and 173 dielectric
+Number of input panels to solver engine: 17580
+Number of panels after refinement: 17580
+Number of potential estimates: 39886
+Number of links: 57850 (uncompressed 309056400, compression ratio is 100.0%)
+Number of precond panels: 0
+Number of precond links: 0
+Max recursion level: 17
+Max Mesh relative refinement value: 0.0233391
+Time for reading input file: 0.003383s
+Time for building super hierarchy: 0.003517s
+Time for discretization: 0.004907s
+Time for building potential matrix: 0.066523s
+Time for precond calculation: 0.000521s
+Time for gmres solving: 0.176061s
+Memory allocated for panel hierarchy: 7034980 bytes
+Memory allocated for links structure: 1073882480 bytes
+Memory allocated for conductor list: 359160 bytes
+Memory allocated for Gmres: 3564864 bytes
+Memory allocated for preconditioner: 0 bytes
+Memory allocated for charge vectors: 0 bytes
+Memory allocated for hierarchical multiplication: 0 bytes
+Iteration time: 0.255319s (0 days, 0 hours, 0 mins, 0 s)
+Iteration allocated memory: 1059415 kilobytes
+***************************************
+Iteration number #1 
+***************************************
+Increasing the geometric refinement.. 
+Delta in refined panel and link count w.r.t. previous iteration less than 10%
+(Panels # 17680, Links # 50350)
+Automatically increasing the refinement parameters
+Delta in refined panel and link count w.r.t. previous iteration less than 10%
+(Panels # 18169, Links # 63710)
+Automatically increasing the refinement parameters
+Delta in refined panel and link count w.r.t. previous iteration less than 10%
+(Panels # 18681, Links # 88028)
+Automatically increasing the refinement parameters
+Refinement completed
+Mesh refinement (-m): 0.00582858
+***************************************
+Computing the links.. 
+Number of panels after refinement: 19988
+Number of links to be computed: 135808
+Done computing links
+***************************************
+Precond Type(s) (-p): Two-levels, two-levels preconditioner dimension (-ps): 128 
+GMRES Iterations: 20 
+GMRES Iterations: 22 
+GMRES Iterations: 21 
+GMRES Iterations: 19 
+GMRES Iterations: 21 
+Capacitance matrix is:
+Dimension 5 x 5
+g1_wire_M1_w1  1.63697e-15 -6.78622e-16 -4.08861e-17 -6.90595e-18 -3.99821e-17 
+g2_wire_M6_w6  -1.12595e-15 1.69297e-15 -9.17509e-17 -1.61209e-17 -1.00872e-16 
+g3_wire_M5_w1  -3.49225e-17 -3.27345e-17 3.42756e-16 -1.95166e-16 3.07665e-17 
+g4_wire_M5_w2  -4.76362e-21 9.9303e-19 -2.12818e-16 4.43349e-16 -2.09529e-16 
+g5_wire_M5_w3  -5.11967e-17 -7.00533e-17 8.80042e-18 -2.19995e-16 3.24152e-16 
+
+Weighted Frobenius norm of the difference between capacitance (auto option): 6.04226
+
+Solve statistics:
+Number of input panels: 227 of which 54 conductors and 173 dielectric
+Number of input panels to solver engine: 17580
+Number of panels after refinement: 19988
+Number of potential estimates: 135256
+Number of links: 155796 (uncompressed 399520144, compression ratio is 100.0%)
+Number of precond panels: 0
+Number of precond links: 0
+Max recursion level: 24
+Max Mesh relative refinement value: 0.00582844
+Time for reading input file: 0.002064s
+Time for building super hierarchy: 0.002129s
+Time for discretization: 0.023680s
+Time for building potential matrix: 0.270169s
+Time for precond calculation: 0.000899s
+Time for gmres solving: 0.401579s
+Memory allocated for panel hierarchy: 8000588 bytes
+Memory allocated for links structure: 1073901744 bytes
+Memory allocated for conductor list: 359160 bytes
+Memory allocated for Gmres: 5647064 bytes
+Memory allocated for preconditioner: 0 bytes
+Memory allocated for charge vectors: 0 bytes
+Memory allocated for hierarchical multiplication: 0 bytes
+Iteration time: 0.749353s (0 days, 0 hours, 0 mins, 0 s)
+Iteration allocated memory: 1062410 kilobytes
+***************************************
+Iteration number #2 
+***************************************
+Increasing the geometric refinement.. 
+Delta in refined panel and link count w.r.t. previous iteration less than 10%
+(Panels # 21680, Links # 228240)
+Automatically increasing the refinement parameters
+Refinement completed
+Mesh refinement (-m): 0.0029141
+***************************************
+Computing the links.. 
+Number of panels after refinement: 24802
+Number of links to be computed: 403672
+Done computing links
+***************************************
+Precond Type(s) (-p): Two-levels, two-levels preconditioner dimension (-ps): 128 
+GMRES Iterations: 20 
+GMRES Iterations: 19 
+GMRES Iterations: 20 
+GMRES Iterations: 22 
+GMRES Iterations: 19 
+Capacitance matrix is:
+Dimension 5 x 5
+g1_wire_M1_w1  1.80123e-15 -6.18745e-16 -4.01908e-17 -8.24348e-18 -3.92525e-17 
+g2_wire_M6_w6  -1.19448e-15 1.61335e-15 -9.48669e-17 -3.05453e-17 -9.63016e-17 
+g3_wire_M5_w1  -1.50183e-17 -4.13291e-17 3.0916e-16 -1.88772e-16 3.80487e-17 
+g4_wire_M5_w2  -2.26571e-19 1.86101e-17 -1.87741e-16 4.2212e-16 -1.90658e-16 
+g5_wire_M5_w3  -4.19282e-17 -4.13538e-17 1.8879e-17 -1.92869e-16 2.93336e-16 
+
+Weighted Frobenius norm of the difference between capacitance (auto option): 0.0765338
+
+Solve statistics:
+Number of input panels: 227 of which 54 conductors and 173 dielectric
+Number of input panels to solver engine: 17580
+Number of panels after refinement: 24802
+Number of potential estimates: 404262
+Number of links: 428474 (uncompressed 615139204, compression ratio is 99.9%)
+Number of precond panels: 0
+Number of precond links: 0
+Max recursion level: 28
+Max Mesh relative refinement value: 0.00291403
+Time for reading input file: 0.001874s
+Time for building super hierarchy: 0.002018s
+Time for discretization: 0.073613s
+Time for building potential matrix: 0.678314s
+Time for precond calculation: 0.031270s
+Time for gmres solving: 0.627418s
+Memory allocated for panel hierarchy: 9931002 bytes
+Memory allocated for links structure: 1073940256 bytes
+Memory allocated for conductor list: 359160 bytes
+Memory allocated for Gmres: 6994984 bytes
+Memory allocated for preconditioner: 268699408 bytes
+Memory allocated for charge vectors: 0 bytes
+Memory allocated for hierarchical multiplication: 0 bytes
+Iteration time: 1.475976s (0 days, 0 hours, 0 mins, 1 s)
+Iteration allocated memory: 1328051 kilobytes
+***************************************
+Iteration number #3 
+***************************************
+Increasing the geometric refinement.. 
+Refinement completed
+Mesh refinement (-m): 0.00206053
+***************************************
+Computing the links.. 
+Number of panels after refinement: 28770
+Number of links to be computed: 747148
+Done computing links
+***************************************
+Precond Type(s) (-p): Two-levels, two-levels preconditioner dimension (-ps): 128 
+GMRES Iterations: 20 
+GMRES Iterations: 23 
+GMRES Iterations: 30 
+GMRES Iterations: 35 
+GMRES Iterations: 27 
+Capacitance matrix is:
+Dimension 5 x 5
+g1_wire_M1_w1  1.80089e-15 -7.27304e-16 -3.65801e-17 -1.52055e-17 -3.6803e-17 
+g2_wire_M6_w6  -1.18912e-15 1.73428e-15 -9.15986e-17 -3.84053e-17 -9.21858e-17 
+g3_wire_M5_w1  -4.57863e-17 -3.46316e-17 3.02803e-16 -1.79298e-16 1.81552e-17 
+g4_wire_M5_w2  5.71162e-17 -5.26315e-18 -1.79677e-16 4.27129e-16 -1.65499e-16 
+g5_wire_M5_w3  -6.10704e-17 -3.76021e-17 1.02405e-17 -1.88846e-16 2.80633e-16 
+
+Weighted Frobenius norm of the difference between capacitance (auto option): 0.0618636
+
+Solve statistics:
+Number of input panels: 227 of which 54 conductors and 173 dielectric
+Number of input panels to solver engine: 17580
+Number of panels after refinement: 28770
+Number of potential estimates: 745887
+Number of links: 775918 (uncompressed 827712900, compression ratio is 99.9%)
+Number of precond panels: 0
+Number of precond links: 0
+Max recursion level: 30
+Max Mesh relative refinement value: 0.00206045
+Time for reading input file: 0.003076s
+Time for building super hierarchy: 0.003492s
+Time for discretization: 0.160334s
+Time for building potential matrix: 1.350540s
+Time for precond calculation: 0.031835s
+Time for gmres solving: 1.079033s
+Memory allocated for panel hierarchy: 11522170 bytes
+Memory allocated for links structure: 1073972000 bytes
+Memory allocated for conductor list: 359160 bytes
+Memory allocated for Gmres: 11101328 bytes
+Memory allocated for preconditioner: 268731152 bytes
+Memory allocated for charge vectors: 0 bytes
+Memory allocated for hierarchical multiplication: 0 bytes
+Iteration time: 2.628797s (0 days, 0 hours, 0 mins, 2 s)
+Iteration allocated memory: 1333677 kilobytes
+***************************************
+Iteration number #4 
+***************************************
+Increasing the geometric refinement.. 
+Refinement completed
+Mesh refinement (-m): 0.00145696
+***************************************
+Computing the links.. 
+Number of panels after refinement: 34850
+Number of links to be computed: 1419106
+Done computing links
+***************************************
+Precond Type(s) (-p): Two-levels, two-levels preconditioner dimension (-ps): 512 
+GMRES Iterations: 22 
+GMRES Iterations: 24 
+GMRES Iterations: 28 
+GMRES Iterations: 24 
+GMRES Iterations: 28 
+Capacitance matrix is:
+Dimension 5 x 5
+g1_wire_M1_w1  1.78157e-15 -7.30951e-16 -3.62971e-17 -2.26216e-17 -3.57587e-17 
+g2_wire_M6_w6  -1.17995e-15 1.72102e-15 -8.95194e-17 -5.00551e-17 -8.65903e-17 
+g3_wire_M5_w1  -2.46747e-17 -2.38093e-17 2.8574e-16 -1.4378e-16 -6.27441e-18 
+g4_wire_M5_w2  -2.01368e-17 -2.36157e-17 -1.40746e-16 3.65949e-16 -1.452e-16 
+g5_wire_M5_w3  -3.31313e-17 -2.67084e-17 -1.33355e-17 -1.46171e-16 2.80073e-16 
+
+Weighted Frobenius norm of the difference between capacitance (auto option): 0.0471749
+
+Solve statistics:
+Number of input panels: 227 of which 54 conductors and 173 dielectric
+Number of input panels to solver engine: 17580
+Number of panels after refinement: 34850
+Number of potential estimates: 1409773
+Number of links: 1453956 (uncompressed 1214522500, compression ratio is 99.9%)
+Number of precond panels: 0
+Number of precond links: 0
+Max recursion level: 30
+Max Mesh relative refinement value: 0.00145694
+Time for reading input file: 0.003487s
+Time for building super hierarchy: 0.002286s
+Time for discretization: 0.265096s
+Time for building potential matrix: 1.860258s
+Time for precond calculation: 0.034322s
+Time for gmres solving: 1.223547s
+Memory allocated for panel hierarchy: 13960250 bytes
+Memory allocated for links structure: 1074020640 bytes
+Memory allocated for conductor list: 359160 bytes
+Memory allocated for Gmres: 11482544 bytes
+Memory allocated for preconditioner: 268779792 bytes
+Memory allocated for charge vectors: 0 bytes
+Memory allocated for hierarchical multiplication: 0 bytes
+Iteration time: 3.389318s (0 days, 0 hours, 0 mins, 3 s)
+Iteration allocated memory: 1336525 kilobytes
+***************************************
+Iteration number #5 
+***************************************
+Increasing the geometric refinement.. 
+Refinement completed
+Mesh refinement (-m): 0.00103022
+***************************************
+Computing the links.. 
+Number of panels after refinement: 49287
+Number of links to be computed: 2843042
+Done computing links
+***************************************
+Precond Type(s) (-p): Two-levels, two-levels preconditioner dimension (-ps): 1024 
+GMRES Iterations: 20 
+GMRES Iterations: 33 
+GMRES Iterations: 51 
+GMRES Iterations: 52 
+GMRES Iterations: 52 
+Capacitance matrix is:
+Dimension 5 x 5
+g1_wire_M1_w1  1.75279e-15 -7.12196e-16 -3.13623e-17 -1.36382e-17 -3.01992e-17 
+g2_wire_M6_w6  -1.15969e-15 1.66243e-15 -8.73146e-17 -3.78359e-17 -9.17246e-17 
+g3_wire_M5_w1  -2.89498e-17 -3.01579e-17 2.61507e-16 -1.40329e-16 5.81858e-18 
+g4_wire_M5_w2  -8.41821e-18 -8.73847e-18 -1.41796e-16 3.43242e-16 -1.5053e-16 
+g5_wire_M5_w3  -2.63861e-17 -3.14082e-17 6.76233e-18 -1.52189e-16 2.73255e-16 
+
+Weighted Frobenius norm of the difference between capacitance (auto option): 0.0307166
+
+Solve statistics:
+Number of input panels: 227 of which 54 conductors and 173 dielectric
+Number of input panels to solver engine: 17580
+Number of panels after refinement: 49287
+Number of potential estimates: 2855568
+Number of links: 2892329 (uncompressed 2429208369, compression ratio is 99.9%)
+Number of precond panels: 0
+Number of precond links: 0
+Max recursion level: 34
+Max Mesh relative refinement value: 0.00103021
+Time for reading input file: 0.002097s
+Time for building super hierarchy: 0.002402s
+Time for discretization: 0.483979s
+Time for building potential matrix: 2.683845s
+Time for precond calculation: 0.150167s
+Time for gmres solving: 3.324764s
+Memory allocated for panel hierarchy: 19749487 bytes
+Memory allocated for links structure: 1074136136 bytes
+Memory allocated for conductor list: 359160 bytes
+Memory allocated for Gmres: 25689144 bytes
+Memory allocated for preconditioner: 268895288 bytes
+Memory allocated for charge vectors: 0 bytes
+Memory allocated for hierarchical multiplication: 0 bytes
+Iteration time: 6.647715s (0 days, 0 hours, 0 mins, 6 s)
+Iteration allocated memory: 1356278 kilobytes
+***************************************
+Iteration number #6 
+***************************************
+Increasing the geometric refinement.. 
+Refinement completed
+Mesh refinement (-m): 0.000728472
+***************************************
+Computing the links.. 
+Number of panels after refinement: 59608
+Number of links to be computed: 5548880
+Done computing links
+***************************************
+Precond Type(s) (-p): Two-levels, two-levels preconditioner dimension (-ps): 1024 
+GMRES Iterations: 16 
+GMRES Iterations: 22 
+GMRES Iterations: 34 
+GMRES Iterations: 37 
+GMRES Iterations: 49 
+Capacitance matrix is:
+Dimension 5 x 5
+g1_wire_M1_w1  1.75973e-15 -7.04821e-16 -3.05749e-17 -1.71842e-17 -3.04686e-17 
+g2_wire_M6_w6  -1.20797e-15 1.66507e-15 -8.87799e-17 -4.50617e-17 -9.03369e-17 
+g3_wire_M5_w1  -3.22417e-17 -3.17943e-17 2.43404e-16 -1.16855e-16 -1.16428e-17 
+g4_wire_M5_w2  -1.47413e-17 -2.02446e-17 -1.08095e-16 2.98977e-16 -1.16827e-16 
+g5_wire_M5_w3  -2.52381e-17 -2.83305e-17 -1.06825e-17 -1.14714e-16 2.48635e-16 
+
+Weighted Frobenius norm of the difference between capacitance (auto option): 0.0358674
+
+Solve statistics:
+Number of input panels: 227 of which 54 conductors and 173 dielectric
+Number of input panels to solver engine: 17580
+Number of panels after refinement: 59608
+Number of potential estimates: 5634190
+Number of links: 5608488 (uncompressed 3553113664, compression ratio is 99.8%)
+Number of precond panels: 0
+Number of precond links: 0
+Max recursion level: 34
+Max Mesh relative refinement value: 0.000728471
+Time for reading input file: 0.002785s
+Time for building super hierarchy: 0.003116s
+Time for discretization: 0.793551s
+Time for building potential matrix: 3.965635s
+Time for precond calculation: 0.561058s
+Time for gmres solving: 3.579286s
+Memory allocated for panel hierarchy: 23888208 bytes
+Memory allocated for links structure: 1074218704 bytes
+Memory allocated for conductor list: 359160 bytes
+Memory allocated for Gmres: 29624200 bytes
+Memory allocated for preconditioner: 268977856 bytes
+Memory allocated for charge vectors: 0 bytes
+Memory allocated for hierarchical multiplication: 0 bytes
+Iteration time: 8.905766s (0 days, 0 hours, 0 mins, 8 s)
+Iteration allocated memory: 1364324 kilobytes
+***************************************
+Iteration number #7 
+***************************************
+Increasing the geometric refinement.. 
+Refinement completed
+Mesh refinement (-m): 0.000515107
+***************************************
+Computing the links.. 
+Number of panels after refinement: 88911
+Number of links to be computed: 11168804
+Done computing links
+***************************************
+Precond Type(s) (-p): Two-levels, two-levels preconditioner dimension (-ps): 1024 
+GMRES Iterations: 16 
+GMRES Iterations: 19 
+GMRES Iterations: 28 
+GMRES Iterations: 28 
+GMRES Iterations: 27 
+Capacitance matrix is:
+Dimension 5 x 5
+g1_wire_M1_w1  1.7386e-15 -7.17256e-16 -3.23799e-17 -1.88725e-17 -3.29856e-17 
+g2_wire_M6_w6  -1.1896e-15 1.68542e-15 -9.14654e-17 -5.15202e-17 -9.09011e-17 
+g3_wire_M5_w1  -3.75287e-17 -3.32049e-17 2.60231e-16 -1.24914e-16 -1.5205e-17 
+g4_wire_M5_w2  -1.94393e-17 -1.43955e-17 -1.15151e-16 3.23333e-16 -1.16017e-16 
+g5_wire_M5_w3  -2.25181e-17 -3.03122e-17 -1.4007e-17 -1.22494e-16 2.62638e-16 
+
+Weighted Frobenius norm of the difference between capacitance (auto option): 0.0185177
+
+Solve statistics:
+Number of input panels: 227 of which 54 conductors and 173 dielectric
+Number of input panels to solver engine: 17580
+Number of panels after refinement: 88911
+Number of potential estimates: 11098641
+Number of links: 11257715 (uncompressed 7905165921, compression ratio is 99.9%)
+Number of precond panels: 0
+Number of precond links: 0
+Max recursion level: 38
+Max Mesh relative refinement value: 0.000515107
+Time for reading input file: 0.002829s
+Time for building super hierarchy: 0.002397s
+Time for discretization: 1.360355s
+Time for building potential matrix: 6.255931s
+Time for precond calculation: 0.617247s
+Time for gmres solving: 4.469087s
+Memory allocated for panel hierarchy: 35638711 bytes
+Memory allocated for links structure: 1074453128 bytes
+Memory allocated for conductor list: 359160 bytes
+Memory allocated for Gmres: 29214552 bytes
+Memory allocated for preconditioner: 269212280 bytes
+Memory allocated for charge vectors: 0 bytes
+Memory allocated for hierarchical multiplication: 0 bytes
+Iteration time: 12.708368s (0 days, 0 hours, 0 mins, 12 s)
+Iteration allocated memory: 1375857 kilobytes
+***************************************
+Iteration number #8 
+***************************************
+Increasing the geometric refinement.. 
+Refinement completed
+Mesh refinement (-m): 0.000364235
+***************************************
+Computing the links.. 
+Number of panels after refinement: 137171
+Number of links to be computed: 22325438
+Done computing links
+***************************************
+Precond Type(s) (-p): Two-levels, two-levels preconditioner dimension (-ps): 1024 
+GMRES Iterations: 15 
+GMRES Iterations: 20 
+GMRES Iterations: 24 
+GMRES Iterations: 26 
+GMRES Iterations: 24 
+Capacitance matrix is:
+Dimension 5 x 5
+g1_wire_M1_w1  1.73278e-15 -7.23331e-16 -3.45336e-17 -2.09386e-17 -3.49183e-17 
+g2_wire_M6_w6  -1.18871e-15 1.69038e-15 -9.1941e-17 -5.0732e-17 -9.0051e-17 
+g3_wire_M5_w1  -3.32051e-17 -3.1509e-17 2.5925e-16 -1.25485e-16 -7.69592e-18 
+g4_wire_M5_w2  -1.74694e-17 -1.90142e-17 -1.18458e-16 3.26951e-16 -1.20787e-16 
+g5_wire_M5_w3  -2.68117e-17 -2.97736e-17 -7.187e-18 -1.24311e-16 2.60162e-16 
+
+Weighted Frobenius norm of the difference between capacitance (auto option): 0.00643388
+
+Solve statistics:
+Number of input panels: 227 of which 54 conductors and 173 dielectric
+Number of input panels to solver engine: 17580
+Number of panels after refinement: 137171
+Number of potential estimates: 21505347
+Number of links: 22462609 (uncompressed 18815883241, compression ratio is 99.9%)
+Number of precond panels: 0
+Number of precond links: 0
+Max recursion level: 38
+Max Mesh relative refinement value: 0.000364235
+Time for reading input file: 0.003082s
+Time for building super hierarchy: 0.002532s
+Time for discretization: 2.312266s
+Time for building potential matrix: 9.214166s
+Time for precond calculation: 0.628657s
+Time for gmres solving: 7.134062s
+Memory allocated for panel hierarchy: 54990971 bytes
+Memory allocated for links structure: 1074839208 bytes
+Memory allocated for conductor list: 359160 bytes
+Memory allocated for Gmres: 42848624 bytes
+Memory allocated for preconditioner: 269598360 bytes
+Memory allocated for charge vectors: 0 bytes
+Memory allocated for hierarchical multiplication: 0 bytes
+Iteration time: 19.295650s (0 days, 0 hours, 0 mins, 19 s)
+Iteration allocated memory: 1408824 kilobytes
+
+Total allocated memory: 1408824 kilobytes
+Total time: 56.126846s (0 days, 0 hours, 0 mins, 56 s)
+
+

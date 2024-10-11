@@ -1,0 +1,225 @@
+Running FasterCap version 6.0.7
+Copyright 2019 FastFieldSolvers S.R.L. http://www.fastfieldsolvers.com, All Rights reserved
+Starting capacitance extraction with the following parameters:
+Input file: fasterCap_3v2.standard.20.0.0.OverUnder3/./TYP/OverUnder3/M3oM2uM5/W0.14_W0.14/S0.21_S0.21_L10/wires.lst
+Auto calculation with max error: 0.01
+Remark: Auto option overrides all other Manual settings
+
+3D Solver Engine invoked
+Solution scheme (-g): Galerkin, GMRES tolerance (-t): 0.005
+Out-of-core free memory to link memory condition (-f): 1
+Potential interaction coefficient to mesh refinement ratio (-d): 1
+Mesh curvature (-mc): 3
+Number of input panels to solver engine: 12864
+***************************************
+Iteration number #0 
+***************************************
+Refining the geometry.. 
+Refinement completed
+Mesh refinement (-m): 1e+32
+***************************************
+Computing the links.. 
+Number of panels after refinement: 12864
+Number of links to be computed: 29148
+Done computing links
+***************************************
+Precond Type(s) (-p): Jacobi 
+GMRES Iterations: 10 
+GMRES Iterations: 12 
+GMRES Iterations: 13 
+GMRES Iterations: 13 
+GMRES Iterations: 13 
+Capacitance matrix is:
+Dimension 5 x 5
+g1_wire_M2_w2  -2.32496e-14 1.07015e-14 -3.65018e-17 -2.399e-17 -3.36348e-17 
+g2_wire_M5_w5  2.39459e-14 -9.04182e-15 -1.87291e-16 -1.36056e-16 -1.89979e-16 
+g3_wire_M3_w1  1.74797e-16 5.79778e-18 2.58548e-16 -1.0761e-16 -2.57989e-17 
+g4_wire_M3_w2  1.55244e-15 -8.61986e-16 -1.09809e-16 3.24733e-16 -1.09198e-16 
+g5_wire_M3_w3  -2.93547e-16 -1.50995e-16 -1.0063e-17 -1.16727e-16 2.73149e-16 
+
+
+Solve statistics:
+Number of input panels: 205 of which 66 conductors and 139 dielectric
+Number of input panels to solver engine: 12864
+Number of panels after refinement: 12864
+Number of potential estimates: 28873
+Number of links: 42012 (uncompressed 165482496, compression ratio is 100.0%)
+Number of precond panels: 0
+Number of precond links: 0
+Max recursion level: 17
+Max Mesh relative refinement value: 0.0256191
+Time for reading input file: 0.002057s
+Time for building super hierarchy: 0.002045s
+Time for discretization: 0.002522s
+Time for building potential matrix: 0.049191s
+Time for precond calculation: 0.000529s
+Time for gmres solving: 0.131465s
+Memory allocated for panel hierarchy: 5146464 bytes
+Memory allocated for links structure: 1073844752 bytes
+Memory allocated for conductor list: 295200 bytes
+Memory allocated for Gmres: 2724696 bytes
+Memory allocated for preconditioner: 0 bytes
+Memory allocated for charge vectors: 0 bytes
+Memory allocated for hierarchical multiplication: 0 bytes
+Iteration time: 0.188088s (0 days, 0 hours, 0 mins, 0 s)
+Iteration allocated memory: 1056651 kilobytes
+***************************************
+Iteration number #1 
+***************************************
+Increasing the geometric refinement.. 
+Delta in refined panel and link count w.r.t. previous iteration less than 10%
+(Panels # 13411, Links # 51678)
+Automatically increasing the refinement parameters
+Delta in refined panel and link count w.r.t. previous iteration less than 10%
+(Panels # 14010, Links # 75696)
+Automatically increasing the refinement parameters
+Refinement completed
+Mesh refinement (-m): 0.00904496
+***************************************
+Computing the links.. 
+Number of panels after refinement: 15269
+Number of links to be computed: 118386
+Done computing links
+***************************************
+Precond Type(s) (-p): Two-levels, two-levels preconditioner dimension (-ps): 128 
+GMRES Iterations: 95 
+GMRES Iterations: 98 
+GMRES Iterations: 75 
+GMRES Iterations: 74 
+GMRES Iterations: 75 
+Capacitance matrix is:
+Dimension 5 x 5
+g1_wire_M2_w2  4.53441e-15 -7.60505e-16 -1.34649e-16 9.03415e-17 -9.29386e-17 
+g2_wire_M5_w5  -3.23081e-15 1.457e-15 -1.00627e-16 2.65121e-17 -9.43868e-17 
+g3_wire_M3_w1  -3.44251e-17 6.28044e-17 5.72526e-16 -4.61283e-16 1.70549e-16 
+g4_wire_M3_w2  1.49923e-16 8.82999e-18 -4.9756e-16 8.59936e-16 -4.93872e-16 
+g5_wire_M3_w3  -1.24081e-16 7.58727e-17 1.89462e-16 -4.84319e-16 5.55188e-16 
+
+Weighted Frobenius norm of the difference between capacitance (auto option): 6.96672
+
+Solve statistics:
+Number of input panels: 205 of which 66 conductors and 139 dielectric
+Number of input panels to solver engine: 12864
+Number of panels after refinement: 15269
+Number of potential estimates: 117901
+Number of links: 133655 (uncompressed 233142361, compression ratio is 99.9%)
+Number of precond panels: 0
+Number of precond links: 0
+Max recursion level: 25
+Max Mesh relative refinement value: 0.00904487
+Time for reading input file: 0.001445s
+Time for building super hierarchy: 0.001479s
+Time for discretization: 0.019249s
+Time for building potential matrix: 0.240407s
+Time for precond calculation: 0.000661s
+Time for gmres solving: 1.401085s
+Memory allocated for panel hierarchy: 6110869 bytes
+Memory allocated for links structure: 1073863992 bytes
+Memory allocated for conductor list: 295200 bytes
+Memory allocated for Gmres: 13647296 bytes
+Memory allocated for preconditioner: 0 bytes
+Memory allocated for charge vectors: 0 bytes
+Memory allocated for hierarchical multiplication: 0 bytes
+Iteration time: 1.697993s (0 days, 0 hours, 0 mins, 1 s)
+Iteration allocated memory: 1068278 kilobytes
+***************************************
+Iteration number #2 
+***************************************
+Increasing the geometric refinement.. 
+Refinement completed
+Mesh refinement (-m): 0.00639569
+***************************************
+Computing the links.. 
+Number of panels after refinement: 16943
+Number of links to be computed: 212494
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Error: mutual-potential calculation failed.
+       Remark: the precision of the result is affected.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance to

@@ -1,0 +1,249 @@
+Running FasterCap version 6.0.7
+Copyright 2019 FastFieldSolvers S.R.L. http://www.fastfieldsolvers.com, All Rights reserved
+Starting capacitance extraction with the following parameters:
+Input file: fasterCap_3v2.standard.20.0.0.OverUnder3/./TYP/OverUnder3/M6oM2uM7/W0.42_W0.42/S1.26_S1.26_L10/wires.lst
+Auto calculation with max error: 0.01
+Remark: Auto option overrides all other Manual settings
+
+3D Solver Engine invoked
+Solution scheme (-g): Galerkin, GMRES tolerance (-t): 0.005
+Out-of-core free memory to link memory condition (-f): 1
+Potential interaction coefficient to mesh refinement ratio (-d): 1
+Mesh curvature (-mc): 3
+Number of input panels to solver engine: 17700
+***************************************
+Iteration number #0 
+***************************************
+Refining the geometry.. 
+Refinement completed
+Mesh refinement (-m): 1e+32
+***************************************
+Computing the links.. 
+Number of panels after refinement: 17700
+Number of links to be computed: 40654
+Done computing links
+***************************************
+Precond Type(s) (-p): Jacobi 
+GMRES Iterations: 7 
+GMRES Iterations: 9 
+GMRES Iterations: 9 
+GMRES Iterations: 9 
+GMRES Iterations: 9 
+Capacitance matrix is:
+Dimension 5 x 5
+g1_wire_M2_w2  7.52231e-15 -2.25401e-15 -3.06018e-16 -2.80439e-16 -3.23061e-16 
+g2_wire_M7_w7  -5.25967e-15 4.5256e-15 -2.81837e-16 -2.45169e-16 -2.9017e-16 
+g3_wire_M6_w1  -4.25411e-16 -1.86007e-16 7.2514e-16 -4.01134e-16 -4.28386e-17 
+g4_wire_M6_w2  1.08463e-15 -5.63504e-16 -2.14247e-16 1.08826e-15 -1.82217e-16 
+g5_wire_M6_w3  -9.93893e-16 5.68999e-17 -1.6957e-17 -2.52246e-16 7.38912e-16 
+
+
+Solve statistics:
+Number of input panels: 228 of which 54 conductors and 174 dielectric
+Number of input panels to solver engine: 17700
+Number of panels after refinement: 17700
+Number of potential estimates: 40377
+Number of links: 58354 (uncompressed 313290000, compression ratio is 100.0%)
+Number of precond panels: 0
+Number of precond links: 0
+Max recursion level: 18
+Max Mesh relative refinement value: 0.0177203
+Time for reading input file: 0.002453s
+Time for building super hierarchy: 0.002644s
+Time for discretization: 0.003914s
+Time for building potential matrix: 0.068808s
+Time for precond calculation: 0.000510s
+Time for gmres solving: 0.140679s
+Memory allocated for panel hierarchy: 7082900 bytes
+Memory allocated for links structure: 1073883440 bytes
+Memory allocated for conductor list: 364080 bytes
+Memory allocated for Gmres: 3163752 bytes
+Memory allocated for preconditioner: 0 bytes
+Memory allocated for charge vectors: 0 bytes
+Memory allocated for hierarchical multiplication: 0 bytes
+Iteration time: 0.219330s (0 days, 0 hours, 0 mins, 0 s)
+Iteration allocated memory: 1059076 kilobytes
+***************************************
+Iteration number #1 
+***************************************
+Increasing the geometric refinement.. 
+Delta in refined panel and link count w.r.t. previous iteration less than 10%
+(Panels # 18242, Links # 62618)
+Automatically increasing the refinement parameters
+Delta in refined panel and link count w.r.t. previous iteration less than 10%
+(Panels # 18652, Links # 79736)
+Automatically increasing the refinement parameters
+Refinement completed
+Mesh refinement (-m): 0.00625643
+***************************************
+Computing the links.. 
+Number of panels after refinement: 19546
+Number of links to be computed: 120320
+Done computing links
+***************************************
+Precond Type(s) (-p): Two-levels, two-levels preconditioner dimension (-ps): 128 
+GMRES Iterations: 27 
+GMRES Iterations: 63 
+GMRES Iterations: 53 
+GMRES Iterations: 43 
+GMRES Iterations: 55 
+Capacitance matrix is:
+Dimension 5 x 5
+g1_wire_M2_w2  5.48006e-15 -7.89922e-16 -1.85524e-16 -1.53506e-16 -1.92503e-16 
+g2_wire_M7_w7  -3.35319e-15 1.93188e-15 -4.36574e-16 -5.88652e-17 -5.09372e-16 
+g3_wire_M6_w1  -2.28128e-16 -1.43013e-16 9.54097e-16 -2.14062e-16 1.04434e-16 
+g4_wire_M6_w2  -3.17126e-16 -1.42878e-16 -3.05938e-16 9.23471e-16 -3.49162e-16 
+g5_wire_M6_w3  -2.83402e-16 -9.29563e-17 -2.82954e-17 -3.47997e-16 8.94127e-16 
+
+Weighted Frobenius norm of the difference between capacitance (auto option): 0.632121
+
+Solve statistics:
+Number of input panels: 228 of which 54 conductors and 174 dielectric
+Number of input panels to solver engine: 17700
+Number of panels after refinement: 19546
+Number of potential estimates: 119825
+Number of links: 139866 (uncompressed 382046116, compression ratio is 100.0%)
+Number of precond panels: 0
+Number of precond links: 0
+Max recursion level: 23
+Max Mesh relative refinement value: 0.00625582
+Time for reading input file: 0.001902s
+Time for building super hierarchy: 0.002043s
+Time for discretization: 0.019965s
+Time for building potential matrix: 0.227984s
+Time for precond calculation: 0.000806s
+Time for gmres solving: 0.948124s
+Memory allocated for panel hierarchy: 7823146 bytes
+Memory allocated for links structure: 1073898208 bytes
+Memory allocated for conductor list: 364080 bytes
+Memory allocated for Gmres: 11949152 bytes
+Memory allocated for preconditioner: 0 bytes
+Memory allocated for charge vectors: 0 bytes
+Memory allocated for hierarchical multiplication: 0 bytes
+Iteration time: 1.232627s (0 days, 0 hours, 0 mins, 1 s)
+Iteration allocated memory: 1068393 kilobytes
+***************************************
+Iteration number #2 
+***************************************
+Increasing the geometric refinement.. 
+Delta in refined panel and link count w.r.t. previous iteration less than 10%
+(Panels # 21054, Links # 187454)
+Automatically increasing the refinement parameters
+Refinement completed
+Mesh refinement (-m): 0.00312775
+***************************************
+Computing the links.. 
+Number of panels after refinement: 23683
+Number of links to be computed: 315860
+Done computing links
+***************************************
+Precond Type(s) (-p): Two-levels, two-levels preconditioner dimension (-ps): 128 
+GMRES Iterations: 183 
+GMRES Iterations: 191 
+GMRES Iterations: 164 
+GMRES Iterations: 118 
+GMRES Iterations: 157 
+Capacitance matrix is:
+Dimension 5 x 5
+g1_wire_M2_w2  5.46333e-15 -7.77568e-16 -2.6492e-16 -8.75478e-17 -2.7529e-16 
+g2_wire_M7_w7  -3.06956e-15 2.30425e-15 -4.76505e-16 -2.53331e-16 -5.10821e-16 
+g3_wire_M6_w1  -3.08312e-16 -1.329e-16 1.26939e-15 -4.93556e-16 1.88227e-17 
+g4_wire_M6_w2  -2.64232e-16 -1.03565e-16 -4.70535e-16 1.25154e-15 -4.79126e-16 
+g5_wire_M6_w3  -1.34929e-16 -1.30451e-16 6.27056e-18 -4.319e-16 1.25585e-15 
+
+Weighted Frobenius norm of the difference between capacitance (auto option): 0.123261
+
+Solve statistics:
+Number of input panels: 228 of which 54 conductors and 174 dielectric
+Number of input panels to solver engine: 17700
+Number of panels after refinement: 23683
+Number of potential estimates: 317650
+Number of links: 339543 (uncompressed 560884489, compression ratio is 99.9%)
+Number of precond panels: 0
+Number of precond links: 0
+Max recursion level: 27
+Max Mesh relative refinement value: 0.0031277
+Time for reading input file: 0.001990s
+Time for building super hierarchy: 0.002091s
+Time for discretization: 0.070812s
+Time for building potential matrix: 0.634535s
+Time for precond calculation: 0.037437s
+Time for gmres solving: 5.671491s
+Memory allocated for panel hierarchy: 9482083 bytes
+Memory allocated for links structure: 1073931304 bytes
+Memory allocated for conductor list: 364080 bytes
+Memory allocated for Gmres: 38848448 bytes
+Memory allocated for preconditioner: 268690456 bytes
+Memory allocated for charge vectors: 0 bytes
+Memory allocated for hierarchical multiplication: 0 bytes
+Iteration time: 6.462856s (0 days, 0 hours, 0 mins, 6 s)
+Iteration allocated memory: 1358707 kilobytes
+***************************************
+Iteration number #3 
+***************************************
+Increasing the geometric refinement.. 
+Refinement completed
+Mesh refinement (-m): 0.00221162
+***************************************
+Computing the links.. 
+Number of panels after refinement: 28326
+Number of links to be computed: 592518
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Error: mutual-potential calculation failed.
+       Remark: the precision of the result is affected.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: panel distance too small found during potential calculation
+         Possible causes are thin panels or, more probably, overlapping panels.
+Warning: pan
