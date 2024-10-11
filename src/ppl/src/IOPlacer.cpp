@@ -1080,7 +1080,10 @@ int IOPlacer::updateSection(Section& section, std::vector<Slot>& slots)
        slot_idx++) {
     new_slots_count += (slots[slot_idx].isAvailable()) ? 1 : 0;
   }
+  // reset the num_slots and used_slots considering that all the other used
+  // slots of the section don't exist, since they can't be used anymore
   section.num_slots = new_slots_count;
+  section.used_slots = 0;
   return new_slots_count;
 }
 
