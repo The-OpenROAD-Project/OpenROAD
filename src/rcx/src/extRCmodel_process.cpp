@@ -276,9 +276,9 @@ uint extRCModel::linesDiagUnder(uint wireCnt, uint widthCnt, uint spaceCnt, uint
          overMet++) {  // the max overMet need to be the same as in functions
                        // writeRulesDiagUnder readRulesDiagUnder
 
-     int metDist= overMet-met;
-     if (metDist>_maxLevelDist)
-      continue;
+      if (overMet - met > _maxLevelDist)
+        continue;
+
       measure.setMets(met, 0, overMet);
       uint cnt1 = 0;
       if (_diagModel == 2) {
@@ -291,14 +291,17 @@ uint extRCModel::linesDiagUnder(uint wireCnt, uint widthCnt, uint spaceCnt, uint
         cnt1 = measureWithVar(&measure);
       }
 
-      logger_->info(RCX, 227,
+      logger_->info(RCX,
+                    227,
                     "Finished {} measurements for pattern M{}_diagUnder_M{}",
-                    cnt1, met, overMet);
+                    cnt1,
+                    met,
+                    overMet);
 
       cnt += cnt1;
     }
   }
-    logger_->info(RCX, 228,
+    logger_->info(RCX, 247,
                   "Finished {} measurements for pattern MET_DIAGUNDER_MET",
                   cnt);
 
@@ -475,14 +478,14 @@ uint extRCModel::linesUnder(uint wireCnt, uint widthCnt, uint spaceCnt,
 
       uint cnt1 = measureWithVar(&measure);
 
-      logger_->info(RCX, 229,
+      logger_->info(RCX, 248,
                     "Finished {} measurements for pattern M{}_under_M{}", cnt1,
                     met, overMet);
 
       cnt += cnt1;
     }
   }
-    logger_->info(RCX, 409,
+    logger_->info(RCX, 410,
                   "Finished {} measurements for pattern MET_UNDER_MET", cnt);
 
   closeCapLogFile();
@@ -554,8 +557,7 @@ uint extRCModel::linesOverUnder(uint wireCnt, uint widthCnt, uint spaceCnt,
 
         uint cnt1 = measureWithVar(&measure);
 
-        logger_->info(
-            RCX, 231,
+        logger_->info(RCX, 233,
             "Finished {} measurements for pattern M{}_over_M{}_under_M{}", cnt1,
             met, underMet, overMet);
 
@@ -563,7 +565,7 @@ uint extRCModel::linesOverUnder(uint wireCnt, uint widthCnt, uint spaceCnt,
       }
     }
   }
-    logger_->info(RCX, 230,
+    logger_->info(RCX, 234,
                   "Finished {} measurements for pattern MET_UNDER_MET", cnt);
 
   closeCapLogFile();
@@ -746,66 +748,6 @@ void extRCModel::writeRuleWires(FILE* fp, extMeasure* measure, uint wireCnt) {
     }
   }
 }
-void extRCModel::writeRuleWires_3D(FILE* fp, extMeasure* measure, uint wireCnt) {
-  extMasterConductor* m = _process->getMasterConductor(measure->_met);
-  double targetWidth = measure->_topWidth;
-  double targetPitch = measure->_topWidth + measure->_seff;
-  double minWidth = _process->getConductor(measure->_met)->_min_width;
-  double minSpace = _process->getConductor(measure->_met)->_min_spacing;
-  double min_pitch = minWidth + minSpace;
-
-  double len= measure->_len * minWidth; // HEIGHT param
-  if (len<=0)
-	  len= 10 * minWidth;
-  
-  // len *= 0.001;
-
-  // Assumption -- odd wireCnt, >1
-  if (wireCnt==0)
-	  return;
-  if (wireCnt%2>0) // should be odd
-	  wireCnt--;
-
-  int n = wireCnt / 2; 
-  double orig = 0.0;
-  double x = orig;
-
-  uint cnt= 1;
-
-  double xd[10]={0,0,0,0,0,0,0,0,0,0};
-  double X0= x-targetPitch; // next neighbor spacing
-  // double W0= targetWidth; // next neighbor width
-  xd[1] = X0-min_pitch;
-  for (int ii = 2; ii < n; ii++) {
-  	xd[ii] = xd[ii-1]-min_pitch; // next over neighbor spacing
-  	//printf("ii= %d  %g\n", ii, xd[ii]);
-  }
-  for (int ii = n-1; ii > 0; ii--) {
-  //	printf("w%d  ii= %d  %g\n",cnt, ii, xd[ii]);
-    	m->writeRaphaelPoly3D_w(fp, cnt++, xd[ii], minWidth, len, 0.0);
-  }
-  //printf("w%d  x= %g\n",cnt, x);
-
-  if (n>1)
-  	m->writeRaphaelPoly3D_w(fp, cnt++, X0, targetWidth, len, 0.0);
-
-  m->writeRaphaelPoly3D_w(fp, cnt++, x, targetWidth, len, 1.0); // Wire on focues
-
-  if (n==1)
-	  return;
-
-  double xu[10]={0,0,0,0,0,0,0,0,0,0};
-  xu[0]= x+targetPitch; // next neighbor spacing
-  m->writeRaphaelPoly3D_w(fp, cnt++, xu[0], targetWidth, len, 0.0);
-  xu[1] += xu[0]+targetWidth+minSpace;
-  for (int ii = 2; ii < n; ii++) {
-  	xu[ii] = xu[ii-1]+min_pitch; // context: next over neighbor spacing
-  }
-  for (int ii = 1; ii < n; ii++) {
-  	//printf("w%d  ii= %d  %g\n",cnt, ii, xu[ii]);
-    	m->writeRaphaelPoly3D_w(fp, cnt++, xu[ii], minWidth, len, 0.0);
-  }
- }
  double extRCModel::writeWirePatterns(FILE* fp, extMeasure* measure, uint wireCnt, double height_offset, double &len, double &max_x) 
  {
   extMasterConductor* m = _process->getMasterConductor(measure->_met);
@@ -907,8 +849,8 @@ double extRCModel::writeWirePatterns_w3(FILE* fp, extMeasure* measure, uint wire
   double targetWidth = measure->_topWidth;
   double targetPitch = measure->_topWidth + measure->_seff;
   double minWidth = _process->getConductor(measure->_met)->_min_width;
-  double minSpace = _process->getConductor(measure->_met)->_min_spacing;
-  double min_pitch = minWidth + minSpace;
+  // DELETE double minSpace = _process->getConductor(measure->_met)->_min_spacing;
+  // DELETE double min_pitch = minWidth + minSpace;
 
   len= measure->_len * minWidth; // HEIGHT param
   if (len<=0)
@@ -922,7 +864,7 @@ double extRCModel::writeWirePatterns_w3(FILE* fp, extMeasure* measure, uint wire
   if (wireCnt%2>0) // should be odd
 	  wireCnt--;
 
-  int n = wireCnt / 2; 
+  // int n = wireCnt / 2; 
   double orig = 0.0;
   double x = orig;
   double X0= x-targetPitch; // next neighbor 
@@ -1011,34 +953,6 @@ void extRCModel::writeWires2_3D(FILE* fp, extMeasure* measure, uint wireCnt) {
     x += min_pitch;
   }
 }
-void extRCModel::writeRaphaelCaps(FILE* fp, extMeasure* measure, uint wireCnt) {
-  fprintf(fp, "\nOPTIONS SET_GRID=10000;\n\n");
-  fprintf(fp, "POTENTIAL\n");
-  /*
-          if (measure->_diag)
-                  fprintf(fp, "POTENTIAL\n");
-          else {
-                  fprintf(fp, "POTENTIAL");
-                  if (!measure->_plate) {
-                          for (uint kk= 1; kk<=wireCnt; kk++)
-                                  m->writeBoxName(fp, kk);
-                  } else  {
-                          m->writeBoxName(fp, wireCnt/2+1);
-                          if (measure->_overMet>0)
-                                  fprintf(fp, "M%d__%s;",
-     measure->_overMet,"GND");
-                  }
-                  fprintf(fp, " \n");
-          }
-  */
-}
-void extRCModel::writeRaphaelCaps3D(FILE* fp, extMeasure* measure,
-                                    uint wireCnt) {
-  //        extMasterConductor *m= _process->getMasterConductor(measure->_met);
-
-  fprintf(fp, "\nOPTIONS SET_GRID=1000000;\n\n");
-  fprintf(fp, "POTENTIAL\n");
-}
 void extRCModel::writeWires(FILE* fp, extMeasure* measure, uint wireCnt) {
   extMasterConductor* m = _process->getMasterConductor(measure->_met);
   double pitch = measure->_topWidth + measure->_seff;
@@ -1066,235 +980,6 @@ void extRCModel::writeWires(FILE* fp, extMeasure* measure, uint wireCnt) {
           fprintf(fp, " \n");
   */
 }
-
-uint extRCModel::readCapacitanceBench3D(bool readCapLog, extMeasure* m,
-                                        bool skipPrintWires) {
-  double units = 1.0e+15;
-
-  FILE* solverFP = NULL;
-  if (!readCapLog) {
-    solverFP = openSolverFile();
-    if (solverFP == NULL) {
-      return 0;
-    }
-    _parser->setInputFP(solverFP);
-  }
-
-  Ath__parser wParser(NULL);
-
-  bool matrixFlag = false;
-  uint cnt = 0;
-  m->_capMatrix[1][0] = 0.0;
-  while (_parser->parseNextLine() > 0) {
-    if (matrixFlag) {
-      if (_parser->isKeyword(0, "END"))
-        break;
-
-      if (!_parser->isKeyword(0, "Charge"))
-        continue;
-
-      //_parser->printWords(stdout);
-      _parser->printWords(_capLogFP);
-
-      double cap = _parser->getDouble(4);
-      if (cap < 0.0)
-        cap = -cap;
-      cap *= units;
-
-      wParser.mkWords(_parser->get(2), "w");
-      uint n1 = wParser.getInt(1);
-      if (!n1) {
-        m->_capMatrix[1][0] += cap;
-        continue;
-      }
-      m->_capMatrix[1][cnt + 1] = cap;
-      m->_idTable[cnt + 1] = n1;
-      cnt++;
-      continue;
-    }
-
-    if (_parser->isKeyword(0, "***") && _parser->isKeyword(1, "POTENTIAL")) {
-      matrixFlag = true;
-
-      fprintf(_capLogFP, "BEGIN %s\n", _wireDirName);
-      fprintf(_capLogFP, "%s\n", _commentLine);
-      if (!skipPrintWires) {
-        if (m != NULL) {
-          if (m->_benchFlag)
-            writeWires2_3D(_capLogFP, m, m->_wireCnt);
-          else
-            writeRuleWires_3D(_capLogFP, m, m->_wireCnt);
-        }
-      }
-      continue;
-    } else if (_parser->isKeyword(0, "BEGIN") &&
-               (strcmp(_parser->get(1), _wireDirName) == 0)) {
-      matrixFlag = true;
-
-      fprintf(_capLogFP, "BEGIN %s\n", _wireDirName);
-
-      continue;
-    }
-  }
-
-  for (uint i = 1; i < cnt; i++) {
-    for (uint j = i + 1; j < cnt + 1; j++) {
-      if (m->_idTable[j] < m->_idTable[i]) {
-        uint t = m->_idTable[i];
-        double tt = m->_capMatrix[1][i];
-        m->_idTable[i] = m->_idTable[j];
-        m->_capMatrix[1][i] = m->_capMatrix[1][j];
-        m->_idTable[j] = t;
-        m->_capMatrix[1][j] = tt;
-      }
-    }
-  }
-
-  if (solverFP != NULL)
-    fclose(solverFP);
-
-  return cnt;
-}
-
-uint extRCModel::getCapValues3D(uint lastNode, double& cc1, double& cc2,
-                                double& fr, double& tot, extMeasure* m) {
-  double totCap = 0.0;
-  uint wireNum = m->_wireCnt / 2 + 1;  // assume odd numebr
-  if (m->_diag) {
-    cc1 = m->_capMatrix[1][0];
-    fprintf(_capLogFP, "\n");
-    m->printMets(_capLogFP);
-    fprintf(_capLogFP, " diag= %g  ", cc1);
-    m->printStats(_capLogFP);
-    fprintf(_capLogFP, "\n\nEND\n\n");
-    return lastNode;
-  }
-
-  uint n = 1;
-  for (; n <= lastNode; n++) {
-    if (n != wireNum)
-      continue;
-    totCap = m->_capMatrix[1][0];
-
-    cc1 = m->_capMatrix[1][n - 1];
-    cc2 = m->_capMatrix[1][n + 1];
-    break;
-  }
-  totCap += m->getCCfringe3D(lastNode, n, 2, 3);
-
-  fr = totCap;
-
-  if (lastNode != m->_wireCnt) {
-    //                return 0;
-    logger_->info(RCX, 209, "Reads only {} nodes from {}", lastNode,
-                  _wireDirName);
-  }
-
-  fprintf(_capLogFP, "\n");
-  m->printMets(_capLogFP);
-  tot = cc1 + cc2 + fr;
-
-  fprintf(_capLogFP, " cc1= %g  cc2= %g  fr= %g  tot= %g  ", cc1, cc2, fr, tot);
-
-  m->printStats(_capLogFP);
-  fprintf(_capLogFP, "\n\nEND\n\n");
-
-  return lastNode;
-}
-
-uint extRCModel::getCapMatrixValues3D(uint lastNode, extMeasure* m) {
-  uint wireNum = m->_wireCnt / 2 + 1;  // assume odd numebr
-  uint n;
-  if (lastNode == 1) {
-    n = 1;
-    double frCap = m->_capMatrix[1][0];
-    m->_capMatrix[1][0] = 0.0;
-
-    logger_->info(RCX, 210, "FrCap for netId {} (nodeId= {})  {}",
-                  m->_idTable[n], n, frCap);
-
-    //                uint w= 0;
-    dbRSeg* rseg1 = m->getFirstDbRseg(m->_idTable[n]);
-    rseg1->setCapacitance(frCap);
-    logger_->info(RCX, 412, "\ttotFrCap for netId {}({}) {}", m->_idTable[n], n,
-                  m->_capMatrix[1][n]);
-    m->printStats(_capLogFP);
-    fprintf(_capLogFP, "\n\nEND\n\n");
-    return 0;
-  }
-
-  for (n = 1; n <= lastNode; n++) {
-    if (n != wireNum)
-      continue;
-    double frCap = m->_capMatrix[1][0];
-    m->_capMatrix[1][0] = 0.0;
-
-    logger_->info(RCX, 413, "FrCap for netId {} (nodeId= {})  {}",
-                  m->_idTable[n], n, frCap);
-
-    //                uint w= 0;
-    //                double res= _extMain->getLefResistance(m->_met,
-    //                1000*m->_w, m->_len);
-
-    dbRSeg* rseg1 = m->getFirstDbRseg(m->_idTable[n]);
-    //                rseg1->setResistance(res);
-
-    double cc1 = m->_capMatrix[1][n - 1];
-    m->_capMatrix[1][n - 1] = 0.0;
-    logger_->info(RCX, 415, "\tccCap for netIds {}({}), {}({}) {}",
-                  m->_idTable[n], n, m->_idTable[n - 1], n - 1, cc1);
-    dbRSeg* rseg2 = m->getFirstDbRseg(m->_idTable[n - 1]);
-    m->_extMain->updateCCCap(rseg1, rseg2, cc1);
-    double cc2 = m->_capMatrix[1][n + 1];
-    m->_capMatrix[1][n + 1] = 0.0;
-    logger_->info(RCX, 211, "\tccCap for netIds {}({}), {}({}) {}",
-                  m->_idTable[n], n, m->_idTable[n + 1], n + 1, cc2);
-    uint netId3 = m->_idTable[n + 1];
-    dbRSeg* rseg3 = m->getFirstDbRseg(netId3);
-    m->_extMain->updateCCCap(rseg1, rseg3, cc2);
-
-    double ccFr = m->getCCfringe3D(lastNode, n, 2, 3);
-    frCap += ccFr;
-    rseg1->setCapacitance(frCap);
-
-    logger_->info(RCX, 212, "\tfrCap from CC for netId {}({}) {}",
-                  m->_idTable[n], n, ccFr);
-    logger_->info(RCX, 213, "\ttotFrCap for netId {}({}) {}", m->_idTable[n], n,
-                  m->_capMatrix[1][n]);
-  }
-  m->printStats(_capLogFP);
-  fprintf(_capLogFP, "\n\nEND\n\n");
-
-  for (uint ii = 1; ii <= lastNode; ii++) {
-    m->_idTable[ii] = 0;
-    for (uint jj = ii + 1; jj <= lastNode; jj++) {
-      m->_capMatrix[ii][jj] = 0.0;
-    }
-  }
-  return 0;
-}
-double extMeasure::getCCfringe3D(uint lastNode, uint n, uint start, uint end) {
-  double ccFr = 0.0;
-  uint End;
-  if (_diag)
-    End = lastNode - n;
-  else
-    End = end;
-  for (uint ii = start; ii <= End; ii++) {
-    int d = n - ii;
-    uint u = n + ii;
-    /*
-                    if (n+ii>lastNode)
-                            break;
-    */
-    if (d > 0)
-      ccFr += _capMatrix[1][d];
-    if (u <= lastNode)
-      ccFr += _capMatrix[1][u];
-  }
-  return ccFr;
-}
-
 bool extRCModel::measurePatternVar_3D(extMeasure* m,
                                       double top_width,
                                       double bot_width,
