@@ -411,7 +411,10 @@ int SimulatedAnnealing::swapPins()
         = constraints_[constraint_idx].pin_indices;
     // if there is only one pin in the constraint, do not swap and fallback to
     // move a pin to a free slot
-    if (pin_indices.size() == 1) {
+    const int pin_count = pin_indices.size();
+    const int mirrored_pins_count
+        = constraints_[constraint_idx].mirrored_pins_count;
+    if (pin_count == 1 || (pin_count - mirrored_pins_count) <= 1) {
       return move_fail_;
     }
     distribution = boost::random::uniform_int_distribution<int>(

@@ -1812,6 +1812,7 @@ void IOPlacer::initConstraints(bool annealing)
       IOPin& io_pin = netlist_->getIoPin(pin_idx);
       io_pin.setConstraintIdx(constraint_idx);
       constraint.pin_indices.push_back(pin_idx);
+      constraint.mirrored_pins_count += io_pin.isMirrored() ? 1 : 0;
       if (io_pin.getGroupIdx() != -1) {
         constraint.pin_groups.insert(io_pin.getGroupIdx());
       }
