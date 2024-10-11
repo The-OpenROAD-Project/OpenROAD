@@ -1004,6 +1004,7 @@ std::vector<Section> IOPlacer::createSectionsPerConstraint(
                                       ? hor_layers_
                                       : ver_layers_;
 
+    bool first_layer = true;
     for (int layer : layers) {
       std::vector<Slot>::iterator it
           = std::find_if(slots_.begin(), slots_.end(), [&](const Slot& s) {
@@ -1032,10 +1033,13 @@ std::vector<Section> IOPlacer::createSectionsPerConstraint(
                     || s.layer != layer);
           });
       int constraint_end = it - slots_.begin() - 1;
-      constraint.first_slot = constraint_begin;
+      if (first_layer) {
+        constraint.first_slot = constraint_begin;
+      }
       constraint.last_slot = constraint_end;
 
       findSections(constraint_begin, constraint_end, edge, sections);
+      first_layer = false;
     }
   } else {
     sections = findSectionsForTopLayer(constraint.box);
