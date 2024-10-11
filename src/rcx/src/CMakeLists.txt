@@ -69,6 +69,13 @@ extmeasure_flow.cpp
 extmeasure_print.cpp
 extmeasure_calc.cpp
 extmeasure_rc_flow.cpp
+extRCmodel_process.cpp
+extRCmodel_solver.cpp
+extDefPatterns.cpp
+extDefPatternsVia.cpp
+extRulesVia.cpp
+extmeasure_print.cpp
+  extmeasure_res_v2.cpp
 )
 
 target_include_directories(rcx_lib
