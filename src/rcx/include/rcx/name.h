@@ -1,12 +1,7 @@
-
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-// derivative file from extRCap.h
-
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2024, IC BENCH, Dimitris Fotakis
+// Copyright (c) 2019, Nefelus Inc
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -35,62 +30,82 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef EXTVIAMODEL_H
-#define EXTVIAMODEL_H
+#pragma once
+
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "odb/util.h"
 #include "util.h"
-// #include "array1.h"
-// #include "parse.h"
 
-namespace utl {
-class Logger;
-}
+// amespace rcx {
 
-namespace rcx {
+using uint = unsigned int;
 
-using utl::Logger;
-
-class extViaModel
+class NameTable
 {
-    public:
+ public:
+  NameTable(uint n, char* zero = nullptr);
+  ~NameTable();
 
-    const char *_viaName;
-    double _res;
-    uint _cutCnt;
-    uint _dx;
-    uint _dy;
-    uint _topMet;
-    uint _botMet;
+  uint addNewName(const char* name, uint dataId);
+  const char* getName(uint poolId);
+  uint getDataId(const char* name,
+                 uint ignoreFlag = 0,
+                 uint exitFlag = 0,
+                 int* nn = nullptr);
 
-public:
-    extViaModel(const char *name, double R, uint cCnt, uint dx, uint dy, uint top, uint bot)
-    {
-        _viaName = strdup(name);
-        _res = R;
-        _cutCnt = cCnt;
-        _dx = dx;
-        _dy = dy;
-        _topMet = top;
-        _botMet = bot;
-    }
-    extViaModel()
-    {
-        _viaName = NULL;
-        _res = 0;
-        _cutCnt = 0;
-        _dx = 0;
-        _dy = 0;
-        _topMet = 0;
-        _botMet = 0;
-    }
-    void printViaRule(FILE *fp);
-    void writeViaRule(FILE *fp);
-    // dkf 09182024
-    void printVia(FILE *fp, uint corner);
+ private:
+  class NameBucket;
 
+  uint addName(const char* name, uint dataId);
+  uint getDataId(int poolId);
+
+  AthHash<int>* _hashTable;
+  odb::AthPool<NameBucket>* _bucketPool;
 };
-}  // namespace rcx
 
-#endif
+class Ath__nameBucket
+{
+ private:
+  char* _name;
+  uint _tag;
 
+ public:
+  void set(char* name, uint tag);
+  void deallocWord();
+
+  friend class Ath__nameTable;
+};
+
+class Ath__nameTable
+{
+ private:
+  AthHash<int>* _hashTable;
+  odb::AthPool<Ath__nameBucket>* _bucketPool;
+  // int *nameMap; // TODO
+
+  void allocName(char* name, uint nameId, bool hash = false);
+  uint addName(char* name, uint dataId);
+
+ public:
+  ~Ath__nameTable();
+  Ath__nameTable(uint n, char* zero = NULL);
+
+  void writeDB(FILE* fp, char* nameType);
+  bool readDB(FILE* fp);
+  void addData(uint poolId, uint dataId);
+
+  uint addNewName(char* name, uint dataId);
+  char* getName(uint poolId);
+  uint getDataId(int poolId);
+  uint getTagId(char* name);
+  uint getDataId(char* name,
+                 uint ignoreFlag = 0,
+                 uint exitFlag = 0,
+                 int* nn = 0);
+};
+
+
+// }  // namespace rcx
