@@ -800,15 +800,13 @@ void SimulatedAnnealing::getSlotsRange(const IOPin& io_pin,
     const Constraint& constraint = constraints_[pin_constraint_idx];
     first_slot = constraint.first_slot;
     last_slot = constraint.last_slot;
-  }
-
-  if (io_pin.isMirrored()) {
+  } else if (io_pin.isMirrored()) {
     const IOPin& mirrored_pin = netlist_->getIoPin(io_pin.getMirrorPinIdx());
     const int mirrored_constraint_idx = mirrored_pin.getConstraintIdx();
     if (mirrored_constraint_idx != -1) {
       const Constraint& constraint = constraints_[mirrored_constraint_idx];
-      first_slot = getMirroredSlotIdx(constraint.first_slot);
-      last_slot = getMirroredSlotIdx(constraint.last_slot);
+      getMirroredSlotRange(
+          constraint.first_slot, constraint.last_slot, first_slot, last_slot);
       if (first_slot > last_slot) {
         std::swap(first_slot, last_slot);
       }
@@ -861,6 +859,71 @@ int SimulatedAnnealing::getMirroredSlotIdx(int slot_idx) const
   }
 
   return mirrored_idx;
+}
+
+void SimulatedAnnealing::getMirroredSlotRange(const int slot_idx1,
+                                              const int slot_idx2,
+                                              int& mirrored_slot1,
+                                              int& mirrored_slot2) const
+{
+  const Slot& slot1 = slots_[slot_idx1];
+  const Slot& slot2 = slots_[slot_idx2];
+  if (slot1.edge != slot2.edge) {
+    logger_->error(
+        utl::PPL, 36, "Constraint cannot have positions in different edges.");
+  }
+  const Edge edge = slot1.edge;
+  const odb::Point& mirrored_pos1 = core_->getMirroredPosition(slot1.pos);
+  const odb::Point& mirrored_pos2 = core_->getMirroredPosition(slot2.pos);
+
+  // find the approximated mirrored position of the original slot range endpoints.
+  // this is only necessary because when using multiple layers, the mirrored position
+  // of the original slots endpoints are not in the beginning of the mirrored range.
+  if (slot1.edge == Edge::bottom || slot1.edge == Edge::right) {
+    for (int i = slots_.size() - 1; i >= 0; i--) {
+      const Slot& slot = slots_[i];
+      if ((edge == Edge::bottom && slot.pos.getX() >= mirrored_pos1.getX()
+           && slot.pos.getY() == mirrored_pos1.getY())
+          || (edge == Edge::right && slot.pos.getX() == mirrored_pos1.getX()
+              && slot.pos.getY() >= mirrored_pos1.getY())) {
+        mirrored_slot1 = i;
+        break;
+      }
+    }
+
+    for (int i = 0; i < slots_.size(); i++) {
+      const Slot& slot = slots_[i];
+      if ((edge == Edge::bottom && slot.pos.getX() <= mirrored_pos2.getX()
+           && slot.pos.getY() == mirrored_pos2.getY())
+          || (edge == Edge::right && slot.pos.getX() == mirrored_pos2.getX()
+              && slot.pos.getY() <= mirrored_pos2.getY())) {
+        mirrored_slot2 = i;
+        break;
+      }
+    }
+  } else {
+    for (int i = 0; i < slots_.size(); i++) {
+      const Slot& slot = slots_[i];
+      if ((edge == Edge::top && slot.pos.getX() >= mirrored_pos1.getX()
+           && slot.pos.getY() == mirrored_pos1.getY())
+          || (edge == Edge::left && slot.pos.getX() == mirrored_pos1.getX()
+              && slot.pos.getY() >= mirrored_pos1.getY())) {
+        mirrored_slot1 = i;
+        break;
+      }
+    }
+
+    for (int i = slots_.size() - 1; i >= 0; i--) {
+      const Slot& slot = slots_[i];
+      if ((edge == Edge::top && slot.pos.getX() <= mirrored_pos2.getX()
+           && slot.pos.getY() == mirrored_pos2.getY())
+          || (edge == Edge::left && slot.pos.getX() == mirrored_pos2.getX()
+              && slot.pos.getY() <= mirrored_pos2.getY())) {
+        mirrored_slot2 = i;
+        break;
+      }
+    }
+  }
 }
 
 void SimulatedAnnealing::updateSlotsFromGroup(
