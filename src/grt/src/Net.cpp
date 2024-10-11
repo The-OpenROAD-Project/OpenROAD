@@ -35,6 +35,7 @@
 
 #include "Net.h"
 
+#include "grt/GlobalRouter.h"
 #include "odb/dbShape.h"
 
 namespace grt {
@@ -111,6 +112,26 @@ void Net::destroyPins()
   pins_.clear();
 }
 
+void Net::destroyITermPin(odb::dbITerm* iterm)
+{
+  pins_.erase(std::remove_if(pins_.begin(),
+                             pins_.end(),
+                             [&](const Pin& pin) {
+                               return pin.getName() == getITermName(iterm);
+                             }),
+              pins_.end());
+}
+
+void Net::destroyBTermPin(odb::dbBTerm* bterm)
+{
+  pins_.erase(std::remove_if(pins_.begin(),
+                             pins_.end(),
+                             [&](const Pin& pin) {
+                               return pin.getName() == bterm->getName();
+                             }),
+              pins_.end());
+}
+
 int Net::getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer)
 {
   int bterm_count = 0;
@@ -157,6 +178,17 @@ bool Net::hasStackedVias(odb::dbTechLayer* max_routing_layer)
   }
 
   return true;
+}
+
+void Net::saveLastPinPositions()
+{
+  if (last_pin_positions_.empty()) {
+    for (const Pin& pin : pins_) {
+      last_pin_positions_.insert(RoutePt(pin.getOnGridPosition().getX(),
+                                         pin.getOnGridPosition().getY(),
+                                         pin.getConnectionLayer()));
+    }
+  }
 }
 
 }  // namespace grt

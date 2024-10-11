@@ -5,12 +5,8 @@
       {
         "name":"_name",
         "type":"char*",
+        "default":"nullptr",
         "flags":["no-set"]
-      },
-      {
-        "name":"_elements",
-        "type":"dbVector<_dbGDSElement*>",
-        "flags":["no-set", "no-get", "no-template"]
       },
       {
         "name":"_next_entry",
@@ -20,7 +16,6 @@
     ],
     "h_includes": [
       "dbVector.h",
-      "dbGDSElement.h",
       "odb/db.h",
       "dbTable.h"
     ],

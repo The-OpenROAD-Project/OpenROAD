@@ -71,11 +71,13 @@ class Parser:
                 line = db_lines[j].strip().replace(" ", "")
                 if re.match(self.user_code_tag, line):
                     name = line[len(self.user_code_tag) :]
-                    if name in self.user_code:
-                        user = self.user_code[name]
+                    has_user_code = name in self.user_code
+                    if has_user_code or keep_empty:
+                        user = self.user_code.get(name, "")
                         if keep_empty or len(user) > 0:
                             db_lines[j + 1 : j + 1] = user
-                            del self.user_code[name]
+                            if has_user_code:
+                                del self.user_code[name]
                         else:
                             db_lines[j : j + 2] = []
                     else:

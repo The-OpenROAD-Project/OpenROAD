@@ -96,6 +96,8 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
 
   logger_ = logger;
   macros_ = macros;
+
+  setBlockedBoundariesForIOs();
 }
 
 template <class T>
@@ -271,7 +273,8 @@ void SimulatedAnnealingCore<T>::calOutlinePenalty()
   // normalization
   outline_penalty_ = outline_penalty_ / (outline_area);
   if (graphics_) {
-    graphics_->setOutlinePenalty(outline_penalty_);
+    graphics_->setOutlinePenalty(
+        {outline_weight_, outline_penalty_ / norm_outline_penalty_});
   }
 }
 
@@ -315,7 +318,8 @@ void SimulatedAnnealingCore<T>::calWirelength()
                 / (outline_.getHeight() + outline_.getWidth());
 
   if (graphics_) {
-    graphics_->setWirelength(wirelength_);
+    graphics_->setWirelengthPenalty(
+        {wirelength_weight_, wirelength_ / norm_wirelength_});
   }
 }
 
@@ -424,7 +428,8 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
   // normalization
   fence_penalty_ = fence_penalty_ / fences_.size();
   if (graphics_) {
-    graphics_->setFencePenalty(fence_penalty_);
+    graphics_->setFencePenalty(
+        {fence_weight_, fence_penalty_ / norm_fence_penalty_});
   }
 }
 
@@ -457,7 +462,8 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
   }
   guidance_penalty_ = guidance_penalty_ / guides_.size();
   if (graphics_) {
-    graphics_->setGuidancePenalty(guidance_penalty_);
+    graphics_->setGuidancePenalty(
+        {guidance_weight_, guidance_penalty_ / norm_guidance_penalty_});
   }
 }
 
@@ -656,7 +662,6 @@ void SimulatedAnnealingCore<T>::fastSA()
     graphics_->startSA();
   }
 
-  // record the previous status
   float cost = calNormCost();
   float pre_cost = cost;
   float delta_cost = 0.0;
@@ -665,16 +670,31 @@ void SimulatedAnnealingCore<T>::fastSA()
   const float min_t = 1e-10;
   const float t_factor
       = std::exp(std::log(min_t / init_temperature_) / max_num_step_);
-  notch_weight_ = 0.0;  // notch pealty is too expensive, we try to avoid
-                        // calculating notch penalty at very beginning
-  // const for restart
+
+  // Used to ensure notch penalty is used only in the latter steps
+  // as it is too expensive
+  notch_weight_ = 0.0;
+
   int num_restart = 1;
   const int max_num_restart = 2;
-  // SA process
+
+  SequencePair best_valid_result;
+  if (isValid()) {
+    updateBestValidResult(best_valid_result);
+  }
+
   while (step <= max_num_step_) {
     for (int i = 0; i < num_perturb_per_step_; i++) {
       perturb();
       cost = calNormCost();
+
+      const bool keep_result
+          = cost < pre_cost || best_valid_result.pos_sequence.empty();
+
+      if (isValid() && keep_result) {
+        updateBestValidResult(best_valid_result);
+      }
+
       delta_cost = cost - pre_cost;
       const float num = distribution_(generator_);
       const float prob
@@ -685,13 +705,13 @@ void SimulatedAnnealingCore<T>::fastSA()
         restore();
       }
     }
-    // temperature *= 0.985;
+
     temperature *= t_factor;
+    step++;
+
     cost_list_.push_back(pre_cost);
     T_list_.push_back(temperature);
-    // increase step
-    step++;
-    // check if restart condition
+
     if ((num_restart <= max_num_restart)
         && (step == std::floor(max_num_step_ / max_num_restart)
             && (outline_penalty_ > 0.0))) {
@@ -703,16 +723,15 @@ void SimulatedAnnealingCore<T>::fastSA()
       step = 1;
       num_perturb_per_step_ *= 2;
       temperature = init_temperature_;
-    }  // end if
-    // only consider the last step to optimize notch weight
+    }
+
     if (step == max_num_step_ - macros_.size() * 2) {
       notch_weight_ = original_notch_weight_;
       packFloorplan();
       calPenalty();
       pre_cost = calNormCost();
     }
-  }  // end while
-  // update the final results
+  }
 
   packFloorplan();
   if (graphics_) {
@@ -720,12 +739,23 @@ void SimulatedAnnealingCore<T>::fastSA()
   }
   calPenalty();
 
+  if (!isValid() && !best_valid_result.pos_sequence.empty()) {
+    pos_seq_ = best_valid_result.pos_sequence;
+    neg_seq_ = best_valid_result.neg_sequence;
+
+    packFloorplan();
+    if (graphics_) {
+      graphics_->doNotSkip();
+    }
+    calPenalty();
+  }
+
   if (centralization_on_) {
     attemptCentralization(calNormCost());
   }
 
   if (graphics_) {
-    graphics_->endSA();
+    graphics_->endSA(calNormCost());
   }
 }
 
@@ -780,6 +810,14 @@ void SimulatedAnnealingCore<T>::moveFloorplan(
   }
 
   calPenalty();
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::updateBestValidResult(
+    SequencePair& best_valid_result)
+{
+  best_valid_result.pos_sequence = pos_seq_;
+  best_valid_result.neg_sequence = neg_seq_;
 }
 
 template <class T>

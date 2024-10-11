@@ -214,6 +214,23 @@ dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
   stream >> inst._halo;
   stream >> inst.pin_access_idx_;
 
+  dbDatabase* db = (dbDatabase*) (inst.getDatabase());
+  if (((_dbDatabase*) db)->isSchema(db_schema_db_remove_hash)) {
+    _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
+    _dbModule* module = nullptr;
+    // if the instance has no module parent put in the top module
+    // We sometimes see instances with _module set to 0 (possibly
+    // introduced downstream) so we stick them in the hash for the
+    // top module.
+    if (inst._module == 0) {
+      module = (_dbModule*) (((dbBlock*) block)->getTopModule());
+    } else {
+      module = block->_module_tbl->getPtr(inst._module);
+    }
+    if (inst._name) {
+      module->_dbinst_hash[inst._name] = dbId<_dbInst>(inst.getId());
+    }
+  }
   return stream;
 }
 
@@ -1393,6 +1410,7 @@ dbInst* dbInst::create(dbBlock* block_,
   _dbBlock* block = (_dbBlock*) block_;
   _dbMaster* master = (_dbMaster*) master_;
   _dbInstHdr* inst_hdr = block->_inst_hdr_hash.find(master->_id);
+
   if (inst_hdr == nullptr) {
     inst_hdr
         = (_dbInstHdr*) dbInstHdr::create((dbBlock*) block, (dbMaster*) master);
@@ -1421,6 +1439,8 @@ dbInst* dbInst::create(dbBlock* block_,
     block->_journal->pushParam(lib->getId());
     block->_journal->pushParam(master_->getId());
     block->_journal->pushParam(name_);
+    // need to add dbModNet
+    // dbModule (scope)
     block->_journal->pushParam(inst->getOID());
     block->_journal->endAction();
   }
@@ -1563,6 +1583,11 @@ void dbInst::destroy(dbInst* inst_)
     for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
          ++cbitr) {
       (**cbitr)().inDbITermDestroy((dbITerm*) it);
+    }
+
+    dbModule* module = inst_->getModule();
+    if (module) {
+      ((_dbModule*) module)->_dbinst_hash.erase(inst_->getName());
     }
 
     dbProperty::destroyProperties(it);

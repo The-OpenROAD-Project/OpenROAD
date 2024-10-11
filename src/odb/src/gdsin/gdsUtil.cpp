@@ -38,19 +38,9 @@
 #include <map>
 #include <utility>
 
-#include "../db/dbGDSBoundary.h"
-#include "../db/dbGDSBox.h"
-#include "../db/dbGDSElement.h"
-#include "../db/dbGDSLib.h"
-#include "../db/dbGDSNode.h"
-#include "../db/dbGDSPath.h"
-#include "../db/dbGDSSRef.h"
-#include "../db/dbGDSStructure.h"
-#include "../db/dbGDSText.h"
 #include "odb/db.h"
 
-namespace odb {
-namespace gds {
+namespace odb::gds {
 
 const char* recordNames[(int) RecordType::INVALID_RT]
     = {"HEADER",    "BGNLIB",    "LIBNAME",    "UNITS",        "ENDLIB",
@@ -65,8 +55,6 @@ const char* recordNames[(int) RecordType::INVALID_RT]
        "BOX",       "BOXTYPE",   "PLEX",       "BGNEXTN",      "ENDEXTN",
        "TAPENUM",   "TAPECODE",  "STRCLASS",   "RESERVED",     "FORMAT",
        "MASK",      "ENDMASKS",  "LIBDIRSIZE", "SRFNAME",      "LIBSECUR"};
-
-// const size_t dataTypeSize[DataType::INVALID_DT] = { 1, 1, 2, 4, 4, 8, 1 };
 
 RecordType toRecordType(uint8_t recordType)
 {
@@ -110,11 +98,10 @@ uint8_t fromDataType(DataType dataType)
 
 double real8_to_double(uint64_t real)
 {
-  int64_t exponent = ((real & 0x7F00000000000000) >> 54) - 256;
-  double mantissa
+  const int64_t exponent = ((real & 0x7F00000000000000) >> 54) - 256;
+  const double mantissa
       = ((double) (real & 0x00FFFFFFFFFFFFFF)) / 72057594037927936.0;
-  double result = mantissa * exp2((double) exponent);
-  return result;
+  return mantissa * exp2((double) exponent);
 }
 
 uint64_t double_to_real8(double value)
@@ -156,17 +143,17 @@ std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(
     if (pairs.first != "properties") {
       continue;
     }
-    boost::property_tree::ptree& layer = pairs.second;
-    std::string name = layer.get<std::string>("name", "");
-    std::string source = layer.get<std::string>("source", "");
-    size_t at_pos = source.find('@');
-    size_t slash_pos = source.find('/');
+    const boost::property_tree::ptree& layer = pairs.second;
+    const std::string name = layer.get<std::string>("name", "");
+    const std::string source = layer.get<std::string>("source", "");
+    const size_t at_pos = source.find('@');
+    const size_t slash_pos = source.find('/');
     if (at_pos == std::string::npos || slash_pos == std::string::npos) {
       throw std::runtime_error("Invalid .lyp file");
     }
-    int16_t layerNum = std::stoi(source.substr(0, slash_pos));
-    int16_t dataType = std::stoi(source.substr(slash_pos + 1, at_pos));
-    layerMap[std::make_pair(layerNum, dataType)] = name;
+    const int16_t layerNum = std::stoi(source.substr(0, slash_pos));
+    const int16_t dataType = std::stoi(source.substr(slash_pos + 1, at_pos));
+    layerMap[std::make_pair(layerNum, dataType)] = std::move(name);
   }
 
   return layerMap;
@@ -174,56 +161,19 @@ std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(
 
 dbGDSLib* createEmptyGDSLib(dbDatabase* db, const std::string& libname)
 {
-  dbGDSLib* lib = (dbGDSLib*) (new _dbGDSLib((_dbDatabase*) db));
-  lib->setLibname(libname);
+  dbGDSLib* lib = dbGDSLib::create(db, libname);
   stampGDSLib(lib, true);
   return lib;
 }
 
 void stampGDSLib(dbGDSLib* lib, bool modified)
 {
-  time_t now = std::time(nullptr);
-  std::tm now_tm = *std::localtime(&now);
+  const time_t now = std::time(nullptr);
+  const std::tm now_tm = *std::localtime(&now);
   lib->set_lastAccessed(now_tm);
   if (modified) {
     lib->set_lastModified(now_tm);
   }
 }
 
-dbGDSStructure* createEmptyGDSStructure(dbGDSLib* lib, const std::string& name)
-{
-  return dbGDSStructure::create(lib, name.c_str());
-}
-
-dbGDSBoundary* createEmptyGDSBoundary(dbDatabase* db)
-{
-  return (dbGDSBoundary*) (new _dbGDSBoundary((_dbDatabase*) db));
-}
-
-dbGDSBox* createEmptyGDSBox(dbDatabase* db)
-{
-  return (dbGDSBox*) (new _dbGDSBox((_dbDatabase*) db));
-}
-
-dbGDSText* createEmptyGDSText(dbDatabase* db)
-{
-  return (dbGDSText*) (new _dbGDSText((_dbDatabase*) db));
-}
-
-dbGDSPath* createEmptyGDSPath(dbDatabase* db)
-{
-  return (dbGDSPath*) (new _dbGDSPath((_dbDatabase*) db));
-}
-
-dbGDSSRef* createEmptyGDSSRef(dbDatabase* db)
-{
-  return (dbGDSSRef*) (new _dbGDSSRef((_dbDatabase*) db));
-}
-
-dbGDSNode* createEmptyGDSNode(dbDatabase* db)
-{
-  return (dbGDSNode*) (new _dbGDSNode((_dbDatabase*) db));
-}
-
-}  // namespace gds
-}  // namespace odb
+}  // namespace odb::gds

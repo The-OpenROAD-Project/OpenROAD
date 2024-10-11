@@ -1,21 +1,28 @@
 ################################
 # You need to provide the script with 3 main arguments
 # --base_db_path <the relative path to the db file to perform the step on>
-# --error_string <the output that indicates a target error has occured>
+# --error_string <the output that indicates a target error has occurred>
 # --step <Command used to perform a step on the base_db file>
 # You also have 1 additional argument
-# --persistence <a value in [1,6] indicating maximum granularity where maximum granularity = 2^persistence>
-# --use_stdout <a flag to either enable or disable detecting the error string from stdout in addition to stderr>
-# --dump_def <a flag to either enable or disable dumping def per each step, could be used if the step acts on a def file rather than an odb>
+# --persistence <a value in [1,6] indicating maximum granularity where maximum
+# granularity = 2^persistence>
+# --use_stdout <a flag to either enable or disable detecting the error string
+# from stdout in addition to stderr>
+# --dump_def <a flag to either enable or disable dumping def per each step,
+# could be used if the step acts on a def file rather than an odb>
 
 # EXAMPLE COMMAND:
 # Assuming running in a directory with the following files in:
 # deltaDebug.py base.odb step.sh
-# openroad -python deltaDebug.py --base_db_path base.odb --error_string <any_possible_error> --step './step.sh'
-#                                --persistence 5  --use_stdout --dump_def
+# openroad -python deltaDebug.py \
+#  --base_db_path base.odb \
+#  --error_string <any_possible_error> \
+#  --step './step.sh' \
+#  --persistence 5  --use_stdout --dump_def
 
-# N.B: step.sh shall read base.odb (or base.def in case the flag dump_def = 1) and operate on it
-# where the script manipulates base.odb between steps to reduce its size.
+# N.B: step.sh shall read base.odb (or base.def in case the flag dump_def = 1)
+# and operate on it where the script manipulates base.odb between steps to
+# reduce its size.
 ################################
 
 import odb
@@ -76,7 +83,10 @@ parser.add_argument(
 parser.add_argument(
     "--exit_early_on_error",
     action="store_true",
-    help="Exit early on unrelated errors to speed things up, but risks exiting on false negatives.",
+    help=(
+        "Exit early on unrelated errors to speed things up, "
+        + "but risks exiting on false negatives."
+    ),
 )
 parser.add_argument(
     "--dump_def",
@@ -136,7 +146,8 @@ class deltaDebugger:
         self.base_db = None
 
         # Debugging level
-        # cutLevel.Insts starts with inst then nets, cutLevel.Nets cuts nets only.
+        # cutLevel.Insts starts with inst then nets,
+        # cutLevel.Nets cuts nets only.
         self.cut_level = cutLevel.Insts
 
         # step command
@@ -147,7 +158,8 @@ class deltaDebugger:
         print("Backing up original base file.")
         shutil.copy(self.base_db_file, self.original_base_db_file)
 
-        # Rename the base db file to a temp name to keep it from overwriting across the two steps cut
+        # Rename the base db file to a temp name to keep it from
+        # overwriting across the two steps cut
         os.rename(self.base_db_file, self.temp_base_db_file)
 
         if self.timeout is None:
@@ -158,7 +170,8 @@ class deltaDebugger:
 
             # Perform a step with no cuts to measure timeout
             print(
-                "Performing a step with the original input file to calculate timeout."
+                "Performing a step with the original "
+                + "input file to calculate timeout."
             )
             error, _ = self.perform_step()
             if error is None:
@@ -204,7 +217,8 @@ class deltaDebugger:
         # Delete unused master-cells from design
         self.remove_unused_masters()
 
-        # Change deltaDebug resultant base_db file name to a representative name
+        # Change deltaDebug resultant base_db
+        # file name to a representative name
         if os.path.exists(self.temp_base_db_file):
             os.rename(self.temp_base_db_file, self.deltaDebug_result_base_file)
 
@@ -292,7 +306,8 @@ class deltaDebugger:
 
     def poll(self, process, poll_obj, start_time):
         output = ""
-        error_string = None  # None for any error code other than self.error_string
+        # None for any error code other than self.error_string
+        error_string = None
         while True:
             # polling on the output of the process with a timeout of 1 second
             # to avoid busywaiting
@@ -328,7 +343,8 @@ class deltaDebugger:
         # Delete the old temporary db file
         if os.path.exists(self.temp_base_db_file):
             os.remove(self.temp_base_db_file)
-        # Rename the new base db file to the temp name to keep it from overwriting across the two steps cut
+        # Rename the new base db file to the temp name to keep it
+        # from overwriting across the two steps cut
         if os.path.exists(self.base_db_file):
             os.rename(self.base_db_file, self.temp_base_db_file)
 

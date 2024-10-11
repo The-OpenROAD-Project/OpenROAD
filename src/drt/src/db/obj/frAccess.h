@@ -169,6 +169,13 @@ class frAccessPoint : public frBlockObject
         std::cout << "Error: unexpected direction in setValidAccess\n";
     }
   }
+  template <std::size_t N>
+  void setMultipleAccesses(const frDirEnum (&dirArray)[N], bool isValid = true)
+  {
+    for (std::size_t i = 0; i < N; ++i) {
+      setAccess(dirArray[i], isValid);
+    }
+  }
   void addViaDef(frViaDef* in);
   void addToPinAccess(frPinAccess* in) { aps_ = in; }
   void setType(frAccessPointEnum in, bool isL = true)

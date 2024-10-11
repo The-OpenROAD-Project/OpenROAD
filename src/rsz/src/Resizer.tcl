@@ -39,7 +39,7 @@ sta::define_cmd_args "set_layer_rc" { [-layer layer]\
                                         [-capacitance cap]\
                                         [-resistance res]\
                                         [-corner corner]}
-proc set_layer_rc {args} {
+proc set_layer_rc { args } {
   sta::parse_key_args "set_layer_rc" args \
     keys {-layer -via -capacitance -resistance -corner} \
     flags {}
@@ -90,7 +90,6 @@ proc set_layer_rc {args} {
     foreach corner $corners {
       rsz::set_layer_rc_cmd $layer $corner $res $cap
     }
-
   } elseif { [info exists keys(-via)] } {
     set layer_name $keys(-via)
     set layer [$tech findLayer $layer_name]
@@ -149,10 +148,12 @@ proc set_wire_rc { args } {
   set v_wire_cap 0.0
 
   if { [info exists keys(-layers)] } {
-    if { [info exists keys(-h_resistance)] \
-           || [info exists keys(-h_capacitance)] \
-           || [info exists keys(-v_resistance)] \
-           || [info exists keys(-v_capacitance)] } {
+    if {
+      [info exists keys(-h_resistance)]
+      || [info exists keys(-h_capacitance)]
+      || [info exists keys(-v_resistance)]
+      || [info exists keys(-v_capacitance)]
+    } {
       utl::error RSZ 1 "Use -layers or -resistance/-capacitance but not both."
     }
     if { [info exists keys(-layer)] } {
@@ -169,7 +170,6 @@ proc set_wire_rc { args } {
     set layers $keys(-layers)
 
     foreach layer_name $layers {
-
       set tec_layer [[ord::get_db_tech] findLayer $layer_name]
       if { $tec_layer == "NULL" } {
         utl::error RSZ 2 "layer $layer_name not found."
@@ -181,20 +181,20 @@ proc set_wire_rc { args } {
         set layer_wire_cap [rsz::layer_capacitance $tec_layer $corner]
       }
       set layer_direction [$tec_layer getDirection]
-      if {$layer_direction == "HORIZONTAL"} {
-        set total_h_wire_res [expr {$total_h_wire_res + $layer_wire_res}]
-        set total_h_wire_cap [expr {$total_h_wire_cap + $layer_wire_cap}]
+      if { $layer_direction == "HORIZONTAL" } {
+        set total_h_wire_res [expr { $total_h_wire_res + $layer_wire_res }]
+        set total_h_wire_cap [expr { $total_h_wire_cap + $layer_wire_cap }]
         incr h_layers
-      } elseif {$layer_direction == "VERTICAL"} {
-        set total_v_wire_res [expr {$total_v_wire_res + $layer_wire_res}]
-        set total_v_wire_cap [expr {$total_v_wire_cap + $layer_wire_cap}]
+      } elseif { $layer_direction == "VERTICAL" } {
+        set total_v_wire_res [expr { $total_v_wire_res + $layer_wire_res }]
+        set total_v_wire_cap [expr { $total_v_wire_cap + $layer_wire_cap }]
         incr v_layers
       } else {
-        set total_h_wire_res [expr {$total_h_wire_res + $layer_wire_res}]
-        set total_h_wire_cap [expr {$total_h_wire_cap + $layer_wire_cap}]
+        set total_h_wire_res [expr { $total_h_wire_res + $layer_wire_res }]
+        set total_h_wire_cap [expr { $total_h_wire_cap + $layer_wire_cap }]
         incr h_layers
-        set total_v_wire_res [expr {$total_v_wire_res + $layer_wire_res}]
-        set total_v_wire_cap [expr {$total_v_wire_cap + $layer_wire_cap}]
+        set total_v_wire_res [expr { $total_v_wire_res + $layer_wire_res }]
+        set total_v_wire_cap [expr { $total_v_wire_cap + $layer_wire_cap }]
         incr v_layers
       }
     }
@@ -210,7 +210,6 @@ proc set_wire_rc { args } {
     set v_wire_res [expr $total_v_wire_res / $v_layers]
     set v_wire_cap [expr $total_v_wire_cap / $v_layers]
   } elseif { [info exists keys(-layer)] } {
-
     set layer_name $keys(-layer)
     set tec_layer [[ord::get_db_tech] findLayer $layer_name]
     if { $tec_layer == "NULL" } {
@@ -417,9 +416,9 @@ sta::define_cmd_args "remove_buffers" { instances }
 
 proc remove_buffers { args } {
   sta::parse_key_args "remove_buffers" args keys {} flags {}
-  set insts [ rsz::init_insts_cmd ]
+  set insts [rsz::init_insts_cmd]
   foreach arg $args {
-    set inst [ get_cells $arg ]
+    set inst [get_cells $arg]
     rsz::add_to_insts_cmd $inst $insts
   }
   rsz::remove_buffers_cmd $insts
@@ -634,7 +633,7 @@ proc report_design_area { args } {
   utl::report "Design area ${area} u^2 ${util}% utilization."
 }
 
-sta::define_cmd_args "report_floating_nets" {[-verbose] [> filename] [>> filename]};# checker off
+sta::define_cmd_args "report_floating_nets" {[-verbose] [> filename] [>> filename]} ;# checker off
 
 sta::proc_redirect report_floating_nets {
   sta::parse_key_args "report_floating_nets" args keys {} flags {-verbose};# checker off
@@ -665,7 +664,7 @@ sta::proc_redirect report_floating_nets {
   utl::metric_int "timing__drv__floating__pins" $floating_pin_count
 }
 
-sta::define_cmd_args "report_long_wires" {count [> filename] [>> filename]};# checker off
+sta::define_cmd_args "report_long_wires" {count [> filename] [>> filename]} ;# checker off
 
 sta::proc_redirect report_long_wires {
   global sta_report_default_digits
@@ -683,7 +682,6 @@ sta::proc_redirect report_long_wires {
 }
 
 namespace eval rsz {
-
 # for testing
 proc repair_setup_pin { end_pin } {
   check_parasitics
@@ -728,7 +726,7 @@ proc parse_max_util { keys_var } {
   set max_util 0.0
   if { [info exists keys(-max_utilization)] } {
     set max_util $keys(-max_utilization)
-    if {!([string is double $max_util] && $max_util >= 0.0 && $max_util <= 100)} {
+    if { !([string is double $max_util] && $max_util >= 0.0 && $max_util <= 100) } {
       utl::error RSZ 4 "-max_utilization must be between 0 and 100%."
     }
     set max_util [expr $max_util / 100.0]
@@ -747,7 +745,7 @@ proc parse_max_wire_length { keys_var } {
   return $max_wire_length
 }
 
-proc check_corner_wire_caps {} {
+proc check_corner_wire_caps { } {
   set have_rc 1
   foreach corner [sta::corners] {
     if { [rsz::wire_signal_capacitance $corner] == 0.0 } {
@@ -784,7 +782,7 @@ proc dblayer_wire_rc { layer } {
   set cap_area_pf_per_sq_micron [$layer getCapacitance]
   set cap_edge_pf_per_micron [$layer getEdgeCapacitance]
   set cap_pf_per_micron [expr 1 * $layer_width_micron * $cap_area_pf_per_sq_micron \
-                           + $cap_edge_pf_per_micron * 2]
+    + $cap_edge_pf_per_micron * 2]
   # ohms/meter
   set wire_res [expr $res_ohm_per_micron * 1e+6]
   # farads/meter

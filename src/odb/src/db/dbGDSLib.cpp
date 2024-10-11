@@ -30,7 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin Cpp
 #include "dbGDSLib.h"
 
 #include "dbDatabase.h"
@@ -122,6 +121,8 @@ _dbGDSLib::_dbGDSLib(_dbDatabase* db)
       db, this, (GetObjTbl_t) &_dbGDSLib::getObjectTable, dbGDSStructureObj);
 
   _structure_hash.setTable(_structure_tbl);
+  std::mktime(&_lastAccessed);
+  std::mktime(&_lastModified);
 }
 
 _dbGDSLib::_dbGDSLib(_dbDatabase* db, const _dbGDSLib& r)
@@ -132,7 +133,8 @@ _dbGDSLib::_dbGDSLib(_dbDatabase* db, const _dbGDSLib& r)
       _srfName(r._srfName),
       _uu_per_dbu(r._uu_per_dbu),
       _dbu_per_meter(r._dbu_per_meter),
-      _structure_hash(r._structure_hash)
+      _structure_hash(r._structure_hash),
+      _structure_tbl(r._structure_tbl)
 {
 }
 
@@ -298,5 +300,20 @@ dbSet<dbGDSStructure> dbGDSLib::getGDSStructures()
   _dbGDSLib* obj = (_dbGDSLib*) this;
   return dbSet<dbGDSStructure>(obj, obj->_structure_tbl);
 }
+
+dbGDSLib* dbGDSLib::create(dbDatabase* db, const std::string& name)
+{
+  auto* obj = (_dbDatabase*) db;
+  auto lib = (dbGDSLib*) obj->_gds_lib_tbl->create();
+  lib->setLibname(name);
+  return lib;
+}
+
+void dbGDSLib::destroy(dbGDSLib* lib)
+{
+  auto* obj = (_dbGDSLib*) lib;
+  auto* db = (_dbDatabase*) obj->getOwner();
+  db->_gds_lib_tbl->destroy(obj);
+}
+
 }  // namespace odb
-   // Generator Code End Cpp

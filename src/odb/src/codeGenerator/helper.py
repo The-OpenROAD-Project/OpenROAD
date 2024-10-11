@@ -133,11 +133,15 @@ def get_hash_table_type(type_name):
 
 
 def is_pass_by_ref(type_name):
-    return type_name.find("dbVector") == 0
+    return type_name.find("dbVector") == 0 or type_name.find("std::vector") == 0
 
 
 def is_set_by_ref(type_name):
-    return type_name == "std::string"
+    return (
+        type_name == "std::string"
+        or type_name.startswith("std::pair")
+        or type_name.find("std::vector") == 0
+    )
 
 
 def _is_template_type(type_name):

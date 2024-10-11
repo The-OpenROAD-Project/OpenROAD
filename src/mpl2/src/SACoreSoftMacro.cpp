@@ -181,7 +181,7 @@ void SACoreSoftMacro::calPenalty()
   calMacroBlockagePenalty();
   calNotchPenalty();
   if (graphics_) {
-    graphics_->setAreaPenalty(getAreaPenalty());
+    graphics_->setAreaPenalty({area_weight_, getAreaPenalty()});
     graphics_->penaltyCalculated(calNormCost());
   }
 }
@@ -281,6 +281,11 @@ void SACoreSoftMacro::initialize()
   std::vector<float> area_penalty_list;
   std::vector<float> width_list;
   std::vector<float> height_list;
+
+  // We don't want to stop in the normalization factor setup
+  Mpl2Observer* save_graphics = graphics_;
+  graphics_ = nullptr;
+
   for (int i = 0; i < num_perturb_per_step_; i++) {
     perturb();
     // store current penalties
@@ -296,6 +301,7 @@ void SACoreSoftMacro::initialize()
     macro_blockage_penalty_list.push_back(macro_blockage_penalty_);
     notch_penalty_list.push_back(notch_penalty_);
   }
+  graphics_ = save_graphics;
 
   norm_area_penalty_ = calAverage(area_penalty_list);
   norm_outline_penalty_ = calAverage(outline_penalty_list);
@@ -411,7 +417,8 @@ void SACoreSoftMacro::calBoundaryPenalty()
   // normalization
   boundary_penalty_ = boundary_penalty_ / tot_num_macros;
   if (graphics_) {
-    graphics_->setBoundaryPenalty(boundary_penalty_);
+    graphics_->setBoundaryPenalty(
+        {boundary_weight_, boundary_penalty_ / norm_boundary_penalty_});
   }
 }
 
@@ -471,7 +478,9 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
   // normalization
   macro_blockage_penalty_ = macro_blockage_penalty_ / tot_num_macros;
   if (graphics_) {
-    graphics_->setMacroBlockagePenalty(macro_blockage_penalty_);
+    graphics_->setMacroBlockagePenalty(
+        {macro_blockage_weight_,
+         macro_blockage_penalty_ / norm_macro_blockage_penalty_});
   }
 }
 
@@ -713,7 +722,8 @@ void SACoreSoftMacro::calNotchPenalty()
   notch_penalty_
       = notch_penalty_ / (outline_.getWidth() * outline_.getHeight());
   if (graphics_) {
-    graphics_->setNotchPenalty(notch_penalty_);
+    graphics_->setNotchPenalty(
+        {notch_weight_, notch_penalty_ / norm_notch_penalty_});
   }
 }
 

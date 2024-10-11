@@ -160,6 +160,23 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
 
 void TritonCTS::setupCharacterization()
 {
+  // Check if CTS library is valid
+  if (options_->isCtsLibrarySet()) {
+    sta::Library* lib = network_->findLibrary(options_->getCtsLibrary());
+    if (lib == nullptr) {
+      logger_->error(CTS,
+                     209,
+                     "Library {} cannot be found because it is not "
+                     "loaded or name is incorrect",
+                     options_->getCtsLibrary());
+    } else {
+      logger_->info(CTS,
+                    210,
+                    "Clock buffers will be chosen from library {}",
+                    options_->getCtsLibrary());
+    }
+  }
+
   openSta_->checkFanoutLimitPreamble();
   // Finalize root/sink buffers
   std::string rootBuffer = selectRootBuffer(rootBuffers_);
@@ -587,13 +604,19 @@ void TritonCTS::setBufferList(const char* buffers)
 
 void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
 {
+  sta::Vector<sta::LibertyCell*> selected_buffers;
+
   // first, look for buffers with "is_clock_cell: true" cell attribute
   sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* lib = lib_iter->next();
+    if (options_->isCtsLibrarySet()
+        && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
+      continue;
+    }
     for (sta::LibertyCell* buffer : *lib->buffers()) {
       if (buffer->isClockCell() && isClockCellCandidate(buffer)) {
-        buffers.emplace_back(buffer->name());
+        selected_buffers.emplace_back(buffer);
         // clang-format off
         debugPrint(logger_, CTS, "buffering", 1, "{} has clock cell attribute",
                    buffer->name());
@@ -604,7 +627,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
   delete lib_iter;
 
   // second, look for all buffers with name CLKBUF or clkbuf
-  if (buffers.empty()) {
+  if (selected_buffers.empty()) {
     sta::PatternMatch patternClkBuf(".*CLKBUF.*",
                                     /* is_regexp */ true,
                                     /* nocase */ true,
@@ -612,10 +635,14 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
     sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
+      if (options_->isCtsLibrarySet()
+          && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
+        continue;
+      }
       for (sta::LibertyCell* buffer :
            lib->findLibertyCellsMatching(&patternClkBuf)) {
         if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
-          buffers.emplace_back(buffer->name());
+          selected_buffers.emplace_back(buffer);
         }
       }
     }
@@ -623,7 +650,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
   }
 
   // third, look for all buffers with name BUF or buf
-  if (buffers.empty()) {
+  if (selected_buffers.empty()) {
     sta::PatternMatch patternBuf(".*BUF.*",
                                  /* is_regexp */ true,
                                  /* nocase */ true,
@@ -631,10 +658,14 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
     lib_iter = network_->libertyLibraryIterator();
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
+      if (options_->isCtsLibrarySet()
+          && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
+        continue;
+      }
       for (sta::LibertyCell* buffer :
            lib->findLibertyCellsMatching(&patternBuf)) {
         if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
-          buffers.emplace_back(buffer->name());
+          selected_buffers.emplace_back(buffer);
         }
       }
     }
@@ -642,24 +673,34 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
   }
 
   // abandon attributes & name patterns, just look for all buffers
-  if (buffers.empty()) {
+  if (selected_buffers.empty()) {
     lib_iter = network_->libertyLibraryIterator();
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
+      if (options_->isCtsLibrarySet()
+          && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
+        continue;
+      }
       for (sta::LibertyCell* buffer : *lib->buffers()) {
         if (isClockCellCandidate(buffer)) {
-          buffers.emplace_back(buffer->name());
+          selected_buffers.emplace_back(buffer);
         }
       }
     }
     delete lib_iter;
 
-    if (buffers.empty()) {
+    if (selected_buffers.empty()) {
       logger_->error(
           CTS,
           110,
           "No clock buffer candidates could be found from any libraries.");
     }
+  }
+
+  resizer_->setClockBuffersList(selected_buffers);
+
+  for (sta::LibertyCell* buffer : selected_buffers) {
+    buffers.emplace_back(buffer->name());
   }
 
   options_->setBufferListInferred(true);

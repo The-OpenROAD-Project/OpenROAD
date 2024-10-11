@@ -184,10 +184,6 @@ class _dbBlock : public _dbObject
   dbHashTable<_dbLogicPort> _logicport_hash;
   dbHashTable<_dbPowerSwitch> _powerswitch_hash;
   dbHashTable<_dbIsolation> _isolation_hash;
-  dbHashTable<_dbModBTerm> _modbterm_hash;
-  dbHashTable<_dbModITerm> _moditerm_hash;
-  dbHashTable<_dbModNet> _modnet_hash;
-  dbHashTable<_dbBusPort> _busport_hash;
 
   dbHashTable<_dbLevelShifter> _levelshifter_hash;
   dbHashTable<_dbGroup> _group_hash;
@@ -200,6 +196,10 @@ class _dbBlock : public _dbObject
   dbVector<dbId<_dbTechLayer>> _component_mask_shift;
   uint _currentCcAdjOrder;
   dbId<_dbDft> _dft;
+  int _min_routing_layer;
+  int _max_routing_layer;
+  int _min_layer_for_clock;
+  int _max_layer_for_clock;
 
   // NON-PERSISTANT-STREAMED-MEMBERS
   dbTable<_dbBTerm>* _bterm_tbl;

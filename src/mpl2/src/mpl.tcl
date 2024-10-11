@@ -81,7 +81,7 @@ proc rtl_macro_placer { args } {
 
   #
   # Check for valid design
-  if {  [ord::get_db_block] == "NULL" } {
+  if { [ord::get_db_block] == "NULL" } {
     utl::error MPL 1 "No block found for Macro Placement."
   }
 
@@ -151,10 +151,10 @@ proc rtl_macro_placer { args } {
   if { [info exists keys(-halo_width)] && [info exists keys(-halo_height)] } {
     set halo_width $keys(-halo_width)
     set halo_height $keys(-halo_height)
-  } elseif {[info exists keys(-halo_width)]} {
+  } elseif { [info exists keys(-halo_width)] } {
     set halo_width $keys(-halo_width)
     set halo_height $keys(-halo_width)
-  } elseif {[info exists keys(-halo_height)]} {
+  } elseif { [info exists keys(-halo_height)] } {
     set halo_width $keys(-halo_height)
     set halo_height $keys(-halo_height)
   }
@@ -259,7 +259,7 @@ proc place_macro { args } {
   sta::parse_key_args "place_macro" args \
     keys {-macro_name -location -orientation} flags {}
 
-  if {[info exists keys(-macro_name)]} {
+  if { [info exists keys(-macro_name)] } {
     set macro_name $keys(-macro_name)
   } else {
     utl::error MPL 19 "-macro_name is required."
@@ -267,7 +267,7 @@ proc place_macro { args } {
 
   set macro [mpl2::parse_macro_name "place_macro" $macro_name]
 
-  if {[info exists keys(-location)]} {
+  if { [info exists keys(-location)] } {
     set location $keys(-location)
   } else {
     utl::error MPL 22 "-location is required."
@@ -281,7 +281,7 @@ proc place_macro { args } {
   set y_origin $y_origin
 
   set orientation R0
-  if {[info exists keys(-orientation)]} {
+  if { [info exists keys(-orientation)] } {
     set orientation $keys(-orientation)
   }
 
@@ -289,8 +289,7 @@ proc place_macro { args } {
 }
 
 namespace eval mpl2 {
-
-proc parse_macro_name {cmd macro_name} {
+proc parse_macro_name { cmd macro_name } {
   set block [ord::get_db_block]
   set inst [$block findInst "$macro_name"]
 
@@ -307,11 +306,11 @@ proc mpl_debug { args } {
   sta::parse_key_args "mpl_debug" args \
     keys {} \
     flags {-coarse -fine -show_bundled_nets \
-           -skip_steps -only_final_result};# checker off
+           -skip_steps -only_final_result} ;# checker off
 
   set coarse [info exists flags(-coarse)]
   set fine [info exists flags(-fine)]
-  if { [expr !$coarse && !$fine] } {
+  if { !$coarse && !$fine } {
     set coarse true
     set fine true
   }
@@ -324,5 +323,4 @@ proc mpl_debug { args } {
     [info exists flags(-skip_steps)] \
     [info exists flags(-only_final_result)]
 }
-
 }

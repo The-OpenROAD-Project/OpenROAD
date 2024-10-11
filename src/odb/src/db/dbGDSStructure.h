@@ -34,7 +34,6 @@
 #pragma once
 
 #include "dbCore.h"
-#include "dbGDSElement.h"
 #include "dbTable.h"
 #include "dbVector.h"
 #include "odb/db.h"
@@ -45,6 +44,14 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
+class _dbGDSBoundary;
+template <class T>
+class dbTable;
+class _dbGDSBox;
+class _dbGDSNode;
+class _dbGDSPath;
+class _dbGDSSRef;
+class _dbGDSText;
 
 class _dbGDSStructure : public _dbObject
 {
@@ -61,30 +68,24 @@ class _dbGDSStructure : public _dbObject
                    const char* field,
                    const _dbGDSStructure& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-
-  std::string to_string()
-  {
-    std::string str = "STRUCTURE " + std::string(_name) + "\n";
-    for (auto& e : _elements) {
-      str += e->to_string() + "\n";
-    }
-    return str;
-  }
-  // User Code End Methods
+  dbObjectTable* getObjectTable(dbObjectType type);
 
   char* _name;
-  dbVector<_dbGDSElement*> _elements;
   dbId<_dbGDSStructure> _next_entry;
+
+  dbTable<_dbGDSBoundary>* boundaries_;
+
+  dbTable<_dbGDSBox>* boxes_;
+
+  dbTable<_dbGDSNode>* nodes_;
+
+  dbTable<_dbGDSPath>* paths_;
+
+  dbTable<_dbGDSSRef>* srefs_;
+
+  dbTable<_dbGDSText>* texts_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj);
-// User Code Begin General
-
-dbIStream& operator>>(dbIStream& stream, _dbGDSElement* obj);
-
-dbOStream& operator<<(dbOStream& stream, const _dbGDSElement* obj);
-
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

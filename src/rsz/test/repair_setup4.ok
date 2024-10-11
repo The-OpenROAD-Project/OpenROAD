@@ -10,7 +10,7 @@ tns -6.294
 [INFO RSZ-0099] Repairing 6 out of 6 (100.00%) violating endpoints...
 [INFO RSZ-0059] Removed 4 buffers.
 [INFO RSZ-0040] Inserted 2 buffers.
-[INFO RSZ-0041] Resized 3 instances.
+[INFO RSZ-0041] Resized 2 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
 worst slack -0.44

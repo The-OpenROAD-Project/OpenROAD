@@ -1,15 +1,15 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[INFO RSZ-0058] Using max wire length 822um.
+[INFO RSZ-0058] Using max wire length 827um.
 [INFO RSZ-0037] Found 118 long wires.
-[INFO RSZ-0038] Inserted 162 buffers in 118 nets.
-[INFO RSZ-0039] Resized 183 instances.
+[INFO RSZ-0038] Inserted 161 buffers in 118 nets.
+[INFO RSZ-0039] Resized 184 instances.
 worst slack -0.266
-tns -28.587
+tns -28.551
 [INFO RSZ-0094] Found 200 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 200 out of 200 (100.00%) violating endpoints...
-[INFO RSZ-0041] Resized 895 instances.
+[INFO RSZ-0041] Resized 844 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 [INFO RSZ-0033] No hold violations found.
 worst slack -0.266
-tns -27.381
+tns -27.434
 No differences found.

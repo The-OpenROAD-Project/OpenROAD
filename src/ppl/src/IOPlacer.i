@@ -126,18 +126,6 @@ tclSetStdSeq(Tcl_Obj *const source,
 namespace ppl {
 
 void
-set_num_slots(int numSlots)
-{
-  getIOPlacer()->getParameters()->setNumSlots(numSlots);
-}
-
-void
-set_slots_factor(float factor)
-{
-  getIOPlacer()->getParameters()->setSlotsFactor(factor);
-}
-
-void
 set_slots_per_section(int slots_per_section)
 {
   getIOPlacer()->getParameters()->setSlotsPerSection(slots_per_section);
@@ -230,9 +218,9 @@ add_pin_group(PinList *pin_list, bool order)
 }
 
 void
-run_io_placement(bool randomMode)
+run_hungarian_matching(bool randomMode)
 {
-  getIOPlacer()->run(randomMode);
+  getIOPlacer()->runHungarianMatching(randomMode);
 }
 
 void
@@ -306,9 +294,9 @@ get_top_layer()
 void
 place_pin(odb::dbBTerm* bterm, odb::dbTechLayer* layer,
           int x, int y, int width, int height,
-          bool force_to_die_bound)
+          bool force_to_die_bound, bool placed_status)
 {
-  getIOPlacer()->placePin(bterm, layer, x, y, width, height, force_to_die_bound);
+  getIOPlacer()->placePin(bterm, layer, x, y, width, height, force_to_die_bound, placed_status);
 }
 
 void
@@ -357,9 +345,9 @@ run_annealing(bool random)
 }
 
 void
-write_pin_placement(const char* file_name)
+write_pin_placement(const char* file_name, bool placed)
 {
-  getIOPlacer()->writePinPlacement(file_name);
+  getIOPlacer()->writePinPlacement(file_name, placed);
 }
 
 } // namespace

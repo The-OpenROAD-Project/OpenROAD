@@ -72,6 +72,8 @@
 
 namespace gpl {
 
+using utl::GPL;
+
 struct Point
 {
   float x;
@@ -142,7 +144,7 @@ float MBFF::GetDistAR(const Point& a, const Point& b, const float AR)
   return (abs(a.x - b.x) / AR + abs(a.y - b.y));
 }
 
-int MBFF::GetRows(int slot_cnt, std::vector<int> array_mask)
+int MBFF::GetRows(int slot_cnt, const Mask& array_mask)
 {
   const int idx = GetBitIdx(slot_cnt);
 
@@ -166,14 +168,14 @@ int MBFF::GetBitIdx(int bit_cnt)
       return i;
     }
   }
-  log_->error(utl::GPL, 122, "{} is not in 2^[0,{}]", bit_cnt, num_sizes_);
+  log_->error(GPL, 122, "{} is not in 2^[0,{}]", bit_cnt, num_sizes_);
 }
 
 bool MBFF::IsClockPin(odb::dbITerm* iterm)
 {
   const bool yes = (iterm->getSigType() == odb::dbSigType::CLOCK);
   const sta::Pin* pin = network_->dbToSta(iterm);
-  return yes || sta_->isClock(pin);
+  return yes || network_->isRegClkPin(pin);
 }
 
 bool MBFF::ClockOn(odb::dbInst* inst)
@@ -555,7 +557,7 @@ PortName MBFF::PortType(sta::LibertyPort* lib_port, odb::dbInst* inst)
     }
   }
 
-  log_->error(utl::GPL, 9032, "Could not recognize port {}", lib_port->name());
+  log_->error(GPL, 9032, "Could not recognize port {}", lib_port->name());
   return d;
 }
 
@@ -597,9 +599,10 @@ int MBFF::GetMatchingFunc(sta::FuncExpr* expr,
   return -1;
 }
 
-std::vector<int> MBFF::GetArrayMask(odb::dbInst* inst, bool isTray)
+MBFF::Mask MBFF::GetArrayMask(odb::dbInst* inst, bool isTray)
 {
-  std::vector<int> ret(7, 0);
+  Mask ret;
+  ret.fill(0);
   ret[0] = ClockOn(inst);
   ret[1] = HasClear(inst);
   ret[2] = HasPreset(inst);
@@ -696,7 +699,7 @@ MBFF::DataToOutputsMap MBFF::GetPinMapping(odb::dbInst* tray)
 void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
                                 const std::vector<Tray>& trays,
                                 const std::vector<std::pair<int, int>>& mapping,
-                                const std::vector<int> array_mask)
+                                const Mask& array_mask)
 {
   const int num_flops = static_cast<int>(flops.size());
   std::vector<std::pair<int, int>> new_mapping(mapping);
@@ -942,7 +945,7 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
                     std::vector<std::pair<int, int>>& final_flop_to_slot,
                     float alpha,
                     float beta,
-                    std::vector<int> array_mask)
+                    const Mask& array_mask)
 {
   const int num_flops = static_cast<int>(flops.size());
   const int num_trays = static_cast<int>(trays.size());
@@ -1232,7 +1235,7 @@ void MBFF::GetSlots(const Point& tray,
                     const int rows,
                     const int cols,
                     std::vector<Point>& slots,
-                    const std::vector<int> array_mask)
+                    const Mask& array_mask)
 {
   slots.clear();
   const int idx = GetBitIdx(rows * cols);
@@ -1439,7 +1442,7 @@ void MBFF::RunCapacitatedKMeans(const std::vector<Flop>& flops,
                                 const int sz,
                                 const int iter,
                                 std::vector<std::pair<int, int>>& cluster,
-                                const std::vector<int> array_mask)
+                                const Mask& array_mask)
 {
   cluster.clear();
   const int num_flops = static_cast<int>(flops.size());
@@ -1471,7 +1474,7 @@ void MBFF::RunMultistart(
     std::vector<std::vector<Tray>>& trays,
     const std::vector<Flop>& flops,
     std::vector<std::vector<std::vector<Tray>>>& start_trays,
-    const std::vector<int> array_mask)
+    const Mask& array_mask)
 {
   const int num_flops = static_cast<int>(flops.size());
   trays.resize(num_sizes_);
@@ -1912,7 +1915,7 @@ float MBFF::RunClustering(const std::vector<Flop>& flops,
                           const int mx_sz,
                           const float alpha,
                           const float beta,
-                          const std::vector<int> array_mask)
+                          const Mask& array_mask)
 {
   std::vector<std::vector<Flop>> pointsets;
   KMeansDecomp(flops, mx_sz, pointsets);
@@ -2040,7 +2043,7 @@ void MBFF::SetVars(const std::vector<Flop>& flops)
   }
 }
 
-void MBFF::SetRatios(const std::vector<int> array_mask)
+void MBFF::SetRatios(const Mask& array_mask)
 {
   norm_area_.clear();
   norm_area_.push_back(1.00);
@@ -2080,16 +2083,24 @@ void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
     }
   }
 
-  for (const auto& clks : clk_terms) {
+  for (const auto& [clk_net, indices] : clk_terms) {
     ArrayMaskVector<Flop> flops_by_mask;
-    for (int idx : clks.second) {
-      const std::vector<int> vec_mask = GetArrayMask(insts_[idx], false);
+    for (int idx : indices) {
+      const Mask vec_mask = GetArrayMask(insts_[idx], false);
       flops_by_mask[vec_mask].push_back(flops_[idx]);
     }
 
-    for (const auto& flop_pair : flops_by_mask) {
-      if (!flop_pair.second.empty()) {
-        ffs.push_back(flop_pair.second);
+    for (const auto& [mask, flops] : flops_by_mask) {
+      if (!flops.empty()) {
+        ffs.push_back(flops);
+        debugPrint(log_,
+                   GPL,
+                   "mbff",
+                   1,
+                   "Flop cluster for net {} with mask {} of size {}",
+                   clk_net->getName(),
+                   fmt::join(mask, ""),
+                   flops.size());
       }
     }
   }
@@ -2118,18 +2129,29 @@ void MBFF::Run(const int mx_sz, const float alpha, const float beta)
   SeparateFlops(FFs);
   const int num_chunks = static_cast<int>(FFs.size());
   float tot_ilp = 0;
+  bool any_found = false;
   for (int i = 0; i < num_chunks; i++) {
-    const std::vector<int> array_mask
-        = GetArrayMask(insts_[FFs[i].back().idx], false);
+    auto ff_inst = insts_[FFs[i].back().idx];
+    const Mask array_mask = GetArrayMask(ff_inst, false);
     // do we even have trays to cluster these flops?
     if (!best_master_[array_mask].size()) {
       tot_ilp += (alpha * static_cast<int>(FFs[i].size()));
       tray_sizes_used_[1] += static_cast<int>(FFs[i].size());
+      log_->info(GPL,
+                 137,
+                 "No tray found for group of {} flop instances containing {}",
+                 FFs[i].size(),
+                 ff_inst->getMaster()->getName());
       continue;
     }
+    any_found = true;
     SetVars(FFs[i]);
     SetRatios(array_mask);
     tot_ilp += RunClustering(FFs[i], mx_sz, alpha, beta, array_mask);
+  }
+
+  if (!any_found) {
+    log_->error(GPL, 138, "No clusterable flops found");
   }
 
   float tcp_disp = (beta * GetPairDisplacements());
@@ -2174,7 +2196,7 @@ void MBFF::Run(const int mx_sz, const float alpha, const float beta)
                tray_sizes_used_[4]);
 }
 
-Point MBFF::GetTrayCenter(std::vector<int> array_mask, int idx)
+Point MBFF::GetTrayCenter(const Mask& array_mask, int idx)
 {
   int num_slots = GetBitCnt(idx);
   std::vector<float> all_x;
@@ -2205,8 +2227,15 @@ void MBFF::ReadLibs()
 
       const int num_slots = GetNumD(tmp_tray);
       const int idx = GetBitIdx(num_slots);
-      const std::vector<int> array_mask = GetArrayMask(tmp_tray, true);
+      const Mask array_mask = GetArrayMask(tmp_tray, true);
 
+      debugPrint(log_,
+                 GPL,
+                 "mbff",
+                 1,
+                 "Found tray {} mask: {}",
+                 master->getName(),
+                 fmt::join(array_mask, ""));
       if (!static_cast<int>(best_master_[array_mask].size())) {
         best_master_[array_mask].resize(num_sizes_, nullptr);
         tray_area_[array_mask].resize(num_sizes_,
@@ -2354,11 +2383,11 @@ void MBFF::ReadPaths()
   for (auto& path_end : path_ends) {
     sta::Path* path = path_end->path();
     sta::PathExpanded expanded(path, sta_);
-    sta::PathRef* pathref_front = expanded.path(expanded.startIndex());
+    const sta::PathRef* pathref_front = expanded.path(expanded.startIndex());
     sta::Vertex* pathvertex_front = pathref_front->vertex(sta_);
     sta::Pin* pathpin_front = pathvertex_front->pin();
 
-    sta::PathRef* pathref_back
+    const sta::PathRef* pathref_back
         = expanded.path(static_cast<int>(expanded.size()) - 1);
     sta::Vertex* pathvertex_back = pathref_back->vertex(sta_);
     sta::Pin* pathpin_back = pathvertex_back->pin();
