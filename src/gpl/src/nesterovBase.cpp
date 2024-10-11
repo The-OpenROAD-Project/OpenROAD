@@ -1491,9 +1491,6 @@ void NesterovBase::updateGCellDensityCenterLocation(
     int idx = &coordi - &coordis[0];
     gCells_[idx]->setDensityCenterLocation(coordi.x, coordi.y);
   }
-  // std::vector<GCell*> gCellPtrs =
-  // convertGCellIndexHandleToGCellPtrs(gCells_);
-  // bg_.updateBinsGCellDensityArea(gCellPtrs);
   bg_.updateBinsGCellDensityArea(gCells_);
 }
 

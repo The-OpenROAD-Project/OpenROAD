@@ -1012,20 +1012,6 @@ class NesterovBase
 
   bool isDiverged() const { return isDiverged_; }
 
-  // Use this momentarily to avoid circular dependencies between NB, NBC,
-  // BinGrid, and GCellIndexHandle
-  // std::vector<GCell*> convertGCellIndexHandleToGCellPtrs(
-  //     const std::vector<GCellIndexHandle>& gCell_handles) const
-  // {
-  //   std::vector<GCell*> gCellPtrs;
-  //   gCellPtrs.reserve(gCell_handles.size());
-
-  //   for (const auto& gcell_handle : gCell_handles) {
-  //     gCellPtrs.push_back(&(const_cast<GCell&>(*gcell_handle)));
-  //   }
-  //   return gCellPtrs;
-  // }
-
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
