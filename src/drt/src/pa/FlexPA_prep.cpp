@@ -49,6 +49,20 @@ namespace drt {
 
 using utl::ThreadException;
 
+// TODO there should be a better way to get this info by getting the master
+// terms from OpenDB
+bool FlexPA::isStdCell(frInst* inst)
+{
+  return inst->getMaster()->getMasterType().isCore();
+}
+
+bool FlexPA::isMacroCell(frInst* inst)
+{
+  dbMasterType masterType = inst->getMaster()->getMasterType();
+  return (masterType.isBlock() || masterType.isPad()
+          || masterType == dbMasterType::RING);
+}
+
 template <typename T>
 std::vector<gtl::polygon_90_set_data<frCoord>>
 FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
@@ -601,21 +615,14 @@ void FlexPA::genAPsFromLayerShapes(
   bool allow_planar = true;
   bool is_macro_cell_pin = false;
   if (inst_term) {
-    dbMasterType masterType
-        = inst_term->getInst()->getMaster()->getMasterType();
-    if (masterType == dbMasterType::CORE
-        || masterType == dbMasterType::CORE_TIEHIGH
-        || masterType == dbMasterType::CORE_TIELOW
-        || masterType == dbMasterType::CORE_ANTENNACELL) {
+    if (isStdCell(inst_term->getInst())) {
       if ((layer_num >= VIAINPIN_BOTTOMLAYERNUM
            && layer_num <= VIAINPIN_TOPLAYERNUM)
           || layer_num <= VIA_ACCESS_LAYERNUM) {
         allow_planar = false;
       }
-    } else if (masterType.isBlock() || masterType.isPad()
-               || masterType == dbMasterType::RING) {
-      is_macro_cell_pin = true;
     }
+    is_macro_cell_pin = isMacroCell(inst_term->getInst());
   } else {
     // IO term is treated as the MacroCellPin as the top block
     is_macro_cell_pin = true;
@@ -684,8 +691,7 @@ void FlexPA::genAPsFromPinShapes(
   }
 }
 
-bool FlexPA::check_endPointIsOutside(
-    Point& end_point,
+Point FlexPA::genEndPoint(
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     const Point& begin_point,
     const frLayerNum layer_num,
@@ -737,17 +743,21 @@ bool FlexPA::check_endPointIsOutside(
     default:
       logger_->error(DRT, 70, "Unexpected direction in getPlanarEP.");
   }
-  end_point = {x, y};
-  const gtl::point_data<frCoord> pt(x, y);
-  bool outside = true;
+  return {x, y};
+}
+
+bool FlexPA::isPointOutsideShapes(
+    const Point& point,
+    const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys)
+{
+  const gtl::point_data<frCoord> pt(point.getX(), point.getY());
   for (auto& layer_poly : layer_polys) {
     if (gtl::contains(layer_poly, pt)) {
-      outside = false;
+      return false;
       break;
     }
   }
-
-  return outside;
+  return true;
 }
 
 template <typename T>
@@ -766,9 +776,9 @@ void FlexPA::check_addPlanarAccess(
   const bool is_block
       = inst_term
         && inst_term->getInst()->getMaster()->getMasterType().isBlock();
-  Point end_point;
-  const bool is_outside = check_endPointIsOutside(
-      end_point, layer_polys, begin_point, ap->getLayerNum(), dir, is_block);
+  const Point end_point
+      = genEndPoint(layer_polys, begin_point, ap->getLayerNum(), dir, is_block);
+  const bool is_outside = isPointOutsideShapes(end_point, layer_polys);
   // skip if two width within shape for standard cell
   if (!is_outside) {
     ap->setAccess(dir, false);
@@ -1064,13 +1074,11 @@ bool FlexPA::checkDirectionalViaAccess(
   const bool is_block
       = inst_term
         && inst_term->getInst()->getMaster()->getMasterType().isBlock();
-  Point end_point;
-  check_endPointIsOutside(end_point,
-                          layer_polys,
-                          begin_point,
-                          via->getViaDef()->getLayer2Num(),
-                          dir,
-                          is_block);
+  const Point end_point = genEndPoint(layer_polys,
+                                      begin_point,
+                                      via->getViaDef()->getLayer2Num(),
+                                      dir,
+                                      is_block);
 
   if (inst_term && inst_term->hasNet()) {
     via->addToNet(inst_term->getNet());
@@ -1220,17 +1228,8 @@ void FlexPA::updatePinStats(
   bool is_std_cell_pin = false;
   bool is_macro_cell_pin = false;
   if (inst_term) {
-    // TODO there should be a better way to get this info by getting the master
-    // terms from OpenDB
-    dbMasterType masterType
-        = inst_term->getInst()->getMaster()->getMasterType();
-    is_std_cell_pin = masterType == dbMasterType::CORE
-                      || masterType == dbMasterType::CORE_TIEHIGH
-                      || masterType == dbMasterType::CORE_TIELOW
-                      || masterType == dbMasterType::CORE_ANTENNACELL;
-
-    is_macro_cell_pin = masterType.isBlock() || masterType.isPad()
-                        || masterType == dbMasterType::RING;
+    is_std_cell_pin = isStdCell(inst_term->getInst());
+    is_macro_cell_pin = isMacroCell(inst_term->getInst());
   }
   for (auto& ap : tmp_aps) {
     if (ap->hasAccess(frDirEnum::W) || ap->hasAccess(frDirEnum::E)
@@ -1270,17 +1269,8 @@ bool FlexPA::initPinAccessCostBounded(
   bool is_std_cell_pin = false;
   bool is_macro_cell_pin = false;
   if (inst_term) {
-    // TODO there should be a better way to get this info by getting the master
-    // terms from OpenDB
-    dbMasterType masterType
-        = inst_term->getInst()->getMaster()->getMasterType();
-    is_std_cell_pin = masterType == dbMasterType::CORE
-                      || masterType == dbMasterType::CORE_TIEHIGH
-                      || masterType == dbMasterType::CORE_TIELOW
-                      || masterType == dbMasterType::CORE_ANTENNACELL;
-
-    is_macro_cell_pin = masterType.isBlock() || masterType.isPad()
-                        || masterType == dbMasterType::RING;
+    is_std_cell_pin = isStdCell(inst_term->getInst());
+    is_macro_cell_pin = isMacroCell(inst_term->getInst());
   }
   const bool is_io_pin = (inst_term == nullptr);
   std::vector<std::unique_ptr<frAccessPoint>> tmp_aps;
@@ -1367,17 +1357,8 @@ int FlexPA::initPinAccess(T* pin, frInstTerm* inst_term)
   bool is_std_cell_pin = false;
   bool is_macro_cell_pin = false;
   if (inst_term) {
-    // TODO there should be a better way to get this info by getting the master
-    // terms from OpenDB
-    dbMasterType masterType
-        = inst_term->getInst()->getMaster()->getMasterType();
-    is_std_cell_pin = masterType == dbMasterType::CORE
-                      || masterType == dbMasterType::CORE_TIEHIGH
-                      || masterType == dbMasterType::CORE_TIELOW
-                      || masterType == dbMasterType::CORE_ANTENNACELL;
-
-    is_macro_cell_pin = masterType.isBlock() || masterType.isPad()
-                        || masterType == dbMasterType::RING;
+    is_std_cell_pin = isStdCell(inst_term->getInst());
+    is_macro_cell_pin = isMacroCell(inst_term->getInst());
   }
 
   if (graphics_) {
@@ -1470,13 +1451,7 @@ void FlexPA::initAllAccessPoints()
     try {
       auto& inst = unique[i];
       // only do for core and block cells
-      dbMasterType masterType = inst->getMaster()->getMasterType();
-      if (masterType != dbMasterType::CORE
-          && masterType != dbMasterType::CORE_TIEHIGH
-          && masterType != dbMasterType::CORE_TIELOW
-          && masterType != dbMasterType::CORE_ANTENNACELL
-          && !masterType.isBlock() && !masterType.isPad()
-          && masterType != dbMasterType::RING) {
+      if (!isStdCell(inst) && !isMacroCell(inst)) {
         continue;
       }
       ProfileTask profile("PA:uniqueInstance");
@@ -1688,11 +1663,7 @@ void FlexPA::prepPattern()
       // only do for core and block cells
       // TODO the above comment says "block cells" but that's not what the code
       // does?
-      dbMasterType masterType = inst->getMaster()->getMasterType();
-      if (masterType != dbMasterType::CORE
-          && masterType != dbMasterType::CORE_TIEHIGH
-          && masterType != dbMasterType::CORE_TIELOW
-          && masterType != dbMasterType::CORE_ANTENNACELL) {
+      if (!isStdCell(inst)) {
         continue;
       }
 
@@ -1842,9 +1813,9 @@ void FlexPA::genInstRowPattern(std::vector<frInst*>& insts)
     return;
   }
 
-  const int numNode = (insts.size() + 2) * ACCESS_PATTERN_END_ITERATION_NUM;
+  const int num_node = (insts.size() + 2) * ACCESS_PATTERN_END_ITERATION_NUM;
 
-  std::vector<FlexDPNode> nodes(numNode);
+  std::vector<FlexDPNode> nodes(num_node);
 
   genInstRowPatternInit(nodes, insts);
   genInstRowPatternPerform(nodes, insts);
@@ -2144,11 +2115,7 @@ void FlexPA::getInsts(std::vector<frInst*>& insts)
     if (!unique_insts_.hasUnique(inst.get())) {
       continue;
     }
-    dbMasterType masterType = inst->getMaster()->getMasterType();
-    if (masterType != dbMasterType::CORE
-        && masterType != dbMasterType::CORE_TIEHIGH
-        && masterType != dbMasterType::CORE_TIELOW
-        && masterType != dbMasterType::CORE_ANTENNACELL) {
+    if (!isStdCell(inst.get())) {
       continue;
     }
     bool is_skip = true;
@@ -2300,12 +2267,12 @@ int FlexPA::genPatterns_helper(
     const int curr_unique_inst_idx,
     const int max_access_point_size)
 {
-  int numNode = (pins.size() + 2) * max_access_point_size;
-  int numEdge = numNode * max_access_point_size;
+  int num_node = (pins.size() + 2) * max_access_point_size;
+  int num_edge = num_node * max_access_point_size;
   int num_valid_pattern = 0;
 
-  std::vector<FlexDPNode> nodes(numNode);
-  std::vector<int> vioEdge(numEdge, -1);
+  std::vector<FlexDPNode> nodes(num_node);
+  std::vector<int> vio_edge(num_edge, -1);
 
   genPatternsInit(nodes,
                   pins,
@@ -2313,11 +2280,12 @@ int FlexPA::genPatterns_helper(
                   used_access_points,
                   viol_access_points,
                   max_access_point_size);
+
   for (int i = 0; i < ACCESS_PATTERN_END_ITERATION_NUM; i++) {
     genPatterns_reset(nodes, pins, max_access_point_size);
     genPatterns_perform(nodes,
                         pins,
-                        vioEdge,
+                        vio_edge,
                         used_access_points,
                         viol_access_points,
                         curr_unique_inst_idx,
@@ -2364,15 +2332,15 @@ void FlexPA::genPatternsInit(
   nodes[end_node_Idx].setNodeCost(0);
   // init pin nodes
   int pin_idx = 0;
-  int apIdx = 0;
+  int ap_idx = 0;
   int pin_access_idx = unique_insts_.getPAIndex(pins[0].second->getInst());
 
   for (auto& [pin, inst_term] : pins) {
-    apIdx = 0;
+    ap_idx = 0;
     for (auto& ap : pin->getPinAccess(pin_access_idx)->getAccessPoints()) {
-      int node_idx = getFlatIdx(pin_idx, apIdx, max_access_point_size);
+      int node_idx = getFlatIdx(pin_idx, ap_idx, max_access_point_size);
       nodes[node_idx].setNodeCost(ap->getCost());
-      apIdx++;
+      ap_idx++;
     }
     pin_idx++;
   }
@@ -2535,33 +2503,33 @@ int FlexPA::getEdgeCost(
     const auto target_obj = inst_term_1->getInst();
     const int pin_access_idx = unique_insts_.getPAIndex(target_obj);
     const auto pa_1 = pin_1->getPinAccess(pin_access_idx);
-    std::unique_ptr<frVia> via_1;
+    std::unique_ptr<frVia> via1;
     if (pa_1->getAccessPoint(prev_idx_2)->hasAccess(frDirEnum::U)) {
-      via_1 = std::make_unique<frVia>(
+      via1 = std::make_unique<frVia>(
           pa_1->getAccessPoint(prev_idx_2)->getViaDef());
       Point pt1(pa_1->getAccessPoint(prev_idx_2)->getPoint());
       xform.apply(pt1);
-      via_1->setOrigin(pt1);
+      via1->setOrigin(pt1);
       if (inst_term_1->hasNet()) {
-        objs.emplace_back(via_1.get(), inst_term_1->getNet());
+        objs.emplace_back(via1.get(), inst_term_1->getNet());
       } else {
-        objs.emplace_back(via_1.get(), inst_term_1);
+        objs.emplace_back(via1.get(), inst_term_1);
       }
     }
 
     const auto& [pin_2, inst_term_2] = pins[curr_idx_1];
     const auto pa_2 = pin_2->getPinAccess(pin_access_idx);
-    std::unique_ptr<frVia> via_2;
+    std::unique_ptr<frVia> via2;
     if (pa_2->getAccessPoint(curr_idx_2)->hasAccess(frDirEnum::U)) {
-      via_2 = std::make_unique<frVia>(
+      via2 = std::make_unique<frVia>(
           pa_2->getAccessPoint(curr_idx_2)->getViaDef());
       Point pt2(pa_2->getAccessPoint(curr_idx_2)->getPoint());
       xform.apply(pt2);
-      via_2->setOrigin(pt2);
+      via2->setOrigin(pt2);
       if (inst_term_2->hasNet()) {
-        objs.emplace_back(via_2.get(), inst_term_2->getNet());
+        objs.emplace_back(via2.get(), inst_term_2->getNet());
       } else {
-        objs.emplace_back(via_2.get(), inst_term_2);
+        objs.emplace_back(via2.get(), inst_term_2);
       }
     }
 
@@ -2700,10 +2668,10 @@ bool FlexPA::genPatterns_commit(
       }
     }
 
-    frAccessPoint* leftAP = nullptr;
-    frAccessPoint* rightAP = nullptr;
-    frCoord leftPt = std::numeric_limits<frCoord>::max();
-    frCoord rightPt = std::numeric_limits<frCoord>::min();
+    frAccessPoint* left_access_point = nullptr;
+    frAccessPoint* right_access_point = nullptr;
+    frCoord left_pt = std::numeric_limits<frCoord>::max();
+    frCoord right_pt = std::numeric_limits<frCoord>::min();
 
     const auto& [pin, inst_term] = pins[0];
     const auto inst = inst_term->getInst();
@@ -2719,14 +2687,14 @@ bool FlexPA::genPatterns_commit(
           pin_access_pattern->addAccessPoint(nullptr);
         } else {
           const auto& ap = pin_to_access_pattern[pin.get()];
-          const Point tmpPt = ap->getPoint();
-          if (tmpPt.x() < leftPt) {
-            leftAP = ap;
-            leftPt = tmpPt.x();
+          const Point tmp_pt = ap->getPoint();
+          if (tmp_pt.x() < left_pt) {
+            left_access_point = ap;
+            left_pt = tmp_pt.x();
           }
-          if (tmpPt.x() > rightPt) {
-            rightAP = ap;
-            rightPt = tmpPt.x();
+          if (tmp_pt.x() > right_pt) {
+            right_access_point = ap;
+            right_pt = tmp_pt.x();
           }
           pin_access_pattern->addAccessPoint(ap);
         }
@@ -2735,8 +2703,8 @@ bool FlexPA::genPatterns_commit(
         logger_->error(DRT, 91, "Pin does not have valid ap.");
       }
     }
-    pin_access_pattern->setBoundaryAP(true, leftAP);
-    pin_access_pattern->setBoundaryAP(false, rightAP);
+    pin_access_pattern->setBoundaryAP(true, left_access_point);
+    pin_access_pattern->setBoundaryAP(false, right_access_point);
 
     std::set<frBlockObject*> owners;
     if (target_obj != nullptr

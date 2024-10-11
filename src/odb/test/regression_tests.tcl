@@ -39,6 +39,11 @@ record_tests {
   smash_vias
   floorplan_initialize
   replace_design1
+  design_is_routed1
+  design_is_routed2
+  design_is_routed3
+  design_is_routed_fail1
+  design_is_routed_fail2
   #odb_man_tcl_check
   #odb_readme_msgs_check
 }
