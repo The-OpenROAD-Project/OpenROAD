@@ -60,6 +60,10 @@ class extConductor
   bool setDoubleVal(Ath__parser* parser, const char* key, int n, double& val);
   bool setIntVal(Ath__parser* parser, const char* key, int n, int& val);
 
+  void printString(FILE* fp, const char* sep, const char* key, char* v, bool pos= false);
+   void printInt(FILE* fp, const char* sep, const char* key, int v, bool pos= false);
+  void printDouble(FILE* fp, const char* sep, const char* key, double v, bool pos= false);
+
   char _name[128];
   double _height;
   double _distance;
@@ -99,6 +103,11 @@ class extDielectric
   void printDielectric(FILE* fp, Ath__parser* parse);
   void printDielectric(FILE* fp, float planeWidth, float planeThickness) ;
   void printDielectric3D(FILE* fp, float blockWidth, float blockThickness, float blockLength);
+
+  void printString(FILE* fp, const char* sep, const char* key, char* v, bool pos= false);
+  void printInt(FILE* fp, const char* sep, const char* key, int v, bool pos= false);
+  void printDouble(FILE* fp, const char* sep, const char* key, double v, bool pos= false);
+
   bool setDoubleVal(Ath__parser* parser, const char* key, int n, double& val);
   bool setIntVal(Ath__parser* parser, const char* key, int n, int& val);
   char _name[128];

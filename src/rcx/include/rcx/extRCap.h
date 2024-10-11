@@ -42,6 +42,8 @@
 #include "odb/dbShape.h"
 #include "odb/odb.h"
 #include "odb/util.h"
+#include "util.h"
+
 #include "rcx/dbUtil.h"
 #include "rcx/gseq.h"
 
@@ -77,6 +79,8 @@ class extDistRC
 
   // ----------------------------------------------- v2
 void Reset();
+  void printBound(FILE *fp, const char *loHi, const char *layer_name, uint met, uint corner, double res);
+
   // -----------------------------------------------------------
 
   void setLogger(Logger* logger) { logger_ = logger; }
@@ -134,6 +138,15 @@ void Reset();
 
 class extDistRCTable
 {
+
+public:
+    // -------------------------------------- v2 
+    void getFringeTable(Ath__array1D<int>* sTable, Ath__array1D<double>* rcTable, bool compute);
+extDistRC* findRes(int dist1, int dist2, bool compute);
+
+    // -------------------------------------------------------------
+ 
+ 
  public:
   extDistRCTable(uint distCnt);
   ~extDistRCTable();
@@ -208,6 +221,14 @@ class extDistRCTable
 class extDistWidthRCTable
 {
  public:
+
+ // ---------------------------------------------------------------------- v2 ---------
+   uint readRulesUnder(Ath__parser* parser, uint widthCnt, bool bin, bool ignore, const char* keyword, double dbFactor = 1.0);
+ void getFringeTable(uint mou, uint w, Ath__array1D<int>* sTable, Ath__array1D<double>* rcTable, bool map);
+
+
+ // ---------------------------------------------------------------------------------------
+
   extDistWidthRCTable(bool dummy, uint met, uint layerCnt, uint width);
   extDistWidthRCTable(bool over,
                       uint met,
@@ -338,6 +359,22 @@ class extDistWidthRCTable
 class extMetRCTable
 {
  public:
+
+ // -------------------------------------------- v2 ------------------------------
+   void mkWidthAndSpaceMappings(uint ii, extDistWidthRCTable* table, const char *keyword);
+   // dkf 12272023
+  bool GetViaRes(Ath__parser* p, Ath__parser* w, dbNet *net, FILE *logFP);
+  extViaModel *addViaModel(char *name, double R, uint cCnt, uint dx, uint dy, uint top, uint bot);
+  extViaModel *getViaModel(char *name);
+  void printViaModels();
+  // dkf 12282023
+  void writeViaRes(FILE *fp);
+  bool ReadRules(Ath__parser *p);
+  // dkf 12302023
+  bool SkipPattern(Ath__parser *p, dbNet *net, FILE *logFP);
+  // dkf 01022024
+  uint SetDefaultTechViaRes(dbTech *tech, bool dbg);
+ // ----------------------------------------------------------------------------------------
   extMetRCTable(uint layerCnt, AthPool<extDistRC>* rcPool, Logger* logger_);
   ~extMetRCTable();
 
@@ -379,6 +416,7 @@ class extMetRCTable
   uint readRCstats(Ath__parser* parser);
   void mkWidthAndSpaceMappings();
 
+
   uint addCapOver(uint met, uint metUnder, extDistRC* rc);
   uint addCapUnder(uint met, uint metOver, extDistRC* rc);
   extDistRC* getCapOver(uint met, uint metUnder);
@@ -405,8 +443,8 @@ class extMetRCTable
   Logger* logger_;
 
     // dkf 092024
-  // TODO  Ath__array1D<extViaModel*> _viaModel;
-  // TODO  AthHash<int> _viaModelHash;
+  Ath__array1D<extViaModel*> _viaModel;
+  AthHash<int> _viaModelHash;
 };
 
 class extRCTable
@@ -433,10 +471,30 @@ class extMainOptions;
 class extRCModel
 {
 
+
  public:
+//------------------------------------------------------------------------ v2 ----------------
+  // dkf 09242023
+  uint DefWires(extMainOptions* opt);
+  uint OverRulePat(extMainOptions* opt, int len, int LL[2], int UR[2], bool res, bool diag, uint overDist);
+  uint UnderRulePat(extMainOptions* opt, int len, int LL[2], int UR[2], bool diag, uint overDist);
+  uint DiagUnderRulePat(extMainOptions* opt, int len, int LL[2], int UR[2]);
+  uint OverUnderRulePat(extMainOptions* opt, int len, int LL[2], int UR[2]);
+  
+  // dkf 12182023
+  uint ViaRulePat(extMainOptions *opt, int len, int origin[2], int UR[2], bool res, bool diag, uint overDist);
+
+bool spotModelsInRules(char *name, bool bin, bool &res_over, bool &over, bool &under, bool &overUnder, bool &diag_under, bool &over0, bool &over1, bool &under0, bool &under1, bool &overunder0, bool &overunder1, bool &via_res);
+
+//------------------------------------------------------------------------ v2 ----------------
 
   // --------------------------- DKF 092024 -------------------------
-  // dkf 03232024
+  // dkf 0323204
+
+  // dkf 09172024 
+  uint calcMinMaxRC(odb::dbTech *tech, const char *out_file);
+  uint getViaTechRes(dbTech *tech, const char *out_file);
+
 
   extMain *get_extMain() { return _extMain; };
   bool getDiagFlag() { return _diag; };
@@ -780,8 +838,43 @@ class extMeasure
  public:
 
  // ------------------------------------------------- v2
+    
+        double _topWidthR;
+    double _botWidthR;
+    double _teffR;
+    double _peffR;
+bool _skipResCalc= false;
+
      Ath__gridTable *_search= NULL;
      bool IsDebugNet1();
+    static int getMetIndexOverUnder(int met, int mUnder, int mOver, int layerCnt, int maxCnt = 10000);
+
+   // dkf 09122023
+    int SingleDiagTrackDist_opt(SEQ *s, Ath__array1D<SEQ *> *dgContext, bool skipZeroDist, bool skipNegativeDist, Ath__array1D<int> *sortedDistTable, Ath__array1D<SEQ *> *segFilteredTable);
+    // dkf 08022023
+    int SingleDiagTrackDist(SEQ *s, Ath__array1D<SEQ *> *dgContext, bool skipZeroDist, bool skipNegativeDist, std::vector<int> &distTable, Ath__array1D<SEQ *> *segFilteredTable);
+    // dkf 08022023
+    int DebugPrint(SEQ *s, Ath__array1D<SEQ *> *dgContext, int trackNum, int plane);
+    // dkf 08022023
+    uint computeResLoop(Ath__array1D<SEQ *> *tmpTable,
+                        Ath__array1D<SEQ *> *dgTable,
+                        uint targetMet,
+                        uint dir,
+                        uint planeIndex,
+                        uint trackn,
+                        Ath__array1D<SEQ *> *residueSeq);
+    uint computeRes(SEQ *s,
+                    Ath__array1D<SEQ *> *,
+                    uint targetMet,
+                    uint dir,
+                    uint planeIndex,
+                    uint trackn,
+                    Ath__array1D<SEQ *> *residueSeq);
+        void DebugRes_calc(FILE *fp, const char *msg, int rsegId1, const char *msg_len, uint len, int dist1, int dist2, int tgtMet, double tot, double R, double unit, double prev);
+
+  extDistRC* findRes(int dist1, int dist2, bool compute);
+      bool DebugDiagCoords(int met, int targetMet, int len1, int diagDist, int ll[2], int ur[2], const char * = "");
+
 
 // ------------------------------------------------------------
    // DKF 7/25/2024 -- 3d pattern generation
@@ -1372,7 +1465,10 @@ class extMain
   bool _v2; // new flow dkf: 10302023
 
   void skip_via_wires(bool v) { _skip_via_wires = v; };
-  void printUpdateCoup(uint netId1, uint netId2, double v, double org, double totCC);
+  void printUpdateCoup(uint netId1, uint netId2, double v, double org, double totCC);  
+  uint DefWires(extMainOptions *opt);
+
+
     
 
 
