@@ -57,6 +57,7 @@ class Instance;
 class Die;
 class PlacerBaseCommon;
 class PlacerBase;
+struct GCellIndexHandle;
 
 class Instance;
 class Pin;
@@ -670,7 +671,7 @@ class BinGrid
   void setCorePoints(const Die* die);
   void setBinCnt(int binCntX, int binCntY);
   void setTargetDensity(float density);
-  void updateBinsGCellDensityArea(const std::vector<GCell*>& cells);
+  void updateBinsGCellDensityArea(std::vector<GCellIndexHandle>& cells);
   void setNumThreads(int num_threads) { num_threads_ = num_threads; }
 
   void initBins();
@@ -854,7 +855,7 @@ class NesterovBaseCommon
   std::unordered_map<Net*, GNet*> gNetMap_;
 
   int num_threads_;
-  friend class NesterovBase;
+  friend struct GCellIndexHandle;
 };
 
 // Stores instances belonging to a specific power domain
@@ -863,38 +864,6 @@ class NesterovBaseCommon
 // Used to calculate density gradient
 class NesterovBase
 {
-  struct GCellIndexHandle
-  {
-    enum class StorageType
-    {
-      NBC,
-      NB
-    } storageType;
-    NesterovBaseCommon* nbc;
-    NesterovBase* nb;
-    size_t index;
-
-    GCell* operator->() { return &(getGCell()); }
-
-    GCell& operator*() { return getGCell(); }
-
-    const GCell& operator*() const { return getGCell(); }
-
-    operator GCell*() { return &(getGCell()); }
-
-    operator const GCell*() const { return &(getGCell()); }
-
-   private:
-    GCell& getGCell() const
-    {
-      if (storageType == StorageType::NBC) {
-        return nbc->gCellStor_[index];
-      } else {
-        return nb->fillerStor_[index];
-      }
-    }
-  };
-
  public:
   NesterovBase(NesterovBaseVars nbVars,
                std::shared_ptr<PlacerBase> pb,
@@ -902,6 +871,7 @@ class NesterovBase
                utl::Logger* log);
   ~NesterovBase();
 
+  const std::vector<GCellIndexHandle>& gCells() const { return gCells_; }
   const std::vector<GCell*>& gCellInsts() const { return gCellInsts_; }
   const std::vector<GCell*>& gCellFillers() const { return gCellFillers_; }
 
@@ -1044,17 +1014,17 @@ class NesterovBase
 
   // Use this momentarily to avoid circular dependencies between NB, NBC,
   // BinGrid, and GCellIndexHandle
-  std::vector<GCell*> convertGCellIndexHandleToGCellPtrs(
-      const std::vector<GCellIndexHandle>& gCell_handles) const
-  {
-    std::vector<GCell*> gCellPtrs;
-    gCellPtrs.reserve(gCell_handles.size());
+  // std::vector<GCell*> convertGCellIndexHandleToGCellPtrs(
+  //     const std::vector<GCellIndexHandle>& gCell_handles) const
+  // {
+  //   std::vector<GCell*> gCellPtrs;
+  //   gCellPtrs.reserve(gCell_handles.size());
 
-    for (const auto& gcell_handle : gCell_handles) {
-      gCellPtrs.push_back(&(const_cast<GCell&>(*gcell_handle)));
-    }
-    return gCellPtrs;
-  }
+  //   for (const auto& gcell_handle : gCell_handles) {
+  //     gCellPtrs.push_back(&(const_cast<GCell&>(*gcell_handle)));
+  //   }
+  //   return gCellPtrs;
+  // }
 
  private:
   NesterovBaseVars nbVars_;
@@ -1158,6 +1128,7 @@ class NesterovBase
   float snapshotStepLength_ = 0;
 
   void initFillerGCells();
+  friend struct GCellIndexHandle;
 };
 
 inline std::vector<Bin>& NesterovBase::bins()
@@ -1176,6 +1147,36 @@ class biNormalParameters
   float ly;
   float ux;
   float uy;
+};
+
+struct GCellIndexHandle {
+    enum class StorageType {
+        NBC,
+        NB
+    } storageType;
+    
+    NesterovBaseCommon* nbc;
+    NesterovBase* nb;
+    size_t index;
+
+    // Non-const versions
+    GCell* operator->() { return &getGCell(); }
+    GCell& operator*() { return getGCell(); }
+    operator GCell*() { return &getGCell(); }
+
+    // Const versions
+    const GCell* operator->() const { return &getGCell(); }
+    const GCell& operator*() const { return getGCell(); }
+    operator const GCell*() const { return &getGCell(); }
+
+private:
+    GCell& getGCell() const {
+        if (storageType == StorageType::NBC) {
+            return nbc->gCellStor_[index];
+        } else {
+            return nb->fillerStor_[index];
+        }
+    }
 };
 
 }  // namespace gpl
