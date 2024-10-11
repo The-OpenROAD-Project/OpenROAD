@@ -1,0 +1,104 @@
+C ../../../../../../Wires/wire_M4_w4_W41.26_T0.3_H1.4-bottom.txt   1e-06    -20.56 -0.3 0.0  + 
+C ../../../../../../Wires/wire_M4_w4_W41.26_T0.3_H1.4-sides.txt   1e-06    -20.56 -0.3 0.0  + 
+C ../../../../../../Wires/wire_M4_w4_W41.26_T0.3_H1.4-top.txt   4.9e-06    -20.56 -0.3 0.0 
+
+C ../../../../../../Wires/wire_M7_w7_W41.26_T1.2_H1.4-bottom.txt   1e-06    -20.56 2.92 0.0  + 
+C ../../../../../../Wires/wire_M7_w7_W41.26_T1.2_H1.4-sides.txt   1e-06    -20.56 2.92 0.0  + 
+C ../../../../../../Wires/wire_M7_w7_W41.26_T1.2_H1.4-top.txt   4.9e-06    -20.56 2.92 0.0 
+
+C ../../../../../../Wires/wire_M5_w1_W0.14_T0.05_H1.4-bottom.txt   4.3e-06    -0.56 0.27 0.0  + 
+C ../../../../../../Wires/wire_M5_w1_W0.14_T0.05_H1.4-sides.txt   4.3e-06    -0.56 0.27 0.0  + 
+C ../../../../../../Wires/wire_M5_w1_W0.14_T0.2_H1.4-sides.txt   4.9e-06    -0.56 0.32 0.0  + 
+C ../../../../../../Wires/wire_M5_w1_W0.14_T0.05_H1.4-sides.txt   4.1e-06    -0.56 0.52 0.0  + 
+C ../../../../../../Wires/wire_M5_w1_W0.14_T0.1_H1.4-sides.txt   4.9e-06    -0.56 0.57 0.0  + 
+C ../../../../../../Wires/wire_M5_w1_W0.14_T0.1_H1.4-top.txt   2.9e-06    -0.56 0.57 0.0 
+
+C ../../../../../../Wires/wire_M5_w2_W0.14_T0.05_H1.4-bottom.txt   4.3e-06    0.0 0.27 0.0  + 
+C ../../../../../../Wires/wire_M5_w2_W0.14_T0.05_H1.4-sides.txt   4.3e-06    0.0 0.27 0.0  + 
+C ../../../../../../Wires/wire_M5_w2_W0.14_T0.2_H1.4-sides.txt   4.9e-06    0.0 0.32 0.0  + 
+C ../../../../../../Wires/wire_M5_w2_W0.14_T0.05_H1.4-sides.txt   4.1e-06    0.0 0.52 0.0  + 
+C ../../../../../../Wires/wire_M5_w2_W0.14_T0.1_H1.4-sides.txt   4.9e-06    0.0 0.57 0.0  + 
+C ../../../../../../Wires/wire_M5_w2_W0.14_T0.1_H1.4-top.txt   2.9e-06    0.0 0.57 0.0 
+
+C ../../../../../../Wires/wire_M5_w3_W0.14_T0.05_H1.4-bottom.txt   4.3e-06    0.56 0.27 0.0  + 
+C ../../../../../../Wires/wire_M5_w3_W0.14_T0.05_H1.4-sides.txt   4.3e-06    0.56 0.27 0.0  + 
+C ../../../../../../Wires/wire_M5_w3_W0.14_T0.2_H1.4-sides.txt   4.9e-06    0.56 0.32 0.0  + 
+C ../../../../../../Wires/wire_M5_w3_W0.14_T0.05_H1.4-sides.txt   4.1e-06    0.56 0.52 0.0  + 
+C ../../../../../../Wires/wire_M5_w3_W0.14_T0.1_H1.4-sides.txt   4.9e-06    0.56 0.57 0.0  + 
+C ../../../../../../Wires/wire_M5_w3_W0.14_T0.1_H1.4-top.txt   2.9e-06    0.56 0.57 0.0 
+
+D ../../../../../../Dielectrics/dielectric_m5_1_W41.26_T0.05_H1.4-sides.txt   1e-06 4.1e-06   -20.56 0.0 0.0    -20.55 0.01 0.01 -  
+D ../../../../../../Dielectrics/dielectric_m5_1_W41.26_T0.05_H1.4-top.txt   7e-06 4.1e-06   -20.56 0.0 0.0    -20.55 0.01 0.01 -  
+
+
+D ../../../../../../Dielectrics/dielectric_m5_2_W41.26_T0.2_H1.4-sides.txt   1e-06 7e-06   -20.56 0.05 0.0    -20.55 0.06 0.01 -  
+D ../../../../../../Dielectrics/dielectric_m5_2_W41.26_T0.2_H1.4-top.txt   4.3e-06 7e-06   -20.56 0.05 0.0    -20.55 0.06 0.01 -  
+
+
+D ../../../../../../Dielectrics/dielectric_m5_3_W41.26_T0.02_H1.4-sides.txt   1e-06 4.3e-06   -20.56 0.25 0.0    -20.55 0.26 0.01 -  
+D ../../../../../../Dielectrics/dielectric_m5_3_W41.26_T0.02_H1.4-top.txt   4.3e-06 4.3e-06   -20.56 0.25 0.0    -20.55 0.26 0.01 -  
+
+
+D ../../../../../../Dielectrics/dielectric_m5_4_W20.0_T0.05_H1.38-sides.txt   1e-06 4.3e-06   -20.56 0.27 0.01    -20.55 0.28 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_4_W20.0_T0.05_H1.38-top.txt   4.9e-06 4.3e-06   -20.56 0.27 0.01    -20.55 0.28 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_4_W0.42_T0.05_H1.38-sides.txt   1e-06 4.3e-06   -0.42 0.27 0.01    -0.41 0.28 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_4_W0.42_T0.05_H1.38-top.txt   4.9e-06 4.3e-06   -0.42 0.27 0.01    -0.41 0.28 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_4_W0.42_T0.05_H1.38-sides.txt   1e-06 4.3e-06   0.14 0.27 0.01    0.15 0.28 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_4_W0.42_T0.05_H1.38-top.txt   4.9e-06 4.3e-06   0.14 0.27 0.01    0.15 0.28 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_4_W20.0_T0.05_H1.38-sides.txt   1e-06 4.3e-06   0.7 0.27 0.01    0.71 0.28 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_4_W20.0_T0.05_H1.38-top.txt   4.9e-06 4.3e-06   0.7 0.27 0.01    0.71 0.28 0.02 -  
+
+
+D ../../../../../../Dielectrics/dielectric_m5_5_W20.0_T0.2_H1.38-sides.txt   1e-06 4.9e-06   -20.56 0.32 0.01    -20.55 0.33 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_5_W20.0_T0.2_H1.38-top.txt   4.1e-06 4.9e-06   -20.56 0.32 0.01    -20.55 0.33 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_5_W0.42_T0.2_H1.38-sides.txt   1e-06 4.9e-06   -0.42 0.32 0.01    -0.41 0.33 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_5_W0.42_T0.2_H1.38-top.txt   4.1e-06 4.9e-06   -0.42 0.32 0.01    -0.41 0.33 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_5_W0.42_T0.2_H1.38-sides.txt   1e-06 4.9e-06   0.14 0.32 0.01    0.15 0.33 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_5_W0.42_T0.2_H1.38-top.txt   4.1e-06 4.9e-06   0.14 0.32 0.01    0.15 0.33 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_5_W20.0_T0.2_H1.38-sides.txt   1e-06 4.9e-06   0.7 0.32 0.01    0.71 0.33 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_5_W20.0_T0.2_H1.38-top.txt   4.1e-06 4.9e-06   0.7 0.32 0.01    0.71 0.33 0.02 -  
+
+
+D ../../../../../../Dielectrics/dielectric_m5_6_W20.0_T0.05_H1.38-sides.txt   1e-06 4.1e-06   -20.56 0.52 0.01    -20.55 0.53 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_6_W20.0_T0.05_H1.38-top.txt   4.9e-06 4.1e-06   -20.56 0.52 0.01    -20.55 0.53 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_6_W0.42_T0.05_H1.38-sides.txt   1e-06 4.1e-06   -0.42 0.52 0.01    -0.41 0.53 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_6_W0.42_T0.05_H1.38-top.txt   4.9e-06 4.1e-06   -0.42 0.52 0.01    -0.41 0.53 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_6_W0.42_T0.05_H1.38-sides.txt   1e-06 4.1e-06   0.14 0.52 0.01    0.15 0.53 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_6_W0.42_T0.05_H1.38-top.txt   4.9e-06 4.1e-06   0.14 0.52 0.01    0.15 0.53 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_6_W20.0_T0.05_H1.38-sides.txt   1e-06 4.1e-06   0.7 0.52 0.01    0.71 0.53 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m5_6_W20.0_T0.05_H1.38-top.txt   4.9e-06 4.1e-06   0.7 0.52 0.01    0.71 0.53 0.02 -  
+
+
+D ../../../../../../Dielectrics/dielectric_m6_1_W20.0_T0.1_H1.38-sides.txt   1e-06 4.9e-06   -20.56 0.57 0.01    -20.55 0.58 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m6_1_W20.0_T0.1_H1.38-top.txt   2.9e-06 4.9e-06   -20.56 0.57 0.01    -20.55 0.58 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m6_1_W0.42_T0.1_H1.38-sides.txt   1e-06 4.9e-06   -0.42 0.57 0.01    -0.41 0.58 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m6_1_W0.42_T0.1_H1.38-top.txt   2.9e-06 4.9e-06   -0.42 0.57 0.01    -0.41 0.58 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m6_1_W0.42_T0.1_H1.38-sides.txt   1e-06 4.9e-06   0.14 0.57 0.01    0.15 0.58 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m6_1_W0.42_T0.1_H1.38-top.txt   2.9e-06 4.9e-06   0.14 0.57 0.01    0.15 0.58 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m6_1_W20.0_T0.1_H1.38-sides.txt   1e-06 4.9e-06   0.7 0.57 0.01    0.71 0.58 0.02 -  
+D ../../../../../../Dielectrics/dielectric_m6_1_W20.0_T0.1_H1.38-top.txt   2.9e-06 4.9e-06   0.7 0.57 0.01    0.71 0.58 0.02 -  
+
+
+D ../../../../../../Dielectrics/dielectric_m6_2_W41.26_T0.5_H1.4-sides.txt   1e-06 2.9e-06   -20.56 0.67 0.0    -20.55 0.68 0.01 -  
+D ../../../../../../Dielectrics/dielectric_m6_2_W41.26_T0.5_H1.4-top.txt   4.4e-06 2.9e-06   -20.56 0.67 0.0    -20.55 0.68 0.01 -  
+
+
+D ../../../../../../Dielectrics/dielectric_m6_3_W41.26_T0.1_H1.4-sides.txt   1e-06 4.4e-06   -20.56 1.17 0.0    -20.55 1.18 0.01 -  
+D ../../../../../../Dielectrics/dielectric_m6_3_W41.26_T0.1_H1.4-top.txt   4.9e-06 4.4e-06   -20.56 1.17 0.0    -20.55 1.18 0.01 -  
+
+
+D ../../../../../../Dielectrics/dielectric_m6_4_W41.26_T0.1_H1.4-sides.txt   1e-06 4.9e-06   -20.56 1.27 0.0    -20.55 1.28 0.01 -  
+D ../../../../../../Dielectrics/dielectric_m6_4_W41.26_T0.1_H1.4-top.txt   2.9e-06 4.9e-06   -20.56 1.27 0.0    -20.55 1.28 0.01 -  
+
+
+D ../../../../../../Dielectrics/dielectric_m6_5_W41.26_T0.7_H1.4-sides.txt   1e-06 2.9e-06   -20.56 1.37 0.0    -20.55 1.38 0.01 -  
+D ../../../../../../Dielectrics/dielectric_m6_5_W41.26_T0.7_H1.4-top.txt   4.4e-06 2.9e-06   -20.56 1.37 0.0    -20.55 1.38 0.01 -  
+
+
+D ../../../../../../Dielectrics/dielectric_m7_1_W41.26_T0.1_H1.4-sides.txt   1e-06 4.4e-06   -20.56 2.07 0.0    -20.55 2.08 0.01 -  
+D ../../../../../../Dielectrics/dielectric_m7_1_W41.26_T0.1_H1.4-top.txt   4.9e-06 4.4e-06   -20.56 2.07 0.0    -20.55 2.08 0.01 -  
+
+
+D ../../../../../../Dielectrics/dielectric_m7_2_W41.26_T0.75_H1.4-sides.txt   1e-06 4.9e-06   -20.56 2.17 0.0    -20.55 2.18 0.01 -  
+
+
