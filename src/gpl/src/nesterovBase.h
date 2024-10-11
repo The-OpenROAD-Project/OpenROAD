@@ -1032,10 +1032,6 @@ class NesterovBase
 
   std::vector<GCell> fillerStor_;
 
-  // Using the handle here allows to access both the gcell from NB and to go to
-  // it in NBC, when needed.
-  //  it also allows for modifications on vector storages (both NB and NBC)
-  //  while maintaining consistency among parallel vectors in NB.
   std::vector<GCellIndexHandle> gCells_;
   std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
