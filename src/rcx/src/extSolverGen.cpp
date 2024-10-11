@@ -58,6 +58,8 @@ uint extSolverGen::genSolverPatterns(const char* process_name,
   _3dFlag = true;
   _diag = 0;
 
+  setDiagModel(0); // to initialize _diagModel;
+
   uint cnt1 = linesOver();
   cnt1 += linesUnder();
   cnt1 += linesOverUnder();
@@ -95,7 +97,7 @@ uint extSolverGen::widthsSpacingsLoop(uint diagMet)
   double t = cond->_thickness;
   double h = cond->_height;
   double ro = cond->_p;
-  double res = 0.0;
+  // double res = 0.0;
   double top_ext = cond->_top_ext;
   double bot_ext = cond->_bot_ext;
 
@@ -121,11 +123,11 @@ uint extSolverGen::widthsSpacingsLoop(uint diagMet)
     float w = mult_w * min_width;
 
     double top_width = w + 2 * top_ext;
-    double top_widthR = w + 2 * top_ext;
+    // double top_widthR = w + 2 * top_ext;
     double bot_width = w + 2 * bot_ext;
     double thickness = t;
-    double bot_widthR = w + 2 * bot_ext;
-    double thicknessR = t;
+    // double bot_widthR = w + 2 * bot_ext;
+    // double thicknessR = t;
 
     if (diagMet == 0) {
       for (uint jj = 0; jj < _spaceMultTable.size(); jj++) {
@@ -137,7 +139,7 @@ uint extSolverGen::widthsSpacingsLoop(uint diagMet)
 
         cnt++;
         if (jj==0 && _overMet<=0 && _underMet==0) {
-            double res= calcResistance(ro, w, s, _len*w, top_width, bot_width, thickness);
+            calcResistance(ro, w, s, _len*w, top_width, bot_width, thickness);
         }
         if (_wireCnt==1)
             break;
@@ -170,8 +172,8 @@ double extSolverGen::calcResistance(double ro, double w, double s, double len, d
 {
   double r_unit = ro / (thicknessR * (top_widthR + bot_widthR)/2);
   double tot_res= len * r_unit;
-  fprintf(_resFP, "Metal %d RESOVER 0 Under 0  Dist %.4f  Width %.4f LEN %.4f  CC 0.0  FR 0.0  TC 0.0  CC2 0.0 RES %.6f %s/wire_0\n",
-    _met, w, s, len, tot_res, _wireDirName);
+  fprintf(_resFP, "Metal %d RESOVER 0 Under 0  Dist 0.0 Width %.4f LEN %.4f  CC 0.0  FR 0.0  TC 0.0  CC2 0.0 RES %.6f %s/wire_0\n",
+    _met, w, len, tot_res, _wireDirName);
   return tot_res;
 }
 uint extSolverGen::linesOver(uint metLevel) 
@@ -193,10 +195,10 @@ uint extSolverGen::linesOver(uint metLevel)
       uint cnt1 = widthsSpacingsLoop();
       cnt += cnt1;
 
-      logger_->info(RCX, 225, "Finished {} measurements for pattern M{}_over_M{}", cnt1, met, underMet);
+      logger_->info(RCX, 249, "Finished {} measurements for pattern M{}_over_M{}", cnt1, met, underMet);
     }
   }
-  logger_->info(RCX, 226, "Finished {} measurements for pattern MET_OVER_MET", cnt);
+  logger_->info(RCX, 250, "Finished {} measurements for pattern MET_OVER_MET", cnt);
   return cnt;
 }
 uint extSolverGen::linesUnder(uint metLevel) 
@@ -208,11 +210,10 @@ uint extSolverGen::linesUnder(uint metLevel)
     if (metLevel > 0 && met != metLevel)
       continue;
 
-    for (uint overMet = met + 1; overMet < _layerCnt; overMet++) {
-        int metDist= overMet-met;
+    for (uint overMet = met + 1; overMet < _layerCnt; overMet++) 
+    {
         if (overMet-met>_maxOverDist)
             continue;
-
 
       setMets(met, 0, overMet);
       uint cnt1 = widthsSpacingsLoop();
@@ -234,8 +235,8 @@ uint extSolverGen::linesDiagUnder(uint metLevel)
     if (metLevel > 0 && met != metLevel)
       continue;
 
-    for (uint overMet = met + 1; overMet < _layerCnt; overMet++) {
-        int metDist= overMet-met;
+    for (uint overMet = met + 1; overMet < _layerCnt; overMet++) 
+    {
         if (overMet-met>_maxOverDist)
             continue;
 
@@ -499,8 +500,8 @@ double extSolverGen::writeWirePatterns_w3(FILE* fp, double height_offset, double
   double targetWidth = _topWidth;
   double targetPitch = _topWidth + _seff;
   double minWidth = getConductor(_met)->_min_width;
-  double minSpace =  getConductor(_met)->_min_spacing;
-  double min_pitch = minWidth + minSpace;
+  // DELETE double minSpace =  getConductor(_met)->_min_spacing;
+  // double min_pitch = minWidth + minSpace;
 
   len= _len * minWidth; // HEIGHT param
   if (len<=0)
@@ -515,7 +516,7 @@ double extSolverGen::writeWirePatterns_w3(FILE* fp, double height_offset, double
   if (wireCnt%2>0) // should be odd
 	  wireCnt--;
 
-  int n = wireCnt / 2; 
+  // DELETE int n = wireCnt / 2; 
   double orig = 0.0;
   double x = orig;
   double X0= x-targetPitch; // prev neighbor 
