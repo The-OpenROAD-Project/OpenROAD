@@ -844,12 +844,22 @@ Instance* dbNetwork::parent(const Instance* instance) const
     return nullptr;
   }
 
-
-    dbInst* db_inst;
-    dbModInst* mod_inst;
-    staToDb(instance, db_inst, mod_inst);
-    if (mod_inst) {
-      auto parent_module = mod_inst->getParent();
+  dbInst* db_inst;
+  dbModInst* mod_inst;
+  staToDb(instance, db_inst, mod_inst);
+  if (mod_inst) {
+    auto parent_module = mod_inst->getParent();
+    if (parent_module) {
+      if (auto parent_inst = parent_module->getModInst()) {
+        if (parent_inst) {
+          return dbToSta(parent_inst);
+        }
+      }
+    }
+  }
+  if (hierarchy_) {
+    if (db_inst) {
+      auto parent_module = db_inst->getModule();
       if (parent_module) {
         if (auto parent_inst = parent_module->getModInst()) {
           if (parent_inst) {
@@ -858,19 +868,8 @@ Instance* dbNetwork::parent(const Instance* instance) const
         }
       }
     }
-    if (hierarchy_) {    
-      if (db_inst) {
-        auto parent_module = db_inst->getModule();
-        if (parent_module) {
-          if (auto parent_inst = parent_module->getModInst()) {
-            if (parent_inst) {
-              return dbToSta(parent_inst);
-            }     
-          }
-        }
-      }
-    }
-    
+  }
+
   return top_instance_;
 }
 
