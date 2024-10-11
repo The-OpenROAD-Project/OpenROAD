@@ -38,6 +38,7 @@ record_tests {
   write_macro_placement
   smash_vias
   floorplan_initialize
+  replace_design1
   #odb_man_tcl_check
   #odb_readme_msgs_check
 }

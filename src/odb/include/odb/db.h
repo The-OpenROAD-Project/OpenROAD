@@ -7813,6 +7813,10 @@ class dbModInst : public dbObject
 
   static dbModInst* getModInst(dbBlock* block_, uint dbid_);
 
+  /// Swap the module of this instance.
+  /// Returns true if the operations succeeds.
+  bool swapMaster(dbModule* module);
+
   // User Code End dbModInst
 };
 

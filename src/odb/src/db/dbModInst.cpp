@@ -45,10 +45,20 @@
 // User Code Begin Includes
 #include "dbGroup.h"
 #include "dbModBTerm.h"
+#include "dbModuleModInstItr.h"
 #include "dbModuleModInstModITermItr.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbModInst>;
+
+class sortModBTerm
+{
+ public:
+  bool operator()(_dbModBTerm* m1, _dbModBTerm* m2)
+  {
+    return strcmp(m1->_name, m2->_name) < 0;
+  }
+};
 
 bool _dbModInst::operator==(const _dbModInst& rhs) const
 {
@@ -394,6 +404,103 @@ void dbModInst::RemoveUnusedPortsAndPins()
       dbModNet::destroy(moditerm_m_net);
     }
   }
+}
+
+bool dbModInst::swapMaster(dbModule* new_module)
+{
+  _dbModInst* inst = (_dbModInst*) this;
+
+  dbModule* old_module = getMaster();
+  _dbModule* old_master = (_dbModule*) old_module;
+  _dbModule* new_master = (_dbModule*) new_module;
+
+  const char* old_module_name = old_module->getName();
+  const char* new_module_name = new_module->getName();
+
+  // check if number of module ports match
+  dbSet<dbModBTerm> old_bterms = old_module->getModBTerms();
+  dbSet<dbModBTerm> new_bterms = new_module->getModBTerms();
+  if (old_bterms.size() != new_bterms.size()) {
+    getImpl()->getLogger()->warn(utl::ODB,
+                                 447,
+                                 "modules cannot be swapped because module {} "
+                                 "has {} ports but module {} has {} ports",
+                                 old_module_name,
+                                 old_bterms.size(),
+                                 new_module_name,
+                                 new_bterms.size());
+    return false;
+  }
+
+  // check if module port names match
+  std::vector<_dbModBTerm*> new_ports;
+  std::vector<_dbModBTerm*> old_ports;
+  dbSet<dbModBTerm>::iterator iter;
+  for (iter = old_bterms.begin(); iter != old_bterms.end(); ++iter) {
+    old_ports.push_back((_dbModBTerm*) *iter);
+  }
+  for (iter = new_bterms.begin(); iter != new_bterms.end(); ++iter) {
+    new_ports.push_back((_dbModBTerm*) *iter);
+  }
+  std::unordered_map<uint, uint> index_map;
+  std::sort(new_ports.begin(), new_ports.end(), sortModBTerm());
+  std::sort(old_ports.begin(), old_ports.end(), sortModBTerm());
+  std::vector<_dbModBTerm*>::iterator i1 = new_ports.begin();
+  std::vector<_dbModBTerm*>::iterator i2 = old_ports.begin();
+  for (; i1 != new_ports.end() && i2 != old_ports.end(); ++i1, ++i2) {
+    _dbModBTerm* t1 = *i1;
+    _dbModBTerm* t2 = *i2;
+    if (strcmp(t1->_name, t2->_name) != 0) {
+      break;
+    }
+    index_map[t2->getId()] = t1->getId();
+  }
+  if (i1 != new_ports.end() || i2 != old_ports.end()) {
+    getImpl()->getLogger()->warn(utl::ODB,
+                                 448,
+                                 "modules cannot be swapped because module {} "
+                                 "has port {} but module {} has port {}",
+                                 old_module_name,
+                                 (*i1)->_name,
+                                 new_module_name,
+                                 (*i2)->_name);
+    return false;
+  }
+
+  // remove all existing instances
+  /*
+  uint id;
+  _dbBlock* block = (_dbBlock*) old_module->getOwner();
+  dbModuleModInstItr itr(block->_modinst_tbl);
+  for (id = itr.begin(this); id != itr.end(this); id = itr.next(id)) {
+    dbModInst* m_inst = (dbModInst*) itr.getObject(id);
+    std::cout << m_inst->getName() << std::endl;
+  }
+  */
+
+  // instance -> master
+  // library of masters..
+  //
+  //
+  // new_name = master_1...
+  // dbModule* uniquified_module = makeUniqueDbModule(master->getName())
+  // then populate..
+  // recursively copy contents of master into uniquified_module.
+  //
+  // dbModule::duplicate(uniquified_module,master);
+  //
+
+  // dbModule* new_module = UniquifyAndDuplicate(master){
+  /*
+  dbModule* uniquified_module = makeUniqueDbModule(master->getName())
+   ..fill out uniquified_module...
+    return uniquified_module;
+  */
+
+  inst->_master = new_master->getOID();
+  new_master->_mod_inst = inst->getOID();
+  old_master->_mod_inst = dbId<_dbModInst>();
+  return true;
 }
 
 // User Code End dbModInstPublicMethods
