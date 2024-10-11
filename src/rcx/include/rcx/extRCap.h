@@ -35,7 +35,7 @@
 #include <map>
 
 #include "ext2dBox.h"
-// #include "extprocess.h"
+#include "extprocess.h"
 #include "rcx/extSolverGen.h"
 #include "odb/db.h"
 #include "odb/dbExtControl.h"
@@ -45,11 +45,16 @@
 #include "rcx/dbUtil.h"
 #include "rcx/gseq.h"
 
+#include "extSegment.h"
+#include "extViaModel.h"
+
 namespace utl {
 class Logger;
 }
 
 namespace rcx {
+
+using namespace odb;
 
 class extMeasure;
 
@@ -69,6 +74,11 @@ using CoupleAndCompute = void (*)(CoupleOptions&, void*);
 class extDistRC
 {
  public:
+
+  // ----------------------------------------------- v2
+void Reset();
+  // -----------------------------------------------------------
+
   void setLogger(Logger* logger) { logger_ = logger; }
   void printDebug(const char*,
                   const char*,
@@ -107,10 +117,11 @@ class extDistRC
   void interpolate(uint d, extDistRC* rc1, extDistRC* rc2);
   double interpolate_res(uint d, extDistRC* rc2);
 
- private:
+ public:
   int _sep;
   double _coupling;
   double _fringe;
+  double _fringeW;
   double _diag;
   double _res;
   Logger* logger_;
@@ -767,6 +778,12 @@ class extLenOU  // assume cross-section on the z-direction
 class extMeasure
 {
  public:
+
+ // ------------------------------------------------- v2
+     Ath__gridTable *_search= NULL;
+     bool IsDebugNet1();
+
+// ------------------------------------------------------------
    // DKF 7/25/2024 -- 3d pattern generation
    bool _3dFlag;
    bool _benchFlag;
@@ -1314,6 +1331,7 @@ class extMainOptions
   uint _dir;
   extRCModel* _rcModel;
   uint _layerCnt;
+  bool _v1;
 };
 
 class extCorner
@@ -1334,10 +1352,41 @@ class extCorner
 class extMain
 {
   // --------------------- dkf 092024 ------------------------
-  private:
+  public:
     extSolverGen *_currentSolverGen;
 
+    // v2 -----------------------------------------------------
+    bool _lefRC= false;
+    uint _dbgOption= 0;
+
+      uint* _ccContextLength= nullptr;
+      //  uint* _ccContextLength= nullptr;
+
+   bool _skip_via_wires;
+      float _version;       // dkf: 06242024
+  int _metal_flag_22; // dkf: 06242024
+  uint _wire_extracted_progress_count; // dkf: 06242024
+
+  bool _v2; // new flow dkf: 10302023
+
+  void skip_via_wires(bool v) { _skip_via_wires = v; };
+  void printUpdateCoup(uint netId1, uint netId2, double v, double org, double totCC);
+    
+
+
 public:
+
+// v2 ------------------------------------------------------------
+  uint _debug_net_id = 0;
+
+  uint couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m);
+  void setBranchCapNodeId(dbNet* net, uint junction);
+  void markPathHeadTerm(dbWirePath& path);
+
+
+
+
+
   extSolverGen* getCurrentSolverGen() { return _currentSolverGen; }
   void setCurrentSolverGen(extSolverGen* p) { _currentSolverGen= p; }
 
@@ -1602,7 +1651,7 @@ public:
 
   void getShapeRC(odb::dbNet* net,
                   const odb::dbShape& s,
-                  const odb::Point& prevPoint,
+                  odb::Point& prevPoint,
                   const odb::dbWirePathShape& pshape);
   void setResAndCap(odb::dbRSeg* rc,
                     const double* restbl,
@@ -2334,7 +2383,7 @@ public:
   std::vector<odb::Rect*> _multiViaTable[20];
   std::vector<odb::dbBox*> _multiViaBoxTable[20];
 
-  uint _debug_net_id = 0;
+  // v2 uint _debug_net_id = 0;
   float _previous_percent_extracted = 0;
 
   double _minCapTable[64][64];
