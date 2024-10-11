@@ -86,7 +86,35 @@ extConductor::extConductor(Logger* logger) {
   _bot_ext = 0;
   logger_ = logger;
 }
+void extConductor::printString(FILE* fp, const char* sep, const char* key, char* v, bool pos)
+{
+  if (pos && !((v == NULL) || (strcmp("", v) == 0)))
+    return;
 
+  fprintf(fp, "%s%s %s\n", sep, key, v);
+}
+void extConductor::printInt(FILE* fp,
+                           const char* sep,
+                           const char* key,
+                           int v,
+                           bool pos)
+{
+  if (pos && !(v > 0))
+    return;
+
+  fprintf(fp, "%s%s %d\n", sep, key, v);
+}
+void extConductor::printDouble(FILE* fp,
+                              const char* sep,
+                              const char* key,
+                              double v,
+                              bool pos)
+{
+  if (pos && !(v > 0))
+    return;
+
+  fprintf(fp, "%s%s %g\n", sep, key, v);
+}
 void extConductor::printConductor(FILE* fp, Ath__parser* parse) 
 {
   fprintf(fp, "CONDUCTOR {\n");
@@ -141,6 +169,7 @@ bool extDielectric::setDoubleVal(Ath__parser* parser, const char* key, int n, do
   }
   return false;
 }
+/*
 bool extConductor::readConductor(Ath__parser* parser) {
   if (setDoubleVal(parser, "distance", 1, _distance))
     return true;
@@ -185,6 +214,75 @@ bool extConductor::readConductor(Ath__parser* parser) {
 
   return false;
 }
+*/
+bool extConductor::readConductor(Ath__parser* parser) 
+{
+    char* keyword = parser->get(0);
+  if (strcmp("distance", keyword) == 0) {
+    _distance= parser->getDouble(1);
+    return true;
+  } else if (strcmp("height", keyword) == 0) {
+    _height= parser->getDouble(1);
+    return true;
+  } else if (strcmp("thickness", keyword) == 0) {
+    _thickness= parser->getDouble(1);
+    return true;
+  } else if (strcmp("min_width", keyword) == 0) {
+    _min_width= parser->getDouble(1);
+    return true;
+  } else if (strcmp("min_spacing", keyword) == 0) {
+    _min_spacing= parser->getDouble(1);
+    return true;
+  } else if (strcmp("origin_x", keyword) == 0) {
+    _origin_x= parser->getDouble(1);
+    return true;
+  } else if (strcmp("bottom_left_x", keyword) == 0) {
+    _bottom_left_x= parser->getDouble(1);
+    return true;
+  } else if (strcmp("bottom_right_x", keyword) == 0) {
+    _bottom_right_x= parser->getDouble(1);
+    return true;
+  } else if (strcmp("top_left_x", keyword) == 0) {
+    _top_left_x= parser->getDouble(1);
+    return true;
+  } else if (strcmp("top_right_x", keyword) == 0) {
+    _top_right_x= parser->getDouble(1);
+    return true;
+  } else if (strcmp("var_table", keyword) == 0) {
+    _var_table_index= parser->getInt(1);
+    return true;
+  } else if (strcmp("resistivity", keyword) == 0) {
+    _p= parser->getDouble(1);
+    return true;
+  } else if (strcmp("min_cw_del", keyword) == 0) {
+    _min_cw_del= parser->getDouble(1);
+    return true;
+  } else if (strcmp("max_cw_del", keyword) == 0) {
+    _max_cw_del= parser->getDouble(1);
+    return true;
+  } else if (strcmp("min_ct_del", keyword) == 0) {
+    _min_ct_del= parser->getDouble(1);
+    return true;
+  } else if (strcmp("max_ct_del", keyword) == 0) {
+    _max_ct_del= parser->getDouble(1);
+    return true;
+  } else if (strcmp("min_ca", keyword) == 0) {
+    _min_ca= parser->getDouble(1);
+    return true;
+  } else if (strcmp("max_ca", keyword) == 0) {
+    _max_ca= parser->getDouble(1);
+    return true;
+  } else if (strcmp("top_extension", keyword) == 0) {
+    _top_ext= parser->getDouble(1);
+    return true;
+  } else if (strcmp("bottom_extension", keyword) == 0) {
+    _bot_ext= parser->getDouble(1);
+    return true;
+  }
+
+  return false;
+}
+
 
 extDielectric::extDielectric(Logger* logger) {
   strcpy(_name, "");
@@ -205,6 +303,36 @@ extDielectric::extDielectric(Logger* logger) {
   _nextMet = 0;
   logger_ = logger;
 }
+void extDielectric::printString(FILE* fp, const char* sep, const char* key, char* v, bool pos)
+{
+  if (pos && !((v == NULL) || (strcmp("", v) == 0)))
+    return;
+
+  fprintf(fp, "%s%s %s\n", sep, key, v);
+}
+void extDielectric::printInt(FILE* fp,
+                           const char* sep,
+                           const char* key,
+                           int v,
+                           bool pos)
+{
+  if (pos && !(v > 0))
+    return;
+
+  fprintf(fp, "%s%s %d\n", sep, key, v);
+}
+void extDielectric::printDouble(FILE* fp,
+                              const char* sep,
+                              const char* key,
+                              double v,
+                              bool pos)
+{
+  if (pos && !(v > 0))
+    return;
+
+  fprintf(fp, "%s%s %g\n", sep, key, v);
+}
+
 void extDielectric::printDielectric(FILE* fp, Ath__parser* parse) {
   fprintf(fp, "DIELECTRIC {\n");
 
@@ -639,8 +767,8 @@ double extProcess::writeProcessAndGroundPlanes(FILE* wfp,
   double height_base = 0.0;
   height_ceiling = 100000;
   if (underMet > 0) {
-    double w = getConductor(underMet)->_min_width;
-    double s = getConductor(underMet)->_min_spacing;
+    // DELETE double w = getConductor(underMet)->_min_width;
+    // DELETE double s = getConductor(underMet)->_min_spacing;
     double th = getConductor(underMet)->_thickness;
 
     extMasterConductor* a = getMasterConductor(underMet);
@@ -661,8 +789,8 @@ double extProcess::writeProcessAndGroundPlanes(FILE* wfp,
         fprintf(wfp, "GROUND_PLANE 0 M0_w0  HEIGHT 0.0 0.0  THICKNESS 0.0\n");
   }
   if (overMet > 0) {
-    double w = getConductor(overMet)->_min_width;
-    double s = getConductor(overMet)->_min_spacing;
+    // DELETE double w = getConductor(overMet)->_min_width;
+    // DELETE double s = getConductor(overMet)->_min_spacing;
     double th = getConductor(overMet)->_thickness;
     double h2 = getConductor(overMet)->_height;
 
@@ -683,12 +811,14 @@ double extProcess::writeProcessAndGroundPlanes(FILE* wfp,
     }
   }
   fprintf(wfp, "\n# Process Stack -- Dielectric Heights\n");
-  double height= writeProcessHeights(wfp, 0, width, length, NULL, height_base, height_ceiling);
-  if (overMet<=0)
-    height_ceiling= height;
+  double height = writeProcessHeights(
+      wfp, 0, width, length, NULL, height_base, height_ceiling);
+  if (overMet <= 0)
+    height_ceiling = height;
 
-    if (!apply_height_offset)
-        height_ceiling= height;
+  if (!apply_height_offset)
+    height_ceiling = height;
+
   return height_base;
 }
 
