@@ -863,7 +863,7 @@ class NesterovBaseCommon
 // Used to calculate density gradient
 class NesterovBase
 {
-  struct GCellPointer
+  struct GCellIndexHandle
   {
     enum class StorageType
     {
@@ -890,7 +890,7 @@ class NesterovBase
       if (storageType == StorageType::NBC) {
         return nbc->gCellStor_[index];
       } else {
-        return nb->gCellStor_[index];
+        return nb->fillerStor_[index];
       }
     }
   };
@@ -1043,15 +1043,15 @@ class NesterovBase
   bool isDiverged() const { return isDiverged_; }
 
   // Use this momentarily to avoid circular dependencies between NB, NBC,
-  // BinGrid, and GCellPointer
-  std::vector<GCell*> convertGCellPointersToGCellPtrs(
-      const std::vector<GCellPointer>& gCellPointers) const
+  // BinGrid, and GCellIndexHandle
+  std::vector<GCell*> convertGCellIndexHandleToGCellPtrs(
+      const std::vector<GCellIndexHandle>& gCell_handles) const
   {
     std::vector<GCell*> gCellPtrs;
-    gCellPtrs.reserve(gCellPointers.size());
+    gCellPtrs.reserve(gCell_handles.size());
 
-    for (const auto& gCellPointer : gCellPointers) {
-      gCellPtrs.push_back(&(const_cast<GCell&>(*gCellPointer)));
+    for (const auto& gcell_handle : gCell_handles) {
+      gCellPtrs.push_back(&(const_cast<GCell&>(*gcell_handle)));
     }
     return gCellPtrs;
   }
@@ -1074,9 +1074,11 @@ class NesterovBase
   int64_t stdInstsArea_ = 0;
   int64_t macroInstsArea_ = 0;
 
-  std::vector<GCell> gCellStor_;
+  std::vector<GCell> fillerStor_;
 
-  std::vector<GCellPointer> gCells_;
+  //Using the handle here allows to access both the gcell from NB and to go to it in NBC, when needed.
+  // it also allows for modifications on vector storages (both NB and NBC) while maintaining consistency among parallel vectors in NB.
+  std::vector<GCellIndexHandle> gCells_;
   std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
 

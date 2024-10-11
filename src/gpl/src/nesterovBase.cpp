@@ -1292,7 +1292,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   // update gFillerCells
   initFillerGCells();
 
-  gCells_.reserve(pb_->insts().size() + gCellStor_.size());
+  gCells_.reserve(pb_->insts().size() + fillerStor_.size());
 
   // add place instances
   for (auto& inst : pb_->placeInsts()) {
@@ -1305,16 +1305,16 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
 
     gCell->clearInstances();
     gCell->setInstance(inst);
-    gCells_.emplace_back(GCellPointer{GCellPointer::StorageType::NBC,
+    gCells_.emplace_back(GCellIndexHandle{GCellIndexHandle::StorageType::NBC,
                                       nbc_.get(),
                                       nullptr,
                                       nbc_->getGCellIndex(gCell)});
   }
 
   // add filler cells to gCells_
-  for (size_t i = 0; i < gCellStor_.size(); ++i) {
+  for (size_t i = 0; i < fillerStor_.size(); ++i) {
     gCells_.emplace_back(
-        GCellPointer{GCellPointer::StorageType::NB, nullptr, this, i});
+        GCellIndexHandle{GCellIndexHandle::StorageType::NB, nullptr, this, i});
   }
 
   log_->info(GPL, 31, "{:20} {:9}", "FillerInit:NumGCells:", gCells_.size());
@@ -1468,7 +1468,7 @@ void NesterovBase::initFillerGCells()
                   fillerDx_,
                   fillerDy_);
 
-    gCellStor_.push_back(myGCell);
+    fillerStor_.push_back(myGCell);
   }
 }
 
@@ -1491,7 +1491,7 @@ void NesterovBase::updateGCellDensityCenterLocation(
     int idx = &coordi - &coordis[0];
     gCells_[idx]->setDensityCenterLocation(coordi.x, coordi.y);
   }
-  std::vector<GCell*> gCellPtrs = convertGCellPointersToGCellPtrs(gCells_);
+  std::vector<GCell*> gCellPtrs = convertGCellIndexHandleToGCellPtrs(gCells_);
   bg_.updateBinsGCellDensityArea(gCellPtrs);
 }
 
