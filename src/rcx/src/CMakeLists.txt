@@ -59,6 +59,12 @@ add_library(rcx_lib
   extRCmodel_solver.cpp
   extSolverGen.cpp
   extModelGen.cpp
+extFlow_v2.cpp
+extmeasure_diag.cpp
+extSegment.cpp
+findsegments.cpp
+extmeasure_couple.cpp
+extmeasure_dist.cpp
 )
 
 target_include_directories(rcx_lib
