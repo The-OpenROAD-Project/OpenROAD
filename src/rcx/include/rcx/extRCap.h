@@ -1356,6 +1356,8 @@ class extMain
     extSolverGen *_currentSolverGen;
 
     // v2 -----------------------------------------------------
+      uint _ccContextDepth = 0;
+
     bool _lefRC= false;
     uint _dbgOption= 0;
 
@@ -2213,7 +2215,7 @@ public:
   uint _ccUp = 0;
   uint _couplingFlag = 0;
   bool _rotatedGs = false;
-  uint _ccContextDepth = 0;
+  // uint _ccContextDepth = 0;
   int _ccMinX;
   int _ccMinY;
   int _ccMaxX;

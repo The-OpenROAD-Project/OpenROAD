@@ -65,6 +65,10 @@ extSegment.cpp
 findsegments.cpp
 extmeasure_couple.cpp
 extmeasure_dist.cpp
+extmeasure_flow.cpp
+extmeasure_print.cpp
+extmeasure_calc.cpp
+extmeasure_rc_flow.cpp
 )
 
 target_include_directories(rcx_lib

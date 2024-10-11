@@ -44,9 +44,18 @@ class extMeasureRC : public extMeasure
     public:
 
     //----------------------------------------------------------------------- v2
+     int _ll_tgt[2];
+    int _ur_tgt[2];
+        int _diagResLen;
+
+
         int _diagResDist;
         bool _useWeighted= false;
     // DELETE static int getMetIndexOverUnder(int met, int mUnder, int mOver, int layerCnt, int maxCnt);
+bool DebugDiagCoords(int met, int targetMet, int len1, int diagDist, int ll[2], int ur[2]);
+
+extDistRC* getDiagUnderCC(extMetRCTable* rcModel, uint dist, uint overMet) ;
+    uint CalcDiag(uint targetMet, uint diagDist, uint tgWidth, uint len1, extSegment *s, int rsegId);
 
 
 
@@ -58,6 +67,8 @@ class extMeasureRC : public extMeasure
     void GetOUname(char buf[20], int met, int metOver, int metUnder);
     void PrintCrossOvelaps(Ath__wire *w, uint tgt_met, int x1, int x2, Ath__array1D<extSegment *> *segTable, int totLen, const char *prefix, int metOver = -1, int metUnder = -1);
 
+// dkf 09212023
+    void OverSubRC_dist_new(dbRSeg *rseg1, dbRSeg *rseg2, int ouCovered, int diagCovered, int srcCovered);
     // dkf 10212023
     void PrintCrossOvelapsOU(Ath__wire *w, uint tgt_met, int x1, int len, Ath__array1D<extSegment *> *segTable, int totLen, const char *prefix, int metOver, int metUnder);
 

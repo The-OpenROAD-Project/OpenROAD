@@ -1955,11 +1955,9 @@ void extMain::makeBlockRCsegs(const char* netNames,
     }
 
     Rect maxRect = _block->getDieArea();
-/* FIXME
     if (_v2)
        couplingFlow_v2(maxRect, _couplingFlag, &m);
     else
-    */
        couplingFlow(maxRect, _couplingFlag, &m, extCompute1);
 
     if (m._debugFP != nullptr) {
