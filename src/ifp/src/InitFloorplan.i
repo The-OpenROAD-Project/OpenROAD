@@ -114,9 +114,11 @@ init_floorplan_core(int die_lx,
                     ifp::RowParity row_parity,
                     const std::vector<odb::dbSite*>& flipped_sites)
 {
+  std::set<odb::dbSite*> flipped_sites_set(flipped_sites.begin(),
+                                           flipped_sites.end());
   get_floorplan().initFloorplan({die_lx, die_ly, die_ux, die_uy},
                                 {core_lx, core_ly, core_ux, core_uy},
-                                site, additional_sites, row_parity, flipped_sites); 
+                                site, additional_sites, row_parity, flipped_sites_set); 
 }
 
 void
@@ -131,11 +133,13 @@ init_floorplan_util(double util,
                     ifp::RowParity row_parity,
                     const std::vector<odb::dbSite*>& flipped_sites)
 {
+  std::set<odb::dbSite*> flipped_sites_set(flipped_sites.begin(),
+                                           flipped_sites.end());
   get_floorplan().initFloorplan(util, aspect_ratio,
                                 core_space_bottom, core_space_top,
                                 core_space_left, core_space_right,
                                 site, additional_sites, row_parity,
-                                flipped_sites);
+                                flipped_sites_set);
 }
 
 void
