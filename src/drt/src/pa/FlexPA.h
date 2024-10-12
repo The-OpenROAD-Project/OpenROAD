@@ -378,7 +378,7 @@ class FlexPA
                              T* pin,
                              std::unique_ptr<frPathSeg> ps,
                              frInstTerm* inst_term,
-                             const Point point,
+                             Point point,
                              frLayer* layer);
 
   /**
@@ -466,7 +466,7 @@ class FlexPA
                           T* pin,
                           std::unique_ptr<frPathSeg> ps,
                           frInstTerm* inst_term,
-                          const Point point);
+                          Point point);
 
   template <typename T>
   void updatePinStats(
