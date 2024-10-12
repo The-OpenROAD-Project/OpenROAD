@@ -46,7 +46,7 @@
 
 %typemap(typecheck,precedence=SWIG_TYPECHECK_STRING) ifp::RowParity {
   const char *str = PyUnicode_AsUTF8($input);
-  $1 = strcasecmp(str, "NONE") != 0 + strcasecmp(str, "EVEN") != 0 + strcasecmp(str, "ODD") != 0;
+  $1 = strcasecmp(str, "NONE") != 0 || strcasecmp(str, "EVEN") != 0 || strcasecmp(str, "ODD") != 0;
 }
 
 %typemap(in) ifp::RowParity {
