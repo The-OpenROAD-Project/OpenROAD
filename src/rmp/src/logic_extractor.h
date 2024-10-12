@@ -15,6 +15,7 @@
 #include "sta/Graph.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/SearchPred.hh"
+#include "utl/Logger.h"
 
 namespace rmp {
 
@@ -45,7 +46,10 @@ class SearchPredNonReg2AbcSupport : public sta::SearchPredNonReg2
 class LogicExtractorFactory
 {
  public:
-  LogicExtractorFactory(sta::dbSta* open_sta) : open_sta_(open_sta) {}
+  LogicExtractorFactory(sta::dbSta* open_sta, utl::Logger* logger)
+      : open_sta_(open_sta), logger_(logger)
+  {
+  }
   LogicExtractorFactory& AppendEndpoint(sta::Vertex* vertex);
   LogicCut BuildLogicCut(AbcLibrary& abc_network);
 
@@ -61,8 +65,14 @@ class LogicExtractorFactory
   std::vector<sta::Pin*> FilterUndrivenOutputs(
       std::vector<sta::Pin*>& primary_outputs,
       std::unordered_set<sta::Instance*>& cut_instances);
+  std::vector<sta::Net*> ConvertIoPinsToNets(
+      std::vector<sta::Pin*>& primary_inputs);
+  void RemovePrimaryOutputInstances(
+      std::unordered_set<sta::Instance*>& cut_instances,
+      std::vector<sta::Pin*>& primary_io_pins);
 
   std::vector<sta::Vertex*> endpoints_;
   sta::dbSta* open_sta_;
+  utl::Logger* logger_;
 };
 }  // namespace rmp
