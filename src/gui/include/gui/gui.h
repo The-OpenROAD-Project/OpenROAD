@@ -704,7 +704,9 @@ class Gui
   void hideGui();
 
   // Called to show the gui and return to tcl command line
-  void showGui(const std::string& cmds = "", bool interactive = true);
+  void showGui(const std::string& cmds = "",
+               bool interactive = true,
+               bool load_settings = true);
 
   // set the system logger
   void setLogger(utl::Logger* logger);
@@ -810,6 +812,7 @@ int startGui(int& argc,
              char* argv[],
              Tcl_Interp* interp,
              const std::string& script = "",
-             bool interactive = true);
+             bool interactive = true,
+             bool load_settings = true);
 
 }  // namespace gui

@@ -117,6 +117,7 @@ int cmd_argc;
 char** cmd_argv;
 const char* log_filename = nullptr;
 const char* metrics_filename = nullptr;
+bool no_init = false;
 
 static const char* init_filename = ".openroad";
 
@@ -257,6 +258,8 @@ int main(int argc, char* argv[])
     remove(metrics_filename);
   }
 
+  no_init = findCmdLineFlag(argc, argv, "-no_init");
+
   cmd_argc = argc;
   cmd_argv = argv;
 #ifdef ENABLE_PYTHON3
@@ -274,7 +277,7 @@ int main(int argc, char* argv[])
       logger->warn(utl::ORD, 38, "-gui is not yet supported with -python");
     }
 
-    if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_init")) {
+    if (!no_init) {
       logger->warn(utl::ORD, 39, ".openroad ignored with -python");
     }
 
@@ -350,7 +353,7 @@ static int tclAppInit(int& argc,
       ;
     }
 
-    gui::startGui(argc, argv, interp);
+    gui::startGui(argc, argv, interp, "", true, !no_init);
   } else {
     // init tcl
     if (Tcl_Init(interp) == TCL_ERROR) {
@@ -399,7 +402,7 @@ static int tclAppInit(int& argc,
     const bool gui_enabled = gui::Gui::enabled();
 
     const char* home = getenv("HOME");
-    if (!findCmdLineFlag(argc, argv, "-no_init") && home) {
+    if (!no_init && home) {
       const char* restore_state_cmd = "source -echo -verbose {{{}}}";
 #ifdef USE_STD_FILESYSTEM
       std::filesystem::path init(home);
