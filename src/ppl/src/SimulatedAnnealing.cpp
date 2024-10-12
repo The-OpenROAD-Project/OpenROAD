@@ -876,9 +876,10 @@ void SimulatedAnnealing::getMirroredSlotRange(const int slot_idx1,
   const odb::Point& mirrored_pos1 = core_->getMirroredPosition(slot1.pos);
   const odb::Point& mirrored_pos2 = core_->getMirroredPosition(slot2.pos);
 
-  // find the approximated mirrored position of the original slot range endpoints.
-  // this is only necessary because when using multiple layers, the mirrored position
-  // of the original slots endpoints are not in the beginning of the mirrored range.
+  // find the approximated mirrored position of the original slot range
+  // endpoints. this is only necessary because when using multiple layers, the
+  // mirrored position of the original slots endpoints are not in the beginning
+  // of the mirrored range.
   if (slot1.edge == Edge::bottom || slot1.edge == Edge::right) {
     for (int i = slots_.size() - 1; i >= 0; i--) {
       const Slot& slot = slots_[i];
