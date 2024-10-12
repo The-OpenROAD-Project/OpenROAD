@@ -1004,6 +1004,7 @@ std::vector<Section> IOPlacer::createSectionsPerConstraint(
                                       ? hor_layers_
                                       : ver_layers_;
 
+    bool first_layer = true;
     for (int layer : layers) {
       std::vector<Slot>::iterator it
           = std::find_if(slots_.begin(), slots_.end(), [&](const Slot& s) {
@@ -1032,10 +1033,13 @@ std::vector<Section> IOPlacer::createSectionsPerConstraint(
                     || s.layer != layer);
           });
       int constraint_end = it - slots_.begin() - 1;
-      constraint.first_slot = constraint_begin;
+      if (first_layer) {
+        constraint.first_slot = constraint_begin;
+      }
       constraint.last_slot = constraint_end;
 
       findSections(constraint_begin, constraint_end, edge, sections);
+      first_layer = false;
     }
   } else {
     sections = findSectionsForTopLayer(constraint.box);
@@ -1812,6 +1816,7 @@ void IOPlacer::initConstraints(bool annealing)
       IOPin& io_pin = netlist_->getIoPin(pin_idx);
       io_pin.setConstraintIdx(constraint_idx);
       constraint.pin_indices.push_back(pin_idx);
+      constraint.mirrored_pins_count += io_pin.isMirrored() ? 1 : 0;
       if (io_pin.getGroupIdx() != -1) {
         constraint.pin_groups.insert(io_pin.getGroupIdx());
       }
