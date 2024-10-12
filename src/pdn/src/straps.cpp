@@ -1545,8 +1545,7 @@ RepairChannelStraps::RepairChannelStraps(
       connect_to_(connect_to),
       area_(area),
       available_area_(available_area),
-      obs_check_area_(obs_check_area),
-      invalid_(false)
+      obs_check_area_(obs_check_area)
 {
   // use snap to grid
   setSnapToGrid(true);
