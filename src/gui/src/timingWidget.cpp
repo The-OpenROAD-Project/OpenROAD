@@ -281,8 +281,6 @@ void TimingWidget::readSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
 
-  settings_->setPathCount(
-      settings->value("path_count", settings_->getPathCount()).toInt());
   settings_->setOnePathPerEndpoint(
       settings->value("one_path_per_endpoint").toBool());
   settings_->setExpandClock(
@@ -308,7 +306,10 @@ void TimingWidget::writeSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
 
-  settings->setValue("path_count", settings_->getPathCount());
+  // NOTE! Don't save path count, this can introduce problems when
+  // switching between large and small designs. Clicking Timing Report
+  // Update for a large number of paths will freeze the GUI, effectively
+  // for large designs.
   settings->setValue("one_path_per_endpoint",
                      settings_->getOnePathPerEndpoint());
   settings->setValue("expand_clk", settings_->getExpandClock());
