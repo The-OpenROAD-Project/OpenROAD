@@ -281,6 +281,18 @@ void TimingWidget::readSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
 
+  // FIXME don't read count, this can introduce problems when
+  // switching between large and small designs. Clicking Timing Report
+  // Update for a large number of paths will freeze the GUI, effectively
+  // for large designs.
+  //
+  // A better approach would be to read the settings only when the
+  // the Timing Report won't be so slow as to lock the GUI, but
+  // it is unclear what heuristic could be used.
+#if 0
+  settings_->setPathCount(
+      settings->value("path_count", settings_->getPathCount()).toInt());
+#endif
   settings_->setOnePathPerEndpoint(
       settings->value("one_path_per_endpoint").toBool());
   settings_->setExpandClock(
@@ -306,10 +318,7 @@ void TimingWidget::writeSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
 
-  // NOTE! Don't save path count, this can introduce problems when
-  // switching between large and small designs. Clicking Timing Report
-  // Update for a large number of paths will freeze the GUI, effectively
-  // for large designs.
+  settings->setValue("path_count", settings_->getPathCount());
   settings->setValue("one_path_per_endpoint",
                      settings_->getOnePathPerEndpoint());
   settings->setValue("expand_clk", settings_->getExpandClock());
