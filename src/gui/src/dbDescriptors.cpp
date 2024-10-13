@@ -1820,6 +1820,11 @@ Descriptor::Properties DbBTermDescriptor::getProperties(std::any object) const
                    {"IO type", bterm->getIoType().getString()},
                    {"Access Points", aps}};
 
+  std::optional<odb::Rect> constraint = bterm->getConstraintRegion();
+  if (constraint) {
+    props.push_back({"Constraint Region", constraint.value()});
+  }
+
   populateODBProperties(props, bterm);
 
   return props;
