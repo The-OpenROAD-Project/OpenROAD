@@ -1558,11 +1558,19 @@ RepairChannelStraps::RepairChannelStraps(
   }
 
   odb::dbTechLayerDir connect_direction = connect_to->getDirection();
+  // find the connecting strap and use it's direction
+  for (const auto& comp : grid->getStraps()) {
+    if (comp->getLayer() == connect_to) {
+      connect_direction = comp->getDirection();
+    }
+  }
+
   if (connect_direction == odb::dbTechLayerDir::NONE) {
-    // Assume this layer is horizontal
+    // Assume this layer is horizontal if not set
     connect_direction = odb::dbTechLayerDir::HORIZONTAL;
   }
-  if (connect_to->getDirection() == getDirection()) {
+
+  if (connect_direction == getDirection()) {
     debugPrint(
         getLogger(),
         utl::PDN,
