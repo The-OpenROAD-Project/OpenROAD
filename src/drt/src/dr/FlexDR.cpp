@@ -1241,7 +1241,7 @@ void FlexDR::reportGuideCoverage()
 void FlexDR::fixMaxSpacing()
 {
   logger_->info(DRT, 227, "Checking For LEF58_MAXSPACING violations");
-  io::Parser parser(db_, router_, logger_);
+  io::Parser parser(db_, getDesign(), logger_);
   parser.initSecondaryVias();
   std::vector<frVia*> lonely_vias;
   for (const auto& layer : getTech()->getLayers()) {
@@ -1429,7 +1429,7 @@ int FlexDR::main()
       break;
     }
     if (logger_->debugCheck(DRT, "snapshot", 1)) {
-      io::Writer writer(router_, logger_);
+      io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, false, true);
       ord::OpenRoad::openRoad()->writeDb(
           fmt::format("drt_iter{}.odb", iter_ - 1).c_str());
