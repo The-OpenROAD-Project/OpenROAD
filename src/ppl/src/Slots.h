@@ -141,6 +141,7 @@ struct Constraint
   float pins_per_slots;
   int first_slot = 0;
   int last_slot = 0;
+  int mirrored_pins_count = 0;
 };
 
 template <typename T>
