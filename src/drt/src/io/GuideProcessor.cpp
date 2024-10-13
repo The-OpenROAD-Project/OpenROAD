@@ -1572,32 +1572,55 @@ void GuidePathFinder::commitPathToGuides(
     }
     ++pin_idx;
   }
-
   updateNodeMap(rects, pin_to_gcell);
   updateGRPins(pins, pin_to_gcell, gr_pins);
   for (auto& [pt, indices] : node_map_) {
-    if ((int) indices.size() == 1) {
-      auto idx = *(indices.begin());
-      if (isGuideIdx(idx)) {
-        // no upper/lower guide
-        if (node_map_.find(Point3D(pt, pt.z() + 2)) == node_map_.end()
-            && node_map_.find(Point3D(pt, pt.z() - 2)) == node_map_.end()) {
-          auto& rect = rects[idx];
-          Rect box = rect.getBBox();
-          if (box.ll() == pt) {
-            rect.setBBox(Rect(box.xMax(), box.yMax(), box.xMax(), box.yMax()));
-          } else {
-            rect.setBBox(Rect(box.xMin(), box.yMin(), box.xMin(), box.yMin()));
-          }
-        }
+    const uint num_indices = indices.size();
+    const auto first_idx = *(indices.begin());
+    if (num_indices == 1 && isPinIdx(first_idx)) {
+      logger_->error(DRT,
+                     223,
+                     "Pin dangling id {} ({},{}) {}.",
+                     first_idx,
+                     pt.x(),
+                     pt.y(),
+                     pt.z());
+    }
+    // no upper/lower guide
+    if (num_indices == 1
+        && node_map_.find(Point3D(pt, pt.z() + 2)) == node_map_.end()
+        && node_map_.find(Point3D(pt, pt.z() - 2)) == node_map_.end()) {
+      auto& rect = rects[first_idx];
+      Rect box = rect.getBBox();
+      if (box.ll() == pt) {
+        rect.setBBox(Rect(box.xMax(), box.yMax(), box.xMax(), box.yMax()));
       } else {
-        logger_->error(DRT,
-                       223,
-                       "Pin dangling id {} ({},{}) {}.",
-                       idx,
-                       pt.x(),
-                       pt.y(),
-                       pt.z());
+        rect.setBBox(Rect(box.xMin(), box.yMin(), box.xMin(), box.yMin()));
+      }
+    } else if (num_indices == 2) {
+      const auto second_idx = *std::prev(indices.end());
+      if (!isGuideIdx(first_idx) || !isGuideIdx(second_idx)) {
+        continue;
+      }
+      auto& rect1 = rects[first_idx];
+      auto& rect2 = rects[second_idx];
+      Rect box1 = rect1.getBBox();
+      Rect box2 = rect2.getBBox();
+      if (box1.getDir() == box2.getDir()) {
+        // merge both and remove rect1/box1/first_idx
+        box2.merge(box1);
+        rect2.setBBox(box2);
+        node_map_[pt].clear();
+        Point3D to_be_updated_pos;
+        if (box1.ll() == pt) {
+          to_be_updated_pos = Point3D(box1.ur(), pt.z());
+        } else {
+          to_be_updated_pos = Point3D(box1.ll(), pt.z());
+        }
+        auto it = node_map_[to_be_updated_pos].find(first_idx);
+        node_map_[to_be_updated_pos].erase(it);
+        node_map_[to_be_updated_pos].insert(second_idx);
+        visited_[first_idx] = false;
       }
     }
   }
