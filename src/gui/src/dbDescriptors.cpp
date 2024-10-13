@@ -460,6 +460,14 @@ Descriptor::Properties DbBlockDescriptor::getProperties(std::any object) const
   }
   props.push_back({"Rows", rows});
 
+  SelectionSet markers;
+  for (auto marker : block->getMarkerCategories()) {
+    markers.insert(gui->makeSelected(marker));
+  }
+  if (!markers.empty()) {
+    props.push_back({"Markers", markers});
+  }
+
   populateODBProperties(props, block);
 
   props.push_back({"Core Area", block->getCoreArea()});
