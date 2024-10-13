@@ -73,7 +73,7 @@ void OpenRoad::writeDb(const char*)
 {
 }
 
-void OpenRoad::readDb(const char*)
+void OpenRoad::readDb(const char*, bool)
 {
 }
 
