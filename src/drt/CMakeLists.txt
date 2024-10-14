@@ -122,6 +122,9 @@ target_sources(drt
     src/pa/FlexPA_init.cpp
     src/pa/FlexPA.cpp
     src/pa/FlexPA_prep.cpp
+    src/pa/FlexPA_acc_point.cpp
+    src/pa/FlexPA_acc_pattern.cpp
+    src/pa/FlexPA_row_pattern.cpp
     src/pa/FlexPA_unique.cpp
     src/pa/FlexPA_graphics.cpp
     src/rp/FlexRP_init.cpp
