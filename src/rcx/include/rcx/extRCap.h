@@ -222,7 +222,7 @@ class extDistWidthRCTable
 {
  public:
 
- // ---------------------------------------------------------------------- v2 ---------
+ // ---------------------------------------------------------------------- v2 --------- 
    uint readRulesUnder(Ath__parser* parser, uint widthCnt, bool bin, bool ignore, const char* keyword, double dbFactor = 1.0);
  void getFringeTable(uint mou, uint w, Ath__array1D<int>* sTable, Ath__array1D<double>* rcTable, bool map);
 
@@ -474,6 +474,24 @@ class extRCModel
 
  public:
 //------------------------------------------------------------------------ v2 ----------------
+
+// dkf 09222023
+  uint readRules_v2(Ath__parser* parser,
+                 uint m,
+                 uint ii,
+                 const char* ouKey,
+                 const char* wKey,
+                 bool over,
+                 bool under,
+                 bool bin,
+                 bool diag,
+                 bool ignore,
+                 double dbFactor = 1.0);
+
+bool spotModelsInRules(char *name, bool bin, bool &res_over, bool &over, bool &under, bool &overUnder, bool &diag_under, bool &over0, bool &over1, bool &under0, bool &under1, bool &overunder0, bool &overunder1, bool &via_res);
+bool readRules(char* name, bool bin, bool over, bool under,
+                           bool overUnder, bool diag, uint cornerCnt,
+                           uint* cornerTable, double dbFactor);
   // dkf 09242023
   uint DefWires(extMainOptions* opt);
   uint OverRulePat(extMainOptions* opt, int len, int LL[2], int UR[2], bool res, bool diag, uint overDist);
@@ -483,8 +501,6 @@ class extRCModel
   
   // dkf 12182023
   uint ViaRulePat(extMainOptions *opt, int len, int origin[2], int UR[2], bool res, bool diag, uint overDist);
-
-bool spotModelsInRules(char *name, bool bin, bool &res_over, bool &over, bool &under, bool &overUnder, bool &diag_under, bool &over0, bool &over1, bool &under0, bool &under1, bool &overunder0, bool &overunder1, bool &via_res);
 
 //------------------------------------------------------------------------ v2 ----------------
 
@@ -694,6 +710,15 @@ double writeWirePatterns_w3(FILE* fp, extMeasure* measure, uint wireCnt, double 
 
   void writeRules(char* name, bool binary);
   bool readRules(char* name,
+                 bool binary,
+                 bool over,
+                 bool under,
+                 bool overUnder,
+                 bool diag,
+                 uint cornerCnt = 0,
+                 const uint* cornerTable = nullptr,
+                 double dbFactor = 1.0);
+  bool readRules_v1(char* name,
                  bool binary,
                  bool over,
                  bool under,
