@@ -188,7 +188,7 @@ class IOPlacer
                           const std::set<int>& ver_layer_idx);
   std::vector<int> getValidSlots(int first, int last, bool top_layer);
   std::vector<int> findValidSlots(const Constraint& constraint,
-                                  const bool top_layer);
+                                  bool top_layer);
   void randomPlacement();
   void randomPlacement(std::vector<int> pin_indices,
                        std::vector<int> slot_indices,
