@@ -1815,6 +1815,7 @@ void IOPlacer::initConstraints(bool annealing)
       int pin_idx = netlist_->getIoPinIdx(term);
       IOPin& io_pin = netlist_->getIoPin(pin_idx);
       io_pin.setConstraintIdx(constraint_idx);
+      io_pin.setInConstraint();
       constraint.pin_indices.push_back(pin_idx);
       constraint.mirrored_pins_count += io_pin.isMirrored() ? 1 : 0;
       if (io_pin.getGroupIdx() != -1) {
@@ -2250,9 +2251,46 @@ void IOPlacer::checkPinPlacement()
     }
   }
 
+  invalid = invalid || checkPinConstraints();
   if (invalid) {
     logger_->error(PPL, 107, "Invalid pin placement.");
   }
+}
+
+bool IOPlacer::checkPinConstraints()
+{
+  bool invalid = false;
+
+  for (const IOPin& pin : netlist_->getIOPins()) {
+    if (pin.isInConstraint()) {
+      const int constraint_idx = pin.getConstraintIdx();
+      const Constraint& constraint = constraints_[constraint_idx];
+      const Interval& constraint_inverval = constraint.interval;
+      if (pin.getEdge() != constraint_inverval.getEdge()) {
+        logger_->warn(PPL,
+                      92,
+                      "Pin {} is not placed in its constraint edge.",
+                      pin.getName());
+        invalid = true;
+      }
+      const int constraint_begin = constraint_inverval.getBegin();
+      const int constraint_end = constraint_inverval.getEnd();
+      const int pin_coord
+          = constraint_inverval.getEdge() == Edge::bottom
+                    || constraint_inverval.getEdge() == Edge::top
+                ? pin.getPosition().getX()
+                : pin.getPosition().getY();
+      if (pin_coord < constraint_begin || pin_coord > constraint_end) {
+        logger_->warn(PPL,
+                      102,
+                      "Pin {} is not placed in its constraint interval.",
+                      pin.getName());
+        invalid = true;
+      }
+    }
+  }
+
+  return invalid;
 }
 
 void IOPlacer::reportHPWL()

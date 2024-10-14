@@ -167,6 +167,7 @@ class IOPlacer
                           int perturb_per_iter,
                           float alpha);
   void checkPinPlacement();
+  bool checkPinConstraints();
 
   void setRenderer(std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer);
   AbstractIOPlacerRenderer* getRenderer();
