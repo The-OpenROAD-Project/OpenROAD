@@ -788,7 +788,9 @@ void Cluster::addVirtualConnection(int src, int target)
 
 ///////////////////////////////////////////////////////////////////////
 // HardMacro
-HardMacro::HardMacro(std::pair<float, float> loc, const std::string& name)
+HardMacro::HardMacro(std::pair<float, float> loc,
+                     const std::string& name,
+                     Cluster* cluster)
 {
   width_ = 0.0;
   height_ = 0.0;
@@ -797,6 +799,7 @@ HardMacro::HardMacro(std::pair<float, float> loc, const std::string& name)
   pin_y_ = 0.0;
   x_ = loc.first;
   y_ = loc.second;
+  cluster_ = cluster;
 }
 
 HardMacro::HardMacro(float width, float height, const std::string& name)

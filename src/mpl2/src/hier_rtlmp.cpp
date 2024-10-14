@@ -3626,7 +3626,11 @@ void HierRTLMP::createFixedTerminals(const Rect& outline,
                 - outline.xMin(),
             temp_cluster->getY() + temp_cluster->getHeight() / 2.0
                 - outline.yMin()),
-        temp_cluster->getName());
+        temp_cluster->getName(),
+        // The information of whether or not a cluster is an IO cluster is
+        // needed inside the SA Core, so if a fixed terminal corresponds
+        // to an IO Cluster it needs to contains that cluster data.
+        temp_cluster->isIOCluster() ? temp_cluster : nullptr);
   }
 }
 
