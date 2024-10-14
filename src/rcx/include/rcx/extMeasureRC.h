@@ -43,6 +43,9 @@ class extMeasureRC : public extMeasure
 {
     public:
 
+    extMeasureRC() : extMeasure(NULL) {}
+
+
     //----------------------------------------------------------------------- v2
      int _ll_tgt[2];
     int _ur_tgt[2];
