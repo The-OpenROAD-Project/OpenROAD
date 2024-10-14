@@ -2280,27 +2280,41 @@ bool IOPlacer::checkPinConstraints()
     if (pin.isInConstraint()) {
       const int constraint_idx = pin.getConstraintIdx();
       const Constraint& constraint = constraints_[constraint_idx];
-      const Interval& constraint_inverval = constraint.interval;
-      if (pin.getEdge() != constraint_inverval.getEdge()) {
+      const Interval& constraint_interval = constraint.interval;
+      if (pin.getEdge() != constraint_interval.getEdge()) {
         logger_->warn(PPL,
                       92,
                       "Pin {} is not placed in its constraint edge.",
                       pin.getName());
         invalid = true;
       }
-      const int constraint_begin = constraint_inverval.getBegin();
-      const int constraint_end = constraint_inverval.getEnd();
-      const int pin_coord
-          = constraint_inverval.getEdge() == Edge::bottom
-                    || constraint_inverval.getEdge() == Edge::top
-                ? pin.getPosition().getX()
-                : pin.getPosition().getY();
-      if (pin_coord < constraint_begin || pin_coord > constraint_end) {
-        logger_->warn(PPL,
-                      102,
-                      "Pin {} is not placed in its constraint interval.",
-                      pin.getName());
-        invalid = true;
+
+      if (constraint_interval.getEdge() != Edge::invalid) {
+        const int constraint_begin = constraint_interval.getBegin();
+        const int constraint_end = constraint_interval.getEnd();
+        const int pin_coord
+            = constraint_interval.getEdge() == Edge::bottom
+                      || constraint_interval.getEdge() == Edge::top
+                  ? pin.getPosition().getX()
+                  : pin.getPosition().getY();
+        if (pin_coord < constraint_begin || pin_coord > constraint_end) {
+          logger_->warn(PPL,
+                        102,
+                        "Pin {} is not placed in its constraint interval.",
+                        pin.getName());
+          invalid = true;
+        }
+      } else {
+        if (!constraint.box.overlaps(pin.getPosition())) {
+          logger_->warn(
+              PPL,
+              105,
+              "Pin {} is not placed in the upper layer grid region {}. {}",
+              pin.getName(),
+              constraint.box,
+              pin.getPosition());
+          invalid = true;
+        }
       }
     }
   }
