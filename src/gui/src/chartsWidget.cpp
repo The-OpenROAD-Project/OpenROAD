@@ -274,7 +274,7 @@ SlackHistogramData ChartsWidget::fetchSlackHistogramData()
   StaPins end_points = stagui_->getEndPoints();
   removeUnconstrainedPinsAndSetLimits(end_points);
 
-  data.constrained_pins = end_points;
+  data.constrained_pins = std::move(end_points);
 
   for (sta::Clock* clock : *stagui_->getClocks()) {
     data.clocks.insert(clock);
