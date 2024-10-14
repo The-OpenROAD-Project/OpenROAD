@@ -1166,6 +1166,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
   std::vector<bool> pop_heap2(y_grid_ * x_range_, false);
 
+  /**
+   * @brief Updates the cost of an adjacent grid if the new cost is lower,
+   * updating the heap accordingly. Also updates parent indexes if cost was
+   * updated. Throws an error if the position can't be found.
+   * */
   auto updateAdjacent = [&](const int cur_x,
                             const int cur_y,
                             const int adj_x,
@@ -1209,6 +1214,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
     }
   };
 
+  /**
+   * @brief Relaxes the cost for adjacent grids based on current grid's cost and
+   * edge usage. It optionally adds a via cost and checks for potential hyper
+   * edges, updating adjacent grids accordingly.
+   */
   auto relaxAdjacent = [&](const int cur_x,
                            const int cur_y,
                            const int d_x,
