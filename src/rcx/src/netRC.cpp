@@ -318,12 +318,11 @@ void extMain::getShapeRC(dbNet* net,
       // find res from ViaModelTable
       for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
         extMetRCTable* rcTable = _metRCTable.get(ii);
-       /* FIXME extViaModel* viaModel = rcTable->getViaModel((char*) viaName);
+        extViaModel* viaModel = rcTable->getViaModel((char*) viaName);
         if (viaModel != NULL) {
           viaResTable[ii] = viaModel->_res;
           viaModelFound = true;
         }
-        */
       }
       level = tvia->getBottomLayer()->getRoutingLevel();
       res = tvia->getResistance();
@@ -1674,17 +1673,33 @@ bool extMain::setCorners(const char* rulesFileName)
     }
     fclose(rules_file);
 
-    if (!(m->readRules((char*) rulesFileName,
-                       false,
-                       true,
-                       true,
-                       true,
-                       true,
-                       extDbCnt,
-                       cornerTable,
-                       dbFactor))) {
-      delete m;
-      return false;
+    if (_v2)
+    {
+      if (!(m->readRules((char*) rulesFileName,
+                         false,
+                         true,
+                         true,
+                         true,
+                         true,
+                         extDbCnt,
+                         cornerTable,
+                         dbFactor))) {
+        delete m;
+        return false;
+      }
+    } else {
+      if (!(m->readRules_v1((char*) rulesFileName,
+                            false,
+                            true,
+                            true,
+                            true,
+                            true,
+                            extDbCnt,
+                            cornerTable,
+                            dbFactor))) {
+        delete m;
+        return false;
+      }
     }
 
     int modelCnt = getRCmodel(0)->getModelCnt();
@@ -1807,6 +1822,8 @@ void extMain::makeBlockRCsegs(const char* netNames,
       || ((_processCornerTable == nullptr) && (extRules != nullptr))) {
     const char* rulesfile
         = extRules ? extRules : _prevControl->_ruleFileName.c_str();
+
+        // Reading model file
     if (!setCorners(rulesfile)) {
       logger_->info(RCX, 128, "skipping Extraction ...");
       return;
@@ -1843,9 +1860,9 @@ void extMain::makeBlockRCsegs(const char* netNames,
     _ccMaxY = -MAX_INT;
   }
   if (_couplingFlag > 1) {
-    // FIXME getResCapTable(true);
     getResCapTable();
   }
+ // FIXME       _overCell = overCell;
 
   logger_->info(RCX,
                 436,
@@ -1925,6 +1942,7 @@ void extMain::makeBlockRCsegs(const char* netNames,
     m._dgContextCnt = 0;
 
     m._ccContextArray = _ccContextArray;
+    // FIXME m._ccContextLength = _ccContextLength;
 
     m._pixelTable = _geomSeq;
     m._minModelIndex = 0;  // couplimg threshold will be appled to this cap
@@ -1960,6 +1978,7 @@ void extMain::makeBlockRCsegs(const char* netNames,
     else
        couplingFlow(maxRect, _couplingFlag, &m, extCompute1);
 
+
     if (m._debugFP != nullptr) {
       fclose(m._debugFP);
     }
@@ -1969,11 +1988,8 @@ void extMain::makeBlockRCsegs(const char* netNames,
       m._dgContextFile = nullptr;
     }
 
-    removeDgContextArray();
+    // removeDgContextArray();
   }
-
-  delete _geomSeq;
-  _geomSeq = nullptr;
   _extracted = true;
   updatePrevControl();
   int numOfNet;
@@ -2007,6 +2023,13 @@ void extMain::makeBlockRCsegs(const char* netNames,
     }
   }
 
+/*
+  if (_geomSeq != NULL) {
+    delete _geomSeq;
+    _geomSeq = NULL;
+  }
+
+*/
   _modelTable->resetCnt(0);
   if (_batchScaleExt) {
     genScaledExt();
