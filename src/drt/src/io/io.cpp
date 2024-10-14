@@ -2477,8 +2477,9 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
     tech_->addUConstraint(std::move(cutSpacingConstraint));
   }
   if (layer->hasOrthSpacingTable()) {
-    auto uCon = std::make_unique<frOrthSpacingTableConstraint>(
-        layer->getOrthSpacingTable());
+    std::vector<std::pair<int, int>> tbl;
+    layer->getOrthSpacingTable(tbl);
+    auto uCon = std::make_unique<frOrthSpacingTableConstraint>(tbl);
     tmpLayer->setOrthSpacingTableConstraint(uCon.get());
     tech_->addUConstraint(std::move(uCon));
   }

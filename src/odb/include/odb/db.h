@@ -8401,7 +8401,7 @@ class dbTechLayer : public dbObject
 
   float getLayerAdjustment() const;
 
-  std::vector<std::pair<int, int>> getOrthSpacingTable() const;
+  void getOrthSpacingTable(std::vector<std::pair<int, int>>& tbl) const;
 
   dbSet<dbTechLayerCutClassRule> getTechLayerCutClassRules() const;
 
