@@ -59,6 +59,7 @@ namespace rcx {
 using namespace odb;
 
 class extMeasure;
+class extMeasureRC;
 
 using odb::Ath__array1D;
 using odb::AthPool;
@@ -1474,6 +1475,7 @@ class extMain
     extSolverGen *_currentSolverGen;
 
     // v2 -----------------------------------------------------
+    void initRunEnv(extMeasureRC &m);
       uint _ccContextDepth = 0;
 
     bool _lefRC= false;

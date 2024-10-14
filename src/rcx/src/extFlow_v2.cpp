@@ -41,9 +41,72 @@
 
 namespace rcx {
 using namespace odb;
-
-uint extMain::couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m)
+void extMain::initRunEnv(extMeasureRC &m)
 {
+    m._extMain = this;
+    m._block = _block;
+    m._diagFlow = _diagFlow;
+
+    m._resFactor = _resFactor;
+    m._resModify = _resModify;
+    m._ccFactor = _ccFactor;
+    m._ccModify = _ccModify;
+    m._gndcFactor = _gndcFactor;
+    m._gndcModify = _gndcModify;
+
+    m._dgContextArray = _dgContextArray;
+    m._dgContextDepth = &_dgContextDepth;
+    m._dgContextPlanes = &_dgContextPlanes;
+    m._dgContextTracks = &_dgContextTracks;
+    m._dgContextBaseLvl = &_dgContextBaseLvl;
+    m._dgContextLowLvl = &_dgContextLowLvl;
+    m._dgContextHiLvl = &_dgContextHiLvl;
+    m._dgContextBaseTrack = _dgContextBaseTrack;
+    m._dgContextLowTrack = _dgContextLowTrack;
+    m._dgContextHiTrack = _dgContextHiTrack;
+    m._dgContextTrackBase = _dgContextTrackBase;
+
+    m._dgContextCnt = 0;
+
+    m._ccContextArray = _ccContextArray;
+    // FIXME m._ccContextLength = _ccContextLength;
+
+    m._pixelTable = _geomSeq;
+    m._minModelIndex = 0;  // couplimg threshold will be appled to this cap
+    m._maxModelIndex = 0;
+    m._currentModel = _currentModel;
+    m._diagModel = _currentModel[0].getDiagModel();
+    for (uint ii = 0; ii < _modelMap.getCnt(); ii++) {
+      uint jj = _modelMap.get(ii);
+      m._metRCTable.add(_currentModel->getMetRCTable(jj));
+    }
+    const uint techLayerCnt = getExtLayerCnt(_tech) + 1;
+    const uint modelLayerCnt = _currentModel->getLayerCnt();
+    m._layerCnt = techLayerCnt < modelLayerCnt ? techLayerCnt : modelLayerCnt;
+    if (techLayerCnt == 5 && modelLayerCnt == 8) {
+      m._layerCnt = modelLayerCnt;
+    }
+    m.getMinWidth(_tech);
+    m.allocOUpool();
+
+    m._debugFP = nullptr;
+    m._netId = 0;
+    uint debugNetId = this->_debug_net_id;
+   
+    if (debugNetId > 0) {
+      m._netId = debugNetId;
+      char bufName[32];
+      sprintf(bufName, "%d", debugNetId);
+      m._debugFP = fopen(bufName, "w");
+    }
+}
+
+uint extMain::couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m1)
+{
+          extMeasureRC* mrc= new extMeasureRC();
+mrc->_extMain= this;
+mrc->_block= _block;
+
   uint ccDist = ccFlag;
 
   uint sigtype = 9;
@@ -101,9 +164,9 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m)
                             _dgContextLowTrack,
                             _dgContextHiTrack,
                             _dgContextTrackBase,
-                            m->_seqPool);
+                            m1->_seqPool);
 
-  _seqPool = m->_seqPool;
+  _seqPool = m1->_seqPool;
 
   uint maxWidth = 0;
   uint totPowerWireCnt = powerWireCounter(maxWidth);
@@ -193,8 +256,8 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m)
                pitchTable,
                widthTable);
 
-      m->_rotatedGs = getRotatedFlag();
-      m->_pixelTable= new gs(m->_seqPool);
+      mrc->_rotatedGs = getRotatedFlag();
+      mrc->_pixelTable= new gs(m1->_seqPool);
 
 
       // add wires onto search such that    loX<=loX<=hiX
@@ -204,9 +267,9 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m)
       processWireCnt += addPowerNets(dir, lo_sdb, hi_sdb, pwrtype);
       processWireCnt += addSignalNets(dir, lo_sdb, hi_sdb, sigtype);
 
-      //extMeasureRC* mrc = (extMeasureRC*) m;
-      extMeasureRC* mrc = (extMeasureRC*) m;
-      m->_search = m->_extMain->_search;
+      // extMeasureRC* mrc = (extMeasureRC*) m;
+      // m->_search = m->_extMain->_search;
+      mrc->_search = m1->_extMain->_search;
       // _dbgOption= 1;
       if (_dbgOption > 0)
         mrc->PrintAllGrids(dir, mrc->OpenPrintFile(dir, "wires.org"), 0);
