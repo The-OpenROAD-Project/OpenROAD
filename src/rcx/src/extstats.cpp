@@ -71,7 +71,9 @@ extDistRC* extRCModel::getMinRC(int met, int width)
   if (met >= _layerCnt) {
     return nullptr;
   }
-
+extDistRC* rc = _modelTable[_tmpDataRate]->_capOver[met]->getFringeRC(0, width);
+return rc;
+/*
   extMeasure m(logger_);
   m._met = met;
   m._underMet = 0;
@@ -79,6 +81,7 @@ extDistRC* extRCModel::getMinRC(int met, int width)
   m._width = width;
 
   return getOverFringeRC(&m);
+*/
 }
 
 extDistRC* extRCModel::getMaxRC(int met, int width, int dist)
