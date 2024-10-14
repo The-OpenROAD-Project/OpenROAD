@@ -323,7 +323,7 @@ class LayoutViewer : public QWidget
   int instanceSizeLimit() const;
   int shapeSizeLimit() const;
 
-  std::vector<std::pair<odb::dbObject*, odb::Rect>> getRowRects(
+  std::vector<std::tuple<odb::dbObject*, odb::Rect, int>> getRowRects(
       odb::dbBlock* block,
       const odb::Rect& bounds);
 
