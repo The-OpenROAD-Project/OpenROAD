@@ -51,7 +51,31 @@ proc define_process_corner { args } {
 
   rcx::define_process_corner $ext_model_index $filename
 }
+sta::define_cmd_args "define_rcx_corners" {
+    [-corner_list cornerList]
+}
+proc define_rcx_corners { args } {
+  sta::parse_key_args "define_rcx_corners" args keys { -corner_list }
 
+  set corner_list ""
+  if { [info exists keys(-corner_list)] } {
+    set corner_list $keys(-corner_list)
+  }
+  rcx::define_rcx_corners $corner_list
+}
+
+sta::define_cmd_args "get_model_corners" {
+    [-ext_model_file cornerList]
+}
+proc get_model_corners { args } {
+  sta::parse_key_args "get_model_corners" args keys { -ext_model_file }
+
+  set ext_model_file ""
+  if { [info exists keys(-ext_model_file)] } {
+    set ext_model_file $keys(-ext_model_file)
+  }
+  rcx::get_model_corners $ext_model_file
+}
 sta::define_cmd_args "extract_parasitics" {
     [-ext_model_file filename]
     [-corner_cnt count]
@@ -63,7 +87,9 @@ sta::define_cmd_args "extract_parasitics" {
     [-cc_model track]
     [-context_depth depth]
     [-no_merge_via_res]
-    [ -skip_over_cell ]
+    [-skip_over_cell ]
+    [-version]
+
 }
 
 proc extract_parasitics { args } {
@@ -74,7 +100,8 @@ proc extract_parasitics { args } {
            -coupling_threshold
            -debug_net_id
            -context_depth
-           -cc_model } \
+           -cc_model
+           -version } \
     flags { -lef_res -lef_rc
             -no_merge_via_res -skip_over_cell }
 
@@ -122,8 +149,11 @@ proc extract_parasitics { args } {
     set debug_net_id $keys(-debug_net_id)
   }
   set dbg 0
-  set version "1.0"
-
+  set version 1.0
+   if { [info exists keys(-version)] } {
+    set version $keys(-version)
+    sta::check_positive_float "-version" $version
+  }
   rcx::extract $ext_model_file $corner_cnt $max_res \
     $coupling_threshold $cc_model \
     $depth $debug_net_id $lef_res $no_merge_via_res \
