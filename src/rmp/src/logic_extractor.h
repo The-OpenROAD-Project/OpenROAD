@@ -66,10 +66,10 @@ class LogicExtractorFactory
       std::vector<sta::Pin*>& primary_outputs,
       std::unordered_set<sta::Instance*>& cut_instances);
   std::vector<sta::Net*> ConvertIoPinsToNets(
-      std::vector<sta::Pin*>& primary_inputs);
+      std::vector<sta::Pin*>& primary_io_pins);
   void RemovePrimaryOutputInstances(
       std::unordered_set<sta::Instance*>& cut_instances,
-      std::vector<sta::Pin*>& primary_io_pins);
+      std::vector<sta::Pin*>& primary_output_pins);
 
   std::vector<sta::Vertex*> endpoints_;
   sta::dbSta* open_sta_;
