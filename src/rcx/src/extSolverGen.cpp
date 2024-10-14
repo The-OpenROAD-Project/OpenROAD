@@ -195,7 +195,7 @@ uint extSolverGen::linesOver(uint metLevel)
       uint cnt1 = widthsSpacingsLoop();
       cnt += cnt1;
 
-      logger_->info(RCX, 249, "Finished {} measurements for pattern M{}_over_M{}", cnt1, met, underMet);
+      logger_->info(RCX, 251, "Finished {} measurements for pattern M{}_over_M{}", cnt1, met, underMet);
     }
   }
   logger_->info(RCX, 250, "Finished {} measurements for pattern MET_OVER_MET", cnt);
@@ -388,7 +388,7 @@ bool extSolverGen::measurePatternVar_3D(int met,
   double len1;
   double X1;
   double X0 = 0;
-  if (wireCnt == 5)
+  if (wireCnt >= 5)
     X0 = writeWirePatterns(wfp, height_low, len1, X1);
   else
     X0 = writeWirePatterns_w3(wfp, height_low, len1, X1);
@@ -404,6 +404,7 @@ bool extSolverGen::measurePatternVar_3D(int met,
 }
 double extSolverGen::writeWirePatterns(FILE* fp, double height_offset, double &len, double &max_x) 
  {
+    //assume _wireCnt>=5
   extMasterConductor* m = getMasterConductor(_met);
   extMasterConductor* mOver= NULL;
   if (_diagModel>0)
@@ -440,17 +441,17 @@ double extSolverGen::writeWirePatterns(FILE* fp, double height_offset, double &l
     if (min_x>xd[ii])
         min_x= xd[ii];
   }
-  for (int ii = n-1; ii > 0; ii--) {
+  for (int ii = 2; ii > 0; ii--) {
     	m->writeWire3D(fp, cnt++, xd[ii], minWidth, len, height_offset, 0.0);
         max_x= xd[ii]+minWidth;
   }
-  if (n>1)
-  	m->writeWire3D(fp, cnt++, X0, targetWidth, len, height_offset, 0.0);
+//  if (n>1)
+//  	m->writeWire3D(fp, cnt++, X0, targetWidth, len, height_offset, 0.0);
 
   if (min_x>x)
         min_x= x;
 
-  m->writeWire3D(fp, cnt++, x, targetWidth, len, height_offset, 1.0); // Wire on focues
+  m->writeWire3D(fp, cnt++, x, targetWidth, len, height_offset, 1.0); // Wire on focus
   double center_diag_x= x;
   max_x= x+targetWidth;
 
