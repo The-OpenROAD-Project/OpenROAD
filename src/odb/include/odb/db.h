@@ -8401,6 +8401,8 @@ class dbTechLayer : public dbObject
 
   float getLayerAdjustment() const;
 
+  void getOrthSpacingTable(std::vector<std::pair<int, int>>& tbl) const;
+
   dbSet<dbTechLayerCutClassRule> getTechLayerCutClassRules() const;
 
   dbTechLayerCutClassRule* findTechLayerCutClassRule(const char* name) const;
@@ -8745,6 +8747,10 @@ class dbTechLayer : public dbObject
   /// Get the technology this layer belongs too.
   ///
   dbTech* getTech() const;
+
+  bool hasOrthSpacingTable() const;
+
+  void addOrthSpacingTableEntry(int within, int spacing);
 
   ///
   /// Create a new layer. The mask order is implicit in the create order.

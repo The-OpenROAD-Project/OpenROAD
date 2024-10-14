@@ -429,6 +429,31 @@ class frMinWidthConstraint : public frConstraint
   frCoord minWidth;
 };
 
+class frOrthSpacingTableConstraint : public frConstraint
+{
+ public:
+  frOrthSpacingTableConstraint(const std::vector<std::pair<int, int>>& spc_tbl)
+      : spc_tbl_(spc_tbl)
+  {
+  }
+
+  const std::vector<std::pair<int, int>>& getSpacingTable() const
+  {
+    return spc_tbl_;
+  }
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcSpacingTableOrth;
+  }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("SPACINGTABLE ORTHOGONAL");
+  }
+
+ private:
+  std::vector<std::pair<int, int>> spc_tbl_;
+};
+
 class frLef58SpacingEndOfLineWithinEncloseCutConstraint : public frConstraint
 {
  public:
