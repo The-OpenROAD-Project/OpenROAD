@@ -145,12 +145,29 @@ std::vector<int> IOPlacer::getValidSlots(int first, int last, bool top_layer)
   return valid_slots;
 }
 
+std::vector<int> IOPlacer::findValidSlots(const Constraint& constraint,
+                                          const bool top_layer)
+{
+  std::vector<int> valid_slots;
+  if (top_layer) {
+    for (const Section& section : constraint.sections) {
+      std::vector constraint_slots
+          = getValidSlots(section.begin_slot, section.end_slot, top_layer);
+      valid_slots.insert(
+          valid_slots.end(), constraint_slots.begin(), constraint_slots.end());
+    }
+  } else {
+    int first_slot = constraint.sections.front().begin_slot;
+    int last_slot = constraint.sections.back().end_slot;
+    valid_slots = getValidSlots(first_slot, last_slot, top_layer);
+  }
+
+  return valid_slots;
+}
+
 void IOPlacer::randomPlacement()
 {
   for (Constraint& constraint : constraints_) {
-    int first_slot = constraint.sections.front().begin_slot;
-    int last_slot = constraint.sections.back().end_slot;
-
     bool top_layer = constraint.interval.getEdge() == Edge::invalid;
     for (auto& io_group : netlist_->getIOGroups()) {
       const PinSet& pin_list = constraint.pin_list;
@@ -161,15 +178,13 @@ void IOPlacer::randomPlacement()
 
       if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm())
           != pin_list.end()) {
-        std::vector<int> valid_slots
-            = getValidSlots(first_slot, last_slot, top_layer);
+        std::vector<int> valid_slots = findValidSlots(constraint, top_layer);
         randomPlacement(
             io_group.pin_indices, std::move(valid_slots), top_layer, true);
       }
     }
 
-    std::vector<int> valid_slots
-        = getValidSlots(first_slot, last_slot, top_layer);
+    std::vector<int> valid_slots = findValidSlots(constraint, top_layer);
     std::vector<int> pin_indices;
     for (bool mirrored_pins : {true, false}) {
       std::vector<int> indices
@@ -2710,19 +2725,23 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
 
   std::vector<Section> sections;
   for (int x = top_grid_->llx(); x < top_grid_->urx(); x += top_grid_->x_step) {
-    std::vector<Slot>& slots = top_layer_slots_;
-    std::vector<Slot>::iterator it
-        = std::find_if(slots.begin(), slots.end(), [&](Slot s) {
-            return (s.pos.x() >= x && s.pos.x() >= lb_x && s.pos.y() >= lb_y);
-          });
-    int edge_begin = it - slots.begin();
-    int edge_x = slots[edge_begin].pos.x();
+    if (x < lb_x || x > ub_x) {
+      continue;
+    }
+    std::vector<Slot>::iterator it = std::find_if(
+        top_layer_slots_.begin(), top_layer_slots_.end(), [&](Slot s) {
+          return (s.pos.x() >= x && s.pos.x() >= lb_x && s.pos.y() >= lb_y);
+        });
+    int edge_begin = it - top_layer_slots_.begin();
+    int edge_x = top_layer_slots_[edge_begin].pos.x();
 
-    it = std::find_if(slots.begin() + edge_begin, slots.end(), [&](Slot s) {
-      return s.pos.x() != edge_x || s.pos.x() >= ub_x || s.pos.y() >= ub_y;
-    });
-    int edge_end = it - slots.begin() - 1;
-
+    it = std::find_if(top_layer_slots_.begin() + edge_begin,
+                      top_layer_slots_.end(),
+                      [&](Slot s) {
+                        return s.pos.x() != edge_x || s.pos.x() >= ub_x
+                               || s.pos.y() >= ub_y;
+                      });
+    int edge_end = it - top_layer_slots_.begin() - 1;
     int end_slot = 0;
 
     while (end_slot < edge_end) {
@@ -2732,13 +2751,13 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
         end_slot = edge_end;
       }
       for (int i = edge_begin; i <= end_slot; ++i) {
-        if (slots[i].blocked) {
+        if (top_layer_slots_[i].blocked) {
           blocked_slots++;
         }
       }
       int half_length_pt = edge_begin + (end_slot - edge_begin) / 2;
       Section n_sec;
-      n_sec.pos = slots.at(half_length_pt).pos;
+      n_sec.pos = top_layer_slots_.at(half_length_pt).pos;
       n_sec.num_slots = end_slot - edge_begin - blocked_slots + 1;
       n_sec.begin_slot = edge_begin;
       n_sec.end_slot = end_slot;
