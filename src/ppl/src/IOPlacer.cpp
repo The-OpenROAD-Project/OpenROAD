@@ -2266,7 +2266,7 @@ void IOPlacer::checkPinPlacement()
     }
   }
 
-  invalid = invalid || checkPinConstraints();
+  invalid = invalid || checkPinConstraints() || checkMirroredPins();
   if (invalid) {
     logger_->error(PPL, 107, "Invalid pin placement.");
   }
@@ -2315,6 +2315,29 @@ bool IOPlacer::checkPinConstraints()
               pin.getPosition());
           invalid = true;
         }
+      }
+    }
+  }
+
+  return invalid;
+}
+
+bool IOPlacer::checkMirroredPins()
+{
+  bool invalid = false;
+
+  for (const IOPin& pin : netlist_->getIOPins()) {
+    if (pin.isMirrored()) {
+      int mirrored_pin_idx = pin.getMirrorPinIdx();
+      const IOPin& mirrored_pin = netlist_->getIoPin(mirrored_pin_idx);
+      if (pin.getPosition().getX() != mirrored_pin.getPosition().getX()
+          && pin.getPosition().getY() != mirrored_pin.getPosition().getY()) {
+        logger_->warn(PPL,
+                      103,
+                      "Pins {} and {} are not mirroring each other.",
+                      pin.getName(),
+                      mirrored_pin.getName());
+        invalid = true;
       }
     }
   }

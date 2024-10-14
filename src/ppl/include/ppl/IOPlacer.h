@@ -168,6 +168,7 @@ class IOPlacer
                           float alpha);
   void checkPinPlacement();
   bool checkPinConstraints();
+  bool checkMirroredPins();
 
   void setRenderer(std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer);
   AbstractIOPlacerRenderer* getRenderer();
