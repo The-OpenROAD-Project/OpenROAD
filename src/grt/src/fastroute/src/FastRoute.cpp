@@ -1060,8 +1060,6 @@ NetRouteMap FastRouteCore::run()
   }
 
   for (int i = 0; i < LVIter; i++) {
-    logistic_coef
-        = std::max<float>(2.0 / (1 + log(maxOverflow)), logistic_coef);
     logistic_coef = 2.0 / (1 + log(maxOverflow));
     debugPrint(logger_,
                GRT,
