@@ -407,6 +407,14 @@ class GuidePathFinder
       const std::vector<frBlockObject*>& pins,
       const std::vector<std::vector<Point3D>>& pin_to_gcell,
       std::vector<std::pair<frBlockObject*, Point>>& gr_pins) const;
+  /**
+   * @brief Clips guide endpoints that are going nowhere
+   */
+  void clipGuides(std::vector<frRect>& rects);
+  /**
+   * @brief Merges guides on same layer and same track
+   */
+  void mergeGuides(std::vector<frRect>& rects);
   frDesign* getDesign() const { return design_; }
 
   frDesign* design_{nullptr};

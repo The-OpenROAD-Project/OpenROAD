@@ -1549,56 +1549,53 @@ void GuidePathFinder::updateNodeMap(
   }
 }
 
-void GuidePathFinder::commitPathToGuides(
-    std::vector<frRect>& rects,
-    const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
-    std::vector<std::pair<frBlockObject*, Point>>& gr_pins)
+void GuidePathFinder::clipGuides(std::vector<frRect>& rects)
 {
-  std::vector<frBlockObject*> pins;
-  pins.reserve(getPinCount());
-  for (const auto& [pin, _] : pin_gcell_map) {
-    pins.emplace_back(pin);
-  }
-  // find pin in which guide
-  std::vector<std::vector<Point3D>> pin_to_gcell
-      = getPinToGCellList(rects, pin_gcell_map, pins);
-  int pin_idx = 0;
-  for (auto& guides : pin_to_gcell) {
-    if (guides.empty()) {
-      logger_->error(DRT,
-                     222,
-                     "Pin {} is not visited by any guide",
-                     getPinName(pins[pin_idx]));
-    }
-    ++pin_idx;
-  }
-  updateNodeMap(rects, pin_to_gcell);
-  updateGRPins(pins, pin_to_gcell, gr_pins);
   for (auto& [pt, indices] : node_map_) {
     const uint num_indices = indices.size();
-    const auto first_idx = *(indices.begin());
-    if (num_indices == 1 && isPinIdx(first_idx)) {
+    if (num_indices != 1) {
+      continue;
+    }
+    const auto idx = *(indices.begin());
+    if (isPinIdx(idx)) {
       logger_->error(DRT,
                      223,
                      "Pin dangling id {} ({},{}) {}.",
-                     first_idx,
+                     idx,
                      pt.x(),
                      pt.y(),
                      pt.z());
     }
     // no upper/lower guide
-    if (num_indices == 1
-        && node_map_.find(Point3D(pt, pt.z() + 2)) == node_map_.end()
+    if (node_map_.find(Point3D(pt, pt.z() + 2)) == node_map_.end()
         && node_map_.find(Point3D(pt, pt.z() - 2)) == node_map_.end()) {
-      auto& rect = rects[first_idx];
+      auto& rect = rects[idx];
       Rect box = rect.getBBox();
+      if (box.ll() == box.ur()) {
+        continue;
+      }
       if (box.ll() == pt) {
         rect.setBBox(Rect(box.xMax(), box.yMax(), box.xMax(), box.yMax()));
       } else {
         rect.setBBox(Rect(box.xMin(), box.yMin(), box.xMin(), box.yMin()));
       }
-    } else if (num_indices == 2) {
-      const auto second_idx = *std::prev(indices.end());
+      node_map_[pt].erase(node_map_[pt].find(idx));
+    }
+  }
+}
+
+void GuidePathFinder::mergeGuides(std::vector<frRect>& rects)
+{
+  for (auto& [pt, indices] : node_map_) {
+    std::vector<int> visited_indices;
+    std::copy_if(indices.begin(),
+                 indices.end(),
+                 std::back_inserter(visited_indices),
+                 [this](int idx) { return visited_[idx]; });
+    const uint num_indices = visited_indices.size();
+    if (num_indices == 2) {
+      const auto first_idx = *(visited_indices.begin());
+      const auto second_idx = *std::prev(visited_indices.end());
       if (!isGuideIdx(first_idx) || !isGuideIdx(second_idx)) {
         continue;
       }
@@ -1624,6 +1621,35 @@ void GuidePathFinder::commitPathToGuides(
       }
     }
   }
+}
+
+void GuidePathFinder::commitPathToGuides(
+    std::vector<frRect>& rects,
+    const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
+    std::vector<std::pair<frBlockObject*, Point>>& gr_pins)
+{
+  std::vector<frBlockObject*> pins;
+  pins.reserve(getPinCount());
+  for (const auto& [pin, _] : pin_gcell_map) {
+    pins.emplace_back(pin);
+  }
+  // find pin in which guide
+  std::vector<std::vector<Point3D>> pin_to_gcell
+      = getPinToGCellList(rects, pin_gcell_map, pins);
+  int pin_idx = 0;
+  for (auto& guides : pin_to_gcell) {
+    if (guides.empty()) {
+      logger_->error(DRT,
+                     222,
+                     "Pin {} is not visited by any guide",
+                     getPinName(pins[pin_idx]));
+    }
+    ++pin_idx;
+  }
+  updateNodeMap(rects, pin_to_gcell);
+  updateGRPins(pins, pin_to_gcell, gr_pins);
+  clipGuides(rects);
+  mergeGuides(rects);
   for (int i = 0; i < getGuideCount(); i++) {
     if (!visited_[i]) {
       continue;
