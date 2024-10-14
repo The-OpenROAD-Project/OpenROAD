@@ -240,13 +240,13 @@ void SimulatedAnnealing::randomAssignment()
 
         int slot = distribution(generator_);
         int mirrored_slot;
-        bool free = !slots_[slot].used;
+        bool free = slots_[slot].isAvailable();
         if (io_pin.isMirrored()) {
           free = free && isFreeForMirrored(slot, mirrored_slot);
         }
         while (!free) {
           slot = distribution(generator_);
-          free = !slots_[slot].used;
+          free = slots_[slot].isAvailable();
           if (io_pin.isMirrored()) {
             free = free && isFreeForMirrored(slot, mirrored_slot);
           }
@@ -263,14 +263,14 @@ void SimulatedAnnealing::randomAssignment()
       if (!io_pin.isInConstraint() && !only_constraints) {
         int slot = slot_indices[slot_idx];
         int mirrored_slot;
-        bool free = !slots_[slot].used;
+        bool free = slots_[slot].isAvailable();
         if (io_pin.isMirrored()) {
           free = free && isFreeForMirrored(slot, mirrored_slot);
         }
         while (!free) {
           slot_idx++;
           slot = slot_indices[slot_idx];
-          free = !slots_[slot].used;
+          free = slots_[slot].isAvailable();
           if (io_pin.isMirrored()) {
             free = free && isFreeForMirrored(slot, mirrored_slot);
           }
