@@ -101,12 +101,14 @@ struct parent3D
 
 struct CostParams
 {
-  const float logis_cof;
+  const float logistic_coef;
   const float cost_height;
   const int slope;
 
-  CostParams(const float logis_cof, const float cost_height, const int slope)
-      : logis_cof(logis_cof), cost_height(cost_height), slope(slope)
+  CostParams(const float logistic_coef,
+             const float cost_height,
+             const int slope)
+      : logistic_coef(logistic_coef), cost_height(cost_height), slope(slope)
   {
   }
 };
@@ -265,7 +267,7 @@ class FastRouteCore
 
   // maze functions
   // Maze-routing in different orders
-  double getCost(int i, bool is_horizontal, const CostParams& cost_params);
+  double getCost(int index, bool is_horizontal, const CostParams& cost_params);
   void mazeRouteMSMD(const int iter,
                      const int expand,
                      const int ripup_threshold,

@@ -1098,25 +1098,25 @@ void FastRouteCore::reInitTree(const int netID)
   checkAndFixEmbeddedTree(netID);
 }
 
-double FastRouteCore::getCost(const int i,
+double FastRouteCore::getCost(const int index,
                               bool is_horizontal,
                               const CostParams& cost_params)
 {
   const auto& cost_table = is_horizontal ? h_cost_table_ : v_cost_table_;
   const auto& capacity = is_horizontal ? h_capacity_ : v_capacity_;
 
-  if (i < cost_table.size()) {
-    return cost_table[i];
+  if (index < cost_table.size()) {
+    return cost_table[index];
   }
 
   double cost = 0;
   const int slope = cost_params.slope;
-  const double logis_cof = cost_params.logis_cof;
+  const double logistic_coef = cost_params.logistic_coef;
   const double cost_height = cost_params.cost_height;
 
-  cost = cost_height / (std::exp((capacity - i) * logis_cof) + 1) + 1;
-  if (i >= capacity) {
-    cost += (cost_height / slope * (i - capacity));
+  cost = cost_height / (std::exp((capacity - index) * logistic_coef) + 1) + 1;
+  if (index >= capacity) {
+    cost += (cost_height / slope * (index - capacity));
   }
 
   return cost;
