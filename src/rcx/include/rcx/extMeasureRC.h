@@ -45,8 +45,17 @@ class extMeasureRC : public extMeasure
 
     extMeasureRC() : extMeasure(NULL) {}
 
+    
+
 
     //----------------------------------------------------------------------- v2
+        void allocateTables(uint colCnt);
+            void de_allocateTables(uint colCnt);
+            Ath__array1D<Ath__wire *> ** allocTable_wire(uint n);
+                void DeleteTable_wire(Ath__array1D<Ath__wire *> **tbl, uint n);
+
+
+
      int _ll_tgt[2];
     int _ur_tgt[2];
         int _diagResLen;
@@ -266,8 +275,8 @@ uint createContextGrid_dir(char* dirName, const int bboxLL[2], const int bboxUR[
     void PrintTable_wires(FILE *fp, bool dbgOverlaps, uint colCnt, Ath__array1D<Ath__wire *> **verticalPowerTable, const char *msg);
 
     // dkf 10182023
-    Ath__array1D<extSegment *> **_upSegTable;
-    Ath__array1D<extSegment *> **_downSegTable;
+    Ath__array1D<extSegment *> **_upSegTable=nullptr;
+    Ath__array1D<extSegment *> **_downSegTable=nullptr;
     Ath__array1D<extSegment *> **allocTable(uint n);
     void DeleteTable(Ath__array1D<extSegment *> **tbl, uint n);
     uint FindAllSegments_up(FILE *fp, Ath__wire *w, bool lookUp, uint start_track, uint dir, uint level, uint maxDist, uint couplingDist, uint limitTrackNum, Ath__array1D<Ath__wire *> **firstWireTable, Ath__array1D<extSegment *> **UpSegTable);
@@ -282,8 +291,8 @@ uint createContextGrid_dir(char* dirName, const int bboxLL[2], const int bboxUR[
 
     // dkf 10202023
     FILE *_segFP;
-    Ath__array1D<extSegment *> **_ovSegTable;
-    Ath__array1D<extSegment *> **_whiteSegTable;
+    Ath__array1D<extSegment *> **_ovSegTable=nullptr;
+    Ath__array1D<extSegment *> **_whiteSegTable=nullptr;
 
     // void PrintCrossSeg(FILE *fp, int x1, int x2, int met, int metOver, int metUnder, const char *prefix="");
     //  void GetOUname(char buf[20], int met, int metOver, int metUnder);
