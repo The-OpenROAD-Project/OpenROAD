@@ -64,7 +64,32 @@ namespace rcx
         }
         return false;
     }
+    void extMeasureRC::allocateTables(uint colCnt)
+    {
+        _upSegTable= allocTable(colCnt);
+        _downSegTable= allocTable(colCnt);
+        _ovSegTable= allocTable(colCnt);
+        _whiteSegTable= allocTable(colCnt);
+        
+     _verticalPowerTable= allocTable_wire(colCnt);
 
+        /*
+                // TODO need to add in constructor/destructor
+
+        _verticalPowerTable= new Ath__array1D<Ath__wire *> *[colCnt];
+        for (uint ii=0; ii<colCnt; ii++)
+            _verticalPowerTable[ii]= new Ath__array1D<Ath__wire *>(4);
+        */
+    }
+    void extMeasureRC::de_allocateTables(uint colCnt)
+    {
+        DeleteTable(_upSegTable, colCnt);
+        DeleteTable(_downSegTable, colCnt);
+
+        DeleteTable(_ovSegTable, colCnt);
+        DeleteTable(_whiteSegTable, colCnt);
+        DeleteTable_wire(_verticalPowerTable, colCnt);
+    }
     int extMeasureRC::CouplingFlow(uint dir, uint couplingDist, uint diag_met_limit, int totWireCnt, uint &totalWiresExtracted, float &previous_percent_extracted)
     {
         bool DBG= _extMain->_dbgOption>0;
@@ -105,23 +130,15 @@ namespace rcx
         Ath__array1D<extSegment *> belowTable;
         Ath__array1D<extSegment *> whiteTable;
 
-         Ath__array1D<Ath__wire *> UpTable;
+        uint colCnt = _search->getColCnt();
+
+        Ath__array1D<Ath__wire *> UpTable;
+        Ath__array1D<Ath__wire *> **firstWireTable = allocMarkTable(colCnt);
+
+       allocateTables(colCnt);
 
         bool lookUp= true;
         _dir= dir;
-
-        uint colCnt = _search->getColCnt();
-        Ath__array1D<Ath__wire *> **firstWireTable = allocMarkTable(colCnt);
-        _upSegTable= allocTable(colCnt);
-        _downSegTable= allocTable(colCnt);
-
-        _ovSegTable= allocTable(colCnt);
-        _whiteSegTable= allocTable(colCnt);
-
-        // TODO need to add in constructor/destructor
-        _verticalPowerTable= new Ath__array1D<Ath__wire *> *[colCnt];
-        for (uint ii=0; ii<colCnt; ii++)
-            _verticalPowerTable[ii]= new Ath__array1D<Ath__wire *>(4);
 
         for (int level = 1; level < colCnt; level++)
         {
@@ -149,7 +166,7 @@ namespace rcx
                     wireCnt++;
                     if (w->isPower() || w->getRsegId()==0)
                         continue;
-                    
+
                     if (DBG)
                         Print5wires(_segFP, w, w->getLevel());
 
@@ -370,8 +387,10 @@ namespace rcx
                     }
                     */
 
-                    for (uint jj = 1; jj < colCnt; jj++)
+                    for (uint jj = 0; jj < colCnt; jj++)
                     {
+                        Release(_downSegTable[jj]);
+                        Release(_upSegTable[jj]);
                         Release(_ovSegTable[jj]);
                         Release(_whiteSegTable[jj]);
                     }
@@ -387,6 +406,8 @@ namespace rcx
         }
         if (_segFP!=NULL)
             fclose(_segFP);
+
+       de_allocateTables(colCnt);
 
         return 0;
     }
@@ -950,6 +971,21 @@ namespace rcx
         }
         delete tbl;
     }
+    Ath__array1D<Ath__wire *> **extMeasureRC::allocTable_wire(uint n)
+    {
+        Ath__array1D<Ath__wire *> **tbl = new Ath__array1D<Ath__wire *> *[n];
+        for (uint ii = 0; ii < n; ii++)
+            tbl[ii] = new Ath__array1D<Ath__wire *>(128);
+        return tbl;
+    }
+    void extMeasureRC::DeleteTable_wire(Ath__array1D<Ath__wire *> **tbl, uint n)
+    {
+        for (uint ii = 0; ii < n; ii++)
+        {
+            delete tbl[ii];
+        }
+        delete tbl;
+    }
     void extMeasureRC::OverUnder(extSegment *cc, uint met, int underMet, int overMet, Ath__array1D<extSegment *> *segTable, const char *ou)
     {
         if (segTable->getCnt() == 0)
@@ -1212,7 +1248,7 @@ namespace rcx
 
                         //   if (_ovSegTable[overMet]->getCnt() == 0)
                         //      continue;
-                        /* TODO: for met1 ------------------------------ IMPORTANT
+                         TODO: for met1 ------------------------------ IMPORTANT
                         int lastUnderMet = _met - 1;
 
                         bool fully_blocked_down = false;
