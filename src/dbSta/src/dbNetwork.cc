@@ -848,8 +848,11 @@ Instance* dbNetwork::parent(const Instance* instance) const
   staToDb(instance, db_inst, mod_inst);
   if (mod_inst) {
     auto parent_module = mod_inst->getParent();
-    if (auto parent_inst = parent_module->getModInst()) {
-      return dbToSta(parent_inst);
+    if (parent_module) {
+      auto parent_inst = parent_module->getModInst();
+      if (parent_inst) {
+        return dbToSta(parent_inst);
+      }
     }
   }
   if (db_inst) {
