@@ -1290,7 +1290,7 @@ void GuideProcessor::mapTermAccessPointsToGCells(
     std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
     frBlockObject* pin) const
 {
-  for (auto ap_loc : getAccessPoints(pin)) {
+  for (const auto& ap_loc : getAccessPoints(pin)) {
     const Point idx = getDesign()->getTopBlock()->getGCellIdx(ap_loc);
     gcell_pin_map[Point3D(idx, ap_loc.z())].insert(pin);
   }
@@ -1428,7 +1428,8 @@ void GuideProcessor::genGuides(frNet* net, std::vector<frRect>& rects)
       path_found = true;
       path_finder.commitPathToGuides(rects, pin_gcell_map, tmpGRPins_);
       break;
-    } else if (patch_guides_on_failure) {
+    }
+    if (patch_guides_on_failure) {
       path_finder.connectDisconnectedComponents(rects, intvs);
     }
   }
