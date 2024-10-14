@@ -134,7 +134,8 @@ bool run_solver(const std::string& dir, int net, int shape);
 
  private:
   odb::dbDatabase* _db = nullptr;
-  std::unique_ptr<extMain> _ext;
+  // ::unique_ptr<extMain> _ext;
+  extMain *_ext= nullptr;
   Logger* logger_ = nullptr;
   const char* spef_version_ = nullptr;
 };  // namespace rcx

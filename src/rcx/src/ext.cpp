@@ -30,7 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "rcx/extRCap.h"
+//#include "rcx/extRCap.h"
+#include "rcx/extMeasureRC.h"
 #include "rcx/ext.h"
 
 #include "odb/wOrder.h"
@@ -41,8 +42,11 @@ namespace rcx {
 using utl::Logger;
 using utl::RCX;
 
-Ext::Ext() : _ext(std::make_unique<extMain>())
+// Ext::Ext() : _ext(std::make_unique<extMain>())
+Ext::Ext()
 {
+      _ext = new extMain();
+
 }
 
 void Ext::init(odb::dbDatabase* db,
@@ -290,6 +294,10 @@ void Ext::extract(ExtractOptions options)
                         options.coupling_threshold,
                         options.context_depth,
                         options.ext_model_file);
+
+  bool completed= true;
+// fprintf(stdout, "Version %5.3f enabled new RC calc flow for lower 2 metals\n", options._version);
+
 }
 
 void Ext::adjust_rc(float res_factor, float cc_factor, float gndc_factor)
