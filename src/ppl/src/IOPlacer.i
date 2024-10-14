@@ -126,18 +126,6 @@ tclSetStdSeq(Tcl_Obj *const source,
 namespace ppl {
 
 void
-set_num_slots(int numSlots)
-{
-  getIOPlacer()->getParameters()->setNumSlots(numSlots);
-}
-
-void
-set_slots_factor(float factor)
-{
-  getIOPlacer()->getParameters()->setSlotsFactor(factor);
-}
-
-void
 set_slots_per_section(int slots_per_section)
 {
   getIOPlacer()->getParameters()->setSlotsPerSection(slots_per_section);
@@ -230,9 +218,9 @@ add_pin_group(PinList *pin_list, bool order)
 }
 
 void
-run_io_placement(bool randomMode)
+run_hungarian_matching(bool randomMode)
 {
-  getIOPlacer()->run(randomMode);
+  getIOPlacer()->runHungarianMatching(randomMode);
 }
 
 void

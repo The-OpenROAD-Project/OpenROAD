@@ -206,7 +206,7 @@ Descriptor::Properties LibertyLibraryDescriptor::getProperties(
   for (auto* corner : *sta_->corners()) {
     for (const sta::MinMax* min_max :
          {sta::MinMax::min(), sta::MinMax::max()}) {
-      const auto libs = corner->libertyLibraries(min_max);
+      const auto& libs = corner->libertyLibraries(min_max);
       if (std::find(libs.begin(), libs.end(), library) != libs.end()) {
         corners.insert(gui->makeSelected(corner));
       }

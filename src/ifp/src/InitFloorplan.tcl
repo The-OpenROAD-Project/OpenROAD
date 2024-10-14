@@ -40,12 +40,13 @@ sta::define_cmd_args "initialize_floorplan" {[-utilization util]\
 					       [-core_area {lx ly ux uy}]\
 					       [-additional_sites site_names]\
 					       [-site site_name]\
-					       [-row_parity NONE|ODD|EVEN]}
+					       [-row_parity NONE|ODD|EVEN]\
+					       [-flip_sites site_names]}
 
 proc initialize_floorplan { args } {
   sta::parse_key_args "initialize_floorplan" args \
     keys {-utilization -aspect_ratio -core_space \
-	    -die_area -core_area -site -additional_sites -row_parity} \
+    -die_area -core_area -site -additional_sites -row_parity -flip_sites} \
     flags {}
 
   sta::check_argc_eq0 "initialize_floorplan" $args
@@ -61,6 +62,13 @@ proc initialize_floorplan { args } {
   if { [info exists keys(-additional_sites)] } {
     foreach sitename $keys(-additional_sites) {
       lappend additional_sites [ifp::find_site $sitename]
+    }
+  }
+
+  set flipped_sites {}
+  if { [info exists keys(-flip_sites)] } {
+    foreach sitename $keys(-flip_sites) {
+      lappend flipped_sites [ifp::find_site $sitename]
     }
   }
 
@@ -111,7 +119,8 @@ proc initialize_floorplan { args } {
       [ord::microns_to_dbu $core_sp_right] \
       $site \
       $additional_sites \
-      $row_parity
+      $row_parity \
+      $flipped_sites
   } elseif { [info exists keys(-die_area)] } {
     set die_area $keys(-die_area)
     if { [llength $die_area] != 4 } {
@@ -143,7 +152,8 @@ proc initialize_floorplan { args } {
         [ord::microns_to_dbu $core_ux] [ord::microns_to_dbu $core_uy] \
         $site \
         $additional_sites \
-        $row_parity
+        $row_parity \
+        $flipped_sites
     } else {
       utl::error IFP 17 "no -core_area specified."
     }

@@ -1820,6 +1820,11 @@ Descriptor::Properties DbBTermDescriptor::getProperties(std::any object) const
                    {"IO type", bterm->getIoType().getString()},
                    {"Access Points", aps}};
 
+  std::optional<odb::Rect> constraint = bterm->getConstraintRegion();
+  if (constraint) {
+    props.push_back({"Constraint Region", constraint.value()});
+  }
+
   populateODBProperties(props, bterm);
 
   return props;
@@ -3994,6 +3999,10 @@ Descriptor::Properties DbSiteDescriptor::getProperties(std::any object) const
     symmetry.emplace_back("R90");
   }
   props.push_back({"Symmetry", symmetry});
+
+  if (auto site = std::any_cast<SpecificSite>(&object)) {
+    props.push_back({"Index", site->index_in_row});
+  }
 
   populateODBProperties(props, site);
 
