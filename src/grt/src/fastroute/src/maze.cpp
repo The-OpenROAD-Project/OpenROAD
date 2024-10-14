@@ -1113,10 +1113,9 @@ double FastRouteCore::getCost(const int i,
   const int slope = cost_params.slope;
   const double logis_cof = cost_params.logis_cof;
   const double cost_height = cost_params.cost_height;
-  const int adjust = cost_params.cost_type == 2;
 
-  cost = cost_height / (std::exp((capacity - i - adjust) * logis_cof) + 1) + 1;
-  if (i >= capacity - adjust) {
+  cost = cost_height / (std::exp((capacity - i) * logis_cof) + 1) + 1;
+  if (i >= capacity) {
     cost += (cost_height / slope * (i - capacity));
   }
 

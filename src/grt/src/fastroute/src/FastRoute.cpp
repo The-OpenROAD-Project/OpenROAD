@@ -1094,7 +1094,6 @@ NetRouteMap FastRouteCore::run()
 
   slope = 20;
   L = 1;
-  int cost_type = 1;
 
   InitLastUsage(upType);
   if (total_overflow_ > 0 && overflow_iterations_ > 0 && verbose_) {
@@ -1153,8 +1152,6 @@ NetRouteMap FastRouteCore::run()
         VIA = 0;
         LOGIS_COF = 1.33;
         ripup_threshold = -1;
-        //  cost_type = 3;
-
       } else if (i > 6) {
         if (i % 2 == 0) {
           LOGIS_COF += 0.5;
@@ -1164,7 +1161,6 @@ NetRouteMap FastRouteCore::run()
         }
       }
       if (i > 10) {
-        cost_type = 1;
         ripup_threshold = 0;
       }
     }
@@ -1196,7 +1192,7 @@ NetRouteMap FastRouteCore::run()
       L = 0;
     }
 
-    auto cost_params = CostParams(LOGIS_COF, costheight_, slope, cost_type);
+    auto cost_params = CostParams(LOGIS_COF, costheight_, slope);
     mazeRouteMSMD(i,
                   enlarge_,
                   ripup_threshold,
@@ -1234,7 +1230,7 @@ NetRouteMap FastRouteCore::run()
         upType = 3;
         stopDEC = true;
         slope = 5;
-        auto cost_params = CostParams(LOGIS_COF, costheight_, slope, cost_type);
+        auto cost_params = CostParams(LOGIS_COF, costheight_, slope);
         mazeRouteMSMD(i,
                       enlarge_,
                       ripup_threshold,
@@ -1283,7 +1279,7 @@ NetRouteMap FastRouteCore::run()
         bmfl = past_cong;
 
         L = 0;
-        auto cost_params = CostParams(LOGIS_COF, costheight_, slope, cost_type);
+        auto cost_params = CostParams(LOGIS_COF, costheight_, slope);
         mazeRouteMSMD(i,
                       enlarge_,
                       ripup_threshold,

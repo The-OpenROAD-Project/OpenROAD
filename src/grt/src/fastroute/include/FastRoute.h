@@ -104,16 +104,9 @@ struct CostParams
   const float logis_cof;
   const float cost_height;
   const int slope;
-  const int cost_type;
 
-  CostParams(const float logis_cof,
-             const float cost_height,
-             const int slope,
-             const int cost_type)
-      : logis_cof(logis_cof),
-        cost_height(cost_height),
-        slope(slope),
-        cost_type(cost_type)
+  CostParams(const float logis_cof, const float cost_height, const int slope)
+      : logis_cof(logis_cof), cost_height(cost_height), slope(slope)
   {
   }
 };
