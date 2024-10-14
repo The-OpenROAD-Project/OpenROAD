@@ -756,4 +756,14 @@ void Fixture::makeLef58WrongDirSpcConstraint(
   design->getTech()->addUConstraint(std::move(con));
 }
 
+void Fixture::makeSpacingTableOrthConstraint(frLayerNum layer_num,
+                                             frCoord within,
+                                             frCoord spc)
+{
+  std::vector<std::pair<frCoord, frCoord>> spc_tbl = {{within, spc}};
+  auto con = std::make_unique<frOrthSpacingTableConstraint>(spc_tbl);
+  auto layer = design->getTech()->getLayer(layer_num);
+  layer->setOrthSpacingTableConstraint(con.get());
+  design->getTech()->addUConstraint(std::move(con));
+}
 }  // namespace drt

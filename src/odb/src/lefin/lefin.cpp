@@ -928,7 +928,14 @@ void lefin::layer(lefiLayer* layer)
       }
     }
   }
-
+  if (layer->hasSpacingTableOrtho()) {
+    auto orth = layer->orthogonal();
+    for (int k = 0; k < orth->numOrthogonal(); k++) {
+      const int within = dbdist(orth->cutWithin(k));
+      const int spacing = dbdist(orth->orthoSpacing(k));
+      l->addOrthSpacingTableEntry(within, spacing);
+    }
+  }
   dbTechMinCutRule* cur_cut_rule;
   bool from_above, from_below;
   for (j = 0; j < layer->numMinimumcut(); j++) {

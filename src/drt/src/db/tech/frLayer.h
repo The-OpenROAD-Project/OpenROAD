@@ -807,6 +807,21 @@ class frLayer
     return result;
   }
 
+  bool hasOrthSpacingTableConstraint() const
+  {
+    return spc_tbl_orth_con_ != nullptr;
+  }
+
+  frOrthSpacingTableConstraint* getOrthSpacingTableConstraint() const
+  {
+    return spc_tbl_orth_con_;
+  }
+
+  void setOrthSpacingTableConstraint(frOrthSpacingTableConstraint* con)
+  {
+    spc_tbl_orth_con_ = con;
+  }
+
   void setDrEolSpacingConstraint(frCoord width, frCoord space, frCoord within)
   {
     drEolCon_.eolWidth = width;
@@ -911,6 +926,8 @@ class frLayer
       belowLef58EncEolConstraints_;
   // vector of maxspacing constraints
   std::vector<frLef58MaxSpacingConstraint*> maxSpacingConstraints_;
+
+  frOrthSpacingTableConstraint* spc_tbl_orth_con_{nullptr};
   drEolSpacingConstraint drEolCon_;
 
   friend class io::Parser;

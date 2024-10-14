@@ -232,6 +232,9 @@ class Fixture
   void makeLef58WrongDirSpcConstraint(
       frLayerNum layer_num,
       odb::dbTechLayerWrongDirSpacingRule* dbRule);
+  void makeSpacingTableOrthConstraint(frLayerNum layer_num,
+                                      frCoord within,
+                                      frCoord spc);
   // Public data members are accessible from inside the test function
   std::unique_ptr<Logger> logger;
   std::unique_ptr<frDesign> design;
