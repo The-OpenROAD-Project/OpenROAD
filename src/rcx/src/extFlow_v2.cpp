@@ -44,7 +44,6 @@ using namespace odb;
 
 uint extMain::couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m)
 {
-    return 1;
   uint ccDist = ccFlag;
 
   uint sigtype = 9;
@@ -195,7 +194,8 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m)
                widthTable);
 
       m->_rotatedGs = getRotatedFlag();
-      m->_pixelTable = _geomSeq;
+      m->_pixelTable= new gs(m->_seqPool);
+
 
       // add wires onto search such that    loX<=loX<=hiX
       hi_sdb[dir] = hiXY;
