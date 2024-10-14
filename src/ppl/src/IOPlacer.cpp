@@ -304,7 +304,7 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
           slot_idx++;
         }
       }
-      io_pin.setPos(slots[slot_idx].pos);
+      io_pin.setPosition(slots[slot_idx].pos);
       io_pin.setPlaced();
       io_pin.setEdge(slots[slot_idx].edge);
       slots[slot_idx].used = true;
@@ -319,8 +319,9 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
         int mirrored_pin_idx = netlist_->getIoPinIdx(mirrored_term);
         IOPin& mirrored_pin = netlist_->getIoPin(mirrored_pin_idx);
 
-        odb::Point mirrored_pos = core_->getMirroredPosition(io_pin.getPos());
-        mirrored_pin.setPos(mirrored_pos);
+        odb::Point mirrored_pos
+            = core_->getMirroredPosition(io_pin.getPosition());
+        mirrored_pin.setPosition(mirrored_pos);
         mirrored_pin.setLayer(slots[slot_idx].layer);
         mirrored_pin.setPlaced();
         mirrored_pin.setEdge(slots[slot_idx].edge);
@@ -456,8 +457,8 @@ void IOPlacer::assignMirroredPins(IOPin& io_pin,
   int mirrored_pin_idx = netlist_->getIoPinIdx(mirrored_term);
   IOPin& mirrored_pin = netlist_->getIoPin(mirrored_pin_idx);
 
-  odb::Point mirrored_pos = core_->getMirroredPosition(io_pin.getPos());
-  mirrored_pin.setPos(mirrored_pos);
+  odb::Point mirrored_pos = core_->getMirroredPosition(io_pin.getPosition());
+  mirrored_pin.setPosition(mirrored_pos);
   mirrored_pin.setLayer(io_pin.getLayer());
   mirrored_pin.setPlaced();
   mirrored_pin.setEdge(getMirroredEdge(io_pin.getEdge()));
@@ -569,7 +570,7 @@ void IOPlacer::placeFallbackGroup(
     const int pin_idx = group.first[reverse ? group_last - i : i];
     IOPin& io_pin = netlist_->getIoPin(pin_idx);
     Slot& slot = slots_[place_slot];
-    io_pin.setPos(slot.pos);
+    io_pin.setPosition(slot.pos);
     io_pin.setLayer(slot.layer);
     io_pin.setEdge(slot.edge);
     assignment_.push_back(io_pin);

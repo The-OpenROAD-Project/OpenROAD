@@ -149,7 +149,7 @@ void SimulatedAnnealing::getAssignment(std::vector<IOPin>& assignment)
     IOPin& io_pin = netlist_->getIoPin(i);
     Slot& slot = slots_[pin_assignment_[i]];
 
-    io_pin.setPos(slot.pos);
+    io_pin.setPosition(slot.pos);
     io_pin.setLayer(slot.layer);
     io_pin.setPlaced();
     io_pin.setEdge(slot.edge);
