@@ -2327,6 +2327,7 @@ void extMeasure::allocOUpool()
 
 extMeasure::~extMeasure()
 {
+    return;
   for (auto& ii : _rc) {
     delete ii;
   }
@@ -3511,7 +3512,7 @@ uint extRCModel::readRules(Ath__parser* parser,
   return cnt;
 }
 
-bool extRCModel::readRules(char* name,
+bool extRCModel::readRules_v1(char* name,
                            bool bin,
                            bool over,
                            bool under,
