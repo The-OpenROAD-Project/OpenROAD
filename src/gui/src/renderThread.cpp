@@ -377,7 +377,8 @@ void RenderThread::drawRows(QPainter* painter,
     return;
   }
 
-  for (const auto& [row, row_site] : viewer_->getRowRects(block, bounds)) {
+  for (const auto& [row, row_site, index] :
+       viewer_->getRowRects(block, bounds)) {
     if (restart_) {
       break;
     }
