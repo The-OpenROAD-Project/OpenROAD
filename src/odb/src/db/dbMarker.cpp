@@ -464,7 +464,7 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
       shapes_.emplace_back(Line(pts[0], pts[1]));
     } else if (shape_type == "box") {
       shapes_.emplace_back(Rect(pts[0], pts[1]));
-    } else if (shape_type == "box") {
+    } else if (shape_type == "polygon") {
       shapes_.emplace_back(Polygon(pts));
     } else {
       getLogger()->warn(
