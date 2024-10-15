@@ -1053,7 +1053,7 @@ void splitByPins(
     auto it = pins_locations_map.lower_bound(begin_idx);
     while (it != pins_locations_map.end()) {
       const auto along_routing_dir_idx = it->first;
-      const auto pins = it->second;
+      const auto& pins = it->second;
       if (along_routing_dir_idx > end_idx) {
         break;
       }
