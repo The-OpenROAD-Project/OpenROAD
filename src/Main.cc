@@ -333,6 +333,39 @@ static int tclReadlineInit(Tcl_Interp* interp)
 }
 #endif
 
+namespace {
+// A fallback from the hardcoded TCLRL_LIBRARY path.
+std::string findPathToTclreadlineInit(Tcl_Interp* interp)
+{
+  std::string path(TCLRL_LIBRARY "/tclreadlineInit.tcl");
+  if (is_regular_file(path.c_str())) {
+    return path;
+  }
+
+  const char* tclScript = R"(
+        proc find_path {} {
+            foreach dir $::auto_path {
+                set folder [file join $dir]
+                set path [file join $folder "tclreadline2.3.8" "tclreadlineInit.tcl"]
+                if {[file exists $path]} {
+                    return $path
+                }
+            }
+            error "tclreadlineInit.tcl not found in any of the directories in auto_path"
+        }
+        find_path
+    )";
+
+  if (Tcl_Eval(interp, tclScript) == TCL_ERROR) {
+    std::cerr << "Tcl_Eval failed: " << Tcl_GetStringResult(interp)
+              << std::endl;
+    return "";
+  }
+
+  return Tcl_GetStringResult(interp);
+}
+}  // namespace
+
 // Tcl init executed inside Tcl_Main.
 static int tclAppInit(int& argc,
                       char* argv[],
@@ -373,8 +406,9 @@ static int tclAppInit(int& argc,
       // script is done.
       Tcl_StaticPackage(
           interp, "tclreadline", Tclreadline_Init, Tclreadline_SafeInit);
-      if (Tcl_EvalFile(interp, TCLRL_LIBRARY "/tclreadlineInit.tcl")
-          != TCL_OK) {
+
+      std::string path = findPathToTclreadlineInit(interp);
+      if (path.empty() || Tcl_EvalFile(interp, path.c_str()) != TCL_OK) {
         printf("Failed to load tclreadline\n");
       }
     }
