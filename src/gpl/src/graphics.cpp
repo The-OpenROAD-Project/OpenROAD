@@ -192,7 +192,7 @@ void Graphics::drawForce(gui::Painter& painter)
   }
 }
 
-void Graphics::drawCells(const std::vector<GCellIndexHandle>& cells,
+void Graphics::drawCells(const std::vector<GCellHandle>& cells,
                          gui::Painter& painter)
 {
   for (const auto& handle : cells) {

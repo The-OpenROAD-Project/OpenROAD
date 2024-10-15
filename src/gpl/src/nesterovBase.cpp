@@ -735,7 +735,7 @@ void BinGrid::updateBinsNonPlaceArea()
 }
 
 // Core Part
-void BinGrid::updateBinsGCellDensityArea(std::vector<GCellIndexHandle>& cells)
+void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
 {
   // clear the Bin-area info
   for (Bin& bin : bins_) {
@@ -743,7 +743,7 @@ void BinGrid::updateBinsGCellDensityArea(std::vector<GCellIndexHandle>& cells)
     bin.setFillerArea(0);
   }
 
-  for (GCellIndexHandle& cell : cells) {
+  for (auto& cell : cells) {
     std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
     std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
 
@@ -1305,16 +1305,12 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
 
     gCell->clearInstances();
     gCell->setInstance(inst);
-    gCells_.emplace_back(GCellIndexHandle{GCellIndexHandle::StorageType::NBC,
-                                          nbc_.get(),
-                                          nullptr,
-                                          nbc_->getGCellIndex(gCell)});
+    gCells_.emplace_back(GCellHandle(nbc_.get(), nbc_->getGCellIndex(gCell)));
   }
 
   // add filler cells to gCells_
   for (size_t i = 0; i < fillerStor_.size(); ++i) {
-    gCells_.emplace_back(
-        GCellIndexHandle{GCellIndexHandle::StorageType::NB, nullptr, this, i});
+    gCells_.emplace_back(GCellHandle(this, i));
   }
 
   log_->info(GPL, 31, "{:20} {:9}", "FillerInit:NumGCells:", gCells_.size());
