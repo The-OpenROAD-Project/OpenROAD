@@ -413,26 +413,6 @@ dbRSeg* extMeasure::getFirstDbRseg(uint netId)
   return rseg;
 }
 
-double extMeasure::getCCfringe(uint lastNode, uint n, uint start, uint end)
-{
-  double ccFr = 0.0;
-  for (uint ii = start; ii <= end; ii++) {
-    int d = n - ii;
-    int u = n + ii;
-
-    if (n + ii > lastNode) {
-      break;
-    }
-
-    if (d > 0) {
-      ccFr += _capMatrix[d][n];
-    }
-
-    ccFr += _capMatrix[n][u];
-  }
-  return ccFr;
-}
-
 void extMeasure::printBox(FILE* fp)
 {
   fprintf(fp, "( %8d %8d ) ( %8d %8d )\n", _ll[0], _ll[1], _ur[0], _ur[1]);
