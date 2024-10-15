@@ -588,18 +588,7 @@ double extMain::getFringe(const uint met,
   if (width == _minWidthTable[met]) {
     return _capacitanceTable[modelIndex][met];
   }
-
-  // just in case
-
-  extMeasure m(logger_);
-
-  m._met = met;
-  m._width = width;
-  m._underMet = 0;
-  m._ccContextArray = _ccContextArray;
-  m._ccMergedContextArray = _ccMergedContextArray;
-
-  extDistRC* rc = _metRCTable.get(modelIndex)->getOverFringeRC(&m);
+  extDistRC* rc= _metRCTable.get(modelIndex)->getOverFringeRC_last(met, width);
 
   if (rc == nullptr) {
     return 0.0;

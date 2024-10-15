@@ -475,6 +475,9 @@ class extRCModel
 
  public:
 //------------------------------------------------------------------------ v2 ----------------
+extDistRC* getUnderRC(int met, int overMet, int width, int dist);
+extDistRC* getOverUnderRC(uint met, uint underMet, int overMet, int width, int dist);
+
 
 // dkf 09222023
   uint readRules_v2(Ath__parser* parser,
@@ -1333,7 +1336,6 @@ bool _skipResCalc= false;
   uint _layerCnt;
   odb::dbBlock* _block;
   odb::dbTech* _tech;
-  double _capMatrix[100][100];
   uint _idTable[10000];
   uint _mapTable[10000];
   uint _maxCapNodeCnt;

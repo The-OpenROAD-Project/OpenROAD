@@ -1780,6 +1780,17 @@ extDistRC* extRCModel::getUnderRC(extMeasure* m)
 
   return rc;
 }
+extDistRC* extRCModel::getUnderRC(int met, int overMet, int width, int dist)
+{
+  uint n = overMet - met - 1;
+  if (_modelTable[_tmpDataRate] == nullptr
+      || _modelTable[_tmpDataRate]->_capUnder[met] == nullptr) {
+    return nullptr;
+  }
+  extDistRC* rc = _modelTable[_tmpDataRate]->_capUnder[met]->getRC(n, width, dist);
+
+  return rc;
+}
 
 extDistRC* extRCModel::getOverUnderRC(extMeasure* m)
 {
@@ -1788,6 +1799,15 @@ extDistRC* extRCModel::getOverUnderRC(extMeasure* m)
   uint n = getOverUnderIndex(m, maxOverUnderIndex);
   extDistRC* rc = _modelTable[_tmpDataRate]->_capOverUnder[m->_met]->getRC(
       n, m->_width, m->_dist);
+
+  return rc;
+}
+extDistRC* extRCModel::getOverUnderRC(uint met, uint underMet, int overMet, int width, int dist)
+{
+  uint maxOverUnderIndex= _modelTable[_tmpDataRate]->_capOverUnder[met]->_metCnt;
+ // uint n = getOverUnderIndex(m, maxOverUnderIndex);
+  uint n= getMetIndexOverUnder(met, underMet, overMet, _layerCnt, maxOverUnderIndex);
+  extDistRC* rc = _modelTable[_tmpDataRate]->_capOverUnder[met]->getRC(n, width, dist);
 
   return rc;
 }
@@ -2283,13 +2303,14 @@ extMeasure::extMeasure(utl::Logger* logger)
   _ll[1] = 0;
   _ur[0] = 0;
   _ur[1] = 0;
-
+/*
   _maxCapNodeCnt = 100;
   for (int n = 0; n < (int) _maxCapNodeCnt; n++) {
     for (int k = 0; k < (int) _maxCapNodeCnt; k++) {
       _capMatrix[n][k] = 0.0;
     }
   }
+  */
   _extMain = nullptr;
 
   _2dBoxPool = new AthPool<ext2dBox>(1024);
