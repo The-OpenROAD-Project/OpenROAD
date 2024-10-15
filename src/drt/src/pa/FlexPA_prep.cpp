@@ -810,15 +810,15 @@ void FlexPA::check_addPlanarAccess(
     ps->addToPin(pin);
   }
 
-  const bool no_drv = isPlanarViolationFree(
-      ap, pin, std::move(ps), inst_term, begin_point, layer);
+  const bool no_drv
+      = isPlanarViolationFree(ap, pin, ps.get(), inst_term, begin_point, layer);
   ap->setAccess(dir, no_drv);
 }
 
 template <typename T>
 bool FlexPA::isPlanarViolationFree(frAccessPoint* ap,
                                    T* pin,
-                                   std::unique_ptr<frPathSeg> ps,
+                                   frPathSeg* ps,
                                    frInstTerm* inst_term,
                                    const Point point,
                                    frLayer* layer)
@@ -855,7 +855,7 @@ bool FlexPA::isPlanarViolationFree(frAccessPoint* ap,
       owner = pin_term;
     }
   }
-  design_rule_checker.addPAObj(ps.get(), owner);
+  design_rule_checker.addPAObj(ps, owner);
   for (auto& apPs : ap->getPathSegs()) {
     design_rule_checker.addPAObj(&apPs, owner);
   }
@@ -864,7 +864,7 @@ bool FlexPA::isPlanarViolationFree(frAccessPoint* ap,
   design_rule_checker.end();
 
   if (graphics_) {
-    graphics_->setPlanarAP(ap, ps.get(), design_rule_checker.getMarkers());
+    graphics_->setPlanarAP(ap, ps, design_rule_checker.getMarkers());
   }
 
   return design_rule_checker.getMarkers().empty();
@@ -1113,15 +1113,14 @@ bool FlexPA::checkDirectionalViaAccess(
   } else {
     ps->addToPin(pin);
   }
-  return isViaViolationFree(
-      ap, via, pin, std::move(ps), inst_term, begin_point);
+  return isViaViolationFree(ap, via, pin, ps.get(), inst_term, begin_point);
 }
 
 template <typename T>
 bool FlexPA::isViaViolationFree(frAccessPoint* ap,
                                 frVia* via,
                                 T* pin,
-                                std::unique_ptr<frPathSeg> ps,
+                                frPathSeg* ps,
                                 frInstTerm* inst_term,
                                 const Point point)
 {
@@ -1165,7 +1164,7 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
       owner = pin_term;
     }
   }
-  design_rule_checker.addPAObj(ps.get(), owner);
+  design_rule_checker.addPAObj(ps, owner);
   design_rule_checker.addPAObj(via, owner);
   for (auto& apPs : ap->getPathSegs()) {
     design_rule_checker.addPAObj(&apPs, owner);

@@ -376,7 +376,7 @@ class FlexPA
   template <typename T>
   bool isPlanarViolationFree(frAccessPoint* ap,
                              T* pin,
-                             std::unique_ptr<frPathSeg> ps,
+                             frPathSeg* ps,
                              frInstTerm* inst_term,
                              const Point point,
                              frLayer* layer);
@@ -464,7 +464,7 @@ class FlexPA
   bool isViaViolationFree(frAccessPoint* ap,
                           frVia* via,
                           T* pin,
-                          std::unique_ptr<frPathSeg> ps,
+                          frPathSeg* ps,
                           frInstTerm* inst_term,
                           const Point point);
 
