@@ -1963,7 +1963,7 @@ odb::dbInst* TritonCTS::insertDummyCell(
     const std::vector<sta::LibertyCell*>& dummyCandidates)
 {
   ClockSubNet* subNet = driver2subnet_[inst];
-  if(subNet->getNumSinks() == options_->getMaxFanout()) {
+  if (subNet->getNumSinks() == options_->getMaxFanout()) {
     return nullptr;
   }
   float deltaCap = inst->getIdealOutputCap() - inst->getOutputCap();
