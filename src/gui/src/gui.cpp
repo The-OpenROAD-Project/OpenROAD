@@ -1245,7 +1245,7 @@ void Gui::hideGui()
   main_window->exit();
 }
 
-void Gui::showGui(const std::string& cmds, bool interactive)
+void Gui::showGui(const std::string& cmds, bool interactive, bool load_settings)
 {
   if (enabled()) {
     logger_->warn(utl::GUI, 8, "GUI already active.");
@@ -1256,7 +1256,7 @@ void Gui::showGui(const std::string& cmds, bool interactive)
   // passing in cmd_argc and cmd_argv to meet Qt application requirement for
   // arguments nullptr for tcl interp to indicate nothing to setup and commands
   // and interactive setting
-  startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive);
+  startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive, load_settings);
 }
 
 void Gui::init(odb::dbDatabase* db, utl::Logger* logger)
@@ -1295,7 +1295,8 @@ int startGui(int& argc,
              char* argv[],
              Tcl_Interp* interp,
              const std::string& script,
-             bool interactive)
+             bool interactive,
+             bool load_settings)
 {
   auto gui = gui::Gui::get();
   // ensure continue after close is false
@@ -1312,7 +1313,7 @@ int startGui(int& argc,
   auto* open_road = ord::OpenRoad::openRoad();
 
   // create new MainWindow
-  main_window = new gui::MainWindow;
+  main_window = new gui::MainWindow(load_settings);
 
   open_road->addObserver(main_window);
   if (!interactive) {
