@@ -343,17 +343,17 @@ std::string findPathToTclreadlineInit(Tcl_Interp* interp)
   }
 
   const char* tclScript = R"(
-        proc find_path {} {
-            foreach dir $::auto_path {
-                set folder [file join $dir]
-                set path [file join $folder "tclreadline2.3.8" "tclreadlineInit.tcl"]
-                if {[file exists $path]} {
-                    return $path
-                }
+      namespace eval temp {
+        foreach dir $::auto_path {
+            set folder [file join $dir]
+            set path [file join $folder "tclreadline)" TCLRL_VERSION_STR
+                          R"(" "tclreadlineInit.tcl"]
+            if {[file exists $path]} {
+                return $path
             }
-            error "tclreadlineInit.tcl not found in any of the directories in auto_path"
         }
-        find_path
+        error "tclreadlineInit.tcl not found in any of the directories in auto_path"
+      }
     )";
 
   if (Tcl_Eval(interp, tclScript) == TCL_ERROR) {
