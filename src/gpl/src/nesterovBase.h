@@ -58,7 +58,7 @@ class Instance;
 class Die;
 class PlacerBaseCommon;
 class PlacerBase;
-struct GCellHandle;
+class GCellHandle;
 
 class Instance;
 class Pin;
