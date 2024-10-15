@@ -167,6 +167,8 @@ class IOPlacer
                           int perturb_per_iter,
                           float alpha);
   void checkPinPlacement();
+  bool checkPinConstraints();
+  bool checkMirroredPins();
 
   void setRenderer(std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer);
   AbstractIOPlacerRenderer* getRenderer();
@@ -185,6 +187,7 @@ class IOPlacer
   void initNetlistAndCore(const std::set<int>& hor_layer_idx,
                           const std::set<int>& ver_layer_idx);
   std::vector<int> getValidSlots(int first, int last, bool top_layer);
+  std::vector<int> findValidSlots(const Constraint& constraint, bool top_layer);
   void randomPlacement();
   void randomPlacement(std::vector<int> pin_indices,
                        std::vector<int> slot_indices,

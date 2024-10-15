@@ -1212,10 +1212,11 @@ float dbTechLayer::getLayerAdjustment() const
   return obj->layer_adjustment_;
 }
 
-std::vector<std::pair<int, int>> dbTechLayer::getOrthSpacingTable() const
+void dbTechLayer::getOrthSpacingTable(
+    std::vector<std::pair<int, int>>& tbl) const
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
-  return obj->orth_spacing_tbl_;
+  tbl = obj->orth_spacing_tbl_;
 }
 
 dbSet<dbTechLayerCutClassRule> dbTechLayer::getTechLayerCutClassRules() const
