@@ -86,17 +86,18 @@ void SimulatedAnnealing::run(float init_temperature,
 
         const int64 cost = pre_cost + getDeltaCost(prev_cost);
         const int delta_cost = cost - pre_cost;
-        debugPrint(
-            logger_,
-            utl::PPL,
-            "annealing",
-            2,
-            "iteration: {}; temperature: {}; assignment cost: {}um; delta "
-            "cost: {}um",
-            iter,
-            temperature,
-            block->dbuToMicrons(cost),
-            block->dbuToMicrons(delta_cost));
+        debugPrint(logger_,
+                   utl::PPL,
+                   "annealing",
+                   2,
+                   "iteration: {}; perturb: {}; temperature: {}; assignment "
+                   "cost: {}um; delta "
+                   "cost: {}um",
+                   iter,
+                   perturb,
+                   temperature,
+                   block->dbuToMicrons(cost),
+                   block->dbuToMicrons(delta_cost));
 
         const float rand_float = distribution(generator_);
         const float accept_prob = std::exp((-1) * delta_cost / temperature);
@@ -148,7 +149,7 @@ void SimulatedAnnealing::getAssignment(std::vector<IOPin>& assignment)
     IOPin& io_pin = netlist_->getIoPin(i);
     Slot& slot = slots_[pin_assignment_[i]];
 
-    io_pin.setPos(slot.pos);
+    io_pin.setPosition(slot.pos);
     io_pin.setLayer(slot.layer);
     io_pin.setPlaced();
     io_pin.setEdge(slot.edge);
@@ -223,63 +224,67 @@ void SimulatedAnnealing::randomAssignment()
   std::set<int> placed_pins;
   int slot_idx = randomAssignmentForGroups(placed_pins, slot_indices);
 
-  for (int i = 0; i < pin_assignment_.size(); i++) {
-    if (placed_pins.find(i) != placed_pins.end()) {
-      continue;
-    }
-
-    const IOPin& io_pin = netlist_->getIoPin(i);
-    if (io_pin.getConstraintIdx() != -1) {
-      int first_slot = 0;
-      int last_slot = num_slots_ - 1;
-      getSlotsRange(io_pin, first_slot, last_slot);
-      boost::random::uniform_int_distribution<int> distribution(first_slot,
-                                                                last_slot);
-
-      int slot = distribution(generator_);
-      int mirrored_slot;
-      bool free = !slots_[slot].used;
-      if (io_pin.isMirrored()) {
-        free = free && isFreeForMirrored(slot, mirrored_slot);
+  for (bool only_constraints : {true, false}) {
+    for (int i = 0; i < pin_assignment_.size(); i++) {
+      if (placed_pins.find(i) != placed_pins.end()) {
+        continue;
       }
-      while (!free) {
-        slot = distribution(generator_);
-        free = !slots_[slot].used;
+
+      const IOPin& io_pin = netlist_->getIoPin(i);
+      if (io_pin.isInConstraint() && only_constraints) {
+        int first_slot = 0;
+        int last_slot = num_slots_ - 1;
+        getSlotsRange(io_pin, first_slot, last_slot);
+        boost::random::uniform_int_distribution<int> distribution(first_slot,
+                                                                  last_slot);
+
+        int slot = distribution(generator_);
+        int mirrored_slot;
+        bool free = slots_[slot].isAvailable();
         if (io_pin.isMirrored()) {
           free = free && isFreeForMirrored(slot, mirrored_slot);
         }
+        while (!free) {
+          slot = distribution(generator_);
+          free = slots_[slot].isAvailable();
+          if (io_pin.isMirrored()) {
+            free = free && isFreeForMirrored(slot, mirrored_slot);
+          }
+        }
+        pin_assignment_[i] = slot;
+        slots_[slot].used = true;
+        if (io_pin.isMirrored()) {
+          pin_assignment_[io_pin.getMirrorPinIdx()] = mirrored_slot;
+          slots_[mirrored_slot].used = true;
+        }
+        placed_pins.insert(io_pin.getMirrorPinIdx());
       }
-      pin_assignment_[i] = slot;
-      slots_[slot].used = true;
-      if (io_pin.isMirrored()) {
-        pin_assignment_[io_pin.getMirrorPinIdx()] = mirrored_slot;
-        slots_[mirrored_slot].used = true;
-      }
-      placed_pins.insert(io_pin.getMirrorPinIdx());
-    } else {
-      int slot = slot_indices[slot_idx];
-      int mirrored_slot;
-      bool free = !slots_[slot].used;
-      if (io_pin.isMirrored()) {
-        free = free && isFreeForMirrored(slot, mirrored_slot);
-      }
-      while (!free) {
+
+      if (!io_pin.isInConstraint() && !only_constraints) {
+        int slot = slot_indices[slot_idx];
+        int mirrored_slot;
+        bool free = slots_[slot].isAvailable();
+        if (io_pin.isMirrored()) {
+          free = free && isFreeForMirrored(slot, mirrored_slot);
+        }
+        while (!free) {
+          slot_idx++;
+          slot = slot_indices[slot_idx];
+          free = slots_[slot].isAvailable();
+          if (io_pin.isMirrored()) {
+            free = free && isFreeForMirrored(slot, mirrored_slot);
+          }
+        }
+        pin_assignment_[i] = slot;
+        slots_[slot].used = true;
+        if (io_pin.isMirrored()) {
+          pin_assignment_[io_pin.getMirrorPinIdx()] = mirrored_slot;
+          slots_[mirrored_slot].used = true;
+        }
+        placed_pins.insert(io_pin.getMirrorPinIdx());
+
         slot_idx++;
-        slot = slot_indices[slot_idx];
-        free = !slots_[slot].used;
-        if (io_pin.isMirrored()) {
-          free = free && isFreeForMirrored(slot, mirrored_slot);
-        }
       }
-      pin_assignment_[i] = slot;
-      slots_[slot].used = true;
-      if (io_pin.isMirrored()) {
-        pin_assignment_[io_pin.getMirrorPinIdx()] = mirrored_slot;
-        slots_[mirrored_slot].used = true;
-      }
-      placed_pins.insert(io_pin.getMirrorPinIdx());
-
-      slot_idx++;
     }
   }
 }
@@ -410,7 +415,10 @@ int SimulatedAnnealing::swapPins()
         = constraints_[constraint_idx].pin_indices;
     // if there is only one pin in the constraint, do not swap and fallback to
     // move a pin to a free slot
-    if (pin_indices.size() == 1) {
+    const int pin_count = pin_indices.size();
+    const int mirrored_pins_count
+        = constraints_[constraint_idx].mirrored_pins_count;
+    if (pin_count == 1 || (pin_count - mirrored_pins_count) <= 1) {
       return move_fail_;
     }
     distribution = boost::random::uniform_int_distribution<int>(
@@ -796,15 +804,13 @@ void SimulatedAnnealing::getSlotsRange(const IOPin& io_pin,
     const Constraint& constraint = constraints_[pin_constraint_idx];
     first_slot = constraint.first_slot;
     last_slot = constraint.last_slot;
-  }
-
-  if (io_pin.isMirrored()) {
+  } else if (io_pin.isMirrored()) {
     const IOPin& mirrored_pin = netlist_->getIoPin(io_pin.getMirrorPinIdx());
     const int mirrored_constraint_idx = mirrored_pin.getConstraintIdx();
     if (mirrored_constraint_idx != -1) {
       const Constraint& constraint = constraints_[mirrored_constraint_idx];
-      first_slot = getMirroredSlotIdx(constraint.first_slot);
-      last_slot = getMirroredSlotIdx(constraint.last_slot);
+      getMirroredSlotRange(
+          constraint.first_slot, constraint.last_slot, first_slot, last_slot);
       if (first_slot > last_slot) {
         std::swap(first_slot, last_slot);
       }
@@ -857,6 +863,72 @@ int SimulatedAnnealing::getMirroredSlotIdx(int slot_idx) const
   }
 
   return mirrored_idx;
+}
+
+void SimulatedAnnealing::getMirroredSlotRange(const int slot_idx1,
+                                              const int slot_idx2,
+                                              int& mirrored_slot1,
+                                              int& mirrored_slot2) const
+{
+  const Slot& slot1 = slots_[slot_idx1];
+  const Slot& slot2 = slots_[slot_idx2];
+  if (slot1.edge != slot2.edge) {
+    logger_->error(
+        utl::PPL, 36, "Constraint cannot have positions in different edges.");
+  }
+  const Edge edge = slot1.edge;
+  const odb::Point& mirrored_pos1 = core_->getMirroredPosition(slot1.pos);
+  const odb::Point& mirrored_pos2 = core_->getMirroredPosition(slot2.pos);
+
+  // find the approximated mirrored position of the original slot range
+  // endpoints. this is only necessary because when using multiple layers, the
+  // mirrored position of the original slots endpoints are not in the beginning
+  // of the mirrored range.
+  if (slot1.edge == Edge::bottom || slot1.edge == Edge::right) {
+    for (int i = slots_.size() - 1; i >= 0; i--) {
+      const Slot& slot = slots_[i];
+      if ((edge == Edge::bottom && slot.pos.getX() >= mirrored_pos1.getX()
+           && slot.pos.getY() == mirrored_pos1.getY())
+          || (edge == Edge::right && slot.pos.getX() == mirrored_pos1.getX()
+              && slot.pos.getY() >= mirrored_pos1.getY())) {
+        mirrored_slot1 = i;
+        break;
+      }
+    }
+
+    for (int i = 0; i < slots_.size(); i++) {
+      const Slot& slot = slots_[i];
+      if ((edge == Edge::bottom && slot.pos.getX() <= mirrored_pos2.getX()
+           && slot.pos.getY() == mirrored_pos2.getY())
+          || (edge == Edge::right && slot.pos.getX() == mirrored_pos2.getX()
+              && slot.pos.getY() <= mirrored_pos2.getY())) {
+        mirrored_slot2 = i;
+        break;
+      }
+    }
+  } else {
+    for (int i = 0; i < slots_.size(); i++) {
+      const Slot& slot = slots_[i];
+      if ((edge == Edge::top && slot.pos.getX() >= mirrored_pos1.getX()
+           && slot.pos.getY() == mirrored_pos1.getY())
+          || (edge == Edge::left && slot.pos.getX() == mirrored_pos1.getX()
+              && slot.pos.getY() >= mirrored_pos1.getY())) {
+        mirrored_slot1 = i;
+        break;
+      }
+    }
+
+    for (int i = slots_.size() - 1; i >= 0; i--) {
+      const Slot& slot = slots_[i];
+      if ((edge == Edge::top && slot.pos.getX() <= mirrored_pos2.getX()
+           && slot.pos.getY() == mirrored_pos2.getY())
+          || (edge == Edge::left && slot.pos.getX() == mirrored_pos2.getX()
+              && slot.pos.getY() <= mirrored_pos2.getY())) {
+        mirrored_slot2 = i;
+        break;
+      }
+    }
+  }
 }
 
 void SimulatedAnnealing::updateSlotsFromGroup(

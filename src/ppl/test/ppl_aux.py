@@ -230,7 +230,7 @@ def place_pins(
             design.getIOPlacer().addPinGroup(pin_list, False)
             group_idx += 1
 
-    design.getIOPlacer().run(random)
+    design.getIOPlacer().runHungarianMatching(random)
 
 
 def place_pin(

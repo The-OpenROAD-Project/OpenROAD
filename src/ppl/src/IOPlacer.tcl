@@ -644,7 +644,7 @@ proc place_pins { args } {
   if { [info exists flags(-annealing)] } {
     ppl::run_annealing [info exists flags(-random)]
   } else {
-    ppl::run_io_placement [info exists flags(-random)]
+    ppl::run_hungarian_matching [info exists flags(-random)]
   }
 }
 
