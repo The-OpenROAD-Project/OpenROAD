@@ -334,14 +334,10 @@ static int tclReadlineInit(Tcl_Interp* interp)
 #endif
 
 namespace {
-// A fallback from the hardcoded TCLRL_LIBRARY path.
+// A stopgap fallback from the hardcoded TCLRL_LIBRARY path for OpenROAD,
+// not essential for OpenSTA
 std::string findPathToTclreadlineInit(Tcl_Interp* interp)
 {
-  std::string path(TCLRL_LIBRARY "/tclreadlineInit.tcl");
-  if (is_regular_file(path.c_str())) {
-    return path;
-  }
-
   // TL;DR it is possible to run the OpenROAD binary from within the
   // official Docker image on a different distribution than the
   // distribution within the Docker image.
@@ -425,9 +421,12 @@ static int tclAppInit(int& argc,
       Tcl_StaticPackage(
           interp, "tclreadline", Tclreadline_Init, Tclreadline_SafeInit);
 
-      std::string path = findPathToTclreadlineInit(interp);
-      if (path.empty() || Tcl_EvalFile(interp, path.c_str()) != TCL_OK) {
-        printf("Failed to load tclreadline\n");
+      if (Tcl_EvalFile(interp, TCLRL_LIBRARY "/tclreadlineInit.tcl")
+          != TCL_OK) {
+        std::string path = findPathToTclreadlineInit(interp);
+        if (path.empty() || Tcl_EvalFile(interp, path.c_str()) != TCL_OK) {
+          printf("Failed to load tclreadline\n");
+        }
       }
     }
 #endif
