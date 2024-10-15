@@ -268,7 +268,7 @@ void _dbMarkerCategory::fromPTree(const PropertyTree& tree)
 
   auto child_violations = tree.get_child_optional("violations");
   if (child_violations) {
-    for (const auto& [name, subtree] : child_violations.value()) {
+    for (const auto& [_, subtree] : child_violations.value()) {
       dbMarker* marker = dbMarker::create((dbMarkerCategory*) this);
       if (marker == nullptr) {
         continue;

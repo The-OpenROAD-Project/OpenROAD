@@ -451,93 +451,99 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
     }
   }
 
-  for (const auto& [ignore, shape] : tree.get_child("shape")) {
-    const std::string shape_type = shape.get<std::string>("type");
-    std::vector<Point> pts;
-    for (const auto& [ignore1, pt] : shape.get_child("points")) {
-      pts.emplace_back(dbus * pt.get<double>("x"), dbus * pt.get<double>("y"));
-    }
+  const auto shape = tree.get_child_optional("shape");
+  if (shape) {
+    for (const auto& [_, shape] : shape.value()) {
+      const std::string shape_type = shape.get<std::string>("type");
+      std::vector<Point> pts;
+      for (const auto& [_, pt] : shape.get_child("points")) {
+        pts.emplace_back(dbus * pt.get<double>("x"), dbus * pt.get<double>("y"));
+      }
 
-    if (shape_type == "point") {
-      shapes_.emplace_back(pts[0]);
-    } else if (shape_type == "line") {
-      shapes_.emplace_back(Line(pts[0], pts[1]));
-    } else if (shape_type == "box") {
-      shapes_.emplace_back(Rect(pts[0], pts[1]));
-    } else if (shape_type == "polygon") {
-      shapes_.emplace_back(Polygon(pts));
-    } else {
-      getLogger()->warn(
-          utl::ODB, 256, "Unable to find shape of violation: {}", shape_type);
+      if (shape_type == "point") {
+        shapes_.emplace_back(pts[0]);
+      } else if (shape_type == "line") {
+        shapes_.emplace_back(Line(pts[0], pts[1]));
+      } else if (shape_type == "box") {
+        shapes_.emplace_back(Rect(pts[0], pts[1]));
+      } else if (shape_type == "polygon") {
+        shapes_.emplace_back(Polygon(pts));
+      } else {
+        getLogger()->warn(
+            utl::ODB, 256, "Unable to find shape of violation: {}", shape_type);
+      }
     }
   }
 
   dbMarker* marker = (dbMarker*) this;
   const Rect bbox = marker->getBBox();
 
-  for (const auto& [ignore, source] : tree.get_child("sources")) {
-    const std::string src_type = source.get<std::string>("type");
-    const auto src_name = source.get_optional<std::string>("name");
+  auto sources = tree.get_child_optional("sources");
+  if (sources) {
+    for (const auto& [ignore, source] : sources.value()) {
+      const std::string src_type = source.get<std::string>("type");
+      const auto src_name = source.get_optional<std::string>("name");
 
-    bool src_found = false;
-    if (src_type == "net") {
-      odb::dbNet* net = block->findNet(src_name.value().c_str());
-      if (net != nullptr) {
-        marker->addSource(net);
-        src_found = true;
-      } else {
-        getLogger()->warn(
-            utl::ODB, 257, "Unable to find net: {}", src_name.value());
-      }
-    } else if (src_type == "inst") {
-      odb::dbInst* inst = block->findInst(src_name.value().c_str());
-      if (inst != nullptr) {
-        marker->addSource(inst);
-        src_found = true;
-      } else {
-        getLogger()->warn(
-            utl::ODB, 258, "Unable to find instance: {}", src_name.value());
-      }
-    } else if (src_type == "iterm") {
-      odb::dbITerm* iterm = block->findITerm(src_name.value().c_str());
-      if (iterm != nullptr) {
-        marker->addSource(iterm);
-        src_found = true;
-      } else {
-        getLogger()->warn(
-            utl::ODB, 259, "Unable to find iterm: {}", src_name.value());
-      }
-    } else if (src_type == "bterm") {
-      odb::dbBTerm* bterm = block->findBTerm(src_name.value().c_str());
-      if (bterm != nullptr) {
-        marker->addSource(bterm);
-        src_found = true;
-      } else {
-        getLogger()->warn(utl::ODB, 262, "Unable to find bterm: {}", src_name);
-      }
-    } else if (src_type == "obstruction") {
-      bool found = false;
-      for (const auto obs : block->getObstructions()) {
-        auto obs_bbox = obs->getBBox();
-        if (obs_bbox->getTechLayer() == layer) {
-          odb::Rect obs_rect = obs_bbox->getBox();
-          if (obs_rect.intersects(bbox)) {
-            marker->addSource(obs);
-            src_found = true;
-            found = true;
+      bool src_found = false;
+      if (src_type == "net") {
+        odb::dbNet* net = block->findNet(src_name.value().c_str());
+        if (net != nullptr) {
+          marker->addSource(net);
+          src_found = true;
+        } else {
+          getLogger()->warn(
+              utl::ODB, 257, "Unable to find net: {}", src_name.value());
+        }
+      } else if (src_type == "inst") {
+        odb::dbInst* inst = block->findInst(src_name.value().c_str());
+        if (inst != nullptr) {
+          marker->addSource(inst);
+          src_found = true;
+        } else {
+          getLogger()->warn(
+              utl::ODB, 258, "Unable to find instance: {}", src_name.value());
+        }
+      } else if (src_type == "iterm") {
+        odb::dbITerm* iterm = block->findITerm(src_name.value().c_str());
+        if (iterm != nullptr) {
+          marker->addSource(iterm);
+          src_found = true;
+        } else {
+          getLogger()->warn(
+              utl::ODB, 259, "Unable to find iterm: {}", src_name.value());
+        }
+      } else if (src_type == "bterm") {
+        odb::dbBTerm* bterm = block->findBTerm(src_name.value().c_str());
+        if (bterm != nullptr) {
+          marker->addSource(bterm);
+          src_found = true;
+        } else {
+          getLogger()->warn(utl::ODB, 262, "Unable to find bterm: {}", src_name);
+        }
+      } else if (src_type == "obstruction") {
+        bool found = false;
+        for (const auto obs : block->getObstructions()) {
+          auto obs_bbox = obs->getBBox();
+          if (obs_bbox->getTechLayer() == layer) {
+            odb::Rect obs_rect = obs_bbox->getBox();
+            if (obs_rect.intersects(bbox)) {
+              marker->addSource(obs);
+              src_found = true;
+              found = true;
+            }
           }
         }
+        if (!found) {
+          getLogger()->warn(utl::ODB, 263, "Unable to find obstruction");
+        }
+      } else {
+        getLogger()->warn(utl::ODB, 264, "Unknown source type: {}", src_type);
       }
-      if (!found) {
-        getLogger()->warn(utl::ODB, 263, "Unable to find obstruction");
-      }
-    } else {
-      getLogger()->warn(utl::ODB, 264, "Unknown source type: {}", src_type);
-    }
 
-    if (!src_found && !src_name) {
-      getLogger()->warn(
-          utl::ODB, 265, "Failed to add source item: {}", src_name.value());
+      if (!src_found && !src_name) {
+        getLogger()->warn(
+            utl::ODB, 265, "Failed to add source item: {}", src_name.value());
+      }
     }
   }
 }
