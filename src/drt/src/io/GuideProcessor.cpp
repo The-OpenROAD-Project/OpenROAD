@@ -211,7 +211,7 @@ int findClosestGuide(const Point3D& best_pin_loc_coords,
                      const std::vector<frRect>& guides,
                      const frCoord layer_change_penalty)
 {
-  int closest_guide_idx = -1;
+  int closest_guide_idx = 0;
   int dist = 0;
   int min_dist = std::numeric_limits<int>::max();
   int guide_idx = 0;
