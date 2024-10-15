@@ -65,7 +65,7 @@ class Mpl2Observer
   virtual void startSA() {}
   virtual void saStep(const std::vector<SoftMacro>& macros) {}
   virtual void saStep(const std::vector<HardMacro>& macros) {}
-  virtual void endSA() {}
+  virtual void endSA(float norm_cost) {}
   virtual void drawResult() {}
 
   virtual void finishedClustering(Cluster* root) {}
