@@ -342,6 +342,24 @@ std::string findPathToTclreadlineInit(Tcl_Interp* interp)
     return path;
   }
 
+  // TL;DR it is possible to run the OpenROAD binary from within the
+  // official Docker image on a different distribution than the
+  // distribution within the Docker image.
+  //
+  // In this case we have to look up
+  // the location of the tclreadline scripts instead of using the hardcoded
+  // path.
+  //
+  // It is helpful to use the official Docker image as CI infrastructure and
+  // also because it is a good way to have as similar an environment as possible
+  // during testing and deployment.
+  //
+  // See
+  // https://github.com/The-OpenROAD-Project/bazel-orfs/blob/main/docker.BUILD.bazel
+  // for the details on how this is done.
+  //
+  // Running Docker within a bazel isolated environment introduces lots of
+  // problems and is not really done.
   const char* tclScript = R"(
       namespace eval temp {
         foreach dir $::auto_path {
