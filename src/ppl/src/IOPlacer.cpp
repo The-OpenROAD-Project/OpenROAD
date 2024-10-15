@@ -145,12 +145,29 @@ std::vector<int> IOPlacer::getValidSlots(int first, int last, bool top_layer)
   return valid_slots;
 }
 
+std::vector<int> IOPlacer::findValidSlots(const Constraint& constraint,
+                                          const bool top_layer)
+{
+  std::vector<int> valid_slots;
+  if (top_layer) {
+    for (const Section& section : constraint.sections) {
+      std::vector constraint_slots
+          = getValidSlots(section.begin_slot, section.end_slot, top_layer);
+      valid_slots.insert(
+          valid_slots.end(), constraint_slots.begin(), constraint_slots.end());
+    }
+  } else {
+    int first_slot = constraint.sections.front().begin_slot;
+    int last_slot = constraint.sections.back().end_slot;
+    valid_slots = getValidSlots(first_slot, last_slot, top_layer);
+  }
+
+  return valid_slots;
+}
+
 void IOPlacer::randomPlacement()
 {
   for (Constraint& constraint : constraints_) {
-    int first_slot = constraint.sections.front().begin_slot;
-    int last_slot = constraint.sections.back().end_slot;
-
     bool top_layer = constraint.interval.getEdge() == Edge::invalid;
     for (auto& io_group : netlist_->getIOGroups()) {
       const PinSet& pin_list = constraint.pin_list;
@@ -161,15 +178,13 @@ void IOPlacer::randomPlacement()
 
       if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm())
           != pin_list.end()) {
-        std::vector<int> valid_slots
-            = getValidSlots(first_slot, last_slot, top_layer);
+        std::vector<int> valid_slots = findValidSlots(constraint, top_layer);
         randomPlacement(
             io_group.pin_indices, std::move(valid_slots), top_layer, true);
       }
     }
 
-    std::vector<int> valid_slots
-        = getValidSlots(first_slot, last_slot, top_layer);
+    std::vector<int> valid_slots = findValidSlots(constraint, top_layer);
     std::vector<int> pin_indices;
     for (bool mirrored_pins : {true, false}) {
       std::vector<int> indices
@@ -289,7 +304,7 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
           slot_idx++;
         }
       }
-      io_pin.setPos(slots[slot_idx].pos);
+      io_pin.setPosition(slots[slot_idx].pos);
       io_pin.setPlaced();
       io_pin.setEdge(slots[slot_idx].edge);
       slots[slot_idx].used = true;
@@ -304,8 +319,9 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
         int mirrored_pin_idx = netlist_->getIoPinIdx(mirrored_term);
         IOPin& mirrored_pin = netlist_->getIoPin(mirrored_pin_idx);
 
-        odb::Point mirrored_pos = core_->getMirroredPosition(io_pin.getPos());
-        mirrored_pin.setPos(mirrored_pos);
+        odb::Point mirrored_pos
+            = core_->getMirroredPosition(io_pin.getPosition());
+        mirrored_pin.setPosition(mirrored_pos);
         mirrored_pin.setLayer(slots[slot_idx].layer);
         mirrored_pin.setPlaced();
         mirrored_pin.setEdge(slots[slot_idx].edge);
@@ -441,8 +457,8 @@ void IOPlacer::assignMirroredPins(IOPin& io_pin,
   int mirrored_pin_idx = netlist_->getIoPinIdx(mirrored_term);
   IOPin& mirrored_pin = netlist_->getIoPin(mirrored_pin_idx);
 
-  odb::Point mirrored_pos = core_->getMirroredPosition(io_pin.getPos());
-  mirrored_pin.setPos(mirrored_pos);
+  odb::Point mirrored_pos = core_->getMirroredPosition(io_pin.getPosition());
+  mirrored_pin.setPosition(mirrored_pos);
   mirrored_pin.setLayer(io_pin.getLayer());
   mirrored_pin.setPlaced();
   mirrored_pin.setEdge(getMirroredEdge(io_pin.getEdge()));
@@ -554,7 +570,7 @@ void IOPlacer::placeFallbackGroup(
     const int pin_idx = group.first[reverse ? group_last - i : i];
     IOPin& io_pin = netlist_->getIoPin(pin_idx);
     Slot& slot = slots_[place_slot];
-    io_pin.setPos(slot.pos);
+    io_pin.setPosition(slot.pos);
     io_pin.setLayer(slot.layer);
     io_pin.setEdge(slot.edge);
     assignment_.push_back(io_pin);
@@ -1004,6 +1020,7 @@ std::vector<Section> IOPlacer::createSectionsPerConstraint(
                                       ? hor_layers_
                                       : ver_layers_;
 
+    bool first_layer = true;
     for (int layer : layers) {
       std::vector<Slot>::iterator it
           = std::find_if(slots_.begin(), slots_.end(), [&](const Slot& s) {
@@ -1032,10 +1049,13 @@ std::vector<Section> IOPlacer::createSectionsPerConstraint(
                     || s.layer != layer);
           });
       int constraint_end = it - slots_.begin() - 1;
-      constraint.first_slot = constraint_begin;
+      if (first_layer) {
+        constraint.first_slot = constraint_begin;
+      }
       constraint.last_slot = constraint_end;
 
       findSections(constraint_begin, constraint_end, edge, sections);
+      first_layer = false;
     }
   } else {
     sections = findSectionsForTopLayer(constraint.box);
@@ -1811,7 +1831,9 @@ void IOPlacer::initConstraints(bool annealing)
       int pin_idx = netlist_->getIoPinIdx(term);
       IOPin& io_pin = netlist_->getIoPin(pin_idx);
       io_pin.setConstraintIdx(constraint_idx);
+      io_pin.setInConstraint();
       constraint.pin_indices.push_back(pin_idx);
+      constraint.mirrored_pins_count += io_pin.isMirrored() ? 1 : 0;
       if (io_pin.getGroupIdx() != -1) {
         constraint.pin_groups.insert(io_pin.getGroupIdx());
       }
@@ -2245,9 +2267,83 @@ void IOPlacer::checkPinPlacement()
     }
   }
 
+  invalid = invalid || checkPinConstraints() || checkMirroredPins();
   if (invalid) {
     logger_->error(PPL, 107, "Invalid pin placement.");
   }
+}
+
+bool IOPlacer::checkPinConstraints()
+{
+  bool invalid = false;
+
+  for (const IOPin& pin : netlist_->getIOPins()) {
+    if (pin.isInConstraint()) {
+      const int constraint_idx = pin.getConstraintIdx();
+      const Constraint& constraint = constraints_[constraint_idx];
+      const Interval& constraint_interval = constraint.interval;
+      if (pin.getEdge() != constraint_interval.getEdge()) {
+        logger_->warn(PPL,
+                      92,
+                      "Pin {} is not placed in its constraint edge.",
+                      pin.getName());
+        invalid = true;
+      }
+
+      if (constraint_interval.getEdge() != Edge::invalid) {
+        const int constraint_begin = constraint_interval.getBegin();
+        const int constraint_end = constraint_interval.getEnd();
+        const int pin_coord
+            = constraint_interval.getEdge() == Edge::bottom
+                      || constraint_interval.getEdge() == Edge::top
+                  ? pin.getPosition().getX()
+                  : pin.getPosition().getY();
+        if (pin_coord < constraint_begin || pin_coord > constraint_end) {
+          logger_->warn(PPL,
+                        102,
+                        "Pin {} is not placed in its constraint interval.",
+                        pin.getName());
+          invalid = true;
+        }
+      } else {
+        if (!constraint.box.overlaps(pin.getPosition())) {
+          logger_->warn(
+              PPL,
+              105,
+              "Pin {} is not placed in the upper layer grid region {}. {}",
+              pin.getName(),
+              constraint.box,
+              pin.getPosition());
+          invalid = true;
+        }
+      }
+    }
+  }
+
+  return invalid;
+}
+
+bool IOPlacer::checkMirroredPins()
+{
+  bool invalid = false;
+
+  for (const IOPin& pin : netlist_->getIOPins()) {
+    if (pin.isMirrored()) {
+      int mirrored_pin_idx = pin.getMirrorPinIdx();
+      const IOPin& mirrored_pin = netlist_->getIoPin(mirrored_pin_idx);
+      if (pin.getPosition().getX() != mirrored_pin.getPosition().getX()
+          && pin.getPosition().getY() != mirrored_pin.getPosition().getY()) {
+        logger_->warn(PPL,
+                      103,
+                      "Pins {} and {} are not mirroring each other.",
+                      pin.getName(),
+                      mirrored_pin.getName());
+        invalid = true;
+      }
+    }
+  }
+
+  return invalid;
 }
 
 void IOPlacer::reportHPWL()
@@ -2667,19 +2763,23 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
 
   std::vector<Section> sections;
   for (int x = top_grid_->llx(); x < top_grid_->urx(); x += top_grid_->x_step) {
-    std::vector<Slot>& slots = top_layer_slots_;
-    std::vector<Slot>::iterator it
-        = std::find_if(slots.begin(), slots.end(), [&](Slot s) {
-            return (s.pos.x() >= x && s.pos.x() >= lb_x && s.pos.y() >= lb_y);
-          });
-    int edge_begin = it - slots.begin();
-    int edge_x = slots[edge_begin].pos.x();
+    if (x < lb_x || x > ub_x) {
+      continue;
+    }
+    std::vector<Slot>::iterator it = std::find_if(
+        top_layer_slots_.begin(), top_layer_slots_.end(), [&](Slot s) {
+          return (s.pos.x() >= x && s.pos.x() >= lb_x && s.pos.y() >= lb_y);
+        });
+    int edge_begin = it - top_layer_slots_.begin();
+    int edge_x = top_layer_slots_[edge_begin].pos.x();
 
-    it = std::find_if(slots.begin() + edge_begin, slots.end(), [&](Slot s) {
-      return s.pos.x() != edge_x || s.pos.x() >= ub_x || s.pos.y() >= ub_y;
-    });
-    int edge_end = it - slots.begin() - 1;
-
+    it = std::find_if(top_layer_slots_.begin() + edge_begin,
+                      top_layer_slots_.end(),
+                      [&](Slot s) {
+                        return s.pos.x() != edge_x || s.pos.x() >= ub_x
+                               || s.pos.y() >= ub_y;
+                      });
+    int edge_end = it - top_layer_slots_.begin() - 1;
     int end_slot = 0;
 
     while (end_slot < edge_end) {
@@ -2689,13 +2789,13 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
         end_slot = edge_end;
       }
       for (int i = edge_begin; i <= end_slot; ++i) {
-        if (slots[i].blocked) {
+        if (top_layer_slots_[i].blocked) {
           blocked_slots++;
         }
       }
       int half_length_pt = edge_begin + (end_slot - edge_begin) / 2;
       Section n_sec;
-      n_sec.pos = slots.at(half_length_pt).pos;
+      n_sec.pos = top_layer_slots_.at(half_length_pt).pos;
       n_sec.num_slots = end_slot - edge_begin - blocked_slots + 1;
       n_sec.begin_slot = edge_begin;
       n_sec.end_slot = end_slot;
