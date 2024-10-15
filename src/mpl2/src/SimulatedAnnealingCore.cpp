@@ -368,12 +368,12 @@ void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
         += net_weight
            * std::min(
                {dist_to_left, dist_to_right, dist_to_bottom, dist_to_top});
-  } else if ((constraint_boundary == Boundary::L && !left_is_blocked_)
-             || (constraint_boundary == Boundary::R && !right_is_blocked_)) {
+  } else if (constraint_boundary == Boundary::L
+             || constraint_boundary == Boundary::R) {
     const float x2 = io.getPinX();
     wirelength_ += net_weight * std::abs(x2 - x1);
-  } else if ((constraint_boundary == Boundary::T && !top_is_blocked_)
-             || (constraint_boundary == Boundary::B && !bottom_is_blocked_)) {
+  } else if (constraint_boundary == Boundary::T
+             || constraint_boundary == Boundary::B) {
     const float y2 = io.getPinY();
     wirelength_ += net_weight * std::abs(y2 - y1);
   }
