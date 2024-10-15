@@ -984,8 +984,6 @@ int TritonRoute::main()
         dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
       });
     }
-    io::Writer writer(this, logger_);
-    writer.updateDb(db_, true);
   }
   if (debug_->debugDumpDR) {
     ord::OpenRoad::openRoad()->writeDb(

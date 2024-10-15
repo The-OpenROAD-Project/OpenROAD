@@ -135,7 +135,7 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
             || io_pin.isPlaced()) {
           continue;
         }
-        io_pin.setPos(slots_[slot_index].pos);
+        io_pin.setPosition(slots_[slot_index].pos);
         io_pin.setLayer(slots_[slot_index].layer);
         io_pin.setPlaced();
         io_pin.setEdge(slots_[slot_index].edge);
@@ -160,8 +160,8 @@ void HungarianMatching::assignMirroredPins(IOPin& io_pin,
   int mirrored_pin_idx = netlist_->getIoPinIdx(mirrored_term);
   IOPin& mirrored_pin = netlist_->getIoPin(mirrored_pin_idx);
 
-  odb::Point mirrored_pos = core_->getMirroredPosition(io_pin.getPos());
-  mirrored_pin.setPos(mirrored_pos);
+  odb::Point mirrored_pos = core_->getMirroredPosition(io_pin.getPosition());
+  mirrored_pin.setPosition(mirrored_pos);
   mirrored_pin.setLayer(io_pin.getLayer());
   mirrored_pin.setEdge(getMirroredEdge(io_pin.getEdge()));
   mirrored_pin.setPlaced();
@@ -302,7 +302,7 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment,
 
       for (int pin_idx : pins) {
         IOPin& io_pin = netlist_->getIoPin(pin_idx);
-        io_pin.setPos(slots_[slot_index + pin_cnt].pos);
+        io_pin.setPosition(slots_[slot_index + pin_cnt].pos);
         io_pin.setLayer(slots_[slot_index + pin_cnt].layer);
         io_pin.setEdge(slots_[slot_index + pin_cnt].edge);
         assignment.push_back(io_pin);
