@@ -15,7 +15,7 @@
  ,"DRT::worst_slack_min" : "0.04123748526040111"
  ,"DRT::worst_slack_max" : "-0.9788220249158479"
  ,"DRT::tns_max" : "-14.967746254967835"
- ,"DRT::clock_skew" : "0.016702240063753447"
+ ,"DRT::clock_skew" : "0.022114710688639166"
  ,"DRT::max_slew_slack" : "0"
  ,"DRT::max_capacitance_slack" : "0"
  ,"DRT::max_fanout_slack" : "0"

@@ -257,6 +257,49 @@ void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
   }
 }
 
+void FlexPA::genAPCosted(
+    const frAccessPointEnum cost,
+    std::map<frCoord, frAccessPointEnum>& coords,
+    const std::map<frCoord, frAccessPointEnum>& track_coords,
+    const frLayerNum base_layer_num,
+    const frLayerNum layer_num,
+    const gtl::rectangle_data<frCoord>& rect,
+    const bool is_curr_layer_horz,
+    const int offset)
+{
+  auto layer = getDesign()->getTech()->getLayer(layer_num);
+  const auto min_width_layer = layer->getMinWidth();
+  const int rect_min = is_curr_layer_horz ? gtl::yl(rect) : gtl::xl(rect);
+  const int rect_max = is_curr_layer_horz ? gtl::yh(rect) : gtl::xh(rect);
+
+  switch (cost) {
+    case (frAccessPointEnum::OnGrid):
+      genAPOnTrack(coords, track_coords, rect_min + offset, rect_max - offset);
+      break;
+
+      // frAccessPointEnum::Halfgrid not defined
+
+    case (frAccessPointEnum::Center):
+      genAPCentered(
+          coords, base_layer_num, rect_min + offset, rect_max - offset);
+      break;
+
+    case (frAccessPointEnum::EncOpt):
+      genAPEnclosedBoundary(coords, rect, base_layer_num, is_curr_layer_horz);
+      break;
+
+    case (frAccessPointEnum::NearbyGrid):
+      genAPOnTrack(
+          coords, track_coords, rect_min - min_width_layer, rect_min, true);
+      genAPOnTrack(
+          coords, track_coords, rect_max, rect_max + min_width_layer, true);
+      break;
+
+    default:
+      logger_->error(DRT, 257, "Invalid frAccessPointEnum type");
+  }
+}
+
 // Responsible for checking if an AP is valid and configuring it
 void FlexPA::gen_createAccessPoint(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
@@ -475,8 +518,6 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
   } else {
     logger_->error(DRT, 68, "genAPsFromRect cannot find second_layer_num.");
   }
-  const auto min_width_layer2
-      = getDesign()->getTech()->getLayer(second_layer_num)->getMinWidth();
   auto& layer1_track_coords = track_coords_[layer_num];
   auto& layer2_track_coords = track_coords_[second_layer_num];
   const bool is_layer1_horz = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
@@ -500,81 +541,46 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
   }
 
   // gen all full/half grid coords
-  const int offset = is_macro_cell_pin ? hwidth : 0;
+  /** offset used to only be used after an if (!is_macro_cell_pin ||
+   * !use_center_line), so this logic was combined with offset is_macro_cell_pin
+   * ? hwidth : 0;
+   */
+  const int offset = is_macro_cell_pin && !use_center_line ? hwidth : 0;
   const int layer1_rect_min = is_layer1_horz ? gtl::yl(rect) : gtl::xl(rect);
   const int layer1_rect_max = is_layer1_horz ? gtl::yh(rect) : gtl::xh(rect);
-  const int layer2_rect_min = is_layer1_horz ? gtl::xl(rect) : gtl::yl(rect);
-  const int layer2_rect_max = is_layer1_horz ? gtl::xh(rect) : gtl::yh(rect);
   auto& layer1_coords = is_layer1_horz ? y_coords : x_coords;
   auto& layer2_coords = is_layer1_horz ? x_coords : y_coords;
 
-  if (!is_macro_cell_pin || !use_center_line) {
-    genAPOnTrack(
-        layer1_coords, layer1_track_coords, layer1_rect_min, layer1_rect_max);
-    genAPOnTrack(layer2_coords,
-                 layer2_track_coords,
-                 layer2_rect_min + offset,
-                 layer2_rect_max - offset);
-    if (lower_type >= frAccessPointEnum::Center) {
-      genAPCentered(layer1_coords, layer_num, layer1_rect_min, layer1_rect_max);
+  const frAccessPointEnum frDirEnums[] = {frAccessPointEnum::OnGrid,
+                                          frAccessPointEnum::Center,
+                                          frAccessPointEnum::EncOpt,
+                                          frAccessPointEnum::NearbyGrid};
+
+  for (const auto cost : frDirEnums) {
+    if (upper_type >= cost) {
+      genAPCosted(cost,
+                  layer2_coords,
+                  layer2_track_coords,
+                  layer_num,
+                  second_layer_num,
+                  rect,
+                  !is_layer1_horz,
+                  offset);
     }
-    if (lower_type >= frAccessPointEnum::EncOpt) {
-      genAPEnclosedBoundary(layer1_coords, rect, layer_num, is_layer1_horz);
-    }
-    if (upper_type >= frAccessPointEnum::Center) {
-      genAPCentered(layer2_coords,
+  }
+  if (!(is_macro_cell_pin && use_center_line)) {
+    for (const auto cost : frDirEnums) {
+      if (lower_type >= cost) {
+        genAPCosted(cost,
+                    layer1_coords,
+                    layer1_track_coords,
                     layer_num,
-                    layer2_rect_min + offset,
-                    layer2_rect_max - offset);
-    }
-    if (upper_type >= frAccessPointEnum::EncOpt) {
-      genAPEnclosedBoundary(layer2_coords, rect, layer_num, !is_layer1_horz);
-    }
-    if (lower_type >= frAccessPointEnum::NearbyGrid) {
-      genAPOnTrack(layer1_coords,
-                   layer1_track_coords,
-                   layer1_rect_max,
-                   layer1_rect_max + min_width_layer1,
-                   true);
-      genAPOnTrack(layer1_coords,
-                   layer1_track_coords,
-                   layer1_rect_min - min_width_layer1,
-                   layer1_rect_min,
-                   true);
-    }
-    if (upper_type >= frAccessPointEnum::NearbyGrid) {
-      genAPOnTrack(layer2_coords,
-                   layer2_track_coords,
-                   layer2_rect_max,
-                   layer2_rect_max + min_width_layer2,
-                   true);
-      genAPOnTrack(layer2_coords,
-                   layer2_track_coords,
-                   layer2_rect_min - min_width_layer2,
-                   layer2_rect_min,
-                   true);
+                    layer_num,
+                    rect,
+                    is_layer1_horz);
+      }
     }
   } else {
-    genAPOnTrack(
-        layer2_coords, layer2_track_coords, layer2_rect_min, layer2_rect_max);
-    if (upper_type >= frAccessPointEnum::Center) {
-      genAPCentered(layer2_coords, layer_num, layer2_rect_min, layer2_rect_max);
-    }
-    if (upper_type >= frAccessPointEnum::EncOpt) {
-      genAPEnclosedBoundary(layer2_coords, rect, layer_num, !is_layer1_horz);
-    }
-    if (upper_type >= frAccessPointEnum::NearbyGrid) {
-      genAPOnTrack(layer2_coords,
-                   layer2_track_coords,
-                   layer2_rect_max,
-                   layer2_rect_max + min_width_layer2,
-                   true);
-      genAPOnTrack(layer2_coords,
-                   layer2_track_coords,
-                   layer2_rect_min - min_width_layer2,
-                   layer2_rect_min,
-                   true);
-    }
     genAPCentered(layer1_coords, layer_num, layer1_rect_min, layer1_rect_max);
     for (auto& [layer1_coord, cost] : layer1_coords) {
       layer1_coords[layer1_coord] = frAccessPointEnum::OnGrid;
