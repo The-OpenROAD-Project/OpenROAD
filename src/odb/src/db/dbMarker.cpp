@@ -457,7 +457,8 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
       const std::string shape_type = shape.get<std::string>("type");
       std::vector<Point> pts;
       for (const auto& [_, pt] : shape.get_child("points")) {
-        pts.emplace_back(dbus * pt.get<double>("x"), dbus * pt.get<double>("y"));
+        pts.emplace_back(dbus * pt.get<double>("x"),
+                         dbus * pt.get<double>("y"));
       }
 
       if (shape_type == "point") {
@@ -518,7 +519,8 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
           marker->addSource(bterm);
           src_found = true;
         } else {
-          getLogger()->warn(utl::ODB, 262, "Unable to find bterm: {}", src_name);
+          getLogger()->warn(
+              utl::ODB, 262, "Unable to find bterm: {}", src_name);
         }
       } else if (src_type == "obstruction") {
         bool found = false;

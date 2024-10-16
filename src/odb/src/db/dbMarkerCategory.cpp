@@ -252,7 +252,8 @@ void _dbMarkerCategory::populatePTree(
   while (key.find(separator) != std::string::npos) {
     separator += 1;
   }
-  tree.add_child(_dbMarkerCategory::PropertyTree::path_type{key, separator}, category_tree);
+  tree.add_child(_dbMarkerCategory::PropertyTree::path_type{key, separator},
+                 category_tree);
 }
 
 void _dbMarkerCategory::fromPTree(const PropertyTree& tree)
