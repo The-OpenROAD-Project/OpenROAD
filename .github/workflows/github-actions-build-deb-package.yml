@@ -29,7 +29,7 @@ jobs:
 
       - name: Build package
         run: |
-          ./debian/create-changelog.sh $RELEASE_VERSION
+          ./debian/create-changelog.sh ${{ env.RELEASE_VERSION }}
           debuild --preserve-env --preserve-envvar=PATH -B
           mkdir -p artifacts
           mv ../openroad_* artifacts
