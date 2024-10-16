@@ -894,17 +894,17 @@ void FlexGCWorker::Impl::checkMetalSpacing()
           checkMetalSpacing_wrongDir(pin.get(), currLayer);
         }
         for (auto& maxrect : pin->getMaxRectangles()) {
-          checkMetalSpacing_main(maxrect.get(),
+          checkMetalSpacing_main(&maxrect,
                                  getDRWorker() || !AUTO_TAPER_NDR_NETS);
           if (currLayer->hasTwoWiresForbiddenSpacingConstraints()) {
             for (auto con :
                  currLayer->getTwoWiresForbiddenSpacingConstraints()) {
-              checkTwoWiresForbiddenSpc_main(maxrect.get(), con);
+              checkTwoWiresForbiddenSpc_main(&maxrect, con);
             }
           }
           if (currLayer->hasForbiddenSpacingConstraints()) {
             for (auto con : currLayer->getForbiddenSpacingConstraints()) {
-              checkForbiddenSpc_main(maxrect.get(), con);
+              checkForbiddenSpc_main(&maxrect, con);
             }
           }
         }
@@ -932,17 +932,17 @@ void FlexGCWorker::Impl::checkMetalSpacing()
           }
           for (auto& maxrect : pin->getMaxRectangles()) {
             // Short, NSMetal, metSpc
-            checkMetalSpacing_main(maxrect.get(),
+            checkMetalSpacing_main(&maxrect,
                                    getDRWorker() || !AUTO_TAPER_NDR_NETS);
             if (currLayer->hasTwoWiresForbiddenSpacingConstraints()) {
               for (auto con :
                    currLayer->getTwoWiresForbiddenSpacingConstraints()) {
-                checkTwoWiresForbiddenSpc_main(maxrect.get(), con);
+                checkTwoWiresForbiddenSpc_main(&maxrect, con);
               }
             }
             if (currLayer->hasForbiddenSpacingConstraints()) {
               for (auto con : currLayer->getForbiddenSpacingConstraints()) {
-                checkForbiddenSpc_main(maxrect.get(), con);
+                checkForbiddenSpc_main(&maxrect, con);
               }
             }
           }
@@ -1914,7 +1914,7 @@ void FlexGCWorker::Impl::checkMetalShape_offGrid(gcPin* pin)
   // negative coordinates
   int mGrid = getTech()->getManufacturingGrid();
   for (auto& rect : pin->getMaxRectangles()) {
-    auto maxRect = rect.get();
+    auto maxRect = &rect;
     auto layerNum = maxRect->getLayerNum();
     // off grid maxRect
     if (gtl::xl(*maxRect) % mGrid || gtl::xh(*maxRect) % mGrid
@@ -3537,8 +3537,8 @@ void FlexGCWorker::Impl::checkCutSpacing()
       }
       for (auto& pin : targetNet_->getPins(i)) {
         for (auto& maxrect : pin->getMaxRectangles()) {
-          checkCutSpacing_main(maxrect.get());
-          checkLef58Enclosure_main(maxrect.get());
+          checkCutSpacing_main(&maxrect);
+          checkLef58Enclosure_main(&maxrect);
         }
       }
     }
@@ -3556,8 +3556,8 @@ void FlexGCWorker::Impl::checkCutSpacing()
       for (auto& net : getNets()) {
         for (auto& pin : net->getPins(i)) {
           for (auto& maxrect : pin->getMaxRectangles()) {
-            checkCutSpacing_main(maxrect.get());
-            checkLef58Enclosure_main(maxrect.get());
+            checkCutSpacing_main(&maxrect);
+            checkLef58Enclosure_main(&maxrect);
           }
         }
       }
@@ -3923,7 +3923,7 @@ void FlexGCWorker::Impl::checkMinimumCut()
       }
       for (auto& pin : targetNet_->getPins(i)) {
         for (auto& maxrect : pin->getMaxRectangles()) {
-          checkMinimumCut_main(maxrect.get());
+          checkMinimumCut_main(&maxrect);
         }
       }
     }
@@ -3944,7 +3944,7 @@ void FlexGCWorker::Impl::checkMinimumCut()
       for (auto& net : getNets()) {
         for (auto& pin : net->getPins(i)) {
           for (auto& maxrect : pin->getMaxRectangles()) {
-            checkMinimumCut_main(maxrect.get());
+            checkMinimumCut_main(&maxrect);
           }
         }
       }

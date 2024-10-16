@@ -210,7 +210,7 @@ void FlexGCWorker::Impl::checkPinMetSpcTblInf(gcPin* pin)
   frLayerNum lNum = pin->getPolygon()->getLayerNum();
   auto con = getTech()->getLayer(lNum)->getSpacingTableInfluence();
   for (auto& rect : pin->getMaxRectangles()) {
-    checkRectMetSpcTblInf(rect.get(), con);
+    checkRectMetSpcTblInf(&rect, con);
   }
 }
 void FlexGCWorker::Impl::checkMetalSpacingTableInfluence()

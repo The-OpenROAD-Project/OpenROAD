@@ -217,7 +217,7 @@ void FlexGCWorkerRegionQuery::Impl::init(int numLayers)
           }
         }
         for (auto& rect : pin->getMaxRectangles()) {
-          addMaxRectangle(rect.get(), allMaxRectangles);
+          addMaxRectangle(&rect, allMaxRectangles);
         }
       }
     }
@@ -244,7 +244,7 @@ void FlexGCWorkerRegionQuery::addToRegionQuery(gcNet* net)
         }
       }
       for (auto& rect : pin->getMaxRectangles()) {
-        addMaxRectangle(rect.get());
+        addMaxRectangle(&rect);
       }
     }
   }
@@ -263,7 +263,7 @@ void FlexGCWorkerRegionQuery::removeFromRegionQuery(gcNet* net)
         }
       }
       for (auto& rect : pin->getMaxRectangles()) {
-        removeMaxRectangle(rect.get());
+        removeMaxRectangle(&rect);
       }
     }
   }

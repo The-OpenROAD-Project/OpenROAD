@@ -809,37 +809,37 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles_helper(
     frLayerNum i,
     const std::vector<std::set<std::pair<Point, Point>>>& fixedMaxRectangles)
 {
-  auto rectangle = std::make_unique<gcRect>();
-  rectangle->setRect(rect);
-  rectangle->setLayerNum(i);
-  rectangle->addToPin(pin);
-  rectangle->addToNet(net);
+  gcRect rectangle;
+  rectangle.setRect(rect);
+  rectangle.setLayerNum(i);
+  rectangle.addToPin(pin);
+  rectangle.addToNet(net);
   if (fixedMaxRectangles[i].find(
           std::make_pair(Point(gtl::xl(rect), gtl::yl(rect)),
                          Point(gtl::xh(rect), gtl::yh(rect))))
       != fixedMaxRectangles[i].end()) {
     // fixed max rectangles
-    rectangle->setFixed(true);
+    rectangle.setFixed(true);
     // cntFixed++;
   } else {
     // route max rectangles
-    rectangle->setFixed(false);
+    rectangle.setFixed(false);
     // cntRoute++;
     int k = i / 2 - 1;
     for (auto& r : net->getTaperedRects(k)) {
-      if (rectangle->intersects(r)) {
-        rectangle->setTapered(true);
+      if (rectangle.intersects(r)) {
+        rectangle.setTapered(true);
         for (auto& nt : net->getNonTaperedRects(k)) {
-          if (rectangle->intersects(nt)) {
+          if (rectangle.intersects(nt)) {
             net->addSpecialSpcRect(
-                nt, i, rectangle->getPin(), rectangle->getNet());
+                nt, i, rectangle.getPin(), rectangle.getNet());
           }
         }
         break;
       }
     }
   }
-  pin->addMaxRectangle(std::move(rectangle));
+  pin->addMaxRectangle(rectangle);
 }
 
 void FlexGCWorker::Impl::initNet_pins_maxRectangles(gcNet* net)
