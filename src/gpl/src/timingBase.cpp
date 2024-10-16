@@ -154,7 +154,7 @@ bool TimingBase::updateGNetWeights(bool run_journal_restore)
   //      also check if memory reallocation happened with the pointers, if not, fix pointers may not be required.
   if(!run_journal_restore) {
     nbc_->fixPointers();
-    log_->report("print gcells after non-virtual rsz:");
+    // log_->report("print gcells after non-virtual rsz:");
     // nbc_->printGCells();
   }
 

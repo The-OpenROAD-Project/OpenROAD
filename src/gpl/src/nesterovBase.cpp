@@ -1403,6 +1403,7 @@ void NesterovBaseCommon::fixPointers(){
     gCellMap_[gCell.instance()] = &gCell;
     db_inst_map_[gCell.instance()->dbInst()] = i;
   }
+  log_->report("Done refreshing gcell vectors of pointers!");
 
   gPins_.clear();
   gPinMap_.clear();
@@ -1417,7 +1418,7 @@ void NesterovBaseCommon::fixPointers(){
       db_iterm_map_[gPin.pin()->dbITerm()] = i;
     }
   }
-
+  log_->report("Done refreshing gpins vectors of pointers!");
  
   gNets_.clear();
   gNetMap_.clear();
@@ -1429,7 +1430,8 @@ void NesterovBaseCommon::fixPointers(){
     gNetMap_[gNet.net()] = &gNet;
     db_net_map_[gNet.net()->dbNet()] = i;
   }
-  log_->report("Done refreshing vectors of pointers!");
+  log_->report("Done refreshing gnets vectors of pointers!");
+  log_->report("Done refreshing all vectors of pointers!");
 
 //Most of this is brought from nesterovBaseCommon constructor, although we are using dbToNb instead of pbToNb,
 // since the trasformantion maps from PlacerBase do not contain the newly added instances, pins and nets. The
@@ -1460,22 +1462,38 @@ void NesterovBaseCommon::fixPointers(){
   log_->report("Done refreshing NBC::gcells in gCellStor_!");
 
 // #pragma omp parallel for num_threads(num_threads_)
-  for (auto it = gPinStor_.begin(); it < gPinStor_.end(); ++it) {
-    auto& gPin = *it;  // old-style loop for old OpenMP
-    auto iterm = gPin.pin()->dbITerm();
-    if(iterm != nullptr) {
-      if(isValidSigType(iterm->getSigType())) {
-        // log_->report("gPin.pin()->dbITerm()->getName():{}", gPin.pin()->dbITerm()->getName());
-        gPin.setGCell(&gCellStor_[db_inst_map_.find(iterm->getInst())->second]);
-        gPin.setGNet(&gNetStor_[db_net_map_.find(iterm->getNet())->second]);
+for (auto it = gPinStor_.begin(); it < gPinStor_.end(); ++it) {
+  auto& gPin = *it;  // old-style loop for old OpenMP
+  auto iterm = gPin.pin()->dbITerm();    
+  if (iterm != nullptr) {
+      if (isValidSigType(iterm->getSigType())) {
+          auto inst_it = db_inst_map_.find(iterm->getInst());
+          auto net_it = db_net_map_.find(iterm->getNet());
+
+          if (inst_it == db_inst_map_.end()) {
+              log_->report("Instance not found in db_inst_map_ for ITerm: {} -> {}", iterm->getInst()->getName(), iterm->getName());
+          }          
+          if (net_it == db_net_map_.end()) {
+              log_->report("Net not found in db_net_map_ for ITerm: {} -> {}", iterm->getNet()->getName(), iterm->getName());
+          }
+
+          if (inst_it == db_inst_map_.end() || net_it == db_net_map_.end()) {
+            continue;
+          }
+          gPin.setGCell(&gCellStor_[inst_it->second]);
+          gPin.setGNet(&gNetStor_[net_it->second]);
       }
-      // else
-        // log_->report("warning itermType:{}", itermType.getString());
-    }
-    // else
-    //   log_->report("warning: iterm is nullptr");
+      else {
+          log_->report("Warning: invalid type itermType: {}", iterm->getSigType().getString());
+      }
   }
-  log_->report("Done refreshing NBC::gpins in gPinStor_!");
+  else {
+      log_->report("Warning: iterm is nullptr");
+  }
+}
+
+log_->report("Done refreshing NBC::gpins in gPinStor_!");
+
 
 // #pragma omp parallel for num_threads(num_threads_)
   for (auto it = gNetStor_.begin(); it < gNetStor_.end(); ++it) {
@@ -2882,6 +2900,7 @@ void NesterovBaseCommon::moveGCell(odb::dbInst* db_inst) {
 
 void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst) {
   GCell* gcell = getGCellByIndex(db_inst_map_.find(db_inst)->second);
+  log_->report("gcell {} found in db_inst_map_ as {}", gcell->instance()->dbInst()->getName(), db_inst->getName());
   odb::dbBox* bbox = db_inst->getBBox();
   gcell->setSize(bbox->getDX(),bbox->getDY());
 }
@@ -3102,8 +3121,8 @@ size_t NesterovBaseCommon::createGCell(odb::dbInst* db_inst){
   db_inst->getLocation(lx,ly);
   // log_->report("db inst for creategcell-> lx,ly: {},{}", lx, ly);
   // log_->report("bbox dx,dy: {},{}", db_inst->getBBox()->getDX(), db_inst->getBBox()->getDY());
-  // log_->report("gcell just created:");
-  // gcell.print(log_);
+  log_->report("NesterovBaseCommon::createGCell --> gcell just created:");
+  gcell.print(log_);
   //TODO it should be more efficient to push_back every cell once (change vector size first).
   gCellStor_.push_back(gcell);
   GCell* gcell_ptr = &gCellStor_.back();

@@ -931,7 +931,7 @@ class NesterovBaseCommon
 
   //TODO this can be placed elsewhere, not necessarly inside NBC
   bool isValidSigType(odb::dbSigType db_type) {
-    if (db_type == odb::dbSigType::SIGNAL || db_type == odb::dbSigType::CLOCK || db_type == odb::dbSigType::ANALOG)
+    if (db_type == odb::dbSigType::SIGNAL || db_type == odb::dbSigType::CLOCK) // || db_type == odb::dbSigType::ANALOG)
       return true;
     else
       return false;
@@ -940,6 +940,12 @@ class NesterovBaseCommon
   void printGCells(){
     for(auto& gcell : gCellStor_) {
       gcell.print(log_);
+    }    
+  }
+
+  void printGPins(){
+    for(auto& gpin : gPinStor_) {
+      gpin.print(log_);
     }    
   }
 

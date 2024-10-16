@@ -90,6 +90,9 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
   init();
   // log_->report("printing gcells after NesterovPlace constructor:");
   // nbc_->printGCells();
+
+  // log_->report("printing gpins after NesterovPlace constructor:");
+  // nbc_->printGPins();
 }
 
 NesterovPlace::~NesterovPlace()
@@ -502,7 +505,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
       db_cbk_->printCallCounts();
       db_cbk_->resetCallCounts();
-      log_->report("after TD - nbVec_[0]->nesterovInstsArea():{}", nbVec_[0]->nesterovInstsArea());    
+      log_->report("after TD - nbVec_[0]->nesterovInstsArea():{}", nbVec_[0]->nesterovInstsArea());
+      // log_->report("print gcells after TD iteration.");
+      // nbc_->printGCells();
+      // log_->report("print gpins after TD iteration.");
+      // nbc_->printGPins();
 
       // problem occured
       // escape timing driven later
@@ -729,13 +736,13 @@ void NesterovPlace::connectIterm(odb::dbITerm* iterm) {
 }
 
 void NesterovPlace::resizeGCell(odb::dbInst* db_inst) {
-  // log_->report("start resizing cell: {}", db_inst->getName());
+  log_->report("start resizing cell: {}", db_inst->getName());
   nbc_->resizeGCell(db_inst);
   // auto gcell = nbc_->dbInstMap().find(db_inst)->second;
   // if(gcell){
   //   gcell->setSize(db_inst->getBBox()->getDX(), db_inst->getBBox()->getDY());
   // }
-  // log_->report("done resizing cell: {}", db_inst->getName());
+  log_->report("done resizing cell: {}", db_inst->getName());
 }
 
 void NesterovPlace::moveGCell(odb::dbInst* db_inst) {
