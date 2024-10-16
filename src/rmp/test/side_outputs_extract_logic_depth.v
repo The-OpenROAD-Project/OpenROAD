@@ -38,7 +38,7 @@ module top(clk, a, b, c, d);
 
   DFF_X1 output_flop2 (
     .CK(clk),
-    .D(flop_net),
+    .D(and_output),
     .Q(d),
     .QN(_unconnected_2)
   );

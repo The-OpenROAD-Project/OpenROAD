@@ -665,7 +665,8 @@ class DbSiteDescriptor : public Descriptor
   struct SpecificSite
   {
     odb::dbSite* site;
-    odb::Rect rect;
+    const odb::Rect rect;
+    const int index_in_row;
   };
 
   DbSiteDescriptor(odb::dbDatabase* db);

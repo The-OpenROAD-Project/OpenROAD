@@ -4008,6 +4008,10 @@ Descriptor::Properties DbSiteDescriptor::getProperties(std::any object) const
   }
   props.push_back({"Symmetry", symmetry});
 
+  if (auto site = std::any_cast<SpecificSite>(&object)) {
+    props.push_back({"Index", site->index_in_row});
+  }
+
   populateODBProperties(props, site);
 
   return props;
