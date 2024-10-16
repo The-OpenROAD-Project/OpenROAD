@@ -1906,8 +1906,11 @@ void FlexPA::genInstRowPattern_commit(std::vector<FlexDPNode>& nodes,
   while (curr_node->getPrevNodeIdx() != -1) {
     // non-virtual node
     if (inst_cnt != (int) insts.size()) {
-      auto [curr_inst_idx, curr_acc_patterns_idx]
-          = getNestedIdx(curr_node_idx, ACCESS_PATTERN_END_ITERATION_NUM);
+      int curr_inst_idx, curr_acc_patterns_idx;
+      getNestedIdx(curr_node_idx,
+                   curr_inst_idx,
+                   curr_acc_patterns_idx,
+                   ACCESS_PATTERN_END_ITERATION_NUM);
       inst_access_pattern_idx[curr_inst_idx] = curr_acc_patterns_idx;
 
       auto& inst = insts[curr_inst_idx];
@@ -1967,8 +1970,12 @@ void FlexPA::genInstRowPattern_print(std::vector<FlexDPNode>& nodes,
   while (curr_node->getPrevNodeIdx() != -1) {
     // non-virtual node
     if (inst_cnt != (int) insts.size()) {
-      auto [curr_inst_idx, curr_acc_pattern_idx]
-          = getNestedIdx(curr_node_idx, ACCESS_PATTERN_END_ITERATION_NUM);
+      int curr_inst_idx, curr_acc_pattern_idx;
+      getNestedIdx(curr_node_idx,
+                   curr_inst_idx,
+                   curr_acc_pattern_idx,
+                   ACCESS_PATTERN_END_ITERATION_NUM);
+
       inst_access_pattern_idx[curr_inst_idx] = curr_acc_pattern_idx;
 
       // print debug information
@@ -2022,10 +2029,15 @@ int FlexPA::getEdgeCost(const int prev_node_idx,
                         const std::vector<frInst*>& insts)
 {
   int edge_cost = 0;
-  auto [prev_inst_idx, prev_acc_pattern_idx]
-      = getNestedIdx(prev_node_idx, ACCESS_PATTERN_END_ITERATION_NUM);
-  auto [curr_inst_idx, curr_acc_pattern_idx]
-      = getNestedIdx(curr_node_idx, ACCESS_PATTERN_END_ITERATION_NUM);
+  int prev_inst_idx, prev_acc_pattern_idx, curr_inst_idx, curr_acc_pattern_idx;
+  getNestedIdx(prev_node_idx,
+               prev_inst_idx,
+               prev_acc_pattern_idx,
+               ACCESS_PATTERN_END_ITERATION_NUM);
+  getNestedIdx(curr_node_idx,
+               curr_inst_idx,
+               curr_acc_pattern_idx,
+               ACCESS_PATTERN_END_ITERATION_NUM);
   if (prev_inst_idx == -1 || curr_inst_idx == (int) insts.size()) {
     return edge_cost;
   }
@@ -2488,10 +2500,12 @@ int FlexPA::getEdgeCost(
     const int max_access_point_size)
 {
   int edge_cost = 0;
-  auto [prev_pin_idx, prev_acc_point_idx]
-      = getNestedIdx(prev_node_idx, max_access_point_size);
-  auto [curr_pin_idx, curr_acc_point_idx]
-      = getNestedIdx(curr_node_idx, max_access_point_size);
+  int prev_pin_idx, prev_acc_point_idx, curr_pin_idx, curr_acc_point_idx;
+  getNestedIdx(
+      prev_node_idx, prev_pin_idx, prev_acc_point_idx, max_access_point_size);
+  getNestedIdx(
+      curr_node_idx, curr_pin_idx, curr_acc_point_idx, max_access_point_size);
+
   if (prev_pin_idx == -1 || curr_pin_idx == (int) pins.size()) {
     return edge_cost;
   }
@@ -2551,8 +2565,11 @@ int FlexPA::getEdgeCost(
       // check one more back
       auto prev_prev_node_idx = nodes[prev_node_idx].getPrevNodeIdx();
       if (prev_prev_node_idx != -1) {
-        auto [prev_prev_pin_idx, prev_prev_acc_point_idx]
-            = getNestedIdx(prev_prev_node_idx, max_access_point_size);
+        int prev_prev_pin_idx, prev_prev_acc_point_idx;
+        getNestedIdx(prev_prev_node_idx,
+                     prev_prev_pin_idx,
+                     prev_prev_acc_point_idx,
+                     max_access_point_size);
         if (prev_prev_pin_idx != -1) {
           const auto& [pin_3, inst_term_3] = pins[prev_prev_pin_idx];
           auto pa_3 = pin_3->getPinAccess(pin_access_idx);
@@ -2625,8 +2642,11 @@ bool FlexPA::genPatterns_commit(
   while (curr_node->getPrevNodeIdx() != -1) {
     // non-virtual node
     if (pin_cnt != (int) pins.size()) {
-      auto [curr_pin_idx, curr_acc_point_idx]
-          = getNestedIdx(curr_node_idx, max_access_point_size);
+      int curr_pin_idx, curr_acc_point_idx;
+      getNestedIdx(curr_node_idx,
+                   curr_pin_idx,
+                   curr_acc_point_idx,
+                   max_access_point_size);
       access_pattern[curr_pin_idx] = curr_acc_point_idx;
       used_access_points.insert(
           std::make_pair(curr_pin_idx, curr_acc_point_idx));
@@ -2777,8 +2797,11 @@ void FlexPA::genPatternsPrintDebug(
       std::cout << " " << inst_term->getTerm()->getName();
       const int pin_access_idx = unique_insts_.getPAIndex(inst);
       auto pa = pin->getPinAccess(pin_access_idx);
-      auto [curr_pin_idx, curr_acc_point_idx]
-          = getNestedIdx(curr_node_idx, max_access_point_size);
+      int curr_pin_idx, curr_acc_point_idx;
+      getNestedIdx(curr_node_idx,
+                   curr_pin_idx,
+                   curr_acc_point_idx,
+                   max_access_point_size);
       Point pt(pa->getAccessPoint(curr_acc_point_idx)->getPoint());
       xform.apply(pt);
       std::cout << " (" << pt.x() / dbu << ", " << pt.y() / dbu << ")";
@@ -2812,8 +2835,11 @@ void FlexPA::genPatterns_print(
       auto inst = inst_term->getInst();
       const int pin_access_idx = unique_insts_.getPAIndex(inst);
       auto pa = pin->getPinAccess(pin_access_idx);
-      auto [curr_pin_idx, curr_acc_point_idx]
-          = getNestedIdx(curr_node_idx, max_access_point_size);
+      int curr_pin_idx, curr_acc_point_idx;
+      getNestedIdx(curr_node_idx,
+                   curr_pin_idx,
+                   curr_acc_point_idx,
+                   max_access_point_size);
       std::unique_ptr<frVia> via = std::make_unique<frVia>(
           pa->getAccessPoint(curr_acc_point_idx)->getViaDef());
       Point pt(pa->getAccessPoint(curr_acc_point_idx)->getPoint());
@@ -2840,12 +2866,13 @@ int FlexPA::getFlatIdx(const int idx_1, const int idx_2, const int idx_2_dim)
 }
 
 // get idx_1 and idx_2 from flat index
-std::pair<int, int> FlexPA::getNestedIdx(const int flat_idx,
-                                         const int idx_2_dim)
+void FlexPA::getNestedIdx(const int flat_idx,
+                          int& idx_1,
+                          int& idx_2,
+                          const int idx_2_dim)
 {
-  const int idx_1 = flat_idx / idx_2_dim - 1;
-  const int idx_2 = flat_idx % idx_2_dim;
-  return {idx_1, idx_2};
+  idx_1 = flat_idx / idx_2_dim - 1;
+  idx_2 = flat_idx % idx_2_dim;
 }
 
 // get flat edge index
