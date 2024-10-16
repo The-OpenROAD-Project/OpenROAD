@@ -176,7 +176,7 @@ def main():
             )
             for idloc in sorted(msgs[key]):
                 fileloc, *_ = idloc.split()
-                file, line = fileloc.split(':')
+                file, line = fileloc.split(":")
                 print(
                     "  Appears in {} on line {} ".format(file, line),
                     file=sys.stderr,
