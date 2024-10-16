@@ -100,45 +100,45 @@ void FlexRP::prep_minStepViasCheck()
     }
 
     gtl::polygon_90_with_holes_data<frCoord> poly = *polys.begin();
-    std::unique_ptr<gcNet> uTestNet = std::make_unique<gcNet>(0);
-    gcNet* testNet = uTestNet.get();
-    auto uTestPin = std::make_unique<gcPin>(poly, lNum, testNet);
-    gcPin* testPin = uTestPin.get();
+    gcNet uTestNet(0);
+    gcNet* testNet = &uTestNet;
+    gcPin uTestPin(poly, lNum, testNet);
+    gcPin* testPin = &uTestPin;
     testPin->setNet(testNet);
 
     bool first = true;
-    std::vector<std::unique_ptr<gcSegment>> tmpEdges;
+    std::vector<gcSegment*> tmpEdges;
     gtl::point_data<frCoord> prev;
     for (const gtl::point_data<frCoord>& cur : poly) {
       if (first) {
         prev = cur;
         first = false;
       } else {
-        auto edge = std::make_unique<gcSegment>();
+        auto edge = segment_arena_.make();
         edge->setLayerNum(lNum);
         edge->addToPin(testPin);
         edge->addToNet(testNet);
         edge->setSegment(prev, cur);
         if (!tmpEdges.empty()) {
-          edge->setPrevEdge(tmpEdges.back().get());
-          tmpEdges.back()->setNextEdge(edge.get());
+          edge->setPrevEdge(tmpEdges.back());
+          tmpEdges.back()->setNextEdge(edge);
         }
-        tmpEdges.push_back(std::move(edge));
+        tmpEdges.push_back(edge);
         prev = cur;
       }
     }
     // last edge
-    auto edge = std::make_unique<gcSegment>();
+    auto edge = segment_arena_.make();
     edge->setLayerNum(lNum);
     edge->addToPin(testPin);
     edge->addToNet(testNet);
     edge->setSegment(prev, *poly.begin());
-    edge->setPrevEdge(tmpEdges.back().get());
-    tmpEdges.back()->setNextEdge(edge.get());
+    edge->setPrevEdge(tmpEdges.back());
+    tmpEdges.back()->setNextEdge(edge);
     // set first edge
-    tmpEdges.front()->setPrevEdge(edge.get());
-    edge->setNextEdge(tmpEdges.front().get());
-    tmpEdges.push_back(std::move(edge));
+    tmpEdges.front()->setPrevEdge(edge);
+    edge->setNextEdge(tmpEdges.front());
+    tmpEdges.push_back(edge);
     // add to polygon edges
     testPin->addPolygonEdges(tmpEdges);
     // check gc minstep violations
@@ -771,46 +771,45 @@ bool FlexRP::hasMinStepViol(const Rect& r1,
   }
 
   gtl::polygon_90_with_holes_data<frCoord> poly = *polys.begin();
-  std::unique_ptr<gcNet> uTestNet = std::make_unique<gcNet>(0);
-  gcNet* testNet = uTestNet.get();
-  std::unique_ptr<gcPin> uTestPin
-      = std::make_unique<gcPin>(poly, lNum, testNet);
-  gcPin* testPin = uTestPin.get();
+  gcNet uTestNet(0);
+  gcNet* testNet = &uTestNet;
+  gcPin uTestPin(poly, lNum, testNet);
+  gcPin* testPin = &uTestPin;
   testPin->setNet(testNet);
 
   bool first = true;
-  std::vector<std::unique_ptr<gcSegment>> tmpEdges;
+  std::vector<gcSegment*> tmpEdges;
   gtl::point_data<frCoord> prev;
   for (const gtl::point_data<frCoord>& cur : poly) {
     if (first) {
       prev = cur;
       first = false;
     } else {
-      auto edge = std::make_unique<gcSegment>();
+      auto edge = segment_arena_.make();
       edge->setLayerNum(lNum);
       edge->addToPin(testPin);
       edge->addToNet(testNet);
       edge->setSegment(prev, cur);
       if (!tmpEdges.empty()) {
-        edge->setPrevEdge(tmpEdges.back().get());
-        tmpEdges.back()->setNextEdge(edge.get());
+        edge->setPrevEdge(tmpEdges.back());
+        tmpEdges.back()->setNextEdge(edge);
       }
-      tmpEdges.push_back(std::move(edge));
+      tmpEdges.push_back(edge);
       prev = cur;
     }
   }
   // last edge
-  auto edge = std::make_unique<gcSegment>();
+  auto edge = segment_arena_.make();
   edge->setLayerNum(lNum);
   edge->addToPin(testPin);
   edge->addToNet(testNet);
   edge->setSegment(prev, *poly.begin());
-  edge->setPrevEdge(tmpEdges.back().get());
-  tmpEdges.back()->setNextEdge(edge.get());
+  edge->setPrevEdge(tmpEdges.back());
+  tmpEdges.back()->setNextEdge(edge);
   // set first edge
-  tmpEdges.front()->setPrevEdge(edge.get());
-  edge->setNextEdge(tmpEdges.front().get());
-  tmpEdges.push_back(std::move(edge));
+  tmpEdges.front()->setPrevEdge(edge);
+  edge->setNextEdge(tmpEdges.front());
+  tmpEdges.push_back(edge);
   // add to polygon edges
   testPin->addPolygonEdges(tmpEdges);
   // check gc minstep violations

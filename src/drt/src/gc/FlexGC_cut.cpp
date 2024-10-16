@@ -660,9 +660,9 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable()
       if (currLayer->getType() != dbTechLayerType::CUT) {
         continue;
       }
-      for (auto& pin : targetNet_->getPins(i)) {
-        for (auto& maxrect : pin->getMaxRectangles()) {
-          checkMetalWidthViaTable_main(maxrect.get());
+      for (auto pin : targetNet_->getPins(i)) {
+        for (auto maxrect : pin->getMaxRectangles()) {
+          checkMetalWidthViaTable_main(maxrect);
         }
       }
     }
@@ -677,15 +677,15 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable()
       if (currLayer->getType() != dbTechLayerType::CUT) {
         continue;
       }
-      for (auto& net : getNets()) {
+      for (auto net : getNets()) {
         // There is no need to check vias in nets we don't route
         auto fr_net = net->getFrNet();
         if (fr_net && (fr_net->isSpecial() || fr_net->getType().isSupply())) {
           continue;
         }
-        for (auto& pin : net->getPins(i)) {
-          for (auto& maxrect : pin->getMaxRectangles()) {
-            checkMetalWidthViaTable_main(maxrect.get());
+        for (auto pin : net->getPins(i)) {
+          for (auto maxrect : pin->getMaxRectangles()) {
+            checkMetalWidthViaTable_main(maxrect);
           }
         }
       }

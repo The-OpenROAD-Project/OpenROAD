@@ -208,21 +208,21 @@ void FlexGCWorkerRegionQuery::Impl::init(int numLayers)
   std::vector<std::vector<rq_box_value_t<gcRect*>>> allMaxRectangles(numLayers);
   std::vector<std::vector<rq_box_value_t<gcRect>>> allSpcRectangles(numLayers);
 
-  for (auto& net : gcWorker_->getNets()) {
+  for (auto net : gcWorker_->getNets()) {
     for (auto& pins : net->getPins()) {
-      for (auto& pin : pins) {
+      for (auto pin : pins) {
         for (auto& edges : pin->getPolygonEdges()) {
-          for (auto& edge : edges) {
-            addPolygonEdge(edge.get(), allPolygonEdges);
+          for (auto edge : edges) {
+            addPolygonEdge(edge, allPolygonEdges);
           }
         }
-        for (auto& rect : pin->getMaxRectangles()) {
-          addMaxRectangle(rect.get(), allMaxRectangles);
+        for (auto rect : pin->getMaxRectangles()) {
+          addMaxRectangle(rect, allMaxRectangles);
         }
       }
     }
-    for (auto& spcRect : net->getSpecialSpcRects()) {
-      addSpcRectangle(spcRect.get(), allSpcRectangles);
+    for (auto spcRect : net->getSpecialSpcRects()) {
+      addSpcRectangle(spcRect, allSpcRectangles);
     }
   }
 
@@ -237,38 +237,38 @@ void FlexGCWorkerRegionQuery::Impl::init(int numLayers)
 void FlexGCWorkerRegionQuery::addToRegionQuery(gcNet* net)
 {
   for (auto& pins : net->getPins()) {
-    for (auto& pin : pins) {
+    for (auto pin : pins) {
       for (auto& edges : pin->getPolygonEdges()) {
-        for (auto& edge : edges) {
-          addPolygonEdge(edge.get());
+        for (auto edge : edges) {
+          addPolygonEdge(edge);
         }
       }
-      for (auto& rect : pin->getMaxRectangles()) {
-        addMaxRectangle(rect.get());
+      for (auto rect : pin->getMaxRectangles()) {
+        addMaxRectangle(rect);
       }
     }
   }
-  for (auto& spcR : net->getSpecialSpcRects()) {
-    addSpcRectangle(spcR.get());
+  for (auto spcR : net->getSpecialSpcRects()) {
+    addSpcRectangle(spcR);
   }
 }
 
 void FlexGCWorkerRegionQuery::removeFromRegionQuery(gcNet* net)
 {
   for (auto& pins : net->getPins()) {
-    for (auto& pin : pins) {
+    for (auto pin : pins) {
       for (auto& edges : pin->getPolygonEdges()) {
-        for (auto& edge : edges) {
-          removePolygonEdge(edge.get());
+        for (auto edge : edges) {
+          removePolygonEdge(edge);
         }
       }
-      for (auto& rect : pin->getMaxRectangles()) {
-        removeMaxRectangle(rect.get());
+      for (auto rect : pin->getMaxRectangles()) {
+        removeMaxRectangle(rect);
       }
     }
   }
-  for (auto& spcR : net->getSpecialSpcRects()) {
-    removeSpcRectangle(spcR.get());
+  for (auto spcR : net->getSpecialSpcRects()) {
+    removeSpcRectangle(spcR);
   }
 }
 

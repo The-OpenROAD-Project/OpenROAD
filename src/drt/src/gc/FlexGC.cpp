@@ -37,7 +37,7 @@ FlexGCWorker::FlexGCWorker(frTechObject* techIn,
                            RouterConfiguration* router_cfg,
                            FlexDRWorker* drWorkerIn)
     : impl_(
-        std::make_unique<Impl>(techIn, logger, router_cfg, drWorkerIn, this))
+          std::make_unique<Impl>(techIn, logger, router_cfg, drWorkerIn, this))
 {
 }
 
@@ -200,7 +200,7 @@ void FlexGCWorker::setIgnoreLongSideEOL()
   impl_->ignoreLongSideEOL_ = true;
 }
 
-std::vector<std::unique_ptr<gcNet>>& FlexGCWorker::getNets()
+std::vector<gcNet*>& FlexGCWorker::getNets()
 {
   return impl_->getNets();
 }

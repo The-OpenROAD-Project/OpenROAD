@@ -30,6 +30,8 @@
 
 #include <boost/icl/interval_set.hpp>
 
+#include "db/Arena.h"
+#include "db/gcObj/gcShape.h"
 #include "frDesign.h"
 
 namespace drt {
@@ -160,5 +162,6 @@ class FlexRP
   frTechObject* tech_;
   Logger* logger_;
   RouterConfiguration* router_cfg_;
+  Arena<gcSegment> segment_arena_;
 };
 }  // namespace drt

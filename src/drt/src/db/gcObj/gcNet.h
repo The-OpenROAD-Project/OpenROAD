@@ -30,6 +30,7 @@
 
 #include <memory>
 
+#include "db/Arena.h"
 #include "db/gcObj/gcBlockObject.h"
 #include "db/gcObj/gcPin.h"
 #include "db/obj/frBlockage.h"
@@ -74,22 +75,25 @@ class gcNet : public gcBlockObject
       routeRectangles_[layerNum].push_back(rect);
     }
   }
-  void addPin(const gtl::polygon_90_with_holes_data<frCoord>& shape,
+  void addPin(Arena<gcPin>& pinArena,
+              const gtl::polygon_90_with_holes_data<frCoord>& shape,
               frLayerNum layerNum)
   {
-    auto pin = std::make_unique<gcPin>(shape, layerNum, this);
+    auto pin = pinArena.make(shape, layerNum, this);
     pin->setId(pins_[layerNum].size());
-    pins_[layerNum].push_back(std::move(pin));
+    pins_[layerNum].push_back(pin);
   }
-  void addPin(const gtl::rectangle_data<frCoord>& rect, frLayerNum layerNum)
+  void addPin(Arena<gcPin>& pinArena,
+              const gtl::rectangle_data<frCoord>& rect,
+              frLayerNum layerNum)
   {
     gtl::polygon_90_with_holes_data<frCoord> shape;
     std::vector<frCoord> coords
         = {gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect)};
     shape.set_compact(coords.begin(), coords.end());
-    auto pin = std::make_unique<gcPin>(shape, layerNum, this);
+    auto pin = pinArena.make(shape, layerNum, this);
     pin->setId(pins_[layerNum].size());
-    pins_[layerNum].push_back(std::move(pin));
+    pins_[layerNum].push_back(pin);
   }
   void setOwner(frBlockObject* in) { owner_ = in; }
   void clear()
@@ -143,11 +147,8 @@ class gcNet : public gcBlockObject
     }
     return routeRectangles_[layerNum];
   }
-  const std::vector<std::vector<std::unique_ptr<gcPin>>>& getPins() const
-  {
-    return pins_;
-  }
-  const std::vector<std::unique_ptr<gcPin>>& getPins(frLayerNum layerNum) const
+  const std::vector<std::vector<gcPin*>>& getPins() const { return pins_; }
+  const std::vector<gcPin*>& getPins(frLayerNum layerNum) const
   {
     return pins_[layerNum];
   }
@@ -207,19 +208,20 @@ class gcNet : public gcBlockObject
   {
     return nonTaperedRects[z];
   }
-  void addSpecialSpcRect(const Rect& bx,
+  void addSpecialSpcRect(Arena<gcRect>& rectArena,
+                         const Rect& bx,
                          frLayerNum lNum,
                          gcPin* pin,
                          gcNet* net)
   {
-    std::unique_ptr<gcRect> sp = std::make_unique<gcRect>();
+    gcRect* sp = rectArena.make();
     sp->setLayerNum(lNum);
     sp->addToNet(net);
     sp->addToPin(pin);
     sp->setRect(bx);
-    specialSpacingRects.push_back(std::move(sp));
+    specialSpacingRects.push_back(sp);
   }
-  const std::vector<std::unique_ptr<gcRect>>& getSpecialSpcRects() const
+  const std::vector<gcRect*>& getSpecialSpcRects() const
   {
     return specialSpacingRects;
   }
@@ -242,7 +244,7 @@ class gcNet : public gcBlockObject
       for (auto& corners : pin->getPolygonCorners()) {
         for (auto& corner : corners) {
           if (corner->x() == x && corner->y() == y) {
-            return corner.get();
+            return corner;
           }
         }
       }
@@ -259,13 +261,13 @@ class gcNet : public gcBlockObject
       fixedRectangles_;  // only cut layer
   std::vector<std::vector<gtl::rectangle_data<frCoord>>>
       routeRectangles_;  // only cut layer
-  std::vector<std::vector<std::unique_ptr<gcPin>>> pins_;
+  std::vector<std::vector<gcPin*>> pins_;
   frBlockObject* owner_{nullptr};
   std::vector<std::vector<Rect>> taperedRects;     //(only routing layer)
   std::vector<std::vector<Rect>> nonTaperedRects;  //(only routing layer)
   // A non-tapered rect within a tapered max rectangle still require nondefault
   // spacing. This list hold these rectangles
-  std::vector<std::unique_ptr<gcRect>> specialSpacingRects;
+  std::vector<gcRect*> specialSpacingRects;
 
   void init();
 };

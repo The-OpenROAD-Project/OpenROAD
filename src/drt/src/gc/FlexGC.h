@@ -30,6 +30,7 @@
 
 #include <memory>
 
+#include "db/Arena.h"
 #include "frDesign.h"
 
 namespace drt {
@@ -63,7 +64,7 @@ class FlexGCWorker
   void setEnableSurgicalFix(bool in);
   void addPAObj(frConnFig* obj, frBlockObject* owner);
   // getters
-  std::vector<std::unique_ptr<gcNet>>& getNets();
+  std::vector<gcNet*>& getNets();
   gcNet* getNet(frNet* net);
   frDesign* getDesign() const;
   const std::vector<std::unique_ptr<frMarker>>& getMarkers() const;
