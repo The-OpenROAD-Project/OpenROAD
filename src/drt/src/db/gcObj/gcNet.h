@@ -228,7 +228,7 @@ class gcNet : public gcBlockObject
     for (auto& pin : pins_[ln]) {
       for (auto& corners : pin->getPolygonCorners()) {
         for (auto& corner : corners) {
-          if (corner->x() == x && corner->y() == y) {
+          if (corner.x() == x && corner.y() == y) {
             return true;
           }
         }
@@ -241,8 +241,8 @@ class gcNet : public gcBlockObject
     for (auto& pin : pins_[ln]) {
       for (auto& corners : pin->getPolygonCorners()) {
         for (auto& corner : corners) {
-          if (corner->x() == x && corner->y() == y) {
-            return corner.get();
+          if (corner.x() == x && corner.y() == y) {
+            return &corner;
           }
         }
       }

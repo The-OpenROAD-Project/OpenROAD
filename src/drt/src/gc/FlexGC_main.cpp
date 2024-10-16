@@ -1369,7 +1369,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
         for (auto& corners : pin->getPolygonCorners()) {
           for (auto& corner : corners) {
             // LEF58 corner spacing
-            checkMetalCornerSpacing_main(corner.get());
+            checkMetalCornerSpacing_main(&corner);
           }
         }
       }
@@ -1391,7 +1391,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
           for (auto& corners : pin->getPolygonCorners()) {
             for (auto& corner : corners) {
               // LEF58 corner spacing
-              checkMetalCornerSpacing_main(corner.get());
+              checkMetalCornerSpacing_main(&corner);
             }
           }
         }

@@ -684,88 +684,84 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
                                                             gcPin* pin)
 {
   for (auto& edges : pin->getPolygonEdges()) {
-    std::vector<std::unique_ptr<gcCorner>> tmpCorners;
+    std::vector<gcCorner> tmpCorners;
     auto prevEdge = &edges.back();
     auto layerNum = prevEdge->getLayerNum();
-    gcCorner* prevCorner = nullptr;
     for (auto& nextEdge : edges) {
-      auto uCurrCorner = std::make_unique<gcCorner>();
-      auto currCorner = uCurrCorner.get();
-      tmpCorners.push_back(std::move(uCurrCorner));
-      // set edge attributes
-      prevEdge->setHighCorner(currCorner);
-      nextEdge.setLowCorner(currCorner);
+      gcCorner currCorner;
       // set currCorner attributes
-      currCorner->setPrevEdge(prevEdge);
-      currCorner->setNextEdge(&nextEdge);
-      currCorner->x(prevEdge->high().x());
-      currCorner->y(prevEdge->high().y());
+      currCorner.setPrevEdge(prevEdge);
+      currCorner.setNextEdge(&nextEdge);
+      currCorner.x(prevEdge->high().x());
+      currCorner.y(prevEdge->high().y());
       int orient = gtl::orientation(*prevEdge, nextEdge);
       if (orient == 1) {
-        currCorner->setType(frCornerTypeEnum::CONVEX);
+        currCorner.setType(frCornerTypeEnum::CONVEX);
       } else if (orient == -1) {
-        currCorner->setType(frCornerTypeEnum::CONCAVE);
+        currCorner.setType(frCornerTypeEnum::CONCAVE);
       } else {
-        currCorner->setType(frCornerTypeEnum::UNKNOWN);
+        currCorner.setType(frCornerTypeEnum::UNKNOWN);
       }
 
       if ((prevEdge->getDir() == frDirEnum::N
            && nextEdge.getDir() == frDirEnum::W)
           || (prevEdge->getDir() == frDirEnum::W
               && nextEdge.getDir() == frDirEnum::N)) {
-        currCorner->setDir(frCornerDirEnum::NE);
+        currCorner.setDir(frCornerDirEnum::NE);
       } else if ((prevEdge->getDir() == frDirEnum::W
                   && nextEdge.getDir() == frDirEnum::S)
                  || (prevEdge->getDir() == frDirEnum::S
                      && nextEdge.getDir() == frDirEnum::W)) {
-        currCorner->setDir(frCornerDirEnum::NW);
+        currCorner.setDir(frCornerDirEnum::NW);
       } else if ((prevEdge->getDir() == frDirEnum::S
                   && nextEdge.getDir() == frDirEnum::E)
                  || (prevEdge->getDir() == frDirEnum::E
                      && nextEdge.getDir() == frDirEnum::S)) {
-        currCorner->setDir(frCornerDirEnum::SW);
+        currCorner.setDir(frCornerDirEnum::SW);
       } else if ((prevEdge->getDir() == frDirEnum::E
                   && nextEdge.getDir() == frDirEnum::N)
                  || (prevEdge->getDir() == frDirEnum::N
                      && nextEdge.getDir() == frDirEnum::E)) {
-        currCorner->setDir(frCornerDirEnum::SE);
+        currCorner.setDir(frCornerDirEnum::SE);
       }
 
       // set fixed / route status
-      if (currCorner->getType() == frCornerTypeEnum::CONVEX) {
-        currCorner->setFixed(false);
+      if (currCorner.getType() == frCornerTypeEnum::CONVEX) {
+        currCorner.setFixed(false);
         for (auto& rect : net->getRectangles(true)[layerNum]) {
-          if (isCornerOverlap(currCorner, rect)) {
-            currCorner->setFixed(true);
+          if (isCornerOverlap(&currCorner, rect)) {
+            currCorner.setFixed(true);
             break;
           }
         }
-      } else if (currCorner->getType() == frCornerTypeEnum::CONCAVE) {
-        currCorner->setFixed(true);
-        auto cornerPt = currCorner->getNextEdge()->low();
+      } else if (currCorner.getType() == frCornerTypeEnum::CONCAVE) {
+        currCorner.setFixed(true);
+        auto cornerPt = currCorner.getNextEdge()->low();
         for (auto& rect : net->getRectangles(false)[layerNum]) {
           if (gtl::contains(rect, cornerPt, true)
               && !gtl::contains(rect, cornerPt, false)) {
-            currCorner->setFixed(false);
+            currCorner.setFixed(false);
             break;
           }
         }
       }
       // currCorner->setFixed(prevEdge->isFixed() && nextEdge->isFixed());
 
-      if (prevCorner) {
-        prevCorner->setNextCorner(currCorner);
-        currCorner->setPrevCorner(prevCorner);
-      }
-      prevCorner = currCorner;
+      tmpCorners.push_back(std::move(currCorner));
       prevEdge = &nextEdge;
     }
-    // update attributes between first and last corners
-    auto currCorner = tmpCorners.front().get();
-    prevCorner->setNextCorner(currCorner);
-    currCorner->setPrevCorner(prevCorner);
+    for (size_t i = 1; i < tmpCorners.size(); i++) {
+      tmpCorners[i - 1].setNextCorner(&tmpCorners[i]);
+      tmpCorners[i].setPrevCorner(&tmpCorners[i - 1]);
+    }
+    tmpCorners.front().setPrevCorner(&tmpCorners.back());
+    tmpCorners.back().setNextCorner(&tmpCorners.front());
+    for (auto& corner : tmpCorners) {
+      corner.getPrevEdge()->setHighCorner(&corner);
+      corner.getNextEdge()->setLowCorner(&corner);
+    }
     // add to polygon corners
-    pin->addPolygonCorners(tmpCorners);
+    pin->addPolygonCorners(std::move(tmpCorners));
   }
 }
 

@@ -50,7 +50,7 @@ class gcPin : public gcBlockObject
   {
     polygon_edges_.push_back(std::move(in));
   }
-  void addPolygonCorners(std::vector<std::unique_ptr<gcCorner>>& in)
+  void addPolygonCorners(std::vector<gcCorner>&& in)
   {
     polygon_corners_.push_back(std::move(in));
   }
@@ -67,7 +67,11 @@ class gcPin : public gcBlockObject
   {
     return polygon_edges_;
   }
-  const std::vector<std::vector<std::unique_ptr<gcCorner>>>& getPolygonCorners()
+  std::vector<std::vector<gcCorner>>& getPolygonCorners()
+  {
+    return polygon_corners_;
+  }
+  const std::vector<std::vector<gcCorner>>& getPolygonCorners()
       const
   {
     return polygon_corners_;
@@ -87,7 +91,7 @@ class gcPin : public gcBlockObject
   gcNet* net_{nullptr};
   // assisting structures
   std::vector<std::vector<gcSegment>> polygon_edges_;
-  std::vector<std::vector<std::unique_ptr<gcCorner>>> polygon_corners_;
+  std::vector<std::vector<gcCorner>> polygon_corners_;
   std::vector<gcRect> max_rectangles_;
 };
 }  // namespace drt
