@@ -336,6 +336,53 @@ static int tclReadlineInit(Tcl_Interp* interp)
 }
 #endif
 
+namespace {
+// A stopgap fallback from the hardcoded TCLRL_LIBRARY path for OpenROAD,
+// not essential for OpenSTA
+std::string findPathToTclreadlineInit(Tcl_Interp* interp)
+{
+  // TL;DR it is possible to run the OpenROAD binary from within the
+  // official Docker image on a different distribution than the
+  // distribution within the Docker image.
+  //
+  // In this case we have to look up
+  // the location of the tclreadline scripts instead of using the hardcoded
+  // path.
+  //
+  // It is helpful to use the official Docker image as CI infrastructure and
+  // also because it is a good way to have as similar an environment as possible
+  // during testing and deployment.
+  //
+  // See
+  // https://github.com/The-OpenROAD-Project/bazel-orfs/blob/main/docker.BUILD.bazel
+  // for the details on how this is done.
+  //
+  // Running Docker within a bazel isolated environment introduces lots of
+  // problems and is not really done.
+  const char* tclScript = R"(
+      namespace eval temp {
+        foreach dir $::auto_path {
+            set folder [file join $dir]
+            set path [file join $folder "tclreadline)" TCLRL_VERSION_STR
+                          R"(" "tclreadlineInit.tcl"]
+            if {[file exists $path]} {
+                return $path
+            }
+        }
+        error "tclreadlineInit.tcl not found in any of the directories in auto_path"
+      }
+    )";
+
+  if (Tcl_Eval(interp, tclScript) == TCL_ERROR) {
+    std::cerr << "Tcl_Eval failed: " << Tcl_GetStringResult(interp)
+              << std::endl;
+    return "";
+  }
+
+  return Tcl_GetStringResult(interp);
+}
+}  // namespace
+
 // Tcl init executed inside Tcl_Main.
 static int tclAppInit(int& argc,
                       char* argv[],
@@ -376,9 +423,13 @@ static int tclAppInit(int& argc,
       // script is done.
       Tcl_StaticPackage(
           interp, "tclreadline", Tclreadline_Init, Tclreadline_SafeInit);
+
       if (Tcl_EvalFile(interp, TCLRL_LIBRARY "/tclreadlineInit.tcl")
           != TCL_OK) {
-        printf("Failed to load tclreadline\n");
+        std::string path = findPathToTclreadlineInit(interp);
+        if (path.empty() || Tcl_EvalFile(interp, path.c_str()) != TCL_OK) {
+          printf("Failed to load tclreadline\n");
+        }
       }
     }
 #endif
