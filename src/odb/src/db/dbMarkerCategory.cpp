@@ -246,7 +246,13 @@ void _dbMarkerCategory::populatePTree(
     category_tree.add_child("violations", violations_tree);
   }
 
-  tree.add_child(category->getName(), category_tree);
+  // Since . is the default separator we may need to pick something else
+  char separator = '.';
+  const std::string key(category->getName());
+  while (key.find(separator) != std::string::npos) {
+    separator += 1;
+  }
+  tree.add_child(_dbMarkerCategory::PropertyTree::path_type{key, separator}, category_tree);
 }
 
 void _dbMarkerCategory::fromPTree(const PropertyTree& tree)
