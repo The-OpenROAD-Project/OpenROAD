@@ -513,7 +513,6 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
   }
 
   dbMarker* marker = (dbMarker*) this;
-  const Rect bbox = marker->getBBox();
 
   auto sources = tree.get_child_optional("sources");
   if (sources) {
