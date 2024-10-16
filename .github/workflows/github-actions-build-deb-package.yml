@@ -24,6 +24,7 @@ jobs:
       - name: Set release version
         id: set_version
         run: |
+          git config --global --add safe.directory '*'
           echo "RELEASE_VERSION=$(git describe | sed 's/v//')" >> $GITHUB_ENV
           echo "RELEASE_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
 
