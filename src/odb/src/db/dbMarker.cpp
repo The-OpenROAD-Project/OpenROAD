@@ -240,7 +240,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMarker& obj)
   }
 
   // handle shapes
-  stream << obj.shapes_.size();
+  stream << static_cast<int>(obj.shapes_.size());
   for (const dbMarker::MarkerShape& shape : obj.shapes_) {
     if (std::holds_alternative<Point>(shape)) {
       stream << _dbMarker::ShapeType::Point;
