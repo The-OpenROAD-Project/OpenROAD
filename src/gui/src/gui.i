@@ -469,10 +469,10 @@ void hide_widget(const char* name)
   return gui->showWidget(name, false);
 }
 
-void show(const char* script = "", bool interactive = true)
+void show(const char* script = "", bool interactive = true, bool load_settings = true)
 {
   auto gui = gui::Gui::get();
-  gui->showGui(script, interactive);
+  gui->showGui(script, interactive, load_settings);
 }
 
 void hide()

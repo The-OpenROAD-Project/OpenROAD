@@ -340,7 +340,7 @@ def set_io_pin_constraint(
     direction -- "input" | "output" | "inout" | "feedthru"
     pin_names -- string list of pins to constrain, can contain regex.
                  Note that we need to escape regex characters for exact matching,
-                 ie, use "rqst\[23\]" instead of "rqst[23]"
+                 ie, use "rqst\\[23\\]" instead of "rqst[23]"
     region    -- region constraint, e.g. "top:*" or "left:1.2-3.4"
                  "up" takes an area spec, ie "up:10 10 300 300" or specify
                  entire area with "up:*"

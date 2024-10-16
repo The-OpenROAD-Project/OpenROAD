@@ -211,7 +211,7 @@ int findClosestGuide(const Point3D& best_pin_loc_coords,
                      const std::vector<frRect>& guides,
                      const frCoord layer_change_penalty)
 {
-  int closest_guide_idx = -1;
+  int closest_guide_idx = 0;
   int dist = 0;
   int min_dist = std::numeric_limits<int>::max();
   int guide_idx = 0;
@@ -1053,7 +1053,7 @@ void splitByPins(
     auto it = pins_locations_map.lower_bound(begin_idx);
     while (it != pins_locations_map.end()) {
       const auto along_routing_dir_idx = it->first;
-      const auto pins = it->second;
+      const auto& pins = it->second;
       if (along_routing_dir_idx > end_idx) {
         break;
       }
