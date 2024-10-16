@@ -492,7 +492,7 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
 
       if (!valid_points) {
         getLogger()->warn(utl::ODB,
-                          273,
+                          294,
                           "Unable to process violation shape {} points",
                           shape_type.value());
       }
