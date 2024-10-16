@@ -187,12 +187,18 @@ void TritonCTS::setupCharacterization()
   int sinkMaxFanout = getBufferFanoutLimit(sinkBuffer);
   int rootMaxFanout = getBufferFanoutLimit(rootBuffer);
 
-  if (sinkMaxFanout && (options_->getSinkClusteringSize() > sinkMaxFanout)) {
-    options_->setSinkClusteringSize(sinkMaxFanout);
-  }
-
   if (rootMaxFanout && (options_->getNumMaxLeafSinks() > rootMaxFanout)) {
     options_->setMaxFanout(rootMaxFanout);
+  }
+
+  if (sinkMaxFanout) {
+    if (options_->getSinkClusteringSize() > sinkMaxFanout) {
+      options_->setSinkClusteringSize(sinkMaxFanout);
+    }
+
+    if (sinkMaxFanout < options_->getMaxFanout()) {
+      options_->setMaxFanout(sinkMaxFanout);
+    }
   }
 
   // A new characteriztion is always created.
@@ -1956,6 +1962,10 @@ odb::dbInst* TritonCTS::insertDummyCell(
     ClockInst* inst,
     const std::vector<sta::LibertyCell*>& dummyCandidates)
 {
+  ClockSubNet* subNet = driver2subnet_[inst];
+  if (subNet->getNumSinks() == options_->getMaxFanout()) {
+    return nullptr;
+  }
   float deltaCap = inst->getIdealOutputCap() - inst->getOutputCap();
   sta::LibertyCell* dummyCell = findBestDummyCell(dummyCandidates, deltaCap);
   // clang-format off
@@ -1969,7 +1979,6 @@ odb::dbInst* TritonCTS::insertDummyCell(
         CTS, 120, "Subnet was not found for clock buffer {}.", inst->getName());
     return nullptr;
   }
-  ClockSubNet* subNet = driver2subnet_[inst];
   connectDummyCell(inst, dummyInst, *subNet, dummyClock);
   return dummyInst;
 }
