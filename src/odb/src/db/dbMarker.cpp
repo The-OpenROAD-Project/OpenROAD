@@ -65,6 +65,9 @@ bool _dbMarker::operator==(const _dbMarker& rhs) const
   if (flags_.visible_ != rhs.flags_.visible_) {
     return false;
   }
+  if (flags_.waived_ != rhs.flags_.waived_) {
+    return false;
+  }
   if (parent_ != rhs.parent_) {
     return false;
   }
@@ -106,6 +109,7 @@ void _dbMarker::differences(dbDiff& diff,
   DIFF_BEGIN
   DIFF_FIELD(flags_.visited_);
   DIFF_FIELD(flags_.visible_);
+  DIFF_FIELD(flags_.waived_);
   DIFF_FIELD(parent_);
   DIFF_FIELD(layer_);
   DIFF_FIELD(comment_);
@@ -121,6 +125,7 @@ void _dbMarker::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(flags_.visited_);
   DIFF_OUT_FIELD(flags_.visible_);
+  DIFF_OUT_FIELD(flags_.waived_);
   DIFF_OUT_FIELD(parent_);
   DIFF_OUT_FIELD(layer_);
   DIFF_OUT_FIELD(comment_);
@@ -145,6 +150,7 @@ _dbMarker::_dbMarker(_dbDatabase* db, const _dbMarker& r)
 {
   flags_.visited_ = r.flags_.visited_;
   flags_.visible_ = r.flags_.visible_;
+  flags_.waived_ = r.flags_.waived_;
   flags_.spare_bits_ = r.flags_.spare_bits_;
   parent_ = r.parent_;
   layer_ = r.layer_;
@@ -338,6 +344,7 @@ void _dbMarker::populatePTree(_dbMarkerCategory::PropertyTree& tree) const
 
   marker_tree.put("visited", marker->isVisited());
   marker_tree.put("visible", marker->isVisible());
+  marker_tree.put("waived", marker->isWaived());
 
   if (marker->getLineNumber() > 0) {
     marker_tree.put("line_number", marker->getLineNumber());
@@ -430,8 +437,18 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
     comment_ = comment.value();
   }
 
-  flags_.visited_ = tree.get<bool>("visited");
-  flags_.visible_ = tree.get<bool>("visible");
+  const auto visited = tree.get_optional<bool>("visited");
+  if (visited) {
+    flags_.visited_ = visited.value();
+  }
+  const auto visible = tree.get_optional<bool>("visible");
+  if (visible) {
+    flags_.visible_ = visible.value();
+  }
+  const auto waived = tree.get_optional<bool>("waived");
+  if (waived) {
+    flags_.waived_ = waived.value();
+  }
 
   const auto line_number = tree.get_optional<int>("line_number");
   if (line_number) {
@@ -454,20 +471,39 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
   const auto shape = tree.get_child_optional("shape");
   if (shape) {
     for (const auto& [_, shape] : shape.value()) {
-      const std::string shape_type = shape.get<std::string>("type");
-      std::vector<Point> pts;
-      for (const auto& [_, pt] : shape.get_child("points")) {
-        pts.emplace_back(dbus * pt.get<double>("x"),
-                         dbus * pt.get<double>("y"));
+      const auto shape_type = shape.get_optional<std::string>("type");
+      const auto points = shape.get_child_optional("points");
+      if (!shape_type || !points) {
+        getLogger()->warn(utl::ODB, 266, "Unable to process violation shape");
+        continue;
       }
 
-      if (shape_type == "point") {
+      std::vector<Point> pts;
+      bool valid_points = true;
+      for (const auto& [_, pt] : points.value()) {
+        const auto x = pt.get_optional<double>("x");
+        const auto y = pt.get_optional<double>("y");
+        if (!x || !y) {
+          valid_points = false;
+          break;
+        }
+        pts.emplace_back(dbus * x.value(), dbus * y.value());
+      }
+
+      if (!valid_points) {
+        getLogger()->warn(utl::ODB,
+                          273,
+                          "Unable to process violation shape {} points",
+                          shape_type.value());
+      }
+
+      if (shape_type.value() == "point") {
         shapes_.emplace_back(pts[0]);
-      } else if (shape_type == "line") {
+      } else if (shape_type.value() == "line") {
         shapes_.emplace_back(Line(pts[0], pts[1]));
-      } else if (shape_type == "box") {
+      } else if (shape_type.value() == "box") {
         shapes_.emplace_back(Rect(pts[0], pts[1]));
-      } else if (shape_type == "polygon") {
+      } else if (shape_type.value() == "polygon") {
         shapes_.emplace_back(Polygon(pts));
       } else {
         getLogger()->warn(
@@ -482,11 +518,17 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
   auto sources = tree.get_child_optional("sources");
   if (sources) {
     for (const auto& [ignore, source] : sources.value()) {
-      const std::string src_type = source.get<std::string>("type");
+      const auto src_type = source.get_optional<std::string>("type");
+
+      if (!src_type) {
+        getLogger()->warn(utl::ODB, 296, "Unable to process violation source");
+        continue;
+      }
+
       const auto src_name = source.get_optional<std::string>("name");
 
       bool src_found = false;
-      if (src_type == "net") {
+      if (src_type.value() == "net") {
         odb::dbNet* net = block->findNet(src_name.value().c_str());
         if (net != nullptr) {
           marker->addSource(net);
@@ -495,7 +537,7 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
           getLogger()->warn(
               utl::ODB, 257, "Unable to find net: {}", src_name.value());
         }
-      } else if (src_type == "inst") {
+      } else if (src_type.value() == "inst") {
         odb::dbInst* inst = block->findInst(src_name.value().c_str());
         if (inst != nullptr) {
           marker->addSource(inst);
@@ -504,7 +546,7 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
           getLogger()->warn(
               utl::ODB, 258, "Unable to find instance: {}", src_name.value());
         }
-      } else if (src_type == "iterm") {
+      } else if (src_type.value() == "iterm") {
         odb::dbITerm* iterm = block->findITerm(src_name.value().c_str());
         if (iterm != nullptr) {
           marker->addSource(iterm);
@@ -513,7 +555,7 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
           getLogger()->warn(
               utl::ODB, 259, "Unable to find iterm: {}", src_name.value());
         }
-      } else if (src_type == "bterm") {
+      } else if (src_type.value() == "bterm") {
         odb::dbBTerm* bterm = block->findBTerm(src_name.value().c_str());
         if (bterm != nullptr) {
           marker->addSource(bterm);
@@ -522,24 +564,11 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
           getLogger()->warn(
               utl::ODB, 262, "Unable to find bterm: {}", src_name);
         }
-      } else if (src_type == "obstruction") {
-        bool found = false;
-        for (const auto obs : block->getObstructions()) {
-          auto obs_bbox = obs->getBBox();
-          if (obs_bbox->getTechLayer() == layer) {
-            odb::Rect obs_rect = obs_bbox->getBox();
-            if (obs_rect.intersects(bbox)) {
-              marker->addSource(obs);
-              src_found = true;
-              found = true;
-            }
-          }
-        }
-        if (!found) {
-          getLogger()->warn(utl::ODB, 263, "Unable to find obstruction");
-        }
+      } else if (src_type.value() == "obstruction") {
+        src_found = marker->addObstructionFromBlock(block);
       } else {
-        getLogger()->warn(utl::ODB, 264, "Unknown source type: {}", src_type);
+        getLogger()->warn(
+            utl::ODB, 264, "Unknown source type: {}", src_type.value());
       }
 
       if (!src_found && !src_name) {
@@ -610,6 +639,20 @@ bool dbMarker::isVisible() const
   _dbMarker* obj = (_dbMarker*) this;
 
   return obj->flags_.visible_;
+}
+
+void dbMarker::setWaived(bool waived)
+{
+  _dbMarker* obj = (_dbMarker*) this;
+
+  obj->flags_.waived_ = waived;
+}
+
+bool dbMarker::isWaived() const
+{
+  _dbMarker* obj = (_dbMarker*) this;
+
+  return obj->flags_.waived_;
 }
 
 // User Code Begin dbMarkerPublicMethods
@@ -716,6 +759,33 @@ void dbMarker::addSource(dbObject* obj)
   }
   _dbMarker* marker = (_dbMarker*) this;
   marker->sources_.emplace(obj->getObjectType(), obj->getId());
+}
+
+bool dbMarker::addObstructionFromBlock(dbBlock* block)
+{
+  if (block == nullptr) {
+    return false;
+  }
+
+  const Rect bbox = getBBox();
+
+  _dbMarker* marker = (_dbMarker*) this;
+  bool found = false;
+  for (const auto obs : block->getObstructions()) {
+    auto obs_bbox = obs->getBBox();
+    if (obs_bbox->getTechLayer()->getId() == marker->layer_) {
+      odb::Rect obs_rect = obs_bbox->getBox();
+      if (obs_rect.intersects(bbox)) {
+        addSource(obs);
+        found = true;
+      }
+    }
+  }
+  if (!found) {
+    marker->getLogger()->warn(utl::ODB, 263, "Unable to find obstruction");
+  }
+
+  return found;
 }
 
 dbTechLayer* dbMarker::getTechLayer() const

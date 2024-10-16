@@ -365,6 +365,7 @@ void DRCWidget::selectCategory(odb::dbMarkerCategory* category)
 void DRCWidget::loadReport(const QString& filename)
 {
   Gui::get()->removeSelected<odb::dbMarker*>();
+  Gui::get()->removeSelected<odb::dbMarkerCategory*>();
 
   try {
     // OpenLane uses .drc and OpenROAD-flow-scripts uses .rpt

@@ -772,26 +772,7 @@ void dbMarkerCategory::fromTR(dbBlock* block,
                        item_name);
         }
       } else if (item_type == "obstruction") {
-        bool found = false;
-        if (layer != nullptr) {
-          for (const auto obs : block->getObstructions()) {
-            auto obs_bbox = obs->getBBox();
-            if (obs_bbox->getTechLayer() == layer) {
-              odb::Rect obs_rect = obs_bbox->getBox();
-              if (obs_rect.intersects(rect)) {
-                marker->addSource(obs);
-                src_found = true;
-                found = true;
-              }
-            }
-          }
-        }
-        if (!found) {
-          logger->warn(utl::ODB,
-                       294,
-                       "Unable to find obstruction (line: {})",
-                       source_line_number);
-        }
+        src_found = marker->addObstructionFromBlock(block);
       } else {
         logger->warn(utl::ODB,
                      233,

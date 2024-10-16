@@ -4313,6 +4313,9 @@ Descriptor::Properties DbMarkerDescriptor::getProperties(std::any object) const
 
   props.push_back({"Category", gui->makeSelected(marker->getCategory())});
 
+  props.push_back({"Visited", marker->isVisited()});
+  props.push_back({"Waived", marker->isWaived()});
+
   auto layer = marker->getTechLayer();
   if (layer != nullptr) {
     props.push_back({"Layer", gui->makeSelected(layer)});

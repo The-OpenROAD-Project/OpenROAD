@@ -23,6 +23,11 @@
       "bits":1
     },
     {
+      "name":"waived_",
+      "type":"bool",
+      "bits":1
+    },
+    {
       "name":"comment_",
       "type":"std::string"
     },

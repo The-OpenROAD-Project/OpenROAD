@@ -7915,6 +7915,10 @@ class dbMarker : public dbObject
 
   bool isVisible() const;
 
+  void setWaived(bool waived);
+
+  bool isWaived() const;
+
   // User Code Begin dbMarker
 
   std::string getName() const;
@@ -7936,6 +7940,7 @@ class dbMarker : public dbObject
   void setTechLayer(dbTechLayer* layer);
 
   void addSource(dbObject* obj);
+  bool addObstructionFromBlock(dbBlock* block);
 
   static dbMarker* create(dbMarkerCategory* category);
   static void destroy(dbMarker* marker);
