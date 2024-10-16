@@ -213,7 +213,7 @@ void FlexGCWorkerRegionQuery::Impl::init(int numLayers)
       for (auto& pin : pins) {
         for (auto& edges : pin->getPolygonEdges()) {
           for (auto& edge : edges) {
-            addPolygonEdge(edge.get(), allPolygonEdges);
+            addPolygonEdge(&edge, allPolygonEdges);
           }
         }
         for (auto& rect : pin->getMaxRectangles()) {
@@ -240,7 +240,7 @@ void FlexGCWorkerRegionQuery::addToRegionQuery(gcNet* net)
     for (auto& pin : pins) {
       for (auto& edges : pin->getPolygonEdges()) {
         for (auto& edge : edges) {
-          addPolygonEdge(edge.get());
+          addPolygonEdge(&edge);
         }
       }
       for (auto& rect : pin->getMaxRectangles()) {
@@ -259,7 +259,7 @@ void FlexGCWorkerRegionQuery::removeFromRegionQuery(gcNet* net)
     for (auto& pin : pins) {
       for (auto& edges : pin->getPolygonEdges()) {
         for (auto& edge : edges) {
-          removePolygonEdge(edge.get());
+          removePolygonEdge(&edge);
         }
       }
       for (auto& rect : pin->getMaxRectangles()) {

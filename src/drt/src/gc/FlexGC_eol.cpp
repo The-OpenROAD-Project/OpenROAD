@@ -1298,7 +1298,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_main(gcPin* pin)
     for (auto& edge : edges) {
       if (ignoreLongSideEOL_
           && layer->getLayerNum() > 2 /* above the 1st metal layer */) {
-        switch (edge->getDir()) {
+        switch (edge.getDir()) {
           case frDirEnum::N:
           case frDirEnum::S:
             if (isVertical) {
@@ -1317,16 +1317,16 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_main(gcPin* pin)
       }
 
       for (auto con : cons) {
-        checkMetalEndOfLine_eol(edge.get(), con);
+        checkMetalEndOfLine_eol(&edge, con);
       }
       for (auto con : lef58Cons) {
-        checkMetalEndOfLine_eol(edge.get(), con);
+        checkMetalEndOfLine_eol(&edge, con);
       }
       for (auto con : keepoutCons) {
-        checkMetalEOLkeepout_main(edge.get(), con);
+        checkMetalEOLkeepout_main(&edge, con);
       }
       for (auto con : extCons) {
-        checkMetalEndOfLine_ext(edge.get(), con);
+        checkMetalEndOfLine_ext(&edge, con);
       }
     }
   }

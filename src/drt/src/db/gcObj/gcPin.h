@@ -46,7 +46,7 @@ class gcPin : public gcBlockObject
   }
   // setters
   void setNet(gcNet* in) { net_ = in; }
-  void addPolygonEdges(std::vector<std::unique_ptr<gcSegment>>& in)
+  void addPolygonEdges(std::vector<gcSegment>&& in)
   {
     polygon_edges_.push_back(std::move(in));
   }
@@ -61,7 +61,11 @@ class gcPin : public gcBlockObject
 
   // getters
   gcPolygon* getPolygon() const { return polygon_.get(); }
-  const std::vector<std::vector<std::unique_ptr<gcSegment>>>& getPolygonEdges()
+  std::vector<std::vector<gcSegment>>& getPolygonEdges()
+  {
+    return polygon_edges_;
+  }
+  const std::vector<std::vector<gcSegment>>& getPolygonEdges()
       const
   {
     return polygon_edges_;
@@ -84,7 +88,7 @@ class gcPin : public gcBlockObject
   std::unique_ptr<gcPolygon> polygon_;
   gcNet* net_{nullptr};
   // assisting structures
-  std::vector<std::vector<std::unique_ptr<gcSegment>>> polygon_edges_;
+  std::vector<std::vector<gcSegment>> polygon_edges_;
   std::vector<std::vector<std::unique_ptr<gcCorner>>> polygon_corners_;
   std::vector<std::unique_ptr<gcRect>> max_rectangles_;
 };
