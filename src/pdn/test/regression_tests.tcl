@@ -72,6 +72,7 @@ record_tests {
   macros_cells_overlapping_ports
   macros_cells_not_fixed
   macros_cells_via_failure
+  repair_channel_inf_loop
 
   region_temp_sensor
   region_secondary_nets

@@ -99,7 +99,7 @@ proc set_dft_config { args } {
 }
 
 sta::define_cmd_args "report_dft_config" { }
-proc report_dft_config { } {
+proc report_dft_config { args } {
   sta::parse_key_args "report_dft_config" args keys {} flags {}
   dft::report_dft_config
 }

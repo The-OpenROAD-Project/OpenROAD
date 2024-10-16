@@ -135,6 +135,8 @@ class FlexPA
   // prep
   void prep();
 
+  bool isStdCell(frInst* inst);
+  bool isMacroCell(frInst* inst);
   /**
    * @brief initializes all access points of all unique instances
    */
@@ -275,10 +277,33 @@ class FlexPA
    * @param rect pin rectangle to which via is bounded
    * @param layer_num number of the layer
    */
+
   void genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
                              const gtl::rectangle_data<frCoord>& rect,
                              frLayerNum layer_num,
                              bool is_curr_layer_horz);
+
+  /**
+   * @brief Calls the other genAP functions according to the informed cost
+   *
+   * @param cost access point cost
+   * @param coords access points cost map (will get at least one new entry)
+   * @param track_coords coordinates of tracks on the layer
+   * @param base_layer_num if two layers are being considered this is the lower,
+   * if only one is being considered this is the layer
+   * @param layer_num number of the current layer
+   * @param rect rectangle representing pin shape
+   * @param is_curr_layer_horz if the current layer is horizontal
+   * @param offset TODO: not sure, something to do with macro cells
+   */
+  void genAPCosted(frAccessPointEnum cost,
+                   std::map<frCoord, frAccessPointEnum>& coords,
+                   const std::map<frCoord, frAccessPointEnum>& track_coords,
+                   frLayerNum base_layer_num,
+                   frLayerNum layer_num,
+                   const gtl::rectangle_data<frCoord>& rect,
+                   bool is_curr_layer_horz,
+                   int offset = 0);
 
   void gen_initializeAccessPoints(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
@@ -372,24 +397,32 @@ class FlexPA
       frInstTerm* inst_term);
 
   /**
-   * @brief Determines coordinates of an End Point given a Begin Point.
+   * @brief Generates an end_point given an begin_point in the direction
    *
-   * @param end_point the End Point to be filled
-   * @param layer_polys a vector with all the pin polygons
-   * @param begin_point the Begin Point
-   * @param layer_num the number of the layer where begin_point is
-   * @param dir the direction the End Point is from the Begin Point
-   * @param is_block if the instance is a macro block.
+   * @param layer_polys Pin Polygons on the layer (used for a check)
+   * TODO: maybe the check can be moves to isPointOusideShapes, but not sure
+   * @param begin_point The begin reference point
+   * @param layer_num layer where the point is being created
+   * @param dir direction where the point will be created
+   * @param is_block wether the begin_point is from a macro block
    *
-   * @return if any polygon on the layer contains the End Point
+   * @returns the generated end point
    */
-  bool check_endPointIsOutside(
-      Point& end_point,
+  Point genEndPoint(
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       const Point& begin_point,
       frLayerNum layer_num,
       frDirEnum dir,
       bool is_block);
+
+  /**
+   * @brief Checks if a point is outside the layer_polygons
+   *
+   * @return if the point is outside the pin shapes
+   */
+  bool isPointOutsideShapes(
+      const Point& point,
+      const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys);
 
   template <typename T>
   void check_addViaAccess(

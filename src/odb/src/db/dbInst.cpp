@@ -217,7 +217,16 @@ dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
   dbDatabase* db = (dbDatabase*) (inst.getDatabase());
   if (((_dbDatabase*) db)->isSchema(db_schema_db_remove_hash)) {
     _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
-    _dbModule* module = block->_module_tbl->getPtr(inst._module);
+    _dbModule* module = nullptr;
+    // if the instance has no module parent put in the top module
+    // We sometimes see instances with _module set to 0 (possibly
+    // introduced downstream) so we stick them in the hash for the
+    // top module.
+    if (inst._module == 0) {
+      module = (_dbModule*) (((dbBlock*) block)->getTopModule());
+    } else {
+      module = block->_module_tbl->getPtr(inst._module);
+    }
     if (inst._name) {
       module->_dbinst_hash[inst._name] = dbId<_dbInst>(inst.getId());
     }
@@ -1430,6 +1439,8 @@ dbInst* dbInst::create(dbBlock* block_,
     block->_journal->pushParam(lib->getId());
     block->_journal->pushParam(master_->getId());
     block->_journal->pushParam(name_);
+    // need to add dbModNet
+    // dbModule (scope)
     block->_journal->pushParam(inst->getOID());
     block->_journal->endAction();
   }

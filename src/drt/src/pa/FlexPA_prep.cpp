@@ -49,6 +49,20 @@ namespace drt {
 
 using utl::ThreadException;
 
+// TODO there should be a better way to get this info by getting the master
+// terms from OpenDB
+bool FlexPA::isStdCell(frInst* inst)
+{
+  return inst->getMaster()->getMasterType().isCore();
+}
+
+bool FlexPA::isMacroCell(frInst* inst)
+{
+  dbMasterType masterType = inst->getMaster()->getMasterType();
+  return (masterType.isBlock() || masterType.isPad()
+          || masterType == dbMasterType::RING);
+}
+
 template <typename T>
 std::vector<gtl::polygon_90_set_data<frCoord>>
 FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
@@ -240,6 +254,49 @@ void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
         coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
       }
     }
+  }
+}
+
+void FlexPA::genAPCosted(
+    const frAccessPointEnum cost,
+    std::map<frCoord, frAccessPointEnum>& coords,
+    const std::map<frCoord, frAccessPointEnum>& track_coords,
+    const frLayerNum base_layer_num,
+    const frLayerNum layer_num,
+    const gtl::rectangle_data<frCoord>& rect,
+    const bool is_curr_layer_horz,
+    const int offset)
+{
+  auto layer = getDesign()->getTech()->getLayer(layer_num);
+  const auto min_width_layer = layer->getMinWidth();
+  const int rect_min = is_curr_layer_horz ? gtl::yl(rect) : gtl::xl(rect);
+  const int rect_max = is_curr_layer_horz ? gtl::yh(rect) : gtl::xh(rect);
+
+  switch (cost) {
+    case (frAccessPointEnum::OnGrid):
+      genAPOnTrack(coords, track_coords, rect_min + offset, rect_max - offset);
+      break;
+
+      // frAccessPointEnum::Halfgrid not defined
+
+    case (frAccessPointEnum::Center):
+      genAPCentered(
+          coords, base_layer_num, rect_min + offset, rect_max - offset);
+      break;
+
+    case (frAccessPointEnum::EncOpt):
+      genAPEnclosedBoundary(coords, rect, base_layer_num, is_curr_layer_horz);
+      break;
+
+    case (frAccessPointEnum::NearbyGrid):
+      genAPOnTrack(
+          coords, track_coords, rect_min - min_width_layer, rect_min, true);
+      genAPOnTrack(
+          coords, track_coords, rect_max, rect_max + min_width_layer, true);
+      break;
+
+    default:
+      logger_->error(DRT, 257, "Invalid frAccessPointEnum type");
   }
 }
 
@@ -461,8 +518,6 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
   } else {
     logger_->error(DRT, 68, "genAPsFromRect cannot find second_layer_num.");
   }
-  const auto min_width_layer2
-      = getDesign()->getTech()->getLayer(second_layer_num)->getMinWidth();
   auto& layer1_track_coords = track_coords_[layer_num];
   auto& layer2_track_coords = track_coords_[second_layer_num];
   const bool is_layer1_horz = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
@@ -486,81 +541,46 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
   }
 
   // gen all full/half grid coords
-  const int offset = is_macro_cell_pin ? hwidth : 0;
+  /** offset used to only be used after an if (!is_macro_cell_pin ||
+   * !use_center_line), so this logic was combined with offset is_macro_cell_pin
+   * ? hwidth : 0;
+   */
+  const int offset = is_macro_cell_pin && !use_center_line ? hwidth : 0;
   const int layer1_rect_min = is_layer1_horz ? gtl::yl(rect) : gtl::xl(rect);
   const int layer1_rect_max = is_layer1_horz ? gtl::yh(rect) : gtl::xh(rect);
-  const int layer2_rect_min = is_layer1_horz ? gtl::xl(rect) : gtl::yl(rect);
-  const int layer2_rect_max = is_layer1_horz ? gtl::xh(rect) : gtl::yh(rect);
   auto& layer1_coords = is_layer1_horz ? y_coords : x_coords;
   auto& layer2_coords = is_layer1_horz ? x_coords : y_coords;
 
-  if (!is_macro_cell_pin || !use_center_line) {
-    genAPOnTrack(
-        layer1_coords, layer1_track_coords, layer1_rect_min, layer1_rect_max);
-    genAPOnTrack(layer2_coords,
-                 layer2_track_coords,
-                 layer2_rect_min + offset,
-                 layer2_rect_max - offset);
-    if (lower_type >= frAccessPointEnum::Center) {
-      genAPCentered(layer1_coords, layer_num, layer1_rect_min, layer1_rect_max);
+  const frAccessPointEnum frDirEnums[] = {frAccessPointEnum::OnGrid,
+                                          frAccessPointEnum::Center,
+                                          frAccessPointEnum::EncOpt,
+                                          frAccessPointEnum::NearbyGrid};
+
+  for (const auto cost : frDirEnums) {
+    if (upper_type >= cost) {
+      genAPCosted(cost,
+                  layer2_coords,
+                  layer2_track_coords,
+                  layer_num,
+                  second_layer_num,
+                  rect,
+                  !is_layer1_horz,
+                  offset);
     }
-    if (lower_type >= frAccessPointEnum::EncOpt) {
-      genAPEnclosedBoundary(layer1_coords, rect, layer_num, is_layer1_horz);
-    }
-    if (upper_type >= frAccessPointEnum::Center) {
-      genAPCentered(layer2_coords,
+  }
+  if (!(is_macro_cell_pin && use_center_line)) {
+    for (const auto cost : frDirEnums) {
+      if (lower_type >= cost) {
+        genAPCosted(cost,
+                    layer1_coords,
+                    layer1_track_coords,
                     layer_num,
-                    layer2_rect_min + offset,
-                    layer2_rect_max - offset);
-    }
-    if (upper_type >= frAccessPointEnum::EncOpt) {
-      genAPEnclosedBoundary(layer2_coords, rect, layer_num, !is_layer1_horz);
-    }
-    if (lower_type >= frAccessPointEnum::NearbyGrid) {
-      genAPOnTrack(layer1_coords,
-                   layer1_track_coords,
-                   layer1_rect_max,
-                   layer1_rect_max + min_width_layer1,
-                   true);
-      genAPOnTrack(layer1_coords,
-                   layer1_track_coords,
-                   layer1_rect_min - min_width_layer1,
-                   layer1_rect_min,
-                   true);
-    }
-    if (upper_type >= frAccessPointEnum::NearbyGrid) {
-      genAPOnTrack(layer2_coords,
-                   layer2_track_coords,
-                   layer2_rect_max,
-                   layer2_rect_max + min_width_layer2,
-                   true);
-      genAPOnTrack(layer2_coords,
-                   layer2_track_coords,
-                   layer2_rect_min - min_width_layer2,
-                   layer2_rect_min,
-                   true);
+                    layer_num,
+                    rect,
+                    is_layer1_horz);
+      }
     }
   } else {
-    genAPOnTrack(
-        layer2_coords, layer2_track_coords, layer2_rect_min, layer2_rect_max);
-    if (upper_type >= frAccessPointEnum::Center) {
-      genAPCentered(layer2_coords, layer_num, layer2_rect_min, layer2_rect_max);
-    }
-    if (upper_type >= frAccessPointEnum::EncOpt) {
-      genAPEnclosedBoundary(layer2_coords, rect, layer_num, !is_layer1_horz);
-    }
-    if (upper_type >= frAccessPointEnum::NearbyGrid) {
-      genAPOnTrack(layer2_coords,
-                   layer2_track_coords,
-                   layer2_rect_max,
-                   layer2_rect_max + min_width_layer2,
-                   true);
-      genAPOnTrack(layer2_coords,
-                   layer2_track_coords,
-                   layer2_rect_min - min_width_layer2,
-                   layer2_rect_min,
-                   true);
-    }
     genAPCentered(layer1_coords, layer_num, layer1_rect_min, layer1_rect_max);
     for (auto& [layer1_coord, cost] : layer1_coords) {
       layer1_coords[layer1_coord] = frAccessPointEnum::OnGrid;
@@ -601,21 +621,14 @@ void FlexPA::genAPsFromLayerShapes(
   bool allow_planar = true;
   bool is_macro_cell_pin = false;
   if (inst_term) {
-    dbMasterType masterType
-        = inst_term->getInst()->getMaster()->getMasterType();
-    if (masterType == dbMasterType::CORE
-        || masterType == dbMasterType::CORE_TIEHIGH
-        || masterType == dbMasterType::CORE_TIELOW
-        || masterType == dbMasterType::CORE_ANTENNACELL) {
+    if (isStdCell(inst_term->getInst())) {
       if ((layer_num >= VIAINPIN_BOTTOMLAYERNUM
            && layer_num <= VIAINPIN_TOPLAYERNUM)
           || layer_num <= VIA_ACCESS_LAYERNUM) {
         allow_planar = false;
       }
-    } else if (masterType.isBlock() || masterType.isPad()
-               || masterType == dbMasterType::RING) {
-      is_macro_cell_pin = true;
     }
+    is_macro_cell_pin = isMacroCell(inst_term->getInst());
   } else {
     // IO term is treated as the MacroCellPin as the top block
     is_macro_cell_pin = true;
@@ -684,8 +697,7 @@ void FlexPA::genAPsFromPinShapes(
   }
 }
 
-bool FlexPA::check_endPointIsOutside(
-    Point& end_point,
+Point FlexPA::genEndPoint(
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     const Point& begin_point,
     const frLayerNum layer_num,
@@ -737,17 +749,21 @@ bool FlexPA::check_endPointIsOutside(
     default:
       logger_->error(DRT, 70, "Unexpected direction in getPlanarEP.");
   }
-  end_point = {x, y};
-  const gtl::point_data<frCoord> pt(x, y);
-  bool outside = true;
+  return {x, y};
+}
+
+bool FlexPA::isPointOutsideShapes(
+    const Point& point,
+    const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys)
+{
+  const gtl::point_data<frCoord> pt(point.getX(), point.getY());
   for (auto& layer_poly : layer_polys) {
     if (gtl::contains(layer_poly, pt)) {
-      outside = false;
+      return false;
       break;
     }
   }
-
-  return outside;
+  return true;
 }
 
 template <typename T>
@@ -766,9 +782,9 @@ void FlexPA::check_addPlanarAccess(
   const bool is_block
       = inst_term
         && inst_term->getInst()->getMaster()->getMasterType().isBlock();
-  Point end_point;
-  const bool is_outside = check_endPointIsOutside(
-      end_point, layer_polys, begin_point, ap->getLayerNum(), dir, is_block);
+  const Point end_point
+      = genEndPoint(layer_polys, begin_point, ap->getLayerNum(), dir, is_block);
+  const bool is_outside = isPointOutsideShapes(end_point, layer_polys);
   // skip if two width within shape for standard cell
   if (!is_outside) {
     ap->setAccess(dir, false);
@@ -1064,13 +1080,11 @@ bool FlexPA::checkDirectionalViaAccess(
   const bool is_block
       = inst_term
         && inst_term->getInst()->getMaster()->getMasterType().isBlock();
-  Point end_point;
-  check_endPointIsOutside(end_point,
-                          layer_polys,
-                          begin_point,
-                          via->getViaDef()->getLayer2Num(),
-                          dir,
-                          is_block);
+  const Point end_point = genEndPoint(layer_polys,
+                                      begin_point,
+                                      via->getViaDef()->getLayer2Num(),
+                                      dir,
+                                      is_block);
 
   if (inst_term && inst_term->hasNet()) {
     via->addToNet(inst_term->getNet());
@@ -1220,17 +1234,8 @@ void FlexPA::updatePinStats(
   bool is_std_cell_pin = false;
   bool is_macro_cell_pin = false;
   if (inst_term) {
-    // TODO there should be a better way to get this info by getting the master
-    // terms from OpenDB
-    dbMasterType masterType
-        = inst_term->getInst()->getMaster()->getMasterType();
-    is_std_cell_pin = masterType == dbMasterType::CORE
-                      || masterType == dbMasterType::CORE_TIEHIGH
-                      || masterType == dbMasterType::CORE_TIELOW
-                      || masterType == dbMasterType::CORE_ANTENNACELL;
-
-    is_macro_cell_pin = masterType.isBlock() || masterType.isPad()
-                        || masterType == dbMasterType::RING;
+    is_std_cell_pin = isStdCell(inst_term->getInst());
+    is_macro_cell_pin = isMacroCell(inst_term->getInst());
   }
   for (auto& ap : tmp_aps) {
     if (ap->hasAccess(frDirEnum::W) || ap->hasAccess(frDirEnum::E)
@@ -1270,17 +1275,8 @@ bool FlexPA::initPinAccessCostBounded(
   bool is_std_cell_pin = false;
   bool is_macro_cell_pin = false;
   if (inst_term) {
-    // TODO there should be a better way to get this info by getting the master
-    // terms from OpenDB
-    dbMasterType masterType
-        = inst_term->getInst()->getMaster()->getMasterType();
-    is_std_cell_pin = masterType == dbMasterType::CORE
-                      || masterType == dbMasterType::CORE_TIEHIGH
-                      || masterType == dbMasterType::CORE_TIELOW
-                      || masterType == dbMasterType::CORE_ANTENNACELL;
-
-    is_macro_cell_pin = masterType.isBlock() || masterType.isPad()
-                        || masterType == dbMasterType::RING;
+    is_std_cell_pin = isStdCell(inst_term->getInst());
+    is_macro_cell_pin = isMacroCell(inst_term->getInst());
   }
   const bool is_io_pin = (inst_term == nullptr);
   std::vector<std::unique_ptr<frAccessPoint>> tmp_aps;
@@ -1367,17 +1363,8 @@ int FlexPA::initPinAccess(T* pin, frInstTerm* inst_term)
   bool is_std_cell_pin = false;
   bool is_macro_cell_pin = false;
   if (inst_term) {
-    // TODO there should be a better way to get this info by getting the master
-    // terms from OpenDB
-    dbMasterType masterType
-        = inst_term->getInst()->getMaster()->getMasterType();
-    is_std_cell_pin = masterType == dbMasterType::CORE
-                      || masterType == dbMasterType::CORE_TIEHIGH
-                      || masterType == dbMasterType::CORE_TIELOW
-                      || masterType == dbMasterType::CORE_ANTENNACELL;
-
-    is_macro_cell_pin = masterType.isBlock() || masterType.isPad()
-                        || masterType == dbMasterType::RING;
+    is_std_cell_pin = isStdCell(inst_term->getInst());
+    is_macro_cell_pin = isMacroCell(inst_term->getInst());
   }
 
   if (graphics_) {
@@ -1470,13 +1457,7 @@ void FlexPA::initAllAccessPoints()
     try {
       auto& inst = unique[i];
       // only do for core and block cells
-      dbMasterType masterType = inst->getMaster()->getMasterType();
-      if (masterType != dbMasterType::CORE
-          && masterType != dbMasterType::CORE_TIEHIGH
-          && masterType != dbMasterType::CORE_TIELOW
-          && masterType != dbMasterType::CORE_ANTENNACELL
-          && !masterType.isBlock() && !masterType.isPad()
-          && masterType != dbMasterType::RING) {
+      if (!isStdCell(inst) && !isMacroCell(inst)) {
         continue;
       }
       ProfileTask profile("PA:uniqueInstance");
@@ -1688,11 +1669,7 @@ void FlexPA::prepPattern()
       // only do for core and block cells
       // TODO the above comment says "block cells" but that's not what the code
       // does?
-      dbMasterType masterType = inst->getMaster()->getMasterType();
-      if (masterType != dbMasterType::CORE
-          && masterType != dbMasterType::CORE_TIEHIGH
-          && masterType != dbMasterType::CORE_TIELOW
-          && masterType != dbMasterType::CORE_ANTENNACELL) {
+      if (!isStdCell(inst)) {
         continue;
       }
 
@@ -2142,11 +2119,7 @@ void FlexPA::getInsts(std::vector<frInst*>& insts)
     if (!unique_insts_.hasUnique(inst.get())) {
       continue;
     }
-    dbMasterType masterType = inst->getMaster()->getMasterType();
-    if (masterType != dbMasterType::CORE
-        && masterType != dbMasterType::CORE_TIEHIGH
-        && masterType != dbMasterType::CORE_TIELOW
-        && masterType != dbMasterType::CORE_ANTENNACELL) {
+    if (!isStdCell(inst.get())) {
       continue;
     }
     bool is_skip = true;
