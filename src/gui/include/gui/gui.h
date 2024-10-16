@@ -682,8 +682,8 @@ class Gui
   void timingCone(odbTerm term, bool fanin, bool fanout);
   void timingPathsThrough(const std::set<odbTerm>& terms);
 
-  // open DRC
-  void loadDRC(const std::string& filename);
+  // open markers
+  void selectMarkers(odb::dbMarkerCategory* markers);
 
   // Force an immediate redraw.
   void redraw();

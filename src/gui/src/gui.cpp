@@ -601,11 +601,9 @@ std::string Gui::requestUserInput(const std::string& title,
                                        QString::fromStdString(question));
 }
 
-void Gui::loadDRC(const std::string& filename)
+void Gui::selectMarkers(odb::dbMarkerCategory* markers)
 {
-  if (!filename.empty()) {
-    main_window->getDRCViewer()->loadReport(QString::fromStdString(filename));
-  }
+  main_window->getDRCViewer()->selectCategory(markers);
 }
 
 void Gui::setDisplayControlsVisible(const std::string& name, bool value)
