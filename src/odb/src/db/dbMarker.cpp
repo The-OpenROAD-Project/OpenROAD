@@ -173,7 +173,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMarker& obj)
   stream >> obj.line_number_;
   // User Code Begin >>
   // handle shapes
-  std::size_t item_count;
+  int item_count;
   stream >> item_count;
   for (std::size_t i = 0; i < item_count; i++) {
     std::string db_type;
@@ -233,7 +233,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMarker& obj)
   stream << obj.line_number_;
   // User Code Begin <<
   // handle sources
-  stream << obj.sources_.size();
+  stream << static_cast<int>(obj.sources_.size());
   for (const auto& [db_type, dbid] : obj.sources_) {
     stream << std::string(dbObject::getTypeName(db_type));
     stream << dbid;
