@@ -40,8 +40,7 @@ class gcPin : public gcBlockObject
   gcPin(const gtl::polygon_90_with_holes_data<frCoord>& shapeIn,
         frLayerNum layerNumIn,
         gcNet* netIn)
-      : polygon_(std::make_unique<gcPolygon>(shapeIn, layerNumIn, this, netIn)),
-        net_(netIn)
+      : polygon_(shapeIn, layerNumIn, this, netIn), net_(netIn)
   {
   }
   // setters
@@ -57,7 +56,8 @@ class gcPin : public gcBlockObject
   void addMaxRectangle(const gcRect& in) { max_rectangles_.push_back(in); }
 
   // getters
-  gcPolygon* getPolygon() const { return polygon_.get(); }
+  gcPolygon* getPolygon() { return &polygon_; }
+  const gcPolygon* getPolygon() const { return &polygon_; }
   std::vector<std::vector<gcSegment>>& getPolygonEdges()
   {
     return polygon_edges_;
@@ -87,7 +87,7 @@ class gcPin : public gcBlockObject
   frBlockObjectEnum typeId() const override { return gccPin; }
 
  private:
-  std::unique_ptr<gcPolygon> polygon_;
+  gcPolygon polygon_;
   gcNet* net_{nullptr};
   // assisting structures
   std::vector<std::vector<gcSegment>> polygon_edges_;
