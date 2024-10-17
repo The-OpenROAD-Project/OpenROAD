@@ -232,7 +232,7 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
                                     const std::string& drcRpt)
 {
   {
-    io::Writer writer(this, logger_);
+    io::Writer writer(getDesign(), logger_);
     writer.updateTrackAssignment(db_->getChip()->getBlock());
   }
   bool on = debug_->debugDR;
@@ -564,7 +564,6 @@ void TritonRoute::initDesign()
     return;
   }
   parser.readTechAndLibs(db_);
-  processBTermsAboveTopLayer();
   parser.readDesign(db_);
   auto tech = getDesign()->getTech();
 
@@ -667,7 +666,7 @@ void TritonRoute::endFR()
     dr_->end(/* done */ true);
   }
   dr_.reset();
-  io::Writer writer(this, logger_);
+  io::Writer writer(getDesign(), logger_);
   writer.updateDb(db_);
   if (debug_->writeNetTracks) {
     writer.updateTrackAssignment(db_->getChip()->getBlock());
@@ -975,7 +974,7 @@ int TritonRoute::main()
     pa_pool.join();
     pa.main();
     if (distributed_ || debug_->debugDR || debug_->debugDumpDR) {
-      io::Writer writer(this, logger_);
+      io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, true);
     }
     if (distributed_) {
@@ -1037,7 +1036,7 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
     dist_pool_.join();
   }
   pa.main();
-  io::Writer writer(this, logger_);
+  io::Writer writer(getDesign(), logger_);
   writer.updateDb(db_, true);
 }
 
@@ -1049,7 +1048,7 @@ void TritonRoute::fixMaxSpacing()
   dr_ = std::make_unique<FlexDR>(this, getDesign(), logger_, db_);
   dr_->init();
   dr_->fixMaxSpacing();
-  io::Writer writer(this, logger_);
+  io::Writer writer(getDesign(), logger_);
   writer.updateDb(db_);
 }
 
@@ -1145,151 +1144,6 @@ void TritonRoute::checkDRC(const char* filename,
   frList<std::unique_ptr<frMarker>> markers;
   getDRCMarkers(markers, requiredDrcBox);
   reportDRC(filename, markers, marker_name, requiredDrcBox);
-}
-
-void TritonRoute::processBTermsAboveTopLayer(bool has_routing)
-{
-  odb::dbTech* tech = db_->getTech();
-  odb::dbBlock* block = db_->getChip()->getBlock();
-
-  odb::dbTechLayer* top_tech_layer
-      = tech->findLayer(TOP_ROUTING_LAYER_NAME.c_str());
-  if (top_tech_layer != nullptr) {
-    int top_layer_idx = top_tech_layer->getRoutingLevel();
-    for (auto bterm : block->getBTerms()) {
-      if (bterm->getNet()->isSpecial()) {
-        continue;
-      }
-      int bterm_bottom_layer_idx = std::numeric_limits<int>::max();
-      for (auto bpin : bterm->getBPins()) {
-        for (auto box : bpin->getBoxes()) {
-          bterm_bottom_layer_idx = std::min(
-              bterm_bottom_layer_idx, box->getTechLayer()->getRoutingLevel());
-        }
-      }
-
-      if (bterm_bottom_layer_idx > top_layer_idx) {
-        stackVias(bterm, top_layer_idx, bterm_bottom_layer_idx, has_routing);
-      }
-    }
-  }
-}
-
-void TritonRoute::stackVias(odb::dbBTerm* bterm,
-                            int top_layer_idx,
-                            int bterm_bottom_layer_idx,
-                            bool has_routing)
-{
-  odb::dbNet* net = bterm->getNet();
-  if (netHasStackedVias(net)) {
-    return;
-  }
-
-  odb::dbTech* tech = db_->getTech();
-  auto fr_tech = getDesign()->getTech();
-  std::map<int, odb::dbTechVia*> default_vias;
-
-  for (auto layer : tech->getLayers()) {
-    if (layer->getType() == odb::dbTechLayerType::CUT) {
-      frLayer* fr_layer = fr_tech->getLayer(layer->getName());
-      frViaDef* via_def = fr_layer->getDefaultViaDef();
-      if (via_def == nullptr) {
-        logger_->warn(utl::DRT,
-                      204,
-                      "Cut layer {} has no default via defined.",
-                      layer->getName());
-        continue;
-      }
-      odb::dbTechVia* tech_via = tech->findVia(via_def->getName().c_str());
-      int via_bottom_layer_idx = tech_via->getBottomLayer()->getRoutingLevel();
-      default_vias[via_bottom_layer_idx] = tech_via;
-    }
-  }
-
-  // get bterm rect
-  odb::Rect pin_rect;
-  for (odb::dbBPin* bpin : bterm->getBPins()) {
-    pin_rect = bpin->getBBox();
-    break;
-  }
-
-  // set the via position as the first AP in the same layer of the bterm
-  odb::Point via_position = odb::Point(pin_rect.xCenter(), pin_rect.yCenter());
-
-  // insert the vias from the top routing layer to the bterm bottom layer
-  odb::dbWire* wire = net->getWire();
-  int bterms_above_max_layer = countNetBTermsAboveMaxLayer(net);
-
-  odb::dbWireEncoder wire_encoder;
-  if (wire == nullptr) {
-    wire = odb::dbWire::create(net);
-    wire_encoder.begin(wire);
-  } else if (bterms_above_max_layer > 1 || has_routing) {
-    // append wire when the net has other pins above the max routing layer
-    wire_encoder.append(wire);
-  } else {
-    logger_->error(utl::DRT, 415, "Net {} already has routes.", net->getName());
-  }
-
-  odb::dbTechLayer* top_tech_layer = tech->findRoutingLayer(top_layer_idx);
-  wire_encoder.newPath(top_tech_layer, odb::dbWireType::ROUTED);
-  wire_encoder.addPoint(via_position.getX(), via_position.getY());
-  for (int layer_idx = top_layer_idx; layer_idx < bterm_bottom_layer_idx;
-       layer_idx++) {
-    wire_encoder.addTechVia(default_vias[layer_idx]);
-  }
-  wire_encoder.end();
-}
-
-int TritonRoute::countNetBTermsAboveMaxLayer(odb::dbNet* net)
-{
-  odb::dbTech* tech = db_->getTech();
-  odb::dbTechLayer* top_tech_layer
-      = tech->findLayer(TOP_ROUTING_LAYER_NAME.c_str());
-  int bterm_count = 0;
-  for (auto bterm : net->getBTerms()) {
-    int bterm_bottom_layer_idx = std::numeric_limits<int>::max();
-    for (auto bpin : bterm->getBPins()) {
-      for (auto box : bpin->getBoxes()) {
-        bterm_bottom_layer_idx = std::min(
-            bterm_bottom_layer_idx, box->getTechLayer()->getRoutingLevel());
-      }
-    }
-    if (bterm_bottom_layer_idx > top_tech_layer->getRoutingLevel()) {
-      bterm_count++;
-    }
-  }
-
-  return bterm_count;
-}
-
-bool TritonRoute::netHasStackedVias(odb::dbNet* net)
-{
-  int bterms_above_max_layer = countNetBTermsAboveMaxLayer(net);
-  uint wire_cnt = 0, via_cnt = 0;
-  net->getWireCount(wire_cnt, via_cnt);
-
-  if (wire_cnt != 0 || via_cnt == 0) {
-    return false;
-  }
-
-  odb::dbWirePath path;
-  odb::dbWirePathShape pshape;
-  odb::dbWire* wire = net->getWire();
-
-  odb::dbWirePathItr pitr;
-  std::set<odb::Point> via_points;
-  for (pitr.begin(wire); pitr.getNextPath(path);) {
-    while (pitr.getNextShape(pshape)) {
-      via_points.insert(path.point);
-    }
-  }
-
-  if (via_points.size() != bterms_above_max_layer) {
-    return false;
-  }
-
-  return true;
 }
 
 void TritonRoute::addUserSelectedVia(const std::string& viaName)
