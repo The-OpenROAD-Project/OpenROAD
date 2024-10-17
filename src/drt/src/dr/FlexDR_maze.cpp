@@ -2778,6 +2778,7 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net)
     }
     if (inst) {
       dbTransform trans = inst->getTransform();
+      // logger_->report("[BNMFW] getTransform FlexDRWorker::addApPathSegs");
       trans.setOrient(dbOrientType(dbOrientType::R0));
       trans.apply(begin);
       trans.apply(end);

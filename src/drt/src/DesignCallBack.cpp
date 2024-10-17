@@ -56,6 +56,10 @@ void DesignCallBack::inDbPostMoveInst(odb::dbInst* db_inst)
     x = defdist(block, x);
     y = defdist(block, y);
     inst->setOrigin({x, y});
+    if (true || inst->getName() == "_13636_") {
+      std::cout << "[BNMFW] DesignCallBack " << inst->getName() << " x=" << x
+                << " y=" << y << std::endl;
+    }
     inst->setOrient(db_inst->getOrient());
     if (design->getRegionQuery() != nullptr) {
       design->getRegionQuery()->addBlockObj(inst);

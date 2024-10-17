@@ -28,8 +28,11 @@
 
 #include "db/obj/frInstTerm.h"
 
-#include "db/obj/frInst.h"
+#include <stdio.h>
 
+#include <iostream>
+
+#include "db/obj/frInst.h"
 namespace drt {
 
 frString frInstTerm::getName() const
@@ -41,6 +44,8 @@ frAccessPoint* frInstTerm::getAccessPoint(frCoord x, frCoord y, frLayerNum lNum)
 {
   auto inst = getInst();
   dbTransform shiftXform = inst->getTransform();
+  // std::cout << "[BNMFW] getTransform frInstTerm::getAccessPoint" <<
+  // std::endl; Point offset(inst->getOrigin());
   Point offset(shiftXform.getOffset());
   x = x - offset.getX();
   y = y - offset.getY();
@@ -58,9 +63,26 @@ void frInstTerm::getShapes(std::vector<frRect>& outShapes,
   term_->getShapes(outShapes);
   for (auto& shape : outShapes) {
     dbTransform trans;
+    dbTransform trans2;
     if (updatedTransform) {
-      trans = getInst()->getUpdatedXform();
+      // trans = getInst()->getUpdatedXform();
+      trans = getInst()->getDBTransform();
+      // if (trans.getOffset().getX() != trans2.getOffset().getX()
+      //     || trans.getOffset().getY() != trans2.getOffset().getY()
+      //     || trans.getOrient() != trans2.getOrient()) {
+      //   printf("[BNMFW] getShapes name=%s x={%d,%d} y={%d,%d}, or={%s,%s}",
+      //          getInst()->getName().c_str(),
+      //          trans.getOffset().getX(),
+      //          trans2.getOffset().getX(),
+      //          trans.getOffset().getY(),
+      //          trans2.getOffset().getY(),
+      //          trans.getOrient().getString(),
+      //          trans2.getOrient().getString());
+      //   int* ptr = nullptr;
+      //   *ptr = 0;
+      // }
     } else {
+      // std::cout << "[BNMFW] getTransform frInstTerm::getShapes" << std::endl;
       trans = getInst()->getTransform();
     }
     shape.move(trans);
@@ -71,9 +93,26 @@ Rect frInstTerm::getBBox(const bool updatedTransform) const
 {
   Rect bbox(term_->getBBox());
   dbTransform trans;
+  dbTransform trans2;
   if (updatedTransform) {
-    trans = getInst()->getUpdatedXform();
+    // trans = getInst()->getUpdatedXform();
+    trans = getInst()->getDBTransform();
+    // if (trans.getOffset().getX() != trans2.getOffset().getX()
+    //     || trans.getOffset().getY() != trans2.getOffset().getY()
+    //     || trans.getOrient() != trans2.getOrient()) {
+    //   printf("[BNMFW] getBBox name=%s x={%d,%d} y={%d,%d}, or={%s,%s}",
+    //          getInst()->getName().c_str(),
+    //          trans.getOffset().getX(),
+    //          trans2.getOffset().getX(),
+    //          trans.getOffset().getY(),
+    //          trans2.getOffset().getY(),
+    //          trans.getOrient().getString(),
+    //          trans2.getOrient().getString());
+    //   int* ptr = nullptr;
+    //   *ptr = 0;
+    // }
   } else {
+    // std::cout <<s "[BNMFW] getTransform frInstTerm::getBBox" << std::endl;
     trans = getInst()->getTransform();
   }
   trans.apply(bbox);

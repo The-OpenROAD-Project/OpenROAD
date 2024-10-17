@@ -875,6 +875,21 @@ void io::Parser::checkPins()
       continue;
     }
     dbTransform xform = inst->getUpdatedXform();
+    dbTransform xform2 = inst->getDBTransform();
+    if (xform.getOffset().getX() != xform2.getOffset().getX()
+        || xform.getOffset().getY() != xform2.getOffset().getY()
+        || xform.getOrient() != xform2.getOrient()) {
+      logger_->report("[BNMFW] Parser::checkPins: x={} y={} orient={}",
+                      xform.getOffset().getX(),
+                      xform.getOffset().getY(),
+                      xform.getOrient());
+      logger_->report("[BNMFW] Parser::checkPins: x={} y={} orient={}",
+                      xform2.getOffset().getX(),
+                      xform2.getOffset().getY(),
+                      xform2.getOrient());
+      int* ptr = nullptr;
+      *ptr = 0;
+    }
     for (auto& iTerm : inst->getInstTerms()) {
       if (!iTerm->hasNet() || iTerm->getNet()->isSpecial()) {
         continue;

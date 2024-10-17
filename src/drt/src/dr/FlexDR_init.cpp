@@ -1184,8 +1184,25 @@ void FlexDRWorker::initNet_term(const frDesign* design,
         auto instTerm = static_cast<frInstTerm*>(term);
         frInst* inst = instTerm->getInst();
         shiftXform = inst->getTransform();
+        // logger_->report("[BNMFW] geTransform FlexDRWorker::initNet_term");
         shiftXform.setOrient(dbOrientType(dbOrientType::R0));
-        instXform = inst->getUpdatedXform();
+        instXform = inst->getDBTransform();  // Ve que ta com 2 DBTransform aqui
+        // const dbTransform xform2 = inst->getDBTransform();
+        // if (instXform.getOffset().getX() != xform2.getOffset().getX()
+        //     || instXform.getOffset().getY() != xform2.getOffset().getY()
+        //     || instXform.getOrient() != xform2.getOrient()) {
+        //   printf("[BNMFW] initNet_term name=%s x={%d,%d} y={%d,%d},
+        //   or={%s,%s}",
+        //          inst->getName().c_str(),
+        //          instXform.getOffset().getX(),
+        //          xform2.getOffset().getX(),
+        //          instXform.getOffset().getY(),
+        //          xform2.getOffset().getY(),
+        //          instXform.getOrient().getString(),
+        //          xform2.getOrient().getString());
+        //   int* ptr = nullptr;
+        //   *ptr = 0;
+        // }
         auto trueTerm = instTerm->getTerm();
         const std::string name = inst->getName() + "/" + trueTerm->getName();
         initNet_term_helper(
@@ -2897,8 +2914,23 @@ void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
     } else if (obj->typeId() == frcInstTerm) {
       auto instTerm = static_cast<frInstTerm*>(obj);
       auto inst = instTerm->getInst();
-      const dbTransform xform = inst->getUpdatedXform();
+      // const dbTransform xform = inst->getUpdatedXform();
+      const dbTransform xform = inst->getDBTransform();
+      // if (xform.getOffset().getX() != xform2.getOffset().getX()
+      //     || xform.getOffset().getY() != xform2.getOffset().getY()
+      //     || xform.getOrient() != xform2.getOrient()) {
+      //   printf("[BNMFW] initMazeCost_terms x={%d,%d} y={%d,%d}, or={%s,%s}",
+      //          xform.getOffset().getX(),
+      //          xform2.getOffset().getX(),
+      //          xform.getOffset().getY(),
+      //          xform2.getOffset().getY(),
+      //          xform.getOrient().getString(),
+      //          xform2.getOrient().getString());
+      //   int* ptr = nullptr;
+      //   *ptr = 0;
+      // }
       const dbTransform shiftXform(inst->getTransform().getOffset());
+      // logger_->report("[BNMFW] FlexDRWorker::initMazeCost_terms");
       const dbMasterType masterType = inst->getMaster()->getMasterType();
       bool accessHorz = false;
       bool accessVert = false;
@@ -3145,6 +3177,7 @@ void FlexDRWorker::initMazeCost_minCut_helper(drNet* net, bool isAddPathCost)
     if (connFig->typeId() == drcVia) {
       auto via = static_cast<drVia*>(connFig.get());
       const dbTransform xform = via->getTransform();
+      // logger_->report("[BNMFW] FlexDRWorker::initMazeCost_minCut_helper");
 
       const auto l1Num = via->getViaDef()->getLayer1Num();
       const auto l1Fig = (via->getViaDef()->getLayer1Figs()[0].get());

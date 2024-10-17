@@ -74,7 +74,32 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
 
   dbTransform xform;
   if (inst) {
-    xform = inst->getUpdatedXform();
+    // logger_->report("\n[BNMFW] instance xform comparison:");
+    xform = inst->getDBTransform();
+    // dbTransform xform2 = inst->getDBTransform();
+    // if (xform.getOffset().getX() != xform2.getOffset().getX()
+    //     || xform.getOffset().getY() != xform2.getOffset().getY()
+    //     || xform.getOrient() != xform2.getOrient()) {
+    //   logger_->report("[BNMFW] mergePinShapes: x={} y={} orient={}",
+    //                   xform.getOffset().getX(),
+    //                   xform.getOffset().getY(),
+    //                   xform.getOrient());
+    //   logger_->report("[BNMFW] mergePinShapes: x={} y={} orient={}",
+    //                   xform2.getOffset().getX(),
+    //                   xform2.getOffset().getY(),
+    //                   xform2.getOrient());
+    //   int* ptr = nullptr;
+    //   *ptr = 0;
+    // }
+    // Point p1 = inst->getTransform().getOffset();
+    // Point p2 = xform.getOffset();
+    // logger_->report("[BNMFW] orientation: {} {}",
+    // inst->getTransform().getOrient(), xform.getOrient());
+    // logger_->report("[BNMFW] p1: {} {} \t p2: {} {}", p1.getX(), p1.getY(),
+    // p2.getX(), p2.getY()); logger_->report("[BNMFW] adjust: {} {}",
+    // p2.getX()-p1.getX(), p2.getY()-p1.getY()); Rect mb =
+    // inst->getMaster()->getDieBox(); logger_->report("[BNMFW] inst: xmin={}
+    // xmax={} ymin={} ymax={}", mb.xMin(), mb.xMax(), mb.yMin(), mb.yMax());
   }
 
   frTechObject* tech = getDesign()->getTech();

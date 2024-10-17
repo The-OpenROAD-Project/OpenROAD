@@ -28,6 +28,8 @@
 
 #include "db/obj/frInst.h"
 
+#include <iostream>
+
 #include "frBlock.h"
 #include "frMaster.h"
 namespace drt {
@@ -36,6 +38,7 @@ Rect frInst::getBBox() const
 {
   Rect box = getMaster()->getBBox();
   dbTransform xform = getTransform();
+  // std::cout << &xform << std::endl;
   Point s(box.xMax(), box.yMax());
   updateXform(xform, s);
   xform.apply(box);
@@ -46,6 +49,7 @@ Rect frInst::getBoundaryBBox() const
 {
   Rect box = getMaster()->getDieBox();
   dbTransform xform = getTransform();
+  // std::cout << &xform << std::endl;
   Point s(box.xMax(), box.yMax());
   updateXform(xform, s);
   xform.apply(box);
@@ -55,10 +59,15 @@ Rect frInst::getBoundaryBBox() const
 dbTransform frInst::getUpdatedXform(bool noOrient) const
 {
   dbTransform xfm = getTransform();
+  // std::cout << &xfm << std::endl;
   Rect mbox = getMaster()->getDieBox();
   Point origin(mbox.xMin(), mbox.yMin());
   dbTransform(xfm.getOrient(), Point(0, 0)).apply(origin);
   Point offset(xfm.getOffset());
+  if (origin.getX() != 0 || origin.getY() != 0) {
+    std::cout << "[BNMFW] getUpdatedXform non zero origin x=" << origin.getX()
+              << " y=" << origin.getY() << std::endl;
+  }
   offset.addX(origin.getX());
   offset.addY(origin.getY());
   xfm.setOffset(offset);
@@ -103,6 +112,7 @@ void frInst::updateXform(dbTransform& xform, Point& size)
     default:
       break;
   }
+  // std::cout << "dbTrasformed altered" << std::endl;
   xform.setOffset(p);
 }
 
