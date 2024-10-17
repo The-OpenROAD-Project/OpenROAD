@@ -20,8 +20,7 @@ clock_tree_synthesis -root_buf CLKBUF_X3 \
   -sink_clustering_size 5 \
   -sink_clustering_max_diameter 60 \
   -balance_levels \
-  -num_static_layers 1 \
-  -obstruction_aware    
+  -num_static_layers 1  
 
 set def_file [make_result_file balance_levels.def]
 write_def $def_file
