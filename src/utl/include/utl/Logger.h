@@ -77,6 +77,7 @@ namespace utl {
   X(PDN)                \
   X(PPL)                \
   X(PSM)                \
+  X(RAM)                \
   X(RCX)                \
   X(RMP)                \
   X(RSZ)                \
