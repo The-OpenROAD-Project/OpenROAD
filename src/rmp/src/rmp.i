@@ -98,4 +98,13 @@ int blif_read(Blif* blif_, const char* file_name){
   return blif_->readBlif(file_name, getOpenRoad()->getDb()->getChip()->getBlock());
 }
 
+void
+remap_cmd(char *library,
+          char *script,
+          bool unconstrained,
+          bool verbose)
+{
+  getRestructure()->cutresynthrun(library, script, nullptr, unconstrained, verbose);
+}
+
 %}
