@@ -1672,8 +1672,9 @@ bool extMain::setCorners(const char* rulesFileName)
           RCX, 468, "Can't open extraction model file {}", rulesFileName);
     }
     fclose(rules_file);
+    bool v2_rules_file = m->isRulesFile_v2((char*) rulesFileName, false);
 
-    if (_v2)
+    if (_v2 || v2_rules_file)
     {
       if (!(m->readRules((char*) rulesFileName,
                          false,
@@ -1701,7 +1702,6 @@ bool extMain::setCorners(const char* rulesFileName)
         return false;
       }
     }
-
     int modelCnt = getRCmodel(0)->getModelCnt();
 
     // If RCX reads wrong extRules file format

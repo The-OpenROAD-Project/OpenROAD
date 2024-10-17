@@ -519,6 +519,26 @@ void extMain::markPathHeadTerm(dbWirePath& path) {
     path.iterm->setMark(1);
   }
 }
+bool extRCModel::isRulesFile_v2(char* name, bool bin) 
+{
+    bool res_over= false;
+    bool Over= false;
+    bool Under= false;
+    bool OverUnder= false;
+    bool diag_under= false;
+    bool over0= false;
+    bool over1= false;
+    bool under0= false;
+    bool under1= false;
+    bool overunder0= false;
+    bool overunder1= false;
+
+    bool via_res= false;
+
+    spotModelsInRules(name, bin, res_over, Over, Under, OverUnder, diag_under, over0, over1, under0, under1, overunder0, overunder1, via_res);
+    bool ret= over0 || over1 || under0 || under1 || overunder0 || overunder1 || via_res;
+    return ret;
+}
 bool extRCModel::spotModelsInRules(char *name, bool bin, bool &res_over, bool &over, bool &under, bool &overUnder, bool &diag_under, bool &over0, bool &over1, bool &under0, bool &under1, bool &overunder0, bool &overunder1, bool &via_res)
 {
 	_ruleFileName = strdup(name);
