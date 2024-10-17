@@ -226,6 +226,13 @@ void GlobalRouter::saveCongestion()
 
 bool GlobalRouter::haveRoutes()
 {
+  if (block_ == nullptr) {
+    logger_->error(GRT,
+                   170,
+                   "dbBlock is not initialized. Load a design before running "
+                   "the grt::have_routes command.");
+  }
+
   loadGuidesFromDB();
   if (routes_.empty()) {
     logger_->warn(GRT, 97, "No global routing found for nets.");
