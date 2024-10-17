@@ -1308,48 +1308,6 @@ void GuideProcessor::initPinGCellMap(
   }
 }
 
-void GuideProcessor::genGuides_addCoverGuide(frNet* net,
-                                             std::vector<frRect>& rects)
-{
-  for (auto& instTerm : net->getInstTerms()) {
-    genGuides_addCoverGuide_helper(instTerm, rects);
-  }
-}
-
-void GuideProcessor::genGuides_addCoverGuide_helper(frInstTerm* iterm,
-                                                    std::vector<frRect>& rects)
-{
-  const frInst* inst = iterm->getInst();
-  const size_t num_pins = iterm->getTerm()->getPins().size();
-  dbTransform transform = inst->getTransform();
-  transform.setOrient(dbOrientType(dbOrientType::R0));
-  for (int pin_idx = 0; pin_idx < num_pins; pin_idx++) {
-    const frAccessPoint* pref_ap = getPrefAp(iterm, pin_idx);
-    if (pref_ap) {
-      Point pt = pref_ap->getPoint();
-      transform.apply(pt);
-      const Point idx = getDesign()->getTopBlock()->getGCellIdx(pt);
-      const Rect ll_box = getDesign()->getTopBlock()->getGCellBox(
-          Point(idx.x() - 1, idx.y() - 1));
-      const Rect ur_box = getDesign()->getTopBlock()->getGCellBox(
-          Point(idx.x() + 1, idx.y() + 1));
-      const Rect cover_box(
-          ll_box.xMin(), ll_box.yMin(), ur_box.xMax(), ur_box.yMax());
-      const frLayerNum begin_layer_num = pref_ap->getLayerNum();
-      const frLayerNum end_layer_num
-          = std::min(begin_layer_num + 4, getTech()->getTopLayerNum());
-
-      for (auto layer_num = begin_layer_num; layer_num <= end_layer_num;
-           layer_num += 2) {
-        frRect cover_guide;
-        cover_guide.setBBox(cover_box);
-        cover_guide.setLayerNum(layer_num);
-        rects.push_back(cover_guide);
-      }
-    }
-  }
-}
-
 void GuideProcessor::genGuides(frNet* net, std::vector<frRect>& rects)
 {
   net->clearGuides();
@@ -1362,9 +1320,6 @@ void GuideProcessor::genGuides(frNet* net, std::vector<frRect>& rects)
     size = std::min(size, TOP_ROUTING_LAYER + 1);
   }
   TrackIntervalsByLayer intvs(size);
-  if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
-    genGuides_addCoverGuide(net, rects);
-  }
   genGuides_prep(rects, intvs);
 
   std::map<Point3D, frBlockObjectSet> gcell_pin_map;
