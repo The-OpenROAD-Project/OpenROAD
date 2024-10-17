@@ -409,6 +409,14 @@ class GuidePathFinder
    * @brief Does a bfs search from the given node idx.
    */
   void bfs(int node_idx);
+  /**
+   * @brief Clips guide endpoints that are going nowhere
+   */
+  void clipGuides(std::vector<frRect>& rects);
+  /**
+   * @brief Merges guides on same layer and same track
+   */
+  void mergeGuides(std::vector<frRect>& rects);
   frDesign* getDesign() const { return design_; }
   frTechObject* getTech() const { return design_->getTech(); }
 
