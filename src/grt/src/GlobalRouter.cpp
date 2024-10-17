@@ -226,13 +226,6 @@ void GlobalRouter::saveCongestion()
 
 bool GlobalRouter::haveRoutes()
 {
-  if (block_ == nullptr) {
-    logger_->error(GRT,
-                   170,
-                   "dbBlock is not initialized. Load a design before running "
-                   "the grt::have_routes command.");
-  }
-
   loadGuidesFromDB();
   if (routes_.empty()) {
     logger_->warn(GRT, 97, "No global routing found for nets.");
@@ -1914,6 +1907,10 @@ void GlobalRouter::perturbCapacities()
 
 void GlobalRouter::initGridAndNets()
 {
+  if (db_->getChip() == nullptr) {
+    logger_->error(
+        GRT, 170, "Load a design before running the global router commands.");
+  }
   block_ = db_->getChip()->getBlock();
   routes_.clear();
   if (getMaxRoutingLayer() == -1) {
@@ -4575,10 +4572,7 @@ void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire,
 void GlobalRouter::createWLReportFile(const char* file_name, bool verbose)
 {
   std::ofstream out(file_name);
-  out << "tool "
-      << "net "
-      << "total_wl "
-      << "#pins ";
+  out << "tool " << "net " << "total_wl " << "#pins ";
 
   if (verbose) {
     out << "#vias ";
