@@ -477,6 +477,7 @@ class extRCModel
 //------------------------------------------------------------------------ v2 ----------------
 extDistRC* getUnderRC(int met, int overMet, int width, int dist);
 extDistRC* getOverUnderRC(uint met, uint underMet, int overMet, int width, int dist);
+bool isRulesFile_v2(char* name, bool bin);
 
 
 // dkf 09222023
