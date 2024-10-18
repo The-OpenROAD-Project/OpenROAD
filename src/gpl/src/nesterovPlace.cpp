@@ -285,12 +285,6 @@ void NesterovPlace::init()
   }
 
   auto gcell = nbc_->gCells().at(0);
-  // log_->report("-> after inits, first normal cell:");
-  // nbVec_[0]->printGCellState(0);    
-  // for(auto& pin : gcell->gPins()) {
-  //   pin->print(log_);
-  // }
-  // log_->report("\n");
 }
 
 // clear reset

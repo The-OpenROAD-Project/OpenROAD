@@ -1470,26 +1470,27 @@ for (auto it = gPinStor_.begin(); it < gPinStor_.end(); ++it) {
           auto inst_it = db_inst_map_.find(iterm->getInst());
           auto net_it = db_net_map_.find(iterm->getNet());
 
-          if (inst_it == db_inst_map_.end()) {
-              log_->report("Instance not found in db_inst_map_ for ITerm: {} -> {}", iterm->getInst()->getName(), iterm->getName());
-          }          
-          if (net_it == db_net_map_.end()) {
-              log_->report("Net not found in db_net_map_ for ITerm: {} -> {}", iterm->getNet()->getName(), iterm->getName());
+          if (inst_it != db_inst_map_.end()) {
+              gPin.setGCell(&gCellStor_[inst_it->second]);
+          }
+          else {
+            log_->report("Instance not found in db_inst_map_ for ITerm: {} -> {}", iterm->getInst()->getName(), iterm->getName());
           }
 
-          if (inst_it == db_inst_map_.end() || net_it == db_net_map_.end()) {
-            continue;
+          if (net_it != db_net_map_.end()) {
+            gPin.setGNet(&gNetStor_[net_it->second]); 
           }
-          gPin.setGCell(&gCellStor_[inst_it->second]);
-          gPin.setGNet(&gNetStor_[net_it->second]);
+          else {
+            log_->report("Net not found in db_net_map_ for ITerm: {} -> {}", iterm->getNet()->getName(), iterm->getName());
+          }                    
       }
       else {
           log_->report("Warning: invalid type itermType: {}", iterm->getSigType().getString());
       }
   }
-  else {
-      log_->report("Warning: iterm is nullptr");
-  }
+  // else {
+  //     log_->report("Warning: iterm is nullptr");
+  // }
 }
 
 log_->report("Done refreshing NBC::gpins in gPinStor_!");
@@ -2036,11 +2037,13 @@ void NesterovBase::updateAreas()
   int64_t coreArea = pb_->die().coreArea();
   whiteSpaceArea_ = coreArea - static_cast<int64_t>(pb_->nonPlaceInstsArea());
 
+  log_->report("previous movableArea_: {}", movableArea_);
   movableArea_ = whiteSpaceArea_ * targetDensity_;
   totalFillerArea_ = movableArea_ - nesterovInstsArea();
   uniformTargetDensity_ = static_cast<float>(nesterovInstsArea())
                           / static_cast<float>(whiteSpaceArea_);
 
+  log_->report("new    movableArea_: {}", movableArea_);
   if (totalFillerArea_ < 0) {
     log_->error(GPL,
                 303,

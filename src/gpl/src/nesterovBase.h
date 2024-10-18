@@ -521,11 +521,18 @@ class GPin
   }
 
   void print(utl::Logger* log) const {
-    log->report("--> print pin: {}", pin()->dbITerm()->getName());
-    if(gCell_->isInstance())
-      log->report("GCell*: {}", gCell_->instance()->dbInst()->getName());
-    else 
-      log->report("GCell of gpin is filler!");
+    if(pin()->dbITerm() != nullptr)
+      log->report("--> print pin: {}", pin()->dbITerm()->getName());
+    else
+      log->report("pin()->dbIterm() is nullptr!");
+    if(gCell_){
+      if(gCell_->isInstance())
+        log->report("GCell*: {}", gCell_->instance()->dbInst()->getName());
+      else 
+        log->report("GCell of gpin is filler!");
+    }
+    else
+      log->report("gcell of gpin is null");
     log->report("GNet: {}", gNet_->net()->dbNet()->getName());
     log->report("pins_.size(): {}", pins_.size());
     log->report("offsetCx_: {}", offsetCx_);
