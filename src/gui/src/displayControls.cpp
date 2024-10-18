@@ -1914,16 +1914,16 @@ void DisplayControls::techInit(odb::dbTech* tech)
                            QColor(254, 0, 0),
                            QColor(9, 221, 0),
                            QColor(190, 244, 81),
-                           QColor(255, 69, 100),
+                           QColor(255, 165, 0),  // Metal 5
                            QColor(32, 216, 253),
                            QColor(253, 108, 160),
-                           QColor(150, 100, 255),
-                           QColor(200, 255, 100),
+                           QColor(117, 63, 194),
+                           QColor(128, 155, 49),
                            QColor(234, 63, 252),
-                           QColor(50, 255, 80),
+                           QColor(9, 96, 19),
                            QColor(214, 120, 239),
                            QColor(192, 222, 164),
-                           QColor(220, 150, 230)};
+                           QColor(110, 68, 107)};
   const int num_colors = sizeof(colors) / sizeof(QColor);
   int metal = 0;
   int via = 0;
