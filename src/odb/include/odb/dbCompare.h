@@ -648,6 +648,25 @@ struct less<odb::dbLogicPort*>
 };
 
 template <>
+struct less<odb::dbMarker*>
+{
+  bool operator()(const odb::dbMarker* lhs, const odb::dbMarker* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbMarkerCategory*>
+{
+  bool operator()(const odb::dbMarkerCategory* lhs,
+                  const odb::dbMarkerCategory* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
 struct less<odb::dbMetalWidthViaMap*>
 {
   bool operator()(const odb::dbMetalWidthViaMap* lhs,

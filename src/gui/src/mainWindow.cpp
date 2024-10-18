@@ -81,7 +81,7 @@ static void loadQTResources()
 
 namespace gui {
 
-MainWindow::MainWindow(QWidget* parent)
+MainWindow::MainWindow(bool load_settings, QWidget* parent)
     : QMainWindow(parent),
       db_(nullptr),
       logger_(nullptr),
@@ -385,31 +385,34 @@ MainWindow::MainWindow(QWidget* parent)
   createMenus();
   createStatusBar();
 
-  // Restore the settings (if none this is a no-op)
-  QSettings settings("OpenRoad Project", "openroad");
-  settings.beginGroup("main");
-  restoreGeometry(settings.value("geometry").toByteArray());
-  restoreState(settings.value("state").toByteArray());
-  QApplication::setFont(
-      settings.value("font", QApplication::font()).value<QFont>());
-  hide_option_->setChecked(
-      settings.value("check_exit", hide_option_->isChecked()).toBool());
-  show_dbu_->setChecked(
-      settings.value("use_dbu", show_dbu_->isChecked()).toBool());
-  default_ruler_style_->setChecked(
-      settings.value("ruler_style", default_ruler_style_->isChecked())
-          .toBool());
-  default_mouse_wheel_zoom_->setChecked(
-      settings.value("mouse_wheel_zoom", default_mouse_wheel_zoom_->isChecked())
-          .toBool());
-  arrow_keys_scroll_step_
-      = settings.value("arrow_keys_scroll_step", arrow_keys_scroll_step_)
-            .toInt();
-  script_->readSettings(&settings);
-  controls_->readSettings(&settings);
-  timing_widget_->readSettings(&settings);
-  hierarchy_widget_->readSettings(&settings);
-  settings.endGroup();
+  if (load_settings) {
+    // Restore the settings (if none this is a no-op)
+    QSettings settings("OpenRoad Project", "openroad");
+    settings.beginGroup("main");
+    restoreGeometry(settings.value("geometry").toByteArray());
+    restoreState(settings.value("state").toByteArray());
+    QApplication::setFont(
+        settings.value("font", QApplication::font()).value<QFont>());
+    hide_option_->setChecked(
+        settings.value("check_exit", hide_option_->isChecked()).toBool());
+    show_dbu_->setChecked(
+        settings.value("use_dbu", show_dbu_->isChecked()).toBool());
+    default_ruler_style_->setChecked(
+        settings.value("ruler_style", default_ruler_style_->isChecked())
+            .toBool());
+    default_mouse_wheel_zoom_->setChecked(
+        settings
+            .value("mouse_wheel_zoom", default_mouse_wheel_zoom_->isChecked())
+            .toBool());
+    arrow_keys_scroll_step_
+        = settings.value("arrow_keys_scroll_step", arrow_keys_scroll_step_)
+              .toInt();
+    script_->readSettings(&settings);
+    controls_->readSettings(&settings);
+    timing_widget_->readSettings(&settings);
+    hierarchy_widget_->readSettings(&settings);
+    settings.endGroup();
+  }
 
   // load resources and set window icon and title
   loadQTResources();
@@ -523,6 +526,9 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbTech*>(new DbTechDescriptor(db_));
   gui->registerDescriptor<odb::dbMetalWidthViaMap*>(
       new DbMetalWidthViaMapDescriptor(db_));
+  gui->registerDescriptor<odb::dbMarkerCategory*>(
+      new DbMarkerCategoryDescriptor(db_));
+  gui->registerDescriptor<odb::dbMarker*>(new DbMarkerDescriptor(db_));
 
   gui->registerDescriptor<sta::Corner*>(new CornerDescriptor(db_, sta));
   gui->registerDescriptor<sta::LibertyLibrary*>(
