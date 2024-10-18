@@ -145,6 +145,8 @@ class dbGuide;
 class dbIsolation;
 class dbLevelShifter;
 class dbLogicPort;
+class dbMarker;
+class dbMarkerCategory;
 class dbMetalWidthViaMap;
 class dbModBTerm;
 class dbModInst;
@@ -1623,6 +1625,22 @@ class dbBlock : public dbObject
   ///  Get the non-default-rules specific to this block.
   ///
   dbSet<dbTechNonDefaultRule> getNonDefaultRules();
+
+  ///
+  ///  Get marker categories for this block.
+  ///
+  dbSet<dbMarkerCategory> getMarkerCategories();
+
+  ///
+  ///  Find marker group for this block.
+  ///
+  dbMarkerCategory* findMarkerCategory(const char* name);
+
+  //
+  //  Write marker information to file
+  //
+  void writeMarkerCategories(const std::string& file);
+  void writeMarkerCategories(std::ofstream& reports);
 
   ///
   ///  Levelelize from set of insts
@@ -7876,6 +7894,119 @@ class dbLogicPort : public dbObject
                              const std::string& direction);
   static void destroy(dbLogicPort* lp);
   // User Code End dbLogicPort
+};
+
+class dbMarker : public dbObject
+{
+ public:
+  void setComment(const std::string& comment);
+
+  std::string getComment() const;
+
+  void setLineNumber(int line_number);
+
+  int getLineNumber() const;
+
+  void setVisited(bool visited);
+
+  bool isVisited() const;
+
+  void setVisible(bool visible);
+
+  bool isVisible() const;
+
+  void setWaived(bool waived);
+
+  bool isWaived() const;
+
+  // User Code Begin dbMarker
+
+  std::string getName() const;
+
+  using MarkerShape = std::variant<Point, Line, Rect, Polygon>;
+
+  dbMarkerCategory* getCategory() const;
+  std::vector<MarkerShape> getShapes() const;
+  dbTechLayer* getTechLayer() const;
+  Rect getBBox() const;
+
+  std::set<dbObject*> getSources() const;
+
+  void addShape(const Point& pt);
+  void addShape(const Line& line);
+  void addShape(const Rect& rect);
+  void addShape(const Polygon& polygon);
+
+  void setTechLayer(dbTechLayer* layer);
+
+  void addSource(dbObject* obj);
+  bool addObstructionFromBlock(dbBlock* block);
+
+  static dbMarker* create(dbMarkerCategory* category);
+  static void destroy(dbMarker* marker);
+
+  // User Code End dbMarker
+};
+
+class dbMarkerCategory : public dbObject
+{
+ public:
+  const char* getName() const;
+
+  void setDescription(const std::string& description);
+
+  std::string getDescription() const;
+
+  void setSource(const std::string& source);
+
+  void setMaxMarkers(int max_markers);
+
+  int getMaxMarkers() const;
+
+  dbSet<dbMarker> getMarkers() const;
+
+  dbSet<dbMarkerCategory> getMarkerCategorys() const;
+
+  dbMarkerCategory* findMarkerCategory(const char* name) const;
+
+  // User Code Begin dbMarkerCategory
+
+  dbMarkerCategory* getTopCategory() const;
+  dbObject* getParent() const;
+  std::string getSource() const;
+
+  std::set<dbMarker*> getAllMarkers() const;
+
+  bool rename(const char* name);
+
+  int getMarkerCount() const;
+
+  void writeJSON(const std::string& path) const;
+  void writeJSON(std::ofstream& report) const;
+  void writeTR(const std::string& path) const;
+  void writeTR(std::ofstream& report) const;
+
+  static void fromJSON(dbBlock* block, const std::string& path);
+  static void fromJSON(dbBlock* block,
+                       const char* source,
+                       std::ifstream& report);
+  static void fromTR(dbBlock* block, const char* name, const std::string& path);
+  static void fromTR(dbBlock* block,
+                     const char* name,
+                     const char* source,
+                     std::ifstream& report);
+
+  static dbMarkerCategory* create(dbBlock* block, const char* name);
+  static dbMarkerCategory* createOrReplace(dbBlock* block, const char* name);
+  static dbMarkerCategory* createOrGet(dbBlock* block, const char* name);
+  static dbMarkerCategory* create(dbMarkerCategory* category, const char* name);
+  static dbMarkerCategory* createOrGet(dbMarkerCategory* category,
+                                       const char* name);
+  static dbMarkerCategory* createOrReplace(dbMarkerCategory* category,
+                                           const char* name);
+  static void destroy(dbMarkerCategory* category);
+
+  // User Code End dbMarkerCategory
 };
 
 class dbMetalWidthViaMap : public dbObject

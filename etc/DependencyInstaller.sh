@@ -623,6 +623,7 @@ _installDebianPackages() {
         git \
         groff \
         lcov \
+        libffi-dev \
         libgomp1 \
         libomp-dev \
         libpcre2-dev \
@@ -635,6 +636,7 @@ _installDebianPackages() {
         tcl-dev \
         tcl-tclreadline \
         tcllib \
+        unzip \
         wget \
         zlib1g-dev
 

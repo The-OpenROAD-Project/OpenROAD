@@ -70,7 +70,10 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 95;  // Current revision number
+const uint db_schema_minor = 96;  // Current revision number
+
+// Revision where the dbMarkerGroup/Categories were added to dbBlock
+const uint db_schema_dbmarkergroup = 96;
 
 // Revision where orthogonal spacing table support added
 const uint db_schema_orth_spc_tbl = 95;

@@ -80,7 +80,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   Q_OBJECT
 
  public:
-  MainWindow(QWidget* parent = nullptr);
+  MainWindow(bool load_settings = true, QWidget* parent = nullptr);
   ~MainWindow();
 
   void setDatabase(odb::dbDatabase* db);
