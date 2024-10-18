@@ -116,8 +116,13 @@ void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
 void Opendp::detailedPlacement(const int max_displacement_x,
                                const int max_displacement_y,
                                const std::string& report_file_name,
-                               const bool disallow_one_site_gaps)
+                               const bool disallow_one_site_gaps,
+                               const bool abacusRun)
 {
+  if (abacusRun) {
+    runAbacus();
+    return;
+  }
   importDb();
 
   if (have_fillers_) {

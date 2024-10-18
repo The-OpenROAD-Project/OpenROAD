@@ -89,6 +89,8 @@ class GridInfo;
 class Padding;
 class PixelPt;
 
+class AbacusLegalizer;
+
 template <typename T>
 struct TypedCoordinate;
 
@@ -137,7 +139,8 @@ class Opendp
   void detailedPlacement(int max_displacement_x,
                          int max_displacement_y,
                          const std::string& report_file_name = std::string(""),
-                         bool disallow_one_site_gaps = false);
+                         bool disallow_one_site_gaps = false,
+                         bool abacus_run = false);
   void reportLegalizationStats() const;
 
   void setPaddingGlobal(int left, int right);
@@ -158,6 +161,7 @@ class Opendp
   void fillerPlacement(dbMasterSeq* filler_masters, const char* prefix);
   void removeFillers();
   void optimizeMirroring();
+  void runAbacus();
 
   // Place decap cells
   void addDecapMaster(dbMaster* decap_master, double decap_cap);
