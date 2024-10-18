@@ -791,7 +791,7 @@ void FlexPA::check_addPlanarAccess(
     return;
   }
   // TODO: EDIT HERE Wrongdirection segments
-  auto layer = getDesign()->getTech()->getLayer(ap->getLayerNum());
+  frLayer* layer = getDesign()->getTech()->getLayer(ap->getLayerNum());
   auto ps = std::make_unique<frPathSeg>();
   auto style = layer->getDefaultSegStyle();
   const bool vert_dir = (dir == frDirEnum::S || dir == frDirEnum::N);
@@ -816,13 +816,26 @@ void FlexPA::check_addPlanarAccess(
     ps->addToPin(pin);
   }
 
+  const bool no_drv
+      = isPlanarViolationFree(ap, pin, ps.get(), inst_term, begin_point, layer);
+  ap->setAccess(dir, no_drv);
+}
+
+template <typename T>
+bool FlexPA::isPlanarViolationFree(frAccessPoint* ap,
+                                   T* pin,
+                                   frPathSeg* ps,
+                                   frInstTerm* inst_term,
+                                   const Point point,
+                                   frLayer* layer)
+{
   // Runs the DRC Engine to check for any violations
   FlexGCWorker design_rule_checker(getTech(), logger_);
   design_rule_checker.setIgnoreMinArea();
   design_rule_checker.setIgnoreCornerSpacing();
   const auto pitch = layer->getPitch();
   const auto extension = 5 * pitch;
-  Rect tmp_box(begin_point, begin_point);
+  Rect tmp_box(point, point);
   Rect ext_box;
   tmp_box.bloat(extension, ext_box);
   design_rule_checker.setExtBox(ext_box);
@@ -848,7 +861,7 @@ void FlexPA::check_addPlanarAccess(
       owner = pin_term;
     }
   }
-  design_rule_checker.addPAObj(ps.get(), owner);
+  design_rule_checker.addPAObj(ps, owner);
   for (auto& apPs : ap->getPathSegs()) {
     design_rule_checker.addPAObj(&apPs, owner);
   }
@@ -856,12 +869,11 @@ void FlexPA::check_addPlanarAccess(
   design_rule_checker.main();
   design_rule_checker.end();
 
-  const bool no_drv = design_rule_checker.getMarkers().empty();
-  ap->setAccess(dir, no_drv);
-
   if (graphics_) {
-    graphics_->setPlanarAP(ap, ps.get(), design_rule_checker.getMarkers());
+    graphics_->setPlanarAP(ap, ps, design_rule_checker.getMarkers());
   }
+
+  return design_rule_checker.getMarkers().empty();
 }
 
 void FlexPA::getViasFromMetalWidthMap(
@@ -1107,7 +1119,17 @@ bool FlexPA::checkDirectionalViaAccess(
   } else {
     ps->addToPin(pin);
   }
+  return isViaViolationFree(ap, via, pin, ps.get(), inst_term, begin_point);
+}
 
+template <typename T>
+bool FlexPA::isViaViolationFree(frAccessPoint* ap,
+                                frVia* via,
+                                T* pin,
+                                frPathSeg* ps,
+                                frInstTerm* inst_term,
+                                const Point point)
+{
   // Runs the DRC Engine to check for any violations
   FlexGCWorker design_rule_checker(getTech(), logger_);
   design_rule_checker.setIgnoreMinArea();
@@ -1115,7 +1137,7 @@ bool FlexPA::checkDirectionalViaAccess(
   design_rule_checker.setIgnoreCornerSpacing();
   const auto pitch = getTech()->getLayer(ap->getLayerNum())->getPitch();
   const auto extension = 5 * pitch;
-  Rect tmp_box(begin_point, begin_point);
+  Rect tmp_box(point, point);
   Rect ext_box;
   tmp_box.bloat(extension, ext_box);
   auto pin_term = pin->getTerm();
@@ -1148,7 +1170,7 @@ bool FlexPA::checkDirectionalViaAccess(
       owner = pin_term;
     }
   }
-  design_rule_checker.addPAObj(ps.get(), owner);
+  design_rule_checker.addPAObj(ps, owner);
   design_rule_checker.addPAObj(via, owner);
   for (auto& apPs : ap->getPathSegs()) {
     design_rule_checker.addPAObj(&apPs, owner);
