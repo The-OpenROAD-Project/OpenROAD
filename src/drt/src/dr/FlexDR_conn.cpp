@@ -1337,7 +1337,7 @@ void FlexDRConnectivityChecker::check(int iter)
     if (graphics_) {
       graphics_->debugWholeDesign();
     }
-    auto writer = io::Writer(router_, logger_);
+    auto writer = io::Writer(getDesign(), logger_);
     writer.updateDb(router_->getDb());
     logger_->error(utl::DRT, 206, "checkConnectivity error.");
   }
