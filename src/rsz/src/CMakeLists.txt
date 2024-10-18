@@ -35,10 +35,20 @@
 
 include("openroad")
 
-swig_lib(NAME      rsz
+swig_lib(NAME      rsz_swig
          NAMESPACE rsz
          I_FILE    Resizer.i
+         SWIG_INCLUDES ${OPENSTA_HOME}
          SCRIPTS   Resizer.tcl
+)
+
+target_include_directories(rsz_swig
+  PUBLIC
+    ../include
+  PRIVATE
+    # A side-effect of including OpenSTA swig files
+    ${OPENSTA_HOME}
+    ${OPENSTA_HOME}/include/sta
 )
 
 add_library(rsz_lib
@@ -56,8 +66,7 @@ add_library(rsz_lib
     OdbCallBack.cc
 )
 
-target_sources(rsz
-  PRIVATE
+add_library(rsz
     MakeResizer.cc
     SteinerRenderer.cc
 )
@@ -82,6 +91,18 @@ target_link_libraries(rsz_lib
     utl_lib
 )
 
+target_link_libraries(rsz_swig
+  PUBLIC
+    rsz_lib
+    stt
+    odb
+    OpenSTA
+    dbSta
+    grt
+    gui
+    utl
+)
+
 target_link_libraries(rsz
   PUBLIC
     rsz_lib
@@ -92,6 +113,8 @@ target_link_libraries(rsz
     grt
     gui
     utl
+  PRIVATE
+    rsz_swig
 )
 
 messages(
