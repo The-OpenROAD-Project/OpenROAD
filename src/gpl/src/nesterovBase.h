@@ -1137,10 +1137,10 @@ class biNormalParameters
 class GCellHandle
 {
  public:
-  using StorageVariant = std::variant<NesterovBaseCommon*, NesterovBase*>;
-
-  GCellHandle(NesterovBaseCommon* nbc, size_t idx) : storage(nbc), index(idx) {}
-  GCellHandle(NesterovBase* nb, size_t idx) : storage(nb), index(idx) {}
+  GCellHandle(NesterovBaseCommon* nbc, size_t idx) : storage_(nbc), index_(idx)
+  {
+  }
+  GCellHandle(NesterovBase* nb, size_t idx) : storage_(nb), index_(idx) {}
 
   // Non-const versions
   GCell* operator->() { return &getGCell(); }
@@ -1153,16 +1153,18 @@ class GCellHandle
   operator const GCell*() const { return &getGCell(); }
 
  private:
-  StorageVariant storage;
-  size_t index;
+  using StorageVariant = std::variant<NesterovBaseCommon*, NesterovBase*>;
 
   GCell& getGCell() const
   {
-    if (std::holds_alternative<NesterovBaseCommon*>(storage)) {
-      return std::get<NesterovBaseCommon*>(storage)->getGCell(index);
+    if (std::holds_alternative<NesterovBaseCommon*>(storage_)) {
+      return std::get<NesterovBaseCommon*>(storage_)->getGCell(index_);
     }
-    return std::get<NesterovBase*>(storage)->getFillerGCell(index);
+    return std::get<NesterovBase*>(storage_)->getFillerGCell(index_);
   }
+
+  StorageVariant storage_;
+  size_t index_;
 };
 
 }  // namespace gpl
