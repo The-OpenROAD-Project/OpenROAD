@@ -51,7 +51,7 @@ class NesterovPlace;
 class PlacerBaseCommon;
 class PlacerBase;
 class GCell;
-struct GCellHandle;
+class GCellHandle;
 
 // This class draws debugging graphics on the layout
 class Graphics : public gui::Renderer, public gui::HeatMapDataSource
