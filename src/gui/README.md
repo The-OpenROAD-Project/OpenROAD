@@ -157,7 +157,7 @@ select
 
 | Switch Name | Description |
 | ---- | ---- |
-|`-type`| name of the object type. For example, ``Inst`` for instances, ``Net`` for nets, and ``DRC`` for DRC violations.|
+|`-type`| name of the object type. For example, ``Inst`` for instances, ``Net`` for nets, and ``Marker`` for database markers.|
 |`-name`| (optional) filter selection by the specified name. For example, to only select clk nets ``*clk*``. Use ``-case_insensitive`` to filter based on case insensitive instead of case sensitive.|
 |`-filter`| (optional) filter selection based on the objects' properties. ``attribute`` represents the property's name and ``value`` the property's value. In case the property holds a collection (e. g. BTerms in a Net) or a table (e. g. Layers in a Generate Via Rule) ``value`` can be any element within those. A special case exists for checking whether a collection is empty or not by using the value ``CONNECTED``. This can be useful to select a specific group of elements (e. g. BTerms=CONNECTED will select only Nets connected to Input/Output Pins).|
 |`-highlight`| (optional) add the selection to the specific highlighting group. Values can be 0 to 7. |
@@ -221,20 +221,20 @@ Announce to the GUI that a design was loaded
 gui::design_created
 ```
 
-### Load DRC Result
+### Load Database Markers Result
 
-To load the results of a DRC report:
+To select a marker category
 
 ```tcl
-gui::load_drc 
-    filename
+gui::select_marker_category 
+    category
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ---- | ---- |
-| `filename` | Filename for DRC report. |
+| `category` | Database marker category. |
 
 ### Show GUI
 

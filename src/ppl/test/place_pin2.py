@@ -16,7 +16,11 @@ ppl_aux.place_pin(
     design, pin_name="resp_val", layer="metal4", location=[12, 50], pin_size=[2, 2]
 )
 ppl_aux.place_pin(
-    design, pin_name="req_msg\[0\]", layer="metal10", location=[25, 70], pin_size=[4, 4]
+    design,
+    pin_name=r"req_msg\[0\]",
+    layer="metal10",
+    location=[25, 70],
+    pin_size=[4, 4],
 )
 
 ppl_aux.place_pins(
