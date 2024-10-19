@@ -239,6 +239,8 @@ class frNet : public frBlockObject
     orig_guides_ = guides;
   }
   const std::vector<frRect>& getOrigGuides() const { return orig_guides_; }
+  void setHasJumpers(bool has_jumpers) {hasJumpers_ = has_jumpers;}
+  bool hasJumpers() {return hasJumpers_;}
 
  protected:
   frString name_;
@@ -272,6 +274,7 @@ class frNet : public frBlockObject
   bool hasInitialRouting_{false};
   bool isFixed_{false};
 
+  bool hasJumpers_{false};
   std::vector<frPinFig*> all_pinfigs_;
 };
 }  // namespace drt

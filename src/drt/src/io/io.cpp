@@ -961,6 +961,7 @@ void io::Parser::setNets(odb::dbBlock* block)
 {
   for (auto net : block->getNets()) {
     bool is_special = net->isSpecial();
+    bool has_jumpers = net->hasJumpers();
     if (!is_special && net->getSigType().isSupply()) {
       logger_->error(DRT,
                      305,
@@ -980,6 +981,9 @@ void io::Parser::setNets(odb::dbBlock* block)
     }
     if (is_special) {
       uNetIn->setIsSpecial(true);
+    }
+    if (has_jumpers) {
+      uNetIn->setHasJumpers(has_jumpers);
     }
     updateNetRouting(netIn, net);
     netIn->setType(net->getSigType());
