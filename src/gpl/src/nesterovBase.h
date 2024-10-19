@@ -36,6 +36,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 #include "point.h"
@@ -57,6 +58,7 @@ class Instance;
 class Die;
 class PlacerBaseCommon;
 class PlacerBase;
+class GCellHandle;
 
 class Instance;
 class Pin;
@@ -670,7 +672,7 @@ class BinGrid
   void setCorePoints(const Die* die);
   void setBinCnt(int binCntX, int binCntY);
   void setTargetDensity(float density);
-  void updateBinsGCellDensityArea(const std::vector<GCell*>& cells);
+  void updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells);
   void setNumThreads(int num_threads) { num_threads_ = num_threads; }
 
   void initBins();
@@ -829,6 +831,13 @@ class NesterovBaseCommon
   // Number of threads of execution
   size_t getNumThreads() { return num_threads_; }
 
+  GCell& getGCell(size_t index) { return gCellStor_[index]; }
+
+  size_t getGCellIndex(const GCell* gCell) const
+  {
+    return std::distance(gCellStor_.data(), gCell);
+  }
+
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBaseCommon> pbc_;
@@ -862,7 +871,9 @@ class NesterovBase
                utl::Logger* log);
   ~NesterovBase();
 
-  const std::vector<GCell*>& gCells() const { return gCells_; }
+  GCell& getFillerGCell(size_t index) { return fillerStor_[index]; }
+
+  const std::vector<GCellHandle>& gCells() const { return gCells_; }
   const std::vector<GCell*>& gCellInsts() const { return gCellInsts_; }
   const std::vector<GCell*>& gCellFillers() const { return gCellFillers_; }
 
@@ -1021,9 +1032,9 @@ class NesterovBase
   int64_t stdInstsArea_ = 0;
   int64_t macroInstsArea_ = 0;
 
-  std::vector<GCell> gCellStor_;
+  std::vector<GCell> fillerStor_;
 
-  std::vector<GCell*> gCells_;
+  std::vector<GCellHandle> gCells_;
   std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
 
@@ -1121,6 +1132,39 @@ class biNormalParameters
   float ly;
   float ux;
   float uy;
+};
+
+class GCellHandle
+{
+ public:
+  GCellHandle(NesterovBaseCommon* nbc, size_t idx) : storage_(nbc), index_(idx)
+  {
+  }
+  GCellHandle(NesterovBase* nb, size_t idx) : storage_(nb), index_(idx) {}
+
+  // Non-const versions
+  GCell* operator->() { return &getGCell(); }
+  GCell& operator*() { return getGCell(); }
+  operator GCell*() { return &getGCell(); }
+
+  // Const versions
+  const GCell* operator->() const { return &getGCell(); }
+  const GCell& operator*() const { return getGCell(); }
+  operator const GCell*() const { return &getGCell(); }
+
+ private:
+  using StorageVariant = std::variant<NesterovBaseCommon*, NesterovBase*>;
+
+  GCell& getGCell() const
+  {
+    if (std::holds_alternative<NesterovBaseCommon*>(storage_)) {
+      return std::get<NesterovBaseCommon*>(storage_)->getGCell(index_);
+    }
+    return std::get<NesterovBase*>(storage_)->getFillerGCell(index_);
+  }
+
+  StorageVariant storage_;
+  size_t index_;
 };
 
 }  // namespace gpl
