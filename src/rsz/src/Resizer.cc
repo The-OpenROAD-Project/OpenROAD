@@ -2817,7 +2817,8 @@ void Resizer::repairSetup(double setup_margin,
                           bool skip_pin_swap,
                           bool skip_gate_cloning,
                           bool skip_buffering,
-                          bool skip_buffer_removal)
+                          bool skip_buffer_removal,
+                          bool skip_last_gasp)
 {
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
@@ -2830,7 +2831,8 @@ void Resizer::repairSetup(double setup_margin,
                              skip_pin_swap,
                              skip_gate_cloning,
                              skip_buffering,
-                             skip_buffer_removal);
+                             skip_buffer_removal,
+                             skip_last_gasp);
 }
 
 void Resizer::reportSwappablePins()
