@@ -2879,6 +2879,10 @@ class dbNet : public dbObject
   dbSet<dbNetTrack> getTracks() const;
 
   void clearTracks();
+
+  bool hasJumpers();
+
+  void setJumpers(bool has_jumpers);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

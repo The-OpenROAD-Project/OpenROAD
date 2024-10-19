@@ -70,7 +70,9 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 96;  // Current revision number
+const uint db_schema_minor = 97;  // Current revision number
+
+const uint db_schema_has_jumpers = 97;
 
 // Revision where the dbMarkerGroup/Categories were added to dbBlock
 const uint db_schema_dbmarkergroup = 96;
