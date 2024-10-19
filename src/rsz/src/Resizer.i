@@ -589,14 +589,16 @@ repair_setup(double setup_margin,
              int max_passes,
              bool verbose,
              bool skip_pin_swap, bool skip_gate_cloning,
-             bool skip_buffering, bool skip_buffer_removal)
+             bool skip_buffering, bool skip_buffer_removal,
+             bool skip_last_gasp)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->repairSetup(setup_margin, repair_tns_end_percent,
                        max_passes, verbose,
                        skip_pin_swap, skip_gate_cloning,
-                       skip_buffering, skip_buffer_removal);
+                       skip_buffering, skip_buffer_removal,
+                       skip_last_gasp);
 }
 
 void
