@@ -663,7 +663,6 @@ class FlexDRWorker
                            drNet* dNet,
                            const std::string& name,
                            const dbTransform& shiftXform);
-  void initNet_termGenAp(const frDesign* design, drPin* dPin);
   bool isRestrictedRouting(frLayerNum lNum);
   void initNet_addNet(std::unique_ptr<drNet> in);
   void getTrackLocs(bool isHorzTracks,
