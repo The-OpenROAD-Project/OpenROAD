@@ -386,6 +386,22 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                   "repair_antennas should perform only one iteration when the "
                   "routing source is detailed routing.");
   }
+
+  // Run jumper insertion only in GRT stage
+  if (!haveDetailedRoutes(nets_to_repair)) {
+    violations = repair_antennas_->checkAntennaViolations(routes_,
+                                                          nets_to_repair,
+                                                          getMaxRoutingLayer(),
+                                                          diode_mterm,
+                                                          ratio_margin,
+                                                          num_threads);
+    if (violations) {
+      repair_antennas_->jumperInsertion(
+        routes_, grid_->getTileSize(), getMaxRoutingLayer());
+      repair_antennas_->clearViolations();
+    }
+  }
+
   while (violations && itr < iterations) {
     if (verbose_) {
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
