@@ -202,6 +202,42 @@ std::vector<sta::Pin*> LogicExtractorFactory::FilterUndrivenOutputs(
   return filtered_output_pins;
 }
 
+std::vector<sta::Net*> LogicExtractorFactory::ConvertIoPinsToNets(
+    std::vector<sta::Pin*>& primary_io_pins)
+{
+  sta::dbNetwork* network = open_sta_->getDbNetwork();
+
+  std::unordered_set<sta::Net*> primary_input_nets;
+  primary_input_nets.reserve(primary_io_pins.size());
+  for (sta::Pin* pin : primary_io_pins) {
+    sta::Net* net = network->net(pin);
+    if (!net) {
+      logger_->error(utl::RMP,
+                     1023,
+                     "primary input pin {} connected to null net",
+                     network->name(pin));
+    }
+
+    primary_input_nets.insert(net);
+  }
+
+  std::vector<sta::Net*> result;
+  result.insert(
+      result.end(), primary_input_nets.begin(), primary_input_nets.end());
+  return result;
+}
+
+void LogicExtractorFactory::RemovePrimaryOutputInstances(
+    std::unordered_set<sta::Instance*>& cut_instances,
+    std::vector<sta::Pin*>& primary_output_pins)
+{
+  sta::dbNetwork* network = open_sta_->getDbNetwork();
+  for (sta::Pin* pin : primary_output_pins) {
+    sta::Instance* instance = network->instance(pin);
+    cut_instances.erase(instance);
+  }
+}
+
 LogicCut LogicExtractorFactory::BuildLogicCut(AbcLibrary& abc_network)
 {
   open_sta_->ensureGraph();
@@ -219,7 +255,15 @@ LogicCut LogicExtractorFactory::BuildLogicCut(AbcLibrary& abc_network)
   std::vector<sta::Pin*> filtered_primary_outputs
       = FilterUndrivenOutputs(primary_outputs, cut_instances);
 
-  return LogicCut(primary_inputs, filtered_primary_outputs, cut_instances);
+  std::vector<sta::Net*> primary_input_nets
+      = ConvertIoPinsToNets(primary_inputs);
+  std::vector<sta::Net*> primary_output_nets
+      = ConvertIoPinsToNets(filtered_primary_outputs);
+
+  // Modifies cut_instances in-place
+  RemovePrimaryOutputInstances(cut_instances, primary_outputs);
+
+  return LogicCut(primary_input_nets, primary_output_nets, cut_instances);
 }
 
 }  // namespace rmp

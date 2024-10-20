@@ -300,7 +300,7 @@ TEST_F(AbcTest, ExtractsAndGateCorrectly)
   }
   EXPECT_NE(flop_input_vertex, nullptr);
 
-  LogicExtractorFactory logic_extractor(sta_.get());
+  LogicExtractorFactory logic_extractor(sta_.get(), &logger_);
   logic_extractor.AppendEndpoint(flop_input_vertex);
   LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
 
@@ -325,7 +325,7 @@ TEST_F(AbcTest, ExtractsEmptyCutSetCorrectly)
   }
   EXPECT_NE(flop_input_vertex, nullptr);
 
-  LogicExtractorFactory logic_extractor(sta_.get());
+  LogicExtractorFactory logic_extractor(sta_.get(), &logger_);
   logic_extractor.AppendEndpoint(flop_input_vertex);
   LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
 
@@ -349,18 +349,18 @@ TEST_F(AbcTest, ExtractSideOutputsCorrectly)
   }
   EXPECT_NE(flop_input_vertex, nullptr);
 
-  LogicExtractorFactory logic_extractor(sta_.get());
+  LogicExtractorFactory logic_extractor(sta_.get(), &logger_);
   logic_extractor.AppendEndpoint(flop_input_vertex);
   LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
 
   std::unordered_set<std::string> primary_output_names;
-  for (sta::Pin* pin : cut.primary_outputs()) {
-    primary_output_names.insert(network->name(pin));
+  for (sta::Net* net : cut.primary_outputs()) {
+    primary_output_names.insert(network->name(net));
   }
 
-  EXPECT_EQ(cut.primary_outputs().size(), 2);
-  EXPECT_THAT(primary_output_names, Contains("output_flop/D"));
-  EXPECT_THAT(primary_output_names, Contains("output_flop2/D"));
+  // Since a single net feeds both of these outputs should expect just 1 output
+  EXPECT_EQ(cut.primary_outputs().size(), 1);
+  EXPECT_THAT(primary_output_names, Contains("flop_net"));
 }
 
 TEST_F(AbcTest, BuildAbcMappedNetworkFromLogicCut)
@@ -380,7 +380,7 @@ TEST_F(AbcTest, BuildAbcMappedNetworkFromLogicCut)
   }
   EXPECT_NE(flop_input_vertex, nullptr);
 
-  LogicExtractorFactory logic_extractor(sta_.get());
+  LogicExtractorFactory logic_extractor(sta_.get(), &logger_);
   logic_extractor.AppendEndpoint(flop_input_vertex);
   LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
 
@@ -392,6 +392,14 @@ TEST_F(AbcTest, BuildAbcMappedNetworkFromLogicCut)
   utl::deleted_unique_ptr<abc::Abc_Ntk_t> logic_network(
       abc::Abc_NtkToLogic(abc_network.get()), &abc::Abc_NtkDelete);
 
+  // Build map of primary output names to primary output indicies in ABC
+  std::map<std::string, int> primary_output_name_to_index;
+  for (int i = 0; i < abc::Abc_NtkPoNum(logic_network.get()); i++) {
+    abc::Abc_Obj_t* po = abc::Abc_NtkPo(logic_network.get(), i);
+    std::string po_name = abc::Abc_ObjName(po);
+    primary_output_name_to_index[po_name] = i;
+  }
+
   std::array<int, 2> input_vector = {1, 1};
   utl::deleted_unique_ptr<int> output_vector(
       abc::Abc_NtkVerifySimulatePattern(logic_network.get(),
@@ -399,8 +407,10 @@ TEST_F(AbcTest, BuildAbcMappedNetworkFromLogicCut)
       &free);
 
   // Both outputs are just the and gate.
-  EXPECT_EQ(output_vector.get()[0], 0);  // Expect that !(1 & 1) == 0
-  EXPECT_EQ(output_vector.get()[1], 0);  // Expect that !(1 & 1) == 0
+  EXPECT_EQ(output_vector.get()[primary_output_name_to_index.at("flop_net")],
+            0);  // Expect that !(1 & 1) == 0
+  EXPECT_EQ(output_vector.get()[primary_output_name_to_index.at("and_output")],
+            1);  // Expect that (1 & 1) == 1
 }
 
 TEST_F(AbcTest, BuildComplexLogicCone)
@@ -420,7 +430,7 @@ TEST_F(AbcTest, BuildComplexLogicCone)
   }
   EXPECT_NE(flop_input_vertex, nullptr);
 
-  LogicExtractorFactory logic_extractor(sta_.get());
+  LogicExtractorFactory logic_extractor(sta_.get(), &logger_);
   logic_extractor.AppendEndpoint(flop_input_vertex);
   LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
 
