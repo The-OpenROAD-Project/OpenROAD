@@ -99,6 +99,20 @@ struct parent3D
   int x, y;
 };
 
+struct CostParams
+{
+  const float logistic_coef;
+  const float cost_height;
+  const int slope;
+
+  CostParams(const float logistic_coef,
+             const float cost_height,
+             const int slope)
+      : logistic_coef(logistic_coef), cost_height(cost_height), slope(slope)
+  {
+  }
+};
+
 class FastRouteCore
 {
  public:
@@ -253,17 +267,15 @@ class FastRouteCore
 
   // maze functions
   // Maze-routing in different orders
+  double getCost(int index, bool is_horizontal, const CostParams& cost_params);
   void mazeRouteMSMD(const int iter,
                      const int expand,
-                     const float cost_height,
                      const int ripup_threshold,
                      const int maze_edge_threshold,
                      const bool ordering,
-                     const int cost_type,
-                     const float logis_cof,
                      const int via,
-                     const int slope,
                      const int L,
+                     const CostParams& cost_params,
                      float& slack_th);
   void convertToMazeroute();
   void updateCongestionHistory(int up_type, bool stop_decreasing, int& max_adj);

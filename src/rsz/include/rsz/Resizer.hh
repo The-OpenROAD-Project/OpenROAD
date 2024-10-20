@@ -290,7 +290,8 @@ class Resizer : public dbStaState
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
                    bool skip_buffering,
-                   bool skip_buffer_removal);
+                   bool skip_buffer_removal,
+                   bool skip_last_gasp);
   // For testing.
   void repairSetup(const Pin* end_pin);
   // For testing.
