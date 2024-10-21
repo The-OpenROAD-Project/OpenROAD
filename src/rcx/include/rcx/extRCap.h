@@ -475,6 +475,8 @@ class extRCModel
 
  public:
 //------------------------------------------------------------------------ v2 ----------------
+bool _v2_flow= false;
+
 extDistRC* getUnderRC(int met, int overMet, int width, int dist);
 extDistRC* getOverUnderRC(uint met, uint underMet, int overMet, int width, int dist);
 bool isRulesFile_v2(char* name, bool bin);
