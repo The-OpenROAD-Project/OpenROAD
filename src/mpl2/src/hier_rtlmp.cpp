@@ -1855,11 +1855,6 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
     best_cost = std::numeric_limits<float>::max();
     begin_check = 0;
     end_check = std::min(check_interval, remaining_runs);
-
-    int outline_weight, boundary_weight;
-    setWeightsForConvergence(
-        outline_weight, boundary_weight, nets, num_of_macros_to_place);
-
     debugPrint(logger_,
                MPL,
                "hierarchical_macro_placement",
@@ -1924,11 +1919,11 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
             outline,
             shaped_macros,
             area_weight_,
-            outline_weight,
+            outline_weight_,
             wirelength_weight_,
             guidance_weight_,
             fence_weight_,
-            boundary_weight,
+            boundary_weight_,
             macro_blockage_weight_,
             notch_weight_,
             notch_h_th_,
@@ -2129,36 +2124,6 @@ void HierRTLMP::adjustMacroBlockageWeight()
                macro_blockage_weight_,
                new_macro_blockage_weight);
     macro_blockage_weight_ = new_macro_blockage_weight;
-  }
-}
-
-void HierRTLMP::setWeightsForConvergence(int& outline_weight,
-                                         int& boundary_weight,
-                                         const std::vector<BundledNet>& nets,
-                                         const int number_of_placeable_macros)
-{
-  outline_weight = outline_weight_;
-  boundary_weight = boundary_weight_;
-
-  if (nets.size() < number_of_placeable_macros / 2) {
-    // If a design has too few connections, there's a possibily that, for
-    // some tight outlines, the outline penalty will struggle to win the
-    // fight against the boundary penalty. This can happen specially for
-    // large hierarchical designs that were reduced by deltaDebug.
-    outline_weight *= 2;
-    boundary_weight /= 2;
-
-    debugPrint(logger_,
-               MPL,
-               "hierarchical_macro_placement",
-               1,
-               "Number of bundled nets is below half of the number of "
-               "placeable macros, adapting "
-               "weights. Outline {} -> {}, Boundary {} -> {}.",
-               outline_weight_,
-               outline_weight,
-               boundary_weight_,
-               boundary_weight);
   }
 }
 
@@ -2463,11 +2428,6 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
   int begin_check = 0;
   int end_check = std::min(check_interval, remaining_runs);
   float best_cost = std::numeric_limits<float>::max();
-
-  int outline_weight, boundary_weight;
-  setWeightsForConvergence(
-      outline_weight, boundary_weight, nets, num_of_macros_to_place);
-
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
@@ -2531,11 +2491,11 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
                                               outline,
                                               shaped_macros,
                                               area_weight_,
-                                              outline_weight,
+                                              outline_weight_,
                                               wirelength_weight_,
                                               guidance_weight_,
                                               fence_weight_,
-                                              boundary_weight,
+                                              boundary_weight_,
                                               macro_blockage_weight_,
                                               notch_weight_,
                                               notch_h_th_,
@@ -2953,11 +2913,6 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
   const int check_interval = 10;
   int begin_check = 0;
   int end_check = std::min(check_interval, remaining_runs);
-
-  int outline_weight, boundary_weight;
-  setWeightsForConvergence(
-      outline_weight, boundary_weight, nets, macros_to_place);
-
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
@@ -3018,11 +2973,11 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
                                               outline,
                                               shaped_macros,
                                               area_weight_,
-                                              outline_weight,
+                                              outline_weight_,
                                               wirelength_weight_,
                                               guidance_weight_,
                                               fence_weight_,
-                                              boundary_weight,
+                                              boundary_weight_,
                                               macro_blockage_weight_,
                                               notch_weight_,
                                               notch_h_th_,
@@ -4666,9 +4621,15 @@ void Snapper::attemptSnapToExtraLayers(
   bool all_layers_snapped = false;
 
   while (remaining_attempts > 0) {
-    // Move one track ahead.
-    new_origin += snap_layer_params.pitch;
-    setOrigin(new_origin, target_direction);
+    const bool is_first_attempt = remaining_attempts == total_attempts;
+    // The pins may already be aligned for all extra layers (in that case,
+    // we don't need to move the macro at all), hence, we use the first
+    // attempt to check if there are in fact any extra layers to snap.
+    if (!is_first_attempt) {
+      // Move one track ahead.
+      new_origin += snap_layer_params.pitch;
+      setOrigin(new_origin, target_direction);
+    }
 
     int curr_number_of_snapped_layers = 1;
     for (const auto [layer, pin] : layers_data.layer_to_pin) {

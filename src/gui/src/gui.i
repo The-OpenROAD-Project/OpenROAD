@@ -442,13 +442,18 @@ void gui_pause(int timeout = 0)
   return gui->pause(timeout);
 }
 
-void load_drc(const char* filename)
+void select_marker_category(odb::dbMarkerCategory* category)
 {
-  if (!check_gui("load_drc")) {
+  if (!check_gui("select_marker_category")) {
     return;
   }
   auto gui = gui::Gui::get();
-  gui->loadDRC(filename);
+  gui->selectMarkers(category);
+}
+
+void select_marker_category(const char* name)
+{
+  select_marker_category(get_block()->findMarkerCategory(name));
 }
 
 void show_widget(const char* name)
@@ -469,10 +474,10 @@ void hide_widget(const char* name)
   return gui->showWidget(name, false);
 }
 
-void show(const char* script = "", bool interactive = true)
+void show(const char* script = "", bool interactive = true, bool load_settings = true)
 {
   auto gui = gui::Gui::get();
-  gui->showGui(script, interactive);
+  gui->showGui(script, interactive, load_settings);
 }
 
 void hide()
@@ -619,12 +624,12 @@ double get_heatmap_double(const std::string& name, const std::string& option)
   return 0.0;
 }
 
-const char* get_heatmap_string(const std::string& name, const std::string& option)
+std::string get_heatmap_string(const std::string& name, const std::string& option)
 {
   auto gui = gui::Gui::get();
   auto value = gui->getHeatMapSetting(name, option);
   if (std::holds_alternative<std::string>(value)) {
-    return std::get<std::string>(value).c_str();
+    return std::get<std::string>(value);
   } else {
     auto logger = ord::OpenRoad::openRoad()->getLogger();
     logger->error(GUI, 93, "Heatmap setting \"{}\" is not a string", option);

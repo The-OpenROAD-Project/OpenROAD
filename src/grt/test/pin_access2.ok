@@ -69,7 +69,7 @@ met5       Horizontal       3403          1640          51.81%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
-[INFO GRT-0197] Via related to pin nodes: 2442
+[INFO GRT-0197] Via related to pin nodes: 2441
 [INFO GRT-0198] Via related Steiner nodes: 73
 [INFO GRT-0199] Via filling finished.
 [INFO GRT-0111] Final number of vias: 3285
@@ -87,6 +87,6 @@ met5              1640             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
 Total            22652          3058           13.50%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 30434 um
+[INFO GRT-0018] Total wirelength: 30441 um
 [INFO GRT-0014] Routed nets: 411
 No differences found.

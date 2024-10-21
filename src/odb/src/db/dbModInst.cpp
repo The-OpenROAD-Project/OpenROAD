@@ -157,9 +157,16 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
   stream >> obj._group;
   // User Code Begin >>
   dbBlock* block = (dbBlock*) (obj.getOwner());
-  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
-  if (db->isSchema(db_schema_update_hierarchy)) {
+  _dbDatabase* db_ = (_dbDatabase*) (block->getDataBase());
+  if (db_->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._moditerms;
+  }
+  if (db_->isSchema(db_schema_db_remove_hash)) {
+    _dbBlock* block = (_dbBlock*) (((dbDatabase*) db_)->getChip()->getBlock());
+    _dbModule* module = block->_module_tbl->getPtr(obj._parent);
+    if (obj._name) {
+      module->_modinst_hash[obj._name] = obj.getId();
+    }
   }
   // User Code End >>
   return stream;
@@ -176,8 +183,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbModInst& obj)
   stream << obj._group;
   // User Code Begin <<
   dbBlock* block = (dbBlock*) (obj.getOwner());
-  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
-  if (db->isSchema(db_schema_update_hierarchy)) {
+  auto db_ = (_dbDatabase*) (block->getDataBase());
+  if (db_->isSchema(db_schema_update_hierarchy)) {
     stream << obj._moditerms;
   }
   // User Code End <<
@@ -261,7 +268,7 @@ dbModInst* dbModInst::create(dbModule* parentModule,
   modinst->_module_next = module->_modinsts;
   module->_modinsts = modinst->getOID();
   master->_mod_inst = modinst->getOID();
-  block->_modinst_hash.insert(modinst);
+  module->_modinst_hash[modinst->_name] = modinst->getOID();
   return (dbModInst*) modinst;
 }
 
@@ -305,7 +312,8 @@ void dbModInst::destroy(dbModInst* modinst)
     modinst->getGroup()->removeModInst(modinst);
   }
   dbProperty::destroyProperties(_modinst);
-  block->_modinst_hash.remove(_modinst);
+  _dbModule* parent = (_dbModule*) (modinst->getParent());
+  parent->_modinst_hash.erase(modinst->getName());
   block->_modinst_tbl->destroy(_modinst);
 }
 
@@ -344,11 +352,12 @@ std::string dbModInst::getHierarchicalName() const
 
 dbModITerm* dbModInst::findModITerm(const char* name)
 {
-  dbSet<dbModITerm> moditerms = getModITerms();
-  for (dbModITerm* mod_iterm : moditerms) {
-    if (!strcmp(mod_iterm->getName(), name)) {
-      return mod_iterm;
-    }
+  _dbModInst* obj = (_dbModInst*) this;
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+  auto it = obj->_moditerm_hash.find(name);
+  if (it != obj->_moditerm_hash.end()) {
+    auto db_id = (*it).second;
+    return (dbModITerm*) par->_moditerm_tbl->getPtr(db_id);
   }
   return nullptr;
 }

@@ -497,9 +497,9 @@ void lefout::writeBlockVia(dbBlock* db_block, dbVia* via)
 
 void lefout::writeBlock(dbBlock* db_block)
 {
-  dbBox* bounding_box = db_block->getBBox();
-  double size_x = lefdist(bounding_box->xMax());
-  double size_y = lefdist(bounding_box->yMax());
+  Rect die_area = db_block->getDieArea();
+  double size_x = lefdist(die_area.xMax());
+  double size_y = lefdist(die_area.yMax());
 
   for (auto via : db_block->getVias()) {
     writeBlockVia(db_block, via);

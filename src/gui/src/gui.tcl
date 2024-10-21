@@ -199,7 +199,7 @@ proc save_clocktree_image { args } {
   if { [info exists keys(-clock)] } {
     set clock $keys(-clock)
   } else {
-    utl:error GUI 88 "-clock is required"
+    utl::error GUI 88 "-clock is required"
   }
 
   gui::save_clocktree_image $path $clock $corner $width $height

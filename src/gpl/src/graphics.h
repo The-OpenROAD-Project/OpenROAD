@@ -51,6 +51,7 @@ class NesterovPlace;
 class PlacerBaseCommon;
 class PlacerBase;
 class GCell;
+class GCellHandle;
 
 // This class draws debugging graphics on the layout
 class Graphics : public gui::Renderer, public gui::HeatMapDataSource
@@ -123,6 +124,8 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
 
   void drawForce(gui::Painter& painter);
   void drawCells(const std::vector<GCell*>& cells, gui::Painter& painter);
+  void drawCells(const std::vector<GCellHandle>& cells, gui::Painter& painter);
+  void drawSingleGCell(const GCell* gCell, gui::Painter& painter);
 
   std::shared_ptr<PlacerBaseCommon> pbc_;
   std::shared_ptr<NesterovBaseCommon> nbc_;

@@ -347,6 +347,19 @@
       "second": "dbGDSText",
       "type": "1_n",
       "tbl_name": "texts_"
+    },
+    {
+      "first":"dbMarkerCategory",
+      "second":"dbMarker",
+      "type":"1_n",
+      "tbl_name":"marker_tbl_"
+    },
+    {
+      "first":"dbMarkerCategory",
+      "second":"dbMarkerCategory",
+      "type":"1_n",
+      "tbl_name":"categories_tbl_",
+      "hash":true
     }
   ]
 }

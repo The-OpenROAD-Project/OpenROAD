@@ -35,6 +35,7 @@
 
 #include "RDLRoute.h"
 
+#include "odb/dbCompare.h"
 #include "odb/geom_boost.h"
 
 namespace pad {
@@ -105,6 +106,11 @@ bool RDLRoute::compare(const std::shared_ptr<RDLRoute>& other) const
   const auto rhs_dist
       = odb::Point::squaredDistance(other->getTerminal()->getBBox().center(),
                                     rhs_shortest->getBBox().center());
+
+  if (lhs_dist == rhs_dist) {
+    // if distances are equal, use id for stable sorting
+    return compare_by_id(getTerminal(), other->getTerminal());
+  }
 
   return lhs_dist > rhs_dist;
 }
