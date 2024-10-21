@@ -1676,6 +1676,8 @@ bool extMain::setCorners(const char* rulesFileName)
 
     if (_v2 || v2_rules_file)
     {
+        m->_v2_flow= _v2;
+        
       if (!(m->readRules((char*) rulesFileName,
                          false,
                          true,
@@ -1818,6 +1820,7 @@ void extMain::makeBlockRCsegs(const char* netNames,
 
   _mergeViaRes = mergeViaRes;
   _mergeResBound = resBound;
+
   if ((_processCornerTable != nullptr)
       || ((_processCornerTable == nullptr) && (extRules != nullptr))) {
     const char* rulesfile
@@ -1842,6 +1845,11 @@ void extMain::makeBlockRCsegs(const char* netNames,
 
   initDgContextArray();
   _extRun++;
+
+
+
+
+
 
   extMeasure m(logger_);
 
