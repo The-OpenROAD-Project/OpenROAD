@@ -192,7 +192,6 @@ class TritonRoute
                 const std::string& marker_name);
   bool initGuide();
   void prep();
-  void processBTermsAboveTopLayer(bool has_routing = false);
   odb::dbDatabase* getDb() const { return db_; }
   void fixMaxSpacing();
 
@@ -224,12 +223,6 @@ class TritonRoute
   void applyUpdates(const std::vector<std::vector<drUpdate>>& updates);
   void getDRCMarkers(std::list<std::unique_ptr<frMarker>>& markers,
                      const odb::Rect& requiredDrcBox);
-  void stackVias(odb::dbBTerm* bterm,
-                 int top_layer_idx,
-                 int bterm_bottom_layer_idx,
-                 bool has_routing);
-  int countNetBTermsAboveMaxLayer(odb::dbNet* net);
-  bool netHasStackedVias(odb::dbNet* net);
   void repairPDNVias();
   friend class FlexDR;
 };
