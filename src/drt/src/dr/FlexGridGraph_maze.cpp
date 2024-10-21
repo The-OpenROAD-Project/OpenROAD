@@ -500,7 +500,7 @@ frCost FlexGridGraph::getCosts(frMIdx gridX,
 
   frUInt4 jumper_cost = 1;
   if (route_with_jumpers) {
-    jumper_cost = 5;
+    jumper_cost = 10;
   }
   // temporarily disable guideCost
   return getEdgeLength(gridX, gridY, gridZ, dir)
