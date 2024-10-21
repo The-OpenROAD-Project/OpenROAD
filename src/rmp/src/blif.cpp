@@ -62,7 +62,7 @@ using utl::RMP;
 
 namespace rmp {
 
-int Blif::call_id_ = 0;
+std::atomic<int> Blif::call_id_ = 0;
 
 Blif::Blif(Logger* logger,
            sta::dbSta* sta,
