@@ -1346,7 +1346,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine()
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
-        checkMetalEndOfLine_main(pin.get());
+        checkMetalEndOfLine_main(&pin);
       }
     }
   } else {
@@ -1362,7 +1362,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine()
       }
       for (auto& net : getNets()) {
         for (auto& pin : net->getPins(i)) {
-          checkMetalEndOfLine_main(pin.get());
+          checkMetalEndOfLine_main(&pin);
         }
       }
     }

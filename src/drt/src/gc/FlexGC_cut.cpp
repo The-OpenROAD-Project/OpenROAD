@@ -659,7 +659,7 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable()
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
-        for (auto& maxrect : pin->getMaxRectangles()) {
+        for (auto& maxrect : pin.getMaxRectangles()) {
           checkMetalWidthViaTable_main(&maxrect);
         }
       }
@@ -682,7 +682,7 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable()
           continue;
         }
         for (auto& pin : net->getPins(i)) {
-          for (auto& maxrect : pin->getMaxRectangles()) {
+          for (auto& maxrect : pin.getMaxRectangles()) {
             checkMetalWidthViaTable_main(&maxrect);
           }
         }

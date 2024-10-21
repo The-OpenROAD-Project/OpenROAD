@@ -2182,12 +2182,12 @@ void FlexDRWorker::cleanUnneededPatches_poly(gcNet* drcNet, drNet* net)
     }
     for (int i = 0; i < drcNet->getPins(lNum).size(); i++) {
       auto& pin = drcNet->getPins(lNum)[i];
-      if (!gtl::contains(*pin->getPolygon(), pt)) {
+      if (!gtl::contains(*pin.getPolygon(), pt)) {
         continue;
       }
       frCoord area;
       if (areaMap[lNum][i] == -1) {
-        areaMap[lNum][i] = gtl::area(*pin->getPolygon());
+        areaMap[lNum][i] = gtl::area(*pin.getPolygon());
       }
       area = areaMap[lNum][i];
       if (area - patch->getOffsetBox().area() >= minArea) {
@@ -2212,7 +2212,7 @@ void FlexDRWorker::modEolCosts_poly(gcNet* net, ModCostType modType)
       continue;
     }
     for (auto& pin : net->getPins(lNum)) {
-      modEolCosts_poly(pin.get(), layer, modType);
+      modEolCosts_poly(&pin, layer, modType);
     }
   }
 }

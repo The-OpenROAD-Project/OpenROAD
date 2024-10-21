@@ -666,15 +666,15 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges(gcNet* net)
   // loop through all merged polygons and build mark edges
   for (int i = 0; i < numLayers; i++) {
     for (auto& pin : net->getPins(i)) {
-      auto poly = pin->getPolygon();
+      auto poly = pin.getPolygon();
       initNet_pins_polygonEdges_helper_outer(
-          net, pin.get(), poly, i, fixedPolygonEdges);
+          net, &pin, poly, i, fixedPolygonEdges);
       // pending
       for (auto holeIt = poly->begin_holes(); holeIt != poly->end_holes();
            holeIt++) {
         auto& hole_poly = *holeIt;
         initNet_pins_polygonEdges_helper_inner(
-            net, pin.get(), hole_poly, i, fixedPolygonEdges);
+            net, &pin, hole_poly, i, fixedPolygonEdges);
       }
     }
   }
@@ -770,7 +770,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners(gcNet* net)
   int numLayers = getTech()->getLayers().size();
   for (int i = 0; i < numLayers; i++) {
     for (auto& pin : net->getPins(i)) {
-      initNet_pins_polygonCorners_helper(net, pin.get());
+      initNet_pins_polygonCorners_helper(net, &pin);
     }
   }
 }
@@ -850,10 +850,10 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles(gcNet* net)
   for (int i = 0; i < numLayers; i++) {
     for (auto& pin : net->getPins(i)) {
       rects.clear();
-      gtl::get_max_rectangles(rects, *(pin->getPolygon()));
+      gtl::get_max_rectangles(rects, *(pin.getPolygon()));
       for (auto& rect : rects) {
         initNet_pins_maxRectangles_helper(
-            net, pin.get(), rect, i, fixedMaxRectangles);
+            net, &pin, rect, i, fixedMaxRectangles);
       }
     }
   }

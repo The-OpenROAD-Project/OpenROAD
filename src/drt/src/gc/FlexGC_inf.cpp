@@ -229,7 +229,7 @@ void FlexGCWorker::Impl::checkMetalSpacingTableInfluence()
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
-        checkPinMetSpcTblInf(pin.get());
+        checkPinMetSpcTblInf(&pin);
       }
     }
   } else {
@@ -248,7 +248,7 @@ void FlexGCWorker::Impl::checkMetalSpacingTableInfluence()
       }
       for (auto& uNet : getNets()) {
         for (auto& pin : uNet->getPins(i)) {
-          checkPinMetSpcTblInf(pin.get());
+          checkPinMetSpcTblInf(&pin);
         }
       }
     }

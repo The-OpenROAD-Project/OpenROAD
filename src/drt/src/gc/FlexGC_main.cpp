@@ -891,9 +891,9 @@ void FlexGCWorker::Impl::checkMetalSpacing()
       }
       for (auto& pin : targetNet_->getPins(i)) {
         if (currLayer->hasLef58SpacingWrongDirConstraints()) {
-          checkMetalSpacing_wrongDir(pin.get(), currLayer);
+          checkMetalSpacing_wrongDir(&pin, currLayer);
         }
-        for (auto& maxrect : pin->getMaxRectangles()) {
+        for (auto& maxrect : pin.getMaxRectangles()) {
           checkMetalSpacing_main(&maxrect,
                                  getDRWorker() || !AUTO_TAPER_NDR_NETS);
           if (currLayer->hasTwoWiresForbiddenSpacingConstraints()) {
@@ -911,7 +911,7 @@ void FlexGCWorker::Impl::checkMetalSpacing()
       }
       for (auto& sr : targetNet_->getSpecialSpcRects()) {
         checkMetalSpacing_main(
-            sr.get(), getDRWorker() || !AUTO_TAPER_NDR_NETS, true);
+            &sr, getDRWorker() || !AUTO_TAPER_NDR_NETS, true);
       }
     }
   } else {
@@ -928,9 +928,9 @@ void FlexGCWorker::Impl::checkMetalSpacing()
       for (auto& net : getNets()) {
         for (auto& pin : net->getPins(i)) {
           if (currLayer->hasLef58SpacingWrongDirConstraints()) {
-            checkMetalSpacing_wrongDir(pin.get(), currLayer);
+            checkMetalSpacing_wrongDir(&pin, currLayer);
           }
-          for (auto& maxrect : pin->getMaxRectangles()) {
+          for (auto& maxrect : pin.getMaxRectangles()) {
             // Short, NSMetal, metSpc
             checkMetalSpacing_main(&maxrect,
                                    getDRWorker() || !AUTO_TAPER_NDR_NETS);
@@ -949,7 +949,7 @@ void FlexGCWorker::Impl::checkMetalSpacing()
         }
         for (auto& sr : net->getSpecialSpcRects()) {
           checkMetalSpacing_main(
-              sr.get(), getDRWorker() || !AUTO_TAPER_NDR_NETS, true);
+              &sr, getDRWorker() || !AUTO_TAPER_NDR_NETS, true);
         }
       }
     }
@@ -1366,7 +1366,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
-        for (auto& corners : pin->getPolygonCorners()) {
+        for (auto& corners : pin.getPolygonCorners()) {
           for (auto& corner : corners) {
             // LEF58 corner spacing
             checkMetalCornerSpacing_main(&corner);
@@ -1388,7 +1388,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
       }
       for (auto& net : getNets()) {
         for (auto& pin : net->getPins(i)) {
-          for (auto& corners : pin->getPolygonCorners()) {
+          for (auto& corners : pin.getPolygonCorners()) {
             for (auto& corner : corners) {
               // LEF58 corner spacing
               checkMetalCornerSpacing_main(&corner);
@@ -2313,7 +2313,7 @@ void FlexGCWorker::Impl::checkMetalShape(bool allow_patching)
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
-        checkMetalShape_main(pin.get(), allow_patching);
+        checkMetalShape_main(&pin, allow_patching);
       }
     }
   } else {
@@ -2329,7 +2329,7 @@ void FlexGCWorker::Impl::checkMetalShape(bool allow_patching)
       }
       for (auto& net : getNets()) {
         for (auto& pin : net->getPins(i)) {
-          checkMetalShape_main(pin.get(), allow_patching);
+          checkMetalShape_main(&pin, allow_patching);
         }
       }
     }
@@ -3536,7 +3536,7 @@ void FlexGCWorker::Impl::checkCutSpacing()
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
-        for (auto& maxrect : pin->getMaxRectangles()) {
+        for (auto& maxrect : pin.getMaxRectangles()) {
           checkCutSpacing_main(&maxrect);
           checkLef58Enclosure_main(&maxrect);
         }
@@ -3555,7 +3555,7 @@ void FlexGCWorker::Impl::checkCutSpacing()
       }
       for (auto& net : getNets()) {
         for (auto& pin : net->getPins(i)) {
-          for (auto& maxrect : pin->getMaxRectangles()) {
+          for (auto& maxrect : pin.getMaxRectangles()) {
             checkCutSpacing_main(&maxrect);
             checkLef58Enclosure_main(&maxrect);
           }
@@ -3922,7 +3922,7 @@ void FlexGCWorker::Impl::checkMinimumCut()
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
-        for (auto& maxrect : pin->getMaxRectangles()) {
+        for (auto& maxrect : pin.getMaxRectangles()) {
           checkMinimumCut_main(&maxrect);
         }
       }
@@ -3943,7 +3943,7 @@ void FlexGCWorker::Impl::checkMinimumCut()
       }
       for (auto& net : getNets()) {
         for (auto& pin : net->getPins(i)) {
-          for (auto& maxrect : pin->getMaxRectangles()) {
+          for (auto& maxrect : pin.getMaxRectangles()) {
             checkMinimumCut_main(&maxrect);
           }
         }
