@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include <atomic>
 #include <map>
 #include <set>
 #include <string>
@@ -90,7 +91,7 @@ class Blif
   std::string const1_cell_port_;
   std::map<std::string, std::pair<float, float>> requireds_;
   std::map<std::string, std::pair<float, float>> arrivals_;
-  static int call_id_;
+  static std::atomic<int> call_id_;
 };
 
 }  // namespace rmp
