@@ -18,4 +18,6 @@ WORKDIR /OpenROAD
 
 ENV PATH=${LOCAL_PATH}:${PATH}
 
+RUN apt-get update && apt-get install -y libcurl4-openssl-dev
+
 RUN ./etc/Build.sh -compiler=${compiler} -threads=${numThreads} -deps-prefixes-file=${depsPrefixFile}
