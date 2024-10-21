@@ -1923,6 +1923,10 @@ void GlobalRouter::perturbCapacities()
 
 void GlobalRouter::initGridAndNets()
 {
+  if (db_->getChip() == nullptr) {
+    logger_->error(
+        GRT, 170, "Load a design before running the global router commands.");
+  }
   block_ = db_->getChip()->getBlock();
   routes_.clear();
   if (getMaxRoutingLayer() == -1) {

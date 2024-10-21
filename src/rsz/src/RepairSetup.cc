@@ -93,7 +93,8 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
                               const bool skip_pin_swap,
                               const bool skip_gate_cloning,
                               const bool skip_buffering,
-                              const bool skip_buffer_removal)
+                              const bool skip_buffer_removal,
+                              const bool skip_last_gasp)
 {
   init();
   constexpr int digits = 3;
@@ -378,11 +379,13 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
     }
   }  // for each violating endpoint
 
-  // do some last gasp setup fixing before we give up
-  OptoParams params(setup_slack_margin, verbose);
-  params.iteration = opto_iteration;
-  params.initial_tns = initial_tns;
-  repairSetupLastGasp(params, num_viols);
+  if (!skip_last_gasp) {
+    // do some last gasp setup fixing before we give up
+    OptoParams params(setup_slack_margin, verbose);
+    params.iteration = opto_iteration;
+    params.initial_tns = initial_tns;
+    repairSetupLastGasp(params, num_viols);
+  }
 
   if (verbose) {
     printProgress(opto_iteration, true, true, false, num_viols);
