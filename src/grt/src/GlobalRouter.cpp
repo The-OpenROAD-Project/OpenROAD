@@ -281,6 +281,11 @@ void GlobalRouter::globalRoute(bool save_guides,
                    "The start_incremental and end_incremental flags cannot be "
                    "defined together");
   } else if (start_incremental) {
+    if (!initialized_ || haveDetailedRoutes()) {
+      int min_layer, max_layer;
+      getMinMaxLayer(min_layer, max_layer);
+      initFastRoute(min_layer, max_layer);
+    }
     grouter_cbk_ = new GRouteDbCbk(this);
     grouter_cbk_->addOwner(block_);
     incremental_ = true;
