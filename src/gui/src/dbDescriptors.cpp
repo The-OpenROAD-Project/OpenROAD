@@ -1833,6 +1833,14 @@ Descriptor::Properties DbBTermDescriptor::getProperties(std::any object) const
     props.push_back({"Constraint Region", constraint.value()});
   }
 
+  SelectionSet pins;
+  for (auto* pin : bterm->getBPins()) {
+    pins.insert(gui->makeSelected(pin));
+  }
+  if (!pins.empty()) {
+    props.push_back({"Pins", pins});
+  }
+
   populateODBProperties(props, bterm);
 
   return props;
@@ -1884,6 +1892,109 @@ bool DbBTermDescriptor::getAllObjects(SelectionSet& objects) const
 
   for (auto* term : block->getBTerms()) {
     objects.insert(makeSelected(term));
+  }
+  return true;
+}
+
+//////////////////////////////////////////////////
+
+DbBPinDescriptor::DbBPinDescriptor(odb::dbDatabase* db) : db_(db)
+{
+}
+
+std::string DbBPinDescriptor::getName(std::any object) const
+{
+  odb::dbBPin* pin = std::any_cast<odb::dbBPin*>(object);
+  return pin->getBTerm()->getName();
+}
+
+std::string DbBPinDescriptor::getTypeName() const
+{
+  return "BPin";
+}
+
+bool DbBPinDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto* bpin = std::any_cast<odb::dbBPin*>(object);
+  bbox = bpin->getBBox();
+  return !bbox.isInverted();
+}
+
+void DbBPinDescriptor::highlight(std::any object, Painter& painter) const
+{
+  auto* bpin = std::any_cast<odb::dbBPin*>(object);
+  for (auto box : bpin->getBoxes()) {
+    odb::Rect rect = box->getBox();
+    painter.drawRect(rect);
+  }
+}
+
+Descriptor::Properties DbBPinDescriptor::getProperties(std::any object) const
+{
+  auto gui = Gui::get();
+  auto bpin = std::any_cast<odb::dbBPin*>(object);
+  SelectionSet aps;
+  for (auto ap : bpin->getAccessPoints()) {
+    DbTermAccessPoint bap{ap, bpin->getBTerm()};
+    aps.insert(gui->makeSelected(bap));
+  }
+  Properties props{{"BTerm", gui->makeSelected(bpin->getBTerm())},
+                   {"Placement status", bpin->getPlacementStatus().getString()},
+                   {"Access points", aps}};
+
+  PropertyList boxes;
+  for (auto* box : bpin->getBoxes()) {
+    auto* layer = box->getTechLayer();
+    if (layer != nullptr) {
+      boxes.push_back({gui->makeSelected(box->getTechLayer()), box->getBox()});
+    }
+  }
+  props.push_back({"Boxes", boxes});
+
+  if (bpin->hasEffectiveWidth()) {
+    props.push_back(
+        {"Effective width", convertUnits(bpin->getEffectiveWidth())});
+  }
+
+  if (bpin->hasMinSpacing()) {
+    props.push_back({"Min spacing", convertUnits(bpin->getMinSpacing())});
+  }
+
+  populateODBProperties(props, bpin);
+
+  return props;
+}
+
+Selected DbBPinDescriptor::makeSelected(std::any object) const
+{
+  if (auto bpin = std::any_cast<odb::dbBPin*>(&object)) {
+    return Selected(*bpin, this);
+  }
+  return Selected();
+}
+
+bool DbBPinDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_bpin = std::any_cast<odb::dbBPin*>(l);
+  auto r_bpin = std::any_cast<odb::dbBPin*>(r);
+  return l_bpin->getId() < r_bpin->getId();
+}
+
+bool DbBPinDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto* term : block->getBTerms()) {
+    for (auto* pin : term->getBPins()) {
+      objects.insert(makeSelected(pin));
+    }
   }
   return true;
 }
