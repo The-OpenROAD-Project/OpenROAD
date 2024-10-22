@@ -518,7 +518,7 @@ uint extMain::benchWires(extMainOptions* opt)
     _block->setBusDelimeters('[', ']');
     _block->setDefUnits(1000);
     m->setExtMain(this);
-    setupMapping(0);
+    setupMapping();
     _noModelRC = true;
     _cornerCnt = 1;
     _extDbCnt = 1;
