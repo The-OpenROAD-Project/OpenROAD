@@ -109,8 +109,10 @@ uint extMain::getMultiples(uint cnt, uint base)
   return ((cnt / base) + 1) * base;
 }
 
-void extMain::setupMapping(uint itermCnt)
+void extMain::setupMapping(uint itermCnt1)
 {
+  uint itermCnt = 3 * _block->getNets().size();
+
   if (_btermTable) {
     return;
   }
@@ -397,7 +399,6 @@ extRCModel* extMain::getRCmodel(uint n)
 
 uint extMain::getResCapTable()
 {
-  calcMinMaxRC();
   _currentModel = getRCmodel(0);
 
   extMeasure m(logger_);

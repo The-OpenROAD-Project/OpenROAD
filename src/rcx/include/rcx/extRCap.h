@@ -1480,6 +1480,8 @@ class extMain
     extSolverGen *_currentSolverGen;
 
     // v2 -----------------------------------------------------
+    bool modelExists(const char* extRules);
+
     void initRunEnv(extMeasureRC &m);
       uint _ccContextDepth = 0;
 
@@ -1725,7 +1727,7 @@ public:
 
   uint getExtBbox(int* x1, int* y1, int* x2, int* y2);
 
-  void setupMapping(uint itermCnt);
+  void setupMapping(uint itermCnt=0);
   uint getMultiples(uint cnt, uint base);
   uint getExtLayerCnt(odb::dbTech* tech);
 
