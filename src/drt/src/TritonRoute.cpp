@@ -289,9 +289,11 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
              "End number of markers {}. Updated={}",
              worker->getBestNumMarkers(),
              updated);
-  if (updated && !drcRpt.empty()) {
-    reportDRC(
-        drcRpt, design_->getTopBlock()->getMarkers(), worker->getDrcBox());
+  if (updated) {
+    reportDRC(drcRpt,
+              design_->getTopBlock()->getMarkers(),
+              "DRC - debug single worker",
+              worker->getDrcBox());
   }
 }
 
@@ -1116,7 +1118,12 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
   }
 }
 
-void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
+void TritonRoute::checkDRC(const char* filename,
+                           int x1,
+                           int y1,
+                           int x2,
+                           int y2,
+                           const std::string& marker_name)
 {
   GC_IGNORE_PDN_LAYER_NUM = -1;
   REPAIR_PDN_LAYER_NUM = -1;
@@ -1136,7 +1143,7 @@ void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
   }
   frList<std::unique_ptr<frMarker>> markers;
   getDRCMarkers(markers, requiredDrcBox);
-  reportDRC(filename, markers, requiredDrcBox);
+  reportDRC(filename, markers, marker_name, requiredDrcBox);
 }
 
 void TritonRoute::addUserSelectedVia(const std::string& viaName)
@@ -1241,11 +1248,109 @@ int TritonRoute::getWorkerResultsSize()
 
 void TritonRoute::reportDRC(const std::string& file_name,
                             const frList<std::unique_ptr<frMarker>>& markers,
+                            const std::string& marker_name,
                             Rect drcBox)
 {
-  double dbu = getDesign()->getTech()->getDBUPerUU();
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  odb::dbMarkerCategory* tool_category
+      = odb::dbMarkerCategory::createOrReplace(block, marker_name.c_str());
+  tool_category->setSource("DRT");
 
-  if (file_name == std::string("")) {
+  // Obstructions Rtree
+  std::vector<std::pair<odb::Rect, odb::dbObstruction*>> obstructions;
+  for (odb::dbObstruction* obs : block->getObstructions()) {
+    obstructions.emplace_back(obs->getBBox()->getBox(), obs);
+  }
+  const boost::geometry::index::rtree<std::pair<odb::Rect, odb::dbObstruction*>,
+                                      boost::geometry::index::quadratic<16UL>>
+      obs_rtree(obstructions.begin(), obstructions.end());
+
+  for (const auto& marker : markers) {
+    // get violation bbox
+    Rect bbox = marker->getBBox();
+    if (drcBox != Rect() && !drcBox.intersects(bbox)) {
+      continue;
+    }
+    auto tech = getDesign()->getTech();
+    auto layer = tech->getLayer(marker->getLayerNum());
+    auto layerType = layer->getType();
+
+    auto con = marker->getConstraint();
+    std::string violName;
+    if (con) {
+      if (con->typeId() == frConstraintTypeEnum::frcShortConstraint
+          && layerType == dbTechLayerType::CUT) {
+        violName = "Cut Short";
+      } else {
+        violName = con->getViolName();
+      }
+    } else {
+      violName = "unknown";
+    }
+
+    odb::dbMarkerCategory* category
+        = odb::dbMarkerCategory::createOrGet(tool_category, violName.c_str());
+
+    odb::dbMarker* db_marker = odb::dbMarker::create(category);
+    if (db_marker == nullptr) {
+      continue;
+    }
+
+    // get source(s) of violation
+    for (auto src : marker->getSrcs()) {
+      if (src) {
+        switch (src->typeId()) {
+          case frcNet:
+            db_marker->addSource(
+                block->findNet(static_cast<frNet*>(src)->getName().c_str()));
+            break;
+          case frcInstTerm: {
+            frInstTerm* instTerm = (static_cast<frInstTerm*>(src));
+            std::string iterm_name;
+            iterm_name += instTerm->getInst()->getName();
+            iterm_name += "/";
+            iterm_name += instTerm->getTerm()->getName();
+            db_marker->addSource(block->findITerm(iterm_name.c_str()));
+            break;
+          }
+          case frcBTerm: {
+            frBTerm* bterm = static_cast<frBTerm*>(src);
+            db_marker->addSource(block->findBTerm(bterm->getName().c_str()));
+            break;
+          }
+          case frcInstBlockage: {
+            frInst* inst = (static_cast<frInstBlockage*>(src))->getInst();
+            db_marker->addSource(block->findInst(inst->getName().c_str()));
+            break;
+          }
+          case frcInst: {
+            frInst* inst = (static_cast<frInst*>(src));
+            db_marker->addSource(block->findInst(inst->getName().c_str()));
+            break;
+          }
+          case frcBlockage: {
+            for (auto itr
+                 = obs_rtree.qbegin(boost::geometry::index::intersects(bbox));
+                 itr != obs_rtree.qend();
+                 itr++) {
+              db_marker->addSource(itr->second);
+            }
+            break;
+          }
+          default:
+            logger_->error(DRT,
+                           291,
+                           "Unexpected source type in marker: {}",
+                           src->typeId());
+        }
+      }
+    }
+    db_marker->addShape(bbox);
+    db_marker->setTechLayer(
+        block->getTech()->findLayer(layer->getName().c_str()));
+  }
+
+  if (file_name.empty()) {
     if (VERBOSE > 0) {
       logger_->warn(
           DRT,
@@ -1254,85 +1359,8 @@ void TritonRoute::reportDRC(const std::string& file_name,
     }
     return;
   }
-  std::ofstream drcRpt(file_name.c_str());
-  if (drcRpt.is_open()) {
-    for (const auto& marker : markers) {
-      // get violation bbox
-      Rect bbox = marker->getBBox();
-      if (drcBox != Rect() && !drcBox.intersects(bbox)) {
-        continue;
-      }
-      auto tech = getDesign()->getTech();
-      auto layer = tech->getLayer(marker->getLayerNum());
-      auto layerType = layer->getType();
 
-      auto con = marker->getConstraint();
-      drcRpt << "  violation type: ";
-      if (con) {
-        std::string violName;
-        if (con->typeId() == frConstraintTypeEnum::frcShortConstraint
-            && layerType == dbTechLayerType::CUT) {
-          violName = "Cut Short";
-        } else {
-          violName = con->getViolName();
-        }
-        drcRpt << violName;
-      } else {
-        drcRpt << "nullptr";
-      }
-      drcRpt << std::endl;
-      // get source(s) of violation
-      // format: type:name/identifier
-      drcRpt << "    srcs: ";
-      for (auto src : marker->getSrcs()) {
-        if (src) {
-          switch (src->typeId()) {
-            case frcNet:
-              drcRpt << "net:" << (static_cast<frNet*>(src))->getName() << " ";
-              break;
-            case frcInstTerm: {
-              frInstTerm* instTerm = (static_cast<frInstTerm*>(src));
-              drcRpt << "iterm:" << instTerm->getInst()->getName() << "/"
-                     << instTerm->getTerm()->getName() << " ";
-              break;
-            }
-            case frcBTerm: {
-              frBTerm* bterm = (static_cast<frBTerm*>(src));
-              drcRpt << "bterm:" << bterm->getName() << " ";
-              break;
-            }
-            case frcInstBlockage: {
-              frInst* inst = (static_cast<frInstBlockage*>(src))->getInst();
-              drcRpt << "inst:" << inst->getName() << " ";
-              break;
-            }
-            case frcInst: {
-              frInst* inst = (static_cast<frInst*>(src));
-              drcRpt << "inst:" << inst->getName() << " ";
-              break;
-            }
-            case frcBlockage: {
-              drcRpt << "obstruction: ";
-              break;
-            }
-            default:
-              logger_->error(DRT,
-                             291,
-                             "Unexpected source type in marker: {}",
-                             src->typeId());
-          }
-        }
-      }
-      drcRpt << "\n";
-
-      drcRpt << "    bbox = ( " << bbox.xMin() / dbu << ", "
-             << bbox.yMin() / dbu << " ) - ( " << bbox.xMax() / dbu << ", "
-             << bbox.yMax() / dbu << " ) on Layer ";
-      drcRpt << layer->getName() << "\n";
-    }
-  } else {
-    std::cout << "Error: Fail to open DRC report file\n";
-  }
+  tool_category->writeTR(file_name);
 }
 
 }  // namespace drt

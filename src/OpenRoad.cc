@@ -360,9 +360,18 @@ void OpenRoad::writeDef(const char* filename, const string& version)
   if (chip) {
     odb::dbBlock* block = chip->getBlock();
     if (block) {
+      sta::dbSta* sta = getSta();
+      // def names are flat hierachical
+      bool hierarchy_set = sta->getDbNetwork()->hasHierarchy();
+      if (hierarchy_set) {
+        sta->getDbNetwork()->disableHierarchy();
+      }
       odb::defout def_writer(logger_);
       def_writer.setVersion(stringToDefVersion(version));
       def_writer.writeBlock(block, filename);
+      if (hierarchy_set) {
+        sta->getDbNetwork()->setHierarchy();
+      }
     }
   }
 }
@@ -388,6 +397,11 @@ void OpenRoad::writeAbstractLef(const char* filename,
 
 void OpenRoad::writeLef(const char* filename)
 {
+  sta::dbSta* sta = getSta();
+  bool hierarchy_set = sta->getDbNetwork()->hasHierarchy();
+  if (hierarchy_set) {
+    sta->getDbNetwork()->disableHierarchy();
+  }
   auto libs = db_->getLibs();
   int num_libs = libs.size();
   if (num_libs > 0) {
@@ -395,7 +409,6 @@ void OpenRoad::writeLef(const char* filename)
       logger_->info(
           ORD, 34, "More than one lib exists, multiple files will be written.");
     }
-
     int cnt = 0;
     for (auto lib : libs) {
       std::string name(filename);
@@ -421,6 +434,9 @@ void OpenRoad::writeLef(const char* filename)
     odb::lefout lef_writer(logger_, stream_handler.getStream());
     lef_writer.writeTech(db_->getTech());
   }
+  if (hierarchy_set) {
+    sta->getDbNetwork()->setHierarchy();
+  }
 }
 
 void OpenRoad::writeCdl(const char* outFilename,
@@ -437,7 +453,7 @@ void OpenRoad::writeCdl(const char* outFilename,
   }
 }
 
-void OpenRoad::readDb(const char* filename)
+void OpenRoad::readDb(const char* filename, bool hierarchy)
 {
   std::ifstream stream;
   stream.open(filename, std::ios::binary);
@@ -445,6 +461,13 @@ void OpenRoad::readDb(const char* filename)
     readDb(stream);
   } catch (const std::ios_base::failure& f) {
     logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
+  }
+  // treat this as a hierarchical network.
+  if (hierarchy) {
+    sta::dbSta* sta = getSta();
+    // After streaming in the last thing we do is build the hashes
+    // we cannot rely on orders to do this during stream in
+    sta->getDbNetwork()->setHierarchy();
   }
 }
 
@@ -460,6 +483,7 @@ void OpenRoad::readDb(std::istream& stream)
 
   db_->read(stream);
 
+  // this fixes up the database post read
   for (OpenRoadObserver* observer : observers_) {
     observer->postReadDb(db_);
   }
