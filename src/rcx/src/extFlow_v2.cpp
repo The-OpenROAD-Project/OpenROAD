@@ -41,6 +41,7 @@
 
 namespace rcx {
 using namespace odb;
+
 void extMain::initRunEnv(extMeasureRC &m)
 {
     m._extMain = this;
@@ -104,8 +105,10 @@ void extMain::initRunEnv(extMeasureRC &m)
 uint extMain::couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m1)
 {
           extMeasureRC* mrc= new extMeasureRC();
-mrc->_extMain= this;
-mrc->_block= _block;
+          initRunEnv(*mrc);
+
+// mrc->_extMain= this;
+// mrc->_block= _block;
 
   uint ccDist = ccFlag;
 
@@ -270,7 +273,7 @@ mrc->_block= _block;
       // extMeasureRC* mrc = (extMeasureRC*) m;
       // m->_search = m->_extMain->_search;
       mrc->_search = m1->_extMain->_search;
-      // _dbgOption= 1;
+       _dbgOption= 1;
       if (_dbgOption > 0)
         mrc->PrintAllGrids(dir, mrc->OpenPrintFile(dir, "wires.org"), 0);
 
