@@ -1635,7 +1635,6 @@ void extMain::makeCornerNameMap()
 bool extMain::setCorners(const char* rulesFileName)
 {
   _modelMap.resetCnt(0);
-  uint ii;
   _metRCTable.resetCnt(0);
 
   if (rulesFileName != nullptr) {  // read rules
@@ -1677,7 +1676,7 @@ bool extMain::setCorners(const char* rulesFileName)
     if (_v2 || v2_rules_file)
     {
         m->_v2_flow= _v2;
-        
+
       if (!(m->readRules((char*) rulesFileName,
                          false,
                          true,
@@ -1721,7 +1720,7 @@ bool extMain::setCorners(const char* rulesFileName)
     }
   }
   _currentModel = getRCmodel(0);
-  for (ii = 0; (_couplingFlag > 0) && ii < _modelMap.getCnt(); ii++) {
+  for (uint ii = 0; (_couplingFlag > 0) && ii < _modelMap.getCnt(); ii++) {
     uint jj = _modelMap.get(ii);
     _metRCTable.add(_currentModel->getMetRCTable(jj));
   }
@@ -1786,6 +1785,18 @@ void extMain::getPrevControl()
   _CCnoPowerTarget = _prevControl->_CCnoPowerTarget;
   _usingMetalPlanes = _prevControl->_usingMetalPlanes;
 }
+bool extMain::modelExists(const char* extRules)
+{
+  if ((_prevControl->_ruleFileName.empty()) && (getRCmodel(0) == nullptr)
+      && (extRules == nullptr)) {
+    logger_->warn(RCX,
+                  127,
+                  "No RC model was read with command <load_model>, "
+                  "will not perform extraction!");
+    return false;
+  }
+  return true;
+}
 
 void extMain::makeBlockRCsegs(const char* netNames,
                               uint cc_up,
@@ -1796,37 +1807,26 @@ void extMain::makeBlockRCsegs(const char* netNames,
                               int contextDepth,
                               const char* extRules)
 {
+    if (!modelExists(extRules))
+        return;
+
   uint debugNetId = 0;
 
   _diagFlow = true;
-
-  std::vector<dbNet*> inets;
-  if ((_prevControl->_ruleFileName.empty()) && (getRCmodel(0) == nullptr)
-      && (extRules == nullptr)) {
-    logger_->warn(RCX,
-                  127,
-                  "No RC model was read with command <load_model>, "
-                  "will not perform extraction!");
-    return;
-  }
-
   _couplingFlag = ccFlag;
   _coupleThreshold = ccThres;
-
   _usingMetalPlanes = true;
   _ccUp = cc_up;
   _couplingFlag = ccFlag;
   _ccContextDepth = contextDepth;
-
   _mergeViaRes = mergeViaRes;
   _mergeResBound = resBound;
 
   if ((_processCornerTable != nullptr)
       || ((_processCornerTable == nullptr) && (extRules != nullptr))) {
-    const char* rulesfile
-        = extRules ? extRules : _prevControl->_ruleFileName.c_str();
+    const char* rulesfile= extRules ? extRules : _prevControl->_ruleFileName.c_str();
 
-        // Reading model file
+    // Reading model file
     if (!setCorners(rulesfile)) {
       logger_->info(RCX, 128, "skipping Extraction ...");
       return;
@@ -1835,31 +1835,28 @@ void extMain::makeBlockRCsegs(const char* netNames,
     logger_->warn(RCX, 129, "Wrong combination of corner related options!");
     return;
   }
+
   _foreign = false;  // extract after read_spef
 
+   std::vector<dbNet*> inets;
   _allNet = !((dbBlock*) _block)->findSomeNet(netNames, inets);
+    for (uint j = 0; j < inets.size(); j++) {
+    dbNet* net = inets[j];
+    net->setMark(true);
+  }
 
   if (_ccContextDepth) {
     initContextArray();
   }
-
   initDgContextArray();
+
   _extRun++;
-
-
-
-
-
+  _useDbSdb = false;
 
   extMeasure m(logger_);
 
   _seqPool = m._seqPool;
-  _useDbSdb = false;
 
-  for (uint j = 0; j < inets.size(); j++) {
-    dbNet* net = inets[j];
-    net->setMark(true);
-  }
 
   if (!_allNet) {
     _ccMinX = MAX_INT;
@@ -1867,9 +1864,13 @@ void extMain::makeBlockRCsegs(const char* netNames,
     _ccMaxX = -MAX_INT;
     _ccMaxY = -MAX_INT;
   }
+      setupMapping();
+
   if (_couplingFlag > 1) {
+    calcMinMaxRC();
     getResCapTable();
   }
+
  // FIXME       _overCell = overCell;
 
   logger_->info(RCX,
@@ -1877,9 +1878,7 @@ void extMain::makeBlockRCsegs(const char* netNames,
                 "RC segment generation {} (max_merge_res {:.1f}) ...",
                 getBlock()->getName().c_str(),
                 _mergeResBound);
-  const uint itermCntEst = 3 * _block->getNets().size();
-  setupMapping(itermCntEst);
-
+  
   uint cnt = 0;
   for (dbNet* net : _block->getNets()) {
     if (net->getSigType().isSupply()) {
