@@ -91,7 +91,10 @@ class Blif
   std::string const1_cell_port_;
   std::map<std::string, std::pair<float, float>> requireds_;
   std::map<std::string, std::pair<float, float>> arrivals_;
-  static std::atomic<int> call_id_;
+  // uniquely identifies an instantiation of this class
+  int instance_id_;
+  // class member: keeps track of how many instances were created; thread safe.
+  static std::atomic<int> instance_counter_;
 };
 
 }  // namespace rmp

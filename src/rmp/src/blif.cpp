@@ -62,7 +62,7 @@ using utl::RMP;
 
 namespace rmp {
 
-std::atomic<int> Blif::call_id_ = 0;
+std::atomic<int> Blif::instance_counter_{1};
 
 Blif::Blif(Logger* logger,
            sta::dbSta* sta,
@@ -77,7 +77,7 @@ Blif::Blif(Logger* logger,
 {
   logger_ = logger;
   open_sta_ = sta;
-  call_id_++;
+  instance_id_ = instance_counter_.fetch_add(1);
 }
 
 void Blif::setReplaceableInstances(std::set<odb::dbInst*>& insts)
@@ -484,7 +484,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
       odb::dbNet* net = block->findNet(constNetName.c_str());
       if (net == nullptr) {
         std::string net_name_modified
-            = std::string("or_") + std::to_string(call_id_) + constNetName;
+            = std::string("or_") + std::to_string(instance_id_) + constNetName;
         net = odb::dbNet::create(block, net_name_modified.c_str());
       }
 
@@ -495,7 +495,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
           = (masterName == "_const0_") ? const0_cell_port_ : const1_cell_port_;
       instIds[constMaster]
           = (instIds[constMaster]) ? instIds[constMaster] + 1 : 1;
-      std::string instName = constMaster + "_" + std::to_string(call_id_)
+      std::string instName = constMaster + "_" + std::to_string(instance_id_)
                              + std::to_string(instIds[constMaster]);
       for (auto&& lib : block->getDb()->getLibs()) {
         master = lib->findMaster(constMaster.c_str());
@@ -507,7 +507,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
       if (master != nullptr) {
         while (block->findInst(instName.c_str())) {
           instIds[constMaster]++;
-          instName = constMaster + "_" + std::to_string(call_id_)
+          instName = constMaster + "_" + std::to_string(instance_id_)
                      + std::to_string(instIds[constMaster]);
         }
         auto newInst = odb::dbInst::create(block, master, instName.c_str());
@@ -527,11 +527,11 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
     }
 
     instIds[masterName] = (instIds[masterName]) ? instIds[masterName] + 1 : 1;
-    std::string instName = masterName + "_" + std::to_string(call_id_) + "_"
+    std::string instName = masterName + "_" + std::to_string(instance_id_) + "_"
                            + std::to_string(instIds[masterName]);
     while (block->findInst(instName.c_str())) {
       instIds[masterName]++;
-      instName = masterName + "_" + std::to_string(call_id_) + "_"
+      instName = masterName + "_" + std::to_string(instance_id_) + "_"
                  + std::to_string(instIds[masterName]);
     }
 
@@ -585,7 +585,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
       odb::dbNet* net = block->findNet(netName.c_str());
       if (net == nullptr) {
         std::string net_name_modified
-            = std::string("or_") + std::to_string(call_id_) + netName;
+            = std::string("or_") + std::to_string(instance_id_) + netName;
         net = block->findNet(net_name_modified.c_str());
         if (!net)
           net = odb::dbNet::create(block, net_name_modified.c_str());
