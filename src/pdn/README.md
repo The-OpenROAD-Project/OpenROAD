@@ -27,7 +27,6 @@ pdngen
     [-reset]
     [-ripup]
     [-skip_trim]
-    [-verbose]
 ```
 
 #### Options
@@ -123,8 +122,8 @@ define_pdn_grid
     [-obstructions list_of_layers]
     [-orient list_of_valid_orientations]
     [-pins list_of_pin_layers]
-    [-power_control_network STAR|DAISY]
     [-power_control signal_name]
+    [-power_control_network STAR|DAISY]
     [-power_switch_cell name]
     [-starts_with POWER|GROUND]
     [-voltage_domains list_of_domain_names]
@@ -159,7 +158,7 @@ Define a power switch cell that will be inserted into a power grid
 Example usage:
 
 ```
-define_power_switch_cell -name POWER_SWITCH -control SLEEP -switched_power VDD -power VDDG -ground VSS
+define_power_switch_cell -name POWER_SWITCH -control SLEEP -power_switchable VDD -power VDDG -ground VSS
 ```
 
 ```tcl
@@ -180,7 +179,7 @@ define_power_switch_cell
 | `-ground` | Defines the name of the pin that connects to the ground net. |
 | `-name` | The name of the power switch cell. |
 | `-power` | Defines the name of the pin that connects to the unswitched power net. |
-| `-switched_power` | Defines the name of the pin that outputs the switched power net. |
+| `-power_switchable` | Defines the name of the pin that outputs the switched power net. |
 | `[-acknowledge]` | Defines the name of the output control signal of the power control switch if it has one. |
 
 ### Add PDN Straps/Stripes
@@ -302,10 +301,8 @@ add_pdn_ring
     [-core_offsets offset_value]
     [-extend_to_boundary]
     [-grid grid_name]
-    [-ground_pads pads]
     [-nets list_of_nets]
     [-pad_offsets offset_value]
-    [-power_pads pads]
     [-starts_with POWER|GROUND]
 
 ```
