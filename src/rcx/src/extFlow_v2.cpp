@@ -260,7 +260,8 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m1)
                widthTable);
 
       mrc->_rotatedGs = getRotatedFlag();
-      mrc->_pixelTable= new gs(m1->_seqPool);
+      // mrc->_pixelTable= new gs(m1->_seqPool);
+      mrc->_pixelTable= _geomSeq;
 
 
       // add wires onto search such that    loX<=loX<=hiX
