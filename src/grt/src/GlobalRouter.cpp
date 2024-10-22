@@ -4698,6 +4698,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
   std::vector<Net*> dirty_nets;
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);
+    fastroute_->clearNetsToRoute();
 
     updateDirtyNets(dirty_nets);
     if (verbose_) {
