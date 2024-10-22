@@ -66,6 +66,7 @@
 #include "sta/TimingModel.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
+#include "utl/scope.h"
 
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
@@ -2689,7 +2690,7 @@ void Resizer::repairNet(Net* net,
 void Resizer::repairClkNets(double max_wire_length)
 {
   resizePreamble();
-  SetAndRestore<LibertyCellSeq> set_buffers(buffer_cells_, clk_buffers_);
+  utl::SetAndRestore<LibertyCellSeq> set_buffers(buffer_cells_, clk_buffers_);
 
   repair_design_->repairClkNets(max_wire_length);
 }
@@ -2850,21 +2851,6 @@ void Resizer::rebufferNet(const Pin* drvr_pin)
 
 ////////////////////////////////////////////////////////////////
 
-template <typename T>
-SetAndRestore<T>::SetAndRestore(T& storage, const T& new_value)
-    : storage_(storage), old_value_(storage)
-{
-  storage_ = new_value;
-}
-
-template <typename T>
-SetAndRestore<T>::~SetAndRestore()
-{
-  storage_ = old_value_;
-}
-
-////////////////////////////////////////////////////////////////
-
 void Resizer::repairHold(
     double setup_margin,
     double hold_margin,
@@ -2880,8 +2866,10 @@ void Resizer::repairHold(
   // higher and we'll need fewer insertions.
   // Obs: We need to clear the buffer list for the preamble to select
   // buffers again excluding the clock ones.
-  SetAndRestore<bool> set_exclude_clk_buffers(exclude_clock_buffers_, false);
-  SetAndRestore<LibertyCellSeq> set_buffers(buffer_cells_, LibertyCellSeq());
+  utl::SetAndRestore<bool> set_exclude_clk_buffers(exclude_clock_buffers_,
+                                                   false);
+  utl::SetAndRestore<LibertyCellSeq> set_buffers(buffer_cells_,
+                                                 LibertyCellSeq());
 
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
@@ -2903,8 +2891,10 @@ void Resizer::repairHold(const Pin* end_pin,
                          int max_passes)
 {
   // See comment on the method above.
-  SetAndRestore<bool> set_exclude_clk_buffers(exclude_clock_buffers_, false);
-  SetAndRestore<LibertyCellSeq> set_buffers(buffer_cells_, LibertyCellSeq());
+  utl::SetAndRestore<bool> set_exclude_clk_buffers(exclude_clock_buffers_,
+                                                   false);
+  utl::SetAndRestore<LibertyCellSeq> set_buffers(buffer_cells_,
+                                                 LibertyCellSeq());
 
   resizePreamble();
   repair_hold_->repairHold(end_pin,

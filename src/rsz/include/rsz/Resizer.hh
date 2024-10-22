@@ -182,19 +182,6 @@ struct BufferData
 
 class OdbCallBack;
 
-// RAII mechanism to facilitate using operation-specific settings.
-template <typename T>
-class SetAndRestore
-{
- public:
-  SetAndRestore(T& storage, const T& new_value);
-  ~SetAndRestore();
-
- private:
-  T& storage_;
-  T old_value_;
-};
-
 class Resizer : public dbStaState
 {
  public:
