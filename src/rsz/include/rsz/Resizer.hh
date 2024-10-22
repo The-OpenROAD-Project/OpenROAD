@@ -182,32 +182,17 @@ struct BufferData
 
 class OdbCallBack;
 
-// RAII mechanism to facilitate using operation specific settings, e.g.,
-// use only the clock buffers from cts when doing repairClkNets, don't
-// use buffers marked as "clock" in hold repairing, etc.
-// Can be instantiated in two ways:
-// - Before resizePreamble(): set the "filters" used by the preamble.
-// - After resizePreamble(): enforce the variables we want.
-class OperationSettings
+// RAII mechanism to facilitate using operation-specific settings.
+template <typename T>
+class SetAndRestore
 {
  public:
-  // Call before preamble:
-  OperationSettings(bool* exclude_clock_buffers,
-                    bool new_exclude_clock_buffers,
-                    sta::LibertyCellSeq* buffer_cells);
-
-  // Call after preamble:
-  OperationSettings(sta::LibertyCellSeq* buffer_cells,
-                    const sta::LibertyCellSeq& new_buffer_cells);
-
-  ~OperationSettings();
+  SetAndRestore(T& storage, const T& new_value);
+  ~SetAndRestore();
 
  private:
-  bool* exclude_clock_buffers_{nullptr};
-  sta::LibertyCellSeq* buffer_cells_{nullptr};
-
-  // Previous settings (initialized to default):
-  bool prev_exclude_clock_buffers_{true};
+  T& storage_;
+  T old_value_;
 };
 
 class Resizer : public dbStaState

@@ -2689,7 +2689,7 @@ void Resizer::repairNet(Net* net,
 void Resizer::repairClkNets(double max_wire_length)
 {
   resizePreamble();
-  OperationSettings operation_settings(&buffer_cells_, clk_buffers_);
+  SetAndRestore<LibertyCellSeq> set_buffers(buffer_cells_, clk_buffers_);
 
   repair_design_->repairClkNets(max_wire_length);
 }
@@ -2850,42 +2850,20 @@ void Resizer::rebufferNet(const Pin* drvr_pin)
 
 ////////////////////////////////////////////////////////////////
 
-OperationSettings::OperationSettings(bool* exclude_clock_buffers,
-                                     const bool new_exclude_clock_buffers,
-                                     sta::LibertyCellSeq* buffer_cells)
+template <typename T>
+SetAndRestore<T>::SetAndRestore(T& storage, const T& new_value)
+    : storage_(storage), old_value_(storage)
 {
-  if (exclude_clock_buffers) {
-    exclude_clock_buffers_ = exclude_clock_buffers;
-    prev_exclude_clock_buffers_ = *exclude_clock_buffers_;
-    *exclude_clock_buffers_ = new_exclude_clock_buffers;
-  }
-
-  if (buffer_cells) {
-    buffer_cells_ = buffer_cells;
-    buffer_cells_->clear();
-  }
+  storage_ = new_value;
 }
 
-OperationSettings::OperationSettings(
-    sta::LibertyCellSeq* buffer_cells,
-    const sta::LibertyCellSeq& new_buffer_cells)
+template <typename T>
+SetAndRestore<T>::~SetAndRestore()
 {
-  if (buffer_cells) {
-    buffer_cells_ = buffer_cells;
-    *buffer_cells_ = new_buffer_cells;
-  }
+  storage_ = old_value_;
 }
 
-OperationSettings::~OperationSettings()
-{
-  if (exclude_clock_buffers_) {
-    *exclude_clock_buffers_ = prev_exclude_clock_buffers_;
-  }
-
-  if (buffer_cells_) {
-    buffer_cells_->clear();
-  }
-}
+////////////////////////////////////////////////////////////////
 
 void Resizer::repairHold(
     double setup_margin,
@@ -2900,9 +2878,11 @@ void Resizer::repairHold(
   // until we have a better approach, it's better to consider clock buffers
   // for hold violation repairing as these buffers' delay may be slighty
   // higher and we'll need fewer insertions.
-  OperationSettings operation_settings(&exclude_clock_buffers_,
-                                       false /*new_exclude_clock_buffers*/,
-                                       &buffer_cells_);
+  // Obs: We need to clear the buffer list for the preamble to select
+  // buffers again excluding the clock ones.
+  SetAndRestore<bool> set_exclude_clk_buffers(exclude_clock_buffers_, false);
+  SetAndRestore<LibertyCellSeq> set_buffers(buffer_cells_, LibertyCellSeq());
+
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
     opendp_->initMacrosAndGrid();
@@ -2923,9 +2903,9 @@ void Resizer::repairHold(const Pin* end_pin,
                          int max_passes)
 {
   // See comment on the method above.
-  OperationSettings operation_settings(&exclude_clock_buffers_,
-                                       false /*new_exclude_clock_buffers*/,
-                                       &buffer_cells_);
+  SetAndRestore<bool> set_exclude_clk_buffers(exclude_clock_buffers_, false);
+  SetAndRestore<LibertyCellSeq> set_buffers(buffer_cells_, LibertyCellSeq());
+
   resizePreamble();
   repair_hold_->repairHold(end_pin,
                            setup_margin,
