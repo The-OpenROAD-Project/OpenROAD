@@ -843,9 +843,6 @@ Instance* dbNetwork::parent(const Instance* instance) const
   if (instance == top_instance_) {
     return nullptr;
   }
-  if (!hasHierarchy()) {
-    return top_instance_;
-  }
   dbInst* db_inst;
   dbModInst* mod_inst;
   staToDb(instance, db_inst, mod_inst);
@@ -859,6 +856,9 @@ Instance* dbNetwork::parent(const Instance* instance) const
     }
   }
   if (db_inst) {
+    if (!hasHierarchy()) {
+      return top_instance_;
+    }
     auto parent_module = db_inst->getModule();
     if (parent_module) {
       auto parent_inst = parent_module->getModInst();
