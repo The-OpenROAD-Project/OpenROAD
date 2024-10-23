@@ -1140,7 +1140,6 @@ uint extMain::fill_gs4(int dir,
     if (!((net->getSigType().isSupply()))) {
       continue;
     }
-
     pcnt += addNetSboxesGs(net, rotatedGs, !dir, gs_dir);
   }
 
@@ -1152,10 +1151,30 @@ uint extMain::fill_gs4(int dir,
     if ((net->getSigType().isSupply())) {
       continue;
     }
-
     scnt += addNetShapesGs(net, rotatedGs, !dir, gs_dir);
   }
+  if (_v2 && _overCell ) {
+    Ath__array1D<uint> instGsTable(nets.size());
+    Ath__array1D<uint> tmpNetIdTable(nets.size());
 
+    dbSet<dbInst> insts = _block->getInsts();
+    dbSet<dbInst>::iterator inst_itr;
+    for (inst_itr = insts.begin(); inst_itr != insts.end(); ++inst_itr) {
+      dbInst* inst = *inst_itr;
+
+      dbBox* R = inst->getBBox();
+
+      int R_ll[2] = {R->xMin(), R->yMin()};
+      int R_ur[2] = {R->xMax(), R->yMax()};
+
+      if ((R_ur[dir] < lo_gs[dir]) || (R_ll[dir] > hi_gs[dir]))
+        continue;
+
+      instGsTable.add(inst->getId());
+    }
+    if (instGsTable.getCnt()>0)
+        addInstsGs(&instGsTable, &tmpNetIdTable, dir);
+  }
   return pcnt + scnt;
 }
 

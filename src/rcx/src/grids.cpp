@@ -279,8 +279,13 @@ void Ath__wire::reset()
   _boxId = 0;
   _srcId = 0;
   _otherId = 0;
-  _track = nullptr;
-  _next = nullptr;
+  _track = NULL;
+  _next = NULL;
+  _upNext= NULL;
+  _downNext= NULL; 
+  _aboveNext= NULL;
+  _belowNext= NULL;
+  _ouLen = 0;
 
   _xy = 0;  // offset from track start
   _len = 0;
@@ -291,7 +296,6 @@ void Ath__wire::reset()
                // 0=wire, 1=obs, 2=pin, 3=power
   _dir = 0;
   _ext = 0;
-  _ouLen = 0;
 }
 bool Ath__wire::isTilePin()
 {

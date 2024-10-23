@@ -271,10 +271,8 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m1)
       processWireCnt += addPowerNets(dir, lo_sdb, hi_sdb, pwrtype);
       processWireCnt += addSignalNets(dir, lo_sdb, hi_sdb, sigtype);
 
-      // extMeasureRC* mrc = (extMeasureRC*) m;
-      // m->_search = m->_extMain->_search;
       mrc->_search = m1->_extMain->_search;
-       _dbgOption= 1;
+      // _dbgOption= 1;
       if (_dbgOption > 0)
         mrc->PrintAllGrids(dir, mrc->OpenPrintFile(dir, "wires.org"), 0);
 
@@ -953,4 +951,106 @@ void extDistRC::printBound(FILE *fp, const char *loHi, const char *layer_name, u
     fprintf(fp, "%-10s Metal %2d  Corner %2d  %s_Bound cap:aF/nm: total %9.6f coupling %9.6f  Res:mOhm/nm: %10.6f\n",
         layer_name, met, corner, loHi, 2*(_coupling+_fringe+_diag)*10e+3, 2*_coupling*10e+3, res*1000);
 }
+
+uint extMain::addInstsGs(Ath__array1D<uint>* instTable,
+                         Ath__array1D<uint>* tmpInstIdTable, uint dir) {
+  if (instTable == NULL)
+    return 0;
+
+  bool rotatedGs = getRotatedFlag();
+
+  uint cnt = 0;
+  uint instCnt = instTable->getCnt();
+
+  for (uint ii = 0; ii < instCnt; ii++) {
+    uint instId = instTable->get(ii);
+    dbInst* inst = dbInst::getInst(_block, instId);
+
+    if (tmpInstIdTable != NULL) {
+      if (inst->getUserFlag1())
+        continue;
+
+      inst->setUserFlag1();
+      tmpInstIdTable->add(instId);
+    }
+
+    /*
+                    Rect r;
+                    dbBox *bb= inst->getBBox();
+                    bb->getBox(r);
+                    if ( !isIncludedInsearch(r, dir, bb_ll, bb_ur) )
+                            continue;
+    */
+    cnt += addItermShapesOnPlanes(inst, rotatedGs, !dir);
+    cnt += addObsShapesOnPlanes(inst, rotatedGs, !dir);
+  }
+  if (tmpInstIdTable != NULL) {
+    for (uint jj = 0; jj < tmpInstIdTable->getCnt(); jj++) {
+      uint instId = instTable->get(jj);
+      dbInst* inst = dbInst::getInst(_block, instId);
+
+      inst->clearUserFlag1();
+    }
+  }
+  return cnt;
+}
+uint extMain::addItermShapesOnPlanes(odb::dbInst* inst, bool rotatedFlag,
+                                     bool swap_coords) {
+  uint cnt = 0;
+  odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
+  odb::dbSet<odb::dbITerm>::iterator iterm_itr;
+
+  for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
+    odb::dbITerm* iterm = *iterm_itr;
+
+    odb::dbShape s;
+    odb::dbITermShapeItr term_shapes;
+    for (term_shapes.begin(iterm); term_shapes.next(s);) {
+      if (s.isVia())
+        continue;
+
+      uint level = s.getTechLayer()->getRoutingLevel();
+
+      uint n = 0;
+      if (!rotatedFlag)
+        n = _geomSeq->box(s.xMin(), s.yMin(), s.xMax(), s.yMax(), level);
+      else
+        n = addShapeOnGs(&s, swap_coords);
+
+      if (n == 0)
+        cnt++;
+    }
+  }
+  return cnt;
+}
+uint extMain::addShapeOnGs(odb::dbShape* s, bool swap_coords) {
+  int level = s->getTechLayer()->getRoutingLevel();
+
+  if (!swap_coords)  // horizontal
+    return _geomSeq->box(s->xMin(), s->yMin(), s->xMax(), s->yMax(), level);
+  else
+    return _geomSeq->box(s->yMin(), s->xMin(), s->yMax(), s->xMax(), level);
+}
+uint extMain::addObsShapesOnPlanes(odb::dbInst* inst, bool rotatedFlag, bool swap_coords) 
+{
+  uint cnt = 0;
+  const char *name= inst->getConstName();
+  odb::dbInstShapeItr obs_shapes;
+
+  odb::dbShape s;
+  for (obs_shapes.begin(inst, odb::dbInstShapeItr::OBSTRUCTIONS);
+       obs_shapes.next(s);) {
+    if (s.isVia())
+      continue;
+
+    uint level = s.getTechLayer()->getRoutingLevel();
+
+    if (!rotatedFlag)
+      _geomSeq->box(s.xMin(), s.yMin(), s.xMax(), s.yMax(), level);
+    else
+      addShapeOnGs(&s, swap_coords);
+  }
+  return cnt;
+}
+
 }  // namespace

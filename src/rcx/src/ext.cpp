@@ -286,6 +286,8 @@ void Ext::extract(ExtractOptions options)
 	_ext->_v2= true;
   _ext->_dbgOption= options._dbg;
 
+   _ext->_overCell = _ext->_v2 && options.over_cell;
+
   _ext->makeBlockRCsegs(options.net,
                         options.cc_up,
                         options.cc_model,
@@ -294,9 +296,6 @@ void Ext::extract(ExtractOptions options)
                         options.coupling_threshold,
                         options.context_depth,
                         options.ext_model_file);
-
-  bool completed= true;
-// fprintf(stdout, "Version %5.3f enabled new RC calc flow for lower 2 metals\n", options._version);
 
 }
 
