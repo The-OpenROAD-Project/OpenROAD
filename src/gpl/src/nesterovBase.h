@@ -1082,6 +1082,12 @@ class NesterovBase
   // should be separately defined.
   // This is mainly used for NesterovLoop
   int64_t nesterovInstsArea() const;
+  int64_t getStdInstArea() const{
+    return this->stdInstsArea_;
+  }
+  int64_t getMacroInstArea() const{
+    return this->macroInstsArea_;
+  }
 
   // sum phi and target density
   // used in NesterovPlace

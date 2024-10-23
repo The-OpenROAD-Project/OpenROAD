@@ -1473,9 +1473,9 @@ for (auto it = gPinStor_.begin(); it < gPinStor_.end(); ++it) {
           if (inst_it != db_inst_map_.end()) {
               gPin.setGCell(&gCellStor_[inst_it->second]);
           }
-          else {
-            log_->report("Instance not found in db_inst_map_ for ITerm: {} -> {}", iterm->getInst()->getName(), iterm->getName());
-          }
+          // else {
+          //   log_->report("Instance not found in db_inst_map_ for ITerm: {} -> {}", iterm->getInst()->getName(), iterm->getName());
+          // }
 
           if (net_it != db_net_map_.end()) {
             gPin.setGNet(&gNetStor_[net_it->second]); 
@@ -2017,6 +2017,7 @@ void NesterovBase::updateDensitySize()
 
 void NesterovBase::updateAreas()
 {
+  auto block = pb_->db()->getChip()->getBlock();
   assert(omp_get_thread_num() == 0);
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
@@ -2037,13 +2038,19 @@ void NesterovBase::updateAreas()
   int64_t coreArea = pb_->die().coreArea();
   whiteSpaceArea_ = coreArea - static_cast<int64_t>(pb_->nonPlaceInstsArea());
 
-  log_->report("previous movableArea_: {}", movableArea_);
+  log_->report("previous whiteSpaceArea_:       {}", block->dbuAreaToMicrons(whiteSpaceArea_));
+  log_->report("previous movableArea_:          {}", block->dbuAreaToMicrons(movableArea_));
+  log_->report("previous totalFillerArea_:      {}", block->dbuAreaToMicrons(totalFillerArea_));
+  log_->report("previous uniformTargetDensity_: {}", block->dbuAreaToMicrons(uniformTargetDensity_));
   movableArea_ = whiteSpaceArea_ * targetDensity_;
   totalFillerArea_ = movableArea_ - nesterovInstsArea();
   uniformTargetDensity_ = static_cast<float>(nesterovInstsArea())
                           / static_cast<float>(whiteSpaceArea_);
 
-  log_->report("new    movableArea_: {}", movableArea_);
+  log_->report("new whiteSpaceArea_:       {}", block->dbuAreaToMicrons(whiteSpaceArea_));
+  log_->report("new    movableArea_:       {}", block->dbuAreaToMicrons(movableArea_));
+  log_->report("new totalFillerArea_:      {}", block->dbuAreaToMicrons(totalFillerArea_));
+  log_->report("new uniformTargetDensity_: {}", block->dbuAreaToMicrons(uniformTargetDensity_));
   if (totalFillerArea_ < 0) {
     log_->error(GPL,
                 303,
@@ -2903,7 +2910,7 @@ void NesterovBaseCommon::moveGCell(odb::dbInst* db_inst) {
 
 void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst) {
   GCell* gcell = getGCellByIndex(db_inst_map_.find(db_inst)->second);
-  log_->report("gcell {} found in db_inst_map_ as {}", gcell->instance()->dbInst()->getName(), db_inst->getName());
+  // log_->report("gcell {} found in db_inst_map_ as {}", gcell->instance()->dbInst()->getName(), db_inst->getName());
   odb::dbBox* bbox = db_inst->getBBox();
   gcell->setSize(bbox->getDX(),bbox->getDY());
 }

@@ -456,8 +456,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
       else
         db_cbk_->removeOwner();
-      log_->report("before TD - nbVec_[0]->nesterovInstsArea():{}", nbVec_[0]->nesterovInstsArea());
-      bool shouldTdProceed = tb_->updateGNetWeights(run_journal_restore);
+      auto block = pbc_->db()->getChip()->getBlock();
+      // log_->report("before TD - nbVec_[0]->nesterovInstsArea():{}", block->dbuAreaToMicrons(nbVec_[0]->nesterovInstsArea()));
+      bool shouldTdProceed = tb_->updateGNetWeights(run_journal_restore);    
+      db_cbk_->printCallCounts();
+      db_cbk_->resetCallCounts();  
       if(!run_journal_restore) {
         //To update GCell states we need GCell pointers to pins set, and GCell positions set.
         // Calling this here because we need access to nesterovBase, but this goes along with fixpointers(), which is called inside timingBase!
@@ -471,35 +474,40 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
         ///// UPDATE GPL DATA /////
         // This updates are the same ones used on routability. They modify only the GCells, not the instances in placerBase.
-        log_->report("nbVec_.size(): {}",nbVec_.size());
-        auto block = pbc_->db()->getChip()->getBlock();
-        for (auto& nb : nbVec_) {          
-          int64_t oldInstArea = nb->nesterovInstsArea();
-          int64_t oldFillerArea = nb->totalFillerArea();
-          log_->report("prev nb->nesterovInstsArea(): {}", block->dbuAreaToMicrons(nb->nesterovInstsArea()));
-          log_->report("prev nb->totalFillerArea():   {}", block->dbuAreaToMicrons(nb->totalFillerArea()));
-          log_->report("prev nb->targetDensity():     {}", nb->targetDensity());
+        log_->report("nbVec_.size(): {}",nbVec_.size());        
+          int64_t oldStdInstArea = nesterov->getStdInstArea();
+          int64_t oldMacroInstArea = nesterov->getMacroInstArea();
+          int64_t oldTotalArea = oldStdInstArea+oldMacroInstArea;
+          int64_t oldFillerArea = nesterov->totalFillerArea();
+          log_->report("\nprev nesterov->stdInstsArea_: {}", block->dbuAreaToMicrons(oldStdInstArea));
+          log_->report("prev nesterov->macroInstsArea_: {}", block->dbuAreaToMicrons(oldMacroInstArea));
+          log_->report("prev total area: {}", block->dbuAreaToMicrons(oldTotalArea));
+          log_->report("prev nesterov->totalFillerArea():   {}", block->dbuAreaToMicrons(nesterov->totalFillerArea()));
+          log_->report("prev nesterov->targetDensity():     {}", nesterov->targetDensity());
           
-          nb->updateAreas();
-          nb->setTargetDensity(
-            static_cast<float>(nb->nesterovInstsArea() + nb->totalFillerArea() )
-            / static_cast<float>(nb->whiteSpaceArea()));    
-          nb->updateDensitySize(); //influenced by bin sizes, which is influenced by instance sizes.
+          nesterov->updateAreas();
+          nesterov->setTargetDensity(
+            static_cast<float>(nesterov->nesterovInstsArea() + nesterov->totalFillerArea() )
+            / static_cast<float>(nesterov->whiteSpaceArea()));    
+          nesterov->updateDensitySize(); //influenced by bin sizes, which is influenced by instance sizes.
           //  updateWireLengthForceWA() --> influenced by pin positions, do they change with different cell size, or even different cell type?
           
-          log_->report("new nb->nesterovInstsArea(): {}", block->dbuAreaToMicrons(nb->nesterovInstsArea()));
-          log_->report("new nb->totalFillerArea():   {}", block->dbuAreaToMicrons(nb->totalFillerArea()));
-          log_->report("new nb->targetDensity():     {}", nb->targetDensity());
+          int64_t newStdInstArea = nesterov->getStdInstArea();
+          int64_t newMacroInstArea = nesterov->getMacroInstArea();
+          int64_t newTotalArea = newStdInstArea + newMacroInstArea;
+          log_->report("\nnew nesterov->stdInstsArea_: {}", block->dbuAreaToMicrons(newStdInstArea));
+          log_->report("new nesterov->macroInstsArea_: {}", block->dbuAreaToMicrons(newMacroInstArea));
+          log_->report("new total area: {}", block->dbuAreaToMicrons(newTotalArea));
+          log_->report("new nesterov->totalFillerArea():   {}", block->dbuAreaToMicrons(nesterov->totalFillerArea()));
+          log_->report("new nesterov->targetDensity():     {}", nesterov->targetDensity());
           
-          log_->report("instDeltaArea:   {}({:3.1f}%)", block->dbuAreaToMicrons(nb->nesterovInstsArea() - oldInstArea), ((static_cast<float>(nb->nesterovInstsArea() - oldInstArea)) / oldInstArea)*100);
-          log_->report("fillerDeltaArea: {}({:3.1f}%)", block->dbuAreaToMicrons(nb->totalFillerArea()- oldFillerArea ), ((static_cast<float>(nb->totalFillerArea()- oldFillerArea)) / oldFillerArea)*100 );                    
+          log_->report("\nStdInstDeltaArea:     {}({:3.1f}%)", block->dbuAreaToMicrons(newStdInstArea - oldStdInstArea), ((static_cast<float>(newStdInstArea - oldStdInstArea)) / oldStdInstArea)*100);
+          log_->report("MacroInstDeltaArea:   {}({:3.1f}%)", block->dbuAreaToMicrons(newMacroInstArea - oldMacroInstArea), ((static_cast<float>(newMacroInstArea - oldMacroInstArea)) / oldMacroInstArea)*100);
+          log_->report("TotalInstDeltaArea:   {}({:3.1f}%)", block->dbuAreaToMicrons(newTotalArea - oldTotalArea), ((static_cast<float>(newTotalArea - oldTotalArea)) / oldTotalArea)*100);
+          log_->report("fillerDeltaArea: {}({:3.1f}%)", block->dbuAreaToMicrons(nesterov->totalFillerArea()- oldFillerArea ), ((static_cast<float>(nesterov->totalFillerArea()- oldFillerArea)) / oldFillerArea)*100 );                    
           log_->report("after -> block->getInsts().size(): {}", block->getInsts().size());   
         }
-        }
       }
-      db_cbk_->printCallCounts();
-      db_cbk_->resetCallCounts();
-      log_->report("after TD - nbVec_[0]->nesterovInstsArea():{}", nbVec_[0]->nesterovInstsArea());
       // log_->report("print gcells after TD iteration.");
       // nbc_->printGCells();
       // log_->report("print gpins after TD iteration.");
@@ -730,13 +738,9 @@ void NesterovPlace::connectIterm(odb::dbITerm* iterm) {
 }
 
 void NesterovPlace::resizeGCell(odb::dbInst* db_inst) {
-  log_->report("start resizing cell: {}", db_inst->getName());
+  // log_->report("start resizing cell: {}", db_inst->getName());
   nbc_->resizeGCell(db_inst);
-  // auto gcell = nbc_->dbInstMap().find(db_inst)->second;
-  // if(gcell){
-  //   gcell->setSize(db_inst->getBBox()->getDX(), db_inst->getBBox()->getDY());
-  // }
-  log_->report("done resizing cell: {}", db_inst->getName());
+  // log_->report("done resizing cell: {}", db_inst->getName());
 }
 
 void NesterovPlace::moveGCell(odb::dbInst* db_inst) {
