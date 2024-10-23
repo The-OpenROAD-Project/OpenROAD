@@ -17,13 +17,12 @@ cd $run_dir
 
 echo "$test_name"
 $or_exec < ../scripts/$test_name.tcl > OUT  
-line_cnt=`diff $test_name.spef ../$test_name.GOLD/$test_name.spef | egrep -v DATE | egrep -v VERSION | egrep -v "\-\-\-" | wc -l `
-if [ $line_cnt -lt 3 ]
+line_cnt=`diff $test_name.def ../$test_name.GOLD/$test_name.def | wc -l `
+# echo "line_cnt= $line_cnt"
+
+if [ $line_cnt -lt 1 ]
 then
 	echo "$test_name Pass"
 else
 	echo "$test_name Fail"
 fi
-
-#  line_cnt=`diff $test_name.spef ../$test_name.GOLD/$test_name.spef | egrep -v DATE | wc -l | awk '$1 == 2 { print "pass" } '
-

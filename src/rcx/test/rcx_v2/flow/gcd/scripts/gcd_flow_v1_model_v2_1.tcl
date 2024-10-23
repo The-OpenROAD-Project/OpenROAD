@@ -2,6 +2,7 @@ set test_case gcd_flow_v1_model_v2_1
 set test_dir ../../../../
 # source $test_dir/helpers.tcl
 set model_v2 ../scripts/max.rcx.model
+set model_v2 /home/dimitris-ic/icb/icbrcx/src/rcx/test/via_res/corners.0322/data.m3/3corners.rcx.model
 set test_nets ""
 
 read_lef $test_dir/sky130hs/sky130hs.tlef 

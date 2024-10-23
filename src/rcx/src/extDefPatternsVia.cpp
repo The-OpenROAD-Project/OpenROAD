@@ -93,8 +93,6 @@ namespace rcx
 
   uint extRulesPat::GetViaCutCount(dbTechVia *tvia)
   {
-      // if (_viaResHash[tvia->getConstName()])
-      double res = 0;
       dbSet<dbBox> boxes = tvia->getBoxes();
       dbSet<dbBox>::iterator bitr;
       uint cnt = 0;
@@ -121,7 +119,7 @@ namespace rcx
   {
     const char *viaName= via->getConstName();
     uint cutCnt= GetViaCutCount(via);
-    double area= GetViaArea(via);
+    // double area= GetViaArea(via);
     dbBox *bbox = via->getBBox();
       uint vdx = bbox->getDX();
       uint vdy = bbox->getDY();
@@ -159,10 +157,6 @@ namespace rcx
 
 
       Print(stdout);
-      int ll[2] = {_LL[1][0], _LL[1][1]};
-      int ur[2] = {_UR[ii - 1][0], _UR[ii - 1][1]};
-
-      // UpdateOrigin_wires(ll, ur);
 
       return ii; // cnt of main pattern;
   }
@@ -176,7 +170,7 @@ namespace rcx
 
     WriteWire(_def_fp, ll, ur,  _patName[jj]);
 
-    dbNet* net= createNetSingleWireAndVia(_patName[jj], ll, ur, width, dir==0, via);
+    createNetSingleWireAndVia(_patName[jj], ll, ur, width, dir==0, via);
   }
   uint extRCModel::ViaRulePat(extMainOptions *opt, int len, int origin[2], int UR[2], bool res, bool diag, uint overDist)
   {
@@ -216,7 +210,8 @@ namespace rcx
                     underMet, bot_layer->getConstName(), met, top_layer->getConstName());
             }
 
-          uint patternSep = p->setLayerInfoVia(top_layer, met, startPatterns);
+          p->setLayerInfoVia(top_layer, met, startPatterns);
+
           if (startPatterns)
             startPatterns= false;
 

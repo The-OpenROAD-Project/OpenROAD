@@ -16,7 +16,7 @@ read_def $test_dir/gcd.def
 source $test_dir/sky130hs/sky130hs.rc
 
 define_process_corner -ext_model_index 0 X
-extract_parasitics -ext_model_file $model_v1 -max_res 0 -coupling_threshold 0.1 -version 2.0 -skip_over_cell -max_res 500
+extract_parasitics -ext_model_file $model_v1 -coupling_threshold 0.1 -version 2.0 -skip_over_cell -max_res 500
 
 set spef_file $test_case.spef 
 write_spef $spef_file -nets $test_nets

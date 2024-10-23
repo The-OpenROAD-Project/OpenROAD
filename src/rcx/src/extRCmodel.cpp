@@ -2689,7 +2689,7 @@ void extRCModel::mkNet_prefix(extMeasure* m, const char* wiresNameSuffix)
     sprintf(_wireFileName, "%s", "wires");
   }
 
-  fprintf(_logFP, "pattern Dir %s\n\n", _wireDirName);
+  // fprintf(_logFP, "pattern Dir %s\n\n", _wireDirName);
   fflush(_logFP);
 }
 
@@ -4173,7 +4173,7 @@ uint extMain::writeRules(const char* name,
                          const char* rulesFile,
                          int pattern)
 {
-  genExtRules(rulesFile, pattern);
+  GenExtRules(rulesFile, pattern);
   return 0;
 }
 

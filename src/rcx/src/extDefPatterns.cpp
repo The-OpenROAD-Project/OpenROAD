@@ -393,13 +393,11 @@ namespace rcx
 
     Print(stdout);
 
-    uint uCnt = 0;
     if (_underMet > 0)
-      uCnt = CreateContext(_underMet, ll, ur, w, s, _under_minWidthCntx, _under_minSpaceCntx, _under_layer);
+      CreateContext(_underMet, ll, ur, w, s, _under_minWidthCntx, _under_minSpaceCntx, _under_layer);
 
-    uint oCnt = 0;
     if (_overMet > 0)
-      oCnt = CreateContext(_overMet, ll, ur, w, s, _over_minWidthCntx, _over_minSpaceCntx, _over_layer);
+      CreateContext(_overMet, ll, ur, w, s, _over_minWidthCntx, _over_minSpaceCntx, _over_layer);
 
     UpdateOrigin_wires(ll, ur);
 
@@ -498,13 +496,11 @@ namespace rcx
     PrintBbox(stdout, ll, ur);
     UpdateOrigin_wires(ll, ur);
 
-    uint uCnt = 0;
     if (_underMet > 0)
-      uCnt = CreateContext(_underMet, ll, ur, w, s1, _under_minWidthCntx, _under_minSpaceCntx, _under_layer);
+      CreateContext(_underMet, ll, ur, w, s1, _under_minWidthCntx, _under_minSpaceCntx, _under_layer);
 
-    uint oCnt = 0;
     if (_overMet > 0)
-      oCnt = CreateContext(_overMet, ll, ur, w, s1, _over_minWidthCntx, _over_minSpaceCntx, _over_layer);
+      CreateContext(_overMet, ll, ur, w, s1, _over_minWidthCntx, _over_minSpaceCntx, _over_layer);
 
     return ii; // cnt of main pattern;
   }
@@ -668,7 +664,7 @@ namespace rcx
 
     WriteWire(_def_fp, ll, ur,  _patName[jj]);
 
-    dbNet* net= createNetSingleWire(_patName[jj], ll, ur, width, dir==0, met, layer);
+    createNetSingleWire(_patName[jj], ll, ur, width, dir==0, met, layer);
   }
   void extRulesPat::WriteWire(FILE *fp, int ll[2], int ur[2], char *name)
   {
@@ -760,7 +756,8 @@ namespace rcx
       dbTechLayer *layer = opt->_tech->findRoutingLayer(met);
       if (layer == NULL)
         continue;
-      uint patternSep = p->setLayerInfo(layer, met);
+      
+      p->setLayerInfo(layer, met);
 
       for (int underMet = 0; underMet < met; underMet++)
       {
@@ -813,7 +810,8 @@ namespace rcx
       dbTechLayer *layer = opt->_tech->findRoutingLayer(met);
       if (layer == NULL)
         continue;
-      uint patternSep = p->setLayerInfo(layer, met);
+      
+      p->setLayerInfo(layer, met);
 
       for (uint overMet = met + 1; overMet <= _layerCnt; overMet++)
       {
@@ -865,7 +863,8 @@ namespace rcx
       dbTechLayer *layer = opt->_tech->findRoutingLayer(met);
       if (layer == NULL)
         continue;
-      uint patternSep = p->setLayerInfo(layer, met);
+      
+      p->setLayerInfo(layer, met);
 
       for (uint overMet = met + 1; overMet <= _layerCnt; overMet++)
       {
@@ -910,7 +909,8 @@ namespace rcx
       dbTechLayer *layer = opt->_tech->findRoutingLayer(met);
       if (layer == NULL)
         continue;
-      uint patternSep = p->setLayerInfo(layer, met);
+      
+      p->setLayerInfo(layer, met);
 
       for (int underMet = 1; underMet < met; underMet++)
       {
@@ -1033,7 +1033,7 @@ namespace rcx
 
   dbNet* extRulesPat::createNetSingleWire(const char* netName, int ll[2], int ur[2], uint width, bool vertical, uint met, dbTechLayer* layer)
   {
-    int dw= width/2;
+   //  int dw= width/2;
     /*
     if (vertical) {
       ll[1] += dw;
@@ -1062,8 +1062,8 @@ namespace rcx
       return NULL;
     }
     net->setSigType(dbSigType::SIGNAL);
-    dbBTerm *loBTerm= extRulesPat::createBterm(false, net, ll, ur, "_LO", layer, width, vertical, true /*input*/); 
-    dbBTerm *hiBTerm= extRulesPat::createBterm(true,  net, ll, ur, "_HI", layer, width, vertical, false /*input*/); 
+    dbBTerm *loBTerm= extRulesPat::createBterm(false, net, ll, ur, "_lo", layer, width, vertical, true /*input*/); 
+    dbBTerm *hiBTerm= extRulesPat::createBterm(true,  net, ll, ur, "_hi", layer, width, vertical, false /*input*/); 
     if ((loBTerm == NULL) || (hiBTerm == NULL)) {
         dbNet::destroy(net);
         fprintf(stdout, "Cannot create net %s, because failed to create bterms\n", netName);

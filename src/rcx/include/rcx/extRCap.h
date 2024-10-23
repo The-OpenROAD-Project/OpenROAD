@@ -47,6 +47,8 @@
 #include "rcx/dbUtil.h"
 #include "rcx/gseq.h"
 
+#include "rcx/extPattern.h"
+
 #include "extSegment.h"
 #include "extViaModel.h"
 
@@ -870,7 +872,9 @@ class extMeasure
  public:
 
  // ------------------------------------------------- v2
-    
+        uint createContextGrid(char *dirName, int bboxLL[2], int bboxUR[2], int met, int s_layout = -1);
+            uint createContextGrid_dir(char *dirName, int bboxLL[2], int bboxUR[2], int met);
+
         double _topWidthR;
     double _botWidthR;
     double _teffR;
@@ -1480,7 +1484,13 @@ class extMain
     extSolverGen *_currentSolverGen;
 
     // v2 -----------------------------------------------------
+    uint benchVerilog_bterms(FILE* fp,
+                           odb::dbIoType iotype,
+                           const char* prefix,
+                           const char* postfix,
+                           bool v = false);
     bool modelExists(const char* extRules);
+
 
     uint addInstsGs(Ath__array1D<uint>* instTable, Ath__array1D<uint>* tmpInstIdTable, uint dir);
     uint addObsShapesOnPlanes(odb::dbInst* inst, bool rotatedFlag, bool swap_coords);
@@ -1891,14 +1901,14 @@ public:
   void initDgContextArray();
   void removeDgContextArray();
 
-  // ruLESgeN
+  // ruLESgeNf
   bool getFirstShape(odb::dbNet* net, odb::dbShape& shape);
   uint writeRules(const char* name,
                   const char* topDir,
                   const char* rulesFile,
                   int pattern);
   uint benchWires(extMainOptions* options);
-  uint genExtRules(const char* rulesFileName, int pattern);
+  uint GenExtRules(const char* rulesFileName, int pattern);
   int getExtCornerIndex(odb::dbBlock* block, const char* cornerName);
 
   void initExtractedCorners(odb::dbBlock* block);
@@ -2297,11 +2307,11 @@ public:
                        odb::dbNet* pNet);
 
   uint benchVerilog(FILE* fp);
-  uint benchVerilog_bterms(FILE* fp,
+  /* v2 up uint benchVerilog_bterms(FILE* fp,
                            const odb::dbIoType& iotype,
                            const char* prefix,
                            const char* postfix,
-                           bool skip_postfix_last = false);
+                           bool skip_postfix_last = false); */
   uint benchVerilog_assign(FILE* fp);
 
   void setMinRC(uint ii, uint jj, extDistRC* rc);
@@ -2540,6 +2550,13 @@ public:
   int _last_node_xy[2];
   bool _wireInfra;
   odb::Rect _extMaxRect;
+
+  // ----------------------------------------- 060623
+  uint benchPatternsGen(const PatternOptions& opt);
+  uint overPatterns(const PatternOptions& opt, int origin[2], dbCreateNetUtil *db_net_util); // 060823
+  uint UnderPatterns(const PatternOptions& opt, int origin[2], dbCreateNetUtil *db_net_util); // 061123
+  uint OverUnderPatterns(const PatternOptions& opt, int origin[2], dbCreateNetUtil *db_net_util); // 061123
+  // ---------------------------------------------------------
 };
 
 }  // namespace rcx

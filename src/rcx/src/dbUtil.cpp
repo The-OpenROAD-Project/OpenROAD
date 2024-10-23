@@ -203,13 +203,15 @@ dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
   if (nd_rule == nullptr) {
     return nullptr;
   }
+  /* FIXME 
   logger_->info(utl::ODB,
                 273,
                 "Create ND RULE {} for layer/width {},{}",
                 rule_name,
                 routingLayer,
                 width);
-
+*/
+fprintf(stdout, "NewRule %s,layer=%d width=%d\n", rule_name, routingLayer, width);
   int i;
   for (i = 1; i <= _tech->getRoutingLayerCount(); i++) {
     dbTechLayer* layer = _routingLayers[i];
