@@ -36,7 +36,7 @@
 #include <functional>
 #include <memory>
 
-#include "db.h"
+#include "odb/db.h"
 #include "dbUtil.h"
 #include "util.h"
 

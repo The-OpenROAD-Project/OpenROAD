@@ -379,3 +379,121 @@ proc write_rules { args } {
 
   rcx::write_rules $filename $dir $name $pattern
 }
+sta::define_cmd_args "bench_wires_gen" {
+    [  -len		length_in_min_widths ]
+    [	 -met	  	metal	 ]
+    [	 -mlist	  	metal_list	 ]
+    [	 -width	  	multiplier_width_list	 ]
+    [	 -spacing	  	multiplier_spacing_list	 ]
+    [	 -couple_width	  	multiplier_coupling_width_list	 ]
+    [	 -couple_spacing	  	multiplier_coupling_spacing_list	 
+    [	 -over_width	  	multiplier_over_width_list	 ]
+    [	 -over_spacing	  	multiplier_over_spacing_list	 ]
+    [	 -under_width	  	multiplier_under_width_list	 ]
+    [	 -under_spacing	  	multiplier_under_spacing_list	 ]
+    [	 -over2_width	  	multiplier_over2_width_list	 ]
+    [	 -over2_spacing	  	multiplier_over2_spacing_list	 ]
+    [	 -under2_width	  	multiplier_under2_width_list	 ]
+    [	 -under2_spacing	  	multiplier_under2_spacing_list	 ]
+    [	 -dbg	  	dbg_flag	 ]
+    [	 -wire_cnt	  	wire_count	 ]
+    [	 -offset_over	  	offset_over	 ]
+    [	 -offset_under	  	offset_under	 ] 
+    [	 -under_dist	  	max_dist_to_under_met	 ] 
+    [	 -over_dist	  	max_dist_to_over_met	 ] 
+    [  -diag ]
+    [  -over ]
+    [  -under ]
+    [  -over_under ]
+}
+proc get_arg_val { keys name default_value } {
+  puts " $default_value $name $keys($name) "
+  set v $default_value 
+  if { [info exists keys($name)] } {
+    set v $keys($name)
+  }
+  return $v
+}
+proc bench_wires_gen { args } {
+  sta::parse_key_args "bench_wires_gen" args keys \
+      { -len -width -spacing -couple_width -couple_spacing -over_width -over_spacing -under_width -under_spacing -over2_width -over2_spacing \
+      -under2_width -under2_spacing -dbg -wire_cnt -mlist -offset_over -offset_under -under_dist -over_dist -met } \
+      flags { -diag -over -under -over_under }
+      
+  set width "1, 1.5, 2"
+  set spacing "1, 1.5, 2, 3, 4, 6, 8, 10"
+  set couple_width "1"
+  set couple_spacing "1"
+  set over_width "1, 2"
+  set over_spacing "1, 2"
+  set under_width "1, 2"
+  set under_spacing "1, 2"
+  set over2_width "1"
+  set over2_spacing "1"
+  set under2_width "1"
+  set under2_spacing "1"
+  set dbg 1
+  set wire_cnt 5
+  set mlist ALL
+  set len 10
+  set offset_over "0.1"
+  set offset_under "0.1"
+  set under_dist 1000
+  set over_dist 1000
+  set met 0
+  set over [info exists flags(-over)]
+  set under [info exists flags(-under)]
+  set over_under [info exists flags(-over_under)]
+  set diag [info exists flags(-diag)]
+
+  if {  [info exists keys(-width)]  } {  set width $keys(-width)  }
+  if {  [info exists keys(-spacing)]  } {  set spacing $keys(-spacing)  }
+  if {  [info exists keys(-couple_width)]  } {  set couple_width $keys(-couple_width)  }
+  if {  [info exists keys(-couple_spacing)]  } {  set couple_spacing $keys(-couple_spacing)  }
+  if {  [info exists keys(-over_width)]  } {  set over_width $keys(-over_width)  }
+  if {  [info exists keys(-over_spacing)]  } {  set over_spacing $keys(-over_spacing)  }
+  if {  [info exists keys(-under_width)]  } {  set under_width $keys(-under_width)  }
+  if {  [info exists keys(-under_spacing)]  } {  set under_spacing $keys(-under_spacing)  }
+  if {  [info exists keys(-over2_width)]  } {  set over2_width $keys(-over2_width)  }
+  if {  [info exists keys(-over2_spacing)]  } {  set over2_spacing $keys(-over2_spacing)  }
+  if {  [info exists keys(-under2_width)]  } {  set under2_width $keys(-under2_width)  }
+  if {  [info exists keys(-under2_spacing)]  } {  set under2_spacing $keys(-under2_spacing)  }
+  if {  [info exists keys(-dbg)]  } {  set dbg $keys(-dbg)  }
+  if {  [info exists keys(-wire_cnt)]  } {  set wire_cnt $keys(-wire_cnt)  }
+  if {  [info exists keys(-mlist)]  } {  set mlist $keys(-mlist)  }
+  if {  [info exists keys(-len)]  } {  set len $keys(-len)  }
+
+  if {  [info exists keys(-offset_over)]  } {  set offset_over $keys(-offset_over)  }
+  if {  [info exists keys(-offset_under)]  } {  set offset_under $keys(-offset_under)  }
+  if {  [info exists keys(-under_dist)]  } {  set under_dist $keys(-under_dist)  }
+  if {  [info exists keys(-over_dist)]  } {  set over_dist $keys(-over_dist)  }
+  if {  [info exists keys(-met)]  } {  set met $keys(-met)  }
+
+
+  if { $dbg>0 } {
+    puts "width = $width"
+    puts "spacing = $spacing"
+    puts "couple_width = $couple_width"
+    puts "couple_spacing = $couple_spacing"
+    puts "over_width = $over_width"
+    puts "over_spacing = $over_spacing"
+    puts "under_width = $under_width"
+    puts "under_spacing = $under_spacing"
+    puts "over2_width = $over2_width"
+    puts "over2_spacing = $over2_spacing"
+    puts "under2_width = $under2_width"
+    puts "under2_spacing = $under2_spacing"
+    puts "dbg = $dbg"
+    puts "wire_cnt = $wire_cnt"
+    puts "mlist = $mlist"
+    puts "offset_over = $offset_over"
+    puts "offset_under = $offset_under"
+    puts "under_dist = $under_dist"
+    puts "over_dist = $over_dist"
+    puts "over = $over"
+    puts "under = $under"
+    puts "over_under = $over_under"
+    puts "met = $met"
+  }
+  rcx::bench_wires_gen $width  $spacing  $couple_width  $couple_spacing  $over_width  $over_spacing  $under_width  $under_spacing  $over2_width  $over2_spacing  $under2_width  $under2_spacing  $dbg  $wire_cnt  $mlist  $len  $offset_over  $offset_under $under_dist $over_dist $over $under $over_under $met
+}

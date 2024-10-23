@@ -73,6 +73,7 @@ extRCmodel_process.cpp
 extRCmodel_solver.cpp
 extDefPatterns.cpp
 extDefPatternsVia.cpp
+extPatterns.cpp
 extRulesVia.cpp
 extmeasure_print.cpp
   extmeasure_res_v2.cpp

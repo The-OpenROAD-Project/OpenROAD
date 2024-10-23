@@ -182,8 +182,7 @@ bench_wires(bool db_only,
   opts.under_met = under_met;
   opts.met_cnt = met_cnt;
   opts.db_only = db_only;
-  // FIXME 100824 opts.v1 = v1;
-  opts.v1 = false;
+  opts.v1 = v1;
 
   ext->bench_wires(opts);
 }
@@ -255,8 +254,6 @@ read_spef(const char* file)
 }
 
 
-//   rcx::bench_wires_gen $width  $spacing  $couple_width  $couple_spacing  $over_width  $over_spacing  $under_width  $under_spacing  $over2_width  $over2_spacing  $under2_width  $under2_spacing  $dbg  $wire_cnt  $mlist  $len  $offset_over  $offset_under  
-
 void
 bench_wires_gen(
 const char* width,
@@ -314,9 +311,7 @@ opts.under= under;
 opts.over_under= over_under;
 opts.met= met;
 
-// printf("spacing= %s", spacing);
-// FIXME
-// ext->bench_wires_gen(opts);
+ext->bench_wires_gen(opts);
 }
 
 // ------------------------------- dkf 09192024 -------------------------------

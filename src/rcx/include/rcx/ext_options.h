@@ -178,7 +178,7 @@ struct BenchWiresOptions
     bool m_map = false;
     bool log = false;
   };
-
+/*
     struct PatternOptions
   {
     const char* name = "blk";
@@ -225,4 +225,4 @@ const char* offset_under;
     bool over_under = false;
     bool under = false;
   };
-
+*/

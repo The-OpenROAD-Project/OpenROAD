@@ -93,7 +93,7 @@ void Ext::bench_wires(const BenchWiresOptions& bwo)
 {
   extMainOptions opt;
 
-  // FIXME opt._v1= bwo.v1;
+  opt._v1= bwo.v1;
   opt._topDir = bwo.dir;
   opt._met_cnt = bwo.met_cnt;
   opt._met = bwo.met;
@@ -180,7 +180,17 @@ void Ext::bench_wires(const BenchWiresOptions& bwo)
     parser.mkWords(d.c_str());
     parser.getDoubleArray(&opt._densityTable, 0);
   }
+ // _ext->benchWires(&opt);
+   if (opt._gen_def_patterns && opt._v1) 
+    _ext->DefWires(&opt);
+  else
   _ext->benchWires(&opt);
+
+}
+void Ext::bench_wires_gen(const PatternOptions& opt)
+{
+      // printf("%s\n", opt.name);
+  _ext->benchPatternsGen(opt);
 }
 
 void Ext::bench_verilog(const std::string& file)
