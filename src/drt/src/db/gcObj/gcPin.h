@@ -28,6 +28,7 @@
 
 #pragma once
 
+#include "db/dynarray.h"
 #include "db/gcObj/gcShape.h"
 
 namespace drt {
@@ -58,21 +59,16 @@ class gcPin : public gcBlockObject
   // getters
   gcPolygon* getPolygon() { return &polygon_; }
   const gcPolygon* getPolygon() const { return &polygon_; }
-  std::vector<std::vector<gcSegment>>& getPolygonEdges()
+  std::vector<dynarray<gcSegment>>& getPolygonEdges() { return polygon_edges_; }
+  const std::vector<dynarray<gcSegment>>& getPolygonEdges() const
   {
     return polygon_edges_;
   }
-  const std::vector<std::vector<gcSegment>>& getPolygonEdges()
-      const
-  {
-    return polygon_edges_;
-  }
-  std::vector<std::vector<gcCorner>>& getPolygonCorners()
+  std::vector<dynarray<gcCorner>>& getPolygonCorners()
   {
     return polygon_corners_;
   }
-  const std::vector<std::vector<gcCorner>>& getPolygonCorners()
-      const
+  const std::vector<dynarray<gcCorner>>& getPolygonCorners() const
   {
     return polygon_corners_;
   }
@@ -90,8 +86,8 @@ class gcPin : public gcBlockObject
   gcPolygon polygon_;
   gcNet* net_{nullptr};
   // assisting structures
-  std::vector<std::vector<gcSegment>> polygon_edges_;
-  std::vector<std::vector<gcCorner>> polygon_corners_;
+  std::vector<dynarray<gcSegment>> polygon_edges_;
+  std::vector<dynarray<gcCorner>> polygon_corners_;
   std::vector<gcRect> max_rectangles_;
 };
 }  // namespace drt

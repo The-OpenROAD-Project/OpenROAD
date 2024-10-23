@@ -457,33 +457,6 @@ void FlexGCWorker::Impl::initNetsFromDesign(const frDesign* design)
   }
 }
 
-void FlexGCWorker::Impl::initNet_pins_polygon(gcNet* net)
-{
-  int numLayers = getTech()->getLayers().size();
-  // init pin from polygons
-  std::vector<gtl::polygon_90_set_data<frCoord>> layerPolys(numLayers);
-  std::vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
-  for (int i = 0; i < numLayers; i++) {
-    polys.clear();
-    using gtl::operators::operator+=;
-    layerPolys[i] += net->getPolygons(i, false);
-    layerPolys[i] += net->getPolygons(i, true);
-    layerPolys[i].get(polys);
-    for (auto& poly : polys) {
-      net->addPin(poly, i);
-    }
-  }
-  // init pin from rectangles
-  for (int i = 0; i < numLayers; i++) {
-    for (auto& rect : net->getRectangles(i, false)) {
-      net->addPin(rect, i);
-    }
-    for (auto& rect : net->getRectangles(i, true)) {
-      net->addPin(rect, i);
-    }
-  }
-}
-
 void FlexGCWorker::Impl::initNet_pins_polygonEdges_getFixedPolygonEdges(
     gcNet* net,
     std::vector<std::set<std::pair<Point, Point>>>& fixedPolygonEdges)
@@ -861,7 +834,7 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles(gcNet* net)
 
 void FlexGCWorker::Impl::initNet(gcNet* net)
 {
-  initNet_pins_polygon(net);
+  net->initPins();
   initNet_pins_polygonEdges(net);
   initNet_pins_polygonCorners(net);
   initNet_pins_maxRectangles(net);
