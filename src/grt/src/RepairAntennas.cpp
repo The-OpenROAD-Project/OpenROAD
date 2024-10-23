@@ -83,6 +83,12 @@ bool RepairAntennas::checkAntennaViolations(
     float ratio_margin,
     const int num_threads)
 {
+  // Save nets repaired in last iteration
+  std::unordered_set<std::string> last_nets;
+  for (const auto& violation : antenna_violations_) {
+    last_nets.insert(violation.first->getConstName());
+  }
+
   antenna_violations_.clear();
   for (odb::dbNet* db_net : nets_to_repair) {
     antenna_violations_[db_net];
@@ -106,12 +112,17 @@ bool RepairAntennas::checkAntennaViolations(
     destroyNetWires(nets_to_repair);
   }
 
+  run_jumper_insertion_ = false;
   // remove nets with zero violations
   for (auto it = antenna_violations_.begin();
        it != antenna_violations_.end();) {
     if (it->second.empty()) {
       it = antenna_violations_.erase(it);
     } else {
+      // check if the net is new to repair
+      if (last_nets.find(it->first->getConstName()) == last_nets.end()) {
+        run_jumper_insertion_ = true;
+      }
       ++it;
     }
   }
