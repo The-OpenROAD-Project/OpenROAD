@@ -1463,7 +1463,7 @@ void IRSolver::writeSpiceFile(GeneratedSourceType source_type,
     spice << "* Sink for " << node->getITerm()->getName() << '\n';
 
     const std::string current_name = fmt::format("I{}", current_number++);
-    const std::string node_current = fmt::format("{:.6e}", current);
+    const std::string node_current = fmt::format("{:.3e}", current);
 
     spice << current_name << " " << node->getName() << " 0 DC " << node_current
           << '\n';
