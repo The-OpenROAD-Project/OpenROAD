@@ -720,7 +720,13 @@ const char* dbNetwork::name(const Instance* instance) const
     name = mod_inst->getName();
   }
 
-  if (hierarchy_) {
+  bool has_mod_insts = false;
+  dbModule* module = block_->getTopModule();
+  if (module && module->getModInstCount() > 0) {
+    has_mod_insts = true;
+  }
+
+  if (hierarchy_ || has_mod_insts) {
     size_t last_idx = name.find_last_of('/');
     if (last_idx != string::npos) {
       name = name.substr(last_idx + 1);
@@ -843,9 +849,7 @@ Instance* dbNetwork::parent(const Instance* instance) const
   if (instance == top_instance_) {
     return nullptr;
   }
-  if (!hasHierarchy()) {
-    return top_instance_;
-  }
+
   dbInst* db_inst;
   dbModInst* mod_inst;
   staToDb(instance, db_inst, mod_inst);
