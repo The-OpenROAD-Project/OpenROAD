@@ -3,7 +3,7 @@ top_dir=$(top_dir1)
 #top_dir=/home/dimitris-ic/z/72424/RegressionTest/
 data_dir=$(top_dir)/data
 
-.PHONY : 1v2_parse ou_parse du_parse M1uM2_parse 1v2 2v2 2v1 1v1 3v2 3v1 5v1 5v2 sept24_1 sept24_2 sept24_3 sept24_fasterCap gen924
+.PHONY : 1v2_parse ou_parse du_parse M1uM2_parse 1v2 2v2 2v1 1v1 3v2 3v1 5v1 5v2 sept24_1 sept24_2 sept24_3 sept24_fasterCap gen924  6v2
 
 # -------------------------------------------------------------------------------------
 #                        rcx generates patterns
@@ -44,6 +44,9 @@ or_exec=$(top_dir)/bin/openroad
 	
 5v2: 
 	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dir)/process "TYP" 5 2 $@.GOLD 
+
+6v2: 
+	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dir)/process "TYP" 6 2 $@.GOLD 
 
 # -------------------------------------------------------------------------------------
 #                        Run fasterCap
@@ -121,5 +124,4 @@ gen924:
 	echo "write_rcx_model -file sept24.rcx.model " >> $(readCaps_tcl) ; \
 	$(or_exec) < $(readCaps_tcl) > OUT ; \
 	diff -r . ../gen924.GOLD
-
 

@@ -106,10 +106,10 @@ class Ath__wire
 {
     // ---------------------------------------- v2
     public:
-     Ath__wire* _upNext;
-  Ath__wire* _downNext; 
-  Ath__wire* _aboveNext; // vertical
-  Ath__wire* _belowNext; // vertical
+     Ath__wire* _upNext=nullptr;
+  Ath__wire* _downNext=nullptr; 
+  Ath__wire* _aboveNext=nullptr; // vertical
+  Ath__wire* _belowNext=nullptr; // vertical
 
   int getLen() { return _len; }
   int getWidth() { return _width; }

@@ -1871,8 +1871,6 @@ void extMain::makeBlockRCsegs(const char* netNames,
     getResCapTable();
   }
 
- // FIXME       _overCell = overCell;
-
   logger_->info(RCX,
                 436,
                 "RC segment generation {} (max_merge_res {:.1f}) ...",

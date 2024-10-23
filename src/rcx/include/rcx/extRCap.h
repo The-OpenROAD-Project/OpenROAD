@@ -1482,11 +1482,20 @@ class extMain
     // v2 -----------------------------------------------------
     bool modelExists(const char* extRules);
 
+    uint addInstsGs(Ath__array1D<uint>* instTable, Ath__array1D<uint>* tmpInstIdTable, uint dir);
+    uint addObsShapesOnPlanes(odb::dbInst* inst, bool rotatedFlag, bool swap_coords);
+    uint addItermShapesOnPlanes(odb::dbInst* inst, bool rotatedFlag, bool swap_coords);
+    uint addShapeOnGs(dbShape* s, bool swap_coords);
+
+
+
     void initRunEnv(extMeasureRC &m);
       uint _ccContextDepth = 0;
 
     bool _lefRC= false;
     uint _dbgOption= 0;
+
+    bool _overCell= true;
 
       uint* _ccContextLength= nullptr;
       //  uint* _ccContextLength= nullptr;
