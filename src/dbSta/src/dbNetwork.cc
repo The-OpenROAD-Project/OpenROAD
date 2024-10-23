@@ -720,13 +720,12 @@ const char* dbNetwork::name(const Instance* instance) const
     name = mod_inst->getName();
   }
 
-  bool has_mod_insts = false;
-  dbModule* module = block_->getTopModule();
-  if (module && module->getModInstCount() > 0) {
-    has_mod_insts = true;
-  }
+  // it is possible to have hierarchy without -hier !
+  // because parent(instance) won't always return
+  // topInstance we need to construct the name
+  // hierarchically.
 
-  if (hierarchy_ || has_mod_insts) {
+  if (hierarchy_ || mod_inst) {
     size_t last_idx = name.find_last_of('/');
     if (last_idx != string::npos) {
       name = name.substr(last_idx + 1);
