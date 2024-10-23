@@ -719,7 +719,7 @@ proc parse_margin_arg { key keys_var } {
   set margin 0.0
   if { [info exists keys($key)] } {
     set margin $keys($key)
-    sta::check_positive_float $key $margin
+    sta::check_float $key $margin
   }
   return $margin
 }

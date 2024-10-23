@@ -66,6 +66,7 @@
 #include "sta/TimingModel.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
+#include "utl/scope.h"
 
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
@@ -2689,14 +2690,9 @@ void Resizer::repairNet(Net* net,
 void Resizer::repairClkNets(double max_wire_length)
 {
   resizePreamble();
-
-  // Use the buffers that were selected by CTS.
-  buffer_cells_ = clk_buffers_;
+  utl::SetAndRestore<LibertyCellSeq> set_buffers(buffer_cells_, clk_buffers_);
 
   repair_design_->repairClkNets(max_wire_length);
-
-  // Reset so that the next preamble select data buffers again.
-  buffer_cells_.clear();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2864,13 +2860,16 @@ void Resizer::repairHold(
     int max_passes,
     bool verbose)
 {
-  buffer_cells_.clear();
-
   // Some technologies such as nangate45 don't have delay cells. Hence,
   // until we have a better approach, it's better to consider clock buffers
   // for hold violation repairing as these buffers' delay may be slighty
   // higher and we'll need fewer insertions.
-  exclude_clock_buffers_ = false;
+  // Obs: We need to clear the buffer list for the preamble to select
+  // buffers again excluding the clock ones.
+  utl::SetAndRestore<bool> set_exclude_clk_buffers(exclude_clock_buffers_,
+                                                   false);
+  utl::SetAndRestore<LibertyCellSeq> set_buffers(buffer_cells_,
+                                                 LibertyCellSeq());
 
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
@@ -2882,10 +2881,6 @@ void Resizer::repairHold(
                            max_buffer_percent,
                            max_passes,
                            verbose);
-
-  // Reset buffer selection strategy for the subsequent RSZ operation.
-  exclude_clock_buffers_ = true;
-  buffer_cells_.clear();
 }
 
 void Resizer::repairHold(const Pin* end_pin,
@@ -2895,10 +2890,11 @@ void Resizer::repairHold(const Pin* end_pin,
                          float max_buffer_percent,
                          int max_passes)
 {
-  buffer_cells_.clear();
-
-  // See comments on previous method.
-  exclude_clock_buffers_ = false;
+  // See comment on the method above.
+  utl::SetAndRestore<bool> set_exclude_clk_buffers(exclude_clock_buffers_,
+                                                   false);
+  utl::SetAndRestore<LibertyCellSeq> set_buffers(buffer_cells_,
+                                                 LibertyCellSeq());
 
   resizePreamble();
   repair_hold_->repairHold(end_pin,
@@ -2907,10 +2903,6 @@ void Resizer::repairHold(const Pin* end_pin,
                            allow_setup_violations,
                            max_buffer_percent,
                            max_passes);
-
-  // Ditto.
-  exclude_clock_buffers_ = true;
-  buffer_cells_.clear();
 }
 
 int Resizer::holdBufferCount() const
