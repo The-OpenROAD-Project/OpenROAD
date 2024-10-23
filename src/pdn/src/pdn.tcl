@@ -35,7 +35,7 @@ sta::define_cmd_args "pdngen" {[-skip_trim] \
                                [-report_only] \
                                [-failed_via_report file] \
                                [-verbose]
-}
+} ;#checker off
 
 proc pdngen { args } {
   sta::parse_key_args "pdngen" args \
@@ -408,7 +408,7 @@ sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
                                      [-add_connect] \
                                      [-extend_to_boundary] \
                                      [-connect_to_pads]
-                                     }
+                                     } ;#checker off
 
 proc add_pdn_ring { args } {
   sta::parse_key_args "add_pdn_ring" args \
