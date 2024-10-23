@@ -141,6 +141,7 @@ class FastRouteCore
   void removeNet(odb::dbNet* db_net);
   void mergeNet(odb::dbNet* db_net);
   void clearNetRoute(odb::dbNet* db_net);
+  void clearNetsToRoute() { net_ids_.clear(); }
   void initEdges();
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(int x1,
@@ -597,7 +598,6 @@ class FastRouteCore
   int enlarge_;
   int costheight_;
   int ahth_;
-  std::vector<int> route_net_ids_;  // IDs of nets to route
   int num_layers_;
   int total_overflow_;  // total # overflow
   bool has_2D_overflow_;
