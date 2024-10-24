@@ -299,7 +299,7 @@ class CtsOptions
   std::vector<odb::dbNet*> clockNetsObjs_;
   utl::Logger* logger_ = nullptr;
   stt::SteinerTreeBuilder* sttBuilder_ = nullptr;
-  bool obsAware_ = false;
+  bool obsAware_ = true;
   bool applyNDR_ = false;
   bool insertionDelay_ = true;
   bool bufferListInferred_ = false;
