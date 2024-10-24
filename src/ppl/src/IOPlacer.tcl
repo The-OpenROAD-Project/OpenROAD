@@ -172,7 +172,7 @@ proc set_io_pin_constraint { args } {
       if { [info exists keys(-direction)] } {
         set direction $keys(-direction)
         set dir [ppl::parse_direction "set_io_pin_constraint" $direction]
-        utl::info PPL 49 "Restrict $direction pins to region\
+        utl::info PPL 67 "Restrict $direction pins to region\
           [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u,\
           in the $edge edge."
         ppl::add_direction_constraint $dir $edge_ $begin $end

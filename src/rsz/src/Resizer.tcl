@@ -752,7 +752,7 @@ proc check_corner_wire_caps { } {
   set have_rc 1
   foreach corner [sta::corners] {
     if { [rsz::wire_signal_capacitance $corner] == 0.0 } {
-      utl::warn RSZ 14 "wire capacitance for corner [$corner name] is zero.\
+      utl::warn RSZ 18 "wire capacitance for corner [$corner name] is zero.\
         Use the set_wire_rc command to set wire resistance and capacitance."
       set have_rc 0
     }
