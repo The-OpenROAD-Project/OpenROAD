@@ -24,10 +24,14 @@ echo "gen_solver_patterns -process_file $process -process_name $outname -wire_cn
 
 $or_exec < $tcl_script > OUT 
 
-# cat TYP/*/*/*/*/wires > all_wires
-# echo "diff OUT ../$gold_dir/OUT"
-# diff OUT ../$gold_dir/OUT
+line_cnt=`diff  -w -r . ../$gold_dir | egrep -v OpenROAD | egrep -v "\-\-\-" | wc -l `
 
-echo "diff -r . ../$gold_dir"
-diff -r . ../$gold_dir
+# line_cnt=`diff  -w -r TYP ../$gold_dir/TYP | egrep -v DATE | egrep -v VERSION | egrep -v "\-\-\-" | wc -l `
+
+if [ $line_cnt -lt 1 ]
+then
+        echo "$dir Pass"
+else
+        echo "$dir Fail"
+fi
 
