@@ -19,35 +19,40 @@
 
 namespace rmp {
 
-std::unordered_map<sta::Pin*, abc::Abc_Obj_t*> CreateAbcPrimaryInputs(
-    const std::vector<sta::Pin*>& primary_inputs,
+std::unordered_map<sta::Net*, abc::Abc_Obj_t*> CreateAbcPrimaryInputs(
+    const std::vector<sta::Net*>& primary_inputs,
     abc::Abc_Ntk_t& abc_network,
     sta::dbNetwork* network)
 {
-  std::unordered_map<sta::Pin*, abc::Abc_Obj_t*> name_pin_map;
-  for (sta::Pin* input_pin : primary_inputs) {
+  std::unordered_map<sta::Net*, abc::Abc_Obj_t*> name_pin_map;
+  for (sta::Net* input_pin : primary_inputs) {
     abc::Abc_Obj_t* primary_input_abc = abc::Abc_NtkCreatePi(&abc_network);
-    std::string pin_name(network->name(input_pin));
+    abc::Abc_Obj_t* primary_input_net = abc::Abc_NtkCreateNet(&abc_network);
+    std::string net_name(network->name(input_pin));
     abc::Abc_ObjAssignName(
-        primary_input_abc, pin_name.data(), /*pSuffix=*/nullptr);
-    name_pin_map[input_pin] = primary_input_abc;
+        primary_input_abc, net_name.data(), /*pSuffix=*/nullptr);
+    abc::Abc_ObjAddFanin(primary_input_net, primary_input_abc);
+
+    name_pin_map[input_pin] = primary_input_net;
   }
 
   return name_pin_map;
 }
 
-std::unordered_map<sta::Pin*, abc::Abc_Obj_t*> CreateAbcPrimaryOutputs(
-    const std::vector<sta::Pin*>& primary_outputs,
+std::unordered_map<sta::Net*, abc::Abc_Obj_t*> CreateAbcPrimaryOutputs(
+    const std::vector<sta::Net*>& primary_outputs,
     abc::Abc_Ntk_t& abc_network,
     sta::dbNetwork* network)
 {
-  std::unordered_map<sta::Pin*, abc::Abc_Obj_t*> name_pin_map;
-  for (sta::Pin* output_pin : primary_outputs) {
+  std::unordered_map<sta::Net*, abc::Abc_Obj_t*> name_pin_map;
+  for (sta::Net* output_pin : primary_outputs) {
     abc::Abc_Obj_t* primary_output_abc = abc::Abc_NtkCreatePo(&abc_network);
-    std::string pin_name(network->name(output_pin));
+    abc::Abc_Obj_t* primary_output_net = abc::Abc_NtkCreateNet(&abc_network);
+    std::string net_name(network->name(output_pin));
     abc::Abc_ObjAssignName(
-        primary_output_abc, pin_name.data(), /*pSuffix=*/nullptr);
-    name_pin_map[output_pin] = primary_output_abc;
+        primary_output_net, net_name.data(), /*pSuffix=*/nullptr);
+    abc::Abc_ObjAddFanin(primary_output_abc, primary_output_net);
+    name_pin_map[output_pin] = primary_output_net;
   }
 
   return name_pin_map;
@@ -127,31 +132,23 @@ std::unordered_map<sta::Instance*, abc::Abc_Obj_t*> CreateStandardCells(
 void ConnectPinToDriver(
     sta::dbNetwork* network,
     sta::Pin* output_pin,
-    const std::unordered_map<sta::Pin*, abc::Abc_Obj_t*>&
+    const std::unordered_map<sta::Net*, abc::Abc_Obj_t*>&
         abc_primary_output_pins,
     std::unordered_map<sta::Net*, abc::Abc_Obj_t*>& abc_net_map,
     utl::Logger* logger,
     abc::Abc_Ntk_t& abc_network,
     const std::unordered_map<sta::Instance*, abc::Abc_Obj_t*>& abc_instances)
 {
-  // The instance / pin that will recieve a singal from a driver.
-  abc::Abc_Obj_t* abc_fanin_reciever;
-  if (abc_primary_output_pins.find(output_pin)
-      != abc_primary_output_pins.end()) {
-    // If it's a primary output look it up in our special map.
-    abc_fanin_reciever = abc_primary_output_pins.at(output_pin);
-  } else {
-    // It's not a primary output it should be an instance of some kind.
-    sta::Instance* instance = network->instance(output_pin);
-    if (abc_instances.find(instance) == abc_instances.end()) {
-      logger->error(utl::RMP,
-                    1018,
-                    "Cannot find instance {} in abc instance map. Please "
-                    "report this internal error.",
-                    network->name(instance));
-    }
-    abc_fanin_reciever = abc_instances.at(instance);
+  sta::Instance* instance = network->instance(output_pin);
+  if (abc_instances.find(instance) == abc_instances.end()) {
+    logger->error(utl::RMP,
+                  1018,
+                  "Cannot find instance {} in abc instance map. Please "
+                  "report this internal error.",
+                  network->name(instance));
   }
+  // The instance / pin that will recieve a singal from a driver.
+  abc::Abc_Obj_t* abc_fanin_reciever = abc_instances.at(instance);
 
   sta::Net* net = network->net(output_pin);
   // If the net already exists just connect it
@@ -190,11 +187,11 @@ void ConnectPinToDriver(
 }
 
 void CreateNets(
-    const std::vector<sta::Pin*>& output_pins,
-    const std::unordered_map<sta::Pin*, abc::Abc_Obj_t*>&
-        abc_primary_input_pins,
-    const std::unordered_map<sta::Pin*, abc::Abc_Obj_t*>&
-        abc_primary_output_pins,
+    const std::vector<sta::Net*>& output_nets,
+    const std::unordered_map<sta::Net*, abc::Abc_Obj_t*>&
+        abc_primary_input_nets,
+    const std::unordered_map<sta::Net*, abc::Abc_Obj_t*>&
+        abc_primary_output_nets,
     const std::unordered_map<sta::Instance*, abc::Abc_Obj_t*>& abc_instances,
     abc::Abc_Ntk_t& abc_network,
     sta::dbNetwork* network,
@@ -206,23 +203,34 @@ void CreateNets(
   // the already created net.
   std::unordered_map<sta::Net*, abc::Abc_Obj_t*> abc_net_map;
 
-  // Connect primary outputs
-  for (sta::Pin* output_pin : output_pins) {
-    ConnectPinToDriver(network,
-                       output_pin,
-                       abc_primary_output_pins,
-                       abc_net_map,
-                       logger,
-                       abc_network,
-                       abc_instances);
+  for (auto& [sta_net, abc_instance] : abc_primary_input_nets) {
+    abc_net_map[sta_net] = abc_instance;
   }
 
-  // Connect instances to their drivers
+  // Connect primary outputs from net. Grab first driver pin,
+  // should be just one. Then grab the instance of that pin. Then
+  // connect the fanout of the abc instance to the primary output of
+  // that net.
+  for (sta::Net* output_net : output_nets) {
+    sta::PinSet* pinset = network->drivers(output_net);
+    // There should be exactly one pin.
+    const sta::Pin* pin = *pinset->begin();
+    sta::Instance* instance = network->instance(pin);
+    abc::Abc_Obj_t* abc_driver_instance = abc_instances.at(instance);
+    abc::Abc_Obj_t* primary_output = abc_primary_output_nets.at(output_net);
+    abc::Abc_ObjAddFanin(primary_output, abc_driver_instance);
+  }
+
+  // ABC expects the inputs to particular gates to happen in a certain implict
+  // order. Create a map from library cells to port order.
   std::unordered_map<abc::Mio_Gate_t*, std::vector<std::string>> port_order
       = MioGateToPortOrder(library);
+
+  // Loop through all the other instances
   for (auto& [sta_instance, abc_instance] : abc_instances) {
     abc::Mio_Gate_t* gate
         = static_cast<abc::Mio_Gate_t*>(abc::Abc_ObjData(abc_instance));
+
     if (port_order.find(gate) == port_order.end()) {
       logger->error(
           utl::RMP,
@@ -231,22 +239,13 @@ void CreateNets(
           network->name(sta_instance));
     }
 
+    // Connect in ABC port order
     std::vector<std::string> port_order_vec = port_order.at(gate);
     for (const auto& port_name : port_order_vec) {
       sta::Pin* pin = network->findPin(sta_instance, port_name.c_str());
-
-      // Deal with primary inputs
-      if (abc_primary_input_pins.find(pin) != abc_primary_input_pins.end()) {
-        abc::Abc_Obj_t* primary_input_pin = abc_primary_input_pins.at(pin);
-        abc::Abc_Obj_t* abc_input_net = abc::Abc_NtkCreateNet(&abc_network);
-        abc::Abc_ObjAddFanin(abc_input_net, primary_input_pin);
-        abc::Abc_ObjAddFanin(abc_instance, abc_input_net);
-        continue;
-      }
-
       ConnectPinToDriver(network,
                          pin,
-                         abc_primary_output_pins,
+                         abc_primary_output_nets,
                          abc_net_map,
                          logger,
                          abc_network,
@@ -266,9 +265,9 @@ utl::deleted_unique_ptr<abc::Abc_Ntk_t> LogicCut::BuildMappedAbcNetwork(
                         /*fUseMemMan=*/1),
       &abc::Abc_NtkDelete);
 
-  std::unordered_map<sta::Pin*, abc::Abc_Obj_t*> abc_input_pins
+  std::unordered_map<sta::Net*, abc::Abc_Obj_t*> abc_input_pins
       = CreateAbcPrimaryInputs(primary_inputs_, *abc_network, network);
-  std::unordered_map<sta::Pin*, abc::Abc_Obj_t*> abc_output_pins
+  std::unordered_map<sta::Net*, abc::Abc_Obj_t*> abc_output_pins
       = CreateAbcPrimaryOutputs(primary_outputs_, *abc_network, network);
 
   // Create MIO standard cell library

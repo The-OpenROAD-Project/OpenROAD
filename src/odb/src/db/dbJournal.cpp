@@ -911,6 +911,14 @@ void dbJournal::redo_updateInstField()
       _log.pop(prev_flags);
       uint* flags = (uint*) &inst->_flags;
       _log.pop(*flags);
+
+      // Changing the orientation flag requires updating the cached bbox
+      _dbInstFlags* a = (_dbInstFlags*) flags;
+      _dbInstFlags* b = (_dbInstFlags*) &prev_flags;
+      if (a->_orient != b->_orient) {
+        _dbInst::setInstBBox(inst);
+      }
+
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
@@ -1783,6 +1791,13 @@ void dbJournal::undo_updateInstField()
       _log.pop(*flags);
       uint new_flags;
       _log.pop(new_flags);
+
+      // Changing the orientation flag requires updating the cached bbox
+      _dbInstFlags* a = (_dbInstFlags*) flags;
+      _dbInstFlags* b = (_dbInstFlags*) &new_flags;
+      if (a->_orient != b->_orient) {
+        _dbInst::setInstBBox(inst);
+      }
       break;
     }
 

@@ -32,7 +32,6 @@
 
 #pragma once
 
-#include <fstream>
 #include <map>
 #include <set>
 #include <vector>
@@ -110,7 +109,7 @@ class Connect
   void addFailedVia(failedViaReason reason,
                     const odb::Rect& rect,
                     odb::dbNet* net);
-  void writeFailedVias(std::ofstream& file) const;
+  void recordFailedVias() const;
 
  private:
   Grid* grid_;

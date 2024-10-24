@@ -56,6 +56,8 @@ class dbRegion;
 class dbRow;
 class dbSBox;
 class dbSWire;
+class dbMarker;
+class dbMarkerCategory;
 
 ///////////////////////////////////////////////////////////////////////////////
 ///
@@ -162,6 +164,16 @@ class dbBlockCallBackObj
   // dbFill Start
   virtual void inDbFillCreate(dbFill*) {}
   // dbFill End
+
+  // dbMarkerCategory Start
+  virtual void inDbMarkerCategoryCreate(dbMarkerCategory*) {}
+  virtual void inDbMarkerCategoryDestroy(dbMarkerCategory*) {}
+  // dbMarkerCategory End
+
+  // dbMarker Start
+  virtual void inDbMarkerCreate(dbMarker*) {}
+  virtual void inDbMarkerDestroy(dbMarker*) {}
+  // dbMarker End
 
   virtual void inDbBlockStreamOutBefore(dbBlock*) {}
   virtual void inDbBlockStreamOutAfter(dbBlock*) {}
