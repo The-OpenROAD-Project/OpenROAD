@@ -469,43 +469,21 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         for(auto& nesterov : nbVec_){
           // nesterov->updateDensityCenterCur(); // bin update
           // nesterov->updateDensityForceBin(); // bin Force update
-
           nesterov->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
 
-        ///// UPDATE GPL DATA /////
-        // This updates are the same ones used on routability. They modify only the GCells, not the instances in placerBase.
-        log_->report("nbVec_.size(): {}",nbVec_.size());        
-          int64_t oldStdInstArea = nesterov->getStdInstArea();
-          int64_t oldMacroInstArea = nesterov->getMacroInstArea();
-          int64_t oldTotalArea = oldStdInstArea+oldMacroInstArea;
-          int64_t oldFillerArea = nesterov->totalFillerArea();
-          log_->report("\nprev nesterov->stdInstsArea_: {}", block->dbuAreaToMicrons(oldStdInstArea));
-          log_->report("prev nesterov->macroInstsArea_: {}", block->dbuAreaToMicrons(oldMacroInstArea));
-          log_->report("prev total area: {}", block->dbuAreaToMicrons(oldTotalArea));
-          log_->report("prev nesterov->totalFillerArea():   {}", block->dbuAreaToMicrons(nesterov->totalFillerArea()));
+          ///// UPDATE GPL DATA /////
+          // This updates are the same ones used on routability. They modify only the GCells, not the instances in placerBase.
+          log_->report("nbVec_.size(): {}",nbVec_.size());        
           log_->report("prev nesterov->targetDensity():     {}", nesterov->targetDensity());
           
           nesterov->updateAreas();
+          nesterov->updateDensitySize(); //influenced by bin sizes, which is influenced by instance sizes.
           nesterov->setTargetDensity(
             static_cast<float>(nesterov->nesterovInstsArea() + nesterov->totalFillerArea() )
             / static_cast<float>(nesterov->whiteSpaceArea()));    
-          nesterov->updateDensitySize(); //influenced by bin sizes, which is influenced by instance sizes.
-          //  updateWireLengthForceWA() --> influenced by pin positions, do they change with different cell size, or even different cell type?
           
-          int64_t newStdInstArea = nesterov->getStdInstArea();
-          int64_t newMacroInstArea = nesterov->getMacroInstArea();
-          int64_t newTotalArea = newStdInstArea + newMacroInstArea;
-          log_->report("\nnew nesterov->stdInstsArea_: {}", block->dbuAreaToMicrons(newStdInstArea));
-          log_->report("new nesterov->macroInstsArea_: {}", block->dbuAreaToMicrons(newMacroInstArea));
-          log_->report("new total area: {}", block->dbuAreaToMicrons(newTotalArea));
-          log_->report("new nesterov->totalFillerArea():   {}", block->dbuAreaToMicrons(nesterov->totalFillerArea()));
-          log_->report("new nesterov->targetDensity():     {}", nesterov->targetDensity());
-          
-          log_->report("\nStdInstDeltaArea:     {}({:3.1f}%)", block->dbuAreaToMicrons(newStdInstArea - oldStdInstArea), ((static_cast<float>(newStdInstArea - oldStdInstArea)) / oldStdInstArea)*100);
-          log_->report("MacroInstDeltaArea:   {}({:3.1f}%)", block->dbuAreaToMicrons(newMacroInstArea - oldMacroInstArea), ((static_cast<float>(newMacroInstArea - oldMacroInstArea)) / oldMacroInstArea)*100);
-          log_->report("TotalInstDeltaArea:   {}({:3.1f}%)", block->dbuAreaToMicrons(newTotalArea - oldTotalArea), ((static_cast<float>(newTotalArea - oldTotalArea)) / oldTotalArea)*100);
-          log_->report("fillerDeltaArea: {}({:3.1f}%)", block->dbuAreaToMicrons(nesterov->totalFillerArea()- oldFillerArea ), ((static_cast<float>(nesterov->totalFillerArea()- oldFillerArea)) / oldFillerArea)*100 );                    
-          log_->report("after -> block->getInsts().size(): {}", block->getInsts().size());   
+          //  updateWireLengthForceWA() --> influenced by pin positions, do they change with different cell size, or even different cell type?                  
+          log_->report("new nesterov->targetDensity():     {}", nesterov->targetDensity());                  
         }
       }
       // log_->report("print gcells after TD iteration.");

@@ -716,6 +716,7 @@ std::pair<bool, bool> RouteBase::routability()
     log_->info(GPL, 80, "minRcViolatedCnt: {}", minRcViolatedCnt_);
     log_->info(GPL, 47, "SavedMinRC: {:.4f}", minRc_);
     log_->info(GPL, 48, "SavedTargetDensity: {:.4f}", minRcTargetDensity_);
+    log_->info(GPL, 60, "maxDensity: {}", rbVars_.maxDensity);
 
     nbVec_[0]->setTargetDensity(minRcTargetDensity_);
 

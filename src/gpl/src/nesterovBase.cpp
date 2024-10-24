@@ -2018,6 +2018,15 @@ void NesterovBase::updateDensitySize()
 void NesterovBase::updateAreas()
 {
   auto block = pb_->db()->getChip()->getBlock();
+  int64_t oldStdInstArea = getStdInstArea();
+  int64_t oldMacroInstArea = getMacroInstArea();
+  int64_t oldTotalArea = oldStdInstArea+oldMacroInstArea;
+  int64_t oldFillerArea = totalFillerArea();
+  log_->report("\nprev stdInstsArea_: {}", block->dbuAreaToMicrons(oldStdInstArea));
+  log_->report("prev macroInstsArea_: {}", block->dbuAreaToMicrons(oldMacroInstArea));
+  log_->report("prev total area: {}", block->dbuAreaToMicrons(oldTotalArea));
+  log_->report("prev totalFillerArea():   {}", block->dbuAreaToMicrons(totalFillerArea()));
+  
   assert(omp_get_thread_num() == 0);
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
@@ -2035,10 +2044,24 @@ void NesterovBase::updateAreas()
     }
   }
 
+  int64_t newStdInstArea = getStdInstArea();
+  int64_t newMacroInstArea = getMacroInstArea();
+  int64_t newTotalArea = newStdInstArea + newMacroInstArea;
+  log_->report("\nnew stdInstsArea_: {}", block->dbuAreaToMicrons(newStdInstArea));
+  log_->report("new macroInstsArea_: {}", block->dbuAreaToMicrons(newMacroInstArea));
+  log_->report("new total area: {}", block->dbuAreaToMicrons(newTotalArea));
+  log_->report("new totalFillerArea():   {}", block->dbuAreaToMicrons(totalFillerArea()));
+
+  log_->report("\nStdInstDeltaArea:     {}({:3.1f}%)", block->dbuAreaToMicrons(newStdInstArea - oldStdInstArea), ((static_cast<float>(newStdInstArea - oldStdInstArea)) / oldStdInstArea)*100);
+  log_->report("MacroInstDeltaArea:   {}({:3.1f}%)", block->dbuAreaToMicrons(newMacroInstArea - oldMacroInstArea), ((static_cast<float>(newMacroInstArea - oldMacroInstArea)) / oldMacroInstArea)*100);
+  log_->report("TotalInstDeltaArea:   {}({:3.1f}%)", block->dbuAreaToMicrons(newTotalArea - oldTotalArea), ((static_cast<float>(newTotalArea - oldTotalArea)) / oldTotalArea)*100);
+  log_->report("fillerDeltaArea: {}({:3.1f}%)", block->dbuAreaToMicrons(totalFillerArea()- oldFillerArea ), ((static_cast<float>(totalFillerArea()- oldFillerArea)) / oldFillerArea)*100 );                    
+  log_->report("after -> block->getInsts().size(): {}", block->getInsts().size());   
+
   int64_t coreArea = pb_->die().coreArea();
   whiteSpaceArea_ = coreArea - static_cast<int64_t>(pb_->nonPlaceInstsArea());
 
-  log_->report("previous whiteSpaceArea_:       {}", block->dbuAreaToMicrons(whiteSpaceArea_));
+  log_->report("\nprevious whiteSpaceArea_:       {}", block->dbuAreaToMicrons(whiteSpaceArea_));
   log_->report("previous movableArea_:          {}", block->dbuAreaToMicrons(movableArea_));
   log_->report("previous totalFillerArea_:      {}", block->dbuAreaToMicrons(totalFillerArea_));
   log_->report("previous uniformTargetDensity_: {}", block->dbuAreaToMicrons(uniformTargetDensity_));
@@ -2047,7 +2070,7 @@ void NesterovBase::updateAreas()
   uniformTargetDensity_ = static_cast<float>(nesterovInstsArea())
                           / static_cast<float>(whiteSpaceArea_);
 
-  log_->report("new whiteSpaceArea_:       {}", block->dbuAreaToMicrons(whiteSpaceArea_));
+  log_->report("\nnew whiteSpaceArea_:       {}", block->dbuAreaToMicrons(whiteSpaceArea_));
   log_->report("new    movableArea_:       {}", block->dbuAreaToMicrons(movableArea_));
   log_->report("new totalFillerArea_:      {}", block->dbuAreaToMicrons(totalFillerArea_));
   log_->report("new uniformTargetDensity_: {}", block->dbuAreaToMicrons(uniformTargetDensity_));
@@ -2911,6 +2934,9 @@ void NesterovBaseCommon::moveGCell(odb::dbInst* db_inst) {
 void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst) {
   GCell* gcell = getGCellByIndex(db_inst_map_.find(db_inst)->second);
   // log_->report("gcell {} found in db_inst_map_ as {}", gcell->instance()->dbInst()->getName(), db_inst->getName());
+  if (gcell->instance()->dbInst()->getName() != db_inst->getName()) {
+    log_->report("Mismatch: gcell {} found in db_inst_map_ as {}", gcell->instance()->dbInst()->getName(), db_inst->getName());
+}
   odb::dbBox* bbox = db_inst->getBBox();
   gcell->setSize(bbox->getDX(),bbox->getDY());
 }
@@ -3131,8 +3157,8 @@ size_t NesterovBaseCommon::createGCell(odb::dbInst* db_inst){
   db_inst->getLocation(lx,ly);
   // log_->report("db inst for creategcell-> lx,ly: {},{}", lx, ly);
   // log_->report("bbox dx,dy: {},{}", db_inst->getBBox()->getDX(), db_inst->getBBox()->getDY());
-  log_->report("NesterovBaseCommon::createGCell --> gcell just created:");
-  gcell.print(log_);
+  // log_->report("NesterovBaseCommon::createGCell --> gcell just created:");
+  // gcell.print(log_);
   //TODO it should be more efficient to push_back every cell once (change vector size first).
   gCellStor_.push_back(gcell);
   GCell* gcell_ptr = &gCellStor_.back();
