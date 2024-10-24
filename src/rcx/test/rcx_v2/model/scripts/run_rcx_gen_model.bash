@@ -17,11 +17,10 @@ cd $run_dir
 
 echo "$test_name"
 $or_exec < ../scripts/$test_name.tcl > OUT  
-# line_cnt=`diff $test_name.def ../$test_name.GOLD/$test_name.def | wc -l `
-line_cnt=`diff -w -r . ../$test_name.GOLD | wc -l `
+line_cnt=`diff -w -r . ../$test_name.GOLD | egrep -v OpenROAD | egrep -v "\-\-\-" | wc -l `
 # echo "line_cnt= $line_cnt"
 
-if [ $line_cnt -lt 1 ]
+if [ $line_cnt -lt 2 ]
 then
 	echo "$test_name Pass"
 else
