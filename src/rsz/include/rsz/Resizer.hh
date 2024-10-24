@@ -283,7 +283,7 @@ class Resizer : public dbStaState
   float targetLoadCap(LibertyCell* cell);
 
   ////////////////////////////////////////////////////////////////
-  void repairSetup(double setup_margin,
+  bool repairSetup(double setup_margin,
                    double repair_tns_end_percent,
                    int max_passes,
                    bool match_cell_footprint,
@@ -303,7 +303,7 @@ class Resizer : public dbStaState
 
   ////////////////////////////////////////////////////////////////
 
-  void repairHold(double setup_margin,
+  bool repairHold(double setup_margin,
                   double hold_margin,
                   bool allow_setup_violations,
                   // Max buffer count as percent of design instance count.
@@ -320,7 +320,7 @@ class Resizer : public dbStaState
   int holdBufferCount() const;
 
   ////////////////////////////////////////////////////////////////
-  void recoverPower(float recover_power_percent, bool match_cell_footprint);
+  bool recoverPower(float recover_power_percent, bool match_cell_footprint);
 
   ////////////////////////////////////////////////////////////////
   // Area of the design in meter^2.
