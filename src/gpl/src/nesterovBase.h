@@ -958,20 +958,6 @@ class NesterovBaseCommon
     }    
   }
 
-  GCell& getGCell(size_t index) { return gCellStor_[index]; }
-
-  size_t getGCellIndex(const GCell* gCell) const
-  {
-    return std::distance(gCellStor_.data(), gCell);
-  }
-
-  GCell& getGCell(size_t index) { return gCellStor_[index]; }
-
-  size_t getGCellIndex(const GCell* gCell) const
-  {
-    return std::distance(gCellStor_.data(), gCell);
-  }
-
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBaseCommon> pbc_;
@@ -1012,38 +998,6 @@ class NesterovBaseCommon
 // Used to calculate density gradient
 class NesterovBase
 {
-  struct GCellIndexHandle
-  {
-    enum class StorageType
-    {
-      NBC,
-      NB
-    } storageType;
-    NesterovBaseCommon* nbc;
-    NesterovBase* nb;
-    size_t index;
-
-    GCell* operator->() { return &(getGCell()); }
-
-    GCell& operator*() { return getGCell(); }
-
-    const GCell& operator*() const { return getGCell(); }
-
-    operator GCell*() { return &(getGCell()); }
-
-    operator const GCell*() const { return &(getGCell()); }
-
-   private:
-    GCell& getGCell() const
-    {
-      if (storageType == StorageType::NBC) {
-        return nbc->gCellStor_[index];
-      } else {
-        return nb->fillerStor_[index];
-      }
-    }
-  };
-
  public:
   NesterovBase(NesterovBaseVars nbVars,
                std::shared_ptr<PlacerBase> pb,
@@ -1221,20 +1175,6 @@ class NesterovBase
   void fixPointers(std::vector<size_t> new_gcells);
   // void fixGPinsPositions();
   
-  // Use this momentarily to avoid circular dependencies between NB, NBC,
-  // BinGrid, and GCellIndexHandle
-  std::vector<GCell*> convertGCellIndexHandleToGCellPtrs(
-      const std::vector<GCellIndexHandle>& gCell_handles) const
-  {
-    std::vector<GCell*> gCellPtrs;
-    gCellPtrs.reserve(gCell_handles.size());
-
-    for (const auto& gcell_handle : gCell_handles) {
-      gCellPtrs.push_back(&(const_cast<GCell&>(*gcell_handle)));
-    }
-    return gCellPtrs;
-  }
-
 void printAllGCellState() {
   for(size_t i =0; i< gCells_.size(); ++i) {
     printGCellState(i);
@@ -1243,7 +1183,8 @@ void printAllGCellState() {
 
 void printGCellState(size_t gcells_index) {
   log_->report("printGCellState, gcells_index:{}", gcells_index);
-  gCells_[gcells_index]->print(log_);
+  // GCellHandle& handle = gCells_[gcells_index];
+  // handle->print(log_);
   log_->report("curSLPCoordi_: {}, {}", curSLPCoordi_[gcells_index].x, curSLPCoordi_[gcells_index].y);
   log_->report("curSLPWireLengthGrads_: {}, {}", curSLPWireLengthGrads_[gcells_index].x, curSLPWireLengthGrads_[gcells_index].y);
   log_->report("curSLPDensityGrads_: {}, {}", curSLPDensityGrads_[gcells_index].x, curSLPDensityGrads_[gcells_index].y);
@@ -1291,7 +1232,7 @@ void printGCellState(size_t gcells_index) {
   std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
 
-  //map used to go from dbInst to GCellIndexHandle, and also to index in NBC::gcellStor_ or NB::fillerStor_
+  //map used to go from dbInst to GCellHandle, and also to index in NBC::gcellStor_ or NB::fillerStor_
   //this accesses are important to remove gcells and maintain index consistency
   std::unordered_map<odb::dbInst*, size_t> db_inst_index_map_;
 
@@ -1469,12 +1410,9 @@ class biNormalParameters
   float uy;
 };
 
-class GCellHandle
-{
+class GCellHandle {
  public:
-  GCellHandle(NesterovBaseCommon* nbc, size_t idx) : storage_(nbc), index_(idx)
-  {
-  }
+  GCellHandle(NesterovBaseCommon* nbc, size_t idx) : storage_(nbc), index_(idx) {}
   GCellHandle(NesterovBase* nb, size_t idx) : storage_(nb), index_(idx) {}
 
   // Non-const versions
@@ -1487,11 +1425,18 @@ class GCellHandle
   const GCell& operator*() const { return getGCell(); }
   operator const GCell*() const { return &getGCell(); }
 
+  bool isNesterovBaseCommon() const {
+    return std::holds_alternative<NesterovBaseCommon*>(storage_);
+  }
+
+  size_t getIndex() const {
+    return index_;
+  }
+
  private:
   using StorageVariant = std::variant<NesterovBaseCommon*, NesterovBase*>;
 
-  GCell& getGCell() const
-  {
+  GCell& getGCell() const {
     if (std::holds_alternative<NesterovBaseCommon*>(storage_)) {
       return std::get<NesterovBaseCommon*>(storage_)->getGCell(index_);
     }

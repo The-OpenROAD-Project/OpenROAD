@@ -1868,9 +1868,9 @@ void NesterovBase::updateGCellDensityCenterLocation(
     int idx = &coordi - &coordis[0];
     gCells_[idx]->setDensityCenterLocation(coordi.x, coordi.y);
   }
-  std::vector<GCell*> gCellPtrs = convertGCellIndexHandleToGCellPtrs(gCells_);
-  bg_.updateBinsGCellDensityArea(gCellPtrs);
+  bg_.updateBinsGCellDensityArea(gCells_);
 }
+
 
 void NesterovBase::setTargetDensity(float density)
 {
@@ -2825,12 +2825,12 @@ void NesterovBase::destroyGCell(odb::dbInst* db_inst) {
     size_t last_index = gCells_.size() - 1;
     size_t gcell_index = db_it->second;
 
-    GCellIndexHandle& handle = gCells_[gcell_index];
-    if (handle.storageType == GCellIndexHandle::StorageType::NBC) {
-      nbc_->destroyGCell(handle.index);
-    } else if (handle.storageType == GCellIndexHandle::StorageType::NB) {
-      //This might never happen, depends if we wish to change gpl filler cells, or whtespace during the processing of callbacks
-      destroyFillerGCell(handle.index);
+    GCellHandle& handle = gCells_[gcell_index];
+    if (handle.isNesterovBaseCommon()) {
+      nbc_->destroyGCell(handle.getIndex());
+    } else {
+      // This might never happen, depends if we wish to change gpl filler cells, or whitespace during the processing of callbacks
+      destroyFillerGCell(handle.getIndex());
     }
 
     if (gcell_index != last_index) {
@@ -2991,15 +2991,16 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY) {
     auto db_it = db_inst_index_map_.find(db_inst);
     if (db_it != db_inst_index_map_.end()) {
       size_t gcells_index = db_it->second;
-      GCellIndexHandle& handle = gCells_[gcells_index];
-      // log_->report("gcells_index:{}",gcells_index);
-      if (handle.storageType == GCellIndexHandle::StorageType::NBC) {
+      GCellHandle& handle = gCells_[gcells_index];
+      // log_->report("gcells_index:{}", gcells_index);
+      if (handle.isNesterovBaseCommon()) {
         // log_->report("updating gcel: {}", handle->instance()->dbInst()->getName());
-      } else if (handle.storageType == GCellIndexHandle::StorageType::NB) {
-        //Unexpected
+      } else {
+        // Unexpected
         log_->report("error, trying to move filler gcell!");
       }
-      GCell* gcell = handle;      
+      GCell* gcell = handle;
+     
 
       //TODO check if all this updates are actually required.
       for(auto& gpin : gcell->gPins()) {
@@ -3098,7 +3099,7 @@ void NesterovBase::createGCell(odb::dbInst* db_inst, size_t stor_index){
   auto gcell = nbc_->getGCellByIndex(stor_index);
   if(gcell!=nullptr){
     new_instances.push_back(db_inst);
-    gCells_.emplace_back(GCellIndexHandle{GCellIndexHandle::StorageType::NBC, nbc_.get(), nullptr, stor_index});
+    gCells_.emplace_back(GCellHandle(nbc_.get(), stor_index));
     size_t gcells_index = gCells_.size() - 1;
     db_inst_index_map_[db_inst] = gcells_index;
 
