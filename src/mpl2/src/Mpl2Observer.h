@@ -38,6 +38,7 @@
 #include <optional>
 #include <vector>
 
+#include "clusterEngine.h"
 #include "object.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
@@ -68,7 +69,7 @@ class Mpl2Observer
   virtual void endSA(float norm_cost) {}
   virtual void drawResult() {}
 
-  virtual void finishedClustering(Cluster* root) {}
+  virtual void finishedClustering(PhysicalHierarchy* tree) {}
 
   virtual void setMaxLevel(int max_level) {}
   virtual void setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages)

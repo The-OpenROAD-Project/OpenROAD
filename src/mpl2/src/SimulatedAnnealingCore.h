@@ -38,6 +38,7 @@
 #include <vector>
 
 #include "Mpl2Observer.h"
+#include "clusterEngine.h"
 
 namespace utl {
 class Logger;
@@ -68,6 +69,7 @@ class SimulatedAnnealingCore
 {
  public:
   SimulatedAnnealingCore(
+      PhysicalHierarchy* tree,
       const Rect& outline,           // boundary constraints
       const std::vector<T>& macros,  // macros (T = HardMacro or T = SoftMacro)
       // weight for different penalty
@@ -132,6 +134,7 @@ class SimulatedAnnealingCore
 
  protected:
   void initSequencePair();
+  void setBlockedBoundariesForIOs();
   void attemptCentralization(float pre_cost);
   void moveFloorplan(const std::pair<float, float>& offset);
   void updateBestValidResult(SequencePair& best_valid_result);
@@ -140,6 +143,10 @@ class SimulatedAnnealingCore
   virtual void calPenalty() = 0;
   void calOutlinePenalty();
   void calWirelength();
+  void addBoundaryDistToWirelength(const T& macro,
+                                   const T& io,
+                                   float net_weight);
+  bool isOutsideTheOutline(const T& macro) const;
   void calGuidancePenalty();
   void calFencePenalty();
 
@@ -163,6 +170,9 @@ class SimulatedAnnealingCore
   /////////////////////////////////////////////
   // boundary constraints
   Rect outline_;
+
+  // Boundaries blocked for IO pins
+  std::set<Boundary> blocked_boundaries_;
 
   // Number of macros that will actually be part of the sequence pair
   int macros_to_place_ = 0;
@@ -248,6 +258,13 @@ class SimulatedAnnealingCore
   bool has_initial_sequence_pair_ = false;
   bool centralization_on_ = false;
   bool centralization_was_reverted_ = false;
+
+  // Blocked boundaries data is kept in bools to avoid overhead
+  // during SA steps.
+  bool left_is_blocked_ = false;
+  bool right_is_blocked_ = false;
+  bool bottom_is_blocked_ = false;
+  bool top_is_blocked_ = false;
 };
 
 // SACore wrapper function
