@@ -777,6 +777,14 @@ void Gui::saveClockTreeImage(const std::string& clock_name,
       clock_name, filename, corner, width, height);
 }
 
+void Gui::selectClockviewerClock(const std::string& clock_name)
+{
+  if (!enabled()) {
+    return;
+  }
+  main_window->getClockViewer()->selectClock(clock_name);
+}
+
 static QWidget* findWidget(const std::string& name)
 {
   if (name == "main_window" || name == "OpenROAD") {
