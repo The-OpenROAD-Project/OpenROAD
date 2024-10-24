@@ -378,16 +378,16 @@ bool RecoverPower::downsizeDrvr(const PathRef* drvr_path,
 }
 
 bool RecoverPower::meetsSizeCriteria(const LibertyCell* cell,
-                                     const LibertyCell* equiv,
+                                     const LibertyCell* candidate,
                                      const bool match_size)
 {
   if (!match_size) {
     return true;
   }
-  const dbMaster* equivalent_cell = db_network_->staToDb(equiv);
+  const dbMaster* candidate_cell = db_network_->staToDb(candidate);
   const dbMaster* curr_cell = db_network_->staToDb(cell);
-  if (equivalent_cell->getWidth() <= curr_cell->getWidth()
-      && equivalent_cell->getHeight() == curr_cell->getHeight()) {
+  if (candidate_cell->getWidth() <= curr_cell->getWidth()
+      && candidate_cell->getHeight() == curr_cell->getHeight()) {
     return true;
   }
   return false;
@@ -403,46 +403,47 @@ LibertyCell* RecoverPower::downsizeCell(const LibertyPort* in_port,
 {
   const int lib_ap = dcalc_ap->libertyIndex();
   LibertyCell* cell = drvr_port->libertyCell();
-  LibertyCellSeq* equiv_cells = sta_->equivCells(cell);
+  LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
   constexpr double delay_margin = 1.5;  // Prevent overly aggressive downsizing
 
-  if (equiv_cells) {
+  if (!swappable_cells.empty()) {
     const char* in_port_name = in_port->name();
     const char* drvr_port_name = drvr_port->name();
-    sort(equiv_cells, [=](const LibertyCell* cell1, const LibertyCell* cell2) {
-      LibertyPort* port1
-          = cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
-      const LibertyPort* port2
-          = cell2->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
-      const float drive1 = port1->driveResistance();
-      const float drive2 = port2->driveResistance();
-      const ArcDelay intrinsic1 = port1->intrinsicDelay(this);
-      const ArcDelay intrinsic2 = port2->intrinsicDelay(this);
-      return (std::tie(drive1, intrinsic2) < std::tie(drive2, intrinsic1));
-    });
+    sort(&swappable_cells,
+         [=](const LibertyCell* cell1, const LibertyCell* cell2) {
+           LibertyPort* port1
+               = cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
+           const LibertyPort* port2
+               = cell2->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
+           const float drive1 = port1->driveResistance();
+           const float drive2 = port2->driveResistance();
+           const ArcDelay intrinsic1 = port1->intrinsicDelay(this);
+           const ArcDelay intrinsic2 = port2->intrinsicDelay(this);
+           return (std::tie(drive1, intrinsic2) < std::tie(drive2, intrinsic1));
+         });
     const float drive = drvr_port->cornerPort(lib_ap)->driveResistance();
     const float delay
         = resizer_->gateDelay(drvr_port, load_cap, resizer_->tgt_slew_dcalc_ap_)
           + prev_drive * in_port->cornerPort(lib_ap)->capacitance();
 
     LibertyCell* best_cell = nullptr;
-    for (LibertyCell* equiv : *equiv_cells) {
-      const LibertyCell* equiv_corner = equiv->cornerCell(lib_ap);
-      const LibertyPort* equiv_drvr
-          = equiv_corner->findLibertyPort(drvr_port_name);
-      const LibertyPort* equiv_input
-          = equiv_corner->findLibertyPort(in_port_name);
-      const float current_drive = equiv_drvr->driveResistance();
-      // Include delay of previous driver into equiv gate.
+    for (LibertyCell* swappable : swappable_cells) {
+      const LibertyCell* swappable_corner = swappable->cornerCell(lib_ap);
+      const LibertyPort* swappable_drvr
+          = swappable_corner->findLibertyPort(drvr_port_name);
+      const LibertyPort* swappable_input
+          = swappable_corner->findLibertyPort(in_port_name);
+      const float current_drive = swappable_drvr->driveResistance();
+      // Include delay of previous driver into swappable gate.
       const float current_delay
-          = resizer_->gateDelay(equiv_drvr, load_cap, dcalc_ap)
-            + prev_drive * equiv_input->capacitance();
+          = resizer_->gateDelay(swappable_drvr, load_cap, dcalc_ap)
+            + prev_drive * swappable_input->capacitance();
 
-      if (!resizer_->dontUse(equiv) && current_drive > drive
+      if (!resizer_->dontUse(swappable) && current_drive > drive
           && current_delay > delay
           && (current_delay - delay) * delay_margin < path_slack  // add margin
-          && meetsSizeCriteria(cell, equiv, match_size)) {
-        best_cell = equiv;
+          && meetsSizeCriteria(cell, swappable, match_size)) {
+        best_cell = swappable;
       }
     }
     if (best_cell != nullptr) {
