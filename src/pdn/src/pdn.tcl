@@ -377,8 +377,7 @@ proc add_pdn_stripe { args } {
 
   if { [info exists flags(-followpins)] } {
     if { [info exists keys(-starts_with)] } {
-      utl::error PDN 211 "Option -starts_with cannot be used with -followpins.\
-        Flip sites when initializing floorplan to change followpin power/ground order."
+      utl::warn PDN 211 "Option -starts_with cannot be used with -followpins and will be ignored."
     }
     pdn::make_followpin $grid $layer $width $extend
   } else {
