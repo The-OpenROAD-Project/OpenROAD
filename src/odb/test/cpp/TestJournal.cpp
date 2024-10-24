@@ -143,6 +143,20 @@ BOOST_FIXTURE_TEST_CASE(test_undo_inst_move, F_DEFAULT)
   BOOST_TEST(inst->getBBox()->getBox() == bbox);
 }
 
+BOOST_FIXTURE_TEST_CASE(test_undo_inst_flip, F_DEFAULT)
+{
+  auto inst = dbInst::create(block, and2, "a");
+  inst->setPlacementStatus(dbPlacementStatus::PLACED);
+  const Point point(1000, 2000);
+  inst->setLocation(point.x(), point.y());
+  const auto bbox = inst->getBBox()->getBox();
+
+  in_eco([&]() { inst->setOrient(dbOrientType::MX); });
+
+  BOOST_TEST(inst->getLocation() == point);
+  BOOST_TEST(inst->getBBox()->getBox() == bbox);
+}
+
 BOOST_FIXTURE_TEST_CASE(test_undo_bterm_connect, F_DEFAULT)
 {
   auto net1 = dbNet::create(block, "n1");
