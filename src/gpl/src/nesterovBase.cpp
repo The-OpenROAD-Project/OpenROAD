@@ -1437,10 +1437,10 @@ void NesterovBase::initFillerGCells()
   }
 
   // limit filler cells
-  static constexpr double limit_filler_ratio = 10;
+  const double limit_filler_ratio = 10;
   const double filler_scale_factor = std::sqrt(
       totalFillerArea_ / (limit_filler_ratio * nesterovInstanceArea));
-  if (filler_scale_factor >= 1.0) {
+  if (filler_scale_factor > 1.0) {
     debugPrint(log_,
                GPL,
                "FillerInit",
@@ -1449,7 +1449,7 @@ void NesterovBase::initFillerGCells()
                fillerDx_,
                fillerDy_);
 
-    static constexpr double max_edge_fillers = 1024;
+    const double max_edge_fillers = 1024;
     const int max_filler_x = std::max(
         static_cast<int>(pb_->die().coreDx() / max_edge_fillers), fillerDx_);
     const int max_filler_y = std::max(
