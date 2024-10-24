@@ -87,7 +87,7 @@ class RecoverPower : public sta::dbStaState
   void init();
   Vertex* recoverPower(const PathRef& path, Slack path_slack);
   bool meetsSizeCriteria(const LibertyCell* cell,
-                         const LibertyCell* equiv,
+                         const LibertyCell* candidate,
                          bool match_size);
   bool downsizeDrvr(const PathRef* drvr_path,
                     int drvr_index,

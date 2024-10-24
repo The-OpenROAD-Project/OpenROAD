@@ -1907,15 +1907,15 @@ LibertyCell* RepairDesign::findBufferUnderSlew(float max_slew, float load_cap)
 {
   LibertyCell* min_slew_buffer = resizer_->buffer_lowest_drive_;
   float min_slew = INF;
-  LibertyCellSeq* equiv_cells
-      = sta_->equivCells(resizer_->buffer_lowest_drive_);
-  if (equiv_cells) {
-    sort(equiv_cells,
+  LibertyCellSeq swappable_cells
+      = resizer_->getSwappableCells(resizer_->buffer_lowest_drive_);
+  if (!swappable_cells.empty()) {
+    sort(swappable_cells,
          [this](const LibertyCell* buffer1, const LibertyCell* buffer2) {
            return resizer_->bufferDriveResistance(buffer1)
                   > resizer_->bufferDriveResistance(buffer2);
          });
-    for (LibertyCell* buffer : *equiv_cells) {
+    for (LibertyCell* buffer : swappable_cells) {
       if (!resizer_->dontUse(buffer) && resizer_->isLinkCell(buffer)) {
         float slew = resizer_->bufferSlew(
             buffer, load_cap, resizer_->tgt_slew_dcalc_ap_);
