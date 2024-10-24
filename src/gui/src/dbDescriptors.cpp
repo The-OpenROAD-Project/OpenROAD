@@ -1562,7 +1562,7 @@ Descriptor::Actions DbNetDescriptor::getActions(std::any object) const
 
 Selected DbNetDescriptor::makeSelected(std::any object) const
 {
-  const auto net_selected = BaseDbDescriptor::makeSelected(object);
+  Selected net_selected = BaseDbDescriptor::makeSelected(object);
   if (net_selected) {
     return net_selected;
   }
@@ -3792,7 +3792,7 @@ Descriptor::Properties DbSiteDescriptor::getDBProperties(
 
 Selected DbSiteDescriptor::makeSelected(std::any object) const
 {
-  const auto site_selected = BaseDbDescriptor::makeSelected(object);
+  Selected site_selected = BaseDbDescriptor::makeSelected(object);
   if (site_selected) {
     return site_selected;
   }

@@ -58,10 +58,10 @@ class BaseDbDescriptor : public Descriptor
  public:
   BaseDbDescriptor(odb::dbDatabase* db);
 
-  virtual Properties getProperties(std::any object) const override;
+  Properties getProperties(std::any object) const override;
 
-  virtual Selected makeSelected(std::any object) const override;
-  virtual bool lessThan(std::any l, std::any r) const override;
+  Selected makeSelected(std::any object) const override;
+  bool lessThan(std::any l, std::any r) const override;
 
  protected:
   odb::dbDatabase* db_;
