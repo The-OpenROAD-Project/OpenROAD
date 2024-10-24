@@ -3,7 +3,12 @@ top_dir=$(top_dir1)
 #top_dir=/home/dimitris-ic/z/72424/RegressionTest/
 data_dir=$(top_dir)/data
 
+.SILENT :
+
 .PHONY : 1v2_parse ou_parse du_parse M1uM2_parse 1v2 2v2 2v1 1v1 3v2 3v1 5v1 5v2 sept24_1 sept24_2 sept24_3 sept24_fasterCap gen924  6v2
+
+patterns :  1v2 2v2 2v1 1v1 3v2 3v1 5v1 5v2 6v2
+all : 1v2_parse ou_parse du_parse M1uM2_parse 1v2 2v2 2v1 1v1 3v2 3v1 5v1 5v2 sept24_1 sept24_2 sept24_3 sept24_fasterCap gen924  6v2
 
 # -------------------------------------------------------------------------------------
 #                        rcx generates patterns
@@ -20,33 +25,34 @@ or_exec=$(top_dir)/bin/openroad
 
 
 # IMPORTANT DEPENDENCY: below goals assume data resides at directory one level up from running
+data_dr1=../data
 
 1v1: 
-	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dir)/process "TYP" 1 1 $@.GOLD
+	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dr1)/process "TYP" 1 1 $@.GOLD
 	
 1v2: 
-	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dir)/process "TYP" 1 2 $@.GOLD 
+	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dr1)/process "TYP" 1 2 $@.GOLD 
 	
 2v1: 
-	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dir)/process "TYP" 2 1 $@.GOLD 
+	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dr1)/process "TYP" 2 1 $@.GOLD 
 	
 2v2: 
-	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dir)/process "TYP" 2 2 $@.GOLD 
+	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dr1)/process "TYP" 2 2 $@.GOLD 
 	
 3v1: 
-	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dir)/process "TYP" 3 1 $@.GOLD 
+	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dr1)/process "TYP" 3 1 $@.GOLD 
 	
 3v2: 
-	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dir)/process "TYP" 3 2 $@.GOLD 
+	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dr1)/process "TYP" 3 2 $@.GOLD 
 
 5v1: 
-	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dir)/process "TYP" 5 1 $@.GOLD 
+	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dr1)/process "TYP" 5 1 $@.GOLD 
 	
 5v2: 
-	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dir)/process "TYP" 5 2 $@.GOLD 
+	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dr1)/process "TYP" 5 2 $@.GOLD 
 
 6v2: 
-	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dir)/process "TYP" 6 2 $@.GOLD 
+	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dr1)/process "TYP" 6 2 $@.GOLD 
 
 # -------------------------------------------------------------------------------------
 #                        Run fasterCap
@@ -123,5 +129,5 @@ gen924:
 	echo "read_rcx_tables -corner TYP -file  $(top_dir)/1v1.GOLD/resistance.TYP " >>  $(readCaps_tcl) ; \
 	echo "write_rcx_model -file sept24.rcx.model " >> $(readCaps_tcl) ; \
 	$(or_exec) < $(readCaps_tcl) > OUT ; \
-	diff -r . ../gen924.GOLD
+	echo "$@ diffs: `diff -w -r . ../gen924.GOLD` "
 
