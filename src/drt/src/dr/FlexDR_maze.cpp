@@ -2103,27 +2103,27 @@ void FlexDRWorker::modEolCosts_poly(gcPin* shape,
   }
   for (auto& edges : shape->getPolygonEdges()) {
     for (auto& edge : edges) {
-      if (edge->length() >= eol.eolWidth) {
+      if (edge.length() >= eol.eolWidth) {
         continue;
       }
       frCoord low, high, line;
       bool innerDirIsIncreasing;  // x: increases to the east, y: increases to
                                   // the north
-      if (edge->isVertical()) {
-        low = std::min(edge->low().y(), edge->high().y());
-        high = std::max(edge->low().y(), edge->high().y());
-        line = edge->low().x();
-        innerDirIsIncreasing = edge->getInnerDir() == frDirEnum::E;
+      if (edge.isVertical()) {
+        low = std::min(edge.low().y(), edge.high().y());
+        high = std::max(edge.low().y(), edge.high().y());
+        line = edge.low().x();
+        innerDirIsIncreasing = edge.getInnerDir() == frDirEnum::E;
       } else {
-        low = std::min(edge->low().x(), edge->high().x());
-        high = std::max(edge->low().x(), edge->high().x());
-        line = edge->low().y();
-        innerDirIsIncreasing = edge->getInnerDir() == frDirEnum::N;
+        low = std::min(edge.low().x(), edge.high().x());
+        high = std::max(edge.low().x(), edge.high().x());
+        line = edge.low().y();
+        innerDirIsIncreasing = edge.getInnerDir() == frDirEnum::N;
       }
       modEolCost(low,
                  high,
                  line,
-                 edge->isVertical(),
+                 edge.isVertical(),
                  innerDirIsIncreasing,
                  layer,
                  modType);
@@ -2182,12 +2182,12 @@ void FlexDRWorker::cleanUnneededPatches_poly(gcNet* drcNet, drNet* net)
     }
     for (int i = 0; i < drcNet->getPins(lNum).size(); i++) {
       auto& pin = drcNet->getPins(lNum)[i];
-      if (!gtl::contains(*pin->getPolygon(), pt)) {
+      if (!gtl::contains(*pin.getPolygon(), pt)) {
         continue;
       }
       frCoord area;
       if (areaMap[lNum][i] == -1) {
-        areaMap[lNum][i] = gtl::area(*pin->getPolygon());
+        areaMap[lNum][i] = gtl::area(*pin.getPolygon());
       }
       area = areaMap[lNum][i];
       if (area - patch->getOffsetBox().area() >= minArea) {
@@ -2212,7 +2212,7 @@ void FlexDRWorker::modEolCosts_poly(gcNet* net, ModCostType modType)
       continue;
     }
     for (auto& pin : net->getPins(lNum)) {
-      modEolCosts_poly(pin.get(), layer, modType);
+      modEolCosts_poly(&pin, layer, modType);
     }
   }
 }

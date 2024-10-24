@@ -30,6 +30,7 @@
 
 #include <memory>
 
+#include "db/dynarray.h"
 #include "db/gcObj/gcBlockObject.h"
 #include "db/gcObj/gcPin.h"
 #include "db/obj/frBlockage.h"
@@ -74,22 +75,39 @@ class gcNet : public gcBlockObject
       routeRectangles_[layerNum].push_back(rect);
     }
   }
-  void addPin(const gtl::polygon_90_with_holes_data<frCoord>& shape,
-              frLayerNum layerNum)
+  void initPins()
   {
-    auto pin = std::make_unique<gcPin>(shape, layerNum, this);
-    pin->setId(pins_[layerNum].size());
-    pins_[layerNum].push_back(std::move(pin));
-  }
-  void addPin(const gtl::rectangle_data<frCoord>& rect, frLayerNum layerNum)
-  {
-    gtl::polygon_90_with_holes_data<frCoord> shape;
-    std::vector<frCoord> coords
-        = {gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect)};
-    shape.set_compact(coords.begin(), coords.end());
-    auto pin = std::make_unique<gcPin>(shape, layerNum, this);
-    pin->setId(pins_[layerNum].size());
-    pins_[layerNum].push_back(std::move(pin));
+    for (int i = 0; i < pins_.size(); i++) {
+      std::vector<gcPin> pins;
+      // init pin from polygons
+      gtl::polygon_90_set_data<frCoord> layerPolys;
+      std::vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
+      polys.clear();
+      using gtl::operators::operator+=;
+      layerPolys += getPolygons(i, false);
+      layerPolys += getPolygons(i, true);
+      layerPolys.get(polys);
+      for (auto& poly : polys) {
+        pins.emplace_back(poly, i, this);
+        pins.back().setId(pins.size());
+      }
+      // init pin from rectangles
+      const auto addPin = ([&](const gtl::rectangle_data<frCoord>& rect) {
+        gtl::polygon_90_with_holes_data<frCoord> shape;
+        std::vector<frCoord> coords
+            = {gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect)};
+        shape.set_compact(coords.begin(), coords.end());
+        pins.emplace_back(shape, i, this);
+        pins.back().setId(pins.size());
+      });
+      for (auto& rect : getRectangles(i, false)) {
+        addPin(rect);
+      }
+      for (auto& rect : getRectangles(i, true)) {
+        addPin(rect);
+      }
+      pins_[i] = std::move(pins);
+    }
   }
   void setOwner(frBlockObject* in) { owner_ = in; }
   void clear()
@@ -143,14 +161,8 @@ class gcNet : public gcBlockObject
     }
     return routeRectangles_[layerNum];
   }
-  const std::vector<std::vector<std::unique_ptr<gcPin>>>& getPins() const
-  {
-    return pins_;
-  }
-  const std::vector<std::unique_ptr<gcPin>>& getPins(frLayerNum layerNum) const
-  {
-    return pins_[layerNum];
-  }
+  std::vector<dynarray<gcPin>>& getPins() { return pins_; }
+  dynarray<gcPin>& getPins(frLayerNum layerNum) { return pins_[layerNum]; }
   bool hasOwner() const { return owner_; }
   frBlockObject* getOwner() const { return owner_; }
   bool isBlockage() const
@@ -212,23 +224,20 @@ class gcNet : public gcBlockObject
                          gcPin* pin,
                          gcNet* net)
   {
-    std::unique_ptr<gcRect> sp = std::make_unique<gcRect>();
-    sp->setLayerNum(lNum);
-    sp->addToNet(net);
-    sp->addToPin(pin);
-    sp->setRect(bx);
+    gcRect sp;
+    sp.setLayerNum(lNum);
+    sp.addToNet(net);
+    sp.addToPin(pin);
+    sp.setRect(bx);
     specialSpacingRects.push_back(std::move(sp));
   }
-  const std::vector<std::unique_ptr<gcRect>>& getSpecialSpcRects() const
-  {
-    return specialSpacingRects;
-  }
+  std::vector<gcRect>& getSpecialSpcRects() { return specialSpacingRects; }
   bool hasPolyCornerAt(frCoord x, frCoord y, frLayerNum ln) const
   {
     for (auto& pin : pins_[ln]) {
-      for (auto& corners : pin->getPolygonCorners()) {
+      for (auto& corners : pin.getPolygonCorners()) {
         for (auto& corner : corners) {
-          if (corner->x() == x && corner->y() == y) {
+          if (corner.x() == x && corner.y() == y) {
             return true;
           }
         }
@@ -236,13 +245,13 @@ class gcNet : public gcBlockObject
     }
     return false;
   }
-  gcCorner* getPolyCornerAt(frCoord x, frCoord y, frLayerNum ln) const
+  gcCorner* getPolyCornerAt(frCoord x, frCoord y, frLayerNum ln)
   {
     for (auto& pin : pins_[ln]) {
-      for (auto& corners : pin->getPolygonCorners()) {
+      for (auto& corners : pin.getPolygonCorners()) {
         for (auto& corner : corners) {
-          if (corner->x() == x && corner->y() == y) {
-            return corner.get();
+          if (corner.x() == x && corner.y() == y) {
+            return &corner;
           }
         }
       }
@@ -259,13 +268,13 @@ class gcNet : public gcBlockObject
       fixedRectangles_;  // only cut layer
   std::vector<std::vector<gtl::rectangle_data<frCoord>>>
       routeRectangles_;  // only cut layer
-  std::vector<std::vector<std::unique_ptr<gcPin>>> pins_;
+  std::vector<dynarray<gcPin>> pins_;
   frBlockObject* owner_{nullptr};
   std::vector<std::vector<Rect>> taperedRects;     //(only routing layer)
   std::vector<std::vector<Rect>> nonTaperedRects;  //(only routing layer)
   // A non-tapered rect within a tapered max rectangle still require nondefault
   // spacing. This list hold these rectangles
-  std::vector<std::unique_ptr<gcRect>> specialSpacingRects;
+  std::vector<gcRect> specialSpacingRects;
 
   void init();
 };

@@ -185,7 +185,6 @@ class FlexGCWorker::Impl
   void initDRWorker();
   void initNets();
   void initNet(gcNet* net);
-  void initNet_pins_polygon(gcNet* net);
   void initNet_pins_polygonEdges(gcNet* net);
   void initNet_pins_polygonEdges_getFixedPolygonEdges(
       gcNet* net,

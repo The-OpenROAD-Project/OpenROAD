@@ -110,40 +110,38 @@ void FlexRP::prep_minStepViasCheck()
     testPin->setNet(testNet);
 
     bool first = true;
-    std::vector<std::unique_ptr<gcSegment>> tmpEdges;
+    std::vector<gcSegment> tmpEdges;
     gtl::point_data<frCoord> prev;
     for (const gtl::point_data<frCoord>& cur : poly) {
       if (first) {
         prev = cur;
         first = false;
       } else {
-        auto edge = std::make_unique<gcSegment>();
-        edge->setLayerNum(lNum);
-        edge->addToPin(testPin);
-        edge->addToNet(testNet);
-        edge->setSegment(prev, cur);
-        if (!tmpEdges.empty()) {
-          edge->setPrevEdge(tmpEdges.back().get());
-          tmpEdges.back()->setNextEdge(edge.get());
-        }
+        gcSegment edge;
+        edge.setLayerNum(lNum);
+        edge.addToPin(testPin);
+        edge.addToNet(testNet);
+        edge.setSegment(prev, cur);
         tmpEdges.push_back(std::move(edge));
         prev = cur;
       }
     }
     // last edge
-    auto edge = std::make_unique<gcSegment>();
-    edge->setLayerNum(lNum);
-    edge->addToPin(testPin);
-    edge->addToNet(testNet);
-    edge->setSegment(prev, *poly.begin());
-    edge->setPrevEdge(tmpEdges.back().get());
-    tmpEdges.back()->setNextEdge(edge.get());
-    // set first edge
-    tmpEdges.front()->setPrevEdge(edge.get());
-    edge->setNextEdge(tmpEdges.front().get());
+    gcSegment edge;
+    edge.setLayerNum(lNum);
+    edge.addToPin(testPin);
+    edge.addToNet(testNet);
+    edge.setSegment(prev, *poly.begin());
     tmpEdges.push_back(std::move(edge));
+    for (size_t i = 1; i < tmpEdges.size(); i++) {
+      tmpEdges[i - 1].setNextEdge(&tmpEdges[i]);
+      tmpEdges[i].setPrevEdge(&tmpEdges[i - 1]);
+    }
+    // set first edge
+    tmpEdges.front().setPrevEdge(&tmpEdges.back());
+    tmpEdges.back().setNextEdge(&tmpEdges.front());
     // add to polygon edges
-    testPin->addPolygonEdges(tmpEdges);
+    testPin->addPolygonEdges(std::move(tmpEdges));
     // check gc minstep violations
     FlexGCWorker worker(tech_, logger_);
     worker.checkMinStep(testPin);
@@ -787,40 +785,38 @@ bool FlexRP::hasMinStepViol(Rect& r1, Rect& r2, frLayerNum lNum)
   testPin->setNet(testNet);
 
   bool first = true;
-  std::vector<std::unique_ptr<gcSegment>> tmpEdges;
+  std::vector<gcSegment> tmpEdges;
   gtl::point_data<frCoord> prev;
   for (const gtl::point_data<frCoord>& cur : poly) {
     if (first) {
       prev = cur;
       first = false;
     } else {
-      auto edge = std::make_unique<gcSegment>();
-      edge->setLayerNum(lNum);
-      edge->addToPin(testPin);
-      edge->addToNet(testNet);
-      edge->setSegment(prev, cur);
-      if (!tmpEdges.empty()) {
-        edge->setPrevEdge(tmpEdges.back().get());
-        tmpEdges.back()->setNextEdge(edge.get());
-      }
+      gcSegment edge;
+      edge.setLayerNum(lNum);
+      edge.addToPin(testPin);
+      edge.addToNet(testNet);
+      edge.setSegment(prev, cur);
       tmpEdges.push_back(std::move(edge));
       prev = cur;
     }
   }
   // last edge
-  auto edge = std::make_unique<gcSegment>();
-  edge->setLayerNum(lNum);
-  edge->addToPin(testPin);
-  edge->addToNet(testNet);
-  edge->setSegment(prev, *poly.begin());
-  edge->setPrevEdge(tmpEdges.back().get());
-  tmpEdges.back()->setNextEdge(edge.get());
-  // set first edge
-  tmpEdges.front()->setPrevEdge(edge.get());
-  edge->setNextEdge(tmpEdges.front().get());
+  gcSegment edge;
+  edge.setLayerNum(lNum);
+  edge.addToPin(testPin);
+  edge.addToNet(testNet);
+  edge.setSegment(prev, *poly.begin());
   tmpEdges.push_back(std::move(edge));
+  for (size_t i = 1; i < tmpEdges.size(); i++) {
+    tmpEdges[i - 1].setNextEdge(&tmpEdges[i]);
+    tmpEdges[i].setPrevEdge(&tmpEdges[i - 1]);
+  }
+  // set first edge
+  tmpEdges.front().setPrevEdge(&tmpEdges.back());
+  tmpEdges.back().setNextEdge(&tmpEdges.front());
   // add to polygon edges
-  testPin->addPolygonEdges(tmpEdges);
+  testPin->addPolygonEdges(std::move(tmpEdges));
   // check gc minstep violations
   FlexGCWorker worker(tech_, logger_);
   worker.checkMinStep(testPin);

@@ -211,18 +211,18 @@ void FlexGCWorkerRegionQuery::Impl::init(int numLayers)
   for (auto& net : gcWorker_->getNets()) {
     for (auto& pins : net->getPins()) {
       for (auto& pin : pins) {
-        for (auto& edges : pin->getPolygonEdges()) {
+        for (auto& edges : pin.getPolygonEdges()) {
           for (auto& edge : edges) {
-            addPolygonEdge(edge.get(), allPolygonEdges);
+            addPolygonEdge(&edge, allPolygonEdges);
           }
         }
-        for (auto& rect : pin->getMaxRectangles()) {
-          addMaxRectangle(rect.get(), allMaxRectangles);
+        for (auto& rect : pin.getMaxRectangles()) {
+          addMaxRectangle(&rect, allMaxRectangles);
         }
       }
     }
     for (auto& spcRect : net->getSpecialSpcRects()) {
-      addSpcRectangle(spcRect.get(), allSpcRectangles);
+      addSpcRectangle(&spcRect, allSpcRectangles);
     }
   }
 
@@ -238,18 +238,18 @@ void FlexGCWorkerRegionQuery::addToRegionQuery(gcNet* net)
 {
   for (auto& pins : net->getPins()) {
     for (auto& pin : pins) {
-      for (auto& edges : pin->getPolygonEdges()) {
+      for (auto& edges : pin.getPolygonEdges()) {
         for (auto& edge : edges) {
-          addPolygonEdge(edge.get());
+          addPolygonEdge(&edge);
         }
       }
-      for (auto& rect : pin->getMaxRectangles()) {
-        addMaxRectangle(rect.get());
+      for (auto& rect : pin.getMaxRectangles()) {
+        addMaxRectangle(&rect);
       }
     }
   }
   for (auto& spcR : net->getSpecialSpcRects()) {
-    addSpcRectangle(spcR.get());
+    addSpcRectangle(&spcR);
   }
 }
 
@@ -257,18 +257,18 @@ void FlexGCWorkerRegionQuery::removeFromRegionQuery(gcNet* net)
 {
   for (auto& pins : net->getPins()) {
     for (auto& pin : pins) {
-      for (auto& edges : pin->getPolygonEdges()) {
+      for (auto& edges : pin.getPolygonEdges()) {
         for (auto& edge : edges) {
-          removePolygonEdge(edge.get());
+          removePolygonEdge(&edge);
         }
       }
-      for (auto& rect : pin->getMaxRectangles()) {
-        removeMaxRectangle(rect.get());
+      for (auto& rect : pin.getMaxRectangles()) {
+        removeMaxRectangle(&rect);
       }
     }
   }
   for (auto& spcR : net->getSpecialSpcRects()) {
-    removeSpcRectangle(spcR.get());
+    removeSpcRectangle(&spcR);
   }
 }
 

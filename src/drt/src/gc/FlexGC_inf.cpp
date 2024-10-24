@@ -210,7 +210,7 @@ void FlexGCWorker::Impl::checkPinMetSpcTblInf(gcPin* pin)
   frLayerNum lNum = pin->getPolygon()->getLayerNum();
   auto con = getTech()->getLayer(lNum)->getSpacingTableInfluence();
   for (auto& rect : pin->getMaxRectangles()) {
-    checkRectMetSpcTblInf(rect.get(), con);
+    checkRectMetSpcTblInf(&rect, con);
   }
 }
 void FlexGCWorker::Impl::checkMetalSpacingTableInfluence()
@@ -229,7 +229,7 @@ void FlexGCWorker::Impl::checkMetalSpacingTableInfluence()
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
-        checkPinMetSpcTblInf(pin.get());
+        checkPinMetSpcTblInf(&pin);
       }
     }
   } else {
@@ -248,7 +248,7 @@ void FlexGCWorker::Impl::checkMetalSpacingTableInfluence()
       }
       for (auto& uNet : getNets()) {
         for (auto& pin : uNet->getPins(i)) {
-          checkPinMetSpcTblInf(pin.get());
+          checkPinMetSpcTblInf(&pin);
         }
       }
     }

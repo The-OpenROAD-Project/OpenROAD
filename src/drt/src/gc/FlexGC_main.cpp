@@ -891,27 +891,27 @@ void FlexGCWorker::Impl::checkMetalSpacing()
       }
       for (auto& pin : targetNet_->getPins(i)) {
         if (currLayer->hasLef58SpacingWrongDirConstraints()) {
-          checkMetalSpacing_wrongDir(pin.get(), currLayer);
+          checkMetalSpacing_wrongDir(&pin, currLayer);
         }
-        for (auto& maxrect : pin->getMaxRectangles()) {
-          checkMetalSpacing_main(maxrect.get(),
+        for (auto& maxrect : pin.getMaxRectangles()) {
+          checkMetalSpacing_main(&maxrect,
                                  getDRWorker() || !AUTO_TAPER_NDR_NETS);
           if (currLayer->hasTwoWiresForbiddenSpacingConstraints()) {
             for (auto con :
                  currLayer->getTwoWiresForbiddenSpacingConstraints()) {
-              checkTwoWiresForbiddenSpc_main(maxrect.get(), con);
+              checkTwoWiresForbiddenSpc_main(&maxrect, con);
             }
           }
           if (currLayer->hasForbiddenSpacingConstraints()) {
             for (auto con : currLayer->getForbiddenSpacingConstraints()) {
-              checkForbiddenSpc_main(maxrect.get(), con);
+              checkForbiddenSpc_main(&maxrect, con);
             }
           }
         }
       }
       for (auto& sr : targetNet_->getSpecialSpcRects()) {
         checkMetalSpacing_main(
-            sr.get(), getDRWorker() || !AUTO_TAPER_NDR_NETS, true);
+            &sr, getDRWorker() || !AUTO_TAPER_NDR_NETS, true);
       }
     }
   } else {
@@ -928,28 +928,28 @@ void FlexGCWorker::Impl::checkMetalSpacing()
       for (auto& net : getNets()) {
         for (auto& pin : net->getPins(i)) {
           if (currLayer->hasLef58SpacingWrongDirConstraints()) {
-            checkMetalSpacing_wrongDir(pin.get(), currLayer);
+            checkMetalSpacing_wrongDir(&pin, currLayer);
           }
-          for (auto& maxrect : pin->getMaxRectangles()) {
+          for (auto& maxrect : pin.getMaxRectangles()) {
             // Short, NSMetal, metSpc
-            checkMetalSpacing_main(maxrect.get(),
+            checkMetalSpacing_main(&maxrect,
                                    getDRWorker() || !AUTO_TAPER_NDR_NETS);
             if (currLayer->hasTwoWiresForbiddenSpacingConstraints()) {
               for (auto con :
                    currLayer->getTwoWiresForbiddenSpacingConstraints()) {
-                checkTwoWiresForbiddenSpc_main(maxrect.get(), con);
+                checkTwoWiresForbiddenSpc_main(&maxrect, con);
               }
             }
             if (currLayer->hasForbiddenSpacingConstraints()) {
               for (auto con : currLayer->getForbiddenSpacingConstraints()) {
-                checkForbiddenSpc_main(maxrect.get(), con);
+                checkForbiddenSpc_main(&maxrect, con);
               }
             }
           }
         }
         for (auto& sr : net->getSpecialSpcRects()) {
           checkMetalSpacing_main(
-              sr.get(), getDRWorker() || !AUTO_TAPER_NDR_NETS, true);
+              &sr, getDRWorker() || !AUTO_TAPER_NDR_NETS, true);
         }
       }
     }
@@ -1035,40 +1035,40 @@ void FlexGCWorker::Impl::checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer)
     for (auto& edges : pin->getPolygonEdges()) {
       for (auto& edge : edges) {
         // Check wrongDir edge
-        if (edge->isVertical() != layer->isVertical()) {
+        if (edge.isVertical() != layer->isVertical()) {
           // Check noneol flag
           if (rule->isNoneolValid()) {
             // Get edge length and compare
-            auto edgeLength = gtl::length(*edge);
+            auto edgeLength = gtl::length(edge);
             auto noneolLength = rule->getNoneolWidth();
             if (edgeLength < noneolLength) {
               continue;
             }
           }
-          gtl::rectangle_data<frCoord> rect1(edge->getLowCorner()->x(),
-                                             edge->getLowCorner()->y(),
-                                             edge->getHighCorner()->x(),
-                                             edge->getHighCorner()->y());
+          gtl::rectangle_data<frCoord> rect1(edge.getLowCorner()->x(),
+                                             edge.getLowCorner()->y(),
+                                             edge.getHighCorner()->x(),
+                                             edge.getHighCorner()->y());
           box_t queryBox;
-          checkMetalSpacing_wrongDir_getQueryBox(edge.get(), spcVal, queryBox);
+          checkMetalSpacing_wrongDir_getQueryBox(&edge, spcVal, queryBox);
           std::vector<std::pair<segment_t, gcSegment*>> results;
           auto& workerRegionQuery = getWorkerRegionQuery();
           workerRegionQuery.queryPolygonEdge(queryBox, layerNum, results);
           for (auto& [boostSeg, ptr] : results) {
             // Check query edge wrongDir
             if (ptr->isVertical() != layer->isVertical()) {
-              if (edge.get() == ptr) {
+              if (&edge == ptr) {
                 continue;
               }
 
               // no violation if fixed shapes
-              if (edge->isFixed() && ptr->isFixed()) {
+              if (edge.isFixed() && ptr->isFixed()) {
                 continue;
               }
 
               // Get edges prl
-              const gtl::orientation_2d orient = edge->getOrientation();
-              const frCoord prl = getPrl(edge.get(), ptr, orient);
+              const gtl::orientation_2d orient = edge.getOrientation();
+              const frCoord prl = getPrl(&edge, ptr, orient);
               // Check PRL branch
               auto prlLength = rule->getPrlLength();
               if (prl <= prlLength) {
@@ -1097,7 +1097,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer)
               }
 
               // Make marker
-              auto net1 = edge->getNet();
+              auto net1 = edge.getNet();
               auto net2 = ptr->getNet();
               gtl::rectangle_data<frCoord> markerRect(rect1);
               gtl::generalized_intersect(markerRect, rect2);
@@ -1110,18 +1110,18 @@ void FlexGCWorker::Impl::checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer)
               marker->setLayerNum(layerNum);
               marker->setConstraint(con);
               marker->addSrc(net1->getOwner());
-              frCoord llx = std::min(edge->getLowCorner()->x(),
-                                     edge->getHighCorner()->x());
-              frCoord lly = std::min(edge->getLowCorner()->y(),
-                                     edge->getHighCorner()->y());
-              frCoord urx = std::max(edge->getLowCorner()->x(),
-                                     edge->getHighCorner()->x());
-              frCoord ury = std::max(edge->getLowCorner()->y(),
-                                     edge->getHighCorner()->y());
+              frCoord llx = std::min(edge.getLowCorner()->x(),
+                                     edge.getHighCorner()->x());
+              frCoord lly = std::min(edge.getLowCorner()->y(),
+                                     edge.getHighCorner()->y());
+              frCoord urx = std::max(edge.getLowCorner()->x(),
+                                     edge.getHighCorner()->x());
+              frCoord ury = std::max(edge.getLowCorner()->y(),
+                                     edge.getHighCorner()->y());
               marker->addVictim(net1->getOwner(),
-                                std::make_tuple(edge->getLayerNum(),
+                                std::make_tuple(edge.getLayerNum(),
                                                 Rect(llx, lly, urx, ury),
-                                                edge->isFixed()));
+                                                edge.isFixed()));
               marker->addSrc(net2->getOwner());
               llx = std::min(ptr->getLowCorner()->x(),
                              ptr->getHighCorner()->x());
@@ -1384,10 +1384,10 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
-        for (auto& corners : pin->getPolygonCorners()) {
+        for (auto& corners : pin.getPolygonCorners()) {
           for (auto& corner : corners) {
             // LEF58 corner spacing
-            checkMetalCornerSpacing_main(corner.get());
+            checkMetalCornerSpacing_main(&corner);
           }
         }
       }
@@ -1406,10 +1406,10 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
       }
       for (auto& net : getNets()) {
         for (auto& pin : net->getPins(i)) {
-          for (auto& corners : pin->getPolygonCorners()) {
+          for (auto& corners : pin.getPolygonCorners()) {
             for (auto& corner : corners) {
               // LEF58 corner spacing
-              checkMetalCornerSpacing_main(corner.get());
+              checkMetalCornerSpacing_main(&corner);
             }
           }
         }
@@ -1559,7 +1559,7 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin)
   }
   for (auto& edges : pin->getPolygonEdges()) {
     for (auto& edge : edges) {
-      if (edge->isFixed()) {
+      if (edge.isFixed()) {
         return;
       }
     }
@@ -1586,8 +1586,8 @@ void FlexGCWorker::Impl::checkMetalShape_lef58MinStep_noBetweenEol(
   for (auto& edges : pin->getPolygonEdges()) {
     // get the first edge that is >= minstep length
     for (auto& e : edges) {
-      if (gtl::length(*e) < minStepLength) {
-        startEdges.push_back(e.get());
+      if (gtl::length(e) < minStepLength) {
+        startEdges.push_back(&e);
       }
     }
   }
@@ -1681,8 +1681,8 @@ void FlexGCWorker::Impl::checkMetalShape_lef58MinStep_minAdjLength(
   for (auto& edges : pin->getPolygonEdges()) {
     // get the first edge that is >= minstep length
     for (auto& e : edges) {
-      if (gtl::length(*e) < minStepLength) {
-        startEdges.push_back(e.get());
+      if (gtl::length(e) < minStepLength) {
+        startEdges.push_back(&e);
       }
     }
   }
@@ -1783,8 +1783,8 @@ void FlexGCWorker::Impl::checkMetalShape_minStep(gcPin* pin)
     // get the first edge that is >= minstep length
     firste = nullptr;
     for (auto& e : edges) {
-      if (gtl::length(*e) >= minStepLength) {
-        firste = e.get();
+      if (gtl::length(e) >= minStepLength) {
+        firste = &e;
         break;
       }
     }
@@ -1880,10 +1880,10 @@ void FlexGCWorker::Impl::checkMetalShape_rectOnly(gcPin* pin)
   // get concave corners of the polygon
   for (auto& edges : pin->getPolygonEdges()) {
     for (auto& edge : edges) {
-      auto currEdge = edge.get();
-      auto nextEdge = currEdge->getNextEdge();
-      if (orientation(*currEdge, *nextEdge) == -1) {
-        concaveCorners.push_back(boost::polygon::high(*currEdge));
+      auto& currEdge = edge;
+      auto& nextEdge = *currEdge.getNextEdge();
+      if (orientation(currEdge, nextEdge) == -1) {
+        concaveCorners.push_back(boost::polygon::high(currEdge));
       }
     }
   }
@@ -1932,7 +1932,7 @@ void FlexGCWorker::Impl::checkMetalShape_offGrid(gcPin* pin)
   // negative coordinates
   int mGrid = getTech()->getManufacturingGrid();
   for (auto& rect : pin->getMaxRectangles()) {
-    auto maxRect = rect.get();
+    auto maxRect = &rect;
     auto layerNum = maxRect->getLayerNum();
     // off grid maxRect
     if (gtl::xl(*maxRect) % mGrid || gtl::xh(*maxRect) % mGrid
@@ -2053,7 +2053,7 @@ void FlexGCWorker::Impl::checkMetalShape_lef58Area(gcPin* pin)
     }
     for (auto& edges : pin->getPolygonEdges()) {
       for (auto& edge : edges) {
-        if (edge->isFixed()) {
+        if (edge.isFixed()) {
           continue;
         }
       }
@@ -2170,9 +2170,9 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
   // traverse polygon edges, searching for the best edge to amend a patch
   for (auto& edges : pin->getPolygonEdges()) {
     for (auto& e : edges) {
-      if (e->isVertical() != prefDirIsVert
-          && (!chosenEdg || bestSuitable(e.get(), chosenEdg) == e.get())) {
-        chosenEdg = e.get();
+      if (e.isVertical() != prefDirIsVert
+          && (!chosenEdg || bestSuitable(&e, chosenEdg) == &e)) {
+        chosenEdg = &e;
       }
     }
   }
@@ -2331,7 +2331,7 @@ void FlexGCWorker::Impl::checkMetalShape(bool allow_patching)
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
-        checkMetalShape_main(pin.get(), allow_patching);
+        checkMetalShape_main(&pin, allow_patching);
       }
     }
   } else {
@@ -2347,7 +2347,7 @@ void FlexGCWorker::Impl::checkMetalShape(bool allow_patching)
       }
       for (auto& net : getNets()) {
         for (auto& pin : net->getPins(i)) {
-          checkMetalShape_main(pin.get(), allow_patching);
+          checkMetalShape_main(&pin, allow_patching);
         }
       }
     }
@@ -3557,9 +3557,9 @@ void FlexGCWorker::Impl::checkCutSpacing()
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
-        for (auto& maxrect : pin->getMaxRectangles()) {
-          checkCutSpacing_main(maxrect.get());
-          checkLef58Enclosure_main(maxrect.get());
+        for (auto& maxrect : pin.getMaxRectangles()) {
+          checkCutSpacing_main(&maxrect);
+          checkLef58Enclosure_main(&maxrect);
         }
       }
     }
@@ -3576,9 +3576,9 @@ void FlexGCWorker::Impl::checkCutSpacing()
       }
       for (auto& net : getNets()) {
         for (auto& pin : net->getPins(i)) {
-          for (auto& maxrect : pin->getMaxRectangles()) {
-            checkCutSpacing_main(maxrect.get());
-            checkLef58Enclosure_main(maxrect.get());
+          for (auto& maxrect : pin.getMaxRectangles()) {
+            checkCutSpacing_main(&maxrect);
+            checkLef58Enclosure_main(&maxrect);
           }
         }
       }
@@ -3943,8 +3943,8 @@ void FlexGCWorker::Impl::checkMinimumCut()
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
-        for (auto& maxrect : pin->getMaxRectangles()) {
-          checkMinimumCut_main(maxrect.get());
+        for (auto& maxrect : pin.getMaxRectangles()) {
+          checkMinimumCut_main(&maxrect);
         }
       }
     }
@@ -3964,8 +3964,8 @@ void FlexGCWorker::Impl::checkMinimumCut()
       }
       for (auto& net : getNets()) {
         for (auto& pin : net->getPins(i)) {
-          for (auto& maxrect : pin->getMaxRectangles()) {
-            checkMinimumCut_main(maxrect.get());
+          for (auto& maxrect : pin.getMaxRectangles()) {
+            checkMinimumCut_main(&maxrect);
           }
         }
       }
