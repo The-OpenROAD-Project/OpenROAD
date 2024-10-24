@@ -156,7 +156,7 @@ proc set_voltage_domain { args } {
     } else {
       set signal_type [$switched_power getSigType]
       if { $signal_type != "POWER" } {
-        utl::error PDN 199 "Net $switched_power_net_name already exists in the design,\
+        utl::error PDN 212 "Net $switched_power_net_name already exists in the design,\
           but is of signal type ${signal_type}."
       }
     }
