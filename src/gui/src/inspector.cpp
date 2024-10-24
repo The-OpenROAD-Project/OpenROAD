@@ -1141,7 +1141,7 @@ void Inspector::navigateBack()
     }
   }
 
-  emit inspect(next);
+  emit selected(next);
 }
 
 ////////////
