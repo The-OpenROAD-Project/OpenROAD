@@ -297,10 +297,12 @@ uint extDistRCTable::writeRules(FILE* fp,
                                 double w,
                                 bool bin)
 {
+      bool modify_last_line= false; // Dimitri 09152023
+
   uint cnt = table->getCnt();
   if (cnt > 0) {
     extDistRC* rc1 = table->get(cnt - 1);
-    if (rc1 != nullptr) {
+    if (rc1 != nullptr && modify_last_line) {
       rc1->set(rc1->_sep, 0, rc1->_coupling + rc1->_fringe, 0.0, rc1->_res);
     }
   }
@@ -3382,6 +3384,7 @@ uint extRCModel::readMetalHeader(Ath__parser* parser,
   return 0;
 }
 
+/*
 void extMetRCTable::allocateInitialTables(uint layerCnt,
                                           uint widthCnt,
                                           bool over,
@@ -3407,6 +3410,35 @@ void extMetRCTable::allocateInitialTables(uint layerCnt,
     if (diag) {
       _capDiagUnder[met] = new extDistWidthRCTable(
           false, met, layerCnt, _layerCnt - met - 1, widthCnt, _rcPoolPtr);
+    }
+  }
+}
+*/
+void extMetRCTable::allocateInitialTables(uint layerCnt, uint widthCnt, bool over, bool under, bool diag) 
+{
+   _layerCnt = layerCnt;
+  _wireCnt= 2;
+
+  for (uint met = 1; met < _layerCnt; met++) {
+    if (over && under && (met > 1) && (met < _layerCnt - 1)) {
+      int n = extRCModel::getMaxMetIndexOverUnder(met, layerCnt);
+      _capOverUnder[met] = new extDistWidthRCTable(false, met, layerCnt, n + 1, widthCnt, _rcPoolPtr);
+      for (uint jj= 0; jj<_wireCnt; jj++)
+        _capOverUnder_open[met][jj] = new extDistWidthRCTable(false, met, layerCnt, n + 1, widthCnt, _rcPoolPtr);
+    }
+    if (over) {
+      _capOver[met] = new extDistWidthRCTable(true, met, layerCnt, met, widthCnt, _rcPoolPtr);
+      _resOver[met] = new extDistWidthRCTable(true, met, layerCnt, met, widthCnt, _rcPoolPtr);
+      for (uint jj= 0; jj<_wireCnt; jj++)
+         _capOver_open[met][jj] = new extDistWidthRCTable(true, met, layerCnt, met, widthCnt, _rcPoolPtr);
+    }
+    if (under) {
+      _capUnder[met] = new extDistWidthRCTable(false, met, layerCnt, _layerCnt - met - 1, widthCnt, _rcPoolPtr);
+      for (uint jj= 0; jj<_wireCnt; jj++)
+        _capUnder_open[met][jj] = new extDistWidthRCTable(false, met, layerCnt, _layerCnt - met - 1, widthCnt, _rcPoolPtr);
+    }
+    if (diag) {
+      _capDiagUnder[met] = new extDistWidthRCTable(false, met, layerCnt, _layerCnt - met - 1, widthCnt, _rcPoolPtr);
     }
   }
 }

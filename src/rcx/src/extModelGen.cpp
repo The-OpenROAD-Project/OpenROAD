@@ -70,11 +70,11 @@ uint extMain::GenExtModel(std::list<std::string> spef_file_list, std::list<std::
         // TODO notice(0, "------------------------- Reading SPEF file %s\n", filename);
 
 /* -------------------------------- TODO ----------------------------------------------------------------------------- */
-        // readSPEF((char *)filename, NULL, /*force*/ true, false,
-        //         false, NULL, false, false, false, -0.5, 0.0, 1.0, false,
-        //         false, NULL, false, -1, 0.0, 0.0, NULL, NULL, NULL, NULL,
-        //         NULL, -1, 0,
-        //         false, false, NULL, /*testParsing*/ false, false, false /*diff*/, false /*calibrate*/, 0);
+         readSPEF((char *)filename, NULL, /*force*/ true, false,
+                 NULL, false, false, false, -0.5, 0.0, 1.0, false,
+                 false, NULL, false, -1, 0.0, 0.0, NULL, NULL, NULL, NULL,
+                 NULL, -1, 0,
+                 false, false, /*testParsing*/ false, false, false /*diff*/, false /*calibrate*/, 0);
 
         char *out = "1.model";
         if (cnt == 1)
@@ -158,7 +158,7 @@ void extModelGen::writeRules(FILE *fp, bool binary, uint mIndex, int corner)
             cnt += writeRulesPattern(2, ii, m, rcTable->_capOverUnder_open[ii][1], rcTable->_capOverUnder_open[0][1], "OVERUNDER1", fp, binary);
         }
     }
-    // TODO rcTable->writeViaRes(fp);
+    rcTable->writeViaRes(fp);
     fprintf(fp, "END DensityModel %d\n", mIndex);
 }
 uint extRCModel::writeRulesPattern(uint ou, uint layer, int modelIndex, extDistWidthRCTable* table_m, extDistWidthRCTable* table_0, const char *patternKeyword, FILE *fp, bool binary)
@@ -170,7 +170,7 @@ uint extRCModel::writeRulesPattern(uint ou, uint layer, int modelIndex, extDistW
   else if ((modelIndex > 0) && (table_0 != NULL))
     table= table_0;
   else if (modelIndex == 0) {
-    fprintf(stdout, "Cannot write %s rules for <DensityModel> %d and layer %d", patternKeyword, modelIndex, layer);
+    fprintf(stdout, "Cannot write %s rules for <DensityModel> %d and layer %d\n", patternKeyword, modelIndex, layer);
     // TODO logger_->info( RCX, 218, "Cannot write {} rules for <DensityModel> {} and layer {}", patternKeyword, modelIndex, layer);
     return 0;
   }
@@ -415,18 +415,18 @@ uint extModelGen::ReadRCDB(dbBlock *block, uint widthCnt, uint diagOption, char 
         // via pattern: V2.W2.M5.M6.DX520.DY1320.C2.V56_1x2_VH_S
         if (p->getFirstChar() == 'V')
         {
-            // TODO if (!rcModel->GetViaRes(p, w, net, logFP))
-            // TODO    break;
+            if (!rcModel->GetViaRes(p, w, net, logFP))
+                break;
             continue;
         }
         if (wcnt < 5)
             continue;
 
         // dkf 12302023 -- NOTE Original Patterns start with: O6_ U6_ OU6_ DU6_ R6_
-        // example: R6_M6oM0_W440W440_S02640S03520_3
+        // example: 
 
-        // TODO if (rcModel->SkipPattern(p, net, logFP))
-        // TODO    continue;
+        if (rcModel->SkipPattern(p, net, logFP))
+            continue;
 
         int targetWire = 0;
         if (p->getFirstChar() == 'U')

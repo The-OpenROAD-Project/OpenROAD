@@ -349,6 +349,47 @@ sta::define_cmd_args "write_rules" {
     [-db]
 }
 
+sta::define_cmd_args "gen_rcx_model" {
+    [-spef_file_list spefList]
+    [-corner_list cornerList]
+    [-out_file outfilename]
+    [-comment comment]
+    [-version version]
+    [-pattern pattern]
+}
+
+proc gen_rcx_model { args } {
+  sta::parse_key_args "gen_rcx_model" args keys \
+      { -spef_file_list -corner_list -out_file -comment -version -pattern }
+  
+  set spef_file_list "" 
+  if { [info exists keys(-spef_file_list)] } {
+    set spef_file_list $keys(-spef_file_list)
+  }
+  set corner_list "" 
+  if { [info exists keys(-corner_list)] } {
+    set corner_list $keys(-corner_list)
+  }
+  set out_file "rcx.model" 
+  if { [info exists keys(-out_file)] } {
+    set out_file $keys(-out_file)
+  }
+  set version "2.0" 
+  if { [info exists keys(-version)] } {
+    set version $keys(-version)
+  }
+  set comment "RCX Model File" 
+  if { [info exists keys(-comment)] } {
+    set comment $keys(-comment)
+  }
+  set pattern 0
+  if { [info exists keys(-pattern)] } {
+    set pattern $keys(-pattern)
+  }
+
+  rcx::gen_rcx_model $spef_file_list $corner_list $out_file $comment $version $pattern
+}
+
 proc write_rules { args } {
   sta::parse_key_args "write_rules" args \
     keys { -file -dir -name -pattern } \
