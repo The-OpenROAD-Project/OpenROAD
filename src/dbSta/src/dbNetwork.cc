@@ -779,7 +779,7 @@ void dbNetwork::setAttribute(Cell* cell, const string& key, const string& value)
     if (property) {
       property->setValue(value.c_str());
     } else {
-      property = odb::dbStringProperty::create(obj, key.c_str(), value.c_str());
+      odb::dbStringProperty::create(obj, key.c_str(), value.c_str());
     }
   }
 }
@@ -1091,7 +1091,7 @@ void dbNetwork::setAttribute(Instance* instance,
     if (property) {
       property->setValue(value.c_str());
     } else {
-      property = odb::dbStringProperty::create(obj, key.c_str(), value.c_str());
+      odb::dbStringProperty::create(obj, key.c_str(), value.c_str());
     }
   }
 }
