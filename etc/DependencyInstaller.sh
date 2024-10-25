@@ -66,9 +66,9 @@ _installCommonDev() {
     pcreChecksum="37d2f77cfd411a3ddf1c64e1d72e43f7"
     swigVersion=4.1.0
     swigChecksum="794433378154eb61270a3ac127d9c5f3"
-    boostVersionBig=1.80
+    boostVersionBig=1.86
     boostVersionSmall=${boostVersionBig}.0
-    boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
+    boostChecksum="ac857d73bb754b718a039830b07b9624"
     eigenVersion=3.4
     cuddVersion=3.0.0
     lemonVersion=1.3.1

@@ -172,8 +172,11 @@ if (SWIG_VERSION VERSION_GREATER_EQUAL "4.1.0")
 endif()
 include(UseSWIG)
 
-find_package(Boost REQUIRED)
+find_package(Boost 1.81.0)
 message(STATUS "boost: ${Boost_VERSION}")
+if(NOT Boost_FOUND)
+  message(FATAL_ERROR "No suitable version of boost found. Consider (re)running `<OpenROAD-dir>/etc/DependencyInstaller.sh -common`")
+endif()
 
 if (ENABLE_TESTS)
   find_package(GTest REQUIRED)
