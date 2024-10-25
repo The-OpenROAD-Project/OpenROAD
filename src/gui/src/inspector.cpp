@@ -34,10 +34,10 @@
 
 #include <QApplication>
 #include <QComboBox>
+#include <QDebug>
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QPushButton>
-#include <QDebug>
 
 #include "gui/gui.h"
 #include "gui_utils.h"
@@ -814,7 +814,8 @@ void Inspector::inspect(const Selected& object)
   }
 
   if (object) {
-    qDebug() << "Inspector change selection to" << QString::fromStdString(object.getName());
+    qDebug() << "Inspector change selection to"
+             << QString::fromStdString(object.getName());
   } else {
     qDebug() << "Inspector change selection to nothing";
   }
