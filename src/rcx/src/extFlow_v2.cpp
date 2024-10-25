@@ -167,9 +167,10 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m1)
                             _dgContextLowTrack,
                             _dgContextHiTrack,
                             _dgContextTrackBase,
-                            m1->_seqPool);
+                            mrc->_seqPool);
 
-  _seqPool = m1->_seqPool;
+  // _seqPool = m1->_seqPool;
+  _seqPool = mrc->_seqPool;
 
   uint maxWidth = 0;
   uint totPowerWireCnt = powerWireCounter(maxWidth);
@@ -271,7 +272,8 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m1)
       processWireCnt += addPowerNets(dir, lo_sdb, hi_sdb, pwrtype);
       processWireCnt += addSignalNets(dir, lo_sdb, hi_sdb, sigtype);
 
-      mrc->_search = m1->_extMain->_search;
+      // mrc->_search = m1->_extMain->_search;
+      mrc->_search = this->_search;
       // _dbgOption= 1;
       if (_dbgOption > 0)
         mrc->PrintAllGrids(dir, mrc->OpenPrintFile(dir, "wires.org"), 0);

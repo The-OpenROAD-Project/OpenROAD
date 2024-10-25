@@ -15,14 +15,14 @@ rm -r $run_dir
 mkdir -p $run_dir
 cd $run_dir
 
-echo "$test_name"
+# echo "$test_name"
 $or_exec < ../scripts/$test_name.tcl > OUT  
 line_cnt=`diff $test_name.spef ../$test_name.GOLD/$test_name.spef | egrep -v DATE | egrep -v VERSION | egrep -v "\-\-\-" | wc -l `
 if [ $line_cnt -lt 3 ]
 then
-	echo "$test_name Pass"
+	echo "Pass $test_name"
 else
-	echo "$test_name Fail"
+	echo "Fail $test_name"
 fi
 
 #  line_cnt=`diff $test_name.spef ../$test_name.GOLD/$test_name.spef | egrep -v DATE | wc -l | awk '$1 == 2 { print "pass" } '

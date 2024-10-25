@@ -15,14 +15,14 @@ rm -r $run_dir
 mkdir -p $run_dir
 cd $run_dir
 
-echo "$test_name"
+# echo "$test_name"
 $or_exec < ../scripts/$test_name.tcl > OUT  
 line_cnt=`diff $test_name.def ../$test_name.GOLD/$test_name.def | wc -l `
 # echo "line_cnt= $line_cnt"
 
 if [ $line_cnt -lt 1 ]
 then
-	echo "$test_name Pass"
+	echo "Pass $test_name"
 else
-	echo "$test_name Fail"
+	echo "Pass $test_name"
 fi
