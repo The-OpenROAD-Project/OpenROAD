@@ -46,32 +46,8 @@ FILE* fp;
 #endif
 using namespace odb;
 
-/* DELETE 
-using odb::dbBlock;
-using odb::dbBox;
-using odb::dbBTerm;
-using odb::dbCapNode;
-using odb::dbCCSeg;
-using odb::dbIntProperty;
-using odb::dbITerm;
-using odb::dbNet;
-using odb::dbRSeg;
-using odb::dbSet;
-using odb::dbShape;
-using odb::dbSigType;
-using odb::dbTechLayer;
-using odb::dbTechLayerType;
-using odb::dbTechVia;
-using odb::dbVia;
-using odb::dbWire;
-using odb::dbWirePath;
-using odb::dbWirePathItr;
-using odb::dbWirePathShape;
-using odb::MAX_INT;
-using odb::Point;
-using odb::Rect;
 using utl::RCX;
-*/
+
 void extMain::print_RC(dbRSeg* rc)
 {
   dbShape s;

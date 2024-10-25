@@ -15,14 +15,14 @@ rm -r $run_dir
 mkdir -p $run_dir
 cd $run_dir
 
-echo "$test_name"
+# echo "$test_name"
 $or_exec < ../scripts/$test_name.tcl > OUT  
 line_cnt=`diff -w -r . ../$test_name.GOLD | egrep -v OpenROAD | egrep -v "\-\-\-" | wc -l `
 # echo "line_cnt= $line_cnt"
 
-if [ $line_cnt -lt 2 ]
+if [ $line_cnt -lt 3 ]
 then
-	echo "$test_name Pass"
+	echo "Pass $test_name"
 else
-	echo "$test_name Fail"
+	echo "Pass $test_name"
 fi

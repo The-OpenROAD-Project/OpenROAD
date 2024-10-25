@@ -272,41 +272,19 @@ void Ext::extract(ExtractOptions options)
     // FIXME _ext->addExtModel();
     logger_->info(RCX, 375, "Using LEF RC values to extract!");
   }
-  _ext->skip_via_wires(options.skip_via_wires);
-  _ext->skip_via_wires(true); // DEBUG
-  _ext->_lef_res = options.lef_res;
+  _ext->setExtractionOptions_v2(options);
 
- _ext->_wire_extracted_progress_count= options._wire_extracted_progress_count;
-  _ext->_version= options._version;
-  _ext->_metal_flag_22= 0;
-  // fprintf(stdout, "RC Flow Version %5.3f enabled\n", _ext->_version);
-  // notice(0, "RC Flow Version %5.3f enabled\n", _ext->_version);
-  if (abs(options._version-2.2)<0.001)
-  {
-    _ext->_metal_flag_22= 2;
-    fprintf(stdout, "Version %5.3f enabled new RC calc flow for lower 2 metals\n", options._version);
-  }
-  if (abs(options._version-2.3)<0.001)
-  {
-    _ext->_metal_flag_22= 3;
-    fprintf(stdout, "Version %5.3f enabled new RC calc flow for lower 2 metals\n", options._version);
-  }
-  _ext->_v2= options._v2;
-  if (options._v2>=2.2)
-	_ext->_v2= true;
-  _ext->_dbgOption= options._dbg;
-
-   _ext->_overCell = _ext->_v2 && options.over_cell;
-
-  _ext->makeBlockRCsegs(options.net,
-                        options.cc_up,
-                        options.cc_model,
-                        options.max_res,
-                        !options.no_merge_via_res,
-                        options.coupling_threshold,
-                        options.context_depth,
-                        options.ext_model_file);
-
+  if (_ext->_v2)
+    _ext->makeBlockRCsegs_v2(options.net, options.ext_model_file);
+  else
+    _ext->makeBlockRCsegs(options.net,
+                          options.cc_up,
+                          options.cc_model,
+                          options.max_res,
+                          !options.no_merge_via_res,
+                          options.coupling_threshold,
+                          options.context_depth,
+                          options.ext_model_file);
 }
 
 void Ext::adjust_rc(float res_factor, float cc_factor, float gndc_factor)

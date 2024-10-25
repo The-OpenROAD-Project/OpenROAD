@@ -48,6 +48,7 @@
 #include "rcx/gseq.h"
 
 #include "rcx/extPattern.h"
+#include "rcx/ext_options.h"
 
 #include "extSegment.h"
 #include "extViaModel.h"
@@ -1484,6 +1485,50 @@ class extMain
     extSolverGen *_currentSolverGen;
 
     // v2 -----------------------------------------------------
+
+// CLEANUP dkf 10242024 ----------------------------------
+void makeBlockRCsegs_v2(const char* netNames, const char* extRules);
+bool markNetsToExtract_v2(const char* netNames, std::vector<dbNet*> & inets);
+
+bool makeRCNetwork_v2();
+bool couplingExtEnd_v2();
+void update_wireAltered_v2(std::vector<dbNet*> & inets);
+void initSomeValues_v2();
+bool SetCornersAndReadModels_v2(const char* extRules);
+double getDbFactor_v2();
+bool ReadModels_v2(const char *rulesFileName, extRCModel* m, uint extDbCnt, uint *cornerTable );
+
+void setExtractionOptions_v2(ExtractOptions options);
+uint makeNetRCsegs_v2(dbNet* net, bool skipStartWarning= false);
+uint resetMapNodes_v2(dbWire* wire);
+
+uint getCapNodeId_v2(dbITerm* iterm, const uint junction);
+uint getCapNodeId_v2(dbBTerm* bterm, const uint junction);
+uint getCapNodeId_v2(dbNet *net, const int junction, const bool branch);
+uint getCapNodeId_v2(dbNet *net, dbWirePath & path, const uint junction, bool branch);
+uint getCapNodeId_v2(dbNet* net, const dbWirePathShape& pshape, int junct_id, bool branch);
+void initJunctionIdMaps(dbNet *net);
+
+void print_debug(const bool branch, const uint junction, uint capId, const char *old_new);
+dbRSeg* addRSeg_v2(dbNet* net, uint& srcId, Point& prevPoint, const dbWirePath& path, const dbWirePathShape& pshape, const bool isBranch,
+const double* restbl=nullptr, const double* captbl=nullptr);
+
+void loopWarning(dbNet* net, const dbWirePathShape& pshape);
+void getShapeRC_v2(dbNet* net,
+                         const dbShape& s,
+                         Point& prevPoint,
+                         const dbWirePathShape& pshape);
+void getShapeRC_v3(dbNet* net,
+                         const dbShape& s,
+                         Point& prevPoint,
+                         const dbWirePathShape& pshape);
+double getViaRes_v2(dbNet* net, dbTechVia* tvia);
+double getDbViaRes_v2(dbNet* net, const dbShape& s);
+double getMetalRes_v2(dbNet* net, const dbShape& s, const dbWirePathShape& pshape);
+void setResAndCap_v2(dbRSeg* rc, const double* restbl, const double* captbl);
+// CLEANUP dkf 10242024 ----------------------------------
+
+
     uint benchVerilog_bterms(FILE* fp,
                            odb::dbIoType iotype,
                            const char* prefix,
@@ -2333,8 +2378,8 @@ public:
   uint _minDistTable[20];
   double _tmpCapTable[20];
   double _tmpSumCapTable[20];
-  double _tmpResTable[20];
-  double _tmpSumResTable[20];
+  double *_tmpResTable= new double[10];
+  double *_tmpSumResTable= new double[10];
   int _sumUpdated;
   int _minModelIndex;  // TO_TEST
   int _typModelIndex;  //

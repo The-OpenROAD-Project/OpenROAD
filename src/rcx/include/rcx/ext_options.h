@@ -30,6 +30,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
  
+ #ifndef EXT_OPTIONS_H
+ #define EXT_OPTIONS_H
+ 
 struct BenchWiresOptions
   {
     const char* block = "blk";
@@ -90,7 +93,7 @@ struct BenchWiresOptions
     bool rlog = false;
     bool _v2= false;
     float _version= 2.2;
-    uint _wire_extracted_progress_count= 50000;
+    int _wire_extracted_progress_count= 50000;
 
     int _dbg= 0;
   };
@@ -226,3 +229,4 @@ const char* offset_under;
     bool under = false;
   };
 */
+#endif
