@@ -960,6 +960,7 @@ class NesterovBaseCommon
 
   //TODO how to do this for each region?
   int64_t getDeltaArea(){ return deltaArea_; }
+  void resetDeltaArea(){ deltaArea_ = 0; }
 
  private:
   NesterovBaseVars nbVars_;

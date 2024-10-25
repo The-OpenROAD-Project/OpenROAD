@@ -920,6 +920,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   nbVars_ = nbVars;
   pbc_ = std::move(pbc);
   log_ = log;
+  deltaArea_ = 0;
 
   // gCellStor init
   gCellStor_.reserve(pbc_->placeInsts().size());
@@ -2022,7 +2023,7 @@ void NesterovBase::updateAreas()
   log_->report("prev total area: {}", block->dbuAreaToMicrons(oldTotalArea));
   log_->report("prev totalFillerArea():   {}", block->dbuAreaToMicrons(totalFillerArea()));
   
-  log_->report("\prev whiteSpaceArea_:       {}", block->dbuAreaToMicrons(whiteSpaceArea_));
+  log_->report("\nprev whiteSpaceArea_:       {}", block->dbuAreaToMicrons(whiteSpaceArea_));
   log_->report("prev movableArea_:          {}", block->dbuAreaToMicrons(movableArea_));
   log_->report("prev totalFillerArea_:      {}", block->dbuAreaToMicrons(totalFillerArea_));
   log_->report("prev uniformTargetDensity_: {}", block->dbuAreaToMicrons(uniformTargetDensity_));
@@ -2933,11 +2934,32 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst) {
     log_->report("warning: gcell {} found in db_inst_map_ as {}", gcell->instance()->dbInst()->getName(), db_inst->getName());
 }
 
-  int64_t prevCellArea = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
-  odb::dbBox* bbox = db_inst->getBBox();
-  gcell->setSize(bbox->getDX(),bbox->getDY());
-  int64_t newCellArea = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
-  deltaArea_ += newCellArea - prevCellArea;
+  // int64_t prevCellArea = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
+  // odb::dbBox* bbox = db_inst->getBBox();
+  // gcell->setSize(bbox->getDX(),bbox->getDY());
+  // int64_t newCellArea = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
+  // deltaArea_ += newCellArea - prevCellArea;
+
+auto block = pbc_->db()->getChip()->getBlock();
+  // Calculate and log the previous cell area
+int64_t prevCellArea = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
+// log_->report("\nPrevious Cell Area:               {}", block->dbuAreaToMicrons(prevCellArea));
+
+// log_->report("Previous GCell Size - DX:         {}, DY: {}", gcell->dx(), gcell->dy());
+odb::dbBox* bbox = db_inst->getBBox();
+gcell->setSize(bbox->getDX(), bbox->getDY());
+// log_->report("New GCell Size - DX:              {}, DY: {}", gcell->dx(), gcell->dy());
+
+// Calculate and log the new cell area
+int64_t newCellArea = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
+// log_->report("New Cell Area:                   {}", block->dbuAreaToMicrons(newCellArea));
+
+// Calculate the change in delta area and log it
+int64_t areaChange = newCellArea - prevCellArea;
+deltaArea_ += areaChange;
+// log_->report("Delta Area Change:               {}", block->dbuAreaToMicrons(areaChange));
+// log_->report("Updated deltaArea_:              {}", block->dbuAreaToMicrons(deltaArea_));
+
 }
 
 void NesterovBaseCommon::disconnectITerm(odb::dbITerm* iterm, odb::dbNet* db_net) {

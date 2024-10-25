@@ -283,8 +283,6 @@ void NesterovPlace::init()
           stepL);
     }
   }
-
-  auto gcell = nbc_->gCells().at(0);
 }
 
 // clear reset
@@ -503,18 +501,29 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           // 2. set target density with delta area
           // 3. updateareas
           // 4. updateDensitySize
+
+          log_->report("prev nesterov->targetDensity():     {}", nesterov->targetDensity());
+          log_->report("nbc_->getDeltaArea():              {}", block->dbuAreaToMicrons(nbc_->getDeltaArea()));
+          log_->report("nesterov->nesterovInstsArea():     {}", block->dbuAreaToMicrons(nesterov->nesterovInstsArea()));
+          log_->report("nesterov->totalFillerArea():       {}", block->dbuAreaToMicrons(nesterov->totalFillerArea()));
+          log_->report("nesterov->whiteSpaceArea():        {}", block->dbuAreaToMicrons(nesterov->whiteSpaceArea()));
+
           nesterov->setTargetDensity(
-            static_cast<float>(nbc_->getDeltaArea() + nesterov->nesterovInstsArea() + nesterov->totalFillerArea() )
-            / static_cast<float>(nesterov->whiteSpaceArea()));     
+              static_cast<float>(nbc_->getDeltaArea() + nesterov->nesterovInstsArea() + nesterov->totalFillerArea())
+              / static_cast<float>(nesterov->whiteSpaceArea())
+          );
+
+          // Log the new target density
+          log_->report("new nesterov->targetDensity():     {}", nesterov->targetDensity());
+
+          // Reset delta area
+          nbc_->resetDeltaArea();
+
 
           nesterov->updateAreas();
           //routability calls this after update areas, but we also do this for new cells in updateGCellState()
-          nesterov->updateDensitySize(); //influenced by bin sizes, which is influenced by instance sizes.
-
-          log_->report("prev nesterov->targetDensity():     {}", nesterov->targetDensity());
-       
-          //  updateWireLengthForceWA() --> influenced by pin positions, do they change with different cell size, or even different cell type?                  
-          log_->report("new nesterov->targetDensity():     {}", nesterov->targetDensity());                  
+          nesterov->updateDensitySize(); //influenced by bin sizes, which is influenced by instance sizes.                
+          //  updateWireLengthForceWA() --> influenced by pin positions, do they change with different cell size, or even different cell type?                                             
         }
       }
       // log_->report("print gcells after TD iteration.");
@@ -753,7 +762,7 @@ void NesterovPlace::resizeGCell(odb::dbInst* db_inst) {
 }
 
 void NesterovPlace::moveGCell(odb::dbInst* db_inst) {
-  auto bbox = db_inst->getBBox();
+  //auto bbox = db_inst->getBBox();
   // log_->report("db_inst in moveGCell:{}, BBOX:({},{}), ({},{})",db_inst->getName(),bbox->xMin(),bbox->yMin(),bbox->xMax(),bbox->yMax());
   nbc_->moveGCell(db_inst);
 }
