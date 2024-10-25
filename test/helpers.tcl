@@ -207,7 +207,7 @@ suppress_message ODB 134
 # match between tcl and Python
 suppress_message PPL 41
 suppress_message PPL 48
-suppress_message PPL 49
+suppress_message PPL 67
 suppress_message PPL 60
 
 # suppress tap info messages
