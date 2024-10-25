@@ -36,6 +36,7 @@
 %{
 
 #include <cstdint>
+#include <fstream>
 
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"

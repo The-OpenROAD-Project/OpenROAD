@@ -32,8 +32,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
 #include <cmath>
 #include <fstream>
 #include <limits>
@@ -106,15 +104,15 @@ void Opendp::checkPlacement(const bool verbose,
       }
     }
   }
+  saveFailures(placed_failures,
+               in_rows_failures,
+               overlap_failures,
+               one_site_gap_failures,
+               site_align_failures,
+               region_placement_failures,
+               {});
   if (!report_file_name.empty()) {
-    writeJsonReport(report_file_name,
-                    placed_failures,
-                    in_rows_failures,
-                    overlap_failures,
-                    one_site_gap_failures,
-                    site_align_failures,
-                    region_placement_failures,
-                    {});
+    writeJsonReport(report_file_name);
   }
   reportFailures(placed_failures, 3, "Placed", verbose);
   reportFailures(in_rows_failures, 4, "Placed in rows", verbose);
@@ -139,21 +137,17 @@ void Opendp::checkPlacement(const bool verbose,
   }
 }
 
-void Opendp::processViolationsPtree(boost::property_tree::ptree& entry,
-                                    const std::vector<Cell*>& failures,
-                                    const string& violation_type) const
+void Opendp::saveViolations(const std::vector<Cell*>& failures,
+                            odb::dbMarkerCategory* category,
+                            const string& violation_type) const
 {
-  using boost::property_tree::ptree;
-  ptree violations;
-  const double dbUnits
-      = block_->getDataBase()->getTech()->getDbUnitsPerMicron();
   const Rect core = grid_->getCore();
   for (auto failure : failures) {
-    ptree violation, shapes, source, sources, shape;
-    double xMin = (failure->x_ + core.xMin()).v / dbUnits;
-    double yMin = (failure->y_ + core.yMin()).v / dbUnits;
-    double xMax = (failure->x_ + failure->width_ + core.xMin()).v / dbUnits;
-    double yMax = (failure->y_ + failure->height_ + core.yMin()).v / dbUnits;
+    odb::dbMarker* marker = odb::dbMarker::create(category);
+    int xMin = (failure->x_ + core.xMin()).v;
+    int yMin = (failure->y_ + core.yMin()).v;
+    int xMax = (failure->x_ + failure->width_ + core.xMin()).v;
+    int yMax = (failure->y_ + failure->height_ + core.yMin()).v;
 
     if (violation_type == "overlap") {
       const Cell* o_cell = checkOverlap(*failure);
@@ -175,112 +169,92 @@ void Opendp::processViolationsPtree(boost::property_tree::ptree& entry,
       odb::Rect overlap_rect;
       o_rect.intersection(f_rect, overlap_rect);
 
-      xMin = (overlap_rect.xMin() + core.xMin()) / dbUnits;
-      yMin = (overlap_rect.yMin() + core.yMin()) / dbUnits;
-      xMax = (overlap_rect.xMax() + core.xMin()) / dbUnits;
-      yMax = (overlap_rect.yMax() + core.yMin()) / dbUnits;
+      xMin = overlap_rect.xMin() + core.xMin();
+      yMin = overlap_rect.yMin() + core.yMin();
+      xMax = overlap_rect.xMax() + core.xMin();
+      yMax = overlap_rect.yMax() + core.yMin();
 
-      ptree overlap_source;
-      overlap_source.put("type", "inst");
-      overlap_source.put("name", o_cell->name());
-      sources.push_back(std::make_pair("", overlap_source));
+      marker->addSource(o_cell->db_inst_);
     }
-    shape.put("x", xMin);
-    shape.put("y", yMin);
-    shapes.push_back(std::make_pair("", shape));
-    shape.clear();
-    shape.put("x", xMax);
-    shape.put("y", yMax);
-    shapes.push_back(std::make_pair("", shape));
-
-    source.put("type", "inst");
-    source.put("name", failure->name());
-    sources.push_back(std::make_pair("", source));
-
-    violation.put("type", "box");
-    violation.add_child("shape", shapes);
-    violation.add_child("sources", sources);
-
-    violations.push_back(std::make_pair("", violation));
+    marker->addShape(Rect{xMin, yMin, xMax, yMax});
+    marker->addSource(failure->db_inst_);
   }
-  entry.add_child("violations", violations);
 }
 
-void Opendp::writeJsonReport(const string& filename,
-                             const vector<Cell*>& placed_failures,
-                             const vector<Cell*>& in_rows_failures,
-                             const vector<Cell*>& overlap_failures,
-                             const vector<Cell*>& one_site_gap_failures,
-                             const vector<Cell*>& site_align_failures,
-                             const vector<Cell*>& region_placement_failures,
-                             const vector<Cell*>& placement_failures_)
+void Opendp::saveFailures(const vector<Cell*>& placed_failures,
+                          const vector<Cell*>& in_rows_failures,
+                          const vector<Cell*>& overlap_failures,
+                          const vector<Cell*>& one_site_gap_failures,
+                          const vector<Cell*>& site_align_failures,
+                          const vector<Cell*>& region_placement_failures,
+                          const vector<Cell*>& placement_failures)
 {
-  std::ofstream json_file(filename);
-  if (!json_file.is_open()) {
-    logger_->error(DPL, 40, "Failed to open file {} for writing.", filename);
+  if (placed_failures.empty() && in_rows_failures.empty()
+      && overlap_failures.empty() && one_site_gap_failures.empty()
+      && site_align_failures.empty() && region_placement_failures.empty()
+      && placement_failures.empty()) {
+    return;
   }
-  try {
-    using boost::property_tree::ptree;
-    ptree root, drcArray;
 
+  auto* tool_category = odb::dbMarkerCategory::createOrGet(block_, "DPL");
+  try {
     if (!placed_failures.empty()) {
-      ptree entry;
-      entry.put("name", "Placement_failures");
-      entry.put("description", "Cells that were not placed.");
-      processViolationsPtree(entry, placed_failures);
-      drcArray.push_back(std::make_pair("", entry));
+      auto category = odb::dbMarkerCategory::createOrReplace(
+          tool_category, "Placement failures");
+      category->setDescription("Cells that were not placed.");
+      saveViolations(placed_failures, category);
     }
     if (!in_rows_failures.empty()) {
-      ptree entry;
-      entry.put("name", "In_rows_failures");
-      entry.put("description",
-                "Cells that were not assigned to rows in the grid.");
-      processViolationsPtree(entry, in_rows_failures);
-      drcArray.push_back(std::make_pair("", entry));
+      auto category = odb::dbMarkerCategory::createOrReplace(
+          tool_category, "In_rows_failures");
+      category->setDescription(
+          "Cells that were not assigned to rows in the grid.");
+      saveViolations(in_rows_failures, category);
     }
     if (!overlap_failures.empty()) {
-      ptree entry;
-      entry.put("name", "Overlap_failures");
-      entry.put("description", "Cells that are overlapping with other cells.");
-      processViolationsPtree(entry, overlap_failures, "overlap");
-      drcArray.push_back(std::make_pair("", entry));
+      auto category = odb::dbMarkerCategory::createOrReplace(
+          tool_category, "Overlap_failures");
+      category->setDescription("Cells that are overlapping with other cells.");
+      saveViolations(overlap_failures, category, "overlap");
     }
     if (!one_site_gap_failures.empty()) {
-      ptree entry;
-      entry.put("name", "One_site_gap_failures");
-      entry.put("description",
-                "Cells that violate the one site gap spacing rules.");
-      processViolationsPtree(entry, one_site_gap_failures);
-      drcArray.push_back(std::make_pair("", entry));
+      auto category = odb::dbMarkerCategory::createOrReplace(
+          tool_category, "One_site_gap_failures");
+      category->setDescription(
+          "Cells that violate the one site gap spacing rules.");
+      saveViolations(one_site_gap_failures, category);
     }
     if (!site_align_failures.empty()) {
-      ptree entry;
-      entry.put("name", "Site_alignment_failures");
-      entry.put("description",
-                "Cells that are not aligned with placement sites.");
-      processViolationsPtree(entry, site_align_failures);
-      drcArray.push_back(std::make_pair("", entry));
+      auto category = odb::dbMarkerCategory::createOrReplace(
+          tool_category, "Site_alignment_failures");
+      category->setDescription(
+          "Cells that are not aligned with placement sites.");
+      saveViolations(site_align_failures, category);
     }
     if (!region_placement_failures.empty()) {
-      ptree entry;
-      entry.put("name", "Region_placement_failures");
-      entry.put("description",
-                "Cells that violate the region placement constraints.");
-      processViolationsPtree(entry, region_placement_failures);
-      drcArray.push_back(std::make_pair("", entry));
+      auto category = odb::dbMarkerCategory::createOrReplace(
+          tool_category, "Region_placement_failures");
+      category->setDescription(
+          "Cells that violate the region placement constraints.");
+      saveViolations(region_placement_failures, category);
     }
-    if (!placement_failures_.empty()) {
-      ptree entry;
-      entry.put("name", "Placement_failures");
-      entry.put("description", "Cells that DPL failed to place.");
-      processViolationsPtree(entry, placement_failures_);
-      drcArray.push_back(std::make_pair("", entry));
+    if (!placement_failures.empty()) {
+      auto category = odb::dbMarkerCategory::createOrReplace(
+          tool_category, "Placement_failures");
+      category->setDescription("Cells that DPL failed to place.");
+      saveViolations(placement_failures, category);
     }
-    root.add_child("DRC", drcArray);
-    boost::property_tree::write_json(json_file, root);
   } catch (std::exception& ex) {
     logger_->error(
         DPL, 45, "Failed to write JSON report. Exception: {}", ex.what());
+  }
+}
+
+void Opendp::writeJsonReport(const string& filename)
+{
+  auto* tool_category = block_->findMarkerCategory("DPL");
+  if (tool_category) {
+    tool_category->writeJSON(filename);
   }
 }
 
