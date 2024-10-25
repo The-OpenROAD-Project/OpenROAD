@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include <boost/unordered/unordered_flat_map.hpp>
+
 #include "frDesign.h"
 
 namespace drt {
@@ -158,7 +160,7 @@ class UniqueInsts
   // Mapp all instances to their representative unique instance
   std::map<frInst*, frInst*, frBlockObjectComp> inst_to_unique_;
   // Maps all instances to the set of instances with the same unique inst
-  std::unordered_map<frInst*, InstSet*> inst_to_class_;
+  boost::unordered_flat_map<frInst*, InstSet*> inst_to_class_;
   // Maps a unique instance to its pin access index
   std::map<frInst*, int, frBlockObjectComp> unique_to_pa_idx_;
   // Maps a unique instance to its index in unique_
