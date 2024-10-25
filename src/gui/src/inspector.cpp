@@ -34,6 +34,7 @@
 
 #include <QApplication>
 #include <QComboBox>
+#include <QDebug>
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QPushButton>
@@ -812,6 +813,12 @@ void Inspector::inspect(const Selected& object)
     navigation_history_.clear();
   }
 
+  if (object) {
+    qDebug() << "Inspector change selection to"
+             << QString::fromStdString(object.getName());
+  } else {
+    qDebug() << "Inspector change selection to nothing";
+  }
   selection_ = object;
   emit selection(object);
 
@@ -1141,7 +1148,8 @@ void Inspector::navigateBack()
     }
   }
 
-  emit inspect(next);
+  qDebug() << "Navigate to" << QString::fromStdString(next.getName());
+  emit selected(next);
 }
 
 ////////////
