@@ -144,6 +144,9 @@ void Opendp::saveViolations(const std::vector<Cell*>& failures,
   const Rect core = grid_->getCore();
   for (auto failure : failures) {
     odb::dbMarker* marker = odb::dbMarker::create(category);
+    if (!marker) {
+      break;
+    }
     int xMin = (failure->x_ + core.xMin()).v;
     int yMin = (failure->y_ + core.yMin()).v;
     int xMax = (failure->x_ + failure->width_ + core.xMin()).v;
@@ -196,57 +199,52 @@ void Opendp::saveFailures(const vector<Cell*>& placed_failures,
     return;
   }
 
-  auto* tool_category = odb::dbMarkerCategory::createOrGet(block_, "DPL");
-  try {
-    if (!placed_failures.empty()) {
-      auto category = odb::dbMarkerCategory::createOrReplace(
-          tool_category, "Placement failures");
-      category->setDescription("Cells that were not placed.");
-      saveViolations(placed_failures, category);
-    }
-    if (!in_rows_failures.empty()) {
-      auto category = odb::dbMarkerCategory::createOrReplace(
-          tool_category, "In_rows_failures");
-      category->setDescription(
-          "Cells that were not assigned to rows in the grid.");
-      saveViolations(in_rows_failures, category);
-    }
-    if (!overlap_failures.empty()) {
-      auto category = odb::dbMarkerCategory::createOrReplace(
-          tool_category, "Overlap_failures");
-      category->setDescription("Cells that are overlapping with other cells.");
-      saveViolations(overlap_failures, category, "overlap");
-    }
-    if (!one_site_gap_failures.empty()) {
-      auto category = odb::dbMarkerCategory::createOrReplace(
-          tool_category, "One_site_gap_failures");
-      category->setDescription(
-          "Cells that violate the one site gap spacing rules.");
-      saveViolations(one_site_gap_failures, category);
-    }
-    if (!site_align_failures.empty()) {
-      auto category = odb::dbMarkerCategory::createOrReplace(
-          tool_category, "Site_alignment_failures");
-      category->setDescription(
-          "Cells that are not aligned with placement sites.");
-      saveViolations(site_align_failures, category);
-    }
-    if (!region_placement_failures.empty()) {
-      auto category = odb::dbMarkerCategory::createOrReplace(
-          tool_category, "Region_placement_failures");
-      category->setDescription(
-          "Cells that violate the region placement constraints.");
-      saveViolations(region_placement_failures, category);
-    }
-    if (!placement_failures.empty()) {
-      auto category = odb::dbMarkerCategory::createOrReplace(
-          tool_category, "Placement_failures");
-      category->setDescription("Cells that DPL failed to place.");
-      saveViolations(placement_failures, category);
-    }
-  } catch (std::exception& ex) {
-    logger_->error(
-        DPL, 45, "Failed to write JSON report. Exception: {}", ex.what());
+  auto* tool_category = odb::dbMarkerCategory::createOrReplace(block_, "DPL");
+  if (!placed_failures.empty()) {
+    auto category = odb::dbMarkerCategory::createOrReplace(
+        tool_category, "Placement failures");
+    category->setDescription("Cells that were not placed.");
+    saveViolations(placed_failures, category);
+  }
+  if (!in_rows_failures.empty()) {
+    auto category = odb::dbMarkerCategory::createOrReplace(tool_category,
+                                                           "In_rows_failures");
+    category->setDescription(
+        "Cells that were not assigned to rows in the grid.");
+    saveViolations(in_rows_failures, category);
+  }
+  if (!overlap_failures.empty()) {
+    auto category = odb::dbMarkerCategory::createOrReplace(tool_category,
+                                                           "Overlap_failures");
+    category->setDescription("Cells that are overlapping with other cells.");
+    saveViolations(overlap_failures, category, "overlap");
+  }
+  if (!one_site_gap_failures.empty()) {
+    auto category = odb::dbMarkerCategory::createOrReplace(
+        tool_category, "One_site_gap_failures");
+    category->setDescription(
+        "Cells that violate the one site gap spacing rules.");
+    saveViolations(one_site_gap_failures, category);
+  }
+  if (!site_align_failures.empty()) {
+    auto category = odb::dbMarkerCategory::createOrReplace(
+        tool_category, "Site_alignment_failures");
+    category->setDescription(
+        "Cells that are not aligned with placement sites.");
+    saveViolations(site_align_failures, category);
+  }
+  if (!region_placement_failures.empty()) {
+    auto category = odb::dbMarkerCategory::createOrReplace(
+        tool_category, "Region_placement_failures");
+    category->setDescription(
+        "Cells that violate the region placement constraints.");
+    saveViolations(region_placement_failures, category);
+  }
+  if (!placement_failures.empty()) {
+    auto category = odb::dbMarkerCategory::createOrReplace(
+        tool_category, "Placement_failures");
+    category->setDescription("Cells that DPL failed to place.");
+    saveViolations(placement_failures, category);
   }
 }
 
