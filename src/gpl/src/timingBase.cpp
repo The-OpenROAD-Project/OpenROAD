@@ -158,14 +158,14 @@ bool TimingBase::updateGNetWeights(bool run_journal_restore)
     // nbc_->printGCells();
   }
 
-  log_->report("\n\nAFTER RSZ:");
+  log_->report("\nAFTER RSZ:");
   log_->report("tb::updateGNetWeights(): run_journal_restore (virtual resizer): {}", run_journal_restore);
-  log_->report("tb::updateGNetWeights(): rs_->repair_design-> Resized gates:    {:5}", rs_->repairDesignResizedCount());
-  log_->report("tb::updateGNetWeights(): rs_->repair_design-> Inserted buffers: {:5}", rs_->repairDesignBufferCount());
-  log_->report("tb::updateGNetWeights(): rs_->repair_design-> TNS: {:5}", rs_->getTotalNegativeSlack());
   log_->report("tb::updateGNetWeights(): after rsz: nbc_->gCells().size():{}", nbc_->gCells().size());  
   log_->report("tb::updateGNetWeights(): after rsz: nbc_->gNets().size():{}", nbc_->gNets().size());
   log_->report("tb::updateGNetWeights(): after rsz: nbc_->gPins().size():{}", nbc_->gPins().size());
+  log_->report("\ntb::updateGNetWeights(): rs_->repair_design-> Resized gates:    {:5}", rs_->repairDesignResizedCount());
+  log_->report("tb::updateGNetWeights(): rs_->repair_design-> Inserted buffers: {:5}", rs_->repairDesignBufferCount());
+  log_->report("tb::updateGNetWeights(): rs_->repair_design-> TNS: {:5}", rs_->getTotalNegativeSlack());
 
 
   //TODO check if these weights are required when executing non-virtual rsz

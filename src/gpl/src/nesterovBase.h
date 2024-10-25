@@ -958,6 +958,9 @@ class NesterovBaseCommon
     }    
   }
 
+  //TODO how to do this for each region?
+  int64_t getDeltaArea(){ return deltaArea_; }
+
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBaseCommon> pbc_;
@@ -987,6 +990,7 @@ class NesterovBaseCommon
   std::vector<odb::dbNet*> nets_to_disconnect;
 
   int num_threads_;
+  int64_t deltaArea_;
   nesterovDbCbk* db_cbk_;
   //TODO check if this is actually needed
   friend class NesterovBase;

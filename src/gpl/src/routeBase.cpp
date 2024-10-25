@@ -666,24 +666,6 @@ std::pair<bool, bool> RouteBase::routability()
     // deltaArea is equal to area * deltaRatio
     // both of original and density size will be changed
     inflatedAreaDelta_ += newCellArea - prevCellArea;
-
-    //    inflatedAreaDelta_
-    //      = static_cast<int64_t>(round(
-    //        static_cast<int64_t>(gCell->dx())
-    //        * static_cast<int64_t>(gCell->dy())
-    //        * (tile->inflatedRatio() - 1.0)));
-  }
-
-  // target ratio
-  float targetInflationDeltaAreaRatio
-      = 1.0 / static_cast<float>(rbVars_.maxInflationIter);
-
-  // TODO: will be implemented
-  if (inflatedAreaDelta_ > targetInflationDeltaAreaRatio
-                               * (nbVec_[0]->whiteSpaceArea()
-                                  - (nbVec_[0]->nesterovInstsArea()
-                                     + nbVec_[0]->totalFillerArea()))) {
-    // TODO dynamic inflation procedure?
   }
 
   dbBlock* block = db_->getChip()->getBlock();
@@ -756,16 +738,6 @@ std::pair<bool, bool> RouteBase::routability()
              block->dbuAreaToMicrons(inflatedAreaDelta_
                                      + nbVec_[0]->nesterovInstsArea()
                                      + nbVec_[0]->totalFillerArea()));
-
-  // cut filler cells accordingly
-  //  if( nb_->totalFillerArea() > inflatedAreaDelta_ ) {
-  //    nb_->cutFillerCells( nb_->totalFillerArea() - inflatedAreaDelta_ );
-  //  }
-  // routability-driven cannot solve this problem with the given density...
-  // return false
-  //  else {
-  //    return false;
-  //  }
 
   // updateArea
   nbVec_[0]->updateAreas();

@@ -2022,6 +2022,12 @@ void NesterovBase::updateAreas()
   log_->report("prev total area: {}", block->dbuAreaToMicrons(oldTotalArea));
   log_->report("prev totalFillerArea():   {}", block->dbuAreaToMicrons(totalFillerArea()));
   
+  log_->report("\prev whiteSpaceArea_:       {}", block->dbuAreaToMicrons(whiteSpaceArea_));
+  log_->report("prev movableArea_:          {}", block->dbuAreaToMicrons(movableArea_));
+  log_->report("prev totalFillerArea_:      {}", block->dbuAreaToMicrons(totalFillerArea_));
+  log_->report("prev uniformTargetDensity_: {}", block->dbuAreaToMicrons(uniformTargetDensity_));
+
+
   assert(omp_get_thread_num() == 0);
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
@@ -2037,7 +2043,19 @@ void NesterovBase::updateAreas()
       stdInstsArea_ += static_cast<int64_t>(gCell->dx())
                        * static_cast<int64_t>(gCell->dy());
     }
-  }
+  }  
+
+  int64_t coreArea = pb_->die().coreArea();
+  whiteSpaceArea_ = coreArea - static_cast<int64_t>(pb_->nonPlaceInstsArea());
+  movableArea_ = whiteSpaceArea_ * targetDensity_;
+  totalFillerArea_ = movableArea_ - nesterovInstsArea();
+  uniformTargetDensity_ = static_cast<float>(nesterovInstsArea())
+                          / static_cast<float>(whiteSpaceArea_);
+
+  log_->report("\nnew whiteSpaceArea_:       {}", block->dbuAreaToMicrons(whiteSpaceArea_));
+  log_->report("new    movableArea_:       {}", block->dbuAreaToMicrons(movableArea_));
+  log_->report("new totalFillerArea_:      {}", block->dbuAreaToMicrons(totalFillerArea_));
+  log_->report("new uniformTargetDensity_: {}", block->dbuAreaToMicrons(uniformTargetDensity_));
 
   int64_t newStdInstArea = getStdInstArea();
   int64_t newMacroInstArea = getMacroInstArea();
@@ -2052,23 +2070,6 @@ void NesterovBase::updateAreas()
   log_->report("TotalInstDeltaArea:   {}({:3.1f}%)", block->dbuAreaToMicrons(newTotalArea - oldTotalArea), ((static_cast<float>(newTotalArea - oldTotalArea)) / oldTotalArea)*100);
   log_->report("fillerDeltaArea: {}({:3.1f}%)", block->dbuAreaToMicrons(totalFillerArea()- oldFillerArea ), ((static_cast<float>(totalFillerArea()- oldFillerArea)) / oldFillerArea)*100 );                    
   log_->report("after -> block->getInsts().size(): {}", block->getInsts().size());   
-
-  int64_t coreArea = pb_->die().coreArea();
-  whiteSpaceArea_ = coreArea - static_cast<int64_t>(pb_->nonPlaceInstsArea());
-
-  log_->report("\nprevious whiteSpaceArea_:       {}", block->dbuAreaToMicrons(whiteSpaceArea_));
-  log_->report("previous movableArea_:          {}", block->dbuAreaToMicrons(movableArea_));
-  log_->report("previous totalFillerArea_:      {}", block->dbuAreaToMicrons(totalFillerArea_));
-  log_->report("previous uniformTargetDensity_: {}", block->dbuAreaToMicrons(uniformTargetDensity_));
-  movableArea_ = whiteSpaceArea_ * targetDensity_;
-  totalFillerArea_ = movableArea_ - nesterovInstsArea();
-  uniformTargetDensity_ = static_cast<float>(nesterovInstsArea())
-                          / static_cast<float>(whiteSpaceArea_);
-
-  log_->report("\nnew whiteSpaceArea_:       {}", block->dbuAreaToMicrons(whiteSpaceArea_));
-  log_->report("new    movableArea_:       {}", block->dbuAreaToMicrons(movableArea_));
-  log_->report("new totalFillerArea_:      {}", block->dbuAreaToMicrons(totalFillerArea_));
-  log_->report("new uniformTargetDensity_: {}", block->dbuAreaToMicrons(uniformTargetDensity_));
   if (totalFillerArea_ < 0) {
     log_->error(GPL,
                 303,
@@ -2928,12 +2929,15 @@ void NesterovBaseCommon::moveGCell(odb::dbInst* db_inst) {
 
 void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst) {
   GCell* gcell = getGCellByIndex(db_inst_map_.find(db_inst)->second);
-  // log_->report("gcell {} found in db_inst_map_ as {}", gcell->instance()->dbInst()->getName(), db_inst->getName());
   if (gcell->instance()->dbInst()->getName() != db_inst->getName()) {
-    log_->report("Mismatch: gcell {} found in db_inst_map_ as {}", gcell->instance()->dbInst()->getName(), db_inst->getName());
+    log_->report("warning: gcell {} found in db_inst_map_ as {}", gcell->instance()->dbInst()->getName(), db_inst->getName());
 }
+
+  int64_t prevCellArea = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
   odb::dbBox* bbox = db_inst->getBBox();
   gcell->setSize(bbox->getDX(),bbox->getDY());
+  int64_t newCellArea = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
+  deltaArea_ += newCellArea - prevCellArea;
 }
 
 void NesterovBaseCommon::disconnectITerm(odb::dbITerm* iterm, odb::dbNet* db_net) {

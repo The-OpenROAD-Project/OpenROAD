@@ -457,31 +457,62 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       else
         db_cbk_->removeOwner();
       auto block = pbc_->db()->getChip()->getBlock();
-      // log_->report("before TD - nbVec_[0]->nesterovInstsArea():{}", block->dbuAreaToMicrons(nbVec_[0]->nesterovInstsArea()));
+      int iterms_count = 0, bterms_count = 0;
+      for (odb::dbITerm* iterm : block->getITerms()) {
+        if(nbc_->isValidSigType(iterm->getSigType()))
+          iterms_count++;
+      } 
+      for (odb::dbBTerm* bterm : block->getBTerms()) {
+        if(nbc_->isValidSigType(bterm->getSigType()))
+          bterms_count++;
+      }
+      log_->report("before rsz:\ndbIterms size: {}", iterms_count);
+      log_->report("dbBterms size: {}", bterms_count);
+      log_->report("B+I terms: {}", bterms_count + iterms_count);
+
+      /////////////////////////////
       bool shouldTdProceed = tb_->updateGNetWeights(run_journal_restore);    
+      /////////////////////////////
+
+      iterms_count = 0;  bterms_count = 0;
+      for (odb::dbITerm* iterm : block->getITerms()) {
+        if(nbc_->isValidSigType(iterm->getSigType()))
+          iterms_count++;
+      } 
+      for (odb::dbBTerm* bterm : block->getBTerms()) {
+        if(nbc_->isValidSigType(bterm->getSigType()))
+          bterms_count++;
+      }
+
+      log_->report("afters rsz:\ndbIterms size: {}", iterms_count);
+      log_->report("dbBterms size: {}", bterms_count);
+      log_->report("B+I terms: {}", bterms_count + iterms_count);
+
       db_cbk_->printCallCounts();
       db_cbk_->resetCallCounts();  
       if(!run_journal_restore) {
-        //To update GCell states we need GCell pointers to pins set, and GCell positions set.
-        // Calling this here because we need access to nesterovBase, but this goes along with fixpointers(), which is called inside timingBase!
-        
+        // Calling this here because we need access to nesterovBase, but this goes along with fixpointers(), which is called inside timingBase!        
         // nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_); // WL
         for(auto& nesterov : nbVec_){
           // nesterov->updateDensityCenterCur(); // bin update
           // nesterov->updateDensityForceBin(); // bin Force update
-          nesterov->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
-
-          ///// UPDATE GPL DATA /////
-          // This updates are the same ones used on routability. They modify only the GCells, not the instances in placerBase.
-          log_->report("nbVec_.size(): {}",nbVec_.size());        
-          log_->report("prev nesterov->targetDensity():     {}", nesterov->targetDensity());
+          nesterov->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);         
           
-          nesterov->updateAreas();
-          nesterov->updateDensitySize(); //influenced by bin sizes, which is influenced by instance sizes.
+          // order in routability:
+          // 1. change areas
+          // 2. set target density with delta area
+          // 3. updateareas
+          // 4. updateDensitySize
           nesterov->setTargetDensity(
-            static_cast<float>(nesterov->nesterovInstsArea() + nesterov->totalFillerArea() )
-            / static_cast<float>(nesterov->whiteSpaceArea()));    
-          
+            static_cast<float>(nbc_->getDeltaArea() + nesterov->nesterovInstsArea() + nesterov->totalFillerArea() )
+            / static_cast<float>(nesterov->whiteSpaceArea()));     
+
+          nesterov->updateAreas();
+          //routability calls this after update areas, but we also do this for new cells in updateGCellState()
+          nesterov->updateDensitySize(); //influenced by bin sizes, which is influenced by instance sizes.
+
+          log_->report("prev nesterov->targetDensity():     {}", nesterov->targetDensity());
+       
           //  updateWireLengthForceWA() --> influenced by pin positions, do they change with different cell size, or even different cell type?                  
           log_->report("new nesterov->targetDensity():     {}", nesterov->targetDensity());                  
         }
