@@ -1262,7 +1262,12 @@ bool Resizer::replaceCell(Instance* inst,
       while (pin_iter->hasNext()) {
         const Pin* pin = pin_iter->next();
         const Net* net = network_->net(pin);
-        invalidateParasitics(pin, net);
+	odb::dbNet* db_net=nullptr;
+	odb::dbModNet* db_modnet=nullptr;
+	db_network_ -> staToDb(net,db_net, db_modnet);
+	//only work on dbnets
+	invalidateParasitics(pin, db_network_ -> dbToSta(db_net));
+	//        invalidateParasitics(pin, net);
       }
       delete pin_iter;
     }

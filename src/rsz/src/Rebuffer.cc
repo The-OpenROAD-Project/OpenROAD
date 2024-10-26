@@ -80,6 +80,7 @@ int RepairSetup::rebuffer(const Pin* drvr_pin)
   } else {
     
     db_network_ -> net(drvr_pin, db_net, db_modnet);
+    
     if (db_modnet){
       printf("Rebuffering from a mod net %s\n", db_modnet -> getName());
     }
@@ -135,7 +136,47 @@ int RepairSetup::rebuffer(const Pin* drvr_pin)
 		 db_network_ -> name(net)
 		 );
 	}
-        inserted_buffer_count = rebufferTopDown(best_option, net, 1,parent );
+
+	//
+	//printf("Rebuffering from top down with this tree\n");
+	//
+
+	//
+	//get the modnet driver
+	//
+	odb::dbITerm* drvr_op_iterm = nullptr;
+	odb::dbBTerm* drvr_op_bterm = nullptr;
+	odb::dbModITerm* drvr_op_moditerm = nullptr;
+	odb::dbModBTerm* drvr_op_modbterm = nullptr;
+        db_network_->staToDb(
+			     drvr_pin,
+			     drvr_op_iterm,
+			     drvr_op_bterm,
+			     drvr_op_moditerm,
+			     drvr_op_modbterm
+			     );
+
+	if (db_modnet)
+	  assert(drvr_op_iterm);
+
+	if (db_net && db_modnet){
+	  //as we move the modnet and dbnet around we might get a clash
+	  //so we have to uniquify the modnet name
+	  printf("Interesting == buffer input is both dbnet and dbmodnet\n");
+	  printf("Name %s and %s\n",db_net -> getName().c_str(), db_modnet -> getName());
+	  printf("Need to change mod net name !\n");
+	  std::string new_name = resizer_ -> makeUniqueNetName();
+	  printf("Changing mod net name from %s to %s\n",
+		 db_modnet -> getName(),
+		 new_name.c_str());
+	  db_modnet -> reName(new_name.c_str());
+	  
+	}
+	
+        inserted_buffer_count = rebufferTopDown(best_option,
+						db_network_ -> dbToSta(db_net), 1,parent,
+						drvr_op_iterm,
+						db_modnet );
         if (inserted_buffer_count > 0) {
           rebuffer_net_count_++;
           debugPrint(logger_,
@@ -455,17 +496,24 @@ float RepairSetup::bufferInputCapacitance(LibertyCell* buffer_cell,
 }
 
 int RepairSetup::rebufferTopDown(const BufferedNetPtr& choice,
-                                 Net* net,
+                                 Net* net,//output of buffer.
                                  int level,
-				 Instance* parent_in)
+				 Instance* parent_in,
+				 odb::dbITerm* mod_net_drvr,
+				 odb::dbModNet* mod_net_in)
 {
-  Instance* parent = parent_in; //db_network_->topInstance();  
+  //HFix, pass in the parent
+  Instance* parent = parent_in;
   switch (choice->type()) {
-    case BufferedNetType::buffer: {
+
+  case BufferedNetType::buffer: {
 
       std::string buffer_name = resizer_-> makeUniqueInstName("rebuffer");
       
-      Net* net2 = resizer_->makeUniqueNet();
+      
+       //HFix: make net in hierarchy
+      std::string net_name = resizer_ -> makeUniqueNetName();
+      Net* net2 = db_network_ -> makeNet(net_name.c_str(), parent);
 
       
       LibertyCell* buffer_cell = choice->bufferCell();
@@ -486,14 +534,57 @@ int RepairSetup::rebufferTopDown(const BufferedNetPtr& choice,
                  buffer_name.c_str(),
                  buffer_cell->name(),
                  sdc_network_->pathName(net2));
-      sta_->connectPin(buffer, input, net);
+
+
+
+      odb::dbNet* db_ip_net=nullptr;
+      odb::dbModNet* db_ip_modnet=nullptr;
+      db_network_ -> staToDb(net,db_ip_net, db_ip_modnet);
+
+      
+      //      sta_->connectPin(buffer, input, net);  //rebuffer
+      sta_->connectPin(buffer, input, db_network_-> dbToSta(db_ip_net));  //rebuffer       
       sta_->connectPin(buffer, output, net2);
-      int buffer_count = rebufferTopDown(choice->ref(), net2, level + 1,parent);
+
+      Pin* buffer_ip_pin=nullptr;
+      Pin* buffer_op_pin=nullptr;
+      
+      resizer_ -> getBufferPins(buffer,buffer_ip_pin, buffer_op_pin);
+      odb::dbITerm* buffer_op_iterm = nullptr;
+      odb::dbBTerm* buffer_op_bterm = nullptr;
+      odb::dbModITerm* buffer_op_moditerm = nullptr;
+      odb::dbModBTerm* buffer_op_modbterm = nullptr;
+        db_network_->staToDb(
+			     buffer_op_pin,
+			     buffer_op_iterm, buffer_op_bterm,
+			     buffer_op_moditerm, buffer_op_modbterm
+			     );
+	
+	//disconnect modnet from original driver
+	//connect the output to the modnet.
+	//inch the modnet to the end of the buffer chain created in this scope
+
+	//Hierarchy handling
+	if (mod_net_drvr && mod_net_in){
+	//save original dbnet
+	dbNet* orig_db_net = mod_net_drvr -> getNet();
+	//disconnect everything
+	mod_net_drvr -> disconnect();
+	//restore dbnet
+	mod_net_drvr -> connect(orig_db_net);
+	//add the modnet to the new output
+	buffer_op_iterm -> connect(mod_net_in);
+	}
+	
+	int buffer_count = rebufferTopDown(choice->ref(), net2, level + 1,
+					   parent,
+					   buffer_op_iterm,
+					   mod_net_in );
+
+      //ip_net
       odb::dbNet* db_net=nullptr;
       odb::dbModNet* db_modnet=nullptr;
       db_network_ -> staToDb(net,db_net, db_modnet);
-      
-
       resizer_->parasiticsInvalid(db_network_ -> dbToSta(db_net));
       
       db_network_ -> staToDb(net2,db_net, db_modnet);
@@ -503,15 +594,18 @@ int RepairSetup::rebufferTopDown(const BufferedNetPtr& choice,
       
     case BufferedNetType::wire:
       debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}wire", "", level);
-      return rebufferTopDown(choice->ref(), net, level + 1,parent);
+      return rebufferTopDown(choice->ref(), net, level + 1,parent, mod_net_drvr,
+			     mod_net_in);
       
     case BufferedNetType::junction: {
       debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}junction", "", level);
-      return rebufferTopDown(choice->ref(), net, level + 1,parent)
-	+ rebufferTopDown(choice->ref2(), net, level + 1,parent);
+      return rebufferTopDown(choice->ref(), net, level + 1,parent, mod_net_drvr,
+			     mod_net_in)
+	+ rebufferTopDown(choice->ref2(), net, level + 1,parent, mod_net_drvr,
+			  mod_net_in);
     }
+      
     case BufferedNetType::load: {
-
       odb::dbNet* db_net=nullptr;
       odb::dbModNet* db_modnet=nullptr;
       db_network_ -> staToDb(net,db_net, db_modnet);
@@ -520,7 +614,6 @@ int RepairSetup::rebufferTopDown(const BufferedNetPtr& choice,
       const Pin* load_pin = choice->loadPin();
 
       //only access at dbnet level
-      
       Net* load_net = network_->net(load_pin);
 
       dbNet* db_load_net;
@@ -531,6 +624,18 @@ int RepairSetup::rebufferTopDown(const BufferedNetPtr& choice,
       
       if (load_net != net) {
         Instance* load_inst = db_network_->instance(load_pin);
+
+	
+	Instance* load_parent = db_network_ ->
+	  getOwningInstanceParent(const_cast<Pin*>(load_pin));
+	if (load_parent != parent){
+	  printf("At cross module case Load in different module %s -> %s!\n",
+		 db_network_ -> name(parent),
+		 db_network_ -> name(load_parent)
+		 );
+	}
+	
+	
         Port* load_port = db_network_->port(load_pin);
 
 	// needed.
@@ -553,11 +658,16 @@ int RepairSetup::rebufferTopDown(const BufferedNetPtr& choice,
                    level,
                    sdc_network_->pathName(load_pin),
                    sdc_network_->pathName(load_net));
+
+	//disconnect removes everything.
         sta_->disconnectPin(const_cast<Pin*>(load_pin));
-
-
 	//prepare for hierarchy
 	load_iterm -> connect(db_net);
+	//preserve the mod net.
+	if (db_mod_load_net){
+	  load_iterm -> connect(db_mod_load_net);
+	}
+
         //sta_->connectPin(load_inst, load_port, net);
 	resizer_->parasiticsInvalid(db_network_ -> dbToSta(db_net));
 	//resizer_->parasiticsInvalid(load_net);	
