@@ -287,6 +287,8 @@ class IOPlacer
   odb::dbTech* getTech() const;
   std::string getEdgeString(Edge edge);
   std::string getDirectionString(Direction direction);
+  template <class PinSetOrList>
+  std::string getPinSetOrListString(const PinSetOrList& group);
 
   std::unique_ptr<Netlist> netlist_;
   std::unique_ptr<Core> core_;

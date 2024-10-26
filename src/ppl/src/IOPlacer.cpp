@@ -1638,24 +1638,14 @@ void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
 {
   Interval interval(edge, begin, end);
   bool inserted = false;
-  std::string pin_names;
-  int pin_cnt = 0;
-  for (odb::dbBTerm* pin : *pins) {
-    pin_names += pin->getName() + " ";
-    pin_cnt++;
-    if (pin_cnt >= pins_per_report_
-        && !logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
-      pin_names += "... ";
-      break;
-    }
-  }
+  std::string pin_names = getPinSetOrListString(*pins);
 
   if (logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
     debugPrint(logger_,
                utl::PPL,
                "pin_groups",
                1,
-               "Restrict pins [ {}] to region {:.2f}u-{:.2f}u at the {} edge.",
+               "Restrict pins [ {} ] to region {:.2f}u-{:.2f}u at the {} edge.",
                pin_names,
                getBlock()->dbuToMicrons(begin),
                getBlock()->dbuToMicrons(end),
@@ -1664,7 +1654,7 @@ void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
     logger_->info(
         utl::PPL,
         48,
-        "Restrict pins [ {}] to region {:.2f}u-{:.2f}u at the {} edge.",
+        "Restrict pins [ {} ] to region {:.2f}u-{:.2f}u at the {} edge.",
         pin_names,
         getBlock()->dbuToMicrons(begin),
         getBlock()->dbuToMicrons(end),
@@ -1705,21 +1695,11 @@ void IOPlacer::addDirectionConstraint(Direction direction,
 void IOPlacer::addTopLayerConstraint(PinSet* pins, const odb::Rect& region)
 {
   Constraint constraint(*pins, Direction::invalid, region);
-  std::string pin_names;
-  int pin_cnt = 0;
-  for (odb::dbBTerm* pin : *pins) {
-    pin_names += pin->getName() + " ";
-    pin_cnt++;
-    if (pin_cnt >= pins_per_report_
-        && !logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
-      pin_names += "... ";
-      break;
-    }
-  }
+  std::string pin_names = getPinSetOrListString(*pins);
 
   logger_->info(utl::PPL,
                 60,
-                "Restrict pins [ {}] to region ({:.2f}u, {:.2f}u)-({:.2f}u, "
+                "Restrict pins [ {} ] to region ({:.2f}u, {:.2f}u)-({:.2f}u, "
                 "{:.2f}u) at routing layer {}.",
                 pin_names,
                 getBlock()->dbuToMicrons(region.xMin()),
@@ -2024,25 +2004,33 @@ Direction IOPlacer::getDirection(const std::string& direction)
   return Direction::feedthru;
 }
 
-void IOPlacer::addPinGroup(PinList* group, bool order)
+/* static */
+template <class PinSetOrList>
+std::string IOPlacer::getPinSetOrListString(const PinSetOrList& group)
 {
   std::string pin_names;
   int pin_cnt = 0;
-  for (odb::dbBTerm* pin : *group) {
-    pin_names += pin->getName() + " ";
+  for (odb::dbBTerm* pin : group) {
+    pin_names += (pin_cnt ? " " : "") + pin->getName();
     pin_cnt++;
     if (pin_cnt >= pins_per_report_
         && !logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
-      pin_names += "... ";
+      pin_names += " ...";
       break;
     }
   }
+  return pin_names;
+}
+
+void IOPlacer::addPinGroup(PinList* group, bool order)
+{
+  std::string pin_names = getPinSetOrListString(*group);
 
   if (logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
     debugPrint(
-        logger_, utl::PPL, "pin_groups", 1, "Pin group: [ {}]", pin_names);
+        logger_, utl::PPL, "pin_groups", 1, "Pin group: [ {} ]", pin_names);
   } else {
-    logger_->info(utl::PPL, 44, "Pin group: [ {}]", pin_names);
+    logger_->info(utl::PPL, 44, "Pin group: [ {} ]", pin_names);
   }
   pin_groups_.push_back({*group, order});
 }
