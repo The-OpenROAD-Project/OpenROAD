@@ -1679,6 +1679,30 @@ void IOPlacer::addDirectionConstraint(Direction direction,
 void IOPlacer::addTopLayerConstraint(PinSet* pins, const odb::Rect& region)
 {
   Constraint constraint(*pins, Direction::invalid, region);
+  std::string pin_names;
+  int pin_cnt = 0;
+  for (odb::dbBTerm* pin : *pins) {
+    pin_names += pin->getName() + " ";
+    pin_cnt++;
+    if (pin_cnt >= pins_per_report_
+        && !logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
+      pin_names += "... ";
+      break;
+    }
+  }
+
+  logger_->info(
+      utl::PPL,
+      60,
+      "Restrict pins [ {}] to region ({:.2f}u, {:.2f}u)-({:.2f}u, {:.2f}u) at routing layer {}.",
+      pin_names,
+      getBlock()->dbuToMicrons(region.xMin()),
+      getBlock()->dbuToMicrons(region.yMin()),
+      getBlock()->dbuToMicrons(region.xMax()),
+      getBlock()->dbuToMicrons(region.yMax()),
+      getTopLayer()->getConstName()
+  );
+
   constraints_.push_back(constraint);
   for (odb::dbBTerm* bterm : *pins) {
     if (!bterm->getFirstPinPlacementStatus().isFixed()) {

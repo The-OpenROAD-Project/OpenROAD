@@ -204,8 +204,6 @@ suppress_message ODB 127
 suppress_message ODB 134
 
 # suppress ppl info messages which are only present in tcl
-suppress_message PPL 41
-suppress_message PPL 60
 suppress_message PPL 67
 
 # suppress tap info messages
