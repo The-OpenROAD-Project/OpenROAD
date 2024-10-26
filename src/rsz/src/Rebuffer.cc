@@ -66,6 +66,11 @@ int RepairSetup::rebuffer(const Pin* drvr_pin)
 {
   int inserted_buffer_count = 0;
   Net* net;
+
+  Instance* parent = db_network_ -> getOwningInstanceParent(const_cast<Pin*>(drvr_pin));
+  odb::dbNet* db_net = nullptr;
+  odb::dbModNet* db_modnet = nullptr;
+  
   if (network_->isTopLevelPort(drvr_pin)) {
     net = network_->net(network_->term(drvr_pin));
     LibertyCell* buffer_cell = resizer_->buffer_lowest_drive_;
@@ -73,9 +78,15 @@ int RepairSetup::rebuffer(const Pin* drvr_pin)
     LibertyPort* input;
     buffer_cell->bufferPorts(input, drvr_port_);
   } else {
+    
+    db_network_ -> net(drvr_pin, db_net, db_modnet);
+    if (db_modnet){
+      printf("Rebuffering from a mod net %s\n", db_modnet -> getName());
+    }
     net = network_->net(drvr_pin);
     drvr_port_ = network_->libertyPort(drvr_pin);
   }
+  
   if (drvr_port_
       && net
       // Verilog connects by net name, so there is no way to distinguish the
@@ -83,6 +94,7 @@ int RepairSetup::rebuffer(const Pin* drvr_pin)
       && !hasTopLevelOutputPort(net)) {
     corner_ = sta_->cmdCorner();
     BufferedNetPtr bnet = resizer_->makeBufferedNet(drvr_pin, corner_);
+    
     if (bnet) {
       bool debug = (drvr_pin == resizer_->debug_pin_);
       if (debug) {
@@ -116,7 +128,14 @@ int RepairSetup::rebuffer(const Pin* drvr_pin)
       }
       if (best_option) {
         debugPrint(logger_, RSZ, "rebuffer", 2, "best option {}", best_index);
-        inserted_buffer_count = rebufferTopDown(best_option, net, 1);
+	if (db_modnet){
+	  printf("Mod net name %s Db Net Name %s net name %s\n",
+		 db_modnet -> getName(),
+		 db_net -> getName().c_str(),
+		 db_network_ -> name(net)
+		 );
+	}
+        inserted_buffer_count = rebufferTopDown(best_option, net, 1,parent );
         if (inserted_buffer_count > 0) {
           rebuffer_net_count_++;
           debugPrint(logger_,
@@ -437,16 +456,22 @@ float RepairSetup::bufferInputCapacitance(LibertyCell* buffer_cell,
 
 int RepairSetup::rebufferTopDown(const BufferedNetPtr& choice,
                                  Net* net,
-                                 int level)
+                                 int level,
+				 Instance* parent_in)
 {
+  Instance* parent = parent_in; //db_network_->topInstance();  
   switch (choice->type()) {
     case BufferedNetType::buffer: {
-      Instance* parent = db_network_->topInstance();
-      string buffer_name = resizer_->makeUniqueInstName("rebuffer");
+
+      std::string buffer_name = resizer_-> makeUniqueInstName("rebuffer");
+      
       Net* net2 = resizer_->makeUniqueNet();
+
+      
       LibertyCell* buffer_cell = choice->bufferCell();
       Instance* buffer = resizer_->makeBuffer(
           buffer_cell, buffer_name.c_str(), parent, choice->location());
+      
       resizer_->level_drvr_vertices_valid_ = false;
       LibertyPort *input, *output;
       buffer_cell->bufferPorts(input, output);
@@ -463,25 +488,62 @@ int RepairSetup::rebufferTopDown(const BufferedNetPtr& choice,
                  sdc_network_->pathName(net2));
       sta_->connectPin(buffer, input, net);
       sta_->connectPin(buffer, output, net2);
-      int buffer_count = rebufferTopDown(choice->ref(), net2, level + 1);
-      resizer_->parasiticsInvalid(net);
-      resizer_->parasiticsInvalid(net2);
+      int buffer_count = rebufferTopDown(choice->ref(), net2, level + 1,parent);
+      odb::dbNet* db_net=nullptr;
+      odb::dbModNet* db_modnet=nullptr;
+      db_network_ -> staToDb(net,db_net, db_modnet);
+      
+
+      resizer_->parasiticsInvalid(db_network_ -> dbToSta(db_net));
+      
+      db_network_ -> staToDb(net2,db_net, db_modnet);
+      resizer_->parasiticsInvalid(db_network_ -> dbToSta(db_net));
       return buffer_count + 1;
     }
+      
     case BufferedNetType::wire:
       debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}wire", "", level);
-      return rebufferTopDown(choice->ref(), net, level + 1);
+      return rebufferTopDown(choice->ref(), net, level + 1,parent);
+      
     case BufferedNetType::junction: {
       debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}junction", "", level);
-      return rebufferTopDown(choice->ref(), net, level + 1)
-             + rebufferTopDown(choice->ref2(), net, level + 1);
+      return rebufferTopDown(choice->ref(), net, level + 1,parent)
+	+ rebufferTopDown(choice->ref2(), net, level + 1,parent);
     }
     case BufferedNetType::load: {
+
+      odb::dbNet* db_net=nullptr;
+      odb::dbModNet* db_modnet=nullptr;
+      db_network_ -> staToDb(net,db_net, db_modnet);
+      
+      
       const Pin* load_pin = choice->loadPin();
+
+      //only access at dbnet level
+      
       Net* load_net = network_->net(load_pin);
+
+      dbNet* db_load_net;
+      odb::dbModNet* db_mod_load_net;
+      db_network_->staToDb(load_net, db_load_net, db_mod_load_net);
+      (void) db_load_net;
+
+      
       if (load_net != net) {
         Instance* load_inst = db_network_->instance(load_pin);
         Port* load_port = db_network_->port(load_pin);
+
+	// needed.
+	odb::dbITerm* load_iterm = nullptr;
+	odb::dbBTerm* load_bterm = nullptr;
+	odb::dbModITerm* load_moditerm = nullptr;
+	odb::dbModBTerm* load_modbterm = nullptr;
+        db_network_->staToDb(
+			     load_pin, load_iterm, load_bterm,
+			     load_moditerm, load_modbterm);
+	
+
+	
         debugPrint(logger_,
                    RSZ,
                    "rebuffer",
@@ -490,10 +552,15 @@ int RepairSetup::rebufferTopDown(const BufferedNetPtr& choice,
                    "",
                    level,
                    sdc_network_->pathName(load_pin),
-                   sdc_network_->pathName(net));
+                   sdc_network_->pathName(load_net));
         sta_->disconnectPin(const_cast<Pin*>(load_pin));
-        sta_->connectPin(load_inst, load_port, net);
-        resizer_->parasiticsInvalid(load_net);
+
+
+	//prepare for hierarchy
+	load_iterm -> connect(db_net);
+        //sta_->connectPin(load_inst, load_port, net);
+	resizer_->parasiticsInvalid(db_network_ -> dbToSta(db_net));
+	//resizer_->parasiticsInvalid(load_net);	
       }
       return 0;
     }

@@ -54,7 +54,15 @@
 #include "sta/TimingArc.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
+#include "sta/VerilogWriter.hh"
 
+/*void
+writeVerilog(const char *filename,
+	     bool sort,
+	     bool include_pwr_gnd,
+	     sta::CellSeq *remove_cells,
+	     sta::Network *network);
+*/
 namespace rsz {
 
 using std::max;
@@ -586,6 +594,11 @@ bool RepairSetup::repairPath(PathRef& path,
                      rebuffer_count);
           inserted_buffer_count_ += rebuffer_count;
           changed = true;
+          //HACK skip any more noise
+	  //write out db_network to verilog for test
+	  //	  sta::CellSeq unused;
+	  //	  writeVerilog("debug.txt",false,false,&unused, db_network_);
+          return true;
           break;
         }
       }
@@ -603,7 +616,7 @@ bool RepairSetup::repairPath(PathRef& path,
 
       if (!skip_buffering) {
         // Don't split loads on low fanout nets.
-        if (fanout > split_load_min_fanout_ && !tristate_drvr
+        if (fanout > 1000 /*split_load_min_fanout_*/ && !tristate_drvr
             && !resizer_->dontTouch(net) && !db_net->isConnectedByAbutment()) {
           const int init_buffer_count = inserted_buffer_count_;
           splitLoads(drvr_path, drvr_index, path_slack, &expanded);

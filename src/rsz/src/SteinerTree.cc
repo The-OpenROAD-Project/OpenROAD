@@ -64,10 +64,31 @@ static void connectedPins(const Net* net,
 // Returns nullptr if net has less than 2 pins or any pin is not placed.
 SteinerTree* Resizer::makeSteinerTree(const Pin* drvr_pin)
 {
+
   Network* sdc_network = network_->sdcNetwork();
+
+  
+  /*
+    Handle hierarchy. Make sure all traversal on dbNets.
+   */
+  odb::dbITerm* iterm;
+  odb::dbBTerm* bterm;
+  odb::dbModITerm* moditerm;
+  odb::dbModBTerm* modbterm;
+
+  db_network_ -> staToDb(drvr_pin, iterm, bterm, moditerm, modbterm);
+
+  odb::dbNet* db_net;
+  odb::dbModNet* db_mod_net;
+  db_network_ -> net(drvr_pin, db_net, db_mod_net);
+  
+
   Net* net = network_->isTopLevelPort(drvr_pin)
                  ? network_->net(network_->term(drvr_pin))
-                 : network_->net(drvr_pin);
+    //original code, could retrun a mod net  : network_->net(drvr_pin);
+    :db_network_ -> dbToSta(db_net);
+
+  
   debugPrint(logger_, RSZ, "steiner", 1, "Net {}", sdc_network->pathName(net));
   SteinerTree* tree = new SteinerTree(drvr_pin, this);
   Vector<PinLoc>& pinlocs = tree->pinlocs();

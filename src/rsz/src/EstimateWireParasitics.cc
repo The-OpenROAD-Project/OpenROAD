@@ -743,6 +743,15 @@ bool Resizer::isPad(const Instance* inst) const
 
 void Resizer::parasiticsInvalid(const Net* net)
 {
+
+  odb::dbNet* db_net = nullptr;
+  odb::dbModNet* db_modnet = nullptr;
+  db_network_ -> staToDb(net, db_net, db_modnet);
+  if (db_modnet){
+    printf("Error -- cannot update parastics from a db modnet\n");
+    exit(0);
+  }
+  
   if (haveEstimatedParasitics()) {
     debugPrint(logger_,
                RSZ,
