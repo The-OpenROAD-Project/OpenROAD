@@ -1691,17 +1691,16 @@ void IOPlacer::addTopLayerConstraint(PinSet* pins, const odb::Rect& region)
     }
   }
 
-  logger_->info(
-      utl::PPL,
-      60,
-      "Restrict pins [ {}] to region ({:.2f}u, {:.2f}u)-({:.2f}u, {:.2f}u) at routing layer {}.",
-      pin_names,
-      getBlock()->dbuToMicrons(region.xMin()),
-      getBlock()->dbuToMicrons(region.yMin()),
-      getBlock()->dbuToMicrons(region.xMax()),
-      getBlock()->dbuToMicrons(region.yMax()),
-      getTopLayer()->getConstName()
-  );
+  logger_->info(utl::PPL,
+                60,
+                "Restrict pins [ {}] to region ({:.2f}u, {:.2f}u)-({:.2f}u, "
+                "{:.2f}u) at routing layer {}.",
+                pin_names,
+                getBlock()->dbuToMicrons(region.xMin()),
+                getBlock()->dbuToMicrons(region.yMin()),
+                getBlock()->dbuToMicrons(region.xMax()),
+                getBlock()->dbuToMicrons(region.yMax()),
+                getTopLayer()->getConstName());
 
   constraints_.push_back(constraint);
   for (odb::dbBTerm* bterm : *pins) {
