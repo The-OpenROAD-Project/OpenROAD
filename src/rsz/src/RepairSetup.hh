@@ -208,7 +208,12 @@ class RepairSetup : public sta::dbStaState
 
   int rebuffer(const Pin* drvr_pin);
   BufferedNetSeq rebufferBottomUp(const BufferedNetPtr& bnet, int level);
-  int rebufferTopDown(const BufferedNetPtr& choice, Net* net, int level,Instance* parent);
+  int rebufferTopDown(const BufferedNetPtr& choice,
+                      Net* net,
+                      int level,
+                      Instance* parent,
+                      odb::dbITerm* mod_net_drvr,
+                      odb::dbModNet* mod_net);
   BufferedNetSeq addWireAndBuffer(const BufferedNetSeq& Z,
                                   const BufferedNetPtr& bnet_wire,
                                   int level);

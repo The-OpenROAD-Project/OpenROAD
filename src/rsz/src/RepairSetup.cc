@@ -53,15 +53,15 @@
 #include "sta/Sdc.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Units.hh"
-#include "utl/Logger.h"
 #include "sta/VerilogWriter.hh"
+#include "utl/Logger.h"
 
 /*void
 writeVerilog(const char *filename,
-	     bool sort,
-	     bool include_pwr_gnd,
-	     sta::CellSeq *remove_cells,
-	     sta::Network *network);
+             bool sort,
+             bool include_pwr_gnd,
+             sta::CellSeq *remove_cells,
+             sta::Network *network);
 */
 namespace rsz {
 
@@ -594,11 +594,6 @@ bool RepairSetup::repairPath(PathRef& path,
                      rebuffer_count);
           inserted_buffer_count_ += rebuffer_count;
           changed = true;
-          //HACK skip any more noise
-	  //write out db_network to verilog for test
-	  //	  sta::CellSeq unused;
-	  //	  writeVerilog("debug.txt",false,false,&unused, db_network_);
-          return true;
           break;
         }
       }

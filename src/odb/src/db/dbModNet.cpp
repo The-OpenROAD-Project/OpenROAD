@@ -228,13 +228,13 @@ const char* dbModNet::getName() const
 }
 
 //
-//Support for renaming hierarchical nets
+// Support for renaming hierarchical nets
 //
-void dbModNet::reName(const char* new_name) 
+void dbModNet::reName(const char* new_name)
 {
   _dbModNet* obj = (_dbModNet*) this;
-  delete(obj -> _name);
-  obj -> _name = strdup(new_name);
+  delete (obj->_name);
+  obj->_name = strdup(new_name);
   _dbBlock* block = (_dbBlock*) obj->getOwner();
   _dbModule* parent = block->_module_tbl->getPtr(obj->_parent);
   parent->_modnet_hash[new_name] = obj->getOID();
