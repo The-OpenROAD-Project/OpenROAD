@@ -203,9 +203,6 @@ suppress_message ODB 127
 # Finished DEF file
 suppress_message ODB 134
 
-# suppress ppl info messages which are only present in tcl
-suppress_message PPL 67
-
 # suppress tap info messages
 suppress_message TAP 100
 suppress_message TAP 101
