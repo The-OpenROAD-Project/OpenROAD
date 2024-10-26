@@ -3,7 +3,9 @@
 [INFO ODB-0130]     Created 103 pins.
 [INFO ODB-0131]     Created 103 components and 412 component-terminals.
 [INFO ODB-0133]     Created 103 nets and 103 connections.
+[INFO PPL-0048] Restrict pins [ bus[0] bus[1] bus[2] bus[3] bus[4] ... ] to region 0.00u-100.80u at the LEFT edge.
 [INFO PPL-0044] Pin group: [ bus[0] bus[1] bus[2] bus[3] bus[4] ... ]
+[INFO PPL-0048] Restrict pins [ clk ] to region 0.00u-100.80u at the LEFT edge.
 [INFO PPL-0044] Pin group: [ clk ]
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
