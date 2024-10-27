@@ -240,6 +240,13 @@ void dbModNet::reName(const char* new_name)
   parent->_modnet_hash[new_name] = obj->getOID();
 }
 
+dbModNet* dbModNet::getModNet(dbBlock* block, uint id)
+{
+  _dbBlock* block_ = (_dbBlock*) block;
+  _dbModNet* ret = block_->_modnet_tbl->getPtr(id);
+  return (dbModNet*) ret;
+}
+
 dbModNet* dbModNet::create(dbModule* parentModule, const char* name)
 {
   // give illusion of scoping.

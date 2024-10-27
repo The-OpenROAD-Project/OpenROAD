@@ -8150,6 +8150,7 @@ class dbModNet : public dbObject
 
   const char* getName() const;
   void reName(const char* new_name);
+  static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* name);
   static void destroy(dbModNet*);
 

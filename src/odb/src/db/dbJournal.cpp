@@ -571,15 +571,30 @@ void dbJournal::redo_connectObject()
       dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
       uint net_id;
       _log.pop(net_id);
-      dbNet* net = dbNet::getNet(_block, net_id);
-      debugPrint(_logger,
-                 utl::ODB,
-                 "DB_ECO",
-                 2,
-                 "REDO ECO: connect dbITermObj, iterm_id {}, net_id {}",
-                 iterm_id,
-                 net_id);
-      iterm->connect(net);
+      if (net_id != 0) {
+        dbNet* net = dbNet::getNet(_block, net_id);
+        debugPrint(_logger,
+                   utl::ODB,
+                   "DB_ECO",
+                   2,
+                   "REDO ECO: connect dbITermObj, iterm_id {}, net_id {}",
+                   iterm_id,
+                   net_id);
+        iterm->connect(net);
+      }
+      uint mod_net_id;
+      _log.pop(mod_net_id);
+      if (mod_net_id != 0) {
+        dbModNet* mod_net = dbModNet::getModNet(_block, mod_net_id);
+        debugPrint(_logger,
+                   utl::ODB,
+                   "DB_ECO",
+                   2,
+                   "REDO ECO: connect dbITermObj, iterm_id {}, mod_net_id {}",
+                   iterm_id,
+                   mod_net_id);
+        iterm->connect(mod_net);
+      }
       break;
     }
 
@@ -622,6 +637,7 @@ void dbJournal::redo_disconnectObject()
                  2,
                  "REDO ECO: disconnect dbITermObj, iterm_id {}",
                  iterm_id);
+      // note: this will disconnect the modnet and the dbNet
       iterm->disconnect();
       break;
     }
@@ -1618,6 +1634,7 @@ void dbJournal::undo_connectObject()
       dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
       uint net_id;
       _log.pop(net_id);
+      // disconnects everything modnet and bnet)
       iterm->disconnect();
       break;
     }
@@ -1653,8 +1670,17 @@ void dbJournal::undo_disconnectObject()
       dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
       uint net_id;
       _log.pop(net_id);
-      dbNet* net = dbNet::getNet(_block, net_id);
-      iterm->connect(net);
+      if (net_id != 0) {
+        dbNet* net = dbNet::getNet(_block, net_id);
+        iterm->connect(net);
+      }
+      uint mnet_id;
+      _log.pop(mnet_id);
+      if (mnet_id != 0) {
+        dbModNet* mod_net = dbModNet::getModNet(_block, mnet_id);
+        iterm->connect(mod_net);
+      }
+
       break;
     }
 
