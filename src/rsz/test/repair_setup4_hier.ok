@@ -1,0 +1,1924 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[WARNING GPL-0001] clk toplevel port is not placed!
+       Replace will regard clk is placed in (0, 0)
+[INFO GPL-0006] NumInstances:                17
+[INFO GPL-0007] NumPlaceInstances:           17
+[INFO GPL-0008] NumFixedInstances:            0
+[INFO GPL-0009] NumDummyInstances:            0
+[INFO GPL-0010] NumNets:                      7
+[INFO GPL-0011] NumPins:                     30
+[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] CoreArea:             47872.020 um^2
+[INFO GPL-0017] NonPlaceInstsArea:        0.000 um^2
+[INFO GPL-0018] PlaceInstsArea:          58.254 um^2
+[INFO GPL-0019] Util:                     0.122 %
+[INFO GPL-0020] StdInstsArea:            58.254 um^2
+[INFO GPL-0021] MacroInstsArea:           0.000 um^2
+[InitialPlace]  Iter: 1 CG residual: 0.00000001 HPWL: 43540
+[InitialPlace]  Iter: 2 CG residual: 0.00000007 HPWL: 54961
+[InitialPlace]  Iter: 3 CG residual: 0.00000007 HPWL: 51394
+[InitialPlace]  Iter: 4 CG residual: 0.00000001 HPWL: 51065
+[InitialPlace]  Iter: 5 CG residual: 0.00000004 HPWL: 50646
+Placement Analysis
+---------------------------------
+total displacement        129.5 u
+average displacement        7.6 u
+max displacement           12.0 u
+original HPWL               4.7 u
+legalized HPWL             57.6 u
+delta HPWL                 1136 %
+
+worst slack -0.54
+tns -1.467
+[DEBUG RSZ-repair_setup] Violating endpoints 6/34 17%
+[INFO RSZ-0094] Found 6 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 6 out of 6 (100.00%) violating endpoints...
+[DEBUG RSZ-repair_setup] u1/r2/D slack = -0.541 worst_slack = -0.541
+[DEBUG RSZ-repair_setup] Doing 1 /6
+[DEBUG RSZ-journal] journal begin
+[DEBUG RSZ-repair_setup] r1/Q load_delay = 0.042 intrinsic_delay = 0.228
+[DEBUG RSZ-repair_setup] u1/u1/Z load_delay = 0.025 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] u1/u2/Z load_delay = 0.012 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] u1/u3/Z load_delay = 0.012 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] u1/u4/Z load_delay = 0.012 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] u1/u5/Z load_delay = 0.013 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] r1/Q DFF_X1 fanout = 11 drvr_index = 2
+[DEBUG RSZ-make_buffered_net]   load u1/r4/D (0.89, 6.22) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]    load u1/r7/D (0.89, 4.99) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r8/D (0.89, 3.41) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]      load u1/r11/D (0.89, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]       load u1/r10/D (0.89, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]   load u1/r5/D (4.12, 4.99) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]    load u1/r9/D (4.12, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r12/D (4.12, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r6/D (7.35, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]      load u1/r3/D (7.35, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]       load u1/u1/A (10.39, 0.61) cap 0.983 req INF
+[DEBUG RSZ-rebuffer] driver r1/Q
+[DEBUG RSZ-rebuffer]      buffer cap 4.857 req 0.075 -> buffer (0.89, 6.22) BUF_X1 cap 0.935 req 0.075 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 4.857 req 0.098 -> buffer (0.89, 6.22) BUF_X2 cap 1.704 req 0.098 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 4.857 req 0.111 -> buffer (0.89, 6.22) BUF_X4 cap 3.252 req 0.111 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 4.857 req 0.116 -> buffer (0.89, 6.22) BUF_X8 cap 6.360 req 0.116 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 4.857 req 0.119 -> buffer (0.89, 6.22) BUF_X16 cap 12.271 req 0.119 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 4.857 req 0.120 -> buffer (0.89, 6.22) BUF_X32 cap 25.711 req 0.120 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 6.135 req 0.064 -> buffer (3.13, 6.22) BUF_X1 cap 0.935 req 0.064 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 6.135 req 0.092 -> buffer (3.13, 6.22) BUF_X2 cap 1.704 req 0.092 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 6.135 req 0.108 -> buffer (3.13, 6.22) BUF_X4 cap 3.252 req 0.108 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 6.135 req 0.115 -> buffer (3.13, 6.22) BUF_X8 cap 6.360 req 0.115 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 6.135 req 0.118 -> buffer (3.13, 6.22) BUF_X16 cap 12.271 req 0.118 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 6.135 req 0.120 -> buffer (3.13, 6.22) BUF_X32 cap 25.711 req 0.120 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.163 req -0.359 -> buffer (7.35, 0.61) BUF_X1 cap 0.935 req -0.359 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.163 req -0.351 -> buffer (7.35, 0.61) BUF_X2 cap 1.704 req -0.351 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.163 req -0.346 -> buffer (7.35, 0.61) BUF_X4 cap 3.252 req -0.346 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.163 req -0.345 -> buffer (7.35, 0.61) BUF_X8 cap 6.360 req -0.345 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.163 req -0.345 -> buffer (7.35, 0.61) BUF_X32 cap 25.711 req -0.345 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 2.390 req -0.366 -> buffer (7.35, 2.19) BUF_X1 cap 0.935 req -0.366 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 2.390 req -0.355 -> buffer (7.35, 2.19) BUF_X2 cap 1.704 req -0.355 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 2.390 req -0.348 -> buffer (7.35, 2.19) BUF_X4 cap 3.252 req -0.348 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 2.390 req -0.346 -> buffer (7.35, 2.19) BUF_X8 cap 6.360 req -0.346 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 2.390 req -0.346 -> buffer (7.35, 2.19) BUF_X16 cap 12.271 req -0.346 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 2.390 req -0.345 -> buffer (7.35, 2.19) BUF_X32 cap 25.711 req -0.345 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 3.742 req -0.372 -> buffer (4.12, 2.19) BUF_X1 cap 0.935 req -0.372 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 3.742 req -0.358 -> buffer (4.12, 2.19) BUF_X2 cap 1.704 req -0.358 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 3.742 req -0.350 -> buffer (4.12, 2.19) BUF_X4 cap 3.252 req -0.350 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 3.742 req -0.347 -> buffer (4.12, 2.19) BUF_X8 cap 6.360 req -0.347 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 3.742 req -0.346 -> buffer (4.12, 2.19) BUF_X16 cap 12.271 req -0.346 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 3.742 req -0.345 -> buffer (4.12, 2.19) BUF_X32 cap 25.711 req -0.345 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 6.289 req -0.381 -> buffer (4.12, 4.99) BUF_X1 cap 0.935 req -0.381 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 6.289 req -0.364 -> buffer (4.12, 4.99) BUF_X2 cap 1.704 req -0.364 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 6.289 req -0.353 -> buffer (4.12, 4.99) BUF_X4 cap 3.252 req -0.353 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 6.289 req -0.349 -> buffer (4.12, 4.99) BUF_X8 cap 6.360 req -0.349 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 6.289 req -0.347 -> buffer (4.12, 4.99) BUF_X16 cap 12.271 req -0.347 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 6.289 req -0.346 -> buffer (4.12, 4.99) BUF_X32 cap 25.711 req -0.346 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 7.564 req -0.385 -> buffer (3.13, 6.22) BUF_X1 cap 0.935 req -0.385 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 7.564 req -0.367 -> buffer (3.13, 6.22) BUF_X2 cap 1.704 req -0.367 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 7.564 req -0.355 -> buffer (3.13, 6.22) BUF_X4 cap 3.252 req -0.355 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 7.564 req -0.350 -> buffer (3.13, 6.22) BUF_X8 cap 6.360 req -0.350 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 7.564 req -0.348 -> buffer (3.13, 6.22) BUF_X16 cap 12.271 req -0.348 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 7.564 req -0.346 -> buffer (3.13, 6.22) BUF_X32 cap 25.711 req -0.346 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 8.611 req -0.388 -> buffer (3.13, 7.70) BUF_X1 cap 0.935 req -0.388 buffers 2
+[DEBUG RSZ-rebuffer]  buffer cap 8.611 req -0.368 -> buffer (3.13, 7.70) BUF_X2 cap 1.704 req -0.368 buffers 2
+[DEBUG RSZ-rebuffer]  buffer cap 8.611 req -0.356 -> buffer (3.13, 7.70) BUF_X4 cap 3.252 req -0.356 buffers 2
+[DEBUG RSZ-rebuffer]  buffer cap 8.611 req -0.351 -> buffer (3.13, 7.70) BUF_X8 cap 6.360 req -0.351 buffers 2
+[DEBUG RSZ-rebuffer]  buffer cap 8.611 req -0.348 -> buffer (3.13, 7.70) BUF_X16 cap 12.271 req -0.348 buffers 2
+[DEBUG RSZ-rebuffer]  buffer cap 8.611 req -0.346 -> buffer (3.13, 7.70) BUF_X32 cap 25.711 req -0.346 buffers 2
+[DEBUG RSZ-rebuffer] option   1:  1 buffers req -0.270 - 0.303 = -0.574 * 0.01 = -0.579 cap 8.611
+[DEBUG RSZ-rebuffer] option   2:  2 buffers req -0.355 - 0.289 = -0.644 * 0.02 = -0.657 cap 4.298
+[DEBUG RSZ-rebuffer] option   3:  2 buffers req -0.367 - 0.283 = -0.649 * 0.02 = -0.662 cap 2.750
+[DEBUG RSZ-rebuffer] option   4:  2 buffers req -0.385 - 0.280 = -0.665 * 0.02 = -0.678 cap 1.981
+[DEBUG RSZ-rebuffer] option   5:  2 buffers req -0.388 - 0.274 = -0.662 * 0.02 = -0.675 cap 0.935
+[DEBUG RSZ-rebuffer] option   6:  2 buffers req -0.368 - 0.278 = -0.646 * 0.02 = -0.659 cap 1.704
+[DEBUG RSZ-rebuffer] option   7:  2 buffers req -0.356 - 0.285 = -0.641 * 0.02 = -0.654 cap 3.252
+[DEBUG RSZ-rebuffer] option   8:  2 buffers req -0.351 - 0.296 = -0.647 * 0.02 = -0.660 cap 6.360
+[DEBUG RSZ-rebuffer] option   9:  2 buffers req -0.348 - 0.314 = -0.662 * 0.02 = -0.676 cap 12.271
+[DEBUG RSZ-rebuffer] option  10:  2 buffers req -0.346 - 0.349 = -0.695 * 0.02 = -0.709 cap 25.711
+[DEBUG RSZ-rebuffer] best option 1
+[DEBUG RSZ-rebuffer]  wire
+[DEBUG RSZ-rebuffer]   junction
+[DEBUG ODB-DB_ECO] ECO: create net, name net2
+[DEBUG ODB-DB_ECO] ECO: dbInst:create
+[DEBUG ODB-DB_ECO] ECO: setPlacementStatus 3
+[DEBUG ODB-DB_ECO] ECO: setOrigin 6270, 12430
+[DEBUG RSZ-journal] journal make_buffer rebuffer1
+[DEBUG RSZ-rebuffer]    insert r1q -> rebuffer1 (BUF_X1) -> net2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 93 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 94 to net 8
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 3
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 3
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 3 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 94 to modnet 1
+[DEBUG RSZ-rebuffer]     wire
+[DEBUG RSZ-rebuffer]      junction
+[DEBUG RSZ-rebuffer]       connect load u1/r4/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 37
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 37
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 37 to net 8
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 37 to modnet 2
+[DEBUG RSZ-rebuffer]       wire
+[DEBUG RSZ-rebuffer]        junction
+[DEBUG RSZ-rebuffer]         connect load u1/r7/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 55
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 55
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 55 to net 8
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 55 to modnet 2
+[DEBUG RSZ-rebuffer]         wire
+[DEBUG RSZ-rebuffer]          junction
+[DEBUG RSZ-rebuffer]           connect load u1/r8/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 61
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 61
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 61 to net 8
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 61 to modnet 2
+[DEBUG RSZ-rebuffer]           wire
+[DEBUG RSZ-rebuffer]            junction
+[DEBUG RSZ-rebuffer]             connect load u1/r11/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 13
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 13
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 13 to net 8
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 13 to modnet 2
+[DEBUG RSZ-rebuffer]             wire
+[DEBUG RSZ-rebuffer]              connect load u1/r10/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 7
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 7
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 7 to net 8
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 7 to modnet 2
+[DEBUG RSZ-rebuffer]    wire
+[DEBUG RSZ-rebuffer]     junction
+[DEBUG RSZ-rebuffer]      connect load u1/r5/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 43
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 43
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to modnet 2
+[DEBUG RSZ-rebuffer]      wire
+[DEBUG RSZ-rebuffer]       junction
+[DEBUG RSZ-rebuffer]        junction
+[DEBUG RSZ-rebuffer]         connect load u1/r9/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 67
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 67
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to modnet 2
+[DEBUG RSZ-rebuffer]         wire
+[DEBUG RSZ-rebuffer]          connect load u1/r12/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 19
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 19
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to modnet 2
+[DEBUG RSZ-rebuffer]        wire
+[DEBUG RSZ-rebuffer]         junction
+[DEBUG RSZ-rebuffer]          connect load u1/r6/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 49
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 49
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to modnet 2
+[DEBUG RSZ-rebuffer]          wire
+[DEBUG RSZ-rebuffer]           junction
+[DEBUG RSZ-rebuffer]            connect load u1/r3/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 31
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 31
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to modnet 2
+[DEBUG RSZ-rebuffer]            wire
+[DEBUG RSZ-rebuffer]             connect load u1/u1/A to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 73
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 73
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to modnet 2
+[DEBUG RSZ-rebuffer] rebuffer r1/Q inserted 1
+[DEBUG RSZ-repair_setup] rebuffer r1/Q inserted 1
+[DEBUG RSZ-repair_setup] pass 1 slack = -0.528 worst_slack = -0.528 save
+[DEBUG RSZ-journal] journal end
+[DEBUG RSZ-journal] journal begin
+[DEBUG RSZ-repair_setup] r1/Q load_delay = 0.033 intrinsic_delay = 0.228
+[DEBUG RSZ-repair_setup] u1/u1/Z load_delay = 0.021 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] u1/u2/Z load_delay = 0.012 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] u1/u3/Z load_delay = 0.012 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] u1/u4/Z load_delay = 0.012 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] u1/u5/Z load_delay = 0.013 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] r1/Q DFF_X1 fanout = 7 drvr_index = 2
+[DEBUG RSZ-make_buffered_net]  load rebuffer1/A (3.26, 6.83) cap 0.983 req INF
+[DEBUG RSZ-make_buffered_net]   load u1/r5/D (4.12, 4.99) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]    load u1/r9/D (4.12, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r12/D (4.12, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r6/D (7.35, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]      load u1/r3/D (7.35, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]       load u1/u1/A (10.39, 0.61) cap 0.983 req INF
+[DEBUG RSZ-rebuffer] driver r1/Q
+[DEBUG RSZ-rebuffer]            buffer cap 1.163 req -0.355 -> buffer (7.35, 0.61) BUF_X1 cap 0.935 req -0.355 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.163 req -0.347 -> buffer (7.35, 0.61) BUF_X2 cap 1.704 req -0.347 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.163 req -0.342 -> buffer (7.35, 0.61) BUF_X4 cap 3.252 req -0.342 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.163 req -0.342 -> buffer (7.35, 0.61) BUF_X8 cap 6.360 req -0.342 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.163 req -0.341 -> buffer (7.35, 0.61) BUF_X32 cap 25.711 req -0.341 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 2.390 req -0.362 -> buffer (7.35, 2.19) BUF_X1 cap 0.935 req -0.362 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 2.390 req -0.351 -> buffer (7.35, 2.19) BUF_X2 cap 1.704 req -0.351 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 2.390 req -0.344 -> buffer (7.35, 2.19) BUF_X4 cap 3.252 req -0.344 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 2.390 req -0.343 -> buffer (7.35, 2.19) BUF_X8 cap 6.360 req -0.343 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 2.390 req -0.342 -> buffer (7.35, 2.19) BUF_X16 cap 12.271 req -0.342 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 2.390 req -0.341 -> buffer (7.35, 2.19) BUF_X32 cap 25.711 req -0.341 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 3.742 req -0.368 -> buffer (4.12, 2.19) BUF_X1 cap 0.935 req -0.368 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 3.742 req -0.355 -> buffer (4.12, 2.19) BUF_X2 cap 1.704 req -0.355 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 3.742 req -0.346 -> buffer (4.12, 2.19) BUF_X4 cap 3.252 req -0.346 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 3.742 req -0.343 -> buffer (4.12, 2.19) BUF_X8 cap 6.360 req -0.343 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 3.742 req -0.343 -> buffer (4.12, 2.19) BUF_X16 cap 12.271 req -0.343 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 3.742 req -0.342 -> buffer (4.12, 2.19) BUF_X32 cap 25.711 req -0.342 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 6.289 req -0.377 -> buffer (4.12, 4.99) BUF_X1 cap 0.935 req -0.377 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 6.289 req -0.360 -> buffer (4.12, 4.99) BUF_X2 cap 1.704 req -0.360 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 6.289 req -0.349 -> buffer (4.12, 4.99) BUF_X4 cap 3.252 req -0.349 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 6.289 req -0.345 -> buffer (4.12, 4.99) BUF_X8 cap 6.360 req -0.345 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 6.289 req -0.344 -> buffer (4.12, 4.99) BUF_X16 cap 12.271 req -0.344 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 6.289 req -0.342 -> buffer (4.12, 4.99) BUF_X32 cap 25.711 req -0.342 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 7.601 req -0.381 -> buffer (3.26, 6.83) BUF_X1 cap 0.935 req -0.381 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 7.601 req -0.363 -> buffer (3.26, 6.83) BUF_X2 cap 1.704 req -0.363 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 7.601 req -0.351 -> buffer (3.26, 6.83) BUF_X4 cap 3.252 req -0.351 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 7.601 req -0.346 -> buffer (3.26, 6.83) BUF_X8 cap 6.360 req -0.346 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 7.601 req -0.344 -> buffer (3.26, 6.83) BUF_X16 cap 12.271 req -0.344 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 7.601 req -0.342 -> buffer (3.26, 6.83) BUF_X32 cap 25.711 req -0.342 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 8.611 req -0.384 -> buffer (3.13, 7.70) BUF_X1 cap 0.935 req -0.384 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 8.611 req -0.365 -> buffer (3.13, 7.70) BUF_X2 cap 1.704 req -0.365 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 8.611 req -0.352 -> buffer (3.13, 7.70) BUF_X4 cap 3.252 req -0.352 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 8.611 req -0.347 -> buffer (3.13, 7.70) BUF_X8 cap 6.360 req -0.347 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 8.611 req -0.344 -> buffer (3.13, 7.70) BUF_X16 cap 12.271 req -0.344 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 8.611 req -0.342 -> buffer (3.13, 7.70) BUF_X32 cap 25.711 req -0.342 buffers 1
+[DEBUG RSZ-rebuffer] option   1:  0 buffers req -0.266 - 0.303 = -0.570 * 0.00 = -0.570 cap 8.611
+[DEBUG RSZ-rebuffer] option   2:  1 buffers req -0.351 - 0.289 = -0.640 * 0.01 = -0.647 cap 4.262
+[DEBUG RSZ-rebuffer] option   3:  1 buffers req -0.363 - 0.283 = -0.646 * 0.01 = -0.652 cap 2.714
+[DEBUG RSZ-rebuffer] option   4:  1 buffers req -0.381 - 0.279 = -0.661 * 0.01 = -0.667 cap 1.944
+[DEBUG RSZ-rebuffer] option   5:  1 buffers req -0.384 - 0.274 = -0.658 * 0.01 = -0.665 cap 0.935
+[DEBUG RSZ-rebuffer] option   6:  1 buffers req -0.365 - 0.278 = -0.643 * 0.01 = -0.649 cap 1.704
+[DEBUG RSZ-rebuffer] option   7:  1 buffers req -0.352 - 0.285 = -0.637 * 0.01 = -0.644 cap 3.252
+[DEBUG RSZ-rebuffer] option   8:  1 buffers req -0.347 - 0.296 = -0.643 * 0.01 = -0.650 cap 6.360
+[DEBUG RSZ-rebuffer] option   9:  1 buffers req -0.344 - 0.314 = -0.659 * 0.01 = -0.665 cap 12.271
+[DEBUG RSZ-rebuffer] option  10:  1 buffers req -0.342 - 0.349 = -0.692 * 0.01 = -0.698 cap 25.711
+[DEBUG RSZ-rebuffer] best option 1
+[DEBUG RSZ-rebuffer]  wire
+[DEBUG RSZ-rebuffer]   junction
+[DEBUG RSZ-rebuffer]    wire
+[DEBUG RSZ-rebuffer]     junction
+[DEBUG RSZ-rebuffer]      connect load u1/r5/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 43
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 43
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to modnet 2
+[DEBUG RSZ-rebuffer]      wire
+[DEBUG RSZ-rebuffer]       junction
+[DEBUG RSZ-rebuffer]        junction
+[DEBUG RSZ-rebuffer]         connect load u1/r9/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 67
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 67
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to modnet 2
+[DEBUG RSZ-rebuffer]         wire
+[DEBUG RSZ-rebuffer]          connect load u1/r12/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 19
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 19
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to modnet 2
+[DEBUG RSZ-rebuffer]        wire
+[DEBUG RSZ-rebuffer]         junction
+[DEBUG RSZ-rebuffer]          connect load u1/r6/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 49
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 49
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to modnet 2
+[DEBUG RSZ-rebuffer]          wire
+[DEBUG RSZ-rebuffer]           junction
+[DEBUG RSZ-rebuffer]            connect load u1/r3/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 31
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 31
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to modnet 2
+[DEBUG RSZ-rebuffer]            wire
+[DEBUG RSZ-rebuffer]             connect load u1/u1/A to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 73
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 73
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to modnet 2
+[DEBUG RSZ-repair_setup] u1/u1/Z BUF_X1 fanout = 1 drvr_index = 4
+[DEBUG RSZ-repair_setup] resize u1/u1/Z BUF_X1 -> BUF_X2
+[DEBUG RSZ-journal] journal replace u1/u1 (BUF_X1)
+[DEBUG ODB-DB_ECO] ECO: swapMaster
+[DEBUG RSZ-repair_setup] pass 2 slack = -0.525 worst_slack = -0.525 save
+[DEBUG RSZ-journal] journal end
+[DEBUG RSZ-journal] journal begin
+[DEBUG RSZ-repair_setup] r1/Q load_delay = 0.035 intrinsic_delay = 0.228
+[DEBUG RSZ-repair_setup] u1/u1/Z load_delay = 0.021 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] u1/u2/Z load_delay = 0.012 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] u1/u3/Z load_delay = 0.012 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] u1/u4/Z load_delay = 0.012 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] u1/u5/Z load_delay = 0.013 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] r1/Q DFF_X1 fanout = 7 drvr_index = 2
+[DEBUG RSZ-make_buffered_net]  load rebuffer1/A (3.26, 6.83) cap 0.983 req INF
+[DEBUG RSZ-make_buffered_net]   load u1/r5/D (4.12, 4.99) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]    load u1/r9/D (4.12, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r12/D (4.12, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r6/D (7.35, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]      load u1/r3/D (7.35, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]       load u1/u1/A (10.40, 0.61) cap 1.811 req INF
+[DEBUG RSZ-rebuffer] driver r1/Q
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.354 -> buffer (7.35, 0.61) BUF_X1 cap 0.935 req -0.354 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.344 -> buffer (7.35, 0.61) BUF_X2 cap 1.704 req -0.344 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.338 -> buffer (7.35, 0.61) BUF_X4 cap 3.252 req -0.338 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.337 -> buffer (7.35, 0.61) BUF_X8 cap 6.360 req -0.337 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.337 -> buffer (7.35, 0.61) BUF_X16 cap 12.271 req -0.337 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.336 -> buffer (7.35, 0.61) BUF_X32 cap 25.711 req -0.336 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.360 -> buffer (7.35, 2.19) BUF_X1 cap 0.935 req -0.360 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.348 -> buffer (7.35, 2.19) BUF_X2 cap 1.704 req -0.348 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.340 -> buffer (7.35, 2.19) BUF_X4 cap 3.252 req -0.340 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.338 -> buffer (7.35, 2.19) BUF_X8 cap 6.360 req -0.338 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.337 -> buffer (7.35, 2.19) BUF_X16 cap 12.271 req -0.337 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.336 -> buffer (7.35, 2.19) BUF_X32 cap 25.711 req -0.336 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.365 -> buffer (4.12, 2.19) BUF_X1 cap 0.935 req -0.365 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.351 -> buffer (4.12, 2.19) BUF_X2 cap 1.704 req -0.351 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.342 -> buffer (4.12, 2.19) BUF_X4 cap 3.252 req -0.342 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.339 -> buffer (4.12, 2.19) BUF_X8 cap 6.360 req -0.339 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.338 -> buffer (4.12, 2.19) BUF_X16 cap 12.271 req -0.338 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.336 -> buffer (4.12, 2.19) BUF_X32 cap 25.711 req -0.336 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.374 -> buffer (4.12, 4.99) BUF_X1 cap 0.935 req -0.374 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.356 -> buffer (4.12, 4.99) BUF_X2 cap 1.704 req -0.356 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.345 -> buffer (4.12, 4.99) BUF_X4 cap 3.252 req -0.345 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.340 -> buffer (4.12, 4.99) BUF_X8 cap 6.360 req -0.340 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.339 -> buffer (4.12, 4.99) BUF_X16 cap 12.271 req -0.339 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.337 -> buffer (4.12, 4.99) BUF_X32 cap 25.711 req -0.337 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.378 -> buffer (3.26, 6.83) BUF_X1 cap 0.935 req -0.378 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.359 -> buffer (3.26, 6.83) BUF_X2 cap 1.704 req -0.359 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.347 -> buffer (3.26, 6.83) BUF_X4 cap 3.252 req -0.347 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.341 -> buffer (3.26, 6.83) BUF_X8 cap 6.360 req -0.341 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.339 -> buffer (3.26, 6.83) BUF_X16 cap 12.271 req -0.339 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.337 -> buffer (3.26, 6.83) BUF_X32 cap 25.711 req -0.337 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.381 -> buffer (3.13, 7.70) BUF_X1 cap 0.935 req -0.381 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.360 -> buffer (3.13, 7.70) BUF_X2 cap 1.704 req -0.360 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.348 -> buffer (3.13, 7.70) BUF_X4 cap 3.252 req -0.348 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.342 -> buffer (3.13, 7.70) BUF_X8 cap 6.360 req -0.342 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.339 -> buffer (3.13, 7.70) BUF_X16 cap 12.271 req -0.339 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.337 -> buffer (3.13, 7.70) BUF_X32 cap 25.711 req -0.337 buffers 1
+[DEBUG RSZ-rebuffer] option   1:  0 buffers req -0.261 - 0.306 = -0.567 * 0.00 = -0.567 cap 9.382
+[DEBUG RSZ-rebuffer] option   2:  1 buffers req -0.347 - 0.289 = -0.636 * 0.01 = -0.642 cap 4.262
+[DEBUG RSZ-rebuffer] option   3:  1 buffers req -0.359 - 0.283 = -0.641 * 0.01 = -0.648 cap 2.714
+[DEBUG RSZ-rebuffer] option   4:  1 buffers req -0.378 - 0.279 = -0.658 * 0.01 = -0.664 cap 1.944
+[DEBUG RSZ-rebuffer] option   5:  1 buffers req -0.381 - 0.274 = -0.655 * 0.01 = -0.661 cap 0.935
+[DEBUG RSZ-rebuffer] option   6:  1 buffers req -0.360 - 0.278 = -0.639 * 0.01 = -0.645 cap 1.704
+[DEBUG RSZ-rebuffer] option   7:  1 buffers req -0.348 - 0.285 = -0.633 * 0.01 = -0.639 cap 3.252
+[DEBUG RSZ-rebuffer] option   8:  1 buffers req -0.342 - 0.296 = -0.638 * 0.01 = -0.645 cap 6.360
+[DEBUG RSZ-rebuffer] option   9:  1 buffers req -0.339 - 0.314 = -0.653 * 0.01 = -0.660 cap 12.271
+[DEBUG RSZ-rebuffer] option  10:  1 buffers req -0.337 - 0.349 = -0.686 * 0.01 = -0.693 cap 25.711
+[DEBUG RSZ-rebuffer] best option 1
+[DEBUG RSZ-rebuffer]  wire
+[DEBUG RSZ-rebuffer]   junction
+[DEBUG RSZ-rebuffer]    wire
+[DEBUG RSZ-rebuffer]     junction
+[DEBUG RSZ-rebuffer]      connect load u1/r5/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 43
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 43
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to modnet 2
+[DEBUG RSZ-rebuffer]      wire
+[DEBUG RSZ-rebuffer]       junction
+[DEBUG RSZ-rebuffer]        junction
+[DEBUG RSZ-rebuffer]         connect load u1/r9/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 67
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 67
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to modnet 2
+[DEBUG RSZ-rebuffer]         wire
+[DEBUG RSZ-rebuffer]          connect load u1/r12/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 19
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 19
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to modnet 2
+[DEBUG RSZ-rebuffer]        wire
+[DEBUG RSZ-rebuffer]         junction
+[DEBUG RSZ-rebuffer]          connect load u1/r6/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 49
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 49
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to modnet 2
+[DEBUG RSZ-rebuffer]          wire
+[DEBUG RSZ-rebuffer]           junction
+[DEBUG RSZ-rebuffer]            connect load u1/r3/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 31
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 31
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to modnet 2
+[DEBUG RSZ-rebuffer]            wire
+[DEBUG RSZ-rebuffer]             connect load u1/u1/A to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 73
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 73
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to modnet 2
+[DEBUG RSZ-repair_setup] u1/u1/Z BUF_X2 fanout = 1 drvr_index = 4
+[DEBUG RSZ-repair_setup] u1/u5/Z BUF_X1 fanout = 1 drvr_index = 12
+[DEBUG RSZ-repair_setup] resize u1/u5/Z BUF_X1 -> BUF_X2
+[DEBUG RSZ-journal] journal replace u1/u5 (BUF_X1)
+[DEBUG ODB-DB_ECO] ECO: swapMaster
+[DEBUG RSZ-repair_setup] pass 3 slack = -0.525 worst_slack = -0.525 
+[DEBUG RSZ-repair_setup] r1/Q load_delay = 0.035 intrinsic_delay = 0.228
+[DEBUG RSZ-repair_setup] u1/u1/Z load_delay = 0.021 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] u1/u2/Z load_delay = 0.012 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] u1/u3/Z load_delay = 0.012 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] u1/u4/Z load_delay = 0.019 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] u1/u5/Z load_delay = 0.012 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] r1/Q DFF_X1 fanout = 7 drvr_index = 2
+[DEBUG RSZ-make_buffered_net]  load rebuffer1/A (3.26, 6.83) cap 0.983 req INF
+[DEBUG RSZ-make_buffered_net]   load u1/r5/D (4.12, 4.99) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]    load u1/r9/D (4.12, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r12/D (4.12, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r6/D (7.35, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]      load u1/r3/D (7.35, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]       load u1/u1/A (10.40, 0.61) cap 1.811 req INF
+[DEBUG RSZ-rebuffer] driver r1/Q
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.355 -> buffer (7.35, 0.61) BUF_X1 cap 0.935 req -0.355 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.345 -> buffer (7.35, 0.61) BUF_X2 cap 1.704 req -0.345 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.338 -> buffer (7.35, 0.61) BUF_X4 cap 3.252 req -0.338 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.337 -> buffer (7.35, 0.61) BUF_X8 cap 6.360 req -0.337 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.337 -> buffer (7.35, 0.61) BUF_X16 cap 12.271 req -0.337 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.336 -> buffer (7.35, 0.61) BUF_X32 cap 25.711 req -0.336 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.360 -> buffer (7.35, 2.19) BUF_X1 cap 0.935 req -0.360 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.348 -> buffer (7.35, 2.19) BUF_X2 cap 1.704 req -0.348 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.340 -> buffer (7.35, 2.19) BUF_X4 cap 3.252 req -0.340 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.338 -> buffer (7.35, 2.19) BUF_X8 cap 6.360 req -0.338 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.338 -> buffer (7.35, 2.19) BUF_X16 cap 12.271 req -0.338 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.337 -> buffer (7.35, 2.19) BUF_X32 cap 25.711 req -0.337 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.366 -> buffer (4.12, 2.19) BUF_X1 cap 0.935 req -0.366 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.351 -> buffer (4.12, 2.19) BUF_X2 cap 1.704 req -0.351 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.342 -> buffer (4.12, 2.19) BUF_X4 cap 3.252 req -0.342 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.339 -> buffer (4.12, 2.19) BUF_X8 cap 6.360 req -0.339 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.338 -> buffer (4.12, 2.19) BUF_X16 cap 12.271 req -0.338 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.337 -> buffer (4.12, 2.19) BUF_X32 cap 25.711 req -0.337 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.375 -> buffer (4.12, 4.99) BUF_X1 cap 0.935 req -0.375 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.357 -> buffer (4.12, 4.99) BUF_X2 cap 1.704 req -0.357 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.346 -> buffer (4.12, 4.99) BUF_X4 cap 3.252 req -0.346 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.341 -> buffer (4.12, 4.99) BUF_X8 cap 6.360 req -0.341 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.339 -> buffer (4.12, 4.99) BUF_X16 cap 12.271 req -0.339 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.337 -> buffer (4.12, 4.99) BUF_X32 cap 25.711 req -0.337 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.379 -> buffer (3.26, 6.83) BUF_X1 cap 0.935 req -0.379 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.359 -> buffer (3.26, 6.83) BUF_X2 cap 1.704 req -0.359 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.347 -> buffer (3.26, 6.83) BUF_X4 cap 3.252 req -0.347 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.342 -> buffer (3.26, 6.83) BUF_X8 cap 6.360 req -0.342 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.339 -> buffer (3.26, 6.83) BUF_X16 cap 12.271 req -0.339 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.337 -> buffer (3.26, 6.83) BUF_X32 cap 25.711 req -0.337 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.382 -> buffer (3.13, 7.70) BUF_X1 cap 0.935 req -0.382 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.361 -> buffer (3.13, 7.70) BUF_X2 cap 1.704 req -0.361 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.348 -> buffer (3.13, 7.70) BUF_X4 cap 3.252 req -0.348 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.343 -> buffer (3.13, 7.70) BUF_X8 cap 6.360 req -0.343 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.340 -> buffer (3.13, 7.70) BUF_X16 cap 12.271 req -0.340 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.338 -> buffer (3.13, 7.70) BUF_X32 cap 25.711 req -0.338 buffers 1
+[DEBUG RSZ-rebuffer] option   1:  0 buffers req -0.261 - 0.306 = -0.567 * 0.00 = -0.567 cap 9.382
+[DEBUG RSZ-rebuffer] option   2:  1 buffers req -0.347 - 0.289 = -0.636 * 0.01 = -0.642 cap 4.262
+[DEBUG RSZ-rebuffer] option   3:  1 buffers req -0.359 - 0.283 = -0.642 * 0.01 = -0.648 cap 2.714
+[DEBUG RSZ-rebuffer] option   4:  1 buffers req -0.379 - 0.279 = -0.658 * 0.01 = -0.665 cap 1.944
+[DEBUG RSZ-rebuffer] option   5:  1 buffers req -0.382 - 0.274 = -0.655 * 0.01 = -0.662 cap 0.935
+[DEBUG RSZ-rebuffer] option   6:  1 buffers req -0.361 - 0.278 = -0.639 * 0.01 = -0.645 cap 1.704
+[DEBUG RSZ-rebuffer] option   7:  1 buffers req -0.348 - 0.285 = -0.633 * 0.01 = -0.639 cap 3.252
+[DEBUG RSZ-rebuffer] option   8:  1 buffers req -0.343 - 0.296 = -0.639 * 0.01 = -0.645 cap 6.360
+[DEBUG RSZ-rebuffer] option   9:  1 buffers req -0.340 - 0.314 = -0.654 * 0.01 = -0.660 cap 12.271
+[DEBUG RSZ-rebuffer] option  10:  1 buffers req -0.338 - 0.349 = -0.687 * 0.01 = -0.694 cap 25.711
+[DEBUG RSZ-rebuffer] best option 1
+[DEBUG RSZ-rebuffer]  wire
+[DEBUG RSZ-rebuffer]   junction
+[DEBUG RSZ-rebuffer]    wire
+[DEBUG RSZ-rebuffer]     junction
+[DEBUG RSZ-rebuffer]      connect load u1/r5/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 43
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 43
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to modnet 2
+[DEBUG RSZ-rebuffer]      wire
+[DEBUG RSZ-rebuffer]       junction
+[DEBUG RSZ-rebuffer]        junction
+[DEBUG RSZ-rebuffer]         connect load u1/r9/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 67
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 67
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to modnet 2
+[DEBUG RSZ-rebuffer]         wire
+[DEBUG RSZ-rebuffer]          connect load u1/r12/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 19
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 19
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to modnet 2
+[DEBUG RSZ-rebuffer]        wire
+[DEBUG RSZ-rebuffer]         junction
+[DEBUG RSZ-rebuffer]          connect load u1/r6/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 49
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 49
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to modnet 2
+[DEBUG RSZ-rebuffer]          wire
+[DEBUG RSZ-rebuffer]           junction
+[DEBUG RSZ-rebuffer]            connect load u1/r3/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 31
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 31
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to modnet 2
+[DEBUG RSZ-rebuffer]            wire
+[DEBUG RSZ-rebuffer]             connect load u1/u1/A to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 73
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 73
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to modnet 2
+[DEBUG RSZ-repair_setup] u1/u1/Z BUF_X2 fanout = 1 drvr_index = 4
+[DEBUG RSZ-repair_setup] u1/u4/Z BUF_X1 fanout = 1 drvr_index = 10
+[DEBUG RSZ-repair_setup] resize u1/u4/Z BUF_X1 -> BUF_X2
+[DEBUG RSZ-journal] journal replace u1/u4 (BUF_X1)
+[DEBUG ODB-DB_ECO] ECO: swapMaster
+[DEBUG RSZ-repair_setup] pass 4 slack = -0.521 worst_slack = -0.521 save
+[DEBUG RSZ-journal] journal end
+[DEBUG RSZ-journal] journal begin
+[DEBUG RSZ-repair_setup] r1/Q load_delay = 0.035 intrinsic_delay = 0.228
+[DEBUG RSZ-repair_setup] u1/u1/Z load_delay = 0.021 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] u1/u2/Z load_delay = 0.012 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] u1/u3/Z load_delay = 0.019 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] u1/u4/Z load_delay = 0.014 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] u1/u5/Z load_delay = 0.011 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] r1/Q DFF_X1 fanout = 7 drvr_index = 2
+[DEBUG RSZ-make_buffered_net]  load rebuffer1/A (3.26, 6.83) cap 0.983 req INF
+[DEBUG RSZ-make_buffered_net]   load u1/r5/D (4.12, 4.99) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]    load u1/r9/D (4.12, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r12/D (4.12, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r6/D (7.35, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]      load u1/r3/D (7.35, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]       load u1/u1/A (10.40, 0.61) cap 1.811 req INF
+[DEBUG RSZ-rebuffer] driver r1/Q
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.351 -> buffer (7.35, 0.61) BUF_X1 cap 0.935 req -0.351 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.341 -> buffer (7.35, 0.61) BUF_X2 cap 1.704 req -0.341 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.335 -> buffer (7.35, 0.61) BUF_X4 cap 3.252 req -0.335 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.333 -> buffer (7.35, 0.61) BUF_X8 cap 6.360 req -0.333 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.333 -> buffer (7.35, 0.61) BUF_X16 cap 12.271 req -0.333 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.332 -> buffer (7.35, 0.61) BUF_X32 cap 25.711 req -0.332 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.357 -> buffer (7.35, 2.19) BUF_X1 cap 0.935 req -0.357 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.344 -> buffer (7.35, 2.19) BUF_X2 cap 1.704 req -0.344 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.336 -> buffer (7.35, 2.19) BUF_X4 cap 3.252 req -0.336 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.334 -> buffer (7.35, 2.19) BUF_X8 cap 6.360 req -0.334 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.334 -> buffer (7.35, 2.19) BUF_X16 cap 12.271 req -0.334 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.333 -> buffer (7.35, 2.19) BUF_X32 cap 25.711 req -0.333 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.362 -> buffer (4.12, 2.19) BUF_X1 cap 0.935 req -0.362 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.348 -> buffer (4.12, 2.19) BUF_X2 cap 1.704 req -0.348 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.338 -> buffer (4.12, 2.19) BUF_X4 cap 3.252 req -0.338 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.335 -> buffer (4.12, 2.19) BUF_X8 cap 6.360 req -0.335 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.334 -> buffer (4.12, 2.19) BUF_X16 cap 12.271 req -0.334 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.333 -> buffer (4.12, 2.19) BUF_X32 cap 25.711 req -0.333 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.371 -> buffer (4.12, 4.99) BUF_X1 cap 0.935 req -0.371 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.353 -> buffer (4.12, 4.99) BUF_X2 cap 1.704 req -0.353 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.342 -> buffer (4.12, 4.99) BUF_X4 cap 3.252 req -0.342 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.337 -> buffer (4.12, 4.99) BUF_X8 cap 6.360 req -0.337 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.335 -> buffer (4.12, 4.99) BUF_X16 cap 12.271 req -0.335 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.333 -> buffer (4.12, 4.99) BUF_X32 cap 25.711 req -0.333 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.375 -> buffer (3.26, 6.83) BUF_X1 cap 0.935 req -0.375 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.355 -> buffer (3.26, 6.83) BUF_X2 cap 1.704 req -0.355 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.343 -> buffer (3.26, 6.83) BUF_X4 cap 3.252 req -0.343 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.338 -> buffer (3.26, 6.83) BUF_X8 cap 6.360 req -0.338 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.336 -> buffer (3.26, 6.83) BUF_X16 cap 12.271 req -0.336 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.334 -> buffer (3.26, 6.83) BUF_X32 cap 25.711 req -0.334 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.378 -> buffer (3.13, 7.70) BUF_X1 cap 0.935 req -0.378 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.357 -> buffer (3.13, 7.70) BUF_X2 cap 1.704 req -0.357 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.344 -> buffer (3.13, 7.70) BUF_X4 cap 3.252 req -0.344 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.339 -> buffer (3.13, 7.70) BUF_X8 cap 6.360 req -0.339 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.336 -> buffer (3.13, 7.70) BUF_X16 cap 12.271 req -0.336 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.334 -> buffer (3.13, 7.70) BUF_X32 cap 25.711 req -0.334 buffers 1
+[DEBUG RSZ-rebuffer] option   1:  0 buffers req -0.258 - 0.306 = -0.563 * 0.00 = -0.563 cap 9.382
+[DEBUG RSZ-rebuffer] option   2:  1 buffers req -0.343 - 0.289 = -0.632 * 0.01 = -0.639 cap 4.262
+[DEBUG RSZ-rebuffer] option   3:  1 buffers req -0.355 - 0.283 = -0.638 * 0.01 = -0.644 cap 2.714
+[DEBUG RSZ-rebuffer] option   4:  1 buffers req -0.375 - 0.279 = -0.654 * 0.01 = -0.661 cap 1.944
+[DEBUG RSZ-rebuffer] option   5:  1 buffers req -0.378 - 0.274 = -0.652 * 0.01 = -0.658 cap 0.935
+[DEBUG RSZ-rebuffer] option   6:  1 buffers req -0.357 - 0.278 = -0.635 * 0.01 = -0.642 cap 1.704
+[DEBUG RSZ-rebuffer] option   7:  1 buffers req -0.344 - 0.285 = -0.629 * 0.01 = -0.636 cap 3.252
+[DEBUG RSZ-rebuffer] option   8:  1 buffers req -0.339 - 0.296 = -0.635 * 0.01 = -0.641 cap 6.360
+[DEBUG RSZ-rebuffer] option   9:  1 buffers req -0.336 - 0.314 = -0.650 * 0.01 = -0.657 cap 12.271
+[DEBUG RSZ-rebuffer] option  10:  1 buffers req -0.334 - 0.349 = -0.683 * 0.01 = -0.690 cap 25.711
+[DEBUG RSZ-rebuffer] best option 1
+[DEBUG RSZ-rebuffer]  wire
+[DEBUG RSZ-rebuffer]   junction
+[DEBUG RSZ-rebuffer]    wire
+[DEBUG RSZ-rebuffer]     junction
+[DEBUG RSZ-rebuffer]      connect load u1/r5/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 43
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 43
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to modnet 2
+[DEBUG RSZ-rebuffer]      wire
+[DEBUG RSZ-rebuffer]       junction
+[DEBUG RSZ-rebuffer]        junction
+[DEBUG RSZ-rebuffer]         connect load u1/r9/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 67
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 67
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to modnet 2
+[DEBUG RSZ-rebuffer]         wire
+[DEBUG RSZ-rebuffer]          connect load u1/r12/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 19
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 19
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to modnet 2
+[DEBUG RSZ-rebuffer]        wire
+[DEBUG RSZ-rebuffer]         junction
+[DEBUG RSZ-rebuffer]          connect load u1/r6/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 49
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 49
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to modnet 2
+[DEBUG RSZ-rebuffer]          wire
+[DEBUG RSZ-rebuffer]           junction
+[DEBUG RSZ-rebuffer]            connect load u1/r3/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 31
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 31
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to modnet 2
+[DEBUG RSZ-rebuffer]            wire
+[DEBUG RSZ-rebuffer]             connect load u1/u1/A to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 73
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 73
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to modnet 2
+[DEBUG RSZ-repair_setup] u1/u1/Z BUF_X2 fanout = 1 drvr_index = 4
+[DEBUG RSZ-repair_setup] u1/u3/Z BUF_X1 fanout = 1 drvr_index = 8
+[DEBUG RSZ-repair_setup] resize u1/u3/Z BUF_X1 -> BUF_X2
+[DEBUG RSZ-journal] journal replace u1/u3 (BUF_X1)
+[DEBUG ODB-DB_ECO] ECO: swapMaster
+[DEBUG RSZ-repair_setup] pass 5 slack = -0.517 worst_slack = -0.517 save
+[DEBUG RSZ-journal] journal end
+[DEBUG RSZ-journal] journal begin
+[DEBUG RSZ-repair_setup] r1/Q load_delay = 0.035 intrinsic_delay = 0.228
+[DEBUG RSZ-repair_setup] u1/u1/Z load_delay = 0.021 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] u1/u2/Z load_delay = 0.018 intrinsic_delay = 0.068
+[DEBUG RSZ-repair_setup] u1/u3/Z load_delay = 0.014 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] u1/u4/Z load_delay = 0.013 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] u1/u5/Z load_delay = 0.011 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] r1/Q DFF_X1 fanout = 7 drvr_index = 2
+[DEBUG RSZ-make_buffered_net]  load rebuffer1/A (3.26, 6.83) cap 0.983 req INF
+[DEBUG RSZ-make_buffered_net]   load u1/r5/D (4.12, 4.99) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]    load u1/r9/D (4.12, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r12/D (4.12, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r6/D (7.35, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]      load u1/r3/D (7.35, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]       load u1/u1/A (10.40, 0.61) cap 1.811 req INF
+[DEBUG RSZ-rebuffer] driver r1/Q
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.347 -> buffer (7.35, 0.61) BUF_X1 cap 0.935 req -0.347 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.337 -> buffer (7.35, 0.61) BUF_X2 cap 1.704 req -0.337 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.330 -> buffer (7.35, 0.61) BUF_X4 cap 3.252 req -0.330 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.329 -> buffer (7.35, 0.61) BUF_X8 cap 6.360 req -0.329 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.329 -> buffer (7.35, 0.61) BUF_X16 cap 12.271 req -0.329 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.328 -> buffer (7.35, 0.61) BUF_X32 cap 25.711 req -0.328 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.352 -> buffer (7.35, 2.19) BUF_X1 cap 0.935 req -0.352 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.340 -> buffer (7.35, 2.19) BUF_X2 cap 1.704 req -0.340 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.332 -> buffer (7.35, 2.19) BUF_X4 cap 3.252 req -0.332 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.330 -> buffer (7.35, 2.19) BUF_X8 cap 6.360 req -0.330 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.330 -> buffer (7.35, 2.19) BUF_X16 cap 12.271 req -0.330 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.328 -> buffer (7.35, 2.19) BUF_X32 cap 25.711 req -0.328 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.358 -> buffer (4.12, 2.19) BUF_X1 cap 0.935 req -0.358 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.343 -> buffer (4.12, 2.19) BUF_X2 cap 1.704 req -0.343 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.334 -> buffer (4.12, 2.19) BUF_X4 cap 3.252 req -0.334 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.331 -> buffer (4.12, 2.19) BUF_X8 cap 6.360 req -0.331 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.330 -> buffer (4.12, 2.19) BUF_X16 cap 12.271 req -0.330 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.329 -> buffer (4.12, 2.19) BUF_X32 cap 25.711 req -0.329 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.367 -> buffer (4.12, 4.99) BUF_X1 cap 0.935 req -0.367 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.349 -> buffer (4.12, 4.99) BUF_X2 cap 1.704 req -0.349 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.338 -> buffer (4.12, 4.99) BUF_X4 cap 3.252 req -0.338 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.333 -> buffer (4.12, 4.99) BUF_X8 cap 6.360 req -0.333 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.331 -> buffer (4.12, 4.99) BUF_X16 cap 12.271 req -0.331 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.329 -> buffer (4.12, 4.99) BUF_X32 cap 25.711 req -0.329 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.371 -> buffer (3.26, 6.83) BUF_X1 cap 0.935 req -0.371 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.351 -> buffer (3.26, 6.83) BUF_X2 cap 1.704 req -0.351 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.339 -> buffer (3.26, 6.83) BUF_X4 cap 3.252 req -0.339 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.334 -> buffer (3.26, 6.83) BUF_X8 cap 6.360 req -0.334 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.331 -> buffer (3.26, 6.83) BUF_X16 cap 12.271 req -0.331 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.329 -> buffer (3.26, 6.83) BUF_X32 cap 25.711 req -0.329 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.374 -> buffer (3.13, 7.70) BUF_X1 cap 0.935 req -0.374 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.353 -> buffer (3.13, 7.70) BUF_X2 cap 1.704 req -0.353 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.340 -> buffer (3.13, 7.70) BUF_X4 cap 3.252 req -0.340 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.334 -> buffer (3.13, 7.70) BUF_X8 cap 6.360 req -0.334 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.332 -> buffer (3.13, 7.70) BUF_X16 cap 12.271 req -0.332 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.330 -> buffer (3.13, 7.70) BUF_X32 cap 25.711 req -0.330 buffers 1
+[DEBUG RSZ-rebuffer] option   1:  0 buffers req -0.253 - 0.306 = -0.559 * 0.00 = -0.559 cap 9.382
+[DEBUG RSZ-rebuffer] option   2:  1 buffers req -0.339 - 0.289 = -0.628 * 0.01 = -0.634 cap 4.262
+[DEBUG RSZ-rebuffer] option   3:  1 buffers req -0.351 - 0.283 = -0.634 * 0.01 = -0.640 cap 2.714
+[DEBUG RSZ-rebuffer] option   4:  1 buffers req -0.371 - 0.279 = -0.650 * 0.01 = -0.657 cap 1.944
+[DEBUG RSZ-rebuffer] option   5:  1 buffers req -0.374 - 0.274 = -0.647 * 0.01 = -0.654 cap 0.935
+[DEBUG RSZ-rebuffer] option   6:  1 buffers req -0.353 - 0.278 = -0.631 * 0.01 = -0.637 cap 1.704
+[DEBUG RSZ-rebuffer] option   7:  1 buffers req -0.340 - 0.285 = -0.625 * 0.01 = -0.631 cap 3.252
+[DEBUG RSZ-rebuffer] option   8:  1 buffers req -0.334 - 0.296 = -0.631 * 0.01 = -0.637 cap 6.360
+[DEBUG RSZ-rebuffer] option   9:  1 buffers req -0.332 - 0.314 = -0.646 * 0.01 = -0.652 cap 12.271
+[DEBUG RSZ-rebuffer] option  10:  1 buffers req -0.330 - 0.349 = -0.679 * 0.01 = -0.686 cap 25.711
+[DEBUG RSZ-rebuffer] best option 1
+[DEBUG RSZ-rebuffer]  wire
+[DEBUG RSZ-rebuffer]   junction
+[DEBUG RSZ-rebuffer]    wire
+[DEBUG RSZ-rebuffer]     junction
+[DEBUG RSZ-rebuffer]      connect load u1/r5/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 43
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 43
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to modnet 2
+[DEBUG RSZ-rebuffer]      wire
+[DEBUG RSZ-rebuffer]       junction
+[DEBUG RSZ-rebuffer]        junction
+[DEBUG RSZ-rebuffer]         connect load u1/r9/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 67
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 67
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to modnet 2
+[DEBUG RSZ-rebuffer]         wire
+[DEBUG RSZ-rebuffer]          connect load u1/r12/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 19
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 19
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to modnet 2
+[DEBUG RSZ-rebuffer]        wire
+[DEBUG RSZ-rebuffer]         junction
+[DEBUG RSZ-rebuffer]          connect load u1/r6/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 49
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 49
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to modnet 2
+[DEBUG RSZ-rebuffer]          wire
+[DEBUG RSZ-rebuffer]           junction
+[DEBUG RSZ-rebuffer]            connect load u1/r3/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 31
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 31
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to modnet 2
+[DEBUG RSZ-rebuffer]            wire
+[DEBUG RSZ-rebuffer]             connect load u1/u1/A to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 73
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 73
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to modnet 2
+[DEBUG RSZ-repair_setup] u1/u1/Z BUF_X2 fanout = 1 drvr_index = 4
+[DEBUG RSZ-repair_setup] u1/u2/Z BUF_X1 fanout = 1 drvr_index = 6
+[DEBUG RSZ-repair_setup] resize u1/u2/Z BUF_X1 -> BUF_X2
+[DEBUG RSZ-journal] journal replace u1/u2 (BUF_X1)
+[DEBUG ODB-DB_ECO] ECO: swapMaster
+[DEBUG RSZ-repair_setup] pass 6 slack = -0.508 worst_slack = -0.508 save
+[DEBUG RSZ-journal] journal end
+[DEBUG RSZ-journal] journal begin
+[DEBUG RSZ-repair_setup] r1/Q load_delay = 0.035 intrinsic_delay = 0.228
+[DEBUG RSZ-repair_setup] u1/u1/Z load_delay = 0.023 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] u1/u2/Z load_delay = 0.012 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] u1/u3/Z load_delay = 0.013 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] u1/u4/Z load_delay = 0.013 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] u1/u5/Z load_delay = 0.011 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] r1/Q DFF_X1 fanout = 7 drvr_index = 2
+[DEBUG RSZ-make_buffered_net]  load rebuffer1/A (3.26, 6.83) cap 0.983 req INF
+[DEBUG RSZ-make_buffered_net]   load u1/r5/D (4.12, 4.99) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]    load u1/r9/D (4.12, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r12/D (4.12, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r6/D (7.35, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]      load u1/r3/D (7.35, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]       load u1/u1/A (10.40, 0.61) cap 1.811 req INF
+[DEBUG RSZ-rebuffer] driver r1/Q
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.337 -> buffer (7.35, 0.61) BUF_X1 cap 0.935 req -0.337 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.327 -> buffer (7.35, 0.61) BUF_X2 cap 1.704 req -0.327 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.321 -> buffer (7.35, 0.61) BUF_X4 cap 3.252 req -0.321 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.320 -> buffer (7.35, 0.61) BUF_X8 cap 6.360 req -0.320 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.320 -> buffer (7.35, 0.61) BUF_X16 cap 12.271 req -0.320 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.319 -> buffer (7.35, 0.61) BUF_X32 cap 25.711 req -0.319 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.343 -> buffer (7.35, 2.19) BUF_X1 cap 0.935 req -0.343 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.331 -> buffer (7.35, 2.19) BUF_X2 cap 1.704 req -0.331 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.323 -> buffer (7.35, 2.19) BUF_X4 cap 3.252 req -0.323 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.321 -> buffer (7.35, 2.19) BUF_X8 cap 6.360 req -0.321 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.320 -> buffer (7.35, 2.19) BUF_X16 cap 12.271 req -0.320 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.319 -> buffer (7.35, 2.19) BUF_X32 cap 25.711 req -0.319 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.348 -> buffer (4.12, 2.19) BUF_X1 cap 0.935 req -0.348 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.334 -> buffer (4.12, 2.19) BUF_X2 cap 1.704 req -0.334 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.324 -> buffer (4.12, 2.19) BUF_X4 cap 3.252 req -0.324 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.322 -> buffer (4.12, 2.19) BUF_X8 cap 6.360 req -0.322 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.320 -> buffer (4.12, 2.19) BUF_X16 cap 12.271 req -0.320 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.319 -> buffer (4.12, 2.19) BUF_X32 cap 25.711 req -0.319 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.357 -> buffer (4.12, 4.99) BUF_X1 cap 0.935 req -0.357 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.339 -> buffer (4.12, 4.99) BUF_X2 cap 1.704 req -0.339 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.328 -> buffer (4.12, 4.99) BUF_X4 cap 3.252 req -0.328 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.323 -> buffer (4.12, 4.99) BUF_X8 cap 6.360 req -0.323 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.321 -> buffer (4.12, 4.99) BUF_X16 cap 12.271 req -0.321 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.320 -> buffer (4.12, 4.99) BUF_X32 cap 25.711 req -0.320 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.361 -> buffer (3.26, 6.83) BUF_X1 cap 0.935 req -0.361 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.342 -> buffer (3.26, 6.83) BUF_X2 cap 1.704 req -0.342 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.330 -> buffer (3.26, 6.83) BUF_X4 cap 3.252 req -0.330 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.324 -> buffer (3.26, 6.83) BUF_X8 cap 6.360 req -0.324 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.322 -> buffer (3.26, 6.83) BUF_X16 cap 12.271 req -0.322 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.320 -> buffer (3.26, 6.83) BUF_X32 cap 25.711 req -0.320 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.364 -> buffer (3.13, 7.70) BUF_X1 cap 0.935 req -0.364 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.343 -> buffer (3.13, 7.70) BUF_X2 cap 1.704 req -0.343 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.331 -> buffer (3.13, 7.70) BUF_X4 cap 3.252 req -0.331 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.325 -> buffer (3.13, 7.70) BUF_X8 cap 6.360 req -0.325 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.322 -> buffer (3.13, 7.70) BUF_X16 cap 12.271 req -0.322 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.320 -> buffer (3.13, 7.70) BUF_X32 cap 25.711 req -0.320 buffers 1
+[DEBUG RSZ-rebuffer] option   1:  0 buffers req -0.244 - 0.306 = -0.550 * 0.00 = -0.550 cap 9.382
+[DEBUG RSZ-rebuffer] option   2:  1 buffers req -0.330 - 0.289 = -0.618 * 0.01 = -0.625 cap 4.262
+[DEBUG RSZ-rebuffer] option   3:  1 buffers req -0.342 - 0.283 = -0.624 * 0.01 = -0.631 cap 2.714
+[DEBUG RSZ-rebuffer] option   4:  1 buffers req -0.361 - 0.279 = -0.641 * 0.01 = -0.647 cap 1.944
+[DEBUG RSZ-rebuffer] option   5:  1 buffers req -0.364 - 0.274 = -0.638 * 0.01 = -0.644 cap 0.935
+[DEBUG RSZ-rebuffer] option   6:  1 buffers req -0.343 - 0.278 = -0.621 * 0.01 = -0.628 cap 1.704
+[DEBUG RSZ-rebuffer] option   7:  1 buffers req -0.331 - 0.285 = -0.616 * 0.01 = -0.622 cap 3.252
+[DEBUG RSZ-rebuffer] option   8:  1 buffers req -0.325 - 0.296 = -0.621 * 0.01 = -0.627 cap 6.360
+[DEBUG RSZ-rebuffer] option   9:  1 buffers req -0.322 - 0.314 = -0.636 * 0.01 = -0.643 cap 12.271
+[DEBUG RSZ-rebuffer] option  10:  1 buffers req -0.320 - 0.349 = -0.669 * 0.01 = -0.676 cap 25.711
+[DEBUG RSZ-rebuffer] best option 1
+[DEBUG RSZ-rebuffer]  wire
+[DEBUG RSZ-rebuffer]   junction
+[DEBUG RSZ-rebuffer]    wire
+[DEBUG RSZ-rebuffer]     junction
+[DEBUG RSZ-rebuffer]      connect load u1/r5/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 43
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 43
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to modnet 2
+[DEBUG RSZ-rebuffer]      wire
+[DEBUG RSZ-rebuffer]       junction
+[DEBUG RSZ-rebuffer]        junction
+[DEBUG RSZ-rebuffer]         connect load u1/r9/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 67
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 67
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to modnet 2
+[DEBUG RSZ-rebuffer]         wire
+[DEBUG RSZ-rebuffer]          connect load u1/r12/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 19
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 19
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to modnet 2
+[DEBUG RSZ-rebuffer]        wire
+[DEBUG RSZ-rebuffer]         junction
+[DEBUG RSZ-rebuffer]          connect load u1/r6/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 49
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 49
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to modnet 2
+[DEBUG RSZ-rebuffer]          wire
+[DEBUG RSZ-rebuffer]           junction
+[DEBUG RSZ-rebuffer]            connect load u1/r3/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 31
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 31
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to modnet 2
+[DEBUG RSZ-rebuffer]            wire
+[DEBUG RSZ-rebuffer]             connect load u1/u1/A to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 73
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 73
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to modnet 2
+[DEBUG RSZ-repair_setup] u1/u1/Z BUF_X2 fanout = 1 drvr_index = 4
+[DEBUG RSZ-repair_setup] u1/u4/Z BUF_X2 fanout = 1 drvr_index = 10
+[DEBUG RSZ-repair_setup] resize u1/u4/Z BUF_X2 -> BUF_X4
+[DEBUG RSZ-journal] journal replace u1/u4 (BUF_X2)
+[DEBUG ODB-DB_ECO] ECO: swapMaster
+[DEBUG RSZ-repair_setup] pass 7 slack = -0.505 worst_slack = -0.505 save
+[DEBUG RSZ-journal] journal end
+[DEBUG RSZ-journal] journal begin
+[DEBUG RSZ-repair_setup] r1/Q load_delay = 0.035 intrinsic_delay = 0.228
+[DEBUG RSZ-repair_setup] u1/u1/Z load_delay = 0.023 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] u1/u2/Z load_delay = 0.012 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] u1/u3/Z load_delay = 0.016 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] u1/u4/Z load_delay = 0.011 intrinsic_delay = 0.060
+[DEBUG RSZ-repair_setup] u1/u5/Z load_delay = 0.010 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] r1/Q DFF_X1 fanout = 7 drvr_index = 2
+[DEBUG RSZ-make_buffered_net]  load rebuffer1/A (3.26, 6.83) cap 0.983 req INF
+[DEBUG RSZ-make_buffered_net]   load u1/r5/D (4.12, 4.99) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]    load u1/r9/D (4.12, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r12/D (4.12, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r6/D (7.35, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]      load u1/r3/D (7.35, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]       load u1/u1/A (10.40, 0.61) cap 1.811 req INF
+[DEBUG RSZ-rebuffer] driver r1/Q
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.335 -> buffer (7.35, 0.61) BUF_X1 cap 0.935 req -0.335 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.324 -> buffer (7.35, 0.61) BUF_X2 cap 1.704 req -0.324 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.318 -> buffer (7.35, 0.61) BUF_X4 cap 3.252 req -0.318 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.317 -> buffer (7.35, 0.61) BUF_X8 cap 6.360 req -0.317 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.317 -> buffer (7.35, 0.61) BUF_X16 cap 12.271 req -0.317 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.316 -> buffer (7.35, 0.61) BUF_X32 cap 25.711 req -0.316 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.340 -> buffer (7.35, 2.19) BUF_X1 cap 0.935 req -0.340 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.328 -> buffer (7.35, 2.19) BUF_X2 cap 1.704 req -0.328 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.320 -> buffer (7.35, 2.19) BUF_X4 cap 3.252 req -0.320 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.318 -> buffer (7.35, 2.19) BUF_X8 cap 6.360 req -0.318 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.317 -> buffer (7.35, 2.19) BUF_X16 cap 12.271 req -0.317 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.316 -> buffer (7.35, 2.19) BUF_X32 cap 25.711 req -0.316 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.345 -> buffer (4.12, 2.19) BUF_X1 cap 0.935 req -0.345 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.331 -> buffer (4.12, 2.19) BUF_X2 cap 1.704 req -0.331 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.322 -> buffer (4.12, 2.19) BUF_X4 cap 3.252 req -0.322 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.319 -> buffer (4.12, 2.19) BUF_X8 cap 6.360 req -0.319 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.318 -> buffer (4.12, 2.19) BUF_X16 cap 12.271 req -0.318 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.317 -> buffer (4.12, 2.19) BUF_X32 cap 25.711 req -0.317 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.354 -> buffer (4.12, 4.99) BUF_X1 cap 0.935 req -0.354 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.337 -> buffer (4.12, 4.99) BUF_X2 cap 1.704 req -0.337 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.325 -> buffer (4.12, 4.99) BUF_X4 cap 3.252 req -0.325 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.321 -> buffer (4.12, 4.99) BUF_X8 cap 6.360 req -0.321 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.319 -> buffer (4.12, 4.99) BUF_X16 cap 12.271 req -0.319 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.317 -> buffer (4.12, 4.99) BUF_X32 cap 25.711 req -0.317 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.359 -> buffer (3.26, 6.83) BUF_X1 cap 0.935 req -0.359 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.339 -> buffer (3.26, 6.83) BUF_X2 cap 1.704 req -0.339 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.327 -> buffer (3.26, 6.83) BUF_X4 cap 3.252 req -0.327 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.322 -> buffer (3.26, 6.83) BUF_X8 cap 6.360 req -0.322 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.319 -> buffer (3.26, 6.83) BUF_X16 cap 12.271 req -0.319 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.317 -> buffer (3.26, 6.83) BUF_X32 cap 25.711 req -0.317 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.361 -> buffer (3.13, 7.70) BUF_X1 cap 0.935 req -0.361 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.341 -> buffer (3.13, 7.70) BUF_X2 cap 1.704 req -0.341 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.328 -> buffer (3.13, 7.70) BUF_X4 cap 3.252 req -0.328 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.322 -> buffer (3.13, 7.70) BUF_X8 cap 6.360 req -0.322 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.320 -> buffer (3.13, 7.70) BUF_X16 cap 12.271 req -0.320 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.317 -> buffer (3.13, 7.70) BUF_X32 cap 25.711 req -0.317 buffers 1
+[DEBUG RSZ-rebuffer] option   1:  0 buffers req -0.241 - 0.306 = -0.547 * 0.00 = -0.547 cap 9.382
+[DEBUG RSZ-rebuffer] option   2:  1 buffers req -0.327 - 0.289 = -0.616 * 0.01 = -0.622 cap 4.262
+[DEBUG RSZ-rebuffer] option   3:  1 buffers req -0.339 - 0.283 = -0.622 * 0.01 = -0.628 cap 2.714
+[DEBUG RSZ-rebuffer] option   4:  1 buffers req -0.359 - 0.279 = -0.638 * 0.01 = -0.644 cap 1.944
+[DEBUG RSZ-rebuffer] option   5:  1 buffers req -0.361 - 0.274 = -0.635 * 0.01 = -0.642 cap 0.935
+[DEBUG RSZ-rebuffer] option   6:  1 buffers req -0.341 - 0.278 = -0.619 * 0.01 = -0.625 cap 1.704
+[DEBUG RSZ-rebuffer] option   7:  1 buffers req -0.328 - 0.285 = -0.613 * 0.01 = -0.619 cap 3.252
+[DEBUG RSZ-rebuffer] option   8:  1 buffers req -0.322 - 0.296 = -0.619 * 0.01 = -0.625 cap 6.360
+[DEBUG RSZ-rebuffer] option   9:  1 buffers req -0.320 - 0.314 = -0.634 * 0.01 = -0.640 cap 12.271
+[DEBUG RSZ-rebuffer] option  10:  1 buffers req -0.317 - 0.349 = -0.667 * 0.01 = -0.673 cap 25.711
+[DEBUG RSZ-rebuffer] best option 1
+[DEBUG RSZ-rebuffer]  wire
+[DEBUG RSZ-rebuffer]   junction
+[DEBUG RSZ-rebuffer]    wire
+[DEBUG RSZ-rebuffer]     junction
+[DEBUG RSZ-rebuffer]      connect load u1/r5/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 43
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 43
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to modnet 2
+[DEBUG RSZ-rebuffer]      wire
+[DEBUG RSZ-rebuffer]       junction
+[DEBUG RSZ-rebuffer]        junction
+[DEBUG RSZ-rebuffer]         connect load u1/r9/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 67
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 67
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to modnet 2
+[DEBUG RSZ-rebuffer]         wire
+[DEBUG RSZ-rebuffer]          connect load u1/r12/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 19
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 19
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to modnet 2
+[DEBUG RSZ-rebuffer]        wire
+[DEBUG RSZ-rebuffer]         junction
+[DEBUG RSZ-rebuffer]          connect load u1/r6/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 49
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 49
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to modnet 2
+[DEBUG RSZ-rebuffer]          wire
+[DEBUG RSZ-rebuffer]           junction
+[DEBUG RSZ-rebuffer]            connect load u1/r3/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 31
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 31
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to modnet 2
+[DEBUG RSZ-rebuffer]            wire
+[DEBUG RSZ-rebuffer]             connect load u1/u1/A to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 73
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 73
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to modnet 2
+[DEBUG RSZ-repair_setup] u1/u1/Z BUF_X2 fanout = 1 drvr_index = 4
+[DEBUG RSZ-repair_setup] u1/u3/Z BUF_X2 fanout = 1 drvr_index = 8
+[DEBUG RSZ-repair_setup] resize u1/u3/Z BUF_X2 -> BUF_X4
+[DEBUG RSZ-journal] journal replace u1/u3 (BUF_X2)
+[DEBUG ODB-DB_ECO] ECO: swapMaster
+[DEBUG RSZ-repair_setup] pass 8 slack = -0.500 worst_slack = -0.500 save
+[DEBUG RSZ-journal] journal end
+[DEBUG RSZ-journal] journal begin
+[DEBUG RSZ-repair_setup] r1/Q load_delay = 0.035 intrinsic_delay = 0.228
+[DEBUG RSZ-repair_setup] u1/u1/Z load_delay = 0.023 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] u1/u2/Z load_delay = 0.016 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] u1/u3/Z load_delay = 0.013 intrinsic_delay = 0.060
+[DEBUG RSZ-repair_setup] u1/u4/Z load_delay = 0.009 intrinsic_delay = 0.060
+[DEBUG RSZ-repair_setup] u1/u5/Z load_delay = 0.010 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] r1/Q DFF_X1 fanout = 7 drvr_index = 2
+[DEBUG RSZ-make_buffered_net]  load rebuffer1/A (3.26, 6.83) cap 0.983 req INF
+[DEBUG RSZ-make_buffered_net]   load u1/r5/D (4.12, 4.99) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]    load u1/r9/D (4.12, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r12/D (4.12, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r6/D (7.35, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]      load u1/r3/D (7.35, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]       load u1/u1/A (10.40, 0.61) cap 1.811 req INF
+[DEBUG RSZ-rebuffer] driver r1/Q
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.330 -> buffer (7.35, 0.61) BUF_X1 cap 0.935 req -0.330 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.319 -> buffer (7.35, 0.61) BUF_X2 cap 1.704 req -0.319 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.313 -> buffer (7.35, 0.61) BUF_X4 cap 3.252 req -0.313 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.312 -> buffer (7.35, 0.61) BUF_X8 cap 6.360 req -0.312 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.312 -> buffer (7.35, 0.61) BUF_X16 cap 12.271 req -0.312 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.311 -> buffer (7.35, 0.61) BUF_X32 cap 25.711 req -0.311 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.335 -> buffer (7.35, 2.19) BUF_X1 cap 0.935 req -0.335 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.323 -> buffer (7.35, 2.19) BUF_X2 cap 1.704 req -0.323 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.315 -> buffer (7.35, 2.19) BUF_X4 cap 3.252 req -0.315 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.313 -> buffer (7.35, 2.19) BUF_X8 cap 6.360 req -0.313 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.312 -> buffer (7.35, 2.19) BUF_X16 cap 12.271 req -0.312 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.311 -> buffer (7.35, 2.19) BUF_X32 cap 25.711 req -0.311 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.340 -> buffer (4.12, 2.19) BUF_X1 cap 0.935 req -0.340 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.326 -> buffer (4.12, 2.19) BUF_X2 cap 1.704 req -0.326 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.317 -> buffer (4.12, 2.19) BUF_X4 cap 3.252 req -0.317 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.314 -> buffer (4.12, 2.19) BUF_X8 cap 6.360 req -0.314 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.313 -> buffer (4.12, 2.19) BUF_X16 cap 12.271 req -0.313 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.312 -> buffer (4.12, 2.19) BUF_X32 cap 25.711 req -0.312 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.349 -> buffer (4.12, 4.99) BUF_X1 cap 0.935 req -0.349 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.332 -> buffer (4.12, 4.99) BUF_X2 cap 1.704 req -0.332 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.320 -> buffer (4.12, 4.99) BUF_X4 cap 3.252 req -0.320 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.316 -> buffer (4.12, 4.99) BUF_X8 cap 6.360 req -0.316 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.314 -> buffer (4.12, 4.99) BUF_X16 cap 12.271 req -0.314 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.312 -> buffer (4.12, 4.99) BUF_X32 cap 25.711 req -0.312 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.354 -> buffer (3.26, 6.83) BUF_X1 cap 0.935 req -0.354 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.334 -> buffer (3.26, 6.83) BUF_X2 cap 1.704 req -0.334 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.322 -> buffer (3.26, 6.83) BUF_X4 cap 3.252 req -0.322 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.317 -> buffer (3.26, 6.83) BUF_X8 cap 6.360 req -0.317 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.314 -> buffer (3.26, 6.83) BUF_X16 cap 12.271 req -0.314 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.312 -> buffer (3.26, 6.83) BUF_X32 cap 25.711 req -0.312 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.356 -> buffer (3.13, 7.70) BUF_X1 cap 0.935 req -0.356 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.336 -> buffer (3.13, 7.70) BUF_X2 cap 1.704 req -0.336 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.323 -> buffer (3.13, 7.70) BUF_X4 cap 3.252 req -0.323 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.317 -> buffer (3.13, 7.70) BUF_X8 cap 6.360 req -0.317 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.315 -> buffer (3.13, 7.70) BUF_X16 cap 12.271 req -0.315 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.312 -> buffer (3.13, 7.70) BUF_X32 cap 25.711 req -0.312 buffers 1
+[DEBUG RSZ-rebuffer] option   1:  0 buffers req -0.236 - 0.306 = -0.542 * 0.00 = -0.542 cap 9.382
+[DEBUG RSZ-rebuffer] option   2:  1 buffers req -0.322 - 0.289 = -0.611 * 0.01 = -0.617 cap 4.262
+[DEBUG RSZ-rebuffer] option   3:  1 buffers req -0.334 - 0.283 = -0.617 * 0.01 = -0.623 cap 2.714
+[DEBUG RSZ-rebuffer] option   4:  1 buffers req -0.354 - 0.279 = -0.633 * 0.01 = -0.639 cap 1.944
+[DEBUG RSZ-rebuffer] option   5:  1 buffers req -0.356 - 0.274 = -0.630 * 0.01 = -0.637 cap 0.935
+[DEBUG RSZ-rebuffer] option   6:  1 buffers req -0.336 - 0.278 = -0.614 * 0.01 = -0.620 cap 1.704
+[DEBUG RSZ-rebuffer] option   7:  1 buffers req -0.323 - 0.285 = -0.608 * 0.01 = -0.614 cap 3.252
+[DEBUG RSZ-rebuffer] option   8:  1 buffers req -0.317 - 0.296 = -0.614 * 0.01 = -0.620 cap 6.360
+[DEBUG RSZ-rebuffer] option   9:  1 buffers req -0.315 - 0.314 = -0.629 * 0.01 = -0.635 cap 12.271
+[DEBUG RSZ-rebuffer] option  10:  1 buffers req -0.312 - 0.349 = -0.662 * 0.01 = -0.668 cap 25.711
+[DEBUG RSZ-rebuffer] best option 1
+[DEBUG RSZ-rebuffer]  wire
+[DEBUG RSZ-rebuffer]   junction
+[DEBUG RSZ-rebuffer]    wire
+[DEBUG RSZ-rebuffer]     junction
+[DEBUG RSZ-rebuffer]      connect load u1/r5/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 43
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 43
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to modnet 2
+[DEBUG RSZ-rebuffer]      wire
+[DEBUG RSZ-rebuffer]       junction
+[DEBUG RSZ-rebuffer]        junction
+[DEBUG RSZ-rebuffer]         connect load u1/r9/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 67
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 67
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to modnet 2
+[DEBUG RSZ-rebuffer]         wire
+[DEBUG RSZ-rebuffer]          connect load u1/r12/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 19
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 19
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to modnet 2
+[DEBUG RSZ-rebuffer]        wire
+[DEBUG RSZ-rebuffer]         junction
+[DEBUG RSZ-rebuffer]          connect load u1/r6/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 49
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 49
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to modnet 2
+[DEBUG RSZ-rebuffer]          wire
+[DEBUG RSZ-rebuffer]           junction
+[DEBUG RSZ-rebuffer]            connect load u1/r3/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 31
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 31
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to modnet 2
+[DEBUG RSZ-rebuffer]            wire
+[DEBUG RSZ-rebuffer]             connect load u1/u1/A to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 73
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 73
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to modnet 2
+[DEBUG RSZ-repair_setup] u1/u1/Z BUF_X2 fanout = 1 drvr_index = 4
+[DEBUG RSZ-repair_setup] u1/u2/Z BUF_X2 fanout = 1 drvr_index = 6
+[DEBUG RSZ-repair_setup] resize u1/u2/Z BUF_X2 -> BUF_X4
+[DEBUG RSZ-journal] journal replace u1/u2 (BUF_X2)
+[DEBUG ODB-DB_ECO] ECO: swapMaster
+[DEBUG RSZ-repair_setup] pass 9 slack = -0.495 worst_slack = -0.495 save
+[DEBUG RSZ-journal] journal end
+[DEBUG RSZ-journal] journal begin
+[DEBUG RSZ-repair_setup] r1/Q load_delay = 0.035 intrinsic_delay = 0.228
+[DEBUG RSZ-repair_setup] u1/u1/Z load_delay = 0.026 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] u1/u2/Z load_delay = 0.012 intrinsic_delay = 0.060
+[DEBUG RSZ-repair_setup] u1/u3/Z load_delay = 0.011 intrinsic_delay = 0.060
+[DEBUG RSZ-repair_setup] u1/u4/Z load_delay = 0.009 intrinsic_delay = 0.060
+[DEBUG RSZ-repair_setup] u1/u5/Z load_delay = 0.010 intrinsic_delay = 0.063
+[DEBUG RSZ-repair_setup] r1/Q DFF_X1 fanout = 7 drvr_index = 2
+[DEBUG RSZ-make_buffered_net]  load rebuffer1/A (3.26, 6.83) cap 0.983 req INF
+[DEBUG RSZ-make_buffered_net]   load u1/r5/D (4.12, 4.99) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]    load u1/r9/D (4.12, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r12/D (4.12, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r6/D (7.35, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]      load u1/r3/D (7.35, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]       load u1/u1/A (10.40, 0.61) cap 1.811 req INF
+[DEBUG RSZ-rebuffer] driver r1/Q
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.325 -> buffer (7.35, 0.61) BUF_X1 cap 0.935 req -0.325 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.315 -> buffer (7.35, 0.61) BUF_X2 cap 1.704 req -0.315 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.308 -> buffer (7.35, 0.61) BUF_X4 cap 3.252 req -0.308 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.307 -> buffer (7.35, 0.61) BUF_X8 cap 6.360 req -0.307 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.307 -> buffer (7.35, 0.61) BUF_X16 cap 12.271 req -0.307 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.306 -> buffer (7.35, 0.61) BUF_X32 cap 25.711 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.330 -> buffer (7.35, 2.19) BUF_X1 cap 0.935 req -0.330 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.318 -> buffer (7.35, 2.19) BUF_X2 cap 1.704 req -0.318 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.310 -> buffer (7.35, 2.19) BUF_X4 cap 3.252 req -0.310 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.308 -> buffer (7.35, 2.19) BUF_X8 cap 6.360 req -0.308 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.308 -> buffer (7.35, 2.19) BUF_X16 cap 12.271 req -0.308 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.306 -> buffer (7.35, 2.19) BUF_X32 cap 25.711 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.336 -> buffer (4.12, 2.19) BUF_X1 cap 0.935 req -0.336 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.321 -> buffer (4.12, 2.19) BUF_X2 cap 1.704 req -0.321 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.312 -> buffer (4.12, 2.19) BUF_X4 cap 3.252 req -0.312 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.309 -> buffer (4.12, 2.19) BUF_X8 cap 6.360 req -0.309 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.308 -> buffer (4.12, 2.19) BUF_X16 cap 12.271 req -0.308 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.307 -> buffer (4.12, 2.19) BUF_X32 cap 25.711 req -0.307 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.345 -> buffer (4.12, 4.99) BUF_X1 cap 0.935 req -0.345 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.327 -> buffer (4.12, 4.99) BUF_X2 cap 1.704 req -0.327 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.316 -> buffer (4.12, 4.99) BUF_X4 cap 3.252 req -0.316 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.311 -> buffer (4.12, 4.99) BUF_X8 cap 6.360 req -0.311 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.309 -> buffer (4.12, 4.99) BUF_X16 cap 12.271 req -0.309 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.307 -> buffer (4.12, 4.99) BUF_X32 cap 25.711 req -0.307 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.349 -> buffer (3.26, 6.83) BUF_X1 cap 0.935 req -0.349 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.329 -> buffer (3.26, 6.83) BUF_X2 cap 1.704 req -0.329 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.317 -> buffer (3.26, 6.83) BUF_X4 cap 3.252 req -0.317 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.312 -> buffer (3.26, 6.83) BUF_X8 cap 6.360 req -0.312 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.309 -> buffer (3.26, 6.83) BUF_X16 cap 12.271 req -0.309 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.307 -> buffer (3.26, 6.83) BUF_X32 cap 25.711 req -0.307 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.352 -> buffer (3.13, 7.70) BUF_X1 cap 0.935 req -0.352 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.331 -> buffer (3.13, 7.70) BUF_X2 cap 1.704 req -0.331 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.318 -> buffer (3.13, 7.70) BUF_X4 cap 3.252 req -0.318 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.313 -> buffer (3.13, 7.70) BUF_X8 cap 6.360 req -0.313 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.310 -> buffer (3.13, 7.70) BUF_X16 cap 12.271 req -0.310 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.308 -> buffer (3.13, 7.70) BUF_X32 cap 25.711 req -0.308 buffers 1
+[DEBUG RSZ-rebuffer] option   1:  0 buffers req -0.231 - 0.306 = -0.537 * 0.00 = -0.537 cap 9.382
+[DEBUG RSZ-rebuffer] option   2:  1 buffers req -0.317 - 0.289 = -0.606 * 0.01 = -0.612 cap 4.262
+[DEBUG RSZ-rebuffer] option   3:  1 buffers req -0.329 - 0.283 = -0.612 * 0.01 = -0.618 cap 2.714
+[DEBUG RSZ-rebuffer] option   4:  1 buffers req -0.349 - 0.279 = -0.628 * 0.01 = -0.634 cap 1.944
+[DEBUG RSZ-rebuffer] option   5:  1 buffers req -0.352 - 0.274 = -0.625 * 0.01 = -0.632 cap 0.935
+[DEBUG RSZ-rebuffer] option   6:  1 buffers req -0.331 - 0.278 = -0.609 * 0.01 = -0.615 cap 1.704
+[DEBUG RSZ-rebuffer] option   7:  1 buffers req -0.318 - 0.285 = -0.603 * 0.01 = -0.609 cap 3.252
+[DEBUG RSZ-rebuffer] option   8:  1 buffers req -0.313 - 0.296 = -0.609 * 0.01 = -0.615 cap 6.360
+[DEBUG RSZ-rebuffer] option   9:  1 buffers req -0.310 - 0.314 = -0.624 * 0.01 = -0.630 cap 12.271
+[DEBUG RSZ-rebuffer] option  10:  1 buffers req -0.308 - 0.349 = -0.657 * 0.01 = -0.663 cap 25.711
+[DEBUG RSZ-rebuffer] best option 1
+[DEBUG RSZ-rebuffer]  wire
+[DEBUG RSZ-rebuffer]   junction
+[DEBUG RSZ-rebuffer]    wire
+[DEBUG RSZ-rebuffer]     junction
+[DEBUG RSZ-rebuffer]      connect load u1/r5/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 43
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 43
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to modnet 2
+[DEBUG RSZ-rebuffer]      wire
+[DEBUG RSZ-rebuffer]       junction
+[DEBUG RSZ-rebuffer]        junction
+[DEBUG RSZ-rebuffer]         connect load u1/r9/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 67
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 67
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to modnet 2
+[DEBUG RSZ-rebuffer]         wire
+[DEBUG RSZ-rebuffer]          connect load u1/r12/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 19
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 19
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to modnet 2
+[DEBUG RSZ-rebuffer]        wire
+[DEBUG RSZ-rebuffer]         junction
+[DEBUG RSZ-rebuffer]          connect load u1/r6/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 49
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 49
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to modnet 2
+[DEBUG RSZ-rebuffer]          wire
+[DEBUG RSZ-rebuffer]           junction
+[DEBUG RSZ-rebuffer]            connect load u1/r3/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 31
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 31
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to modnet 2
+[DEBUG RSZ-rebuffer]            wire
+[DEBUG RSZ-rebuffer]             connect load u1/u1/A to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 73
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 73
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to modnet 2
+[DEBUG RSZ-repair_setup] u1/u1/Z BUF_X2 fanout = 1 drvr_index = 4
+[DEBUG RSZ-repair_setup] u1/u2/Z BUF_X4 fanout = 1 drvr_index = 6
+[DEBUG RSZ-repair_setup] u1/u3/Z BUF_X4 fanout = 1 drvr_index = 8
+[DEBUG RSZ-repair_setup] u1/u5/Z BUF_X2 fanout = 1 drvr_index = 12
+[DEBUG RSZ-repair_setup] resize u1/u5/Z BUF_X2 -> BUF_X4
+[DEBUG RSZ-journal] journal replace u1/u5 (BUF_X2)
+[DEBUG ODB-DB_ECO] ECO: swapMaster
+[DEBUG RSZ-repair_setup] pass 10 slack = -0.492 worst_slack = -0.492 save
+[DEBUG RSZ-journal] journal end
+[DEBUG RSZ-journal] journal begin
+[DEBUG RSZ-repair_setup] u1/r3/D slack = -0.154 worst_slack = -0.492
+[DEBUG RSZ-repair_setup] Doing 2 /6
+[DEBUG RSZ-journal] journal begin
+[DEBUG RSZ-repair_setup] r1/Q load_delay = 0.065 intrinsic_delay = 0.289
+[DEBUG RSZ-repair_setup] r1/Q DFF_X1 fanout = 7 drvr_index = 2
+[DEBUG RSZ-make_buffered_net]  load rebuffer1/A (3.26, 6.83) cap 0.983 req INF
+[DEBUG RSZ-make_buffered_net]   load u1/r5/D (4.12, 4.99) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]    load u1/r9/D (4.12, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r12/D (4.12, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r6/D (7.35, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]      load u1/r3/D (7.35, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]       load u1/u1/A (10.40, 0.61) cap 1.811 req INF
+[DEBUG RSZ-rebuffer] driver r1/Q
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.321 -> buffer (7.35, 0.61) BUF_X1 cap 0.935 req -0.321 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.311 -> buffer (7.35, 0.61) BUF_X2 cap 1.704 req -0.311 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.305 -> buffer (7.35, 0.61) BUF_X4 cap 3.252 req -0.305 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.304 -> buffer (7.35, 0.61) BUF_X8 cap 6.360 req -0.304 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.303 -> buffer (7.35, 0.61) BUF_X16 cap 12.271 req -0.303 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.303 -> buffer (7.35, 0.61) BUF_X32 cap 25.711 req -0.303 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.327 -> buffer (7.35, 2.19) BUF_X1 cap 0.935 req -0.327 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.314 -> buffer (7.35, 2.19) BUF_X2 cap 1.704 req -0.314 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.306 -> buffer (7.35, 2.19) BUF_X4 cap 3.252 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.304 -> buffer (7.35, 2.19) BUF_X8 cap 6.360 req -0.304 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.304 -> buffer (7.35, 2.19) BUF_X16 cap 12.271 req -0.304 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.303 -> buffer (7.35, 2.19) BUF_X32 cap 25.711 req -0.303 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.332 -> buffer (4.12, 2.19) BUF_X1 cap 0.935 req -0.332 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.318 -> buffer (4.12, 2.19) BUF_X2 cap 1.704 req -0.318 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.308 -> buffer (4.12, 2.19) BUF_X4 cap 3.252 req -0.308 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.305 -> buffer (4.12, 2.19) BUF_X8 cap 6.360 req -0.305 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.304 -> buffer (4.12, 2.19) BUF_X16 cap 12.271 req -0.304 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.303 -> buffer (4.12, 2.19) BUF_X32 cap 25.711 req -0.303 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.341 -> buffer (4.12, 4.99) BUF_X1 cap 0.935 req -0.341 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.323 -> buffer (4.12, 4.99) BUF_X2 cap 1.704 req -0.323 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.312 -> buffer (4.12, 4.99) BUF_X4 cap 3.252 req -0.312 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.307 -> buffer (4.12, 4.99) BUF_X8 cap 6.360 req -0.307 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.305 -> buffer (4.12, 4.99) BUF_X16 cap 12.271 req -0.305 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.303 -> buffer (4.12, 4.99) BUF_X32 cap 25.711 req -0.303 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.345 -> buffer (3.26, 6.83) BUF_X1 cap 0.935 req -0.345 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.325 -> buffer (3.26, 6.83) BUF_X2 cap 1.704 req -0.325 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.313 -> buffer (3.26, 6.83) BUF_X4 cap 3.252 req -0.313 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.308 -> buffer (3.26, 6.83) BUF_X8 cap 6.360 req -0.308 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.306 -> buffer (3.26, 6.83) BUF_X16 cap 12.271 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.304 -> buffer (3.26, 6.83) BUF_X32 cap 25.711 req -0.304 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.348 -> buffer (3.13, 7.70) BUF_X1 cap 0.935 req -0.348 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.327 -> buffer (3.13, 7.70) BUF_X2 cap 1.704 req -0.327 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.314 -> buffer (3.13, 7.70) BUF_X4 cap 3.252 req -0.314 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.309 -> buffer (3.13, 7.70) BUF_X8 cap 6.360 req -0.309 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.306 -> buffer (3.13, 7.70) BUF_X16 cap 12.271 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.304 -> buffer (3.13, 7.70) BUF_X32 cap 25.711 req -0.304 buffers 1
+[DEBUG RSZ-rebuffer] option   1:  0 buffers req -0.228 - 0.306 = -0.533 * 0.00 = -0.533 cap 9.382
+[DEBUG RSZ-rebuffer] option   2:  1 buffers req -0.313 - 0.289 = -0.602 * 0.01 = -0.608 cap 4.262
+[DEBUG RSZ-rebuffer] option   3:  1 buffers req -0.325 - 0.283 = -0.608 * 0.01 = -0.614 cap 2.714
+[DEBUG RSZ-rebuffer] option   4:  1 buffers req -0.345 - 0.279 = -0.624 * 0.01 = -0.631 cap 1.944
+[DEBUG RSZ-rebuffer] option   5:  1 buffers req -0.348 - 0.274 = -0.622 * 0.01 = -0.628 cap 0.935
+[DEBUG RSZ-rebuffer] option   6:  1 buffers req -0.327 - 0.278 = -0.605 * 0.01 = -0.611 cap 1.704
+[DEBUG RSZ-rebuffer] option   7:  1 buffers req -0.314 - 0.285 = -0.599 * 0.01 = -0.605 cap 3.252
+[DEBUG RSZ-rebuffer] option   8:  1 buffers req -0.309 - 0.296 = -0.605 * 0.01 = -0.611 cap 6.360
+[DEBUG RSZ-rebuffer] option   9:  1 buffers req -0.306 - 0.314 = -0.620 * 0.01 = -0.626 cap 12.271
+[DEBUG RSZ-rebuffer] option  10:  1 buffers req -0.304 - 0.349 = -0.653 * 0.01 = -0.660 cap 25.711
+[DEBUG RSZ-rebuffer] best option 1
+[DEBUG RSZ-rebuffer]  wire
+[DEBUG RSZ-rebuffer]   junction
+[DEBUG RSZ-rebuffer]    wire
+[DEBUG RSZ-rebuffer]     junction
+[DEBUG RSZ-rebuffer]      connect load u1/r5/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 43
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 43
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to modnet 2
+[DEBUG RSZ-rebuffer]      wire
+[DEBUG RSZ-rebuffer]       junction
+[DEBUG RSZ-rebuffer]        junction
+[DEBUG RSZ-rebuffer]         connect load u1/r9/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 67
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 67
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to modnet 2
+[DEBUG RSZ-rebuffer]         wire
+[DEBUG RSZ-rebuffer]          connect load u1/r12/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 19
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 19
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to modnet 2
+[DEBUG RSZ-rebuffer]        wire
+[DEBUG RSZ-rebuffer]         junction
+[DEBUG RSZ-rebuffer]          connect load u1/r6/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 49
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 49
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to modnet 2
+[DEBUG RSZ-rebuffer]          wire
+[DEBUG RSZ-rebuffer]           junction
+[DEBUG RSZ-rebuffer]            connect load u1/r3/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 31
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 31
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to modnet 2
+[DEBUG RSZ-rebuffer]            wire
+[DEBUG RSZ-rebuffer]             connect load u1/u1/A to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 73
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 73
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to modnet 2
+[DEBUG RSZ-journal] journal end
+[DEBUG RSZ-repair_setup] bailing out u1/r3/D no changes after 0 decreasing passes
+[DEBUG RSZ-repair_setup] u1/r4/D slack = -0.351 worst_slack = -0.492
+[DEBUG RSZ-repair_setup] Doing 3 /6
+[DEBUG RSZ-journal] journal begin
+[DEBUG RSZ-repair_setup] r1/Q load_delay = 0.065 intrinsic_delay = 0.289
+[DEBUG RSZ-repair_setup] rebuffer1/Z load_delay = 0.150 intrinsic_delay = 0.034
+[DEBUG RSZ-repair_setup] rebuffer1/Z BUF_X1 fanout = 5 drvr_index = 4
+[DEBUG RSZ-repair_setup] resize rebuffer1/Z BUF_X1 -> BUF_X2
+[DEBUG RSZ-journal] journal replace rebuffer1 (BUF_X1)
+[DEBUG ODB-DB_ECO] ECO: swapMaster
+[DEBUG RSZ-repair_setup] pass 1 slack = -0.280 worst_slack = -0.494 
+[DEBUG RSZ-repair_setup] r1/Q load_delay = 0.071 intrinsic_delay = 0.289
+[DEBUG RSZ-repair_setup] rebuffer1/Z load_delay = 0.096 intrinsic_delay = 0.033
+[DEBUG RSZ-repair_setup] rebuffer1/Z BUF_X2 fanout = 5 drvr_index = 4
+[DEBUG RSZ-repair_setup] resize rebuffer1/Z BUF_X2 -> BUF_X4
+[DEBUG RSZ-journal] journal replace rebuffer1 (BUF_X2)
+[DEBUG ODB-DB_ECO] ECO: swapMaster
+[DEBUG RSZ-repair_setup] pass 2 slack = -0.255 worst_slack = -0.499 
+[DEBUG RSZ-repair_setup] r1/Q load_delay = 0.083 intrinsic_delay = 0.289
+[DEBUG RSZ-repair_setup] rebuffer1/Z load_delay = 0.072 intrinsic_delay = 0.032
+[DEBUG RSZ-repair_setup] r1/Q DFF_X1 fanout = 7 drvr_index = 2
+[DEBUG RSZ-make_buffered_net]  load rebuffer1/A (3.25, 6.83) cap 3.446 req INF
+[DEBUG RSZ-make_buffered_net]   load u1/r5/D (4.12, 4.99) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]    load u1/r9/D (4.12, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r12/D (4.12, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r6/D (7.35, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]      load u1/r3/D (7.35, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]       load u1/u1/A (10.40, 0.61) cap 1.811 req INF
+[DEBUG RSZ-rebuffer] driver r1/Q
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.323 -> buffer (7.35, 0.61) BUF_X1 cap 0.935 req -0.323 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.313 -> buffer (7.35, 0.61) BUF_X2 cap 1.704 req -0.313 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.307 -> buffer (7.35, 0.61) BUF_X4 cap 3.252 req -0.307 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.306 -> buffer (7.35, 0.61) BUF_X8 cap 6.360 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.305 -> buffer (7.35, 0.61) BUF_X16 cap 12.271 req -0.305 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.305 -> buffer (7.35, 0.61) BUF_X32 cap 25.711 req -0.305 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.329 -> buffer (7.35, 2.19) BUF_X1 cap 0.935 req -0.329 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.316 -> buffer (7.35, 2.19) BUF_X2 cap 1.704 req -0.316 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.308 -> buffer (7.35, 2.19) BUF_X4 cap 3.252 req -0.308 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.306 -> buffer (7.35, 2.19) BUF_X8 cap 6.360 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.306 -> buffer (7.35, 2.19) BUF_X16 cap 12.271 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.305 -> buffer (7.35, 2.19) BUF_X32 cap 25.711 req -0.305 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.334 -> buffer (4.12, 2.19) BUF_X1 cap 0.935 req -0.334 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.320 -> buffer (4.12, 2.19) BUF_X2 cap 1.704 req -0.320 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.310 -> buffer (4.12, 2.19) BUF_X4 cap 3.252 req -0.310 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.307 -> buffer (4.12, 2.19) BUF_X8 cap 6.360 req -0.307 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.306 -> buffer (4.12, 2.19) BUF_X16 cap 12.271 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.305 -> buffer (4.12, 2.19) BUF_X32 cap 25.711 req -0.305 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.343 -> buffer (4.12, 4.99) BUF_X1 cap 0.935 req -0.343 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.325 -> buffer (4.12, 4.99) BUF_X2 cap 1.704 req -0.325 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.314 -> buffer (4.12, 4.99) BUF_X4 cap 3.252 req -0.314 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.309 -> buffer (4.12, 4.99) BUF_X8 cap 6.360 req -0.309 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.307 -> buffer (4.12, 4.99) BUF_X16 cap 12.271 req -0.307 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.306 -> buffer (4.12, 4.99) BUF_X32 cap 25.711 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.347 -> buffer (3.25, 6.83) BUF_X1 cap 0.935 req -0.347 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.327 -> buffer (3.25, 6.83) BUF_X2 cap 1.704 req -0.327 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.315 -> buffer (3.25, 6.83) BUF_X4 cap 3.252 req -0.315 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.310 -> buffer (3.25, 6.83) BUF_X8 cap 6.360 req -0.310 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.308 -> buffer (3.25, 6.83) BUF_X16 cap 12.271 req -0.308 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.306 -> buffer (3.25, 6.83) BUF_X32 cap 25.711 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 11.699 req -0.357 -> buffer (3.13, 7.70) BUF_X1 cap 0.935 req -0.357 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 11.699 req -0.333 -> buffer (3.13, 7.70) BUF_X2 cap 1.704 req -0.333 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 11.699 req -0.319 -> buffer (3.13, 7.70) BUF_X4 cap 3.252 req -0.319 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 11.699 req -0.312 -> buffer (3.13, 7.70) BUF_X8 cap 6.360 req -0.312 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 11.699 req -0.309 -> buffer (3.13, 7.70) BUF_X16 cap 12.271 req -0.309 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 11.699 req -0.306 -> buffer (3.13, 7.70) BUF_X32 cap 25.711 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer] option   1:  0 buffers req -0.230 - 0.312 = -0.542 * 0.00 = -0.542 cap 11.699
+[DEBUG RSZ-rebuffer] option   2:  1 buffers req -0.315 - 0.297 = -0.612 * 0.01 = -0.618 cap 6.578
+[DEBUG RSZ-rebuffer] option   3:  1 buffers req -0.327 - 0.292 = -0.619 * 0.01 = -0.625 cap 5.030
+[DEBUG RSZ-rebuffer] option   4:  1 buffers req -0.347 - 0.289 = -0.636 * 0.01 = -0.642 cap 4.261
+[DEBUG RSZ-rebuffer] option   5:  1 buffers req -0.357 - 0.274 = -0.630 * 0.01 = -0.637 cap 0.935
+[DEBUG RSZ-rebuffer] option   6:  1 buffers req -0.333 - 0.278 = -0.611 * 0.01 = -0.617 cap 1.704
+[DEBUG RSZ-rebuffer] option   7:  1 buffers req -0.319 - 0.285 = -0.604 * 0.01 = -0.610 cap 3.252
+[DEBUG RSZ-rebuffer] option   8:  1 buffers req -0.312 - 0.296 = -0.609 * 0.01 = -0.615 cap 6.360
+[DEBUG RSZ-rebuffer] option   9:  1 buffers req -0.309 - 0.314 = -0.623 * 0.01 = -0.629 cap 12.271
+[DEBUG RSZ-rebuffer] option  10:  1 buffers req -0.306 - 0.349 = -0.656 * 0.01 = -0.662 cap 25.711
+[DEBUG RSZ-rebuffer] best option 1
+[DEBUG RSZ-rebuffer]  wire
+[DEBUG RSZ-rebuffer]   junction
+[DEBUG RSZ-rebuffer]    wire
+[DEBUG RSZ-rebuffer]     junction
+[DEBUG RSZ-rebuffer]      connect load u1/r5/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 43
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 43
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to modnet 2
+[DEBUG RSZ-rebuffer]      wire
+[DEBUG RSZ-rebuffer]       junction
+[DEBUG RSZ-rebuffer]        junction
+[DEBUG RSZ-rebuffer]         connect load u1/r9/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 67
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 67
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to modnet 2
+[DEBUG RSZ-rebuffer]         wire
+[DEBUG RSZ-rebuffer]          connect load u1/r12/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 19
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 19
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to modnet 2
+[DEBUG RSZ-rebuffer]        wire
+[DEBUG RSZ-rebuffer]         junction
+[DEBUG RSZ-rebuffer]          connect load u1/r6/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 49
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 49
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to modnet 2
+[DEBUG RSZ-rebuffer]          wire
+[DEBUG RSZ-rebuffer]           junction
+[DEBUG RSZ-rebuffer]            connect load u1/r3/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 31
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 31
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to modnet 2
+[DEBUG RSZ-rebuffer]            wire
+[DEBUG RSZ-rebuffer]             connect load u1/u1/A to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 73
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 73
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to modnet 2
+[DEBUG RSZ-repair_setup] rebuffer1/Z BUF_X4 fanout = 5 drvr_index = 4
+[DEBUG RSZ-make_buffered_net]  load u1/r4/D (0.89, 6.22) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]   load u1/r7/D (0.89, 4.99) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]    load u1/r8/D (0.89, 3.41) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r11/D (0.89, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]      load u1/r10/D (0.89, 0.61) cap 1.158 req INF
+[DEBUG RSZ-rebuffer] driver rebuffer1/Z
+[DEBUG RSZ-rebuffer]    buffer cap 4.857 req 0.106 -> buffer (0.89, 6.22) BUF_X1 cap 0.935 req 0.106 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 4.857 req 0.129 -> buffer (0.89, 6.22) BUF_X2 cap 1.704 req 0.129 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 4.857 req 0.142 -> buffer (0.89, 6.22) BUF_X4 cap 3.252 req 0.142 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 4.857 req 0.147 -> buffer (0.89, 6.22) BUF_X8 cap 6.360 req 0.147 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 4.857 req 0.150 -> buffer (0.89, 6.22) BUF_X16 cap 12.271 req 0.150 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 4.857 req 0.151 -> buffer (0.89, 6.22) BUF_X32 cap 25.711 req 0.151 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 6.249 req 0.094 -> buffer (3.97, 6.89) BUF_X1 cap 0.935 req 0.094 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 6.249 req 0.123 -> buffer (3.97, 6.89) BUF_X2 cap 1.704 req 0.123 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 6.249 req 0.139 -> buffer (3.97, 6.89) BUF_X4 cap 3.252 req 0.139 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 6.249 req 0.146 -> buffer (3.97, 6.89) BUF_X8 cap 6.360 req 0.146 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 6.249 req 0.149 -> buffer (3.97, 6.89) BUF_X16 cap 12.271 req 0.149 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 6.249 req 0.151 -> buffer (3.97, 6.89) BUF_X32 cap 25.711 req 0.151 buffers 1
+[DEBUG RSZ-rebuffer] option   1:  0 buffers req 0.220 - 0.081 = 0.139 * 0.00 = 0.139 cap 6.249
+[DEBUG RSZ-rebuffer] option   2:  1 buffers req 0.142 - 0.078 = 0.065 * 0.01 = 0.064 cap 4.644
+[DEBUG RSZ-rebuffer] option   3:  1 buffers req 0.129 - 0.074 = 0.055 * 0.01 = 0.054 cap 3.096
+[DEBUG RSZ-rebuffer] option   4:  1 buffers req 0.106 - 0.072 = 0.034 * 0.01 = 0.033 cap 2.326
+[DEBUG RSZ-rebuffer] option   5:  1 buffers req 0.094 - 0.069 = 0.025 * 0.01 = 0.025 cap 0.935
+[DEBUG RSZ-rebuffer] option   6:  1 buffers req 0.123 - 0.071 = 0.052 * 0.01 = 0.052 cap 1.704
+[DEBUG RSZ-rebuffer] option   7:  1 buffers req 0.139 - 0.074 = 0.065 * 0.01 = 0.064 cap 3.252
+[DEBUG RSZ-rebuffer] option   8:  1 buffers req 0.146 - 0.082 = 0.064 * 0.01 = 0.063 cap 6.360
+[DEBUG RSZ-rebuffer] option   9:  1 buffers req 0.149 - 0.095 = 0.054 * 0.01 = 0.054 cap 12.271
+[DEBUG RSZ-rebuffer] option  10:  1 buffers req 0.151 - 0.123 = 0.028 * 0.01 = 0.027 cap 25.711
+[DEBUG RSZ-rebuffer] best option 1
+[DEBUG RSZ-rebuffer]  wire
+[DEBUG RSZ-rebuffer]   junction
+[DEBUG RSZ-rebuffer]    connect load u1/r4/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 37
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 37
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 37 to net 8
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 37 to modnet 2
+[DEBUG RSZ-rebuffer]    wire
+[DEBUG RSZ-rebuffer]     junction
+[DEBUG RSZ-rebuffer]      connect load u1/r7/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 55
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 55
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 55 to net 8
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 55 to modnet 2
+[DEBUG RSZ-rebuffer]      wire
+[DEBUG RSZ-rebuffer]       junction
+[DEBUG RSZ-rebuffer]        connect load u1/r8/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 61
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 61
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 61 to net 8
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 61 to modnet 2
+[DEBUG RSZ-rebuffer]        wire
+[DEBUG RSZ-rebuffer]         junction
+[DEBUG RSZ-rebuffer]          connect load u1/r11/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 13
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 13
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 13 to net 8
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 13 to modnet 2
+[DEBUG RSZ-rebuffer]          wire
+[DEBUG RSZ-rebuffer]           connect load u1/r10/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 7
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 7
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 7 to net 8
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 7 to modnet 2
+[DEBUG RSZ-repair_setup] No change after 2 decreasing slack passes.
+[DEBUG RSZ-repair_setup] Restoring best slack end slack -0.351 worst slack -0.492
+[DEBUG RSZ-journal] journal restore starts >>>
+[DEBUG RSZ-journal] Undid 1 sizing 0 buffering 0 cloning 0 swaps 0 buf removal
+[DEBUG RSZ-journal] journal restore ends <<<
+[DEBUG RSZ-repair_setup] bailing out u1/r4/D no changes after 2 decreasing passes
+[DEBUG RSZ-repair_setup] u1/r5/D slack = -0.154 worst_slack = -0.492
+[DEBUG RSZ-repair_setup] Doing 4 /6
+[DEBUG RSZ-journal] journal begin
+[DEBUG RSZ-repair_setup] r1/Q load_delay = 0.065 intrinsic_delay = 0.289
+[DEBUG RSZ-repair_setup] r1/Q DFF_X1 fanout = 7 drvr_index = 2
+[DEBUG RSZ-make_buffered_net]  load rebuffer1/A (3.26, 6.83) cap 0.983 req INF
+[DEBUG RSZ-make_buffered_net]   load u1/r5/D (4.12, 4.99) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]    load u1/r9/D (4.12, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r12/D (4.12, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r6/D (7.35, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]      load u1/r3/D (7.35, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]       load u1/u1/A (10.40, 0.61) cap 1.811 req INF
+[DEBUG RSZ-rebuffer] driver r1/Q
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.321 -> buffer (7.35, 0.61) BUF_X1 cap 0.935 req -0.321 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.311 -> buffer (7.35, 0.61) BUF_X2 cap 1.704 req -0.311 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.305 -> buffer (7.35, 0.61) BUF_X4 cap 3.252 req -0.305 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.304 -> buffer (7.35, 0.61) BUF_X8 cap 6.360 req -0.304 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.303 -> buffer (7.35, 0.61) BUF_X16 cap 12.271 req -0.303 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.303 -> buffer (7.35, 0.61) BUF_X32 cap 25.711 req -0.303 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.327 -> buffer (7.35, 2.19) BUF_X1 cap 0.935 req -0.327 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.314 -> buffer (7.35, 2.19) BUF_X2 cap 1.704 req -0.314 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.306 -> buffer (7.35, 2.19) BUF_X4 cap 3.252 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.304 -> buffer (7.35, 2.19) BUF_X8 cap 6.360 req -0.304 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.304 -> buffer (7.35, 2.19) BUF_X16 cap 12.271 req -0.304 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.303 -> buffer (7.35, 2.19) BUF_X32 cap 25.711 req -0.303 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.332 -> buffer (4.12, 2.19) BUF_X1 cap 0.935 req -0.332 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.318 -> buffer (4.12, 2.19) BUF_X2 cap 1.704 req -0.318 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.308 -> buffer (4.12, 2.19) BUF_X4 cap 3.252 req -0.308 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.305 -> buffer (4.12, 2.19) BUF_X8 cap 6.360 req -0.305 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.304 -> buffer (4.12, 2.19) BUF_X16 cap 12.271 req -0.304 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.303 -> buffer (4.12, 2.19) BUF_X32 cap 25.711 req -0.303 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.341 -> buffer (4.12, 4.99) BUF_X1 cap 0.935 req -0.341 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.323 -> buffer (4.12, 4.99) BUF_X2 cap 1.704 req -0.323 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.312 -> buffer (4.12, 4.99) BUF_X4 cap 3.252 req -0.312 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.307 -> buffer (4.12, 4.99) BUF_X8 cap 6.360 req -0.307 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.305 -> buffer (4.12, 4.99) BUF_X16 cap 12.271 req -0.305 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.303 -> buffer (4.12, 4.99) BUF_X32 cap 25.711 req -0.303 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.345 -> buffer (3.26, 6.83) BUF_X1 cap 0.935 req -0.345 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.325 -> buffer (3.26, 6.83) BUF_X2 cap 1.704 req -0.325 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.313 -> buffer (3.26, 6.83) BUF_X4 cap 3.252 req -0.313 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.308 -> buffer (3.26, 6.83) BUF_X8 cap 6.360 req -0.308 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.306 -> buffer (3.26, 6.83) BUF_X16 cap 12.271 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.304 -> buffer (3.26, 6.83) BUF_X32 cap 25.711 req -0.304 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.348 -> buffer (3.13, 7.70) BUF_X1 cap 0.935 req -0.348 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.327 -> buffer (3.13, 7.70) BUF_X2 cap 1.704 req -0.327 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.314 -> buffer (3.13, 7.70) BUF_X4 cap 3.252 req -0.314 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.309 -> buffer (3.13, 7.70) BUF_X8 cap 6.360 req -0.309 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.306 -> buffer (3.13, 7.70) BUF_X16 cap 12.271 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.304 -> buffer (3.13, 7.70) BUF_X32 cap 25.711 req -0.304 buffers 1
+[DEBUG RSZ-rebuffer] option   1:  0 buffers req -0.228 - 0.306 = -0.533 * 0.00 = -0.533 cap 9.382
+[DEBUG RSZ-rebuffer] option   2:  1 buffers req -0.313 - 0.289 = -0.602 * 0.01 = -0.608 cap 4.262
+[DEBUG RSZ-rebuffer] option   3:  1 buffers req -0.325 - 0.283 = -0.608 * 0.01 = -0.614 cap 2.714
+[DEBUG RSZ-rebuffer] option   4:  1 buffers req -0.345 - 0.279 = -0.624 * 0.01 = -0.631 cap 1.944
+[DEBUG RSZ-rebuffer] option   5:  1 buffers req -0.348 - 0.274 = -0.622 * 0.01 = -0.628 cap 0.935
+[DEBUG RSZ-rebuffer] option   6:  1 buffers req -0.327 - 0.278 = -0.605 * 0.01 = -0.611 cap 1.704
+[DEBUG RSZ-rebuffer] option   7:  1 buffers req -0.314 - 0.285 = -0.599 * 0.01 = -0.605 cap 3.252
+[DEBUG RSZ-rebuffer] option   8:  1 buffers req -0.309 - 0.296 = -0.605 * 0.01 = -0.611 cap 6.360
+[DEBUG RSZ-rebuffer] option   9:  1 buffers req -0.306 - 0.314 = -0.620 * 0.01 = -0.626 cap 12.271
+[DEBUG RSZ-rebuffer] option  10:  1 buffers req -0.304 - 0.349 = -0.653 * 0.01 = -0.660 cap 25.711
+[DEBUG RSZ-rebuffer] best option 1
+[DEBUG RSZ-rebuffer]  wire
+[DEBUG RSZ-rebuffer]   junction
+[DEBUG RSZ-rebuffer]    wire
+[DEBUG RSZ-rebuffer]     junction
+[DEBUG RSZ-rebuffer]      connect load u1/r5/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 43
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 43
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to modnet 2
+[DEBUG RSZ-rebuffer]      wire
+[DEBUG RSZ-rebuffer]       junction
+[DEBUG RSZ-rebuffer]        junction
+[DEBUG RSZ-rebuffer]         connect load u1/r9/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 67
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 67
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to modnet 2
+[DEBUG RSZ-rebuffer]         wire
+[DEBUG RSZ-rebuffer]          connect load u1/r12/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 19
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 19
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to modnet 2
+[DEBUG RSZ-rebuffer]        wire
+[DEBUG RSZ-rebuffer]         junction
+[DEBUG RSZ-rebuffer]          connect load u1/r6/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 49
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 49
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to modnet 2
+[DEBUG RSZ-rebuffer]          wire
+[DEBUG RSZ-rebuffer]           junction
+[DEBUG RSZ-rebuffer]            connect load u1/r3/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 31
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 31
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to modnet 2
+[DEBUG RSZ-rebuffer]            wire
+[DEBUG RSZ-rebuffer]             connect load u1/u1/A to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 73
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 73
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to modnet 2
+[DEBUG RSZ-journal] journal end
+[DEBUG RSZ-repair_setup] bailing out u1/r5/D no changes after 0 decreasing passes
+[DEBUG RSZ-repair_setup] u1/r6/D slack = -0.154 worst_slack = -0.492
+[DEBUG RSZ-repair_setup] Doing 5 /6
+[DEBUG RSZ-journal] journal begin
+[DEBUG RSZ-repair_setup] r1/Q load_delay = 0.065 intrinsic_delay = 0.289
+[DEBUG RSZ-repair_setup] r1/Q DFF_X1 fanout = 7 drvr_index = 2
+[DEBUG RSZ-make_buffered_net]  load rebuffer1/A (3.26, 6.83) cap 0.983 req INF
+[DEBUG RSZ-make_buffered_net]   load u1/r5/D (4.12, 4.99) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]    load u1/r9/D (4.12, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r12/D (4.12, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r6/D (7.35, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]      load u1/r3/D (7.35, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]       load u1/u1/A (10.40, 0.61) cap 1.811 req INF
+[DEBUG RSZ-rebuffer] driver r1/Q
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.321 -> buffer (7.35, 0.61) BUF_X1 cap 0.935 req -0.321 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.311 -> buffer (7.35, 0.61) BUF_X2 cap 1.704 req -0.311 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.305 -> buffer (7.35, 0.61) BUF_X4 cap 3.252 req -0.305 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.304 -> buffer (7.35, 0.61) BUF_X8 cap 6.360 req -0.304 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.303 -> buffer (7.35, 0.61) BUF_X16 cap 12.271 req -0.303 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.303 -> buffer (7.35, 0.61) BUF_X32 cap 25.711 req -0.303 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.327 -> buffer (7.35, 2.19) BUF_X1 cap 0.935 req -0.327 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.314 -> buffer (7.35, 2.19) BUF_X2 cap 1.704 req -0.314 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.306 -> buffer (7.35, 2.19) BUF_X4 cap 3.252 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.304 -> buffer (7.35, 2.19) BUF_X8 cap 6.360 req -0.304 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.304 -> buffer (7.35, 2.19) BUF_X16 cap 12.271 req -0.304 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.303 -> buffer (7.35, 2.19) BUF_X32 cap 25.711 req -0.303 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.332 -> buffer (4.12, 2.19) BUF_X1 cap 0.935 req -0.332 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.318 -> buffer (4.12, 2.19) BUF_X2 cap 1.704 req -0.318 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.308 -> buffer (4.12, 2.19) BUF_X4 cap 3.252 req -0.308 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.305 -> buffer (4.12, 2.19) BUF_X8 cap 6.360 req -0.305 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.304 -> buffer (4.12, 2.19) BUF_X16 cap 12.271 req -0.304 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.303 -> buffer (4.12, 2.19) BUF_X32 cap 25.711 req -0.303 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.341 -> buffer (4.12, 4.99) BUF_X1 cap 0.935 req -0.341 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.323 -> buffer (4.12, 4.99) BUF_X2 cap 1.704 req -0.323 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.312 -> buffer (4.12, 4.99) BUF_X4 cap 3.252 req -0.312 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.307 -> buffer (4.12, 4.99) BUF_X8 cap 6.360 req -0.307 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.305 -> buffer (4.12, 4.99) BUF_X16 cap 12.271 req -0.305 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.303 -> buffer (4.12, 4.99) BUF_X32 cap 25.711 req -0.303 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.345 -> buffer (3.26, 6.83) BUF_X1 cap 0.935 req -0.345 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.325 -> buffer (3.26, 6.83) BUF_X2 cap 1.704 req -0.325 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.313 -> buffer (3.26, 6.83) BUF_X4 cap 3.252 req -0.313 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.308 -> buffer (3.26, 6.83) BUF_X8 cap 6.360 req -0.308 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.306 -> buffer (3.26, 6.83) BUF_X16 cap 12.271 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.304 -> buffer (3.26, 6.83) BUF_X32 cap 25.711 req -0.304 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.348 -> buffer (3.13, 7.70) BUF_X1 cap 0.935 req -0.348 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.327 -> buffer (3.13, 7.70) BUF_X2 cap 1.704 req -0.327 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.314 -> buffer (3.13, 7.70) BUF_X4 cap 3.252 req -0.314 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.309 -> buffer (3.13, 7.70) BUF_X8 cap 6.360 req -0.309 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.306 -> buffer (3.13, 7.70) BUF_X16 cap 12.271 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 9.382 req -0.304 -> buffer (3.13, 7.70) BUF_X32 cap 25.711 req -0.304 buffers 1
+[DEBUG RSZ-rebuffer] option   1:  0 buffers req -0.228 - 0.306 = -0.533 * 0.00 = -0.533 cap 9.382
+[DEBUG RSZ-rebuffer] option   2:  1 buffers req -0.313 - 0.289 = -0.602 * 0.01 = -0.608 cap 4.262
+[DEBUG RSZ-rebuffer] option   3:  1 buffers req -0.325 - 0.283 = -0.608 * 0.01 = -0.614 cap 2.714
+[DEBUG RSZ-rebuffer] option   4:  1 buffers req -0.345 - 0.279 = -0.624 * 0.01 = -0.631 cap 1.944
+[DEBUG RSZ-rebuffer] option   5:  1 buffers req -0.348 - 0.274 = -0.622 * 0.01 = -0.628 cap 0.935
+[DEBUG RSZ-rebuffer] option   6:  1 buffers req -0.327 - 0.278 = -0.605 * 0.01 = -0.611 cap 1.704
+[DEBUG RSZ-rebuffer] option   7:  1 buffers req -0.314 - 0.285 = -0.599 * 0.01 = -0.605 cap 3.252
+[DEBUG RSZ-rebuffer] option   8:  1 buffers req -0.309 - 0.296 = -0.605 * 0.01 = -0.611 cap 6.360
+[DEBUG RSZ-rebuffer] option   9:  1 buffers req -0.306 - 0.314 = -0.620 * 0.01 = -0.626 cap 12.271
+[DEBUG RSZ-rebuffer] option  10:  1 buffers req -0.304 - 0.349 = -0.653 * 0.01 = -0.660 cap 25.711
+[DEBUG RSZ-rebuffer] best option 1
+[DEBUG RSZ-rebuffer]  wire
+[DEBUG RSZ-rebuffer]   junction
+[DEBUG RSZ-rebuffer]    wire
+[DEBUG RSZ-rebuffer]     junction
+[DEBUG RSZ-rebuffer]      connect load u1/r5/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 43
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 43
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to modnet 2
+[DEBUG RSZ-rebuffer]      wire
+[DEBUG RSZ-rebuffer]       junction
+[DEBUG RSZ-rebuffer]        junction
+[DEBUG RSZ-rebuffer]         connect load u1/r9/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 67
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 67
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to modnet 2
+[DEBUG RSZ-rebuffer]         wire
+[DEBUG RSZ-rebuffer]          connect load u1/r12/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 19
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 19
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to modnet 2
+[DEBUG RSZ-rebuffer]        wire
+[DEBUG RSZ-rebuffer]         junction
+[DEBUG RSZ-rebuffer]          connect load u1/r6/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 49
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 49
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to modnet 2
+[DEBUG RSZ-rebuffer]          wire
+[DEBUG RSZ-rebuffer]           junction
+[DEBUG RSZ-rebuffer]            connect load u1/r3/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 31
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 31
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to modnet 2
+[DEBUG RSZ-rebuffer]            wire
+[DEBUG RSZ-rebuffer]             connect load u1/u1/A to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 73
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 73
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to modnet 2
+[DEBUG RSZ-journal] journal end
+[DEBUG RSZ-repair_setup] bailing out u1/r6/D no changes after 0 decreasing passes
+[DEBUG RSZ-repair_setup] u1/r7/D slack = -0.351 worst_slack = -0.492
+[DEBUG RSZ-repair_setup] Doing 6 /6
+[DEBUG RSZ-journal] journal begin
+[DEBUG RSZ-repair_setup] r1/Q load_delay = 0.065 intrinsic_delay = 0.289
+[DEBUG RSZ-repair_setup] rebuffer1/Z load_delay = 0.150 intrinsic_delay = 0.034
+[DEBUG RSZ-repair_setup] rebuffer1/Z BUF_X1 fanout = 5 drvr_index = 4
+[DEBUG RSZ-repair_setup] resize rebuffer1/Z BUF_X1 -> BUF_X2
+[DEBUG RSZ-journal] journal replace rebuffer1 (BUF_X1)
+[DEBUG ODB-DB_ECO] ECO: swapMaster
+[DEBUG RSZ-repair_setup] pass 1 slack = -0.280 worst_slack = -0.494 
+[DEBUG RSZ-repair_setup] r1/Q load_delay = 0.071 intrinsic_delay = 0.289
+[DEBUG RSZ-repair_setup] rebuffer1/Z load_delay = 0.096 intrinsic_delay = 0.033
+[DEBUG RSZ-repair_setup] rebuffer1/Z BUF_X2 fanout = 5 drvr_index = 4
+[DEBUG RSZ-repair_setup] resize rebuffer1/Z BUF_X2 -> BUF_X4
+[DEBUG RSZ-journal] journal replace rebuffer1 (BUF_X2)
+[DEBUG ODB-DB_ECO] ECO: swapMaster
+[DEBUG RSZ-repair_setup] pass 2 slack = -0.255 worst_slack = -0.499 
+[DEBUG RSZ-repair_setup] r1/Q load_delay = 0.083 intrinsic_delay = 0.289
+[DEBUG RSZ-repair_setup] rebuffer1/Z load_delay = 0.072 intrinsic_delay = 0.032
+[DEBUG RSZ-repair_setup] r1/Q DFF_X1 fanout = 7 drvr_index = 2
+[DEBUG RSZ-make_buffered_net]  load rebuffer1/A (3.25, 6.83) cap 3.446 req INF
+[DEBUG RSZ-make_buffered_net]   load u1/r5/D (4.12, 4.99) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]    load u1/r9/D (4.12, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r12/D (4.12, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r6/D (7.35, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]      load u1/r3/D (7.35, 0.61) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]       load u1/u1/A (10.40, 0.61) cap 1.811 req INF
+[DEBUG RSZ-rebuffer] driver r1/Q
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.323 -> buffer (7.35, 0.61) BUF_X1 cap 0.935 req -0.323 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.313 -> buffer (7.35, 0.61) BUF_X2 cap 1.704 req -0.313 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.307 -> buffer (7.35, 0.61) BUF_X4 cap 3.252 req -0.307 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.306 -> buffer (7.35, 0.61) BUF_X8 cap 6.360 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.305 -> buffer (7.35, 0.61) BUF_X16 cap 12.271 req -0.305 buffers 1
+[DEBUG RSZ-rebuffer]            buffer cap 1.934 req -0.305 -> buffer (7.35, 0.61) BUF_X32 cap 25.711 req -0.305 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.329 -> buffer (7.35, 2.19) BUF_X1 cap 0.935 req -0.329 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.316 -> buffer (7.35, 2.19) BUF_X2 cap 1.704 req -0.316 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.308 -> buffer (7.35, 2.19) BUF_X4 cap 3.252 req -0.308 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.306 -> buffer (7.35, 2.19) BUF_X8 cap 6.360 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.306 -> buffer (7.35, 2.19) BUF_X16 cap 12.271 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]          buffer cap 3.161 req -0.305 -> buffer (7.35, 2.19) BUF_X32 cap 25.711 req -0.305 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.334 -> buffer (4.12, 2.19) BUF_X1 cap 0.935 req -0.334 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.320 -> buffer (4.12, 2.19) BUF_X2 cap 1.704 req -0.320 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.310 -> buffer (4.12, 2.19) BUF_X4 cap 3.252 req -0.310 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.307 -> buffer (4.12, 2.19) BUF_X8 cap 6.360 req -0.307 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.306 -> buffer (4.12, 2.19) BUF_X16 cap 12.271 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]        buffer cap 4.513 req -0.305 -> buffer (4.12, 2.19) BUF_X32 cap 25.711 req -0.305 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.343 -> buffer (4.12, 4.99) BUF_X1 cap 0.935 req -0.343 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.325 -> buffer (4.12, 4.99) BUF_X2 cap 1.704 req -0.325 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.314 -> buffer (4.12, 4.99) BUF_X4 cap 3.252 req -0.314 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.309 -> buffer (4.12, 4.99) BUF_X8 cap 6.360 req -0.309 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.307 -> buffer (4.12, 4.99) BUF_X16 cap 12.271 req -0.307 buffers 1
+[DEBUG RSZ-rebuffer]      buffer cap 7.059 req -0.306 -> buffer (4.12, 4.99) BUF_X32 cap 25.711 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.347 -> buffer (3.25, 6.83) BUF_X1 cap 0.935 req -0.347 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.327 -> buffer (3.25, 6.83) BUF_X2 cap 1.704 req -0.327 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.315 -> buffer (3.25, 6.83) BUF_X4 cap 3.252 req -0.315 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.310 -> buffer (3.25, 6.83) BUF_X8 cap 6.360 req -0.310 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.308 -> buffer (3.25, 6.83) BUF_X16 cap 12.271 req -0.308 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 8.372 req -0.306 -> buffer (3.25, 6.83) BUF_X32 cap 25.711 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 11.699 req -0.357 -> buffer (3.13, 7.70) BUF_X1 cap 0.935 req -0.357 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 11.699 req -0.333 -> buffer (3.13, 7.70) BUF_X2 cap 1.704 req -0.333 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 11.699 req -0.319 -> buffer (3.13, 7.70) BUF_X4 cap 3.252 req -0.319 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 11.699 req -0.312 -> buffer (3.13, 7.70) BUF_X8 cap 6.360 req -0.312 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 11.699 req -0.309 -> buffer (3.13, 7.70) BUF_X16 cap 12.271 req -0.309 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 11.699 req -0.306 -> buffer (3.13, 7.70) BUF_X32 cap 25.711 req -0.306 buffers 1
+[DEBUG RSZ-rebuffer] option   1:  0 buffers req -0.230 - 0.312 = -0.542 * 0.00 = -0.542 cap 11.699
+[DEBUG RSZ-rebuffer] option   2:  1 buffers req -0.315 - 0.297 = -0.612 * 0.01 = -0.618 cap 6.578
+[DEBUG RSZ-rebuffer] option   3:  1 buffers req -0.327 - 0.292 = -0.619 * 0.01 = -0.625 cap 5.030
+[DEBUG RSZ-rebuffer] option   4:  1 buffers req -0.347 - 0.289 = -0.636 * 0.01 = -0.642 cap 4.261
+[DEBUG RSZ-rebuffer] option   5:  1 buffers req -0.357 - 0.274 = -0.630 * 0.01 = -0.637 cap 0.935
+[DEBUG RSZ-rebuffer] option   6:  1 buffers req -0.333 - 0.278 = -0.611 * 0.01 = -0.617 cap 1.704
+[DEBUG RSZ-rebuffer] option   7:  1 buffers req -0.319 - 0.285 = -0.604 * 0.01 = -0.610 cap 3.252
+[DEBUG RSZ-rebuffer] option   8:  1 buffers req -0.312 - 0.296 = -0.609 * 0.01 = -0.615 cap 6.360
+[DEBUG RSZ-rebuffer] option   9:  1 buffers req -0.309 - 0.314 = -0.623 * 0.01 = -0.629 cap 12.271
+[DEBUG RSZ-rebuffer] option  10:  1 buffers req -0.306 - 0.349 = -0.656 * 0.01 = -0.662 cap 25.711
+[DEBUG RSZ-rebuffer] best option 1
+[DEBUG RSZ-rebuffer]  wire
+[DEBUG RSZ-rebuffer]   junction
+[DEBUG RSZ-rebuffer]    wire
+[DEBUG RSZ-rebuffer]     junction
+[DEBUG RSZ-rebuffer]      connect load u1/r5/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 43
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 43
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 43 to modnet 2
+[DEBUG RSZ-rebuffer]      wire
+[DEBUG RSZ-rebuffer]       junction
+[DEBUG RSZ-rebuffer]        junction
+[DEBUG RSZ-rebuffer]         connect load u1/r9/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 67
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 67
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to modnet 2
+[DEBUG RSZ-rebuffer]         wire
+[DEBUG RSZ-rebuffer]          connect load u1/r12/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 19
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 19
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 19 to modnet 2
+[DEBUG RSZ-rebuffer]        wire
+[DEBUG RSZ-rebuffer]         junction
+[DEBUG RSZ-rebuffer]          connect load u1/r6/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 49
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 49
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 49 to modnet 2
+[DEBUG RSZ-rebuffer]          wire
+[DEBUG RSZ-rebuffer]           junction
+[DEBUG RSZ-rebuffer]            connect load u1/r3/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 31
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 31
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 31 to modnet 2
+[DEBUG RSZ-rebuffer]            wire
+[DEBUG RSZ-rebuffer]             connect load u1/u1/A to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 73
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 73
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to net 2
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to modnet 2
+[DEBUG RSZ-repair_setup] rebuffer1/Z BUF_X4 fanout = 5 drvr_index = 4
+[DEBUG RSZ-make_buffered_net]  load u1/r4/D (0.89, 6.22) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]   load u1/r7/D (0.89, 4.99) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]    load u1/r8/D (0.89, 3.41) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]     load u1/r11/D (0.89, 2.19) cap 1.158 req INF
+[DEBUG RSZ-make_buffered_net]      load u1/r10/D (0.89, 0.61) cap 1.158 req INF
+[DEBUG RSZ-rebuffer] driver rebuffer1/Z
+[DEBUG RSZ-rebuffer]    buffer cap 4.857 req 0.106 -> buffer (0.89, 6.22) BUF_X1 cap 0.935 req 0.106 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 4.857 req 0.129 -> buffer (0.89, 6.22) BUF_X2 cap 1.704 req 0.129 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 4.857 req 0.142 -> buffer (0.89, 6.22) BUF_X4 cap 3.252 req 0.142 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 4.857 req 0.147 -> buffer (0.89, 6.22) BUF_X8 cap 6.360 req 0.147 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 4.857 req 0.150 -> buffer (0.89, 6.22) BUF_X16 cap 12.271 req 0.150 buffers 1
+[DEBUG RSZ-rebuffer]    buffer cap 4.857 req 0.151 -> buffer (0.89, 6.22) BUF_X32 cap 25.711 req 0.151 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 6.249 req 0.094 -> buffer (3.97, 6.89) BUF_X1 cap 0.935 req 0.094 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 6.249 req 0.123 -> buffer (3.97, 6.89) BUF_X2 cap 1.704 req 0.123 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 6.249 req 0.139 -> buffer (3.97, 6.89) BUF_X4 cap 3.252 req 0.139 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 6.249 req 0.146 -> buffer (3.97, 6.89) BUF_X8 cap 6.360 req 0.146 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 6.249 req 0.149 -> buffer (3.97, 6.89) BUF_X16 cap 12.271 req 0.149 buffers 1
+[DEBUG RSZ-rebuffer]  buffer cap 6.249 req 0.151 -> buffer (3.97, 6.89) BUF_X32 cap 25.711 req 0.151 buffers 1
+[DEBUG RSZ-rebuffer] option   1:  0 buffers req 0.220 - 0.081 = 0.139 * 0.00 = 0.139 cap 6.249
+[DEBUG RSZ-rebuffer] option   2:  1 buffers req 0.142 - 0.078 = 0.065 * 0.01 = 0.064 cap 4.644
+[DEBUG RSZ-rebuffer] option   3:  1 buffers req 0.129 - 0.074 = 0.055 * 0.01 = 0.054 cap 3.096
+[DEBUG RSZ-rebuffer] option   4:  1 buffers req 0.106 - 0.072 = 0.034 * 0.01 = 0.033 cap 2.326
+[DEBUG RSZ-rebuffer] option   5:  1 buffers req 0.094 - 0.069 = 0.025 * 0.01 = 0.025 cap 0.935
+[DEBUG RSZ-rebuffer] option   6:  1 buffers req 0.123 - 0.071 = 0.052 * 0.01 = 0.052 cap 1.704
+[DEBUG RSZ-rebuffer] option   7:  1 buffers req 0.139 - 0.074 = 0.065 * 0.01 = 0.064 cap 3.252
+[DEBUG RSZ-rebuffer] option   8:  1 buffers req 0.146 - 0.082 = 0.064 * 0.01 = 0.063 cap 6.360
+[DEBUG RSZ-rebuffer] option   9:  1 buffers req 0.149 - 0.095 = 0.054 * 0.01 = 0.054 cap 12.271
+[DEBUG RSZ-rebuffer] option  10:  1 buffers req 0.151 - 0.123 = 0.028 * 0.01 = 0.027 cap 25.711
+[DEBUG RSZ-rebuffer] best option 1
+[DEBUG RSZ-rebuffer]  wire
+[DEBUG RSZ-rebuffer]   junction
+[DEBUG RSZ-rebuffer]    connect load u1/r4/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 37
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 37
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 37 to net 8
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 37 to modnet 2
+[DEBUG RSZ-rebuffer]    wire
+[DEBUG RSZ-rebuffer]     junction
+[DEBUG RSZ-rebuffer]      connect load u1/r7/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 55
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 55
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 55 to net 8
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 55 to modnet 2
+[DEBUG RSZ-rebuffer]      wire
+[DEBUG RSZ-rebuffer]       junction
+[DEBUG RSZ-rebuffer]        connect load u1/r8/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 61
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 61
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 61 to net 8
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 61 to modnet 2
+[DEBUG RSZ-rebuffer]        wire
+[DEBUG RSZ-rebuffer]         junction
+[DEBUG RSZ-rebuffer]          connect load u1/r11/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 13
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 13
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 13 to net 8
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 13 to modnet 2
+[DEBUG RSZ-rebuffer]          wire
+[DEBUG RSZ-rebuffer]           connect load u1/r10/D to r1q
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm 7
+[DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 7
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 7 to net 8
+[DEBUG ODB-DB_ECO] ECO: connect Iterm 7 to modnet 2
+[DEBUG RSZ-repair_setup] No change after 2 decreasing slack passes.
+[DEBUG RSZ-repair_setup] Restoring best slack end slack -0.351 worst slack -0.492
+[DEBUG RSZ-journal] journal restore starts >>>
+[DEBUG RSZ-journal] Undid 1 sizing 0 buffering 0 cloning 0 swaps 0 buf removal
+[DEBUG RSZ-journal] journal restore ends <<<
+[DEBUG RSZ-repair_setup] bailing out u1/r7/D no changes after 2 decreasing passes
+[INFO RSZ-0040] Inserted 1 buffers.
+[INFO RSZ-0041] Resized 11 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+No differences found.

@@ -31,9 +31,11 @@ set_debug_level RSZ "rebuffer" 3
 set_debug_level RSZ "make_buffered_net" 4
 set_debug_level RSZ "rebuffer" 3
 set_debug_level RSZ "journal" 1
+set_debug_level ODB "DB_ECO" 1
 
-repair_timing -setup -skip_last_gasp -skip_pin_swap -skip_gate_cloning -skip_buffer_removal -max_passes 1
+repair_timing -setup -skip_last_gasp -skip_pin_swap -skip_gate_cloning -skip_buffer_removal -max_passes 10
 
-
-write_verilog repair_setup4_after_hier.v
+set verilog_file [make_result_file repair_setup4_hier_out.v]
+write_verilog $verilog_file
+diff_files $verilog_file repair_setup4_hier_out.vok
 
