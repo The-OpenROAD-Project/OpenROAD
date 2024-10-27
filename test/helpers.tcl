@@ -203,18 +203,11 @@ suppress_message ODB 127
 # Finished DEF file
 suppress_message ODB 134
 
-# suppress ppl info messages. The ones defined in tcl can never
-# match between tcl and Python
-suppress_message PPL 41
-suppress_message PPL 48
-suppress_message PPL 67
-suppress_message PPL 60
-
 # suppress tap info messages
 suppress_message TAP 100
 suppress_message TAP 101
 
-# suppress par messages with files' names
+# suppress par messages with filenames
 suppress_message PAR 6
 suppress_message PAR 38
 
