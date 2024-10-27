@@ -2814,6 +2814,70 @@ dbModule* dbNetwork::findHighestCommonModule(std::vector<dbModule*>& itree1,
   return common_module;  // default to top
 }
 
+class PinModuleConnection : public PinVisitor
+{
+ public:
+  PinModuleConnection(const dbNetwork* nwk,
+                      const Pin* drvr_pin,
+                      const dbModule* target_module_);
+  virtual void operator()(const Pin* pin);
+
+ protected:
+  const dbNetwork* db_network_;
+  const Pin* drvr_pin_;
+  const dbModule* target_module_;
+  dbModBTerm* dest_modbterm_;
+  friend class dbNetwork;
+};
+
+PinModuleConnection::PinModuleConnection(const dbNetwork* nwk,
+                                         const Pin* drvr_pin,
+                                         const dbModule* target_module)
+{
+  db_network_ = nwk;
+  drvr_pin_ = drvr_pin;
+  target_module_ = target_module;
+  dest_modbterm_ = nullptr;
+}
+
+void PinModuleConnection::operator()(const Pin* pin)
+{
+  dbITerm* iterm;
+  dbBTerm* bterm;
+  dbModBTerm* modbterm;
+  dbModITerm* moditerm;
+  db_network_->staToDb(pin, iterm, bterm, moditerm, modbterm);
+  (void) (iterm);
+  (void) (bterm);
+  (void) (modbterm);
+  if (moditerm) {
+    std::string port_name_str = moditerm->getName();
+    size_t last_idx = port_name_str.find_last_of('/');
+    if (last_idx != string::npos) {
+      port_name_str = port_name_str.substr(last_idx + 1);
+    }
+    const char* port_name = port_name_str.c_str();
+    dbModInst* mod_inst = moditerm->getParent();
+    dbModule* module = mod_inst->getMaster();
+    if (module == target_module_) {
+      dest_modbterm_ = module->findModBTerm(port_name);
+    }
+  }
+}
+
+bool dbNetwork::ConnectionToModuleExists(dbITerm* source_pin,
+                                         dbModule* dest_module,
+                                         dbModBTerm*& dest_modbterm)
+{
+  PinModuleConnection visitor(this, dbToSta(source_pin), dest_module);
+  network_->visitConnectedPins(dbToSta(source_pin), visitor);
+  if (visitor.dest_modbterm_ != nullptr) {
+    dest_modbterm = visitor.dest_modbterm_;
+    return true;
+  }
+  return false;
+}
+
 /*
 Connect any two leaf instance pins anywhere in hierarchy
 adding pins/nets/ports on the hierarchical objects
@@ -2837,6 +2901,16 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
     }
     dest_pin->connect(source_db_mod_net);
   } else {
+    // Attempt to factor connection (minimize punch through)
+    dbModBTerm* dest_modbterm;
+    if (ConnectionToModuleExists(source_pin, dest_db_module, dest_modbterm)) {
+      dbModNet* dest_mod_net = dest_modbterm->getModNet();
+      if (dest_mod_net) {
+        dest_pin->connect(dest_mod_net);
+        return;
+      }
+    }
+
     // case 2: source/dest in different modules. Find highest
     // common module, traverse up adding pins/nets and make
     // connection in highest common module

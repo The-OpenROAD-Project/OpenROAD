@@ -1563,7 +1563,8 @@ void RepairSetup::splitLoads(const PathRef* drvr_path,
     if (!network_->isTopLevelPort(load_pin)) {
       LibertyPort* load_port = network_->libertyPort(load_pin);
       Instance* load = network_->instance(load_pin);
-
+      (void) (load_port);
+      (void) (load);
       // stash the modnet for the load
       dbNet* db_load_net;
       odb::dbModNet* db_mod_load_net;
@@ -1583,8 +1584,6 @@ void RepairSetup::splitLoads(const PathRef* drvr_path,
       Instance* load_parent = db_network_->getOwningInstanceParent(load_pin);
 
       if (load_parent != parent) {
-        printf("Got split load across hierarchy !\n");
-
         std::string unique_connection_name = resizer_->makeUniqueNetName();
 
         odb::dbITerm* load_pin_iterm;

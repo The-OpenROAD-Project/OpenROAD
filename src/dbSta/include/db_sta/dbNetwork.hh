@@ -183,6 +183,10 @@ class dbNetwork : public ConcreteNetwork
   dbModule* getNetDriverParentModule(Net* net);
   Instance* getOwningInstanceParent(Pin* pin);
 
+  bool ConnectionToModuleExists(dbITerm* source_pin,
+                                dbModule* dest_module,
+                                dbModBTerm*& dest_modbterm);
+
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
                            const char* connection_name);
