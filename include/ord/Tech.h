@@ -41,7 +41,7 @@
 namespace odb {
 class dbDatabase;
 class dbTech;
-}
+}  // namespace odb
 
 namespace sta {
 class dbSta;
