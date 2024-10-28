@@ -32,6 +32,7 @@
 
 #include "rcx/ext_options.h"
 #include "rcx/extRCap.h"
+#include "rcx/extModelGen.h"
 #include "rcx/extSpef.h"
 #include "utl/Logger.h"
 
@@ -40,6 +41,7 @@ namespace rcx {
 using utl::RCX;
 
 using namespace odb;
+class extModelGen;
 
 void extCompute(CoupleOptions& inputTable, void* extModel);
 void extCompute1(CoupleOptions& inputTable, void* extModel);
@@ -48,49 +50,42 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
 {
   if (!_lefRC && !modelExists(extRules))
     return;
-  /* DELETE
-    _diagFlow = true;
-    _couplingFlag = ccFlag;
-    _coupleThreshold = ccThres;
-    _usingMetalPlanes = true;
-    _ccUp = cc_up;
-    _couplingFlag = ccFlag;
-    _ccContextDepth = contextDepth;
-    _mergeViaRes = mergeViaRes;
-    _mergeResBound = resBound;
-  */
+
   _extRun++;
-
-  initSomeValues_v2();
-  if (!SetCornersAndReadModels_v2(extRules))
-    return;
-
   std::vector<dbNet*> inets;
   markNetsToExtract_v2(netNames, inets);
 
-  if (_ccContextDepth) {
-    initContextArray();
-  }
-  initDgContextArray();
-  setupMapping();
+  initSomeValues_v2();
+  setupMapping(); // iterm, bterm, junction CapNode mapping
 
-  if (_couplingFlag > 1 && !_lefRC) {
+  if (_couplingFlag > 1 && !_lefRC) 
+  {
+    if (!SetCornersAndReadModels_v2(extRules))
+      return;
+
+    if (_ccContextDepth) {
+      initContextArray();
+    }
+    initDgContextArray();
+
     calcMinMaxRC();
     getResCapTable();
+
+  } else if (_lefRC) {
+    addRCCorner("LEF_RC", 0);
+    _extDbCnt = _processCornerTable->getCnt();
+    _block->setCornerCount(_cornerCnt, _extDbCnt, nullptr);
+    getResCapTable_lefRC_v2();
   }
   if (!makeRCNetwork_v2())
     return;
 
+  if (_lefRC) {
+      update_wireAltered_v2(inets);
+      return;
+  }
   if (_couplingFlag > 1) {
-    logger_->info(RCX,
-                  503,
-                  "Start Coupling Cap extraction {} ...",
-                  getBlock()->getName().c_str());
-
-    logger_->info(RCX,
-                  504,
-                  "Coupling capacitance less than {:.4f} fF will be grounded.",
-                  _coupleThreshold);
+    infoBeforeCouplingExt();
 
     Rect maxRect = _block->getDieArea();
     couplingFlow_v2(maxRect, _couplingFlag, NULL);
@@ -98,9 +93,8 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
     removeDgContextArray();
   }
   couplingExtEnd_v2();
-  update_wireAltered_v2(inets);
 
-  /*
+  /* TEST and DELETE
     if (_geomSeq != NULL) {
       delete _geomSeq;
       _geomSeq = NULL;
@@ -111,6 +105,18 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
   if (_batchScaleExt) {
     genScaledExt();
   }
+}
+void extMain::infoBeforeCouplingExt()
+{
+  logger_->info(RCX,
+                503,
+                "Start Coupling Cap extraction {} ...",
+                getBlock()->getName().c_str());
+
+  logger_->info(RCX,
+                504,
+                "Coupling capacitance less than {:.4f} fF will be grounded.",
+                _coupleThreshold);
 }
 bool extMain::markNetsToExtract_v2(const char* netNames, std::vector<dbNet*> &inets)
 {
@@ -205,6 +211,7 @@ void extMain::setExtractionOptions_v2(ExtractOptions options)
 skip_via_wires(options.skip_via_wires);
   skip_via_wires(true); // DEBUG
   _lef_res = options.lef_res;
+  _lefRC= options.lef_rc; // model file not required
 
  _wire_extracted_progress_count= options._wire_extracted_progress_count;
   _version= options._version;
@@ -227,6 +234,7 @@ skip_via_wires(options.skip_via_wires);
   _dbgOption= options._dbg;
    _overCell = _v2 && options.over_cell;
 
+   // TODO _cornerCnt
   _diagFlow = true;
   _couplingFlag = options.cc_model;
   _coupleThreshold = options.coupling_threshold;
@@ -253,58 +261,18 @@ void extMain::initSomeValues_v2()
 }
 bool extMain::SetCornersAndReadModels_v2(const char* rulesFileName)
 {
-// FIXME all
-  if ((_processCornerTable != nullptr)
-      || ((_processCornerTable == nullptr) && (rulesFileName != nullptr))) {
-    const char* rulesfile= rulesFileName ? rulesFileName : _prevControl->_ruleFileName.c_str();
-
-    // Reading model file
-    if (!setCorners(rulesfile)) {
-      logger_->info(RCX, 600, "Problems with reading model file, skipping Extraction ...");
-      return false;
-    }
-  }
   _modelMap.resetCnt(0);
   _metRCTable.resetCnt(0);
 
   if (rulesFileName != nullptr) {  // read rules
-/* DELETE
 
-    double dbFactor= getDbFactor_v2();
-    int dbunit = _block->getDbUnitsPerMicron();
-    double dbFactor = 1;
-    if (dbunit > 1000) {
-      dbFactor = dbunit * 0.001;
-    }
-*/
-    extRCModel* m = new extRCModel("MINTYPMAX", logger_);
-    _modelTable->add(m);
+    extRCModel* m= createCornerMap(rulesFileName);
 
-    uint cornerTable[10];
-    uint extDbCnt = 0;
-
-    _minModelIndex = 0;
-    _maxModelIndex = 0;
-    _typModelIndex = 0;
-    if (_processCornerTable != nullptr) {
-      for (uint ii = 0; ii < _processCornerTable->getCnt(); ii++) {
-        extCorner* s = _processCornerTable->get(ii);
-        cornerTable[extDbCnt++] = s->_model;
-        _modelMap.add(ii);
-      }
-    }
-
-    if ( ! ReadModels_v2(rulesFileName, m, extDbCnt, cornerTable) )
+    if ( ! ReadModels_v2(rulesFileName, m, 0, NULL) )
         return false;
 
     int modelCnt = getRCmodel(0)->getModelCnt();
 
-    if (_processCornerTable == nullptr) {
-      for (int ii = 0; ii < modelCnt; ii++) {
-        addRCCorner(nullptr, ii, 0);
-        _modelMap.add(ii);
-      }
-    }
   }
   _currentModel = getRCmodel(0);
   for (uint ii = 0; (_couplingFlag > 0) && ii < _modelMap.getCnt(); ii++) {
@@ -324,64 +292,41 @@ double extMain::getDbFactor_v2()
     }
     return dbFactor;
 }
-bool extMain::ReadModels_v2(const char *rulesFileName, extRCModel* m, uint extDbCnt, uint *cornerTable)
+bool extMain::ReadModels_v2(const char* rulesFileName,
+                            extRCModel* m,
+                            uint extDbCnt,
+                            uint* cornerTable)
 {
-        double dbFactor= getDbFactor_v2();
+  logger_->info(
+      RCX, 441, "Reading extraction model file {} ...", rulesFileName);
+  FILE* rules_file = fopen(rulesFileName, "r");
+  if (rules_file == nullptr) {
+    logger_->error(
+        RCX, 469, "Can't open extraction model file {}", rulesFileName);
+  }
+  fclose(rules_file);
+  bool v2_rules_file = m->isRulesFile_v2((char*) rulesFileName, false);
+  m->_v2_flow = _v2;
+  
+  double dbFactor = getDbFactor_v2();
+  if (!(m->readRules_v2(
+          (char*) rulesFileName, false, true, true, true, true, dbFactor))) {
+    delete m;
+    return false;
+  }
 
-    logger_->info(
-        RCX, 441, "Reading extraction model file {} ...", rulesFileName);
+  int modelCnt = getRCmodel(0)->getModelCnt();
 
-    FILE* rules_file = fopen(rulesFileName, "r");
-    if (rules_file == nullptr) {
-      logger_->error(
-          RCX, 469, "Can't open extraction model file {}", rulesFileName);
-    }
-    fclose(rules_file);
-    bool v2_rules_file = m->isRulesFile_v2((char*) rulesFileName, false);
+  // If RCX reads wrong extRules file format
+  if (modelCnt == 0) {
+    logger_->error(RCX,
+                   488,
+                   "No RC model read from the extraction model! "
+                   "Ensure the right extRules file is used!");
+    return false;
+  }
 
-    if (_v2 || v2_rules_file)
-    {
-        m->_v2_flow= _v2;
-
-      if (!(m->readRules((char*) rulesFileName,
-                         false,
-                         true,
-                         true,
-                         true,
-                         true,
-                         extDbCnt,
-                         cornerTable,
-                         dbFactor))) {
-        delete m;
-        return false;
-      }
-    } else {
-      if (!(m->readRules_v1((char*) rulesFileName,
-                            false,
-                            true,
-                            true,
-                            true,
-                            true,
-                            extDbCnt,
-                            cornerTable,
-                            dbFactor))) {
-        delete m;
-        return false;
-      }
-    }
-    int modelCnt = getRCmodel(0)->getModelCnt();
-
-    // If RCX reads wrong extRules file format
-    if (modelCnt == 0) {
-      logger_->error(RCX,
-                     488,
-                     "No RC model read from the extraction model! "
-                     "Ensure the right extRules file is used!");
-            return false;
-
-    }
-
-    return true;
+  return true;
 }
 
 uint extMain::resetMapNodes_v2(dbWire* wire)
@@ -405,7 +350,7 @@ uint extMain::makeNetRCsegs_v2(dbNet* net, bool skipStartWarning)
 {
   net->setRCgraph(true);
 
-  dbWire* wire= net->getWire();
+  dbWire* wire = net->getWire();
   if (wire == nullptr) {
     if (_reportNetNoWire) {
       logger_->info(RCX, 511, "Net {} has no wires.", net->getName().c_str());
@@ -420,7 +365,7 @@ uint extMain::makeNetRCsegs_v2(dbNet* net, bool skipStartWarning)
   _netGndcCalibFactor = net->getGndcCalibFactor();
   _netGndcCalibration = _netGndcCalibFactor == 1.0 ? false : true;
 
-   initJunctionIdMaps(net);
+  initJunctionIdMaps(net);
 
   dbWirePathItr pitr;
   uint srcId;
@@ -429,17 +374,22 @@ uint extMain::makeNetRCsegs_v2(dbNet* net, bool skipStartWarning)
   bool netHeadMarked = false;
   dbWirePath path;
   for (pitr.begin(wire); pitr.getNextPath(path);) {
-    uint netId= net->getId();
+    uint netId = net->getId();
     if (netId == _debug_net_id) {
-      debugPrint(logger_, RCX, "rcseg", 1, "RCSEG:R makeNetRCsegs:  path.junction_id {}", path.junction_id);
+      debugPrint(logger_,
+                 RCX,
+                 "rcseg",
+                 1,
+                 "RCSEG:R makeNetRCsegs:  path.junction_id {}",
+                 path.junction_id);
     }
     if (!path.iterm && !path.bterm && !path.is_branch && path.is_short) {
-    // if (! (path.iterm || path.bterm || path.is_branch) && path.is_short) {
-        uint junct_id= getShortSrcJid(path.junction_id);
-        srcId= getCapNodeId_v2(net, junct_id, true);
+      // if (! (path.iterm || path.bterm || path.is_branch) && path.is_short) {
+      uint junct_id = getShortSrcJid(path.junction_id);
+      srcId = getCapNodeId_v2(net, junct_id, true);
     } else {
-        uint junct_id= getShortSrcJid(path.junction_id);
-        srcId= getCapNodeId_v2(net, path, junct_id, path.is_branch);
+      uint junct_id = getShortSrcJid(path.junction_id);
+      srcId = getCapNodeId_v2(net, path, junct_id, path.is_branch);
     }
     if (!netHeadMarked) {
       netHeadMarked = true;
@@ -447,40 +397,46 @@ uint extMain::makeNetRCsegs_v2(dbNet* net, bool skipStartWarning)
     }
     Point prevPoint = path.point;
     Point sprevPoint = prevPoint;
-    resetSumRCtable(); // dkf start the path for merging resistors
+    resetSumRCtable();  // dkf start the path for merging resistors
     dbWirePathShape pshape;
     while (pitr.getNextShape(pshape)) {
       dbShape s = pshape.shape;
 
       if (netId == _debug_net_id) {
-        debugPrint(logger_, RCX, "rcseg", 1, "RCSEG:R makeNetRCsegs: {} {}",pshape.junction_id, s.isVia() ? "VIA" : "WIRE");
+        debugPrint(logger_,
+                   RCX,
+                   "rcseg",
+                   1,
+                   "RCSEG:R makeNetRCsegs: {} {}",
+                   pshape.junction_id,
+                   s.isVia() ? "VIA" : "WIRE");
       }
 
       getShapeRC_v2(net, s, sprevPoint, pshape);
-      
-      // ------------------------------------------------------------
-      // Have to create node because reached iterm/bterm or branch
-      // ------------------------------------------------------------
 
-      //bool isStopNode= pshape.bterm!=nullptr || pshape.iterm!=nullptr || _nodeTable->geti(pshape.junction_id) < 0;
-      
       sprevPoint = pshape.point;
 
       // ------------------------------------------------------------------
       // No merging except via merge if _mergeViaRes
       // --------------------------------------------------------------------
-      if (_mergeResBound == 0.0) { // No merging except via merge is
+      if (_mergeResBound == 0.0) {  // No merging except via merge is
         if (!s.isVia()) {
           _rsegJid.push_back(pshape.junction_id);
         }
         addToSumRCtable();
-      bool isStopNode= pshape.bterm!=nullptr || pshape.iterm!=nullptr || _nodeTable->geti(pshape.junction_id) < 0;
 
-        // if ( (_mergeViaRes && s.isVia()) || isStopNode ) 
-        if (!_mergeViaRes || !s.isVia() || isStopNode ) 
-        {
-           dbRSeg* rc = addRSeg_v2(net, srcId, prevPoint, path, pshape, path.is_branch);
-            
+        // ------------------------------------------------------------
+        // Have to create node because reached iterm/bterm or branch
+        // ------------------------------------------------------------
+
+        bool isStopNode = pshape.bterm != nullptr || pshape.iterm != nullptr
+                          || _nodeTable->geti(pshape.junction_id) < 0;
+
+        // if ( (_mergeViaRes && s.isVia()) || isStopNode )
+        if (!_mergeViaRes || !s.isVia() || isStopNode) {
+          dbRSeg* rc
+              = addRSeg_v2(net, srcId, prevPoint, path, pshape, path.is_branch);
+
           if (s.isVia() && rc != nullptr) {
             createShapeProperty(net, pshape.junction_id, rc->getId());
           }
@@ -499,8 +455,16 @@ uint extMain::makeNetRCsegs_v2(dbNet* net, bool skipStartWarning)
           _rsegJid.push_back(pshape.junction_id);
         }
         // FIXME
-         addRSeg_v2(net, srcId, prevPoint, path, pshape, path.is_branch, _tmpResTable, _tmpCapTable);
-         //  addRSeg(net, _rsegJid, srcId, prevPoint, path, pshape, path.is_branch, _tmpResTable, _tmpCapTable); 
+        addRSeg_v2(net,
+                   srcId,
+                   prevPoint,
+                   path,
+                   pshape,
+                   path.is_branch,
+                   _tmpResTable,
+                   _tmpCapTable);
+        //  addRSeg(net, _rsegJid, srcId, prevPoint, path, pshape,
+        //  path.is_branch, _tmpResTable, _tmpCapTable);
         rcCnt++;
         continue;
       }
@@ -520,10 +484,11 @@ uint extMain::makeNetRCsegs_v2(dbNet* net, bool skipStartWarning)
         }
         addToSumRCtable();
       }
-      bool isStopNode= pshape.bterm!=nullptr || pshape.iterm!=nullptr || _nodeTable->geti(pshape.junction_id) < 0;
+      bool isStopNode = pshape.bterm != nullptr || pshape.iterm != nullptr
+                        || _nodeTable->geti(pshape.junction_id) < 0;
 
       if (isStopNode || (_tmpSumResTable[0] >= _mergeResBound)) {
-        addRSeg_v2(net, srcId, prevPoint, path, pshape,  path.is_branch);
+        addRSeg_v2(net, srcId, prevPoint, path, pshape, path.is_branch);
         rcCnt++;
         resetSumRCtable();
       } else {
@@ -531,7 +496,7 @@ uint extMain::makeNetRCsegs_v2(dbNet* net, bool skipStartWarning)
       }
     }
     if (_sumUpdated) {
-      addRSeg_v2(net, srcId, prevPoint, path, ppshape,  path.is_branch);
+      addRSeg_v2(net, srcId, prevPoint, path, ppshape, path.is_branch);
       rcCnt++;
     }
   }
@@ -737,6 +702,9 @@ void extMain::setResAndCap_v2(dbRSeg* rc,  const double* restbl, const double* c
     rc->setResistance(res, pcdbIdx);
     double cap = _gndcModify ? captbl[ii] * _gndcFactor : captbl[ii];
     cap = _netGndcCalibration ? cap * _netGndcCalibFactor : cap;
+    if (_lefRC)
+        rc->setCapacitance(cap, pcdbIdx); // _lefRC
+
     int sci, scdbIdx;
     getScaledCornerDbIndex(ii, sci, scdbIdx);
     if (sci == -1) {
@@ -828,6 +796,8 @@ double extMain::getViaRes_v2(dbNet* net, dbTechVia* tvia)
       _tmpResTable[ii] = res;
     }
     if (_lefRC) {  // estimate Capacitance
+      _tmpResTable[0] = res;
+
       double areaCap;
       double fringeCap = getFringe(level, width, 0, areaCap);
       _tmpCapTable[0] = width * 2 * fringeCap;
@@ -883,7 +853,9 @@ double extMain::getDbViaRes_v2(dbNet* net, const dbShape& s)
   }
   return res;
 }
-double extMain::getMetalRes_v2(dbNet* net, const dbShape& s, const dbWirePathShape& pshape)
+double extMain::getMetalRes_v2(dbNet* net,
+                               const dbShape& s,
+                               const dbWirePathShape& pshape)
 {
   const uint level = s.getTechLayer()->getRoutingLevel();
   uint width = std::min(pshape.shape.getDX(), pshape.shape.getDY());
@@ -892,14 +864,16 @@ double extMain::getMetalRes_v2(dbNet* net, const dbShape& s, const dbWirePathSha
   double res = getLefResistance(level, width, len, 0);
 
   if (_lefRC || _lef_res) {
+    res = _resistanceTable[0][level];
+    res *= len;
     _tmpResTable[0] = res;
     if (_lefRC) {
-      double areaCap;
-      double unitCap = getFringe(level, width, 0, areaCap);
-      double frTot = len * 2 * unitCap;
-
-      _tmpCapTable[0] = frTot;
-      _tmpCapTable[0] += 2 * areaCap * len * width;
+      // const float cap_pf_per_micron = width *
+      // s.getTechLayer()->getCapacitance() + 2 *
+      // s.getTechLayer()->getEdgeCapacitance();
+      float cap_fF_per_nm = _capacitanceTable[0][level];
+      float cap = cap_fF_per_nm * len;
+      _tmpCapTable[0] = cap;
     }
   } else {
     for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
@@ -938,6 +912,83 @@ void extMain::getShapeRC_v2(dbNet* net,
     }
   }
   prevPoint = pshape.point;
+}
+extRCModel* extMain::createCornerMap(const char *rulesFileName)
+{
+    extRCModel* m = new extRCModel("MINTYPMAX", logger_);
+    _modelTable->add(m);
+
+    // uint cornerTable[10];
+    uint extCornerDbCnt = 0;
+
+    _minModelIndex = 0;
+    _maxModelIndex = 0;
+    _typModelIndex = 0;
+
+    if (_processCornerTable != nullptr) {
+        // User define process corners using <ext define_process_corner>
+      for (uint ii = 0; ii < _processCornerTable->getCnt(); ii++) {
+        extCorner* s = _processCornerTable->get(ii);
+    //    cornerTable[extCornerDbCnt++] = s->_model;
+        _modelMap.add(s->_model);
+      }
+    } else {
+        // No user defined process corners:
+        // All Model file process corners will  be extracted
+      double version = 0.0;
+      std::list<std::string> corner_list= extModelGen::GetCornerNames(rulesFileName, version);
+      std::list<std::string>::iterator it;
+      for (it = corner_list.begin(); it != corner_list.end(); ++it) {
+        std::string str = *it;
+        addRCCorner(str.c_str(), extCornerDbCnt, 0);
+        _modelMap.add(extCornerDbCnt);
+        extCornerDbCnt ++;
+      }
+    }
+    return m;
+}
+uint extMain::getResCapTable_lefRC_v2()
+{
+  uint cnt = 0;
+  for (dbTechLayer* layer : _tech->getLayers()) {
+    if (layer->getRoutingLevel() == 0) {
+      continue;
+    }
+    const uint n = layer->getRoutingLevel();
+    const uint w = layer->getWidth();  // nm
+    _minWidthTable[n] = w;
+
+    uint sp = layer->getSpacing();  // nm
+    _minDistTable[n] = sp;
+    if (sp == 0) {
+      sp = layer->getPitch() - layer->getWidth();
+      _minDistTable[n] = sp;
+    }
+    float cap2= layer->getCapacitance();
+    float edge_cap= layer->getEdgeCapacitance();
+    float w_microns= _block->dbuToMicrons(layer->getWidth());
+    float len_microns_1= _block->dbuToMicrons(1);
+
+    float cap_fF_per_nm_1= w_microns * len_microns_1 * cap2 * 1000 + 2 * edge_cap; 
+    const float cap_fF_per_nm= w * cap2 + 2 * edge_cap;
+    
+    _capacitanceTable[0][n] = cap_fF_per_nm_1;
+    _minCapTable[n][0] = cap_fF_per_nm_1;
+
+    const double res = layer->getResistance();  // OHMS per square
+    _resistanceTable[0][n] = res/w;
+
+    debugPrint(logger_,
+               RCX,
+               "extrules",
+               1,
+               "EXT_RES_LEF: R Layer= {} met= {}  lef_res= {:g}",
+               layer->getConstName(),
+               n,
+               res);
+  }
+  cnt++;
+  return cnt;
 }
 
 }  // namespace

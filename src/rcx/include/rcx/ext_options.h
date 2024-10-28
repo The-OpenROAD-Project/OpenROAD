@@ -78,6 +78,7 @@ struct BenchWiresOptions
     int corner_cnt = 1;
     double max_res = 50.0;
     bool no_merge_via_res = false;
+    int corner= -1; // all  corners in model file
     float coupling_threshold = 0.1;
     int context_depth = 5;
     int cc_model = 10;

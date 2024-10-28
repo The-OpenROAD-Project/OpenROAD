@@ -484,6 +484,11 @@ extDistRC* getUnderRC(int met, int overMet, int width, int dist);
 extDistRC* getOverUnderRC(uint met, uint underMet, int overMet, int width, int dist);
 bool isRulesFile_v2(char* name, bool bin);
 
+// --------------------------------------------------------------- v2 CLEANUP ----------
+bool readRules_v2(char* name, bool bin, bool over, bool under, bool overUnder, bool diag, double dbFactor);
+bool createModelProcessTable(uint rulesFileModelCnt, uint cornerCnt);
+// --------------------------------------------------------------- v2 CLEANUP ----------
+
 
 // dkf 09222023
   uint readRules_v2(Ath__parser* parser,
@@ -1526,6 +1531,10 @@ double getViaRes_v2(dbNet* net, dbTechVia* tvia);
 double getDbViaRes_v2(dbNet* net, const dbShape& s);
 double getMetalRes_v2(dbNet* net, const dbShape& s, const dbWirePathShape& pshape);
 void setResAndCap_v2(dbRSeg* rc, const double* restbl, const double* captbl);
+extRCModel* createCornerMap(const char *rulesFileName);
+
+uint getResCapTable_lefRC_v2();
+void infoBeforeCouplingExt();
 // CLEANUP dkf 10242024 ----------------------------------
 
 

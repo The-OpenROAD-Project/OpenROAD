@@ -23,6 +23,7 @@ def extract_parasitics(
     lef_rc=False,
     skip_over_cell=False,
     version=1.0,
+    corner=-1,
     dbg=0
 ):
     # NOTE: This is position dependent
@@ -39,6 +40,7 @@ def extract_parasitics(
     	lef_rc,
     	skip_over_cell,
     	version,
+	corner,
     	dbg
     )
 

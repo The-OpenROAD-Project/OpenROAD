@@ -482,6 +482,7 @@ uint extMain::getResCapTable()
   return cnt;
 }
 
+
 bool extMain::checkLayerResistance()
 {
   dbSet<dbTechLayer> layers = _tech->getLayers();
@@ -585,8 +586,8 @@ double extMain::getFringe(const uint met,
                           double& areaCap)
 {
   areaCap = 0.0;
-  if (_noModelRC) {
-    return 0.0;
+  if (_noModelRC || _lefRC) {
+    return _capacitanceTable[0][met];
   }
 
   if (width == _minWidthTable[met]) {
