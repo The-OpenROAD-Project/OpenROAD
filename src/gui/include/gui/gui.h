@@ -626,6 +626,7 @@ class Gui
                           const std::string& corner = "",
                           int width_px = 0,
                           int height_px = 0);
+  void selectClockviewerClock(const std::string& clock_name);
 
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);

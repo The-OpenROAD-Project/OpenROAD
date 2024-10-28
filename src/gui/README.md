@@ -640,6 +640,21 @@ gui::dump_heatmap
 [^RUDY]: RUDY means Rectangular Uniform wire DensitY, which can predict the routing density very rough and quickly. You can see this notion in [this paper](https://past.date-conference.com/proceedings-archive/2007/DATE07/PDFFILES/08.7_1.PDF) 
 
 
+### Clocktree Selection
+
+Select a clock in the clock viewer:
+
+```tcl
+gui::select_clockviewer_clock
+    name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+| `name` |  name of clock to select |
+
 ### GUI Display Controls
 
 Control the visible and selected elements in the layout:

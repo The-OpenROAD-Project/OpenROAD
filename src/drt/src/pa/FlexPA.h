@@ -138,6 +138,13 @@ class FlexPA
   bool isStdCell(frInst* inst);
   bool isMacroCell(frInst* inst);
   /**
+   * @brief initializes all access points of a single unique instance
+   *
+   * @param inst the unique instance
+   */
+  void initInstAccessPoints(frInst* inst);
+
+  /**
    * @brief initializes all access points of all unique instances
    */
   void initAllAccessPoints();
@@ -396,6 +403,14 @@ class FlexPA
       T* pin,
       frInstTerm* inst_term);
 
+  template <typename T>
+  bool isPlanarViolationFree(frAccessPoint* ap,
+                             T* pin,
+                             frPathSeg* ps,
+                             frInstTerm* inst_term,
+                             Point point,
+                             frLayer* layer);
+
   /**
    * @brief Generates an end_point given an begin_point in the direction
    *
@@ -474,6 +489,14 @@ class FlexPA
       frInstTerm* inst_term,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       frDirEnum dir);
+
+  template <typename T>
+  bool isViaViolationFree(frAccessPoint* ap,
+                          frVia* via,
+                          T* pin,
+                          frPathSeg* ps,
+                          frInstTerm* inst_term,
+                          Point point);
 
   template <typename T>
   void updatePinStats(

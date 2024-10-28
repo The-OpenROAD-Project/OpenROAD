@@ -39,6 +39,7 @@
 #include <optional>
 #include <vector>
 
+#include "connection.h"
 #include "node.h"
 #include "odb/db.h"
 #include "psm/pdnsim.h"

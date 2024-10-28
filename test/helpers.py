@@ -66,17 +66,11 @@ utl.suppress_message(utl.ODB, 127)
 # Finished DEF file
 utl.suppress_message(utl.ODB, 134)
 
-# suppress PPL info messages
-utl.suppress_message(utl.PPL, 41)
-utl.suppress_message(utl.PPL, 48)
-utl.suppress_message(utl.PPL, 49)
-utl.suppress_message(utl.PPL, 60)
-
 # suppress tap info messages
 utl.suppress_message(utl.TAP, 100)
 utl.suppress_message(utl.TAP, 101)
 
-# suppress par messages with files' names
+# suppress par messages with filenames
 utl.suppress_message(utl.PAR, 6)
 utl.suppress_message(utl.PAR, 38)
 
