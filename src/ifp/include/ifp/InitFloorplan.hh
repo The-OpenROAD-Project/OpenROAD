@@ -65,7 +65,7 @@ enum class RowParity
 class InitFloorplan
 {
  public:
-  InitFloorplan() = default; // only for swig
+  InitFloorplan() = default;  // only for swig
   InitFloorplan(odb::dbBlock* block, Logger* logger, sta::dbNetwork* network);
 
   // utilization is in [0, 100]%
