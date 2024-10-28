@@ -375,8 +375,8 @@ BufferedNetPtr Resizer::makeBufferedNet(const Pin* drvr_pin,
     case ParasiticsSrc::placement:
       return makeBufferedNetSteiner(drvr_pin, corner);
     case ParasiticsSrc::global_routing:
-      return makeBufferedNetGroute(drvr_pin, corner);
     case ParasiticsSrc::detailed_routing:
+      return makeBufferedNetGroute(drvr_pin, corner);
     case ParasiticsSrc::none:
       return nullptr;
   }

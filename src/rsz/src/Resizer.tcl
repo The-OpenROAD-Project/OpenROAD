@@ -613,6 +613,9 @@ proc repair_timing { args } {
   }
 
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
+  if { [design_is_routed] } {
+    rsz::set_parasitics_src "detailed_routing"
+  }
 
   sta::check_argc_eq0 "repair_timing" $args
   rsz::check_parasitics

@@ -349,7 +349,8 @@ void Resizer::updateParasitics(bool save_guides)
       }
       parasitics_invalid_.clear();
       break;
-    case ParasiticsSrc::global_routing: {
+    case ParasiticsSrc::global_routing:
+    case ParasiticsSrc::detailed_routing: {
       incr_groute_->updateRoutes(save_guides);
       for (const Net* net : parasitics_invalid_) {
         global_router_->estimateRC(db_network_->staToDb(net));
@@ -357,7 +358,6 @@ void Resizer::updateParasitics(bool save_guides)
       parasitics_invalid_.clear();
       break;
     }
-    case ParasiticsSrc::detailed_routing:
     case ParasiticsSrc::none:
       break;
   }
