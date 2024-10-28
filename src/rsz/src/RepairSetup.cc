@@ -1427,8 +1427,6 @@ void RepairSetup::splitLoads(const PathRef* drvr_path,
                              const Slack drvr_slack,
                              PathExpanded* expanded)
 {
-  static int debug;
-  debug++;
   Pin* drvr_pin = drvr_path->pin(this);
 
   const PathRef* load_path = expanded->path(drvr_index + 1);
