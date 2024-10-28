@@ -224,63 +224,67 @@ void SimulatedAnnealing::randomAssignment()
   std::set<int> placed_pins;
   int slot_idx = randomAssignmentForGroups(placed_pins, slot_indices);
 
-  for (int i = 0; i < pin_assignment_.size(); i++) {
-    if (placed_pins.find(i) != placed_pins.end()) {
-      continue;
-    }
-
-    const IOPin& io_pin = netlist_->getIoPin(i);
-    if (io_pin.getConstraintIdx() != -1) {
-      int first_slot = 0;
-      int last_slot = num_slots_ - 1;
-      getSlotsRange(io_pin, first_slot, last_slot);
-      boost::random::uniform_int_distribution<int> distribution(first_slot,
-                                                                last_slot);
-
-      int slot = distribution(generator_);
-      int mirrored_slot;
-      bool free = !slots_[slot].used;
-      if (io_pin.isMirrored()) {
-        free = free && isFreeForMirrored(slot, mirrored_slot);
+  for (bool only_constraints : {true, false}) {
+    for (int i = 0; i < pin_assignment_.size(); i++) {
+      if (placed_pins.find(i) != placed_pins.end()) {
+        continue;
       }
-      while (!free) {
-        slot = distribution(generator_);
-        free = !slots_[slot].used;
+
+      const IOPin& io_pin = netlist_->getIoPin(i);
+      if (io_pin.isInConstraint() && only_constraints) {
+        int first_slot = 0;
+        int last_slot = num_slots_ - 1;
+        getSlotsRange(io_pin, first_slot, last_slot);
+        boost::random::uniform_int_distribution<int> distribution(first_slot,
+                                                                  last_slot);
+
+        int slot = distribution(generator_);
+        int mirrored_slot;
+        bool free = slots_[slot].isAvailable();
         if (io_pin.isMirrored()) {
           free = free && isFreeForMirrored(slot, mirrored_slot);
         }
+        while (!free) {
+          slot = distribution(generator_);
+          free = slots_[slot].isAvailable();
+          if (io_pin.isMirrored()) {
+            free = free && isFreeForMirrored(slot, mirrored_slot);
+          }
+        }
+        pin_assignment_[i] = slot;
+        slots_[slot].used = true;
+        if (io_pin.isMirrored()) {
+          pin_assignment_[io_pin.getMirrorPinIdx()] = mirrored_slot;
+          slots_[mirrored_slot].used = true;
+        }
+        placed_pins.insert(io_pin.getMirrorPinIdx());
       }
-      pin_assignment_[i] = slot;
-      slots_[slot].used = true;
-      if (io_pin.isMirrored()) {
-        pin_assignment_[io_pin.getMirrorPinIdx()] = mirrored_slot;
-        slots_[mirrored_slot].used = true;
-      }
-      placed_pins.insert(io_pin.getMirrorPinIdx());
-    } else {
-      int slot = slot_indices[slot_idx];
-      int mirrored_slot;
-      bool free = !slots_[slot].used;
-      if (io_pin.isMirrored()) {
-        free = free && isFreeForMirrored(slot, mirrored_slot);
-      }
-      while (!free) {
+
+      if (!io_pin.isInConstraint() && !only_constraints) {
+        int slot = slot_indices[slot_idx];
+        int mirrored_slot;
+        bool free = slots_[slot].isAvailable();
+        if (io_pin.isMirrored()) {
+          free = free && isFreeForMirrored(slot, mirrored_slot);
+        }
+        while (!free) {
+          slot_idx++;
+          slot = slot_indices[slot_idx];
+          free = slots_[slot].isAvailable();
+          if (io_pin.isMirrored()) {
+            free = free && isFreeForMirrored(slot, mirrored_slot);
+          }
+        }
+        pin_assignment_[i] = slot;
+        slots_[slot].used = true;
+        if (io_pin.isMirrored()) {
+          pin_assignment_[io_pin.getMirrorPinIdx()] = mirrored_slot;
+          slots_[mirrored_slot].used = true;
+        }
+        placed_pins.insert(io_pin.getMirrorPinIdx());
+
         slot_idx++;
-        slot = slot_indices[slot_idx];
-        free = !slots_[slot].used;
-        if (io_pin.isMirrored()) {
-          free = free && isFreeForMirrored(slot, mirrored_slot);
-        }
       }
-      pin_assignment_[i] = slot;
-      slots_[slot].used = true;
-      if (io_pin.isMirrored()) {
-        pin_assignment_[io_pin.getMirrorPinIdx()] = mirrored_slot;
-        slots_[mirrored_slot].used = true;
-      }
-      placed_pins.insert(io_pin.getMirrorPinIdx());
-
-      slot_idx++;
     }
   }
 }

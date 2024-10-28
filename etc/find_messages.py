@@ -96,7 +96,7 @@ warn_regexp_tcl = re.compile(
       \s+                              # white-space
       (?P<id>\d+)                      # id
       \s+                              # white-space
-      (?P<message>"(?:[^"\\]|\\.)+?")  # message
+      (?P<message>"(?:[^"]|\\.)+?")  # message
     """,
     re.VERBOSE | re.MULTILINE,
 )
@@ -174,6 +174,13 @@ def main():
                 ),
                 file=sys.stderr,
             )
+            for idloc in sorted(msgs[key]):
+                fileloc, *_ = idloc.split()
+                file, line = fileloc.split(":")
+                print(
+                    "  Appears in {} on line {} ".format(file, line),
+                    file=sys.stderr,
+                )
             has_error = True
 
     for key in sorted(msgs):

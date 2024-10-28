@@ -245,6 +245,8 @@ class definReader : public definBase
                          defiVia* via,
                          defiUserData data);
 
+  static void contextLogFunctionCallback(defiUserData data, const char* msg);
+
  public:
   definReader(dbDatabase* db,
               utl::Logger* logger,

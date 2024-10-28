@@ -288,6 +288,15 @@ void save_clocktree_image(const char* filename, const char* clock_name, const ch
   gui->saveClockTreeImage(clock_name, filename, corner, width_px, height_px);
 }
 
+void select_clockviewer_clock(const char* clock_name)
+{
+  if (!check_gui("select_clockviewer_clock")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->selectClockviewerClock(clock_name);
+}
+
 void clear_rulers()
 {
   if (!check_gui("clear_rulers")) {
@@ -442,13 +451,18 @@ void gui_pause(int timeout = 0)
   return gui->pause(timeout);
 }
 
-void load_drc(const char* filename)
+void select_marker_category(odb::dbMarkerCategory* category)
 {
-  if (!check_gui("load_drc")) {
+  if (!check_gui("select_marker_category")) {
     return;
   }
   auto gui = gui::Gui::get();
-  gui->loadDRC(filename);
+  gui->selectMarkers(category);
+}
+
+void select_marker_category(const char* name)
+{
+  select_marker_category(get_block()->findMarkerCategory(name));
 }
 
 void show_widget(const char* name)
@@ -469,10 +483,10 @@ void hide_widget(const char* name)
   return gui->showWidget(name, false);
 }
 
-void show(const char* script = "", bool interactive = true)
+void show(const char* script = "", bool interactive = true, bool load_settings = true)
 {
   auto gui = gui::Gui::get();
-  gui->showGui(script, interactive);
+  gui->showGui(script, interactive, load_settings);
 }
 
 void hide()

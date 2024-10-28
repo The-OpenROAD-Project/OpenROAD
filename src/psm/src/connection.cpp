@@ -102,31 +102,23 @@ bool Connection::compare(const std::unique_ptr<Connection>& other) const
   return compare(other.get());
 }
 
-std::tuple<int, int, int, int, int, int> Connection::compareTuple() const
+Connection::CompareInformation Connection::compareTuple() const
 {
-  int node0_x = 0;
-  int node0_y = 0;
-  int node0_l = 0;
-
-  int node1_x = 0;
-  int node1_y = 0;
-  int node1_l = 0;
-
+  Node::CompareInformation node0_info;
   if (node0_ != nullptr) {
-    const auto& pt = node0_->getPoint();
-    node0_x = pt.getX();
-    node0_y = pt.getY();
-    node0_l = node0_->getLayer()->getNumber();
+    node0_info = node0_->compareTuple();
+  } else {
+    node0_info = Node::dummyCompareTuple();
   }
 
+  Node::CompareInformation node1_info;
   if (node1_ != nullptr) {
-    const auto& pt = node1_->getPoint();
-    node1_x = pt.getX();
-    node1_y = pt.getY();
-    node1_l = node1_->getLayer()->getNumber();
+    node1_info = node1_->compareTuple();
+  } else {
+    node1_info = Node::dummyCompareTuple();
   }
 
-  return {node0_l, node0_x, node0_y, node1_l, node1_x, node1_y};
+  return {node0_info, node1_info};
 }
 
 std::string Connection::describeWithNodes() const

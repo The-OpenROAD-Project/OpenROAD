@@ -735,7 +735,7 @@ void BinGrid::updateBinsNonPlaceArea()
 }
 
 // Core Part
-void BinGrid::updateBinsGCellDensityArea(const std::vector<GCell*>& cells)
+void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
 {
   // clear the Bin-area info
   for (Bin& bin : bins_) {
@@ -1292,7 +1292,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   // update gFillerCells
   initFillerGCells();
 
-  gCells_.reserve(pb_->insts().size() + gCellStor_.size());
+  gCells_.reserve(pb_->insts().size() + fillerStor_.size());
 
   // add place instances
   for (auto& inst : pb_->placeInsts()) {
@@ -1305,20 +1305,12 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
 
     gCell->clearInstances();
     gCell->setInstance(inst);
-    gCells_.push_back(gCell);
+    gCells_.emplace_back(GCellHandle(nbc_.get(), nbc_->getGCellIndex(gCell)));
   }
 
   // add filler cells to gCells_
-  for (auto& gCell : gCellStor_) {
-    gCells_.push_back(&gCell);
-  }
-
-  for (auto& gCell : gCells_) {
-    if (gCell->isInstance()) {
-      gCellInsts_.push_back(gCell);
-    } else if (gCell->isFiller()) {
-      gCellFillers_.push_back(gCell);
-    }
+  for (size_t i = 0; i < fillerStor_.size(); ++i) {
+    gCells_.emplace_back(GCellHandle(this, i));
   }
 
   log_->info(GPL, 31, "{:20} {:9}", "FillerInit:NumGCells:", gCells_.size());
@@ -1423,11 +1415,13 @@ void NesterovBase::initFillerGCells()
     targetDensity_ = nbVars_.targetDensity;
   }
 
+  const int64_t nesterovInstanceArea = nesterovInstsArea();
+
   // TODO density screening
   movableArea_ = whiteSpaceArea_ * targetDensity_;
 
-  totalFillerArea_ = movableArea_ - nesterovInstsArea();
-  uniformTargetDensity_ = static_cast<float>(nesterovInstsArea())
+  totalFillerArea_ = movableArea_ - nesterovInstanceArea;
+  uniformTargetDensity_ = static_cast<float>(nesterovInstanceArea)
                           / static_cast<float>(whiteSpaceArea_);
 
   if (totalFillerArea_ < 0) {
@@ -1442,10 +1436,52 @@ void NesterovBase::initFillerGCells()
                 uniformTargetDensity_);
   }
 
-  int fillerCnt = static_cast<int>(
+  // limit filler cells
+  const double limit_filler_ratio = 10;
+  const double filler_scale_factor = std::sqrt(
+      totalFillerArea_ / (limit_filler_ratio * nesterovInstanceArea));
+  if (filler_scale_factor > 1.0) {
+    debugPrint(log_,
+               GPL,
+               "FillerInit",
+               1,
+               "InitialFillerCellSize {} {}",
+               fillerDx_,
+               fillerDy_);
+
+    const double max_edge_fillers = 1024;
+    const int max_filler_x = std::max(
+        static_cast<int>(pb_->die().coreDx() / max_edge_fillers), fillerDx_);
+    const int max_filler_y = std::max(
+        static_cast<int>(pb_->die().coreDy() / max_edge_fillers), fillerDy_);
+    debugPrint(log_,
+               GPL,
+               "FillerInit",
+               1,
+               "FillerCellMaxSize {} {}",
+               max_filler_x,
+               max_filler_y);
+
+    debugPrint(log_,
+               GPL,
+               "FillerInit",
+               1,
+               "FillerCellScaleFactor {:.4f}",
+               filler_scale_factor);
+
+    fillerDx_ *= filler_scale_factor;
+    fillerDy_ *= filler_scale_factor;
+
+    fillerDx_ = std::min(fillerDx_, max_filler_x);
+    fillerDy_ = std::min(fillerDy_, max_filler_y);
+  }
+
+  const int fillerCnt = static_cast<int>(
       totalFillerArea_ / static_cast<int64_t>(fillerDx_ * fillerDy_));
 
   debugPrint(log_, GPL, "FillerInit", 1, "CoreArea {}", coreArea);
+  debugPrint(
+      log_, GPL, "FillerInit", 1, "nesterovInstsArea {}", nesterovInstanceArea);
   debugPrint(log_, GPL, "FillerInit", 1, "WhiteSpaceArea {}", whiteSpaceArea_);
   debugPrint(log_, GPL, "FillerInit", 1, "MovableArea {}", movableArea_);
   debugPrint(
@@ -1472,7 +1508,7 @@ void NesterovBase::initFillerGCells()
                   fillerDx_,
                   fillerDy_);
 
-    gCellStor_.push_back(myGCell);
+    fillerStor_.push_back(myGCell);
   }
 }
 
@@ -1675,42 +1711,6 @@ void NesterovBase::updateAreas()
   }
 }
 
-// cut the filler cells
-void NesterovBase::cutFillerCells(int64_t targetFillerArea)
-{
-  std::vector<GCell*> newGCells = gCellInsts_;
-  std::vector<GCell*> newGCellFillers;
-
-  int64_t curFillerArea = 0;
-  log_->info(GPL, 34, "{:20} {:10.3f}", "gCellFiller:", gCellFillers_.size());
-
-  for (auto& gCellFiller : gCellFillers_) {
-    curFillerArea += static_cast<int64_t>(gCellFiller->dx())
-                     * static_cast<int64_t>(gCellFiller->dy());
-
-    if (curFillerArea >= targetFillerArea) {
-      curFillerArea -= static_cast<int64_t>(gCellFiller->dx())
-                       * static_cast<int64_t>(gCellFiller->dy());
-      break;
-    }
-
-    newGCells.push_back(gCellFiller);
-    newGCellFillers.push_back(gCellFiller);
-  }
-
-  // update totalFillerArea_
-  totalFillerArea_ = curFillerArea;
-  dbBlock* block = pb_->db()->getChip()->getBlock();
-  log_->info(GPL,
-             35,
-             "{:20} {:10.3f} um^2",
-             "NewTotalFillerArea:",
-             block->dbuAreaToMicrons(totalFillerArea_));
-
-  gCells_.swap(newGCells);
-  gCellFillers_.swap(newGCellFillers);
-}
-
 void NesterovBase::updateDensityCoordiLayoutInside(GCell* gCell)
 {
   float targetLx = gCell->dLx();
@@ -1855,9 +1855,9 @@ void NesterovBase::initDensity1()
 
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto it = gCells_.begin(); it < gCells_.end(); ++it) {
-    auto& gCell = *it;  // old-style loop for old OpenMP
+    GCell* gCell = *it;  // old-style loop for old OpenMP
     updateDensityCoordiLayoutInside(gCell);
-    int idx = &gCell - &gCells_[0];
+    int idx = it - gCells_.begin();
     curSLPCoordi_[idx] = prevSLPCoordi_[idx] = curCoordi_[idx]
         = initCoordi_[idx] = FloatPoint(gCell->dCx(), gCell->dCy());
 

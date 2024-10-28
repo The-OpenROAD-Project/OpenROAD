@@ -745,6 +745,47 @@ const char* dbNetwork::name(const Cell* cell) const
   return nullptr;
 }
 
+string dbNetwork::getAttribute(const Cell* cell, const string& key) const
+{
+  dbMaster* db_master;
+  dbModule* db_module;
+  staToDb(cell, db_master, db_module);
+  odb::dbObject* obj;
+  if (db_master) {
+    obj = db_master;
+  } else {
+    obj = db_module;
+  }
+  if (obj) {
+    auto property = odb::dbStringProperty::find(obj, key.c_str());
+    if (property) {
+      return property->getValue();
+    }
+  }
+  return "";
+}
+
+void dbNetwork::setAttribute(Cell* cell, const string& key, const string& value)
+{
+  dbMaster* db_master;
+  dbModule* db_module;
+  staToDb(cell, db_master, db_module);
+  odb::dbObject* obj;
+  if (db_master) {
+    obj = db_master;
+  } else {
+    obj = db_module;
+  }
+  if (obj) {
+    auto property = odb::dbStringProperty::find(obj, key.c_str());
+    if (property) {
+      property->setValue(value.c_str());
+    } else {
+      odb::dbStringProperty::create(obj, key.c_str(), value.c_str());
+    }
+  }
+}
+
 ////////////////////////////////////////////////////////////////
 // Module port iterator, allows traversal across dbModulePorts
 // Note that a port is not the same as a dbModBTerm.
@@ -845,33 +886,30 @@ Instance* dbNetwork::parent(const Instance* instance) const
   if (instance == top_instance_) {
     return nullptr;
   }
-
   dbInst* db_inst;
   dbModInst* mod_inst;
   staToDb(instance, db_inst, mod_inst);
   if (mod_inst) {
     auto parent_module = mod_inst->getParent();
     if (parent_module) {
-      if (auto parent_inst = parent_module->getModInst()) {
-        if (parent_inst) {
-          return dbToSta(parent_inst);
-        }
+      auto parent_inst = parent_module->getModInst();
+      if (parent_inst) {
+        return dbToSta(parent_inst);
       }
     }
   }
-  if (hierarchy_) {
-    if (db_inst) {
-      auto parent_module = db_inst->getModule();
-      if (parent_module) {
-        if (auto parent_inst = parent_module->getModInst()) {
-          if (parent_inst) {
-            return dbToSta(parent_inst);
-          }
-        }
+  if (db_inst) {
+    if (!hasHierarchy()) {
+      return top_instance_;
+    }
+    auto parent_module = db_inst->getModule();
+    if (parent_module) {
+      auto parent_inst = parent_module->getModInst();
+      if (parent_inst) {
+        return dbToSta(parent_inst);
       }
     }
   }
-
   return top_instance_;
 }
 
@@ -1015,6 +1053,49 @@ InstancePinIterator* dbNetwork::pinIterator(const Instance* instance) const
 InstanceNetIterator* dbNetwork::netIterator(const Instance* instance) const
 {
   return new DbInstanceNetIterator(instance, this);
+}
+
+string dbNetwork::getAttribute(const Instance* inst, const string& key) const
+{
+  dbInst* db_inst;
+  dbModInst* mod_inst;
+  staToDb(inst, db_inst, mod_inst);
+  odb::dbObject* obj;
+  if (db_inst) {
+    obj = db_inst;
+  } else {
+    obj = mod_inst;
+  }
+  if (obj) {
+    auto property = odb::dbStringProperty::find(obj, key.c_str());
+    if (property) {
+      return property->getValue();
+    }
+  }
+  return "";
+}
+
+void dbNetwork::setAttribute(Instance* instance,
+                             const string& key,
+                             const string& value)
+{
+  dbInst* db_inst;
+  dbModInst* mod_inst;
+  staToDb(instance, db_inst, mod_inst);
+  odb::dbObject* obj;
+  if (db_inst) {
+    obj = db_inst;
+  } else {
+    obj = mod_inst;
+  }
+  if (obj) {
+    auto property = odb::dbStringProperty::find(obj, key.c_str());
+    if (property) {
+      property->setValue(value.c_str());
+    } else {
+      odb::dbStringProperty::create(obj, key.c_str(), value.c_str());
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////

@@ -224,6 +224,10 @@ class dbNetwork : public ConcreteNetwork
   InstanceChildIterator* childIterator(const Instance* instance) const override;
   InstancePinIterator* pinIterator(const Instance* instance) const override;
   InstanceNetIterator* netIterator(const Instance* instance) const override;
+  string getAttribute(const Instance* inst, const string& key) const override;
+  void setAttribute(Instance* instance,
+                    const string& key,
+                    const string& value) override;
 
   ////////////////////////////////////////////////////////////////
   // Pin functions
@@ -248,6 +252,10 @@ class dbNetwork : public ConcreteNetwork
   ////////////////////////////////////////////////////////////////
   // Cell functions
   const char* name(const Cell* cell) const override;
+  string getAttribute(const Cell* cell, const string& key) const override;
+  void setAttribute(Cell* cell,
+                    const string& key,
+                    const string& value) override;
 
   bool isConcreteCell(const Cell*) const;
   void registerConcreteCell(const Cell*);

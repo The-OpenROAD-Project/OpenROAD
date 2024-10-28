@@ -96,7 +96,7 @@ static void message_handler(QtMsgType type,
   }
   switch (type) {
     case QtDebugMsg:
-      logger->debug(utl::GUI, "qt", print_msg);
+      debugPrint(logger, utl::GUI, "qt", 1, print_msg);
       break;
     case QtInfoMsg:
       logger->info(utl::GUI, 75, print_msg);
@@ -601,11 +601,9 @@ std::string Gui::requestUserInput(const std::string& title,
                                        QString::fromStdString(question));
 }
 
-void Gui::loadDRC(const std::string& filename)
+void Gui::selectMarkers(odb::dbMarkerCategory* markers)
 {
-  if (!filename.empty()) {
-    main_window->getDRCViewer()->loadReport(QString::fromStdString(filename));
-  }
+  main_window->getDRCViewer()->selectCategory(markers);
 }
 
 void Gui::setDisplayControlsVisible(const std::string& name, bool value)
@@ -777,6 +775,14 @@ void Gui::saveClockTreeImage(const std::string& clock_name,
   }
   main_window->getClockViewer()->saveImage(
       clock_name, filename, corner, width, height);
+}
+
+void Gui::selectClockviewerClock(const std::string& clock_name)
+{
+  if (!enabled()) {
+    return;
+  }
+  main_window->getClockViewer()->selectClock(clock_name);
 }
 
 static QWidget* findWidget(const std::string& name)
@@ -1245,7 +1251,7 @@ void Gui::hideGui()
   main_window->exit();
 }
 
-void Gui::showGui(const std::string& cmds, bool interactive)
+void Gui::showGui(const std::string& cmds, bool interactive, bool load_settings)
 {
   if (enabled()) {
     logger_->warn(utl::GUI, 8, "GUI already active.");
@@ -1256,7 +1262,7 @@ void Gui::showGui(const std::string& cmds, bool interactive)
   // passing in cmd_argc and cmd_argv to meet Qt application requirement for
   // arguments nullptr for tcl interp to indicate nothing to setup and commands
   // and interactive setting
-  startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive);
+  startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive, load_settings);
 }
 
 void Gui::init(odb::dbDatabase* db, utl::Logger* logger)
@@ -1295,7 +1301,8 @@ int startGui(int& argc,
              char* argv[],
              Tcl_Interp* interp,
              const std::string& script,
-             bool interactive)
+             bool interactive,
+             bool load_settings)
 {
   auto gui = gui::Gui::get();
   // ensure continue after close is false
@@ -1312,7 +1319,7 @@ int startGui(int& argc,
   auto* open_road = ord::OpenRoad::openRoad();
 
   // create new MainWindow
-  main_window = new gui::MainWindow;
+  main_window = new gui::MainWindow(load_settings);
 
   open_road->addObserver(main_window);
   if (!interactive) {
