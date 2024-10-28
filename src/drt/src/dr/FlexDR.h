@@ -730,16 +730,28 @@ class FlexDRWorker
 
   void initGridGraph(const frDesign* design);
   void initTrackCoords(
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap);
+      boost::container::flat_map<
+          frCoord,
+          boost::container::flat_map<frLayerNum, frTrackPattern*>>& xMap,
+      boost::container::flat_map<
+          frCoord,
+          boost::container::flat_map<frLayerNum, frTrackPattern*>>& yMap);
   void initTrackCoords_route(
       drNet* net,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap);
+      boost::container::flat_map<
+          frCoord,
+          boost::container::flat_map<frLayerNum, frTrackPattern*>>& xMap,
+      boost::container::flat_map<
+          frCoord,
+          boost::container::flat_map<frLayerNum, frTrackPattern*>>& yMap);
   void initTrackCoords_pin(
       drNet* net,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap);
+      boost::container::flat_map<
+          frCoord,
+          boost::container::flat_map<frLayerNum, frTrackPattern*>>& xMap,
+      boost::container::flat_map<
+          frCoord,
+          boost::container::flat_map<frLayerNum, frTrackPattern*>>& yMap);
   void initMazeIdx();
   void initMazeIdx_connFig(drConnFig* connFig);
   void initMazeIdx_ap(drAccessPattern* ap);

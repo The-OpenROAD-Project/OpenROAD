@@ -1579,8 +1579,12 @@ void FlexDRWorker::initNets(const frDesign* design)
 
 void FlexDRWorker::initTrackCoords_route(
     drNet* net,
-    std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-    std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap)
+    boost::container::flat_map<
+        frCoord,
+        boost::container::flat_map<frLayerNum, frTrackPattern*>>& xMap,
+    boost::container::flat_map<
+        frCoord,
+        boost::container::flat_map<frLayerNum, frTrackPattern*>>& yMap)
 {
   // add for routes
   std::vector<drConnFig*> allObjs;
@@ -1688,8 +1692,12 @@ void FlexDRWorker::initTrackCoords_route(
 
 void FlexDRWorker::initTrackCoords_pin(
     drNet* net,
-    std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-    std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap)
+    boost::container::flat_map<
+        frCoord,
+        boost::container::flat_map<frLayerNum, frTrackPattern*>>& xMap,
+    boost::container::flat_map<
+        frCoord,
+        boost::container::flat_map<frLayerNum, frTrackPattern*>>& yMap)
 {
   // add for aps
   for (auto& pin : net->getPins()) {
@@ -1722,8 +1730,12 @@ void FlexDRWorker::initTrackCoords_pin(
 }
 
 void FlexDRWorker::initTrackCoords(
-    std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-    std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap)
+    boost::container::flat_map<
+        frCoord,
+        boost::container::flat_map<frLayerNum, frTrackPattern*>>& xMap,
+    boost::container::flat_map<
+        frCoord,
+        boost::container::flat_map<frLayerNum, frTrackPattern*>>& yMap)
 {
   // add boundary points
   // lNum = -10 to indicate routeBox and extBox frCoord
@@ -1747,8 +1759,12 @@ void FlexDRWorker::initTrackCoords(
 void FlexDRWorker::initGridGraph(const frDesign* design)
 {
   // get all track coords based on existing objs and aps
-  std::map<frCoord, std::map<frLayerNum, frTrackPattern*>> xMap;
-  std::map<frCoord, std::map<frLayerNum, frTrackPattern*>> yMap;
+  boost::container::
+      flat_map<frCoord, boost::container::flat_map<frLayerNum, frTrackPattern*>>
+          xMap;
+  boost::container::
+      flat_map<frCoord, boost::container::flat_map<frLayerNum, frTrackPattern*>>
+          yMap;
   initTrackCoords(xMap, yMap);
   gridGraph_.setCost(workerDRCCost_, workerMarkerCost_, workerFixedShapeCost_);
   gridGraph_.init(design,
