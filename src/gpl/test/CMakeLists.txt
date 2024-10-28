@@ -10,6 +10,8 @@ set(TEST_NAMES
   simple01-skip-io
   simple01-rd
   simple02-rd
+  simple03-rd
+  simple04-rd
   simple02
   simple03
   simple04
@@ -18,6 +20,7 @@ set(TEST_NAMES
   simple07
   simple08
   simple09
+  simple10
   core01
   ar01
   ar02
