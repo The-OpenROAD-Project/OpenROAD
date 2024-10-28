@@ -122,7 +122,10 @@ void extMain::resetSumRCtable()
 void extMain::addToSumRCtable()
 {
   _sumUpdated = 1;
-  for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
+  uint ii= 0;
+  _tmpSumCapTable[ii] += _tmpCapTable[ii]; // _lefRC option
+  _tmpSumResTable[ii] += _tmpResTable[ii]; // _lefRC option
+  for (uint ii = 1; ii < _metRCTable.getCnt(); ii++) {
     _tmpSumCapTable[ii] += _tmpCapTable[ii];
     _tmpSumResTable[ii] += _tmpResTable[ii];
   }
@@ -130,6 +133,9 @@ void extMain::addToSumRCtable()
 
 void extMain::copyToSumRCtable()
 {
+    uint ii= 0;
+  _tmpSumCapTable[ii]= _tmpCapTable[ii]; // _lefRC option
+  _tmpSumResTable[ii]= _tmpResTable[ii]; // _lefRC option
   for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
     _tmpSumCapTable[ii] = _tmpCapTable[ii];
     _tmpSumResTable[ii] = _tmpResTable[ii];
@@ -1696,9 +1702,22 @@ bool extMain::setCorners(const char* rulesFileName)
     }
   }
   _currentModel = getRCmodel(0);
+  if (_v2)
+  {
+       if (_processCornerTable != nullptr && _couplingFlag > 0 ) {
+      for (uint ii = 0; ii < _processCornerTable->getCnt(); ii++) {
+        extCorner* s = _processCornerTable->get(ii);
+        _modelMap.add(s->_model);
+            _metRCTable.add(_currentModel->getMetRCTable(s->_model));
+
+      }
+    }
+  }
+  else {
   for (uint ii = 0; (_couplingFlag > 0) && ii < _modelMap.getCnt(); ii++) {
     uint jj = _modelMap.get(ii);
     _metRCTable.add(_currentModel->getMetRCTable(jj));
+  }
   }
   _extDbCnt = _processCornerTable->getCnt();
 

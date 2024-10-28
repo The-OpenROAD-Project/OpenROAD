@@ -73,6 +73,7 @@ extract(const char* ext_model_file,
         bool  lef_rc,
         bool skip_over_cell,
         float version,
+        int corner,
         int dbg
         )
 {
@@ -81,6 +82,7 @@ extract(const char* ext_model_file,
 
   opts.ext_model_file = ext_model_file;
   opts.corner_cnt = corner_cnt;
+  opts.corner = corner;
   opts.max_res = max_res;
   opts.coupling_threshold = coupling_threshold;
   opts.signal_table = 3;

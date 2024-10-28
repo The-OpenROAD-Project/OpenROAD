@@ -630,19 +630,6 @@ bool OUREVERSEORDER = false;
       }
       continue;
     }
-
-    if (parser.isKeyword(0, "rcStats")) {  // TO_TEST
-      _layerCnt = parser.getInt(2);
-      createModelTable(1, _layerCnt);
-      for (uint kk = 0; kk < _modelCnt; kk++)
-        _dataRateTable->add(0.0);
-
-      _modelTable[0]->allocateInitialTables(_layerCnt, 10, true, true, true);
-
-      _modelTable[0]->readRCstats(&parser);
-
-      continue;
-    }
     if (parser.isKeyword(0, "Layer")) {
       _layerCnt = parser.getInt(2);
       continue;
@@ -657,13 +644,14 @@ bool OUREVERSEORDER = false;
       if (cornerCnt > 0) {
         if ((rulesFileModelCnt > 0) && (rulesFileModelCnt < cornerCnt)) {
           logger_->warn(
-              RCX, 224,
+              RCX, 226,
               "There were {} extraction models defined but only {} exists "
               "in the extraction rules file {}",
               cornerCnt, rulesFileModelCnt, name);
           return false;
         }
-        createModelTable(cornerCnt, _layerCnt);
+        // createModelTable(cornerCnt, _layerCnt);
+        createModelTable(rulesFileModelCnt, _layerCnt);
 
         for (uint jj = 0; jj < cornerCnt; jj++) {
           uint modelIndex = cornerTable[jj];
@@ -676,23 +664,11 @@ bool OUREVERSEORDER = false;
             break;
           }
           if (kk == rulesFileModelCnt) {
-            logger_->warn(RCX, 225,
+            logger_->warn(RCX, 228,
                           "Cannot find model index {} in extRules file {}",
                           modelIndex, name);
             return false;
           }
-        }
-      } else {  // old behavior;
-                // david 7.20
-                // createModelTable(rulesFileModelCnt,
-        // _layerCnt);
-        createModelTable(1, _layerCnt);
-
-        for (uint kk = 0; kk < _modelCnt; kk++) {
-          _dataRateTable->add(parser.getDouble(kk + 2));
-        }
-        for (uint ii = 0; ii < _modelCnt; ii++) {
-          _modelTable[ii]->_rate = _dataRateTable->get(ii);
         }
       }
       continue;
@@ -703,6 +679,7 @@ bool OUREVERSEORDER = false;
       uint m = parser.getInt(1);
       uint modelIndex = m;
       bool skipModel = false;
+      /*
       if (cornerCnt > 0) {
         uint jj = 0;
         for (; jj < cornerCnt; jj++) {
@@ -720,6 +697,7 @@ bool OUREVERSEORDER = false;
         if (modelIndex)
           skipModel = true;
       }
+      */
       // skipModel= true;
       bool res_skipModel = false;
 
@@ -774,7 +752,158 @@ bool OUREVERSEORDER = false;
   }
   return true;
 }
+/* TODO for v1 flow
+bool extRCModel::createModelProcessTable(uint rulesFileModelCnt, uint cornerCnt)
+{
+    if (cornerCnt==0) // NEW v2 flow -- should not be called by old flow
+    {
 
+
+  if ((rulesFileModelCnt > 0) && (rulesFileModelCnt < cornerCnt)) {
+          logger_->warn(
+              RCX, 224,
+              "There were {} extraction models defined but only {} exists "
+              "in the extraction rules file {}",
+              cornerCnt, rulesFileModelCnt, name);
+          return false;
+        }
+        // createModelTable(cornerCnt, _layerCnt);
+        createModelTable(rulesFileModelCnt, _layerCnt);
+
+        for (uint jj = 0; jj < cornerCnt; jj++) {
+          uint modelIndex = cornerTable[jj];
+
+          uint kk;
+          for (kk = 0; kk < rulesFileModelCnt; kk++) {
+            if (modelIndex != kk)
+              continue;
+            _dataRateTable->add(parser.getDouble(kk + 2));
+            break;
+          }
+          if (kk == rulesFileModelCnt) {
+            logger_->warn(RCX, 225,
+                          "Cannot find model index {} in extRules file {}",
+                          modelIndex, name);
+            return false;
+          }
+        }
+      }
+      return true;
+}
+*/
+bool extRCModel::readRules_v2(char* name, bool bin, bool over, bool under,
+                           bool overUnder, bool diag, double dbFactor) 
+{
+    // clean v2 flow
+
+    bool res_over= false;
+    bool Over= false;
+    bool Under= false;
+    bool OverUnder= false;
+    bool diag_under= false;
+    bool over0= false;
+    bool over1= false;
+    bool under0= false;
+    bool under1= false;
+    bool overunder0= false;
+    bool overunder1= false;
+
+    bool via_res= false;
+
+    spotModelsInRules(name, bin, res_over, Over, Under, OverUnder, diag_under, over0, over1, under0, under1, overunder0, overunder1, via_res);
+
+  // TODO: bool OUREVERSEORDER = false;
+  diag = false;
+  uint cnt = 0;
+  _ruleFileName = strdup(name);
+  Ath__parser parser(NULL);
+  // parser.setDbg(1);
+  parser.addSeparator("\r");
+  parser.openFile(name);
+  while (parser.parseNextLine() > 0) {
+    if (parser.isKeyword(0, "OUREVERSEORDER")) {
+        /* TODO:
+      if (strcmp(parser.get(1), "ON") == 0) {
+        OUREVERSEORDER = true;
+      }
+      */
+    }
+    if (parser.isKeyword(0, "DIAGMODEL")) {
+      if (strcmp(parser.get(1), "ON") == 0) {
+        _diagModel = 1;
+        diag = true;
+      } else if (strcmp(parser.get(1), "TRUE") == 0) {
+        _diagModel = 2;
+        diag = true;
+      }
+      continue;
+    }
+    if (parser.isKeyword(0, "Layer")) {
+      _layerCnt = parser.getInt(2);
+      continue;
+    }
+    if (parser.isKeyword(0, "LayerCount")) {
+      _layerCnt = parser.getInt(1) + 1;
+      _verticalDiag = true;
+      continue;
+    }
+    if (parser.isKeyword(0, "DensityRate")) {
+      uint rulesFileModelCnt = parser.getInt(1);
+      createModelTable(rulesFileModelCnt, _layerCnt);
+      continue;
+    }
+    if (parser.isKeyword(0, "DensityModel")) {
+      uint m = parser.getInt(1);
+      uint modelIndex = m;
+      bool skipModel = false;
+      bool res_skipModel = false;
+
+      for (uint ii = 1; ii < _layerCnt; ii++) {
+        if (res_over) {
+          cnt += readRules_v2(&parser, modelIndex, ii, "RESOVER", "WIDTH", over, false, bin, false, res_skipModel, dbFactor);
+        }
+        cnt += readRules_v2(&parser, modelIndex, ii, "OVER", "WIDTH", over, false, bin, false, skipModel, dbFactor);
+        if (over0)
+        cnt += readRules_v2(&parser, modelIndex, ii, "OVER0", "WIDTH", over, false, bin, false, skipModel, dbFactor);
+        if (over1)
+        cnt += readRules_v2(&parser, modelIndex, ii, "OVER1", "WIDTH", over, false, bin, false, skipModel, dbFactor);
+
+        if (ii < _layerCnt - 1) {
+          cnt += readRules_v2(&parser, modelIndex, ii, "UNDER", "WIDTH", false, under, bin, false, skipModel, dbFactor);
+          if (under0)
+          cnt += readRules_v2(&parser, modelIndex, ii, "UNDER0", "WIDTH", false, under, bin, false, skipModel, dbFactor);
+          if (under1)
+          cnt += readRules_v2(&parser, modelIndex, ii, "UNDER1", "WIDTH", false, under, bin, false, skipModel, dbFactor);
+          if (diag)
+            cnt += readRules_v2(&parser, modelIndex, ii, "DIAGUNDER", "WIDTH", false, false, bin, diag, skipModel, dbFactor);
+        }
+        if ((ii > 1) && (ii < _layerCnt - 1))
+        {
+            cnt += readRules_v2(&parser, modelIndex, ii, "OVERUNDER", "WIDTH", overUnder, overUnder, bin, false, skipModel, dbFactor);
+            if (overunder0)
+            cnt += readRules_v2(&parser, modelIndex, ii, "OVERUNDER0", "WIDTH", overUnder, overUnder, bin, false, skipModel, dbFactor);
+            if (overunder1)
+            cnt += readRules_v2(&parser, modelIndex, ii, "OVERUNDER1", "WIDTH", overUnder, overUnder, bin, false, skipModel, dbFactor);
+        }
+      }
+      if (!_v2_flow) // v1 flow can only handle one corner
+        break;
+
+      if (!via_res)
+        continue;
+      
+      while (parser.parseNextLine())
+      {
+          if (parser.isKeyword(0, "VIARES"))
+          {
+              _modelTable[modelIndex]->ReadRules(&parser);
+              break;
+          }
+      }
+    }   
+  }
+  return true;
+}
 
 uint extRCModel::readRules_v2(Ath__parser* parser, uint m, uint ii,
                            const char* ouKey, const char* wKey, bool over,
@@ -805,17 +934,13 @@ uint extRCModel::readRules_v2(Ath__parser* parser, uint m, uint ii,
     if (parser->isKeyword(0, "DIAG_DIST"))
       diagDistCnt = parser->getInt(3);
   }
-
-// TODO- Read ViaResistance 
- // _modelTable[m]->addViaModel
-
   if (over && under && (met > 1)) {
     if (!ignore) {
       if (strcmp(ouKey, "OVERUNDER") == 0) {
         _modelTable[m]->allocOverUnderTable(met, false, wTable, dbFactor);
         _modelTable[m]->_capOverUnder[met]->readRulesOverUnder(parser, widthCnt, bin, ignore, dbFactor);
       } else if (strcmp(ouKey, "OVERUNDER0") == 0) {
-        _modelTable[m]->allocOverUnderTable(met, true, wTable, dbFactor); // should be before OVERUNDER1
+        _modelTable[m]->allocOverUnderTable(met, true, wTable, dbFactor); 
         _modelTable[m]->_capOverUnder_open[met][0]->readRulesOverUnder(parser, widthCnt, bin, ignore, dbFactor);
       } else if (strcmp(ouKey, "OVERUNDER1") == 0) {
         _modelTable[m]->_capOverUnder_open[met][1]->readRulesOverUnder(parser, widthCnt, bin, ignore, dbFactor);

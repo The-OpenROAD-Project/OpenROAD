@@ -78,10 +78,12 @@ proc get_model_corners { args } {
 }
 sta::define_cmd_args "extract_parasitics" {
     [-ext_model_file filename]
+    [-corner cornerIndex]
     [-corner_cnt count]
     [-max_res ohms]
     [-coupling_threshold fF]
     [-debug_net_id id]
+    [ -dbg dbg_num ]
     [-lef_res]
     [-lef_rc]
     [-cc_model track]
@@ -89,18 +91,18 @@ sta::define_cmd_args "extract_parasitics" {
     [-no_merge_via_res]
     [-skip_over_cell ]
     [-version]
-
 }
-
 proc extract_parasitics { args } {
   sta::parse_key_args "extract_parasitics" args \
     keys { -ext_model_file
            -corner_cnt
+           -corner
            -max_res
            -coupling_threshold
            -debug_net_id
            -context_depth
            -cc_model
+           -dbg
            -version } \
     flags { -lef_res -lef_rc
             -no_merge_via_res -skip_over_cell }
@@ -114,6 +116,11 @@ proc extract_parasitics { args } {
   if { [info exists keys(-corner_cnt)] } {
     set corner_cnt $keys(-corner_cnt)
     sta::check_positive_integer "-corner_cnt" $corner_cnt
+  }
+  set corner -1
+  if { [info exists keys(-corner)] } {
+    set corner $keys(-corner)
+    sta::check_positive_integer "-corner" $corner
   }
 
   set max_res 50.0
@@ -149,6 +156,9 @@ proc extract_parasitics { args } {
     set debug_net_id $keys(-debug_net_id)
   }
   set dbg 0
+  if { [info exists keys(-dbg)] } {
+    set dbg $keys(-dbg)
+  }
   set version 1.0
    if { [info exists keys(-version)] } {
     set version $keys(-version)
@@ -157,7 +167,7 @@ proc extract_parasitics { args } {
   rcx::extract $ext_model_file $corner_cnt $max_res \
     $coupling_threshold $cc_model \
     $depth $debug_net_id $lef_res $no_merge_via_res \
-    $lef_rc $skip_over_cell $version $dbg
+    $lef_rc $skip_over_cell $version $corner $dbg
 
 }
 

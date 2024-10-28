@@ -65,6 +65,7 @@ void extract(const char* ext_model_file,
         bool  lef_rc,
         bool skip_over_cell,
         float version,
+        int corner,
         int dbg
         );
 void

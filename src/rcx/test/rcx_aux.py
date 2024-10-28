@@ -24,8 +24,27 @@ def extract_parasitics(
     lef_rc=False,
     skip_over_cell=False,
     version=1.0,
+    corner=-1,
     dbg=0
 ):
+    # NOTE: This is position dependent
+    rcx.extract(
+        ext_model_file,
+        corner_cnt,
+        max_res,
+        coupling_threshold,
+        cc_model,
+        context_depth,
+        debug_net_id,
+        lef_res,
+        no_merge_via_res,
+    	lef_rc,
+    	skip_over_cell,
+    	version,
+	corner,
+    	dbg
+    )
+
     opts = rcx.ExtractOptions()
 
     opts.ext_model_file = ext_model_file
@@ -39,6 +58,7 @@ def extract_parasitics(
     opts.no_merge_via_res = no_merge_via_res
 
     design.getOpenRCX().extract(opts)
+
 
 def write_spef(design, *, filename="", nets="", net_id=0, coordinates=False):
     opts = rcx.SpefOptions()
@@ -87,6 +107,7 @@ def bench_wires(
     opts.under_dist = under_dist
     opts.v1= v1
     design.getOpenRCX().bench_wires(opts)
+
 
 def adjust_rc(design, *, res_factor=1.0, cc_factor=1.0, gndc_factor=1.0):
     design.getOpenRCX().adjust_rc(res_factor, cc_factor, gndc_factor)

@@ -274,7 +274,7 @@ void Ext::extract(ExtractOptions options)
   }
   _ext->setExtractionOptions_v2(options);
 
-  if (_ext->_v2)
+  if (_ext->_v2) 
     _ext->makeBlockRCsegs_v2(options.net, options.ext_model_file);
   else
     _ext->makeBlockRCsegs(options.net,

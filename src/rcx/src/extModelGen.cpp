@@ -67,9 +67,6 @@ uint extMain::GenExtModel(std::list<std::string> spef_file_list, std::list<std::
     {
         std::string str = *it;
         const char *filename = str.c_str();
-        // TODO notice(0, "------------------------- Reading SPEF file %s\n", filename);
-
-/* -------------------------------- TODO ----------------------------------------------------------------------------- */
          readSPEF((char *)filename, NULL, /*force*/ true, false,
                  NULL, false, false, false, -0.5, 0.0, 1.0, false,
                  false, NULL, false, -1, 0.0, 0.0, NULL, NULL, NULL, NULL,
