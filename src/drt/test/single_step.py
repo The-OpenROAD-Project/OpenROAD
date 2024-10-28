@@ -4,7 +4,7 @@ import drt_aux
 
 tech = Tech()
 tech.readLef("testcase/ispd18_sample/ispd18_sample.input.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("testcase/ispd18_sample/ispd18_sample.input.def")
 
 gr = design.getGlobalRouter()

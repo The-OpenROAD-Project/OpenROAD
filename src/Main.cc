@@ -65,8 +65,10 @@
 #endif
 
 #include "gui/gui.h"
+#include "ord/Design.h"
 #include "ord/InitOpenRoad.hh"
 #include "ord/OpenRoad.hh"
+#include "ord/Tech.h"
 #include "sta/StaMain.hh"
 #include "sta/StringUtil.hh"
 #include "utl/Logger.h"
@@ -202,6 +204,12 @@ static void initPython()
 
 static volatile sig_atomic_t fatal_error_in_progress = 0;
 
+// When we enter through main() we have a single tech and design.
+// Custom applications using OR as a library might define multiple.
+// Such applications won't allocate or use these objects.
+static std::unique_ptr<ord::Tech> the_tech;
+static std::unique_ptr<ord::Design> the_design;
+
 static void handler(int sig)
 {
   if (fatal_error_in_progress) {
@@ -262,6 +270,10 @@ int main(int argc, char* argv[])
 
   cmd_argc = argc;
   cmd_argv = argv;
+
+  the_tech = std::make_unique<ord::Tech>();
+  the_design = std::make_unique<ord::Design>(the_tech.get());
+  ord::OpenRoad::setOpenRoad(the_design->getOpenRoad());
 #ifdef ENABLE_PYTHON3
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-python")) {
     // Setup the app with tcl
@@ -389,6 +401,7 @@ static int tclAppInit(int& argc,
                       const char* init_filename,
                       Tcl_Interp* interp)
 {
+  Tcl_SetAssocData(interp, "design", nullptr, the_design.get());
   bool exit_after_cmd_file = false;
   // first check if gui was requested and launch.
   // gui will call this function again as part of setup

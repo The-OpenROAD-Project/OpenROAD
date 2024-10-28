@@ -1,9 +1,8 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
+///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
+//
+// Copyright (c) 2024, Precision Innovations Inc.
+// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -30,43 +29,8 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-#include <memory>
-#include <string>
-
-namespace odb {
-class dbDatabase;
-class dbTech;
+%typemap(in,numinputs=0) ord::Design* design {
+  $1 = static_cast<ord::Design*>(Tcl_GetAssocData(interp, "design", nullptr));
 }
-
-namespace sta {
-class dbSta;
-}  // namespace sta
-
-namespace ord {
-
-class OpenRoad;
-
-class Tech
-{
- public:
-  Tech();
-  ~Tech();
-
-  void readLef(const std::string& file_name);
-  void readLiberty(const std::string& file_name);
-  odb::dbDatabase* getDB();
-  odb::dbTech* getTech();
-  sta::dbSta* getSta();
-
- private:
-  OpenRoad* app_;
-
-  friend class Design;
-};
-
-}  // namespace ord

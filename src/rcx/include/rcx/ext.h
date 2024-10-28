@@ -55,7 +55,7 @@ class Ext
       odb::dbDatabase* db,
       Logger* logger,
       const char* spef_version,
-      const std::function<void()>& rcx_init = []() {});
+      const std::function<void()>& rcx_init);
   void setLogger(Logger* logger);
 
   void write_rules(const std::string& name,
@@ -109,8 +109,8 @@ class Ext
   {
     const char* debug_net = nullptr;
     const char* ext_model_file = nullptr;
-    const char* const net = nullptr;
-    const int cc_up = 2;
+    const char* net = nullptr;
+    static constexpr int cc_up = 2;
     int corner_cnt = 1;
     double max_res = 50.0;
     bool no_merge_via_res = false;

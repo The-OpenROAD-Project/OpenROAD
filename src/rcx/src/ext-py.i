@@ -40,7 +40,11 @@ using namespace odb;
 using rcx::Ext;
 %}
 
+%include <std_string.i>
 %include "../../Exception-py.i"
+%import "odb/odb.h"
+%feature ("flatnested");
+%include "rcx/ext.h"
 
 // Just reuse the api defined in ext.i
 %inline %{

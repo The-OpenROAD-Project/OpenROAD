@@ -65,6 +65,7 @@ enum class RowParity
 class InitFloorplan
 {
  public:
+  InitFloorplan() = default; // only for swig
   InitFloorplan(odb::dbBlock* block, Logger* logger, sta::dbNetwork* network);
 
   // utilization is in [0, 100]%
@@ -131,9 +132,9 @@ class InitFloorplan
   void updateVoltageDomain(int core_lx, int core_ly, int core_ux, int core_uy);
   void addUsedSites(std::map<std::string, odb::dbSite*>& sites_by_name) const;
 
-  odb::dbBlock* block_;
-  Logger* logger_;
-  sta::dbNetwork* network_;
+  odb::dbBlock* block_{nullptr};
+  Logger* logger_{nullptr};
+  sta::dbNetwork* network_{nullptr};
 
   // this is a set of sets of all constructed site ids.
   std::set<std::set<int>> constructed_patterns_;
