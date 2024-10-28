@@ -51,11 +51,10 @@ class Ext
   Ext();
   ~Ext() = default;
 
-  void init(
-      odb::dbDatabase* db,
-      Logger* logger,
-      const char* spef_version,
-      const std::function<void()>& rcx_init);
+  void init(odb::dbDatabase* db,
+            Logger* logger,
+            const char* spef_version,
+            const std::function<void()>& rcx_init);
   void setLogger(Logger* logger);
 
   void write_rules(const std::string& name,
