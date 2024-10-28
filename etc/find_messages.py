@@ -96,7 +96,7 @@ warn_regexp_tcl = re.compile(
       \s+                              # white-space
       (?P<id>\d+)                      # id
       \s+                              # white-space
-      (?P<message>"(?:[^"\\]|\\.)+?")  # message
+      (?P<message>"(?:[^"]|\\.)+?")  # message
     """,
     re.VERBOSE | re.MULTILINE,
 )

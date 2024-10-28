@@ -1415,11 +1415,13 @@ void NesterovBase::initFillerGCells()
     targetDensity_ = nbVars_.targetDensity;
   }
 
+  const int64_t nesterovInstanceArea = nesterovInstsArea();
+
   // TODO density screening
   movableArea_ = whiteSpaceArea_ * targetDensity_;
 
-  totalFillerArea_ = movableArea_ - nesterovInstsArea();
-  uniformTargetDensity_ = static_cast<float>(nesterovInstsArea())
+  totalFillerArea_ = movableArea_ - nesterovInstanceArea;
+  uniformTargetDensity_ = static_cast<float>(nesterovInstanceArea)
                           / static_cast<float>(whiteSpaceArea_);
 
   if (totalFillerArea_ < 0) {
@@ -1434,10 +1436,52 @@ void NesterovBase::initFillerGCells()
                 uniformTargetDensity_);
   }
 
-  int fillerCnt = static_cast<int>(
+  // limit filler cells
+  const double limit_filler_ratio = 10;
+  const double filler_scale_factor = std::sqrt(
+      totalFillerArea_ / (limit_filler_ratio * nesterovInstanceArea));
+  if (filler_scale_factor > 1.0) {
+    debugPrint(log_,
+               GPL,
+               "FillerInit",
+               1,
+               "InitialFillerCellSize {} {}",
+               fillerDx_,
+               fillerDy_);
+
+    const double max_edge_fillers = 1024;
+    const int max_filler_x = std::max(
+        static_cast<int>(pb_->die().coreDx() / max_edge_fillers), fillerDx_);
+    const int max_filler_y = std::max(
+        static_cast<int>(pb_->die().coreDy() / max_edge_fillers), fillerDy_);
+    debugPrint(log_,
+               GPL,
+               "FillerInit",
+               1,
+               "FillerCellMaxSize {} {}",
+               max_filler_x,
+               max_filler_y);
+
+    debugPrint(log_,
+               GPL,
+               "FillerInit",
+               1,
+               "FillerCellScaleFactor {:.4f}",
+               filler_scale_factor);
+
+    fillerDx_ *= filler_scale_factor;
+    fillerDy_ *= filler_scale_factor;
+
+    fillerDx_ = std::min(fillerDx_, max_filler_x);
+    fillerDy_ = std::min(fillerDy_, max_filler_y);
+  }
+
+  const int fillerCnt = static_cast<int>(
       totalFillerArea_ / static_cast<int64_t>(fillerDx_ * fillerDy_));
 
   debugPrint(log_, GPL, "FillerInit", 1, "CoreArea {}", coreArea);
+  debugPrint(
+      log_, GPL, "FillerInit", 1, "nesterovInstsArea {}", nesterovInstanceArea);
   debugPrint(log_, GPL, "FillerInit", 1, "WhiteSpaceArea {}", whiteSpaceArea_);
   debugPrint(log_, GPL, "FillerInit", 1, "MovableArea {}", movableArea_);
   debugPrint(

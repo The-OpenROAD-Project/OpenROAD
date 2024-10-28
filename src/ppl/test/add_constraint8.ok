@@ -3,6 +3,8 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
+[INFO PPL-0048] Restrict pins [ req_msg[31] req_msg[30] req_msg[29] req_msg[28] req_msg[27] ... ] to region 0.00u-18.00u at the BOTTOM edge.
+[INFO PPL-0048] Restrict pins [ resp_msg[15] resp_msg[14] resp_msg[13] resp_msg[12] resp_msg[11] ... ] to region 10.00u-20.00u at the BOTTOM edge.
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0001] Number of slots           1228

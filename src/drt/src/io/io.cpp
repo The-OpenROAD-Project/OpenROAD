@@ -48,7 +48,6 @@ namespace drt {
 io::Parser::Parser(odb::dbDatabase* dbIn, frDesign* designIn, Logger* loggerIn)
     : db_(dbIn),
       design_(designIn),
-      tech_(design_->getTech()),
       logger_(loggerIn),
       readLayerCnt_(0),
       masterSliceLayer_(nullptr)
@@ -75,8 +74,8 @@ void io::Parser::setTracks(odb::dbBlock* block)
 {
   auto tracks = block->getTrackGrids();
   for (auto track : tracks) {
-    if (tech_->name2layer_.find(track->getTechLayer()->getName())
-        == tech_->name2layer_.end()) {
+    if (getTech()->name2layer_.find(track->getTechLayer()->getName())
+        == getTech()->name2layer_.end()) {
       logger_->error(
           DRT, 94, "Cannot find layer: {}.", track->getTechLayer()->getName());
     }
@@ -86,7 +85,8 @@ void io::Parser::setTracks(odb::dbBlock* block)
       std::unique_ptr<frTrackPattern> tmpTrackPattern
           = std::make_unique<frTrackPattern>();
       tmpTrackPattern->setLayerNum(
-          tech_->name2layer_.at(track->getTechLayer()->getName())
+          getTech()
+              ->name2layer_.at(track->getTechLayer()->getName())
               ->getLayerNum());
       tmpTrackPattern->setHorizontal(true);
       int startCoord, numTracks, step;
@@ -102,7 +102,8 @@ void io::Parser::setTracks(odb::dbBlock* block)
       std::unique_ptr<frTrackPattern> tmpTrackPattern
           = std::make_unique<frTrackPattern>();
       tmpTrackPattern->setLayerNum(
-          tech_->name2layer_.at(track->getTechLayer()->getName())
+          getTech()
+              ->name2layer_.at(track->getTechLayer()->getName())
               ->getLayerNum());
       tmpTrackPattern->setHorizontal(false);
       int startCoord, numTracks, step;
@@ -119,7 +120,7 @@ void io::Parser::setTracks(odb::dbBlock* block)
 
 void io::Parser::setInst(odb::dbInst* inst)
 {
-  frMaster* master = design_->name2master_.at(inst->getMaster()->getName());
+  frMaster* master = getDesign()->name2master_.at(inst->getMaster()->getName());
   auto uInst = std::make_unique<frInst>(inst->getName(), master);
   auto tmpInst = uInst.get();
 
@@ -150,8 +151,8 @@ void io::Parser::setInst(odb::dbInst* inst)
 void io::Parser::setInsts(odb::dbBlock* block)
 {
   for (auto inst : block->getInsts()) {
-    if (design_->name2master_.find(inst->getMaster()->getName())
-        == design_->name2master_.end()) {
+    if (getDesign()->name2master_.find(inst->getMaster()->getName())
+        == getDesign()->name2master_.end()) {
       logger_->error(
           DRT, 95, "Library cell {} not found.", inst->getMaster()->getName());
     }
@@ -167,12 +168,13 @@ void io::Parser::setObstructions(odb::dbBlock* block)
 {
   for (auto blockage : block->getObstructions()) {
     std::string layerName = blockage->getBBox()->getTechLayer()->getName();
-    if (tech_->name2layer_.find(layerName) == tech_->name2layer_.end()) {
+    if (getTech()->name2layer_.find(layerName)
+        == getTech()->name2layer_.end()) {
       logger_->warn(
           DRT, 282, "Skipping blockage. Cannot find layer {}.", layerName);
       continue;
     }
-    frLayerNum layerNum = tech_->name2layer_[layerName]->getLayerNum();
+    frLayerNum layerNum = getTech()->name2layer_[layerName]->getLayerNum();
     auto blkIn = std::make_unique<frBlockage>();
     auto pinIn = std::make_unique<frBPin>();
     pinIn->setId(0);
@@ -203,18 +205,19 @@ void io::Parser::setVias(odb::dbBlock* block)
       frLayerNum botLayerNum = 0;
       frLayerNum topLayerNum = 0;
 
-      if (tech_->name2layer_.find(params.getCutLayer()->getName())
-          == tech_->name2layer_.end()) {
+      if (getTech()->name2layer_.find(params.getCutLayer()->getName())
+          == getTech()->name2layer_.end()) {
         logger_->error(DRT,
                        97,
                        "Cannot find cut layer {}.",
                        params.getCutLayer()->getName());
       } else {
-        cutLayerNum = tech_->name2layer_.find(params.getCutLayer()->getName())
+        cutLayerNum = getTech()
+                          ->name2layer_.find(params.getCutLayer()->getName())
                           ->second->getLayerNum();
       }
-      if (tech_->name2layer_.find(params.getBottomLayer()->getName())
-          == tech_->name2layer_.end()) {
+      if (getTech()->name2layer_.find(params.getBottomLayer()->getName())
+          == getTech()->name2layer_.end()) {
         logger_->error(DRT,
                        98,
                        "Cannot find bottom layer {}.",
@@ -230,12 +233,13 @@ void io::Parser::setVias(odb::dbBlock* block)
           continue;
         }
         botLayerNum
-            = tech_->name2layer_.find(params.getBottomLayer()->getName())
+            = getTech()
+                  ->name2layer_.find(params.getBottomLayer()->getName())
                   ->second->getLayerNum();
       }
 
-      if (tech_->name2layer_.find(params.getTopLayer()->getName())
-          == tech_->name2layer_.end()) {
+      if (getTech()->name2layer_.find(params.getTopLayer()->getName())
+          == getTech()->name2layer_.end()) {
         logger_->error(DRT,
                        99,
                        "Cannot find top layer {}.",
@@ -249,7 +253,8 @@ void io::Parser::setVias(odb::dbBlock* block)
                         via->getName());
           continue;
         }
-        topLayerNum = tech_->name2layer_.find(params.getTopLayer()->getName())
+        topLayerNum = getTech()
+                          ->name2layer_.find(params.getTopLayer()->getName())
                           ->second->getLayerNum();
       }
       int xSize = params.getXCutSize();
@@ -312,7 +317,7 @@ void io::Parser::setVias(odb::dbBlock* block)
       auto viaDef = std::make_unique<frViaDef>(via->getName());
       viaDef->addLayer1Fig(std::move(uBotFig));
       viaDef->addLayer2Fig(std::move(uTopFig));
-      auto cutLayer = tech_->getLayer(cutLayerNum);
+      auto cutLayer = getTech()->getLayer(cutLayerNum);
       for (auto& uShape : cutFigs) {
         viaDef->addCutFig(std::move(uShape));
       }
@@ -332,18 +337,19 @@ void io::Parser::setVias(odb::dbBlock* block)
         viaDef->setCutClass(cutClass);
         viaDef->setCutClassIdx(cutClassIdx);
       }
-      if (!tech_->addVia(std::move(viaDef))) {
+      if (!getTech()->addVia(std::move(viaDef))) {
         logger_->error(
             utl::DRT, 337, "Duplicated via definition for {}", via->getName());
       }
     } else {
       std::map<frLayerNum, std::set<odb::dbBox*>> lNum2Int;
       for (auto box : via->getBoxes()) {
-        if (tech_->name2layer_.find(box->getTechLayer()->getName())
-            == tech_->name2layer_.end()) {
+        if (getTech()->name2layer_.find(box->getTechLayer()->getName())
+            == getTech()->name2layer_.end()) {
           return;
         }
-        auto layerNum = tech_->name2layer_.at(box->getTechLayer()->getName())
+        auto layerNum = getTech()
+                            ->name2layer_.at(box->getTechLayer()->getName())
                             ->getLayerNum();
         lNum2Int[layerNum].insert(box);
       }
@@ -379,7 +385,7 @@ void io::Parser::setVias(odb::dbBlock* block)
       if (via->isDefault()) {
         viaDef->setDefault(true);
       }
-      if (!tech_->addVia(std::move(viaDef))) {
+      if (!getTech()->addVia(std::move(viaDef))) {
         logger_->error(
             utl::DRT, 338, "Duplicated via definition for {}", via->getName());
       }
@@ -398,7 +404,7 @@ inline frMIdx getZIdx(frLayerNum lNum)
 
 void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
 {
-  if (design_->tech_->getNondefaultRule(ndr->getName())) {
+  if (getTech()->getNondefaultRule(ndr->getName())) {
     logger_->warn(DRT,
                   256,
                   "Skipping NDR {} because another rule with the same name "
@@ -411,13 +417,13 @@ void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
   int z;
   ptnd = std::make_unique<frNonDefaultRule>();
   fnd = ptnd.get();
-  design_->tech_->addNDR(std::move(ptnd));
+  getTech()->addNDR(std::move(ptnd));
   fnd->setName(ndr->getName().data());
   fnd->setHardSpacing(ndr->getHardSpacing());
   std::vector<odb::dbTechLayerRule*> lr;
   ndr->getLayerRules(lr);
   for (auto& l : lr) {
-    auto layer = tech_->getLayer(l->getLayer()->getName());
+    auto layer = getTech()->getLayer(l->getLayer()->getName());
     z = getZIdx(layer->getLayerNum());
     fnd->setWidth(l->getWidth(), z);
     fnd->setSpacing(l->getSpacing(), z);
@@ -426,9 +432,9 @@ void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
   std::vector<odb::dbTechVia*> vias;
   ndr->getUseVias(vias);
   for (auto via : vias) {
-    auto layer = tech_->getLayer(via->getBottomLayer()->getName());
+    auto layer = getTech()->getLayer(via->getBottomLayer()->getName());
     z = getZIdx(layer->getLayerNum());
-    fnd->addVia(tech_->getVia(via->getName()), z);
+    fnd->addVia(getTech()->getVia(via->getName()), z);
   }
   std::vector<odb::dbTechViaGenerateRule*> viaRules;
   ndr->getUseViaRules(viaRules);
@@ -443,7 +449,7 @@ void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
         z = via->getViaLayerRule(i)->getLayer()->getNumber() / 2;
       }
     }
-    fnd->addViaRule(design_->getTech()->getViaRule(via->getName()), z);
+    fnd->addViaRule(getTech()->getViaRule(via->getName()), z);
   }
 }
 
@@ -455,13 +461,13 @@ void io::Parser::setNDRs(odb::dbDatabase* db)
   for (auto ndr : db->getChip()->getBlock()->getNonDefaultRules()) {
     createNDR(ndr);
   }
-  for (auto& layer : design_->getTech()->getLayers()) {
+  for (auto& layer : getTech()->getLayers()) {
     if (layer->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
-    MTSAFEDIST = std::max(MTSAFEDIST,
-                          design_->getTech()->getMaxNondefaultSpacing(
-                              getZIdx(layer->getLayerNum())));
+    MTSAFEDIST = std::max(
+        MTSAFEDIST,
+        getTech()->getMaxNondefaultSpacing(getZIdx(layer->getLayerNum())));
   }
 }
 
@@ -727,8 +733,8 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
           case odb::dbWireDecoder::VWIRE:
             prevLayer = decoder.getLayer();
             layerName = prevLayer->getName();
-            if (tech_->name2layer_.find(layerName)
-                == tech_->name2layer_.end()) {
+            if (getTech()->name2layer_.find(layerName)
+                == getTech()->name2layer_.end()) {
               logger_->error(DRT, 107, "Unsupported layer {}.", layerName);
             }
             break;
@@ -811,7 +817,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
           endpath = true;
         }
       } while (!endpath);
-      auto layerNum = tech_->name2layer_[layerName]->getLayerNum();
+      auto layerNum = getTech()->name2layer_[layerName]->getLayerNum();
       if (hasRect) {
         auto tmpPWire = std::make_unique<frPatchWire>();
         tmpPWire->setLayerNum(layerNum);
@@ -830,7 +836,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
         }
         tmpP->addToNet(netIn);
         tmpP->setLayerNum(layerNum);
-        auto layer = tech_->name2layer_[layerName];
+        auto layer = getTech()->name2layer_[layerName];
         auto styleWidth = width;
         if (!(styleWidth)) {
           if ((layer->isHorizontal() && beginY != endY)
@@ -840,7 +846,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
             styleWidth = layer->getWidth();
           }
         }
-        width = tech_->name2layer_[layerName]->getWidth();
+        width = getTech()->name2layer_[layerName]->getWidth();
         auto defaultBeginExt = width / 2;
         auto defaultEndExt = width / 2;
 
@@ -876,7 +882,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
         netIn->addShape(std::move(tmpP));
       }
       if (!viaName.empty()) {
-        if (tech_->name2via_.find(viaName) == tech_->name2via_.end()) {
+        if (getTech()->name2via_.find(viaName) == getTech()->name2via_.end()) {
           logger_->error(DRT, 108, "Unsupported via in db.");
         } else {
           Point p;
@@ -885,7 +891,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
           } else {
             p = {beginX, beginY};
           }
-          auto viaDef = tech_->name2via_[viaName];
+          auto viaDef = getTech()->name2via_[viaName];
           auto tmpP = std::make_unique<frVia>(viaDef);
           tmpP->setOrigin(p);
           tmpP->addToNet(netIn);
@@ -900,13 +906,15 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
       for (auto box : swire->getWires()) {
         if (!box->isVia()) {
           getSBoxCoords(box, beginX, beginY, endX, endY, width);
-          auto layerNum = tech_->name2layer_[box->getTechLayer()->getName()]
+          auto layerNum = getTech()
+                              ->name2layer_[box->getTechLayer()->getName()]
                               ->getLayerNum();
           auto tmpP = std::make_unique<frPathSeg>();
           tmpP->setPoints(Point(beginX, beginY), Point(endX, endY));
           tmpP->addToNet(netIn);
           tmpP->setLayerNum(layerNum);
-          width = (width) ? width : tech_->name2layer_[layerName]->getWidth();
+          width
+              = (width) ? width : getTech()->name2layer_[layerName]->getWidth();
           auto defaultExt = width / 2;
 
           frEndStyleEnum tmpBeginEnum;
@@ -940,13 +948,14 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
             viaName = box->getBlockVia()->getName();
           }
 
-          if (tech_->name2via_.find(viaName) == tech_->name2via_.end()) {
+          if (getTech()->name2via_.find(viaName)
+              == getTech()->name2via_.end()) {
             logger_->error(DRT, 109, "Unsupported via in db.");
           } else {
             int x, y;
             box->getViaXY(x, y);
             Point p(x, y);
-            auto viaDef = tech_->name2via_[viaName];
+            auto viaDef = getTech()->name2via_[viaName];
             auto tmpP = std::make_unique<frVia>(viaDef);
             tmpP->setOrigin(p);
             tmpP->addToNet(netIn);
@@ -973,8 +982,8 @@ void io::Parser::setNets(odb::dbBlock* block)
     std::unique_ptr<frNet> uNetIn = std::make_unique<frNet>(net->getName());
     auto netIn = uNetIn.get();
     if (net->getNonDefaultRule()) {
-      uNetIn->updateNondefaultRule(design_->getTech()->getNondefaultRule(
-          net->getNonDefaultRule()->getName()));
+      uNetIn->updateNondefaultRule(
+          getTech()->getNondefaultRule(net->getNonDefaultRule()->getName()));
     }
     if (net->getSigType() == dbSigType::CLOCK) {
       uNetIn->updateIsClock(true);
@@ -1084,8 +1093,9 @@ void io::Parser::setBTerms(odb::dbBlock* block)
     int bterm_bottom_layer_idx = std::numeric_limits<int>::max();
     for (auto bpin : term->getBPins()) {
       for (auto box : bpin->getBoxes()) {
-        frLayerNum layer_idx
-            = tech_->name2layer_[box->getTechLayer()->getName()]->getLayerNum();
+        frLayerNum layer_idx = getTech()
+                                   ->name2layer_[box->getTechLayer()->getName()]
+                                   ->getLayerNum();
         bterm_bottom_layer_idx = std::min(bterm_bottom_layer_idx, layer_idx);
       }
     }
@@ -1100,15 +1110,16 @@ void io::Parser::setBTerms(odb::dbBlock* block)
       for (auto pin : term->getBPins()) {
         for (auto box : pin->getBoxes()) {
           odb::Rect bbox = box->getBox();
-          if (tech_->name2layer_.find(box->getTechLayer()->getName())
-              == tech_->name2layer_.end()) {
+          if (getTech()->name2layer_.find(box->getTechLayer()->getName())
+              == getTech()->name2layer_.end()) {
             logger_->error(DRT,
                            112,
                            "Unsupported layer {}.",
                            box->getTechLayer()->getName());
           }
           frLayerNum layerNum
-              = tech_->name2layer_[box->getTechLayer()->getName()]
+              = getTech()
+                    ->name2layer_[box->getTechLayer()->getName()]
                     ->getLayerNum();
           frLayerNum finalLayerNum = layerNum;
           setBTerms_addPinFig_helper(pinIn.get(), bbox, finalLayerNum);
@@ -1121,7 +1132,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
       auto db_pin = (odb::dbBPin*) *term->getBPins().begin();
       for (auto& db_ap : db_pin->getAccessPoints()) {
         auto ap = std::make_unique<frAccessPoint>();
-        updatefrAccessPoint(db_ap, ap.get(), tech_);
+        updatefrAccessPoint(db_ap, ap.get(), getTech());
         pa->addAccessPoint(std::move(ap));
       }
     }
@@ -1147,7 +1158,8 @@ odb::Rect io::Parser::getViaBoxForTermAboveMaxLayer(odb::dbBTerm* term,
           odb::dbTechVia* via = pshape.shape.getTechVia();
           for (const auto& vbox : via->getBoxes()) {
             frLayerNum layerNum
-                = tech_->name2layer_[vbox->getTechLayer()->getName()]
+                = getTech()
+                      ->name2layer_[vbox->getTechLayer()->getName()]
                       ->getLayerNum();
             if (layerNum == TOP_ROUTING_LAYER) {
               odb::Rect viaBox = vbox->getBox();
@@ -1186,7 +1198,7 @@ void io::Parser::setBTerms_addPinFig_helper(frBPin* pinIn,
 void io::Parser::setAccessPoints(odb::dbDatabase* db)
 {
   std::map<odb::dbAccessPoint*, frAccessPoint*> ap_map;
-  for (auto& master : design_->getMasters()) {
+  for (auto& master : getDesign()->getMasters()) {
     auto db_master = db->findMaster(master->getName().c_str());
     for (auto& term : master->getTerms()) {
       auto db_mterm = db_master->findMTerm(term->getName().c_str());
@@ -1211,7 +1223,7 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
           for (auto db_ap : db_aps) {
             std::unique_ptr<frAccessPoint> ap
                 = std::make_unique<frAccessPoint>();
-            updatefrAccessPoint(db_ap, ap.get(), tech_);
+            updatefrAccessPoint(db_ap, ap.get(), getTech());
             ap_map[db_ap] = ap.get();
             pa->addAccessPoint(std::move(ap));
           }
@@ -1258,7 +1270,7 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
 
 void io::Parser::readDesign(odb::dbDatabase* db)
 {
-  if (design_->getTopBlock() != nullptr) {
+  if (getBlock() != nullptr) {
     return;
   }
   if (VERBOSE > 0) {
@@ -1274,45 +1286,40 @@ void io::Parser::readDesign(odb::dbDatabase* db)
     logger_->error(DRT, 117, "Load design first.");
   }
   auto tmpBlock = std::make_unique<frBlock>(std::string(block->getName()));
-  design_->setTopBlock(std::move(tmpBlock));
+  getDesign()->setTopBlock(std::move(tmpBlock));
   getBlock()->trackPatterns_.clear();
-  getBlock()->trackPatterns_.resize(tech_->layers_.size());
+  getBlock()->trackPatterns_.resize(getTech()->layers_.size());
   setDieArea(block);
   setTracks(block);
   setInsts(block);
   setObstructions(block);
+  TopLayerBTermHandler(getDesign(), db, logger_).processBTermsAboveTopLayer();
   setBTerms(block);
   setAccessPoints(db);
   setNets(block);
   getBlock()->setId(0);
   addFakeNets();
 
-  auto numLefVia = tech_->vias_.size();
+  auto numLefVia = getTech()->vias_.size();
   if (VERBOSE > 0) {
     logger_->report("");
-    Rect dieBox = design_->getTopBlock()->getDieBox();
-    logger_->report("Design:                   {}",
-                    design_->getTopBlock()->getName());
+    Rect dieBox = getBlock()->getDieBox();
+    logger_->report("Design:                   {}", getBlock()->getName());
     // TODO Rect can't be logged directly
     std::stringstream dieBoxSStream;
     dieBoxSStream << dieBox;
     logger_->report("Die area:                 {}", dieBoxSStream.str());
     logger_->report("Number of track patterns: {}",
-                    design_->getTopBlock()->getTrackPatterns().size());
+                    getBlock()->getTrackPatterns().size());
     logger_->report("Number of DEF vias:       {}",
-                    tech_->vias_.size() - numLefVia);
-    logger_->report("Number of components:     {}",
-                    design_->getTopBlock()->insts_.size());
-    logger_->report("Number of terminals:      {}",
-                    design_->getTopBlock()->terms_.size());
-    logger_->report("Number of snets:          {}",
-                    design_->getTopBlock()->snets_.size());
-    logger_->report("Number of nets:           {}",
-                    design_->getTopBlock()->nets_.size());
+                    getTech()->vias_.size() - numLefVia);
+    logger_->report("Number of components:     {}", getBlock()->insts_.size());
+    logger_->report("Number of terminals:      {}", getBlock()->terms_.size());
+    logger_->report("Number of snets:          {}", getBlock()->snets_.size());
+    logger_->report("Number of nets:           {}", getBlock()->nets_.size());
     logger_->report("");
-    logger_->metric("route__net", design_->getTopBlock()->nets_.size());
-    logger_->metric("route__net__special",
-                    design_->getTopBlock()->snets_.size());
+    logger_->metric("route__net", getBlock()->nets_.size());
+    logger_->metric("route__net__special", getBlock()->snets_.size());
   }
 }
 
@@ -1322,12 +1329,12 @@ void io::Parser::addFakeNets()
   auto vssFakeNet = std::make_unique<frNet>(std::string("frFakeVSS"));
   vssFakeNet->setType(dbSigType::GROUND);
   vssFakeNet->setIsFake(true);
-  design_->getTopBlock()->addFakeSNet(std::move(vssFakeNet));
+  getBlock()->addFakeSNet(std::move(vssFakeNet));
   // add VDD fake net
   auto vddFakeNet = std::make_unique<frNet>(std::string("frFakeVDD"));
   vddFakeNet->setType(dbSigType::POWER);
   vddFakeNet->setIsFake(true);
-  design_->getTopBlock()->addFakeSNet(std::move(vddFakeNet));
+  getBlock()->addFakeSNet(std::move(vddFakeNet));
 }
 
 void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
@@ -1385,7 +1392,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     rptr->setSameXY(hasSameXY);
     rptr->setExceptSameNet(rule->isExceptSameNet());
     rptr->setExceptSameMetal(rule->isExceptSameMetal());
-    tech_->addUConstraint(std::move(uCon));
+    getTech()->addUConstraint(std::move(uCon));
     tmpLayer->addLef58CornerSpacingConstraint(rptr);
   }
   for (auto rule : layer->getTechLayerSpacingTablePrlRules()) {
@@ -1410,7 +1417,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
       spacingTableConstraint->setEolWidth(rule->getEolWidth());
     }
     tmpLayer->addConstraint(spacingTableConstraint.get());
-    tech_->addUConstraint(std::move(spacingTableConstraint));
+    getTech()->addUConstraint(std::move(spacingTableConstraint));
   }
   for (auto rule : layer->getTechLayerSpacingEolRules()) {
     if (rule->isExceptExactWidthValid()) {
@@ -1524,7 +1531,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
       enc->setAllCuts(rule->isAllCutsValid());
     }
     tmpLayer->addLef58SpacingEndOfLineConstraint(con.get());
-    tech_->addUConstraint(std::move(con));
+    getTech()->addUConstraint(std::move(con));
   }
   for (auto rule : layer->getTechLayerWrongDirSpacingRules()) {
     std::unique_ptr<frConstraint> uCon
@@ -1542,17 +1549,17 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
                     "in WrongDirSpacingRule.");
       continue;
     }
-    tech_->addUConstraint(std::move(uCon));
+    getTech()->addUConstraint(std::move(uCon));
     tmpLayer->addLef58SpacingWrongDirConstraint(rptr);
   }
-  if (tech_->hasUnidirectionalLayer(layer)) {
+  if (getTech()->hasUnidirectionalLayer(layer)) {
     tmpLayer->setUnidirectional(true);
   }
   if (layer->isRectOnly()) {
     auto rectOnlyConstraint = std::make_unique<frLef58RectOnlyConstraint>(
         layer->isRectOnlyExceptNonCorePins());
     tmpLayer->setLef58RectOnlyConstraint(rectOnlyConstraint.get());
-    tech_->addUConstraint(std::move(rectOnlyConstraint));
+    getTech()->addUConstraint(std::move(rectOnlyConstraint));
   }
   // We don't handle coloring so tracks on any multiple patterned
   // layer are forced to be on grid.
@@ -1562,7 +1569,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
             layer->isRightWayOnGridOnlyCheckMask());
     tmpLayer->setLef58RightWayOnGridOnlyConstraint(
         rightWayOnGridOnlyConstraint.get());
-    tech_->addUConstraint(std::move(rightWayOnGridOnlyConstraint));
+    getTech()->addUConstraint(std::move(rightWayOnGridOnlyConstraint));
   }
   for (auto rule : layer->getTechLayerMinStepRules()) {
     if (rule->getMaxEdges() > 1) {
@@ -1581,7 +1588,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     con->setEolWidth(rule->isNoBetweenEol() ? rule->getEolWidth() : -1);
     con->setExceptRectangle(rule->isExceptRectangle());
     tmpLayer->addLef58MinStepConstraint(con.get());
-    tech_->addUConstraint(std::move(con));
+    getTech()->addUConstraint(std::move(con));
   }
   for (auto rule : layer->getTechLayerEolExtensionRules()) {
     frCollection<frCoord> widthTbl;
@@ -1597,17 +1604,17 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     con->setMinSpacing(rule->getSpacing());
     con->setParallelOnly(rule->isParallelOnly());
     tmpLayer->addLef58EolExtConstraint(con.get());
-    tech_->addUConstraint(std::move(con));
+    getTech()->addUConstraint(std::move(con));
   }
   for (auto rule : layer->getTechLayerAreaRules()) {
     auto con = std::make_unique<frLef58AreaConstraint>(rule);
     tmpLayer->addLef58AreaConstraint(con.get());
-    tech_->addUConstraint(std::move(con));
+    getTech()->addUConstraint(std::move(con));
   }
   for (auto rule : layer->getTechLayerTwoWiresForbiddenSpcRules()) {
     auto con = std::make_unique<frLef58TwoWiresForbiddenSpcConstraint>(rule);
     tmpLayer->addTwoWiresForbiddenSpacingConstraint(con.get());
-    tech_->addUConstraint(std::move(con));
+    getTech()->addUConstraint(std::move(con));
   }
   for (auto rule : layer->getTechLayerForbiddenSpacingRules()) {
     if (!rule->hasTwoEdges()) {
@@ -1644,7 +1651,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     }
     auto con = std::make_unique<frLef58ForbiddenSpcConstraint>(rule);
     tmpLayer->addForbiddenSpacingConstraint(con.get());
-    tech_->addUConstraint(std::move(con));
+    getTech()->addUConstraint(std::move(con));
   }
 }
 
@@ -1666,7 +1673,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     } else {
       cutClass->setNumCut(1);
     }
-    tech_->addCutClass(tmpLayer->getLayerNum(), std::move((cutClass)));
+    getTech()->addCutClass(tmpLayer->getLayerNum(), std::move((cutClass)));
   }
   for (auto rule : layer->getTechLayerCutSpacingRules()) {
     switch (rule->getType()) {
@@ -1703,7 +1710,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
         con->setSameMask(rule->isSameMask());
 
         tmpLayer->addLef58CutSpacingConstraint(con.get());
-        tech_->addUConstraint(std::move(con));
+        getTech()->addUConstraint(std::move(con));
         break;
       }
 
@@ -1768,7 +1775,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
           con->setWrongDirection(rule->isWrongDirection());
         }
         tmpLayer->addLef58CutSpacingConstraint(con.get());
-        tech_->addUConstraint(std::move(con));
+        getTech()->addUConstraint(std::move(con));
         break;
       }
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::AREA:
@@ -1803,7 +1810,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
         con->setSameMask(rule->isSameMask());
         con->setParallelOverlap(true);
         tmpLayer->addLef58CutSpacingConstraint(con.get());
-        tech_->addUConstraint(std::move(con));
+        getTech()->addUConstraint(std::move(con));
         break;
       }
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::PARALLELWITHIN:
@@ -1872,7 +1879,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
         tmpLayer->setLef58DiffNetCutSpcTblConstraint(con.get());
       }
     }
-    tech_->addUConstraint(std::move(con));
+    getTech()->addUConstraint(std::move(con));
   }
   for (auto rule : layer->getTechLayerKeepOutZoneRules()) {
     if (rule->isSameMask()) {
@@ -1918,7 +1925,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     std::unique_ptr<frConstraint> uCon
         = std::make_unique<frLef58KeepOutZoneConstraint>(rule);
     auto rptr = static_cast<frLef58KeepOutZoneConstraint*>(uCon.get());
-    tech_->addUConstraint(std::move(uCon));
+    getTech()->addUConstraint(std::move(uCon));
     tmpLayer->addKeepOutZoneConstraint(rptr);
   }
   for (auto rule : layer->getTechLayerCutEnclosureRules()) {
@@ -2014,7 +2021,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
                      "Invalid index for cut class {}.",
                      rule->getCutClass()->getName());
     }
-    tech_->addUConstraint(std::move(uCon));
+    getTech()->addUConstraint(std::move(uCon));
     tmpLayer->addLef58EnclosureConstraint(rptr);
   }
   for (auto rule : layer->getTechLayerMaxSpacingRules()) {
@@ -2037,7 +2044,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
         continue;
       }
     }
-    tech_->addUConstraint(std::move(u_con));
+    getTech()->addUConstraint(std::move(u_con));
     tmpLayer->addLef58MaxSpacingConstraint(rptr);
   }
 }
@@ -2052,7 +2059,7 @@ void io::Parser::addDefaultMasterSliceLayer()
     tmpMSLayer->setDbLayer(masterSliceLayer_);
   }
   tmpMSLayer->setLayerNum(readLayerCnt_++);
-  tech_->addLayer(std::move(uMSLayer));
+  getTech()->addLayer(std::move(uMSLayer));
 }
 
 void io::Parser::addDefaultCutLayer()
@@ -2061,7 +2068,7 @@ void io::Parser::addDefaultCutLayer()
   auto tmpCutLayer = uCutLayer.get();
   tmpCutLayer->setFakeCut(true);
   tmpCutLayer->setLayerNum(readLayerCnt_++);
-  tech_->addLayer(std::move(uCutLayer));
+  getTech()->addLayer(std::move(uCutLayer));
 }
 
 void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
@@ -2077,7 +2084,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   auto tmpLayer = uLayer.get();
   tmpLayer->setDbLayer(layer);
   tmpLayer->setLayerNum(readLayerCnt_++);
-  tech_->addLayer(std::move(uLayer));
+  getTech()->addLayer(std::move(uLayer));
 
   tmpLayer->setWidth(layer->getWidth());
   if (layer->getMinWidth() > layer->getWidth()) {
@@ -2092,37 +2099,37 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   auto minWidthConstraint
       = std::make_unique<frMinWidthConstraint>(tmpLayer->getMinWidth());
   tmpLayer->setMinWidthConstraint(minWidthConstraint.get());
-  tech_->addUConstraint(std::move(minWidthConstraint));
+  getTech()->addUConstraint(std::move(minWidthConstraint));
 
   // Add off grid rule for every layer
   auto recheckConstraint = std::make_unique<frRecheckConstraint>();
   tmpLayer->setRecheckConstraint(recheckConstraint.get());
-  tech_->addUConstraint(std::move(recheckConstraint));
+  getTech()->addUConstraint(std::move(recheckConstraint));
 
   // Add short rule for every layer
   auto shortConstraint = std::make_unique<frShortConstraint>();
   tmpLayer->setShortConstraint(shortConstraint.get());
-  tech_->addUConstraint(std::move(shortConstraint));
+  getTech()->addUConstraint(std::move(shortConstraint));
 
   // Add off grid rule for every layer
   auto offGridConstraint = std::make_unique<frOffGridConstraint>();
   tmpLayer->setOffGridConstraint(offGridConstraint.get());
-  tech_->addUConstraint(std::move(offGridConstraint));
+  getTech()->addUConstraint(std::move(offGridConstraint));
 
   // Add nsmetal rule for every layer
   auto nsmetalConstraint = std::make_unique<frNonSufficientMetalConstraint>();
   tmpLayer->setNonSufficientMetalConstraint(nsmetalConstraint.get());
 
-  tech_->addUConstraint(std::move(nsmetalConstraint));
+  getTech()->addUConstraint(std::move(nsmetalConstraint));
   setRoutingLayerProperties(layer, tmpLayer);
   // read minArea rule
   if (layer->hasArea()) {
-    frCoord minArea = frCoord(
-        round(layer->getArea() * tech_->getDBUPerUU() * tech_->getDBUPerUU()));
+    frCoord minArea = frCoord(round(layer->getArea() * getTech()->getDBUPerUU()
+                                    * getTech()->getDBUPerUU()));
     std::unique_ptr<frConstraint> uCon
         = std::make_unique<frAreaConstraint>(minArea);
     auto rptr = static_cast<frAreaConstraint*>(uCon.get());
-    tech_->addUConstraint(std::move(uCon));
+    getTech()->addUConstraint(std::move(uCon));
     tmpLayer->setAreaConstraint(rptr);
   }
 
@@ -2159,7 +2166,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       rptr->setMinstepType(frMinstepTypeEnum::UNKNOWN);
     }
     rptr->setMinStepLength(layer->getMinStep());
-    tech_->addUConstraint(std::move(uCon));
+    getTech()->addUConstraint(std::move(uCon));
     tmpLayer->setMinStepConstraint(rptr);
   }
 
@@ -2182,7 +2189,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     auto minEnclosedAreaConstraint
         = std::make_unique<frMinEnclosedAreaConstraint>(minEnclosedArea);
     tmpLayer->addMinEnclosedAreaConstraint(minEnclosedAreaConstraint.get());
-    tech_->addUConstraint(std::move(minEnclosedAreaConstraint));
+    getTech()->addUConstraint(std::move(minEnclosedAreaConstraint));
   }
 
   // read spacing rule
@@ -2209,7 +2216,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       uCon->setMaxWidth(maxWidth);
       uCon->setLayer(tmpLayer);
       tmpLayer->addSpacingRangeConstraint(uCon.get());
-      tech_->addUConstraint(std::move(uCon));
+      getTech()->addUConstraint(std::move(uCon));
     } else if (rule->hasLengthThreshold()) {
       logger_->warn(DRT, 141, "SpacingLengthThreshold unsupported.");
     } else if (rule->hasSpacingNotchLength()) {
@@ -2228,14 +2235,14 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
         rptr->setParWithin(parWithin);
         rptr->setTwoEdges(hasSpacingTwoEdges);
       }
-      tech_->addUConstraint(std::move(uCon));
+      getTech()->addUConstraint(std::move(uCon));
       tmpLayer->addEolSpacing(rptr);
     } else if (rule->getCutSameNet()) {
       bool pgOnly = rule->getSameNetPgOnly();
       std::unique_ptr<frConstraint> uCon
           = std::make_unique<frSpacingSamenetConstraint>(minSpacing, pgOnly);
       auto rptr = uCon.get();
-      tech_->addUConstraint(std::move(uCon));
+      getTech()->addUConstraint(std::move(uCon));
       tmpLayer->setSpacingSamenet(
           static_cast<frSpacingSamenetConstraint*>(rptr));
     } else {
@@ -2246,7 +2253,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
           = std::make_unique<frSpacingTablePrlConstraint>(
               fr2DLookupTbl(rowName, rowVals, colName, colVals, tblVals));
       auto rptr = static_cast<frSpacingTablePrlConstraint*>(uCon.get());
-      tech_->addUConstraint(std::move(uCon));
+      getTech()->addUConstraint(std::move(uCon));
       tmpLayer->setMinSpacing(rptr);
     }
   }
@@ -2264,7 +2271,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     std::unique_ptr<frConstraint> uCon
         = std::make_unique<frSpacingTableInfluenceConstraint>(tbl);
     auto rptr = static_cast<frSpacingTableInfluenceConstraint*>(uCon.get());
-    tech_->addUConstraint(std::move(uCon));
+    getTech()->addUConstraint(std::move(uCon));
     tmpLayer->setSpacingTableInfluence(rptr);
   }
   // read prl spacingTable
@@ -2292,13 +2299,13 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
         rowName, rowVals, colName, colVals, tblVals);
     spacingTableConstraint = std::make_unique<frSpacingTableConstraint>(prlTbl);
     tmpLayer->addConstraint(spacingTableConstraint.get());
-    tech_->addUConstraint(std::move(spacingTableConstraint));
+    getTech()->addUConstraint(std::move(spacingTableConstraint));
     // new
     std::unique_ptr<frConstraint> uCon
         = std::make_unique<frSpacingTablePrlConstraint>(
             fr2DLookupTbl(rowName, rowVals, colName, colVals, tblVals));
     auto rptr = static_cast<frSpacingTablePrlConstraint*>(uCon.get());
-    tech_->addUConstraint(std::move(uCon));
+    getTech()->addUConstraint(std::move(uCon));
     tmpLayer->setMinSpacing(rptr);
   }
 
@@ -2324,7 +2331,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
         = std::make_unique<frSpacingTableTwConstraint>(rowVals, tblVals);
     auto rptr = static_cast<frSpacingTableTwConstraint*>(uCon.get());
     rptr->setLayer(tmpLayer);
-    tech_->addUConstraint(std::move(uCon));
+    getTech()->addUConstraint(std::move(uCon));
     tmpLayer->setMinSpacing(rptr);
   }
 
@@ -2350,7 +2357,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     if (rule->getLengthForCuts(length, distance)) {
       rptr->setLength(length, distance);
     }
-    tech_->addUConstraint(std::move(uCon));
+    getTech()->addUConstraint(std::move(uCon));
     tmpLayer->addMinimumcutConstraint(rptr);
   }
   for (auto rule : layer->getTechLayerMinCutRules()) {
@@ -2381,7 +2388,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     std::unique_ptr<frConstraint> uCon
         = std::make_unique<frLef58MinimumcutConstraint>(rule);
     auto rptr = static_cast<frLef58MinimumcutConstraint*>(uCon.get());
-    tech_->addUConstraint(std::move(uCon));
+    getTech()->addUConstraint(std::move(uCon));
     tmpLayer->addLef58MinimumcutConstraint(rptr);
   }
 
@@ -2397,7 +2404,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     rptr->setExceptWithin(rule->isExceptWithin());
     rptr->setWithinLow(rule->getWithinLow());
     rptr->setWithinHigh(rule->getWithinHigh());
-    tech_->addUConstraint(std::move(uCon));
+    getTech()->addUConstraint(std::move(uCon));
     tmpLayer->addLef58EolKeepOutConstraint(rptr);
   }
 }
@@ -2420,12 +2427,12 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
   auto tmpLayer = uLayer.get();
   tmpLayer->setDbLayer(layer);
   tmpLayer->setLayerNum(readLayerCnt_++);
-  tech_->addLayer(std::move(uLayer));
+  getTech()->addLayer(std::move(uLayer));
 
   auto shortConstraint = std::make_unique<frShortConstraint>();
   tmpLayer->addConstraint(shortConstraint.get());
   tmpLayer->setShortConstraint(shortConstraint.get());
-  tech_->addUConstraint(std::move(shortConstraint));
+  getTech()->addUConstraint(std::move(shortConstraint));
 
   // read spacing constraint
   for (odb::dbTechLayerSpacingRule* rule : layer->getV54SpacingRules()) {
@@ -2478,14 +2485,14 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
                                                    parallelOverlap,
                                                    cutArea);
     tmpLayer->addCutSpacingConstraint(cutSpacingConstraint.get());
-    tech_->addUConstraint(std::move(cutSpacingConstraint));
+    getTech()->addUConstraint(std::move(cutSpacingConstraint));
   }
   if (layer->hasOrthSpacingTable()) {
     std::vector<std::pair<int, int>> tbl;
     layer->getOrthSpacingTable(tbl);
     auto uCon = std::make_unique<frOrthSpacingTableConstraint>(tbl);
     tmpLayer->setOrthSpacingTableConstraint(uCon.get());
-    tech_->addUConstraint(std::move(uCon));
+    getTech()->addUConstraint(std::move(uCon));
   }
 
   // lef58
@@ -2522,13 +2529,13 @@ void io::Parser::setLayers(odb::dbTech* db_tech)
   // MetalWidthViaMap
   for (auto rule : db_tech->getMetalWidthViaMap()) {
     auto db_layer = rule->getCutLayer();
-    auto layer = tech_->getLayer(db_layer->getName());
+    auto layer = getTech()->getLayer(db_layer->getName());
     if (layer == nullptr) {
       continue;
     }
     auto uCon = std::make_unique<frMetalWidthViaConstraint>(rule);
     layer->addMetalWidthViaConstraint(uCon.get());
-    tech_->addUConstraint(std::move(uCon));
+    getTech()->addUConstraint(std::move(uCon));
   }
 }
 
@@ -2537,7 +2544,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
   frUInt4 num_terms = 0;
   frUInt4 num_blockages = 0;
   frUInt4 num_masters = 1;
-  const frLayerNum numLayers = tech_->getLayers().size();
+  const frLayerNum numLayers = getTech()->getLayers().size();
   std::vector<RTree<frMPin*>> pin_shapes;
   pin_shapes.resize(numLayers);
   auto addPinFig
@@ -2589,8 +2596,8 @@ void io::Parser::setMasters(odb::dbDatabase* db)
           for (auto box : mpin->getGeometry()) {
             auto layer = box->getTechLayer();
             if (!layer) {
-              if (tech_->name2via_.find(box->getTechVia()->getName())
-                  == tech_->name2via_.end()) {
+              if (getTech()->name2via_.find(box->getTechVia()->getName())
+                  == getTech()->name2via_.end()) {
                 logger_->warn(DRT,
                               193,
                               "Skipping unsupported via {} in macro pin {}/{}.",
@@ -2600,7 +2607,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
               }
               int x, y;
               box->getViaXY(x, y);
-              auto viaDef = tech_->name2via_[box->getTechVia()->getName()];
+              auto viaDef = getTech()->name2via_[box->getTechVia()->getName()];
               auto tmpP = std::make_unique<frVia>(viaDef);
               tmpP->setOrigin({x, y});
               // layer1 rect
@@ -2614,8 +2621,8 @@ void io::Parser::setMasters(odb::dbDatabase* db)
                   tmpP->getCutBBox(), viaDef->getCutLayerNum(), pinIn.get());
             } else {
               std::string layer_name = layer->getName();
-              if (tech_->name2layer_.find(layer_name)
-                  == tech_->name2layer_.end()) {
+              if (getTech()->name2layer_.find(layer_name)
+                  == getTech()->name2layer_.end()) {
                 auto type = box->getTechLayer()->getType();
                 if (type == odb::dbTechLayerType::ROUTING
                     || type == odb::dbTechLayerType::CUT) {
@@ -2629,7 +2636,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
                 continue;
               }
               frLayerNum layerNum
-                  = tech_->name2layer_.at(layer_name)->getLayerNum();
+                  = getTech()->name2layer_.at(layer_name)->getLayerNum();
 
               frCoord xl = box->xMin();
               frCoord yl = box->yMin();
@@ -2643,13 +2650,14 @@ void io::Parser::setMasters(odb::dbDatabase* db)
       }
 
       std::vector<gtl::polygon_90_set_data<frCoord>> layerPolys(
-          tech_->getLayers().size());
+          getTech()->getLayers().size());
       for (auto obs : master->getObstructions()) {
         frLayerNum layerNum = -1;
         auto layer = obs->getTechLayer();
         std::string layer_name = layer->getName();
         auto layer_type = layer->getType();
-        if (tech_->name2layer_.find(layer_name) == tech_->name2layer_.end()) {
+        if (getTech()->name2layer_.find(layer_name)
+            == getTech()->name2layer_.end()) {
           if (layer_type == odb::dbTechLayerType::ROUTING
               || layer_type == odb::dbTechLayerType::CUT) {
             logger_->warn(DRT,
@@ -2660,7 +2668,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
           }
           continue;
         }
-        layerNum = tech_->name2layer_.at(layer_name)->getLayerNum();
+        layerNum = getTech()->name2layer_.at(layer_name)->getLayerNum();
 
         frCoord xl = obs->xMin();
         frCoord yl = obs->yMin();
@@ -2750,7 +2758,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
         lNum++;
       }
       tmpMaster->setId(num_masters++);
-      design_->addMaster(std::move(tmpMaster));
+      getDesign()->addMaster(std::move(tmpMaster));
       num_terms = 0;
       num_blockages = 0;
     }
@@ -2768,14 +2776,15 @@ void io::Parser::setTechViaRules(odb::dbTech* db_tech)
     for (int i = 0; i < count; i++) {
       auto layerRule = rule->getViaLayerRule(i);
       std::string layerName = layerRule->getLayer()->getName();
-      if (tech_->name2layer_.find(layerName) == tech_->name2layer_.end()) {
+      if (getTech()->name2layer_.find(layerName)
+          == getTech()->name2layer_.end()) {
         logger_->error(DRT,
                        129,
                        "Unknown layer {} for viarule {}.",
                        layerName,
                        rule->getName());
       }
-      frLayerNum lNum = tech_->name2layer_[layerName]->getLayerNum();
+      frLayerNum lNum = getTech()->name2layer_[layerName]->getLayerNum();
       lNum2Int[lNum] = 1;
     }
     int curOrder = 0;
@@ -2792,8 +2801,9 @@ void io::Parser::setTechViaRules(odb::dbTech* db_tech)
     }
     for (int i = 0; i < count; i++) {
       auto layerRule = rule->getViaLayerRule(i);
-      frLayerNum layerNum
-          = tech_->name2layer_[layerRule->getLayer()->getName()]->getLayerNum();
+      frLayerNum layerNum = getTech()
+                                ->name2layer_[layerRule->getLayer()->getName()]
+                                ->getLayerNum();
       if (layerRule->hasEnclosure()) {
         frCoord x;
         frCoord y;
@@ -2869,7 +2879,7 @@ void io::Parser::setTechViaRules(odb::dbTech* db_tech)
         }
       }
     }
-    tech_->addViaRuleGenerate(std::move(viaRuleGen));
+    getTech()->addViaRuleGenerate(std::move(viaRuleGen));
   }
 }
 
@@ -2880,7 +2890,8 @@ void io::Parser::setTechVias(odb::dbTech* db_tech)
     bool has_unknown_layer = false;
     for (auto box : via->getBoxes()) {
       std::string layerName = box->getTechLayer()->getName();
-      if (tech_->name2layer_.find(layerName) == tech_->name2layer_.end()) {
+      if (getTech()->name2layer_.find(layerName)
+          == getTech()->name2layer_.end()) {
         logger_->warn(DRT,
                       124,
                       "Via {} with unused layer {} will be ignored.",
@@ -2898,7 +2909,7 @@ void io::Parser::setTechVias(odb::dbTech* db_tech)
         has_unknown_layer = true;
         continue;
       }
-      frLayerNum lNum = tech_->name2layer_[layerName]->getLayerNum();
+      frLayerNum lNum = getTech()->name2layer_[layerName]->getLayerNum();
       lNum2Int[lNum] = 1;
     }
     if (has_unknown_layer) {
@@ -2923,11 +2934,11 @@ void io::Parser::setTechVias(odb::dbTech* db_tech)
     for (auto box : via->getBoxes()) {
       frLayerNum layerNum;
       std::string layer = box->getTechLayer()->getName();
-      if (tech_->name2layer_.find(layer) == tech_->name2layer_.end()) {
+      if (getTech()->name2layer_.find(layer) == getTech()->name2layer_.end()) {
         logger_->error(
             DRT, 127, "Unknown layer {} for via {}.", layer, via->getName());
       } else {
-        layerNum = tech_->name2layer_.at(layer)->getLayerNum();
+        layerNum = getTech()->name2layer_.at(layer)->getLayerNum();
       }
       frCoord xl = box->xMin();
       frCoord yl = box->yMin();
@@ -2945,7 +2956,7 @@ void io::Parser::setTechVias(odb::dbTech* db_tech)
       }
     }
     auto cutLayerNum = viaDef->getCutLayerNum();
-    auto cutLayer = tech_->getLayer(cutLayerNum);
+    auto cutLayer = getTech()->getLayer(cutLayerNum);
     int cutClassIdx = -1;
     frLef58CutClass* cutClass = nullptr;
 
@@ -2963,7 +2974,7 @@ void io::Parser::setTechVias(odb::dbTech* db_tech)
       viaDef->setCutClass(cutClass);
       viaDef->setCutClassIdx(cutClassIdx);
     }
-    if (!tech_->addVia(std::move(viaDef))) {
+    if (!getTech()->addVia(std::move(viaDef))) {
       logger_->error(
           utl::DRT, 339, "Duplicated via definition for {}", via->getName());
     }
@@ -2980,12 +2991,12 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
   if (tech == nullptr) {
     logger_->error(DRT, 136, "Load design first.");
   }
-  tech_->setDBUPerUU(tech->getDbUnitsPerMicron());
+  getTech()->setDBUPerUU(tech->getDbUnitsPerMicron());
   USEMINSPACING_OBS = tech->getUseMinSpacingObs() == odb::dbOnOffType::ON;
-  tech_->setManufacturingGrid(frUInt4(tech->getManufacturingGrid()));
+  getTech()->setManufacturingGrid(frUInt4(tech->getManufacturingGrid()));
   setLayers(tech);
 
-  auto fr_tech = design_->getTech();
+  auto fr_tech = getTech();
   if (!BOTTOM_ROUTING_LAYER_NAME.empty()) {
     frLayer* layer = fr_tech->getLayer(BOTTOM_ROUTING_LAYER_NAME);
     if (layer) {
@@ -3021,12 +3032,12 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
 
   if (VERBOSE > 0) {
     logger_->report("");
-    logger_->report("Units:                {}", tech_->getDBUPerUU());
-    logger_->report("Number of layers:     {}", tech_->layers_.size());
-    logger_->report("Number of macros:     {}", design_->masters_.size());
-    logger_->report("Number of vias:       {}", tech_->vias_.size());
+    logger_->report("Units:                {}", getTech()->getDBUPerUU());
+    logger_->report("Number of layers:     {}", getTech()->layers_.size());
+    logger_->report("Number of macros:     {}", getDesign()->masters_.size());
+    logger_->report("Number of vias:       {}", getTech()->vias_.size());
     logger_->report("Number of viarulegen: {}",
-                    tech_->viaRuleGenerates_.size());
+                    getTech()->viaRuleGenerates_.size());
     logger_->report("");
   }
 }
@@ -3049,8 +3060,23 @@ void io::Parser::updateDesign()
     netIn->clearOrigGuides();
     updateNetRouting(netIn, db_net);
   }
-  design_->getRegionQuery()->init();
-  design_->getRegionQuery()->initDRObj();
+  getDesign()->getRegionQuery()->init();
+  getDesign()->getRegionQuery()->initDRObj();
+}
+
+frDesign* io::Parser::getDesign() const
+{
+  return design_;
+}
+
+frBlock* io::Parser::getBlock() const
+{
+  return getDesign()->getTopBlock();
+}
+
+frTechObject* io::Parser::getTech() const
+{
+  return getDesign()->getTech();
 }
 
 frTechObject* io::Writer::getTech() const
@@ -3060,7 +3086,7 @@ frTechObject* io::Writer::getTech() const
 
 frDesign* io::Writer::getDesign() const
 {
-  return router_->getDesign();
+  return design_;
 }
 
 void io::Writer::fillConnFigs_net(frNet* net, bool isTA)
@@ -3772,7 +3798,224 @@ void io::Writer::updateDb(odb::dbDatabase* db,
     }
     fillConnFigs(false);
     updateDbConn(block, db_tech, snapshot);
-    router_->processBTermsAboveTopLayer(true);
+    TopLayerBTermHandler(getDesign(), db, logger_)
+        .processBTermsAboveTopLayer(true);
+  }
+}
+
+namespace {
+std::vector<int> getTracksInRange(const frTrackPattern* tp,
+                                  int range_start,
+                                  int range_end)
+{
+  const auto start = tp->getStartCoord();
+  const auto spacing = tp->getTrackSpacing();
+  const auto num_tracks = tp->getNumTracks();
+  std::vector<int> tracks;
+
+  int first_track_idx = (range_start - start + spacing - 1) / spacing;
+  first_track_idx = std::max(first_track_idx, 0);  // Ensure valid index
+
+  int last_track_idx = (range_end - start) / spacing;
+  last_track_idx = std::min(
+      last_track_idx,
+      (int) (num_tracks - 1));  // Ensure it doesn't exceed total tracks
+
+  // Generate tracks only in the valid range
+  for (int i = first_track_idx; i <= last_track_idx; ++i) {
+    int track = start + i * spacing;
+    tracks.push_back(track);
+  }
+
+  return tracks;
+}
+}  // namespace
+
+/**
+ * @details The function iterates over all preferred tracks that pass through
+ * the passed pin_rect and chooses the one that is closest to the center. If no
+ * tracks are found, it chooses the pin center point as the via location.
+ */
+Point io::TopLayerBTermHandler::getBestViaPosition(Rect pin_rect)
+{
+  Point center_pt = pin_rect.center();
+  const auto top_routing_layer
+      = design_->getTech()->getLayer(TOP_ROUTING_LAYER);
+  const bool is_horizontal = top_routing_layer->isHorizontal();
+  const auto track_patterns = design_->getTopBlock()->getTrackPatterns(
+      TOP_ROUTING_LAYER, !is_horizontal);
+  std::vector<frCoord> valid_tracks;
+  for (const auto tp : track_patterns) {
+    const auto result
+        = getTracksInRange(tp,
+                           is_horizontal ? pin_rect.yMin() : pin_rect.xMin(),
+                           is_horizontal ? pin_rect.yMax() : pin_rect.xMax());
+    valid_tracks.insert(valid_tracks.end(), result.begin(), result.end());
+  }
+  if (valid_tracks.empty()) {
+    return center_pt;
+  }
+  frCoord min_dist = std::numeric_limits<frCoord>::max();
+  frCoord best_track = -1;
+  for (const auto& track : valid_tracks) {
+    const auto dist
+        = std::abs(track - (is_horizontal ? center_pt.y() : center_pt.x()));
+    if (dist < min_dist) {
+      min_dist = dist;
+      best_track = track;
+    }
+  }
+  if (!is_horizontal) {
+    return {best_track, center_pt.y()};
+  }
+  return {center_pt.x(), best_track};
+}
+
+int io::TopLayerBTermHandler::countNetBTermsAboveMaxLayer(odb::dbNet* net)
+{
+  odb::dbTech* tech = db_->getTech();
+  odb::dbTechLayer* top_tech_layer
+      = tech->findLayer(TOP_ROUTING_LAYER_NAME.c_str());
+  int bterm_count = 0;
+  for (auto bterm : net->getBTerms()) {
+    int bterm_bottom_layer_idx = std::numeric_limits<int>::max();
+    for (auto bpin : bterm->getBPins()) {
+      for (auto box : bpin->getBoxes()) {
+        bterm_bottom_layer_idx = std::min(
+            bterm_bottom_layer_idx, box->getTechLayer()->getRoutingLevel());
+      }
+    }
+    if (bterm_bottom_layer_idx > top_tech_layer->getRoutingLevel()) {
+      bterm_count++;
+    }
+  }
+
+  return bterm_count;
+}
+
+bool io::TopLayerBTermHandler::netHasStackedVias(odb::dbNet* net)
+{
+  int bterms_above_max_layer = countNetBTermsAboveMaxLayer(net);
+  uint wire_cnt = 0, via_cnt = 0;
+  net->getWireCount(wire_cnt, via_cnt);
+
+  if (wire_cnt != 0 || via_cnt == 0) {
+    return false;
+  }
+
+  odb::dbWirePath path;
+  odb::dbWirePathShape pshape;
+  odb::dbWire* wire = net->getWire();
+
+  odb::dbWirePathItr pitr;
+  std::set<odb::Point> via_points;
+  for (pitr.begin(wire); pitr.getNextPath(path);) {
+    while (pitr.getNextShape(pshape)) {
+      via_points.insert(path.point);
+    }
+  }
+
+  if (via_points.size() != bterms_above_max_layer) {
+    return false;
+  }
+
+  return true;
+}
+
+void io::TopLayerBTermHandler::stackVias(odb::dbBTerm* bterm,
+                                         int top_layer_idx,
+                                         int bterm_bottom_layer_idx,
+                                         bool has_routing)
+{
+  odb::dbNet* net = bterm->getNet();
+  if (netHasStackedVias(net)) {
+    return;
+  }
+
+  odb::dbTech* tech = db_->getTech();
+  auto fr_tech = design_->getTech();
+  std::map<int, odb::dbTechVia*> default_vias;
+
+  for (auto layer : tech->getLayers()) {
+    if (layer->getType() == odb::dbTechLayerType::CUT) {
+      frLayer* fr_layer = fr_tech->getLayer(layer->getName());
+      frViaDef* via_def = fr_layer->getDefaultViaDef();
+      if (via_def == nullptr) {
+        logger_->warn(utl::DRT,
+                      204,
+                      "Cut layer {} has no default via defined.",
+                      layer->getName());
+        continue;
+      }
+      odb::dbTechVia* tech_via = tech->findVia(via_def->getName().c_str());
+      int via_bottom_layer_idx = tech_via->getBottomLayer()->getRoutingLevel();
+      default_vias[via_bottom_layer_idx] = tech_via;
+    }
+  }
+
+  // get bterm rect
+  odb::Rect pin_rect;
+  for (odb::dbBPin* bpin : bterm->getBPins()) {
+    pin_rect = bpin->getBBox();
+    break;
+  }
+
+  // set the via position as the first AP in the same layer of the bterm
+  odb::Point via_position = getBestViaPosition(pin_rect);
+
+  // insert the vias from the top routing layer to the bterm bottom layer
+  odb::dbWire* wire = net->getWire();
+  int bterms_above_max_layer = countNetBTermsAboveMaxLayer(net);
+
+  odb::dbWireEncoder wire_encoder;
+  if (wire == nullptr) {
+    wire = odb::dbWire::create(net);
+    wire_encoder.begin(wire);
+  } else if (bterms_above_max_layer > 1 || has_routing) {
+    // append wire when the net has other pins above the max routing layer
+    wire_encoder.append(wire);
+  } else {
+    logger_->error(utl::DRT, 415, "Net {} already has routes.", net->getName());
+  }
+
+  odb::dbTechLayer* top_tech_layer = tech->findRoutingLayer(top_layer_idx);
+  wire_encoder.newPath(top_tech_layer, odb::dbWireType::ROUTED);
+  wire_encoder.addPoint(via_position.getX(), via_position.getY());
+  for (int layer_idx = top_layer_idx; layer_idx < bterm_bottom_layer_idx;
+       layer_idx++) {
+    wire_encoder.addTechVia(default_vias[layer_idx]);
+  }
+  wire_encoder.end();
+}
+
+void io::TopLayerBTermHandler::processBTermsAboveTopLayer(bool has_routing)
+{
+  if (TOP_ROUTING_LAYER_NAME.empty()) {
+    return;
+  }
+  odb::dbTech* tech = db_->getTech();
+  odb::dbBlock* block = db_->getChip()->getBlock();
+
+  odb::dbTechLayer* top_tech_layer
+      = tech->findLayer(TOP_ROUTING_LAYER_NAME.c_str());
+  if (top_tech_layer != nullptr) {
+    int top_layer_idx = top_tech_layer->getRoutingLevel();
+    for (auto bterm : block->getBTerms()) {
+      if (bterm->getNet()->isSpecial()) {
+        continue;
+      }
+      int bterm_bottom_layer_idx = std::numeric_limits<int>::max();
+      for (auto bpin : bterm->getBPins()) {
+        for (auto box : bpin->getBoxes()) {
+          bterm_bottom_layer_idx = std::min(
+              bterm_bottom_layer_idx, box->getTechLayer()->getRoutingLevel());
+        }
+      }
+
+      if (bterm_bottom_layer_idx > top_layer_idx) {
+        stackVias(bterm, top_layer_idx, bterm_bottom_layer_idx, has_routing);
+      }
+    }
   }
 }
 
