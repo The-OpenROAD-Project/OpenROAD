@@ -1,4 +1,5 @@
 record_tests {
+  split_load_hier
   resize1_hier
   repair_hold1_hier  
   buffer_ports1
