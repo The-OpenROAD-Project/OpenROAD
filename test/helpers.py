@@ -4,6 +4,7 @@ import utl
 import re
 from openroad import Design
 
+
 def make_rect(design, xl, yl, xh, yh):
     xl = design.micronToDBU(xl)
     yl = design.micronToDBU(yl)
