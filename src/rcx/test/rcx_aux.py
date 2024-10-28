@@ -34,7 +34,7 @@ def extract_parasitics(
     opts.lef_res = lef_res
     opts.debug_net = debug_net_id
     opts.no_merge_via_res = no_merge_via_res
-    
+
     design.getOpenRCX().extract(opts)
 
 
@@ -44,7 +44,7 @@ def write_spef(design, *, filename="", nets="", net_id=0, coordinates=False):
     opts.nets = nets
     opts.net_id = net_id
     if coordinates:
-      opts.N = "Y"
+        opts.N = "Y"
 
     design.getOpenRCX().write_spef(opts)
 
@@ -70,18 +70,18 @@ def bench_wires(
     under_dist=100
 ):
     opts = rcx.BenchWiresOptions()
-    opts.w_list = w_list;
-    opts.s_list = s_list;
-    opts.Over = over;
-    opts.diag = diag;
-    opts.gen_def_patterns = all;
-    opts.cnt = cnt;
-    opts.len = len;
-    opts.under_met = under_met;
-    opts.met_cnt = met_cnt;
-    opts.db_only = db_only;
-    opts.over_dist = over_dist;
-    opts.under_dist = under_dist;
+    opts.w_list = w_list
+    opts.s_list = s_list
+    opts.Over = over
+    opts.diag = diag
+    opts.gen_def_patterns = all
+    opts.cnt = cnt
+    opts.len = len
+    opts.under_met = under_met
+    opts.met_cnt = met_cnt
+    opts.db_only = db_only
+    opts.over_dist = over_dist
+    opts.under_dist = under_dist
     design.getOpenRCX().bench_wires(opts)
 
 
@@ -89,8 +89,9 @@ def adjust_rc(design, *, res_factor=1.0, cc_factor=1.0, gndc_factor=1.0):
     design.getOpenRCX().adjust_rc(res_factor, cc_factor, gndc_factor)
 
 
-def diff_spef(design, *, filename="", r_conn=False, r_res=False,
-              r_cap=False, r_cc_cap=False):
+def diff_spef(
+    design, *, filename="", r_conn=False, r_res=False, r_cap=False, r_cc_cap=False
+):
     opts = rcx.DiffOptions()
     opts.file = file
     opts.r_res = r_res
@@ -106,5 +107,5 @@ def write_rules(design, *, filename="extRules", dir="./", name="TYP", pattern=0)
 
 def read_spef(design, *, filename):
     opts = rcx.DiffOptions()
-    opts.file = filename;
+    opts.file = filename
     design.getOpenRCX().read_spef(opts)
