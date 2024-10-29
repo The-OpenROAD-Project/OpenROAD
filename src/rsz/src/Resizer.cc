@@ -2849,14 +2849,14 @@ bool Resizer::repairSetup(double setup_margin,
     opendp_->initMacrosAndGrid();
   }
   return repair_setup_->repairSetup(setup_margin,
-                             repair_tns_end_percent,
-                             max_passes,
-                             verbose,
-                             skip_pin_swap,
-                             skip_gate_cloning,
-                             skip_buffering,
-                             skip_buffer_removal,
-                             skip_last_gasp);
+                                    repair_tns_end_percent,
+                                    max_passes,
+                                    verbose,
+                                    skip_pin_swap,
+                                    skip_gate_cloning,
+                                    skip_buffering,
+                                    skip_buffer_removal,
+                                    skip_last_gasp);
 }
 
 void Resizer::reportSwappablePins()
@@ -2907,11 +2907,11 @@ bool Resizer::repairHold(
     opendp_->initMacrosAndGrid();
   }
   return repair_hold_->repairHold(setup_margin,
-                           hold_margin,
-                           allow_setup_violations,
-                           max_buffer_percent,
-                           max_passes,
-                           verbose);
+                                  hold_margin,
+                                  allow_setup_violations,
+                                  max_buffer_percent,
+                                  max_passes,
+                                  verbose);
 }
 
 void Resizer::repairHold(const Pin* end_pin,

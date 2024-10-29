@@ -111,13 +111,13 @@ bool RepairHold::repairHold(
   max_buffer_count = std::max(max_buffer_count, 100);
   resizer_->incrementalParasiticsBegin();
   repaired = repairHold(ends1,
-             buffer_cell,
-             setup_margin,
-             hold_margin,
-             allow_setup_violations,
-             max_buffer_count,
-             max_passes,
-             verbose);
+                        buffer_cell,
+                        setup_margin,
+                        hold_margin,
+                        allow_setup_violations,
+                        max_buffer_count,
+                        max_passes,
+                        verbose);
 
   // Leave the parasitices up to date.
   resizer_->updateParasitics();
