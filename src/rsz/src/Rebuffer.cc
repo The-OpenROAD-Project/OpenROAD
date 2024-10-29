@@ -601,14 +601,6 @@ int RepairSetup::rebufferTopDown(const BufferedNetPtr& choice,
       (void) db_load_net;
 
       if (load_net != net) {
-        Instance* load_inst = db_network_->instance(load_pin);
-
-        Instance* load_parent
-            = db_network_->getOwningInstanceParent(const_cast<Pin*>(load_pin));
-
-        Port* load_port = db_network_->port(load_pin);
-
-        // needed.
         odb::dbITerm* load_iterm = nullptr;
         odb::dbBTerm* load_bterm = nullptr;
         odb::dbModITerm* load_moditerm = nullptr;
