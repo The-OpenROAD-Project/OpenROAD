@@ -102,48 +102,130 @@ void extMain::initRunEnv(extMeasureRC &m)
     }
 }
 
-uint extMain::couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m1)
+uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
 {
+    // ----- extraction boundaries
+    int ll[2]= {extRect.xMin(), extRect.yMin()};
+  int ur[2]= { extRect.xMax(), extRect.yMax()};
+
           extMeasureRC* mrc= new extMeasureRC();
           initRunEnv(*mrc);
 
-// mrc->_extMain= this;
-// mrc->_block= _block;
-
-  uint ccDist = ccFlag;
-
-  uint sigtype = 9;
-  uint pwrtype = 11;
-
+// ----------------------------------------------------  
   uint pitchTable[32];
   uint widthTable[32];
   for (uint ii = 0; ii < 32; ii++) {
     pitchTable[ii] = 0;
     widthTable[ii] = 0;
   }
-  uint dirTable[16];
+  uint dirTable[32];
   int baseX[32];
   int baseY[32];
-  uint layerCnt = initSearchForNets(
-      baseX, baseY, pitchTable, widthTable, dirTable, extRect, false);
+  int layerCnt = initSearchForNets(baseX, baseY, pitchTable, widthTable, dirTable, extRect, false);
+  if (layerCnt <= _currentModel->getLayerCnt())
+    layerCnt= _currentModel->getLayerCnt();
 
-  uint maxPitch = pitchTable[layerCnt - 1];
+setExtControl_v2( mrc->_seqPool);
 
-  layerCnt = (int) layerCnt > _currentModel->getLayerCnt()
-                 ? layerCnt
-                 : _currentModel->getLayerCnt();
-  int ll[2];
-  int ur[2];
-  ll[0] = extRect.xMin();
-  ll[1] = extRect.yMin();
-  ur[0] = extRect.xMax();
-  ur[1] = extRect.yMax();
+  _seqPool = mrc->_seqPool;
+
+  uint maxWidth = 0;
+  uint totPowerWireCnt = powerWireCounter(maxWidth);
+  uint totWireCnt = signalWireCounter(maxWidth);
+  totWireCnt += totPowerWireCnt;
+
+  if (_dbgOption > 0)
+    logger_->info(RCX, 43, "{} wires to be extracted", totWireCnt);
+
+ uint maxPitch = pitchTable[layerCnt - 1];
+
+  uint minRes[2] = {widthTable[1], pitchTable[1]};
+ 
+  const uint trackStep = 1000;
+  uint step_nm[2]= {trackStep * minRes[1], trackStep * minRes[1]};
+  if (maxWidth > ccDist * maxPitch) {
+    step_nm[1] = ur[1] - ll[1];
+    step_nm[0] = ur[0] - ll[0];
+  }
+
+  uint totalWiresExtracted = 0;
+  float previous_percent_extracted = 0.0;
+  _search->_no_sub_tracks = _v2;
+  _search->_v2 = _v2;
 
   int lo_gs[2];
   int hi_gs[2];
   int lo_sdb[2];
   int hi_sdb[2];
 
+  for (int dir = 1; dir >= 0; dir--) {
+  
+    if (dir == 0) {
+      enableRotatedFlag();
+    }
+    lo_gs[!dir] = ll[!dir];
+    hi_gs[!dir] = ur[!dir];
+    lo_sdb[!dir] = ll[!dir];
+    hi_sdb[!dir] = ur[!dir];
+
+    int gs_limit = ll[dir];
+    _search->initCouplingCapLoops_v2(dir, ccDist);
+
+    lo_sdb[dir] = ll[dir] - step_nm[dir];
+    int hiXY = std::min( ll[dir] + (int) step_nm[dir], ur[dir]);
+    for (; hiXY <= ur[dir]; hiXY += step_nm[dir])  // dkf  10292024 -- not required unless very large design
+    {
+        hiXY = ur[dir] + step_nm[dir] + 5 * ccDist * maxPitch;
+
+      lo_gs[dir] = gs_limit;
+      hi_gs[dir] = hiXY;
+
+      fill_gs4(dir,
+               ll,
+               ur,
+               lo_gs,
+               hi_gs,
+               layerCnt,
+               dirTable,
+               pitchTable,
+               widthTable);
+
+      mrc->_rotatedGs = getRotatedFlag();
+      mrc->_pixelTable= _geomSeq;
+
+      uint processWireCnt = 0;
+      uint sigtype = 9;
+      uint pwrtype = 11;
+      hi_sdb[dir] = hiXY;
+      processWireCnt += addPowerNets(dir, lo_sdb, hi_sdb, pwrtype);
+      processWireCnt += addSignalNets(dir, lo_sdb, hi_sdb, sigtype);
+
+      mrc->_search = this->_search;
+      // _dbgOption= 1;
+      if (_dbgOption > 0)
+        mrc->PrintAllGrids(dir, mrc->OpenPrintFile(dir, "wires.org"), 0);
+
+      mrc->ConnectWires(dir);
+
+      if (_dbgOption > 0)
+        mrc->PrintAllGrids(dir, mrc->OpenPrintFile(dir, "wires"), 0);
+
+      mrc->FindCouplingNeighbors(dir, 10, 5);
+      mrc->CouplingFlow(dir,
+                        10,
+                        5,
+                        totWireCnt,
+                        totalWiresExtracted,
+                        previous_percent_extracted); 
+      float tmpCnt = -10;
+      mrc->printProgress(totalWiresExtracted, totWireCnt, tmpCnt);
+    }
+  }
+  return 0;
+}
+
+void extMain::setExtControl_v2(AthPool<SEQ>* seqPool)
+{
   Ath__overlapAdjust overlapAdj = Z_noAdjust;
   _useDbSdb = true;
   _search->setExtControl_v2(_block,
@@ -167,138 +249,10 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m1)
                             _dgContextLowTrack,
                             _dgContextHiTrack,
                             _dgContextTrackBase,
-                            mrc->_seqPool);
-
-  // _seqPool = m1->_seqPool;
-  _seqPool = mrc->_seqPool;
-
-  uint maxWidth = 0;
-  uint totPowerWireCnt = powerWireCounter(maxWidth);
-  uint totWireCnt = signalWireCounter(maxWidth);
-  totWireCnt += totPowerWireCnt;
-
-  if (_dbgOption > 0)
-    logger_->info(RCX, 43, "{} wires to be extracted", totWireCnt);
-
-  uint minRes[2];
-  minRes[1] = pitchTable[1];
-  minRes[0] = widthTable[1];
-
-  const uint trackStep = 1000;
-  uint step_nm[2];
-  step_nm[1] = trackStep * minRes[1];
-  step_nm[0] = trackStep * minRes[1];
-  if (maxWidth > ccDist * maxPitch) {
-    step_nm[1] = ur[1] - ll[1];
-    step_nm[0] = ur[0] - ll[0];
-  }
-  // _use_signal_tables
-  Ath__array1D<uint> sdbPowerTable;
-  Ath__array1D<uint> tmpNetIdTable(64000);
-
-  uint totalWiresExtracted = 0;
-  float previous_percent_extracted = 0.0;
-  _search->_no_sub_tracks = _v2;
-  _search->_v2 = _v2;
-
-  int** limitArray;
-  limitArray = new int*[layerCnt];
-  for (uint jj = 0; jj < layerCnt; jj++) {
-    limitArray[jj] = new int[10];
-  }
-
-  FILE* bandinfo = nullptr;
-  if (_printBandInfo) {
-    if (_getBandWire) {
-      bandinfo = fopen("bandInfo.getWire", "w");
-    } else {
-      bandinfo = fopen("bandInfo.extract", "w");
-    }
-  }
-  for (int dir = 1; dir >= 0; dir--) {
-    if (_printBandInfo) {
-      fprintf(bandinfo, "dir = %d\n", dir);
-    }
-    if (dir == 0) {
-      enableRotatedFlag();
-    }
-
-    lo_gs[!dir] = ll[!dir];
-    hi_gs[!dir] = ur[!dir];
-    lo_sdb[!dir] = ll[!dir];
-    hi_sdb[!dir] = ur[!dir];
-
-    int gs_limit = ll[dir];
-
-    // DELETE _search->initCouplingCapLoops(dir, ccFlag, NULL, m);
-    _search->initCouplingCapLoops_v2(dir, ccFlag);
-
-    lo_sdb[dir] = ll[dir] - step_nm[dir];
-    int hiXY = ll[dir] + step_nm[dir];
-    if (hiXY > ur[dir]) {
-      hiXY = ur[dir];
-    }
-
-    // DELETE uint stepNum = 0;
-    for (; hiXY <= ur[dir]; hiXY += step_nm[dir]) {
-      if (ur[dir] - hiXY <= (int) step_nm[dir]) {  // dkf FIXME -- delete
-        hiXY = ur[dir] + 5 * ccDist * maxPitch;
-      }
-      if (_v2)
-        hiXY = ur[dir] + step_nm[dir] + 5 * ccDist * maxPitch;
-
-      lo_gs[dir] = gs_limit;
-      hi_gs[dir] = hiXY;
-
-      fill_gs4(dir,
-               ll,
-               ur,
-               lo_gs,
-               hi_gs,
-               layerCnt,
-               dirTable,
-               pitchTable,
-               widthTable);
-
-      mrc->_rotatedGs = getRotatedFlag();
-      // mrc->_pixelTable= new gs(m1->_seqPool);
-      mrc->_pixelTable= _geomSeq;
-
-
-      // add wires onto search such that    loX<=loX<=hiX
-      hi_sdb[dir] = hiXY;
-
-      uint processWireCnt = 0;
-      processWireCnt += addPowerNets(dir, lo_sdb, hi_sdb, pwrtype);
-      processWireCnt += addSignalNets(dir, lo_sdb, hi_sdb, sigtype);
-
-      // mrc->_search = m1->_extMain->_search;
-      mrc->_search = this->_search;
-      // _dbgOption= 1;
-      if (_dbgOption > 0)
-        mrc->PrintAllGrids(dir, mrc->OpenPrintFile(dir, "wires.org"), 0);
-
-      mrc->ConnectWires(dir);
-
-      if (_dbgOption > 0)
-        mrc->PrintAllGrids(dir, mrc->OpenPrintFile(dir, "wires"), 0);
-
-      mrc->FindCouplingNeighbors(dir, 10, 5);
-      mrc->CouplingFlow(dir,
-                        10,
-                        5,
-                        totWireCnt,
-                        totalWiresExtracted,
-                        previous_percent_extracted); 
-      float tmpCnt = -10;
-      mrc->printProgress(totalWiresExtracted, totWireCnt, tmpCnt);
-    }
-  }
-  if (_printBandInfo) {
-    fclose(bandinfo);
-  }
-  return 0;
+                            seqPool);
 }
+
+
 void extMain::printUpdateCoup(uint netId1, uint netId2, double v, double org, double totCC)
 {
 
