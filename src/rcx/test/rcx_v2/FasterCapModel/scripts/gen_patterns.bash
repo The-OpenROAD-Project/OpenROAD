@@ -26,12 +26,10 @@ $or_exec < $tcl_script > OUT
 
 line_cnt=`diff  -w -r . ../$gold_dir | egrep -v OpenROAD | egrep -v diff | egrep -v "\-\-\-" | wc -l `
 
-# line_cnt=`diff  -w -r TYP ../$gold_dir/TYP | egrep -v DATE | egrep -v VERSION | egrep -v "\-\-\-" | wc -l `
-
 if [ $line_cnt -lt 2 ]
 then
-        echo "$dir Pass"
+        echo "Pass $dir `pwd`"
 else
-        echo "$dir Fail"
+        echo "Fail $dir `pwd`"
 fi
 
