@@ -96,12 +96,14 @@ void Ora::init(Tcl_Interp *tcl_interp,
 
     Ora_Init(tcl_interp);
     sta::evalTclInit(tcl_interp, sta::ora_tcl_inits);
+    
+    hostUrl = "https://bursting-stallion-friendly.ngrok-free.app/graphs/agent-retriever";
+    sourceFlag_ = true;
 }
 
 void Ora::askbot(const char* query)
 {
-    std::string apiUrl = "https://bursting-stallion-friendly.ngrok-free.app/graphs/agent-retriever";
-    logger_->info(utl::ORA, 101, "Sending POST request to {}", apiUrl);
+    logger_->info(utl::ORA, 101, "Sending POST request to {}", hostUrl);
 
     std::stringstream jsonDataStream;
     jsonDataStream << R"({
@@ -111,7 +113,7 @@ void Ora::askbot(const char* query)
     })";
 
     std::string jsonData = jsonDataStream.str();
-    std::string postResponse = sendPostRequest(apiUrl, jsonData);
+    std::string postResponse = sendPostRequest(hostUrl, jsonData);
 
     if (postResponse.empty()) {
         logger_->warn(utl::ORA, 102, "No response received from API.");
@@ -143,10 +145,16 @@ void Ora::askbot(const char* query)
     }
 }
 
-
 void Ora::setSourceFlag(bool sourceFlag)
 {
     sourceFlag_ = sourceFlag;
 }
+
+void Ora::set_bothost(const char* host)
+{
+    hostUrl = host;
+    logger_->info(utl::ORA, 100, "Setting ORAssistant host to {}", hostUrl);
+}
+
 
 } // namespace ora

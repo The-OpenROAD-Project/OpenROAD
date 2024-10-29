@@ -45,4 +45,9 @@ void askbot(const char *query)
   getOra()->askbot(query);
 }
 
+void set_bothost(const char *host)
+{
+  getOra()->set_bothost(host);
+}
+
 %} // inline

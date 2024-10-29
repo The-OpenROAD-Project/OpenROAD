@@ -14,25 +14,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-sta::define_cmd_args "run_ora" {[-key1 key1] [-flag1] query}
-
-# Put helper functions in a separate namespace so they are not visible
-# too users in the global namespace.
-namespace eval ora {
-
-proc ora_helper { } {
-  puts "ORAssistant Helper Function"
-}
-
-}
-
 proc askbot { args } {
   sta::parse_key_args "askbot" args \
-    flags {-listSources -listContext}
-    
+    flags {-listSources}
+
   ora::ora_set_listSources [info exists flags(-listSources)]
 
   sta::check_argc_eq1 "askbot" $args
-  ora::ora_helper
+
   ora::askbot [lindex $args 0]
+}
+
+proc set_bothost { hostUrl } {
+  puts "Setting ORAssistant host to $hostUrl"
+
+  sta::check_argc_eq1 "set_bothost" $hostUrl
+
+  ora::set_bothost $hostUrl
 }
