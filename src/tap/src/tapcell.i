@@ -40,15 +40,10 @@
 #include "tap/tapcell.h"
 
   namespace ord {
-
   tap::Tapcell* getTapcell();
-
   }
 
   using ord::getTapcell;
-  using std::set;
-  using std::string;
-  using std::vector;
 
   static odb::dbMaster* findMaster(const char* name)
   {

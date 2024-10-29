@@ -5,7 +5,7 @@ import dpl_aux
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
 tech.readLef("fill3.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("fillers4.def")
 
 dpl_aux.detailed_placement(design, disallow_one_site_gaps=True)

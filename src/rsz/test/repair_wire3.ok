@@ -8,7 +8,7 @@
 [WARNING RSZ-0011] Signal/clock vertical wire resistance is 0.
 [WARNING RSZ-0012] Signal/clock horizontal wire capacitance is 0.
 [WARNING RSZ-0013] Signal/clock vertical wire capacitance is 0.
-[WARNING RSZ-0014] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
+[WARNING RSZ-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
 Driver    length delay
 u2/Z manhtn 1998.8 steiner 1998.8 0.00
 u3/Z manhtn 1.3 steiner 1.3 0.00

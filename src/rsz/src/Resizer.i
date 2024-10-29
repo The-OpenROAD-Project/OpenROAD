@@ -36,6 +36,7 @@
 %{
 
 #include <cstdint>
+#include <fstream>
 
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
@@ -542,11 +543,17 @@ repair_design_cmd(double max_length,
                   double slew_margin,
                   double cap_margin,
                   double buffer_gain,
+                  bool match_cell_footprint,
                   bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairDesign(max_length, slew_margin, cap_margin, buffer_gain, verbose);
+  resizer->repairDesign(max_length,
+                        slew_margin,
+                        cap_margin,
+                        buffer_gain,
+                        match_cell_footprint,
+                        verbose);
 }
 
 int
@@ -587,7 +594,7 @@ void
 repair_setup(double setup_margin,
              double repair_tns_end_percent,
              int max_passes,
-             bool verbose,
+             bool match_cell_footprint, bool verbose,
              bool skip_pin_swap, bool skip_gate_cloning,
              bool skip_buffering, bool skip_buffer_removal,
              bool skip_last_gasp)
@@ -595,7 +602,7 @@ repair_setup(double setup_margin,
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->repairSetup(setup_margin, repair_tns_end_percent,
-                       max_passes, verbose,
+                       max_passes, match_cell_footprint, verbose,
                        skip_pin_swap, skip_gate_cloning,
                        skip_buffering, skip_buffer_removal,
                        skip_last_gasp);
@@ -623,6 +630,7 @@ repair_hold(double setup_margin,
             bool allow_setup_violations,
             float max_buffer_percent,
             int max_passes,
+            bool match_cell_footprint,
             bool verbose)
 {
   ensureLinked();
@@ -630,7 +638,7 @@ repair_hold(double setup_margin,
   resizer->repairHold(setup_margin, hold_margin,
                       allow_setup_violations,
                       max_buffer_percent, max_passes,
-                      verbose);
+                      match_cell_footprint, verbose);
 }
 
 void
@@ -657,11 +665,11 @@ hold_buffer_count()
 
 ////////////////////////////////////////////////////////////////
 void
-recover_power(float recover_power_percent)
+recover_power(float recover_power_percent, bool match_cell_footprint)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->recoverPower(recover_power_percent);
+  resizer->recoverPower(recover_power_percent, match_cell_footprint);
 }
 
 ////////////////////////////////////////////////////////////////

@@ -367,12 +367,13 @@ void DRCWidget::loadReport(const QString& filename)
   Gui::get()->removeSelected<odb::dbMarker*>();
   Gui::get()->removeSelected<odb::dbMarkerCategory*>();
 
+  odb::dbMarkerCategory* category = nullptr;
   try {
     // OpenLane uses .drc and OpenROAD-flow-scripts uses .rpt
     if (filename.endsWith(".rpt") || filename.endsWith(".drc")) {
-      loadTRReport(filename);
+      category = loadTRReport(filename);
     } else if (filename.endsWith(".json")) {
-      loadJSONReport(filename);
+      category = loadJSONReport(filename);
     } else {
       logger_->error(utl::GUI,
                      32,
@@ -382,21 +383,38 @@ void DRCWidget::loadReport(const QString& filename)
   } catch (std::runtime_error&) {
   }  // catch errors
 
+  if (category != nullptr) {
+    selectCategory(category);
+  }
+
   updateModel();
   show();
   raise();
 }
 
-void DRCWidget::loadTRReport(const QString& filename)
+odb::dbMarkerCategory* DRCWidget::loadTRReport(const QString& filename)
 {
   const std::string file = filename.toStdString();
-  odb::dbMarkerCategory::fromTR(block_, "DRC", file);
+  return odb::dbMarkerCategory::fromTR(block_, "DRC", file);
 }
 
-void DRCWidget::loadJSONReport(const QString& filename)
+odb::dbMarkerCategory* DRCWidget::loadJSONReport(const QString& filename)
 {
   const std::string file = filename.toStdString();
-  odb::dbMarkerCategory::fromJSON(block_, file);
+  const auto categories = odb::dbMarkerCategory::fromJSON(block_, file);
+
+  if (categories.size() > 1) {
+    logger_->warn(utl::GUI,
+                  30,
+                  "Multiple marker categories loaded, only the first one will "
+                  "be selected.");
+  }
+
+  if (categories.empty()) {
+    return nullptr;
+  }
+
+  return *categories.begin();
 }
 
 void DRCWidget::updateMarkerGroups()

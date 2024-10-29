@@ -286,6 +286,7 @@ class Resizer : public dbStaState
   void repairSetup(double setup_margin,
                    double repair_tns_end_percent,
                    int max_passes,
+                   bool match_cell_footprint,
                    bool verbose,
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
@@ -308,6 +309,7 @@ class Resizer : public dbStaState
                   // Max buffer count as percent of design instance count.
                   float max_buffer_percent,
                   int max_passes,
+                  bool match_cell_footprint,
                   bool verbose);
   void repairHold(const Pin* end_pin,
                   double setup_margin,
@@ -318,7 +320,7 @@ class Resizer : public dbStaState
   int holdBufferCount() const;
 
   ////////////////////////////////////////////////////////////////
-  void recoverPower(float recover_power_percent);
+  void recoverPower(float recover_power_percent, bool match_cell_footprint);
 
   ////////////////////////////////////////////////////////////////
   // Area of the design in meter^2.
@@ -348,6 +350,7 @@ class Resizer : public dbStaState
       double slew_margin,      // 0.0-1.0
       double cap_margin,       // 0.0-1.0
       double buffer_gain,
+      bool match_cell_footprint,
       bool verbose);
   int repairDesignBufferCount() const;
   int repairDesignResizedCount() const;
@@ -445,7 +448,7 @@ class Resizer : public dbStaState
   LibertyCell* halfDrivingPowerCell(Instance* inst);
   LibertyCell* halfDrivingPowerCell(LibertyCell* cell);
   LibertyCell* closestDriver(LibertyCell* cell,
-                             LibertyCellSeq* candidates,
+                             const LibertyCellSeq& candidates,
                              float scale);
   std::vector<sta::LibertyPort*> libraryPins(Instance* inst) const;
   std::vector<sta::LibertyPort*> libraryPins(LibertyCell* cell) const;
@@ -475,6 +478,9 @@ class Resizer : public dbStaState
   bool hasMultipleOutputs(const Instance* inst);
 
   void resizePreamble();
+  LibertyCellSeq getSwappableCells(LibertyCell* source_cell);
+  bool footprintsMatch(LibertyCell* source, LibertyCell* target);
+
   // Resize drvr_pin instance to target slew.
   // Return 1 if resized.
   int resizeToTargetSlew(const Pin* drvr_pin);
@@ -742,6 +748,7 @@ class Resizer : public dbStaState
   int removed_buffer_count_ = 0;
   bool exclude_clock_buffers_ = true;
   bool buffer_moved_into_core_ = false;
+  bool match_cell_footprint_ = false;
   // Slack map variables.
   // This is the minimum length of wire that is worth while to split and
   // insert a buffer in the middle of. Theoretically computed using the smallest

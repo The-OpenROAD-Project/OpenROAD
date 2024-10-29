@@ -7,7 +7,7 @@ tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
 tech.readLiberty("Nangate45/Nangate45_typ.lib")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.evalTclString(cts_helpers.make_array)
 design.evalTclString("make_array 300")
 design.evalTclString("sta::db_network_defined")

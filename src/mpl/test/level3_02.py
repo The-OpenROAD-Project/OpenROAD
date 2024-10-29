@@ -10,7 +10,7 @@ tech.readLiberty("Nangate45/fakeram45_64x7.lib")
 tech.readLef("Nangate45/Nangate45.lef")
 tech.readLef("Nangate45/fakeram45_64x7.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("level3.def")
 design.evalTclString('read_sdc "gcd.sdc"')
 
