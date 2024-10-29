@@ -239,8 +239,8 @@ class frNet : public frBlockObject
     orig_guides_ = guides;
   }
   const std::vector<frRect>& getOrigGuides() const { return orig_guides_; }
-  void setHasJumpers(bool has_jumpers) {hasJumpers_ = has_jumpers;}
-  bool hasJumpers() {return hasJumpers_;}
+  void setHasJumpers(bool has_jumpers) { hasJumpers_ = has_jumpers; }
+  bool hasJumpers() { return hasJumpers_; }
 
  protected:
   frString name_;
