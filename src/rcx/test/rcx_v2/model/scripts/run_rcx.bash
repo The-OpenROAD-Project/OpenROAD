@@ -24,5 +24,5 @@ if [ $line_cnt -lt 1 ]
 then
 	echo "Pass $test_name"
 else
-	echo "Pass $test_name"
+	echo "Fail $test_name"
 fi

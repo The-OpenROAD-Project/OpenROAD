@@ -12,12 +12,11 @@ run_rcx=$(test_dir)/rcx_v2/flow/scripts/run_rcx.bash
 
 .SILENT:
 
-all: options flow
+all: options flow 
 
-options: gcd_flow_v2_model_v1_no_via_merge gcd_v2_v1_max_res_0 gcd_v2_v1_max_res_0_no_via_merge gcd_v2_v1_max_res_10 gcd_v2_v1_max_res_500 gcd_v2_v1_lef_rc
+options: gcd_flow_v2_model_v1_no_via_merge gcd_v2_v1_max_res_0 gcd_v2_v1_max_res_0_no_via_merge gcd_v2_v1_max_res_10 gcd_v2_v1_max_res_500 gcd_v2_lef_rc_max_res_0 gcd_v2_v1_lef_rc_max_res_0
 
 flow: gcd_flow_v2_model_v2 gcd_flow_v2_model_v1 gcd_flow_v1_model_v2 ext_patterns_flow_v2_model_v2
-
 
 gcd_flow_v2_model_v2: 
 			$(run_rcx) $(or_exec) gcd $@
@@ -52,6 +51,9 @@ gcd_v2_v1_max_res_0_no_via_merge:
 gcd_v2_v1_max_res_500: 
 			$(run_rcx) $(or_exec) options $@
 
-gcd_v2_v1_lef_rc: 
+gcd_v2_lef_rc_max_res_0: 
+			$(run_rcx) $(or_exec) options $@
+
+gcd_v2_v1_lef_rc_max_res_0: 
 			$(run_rcx) $(or_exec) options $@
 
