@@ -1,9 +1,7 @@
 [INFO ODB-0227] LEF file: ant_check.lef, created 14 layers, 30 vias, 3 library cells
-[INFO ODB-0127] Reading DEF file: ant_check.def
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0131]     Created 3 components and 24 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 3 connections.
-[INFO ODB-0134] Finished DEF file: ant_check.def
 Net: net50
   Pin:   output50/A (sky130_fd_sc_ms__buf_1)
     Layer: mcon

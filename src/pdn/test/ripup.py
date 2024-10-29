@@ -6,7 +6,7 @@ import helpers
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("nangate_gcd/floorplan_with_grid.def")
 
 pdngen = design.getPdnGen()

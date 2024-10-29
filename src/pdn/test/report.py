@@ -6,7 +6,7 @@ tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
 tech.readLef("nangate_bsg_black_parrot/dummy_pads.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("nangate_bsg_black_parrot/floorplan.def")
 pdngen = design.getPdnGen()
 

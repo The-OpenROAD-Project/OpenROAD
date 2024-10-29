@@ -5,7 +5,7 @@ import drt_aux
 tech = Tech()
 tech.readLef("sky130hs/sky130hs.tlef")
 tech.readLef("sky130hs/sky130hs_std_cell.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("top_level_term.def")
 
 gr = design.getGlobalRouter()
