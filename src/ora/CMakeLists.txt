@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU General 
 # Public License along with this program. If not, see 
 # <https://www.gnu.org/licenses/>.
-
 include("openroad")
 
 project(ora)
@@ -40,17 +39,21 @@ target_include_directories(ora
 )
 
 find_package(CURL REQUIRED)
+find_package(Boost REQUIRED COMPONENTS json) 
 
 target_include_directories(ora
     PUBLIC ${CURL_INCLUDE_DIRS}
+    PUBLIC ${Boost_INCLUDE_DIRS}
 )
 
 target_link_libraries(ora
     OpenSTA
     odb
     ${CURL_LIBRARIES}
+    Boost::json
 )
 
 messages(
   TARGET ora
 )
+
