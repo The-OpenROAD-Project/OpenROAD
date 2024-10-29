@@ -1941,13 +1941,14 @@ void GuideProcessor::processGuides()
   getDesign()->getRegionQuery()->initOrigGuide(tmp_guides_);
   int cnt = 0;
   std::vector<std::pair<frNet*, std::vector<frRect>>> nets_to_guides;
+  frBlockObjectMap<std::vector<std::pair<frBlockObject*, Point>>>
+      net_to_gr_pins;
   for (auto& [net, rects] : tmp_guides_) {
     nets_to_guides.push_back({net, rects});
     net->setOrigGuides(rects);
+    net_to_gr_pins[net];
   }
   omp_set_num_threads(MAX_THREADS);
-  frBlockObjectMap<std::vector<std::pair<frBlockObject*, Point>>>
-      net_to_gr_pins;
   utl::ThreadException exception;
 #pragma omp parallel for
   for (int i = 0; i < nets_to_guides.size(); i++) {
