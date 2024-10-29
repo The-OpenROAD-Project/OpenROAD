@@ -637,7 +637,7 @@ proc repair_timing { args } {
 
 sta::define_cmd_args "report_design_area" {}
 
-proc report_design_area { args } {
+sta::proc_redirect report_design_area { args } {
   sta::parse_key_args "report_design_area" args keys {} flags {}
   set util [format %.0f [expr [rsz::utilization] * 100]]
   set area [sta::format_area [rsz::design_area] 0]
