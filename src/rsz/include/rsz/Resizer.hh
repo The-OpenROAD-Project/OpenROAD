@@ -152,7 +152,8 @@ enum class ParasiticsSrc
 {
   none,
   placement,
-  global_routing
+  global_routing,
+  detailed_routing
 };
 
 struct ParasiticsResistance
@@ -413,6 +414,7 @@ class Resizer : public dbStaState
 
   dbNetwork* getDbNetwork() { return db_network_; }
   ParasiticsSrc getParasiticsSrc() { return parasitics_src_; }
+  void setParasiticsSrc(ParasiticsSrc src) { parasitics_src_ = src; }
   dbBlock* getDbBlock() { return block_; };
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;

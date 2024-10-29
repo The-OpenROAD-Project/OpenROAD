@@ -213,6 +213,8 @@ tclListNetworkSet(Tcl_Obj *const source,
     $1 = ParasiticsSrc::placement;
   else if (stringEq(arg, "global_routing"))
     $1 = ParasiticsSrc::global_routing;
+  else if (stringEq(arg, "detailed_routing"))
+    $1 = ParasiticsSrc::detailed_routing;
   else {
     Tcl_SetResult(interp,const_cast<char*>("Error: parasitics source."), TCL_STATIC);
     return TCL_ERROR;
@@ -814,6 +816,13 @@ set_worst_slack_nets_percent(float percent)
 {
   Resizer *resizer = getResizer();
   resizer->setWorstSlackNetsPercent(percent);
+}
+
+void
+set_parasitics_src(ParasiticsSrc src)
+{
+  Resizer *resizer = getResizer();
+  resizer->setParasiticsSrc(src);
 }
 
 } // namespace
