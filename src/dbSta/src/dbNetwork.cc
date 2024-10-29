@@ -2820,7 +2820,7 @@ class PinModuleConnection : public PinVisitor
   PinModuleConnection(const dbNetwork* nwk,
                       const Pin* drvr_pin,
                       const dbModule* target_module_);
-  virtual void operator()(const Pin* pin);
+  virtual void operator()(const Pin* pin) override;
 
  protected:
   const dbNetwork* db_network_;
