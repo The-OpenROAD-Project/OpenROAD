@@ -3636,7 +3636,8 @@ class dbITerm : public dbObject
   ///
   /// Returns all geometries of all dbMPin associated with
   /// the dbMTerm.
-  std::vector<Rect> getGeometries() const;
+  ///
+  std::vector<std::pair<dbTechLayer*, Rect>> getGeometries() const;
 
   void setAccessPoint(dbMPin* pin, dbAccessPoint* ap);
 
