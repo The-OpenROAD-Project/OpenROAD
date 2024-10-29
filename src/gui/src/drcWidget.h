@@ -122,8 +122,8 @@ class DRCWidget : public QDockWidget, public odb::dbBlockCallBackObj
   void hideEvent(QHideEvent* event) override;
 
  private:
-  void loadTRReport(const QString& filename);
-  void loadJSONReport(const QString& filename);
+  odb::dbMarkerCategory* loadTRReport(const QString& filename);
+  odb::dbMarkerCategory* loadJSONReport(const QString& filename);
   void updateMarkerGroupsWithIgnore(odb::dbMarkerCategory* ignore);
 
   utl::Logger* logger_;
