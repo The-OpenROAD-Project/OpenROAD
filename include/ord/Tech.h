@@ -35,35 +35,38 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 
 namespace odb {
 class dbDatabase;
-}
-
-namespace utl {
-class Logger;
-}
+class dbTech;
+}  // namespace odb
 
 namespace sta {
 class dbSta;
-class dbNetwork;
-class LibertyCell;
 }  // namespace sta
 
 namespace ord {
+
+class OpenRoad;
 
 class Tech
 {
  public:
   Tech();
+  ~Tech();
+
   void readLef(const std::string& file_name);
   void readLiberty(const std::string& file_name);
   odb::dbDatabase* getDB();
+  odb::dbTech* getTech();
   sta::dbSta* getSta();
 
  private:
-  odb::dbDatabase* db_;
+  OpenRoad* app_;
+
+  friend class Design;
 };
 
 }  // namespace ord

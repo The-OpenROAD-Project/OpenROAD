@@ -4,7 +4,7 @@ import helpers
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("gcd.def")
 
 design.getOptdp().improvePlacement(1, 0, 0)

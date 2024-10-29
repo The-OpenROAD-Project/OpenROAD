@@ -9,7 +9,7 @@ tech.readLiberty("Nangate45/fakeram45_64x7.lib")
 tech.readLef("Nangate45/Nangate45.lef")
 tech.readLef("Nangate45/fakeram45_64x7.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("east_west1.def")
 
 mpl_aux.macro_placement(design, snap_layer=3, halo=[1.0, 1.0])

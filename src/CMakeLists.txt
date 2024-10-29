@@ -422,6 +422,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       dbSta
       odb
       OpenSTA
+      ifp
   )
   target_link_libraries(openroad
     openroad_swig_py

@@ -188,16 +188,6 @@ proc exit_summary {} {
   exit $::failing_checks
 }
 
-# Output voltage file is specified as ...
-suppress_message PSM 2
-# Output current file specified ...
-suppress_message PSM 3
-# Error file is specified as ...
-suppress_message PSM 83
-# Output spice file is specified as
-suppress_message PSM 5
-# SPICE file is written at
-suppress_message PSM 6
 # Reading DEF file
 suppress_message ODB 127
 # Finished DEF file

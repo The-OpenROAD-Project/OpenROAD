@@ -6,7 +6,7 @@ tech = Tech()
 tech.readLiberty("Nangate45/Nangate45_typ.lib")
 tech.readLef("Nangate45/Nangate45.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("gcd_placed.def")
 
 # read_sdc is defined in sta/tcl/Sdc.tcl (not yet wrapped)
