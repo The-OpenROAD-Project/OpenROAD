@@ -1535,6 +1535,8 @@ extRCModel* createCornerMap(const char *rulesFileName);
 
 uint getResCapTable_lefRC_v2();
 void infoBeforeCouplingExt();
+void setExtControl_v2(AthPool<SEQ>* seqPool);
+
 // CLEANUP dkf 10242024 ----------------------------------
 
 
