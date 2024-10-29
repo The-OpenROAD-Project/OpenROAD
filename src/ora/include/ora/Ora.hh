@@ -17,6 +17,7 @@
 #include <tcl.h>
 #include "odb/db.h"
 #include <curl/curl.h>
+#include <boost/json.hpp>
 
 namespace utl {
 class Logger;
@@ -37,12 +38,10 @@ public:
             utl::Logger* logger);
   void askbot(const char *pos_arg1);
   void setSourceFlag(bool sourceFlag);
-  void setContextFlag(bool contextFlag);
 
 private:
   odb::dbDatabase *db_;
   bool sourceFlag_;
-  bool contextFlag_;
 
  Logger* logger_ = nullptr;
 
