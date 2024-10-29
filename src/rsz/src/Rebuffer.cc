@@ -140,9 +140,6 @@ int RepairSetup::rebuffer(const Pin* drvr_pin)
                              drvr_op_moditerm,
                              drvr_op_modbterm);
 
-        if (db_modnet)
-          assert(drvr_op_iterm);
-
         if (db_net && db_modnet) {
           // as we move the modnet and dbnet around we will get a clash
           //(the dbNet name now exposed is the same as the modnet name)
