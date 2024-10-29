@@ -72,6 +72,7 @@ const uint db_schema_initial = 57;
 
 const uint db_schema_minor = 97;  // Current revision number
 
+// Revision where the jumper insertion flag is added to dbNet
 const uint db_schema_has_jumpers = 97;
 
 // Revision where the dbMarkerGroup/Categories were added to dbBlock
