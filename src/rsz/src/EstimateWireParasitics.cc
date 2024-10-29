@@ -295,6 +295,7 @@ void Resizer::estimateParasitics(ParasiticsSrc src,
       parasitics_src_ = ParasiticsSrc::global_routing;
       break;
     case ParasiticsSrc::detailed_routing:
+      // TODO: call rcx to extract parasitics and load them to STA
       parasitics_src_ = ParasiticsSrc::detailed_routing;
       break;
     case ParasiticsSrc::none:
@@ -314,6 +315,7 @@ void Resizer::incrementalParasiticsBegin()
       break;
     case ParasiticsSrc::global_routing:
     case ParasiticsSrc::detailed_routing:
+      // TODO: add IncrementalDRoute
       incr_groute_ = new IncrementalGRoute(global_router_, block_);
       // Don't print verbose messages for incremental routing
       global_router_->setVerbose(false);
@@ -331,6 +333,7 @@ void Resizer::incrementalParasiticsEnd()
       break;
     case ParasiticsSrc::global_routing:
     case ParasiticsSrc::detailed_routing:
+      // TODO: add IncrementalDRoute
       delete incr_groute_;
       incr_groute_ = nullptr;
       break;
@@ -351,6 +354,7 @@ void Resizer::updateParasitics(bool save_guides)
       break;
     case ParasiticsSrc::global_routing:
     case ParasiticsSrc::detailed_routing: {
+      // TODO: update detailed route for modified nets
       incr_groute_->updateRoutes(save_guides);
       for (const Net* net : parasitics_invalid_) {
         global_router_->estimateRC(db_network_->staToDb(net));
@@ -398,6 +402,7 @@ void Resizer::ensureWireParasitic(const Pin* drvr_pin, const Net* net)
         break;
       }
       case ParasiticsSrc::detailed_routing:
+        // TODO: call incremental drt for the modified net
         break;
       case ParasiticsSrc::none:
         break;
