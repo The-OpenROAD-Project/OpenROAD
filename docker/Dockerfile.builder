@@ -18,6 +18,19 @@ WORKDIR /OpenROAD
 
 ENV PATH=${LOCAL_PATH}:${PATH}
 
-RUN apt-get update && apt-get install -y libcurl4-openssl-dev
+RUN apt-get update && apt-get install -y \
+    libcurl4-openssl-dev \
+    wget && \
+    wget https://boostorg.jfrog.io/artifactory/main/release/1.80.0/source/boost_1_80_0.tar.gz && \
+    tar -xzvf boost_1_80_0.tar.gz && \
+    cd boost_1_80_0 && \
+    ./bootstrap.sh --with-libraries=json && \
+    ./b2 install -j$(nproc) && \
+    cd .. && rm -rf boost_1_80_0 boost_1_80_0.tar.gz
+
+RUN apt-get update && \
+apt-get install -y \
+libcurl4-openssl-dev \
+libboost-all-dev
 
 RUN ./etc/Build.sh -compiler=${compiler} -threads=${numThreads} -deps-prefixes-file=${depsPrefixFile}
