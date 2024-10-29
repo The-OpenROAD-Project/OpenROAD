@@ -1512,7 +1512,7 @@ void RepairAntennas::jumperInsertion(NetRouteMap& routing,
       if (jumpers_by_net) {
         net_with_jumpers++;
         total_jumpers += jumpers_by_net;
-	db_net->setJumpers(true);
+        db_net->setJumpers(true);
       }
     }
   }
