@@ -1,4 +1,4 @@
-// Copyright (c) 2021, The Regents of the University of California
+// Copyright (c) 2024, The Regents of the University of California
 // All rights reserved.
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -20,6 +20,7 @@
 #include <string>
 #include <sstream>
 #include <curl/curl.h>
+#include <boost/json.hpp>
 
 namespace sta {
 // Tcl files encoded into strings.
@@ -39,8 +40,7 @@ void setLogger(Logger* logger);
 Logger* logger_ = nullptr;
 
 Ora::Ora() :
-  sourceFlag_(false),
-  contextFlag_(false)
+  sourceFlag_(true)
 {
 }
 
@@ -94,44 +94,59 @@ void Ora::init(Tcl_Interp *tcl_interp,
     db_ = db;
     logger_ = logger;
 
-    // Define SWIG TCL commands.
     Ora_Init(tcl_interp);
-    // Eval encoded sta TCL sources.
     sta::evalTclInit(tcl_interp, sta::ora_tcl_inits);
 }
 
 void Ora::askbot(const char* query)
 {
-    std::string apiUrl = "http://localhost:8000/graphs/agent-retriever";
-    logger_->info(utl::ORD, 101, "Sending POST request to {}", apiUrl);
-    logger_->info(utl::ORD, 102, "Data: {}", query);
+    std::string apiUrl = "https://bursting-stallion-friendly.ngrok-free.app/graphs/agent-retriever";
+    logger_->info(utl::ORA, 101, "Sending POST request to {}", apiUrl);
 
     std::stringstream jsonDataStream;
     jsonDataStream << R"({
         "query": ")" << query << R"(",
         "chat_history": [],
-        "list_sources": )" << (sourceFlag_ ? "true" : "false") << R"(,
-        "list_context": )" << (contextFlag_ ? "true" : "false") << R"(
+        "list_sources": )" << (sourceFlag_ ? "true" : "false") << R"(
     })";
 
     std::string jsonData = jsonDataStream.str();
-    std::string response = sendPostRequest(apiUrl, jsonData);
+    std::string postResponse = sendPostRequest(apiUrl, jsonData);
 
-    if (response.empty()) {
-        logger_->warn(utl::ORD, 103, "No response received from API.");
-    } else {
-        logger_->info(utl::ORD, 104, "API Response: {}", response);
+    if (postResponse.empty()) {
+        logger_->warn(utl::ORA, 102, "No response received from API.");
+        return;
+    }
+
+    try {
+        boost::json::value jsonObject = boost::json::parse(postResponse);
+        
+        if (jsonObject.as_object().contains("response") && jsonObject.at("response").is_string()) {
+            std::string response = jsonObject.at("response").as_string().c_str();
+            
+            if (sourceFlag_ && jsonObject.as_object().contains("sources") && jsonObject.at("sources").is_array()) {
+                std::string sources;
+                for (const auto& src : jsonObject.at("sources").as_array()) {
+                    sources += src.as_string().c_str();
+                    sources += "\n";
+                }
+                logger_->info(utl::ORA, 103, "ORAssistant Response: \n\n{}\nSources:\n{}", response, sources);
+            } else {
+                logger_->info(utl::ORA, 104, "ORAssistant Response: \n\n{}\n", response);
+            }
+        } else {
+            logger_->warn(utl::ORA, 106, "API response does not contain 'response' field or it is not a string.");
+            logger_->warn(utl::ORA, 107, "API response: {}", postResponse);
+        }
+    } catch (const boost::json::system_error& e) {
+        logger_->error(utl::ORA, 105, "JSON Parsing Error: {}", e.what());
     }
 }
+
 
 void Ora::setSourceFlag(bool sourceFlag)
 {
     sourceFlag_ = sourceFlag;
-}
-
-void Ora::setContextFlag(bool contextFlag)
-{
-    contextFlag_ = contextFlag;
 }
 
 } // namespace ora
