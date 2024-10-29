@@ -9,7 +9,7 @@ tech.readLiberty("Nangate45/fakeram45_64x7.lib")
 tech.readLef("Nangate45/Nangate45.lef")
 tech.readLef("Nangate45/fakeram45_64x7.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("east_west1.def")
 
 # This appears to be the only difference from east_west1, ie, we do not

@@ -7,7 +7,7 @@ tech.readLiberty("sky130hs/sky130hs_tt.lib")
 tech.readLef("sky130hs/sky130hs.tlef")
 tech.readLef("sky130hs/sky130hs_std_cell.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("gcd_sky130.def")
 gr = design.getGlobalRouter()
 

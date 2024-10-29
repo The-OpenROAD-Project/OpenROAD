@@ -2,6 +2,7 @@ import odb
 import os
 import utl
 import re
+from openroad import Design
 
 
 def make_rect(design, xl, yl, xh, yh):
@@ -51,28 +52,24 @@ def diff_files(file1, file2, ignore=None):
     return 0
 
 
-# Output voltage file is specified as ...
-utl.suppress_message(utl.PSM, 2)
-# Output current file specified ...
-utl.suppress_message(utl.PSM, 3)
-# Error file is specified as ...
-utl.suppress_message(utl.PSM, 83)
-# Output spice file is specified as
-utl.suppress_message(utl.PSM, 5)
-# SPICE file is written at
-utl.suppress_message(utl.PSM, 6)
-# Reading DEF file
-utl.suppress_message(utl.ODB, 127)
-# Finished DEF file
-utl.suppress_message(utl.ODB, 134)
+def make_design(tech):
+    design = Design(tech)
+    logger = design.getLogger()
 
-# suppress tap info messages
-utl.suppress_message(utl.TAP, 100)
-utl.suppress_message(utl.TAP, 101)
+    # Reading DEF file
+    logger.suppressMessage(utl.ODB, 127)
+    # Finished DEF file
+    logger.suppressMessage(utl.ODB, 134)
 
-# suppress par messages with filenames
-utl.suppress_message(utl.PAR, 6)
-utl.suppress_message(utl.PAR, 38)
+    # suppress tap info messages
+    logger.suppressMessage(utl.TAP, 100)
+    logger.suppressMessage(utl.TAP, 101)
 
-# suppress ord message with number of threads
-utl.suppress_message(utl.ORD, 30)
+    # suppress par messages with files' names
+    logger.suppressMessage(utl.PAR, 6)
+    logger.suppressMessage(utl.PAR, 38)
+
+    # suppress ord message with number of threads
+    logger.suppressMessage(utl.ORD, 30)
+
+    return design

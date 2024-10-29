@@ -7986,15 +7986,18 @@ class dbMarkerCategory : public dbObject
   void writeTR(const std::string& path) const;
   void writeTR(std::ofstream& report) const;
 
-  static void fromJSON(dbBlock* block, const std::string& path);
-  static void fromJSON(dbBlock* block,
-                       const char* source,
-                       std::ifstream& report);
-  static void fromTR(dbBlock* block, const char* name, const std::string& path);
-  static void fromTR(dbBlock* block,
-                     const char* name,
-                     const char* source,
-                     std::ifstream& report);
+  static std::set<dbMarkerCategory*> fromJSON(dbBlock* block,
+                                              const std::string& path);
+  static std::set<dbMarkerCategory*> fromJSON(dbBlock* block,
+                                              const char* source,
+                                              std::ifstream& report);
+  static dbMarkerCategory* fromTR(dbBlock* block,
+                                  const char* name,
+                                  const std::string& path);
+  static dbMarkerCategory* fromTR(dbBlock* block,
+                                  const char* name,
+                                  const char* source,
+                                  std::ifstream& report);
 
   static dbMarkerCategory* create(dbBlock* block, const char* name);
   static dbMarkerCategory* createOrReplace(dbBlock* block, const char* name);
