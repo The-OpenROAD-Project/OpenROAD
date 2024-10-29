@@ -1592,6 +1592,7 @@ void dbInst::destroy(dbInst* inst_)
 
     dbProperty::destroyProperties(it);
     block->_iterm_tbl->destroy(it);
+    inst->_iterms.pop_back();
   }
 
   //    Move this part after inDbInstDestroy
