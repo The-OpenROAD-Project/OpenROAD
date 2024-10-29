@@ -26,22 +26,11 @@ proc ora_helper { } {
 
 }
 
-# Example usage:
-#  askbot foo
-#  askbot -flag1 -key1 2.0 bar
-#  help askbot 
 proc askbot { args } {
   sta::parse_key_args "askbot" args \
     flags {-listSources -listContext}
-
-  # if { [info exists keys(-key1)] } {
-  #   set param1 $keys(-key1)
-  #   sta::check_positive_float "-key1" $param1
-  #   ora::ora_set_param1 $param1
-  # }
-
+    
   ora::ora_set_listSources [info exists flags(-listSources)]
-  ora::ora_set_listContext [info exists flags(-listContext)]
 
   sta::check_argc_eq1 "askbot" $args
   ora::ora_helper

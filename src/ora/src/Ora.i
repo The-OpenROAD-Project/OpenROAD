@@ -40,11 +40,6 @@ void ora_set_listSources(bool listSources)
   getOra()->setSourceFlag(listSources);
 }
 
-void ora_set_listContext(bool listContext)
-{
-  getOra()->setContextFlag(listContext);
-}
-
 void askbot(const char *query)
 {
   getOra()->askbot(query);
