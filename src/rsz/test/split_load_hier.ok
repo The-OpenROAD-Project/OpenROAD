@@ -103,62 +103,50 @@ tns -7.917
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm 97
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 97
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 97 to net 23
-Factored Connection from split1/Z to u1/r28/D
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 97 to modnet 5
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm 103
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 103
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 103 to net 23
-Factored Connection from split1/Z to u1/r29/D
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 103 to modnet 5
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm 115
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 115
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 115 to net 23
-Factored Connection from split1/Z to u1/r30/D
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 115 to modnet 5
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm 121
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 121
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 121 to net 23
-Factored Connection from split1/Z to u1/r31/D
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 121 to modnet 5
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm 61
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 61
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 61 to net 23
-Factored Connection from split1/Z to u1/r22/D
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 61 to modnet 5
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm 67
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 67
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to net 23
-Factored Connection from split1/Z to u1/r23/D
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 67 to modnet 5
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm 73
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 73
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to net 23
-Factored Connection from split1/Z to u1/r24/D
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 73 to modnet 5
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm 79
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 79
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 79 to net 23
-Factored Connection from split1/Z to u1/r25/D
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 79 to modnet 5
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm 85
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 85
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 85 to net 23
-Factored Connection from split1/Z to u1/r26/D
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 85 to modnet 5
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm 163
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 163
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 163 to net 23
-Factored Connection from split1/Z to u1/u1/A
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 163 to modnet 5
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm 167
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 167
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 167 to net 23
-Factored Connection from split1/Z to u1/u10/A
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 167 to modnet 5
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm 171
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 171
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 171 to net 23
-Factored Connection from split1/Z to u1/u11/A
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 171 to modnet 5
 [DEBUG RSZ-journal] journal replace split1 (BUF_X1)
 [DEBUG ODB-DB_ECO] ECO: swapMaster
@@ -1000,27 +988,22 @@ Factored Connection from split1/Z to u1/u11/A
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm 97
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 97
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 97 to net 26
-Factored Connection from split4/Z to u1/r28/D
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 97 to modnet 7
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm 103
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 103
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 103 to net 26
-Factored Connection from split4/Z to u1/r29/D
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 103 to modnet 7
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm 115
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 115
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 115 to net 26
-Factored Connection from split4/Z to u1/r30/D
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 115 to modnet 7
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm 121
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 121
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 121 to net 26
-Factored Connection from split4/Z to u1/r31/D
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 121 to modnet 7
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm 61
 [DEBUG ODB-DB_ECO] ECO: disconnect Iterm -- modnet part 61
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 61 to net 26
-Factored Connection from split4/Z to u1/r22/D
 [DEBUG ODB-DB_ECO] ECO: connect Iterm 61 to modnet 7
 [DEBUG RSZ-repair_setup] pass 3 slack = -0.359 worst_slack = -0.518 
 [DEBUG RSZ-repair_setup] r1/Q load_delay = 0.039 intrinsic_delay = 0.413
