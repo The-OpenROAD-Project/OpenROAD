@@ -635,7 +635,7 @@ proc repair_timing { args } {
 
 ################################################################
 
-sta::define_cmd_args "report_design_area" {}
+sta::define_cmd_args "report_design_area" {[> filename] [>> filename]} ;# checker off
 
 sta::proc_redirect report_design_area { args } {
   sta::parse_key_args "report_design_area" args keys {} flags {}
