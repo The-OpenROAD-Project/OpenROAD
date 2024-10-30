@@ -181,7 +181,7 @@ void Ext::bench_wires(const BenchWiresOptions& bwo)
     parser.getDoubleArray(&opt._densityTable, 0);
   }
  // _ext->benchWires(&opt);
-   if (opt._gen_def_patterns && opt._v1) 
+   if (opt._gen_def_patterns && opt._v1) // New patterns v1=true
     _ext->DefWires(&opt);
   else
   _ext->benchWires(&opt);
