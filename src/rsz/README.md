@@ -117,13 +117,15 @@ Standard Parasitic Exchange Format.
 estimate_parasitics
     -placement|-global_routing
     [-spef_file spef_file]
+    [-ext_model_file]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-placement` or `-global_routing` | Either of these flags must be set. Parasitics are estimated based after placement stage versus after global routing stage. |
+| `-placement` or `-global_routing` or `-detailed_routing` | Either of these flags must be set. Parasitics are estimated based after placement stage versus after global routing stage, or extracted from the detailed routing. |
+| `-ext_model_file` | Optional. File name to load the extraction model file for parasitics extraction from detailed routing. |
 | `-spef_file` | Optional. File name to write SPEF files. If more than one corner is available for the design, the files will be written as filename_corner.spef. |
 
 ### Set Don't Use
