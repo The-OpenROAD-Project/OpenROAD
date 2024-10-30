@@ -79,6 +79,7 @@ target_link_libraries(rsz_lib
     OpenSTA
     dbSta_lib
     grt_lib
+    rcx_lib
     utl_lib
 )
 
@@ -91,6 +92,7 @@ target_link_libraries(rsz
     dbSta
     grt
     gui
+    rcx
     utl
 )
 

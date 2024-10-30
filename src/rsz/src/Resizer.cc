@@ -47,6 +47,7 @@
 #include "RepairSetup.hh"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
+#include "rcx/ext.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Bfs.hh"
 #include "sta/Corner.hh"
@@ -156,6 +157,7 @@ void Resizer::init(Logger* logger,
                    SteinerTreeBuilder* stt_builder,
                    GlobalRouter* global_router,
                    dpl::Opendp* opendp,
+                   rcx::Ext* openrcx,
                    std::unique_ptr<AbstractSteinerRenderer> steiner_renderer)
 {
   opendp_ = opendp;
@@ -166,6 +168,7 @@ void Resizer::init(Logger* logger,
   stt_builder_ = stt_builder;
   global_router_ = global_router;
   incr_groute_ = nullptr;
+  openrcx_ = openrcx;
   db_network_ = sta->getDbNetwork();
   resized_multi_output_insts_ = InstanceSet(db_network_);
   inserted_buffer_set_ = InstanceSet(db_network_);

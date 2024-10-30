@@ -74,6 +74,7 @@ void initResizer(OpenRoad* openroad)
                                openroad->getSteinerTreeBuilder(),
                                openroad->getGlobalRouter(),
                                openroad->getOpendp(),
+                               openroad->getOpenRCX(),
                                std::move(steiner_renderer));
   // Define swig TCL commands.
   Rsz_Init(interp);
