@@ -1580,9 +1580,9 @@ void GuidePathFinder::clipGuides(std::vector<frRect>& rects)
         continue;
       }
       if (box.ll() == pt) {
-        rect.setBBox(Rect(box.xMax(), box.yMax(), box.xMax(), box.yMax()));
+        rect.setBBox(Rect(box.ur(), box.ur()));
       } else {
-        rect.setBBox(Rect(box.xMin(), box.yMin(), box.xMin(), box.yMin()));
+        rect.setBBox(Rect(box.ll(), box.ll()));
       }
       node_map_[pt].erase(node_map_[pt].find(idx));
     }
@@ -1598,32 +1598,30 @@ void GuidePathFinder::mergeGuides(std::vector<frRect>& rects)
                  std::back_inserter(visited_indices),
                  [this](int idx) { return visited_[idx]; });
     const uint num_indices = visited_indices.size();
-    if (num_indices == 2) {
-      const auto first_idx = *(visited_indices.begin());
-      const auto second_idx = *std::prev(visited_indices.end());
-      if (!isGuideIdx(first_idx) || !isGuideIdx(second_idx)) {
-        continue;
-      }
-      auto& rect1 = rects[first_idx];
-      auto& rect2 = rects[second_idx];
-      Rect box1 = rect1.getBBox();
-      Rect box2 = rect2.getBBox();
-      if (box1.getDir() == box2.getDir()) {
-        // merge both and remove rect1/box1/first_idx
-        box2.merge(box1);
-        rect2.setBBox(box2);
-        node_map_[pt].clear();
-        Point3D to_be_updated_pos;
-        if (box1.ll() == pt) {
-          to_be_updated_pos = Point3D(box1.ur(), pt.z());
-        } else {
-          to_be_updated_pos = Point3D(box1.ll(), pt.z());
-        }
-        auto it = node_map_[to_be_updated_pos].find(first_idx);
-        node_map_[to_be_updated_pos].erase(it);
-        node_map_[to_be_updated_pos].insert(second_idx);
-        visited_[first_idx] = false;
-      }
+    if (num_indices != 2) {
+      continue;
+    }
+    const auto first_idx = *(visited_indices.begin());
+    const auto second_idx = *std::prev(visited_indices.end());
+    if (!isGuideIdx(first_idx) || !isGuideIdx(second_idx)) {
+      continue;
+    }
+    auto& rect1 = rects[first_idx];
+    auto& rect2 = rects[second_idx];
+    Rect box1 = rect1.getBBox();
+    Rect box2 = rect2.getBBox();
+    if (box1.getDir() == box2.getDir()) {
+      continue;
+    }
+    // merge both and remove rect1/box1/first_idx
+    box2.merge(box1);
+    rect2.setBBox(box2);
+    node_map_[pt].clear();
+    Point3D to_be_updated_pos((box1.ll() == pt) ? box1.ur() : box1.ll(), pt.z());
+    auto it = node_map_[to_be_updated_pos].find(first_idx);
+    node_map_[to_be_updated_pos].erase(it);
+    node_map_[to_be_updated_pos].insert(second_idx);
+    visited_[first_idx] = false;
     }
   }
 }
