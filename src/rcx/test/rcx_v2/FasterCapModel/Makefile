@@ -7,7 +7,9 @@ data_dir=$(top_dir)/data
 
 .PHONY : 1v2_parse ou_parse du_parse M1uM2_parse 1v2 2v2 2v1 1v1 3v2 3v1 5v1 5v2 sept24_1 sept24_2 sept24_3 sept24_fasterCap gen924  6v2
 
-patterns :  1v2 2v2 2v1 1v1 3v2 3v1 5v1 5v2 6v2
+patterns_v1 :  1v1 2v1 3v1 5v1 
+patterns_v2 :  1v2 2v2 3v2 5v2 
+patterns :  patterns_v1 patterns_v2 6v1 6v2
 all : 1v2_parse ou_parse du_parse M1uM2_parse 1v2 2v2 2v1 1v1 3v2 3v1 5v1 5v2 sept24_1 sept24_2 sept24_3 sept24_fasterCap gen924  6v2
 
 # -------------------------------------------------------------------------------------
@@ -50,6 +52,9 @@ data_dr1=../data
 	
 5v2: 
 	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dr1)/process "TYP" 5 2 $@.GOLD 
+
+6v1: 
+	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dr1)/process "TYP" 6 1 $@.GOLD 
 
 6v2: 
 	$(new_gen_pattern_bash) $@ $(or_exec) $(data_dr1)/process "TYP" 6 2 $@.GOLD 

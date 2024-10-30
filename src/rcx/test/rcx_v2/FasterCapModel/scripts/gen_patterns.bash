@@ -18,7 +18,6 @@ tcl_script=tmp_gen_patterns.tcl
 rm -rf $dir
 mkdir $dir
 cd $dir
-pwd
 
 echo "gen_solver_patterns -process_file $process -process_name $outname -wire_cnt $wire_cnt -version $version" > $tcl_script
 
