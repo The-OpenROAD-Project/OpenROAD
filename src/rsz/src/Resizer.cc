@@ -1032,10 +1032,7 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
       }
 
       if (source_cell->userFunctionClass()) {
-        // Don't use stringEqIf to avoid a reduntant nullptr check.
-        // Here, we assume that the equivalent cell will also have
-        // a user_function_class attribute.
-        const bool user_function_classes_match = sta::stringEqual(
+        const bool user_function_classes_match = sta::stringEqIf(
             source_cell->userFunctionClass(), equiv_cell->userFunctionClass());
         if (!user_function_classes_match) {
           continue;
