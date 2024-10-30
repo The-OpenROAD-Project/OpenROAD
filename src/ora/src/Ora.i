@@ -35,19 +35,19 @@ ora::Ora *getOra()
 //   getOra()->setParam1(param1);
 // }
 
-void ora_set_listSources(bool listSources)
-{
-  getOra()->setSourceFlag(listSources);
-}
-
 void askbot(const char *query)
 {
   getOra()->askbot(query);
 }
 
+void askbot_listSources(bool listSources)
+{
+  getOra()->setSourceFlag(listSources);
+}
+
 void set_bothost(const char *host)
 {
-  getOra()->set_bothost(host);
+  getOra()->setBotHost(host);
 }
 
 %} // inline

@@ -37,7 +37,7 @@ public:
             odb::dbDatabase *db,
             utl::Logger* logger);
   void askbot(const char *pos_arg1);
-  void set_bothost(const char *host);
+  void setBotHost(const char *host);
   void setSourceFlag(bool sourceFlag);
 
 private:

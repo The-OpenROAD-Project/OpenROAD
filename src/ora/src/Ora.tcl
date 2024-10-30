@@ -18,7 +18,7 @@ proc askbot { args } {
   sta::parse_key_args "askbot" args \
     flags {-listSources}
 
-  ora::ora_set_listSources [info exists flags(-listSources)]
+  ora::askbot_listSources [info exists flags(-listSources)]
 
   sta::check_argc_eq1 "askbot" $args
 

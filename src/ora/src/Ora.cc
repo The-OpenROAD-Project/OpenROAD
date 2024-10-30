@@ -18,6 +18,7 @@
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
 #include <string>
+#include <fstream>
 #include <sstream>
 #include <curl/curl.h>
 #include <boost/json.hpp>
@@ -98,9 +99,21 @@ void Ora::init(Tcl_Interp *tcl_interp,
     sta::evalTclInit(tcl_interp, sta::ora_tcl_inits);
     
     hostUrl = "https://bursting-stallion-friendly.ngrok-free.app/graphs/agent-retriever";
+
+    try{
+    std::ifstream hostUrlFile("orassistant_host.txt");
+    if (hostUrlFile.is_open()) {
+        std::getline(hostUrlFile, hostUrl);
+        hostUrlFile.close();
+        logger_->info(utl::ORA, 110, "ORAssistant host loaded from file.");
+    }
+    }
+    catch (const std::exception& e) {
+        logger_->warn(utl::ORA, 111, "Failed to read ORAssistant host from file.");
+    }
+    
     sourceFlag_ = true;
 }
-
 void Ora::askbot(const char* query)
 {
     logger_->info(utl::ORA, 101, "Sending POST request to {}", hostUrl);
@@ -141,7 +154,7 @@ void Ora::askbot(const char* query)
             logger_->warn(utl::ORA, 107, "API response: {}", postResponse);
         }
     } catch (const boost::json::system_error& e) {
-        logger_->error(utl::ORA, 105, "JSON Parsing Error: {}", e.what());
+        logger_->warn(utl::ORA, 105, "JSON Parsing Error: {}\nPlease check if you have access to ORAssistant's API.", e.what());
     }
 }
 
@@ -150,11 +163,20 @@ void Ora::setSourceFlag(bool sourceFlag)
     sourceFlag_ = sourceFlag;
 }
 
-void Ora::set_bothost(const char* host)
+void Ora::setBotHost(const char* host)
 {
     hostUrl = host;
     logger_->info(utl::ORA, 100, "Setting ORAssistant host to {}", hostUrl);
-}
+    std::ofstream hostUrlFile("orassistant_host.txt");
 
+    if (hostUrlFile.is_open()) {
+        hostUrlFile << hostUrl;
+        hostUrlFile.close();
+        logger_->info(utl::ORA, 109, "ORAssistant host saved to file.");
+    } else {
+        logger_->warn(utl::ORA, 108, "Failed to write ORAssistant host to file.");
+    }
+
+}
 
 } // namespace ora
