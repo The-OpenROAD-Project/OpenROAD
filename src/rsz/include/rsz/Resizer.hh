@@ -52,8 +52,8 @@ class IncrementalGRoute;
 }  // namespace grt
 
 namespace rcx {
-  class Ext;
-} // namespace rcx
+class Ext;
+}  // namespace rcx
 
 namespace stt {
 class SteinerTreeBuilder;
