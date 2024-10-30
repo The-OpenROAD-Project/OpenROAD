@@ -1492,7 +1492,6 @@ void FlexPA::initAllAccessPoints()
 {
   ProfileTask profile("PA:point");
   int pin_count = 0;
-  int pin_count_inform = 1000;
 
   omp_set_num_threads(MAX_THREADS);
   ThreadException exception;
@@ -1515,13 +1514,10 @@ void FlexPA::initAllAccessPoints()
 
       int inst_terms_cnt = static_cast<int>(inst->getInstTerms().size());
 #pragma omp critical
-      for (int i = 0; i < inst_terms_cnt; i++, pin_count++) {
+      for (int i = 0; i < inst_terms_cnt; i++) {
         pin_count++;
-        if (pin_count % pin_count_inform == 0) {
+        if (pin_count % (pin_count > 10000 ? 10000 : 1000) == 0) {
           logger_->info(DRT, 76, "  Complete {} pins.", pin_count);
-          if (pin_count >= 10000) {
-            pin_count_inform = 10000;
-          }
         }
       }
     } catch (...) {
