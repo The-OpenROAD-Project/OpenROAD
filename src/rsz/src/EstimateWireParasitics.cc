@@ -265,19 +265,6 @@ double Resizer::wireClkVCapacitance(const Corner* corner) const
 
 ////////////////////////////////////////////////////////////////
 
-void Resizer::ensureParasitics()
-{
-  estimateParasitics(global_router_->haveRoutes()
-                         ? ParasiticsSrc::global_routing
-                         : ParasiticsSrc::placement);
-}
-
-void Resizer::estimateParasitics(ParasiticsSrc src)
-{
-  std::map<Corner*, std::ostream*> spef_streams;
-  estimateParasitics(src, spef_streams);
-}
-
 void Resizer::estimateParasitics(ParasiticsSrc src,
                                  std::map<Corner*, std::ostream*>& spef_streams)
 {
