@@ -42,6 +42,31 @@ void FlexGridGraph::addAccessPointLocation(frLayerNum layer_num,
   ap_locs_[layer_num].insert(Point(x_coord, y_coord));
 }
 
+void initCoords(const boost::container::flat_map<
+                    frLayerNum,
+                    boost::container::flat_map<frCoord, frTrackPattern*>>& map,
+                std::vector<frCoord>& coords)
+{
+  coords.clear();
+  for (auto& [l, m] : map) {
+    coords.reserve(m.size());
+    if (coords.empty()) {
+      std::transform(
+          m.begin(), m.end(), std::back_inserter(coords), [](const auto& kv) {
+            return kv.first;
+          });
+    } else {
+      auto it = coords.begin();
+      for (auto& [k, _] : m) {
+        it = std::lower_bound(it, coords.end(), k);
+        if (it == coords.end() || *it != k) {
+          it = coords.insert(it, k);
+        }
+      }
+    }
+  }
+}
+
 bool FlexGridGraph::isAccessPointLocation(frLayerNum layer_num,
                                           frCoord x_coord,
                                           frCoord y_coord) const
@@ -54,28 +79,21 @@ bool FlexGridGraph::isAccessPointLocation(frLayerNum layer_num,
 }
 void FlexGridGraph::initGrids(
     const boost::container::flat_map<
-        frCoord,
-        boost::container::flat_map<frLayerNum, frTrackPattern*>>& xMap,
+        frLayerNum,
+        boost::container::flat_map<frCoord, frTrackPattern*>>& xMap,
     const boost::container::flat_map<
-        frCoord,
-        boost::container::flat_map<frLayerNum, frTrackPattern*>>& yMap,
+        frLayerNum,
+        boost::container::flat_map<frCoord, frTrackPattern*>>& yMap,
     const boost::container::flat_map<frLayerNum, dbTechLayerDir>& zMap,
     bool followGuide)
 {
   // initialize coord vectors
-  xCoords_.clear();
-  yCoords_.clear();
+  initCoords(xMap, xCoords_);
+  initCoords(yMap, yCoords_);
   zCoords_.clear();
   zHeights_.clear();
   layerRouteDirections_.clear();
-  xCoords_.reserve(xMap.size());
-  for (auto& [k, v] : xMap) {
-    xCoords_.push_back(k);
-  }
-  yCoords_.reserve(yMap.size());
-  for (auto& [k, v] : yMap) {
-    yCoords_.push_back(k);
-  }
+
   frCoord zHeight = 0;
   // std::vector<frCoord> via2viaMinLenTmp(4, 0);
   zCoords_.reserve(zMap.size());
@@ -205,11 +223,11 @@ bool FlexGridGraph::hasAlignedUpDefTrack(
 void FlexGridGraph::initEdges(
     const frDesign* design,
     boost::container::flat_map<
-        frCoord,
-        boost::container::flat_map<frLayerNum, frTrackPattern*>>& xMap,
+        frLayerNum,
+        boost::container::flat_map<frCoord, frTrackPattern*>>& xMap,
     boost::container::flat_map<
-        frCoord,
-        boost::container::flat_map<frLayerNum, frTrackPattern*>>& yMap,
+        frLayerNum,
+        boost::container::flat_map<frCoord, frTrackPattern*>>& yMap,
     const boost::container::flat_map<frLayerNum, dbTechLayerDir>& zMap,
     const Rect& bbox,
     bool initDR)
@@ -217,7 +235,7 @@ void FlexGridGraph::initEdges(
   frMIdx xDim, yDim, zDim;
   getDim(xDim, yDim, zDim);
   // initialize grid graph
-  frMIdx xIdx = 0, yIdx = 0, zIdx = 0;
+  frMIdx zIdx = 0;
   dieBox_ = design->getTopBlock()->getDieBox();
   for (const auto& [layerNum, dir] : zMap) {
     frLayerNum nonPrefLayerNum;
@@ -229,22 +247,28 @@ void FlexGridGraph::initEdges(
     } else {
       nonPrefLayerNum = layerNum;
     }
-    yIdx = 0;
-    for (auto& [yCoord, ySubMap] : yMap) {
-      auto yIt = ySubMap.find(layerNum);
-      auto yIt2 = ySubMap.find(layerNum + 2);
-      auto yIt3 = ySubMap.find(nonPrefLayerNum);
-      bool yFound = (yIt != ySubMap.end());
-      bool yFound2 = (yIt2 != ySubMap.end());
-      bool yFound3 = (yIt3 != ySubMap.end());
-      xIdx = 0;
-      for (auto& [xCoord, xSubMap] : xMap) {
-        auto xIt = xSubMap.find(layerNum);
-        auto xIt2 = xSubMap.find(layerNum + 2);
-        auto xIt3 = xSubMap.find(nonPrefLayerNum);
-        bool xFound = (xIt != xSubMap.end());
-        bool xFound2 = (xIt2 != xSubMap.end());
-        bool xFound3 = (xIt3 != xSubMap.end());
+    auto& yLayerMap = yMap[layerNum];
+    auto& yLayer2Map = yMap[layerNum + 2];
+    auto& yNonPrefLayerMap = yMap[nonPrefLayerNum];
+    auto& xLayerMap = xMap[layerNum];
+    auto& xLayer2Map = xMap[layerNum + 2];
+    auto& xNonPrefLayerMap = xMap[nonPrefLayerNum];
+    for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
+      auto yCoord = yCoords_[yIdx];
+      auto yIt = yLayerMap.find(yCoord);
+      auto yIt2 = yLayer2Map.find(yCoord);
+      auto yIt3 = yNonPrefLayerMap.find(yCoord);
+      bool yFound = (yIt != yLayerMap.end());
+      bool yFound2 = (yIt2 != yLayer2Map.end());
+      bool yFound3 = (yIt3 != yNonPrefLayerMap.end());
+      for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
+        auto xCoord = xCoords_[xIdx];
+        auto xIt = xLayerMap.find(xCoord);
+        auto xIt2 = xLayer2Map.find(xCoord);
+        auto xIt3 = xNonPrefLayerMap.find(xCoord);
+        bool xFound = (xIt != xLayerMap.end());
+        bool xFound2 = (xIt2 != xLayer2Map.end());
+        bool xFound3 = (xIt3 != xNonPrefLayerMap.end());
         // add cost to out-of-die edge
         bool isOutOfDieVia = outOfDieVia(xIdx, yIdx, zIdx, dieBox_);
         // add edge for preferred direction
@@ -322,9 +346,7 @@ void FlexGridGraph::initEdges(
             }
           }
         }
-        ++xIdx;
       }
-      ++yIdx;
     }
     ++zIdx;
   }
@@ -352,15 +374,15 @@ void FlexGridGraph::initEdges(
               || nextLNum < router_cfg_->BOTTOM_ROUTING_LAYER
               || nextLNum > router_cfg_->TOP_ROUTING_LAYER;
         if (!restrictedRouting || nextLayer->isVertical()) {
-          auto& xSubMap = xMap[apPt.x()];
-          auto xTrack = xSubMap.find(nextLNum);
+          auto& xSubMap = xMap[nextLNum];
+          auto xTrack = xSubMap.find(apPt.x());
           if (xTrack != xSubMap.end() && xTrack->second != nullptr) {
             break;
           }
         }
         if (!restrictedRouting || nextLayer->isHorizontal()) {
-          auto& ySubMap = yMap[apPt.y()];
-          auto yTrack = ySubMap.find(nextLNum);
+          auto& ySubMap = yMap[nextLNum];
+          auto yTrack = ySubMap.find(apPt.y());
           if (yTrack != ySubMap.end() && yTrack->second != nullptr) {
             break;
           }
@@ -370,8 +392,8 @@ void FlexGridGraph::initEdges(
             && nextLNum >= router_cfg_->VIA_ACCESS_LAYERNUM) {
           dbTechLayerDir prefDir
               = design->getTech()->getLayer(nextLNum)->getDir();
-          xMap[apPt.x()][nextLNum] = nullptr;  // to keep coherence
-          yMap[apPt.y()][nextLNum] = nullptr;
+          xMap[nextLNum][apPt.x()] = nullptr;  // to keep coherence
+          yMap[nextLNum][apPt.y()] = nullptr;
           frMIdx nextZ = up ? zIdx + 1 : zIdx;
           // This is a value to make sure the edges we are adding will
           // reach a track on the layer of interest.  It is simpler to
@@ -404,11 +426,11 @@ void FlexGridGraph::init(
     const Rect& routeBBox,
     const Rect& extBBox,
     boost::container::flat_map<
-        frCoord,
-        boost::container::flat_map<frLayerNum, frTrackPattern*>>& xMap,
+        frLayerNum,
+        boost::container::flat_map<frCoord, frTrackPattern*>>& xMap,
     boost::container::flat_map<
-        frCoord,
-        boost::container::flat_map<frLayerNum, frTrackPattern*>>& yMap,
+        frLayerNum,
+        boost::container::flat_map<frCoord, frTrackPattern*>>& yMap,
     bool initDR,
     bool followGuide)
 {
@@ -417,6 +439,9 @@ void FlexGridGraph::init(
 
   // get tracks intersecting with the Maze bbox
   boost::container::flat_map<frLayerNum, dbTechLayerDir> zMap;
+  size_t layerCount = design->getTech()->getLayers().size();
+  zMap.reserve(layerCount);
+
   initTracks(design, xMap, yMap, zMap, extBBox);
   initGrids(xMap, yMap, zMap, followGuide);  // buildGridGraph
   initEdges(
@@ -429,12 +454,12 @@ void FlexGridGraph::init(
 void FlexGridGraph::initTracks(
     const frDesign* design,
     boost::container::flat_map<
-        frCoord,
-        boost::container::flat_map<frLayerNum, frTrackPattern*>>&
+        frLayerNum,
+        boost::container::flat_map<frCoord, frTrackPattern*>>&
         horLoc2TrackPatterns,
     boost::container::flat_map<
-        frCoord,
-        boost::container::flat_map<frLayerNum, frTrackPattern*>>&
+        frLayerNum,
+        boost::container::flat_map<frCoord, frTrackPattern*>>&
         vertLoc2TrackPatterns,
     boost::container::flat_map<frLayerNum, dbTechLayerDir>&
         layerNum2PreRouteDir,
@@ -473,9 +498,9 @@ void FlexGridGraph::initTracks(
           frCoord trackLoc
               = trackNum * tp->getTrackSpacing() + tp->getStartCoord();
           if (tp->isHorizontal()) {
-            horLoc2TrackPatterns[trackLoc][currLayerNum] = tp.get();
+            horLoc2TrackPatterns[currLayerNum][trackLoc] = tp.get();
           } else {
-            vertLoc2TrackPatterns[trackLoc][currLayerNum] = tp.get();
+            vertLoc2TrackPatterns[currLayerNum][trackLoc] = tp.get();
           }
         }
       }

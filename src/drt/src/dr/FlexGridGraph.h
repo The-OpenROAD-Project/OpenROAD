@@ -29,6 +29,7 @@
 #pragma once
 
 #include <boost/container/flat_map.hpp>
+#include <boost/container/flat_set.hpp>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
