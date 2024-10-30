@@ -624,7 +624,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         log_->report("[NesterovSolve] Revert back to snapshot coordi");
       }
     }
-
     // check each for converge and if all are converged then stop
     int numConverge = 0;
     for (auto& nb : nbVec_) {
@@ -707,7 +706,7 @@ void NesterovPlace::createGCell(odb::dbInst* db_inst) {
   auto gcell_index = nbc_->createGCell(db_inst);
   for(auto& nesterov : nbVec_){
     //TODO: properly manage regions, not every region (NB) should create a gcell.
-    nesterov->createGCell(db_inst, gcell_index);
+    nesterov->createGCell(db_inst, gcell_index, rb_.get());
   }
 }
 

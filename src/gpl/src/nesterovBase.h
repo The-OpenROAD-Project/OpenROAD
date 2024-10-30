@@ -41,6 +41,7 @@
 
 #include "point.h"
 #include "placerBase.h"
+#include "routeBase.h"
 #include "odb/db.h"
 
 namespace odb {
@@ -1171,7 +1172,7 @@ class NesterovBase
   bool isDiverged() const { return isDiverged_; }
 
   //  void resizeGCell();
-  void createGCell(odb::dbInst* db_inst, size_t stor_index);
+  void createGCell(odb::dbInst* db_inst, size_t stor_index, RouteBase* rb);
   void updateGCellState(float wlCoeffX, float wlCoeffY);
   void destroyGCell(odb::dbInst* db_inst);
   void destroyFillerGCell(size_t index_remove);

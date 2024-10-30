@@ -2656,7 +2656,8 @@ void NesterovBase::updateNextIter(const int iter)
 
   debugPrint(log_, GPL, "updateNextIter", 1, "PhiCoef: {:g}", phiCoef);
 
-  if (iter == 0 || (iter + 1) % 10 == 0) {
+  // if (iter == 0 || (iter + 1) % 10 == 0) 
+  {
     std::string group;
     if (pb_->group()) {
       group = fmt::format(" ({})", pb_->group()->getName());
@@ -3163,7 +3164,7 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY) {
 
 // If placer base and placer base common also have their vector replaced,
 // the gcell parameter is not necessary, and can be accessed with dbToNb()
-void NesterovBase::createGCell(odb::dbInst* db_inst, size_t stor_index){
+void NesterovBase::createGCell(odb::dbInst* db_inst, size_t stor_index, RouteBase* rb){
   //TODO: for now pbc and pb does not support dynamic creation of instances 
 //  GCell* gCell = nbc_->dbToNb(db_inst);
   auto gcell = nbc_->getGCellByIndex(stor_index);
@@ -3192,6 +3193,8 @@ void NesterovBase::createGCell(odb::dbInst* db_inst, size_t stor_index){
     snapshotSLPCoordi_.push_back(FloatPoint());
     snapshotSLPSumGrads_.push_back(FloatPoint());
 
+    rb->pushBackMinRcCellSize(gcell->dx(),gcell->dy());
+
   // log_->report("gCells_[gcells_index]->print(log_):");
   // gCells_[gcells_index]->print(log_);
   } else {
@@ -3219,8 +3222,8 @@ size_t NesterovBaseCommon::createGCell(odb::dbInst* db_inst){
                     pbc_->siteSizeY(),
                     log_);
   GCell gcell(gpl_inst);
-  int lx, ly;
-  db_inst->getLocation(lx,ly);
+  // int lx, ly;
+  // db_inst->getLocation(lx,ly);
   // log_->report("db inst for creategcell-> lx,ly: {},{}", lx, ly);
   // log_->report("bbox dx,dy: {},{}", db_inst->getBBox()->getDX(), db_inst->getBBox()->getDY());
   // log_->report("NesterovBaseCommon::createGCell --> gcell just created:");
