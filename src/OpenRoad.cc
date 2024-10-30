@@ -116,6 +116,8 @@ using sta::evalTclInit;
 
 using utl::ORD;
 
+OpenRoad* OpenRoad::app_ = nullptr;
+
 OpenRoad::OpenRoad()
 {
   db_ = dbDatabase::create();
@@ -161,9 +163,17 @@ sta::dbNetwork* OpenRoad::getDbNetwork()
 /* static */
 OpenRoad* OpenRoad::openRoad()
 {
-  // This will be destroyed at application exit
-  static OpenRoad o;
-  return &o;
+  return app_;
+}
+
+/* static */
+void OpenRoad::setOpenRoad(OpenRoad* app, bool reinit_ok)
+{
+  if (!reinit_ok && app_) {
+    std::cerr << "Attempt to reinitialize the application." << std::endl;
+    exit(1);
+  }
+  app_ = app;
 }
 
 ////////////////////////////////////////////////////////////////

@@ -67,7 +67,7 @@ class RepairHold : public sta::dbStaState
 {
  public:
   RepairHold(Resizer* resizer);
-  void repairHold(double setup_margin,
+  bool repairHold(double setup_margin,
                   double hold_margin,
                   bool allow_setup_violations,
                   // Max buffer count as percent of design instance count.
@@ -94,7 +94,7 @@ class RepairHold : public sta::dbStaState
                           // Return values.
                           Slack& worst_slack,
                           VertexSeq& hold_violations);
-  void repairHold(VertexSeq& ends,
+  bool repairHold(VertexSeq& ends,
                   LibertyCell* buffer_cell,
                   double setup_margin,
                   double hold_margin,

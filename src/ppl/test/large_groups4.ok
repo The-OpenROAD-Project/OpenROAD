@@ -3,7 +3,9 @@
 [INFO ODB-0130]     Created 400 pins.
 [INFO ODB-0131]     Created 1 components and 6 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 1 connections.
+[INFO PPL-0048] Restrict pins [ pin0 pin1 pin10 pin100 pin101 ... ] to region 0.00u-100.13u at the TOP edge.
 [INFO PPL-0044] Pin group: [ pin0 pin1 pin2 pin3 pin4 ... ]
+[INFO PPL-0048] Restrict pins [ pin300 pin301 pin302 pin303 pin304 ... ] to region 0.00u-100.13u at the BOTTOM edge.
 [INFO PPL-0044] Pin group: [ pin300 pin301 pin302 pin303 pin304 ... ]
 Found 0 macro blocks.
 [INFO PPL-0001] Number of slots           1754

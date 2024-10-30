@@ -35,7 +35,7 @@ sta::define_cmd_args "pdngen" {[-skip_trim] \
                                [-report_only] \
                                [-failed_via_report file] \
                                [-verbose]
-}
+} ;#checker off
 
 proc pdngen { args } {
   sta::parse_key_args "pdngen" args \
@@ -47,7 +47,7 @@ proc pdngen { args } {
     utl::error PDN 2 "No design block found."
   }
 
-  pdn::depricated flags -verbose
+  pdn::deprecated flags -verbose
 
   if { [info exists flags(-reset)] } {
     if { [array size flags] != 1 } {
@@ -156,7 +156,7 @@ proc set_voltage_domain { args } {
     } else {
       set signal_type [$switched_power getSigType]
       if { $signal_type != "POWER" } {
-        utl::error PDN 199 "Net $switched_power_net_name already exists in the design,\
+        utl::error PDN 212 "Net $switched_power_net_name already exists in the design,\
           but is of signal type ${signal_type}."
       }
     }
@@ -376,6 +376,9 @@ proc add_pdn_stripe { args } {
   }
 
   if { [info exists flags(-followpins)] } {
+    if { [info exists keys(-starts_with)] } {
+      utl::warn PDN 211 "Option -starts_with cannot be used with -followpins and will be ignored."
+    }
     pdn::make_followpin $grid $layer $width $extend
   } else {
     pdn::make_strap \
@@ -408,7 +411,7 @@ sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
                                      [-add_connect] \
                                      [-extend_to_boundary] \
                                      [-connect_to_pads]
-                                     }
+                                     } ;#checker off
 
 proc add_pdn_ring { args } {
   sta::parse_key_args "add_pdn_ring" args \
@@ -420,10 +423,10 @@ proc add_pdn_ring { args } {
 
   pdn::check_design_state "add_pdn_ring"
 
-  if { [pdn::depricated keys -power_pads ", use -connect_to_pads instead."] != {} } {
+  if { [pdn::deprecated keys -power_pads ", use -connect_to_pads instead."] != {} } {
     set flags(-connect_to_pads) 1
   }
-  if { [pdn::depricated keys -ground_pads ", use -connect_to_pads instead."] != {} } {
+  if { [pdn::deprecated keys -ground_pads ", use -connect_to_pads instead."] != {} } {
     set flags(-connect_to_pads) 1
   }
 
@@ -849,7 +852,7 @@ proc get_layer { name } {
   }
 }
 
-proc depricated { args_var key { use "." } } {
+proc deprecated { args_var key { use "." } } {
   upvar 1 $args_var args
   if { [info exists args($key)] } {
     utl::warn PDN 1024 "$key has been deprecated$use"
@@ -965,7 +968,7 @@ proc define_pdn_grid_macro { args } {
   pdn::check_design_state "define_pdn_grid"
 
   set pg_pins_to_boundary 1
-  pdn::depricated keys -pin_direction
+  pdn::deprecated keys -pin_direction
   if { [info exists flags(-grid_over_pg_pins)] && [info exists flags(-grid_over_boundary)] } {
     utl::error PDN 1026 "Options -grid_over_pg_pins and -grid_over_boundary are mutually exclusive."
   } elseif { [info exists flags(-grid_over_pg_pins)] } {

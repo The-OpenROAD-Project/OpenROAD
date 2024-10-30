@@ -5,7 +5,7 @@ import ppl_aux
 
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("gcd.def")
 
 ppl_aux.place_pins(design, hor_layers="metal3", ver_layers="metal2", random=True)

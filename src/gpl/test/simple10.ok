@@ -1,0 +1,46 @@
+[WARNING ODB-0220] WARNING (LEFPARS-2036): SOURCE statement is obsolete in version 5.6 and later.
+The LEF parser will ignore this statement.
+To avoid this warning in the future, remove this statement from the LEF file with version 5.6 or later. See file ./sky130hd.lef at line 794.
+
+[INFO ODB-0227] LEF file: ./sky130hd.lef, created 13 layers, 25 vias, 441 library cells
+[INFO ODB-0128] Design: inverter
+[INFO ODB-0130]     Created 4 pins.
+[INFO ODB-0131]     Created 32 components and 116 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 114 connections.
+[INFO ODB-0133]     Created 2 nets and 2 connections.
+[INFO GPL-0002] DBU: 1000
+[INFO GPL-0003] SiteSize: (  0.460  2.720 ) um
+[INFO GPL-0004] CoreBBox: ( 10.120 10.880 ) ( 7989.740 7988.640 ) um
+[INFO GPL-0006] NumInstances:                20
+[INFO GPL-0007] NumPlaceInstances:            1
+[INFO GPL-0008] NumFixedInstances:           19
+[INFO GPL-0009] NumDummyInstances:            0
+[INFO GPL-0010] NumNets:                      2
+[INFO GPL-0011] NumPins:                      4
+[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 8000.000 8000.000 ) um
+[INFO GPL-0013] CoreBBox: ( 10.120 10.880 ) ( 7989.740 7988.640 ) um
+[INFO GPL-0016] CoreArea:            63659493.251 um^2
+[INFO GPL-0017] NonPlaceInstsArea:       53.802 um^2
+[INFO GPL-0018] PlaceInstsArea:           3.754 um^2
+[INFO GPL-0019] Util:                     0.000 %
+[INFO GPL-0020] StdInstsArea:             3.754 um^2
+[INFO GPL-0021] MacroInstsArea:           0.000 um^2
+[InitialPlace]  Iter: 1 CG residual: 0.00000000 HPWL: 2069560
+[InitialPlace]  Iter: 2 CG residual: 0.00000000 HPWL: 2069560
+[InitialPlace]  Iter: 3 CG residual: 0.00000000 HPWL: 2069560
+[InitialPlace]  Iter: 4 CG residual: 0.00000000 HPWL: 2069560
+[InitialPlace]  Iter: 5 CG residual: 0.00000000 HPWL: 2069560
+[INFO GPL-0031] FillerInit:NumGCells:    786571
+[INFO GPL-0032] FillerInit:NumGNets:          2
+[INFO GPL-0033] FillerInit:NumGPins:          4
+[INFO GPL-0023] TargetDensity:            0.750
+[INFO GPL-0024] AvrgPlaceInstArea:        3.754 um^2
+[INFO GPL-0025] IdealBinArea:             5.005 um^2
+[INFO GPL-0026] IdealBinCnt:           12719687
+[INFO GPL-0027] TotalBinArea:        63659493.251 um^2
+[INFO GPL-0028] BinCnt:      2048   2048
+[INFO GPL-0029] BinSize: (  3.897  3.896 )
+[INFO GPL-0030] NumBins: 4194304
+[NesterovSolve] Iter:    1 overflow: 0.000 HPWL: 2065415
+[NesterovSolve] Finished with Overflow: 0.000000
+No differences found.
