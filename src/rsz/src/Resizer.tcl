@@ -313,8 +313,8 @@ proc set_wire_rc { args } {
 }
 
 sta::define_cmd_args "estimate_parasitics" { -placement|-global_routing|-detailed_routing \
-                                            [-spef_file filename] \
-                                            [-ext_model_file filename]}
+                                            [-spef_file spef_file] \
+                                            [-ext_model_file model_file]}
 
 proc estimate_parasitics { args } {
   sta::parse_key_args "estimate_parasitics" args \

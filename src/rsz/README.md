@@ -117,7 +117,7 @@ Standard Parasitic Exchange Format.
 estimate_parasitics
     -placement|-global_routing|-detailed_routing
     [-spef_file spef_file]
-    [-ext_model_file]
+    [-ext_model_file model_file]
 ```
 
 #### Options
