@@ -78,8 +78,9 @@ void RecoverPower::init()
   db_network_ = resizer_->db_network_;
 }
 
-void RecoverPower::recoverPower(const float recover_power_percent)
+bool RecoverPower::recoverPower(const float recover_power_percent)
 {
+  bool recovered = false;
   init();
   constexpr int digits = 3;
   resize_count_ = 0;
@@ -222,11 +223,14 @@ void RecoverPower::recoverPower(const float recover_power_percent)
   // logger_->metric("design__instance__count__setup_buffer",
   // inserted_buffer_count_);
   if (resize_count_ > 0) {
+    recovered = true;
     logger_->info(RSZ, 141, "Resized {} instances.", resize_count_);
   }
   if (resizer_->overMaxArea()) {
     logger_->error(RSZ, 125, "max utilization reached.");
   }
+
+  return recovered;
 }
 
 // For testing.
