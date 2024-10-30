@@ -124,7 +124,7 @@ estimate_parasitics
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-placement` or `-global_routing` or `-detailed_routing` | Either of these flags must be set. Parasitics are estimated based after placement stage versus after global routing stage, or extracted from the detailed routing. |
+| `-placement` or `-global_routing` or `-detailed_routing` | One of these flags must be set. Parasitics are estimated based on placement, global routing, or detailed routing. |
 | `-ext_model_file` | Optional. File name to load the extraction model file for parasitics extraction from detailed routing. |
 | `-spef_file` | Optional. File name to write SPEF files. If more than one corner is available for the design, the files will be written as filename_corner.spef. |
 
