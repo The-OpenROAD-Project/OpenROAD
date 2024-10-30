@@ -28,9 +28,4 @@ RUN apt-get update && apt-get install -y \
     ./b2 install -j$(nproc) && \
     cd .. && rm -rf boost_1_80_0 boost_1_80_0.tar.gz
 
-RUN apt-get update && \
-apt-get install -y \
-libcurl4-openssl-dev \
-libboost-all-dev
-
 RUN ./etc/Build.sh -compiler=${compiler} -threads=${numThreads} -deps-prefixes-file=${depsPrefixFile}
