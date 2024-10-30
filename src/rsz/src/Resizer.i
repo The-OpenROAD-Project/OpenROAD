@@ -338,40 +338,40 @@ wire_clk_capacitance(const Corner *corner)
 }
 
 void 
-estimate_parasitics_cmd(ParasiticsSrc src, const char* path)
+estimate_parasitics_cmd(ParasiticsSrc src, const char* spef_path, const char* ext_model_path)
 {
   ensureLinked();
   Resizer* resizer = getResizer();
   std::map<Corner*, std::ostream*> spef_files;
-  if (path != nullptr && std::strlen(path) > 0) {
-    std::string file_path(path);
-    if (!file_path.empty()) {
+  if (spef_path != nullptr && std::strlen(spef_path) > 0) {
+    std::string spef_file_path(spef_path);
+    if (!spef_file_path.empty()) {
       for (Corner* corner : *resizer->getDbNetwork()->corners()) {
-        file_path = path;
+        spef_file_path = spef_path;
         std::string suffix("_");
         suffix.append(corner->name());
-        if (file_path.find(".spef") != std::string::npos
-            || file_path.find(".SPEF") != std::string::npos) {
-          file_path.insert(file_path.size() - 5, suffix);
+        if (spef_file_path.find(".spef") != std::string::npos
+            || spef_file_path.find(".SPEF") != std::string::npos) {
+          spef_file_path.insert(spef_file_path.size() - 5, suffix);
         } else {
-          file_path.append(suffix);
+          spef_file_path.append(suffix);
         }
 
-        std::ofstream* file = new std::ofstream(file_path);
+        std::ofstream* spef_file = new std::ofstream(spef_file_path);
 
-        if (file->is_open()) {
-          spef_files[corner] = std::move(file);
+        if (spef_file->is_open()) {
+          spef_files[corner] = std::move(spef_file);
         } else {
           Logger* logger = ord::getLogger();
           logger->error(utl::RSZ,
                         7,
-                        "Can't open file " + file_path);
+                        "Can't open file " + spef_file_path);
         }
       }
     }
   }
 
-  resizer->estimateParasitics(src, spef_files);
+  resizer->estimateParasitics(src, spef_files, ext_model_path);
 
   for (auto [_, file] : spef_files) {
     file->flush();
