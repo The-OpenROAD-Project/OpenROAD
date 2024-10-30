@@ -55,7 +55,7 @@ proc initialize_floorplan { args } {
   if { [info exists keys(-site)] } {
     set site [ifp::find_site $keys(-site)]
   } else {
-    utl::warn IFP 11 "use -site to add placement rows."
+    utl::error IFP 11 "use -site to add placement rows."
   }
 
   set additional_sites {}
