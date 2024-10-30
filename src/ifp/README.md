@@ -52,30 +52,30 @@ die =  ( 0, 0 )
 
 ```tcl
 initialize_floorplan
-  [-utilization util]
+  [-additional_sites site_names]
   [-aspect_ratio ratio]
+  [-core_area {llx lly urx ury}]
   [-core_space space | {bottom top left right}]
   [-die_area {llx lly urx ury}]
-  [-core_area {llx lly urx ury}]
-  [-additional_sites site_names]
-  [-site site_name]
-  [-row_parity NONE|EVEN|ODD]
   [-flip_sites site_names]
+  [-row_parity NONE|EVEN|ODD]
+  [-site site_name]
+  [-utilization util]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-utilization` | Percentage utilization. Allowed values are `double` in the range `(0-100]`. |
-| `-aspect_ratio` | Ratio $\frac{height}{width}$. The default value is `1.0` and the allowed values are floats `[0, 1.0]`. |
-| `-core_space` | Space around the core, default `0.0` microns. Allowed values are either one value for all margins or a set of four values, one for each margin. The order of the four values are: `{bottom top left right}`. |
-| `-additional_sites` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`) |
-| `-site` | Site name. |
-| `-die_area` | Die area coordinates in microns (lower left x/y and upper right x/y coordinates). |
-| `-core_area` | Core area coordinates in microns (lower left x/y and upper right x/y coordinates). |
-| `-row_parity` | Snap to either an odd (`ODD`) or even (`EVEN`) number of rows. Defaults to `NONE` (no constraint on parity). |
-| `-flip_sites` | Flip the orientations of rows matching these sites. Sites listed under this option will create `FS`-oriented rows at even indices and `N`-oriented rows at odd ones, and vice versa for sites not listed under this option. (e.g. `{SITEXX, SITEYY}`) |
+| `[-additional_sites]` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`) |
+| `[-aspect_ratio]` | Ratio $\frac{height}{width}$. The default value is `1.0` and the allowed values are floats `[0, 1.0]`. |
+| `[-core_area]` | Core area coordinates in microns (lower left x/y and upper right x/y coordinates). |
+| `[-core_space]` | Space around the core, default `0.0` microns. Allowed values are either one value for all margins or a set of four values, one for each margin. The order of the four values are: `{bottom top left right}`. |
+| `[-die_area]` | Die area coordinates in microns (lower left x/y and upper right x/y coordinates). |
+| `[-flip_sites]` | Flip the orientations of rows matching these sites. Sites listed under this option will create `FS`-oriented rows at even indices and `N`-oriented rows at odd ones, and vice versa for sites not listed under this option. (e.g. `{SITEXX, SITEYY}`) |
+| `[-row_parity]` | Snap to either an odd (`ODD`) or even (`EVEN`) number of rows. Defaults to `NONE` (no constraint on parity). |
+| `[-site]` | Site name. |
+| `[-utilization]` | Percentage utilization. Allowed values are `double` in the range `(0-100]`. |
 
 ### Make Tracks
 
@@ -85,19 +85,19 @@ Use the `make_tracks` command to add routing tracks to a floorplan.
 ```tcl
 make_tracks 
     [layer]
-    [-x_pitch x_pitch]
-    [-y_pitch y_pitch]
     [-x_offset x_offset]
     [-y_offset y_offset]
+    [-x_pitch x_pitch]
+    [-y_pitch y_pitch]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `layer` | Select layer name to make tracks for. Defaults to all layers. |
-| `-x_pitch`, `-y_pitch` | If set, overrides the LEF technology x-/y- pitch. Use the same unit as in the LEF file. |
-| `-x_offset`, `-y_offset` | If set, overrides the LEF technology x-/y- offset. Use the same unit as in the LEFT file. |
+| `[layer]` | Select layer name to make tracks for. Defaults to all layers. |
+| `[-x_offset]`, `[-y_offset]` | If set, overrides the LEF technology x-/y- offset. Use the same unit as in the LEFT file. |
+| `[-x_pitch]`, `[-y_pitch]` | If set, overrides the LEF technology x-/y- pitch. Use the same unit as in the LEF file. |
 
 ### Insert tieoff cells
 
@@ -105,16 +105,16 @@ This comamnd inserts tiecells.
 
 ```tcl
 insert_tiecells 
-    tie_pin
     [-prefix inst_prefix]
+    tie_pin
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
+| `[-prefix]` | Used to control the prefix of the new tiecell names. This will default to `TIEOFF_`. |
 | `tie_pin` | Indicates the master and port to use to tie off nets. For example, `LOGIC0_X1/Z` for the Nangate45 library, where `LOGIC0_X1` is the master and `Z` is the output port on the master. |
-| `-prefix` | Used to control the prefix of the new tiecell names. This will default to `TIEOFF_`. |
 
 ## Useful Developer Commands
 
