@@ -43,15 +43,18 @@ do
 	echo "Running $dirName ... "
 
 	# incrementality -- if wires.log has total allocated memore greater than 100MB, skip pattern
-	if [ -e $dirName/wires.log ]; then
-		echo "\t$dirName/wires.log exists from previous run"
-		bytes=`grep "Total allocated memory" $ii | awk '{print $4}'`
-		if [ $bytes > 100000 ]; then
-			echo "\tCompleted already"
-			continue
-		fi
-	fi
-		
+        wires_log=$out_dir/$dirName/wires.log
+        if [ -e $wires_log ]; then
+                ls -ltr -h $wires_log
+                continue
+                echo "     exists   $wires_log "
+                bytes=`grep "Total allocated memory" $wires_log | awk '{print $4}'`
+                if [ $bytes -gt 100000 ]
+                then
+                        ls -ltr -h $wires_log
+                        continue
+                fi
+        fi
 	echo "python3 $python_script $in_dir/process.out $in_dir/$dirName $out_dir $std_normal -sim_window_ext -$ext_x -$ext_z -$ext_y $ext_x $ext_z $ext_y" >> $out
 	python3 $python_script $in_dir/process.out $in_dir/$dirName $out_dir $std_normal -sim_window_ext  -$ext_x -$ext_z -$ext_y $ext_x $ext_z $ext_y >> $out
 
@@ -59,6 +62,6 @@ do
 	# $fasterCap -b $out_dir/$dirName/wires.lst -g -ap -a$error > $out_dir/$dirName/wires.log
 	echo "$fasterCap -b $out_dir/$dirName/wires.lst -g -a$error > $out_dir/$dirName/wires.log" >> $out
 	$fasterCap -b $out_dir/$dirName/wires.lst -g -a$error > $out_dir/$dirName/wires.log
-	echo "Completed $dirName "
+	echo "Completed `date` $dirName "
 done
 

@@ -1,7 +1,7 @@
 
 .PHONY :  flow model
 
-all :  flow model corners
+all :  flow model corners fasterCap fasterCap-gen
 
 flow:
 	cd $@ ; make all
