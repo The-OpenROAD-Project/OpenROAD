@@ -104,10 +104,6 @@ void extMain::initRunEnv(extMeasureRC &m)
 
 uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
 {
-    // ----- extraction boundaries
-    int ll[2]= {extRect.xMin(), extRect.yMin()};
-  int ur[2]= { extRect.xMax(), extRect.yMax()};
-
           extMeasureRC* mrc= new extMeasureRC();
           initRunEnv(*mrc);
 
@@ -140,7 +136,11 @@ setExtControl_v2( mrc->_seqPool);
  uint maxPitch = pitchTable[layerCnt - 1];
 
   uint minRes[2] = {widthTable[1], pitchTable[1]};
- 
+
+// ----- extraction boundaries
+    int ll[2]= {extRect.xMin(), extRect.yMin()};
+  int ur[2]= { extRect.xMax(), extRect.yMax()};
+
   const uint trackStep = 1000;
   uint step_nm[2]= {trackStep * minRes[1], trackStep * minRes[1]};
   if (maxWidth > ccDist * maxPitch) {
@@ -158,7 +158,7 @@ setExtControl_v2( mrc->_seqPool);
   int lo_sdb[2];
   int hi_sdb[2];
 
-  for (int dir = 1; dir >= 0; dir--) {
+  for (int dir = 1; dir >= 0; dir--) { // dir==1 Horizontal wires
   
     if (dir == 0) {
       enableRotatedFlag();
@@ -171,9 +171,8 @@ setExtControl_v2( mrc->_seqPool);
     int gs_limit = ll[dir];
     _search->initCouplingCapLoops_v2(dir, ccDist);
 
-    lo_sdb[dir] = ll[dir] - step_nm[dir];
     int hiXY = std::min( ll[dir] + (int) step_nm[dir], ur[dir]);
-    for (; hiXY <= ur[dir]; hiXY += step_nm[dir])  // dkf  10292024 -- not required unless very large design
+    for (; hiXY <= ur[dir]; hiXY += step_nm[dir])  // dkf  10292024 -- for loop not required unless very large design
     {
         hiXY = ur[dir] + step_nm[dir] + 5 * ccDist * maxPitch;
 
@@ -197,6 +196,7 @@ setExtControl_v2( mrc->_seqPool);
       uint sigtype = 9;
       uint pwrtype = 11;
       hi_sdb[dir] = hiXY;
+      lo_sdb[dir] = ll[dir] - step_nm[dir];
       processWireCnt += addPowerNets(dir, lo_sdb, hi_sdb, pwrtype);
       processWireCnt += addSignalNets(dir, lo_sdb, hi_sdb, sigtype);
 

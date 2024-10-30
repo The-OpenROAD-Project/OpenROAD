@@ -270,9 +270,6 @@ bool extMain::SetCornersAndReadModels_v2(const char* rulesFileName)
 
     if ( ! ReadModels_v2(rulesFileName, m, 0, NULL) )
         return false;
-
-    int modelCnt = getRCmodel(0)->getModelCnt();
-
   }
   _currentModel = getRCmodel(0);
   for (uint ii = 0; (_couplingFlag > 0) && ii < _modelMap.getCnt(); ii++) {
@@ -305,7 +302,7 @@ bool extMain::ReadModels_v2(const char* rulesFileName,
         RCX, 469, "Can't open extraction model file {}", rulesFileName);
   }
   fclose(rules_file);
-  bool v2_rules_file = m->isRulesFile_v2((char*) rulesFileName, false);
+  // bool v2_rules_file = m->isRulesFile_v2((char*) rulesFileName, false);
   m->_v2_flow = _v2;
   
   double dbFactor = getDbFactor_v2();
@@ -904,6 +901,7 @@ void extMain::getShapeRC_v2(dbNet* net,
     }
   } else {
     getMetalRes_v2(net, s, pshape);
+
     if (!_allNet && _couplingFlag > 0) {
       _ccMinX = std::min(s.xMin(), _ccMinX);
       _ccMinY = std::min(s.yMin(), _ccMinY);
@@ -970,7 +968,6 @@ uint extMain::getResCapTable_lefRC_v2()
     float len_microns_1= _block->dbuToMicrons(1);
 
     float cap_fF_per_nm_1= w_microns * len_microns_1 * cap2 * 1000 + 2 * edge_cap; 
-    const float cap_fF_per_nm= w * cap2 + 2 * edge_cap;
     
     _capacitanceTable[0][n] = cap_fF_per_nm_1;
     _minCapTable[n][0] = cap_fF_per_nm_1;

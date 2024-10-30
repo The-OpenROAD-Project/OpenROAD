@@ -678,15 +678,13 @@ namespace rcx
   {
     _tech = _db->getTech();
     uint layerCnt = _tech->getRoutingLayerCount();
+    
     extRCModel *m = new extRCModel(layerCnt, "processName", logger_);
     _modelTable->add(m);
-
-    // m->setProcess(p);
     m->setDataRateTable(1);
     m = _modelTable->get(0);
 
-    m->setOptions(opt->_topDir, opt->_name, opt->_write_to_solver,
-                  opt->_read_from_solver, opt->_run_solver);
+    m->setOptions(opt->_topDir, opt->_name, false, false, false);
 
     opt->_tech = _tech;
 
@@ -694,29 +692,18 @@ namespace rcx
     assert(chip);
     _block = dbBlock::create(chip, opt->_name, NULL, '/');
     assert(_block);
-    _prevControl = _block->getExtControl();
+
     _block->setBusDelimeters('[', ']');
     _block->setDefUnits(1000);
     m->setExtMain(this);
-    setupMapping(0);
-    _noModelRC = true;
-    _cornerCnt = 1;
-    _extDbCnt = 1;
-    _block->setCornerCount(_cornerCnt);
-    opt->_ll[0] = 0;
-    opt->_ll[1] = 0;
-    opt->_ur[0] = 0;
-    opt->_ur[1] = 0;
+
     m->setLayerCnt(_tech->getRoutingLayerCount());
     opt->_block = _block;
-
-    uint cnt = 0;
 
     int LL[2] = {0, 0};
     int UR[2] = {0, 0};
 
-    // cnt += m->ViaRulePat(opt, opt->_len, LL, UR, false, false, opt->_overDist); // over
-
+    uint cnt = 0;
     cnt += m->OverRulePat(opt, opt->_len, LL, UR, false, false, opt->_overDist); // over
     cnt += m->OverRulePat(opt, opt->_len, LL, UR, true, false, opt->_overDist);  // res
     cnt += m->UnderRulePat(opt, opt->_len, LL, UR, false, opt->_overDist);
@@ -725,15 +712,11 @@ namespace rcx
     cnt += m->UnderRulePat(opt, opt->_len, LL, UR, true, opt->_overDist);       // diag
     cnt += m->OverRulePat(opt, opt->_len, LL, UR, false, true, opt->_overDist); // diag
 
-    // m->DiagUnderRulePat(opt, opt->_len, LL, UR);
-
     cnt += m->ViaRulePat(opt, opt->_len, LL, UR, false, false, opt->_overDist); // over
 
     dbBox *bb = _block->getBBox();
     Rect r(bb->xMin(), bb->yMin(), bb->xMax(), bb->yMax());
     _block->setDieArea(r);
-    _extracted = true;
-    updatePrevControl();
 
     return 0;
   }
@@ -784,8 +767,6 @@ namespace rcx
         if (underMet == 0 && p->_res)
           break;
       }
-      // UR[0] = p->_origin[0]; // p->_origin is updated after every pattern
-      // UR[1] = MAX(UR[1], p->_ur[1]);
     }
     logger_->info(RCX, 59, "Finished {} bench measurements for pattern MET_OVER_MET", cnt);
     origin[1] = 0; // reset for next family of patterns
@@ -1033,29 +1014,6 @@ namespace rcx
 
   dbNet* extRulesPat::createNetSingleWire(const char* netName, int ll[2], int ur[2], uint width, bool vertical, uint met, dbTechLayer* layer)
   {
-   //  int dw= width/2;
-    /*
-    if (vertical) {
-      ll[1] += dw;
-      ur[1] -= dw;
-    } else {
-      ll[0] += dw;
-      ur[0] -= dw;
-    }
-    */
-    
-   /*
-    dbNet* net = _create_net_util.createNetSingleWire(netName, ll[0], ll[1], ur[0], ur[1], met);
-    dbBTerm* in1 = net->get1stBTerm();
-    if (in1 != NULL) {
-      in1->rename(net->getConstName());
-      // fprintf(stdout, "M%d  %8d %8d   %8d %8d DX=%d DY=%d  %s\n",
-      // _met, ll[0], ll[1], ur[0], ur[1], ur[0]-ll[0], ur[1]-ll[1], netName);
-    }
-    _extMain->makeNetRCsegs(net);
-    return net;
-
-*/
    dbNet *net = dbNet::create(_block, netName);
     if (net == NULL) {
       fprintf(stdout, "Cannot create net %s, duplicate\n", netName);
@@ -1069,24 +1027,12 @@ namespace rcx
         fprintf(stdout, "Cannot create net %s, because failed to create bterms\n", netName);
         return NULL;
     }
-/*
-    dbTechLayerRule* rule = NULL;
-    if (layer->getWidth() != width)
-      rule = getRule(routingLayer, width);
-*/
+
     dbWireEncoder encoder;
     encoder.begin(dbWire::create(net));
     
     encoder.newPath(layer, dbWireType::ROUTED);
-/*
-    if (rule == NULL)
-      encoder.newPath(layer, dbWireType::ROUTED);
-    else
-      encoder.newPath(layer, dbWireType::ROUTED, rule);
-*/
-    //encoder.addPoint(ll[0], ll[1], 0);
 
-  
     encoder.addPoint(ll[0], ll[1], 0);
     encoder.addBTerm(loBTerm);
     
@@ -1098,8 +1044,6 @@ namespace rcx
     
     encoder.addBTerm(hiBTerm);
     encoder.end();
-
-    _extMain->makeNetRCsegs(net);
 
     return net;
 }

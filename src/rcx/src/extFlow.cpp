@@ -380,6 +380,7 @@ uint extMain::initSearchForNets(int* X1,
 
   _search = new Ath__gridTable(&maxRect, 2, layerCnt, W, pitchTable, S, X1, Y1);
   _search->setBlock(_block);
+  
   return layerCnt;
 }
 

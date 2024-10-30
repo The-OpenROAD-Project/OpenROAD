@@ -264,9 +264,7 @@ dbNet *extRulesPat::createNetSingleWireAndVia(const char *netName, int ll[2], in
     encoder.addTechVia(via);
     encoder.addBTerm(hiBTerm);
     encoder.end();
-
-    _extMain->makeNetRCsegs(net);
-
+    
     return net;
 }
 
