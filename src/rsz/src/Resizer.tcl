@@ -342,6 +342,9 @@ proc estimate_parasitics { args } {
       utl::error RSZ 5 "Run global_route before estimating parasitics for global routing."
     }
   } elseif { [info exists flags(-detailed_routing)] } {
+    if { ![design_is_routed] } {
+      utl::error RSZ 87 "Design is not routed."
+    }
     rsz::estimate_parasitics_cmd "detailed_routing" $spef_file $ext_model_file
   } else {
     utl::error RSZ 3 "missing -placement or -global_routing flag."
