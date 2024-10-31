@@ -318,13 +318,6 @@ void GlobalRouter::globalRoute(bool save_guides,
     updateDbCongestion();
     saveCongestion();
 
-    if (fastroute_->totalOverflow() > 0 && verbose_) {
-      logger_->warn(GRT,
-                    115,
-                    "Global routing finished with congestion. Check the "
-                    "congestion regions in the DRC Viewer.");
-    }
-
     if (verbose_) {
       reportCongestion();
     }
@@ -335,6 +328,13 @@ void GlobalRouter::globalRoute(bool save_guides,
     if (save_guides) {
       saveGuides();
     }
+  }
+
+  if (fastroute_->totalOverflow() > 0) {
+    logger_->error(GRT,
+                  115,
+                  "Global routing finished with congestion. Check the "
+                  "congestion regions in the DRC Viewer.");
   }
 }
 
