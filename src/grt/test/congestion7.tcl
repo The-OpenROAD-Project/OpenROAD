@@ -12,7 +12,7 @@ set_global_routing_layer_adjustment metal4-metal10 1
 
 set_routing_layers -signal metal2-metal10
 
-global_route -verbose -congestion_report_file $rpt_file -congestion_report_iter_step 20
+global_route -allow_congestion -verbose -congestion_report_file $rpt_file -congestion_report_iter_step 20
 
 write_guides $guide_file
 

@@ -332,6 +332,7 @@ void RouteBase::getGrtResult()
   nbc_->updateDbGCells();
 
   // these two options must be on
+  grouter_->setAllowCongestion(true);
   grouter_->setOverflowIterations(0);
 
   // this option must be off

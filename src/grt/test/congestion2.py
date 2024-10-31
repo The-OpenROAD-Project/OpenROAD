@@ -19,6 +19,7 @@ grt_aux.set_global_routing_layer_adjustment(design, "metal7-metal10", 1.0)
 grt_aux.set_routing_layers(design, signal="metal2-metal10")
 
 gr.setVerbose(True)
+gr.setAllowCongestion(True)
 gr.globalRoute(True)
 
 design.getBlock().writeGuides(guideFile)

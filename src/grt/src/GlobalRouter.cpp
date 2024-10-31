@@ -94,6 +94,7 @@ GlobalRouter::GlobalRouter()
       layer_for_guide_dimension_(3),
       overflow_iterations_(50),
       congestion_report_iter_step_(0),
+      allow_congestion_(false),
       macro_extension_(0),
       initialized_(false),
       total_diodes_count_(0),
@@ -331,10 +332,17 @@ void GlobalRouter::globalRoute(bool save_guides,
   }
 
   if (fastroute_->totalOverflow() > 0) {
-    logger_->error(GRT,
-                  115,
-                  "Global routing finished with congestion. Check the "
-                  "congestion regions in the DRC Viewer.");
+    if (allow_congestion_) {
+      logger_->warn(GRT,
+                    115,
+                    "Global routing finished with congestion. Check the "
+                    "congestion regions in the DRC Viewer.");
+    } else {
+      logger_->error(GRT,
+                     116,
+                     "Global routing finished with congestion. Check the "
+                     "congestion regions in the DRC Viewer.");
+    }
   }
 }
 
@@ -1844,6 +1852,11 @@ void GlobalRouter::setCongestionReportFile(const char* file_name)
 void GlobalRouter::setGridOrigin(int x, int y)
 {
   grid_origin_ = odb::Point(x, y);
+}
+
+void GlobalRouter::setAllowCongestion(bool allow_congestion)
+{
+  allow_congestion_ = allow_congestion;
 }
 
 void GlobalRouter::setMacroExtension(int macro_extension)
@@ -4550,10 +4563,7 @@ void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire,
 void GlobalRouter::createWLReportFile(const char* file_name, bool verbose)
 {
   std::ofstream out(file_name);
-  out << "tool "
-      << "net "
-      << "total_wl "
-      << "#pins ";
+  out << "tool " << "net " << "total_wl " << "#pins ";
 
   if (verbose) {
     out << "#vias ";
@@ -4705,7 +4715,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
     mergeResults(new_route);
 
     bool reroutingOverflow = true;
-    if (fastroute_->has2Doverflow()) {
+    if (fastroute_->has2Doverflow() && !allow_congestion_) {
       // The maximum number of times that the nets traversing the congestion
       // area will be added
       int add_max = 30;
