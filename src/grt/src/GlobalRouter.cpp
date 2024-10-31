@@ -219,9 +219,7 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
 // previous congestion report file.
 void GlobalRouter::saveCongestion()
 {
-  if (congestion_file_name_ != nullptr) {
-    fastroute_->saveCongestion();
-  }
+  fastroute_->saveCongestion();
 }
 
 bool GlobalRouter::haveRoutes()
