@@ -124,7 +124,7 @@ class RepairSetup : public sta::dbStaState
 {
  public:
   RepairSetup(Resizer* resizer);
-  void repairSetup(float setup_slack_margin,
+  bool repairSetup(float setup_slack_margin,
                    // Percent of violating ends to repair to
                    // reduce tns (0.0-1.0).
                    double repair_tns_end_percent,

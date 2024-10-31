@@ -79,7 +79,7 @@ class RecoverPower : public sta::dbStaState
 {
  public:
   RecoverPower(Resizer* resizer);
-  void recoverPower(float recover_power_percent);
+  bool recoverPower(float recover_power_percent);
   // For testing.
   Vertex* recoverPower(const Pin* end_pin);
 

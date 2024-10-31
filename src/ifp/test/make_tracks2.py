@@ -18,7 +18,7 @@ floorplan.initFloorplan(
     floorplan.findSite("FreePDK45_38x28_10R_NP_162NW_34O"),
 )
 
-db_tech = ord.get_db_tech()
+db_tech = tech.getTech()
 m1 = db_tech.findLayer("metal1")
 m2 = db_tech.findLayer("metal2")
 
