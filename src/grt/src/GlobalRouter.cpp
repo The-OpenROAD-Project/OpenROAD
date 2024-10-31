@@ -2297,7 +2297,7 @@ void GlobalRouter::saveGuidesFromFile(
       for (const auto& guide : guide_boxes) {
         ph_layer_final = routing_layers_[guide.first];
         odb::dbGuide::create(
-            db_net, ph_layer_final, ph_layer_final, guide.second);
+            db_net, ph_layer_final, ph_layer_final, guide.second, false);
       }
     }
   }
@@ -2307,6 +2307,8 @@ void GlobalRouter::saveGuides()
 {
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
+
+  bool is_congested = fastroute_->has2Doverflow() && !allow_congestion_;
 
   for (odb::dbNet* db_net : block_->getNets()) {
     auto iter = routes_.find(db_net);
@@ -2334,15 +2336,15 @@ void GlobalRouter::saveGuides()
             int layer_idx2 = segment.final_layer;
             odb::dbTechLayer* layer1 = routing_layers_[layer_idx1];
             odb::dbTechLayer* layer2 = routing_layers_[layer_idx2];
-            odb::dbGuide::create(db_net, layer1, layer2, box);
-            odb::dbGuide::create(db_net, layer2, layer1, box);
+            odb::dbGuide::create(db_net, layer1, layer2, box, is_congested);
+            odb::dbGuide::create(db_net, layer2, layer1, box, is_congested);
           } else {
             int layer_idx = std::min(segment.init_layer, segment.final_layer);
             int via_layer_idx
                 = std::max(segment.init_layer, segment.final_layer);
             odb::dbTechLayer* layer = routing_layers_[layer_idx];
             odb::dbTechLayer* via_layer = routing_layers_[via_layer_idx];
-            odb::dbGuide::create(db_net, layer, via_layer, box);
+            odb::dbGuide::create(db_net, layer, via_layer, box, is_congested);
           }
         } else if (segment.init_layer == segment.final_layer) {
           if (segment.init_layer < getMinRoutingLayer()
@@ -2355,7 +2357,7 @@ void GlobalRouter::saveGuides()
           }
 
           odb::dbTechLayer* layer = routing_layers_[segment.init_layer];
-          odb::dbGuide::create(db_net, layer, layer, box);
+          odb::dbGuide::create(db_net, layer, layer, box, is_congested);
         }
       }
     }
