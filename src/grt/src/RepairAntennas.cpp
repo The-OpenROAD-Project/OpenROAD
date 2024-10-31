@@ -888,8 +888,13 @@ void RepairAntennas::addJumperAndVias(GRoute& route,
         GSegment(final_x, final_y, layer, final_x, final_y, layer + 1));
   }
   // Create segment in upper layer (jumper)
-  route.push_back(GSegment(
-      init_x, init_y, layer_level + 2, final_x, final_y, layer_level + 2));
+  route.push_back(GSegment(init_x,
+                           init_y,
+                           layer_level + 2,
+                           final_x,
+                           final_y,
+                           layer_level + 2,
+                           true));
   // Reducing usage in the layer level
   grouter_->updateResources(init_x, init_y, final_x, final_y, layer_level, -1);
   // Increasing usage in the layer level + 2

@@ -2340,6 +2340,7 @@ void GlobalRouter::saveGuides()
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
 
+  int jumper_count = 0;
   for (odb::dbNet* db_net : block_->getNets()) {
     auto iter = routes_.find(db_net);
     if (iter == routes_.end()) {
@@ -2387,7 +2388,12 @@ void GlobalRouter::saveGuides()
           }
 
           odb::dbTechLayer* layer = routing_layers_[segment.init_layer];
-          odb::dbGuide::create(db_net, layer, layer, box);
+          bool is_jumper = segment.isJumper();
+          auto guide = odb::dbGuide::create(db_net, layer, layer, box);
+          if (is_jumper) {
+            guide->setIsJumper(true);
+          }
+          jumper_count += guide->isJumper();
         }
       }
     }
@@ -2395,6 +2401,7 @@ void GlobalRouter::saveGuides()
     if (dbGuides.orderReversed() && dbGuides.reversible())
       dbGuides.reverse();
   }
+  printf("%d jumpers marked!!\n", jumper_count);
 }
 
 void GlobalRouter::writeSegments(const char* file_name)
@@ -4891,7 +4898,7 @@ void GRouteDbCbk::inDbBTermPreDisconnect(odb::dbBTerm* bterm)
 
 ////////////////////////////////////////////////////////////////
 
-GSegment::GSegment(int x0, int y0, int l0, int x1, int y1, int l1)
+GSegment::GSegment(int x0, int y0, int l0, int x1, int y1, int l1, bool jumper)
 {
   init_x = std::min(x0, x1);
   init_y = std::min(y0, y1);
@@ -4899,6 +4906,7 @@ GSegment::GSegment(int x0, int y0, int l0, int x1, int y1, int l1)
   final_x = std::max(x0, x1);
   final_y = std::max(y0, y1);
   final_layer = l1;
+  is_jumper = jumper;
 }
 
 bool GSegment::operator==(const GSegment& segment) const
