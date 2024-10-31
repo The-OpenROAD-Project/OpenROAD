@@ -123,7 +123,7 @@ class Replace
   void setRoutabilityDrivenMode(bool mode);
   void setRoutabilityUseGrt(bool mode);
   void setRoutabilityCheckOverflow(float overflow);
-  void setTimingDrivenCheckOverflow(float overflow);
+  void setKeepResizeBelowOverflow(float overflow);
   void setRoutabilityMaxDensity(float density);
 
   void setRoutabilityMaxBloatIter(int iter);
@@ -183,7 +183,7 @@ class Replace
   float referenceHpwl_ = 446000000;
 
   float routabilityCheckOverflow_ = 0.3;
-  float timingDrivenCheckOverflow_ = 0.0;
+  float keepResizeBelowOverflow_ = 0.0;
   float routabilityMaxDensity_ = 0.99;
   float routabilityTargetRcMetric_ = 1.01;
   float routabilityInflationRatioCoef_ = 5;

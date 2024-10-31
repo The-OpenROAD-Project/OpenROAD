@@ -155,10 +155,10 @@ void set_timing_driven_mode(bool timing_driven)
 
 
 void
-set_timing_driven_check_overflow_cmd(float overflow) 
+set_keep_resize_below_overflow_cmd(float overflow) 
 {
   Replace* replace = getReplace();
-  replace->setTimingDrivenCheckOverflow(overflow);
+  replace->setKeepResizeBelowOverflow(overflow);
 }
 
 void
