@@ -12,7 +12,7 @@ set_global_routing_layer_adjustment metal7-metal10 1.0
 
 set_routing_layers -signal metal2-metal10
 
-global_route -allow_congestion -verbose
+global_route -verbose
 
 write_guides $guide_file
 

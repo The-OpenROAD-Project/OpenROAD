@@ -48,7 +48,7 @@ metal10    Vertical         2305             0          100.00%
 [INFO GRT-0199] Via filling finished.
 [INFO GRT-0111] Final number of vias: 6786
 [INFO GRT-0112] Final usage 3D: 25465
-[WARNING GRT-0115] Global routing finished with overflow.
+[WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
