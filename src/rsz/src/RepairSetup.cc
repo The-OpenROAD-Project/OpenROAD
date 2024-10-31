@@ -56,13 +56,6 @@
 #include "sta/VerilogWriter.hh"
 #include "utl/Logger.h"
 
-/*void
-writeVerilog(const char *filename,
-             bool sort,
-             bool include_pwr_gnd,
-             sta::CellSeq *remove_cells,
-             sta::Network *network);
-*/
 namespace rsz {
 
 using std::max;

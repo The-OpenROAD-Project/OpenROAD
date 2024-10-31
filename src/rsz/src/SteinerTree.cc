@@ -69,16 +69,8 @@ SteinerTree* Resizer::makeSteinerTree(const Pin* drvr_pin)
   /*
     Handle hierarchy. Make sure all traversal on dbNets.
    */
-  odb::dbITerm* iterm;
-  odb::dbBTerm* bterm;
-  odb::dbModITerm* moditerm;
-  odb::dbModBTerm* modbterm;
-
-  db_network_->staToDb(drvr_pin, iterm, bterm, moditerm, modbterm);
-
   odb::dbNet* db_net;
-  odb::dbModNet* db_mod_net;
-  db_network_->net(drvr_pin, db_net, db_mod_net);
+  db_net = db_network_->flatNet(drvr_pin);
 
   Net* net
       = network_->isTopLevelPort(drvr_pin)

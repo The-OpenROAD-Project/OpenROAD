@@ -1634,7 +1634,7 @@ void dbJournal::undo_connectObject()
       dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
       uint net_id;
       _log.pop(net_id);
-      // disconnects everything modnet and bnet)
+      // disconnects everything: modnet and dbnet
       iterm->disconnect();
       break;
     }

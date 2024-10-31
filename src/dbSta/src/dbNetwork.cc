@@ -1189,6 +1189,18 @@ Net* dbNetwork::net(const Pin* pin) const
 }
 
 /*
+Get the db net (flat net) for the pin
+*/
+
+dbNet* dbNetwork::flatNet(const Pin* pin) const
+{
+  dbNet* db_net;
+  dbModNet* db_modnet;
+  net(pin, db_net, db_modnet);
+  return db_net;
+}
+
+/*
 Get the dbnet or the moddbnet for a pin
 Sometimes a pin can be hooked to both and we want to expose them
 both, so we add this api
@@ -1234,16 +1246,7 @@ Term* dbNetwork::term(const Pin* pin) const
     return dbToStaTerm(bterm);
   }
   if (moditerm) {
-    // get the mod bterm
-    std::string port_name_str = moditerm->getName();
-    size_t last_idx = port_name_str.find_last_of('/');
-    if (last_idx != string::npos) {
-      port_name_str = port_name_str.substr(last_idx + 1);
-    }
-    const char* port_name = port_name_str.c_str();
-    dbModInst* mod_inst = moditerm->getParent();
-    dbModule* module = mod_inst->getMaster();
-    dbModBTerm* mod_port = module->findModBTerm(port_name);
+    dbModBTerm* mod_port = moditerm->getChildModBTerm();
     if (mod_port) {
       Term* ret = dbToStaTerm(mod_port);
       return ret;
@@ -2193,6 +2196,18 @@ dbNet* dbNetwork::staToDb(const Net* net) const
   return reinterpret_cast<dbNet*>(const_cast<Net*>(net));
 }
 
+dbNet* dbNetwork::flatNet(const Net* net) const
+{
+  if (net) {
+    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Net*>(net));
+    dbObjectType type = obj->getObjectType();
+    if (type == odb::dbNetObj) {
+      return static_cast<dbNet*>(obj);
+    }
+  }
+  return nullptr;
+}
+
 void dbNetwork::staToDb(const Net* net, dbNet*& dnet, dbModNet*& modnet) const
 {
   dnet = nullptr;
@@ -2851,16 +2866,9 @@ void PinModuleConnection::operator()(const Pin* pin)
   (void) (bterm);
   (void) (modbterm);
   if (moditerm) {
-    std::string port_name_str = moditerm->getName();
-    size_t last_idx = port_name_str.find_last_of('/');
-    if (last_idx != string::npos) {
-      port_name_str = port_name_str.substr(last_idx + 1);
-    }
-    const char* port_name = port_name_str.c_str();
-    dbModInst* mod_inst = moditerm->getParent();
-    dbModule* module = mod_inst->getMaster();
-    if (module == target_module_) {
-      dest_modbterm_ = module->findModBTerm(port_name);
+    dbModBTerm* modbterm = moditerm->getChildModBTerm();
+    if (modbterm->getParent() == target_module_) {
+      dest_modbterm_ = modbterm;
     }
   }
 }

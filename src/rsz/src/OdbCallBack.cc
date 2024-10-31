@@ -150,10 +150,8 @@ void OdbCallBack::inDbInstSwapMasterAfter(dbInst* inst)
   while (pin_iter->hasNext()) {
     Pin* pin = pin_iter->next();
     Net* net = network_->net(pin);
-    // we can only update parasitics for low level net
-    odb::dbNet* db_net = nullptr;
-    odb::dbModNet* db_modnet = nullptr;
-    db_network_->staToDb(net, db_net, db_modnet);
+    // we can only update parasitics for flat net
+    odb::dbNet* db_net = db_network_->flatNet(net);
     resizer_->parasiticsInvalid(db_network_->dbToSta(db_net));
   }
 }

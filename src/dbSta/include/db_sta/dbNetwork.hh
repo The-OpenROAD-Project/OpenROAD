@@ -132,6 +132,7 @@ class dbNetwork : public ConcreteNetwork
 
   dbNet* staToDb(const Net* net) const;
   void staToDb(const Net* net, dbNet*& dnet, dbModNet*& modnet) const;
+  dbNet* flatNet(const Net* pin) const;
 
   dbBTerm* staToDb(const Term* term) const;
   void staToDb(const Term* term,
@@ -239,6 +240,8 @@ class dbNetwork : public ConcreteNetwork
   Instance* instance(const Pin* pin) const override;
   Net* net(const Pin* pin) const override;
   void net(const Pin* pin, dbNet*& db_net, dbModNet*& db_modnet) const;
+  dbNet* flatNet(const Pin* pin) const;
+
   Term* term(const Pin* pin) const override;
   PortDirection* direction(const Pin* pin) const override;
   VertexId vertexId(const Pin* pin) const override;

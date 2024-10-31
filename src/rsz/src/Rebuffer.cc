@@ -145,7 +145,7 @@ int RepairSetup::rebuffer(const Pin* drvr_pin)
           //(the dbNet name now exposed is the same as the modnet name)
           // so we uniquify the modnet name
           std::string new_name = resizer_->makeUniqueNetName();
-          db_modnet->reName(new_name.c_str());
+          db_modnet->rename(new_name.c_str());
         }
 
         inserted_buffer_count = rebufferTopDown(best_option,
