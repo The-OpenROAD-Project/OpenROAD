@@ -7747,6 +7747,10 @@ class dbGuide : public dbObject
 
   static dbSet<dbGuide>::iterator destroy(dbSet<dbGuide>::iterator& itr);
 
+  bool isJumper();
+
+  void setIsJumper(bool jumper);
+
   // User Code End dbGuide
 };
 
