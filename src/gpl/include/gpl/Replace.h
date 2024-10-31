@@ -122,8 +122,7 @@ class Replace
 
   void setRoutabilityDrivenMode(bool mode);
   void setRoutabilityUseGrt(bool mode);
-  void setRoutabilityCheckOverflow(float overflow);
-  void setKeepResizeBelowOverflow(float overflow);
+  void setRoutabilityCheckOverflow(float overflow);  
   void setRoutabilityMaxDensity(float density);
 
   void setRoutabilityMaxBloatIter(int iter);
@@ -137,6 +136,7 @@ class Replace
 
   void addTimingNetWeightOverflow(int overflow);
   void setTimingNetWeightMax(float max);
+  void setKeepResizeBelowOverflow(float overflow);
 
   void setDebug(int pause_iterations,
                 int update_iterations,
@@ -183,7 +183,6 @@ class Replace
   float referenceHpwl_ = 446000000;
 
   float routabilityCheckOverflow_ = 0.3;
-  float keepResizeBelowOverflow_ = 0.0;
   float routabilityMaxDensity_ = 0.99;
   float routabilityTargetRcMetric_ = 1.01;
   float routabilityInflationRatioCoef_ = 5;
@@ -199,6 +198,7 @@ class Replace
   int routabilityMaxInflationIter_ = 4;
 
   float timingNetWeightMax_ = 1.9;
+  float keepResizeBelowOverflow_ = 0.0;
 
   bool timingDrivenMode_ = true;
   bool routabilityDrivenMode_ = true;
