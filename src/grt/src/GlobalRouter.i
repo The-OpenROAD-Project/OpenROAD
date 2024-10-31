@@ -131,12 +131,6 @@ set_grid_origin(int x, int y)
 }
 
 void
-set_allow_congestion(bool allowCongestion)
-{
-  getGlobalRouter()->setAllowCongestion(allowCongestion);
-}
-
-void
 set_critical_nets_percentage(float criticalNetsPercentage)
 {
   getGlobalRouter()->setCriticalNetsPercentage(criticalNetsPercentage);

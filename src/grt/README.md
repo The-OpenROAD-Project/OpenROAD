@@ -24,7 +24,6 @@ global_route
     [-congestion_report_iter_step steps]
     [-grid_origin {x y}]
     [-critical_nets_percentage percent]
-    [-allow_congestion]
     [-allow_overflow]
     [-overflow_iterations]
     [-verbose]
@@ -42,7 +41,6 @@ global_route
 | `-congestion_report_iter_step` | Set the number of iterations to report. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-grid_origin` | Set the (x, y) origin of the routing grid in DBU. For example, `-grid_origin {1 1}` corresponds to the die (0, 0) + 1 DBU in each x--, y- direction. |
 | `-critical_nets_percentage` | Set the percentage of nets with the worst slack value that are considered timing critical, having preference over other nets during congestion iterations (e.g. `-critical_nets_percentage 30`). The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
-| `-allow_congestion` | Allow global routing results to be generated with remaining congestion. The default is false. |
 | `-verbose` | This flag enables the full reporting of the global routing. |
 | `-start_incremental` | This flag initializes the GRT listener to get the net modified. The default is false. |
 | `-end_incremental` | This flag run incremental GRT with the nets modified. The default is false. |
@@ -410,7 +408,6 @@ command. (See `GlobalRouter.h` for a complete list)
 gr.setGridOrigin(x, y)                     # int, default 0,0
 gr.setCongestionReportFile(file_name)      # string
 gr.setOverflowIterations(n)                # int, default 50
-gr.setAllowCongestion(allowCongestion)     # boolean, default False
 gr.setCriticalNetsPercentage(percentage)   # float
 gr.setMinRoutingLayer(minLayer)            # int
 gr.setMaxRoutingLayer(maxLayer)            # int

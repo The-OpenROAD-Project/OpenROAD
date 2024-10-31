@@ -94,7 +94,6 @@ GlobalRouter::GlobalRouter()
       layer_for_guide_dimension_(3),
       overflow_iterations_(50),
       congestion_report_iter_step_(0),
-      allow_congestion_(false),
       macro_extension_(0),
       initialized_(false),
       total_diodes_count_(0),
@@ -318,9 +317,12 @@ void GlobalRouter::globalRoute(bool save_guides,
 
     updateDbCongestion();
     saveCongestion();
-    checkOverflow();
+
     if (fastroute_->totalOverflow() > 0 && verbose_) {
-      logger_->warn(GRT, 115, "Global routing finished with overflow.");
+      logger_->warn(GRT,
+                    115,
+                    "Global routing finished with congestion. Check the "
+                    "congestion regions in the DRC Viewer.");
     }
 
     if (verbose_) {
@@ -1844,11 +1846,6 @@ void GlobalRouter::setGridOrigin(int x, int y)
   grid_origin_ = odb::Point(x, y);
 }
 
-void GlobalRouter::setAllowCongestion(bool allow_congestion)
-{
-  allow_congestion_ = allow_congestion;
-}
-
 void GlobalRouter::setMacroExtension(int macro_extension)
 {
   macro_extension_ = macro_extension;
@@ -1969,28 +1966,6 @@ void GlobalRouter::getMinMaxLayer(int& min_layer, int& max_layer)
                   ? std::min(getMinRoutingLayer(), getMinLayerForClock())
                   : getMinRoutingLayer();
   max_layer = std::max(getMaxRoutingLayer(), getMaxLayerForClock());
-}
-
-void GlobalRouter::checkOverflow()
-{
-  if (fastroute_->has2Doverflow()) {
-    if (!allow_congestion_) {
-      if (congestion_file_name_ != nullptr) {
-        logger_->error(
-            GRT,
-            119,
-            "Routing congestion too high. Check the congestion heatmap "
-            "in the GUI and load {} in the DRC viewer.",
-            congestion_file_name_);
-      } else {
-        logger_->error(
-            GRT,
-            118,
-            "Routing congestion too high. Check the congestion heatmap "
-            "in the GUI.");
-      }
-    }
-  }
 }
 
 void GlobalRouter::readGuides(const char* file_name)
@@ -4730,7 +4705,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
     mergeResults(new_route);
 
     bool reroutingOverflow = true;
-    if (fastroute_->has2Doverflow() && !allow_congestion_) {
+    if (fastroute_->has2Doverflow()) {
       // The maximum number of times that the nets traversing the congestion
       // area will be added
       int add_max = 30;
@@ -4769,7 +4744,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         saveCongestion();
         logger_->error(GRT,
                        232,
-                       "Routing congestion too high. Check the congestion "
+                       "Routing congestion too high. Check the congested "
                        "heatmap in the GUI.");
       }
     }

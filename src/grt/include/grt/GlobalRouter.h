@@ -183,7 +183,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   void setCongestionReportIterStep(int congestion_report_iter_step);
   void setCongestionReportFile(const char* file_name);
   void setGridOrigin(int x, int y);
-  void setAllowCongestion(bool allow_congestion);
   void setMacroExtension(int macro_extension);
 
   // flow functions
@@ -464,7 +463,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   void initGridAndNets();
   void ensureLayerForGuideDimension(int max_routing_layer);
   void configFastRoute();
-  void checkOverflow();
 
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
@@ -487,7 +485,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   int layer_for_guide_dimension_;
   int overflow_iterations_;
   int congestion_report_iter_step_;
-  bool allow_congestion_;
   std::vector<int> vertical_capacities_;
   std::vector<int> horizontal_capacities_;
   int macro_extension_;
