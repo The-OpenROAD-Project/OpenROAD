@@ -236,6 +236,9 @@ int RDLRouter::getRoutingInstanceCount() const
   std::set<odb::dbInst*> insts;
   for (const auto& route : routes_) {
     insts.insert(route->getTerminal()->getInst());
+    for (const auto* iterm : route->getTerminals()) {
+      insts.insert(iterm->getInst());
+    }
   }
   return insts.size();
 }
@@ -245,7 +248,8 @@ std::set<odb::dbInst*> RDLRouter::getRoutedInstances() const
   std::set<odb::dbInst*> insts;
   for (const auto& route : routes_) {
     if (route->isRouted()) {
-      insts.insert(route->getTerminal()->getInst());
+      insts.insert(route->getRouteTargetSource()->terminal->getInst());
+      insts.insert(route->getRouteTargetDestination()->terminal->getInst());
     }
   }
   return insts;
@@ -257,7 +261,12 @@ std::vector<RDLRouter::RDLRoutePtr> RDLRouter::getFailedRoutes() const
   std::set<odb::dbInst*> success_covers;
   for (auto& route : routes_) {
     if (route->isRouted()) {
-      success_covers.insert(route->getTerminal()->getInst());
+      if (isCoverTerm(route->getRouteTargetSource()->terminal)) {
+        success_covers.insert(route->getRouteTargetSource()->terminal->getInst());
+      }
+      if (isCoverTerm(route->getRouteTargetDestination()->terminal)) {
+        success_covers.insert(route->getRouteTargetDestination()->terminal->getInst());
+      }
     }
   }
 
@@ -521,12 +530,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
       }
       last_itr_routed = routed_insts;
 
-      std::vector<RDLRoutePtr> failed;
-      for (auto& route : routes_) {
-        if (route->isFailed()) {
-          failed.push_back(route);
-        }
-      }
+      std::vector<RDLRoutePtr> failed = getFailedRoutes();
 
       if (failed.empty()) {
         continue;
