@@ -1924,7 +1924,8 @@ void GuideProcessor::saveGuidesUpdates()
               dbNet,
               dbLayer,
               dbLayer,
-              {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()});
+              {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()},
+              false);
         }
       } else {
         auto layerName = getTech()->getLayer(bNum)->getName();
@@ -1933,7 +1934,8 @@ void GuideProcessor::saveGuidesUpdates()
             dbNet,
             dbLayer,
             dbLayer,
-            {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()});
+            {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()},
+            false);
       }
     }
     auto dbGuides = dbNet->getGuides();
