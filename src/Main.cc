@@ -271,14 +271,14 @@ int main(int argc, char* argv[])
   cmd_argc = argc;
   cmd_argv = argv;
 
-  the_tech = std::make_unique<ord::Tech>();
-  the_design = std::make_unique<ord::Design>(the_tech.get());
-  ord::OpenRoad::setOpenRoad(the_design->getOpenRoad());
 #ifdef ENABLE_PYTHON3
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-python")) {
     // Setup the app with tcl
     auto* interp = Tcl_CreateInterp();
     Tcl_Init(interp);
+    the_tech = std::make_unique<ord::Tech>(interp);
+    the_design = std::make_unique<ord::Design>(the_tech.get());
+    ord::OpenRoad::setOpenRoad(the_design->getOpenRoad());
     ord::initOpenRoad(interp);
     if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash")) {
       showSplash();
@@ -401,6 +401,10 @@ static int tclAppInit(int& argc,
                       const char* init_filename,
                       Tcl_Interp* interp)
 {
+  the_tech = std::make_unique<ord::Tech>(interp);
+  the_design = std::make_unique<ord::Design>(the_tech.get());
+  ord::OpenRoad::setOpenRoad(the_design->getOpenRoad());
+
   // This is to enable Design.i where a design arg can be
   // retrieved from the interpreter.  This is necessary for
   // cases with more than one interpreter (ie more than one Design).
