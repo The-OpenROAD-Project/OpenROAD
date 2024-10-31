@@ -703,6 +703,7 @@ bool GuideProcessor::readGuides()
   ProfileTask profile("IO:readGuide");
   int num_guides = 0;
   const auto block = db_->getChip()->getBlock();
+  int jumper_count = 0;
   for (const auto db_net : block->getNets()) {
     frNet* net = getDesign()->getTopBlock()->findNet(db_net->getName());
     if (net == nullptr) {
@@ -719,8 +720,12 @@ bool GuideProcessor::readGuides()
       tmp_guides_[net].emplace_back(rect);
       ++num_guides;
       logGuidesRead(num_guides, logger_);
+      if (db_guide->isJumper()) {
+        jumper_count++;
+      }
     }
   }
+  printf("%d jumpers detected!!\n", jumper_count);
   if (VERBOSE > 0) {
     logger_->report("");
     logger_->info(utl::DRT, 157, "Number of guides:     {}", num_guides);
