@@ -486,7 +486,12 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
           dst_items_routed.insert(dst);
 
           // record cover instance
-          routed_covers.insert(src->getInst());
+          if (isCoverTerm(src)) {
+            routed_covers.insert(src->getInst());
+          }
+          if (isCoverTerm(dst)) {
+            routed_covers.insert(dst->getInst());
+          }
 
           // record routed pair (forward and reverse) to avoid routing this
           // segment again
@@ -587,6 +592,8 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
             ripup_route->getRouteTargetDestination()->terminal);
         routed_covers.erase(
             ripup_route->getRouteTargetSource()->terminal->getInst());
+        routed_covers.erase(
+            ripup_route->getRouteTargetDestination()->terminal->getInst());
         routed_pairs.erase(ripup_route->getRouteTargetSource()->terminal);
         routed_pairs.erase(ripup_route->getRouteTargetDestination()->terminal);
         ripup_route->resetRoute();
