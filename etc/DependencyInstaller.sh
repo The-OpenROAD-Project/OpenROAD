@@ -327,6 +327,7 @@ _installUbuntuPackages() {
         build-essential \
         ccache \
         clang \
+        curl \
         debhelper \
         devscripts \
         flex \
@@ -404,6 +405,7 @@ _installRHELPackages() {
         automake \
         clang \
         clang-devel \
+        curl \
         gcc \
         gcc-c++ \
         gdb \
@@ -512,6 +514,7 @@ _installOpenSusePackages() {
     zypper -n install \
         binutils \
         clang \
+        curl \
         gcc \
         gcc11-c++ \
         git \
@@ -615,6 +618,7 @@ _installDebianPackages() {
         bison \
         build-essential \
         clang \
+        curl \
         debhelper \
         devscripts \
         flex \
