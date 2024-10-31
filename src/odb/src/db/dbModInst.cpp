@@ -431,7 +431,7 @@ bool dbModInst::swapMaster(dbModule* new_module)
   dbSet<dbModBTerm> new_bterms = new_module->getModBTerms();
   if (old_bterms.size() != new_bterms.size()) {
     getImpl()->getLogger()->warn(utl::ODB,
-                                 447,
+                                 453,
                                  "modules cannot be swapped because module {} "
                                  "has {} ports but module {} has {} ports",
                                  old_module_name,
@@ -466,7 +466,7 @@ bool dbModInst::swapMaster(dbModule* new_module)
   }
   if (i1 != new_ports.end() || i2 != old_ports.end()) {
     getImpl()->getLogger()->warn(utl::ODB,
-                                 448,
+                                 454,
                                  "modules cannot be swapped because module {} "
                                  "has port {} but module {} has port {}",
                                  old_module_name,
