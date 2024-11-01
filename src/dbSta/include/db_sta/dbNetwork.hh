@@ -132,7 +132,6 @@ class dbNetwork : public ConcreteNetwork
 
   dbNet* staToDb(const Net* net) const;
   void staToDb(const Net* net, dbNet*& dnet, dbModNet*& modnet) const;
-  dbNet* flatNet(const Net* pin) const;
 
   dbBTerm* staToDb(const Term* term) const;
   void staToDb(const Term* term,
@@ -291,6 +290,7 @@ class dbNetwork : public ConcreteNetwork
   NetTermIterator* termIterator(const Net* net) const override;
   const Net* highestConnectedNet(Net* net) const override;
   bool isSpecial(Net* net);
+  dbNet* flatNet(const Net* net) const;
 
   ////////////////////////////////////////////////////////////////
   // Edit functions
