@@ -2883,6 +2883,7 @@ void NesterovBase::destroyGCell(odb::dbInst* db_inst) {
     if (gcell_index != last_index) {
       std::swap(gCells_[gcell_index], gCells_[last_index]);
     }
+    //TODO: do the same for routability parallel vector
     swapAndPopParallelVectors(gcell_index,last_index);
     gCells_.pop_back();
     db_inst_index_map_.erase(db_it);
