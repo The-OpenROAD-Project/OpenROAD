@@ -188,6 +188,40 @@ def getParallelTests(String image) {
 
     ];
 
+    deb_os = [
+        [name: 'Ubuntu 20.04' , image: 'openroad/ubuntu20.04-dev'],
+        [name: 'Ubuntu 22.04' , image: 'openroad/ubuntu22.04-dev'],
+        [name: 'Debian 11' , image: 'openroad/debian11-dev']
+    ];
+
+    deb_os.each { os ->
+        ret["Build .deb - ${os.name}"] = {
+            node {
+                stage('Setup and Build') {
+                    withDockerContainer(args: '-u root', image: os.image) {
+                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
+                        checkout([
+                                $class: 'GitSCM',
+                                branches: [[name: scm.branches[0].name]],
+                                doGenerateSubmoduleConfigurations: false,
+                                extensions: [
+                                [$class: 'CloneOption', noTags: false],
+                                [$class: 'SubmoduleOption', recursiveSubmodules: true]
+                                ],
+                                submoduleCfg: [],
+                                userRemoteConfigs: scm.userRemoteConfigs
+                        ]);
+                        def version = sh(script: 'git describe | sed s,^v,,', returnStdout: true).trim();
+                        sh label: 'Create Changelog', script: "./debian/create-changelog.sh ${version}";
+                        sh label: 'Run debuild', script: 'debuild --preserve-env --preserve-envvar=PATH -B -j$(nproc)';
+                        sh label: 'Move generated files', script: 'mv -v ../*' + "${version}" + '* .';
+                        archiveArtifacts artifacts: '*' + "${version}" + '*';
+                    }
+                }
+            }
+        }
+    }
+
     return ret;
 }
 
