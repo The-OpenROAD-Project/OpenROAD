@@ -1490,6 +1490,30 @@ class extMain
     extSolverGen *_currentSolverGen;
 
     // v2 -----------------------------------------------------
+// CLEANUP dkf 10302024
+struct LayerDimensionData {
+        uint pitchTable[32];
+        uint widthTable[32];
+        uint dirTable[32];
+        int baseX[32];
+        int baseY[32];
+        uint minRes[2];
+    };
+
+    struct BoundaryData {
+        int ll[2];  // lower left
+        int ur[2];  // upper right
+        int lo_gs[2];
+        int hi_gs[2];
+        int lo_search[2];
+        int hi_search[2];
+    };
+    void setupBoundaries(BoundaryData& bounds, const Rect& extRect);
+    void updateBoundaries(BoundaryData& bounds, uint dir, uint ccDist, uint maxPitch);
+        void initializeLayerTables(LayerDimensionData& tables);
+            int initSearch(LayerDimensionData& tables, Rect& extRect, uint &totWireCnt);
+
+
 
 // CLEANUP dkf 10242024 ----------------------------------
 void makeBlockRCsegs_v2(const char* netNames, const char* extRules);

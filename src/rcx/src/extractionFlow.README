@@ -1,0 +1,71 @@
+
+User Command: extract_parasitics 
+	function: makeBlockRCsegs_v2
+
+Major Flow Steps:
+
+-------------------------------------------------------------------------------------------
+1. Set User Options
+
+-------------------------------------------------------------------------------------------
+2. Associate User Defined and Model File Process Corners
+	function: SetCornersAndReadModels_v2
+	Note 1: if not set with Tcl cmd: <define_process_corner>, all model file corners will be extracted
+	Note 2: if user option lefRC is used, a single corner is generated 
+
+-------------------------------------------------------------------------------------------
+3. Read Model File
+	function: SetCornersAndReadModels_v2/ReadModels_v2
+	Note 1: DensityModel is equivalent to Process Corner
+	Note 2: basic format for every distance based model is defined as follows:
+		<dist_to_neighbor_in_microns> <coupling_cap> <ground_cap> <resistance>
+		capacitance units are in fF/nm
+		resistance unist are in Ohms/nm
+	
+-------------------------------------------------------------------------------------------
+3. Generate Full RC network for all nets
+	function: makeRCNetwork_v2
+	Important User Options: 
+	
+	A. Create Resistance Table per Layer to drive RC Merging
+		Note: Values from first process corner are used 
+
+	B. Create RC Segments and Capacitance Nodes by traversing dbWire object
+		Associate one or more Physical wires to an RC segment (dbRSeg)
+		SPEF structure is dependent on the RC network generation
+		Physical wires will be extracted for Coupling Capacitance and Resistance based on 
+		user option: max_res drives RC segment Merging in a net
+				Merging stops at instance and block terms and wire branches
+		Note 1: via resistance can be taken from Model File or from LEF if Via Models don't exist
+		Note 2: via resistance is added to the connecting wires if user option -no_merge_via_res is not set
+		Note 3: Extracted coupling caps for the wire segments 
+	
+-------------------------------------------------------------------------------------------
+4. Extract Coupling Caps 
+	function: couplingFlow_v2
+
+
+    // Model file is required if not option _lefRC is used.
+    // _lefRC option requires Resistance and Capacitance values per Layer and Technology to be taken from LEF file.
+ 
+  Flag nets to be extracted; default is all nets
+    Associate User defined Process Corners and DensityModels in Model file
+
+    Create Capacitance table per layer with min/max values 
+    based on the model file given min nad max context scenarios
+
+    Create Capacitance and Resistance table per layer with min/max values 
+    based on the model file required for RC Network Generation
+
+  if (_lefRC) {
+    // Add a single process corner to drive the flow
+    // Create tables with RC values per layer from LEF file
+
+  // Create RC network for every net: Resistor Nodes and Resistor Segments,
+  // Following the order of the wires
+  // NOTE: dependent on odb::orderWires
+ 
+
+    couplingFlow_v2(maxRect, _couplingFlag, NULL);
+
+

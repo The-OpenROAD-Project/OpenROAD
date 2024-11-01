@@ -43,68 +43,69 @@ using utl::RCX;
 using namespace odb;
 class extModelGen;
 
-void extCompute(CoupleOptions& inputTable, void* extModel);
-void extCompute1(CoupleOptions& inputTable, void* extModel);
 
+// Main function that drives extraction flow
 void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
 {
+    // Model file is required if not option _lefRC is used.
+    // _lefRC option requires Resistance and Capacitance values per Layer and Technology to be taken from LEF file.
   if (!_lefRC && !modelExists(extRules))
     return;
 
-  _extRun++;
+  // Selected user set for net names to be extracted
   std::vector<dbNet*> inets;
   markNetsToExtract_v2(netNames, inets);
 
   initSomeValues_v2();
-  setupMapping(); // iterm, bterm, junction CapNode mapping
-
   if (_couplingFlag > 1 && !_lefRC) 
   {
+    // Associate User defined Process Corners and DensityModels in Model file
     if (!SetCornersAndReadModels_v2(extRules))
       return;
 
-    if (_ccContextDepth) {
-      initContextArray();
-    }
-    initDgContextArray();
-
+    // Create Capacitance table per layer with min/max values 
+    // based on the model file given min nad max context scenarios
     calcMinMaxRC();
+
+    // Create Capacitance and Resistance table per layer with min/max values 
+    // based on the model file required for RC Network Generation
     getResCapTable();
 
   } else if (_lefRC) {
+    // Add a single process corner to drive the flow
     addRCCorner("LEF_RC", 0);
     _extDbCnt = _processCornerTable->getCnt();
     _block->setCornerCount(_cornerCnt, _extDbCnt, nullptr);
+
+    // Create tables with RC values per layer from LEF file
     getResCapTable_lefRC_v2();
   }
+
+  // Create RC network for every net: Resistor Nodes and Resistor Segments,
+  // Following the order of the wires
+  // NOTE: dependent on odb::orderWires
   if (!makeRCNetwork_v2())
     return;
 
   if (_lefRC) {
+    // update dbNet object flags 
       update_wireAltered_v2(inets);
       return;
   }
   if (_couplingFlag > 1) {
+    // Print out stats
     infoBeforeCouplingExt();
 
     Rect maxRect = _block->getDieArea();
     couplingFlow_v2(maxRect, _couplingFlag, NULL);
 
-    removeDgContextArray();
+    // Print out stats on db Ojects created during extraction
+    couplingExtEnd_v2();
   }
+  // Print out stats on db Ojects created during extraction
   couplingExtEnd_v2();
 
-  /* TEST and DELETE
-    if (_geomSeq != NULL) {
-      delete _geomSeq;
-      _geomSeq = NULL;
-    }
-
-  */
   _modelTable->resetCnt(0);
-  if (_batchScaleExt) {
-    genScaledExt();
-  }
 }
 void extMain::infoBeforeCouplingExt()
 {
@@ -138,6 +139,8 @@ bool extMain::makeRCNetwork_v2()
 {
   logger_->info(RCX, 501, "RC segment generation {} (max_merge_res {:.1f}) ...",
                 getBlock()->getName().c_str(), _mergeResBound);
+
+  setupMapping(); // iterm, bterm, junction CapNode mapping
 
   uint cnt = 0;
   for (dbNet* net : _block->getNets()) {
@@ -203,50 +206,46 @@ if (_allNet) {
   }
 }
 
-
-
 void extMain::setExtractionOptions_v2(ExtractOptions options)
 {
-    
-skip_via_wires(options.skip_via_wires);
-  skip_via_wires(true); // DEBUG
-  _lef_res = options.lef_res;
-  _lefRC= options.lef_rc; // model file not required
+  skip_via_wires(options.skip_via_wires); // Skip Coupling caps for Vias -- affects run time
+  skip_via_wires(true);  // for debugging purposes can skip via resistance 
+  _lef_res = options.lef_res; // Don't use wire resistance from Model file; but from LEF file
+  _lefRC = options.lef_rc;  // Wire Resistance/Capcitance and Via Resistance are taken from LEF file; model file not required
 
- _wire_extracted_progress_count= options._wire_extracted_progress_count;
-  _version= options._version;
-  _metal_flag_22= 0;
+  _wire_extracted_progress_count = options._wire_extracted_progress_count;
+  _version = options._version;
+  _metal_flag_22 = 0;
   // fprintf(stdout, "RC Flow Version %5.3f enabled\n", _version);
   // notice(0, "RC Flow Version %5.3f enabled\n", _version);
-  if (abs(options._version-2.2)<0.001)
-  {
-    _metal_flag_22= 2;
-    fprintf(stdout, "Version %5.3f enabled new RC calc flow for lower 2 metals\n", options._version);
+  if (abs(options._version - 2.2) < 0.001) {
+    _metal_flag_22 = 2;
+    fprintf(stdout,
+            "Version %5.3f enabled new RC calc flow for lower 2 metals\n",
+            options._version);
   }
-  if (abs(options._version-2.3)<0.001)
-  {
-    _metal_flag_22= 3;
-    fprintf(stdout, "Version %5.3f enabled new RC calc flow for lower 2 metals\n", options._version);
+  if (abs(options._version - 2.3) < 0.001) {
+    _metal_flag_22 = 3;
+    fprintf(stdout,
+            "Version %5.3f enabled new RC calc flow for lower 2 metals\n",
+            options._version);
   }
-  _v2= options._v2;
-  if (options._v2>=2.2)
-	_v2= true;
-  _dbgOption= options._dbg;
-   _overCell = _v2 && options.over_cell;
+  _v2 = options._v2;
+  if (options._v2 >= 2.2)
+    _v2 = true;
+  _dbgOption = options._dbg;
+  _overCell = _v2 && options.over_cell; // Use inside cell context for coupling cap extraction
 
-   // TODO _cornerCnt
+  // TODO _cornerCnt
   _diagFlow = true;
   _couplingFlag = options.cc_model;
-  _coupleThreshold = options.coupling_threshold;
+  _coupleThreshold = options.coupling_threshold; // 
   _usingMetalPlanes = true;
-  _ccUp = options.cc_up;
+  _ccUp = options.cc_up; // Context up
   _ccContextDepth = options.context_depth;
   _mergeViaRes = !options.no_merge_via_res;
   _mergeResBound = options.max_res;
-   _extRun++;
-
-
-
+  _extRun++;
 }
 
 void extMain::initSomeValues_v2()
@@ -259,6 +258,8 @@ void extMain::initSomeValues_v2()
   _totSegCnt = 0;
   _totSignalSegCnt = 0;
 }
+
+// Associate User defined Process Corners and DensityModels in Model file
 bool extMain::SetCornersAndReadModels_v2(const char* rulesFileName)
 {
   _modelMap.resetCnt(0);
@@ -266,10 +267,10 @@ bool extMain::SetCornersAndReadModels_v2(const char* rulesFileName)
 
   if (rulesFileName != nullptr) {  // read rules
 
-    extRCModel* m= createCornerMap(rulesFileName);
+    extRCModel* m = createCornerMap(rulesFileName);
 
-    if ( ! ReadModels_v2(rulesFileName, m, 0, NULL) )
-        return false;
+    if (!ReadModels_v2(rulesFileName, m, 0, NULL))
+      return false;
   }
   _currentModel = getRCmodel(0);
   for (uint ii = 0; (_couplingFlag > 0) && ii < _modelMap.getCnt(); ii++) {
@@ -289,33 +290,30 @@ double extMain::getDbFactor_v2()
     }
     return dbFactor;
 }
+// Wrapper function to drive reading of the model file
 bool extMain::ReadModels_v2(const char* rulesFileName,
                             extRCModel* m,
                             uint extDbCnt,
                             uint* cornerTable)
 {
-  logger_->info(
-      RCX, 441, "Reading extraction model file {} ...", rulesFileName);
+  logger_->info(RCX, 441, "Reading extraction model file {} ...", rulesFileName);
+
   FILE* rules_file = fopen(rulesFileName, "r");
   if (rules_file == nullptr) {
-    logger_->error(
-        RCX, 469, "Can't open extraction model file {}", rulesFileName);
+    logger_->error(RCX, 469, "Can't open extraction model file {}", rulesFileName);
   }
   fclose(rules_file);
-  // bool v2_rules_file = m->isRulesFile_v2((char*) rulesFileName, false);
+
   m->_v2_flow = _v2;
   
   double dbFactor = getDbFactor_v2();
-  if (!(m->readRules_v2(
-          (char*) rulesFileName, false, true, true, true, true, dbFactor))) {
+
+  if (!(m->readRules_v2((char*) rulesFileName, false, true, true, true, true, dbFactor))) {
     delete m;
     return false;
   }
-
-  int modelCnt = getRCmodel(0)->getModelCnt();
-
   // If RCX reads wrong extRules file format
-  if (modelCnt == 0) {
+  if (getRCmodel(0)->getModelCnt() == 0) {
     logger_->error(RCX,
                    488,
                    "No RC model read from the extraction model! "
