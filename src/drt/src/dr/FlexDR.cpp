@@ -530,7 +530,7 @@ std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
 FlexDR::initDR_mergeBoundaryPin(int startX,
                                 int startY,
                                 int size,
-                                const Rect& routeBox)
+                                const Rect& routeBox) const
 {
   std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
       bp;
@@ -559,266 +559,98 @@ void FlexDR::getBatchInfo(int& batchStepX, int& batchStepY)
   batchStepY = 2;
 }
 
-void FlexDR::searchRepair(const SearchRepairArgs& args)
+std::unique_ptr<FlexDRWorker> FlexDR::createWorker(const int x_offset,
+                                                   const int y_offset,
+                                                   const SearchRepairArgs& args,
+                                                   Rect routeBox)
 {
-  const int iter = iter_++;
-  const int size = args.size;
-  const int offset = args.offset;
-  const int mazeEndIter = args.mazeEndIter;
-  const frUInt4 workerDRCCost = args.workerDRCCost;
-  const frUInt4 workerMarkerCost = args.workerMarkerCost;
-  const frUInt4 workerFixedShapeCost = args.workerFixedShapeCost;
-  const float workerMarkerDecay = args.workerMarkerDecay;
-  const RipUpMode ripupMode = args.ripupMode;
-  const bool followGuide = args.followGuide;
+  auto worker
+      = std::make_unique<FlexDRWorker>(&via_data_, getDesign(), logger_);
+  const int iter = iter_ - 1;
+  if (routeBox == Rect(0, 0, 0, 0)) {
+    auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
+    auto& xgp = gCellPatterns.at(0);
+    auto& ygp = gCellPatterns.at(1);
+    Rect routeBox1
+        = getDesign()->getTopBlock()->getGCellBox(Point(x_offset, y_offset));
+    const int max_i
+        = std::min((int) xgp.getCount() - 1, x_offset + args.size - 1);
+    const int max_j = std::min((int) ygp.getCount(), y_offset + args.size - 1);
+    Rect routeBox2
+        = getDesign()->getTopBlock()->getGCellBox(Point(max_i, max_j));
+    routeBox.init(
+        routeBox1.xMin(), routeBox1.yMin(), routeBox2.xMax(), routeBox2.yMax());
+  }
+  Rect extBox;
+  Rect drcBox;
+  routeBox.bloat(MTSAFEDIST, extBox);
+  routeBox.bloat(DRCSAFEDIST, drcBox);
+  worker->setRouteBox(routeBox);
+  worker->setExtBox(extBox);
+  worker->setDrcBox(drcBox);
+  worker->setMazeEndIter(args.mazeEndIter);
+  worker->setDRIter(iter);
+  worker->setDebugSettings(router_->getDebugSettings());
+  if (dist_on_) {
+    worker->setDistributed(dist_, dist_ip_, dist_port_, dist_dir_);
+  }
+  if (!iter) {
+    auto bp = initDR_mergeBoundaryPin(x_offset, y_offset, args.size, routeBox);
+    worker->setDRIter(0, bp);
+  }
+  worker->setRipupMode(args.ripupMode);
+  worker->setFollowGuide(args.followGuide);
+  // TODO: only pass to relevant workers
+  worker->setGraphics(graphics_.get());
+  worker->setCost(args.workerDRCCost,
+                  args.workerMarkerCost,
+                  args.workerFixedShapeCost,
+                  args.workerMarkerDecay);
+  return worker;
+}
 
-  std::string profile_name("DR:searchRepair");
-  profile_name += std::to_string(iter);
-  ProfileTask profile(profile_name.c_str());
-  if ((ripupMode == RipUpMode::DRC || ripupMode == RipUpMode::NEARDRC)
-      && getDesign()->getTopBlock()->getMarkers().empty()) {
+namespace {
+void printIteration(Logger* logger, const int iter)
+{
+  if (VERBOSE == 0) {
     return;
   }
-  if (dist_on_) {
-    if ((iter % 10 == 0 && iter != 60) || iter == 3 || iter == 15) {
-      globals_path_ = fmt::format("{}globals.{}.ar", dist_dir_, iter);
-      router_->writeGlobals(globals_path_);
-    }
+  std::string suffix;
+  if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
+    suffix = "st";
+  } else if (iter == 2 || (iter > 20 && iter % 10 == 2)) {
+    suffix = "nd";
+  } else if (iter == 3 || (iter > 20 && iter % 10 == 3)) {
+    suffix = "rd";
+  } else {
+    suffix = "th";
   }
-  frTime t;
-  if (VERBOSE > 0) {
-    std::string suffix;
-    if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
-      suffix = "st";
-    } else if (iter == 2 || (iter > 20 && iter % 10 == 2)) {
-      suffix = "nd";
-    } else if (iter == 3 || (iter > 20 && iter % 10 == 3)) {
-      suffix = "rd";
-    } else {
-      suffix = "th";
-    }
-    logger_->info(DRT, 195, "Start {}{} optimization iteration.", iter, suffix);
+  logger->info(DRT, 195, "Start {}{} optimization iteration.", iter, suffix);
+}
+
+void printIterationProgress(Logger* logger,
+                            FlexDR::IterationProgress& iter_prog,
+                            const int num_markers,
+                            const int max_perc = 90)
+{
+  iter_prog.cnt_done_workers++;
+  if (VERBOSE == 0) {
+    return;
   }
-  if (graphics_) {
-    graphics_->startIter(iter);
+  if ((iter_prog.cnt_done_workers * 1.0 / iter_prog.total_num_workers)
+          >= (iter_prog.last_reported_perc / 100.0 + 0.1)
+      && iter_prog.last_reported_perc < max_perc) {
+    iter_prog.last_reported_perc += 10;
+    logger->report("    Completing {}% with {} violations.",
+                   iter_prog.last_reported_perc,
+                   num_markers);
+    logger->report("    {}.", iter_prog.time);
   }
-  auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
-  auto& xgp = gCellPatterns.at(0);
-  auto& ygp = gCellPatterns.at(1);
-  int cnt = 0;
-  int tot = (((int) xgp.getCount() - 1 - offset) / size + 1)
-            * (((int) ygp.getCount() - 1 - offset) / size + 1);
-  int prev_perc = 0;
-  bool isExceed = false;
+}
+}  // namespace
 
-  std::vector<std::unique_ptr<FlexDRWorker>> uworkers;
-  int batchStepX, batchStepY;
-
-  getBatchInfo(batchStepX, batchStepY);
-
-  std::vector<std::vector<std::vector<std::unique_ptr<FlexDRWorker>>>> workers(
-      batchStepX * batchStepY);
-
-  int xIdx = 0, yIdx = 0;
-  for (int i = offset; i < (int) xgp.getCount(); i += size) {
-    for (int j = offset; j < (int) ygp.getCount(); j += size) {
-      auto worker
-          = std::make_unique<FlexDRWorker>(&via_data_, design_, logger_);
-      Rect routeBox1 = getDesign()->getTopBlock()->getGCellBox(Point(i, j));
-      const int max_i = std::min((int) xgp.getCount() - 1, i + size - 1);
-      const int max_j = std::min((int) ygp.getCount(), j + size - 1);
-      Rect routeBox2
-          = getDesign()->getTopBlock()->getGCellBox(Point(max_i, max_j));
-      Rect routeBox(routeBox1.xMin(),
-                    routeBox1.yMin(),
-                    routeBox2.xMax(),
-                    routeBox2.yMax());
-      Rect extBox;
-      Rect drcBox;
-      routeBox.bloat(MTSAFEDIST, extBox);
-      routeBox.bloat(DRCSAFEDIST, drcBox);
-      worker->setRouteBox(routeBox);
-      worker->setExtBox(extBox);
-      worker->setDrcBox(drcBox);
-      worker->setGCellBox(Rect(i, j, max_i, max_j));
-      worker->setMazeEndIter(mazeEndIter);
-      worker->setDRIter(iter);
-      worker->setDebugSettings(router_->getDebugSettings());
-      if (dist_on_) {
-        worker->setDistributed(dist_, dist_ip_, dist_port_, dist_dir_);
-      }
-      if (!iter) {
-        // if (routeBox.xMin() == 441000 && routeBox.yMin() == 816100) {
-        //   std::cout << "@@@ debug: " << i << " " << j << std::endl;
-        // }
-        // set boundary pin
-        auto bp = initDR_mergeBoundaryPin(i, j, size, routeBox);
-        worker->setDRIter(0, bp);
-      }
-      worker->setRipupMode(ripupMode);
-      worker->setFollowGuide(followGuide);
-      // TODO: only pass to relevant workers
-      worker->setGraphics(graphics_.get());
-      worker->setCost(workerDRCCost,
-                      workerMarkerCost,
-                      workerFixedShapeCost,
-                      workerMarkerDecay);
-
-      int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
-      if (workers[batchIdx].empty()
-          || (!dist_on_
-              && (int) workers[batchIdx].back().size() >= BATCHSIZE)) {
-        workers[batchIdx].push_back(
-            std::vector<std::unique_ptr<FlexDRWorker>>());
-      }
-      workers[batchIdx].back().push_back(std::move(worker));
-
-      yIdx++;
-    }
-    yIdx = 0;
-    xIdx++;
-  }
-
-  omp_set_num_threads(MAX_THREADS);
-  int version = 0;
-  increaseClipsize_ = false;
-  numWorkUnits_ = 0;
-  // parallel execution
-  for (auto& workerBatch : workers) {
-    ProfileTask profile("DR:checkerboard");
-    for (auto& workersInBatch : workerBatch) {
-      {
-        const std::string batch_name = std::string("DR:batch<")
-                                       + std::to_string(workersInBatch.size())
-                                       + ">";
-        ProfileTask profile(batch_name.c_str());
-        if (dist_on_) {
-          router_->dist_pool_.join();
-          if (version++ == 0 && !design_->hasUpdates()) {
-            std::string serializedViaData;
-            serializeViaData(via_data_, serializedViaData);
-            router_->sendGlobalsUpdates(globals_path_, serializedViaData);
-          } else {
-            router_->sendDesignUpdates(globals_path_);
-          }
-        }
-        {
-          ProfileTask task("DIST: PROCESS_BATCH");
-          // multi thread
-          ThreadException exception;
-#pragma omp parallel for schedule(dynamic)
-          for (int i = 0; i < (int) workersInBatch.size(); i++) {  // NOLINT
-            try {
-              if (dist_on_) {
-                workersInBatch[i]->distributedMain(getDesign());
-              } else {
-                workersInBatch[i]->main(getDesign());
-              }
-#pragma omp critical
-              {
-                cnt++;
-                if (VERBOSE > 0) {
-                  if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
-                      && prev_perc < 90) {
-                    if (prev_perc == 0 && t.isExceed(0)) {
-                      isExceed = true;
-                    }
-                    prev_perc += 10;
-                    if (isExceed) {
-                      logger_->report(
-                          "    Completing {}% with {} violations.",
-                          prev_perc,
-                          getDesign()->getTopBlock()->getNumMarkers());
-                      logger_->report("    {}.", t);
-                    }
-                  }
-                }
-              }
-            } catch (...) {
-              exception.capture();
-            }
-          }
-          exception.rethrow();
-          if (dist_on_) {
-            int j = 0;
-            std::vector<std::vector<std::pair<int, FlexDRWorker*>>>
-                distWorkerBatches(router_->getCloudSize());
-            for (int i = 0; i < workersInBatch.size(); i++) {
-              auto worker = workersInBatch.at(i).get();
-              if (!worker->isSkipRouting()) {
-                distWorkerBatches[j].push_back({i, worker});
-                j = (j + 1) % router_->getCloudSize();
-              }
-            }
-            {
-              ProfileTask task("DIST: SERIALIZE+SEND");
-#pragma omp parallel for schedule(dynamic)
-              for (int i = 0; i < distWorkerBatches.size(); i++)  // NOLINT
-                sendWorkers(distWorkerBatches.at(i), workersInBatch);
-            }
-            logger_->report("    Received Batches:{}.", t);
-            std::vector<std::pair<int, std::string>> workers;
-            router_->getWorkerResults(workers);
-            {
-              ProfileTask task("DIST: DESERIALIZING_BATCH");
-#pragma omp parallel for schedule(dynamic)
-              for (int i = 0; i < workers.size(); i++) {  // NOLINT
-                deserializeWorker(workersInBatch.at(workers.at(i).first).get(),
-                                  design_,
-                                  workers.at(i).second);
-              }
-            }
-            logger_->report("    Deserialized Batches:{}.", t);
-          }
-        }
-      }
-      {
-        ProfileTask profile("DR:end_batch");
-        // single thread
-        for (auto& worker : workersInBatch) {
-          if (worker->end(getDesign())) {
-            numWorkUnits_ += 1;
-          }
-          if (worker->isCongested()) {
-            increaseClipsize_ = true;
-          }
-        }
-        workersInBatch.clear();
-      }
-    }
-  }
-
-  if (!iter) {
-    removeGCell2BoundaryPin();
-  }
-  if (VERBOSE > 0) {
-    if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1 && prev_perc >= 90) {
-      if (prev_perc == 0 && t.isExceed(0)) {
-        isExceed = true;
-      }
-      prev_perc += 10;
-      if (isExceed) {
-        logger_->report("    Completing {}% with {} violations.",
-                        prev_perc,
-                        getDesign()->getTopBlock()->getNumMarkers());
-        logger_->report("    {}.", t);
-      }
-    }
-  }
-  FlexDRConnectivityChecker checker(
-      router_, logger_, graphics_.get(), dist_on_);
-  checker.check(iter);
-  if (getDesign()->getTopBlock()->getNumMarkers() == 0
-      && getTech()->hasMaxSpacingConstraints()) {
-    fixMaxSpacing();
-  }
-  numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
-  debugPrint(logger_,
-             utl::DRT,
-             "workers",
-             1,
-             "Number of work units = {}.",
-             numWorkUnits_);
+void FlexDR::reportIterationViolations() const
+{
   if (VERBOSE > 0) {
     logger_->info(DRT,
                   199,
@@ -864,10 +696,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
         logger_->report(line);
       }
     }
-    t.print(logger_);
-    std::cout << std::flush;
   }
-  end();
+  const int iter = iter_ - 1;
   if ((DRC_RPT_ITER_STEP && iter > 0 && iter % DRC_RPT_ITER_STEP.value() == 0)
       || logger_->debugCheck(DRT, "autotuner", 1)
       || logger_->debugCheck(DRT, "report", 1)) {
@@ -875,6 +705,384 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
                        design_->getTopBlock()->getMarkers(),
                        "DRC - iter " + std::to_string(iter));
   }
+}
+
+void FlexDR::processWorkersBatch(
+    std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch,
+    IterationProgress& iter_prog)
+{
+  const int num_markers = getDesign()->getTopBlock()->getNumMarkers();
+  ThreadException exception;
+#pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < (int) workers_batch.size(); i++) {  // NOLINT
+    try {
+      workers_batch[i]->main(getDesign());
+#pragma omp critical
+      {
+        printIterationProgress(logger_, iter_prog, num_markers);
+      }
+    } catch (...) {
+      exception.capture();
+    }
+  }
+  exception.rethrow();
+}
+
+void FlexDR::processWorkersBatchDistributed(
+    std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch,
+    int& version,
+    IterationProgress& iter_prog)
+{
+  router_->dist_pool_.join();
+  if (version++ == 0 && !design_->hasUpdates()) {
+    std::string serializedViaData;
+    serializeViaData(via_data_, serializedViaData);
+    router_->sendGlobalsUpdates(globals_path_, serializedViaData);
+  } else {
+    router_->sendDesignUpdates(globals_path_);
+  }
+
+  ProfileTask task("DIST: PROCESS_BATCH");
+  const int num_markers = getDesign()->getTopBlock()->getNumMarkers();
+  // multi thread
+  ThreadException exception;
+#pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < (int) workers_batch.size(); i++) {  // NOLINT
+    try {
+      workers_batch[i]->distributedMain(getDesign());
+    } catch (...) {
+      exception.capture();
+    }
+  }
+  exception.rethrow();
+  int j = 0;
+  std::vector<std::vector<std::pair<int, FlexDRWorker*>>> distWorkerBatches(
+      router_->getCloudSize());
+  for (int i = 0; i < workers_batch.size(); i++) {
+    auto worker = workers_batch.at(i).get();
+    if (!worker->isSkipRouting()) {
+      distWorkerBatches[j].push_back({i, worker});
+      j = (j + 1) % router_->getCloudSize();
+    }
+  }
+  {
+    ProfileTask task("DIST: SERIALIZE+SEND");
+#pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < distWorkerBatches.size(); i++)  // NOLINT
+      sendWorkers(distWorkerBatches.at(i), workers_batch);
+  }
+  std::vector<std::pair<int, std::string>> workers;
+  router_->getWorkerResults(workers);
+  {
+    ProfileTask task("DIST: DESERIALIZING_BATCH");
+#pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < workers.size(); i++) {  // NOLINT
+      deserializeWorker(workers_batch.at(workers.at(i).first).get(),
+                        design_,
+                        workers.at(i).second);
+#pragma omp critical
+      {
+        printIterationProgress(logger_, iter_prog, num_markers);
+      }
+    }
+  }
+}
+
+void FlexDR::endWorkersBatch(
+    std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch)
+{
+  ProfileTask profile("DR:end_batch");
+  // single thread
+  for (auto& worker : workers_batch) {
+    if (worker->end(getDesign())) {
+      numWorkUnits_ += 1;
+    }
+    if (worker->isCongested()) {
+      increaseClipsize_ = true;
+    }
+  }
+  workers_batch.clear();
+}
+
+Rect FlexDR::getWorkerRouteBox(const Rect& drv_rect) const
+{
+  Rect route_box = drv_rect;
+  auto min_idx = getDesign()->getTopBlock()->getGCellIdx(route_box.ll());
+  auto max_idx = getDesign()->getTopBlock()->getGCellIdx(route_box.ur());
+  return {min_idx, max_idx};
+  // min_idx.addX(-1);
+  // min_idx.addY(-1);
+  // max_idx.addX(1);
+  // max_idx.addY(1);
+  // route_box.merge(getDesign()->getTopBlock()->getGCellBox(min_idx));
+  // route_box.merge(getDesign()->getTopBlock()->getGCellBox(max_idx));
+  // return route_box;
+}
+
+namespace stub_tiles {
+std::vector<std::pair<Rect, std::vector<Rect*>>> mergeBoxes(
+    std::vector<Rect>& drv_boxes)
+{
+  std::vector<std::pair<Rect, std::vector<Rect*>>> merge_boxes;
+  for (auto& box : drv_boxes) {
+    merge_boxes.emplace_back(box, std::vector<Rect*>());
+    merge_boxes.back().second.emplace_back(&box);
+  }
+  bool merged;
+  do {
+    merged = false;
+    for (auto it1 = merge_boxes.begin(); it1 != merge_boxes.end(); ++it1) {
+      for (auto it2 = it1 + 1; it2 != merge_boxes.end(); ++it2) {
+        Rect merge_box = (*it1).first;
+        merge_box.merge((*it2).first);
+        if (merge_box.area() > (4 * 4)) {
+          continue;
+        }
+        (*it1).first.merge((*it2).first);
+        (*it1).second.insert(
+            (*it1).second.end(), (*it2).second.begin(), (*it2).second.end());
+        merge_boxes.erase(it2);
+        merged = true;
+        break;
+      }
+      if (merged) {
+        break;
+      }
+    }
+  } while (merged);
+  return merge_boxes;
+}
+
+int expandBox(Rect& box,
+              std::vector<std::pair<Rect, std::vector<Rect*>>>& merged_boxes,
+              const frDirEnum dir,
+              const int max_expansion)
+{
+  auto min_idx = box.ll();
+  auto max_idx = box.ur();
+  for (int i = 1; i <= max_expansion; i++) {
+    switch (dir) {
+      case frDirEnum::E:
+        max_idx.addX(1);
+        break;
+      case frDirEnum::W:
+        min_idx.addX(-1);
+        break;
+      case frDirEnum::N:
+        max_idx.addY(1);
+        break;
+      case frDirEnum::S:
+        min_idx.addY(-1);
+        break;
+      default:
+        break;
+    }
+    Rect expanded_box = {min_idx, max_idx};
+    for (auto& [other_rect, drvs] : merged_boxes) {
+      if (&other_rect == &box) {
+        continue;
+      }
+      if (expanded_box.intersects(other_rect)) {
+        return i - 1;
+      }
+    }
+    box = expanded_box;
+  }
+  return max_expansion;
+}
+
+void expandBoxes(std::vector<std::pair<Rect, std::vector<Rect*>>>& merged_boxes)
+{
+  for (auto it1 = merged_boxes.begin(); it1 != merged_boxes.end(); ++it1) {
+    auto& box = (*it1).first;
+    int horizontal_expand = 6 - box.dx();
+    int vertical_expand = 6 - box.dy();
+    horizontal_expand
+        -= expandBox(box, merged_boxes, frDirEnum::E, horizontal_expand / 2);
+    expandBox(box, merged_boxes, frDirEnum::W, horizontal_expand);
+    vertical_expand
+        -= expandBox(box, merged_boxes, frDirEnum::N, vertical_expand / 2);
+    expandBox(box, merged_boxes, frDirEnum::S, vertical_expand);
+  }
+}
+}  // namespace stub_tiles
+
+void FlexDR::stubbornTilesFlow(SearchRepairArgs args,
+                               IterationProgress& iter_prog)
+{
+  if (VERBOSE > 0) {
+    logger_->info(DRT, 196, "Start Stubborn Tiles iteration({}).", iter_ - 1);
+  }
+  std::vector<Rect> drv_boxes;
+  for (const auto& marker : getDesign()->getTopBlock()->getMarkers()) {
+    auto box = marker->getBBox();
+    drv_boxes.push_back(getWorkerRouteBox(box));
+  }
+  auto merged_boxes = stub_tiles::mergeBoxes(drv_boxes);
+  stub_tiles::expandBoxes(merged_boxes);
+  for (auto& [box, drvs] : merged_boxes) {
+    auto min_idx = box.ll();
+    auto max_idx = box.ur();
+    // logger_->report("Box size is {}x{}", box.dx(), box.dy());
+    box = {getDesign()->getTopBlock()->getGCellBox(min_idx).ll(),
+           getDesign()->getTopBlock()->getGCellBox(max_idx).ur()};
+    // logger_->report("Box is {}", box);
+  }
+  std::vector<frUInt4> drc_costs
+      = {args.workerDRCCost, args.workerDRCCost / 2, args.workerDRCCost * 2};
+  std::vector<frUInt4> marker_costs = {args.workerMarkerCost,
+                                       args.workerMarkerCost / 2,
+                                       args.workerMarkerCost * 2};
+  std::vector<std::pair<int, std::unique_ptr<FlexDRWorker>>> workers;
+  for (int i = 0; i < merged_boxes.size(); i++) {
+    for (auto drc_cost : drc_costs) {
+      for (auto marker_cost : marker_costs) {
+        args.workerDRCCost = drc_cost;
+        args.workerMarkerCost = marker_cost;
+        workers.emplace_back(i,
+                             createWorker(0, 0, args, merged_boxes[i].first));
+      }
+    }
+  }
+  iter_prog.total_num_workers = workers.size();
+  const auto num_markers = getDesign()->getTopBlock()->getNumMarkers();
+  omp_set_num_threads(MAX_THREADS);
+#pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < workers.size(); i++) {
+    workers[i].second->main(getDesign());
+#pragma omp critical
+    {
+      printIterationProgress(logger_, iter_prog, num_markers);
+    }
+  }
+  std::set<int> committed_ids;
+  for (int i = 0; i < workers.size(); i++) {
+    if (workers[i].second->getBestNumMarkers() == 0
+        && committed_ids.find(workers[i].first) == committed_ids.end()) {
+      committed_ids.insert(i);
+      workers[i].second->end(getDesign());
+    }
+  }
+  workers.clear();
+}
+
+void FlexDR::searchRepair(SearchRepairArgs args)
+{
+  const int iter = iter_++;
+  const int size = args.size;
+  const int offset = args.offset;
+  const RipUpMode ripupMode = args.ripupMode;
+  if ((ripupMode == RipUpMode::DRC || ripupMode == RipUpMode::NEARDRC)
+      && getDesign()->getTopBlock()->getMarkers().empty()) {
+    return;
+  }
+  ProfileTask profile(fmt::format("DR:searchRepair{}", iter).c_str());
+
+  if (dist_on_) {
+    if ((iter % 10 == 0 && iter != 60) || iter == 3 || iter == 15) {
+      globals_path_ = fmt::format("{}globals.{}.ar", dist_dir_, iter);
+      router_->writeGlobals(globals_path_);
+    }
+  }
+  // start timer for the current iteration
+  IterationProgress iter_prog;
+  auto block = getDesign()->getTopBlock();
+  const auto num_drvs = block->getNumMarkers();
+  if (iter >= 1 && num_drvs <= 11 && ripupMode != RipUpMode::ALL) {
+    stubbornTilesFlow(args, iter_prog);
+  } else {
+    printIteration(logger_, iter);
+    if (graphics_) {
+      graphics_->startIter(iter);
+    }
+    auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
+    auto& xgp = gCellPatterns.at(0);
+    auto& ygp = gCellPatterns.at(1);
+    iter_prog.total_num_workers
+        = (((int) xgp.getCount() - 1 - offset) / size + 1)
+          * (((int) ygp.getCount() - 1 - offset) / size + 1);
+
+    std::vector<std::unique_ptr<FlexDRWorker>> uworkers;
+    int batchStepX, batchStepY;
+
+    getBatchInfo(batchStepX, batchStepY);
+
+    std::vector<std::vector<std::vector<std::unique_ptr<FlexDRWorker>>>>
+        workers(batchStepX * batchStepY);
+
+    int xIdx = 0, yIdx = 0;
+    for (int i = offset; i < (int) xgp.getCount(); i += size) {
+      for (int j = offset; j < (int) ygp.getCount(); j += size) {
+        auto worker = createWorker(i, j, args);
+        int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
+        if (workers[batchIdx].empty()
+            || (!dist_on_
+                && (int) workers[batchIdx].back().size() >= BATCHSIZE)) {
+          workers[batchIdx].push_back(
+              std::vector<std::unique_ptr<FlexDRWorker>>());
+        }
+        workers[batchIdx].back().push_back(std::move(worker));
+
+        yIdx++;
+      }
+      yIdx = 0;
+      xIdx++;
+    }
+
+    omp_set_num_threads(MAX_THREADS);
+    int version = 0;
+    increaseClipsize_ = false;
+    numWorkUnits_ = 0;
+    // parallel execution
+    for (auto& workerBatch : workers) {
+      ProfileTask profile("DR:checkerboard");
+      for (auto& workersInBatch : workerBatch) {
+        {
+          const std::string batch_name = std::string("DR:batch<")
+                                         + std::to_string(workersInBatch.size())
+                                         + ">";
+          ProfileTask profile(batch_name.c_str());
+          if (dist_on_) {
+            processWorkersBatchDistributed(workersInBatch, version, iter_prog);
+          } else {
+            processWorkersBatch(workersInBatch, iter_prog);
+          }
+        }
+        endWorkersBatch(workersInBatch);
+      }
+    }
+
+    if (!iter) {
+      removeGCell2BoundaryPin();
+    }
+  }
+
+  if (VERBOSE > 0) {
+    iter_prog.cnt_done_workers--;  // decrement 1 and increment again in
+                                   // printIterationProgress
+    printIterationProgress(
+        logger_, iter_prog, getDesign()->getTopBlock()->getNumMarkers(), 100);
+  }
+  FlexDRConnectivityChecker checker(
+      router_, logger_, graphics_.get(), dist_on_);
+  checker.check(iter);
+  if (getDesign()->getTopBlock()->getNumMarkers() == 0
+      && getTech()->hasMaxSpacingConstraints()) {
+    fixMaxSpacing();
+  }
+  numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
+  debugPrint(logger_,
+             utl::DRT,
+             "workers",
+             1,
+             "Number of work units = {}.",
+             numWorkUnits_);
+  reportIterationViolations();
+  if (VERBOSE > 0) {
+    iter_prog.time.print(logger_);
+    std::cout << std::flush;
+  }
+  end();
 }
 
 void FlexDR::end(bool done)
@@ -1526,7 +1734,6 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
   (ar) & routeBox_;
   (ar) & extBox_;
   (ar) & drcBox_;
-  (ar) & gcellBox_;
   (ar) & drIter_;
   (ar) & mazeEndIter_;
   (ar) & followGuide_;

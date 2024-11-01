@@ -1249,7 +1249,7 @@ int TritonRoute::getWorkerResultsSize()
 void TritonRoute::reportDRC(const std::string& file_name,
                             const frList<std::unique_ptr<frMarker>>& markers,
                             const std::string& marker_name,
-                            Rect drcBox)
+                            Rect drcBox) const
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   odb::dbMarkerCategory* tool_category

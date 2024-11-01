@@ -37,6 +37,7 @@
 
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
+#include "db/infra/frTime.h"
 #include "dr/FlexDR_graphics.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
@@ -89,6 +90,13 @@ class FlexDR
     RipUpMode ripupMode;
     bool followGuide;
   };
+  struct IterationProgress
+  {
+    int total_num_workers{0};
+    int cnt_done_workers{0};
+    int last_reported_perc{0};
+    frTime time;
+  };
 
   // constructors
   FlexDR(TritonRoute* router,
@@ -103,7 +111,7 @@ class FlexDR
   // others
   void init();
   int main();
-  void searchRepair(const SearchRepairArgs& args);
+  void searchRepair(SearchRepairArgs args);
   void end(bool done = false);
 
   const FlexDRViaData* getViaData() const { return &via_data_; }
@@ -173,8 +181,25 @@ class FlexDR
   initDR_mergeBoundaryPin(int startX,
                           int startY,
                           int size,
-                          const Rect& routeBox);
+                          const Rect& routeBox) const;
   std::vector<frVia*> getLonelyVias(frLayer* layer, int max_spc, int cut_class);
+  std::unique_ptr<FlexDRWorker> createWorker(int x_offset,
+                                             int y_offset,
+                                             const SearchRepairArgs& args,
+                                             Rect routeBox = Rect(0, 0, 0, 0));
+  void reportIterationViolations() const;
+  void endWorkersBatch(
+      std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch);
+  void processWorkersBatch(
+      std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch,
+      IterationProgress& iter_prog);
+
+  void processWorkersBatchDistributed(
+      std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch,
+      int& version,
+      IterationProgress& iter_prog);
+  Rect getWorkerRouteBox(const Rect& drv_rect) const;
+  void stubbornTilesFlow(SearchRepairArgs args, IterationProgress& iter_prog);
 };
 
 class FlexDRWorker;
@@ -267,7 +292,6 @@ class FlexDRWorker
   void setRouteBox(const Rect& boxIn) { routeBox_ = boxIn; }
   void setExtBox(const Rect& boxIn) { extBox_ = boxIn; }
   void setDrcBox(const Rect& boxIn) { drcBox_ = boxIn; }
-  void setGCellBox(const Rect& boxIn) { gcellBox_ = boxIn; }
   void setDRIter(int in) { drIter_ = in; }
   void setDRIter(int in,
                  std::map<frNet*,
@@ -359,7 +383,6 @@ class FlexDRWorker
   Rect& getExtBox() { return extBox_; }
   const Rect& getDrcBox() const { return drcBox_; }
   Rect& getDrcBox() { return drcBox_; }
-  const Rect& getGCellBox() const { return gcellBox_; }
   bool isInitDR() const { return (drIter_ == 0); }
   int getDRIter() const { return drIter_; }
   int getMazeEndIter() const { return mazeEndIter_; }
@@ -389,6 +412,8 @@ class FlexDRWorker
   FlexGCWorker* getGCWorker() { return gcWorker_.get(); }
   const FlexDRViaData* getViaData() const { return via_data_; }
   const FlexGridGraph& getGridGraph() const { return gridGraph_; }
+  frUInt4 getWorkerMarkerCost() const { return workerMarkerCost_; }
+  frUInt4 getWorkerDRCCost() const { return workerDRCCost_; }
   // others
   int main(frDesign* design);
   void distributedMain(frDesign* design);
@@ -469,7 +494,6 @@ class FlexDRWorker
   Rect routeBox_;
   Rect extBox_;
   Rect drcBox_;
-  Rect gcellBox_;
   int drIter_ = 0;
   int mazeEndIter_ = 0;
   bool followGuide_ = false;

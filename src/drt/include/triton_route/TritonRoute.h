@@ -183,7 +183,7 @@ class TritonRoute
   void reportDRC(const std::string& file_name,
                  const std::list<std::unique_ptr<frMarker>>& markers,
                  const std::string& marker_name,
-                 odb::Rect drcBox = odb::Rect(0, 0, 0, 0));
+                 odb::Rect drcBox = odb::Rect(0, 0, 0, 0)) const;
   void checkDRC(const char* filename,
                 int x1,
                 int y1,
