@@ -48,6 +48,7 @@ namespace rcx
     using utl::RCX;
     using namespace odb;
 
+    // Find immediate coupling neighbor wires in all directions and levels
     int extMeasureRC::FindCouplingNeighbors(uint dir, uint couplingDist, uint diag_met_limit)
     {
         Ath__wire *t = NULL;
@@ -69,15 +70,6 @@ namespace rcx
 
                 for (Ath__wire *w = track->getNextWire(NULL); w != NULL; w = w->getNext())
                 {
-                    /*
-                    if (w->getXY()==127720 && w->getBase()==2120)
-                        PrintWire(stdout, w, jj);
-                    if (w->getXY()== 31700 && w->getBase()== 28100 && jj==3)
-                        PrintWire(stdout, w, jj);
-                    if (w->getXY()==13400 && w->getBase()==4120)
-                        Print5wires(stdout, w, w->getLevel());
-                    */
-
                     bool found= false;
                     uint start_next_track= tr; // in case that track holds wires with different base
                     for (uint next_tr = start_next_track; !found && next_tr - tr < limitTrackNum && next_tr < netGrid->getTrackCnt(); next_tr++)
@@ -93,12 +85,9 @@ namespace rcx
                         if (w2 != NULL && found)
                         {
                             firstWireTable.set(next_tr, w2);
-                            //if (w!=w2) {
+                          
                                 w->_upNext = w2;
                                 break;
-                            //}
-                            //found= false;
-                            //continue;
                         }
                         else if (w2 != NULL && !found)
                         {
@@ -131,31 +120,6 @@ namespace rcx
             fprintf(stdout, "%d 1st Pass: FindDiagonalNeighbors_vertical_down met_limit=2 trackLimit=0", cnt2);
             PrintAllGrids(dir, OpenPrintFile(dir, "vertical_down.pass1"), 2);
         }
-/*
-        uint cnt1 = FindDiagonalNeighbors(dir, couplingDist, diag_met_limit, 2, 0);
-        fprintf(stdout, "%d 1st Pass: FindDiagonalNeighbors met_limit=2 trackLimit=0", cnt1);
-        PrintAllGrids(dir, OpenPrintFile(dir, "diag.pass1"), 2);
-
-        uint cnt2 = FindDiagonalNeighbors(dir, couplingDist, diag_met_limit, 2, 0);
-        fprintf(stdout, "%d 2nd Pass: FindDiagonalNeighbors met_limit=2 trackLimit=0", cnt2);
-        PrintAllGrids(dir, OpenPrintFile(dir, "diag.pass2"), 2);
-
-        uint cnt3= FindDiagonalNeighbors(dir, couplingDist, diag_met_limit, 2, 1);
-        fprintf(stdout, "%d 3nd Pass: FindDiagonalNeighbors met_limit=2 trackLimit=1", cnt3);
-        PrintAllGrids(dir, OpenPrintFile(dir, "diag.pass3"), 2);
-
-        uint cnt4= FindDiagonalNeighbors_down(dir, couplingDist, diag_met_limit, 2, 0);
-        fprintf(stdout, "%d FindDiagonalNeighbors met_limit=2 trackLimit=0", cnt4);
-        PrintAllGrids(dir, OpenPrintFile(dir, "down.diag.pass1"), 2);
-
-        uint cnt5= FindDiagonalNeighbors_down(dir, couplingDist, diag_met_limit, 2, 0);
-        fprintf(stdout, "%d FindDiagonalNeighbors met_limit=2 trackLimit=0", cnt5);
-        PrintAllGrids(dir, OpenPrintFile(dir, "down.diag.pass2"), 2);
-
-        uint cnt6= FindDiagonalNeighbors_down(dir, couplingDist, diag_met_limit, 2, 3);
-        fprintf(stdout, "%d FindDiagonalNeighbors met_limit=2 trackLimit=3", cnt6);
-        PrintAllGrids(dir, OpenPrintFile(dir, "down.diag.pass3"), 2);
-*/
         return 0;
     }
     Ath__wire *extMeasureRC::SetUpDown(Ath__wire *w2, int next_tr, bool found, Ath__wire *first_wire, Ath__array1D<Ath__wire *> *firstWireTable)
@@ -199,18 +163,6 @@ namespace rcx
                     for (int next_tr = tr - 1; !found && tr - next_tr < limitTrackNum && next_tr >= 0; next_tr--)
                     {
                         Ath__wire *first_wire = GetNextWire(netGrid, next_tr, &firstWireTable);
-                        /*
-                        Ath__wire *w2 = FindOverlap(w, first_wire);
-                        if (w2 != NULL)
-                        {
-                            firstWireTable.set(next_tr, w2);
-                            w->_downNext = w2;
-                            found= true;
-                            break;
-                        }
-                        */
-
-                        // PrintWire(stdout, first_wire, jj);
                         Ath__wire *w2 = FindOverlap_found(w, first_wire, found);
                         if (w2 != NULL && found)
                         {
@@ -228,14 +180,12 @@ namespace rcx
                             firstWireTable.set(next_tr, first_wire);
                             break;
                         }
-
                     }
                 }
             }
         }
         return 0;
     }
-
     void extMeasureRC::ResetFirstWires(Ath__grid *netGrid, Ath__array1D<Ath__wire *> *firstWireTable, int tr1, int trCnt, uint limitTrackNum)
     {
 
@@ -422,42 +372,6 @@ namespace rcx
         }
         return first_wire;
     }
-    /*
-    Ath__wire *extMeasureRC::FindOverlap(Ath__wire *w, Ath__wire *first_wire)
-    {
-        Ath__wire *w2 = first_wire;
-        if (w2 == NULL)
-            return NULL;
-
-        // int xy1 = w->getXY()+w->getWidth();
-        // int len1 = w->getLen()-2*w->getWidth();
-        int xy1 = w->getXY();
-        int len1 = w->getLen();
-
-        for (; w2 != NULL; w2 = w2->getNext())
-        {
-            int xy2 = w2->getXY();
-            int len2 = w2->getLen();
-
-            if (xy1 + len1 <= xy2) // on the left
-                continue;
-
-            if (xy1 >= xy2 + len2) // on the right
-                continue;
-            if (xy1 + len1 <= xy2) // on the left
-                continue;
-
-            if (xy1 >= xy2 && xy1 <= xy2 + len2)
-                return w2;
-            if (xy2 >= xy1 && xy2 <= xy1 + len1)
-                return w2;
-            if (xy1 + len1 >= xy2 && xy1 + len1 <= xy2 + len2)
-                return w2;
-            if (xy2 + len2 >= xy1 && xy2 + len2 <= xy1 + len1)
-                return w2;
-        }
-        return w2;
-    } */
     bool extMeasureRC::IsSegmentOverlap(int x1, int len1, int x2, int len2)
     {
         if (x1 + len1 <= x2) // on the left
@@ -545,14 +459,6 @@ namespace rcx
         fprintf(fp, "\n");
 
     }
-
-    void extMeasureRC::PrintCoupingNeighbors(FILE *fp, uint upCount, uint downCount)
-    {
-        //  bool extMeasureRC::DebugCoords(FILE *fp, int rsegId, int ll[2], int ur[2], const char *msg)
-
-        //  printBox
-    }
-
     Ath__wire *extMeasureRC::GetNextWire(Ath__grid *netGrid, uint tr, Ath__array1D<Ath__wire *> *firstWireTable)
     {
         Ath__track *next_track = netGrid->getTrackPtr(tr);
@@ -1069,12 +975,4 @@ FILE *extMeasureRC::OpenPrintFile(uint dir, const char *name)
         DeleteMarkTable(firstWireTable, levelCnt);
         return cnt;
     }
-    /*
-                 if (!wire->isPower() && nwire && nwire->isPower() &&
-   nwire->_xy < wire->_xy + wire->_len)
-   coupleOptions[19] = 0;  // bp
-   if (wire->isPower() && nwire && !nwire->isPower() &&
-   nwire->_xy < wire->_xy + wire->_len)
-   coupleOptions[19] = 0;  // bp
-   */
 } // namespace

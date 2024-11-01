@@ -201,6 +201,7 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
     updateBoundaries(bounds, dir, ccDist, maxPitch);
     _search->initCouplingCapLoops_v2(dir, ccDist);
 
+    // Add all shapes on a compressed bit-based structure for quick cross overlap calculation
     fill_gs4(dir,
              bounds.ll,
              bounds.ur,
@@ -214,21 +215,22 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
     mrc->_rotatedGs = getRotatedFlag();
     mrc->_pixelTable = _geomSeq;
 
-    uint processWireCnt = addPowerNets(
-        dir, bounds.lo_search, bounds.hi_search, 11);  // pwrtype = 11
-    processWireCnt += addSignalNets(
-        dir, bounds.lo_search, bounds.hi_search, 9);  // sigtype = 9
+    // Add all shapes on a fast track based structure for quick wire coupling detection
+    uint processWireCnt = addPowerNets(dir, bounds.lo_search, bounds.hi_search, 11);  // pwrtype = 11
+    processWireCnt += addSignalNets(dir, bounds.lo_search, bounds.hi_search, 9);  // sigtype = 9
 
     mrc->_search = this->_search;
     // _dbgOption= 1;
     if (_dbgOption > 0)
       mrc->PrintAllGrids(dir, mrc->OpenPrintFile(dir, "wires.org"), 0);
 
+    // Create single lists of wires on every track/level/direction
     mrc->ConnectWires(dir);
 
     if (_dbgOption > 0)
       mrc->PrintAllGrids(dir, mrc->OpenPrintFile(dir, "wires"), 0);
 
+    // Find immediate coupling neighbor wires in all directions and levels
     mrc->FindCouplingNeighbors(dir, 10, 5);
     mrc->CouplingFlow(dir,
                       10,
