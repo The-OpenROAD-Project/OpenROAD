@@ -48,10 +48,9 @@ namespace rcx
     using utl::RCX;
     using namespace odb;
 
-    // Find immediate coupling neighbor wires in all directions and levels
+    // Find immediate coupling neighbor wires in all directions and levels for every Ath__wire
     int extMeasureRC::FindCouplingNeighbors(uint dir, uint couplingDist, uint diag_met_limit)
     {
-        Ath__wire *t = NULL;
         uint limitTrackNum = 10;
         Ath__array1D<Ath__wire *> firstWireTable;
 
@@ -137,7 +136,6 @@ namespace rcx
     }
     int extMeasureRC::FindCouplingNeighbors_down(uint dir, uint couplingDist, uint diag_met_limit)
     {
-        Ath__wire *t = NULL;
         uint limitTrackNum = 10;
         Ath__array1D<Ath__wire *> firstWireTable;
         uint colCnt = _search->getColCnt();
@@ -551,12 +549,7 @@ FILE *extMeasureRC::OpenPrintFile(uint dir, const char *name)
 }
     int extMeasureRC::PrintAllGrids(uint dir, FILE *fp, uint mode)
     {
-        uint cnt = 0;
-        Ath__wire *t = NULL;
-
         uint colCnt = _search->getColCnt();
-        Ath__array1D<Ath__wire *> **firstWireTable = allocMarkTable(colCnt);
-
         for (uint jj = 1; jj < colCnt; jj++) // For all Layers
         {
             const char *vert = dir == 1 ? "H" : "V";
@@ -580,15 +573,13 @@ FILE *extMeasureRC::OpenPrintFile(uint dir, const char *name)
                 }
             }
         }
+        return 0;
     }
     int extMeasureRC::ConnectWires(uint dir)
     {
         uint cnt = 0;
-        Ath__wire *t = NULL;
 
         uint colCnt = _search->getColCnt();
-        Ath__array1D<Ath__wire *> **firstWireTable = allocMarkTable(colCnt);
-
         for (uint jj = 1; jj < colCnt; jj++) // For all Layers
         {
             Ath__grid *netGrid = _search->getGrid(dir, jj);
@@ -598,8 +589,6 @@ FILE *extMeasureRC::OpenPrintFile(uint dir, const char *name)
                 if (track == NULL)
                     continue;
                 
-                // fprintf(stdout, "Track %d M%d %d  -- BEFORE ConnectAllWires\n", tr, jj, track->getBase());
-
                 if (ConnectAllWires(track))
                 {
                     if (_extMain->_dbgOption > 0)
@@ -616,7 +605,6 @@ FILE *extMeasureRC::OpenPrintFile(uint dir, const char *name)
     uint extMeasureRC::ConnectAllWires(Ath__track *track)
     {
         Ath__array1D<Ath__wire *> tbl(128);
-        Ath__wire *prev = NULL;
         uint ii = track->getGrid()->searchLowMarker();
         int first_marker_index = -1;
         for (; ii <= track->getGrid()->searchHiMarker(); ii++)
@@ -676,7 +664,6 @@ FILE *extMeasureRC::OpenPrintFile(uint dir, const char *name)
     int extMeasureRC::FindDiagonalNeighbors(uint dir, uint couplingDist, uint diag_met_limit, uint lookUpLevel, uint limitTrackNum)
     {
         uint cnt = 0;
-        Ath__wire *t = NULL;
 
         uint levelCnt = _search->getColCnt();
         Ath__array1D<Ath__wire *> **firstWireTable = allocMarkTable(levelCnt);
@@ -738,7 +725,6 @@ FILE *extMeasureRC::OpenPrintFile(uint dir, const char *name)
     }
     int extMeasureRC::FindDiagonalNeighbors_vertical_power(uint dir, Ath__wire *w, uint couplingDist, uint diag_met_limit, uint limitTrackNum, Ath__array1D<Ath__wire *> **upWireTable)
     {
-        bool skipCheckNeighbors = true;
         uint cnt = 0;
         uint current_met = w->getLevel();
         for (uint level = 1; level < _search->getColCnt(); level++) // For all Layers
@@ -752,7 +738,6 @@ FILE *extMeasureRC::OpenPrintFile(uint dir, const char *name)
             int start_track = up_track_num - limitTrackNum >= 0 ? up_track_num - limitTrackNum : 0;
             int end_track = up_track_num + limitTrackNum + 1;
 
-            bool found = false;
             for (uint next_tr = start_track; next_tr < end_track && next_tr < grid->getTrackCnt(); next_tr++) // for tracks overlapping wire
             {
                 Ath__track *next_track = grid->getTrackPtr(next_tr);
@@ -770,7 +755,6 @@ FILE *extMeasureRC::OpenPrintFile(uint dir, const char *name)
                     continue;
 
                 upWireTable[level]->add(w2);
-                found = true;
                 cnt++;
                 break;
             }
@@ -911,7 +895,6 @@ FILE *extMeasureRC::OpenPrintFile(uint dir, const char *name)
     int extMeasureRC::FindDiagonalNeighbors_down(uint dir, uint couplingDist, uint diag_met_limit, uint lookUpLevel, uint limitTrackNum)
     {
         uint cnt = 0;
-        Ath__wire *t = NULL;
 
         uint levelCnt = _search->getColCnt();
         Ath__array1D<Ath__wire *> **firstWireTable = allocMarkTable(levelCnt);

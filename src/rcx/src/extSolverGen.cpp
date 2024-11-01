@@ -167,6 +167,7 @@ uint extSolverGen::widthsSpacingsLoop(uint diagMet)
     }
     return cnt;
   }
+  return cnt;
 }
 double extSolverGen::calcResistance(double ro, double w, double s, double len, double top_widthR, double bot_widthR, double thicknessR)
 {
@@ -445,29 +446,12 @@ double extSolverGen::writeWirePatterns(FILE* fp, double height_offset, double &l
     	m->writeWire3D(fp, cnt++, xd[ii], minWidth, len, height_offset, 0.0);
         max_x= xd[ii]+minWidth;
   }
-//  if (n>1)
-//  	m->writeWire3D(fp, cnt++, X0, targetWidth, len, height_offset, 0.0);
-
   if (min_x>x)
         min_x= x;
 
   m->writeWire3D(fp, cnt++, x, targetWidth, len, height_offset, 1.0); // Wire on focus
   double center_diag_x= x;
   max_x= x+targetWidth;
-
-  // ----- DKF 09162024 Single Wire NOT COVERED for now -- needs a flag
-  /*
-  if (n == 1) {
-    if (_diagModel > 0) {
-      double minWidthDiag= _process->getConductor(measure->_overMet)->_min_width;
-      double minSpaceDiag= _process->getConductor(measure->_overMet)->_min_spacing;
-
-      fprintf(fp, "\n");
-      mOver->writeWire3D(fp, cnt, x, minWidthDiag, len, height_offset, 0.0);
-    }
-    return min_x;
-  }
-  */
 
   double xu[10]={0,0,0,0,0,0,0,0,0,0};
   xu[0]= x+targetPitch; // next neighbor spacing

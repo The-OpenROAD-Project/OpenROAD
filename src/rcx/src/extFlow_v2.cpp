@@ -155,8 +155,6 @@ int extMain::initSearch(LayerDimensionData& tables, Rect& extRect, uint &totWire
   if (_dbgOption > 0)
     logger_->info(RCX, 43, "{} wires to be extracted", totWireCnt);
 
-  uint maxPitch = tables.pitchTable[layerCnt - 1];
-
   return layerCnt;
 }
 uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
@@ -167,7 +165,7 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
   // Wire Tables for Diagonal Coupling for v1 modeling
   initDgContextArray();
 
-  extMeasureRC* mrc = new extMeasureRC();
+  extMeasureRC* mrc = new extMeasureRC(logger_);
   initRunEnv(*mrc);
 
   // Setup boundaries and steps
@@ -190,7 +188,7 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
   uint totalWiresExtracted = 0;
   float previous_percent_extracted = 0.0;
                   
-  mrc->_progressTracker = std::make_unique<ExtProgressTracker>(totWireCnt);
+  // TODO mrc->_progressTracker = std::make_unique<ExtProgressTracker>(totWireCnt);
 
   for (int dir = 1; dir >= 0; dir--) {  // dir==1 Horizontal wires
 

@@ -34,7 +34,7 @@
 #define ADS_extMeasureRC_H
 
 #include "extRCap.h"
-#include "extProgressTracker.hpp"
+// TODO #include "extProgressTracker.hpp"
 
 namespace rcx {
 
@@ -306,8 +306,8 @@ class extMeasureRC : public extMeasure
 {
  
     public:
-        std::unique_ptr<ExtProgressTracker> _progressTracker;
-        extMeasureRC() : extMeasure(NULL) {}
+        // TODO std::unique_ptr<ExtProgressTracker> _progressTracker;
+        extMeasureRC(utl::Logger* logger) : extMeasure(logger) {}
 
     //----------------------------------------------------------------------- v2 ----- CLEANUP
     void allocateTables(uint colCnt);

@@ -111,15 +111,9 @@ Ext::write_rcx_model(const char* filename)
     std::list<std::string> corner_list;
     m->getCorners(corner_list);
 
-    extModelGen *g= (extModelGen *) m;
     m->GenExtModel(corner_list, filename, "FasterCap Integration", "v2.0", 0);
-
-
-        return true;
-
+    return true;
 }
-
-
 // ----------------------------- dkf 092024 --------------------------------
 bool 
 Ext::gen_solver_patterns(const char* process_file, const char * process_name, int version, int wire_cnt, int len, int over_dist, int under_dist, const char* w_list, const char* s_list)

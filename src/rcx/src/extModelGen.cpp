@@ -73,15 +73,14 @@ uint extMain::GenExtModel(std::list<std::string> spef_file_list, std::list<std::
                  NULL, -1, 0,
                  false, false, /*testParsing*/ false, false, false /*diff*/, false /*calibrate*/, 0);
 
-        char *out = "1.model";
-        if (cnt == 1)
-            out = "2.model";
-        // extRCModel* extRulesModel = new extRCModel(layerCnt, "TYPICAL", logger_);
         extModelGen *extRulesModel = new extModelGen(layerCnt, "TYPICAL", logger_);
         extRulesModel->setExtMain(this);
 
         uint diagOption = 1;
-        extRulesModel->ReadRCDB(_block, widthCnt, diagOption, out);
+        const char *out = "1.model";
+        if (cnt == 1)
+           out = "2.model";
+        extRulesModel->ReadRCDB(_block, widthCnt, diagOption, (char *) out); // FIXME
         if (outFP==NULL)
             outFP = extRulesModel->InitWriteRules(out_file, corner_list, comment, binary, fileCnt);
 
@@ -95,7 +94,6 @@ void extModelGen::writeRules(FILE *fp, bool binary, uint mIndex, int corner)
 {
     uint m= 0;
     bool writeRes = true;
-    bool writeOpen = true;
 
     extMetRCTable *rcTable0 = getMetRCTable(0); // orig call
 
@@ -144,9 +142,8 @@ void extModelGen::writeRules(FILE *fp, bool binary, uint mIndex, int corner)
         }
         else if (m == 0)
         {
-            // notice(0, "Cannot write <DIAGUNDER> rules for <DensityModel> %d and layer %d\n", m, ii);
             // TODO logger_->info( RCX, 220, "Cannot write <DIAGUNDER> rules for <DensityModel> {} and layer {}", m, ii);
-            fprintf(stdout, "Cannot write <DIAGUNDER> rules for <DensityModel> {} and layer {}", m, ii);
+            fprintf(stdout, "Cannot write <DIAGUNDER> rules for <DensityModel> %d and layer %d", m, ii);
         }
         if ((ii > 1) && (ii < layerCnt - 1))
         {
@@ -327,7 +324,6 @@ FILE *extModelGen::InitWriteRules(const char *name, std::list<std::string> corne
     //	FILE *fp= openFile("./", name, NULL, "w");
     FILE *fp = fopen(name, "w");
 
-    uint cnt = 0;
     fprintf(fp, "Extraction Rules for rcx\n\n");
     fprintf(fp, "Version 1.2\n\n");
     if (diag || diagModel > 0)
@@ -337,7 +333,6 @@ FILE *extModelGen::InitWriteRules(const char *name, std::list<std::string> corne
         else if (diagModel == 2)
             fprintf(fp, "DIAGMODEL TRUE\n\n");
     }
-
     fprintf(fp, "LayerCount %d\n", layerCnt - 1);
 
     fprintf(fp, "\nDensityRate %d ", modelCnt);
@@ -345,7 +340,7 @@ FILE *extModelGen::InitWriteRules(const char *name, std::list<std::string> corne
         fprintf(fp, " %d", kk);
     fprintf(fp, "\n");
 
-    fprintf(fp, "\nCorners %d : ", corner_list.size());
+    fprintf(fp, "\nCorners %ld : ", corner_list.size());
     std::list<std::string>::iterator it;
     for (it = corner_list.begin(); it != corner_list.end(); ++it)
     {
@@ -386,19 +381,13 @@ uint extModelGen::ReadRCDB(dbBlock *block, uint widthCnt, uint diagOption, char 
 
     int prev_sep = 0;
     int prev_width = 0;
-    int n = 0;
-
-    double via_res_1 = 0;
-
     odb::dbSet<dbNet> nets = block->getNets();
     odb::dbSet<dbNet>::iterator itr;
     for (itr = nets.begin(); itr != nets.end(); ++itr)
     {
         dbNet *net = *itr;
         const char *netName = net->getConstName();
-        // if (strcmp(netName, "O4_M2oM0_W200W200_S02400S02400_3")==0)
-        // fprintf(stdout,"%s\n", netName);
-
+    
         uint wireCnt = 0;
         uint viaCnt = 0;
         uint len = 0;
@@ -652,12 +641,10 @@ std::list<std::string> extModelGen::GetCornerNames(const char *filename, double 
     parser.addSeparator("\r");
     parser.openFile((char *)filename);
 
-    bool gotVersion = false;
     while (parser.parseNextLine() > 0)
     {
         if (parser.isKeyword(0, "Version"))
         {
-            gotVersion = true;
             version = parser.getDouble(1);
             if (dbg)
                 fprintf(stdout, "Version %g\n", version);

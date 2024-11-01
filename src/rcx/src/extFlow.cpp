@@ -1143,7 +1143,6 @@ uint extMain::fill_gs4(int dir,
     }
     pcnt += addNetSboxesGs(net, rotatedGs, !dir, gs_dir);
   }
-
   uint scnt = 0;
 
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {

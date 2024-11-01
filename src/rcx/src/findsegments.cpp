@@ -100,7 +100,6 @@ namespace rcx
         if (w2_next == NULL)
             return 0;
 
-        uint d = !dir;
         int dist = GetDistance(w1, w2_next);
         if (dist > maxDist)
         {
