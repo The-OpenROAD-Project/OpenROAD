@@ -2945,6 +2945,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       cur_module = parent_inst->getParent();
       dbModITerm* mod_iterm
           = dbModITerm::create(parent_inst, connection_name_o.c_str());
+      mod_iterm->setChildModBTerm(mod_bterm);
       source_db_mod_net = dbModNet::create(cur_module, connection_name);
       mod_iterm->connect(source_db_mod_net);
       top_net = source_db_mod_net;
@@ -2972,6 +2973,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       cur_module = parent_inst->getParent();
       dbModITerm* mod_iterm
           = dbModITerm::create(parent_inst, connection_name_i.c_str());
+      mod_iterm->setChildModBTerm(mod_bterm);
       if (cur_module != highest_common_module) {
         dest_db_mod_net = dbModNet::create(cur_module, connection_name);
         mod_iterm->connect(dest_db_mod_net);

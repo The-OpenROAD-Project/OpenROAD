@@ -453,13 +453,15 @@ void Verilog2db::makeDbModule(
         dbModule* module = modinst->getMaster();
         modbterm = module->findModBTerm(port_name_str.c_str());
         moditerm->setChildModBTerm(modbterm);
+
         (void) moditerm;
         debugPrint(logger_,
                    utl::ODB,
                    "dbReadVerilog",
                    1,
-                   "Created module iterm {} ",
-                   moditerm->getName());
+                   "Created module iterm {} for bterm {}",
+                   moditerm->getName(),
+                   modbterm->getName());
       }
     }
   }
