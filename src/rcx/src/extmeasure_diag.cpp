@@ -1069,16 +1069,6 @@ FILE *extMeasureRC::OpenPrintFile(uint dir, const char *name)
         DeleteMarkTable(firstWireTable, levelCnt);
         return cnt;
     }
-
-void extMeasureRC::Release(Ath__array1D<extSegment *> *segTable)
-{
-    for (uint ii = 0; ii < segTable->getCnt(); ii++)
-    {
-        extSegment *s = segTable->get(ii);
-        delete s;
-    }
-    segTable->resetCnt();
-}
     /*
                  if (!wire->isPower() && nwire && nwire->isPower() &&
    nwire->_xy < wire->_xy + wire->_len)

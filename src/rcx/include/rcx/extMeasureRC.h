@@ -34,42 +34,310 @@
 #define ADS_extMeasureRC_H
 
 #include "extRCap.h"
+#include "extProgressTracker.hpp"
 
 namespace rcx {
 
 using namespace odb;
 
+// Configuration settings for coupling flow
+
+// Tracks the state during coupling flow execution
+struct CouplingState
+{
+  // Processing counters
+  uint wire_count;         // Total wires processed
+  uint not_ordered_count;  // Count of non-ordered segments
+  uint empty_table_count;  // Count of empty tables
+  uint one_count_table;    // Count of single-entry tables
+
+  // Constructor initializes all counters to 0
+  CouplingState()
+      : wire_count(0),
+        not_ordered_count(0),
+        empty_table_count(0),
+        one_count_table(0)
+  {
+  }
+
+  // Reset all counters
+  void reset()
+  {
+    wire_count = 0;
+    not_ordered_count = 0;
+    empty_table_count = 0;
+    one_count_table = 0;
+  }
+
+  // Update counts when processing tables
+  void updateTableCounts(bool hasEmptyTable, bool hasOneCount)
+  {
+    if (hasEmptyTable)
+      empty_table_count++;
+    if (hasOneCount)
+      one_count_table++;
+  }
+
+  // Print statistics
+  void printStats(FILE* fp, uint dir) const
+  {
+    if (fp) {
+      fprintf(fp,
+              "\nDir=%d  wireCnt=%d  NotOrderedCnt=%d  oneEmptyTable=%d  "
+              "oneCntTable=%d\n",
+              dir,
+              wire_count,
+              not_ordered_count,
+              empty_table_count,
+              one_count_table);
+    }
+  }
+};
+struct CouplingConfig
+{
+  // Metal layer settings
+  const int metal_level_count;  // Number of metal layers
+  const int metal_flag;         // Metal layer control flag
+  const uint limit_track_num;   // Track limit for neighbor search
+
+  // Length settings
+  static constexpr int LENGTH_BOUND
+      = 7000;              // Threshold for length-based calculations
+  const bool length_flag;  // Whether to use length-based calculations
+
+  // Calculation modes
+  bool new_calc_flow;         // Use new calculation flow
+  const bool vertical_cap;    // Enable vertical capacitance calculation
+  const bool diag_cap;        // Enable diagonal capacitance calculation
+  const bool diag_cap_power;  // Enable power net diagonal capacitance
+
+  // Debug settings
+  const bool debug_enabled;      // Main debug flag
+  bool debug_overlaps;           // Enable overlap debugging
+  FILE* debug_fp;                // Debug file pointer
+  const uint progress_interval;  // Progress update interval
+
+  // Constructor to initialize all settings
+  CouplingConfig(extMain* ext_main, uint levelCnt)
+      : metal_level_count(levelCnt),
+        metal_flag(ext_main->_metal_flag_22),
+        limit_track_num(10),
+        length_flag(false),
+        new_calc_flow(true),
+        vertical_cap(true),
+        diag_cap(true),
+        diag_cap_power(true),
+        debug_enabled(ext_main->_dbgOption > 0),
+        debug_overlaps(debug_enabled),
+        debug_fp(nullptr),
+        progress_interval(ext_main->_wire_extracted_progress_count)
+  {
+  }
+  void reset_calc_flow_flag(uint level)
+  {
+    if (metal_flag > 0)
+      new_calc_flow = level <= metal_flag ? true : false;
+  }
+  // Destructor to clean up resources
+  ~CouplingConfig()
+  {
+   // TODO if (debug_fp) {
+   //   fclose(debug_fp);
+    // }
+  }
+
+  // Prevent copying
+  CouplingConfig(const CouplingConfig&) = delete;
+  CouplingConfig& operator=(const CouplingConfig&) = delete;
+
+  // Allow moving
+  CouplingConfig(CouplingConfig&& other) noexcept
+      : metal_level_count(other.metal_level_count),
+        metal_flag(other.metal_flag),
+        limit_track_num(other.limit_track_num),
+        length_flag(other.length_flag),
+        new_calc_flow(other.new_calc_flow),
+        vertical_cap(other.vertical_cap),
+        diag_cap(other.diag_cap),
+        diag_cap_power(other.diag_cap_power),
+        debug_enabled(other.debug_enabled),
+        debug_overlaps(other.debug_overlaps),
+        debug_fp(other.debug_fp),
+        progress_interval(other.progress_interval)
+  {
+    other.debug_fp = nullptr;
+  }
+};
+struct CouplingDimensionParams
+{
+  uint direction;          // Wire direction (horizontal/vertical)
+  uint metal_level;        // Metal layer level
+  uint max_distance;       // Maximum coupling distance to consider
+  uint coupling_distance;  // Target coupling distance
+  uint track_limit;        // Maximum number of tracks to search
+  FILE* dbgFP;
+
+  // Default constructor with typical values
+  CouplingDimensionParams()
+      : direction(0),
+        metal_level(1),
+        max_distance(0),
+        coupling_distance(0),
+        track_limit(10),
+        dbgFP(NULL)
+  {
+  }
+
+  // Full constructor
+  CouplingDimensionParams(uint dir,
+                          uint level,
+                          uint maxDist,
+                          uint coupDist,
+                          uint limitTrack,
+                          FILE* fp)
+      : direction(dir),
+        metal_level(level),
+        max_distance(maxDist),
+        coupling_distance(coupDist),
+        track_limit(limitTrack),
+        dbgFP(fp)
+
+  {
+  }
+
+  // Create params with adjusted track limit
+  CouplingDimensionParams withTrackLimit(uint new_limit) const
+  {
+    return CouplingDimensionParams(direction,
+                                   metal_level,
+                                   max_distance,
+                                   coupling_distance,
+                                   new_limit,
+                                   dbgFP);
+  }
+
+  // Create params for next metal level
+  CouplingDimensionParams nextLevel() const
+  {
+    return CouplingDimensionParams(direction,
+                                   metal_level + 1,
+                                   max_distance,
+                                   coupling_distance,
+                                   track_limit,
+                                   dbgFP);
+  }
+
+  // Create params with new distances
+  CouplingDimensionParams withDistances(uint maxDist, uint coupDist) const
+  {
+    return CouplingDimensionParams(
+        direction, metal_level, maxDist, coupDist, track_limit, dbgFP);
+  }
+
+  // Utility method to calculate if within distance bounds
+  bool isWithinDistance(uint distance) const
+  {
+    return distance <= max_distance;
+  }
+
+  // String representation for debugging
+  std::string toString() const
+  {
+    return "Dir: " + std::to_string(direction)
+           + " Level: " + std::to_string(metal_level)
+           + " MaxDist: " + std::to_string(max_distance)
+           + " CoupDist: " + std::to_string(coupling_distance)
+           + " TrackLimit: " + std::to_string(track_limit);
+  }
+};
+
+class SegmentTables
+{
+ public:
+  Ath__array1D<extSegment*> upTable;
+  Ath__array1D<extSegment*> downTable;
+  Ath__array1D<extSegment*> verticalUpTable;
+  Ath__array1D<extSegment*> verticalDownTable;
+  Ath__array1D<extSegment*> wireSegmentTable;
+  Ath__array1D<extSegment*> aboveTable;
+  Ath__array1D<extSegment*> belowTable;
+  Ath__array1D<extSegment*> whiteTable;
+
+  // Default constructor - tables are auto-initialized
+  SegmentTables() = default;
+
+  // Reset all tables
+  void resetAll()
+  {
+    upTable.resetCnt();
+    downTable.resetCnt();
+    verticalUpTable.resetCnt();
+    verticalDownTable.resetCnt();
+    wireSegmentTable.resetCnt();
+    aboveTable.resetCnt();
+    belowTable.resetCnt();
+    whiteTable.resetCnt();
+  }
+
+  // Release memory for all segments in all tables
+  void releaseAll()
+  {
+    Release(&upTable);
+    Release(&downTable);
+    Release(&verticalUpTable);
+    Release(&verticalDownTable);
+    Release(&wireSegmentTable);
+    Release(&aboveTable);
+    Release(&belowTable);
+    Release(&whiteTable);
+  }
+
+ private:
+  // Helper function to release segments from a single table
+  static void Release(Ath__array1D<extSegment*>* table)
+  {
+    for (uint i = 0; i < table->getCnt(); i++) {
+      delete table->get(i);
+    }
+    table->resetCnt();
+  }
+};
 class extMeasureRC : public extMeasure
 {
+ 
     public:
+        std::unique_ptr<ExtProgressTracker> _progressTracker;
+        extMeasureRC() : extMeasure(NULL) {}
 
-    extMeasureRC() : extMeasure(NULL) {}
+    //----------------------------------------------------------------------- v2 ----- CLEANUP
+    void allocateTables(uint colCnt);
+    void de_allocateTables(uint colCnt);
+    Ath__array1D<Ath__wire *> ** allocTable_wire(uint n);
+    void DeleteTable_wire(Ath__array1D<Ath__wire *> **tbl, uint n);
+    uint GetCoupleSegments(bool lookUp, Ath__wire *w, uint start_track, CouplingDimensionParams& coupleOptions, Ath__array1D<Ath__wire *> **firstWireTable, Ath__array1D<extSegment *> *UpSegTable);
+    uint FindCoupleWiresOnTracks_down(Ath__wire *w, int start_track, CouplingDimensionParams& coupleOptions, Ath__array1D<Ath__wire *> **firstWireTable, Ath__array1D<Ath__wire *> *resTable);
 
-    
+    uint FindCoupleWiresOnTracks_up(Ath__wire *w, uint start_track, CouplingDimensionParams &coupleOptions, Ath__array1D<Ath__wire *> **firstWireTable, Ath__array1D<Ath__wire *> *resTable);
+    uint makeCoupleSegments_up(Ath__wire *w, uint start_track, CouplingDimensionParams &coupleOptions, Ath__array1D<Ath__wire *> **firstWireTable, Ath__array1D<extSegment *> *UpSegTable);
 
+    bool FindDiagonalCoupleSegments(Ath__wire *w, int current_level, int max_level, CouplingDimensionParams& opts, Ath__array1D<Ath__wire *> **firstWireTable);
+    bool VerticalDiagonalCouplingAndCrossOverlap(Ath__wire *w, extSegment *s, int overMet, SegmentTables &segments, CouplingConfig &config);
+    bool CreateCouplingCaps_overUnder(extSegment* s, uint overMet);
+    bool CreateCouplingCaps_over(extSegment* s, uint metalLevelCnt);
+    void  ReleaseSegTables(uint metalLevelCnt);
+    bool GetCouplingSegments(int tr, Ath__wire *w, CouplingConfig &config, CouplingDimensionParams &coupleOptions, SegmentTables &segments, Ath__array1D<Ath__wire *> **firstWireTable);
 
-    //----------------------------------------------------------------------- v2
-        void allocateTables(uint colCnt);
-            void de_allocateTables(uint colCnt);
-            Ath__array1D<Ath__wire *> ** allocTable_wire(uint n);
-                void DeleteTable_wire(Ath__array1D<Ath__wire *> **tbl, uint n);
-
-
-
-     int _ll_tgt[2];
+    int _ll_tgt[2];
     int _ur_tgt[2];
-        int _diagResLen;
+    int _diagResLen;
 
 
-        int _diagResDist;
-        bool _useWeighted= false;
-    // DELETE static int getMetIndexOverUnder(int met, int mUnder, int mOver, int layerCnt, int maxCnt);
-bool DebugDiagCoords(int met, int targetMet, int len1, int diagDist, int ll[2], int ur[2]);
+    int _diagResDist;
+    bool _useWeighted= false;
+    bool DebugDiagCoords(int met, int targetMet, int len1, int diagDist, int ll[2], int ur[2]);
 
-extDistRC* getDiagUnderCC(extMetRCTable* rcModel, uint dist, uint overMet) ;
+    extDistRC* getDiagUnderCC(extMetRCTable* rcModel, uint dist, uint overMet) ;
     uint CalcDiag(uint targetMet, uint diagDist, uint tgWidth, uint len1, extSegment *s, int rsegId);
-
-
 
     FILE *OpenFile(const char *name, const char *perms);
     FILE *OpenPrintFile(uint dir, const char *name);
@@ -268,8 +536,8 @@ uint createContextGrid_dir(char* dirName, const int bboxLL[2], const int bboxUR[
     void FindSegmentsTrack(Ath__wire *w1, int xy1, int len1, Ath__wire *w2_next, uint ii, Ath__array1D<Ath__wire *> *trackTable, bool lookUp, uint dir, int maxDist,  Ath__array1D<extSegment *> *segTable);
     uint FindAllNeigbors_down(Ath__wire *w, int start_track, uint dir, uint level, uint couplingDist, uint limitTrackNum, Ath__array1D<Ath__wire *> **firstWireTable, Ath__array1D<Ath__wire *> *resTable);
     bool PrintInit(FILE *fp, bool dbgOverlaps, Ath__wire *w, int x, int y);
-    void PrintTable_coupleWires(FILE *fp1, Ath__wire *w, bool dbgOverlaps, Ath__array1D<Ath__wire *> *UpTable, const char *msg);
-    void PrintTable_segments(FILE *fp1,  Ath__wire *w, bool lookUp, bool dbgOverlaps, Ath__array1D<extSegment *> *UpSegTable, const char *msg);
+    void PrintTable_coupleWires(FILE *fp1, Ath__wire *w, bool dbgOverlaps, Ath__array1D<Ath__wire *> *UpTable, const char *msg, int level=-1);
+    void PrintTable_segments(FILE *fp1,  Ath__wire *w, bool lookUp, bool dbgOverlaps, Ath__array1D<extSegment *> *UpSegTable, const char *msg, int level=-1);
     bool DebugWire(Ath__wire *w, int x, int y, int netId=-1);
     uint CreateCouplingSEgments(Ath__wire *w, Ath__array1D<extSegment *> *segTable, Ath__array1D<extSegment *> *upTable, Ath__array1D<extSegment *> *downTable, bool dbgOverlaps, FILE *fp);
     void PrintTable_wires(FILE *fp, bool dbgOverlaps, uint colCnt, Ath__array1D<Ath__wire *> **verticalPowerTable, const char *msg);

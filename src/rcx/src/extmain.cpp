@@ -438,12 +438,11 @@ uint extMain::getResCapTable()
 
       _capacitanceTable[jj][n] = 0.0;
 
-/* FIXME
+
       extDistRC* rc = rcModel->getOverFringeRC(&m);
-*/
+      
        _capacitanceTable[jj][n]= _minCapTable[n][jj];
 
-/* FIXME
       if (rc != nullptr) {
         const double r1 = rc->getRes();
         _capacitanceTable[jj][n] = rc->getFringe();
@@ -463,7 +462,6 @@ uint extMain::getResCapTable()
                    r1,
                    resTable[jj]);
       }
-*/
       if (!_lef_res) {
         _resistanceTable[jj][n] = resTable[jj];
       } else {

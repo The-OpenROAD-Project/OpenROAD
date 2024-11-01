@@ -19,7 +19,7 @@ source $test_dir/sky130hs/sky130hs.rc
 get_model_corners -ext_model_file $model_v2
 define_rcx_corners -corner_list "max typ min"
 
-extract_parasitics -ext_model_file $model_v2 -max_res 0 -coupling_threshold 0.001 -version 2.0 -skip_over_cell
+extract_parasitics -ext_model_file $model_v2 -max_res 0 -coupling_threshold 0.001 -version 2.0 -skip_over_cell -dbg 2
 # different test: extract_parasitics -ext_model_file $model_v2 -max_res 0 -coupling_threshold 0.1 -version 2.0
 # extract_parasitics -ext_model_file $model_v2 -max_res 0 -version 2.0
 

@@ -46,32 +46,6 @@
 namespace rcx
 {
     using utl::RCX;
-/*
-    using odb::dbBlock;
-    using odb::dbBox;
-    using odb::dbBTerm;
-    using odb::dbCapNode;
-    using odb::dbCCSeg;
-    using odb::dbChip;
-    using odb::dbDatabase;
-    using odb::dbNet;
-    using odb::dbRSeg;
-    using odb::dbRtTree;
-    using odb::dbSet;
-    using odb::dbShape;
-    using odb::dbSigType;
-    using odb::dbTech;
-    using odb::dbTechLayer;
-    using odb::dbTechLayerDir;
-    using odb::dbTechLayerType;
-    using odb::dbWire;
-    using odb::dbWirePath;
-    using odb::dbWirePathItr;
-    using odb::dbWirePathShape;
-    using odb::gs;
-    using odb::Rect;
-    using odb::SEQ;
-	*/
 
 void extMeasureRC::VerticalCap(Ath__array1D<extSegment *> *segTable, bool look_up)
 {
@@ -146,52 +120,6 @@ bool extMeasureRC::DiagCap(FILE *fp, Ath__wire *w, bool lookUp, uint maxDist, ui
     }
     return true;
 }
-/*
-bool extMeasureRC::DiagCap(FILE *fp, Ath__wire *w, extSegment *s, bool lookUp, uint maxDist, uint trackLimitCnt, uint level, Ath__array1D<extSegment *> **segTable, bool PowerOnly)
-{
-    bool no_dist_limit= false;
-    if (PowerOnly)
-        no_dist_limit= true;
-
-    uint met= w->getLevel();
-    _width= w->getWidth();
-    uint rsegId1= w->getRsegId();
-
-
-        Ath__wire *w2= lookUp ? s->_up : s->_down;
-        if (w2==NULL)
-            return;
-        if (PowerOnly && !w2->isPower())
-            continue;
-        int dist= lookUp ? s->_dist : s->_dist_down;
-
-        uint tgtMet= w2->getLevel();
-
-        if (!no_dist_limit)
-        {
-            if (tgtMet - met < 2)
-            {
-                if (dist > 2 * pitch)
-                    return;
-            }
-            else
-            {
-                if (dist > pitch)
-                    return;
-            }
-        }
-        uint tgtWidth= w2->getWidth();
-        uint rsegId2= w2->getRsegId();
-
-        if (DiagCouplingCap(met, tgtMet, rsegId2, rsegId1, s->_len, _width, tgtWidth, dist))
-        {
-            //print
-        }
-    
-    return true;
-}
-*/
-
 dbRSeg* extMeasureRC::GetRseg(int id)
 {
       dbRSeg* rseg1 = id > 0 ? dbRSeg::getRSeg(_block, id) : NULL;
@@ -215,12 +143,6 @@ bool extMeasureRC::VerticalCap(uint met, uint tgtMet, int rsegId1, uint rsegId2,
       return false;
 
     capTable[ii] = len * rc->_fringe;
-    /*
-    if (rseg2 != NULL)
-      _extMain->updateTotalCap(rseg2, 0.0, 0.0, frCap, ii);
-    if (rseg1 != NULL)
-      _extMain->updateTotalCap(rseg1, 0.0, 0.0, 0.5 * frCap, ii);
-    */
   }
   createCap(rsegId1, rsegId2, capTable);
   return true;

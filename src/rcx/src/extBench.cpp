@@ -549,10 +549,11 @@ uint extMain::benchWires(extMainOptions* opt)
     m->linesUnderBench(opt);
     m->linesDiagUnderBench(opt);
 
-       int LL[2]= {opt->_ur[0], 0};
+    /* TODO for v1 vs. v12 patterns
+    int LL[2]= {opt->_ur[0], 0};
     int UR[2]= {opt->_ur[0], 0};
-    
-  //  m->ViaRulePat(opt, opt->_len, LL, UR, false, false, opt->_overDist); // over
+     m->ViaRulePat(opt, opt->_len, LL, UR, false, false, opt->_overDist); // over
+    */
     
   } else {
     if (opt->_over) {

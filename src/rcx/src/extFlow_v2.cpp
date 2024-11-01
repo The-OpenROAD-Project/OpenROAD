@@ -101,126 +101,151 @@ void extMain::initRunEnv(extMeasureRC &m)
       m._debugFP = fopen(bufName, "w");
     }
 }
-
-uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
+void extMain::initializeLayerTables(LayerDimensionData& tables)
 {
-          extMeasureRC* mrc= new extMeasureRC();
-          initRunEnv(*mrc);
-
-// ----------------------------------------------------  
-  uint pitchTable[32];
-  uint widthTable[32];
   for (uint ii = 0; ii < 32; ii++) {
-    pitchTable[ii] = 0;
-    widthTable[ii] = 0;
+    tables.pitchTable[ii] = 0;
+    tables.widthTable[ii] = 0;
   }
-  uint dirTable[32];
-  int baseX[32];
-  int baseY[32];
-  int layerCnt = initSearchForNets(baseX, baseY, pitchTable, widthTable, dirTable, extRect, false);
+}
+void extMain::setupBoundaries(BoundaryData& bounds, const Rect& extRect) {
+        bounds.ll[0] = extRect.xMin();
+        bounds.ll[1] = extRect.yMin();
+        bounds.ur[0] = extRect.xMax();
+        bounds.ur[1] = extRect.yMax();
+}
+void extMain::updateBoundaries(BoundaryData& bounds,
+                               uint dir,
+                               uint ccDist,
+                               uint maxPitch)
+{
+  bounds.lo_gs[!dir] = bounds.ll[!dir];
+  bounds.hi_gs[!dir] = bounds.ur[!dir];
+  bounds.lo_search[!dir] = bounds.ll[!dir];
+  bounds.hi_search[!dir] = bounds.ur[!dir];
+
+  int hiXY = bounds.ur[dir] + 5 * ccDist * maxPitch;
+  int gs_limit = bounds.ll[dir];
+
+  bounds.lo_gs[dir] = gs_limit;
+  bounds.hi_gs[dir] = hiXY;
+
+  bounds.hi_search[dir] = hiXY;
+  bounds.lo_search[dir] = bounds.ll[dir];
+}
+
+int extMain::initSearch(LayerDimensionData& tables, Rect& extRect, uint &totWireCnt)
+{
+  int layerCnt = initSearchForNets(tables.baseX,
+                                   tables.baseY,
+                                   tables.pitchTable,
+                                   tables.widthTable,
+                                   tables.dirTable,
+                                   extRect,
+                                   false);
+
   if (layerCnt <= _currentModel->getLayerCnt())
-    layerCnt= _currentModel->getLayerCnt();
-
-setExtControl_v2( mrc->_seqPool);
-
-  _seqPool = mrc->_seqPool;
+    layerCnt = _currentModel->getLayerCnt();
 
   uint maxWidth = 0;
   uint totPowerWireCnt = powerWireCounter(maxWidth);
-  uint totWireCnt = signalWireCounter(maxWidth);
+  totWireCnt = signalWireCounter(maxWidth);
   totWireCnt += totPowerWireCnt;
 
   if (_dbgOption > 0)
     logger_->info(RCX, 43, "{} wires to be extracted", totWireCnt);
 
- uint maxPitch = pitchTable[layerCnt - 1];
+  uint maxPitch = tables.pitchTable[layerCnt - 1];
 
-  uint minRes[2] = {widthTable[1], pitchTable[1]};
-
-// ----- extraction boundaries
-    int ll[2]= {extRect.xMin(), extRect.yMin()};
-  int ur[2]= { extRect.xMax(), extRect.yMax()};
-
-  const uint trackStep = 1000;
-  uint step_nm[2]= {trackStep * minRes[1], trackStep * minRes[1]};
-  if (maxWidth > ccDist * maxPitch) {
-    step_nm[1] = ur[1] - ll[1];
-    step_nm[0] = ur[0] - ll[0];
+  return layerCnt;
+}
+uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
+{
+  if (_ccContextDepth) {
+    initContextArray();
   }
+  // Wire Tables for Diagonal Coupling for v1 modeling
+  initDgContextArray();
 
-  uint totalWiresExtracted = 0;
-  float previous_percent_extracted = 0.0;
+  extMeasureRC* mrc = new extMeasureRC();
+  initRunEnv(*mrc);
+
+  // Setup boundaries and steps
+  BoundaryData bounds;
+  setupBoundaries(bounds, extRect);
+
+  // Get Width and Pitch for all  layers
+  LayerDimensionData tables;
+  initializeLayerTables(tables);
+
+  uint totWireCnt;
+  int layerCnt = initSearch(tables, extRect, totWireCnt);
   _search->_no_sub_tracks = _v2;
   _search->_v2 = _v2;
 
-  int lo_gs[2];
-  int hi_gs[2];
-  int lo_sdb[2];
-  int hi_sdb[2];
+  setExtControl_v2(mrc->_seqPool);
+  _seqPool = mrc->_seqPool;
 
-  for (int dir = 1; dir >= 0; dir--) { // dir==1 Horizontal wires
   
+  uint totalWiresExtracted = 0;
+  float previous_percent_extracted = 0.0;
+                  
+  mrc->_progressTracker = std::make_unique<ExtProgressTracker>(totWireCnt);
+
+  for (int dir = 1; dir >= 0; dir--) {  // dir==1 Horizontal wires
+
     if (dir == 0) {
       enableRotatedFlag();
     }
-    lo_gs[!dir] = ll[!dir];
-    hi_gs[!dir] = ur[!dir];
-    lo_sdb[!dir] = ll[!dir];
-    hi_sdb[!dir] = ur[!dir];
-
-    int gs_limit = ll[dir];
+    uint maxPitch = tables.pitchTable[layerCnt - 1];
+    updateBoundaries(bounds, dir, ccDist, maxPitch);
     _search->initCouplingCapLoops_v2(dir, ccDist);
 
-    int hiXY = std::min( ll[dir] + (int) step_nm[dir], ur[dir]);
-    for (; hiXY <= ur[dir]; hiXY += step_nm[dir])  // dkf  10292024 -- for loop not required unless very large design
-    {
-        hiXY = ur[dir] + step_nm[dir] + 5 * ccDist * maxPitch;
+    fill_gs4(dir,
+             bounds.ll,
+             bounds.ur,
+             bounds.lo_gs,
+             bounds.hi_gs,
+             layerCnt,
+             tables.dirTable,
+             tables.pitchTable,
+             tables.widthTable);
 
-      lo_gs[dir] = gs_limit;
-      hi_gs[dir] = hiXY;
+    mrc->_rotatedGs = getRotatedFlag();
+    mrc->_pixelTable = _geomSeq;
 
-      fill_gs4(dir,
-               ll,
-               ur,
-               lo_gs,
-               hi_gs,
-               layerCnt,
-               dirTable,
-               pitchTable,
-               widthTable);
+    uint processWireCnt = addPowerNets(
+        dir, bounds.lo_search, bounds.hi_search, 11);  // pwrtype = 11
+    processWireCnt += addSignalNets(
+        dir, bounds.lo_search, bounds.hi_search, 9);  // sigtype = 9
 
-      mrc->_rotatedGs = getRotatedFlag();
-      mrc->_pixelTable= _geomSeq;
+    mrc->_search = this->_search;
+    // _dbgOption= 1;
+    if (_dbgOption > 0)
+      mrc->PrintAllGrids(dir, mrc->OpenPrintFile(dir, "wires.org"), 0);
 
-      uint processWireCnt = 0;
-      uint sigtype = 9;
-      uint pwrtype = 11;
-      hi_sdb[dir] = hiXY;
-      lo_sdb[dir] = ll[dir] - step_nm[dir];
-      processWireCnt += addPowerNets(dir, lo_sdb, hi_sdb, pwrtype);
-      processWireCnt += addSignalNets(dir, lo_sdb, hi_sdb, sigtype);
+    mrc->ConnectWires(dir);
 
-      mrc->_search = this->_search;
-      // _dbgOption= 1;
-      if (_dbgOption > 0)
-        mrc->PrintAllGrids(dir, mrc->OpenPrintFile(dir, "wires.org"), 0);
+    if (_dbgOption > 0)
+      mrc->PrintAllGrids(dir, mrc->OpenPrintFile(dir, "wires"), 0);
 
-      mrc->ConnectWires(dir);
-
-      if (_dbgOption > 0)
-        mrc->PrintAllGrids(dir, mrc->OpenPrintFile(dir, "wires"), 0);
-
-      mrc->FindCouplingNeighbors(dir, 10, 5);
-      mrc->CouplingFlow(dir,
-                        10,
-                        5,
-                        totWireCnt,
-                        totalWiresExtracted,
-                        previous_percent_extracted); 
-      float tmpCnt = -10;
-      mrc->printProgress(totalWiresExtracted, totWireCnt, tmpCnt);
-    }
+    mrc->FindCouplingNeighbors(dir, 10, 5);
+    mrc->CouplingFlow(dir,
+                      10,
+                      5,
+                      totWireCnt,
+                      totalWiresExtracted,
+                      previous_percent_extracted);
+    float tmpCnt = -10;
+    mrc->printProgress(totalWiresExtracted, totWireCnt, tmpCnt);
   }
+  if (_geomSeq != NULL) {
+    delete _geomSeq;
+    _geomSeq = NULL;
+  }
+  // delete wire tables  used during diagonal coupling in v1 modeling
+  removeDgContextArray();
+
   return 0;
 }
 
@@ -560,7 +585,6 @@ bool extRCModel::readRules(char* name, bool bin, bool over, bool under,
 
     spotModelsInRules(name, bin, res_over, Over, Under, OverUnder, diag_under, over0, over1, under0, under1, overunder0, overunder1, via_res);
 
-bool OUREVERSEORDER = false;
   diag = false;
   uint cnt = 0;
   _ruleFileName = strdup(name);
@@ -570,9 +594,7 @@ bool OUREVERSEORDER = false;
   parser.openFile(name);
   while (parser.parseNextLine() > 0) {
     if (parser.isKeyword(0, "OUREVERSEORDER")) {
-      if (strcmp(parser.get(1), "ON") == 0) {
-        OUREVERSEORDER = true;
-      }
+     
     }
     if (parser.isKeyword(0, "DIAGMODEL")) {
       if (strcmp(parser.get(1), "ON") == 0) {
@@ -766,7 +788,6 @@ bool extRCModel::readRules_v2(char* name, bool bin, bool over, bool under,
 
     spotModelsInRules(name, bin, res_over, Over, Under, OverUnder, diag_under, over0, over1, under0, under1, overunder0, overunder1, via_res);
 
-  // TODO: bool OUREVERSEORDER = false;
   diag = false;
   uint cnt = 0;
   _ruleFileName = strdup(name);
@@ -776,11 +797,6 @@ bool extRCModel::readRules_v2(char* name, bool bin, bool over, bool under,
   parser.openFile(name);
   while (parser.parseNextLine() > 0) {
     if (parser.isKeyword(0, "OUREVERSEORDER")) {
-        /* TODO:
-      if (strcmp(parser.get(1), "ON") == 0) {
-        OUREVERSEORDER = true;
-      }
-      */
     }
     if (parser.isKeyword(0, "DIAGMODEL")) {
       if (strcmp(parser.get(1), "ON") == 0) {
@@ -803,15 +819,18 @@ bool extRCModel::readRules_v2(char* name, bool bin, bool over, bool under,
     }
     if (parser.isKeyword(0, "DensityRate")) {
       uint rulesFileModelCnt = parser.getInt(1);
+      // _modelTable holds process corners
       createModelTable(rulesFileModelCnt, _layerCnt);
       continue;
     }
+    // Density Model is equivalent to Process Corner
     if (parser.isKeyword(0, "DensityModel")) {
       uint m = parser.getInt(1);
       uint modelIndex = m;
       bool skipModel = false;
       bool res_skipModel = false;
 
+      // Loop to read all sections of the Model file per Metal Level
       for (uint ii = 1; ii < _layerCnt; ii++) {
         if (res_over) {
           cnt += readRules_v2(&parser, modelIndex, ii, "RESOVER", "WIDTH", over, false, bin, false, res_skipModel, dbFactor);
@@ -840,6 +859,7 @@ bool extRCModel::readRules_v2(char* name, bool bin, bool over, bool under,
             cnt += readRules_v2(&parser, modelIndex, ii, "OVERUNDER1", "WIDTH", overUnder, overUnder, bin, false, skipModel, dbFactor);
         }
       }
+      // v1 flow can only handle single process corners and NO Via modeling
       if (!_v2_flow) // v1 flow can only handle one corner
         break;
 
@@ -969,14 +989,14 @@ uint extDistWidthRCTable::readRulesUnder(Ath__parser* parser, uint widthCnt, boo
 }
 uint extRCModel::calcMinMaxRC(dbTech *tech, const char *out_file)
 {
-    odb::dbSet<odb::dbTechLayer> layers = tech->getLayers();
-    odb::dbSet<odb::dbTechLayer>::iterator itr;
+    dbSet<dbTechLayer> layers = tech->getLayers();
+    dbSet<dbTechLayer>::iterator itr;
 
     FILE *fp= openFile(out_file, "", "", "w");
     uint cnt = 0;
     for (itr = layers.begin(); itr != layers.end(); ++itr)
     {
-        odb::dbTechLayer *layer = *itr;
+        dbTechLayer *layer = *itr;
 
         if (layer->getRoutingLevel() == 0)
             continue;
@@ -1075,17 +1095,17 @@ uint extMain::addInstsGs(Ath__array1D<uint>* instTable,
   }
   return cnt;
 }
-uint extMain::addItermShapesOnPlanes(odb::dbInst* inst, bool rotatedFlag,
+uint extMain::addItermShapesOnPlanes(dbInst* inst, bool rotatedFlag,
                                      bool swap_coords) {
   uint cnt = 0;
-  odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
-  odb::dbSet<odb::dbITerm>::iterator iterm_itr;
+  dbSet<dbITerm> iterms = inst->getITerms();
+  dbSet<dbITerm>::iterator iterm_itr;
 
   for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
-    odb::dbITerm* iterm = *iterm_itr;
+    dbITerm* iterm = *iterm_itr;
 
-    odb::dbShape s;
-    odb::dbITermShapeItr term_shapes;
+    dbShape s;
+    dbITermShapeItr term_shapes;
     for (term_shapes.begin(iterm); term_shapes.next(s);) {
       if (s.isVia())
         continue;
@@ -1104,7 +1124,7 @@ uint extMain::addItermShapesOnPlanes(odb::dbInst* inst, bool rotatedFlag,
   }
   return cnt;
 }
-uint extMain::addShapeOnGs(odb::dbShape* s, bool swap_coords) {
+uint extMain::addShapeOnGs(dbShape* s, bool swap_coords) {
   int level = s->getTechLayer()->getRoutingLevel();
 
   if (!swap_coords)  // horizontal
@@ -1112,14 +1132,13 @@ uint extMain::addShapeOnGs(odb::dbShape* s, bool swap_coords) {
   else
     return _geomSeq->box(s->yMin(), s->xMin(), s->yMax(), s->xMax(), level);
 }
-uint extMain::addObsShapesOnPlanes(odb::dbInst* inst, bool rotatedFlag, bool swap_coords) 
+uint extMain::addObsShapesOnPlanes(dbInst* inst, bool rotatedFlag, bool swap_coords) 
 {
   uint cnt = 0;
-  const char *name= inst->getConstName();
-  odb::dbInstShapeItr obs_shapes;
+  dbInstShapeItr obs_shapes;
 
-  odb::dbShape s;
-  for (obs_shapes.begin(inst, odb::dbInstShapeItr::OBSTRUCTIONS);
+  dbShape s;
+  for (obs_shapes.begin(inst, dbInstShapeItr::OBSTRUCTIONS);
        obs_shapes.next(s);) {
     if (s.isVia())
       continue;

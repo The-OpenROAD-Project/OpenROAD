@@ -2189,6 +2189,7 @@ void extRCModel::setProcess(extProcess* p)
   _process = p;
 }
 
+// extMetRCTable holds one RC model per process corner
 void extRCModel::createModelTable(uint n, uint layerCnt)
 {
   _layerCnt = layerCnt;

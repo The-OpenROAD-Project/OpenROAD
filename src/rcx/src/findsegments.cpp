@@ -95,28 +95,6 @@ namespace rcx
 
         return false;
     }
-    
-    /*
-    uint extMeasureRC::FindSegments(bool lookUp, uint dir, int maxDist, Ath__wire *w1, int xy1, int len1, Ath__wire *w2, Ath__array1D<extSegment *> *segTable)
-    {
-
-        for (Ath__wire *up= w1->_upNext; up!=NULL; up= up->_upNext)
-        {
-            int dist = GetDistance(w1, w2);
-            if (dist > maxDist)
-                break;
-
-            for (Ath__wire *w2= up; w2!=NULL; w2= w2->getNext())
-            {
-                if w2 fan on left break
-                FindSegmentsonRow(w1, w2);
-                if all covered on right;
-                break;
-            }
-            for all white call FindSegments with w1->_upNext;
-        }
-        */
-  
     uint extMeasureRC::FindSegments(bool lookUp, uint dir, int maxDist, Ath__wire *w1, int xy1, int len1, Ath__wire *w2_next, Ath__array1D<extSegment *> *segTable)
     {
         if (w2_next == NULL)
@@ -216,83 +194,5 @@ namespace rcx
         }
         return cnt;
     }
-     uint extMeasureRC::FindSegments_org(bool lookUp, uint dir, int maxDist, Ath__wire *w1, int xy1, int len1, Ath__wire *w2, Ath__array1D<extSegment *> *segTable)
-    {
-        if (w2 == NULL)
-            return 0;
-
-        uint d = !dir;
-        int dist = GetDistance(w1, w2);
-        if (dist > maxDist)
-        {
-            extSegment *s = new extSegment(dir, w1, xy1, len1, NULL, NULL);
-            segTable->add(s);
-            return 0;
-        }
-        uint cnt = 0;
-        int xy2 = w2->getXY() + w2->getLen();
-        int dx2;
-        int dx1 = GetDx1Dx2(xy1, len1, w2, dx2);
-
-        if (dx1 < 0 && xy2 < xy1) // no overlap - on left side
-            return FindSegments(lookUp, dir, maxDist, w1, xy1, len1, w2->getNext(), segTable);
-        else if (xy1 + len1 < w2->getXY()) // no overlap and w2 too far on the right
-            return 0;
-
-        if (dx1 <= 0)
-        { // Covered Left
-            if (dx2 >= 0)
-            { // covered Right
-                extSegment *s = new extSegment(dir, w1, xy1, len1, NULL, NULL);
-                segTable->add(s);
-                s->setUpDown(lookUp, w2);
-            }
-            else
-            { // not covered right
-                extSegment *s = new extSegment(dir, w1, xy1, xy2 - xy1, NULL, NULL);
-                s->setUpDown(lookUp, w2);
-                segTable->add(s);
-
-                Ath__wire *w2_next = w2->getNext();
-                if (w2_next != NULL && w2_next->getXY() <= w1->getXY() + w1->getLen())
-                { // overlap
-                    FindSegments(lookUp, dir, maxDist, w1, xy2, -dx2, w2_next, segTable);
-                }
-                else
-                {
-                    w2_next = lookUp ? w2->_upNext : w2->_downNext;
-                    FindSegments(lookUp, dir, maxDist, w1, xy2, -dx2, w2_next, segTable);
-                }
-            }
-        }
-        else
-        { // Open Left
-            Ath__wire *w2_next = lookUp ? w2->_upNext : w2->_downNext;
-            FindSegments(lookUp, dir, maxDist, w1, xy1, dx1, w2_next, segTable); // white space
-            if (dx2 >= 0)
-            { // covered Right
-                extSegment *s = new extSegment(dir, w1, w2->getXY(), xy1 + len1 - w2->getXY(), NULL, NULL);
-                segTable->add(s);
-                s->setUpDown(lookUp, w2);
-            }
-            else
-            { // not covered right
-                extSegment *s = new extSegment(dir, w1, w2->getXY(), w2->getLen(), NULL, NULL);
-                segTable->add(s);
-                s->setUpDown(lookUp, w2);
-
-                Ath__wire *w2_next = w2->getNext();
-                if (w2_next != NULL && w2_next->getXY() <= w1->getXY() + w1->getLen())
-                { // overlap
-                    FindSegments(lookUp, dir, maxDist, w1, xy2, -dx2, w2_next, segTable);
-                }
-                else
-                {
-                    w2_next = lookUp ? w2->_upNext : w2->_downNext;
-                    FindSegments(lookUp, dir, maxDist, w1, xy2, -dx2, w2_next, segTable);
-                }
-            }
-        }
-        return cnt;
-    }
+    
 }

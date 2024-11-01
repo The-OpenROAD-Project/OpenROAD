@@ -50,6 +50,7 @@ namespace rcx
 
     using namespace odb;
 
+    struct CouplingConfig;
 
     bool extMeasureRC::printProgress(uint totalWiresExtracted, uint totWireCnt, float &previous_percent_extracted)
     {
@@ -57,7 +58,7 @@ namespace rcx
 
         if ((totWireCnt > 0) && (totalWiresExtracted > 0) && (percent_extracted - previous_percent_extracted >= 5.0))
         {
-            fprintf(stdout, "%3d%c completion -- %6d wires have been extracted\n",
+            fprintf(stdout, "%3d%c completion -- %6d wires have been extracted ----- \n",
                     (int)percent_extracted, '%', totalWiresExtracted);
             previous_percent_extracted = percent_extracted;
             return true;
@@ -90,327 +91,434 @@ namespace rcx
         DeleteTable(_whiteSegTable, colCnt);
         DeleteTable_wire(_verticalPowerTable, colCnt);
     }
-    int extMeasureRC::CouplingFlow(uint dir, uint couplingDist, uint diag_met_limit, int totWireCnt, uint &totalWiresExtracted, float &previous_percent_extracted)
+
+
+
+// ----------------------------------------------------------- cleanup
+
+    uint extMeasureRC::GetCoupleSegments(
+        bool lookUp,
+        Ath__wire* w,
+        uint start_track,
+        CouplingDimensionParams& opt,
+        Ath__array1D<Ath__wire*>** firstWireTable,
+        Ath__array1D<extSegment*>* segmentTable)
     {
-        bool DBG= _extMain->_dbgOption>0;
-        uint progress_interval= _extMain->_wire_extracted_progress_count;
+      Ath__array1D<Ath__wire*> wireTable;
+      int level = opt.metal_level;
 
-        bool new_calc_flow= true;
-        int metal_flag= _extMain->_metal_flag_22;
+      // in case that there are wires at distance on the same track; looking  at
+      // increasing track number vertical  or horizontal
+      if (lookUp && opt.metal_level == w->getLevel()) {
+        Ath__wire* w2 = FindOverlapWire(w, w->getNext());
+        if (w2 != NULL)
+          wireTable.add(w2);
+      }
 
-        bool length_flag= false; // dkf 061124 skip cap calculation when new_calc_flow= true if length of wire less than LENGTH_BOUND
-        int LENGTH_BOUND= 7000;
+      if (lookUp)
+        FindCoupleWiresOnTracks_up(w, start_track, opt,  firstWireTable,&wireTable);  // looking on increasing track numbers
+      else
+        FindCoupleWiresOnTracks_down(w,  start_track, opt, firstWireTable, &wireTable);  // looking on decreasing track numbers
 
-        bool verticalCap= true;
-        bool diagCapFlag= true;
-        bool diagCapPower= true;
+      const char* msg = lookUp ? "Up Coupling Wires:" : "Down Coupling Wires:";
+      PrintTable_coupleWires(opt.dbgFP, w, true, &wireTable, msg, level);
 
-        uint notOrderCnt = 0;
-        uint oneEmptyTable = 0;
-        uint oneCntTable = 0;
-        uint wireCnt = 0;
+      Release(segmentTable);
+      FindSegmentsTrack(w, w->getXY(), w->getLen(), NULL, 0, &wireTable, lookUp,
+                        opt.direction,
+                        opt.max_distance,
+                        segmentTable);
 
-        bool dbgOverlaps = false;
-        _segFP=  NULL;
-        if (DBG)
+      msg = lookUp ? "Up Coupling Segments:" : "Down Coupling Segments:";
+      PrintTable_segments(opt.dbgFP, w, lookUp, true, segmentTable, msg, level);
+    }
+uint extMeasureRC::FindCoupleWiresOnTracks_down(Ath__wire *w, int start_track, CouplingDimensionParams& opt, Ath__array1D<Ath__wire *> **firstWireTable, Ath__array1D<Ath__wire *> *resTable)
+    {
+        resTable->resetCnt();
+        if (start_track<0)
+            return 0;
+
+        uint level= opt.metal_level;
+        Ath__grid *upGrid = _search->getGrid(opt.direction, level);
+        // int up_track_num = upGrid->getTrackNum1(w->getBase());
+        int end_track = start_track - opt.track_limit - 1;
+        if (end_track<0)
+            end_track= 0;
+
+        for (int next_tr = start_track; next_tr > end_track; next_tr--) // for tracks overlapping wire
         {
-            dbgOverlaps = true;
-            _segFP = OpenPrintFile(dir, "Segments");
-        }
-        FILE *fp = _segFP;
+            Ath__wire *first = GetNextWire(upGrid, next_tr, firstWireTable[level]);
+            Ath__wire *w2 = FindOverlapWire(w, first);
+            if (w2 == NULL) 
+                continue;
 
-        Ath__wire *t = NULL;
-        uint limitTrackNum = 10;
-        Ath__array1D<extSegment *> upTable;
-        Ath__array1D<extSegment *> downTable;
-        Ath__array1D<extSegment *> verticalUpTable;
-        Ath__array1D<extSegment *> verticalDownTable;
-        Ath__array1D<extSegment *> segTable;
-        Ath__array1D<extSegment *> aboveTable;
-        Ath__array1D<extSegment *> belowTable;
-        Ath__array1D<extSegment *> whiteTable;
+            firstWireTable[level]->set(next_tr, w2);
 
-        uint colCnt = _search->getColCnt();
-
-        Ath__array1D<Ath__wire *> UpTable;
-        Ath__array1D<Ath__wire *> **firstWireTable = allocMarkTable(colCnt);
-
-       allocateTables(colCnt);
-
-        bool lookUp= true;
-        _dir= dir;
-
-        for (int level = 1; level < colCnt; level++)
-        {
-            if (metal_flag>0)
-                new_calc_flow= level <= metal_flag ? true : false;
-
-          //  if (DBG)
-          //      notice(0, "level= %d new_calc_flow=%d\n", level, new_calc_flow);
-
-            _met = level;
-            Ath__grid *netGrid = _search->getGrid(dir, level);
-            upTable.resetCnt();
-
-            uint maxDist = 10 * netGrid->_pitch;
-            for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)
+            bool w2_next_covered= false;
+            Ath__wire *w2_next = w2->getNext();
+            if (w2_next != NULL) // TODO: because more 2 wires at different distance can reside in same track
             {
-                Ath__track *track = netGrid->getTrackPtr(tr);
-                if (track == NULL)
-                    continue;
-                
-                // ResetFirstWires(level, level+1, dir, firstWireTable);
-                ResetFirstWires(level, colCnt, dir, firstWireTable);
-                for (Ath__wire *w = track->getNextWire(NULL); w != NULL; w = w->getNext())
+                if (OverlapOnly(w->getXY(), w->getLen(), w2_next->getXY(), w2_next->getLen()))
                 {
-                    wireCnt++;
-                    if (w->isPower() || w->getRsegId()==0)
-                        continue;
-
-                    if (DBG)
-                        Print5wires(_segFP, w, w->getLevel());
-
-                    // DebugWire(w, 0, 0, 17091);
-
-                    // wireCnt++;
-                    totalWiresExtracted ++;
-                    if (wireCnt%progress_interval==0) {
-                        // if (DBG)
-                        //    notice(0, "\t%d wires have been extracted\n", wireCnt);
-                        printProgress(totalWiresExtracted, totWireCnt, previous_percent_extracted);
-                    }
-
-                    // PrintInit(fp, dbgOverlaps, w, 639320, 1720);
-                    // PrintInit(fp, dbgOverlaps, w, 64100, 722500);35.720   2.120
-                    // PrintInit(fp, dbgOverlaps, w, 35720,  2120);
-                    bool found_dbg= false;
-                    // found_dbg= PrintInit(fp, dbgOverlaps, w, 50200, 407720);
-                    // found_dbg= PrintInit(fp, dbgOverlaps, w, 5157200, 186320);
-                    // found_dbg= PrintInit(fp, dbgOverlaps, w, 5157200, 187040);5157.200 313.840
-                    // found_dbg= PrintInit(fp, dbgOverlaps, w, 5157200, 313840); 13946.660 530.920
-                    // found_dbg= PrintInit(fp, dbgOverlaps, w, 13946660, 530920); 577.300 477.600
-                    // found_dbg= PrintInit(fp, dbgOverlaps, w, 577300, 477600); 13946.660 475.640
-                    // found_dbg= PrintInit(fp, dbgOverlaps, w, 13946660, 475640); 13946.660 569.000
-                    // found_dbg= PrintInit(fp, dbgOverlaps, w, 13946660, 569000);
-
-                    // ------------------------------------------------------------------------------------- Coupling Up
-                    FindAllSegments_up(fp, w, lookUp, tr + 1, dir, level, maxDist, couplingDist, limitTrackNum, firstWireTable, _upSegTable);
-                    FindAllSegments_up(fp, w, !lookUp, tr - 1, dir, level, maxDist, couplingDist, limitTrackNum, firstWireTable, _downSegTable);
-                    uint cnt1 = CreateCouplingSEgments(w, &segTable, _upSegTable[level], _downSegTable[level], dbgOverlaps, fp);
-
-                    if (FindDiagonalNeighbors_vertical_power(dir, w, 10000, 100, 3, _verticalPowerTable) > 0) // power
-                        PrintTable_wires(fp, dbgOverlaps, colCnt, _verticalPowerTable, "Vertical Power Wires:");
-                    
-                    int diagLimit= 3;
-                    int diagLimitTrackNum= 4;
-                    int diagMaxDist= 500;
-                    for (uint jj= level + 1; jj<colCnt && jj< level + diagLimit; jj++)
-                    {
-                        Ath__grid *upgrid = _search->getGrid(dir, jj);
-                        int diag_track_num = upgrid->getTrackNum1(w->getBase());
-                        FindAllSegments_up(fp, w,  lookUp, diag_track_num + 1, dir, jj, maxDist, diagMaxDist, diagLimitTrackNum, firstWireTable, _upSegTable);
-                        FindAllSegments_up(fp, w,  !lookUp, diag_track_num - 1, dir, jj, maxDist, diagMaxDist, diagLimitTrackNum, firstWireTable, _downSegTable);
-                    }
-                    for (int jj= level - 1; jj>0 && jj> level - diagLimit; jj--)
-                    {
-                        Ath__grid *upgrid = _search->getGrid(dir, jj);
-                        int diag_track_num = upgrid->getTrackNum1(w->getBase());
-                        FindAllSegments_up(fp, w,  lookUp, diag_track_num + 1, dir, jj, maxDist, diagMaxDist, diagLimitTrackNum, firstWireTable, _upSegTable);
-                        FindAllSegments_up(fp, w,  !lookUp, diag_track_num - 1, dir, jj, maxDist, diagMaxDist, diagLimitTrackNum, firstWireTable, _downSegTable);
-                    }
-                    // TODO: diagonal looking down -- at least for power wires! power wires don't look up -- M1 is required as width not wide
-                   
-                    //     DebugWire(w, 0, 0, 369); 
-                    // TODO measureRC_res_init(w->getRsegId()); // reset res value
-
-                   // ----------------------------------------------------------------------------------------------------Diagonal
-                    aboveTable.resetCnt();
-                    uint upvcnt= FindAllSegments_vertical(fp, w, lookUp, dir,  maxDist, &aboveTable); // Note: _up holds the above vertical wire
-                    belowTable.resetCnt(); // for power nets only
-                    uint downvcnt= FindAllSegments_vertical(fp, w, !lookUp, dir,  maxDist, &belowTable); // Note: _down holds the above vertical wire
-
-                    for (uint ii = 0; ii < segTable.getCnt(); ii++)
-                    {
-                        uint lenCovered = 0;
-                        extSegment *s = segTable.get(ii);
-
-                        CalcRes(s);
-                        if (IsDebugNet1())
-                            DebugEnd_res(stdout, _rsegSrcId, s->_len, "AFTER CalcRes");
-                    }
-                    
-                    if (new_calc_flow || length_flag)
-                    {
-                        _met = w->getLevel();
-                        _len = w->getLen();
-                        // _segFP= stdout;
-                        for (uint ii = 0; ii < segTable.getCnt(); ii++)
-                        {
-                            uint lenCovered = 0;
-                            extSegment *s = segTable.get(ii);
-
-                            /* MOVED outside the loop 
-                            CalcRes(s);
-                            if  (IsDebugNet1())
-                                DebugEnd_res(stdout, _rsegSrcId, s->_len, "AFTER CalcRes");
-                            */
-                            if (length_flag && s->_len<LENGTH_BOUND)
-                                continue;
-
-                            extSegment *white = new extSegment(dir, w, s->_xy, s->_len, NULL, NULL);
-                            // _whiteSegTable[_met]->resetCnt();
-                            Release(_whiteSegTable[_met]);
-                            _whiteSegTable[_met]->add(white);
-                            PrintOverlapSeg(_segFP, s, _met, "\nNEW --");
-
-                            Ath__array1D<extSegment *> crossOvelapTable(8);
-                            bool fully_blocked_up = false;
-                            int lastOverMet = _met + 1;
-                            uint overMet = _met + 1;
-                            for (; overMet < colCnt; overMet++)
-                            {
-                                _ovSegTable[overMet]->resetCnt();
-                                _whiteSegTable[overMet]->resetCnt();
-                               
-                                uint di = 1000000;
-                                for (uint kk = 0; kk < _whiteSegTable[overMet - 1]->getCnt(); kk++)
-                                {
-                                    extSegment *ww = _whiteSegTable[overMet - 1]->get(kk);
-
-                                    // vertical and diag
-                                    if (verticalCap)
-                                    {
-                                        Ath__array1D<extSegment *> upVertTable;
-                                        FindDiagonalSegments(s, ww, &aboveTable, &upVertTable, dbgOverlaps, fp, lookUp, overMet);
-                                        VerticalCap(&upVertTable, lookUp);
-                                        Release(&upVertTable);
-                                        
-                                        Ath__array1D<extSegment *> downVertTable;
-                                        FindDiagonalSegments(s, ww, &belowTable, &downVertTable, dbgOverlaps, fp, !lookUp, overMet);
-                                        VerticalCap(&downVertTable, !lookUp);
-                                        Release(&downVertTable);
-                                    }
-                                    if (diagCapFlag)
-                                    {
-                                        Ath__array1D<extSegment *> upDiagTable;
-                                        FindDiagonalSegments(s, ww, _upSegTable[overMet], &upDiagTable, dbgOverlaps, fp, lookUp);
-                                        DiagCap(fp, w, lookUp, diagMaxDist, 2, &upDiagTable);
-                                        Release(&upDiagTable);
-
-                                        Ath__array1D<extSegment *> downDiagTable;
-                                        FindDiagonalSegments(s, ww, _downSegTable[overMet], &downDiagTable, dbgOverlaps, fp, !lookUp);
-                                        DiagCap(fp, w, !lookUp, diagMaxDist, 2, &downDiagTable);
-                                        Release(&downDiagTable);
-                                    }
-
-/*
-                                    for (; di < _upSegTable[overMet]->getCnt(); di++)
-                                    {
-                                        extSegment *dg = _upSegTable[overMet]->get(di);
-                                        int len1=0;
-                                        int len2=0;
-                                        int len3=0;
-                                        int ovCode= wireOverlap(ww->_xy, ww->_len, dg->_xy, dg->_len, &len1, &len2, &len3);
-                                        if (len2>0)
-                                        {
-                                            // diagClac
-                                            if (len3> 0)
-                                                break;
-                                        } else {
-                                            if (len1<=0)
-                                                continue;
-                                        }
-                                        if (len3>0)
-                                            break;
-                                    }
-*/
-                                    GetCrossOvelaps(w, overMet, ww->_xy, ww->_len, dir, _ovSegTable[overMet], _whiteSegTable[overMet]);
-                                }
-                                PrintOvelaps(s, _met, overMet, _ovSegTable[overMet], "u");
-                                if (_met == 1)
-                                {
-                                    OverUnder(s, _met, 0, overMet, _ovSegTable[overMet], "OverSubUnderM");
-                                    continue;
-                                }
-                                for (uint oo = 0; oo < _ovSegTable[overMet]->getCnt(); oo++)
-                                { // looking down
-                                    extSegment *v = _ovSegTable[overMet]->get(oo);
-                                     OverlapDown(overMet, s, v, dir);
-                                    if (_whiteSegTable[1]->getCnt()>0)
-                                    {
-                                        PrintOvelaps(v, _met, 0, _whiteSegTable[1], "OverSubUnderMet");
-                                        OverUnder(s, _met, 0, overMet, _whiteSegTable[1], "OverSubUnderM");
-                                        _whiteSegTable[1]->resetCnt();
-                                    }
-                                }
-                                if (_whiteSegTable[overMet]->getCnt() == 0)
-                                {
-                                    lastOverMet = overMet;
-                                    break;
-                                }
-                            }
-                            if (overMet >= colCnt - 1)
-                            {
-                                if (_met == 1)
-                                {
-                                    PrintOvelaps(s, _met, 0, _whiteSegTable[colCnt - 1], "OverSub");
-                                    OverUnder(s, _met, 0, -1, _whiteSegTable[colCnt - 1], "OverSub");
-                                }
-                                else
-                                {
-                                    for (uint oo = 0; oo < _whiteSegTable[colCnt - 1]->getCnt(); oo++)
-                                    { // looking down
-                                        extSegment *v = _whiteSegTable[colCnt - 1]->get(oo);
-                                        OverlapDown(-1, s, v, dir); // OverMet
-                                    }
-                                    PrintOvelaps(s, _met, 0, _whiteSegTable[1], "OverSub");
-                                    OverUnder(s, _met, 0, -1, _whiteSegTable[1], "OverSub");
-                                }
-                            }
-                        }
-                    }
-                    // for (uint ii = 0; ii < !new_calc_flow && segTable.getCnt(); ii++)
-                    for (uint ii = 0; (!new_calc_flow || length_flag) && ii < segTable.getCnt(); ii++)
-                    {
-                        extSegment *s = segTable.get(ii);
-
-                        if (length_flag && s->_len>=LENGTH_BOUND)
-                                continue;
-                        PrintOverlapSeg(_segFP, s, _met, "\nmeasure_RC_new .........................\n");
-
-                        measure_RC_new(s, true);
-                    }
-                    /*
-                    if (found_dbg && DBG) {
-                        fclose(fp);
-                        // exit(0);
-                    }
-                    */
-
-                    for (uint jj = 0; jj < colCnt; jj++)
-                    {
-                        Release(_downSegTable[jj]);
-                        Release(_upSegTable[jj]);
-                        Release(_ovSegTable[jj]);
-                        Release(_whiteSegTable[jj]);
-                    }
-                    Release(&upTable);
-                    Release(&downTable);
-                    Release(&segTable);
-                    Release(&aboveTable);
-                    Release(&belowTable);
+                    resTable->add(w2_next);
+                    firstWireTable[level]->set(next_tr, w2_next);
+                    w2_next_covered= Enclosed(w->getXY(), w->getXY() + w->getLen(), w2_next->getXY(), w2_next->getXY() + w2_next->getLen());
                 }
             }
-            // fprintf(stdout, "\nDir=%d  wireCnt=%d  NotOrderedCnt=%d  oneEmptyTable=%d  oneCntTable=%d\n",
-            //        dir, wireCnt, notOrderCnt, oneEmptyTable, oneCntTable);
+            resTable->add(w2);
+            if (Enclosed(w->getXY(), w->getXY() + w->getLen(), w2->getXY(), w2->getXY() + w2->getLen()))
+                break;
+            if (w2_next_covered)
+                break;
+
+            if (w2->isPower())
+                break;
         }
-        if (_segFP!=NULL)
-            fclose(_segFP);
-
-       de_allocateTables(colCnt);
-
-        return 0;
+        return resTable->getCnt();
     }
+
+    uint extMeasureRC::FindCoupleWiresOnTracks_up(
+        Ath__wire* w,
+        uint start_track,
+        CouplingDimensionParams& coupleOptions,
+        Ath__array1D<Ath__wire*>** firstWireTable,
+        Ath__array1D<Ath__wire*>* resTable)
+
+    // int extMeasureRC::FindAllNeigbors_up(Ath__wire *w, uint start_track, uint
+    // dir, uint level, uint couplingDist, uint limitTrackNum,
+    // Ath__array1D<Ath__wire *> **firstWireTable, Ath__array1D<Ath__wire *>
+    // *resTable)
+    {
+      Ath__grid* upGrid = _search->getGrid(coupleOptions.direction, coupleOptions.metal_level);
+      int end_track = start_track + coupleOptions.track_limit + 1;
+
+      uint level = coupleOptions.metal_level;
+
+      for (uint next_tr = start_track;
+           next_tr < end_track && next_tr < upGrid->getTrackCnt();
+           next_tr++)  // for tracks overlapping wire
+      {
+        Ath__wire* first = GetNextWire(upGrid, next_tr, firstWireTable[level]);
+        Ath__wire* w2 = FindOverlapWire(w, first);
+        if (w2 == NULL)
+          continue;
+        firstWireTable[level]->set(next_tr, w2);
+        resTable->add(w2);
+        if (Enclosed(w->getXY(),
+                     w->getXY() + w->getLen(),
+                     w2->getXY(),
+                     w2->getXY() + w2->getLen()))
+          break;
+
+        if (w2->isPower())
+          break;
+      }
+      return resTable->getCnt();
+    }
+    
+bool extMeasureRC::FindDiagonalCoupleSegments(Ath__wire *w, int current_level, int max_level,  CouplingDimensionParams& opts, Ath__array1D<Ath__wire *> **firstWireTable)
+{
+    int diagLimit= 3;
+    int diagLimitTrackNum= 4;
+    int diagMaxDist= 500;
+    uint dir= opts.direction;
+    FILE *fp= opts.dbgFP;
+    
+    bool lookUp= true;
+
+    for (uint jj= current_level + 1; jj<max_level && jj< current_level + diagLimit; jj++)
+    {
+        Ath__grid *upgrid = _search->getGrid(dir, jj);
+        
+        int diag_track_num = upgrid->getTrackNum1(w->getBase());
+        FindAllSegments_up(fp, w,  lookUp, diag_track_num + 1, dir, jj, opts.max_distance, diagMaxDist, diagLimitTrackNum, firstWireTable, _upSegTable);
+        FindAllSegments_up(fp, w,  !lookUp, diag_track_num - 1, dir, jj, opts.max_distance, diagMaxDist, diagLimitTrackNum, firstWireTable, _downSegTable);
+    }
+    for (int jj= current_level - 1; jj>0 && jj> current_level - diagLimit; jj--)
+    {
+        Ath__grid *upgrid = _search->getGrid(dir, jj);
+        int diag_track_num = upgrid->getTrackNum1(w->getBase());
+        FindAllSegments_up(fp, w,  lookUp, diag_track_num + 1, dir, jj, opts.max_distance, diagMaxDist, diagLimitTrackNum, firstWireTable, _upSegTable);
+        FindAllSegments_up(fp, w,  !lookUp, diag_track_num - 1, dir, jj, opts.max_distance, diagMaxDist, diagLimitTrackNum, firstWireTable, _downSegTable);
+    }
+    // TODO: diagonal looking down -- at least for power wires! power wires don't look up -- M1 is required as width not wide
+    return true;
+}
+bool extMeasureRC::VerticalDiagonalCouplingAndCrossOverlap(
+    Ath__wire* w,
+    extSegment* s,
+    int overMet,
+    SegmentTables& segments,
+    CouplingConfig& config)
+{
+  int diagMaxDist= 500;  // same as in FindDiagonalCoupleSegments; TODO create opts
+
+  bool dbgOverlaps = config.debug_overlaps;  // CHECK
+  FILE* fp = config.debug_fp;
+  bool lookUp = true;
+
+  for (uint kk = 0; kk < _whiteSegTable[overMet - 1]->getCnt(); kk++) {
+    extSegment *ww = _whiteSegTable[overMet - 1]->get(kk);
+    // vertical and diag
+    if (config.vertical_cap)
+    {
+        Ath__array1D<extSegment *> upVertTable;
+        FindDiagonalSegments(s, ww, &segments.aboveTable, &upVertTable, dbgOverlaps, fp, lookUp, overMet);
+        VerticalCap(&upVertTable, lookUp);
+        Release(&upVertTable);
+        
+        Ath__array1D<extSegment *> downVertTable;
+        FindDiagonalSegments(s, ww, &segments.belowTable, &downVertTable, dbgOverlaps, fp, !lookUp, overMet);
+        VerticalCap(&downVertTable, !lookUp);
+        Release(&downVertTable);
+    }
+    if (config.diag_cap)
+    {
+        Ath__array1D<extSegment *> upDiagTable;
+        FindDiagonalSegments(s, ww, _upSegTable[overMet], &upDiagTable, dbgOverlaps, fp, lookUp);
+        DiagCap(fp, w, lookUp, diagMaxDist, 2, &upDiagTable);
+        Release(&upDiagTable);
+        
+        Ath__array1D<extSegment *> downDiagTable;
+        FindDiagonalSegments(s, ww, _downSegTable[overMet], &downDiagTable, dbgOverlaps, fp, !lookUp);
+        DiagCap(fp, w, !lookUp, diagMaxDist, 2, &downDiagTable);
+        Release(&downDiagTable);
+        }
+        GetCrossOvelaps(w, overMet, ww->_xy, ww->_len, _dir, _ovSegTable[overMet], _whiteSegTable[overMet]);
+  }
+    PrintOvelaps(s, _met, overMet, _ovSegTable[overMet], "u");
+    return true;
+}
+bool extMeasureRC::CreateCouplingCaps_overUnder(extSegment* s, uint overMet)
+{
+  if (_met == 1) {
+    OverUnder(s, _met, 0, overMet, _ovSegTable[overMet], "OverSubUnderM");
+    return true; // break the flow
+  }
+  for (uint oo = 0; oo < _ovSegTable[overMet]->getCnt(); oo++) {  // looking down
+    extSegment* v = _ovSegTable[overMet]->get(oo);
+    OverlapDown(overMet, s, v, _dir);
+    if (_whiteSegTable[1]->getCnt() > 0) {
+      PrintOvelaps(v, _met, 0, _whiteSegTable[1], "OverSubUnderMet");
+      OverUnder(s, _met, 0, overMet, _whiteSegTable[1], "OverSubUnderM");
+      _whiteSegTable[1]->resetCnt();
+    }
+  }
+  return false;
+}
+bool extMeasureRC::CreateCouplingCaps_over(extSegment* s, uint metalLevelCnt)
+{
+    if (_met == 1)
+    {
+        PrintOvelaps(s, _met, 0, _whiteSegTable[metalLevelCnt - 1], "OverSub");
+        OverUnder(s, _met, 0, -1, _whiteSegTable[metalLevelCnt - 1], "OverSub");
+    } else {
+        for (uint oo = 0; oo < _whiteSegTable[metalLevelCnt - 1]->getCnt(); oo++)
+        { // looking down
+            extSegment *v = _whiteSegTable[metalLevelCnt - 1]->get(oo);
+            OverlapDown(-1, s, v, _dir); // OverMet
+        }
+        PrintOvelaps(s, _met, 0, _whiteSegTable[1], "OverSub");
+        OverUnder(s, _met, 0, -1, _whiteSegTable[1], "OverSub");
+    }
+    return true;
+}
+bool extMeasureRC::GetCouplingSegments(int tr, Ath__wire *w, CouplingConfig &config, CouplingDimensionParams &coupleOptions, SegmentTables &segments, Ath__array1D<Ath__wire *> **firstWireTable)
+{
+    bool lookUp= true;
+    uint level= coupleOptions.metal_level;
+    uint dir= coupleOptions.direction;
+    uint metalLevelCnt= config.metal_level_count;
+    uint maxDist= coupleOptions.max_distance;
+    
+    // Find all direct projections of wires on increasing tracks -- on one side of wire
+    GetCoupleSegments(lookUp, w, tr+1, coupleOptions, firstWireTable, _upSegTable[level]);
+
+    // Find all direct projections of wires on decreasing tracks -- on other side of wire
+    GetCoupleSegments( ! lookUp, w, tr-1, coupleOptions, firstWireTable, _downSegTable[level]);
+
+    // alternative call FindAllSegments_up(fp, w, lookUp, tr + 1, dir, level, maxDist, couplingDist, limitTrackNum, firstWireTable, _upSegTable);
+    // FindAllSegments_up(fp, w, !lookUp, tr - 1, dir, level, maxDist, couplingDist, limitTrackNum, firstWireTable, _downSegTable);
+                    
+    // Create coupling segments with both or one way or neighboring wires in wireSegmentTable
+    CreateCouplingSEgments(w, &segments.wireSegmentTable, _upSegTable[level], _downSegTable[level], config.debug_enabled, config.debug_fp);
+
+    // find overlapping power wires; result in _verticalPowerTable
+    if (FindDiagonalNeighbors_vertical_power(dir, w, 10000, 100, 3, _verticalPowerTable) > 0) // power
+        PrintTable_wires(config.debug_fp, config.debug_enabled, metalLevelCnt, _verticalPowerTable, "Vertical Power Wires:");
+                    
+    int diagMaxDist= 500; // same as in FindDiagonalCoupleSegments; TODO create opts
+    // find coupling segments (=Diagonal) on differen levels; results in _upSegTable, _downSegTable
+    FindDiagonalCoupleSegments(w, level, metalLevelCnt,  coupleOptions, firstWireTable);
+
+    // ----------------------------------------------------------------------------------------------------Diagonal
+    segments.aboveTable.resetCnt(); // over vertical segment list
+    segments.belowTable.resetCnt(); // under vertical segment list
+
+    // Note: Ath__wire->_up holds the first above vertical wire
+    FindAllSegments_vertical(config.debug_fp, w, lookUp, dir,  maxDist, &segments.aboveTable); // Note: _up holds the above vertical wire
+
+    // Note: Ath__wire->_down holds the first below vertical wire
+    FindAllSegments_vertical(config.debug_fp, w, !lookUp, dir,  maxDist, &segments.belowTable); // Note: _down holds the above vertical wire
+
+    return true;
+}
+// ------------------------------------------------------------------------ v2 cleanup
+
+int extMeasureRC::CouplingFlow(uint dir,
+                               uint couplingDist,
+                               uint diag_met_limit,
+                               int totWireCnt,
+                               uint& totalWiresExtracted,
+                               float& previous_percent_extracted)
+{
+  uint metalLevelCnt = _search->getColCnt();
+
+  CouplingConfig config(_extMain, metalLevelCnt);
+  _segFP = NULL;
+  if (config.debug_enabled) {
+    config.debug_fp = OpenPrintFile(dir, "Segments");
+    _segFP = config.debug_fp;
+  }
+  CouplingState counts;
+
+  SegmentTables segments;
+
+  // first wire from a Track on all levels and tracks
+  Ath__array1D<Ath__wire*>** firstWireTable = allocMarkTable(metalLevelCnt);
+  allocateTables(metalLevelCnt);
+
+  bool lookUp = true;
+  _dir = dir;
+
+  for (int level = 1; level < metalLevelCnt; level++) {
+    _met = level;
+    Ath__grid* netGrid = _search->getGrid(dir, level);
+    segments.resetAll();
+
+    config.reset_calc_flow_flag(level);
+
+    uint maxDist = 10 * netGrid->_pitch;
+    for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++) {
+      Ath__track* track = netGrid->getTrackPtr(tr);
+      if (track == NULL)
+        continue;
+
+      ResetFirstWires(level, metalLevelCnt, dir, firstWireTable);
+      for (Ath__wire* w = track->getNextWire(NULL); w != NULL;
+           w = w->getNext()) {
+        counts.wire_count++;
+        if (w->isPower() || w->getRsegId() == 0)
+          continue;
+
+        if (config.debug_enabled)
+          Print5wires(_segFP, w, w->getLevel());
+          // DebugWire(w, 0, 0, 17091); --- Placeholder for stopping during
+
+        totalWiresExtracted++;
+        // FIXME _progressTracker->updateProgress();
+
+        if (counts.wire_count % _extMain->_wire_extracted_progress_count == 0) {
+          printProgress(totalWiresExtracted, totWireCnt, previous_percent_extracted);
+        }
+        CouplingDimensionParams coupleOptions(dir, level, maxDist,  couplingDist, config.limit_track_num, config.debug_fp);
+
+        // Find all detailed Coupling neighbors in both directions and levels to
+        // calculate Lateral and Diagonal Coupling
+        GetCouplingSegments(tr, w, config, coupleOptions, segments, firstWireTable);
+
+        // Distance based Resistance Calculation based on coupling segments of the wire
+        for (uint ii = 0; ii < segments.wireSegmentTable.getCnt(); ii++) {
+          extSegment* s = segments.wireSegmentTable.get(ii);
+          CalcRes(s);
+        }
+        // Context -- Overlap -- Coupling Extraction
+        if (config.new_calc_flow || config.length_flag) {
+          _met = w->getLevel();
+          _len = w->getLen();
+          for (uint ii = 0; ii < segments.wireSegmentTable.getCnt(); ii++) {
+            extSegment* s = segments.wireSegmentTable.get(ii);
+
+            if (config.length_flag && s->_len < config.LENGTH_BOUND)
+              continue;
+
+            Release(_whiteSegTable[_met]);
+            extSegment* white= new extSegment(dir, w, s->_xy, s->_len, NULL, NULL);
+            _whiteSegTable[_met]->add(white);
+            PrintOverlapSeg(_segFP, s, _met, "\nNEW --");
+
+            Ath__array1D<extSegment*> crossOvelapTable(8);
+            int lastOverMet = _met + 1;
+            uint overMet = _met + 1;
+            for (; overMet < metalLevelCnt; overMet++) {
+              _ovSegTable[overMet]->resetCnt();
+              _whiteSegTable[overMet]->resetCnt();
+
+              // Coupling Caps
+              VerticalDiagonalCouplingAndCrossOverlap(w, s, overMet, segments, config);
+
+              // Over Sub Under met -- Create Coupling Capacitors
+              if (CreateCouplingCaps_overUnder(s, overMet))
+                continue;
+
+              // Looking up metal levels, all overlaps are blocked
+              if (_whiteSegTable[overMet]->getCnt() == 0) {
+                lastOverMet = overMet;
+                break;
+              }
+            }
+            if (overMet >= metalLevelCnt - 1)
+              CreateCouplingCaps_over(s, metalLevelCnt);
+          }
+        }
+        // DELETE for (uint ii = 0; ii < !new_calc_flow && segTable.getCnt();
+        // ii++)
+        for (uint ii = 0; (!config.new_calc_flow || config.length_flag)
+                          && ii < segments.wireSegmentTable.getCnt();
+             ii++) {
+          extSegment* s = segments.wireSegmentTable.get(ii);
+
+          if (config.length_flag && s->_len >= config.LENGTH_BOUND)
+            continue;
+
+          PrintOverlapSeg(_segFP, s, _met, "\nmeasure_RC_new .........................\n");
+
+          measure_RC_new(s, true);
+        }
+        ReleaseSegTables(metalLevelCnt);
+        segments.releaseAll();
+      }
+    }
+    // fprintf(stdout, "\nDir=%d  wireCnt=%d  NotOrderedCnt=%d  oneEmptyTable=%d
+    // oneCntTable=%d\n",
+    //        dir, wireCnt, notOrderCnt, oneEmptyTable, oneCntTable);
+  }
+  if (_segFP != NULL)
+    fclose(_segFP);
+
+  de_allocateTables(metalLevelCnt);
+
+  return 0;
+}
+void extMeasureRC::ReleaseSegTables(uint metalLevelCnt)
+{
+  for (uint jj = 0; jj < metalLevelCnt; jj++) {
+    Release(_downSegTable[jj]);
+    Release(_upSegTable[jj]);
+    Release(_ovSegTable[jj]);
+    Release(_whiteSegTable[jj]);
+  }
+}
+void extMeasureRC::Release(Ath__array1D<extSegment *> *segTable)
+{
+    for (uint ii = 0; ii < segTable->getCnt(); ii++)
+    {
+        extSegment *s = segTable->get(ii);
+        delete s;
+    }
+    segTable->resetCnt();
+}
+
     bool extMeasureRC::CalcRes(extSegment *s)
     {
         double deltaRes[10];
@@ -474,6 +582,8 @@ namespace rcx
         }
 
         rcNetInfo();
+        if (IsDebugNet1())
+            DebugEnd_res(stdout, _rsegSrcId, s->_len, "AFTER CalcRes");
         return true;
     }
     bool extMeasureRC::FindDiagonalSegments(extSegment *s, extSegment *w1, Ath__array1D<extSegment *> *segDiagTable, Ath__array1D<extSegment *> *diagSegTable, bool dbgOverlaps, FILE *fp, bool lookUp, int tgt_met)
@@ -588,7 +698,7 @@ namespace rcx
         Ath__wire* w2_next_next= lookUp ? w2_next->_aboveNext : w2_next->_belowNext;
         if (w2_next_next!=NULL)
             wTable.add(w2_next_next);
-// TODO, optimize, not accurate 
+        // TODO, optimize, not accurate 
 
         if (dbgOverlaps)
         {
@@ -613,22 +723,9 @@ namespace rcx
             sprintf(buff, "M%d %s", w2_next->getLevel(), msg);
             PrintTable_segments(fp, w, lookUp, dbgOverlaps, aboveTable, buff);
         }
-        /*
-         uint len2 = FindSegments(true, dir, maxDist, w, w->getXY(), w->getLen(), w->_aboveNext, &aboveTable);
-                    if (dbgOverlaps)
-                    {
-                        if (w->_aboveNext != NULL)
-               
-                 {
-                            fprintf(fp, "Above Diag Wire\n");
-                            PrintWire(fp, w->_aboveNext, 0);
-                        }
-                        fprintf(fp, "Above Diag Segments %d\n", aboveTable.getCnt());
-                        Print(fp, &aboveTable, dir, true);
-                    }
-        */
        return 0;
     }
+
     uint extMeasureRC::FindAllSegments_up(FILE *fp, Ath__wire *w, bool lookUp, uint start_track, uint dir, uint level, uint maxDist, uint couplingDist, uint limitTrackNum, Ath__array1D<Ath__wire *> **firstWireTable, Ath__array1D<extSegment *> **UpSegTable)
     {
         bool dbgOverlaps = true;
@@ -736,7 +833,7 @@ namespace rcx
     uint extMeasureRC::CreateCouplingSEgments(Ath__wire *w, Ath__array1D<extSegment *> *segTable, Ath__array1D<extSegment *> *upTable, Ath__array1D<extSegment *> *downTable, bool dbgOverlaps, FILE *fp)
     {
         uint cnt1 = 0;
-        /*
+        /* TODO
                     if (upTable->getCnt() == 0 || downTable->getCnt() == 0)
                     {
                         oneEmptyTable++;
@@ -890,26 +987,52 @@ namespace rcx
         }
         return false;
     }
-    void extMeasureRC::PrintTable_coupleWires(FILE *fp1, Ath__wire *w, bool dbgOverlaps, Ath__array1D<Ath__wire *> *UpTable, const char *msg)
+    void extMeasureRC::PrintTable_coupleWires(FILE* fp1,
+                                              Ath__wire* w,
+                                              bool dbgOverlaps,
+                                              Ath__array1D<Ath__wire*>* UpTable,
+                                              const char* msg,
+                                              int level)
     {
-        if (fp1==NULL)
-            return;
-        if (dbgOverlaps && UpTable->getCnt()>0)
-        {
-            fprintf(fp1, "\n%s %d\n", msg, UpTable->getCnt());
-            Print(fp1, UpTable, "");
+      if (fp1 == NULL)
+        return;
+
+      if (dbgOverlaps && UpTable->getCnt() > 0) {
+        if (level > 0) {
+          char buff[100];
+          sprintf(buff, "M%d %s", level, msg);
+          fprintf(fp1, "\n%s %d\n", buff, UpTable->getCnt());
+
+        } else {
+          fprintf(fp1, "\n%s %d\n", msg, UpTable->getCnt());
         }
+        Print(fp1, UpTable, "");
+      }
     }
 
-    void extMeasureRC::PrintTable_segments(FILE *fp1, Ath__wire *w, bool lookUp, bool dbgOverlaps, Ath__array1D<extSegment *> *UpSegTable, const char *msg)
+    void extMeasureRC::PrintTable_segments(
+        FILE* fp1,
+        Ath__wire* w,
+        bool lookUp,
+        bool dbgOverlaps,
+        Ath__array1D<extSegment*>* segmentTable,
+        const char* msg,
+        int level)
     {
-        if (fp1==NULL)
-            return;
-        if (dbgOverlaps && UpSegTable->getCnt()>0)
-        {
-            fprintf(fp1, "\n%s %d\n", msg, UpSegTable->getCnt());
-            Print(fp1, UpSegTable, !_dir, lookUp);
+      if (fp1 == NULL)
+        return;
+
+      if (dbgOverlaps && segmentTable->getCnt() > 0) {
+        if (level > 0) {
+          char buff[100];
+          sprintf(buff, "M%d %s", level, msg);
+          fprintf(fp1, "\n%s %d\n", buff, segmentTable->getCnt());
+
+        } else {
+          fprintf(fp1, "\n%s %d\n", msg, segmentTable->getCnt());
         }
+        Print(fp1, segmentTable, !_dir, lookUp);
+      }
     }
     void extMeasureRC::PrintTable_wires(FILE *fp, bool dbgOverlaps, uint colCnt, Ath__array1D<Ath__wire *> **verticalPowerTable, const char *msg)
     {
@@ -925,35 +1048,6 @@ namespace rcx
         if (w->getBoxId()==netId) 
             Print5wires(stdout, w, w->getLevel());
  
-        // if (w->getXY() == 32500 && w->getBase() == 27700)
-        //    Print5wires(stdout, w, w->getLevel());
-        // else
-        //    continue;
-        // 32.520   4.120
-        // if (w->getXY()==32520 && w->getBase()== 4120)
-        //    Print5wires(stdout, w, w->getLevel());
-        // else
-        //    continue;
-
-        // if (w->getXY()==20500 && w->getBase()==6500)
-        //    Print5wires(stdout, w, w->getLevel());
-        // if (w->getXY()==64100 && w->getBase()==722500)
-        //   Print5wires(stdout, w, w->getLevel());
-        // else
-        //    continue;
-
-        // if (netId==365 || netId==366)
-        //     Print5wires(stdout, w, w->getLevel());
-
-        // if (w->getXY() == 638100 && w->getBase() == 21700)
-         //   Print5wires(stdout, w, w->getLevel());
-        // else
-        //    continue;
-
-       // if (w->getXY() == 127720 && w->getBase() == 2120)
-        //    Print5wires(stdout, w, w->getLevel());
-        // if (w->getXY() == 13400 && w->getBase() == 4120)
-        //    Print5wires(stdout, w, w->getLevel());
         return true;
     }
     Ath__array1D<extSegment *> **extMeasureRC::allocTable(uint n)
@@ -981,9 +1075,8 @@ namespace rcx
     void extMeasureRC::DeleteTable_wire(Ath__array1D<Ath__wire *> **tbl, uint n)
     {
         for (uint ii = 0; ii < n; ii++)
-        {
             delete tbl[ii];
-        }
+
         delete tbl;
     }
     void extMeasureRC::OverUnder(extSegment *cc, uint met, int underMet, int overMet, Ath__array1D<extSegment *> *segTable, const char *ou)
@@ -992,31 +1085,13 @@ namespace rcx
             return;
         if (_segFP != NULL)
             fprintf(_segFP, "\n%7.3f %7.3f  %dL M%d cnt=%d\n", GetDBcoords(cc->_xy), GetDBcoords(cc->_xy + cc->_len), cc->_len, met, segTable->getCnt());
-        // fprintf(_segFP, "\n%7.3f %7.3f  %dL M%doM%duM%d cnt=%d\n", GetDBcoords(w->_xy), GetDBcoords(w->_xy + w->_len), w->_len, met, ou, tgt_met, segTable->getCnt());
-           // fprintf(stdout, "\n%7.3f %7.3f  %dL M%d cnt=%d\n", GetDBcoords(cc->_xy), GetDBcoords(cc->_xy + cc->_len), cc->_len, met, segTable->getCnt());
-
+ 
         for (uint ii = 0; ii < segTable->getCnt(); ii++)
         {
             extSegment *s = segTable->get(ii);
             if (_segFP)
                 PrintOUSeg(_segFP, s->_xy, s->_len, met, overMet, underMet, "\t", cc->_dist, cc->_dist_down);
-                // PrintOUSeg(stdout, s->_xy, s->_len, met, overMet, underMet, "\t", cc->_dist, cc->_dist_down);
-            
-/*
-            _width= cc->_wire->getWidth();
-            _met= met;
-            _underMet= underMet;
-            _overMet= overMet;
-
-            
-            if (overMet>0 && underMet>0)
-                computeOverUnderRC(s->_len);
-            else if (underMet>0)
-                computeOverRC(s->_len);
-            else if (overMet)
-                computeUnderRC(s->_len);
-
-*/        
+ 
             if (cc->_dist<0 && cc->_dist_down<0)
                 OpenEnded2(cc, s->_len, met, overMet, underMet, _segFP) ;
             else if (cc->_dist<0 || cc->_dist_down<0) 
@@ -1174,135 +1249,3 @@ namespace rcx
     }
 
     } // namespace rcx
-
- /*
-                    int lastOverMet = _met + 1;
-                    for (uint jj = _met + 1; jj < colCnt; jj++)
-                    {
-                        if (GetCrossOvelaps(w, jj, w->getXY(), w->getLen(), dir, _ovSegTable[jj], _whiteSegTable[jj]))
-                        {
-                            lastOverMet = jj;
-                            break;
-                        }
-                    }
-                    int lastUnderMet = _met + 1;
-                    for (int jj = _met - 1; jj > 0; jj--)
-                    {
-                        if (GetCrossOvelaps(w, jj, w->getXY(), w->getLen(), dir, _ovSegTable[jj], _whiteSegTable[jj]))
-                        {
-                            lastUnderMet = jj;
-                            break;
-                        }
-                        // QUESTION: _whiteSegTable[1] is over SUB ?
-                    }
-                    extSegment *white = new extSegment(dir, w, w->getXY(), w->getLen(), NULL, NULL);
-                    _whiteSegTable[_met]->add(white);
-                    */
-/*
-                     // intersect with white _ovSegTable[underMet]
-                            // intersect _ovSegTable[overMet] _ovSegTable[underMet]
-                            crossOvelapTable.resetCnt();
-                            uint cnt = FindUpDownSegments(_ovSegTable[overMet], _ovSegTable[underMet], &crossOvelapTable, overMet, underMet);
-                            PrintCrossOvelaps(w, _met, s->_xy, s->_len, &crossOvelapTable, s->_len, "\n\tOUcalc-all");
-
-                            // CALCULATE OU segs : crossOvelapTable: metUnder>0,metOver>0
-                            PrintCrossOvelapsOU(w, _met, s->_xy, s->_len, &crossOvelapTable, 0, "OverUnder-calc", overMet, underMet);
-
-                            // lenCovered +=
-                            if (fully_blocked_down)
-                                break;
-                            // all segments with metUnder>0 should cross down
-
-                            // covered -- calculate
-                            // if all covered, break
-                            // for white
-                            }
-                            // Under Metal, Over Sub : crossOvelapTable: metUnder=-1
-                            if (!fully_blocked_down)
-                            {
-                                if (crossOvelapTable.getCnt() > 0)
-                                {
-                                    PrintCrossOvelapsOU(w, _met, s->_xy, s->_len, &crossOvelapTable, 0, "OverSub-calc", overMet, -1);
-
-                                    // find all white (metUnder==-1) == overSub)
-                                }
-                            }
-                            else
-                            {
-                                break;
-
-                                // if all covered, break
-                            }
-                            // not all covered: lenCovered -- overSub
-                            if (!fully_blocked_up) // white space of M1 is Metal Under X over Sub
-                            {
-                                // white space of last met
-                                int lastMet = colCnt - 1;
-                            }
-                        }
-                    }
-*/
-
-/*
-
-
-                        //   if (_ovSegTable[overMet]->getCnt() == 0)
-                        //      continue;
-                         TODO: for met1 ------------------------------ IMPORTANT
-                        int lastUnderMet = _met - 1;
-
-                        bool fully_blocked_down = false;
-                        for (int underMet = _met - 1; underMet > 0; underMet--)
-                        {
-                            _ovSegTable[underMet]->resetCnt();
-                            _whiteSegTable[underMet]->resetCnt();
-                            for (uint kk = 0; kk < _whiteSegTable[underMet + 1]->getCnt(); kk++)
-                            {
-                                extSegment *ww = _whiteSegTable[underMet + 1]->get(kk);
-                                GetCrossOvelaps(w, underMet, ww->_xy, ww->_len, dir, _ovSegTable[underMet], _whiteSegTable[underMet]);
-                            }
-                            PrintOvelaps(s, _met, underMet, _ovSegTable[underMet], "o");
-                            if (_whiteSegTable[underMet]->getCnt() == 0)
-                            {
-                                lastUnderMet = underMet;
-                                break;
-                            }
-                        }
-                    
-                        for (uint overMet = _met + 1; overMet < lastOverMet + 1; overMet++)
-                        {
-                            for (int underMet = _met - 1; underMet > 0 && underMet > lastUnderMet - 1; underMet--)
-                            {
-                                crossOvelapTable.resetCnt();
-                                if (_ovSegTable[overMet]->getCnt() == 0 || _ovSegTable[underMet]->getCnt() == 0)
-                                    continue;
-
-                                uint cnt = FindUpDownSegments(_ovSegTable[overMet], _ovSegTable[underMet], &crossOvelapTable, overMet, underMet);
-                                PrintOvelaps(s, underMet, overMet, &crossOvelapTable, "OU");
-                                continue;
-                                if (_ovSegTable[overMet]->getCnt() == 0 && _ovSegTable[underMet]->getCnt() > 0)
-                                {
-                                    PrintOvelaps(s, 0, overMet, _ovSegTable[underMet], "ou-Over");
-                                }
-                                else if (_ovSegTable[overMet]->getCnt() > 0 && _ovSegTable[underMet]->getCnt() == 0)
-                                {
-                                    PrintOvelaps(s, underMet, 0, _ovSegTable[underMet], "ou-Under");
-                                }
-                                else
-                                {
-                                    uint cnt = FindUpDownSegments(_ovSegTable[overMet], _ovSegTable[underMet], &crossOvelapTable, overMet, underMet);
-                                    PrintOvelaps(s, underMet, overMet, &crossOvelapTable, "ou");
-                                }
-                                // PrintCrossOvelaps(w, _met, s->_xy, s->_len, &crossOvelapTable, s->_len, "\n\tOverUnder");
-                            }
-                        }
-                        
-                        for (int underMet = _met - 1; underMet > 0; underMet--) // over sub
-                        {
-                            crossOvelapTable.resetCnt();
-                            if (_ovSegTable[underMet]->getCnt() == 0 || _ovSegTable[1]->getCnt() == 0)
-                                continue;
-                            uint cnt = FindUpDownSegments(_ovSegTable[underMet], _ovSegTable[1], &crossOvelapTable, underMet, 0);
-                            PrintCrossOvelaps(w, _met, s->_xy, s->_len, &crossOvelapTable, s->_len, "\n\tOverSub");
-                        }
-                        */
