@@ -101,7 +101,6 @@ namespace rcx
             FindSegmentsTrack(w1, xy1, len1, NULL, ii+1, trackTable, lookUp, dir, maxDist,segTable);
             return;
         }
-        uint cnt = 0;
         int xy2 = w2->getXY() + w2->getLen();
         int dx2;
         int dx1 = GetDx1Dx2(xy1, len1, w2, dx2);
@@ -405,7 +404,7 @@ namespace rcx
         uint wireCnt = 0;
         bool dbgOverlaps = true;
         FILE *fp = OpenPrintFile(dir, "Segments");
-        Ath__wire *t = NULL;
+
         uint limitTrackNum = 10;
         Ath__array1D<extSegment *> upTable;
         Ath__array1D<extSegment *> downTable;
@@ -449,9 +448,6 @@ namespace rcx
                     if (rsegId==0)
                         continue;
 
-                    dbRSeg *seg= dbRSeg::getRSeg(_block, rsegId);
-                    // DELETE uint netId= seg->getNet()->getId();
-
                     if (dbgOverlaps)
                     {
                         fprintf(fp, "\n");
@@ -486,12 +482,6 @@ namespace rcx
                     measureRC_res_init(rsegId); // reset res value
                     if (IsDebugNet()) // TODO: debug
                     {
-                        // DELETE const char *netName = "";
-                        if (_netId > 0)
-                        {
-                            dbNet *net = dbNet::getNet(_block, _netId);
-                            // DELETE netName = net->getConstName();
-                        }
                         DebugStart_res(_debugFP);
                         DebugStart_res(stdout);
                     }
@@ -617,9 +607,6 @@ namespace rcx
         if (!(lenOverSub > 0))
             return;
 
-        bool rvia1 = rseg1 != NULL && isVia(rseg1->getId());
-        bool rvia2 = rseg2 != NULL && isVia(rseg2->getId());
-
         bool over1 = false;
         bool openEnded = false;
         // note: _dist>0
@@ -647,7 +634,7 @@ namespace rcx
                 else */
             if (openEnded)
             {
-                float openFr = getOverRC_Open(rcModel, _width, _met, 0, _dist, _diagResDist);
+                getOverRC_Open(rcModel, _width, _met, 0, _dist, _diagResDist);
                 fr = _tmpRC->_fringe * lenOverSub;
                 if (rseg1 != NULL)
                 {
@@ -671,19 +658,17 @@ namespace rcx
                 extDistRC *rc0 = rcModel->_capOver[_met]->getRC(0, _width, _diagResDist);
                 extDistRC *rc = rcModel->_capOver_open[_met][1]->getRC(0, _width, _dist);
                 extDistRC *rc1 = rcModel->_capOver[_met]->getRC(0, _width, _dist);
-                float fr0 = 2 * rc->_fringe * lenOverSub;
 
-                // fr= (2*rc->_fringe - rc0->_fringe) * lenOverSub;
-                float delta_fr = (2 * rc->_fringe - (rc0->_fringe + rc1->_fringe)) * lenOverSub;
-                float fr1 = rc1->_fringe * lenOverSub;
+                // float delta_fr = (2 * rc->_fringe - (rc0->_fringe + rc1->_fringe)) * lenOverSub;
+                // float fr1 = rc1->_fringe * lenOverSub;
 
-                float cc = rc->_coupling * lenOverSub;
-                float cc0 = rc0->_coupling * lenOverSub;
-                float cc1 = rc1->_coupling * lenOverSub;
+                // float cc = rc->_coupling * lenOverSub;
+                // float cc0 = rc0->_coupling * lenOverSub;
+                // float cc1 = rc1->_coupling * lenOverSub;
                 float delta_cc = (2 * rc->_coupling - (rc0->_coupling + rc1->_coupling)) * lenOverSub;
                 cc += delta_cc;
 
-                float FR = getOver_over1(rcModel, _width, _met, 0, _diagResDist, _dist, lenOverSub);
+                // float FR = getOver_over1(rcModel, _width, _met, 0, _diagResDist, _dist, lenOverSub);
 
                 float FR0 = _tmpRC->_fringeW * lenOverSub;
                 float FR1 = _tmpRC->_fringe * lenOverSub;
@@ -749,7 +734,6 @@ namespace rcx
                     }
                 }
             }
-             const char *msg = "OverSubRC_dist (With Neighbor)";
         }
     }
     int extMeasureRC::computeAndStoreRC_new(dbRSeg *rseg1, dbRSeg *rseg2, int srcCovered)
@@ -822,12 +806,10 @@ namespace rcx
 
             for (uint jj = 0; jj < _metRCTable.getCnt(); jj++)
             {
-                bool ou = false;
                 _rc[jj]->_res = 0; // DF 022821 : Res non context based
 
                 if (_rc[jj]->_fringe > 0)
                 {
-                    ou = true;
                     double fr = _rc[jj]->_fringe;
                     fr += _rc[jj]->_fringeW;
                     _extMain->updateTotalCap(rseg1, fr, jj);
@@ -865,43 +847,19 @@ namespace rcx
                     printDebugRC(_debugFP, _rc[jj], "\tOU_TOTAL_dist", "\n");
                     printDebugRC(stdout, _rc[jj], "\tOU_TOTAL_dist", "\n");
                 }
-                bool ou = false;
-                /* Res NOT context dependent DF: 022821   TODO: compatible with initial
-                if (!_extMain->_lef_res && _rc[jj]->_res > 0) {
-                  if (!rvia1) {
-                    ou = true;
-                    totR1 = _extMain->updateRes(rseg1, _rc[jj]->_res, jj);
-                  }
-                  if (!rvia2) {
-                    ou = true;
-                    totR2 = _extMain->updateRes(rseg2, _rc[jj]->_res, jj);
-                  }
-                } */
                 double tot1 = 0;
                 double tot2 = 0;
-                /* TODO
-                if (_useWeighted && !OpenEnded) {
-                  ou = true;
-                  tot1 = _extMain->updateTotalCap(rseg1, _rc[jj]->_fringeW, jj);
-                  _extMain->updateCoupCap(rseg1, rseg2, jj, _rc[jj]->_coupling);
-
-
-                }
-                else */
                 if (OpenEnded)
                 {
-                    ou = true;
                     double tot_fr = _rc[jj]->_fringe;
                     if (rseg1 != NULL)
                     {
-                        tot1 = _extMain->updateTotalCap(rseg1, _rc[jj]->_fringe, jj);
+                        tot1 = _extMain->updateTotalCap(rseg1, tot_fr, jj);
                         if (IsDebugNet())
                         {
                             DebugUpdateValue(stdout, "OVER_SUB_DIST_OpenEnded", "FR", rseg1->getId(), _rc[jj]->_fringe, tot1);
                             DebugUpdateValue(_debugFP, "OVER_SUB_DIST_OpenEnded", "FR", rseg1->getId(), _rc[jj]->_fringe, tot1);
                         }
-                        // NOTE: fringe for rseg2 will use wire2 model
-                        // tot1 = _extMain->updateTotalCap(rseg1, _rc[jj]->_fringe/2, jj);
                     }
                     updateCoupCap(rseg1, rseg2, jj, _rc[jj]->_coupling, "OVER_SUB_DIST_OpenEnded");
                 }
@@ -923,12 +881,10 @@ namespace rcx
                             DebugUpdateValue(_debugFP, "OVER_SUB_DIST_Over1", "FR", rseg2->getId(), _rc[jj]->_fringe, tot1);
                         }
                     }
-
                     updateCoupCap(rseg1, rseg2, jj, _rc[jj]->_coupling, "OVER_SUB_DIST_Over1");
                 }
                 else
                 {
-                    ou = true;
                     double tot_fr = _rc[jj]->_fringe + _rc[jj]->_fringeW;
                     tot1 = _extMain->updateTotalCap(rseg1, tot_fr, jj);
                     if (IsDebugNet()&&rseg1!=NULL)
@@ -944,12 +900,6 @@ namespace rcx
                     }
                     updateCoupCap(rseg1, rseg2, jj, _rc[jj]->_coupling, "OVER_SUB_DIST_else");
                 }
-                /* dkf 09212023
-                else if (_rc[jj]->_coupling > 0) {
-                  ou = true;
-                  _extMain->updateCoupCap(rseg1, rseg2, jj, _rc[jj]->_coupling);
-                }
-                */
                 tot1 += _rc[jj]->_coupling;
                 tot2 += _rc[jj]->_coupling;
             }

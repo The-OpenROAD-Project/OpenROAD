@@ -878,14 +878,14 @@ class extMeasure
  public:
 
  // ------------------------------------------------- v2
-        uint createContextGrid(char *dirName, int bboxLL[2], int bboxUR[2], int met, int s_layout = -1);
-            uint createContextGrid_dir(char *dirName, int bboxLL[2], int bboxUR[2], int met);
+    uint createContextGrid(char *dirName, int bboxLL[2], int bboxUR[2], int met, int s_layout = -1);
+    uint createContextGrid_dir(char *dirName, int bboxLL[2], int bboxUR[2], int met);
 
-        double _topWidthR;
+    double _topWidthR;
     double _botWidthR;
     double _teffR;
     double _peffR;
-bool _skipResCalc= false;
+    bool _skipResCalc= false;
 
      Ath__gridTable *_search= NULL;
      bool IsDebugNet1();
@@ -912,10 +912,10 @@ bool _skipResCalc= false;
                     uint planeIndex,
                     uint trackn,
                     Ath__array1D<SEQ *> *residueSeq);
-        void DebugRes_calc(FILE *fp, const char *msg, int rsegId1, const char *msg_len, uint len, int dist1, int dist2, int tgtMet, double tot, double R, double unit, double prev);
+    void DebugRes_calc(FILE *fp, const char *msg, int rsegId1, const char *msg_len, uint len, int dist1, int dist2, int tgtMet, double tot, double R, double unit, double prev);
 
-  extDistRC* findRes(int dist1, int dist2, bool compute);
-      bool DebugDiagCoords(int met, int targetMet, int len1, int diagDist, int ll[2], int ur[2], const char * = "");
+    extDistRC* findRes(int dist1, int dist2, bool compute);
+    bool DebugDiagCoords(int met, int targetMet, int len1, int diagDist, int ll[2], int ur[2], const char * = "");
 
 
 // ------------------------------------------------------------

@@ -300,12 +300,12 @@ float extMeasureRC::getOverRC_Open(extMetRCTable* rcModel, uint width, int met, 
   extDistRC* rc1= getOverOpenRC_Dist(rcModel, width, met, metUnder, dist2);
   if (rc1==NULL)
     return 0;
-  extDistRC* rc2= getOverRC_Dist(rcModel, width, met, metUnder, dist2);
+  // TODO extDistRC* rc2= getOverRC_Dist(rcModel, width, met, metUnder, dist2);
   _tmpRC->_fringe = 2 * rc1->getFringe();
   _tmpRC->_coupling = 2 * rc1->getCoupling();
   float fr1= 2 * rc1->getFringe();
-  // DBG float fr2= rc2->getFringe();
-  // DBG float fr= fr1 - fr2;
+  // TODO float fr2= rc2->getFringe();
+  // TODO float fr= fr1 - fr2;
 
   return fr1;
 }
@@ -321,14 +321,14 @@ float extMeasureRC::getOURC_Open(extMetRCTable* rcModel, uint width, int met, in
   }
   _tmpRC->Reset();
   extDistRC* rc1= NULL;
-  extDistRC* rc2= NULL;
+  // TODO extDistRC* rc2= NULL;
   if (metUnder<=0) { // Under pattern
     rc1= getUnderRC_Dist(rcModel, width, met, metOver, dist2, 0);
-    rc2= getUnderRC_Dist(rcModel, width, met, metOver, dist2);
+    // TODO ?? rc2= getUnderRC_Dist(rcModel, width, met, metOver, dist2);
   }
   else {
     rc1= getOverUnderRC_Dist(rcModel, width, met, metUnder, metOver, dist2, 0);
-    rc2= getOverUnderRC_Dist(rcModel, width, met, metUnder, metOver, dist2);
+    // TODO ?? rc2= getOverUnderRC_Dist(rcModel, width, met, metUnder, metOver, dist2);
   }
   if (rc1==NULL)
     return 0;
@@ -336,8 +336,8 @@ float extMeasureRC::getOURC_Open(extMetRCTable* rcModel, uint width, int met, in
   _tmpRC->_fringe = 2 * rc1->getFringe();
   _tmpRC->_coupling = 2 * rc1->getCoupling();
   float fr1= 2 * rc1->getFringe();
-  // DBG float fr2= rc2->getFringe();
-  // DBG float fr= fr1 - fr2;
+  // TODO ?? float fr2= rc2->getFringe();
+  // TODO ?? float fr= fr1 - fr2;
 
   return fr1;
 }
