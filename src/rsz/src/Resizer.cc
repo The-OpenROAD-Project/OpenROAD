@@ -1015,6 +1015,8 @@ void Resizer::resizePreamble()
 // Filter equivalent cells based on the following liberty attributes:
 // - Footprint (Optional - Honored if enforced by user): Cells with the
 //   same footprint have the same layout boundary.
+// - User Function Class (Optional - Honored if found): Cells with the
+//   same user_function_class are electrically compatible.
 LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
 {
   LibertyCellSeq swappable_cells;
@@ -1022,8 +1024,20 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
 
   if (equiv_cells) {
     for (LibertyCell* equiv_cell : *equiv_cells) {
-      if (match_cell_footprint_ && !footprintsMatch(source_cell, equiv_cell)) {
-        continue;
+      if (match_cell_footprint_) {
+        const bool footprints_match = sta::stringEqIf(source_cell->footprint(),
+                                                      equiv_cell->footprint());
+        if (!footprints_match) {
+          continue;
+        }
+      }
+
+      if (source_cell->userFunctionClass()) {
+        const bool user_function_classes_match = sta::stringEqIf(
+            source_cell->userFunctionClass(), equiv_cell->userFunctionClass());
+        if (!user_function_classes_match) {
+          continue;
+        }
       }
 
       swappable_cells.push_back(equiv_cell);
@@ -1031,11 +1045,6 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
   }
 
   return swappable_cells;
-}
-
-bool Resizer::footprintsMatch(LibertyCell* source, LibertyCell* target)
-{
-  return sta::stringEqIf(source->footprint(), target->footprint());
 }
 
 void Resizer::checkLibertyForAllCorners()

@@ -481,7 +481,6 @@ class Resizer : public dbStaState
 
   void resizePreamble();
   LibertyCellSeq getSwappableCells(LibertyCell* source_cell);
-  bool footprintsMatch(LibertyCell* source, LibertyCell* target);
 
   // Resize drvr_pin instance to target slew.
   // Return 1 if resized.
