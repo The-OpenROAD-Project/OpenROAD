@@ -1200,6 +1200,14 @@ dbNet* dbNetwork::flatNet(const Pin* pin) const
   return db_net;
 }
 
+dbModNet* dbNetwork::hierNet(const Pin* pin) const
+{
+  dbNet* db_net;
+  dbModNet* db_modnet;
+  net(pin, db_net, db_modnet);
+  return db_modnet;
+}
+
 /*
 Get the dbnet or the moddbnet for a pin
 Sometimes a pin can be hooked to both and we want to expose them
@@ -2223,12 +2231,37 @@ void dbNetwork::staToDb(const Net* net, dbNet*& dnet, dbModNet*& modnet) const
   }
 }
 
+dbITerm* dbNetwork::flatPin(const Pin* pin) const
+{
+  odb::dbITerm* iterm;
+  odb::dbBTerm* bterm;
+  odb::dbModITerm* moditerm;
+  odb::dbModBTerm* modbterm;
+  staToDb(pin, iterm, bterm, moditerm, modbterm);
+  (void) bterm;
+  (void) moditerm;
+  (void) modbterm;
+  return iterm;
+}
+
+dbModITerm* dbNetwork::hierPin(const Pin* pin) const
+{
+  odb::dbITerm* iterm;
+  odb::dbBTerm* bterm;
+  odb::dbModITerm* moditerm;
+  odb::dbModBTerm* modbterm;
+  staToDb(pin, iterm, bterm, moditerm, modbterm);
+  (void) iterm;
+  (void) bterm;
+  (void) modbterm;
+  return moditerm;
+}
+
 void dbNetwork::staToDb(const Pin* pin,
                         // Return values.
                         dbITerm*& iterm,
                         dbBTerm*& bterm,
                         dbModITerm*& moditerm,
-                        // axiom never see a modbterm...
                         dbModBTerm*& modbterm) const
 {
   iterm = nullptr;

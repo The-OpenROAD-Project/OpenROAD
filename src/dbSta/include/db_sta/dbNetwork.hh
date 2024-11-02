@@ -240,6 +240,9 @@ class dbNetwork : public ConcreteNetwork
   Net* net(const Pin* pin) const override;
   void net(const Pin* pin, dbNet*& db_net, dbModNet*& db_modnet) const;
   dbNet* flatNet(const Pin* pin) const;
+  dbModNet* hierNet(const Pin* pin) const;
+  dbITerm* flatPin(const Pin* pin) const;
+  dbModITerm* hierPin(const Pin* pin) const;
 
   Term* term(const Pin* pin) const override;
   PortDirection* direction(const Pin* pin) const override;

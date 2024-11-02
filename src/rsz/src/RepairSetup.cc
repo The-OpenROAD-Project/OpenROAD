@@ -1459,13 +1459,11 @@ void RepairSetup::splitLoads(const PathRef* drvr_path,
       Instance* load = network_->instance(load_pin);
       (void) (load_port);
       (void) (load);
-      // stash the modnet for the load
-      dbNet* db_load_net;
-      odb::dbModNet* db_mod_load_net;
-      db_network_->net(load_pin, db_load_net, db_mod_load_net);
-      (void) db_load_net;
 
-      // This will kill both the dbNet and modnet connection
+      // stash the modnet,if any,  for the load
+      odb::dbModNet* db_mod_load_net = db_network_->hierNet(load_pin);
+
+      // This will kill both the flat (dbNet) and hier (modnet) connection
       load_iterm->disconnect();
 
       // Flat connection to dbNet
@@ -1473,48 +1471,21 @@ void RepairSetup::splitLoads(const PathRef* drvr_path,
 
       //
       // H-Fix. Support connecting across hierachy.
-      // This is a hack: way too much punch through... clean up
       //
       Instance* load_parent = db_network_->getOwningInstanceParent(load_pin);
 
       if (load_parent != parent) {
         std::string unique_connection_name = resizer_->makeUniqueNetName();
-
-        odb::dbITerm* load_pin_iterm;
-        odb::dbBTerm* load_pin_bterm;
-        odb::dbModITerm* load_pin_moditerm;
-        odb::dbModBTerm* load_pin_modbterm;
-
-        db_network_->staToDb(load_pin,
-                             load_pin_iterm,
-                             load_pin_bterm,
-                             load_pin_moditerm,
-                             load_pin_modbterm);
-
-        odb::dbITerm* buffer_op_pin_iterm;
-        odb::dbBTerm* buffer_op_pin_bterm;
-        odb::dbModITerm* buffer_op_pin_moditerm;
-        odb::dbModBTerm* buffer_op_pin_modbterm;
-
-        db_network_->staToDb(buffer_op_pin,
-                             buffer_op_pin_iterm,
-                             buffer_op_pin_bterm,
-                             buffer_op_pin_moditerm,
-                             buffer_op_pin_modbterm);
-
+        odb::dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
+        odb::dbITerm* load_pin_iterm = db_network_->flatPin(load_pin);
         if (load_pin_iterm && buffer_op_pin_iterm) {
           db_network_->hierarchicalConnect(buffer_op_pin_iterm,
                                            load_pin_iterm,
                                            unique_connection_name.c_str());
         }
       } else {
-        // everything in same module, no worries, share the dbModNet.
-        // get iterm for load and connect to the modnet
         odb::dbITerm* iterm;
-        odb::dbBTerm* bterm;
-        odb::dbModITerm* moditerm;
-        odb::dbModBTerm* modbterm;
-        db_network_->staToDb(load_pin, iterm, bterm, moditerm, modbterm);
+        iterm = db_network_->flatPin(load_pin);
         if (iterm && db_mod_load_net) {
           iterm->connect(db_mod_load_net);
         }
