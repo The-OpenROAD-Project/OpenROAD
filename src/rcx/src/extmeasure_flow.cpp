@@ -54,8 +54,10 @@ namespace rcx
     {
         if (len1==0)
             return NULL;
-            
-        extSegment *s = new extSegment(_dir, w, xy1, len1, NULL, NULL);
+                        
+        extSegment *s = _seqmentPool->alloc();
+
+        s->set(_dir, w, xy1, len1, NULL, NULL);
         segTable->add(s);
         s->setUpDown(lookUp, w2);
         return s;
@@ -148,7 +150,10 @@ namespace rcx
     {
         if (len1==0)
             return NULL;
-        extSegment *s = new extSegment(_dir, w, xy1, len1, up, down, metOver,  metUnder);
+        
+        extSegment *s = _seqmentPool->alloc();
+        s->set(_dir, w, xy1, len1, up, down, metOver,  metUnder);
+
         segTable->add(s);
         return s;
     }

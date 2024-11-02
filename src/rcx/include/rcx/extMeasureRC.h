@@ -310,6 +310,9 @@ class extMeasureRC : public extMeasure
         extMeasureRC(utl::Logger* logger) : extMeasure(logger) {}
 
     //----------------------------------------------------------------------- v2 ----- CLEANUP
+      AthPool<extSegment>* _seqmentPool;
+      void releaseAll(SegmentTables &segments);
+
     void allocateTables(uint colCnt);
     void de_allocateTables(uint colCnt);
     Ath__array1D<Ath__wire *> ** allocTable_wire(uint n);

@@ -458,7 +458,10 @@ int extMeasureRC::CouplingFlow(uint dir,
               continue;
 
             Release(_whiteSegTable[_met]);
-            extSegment* white= new extSegment(dir, w, s->_xy, s->_len, NULL, NULL);
+            
+            extSegment *white = _seqmentPool->alloc();
+            white->set(dir, w, s->_xy, s->_len, NULL, NULL);
+
             _whiteSegTable[_met]->add(white);
             PrintOverlapSeg(_segFP, s, _met, "\nNEW --");
 
@@ -499,7 +502,8 @@ int extMeasureRC::CouplingFlow(uint dir,
           measure_RC_new(s, true);
         }
         ReleaseSegTables(metalLevelCnt);
-        segments.releaseAll();
+        // segments.releaseAll();
+        releaseAll(segments);
       }
     }
     // fprintf(stdout, "\nDir=%d  wireCnt=%d  NotOrderedCnt=%d  oneEmptyTable=%d
@@ -522,12 +526,23 @@ void extMeasureRC::ReleaseSegTables(uint metalLevelCnt)
     Release(_whiteSegTable[jj]);
   }
 }
+void extMeasureRC::releaseAll(SegmentTables &segments)
+  {
+    Release(&segments.upTable);
+    Release(&segments.downTable);
+    Release(&segments.verticalUpTable);
+    Release(&segments.verticalDownTable);
+    Release(&segments.wireSegmentTable);
+    Release(&segments.aboveTable);
+    Release(&segments.belowTable);
+    Release(&segments.whiteTable);
+  }
 void extMeasureRC::Release(Ath__array1D<extSegment *> *segTable)
 {
     for (uint ii = 0; ii < segTable->getCnt(); ii++)
     {
         extSegment *s = segTable->get(ii);
-        delete s;
+        _seqmentPool->free(s);
     }
     segTable->resetCnt();
 }
@@ -616,8 +631,9 @@ bool extMeasureRC::FindDiagonalSegments(extSegment* s,
   if (segDiagTable->getCnt() == 0)
     return false;
 
-  extSegment* white
-      = new extSegment(_dir, s->_wire, w1->_xy, w1->_len, NULL, NULL);
+extSegment *white = _seqmentPool->alloc();
+  white->set(_dir, s->_wire, w1->_xy, w1->_len, NULL, NULL);
+
   if (!lookUp)
     white->_up = s->_wire;
   else
@@ -637,7 +653,8 @@ bool extMeasureRC::FindDiagonalSegments(extSegment* s,
         vertTable.add(v);
     }
     if (vertTable.getCnt() == 0) {
-      delete white;
+      _seqmentPool->free(white);
+      // delete white;
       return false;
     }
     if (lookUp)
@@ -661,16 +678,17 @@ bool extMeasureRC::FindDiagonalSegments(extSegment* s,
   for (uint ii = 0; ii < resultTable.getCnt(); ii++) {
     extSegment* s1 = resultTable.get(ii);
     if (s1->_up == NULL || s1->_down == NULL) {
-      delete s1;
+      // delete s1;
+      _seqmentPool->free(s1);
       continue;
     }
     diagSegTable->add(s1);
     PrintUpDown(fp, s1);
     PrintUpDownNet(fp, s1->_up, s1->_dist, "\t");  // TODO _up should extSegment
-    PrintUpDownNet(
-        fp, s1->_down, s1->_dist_down, "\t");  // TODO _down should extSegment
+    PrintUpDownNet(fp, s1->_down, s1->_dist_down, "\t");  // TODO _down should extSegment
   }
-  delete white;
+  // delete white;
+  _seqmentPool->free(white);
   return false;
 
   if (whiteTable.getCnt() == 0)
@@ -683,8 +701,9 @@ void extMeasureRC::OverlapDown(int overMet,
                                extSegment* overlapSeg,
                                uint dir)
 {
-  extSegment* ov = new extSegment(
-      dir, coupSeg->_wire, overlapSeg->_xy, overlapSeg->_len, NULL, NULL);
+    extSegment *ov = _seqmentPool->alloc();
+    ov->set(dir, coupSeg->_wire, overlapSeg->_xy, overlapSeg->_len, NULL, NULL);
+
   _whiteSegTable[_met]->resetCnt();
   _whiteSegTable[_met]->add(ov);
   for (int underMet = _met - 1; underMet > 0; underMet--) {
@@ -997,7 +1016,9 @@ bool extMeasureRC::GetCrossOvelaps(Ath__wire* w,
     SEQ* p = table.get(ii);
 
     int len1 = p->_ur[!dir] - p->_ll[!dir];
-    extSegment* s = new extSegment(dir, w, p->_ll[!dir], len1, NULL, NULL);
+
+    extSegment *s = _seqmentPool->alloc();
+    s->set(dir, w, p->_ll[!dir], len1, NULL, NULL);
 
     if (p->type == 0)
       whiteTable->add(s);
