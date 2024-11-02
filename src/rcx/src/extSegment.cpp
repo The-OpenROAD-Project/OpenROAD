@@ -55,7 +55,33 @@ namespace rcx
         _dist= dist;
     }
     */
+   /* Working
     extSegment::extSegment(uint dir, Ath__wire *w, int xy, int len, Ath__wire *up, Ath__wire *down, int metOver, int metUnder)
+    {
+        _dir = dir;
+        _wire = w;
+
+        _base = w->getBase();
+        _width = w->getWidth();
+        _xy = xy;
+        _len = len;
+
+        uint d = !dir;
+        _ll[d] = xy;
+        _ur[d] = xy + len;
+        _ll[dir] = w->getBase();
+        _ur[dir] = _ll[dir] + w->getWidth();
+
+        _up = up;
+        _down = down;
+        _dist= GetDist(_wire, _up);
+        _dist_down = GetDist(_down, _wire);
+
+        _metUnder= metUnder;
+        _metOver= metOver;
+    }
+    */
+    void extSegment::set(uint dir, Ath__wire *w, int xy, int len, Ath__wire *up, Ath__wire *down, int metOver, int metUnder)
     {
         _dir = dir;
         _wire = w;

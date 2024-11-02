@@ -184,7 +184,8 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
   setExtControl_v2(mrc->_seqPool);
   _seqPool = mrc->_seqPool;
 
-  
+  mrc->_seqmentPool= new AthPool<extSegment>(1024);
+
   uint totalWiresExtracted = 0;
   float previous_percent_extracted = 0.0;
                   
@@ -245,7 +246,10 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
   }
   // delete wire tables  used during diagonal coupling in v1 modeling
   removeDgContextArray();
+delete mrc->_seqmentPool;
+mrc->_seqmentPool= nullptr;
 
+    delete mrc;
   return 0;
 }
 

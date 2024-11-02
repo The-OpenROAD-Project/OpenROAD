@@ -103,7 +103,9 @@ namespace rcx
         int dist = GetDistance(w1, w2_next);
         if (dist > maxDist)
         {
-            extSegment *s = new extSegment(dir, w1, xy1, len1, NULL, NULL);
+            extSegment *s = _seqmentPool->alloc();
+            s->set(dir, w1, xy1, len1, NULL, NULL);
+
             segTable->add(s);
             return 0;
         }
@@ -141,13 +143,17 @@ namespace rcx
         { // Covered Left
             if (dx2 >= 0)
             { // covered Right
-                extSegment *s = new extSegment(dir, w1, xy1, len1, NULL, NULL);
+                
+                extSegment *s = _seqmentPool->alloc();
+                s->set(dir, w1, xy1, len1, NULL, NULL);
+
                 segTable->add(s);
                 s->setUpDown(lookUp, w2);
             }
             else
             { // not covered right
-                extSegment *s = new extSegment(dir, w1, xy1, xy2 - xy1, NULL, NULL);
+                extSegment *s = _seqmentPool->alloc();
+                s->set(dir, w1, xy1, xy2 - xy1, NULL, NULL);
                 s->setUpDown(lookUp, w2);
                 segTable->add(s);
 
@@ -169,13 +175,15 @@ namespace rcx
             FindSegments(lookUp, dir, maxDist, w1, xy1, dx1, next, segTable); // white space
             if (dx2 >= 0)
             { // covered Right
-                extSegment *s = new extSegment(dir, w1, w2->getXY(), xy1 + len1 - w2->getXY(), NULL, NULL);
+                extSegment *s = _seqmentPool->alloc();
+                s->set(dir, w1, w2->getXY(), xy1 + len1 - w2->getXY(), NULL, NULL);
                 segTable->add(s);
                 s->setUpDown(lookUp, w2);
             }
             else
             { // not covered right
-                extSegment *s = new extSegment(dir, w1, w2->getXY(), w2->getLen(), NULL, NULL);
+                extSegment *s = _seqmentPool->alloc();
+                s->set(dir, w1, w2->getXY(), w2->getLen(), NULL, NULL);
                 segTable->add(s);
                 s->setUpDown(lookUp, w2);
 

@@ -104,10 +104,11 @@ namespace rcx
         Ath__wire *_down;
 
         //extSegment(uint dir, Ath__wire *w2, int dist);
-        // extSegment();
         // ~extSegment();
 
-        extSegment(uint d, Ath__wire *w, int xy, int len, Ath__wire *up, Ath__wire *down, int metOver=-1, int metUnder=-1);
+        // extSegment();
+        // extSegment(uint d, Ath__wire *w, int xy, int len, Ath__wire *up, Ath__wire *down, int metOver=-1, int metUnder=-1);
+        void set(uint d, Ath__wire *w, int xy, int len, Ath__wire *up, Ath__wire *down, int metOver=-1, int metUnder=-1);
         int GetDist(Ath__wire *w1, Ath__wire *w2);
         int setUpDown(bool up, Ath__wire *w1);
 
