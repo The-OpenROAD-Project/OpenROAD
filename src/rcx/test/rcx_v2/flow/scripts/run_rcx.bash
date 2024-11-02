@@ -17,6 +17,10 @@ cd $run_dir
 
 # echo "$test_name"
 $or_exec < ../scripts/$test_name.tcl > OUT  
+if [ ! -e "$test_name.spef" ]; then
+	echo "Fail $test_name : NO SPEF"
+	exit
+fi
 line_cnt=`diff $test_name.spef ../$test_name.GOLD/$test_name.spef | egrep -v DATE | egrep -v VERSION | egrep -v "\-\-\-" | wc -l `
 if [ $line_cnt -lt 3 ]
 then
