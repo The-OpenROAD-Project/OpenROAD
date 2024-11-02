@@ -709,10 +709,7 @@ bool extRCModel::readRules(char* name, bool bin, bool over, bool under,
             cnt += readRules_v2(&parser, modelIndex, ii, "OVERUNDER1", "WIDTH", overUnder, overUnder, bin, false, skipModel, dbFactor);
         }
       }
-      if (!_v2_flow) // v1 flow can only handle one corner
-        break;
 
-      // break;
       if (!via_res)
         continue;
       
@@ -727,8 +724,7 @@ bool extRCModel::readRules(char* name, bool bin, bool over, bool under,
               break;
           }
       }
-    }
-        
+    }  
   }
   return true;
 }
