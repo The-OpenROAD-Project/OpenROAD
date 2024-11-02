@@ -86,7 +86,7 @@ void RepairSetup::init()
   db_network_ = resizer_->db_network_;
 }
 
-void RepairSetup::repairSetup(const float setup_slack_margin,
+bool RepairSetup::repairSetup(const float setup_slack_margin,
                               const double repair_tns_end_percent,
                               const int max_passes,
                               const bool verbose,
@@ -96,6 +96,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
                               const bool skip_buffer_removal,
                               const bool skip_last_gasp)
 {
+  bool repaired = false;
   init();
   constexpr int digits = 3;
   inserted_buffer_count_ = 0;
@@ -143,7 +144,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
     // nothing to repair
     logger_->metric("design__instance__count__setup_buffer", 0);
     logger_->info(RSZ, 98, "No setup violations found");
-    return;
+    return false;
   }
 
   int end_index = 0;
@@ -392,11 +393,14 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   }
 
   if (removed_buffer_count_ > 0) {
+    repaired = true;
     logger_->info(RSZ, 59, "Removed {} buffers.", removed_buffer_count_);
   }
   if (inserted_buffer_count_ > 0 && split_load_buffer_count_ == 0) {
+    repaired = true;
     logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
   } else if (inserted_buffer_count_ > 0 && split_load_buffer_count_ > 0) {
+    repaired = true;
     logger_->info(RSZ,
                   45,
                   "Inserted {} buffers, {} to split loads.",
@@ -406,21 +410,27 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   logger_->metric("design__instance__count__setup_buffer",
                   inserted_buffer_count_);
   if (resize_count_ > 0) {
+    repaired = true;
     logger_->info(RSZ, 41, "Resized {} instances.", resize_count_);
   }
   if (swap_pin_count_ > 0) {
+    repaired = true;
     logger_->info(RSZ, 43, "Swapped pins on {} instances.", swap_pin_count_);
   }
   if (cloned_gate_count_ > 0) {
+    repaired = true;
     logger_->info(RSZ, 49, "Cloned {} instances.", cloned_gate_count_);
   }
   const Slack worst_slack = sta_->worstSlack(max_);
   if (fuzzyLess(worst_slack, setup_slack_margin)) {
+    repaired = true;
     logger_->warn(RSZ, 62, "Unable to repair all setup violations.");
   }
   if (resizer_->overMaxArea()) {
     logger_->error(RSZ, 25, "max utilization reached.");
   }
+
+  return repaired;
 }
 
 // For testing.

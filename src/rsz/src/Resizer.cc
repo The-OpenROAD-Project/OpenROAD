@@ -1014,6 +1014,8 @@ void Resizer::resizePreamble()
 // Filter equivalent cells based on the following liberty attributes:
 // - Footprint (Optional - Honored if enforced by user): Cells with the
 //   same footprint have the same layout boundary.
+// - User Function Class (Optional - Honored if found): Cells with the
+//   same user_function_class are electrically compatible.
 LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
 {
   LibertyCellSeq swappable_cells;
@@ -1021,8 +1023,20 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
 
   if (equiv_cells) {
     for (LibertyCell* equiv_cell : *equiv_cells) {
-      if (match_cell_footprint_ && !footprintsMatch(source_cell, equiv_cell)) {
-        continue;
+      if (match_cell_footprint_) {
+        const bool footprints_match = sta::stringEqIf(source_cell->footprint(),
+                                                      equiv_cell->footprint());
+        if (!footprints_match) {
+          continue;
+        }
+      }
+
+      if (source_cell->userFunctionClass()) {
+        const bool user_function_classes_match = sta::stringEqIf(
+            source_cell->userFunctionClass(), equiv_cell->userFunctionClass());
+        if (!user_function_classes_match) {
+          continue;
+        }
       }
 
       swappable_cells.push_back(equiv_cell);
@@ -1030,11 +1044,6 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
   }
 
   return swappable_cells;
-}
-
-bool Resizer::footprintsMatch(LibertyCell* source, LibertyCell* target)
-{
-  return sta::stringEqIf(source->footprint(), target->footprint());
 }
 
 void Resizer::checkLibertyForAllCorners()
@@ -1276,7 +1285,8 @@ bool Resizer::replaceCell(Instance* inst,
     designAreaIncr(area(replacement_master));
 
     // Legalize the position of the instance in case it leaves the die
-    if (parasitics_src_ == ParasiticsSrc::global_routing) {
+    if (parasitics_src_ == ParasiticsSrc::global_routing
+        || parasitics_src_ == ParasiticsSrc::detailed_routing) {
       opendp_->legalCellPos(db_network_->staToDb(inst));
     }
     if (haveEstimatedParasitics()) {
@@ -2691,7 +2701,8 @@ void Resizer::repairDesign(double max_wire_length,
   utl::SetAndRestore<bool> set_match_footprint(match_cell_footprint_,
                                                match_cell_footprint);
   resizePreamble();
-  if (parasitics_src_ == ParasiticsSrc::global_routing) {
+  if (parasitics_src_ == ParasiticsSrc::global_routing
+      || parasitics_src_ == ParasiticsSrc::detailed_routing) {
     opendp_->initMacrosAndGrid();
   }
   repair_design_->repairDesign(
@@ -2831,7 +2842,7 @@ void Resizer::cloneClkInverter(Instance* inv)
 
 ////////////////////////////////////////////////////////////////
 
-void Resizer::repairSetup(double setup_margin,
+bool Resizer::repairSetup(double setup_margin,
                           double repair_tns_end_percent,
                           int max_passes,
                           bool match_cell_footprint,
@@ -2845,18 +2856,19 @@ void Resizer::repairSetup(double setup_margin,
   utl::SetAndRestore<bool> set_match_footprint(match_cell_footprint_,
                                                match_cell_footprint);
   resizePreamble();
-  if (parasitics_src_ == ParasiticsSrc::global_routing) {
+  if (parasitics_src_ == ParasiticsSrc::global_routing
+      || parasitics_src_ == ParasiticsSrc::detailed_routing) {
     opendp_->initMacrosAndGrid();
   }
-  repair_setup_->repairSetup(setup_margin,
-                             repair_tns_end_percent,
-                             max_passes,
-                             verbose,
-                             skip_pin_swap,
-                             skip_gate_cloning,
-                             skip_buffering,
-                             skip_buffer_removal,
-                             skip_last_gasp);
+  return repair_setup_->repairSetup(setup_margin,
+                                    repair_tns_end_percent,
+                                    max_passes,
+                                    verbose,
+                                    skip_pin_swap,
+                                    skip_gate_cloning,
+                                    skip_buffering,
+                                    skip_buffer_removal,
+                                    skip_last_gasp);
 }
 
 void Resizer::reportSwappablePins()
@@ -2879,7 +2891,7 @@ void Resizer::rebufferNet(const Pin* drvr_pin)
 
 ////////////////////////////////////////////////////////////////
 
-void Resizer::repairHold(
+bool Resizer::repairHold(
     double setup_margin,
     double hold_margin,
     bool allow_setup_violations,
@@ -2903,15 +2915,16 @@ void Resizer::repairHold(
                                                  LibertyCellSeq());
 
   resizePreamble();
-  if (parasitics_src_ == ParasiticsSrc::global_routing) {
+  if (parasitics_src_ == ParasiticsSrc::global_routing
+      || parasitics_src_ == ParasiticsSrc::detailed_routing) {
     opendp_->initMacrosAndGrid();
   }
-  repair_hold_->repairHold(setup_margin,
-                           hold_margin,
-                           allow_setup_violations,
-                           max_buffer_percent,
-                           max_passes,
-                           verbose);
+  return repair_hold_->repairHold(setup_margin,
+                                  hold_margin,
+                                  allow_setup_violations,
+                                  max_buffer_percent,
+                                  max_passes,
+                                  verbose);
 }
 
 void Resizer::repairHold(const Pin* end_pin,
@@ -2942,16 +2955,17 @@ int Resizer::holdBufferCount() const
 }
 
 ////////////////////////////////////////////////////////////////
-void Resizer::recoverPower(float recover_power_percent,
+bool Resizer::recoverPower(float recover_power_percent,
                            bool match_cell_footprint)
 {
   utl::SetAndRestore<bool> set_match_footprint(match_cell_footprint_,
                                                match_cell_footprint);
   resizePreamble();
-  if (parasitics_src_ == ParasiticsSrc::global_routing) {
+  if (parasitics_src_ == ParasiticsSrc::global_routing
+      || parasitics_src_ == ParasiticsSrc::detailed_routing) {
     opendp_->initMacrosAndGrid();
   }
-  recover_power_->recoverPower(recover_power_percent);
+  return recover_power_->recoverPower(recover_power_percent);
 }
 ////////////////////////////////////////////////////////////////
 // Journal to roll back changes
@@ -3479,7 +3493,8 @@ Instance* Resizer::makeInstance(LibertyCell* cell,
   db_inst->setSourceType(odb::dbSourceType::TIMING);
   setLocation(db_inst, loc);
   // Legalize the position of the instance in case it leaves the die
-  if (parasitics_src_ == ParasiticsSrc::global_routing) {
+  if (parasitics_src_ == ParasiticsSrc::global_routing
+      || parasitics_src_ == ParasiticsSrc::detailed_routing) {
     opendp_->legalCellPos(db_inst);
   }
   designAreaIncr(area(db_inst->getMaster()));
