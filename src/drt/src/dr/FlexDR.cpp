@@ -905,6 +905,49 @@ void expandBoxes(std::vector<std::pair<Rect, std::vector<Rect*>>>& merged_boxes)
     expandBox(box, merged_boxes, frDirEnum::S, vertical_expand);
   }
 }
+
+std::vector<std::vector<Rect>> getWorkerBatchesBoxes(
+    frDesign* design,
+    std::vector<std::pair<Rect, std::vector<Rect*>>>& merged_boxes)
+{
+  if (merged_boxes.empty()) {
+    return {};
+  }
+  for (auto& [box, drvs] : merged_boxes) {
+    auto min_idx = box.ll();
+    auto max_idx = box.ur();
+    box = {design->getTopBlock()->getGCellBox(min_idx).ll(),
+           design->getTopBlock()->getGCellBox(max_idx).ur()};
+  }
+  std::vector<std::vector<Rect>> batches(1);
+  batches[0].emplace_back(merged_boxes[0].first);
+  for (int i = 1; i < merged_boxes.size(); i++) {
+    auto curr_box = merged_boxes[i].first;
+    Rect curr_ext_box;
+    curr_box.bloat(MTSAFEDIST, curr_ext_box);
+    bool added = false;
+    for (auto& batch : batches) {
+      bool intersects = false;
+      for (const auto& route_box : batch) {
+        Rect ext_box;
+        route_box.bloat(MTSAFEDIST, ext_box);
+        if (ext_box.intersects(curr_ext_box)) {
+          intersects = true;
+          break;
+        }
+      }
+      if (!intersects) {
+        batch.emplace_back(curr_box);
+        added = true;
+        break;
+      }
+    }
+    if (!added) {
+      batches.push_back({curr_box});
+    }
+  }
+  return batches;
+}
 }  // namespace stub_tiles
 
 void FlexDR::stubbornTilesFlow(SearchRepairArgs args,
@@ -920,50 +963,51 @@ void FlexDR::stubbornTilesFlow(SearchRepairArgs args,
   }
   auto merged_boxes = stub_tiles::mergeBoxes(drv_boxes);
   stub_tiles::expandBoxes(merged_boxes);
-  for (auto& [box, drvs] : merged_boxes) {
-    auto min_idx = box.ll();
-    auto max_idx = box.ur();
-    // logger_->report("Box size is {}x{}", box.dx(), box.dy());
-    box = {getDesign()->getTopBlock()->getGCellBox(min_idx).ll(),
-           getDesign()->getTopBlock()->getGCellBox(max_idx).ur()};
-    // logger_->report("Box is {}", box);
-  }
+  auto route_boxes_batches
+      = stub_tiles::getWorkerBatchesBoxes(getDesign(), merged_boxes);
   std::vector<frUInt4> drc_costs
       = {args.workerDRCCost, args.workerDRCCost / 2, args.workerDRCCost * 2};
   std::vector<frUInt4> marker_costs = {args.workerMarkerCost,
                                        args.workerMarkerCost / 2,
                                        args.workerMarkerCost * 2};
-  std::vector<std::pair<int, std::unique_ptr<FlexDRWorker>>> workers;
-  for (int i = 0; i < merged_boxes.size(); i++) {
-    for (auto drc_cost : drc_costs) {
-      for (auto marker_cost : marker_costs) {
-        args.workerDRCCost = drc_cost;
-        args.workerMarkerCost = marker_cost;
-        workers.emplace_back(i,
-                             createWorker(0, 0, args, merged_boxes[i].first));
+  std::vector<std::vector<std::pair<int, std::unique_ptr<FlexDRWorker>>>>
+      workers_batches(route_boxes_batches.size());
+  iter_prog.total_num_workers = 0;
+  for (int batch_id = 0; batch_id < route_boxes_batches.size(); batch_id++) {
+    auto& batch = route_boxes_batches[batch_id];
+    iter_prog.total_num_workers += batch.size();
+    for (int worker_id = 0; worker_id < batch.size(); worker_id++) {
+      for (auto drc_cost : drc_costs) {
+        for (auto marker_cost : marker_costs) {
+          args.workerDRCCost = drc_cost;
+          args.workerMarkerCost = marker_cost;
+          workers_batches[batch_id].emplace_back(
+              worker_id, createWorker(0, 0, args, batch[worker_id]));
+        }
       }
     }
   }
-  iter_prog.total_num_workers = workers.size();
-  const auto num_markers = getDesign()->getTopBlock()->getNumMarkers();
   omp_set_num_threads(MAX_THREADS);
+  for (auto& batch : workers_batches) {
+    const auto num_markers = getDesign()->getTopBlock()->getNumMarkers();
 #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < workers.size(); i++) {
-    workers[i].second->main(getDesign());
+    for (int i = 0; i < batch.size(); i++) {
+      batch[i].second->main(getDesign());
 #pragma omp critical
-    {
-      printIterationProgress(logger_, iter_prog, num_markers);
+      {
+        printIterationProgress(logger_, iter_prog, num_markers);
+      }
     }
-  }
-  std::set<int> committed_ids;
-  for (int i = 0; i < workers.size(); i++) {
-    if (workers[i].second->getBestNumMarkers() == 0
-        && committed_ids.find(workers[i].first) == committed_ids.end()) {
-      committed_ids.insert(i);
-      workers[i].second->end(getDesign());
+    std::map<int, int> worker_best_result;
+    for (auto& [worker_id, worker] : batch) {
+      if (worker_best_result.find(worker_id) == worker_best_result.end()
+          || worker->getBestNumMarkers() < worker_best_result[worker_id]) {
+        worker_best_result[worker_id] = worker->getBestNumMarkers();
+        worker->end(getDesign());
+      }
     }
+    batch.clear();
   }
-  workers.clear();
 }
 
 void FlexDR::searchRepair(SearchRepairArgs args)
