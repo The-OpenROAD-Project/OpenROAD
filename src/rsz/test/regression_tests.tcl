@@ -68,7 +68,8 @@ record_tests {
   repair_setup2
   repair_setup3
   repair_setup4
-  repair_setup4_hier    
+  repair_setup4_hier
+  repair_setup4_flat
   repair_setup5
   repair_setup6
   repair_setup7

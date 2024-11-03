@@ -33,11 +33,11 @@ original HPWL               4.7 u
 legalized HPWL             57.6 u
 delta HPWL                 1136 %
 
-worst slack -0.54
-tns -1.467
+worst slack -0.56
+tns -1.578
 [INFO RSZ-0094] Found 6 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 6 out of 6 (100.00%) violating endpoints...
 [INFO RSZ-0040] Inserted 1 buffers.
-[INFO RSZ-0041] Resized 11 instances.
+[INFO RSZ-0041] Resized 2 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 No differences found.
