@@ -430,20 +430,38 @@ void Verilog2db::makeDbModule(
         }
       }
       module->getModBTerms().reverse();
-      // make the instance iterms
+
+      // make the instance iterms and set up their reference
+      // to the child ports (dbModBTerms).
+
       InstancePinIterator* ip_iter = network_->pinIterator(inst);
       while (ip_iter->hasNext()) {
         Pin* cur_pin = ip_iter->next();
         std::string pin_name_string = network_->portName(cur_pin);
+        //
+        // we do not need to store the pin names.. But they are
+        // assumed to exist in the STA world.
+        //
         dbModITerm* moditerm
             = dbModITerm::create(modinst, pin_name_string.c_str());
+        dbModBTerm* modbterm;
+        std::string port_name_str = pin_name_string;
+        size_t last_idx = port_name_str.find_last_of('/');
+        if (last_idx != string::npos) {
+          port_name_str = port_name_str.substr(last_idx + 1);
+        }
+        dbModule* module = modinst->getMaster();
+        modbterm = module->findModBTerm(port_name_str.c_str());
+        moditerm->setChildModBTerm(modbterm);
+
         (void) moditerm;
         debugPrint(logger_,
                    utl::ODB,
                    "dbReadVerilog",
                    1,
-                   "Created module iterm {} ",
-                   moditerm->getName());
+                   "Created module iterm {} for bterm {}",
+                   moditerm->getName(),
+                   modbterm->getName());
       }
     }
   }
