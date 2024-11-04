@@ -593,13 +593,13 @@ class FlexPA
 
   /**
    * @brief Extracts the access patterns given the graph nodes composing the
-   * access points relatioship
+   * access points relationship
    *
    * @param nodes {pin,access_point} nodes of the access pattern graph
    * @param pins vector os pins of the unique instance
    * @param used_access_points a set of all used access points
-   * @param max_access_point_size number of acc points the instance with most
-   * acc points has
+   * @param max_access_point_size the maximum number of access points across
+   * all instances
    *
    * @returns a vector of ints representing the access pattern in the form:
    * access_pattern[pin_idx] = access_point_idx of the pin
