@@ -256,23 +256,12 @@ void FlexGridGraph::initEdges(
     for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
       auto yCoord = yCoords_[yIdx];
       auto yIt = yLayerMap.find(yCoord);
-      auto yIt2 = yLayer2Map.find(yCoord);
-      auto yIt3 = yNonPrefLayerMap.find(yCoord);
-      bool yFound = (yIt != yLayerMap.end());
-      bool yFound2 = (yIt2 != yLayer2Map.end());
-      bool yFound3 = (yIt3 != yNonPrefLayerMap.end());
+      if (yIt == yLayerMap.end()) continue;
       for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
-        auto xCoord = xCoords_[xIdx];
-        auto xIt = xLayerMap.find(xCoord);
-        auto xIt2 = xLayer2Map.find(xCoord);
-        auto xIt3 = xNonPrefLayerMap.find(xCoord);
-        bool xFound = (xIt != xLayerMap.end());
-        bool xFound2 = (xIt2 != xLayer2Map.end());
-        bool xFound3 = (xIt3 != xNonPrefLayerMap.end());
         // add cost to out-of-die edge
         bool isOutOfDieVia = outOfDieVia(xIdx, yIdx, zIdx, dieBox_);
         // add edge for preferred direction
-        if (dir == dbTechLayerDir::HORIZONTAL && yFound) {
+        if (dir == dbTechLayerDir::HORIZONTAL) {
           if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
               && layerNum <= router_cfg_->TOP_ROUTING_LAYER) {
             if ((!isOutOfDieVia || !hasOutOfDieViol(xIdx, yIdx, zIdx))
@@ -284,13 +273,16 @@ void FlexGridGraph::initEdges(
               }
             }
           }
+          auto xCoord = xCoords_[xIdx];
+          auto xIt2 = xLayer2Map.find(xCoord);
+          if (xIt2 == xLayer2Map.end()) continue;
           // via to upper layer
-          if (xFound2 && !isOutOfDieVia) {
+          if (!isOutOfDieVia) {
             const bool is_on_grid
-                = yIt->second != nullptr && xIt2->second != nullptr;
+              = yIt->second != nullptr && xIt2->second != nullptr;
             const bool allow_off_grid
-                = layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
-                  || isAccessPointLocation(layerNum, xCoord, yCoord);
+              = layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
+              || isAccessPointLocation(layerNum, xCoord, yCoord);
             if (is_on_grid || allow_off_grid) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
               if (!is_on_grid) {
@@ -298,7 +290,20 @@ void FlexGridGraph::initEdges(
               }
             }
           }
-        } else if (dir == dbTechLayerDir::VERTICAL && xFound) {
+        }
+      }
+    }
+    for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
+      auto yCoord = yCoords_[yIdx];
+      auto yIt2 = yLayer2Map.find(yCoord);
+      for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
+        auto xCoord = xCoords_[xIdx];
+        auto xIt = xLayerMap.find(xCoord);
+        if (xIt == xLayerMap.end()) continue;
+        // add cost to out-of-die edge
+        bool isOutOfDieVia = outOfDieVia(xIdx, yIdx, zIdx, dieBox_);
+        // add edge for preferred direction
+        if (dir == dbTechLayerDir::VERTICAL) {
           if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
               && layerNum <= router_cfg_->TOP_ROUTING_LAYER) {
             if ((!isOutOfDieVia || !hasOutOfDieViol(xIdx, yIdx, zIdx))
@@ -310,8 +315,9 @@ void FlexGridGraph::initEdges(
               }
             }
           }
+          if (yIt2 == yLayer2Map.end()) continue;
           // via to upper layer
-          if (yFound2 && !isOutOfDieVia) {
+          if (!isOutOfDieVia) {
             const bool is_on_grid
                 = xIt->second != nullptr && yIt2->second != nullptr;
             const bool allow_off_grid
@@ -326,19 +332,40 @@ void FlexGridGraph::initEdges(
             }
           }
         }
+      }
+    }
+    for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
+      for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
+        auto xCoord = xCoords_[xIdx];
+        auto xIt3 = xNonPrefLayerMap.find(xCoord);
+        if (xIt3 == xNonPrefLayerMap.end()) continue;
         // get non pref track layer --> use upper layer pref dir track if
         // possible
         if (router_cfg_->USENONPREFTRACKS && !layer->isUnidirectional()) {
           // add edge for non-preferred direction
           // vertical non-pref track
-          if (dir == dbTechLayerDir::HORIZONTAL && xFound3) {
+          if (dir == dbTechLayerDir::HORIZONTAL) {
             if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
                 && layerNum <= router_cfg_->TOP_ROUTING_LAYER) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::N, bbox, initDR);
               setGridCostN(xIdx, yIdx, zIdx);
             }
             // horizontal non-pref track
-          } else if (dir == dbTechLayerDir::VERTICAL && yFound3) {
+          }
+        }
+      }
+    }
+    for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
+      auto yCoord = yCoords_[yIdx];
+      auto yIt3 = yNonPrefLayerMap.find(yCoord);
+      if (yIt3 == yNonPrefLayerMap.end()) continue;
+      for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
+        // get non pref track layer --> use upper layer pref dir track if
+        // possible
+        if (router_cfg_->USENONPREFTRACKS && !layer->isUnidirectional()) {
+          // add edge for non-preferred direction
+          // vertical non-pref track
+          if (dir == dbTechLayerDir::VERTICAL) {
             if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
                 && layerNum <= router_cfg_->TOP_ROUTING_LAYER) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::E, bbox, initDR);
