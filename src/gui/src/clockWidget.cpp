@@ -1542,6 +1542,25 @@ void ClockWidget::postReadLiberty()
   }
 }
 
+void ClockWidget::selectClock(const std::string& clock_name)
+{
+  setVisible(true);
+
+  if (views_.empty()) {
+    populate(nullptr);
+  }
+
+  for (auto& view : views_) {
+    if (view->getClockName() == clock_name) {
+      clocks_tab_->setCurrentWidget(view.get());
+
+      return;
+    }
+  }
+
+  logger_->error(utl::GUI, 74, "Unable to find clock: {}", clock_name);
+}
+
 void ClockWidget::saveImage(const std::string& clock_name,
                             const std::string& path,
                             const std::string& corner,
@@ -1568,35 +1587,28 @@ void ClockWidget::saveImage(const std::string& clock_name,
     populate(sta_corner);
   }
 
-  bool found = false;
-  for (auto& view : views_) {
-    if (view->getClockName() == clock_name) {
-      found = true;
+  selectClock(clock_name);
 
-      ClockTreeView print_view(
-          view->getClockTree(), stagui_.get(), logger_, this);
-      QSize view_size = view->size();
-      if (width_px.has_value()) {
-        view_size.setWidth(width_px.value());
-      }
-      if (height_px.has_value()) {
-        view_size.setHeight(height_px.value());
-      }
-      print_view.scale(1, 1);  // mysteriously necessary sometimes
-      print_view.resize(view_size);
-      // Ensure the new view is sized correctly by Qt by processing the event
-      // so fit will work
-      QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-      print_view.fit();
-      print_view.save(QString::fromStdString(path));
-    }
+  ClockTreeView* view
+      = static_cast<ClockTreeView*>(clocks_tab_->currentWidget());
+
+  ClockTreeView print_view(view->getClockTree(), stagui_.get(), logger_, this);
+  QSize view_size = view->size();
+  if (width_px.has_value()) {
+    view_size.setWidth(width_px.value());
   }
+  if (height_px.has_value()) {
+    view_size.setHeight(height_px.value());
+  }
+  print_view.scale(1, 1);  // mysteriously necessary sometimes
+  print_view.resize(view_size);
+  // Ensure the new view is sized correctly by Qt by processing the event
+  // so fit will work
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+  print_view.fit();
+  print_view.save(QString::fromStdString(path));
 
   setVisible(visible);
-
-  if (!found) {
-    logger_->error(utl::GUI, 74, "Unable to find clock: {}", clock_name);
-  }
 }
 
 void ClockWidget::currentClockChanged(int index)

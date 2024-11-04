@@ -123,6 +123,24 @@ std::string IOPlacer::getEdgeString(Edge edge)
   return edge_str;
 }
 
+std::string IOPlacer::getDirectionString(Direction direction)
+{
+  std::string direction_str;
+  if (direction == Direction::input) {
+    direction_str = "INPUT";
+  } else if (direction == Direction::output) {
+    direction_str = "OUTPUT";
+  } else if (direction == Direction::inout) {
+    direction_str = "INOUT";
+  } else if (direction == Direction::feedthru) {
+    direction_str = "FEEDTHRU";
+  } else if (direction == Direction::invalid) {
+    direction_str = "INVALID";
+  }
+
+  return direction_str;
+}
+
 void IOPlacer::initNetlistAndCore(const std::set<int>& hor_layer_idx,
                                   const std::set<int>& ver_layer_idx)
 {
@@ -588,16 +606,23 @@ void IOPlacer::placeFallbackGroup(
                 group.first.size());
 }
 
-bool IOPlacer::checkBlocked(Edge edge, int pos, int layer)
+bool IOPlacer::checkBlocked(Edge edge, const odb::Point& pos, int layer)
 {
+  for (odb::Rect fixed_pin_shape : layer_fixed_pins_shapes_[layer]) {
+    if (fixed_pin_shape.intersects(pos)) {
+      return true;
+    }
+  }
+  bool vertical_pin = (edge == Edge::top || edge == Edge::bottom);
+  int coord = vertical_pin ? pos.getX() : pos.getY();
   for (Interval blocked_interval : excluded_intervals_) {
     // check if the blocked interval blocks all layers (== -1) or if it blocks
     // the layer of the position
     if (blocked_interval.getLayer() == -1
         || blocked_interval.getLayer() == layer) {
       if (blocked_interval.getEdge() == edge
-          && pos > blocked_interval.getBegin()
-          && pos < blocked_interval.getEnd()) {
+          && coord > blocked_interval.getBegin()
+          && coord < blocked_interval.getEnd()) {
         return true;
       }
     }
@@ -887,11 +912,8 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
     }
 
     for (const Point& pos : slots) {
-      curr_x = pos.getX();
-      curr_y = pos.getY();
-      bool blocked = vertical_pin ? checkBlocked(edge, curr_x, layer)
-                                  : checkBlocked(edge, curr_y, layer);
-      slots_.push_back({blocked, false, Point(curr_x, curr_y), layer, edge});
+      bool blocked = checkBlocked(edge, pos, layer);
+      slots_.push_back({blocked, false, pos, layer, edge});
     }
   }
 }
@@ -1616,24 +1638,14 @@ void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
 {
   Interval interval(edge, begin, end);
   bool inserted = false;
-  std::string pin_names;
-  int pin_cnt = 0;
-  for (odb::dbBTerm* pin : *pins) {
-    pin_names += pin->getName() + " ";
-    pin_cnt++;
-    if (pin_cnt >= pins_per_report_
-        && !logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
-      pin_names += "... ";
-      break;
-    }
-  }
+  std::string pin_names = getPinSetOrListString(*pins);
 
   if (logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
     debugPrint(logger_,
                utl::PPL,
                "pin_groups",
                1,
-               "Restrict pins [ {}] to region {:.2f}u-{:.2f}u at the {} edge.",
+               "Restrict pins [ {} ] to region {:.2f}u-{:.2f}u at the {} edge.",
                pin_names,
                getBlock()->dbuToMicrons(begin),
                getBlock()->dbuToMicrons(end),
@@ -1642,7 +1654,7 @@ void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
     logger_->info(
         utl::PPL,
         48,
-        "Restrict pins [ {}] to region {:.2f}u-{:.2f}u at the {} edge.",
+        "Restrict pins [ {} ] to region {:.2f}u-{:.2f}u at the {} edge.",
         pin_names,
         getBlock()->dbuToMicrons(begin),
         getBlock()->dbuToMicrons(end),
@@ -1668,6 +1680,14 @@ void IOPlacer::addDirectionConstraint(Direction direction,
                                       int end)
 {
   Interval interval(edge, begin, end);
+  logger_->info(utl::PPL,
+                67,
+                "Restrict {} pins to region {}u-{}u, in the {} edge.",
+                getDirectionString(direction),
+                getBlock()->dbuToMicrons(begin),
+                getBlock()->dbuToMicrons(end),
+                getEdgeString(edge));
+
   Constraint constraint(PinSet(), direction, interval);
   constraints_.push_back(constraint);
 }
@@ -1675,6 +1695,19 @@ void IOPlacer::addDirectionConstraint(Direction direction,
 void IOPlacer::addTopLayerConstraint(PinSet* pins, const odb::Rect& region)
 {
   Constraint constraint(*pins, Direction::invalid, region);
+  std::string pin_names = getPinSetOrListString(*pins);
+
+  logger_->info(utl::PPL,
+                60,
+                "Restrict pins [ {} ] to region ({:.2f}u, {:.2f}u)-({:.2f}u, "
+                "{:.2f}u) at routing layer {}.",
+                pin_names,
+                getBlock()->dbuToMicrons(region.xMin()),
+                getBlock()->dbuToMicrons(region.yMin()),
+                getBlock()->dbuToMicrons(region.xMax()),
+                getBlock()->dbuToMicrons(region.yMax()),
+                getTopLayer()->getConstName());
+
   constraints_.push_back(constraint);
   for (odb::dbBTerm* bterm : *pins) {
     if (!bterm->getFirstPinPlacementStatus().isFixed()) {
@@ -1971,25 +2004,33 @@ Direction IOPlacer::getDirection(const std::string& direction)
   return Direction::feedthru;
 }
 
-void IOPlacer::addPinGroup(PinList* group, bool order)
+/* static */
+template <class PinSetOrList>
+std::string IOPlacer::getPinSetOrListString(const PinSetOrList& group)
 {
   std::string pin_names;
   int pin_cnt = 0;
-  for (odb::dbBTerm* pin : *group) {
-    pin_names += pin->getName() + " ";
+  for (odb::dbBTerm* pin : group) {
+    pin_names += (pin_cnt ? " " : "") + pin->getName();
     pin_cnt++;
     if (pin_cnt >= pins_per_report_
         && !logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
-      pin_names += "... ";
+      pin_names += " ...";
       break;
     }
   }
+  return pin_names;
+}
+
+void IOPlacer::addPinGroup(PinList* group, bool order)
+{
+  std::string pin_names = getPinSetOrListString(*group);
 
   if (logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
     debugPrint(
-        logger_, utl::PPL, "pin_groups", 1, "Pin group: [ {}]", pin_names);
+        logger_, utl::PPL, "pin_groups", 1, "Pin group: [ {} ]", pin_names);
   } else {
-    logger_->info(utl::PPL, 44, "Pin group: [ {}]", pin_names);
+    logger_->info(utl::PPL, 44, "Pin group: [ {} ]", pin_names);
   }
   pin_groups_.push_back({*group, order});
 }
@@ -2063,7 +2104,6 @@ void IOPlacer::runHungarianMatching(bool random_mode)
   initNetlistAndCore(hor_layers_, ver_layers_);
   getBlockedRegionsFromMacros();
 
-  // initIOLists();
   defineSlots();
 
   initMirroredPins();
@@ -2439,10 +2479,17 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
     // between pins
     bool placed_at_blocked
         = horizontal
-              ? checkBlocked(edge, pos.y() - height / 2, layer_level)
-                    || checkBlocked(edge, pos.y() + height / 2, layer_level)
-              : checkBlocked(edge, pos.x() - width / 2, layer_level)
-                    || checkBlocked(edge, pos.x() + width / 2, layer_level);
+              ? checkBlocked(edge,
+                             odb::Point(pos.x(), pos.y() - height / 2),
+                             layer_level)
+                    || checkBlocked(edge,
+                                    odb::Point(pos.x(), pos.y() + height / 2),
+                                    layer_level)
+              : checkBlocked(
+                    edge, odb::Point(pos.x() - width / 2, pos.y()), layer_level)
+                    || checkBlocked(edge,
+                                    odb::Point(pos.x() + width / 2, pos.y()),
+                                    layer_level);
     bool sum = true;
     int offset_sum = 1;
     int offset_sub = 1;
@@ -2462,12 +2509,22 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
       // between pins
       placed_at_blocked
           = horizontal
-                ? checkBlocked(edge, pos.y() - height / 2 + offset, layer_level)
+                ? checkBlocked(
+                      edge,
+                      odb::Point(pos.x(), pos.y() - height / 2 + offset),
+                      layer_level)
                       || checkBlocked(
-                          edge, pos.y() + height / 2 + offset, layer_level)
-                : checkBlocked(edge, pos.x() - width / 2 + offset, layer_level)
+                          edge,
+                          odb::Point(pos.x(), pos.y() + height / 2 + offset),
+                          layer_level)
+                : checkBlocked(
+                      edge,
+                      odb::Point(pos.x() - width / 2 + offset, pos.y()),
+                      layer_level)
                       || checkBlocked(
-                          edge, pos.x() + width / 2 + offset, layer_level);
+                          edge,
+                          odb::Point(pos.x() + width / 2 + offset, pos.y()),
+                          layer_level);
     }
     pos.addX(horizontal ? 0 : offset);
     pos.addY(horizontal ? offset : 0);
@@ -2819,18 +2876,27 @@ void IOPlacer::initNetlist()
 
   odb::dbSet<odb::dbBTerm> bterms = getBlock()->getBTerms();
 
-  for (odb::dbBTerm* b_term : bterms) {
-    if (b_term->getFirstPinPlacementStatus().isFixed()) {
+  for (odb::dbBTerm* bterm : bterms) {
+    int x_pos = 0;
+    int y_pos = 0;
+    bterm->getFirstPinLocation(x_pos, y_pos);
+    if (bterm->getFirstPinPlacementStatus().isFixed()) {
+      for (odb::dbBPin* bterm_pin : bterm->getBPins()) {
+        for (odb::dbBox* bpin_box : bterm_pin->getBoxes()) {
+          int layer = bpin_box->getTechLayer()->getRoutingLevel();
+          layer_fixed_pins_shapes_[layer].push_back(bpin_box->getBox());
+        }
+      }
       continue;
     }
-    odb::dbNet* net = b_term->getNet();
+    odb::dbNet* net = bterm->getNet();
     if (net == nullptr) {
-      logger_->warn(PPL, 38, "Pin {} without net.", b_term->getConstName());
+      logger_->warn(PPL, 38, "Pin {} without net.", bterm->getConstName());
       continue;
     }
 
     Direction dir = Direction::inout;
-    switch (b_term->getIoType().getValue()) {
+    switch (bterm->getIoType().getValue()) {
       case odb::dbIoType::INPUT:
         dir = Direction::input;
         break;
@@ -2841,12 +2907,8 @@ void IOPlacer::initNetlist()
         dir = Direction::inout;
     }
 
-    int x_pos = 0;
-    int y_pos = 0;
-    b_term->getFirstPinLocation(x_pos, y_pos);
-
     Point bounds(0, 0);
-    IOPin io_pin(b_term,
+    IOPin io_pin(bterm,
                  Point(x_pos, y_pos),
                  dir,
                  bounds,

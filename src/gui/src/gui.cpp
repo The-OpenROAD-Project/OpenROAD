@@ -96,7 +96,7 @@ static void message_handler(QtMsgType type,
   }
   switch (type) {
     case QtDebugMsg:
-      logger->debug(utl::GUI, "qt", print_msg);
+      debugPrint(logger, utl::GUI, "qt", 1, print_msg);
       break;
     case QtInfoMsg:
       logger->info(utl::GUI, 75, print_msg);
@@ -775,6 +775,14 @@ void Gui::saveClockTreeImage(const std::string& clock_name,
   }
   main_window->getClockViewer()->saveImage(
       clock_name, filename, corner, width, height);
+}
+
+void Gui::selectClockviewerClock(const std::string& clock_name)
+{
+  if (!enabled()) {
+    return;
+  }
+  main_window->getClockViewer()->selectClock(clock_name);
 }
 
 static QWidget* findWidget(const std::string& name)

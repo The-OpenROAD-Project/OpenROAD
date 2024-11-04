@@ -8,7 +8,7 @@ tech.readLef("sky130hd/sky130hd.tlef")
 tech.readLef("sky130hd/sky130_fd_sc_hd_merged.lef")
 tech.readLef("sky130_power_switch/power_switch.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("sky130_power_switch/floorplan.def")
 
 pdn_aux.add_global_connection(design, net_name="VDD", power=True, pin_pattern="^VDDG$")

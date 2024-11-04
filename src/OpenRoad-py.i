@@ -43,6 +43,7 @@
 #include "ord/Tech.h"
 #include "ord/Design.h"
 #include "ord/Timing.h"
+#include "ifp/InitFloorplan.hh"
 
 using odb::dbDatabase;
 using odb::dbBlock;

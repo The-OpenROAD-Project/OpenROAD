@@ -1,0 +1,14 @@
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 15 components and 98 component-terminals.
+[INFO ODB-0133]     Created 13 nets and 30 connections.
+ (clk ^) r -0.14:2.03 f -0.05:2.01
+ (clk ^) r -0.07:-0.22 f 0.02:-0.26
+ (clk ^) r 0.05:1.85 f 0.16:1.79
+[INFO RSZ-0046] Found 1 endpoints with hold violations.
+[WARNING RSZ-0064] Unable to repair all hold checks within margin.
+ (clk ^) r -0.14:2.03 f -0.05:2.01
+ (clk ^) r -0.07:-0.22 f 0.02:-0.26
+ (clk ^) r 0.05:1.85 f 0.16:1.79

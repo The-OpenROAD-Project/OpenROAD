@@ -494,6 +494,7 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbMTerm*>(new DbMTermDescriptor(
       db_, [this]() -> bool { return show_poly_decomp_view_->isChecked(); }));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
+  gui->registerDescriptor<odb::dbBPin*>(new DbBPinDescriptor(db_));
   gui->registerDescriptor<odb::dbVia*>(new DbViaDescriptor(db_));
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
   gui->registerDescriptor<odb::dbObstruction*>(
@@ -514,7 +515,7 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbTechNonDefaultRule*>(
       new DbNonDefaultRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbTechLayerRule*>(
-      new DbTechLayerRuleDescriptor());
+      new DbTechLayerRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbTechSameNetRule*>(
       new DbTechSameNetRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbSite*>(new DbSiteDescriptor(db_));

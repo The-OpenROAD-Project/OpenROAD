@@ -11,7 +11,7 @@ design = Design(tech)
 design.readVerilog("reg1.v")
 design.link("top")
 
-odb.dbBlockage_create(ord.get_db_block(), 0, 0, 2000000, 208400)
+odb.dbBlockage_create(design.getBlock(), 0, 0, 2000000, 208400)
 
 floorplan = design.getFloorplan()
 floorplan.initFloorplan(

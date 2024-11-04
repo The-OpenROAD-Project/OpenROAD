@@ -4,7 +4,7 @@ import rmp_aux
 import rmp
 
 tech = Tech()
-design = Design(tech)
+design = helpers.make_design(tech)
 
 blif = rmp_aux.create_blif(
     design, hicell="LOGIC1_X1", hiport="Z", locell="LOGIC0_X1", loport="Z"

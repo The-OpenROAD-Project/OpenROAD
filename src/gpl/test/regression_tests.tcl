@@ -18,6 +18,7 @@ record_tests {
   simple07
   simple08
   simple09
+  simple10
   core01
   ar01
   ar02

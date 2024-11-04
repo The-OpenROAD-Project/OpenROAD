@@ -5,7 +5,7 @@ import dpl_aux
 
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("blockage01.def")
 
 dpl_aux.detailed_placement(design)

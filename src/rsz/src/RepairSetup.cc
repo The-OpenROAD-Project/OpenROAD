@@ -86,7 +86,7 @@ void RepairSetup::init()
   db_network_ = resizer_->db_network_;
 }
 
-void RepairSetup::repairSetup(const float setup_slack_margin,
+bool RepairSetup::repairSetup(const float setup_slack_margin,
                               const double repair_tns_end_percent,
                               const int max_passes,
                               const bool verbose,
@@ -96,6 +96,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
                               const bool skip_buffer_removal,
                               const bool skip_last_gasp)
 {
+  bool repaired = false;
   init();
   constexpr int digits = 3;
   inserted_buffer_count_ = 0;
@@ -143,7 +144,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
     // nothing to repair
     logger_->metric("design__instance__count__setup_buffer", 0);
     logger_->info(RSZ, 98, "No setup violations found");
-    return;
+    return false;
   }
 
   int end_index = 0;
@@ -392,11 +393,14 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   }
 
   if (removed_buffer_count_ > 0) {
+    repaired = true;
     logger_->info(RSZ, 59, "Removed {} buffers.", removed_buffer_count_);
   }
   if (inserted_buffer_count_ > 0 && split_load_buffer_count_ == 0) {
+    repaired = true;
     logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
   } else if (inserted_buffer_count_ > 0 && split_load_buffer_count_ > 0) {
+    repaired = true;
     logger_->info(RSZ,
                   45,
                   "Inserted {} buffers, {} to split loads.",
@@ -406,21 +410,27 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   logger_->metric("design__instance__count__setup_buffer",
                   inserted_buffer_count_);
   if (resize_count_ > 0) {
+    repaired = true;
     logger_->info(RSZ, 41, "Resized {} instances.", resize_count_);
   }
   if (swap_pin_count_ > 0) {
+    repaired = true;
     logger_->info(RSZ, 43, "Swapped pins on {} instances.", swap_pin_count_);
   }
   if (cloned_gate_count_ > 0) {
+    repaired = true;
     logger_->info(RSZ, 49, "Cloned {} instances.", cloned_gate_count_);
   }
   const Slack worst_slack = sta_->worstSlack(max_);
   if (fuzzyLess(worst_slack, setup_slack_margin)) {
+    repaired = true;
     logger_->warn(RSZ, 62, "Unable to repair all setup violations.");
   }
   if (resizer_->overMaxArea()) {
     logger_->error(RSZ, 25, "max utilization reached.");
   }
+
+  return repaired;
 }
 
 // For testing.
@@ -1108,41 +1118,44 @@ LibertyCell* RepairSetup::upsizeCell(LibertyPort* in_port,
 {
   const int lib_ap = dcalc_ap->libertyIndex();
   LibertyCell* cell = drvr_port->libertyCell();
-  LibertyCellSeq* equiv_cells = sta_->equivCells(cell);
-  if (equiv_cells) {
+  LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
+  if (!swappable_cells.empty()) {
     const char* in_port_name = in_port->name();
     const char* drvr_port_name = drvr_port->name();
-    sort(equiv_cells, [=](const LibertyCell* cell1, const LibertyCell* cell2) {
-      LibertyPort* port1
-          = cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
-      LibertyPort* port2
-          = cell2->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
-      const float drive1 = port1->driveResistance();
-      const float drive2 = port2->driveResistance();
-      const ArcDelay intrinsic1 = port1->intrinsicDelay(this);
-      const ArcDelay intrinsic2 = port2->intrinsicDelay(this);
-      return drive1 > drive2
-             || ((drive1 == drive2 && intrinsic1 < intrinsic2)
-                 || (intrinsic1 == intrinsic2
-                     && port1->capacitance() < port2->capacitance()));
-    });
+    sort(swappable_cells,
+         [=](const LibertyCell* cell1, const LibertyCell* cell2) {
+           LibertyPort* port1
+               = cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
+           LibertyPort* port2
+               = cell2->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
+           const float drive1 = port1->driveResistance();
+           const float drive2 = port2->driveResistance();
+           const ArcDelay intrinsic1 = port1->intrinsicDelay(this);
+           const ArcDelay intrinsic2 = port2->intrinsicDelay(this);
+           return drive1 > drive2
+                  || ((drive1 == drive2 && intrinsic1 < intrinsic2)
+                      || (intrinsic1 == intrinsic2
+                          && port1->capacitance() < port2->capacitance()));
+         });
     const float drive = drvr_port->cornerPort(lib_ap)->driveResistance();
     const float delay
         = resizer_->gateDelay(drvr_port, load_cap, resizer_->tgt_slew_dcalc_ap_)
           + prev_drive * in_port->cornerPort(lib_ap)->capacitance();
 
-    for (LibertyCell* equiv : *equiv_cells) {
-      LibertyCell* equiv_corner = equiv->cornerCell(lib_ap);
-      LibertyPort* equiv_drvr = equiv_corner->findLibertyPort(drvr_port_name);
-      LibertyPort* equiv_input = equiv_corner->findLibertyPort(in_port_name);
-      const float equiv_drive = equiv_drvr->driveResistance();
-      // Include delay of previous driver into equiv gate.
-      const float equiv_delay
-          = resizer_->gateDelay(equiv_drvr, load_cap, dcalc_ap)
-            + prev_drive * equiv_input->capacitance();
-      if (!resizer_->dontUse(equiv) && equiv_drive < drive
-          && equiv_delay < delay) {
-        return equiv;
+    for (LibertyCell* swappable : swappable_cells) {
+      LibertyCell* swappable_corner = swappable->cornerCell(lib_ap);
+      LibertyPort* swappable_drvr
+          = swappable_corner->findLibertyPort(drvr_port_name);
+      LibertyPort* swappable_input
+          = swappable_corner->findLibertyPort(in_port_name);
+      const float swappable_drive = swappable_drvr->driveResistance();
+      // Include delay of previous driver into swappable gate.
+      const float swappable_delay
+          = resizer_->gateDelay(swappable_drvr, load_cap, dcalc_ap)
+            + prev_drive * swappable_input->capacitance();
+      if (!resizer_->dontUse(swappable) && swappable_drive < drive
+          && swappable_delay < delay) {
+        return swappable;
       }
     }
   }

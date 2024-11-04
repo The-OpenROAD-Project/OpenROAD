@@ -365,6 +365,10 @@ void dbBTerm::setSigType(dbSigType type)
     block->_journal->updateField(
         this, _dbBTerm::FLAGS, prev_flags, flagsToUInt(bterm));
   }
+
+  for (auto callback : block->_callbacks) {
+    callback->inDbBTermSetSigType(this, type);
+  }
 }
 
 dbSigType dbBTerm::getSigType()
