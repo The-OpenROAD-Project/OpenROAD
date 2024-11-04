@@ -1492,7 +1492,6 @@ void FlexPA::initAllAccessPoints()
 {
   ProfileTask profile("PA:point");
   int pin_count = 0;
-  int pin_count_inform = 1000;
 
   omp_set_num_threads(MAX_THREADS);
   ThreadException exception;
@@ -1515,13 +1514,10 @@ void FlexPA::initAllAccessPoints()
 
       int inst_terms_cnt = static_cast<int>(inst->getInstTerms().size());
 #pragma omp critical
-      for (int i = 0; i < inst_terms_cnt; i++, pin_count++) {
+      for (int i = 0; i < inst_terms_cnt; i++) {
         pin_count++;
-        if (pin_count % pin_count_inform == 0) {
+        if (pin_count % (pin_count > 10000 ? 10000 : 1000) == 0) {
           logger_->info(DRT, 76, "  Complete {} pins.", pin_count);
-          if (pin_count >= 10000) {
-            pin_count_inform = 10000;
-          }
         }
       }
     } catch (...) {
@@ -1609,15 +1605,11 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
           for (const auto& res : update.getGroupResults()) {
             all_updates.addGroupResult(res);
           }
-          cnt += batch.size();
-          if (VERBOSE > 0) {
-            if (cnt < 100000) {
-              if (cnt % 10000 == 0) {
+          for (i = 0; i < batch.size(); i++) {
+            cnt++;
+            if (VERBOSE > 0) {
+              if (cnt % (cnt > 100000 ? 100000 : 10000) == 0) {
                 logger_->info(DRT, 110, "  Complete {} groups.", cnt);
-              }
-            } else {
-              if (cnt % 100000 == 0) {
-                logger_->info(DRT, 111, "  Complete {} groups.", cnt);
               }
             }
           }
@@ -1657,14 +1649,8 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
           rowIdx++;
           cnt++;
           if (VERBOSE > 0) {
-            if (cnt < 100000) {
-              if (cnt % 10000 == 0) {
-                logger_->info(DRT, 82, "  Complete {} groups.", cnt);
-              }
-            } else {
-              if (cnt % 100000 == 0) {
-                logger_->info(DRT, 83, "  Complete {} groups.", cnt);
-              }
+            if (cnt % (cnt > 100000 ? 100000 : 10000) == 0) {
+              logger_->info(DRT, 82, "  Complete {} groups.", cnt);
             }
           }
         }
@@ -1723,16 +1709,8 @@ void FlexPA::prepPattern()
       {
         cnt++;
         if (VERBOSE > 0) {
-          if (cnt < 1000) {
-            if (cnt % 100 == 0) {
-              logger_->info(
-                  DRT, 79, "  Complete {} unique inst patterns.", cnt);
-            }
-          } else {
-            if (cnt % 1000 == 0) {
-              logger_->info(
-                  DRT, 80, "  Complete {} unique inst patterns.", cnt);
-            }
+          if (cnt % (cnt > 1000 ? 1000 : 100) == 0) {
+            logger_->info(DRT, 79, "  Complete {} unique inst patterns.", cnt);
           }
         }
       }

@@ -59,6 +59,7 @@ sta::define_cmd_args "global_placement" {\
     [-routability_inflation_ratio_coef routability_inflation_ratio_coef]\
     [-routability_max_inflation_ratio routability_max_inflation_ratio]\
     [-routability_rc_coefficients routability_rc_coefficients]\
+    [-keep_resize_below_overflow keep_resize_below_overflow]\
     [-timing_driven_net_reweight_overflow timing_driven_net_reweight_overflow]\
     [-timing_driven_net_weight_max timing_driven_net_weight_max]\
     [-timing_driven_nets_percentage timing_driven_nets_percentage]\
@@ -82,6 +83,7 @@ proc global_placement { args } {
       -timing_driven_net_reweight_overflow \
       -timing_driven_net_weight_max \
       -timing_driven_nets_percentage \
+      -keep_resize_below_overflow \
       -pad_left -pad_right} \
     flags {-skip_initial_place \
       -skip_nesterov_place \
@@ -132,6 +134,13 @@ proc global_placement { args } {
 
     foreach overflow $overflow_list {
       gpl::add_timing_net_reweight_overflow_cmd $overflow
+    }
+
+    # timing driven check overflow to keep resizer changes (non-virtual resizer)
+    if { [info exists keys(-keep_resize_below_overflow)] } {
+      set keep_resize_below_overflow $keys(-keep_resize_below_overflow)
+      sta::check_positive_float "-keep_resize_below_overflow" $keep_resize_below_overflow
+      gpl::set_keep_resize_below_overflow_cmd $keep_resize_below_overflow
     }
 
     if { [info exists keys(-timing_driven_net_weight_max)] } {

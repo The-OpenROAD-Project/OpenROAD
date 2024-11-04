@@ -150,6 +150,7 @@ class dbStaCbk : public dbBlockCallBackObj
   void inDbBTermCreate(dbBTerm*) override;
   void inDbBTermDestroy(dbBTerm* bterm) override;
   void inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type) override;
+  void inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type) override;
 
  private:
   dbSta* sta_;
@@ -880,6 +881,13 @@ void dbStaCbk::inDbBTermDestroy(dbBTerm* bterm)
 void dbStaCbk::inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type)
 {
   sta_->getDbNetwork()->setTopPortDirection(bterm, io_type);
+}
+
+void dbStaCbk::inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type)
+{
+  // sta can't handle such changes, see OpenROAD#6025 so just reset the whole
+  // thing.
+  sta_->networkChanged();
 }
 
 ////////////////////////////////////////////////////////////////

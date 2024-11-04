@@ -1335,9 +1335,10 @@ void Resizer::resizeSlackPreamble()
 
 // Run repair_design to repair long wires and max slew, capacitance and fanout
 // violations. Find the slacks, and then undo all changes to the netlist.
-void Resizer::findResizeSlacks()
+void Resizer::findResizeSlacks(bool run_journal_restore)
 {
-  journalBegin();
+  if (run_journal_restore)
+    journalBegin();
   estimateWireParasitics();
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
@@ -1352,11 +1353,12 @@ void Resizer::findResizeSlacks()
                                fanout_violations,
                                length_violations);
   findResizeSlacks1();
-  journalRestore(resize_count_,
-                 inserted_buffer_count_,
-                 cloned_gate_count_,
-                 swap_pin_count_,
-                 removed_buffer_count_);
+  if (run_journal_restore)
+    journalRestore(resize_count_,
+                   inserted_buffer_count_,
+                   cloned_gate_count_,
+                   swap_pin_count_,
+                   removed_buffer_count_);
 }
 
 void Resizer::findResizeSlacks1()
