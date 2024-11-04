@@ -107,10 +107,7 @@ proc initialize_floorplan { args } {
         utl::error IFP 13 "-core_space is either a list of 4 margins or one value for all margins."
       }
     } else {
-      set core_sp_bottom 0.0
-      set core_sp_top 0.0
-      set core_sp_left 0.0
-      set core_sp_right 0.0
+      utl::error IFP 34 "no -core_space specified."
     }
     if { [info exists keys(-aspect_ratio)] } {
       set aspect_ratio $keys(-aspect_ratio)
