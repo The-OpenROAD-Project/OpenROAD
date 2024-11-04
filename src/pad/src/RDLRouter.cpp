@@ -235,7 +235,15 @@ int RDLRouter::getRoutingInstanceCount() const
 {
   std::set<odb::dbInst*> insts;
   for (const auto& route : routes_) {
-    insts.insert(route->getTerminal()->getInst());
+    if (route->isRouted()) {
+      insts.insert(route->getRouteTargetSource()->terminal->getInst());
+      insts.insert(route->getRouteTargetDestination()->terminal->getInst());
+    } else {
+      insts.insert(route->getTerminal()->getInst());
+      for (const auto* iterm : route->getTerminals()) {
+        insts.insert(iterm->getInst());
+      }
+    }
   }
   return insts.size();
 }
@@ -245,7 +253,8 @@ std::set<odb::dbInst*> RDLRouter::getRoutedInstances() const
   std::set<odb::dbInst*> insts;
   for (const auto& route : routes_) {
     if (route->isRouted()) {
-      insts.insert(route->getTerminal()->getInst());
+      insts.insert(route->getRouteTargetSource()->terminal->getInst());
+      insts.insert(route->getRouteTargetDestination()->terminal->getInst());
     }
   }
   return insts;
@@ -257,7 +266,14 @@ std::vector<RDLRouter::RDLRoutePtr> RDLRouter::getFailedRoutes() const
   std::set<odb::dbInst*> success_covers;
   for (auto& route : routes_) {
     if (route->isRouted()) {
-      success_covers.insert(route->getTerminal()->getInst());
+      if (isCoverTerm(route->getRouteTargetSource()->terminal)) {
+        success_covers.insert(
+            route->getRouteTargetSource()->terminal->getInst());
+      }
+      if (isCoverTerm(route->getRouteTargetDestination()->terminal)) {
+        success_covers.insert(
+            route->getRouteTargetDestination()->terminal->getInst());
+      }
     }
   }
 
@@ -368,13 +384,12 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
 
   logger_->info(utl::PAD, 5, "Routing {} nets", nets.size());
 
-  // track destinations routed to, so we don't attempt to route to the same
-  // iterm more than once.
-  std::set<odb::dbITerm*> dst_items_routed;
   // track sets of routes, so we don't route the reverse by accident
   std::map<odb::dbITerm*, odb::dbITerm*> routed_pairs;
   // track cover instances we dont route the same one twice
   std::set<odb::dbInst*> routed_covers;
+  // track non-cover iterms we dont route the same one twice
+  std::set<odb::dbITerm*> routed_non_covers;
   // track iteration information
   int iteration_count = 0;
   std::set<odb::dbInst*> last_itr_routed;
@@ -401,107 +416,115 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
 
       routed_pairs[src] = nullptr;
       route->moveNextTerminalToEnd();
-      continue;
-    }
-
-    // get the next destination
-    odb::dbITerm* dst = nullptr;
-    do {
-      if (!route->hasNextTerminal()) {
-        dst = nullptr;
-        break;
-      }
-      dst = route->getNextTerminal();
-    } while (dst_items_routed.find(dst) != dst_items_routed.end()
-             || routed_pairs[src] == dst);
-
-    if (dst != nullptr) {
-      // create ordered set of iterm targets
-      std::vector<TargetPair> targets;
-      for (const auto& src_target : net_targets[src]) {
-        for (const auto& dst_target : net_targets[dst]) {
-          targets.push_back(TargetPair{&src_target, &dst_target});
-        }
-      }
-
-      std::stable_sort(
-          targets.begin(), targets.end(), [](const auto& lhs, const auto& rhs) {
-            return distance(lhs) < distance(rhs);
-          });
-
-      debugPrint(
-          logger_,
-          utl::PAD,
-          "Router",
-          2,
-          "Routing {} -> {} : ({:.3f}um) / {} target pairs / {} priority",
-          src->getName(),
-          dst->getName(),
-          distance(src->getBBox().center(), dst->getBBox().center()) / dbus,
-          targets.size(),
-          route->getPriority());
-
-      for (auto& points : targets) {
-        debugPrint(logger_,
-                   utl::PAD,
-                   "Router",
-                   3,
-                   "Routing {} ({:.3f}um, {:.3f}um) -> ({:.3f}um, {:.3f}um) : "
-                   "({:.3f}um)",
-                   net->getName(),
-                   points.target0->center.x() / dbus,
-                   points.target0->center.y() / dbus,
-                   points.target1->center.x() / dbus,
-                   points.target1->center.y() / dbus,
-                   distance(points) / dbus);
-
-        const auto added_edges0
-            = insertTerminalVertex(*points.target0, *points.target1);
-        const auto added_edges1
-            = insertTerminalVertex(*points.target1, *points.target0);
-
-        auto route_vextex = run(points.target0->center, points.target1->center);
-
-        if (!route_vextex.empty()) {
-          debugPrint(logger_,
-                     utl::PAD,
-                     "Router",
-                     3,
-                     "Route segments {}",
-                     route_vextex.size());
-          const auto route_edges = commitRoute(route_vextex);
-          route->setRoute(
-              route_vextex, route_edges, points.target0, points.target1);
-
-          // record destination to avoid picking it again as a destination
-          dst_items_routed.insert(dst);
-
-          // record cover instance
-          routed_covers.insert(src->getInst());
-
-          // record routed pair (forward and reverse) to avoid routing this
-          // segment again
-          routed_pairs[src] = dst;
-          routed_pairs[dst] = src;
-        }
-
-        removeTerminalEdges(added_edges0);
-        removeTerminalEdges(added_edges1);
-
-        if (route->isRouted()) {
+    } else {
+      // get the next destination
+      odb::dbITerm* dst = nullptr;
+      do {
+        if (!route->hasNextTerminal()) {
+          dst = nullptr;
           break;
         }
-      }
-    }
+        dst = route->getNextTerminal();
+      } while (routed_non_covers.find(dst) != routed_non_covers.end()
+               || routed_pairs[src] == dst);
 
-    if (!route->isRouted()) {
-      if (route->hasNextTerminal()) {
-        route_queue.push(route);
-      }
-    }
+      if (dst != nullptr) {
+        // create ordered set of iterm targets
+        std::vector<TargetPair> targets;
+        for (const auto& src_target : net_targets[src]) {
+          for (const auto& dst_target : net_targets[dst]) {
+            targets.push_back(TargetPair{&src_target, &dst_target});
+          }
+        }
 
-    if (gui_ != nullptr && logger_->debugCheck(utl::PAD, "Router", 3)) {
-      gui_->pause(route->isRouted());
+        std::stable_sort(targets.begin(),
+                         targets.end(),
+                         [](const auto& lhs, const auto& rhs) {
+                           return distance(lhs) < distance(rhs);
+                         });
+
+        debugPrint(
+            logger_,
+            utl::PAD,
+            "Router",
+            2,
+            "Routing {} -> {} : ({:.3f}um) / {} target pairs / {} priority",
+            src->getName(),
+            dst->getName(),
+            distance(src->getBBox().center(), dst->getBBox().center()) / dbus,
+            targets.size(),
+            route->getPriority());
+
+        for (auto& points : targets) {
+          debugPrint(
+              logger_,
+              utl::PAD,
+              "Router",
+              3,
+              "Routing {} ({:.3f}um, {:.3f}um) -> ({:.3f}um, {:.3f}um) : "
+              "({:.3f}um)",
+              net->getName(),
+              points.target0->center.x() / dbus,
+              points.target0->center.y() / dbus,
+              points.target1->center.x() / dbus,
+              points.target1->center.y() / dbus,
+              distance(points) / dbus);
+
+          const auto added_edges0
+              = insertTerminalVertex(*points.target0, *points.target1);
+          const auto added_edges1
+              = insertTerminalVertex(*points.target1, *points.target0);
+
+          auto route_vextex
+              = run(points.target0->center, points.target1->center);
+
+          if (!route_vextex.empty()) {
+            debugPrint(logger_,
+                       utl::PAD,
+                       "Router",
+                       3,
+                       "Route segments {}",
+                       route_vextex.size());
+            const auto route_edges = commitRoute(route_vextex);
+            route->setRoute(
+                route_vextex, route_edges, points.target0, points.target1);
+
+            // record cover instance
+            if (isCoverTerm(src)) {
+              routed_covers.insert(src->getInst());
+            } else {
+              routed_non_covers.insert(src);
+            }
+            if (isCoverTerm(dst)) {
+              routed_covers.insert(dst->getInst());
+            } else {
+              routed_non_covers.insert(dst);
+            }
+
+            // record routed pair (forward and reverse) to avoid routing this
+            // segment again
+            routed_pairs[src] = dst;
+            routed_pairs[dst] = src;
+          }
+
+          removeTerminalEdges(added_edges0);
+          removeTerminalEdges(added_edges1);
+
+          if (route->isRouted()) {
+            break;
+          }
+        }
+      }
+
+      if (!route->isRouted()) {
+        if (route->hasNextTerminal()) {
+          route_queue.push(route);
+        }
+      }
+
+      if (gui_ != nullptr && logger_->debugCheck(utl::PAD, "Router", 3)) {
+        gui_->pause(route->isRouted());
+      }
     }
 
     if (route_queue.empty() && iteration_count < max_router_iterations_) {
@@ -521,12 +544,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
       }
       last_itr_routed = routed_insts;
 
-      std::vector<RDLRoutePtr> failed;
-      for (auto& route : routes_) {
-        if (route->isFailed()) {
-          failed.push_back(route);
-        }
-      }
+      std::vector<RDLRoutePtr> failed = getFailedRoutes();
 
       if (failed.empty()) {
         continue;
@@ -579,10 +597,13 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
       // ripup routing
       for (auto& ripup_route : ripup) {
         uncommitRoute(ripup_route->getRouteEdges());
-        dst_items_routed.erase(
-            ripup_route->getRouteTargetDestination()->terminal);
         routed_covers.erase(
             ripup_route->getRouteTargetSource()->terminal->getInst());
+        routed_covers.erase(
+            ripup_route->getRouteTargetDestination()->terminal->getInst());
+        routed_non_covers.erase(ripup_route->getRouteTargetSource()->terminal);
+        routed_non_covers.erase(
+            ripup_route->getRouteTargetDestination()->terminal);
         routed_pairs.erase(ripup_route->getRouteTargetSource()->terminal);
         routed_pairs.erase(ripup_route->getRouteTargetDestination()->terminal);
         ripup_route->resetRoute();
