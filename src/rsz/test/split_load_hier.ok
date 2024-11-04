@@ -40,6 +40,4 @@ tns -7.917
 [INFO RSZ-0045] Inserted 11 buffers, 1 to split loads.
 [INFO RSZ-0041] Resized 51 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-Differences found at line 44.
- DFF_X1 r1 (.D(\u1/u6z ),
- DFF_X1 r10 (.D(net20_i));
+No differences found.
