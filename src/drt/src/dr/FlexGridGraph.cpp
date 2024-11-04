@@ -293,13 +293,11 @@ void FlexGridGraph::initEdges(
         }
       }
     }
-    for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
-      auto yCoord = yCoords_[yIdx];
-      auto yIt2 = yLayer2Map.find(yCoord);
-      for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
-        auto xCoord = xCoords_[xIdx];
-        auto xIt = xLayerMap.find(xCoord);
-        if (xIt == xLayerMap.end()) continue;
+    for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
+      auto xCoord = xCoords_[xIdx];
+      auto xIt = xLayerMap.find(xCoord);
+      if (xIt == xLayerMap.end()) continue;
+      for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
         // add cost to out-of-die edge
         bool isOutOfDieVia = outOfDieVia(xIdx, yIdx, zIdx, dieBox_);
         // add edge for preferred direction
@@ -315,6 +313,8 @@ void FlexGridGraph::initEdges(
               }
             }
           }
+          auto yCoord = yCoords_[yIdx];
+          auto yIt2 = yLayer2Map.find(yCoord);
           if (yIt2 == yLayer2Map.end()) continue;
           // via to upper layer
           if (!isOutOfDieVia) {
@@ -334,11 +334,11 @@ void FlexGridGraph::initEdges(
         }
       }
     }
-    for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
-      for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
-        auto xCoord = xCoords_[xIdx];
-        auto xIt3 = xNonPrefLayerMap.find(xCoord);
-        if (xIt3 == xNonPrefLayerMap.end()) continue;
+    for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
+      auto xCoord = xCoords_[xIdx];
+      auto xIt3 = xNonPrefLayerMap.find(xCoord);
+      if (xIt3 == xNonPrefLayerMap.end()) continue;
+      for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
         // get non pref track layer --> use upper layer pref dir track if
         // possible
         if (router_cfg_->USENONPREFTRACKS && !layer->isUnidirectional()) {
