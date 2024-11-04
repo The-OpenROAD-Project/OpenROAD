@@ -52,7 +52,7 @@ die =  ( 0, 0 )
 
 ```tcl
 initialize_floorplan
-  (-die_area {llx lly urx ury} -core_area {llx lly urx ury}) | (-utilization util [-aspect_ratio ratio] [-core_space (space | {bottom top left right})])
+  (-die_area {llx lly urx ury} -core_area {llx lly urx ury}) | (-utilization util -core_space (space | {bottom top left right}) [-aspect_ratio ratio])
   -site site_name
   [-additional_sites site_names]
   [-flip_sites site_names]
@@ -64,12 +64,12 @@ initialize_floorplan
 | Switch Name | Description |
 | ----- | ----- |
 | `-core_area` | Core area coordinates in microns (lower left x/y and upper right x/y coordinates). |
+| `-core_space` | Space around the core, default `0.0` microns. Allowed values are either one value for all margins or a set of four values, one for each margin. The order of the four values are: `{bottom top left right}`. |
 | `-die_area` | Die area coordinates in microns (lower left x/y and upper right x/y coordinates). |
 | `-site` | Site name. |
 | `-utilization` | Percentage utilization. Allowed values are `double` in the range `(0-100]`. |
 | `[-additional_sites]` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`) |
 | `[-aspect_ratio]` | Ratio $\frac{height}{width}$. The default value is `1.0` and the allowed values are floats `[0, 1.0]`. |
-| `[-core_space]` | Space around the core, default `0.0` microns. Allowed values are either one value for all margins or a set of four values, one for each margin. The order of the four values are: `{bottom top left right}`. |
 | `[-flip_sites]` | Flip the orientations of rows matching these sites. Sites listed under this option will create `FS`-oriented rows at even indices and `N`-oriented rows at odd ones, and vice versa for sites not listed under this option. (e.g. `{SITEXX, SITEYY}`) |
 | `[-row_parity]` | Snap to either an odd (`ODD`) or even (`EVEN`) number of rows. Defaults to `NONE` (no constraint on parity). |
 
