@@ -1300,7 +1300,12 @@ bool Resizer::replaceCell(Instance* inst,
       while (pin_iter->hasNext()) {
         const Pin* pin = pin_iter->next();
         const Net* net = network_->net(pin);
-        invalidateParasitics(pin, net);
+        odb::dbNet* db_net = nullptr;
+        odb::dbModNet* db_modnet = nullptr;
+        db_network_->staToDb(net, db_net, db_modnet);
+        // only work on dbnets
+        invalidateParasitics(pin, db_network_->dbToSta(db_net));
+        //        invalidateParasitics(pin, net);
       }
       delete pin_iter;
     }
@@ -1356,83 +1361,12 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
                                fanout_violations,
                                length_violations);
   findResizeSlacks1();
-  debugPrint(logger_, utl::GPL, "timing", 1, "--> Before journalRestore:");
-  debugPrint(logger_,
-             utl::GPL,
-             "timing",
-             1,
-             "repaired_net_count:        {:5}",
-             repaired_net_count);
-  debugPrint(logger_,
-             utl::GPL,
-             "timing",
-             1,
-             "inserted_buffer_count_:    {:5}",
-             inserted_buffer_count_);
-  debugPrint(logger_,
-             utl::GPL,
-             "timing",
-             1,
-             "inserted_buffer_set_.size: {:5}",
-             inserted_buffer_set_.size());
-  debugPrint(logger_,
-             utl::GPL,
-             "timing",
-             1,
-             "resize_count_:             {:5}",
-             resize_count_);
-  debugPrint(logger_,
-             utl::GPL,
-             "timing",
-             1,
-             "cloned_gate_count_:        {:5}",
-             cloned_gate_count_);
-
   if (run_journal_restore)
     journalRestore(resize_count_,
                    inserted_buffer_count_,
                    cloned_gate_count_,
                    swap_pin_count_,
                    removed_buffer_count_);
-
-  if (!run_journal_restore) {
-    // destroy for testing only. copied from TestCallBacks.cpp
-    //  auto inst_to_destroy = *block_->getInsts().begin();
-    //  logger_->report("destroying inst:{}", inst_to_destroy->getName());
-    //  odb::dbInst::destroy(inst_to_destroy);
-  }
-
-  debugPrint(logger_, utl::GPL, "timing", 1, "--> After journalRestore:");
-  debugPrint(logger_,
-             utl::GPL,
-             "timing",
-             1,
-             "repaired_net_count:        {:5}",
-             repaired_net_count);
-  debugPrint(logger_,
-             utl::GPL,
-             "timing",
-             1,
-             "inserted_buffer_count_:    {:5}",
-             inserted_buffer_count_);
-  debugPrint(logger_,
-             utl::GPL,
-             "timing",
-             1,
-             "inserted_buffer_set_.size: {:5}",
-             inserted_buffer_set_.size());
-  debugPrint(logger_,
-             utl::GPL,
-             "timing",
-             1,
-             "resize_count_:             {:5}",
-             resize_count_);
-  debugPrint(logger_,
-             utl::GPL,
-             "timing",
-             1,
-             "cloned_gate_count_:        {:5}",
-             cloned_gate_count_);
 }
 
 void Resizer::findResizeSlacks1()

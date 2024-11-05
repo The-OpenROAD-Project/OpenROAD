@@ -155,6 +155,13 @@ void set_timing_driven_mode(bool timing_driven)
 
 
 void
+set_keep_resize_below_overflow_cmd(float overflow) 
+{
+  Replace* replace = getReplace();
+  replace->setKeepResizeBelowOverflow(overflow);
+}
+
+void
 set_routability_driven_mode(bool routability_driven)
 {
   Replace* replace = getReplace();

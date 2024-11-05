@@ -114,7 +114,7 @@ void Replace::reset()
   routabilityMaxInflationIter_ = 4;
 
   timingDrivenMode_ = true;
-  timingDrivenCheckOverflow_ = 0.0;
+  keepResizeBelowOverflow_ = 0.0;
   routabilityDrivenMode_ = true;
   routabilityUseRudy_ = true;
   uniformTargetDensityMode_ = false;
@@ -343,7 +343,7 @@ bool Replace::initNesterovPlace(int threads)
     npVars.maxPhiCoef = maxPhiCoef_;
     npVars.referenceHpwl = referenceHpwl_;
     npVars.routabilityCheckOverflow = routabilityCheckOverflow_;
-    npVars.timingDrivenCheckOverflow = timingDrivenCheckOverflow_;
+    npVars.keepResizeBelowOverflow = keepResizeBelowOverflow_;
     npVars.initDensityPenalty = initDensityPenalityFactor_;
     npVars.initWireLengthCoef = initWireLengthCoef_;
     npVars.targetOverflow = overflow_;
@@ -509,9 +509,9 @@ void Replace::setRoutabilityCheckOverflow(float overflow)
   routabilityCheckOverflow_ = overflow;
 }
 
-void Replace::setTimingDrivenCheckOverflow(float overflow)
+void Replace::setKeepResizeBelowOverflow(float overflow)
 {
-   timingDrivenCheckOverflow_ = overflow;
+  keepResizeBelowOverflow_ = overflow;
 }
 
 void Replace::setRoutabilityMaxDensity(float density)
