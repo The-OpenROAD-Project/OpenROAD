@@ -81,6 +81,8 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
   initSomeValues_v2();
   if (_couplingFlag > 1 && !_lefRC) 
   {
+    getPeakMemory("Before LoadModels: ");
+
     // Associate User defined Process Corners and DensityModels in Model file
     if (!SetCornersAndReadModels_v2(extRules))
       return;
@@ -128,10 +130,7 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
     couplingExtEnd_v2();
   }
   // Print out stats on db Ojects created during extraction
-  couplingExtEnd_v2();
-
-  _modelTable->resetCnt(0);
-
+ // _modelTable->resetCnt(0);
     getPeakMemory("End Extraction: ");
 
 }
