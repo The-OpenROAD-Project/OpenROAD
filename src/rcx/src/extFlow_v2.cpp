@@ -101,6 +101,7 @@ void extMain::initRunEnv(extMeasureRC &m)
       m._debugFP = fopen(bufName, "w");
     }
 }
+
 void extMain::initializeLayerTables(LayerDimensionData& tables)
 {
   for (uint ii = 0; ii < 32; ii++) {
@@ -152,13 +153,31 @@ int extMain::initSearch(LayerDimensionData& tables, Rect& extRect, uint &totWire
   totWireCnt = signalWireCounter(maxWidth);
   totWireCnt += totPowerWireCnt;
 
+    tables.maxWidth= maxWidth;
+
   if (_dbgOption > 0)
     logger_->info(RCX, 43, "{} wires to be extracted", totWireCnt);
 
   return layerCnt;
 }
+void extMeasureRC::resetTrackIndices(uint dir)
+{
+  for (uint ii = 0; ii < _trackLevelCnt; ii++) {
+    _lowTrackToExtract[dir][ii] = 0;
+    _hiTrackToExtract[dir][ii] = 0;
+    _lowTrackToFree[dir][ii] = 0;
+    _hiTrackToFree[dir][ii] = 0;
+     _lowTrackSearch[dir][ii] = 0;
+    _hiTrackSearch[dir][ii] = 0;
+  }
+}
 uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
 {
+    // if (_dbgOption==21) // NEW Flow optimized for memory
+    //    return  couplingFlow_v2_opt(extRect, ccDist, m1);
+
+  getPeakMemory("Start Coupling Flow: ");
+
   if (_ccContextDepth) {
     initContextArray();
   }
@@ -184,23 +203,34 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
   setExtControl_v2(mrc->_seqPool);
   _seqPool = mrc->_seqPool;
 
-  mrc->_seqmentPool= new AthPool<extSegment>(1024);
+  uint maxPitch = tables.pitchTable[layerCnt - 1];
+
+  const uint trackStep = 1000;
+  // Extraction step = tracks * pitch of level 1
+  uint step_nm = trackStep * tables.pitchTable[1];
+  if (tables.maxWidth > ccDist * maxPitch)
+    step_nm
+        = std::max(bounds.ur[1] - bounds.ll[1], bounds.ur[0] - bounds.ll[0]);
+
+  mrc->_seqmentPool = new AthPool<extSegment>(1024);
 
   uint totalWiresExtracted = 0;
   float previous_percent_extracted = 0.0;
-                  
-  // TODO mrc->_progressTracker = std::make_unique<ExtProgressTracker>(totWireCnt);
+
+  // TODO mrc->_progressTracker =
+  // std::make_unique<ExtProgressTracker>(totWireCnt);
 
   for (int dir = 1; dir >= 0; dir--) {  // dir==1 Horizontal wires
 
     if (dir == 0) {
       enableRotatedFlag();
     }
-    uint maxPitch = tables.pitchTable[layerCnt - 1];
+
     updateBoundaries(bounds, dir, ccDist, maxPitch);
     _search->initCouplingCapLoops_v2(dir, ccDist);
 
-    // Add all shapes on a compressed bit-based structure for quick cross overlap calculation
+    // Add all shapes on a compressed bit-based structure for quick cross
+    // overlap calculation
     fill_gs4(dir,
              bounds.ll,
              bounds.ur,
@@ -213,24 +243,31 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
 
     mrc->_rotatedGs = getRotatedFlag();
     mrc->_pixelTable = _geomSeq;
+  getPeakMemory("End fill_gs4 Dir: ", dir);
 
-    // Add all shapes on a fast track based structure for quick wire coupling detection
-    uint processWireCnt = addPowerNets(dir, bounds.lo_search, bounds.hi_search, 11);  // pwrtype = 11
-    processWireCnt += addSignalNets(dir, bounds.lo_search, bounds.hi_search, 9);  // sigtype = 9
+    // Add all shapes on a fast track based structure for quick wire coupling
+    // detection
+    uint processWireCnt = addPowerNets(
+        dir, bounds.lo_search, bounds.hi_search, 11);  // pwrtype = 11
+    processWireCnt += addSignalNets(
+        dir, bounds.lo_search, bounds.hi_search, 9);  // sigtype = 9
+
+  getPeakMemory("End WiresOnSearch Dir: ", dir);
 
     mrc->_search = this->_search;
     // _dbgOption= 1;
-    if (_dbgOption > 0)
+    if (_dbgOption > 1)
       mrc->PrintAllGrids(dir, mrc->OpenPrintFile(dir, "wires.org"), 0);
 
     // Create single lists of wires on every track/level/direction
     mrc->ConnectWires(dir);
 
-    if (_dbgOption > 0)
+    if (_dbgOption > 1)
       mrc->PrintAllGrids(dir, mrc->OpenPrintFile(dir, "wires"), 0);
 
     // Find immediate coupling neighbor wires in all directions and levels
     mrc->FindCouplingNeighbors(dir, 10, 5);
+
     mrc->CouplingFlow(dir,
                       10,
                       5,
@@ -239,6 +276,108 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
                       previous_percent_extracted);
     float tmpCnt = -10;
     mrc->printProgress(totalWiresExtracted, totWireCnt, tmpCnt);
+    getPeakMemory("End CouplingFlow Dir:", dir);
+     // _search->dealloc(dir, bounds.ur[dir]+step_nm);
+  }
+}
+uint extMain::couplingFlow_v2_opt(Rect & extRect, uint ccDist, extMeasure * m1)
+{
+    ccDist= 10; // TODO -- test for different  values and adjust regression tests
+
+    if (_ccContextDepth) {
+      initContextArray();
+    }
+    // Wire Tables for Diagonal Coupling for v1 modeling
+    initDgContextArray();
+
+    extMeasureRC* mrc = new extMeasureRC(logger_);
+    initRunEnv(*mrc);
+    mrc->resetTrackIndices(0);
+    mrc->resetTrackIndices(1);
+
+
+    // Get Width and Pitch for all  layers
+    LayerDimensionData tables;
+    initializeLayerTables(tables);
+
+    uint totWireCnt;
+    int layerCnt = initSearch(tables, extRect, totWireCnt);
+    _search->_no_sub_tracks = _v2;
+    _search->_v2 = _v2;
+
+    setExtControl_v2(mrc->_seqPool);
+    _seqPool = mrc->_seqPool;
+
+  // Setup boundaries and extraction steps
+  BoundaryData bounds;
+  bounds.setBBox(extRect);
+  bounds.init(ccDist, 5, tables.pitchTable[1], tables.pitchTable[layerCnt - 1], tables.maxWidth, 1000);
+
+  mrc->_seqmentPool= new AthPool<extSegment>(1024);
+
+  uint totalWiresExtracted = 0;
+  float previous_percent_extracted = 0.0;
+                  
+  // TODO mrc->_progressTracker = std::make_unique<ExtProgressTracker>(totWireCnt);
+
+  for (int dir = 1; dir >= 0; dir--) // dir==1 Horizontal wires
+  {  
+    if (dir == 0) {
+      enableRotatedFlag();
+    }
+        mrc->resetTrackIndices(dir);
+    // TODO -- need it?
+    _search->initCouplingCapLoops_v2(dir, ccDist);
+    
+    bounds.setBBox(extRect);
+    while (true) // Extraction Iteration Loop
+    {
+      bool lastIteration= bounds.update(dir);
+
+      // Add all shapes on a compressed bit-based structure for quick cross
+      // overlap calculation
+      fill_gs4(dir,
+               bounds.ll,
+               bounds.ur,
+               bounds.lo_gs,
+               bounds.hi_gs,
+               layerCnt,
+               tables.dirTable,
+               tables.pitchTable,
+               tables.widthTable);
+
+        // TODO move up
+      mrc->_rotatedGs = getRotatedFlag();
+      mrc->_pixelTable = _geomSeq;
+
+      // Add all shapes on a fast track based structure for quick wire
+      // coupling detection
+      uint processWireCnt = addPowerNets(dir, bounds.lo_search, bounds.hi_search, 11);  // pwrtype = 11
+      processWireCnt += addSignalNets(dir, bounds.lo_search, bounds.hi_search, 9);  // sigtype = 9
+
+// TODO move up
+      mrc->_search = this->_search;
+
+      // Create single lists of wires on every track/level/direction
+      // Set Boundaries for all tracks
+      mrc->ConnectWires(dir, bounds);
+
+      // Find immediate coupling neighbor wires in all directions and levels
+      // mrc->FindCouplingNeighbors(dir, 10, 5);
+      mrc->FindCouplingNeighbors(dir, bounds);
+
+      // Lateral and diagonal coupling
+      const int minExtracted = mrc->CouplingFlow_opt(dir, bounds,
+                                                 totWireCnt,
+                                                 totalWiresExtracted,
+                                                 previous_percent_extracted);
+      float tmpCnt = -10;
+      mrc->printProgress(totalWiresExtracted, totWireCnt, tmpCnt);
+
+      _search->dealloc(dir, bounds.releaseMemoryLimitXY);
+      if (lastIteration)
+        break;
+    }
   }
   if (_geomSeq != NULL) {
     delete _geomSeq;

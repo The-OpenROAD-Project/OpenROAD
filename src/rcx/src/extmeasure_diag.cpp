@@ -104,17 +104,17 @@ namespace rcx
             }
         }
         FindCouplingNeighbors_down(dir, couplingDist, diag_met_limit);
-        if (_extMain->_dbgOption>0)
+        if (_extMain->_dbgOption>1)
             PrintAllGrids(dir, OpenPrintFile(dir, "couple"), 1);
 
         uint cnt1 = FindDiagonalNeighbors_vertical_up(dir, couplingDist, diag_met_limit, 2, 0, false);
-        if (_extMain->_dbgOption > 0)
+        if (_extMain->_dbgOption > 1)
         {
             fprintf(stdout, "%d 1st Pass: FindDiagonalNeighbors_vertical_up met_limit=2 trackLimit=0", cnt1);
             PrintAllGrids(dir, OpenPrintFile(dir, "vertical_up.pass1"), 2);
         }
         uint cnt2 = FindDiagonalNeighbors_vertical_down(dir, couplingDist, diag_met_limit, 2, 0, false);
-        if (_extMain->_dbgOption > 0)
+        if (_extMain->_dbgOption > 1)
         {
             fprintf(stdout, "%d 1st Pass: FindDiagonalNeighbors_vertical_down met_limit=2 trackLimit=0", cnt2);
             PrintAllGrids(dir, OpenPrintFile(dir, "vertical_down.pass1"), 2);
@@ -575,32 +575,39 @@ FILE *extMeasureRC::OpenPrintFile(uint dir, const char *name)
         }
         return 0;
     }
+    
     int extMeasureRC::ConnectWires(uint dir)
     {
-        uint cnt = 0;
+      if (_extMain->_dbgOption > 1)
+        PrintAllGrids(dir, OpenPrintFile(dir, "wires.org"), 0);
 
-        uint colCnt = _search->getColCnt();
-        for (uint jj = 1; jj < colCnt; jj++) // For all Layers
+      uint cnt = 0;
+
+      uint colCnt = _search->getColCnt();
+      for (uint jj = 1; jj < colCnt; jj++)  // For all Layers
+      {
+        Ath__grid* netGrid = _search->getGrid(dir, jj);
+        for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
         {
-            Ath__grid *netGrid = _search->getGrid(dir, jj);
-            for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++) // for all  tracks
-            {
-                Ath__track *track = netGrid->getTrackPtr(tr);
-                if (track == NULL)
-                    continue;
-                
-                if (ConnectAllWires(track))
-                {
-                    if (_extMain->_dbgOption > 0)
-                    {
-                        fprintf(stdout, "Track %d M%d %d \n", tr, jj, track->getBase());
-                        for (Ath__wire *w = track->getNextWire(NULL); w != NULL; w = w->getNext())
-                            PrintWire(stdout, w, jj);
-                    }
-                }
+          Ath__track* track = netGrid->getTrackPtr(tr);
+          if (track == NULL)
+            continue;
+
+          ConnectAllWires(track);
+            /* DEBUG
+          if (ConnectAllWires(track)) {
+            if (_extMain->_dbgOption > 1) {
+              for (Ath__wire* w = track->getNextWire(NULL); w != NULL;
+                   w = w->getNext())
+                PrintWire(stdout, w, jj);
             }
+          }
+          */
         }
-        return cnt;
+      }
+      if (_extMain->_dbgOption > 1)
+        PrintAllGrids(dir, OpenPrintFile(dir, "wires"), 0);
+      return cnt;
     }
     uint extMeasureRC::ConnectAllWires(Ath__track *track)
     {

@@ -1852,7 +1852,7 @@ void extMain::makeBlockRCsegs(const char* netNames,
 
   _seqPool = m._seqPool;
 
-
+    getPeakMemory("Start makeNetRCsegs");
   if (!_allNet) {
     _ccMinX = MAX_INT;
     _ccMinY = MAX_INT;
@@ -1891,6 +1891,7 @@ void extMain::makeBlockRCsegs(const char* netNames,
       iterm->setMark(0);
     }
   }
+  getPeakMemory("End  makeNetRCsegs");
 
   logger_->info(RCX, 40, "Final {} rc segments", cnt);
 
@@ -1972,12 +1973,14 @@ void extMain::makeBlockRCsegs(const char* netNames,
       m._debugFP = fopen(bufName, "w");
     }
 
+    getPeakMemory("Start CouplingFlow");
     Rect maxRect = _block->getDieArea();
     if (_v2)
        couplingFlow_v2(maxRect, _couplingFlag, &m);
     else
        couplingFlow(maxRect, _couplingFlag, &m, extCompute1);
 
+    getPeakMemory("End CouplingFlow");
 
     if (m._debugFP != nullptr) {
       fclose(m._debugFP);

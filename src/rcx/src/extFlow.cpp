@@ -1312,6 +1312,8 @@ uint extMain::couplingFlow(Rect& extRect,
       lo_gs[dir] = gs_limit;
       hi_gs[dir] = hiXY;
 
+    getPeakMemory("Start fill_gs4");
+
       fill_gs4(dir,
                ll,
                ur,
@@ -1321,9 +1323,12 @@ uint extMain::couplingFlow(Rect& extRect,
                dirTable,
                pitchTable,
                widthTable);
+    getPeakMemory("End fill_gs4");
 
       m->_rotatedGs = getRotatedFlag();
       m->_pixelTable = _geomSeq;
+
+    getPeakMemory("Start Search");
 
       // add wires onto search such that    loX<=loX<=hiX
       hi_sdb[dir] = hiXY;
@@ -1331,6 +1336,9 @@ uint extMain::couplingFlow(Rect& extRect,
       uint processWireCnt = 0;
       processWireCnt += addPowerNets(dir, lo_sdb, hi_sdb, pwrtype);
       processWireCnt += addSignalNets(dir, lo_sdb, hi_sdb, sigtype);
+    getPeakMemory("End Search");
+
+    getPeakMemory("Start couplingCaps");
 
       uint extractedWireCnt = 0;
       int extractLimit = hiXY - ccDist * maxPitch;
@@ -1354,7 +1362,10 @@ uint extMain::couplingFlow(Rect& extRect,
                 minExtracted,
                 deallocLimit);
       }
+          getPeakMemory("End couplingCaps");
+
       _search->dealloc(dir, deallocLimit);
+          getPeakMemory("End dealloc couplingCaps");
 
       lo_sdb[dir] = hiXY;
       gs_limit = minExtracted - (ccDist + 2) * maxPitch;
@@ -1382,6 +1393,7 @@ uint extMain::couplingFlow(Rect& extRect,
     fclose(bandinfo);
   }
 
+
   delete _geomSeq;
   _geomSeq = nullptr;
 
@@ -1389,6 +1401,8 @@ uint extMain::couplingFlow(Rect& extRect,
     delete[] limitArray[jj];
   }
   delete[] limitArray;
+
+    getPeakMemory("End couplingFlow");
 
   return 0;
 }
