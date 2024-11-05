@@ -4759,7 +4759,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         saveCongestion();
         logger_->error(GRT,
                        232,
-                       "Routing congestion too high. Check the congested "
+                       "Routing congestion too high. Check the congestion "
                        "heatmap in the GUI.");
       }
     }
