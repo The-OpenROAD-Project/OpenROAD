@@ -103,13 +103,13 @@ struct CouplingConfig
   // Length settings
   static constexpr int LENGTH_BOUND
       = 7000;              // Threshold for length-based calculations
-  const bool length_flag;  // Whether to use length-based calculations
+  bool length_flag;  // Whether to use length-based calculations
 
   // Calculation modes
   bool new_calc_flow;         // Use new calculation flow
-  const bool vertical_cap;    // Enable vertical capacitance calculation
-  const bool diag_cap;        // Enable diagonal capacitance calculation
-  const bool diag_cap_power;  // Enable power net diagonal capacitance
+   bool vertical_cap;    // Enable vertical capacitance calculation
+   bool diag_cap;        // Enable diagonal capacitance calculation
+   bool diag_cap_power;  // Enable power net diagonal capacitance
 
   // Debug settings
   const bool debug_enabled;      // Main debug flag
@@ -251,6 +251,8 @@ struct CouplingDimensionParams
   }
 };
 
+struct BoundaryData;
+
 class SegmentTables
 {
  public:
@@ -307,8 +309,30 @@ class extMeasureRC : public extMeasure
  
     public:
         // TODO std::unique_ptr<ExtProgressTracker> _progressTracker;
-        extMeasureRC(utl::Logger* logger) : extMeasure(logger) {}
+        extMeasureRC(utl::Logger* logger) : extMeasure(logger) {
 
+        }
+        FILE *_connect_wire_FP= nullptr;
+        FILE *_connect_FP= nullptr;
+        // Not dynamic arrays for debugging conveniencex 
+        uint _trackLevelCnt= 32;
+        uint _lowTrackToExtract[2][32]; // 32 is the max layer level
+        uint _hiTrackToExtract[2][32];
+        uint _lowTrackToFree[2][32];
+        uint _hiTrackToFree[2][32];
+        uint _lowTrackSearch[2][32]; 
+        uint _hiTrackSearch[2][32];
+     
+        void resetTrackIndices(uint dir);
+        int ConnectWires(uint dir, BoundaryData &bounds);
+        int FindCouplingNeighbors(uint dir, BoundaryData& bounds);
+            int FindCouplingNeighbors_down_opt(uint dir, BoundaryData &bounds);
+       int FindDiagonalNeighbors_vertical_up_opt(uint dir, uint couplingDist, uint diag_met_limit, uint lookUpLevel, uint limitTrackNum, bool skipCheckNeighbors);
+           int FindDiagonalNeighbors_vertical_down_opt(uint dir, uint couplingDist, uint diag_met_limit, uint lookUpLevel, uint limitTrackNum, bool skipCheckNeighbors);
+    int CouplingFlow_opt(uint dir, BoundaryData &bounds,
+                               int totWireCnt,
+                               uint& totalWiresExtracted,
+                               float& previous_percent_extracted);
     //----------------------------------------------------------------------- v2 ----- CLEANUP
       AthPool<extSegment>* _seqmentPool;
       void releaseAll(SegmentTables &segments);

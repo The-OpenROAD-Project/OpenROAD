@@ -1482,14 +1482,6 @@ class extCorner
   float _gndFactor;
   extCorner* _extCornerPtr;
 };
-
-class extMain
-{
-  // --------------------- dkf 092024 ------------------------
-  public:
-    extSolverGen *_currentSolverGen;
-
-    // v2 -----------------------------------------------------
 // CLEANUP dkf 10302024
 struct LayerDimensionData {
         uint pitchTable[32];
@@ -1498,21 +1490,105 @@ struct LayerDimensionData {
         int baseX[32];
         int baseY[32];
         uint minRes[2];
+
+        uint maxWidth;
+        uint minPitch;
     };
 
-    struct BoundaryData {
-        int ll[2];  // lower left
-        int ur[2];  // upper right
-        int lo_gs[2];
-        int hi_gs[2];
-        int lo_search[2];
-        int hi_search[2];
+    struct BoundaryData
+    {
+      int ll[2];  // lower left
+      int ur[2];  // upper right
+      int lo_gs[2];
+      int hi_gs[2];
+      int lo_search[2];
+      int hi_search[2];
+      uint maxCouplingTracks;
+      uint diag_met_limit;
+      uint minPitch;
+      uint maxPitch;
+      uint iterationIncrement;
+      uint maxExtractBuffer;
+      int extractLimitXY;
+      int releaseMemoryLimitXY;
+
+      int lo_search_limit;
+      int lo_gs_limit;
+
+      void setBBox(const Rect& extRect) {
+        ll[0] = extRect.xMin();
+        ll[1] = extRect.yMin();
+        ur[0] = extRect.xMax();
+        ur[1] = extRect.yMax();
+     }
+
+      bool update(uint dir)
+      {
+        // get wires for coupling
+        lo_search_limit= hi_search[dir]; 
+        lo_search[dir]= lo_search_limit;
+        hi_search[dir]= lo_search_limit + iterationIncrement;
+
+        bool lastIteration= lo_search_limit + iterationIncrement - ur[dir] >0;
+        if (lastIteration)
+        {
+            hi_search[dir]= ur[dir] + 5 * maxExtractBuffer;
+        }
+
+        // Wires should be present for up coupling
+        extractLimitXY= hi_search[dir] - maxExtractBuffer;
+
+        // Wires should be present for down coupling
+        releaseMemoryLimitXY= extractLimitXY - maxExtractBuffer;
+
+        // get wires for context
+        lo_gs_limit= lo_search[dir] - maxExtractBuffer;
+        lo_gs[dir]= lo_gs_limit;
+        hi_gs[dir]= hi_search[dir] + maxExtractBuffer;
+
+        return lastIteration;
+      }
+      uint init(uint ccTrackDist, uint diag_limit,
+               uint pitch1,
+               uint pitch2,
+               uint maxWidth,
+               uint iterationTrackCount)
+      {
+        maxCouplingTracks = ccTrackDist;
+        diag_met_limit= diag_limit;
+
+        minPitch = pitch1;
+        maxPitch = pitch2;
+        maxExtractBuffer= ccTrackDist*pitch2;
+
+        iterationIncrement = iterationTrackCount * minPitch;
+        if (maxWidth > maxCouplingTracks * maxPitch)
+          iterationIncrement = std::max(ur[1] - ll[1], ur[0] - ll[0]);
+
+        for (uint dir = 0; dir < 2; dir++) {
+          lo_gs[dir] = ll[dir];
+          hi_gs[dir] = ll[dir];
+          lo_search[dir] = ll[dir];
+          hi_search[dir] = ll[dir];
+        }
+        return iterationIncrement;
+      }
     };
-    void setupBoundaries(BoundaryData& bounds, const Rect& extRect);
+ 
+
+class extMain
+{
+  // --------------------- dkf 092024 ------------------------
+  public:
+    extSolverGen *_currentSolverGen;
+
+    // v2 -----------------------------------------------------
+uint getPeakMemory(const char *msg, int n=-1);
+
+   void setupBoundaries(BoundaryData& bounds, const Rect& extRect);
     void updateBoundaries(BoundaryData& bounds, uint dir, uint ccDist, uint maxPitch);
         void initializeLayerTables(LayerDimensionData& tables);
             int initSearch(LayerDimensionData& tables, Rect& extRect, uint &totWireCnt);
-
 
 
 // CLEANUP dkf 10242024 ----------------------------------
@@ -1610,6 +1686,7 @@ public:
 // v2 ------------------------------------------------------------
   uint _debug_net_id = 0;
 
+  uint couplingFlow_v2_opt(Rect& extRect, uint ccFlag, extMeasure* m);
   uint couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m);
   void setBranchCapNodeId(dbNet* net, uint junction);
   void markPathHeadTerm(dbWirePath& path);
