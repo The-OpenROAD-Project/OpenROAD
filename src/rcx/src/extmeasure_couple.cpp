@@ -402,7 +402,7 @@ int extMeasureRC::CouplingFlow(uint dir,
     _met = level;
     Ath__grid* netGrid = _search->getGrid(dir, level);
     segments.resetAll();
-    _extMain->getPeakMemory("CouplingFlow Level:", level);
+    // DBG _extMain->getPeakMemory("CouplingFlow Level:", level);
 
     config.reset_calc_flow_flag(level);
 

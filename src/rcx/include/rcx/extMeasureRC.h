@@ -127,7 +127,7 @@ struct CouplingConfig
         vertical_cap(true),
         diag_cap(true),
         diag_cap_power(true),
-        debug_enabled(ext_main->_dbgOption > 0),
+        debug_enabled(ext_main->_dbgOption > 1),
         debug_overlaps(debug_enabled),
         debug_fp(nullptr),
         progress_interval(ext_main->_wire_extracted_progress_count)
