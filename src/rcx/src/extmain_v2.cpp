@@ -30,19 +30,41 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <sys/resource.h>
+#include <unistd.h>
+
 #include "rcx/ext_options.h"
 #include "rcx/extRCap.h"
 #include "rcx/extModelGen.h"
 #include "rcx/extSpef.h"
 #include "utl/Logger.h"
 
+
 namespace rcx {
 
 using utl::RCX;
-
 using namespace odb;
+
 class extModelGen;
 
+uint extMain::getPeakMemory(const char *msg, int n)
+{
+    if (_dbgOption==0)
+        return 0;
+
+  struct rusage usage;
+  if (getrusage(RUSAGE_SELF, &usage) == 0) {
+    // Convert from KB to Mbytes
+    int peak_rss = usage.ru_maxrss / 1024;
+
+    if (n < 0)
+      fprintf(stdout, "\t\t\t\tPeak Memory: %s    %6d MBytes\n", msg, peak_rss);
+    else
+      fprintf(stdout, "\t\t\t\tPeak Memory: %s %d %6d MBytes\n", msg, n, peak_rss);
+    return peak_rss;
+  }
+  return 0;
+}
 
 // Main function that drives extraction flow
 void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
@@ -62,6 +84,8 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
     // Associate User defined Process Corners and DensityModels in Model file
     if (!SetCornersAndReadModels_v2(extRules))
       return;
+  
+    getPeakMemory("End LoadModels: ");
 
     // Create Capacitance table per layer with min/max values 
     // based on the model file given min nad max context scenarios
@@ -87,6 +111,8 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
   if (!makeRCNetwork_v2())
     return;
 
+  getPeakMemory("End RC_Network: ");
+
   if (_lefRC) {
     // update dbNet object flags 
       update_wireAltered_v2(inets);
@@ -95,10 +121,9 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
   if (_couplingFlag > 1) {
     // Print out stats
     infoBeforeCouplingExt();
-
+    
     Rect maxRect = _block->getDieArea();
     couplingFlow_v2(maxRect, _couplingFlag, NULL);
-
     // Print out stats on db Ojects created during extraction
     couplingExtEnd_v2();
   }
@@ -106,6 +131,9 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
   couplingExtEnd_v2();
 
   _modelTable->resetCnt(0);
+
+    getPeakMemory("End Extraction: ");
+
 }
 void extMain::infoBeforeCouplingExt()
 {
