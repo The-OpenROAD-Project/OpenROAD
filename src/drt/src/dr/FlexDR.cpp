@@ -998,13 +998,16 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
         printIterationProgress(logger_, iter_prog, num_markers);
       }
     }
-    std::map<int, int> worker_best_result;
+    std::map<int, FlexDRWorker*> worker_best_result;
     for (auto& [worker_id, worker] : batch) {
       if (worker_best_result.find(worker_id) == worker_best_result.end()
-          || worker->getBestNumMarkers() < worker_best_result[worker_id]) {
-        worker_best_result[worker_id] = worker->getBestNumMarkers();
-        changed |= worker->end(getDesign());
+          || worker->getBestNumMarkers()
+                 < worker_best_result[worker_id]->getBestNumMarkers()) {
+        worker_best_result[worker_id] = worker.get();
       }
+    }
+    for (auto [_, worker] : worker_best_result) {
+      changed |= worker->end(getDesign());
     }
     batch.clear();
   }

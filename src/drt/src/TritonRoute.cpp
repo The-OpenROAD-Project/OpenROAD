@@ -657,6 +657,7 @@ void TritonRoute::stepDR(int size,
                      workerMarkerDecay,
                      getMode(ripupMode),
                      followGuide});
+  dr_->incIter();
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 }
 
