@@ -64,7 +64,7 @@ bool _dbGuide::operator==(const _dbGuide& rhs) const
   if (guide_next_ != rhs.guide_next_) {
     return false;
   }
-  if (is_congested != rhs.is_congested) {
+  if (is_congested_ != rhs.is_congested_) {
     return false;
   }
 
@@ -86,7 +86,7 @@ void _dbGuide::differences(dbDiff& diff,
   DIFF_FIELD(layer_);
   DIFF_FIELD(via_layer_);
   DIFF_FIELD(guide_next_);
-  DIFF_FIELD(is_congested);
+  DIFF_FIELD(is_congested_);
   DIFF_END
 }
 
@@ -98,7 +98,7 @@ void _dbGuide::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(layer_);
   DIFF_OUT_FIELD(via_layer_);
   DIFF_OUT_FIELD(guide_next_);
-  DIFF_OUT_FIELD(is_congested);
+  DIFF_OUT_FIELD(is_congested_);
 
   DIFF_END
 }
@@ -114,7 +114,7 @@ _dbGuide::_dbGuide(_dbDatabase* db, const _dbGuide& r)
   layer_ = r.layer_;
   via_layer_ = r.via_layer_;
   guide_next_ = r.guide_next_;
-  is_congested = r.is_congested;
+  is_congested_ = r.is_congested_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
@@ -127,7 +127,7 @@ dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
   }
   stream >> obj.guide_next_;
   if (obj.getDatabase()->isSchema(db_schema_db_guide_congested)) {
-    stream >> obj.is_congested;
+    stream >> obj.is_congested_;
   }
   return stream;
 }
@@ -142,7 +142,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj)
   }
   stream << obj.guide_next_;
   if (obj.getDatabase()->isSchema(db_schema_db_guide_congested)) {
-    stream << obj.is_congested;
+    stream << obj.is_congested_;
   }
   return stream;
 }
@@ -178,7 +178,7 @@ dbTechLayer* dbGuide::getViaLayer() const
 bool dbGuide::isCongested() const
 {
   _dbGuide* obj = (_dbGuide*) this;
-  return obj->is_congested;
+  return obj->is_congested_;
 }
 
 dbNet* dbGuide::getNet() const
@@ -216,7 +216,7 @@ dbGuide* dbGuide::create(dbNet* net,
   guide->via_layer_ = via_layer->getImpl()->getOID();
   guide->box_ = box;
   guide->net_ = owner->getId();
-  guide->is_congested = is_congested;
+  guide->is_congested_ = is_congested;
   guide->guide_next_ = owner->guides_;
   owner->guides_ = guide->getOID();
   return (dbGuide*) guide;
@@ -250,6 +250,7 @@ void dbGuide::destroy(dbGuide* guide)
     block->_journal->pushParam(_guide->box_.yMax());
     block->_journal->pushParam(_guide->layer_);
     block->_journal->pushParam(_guide->via_layer_);
+    block->_journal->pushParam(_guide->is_congested_);
     block->_journal->endAction();
   }
 
