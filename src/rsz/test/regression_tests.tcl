@@ -1,4 +1,5 @@
 record_tests {
+  split_load_hier
   resize1_hier
   repair_hold1_hier  
   buffer_ports1
@@ -67,6 +68,8 @@ record_tests {
   repair_setup2
   repair_setup3
   repair_setup4
+  repair_setup4_hier
+  repair_setup4_flat
   repair_setup5
   repair_setup6
   repair_setup7
