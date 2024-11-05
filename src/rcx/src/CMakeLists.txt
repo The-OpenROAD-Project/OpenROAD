@@ -78,6 +78,7 @@ extRulesVia.cpp
 extmeasure_print.cpp
   extmeasure_res_v2.cpp
 			extmain_v2.cpp
+extmeasure_diag_opt.cpp
 )
 
 target_include_directories(rcx_lib
