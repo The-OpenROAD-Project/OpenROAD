@@ -560,10 +560,6 @@ float SimulatedAnnealingCore<T>::calAverage(std::vector<float>& value_list)
 template <class T>
 void SimulatedAnnealingCore<T>::fastSA()
 {
-  if (graphics_) {
-    graphics_->startSA();
-  }
-
   float cost = calNormCost();
   float pre_cost = cost;
   float delta_cost = 0.0;
@@ -580,9 +576,8 @@ void SimulatedAnnealingCore<T>::fastSA()
   int num_restart = 1;
   const int max_num_restart = 2;
 
-  SequencePair best_valid_result;
-  if (isValid()) {
-    updateBestValidResult(best_valid_result);
+  if (best_valid_result_ && isValid()) {
+    updateBestValidSoftResult();
   }
 
   while (step <= max_num_step_) {
@@ -590,11 +585,13 @@ void SimulatedAnnealingCore<T>::fastSA()
       perturb();
       cost = calNormCost();
 
-      const bool keep_result
-          = cost < pre_cost || best_valid_result.pos_sequence.empty();
-
-      if (isValid() && keep_result) {
-        updateBestValidResult(best_valid_result);
+      if (best_valid_result_) {
+        const bool keep_result
+            = cost < pre_cost
+              || best_valid_result_->sequence_pair.pos_sequence.empty();
+        if (isValid() && keep_result) {
+          updateBestValidSoftResult();
+        }
       }
 
       delta_cost = cost - pre_cost;
@@ -640,86 +637,18 @@ void SimulatedAnnealingCore<T>::fastSA()
     graphics_->doNotSkip();
   }
   calPenalty();
-
-  if (!isValid() && !best_valid_result.pos_sequence.empty()) {
-    pos_seq_ = best_valid_result.pos_sequence;
-    neg_seq_ = best_valid_result.neg_sequence;
-
-    packFloorplan();
-    if (graphics_) {
-      graphics_->doNotSkip();
-    }
-    calPenalty();
-  }
-
-  if (centralization_on_) {
-    attemptCentralization(calNormCost());
-  }
-
-  if (graphics_) {
-    graphics_->endSA(calNormCost());
-  }
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::attemptCentralization(const float pre_cost)
+void SimulatedAnnealingCore<T>::updateBestValidSoftResult()
 {
-  if (outline_penalty_ > 0) {
-    return;
+  best_valid_result_->sequence_pair.pos_sequence = pos_seq_;
+  best_valid_result_->sequence_pair.neg_sequence = neg_seq_;
+
+  for (const int macro_id : pos_seq_) {
+    T& macro = macros_[macro_id];
+    best_valid_result_->macro_id_to_width[macro_id] = macro.getWidth();
   }
-
-  // In order to revert the centralization, we cache the current location
-  // of the clusters to avoid floating-point evilness when creating the
-  // x,y grid to fill the dead space by expanding mixed clusters.
-  std::map<int, std::pair<float, float>> clusters_locations;
-
-  for (int& id : pos_seq_) {
-    clusters_locations[id] = {macros_[id].getX(), macros_[id].getY()};
-  }
-
-  std::pair<float, float> offset((outline_.getWidth() - width_) / 2,
-                                 (outline_.getHeight() - height_) / 2);
-  moveFloorplan(offset);
-
-  // revert centralization
-  if (calNormCost() > pre_cost) {
-    centralization_was_reverted_ = true;
-
-    for (int& id : pos_seq_) {
-      macros_[id].setX(clusters_locations[id].first);
-      macros_[id].setY(clusters_locations[id].second);
-    }
-
-    if (graphics_) {
-      graphics_->saStep(macros_);
-    }
-
-    calPenalty();
-  }
-}
-
-template <class T>
-void SimulatedAnnealingCore<T>::moveFloorplan(
-    const std::pair<float, float>& offset)
-{
-  for (auto& id : pos_seq_) {
-    macros_[id].setX(macros_[id].getX() + offset.first);
-    macros_[id].setY(macros_[id].getY() + offset.second);
-  }
-
-  if (graphics_) {
-    graphics_->saStep(macros_);
-  }
-
-  calPenalty();
-}
-
-template <class T>
-void SimulatedAnnealingCore<T>::updateBestValidResult(
-    SequencePair& best_valid_result)
-{
-  best_valid_result.pos_sequence = pos_seq_;
-  best_valid_result.neg_sequence = neg_seq_;
 }
 
 template <class T>
