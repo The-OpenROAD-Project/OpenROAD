@@ -566,7 +566,6 @@ std::unique_ptr<FlexDRWorker> FlexDR::createWorker(const int x_offset,
 {
   auto worker
       = std::make_unique<FlexDRWorker>(&via_data_, getDesign(), logger_);
-  const int iter = iter_ - 1;
   if (routeBox == Rect(0, 0, 0, 0)) {
     auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
     auto& xgp = gCellPatterns.at(0);
@@ -589,12 +588,12 @@ std::unique_ptr<FlexDRWorker> FlexDR::createWorker(const int x_offset,
   worker->setExtBox(extBox);
   worker->setDrcBox(drcBox);
   worker->setMazeEndIter(args.mazeEndIter);
-  worker->setDRIter(iter);
+  worker->setDRIter(iter_);
   worker->setDebugSettings(router_->getDebugSettings());
   if (dist_on_) {
     worker->setDistributed(dist_, dist_ip_, dist_port_, dist_dir_);
   }
-  if (!iter) {
+  if (!iter_) {
     auto bp = initDR_mergeBoundaryPin(x_offset, y_offset, args.size, routeBox);
     worker->setDRIter(0, bp);
   }
@@ -697,13 +696,12 @@ void FlexDR::reportIterationViolations() const
       }
     }
   }
-  const int iter = iter_ - 1;
-  if ((DRC_RPT_ITER_STEP && iter > 0 && iter % DRC_RPT_ITER_STEP.value() == 0)
+  if ((DRC_RPT_ITER_STEP && iter_ > 0 && iter_ % DRC_RPT_ITER_STEP.value() == 0)
       || logger_->debugCheck(DRT, "autotuner", 1)
       || logger_->debugCheck(DRT, "report", 1)) {
-    router_->reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt",
+    router_->reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter_) + ".rpt",
                        design_->getTopBlock()->getMarkers(),
-                       "DRC - iter " + std::to_string(iter));
+                       "DRC - iter " + std::to_string(iter_));
   }
 }
 
@@ -950,11 +948,11 @@ std::vector<std::vector<Rect>> getWorkerBatchesBoxes(
 }
 }  // namespace stub_tiles
 
-void FlexDR::stubbornTilesFlow(SearchRepairArgs args,
+void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
                                IterationProgress& iter_prog)
 {
   if (VERBOSE > 0) {
-    logger_->info(DRT, 196, "Start Stubborn Tiles iteration({}).", iter_ - 1);
+    logger_->info(DRT, 196, "Start Stubborn Tiles iteration({}).", iter_);
   }
   std::vector<Rect> drv_boxes;
   for (const auto& marker : getDesign()->getTopBlock()->getMarkers()) {
@@ -979,14 +977,16 @@ void FlexDR::stubbornTilesFlow(SearchRepairArgs args,
     for (int worker_id = 0; worker_id < batch.size(); worker_id++) {
       for (auto drc_cost : drc_costs) {
         for (auto marker_cost : marker_costs) {
-          args.workerDRCCost = drc_cost;
-          args.workerMarkerCost = marker_cost;
+          auto worker_args = args;
+          worker_args.workerDRCCost = drc_cost;
+          worker_args.workerMarkerCost = marker_cost;
           workers_batches[batch_id].emplace_back(
-              worker_id, createWorker(0, 0, args, batch[worker_id]));
+              worker_id, createWorker(0, 0, worker_args, batch[worker_id]));
         }
       }
     }
   }
+  bool changed = false;
   omp_set_num_threads(MAX_THREADS);
   for (auto& batch : workers_batches) {
     const auto num_markers = getDesign()->getTopBlock()->getNumMarkers();
@@ -1003,16 +1003,19 @@ void FlexDR::stubbornTilesFlow(SearchRepairArgs args,
       if (worker_best_result.find(worker_id) == worker_best_result.end()
           || worker->getBestNumMarkers() < worker_best_result[worker_id]) {
         worker_best_result[worker_id] = worker->getBestNumMarkers();
-        worker->end(getDesign());
+        changed |= worker->end(getDesign());
       }
     }
     batch.clear();
   }
+  if (!changed) {
+    control_.skip_till_changed = true;
+    control_.last_args = args;
+  }
 }
 
-void FlexDR::searchRepair(SearchRepairArgs args)
+void FlexDR::searchRepair(const SearchRepairArgs& args)
 {
-  const int iter = iter_++;
   const int size = args.size;
   const int offset = args.offset;
   const RipUpMode ripupMode = args.ripupMode;
@@ -1020,11 +1023,11 @@ void FlexDR::searchRepair(SearchRepairArgs args)
       && getDesign()->getTopBlock()->getMarkers().empty()) {
     return;
   }
-  ProfileTask profile(fmt::format("DR:searchRepair{}", iter).c_str());
+  ProfileTask profile(fmt::format("DR:searchRepair{}", iter_).c_str());
 
   if (dist_on_) {
-    if ((iter % 10 == 0 && iter != 60) || iter == 3 || iter == 15) {
-      globals_path_ = fmt::format("{}globals.{}.ar", dist_dir_, iter);
+    if ((iter_ % 10 == 0 && iter_ != 60) || iter_ == 3 || iter_ == 15) {
+      globals_path_ = fmt::format("{}globals.{}.ar", dist_dir_, iter_);
       router_->writeGlobals(globals_path_);
     }
   }
@@ -1032,12 +1035,12 @@ void FlexDR::searchRepair(SearchRepairArgs args)
   IterationProgress iter_prog;
   auto block = getDesign()->getTopBlock();
   const auto num_drvs = block->getNumMarkers();
-  if (iter >= 1 && num_drvs <= 11 && ripupMode != RipUpMode::ALL) {
+  if (iter_ >= 1 && num_drvs <= 11 && ripupMode != RipUpMode::ALL) {
     stubbornTilesFlow(args, iter_prog);
   } else {
-    printIteration(logger_, iter);
+    printIteration(logger_, iter_);
     if (graphics_) {
-      graphics_->startIter(iter);
+      graphics_->startIter(iter_);
     }
     auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
     auto& xgp = gCellPatterns.at(0);
@@ -1096,7 +1099,7 @@ void FlexDR::searchRepair(SearchRepairArgs args)
       }
     }
 
-    if (!iter) {
+    if (!iter_) {
       removeGCell2BoundaryPin();
     }
   }
@@ -1109,7 +1112,7 @@ void FlexDR::searchRepair(SearchRepairArgs args)
   }
   FlexDRConnectivityChecker checker(
       router_, logger_, graphics_.get(), dist_on_);
-  checker.check(iter);
+  checker.check(iter_);
   if (getDesign()->getTopBlock()->getNumMarkers() == 0
       && getTech()->hasMaxSpacingConstraints()) {
     fixMaxSpacing();
@@ -1660,6 +1663,9 @@ int FlexDR::main()
     }
   }
   for (auto& args : strategy()) {
+    if (iter_ > END_ITERATION) {
+      break;
+    }
     int clipSize = args.size;
     if (args.ripupMode != RipUpMode::ALL) {
       if (increaseClipsize_) {
@@ -1675,19 +1681,26 @@ int FlexDR::main()
         args.ripupMode = RipUpMode::INCR;
       }
     }
+    if (control_.skip_till_changed
+        && args.isEqualIgnoringSizeAndOffset(control_.last_args)) {
+      if (VERBOSE > 0) {
+        logger_->info(DRT, 200, "Skipping iteration {}", iter_);
+      }
+      ++iter_;
+      continue;
+    }
+    control_.skip_till_changed = false;
     searchRepair(args);
     if (getDesign()->getTopBlock()->getNumMarkers() == 0) {
-      break;
-    }
-    if (iter_ > END_ITERATION) {
       break;
     }
     if (logger_->debugCheck(DRT, "snapshot", 1)) {
       io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, false, true);
       ord::OpenRoad::openRoad()->writeDb(
-          fmt::format("drt_iter{}.odb", iter_ - 1).c_str());
+          fmt::format("drt_iter{}.odb", iter_).c_str());
     }
+    ++iter_;
   }
 
   end(/* done */ true);

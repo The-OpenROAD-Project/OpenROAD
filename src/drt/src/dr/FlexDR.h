@@ -89,6 +89,16 @@ class FlexDR
     float workerMarkerDecay;
     RipUpMode ripupMode;
     bool followGuide;
+    bool isEqualIgnoringSizeAndOffset(const SearchRepairArgs& other) const
+    {
+      return (mazeEndIter == other.mazeEndIter
+              && workerDRCCost == other.workerDRCCost
+              && workerMarkerCost == other.workerMarkerCost
+              && workerFixedShapeCost == other.workerFixedShapeCost
+              && std::fabs(workerMarkerDecay - other.workerMarkerDecay) < 1e-6
+              && ripupMode == other.ripupMode
+              && followGuide == other.followGuide);
+    }
   };
   struct IterationProgress
   {
@@ -97,6 +107,11 @@ class FlexDR
     int last_reported_perc{0};
     frTime time;
   };
+  struct IterationsControl
+  {
+    bool skip_till_changed{false};
+    SearchRepairArgs last_args;
+  } control_;
 
   // constructors
   FlexDR(TritonRoute* router,
@@ -111,7 +126,7 @@ class FlexDR
   // others
   void init();
   int main();
-  void searchRepair(SearchRepairArgs args);
+  void searchRepair(const SearchRepairArgs& args);
   void end(bool done = false);
 
   const FlexDRViaData* getViaData() const { return &via_data_; }
@@ -199,7 +214,8 @@ class FlexDR
       int& version,
       IterationProgress& iter_prog);
   Rect getWorkerRouteBox(const Rect& drv_rect) const;
-  void stubbornTilesFlow(SearchRepairArgs args, IterationProgress& iter_prog);
+  void stubbornTilesFlow(const SearchRepairArgs& args,
+                         IterationProgress& iter_prog);
 };
 
 class FlexDRWorker;
