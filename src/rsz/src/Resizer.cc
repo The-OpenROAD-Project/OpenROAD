@@ -524,6 +524,126 @@ void Resizer::balanceRowUsage()
 
 ////////////////////////////////////////////////////////////////
 
+bool Resizer::bufferSizeOutmatched(LibertyCell *worse, LibertyCell *better, float max_drive_resist)
+{
+  LibertyPort *win, *wout, *bin, *bout;
+  worse->bufferPorts(win, wout);
+  better->bufferPorts(bin, bout);
+
+  float extra_input_cap = std::max(bin->capacitance() - win->capacitance(), 0.0f);
+  float delay_penalty = max_drive_resist * extra_input_cap;
+
+  float wlimit = maxLoad(network_->cell(worse)), blimit = maxLoad(network_->cell(better));
+#if 0
+  if (/* blimit exists */ blimit > 0 && wlimit > blimit) {
+    return false;
+  }
+#endif
+
+  std::vector<float> cap_test_points;
+
+  // TODO: factor out
+  for (TimingArcSet* arc_set : worse->timingArcSets()) {
+    TimingRole* role = arc_set->role();
+    if (role->combinational() && arc_set->from() == win && arc_set->to() == wout) {
+      for (TimingArc* arc : arc_set->arcs()) {
+        auto model = dynamic_cast<sta::GateTableModel*>(arc->model());
+        if (model) {
+          auto dm = model->delayModel();
+          for (const sta::TableAxis *axis : {dm->axis1(), dm->axis2(), dm->axis3()}) {
+            if (axis && axis->variable() == sta::TableAxisVariable::total_output_net_capacitance) {
+              cap_test_points.insert(cap_test_points.end(), axis->values()->begin(), axis->values()->end());
+            }
+          }
+        }
+      }
+    }
+  }
+
+  for (TimingArcSet* arc_set : better->timingArcSets()) {
+    TimingRole* role = arc_set->role();
+    if (role->combinational() && arc_set->from() == bin && arc_set->to() == bout) {
+      for (TimingArc* arc : arc_set->arcs()) {
+        auto model = dynamic_cast<sta::GateTableModel*>(arc->model());
+        if (model) {
+          auto dm = model->delayModel();
+          for (const sta::TableAxis *axis : {dm->axis1(), dm->axis2(), dm->axis3()}) {
+            if (axis && axis->variable() == sta::TableAxisVariable::total_output_net_capacitance) {
+              cap_test_points.insert(cap_test_points.end(), axis->values()->begin(), axis->values()->end());
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (cap_test_points.empty()) {
+    return false;
+  }
+
+  for (auto p : cap_test_points) {
+    if ((wlimit == 0 || p <= wlimit) &&
+        /* ignore high C_load/C_in */ p < std::min(bin->capacitance(), win->capacitance()) * 20.0f) {
+      float bd = bufferDelay(better, p, tgt_slew_dcalc_ap_);
+      float wd = bufferDelay(worse, p, tgt_slew_dcalc_ap_);
+      if (bd + delay_penalty > wd) {
+        debugPrint(logger_, RSZ, "gain_buffering", 3, "{} is better than {} at {}: {} vs {} + {}",
+                   worse->name(), better->name(), units_->capacitanceUnit()->asString(p),
+                   units_->timeUnit()->asString(wd), units_->timeUnit()->asString(bd),
+                   units_->timeUnit()->asString(delay_penalty));
+        return false;
+      }
+    }
+  }
+
+  // We haven't found a load amount (within bounds) for which `worse` wouldn't be slower than `better`
+  return true;
+}
+
+void Resizer::findFastBuffers()
+{
+  if (!buffer_fast_sizes_.empty()) {
+    return;
+  }
+
+  float R_max = bufferDriveResistance(buffer_lowest_drive_);
+  LibertyCellSeq sizes_by_inp_cap;
+  sizes_by_inp_cap = buffer_cells_;
+  sort(sizes_by_inp_cap,
+       [this](const LibertyCell* buffer1, const LibertyCell* buffer2) {
+          LibertyPort *port1, *port2, *scratch;
+          buffer1->bufferPorts(port1, scratch);
+          buffer2->bufferPorts(port2, scratch);
+          return port1->capacitance() < port2->capacitance();
+        });
+
+  LibertyCellSeq fast_buffers;
+  for (auto size : sizes_by_inp_cap) {
+    if (fast_buffers.empty()) {
+      fast_buffers.push_back(size);
+    } else {
+      if (!bufferSizeOutmatched(size, fast_buffers.back(), R_max)) {
+        while (!fast_buffers.empty() && bufferSizeOutmatched(fast_buffers.back(), size, R_max)) {
+          debugPrint(logger_, RSZ, "gain_buffering", 2, "{} trumps {}",
+                     size->name(), fast_buffers.back()->name());
+          fast_buffers.pop_back();
+        }
+        fast_buffers.push_back(size);
+      } else {
+        debugPrint(logger_, RSZ, "gain_buffering", 2, "{} trumps {}",
+                   fast_buffers.back()->name(), size->name());
+      }
+    }
+  }
+
+  debugPrint(logger_, RSZ, "gain_buffering", 1, "pre-selected buffers:");
+  for (auto size : fast_buffers) {
+    debugPrint(logger_, RSZ, "gain_buffering", 1, " - {}", size->name());
+  }
+
+  buffer_fast_sizes_ = fast_buffers;
+}
+
 void Resizer::findBuffers()
 {
   if (buffer_cells_.empty()) {

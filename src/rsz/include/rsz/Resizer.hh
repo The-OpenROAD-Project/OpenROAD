@@ -447,7 +447,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool isTristateDriver(const Pin* pin);
   void checkLibertyForAllCorners();
   void copyDontUseFromLiberty();
+  bool bufferSizeOutmatched(LibertyCell *worse, LibertyCell *better, float max_drive_resist);
   void findBuffers();
+  void findFastBuffers();
   bool isLinkCell(LibertyCell* cell) const;
   void findTargetLoads();
   void balanceBin(const vector<odb::dbInst*>& bin,
@@ -738,6 +740,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   const MinMax* max_ = MinMax::max();
   LibertyCellSeq buffer_cells_;
   LibertyCell* buffer_lowest_drive_ = nullptr;
+  LibertyCellSeq buffer_fast_sizes_;
   // Buffer list created by CTS kept here so that we use the
   // exact same buffers when reparing clock nets.
   LibertyCellSeq clk_buffers_;

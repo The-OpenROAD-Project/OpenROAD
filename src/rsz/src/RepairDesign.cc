@@ -446,8 +446,9 @@ static float bufferCin(const LibertyCell* cell)
 
 void RepairDesign::findBufferSizes()
 {
+  resizer_->findFastBuffers();
   buffer_sizes_.clear();
-  buffer_sizes_ = resizer_->buffer_cells_;
+  buffer_sizes_ = resizer_->buffer_fast_sizes_;
   std::sort(buffer_sizes_.begin(),
             buffer_sizes_.end(),
             [=](LibertyCell* a, LibertyCell* b) {
