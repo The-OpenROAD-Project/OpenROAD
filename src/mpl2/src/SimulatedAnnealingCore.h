@@ -118,10 +118,8 @@ class SimulatedAnnealingCore
   float getNormFencePenalty() const;
   void getMacros(std::vector<T>& macros) const;
 
-  // Initialize the SA worker
   virtual void initialize() = 0;
   virtual void run() = 0;
-  void fastSA();
   virtual void fillDeadSpace() = 0;
 
  protected:
@@ -132,6 +130,8 @@ class SimulatedAnnealingCore
     SequencePair sequence_pair;
     std::map<int, float> macro_id_to_width;  // Macros' shapes.
   };
+
+  void fastSA();
 
   void initSequencePair();
   void updateBestValidSoftResult();
