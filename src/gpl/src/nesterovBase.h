@@ -39,10 +39,10 @@
 #include <variant>
 #include <vector>
 
-#include "point.h"
-#include "placerBase.h"
-#include "routeBase.h"
 #include "odb/db.h"
+#include "placerBase.h"
+#include "point.h"
+#include "routeBase.h"
 
 namespace odb {
 class dbInst;
@@ -138,14 +138,19 @@ class GCell
 
   void print(utl::Logger* logger) const
   {
-    if(insts_.size()>0)
-      logger->report("print gcell:{}",insts_[0]->dbInst()->getName());
+    if (insts_.size() > 0)
+      logger->report("print gcell:{}", insts_[0]->dbInst()->getName());
     else
       logger->report("print gcell insts_ empty! (filler cell)");
-    logger->report("insts_ size: {}, gPins_ size: {}",  insts_.size(), gPins_.size());
+    logger->report(
+        "insts_ size: {}, gPins_ size: {}", insts_.size(), gPins_.size());
     logger->report("lx_: {} ly_: {} ux_: {} uy_: {}", lx_, ly_, ux_, uy_);
-    logger->report("dLx_: {} dLy_: {} dUx_: {} dUy_: {}", dLx_, dLy_, dUx_, dUy_);
-    logger->report("densityScale_: {} gradientX_: {} gradientY_: {}", densityScale_, gradientX_, gradientY_);
+    logger->report(
+        "dLx_: {} dLy_: {} dUx_: {} dUy_: {}", dLx_, dLy_, dUx_, dUy_);
+    logger->report("densityScale_: {} gradientX_: {} gradientY_: {}",
+                   densityScale_,
+                   gradientX_,
+                   gradientY_);
   }
 
  private:
@@ -305,18 +310,23 @@ class GNet
 
   void disconnectPin(GPin* gPin);
 
-  void print(utl::Logger* log) const {
-    log->report("print net: {}",nets_[0]->dbNet()->getName());
+  void print(utl::Logger* log) const
+  {
+    log->report("print net: {}", nets_[0]->dbNet()->getName());
     log->report("gPins_ size: {}", gPins_.size());
     log->report("nets_ size: {}", nets_.size());
     // log->report("gpl_net_: {}", pb_net->);
     log->report("lx_: {}, ly_: {}, ux_: {}, uy_: {}", lx_, ly_, ux_, uy_);
     log->report("timingWeight_: {}", timingWeight_);
     log->report("customWeight_: {}", customWeight_);
-    log->report("waExpMinSumX_: {}, waXExpMinSumX_: {}", waExpMinSumX_, waXExpMinSumX_);
-    log->report("waExpMaxSumX_: {}, waXExpMaxSumX_: {}", waExpMaxSumX_, waXExpMaxSumX_);
-    log->report("waExpMinSumY_: {}, waYExpMinSumY_: {}", waExpMinSumY_, waYExpMinSumY_);
-    log->report("waExpMaxSumY_: {}, waYExpMaxSumY_: {}", waExpMaxSumY_, waYExpMaxSumY_);
+    log->report(
+        "waExpMinSumX_: {}, waXExpMinSumX_: {}", waExpMinSumX_, waXExpMinSumX_);
+    log->report(
+        "waExpMaxSumX_: {}, waXExpMaxSumX_: {}", waExpMaxSumX_, waXExpMaxSumX_);
+    log->report(
+        "waExpMinSumY_: {}, waYExpMinSumY_: {}", waExpMinSumY_, waYExpMinSumY_);
+    log->report(
+        "waExpMaxSumY_: {}, waYExpMaxSumY_: {}", waExpMaxSumY_, waYExpMaxSumY_);
     log->report("isDontCare_: {}", isDontCare_ ? "true" : "false");
   }
 
@@ -515,7 +525,8 @@ class GPin
 
   void disconnectNet() { gNet_ = nullptr; }
 
-  void updateCoordi() {
+  void updateCoordi()
+  {
     Pin* pb_pin = pins_[0];
     cx_ = pb_pin->cx();
     cy_ = pb_pin->cy();
@@ -523,18 +534,18 @@ class GPin
     offsetCy_ = pb_pin->offsetCy();
   }
 
-  void print(utl::Logger* log) const {
-    if(pin()->dbITerm() != nullptr)
+  void print(utl::Logger* log) const
+  {
+    if (pin()->dbITerm() != nullptr)
       log->report("--> print pin: {}", pin()->dbITerm()->getName());
     else
       log->report("pin()->dbIterm() is nullptr!");
-    if(gCell_){
-      if(gCell_->isInstance())
+    if (gCell_) {
+      if (gCell_->isInstance())
         log->report("GCell*: {}", gCell_->instance()->dbInst()->getName());
-      else 
+      else
         log->report("GCell of gpin is filler!");
-    }
-    else
+    } else
       log->report("gcell of gpin is null");
     log->report("GNet: {}", gNet_->net()->dbNet()->getName());
     log->report("pins_.size(): {}", pins_.size());
@@ -837,7 +848,7 @@ class NesterovPlaceVars
   float initialPrevCoordiUpdateCoef = 100;  // z_ref_alpha
   float referenceHpwl = 446000000;          // refDeltaHpwl
   float routabilityCheckOverflow = 0.30;
-  float timingDrivenCheckOverflow = 0.0;
+  float keepResizeBelowOverflow = 0.0;
 
   static const int maxRecursionWlCoef = 10;
   static const int maxRecursionInitSLPCoef = 10;
@@ -865,7 +876,7 @@ class NesterovBaseCommon
 
   const std::vector<GCell*>& gCells() const { return gCells_; }
   const std::vector<GNet*>& gNets() const { return gNets_; }
-  const std::vector<GPin*>&gPins() const { return gPins_; }
+  const std::vector<GPin*>& gPins() const { return gPins_; }
 
   std::unordered_map<odb::dbInst*, size_t>& dbInstMap() { return db_inst_map_; }
 
@@ -911,7 +922,7 @@ class NesterovBaseCommon
 
   // Number of threads of execution
   size_t getNumThreads() { return num_threads_; }
-  
+
   GCell* getGCellByIndex(size_t i);
   std::vector<size_t> insertGCellsTestOnly();
   void fixPointers(std::vector<size_t> new_gcells);
@@ -924,9 +935,9 @@ class NesterovBaseCommon
   size_t createGCell(odb::dbInst* db_inst);
   void moveGCell(odb::dbInst* db_inst);
 
-  void destroyGCell(size_t );  
+  void destroyGCell(size_t);
   void destroyGNet(odb::dbNet*);
-  void destroyITerm(odb::dbITerm*);  
+  void destroyITerm(odb::dbITerm*);
 
   void resizeGCell(odb::dbInst* db_inst);
   void disconnectITerm(odb::dbITerm*, odb::dbNet*);
@@ -939,29 +950,34 @@ class NesterovBaseCommon
     return std::distance(gCellStor_.data(), gCell);
   }
 
-  //TODO this can be placed elsewhere, not necessarly inside NBC
-  bool isValidSigType(odb::dbSigType db_type) {
-    if (db_type == odb::dbSigType::SIGNAL || db_type == odb::dbSigType::CLOCK) // || db_type == odb::dbSigType::ANALOG)
+  // TODO this can be placed elsewhere, not necessarly inside NBC
+  bool isValidSigType(odb::dbSigType db_type)
+  {
+    if (db_type == odb::dbSigType::SIGNAL
+        || db_type == odb::dbSigType::CLOCK)  // || db_type ==
+                                              // odb::dbSigType::ANALOG)
       return true;
     else
       return false;
   }
 
-  void printGCells(){
-    for(auto& gcell : gCellStor_) {
+  void printGCells()
+  {
+    for (auto& gcell : gCellStor_) {
       gcell.print(log_);
-    }    
+    }
   }
 
-  void printGPins(){
-    for(auto& gpin : gPinStor_) {
+  void printGPins()
+  {
+    for (auto& gpin : gPinStor_) {
       gpin.print(log_);
-    }    
+    }
   }
 
-  //TODO how to do this for each region?
-  int64_t getDeltaArea(){ return deltaArea_; }
-  void resetDeltaArea(){ deltaArea_ = 0; }
+  // TODO how to do this for each region?
+  int64_t getDeltaArea() { return deltaArea_; }
+  void resetDeltaArea() { deltaArea_ = 0; }
 
  private:
   NesterovBaseVars nbVars_;
@@ -976,12 +992,13 @@ class NesterovBaseCommon
   std::vector<GNet*> gNets_;
   std::vector<GPin*> gPins_;
 
-  //TODO change gCellMap_ second to access by index instead of pointer.
+  // TODO change gCellMap_ second to access by index instead of pointer.
   std::unordered_map<Instance*, GCell*> gCellMap_;
   std::unordered_map<Pin*, GPin*> gPinMap_;
   std::unordered_map<Net*, GNet*> gNetMap_;
 
-  //TODO maybe change this map to be in NB instead of NBC, from NB we can access the gcell in NBC.
+  // TODO maybe change this map to be in NB instead of NBC, from NB we can
+  // access the gcell in NBC.
   std::unordered_map<odb::dbInst*, size_t> db_inst_map_;
   std::unordered_map<odb::dbNet*, size_t> db_net_map_;
   std::unordered_map<odb::dbITerm*, size_t> db_iterm_map_;
@@ -994,7 +1011,7 @@ class NesterovBaseCommon
   int num_threads_;
   int64_t deltaArea_;
   nesterovDbCbk* db_cbk_;
-  //TODO check if this is actually needed
+  // TODO check if this is actually needed
   friend class NesterovBase;
 };
 
@@ -1061,12 +1078,8 @@ class NesterovBase
   // should be separately defined.
   // This is mainly used for NesterovLoop
   int64_t nesterovInstsArea() const;
-  int64_t getStdInstArea() const{
-    return this->stdInstsArea_;
-  }
-  int64_t getMacroInstArea() const{
-    return this->macroInstsArea_;
-  }
+  int64_t getStdInstArea() const { return this->stdInstsArea_; }
+  int64_t getMacroInstArea() const { return this->macroInstsArea_; }
 
   // sum phi and target density
   // used in NesterovPlace
@@ -1126,18 +1139,22 @@ class NesterovBase
 
   void updatePrevGradient(float wlCoeffX, float wlCoeffY);
   void updateCurGradient(float wlCoeffX, float wlCoeffY);
-  void updateNextGradient(float wlCoeffX, float wlCoeffY);                       
+  void updateNextGradient(float wlCoeffX, float wlCoeffY);
 
   // Used for updates based on callbacks
   void updateSingleGradient(size_t gCellIndex,
-                        std::vector<FloatPoint>& sumGrads,
-                        std::vector<FloatPoint>& wireLengthGrads,
-                        std::vector<FloatPoint>& densityGrads,
-                        float wlCoeffX,
-                        float wlCoeffY);
-  
-  void updateSinglePrevGradient(size_t gCellIndex, float wlCoeffX, float wlCoeffY);
-  void updateSingleCurGradient(size_t gCellIndex, float wlCoeffX, float wlCoeffY);
+                            std::vector<FloatPoint>& sumGrads,
+                            std::vector<FloatPoint>& wireLengthGrads,
+                            std::vector<FloatPoint>& densityGrads,
+                            float wlCoeffX,
+                            float wlCoeffY);
+
+  void updateSinglePrevGradient(size_t gCellIndex,
+                                float wlCoeffX,
+                                float wlCoeffY);
+  void updateSingleCurGradient(size_t gCellIndex,
+                               float wlCoeffX,
+                               float wlCoeffY);
 
   void updateInitialPrevSLPCoordi();
 
@@ -1176,43 +1193,80 @@ class NesterovBase
   void updateGCellState(float wlCoeffX, float wlCoeffY);
   void destroyGCell(odb::dbInst* db_inst);
   void destroyFillerGCell(size_t index_remove);
-  
-//  void insertGCells(std::vector<GCell*> new_gcells);
+
+  //  void insertGCells(std::vector<GCell*> new_gcells);
   void fixPointers(std::vector<size_t> new_gcells);
   // void fixGPinsPositions();
-  
-void printAllGCellState() {
-  for(size_t i =0; i< gCells_.size(); ++i) {
-    printGCellState(i);
-  }
-}
 
-void printGCellState(size_t gcells_index) {
-  log_->report("printGCellState, gcells_index:{}", gcells_index);
-  // GCellHandle& handle = gCells_[gcells_index];
-  // handle->print(log_);
-  log_->report("curSLPCoordi_: {}, {}", curSLPCoordi_[gcells_index].x, curSLPCoordi_[gcells_index].y);
-  log_->report("curSLPWireLengthGrads_: {}, {}", curSLPWireLengthGrads_[gcells_index].x, curSLPWireLengthGrads_[gcells_index].y);
-  log_->report("curSLPDensityGrads_: {}, {}", curSLPDensityGrads_[gcells_index].x, curSLPDensityGrads_[gcells_index].y);
-  log_->report("curSLPSumGrads_: {}, {}", curSLPSumGrads_[gcells_index].x, curSLPSumGrads_[gcells_index].y);
-  log_->report("nextSLPCoordi_: {}, {}", nextSLPCoordi_[gcells_index].x, nextSLPCoordi_[gcells_index].y);
-  log_->report("nextSLPWireLengthGrads_: {}, {}", nextSLPWireLengthGrads_[gcells_index].x, nextSLPWireLengthGrads_[gcells_index].y);
-  log_->report("nextSLPDensityGrads_: {}, {}", nextSLPDensityGrads_[gcells_index].x, nextSLPDensityGrads_[gcells_index].y);
-  log_->report("nextSLPSumGrads_: {}, {}", nextSLPSumGrads_[gcells_index].x, nextSLPSumGrads_[gcells_index].y);
-  log_->report("prevSLPCoordi_: {}, {}", prevSLPCoordi_[gcells_index].x, prevSLPCoordi_[gcells_index].y);
-  log_->report("prevSLPWireLengthGrads_: {}, {}", prevSLPWireLengthGrads_[gcells_index].x, prevSLPWireLengthGrads_[gcells_index].y);
-  log_->report("prevSLPDensityGrads_: {}, {}", prevSLPDensityGrads_[gcells_index].x, prevSLPDensityGrads_[gcells_index].y);
-  log_->report("prevSLPSumGrads_: {}, {}", prevSLPSumGrads_[gcells_index].x, prevSLPSumGrads_[gcells_index].y);
-  log_->report("curCoordi_: {}, {}", curCoordi_[gcells_index].x, curCoordi_[gcells_index].y);
-  log_->report("nextCoordi_: {}, {}", nextCoordi_[gcells_index].x, nextCoordi_[gcells_index].y);
-  log_->report("initCoordi_: {}, {}", initCoordi_[gcells_index].x, initCoordi_[gcells_index].y);
-  if(snapshotCoordi_.size()>gcells_index) {
-    log_->report("snapshotCoordi_: {}, {}", snapshotCoordi_[gcells_index].x, snapshotCoordi_[gcells_index].y);
-    log_->report("snapshotSLPCoordi_: {}, {}", snapshotSLPCoordi_[gcells_index].x, snapshotSLPCoordi_[gcells_index].y);
-    log_->report("snapshotSLPSumGrads_: {}, {}", snapshotSLPSumGrads_[gcells_index].x, snapshotSLPSumGrads_[gcells_index].y);    
+  void printAllGCellState()
+  {
+    for (size_t i = 0; i < gCells_.size(); ++i) {
+      printGCellState(i);
+    }
   }
-}
 
+  void printGCellState(size_t gcells_index)
+  {
+    log_->report("printGCellState, gcells_index:{}", gcells_index);
+    // GCellHandle& handle = gCells_[gcells_index];
+    // handle->print(log_);
+    log_->report("curSLPCoordi_: {}, {}",
+                 curSLPCoordi_[gcells_index].x,
+                 curSLPCoordi_[gcells_index].y);
+    log_->report("curSLPWireLengthGrads_: {}, {}",
+                 curSLPWireLengthGrads_[gcells_index].x,
+                 curSLPWireLengthGrads_[gcells_index].y);
+    log_->report("curSLPDensityGrads_: {}, {}",
+                 curSLPDensityGrads_[gcells_index].x,
+                 curSLPDensityGrads_[gcells_index].y);
+    log_->report("curSLPSumGrads_: {}, {}",
+                 curSLPSumGrads_[gcells_index].x,
+                 curSLPSumGrads_[gcells_index].y);
+    log_->report("nextSLPCoordi_: {}, {}",
+                 nextSLPCoordi_[gcells_index].x,
+                 nextSLPCoordi_[gcells_index].y);
+    log_->report("nextSLPWireLengthGrads_: {}, {}",
+                 nextSLPWireLengthGrads_[gcells_index].x,
+                 nextSLPWireLengthGrads_[gcells_index].y);
+    log_->report("nextSLPDensityGrads_: {}, {}",
+                 nextSLPDensityGrads_[gcells_index].x,
+                 nextSLPDensityGrads_[gcells_index].y);
+    log_->report("nextSLPSumGrads_: {}, {}",
+                 nextSLPSumGrads_[gcells_index].x,
+                 nextSLPSumGrads_[gcells_index].y);
+    log_->report("prevSLPCoordi_: {}, {}",
+                 prevSLPCoordi_[gcells_index].x,
+                 prevSLPCoordi_[gcells_index].y);
+    log_->report("prevSLPWireLengthGrads_: {}, {}",
+                 prevSLPWireLengthGrads_[gcells_index].x,
+                 prevSLPWireLengthGrads_[gcells_index].y);
+    log_->report("prevSLPDensityGrads_: {}, {}",
+                 prevSLPDensityGrads_[gcells_index].x,
+                 prevSLPDensityGrads_[gcells_index].y);
+    log_->report("prevSLPSumGrads_: {}, {}",
+                 prevSLPSumGrads_[gcells_index].x,
+                 prevSLPSumGrads_[gcells_index].y);
+    log_->report("curCoordi_: {}, {}",
+                 curCoordi_[gcells_index].x,
+                 curCoordi_[gcells_index].y);
+    log_->report("nextCoordi_: {}, {}",
+                 nextCoordi_[gcells_index].x,
+                 nextCoordi_[gcells_index].y);
+    log_->report("initCoordi_: {}, {}",
+                 initCoordi_[gcells_index].x,
+                 initCoordi_[gcells_index].y);
+    if (snapshotCoordi_.size() > gcells_index) {
+      log_->report("snapshotCoordi_: {}, {}",
+                   snapshotCoordi_[gcells_index].x,
+                   snapshotCoordi_[gcells_index].y);
+      log_->report("snapshotSLPCoordi_: {}, {}",
+                   snapshotSLPCoordi_[gcells_index].x,
+                   snapshotSLPCoordi_[gcells_index].y);
+      log_->report("snapshotSLPSumGrads_: {}, {}",
+                   snapshotSLPSumGrads_[gcells_index].x,
+                   snapshotSLPSumGrads_[gcells_index].y);
+    }
+  }
 
  private:
   NesterovBaseVars nbVars_;
@@ -1238,11 +1292,12 @@ void printGCellState(size_t gcells_index) {
   std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
 
-  //map used to go from dbInst to GCellHandle, and also to index in NBC::gcellStor_ or NB::fillerStor_
-  //this accesses are important to remove gcells and maintain index consistency
+  // map used to go from dbInst to GCellHandle, and also to index in
+  // NBC::gcellStor_ or NB::fillerStor_ this accesses are important to remove
+  // gcells and maintain index consistency
   std::unordered_map<odb::dbInst*, size_t> db_inst_index_map_;
 
-  //used to update gcell states after fixPointers() is called
+  // used to update gcell states after fixPointers() is called
   std::vector<odb::dbInst*> new_instances;
 
   float sumPhi_ = 0;
@@ -1322,23 +1377,33 @@ void printGCellState(size_t gcells_index) {
 
   void initFillerGCells();
 
-  void swapAndPop(std::vector<FloatPoint>& vec, size_t remove_index, size_t last_index) {
-      if (last_index != vec.size() - 1) {
-          log_->report("Error: last_index {} does not match the actual last index {}.", 
-                      last_index, vec.size() - 1);
-          return;
-      }
+  void swapAndPop(std::vector<FloatPoint>& vec,
+                  size_t remove_index,
+                  size_t last_index)
+  {
+    if (last_index != vec.size() - 1) {
+      log_->report(
+          "Error: last_index {} does not match the actual last index {}.",
+          last_index,
+          vec.size() - 1);
+      return;
+    }
 
-      if (remove_index != last_index) {
-          log_->report("Swapping index {} with last_index {}", remove_index, last_index);
-          std::swap(vec[remove_index], vec[last_index]);
-      }
-      vec.pop_back();
+    if (remove_index != last_index) {
+      log_->report(
+          "Swapping index {} with last_index {}", remove_index, last_index);
+      std::swap(vec[remove_index], vec[last_index]);
+    }
+    vec.pop_back();
   }
 
-  void swapAndPopParallelVectors(size_t remove_index, size_t last_index) {
-      log_->report("Swapping and popping parallel vectors with remove_index {} and last_index {}", 
-                  remove_index, last_index);
+  void swapAndPopParallelVectors(size_t remove_index, size_t last_index)
+  {
+    log_->report(
+        "Swapping and popping parallel vectors with remove_index {} and "
+        "last_index {}",
+        remove_index,
+        last_index);
     swapAndPop(curSLPCoordi_, remove_index, last_index);
     swapAndPop(curSLPWireLengthGrads_, remove_index, last_index);
     swapAndPop(curSLPDensityGrads_, remove_index, last_index);
@@ -1357,45 +1422,43 @@ void printGCellState(size_t gcells_index) {
     swapAndPop(snapshotCoordi_, remove_index, last_index);
     swapAndPop(snapshotSLPCoordi_, remove_index, last_index);
     swapAndPop(snapshotSLPSumGrads_, remove_index, last_index);
-      // log_->report("Processing curSLPCoordi_");
-      // swapAndPop(curSLPCoordi_, remove_index, last_index);
-      // log_->report("Processing curSLPWireLengthGrads_");
-      // swapAndPop(curSLPWireLengthGrads_, remove_index, last_index);
-      // log_->report("Processing curSLPDensityGrads_");
-      // swapAndPop(curSLPDensityGrads_, remove_index, last_index);
-      // log_->report("Processing curSLPSumGrads_");
-      // swapAndPop(curSLPSumGrads_, remove_index, last_index);
-      // log_->report("Processing nextSLPCoordi_");
-      // swapAndPop(nextSLPCoordi_, remove_index, last_index);
-      // log_->report("Processing nextSLPWireLengthGrads_");
-      // swapAndPop(nextSLPWireLengthGrads_, remove_index, last_index);
-      // log_->report("Processing nextSLPDensityGrads_");
-      // swapAndPop(nextSLPDensityGrads_, remove_index, last_index);
-      // log_->report("Processing nextSLPSumGrads_");
-      // swapAndPop(nextSLPSumGrads_, remove_index, last_index);
-      // log_->report("Processing prevSLPCoordi_");
-      // swapAndPop(prevSLPCoordi_, remove_index, last_index);
-      // log_->report("Processing prevSLPWireLengthGrads_");
-      // swapAndPop(prevSLPWireLengthGrads_, remove_index, last_index);
-      // log_->report("Processing prevSLPDensityGrads_");
-      // swapAndPop(prevSLPDensityGrads_, remove_index, last_index);
-      // log_->report("Processing prevSLPSumGrads_");
-      // swapAndPop(prevSLPSumGrads_, remove_index, last_index);
-      // log_->report("Processing curCoordi_");
-      // swapAndPop(curCoordi_, remove_index, last_index);
-      // log_->report("Processing nextCoordi_");
-      // swapAndPop(nextCoordi_, remove_index, last_index);
-      // log_->report("Processing initCoordi_");
-      // swapAndPop(initCoordi_, remove_index, last_index);
-      // log_->report("Processing snapshotCoordi_");
-      // swapAndPop(snapshotCoordi_, remove_index, last_index);
-      // log_->report("Processing snapshotSLPCoordi_");
-      // swapAndPop(snapshotSLPCoordi_, remove_index, last_index);
-      // log_->report("Processing snapshotSLPSumGrads_");
-      // swapAndPop(snapshotSLPSumGrads_, remove_index, last_index);
+    // log_->report("Processing curSLPCoordi_");
+    // swapAndPop(curSLPCoordi_, remove_index, last_index);
+    // log_->report("Processing curSLPWireLengthGrads_");
+    // swapAndPop(curSLPWireLengthGrads_, remove_index, last_index);
+    // log_->report("Processing curSLPDensityGrads_");
+    // swapAndPop(curSLPDensityGrads_, remove_index, last_index);
+    // log_->report("Processing curSLPSumGrads_");
+    // swapAndPop(curSLPSumGrads_, remove_index, last_index);
+    // log_->report("Processing nextSLPCoordi_");
+    // swapAndPop(nextSLPCoordi_, remove_index, last_index);
+    // log_->report("Processing nextSLPWireLengthGrads_");
+    // swapAndPop(nextSLPWireLengthGrads_, remove_index, last_index);
+    // log_->report("Processing nextSLPDensityGrads_");
+    // swapAndPop(nextSLPDensityGrads_, remove_index, last_index);
+    // log_->report("Processing nextSLPSumGrads_");
+    // swapAndPop(nextSLPSumGrads_, remove_index, last_index);
+    // log_->report("Processing prevSLPCoordi_");
+    // swapAndPop(prevSLPCoordi_, remove_index, last_index);
+    // log_->report("Processing prevSLPWireLengthGrads_");
+    // swapAndPop(prevSLPWireLengthGrads_, remove_index, last_index);
+    // log_->report("Processing prevSLPDensityGrads_");
+    // swapAndPop(prevSLPDensityGrads_, remove_index, last_index);
+    // log_->report("Processing prevSLPSumGrads_");
+    // swapAndPop(prevSLPSumGrads_, remove_index, last_index);
+    // log_->report("Processing curCoordi_");
+    // swapAndPop(curCoordi_, remove_index, last_index);
+    // log_->report("Processing nextCoordi_");
+    // swapAndPop(nextCoordi_, remove_index, last_index);
+    // log_->report("Processing initCoordi_");
+    // swapAndPop(initCoordi_, remove_index, last_index);
+    // log_->report("Processing snapshotCoordi_");
+    // swapAndPop(snapshotCoordi_, remove_index, last_index);
+    // log_->report("Processing snapshotSLPCoordi_");
+    // swapAndPop(snapshotSLPCoordi_, remove_index, last_index);
+    // log_->report("Processing snapshotSLPSumGrads_");
+    // swapAndPop(snapshotSLPSumGrads_, remove_index, last_index);
   }
-
-
 };
 
 inline std::vector<Bin>& NesterovBase::bins()
@@ -1416,9 +1479,12 @@ class biNormalParameters
   float uy;
 };
 
-class GCellHandle {
+class GCellHandle
+{
  public:
-  GCellHandle(NesterovBaseCommon* nbc, size_t idx) : storage_(nbc), index_(idx) {}
+  GCellHandle(NesterovBaseCommon* nbc, size_t idx) : storage_(nbc), index_(idx)
+  {
+  }
   GCellHandle(NesterovBase* nb, size_t idx) : storage_(nb), index_(idx) {}
 
   // Non-const versions
@@ -1431,18 +1497,18 @@ class GCellHandle {
   const GCell& operator*() const { return getGCell(); }
   operator const GCell*() const { return &getGCell(); }
 
-  bool isNesterovBaseCommon() const {
+  bool isNesterovBaseCommon() const
+  {
     return std::holds_alternative<NesterovBaseCommon*>(storage_);
   }
 
-  size_t getIndex() const {
-    return index_;
-  }
+  size_t getIndex() const { return index_; }
 
  private:
   using StorageVariant = std::variant<NesterovBaseCommon*, NesterovBase*>;
 
-  GCell& getGCell() const {
+  GCell& getGCell() const
+  {
     if (std::holds_alternative<NesterovBaseCommon*>(storage_)) {
       return std::get<NesterovBaseCommon*>(storage_)->getGCell(index_);
     }
