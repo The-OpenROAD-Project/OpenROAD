@@ -2705,8 +2705,8 @@ void Resizer::repairDesign(double max_wire_length,
                            bool match_cell_footprint,
                            bool verbose)
 {
-  utl::SetAndRestore<bool> set_match_footprint(match_cell_footprint_,
-                                               match_cell_footprint);
+  utl::SetAndRestore set_match_footprint(match_cell_footprint_,
+                                         match_cell_footprint);
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing
       || parasitics_src_ == ParasiticsSrc::detailed_routing) {
@@ -2733,7 +2733,7 @@ void Resizer::repairNet(Net* net,
 void Resizer::repairClkNets(double max_wire_length)
 {
   resizePreamble();
-  utl::SetAndRestore<LibertyCellSeq> set_buffers(buffer_cells_, clk_buffers_);
+  utl::SetAndRestore set_buffers(buffer_cells_, clk_buffers_);
 
   repair_design_->repairClkNets(max_wire_length);
 }
@@ -2860,8 +2860,8 @@ bool Resizer::repairSetup(double setup_margin,
                           bool skip_buffer_removal,
                           bool skip_last_gasp)
 {
-  utl::SetAndRestore<bool> set_match_footprint(match_cell_footprint_,
-                                               match_cell_footprint);
+  utl::SetAndRestore set_match_footprint(match_cell_footprint_,
+                                         match_cell_footprint);
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing
       || parasitics_src_ == ParasiticsSrc::detailed_routing) {
@@ -2908,18 +2908,16 @@ bool Resizer::repairHold(
     bool match_cell_footprint,
     bool verbose)
 {
-  utl::SetAndRestore<bool> set_match_footprint(match_cell_footprint_,
-                                               match_cell_footprint);
+  utl::SetAndRestore set_match_footprint(match_cell_footprint_,
+                                         match_cell_footprint);
   // Some technologies such as nangate45 don't have delay cells. Hence,
   // until we have a better approach, it's better to consider clock buffers
   // for hold violation repairing as these buffers' delay may be slighty
   // higher and we'll need fewer insertions.
   // Obs: We need to clear the buffer list for the preamble to select
   // buffers again excluding the clock ones.
-  utl::SetAndRestore<bool> set_exclude_clk_buffers(exclude_clock_buffers_,
-                                                   false);
-  utl::SetAndRestore<LibertyCellSeq> set_buffers(buffer_cells_,
-                                                 LibertyCellSeq());
+  utl::SetAndRestore set_exclude_clk_buffers(exclude_clock_buffers_, false);
+  utl::SetAndRestore set_buffers(buffer_cells_, LibertyCellSeq());
 
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing
@@ -2942,10 +2940,8 @@ void Resizer::repairHold(const Pin* end_pin,
                          int max_passes)
 {
   // See comment on the method above.
-  utl::SetAndRestore<bool> set_exclude_clk_buffers(exclude_clock_buffers_,
-                                                   false);
-  utl::SetAndRestore<LibertyCellSeq> set_buffers(buffer_cells_,
-                                                 LibertyCellSeq());
+  utl::SetAndRestore set_exclude_clk_buffers(exclude_clock_buffers_, false);
+  utl::SetAndRestore set_buffers(buffer_cells_, LibertyCellSeq());
 
   resizePreamble();
   repair_hold_->repairHold(end_pin,
@@ -2965,8 +2961,8 @@ int Resizer::holdBufferCount() const
 bool Resizer::recoverPower(float recover_power_percent,
                            bool match_cell_footprint)
 {
-  utl::SetAndRestore<bool> set_match_footprint(match_cell_footprint_,
-                                               match_cell_footprint);
+  utl::SetAndRestore set_match_footprint(match_cell_footprint_,
+                                         match_cell_footprint);
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing
       || parasitics_src_ == ParasiticsSrc::detailed_routing) {
