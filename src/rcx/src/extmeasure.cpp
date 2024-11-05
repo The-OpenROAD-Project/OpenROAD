@@ -2058,14 +2058,8 @@ void extMeasure::calcDiagRC(int rsegId1,
 
 void extMeasure::createCap(int rsegId1, uint rsegId2, double* capTable)
 {
-  dbRSeg* rseg1 = nullptr;
-  dbRSeg* rseg2 = nullptr;
-  if (rsegId1 > 0) {
-    rseg1 = dbRSeg::getRSeg(_block, rsegId1);
-  }
-  if (rsegId2 > 0) {
-    rseg2 = dbRSeg::getRSeg(_block, rsegId2);
-  }
+  dbRSeg* rseg1 = rsegId1 > 0 ? dbRSeg::getRSeg(_block, rsegId1) :  nullptr;
+  dbRSeg* rseg2 = rsegId2 > 0 ? dbRSeg::getRSeg(_block, rsegId2) :  nullptr;
 
   dbCCSeg* ccCap = makeCcap(rseg1, rseg2, capTable[_minModelIndex]);
 
@@ -2075,7 +2069,9 @@ void extMeasure::createCap(int rsegId1, uint rsegId2, double* capTable)
       addCCcap(ccCap, capTable[model], model);
     } else {
       _rc[model]->_diag += capTable[model];
+      // FIXME
       addFringe(nullptr, rseg2, capTable[model], model);
+      // addFringe(rseg1, rseg2, capTable[model], model);
     }
   }
 }

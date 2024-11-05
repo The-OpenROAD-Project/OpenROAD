@@ -73,14 +73,6 @@ namespace rcx
         _whiteSegTable= allocTable(colCnt);
         
      _verticalPowerTable= allocTable_wire(colCnt);
-
-        /*
-                // TODO need to add in constructor/destructor
-
-        _verticalPowerTable= new Ath__array1D<Ath__wire *> *[colCnt];
-        for (uint ii=0; ii<colCnt; ii++)
-            _verticalPowerTable[ii]= new Ath__array1D<Ath__wire *>(4);
-        */
     }
     void extMeasureRC::de_allocateTables(uint colCnt)
     {
@@ -318,7 +310,7 @@ bool extMeasureRC::CreateCouplingCaps_overUnder(extSegment* s, uint overMet)
     if (_whiteSegTable[1]->getCnt() > 0) {
       PrintOvelaps(v, _met, 0, _whiteSegTable[1], "OverSubUnderMet");
       OverUnder(s, _met, 0, overMet, _whiteSegTable[1], "OverSubUnderM");
-      _whiteSegTable[1]->resetCnt();
+      Release(_whiteSegTable[1]);
     }
   }
   return false;
@@ -410,6 +402,7 @@ int extMeasureRC::CouplingFlow(uint dir,
     _met = level;
     Ath__grid* netGrid = _search->getGrid(dir, level);
     segments.resetAll();
+    _extMain->getPeakMemory("CouplingFlow Level:", level);
 
     config.reset_calc_flow_flag(level);
 
@@ -468,8 +461,8 @@ int extMeasureRC::CouplingFlow(uint dir,
             Ath__array1D<extSegment*> crossOvelapTable(8);
             uint overMet = _met + 1;
             for (; overMet < metalLevelCnt; overMet++) {
-              _ovSegTable[overMet]->resetCnt();
-              _whiteSegTable[overMet]->resetCnt();
+              Release(_ovSegTable[overMet]);
+              Release(_whiteSegTable[overMet]);
 
               // Coupling Caps
               VerticalDiagonalCouplingAndCrossOverlap(w, s, overMet, segments, config);
@@ -502,7 +495,6 @@ int extMeasureRC::CouplingFlow(uint dir,
           measure_RC_new(s, true);
         }
         ReleaseSegTables(metalLevelCnt);
-        // segments.releaseAll();
         releaseAll(segments);
       }
     }
@@ -704,11 +696,12 @@ void extMeasureRC::OverlapDown(int overMet,
     extSegment *ov = _seqmentPool->alloc();
     ov->set(dir, coupSeg->_wire, overlapSeg->_xy, overlapSeg->_len, NULL, NULL);
 
-  _whiteSegTable[_met]->resetCnt();
+  Release(_whiteSegTable[_met]);
   _whiteSegTable[_met]->add(ov);
   for (int underMet = _met - 1; underMet > 0; underMet--) {
-    _ovSegTable[underMet]->resetCnt();
-    _whiteSegTable[underMet]->resetCnt();
+    Release(_ovSegTable[underMet]);
+    Release(_whiteSegTable[underMet]);
+
     for (uint kk = 0; kk < _whiteSegTable[underMet + 1]->getCnt(); kk++) {
       extSegment* ww = _whiteSegTable[underMet + 1]->get(kk);
       GetCrossOvelaps(coupSeg->_wire,
@@ -1283,8 +1276,6 @@ void extMeasureRC::OpenEnded2(extSegment* cc,
 
     double inf_cc = 2 * len * (rc->_coupling + rc->_fringe);
     _extMain->updateTotalCap(rseg1, inf_cc, ii);
-
-    // addRC(rc, 2 * len, ii, inf_cc);
   }
 }
 void extMeasureRC::OpenEnded1(extSegment* cc,
@@ -1294,6 +1285,7 @@ void extMeasureRC::OpenEnded1(extSegment* cc,
                               int metOver,
                               FILE* segFP)
 {
+    bool CHECK_COUPLING_THRESHOLD= true;
   int open = 0;
   dbRSeg* rseg = GetRSeg(cc);
   int dist = cc->_dist;
@@ -1303,6 +1295,7 @@ void extMeasureRC::OpenEnded1(extSegment* cc,
   dbRSeg* rseg2 = cc->_down != NULL ? GetRSeg(cc->_down->getRsegId())
                                     : GetRSeg(cc->_up->getRsegId());
 
+  dbCCSeg* ccCap= NULL;
   for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
     extMetRCTable* rcModel = _metRCTable.get(ii);
     extDistRC* rc = OverUnderRC(rcModel,
@@ -1322,7 +1315,20 @@ void extMeasureRC::OpenEnded1(extSegment* cc,
 
     _extMain->updateTotalCap(rseg, fr2, ii);
 
-    updateCoupCap(rseg, rseg2, ii, cc);
+    if (CHECK_COUPLING_THRESHOLD) {
+      if (ii == 0) {
+        // check if the cap value is over the couplingThreshold, then create
+        // coupling cap object dbCCSeg
+        ccCap = makeCcap(rseg, rseg2, cc);
+      }
+      if (ccCap != nullptr)
+        addCCcap(ccCap, cc / 2, ii);
+      else
+        addFringe(rseg, rseg2, cc / 2, ii);
+
+    } else {
+      updateCoupCap(rseg, rseg2, ii, cc);
+    }
   }
 }
 void extMeasureRC::OverUnder(extSegment* cc,
@@ -1332,11 +1338,14 @@ void extMeasureRC::OverUnder(extSegment* cc,
                              int metOver,
                              FILE* segFP)
 {
+    bool CHECK_COUPLING_THRESHOLD= true;
   int open = -1;
   dbRSeg* rseg = GetRSeg(cc);
   dbRSeg* rseg_down = GetRSeg(cc->_down->getRsegId());
   dbRSeg* rseg_up = GetRSeg(cc->_up->getRsegId());
 
+  dbCCSeg* ccCap_up= NULL;
+  dbCCSeg* ccCap_down= NULL;
   for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
     extMetRCTable* rcModel = _metRCTable.get(ii);
     extDistRC* rc_up = OverUnderRC(rcModel,
@@ -1363,8 +1372,27 @@ void extMeasureRC::OverUnder(extSegment* cc,
     double cc_down = len * rc_down->_coupling;
 
     _extMain->updateTotalCap(rseg, fr2, ii);
-    updateCoupCap(rseg, rseg_up, ii, cc_up);
-    updateCoupCap(rseg, rseg_down, ii, cc_down);
+
+    if (CHECK_COUPLING_THRESHOLD) {
+      if (ii == 0) {
+        // check if the cap value is over the couplingThreshold, then create
+        // coupling cap object dbCCSeg
+        ccCap_up = makeCcap(rseg, rseg_up, cc_up);
+        ccCap_down = makeCcap(rseg, rseg_down, cc_down);
+      }
+      if (ccCap_up != nullptr)
+        addCCcap(ccCap_up, cc_up/2, ii);
+      else
+        addFringe(rseg, rseg_up, cc_up/2, ii);
+
+      if (ccCap_down != nullptr)
+        addCCcap(ccCap_down, cc_down/2, ii);
+      else
+        addFringe(rseg, rseg_down, cc_down/2, ii);
+    } else {
+      updateCoupCap(rseg, rseg_up, ii, cc_up);
+      updateCoupCap(rseg, rseg_down, ii, cc_down);
+    }
   }
 }
 void extMeasureRC::Model1(extSegment* cc,
@@ -1374,6 +1402,7 @@ void extMeasureRC::Model1(extSegment* cc,
                           int metOver,
                           FILE* segFP)
 {
+    bool CHECK_COUPLING_THRESHOLD= true;
   int open = 1;
   dbRSeg* rseg1 = GetRSeg(cc);
   dbRSeg* rseg_down = GetRSeg(cc->_down->getRsegId());
@@ -1383,6 +1412,8 @@ void extMeasureRC::Model1(extSegment* cc,
   if (dist < cc->_dist_down)
     dist = cc->_dist_down;
 
+  dbCCSeg* ccCap_up= NULL;
+  dbCCSeg* ccCap_down= NULL;
   for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
     extMetRCTable* rcModel = _metRCTable.get(ii);
     extDistRC* rc_up = OverUnderRC(rcModel,
@@ -1395,7 +1426,7 @@ void extMeasureRC::Model1(extSegment* cc,
                                    metOver,
                                    segFP);
     double cc_up = len * rc_up->_coupling;
-    updateCoupCap(rseg1, rseg_up, ii, cc_up);
+    // updateCoupCap(rseg1, rseg_up, ii, cc_up);
 
     extDistRC* rc_down = OverUnderRC(rcModel,
                                      -1,
@@ -1407,7 +1438,7 @@ void extMeasureRC::Model1(extSegment* cc,
                                      metOver,
                                      segFP);
     double cc_down = len * rc_down->_coupling;
-    updateCoupCap(rseg1, rseg_down, ii, cc_down);
+    // updateCoupCap(rseg1, rseg_down, ii, cc_down);
 
     extDistRC* rc_fr = OverUnderRC(rcModel,
                                    open,
@@ -1420,6 +1451,27 @@ void extMeasureRC::Model1(extSegment* cc,
                                    segFP);
     double fr2 = 2 * len * rc_fr->_fringe;
     _extMain->updateTotalCap(rseg1, fr2, ii);
+
+    if (CHECK_COUPLING_THRESHOLD) {
+      if (ii == 0) {
+        // check if the cap value is over the couplingThreshold, then create
+        // coupling cap object dbCCSeg
+        ccCap_up = makeCcap(rseg1, rseg_up, cc_up);
+        ccCap_down = makeCcap(rseg1, rseg_down, cc_down);
+      }
+      if (ccCap_up != nullptr)
+        addCCcap(ccCap_up, cc_up / 2, ii);
+      else
+        addFringe(rseg1, rseg_up, cc_up / 2, ii);
+
+      if (ccCap_down != nullptr)
+        addCCcap(ccCap_down, cc_down / 2, ii);
+      else
+        addFringe(rseg1, rseg_down, cc_down / 2, ii);
+    } else {
+      updateCoupCap(rseg1, rseg_up, ii, cc_up);
+      updateCoupCap(rseg1, rseg_down, ii, cc_down);
+    }
   }
 }
 double extMeasureRC::updateCoupCap(dbRSeg* rseg1,
@@ -1431,8 +1483,7 @@ double extMeasureRC::updateCoupCap(dbRSeg* rseg1,
     double tot = _extMain->updateTotalCap(rseg1, v, jj);
     return tot;
   }
-  dbCCSeg* ccap
-      = dbCCSeg::create(dbCapNode::getCapNode(_block, rseg1->getTargetNode()),
+  dbCCSeg* ccap= dbCCSeg::create(dbCapNode::getCapNode(_block, rseg1->getTargetNode()),
                         dbCapNode::getCapNode(_block, rseg2->getTargetNode()),
                         true);
 
@@ -1462,8 +1513,7 @@ extDistRC* extMeasureRC::OverUnderRC(extMetRCTable* rcModel,
   else if (metUnder <= 0)
     rc = getUnderRC_Dist(rcModel, width, met, metOver, dist, open);
   else
-    rc = getOverUnderRC_Dist(
-        rcModel, width, met, metUnder, metOver, dist, open);
+    rc = getOverUnderRC_Dist(rcModel, width, met, metUnder, metOver, dist, open);
 
   return rc;
 }

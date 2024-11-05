@@ -169,13 +169,7 @@ bool extMeasureRC::DiagCouplingCap(uint met, uint tgtMet, int rsegId1, uint rseg
     if (rc == NULL)
       return false;
 
-    capTable[ii] = len * rc->_fringe;
-    /*
-    if (rseg2 != NULL)
-      _extMain->updateTotalCap(rseg2, 0.0, 0.0, frCap, ii);
-    if (rseg1 != NULL)
-      _extMain->updateTotalCap(rseg1, 0.0, 0.0, 0.5 * frCap, ii);
-    */
+    capTable[ii] = len * rc->_fringe; // OVERLOADED value from model - dkf 110424
   }
   createCap(rsegId1, rsegId2, capTable);
   return true;
