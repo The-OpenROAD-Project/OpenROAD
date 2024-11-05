@@ -111,6 +111,7 @@ class FlexDR
   {
     bool skip_till_changed{false};
     SearchRepairArgs last_args;
+    bool fixing_max_spacing{false};
   } control_;
 
   // constructors

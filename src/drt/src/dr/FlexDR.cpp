@@ -1038,7 +1038,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   IterationProgress iter_prog;
   auto block = getDesign()->getTopBlock();
   const auto num_drvs = block->getNumMarkers();
-  if (iter_ >= 1 && num_drvs <= 11 && ripupMode != RipUpMode::ALL) {
+  if (iter_ >= 1 && num_drvs <= 11 && ripupMode != RipUpMode::ALL
+      && !control_.fixing_max_spacing) {
     stubbornTilesFlow(args, iter_prog);
   } else {
     printIteration(logger_, iter_);
@@ -1116,6 +1117,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   FlexDRConnectivityChecker checker(
       router_, logger_, graphics_.get(), dist_on_);
   checker.check(iter_);
+  control_.fixing_max_spacing = false;
   if (getDesign()->getTopBlock()->getNumMarkers() == 0
       && getTech()->hasMaxSpacingConstraints()) {
     fixMaxSpacing();
@@ -1589,6 +1591,7 @@ void FlexDR::fixMaxSpacing()
       worker->end(getDesign());
     }
   }
+  control_.fixing_max_spacing = true;
 }
 
 std::vector<frVia*> FlexDR::getLonelyVias(frLayer* layer,
