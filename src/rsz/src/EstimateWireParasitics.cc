@@ -749,6 +749,7 @@ bool Resizer::isPad(const Instance* inst) const
 
 void Resizer::parasiticsInvalid(const Net* net)
 {
+  odb::dbNet* db_net = db_network_->flatNet(net);
   if (haveEstimatedParasitics()) {
     debugPrint(logger_,
                RSZ,
@@ -756,7 +757,7 @@ void Resizer::parasiticsInvalid(const Net* net)
                2,
                "parasitics invalid {}",
                network_->pathName(net));
-    parasitics_invalid_.insert(net);
+    parasitics_invalid_.insert(db_network_->dbToSta(db_net));
   }
 }
 
