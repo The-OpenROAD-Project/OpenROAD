@@ -112,6 +112,7 @@ class RepairDesign : dbStaState
   void init();
 
   bool getCin(const Pin* drvr_pin, float& cin);
+  bool getLargestSizeCin(const Pin* drvr_pin, float& cin);
   void findBufferSizes();
   bool performGainBuffering(Net* net, const Pin* drvr_pin, int max_fanout);
 

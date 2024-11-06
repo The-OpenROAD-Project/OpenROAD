@@ -412,6 +412,36 @@ void RepairDesign::repairNet(Net* net,
   }
 }
 
+bool RepairDesign::getLargestSizeCin(const Pin* drvr_pin, float& cin)
+{
+  Instance* inst = network_->instance(drvr_pin);
+  LibertyCell* cell = network_->libertyCell(inst);
+  cin = 0;
+  if (!network_->isTopLevelPort(drvr_pin) && cell != nullptr
+      && resizer_->isLogicStdCell(inst)) {
+    for (auto size : resizer_->getSwappableCells(cell)) {
+      float size_cin = 0;
+      sta::LibertyCellPortIterator port_iter(size);
+      int nports = 0;
+      while (port_iter.hasNext()) {
+        const LibertyPort* port = port_iter.next();
+        if (port->direction() == sta::PortDirection::input()) {
+          size_cin += port->capacitance();
+          nports++;
+        }
+      }
+      if (!nports) {
+        return false;
+      }
+      size_cin /= nports;
+      if (size_cin > cin)
+        cin = size_cin;
+    }
+    return true;
+  }
+  return false;
+}
+
 bool RepairDesign::getCin(const Pin* drvr_pin, float& cin)
 {
   Instance* inst = network_->instance(drvr_pin);
@@ -541,8 +571,10 @@ bool RepairDesign::performGainBuffering(Net* net,
   const float max_buf_load = bufferCin(buffer_sizes_.back()) * buffer_gain_;
 
   float cin;
+  static float gate_gain = 4.0f; // use a fanout-of-4 rule for gates
   bool repaired_net = false;
-  if (getCin(drvr_pin, cin)) {
+
+  if (getLargestSizeCin(drvr_pin, cin)) {
     float load = 0.0;
     for (auto& sink : sinks) {
       load += sink.capacitance(network_);
@@ -551,7 +583,7 @@ bool RepairDesign::performGainBuffering(Net* net,
 
     // Iterate until we satisfy both the gain condition and max_fanout
     // on drvr_pin
-    while (sinks.size() > max_fanout || load > cin * buffer_gain_) {
+    while (sinks.size() > max_fanout || load > cin * gate_gain) {
       float load_acc = 0;
       auto it = sinks.begin();
       for (; it != sinks.end(); it++) {
