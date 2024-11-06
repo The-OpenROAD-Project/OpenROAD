@@ -230,24 +230,30 @@ int MBFF::GetNumD(odb::dbInst* inst)
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
 
-  for (auto seq : lib_cell->sequentials()) {
-    auto data = seq->data();
-    sta::FuncExprPortIterator port_itr(data);
-    while (port_itr.hasNext()) {
-      sta::LibertyPort* port = port_itr.next();
-      if (port != nullptr) {
-        odb::dbMTerm* mterm = network_->staToDb(port);
-        if (mterm == nullptr) {
-          continue;
+  if (!lib_cell->sequentials().empty()) {
+    for (auto seq : lib_cell->sequentials()) {
+      auto data = seq->data();
+      sta::FuncExprPortIterator port_itr(data);
+      while (port_itr.hasNext()) {
+        sta::LibertyPort* port = port_itr.next();
+        if (port != nullptr) {
+          odb::dbMTerm* mterm = network_->staToDb(port);
+          if (mterm == nullptr) {
+            continue;
+          }
+          odb::dbITerm* iterm = inst->getITerm(mterm);
+          if (iterm == nullptr) {
+            continue;
+          }
+          cnt_d += !(IsScanIn(iterm) || IsScanEnable(iterm));
+        } else {
+          break;
         }
-        odb::dbITerm* iterm = inst->getITerm(mterm);
-        if (iterm == nullptr) {
-          continue;
-        }
-        cnt_d += !(IsScanIn(iterm) || IsScanEnable(iterm));
-      } else {
-        break;
       }
+    }
+  } else if (sta::TestCell* test_cell = lib_cell->testCell()) {
+    if (sta::LibertyPort* data = test_cell->dataIn()) {
+      cnt_d += data->size();
     }
   }
   return cnt_d;
