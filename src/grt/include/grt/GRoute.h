@@ -71,26 +71,6 @@ struct GSegmentHash
   std::size_t operator()(const GSegment& seg) const;
 };
 
-class Capacities
-{
- public:
-  Capacities() = default;
-  CapacitiesVec& getHorCapacities() { return hor_capacities_; }
-  CapacitiesVec& getVerCapacities() { return ver_capacities_; }
-  void setHorCapacities(CapacitiesVec capacities)
-  {
-    hor_capacities_ = capacities;
-  }
-  void setVerCapacities(CapacitiesVec capacities)
-  {
-    ver_capacities_ = capacities;
-  }
-
- private:
-  CapacitiesVec hor_capacities_;
-  CapacitiesVec ver_capacities_;
-};
-
 struct TileCongestion
 {
   int capacity;

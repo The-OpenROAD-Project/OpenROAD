@@ -79,6 +79,9 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                   unsigned seed,
                   Mpl2Observer* graphics,
                   utl::Logger* logger);
+
+  void run() override;
+
   // accessors
   float getBoundaryPenalty() const;
   float getNormBoundaryPenalty() const;
@@ -95,6 +98,12 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void fillDeadSpace() override;
   void alignMacroClusters();
   void addBlockages(const std::vector<Rect>& blockages);
+
+  bool centralizationWasReverted() { return centralization_was_reverted_; }
+  void setCentralizationAttemptOn(bool centralization_on)
+  {
+    centralization_on_ = centralization_on;
+  };
 
  private:
   float getAreaPenalty() const;
@@ -120,6 +129,13 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void calBoundaryPenalty();
   void calNotchPenalty();
   void calMacroBlockagePenalty();
+
+  // Only for Cluster Placement:
+  void attemptCentralization(float pre_cost);
+  void moveFloorplan(const std::pair<float, float>& offset);
+
+  void useBestValidResult();
+
   std::vector<Rect> blockages_;
 
   Cluster* root_;
@@ -151,6 +167,9 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   // action prob
   float resize_prob_ = 0.0;
+
+  bool centralization_on_ = false;
+  bool centralization_was_reverted_ = false;
 };
 
 }  // namespace mpl2
