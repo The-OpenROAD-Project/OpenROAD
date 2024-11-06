@@ -260,16 +260,16 @@ void ScanReplace::collectScanCellAvailable()
   // Let's collect scan lib cells and non-scan lib cells availables
   for (odb::dbLib* lib : db_->getLibs()) {
     for (odb::dbMaster* master : lib->getMasters()) {
-      // We only care about sequential cells in DFT
-      if (!master->isSequential()) {
-        continue;
-      }
-
       sta::Cell* master_cell = db_network->dbToSta(master);
       sta::LibertyCell* liberty_cell = db_network->libertyCell(master_cell);
 
       if (!liberty_cell) {
         // Without info about the cell we can't do any replacement
+        continue;
+      }
+
+      // We only care about sequential cells in DFT
+      if (!liberty_cell->hasSequentials()) {
         continue;
       }
 
