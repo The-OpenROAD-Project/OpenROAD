@@ -1286,6 +1286,7 @@ void Resizer::resizePreamble()
   checkLibertyForAllCorners();
   findBuffers();
   findTargetLoads();
+  findFastBuffers();
 }
 
 // Filter equivalent cells based on the following liberty attributes:
