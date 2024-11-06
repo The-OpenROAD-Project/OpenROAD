@@ -233,18 +233,18 @@ proc adjust_rc { args } {
 
   rcx::adjust_rc $res_factor $cc_factor $gndc_factor
 }
-
 sta::define_cmd_args "diff_spef" {
     [-file filename]
+    [-spef_corner spef_num]
+    [-ext_corner ext_num]
     [-r_res]
     [-r_cap]
     [-r_cc_cap]
     [-r_conn]
 }
-
 proc diff_spef { args } {
   sta::parse_key_args "diff_spef" args \
-    keys { -file } \
+    keys { -file -spef_corner -ext_corner } \
     flags { -r_res -r_cap -r_cc_cap -r_conn }
 
   set filename ""
@@ -256,9 +256,16 @@ proc diff_spef { args } {
   set cc_cap [info exists flags(-over)]
   set conn [info exists flags(-over)]
 
-  rcx::diff_spef $filename $conn $res $cap $cc_cap
+  set spef_corner -1
+  if { [info exists keys(-spef_corner)] } {
+    set spef_corner $keys(-spef_corner)
+  }
+  set ext_corner -1
+  if { [info exists keys(-ext_corner)] } {
+    set ext_corner $keys(-ext_corner)
+  }
+  rcx::diff_spef $filename $conn $res $cap $cc_cap $spef_corner $ext_corner
 }
-
 sta::define_cmd_args "bench_wires" {
     [-met_cnt mcnt]
     [-cnt count]
