@@ -4,6 +4,143 @@ set -euo pipefail
 
 CMAKE_PACKAGE_ROOT_ARGS=""
 
+# Function to display usage instructions
+_searchUsage() {
+    echo "Usage: $0 [--use-find] [--update-db] --file-pattern <filename-pattern>"
+    echo "Options:"
+    echo "  --use-find      Force the use of 'find' even if 'locate' or 'plocate' is available"
+    echo "  --update-db     Update the locate database before searching (requires sudo)"
+    echo "  --file-pattern  Specify the filename pattern to search for (required)"
+    echo "Example: $0 --file-pattern '*.txt'"
+    exit 1
+}
+
+# Function to display a spinning wait cursor
+_showSpinner() {
+    local pid=$1
+    local delay=0.1
+    local spinstr='|/-\'
+    local i=0
+
+    while kill -0 "$pid" 2>/dev/null; do
+        printf "\r%s" "${spinstr:i++%${#spinstr}:1}"
+        sleep "$delay"
+    done
+
+    printf "\r" 
+}
+
+# Function to update the locate database if necessary
+_updateLocateDb() {
+    echo "Updating locate database. This may take a moment..."
+    sudo updatedb
+}
+
+# Function to determine the available locate command
+_getLocateCommand() {
+    if command -v plocate &>/dev/null; then
+        LOCATE_CMD="plocate"
+    elif command -v locate &>/dev/null; then
+        LOCATE_CMD="locate"
+    else
+        LOCATE_CMD=""
+    fi
+}
+
+# Function to perform the search using locate or plocate
+_searchWithLocate() {
+    echo "Using '$LOCATE_CMD' to search for '$FILE_PATTERN'..."
+    ($LOCATE_CMD "$FILE_PATTERN" 2>/dev/null) &
+    SEARCH_PID=$!
+    _showSpinner "$SEARCH_PID"
+    wait "$SEARCH_PID"
+    LIST=($($LOCATE_CMD "$FILE_PATTERN" 2>/dev/null))
+}
+
+# Function to perform the search using find
+_searchWithFind() {
+    echo "Using 'find' to search for '$FILE_PATTERN'..."
+    (find / -type f -name "$FILE_PATTERN" 2>/dev/null) &
+    SEARCH_PID=$!
+    _showSpinner "$SEARCH_PID"
+    wait "$SEARCH_PID"
+    LIST=($(find / -type f -name "$FILE_PATTERN" 2>/dev/null))
+}
+
+# Function to display the search results
+_displayResults() {
+    if [ ${#LIST[@]} -eq 0 ]; then
+        echo -e "\nNo files found matching '$FILE_PATTERN'."
+    else
+        echo -e "\nFiles found:"
+        for file in "${LIST[@]}"; do
+            echo "$file"
+        done
+    fi
+}
+
+# Main function to orchestrate the script
+_searchEverywhere() {
+    FORCE_FIND=0  # Default: do not force find
+    UPDATE_DB=0   # Default: do not update database
+    FILE_PATTERN=""
+
+    # Parse options
+    while [[ "$1" == "--"* ]]; do
+        case "$1" in
+            --use-find)
+                FORCE_FIND=1
+                shift
+                ;;
+            --update-db)
+                UPDATE_DB=1
+                shift
+                ;;
+            --file-pattern)
+                if [ -n "$2" ]; then
+                    FILE_PATTERN="$2"
+                    shift 2
+                else
+                    echo "Error: --file-pattern requires a filename pattern."
+                    _searchUsage
+                fi
+                ;;
+            *)
+                echo "Error: Unknown option $1"
+                _searchUsage
+                ;;
+        esac
+    done
+
+    # Check if the required option --file-pattern was provided
+    if [ -z "$FILE_PATTERN" ]; then
+        echo "Error: --file-pattern is required."
+        _searchUsage
+    fi
+
+    # Update locate database if requested
+    if [ "$UPDATE_DB" -eq 1 ]; then
+        _updateLocateDb
+    fi
+
+    # Determine if locate or plocate is available, unless --use-find is specified
+    if [ "$FORCE_FIND" -eq 0 ]; then
+        _getLocateCommand
+    else
+        LOCATE_CMD=""  # Clear locate command if --use-find is specified
+    fi
+
+    # Run the appropriate search command
+    if [ -n "$LOCATE_CMD" ]; then
+        _searchWithLocate
+    else
+        _searchWithFind
+    fi
+
+    # Display the search results
+    _displayResults
+}
+
 _versionCompare() {
     local a b IFS=. ; set -f
     printf -v a %08d $1; printf -v b %08d $3
@@ -274,7 +411,7 @@ _installOrTools() {
 
     # Disable exit on error for 'find' command, as it might return non zero
     set +euo pipefail
-    LIST=($(find / -type f -name "libortools.so*" 2>/dev/null))
+    _searchEverywhere --update-db --file-pattern "libortools.so*"
     # Bring back exit on error
     set -euo pipefail
     # Return if right version of or-tools is installed
@@ -898,9 +1035,9 @@ EOF
         fi
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev
-            if _versionCompare ${version} -gt 24.04; then
+            if _versionCompare ${version} -ge 24.04; then
                 version=24.04
-            elif _versionCompare ${version} -gt 22.04; then
+            elif _versionCompare ${version} -ge 22.04; then
                 version=22.04
             else
                 version=20.04
