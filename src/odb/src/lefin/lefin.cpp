@@ -279,8 +279,8 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
           points.push_back(Point(x, y));
         }
 
-        int numX = round(pathItr->xStart);
-        int numY = round(pathItr->yStart);
+        int numX = lround(pathItr->xStart);
+        int numY = lround(pathItr->yStart);
         int stepX = dbdist(pathItr->xStep);
         int stepY = dbdist(pathItr->yStep);
         int dx, dy, x_idx, y_idx;
@@ -351,8 +351,8 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
         int y1 = dbdist(rectItr->yl);
         int x2 = dbdist(rectItr->xh);
         int y2 = dbdist(rectItr->yh);
-        int numX = round(rectItr->xStart);
-        int numY = round(rectItr->yStart);
+        int numX = lround(rectItr->xStart);
+        int numY = lround(rectItr->yStart);
         int stepX = dbdist(rectItr->xStep);
         int stepY = dbdist(rectItr->yStep);
         int dx, dy, x_idx, y_idx;
@@ -440,8 +440,8 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
 
         int x = dbdist(viaItr->x);
         int y = dbdist(viaItr->y);
-        int numX = round(viaItr->xStart);
-        int numY = round(viaItr->yStart);
+        int numX = lround(viaItr->xStart);
+        int numY = lround(viaItr->yStart);
         int stepX = dbdist(viaItr->xStep);
         int stepY = dbdist(viaItr->yStep);
         int dx, dy, x_idx, y_idx;

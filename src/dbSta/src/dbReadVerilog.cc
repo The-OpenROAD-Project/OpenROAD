@@ -445,7 +445,7 @@ void Verilog2db::makeDbModule(
         dbModITerm* moditerm
             = dbModITerm::create(modinst, pin_name_string.c_str());
         dbModBTerm* modbterm;
-        std::string port_name_str = pin_name_string;
+        std::string port_name_str = std::move(pin_name_string);
         size_t last_idx = port_name_str.find_last_of('/');
         if (last_idx != string::npos) {
           port_name_str = port_name_str.substr(last_idx + 1);
