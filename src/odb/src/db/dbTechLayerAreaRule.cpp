@@ -217,7 +217,7 @@ int dbTechLayerAreaRule::getExceptEdgeLength() const
 }
 
 void dbTechLayerAreaRule::setExceptEdgeLengths(
-    std::pair<int, int> except_edge_lengths)
+    const std::pair<int, int>& except_edge_lengths)
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
 
@@ -230,7 +230,8 @@ std::pair<int, int> dbTechLayerAreaRule::getExceptEdgeLengths() const
   return obj->except_edge_lengths_;
 }
 
-void dbTechLayerAreaRule::setExceptMinSize(std::pair<int, int> except_min_size)
+void dbTechLayerAreaRule::setExceptMinSize(
+    const std::pair<int, int>& except_min_size)
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
 
@@ -243,7 +244,7 @@ std::pair<int, int> dbTechLayerAreaRule::getExceptMinSize() const
   return obj->except_min_size_;
 }
 
-void dbTechLayerAreaRule::setExceptStep(std::pair<int, int> except_step)
+void dbTechLayerAreaRule::setExceptStep(const std::pair<int, int>& except_step)
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
 

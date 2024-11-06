@@ -39,6 +39,7 @@
 #include <boost/geometry/index/rtree.hpp>
 #include <boost/iterator/function_output_iterator.hpp>
 #include <string>
+#include <unordered_set>
 
 #include "ant/AntennaChecker.hh"
 #include "dpl/Opendp.h"
@@ -80,6 +81,41 @@ struct RoutePtPins
 };
 
 using RoutePtPinsMap = std::map<RoutePt, RoutePtPins>;
+using ViolationIdToSegmentIds = std::unordered_map<int, std::vector<int>>;
+using PositionSet = std::set<std::pair<int, int>>;
+using LayerIdToViaPosition = std::unordered_map<int, PositionSet>;
+
+struct PinsCountNearSegments
+{
+  int pin_num_near_to_start_ = 0;
+  int pin_num_near_to_end_ = 0;
+};
+
+struct SegmentData
+{
+  int id = -1;
+  int seg_id;
+  odb::Rect rect;
+  std::vector<std::pair<odb::dbTechLayer*, int>> adjs;
+  SegmentData(int id_, int seg_id_, odb::Rect rect_)
+  {
+    id = id_;
+    seg_id = seg_id_;
+    rect = rect_;
+  }
+};
+
+using LayerToSegmentDataVector
+    = std::unordered_map<odb::dbTechLayer*, std::vector<SegmentData>>;
+using PinNameToSegmentIds
+    = std::unordered_map<std::string, std::unordered_set<int>>;
+
+enum class RoutingSource
+{
+  DetailedRouting,
+  GlobalRouting,
+  None
+};
 
 class RepairAntennas
 {
@@ -100,6 +136,66 @@ class RepairAntennas
                           odb::dbMTerm* diode_mterm,
                           float ratio_margin);
   void repairAntennas(odb::dbMTerm* diode_mterm);
+  void addJumperAndVias(GRoute& route,
+                        const int& init_x,
+                        const int& init_y,
+                        const int& final_x,
+                        const int& final_y,
+                        const int& layer_level);
+  void addJumperHorizontal(const int& seg_id,
+                           GRoute& route,
+                           const int& bridge_init_x,
+                           const int& bridge_final_x,
+                           const int& layer_level);
+  void addJumperVertical(const int& seg_id,
+                         GRoute& route,
+                         const int& bridge_init_y,
+                         const int& bridge_final_y,
+                         const int& layer_level);
+  bool addJumper(GRoute& route,
+                 std::vector<int>& segment_ids,
+                 const int& bridge_size,
+                 const int& tile_size,
+                 int& req_size,
+                 odb::dbTechLayer* violation_layer,
+                 bool near_to_start);
+  int addJumpers(std::vector<int>& segment_ids,
+                 GRoute& route,
+                 odb::dbTechLayer* violation_layer,
+                 const int& tile_size,
+                 const double& ratio,
+                 const PinsCountNearSegments& pins_count);
+  int findJumperPosition(bool is_reversed,
+                         bool is_horizontal,
+                         const GSegment& seg,
+                         const int& bridge_size,
+                         const int& tile_size);
+  int getSegmentIdToAdd(std::vector<int>& segments,
+                        const GRoute& route,
+                        int& req_size,
+                        const int& bridge_size,
+                        const int& tile_size,
+                        bool is_horizontal,
+                        bool near_to_start);
+  int getSegmentByLayer(const GRoute& route,
+                        const int& max_layer,
+                        LayerToSegmentDataVector& segment_by_layer);
+  void setAdjacentSegments(LayerToSegmentDataVector& segment_by_layer);
+  void getSegmentsConnectedToPins(odb::dbNet* db_net,
+                                  LayerToSegmentDataVector& segment_by_layer,
+                                  PinNameToSegmentIds& seg_connected_to_pin);
+  ViolationIdToSegmentIds getSegmentsWithViolation(
+      odb::dbNet* db_net,
+      const GRoute& route,
+      const int& max_layer,
+      std::map<int, int>& layer_with_violation);
+  void getPinCountNearEndPoints(const std::vector<int>& segment_ids,
+                                const std::vector<odb::dbITerm*>& gates,
+                                const GRoute& route,
+                                PinsCountNearSegments& pins_count);
+  void jumperInsertion(NetRouteMap& routing,
+                       const int& tile_size,
+                       const int& max_routing_layer);
   int illegalDiodePlacementCount() const
   {
     return illegal_diode_placement_count_;
@@ -134,7 +230,9 @@ class RepairAntennas
                    r_tree& fixed_insts,
                    odb::dbTechLayer* violation_layer);
   void getFixedInstances(r_tree& fixed_insts);
-  void setInstsPlacementStatus(odb::dbPlacementStatus placement_status);
+  void setDiodesAndGatesPlacementStatus(
+      odb::dbPlacementStatus placement_status);
+  void setInstsPlacementStatus(std::vector<odb::dbInst*>& insts_to_restore);
   bool setDiodeLoc(odb::dbInst* diode_inst,
                    odb::dbITerm* gate,
                    int site_width,
@@ -197,6 +295,8 @@ class RepairAntennas
   AntennaViolations antenna_violations_;
   int unique_diode_index_;
   int illegal_diode_placement_count_;
+  LayerIdToViaPosition vias_pos_;
+  RoutingSource routing_source_;
 };
 
 }  // namespace grt

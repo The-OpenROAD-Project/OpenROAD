@@ -70,7 +70,36 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 88;  // Current revision number
+const uint db_schema_minor = 96;  // Current revision number
+
+// Revision where the dbMarkerGroup/Categories were added to dbBlock
+const uint db_schema_dbmarkergroup = 96;
+
+// Revision where orthogonal spacing table support added
+const uint db_schema_orth_spc_tbl = 95;
+
+// Revision where unused hashes removed
+const uint db_schema_db_remove_hash = 94;
+
+// Revision where the dbGDSLib is added to dbDatabase
+const uint db_schema_gds_lib_in_block = 93;
+
+// Reverted Revision where unused hashes removed
+const uint reverted_db_schema_db_remove_hash = 92;
+
+// Revision where the layers ranges, for signals and clock nets,
+// were moved from GlobalRouter to dbBlock
+const uint db_schema_dbblock_layers_ranges = 91;
+
+// Revision where via layer was added to dbGuide
+const uint db_schema_db_guide_via_layer = 90;
+
+// Revision where blocked regions for IO pins were added to dbBlock
+const uint db_schema_dbblock_blocked_regions_for_pins = 89;
+
+// Revision where odb::modITerm,modBTerm,modNet made doubly linked for
+// hiearchical port removal
+const uint db_schema_hier_port_removal = 89;
 
 // Revision where odb::Polygon was added
 const uint db_schema_polygon = 88;
@@ -168,6 +197,7 @@ class _dbNameCache;
 class _dbTech;
 class _dbChip;
 class _dbLib;
+class _dbGDSLib;
 class dbOStream;
 class dbIStream;
 class dbDiff;
@@ -187,6 +217,7 @@ class _dbDatabase : public _dbObject
   dbTable<_dbTech>* _tech_tbl;
   dbTable<_dbLib>* _lib_tbl;
   dbTable<_dbChip>* _chip_tbl;
+  dbTable<_dbGDSLib>* _gds_lib_tbl;
   dbTable<_dbProperty>* _prop_tbl;
   _dbNameCache* _name_cache;
   dbPropertyItr* _prop_itr;
@@ -208,7 +239,7 @@ class _dbDatabase : public _dbObject
                    const _dbDatabase& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 
-  bool isSchema(uint rev) { return _schema_minor >= rev; }
+  bool isSchema(uint rev) const { return _schema_minor >= rev; }
   bool isLessThanSchema(uint rev) { return _schema_minor < rev; }
   dbObjectTable* getObjectTable(dbObjectType type);
 };

@@ -44,7 +44,7 @@
 
 namespace grt {
 
-typedef std::vector<std::vector<std::vector<int>>> CapacitiesVec;
+using CapacitiesVec = std::vector<std::vector<std::vector<int>>>;
 
 struct GSegment
 {
@@ -57,7 +57,7 @@ struct GSegment
   GSegment() = default;
   GSegment(int x0, int y0, int l0, int x1, int y1, int l1);
   bool isVia() const { return (init_x == final_x && init_y == final_y); }
-  int length()
+  int length() const
   {
     return std::abs(init_x - final_x) + std::abs(init_y - final_y);
   }
@@ -118,9 +118,11 @@ struct CapacityReduction
 
 using CapacityReductionData = std::vector<std::vector<CapacityReduction>>;
 
+using SegmentIndex = uint16_t;
+
 // class Route is defined in fastroute core.
-typedef std::vector<GSegment> GRoute;
-typedef std::map<odb::dbNet*, GRoute> NetRouteMap;
+using GRoute = std::vector<GSegment>;
+using NetRouteMap = std::map<odb::dbNet*, GRoute>;
 void print(GRoute& groute);
 
 }  // namespace grt

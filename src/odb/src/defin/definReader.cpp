@@ -1861,6 +1861,12 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
+void definReader::contextLogFunctionCallback(defiUserData data, const char* msg)
+{
+  definReader* reader = (definReader*) data;
+  reader->_logger->warn(utl::ODB, 1003, msg);
+}
+
 void definReader::line(int line_num)
 {
   _logger->info(utl::ODB, 125, "lines processed: {}", line_num);
@@ -1890,8 +1896,7 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs,
       _logger->error(utl::ODB, 250, "Chip does not exist");
     }
   } else if (chip != nullptr) {
-    fprintf(stderr, "Error: Chip already exists\n");
-    return nullptr;
+    _logger->error(utl::ODB, 251, "Chip already exists");
   } else {
     chip = dbChip::create(_db);
   }
@@ -2055,6 +2060,7 @@ bool definReader::createBlock(const char* file)
   defrSetPinCbk(pinCallback);
   defrSetPinEndCbk(pinsEndCallback);
   defrSetPinPropCbk(pinPropCallback);
+  defrSetContextLogFunction(contextLogFunctionCallback);
 
   if (_mode == defin::DEFAULT || _mode == defin::FLOORPLAN) {
     defrSetDieAreaCbk(dieAreaCallback);

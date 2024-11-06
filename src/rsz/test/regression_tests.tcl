@@ -1,5 +1,6 @@
 record_tests {
   resize1_hier
+  repair_hold1_hier  
   buffer_ports1
   buffer_ports3
   buffer_ports4
@@ -11,6 +12,7 @@ record_tests {
   eqy_repair_setup2
   eqy_repair_setup5
   fanin_fanout1
+  gain_buffering1
   make_parasitics1
   make_parasitics2
   make_parasitics3

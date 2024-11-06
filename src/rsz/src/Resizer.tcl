@@ -39,7 +39,7 @@ sta::define_cmd_args "set_layer_rc" { [-layer layer]\
                                         [-capacitance cap]\
                                         [-resistance res]\
                                         [-corner corner]}
-proc set_layer_rc {args} {
+proc set_layer_rc { args } {
   sta::parse_key_args "set_layer_rc" args \
     keys {-layer -via -capacitance -resistance -corner} \
     flags {}
@@ -90,7 +90,6 @@ proc set_layer_rc {args} {
     foreach corner $corners {
       rsz::set_layer_rc_cmd $layer $corner $res $cap
     }
-
   } elseif { [info exists keys(-via)] } {
     set layer_name $keys(-via)
     set layer [$tech findLayer $layer_name]
@@ -149,10 +148,12 @@ proc set_wire_rc { args } {
   set v_wire_cap 0.0
 
   if { [info exists keys(-layers)] } {
-    if { [info exists keys(-h_resistance)] \
-           || [info exists keys(-h_capacitance)] \
-           || [info exists keys(-v_resistance)] \
-           || [info exists keys(-v_capacitance)] } {
+    if {
+      [info exists keys(-h_resistance)]
+      || [info exists keys(-h_capacitance)]
+      || [info exists keys(-v_resistance)]
+      || [info exists keys(-v_capacitance)]
+    } {
       utl::error RSZ 1 "Use -layers or -resistance/-capacitance but not both."
     }
     if { [info exists keys(-layer)] } {
@@ -169,7 +170,6 @@ proc set_wire_rc { args } {
     set layers $keys(-layers)
 
     foreach layer_name $layers {
-
       set tec_layer [[ord::get_db_tech] findLayer $layer_name]
       if { $tec_layer == "NULL" } {
         utl::error RSZ 2 "layer $layer_name not found."
@@ -181,20 +181,20 @@ proc set_wire_rc { args } {
         set layer_wire_cap [rsz::layer_capacitance $tec_layer $corner]
       }
       set layer_direction [$tec_layer getDirection]
-      if {$layer_direction == "HORIZONTAL"} {
-        set total_h_wire_res [expr {$total_h_wire_res + $layer_wire_res}]
-        set total_h_wire_cap [expr {$total_h_wire_cap + $layer_wire_cap}]
+      if { $layer_direction == "HORIZONTAL" } {
+        set total_h_wire_res [expr { $total_h_wire_res + $layer_wire_res }]
+        set total_h_wire_cap [expr { $total_h_wire_cap + $layer_wire_cap }]
         incr h_layers
-      } elseif {$layer_direction == "VERTICAL"} {
-        set total_v_wire_res [expr {$total_v_wire_res + $layer_wire_res}]
-        set total_v_wire_cap [expr {$total_v_wire_cap + $layer_wire_cap}]
+      } elseif { $layer_direction == "VERTICAL" } {
+        set total_v_wire_res [expr { $total_v_wire_res + $layer_wire_res }]
+        set total_v_wire_cap [expr { $total_v_wire_cap + $layer_wire_cap }]
         incr v_layers
       } else {
-        set total_h_wire_res [expr {$total_h_wire_res + $layer_wire_res}]
-        set total_h_wire_cap [expr {$total_h_wire_cap + $layer_wire_cap}]
+        set total_h_wire_res [expr { $total_h_wire_res + $layer_wire_res }]
+        set total_h_wire_cap [expr { $total_h_wire_cap + $layer_wire_cap }]
         incr h_layers
-        set total_v_wire_res [expr {$total_v_wire_res + $layer_wire_res}]
-        set total_v_wire_cap [expr {$total_v_wire_cap + $layer_wire_cap}]
+        set total_v_wire_res [expr { $total_v_wire_res + $layer_wire_res }]
+        set total_v_wire_cap [expr { $total_v_wire_cap + $layer_wire_cap }]
         incr v_layers
       }
     }
@@ -210,7 +210,6 @@ proc set_wire_rc { args } {
     set v_wire_res [expr $total_v_wire_res / $v_layers]
     set v_wire_cap [expr $total_v_wire_cap / $v_layers]
   } elseif { [info exists keys(-layer)] } {
-
     set layer_name $keys(-layer)
     set tec_layer [[ord::get_db_tech] findLayer $layer_name]
     if { $tec_layer == "NULL" } {
@@ -313,21 +312,26 @@ proc set_wire_rc { args } {
   }
 }
 
-sta::define_cmd_args "estimate_parasitics" { -placement|-global_routing }
+sta::define_cmd_args "estimate_parasitics" { -placement|-global_routing \
+                                            [-spef_file filename]}
 
 proc estimate_parasitics { args } {
   sta::parse_key_args "estimate_parasitics" args \
-    keys {} flags {-placement -global_routing}
+    keys {-spef_file} flags {-placement -global_routing}
 
-  sta::check_argc_eq0 "estimate_parasitics" $args
+  set filename ""
+  if { [info exists keys(-spef_file)] } {
+    set filename $keys(-spef_file)
+  }
+
   if { [info exists flags(-placement)] } {
     if { [rsz::check_corner_wire_cap] } {
-      rsz::estimate_parasitics_cmd "placement"
+      rsz::estimate_parasitics_cmd "placement" $filename
     }
   } elseif { [info exists flags(-global_routing)] } {
     if { [grt::have_routes] } {
       # should check for layer rc
-      rsz::estimate_parasitics_cmd "global_routing"
+      rsz::estimate_parasitics_cmd "global_routing" $filename
     } else {
       utl::error RSZ 5 "Run global_route before estimating parasitics for global routing."
     }
@@ -412,9 +416,9 @@ sta::define_cmd_args "remove_buffers" { instances }
 
 proc remove_buffers { args } {
   sta::parse_key_args "remove_buffers" args keys {} flags {}
-  set insts [ rsz::init_insts_cmd ]
+  set insts [rsz::init_insts_cmd]
   foreach arg $args {
-    set inst [ get_cells $arg ]
+    set inst [get_cells $arg]
     rsz::add_to_insts_cmd $inst $insts
   }
   rsz::remove_buffers_cmd $insts
@@ -433,23 +437,29 @@ sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
                                       [-max_utilization util] \
                                       [-slew_margin slack_margin] \
                                       [-cap_margin cap_margin] \
+                                      [-buffer_gain gain] \
                                       [-verbose]}
 
 proc repair_design { args } {
   sta::parse_key_args "repair_design" args \
-    keys {-max_wire_length -max_utilization -slew_margin -cap_margin} \
+    keys {-max_wire_length -max_utilization -slew_margin -cap_margin -buffer_gain} \
     flags {-verbose}
 
   set max_wire_length [rsz::parse_max_wire_length keys]
   set slew_margin [rsz::parse_percent_margin_arg "-slew_margin" keys]
   set cap_margin [rsz::parse_percent_margin_arg "-cap_margin" keys]
+  set buffer_gain 0.0
+  if { [info exists keys(-buffer_gain)] } {
+    set buffer_gain $keys(-buffer_gain)
+    sta::check_positive_float "-buffer_gain" $buffer_gain
+  }
   rsz::set_max_utilization [rsz::parse_max_util keys]
 
   sta::check_argc_eq0 "repair_design" $args
   rsz::check_parasitics
   set max_wire_length [rsz::check_max_wire_length $max_wire_length]
   set verbose [info exists flags(-verbose)]
-  rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin $verbose
+  rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin $buffer_gain $verbose
 }
 
 sta::define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]}
@@ -521,6 +531,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-skip_gate_cloning]\
                                         [-skip_buffering]\
                                         [-skip_buffer_removal]\
+                                        [-skip_last_gasp]\
                                         [-repair_tns tns_end_percent]\
                                         [-max_passes passes]\
                                         [-max_buffer_percent buffer_percent]\
@@ -533,7 +544,7 @@ proc repair_timing { args } {
             -libraries -max_utilization -max_buffer_percent \
             -recover_power -repair_tns -max_passes} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
-           -skip_buffering -skip_buffer_removal -verbose}
+           -skip_buffering -skip_buffer_removal -skip_last_gasp -verbose}
 
   set setup [info exists flags(-setup)]
   set hold [info exists flags(-hold)]
@@ -562,6 +573,7 @@ proc repair_timing { args } {
   set skip_gate_cloning [info exists flags(-skip_gate_cloning)]
   set skip_buffering [info exists flags(-skip_buffering)]
   set skip_buffer_removal [info exists flags(-skip_buffer_removal)]
+  set skip_last_gasp [info exists flags(-skip_last_gasp)]
   rsz::set_max_utilization [rsz::parse_max_util keys]
 
   set max_buffer_percent 20
@@ -602,7 +614,8 @@ proc repair_timing { args } {
     if { $setup } {
       rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
         $verbose \
-        $skip_pin_swap $skip_gate_cloning $skip_buffering $skip_buffer_removal
+        $skip_pin_swap $skip_gate_cloning $skip_buffering \
+        $skip_buffer_removal $skip_last_gasp
     }
     if { $hold } {
       rsz::repair_hold $setup_margin $hold_margin \
@@ -623,7 +636,7 @@ proc report_design_area { args } {
   utl::report "Design area ${area} u^2 ${util}% utilization."
 }
 
-sta::define_cmd_args "report_floating_nets" {[-verbose] [> filename] [>> filename]};# checker off
+sta::define_cmd_args "report_floating_nets" {[-verbose] [> filename] [>> filename]} ;# checker off
 
 sta::proc_redirect report_floating_nets {
   sta::parse_key_args "report_floating_nets" args keys {} flags {-verbose};# checker off
@@ -654,7 +667,7 @@ sta::proc_redirect report_floating_nets {
   utl::metric_int "timing__drv__floating__pins" $floating_pin_count
 }
 
-sta::define_cmd_args "report_long_wires" {count [> filename] [>> filename]};# checker off
+sta::define_cmd_args "report_long_wires" {count [> filename] [>> filename]} ;# checker off
 
 sta::proc_redirect report_long_wires {
   global sta_report_default_digits
@@ -672,7 +685,6 @@ sta::proc_redirect report_long_wires {
 }
 
 namespace eval rsz {
-
 # for testing
 proc repair_setup_pin { end_pin } {
   check_parasitics
@@ -717,7 +729,7 @@ proc parse_max_util { keys_var } {
   set max_util 0.0
   if { [info exists keys(-max_utilization)] } {
     set max_util $keys(-max_utilization)
-    if {!([string is double $max_util] && $max_util >= 0.0 && $max_util <= 100)} {
+    if { !([string is double $max_util] && $max_util >= 0.0 && $max_util <= 100) } {
       utl::error RSZ 4 "-max_utilization must be between 0 and 100%."
     }
     set max_util [expr $max_util / 100.0]
@@ -736,7 +748,7 @@ proc parse_max_wire_length { keys_var } {
   return $max_wire_length
 }
 
-proc check_corner_wire_caps {} {
+proc check_corner_wire_caps { } {
   set have_rc 1
   foreach corner [sta::corners] {
     if { [rsz::wire_signal_capacitance $corner] == 0.0 } {
@@ -773,7 +785,7 @@ proc dblayer_wire_rc { layer } {
   set cap_area_pf_per_sq_micron [$layer getCapacitance]
   set cap_edge_pf_per_micron [$layer getEdgeCapacitance]
   set cap_pf_per_micron [expr 1 * $layer_width_micron * $cap_area_pf_per_sq_micron \
-                           + $cap_edge_pf_per_micron * 2]
+    + $cap_edge_pf_per_micron * 2]
   # ohms/meter
   set wire_res [expr $res_ohm_per_micron * 1e+6]
   # farads/meter

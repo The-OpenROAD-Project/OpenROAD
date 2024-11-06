@@ -665,7 +665,8 @@ class DbSiteDescriptor : public Descriptor
   struct SpecificSite
   {
     odb::dbSite* site;
-    odb::Rect rect;
+    const odb::Rect rect;
+    const int index_in_row;
   };
 
   DbSiteDescriptor(odb::dbDatabase* db);
@@ -708,6 +709,52 @@ class DbRowDescriptor : public Descriptor
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
+
+ private:
+  odb::dbDatabase* db_;
+};
+
+class DbMarkerCategoryDescriptor : public Descriptor
+{
+ public:
+  DbMarkerCategoryDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object, Painter& painter) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+ private:
+  odb::dbDatabase* db_;
+};
+
+class DbMarkerDescriptor : public Descriptor
+{
+ public:
+  DbMarkerDescriptor(odb::dbDatabase* db);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override;
+
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object, Painter& painter) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+  void paintMarker(odb::dbMarker* marker, Painter& painter) const;
 
  private:
   odb::dbDatabase* db_;

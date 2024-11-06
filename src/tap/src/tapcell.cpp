@@ -35,6 +35,7 @@
 
 #include "tap/tapcell.h"
 
+#include <algorithm>
 #include <map>
 #include <optional>
 #include <string>
@@ -105,9 +106,10 @@ void Tapcell::cutRows(const Options& options)
   odb::dbBlock* block = db_->getChip()->getBlock();
   const int halo_x = options.halo_x >= 0 ? options.halo_x : defaultDistance();
   const int halo_y = options.halo_y >= 0 ? options.halo_y : defaultDistance();
-  const int min_row_width = (options.endcap_master != nullptr)
-                                ? 2 * options.endcap_master->getWidth()
-                                : 0;
+  int min_row_width = (options.endcap_master != nullptr)
+                          ? 2 * options.endcap_master->getWidth()
+                          : 0;
+  min_row_width = std::max(min_row_width, options.row_min_width);
   odb::cutRows(block, min_row_width, blockages, halo_x, halo_y, logger_);
 }
 
@@ -159,11 +161,23 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
     edge_rows.insert(rows.begin(), rows.end());
   }
 
+  std::vector<odb::dbInst*> fixed_insts;
+  for (auto* inst : db_->getChip()->getBlock()->getInsts()) {
+    if (inst->isFixed()) {
+      fixed_insts.push_back(inst);
+    }
+  }
+  InstTree instancetree(fixed_insts.begin(), fixed_insts.end());
+
   int inst = 0;
   for (auto* row : db_->getChip()->getBlock()->getRows()) {
     const bool is_edge = edge_rows.find(row) != edge_rows.end();
-    inst += placeTapcells(
-        tapcell_master, dist, row, is_edge, disallow_one_site_gaps);
+    inst += placeTapcells(tapcell_master,
+                          dist,
+                          row,
+                          is_edge,
+                          disallow_one_site_gaps,
+                          instancetree);
   }
   logger_->info(utl::TAP, 5, "Inserted {} tapcells.", inst);
   return inst;
@@ -173,7 +187,8 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
                            const int dist,
                            odb::dbRow* row,
                            const bool is_edge,
-                           const bool disallow_one_site_gaps)
+                           const bool disallow_one_site_gaps,
+                           const InstTree& fixed_instances)
 {
   if (row->getSite()->getName() != tapcell_master->getSite()->getName()) {
     return 0;
@@ -201,16 +216,9 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
 
   const odb::Rect row_bb = row->getBBox();
 
-  std::set<odb::dbInst*> row_insts;
-  for (auto* inst : db_->getChip()->getBlock()->getInsts()) {
-    if (!inst->isFixed()) {
-      continue;
-    }
-
-    if (row_bb.contains(inst->getBBox()->getBox())) {
-      row_insts.insert(inst);
-    }
-  }
+  std::set<odb::dbInst*> row_insts(
+      fixed_instances.qbegin(boost::geometry::index::covered_by(row_bb)),
+      fixed_instances.qend());
 
   const int llx = row_bb.xMin();
   const int urx = row_bb.xMax();
@@ -543,6 +551,8 @@ void Tapcell::placeEndcaps(const EndcapCellOptions& options)
   if (endcaps > 0) {
     logger_->info(utl::TAP, 4, "Inserted {} endcaps.", endcaps);
   }
+
+  filled_edges_.clear();
 }
 
 std::vector<Tapcell::Edge> Tapcell::getBoundaryEdges(const Polygon& area,
@@ -902,7 +912,11 @@ std::pair<int, int> Tapcell::placeEndcaps(const Tapcell::Polygon90& area,
   }
 
   for (const auto& edge : getBoundaryEdges(area, outer)) {
-    endcaps += placeEndcapEdge(edge, corners, options);
+    if (std::find(filled_edges_.begin(), filled_edges_.end(), edge)
+        == filled_edges_.end()) {
+      endcaps += placeEndcapEdge(edge, corners, options);
+      filled_edges_.push_back(edge);
+    }
   }
 
   return {corner_count, endcaps};
@@ -1495,6 +1509,13 @@ void Tapcell::placeTapcells(const Options& options)
 odb::dbBlock* Tapcell::getBlock() const
 {
   return db_->getChip()->getBlock();
+}
+
+bool Tapcell::Edge::operator==(const Edge& edge) const
+{
+  return type == edge.type
+         && ((pt0 == edge.pt0 && pt1 == edge.pt1)
+             || (pt0 == edge.pt1 && pt1 == edge.pt0));
 }
 
 }  // namespace tap

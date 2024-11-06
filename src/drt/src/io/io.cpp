@@ -615,6 +615,15 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
       netIn->addNode(instTermNode);
     }
   }
+  if (!net->isSpecial() && net->getTermCount() > LARGE_NET_FANOUT_THRESHOLD) {
+    logger_->warn(
+        DRT,
+        120,
+        "Large net {} has {} pins which may impact routing performance. "
+        "Consider optimization.",
+        net->getName(),
+        net->getTermCount());
+  }
   if (net->getWire()
       && (net->getWireType() == odb::dbWireType::SHIELD
           || net->getWireType() == odb::dbWireType::COVER)) {
@@ -2466,6 +2475,13 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
                                                    cutArea);
     tmpLayer->addCutSpacingConstraint(cutSpacingConstraint.get());
     tech_->addUConstraint(std::move(cutSpacingConstraint));
+  }
+  if (layer->hasOrthSpacingTable()) {
+    std::vector<std::pair<int, int>> tbl;
+    layer->getOrthSpacingTable(tbl);
+    auto uCon = std::make_unique<frOrthSpacingTableConstraint>(tbl);
+    tmpLayer->setOrthSpacingTableConstraint(uCon.get());
+    tech_->addUConstraint(std::move(uCon));
   }
 
   // lef58

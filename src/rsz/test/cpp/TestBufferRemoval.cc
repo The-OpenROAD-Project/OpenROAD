@@ -103,17 +103,24 @@ class BufRemTest : public ::testing::Test
     b4->setLocation(400, 400);
     b4->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 
+    odb::dbInst* b5 = odb::dbInst::create(block, bufx8, "b5", module);
+    b4->setSourceType(odb::dbSourceType::TIMING);
+    b4->setLocation(500, 500);
+    b4->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+
     odb::dbNet* in1 = odb::dbNet::create(block, "in1");
     odb::dbNet* n1 = odb::dbNet::create(block, "n1");
     odb::dbNet* n2 = odb::dbNet::create(block, "n2");
     odb::dbNet* n3 = odb::dbNet::create(block, "n3");
     odb::dbNet* out1 = odb::dbNet::create(block, "out1");
+    odb::dbNet* out2 = odb::dbNet::create(block, "out2");
 
     odb::dbWire::create(in1);
     odb::dbWire::create(n1);
     odb::dbWire::create(n2);
     odb::dbWire::create(n3);
     odb::dbWire::create(out1);
+    odb::dbWire::create(out2);
 
     in1->setSigType(odb::dbSigType::SIGNAL);
     n1->setSigType(odb::dbSigType::SIGNAL);
@@ -134,6 +141,13 @@ class BufRemTest : public ::testing::Test
     layer = block->getTech()->findRoutingLayer(0);
     odb::dbBox::create(outPin, layer, 990, 990, 1000, 1000);
     outPin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+
+    odb::dbBTerm* outPort2 = odb::dbBTerm::create(out2, "out2");
+    outPort2->setIoType(odb::dbIoType::OUTPUT);
+    odb::dbBPin* outPin2 = odb::dbBPin::create(outPort2);
+    layer = block->getTech()->findRoutingLayer(0);
+    odb::dbBox::create(outPin2, layer, 980, 980, 1000, 990);
+    outPin2->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 
     odb::dbITerm* inTerm = getFirstInput(b1);
     inTerm->connect(in1);
@@ -156,6 +170,11 @@ class BufRemTest : public ::testing::Test
     outTerm = b4->getFirstOutput();
     outTerm->connect(out1);
 
+    outTerm = b5->getFirstOutput();
+    outTerm->connect(out2);
+    inTerm = getFirstInput(b5);
+    inTerm->connect(n1);
+
     // initialize STA
     sta::Corner* corner = sta_->cmdCorner();
     sta::PathAPIndex pathAPIndex
@@ -165,13 +184,6 @@ class BufRemTest : public ::testing::Test
     sta::Graph* graph = sta_->ensureGraph();
     sta::Pin* outStaPin = db_network_->dbToSta(outPort);
     outVertex_ = graph->pinLoadVertex(outStaPin);
-
-    // initializer resizer
-    resizer_ = new rsz::Resizer;
-    stt::SteinerTreeBuilder* stt = new stt::SteinerTreeBuilder;
-    grt::GlobalRouter* grt = new grt::GlobalRouter;
-    dpl::Opendp* dp = new dpl::Opendp;
-    resizer_->init(&logger_, db_.get(), sta_.get(), stt, grt, dp, nullptr);
   }
 
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const
@@ -198,14 +210,24 @@ class BufRemTest : public ::testing::Test
 
 TEST_F(BufRemTest, SlackImproves)
 {
+  // initializer resizer
+  resizer_ = new rsz::Resizer;
+  stt::SteinerTreeBuilder* stt = new stt::SteinerTreeBuilder;
+  grt::GlobalRouter* grt = new grt::GlobalRouter;
+  dpl::Opendp* dp = new dpl::Opendp;
+  resizer_->init(&logger_, db_.get(), sta_.get(), stt, grt, dp, nullptr);
+
   float origArrival
       = sta_->vertexArrival(outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
 
-  // Remove one buffer 'b2' and 'b3' from the buffer chain
+  // Remove buffers 'b2' and 'b3' from the buffer chain
   odb::dbChip* chip = db_->getChip();
   odb::dbBlock* block = chip->getBlock();
 
+  resizer_->initBlock();
+  db_->setLogger(&logger_);
   resizer_->journalBeginTest();
+  resizer_->logger()->setDebugLevel(utl::RSZ, "journal", 1);
 
   auto insts = std::make_unique<sta::InstanceSeq>();
   odb::dbInst* inst1 = block->findInst("b2");

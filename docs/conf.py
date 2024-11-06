@@ -34,6 +34,7 @@ extensions = [
     "sphinx_copybutton",
     "myst_parser",
     "sphinxcontrib.mermaid",
+    "sphinx_tabs.tabs",
 ]
 
 myst_enable_extensions = [
@@ -58,8 +59,7 @@ templates_path = ["_templates"]
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-# source_suffix = ['.rst', '.md']
-source_suffix = [".md"]
+source_suffix = [".rst", ".md"]
 
 # The master toctree document.
 master_doc = "index"
@@ -151,11 +151,6 @@ html_theme_options = {
     ],
 }
 
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-# html_static_path = ['_static']
-
 
 def swap_prefix(file, old, new):
     with open(file, "r") as f:
@@ -170,10 +165,23 @@ def setup(app):
 
     if not os.path.exists("./main"):
         os.symlink("..", "./main")
+
+    # also symlink readme
+    import shutil
+
+    if not os.path.exists("./main/README2.md"):
+        shutil.copy("main/README.md", "main/README2.md")
+
     # these prefix swaps will be reverted and is needed for sphinx compilation.
-    swap_prefix("../README.md", "(docs/", "(../")
-    swap_prefix("../README.md", "```mermaid", "```{mermaid}\n:align: center\n")
+    for filename in ["../README.md", "../README2.md"]:
+        swap_prefix(filename, "(docs/", "(../")
+        swap_prefix(filename, "```mermaid", "```{mermaid}\n:align: center\n")
 
     # for populating OR Messages page.
     command = "python getMessages.py"
+    _ = os.popen(command).read()
+
+    if not os.path.exists("../_readthedocs/html/doxygen_output"):
+        os.makedirs("../_readthedocs/html/doxygen_output", exist_ok=True)
+    command = "cd .. ; doxygen"
     _ = os.popen(command).read()

@@ -62,65 +62,37 @@ namespace pad {
 
 class RDLRouter;
 
-class RDLGui : public gui::Renderer
+using GridGraph
+    = boost::adjacency_list<boost::listS,
+                            boost::vecS,
+                            boost::undirectedS,
+                            boost::no_property,
+                            boost::property<boost::edge_weight_t, int64_t>>;
+
+using GridWeightMap
+    = boost::property_map<GridGraph, boost::edge_weight_t>::type;
+using grid_vertex = GridGraph::vertex_descriptor;
+using grid_edge = GridGraph::edge_descriptor;
+
+struct RouteTarget
 {
- public:
-  RDLGui();
-  ~RDLGui() override;
-
-  void setRouter(RDLRouter* router);
-
-  void drawObjects(gui::Painter& painter) override;
-
-  const char* getDisplayControlGroupName() override { return "RDL Router"; }
-
-  void pause();
-
- private:
-  RDLRouter* router_ = nullptr;
-
-  static constexpr const char* draw_vertex_ = "Vertices";
-  static constexpr const char* draw_edge_ = "Edges";
-  static constexpr const char* draw_obs_ = "Obstructions";
-  static constexpr const char* draw_fly_wires_ = "Routing fly wires";
-  static constexpr const char* draw_routes_ = "Routes";
-  static constexpr const char* draw_route_obstructions_ = "Route obstructions";
+  // center point of the target shape
+  odb::Point center;
+  odb::Rect shape;
+  odb::dbITerm* terminal;
+  odb::dbTechLayer* layer;
 };
+
+class RDLGui;
+class RDLRoute;
 
 class RDLRouter
 {
  public:
-  using GridGraph
-      = boost::adjacency_list<boost::listS,
-                              boost::vecS,
-                              boost::undirectedS,
-                              boost::no_property,
-                              boost::property<boost::edge_weight_t, int64_t>>;
-
-  using GridWeightMap
-      = boost::property_map<GridGraph, boost::edge_weight_t>::type;
-  using grid_vertex = GridGraph::vertex_descriptor;
-  using grid_edge = GridGraph::edge_descriptor;
-
-  enum class RouteState
-  {
-    PENDING,
-    SUCCESS,
-    FAILED
-  };
-  struct RouteTarget
-  {
-    // center point of the target shape
-    odb::Point center;
-    odb::Rect shape;
-    odb::dbITerm* terminal;
-    odb::dbTechLayer* layer;
-  };
   struct TargetPair
   {
-    RouteTarget target0;
-    RouteTarget target1;
-    RouteState state = RouteState::PENDING;
+    const RouteTarget* target0;
+    const RouteTarget* target1;
   };
   struct Edge
   {
@@ -130,9 +102,21 @@ class RDLRouter
   struct NetRoute
   {
     std::vector<grid_vertex> route;
-    RouteTarget source;
-    RouteTarget target;
+    std::set<std::tuple<odb::Point, odb::Point, float>> removed_edges;
+    const RouteTarget* source;
+    const RouteTarget* target;
   };
+  struct ITermRouteOrder
+  {
+    std::vector<odb::dbITerm*> terminals;
+    std::vector<odb::dbITerm*>::iterator next;
+  };
+
+  using NetRoutingTargetMap
+      = std::map<odb::dbNet*,
+                 std::map<odb::dbITerm*, std::vector<RouteTarget>>>;
+
+  using RDLRoutePtr = std::shared_ptr<RDLRoute>;
 
   RDLRouter(utl::Logger* logger,
             odb::dbBlock* block,
@@ -143,12 +127,14 @@ class RDLRouter
             int width,
             int spacing,
             bool allow45,
-            float turn_penalty);
+            float turn_penalty,
+            int max_iterations);
   ~RDLRouter();
 
   void route(const std::vector<odb::dbNet*>& nets);
 
   static int64_t distance(const odb::Point& p0, const odb::Point& p1);
+  static int64_t distance(const TargetPair& pair);
 
   using ObsValue = std::tuple<odb::Rect, odb::Polygon, odb::dbNet*>;
   using ObsTree
@@ -166,15 +152,12 @@ class RDLRouter
     return vertex_point_map_;
   }
   const ObsTree& getObstructions() const { return obstructions_; }
-  const std::map<odb::dbNet*, std::vector<TargetPair>>& getRoutingMap() const
+  const NetRoutingTargetMap& getRoutingTargets() const
   {
-    return routing_terminals_;
+    return routing_targets_;
   }
-
-  const std::map<odb::dbNet*, std::vector<NetRoute>>& getRoutes() const
-  {
-    return routes_;
-  }
+  const std::vector<RDLRoutePtr>& getRoutes() const { return routes_; }
+  std::vector<RDLRoutePtr> getFailedRoutes() const;
 
   void setRDLGui(RDLGui* gui) { gui_ = gui; }
 
@@ -182,6 +165,8 @@ class RDLRouter
   odb::Polygon getEdgeObstruction(const odb::Point& pt0,
                                   const odb::Point& pt1) const;
   bool is45DegreeEdge(const odb::Point& pt0, const odb::Point& pt1) const;
+
+  static bool isCoverTerm(odb::dbITerm* term);
 
  private:
   void makeGraph();
@@ -193,9 +178,10 @@ class RDLRouter
 
   std::vector<grid_vertex> run(const odb::Point& source,
                                const odb::Point& dest);
-  std::set<std::pair<odb::Point, odb::Point>> commitRoute(
+  std::set<std::tuple<odb::Point, odb::Point, float>> commitRoute(
       const std::vector<grid_vertex>& route);
-  void uncommitRoute(const std::set<std::pair<odb::Point, odb::Point>>& route);
+  void uncommitRoute(
+      const std::set<std::tuple<odb::Point, odb::Point, float>>& route);
 
   void writeToDb(odb::dbNet* net,
                  const std::vector<grid_vertex>& route,
@@ -215,9 +201,16 @@ class RDLRouter
                                          const RouteTarget& source);
   void removeTerminalEdges(const std::vector<Edge>& edges);
 
-  std::vector<TargetPair> generateRoutingPairs(odb::dbNet* net) const;
+  std::map<odb::dbITerm*, std::vector<RouteTarget>> generateRoutingTargets(
+      odb::dbNet* net) const;
   odb::dbTechLayer* getOtherLayer(odb::dbTechVia* via) const;
   std::set<grid_edge> getVertexEdges(const grid_vertex& vertex) const;
+
+  void buildIntialRouteSet();
+  int reportFailedRoutes(
+      const std::map<odb::dbITerm*, odb::dbITerm*>& routed_pairs) const;
+  std::set<odb::dbInst*> getRoutedInstances() const;
+  int getRoutingInstanceCount() const;
 
   int getBloatFactor() const;
 
@@ -231,6 +224,7 @@ class RDLRouter
   int spacing_;
   bool allow45_;
   float turn_penalty_;
+  int max_router_iterations_;
 
   const std::map<odb::dbITerm*, odb::dbITerm*>& routing_map_;
 
@@ -247,10 +241,10 @@ class RDLRouter
   // Routing grid
   std::vector<int> x_grid_;
   std::vector<int> y_grid_;
-  std::map<odb::dbNet*, std::vector<TargetPair>> routing_terminals_;
 
   // Routing information
-  std::map<odb::dbNet*, std::vector<NetRoute>> routes_;
+  NetRoutingTargetMap routing_targets_;
+  std::vector<RDLRoutePtr> routes_;
 
   RDLGui* gui_;
 };

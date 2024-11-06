@@ -85,17 +85,27 @@ add_library(db
     wOrder.cpp
     dbGroupPowerNetItr.cpp
     dbGroupGroundNetItr.cpp
+    dbGDSLib.cpp
     # Generator Code Begin cpp
     dbAccessPoint.cpp
     dbBusPort.cpp
     dbDft.cpp
     dbGCellGrid.cpp
+    dbGDSBoundary.cpp
+    dbGDSBox.cpp
+    dbGDSNode.cpp
+    dbGDSPath.cpp
+    dbGDSSRef.cpp
+    dbGDSStructure.cpp
+    dbGDSText.cpp
     dbGlobalConnect.cpp
     dbGroup.cpp
     dbGuide.cpp
     dbIsolation.cpp
     dbLevelShifter.cpp
     dbLogicPort.cpp
+    dbMarker.cpp
+    dbMarkerCategory.cpp
     dbMetalWidthViaMap.cpp
     dbModBTerm.cpp
     dbModInst.cpp
@@ -169,9 +179,4 @@ target_link_libraries(db
         zutil
         utl_lib
         ${TCL_LIBRARY}
-)
-
-messages(
-  TARGET db
-  OUTPUT_DIR ../..
 )

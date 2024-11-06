@@ -101,10 +101,22 @@ void Design::link(const std::string& design_name)
   app->linkDesign(design_name.c_str(), false);
 }
 
+void Design::readDb(std::istream& stream)
+{
+  auto app = OpenRoad::openRoad();
+  app->readDb(stream);
+}
+
 void Design::readDb(const std::string& file_name)
 {
   auto app = OpenRoad::openRoad();
   app->readDb(file_name.c_str());
+}
+
+void Design::writeDb(std::ostream& stream)
+{
+  auto app = OpenRoad::openRoad();
+  app->writeDb(stream);
 }
 
 void Design::writeDb(const std::string& file_name)
@@ -211,6 +223,15 @@ bool Design::isInClock(odb::dbInst* inst)
     if (net != nullptr && net->getSigType() == odb::dbSigType::CLOCK) {
       return true;
     }
+  }
+  return false;
+}
+
+bool Design::isInClock(odb::dbITerm* iterm)
+{
+  auto* net = iterm->getNet();
+  if (net != nullptr && net->getSigType() == odb::dbSigType::CLOCK) {
+    return true;
   }
   return false;
 }

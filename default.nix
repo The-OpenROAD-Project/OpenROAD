@@ -33,6 +33,7 @@
 ##
 ###############################################################################
 {
+  flake,
   lib,
   clangStdenv,
   fetchFromGitHub,
@@ -62,9 +63,11 @@
   flex,
   bison,
   clang-tools_14,
+  gtest,
   # or-tools
   stdenv,
   overrideSDK,
+  git,
 }: let
   or-tools' =
     (or-tools.override {
@@ -87,7 +90,7 @@
   self = clangStdenv.mkDerivation (finalAttrs: {
     name = "openroad";
 
-    src = ./.;
+    src = flake;
 
     cmakeFlags = [
       "-DTCL_LIBRARY=${tcl}/lib/libtcl${clangStdenv.hostPlatform.extensions.sharedLibrary}"
@@ -95,6 +98,14 @@
       "-DUSE_SYSTEM_BOOST:BOOL=ON"
       "-DVERBOSE=1"
     ];
+    
+    postPatch = ''
+      patchShebangs .
+    '';
+    
+    shellHook = ''
+      alias ord-format-changed="${git}/bin/git diff --name-only | grep -E '\.(cpp|cc|c|h|hh)$' | xargs clang-format -i -style=file:.clang-format"; 
+    '';
     
     qt5Libs = [
       libsForQt5.qt5.qtbase
@@ -124,6 +135,7 @@
       clp
       cbc
       re2
+      gtest
     ];
 
     nativeBuildInputs = [

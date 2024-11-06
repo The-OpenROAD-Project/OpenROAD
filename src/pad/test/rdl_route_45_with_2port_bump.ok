@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45_io/dummy_pads.lef, created 26 library cells
+[INFO ODB-0128] Design: soc_bsg_black_parrot
+[INFO ODB-0130]     Created 139 pins.
+[INFO ODB-0131]     Created 1452 components and 8287 component-terminals.
+[INFO ODB-0132]     Created 4 special nets and 4706 connections.
+[INFO ODB-0133]     Created 354 nets and 864 connections.
+[INFO PAD-0005] Routing 139 nets
+No differences found.

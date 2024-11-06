@@ -1006,6 +1006,24 @@ frCoord FlexGCWorker::Impl::getPrl(gcSegment* edge,
   return std::min(edge1_max, edge2_max) - std::max(edge1_min, edge2_min);
 }
 
+std::pair<frCoord, frCoord> FlexGCWorker::Impl::getRectsPrl(gcRect* rect1,
+                                                            gcRect* rect2) const
+{
+  gtl::rectangle_data<frCoord> marker_rect(*rect1);
+  gtl::generalized_intersect(marker_rect, *rect2);
+  auto prl_x = gtl::delta(marker_rect, gtl::HORIZONTAL);
+  auto prl_y = gtl::delta(marker_rect, gtl::VERTICAL);
+  auto dist_x = gtl::euclidean_distance(*rect1, *rect2, gtl::HORIZONTAL);
+  auto dist_y = gtl::euclidean_distance(*rect1, *rect2, gtl::VERTICAL);
+  if (dist_x) {
+    prl_x = -prl_x;
+  }
+  if (dist_y) {
+    prl_y = -prl_y;
+  }
+  return {prl_x, prl_y};
+}
+
 void FlexGCWorker::Impl::checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer)
 {
   auto lef58WrongDirCons = layer->getLef58SpacingWrongDirConstraints();
@@ -2131,6 +2149,14 @@ bool FlexGCWorker::Impl::checkMetalShape_lef58Area_rectWidth(
   return false;
 }
 
+namespace gc_patch {
+bool isPatchValid(drPatchWire* pwire, const Rect& boundary_box)
+{
+  return pwire->getBBox().intersects(boundary_box)
+         || boundary_box.intersects(pwire->getOrigin());
+}
+}  // namespace gc_patch
+
 void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
 {
   auto poly = pin->getPolygon();
@@ -2208,6 +2234,9 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
     return;
   }
 
+  if (!gc_patch::isPatchValid(patch.get(), getDRWorker()->getRouteBox())) {
+    return;
+  }
   pwires_.push_back(std::move(patch));
 }
 
@@ -3509,6 +3538,9 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect)
           rect, aboveLayer->getLef58DefaultInterCutSpcTblConstraint());
     }
   }
+  if (layer->hasOrthSpacingTableConstraint()) {
+    checkCutSpacingTableOrthogonal(rect);
+  }
 }
 
 void FlexGCWorker::Impl::checkCutSpacing()
@@ -3659,6 +3691,9 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
     patch->setOrigin(origin);
     patch->setOffsetBox(markerBBox);
     patch->addToNet(net);
+    if (!gc_patch::isPatchValid(patch.get(), getDRWorker()->getRouteBox())) {
+      continue;
+    }
     pwires_.push_back(std::move(patch));
   }
 }
@@ -3781,6 +3816,9 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
     patch->setOrigin(origin);
     patch->setOffsetBox(markerBBox);
     patch->addToNet(net);
+    if (!gc_patch::isPatchValid(patch.get(), getDRWorker()->getRouteBox())) {
+      continue;
+    }
     pwires_.push_back(std::move(patch));
   }
 }

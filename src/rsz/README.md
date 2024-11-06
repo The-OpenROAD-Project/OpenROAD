@@ -110,9 +110,13 @@ After the `global_route` command has been called, the global routing topology
 and layers can be used to estimate parasitics  with the `-global_routing`
 flag.
 
+The optional argument `-spef_file` can be used to write the estimated parasitics using 
+Standard Parasitic Exchange Format.
+
 ```tcl
 estimate_parasitics
     -placement|-global_routing
+    [-spef_file spef_file]
 ```
 
 #### Options
@@ -120,6 +124,7 @@ estimate_parasitics
 | Switch Name | Description |
 | ----- | ----- |
 | `-placement` or `-global_routing` | Either of these flags must be set. Parasitics are estimated based after placement stage versus after global routing stage. |
+| `-spef_file` | Optional. File name to write SPEF files. If more than one corner is available for the design, the files will be written as filename_corner.spef. |
 
 ### Set Don't Use
 
@@ -219,6 +224,7 @@ repair_design
     [-slew_margin slew_margin]
     [-cap_margin cap_margin]
     [-max_utilization util]
+    [-buffer_gain gain_ratio]
     [-verbose]
 ```
 
@@ -230,6 +236,7 @@ repair_design
 | `-slew_margin` | Add a slew margin. The default value is `0`, the allowed values are integers `[0, 100]`. |
 | `-cap_margin` | Add a capactitance margin. The default value is `0`, the allowed values are integers `[0, 100]`. |
 | `-max_utilization` | Defines the percentage of core area used. |
+| `-buffer_gain` | Enables gain-based buffering with the given gain value. |
 | `-verbose` | Enable verbose logging on progress of the repair. |
 
 ### Repair Tie Fanout
@@ -277,6 +284,7 @@ repair_timing
     [-skip_gate_cloning]
     [-skip_buffering]
     [-skip_buffer_removal]
+    [-skip_last_gasp]
     [-repair_tns tns_end_percent]
     [-max_passes passes]
     [-max_utilization util]
@@ -298,6 +306,7 @@ repair_timing
 | `-skip_gate_cloning` | Flag to skip gate cloning. The default is to perform gate cloning transform during setup fixing. |
 | `-skip_buffering` | Flag to skip rebuffering and load splitting. The default is to perform rebuffering and load splitting transforms during setup fixing. |
 | `-skip_buffer_removal` | Flag to skip buffer removal.  The default is to perform buffer removal transform during setup fixing. |
+| `-skip_last_gasp` | Flag to skip final ("last gasp") optimizations.  The default is to perform greedy sizing at the end of optimization. |
 | `-repair_tns` | Percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero, only the worst endpoint is repaired. When `tns_end_percent` is 100 (default), all violating endpoints are repaired. |
 | `-max_utilization` | Defines the percentage of core area used. |
 | `-max_buffer_percent` | Specify a maximum number of buffers to insert to repair hold violations as a percentage of the number of instances in the design. The default value is `20`, and the allowed values are integers `[0, 100]`. |

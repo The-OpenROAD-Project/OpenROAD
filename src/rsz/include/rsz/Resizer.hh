@@ -41,6 +41,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
+#include "rsz/OdbCallBack.hh"
 #include "sta/Path.hh"
 #include "sta/UnorderedSet.hh"
 #include "utl/Logger.h"
@@ -136,6 +137,8 @@ class RepairDesign;
 class RepairSetup;
 class RepairHold;
 
+class SpefWriter;
+
 class NetHash
 {
  public:
@@ -176,6 +179,8 @@ struct BufferData
   Instance* parent;
   Point location;
 };
+
+class OdbCallBack;
 
 class Resizer : public dbStaState
 {
@@ -235,9 +240,13 @@ class Resizer : public dbStaState
   double wireClkHCapacitance(const Corner* corner) const;
   double wireClkVCapacitance(const Corner* corner) const;
   void estimateParasitics(ParasiticsSrc src);
-  void estimateWireParasitics();
-  void estimateWireParasitic(const Net* net);
-  void estimateWireParasitic(const Pin* drvr_pin, const Net* net);
+  void estimateParasitics(ParasiticsSrc src,
+                          std::map<Corner*, std::ostream*>& spef_streams_);
+  void estimateWireParasitics(SpefWriter* spef_writer = nullptr);
+  void estimateWireParasitic(const Net* net, SpefWriter* spef_writer = nullptr);
+  void estimateWireParasitic(const Pin* drvr_pin,
+                             const Net* net,
+                             SpefWriter* spef_writer = nullptr);
   bool haveEstimatedParasitics() const;
   void parasiticsInvalid(const Net* net);
   void parasiticsInvalid(const dbNet* net);
@@ -281,7 +290,8 @@ class Resizer : public dbStaState
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
                    bool skip_buffering,
-                   bool skip_buffer_removal);
+                   bool skip_buffer_removal,
+                   bool skip_last_gasp);
   // For testing.
   void repairSetup(const Pin* end_pin);
   // For testing.
@@ -337,6 +347,7 @@ class Resizer : public dbStaState
       double max_wire_length,  // max_wire_length zero for none (meters)
       double slew_margin,      // 0.0-1.0
       double cap_margin,       // 0.0-1.0
+      double buffer_gain,
       bool verbose);
   int repairDesignBufferCount() const;
   // for debugging
@@ -351,6 +362,10 @@ class Resizer : public dbStaState
   // Use max_wire_length zero for none (meters)
   void repairClkNets(
       double max_wire_length);  // max_wire_length zero for none (meters)
+  void setClockBuffersList(const LibertyCellSeq& clk_buffers)
+  {
+    clk_buffers_ = clk_buffers;
+  }
   // Clone inverters next to the registers they drive to remove them
   // from the clock network.
   // yosys is too stupid to use the inverted clock registers
@@ -401,12 +416,15 @@ class Resizer : public dbStaState
   void makeEquivCells();
 
   ////////////////////////////////////////////////////////////////
+  void initBlock();
   void journalBeginTest();
   void journalRestoreTest();
+  Logger* logger() const { return logger_; }
+  void invalidateParasitics(const Pin* pin, const Net* net);
+  void eraseParasitics(const Net* net);
 
  protected:
   void init();
-  void initBlock();
   void initDesignArea();
   void ensureLevelDrvrVertices();
   Instance* bufferInput(const Pin* top_pin, LibertyCell* buffer_cell);
@@ -417,7 +435,8 @@ class Resizer : public dbStaState
   void findBuffers();
   bool isLinkCell(LibertyCell* cell);
   void findTargetLoads();
-  void balanceBin(const vector<odb::dbInst*>& bin);
+  void balanceBin(const vector<odb::dbInst*>& bin,
+                  const std::set<odb::dbSite*>& base_sites);
 
   //==============================
   // APIs for gate cloning
@@ -569,12 +588,14 @@ class Resizer : public dbStaState
   void updateParasitics(bool save_guides = false);
   void ensureWireParasitic(const Pin* drvr_pin);
   void ensureWireParasitic(const Pin* drvr_pin, const Net* net);
-  void estimateWireParasiticSteiner(const Pin* drvr_pin, const Net* net);
+  void estimateWireParasiticSteiner(const Pin* drvr_pin,
+                                    const Net* net,
+                                    SpefWriter* spef_writer);
   float totalLoad(SteinerTree* tree) const;
   float subtreeLoad(SteinerTree* tree,
                     float cap_per_micron,
                     SteinerPt pt) const;
-  void makePadParasitic(const Net* net);
+  void makePadParasitic(const Net* net, SpefWriter* spef_writer);
   bool isPadNet(const Net* net) const;
   bool isPadPin(const Pin* pin) const;
   bool isPad(const Instance* inst) const;
@@ -597,6 +618,8 @@ class Resizer : public dbStaState
                          const char* name,
                          Instance* parent,
                          const Point& loc);
+  void getBufferPins(Instance* buffer, Pin*& ip_pin, Pin*& op_pin);
+
   Instance* makeBuffer(LibertyCell* cell,
                        const char* name,
                        Instance* parent,
@@ -625,7 +648,6 @@ class Resizer : public dbStaState
                       const Corner*& corner);
   void warnBufferMovedIntoCore();
   bool isLogicStdCell(const Instance* inst);
-  void invalidateParasitics(const Pin* pin, const Net* net);
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
   // during repair timing.
@@ -634,6 +656,7 @@ class Resizer : public dbStaState
   void journalRestore(int& resize_count,
                       int& inserted_buffer_count,
                       int& cloned_gate_count,
+                      int& swap_pin_count,
                       int& removed_buffer_count);
   void journalUndoGateCloning(int& cloned_gate_count);
   void journalSwapPins(Instance* inst, LibertyPort* port1, LibertyPort* port2);
@@ -646,6 +669,7 @@ class Resizer : public dbStaState
                                  const Point& loc);
   void journalRemoveBuffer(Instance* buffer);
   void journalRestoreBuffers(int& removed_buffer_count);
+  bool canRestoreBuffer(const BufferData& data);
   ////////////////////////////////////////////////////////////////
   // API for logic resynthesis
   VertexSet findFaninFanouts(VertexSet& ends);
@@ -654,8 +678,6 @@ class Resizer : public dbStaState
   bool isRegOutput(Vertex* vertex);
   bool isRegister(Vertex* vertex);
   ////////////////////////////////////////////////////////////////
-
-  Logger* logger() const { return logger_; }
 
   // Components
   RecoverPower* recover_power_;
@@ -697,6 +719,9 @@ class Resizer : public dbStaState
   const MinMax* max_ = MinMax::max();
   LibertyCellSeq buffer_cells_;
   LibertyCell* buffer_lowest_drive_ = nullptr;
+  // Buffer list created by CTS kept here so that we use the
+  // exact same buffers when reparing clock nets.
+  LibertyCellSeq clk_buffers_;
 
   CellTargetLoadMap* target_load_map_ = nullptr;
   VertexSeq level_drvr_vertices_;
@@ -711,7 +736,9 @@ class Resizer : public dbStaState
   int resize_count_ = 0;
   int inserted_buffer_count_ = 0;
   int cloned_gate_count_ = 0;
+  int swap_pin_count_ = 0;
   int removed_buffer_count_ = 0;
+  bool exclude_clock_buffers_ = true;
   bool buffer_moved_into_core_ = false;
   // Slack map variables.
   // This is the minimum length of wire that is worth while to split and
@@ -741,11 +768,14 @@ class Resizer : public dbStaState
 
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
-  // Prim/Dijkstra gets out of hand with bigger nets.
-  static constexpr int max_steiner_pin_count_ = 200000;
 
   // Use actual input slews for accurate delay/slew estimation
   sta::UnorderedMap<LibertyPort*, InputSlews> input_slew_map_;
+
+  std::unique_ptr<OdbCallBack> db_cbk_;
+  bool is_callback_registered_ = false;
+  bool isCallBackRegistered() { return is_callback_registered_; }
+  void setCallBackRegistered(bool val) { is_callback_registered_ = val; }
 
   friend class BufferedNet;
   friend class GateCloner;

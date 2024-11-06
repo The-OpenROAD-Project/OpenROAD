@@ -525,6 +525,71 @@ struct less<odb::dbGCellGrid*>
 };
 
 template <>
+struct less<odb::dbGDSBoundary*>
+{
+  bool operator()(const odb::dbGDSBoundary* lhs,
+                  const odb::dbGDSBoundary* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbGDSBox*>
+{
+  bool operator()(const odb::dbGDSBox* lhs, const odb::dbGDSBox* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbGDSNode*>
+{
+  bool operator()(const odb::dbGDSNode* lhs, const odb::dbGDSNode* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbGDSPath*>
+{
+  bool operator()(const odb::dbGDSPath* lhs, const odb::dbGDSPath* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbGDSSRef*>
+{
+  bool operator()(const odb::dbGDSSRef* lhs, const odb::dbGDSSRef* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbGDSStructure*>
+{
+  bool operator()(const odb::dbGDSStructure* lhs,
+                  const odb::dbGDSStructure* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbGDSText*>
+{
+  bool operator()(const odb::dbGDSText* lhs, const odb::dbGDSText* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
 struct less<odb::dbGlobalConnect*>
 {
   bool operator()(const odb::dbGlobalConnect* lhs,
@@ -577,6 +642,25 @@ struct less<odb::dbLogicPort*>
 {
   bool operator()(const odb::dbLogicPort* lhs,
                   const odb::dbLogicPort* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbMarker*>
+{
+  bool operator()(const odb::dbMarker* lhs, const odb::dbMarker* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbMarkerCategory*>
+{
+  bool operator()(const odb::dbMarkerCategory* lhs,
+                  const odb::dbMarkerCategory* rhs) const
   {
     return odb::compare_by_id(lhs, rhs);
   }

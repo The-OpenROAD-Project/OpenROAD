@@ -150,7 +150,9 @@ class Design
                bool child = false);
   void link(const std::string& design_name);
 
+  void readDb(std::istream& stream);
   void readDb(const std::string& file_name);
+  void writeDb(std::ostream& stream);
   void writeDb(const std::string& file_name);
   void writeDef(const std::string& file_name);
 
@@ -170,6 +172,7 @@ class Design
   bool isInSupply(odb::dbITerm* pin);
   std::string getITermName(odb::dbITerm* pin);
   bool isInClock(odb::dbInst* inst);
+  bool isInClock(odb::dbITerm* iterm);
   std::uint64_t getNetRoutedLength(odb::dbNet* net);
 
   // Services

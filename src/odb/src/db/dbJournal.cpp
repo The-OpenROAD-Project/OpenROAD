@@ -1519,15 +1519,19 @@ void dbJournal::undo_deleteObject()
       int x_max;
       int y_max;
       uint layer_id;
+      uint via_layer_id;
       _log.pop(net_id);
       _log.pop(x_min);
       _log.pop(y_min);
       _log.pop(x_max);
       _log.pop(y_max);
       _log.pop(layer_id);
+      _log.pop(via_layer_id);
       auto net = dbNet::getNet(_block, net_id);
       auto layer = dbTechLayer::getTechLayer(_block->getTech(), layer_id);
-      dbGuide::create(net, layer, {x_min, y_min, x_max, y_max});
+      auto via_layer
+          = dbTechLayer::getTechLayer(_block->getTech(), via_layer_id);
+      dbGuide::create(net, layer, via_layer, {x_min, y_min, x_max, y_max});
       break;
     }
     case dbInstObj: {
@@ -1743,12 +1747,19 @@ void dbJournal::undo_updateNetField()
 {
   uint net_id;
   _log.pop(net_id);
-  //_dbNet * net = (_dbNet *) dbNet::getNet(_block, net_id );
+  _dbNet* net = (_dbNet*) dbNet::getNet(_block, net_id);
 
   int field;
   _log.pop(field);
 
   switch ((_dbNet::Field) field) {
+    case _dbNet::FLAGS: {
+      uint* flags = (uint*) &net->_flags;
+      _log.pop(*flags);
+      uint new_flags;
+      _log.pop(new_flags);
+      break;
+    }
     default: {
       _logger->critical(
           utl::ODB, 408, "No undo_updateNetField support for field {}", field);

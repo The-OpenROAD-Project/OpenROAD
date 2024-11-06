@@ -31,6 +31,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <algorithm>
+#include <iostream>
 
 #include "DataType.h"
 #include "FastRoute.h"
@@ -53,17 +54,6 @@ static int left_index(int i)
 static int right_index(int i)
 {
   return 2 * i + 2;
-}
-
-void FastRouteCore::fixEmbeddedTrees()
-{
-  // check embedded trees only when maze router is called
-  // i.e., when running overflow iterations
-  if (overflow_iterations_ > 0) {
-    for (const int& netID : net_ids_) {
-      checkAndFixEmbeddedTree(netID);
-    }
-  }
 }
 
 void FastRouteCore::checkAndFixEmbeddedTree(const int net_id)
@@ -154,7 +144,7 @@ bool FastRouteCore::areEdgesOverlapping(const int net_id,
 void FastRouteCore::fixOverlappingEdge(
     const int net_id,
     const int edge,
-    std::vector<std::pair<short, short>>& blocked_positions)
+    std::vector<std::pair<int16_t, int16_t>>& blocked_positions)
 {
   TreeEdge* treeedge = &(sttrees_[net_id].edges[edge]);
   auto& treenodes = sttrees_[net_id].nodes;
@@ -209,69 +199,6 @@ void FastRouteCore::fixOverlappingEdge(
     treeedge->route.routelen = new_route_x.size() - 1;
     treeedge->route.gridsX = std::move(new_route_x);
     treeedge->route.gridsY = std::move(new_route_y);
-  }
-}
-
-void FastRouteCore::bendEdge(
-    TreeEdge* treeedge,
-    std::vector<TreeNode>& treenodes,
-    std::vector<short>& new_route_x,
-    std::vector<short>& new_route_y,
-    std::vector<std::pair<short, short>>& blocked_positions)
-{
-  const std::vector<short>& gridsX = treeedge->route.gridsX;
-  const std::vector<short>& gridsY = treeedge->route.gridsY;
-
-  for (int i = 0; i <= treeedge->route.routelen; i++) {
-    std::pair<short, short> pos = {gridsX[i], gridsY[i]};
-    if (pos == blocked_positions.front()) {
-      break;
-    } else {
-      new_route_x.push_back(pos.first);
-      new_route_y.push_back(pos.second);
-    }
-  }
-
-  short x_min = std::min(treenodes[treeedge->n1].x, treenodes[treeedge->n2].x);
-  short y_min = std::min(treenodes[treeedge->n1].y, treenodes[treeedge->n2].y);
-
-  const TreeNode& endpoint = treenodes[treeedge->n2];
-  if (blocked_positions.front().second == blocked_positions.back().second) {
-    // blocked positions are horizontally aligned
-    short y = (new_route_y.back() == y_min) ? new_route_y.back() + 1
-                                            : new_route_y.back() - 1;
-    new_route_x.push_back(new_route_x.back());
-    new_route_y.push_back(y);
-
-    for (short x = new_route_x.back(); x < endpoint.x; x++) {
-      new_route_x.push_back(x + 1);
-      new_route_y.push_back(y);
-    }
-
-    new_route_x.push_back(endpoint.x);
-    new_route_y.push_back(endpoint.y);
-  } else if (blocked_positions.front().first
-             == blocked_positions.back().first) {
-    // blocked positions are vertically aligned
-    short x = (new_route_x.back() == x_min) ? new_route_x.back() + 1
-                                            : new_route_x.back() - 1;
-    new_route_x.push_back(x);
-    new_route_y.push_back(new_route_y.back());
-
-    if (new_route_y.back() < endpoint.y) {
-      for (short y = new_route_y.back(); y < endpoint.y; y++) {
-        new_route_x.push_back(x);
-        new_route_y.push_back(y + 1);
-      }
-    } else {
-      for (short y = new_route_y.back(); y > endpoint.y; y--) {
-        new_route_x.push_back(x);
-        new_route_y.push_back(y - 1);
-      }
-    }
-
-    new_route_x.push_back(endpoint.x);
-    new_route_y.push_back(endpoint.y);
   }
 }
 
@@ -575,147 +502,39 @@ static void removeMin(std::vector<double*>& array)
  * round : the number of maze route stages runned
  */
 
-void FastRouteCore::updateCongestionHistory(const int upType,
-                                            bool stopDEC,
+void FastRouteCore::updateCongestionHistory(const int up_type,
+                                            bool stop_decreasing,
                                             int& max_adj)
 {
   int maxlimit = 0;
 
-  if (upType == 1) {
-    for (const auto& [i, j] : h_used_ggrid_) {
-      const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
-
-      if (overflow > 0) {
-        h_edges_[i][j].last_usage += overflow;
-        h_edges_[i][j].congCNT++;
-      } else {
-        if (!stopDEC) {
-          h_edges_[i][j].last_usage = h_edges_[i][j].last_usage * 0.9;
-        }
-      }
-      maxlimit = std::max<int>(maxlimit, h_edges_[i][j].last_usage);
-    }
-
-    for (const auto& [i, j] : v_used_ggrid_) {
-      const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
-
-      if (overflow > 0) {
-        v_edges_[i][j].last_usage += overflow;
-        v_edges_[i][j].congCNT++;
-      } else {
-        if (!stopDEC) {
-          v_edges_[i][j].last_usage = v_edges_[i][j].last_usage * 0.9;
-        }
-      }
-      maxlimit = std::max<int>(maxlimit, v_edges_[i][j].last_usage);
-    }
-  } else if (upType == 2) {
-    if (max_adj < ahth_) {
-      stopDEC = true;
-    } else {
-      stopDEC = false;
-    }
-    for (const auto& [i, j] : h_used_ggrid_) {
-      const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
-
-      if (overflow > 0) {
-        h_edges_[i][j].congCNT++;
-        h_edges_[i][j].last_usage += overflow;
-      } else {
-        if (!stopDEC) {
-          h_edges_[i][j].congCNT--;
-          h_edges_[i][j].congCNT = std::max<int>(0, h_edges_[i][j].congCNT);
-          h_edges_[i][j].last_usage = h_edges_[i][j].last_usage * 0.9;
-        }
-      }
-      maxlimit = std::max<int>(maxlimit, h_edges_[i][j].last_usage);
-    }
-
-    for (const auto& [i, j] : v_used_ggrid_) {
-      const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
-
-      if (overflow > 0) {
-        v_edges_[i][j].congCNT++;
-        v_edges_[i][j].last_usage += overflow;
-      } else {
-        if (!stopDEC) {
-          v_edges_[i][j].congCNT--;
-          v_edges_[i][j].congCNT = std::max<int>(0, v_edges_[i][j].congCNT);
-          v_edges_[i][j].last_usage = v_edges_[i][j].last_usage * 0.9;
-        }
-      }
-      maxlimit = std::max<int>(maxlimit, v_edges_[i][j].last_usage);
-    }
-
-  } else if (upType == 3) {
-    for (const auto& [i, j] : h_used_ggrid_) {
-      const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
-
-      if (overflow > 0) {
-        h_edges_[i][j].congCNT++;
-        h_edges_[i][j].last_usage += overflow;
-      } else {
-        if (!stopDEC) {
-          h_edges_[i][j].congCNT--;
-          h_edges_[i][j].congCNT = std::max<int>(0, h_edges_[i][j].congCNT);
-          h_edges_[i][j].last_usage += overflow;
-          h_edges_[i][j].last_usage
-              = std::max<int>(h_edges_[i][j].last_usage, 0);
-        }
-      }
-      maxlimit = std::max<int>(maxlimit, h_edges_[i][j].last_usage);
-    }
-
-    for (const auto& [i, j] : v_used_ggrid_) {
-      const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
-
-      if (overflow > 0) {
-        v_edges_[i][j].congCNT++;
-        v_edges_[i][j].last_usage += overflow;
-      } else {
-        if (!stopDEC) {
-          v_edges_[i][j].congCNT--;
-          v_edges_[i][j].last_usage += overflow;
-          v_edges_[i][j].last_usage
-              = std::max<int>(v_edges_[i][j].last_usage, 0);
-        }
-      }
-      maxlimit = std::max<int>(maxlimit, v_edges_[i][j].last_usage);
-    }
-
-  } else if (upType == 4) {
-    for (const auto& [i, j] : h_used_ggrid_) {
-      const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
-
-      if (overflow > 0) {
-        h_edges_[i][j].congCNT++;
-        h_edges_[i][j].last_usage += overflow;
-      } else {
-        if (!stopDEC) {
-          h_edges_[i][j].congCNT--;
-          h_edges_[i][j].congCNT = std::max<int>(0, h_edges_[i][j].congCNT);
-          h_edges_[i][j].last_usage = h_edges_[i][j].last_usage * 0.9;
-        }
-      }
-      maxlimit = std::max<int>(maxlimit, h_edges_[i][j].last_usage);
-    }
-
-    for (const auto& [i, j] : v_used_ggrid_) {
-      const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
-
-      if (overflow > 0) {
-        v_edges_[i][j].congCNT++;
-        v_edges_[i][j].last_usage += overflow;
-      } else {
-        if (!stopDEC) {
-          v_edges_[i][j].congCNT--;
-          v_edges_[i][j].congCNT = std::max<int>(0, v_edges_[i][j].congCNT);
-          v_edges_[i][j].last_usage = v_edges_[i][j].last_usage * 0.9;
-        }
-      }
-      maxlimit = std::max<int>(maxlimit, v_edges_[i][j].last_usage);
-    }
+  if (up_type == 2) {
+    stop_decreasing = max_adj < ahth_;
   }
+
+  auto updateEdges = [&](const auto& grid, auto& edges) {
+    for (const auto& [i, j] : grid) {
+      const int overflow = edges[i][j].usage - edges[i][j].cap;
+      if (overflow > 0) {
+        edges[i][j].congCNT++;
+        edges[i][j].last_usage += overflow;
+      } else if (!stop_decreasing) {
+        if (up_type != 1) {
+          edges[i][j].congCNT = std::max<int>(0, edges[i][j].congCNT - 1);
+        }
+        if (up_type != 3) {
+          edges[i][j].last_usage *= 0.9;
+        } else {
+          edges[i][j].last_usage
+              = std::max<int>(edges[i][j].last_usage + overflow, 0);
+        }
+      }
+      maxlimit = std::max<int>(maxlimit, edges[i][j].last_usage);
+    }
+  };
+
+  updateEdges(h_used_ggrid_, h_edges_);
+  updateEdges(v_used_ggrid_, v_edges_);
 
   max_adj = maxlimit;
 }
@@ -1279,41 +1098,38 @@ void FastRouteCore::reInitTree(const int netID)
   checkAndFixEmbeddedTree(netID);
 }
 
-float getCost(const int i,
-              const float logis_cof,
-              const float cost_height,
-              const int slope,
-              const int capacity,
-              const int cost_type)
+double FastRouteCore::getCost(const int index,
+                              bool is_horizontal,
+                              const CostParams& cost_params)
 {
-  float cost;
-  if (cost_type == 2) {
-    if (i < capacity - 1)
-      cost = cost_height / (std::exp((capacity - i - 1) * logis_cof) + 1) + 1;
-    else
-      cost = cost_height / (std::exp((capacity - i - 1) * logis_cof) + 1) + 1
-             + cost_height / slope * (i - capacity);
-  } else {
-    if (i < capacity)
-      cost = cost_height / (std::exp((capacity - i) * logis_cof) + 1) + 1;
-    else
-      cost = cost_height / (std::exp((capacity - i) * logis_cof) + 1) + 1
-             + cost_height / slope * (i - capacity);
+  const auto& cost_table = is_horizontal ? h_cost_table_ : v_cost_table_;
+  const auto& capacity = is_horizontal ? h_capacity_ : v_capacity_;
+
+  if (index < cost_table.size()) {
+    return cost_table[index];
   }
+
+  double cost = 0;
+  const int slope = cost_params.slope;
+  const double logistic_coef = cost_params.logistic_coef;
+  const double cost_height = cost_params.cost_height;
+
+  cost = cost_height / (std::exp((capacity - index) * logistic_coef) + 1) + 1;
+  if (index >= capacity) {
+    cost += (cost_height / slope * (index - capacity));
+  }
+
   return cost;
 }
 
 void FastRouteCore::mazeRouteMSMD(const int iter,
                                   const int expand,
-                                  const float cost_height,
                                   const int ripup_threshold,
                                   const int maze_edge_threshold,
                                   const bool ordering,
-                                  const int cost_type,
-                                  const float logis_cof,
                                   const int via,
-                                  const int slope,
                                   const int L,
+                                  const CostParams& cost_params,
                                   float& slack_th)
 {
   // maze routing for multi-source, multi-destination
@@ -1321,17 +1137,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
   const int max_usage_multiplier = 40;
 
-  // allocate memory for distance and parent and pop_heap
-  h_cost_table_.resize(max_usage_multiplier * h_capacity_);
-  v_cost_table_.resize(max_usage_multiplier * v_capacity_);
-
   for (int i = 0; i < max_usage_multiplier * h_capacity_; i++) {
-    h_cost_table_[i]
-        = getCost(i, logis_cof, cost_height, slope, h_capacity_, cost_type);
+    h_cost_table_.push_back(getCost(i, true, cost_params));
   }
   for (int i = 0; i < max_usage_multiplier * v_capacity_; i++) {
-    v_cost_table_[i]
-        = getCost(i, logis_cof, cost_height, slope, v_capacity_, cost_type);
+    v_cost_table_.push_back(getCost(i, false, cost_params));
   }
 
   for (int i = 0; i < y_grid_; i++) {
@@ -1355,6 +1165,101 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
   multi_array<double, 2> d2(boost::extents[y_range_][x_range_]);
 
   std::vector<bool> pop_heap2(y_grid_ * x_range_, false);
+
+  /**
+   * @brief Updates the cost of an adjacent grid if the new cost is lower,
+   * updating the heap accordingly. Also updates parent indexes if cost was
+   * updated. Throws an error if the position can't be found.
+   * */
+  auto updateAdjacent = [&](const int cur_x,
+                            const int cur_y,
+                            const int adj_x,
+                            const int adj_y,
+                            double cost,
+                            const int net_id) {
+    double adj_cost = d1[adj_y][adj_x];
+    if (adj_cost <= cost) {
+      return;
+    }
+
+    d1[adj_y][adj_x] = cost;
+
+    if (cur_x != adj_x) {
+      parent_x3_[adj_y][adj_x] = cur_x;
+      parent_y3_[adj_y][adj_x] = cur_y;
+      hv_[adj_y][adj_x] = false;
+    } else {
+      parent_x1_[adj_y][adj_x] = cur_x;
+      parent_y1_[adj_y][adj_x] = cur_y;
+      hv_[adj_y][adj_x] = true;
+    }
+
+    if (adj_cost >= BIG_INT) {  // neighbor has not been put into src_heap
+      src_heap.push_back(&d1[adj_y][adj_x]);
+      updateHeap(src_heap, src_heap.size() - 1);
+    } else if (adj_cost > cost) {  // neighbor has been put into src_heap
+                                   // but needs update
+      double* dtmp = &d1[adj_y][adj_x];
+      const auto it = std::find(src_heap.begin(), src_heap.end(), dtmp);
+      if (it != src_heap.end()) {
+        const int pos = it - src_heap.begin();
+        updateHeap(src_heap, pos);
+      } else {
+        logger_->error(
+            GRT,
+            607,
+            "Unable to update: position not found in 2D heap for net {}.",
+            nets_[net_id]->getName());
+      }
+    }
+  };
+
+  /**
+   * @brief Relaxes the cost for adjacent grids based on current grid's cost and
+   * edge usage. It optionally adds a via cost and checks for potential hyper
+   * edges, updating adjacent grids accordingly.
+   */
+  auto relaxAdjacent = [&](const int cur_x,
+                           const int cur_y,
+                           const int d_x,
+                           const int d_y,
+                           const bool add_via,
+                           const bool maybe_hyper,
+                           const int net_id) {
+    const bool is_horizontal = d_x != 0;
+    const auto& edges = is_horizontal ? h_edges_ : v_edges_;
+    auto& hyper = is_horizontal ? hyper_h_ : hyper_v_;
+
+    const int p1_x = cur_x - (d_x == -1);
+    const int p1_y = cur_y - (d_y == -1);
+    const int p2_x = cur_x - (d_x == 1);
+    const int p2_y = cur_y - (d_y == 1);
+
+    const int pos1
+        = edges[p1_y][p1_x].usage_red() + L * edges[p1_y][p1_x].last_usage;
+
+    double cost1 = getCost(pos1, is_horizontal, cost_params);
+
+    double tmp = d1[cur_y][cur_x] + cost1;
+
+    if (add_via && d1[cur_y][cur_x] != 0) {
+      tmp += via;
+
+      if (maybe_hyper) {
+        const int pos2
+            = edges[p2_y][p2_x].usage_red() + L * edges[p2_y][p2_x].last_usage;
+
+        double cost2 = getCost(pos2, is_horizontal, cost_params);
+
+        const int tmp_cost = d1[cur_y - d_y][cur_x - d_x] + cost2;
+        if (tmp_cost < d1[cur_y][cur_x] + via) {
+          hyper[cur_y][cur_x] = true;
+        }
+      }
+    }
+
+    updateAdjacent(cur_x, cur_y, cur_x + d_x, cur_y + d_y, tmp, net_id);
+  };
 
   for (int nidRPC = 0; nidRPC < net_ids_.size(); nidRPC++) {
     const int netID
@@ -1456,265 +1361,33 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         // source subtree
         const int curX = ind1 % x_range_;
         const int curY = ind1 / x_range_;
-        int preX, preY;
+
+        int preX = curX;
+        int preY = curY;
         if (d1[curY][curX] != 0) {
-          if (hv_[curY][curX]) {
-            preX = parent_x1_[curY][curX];
-            preY = parent_y1_[curY][curX];
-          } else {
-            preX = parent_x3_[curY][curX];
-            preY = parent_y3_[curY][curX];
-          }
-        } else {
-          preX = curX;
-          preY = curY;
+          preX = hv_[curY][curX] ? parent_x1_[curY][curX]
+                                 : parent_x3_[curY][curX];
+          preY = hv_[curY][curX] ? parent_y1_[curY][curX]
+                                 : parent_y3_[curY][curX];
         }
 
         removeMin(src_heap);
 
-        // left
-        if (curX > regionX1) {
-          float tmp, cost1, cost2;
-          const int pos1 = h_edges_[curY][curX - 1].usage_red()
-                           + L * h_edges_[curY][(curX - 1)].last_usage;
-
-          if (pos1 < h_cost_table_.size())
-            cost1 = h_cost_table_.at(pos1);
-          else
-            cost1 = getCost(
-                pos1, logis_cof, cost_height, slope, h_capacity_, cost_type);
-
-          if ((preY == curY) || (d1[curY][curX] == 0)) {
-            tmp = d1[curY][curX] + cost1;
-          } else {
-            if (curX < regionX2 - 1) {
-              const int pos2 = h_edges_[curY][curX].usage_red()
-                               + L * h_edges_[curY][curX].last_usage;
-
-              if (pos2 < h_cost_table_.size())
-                cost2 = h_cost_table_.at(pos2);
-              else
-                cost2 = getCost(pos2,
-                                logis_cof,
-                                cost_height,
-                                slope,
-                                h_capacity_,
-                                cost_type);
-
-              const int tmp_cost = d1[curY][curX + 1] + cost2;
-
-              if (tmp_cost < d1[curY][curX] + via) {
-                hyper_h_[curY][curX] = true;
-              }
-            }
-            tmp = d1[curY][curX] + via + cost1;
-          }
-          tmpX = curX - 1;  // the left neighbor
-
-          if (d1[curY][tmpX]
-              >= BIG_INT)  // left neighbor not been put into src_heap
-          {
-            d1[curY][tmpX] = tmp;
-            parent_x3_[curY][tmpX] = curX;
-            parent_y3_[curY][tmpX] = curY;
-            hv_[curY][tmpX] = false;
-            src_heap.push_back(&d1[curY][tmpX]);
-            updateHeap(src_heap, src_heap.size() - 1);
-          } else if (d1[curY][tmpX] > tmp)  // left neighbor been put into
-                                            // src_heap but needs update
-          {
-            d1[curY][tmpX] = tmp;
-            parent_x3_[curY][tmpX] = curX;
-            parent_y3_[curY][tmpX] = curY;
-            hv_[curY][tmpX] = false;
-            double* dtmp = &d1[curY][tmpX];
-            int ind = 0;
-            while (src_heap[ind] != dtmp)
-              ind++;
-            updateHeap(src_heap, ind);
-          }
+        if (curX > regionX1) {  // left
+          relaxAdjacent(
+              curX, curY, -1, 0, preY != curY, curX < regionX2 - 1, netID);
         }
-        // right
-        if (curX < regionX2) {
-          double tmp, cost1, cost2;
-          const int pos1 = h_edges_[curY][curX].usage_red()
-                           + L * h_edges_[curY][curX].last_usage;
-
-          if (pos1 < h_cost_table_.size())
-            cost1 = h_cost_table_.at(pos1);
-          else
-            cost1 = getCost(
-                pos1, logis_cof, cost_height, slope, h_capacity_, cost_type);
-
-          if ((preY == curY) || (d1[curY][curX] == 0)) {
-            tmp = d1[curY][curX] + cost1;
-          } else {
-            if (curX > regionX1 + 1) {
-              const int pos2 = h_edges_[curY][curX - 1].usage_red()
-                               + L * h_edges_[curY][curX - 1].last_usage;
-
-              if (pos2 < h_cost_table_.size())
-                cost2 = h_cost_table_.at(pos2);
-              else
-                cost2 = getCost(pos2,
-                                logis_cof,
-                                cost_height,
-                                slope,
-                                h_capacity_,
-                                cost_type);
-              const int tmp_cost = d1[curY][curX - 1] + cost2;
-
-              if (tmp_cost < d1[curY][curX] + via) {
-                hyper_h_[curY][curX] = true;
-              }
-            }
-            tmp = d1[curY][curX] + via + cost1;
-          }
-          tmpX = curX + 1;  // the right neighbor
-
-          if (d1[curY][tmpX]
-              >= BIG_INT)  // right neighbor not been put into src_heap
-          {
-            d1[curY][tmpX] = tmp;
-            parent_x3_[curY][tmpX] = curX;
-            parent_y3_[curY][tmpX] = curY;
-            hv_[curY][tmpX] = false;
-            src_heap.push_back(&d1[curY][tmpX]);
-            updateHeap(src_heap, src_heap.size() - 1);
-          } else if (d1[curY][tmpX] > tmp)  // right neighbor been put into
-                                            // src_heap but needs update
-          {
-            d1[curY][tmpX] = tmp;
-            parent_x3_[curY][tmpX] = curX;
-            parent_y3_[curY][tmpX] = curY;
-            hv_[curY][tmpX] = false;
-            double* dtmp = &d1[curY][tmpX];
-            int ind = 0;
-            while (src_heap[ind] != dtmp)
-              ind++;
-            updateHeap(src_heap, ind);
-          }
+        if (curX < regionX2) {  // right
+          relaxAdjacent(
+              curX, curY, 1, 0, preY != curY, curX > regionX1 + 1, netID);
         }
-        // bottom
-        if (curY > regionY1) {
-          double tmp, cost1, cost2;
-          const int pos1 = v_edges_[curY - 1][curX].usage_red()
-                           + L * v_edges_[curY - 1][curX].last_usage;
-
-          if (pos1 < v_cost_table_.size())
-            cost1 = v_cost_table_.at(pos1);
-          else
-            cost1 = getCost(
-                pos1, logis_cof, cost_height, slope, v_capacity_, cost_type);
-
-          if ((preX == curX) || (d1[curY][curX] == 0)) {
-            tmp = d1[curY][curX] + cost1;
-          } else {
-            if (curY < regionY2 - 1) {
-              const int pos2 = v_edges_[curY][curX].usage_red()
-                               + L * v_edges_[curY][curX].last_usage;
-
-              if (pos2 < v_cost_table_.size())
-                cost2 = v_cost_table_.at(pos2);
-              else
-                cost2 = getCost(pos2,
-                                logis_cof,
-                                cost_height,
-                                slope,
-                                v_capacity_,
-                                cost_type);
-              const int tmp_cost = d1[curY + 1][curX] + cost2;
-
-              if (tmp_cost < d1[curY][curX] + via) {
-                hyper_v_[curY][curX] = true;
-              }
-            }
-            tmp = d1[curY][curX] + via + cost1;
-          }
-          tmpY = curY - 1;  // the bottom neighbor
-          if (d1[tmpY][curX]
-              >= BIG_INT)  // bottom neighbor not been put into src_heap
-          {
-            d1[tmpY][curX] = tmp;
-            parent_x1_[tmpY][curX] = curX;
-            parent_y1_[tmpY][curX] = curY;
-            hv_[tmpY][curX] = true;
-            src_heap.push_back(&d1[tmpY][curX]);
-            updateHeap(src_heap, src_heap.size() - 1);
-          } else if (d1[tmpY][curX] > tmp)  // bottom neighbor been put into
-                                            // src_heap but needs update
-          {
-            d1[tmpY][curX] = tmp;
-            parent_x1_[tmpY][curX] = curX;
-            parent_y1_[tmpY][curX] = curY;
-            hv_[tmpY][curX] = true;
-            double* dtmp = &d1[tmpY][curX];
-            int ind = 0;
-            while (src_heap[ind] != dtmp)
-              ind++;
-            updateHeap(src_heap, ind);
-          }
+        if (curY > regionY1) {  // bottom
+          relaxAdjacent(
+              curX, curY, 0, -1, preX != curX, curY < regionY2 - 1, netID);
         }
-        // top
-        if (curY < regionY2) {
-          double tmp, cost1, cost2;
-          const int pos1 = v_edges_[curY][curX].usage_red()
-                           + L * v_edges_[curY][curX].last_usage;
-
-          if (pos1 < v_cost_table_.size())
-            cost1 = v_cost_table_.at(pos1);
-          else
-            cost1 = getCost(
-                pos1, logis_cof, cost_height, slope, v_capacity_, cost_type);
-
-          if ((preX == curX) || (d1[curY][curX] == 0)) {
-            tmp = d1[curY][curX] + cost1;
-          } else {
-            if (curY > regionY1 + 1) {
-              const int pos2 = v_edges_[curY - 1][curX].usage_red()
-                               + L * v_edges_[curY - 1][curX].last_usage;
-
-              if (pos2 < v_cost_table_.size())
-                cost2 = v_cost_table_.at(pos2);
-              else
-                cost2 = getCost(pos2,
-                                logis_cof,
-                                cost_height,
-                                slope,
-                                v_capacity_,
-                                cost_type);
-
-              const int tmp_cost = d1[curY - 1][curX] + cost2;
-
-              if (tmp_cost < d1[curY][curX] + via) {
-                hyper_v_[curY][curX] = true;
-              }
-            }
-            tmp = d1[curY][curX] + via + cost1;
-          }
-          tmpY = curY + 1;  // the top neighbor
-          if (d1[tmpY][curX]
-              >= BIG_INT)  // top neighbor not been put into src_heap
-          {
-            d1[tmpY][curX] = tmp;
-            parent_x1_[tmpY][curX] = curX;
-            parent_y1_[tmpY][curX] = curY;
-            hv_[tmpY][curX] = true;
-            src_heap.push_back(&d1[tmpY][curX]);
-            updateHeap(src_heap, src_heap.size() - 1);
-          } else if (d1[tmpY][curX] > tmp)  // top neighbor been put into
-                                            // src_heap but needs update
-          {
-            d1[tmpY][curX] = tmp;
-            parent_x1_[tmpY][curX] = curX;
-            parent_y1_[tmpY][curX] = curY;
-            hv_[tmpY][curX] = true;
-            double* dtmp = &d1[tmpY][curX];
-            int ind = 0;
-            while (src_heap[ind] != dtmp)
-              ind++;
-            updateHeap(src_heap, ind);
-          }
+        if (curY < regionY2) {  // top
+          relaxAdjacent(
+              curX, curY, 0, 1, preX != curX, curY > regionY1 + 1, netID);
         }
 
         // update ind1 for next loop

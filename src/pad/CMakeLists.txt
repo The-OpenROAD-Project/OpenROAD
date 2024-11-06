@@ -51,6 +51,8 @@ target_sources(pad
     src/MakeICeWall.cpp
     src/ICeWall.cpp
     src/RDLRouter.cpp
+    src/RDLRoute.cpp
+    src/RDLGui.cpp
     src/Utilities.cpp
 )
 

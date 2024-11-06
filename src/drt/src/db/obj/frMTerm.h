@@ -89,12 +89,12 @@ class frMTerm : public frTerm
     return nullptr;
   }
   // fills outShapes with copies of the pinFigs
-  void getShapes(std::vector<frRect>& outShapes) override
+  void getShapes(std::vector<frRect>& outShapes) const override
   {
-    for (auto& pin : pins_) {
-      for (auto& pinShape : pin->getFigs()) {
+    for (const auto& pin : pins_) {
+      for (const auto& pinShape : pin->getFigs()) {
         if (pinShape->typeId() == frcRect) {
-          outShapes.push_back(*static_cast<frRect*>(pinShape.get()));
+          outShapes.push_back(*static_cast<const frRect*>(pinShape.get()));
         }
       }
     }

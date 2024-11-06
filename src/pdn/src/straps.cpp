@@ -1135,7 +1135,7 @@ void PadDirectConnectionStraps::makeShapesOverPads(
 
   const int max_width = inst_width / (2 * (straps.size() + 1));
   TechLayer layer(getLayer());
-  const int target_width = layer.snapToManufacturingGrid(max_width, false);
+  const int target_width = layer.snapToManufacturingGrid(max_width, false, 2);
   if (target_width < layer.getMinWidth()) {
     // dont build anything
     debugPrint(
@@ -1557,7 +1557,37 @@ RepairChannelStraps::RepairChannelStraps(
     setStrapStartEnd(area_.yMin(), area_.yMax());
   }
 
-  determineParameters(other_shapes);
+  odb::dbTechLayerDir connect_direction = connect_to->getDirection();
+  // find the connecting strap and use it's direction
+  for (const auto& comp : grid->getStraps()) {
+    if (comp->getLayer() == connect_to) {
+      connect_direction = comp->getDirection();
+    }
+  }
+
+  if (connect_direction == odb::dbTechLayerDir::NONE) {
+    // Assume this layer is horizontal if not set
+    connect_direction = odb::dbTechLayerDir::HORIZONTAL;
+  }
+
+  if (connect_direction == getDirection()) {
+    debugPrint(
+        getLogger(),
+        utl::PDN,
+        "Channel",
+        1,
+        "Reject repair channel due to layer directions {} ({} / {}) -> {} ({})",
+        connect_to->getName(),
+        connect_to->getDirection().getString(),
+        connect_direction.getString(),
+        getLayer()->getName(),
+        getDirection().getString());
+    invalid_ = true;
+  }
+
+  if (!invalid_) {
+    determineParameters(other_shapes);
+  }
 
   if (invalid_) {
     const TechLayer layer(getLayer());
@@ -2375,7 +2405,7 @@ int RepairChannelStraps::getNextWidth() const
 {
   const TechLayer layer(getLayer());
 
-  int new_width = layer.snapToManufacturingGrid(getWidth() / 2);
+  int new_width = layer.snapToManufacturingGrid(getWidth() / 2, false, 2);
 
   // if new is smaller than min width use min width
   const int min_width = layer.getMinWidth();

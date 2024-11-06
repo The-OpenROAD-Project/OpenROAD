@@ -22,6 +22,12 @@
           "flags":["no-set","no-get"],
 	  "schema":"db_schema_update_hierarchy"	    	    	       	      	      
           },
+          {
+          "name":"_prev_entry",
+          "type":"dbId<_dbModNet>",
+          "flags":["no-set","no-get"],
+	  "schema":"db_schema_hier_port_removal"	    	    	       	      	      
+          },
 	  {
           "name": "_moditerms",
           "type": "dbId<_dbModITerm>",

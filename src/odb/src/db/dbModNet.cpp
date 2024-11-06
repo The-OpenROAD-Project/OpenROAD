@@ -66,6 +66,9 @@ bool _dbModNet::operator==(const _dbModNet& rhs) const
   if (_next_entry != rhs._next_entry) {
     return false;
   }
+  if (_prev_entry != rhs._prev_entry) {
+    return false;
+  }
   if (_moditerms != rhs._moditerms) {
     return false;
   }
@@ -95,6 +98,7 @@ void _dbModNet::differences(dbDiff& diff,
   DIFF_FIELD(_name);
   DIFF_FIELD(_parent);
   DIFF_FIELD(_next_entry);
+  DIFF_FIELD(_prev_entry);
   DIFF_FIELD(_moditerms);
   DIFF_FIELD(_modbterms);
   DIFF_FIELD(_iterms);
@@ -108,6 +112,7 @@ void _dbModNet::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(_parent);
   DIFF_OUT_FIELD(_next_entry);
+  DIFF_OUT_FIELD(_prev_entry);
   DIFF_OUT_FIELD(_moditerms);
   DIFF_OUT_FIELD(_modbterms);
   DIFF_OUT_FIELD(_iterms);
@@ -126,6 +131,7 @@ _dbModNet::_dbModNet(_dbDatabase* db, const _dbModNet& r)
   _name = r._name;
   _parent = r._parent;
   _next_entry = r._next_entry;
+  _prev_entry = r._prev_entry;
   _moditerms = r._moditerms;
   _modbterms = r._modbterms;
   _iterms = r._iterms;
@@ -142,6 +148,9 @@ dbIStream& operator>>(dbIStream& stream, _dbModNet& obj)
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._next_entry;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_hier_port_removal)) {
+    stream >> obj._prev_entry;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._moditerms;
@@ -168,6 +177,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbModNet& obj)
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream << obj._next_entry;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_hier_port_removal)) {
+    stream << obj._prev_entry;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream << obj._moditerms;
@@ -225,8 +237,38 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* name)
   modnet->_name = strdup(name);
   modnet->_parent = parent->getOID();  // dbmodule
   modnet->_next_entry = parent->_modnets;
+  modnet->_prev_entry = 0;
+  if (parent->_modnets != 0) {
+    _dbModNet* new_next = block->_modnet_tbl->getPtr(parent->_modnets);
+    new_next->_prev_entry = modnet->getOID();
+  }
   parent->_modnets = modnet->getOID();
+  parent->_modnet_hash[name] = modnet->getOID();
   return (dbModNet*) modnet;
+}
+
+void dbModNet::destroy(dbModNet* mod_net)
+{
+  _dbModNet* _modnet = (_dbModNet*) mod_net;
+  _dbBlock* block = (_dbBlock*) _modnet->getOwner();
+  _dbModule* module = block->_module_tbl->getPtr(_modnet->_parent);
+
+  uint prev = _modnet->_prev_entry;
+  uint next = _modnet->_next_entry;
+  if (prev == 0) {
+    module->_modnets = next;
+  } else {
+    _dbModNet* prev_modnet = block->_modnet_tbl->getPtr(prev);
+    prev_modnet->_next_entry = next;
+  }
+  if (next != 0) {
+    _dbModNet* next_modnet = block->_modnet_tbl->getPtr(next);
+    next_modnet->_prev_entry = prev;
+  }
+  _modnet->_prev_entry = 0;
+  _modnet->_next_entry = 0;
+  module->_modnet_hash.erase(mod_net->getName());
+  block->_modnet_tbl->destroy(_modnet);
 }
 
 dbSet<dbModITerm> dbModNet::getModITerms()
@@ -256,7 +298,6 @@ dbSet<dbITerm> dbModNet::getITerms()
   _dbBlock* _block = (_dbBlock*) _mod_net->getOwner();
   return dbSet<dbITerm>(_mod_net, _block->_module_modnet_iterm_itr);
 }
-
 // User Code End dbModNetPublicMethods
 }  // namespace odb
    // Generator Code End Cpp

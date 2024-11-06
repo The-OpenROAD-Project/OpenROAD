@@ -104,7 +104,7 @@ using sta::Term;
 using sta::TimingArcSet;
 using sta::TimingArcSetSeq;
 using sta::TimingRole;
-;
+
 using sta::ArcDcalcResult;
 using sta::ArcDelayCalc;
 using sta::BfsBkwdIterator;
@@ -124,6 +124,9 @@ using sta::SearchPredNonReg2;
 using sta::stringPrint;
 using sta::VertexIterator;
 using sta::VertexOutEdgeIterator;
+
+using sta::BufferUse;
+using sta::CLOCK;
 
 Resizer::Resizer()
     : recover_power_(new RecoverPower(this)),
@@ -170,6 +173,7 @@ void Resizer::init(Logger* logger,
   all_inserted_buffer_set_ = InstanceSet(db_network_);
   all_swapped_pin_inst_set_ = InstanceSet(db_network_);
   all_cloned_inst_set_ = InstanceSet(db_network_);
+  db_cbk_ = std::make_unique<OdbCallBack>(this, network_, db_network_);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -272,8 +276,8 @@ void Resizer::removeBuffers(sta::InstanceSeq insts, bool recordJournal)
         logger_->warn(
             RSZ,
             97,
-            "Instance {} cannot be removed because it is not a buffer",
-            " or is a feedthrough port buffer",
+            "Instance {} cannot be removed because it is not a buffer, "
+            "functions as a feedthrough port buffer, or is constrained",
             db_network_->name(buffer));
       }
     }
@@ -410,7 +414,8 @@ void Resizer::ensureLevelDrvrVertices()
   }
 }
 
-void Resizer::balanceBin(const vector<odb::dbInst*>& bin)
+void Resizer::balanceBin(const vector<odb::dbInst*>& bin,
+                         const std::set<odb::dbSite*>& base_sites)
 {
   // Maps sites to the total width of all instances using that site
   map<odb::dbSite*, uint64_t> sites;
@@ -419,6 +424,13 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin)
     auto master = inst->getMaster();
     sites[master->getSite()] += master->getWidth();
     total_width += master->getWidth();
+  }
+
+  // Add empty base_sites
+  for (odb::dbSite* site : base_sites) {
+    if (sites.find(site) == sites.end()) {
+      sites[site] = 0;
+    }
   }
 
   const double imbalance_factor = 0.8;
@@ -430,6 +442,9 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin)
         break;
       }
       if (inst->getMaster()->getSite() == site) {
+        continue;
+      }
+      if (inst->getPlacementStatus().isFixed() || inst->isDoNotTouch()) {
         continue;
       }
       Instance* sta_inst = db_network_->dbToSta(inst);
@@ -474,6 +489,15 @@ void Resizer::balanceRowUsage()
   const int x_step = core_width / num_bins + 1;
   const int y_step = core_height / num_bins + 1;
 
+  std::set<odb::dbSite*> base_sites;
+  for (odb::dbRow* row : block_->getRows()) {
+    odb::dbSite* site = row->getSite();
+    if (site->hasRowPattern()) {
+      continue;
+    }
+    base_sites.insert(site);
+  }
+
   for (auto inst : block_->getInsts()) {
     auto master = inst->getMaster();
     auto site = master->getSite();
@@ -490,7 +514,7 @@ void Resizer::balanceRowUsage()
 
   for (int x = 0; x < num_bins; ++x) {
     for (int y = 0; y < num_bins; ++y) {
-      balanceBin(grid[x][y]);
+      balanceBin(grid[x][y], base_sites);
     }
   }
 }
@@ -501,14 +525,25 @@ void Resizer::findBuffers()
 {
   if (buffer_cells_.empty()) {
     LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+
     while (lib_iter->hasNext()) {
       LibertyLibrary* lib = lib_iter->next();
+
       for (LibertyCell* buffer : *lib->buffers()) {
+        if (exclude_clock_buffers_) {
+          BufferUse buffer_use = sta_->getBufferUse(buffer);
+
+          if (buffer_use == CLOCK) {
+            continue;
+          }
+        }
+
         if (!dontUse(buffer) && isLinkCell(buffer)) {
           buffer_cells_.emplace_back(buffer);
         }
       }
     }
+
     delete lib_iter;
 
     if (buffer_cells_.empty()) {
@@ -519,6 +554,7 @@ void Resizer::findBuffers()
              return bufferDriveResistance(buffer1)
                     > bufferDriveResistance(buffer2);
            });
+
       buffer_lowest_drive_ = buffer_cells_[0];
     }
   }
@@ -1145,6 +1181,11 @@ void Resizer::invalidateParasitics(const Pin* pin, const Net* net)
   }
 }
 
+void Resizer::eraseParasitics(const Net* net)
+{
+  parasitics_invalid_.erase(net);
+}
+
 void Resizer::swapPins(Instance* inst,
                        LibertyPort* port1,
                        LibertyPort* port2,
@@ -1267,6 +1308,7 @@ void Resizer::findResizeSlacks()
   repair_design_->repairDesign(max_wire_length_,
                                0.0,
                                0.0,
+                               0.0,
                                false,
                                repaired_net_count,
                                slew_violations,
@@ -1277,6 +1319,7 @@ void Resizer::findResizeSlacks()
   journalRestore(resize_count_,
                  inserted_buffer_count_,
                  cloned_gate_count_,
+                 swap_pin_count_,
                  removed_buffer_count_);
 }
 
@@ -2618,6 +2661,7 @@ bool Resizer::isFuncOneZero(const Pin* drvr_pin)
 void Resizer::repairDesign(double max_wire_length,
                            double slew_margin,
                            double cap_margin,
+                           double buffer_gain,
                            bool verbose)
 {
   resizePreamble();
@@ -2625,7 +2669,7 @@ void Resizer::repairDesign(double max_wire_length,
     opendp_->initMacrosAndGrid();
   }
   repair_design_->repairDesign(
-      max_wire_length, slew_margin, cap_margin, verbose);
+      max_wire_length, slew_margin, cap_margin, buffer_gain, verbose);
 }
 
 int Resizer::repairDesignBufferCount() const
@@ -2645,7 +2689,14 @@ void Resizer::repairNet(Net* net,
 void Resizer::repairClkNets(double max_wire_length)
 {
   resizePreamble();
+
+  // Use the buffers that were selected by CTS.
+  buffer_cells_ = clk_buffers_;
+
   repair_design_->repairClkNets(max_wire_length);
+
+  // Reset so that the next preamble select data buffers again.
+  buffer_cells_.clear();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2766,7 +2817,8 @@ void Resizer::repairSetup(double setup_margin,
                           bool skip_pin_swap,
                           bool skip_gate_cloning,
                           bool skip_buffering,
-                          bool skip_buffer_removal)
+                          bool skip_buffer_removal,
+                          bool skip_last_gasp)
 {
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
@@ -2779,7 +2831,8 @@ void Resizer::repairSetup(double setup_margin,
                              skip_pin_swap,
                              skip_gate_cloning,
                              skip_buffering,
-                             skip_buffer_removal);
+                             skip_buffer_removal,
+                             skip_last_gasp);
 }
 
 void Resizer::reportSwappablePins()
@@ -2811,6 +2864,14 @@ void Resizer::repairHold(
     int max_passes,
     bool verbose)
 {
+  buffer_cells_.clear();
+
+  // Some technologies such as nangate45 don't have delay cells. Hence,
+  // until we have a better approach, it's better to consider clock buffers
+  // for hold violation repairing as these buffers' delay may be slighty
+  // higher and we'll need fewer insertions.
+  exclude_clock_buffers_ = false;
+
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
     opendp_->initMacrosAndGrid();
@@ -2821,6 +2882,10 @@ void Resizer::repairHold(
                            max_buffer_percent,
                            max_passes,
                            verbose);
+
+  // Reset buffer selection strategy for the subsequent RSZ operation.
+  exclude_clock_buffers_ = true;
+  buffer_cells_.clear();
 }
 
 void Resizer::repairHold(const Pin* end_pin,
@@ -2830,6 +2895,11 @@ void Resizer::repairHold(const Pin* end_pin,
                          float max_buffer_percent,
                          int max_passes)
 {
+  buffer_cells_.clear();
+
+  // See comments on previous method.
+  exclude_clock_buffers_ = false;
+
   resizePreamble();
   repair_hold_->repairHold(end_pin,
                            setup_margin,
@@ -2837,6 +2907,10 @@ void Resizer::repairHold(const Pin* end_pin,
                            allow_setup_violations,
                            max_buffer_percent,
                            max_passes);
+
+  // Ditto.
+  exclude_clock_buffers_ = true;
+  buffer_cells_.clear();
 }
 
 int Resizer::holdBufferCount() const
@@ -2854,10 +2928,16 @@ void Resizer::recoverPower(float recover_power_percent)
   recover_power_->recoverPower(recover_power_percent);
 }
 ////////////////////////////////////////////////////////////////
-// Journal to roll back changes (OpenDB not up to the task).
+// Journal to roll back changes
 void Resizer::journalBegin()
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
+  incrementalParasiticsBegin();
+  odb::dbDatabase::beginEco(block_);
+  if (isCallBackRegistered()) {
+    db_cbk_->removeOwner();
+    setCallBackRegistered(false);
+  }
   resized_inst_map_.clear();
   inserted_buffers_.clear();
   inserted_buffer_set_.clear();
@@ -2870,6 +2950,12 @@ void Resizer::journalBegin()
 void Resizer::journalEnd()
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal end");
+  if (!odb::dbDatabase::ecoEmpty(block_)) {
+    updateParasitics();
+    sta_->findRequireds();
+  }
+  incrementalParasiticsEnd();
+  odb::dbDatabase::endEco(block_);
   resized_inst_map_.clear();
   inserted_buffers_.clear();
   inserted_buffer_set_.clear();
@@ -3069,11 +3155,26 @@ void Resizer::journalRemoveBuffer(Instance* buffer)
 void Resizer::journalRestoreBuffers(int& removed_buffer_count)
 {
   // First, re-create buffer instances
-  for (const auto& pair : removed_buffer_map_) {
-    std::string name = pair.first;
-    BufferData data = pair.second;
-    makeInstance(data.lib_cell, name.c_str(), data.parent, data.location);
-    debugPrint(logger_, RSZ, "journal", 1, "journal restore buffer {}", name);
+  for (auto it = removed_buffer_map_.begin();
+       it != removed_buffer_map_.end();) {
+    std::string name = it->first;
+    BufferData data = it->second;
+    // RSZ journal restore doesn't fully honor transform order history
+    // Restore buffer only if all original driver and loads exist
+    if (canRestoreBuffer(data)) {
+      makeInstance(data.lib_cell, name.c_str(), data.parent, data.location);
+      // clang-format off
+      debugPrint(logger_, RSZ, "journal", 1,
+                 "journal restore buffer: re-created buffer {}", name);
+      // clang-format on
+      ++it;
+    } else {
+      // clang-format off
+      debugPrint(logger_, RSZ, "journal", 1,
+                 "journal restore buffer: can't restore buffer {}", name);
+      // clang-format on
+      it = removed_buffer_map_.erase(it);
+    }
   }
 
   // Second, reconnect buffer input and output pins
@@ -3085,14 +3186,51 @@ void Resizer::journalRestoreBuffers(int& removed_buffer_count)
     data.lib_cell->bufferPorts(input, output);
 
     // Reconnect buffer input pin to previous driver pin
+    // Watch out for any side load insts
+    //
+    // Before restore
+    // drvr_inst -> load_inst1
+    //           -> load_inst2
+    //           -> side_load_inst3
+    //           -> side_load_inst4
+    //
+    // After restore
+    // drvr_inst -> buffer -> load_inst1
+    //           |         -> load_inst2
+    //           -> side_load_inst3
+    //           -> side_load_inst4
+    //
     Net* input_net = makeUniqueNet();
     Instance* drvr_inst = network_->findInstance(data.driver_pin.first.c_str());
     Pin* drvr_pin
         = network_->findPin(drvr_inst, data.driver_pin.second.c_str());
     Port* drvr_port = network_->port(drvr_pin);
+    // Remember original loads including side loads
+    std::set<const Pin*> side_load_pins;
+    Net* orig_input_net = db_network_->net(drvr_pin);
+    NetConnectedPinIterator* net_pin_iter
+        = network_->connectedPinIterator(orig_input_net);
+    while (net_pin_iter->hasNext()) {
+      const Pin* side_load_pin = net_pin_iter->next();
+      if (side_load_pin != drvr_pin) {
+        side_load_pins.insert(side_load_pin);
+      }
+    }
+
+    if (logger_->debugCheck(RSZ, "journal", 1)) {
+      logger_->report("<<< before restoring buffer {}", name);
+      logger_->report("  drvr pin {}, net {}",
+                      network_->name(drvr_pin),
+                      network_->name(orig_input_net));
+      for (const Pin* pin : side_load_pins) {
+        logger_->report("    -> {}", network_->name(pin));
+      }
+    }
+
     sta_->disconnectPin(const_cast<Pin*>(drvr_pin));
     sta_->connectPin(drvr_inst, drvr_port, input_net);
     sta_->connectPin(buffer, input, input_net);
+    db_network_->deleteNet(orig_input_net);
 
     // Reconnect buffer output pin to prevoius load pins
     Net* output_net = makeUniqueNet();
@@ -3102,10 +3240,43 @@ void Resizer::journalRestoreBuffers(int& removed_buffer_count)
       Pin* load_pin
           = network_->findPin(load_inst, load_pin_pair.second.c_str());
       Port* load_port = network_->port(load_pin);
+      side_load_pins.erase(load_pin);  // load_inst1, load_inst2, ...
       sta_->disconnectPin(const_cast<Pin*>(load_pin));
       sta_->connectPin(load_inst, load_port, output_net);
     }
     sta_->connectPin(buffer, output, output_net);
+
+    // Take care of original side loads (side_load_inst3, side_load_inst4 from
+    // above)
+    for (const Pin* side_load_pin : side_load_pins) {
+      Instance* side_load_inst = network_->instance(side_load_pin);
+      Port* side_load_port = network_->port(side_load_pin);
+      sta_->connectPin(side_load_inst, side_load_port, input_net);
+    }
+
+    if (logger_->debugCheck(RSZ, "journal", 1)) {
+      logger_->report(">>> after restoring buffer {}", name);
+      NetConnectedPinIterator* pin_iter
+          = network_->connectedPinIterator(input_net);
+      logger_->report("  drvr pin {}, net {}",
+                      network_->name(drvr_pin),
+                      network_->name(input_net));
+      while (pin_iter->hasNext()) {
+        const Pin* pin = pin_iter->next();
+        if (pin != drvr_pin) {
+          logger_->report("  -> {}", network_->name(pin));
+        }
+      }
+      logger_->report(
+          "  -> buffer {}, net {}", name, network_->name(output_net));
+      pin_iter = network_->connectedPinIterator(output_net);
+      while (pin_iter->hasNext()) {
+        const Pin* pin = pin_iter->next();
+        if (network_->direction(pin)->isInput()) {
+          logger_->report("    -> {}", network_->name(pin));
+        }
+      }
+    }
 
     parasiticsInvalid(input_net);
     parasiticsInvalid(output_net);
@@ -3114,76 +3285,102 @@ void Resizer::journalRestoreBuffers(int& removed_buffer_count)
   removed_buffer_map_.clear();
 }
 
+// Check if all original driver and loads exist
+bool Resizer::canRestoreBuffer(const BufferData& data)
+{
+  // Does original driver exist?
+  if (network_->findInstance(data.driver_pin.first.c_str()) == nullptr) {
+    return false;
+  }
+
+  // Do original loads exist?
+  for (const std::pair<std::string, std::string>& load_pin_pair :
+       data.load_pins) {
+    if (network_->findInstance(load_pin_pair.first.c_str()) == nullptr) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// This restores previously saved checkpoint by
+// using odb undoEco.  Parasitics on relevant nets
+// are invalidated and parasitics are updated.
+// STA findRequireds() is performed also.
 void Resizer::journalRestore(int& resize_count,
                              int& inserted_buffer_count,
                              int& cloned_gate_count,
+                             int& swap_pin_count,
                              int& removed_buffer_count)
 {
-  for (auto [inst, lib_cell] : resized_inst_map_) {
-    if (!inserted_buffer_set_.hasKey(inst)) {
-      debugPrint(logger_,
-                 RSZ,
-                 "journal",
-                 1,
-                 "journal restore {} ({})",
-                 network_->pathName(inst),
-                 lib_cell->name());
-      // skip if it is a cloned cell
-      if (cloned_inst_set_.find(inst) != cloned_inst_set_.end()) {
-        debugPrint(logger_,
-                   RSZ,
-                   "journal",
-                   1,
-                   "journal skip cloned {} ({})",
-                   network_->pathName(inst),
-                   lib_cell->name());
-        continue;
-      }
-      debugPrint(logger_,
-                 RSZ,
-                 "journal",
-                 1,
-                 "journal replace {} ({})",
-                 network_->pathName(inst),
-                 lib_cell->name());
-      replaceCell(inst, lib_cell, false);
-      resize_count--;
-    }
+  debugPrint(logger_, RSZ, "journal", 1, "journal restore starts >>>");
+  init();
+
+  if (odb::dbDatabase::ecoEmpty(block_)) {
+    odb::dbDatabase::endEco(block_);
+    incrementalParasiticsEnd();
+    debugPrint(logger_,
+               RSZ,
+               "journal",
+               1,
+               "journal restore ends due to empty ECO >>>");
+    return;
   }
+
+  incrementalParasiticsEnd();
+  incrementalParasiticsBegin();
+
+  // Observe netlist changes to invalidate relevant net parasitics
+  if (!isCallBackRegistered()) {
+    db_cbk_->addOwner(block_);
+    setCallBackRegistered(true);
+    debugPrint(logger_,
+               RSZ,
+               "odb",
+               1,
+               "ODB callback registered for block {}",
+               reinterpret_cast<uintptr_t>(block_));
+  }
+
+  // Odb callbacks invalidate parasitics
+  odb::dbDatabase::endEco(block_);
+  odb::dbDatabase::undoEco(block_);
+
+  // Done with restore.  Disable netlist observer.
+  db_cbk_->removeOwner();
+  setCallBackRegistered(false);
+  debugPrint(logger_, RSZ, "odb", 1, "ODB callback unregistered");
+
+  updateParasitics();
+  sta_->findRequireds();
+  incrementalParasiticsEnd();
+
+  // Update transform counts
+  debugPrint(logger_,
+             RSZ,
+             "journal",
+             1,
+             "Undid {} sizing {} buffering {} cloning {} swaps {} buf removal",
+             resized_inst_map_.size(),
+             inserted_buffers_.size(),
+             cloned_gates_.size(),
+             swapped_pins_.size(),
+             removed_buffer_map_.size());
+  resize_count -= resized_inst_map_.size();
+  resized_inst_map_.clear();
+  inserted_buffer_count -= inserted_buffers_.size();
+  inserted_buffers_.clear();
   inserted_buffer_set_.clear();
-
-  while (!inserted_buffers_.empty()) {
-    const Instance* buffer = inserted_buffers_.back();
-    debugPrint(logger_,
-               RSZ,
-               "journal",
-               1,
-               "journal remove buffer {}",
-               network_->pathName(buffer));
-    removeBuffer(const_cast<Instance*>(buffer));
-    inserted_buffers_.pop_back();
-    inserted_buffer_count--;
-  }
-
-  // Undo pin swaps
-  for (const auto& element : swapped_pins_) {
-    Instance* inst = element.first;
-    LibertyPort* port1 = std::get<0>(element.second);
-    LibertyPort* port2 = std::get<1>(element.second);
-    debugPrint(logger_,
-               RSZ,
-               "journal",
-               1,
-               "journal unswap pins {} ({}<-{})",
-               network_->pathName(inst),
-               port1->name(),
-               port2->name());
-    swapPins(inst, port1, port2, false);
-  }
+  cloned_gate_count -= cloned_gates_.size();
+  cloned_gates_ = {};
+  cloned_inst_set_.clear();
+  swap_pin_count -= swapped_pins_.size();
   swapped_pins_.clear();
+  removed_buffer_count -= removed_buffer_map_.size();
+  removed_buffer_map_.clear();
 
-  journalUndoGateCloning(cloned_gate_count);
-  journalRestoreBuffers(removed_buffer_count);
+  debugPrint(logger_, RSZ, "journal", 1, "journal restore ends <<<");
 }
 
 ////////////////////////////////////////////////////////////////
@@ -3197,20 +3394,41 @@ void Resizer::journalRestoreTest()
   int resize_count_old = resize_count_;
   int inserted_buffer_count_old = inserted_buffer_count_;
   int cloned_gate_count_old = cloned_gate_count_;
+  int swap_pin_count_old = swap_pin_count_;
   int removed_buffer_count_old = removed_buffer_count_;
 
   journalRestore(resize_count_,
                  inserted_buffer_count_,
                  cloned_gate_count_,
+                 swap_pin_count_,
                  removed_buffer_count_);
 
   logger_->report(
       "journalRestoreTest restored {} sizing, {} buffering, {} "
-      "cloning, {} buffer removal",
+      "cloning, {} pin swaps, {} buffer removal",
       resize_count_old - resize_count_,
       inserted_buffer_count_old - inserted_buffer_count_,
       cloned_gate_count_old - cloned_gate_count_,
+      swap_pin_count_old - swap_pin_count_,
       removed_buffer_count_old - removed_buffer_count_);
+}
+
+void Resizer::getBufferPins(Instance* buffer, Pin*& ip, Pin*& op)
+{
+  ip = nullptr;
+  op = nullptr;
+  auto pin_iter
+      = std::unique_ptr<InstancePinIterator>(network_->pinIterator(buffer));
+  while (pin_iter->hasNext()) {
+    Pin* pin = pin_iter->next();
+    sta::PortDirection* dir = network_->direction(pin);
+    if (dir->isAnyOutput()) {
+      op = pin;
+    }
+    if (dir->isAnyInput()) {
+      ip = pin;
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////

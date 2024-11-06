@@ -46,7 +46,7 @@ std::string testTmpPath(const std::string& path, const std::string& file)
       throw std::runtime_error(
           "BASE_DIR and PWD environment variables are not set");
     }
-    return std::string(pwd) + file;
+    return std::string(pwd) + "/" + file;
   }
   return std::string(base_dir) + "/" + path + "/" + file;
 }

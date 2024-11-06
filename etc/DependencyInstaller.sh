@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+CMAKE_PACKAGE_ROOT_ARGS=""
+
 _versionCompare() {
     local a b IFS=. ; set -f
     printf -v a %08d $1; printf -v b %08d $3
@@ -21,7 +23,7 @@ _equivalenceDeps() {
         git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/yosys
         cd yosys
         # use of no-register flag is required for some compilers,
-        # e.g., gcc and clang fron RHEL8
+        # e.g., gcc and clang from RHEL8
         make -j $(nproc) PREFIX="${yosysPrefix}" ABC_ARCHFLAGS=-Wno-register
         make install
     ) fi
@@ -94,7 +96,7 @@ _installCommonDev() {
     cmakeBin=${cmakePrefix}/bin/cmake
     if [[ ! -f ${cmakeBin} || -z $(${cmakeBin} --version | grep ${cmakeVersionBig}) ]]; then
         cd "${baseDir}"
-        wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-${osName}-${arch}.sh
+        eval wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-${osName}-${arch}.sh
         md5sum -c <(echo "${cmakeChecksum} cmake-${cmakeVersionSmall}-${osName}-${arch}.sh") || exit 1
         chmod +x cmake-${cmakeVersionSmall}-${osName}-${arch}.sh
         ./cmake-${cmakeVersionSmall}-${osName}-${arch}.sh --skip-license --prefix=${cmakePrefix}
@@ -108,7 +110,7 @@ _installCommonDev() {
     if [[ ! -f ${swigBin} || -z $(${swigBin} -version | grep ${swigVersion}) ]]; then
         cd "${baseDir}"
         tarName="v${swigVersion}.tar.gz"
-        wget https://github.com/swig/swig/archive/${tarName}
+        eval wget https://github.com/swig/swig/archive/${tarName}
         md5sum -c <(echo "${swigChecksum} ${tarName}") || exit 1
         tar xfz ${tarName}
         cd swig-${tarName%%.tar*} || cd swig-${swigVersion}
@@ -116,7 +118,7 @@ _installCommonDev() {
         # Check if pcre2 is installed
         if [[ -z $(pcre2-config --version) ]]; then
             tarName="pcre2-${pcreVersion}.tar.gz"
-            wget https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${pcreVersion}/${tarName}
+            eval wget https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${pcreVersion}/${tarName}
             md5sum -c <(echo "${pcreChecksum} ${tarName}") || exit 1
             ./Tools/pcre-build.sh
         fi
@@ -127,14 +129,15 @@ _installCommonDev() {
     else
         echo "Swig already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D SWIG_ROOT=$(realpath $swigPrefix) "
 
     # boost
     boostPrefix=${PREFIX:-"/usr/local"}
     if [[ -z $(grep "BOOST_LIB_VERSION \"${boostVersionBig//./_}\"" ${boostPrefix}/include/boost/version.hpp) ]]; then
         cd "${baseDir}"
         boostVersionUnderscore=${boostVersionSmall//./_}
-        wget https://sourceforge.net/projects/boost/files/boost/${boostVersionSmall}/boost_${boostVersionUnderscore}.tar.gz
-        # wget https://boostorg.jfrog.io/artifactory/main/release/${boostVersionSmall}/source/boost_${boostVersionUnderscore}.tar.gz
+        eval wget https://sourceforge.net/projects/boost/files/boost/${boostVersionSmall}/boost_${boostVersionUnderscore}.tar.gz
+        # eval wget https://boostorg.jfrog.io/artifactory/main/release/${boostVersionSmall}/source/boost_${boostVersionUnderscore}.tar.gz
         md5sum -c <(echo "${boostChecksum}  boost_${boostVersionUnderscore}.tar.gz") || exit 1
         tar -xf boost_${boostVersionUnderscore}.tar.gz
         cd boost_${boostVersionUnderscore}
@@ -143,6 +146,7 @@ _installCommonDev() {
     else
         echo "Boost already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D Boost_ROOT=$(realpath $boostPrefix) "
 
     # eigen
     eigenPrefix=${PREFIX:-"/usr/local"}
@@ -155,10 +159,11 @@ _installCommonDev() {
     else
         echo "Eigen already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D Eigen3_ROOT=$(realpath $eigenPrefix) "
 
     # cudd
     cuddPrefix=${PREFIX:-"/usr/local"}
-    if [[ ! -d ${cuddPrefix}/include/cudd.h ]]; then
+    if [[ ! -f ${cuddPrefix}/include/cudd.h ]]; then
         cd "${baseDir}"
         git clone --depth=1 -b ${cuddVersion} https://github.com/The-OpenROAD-Project/cudd.git
         cd cudd
@@ -191,6 +196,7 @@ _installCommonDev() {
     else
         echo "Lemon already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D LEMON_ROOT=$(realpath $lemonPrefix) "
 
     # spdlog
     spdlogPrefix=${PREFIX:-"/usr/local"}
@@ -203,12 +209,13 @@ _installCommonDev() {
     else
         echo "spdlog already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D spdlog_ROOT=$(realpath $spdlogPrefix) "
 
     # gtest
     gtestPrefix=${PREFIX:-"/usr/local"}
     if [[ ! -d ${gtestPrefix}/include/gtest ]]; then
         cd "${baseDir}"
-        wget https://github.com/google/googletest/archive/refs/tags/v${gtestVersion}.zip
+        eval wget https://github.com/google/googletest/archive/refs/tags/v${gtestVersion}.zip
         md5sum -c <(echo "${gtestChecksum} v${gtestVersion}.zip") || exit 1
         unzip v${gtestVersion}.zip
         cd googletest-${gtestVersion}
@@ -217,6 +224,7 @@ _installCommonDev() {
     else
         echo "gtest already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D GTest_ROOT=$(realpath $gtestPrefix) "
 
     if [[ ${equivalenceDeps} == "yes" ]]; then
         _equivalenceDeps
@@ -230,7 +238,7 @@ _installCommonDev() {
         ninjaBin=${ninjaPrefix}/bin/ninja
         if [[ ! -d ${ninjaBin} ]]; then
             cd "${baseDir}"
-            wget -O ninja-linux.zip https://github.com/ninja-build/ninja/releases/download/v${ninjaVersion}/ninja-linux.zip
+            eval wget -O ninja-linux.zip https://github.com/ninja-build/ninja/releases/download/v${ninjaVersion}/ninja-linux.zip
             md5sum -c <(echo "${ninjaCheckSum} ninja-linux.zip") || exit 1
             unzip -o ninja-linux.zip -d ${ninjaPrefix}/bin/
             chmod +x ${ninjaBin}
@@ -264,27 +272,34 @@ _installOrTools() {
     if [[ ! -z "${PREFIX}" ]]; then mkdir -p "${PREFIX}"; fi
     cd "${baseDir}"
 
+    # Disable exit on error for 'find' command, as it might return non zero
+    set +euo pipefail
+    LIST=($(find / -type f -name "libortools.so*" 2>/dev/null))
+    # Bring back exit on error
+    set -euo pipefail
+    # Return if right version of or-tools is installed
+    for lib in ${LIST[@]}; do
+        if [[ "$lib" =~ .*"/libortools.so.${orToolsVersionSmall}" ]]; then
+            echo "OR-Tools is already installed"
+            CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=$(realpath $(dirname $lib)/..) "
+            return
+        fi
+    done
+
     orToolsPath=${PREFIX:-"/opt/or-tools"}
     if [ "$(uname -m)" == "aarch64" ]; then
-        # Disable exit on error for 'find' command, as it might return non zero
-        set +euo pipefail
-        LIST=($(find / -type f -name "libortools.so*" 2>/dev/null))
-        # Bring back exit on error
-        set -euo pipefail
-        if [ ${#LIST[@]} -eq 0 ]; then
-            echo "OR-TOOLS NOT FOUND"
-            echo "Installing  OR-Tools for aarch64..."
-            git clone --depth=1 -b "v${orToolsVersionBig}" https://github.com/google/or-tools.git
-            cd or-tools
-            ${cmakePrefix}/bin/cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_SAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_INSTALL_PREFIX=${orToolsPath} -DCMAKE_CXX_FLAGS="-w" -DCMAKE_C_FLAGS="-w"
-            ${cmakePrefix}/bin/cmake --build build --config Release --target install -v -j $(nproc)
-        else
-            echo "OR-Tools is already installed"
-        fi
+        echo "OR-TOOLS NOT FOUND"
+        echo "Installing  OR-Tools for aarch64..."
+        git clone --depth=1 -b "v${orToolsVersionBig}" https://github.com/google/or-tools.git
+        cd or-tools
+        ${cmakePrefix}/bin/cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_SAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_INSTALL_PREFIX=${orToolsPath} -DCMAKE_CXX_FLAGS="-w" -DCMAKE_C_FLAGS="-w"
+        ${cmakePrefix}/bin/cmake --build build --config Release --target install -v -j $(nproc)
     else
+        if [[ $version == rodete ]]; then
+            version=11
+        fi
         orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
-        wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
-        orToolsPath=${PREFIX:-"/opt/or-tools"}
+        eval wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
         if command -v brew &> /dev/null; then
             orToolsPath="$(brew --prefix or-tools)"
         fi
@@ -292,6 +307,7 @@ _installOrTools() {
         tar --strip 1 --dir ${orToolsPath} -xf ${orToolsFile}
         rm -rf ${baseDir}
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=$(realpath $orToolsPath) "
 }
 
 _installUbuntuCleanUp() {
@@ -423,7 +439,7 @@ _installRHELPackages() {
         http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
         https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm
 
-    wget https://github.com/jgm/pandoc/releases/download/${version}/pandoc-${version}-linux-${arch}.tar.gz
+    eval wget https://github.com/jgm/pandoc/releases/download/${version}/pandoc-${version}-linux-${arch}.tar.gz
     tar xvzf pandoc-${version}-linux-${arch}.tar.gz --strip-components 1 -C /usr/local/
     rm -rf pandoc-${version}-linux-${arch}.tar.gz
 }
@@ -568,7 +584,7 @@ EOF
     fi
     brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pyqt5 python spdlog tcl-tk zlib
 
-    # Some systems neeed this to correclty find OpenMP package during build
+    # Some systems need this to correctly find OpenMP package during build
     brew link --force libomp
 
     # Lemon is not in the homebrew-core repo
@@ -587,6 +603,11 @@ _installDebianPackages() {
     export DEBIAN_FRONTEND="noninteractive"
     apt-get -y update
     apt-get -y install --no-install-recommends tzdata
+    if [[ $1 == rodete ]]; then
+        tclver=8.6
+    else
+        tclver=
+    fi
     apt-get -y install --no-install-recommends \
         automake \
         autotools-dev \
@@ -602,18 +623,20 @@ _installDebianPackages() {
         git \
         groff \
         lcov \
+        libffi-dev \
         libgomp1 \
         libomp-dev \
         libpcre2-dev \
         libpcre3-dev \
         libreadline-dev \
-        libtcl \
+        libtcl${tclver} \
         pandoc \
         python3-dev \
         qt5-image-formats-plugins \
         tcl-dev \
         tcl-tclreadline \
         tcllib \
+        unzip \
         wget \
         zlib1g-dev
 
@@ -623,8 +646,13 @@ _installDebianPackages() {
             qt5-default
 
     else
+        if [[ $1 == rodete ]]; then
+            pythonver=3.12
+        else
+            pythonver=3.8
+        fi
         apt-get install -y --no-install-recommends \
-            libpython3.8 \
+            libpython${pythonver} \
             qtbase5-dev \
             qtchooser \
             qt5-qmake \
@@ -641,6 +669,14 @@ _installCI() {
         jq \
         parallel \
         software-properties-common
+
+    if command -v docker &> /dev/null; then
+        # The user can uninstall docker if they want to reinstall it,
+        # and also this allows the user to choose drop in replacements
+        # for docker, such as podman-docker
+        echo "Docker is already installed, skip docker reinstall."
+        return 0
+    fi
 
     # Add Docker's official GPG key:
     install -m 0755 -d /etc/apt/keyrings
@@ -698,6 +734,18 @@ Usage: $0
                                 #    sudo or with root access.
        $0 -ci
                                 # Installs dependencies required to run CI
+       $0 -nocert
+                                # Disable certificate checks
+                                #    WARNING: Do not use without a good reason,
+                                #    like working around a firewall. This opens
+                                #    vulnerability to man-in-the-middle (MITM)
+                                #    attacks.
+       $0 -save-deps-prefixes=FILE
+                                # Dumps OpenROAD build arguments and variables
+                                # to FILE
+       $0 -constant-build-dir
+                                # Use constant build directory, instead of
+                                #    random one.
 
 EOF
     exit "${1:-1}"
@@ -709,6 +757,7 @@ option="all"
 isLocal="false"
 equivalenceDeps="no"
 CI="no"
+saveDepsPrefixes=""
 # temp dir to download and compile
 baseDir=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
 
@@ -753,12 +802,31 @@ while [ "$#" -gt 0 ]; do
             export PREFIX="${HOME}/.local"
             export isLocal="true"
             ;;
+        -constant-build-dir)
+            if [[ -d "$baseDir" ]]; then
+                echo "INFO: removing old building directory $baseDir"
+                rm -r "$baseDir"
+            fi
+            baseDir="/tmp/DependencyInstaller-OpenROAD"
+            mkdir -p "$baseDir"
+            ;;
         -prefix=*)
             if [[ ! -z ${PREFIX} ]]; then
                 echo "WARNING: previous argument -local will be overwritten with -prefix"
                 export isLocal="false"
             fi
             export PREFIX="$(realpath $(echo $1 | sed -e 's/^[^=]*=//g'))"
+            ;;
+        -nocert)
+            echo "WARNING: security certificates for downloaded packages will not be checked. Do not use" >&2
+            echo "         -nocert without a good reason, like working around a firewall. This opens" >&2
+            echo "         vulnerability to man-in-the-middle (MITM) attacks." >&2
+            shopt -s expand_aliases
+            alias wget="wget --no-check-certificate"
+            export GIT_SSL_NO_VERIFY=true
+            ;;
+        -save-deps-prefixes=*)
+            saveDepsPrefixes=$(realpath ${1#-save-deps-prefixes=})
             ;;
         *)
             echo "unknown option: ${1}" >&2
@@ -767,6 +835,11 @@ while [ "$#" -gt 0 ]; do
     esac
     shift 1
 done
+
+if [[ -z "${saveDepsPrefixes}" ]]; then
+    DIR="$(dirname $(readlink -f $0))"
+    saveDepsPrefixes="$DIR/openroad_deps_prefixes.txt"
+fi
 
 platform="$(uname -s)"
 case "${platform}" in
@@ -880,8 +953,11 @@ To enable GCC-11 you need to run:
         update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
 EOF
         ;;
-    "Debian GNU/Linux" )
+    "Debian GNU/Linux" | "Debian GNU/Linux rodete" )
         version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
+        if [[ -z ${version} ]]; then
+            version=$(awk -F= '/^VERSION_CODENAME/{print $2}' /etc/os-release | sed 's/"//g')
+        fi
         if [[ ${CI} == "yes" ]]; then
             echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
         fi
@@ -900,3 +976,7 @@ EOF
         _help
         ;;
 esac
+if [[ ! -z ${saveDepsPrefixes} ]]; then
+    mkdir -p "$(dirname $saveDepsPrefixes)"
+    echo "$CMAKE_PACKAGE_ROOT_ARGS" > $saveDepsPrefixes
+fi

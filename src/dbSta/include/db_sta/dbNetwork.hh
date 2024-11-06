@@ -179,6 +179,19 @@ class dbNetwork : public ConcreteNetwork
   void setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type);
   ObjectId id(const Port* port) const override;
 
+  // hierarchical support functions
+  dbModule* getNetDriverParentModule(Net* net);
+  Instance* getOwningInstanceParent(Pin* pin);
+
+  void hierarchicalConnect(dbITerm* source_pin,
+                           dbITerm* dest_pin,
+                           const char* connection_name);
+
+  void getParentHierarchy(dbModule* start_module,
+                          std::vector<dbModule*>& parent_hierarchy);
+  dbModule* findHighestCommonModule(std::vector<dbModule*>& itree1,
+                                    std::vector<dbModule*>& itree2);
+
   ////////////////////////////////////////////////////////////////
   //
   // Implement network API
@@ -217,6 +230,7 @@ class dbNetwork : public ConcreteNetwork
   Port* port(const Pin* pin) const override;
   Instance* instance(const Pin* pin) const override;
   Net* net(const Pin* pin) const override;
+  void net(const Pin* pin, dbNet*& db_net, dbModNet*& db_modnet) const;
   Term* term(const Pin* pin) const override;
   PortDirection* direction(const Pin* pin) const override;
   VertexId vertexId(const Pin* pin) const override;
@@ -291,6 +305,7 @@ class dbNetwork : public ConcreteNetwork
 
   // hierarchy handler, set in openroad tested in network child traverserser
   void setHierarchy() { hierarchy_ = true; }
+  void disableHierarchy() { hierarchy_ = false; }
   bool hasHierarchy() const { return hierarchy_; }
 
   int fromIndex(const Port* port) const override;
@@ -320,6 +335,7 @@ class dbNetwork : public ConcreteNetwork
   void readDbNetlistAfter();
   void makeTopCell();
   void findConstantNets();
+  void makeAccessHashes();
   void visitConnectedPins(const Net* net,
                           PinVisitor& visitor,
                           NetSet& visited_nets) const override;

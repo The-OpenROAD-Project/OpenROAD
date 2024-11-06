@@ -99,7 +99,9 @@ static void populateODBProperties(Descriptor::Properties& props,
   }
 }
 
-static std::string convertUnits(double value, bool area = false)
+std::string Descriptor::convertUnits(const double value,
+                                     const bool area,
+                                     int digits)
 {
   double log_value = value;
   if (area) {
@@ -122,7 +124,7 @@ static std::string convertUnits(double value, bool area = false)
     unit = "n";
   } else if (log_units <= -6) {
     unit_scale = 1e6;
-    const char* micron = "\u03BC";
+    const char* micron = "μ";
     unit = micron;
   } else if (log_units <= -3) {
     unit_scale = 1e3;
@@ -139,8 +141,7 @@ static std::string convertUnits(double value, bool area = false)
     unit_scale *= unit_scale;
   }
 
-  const int precision = 3;
-  auto str = utl::to_numeric_string(value * unit_scale, precision);
+  auto str = utl::to_numeric_string(value * unit_scale, digits);
   str += " " + unit;
 
   return str;
@@ -459,6 +460,14 @@ Descriptor::Properties DbBlockDescriptor::getProperties(std::any object) const
   }
   props.push_back({"Rows", rows});
 
+  SelectionSet markers;
+  for (auto marker : block->getMarkerCategories()) {
+    markers.insert(gui->makeSelected(marker));
+  }
+  if (!markers.empty()) {
+    props.push_back({"Markers", markers});
+  }
+
   populateODBProperties(props, block);
 
   props.push_back({"Core Area", block->getCoreArea()});
@@ -546,6 +555,7 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
     props.push_back({"Module", gui->makeSelected(module)});
   }
   props.push_back({"Master", gui->makeSelected(inst->getMaster())});
+
   props.push_back(
       {"Description", sta_->getInstanceTypeText(sta_->getInstanceType(inst))});
   props.push_back({"Placement status", placed.getString()});
@@ -580,6 +590,11 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
   auto* region = inst->getRegion();
   if (region != nullptr) {
     props.push_back({"Region", gui->makeSelected(region)});
+  }
+
+  auto* sta_inst = sta_->getDbNetwork()->dbToSta(inst);
+  if (sta_inst != nullptr) {
+    props.push_back({"Timing/Power", gui->makeSelected(sta_inst)});
   }
 
   populateODBProperties(props, inst);
@@ -834,6 +849,12 @@ Descriptor::Properties DbMasterDescriptor::getProperties(std::any object) const
   props.push_back({"Origin", master->getOrigin()});
 
   populateODBProperties(props, master);
+
+  auto liberty
+      = sta_->getDbNetwork()->findLibertyCell(master->getName().c_str());
+  if (liberty) {
+    props.push_back({"Liberty", gui->makeSelected(liberty)});
+  }
 
   return props;
 }
@@ -1807,6 +1828,11 @@ Descriptor::Properties DbBTermDescriptor::getProperties(std::any object) const
                    {"IO type", bterm->getIoType().getString()},
                    {"Access Points", aps}};
 
+  std::optional<odb::Rect> constraint = bterm->getConstraintRegion();
+  if (constraint) {
+    props.push_back({"Constraint Region", constraint.value()});
+  }
+
   populateODBProperties(props, bterm);
 
   return props;
@@ -2469,26 +2495,23 @@ Descriptor::Properties DbTechLayerDescriptor::getProperties(
     props.push_back(
         {"Minimum spacing", Property::convert_dbu(layer->getSpacing(), true)});
   }
-  const char* micron = "\u03BC";
   if (layer->hasArea()) {
-    props.push_back({"Minimum area",
-                     convertUnits(layer->getArea() * 1e-6 * 1e-6, true)
-                         + "m\u00B2"});  // m^2
+    props.push_back(
+        {"Minimum area",
+         convertUnits(layer->getArea() * 1e-6 * 1e-6, true) + "m²"});
   }
   if (layer->getResistance() != 0.0) {
     props.push_back(
-        {"Resistance",
-         convertUnits(layer->getResistance()) + "\u03A9/sq"});  // ohm/sq
+        {"Resistance", convertUnits(layer->getResistance()) + "Ω/sq"});
   }
   if (layer->getCapacitance() != 0.0) {
     props.push_back({"Capacitance",
-                     convertUnits(layer->getCapacitance() * 1e-12) + "F/"
-                         + micron + "m\u00B2"});  // F/um^2
+                     convertUnits(layer->getCapacitance() * 1e-12) + "F/μm²"});
   }
   if (layer->getEdgeCapacitance() != 0.0) {
-    props.push_back({"Edge capacitance",
-                     convertUnits(layer->getEdgeCapacitance() * 1e-12) + "F/"
-                         + micron + "m"});  // F/um
+    props.push_back(
+        {"Edge capacitance",
+         convertUnits(layer->getEdgeCapacitance() * 1e-12) + "F/μm"});
   }
 
   for (auto* width_table : layer->getTechLayerWidthTableRules()) {
@@ -3268,7 +3291,7 @@ Descriptor::Properties DbTechViaDescriptor::getProperties(std::any object) const
 
   if (via->getResistance() != 0.0) {
     props.push_back(
-        {"Resistance", convertUnits(via->getResistance()) + "\u03A9/sq"});
+        {"Resistance", convertUnits(via->getResistance()) + "Ω/sq"});
   }
 
   auto* ndr = via->getNonDefaultRule();
@@ -3483,9 +3506,8 @@ Descriptor::Properties DbTechViaLayerRuleDescriptor::getProperties(
   }
 
   if (via_layer_rule->hasResistance()) {
-    props.push_back({"Resistance",
-                     convertUnits(via_layer_rule->getResistance())
-                         + "\u03A9/sq"});  // ohm/sq
+    props.push_back(
+        {"Resistance", convertUnits(via_layer_rule->getResistance()) + "Ω/sq"});
   }
 
   return props;
@@ -3986,6 +4008,10 @@ Descriptor::Properties DbSiteDescriptor::getProperties(std::any object) const
   }
   props.push_back({"Symmetry", symmetry});
 
+  if (auto site = std::any_cast<SpecificSite>(&object)) {
+    props.push_back({"Index", site->index_in_row});
+  }
+
   populateODBProperties(props, site);
 
   return props;
@@ -4130,6 +4156,268 @@ bool DbRowDescriptor::getAllObjects(SelectionSet& objects) const
   }
 
   return true;
+}
+
+//////////////////////////////////////////////////
+
+DbMarkerCategoryDescriptor::DbMarkerCategoryDescriptor(odb::dbDatabase* db)
+    : db_(db)
+{
+}
+
+std::string DbMarkerCategoryDescriptor::getName(std::any object) const
+{
+  auto* category = std::any_cast<odb::dbMarkerCategory*>(object);
+  return category->getName();
+}
+
+std::string DbMarkerCategoryDescriptor::getTypeName() const
+{
+  return "Marker Category";
+}
+
+bool DbMarkerCategoryDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto* category = std::any_cast<odb::dbMarkerCategory*>(object);
+  bbox.mergeInit();
+  bool has_bbox = false;
+  for (odb::dbMarker* marker : category->getAllMarkers()) {
+    bbox.merge(marker->getBBox());
+    has_bbox = true;
+  }
+  return has_bbox;
+}
+
+void DbMarkerCategoryDescriptor::highlight(std::any object,
+                                           Painter& painter) const
+{
+  auto* category = std::any_cast<odb::dbMarkerCategory*>(object);
+
+  const Descriptor* desc = Gui::get()->getDescriptor<odb::dbMarker*>();
+  for (odb::dbMarker* marker : category->getAllMarkers()) {
+    desc->highlight(marker, painter);
+  }
+}
+
+Descriptor::Properties DbMarkerCategoryDescriptor::getProperties(
+    std::any object) const
+{
+  auto* category = std::any_cast<odb::dbMarkerCategory*>(object);
+  auto* gui = Gui::get();
+
+  Properties props;
+
+  props.push_back({"Description", category->getDescription()});
+  props.push_back({"Source", category->getSource()});
+  props.push_back({"Max markers", category->getMaxMarkers()});
+
+  odb::dbMarkerCategory* top = category->getTopCategory();
+  if (category != top) {
+    props.push_back({"Top category", gui->makeSelected(top)});
+  }
+
+  odb::dbObject* parent = category->getParent();
+  if (parent != top) {
+    if (parent->getObjectType() == odb::dbObjectType::dbBlockObj) {
+      props.push_back(
+          {"Parent", gui->makeSelected(static_cast<odb::dbBlock*>(parent))});
+    } else {
+      props.push_back(
+          {"Parent",
+           gui->makeSelected(static_cast<odb::dbMarkerCategory*>(parent))});
+    }
+  }
+
+  SelectionSet subcategories;
+  for (odb::dbMarkerCategory* subcat : category->getMarkerCategorys()) {
+    subcategories.insert(gui->makeSelected(subcat));
+  }
+  if (!subcategories.empty()) {
+    props.push_back({"Categories", subcategories});
+  }
+
+  SelectionSet markers;
+  for (odb::dbMarker* marker : category->getMarkers()) {
+    markers.insert(gui->makeSelected(marker));
+  }
+  if (!markers.empty()) {
+    props.push_back({"Markers", markers});
+  }
+
+  return props;
+}
+
+Selected DbMarkerCategoryDescriptor::makeSelected(std::any object) const
+{
+  if (auto category = std::any_cast<odb::dbMarkerCategory*>(&object)) {
+    return Selected(*category, this);
+  }
+  return Selected();
+}
+
+bool DbMarkerCategoryDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_category = std::any_cast<odb::dbMarkerCategory*>(l);
+  auto r_category = std::any_cast<odb::dbMarkerCategory*>(r);
+
+  return l_category->getId() < r_category->getId();
+}
+
+bool DbMarkerCategoryDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* block = db_->getChip()->getBlock();
+
+  for (auto* category : block->getMarkerCategories()) {
+    objects.insert(makeSelected(category));
+  }
+
+  return true;
+}
+
+//////////////////////////////////////////////////
+
+DbMarkerDescriptor::DbMarkerDescriptor(odb::dbDatabase* db) : db_(db)
+{
+}
+
+std::string DbMarkerDescriptor::getName(std::any object) const
+{
+  auto* marker = std::any_cast<odb::dbMarker*>(object);
+  return marker->getName();
+}
+
+std::string DbMarkerDescriptor::getTypeName() const
+{
+  return "Marker";
+}
+
+bool DbMarkerDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto* marker = std::any_cast<odb::dbMarker*>(object);
+  bbox = marker->getBBox();
+  return true;
+}
+
+void DbMarkerDescriptor::highlight(std::any object, Painter& painter) const
+{
+  auto* marker = std::any_cast<odb::dbMarker*>(object);
+  paintMarker(marker, painter);
+}
+
+Descriptor::Properties DbMarkerDescriptor::getProperties(std::any object) const
+{
+  auto* marker = std::any_cast<odb::dbMarker*>(object);
+  auto* gui = Gui::get();
+
+  Properties props;
+
+  props.push_back({"Category", gui->makeSelected(marker->getCategory())});
+
+  props.push_back({"Visited", marker->isVisited()});
+  props.push_back({"Waived", marker->isWaived()});
+
+  auto layer = marker->getTechLayer();
+  if (layer != nullptr) {
+    props.push_back({"Layer", gui->makeSelected(layer)});
+  }
+
+  SelectionSet sources;
+  for (odb::dbObject* src : marker->getSources()) {
+    Selected select;
+    switch (src->getObjectType()) {
+      case odb::dbNetObj:
+        select = gui->makeSelected(static_cast<odb::dbNet*>(src));
+        break;
+      case odb::dbInstObj:
+        select = gui->makeSelected(static_cast<odb::dbInst*>(src));
+        break;
+      case odb::dbITermObj:
+        select = gui->makeSelected(static_cast<odb::dbITerm*>(src));
+        break;
+      case odb::dbBTermObj:
+        select = gui->makeSelected(static_cast<odb::dbBTerm*>(src));
+        break;
+      case odb::dbObstructionObj:
+        select = gui->makeSelected(static_cast<odb::dbObstruction*>(src));
+        break;
+      default:
+        break;
+    }
+    if (select) {
+      sources.insert(select);
+    }
+  }
+  if (!sources.empty()) {
+    props.push_back({"Sources", sources});
+  }
+
+  const auto& comment = marker->getComment();
+  if (!comment.empty()) {
+    props.push_back({"Comment", comment});
+  }
+
+  int line_number = marker->getLineNumber();
+  if (line_number > 0) {
+    props.push_back({"Line number:", line_number});
+  }
+
+  return props;
+}
+
+Selected DbMarkerDescriptor::makeSelected(std::any object) const
+{
+  if (auto marker = std::any_cast<odb::dbMarker*>(&object)) {
+    return Selected(*marker, this);
+  }
+  return Selected();
+}
+
+bool DbMarkerDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_marker = std::any_cast<odb::dbMarker*>(l);
+  auto r_marker = std::any_cast<odb::dbMarker*>(r);
+
+  return l_marker->getId() < r_marker->getId();
+}
+
+bool DbMarkerDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* block = db_->getChip()->getBlock();
+
+  for (auto* category : block->getMarkerCategories()) {
+    for (odb::dbMarker* marker : category->getAllMarkers()) {
+      objects.insert(makeSelected(marker));
+    }
+  }
+
+  return true;
+}
+
+void DbMarkerDescriptor::paintMarker(odb::dbMarker* marker,
+                                     Painter& painter) const
+{
+  const int min_box = 20.0 / painter.getPixelsPerDBU();
+
+  const odb::Rect& box = marker->getBBox();
+  if (box.maxDXDY() < min_box) {
+    // box is too small to be useful, so draw X instead
+    odb::Point center(box.xMin() + box.dx() / 2, box.yMin() + box.dy() / 2);
+    painter.drawX(center.x(), center.y(), min_box);
+  } else {
+    for (const auto& shape : marker->getShapes()) {
+      if (std::holds_alternative<odb::Point>(shape)) {
+        const odb::Point pt = std::get<odb::Point>(shape);
+        painter.drawX(pt.x(), pt.y(), min_box);
+      } else if (std::holds_alternative<odb::Line>(shape)) {
+        const odb::Line line = std::get<odb::Line>(shape);
+        painter.drawLine(line.pt0(), line.pt1());
+      } else if (std::holds_alternative<odb::Rect>(shape)) {
+        painter.drawRect(std::get<odb::Rect>(shape));
+      } else {
+        painter.drawPolygon(std::get<odb::Polygon>(shape));
+      }
+    }
+  }
 }
 
 }  // namespace gui

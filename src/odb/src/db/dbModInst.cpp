@@ -44,6 +44,7 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include "dbGroup.h"
+#include "dbModBTerm.h"
 #include "dbModuleModInstModITermItr.h"
 // User Code End Includes
 namespace odb {
@@ -156,9 +157,16 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
   stream >> obj._group;
   // User Code Begin >>
   dbBlock* block = (dbBlock*) (obj.getOwner());
-  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
-  if (db->isSchema(db_schema_update_hierarchy)) {
+  _dbDatabase* db_ = (_dbDatabase*) (block->getDataBase());
+  if (db_->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._moditerms;
+  }
+  if (db_->isSchema(db_schema_db_remove_hash)) {
+    _dbBlock* block = (_dbBlock*) (((dbDatabase*) db_)->getChip()->getBlock());
+    _dbModule* module = block->_module_tbl->getPtr(obj._parent);
+    if (obj._name) {
+      module->_modinst_hash[obj._name] = obj.getId();
+    }
   }
   // User Code End >>
   return stream;
@@ -175,8 +183,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbModInst& obj)
   stream << obj._group;
   // User Code Begin <<
   dbBlock* block = (dbBlock*) (obj.getOwner());
-  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
-  if (db->isSchema(db_schema_update_hierarchy)) {
+  auto db_ = (_dbDatabase*) (block->getDataBase());
+  if (db_->isSchema(db_schema_update_hierarchy)) {
     stream << obj._moditerms;
   }
   // User Code End <<
@@ -260,7 +268,7 @@ dbModInst* dbModInst::create(dbModule* parentModule,
   modinst->_module_next = module->_modinsts;
   module->_modinsts = modinst->getOID();
   master->_mod_inst = modinst->getOID();
-  block->_modinst_hash.insert(modinst);
+  module->_modinst_hash[modinst->_name] = modinst->getOID();
   return (dbModInst*) modinst;
 }
 
@@ -304,7 +312,8 @@ void dbModInst::destroy(dbModInst* modinst)
     modinst->getGroup()->removeModInst(modinst);
   }
   dbProperty::destroyProperties(_modinst);
-  block->_modinst_hash.remove(_modinst);
+  _dbModule* parent = (_dbModule*) (modinst->getParent());
+  parent->_modinst_hash.erase(modinst->getName());
   block->_modinst_tbl->destroy(_modinst);
 }
 
@@ -343,13 +352,57 @@ std::string dbModInst::getHierarchicalName() const
 
 dbModITerm* dbModInst::findModITerm(const char* name)
 {
-  dbSet<dbModITerm> moditerms = getModITerms();
-  for (dbModITerm* mod_iterm : moditerms) {
-    if (!strcmp(mod_iterm->getName(), name)) {
-      return mod_iterm;
-    }
+  _dbModInst* obj = (_dbModInst*) this;
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+  auto it = obj->_moditerm_hash.find(name);
+  if (it != obj->_moditerm_hash.end()) {
+    auto db_id = (*it).second;
+    return (dbModITerm*) par->_moditerm_tbl->getPtr(db_id);
   }
   return nullptr;
+}
+
+void dbModInst::RemoveUnusedPortsAndPins()
+{
+  std::set<dbModITerm*> kill_set;
+  dbModule* module = this->getMaster();
+  dbSet<dbModITerm> moditerms = getModITerms();
+  dbSet<dbModBTerm> modbterms = module->getModBTerms();
+
+  for (dbModITerm* mod_iterm : moditerms) {
+    dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
+    dbModNet* mod_net = mod_bterm->getModNet();
+    dbSet<dbModITerm> dest_mod_iterms = mod_net->getModITerms();
+    dbSet<dbBTerm> dest_bterms = mod_net->getBTerms();
+    dbSet<dbITerm> dest_iterms = mod_net->getITerms();
+    if (dest_mod_iterms.size() == 0 && dest_bterms.size() == 0
+        && dest_iterms.size() == 0) {
+      kill_set.insert(mod_iterm);
+    }
+  }
+  moditerms = getModITerms();
+  modbterms = module->getModBTerms();
+  for (auto mod_iterm : kill_set) {
+    dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
+    dbModNet* modbterm_m_net = mod_bterm->getModNet();
+    mod_bterm->disconnect();
+    dbModBTerm::destroy(mod_bterm);
+    dbModNet* moditerm_m_net = mod_iterm->getModNet();
+    mod_iterm->disconnect();
+    dbModITerm::destroy(mod_iterm);
+    if (modbterm_m_net && modbterm_m_net->getBTerms().size() == 0
+        && modbterm_m_net->getITerms().size() == 0
+        && modbterm_m_net->getModITerms().size() == 0
+        && modbterm_m_net->getModBTerms().size() == 0) {
+      dbModNet::destroy(modbterm_m_net);
+    }
+    if (moditerm_m_net && moditerm_m_net->getBTerms().size() == 0
+        && moditerm_m_net->getITerms().size() == 0
+        && moditerm_m_net->getModITerms().size() == 0
+        && moditerm_m_net->getModBTerms().size() == 0) {
+      dbModNet::destroy(moditerm_m_net);
+    }
+  }
 }
 
 // User Code End dbModInstPublicMethods
