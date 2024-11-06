@@ -709,6 +709,9 @@ bool GuideProcessor::readGuides()
       logger_->error(DRT, 153, "Cannot find net {}.", db_net->getName());
     }
     for (auto db_guide : db_net->getGuides()) {
+      if (db_guide->isCongested()) {
+        logger_->error(DRT, 352, "Input route guides are congested.");
+      }
       frLayerNum layer_num;
       if (!isValidGuideLayerNum(db_guide, getTech(), net, logger_, layer_num)) {
         continue;
@@ -1924,7 +1927,8 @@ void GuideProcessor::saveGuidesUpdates()
               dbNet,
               dbLayer,
               dbLayer,
-              {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()});
+              {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()},
+              false);
         }
       } else {
         auto layerName = getTech()->getLayer(bNum)->getName();
@@ -1933,7 +1937,8 @@ void GuideProcessor::saveGuidesUpdates()
             dbNet,
             dbLayer,
             dbLayer,
-            {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()});
+            {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()},
+            false);
       }
     }
     auto dbGuides = dbNet->getGuides();
