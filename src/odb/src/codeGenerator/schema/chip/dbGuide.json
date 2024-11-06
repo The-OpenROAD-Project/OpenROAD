@@ -37,7 +37,7 @@
         "parent":"dbBlock"
       },
       {
-      "name":"is_congested",
+      "name":"is_congested_",
       "type":"bool",
       "schema":"db_schema_db_guide_congested",
       "flags": [
