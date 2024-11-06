@@ -5,7 +5,7 @@ import pdnsim_aux
 tech = Tech()
 tech.readLef("asap7/asap7_tech_1x_201209.lef")
 tech.readLef("asap7/asap7sc7p5t_28_R_1x_220121a.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("asap7_data/aes_place.def")
 tech.readLiberty("asap7_data/asap7.lib")
 

@@ -5,7 +5,7 @@ import tap
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
 tech.readLef("Nangate45/fakeram45_64x7.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("gcd_fakeram.def")
 
 options = tap.Options()

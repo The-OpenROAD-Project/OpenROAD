@@ -36,6 +36,8 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -61,6 +63,10 @@ namespace ant {
 class AntennaChecker;
 }
 
+namespace dft {
+class Dft;
+}
+
 namespace grt {
 class GlobalRouter;
 }
@@ -75,6 +81,10 @@ class Opendp;
 
 namespace mpl {
 class MacroPlacer;
+}
+
+namespace mpl2 {
+class MacroPlacer2;
 }
 
 namespace ppl {
@@ -113,6 +123,10 @@ namespace rmp {
 class Restructure;
 }
 
+namespace rsz {
+class Resizer;
+}
+
 namespace stt {
 class SteinerTreeBuilder;
 }
@@ -136,12 +150,14 @@ class LibertyCell;
 
 namespace ord {
 
+class OpenRoad;
 class Tech;
 
 class Design
 {
  public:
   explicit Design(Tech* tech);
+
   void readVerilog(const std::string& file_name);
   void readDef(const std::string& file_name,
                bool continue_on_errors = false,
@@ -162,7 +178,7 @@ class Design
   int micronToDBU(double coord);
 
   // This is intended as a temporary back door to tcl from Python
-  const std::string evalTclString(const std::string& cmd);
+  std::string evalTclString(const std::string& cmd);
 
   Tech* getTech();
 
@@ -176,25 +192,32 @@ class Design
   std::uint64_t getNetRoutedLength(odb::dbNet* net);
 
   // Services
-  ifp::InitFloorplan* getFloorplan();
   ant::AntennaChecker* getAntennaChecker();
-  grt::GlobalRouter* getGlobalRouter();
-  gpl::Replace* getReplace();
-  dpl::Opendp* getOpendp();
-  mpl::MacroPlacer* getMacroPlacer();
-  ppl::IOPlacer* getIOPlacer();
-  tap::Tapcell* getTapcell();
   cts::TritonCTS* getTritonCts();
-  drt::TritonRoute* getTritonRoute();
+  dft::Dft* getDft();
+  dpl::Opendp* getOpendp();
   dpo::Optdp* getOptdp();
+  drt::TritonRoute* getTritonRoute();
   fin::Finale* getFinale();
+  gpl::Replace* getReplace();
+  grt::GlobalRouter* getGlobalRouter();
+  ifp::InitFloorplan getFloorplan();
+  mpl::MacroPlacer* getMacroPlacer();
+  mpl2::MacroPlacer2* getMacroPlacer2();
+  odb::dbDatabase* getDb();
+  pad::ICeWall* getICeWall();
   par::PartitionMgr* getPartitionMgr();
+  pdn::PdnGen* getPdnGen();
+  ppl::IOPlacer* getIOPlacer();
+  psm::PDNSim* getPDNSim();
   rcx::Ext* getOpenRCX();
   rmp::Restructure* getRestructure();
+  rsz::Resizer* getResizer();
   stt::SteinerTreeBuilder* getSteinerTreeBuilder();
-  psm::PDNSim* getPDNSim();
-  pdn::PdnGen* getPdnGen();
-  pad::ICeWall* getICeWall();
+  tap::Tapcell* getTapcell();
+
+  // Needed by standalone startup, not for general use.
+  ord::OpenRoad* getOpenRoad();
 
   // This returns a database that is not the one associated with
   // the rest of the application.  It is usable as a standalone
@@ -209,6 +232,9 @@ class Design
   sta::LibertyCell* getLibertyCell(odb::dbMaster* master);
 
   Tech* tech_;
+
+  // Single-thread access to the interpreter in evalTclString
+  static std::mutex interp_mutex;
 };
 
 }  // namespace ord

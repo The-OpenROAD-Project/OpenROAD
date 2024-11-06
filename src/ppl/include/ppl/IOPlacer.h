@@ -263,7 +263,7 @@ class IOPlacer
                       int height,
                       const Rect& die_boundary);
   Interval getIntervalFromPin(IOPin& io_pin, const Rect& die_boundary);
-  bool checkBlocked(Edge edge, int pos, int layer);
+  bool checkBlocked(Edge edge, const odb::Point& pos, int layer);
   std::vector<Interval> findBlockedIntervals(const odb::Rect& die_area,
                                              const odb::Rect& box);
   void getBlockedRegionsFromMacros();
@@ -286,6 +286,9 @@ class IOPlacer
   odb::dbBlock* getBlock() const;
   odb::dbTech* getTech() const;
   std::string getEdgeString(Edge edge);
+  std::string getDirectionString(Direction direction);
+  template <class PinSetOrList>
+  std::string getPinSetOrListString(const PinSetOrList& group);
 
   std::unique_ptr<Netlist> netlist_;
   std::unique_ptr<Core> core_;
@@ -304,6 +307,7 @@ class IOPlacer
   std::vector<PinGroup> pin_groups_;
   MirroredPins mirrored_pins_;
   FallbackPins fallback_pins_;
+  std::map<int, std::vector<odb::Rect>> layer_fixed_pins_shapes_;
 
   Logger* logger_ = nullptr;
   std::unique_ptr<Parameters> parms_;

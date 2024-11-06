@@ -1914,7 +1914,7 @@ void DisplayControls::techInit(odb::dbTech* tech)
                            QColor(254, 0, 0),
                            QColor(9, 221, 0),
                            QColor(190, 244, 81),
-                           QColor(159, 24, 69),
+                           QColor(222, 33, 96),  // Metal 5
                            QColor(32, 216, 253),
                            QColor(253, 108, 160),
                            QColor(117, 63, 194),

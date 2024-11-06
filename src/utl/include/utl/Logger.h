@@ -166,9 +166,8 @@ class Logger
     log(tool, spdlog::level::err, id, message, args...);
     char tool_id[32];
     sprintf(tool_id, "%s-%04d", tool_names_[tool], id);
-    std::runtime_error except(tool_id);
     // Exception should be caught by swig error handler.
-    throw except;
+    throw std::runtime_error(tool_id);
   }
 
   template <typename... Args>
@@ -271,13 +270,14 @@ class Logger
     }
   }
 
-  inline void log_metric(const std::string metric, const std::string value)
+  inline void log_metric(const std::string& metric, const std::string& value)
   {
     std::string key;
-    if (metrics_stages_.empty())
+    if (metrics_stages_.empty()) {
       key = metric;
-    else
+    } else {
       key = fmt::format(FMT_RUNTIME(metrics_stages_.top()), metric);
+    }
     metrics_entries_.push_back({std::move(key), value});
   }
 

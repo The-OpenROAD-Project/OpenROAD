@@ -7,7 +7,7 @@ tech = Tech()
 tech.readLef("asap7_vias/asap7_tech_1x.lef")
 tech.readLef("asap7_vias/asap7sc7p5t_27_R_1x.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("asap7_vias/floorplan.def")
 pdngen = design.getPdnGen()
 

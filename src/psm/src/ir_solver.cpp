@@ -391,15 +391,15 @@ Connection::ResistanceMap IRSolver::getResistanceMap(sta::Corner* corner) const
   return resistance;
 }
 
-std::map<Connection*, Connection::Conductance> IRSolver::generateConductanceMap(
-    sta::Corner* corner) const
+Connection::ConnectionMap<Connection::Conductance>
+IRSolver::generateConductanceMap(sta::Corner* corner) const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate conductance map: {}");
 
   const Connection::ResistanceMap resistance = getResistanceMap(corner);
 
-  std::map<Connection*, Connection::Conductance> conductance;
+  Connection::ConnectionMap<Connection::Conductance> conductance;
   for (const auto& conn : network_->getConnections()) {
     const auto res = conn->getResistance(resistance);
     conductance[conn.get()] = 1.0 / res;
@@ -771,8 +771,7 @@ void IRSolver::buildNodeCurrentMap(sta::Corner* corner,
 }
 
 std::map<Node*, Connection::ConnectionSet> IRSolver::getNodeConnectionMap(
-    const std::map<psm::Connection*, Connection::Conductance>& conductance)
-    const
+    const Connection::ConnectionMap<Connection::Conductance>& conductance) const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Build node/connection mapping: {}");
@@ -815,7 +814,7 @@ void IRSolver::buildCondMatrixAndVoltages(
     bool is_ground,
     const std::map<Node*, Connection::ConnectionSet>& node_connections,
     const ValueNodeMap<Current>& currents,
-    const std::map<psm::Connection*, Connection::Conductance>& conductance,
+    const Connection::ConnectionMap<Connection::Conductance>& conductance,
     const std::map<Node*, std::size_t>& node_index,
     Eigen::SparseMatrix<Connection::Conductance>& G,
     Eigen::VectorXd& J) const
@@ -1403,12 +1402,8 @@ void IRSolver::writeEMFile(const std::string& em_file,
   report << "Node0 Layer,Node0 X location,Node0 Y location,Node1 Layer,Node1 X "
             "location,Node1 Y location,Current\n";
 
-  const auto current_map = generateCurrentMap(corner);
-  const std::map<Connection*, Current, Connection::Compare> sorted_current_map(
-      current_map.begin(), current_map.end());
-
   const double dbus = getBlock()->getDbUnitsPerMicron();
-  for (const auto& [connection, current] : sorted_current_map) {
+  for (const auto& [connection, current] : generateCurrentMap(corner)) {
     const Node* node0 = connection->getNode0();
     const Node* node1 = connection->getNode1();
 
@@ -1468,7 +1463,7 @@ void IRSolver::writeSpiceFile(GeneratedSourceType source_type,
     spice << "* Sink for " << node->getITerm()->getName() << '\n';
 
     const std::string current_name = fmt::format("I{}", current_number++);
-    const std::string node_current = fmt::format("{:.6e}", current);
+    const std::string node_current = fmt::format("{:.3e}", current);
 
     spice << current_name << " " << node->getName() << " 0 DC " << node_current
           << '\n';
@@ -1499,11 +1494,11 @@ void IRSolver::writeSpiceFile(GeneratedSourceType source_type,
   spice << ".END\n\n";
 }
 
-std::map<Connection*, IRSolver::Current> IRSolver::generateCurrentMap(
+Connection::ConnectionMap<IRSolver::Current> IRSolver::generateCurrentMap(
     sta::Corner* corner) const
 {
   const auto& voltages = voltages_.at(corner);
-  std::map<Connection*, IRSolver::Current> currents;
+  Connection::ConnectionMap<IRSolver::Current> currents;
   for (const auto& [connection, cond] : generateConductanceMap(corner)) {
     if (connection->hasITermNode() || connection->hasBPinNode()) {
       continue;
@@ -1554,7 +1549,7 @@ void IRSolver::dumpMatrix(
 }
 
 void IRSolver::dumpConductance(
-    const std::map<Connection*, Connection::Conductance>& cond,
+    const Connection::ConnectionMap<Connection::Conductance>& cond,
     const std::string& name) const
 {
   const std::string report_file = fmt::format("psm_{}.txt", name);
@@ -1563,14 +1558,14 @@ void IRSolver::dumpConductance(
     logger_->report("Failed to open {} for {}", report_file, name);
     return;
   }
-  const std::map<Connection*, Connection::Conductance, Connection::Compare>
-      sorted_cond(cond.begin(), cond.end());
 
-  for (const auto& [connection, cond] : sorted_cond) {
+  for (const auto& [connection, conductance] : cond) {
     const Node* node0 = connection->getNode0();
     const Node* node1 = connection->getNode1();
-    report << fmt::format(
-        "{} -> {}: {:.15e}", node0->describe(""), node1->describe(""), cond)
+    report << fmt::format("{} -> {}: {:.15e}",
+                          node0->describe(""),
+                          node1->describe(""),
+                          conductance)
            << '\n';
   }
 }

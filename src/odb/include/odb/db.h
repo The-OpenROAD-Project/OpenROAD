@@ -1227,7 +1227,7 @@ class dbBlock : public dbObject
   ///
   /// Convert an area from database units squared (DBU^2) to square microns.
   ///
-  double dbuAreaToMicrons(const int64_t dbu_area);
+  double dbuAreaToMicrons(int64_t dbu_area);
 
   ///
   /// Convert a length from microns to database units (DBUs).
@@ -1237,7 +1237,7 @@ class dbBlock : public dbObject
   ///
   /// Convert an area from square microns to database units squared (DBU^2).
   ///
-  int64_t micronsAreaToDbu(const double micronsArea);
+  int64_t micronsAreaToDbu(double micronsArea);
 
   ///
   /// Get the hierarchy delimeter.
@@ -7986,15 +7986,18 @@ class dbMarkerCategory : public dbObject
   void writeTR(const std::string& path) const;
   void writeTR(std::ofstream& report) const;
 
-  static void fromJSON(dbBlock* block, const std::string& path);
-  static void fromJSON(dbBlock* block,
-                       const char* source,
-                       std::ifstream& report);
-  static void fromTR(dbBlock* block, const char* name, const std::string& path);
-  static void fromTR(dbBlock* block,
-                     const char* name,
-                     const char* source,
-                     std::ifstream& report);
+  static std::set<dbMarkerCategory*> fromJSON(dbBlock* block,
+                                              const std::string& path);
+  static std::set<dbMarkerCategory*> fromJSON(dbBlock* block,
+                                              const char* source,
+                                              std::ifstream& report);
+  static dbMarkerCategory* fromTR(dbBlock* block,
+                                  const char* name,
+                                  const std::string& path);
+  static dbMarkerCategory* fromTR(dbBlock* block,
+                                  const char* name,
+                                  const char* source,
+                                  std::ifstream& report);
 
   static dbMarkerCategory* create(dbBlock* block, const char* name);
   static dbMarkerCategory* createOrReplace(dbBlock* block, const char* name);
@@ -8149,8 +8152,11 @@ class dbModNet : public dbObject
   dbSet<dbBTerm> getBTerms();
 
   const char* getName() const;
+  void rename(const char* new_name);
+  static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* name);
   static void destroy(dbModNet*);
+
   // User Code End dbModNet
 };
 

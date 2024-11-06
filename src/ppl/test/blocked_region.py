@@ -8,7 +8,7 @@ tech.readLef("sky130hd/sky130hd.tlef")
 tech.readLef("sky130hd/sky130_fd_sc_hd_merged.lef")
 tech.readLef("blocked_region.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("blocked_region.def")
 
 ppl_aux.place_pins(design, hor_layers="met3", ver_layers="met2", random=True)

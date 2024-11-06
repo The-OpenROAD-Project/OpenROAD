@@ -54,6 +54,7 @@ class dbPlacementStatus;
 class dbObstruction;
 class dbRegion;
 class dbRow;
+class dbSigType;
 class dbSBox;
 class dbSWire;
 class dbMarker;
@@ -107,6 +108,7 @@ class dbBlockCallBackObj
   virtual void inDbBTermPreDisconnect(dbBTerm*) {}
   virtual void inDbBTermPostDisConnect(dbBTerm*, dbNet*) {}
   virtual void inDbBTermSetIoType(dbBTerm*, const dbIoType&) {}
+  virtual void inDbBTermSetSigType(dbBTerm*, const dbSigType&) {}
   // dbBTerm End
 
   // dbBPin Start

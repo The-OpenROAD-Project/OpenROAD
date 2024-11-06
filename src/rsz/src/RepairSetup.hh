@@ -124,7 +124,7 @@ class RepairSetup : public sta::dbStaState
 {
  public:
   RepairSetup(Resizer* resizer);
-  void repairSetup(float setup_slack_margin,
+  bool repairSetup(float setup_slack_margin,
                    // Percent of violating ends to repair to
                    // reduce tns (0.0-1.0).
                    double repair_tns_end_percent,
@@ -208,7 +208,12 @@ class RepairSetup : public sta::dbStaState
 
   int rebuffer(const Pin* drvr_pin);
   BufferedNetSeq rebufferBottomUp(const BufferedNetPtr& bnet, int level);
-  int rebufferTopDown(const BufferedNetPtr& choice, Net* net, int level);
+  int rebufferTopDown(const BufferedNetPtr& choice,
+                      Net* net,
+                      int level,
+                      Instance* parent,
+                      odb::dbITerm* mod_net_drvr,
+                      odb::dbModNet* mod_net);
   BufferedNetSeq addWireAndBuffer(const BufferedNetSeq& Z,
                                   const BufferedNetPtr& bnet_wire,
                                   int level);
