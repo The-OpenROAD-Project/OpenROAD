@@ -424,7 +424,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
 
     // timing driven feature
-    // do reweight on timing-critical nets.
+    // if virtual do reweight on timing-critical nets,
+    // otherwise keep all modifications by rsz.
     if (npVars_.timingDrivenMode
         && tb_->isTimingNetWeightOverflow(average_overflow_)) {
       // update db's instance location from current density coordinates
@@ -435,33 +436,38 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       // and update GNet's weights from worst timing paths.
       //
       // See timingBase.cpp in detail
-      log_->info(
-          GPL, 100, "Timing-driven: executing resizer for reweighting nets.");
-
-      bool run_journal_restore
+      bool virtual_td_iter
           = (average_overflow_ > npVars_.keepResizeBelowOverflow);
-      log_->report(
-          "current overflow: {}, TD check overflow: {}, virtual rsz: {}",
-          average_overflow_,
-          npVars_.keepResizeBelowOverflow,
-          run_journal_restore);
 
-      if (!run_journal_restore)
+      log_->info(
+          GPL, 100, "Timing-driven iteration {}/{}, virtual: {}.", 
+          ++npVars_.timingDrivenIterCounter, 
+          tb_->getTimingNetWeightOverflowSize(),
+          virtual_td_iter);
+
+      log_->info(GPL, 101, "Iter: {}, overflow: {:.3f}, keep rsz at: {}",
+          iter,
+          average_overflow_,
+          npVars_.keepResizeBelowOverflow);
+
+      if (!virtual_td_iter)
         db_cbk_->addOwner(pbc_->db()->getChip()->getBlock());
       else
         db_cbk_->removeOwner();
 
       // auto block = pbc_->db()->getChip()->getBlock();
-      bool shouldTdProceed = tb_->updateGNetWeights(run_journal_restore);
+      bool shouldTdProceed = tb_->updateGNetWeights(virtual_td_iter);
 
       db_cbk_->printCallCounts();
       db_cbk_->resetCallCounts();
-      if (!run_journal_restore) {        
+
+      if (!virtual_td_iter) {        
         nbc_->fixPointers();
+        // Reset timing-driven net wegiths to default since non-virtual iteration.
         for (auto& gNet : nbc_->gNets()) {
-          // default weight
           gNet->setTimingWeight(1.0);
         }
+
         // Calling this here because we need access to nesterovBase, but this
         // goes along with fixpointers(), which is called inside timingBase!
         // nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
@@ -497,6 +503,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           nesterov->updateDensitySize();
         }
       }
+
       // problem occured
       // escape timing driven later
       if (!shouldTdProceed) {

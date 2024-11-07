@@ -145,11 +145,7 @@ void TimingBase::setTimingNetWeightMax(float max)
 bool TimingBase::updateGNetWeights(bool run_journal_restore)
 {  
   rs_->findResizeSlacks(run_journal_restore);
-  // if(!run_journal_restore) {
-  //   nbc_->fixPointers();
-  // }
 
-  //TODO check if these weights are required when executing non-virtual rsz
   // get worst resize nets
   int weighted_net_count = 0;
   if(run_journal_restore) 
@@ -159,7 +155,7 @@ bool TimingBase::updateGNetWeights(bool run_journal_restore)
     if (worst_slack_nets.empty()) {
       log_->warn(
           GPL,
-          114,
+          105,
           "Timing-driven: no net slacks found. Timing-driven mode disabled.");
       return false;
     }
@@ -170,7 +166,7 @@ bool TimingBase::updateGNetWeights(bool run_journal_restore)
         = rs_->resizeNetSlack(worst_slack_nets[worst_slack_nets.size() - 1])
               .value();
 
-    log_->info(GPL, 101, "Timing-driven: worst slack {:.3g}", slack_min);
+    log_->info(GPL, 106, "Timing-driven: worst slack {:.3g}", slack_min);
 
     if (sta::fuzzyInf(slack_min)) {
       log_->warn(GPL,

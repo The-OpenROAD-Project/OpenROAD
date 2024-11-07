@@ -854,7 +854,9 @@ class NesterovPlaceVars
   static const int maxRecursionInitSLPCoef = 10;
 
   bool timingDrivenMode = true;
+  int timingDrivenIterCounter = 0;
   bool routabilityDrivenMode = true;
+
   bool debug = false;
   int debug_pause_iterations = 10;
   int debug_update_iterations = 10;
