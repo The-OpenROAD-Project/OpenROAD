@@ -1,0 +1,94 @@
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
+//
+// Copyright (c) 2024, Dimitris Fotakis
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
+# Author: Dimitris K. Fotakis
+# Version: v1.0
+# Date: 11/05/2024
+
+RCX has the following main Architectural Components
+
+0. Model Generation
+
+	Create Wire Patterns in two possible formats: DEF or Universal Field Solver Format
+		DEF based patterns can be run through through a commercial extractor to create SPEF 
+			Requirement: Technology LEF file, one per Process Corner
+		Solver based patterns can be converted to drive 2d or 3d Filed Solver
+			Requirement: Process Stack, one per Process Corner
+
+	Note: this step is NOT ran when extracting a design
+
+1. Read Model
+
+	Read distance based model file generated ahead of time for multiple corners
+	Organize tables for fast RC value calculation based on coupling distance and over/under context
+	
+2. Net Wire Ordering
+
+	For every Net Encode all DEF paths so all Instance terms, Block Terms are connected to Vias and wires
+	This is part of odb, order_wires function
+	dbWire objects holds 
+
+3. RC Segment Generation
+
+	For every net create Resistor Nodes (dbCapNode) and RC segments (dbRSeg)  for every via and wire (dbShape)
+	In series Resitor merging is done per user options -no_via_merge_res and -max_res
+	Coupling Capacitor objects (dbCCSeg) are attached to Resistor Node Objects
+	
+4. Wire Search Engine
+	
+	Signal and Power Nets are organized per metal level and direction on tracks and sorted for fast search
+
+5. Bit Masking Engine
+
+	Signal and Power Net Shapes are encoded in bit words for fast Cross Overlap calculation
+
+6. Wire Pattern Recognition
+
+	Find direct neigboring lateral wires on any metal level
+	Calculate distance to neigboring wires 
+	For each coupled pair or triplet calculate over and under context -- Crossoverlap
+	
+7. Wire RC Calculation
+	
+	for every wire apply over, under, over_under, diagonal modeling 
+	Interpolate for distance
+
+8. Read/Write SPEF
+
+	Read multiple SPEF files for Model Generation
+	Write SPEF for multiple corners
+
+9. Memory Allocation Recycling
+
+	Use Recycled Memory pools 
+
+
