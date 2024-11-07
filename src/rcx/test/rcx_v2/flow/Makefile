@@ -8,7 +8,7 @@ test_dir=$(TOP_DIR)/src/rcx/test/
 or_exec=$(TOP_DIR)/build/src/openroad
 run_rcx=$(test_dir)/rcx_v2/flow/scripts/run_rcx.bash
 
-.PHONY : gcd_flow_v2_model_v2 gcd_flow_v2_model_v1 gcd_flow_v1_model_v2
+.PHONY : gcd_flow_v2_model_v2 gcd_flow_v2_model_v1 gcd_flow_v1_model_v2 ext_patterns_flow_v2_model_v2
 
 .SILENT:
 

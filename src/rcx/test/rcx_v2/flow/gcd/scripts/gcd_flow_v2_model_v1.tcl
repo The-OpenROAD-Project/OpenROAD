@@ -21,6 +21,3 @@ extract_parasitics -ext_model_file $model_v1 -max_res 0 -coupling_threshold 0.1 
 set spef_file $test_case.spef 
 write_spef $spef_file -nets $test_nets
 
-# read_spef $spef_file
-
-# diff_files gcd.spefok $spef_file "^\\*(DATE|VERSION)"
