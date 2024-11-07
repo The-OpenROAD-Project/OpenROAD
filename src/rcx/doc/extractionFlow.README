@@ -1,0 +1,126 @@
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
+//
+// Copyright (c) 2024, Dimitris Fotakis
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
+# Author: Dimitris K. Fotakis
+# Version: v1.0 
+# Date: 11052024
+
+Major Flow Steps: to run rcx command: extract_parasitics
+
+
+Prerequisite Reading: run_extraction.README, Architecture.README
+
+-------------------------------------------------------------------------------------------
+1. Set User Options
+
+	User Command: extract_parasitics 
+	function: makeBlockRCsegs_v2
+
+-------------------------------------------------------------------------------------------
+2. Read Model File and Associate User Defined 
+
+	function: SetCornersAndReadModels_v2
+	Note 1: if not set with Tcl cmd: <define_process_corner>, all model file corners will be extracted
+	Note 2: if user option lefRC is used, a single corner is generated 
+
+-------------------------------------------------------------------------------------------
+3. Read Model File
+
+	Organize distance based Coupling/Fringe values to calculate RC values for every signal wire
+
+	function: SetCornersAndReadModels_v2/ReadModels_v2
+	Note 1: DensityModel is equivalent to Process Corner
+	Note 2: basic format for every distance based model is defined as follows:
+		<dist_to_neighbor_in_microns> <coupling_cap> <ground_cap> <resistance>
+		capacitance units are in fF/nm
+		resistance unist are in Ohms/nm
+	
+-------------------------------------------------------------------------------------------
+3. Generate Full RC network for all nets
+
+	function: makeRCNetwork_v2
+	Objects: dbCapNode, dbRSeg
+	Important User Options: -max_res -no_via_merge_res -lefRC -lef_res
+  	Prerequisite Step: odb::orderWires is called before makeBlockRCsegs_v2
+
+	A. Create Resistance Table per Layer to drive RC Merging
+		Note: Values from first process corner are used 
+
+	B. Create RC Segments and Capacitance Nodes by traversing dbWire object
+		Associate one or more Physical wires to an RC segment (dbRSeg)
+		SPEF structure is dependent on the RC network generation
+		Physical wires will be extracted for Coupling Capacitance and Resistance based on 
+		user option: max_res drives RC segment Merging in a net
+				Merging stops at instance and block terms and wire branches
+		Note 1: via resistance can be taken from Model File or from LEF if Via Models don't exist
+		Note 2: via resistance is added to the connecting wires if user option -no_merge_via_res is not set
+		Note 3: Extracted coupling caps for the wire segments 
+	
+-------------------------------------------------------------------------------------------
+4. Extract Coupling Caps 
+
+	function: couplingFlow_v2
+	Important Objects: dbCCseg, extDistRC
+	Important User Options: -skip_over_cell, -coupling_threshold, -context_depth -cc_model
+
+	A. RC Network Generation (see step 3)
+
+	Note: the following steps are repeated on horizontal and vertical directions 
+
+	B. Load Signal and Power Wires on Search object: Ath__gridTable
+		Functions: addPowerNets, addSignalNets
+
+	C.  Load Signal and Power Wires on Geometric Search object: gs
+		Functions: fill_gs4, addShapeOnGS, 
+		Important Note: add instance obstructions and pin shapes on Geometric search, unless user option -skip_over_cell
+
+	D. Find coupling neighbors on object Ath__wire on both sides and all levels
+		User option -cc_model controls how far in tracks coupling neighbors are found
+		Function: couplingFlow_v2/FindCouplingNeighbors
+		important object: extMain->_search, extMeasure->_search, extMeasureRC->_search
+		Note 1: Coupling neighbors on different levels are called Diagonal
+		Note 2: Coupling neighbors on different levels overlapping latterally are called Vertical Diagonal
+
+	E. Find Segments of Wires that directly coupled with segments of other wires and over/under CrossOverlaps
+		User Option -context_depth controls low and upper bound of metal levels for cross ovelaps
+		Function: couplingFlow_v2/CouplingFlow/GetCouplingSegments
+
+	F. Calculate Resistance of every coupling segment based on distance of neighbors of both sides
+		Function: couplingFlow_v2/CouplingFlow/CalcRes
+
+	G. Calculate Coupling and Fringe Capacitance of every coupling segment 
+		based on distance of neighbors of both sides and CrossOveral Context
+		User Option -coupling_threshold controls the creation of coupling caps
+		Function: couplingFlow_v2/CouplingFlow/
+				VerticalDiagonalCouplingAndCrossOverlap
+				CreateCouplingCaps_overUnder, CreateCouplingCaps_over
+				

@@ -1,0 +1,71 @@
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
+//
+// Copyright (c) 2024, Dimitris Fotakis
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
+# Author: Dimitris K Fotakis
+# Version: 1.0
+# Date: 11052024 
+
+Running RC Extraction with rcx
+
+  	- Description: Extraction extracts RC values for wires and vias and write on DB.	
+			It can also create a SPEF file.  
+			it can extract from 1 to as many as max number of corners in model file
+
+  	- Input: 
+		tech LEF : Layer/Via Info
+		macro LEF 
+			NOTE: tech and LEF files might be a single file)
+		DEF - nets/components/wires of the design
+		model File
+			NOTE: Accuracy of the results is dependent on the method used to generate the model file
+
+  	- Output: SPEF file
+
+	- Required Tcl Commands: define_rcx_corners if specific corners are to be extracted
+		Associate corner index numbers in model file (Keyword: Corners)
+		Extract from 1 to as many as mx number of corners in model file
+		Use different corner names than the ones in model files
+		if define_rcx_corners not present, all corners in the model file will be extracted
+
+  	- Sample Script: 
+			read_lef $lef_tech
+			read_lef $lef
+			read_def $def
+
+			get_model_corners -ext_model_file $model # NOT reqiored
+			define_rcx_corners -corner_list "max typ min"
+
+			extract_parasitics -ext_model_file model_file -version 2.0
+			write_spef 3corners.spef
+
+  		Example: rcx/test/rcx_v2/flow/gcd/scripts/gcd_flow_v2_model_v1.tcl
+
