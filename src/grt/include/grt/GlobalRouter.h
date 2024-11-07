@@ -492,6 +492,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   int macro_extension_;
   bool initialized_;
   int total_diodes_count_;
+  // TODO: remove this flag after support incremental updates on DRT PA
   bool skip_drt_aps_;
 
   // Region adjustment variables
