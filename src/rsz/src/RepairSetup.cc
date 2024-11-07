@@ -259,6 +259,9 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         break;
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
+
+      Pin* end_pin = end->pin();
+
       const bool changed = repairPath(end_path,
                                       end_slack,
                                       skip_pin_swap,
@@ -1917,6 +1920,8 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
         break;
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
+      Pin* end_pin = end->pin();
+
       const bool changed = repairPath(end_path,
                                       end_slack,
                                       true /* skip_pin_swap */,

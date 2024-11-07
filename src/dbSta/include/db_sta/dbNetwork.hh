@@ -268,6 +268,7 @@ class dbNetwork : public ConcreteNetwork
 
   ////////////////////////////////////////////////////////////////
   // Port functions
+
   Cell* cell(const Port* port) const override;
   void registerConcretePort(const Port*);
 

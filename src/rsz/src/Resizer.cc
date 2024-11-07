@@ -1231,6 +1231,15 @@ void Resizer::swapPins(Instance* inst,
   Pin *found_pin1, *found_pin2;
   Net *net1, *net2;
 
+  odb::dbModNet* mod_net_pin1 = nullptr;
+  odb::dbNet* flat_net_pin1 = nullptr;
+
+  odb::dbModNet* mod_net_pin2 = nullptr;
+  odb::dbNet* flat_net_pin2 = nullptr;
+
+  odb::dbITerm* iterm_pin1 = nullptr;
+  odb::dbITerm* iterm_pin2 = nullptr;
+
   InstancePinIterator* pin_iter = network_->pinIterator(inst);
   found_pin1 = found_pin2 = nullptr;
   net1 = net2 = nullptr;
@@ -1238,29 +1247,54 @@ void Resizer::swapPins(Instance* inst,
     Pin* pin = pin_iter->next();
     Net* net = network_->net(pin);
     LibertyPort* port = network_->libertyPort(pin);
+
     // port pointers may change after sizing
     // if (port == port1) {
     if (std::strcmp(port->name(), port1->name()) == 0) {
       found_pin1 = pin;
       net1 = net;
+      flat_net_pin1 = db_network_->flatNet(found_pin1);
+      mod_net_pin1 = db_network_->hierNet(found_pin1);
+      iterm_pin1 = db_network_->flatPin(found_pin1);
     }
     if (std::strcmp(port->name(), port2->name()) == 0) {
       found_pin2 = pin;
       net2 = net;
+      flat_net_pin2 = db_network_->flatNet(found_pin2);
+      mod_net_pin2 = db_network_->hierNet(found_pin2);
+      iterm_pin2 = db_network_->flatPin(found_pin2);
     }
   }
 
   if (net1 != nullptr && net2 != nullptr) {
     // Swap the ports and nets
+    // Support for hierarchy, swap modnets as well as dbnets
+
+    // disconnect everything connected to found_pin1
     sta_->disconnectPin(found_pin1);
-    sta_->connectPin(inst, port1, net2);
+    //  sta_->connectPin(inst, port1, net2);
+    if (flat_net_pin2) {
+      iterm_pin1->connect(flat_net_pin2);
+    }
+    if (mod_net_pin2) {
+      iterm_pin1->connect(mod_net_pin2);
+    }
+
     sta_->disconnectPin(found_pin2);
-    sta_->connectPin(inst, port2, net1);
+    // sta_->connectPin(inst, port2, net1);
+    if (flat_net_pin1) {
+      iterm_pin2->connect(flat_net_pin1);
+    }
+    if (mod_net_pin1) {
+      iterm_pin2->connect(mod_net_pin1);
+    }
 
     // Invalidate the parasitics on these two nets.
     if (haveEstimatedParasitics()) {
-      invalidateParasitics(found_pin2, net1);
-      invalidateParasitics(found_pin1, net2);
+      invalidateParasitics(found_pin2,
+                           db_network_->dbToSta(flat_net_pin1));  // net1);
+      invalidateParasitics(found_pin1,
+                           db_network_->dbToSta(flat_net_pin2));  // net2);
     }
   }
 }

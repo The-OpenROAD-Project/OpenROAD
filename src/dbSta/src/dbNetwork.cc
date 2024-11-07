@@ -2011,6 +2011,22 @@ Pin* dbNetwork::connect(Instance* inst, Port* port, Net* net)
   }
   return pin;
 }
+/*
+bool dbNetwork::isDriver(const Pin* pin) const{
+  PortDirection *dir = direction(pin);
+  const Instance *inst = instance(pin);
+  odb::dbInst* db_inst;
+  odb::dbModInst* mod_inst;
+  staToDb(inst, db_inst, mod_inst);
+  if (isLeaf(inst) && dir->isAnyOutput()){
+    return true;
+  }
+  else if (mod_inst && dir->isAnyOutput()){
+    return true;
+  }
+  return false;
+}
+*/
 
 // Used by dbStaCbk
 // Incrementally update drivers.
@@ -2979,6 +2995,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       dbModITerm* mod_iterm
           = dbModITerm::create(parent_inst, connection_name_o.c_str());
       mod_iterm->setChildModBTerm(mod_bterm);
+      mod_bterm->setParentModITerm(mod_iterm);
       source_db_mod_net = dbModNet::create(cur_module, connection_name);
       mod_iterm->connect(source_db_mod_net);
       top_net = source_db_mod_net;

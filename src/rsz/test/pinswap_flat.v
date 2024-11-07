@@ -8,16 +8,17 @@ module td1 (a1,
     y1,
     y2);
 
- input a1;
- input a2;
- input a3;
- input a4;
- input a5;
- input a6;         
- input clk;
- output y1;
- output y2;
+   input clk;
+   output y1;
+   output y2;
 
+   input a1;
+   input a2;
+   input a3;
+   input a4;
+   input a5;
+   input a6;
+   
  wire n1;
  wire net1;
  wire net2;
