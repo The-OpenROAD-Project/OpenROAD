@@ -833,7 +833,7 @@ std::vector<std::pair<Rect, std::vector<Rect*>>> mergeBoxes(
       for (auto it2 = it1 + 1; it2 != merge_boxes.end(); ++it2) {
         Rect merge_box = (*it1).first;
         merge_box.merge((*it2).first);
-        if (merge_box.area() > (4 * 4)) {
+        if (merge_box.dx() > 4 || merge_box.dy() > 4) {
           continue;
         }
         (*it1).first.merge((*it2).first);
