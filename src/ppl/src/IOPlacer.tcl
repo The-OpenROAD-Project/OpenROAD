@@ -396,6 +396,15 @@ proc place_pin { args } {
     utl::error PPL 65 "-layer is required."
   }
 
+  set tech_layer [ppl::parse_layer_name $layer]
+  set layer_direction [$tech_layer getDirection]
+  if {
+    ($layer_direction == "HORIZONTAL" && ![ord::db_layer_has_hor_tracks $tech_layer])
+    || ($layer_direction == "VERTICAL" && ![ord::db_layer_has_ver_tracks $tech_layer])
+  } {
+    utl::error PPL 22 "Routing tracks not found for layer $layer."
+  }
+
   if { [info exists keys(-location)] } {
     set location $keys(-location)
   } else {
