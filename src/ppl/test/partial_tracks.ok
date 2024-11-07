@@ -3,5 +3,6 @@
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 1 components and 6 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 1 connections.
+[WARNING PPL-0010] Routing tracks in the non-preferred direction were not found for the layer metal2.
 [INFO PPL-0070] Pin clk placed at (4.08um, 0.04um).
 No differences found.

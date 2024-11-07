@@ -405,6 +405,13 @@ proc place_pin { args } {
     utl::error PPL 22 "Routing tracks not found for layer $layer."
   }
 
+  if {
+    ($layer_direction == "VERTICAL" && ![ord::db_layer_has_hor_tracks $tech_layer])
+    || ($layer_direction == "HORIZONTAL" && ![ord::db_layer_has_ver_tracks $tech_layer])
+  } {
+    utl::warn PPL 10 "Routing tracks in the non-preferred direction were not found for the layer $layer."
+  }
+
   if { [info exists keys(-location)] } {
     set location $keys(-location)
   } else {
