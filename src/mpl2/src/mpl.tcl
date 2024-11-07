@@ -220,30 +220,30 @@ proc rtl_macro_placer { args } {
     mpl2::set_macro_placement_file $keys(-write_macro_placement)
   }
 
-  if {![mpl2::rtl_macro_placer_cmd $max_num_macro \
-                                   $min_num_macro \
-                                   $max_num_inst \
-                                   $min_num_inst \
-                                   $tolerance \
-                                   $max_num_level \
-                                   $coarsening_ratio \
-                                   $large_net_threshold \
-                                   $signature_net_threshold \
-                                   $halo_width \
-                                   $halo_height \
-                                   $fence_lx $fence_ly $fence_ux $fence_uy \
-                                   $area_weight $outline_weight $wirelength_weight \
-                                   $guidance_weight $fence_weight $boundary_weight \
-                                   $notch_weight $macro_blockage_weight \
-                                   $pin_access_th \
-                                   $target_util \
-                                   $target_dead_space \
-                                   $min_ar \
-                                   $snap_layer \
-                                   [info exists flags(-bus_planning)] \
-                                   $report_directory \
-                                   ]} {
-
+  if {
+    ![mpl2::rtl_macro_placer_cmd $max_num_macro \
+      $min_num_macro \
+      $max_num_inst \
+      $min_num_inst \
+      $tolerance \
+      $max_num_level \
+      $coarsening_ratio \
+      $large_net_threshold \
+      $signature_net_threshold \
+      $halo_width \
+      $halo_height \
+      $fence_lx $fence_ly $fence_ux $fence_uy \
+      $area_weight $outline_weight $wirelength_weight \
+      $guidance_weight $fence_weight $boundary_weight \
+      $notch_weight $macro_blockage_weight \
+      $pin_access_th \
+      $target_util \
+      $target_dead_space \
+      $min_ar \
+      $snap_layer \
+      [info exists flags(-bus_planning)] \
+      $report_directory]
+  } {
     return false
   }
 
