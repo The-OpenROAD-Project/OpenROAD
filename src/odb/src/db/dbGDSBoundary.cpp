@@ -44,6 +44,13 @@ template class dbTable<_dbGDSBoundary>;
 
 bool _dbGDSBoundary::operator==(const _dbGDSBoundary& rhs) const
 {
+  if (_layer != rhs._layer) {
+    return false;
+  }
+  if (_datatype != rhs._datatype) {
+    return false;
+  }
+
   return true;
 }
 
@@ -57,29 +64,47 @@ void _dbGDSBoundary::differences(dbDiff& diff,
                                  const _dbGDSBoundary& rhs) const
 {
   DIFF_BEGIN
+  DIFF_FIELD(_layer);
+  DIFF_FIELD(_datatype);
   DIFF_END
 }
 
-void _dbGDSBoundary::out(dbDiff& diff, char side, const char* field) const {
-    DIFF_OUT_BEGIN
+void _dbGDSBoundary::out(dbDiff& diff, char side, const char* field) const
+{
+  DIFF_OUT_BEGIN
+  DIFF_OUT_FIELD(_layer);
+  DIFF_OUT_FIELD(_datatype);
 
-        DIFF_END}
+  DIFF_END
+}
 
 _dbGDSBoundary::_dbGDSBoundary(_dbDatabase* db)
 {
+  _layer = 0;
+  _datatype = 0;
 }
 
 _dbGDSBoundary::_dbGDSBoundary(_dbDatabase* db, const _dbGDSBoundary& r)
 {
+  _layer = r._layer;
+  _datatype = r._datatype;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSBoundary& obj)
 {
+  stream >> obj._layer;
+  stream >> obj._datatype;
+  stream >> obj._xy;
+  stream >> obj._propattr;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSBoundary& obj)
 {
+  stream << obj._layer;
+  stream << obj._datatype;
+  stream << obj._xy;
+  stream << obj._propattr;
   return stream;
 }
 
@@ -89,5 +114,71 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSBoundary& obj)
 //
 ////////////////////////////////////////////////////////////////////
 
+void dbGDSBoundary::setLayer(int16_t layer)
+{
+  _dbGDSBoundary* obj = (_dbGDSBoundary*) this;
+
+  obj->_layer = layer;
+}
+
+int16_t dbGDSBoundary::getLayer() const
+{
+  _dbGDSBoundary* obj = (_dbGDSBoundary*) this;
+  return obj->_layer;
+}
+
+void dbGDSBoundary::setDatatype(int16_t datatype)
+{
+  _dbGDSBoundary* obj = (_dbGDSBoundary*) this;
+
+  obj->_datatype = datatype;
+}
+
+int16_t dbGDSBoundary::getDatatype() const
+{
+  _dbGDSBoundary* obj = (_dbGDSBoundary*) this;
+  return obj->_datatype;
+}
+
+void dbGDSBoundary::setXy(const std::vector<Point>& xy)
+{
+  _dbGDSBoundary* obj = (_dbGDSBoundary*) this;
+
+  obj->_xy = xy;
+}
+
+void dbGDSBoundary::getXy(std::vector<Point>& tbl) const
+{
+  _dbGDSBoundary* obj = (_dbGDSBoundary*) this;
+  tbl = obj->_xy;
+}
+
+// User Code Begin dbGDSBoundaryPublicMethods
+const std::vector<Point>& dbGDSBoundary::getXY()
+{
+  auto obj = (_dbGDSBoundary*) this;
+  return obj->_xy;
+}
+
+std::vector<std::pair<std::int16_t, std::string>>& dbGDSBoundary::getPropattr()
+{
+  auto* obj = (_dbGDSBoundary*) this;
+  return obj->_propattr;
+}
+
+dbGDSBoundary* dbGDSBoundary::create(dbGDSStructure* structure)
+{
+  auto* obj = (_dbGDSStructure*) structure;
+  return (dbGDSBoundary*) obj->boundaries_->create();
+}
+
+void dbGDSBoundary::destroy(dbGDSBoundary* boundary)
+{
+  auto* obj = (_dbGDSBoundary*) boundary;
+  auto* structure = (_dbGDSStructure*) obj->getOwner();
+  structure->boundaries_->destroy(obj);
+}
+
+// User Code End dbGDSBoundaryPublicMethods
 }  // namespace odb
    // Generator Code End Cpp

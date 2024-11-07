@@ -17,7 +17,7 @@ core = helpers.make_rect(design, 20, 20, 130, 130)
 l = design.micronToDBU(27)
 u = design.micronToDBU(60)
 
-ifph.create_voltage_domain("TEMP_ANALOG", (l, l, u, u))
+ifph.create_voltage_domain(design, "TEMP_ANALOG", (l, l, u, u))
 
 floorplan = design.getFloorplan()
 site = floorplan.findSite("FreePDK45_38x28_10R_NP_162NW_34O")

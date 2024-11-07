@@ -152,7 +152,8 @@ enum class ParasiticsSrc
 {
   none,
   placement,
-  global_routing
+  global_routing,
+  detailed_routing
 };
 
 struct ParasiticsResistance
@@ -283,14 +284,16 @@ class Resizer : public dbStaState
   float targetLoadCap(LibertyCell* cell);
 
   ////////////////////////////////////////////////////////////////
-  void repairSetup(double setup_margin,
+  bool repairSetup(double setup_margin,
                    double repair_tns_end_percent,
                    int max_passes,
+                   bool match_cell_footprint,
                    bool verbose,
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
                    bool skip_buffering,
-                   bool skip_buffer_removal);
+                   bool skip_buffer_removal,
+                   bool skip_last_gasp);
   // For testing.
   void repairSetup(const Pin* end_pin);
   // For testing.
@@ -301,12 +304,13 @@ class Resizer : public dbStaState
 
   ////////////////////////////////////////////////////////////////
 
-  void repairHold(double setup_margin,
+  bool repairHold(double setup_margin,
                   double hold_margin,
                   bool allow_setup_violations,
                   // Max buffer count as percent of design instance count.
                   float max_buffer_percent,
                   int max_passes,
+                  bool match_cell_footprint,
                   bool verbose);
   void repairHold(const Pin* end_pin,
                   double setup_margin,
@@ -317,7 +321,7 @@ class Resizer : public dbStaState
   int holdBufferCount() const;
 
   ////////////////////////////////////////////////////////////////
-  void recoverPower(float recover_power_percent);
+  bool recoverPower(float recover_power_percent, bool match_cell_footprint);
 
   ////////////////////////////////////////////////////////////////
   // Area of the design in meter^2.
@@ -347,6 +351,7 @@ class Resizer : public dbStaState
       double slew_margin,      // 0.0-1.0
       double cap_margin,       // 0.0-1.0
       double buffer_gain,
+      bool match_cell_footprint,
       bool verbose);
   int repairDesignBufferCount() const;
   // for debugging
@@ -361,6 +366,10 @@ class Resizer : public dbStaState
   // Use max_wire_length zero for none (meters)
   void repairClkNets(
       double max_wire_length);  // max_wire_length zero for none (meters)
+  void setClockBuffersList(const LibertyCellSeq& clk_buffers)
+  {
+    clk_buffers_ = clk_buffers;
+  }
   // Clone inverters next to the registers they drive to remove them
   // from the clock network.
   // yosys is too stupid to use the inverted clock registers
@@ -386,7 +395,7 @@ class Resizer : public dbStaState
   //  restore resized gates
   // resizeSlackPreamble must be called before the first findResizeSlacks.
   void resizeSlackPreamble();
-  void findResizeSlacks();
+  void findResizeSlacks(bool run_journal_restore);
   // Return nets with worst slack.
   NetSeq& resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).
@@ -405,6 +414,7 @@ class Resizer : public dbStaState
 
   dbNetwork* getDbNetwork() { return db_network_; }
   ParasiticsSrc getParasiticsSrc() { return parasitics_src_; }
+  void setParasiticsSrc(ParasiticsSrc src) { parasitics_src_ = src; }
   dbBlock* getDbBlock() { return block_; };
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
@@ -430,14 +440,15 @@ class Resizer : public dbStaState
   void findBuffers();
   bool isLinkCell(LibertyCell* cell);
   void findTargetLoads();
-  void balanceBin(const vector<odb::dbInst*>& bin);
+  void balanceBin(const vector<odb::dbInst*>& bin,
+                  const std::set<odb::dbSite*>& base_sites);
 
   //==============================
   // APIs for gate cloning
   LibertyCell* halfDrivingPowerCell(Instance* inst);
   LibertyCell* halfDrivingPowerCell(LibertyCell* cell);
   LibertyCell* closestDriver(LibertyCell* cell,
-                             LibertyCellSeq* candidates,
+                             const LibertyCellSeq& candidates,
                              float scale);
   std::vector<sta::LibertyPort*> libraryPins(Instance* inst) const;
   std::vector<sta::LibertyPort*> libraryPins(LibertyCell* cell) const;
@@ -467,6 +478,8 @@ class Resizer : public dbStaState
   bool hasMultipleOutputs(const Instance* inst);
 
   void resizePreamble();
+  LibertyCellSeq getSwappableCells(LibertyCell* source_cell);
+
   // Resize drvr_pin instance to target slew.
   // Return 1 if resized.
   int resizeToTargetSlew(const Pin* drvr_pin);
@@ -713,6 +726,9 @@ class Resizer : public dbStaState
   const MinMax* max_ = MinMax::max();
   LibertyCellSeq buffer_cells_;
   LibertyCell* buffer_lowest_drive_ = nullptr;
+  // Buffer list created by CTS kept here so that we use the
+  // exact same buffers when reparing clock nets.
+  LibertyCellSeq clk_buffers_;
 
   CellTargetLoadMap* target_load_map_ = nullptr;
   VertexSeq level_drvr_vertices_;
@@ -729,7 +745,9 @@ class Resizer : public dbStaState
   int cloned_gate_count_ = 0;
   int swap_pin_count_ = 0;
   int removed_buffer_count_ = 0;
+  bool exclude_clock_buffers_ = true;
   bool buffer_moved_into_core_ = false;
+  bool match_cell_footprint_ = false;
   // Slack map variables.
   // This is the minimum length of wire that is worth while to split and
   // insert a buffer in the middle of. Theoretically computed using the smallest

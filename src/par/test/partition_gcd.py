@@ -5,7 +5,7 @@ import par_aux
 tech = Tech()
 tech.readLiberty("Nangate45/Nangate45_typ.lib")
 tech.readLef("Nangate45/Nangate45.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readVerilog("gcd.v")
 design.link("gcd")
 

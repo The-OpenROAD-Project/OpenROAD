@@ -63,7 +63,7 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
   odb::dbInst* inst3 = odb::dbInst::create(block_, master_, "cells_3");
   odb::dbDatabase::endEco(block_);
 
-  Snapper snapper;
+  Snapper snapper(logger);
   snapper.setMacro(inst1);
   snapper.setMacro(inst2);
   snapper.setMacro(inst3);

@@ -38,6 +38,8 @@
 #include <string>
 #include <tuple>
 
+#include "node.h"
+
 namespace utl {
 class Logger;
 }
@@ -47,7 +49,6 @@ class dbTechLayer;
 }
 
 namespace psm {
-class Node;
 
 class Connection
 {
@@ -68,6 +69,9 @@ class Connection
   };
 
   using ConnectionSet = std::set<Connection*, Compare>;
+
+  template <typename T>
+  using ConnectionMap = std::map<Connection*, T, Compare>;
 
   Connection(Node* node0, Node* node1);
   virtual ~Connection() = default;
@@ -108,7 +112,9 @@ class Connection
   Node* node1_;
 
  private:
-  std::tuple<int, int, int, int, int, int> compareTuple() const;
+  using CompareInformation
+      = std::tuple<Node::CompareInformation, Node::CompareInformation>;
+  CompareInformation compareTuple() const;
 
   template <typename T>
   bool hasNodeOfType() const;

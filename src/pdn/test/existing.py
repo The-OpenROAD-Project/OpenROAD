@@ -6,7 +6,7 @@ tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
 tech.readLef("nangate_macros/fakeram45_64x32.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("nangate_existing/floorplan.def")
 
 

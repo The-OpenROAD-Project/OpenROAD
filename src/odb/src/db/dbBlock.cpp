@@ -82,6 +82,7 @@
 #include "dbJournal.h"
 #include "dbLevelShifter.h"
 #include "dbLogicPort.h"
+#include "dbMarkerCategory.h"
 #include "dbModBTerm.h"
 #include "dbModITerm.h"
 #include "dbModInst.h"
@@ -164,6 +165,7 @@ template class dbHashTable<_dbNet>;
 template class dbHashTable<_dbInst>;
 template class dbIntHashTable<_dbInstHdr>;
 template class dbHashTable<_dbBTerm>;
+template class dbHashTable<_dbMarkerCategory>;
 
 _dbBlock::_dbBlock(_dbDatabase* db)
 {
@@ -349,14 +351,13 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   dft_ptr->initialize();
   _dft = dft_ptr->getId();
 
+  _marker_categories_tbl = new dbTable<_dbMarkerCategory>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbMarkerCategoryObj);
+
   _net_hash.setTable(_net_tbl);
   _inst_hash.setTable(_inst_tbl);
   _module_hash.setTable(_module_tbl);
   _modinst_hash.setTable(_modinst_tbl);
-  _modbterm_hash.setTable(_modbterm_tbl);
-  _moditerm_hash.setTable(_moditerm_tbl);
-  _modnet_hash.setTable(_modnet_tbl);
-  _busport_hash.setTable(_busport_tbl);
   _powerdomain_hash.setTable(_powerdomain_tbl);
   _logicport_hash.setTable(_logicport_tbl);
   _powerswitch_hash.setTable(_powerswitch_tbl);
@@ -365,6 +366,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _group_hash.setTable(_group_tbl);
   _inst_hdr_hash.setTable(_inst_hdr_tbl);
   _bterm_hash.setTable(_bterm_tbl);
+  _marker_category_hash.setTable(_marker_categories_tbl);
 
   _net_bterm_itr = new dbNetBTermItr(_bterm_tbl);
 
@@ -571,6 +573,9 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
 
   _dft_tbl = new dbTable<_dbDft>(db, this, *block._dft_tbl);
 
+  _marker_categories_tbl
+      = new dbTable<_dbMarkerCategory>(db, this, *block._marker_categories_tbl);
+
   _net_hash.setTable(_net_tbl);
   _inst_hash.setTable(_inst_tbl);
   _module_hash.setTable(_module_tbl);
@@ -583,6 +588,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _powerswitch_hash.setTable(_powerswitch_tbl);
   _isolation_hash.setTable(_isolation_tbl);
   _levelshifter_hash.setTable(_levelshifter_tbl);
+  _marker_category_hash.setTable(_marker_categories_tbl);
 
   _net_bterm_itr = new dbNetBTermItr(_bterm_tbl);
 
@@ -723,6 +729,7 @@ _dbBlock::~_dbBlock()
   delete _bpin_itr;
   delete _prop_itr;
   delete _dft_tbl;
+  delete _marker_categories_tbl;
 
   std::list<dbBlockCallBackObj*>::iterator _cbitr;
   while (_callbacks.begin() != _callbacks.end()) {
@@ -935,6 +942,9 @@ dbObjectTable* _dbBlock::getObjectTable(dbObjectType type)
     case dbDftObj:
       return _dft_tbl;
 
+    case dbMarkerCategoryObj:
+      return _marker_categories_tbl;
+
     default:
       break;
   }
@@ -978,12 +988,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._inst_hash;
   stream << block._module_hash;
   stream << block._modinst_hash;
-  if (db->isSchema(db_schema_update_hierarchy)) {
-    stream << block._modbterm_hash;
-    stream << block._moditerm_hash;
-    stream << block._modnet_hash;
-    stream << block._busport_hash;
-  }
+
   stream << block._powerdomain_hash;
   stream << block._logicport_hash;
   stream << block._powerswitch_hash;
@@ -1003,11 +1008,19 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._iterm_tbl;
   stream << *block._net_tbl;
   stream << *block._inst_hdr_tbl;
-  stream << *block._inst_tbl;
-  stream << *block._module_tbl;
+  if (db->isSchema(db_schema_db_remove_hash)) {
+    stream << *block._module_tbl;
+    stream << *block._inst_tbl;
+  } else {
+    stream << *block._inst_tbl;
+    stream << *block._module_tbl;
+  }
   stream << *block._modinst_tbl;
   if (db->isSchema(db_schema_update_hierarchy)) {
     stream << *block._modbterm_tbl;
+    if (db->isSchema(db_schema_db_remove_hash)) {
+      stream << *block._busport_tbl;
+    }
     stream << *block._moditerm_tbl;
     stream << *block._modnet_tbl;
   }
@@ -1049,6 +1062,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._extControl;
   stream << block._dft;
   stream << *block._dft_tbl;
+  stream << *block._marker_categories_tbl;
+  stream << block._marker_category_hash;
   if (block.getDatabase()->isSchema(db_schema_dbblock_layers_ranges)) {
     stream << block._min_routing_layer;
     stream << block._max_routing_layer;
@@ -1108,10 +1123,16 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._module_hash;
   stream >> block._modinst_hash;
   if (db->isSchema(db_schema_update_hierarchy)) {
-    stream >> block._modbterm_hash;
-    stream >> block._moditerm_hash;
-    stream >> block._modnet_hash;
-    stream >> block._busport_hash;
+    if (!db->isSchema(db_schema_db_remove_hash)) {
+      dbHashTable<_dbModBTerm> unused_modbterm_hash;
+      dbHashTable<_dbModITerm> unused_moditerm_hash;
+      dbHashTable<_dbModNet> unused_modnet_hash;
+      dbHashTable<_dbBusPort> unused_busport_hash;
+      stream >> unused_modbterm_hash;
+      stream >> unused_moditerm_hash;
+      stream >> unused_modnet_hash;
+      stream >> unused_busport_hash;
+    }
   }
   stream >> block._powerdomain_hash;
   stream >> block._logicport_hash;
@@ -1141,11 +1162,19 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block._iterm_tbl;
   stream >> *block._net_tbl;
   stream >> *block._inst_hdr_tbl;
-  stream >> *block._inst_tbl;
-  stream >> *block._module_tbl;
+  if (db->isSchema(db_schema_db_remove_hash)) {
+    stream >> *block._module_tbl;
+    stream >> *block._inst_tbl;
+  } else {
+    stream >> *block._inst_tbl;
+    stream >> *block._module_tbl;
+  }
   stream >> *block._modinst_tbl;
   if (db->isSchema(db_schema_update_hierarchy)) {
     stream >> *block._modbterm_tbl;
+    if (db->isSchema(db_schema_db_remove_hash)) {
+      stream >> *block._busport_tbl;
+    }
     stream >> *block._moditerm_tbl;
     stream >> *block._modnet_tbl;
   }
@@ -1193,6 +1222,10 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   if (db->isSchema(db_schema_add_scan)) {
     stream >> block._dft;
     stream >> *block._dft_tbl;
+  }
+  if (db->isSchema(db_schema_dbmarkergroup)) {
+    stream >> *block._marker_categories_tbl;
+    stream >> block._marker_category_hash;
   }
   if (db->isSchema(db_schema_dbblock_layers_ranges)) {
     stream >> block._min_routing_layer;
@@ -1577,6 +1610,10 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
     return false;
   }
 
+  if (*_marker_categories_tbl != *rhs._marker_categories_tbl) {
+    return false;
+  }
+
   return true;
 }
 
@@ -1664,6 +1701,7 @@ void _dbBlock::differences(dbDiff& diff,
   DIFF_NAME_CACHE(_name_cache);
   DIFF_FIELD(_dft);
   DIFF_TABLE(_dft_tbl);
+  DIFF_TABLE(_marker_categories_tbl);
   DIFF_FIELD(_min_routing_layer);
   DIFF_FIELD(_max_routing_layer);
   DIFF_FIELD(_min_layer_for_clock);
@@ -1769,6 +1807,7 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_NAME_CACHE(_name_cache);
   DIFF_OUT_FIELD(_dft);
   DIFF_OUT_TABLE(_dft_tbl);
+  DIFF_OUT_TABLE(_marker_categories_tbl);
   DIFF_OUT_FIELD(_min_routing_layer);
   DIFF_OUT_FIELD(_max_routing_layer);
   DIFF_OUT_FIELD(_min_layer_for_clock);
@@ -4097,6 +4136,33 @@ void dbBlock::preExttreeMergeRC(double max_cap, uint corner)
   }
 }
 
+bool dbBlock::designIsRouted(bool verbose)
+{
+  bool design_is_routed = true;
+  for (dbNet* net : getNets()) {
+    if (net->isSpecial()) {
+      continue;
+    }
+
+    const int pin_count = net->getBTermCount() + net->getITerms().size();
+
+    odb::uint wire_cnt = 0, via_cnt = 0;
+    net->getWireCount(wire_cnt, via_cnt);
+    bool has_wires = wire_cnt != 0 || via_cnt != 0;
+
+    if (pin_count > 1 && !has_wires && !net->isConnectedByAbutment()) {
+      if (verbose) {
+        getImpl()->getLogger()->warn(
+            utl::ODB, 232, "Net {} is not routed.", net->getName());
+        design_is_routed = false;
+      } else {
+        return false;
+      }
+    }
+  }
+  return design_is_routed;
+}
+
 int dbBlock::globalConnect()
 {
   dbSet<dbGlobalConnect> gcs = getGlobalConnects();
@@ -4256,6 +4322,44 @@ dbTech* dbBlock::getTech()
 {
   _dbBlock* block = (_dbBlock*) this;
   return (dbTech*) block->getTech();
+}
+
+dbSet<dbMarkerCategory> dbBlock::getMarkerCategories()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbMarkerCategory>(block, block->_marker_categories_tbl);
+}
+
+dbMarkerCategory* dbBlock::findMarkerCategory(const char* name)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return (dbMarkerCategory*) block->_marker_category_hash.find(name);
+}
+
+void dbBlock::writeMarkerCategories(const std::string& file)
+{
+  std::ofstream report(file);
+
+  if (!report) {
+    _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
+    utl::Logger* logger = obj->getLogger();
+
+    logger->error(utl::ODB, 272, "Unable to open {} to write markers", file);
+  }
+
+  writeMarkerCategories(report);
+
+  report.close();
+}
+
+void dbBlock::writeMarkerCategories(std::ofstream& report)
+{
+  std::set<_dbMarkerCategory*> groups;
+  for (dbMarkerCategory* group : getMarkerCategories()) {
+    groups.insert((_dbMarkerCategory*) group);
+  }
+
+  _dbMarkerCategory::writeJSON(report, groups);
 }
 
 }  // namespace odb

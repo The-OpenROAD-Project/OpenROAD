@@ -107,7 +107,8 @@ void InitFloorplan::initFloorplan(
     int core_space_right,
     odb::dbSite* base_site,
     const std::vector<odb::dbSite*>& additional_sites,
-    RowParity row_parity)
+    RowParity row_parity,
+    const std::set<odb::dbSite*>& flipped_sites)
 {
   utl::Validator v(logger_, IFP);
   v.check_non_negative("utilization", utilization, 12);
@@ -135,7 +136,8 @@ void InitFloorplan::initFloorplan(
                 {core_lx, core_ly, core_ux, core_uy},
                 base_site,
                 additional_sites,
-                row_parity);
+                row_parity,
+                flipped_sites);
 }
 
 double InitFloorplan::designArea()
@@ -160,7 +162,8 @@ void InitFloorplan::initFloorplan(
     const odb::Rect& core,
     odb::dbSite* base_site,
     const std::vector<odb::dbSite*>& additional_sites,
-    RowParity row_parity)
+    RowParity row_parity,
+    const std::set<odb::dbSite*>& flipped_sites)
 {
   Rect die_area(snapToMfgGrid(die.xMin()),
                 snapToMfgGrid(die.yMin()),
@@ -227,7 +230,8 @@ void InitFloorplan::initFloorplan(
       }
       makeHybridRows(base_site, sites_by_name, snapped_core);
     } else {
-      makeUniformRows(base_site, sites_by_name, snapped_core, row_parity);
+      makeUniformRows(
+          base_site, sites_by_name, snapped_core, row_parity, flipped_sites);
     }
 
     updateVoltageDomain(clx, cly, cux, cuy);
@@ -417,7 +421,8 @@ void InitFloorplan::addUsedSites(
 void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
                                     const SitesByName& sites_by_name,
                                     const odb::Rect& core,
-                                    RowParity row_parity)
+                                    RowParity row_parity,
+                                    const std::set<odb::dbSite*>& flipped_sites)
 {
   const int core_dx = core.dx();
   const int core_dy = core.dy();
@@ -427,7 +432,7 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
   auto make_rows = [&](dbSite* site) {
     const uint site_dy = site->getHeight();
     int rows_y = core_dy / site_dy;
-
+    bool flip = flipped_sites.find(site) != flipped_sites.end();
     switch (row_parity) {
       case RowParity::NONE:
         break;
@@ -445,8 +450,8 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
 
     int y = core.yMin();
     for (int row = 0; row < rows_y; row++) {
-      dbOrientType orient = (row % 2 == 0) ? dbOrientType::R0   // N
-                                           : dbOrientType::MX;  // FS
+      dbOrientType orient = ((row + flip) % 2 == 0) ? dbOrientType::R0   // N
+                                                    : dbOrientType::MX;  // FS
       string row_name = fmt::format("ROW_{}", block_->getRows().size());
       dbRow::create(block_,
                     row_name.c_str(),

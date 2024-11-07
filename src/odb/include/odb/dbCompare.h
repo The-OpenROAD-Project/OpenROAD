@@ -544,16 +544,6 @@ struct less<odb::dbGDSBox*>
 };
 
 template <>
-struct less<odb::dbGDSElement*>
-{
-  bool operator()(const odb::dbGDSElement* lhs,
-                  const odb::dbGDSElement* rhs) const
-  {
-    return odb::compare_by_id(lhs, rhs);
-  }
-};
-
-template <>
 struct less<odb::dbGDSNode*>
 {
   bool operator()(const odb::dbGDSNode* lhs, const odb::dbGDSNode* rhs) const
@@ -652,6 +642,25 @@ struct less<odb::dbLogicPort*>
 {
   bool operator()(const odb::dbLogicPort* lhs,
                   const odb::dbLogicPort* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbMarker*>
+{
+  bool operator()(const odb::dbMarker* lhs, const odb::dbMarker* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbMarkerCategory*>
+{
+  bool operator()(const odb::dbMarkerCategory* lhs,
+                  const odb::dbMarkerCategory* rhs) const
   {
     return odb::compare_by_id(lhs, rhs);
   }

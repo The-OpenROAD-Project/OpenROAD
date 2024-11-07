@@ -87,8 +87,8 @@ struct SlackEstimatorParams
   Pin* prev_driver_pin;
   Pin* driver_input_pin;
   Instance* driver;
-  PathRef* driver_path;
-  PathRef* prev_driver_path;
+  const PathRef* driver_path;
+  const PathRef* prev_driver_path;
   LibertyCell* driver_cell;
   const float setup_slack_margin;
   const Corner* corner;
@@ -124,7 +124,7 @@ class RepairSetup : public sta::dbStaState
 {
  public:
   RepairSetup(Resizer* resizer);
-  void repairSetup(float setup_slack_margin,
+  bool repairSetup(float setup_slack_margin,
                    // Percent of violating ends to repair to
                    // reduce tns (0.0-1.0).
                    double repair_tns_end_percent,
@@ -133,7 +133,8 @@ class RepairSetup : public sta::dbStaState
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
                    bool skip_buffering,
-                   bool skip_buffer_removal);
+                   bool skip_buffer_removal,
+                   bool skip_last_gasp);
   // For testing.
   void repairSetup(const Pin* end_pin);
   // For testing.
@@ -166,8 +167,10 @@ class RepairSetup : public sta::dbStaState
   void equivCellPins(const LibertyCell* cell,
                      LibertyPort* input_port,
                      sta::LibertyPortSet& ports);
-  bool swapPins(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
-  bool removeDrvr(PathRef* drvr_path,
+  bool swapPins(const PathRef* drvr_path,
+                int drvr_index,
+                PathExpanded* expanded);
+  bool removeDrvr(const PathRef* drvr_path,
                   LibertyCell* drvr_cell,
                   int drvr_index,
                   PathExpanded* expanded,
@@ -181,15 +184,17 @@ class RepairSetup : public sta::dbStaState
                                float delay_adjust,
                                SlackEstimatorParams params,
                                bool accept_if_slack_improves);
-  bool upsizeDrvr(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
+  bool upsizeDrvr(const PathRef* drvr_path,
+                  int drvr_index,
+                  PathExpanded* expanded);
   Point computeCloneGateLocation(
       const Pin* drvr_pin,
       const vector<pair<Vertex*, Slack>>& fanout_slacks);
-  bool cloneDriver(PathRef* drvr_path,
+  bool cloneDriver(const PathRef* drvr_path,
                    int drvr_index,
                    Slack drvr_slack,
                    PathExpanded* expanded);
-  void splitLoads(PathRef* drvr_path,
+  void splitLoads(const PathRef* drvr_path,
                   int drvr_index,
                   Slack drvr_slack,
                   PathExpanded* expanded);
@@ -203,7 +208,12 @@ class RepairSetup : public sta::dbStaState
 
   int rebuffer(const Pin* drvr_pin);
   BufferedNetSeq rebufferBottomUp(const BufferedNetPtr& bnet, int level);
-  int rebufferTopDown(const BufferedNetPtr& choice, Net* net, int level);
+  int rebufferTopDown(const BufferedNetPtr& choice,
+                      Net* net,
+                      int level,
+                      Instance* parent,
+                      odb::dbITerm* mod_net_drvr,
+                      odb::dbModNet* mod_net);
   BufferedNetSeq addWireAndBuffer(const BufferedNetSeq& Z,
                                   const BufferedNetPtr& bnet_wire,
                                   int level);

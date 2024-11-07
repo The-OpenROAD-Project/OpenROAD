@@ -300,7 +300,6 @@ _installOrTools() {
         fi
         orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
         eval wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
-        orToolsPath=${PREFIX:-"/opt/or-tools"}
         if command -v brew &> /dev/null; then
             orToolsPath="$(brew --prefix or-tools)"
         fi
@@ -624,6 +623,7 @@ _installDebianPackages() {
         git \
         groff \
         lcov \
+        libffi-dev \
         libgomp1 \
         libomp-dev \
         libpcre2-dev \
@@ -636,6 +636,7 @@ _installDebianPackages() {
         tcl-dev \
         tcl-tclreadline \
         tcllib \
+        unzip \
         wget \
         zlib1g-dev
 

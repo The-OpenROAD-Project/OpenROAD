@@ -1855,11 +1855,6 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
     best_cost = std::numeric_limits<float>::max();
     begin_check = 0;
     end_check = std::min(check_interval, remaining_runs);
-
-    int outline_weight, boundary_weight;
-    setWeightsForConvergence(
-        outline_weight, boundary_weight, nets, num_of_macros_to_place);
-
     debugPrint(logger_,
                MPL,
                "hierarchical_macro_placement",
@@ -1924,11 +1919,11 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
             outline,
             shaped_macros,
             area_weight_,
-            outline_weight,
+            outline_weight_,
             wirelength_weight_,
             guidance_weight_,
             fence_weight_,
-            boundary_weight,
+            boundary_weight_,
             macro_blockage_weight_,
             notch_weight_,
             notch_h_th_,
@@ -2129,36 +2124,6 @@ void HierRTLMP::adjustMacroBlockageWeight()
                macro_blockage_weight_,
                new_macro_blockage_weight);
     macro_blockage_weight_ = new_macro_blockage_weight;
-  }
-}
-
-void HierRTLMP::setWeightsForConvergence(int& outline_weight,
-                                         int& boundary_weight,
-                                         const std::vector<BundledNet>& nets,
-                                         const int number_of_placeable_macros)
-{
-  outline_weight = outline_weight_;
-  boundary_weight = boundary_weight_;
-
-  if (nets.size() < number_of_placeable_macros / 2) {
-    // If a design has too few connections, there's a possibily that, for
-    // some tight outlines, the outline penalty will struggle to win the
-    // fight against the boundary penalty. This can happen specially for
-    // large hierarchical designs that were reduced by deltaDebug.
-    outline_weight *= 2;
-    boundary_weight /= 2;
-
-    debugPrint(logger_,
-               MPL,
-               "hierarchical_macro_placement",
-               1,
-               "Number of bundled nets is below half of the number of "
-               "placeable macros, adapting "
-               "weights. Outline {} -> {}, Boundary {} -> {}.",
-               outline_weight_,
-               outline_weight,
-               boundary_weight_,
-               boundary_weight);
   }
 }
 
@@ -2463,11 +2428,6 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
   int begin_check = 0;
   int end_check = std::min(check_interval, remaining_runs);
   float best_cost = std::numeric_limits<float>::max();
-
-  int outline_weight, boundary_weight;
-  setWeightsForConvergence(
-      outline_weight, boundary_weight, nets, num_of_macros_to_place);
-
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
@@ -2531,11 +2491,11 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
                                               outline,
                                               shaped_macros,
                                               area_weight_,
-                                              outline_weight,
+                                              outline_weight_,
                                               wirelength_weight_,
                                               guidance_weight_,
                                               fence_weight_,
-                                              boundary_weight,
+                                              boundary_weight_,
                                               macro_blockage_weight_,
                                               notch_weight_,
                                               notch_h_th_,
@@ -2953,11 +2913,6 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
   const int check_interval = 10;
   int begin_check = 0;
   int end_check = std::min(check_interval, remaining_runs);
-
-  int outline_weight, boundary_weight;
-  setWeightsForConvergence(
-      outline_weight, boundary_weight, nets, macros_to_place);
-
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
@@ -3018,11 +2973,11 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
                                               outline,
                                               shaped_macros,
                                               area_weight_,
-                                              outline_weight,
+                                              outline_weight_,
                                               wirelength_weight_,
                                               guidance_weight_,
                                               fence_weight_,
-                                              boundary_weight,
+                                              boundary_weight_,
                                               macro_blockage_weight_,
                                               notch_weight_,
                                               notch_h_th_,
@@ -4075,7 +4030,7 @@ void HierRTLMP::updateMacroOnDb(const HardMacro* hard_macro)
 
 void HierRTLMP::commitMacroPlacementToDb()
 {
-  Snapper snapper;
+  Snapper snapper(logger_);
 
   for (auto& [inst, hard_macro] : tree_->maps.inst_to_hard) {
     if (!inst) {
@@ -4463,186 +4418,268 @@ bool Pusher::overlapsWithIOBlockage(const odb::Rect& cluster_box,
 
 //////// Snapper ////////
 
-Snapper::Snapper() : inst_(nullptr)
+Snapper::Snapper(utl::Logger* logger) : logger_(logger), inst_(nullptr)
 {
 }
 
-Snapper::Snapper(odb::dbInst* inst) : inst_(inst)
+Snapper::Snapper(utl::Logger* logger, odb::dbInst* inst)
+    : logger_(logger), inst_(inst)
 {
 }
 
 void Snapper::snapMacro()
 {
-  const odb::Point snap_origin = computeSnapOrigin();
-  inst_->setOrigin(snap_origin.x(), snap_origin.y());
+  snap(odb::dbTechLayerDir::VERTICAL);
+  snap(odb::dbTechLayerDir::HORIZONTAL);
 }
 
-odb::Point Snapper::computeSnapOrigin()
+void Snapper::snap(const odb::dbTechLayerDir& target_direction)
 {
-  SnapParameters x, y;
+  SameDirectionLayersData layers_data
+      = computeSameDirectionLayersData(target_direction);
 
-  std::set<odb::dbTechLayer*> snap_layers;
+  int origin = target_direction == odb::dbTechLayerDir::VERTICAL
+                   ? inst_->getOrigin().x()
+                   : inst_->getOrigin().y();
 
-  odb::dbMaster* master = inst_->getMaster();
-  for (odb::dbMTerm* mterm : master->getMTerms()) {
-    if (mterm->getSigType() != odb::dbSigType::SIGNAL) {
+  if (!layers_data.snap_layer) {
+    // There are no pins to align with the track-grid.
+    alignWithManufacturingGrid(origin);
+    setOrigin(origin, target_direction);
+    return;
+  }
+
+  odb::dbITerm* snap_pin = layers_data.layer_to_pin.at(layers_data.snap_layer);
+  const LayerParameters& snap_layer_params
+      = layers_data.layer_to_params.at(layers_data.snap_layer);
+
+  if (!pinsAreAlignedWithTrackGrid(
+          snap_pin, snap_layer_params, target_direction)) {
+    // The idea here is to first align the origin of the macro with
+    // the track-grid taking into account that the grid has a certain
+    // offset with regards to (0,0) and, then, compensate the offset
+    // of the pins themselves so that the lines of the grid cross
+    // their center.
+    origin
+        = std::round(origin / snap_layer_params.pitch) * snap_layer_params.pitch
+          + snap_layer_params.offset - snap_layer_params.pin_offset;
+
+    alignWithManufacturingGrid(origin);
+    setOrigin(origin, target_direction);
+  }
+
+  attemptSnapToExtraLayers(
+      origin, layers_data, snap_layer_params, target_direction);
+}
+
+void Snapper::setOrigin(const int origin,
+                        const odb::dbTechLayerDir& target_direction)
+{
+  if (target_direction == odb::dbTechLayerDir::VERTICAL) {
+    inst_->setOrigin(origin, inst_->getOrigin().y());
+  } else {
+    inst_->setOrigin(inst_->getOrigin().x(), origin);
+  }
+}
+
+SameDirectionLayersData Snapper::computeSameDirectionLayersData(
+    const odb::dbTechLayerDir& target_direction)
+{
+  SameDirectionLayersData data;
+
+  for (odb::dbITerm* iterm : inst_->getITerms()) {
+    if (iterm->getSigType() != odb::dbSigType::SIGNAL) {
       continue;
     }
 
-    for (odb::dbMPin* mpin : mterm->getMPins()) {
+    for (odb::dbMPin* mpin : iterm->getMTerm()->getMPins()) {
       for (odb::dbBox* box : mpin->getGeometry()) {
         odb::dbTechLayer* layer = box->getTechLayer();
+        if (layer->getDirection() == target_direction) {
+          if (data.layer_to_pin.find(layer) != data.layer_to_pin.end()) {
+            continue;
+          }
 
-        if (snap_layers.find(layer) != snap_layers.end()) {
-          continue;
-        }
+          if (data.layer_to_pin.empty()) {
+            data.snap_layer = layer;
+          }
 
-        snap_layers.insert(layer);
-
-        if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-          y = computeSnapParameters(layer, box, false);
-        } else {
-          x = computeSnapParameters(layer, box, true);
+          data.layer_to_pin[layer] = iterm;
+          data.layer_to_params[layer]
+              = computeLayerParameters(layer, iterm, target_direction);
         }
       }
     }
   }
 
-  // The distance between the pins and the lower-left corner of the master of
-  // a macro instance may not be a multiple of the track-grid, in these cases,
-  // we need to compensate a small offset.
-  const int mterm_offset_x
-      = x.pitch != 0
-            ? x.lower_left_to_first_pin
-                  - std::floor(x.lower_left_to_first_pin / x.pitch) * x.pitch
-            : 0;
-  const int mterm_offset_y
-      = y.pitch != 0
-            ? y.lower_left_to_first_pin
-                  - std::floor(y.lower_left_to_first_pin / y.pitch) * y.pitch
-            : 0;
-
-  int pin_offset_x = x.pin_width / 2 + mterm_offset_x;
-  int pin_offset_y = y.pin_width / 2 + mterm_offset_y;
-
-  odb::dbOrientType orientation = inst_->getOrient();
-
-  if (orientation == odb::dbOrientType::MX) {
-    pin_offset_y = -pin_offset_y;
-  } else if (orientation == odb::dbOrientType::MY) {
-    pin_offset_x = -pin_offset_x;
-  } else if (orientation == odb::dbOrientType::R180) {
-    pin_offset_x = -pin_offset_x;
-    pin_offset_y = -pin_offset_y;
-  }
-
-  // This may NOT be the lower-left corner.
-  int origin_x = inst_->getOrigin().x();
-  int origin_y = inst_->getOrigin().y();
-
-  // Compute trackgrid alignment only if there are pins in the grid's direction.
-  // Note that we first align the macro origin with the track grid and then, we
-  // compensate the necessary offset.
-  if (x.pin_width != 0) {
-    origin_x = std::round(origin_x / x.pitch) * x.pitch + x.offset;
-    origin_x -= pin_offset_x;
-  }
-  if (y.pin_width != 0) {
-    origin_y = std::round(origin_y / y.pitch) * y.pitch + y.offset;
-    origin_y -= pin_offset_y;
-  }
-
-  const int manufacturing_grid
-      = inst_->getDb()->getTech()->getManufacturingGrid();
-
-  origin_x = std::round(origin_x / manufacturing_grid) * manufacturing_grid;
-  origin_y = std::round(origin_y / manufacturing_grid) * manufacturing_grid;
-
-  const odb::Point snap_origin(origin_x, origin_y);
-
-  return snap_origin;
+  return data;
 }
 
-SnapParameters Snapper::computeSnapParameters(odb::dbTechLayer* layer,
-                                              odb::dbBox* box,
-                                              const bool vertical_layer)
+LayerParameters Snapper::computeLayerParameters(
+    odb::dbTechLayer* layer,
+    odb::dbITerm* pin,
+    const odb::dbTechLayerDir& target_direction)
 {
-  SnapParameters params;
+  LayerParameters params;
 
   odb::dbBlock* block = inst_->getBlock();
   odb::dbTrackGrid* track_grid = block->findTrackGrid(layer);
 
   if (track_grid) {
     std::vector<int> coordinate_grid;
-    getTrackGrid(track_grid, coordinate_grid, vertical_layer);
+    getTrackGrid(track_grid, coordinate_grid, target_direction);
 
     params.offset = coordinate_grid[0];
     params.pitch = coordinate_grid[1] - coordinate_grid[0];
   } else {
-    params.pitch = getPitch(layer, vertical_layer);
-    params.offset = getOffset(layer, vertical_layer);
+    logger_->error(
+        MPL, 39, "No track-grid found for layer {}", layer->getName());
   }
 
-  params.pin_width = getPinWidth(box, vertical_layer);
+  params.pin_width = getPinWidth(pin, target_direction);
   params.lower_left_to_first_pin
-      = getPinToLowerLeftDistance(box, vertical_layer);
+      = getPinToLowerLeftDistance(pin, target_direction);
 
+  // The distance between the pins and the lower-left corner
+  // of the master of a macro instance may not be a multiple
+  // of the track-grid, in these cases, we need to compensate
+  // a small offset.
+  int mterm_offset = 0;
+  if (params.pitch != 0) {
+    mterm_offset = params.lower_left_to_first_pin
+                   - std::floor(params.lower_left_to_first_pin / params.pitch)
+                         * params.pitch;
+  }
+  params.pin_offset = params.pin_width / 2 + mterm_offset;
+
+  const odb::dbOrientType& orientation = inst_->getOrient();
+  if (target_direction == odb::dbTechLayerDir::VERTICAL) {
+    if (orientation == odb::dbOrientType::MY
+        || orientation == odb::dbOrientType::R180) {
+      params.pin_offset = -params.pin_offset;
+    }
+  } else if (orientation == odb::dbOrientType::MX
+             || orientation == odb::dbOrientType::R180) {
+    params.pin_offset = -params.pin_offset;
+  }
   return params;
 }
 
-int Snapper::getPitch(odb::dbTechLayer* layer, const bool vertical_layer)
-{
-  int pitch = 0;
-  if (vertical_layer) {
-    pitch = layer->getPitchX();
-  } else {
-    pitch = layer->getPitchY();
-  }
-  return pitch;
-}
-
-int Snapper::getOffset(odb::dbTechLayer* layer, const bool vertical_layer)
-{
-  int offset = 0;
-  if (vertical_layer) {
-    offset = layer->getOffsetX();
-  } else {
-    offset = layer->getOffsetY();
-  }
-  return offset;
-}
-
-int Snapper::getPinWidth(odb::dbBox* box, const bool vertical_layer)
+int Snapper::getPinWidth(odb::dbITerm* pin,
+                         const odb::dbTechLayerDir& target_direction)
 {
   int pin_width = 0;
-  if (vertical_layer) {
-    pin_width = box->getDX();
+  if (target_direction == odb::dbTechLayerDir::VERTICAL) {
+    pin_width = pin->getBBox().dx();
   } else {
-    pin_width = box->getDY();
+    pin_width = pin->getBBox().dy();
   }
   return pin_width;
 }
 
 void Snapper::getTrackGrid(odb::dbTrackGrid* track_grid,
                            std::vector<int>& coordinate_grid,
-                           const bool vertical_layer)
+                           const odb::dbTechLayerDir& target_direction)
 {
-  if (vertical_layer) {
+  if (target_direction == odb::dbTechLayerDir::VERTICAL) {
     track_grid->getGridX(coordinate_grid);
   } else {
     track_grid->getGridY(coordinate_grid);
   }
 }
 
-int Snapper::getPinToLowerLeftDistance(odb::dbBox* box, bool vertical_layer)
+int Snapper::getPinToLowerLeftDistance(
+    odb::dbITerm* pin,
+    const odb::dbTechLayerDir& target_direction)
 {
   int pin_to_origin = 0;
-  if (vertical_layer) {
-    pin_to_origin = box->getBox().xMin();
+
+  odb::dbMTerm* mterm = pin->getMTerm();
+  if (target_direction == odb::dbTechLayerDir::VERTICAL) {
+    pin_to_origin = mterm->getBBox().xMin();
   } else {
-    pin_to_origin = box->getBox().yMin();
+    pin_to_origin = mterm->getBBox().yMin();
   }
+
   return pin_to_origin;
+}
+
+void Snapper::attemptSnapToExtraLayers(
+    const int origin,
+    const SameDirectionLayersData& layers_data,
+    const LayerParameters& snap_layer_params,
+    const odb::dbTechLayerDir& target_direction)
+{
+  const int total_number_of_layers
+      = static_cast<int>(layers_data.layer_to_pin.size());
+  const int total_attempts = 5;
+  int remaining_attempts = total_attempts;
+
+  int best_origin = origin;
+  int best_number_of_snapped_layers = 1;
+  int new_origin = origin;
+  bool all_layers_snapped = false;
+
+  while (remaining_attempts > 0) {
+    const bool is_first_attempt = remaining_attempts == total_attempts;
+    // The pins may already be aligned for all extra layers (in that case,
+    // we don't need to move the macro at all), hence, we use the first
+    // attempt to check if there are in fact any extra layers to snap.
+    if (!is_first_attempt) {
+      // Move one track ahead.
+      new_origin += snap_layer_params.pitch;
+      setOrigin(new_origin, target_direction);
+    }
+
+    int curr_number_of_snapped_layers = 1;
+    for (const auto [layer, pin] : layers_data.layer_to_pin) {
+      if (layer == layers_data.snap_layer) {
+        continue;
+      }
+
+      if (pinsAreAlignedWithTrackGrid(
+              pin, layers_data.layer_to_params.at(layer), target_direction)) {
+        ++curr_number_of_snapped_layers;
+      }
+
+      if (curr_number_of_snapped_layers == total_number_of_layers) {
+        all_layers_snapped = true;
+        break;
+      }
+    }
+
+    if (all_layers_snapped) {
+      return;
+    }
+
+    if (curr_number_of_snapped_layers > best_number_of_snapped_layers) {
+      best_number_of_snapped_layers = curr_number_of_snapped_layers;
+      best_origin = new_origin;
+    }
+
+    --remaining_attempts;
+  }
+
+  setOrigin(best_origin, target_direction);
+}
+
+bool Snapper::pinsAreAlignedWithTrackGrid(
+    odb::dbITerm* pin,
+    const LayerParameters& layer_params,
+    const odb::dbTechLayerDir& target_direction)
+{
+  int pin_center = target_direction == odb::dbTechLayerDir::VERTICAL
+                       ? pin->getBBox().xCenter()
+                       : pin->getBBox().yCenter();
+  return (pin_center - layer_params.offset) % layer_params.pitch == 0;
+}
+
+void Snapper::alignWithManufacturingGrid(int& origin)
+{
+  const int manufacturing_grid
+      = inst_->getDb()->getTech()->getManufacturingGrid();
+
+  origin = std::round(origin / manufacturing_grid) * manufacturing_grid;
 }
 
 }  // namespace mpl2

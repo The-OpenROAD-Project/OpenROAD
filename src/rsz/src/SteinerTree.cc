@@ -65,9 +65,19 @@ static void connectedPins(const Net* net,
 SteinerTree* Resizer::makeSteinerTree(const Pin* drvr_pin)
 {
   Network* sdc_network = network_->sdcNetwork();
-  Net* net = network_->isTopLevelPort(drvr_pin)
-                 ? network_->net(network_->term(drvr_pin))
-                 : network_->net(drvr_pin);
+
+  /*
+    Handle hierarchy. Make sure all traversal on dbNets.
+   */
+  odb::dbNet* db_net;
+  db_net = db_network_->flatNet(drvr_pin);
+
+  Net* net
+      = network_->isTopLevelPort(drvr_pin)
+            ? network_->net(network_->term(drvr_pin))
+            // original code, could retrun a mod net  : network_->net(drvr_pin);
+            : db_network_->dbToSta(db_net);
+
   debugPrint(logger_, RSZ, "steiner", 1, "Net {}", sdc_network->pathName(net));
   SteinerTree* tree = new SteinerTree(drvr_pin, this);
   Vector<PinLoc>& pinlocs = tree->pinlocs();

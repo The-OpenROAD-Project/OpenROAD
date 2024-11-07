@@ -134,7 +134,6 @@ class dbDft;
 class dbGCellGrid;
 class dbGDSBoundary;
 class dbGDSBox;
-class dbGDSElement;
 class dbGDSNode;
 class dbGDSPath;
 class dbGDSSRef;
@@ -146,6 +145,8 @@ class dbGuide;
 class dbIsolation;
 class dbLevelShifter;
 class dbLogicPort;
+class dbMarker;
+class dbMarkerCategory;
 class dbMetalWidthViaMap;
 class dbModBTerm;
 class dbModInst;
@@ -1226,7 +1227,7 @@ class dbBlock : public dbObject
   ///
   /// Convert an area from database units squared (DBU^2) to square microns.
   ///
-  double dbuAreaToMicrons(const int64_t dbu_area);
+  double dbuAreaToMicrons(int64_t dbu_area);
 
   ///
   /// Convert a length from microns to database units (DBUs).
@@ -1236,7 +1237,7 @@ class dbBlock : public dbObject
   ///
   /// Convert an area from square microns to database units squared (DBU^2).
   ///
-  int64_t micronsAreaToDbu(const double micronsArea);
+  int64_t micronsAreaToDbu(double micronsArea);
 
   ///
   /// Get the hierarchy delimeter.
@@ -1591,6 +1592,11 @@ class dbBlock : public dbObject
   void preExttreeMergeRC(double max_cap, uint corner);
 
   ///
+  /// check if signal, clock and special nets are routed
+  ///
+  bool designIsRouted(bool verbose);
+
+  ///
   /// clear
   ///
   void clear();
@@ -1619,6 +1625,22 @@ class dbBlock : public dbObject
   ///  Get the non-default-rules specific to this block.
   ///
   dbSet<dbTechNonDefaultRule> getNonDefaultRules();
+
+  ///
+  ///  Get marker categories for this block.
+  ///
+  dbSet<dbMarkerCategory> getMarkerCategories();
+
+  ///
+  ///  Find marker group for this block.
+  ///
+  dbMarkerCategory* findMarkerCategory(const char* name);
+
+  //
+  //  Write marker information to file
+  //
+  void writeMarkerCategories(const std::string& file);
+  void writeMarkerCategories(std::ofstream& reports);
 
   ///
   ///  Levelelize from set of insts
@@ -5799,6 +5821,9 @@ class dbGDSLib : public dbObject
   dbGDSStructure* findGDSStructure(const char* name) const;
 
   dbSet<dbGDSStructure> getGDSStructures();
+
+  static dbGDSLib* create(dbDatabase* db, const std::string& name);
+  static void destroy(dbGDSLib* lib);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -7403,7 +7428,7 @@ class dbGCellGrid : public dbObject
   // User Code End dbGCellGrid
 };
 
-class dbGDSElement : public dbObject
+class dbGDSBoundary : public dbObject
 {
  public:
   void setLayer(int16_t layer);
@@ -7414,13 +7439,136 @@ class dbGDSElement : public dbObject
 
   int16_t getDatatype() const;
 
-  // User Code Begin dbGDSElement
+  void setXy(const std::vector<Point>& xy);
 
+  void getXy(std::vector<Point>& tbl) const;
+
+  // User Code Begin dbGDSBoundary
+  const std::vector<Point>& getXY();
   std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
 
-  std::vector<Point>& getXY();
+  static dbGDSBoundary* create(dbGDSStructure* structure);
+  static void destroy(dbGDSBoundary* boundary);
+  // User Code End dbGDSBoundary
+};
 
-  // User Code End dbGDSElement
+class dbGDSBox : public dbObject
+{
+ public:
+  void setLayer(int16_t layer);
+
+  int16_t getLayer() const;
+
+  void setDatatype(int16_t datatype);
+
+  int16_t getDatatype() const;
+
+  void setXy(const std::vector<Point>& xy);
+
+  void getXy(std::vector<Point>& tbl) const;
+
+  // User Code Begin dbGDSBox
+  const std::vector<Point>& getXY();
+  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+
+  static dbGDSBox* create(dbGDSStructure* structure);
+  static void destroy(dbGDSBox* box);
+  // User Code End dbGDSBox
+};
+
+class dbGDSNode : public dbObject
+{
+ public:
+  void setLayer(int16_t layer);
+
+  int16_t getLayer() const;
+
+  void setDatatype(int16_t datatype);
+
+  int16_t getDatatype() const;
+
+  void setXy(const std::vector<Point>& xy);
+
+  void getXy(std::vector<Point>& tbl) const;
+
+  // User Code Begin dbGDSNode
+  const std::vector<Point>& getXY();
+  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+
+  static dbGDSNode* create(dbGDSStructure* structure);
+  static void destroy(dbGDSNode* node);
+  // User Code End dbGDSNode
+};
+
+class dbGDSPath : public dbObject
+{
+ public:
+  void setLayer(int16_t layer);
+
+  int16_t getLayer() const;
+
+  void setDatatype(int16_t datatype);
+
+  int16_t getDatatype() const;
+
+  void setXy(const std::vector<Point>& xy);
+
+  void getXy(std::vector<Point>& tbl) const;
+
+  void setWidth(int width);
+
+  int getWidth() const;
+
+  void set_pathType(int16_t pathType);
+
+  int16_t get_pathType() const;
+
+  // User Code Begin dbGDSPath
+  const std::vector<Point>& getXY();
+  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+
+  static dbGDSPath* create(dbGDSStructure* structure);
+  static void destroy(dbGDSPath* path);
+  // User Code End dbGDSPath
+};
+
+class dbGDSSRef : public dbObject
+{
+ public:
+  void setLayer(int16_t layer);
+
+  int16_t getLayer() const;
+
+  void setDatatype(int16_t datatype);
+
+  int16_t getDatatype() const;
+
+  void setXy(const std::vector<Point>& xy);
+
+  void getXy(std::vector<Point>& tbl) const;
+
+  void set_sName(const std::string& sName);
+
+  std::string get_sName() const;
+
+  void setTransform(dbGDSSTrans transform);
+
+  dbGDSSTrans getTransform() const;
+
+  void set_colRow(const std::pair<int16_t, int16_t>& colRow);
+
+  std::pair<int16_t, int16_t> get_colRow() const;
+
+  // User Code Begin dbGDSSRef
+  const std::vector<Point>& getXY();
+  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+
+  dbGDSStructure* getStructure() const;
+  void setStructure(dbGDSStructure* structure) const;
+
+  static dbGDSSRef* create(dbGDSStructure* structure);
+  static void destroy(dbGDSSRef* sref);
+  // User Code End dbGDSSRef
 };
 
 class dbGDSStructure : public dbObject
@@ -7428,25 +7576,66 @@ class dbGDSStructure : public dbObject
  public:
   char* getName() const;
 
+  dbSet<dbGDSBoundary> getGDSBoundarys() const;
+
+  dbSet<dbGDSBox> getGDSBoxs() const;
+
+  dbSet<dbGDSNode> getGDSNodes() const;
+
+  dbSet<dbGDSPath> getGDSPaths() const;
+
+  dbSet<dbGDSSRef> getGDSSRefs() const;
+
+  dbSet<dbGDSText> getGDSTexts() const;
+
   // User Code Begin dbGDSStructure
 
   dbGDSLib* getGDSLib();
 
   static dbGDSStructure* create(dbGDSLib* lib, const char* name);
-
   static void destroy(dbGDSStructure* structure);
 
-  void removeElement(int index);
-
-  void addElement(dbGDSElement* element);
-
-  dbGDSElement* getElement(int index);
-
-  dbGDSElement* operator[](int index);
-
-  int getNumElements();
-
   // User Code End dbGDSStructure
+};
+
+class dbGDSText : public dbObject
+{
+ public:
+  void setLayer(int16_t layer);
+
+  int16_t getLayer() const;
+
+  void setDatatype(int16_t datatype);
+
+  int16_t getDatatype() const;
+
+  void setXy(const std::vector<Point>& xy);
+
+  void getXy(std::vector<Point>& tbl) const;
+
+  void setPresentation(dbGDSTextPres presentation);
+
+  dbGDSTextPres getPresentation() const;
+
+  void setWidth(int width);
+
+  int getWidth() const;
+
+  void setTransform(dbGDSSTrans transform);
+
+  dbGDSSTrans getTransform() const;
+
+  void setText(const std::string& text);
+
+  std::string getText() const;
+
+  // User Code Begin dbGDSText
+  const std::vector<Point>& getXY();
+  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+
+  static dbGDSText* create(dbGDSStructure* structure);
+  static void destroy(dbGDSText* text);
+  // User Code End dbGDSText
 };
 
 class dbGlobalConnect : public dbObject
@@ -7543,10 +7732,13 @@ class dbGuide : public dbObject
 
   dbTechLayer* getViaLayer() const;
 
+  bool isCongested() const;
+
   static dbGuide* create(dbNet* net,
                          dbTechLayer* layer,
                          dbTechLayer* via_layer,
-                         Rect box);
+                         Rect box,
+                         bool is_congested);
 
   static dbGuide* getGuide(dbBlock* block, uint dbid);
 
@@ -7707,6 +7899,122 @@ class dbLogicPort : public dbObject
   // User Code End dbLogicPort
 };
 
+class dbMarker : public dbObject
+{
+ public:
+  void setComment(const std::string& comment);
+
+  std::string getComment() const;
+
+  void setLineNumber(int line_number);
+
+  int getLineNumber() const;
+
+  void setVisited(bool visited);
+
+  bool isVisited() const;
+
+  void setVisible(bool visible);
+
+  bool isVisible() const;
+
+  void setWaived(bool waived);
+
+  bool isWaived() const;
+
+  // User Code Begin dbMarker
+
+  std::string getName() const;
+
+  using MarkerShape = std::variant<Point, Line, Rect, Polygon>;
+
+  dbMarkerCategory* getCategory() const;
+  std::vector<MarkerShape> getShapes() const;
+  dbTechLayer* getTechLayer() const;
+  Rect getBBox() const;
+
+  std::set<dbObject*> getSources() const;
+
+  void addShape(const Point& pt);
+  void addShape(const Line& line);
+  void addShape(const Rect& rect);
+  void addShape(const Polygon& polygon);
+
+  void setTechLayer(dbTechLayer* layer);
+
+  void addSource(dbObject* obj);
+  bool addObstructionFromBlock(dbBlock* block);
+
+  static dbMarker* create(dbMarkerCategory* category);
+  static void destroy(dbMarker* marker);
+
+  // User Code End dbMarker
+};
+
+class dbMarkerCategory : public dbObject
+{
+ public:
+  const char* getName() const;
+
+  void setDescription(const std::string& description);
+
+  std::string getDescription() const;
+
+  void setSource(const std::string& source);
+
+  void setMaxMarkers(int max_markers);
+
+  int getMaxMarkers() const;
+
+  dbSet<dbMarker> getMarkers() const;
+
+  dbSet<dbMarkerCategory> getMarkerCategorys() const;
+
+  dbMarkerCategory* findMarkerCategory(const char* name) const;
+
+  // User Code Begin dbMarkerCategory
+
+  dbMarkerCategory* getTopCategory() const;
+  dbObject* getParent() const;
+  std::string getSource() const;
+
+  std::set<dbMarker*> getAllMarkers() const;
+
+  bool rename(const char* name);
+
+  int getMarkerCount() const;
+
+  void writeJSON(const std::string& path) const;
+  void writeJSON(std::ofstream& report) const;
+  void writeTR(const std::string& path) const;
+  void writeTR(std::ofstream& report) const;
+
+  static std::set<dbMarkerCategory*> fromJSON(dbBlock* block,
+                                              const std::string& path);
+  static std::set<dbMarkerCategory*> fromJSON(dbBlock* block,
+                                              const char* source,
+                                              std::ifstream& report);
+  static dbMarkerCategory* fromTR(dbBlock* block,
+                                  const char* name,
+                                  const std::string& path);
+  static dbMarkerCategory* fromTR(dbBlock* block,
+                                  const char* name,
+                                  const char* source,
+                                  std::ifstream& report);
+
+  static dbMarkerCategory* create(dbBlock* block, const char* name);
+  static dbMarkerCategory* createOrReplace(dbBlock* block, const char* name);
+  static dbMarkerCategory* createOrGet(dbBlock* block, const char* name);
+  static dbMarkerCategory* create(dbMarkerCategory* category, const char* name);
+  static dbMarkerCategory* createOrGet(dbMarkerCategory* category,
+                                       const char* name);
+  static dbMarkerCategory* createOrReplace(dbMarkerCategory* category,
+                                           const char* name);
+  static void destroy(dbMarkerCategory* category);
+
+  // User Code End dbMarkerCategory
+};
+
 class dbMetalWidthViaMap : public dbObject
 {
  public:
@@ -7847,8 +8155,11 @@ class dbModNet : public dbObject
   dbSet<dbBTerm> getBTerms();
 
   const char* getName() const;
+  void rename(const char* new_name);
+  static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* name);
   static void destroy(dbModNet*);
+
   // User Code End dbModNet
 };
 
@@ -8230,6 +8541,8 @@ class dbTechLayer : public dbObject
 
   float getLayerAdjustment() const;
 
+  void getOrthSpacingTable(std::vector<std::pair<int, int>>& tbl) const;
+
   dbSet<dbTechLayerCutClassRule> getTechLayerCutClassRules() const;
 
   dbTechLayerCutClassRule* findTechLayerCutClassRule(const char* name) const;
@@ -8574,6 +8887,10 @@ class dbTechLayer : public dbObject
   /// Get the technology this layer belongs too.
   ///
   dbTech* getTech() const;
+
+  bool hasOrthSpacingTable() const;
+
+  void addOrthSpacingTableEntry(int within, int spacing);
 
   ///
   /// Create a new layer. The mask order is implicit in the create order.
@@ -10354,75 +10671,6 @@ class dbTechLayerWrongDirSpacingRule : public dbObject
 
   static void destroy(dbTechLayerWrongDirSpacingRule* rule);
   // User Code End dbTechLayerWrongDirSpacingRule
-};
-
-class dbGDSBoundary : public dbGDSElement
-{
- public:
-};
-
-class dbGDSBox : public dbGDSElement
-{
- public:
-};
-
-class dbGDSNode : public dbGDSElement
-{
- public:
-};
-
-class dbGDSPath : public dbGDSElement
-{
- public:
-  void setWidth(int width);
-
-  int getWidth() const;
-
-  void set_pathType(int16_t pathType);
-
-  int16_t get_pathType() const;
-};
-
-class dbGDSSRef : public dbGDSElement
-{
- public:
-  void set_sName(const std::string& sName);
-
-  std::string get_sName() const;
-
-  void setTransform(dbGDSSTrans transform);
-
-  dbGDSSTrans getTransform() const;
-
-  void set_colRow(const std::pair<int16_t, int16_t>& colRow);
-
-  std::pair<int16_t, int16_t> get_colRow() const;
-
-  // User Code Begin dbGDSSRef
-
-  dbGDSStructure* getStructure() const;
-
-  // User Code End dbGDSSRef
-};
-
-class dbGDSText : public dbGDSElement
-{
- public:
-  void setPresentation(dbGDSTextPres presentation);
-
-  dbGDSTextPres getPresentation() const;
-
-  void setWidth(int width);
-
-  int getWidth() const;
-
-  void setTransform(dbGDSSTrans transform);
-
-  dbGDSSTrans getTransform() const;
-
-  void setText(const std::string& text);
-
-  std::string getText() const;
 };
 
 // Generator Code End ClassDefinition

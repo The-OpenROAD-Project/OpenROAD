@@ -121,6 +121,10 @@ class SimulatedAnnealing
   int getSlotIdxByPosition(const odb::Point& position, int layer) const;
   bool isFreeForMirrored(int slot_idx, int& mirrored_idx) const;
   int getMirroredSlotIdx(int slot_idx) const;
+  void getMirroredSlotRange(int slot_idx1,
+                            int slot_idx2,
+                            int& mirrored_slot1,
+                            int& mirrored_slot2) const;
   void updateSlotsFromGroup(const std::vector<int>& prev_slots_, bool block);
   int computeGroupPrevCost(int group_idx);
   void updateGroupSlots(const std::vector<int>& pin_indices, int& new_slot);

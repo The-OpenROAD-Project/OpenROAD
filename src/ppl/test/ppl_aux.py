@@ -230,7 +230,7 @@ def place_pins(
             design.getIOPlacer().addPinGroup(pin_list, False)
             group_idx += 1
 
-    design.getIOPlacer().run(random)
+    design.getIOPlacer().runHungarianMatching(random)
 
 
 def place_pin(
@@ -240,6 +240,7 @@ def place_pin(
     location=None,
     pin_size=None,
     force_to_die_boundary=False,
+    placed_status=False,
 ):
     x = design.micronToDBU(location[0])
     y = design.micronToDBU(location[1])
@@ -248,7 +249,7 @@ def place_pin(
     pin = parse_pin_names(design, pin_name)
     lay = parse_layer_name(design, layer)
     design.getIOPlacer().placePin(
-        pin[0], lay, x, y, width, height, force_to_die_boundary
+        pin[0], lay, x, y, width, height, force_to_die_boundary, placed_status
     )
 
 
@@ -339,7 +340,7 @@ def set_io_pin_constraint(
     direction -- "input" | "output" | "inout" | "feedthru"
     pin_names -- string list of pins to constrain, can contain regex.
                  Note that we need to escape regex characters for exact matching,
-                 ie, use "rqst\[23\]" instead of "rqst[23]"
+                 ie, use "rqst\\[23\\]" instead of "rqst[23]"
     region    -- region constraint, e.g. "top:*" or "left:1.2-3.4"
                  "up" takes an area spec, ie "up:10 10 300 300" or specify
                  entire area with "up:*"

@@ -600,6 +600,27 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
   }
 }
 
+int FastRouteCore::getAvailableResources(int x1,
+                                         int y1,
+                                         int x2,
+                                         int y2,
+                                         int layer)
+{
+  const int k = layer - 1;
+  int available_cap = 0;
+  if (y1 == y2) {  // horizontal edge
+    available_cap = h_edges_3D_[k][y1][x1].cap - h_edges_3D_[k][y1][x1].usage;
+  } else if (x1 == x2) {  // vertical edge
+    available_cap = v_edges_3D_[k][y1][x1].cap - v_edges_3D_[k][y1][x1].usage;
+  } else {
+    logger_->error(
+        GRT,
+        213,
+        "Cannot get available resources: edge is not vertical or horizontal.");
+  }
+  return available_cap;
+}
+
 int FastRouteCore::getEdgeCapacity(int x1, int y1, int x2, int y2, int layer)
 {
   const int k = layer - 1;
@@ -651,6 +672,28 @@ void FastRouteCore::incrementEdge3DUsage(int x1,
   } else if (x1 == x2) {  // vertical edge
     for (int y = y1; y < y2; y++) {
       v_edges_3D_[k][y][x1].usage++;
+    }
+  }
+}
+
+void FastRouteCore::updateEdge2DAnd3DUsage(int x1,
+                                           int y1,
+                                           int x2,
+                                           int y2,
+                                           int layer,
+                                           int used)
+{
+  const int k = layer - 1;
+
+  if (y1 == y2) {  // horizontal edge
+    for (int x = x1; x < x2; x++) {
+      h_edges_[y1][x].usage += used;
+      h_edges_3D_[k][y1][x].usage += used;
+    }
+  } else if (x1 == x2) {  // vertical edge
+    for (int y = y1; y < y2; y++) {
+      v_edges_[y][x1].usage += used;
+      v_edges_3D_[k][y][x1].usage += used;
     }
   }
 }
@@ -982,7 +1025,7 @@ NetRouteMap FastRouteCore::run()
   const int mazeRound = 500;
   int bmfl = BIG_INT;
   int minofl = BIG_INT;
-  float LOGIS_COF = 0;
+  float logistic_coef = 0;
   int slope;
   int max_adj;
 
@@ -1010,15 +1053,14 @@ NetRouteMap FastRouteCore::run()
   costheight_ = COSHEIGHT;
   if (maxOverflow > 700) {
     costheight_ = 8;
-    LOGIS_COF = 1.33;
+    logistic_coef = 1.33;
     VIA = 0;
     THRESH_M = 0;
     CSTEP1 = 30;
   }
 
   for (int i = 0; i < LVIter; i++) {
-    LOGIS_COF = std::max<float>(2.0 / (1 + log(maxOverflow)), LOGIS_COF);
-    LOGIS_COF = 2.0 / (1 + log(maxOverflow));
+    logistic_coef = 2.0 / (1 + log(maxOverflow));
     debugPrint(logger_,
                GRT,
                "patternRouting",
@@ -1026,7 +1068,7 @@ NetRouteMap FastRouteCore::run()
                "LV routing round {}, enlarge {}.",
                i,
                enlarge_);
-    routeMonotonicAll(newTH, enlarge_, LOGIS_COF);
+    routeMonotonicAll(newTH, enlarge_, logistic_coef);
 
     past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
 
@@ -1051,7 +1093,6 @@ NetRouteMap FastRouteCore::run()
 
   slope = 20;
   L = 1;
-  int cost_type = 1;
 
   InitLastUsage(upType);
   if (total_overflow_ > 0 && overflow_iterations_ > 0 && verbose_) {
@@ -1108,20 +1149,17 @@ NetRouteMap FastRouteCore::run()
       slope = BIG_INT;
       if (i == 5) {
         VIA = 0;
-        LOGIS_COF = 1.33;
+        logistic_coef = 1.33;
         ripup_threshold = -1;
-        //  cost_type = 3;
-
       } else if (i > 6) {
         if (i % 2 == 0) {
-          LOGIS_COF += 0.5;
+          logistic_coef += 0.5;
         }
         if (i > 40) {
           break;
         }
       }
       if (i > 10) {
-        cost_type = 1;
         ripup_threshold = 0;
       }
     }
@@ -1131,10 +1169,11 @@ NetRouteMap FastRouteCore::run()
     mazeedge_threshold_ = THRESH_M;
 
     if (upType == 3) {
-      LOGIS_COF
-          = std::max<float>(2.0 / (1 + log(maxOverflow + max_adj)), LOGIS_COF);
+      logistic_coef = std::max<float>(2.0 / (1 + log(maxOverflow + max_adj)),
+                                      logistic_coef);
     } else {
-      LOGIS_COF = std::max<float>(2.0 / (1 + log(maxOverflow)), LOGIS_COF);
+      logistic_coef
+          = std::max<float>(2.0 / (1 + log(maxOverflow)), logistic_coef);
     }
 
     if (i == 8) {
@@ -1153,17 +1192,15 @@ NetRouteMap FastRouteCore::run()
       L = 0;
     }
 
+    auto cost_params = CostParams(logistic_coef, costheight_, slope);
     mazeRouteMSMD(i,
                   enlarge_,
-                  costheight_,
                   ripup_threshold,
                   mazeedge_threshold_,
                   !(i % 3),
-                  cost_type,
-                  LOGIS_COF,
                   VIA,
-                  slope,
                   L,
+                  cost_params,
                   slack_th);
     int last_cong = past_cong;
     past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
@@ -1193,17 +1230,15 @@ NetRouteMap FastRouteCore::run()
         upType = 3;
         stopDEC = true;
         slope = 5;
+        auto cost_params = CostParams(logistic_coef, costheight_, slope);
         mazeRouteMSMD(i,
                       enlarge_,
-                      costheight_,
                       ripup_threshold,
                       mazeedge_threshold_,
                       !(i % 3),
-                      cost_type,
-                      LOGIS_COF,
                       VIA,
-                      slope,
                       L,
+                      cost_params,
                       slack_th);
         last_cong = past_cong;
         past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
@@ -1244,17 +1279,15 @@ NetRouteMap FastRouteCore::run()
         bmfl = past_cong;
 
         L = 0;
+        auto cost_params = CostParams(logistic_coef, costheight_, slope);
         mazeRouteMSMD(i,
                       enlarge_,
-                      costheight_,
                       ripup_threshold,
                       mazeedge_threshold_,
                       !(i % 3),
-                      cost_type,
-                      LOGIS_COF,
                       VIA,
-                      slope,
                       L,
+                      cost_params,
                       slack_th);
         last_cong = past_cong;
         past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);

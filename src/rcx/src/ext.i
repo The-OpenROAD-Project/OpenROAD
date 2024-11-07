@@ -51,6 +51,7 @@ using rcx::Ext;
 %}
 
 %include "../../Exception.i"
+
 %inline %{
 
 void

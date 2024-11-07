@@ -431,7 +431,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       // See timingBase.cpp in detail
       log_->info(
           GPL, 100, "Timing-driven: executing resizer for reweighting nets.");
-      bool shouldTdProceed = tb_->updateGNetWeights(average_overflow_);
+
+      bool run_journal_restore
+          = (average_overflow_ > npVars_.keepResizeBelowOverflow);
+      bool shouldTdProceed = tb_->updateGNetWeights(run_journal_restore);
 
       // problem occured
       // escape timing driven later

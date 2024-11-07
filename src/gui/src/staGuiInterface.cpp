@@ -687,7 +687,7 @@ void ClockTree::addPath(sta::PathExpanded& path,
     return;
   }
 
-  sta::PathRef* ref = path.path(idx);
+  const sta::PathRef* ref = path.path(idx);
   sta::Vertex* vertex = ref->vertex(sta);
   sta::Pin* pin = vertex->pin();
   sta::Net* net = getNet(pin);
@@ -1036,8 +1036,13 @@ TimingPathList STAGuiInterface::getTimingPaths(
                                  sta::RiseFallBoth::riseFall());
   }
 
-  sta::Search* search = sta_->search();
+  std::unique_ptr<sta::PathGroupNameSet> group_names;
+  if (!path_group_name.empty()) {
+    group_names = std::make_unique<sta::PathGroupNameSet>();
+    group_names->insert(path_group_name.c_str());
+  }
 
+  sta::Search* search = sta_->search();
   sta::PathEndSeq path_ends
       = search->findPathEnds(  // from, thrus, to, unconstrained
           e_from,
@@ -1054,7 +1059,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
           -sta::INF,
           sta::INF,  // slack_min, slack_max,
           true,      // sort_by_slack
-          nullptr,   // group_names
+          group_names.get(),
           // setup, hold, recovery, removal,
           use_max_,
           !use_max_,
@@ -1064,13 +1069,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
           false,
           false);
 
-  sta::PathGroup* path_group
-      = search->findPathGroup(path_group_name.c_str(), sta::MinMax::max());
   for (auto& path_end : path_ends) {
-    if (path_group && path_group != search->pathGroup(path_end)) {
-      continue;
-    }
-
     TimingPath* timing_path = new TimingPath();
     sta::Path* path = path_end->path();
 

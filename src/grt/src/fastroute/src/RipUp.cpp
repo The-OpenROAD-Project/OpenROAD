@@ -220,7 +220,11 @@ bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
     }
     return needRipup;
   } else {
-    logger_->error(GRT, 226, "Type2 ripup not type L.");
+    logger_->error(GRT,
+                   226,
+                   "Net {} ripup type is {}. Expected LRoute.",
+                   nets_[netID]->getName(),
+                   ripuptype);
   }
 }
 

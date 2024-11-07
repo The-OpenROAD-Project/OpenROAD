@@ -29,7 +29,7 @@ for the same command.
 necessary square brackets. Also, keys have to be followed with a specifier
 whereas flags only require the `-flag` itself.
 
-As far as possible, do place the positional arguments last.
+Place the positional arguments last.
 
 ```tcl
 command_abc
@@ -38,6 +38,12 @@ command_abc
     [-flagDev]
     arg1
 ```
+
+Arguments must follow this order and be sorted alphabetically within each category:
+
+1. Mandatory flags
+2. Optional flags
+3. Positional
 
 #### Options
 
