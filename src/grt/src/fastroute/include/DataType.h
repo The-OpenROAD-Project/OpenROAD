@@ -162,7 +162,8 @@ struct TreeNode
 
   int16_t status = 0;
   int16_t conCNT = 0;
-  int16_t botL, topL;
+  int16_t botL = -1;
+  int16_t topL = -1;
   // heights and eID arrays size were increased after using PD
   // to create the tree topologies.
   static constexpr int max_connections = 10;
@@ -195,7 +196,7 @@ struct Route
   bool HVH = false;
 
   // valid for ZRoute: the position of turn point for Z-shape
-  int16_t Zpoint;
+  int16_t Zpoint = -1;
 
   // valid for MazeRoute: a list of grids (n=routelen+1) the route
   // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
