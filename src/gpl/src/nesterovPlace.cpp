@@ -457,7 +457,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       // db_cbk_->printCallCounts();
       // db_cbk_->resetCallCounts();
       if (!run_journal_restore) {        
-        nbc_->fixPointers();
+        // nbc_->fixPointers();
         // Calling this here because we need access to nesterovBase, but this
         // goes along with fixpointers(), which is called inside timingBase!
         // nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);

@@ -145,68 +145,71 @@ void TimingBase::setTimingNetWeightMax(float max)
 bool TimingBase::updateGNetWeights(bool run_journal_restore)
 {  
   rs_->findResizeSlacks(run_journal_restore);
-  // if(!run_journal_restore) {
-  //   nbc_->fixPointers();
-  // }
+  if(!run_journal_restore) {
+    nbc_->fixPointers();
+  }
 
   //TODO check if these weights are required when executing non-virtual rsz
   // get worst resize nets
-  sta::NetSeq& worst_slack_nets = rs_->resizeWorstSlackNets();
+  // if(run_journal_restore) 
+  {
+    sta::NetSeq& worst_slack_nets = rs_->resizeWorstSlackNets();
 
-  if (worst_slack_nets.empty()) {
-    log_->warn(
-        GPL,
-        114,
-        "Timing-driven: no net slacks found. Timing-driven mode disabled.");
-    return false;
-  }
+    if (worst_slack_nets.empty()) {
+      log_->warn(
+          GPL,
+          114,
+          "Timing-driven: no net slacks found. Timing-driven mode disabled.");
+      return false;
+    }
 
-  // min/max slack for worst nets
-  auto slack_min = rs_->resizeNetSlack(worst_slack_nets[0]).value();
-  auto slack_max
-      = rs_->resizeNetSlack(worst_slack_nets[worst_slack_nets.size() - 1])
-            .value();
+    // min/max slack for worst nets
+    auto slack_min = rs_->resizeNetSlack(worst_slack_nets[0]).value();
+    auto slack_max
+        = rs_->resizeNetSlack(worst_slack_nets[worst_slack_nets.size() - 1])
+              .value();
 
-  log_->info(GPL, 101, "Timing-driven: worst slack {:.3g}", slack_min);
+    log_->info(GPL, 101, "Timing-driven: worst slack {:.3g}", slack_min);
 
-  if (sta::fuzzyInf(slack_min)) {
-    log_->warn(GPL,
-               102,
-               "Timing-driven: no slacks found. Timing-driven mode disabled.");
-    return false;
-  }
+    if (sta::fuzzyInf(slack_min)) {
+      log_->warn(GPL,
+                102,
+                "Timing-driven: no slacks found. Timing-driven mode disabled.");
+      return false;
+    }
 
-  int weighted_net_count = 0;
-  for (auto& gNet : nbc_->gNets()) {
-    // default weight
-    gNet->setTimingWeight(1.0);
-    if (gNet->gPins().size() > 1) {
-      auto net_slack_opt = rs_->resizeNetSlack(gNet->net()->dbNet());
-      if (!net_slack_opt) {
-        continue;
-      }
-      auto net_slack = net_slack_opt.value();
-      if (net_slack < slack_max) {
-        if (slack_max == slack_min) {
-          gNet->setTimingWeight(1.0);
-        } else {
-          // weight(min_slack) = net_weight_max_
-          // weight(max_slack) = 1
-          const float weight = 1
-                               + (net_weight_max_ - 1) * (slack_max - net_slack)
-                                     / (slack_max - slack_min);
-          gNet->setTimingWeight(weight);
+    int weighted_net_count = 0;
+    for (auto& gNet : nbc_->gNets()) {
+      // default weight
+      gNet->setTimingWeight(1.0);
+      if (gNet->gPins().size() > 1) {
+        auto net_slack_opt = rs_->resizeNetSlack(gNet->net()->dbNet());
+        if (!net_slack_opt) {
+          continue;
         }
-        weighted_net_count++;
+        auto net_slack = net_slack_opt.value();
+        if (net_slack < slack_max) {
+          if (slack_max == slack_min) {
+            gNet->setTimingWeight(1.0);
+          } else {
+            // weight(min_slack) = net_weight_max_
+            // weight(max_slack) = 1
+            const float weight = 1
+                                + (net_weight_max_ - 1) * (slack_max - net_slack)
+                                      / (slack_max - slack_min);
+            gNet->setTimingWeight(weight);
+          }
+          weighted_net_count++;
+        }
+        debugPrint(log_,
+                  GPL,
+                  "timing",
+                  1,
+                  "net:{} slack:{} weight:{}",
+                  gNet->net()->dbNet()->getConstName(),
+                  net_slack,
+                  gNet->totalWeight());
       }
-      debugPrint(log_,
-                 GPL,
-                 "timing",
-                 1,
-                 "net:{} slack:{} weight:{}",
-                 gNet->net()->dbNet()->getConstName(),
-                 net_slack,
-                 gNet->totalWeight());
     }
   }
 
