@@ -151,6 +151,7 @@ bool TimingBase::updateGNetWeights(bool run_journal_restore)
 
   //TODO check if these weights are required when executing non-virtual rsz
   // get worst resize nets
+  int weighted_net_count = 0;
   // if(run_journal_restore) 
   {
     sta::NetSeq& worst_slack_nets = rs_->resizeWorstSlackNets();
@@ -177,8 +178,7 @@ bool TimingBase::updateGNetWeights(bool run_journal_restore)
                 "Timing-driven: no slacks found. Timing-driven mode disabled.");
       return false;
     }
-
-    int weighted_net_count = 0;
+    
     for (auto& gNet : nbc_->gNets()) {
       // default weight
       gNet->setTimingWeight(1.0);
