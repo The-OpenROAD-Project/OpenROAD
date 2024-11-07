@@ -145,14 +145,14 @@ void TimingBase::setTimingNetWeightMax(float max)
 bool TimingBase::updateGNetWeights(bool run_journal_restore)
 {  
   rs_->findResizeSlacks(run_journal_restore);
-  if(!run_journal_restore) {
-    nbc_->fixPointers();
-  }
+  // if(!run_journal_restore) {
+  //   nbc_->fixPointers();
+  // }
 
   //TODO check if these weights are required when executing non-virtual rsz
   // get worst resize nets
   int weighted_net_count = 0;
-  // if(run_journal_restore) 
+  if(run_journal_restore) 
   {
     sta::NetSeq& worst_slack_nets = rs_->resizeWorstSlackNets();
 
