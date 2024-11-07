@@ -458,6 +458,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       db_cbk_->resetCallCounts();
       if (!run_journal_restore) {        
         nbc_->fixPointers();
+        for (auto& gNet : nbc_->gNets()) {
+          // default weight
+          gNet->setTimingWeight(1.0);
+        }
         // Calling this here because we need access to nesterovBase, but this
         // goes along with fixpointers(), which is called inside timingBase!
         // nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);

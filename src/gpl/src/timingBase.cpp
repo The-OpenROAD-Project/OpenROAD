@@ -212,12 +212,6 @@ bool TimingBase::updateGNetWeights(bool run_journal_restore)
       }
     }
   }
-  else {
-    for (auto& gNet : nbc_->gNets()) {
-      // default weight
-      gNet->setTimingWeight(1.0);
-    }
-  }
 
   log_->info(GPL, 103, "Timing-driven: weighted {} nets.", weighted_net_count);
   return true;
