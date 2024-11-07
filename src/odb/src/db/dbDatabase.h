@@ -70,10 +70,13 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 97;  // Current revision number
+const uint db_schema_minor = 98;  // Current revision number
 
 // Revision where the jumper insertion flag is added to dbNet
-const uint db_schema_has_jumpers = 97;
+const uint db_schema_has_jumpers = 98;
+
+// Revision where the is_congested flag was added to dbGuide
+const uint db_schema_db_guide_congested = 97;
 
 // Revision where the dbMarkerGroup/Categories were added to dbBlock
 const uint db_schema_dbmarkergroup = 96;

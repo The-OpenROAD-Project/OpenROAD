@@ -219,9 +219,7 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
 // previous congestion report file.
 void GlobalRouter::saveCongestion()
 {
-  if (congestion_file_name_ != nullptr) {
-    fastroute_->saveCongestion();
-  }
+  fastroute_->saveCongestion();
 }
 
 bool GlobalRouter::haveRoutes()
@@ -320,10 +318,6 @@ void GlobalRouter::globalRoute(bool save_guides,
 
     updateDbCongestion();
     saveCongestion();
-    checkOverflow();
-    if (fastroute_->totalOverflow() > 0 && verbose_) {
-      logger_->warn(GRT, 115, "Global routing finished with overflow.");
-    }
 
     if (verbose_) {
       reportCongestion();
@@ -334,6 +328,20 @@ void GlobalRouter::globalRoute(bool save_guides,
     }
     if (save_guides) {
       saveGuides();
+    }
+  }
+
+  if (fastroute_->totalOverflow() > 0) {
+    if (allow_congestion_) {
+      logger_->warn(GRT,
+                    115,
+                    "Global routing finished with congestion. Check the "
+                    "congestion regions in the DRC Viewer.");
+    } else {
+      logger_->error(GRT,
+                     116,
+                     "Global routing finished with congestion. Check the "
+                     "congestion regions in the DRC Viewer.");
     }
   }
 }
@@ -701,7 +709,7 @@ void GlobalRouter::shrinkNetRoute(odb::dbNet* db_net)
     root = alternate_root;
     // If driverless nets issue is fixed there should be no alternate_root and
     // this should become an Error
-    logger_->warn(GRT, 268, "Net {} has no driver pin.", net->getName());
+    logger_->error(GRT, 268, "Net {} has no driver pin.", net->getName());
   }
   AdjacencyList graph = buildNetGraph(db_net);
 
@@ -1991,28 +1999,6 @@ void GlobalRouter::getMinMaxLayer(int& min_layer, int& max_layer)
   max_layer = std::max(getMaxRoutingLayer(), getMaxLayerForClock());
 }
 
-void GlobalRouter::checkOverflow()
-{
-  if (fastroute_->has2Doverflow()) {
-    if (!allow_congestion_) {
-      if (congestion_file_name_ != nullptr) {
-        logger_->error(
-            GRT,
-            119,
-            "Routing congestion too high. Check the congestion heatmap "
-            "in the GUI and load {} in the DRC viewer.",
-            congestion_file_name_);
-      } else {
-        logger_->error(
-            GRT,
-            118,
-            "Routing congestion too high. Check the congestion heatmap "
-            "in the GUI.");
-      }
-    }
-  }
-}
-
 void GlobalRouter::readGuides(const char* file_name)
 {
   logger_->warn(GRT,
@@ -2329,7 +2315,7 @@ void GlobalRouter::saveGuidesFromFile(
       for (const auto& guide : guide_boxes) {
         ph_layer_final = routing_layers_[guide.first];
         odb::dbGuide::create(
-            db_net, ph_layer_final, ph_layer_final, guide.second);
+            db_net, ph_layer_final, ph_layer_final, guide.second, false);
       }
     }
   }
@@ -2341,6 +2327,8 @@ void GlobalRouter::saveGuides()
   int offset_y = grid_origin_.y();
 
   int jumper_count = 0;
+  bool is_congested = fastroute_->has2Doverflow() && !allow_congestion_;
+
   for (odb::dbNet* db_net : block_->getNets()) {
     auto iter = routes_.find(db_net);
     if (iter == routes_.end()) {
@@ -2367,15 +2355,15 @@ void GlobalRouter::saveGuides()
             int layer_idx2 = segment.final_layer;
             odb::dbTechLayer* layer1 = routing_layers_[layer_idx1];
             odb::dbTechLayer* layer2 = routing_layers_[layer_idx2];
-            odb::dbGuide::create(db_net, layer1, layer2, box);
-            odb::dbGuide::create(db_net, layer2, layer1, box);
+            odb::dbGuide::create(db_net, layer1, layer2, box, is_congested);
+            odb::dbGuide::create(db_net, layer2, layer1, box, is_congested);
           } else {
             int layer_idx = std::min(segment.init_layer, segment.final_layer);
             int via_layer_idx
                 = std::max(segment.init_layer, segment.final_layer);
             odb::dbTechLayer* layer = routing_layers_[layer_idx];
             odb::dbTechLayer* via_layer = routing_layers_[via_layer_idx];
-            odb::dbGuide::create(db_net, layer, via_layer, box);
+            odb::dbGuide::create(db_net, layer, via_layer, box, is_congested);
           }
         } else if (segment.init_layer == segment.final_layer) {
           if (segment.init_layer < getMinRoutingLayer()
@@ -2389,7 +2377,7 @@ void GlobalRouter::saveGuides()
 
           odb::dbTechLayer* layer = routing_layers_[segment.init_layer];
           bool is_jumper = segment.isJumper();
-          auto guide = odb::dbGuide::create(db_net, layer, layer, box);
+          auto guide = odb::dbGuide::create(db_net, layer, layer, box, is_congested);
           if (is_jumper) {
             guide->setIsJumper(true);
           }

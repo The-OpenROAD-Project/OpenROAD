@@ -464,7 +464,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   void initGridAndNets();
   void ensureLayerForGuideDimension(int max_routing_layer);
   void configFastRoute();
-  void checkOverflow();
 
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
