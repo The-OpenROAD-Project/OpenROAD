@@ -2184,6 +2184,10 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
           float arrival = getVertexClkArrival(sinkVertex, topClokcNet, iterm);
           float pin_arrival = openSta_->pinArrival(
               pin, sta::RiseFall::rise(), sta::MinMax::max()); 
+          if(arrival != pin_arrival) {
+            logger_->report("Arrival we looked up: {}", arrival);
+            logger_->report("Arrival from sta API: {}", pin_arrival);
+          }
           // add insertion delay
           float insDelay = 0.0;
           sta::LibertyCell* libCell
@@ -2291,7 +2295,7 @@ void TritonCTS::adjustLatencies(TreeBuilder* macroBuilder,
     double locY = (double) (sourceY + offsetY * (i + 1)) / scalingFactor;
     Point<double> bufferLoc(locX, locY);
     Point<double> legalBufferLoc
-        = builder->legalizeOneBuffer(bufferLoc, options_->getRootBuffer(), std::vector<Point<double>>());
+        = builder->legalizeOneBuffer(bufferLoc, options_->getRootBuffer());
     odb::dbInst* buffer
         = insertDelayBuffer(driver,
                             builder->getClock().getSdcName(),
