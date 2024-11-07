@@ -1,4 +1,6 @@
 record_tests {
+  pinswap_flat
+  pinswap_hier
   split_load_hier
   resize1_hier
   repair_hold1_hier  

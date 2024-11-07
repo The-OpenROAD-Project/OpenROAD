@@ -30,10 +30,8 @@ set_wire_rc -clock  -layer metal5
 estimate_parasitics -placement
 
 report_worst_slack
-write_verilog_for_eqy repair_setup2 before "None"
 repair_design
-write_verilog before_ps.v
-set_debug_level RSZ  "repair_setup" 3
 repair_timing -setup -verbose
-write_verilog pinswap_flat_out.v
-
+set verilog_file [make_result_file pinswap_flat_out.v]
+write_verilog $verilog_file
+diff_files $verilog_file pinswap_flat_out.vok
