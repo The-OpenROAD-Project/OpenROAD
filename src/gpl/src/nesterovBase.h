@@ -940,8 +940,6 @@ class NesterovBaseCommon
   void destroyITerm(odb::dbITerm*);
 
   void resizeGCell(odb::dbInst* db_inst);
-  void disconnectITerm(odb::dbITerm*, odb::dbNet*);
-  void connectITerm(odb::dbITerm*);
 
   GCell& getGCell(size_t index) { return gCellStor_[index]; }
 
@@ -1002,11 +1000,6 @@ class NesterovBaseCommon
   std::unordered_map<odb::dbInst*, size_t> db_inst_map_;
   std::unordered_map<odb::dbNet*, size_t> db_net_map_;
   std::unordered_map<odb::dbITerm*, size_t> db_iterm_map_;
-  // std::unordered_map<odb::dbITerm*, GPin*> db_iterm_map_;
-
-  std::vector<odb::dbITerm*> iterms_to_connect;
-  std::vector<odb::dbITerm*> iterms_to_disconnect;
-  std::vector<odb::dbNet*> nets_to_disconnect;
 
   int num_threads_;
   int64_t deltaArea_;

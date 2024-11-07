@@ -88,11 +88,6 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                                            npVars.debug_inst);
   }
   init();
-  // log_->report("printing gcells after NesterovPlace constructor:");
-  // nbc_->printGCells();
-
-  // log_->report("printing gpins after NesterovPlace constructor:");
-  // nbc_->printGPins();
 }
 
 NesterovPlace::~NesterovPlace()
@@ -450,76 +445,40 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           average_overflow_,
           npVars_.keepResizeBelowOverflow,
           run_journal_restore);
-      if (!run_journal_restore) {
+
+      if (!run_journal_restore)
         db_cbk_->addOwner(pbc_->db()->getChip()->getBlock());
-        // //destroy for testing only. copied from TestCallBacks.cpp
-        // auto inst_to_destroy =
-        // pbc_->db()->getChip()->getBlock()->getInsts().begin();
-        // log_->report("destroying inst inside gpl:{}",
-        // inst_to_destroy->getName()); odb::dbInst::destroy(inst_to_destroy);
-      } else
+      else
         db_cbk_->removeOwner();
-      auto block = pbc_->db()->getChip()->getBlock();
-      int iterms_count = 0, bterms_count = 0;
-      for (odb::dbITerm* iterm : block->getITerms()) {
-        if (nbc_->isValidSigType(iterm->getSigType()))
-          iterms_count++;
-      }
-      for (odb::dbBTerm* bterm : block->getBTerms()) {
-        if (nbc_->isValidSigType(bterm->getSigType()))
-          bterms_count++;
-      }
-      log_->report("before rsz:\ndbIterms size: {}", iterms_count);
-      log_->report("dbBterms size: {}", bterms_count);
-      log_->report("B+I terms: {}", bterms_count + iterms_count);
 
-      /////////////////////////////
+      // auto block = pbc_->db()->getChip()->getBlock();
       bool shouldTdProceed = tb_->updateGNetWeights(run_journal_restore);
-      /////////////////////////////
 
-      iterms_count = 0;
-      bterms_count = 0;
-      for (odb::dbITerm* iterm : block->getITerms()) {
-        if (nbc_->isValidSigType(iterm->getSigType()))
-          iterms_count++;
-      }
-      for (odb::dbBTerm* bterm : block->getBTerms()) {
-        if (nbc_->isValidSigType(bterm->getSigType()))
-          bterms_count++;
-      }
-
-      log_->report("afters rsz:\ndbIterms size: {}", iterms_count);
-      log_->report("dbBterms size: {}", bterms_count);
-      log_->report("B+I terms: {}", bterms_count + iterms_count);
-
-      db_cbk_->printCallCounts();
-      db_cbk_->resetCallCounts();
-      if (!run_journal_restore) {
+      // db_cbk_->printCallCounts();
+      // db_cbk_->resetCallCounts();
+      if (!run_journal_restore) {        
+        nbc_->fixPointers();
         // Calling this here because we need access to nesterovBase, but this
         // goes along with fixpointers(), which is called inside timingBase!
-        // nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_); //
-        // WL
+        // nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
         for (auto& nesterov : nbVec_) {
-          // nesterov->updateDensityCenterCur(); // bin update
-          // nesterov->updateDensityForceBin(); // bin Force update
           nesterov->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
-
           // order in routability:
           // 1. change areas
           // 2. set target density with delta area
           // 3. updateareas
           // 4. updateDensitySize
 
-          log_->report("prev nesterov->targetDensity():     {}",
-                       nesterov->targetDensity());
-          log_->report("nbc_->getDeltaArea():              {}",
-                       block->dbuAreaToMicrons(nbc_->getDeltaArea()));
-          log_->report("nesterov->nesterovInstsArea():     {}",
-                       block->dbuAreaToMicrons(nesterov->nesterovInstsArea()));
-          log_->report("nesterov->totalFillerArea():       {}",
-                       block->dbuAreaToMicrons(nesterov->totalFillerArea()));
-          log_->report("nesterov->whiteSpaceArea():        {}",
-                       block->dbuAreaToMicrons(nesterov->whiteSpaceArea()));
+          // log_->report("prev nesterov->targetDensity():     {}",
+          //              nesterov->targetDensity());
+          // log_->report("nbc_->getDeltaArea():              {}",
+          //              block->dbuAreaToMicrons(nbc_->getDeltaArea()));
+          // log_->report("nesterov->nesterovInstsArea():     {}",
+          //              block->dbuAreaToMicrons(nesterov->nesterovInstsArea()));
+          // log_->report("nesterov->totalFillerArea():       {}",
+          //              block->dbuAreaToMicrons(nesterov->totalFillerArea()));
+          // log_->report("nesterov->whiteSpaceArea():        {}",
+          //              block->dbuAreaToMicrons(nesterov->whiteSpaceArea()));
 
           nesterov->setTargetDensity(
               static_cast<float>(nbc_->getDeltaArea()
@@ -527,27 +486,13 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                                  + nesterov->totalFillerArea())
               / static_cast<float>(nesterov->whiteSpaceArea()));
 
-          // Log the new target density
           log_->report("new nesterov->targetDensity():     {}",
                        nesterov->targetDensity());
-
-          // Reset delta area
           nbc_->resetDeltaArea();
-
           nesterov->updateAreas();
-          // routability calls this after update areas, but we also do this for
-          // new cells in updateGCellState()
-          nesterov->updateDensitySize();  // influenced by bin sizes, which is
-                                          // influenced by instance sizes.
-          //  updateWireLengthForceWA() --> influenced by pin positions, do they
-          //  change with different cell size, or even different cell type?
+          nesterov->updateDensitySize();
         }
       }
-      // log_->report("print gcells after TD iteration.");
-      // nbc_->printGCells();
-      // log_->report("print gpins after TD iteration.");
-      // nbc_->printGPins();
-
       // problem occured
       // escape timing driven later
       if (!shouldTdProceed) {
@@ -775,16 +720,6 @@ void NesterovPlace::destroyITerm(odb::dbITerm* iterm)
   nbc_->destroyITerm(iterm);
 }
 
-void NesterovPlace::disconnectIterm(odb::dbITerm* iterm, odb::dbNet* db_net)
-{
-  nbc_->disconnectITerm(iterm, db_net);
-}
-
-void NesterovPlace::connectIterm(odb::dbITerm* iterm)
-{
-  nbc_->connectITerm(iterm);
-}
-
 void NesterovPlace::resizeGCell(odb::dbInst* db_inst)
 {
   // log_->report("start resizing cell: {}", db_inst->getName());
@@ -853,7 +788,7 @@ void nesterovDbCbk::inDbITermPostDisconnect(odb::dbITerm* iterm,
   ++inDbITermPostDisconnectCount;
   // log_.report("Check: inDbITermPostDisconnect, net: {}, iterm: {}",
   // net->getName(), iterm->getName('|'));
-  nesterov_place_->disconnectIterm(iterm, net);
+  // nesterov_place_->disconnectIterm(iterm, net);
 }
 
 // void nesterovDbCbk::inDbITermPreConnect(odb::dbITerm* iterm, odb::dbNet* net)
@@ -867,7 +802,7 @@ void nesterovDbCbk::inDbITermPostConnect(odb::dbITerm* iterm)
 {
   ++inDbITermPostConnectCount;
   // log_.report("Check: inDbITermPostConnect iterm: {}", iterm->getName('|'));
-  nesterov_place_->connectIterm(iterm);
+  // nesterov_place_->connectIterm(iterm);
 }
 
 // void nesterovDbCbk::inDbPreMoveInst(odb::dbInst* db_inst) {

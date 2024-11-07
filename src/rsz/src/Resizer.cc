@@ -47,7 +47,6 @@
 #include "RepairSetup.hh"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
-#include "odb/db.h"  //TODO remove after testings
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Bfs.hh"
 #include "sta/Corner.hh"

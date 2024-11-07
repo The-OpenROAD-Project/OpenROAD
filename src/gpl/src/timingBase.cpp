@@ -143,30 +143,11 @@ void TimingBase::setTimingNetWeightMax(float max)
 }
 
 bool TimingBase::updateGNetWeights(bool run_journal_restore)
-{
-  log_->report("\n\nBEFORE RSZ:");
-  log_->report("tb::updateGNetWeights(): before rsz: nbc_->gCells().size():{}", nbc_->gCells().size());
-  log_->report("tb::updateGNetWeights(): before rsz: nbc_->gNets().size():{}", nbc_->gNets().size());
-  log_->report("tb::updateGNetWeights(): before rsz: nbc_->gPins().size():{}", nbc_->gPins().size());
-   
+{  
   rs_->findResizeSlacks(run_journal_restore);
-  //TODO: check call counts if calling fixpointers is required.
-  //      also check if memory reallocation happened with the pointers, if not, fix pointers may not be required.
-  if(!run_journal_restore) {
-    nbc_->fixPointers();
-    // log_->report("print gcells after non-virtual rsz:");
-    // nbc_->printGCells();
-  }
-
-  log_->report("\nAFTER RSZ:");
-  log_->report("tb::updateGNetWeights(): run_journal_restore (virtual resizer): {}", run_journal_restore);
-  log_->report("tb::updateGNetWeights(): after rsz: nbc_->gCells().size():{}", nbc_->gCells().size());  
-  log_->report("tb::updateGNetWeights(): after rsz: nbc_->gNets().size():{}", nbc_->gNets().size());
-  log_->report("tb::updateGNetWeights(): after rsz: nbc_->gPins().size():{}", nbc_->gPins().size());
-  log_->report("\ntb::updateGNetWeights(): rs_->repair_design-> Resized gates:    {:5}", rs_->repairDesignResizedCount());
-  log_->report("tb::updateGNetWeights(): rs_->repair_design-> Inserted buffers: {:5}", rs_->repairDesignBufferCount());
-  log_->report("tb::updateGNetWeights(): rs_->repair_design-> TNS: {:5}", rs_->getTotalNegativeSlack());
-
+  // if(!run_journal_restore) {
+  //   nbc_->fixPointers();
+  // }
 
   //TODO check if these weights are required when executing non-virtual rsz
   // get worst resize nets

@@ -102,11 +102,6 @@ class NesterovPlace
   void destroyGNet(odb::dbNet*);
   void destroyITerm(odb::dbITerm*);
 
-  // These two may not be required to implement since we are updating the connections when refreshing pointers with fixPointers().
-  // And when refresh happens, all connections are already settled in the db.
-  void disconnectIterm(odb::dbITerm* iterm, odb::dbNet* net);
-  void connectIterm(odb::dbITerm* iterm);
-
  private:
   std::shared_ptr<PlacerBaseCommon> pbc_;
   std::shared_ptr<NesterovBaseCommon> nbc_;
