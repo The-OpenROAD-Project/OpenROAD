@@ -492,7 +492,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   int macro_extension_;
   bool initialized_;
   int total_diodes_count_;
-  bool incremental_;
+  bool skip_drt_aps_;
 
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;
