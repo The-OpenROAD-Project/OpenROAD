@@ -98,7 +98,6 @@ GlobalRouter::GlobalRouter()
       macro_extension_(0),
       initialized_(false),
       total_diodes_count_(0),
-      skip_drt_aps_(false),
       verbose_(false),
       seed_(0),
       caps_perturbation_percentage_(0),
