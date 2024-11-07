@@ -32,11 +32,9 @@ set_wire_rc -clock  -layer metal5
 estimate_parasitics -placement
 
 report_worst_slack
-write_verilog_for_eqy repair_setup2 before "None"
 repair_design
-write_verilog before_ps.v
-set_debug_level RSZ  "repair_setup" 3
 repair_timing -setup -verbose
-write_verilog after_ps.v
-run_equivalence_test repair_setup2 ./Nangate45/work_around_yosys/ "None"
-report_worst_slack
+set verilog_file [make_result_file pinswap_hier_out.v]
+write_verilog $verilog_file
+diff_files $verilog_file pinswap_hier_out.vok
+
