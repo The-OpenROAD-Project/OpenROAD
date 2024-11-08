@@ -59,6 +59,7 @@ class dbStaCbk;
 class AbstractPathRenderer;
 class AbstractPowerDensityDataSource;
 class PatternMatch;
+class TestCell;
 
 using utl::Logger;
 
@@ -217,5 +218,11 @@ class dbSta : public Sta, public ord::OpenRoadObserver
   std::unique_ptr<AbstractPathRenderer> path_renderer_;
   std::unique_ptr<AbstractPowerDensityDataSource> power_density_data_source_;
 };
+
+// Utilities for TestCell
+
+sta::LibertyPort* getLibertyScanEnable(const TestCell* test_cell);
+sta::LibertyPort* getLibertyScanIn(const TestCell* test_cell);
+sta::LibertyPort* getLibertyScanOut(const TestCell* test_cell);
 
 }  // namespace sta
