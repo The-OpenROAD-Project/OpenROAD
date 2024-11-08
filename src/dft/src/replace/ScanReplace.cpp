@@ -115,6 +115,7 @@ bool IsScanEquivalent(
     const sta::LibertyCell* scan_cell,
     std::unordered_map<std::string, std::string>& port_mapping)
 {
+  std::set<sta::LibertyPort*> seen_on_scan_cell;
   sta::LibertyCellPortIterator non_scan_cell_ports_iter(non_scan_cell);
   while (non_scan_cell_ports_iter.hasNext()) {
     sta::LibertyPort* non_scan_cell_port = non_scan_cell_ports_iter.next();
@@ -125,6 +126,7 @@ bool IsScanEquivalent(
     }
 
     port_mapping.insert({non_scan_cell_port->name(), scan_equiv_port->name()});
+    seen_on_scan_cell.insert(scan_equiv_port);
   }
 
   sta::LibertyCellPgPortIterator non_scan_cell_pg_ports_iter(non_scan_cell);
@@ -139,6 +141,32 @@ bool IsScanEquivalent(
 
     port_mapping.insert(
         {non_scan_cell_pg_port->name(), scan_equiv_port->name()});
+  }
+
+  // Check there are no extra signals on the scan flop not present
+  // on the non-scan flop (e.g. preset, clear, or enable)
+  sta::TestCell* test_cell = scan_cell->testCell();
+  sta::LibertyCellPortIterator scan_cell_ports_iter(scan_cell);
+  while (scan_cell_ports_iter.hasNext()) {
+    sta::LibertyPort* scan_cell_port = scan_cell_ports_iter.next();
+    if (seen_on_scan_cell.find(scan_cell_port) != seen_on_scan_cell.end()) {
+      continue;
+    }
+    auto ignore_port = [scan_cell_port](sta::LibertyPort* other) {
+      if (!other) {
+        return false;
+      }
+      return strcmp(scan_cell_port->name(), other->name()) == 0;
+    };
+    // Extra scan related pins are ok
+    if (test_cell
+        && (ignore_port(test_cell->scanIn())
+            || ignore_port(test_cell->scanEnable())
+            || ignore_port(test_cell->scanOut())
+            || ignore_port(test_cell->scanOutInv()))) {
+      continue;
+    }
+    return false;
   }
 
   return true;
