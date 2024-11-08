@@ -265,8 +265,6 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
     float tmpCnt = -10;
     mrc->printProgress(totalWiresExtracted, totWireCnt, tmpCnt);
     getPeakMemory("End CouplingFlow Dir:", dir);
-    _search->dealloc(dir, bounds.ur[dir]+step_nm);
-    getPeakMemory("End CouplingFlow dealloc Dir:", dir);
   }
   if (_geomSeq != NULL) {
     delete _geomSeq;

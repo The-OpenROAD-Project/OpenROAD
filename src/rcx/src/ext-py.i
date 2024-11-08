@@ -106,9 +106,7 @@ void bench_verilog(const char* file);
 void write_rules(const char* file,
             const char* dir,
             const char* name,
-            int pattern,
-            bool read_from_db,
-            bool read_from_solver);
+            int pattern);
 
 void read_spef(const char* file);
 

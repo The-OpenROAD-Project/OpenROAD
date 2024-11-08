@@ -35,6 +35,7 @@
 #include <functional>
 #include <memory>
 
+#include "extPattern.h"
 #include "ext_options.h"
 #include "extRCap.h"
 #include "rcx/extModelGen.h"
@@ -85,9 +86,7 @@ class Ext
                    const std::string& dir,
                    const std::string& file,
                    int pattern);
-  bool write_rules(const std::string& name, const std::string& dir,
-                      const std::string& file, int pattern, bool read_from_db,
-                      bool read_from_solver);
+
   void bench_verilog(const std::string& file);
 
   void bench_wires(const BenchWiresOptions& bwo);

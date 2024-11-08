@@ -69,17 +69,6 @@ void Ext::setLogger(Logger* logger)
     logger_ = logger;
   }
 }
-bool Ext::write_rules(const std::string& name, const std::string& dir,
-                      const std::string& file, int pattern, bool read_from_db,
-                      bool read_from_solver) {
-  _ext->setBlockFromChip();
-  /* FIXME
-  _ext->writeRules(name.c_str(), dir.c_str(), file.c_str(), pattern,
-                   read_from_db, read_from_solver);
-                   */
-  return true;
-}
-/* DELETE 
 void Ext::write_rules(const std::string& name,
                       const std::string& dir,
                       const std::string& file,
@@ -88,7 +77,6 @@ void Ext::write_rules(const std::string& name,
   _ext->setBlockFromChip();
   _ext->writeRules(name.c_str(), dir.c_str(), file.c_str(), pattern);
 }
-*/
 void Ext::bench_wires(const BenchWiresOptions& bwo)
 {
   extMainOptions opt;

@@ -39,6 +39,7 @@
 #include "odb/db.h"
 #include "dbUtil.h"
 #include "util.h"
+#include "ext_options.h"
 
 namespace rcx {
 
@@ -46,6 +47,7 @@ using namespace odb;
 
 
 
+/*
   struct PatternOptions
   {
     const char* name = "blk";
@@ -92,7 +94,7 @@ const char* offset_under;
     bool over_under = false;
     bool under = false;
   };
-
+*/
 template <class T> class AthArray;
 
 class extWirePattern;

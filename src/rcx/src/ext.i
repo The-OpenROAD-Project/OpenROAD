@@ -200,14 +200,11 @@ void
 write_rules(const char* file,
             const char* dir,
             const char* name,
-            int pattern,
-            bool read_from_db,
-            bool read_from_solver)
+            int pattern)
 {
   Ext* ext = getOpenRCX();
   
-  ext->write_rules(name, dir, file, pattern, read_from_db,
-                   read_from_solver);
+  ext->write_rules(name, dir, file, pattern);
 }
 
 void

@@ -73,8 +73,8 @@ struct BenchWiresOptions
   {
     const char* debug_net = nullptr;
     const char* ext_model_file = nullptr;
-    const char* const net = nullptr;
-    const int cc_up = 2;
+    const char* net = nullptr;
+    int cc_up = 2;
     int corner_cnt = 1;
     double max_res = 50.0;
     bool no_merge_via_res = false;
@@ -182,7 +182,7 @@ struct BenchWiresOptions
     bool m_map = false;
     bool log = false;
   };
-/*
+
     struct PatternOptions
   {
     const char* name = "blk";
@@ -229,5 +229,5 @@ const char* offset_under;
     bool over_under = false;
     bool under = false;
   };
-*/
+
 #endif
