@@ -38,6 +38,7 @@
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.hpp"
+#include "dbJournal.h"
 #include "dbModITerm.h"
 #include "dbModNet.h"
 #include "dbModule.h"
@@ -365,6 +366,14 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
   }
   module->_modbterms = modbterm->getOID();
   module->_modbterm_hash[name] = dbId<_dbModBTerm>(modbterm->getOID());
+
+  if (block->_journal) {
+    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->pushParam(dbModBTermObj);
+    block->_journal->pushParam(modbterm->getId());
+    block->_journal->endAction();
+  }
+
   return (dbModBTerm*) modbterm;
 }
 
@@ -391,6 +400,15 @@ void dbModBTerm::connect(dbModNet* net)
   }
   _modbterm->_prev_net_modbterm = 0;  // previous of head always zero
   _modnet->_modbterms = getId();      // set new head
+
+  if (_block -> _journal){
+    _block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
+    _block->_journal->pushParam(dbModBTermObj);
+    _block->_journal->pushParam(getId());
+    _block->_journal->pushParam(net->getId());    
+    _block->_journal->endAction();    
+  }
+
 }
 
 void dbModBTerm::disconnect()
@@ -448,8 +466,15 @@ void dbModBTerm::setBusPort(dbBusPort* bus_port)
   _modbterm->_busPort = bus_port->getId();
 }
 
+dbModBTerm* dbModBTerm::getModBTerm(dbBlock* block, uint dbid)
+{
+  _dbBlock* owner = (_dbBlock*) block;
+  return (dbModBTerm*) (owner->_modbterm_tbl->getPtr(dbid));
+}
+
 void dbModBTerm::destroy(dbModBTerm* val)
 {
+  printf("Destroying mod bterm %d\n", val -> getId());  
   _dbModBTerm* _modbterm = (_dbModBTerm*) val;
   _dbBlock* block = (_dbBlock*) (_modbterm->getOwner());
   _dbModule* module = block->_module_tbl->getPtr(_modbterm->_parent);

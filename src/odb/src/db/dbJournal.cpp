@@ -1490,14 +1490,16 @@ void dbJournal::undo_createObject()
   auto obj_type = popObjectType();
 
   switch (obj_type) {
-    case dbGuideObj: {
+    
+
+  case dbGuideObj: {
       uint guide_id;
       _log.pop(guide_id);
       dbGuide* guide = dbGuide::getGuide(_block, guide_id);
       dbGuide::destroy(guide);
       break;
     }
-    case dbInstObj: {
+  case dbInstObj: {
       uint lib_id;
       uint master_id;
       uint inst_id;
@@ -1521,13 +1523,29 @@ void dbJournal::undo_createObject()
       break;
     }
 
-    default: {
-      _logger->critical(utl::ODB,
-                        441,
-                        "No undo_createObject support for type {}",
-                        dbObject::getTypeName(obj_type));
-      break;
-    }
+  case dbModBTermObj:{
+    uint modbterm_id;
+    _log.pop(modbterm_id);
+    dbModBTerm* modbterm = dbModBTerm::getModBTerm(_block,modbterm_id);
+    dbModBTerm::destroy(modbterm);
+    break;
+  }
+
+  case dbModITermObj:{
+    uint moditerm_id;
+    _log.pop(moditerm_id);
+    dbModITerm* moditerm = dbModITerm::getModITerm(_block,moditerm_id);
+    dbModITerm::destroy(moditerm);
+    break;
+  }
+      
+  default: {
+    _logger->critical(utl::ODB,
+		      441,
+		      "No undo_createObject support for type {}",
+		      dbObject::getTypeName(obj_type));
+    break;
+  }
   }
 }
 
@@ -1628,7 +1646,29 @@ void dbJournal::undo_connectObject()
   auto obj_type = popObjectType();
 
   switch (obj_type) {
-    case dbITermObj: {
+    
+  case dbModITermObj:{
+    uint moditerm_id;
+    _log.pop(moditerm_id);
+    dbModITerm* moditerm = dbModITerm::getModITerm(_block, moditerm_id);
+    uint net_id;
+    _log.pop(net_id);
+    moditerm->disconnect();
+    break;
+  }
+
+  case dbModBTermObj:{
+    uint modbterm_id;
+    _log.pop(modbterm_id);
+    dbModBTerm* modbterm = dbModBTerm::getModBTerm(_block, modbterm_id);
+    uint net_id;
+    _log.pop(net_id);
+    modbterm->disconnect();
+    break;
+  }
+    
+    
+  case dbITermObj: {
       uint iterm_id;
       _log.pop(iterm_id);
       dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);

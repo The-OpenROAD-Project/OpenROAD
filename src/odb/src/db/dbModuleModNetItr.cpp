@@ -34,6 +34,7 @@
 #include "dbModuleModNetItr.h"
 
 #include "dbModNet.h"
+#include "dbModNet.h"
 #include "dbModule.h"
 #include "dbTable.h"
 

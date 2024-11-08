@@ -37,6 +37,7 @@
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.hpp"
+#include "dbJournal.h"
 #include "dbModBTerm.h"
 #include "dbModInst.h"
 #include "dbModNet.h"
@@ -282,6 +283,14 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
   }
   parent->_moditerms = moditerm->getOID();
   parent->_moditerm_hash[name] = dbId<_dbModITerm>(moditerm->getOID());
+
+  if (block->_journal) {
+    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->pushParam(dbModITermObj);
+    block->_journal->pushParam(moditerm->getId());
+    block->_journal->endAction();
+  }
+
   return (dbModITerm*) moditerm;
 }
 
@@ -307,6 +316,15 @@ void dbModITerm::connect(dbModNet* net)
   // set up new head
   _moditerm->_prev_net_moditerm = 0;
   _modnet->_moditerms = getId();
+
+  if (_block -> _journal){
+    _block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
+    _block->_journal->pushParam(dbModITermObj);
+    _block->_journal->pushParam(getId());
+    _block->_journal->pushParam(_modnet->getId());    
+    _block->_journal->endAction();    
+  }
+  
 }
 
 void dbModITerm::disconnect()
@@ -336,8 +354,18 @@ void dbModITerm::disconnect()
   }
 }
 
+dbModITerm* dbModITerm::getModITerm(dbBlock* block, uint dbid)
+{
+  _dbBlock* owner = (_dbBlock*) block;
+  return (dbModITerm*) (owner->_moditerm_tbl->getPtr(dbid));
+}
+
 void dbModITerm::destroy(dbModITerm* val)
 {
+  printf("Destroying mod iterm %d\n", val -> getId());
+  printf("Which is connected to net %s\n",val -> getModNet() ?
+	 val -> getModNet() -> getName():
+	 "empty");
   _dbModITerm* _moditerm = (_dbModITerm*) val;
   _dbBlock* block = (_dbBlock*) _moditerm->getOwner();
 

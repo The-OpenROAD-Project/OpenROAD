@@ -185,7 +185,9 @@ class dbNetwork : public ConcreteNetwork
 
   bool ConnectionToModuleExists(dbITerm* source_pin,
                                 dbModule* dest_module,
-                                dbModBTerm*& dest_modbterm);
+                                dbModBTerm*& dest_modbterm,
+				dbModITerm*& dest_moditerm				
+				);
 
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,

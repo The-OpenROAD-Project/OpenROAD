@@ -260,8 +260,6 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
 
-      Pin* end_pin = end->pin();
-
       const bool changed = repairPath(end_path,
                                       end_slack,
                                       skip_pin_swap,
@@ -1243,7 +1241,9 @@ bool RepairSetup::cloneDriver(const PathRef* drvr_path,
   }
 
   const string buffer_name = resizer_->makeUniqueInstName("clone");
-  Instance* parent = db_network_->topInstance();
+
+  // Hierarchy fix
+  Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);
 
   // This is the meat of the gate cloning code.
   // We need to downsize the current driver AND we need to insert another
@@ -1277,21 +1277,39 @@ bool RepairSetup::cloneDriver(const PathRef* drvr_path,
              network_->pathName(clone_inst),
              clone_cell->name());
 
-  Net* out_net = resizer_->makeUniqueNet();
+  // Hierarchy fix, make out_net in parent.
+
+  //  Net* out_net = resizer_->makeUniqueNet();
+  std::string out_net_name = resizer_->makeUniqueNetName();
+  Net* out_net = db_network_->makeNet(out_net_name.c_str(), parent);
+
   std::unique_ptr<InstancePinIterator> inst_pin_iter{
       network_->pinIterator(drvr_inst)};
+
   while (inst_pin_iter->hasNext()) {
     Pin* pin = inst_pin_iter->next();
     if (network_->direction(pin)->isInput()) {
       // Connect to all the inputs of the original cell.
       auto libPort = network_->libertyPort(
           pin);  // get the liberty port of the original inst/pin
-      auto net = network_->net(pin);
+      // Hierarchy fix: make sure modnet on input supported
+      dbNet* dbnet = db_network_->flatNet(pin);
+      odb::dbModNet* modnet = db_network_->hierNet(pin);
+      // get the iterm
+      Pin* clone_pin = db_network_->findPin(clone_inst, libPort->name());
+      dbITerm* iterm = db_network_->flatPin(clone_pin);
+
       sta_->connectPin(
           clone_inst,
           libPort,
-          net);  // connect the same liberty port of the new instance
-      resizer_->parasiticsInvalid(net);
+          db_network_->dbToSta(
+              dbnet));  // connect the same liberty port of the new instance
+
+      // Hierarchy fix
+      if (modnet) {
+        iterm->connect(modnet);
+      }
+      resizer_->parasiticsInvalid(db_network_->dbToSta(dbnet));
     }
   }
 
@@ -1307,9 +1325,14 @@ bool RepairSetup::cloneDriver(const PathRef* drvr_path,
       break;
     }
   }
+
   // Connect to the new output net we just created
   auto* clone_output_port = network_->port(clone_output_pin);
   sta_->connectPin(clone_inst, clone_output_port, out_net);
+  // Hierarchy: stash the iterm just in case we need to do some
+  // hierarchical wiring
+
+  odb::dbITerm* clone_output_iterm = db_network_->flatPin(clone_output_pin);
 
   // Divide the list of pins in half and connect them to the new net we
   // created as part of gate cloning. Skip ports connected to the original net
@@ -1318,13 +1341,27 @@ bool RepairSetup::cloneDriver(const PathRef* drvr_path,
     pair<Vertex*, Slack> fanout_slack = fanout_slacks[i];
     Vertex* load_vertex = fanout_slack.first;
     Pin* load_pin = load_vertex->pin();
-    // Leave ports connected to original net so verilog port names are
+    dbITerm* load_iterm = db_network_->flatPin(load_pin);
+
+    // Leave top level ports connected to original net so verilog port names are
     // preserved.
     if (!network_->isTopLevelPort(load_pin)) {
       auto* load_port = network_->port(load_pin);
       Instance* load = network_->instance(load_pin);
+      Instance* load_parent_inst
+          = db_network_->getOwningInstanceParent(load_pin);
+
+      // disconnects everything
       sta_->disconnectPin(load_pin);
-      sta_->connectPin(load, load_port, out_net);
+      // hierarchy fix: if load and clone in different modules
+      // do the cross module wiring.
+      if (load_parent_inst != parent) {
+        std::string unique_connection_name = resizer_->makeUniqueNetName();
+        db_network_->hierarchicalConnect(
+            clone_output_iterm, load_iterm, unique_connection_name.c_str());
+      } else {
+        sta_->connectPin(load, load_port, out_net);
+      }
     }
   }
   resizer_->parasiticsInvalid(out_net);
@@ -1920,7 +1957,6 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
         break;
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
-      Pin* end_pin = end->pin();
 
       const bool changed = repairPath(end_path,
                                       end_slack,
