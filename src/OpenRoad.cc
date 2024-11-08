@@ -507,11 +507,15 @@ void OpenRoad::writeDb(std::ostream& stream)
 
 void OpenRoad::writeDb(const char* filename)
 {
+  std::ofstream stream;
+  stream.open(filename, std::ios::binary);
+  if (!stream.is_open()) {
+    logger_->error(ORD, 55, "Cannot open file {} for writing", filename);
+  }
   try {
-    utl::StreamHandler stream_handler(filename, true);
-    db_->write(stream_handler.getStream());
+    db_->write(stream);
   } catch (const std::ios_base::failure& f) {
-    logger_->error(ORD, 55, "Cannot write database to {}", filename);
+    logger_->error(ORD, 56, "Cannot write database to {} ({})", filename, f.what());
   }
 }
 
