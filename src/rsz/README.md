@@ -362,7 +362,7 @@ report_design_area
 
 ### Report Floating Nets
 
-The `report_floating_nets` command reports nets with only one pin connection.
+The `report_floating_nets` command reports nets with connected loads but no connected drivers.
 
 ```tcl
 report_floating_nets 
