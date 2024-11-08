@@ -1285,9 +1285,6 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
   odb::dbModule* top_module
       = network_->getNetDriverParentModule(network_->dbToSta(topClockNet));
 
-  const std::string topRegBufferName = "clkbuf_regs_0_" + clockNet.getSdcName();
-  odb::dbInst* topRegBuffer = block_->findInst(topRegBufferName.c_str());
-
   disconnectAllSinksFromNet(topClockNet);
 
   // re-connect top buffer that separates macros from registers
@@ -2182,12 +2179,6 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
         if (pin) {
           sta::Vertex* sinkVertex = graph->pinDrvrVertex(pin);
           float arrival = getVertexClkArrival(sinkVertex, topClokcNet, iterm);
-          float pin_arrival = openSta_->pinArrival(
-              pin, sta::RiseFall::rise(), sta::MinMax::max()); 
-          if(arrival != pin_arrival) {
-            logger_->report("Arrival we looked up: {}", arrival);
-            logger_->report("Arrival from sta API: {}", pin_arrival);
-          }
           // add insertion delay
           float insDelay = 0.0;
           sta::LibertyCell* libCell
