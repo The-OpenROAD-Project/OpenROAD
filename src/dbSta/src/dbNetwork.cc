@@ -3010,9 +3010,10 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       dbModBTerm* mod_bterm
           = dbModBTerm::create(cur_module, connection_name_o.c_str());
       if (!source_db_mod_net) {
-        source_db_mod_net = dbModNet::create(source_db_module, connection_name);
-        source_pin->connect(source_db_mod_net);
+        source_db_mod_net
+            = dbModNet::create(source_db_module, connection_name_o.c_str());
       }
+      source_pin->connect(source_db_mod_net);
       mod_bterm->connect(source_db_mod_net);
       mod_bterm->setIoType(dbIoType::OUTPUT);
       mod_bterm->setSigType(dbSigType::SIGNAL);
