@@ -57,21 +57,6 @@ bool dbModuleInstItr::orderReversed()
 
 void dbModuleInstItr::reverse(dbObject* parent)
 {
-  // User Code Begin reverse
-  _dbModule* module = (_dbModule*) parent;
-  uint id = module->_insts;
-  uint list = 0;
-
-  while (id != 0) {
-    _dbInst* inst = _inst_tbl->getPtr(id);
-    uint n = inst->_module_prev;
-    inst->_module_prev = inst->_module_next;
-    inst->_module_next = n;
-    list = id;
-    id = inst->_module_prev;
-  }
-  module->_insts = list;
-  // User Code End reverse
 }
 
 uint dbModuleInstItr::sequential()
@@ -94,10 +79,6 @@ uint dbModuleInstItr::size(dbObject* parent)
 
 uint dbModuleInstItr::begin(dbObject* parent)
 {
-  // User Code Begin begin
-  _dbModule* module = (_dbModule*) parent;
-  return module->_insts;
-  // User Code End begin
 }
 
 uint dbModuleInstItr::end(dbObject* /* unused: parent */)
@@ -107,10 +88,6 @@ uint dbModuleInstItr::end(dbObject* /* unused: parent */)
 
 uint dbModuleInstItr::next(uint id, ...)
 {
-  // User Code Begin next
-  _dbInst* inst = _inst_tbl->getPtr(id);
-  return inst->_module_next;
-  // User Code End next
 }
 
 dbObject* dbModuleInstItr::getObject(uint id, ...)

@@ -82,10 +82,6 @@ uint dbModulePortItr::size(dbObject* parent)
 
 uint dbModulePortItr::begin(dbObject* parent)
 {
-  // User Code Begin begin
-  _dbModule* _module = (_dbModule*) parent;
-  return _module->_modbterms;
-  // User Code End begin
 }
 
 uint dbModulePortItr::end(dbObject* /* unused: parent */)
@@ -95,20 +91,6 @@ uint dbModulePortItr::end(dbObject* /* unused: parent */)
 
 uint dbModulePortItr::next(uint id, ...)
 {
-  // User Code Begin next
-  _dbModBTerm* modbterm = _modbterm_tbl->getPtr(id);
-  if (modbterm->_busPort != 0) {
-    _dbBlock* block = (_dbBlock*) modbterm->getOwner();
-    _dbBusPort* bus_port = block->_busport_tbl->getPtr(modbterm->_busPort);
-    if (bus_port) {
-      modbterm = _modbterm_tbl->getPtr(bus_port->_last);
-    }
-  }
-  if (modbterm) {
-    return modbterm->_next_entry;
-  }
-  return 0;
-  // User Code End next
 }
 
 dbObject* dbModulePortItr::getObject(uint id, ...)
@@ -116,4 +98,4 @@ dbObject* dbModulePortItr::getObject(uint id, ...)
   return _modbterm_tbl->getPtr(id);
 }
 }  // namespace odb
-// Generator Code End Cpp
+   // Generator Code End Cpp
