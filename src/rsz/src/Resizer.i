@@ -825,6 +825,14 @@ set_parasitics_src(ParasiticsSrc src)
   resizer->setParasiticsSrc(src);
 }
 
+void
+eliminate_dead_logic_cmd()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->eliminateDeadLogic(); 
+}
+
 } // namespace
 
 %} // inline

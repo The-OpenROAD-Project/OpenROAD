@@ -427,6 +427,7 @@ class Resizer : public dbStaState
   Logger* logger() const { return logger_; }
   void invalidateParasitics(const Pin* pin, const Net* net);
   void eraseParasitics(const Net* net);
+  void eliminateDeadLogic();
 
  protected:
   void init();
