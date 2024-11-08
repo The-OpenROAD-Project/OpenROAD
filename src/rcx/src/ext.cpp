@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 //#include "rcx/extRCap.h"
+#include "rcx/extPattern.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/ext.h"
 

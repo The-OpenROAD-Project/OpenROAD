@@ -182,7 +182,6 @@ struct BenchWiresOptions
     bool m_map = false;
     bool log = false;
   };
-
     struct PatternOptions
   {
     const char* name = "blk";
@@ -194,7 +193,7 @@ struct BenchWiresOptions
     int under_met = -1;
 
 
-// Target Wire 
+// Target Wire
 const char* width;
 const char* spacing;
 const char* couple_width;
@@ -224,10 +223,9 @@ const char* offset_under;
     const char* dir = "./Bench";
     bool over = false;
     bool ddd = false;
-   
+
     bool diag = false;
     bool over_under = false;
     bool under = false;
   };
-
 #endif

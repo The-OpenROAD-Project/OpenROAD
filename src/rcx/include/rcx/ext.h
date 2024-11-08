@@ -86,7 +86,6 @@ class Ext
                    const std::string& dir,
                    const std::string& file,
                    int pattern);
-
   void bench_verilog(const std::string& file);
 
   void bench_wires(const BenchWiresOptions& bwo);
@@ -94,7 +93,6 @@ class Ext
                        bool flatten,
                        bool parallel,
                        int corner);
-
   void extract(ExtractOptions options);
 
   void define_process_corner(int ext_model_index, const std::string& name);

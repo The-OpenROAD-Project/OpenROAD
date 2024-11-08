@@ -240,7 +240,6 @@ rc_estimate(const char *ext_model_file, const char *out_file_prefix)
   
   ext->rc_estimate(ext_model_file, out_file_prefix);
 }
-
 void 
 read_spef(const char* file)
 {

@@ -47,54 +47,6 @@ using namespace odb;
 
 
 
-/*
-  struct PatternOptions
-  {
-    const char* name = "blk";
-    int over_dist = 1000;
-    int under_dist = 1000;
-    int met_cnt = 1000;
-    int met = -1;
-    int over_met = -1;
-    int under_met = -1;
-
-
-// Target Wire 
-const char* width;
-const char* spacing;
-const char* couple_width;
-const char* couple_spacing;
-const char* far_width= "1";
-const char* far_spacing= "1";
-// over context
-const char* over_width;
-const char* over_spacing;
-const char* over2_width;
-const char* over2_spacing;
-// under context
-const char* under_width;
-const char* under_spacing;
-const char* under2_width;
-const char* under2_spacing;
-int dbg;
-int wire_cnt;
-const char* mlist;
-int len;
-const char* offset_over;
-const char* offset_under;
-
-      const char* grid_list = "";
-    bool default_lef_rules = false;
-    bool nondefault_lef_rules = false;
-    const char* dir = "./Bench";
-    bool over = false;
-    bool ddd = false;
-   
-    bool diag = false;
-    bool over_under = false;
-    bool under = false;
-  };
-*/
 template <class T> class AthArray;
 
 class extWirePattern;

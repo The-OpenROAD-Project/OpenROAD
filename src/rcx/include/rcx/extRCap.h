@@ -47,8 +47,8 @@
 #include "rcx/dbUtil.h"
 #include "rcx/gseq.h"
 
-#include "rcx/extPattern.h"
 #include "rcx/ext_options.h"
+#include "rcx/extPattern.h"
 
 #include "extSegment.h"
 #include "extViaModel.h"
