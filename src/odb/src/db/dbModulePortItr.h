@@ -62,6 +62,9 @@ class dbModulePortItr : public dbIterator
 
  private:
   dbTable<_dbModBTerm>* _modbterm_tbl;
+  // User Code Begin Fields
+  dbModulePortItr* _port_iter = nullptr;
+  // User Code End Fields
 };
 
 }  // namespace odb

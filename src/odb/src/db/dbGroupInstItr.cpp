@@ -57,6 +57,20 @@ bool dbGroupInstItr::orderReversed()
 
 void dbGroupInstItr::reverse(dbObject* parent)
 {
+  // User Code Begin reverse
+  _dbGroup* _parent = (_dbGroup*) parent;
+  uint id = _parent->_insts;
+  uint list = 0;
+
+  while (id != 0) {
+    _dbInst* inst = _inst_tbl->getPtr(id);
+    uint n = inst->_group_next;
+    inst->_group_next = list;
+    list = id;
+    id = n;
+  }
+  _parent->_insts = list;
+  // User Code End reverse
 }
 
 uint dbGroupInstItr::sequential()
@@ -79,6 +93,10 @@ uint dbGroupInstItr::size(dbObject* parent)
 
 uint dbGroupInstItr::begin(dbObject* parent)
 {
+  // User Code Begin begin
+  _dbGroup* _parent = (_dbGroup*) parent;
+  return _parent->_insts;
+  // User Code End begin
 }
 
 uint dbGroupInstItr::end(dbObject* /* unused: parent */)
@@ -88,6 +106,10 @@ uint dbGroupInstItr::end(dbObject* /* unused: parent */)
 
 uint dbGroupInstItr::next(uint id, ...)
 {
+  // User Code Begin next
+  _dbInst* inst = _inst_tbl->getPtr(id);
+  return inst->_group_next;
+  // User Code End next
 }
 
 dbObject* dbGroupInstItr::getObject(uint id, ...)

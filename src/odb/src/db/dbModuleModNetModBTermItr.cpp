@@ -81,6 +81,10 @@ uint dbModuleModNetModBTermItr::size(dbObject* parent)
 
 uint dbModuleModNetModBTermItr::begin(dbObject* parent)
 {
+  // User Code Begin begin
+  _dbModNet* mod_net = (_dbModNet*) parent;
+  return mod_net->_modbterms;
+  // User Code End begin
 }
 
 uint dbModuleModNetModBTermItr::end(dbObject* /* unused: parent */)
@@ -90,6 +94,10 @@ uint dbModuleModNetModBTermItr::end(dbObject* /* unused: parent */)
 
 uint dbModuleModNetModBTermItr::next(uint id, ...)
 {
+  // User Code Begin next
+  _dbModBTerm* _modbterm = _modbterm_tbl->getPtr(id);
+  return _modbterm->_next_net_modbterm;
+  // User Code End next
 }
 
 dbObject* dbModuleModNetModBTermItr::getObject(uint id, ...)
