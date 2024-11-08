@@ -507,9 +507,12 @@ void OpenRoad::writeDb(std::ostream& stream)
 
 void OpenRoad::writeDb(const char* filename)
 {
-  utl::StreamHandler stream_handler(filename, true);
-
-  db_->write(stream_handler.getStream());
+  try {
+    utl::StreamHandler stream_handler(filename, true);
+    db_->write(stream_handler.getStream());
+  } catch (const std::ios_base::failure& f) {
+    logger_->error(ORD, 55, "Cannot write database to {}", filename);
+  }
 }
 
 void OpenRoad::diffDbs(const char* filename1,
