@@ -81,9 +81,6 @@ class GuideProcessor
                                  frCoord& GCELLOFFSETY);
 
   void genGuides(frNet* net, std::vector<frRect>& rects);
-  void genGuides_addCoverGuide(frNet* net, std::vector<frRect>& rects);
-  void genGuides_addCoverGuide_helper(frInstTerm* term,
-                                      std::vector<frRect>& rects);
   /**
    * @brief Creates/Extends guides to cover a pin shape at best_pin_loc_coords
    * through its closest guide.
