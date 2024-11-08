@@ -885,9 +885,12 @@ void dbStaCbk::inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type)
 
 void dbStaCbk::inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type)
 {
-  // sta can't handle such changes, see OpenROAD#6025 so just reset the whole
+  // sta can't handle such changes, see OpenROAD#6025, so just reset the whole
   // thing.
   sta_->networkChanged();
+  // The above is insufficient, see OpenROAD#6089, clear the vertex id as a
+  // workaround.
+  bterm->staSetVertexId(object_id_null);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -918,6 +921,50 @@ BufferUse BufferUseAnalyser::getBufferUse(sta::LibertyCell* buffer)
   }
 
   return DATA;
+}
+
+////////////////////////////////////////////////////////////////
+
+sta::LibertyPort* getLibertyScanEnable(const sta::TestCell* test_cell)
+{
+  sta::LibertyCellPortIterator iter(test_cell);
+  while (iter.hasNext()) {
+    sta::LibertyPort* port = iter.next();
+    sta::ScanSignalType signal_type = port->scanSignalType();
+    if (signal_type == sta::ScanSignalType::enable
+        || signal_type == sta::ScanSignalType::enable_inverted) {
+      return port;
+    }
+  }
+  return nullptr;
+}
+
+sta::LibertyPort* getLibertyScanIn(const sta::TestCell* test_cell)
+{
+  sta::LibertyCellPortIterator iter(test_cell);
+  while (iter.hasNext()) {
+    sta::LibertyPort* port = iter.next();
+    sta::ScanSignalType signal_type = port->scanSignalType();
+    if (signal_type == sta::ScanSignalType::input
+        || signal_type == sta::ScanSignalType::input_inverted) {
+      return port;
+    }
+  }
+  return nullptr;
+}
+
+sta::LibertyPort* getLibertyScanOut(const sta::TestCell* test_cell)
+{
+  sta::LibertyCellPortIterator iter(test_cell);
+  while (iter.hasNext()) {
+    sta::LibertyPort* port = iter.next();
+    sta::ScanSignalType signal_type = port->scanSignalType();
+    if (signal_type == sta::ScanSignalType::output
+        || signal_type == sta::ScanSignalType::output_inverted) {
+      return port;
+    }
+  }
+  return nullptr;
 }
 
 }  // namespace sta

@@ -64,6 +64,9 @@ bool _dbGuide::operator==(const _dbGuide& rhs) const
   if (guide_next_ != rhs.guide_next_) {
     return false;
   }
+  if (is_congested_ != rhs.is_congested_) {
+    return false;
+  }
 
   return true;
 }
@@ -83,6 +86,7 @@ void _dbGuide::differences(dbDiff& diff,
   DIFF_FIELD(layer_);
   DIFF_FIELD(via_layer_);
   DIFF_FIELD(guide_next_);
+  DIFF_FIELD(is_congested_);
   DIFF_END
 }
 
@@ -94,12 +98,14 @@ void _dbGuide::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(layer_);
   DIFF_OUT_FIELD(via_layer_);
   DIFF_OUT_FIELD(guide_next_);
+  DIFF_OUT_FIELD(is_congested_);
 
   DIFF_END
 }
 
 _dbGuide::_dbGuide(_dbDatabase* db)
 {
+  is_congested_ = false;
 }
 
 _dbGuide::_dbGuide(_dbDatabase* db, const _dbGuide& r)
@@ -109,6 +115,7 @@ _dbGuide::_dbGuide(_dbDatabase* db, const _dbGuide& r)
   layer_ = r.layer_;
   via_layer_ = r.via_layer_;
   guide_next_ = r.guide_next_;
+  is_congested_ = r.is_congested_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
@@ -120,6 +127,9 @@ dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
     stream >> obj.via_layer_;
   }
   stream >> obj.guide_next_;
+  if (obj.getDatabase()->isSchema(db_schema_db_guide_congested)) {
+    stream >> obj.is_congested_;
+  }
   return stream;
 }
 
@@ -132,6 +142,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj)
     stream << obj.via_layer_;
   }
   stream << obj.guide_next_;
+  if (obj.getDatabase()->isSchema(db_schema_db_guide_congested)) {
+    stream << obj.is_congested_;
+  }
   return stream;
 }
 
@@ -163,6 +176,12 @@ dbTechLayer* dbGuide::getViaLayer() const
   return odb::dbTechLayer::getTechLayer(tech, obj->via_layer_);
 }
 
+bool dbGuide::isCongested() const
+{
+  _dbGuide* obj = (_dbGuide*) this;
+  return obj->is_congested_;
+}
+
 dbNet* dbGuide::getNet() const
 {
   _dbGuide* obj = (_dbGuide*) this;
@@ -173,7 +192,8 @@ dbNet* dbGuide::getNet() const
 dbGuide* dbGuide::create(dbNet* net,
                          dbTechLayer* layer,
                          dbTechLayer* via_layer,
-                         Rect box)
+                         Rect box,
+                         bool is_congested)
 {
   _dbNet* owner = (_dbNet*) net;
   _dbBlock* block = (_dbBlock*) owner->getOwner();
@@ -197,6 +217,7 @@ dbGuide* dbGuide::create(dbNet* net,
   guide->via_layer_ = via_layer->getImpl()->getOID();
   guide->box_ = box;
   guide->net_ = owner->getId();
+  guide->is_congested_ = is_congested;
   guide->guide_next_ = owner->guides_;
   owner->guides_ = guide->getOID();
   return (dbGuide*) guide;
@@ -230,6 +251,7 @@ void dbGuide::destroy(dbGuide* guide)
     block->_journal->pushParam(_guide->box_.yMax());
     block->_journal->pushParam(_guide->layer_);
     block->_journal->pushParam(_guide->via_layer_);
+    block->_journal->pushParam(_guide->is_congested_);
     block->_journal->endAction();
   }
 

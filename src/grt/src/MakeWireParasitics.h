@@ -110,11 +110,13 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
                                           sta::Parasitic* parasitic,
                                           sta::Net* net) const;
   void makeParasiticsToPins(std::vector<Pin>& pins,
+                            odb::dbNet* net,
                             NodeRoutePtMap& node_map,
                             sta::Corner* corner,
                             sta::ParasiticAnalysisPt* analysis_point,
                             sta::Parasitic* parasitic);
   void makeParasiticsToPin(Pin& pin,
+                           odb::dbNet* net,
                            NodeRoutePtMap& node_map,
                            sta::Corner* corner,
                            sta::ParasiticAnalysisPt* analysis_point,
