@@ -1,4 +1,5 @@
 record_tests {
+  clone_flat
   pinswap_flat
   pinswap_hier
   split_load_hier
