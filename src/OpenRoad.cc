@@ -514,8 +514,11 @@ void OpenRoad::writeDb(const char* filename)
   }
   try {
     db_->write(stream);
+    stream.close();
   } catch (const std::ios_base::failure& f) {
-    logger_->error(ORD, 56, "Cannot write database to {} ({})", filename, f.what());
+    stream.close();
+    logger_->error(
+        ORD, 56, "Cannot write database to {} ({})", filename, f.what());
   }
 }
 
