@@ -923,4 +923,48 @@ BufferUse BufferUseAnalyser::getBufferUse(sta::LibertyCell* buffer)
   return DATA;
 }
 
+////////////////////////////////////////////////////////////////
+
+sta::LibertyPort* getLibertyScanEnable(const sta::TestCell* test_cell)
+{
+  sta::LibertyCellPortIterator iter(test_cell);
+  while (iter.hasNext()) {
+    sta::LibertyPort* port = iter.next();
+    sta::ScanSignalType signal_type = port->scanSignalType();
+    if (signal_type == sta::ScanSignalType::enable
+        || signal_type == sta::ScanSignalType::enable_inverted) {
+      return port;
+    }
+  }
+  return nullptr;
+}
+
+sta::LibertyPort* getLibertyScanIn(const sta::TestCell* test_cell)
+{
+  sta::LibertyCellPortIterator iter(test_cell);
+  while (iter.hasNext()) {
+    sta::LibertyPort* port = iter.next();
+    sta::ScanSignalType signal_type = port->scanSignalType();
+    if (signal_type == sta::ScanSignalType::input
+        || signal_type == sta::ScanSignalType::input_inverted) {
+      return port;
+    }
+  }
+  return nullptr;
+}
+
+sta::LibertyPort* getLibertyScanOut(const sta::TestCell* test_cell)
+{
+  sta::LibertyCellPortIterator iter(test_cell);
+  while (iter.hasNext()) {
+    sta::LibertyPort* port = iter.next();
+    sta::ScanSignalType signal_type = port->scanSignalType();
+    if (signal_type == sta::ScanSignalType::output
+        || signal_type == sta::ScanSignalType::output_inverted) {
+      return port;
+    }
+  }
+  return nullptr;
+}
+
 }  // namespace sta
