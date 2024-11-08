@@ -36,4 +36,8 @@ estimate_parasitics -placement
 report_worst_slack -max
 repair_timing -setup -repair_tns 100 -verbose
 report_worst_slack -max
-write_verilog clone_hier_out.v
+set verilog_file [make_result_file clone_hier_out.v]
+write_verilog $verilog_file
+diff_files $verilog_file clone_hier_out.vok
+
+
