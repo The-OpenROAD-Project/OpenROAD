@@ -317,14 +317,13 @@ void dbModITerm::connect(dbModNet* net)
   _moditerm->_prev_net_moditerm = 0;
   _modnet->_moditerms = getId();
 
-  if (_block -> _journal){
+  if (_block->_journal) {
     _block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     _block->_journal->pushParam(dbModITermObj);
     _block->_journal->pushParam(getId());
-    _block->_journal->pushParam(_modnet->getId());    
-    _block->_journal->endAction();    
+    _block->_journal->pushParam(_modnet->getId());
+    _block->_journal->endAction();
   }
-  
 }
 
 void dbModITerm::disconnect()
@@ -362,10 +361,9 @@ dbModITerm* dbModITerm::getModITerm(dbBlock* block, uint dbid)
 
 void dbModITerm::destroy(dbModITerm* val)
 {
-  printf("Destroying mod iterm %d\n", val -> getId());
-  printf("Which is connected to net %s\n",val -> getModNet() ?
-	 val -> getModNet() -> getName():
-	 "empty");
+  printf("Destroying mod iterm %d\n", val->getId());
+  printf("Which is connected to net %s\n",
+         val->getModNet() ? val->getModNet()->getName() : "empty");
   _dbModITerm* _moditerm = (_dbModITerm*) val;
   _dbBlock* block = (_dbBlock*) _moditerm->getOwner();
 

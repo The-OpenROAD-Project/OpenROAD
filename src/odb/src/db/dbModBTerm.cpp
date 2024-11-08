@@ -401,14 +401,13 @@ void dbModBTerm::connect(dbModNet* net)
   _modbterm->_prev_net_modbterm = 0;  // previous of head always zero
   _modnet->_modbterms = getId();      // set new head
 
-  if (_block -> _journal){
+  if (_block->_journal) {
     _block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     _block->_journal->pushParam(dbModBTermObj);
     _block->_journal->pushParam(getId());
-    _block->_journal->pushParam(net->getId());    
-    _block->_journal->endAction();    
+    _block->_journal->pushParam(net->getId());
+    _block->_journal->endAction();
   }
-
 }
 
 void dbModBTerm::disconnect()
@@ -474,7 +473,7 @@ dbModBTerm* dbModBTerm::getModBTerm(dbBlock* block, uint dbid)
 
 void dbModBTerm::destroy(dbModBTerm* val)
 {
-  printf("Destroying mod bterm %d\n", val -> getId());  
+  printf("Destroying mod bterm %d\n", val->getId());
   _dbModBTerm* _modbterm = (_dbModBTerm*) val;
   _dbBlock* block = (_dbBlock*) (_modbterm->getOwner());
   _dbModule* module = block->_module_tbl->getPtr(_modbterm->_parent);
