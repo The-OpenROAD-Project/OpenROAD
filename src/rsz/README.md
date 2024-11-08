@@ -369,6 +369,14 @@ report_floating_nets
     [-verbose]
 ```
 
+### Eliminate Dead Logic
+
+The `eliminate_dead_logic` command eliminates dead logic, i.e. it removes standard cell instances which can be removed without affecting the function of the design.
+
+```tcl
+eliminate_dead_logic
+```
+
 #### Options
 
 | Switch Name | Description |
