@@ -3705,8 +3705,10 @@ void Resizer::eliminateDeadLogic()
     }
   }
 
-  for (int i = 0; i < queue.size(); i++) {
-    auto iter = network_->pinIterator(queue[i]);
+  while (!queue.empty()) {
+    const Instance* inst = queue.back();
+    queue.pop_back();
+    auto iter = network_->pinIterator(inst);
     while (iter->hasNext()) {
       keepPinDriver(iter->next());
     }
