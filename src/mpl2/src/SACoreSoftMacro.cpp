@@ -107,13 +107,7 @@ void SACoreSoftMacro::run()
     graphics_->startSA();
   }
 
-  best_valid_result_ = std::make_unique<SoftResult>();
-
   fastSA();
-
-  if (!isValid() && !best_valid_result_->sequence_pair.pos_sequence.empty()) {
-    useBestValidResult();
-  }
 
   if (centralization_on_) {
     attemptCentralization(calNormCost());
@@ -1174,31 +1168,6 @@ void SACoreSoftMacro::moveFloorplan(const std::pair<float, float>& offset)
     graphics_->saStep(macros_);
   }
 
-  calPenalty();
-}
-
-void SACoreSoftMacro::useBestValidResult()
-{
-  pos_seq_ = best_valid_result_->sequence_pair.pos_sequence;
-  neg_seq_ = best_valid_result_->sequence_pair.neg_sequence;
-
-  for (const int macro_id : pos_seq_) {
-    SoftMacro& macro = macros_[macro_id];
-    const float valid_result_width
-        = best_valid_result_->macro_id_to_width.at(macro_id);
-
-    if (macro.isMacroCluster()) {
-      const float valid_result_height = macro.getArea() / valid_result_width;
-      macro.setShapeF(valid_result_width, valid_result_height);
-    } else {
-      macro.setWidth(valid_result_width);
-    }
-  }
-
-  packFloorplan();
-  if (graphics_) {
-    graphics_->doNotSkip();
-  }
   calPenalty();
 }
 
