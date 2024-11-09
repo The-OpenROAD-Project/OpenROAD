@@ -183,10 +183,6 @@ frInst* Fixture::makeInst(const char* name,
   auto tmpInst = uInst.get();
   tmpInst->setId(numInsts++);
   tmpInst->setOrigin(Point(x, y));
-  if (tmpInst->getName() == "_13636_") {
-    std::cout << "[BNMFW] fixture.cpp" << tmpInst->getName() << " x=" << x
-              << " y=" << y << std::endl;
-  }
   tmpInst->setOrient(dbOrientType::R0);
   for (auto& uTerm : tmpInst->getMaster()->getTerms()) {
     auto term = uTerm.get();

@@ -28,7 +28,6 @@
 
 #pragma once
 
-#include <iostream>
 #include <memory>
 
 #include "db/obj/frBlockage.h"
@@ -93,19 +92,18 @@ class frInst : public frRef
     xform_.setOrient(tmpOrient);
   }
   Point getOrigin() const override { return xform_.getOffset(); }
-  void setOrigin(const Point& tmpPoint) override
-  {
-    if (name_ == "_13636_") {
-      std::cout << "[BNMFW] root " << name_ << " x=" << tmpPoint.getX()
-                << " y=" << tmpPoint.getY() << std::endl;
-    }
-    xform_.setOffset(tmpPoint);
-  }
+  void setOrigin(const Point& tmpPoint) override { xform_.setOffset(tmpPoint); }
   dbTransform getTransform() const override { return xform_; }
   void setTransform(const dbTransform& xformIn) override { xform_ = xformIn; }
   void setDBInst(odb::dbInst* db_inst_in) { db_inst_ = db_inst_in; }
   odb::dbInst* getDBInst() const { return db_inst_; }
-  dbTransform getDBTransform() const { return db_inst_->getTransform(); }
+  dbTransform getDBTransform() const
+  {
+    if (!db_inst_) {
+      return dbTransform();
+    }
+    return db_inst_->getTransform();
+  }
 
   /* from frPinFig
    * hasPin
@@ -154,7 +152,7 @@ class frInst : public frRef
   frMaster* master_;
   std::vector<std::unique_ptr<frInstTerm>> instTerms_;
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
-  odb::dbInst* db_inst_;
+  odb::dbInst* db_inst_ = nullptr;
   dbTransform xform_;
   int pinAccessIdx_;
   bool toBeDeleted_;

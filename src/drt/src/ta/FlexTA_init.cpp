@@ -138,7 +138,6 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
         }
         frInst* inst = iterm->getInst();
         dbTransform shiftXform = inst->getTransform();
-        // logger_->report("[BNMFW] getTransform FlexTAWorker::initIroute_helper_pin");
         shiftXform.setOrient(dbOrientType(dbOrientType::R0));
         frMTerm* mterm = iterm->getTerm();
         int pinIdx = 0;
@@ -261,7 +260,6 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
         }
         frInst* inst = iterm->getInst();
         dbTransform shiftXform = inst->getTransform();
-        // logger_->report("[BNMFW] getTransform FlexTAWorker::initIroute_helper_generic_helper");
         shiftXform.setOrient(dbOrientType(dbOrientType::R0));
         frMTerm* mterm = iterm->getTerm();
         int pinIdx = 0;

@@ -31,7 +31,6 @@
 #include "db/obj/frInst.h"
 #include "db/obj/frInstTerm.h"
 
-#include <iostream>
 namespace drt {
 
 Rect frRPin::getBBox()
@@ -41,8 +40,7 @@ Rect frRPin::getBBox()
   switch (term->typeId()) {
     case frcInstTerm: {
       auto inst = static_cast<frInstTerm*>(term)->getInst();
-      dbTransform shiftXform = inst->getTransform();  
-      // std::cout << "[BNMFW] getTransform frRPin::getBBox" << std::endl;
+      dbTransform shiftXform = inst->getTransform();
       shiftXform.setOrient(dbOrientType(dbOrientType::R0));
 
       pt = accessPoint->getPoint();

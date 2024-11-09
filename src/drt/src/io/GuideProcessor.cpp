@@ -32,8 +32,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "GuideProcessor.h"
 
-#include <iostream>
-
 #include "frProfileTask.h"
 namespace drt::io {
 using Interval = boost::icl::interval<frCoord>;
@@ -110,7 +108,6 @@ std::vector<Point3D> getAccessPoints(const frBlockObject* pin)
   if (pin->typeId() == frcInstTerm) {
     auto iterm = static_cast<const frInstTerm*>(pin);
     auto transform = iterm->getInst()->getTransform();
-    // std::cout << "[BNMFW] getTransform io::getAccessPoints" << std::endl;
     transform.setOrient(odb::dbOrientType::R0);
     const int pin_access_idx = iterm->getInst()->getPinAccessIdx();
     for (const auto& mpin : iterm->getTerm()->getPins()) {
@@ -1328,8 +1325,6 @@ void GuideProcessor::genGuides_addCoverGuide_helper(frInstTerm* iterm,
   const frInst* inst = iterm->getInst();
   const size_t num_pins = iterm->getTerm()->getPins().size();
   dbTransform transform = inst->getTransform();
-  // std::cout << "[BNMFW] getTransform
-  // GuideProcessor::genGuides_addCoverGuide_helper" << std::endl;
   transform.setOrient(dbOrientType(dbOrientType::R0));
   for (int pin_idx = 0; pin_idx < num_pins; pin_idx++) {
     const frAccessPoint* pref_ap = getPrefAp(iterm, pin_idx);

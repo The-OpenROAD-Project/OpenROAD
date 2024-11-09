@@ -28,8 +28,6 @@
 
 #include "frRegionQuery.h"
 
-#include <stdio.h>
-
 #include <boost/polygon/polygon.hpp>
 #include <iostream>
 
@@ -185,23 +183,7 @@ void frRegionQuery::addBlockObj(frBlockObject* obj)
   switch (obj->typeId()) {
     case frcInstTerm: {
       auto instTerm = static_cast<frInstTerm*>(obj);
-      // dbTransform xform = instTerm->getInst()->getUpdatedXform();
       dbTransform xform = instTerm->getInst()->getDBTransform();
-      // if (xform.getOffset().getX() != xform2.getOffset().getX()
-      //     || xform.getOffset().getY() != xform2.getOffset().getY()
-      //     || xform.getOrient() != xform2.getOrient()) {
-      //   printf("[BNMFW] addBlockObj1 name=%s x={%d,%d} y={%d,%d},
-      //   or={%s,%s}",
-      //          instTerm->getInst()->getName().c_str(),
-      //          xform.getOffset().getX(),
-      //          xform2.getOffset().getX(),
-      //          xform.getOffset().getY(),
-      //          xform2.getOffset().getY(),
-      //          xform.getOrient().getString(),
-      //          xform2.getOrient().getString());
-      //   int* ptr = nullptr;
-      //   *ptr = 0;
-      // }
       for (auto& pin : instTerm->getTerm()->getPins()) {
         for (auto& uFig : pin->getFigs()) {
           auto shape = uFig.get();
@@ -215,23 +197,7 @@ void frRegionQuery::addBlockObj(frBlockObject* obj)
     }
     case frcInstBlockage: {
       auto instBlk = static_cast<frInstBlockage*>(obj);
-      // dbTransform xform = instBlk->getInst()->getUpdatedXform();
       dbTransform xform = instBlk->getInst()->getDBTransform();
-      // if (xform.getOffset().getX() != xform2.getOffset().getX()
-      //     || xform.getOffset().getY() != xform2.getOffset().getY()
-      //     || xform.getOrient() != xform2.getOrient()) {
-      //   printf("[BNMFW] addBlockObj2 name=%s x={%d,%d} y={%d,%d},
-      //   or={%s,%s}",
-      //          instBlk->getInst()->getName().c_str(),
-      //          xform.getOffset().getX(),
-      //          xform2.getOffset().getX(),
-      //          xform.getOffset().getY(),
-      //          xform2.getOffset().getY(),
-      //          xform.getOrient().getString(),
-      //          xform2.getOrient().getString());
-      //   int* ptr = nullptr;
-      //   *ptr = 0;
-      // }
       auto blk = instBlk->getBlockage();
       auto pin = blk->getPin();
       for (auto& uFig : pin->getFigs()) {
@@ -290,50 +256,7 @@ void frRegionQuery::removeBlockObj(frBlockObject* obj)
   switch (obj->typeId()) {
     case frcInstTerm: {
       auto instTerm = static_cast<frInstTerm*>(obj);
-      // dbTransform xform = instTerm->getInst()->getUpdatedXform();
       dbTransform xform = instTerm->getInst()->getDBTransform();
-      // if (xform.getOffset().getX() != xform2.getOffset().getX()
-      //     || xform.getOffset().getY() != xform2.getOffset().getY()
-      //     || xform.getOrient() != xform2.getOrient()) {
-      //   int odbx, odby;
-      //   drt::frInst* inst = instTerm->getInst();
-      //   inst->getDBInst()->getLocation(odbx, odby);
-      //   printf(
-      //       "[BNMFW] I have an inconsistency on inst %s: \n"
-      //       "odb says its at x=%d y=%d\n"
-      //       "BBox says its at x=%d y=%d\n"
-      //       "Transform says its at x=%d y=%d\n",
-      //       inst->getName().c_str(),
-      //       odbx,
-      //       odby,
-      //       inst->getBBox().xMin(),
-      //       inst->getBBox().yMin(),
-      //       inst->getTransform().getOffset().getX(),
-      //       inst->getTransform().getOffset().getY());
-      // printf(
-      //     "[BNMFW] removeBlockObj1 name=%s TransformX:%d-%d=%d widthDRT=%d
-      //     widthODB=%d TransformY:%d-%d=%d " "heightDRT=%d heightODB=%d
-      //     or={%s,%s} originDRT={%d,%d} originODB={%d,%d}",
-      //     inst->getName().c_str(),
-      //     xform.getOffset().getX(),
-      //     xform2.getOffset().getX(),
-      //     xform.getOffset().getX() - xform2.getOffset().getX(),
-      //     inst->getMaster()->getDieBox().dx(),
-      //     inst->getDBInst()->getBBox()->getDX(),
-      //     xform.getOffset().getY(),
-      //     xform2.getOffset().getY(),
-      //     xform.getOffset().getY() - xform2.getOffset().getY(),
-      //     inst->getMaster()->getDieBox().dy(),
-      //     inst->getDBInst()->getBBox()->getDY(),
-      //     xform.getOrient().getString(),
-      //     xform2.getOrient().getString(),
-      //     inst->getBBox().xMin(),
-      //     inst->getBBox().yMin(),
-      //     odbx,
-      //     odby);
-      //   int* ptr = nullptr;
-      //   *ptr = 0;
-      // }
       for (auto& pin : instTerm->getTerm()->getPins()) {
         for (auto& uFig : pin->getFigs()) {
           auto shape = uFig.get();
@@ -347,23 +270,7 @@ void frRegionQuery::removeBlockObj(frBlockObject* obj)
     }
     case frcInstBlockage: {
       auto instBlk = static_cast<frInstBlockage*>(obj);
-      // dbTransform xform = instBlk->getInst()->getUpdatedXform();
       dbTransform xform = instBlk->getInst()->getDBTransform();
-      // if (xform.getOffset().getX() != xform2.getOffset().getX()
-      //     || xform.getOffset().getY() != xform2.getOffset().getY()
-      //     || xform.getOrient() != xform2.getOrient()) {
-      //   printf(
-      //       "[BNMFW] removeBlockObj2 name=%s x={%d,%d} y={%d,%d},
-      //       or={%s,%s}", instBlk->getInst()->getName().c_str(),
-      //       xform.getOffset().getX(),
-      //       xform2.getOffset().getX(),
-      //       xform.getOffset().getY(),
-      //       xform2.getOffset().getY(),
-      //       xform.getOrient().getString(),
-      //       xform2.getOrient().getString());
-      //   int* ptr = nullptr;
-      //   *ptr = 0;
-      // }
       auto blk = instBlk->getBlockage();
       auto pin = blk->getPin();
       for (auto& uFig : pin->getFigs()) {
@@ -547,7 +454,7 @@ void frRegionQuery::addGRObj(grVia* via)
 void frRegionQuery::Impl::add(frInstTerm* instTerm,
                               ObjectsByLayer<frBlockObject>& allShapes)
 {
-  dbTransform xform = instTerm->getInst()->getUpdatedXform();
+  dbTransform xform = instTerm->getInst()->getDBTransform();
 
   for (auto& pin : instTerm->getTerm()->getPins()) {
     for (auto& uFig : pin->getFigs()) {
@@ -584,33 +491,7 @@ void frRegionQuery::Impl::add(frBTerm* term,
 void frRegionQuery::Impl::add(frInstBlockage* instBlk,
                               ObjectsByLayer<frBlockObject>& allShapes)
 {
-  // dbTransform xform = instBlk->getInst()->getUpdatedXform();
   dbTransform xform = instBlk->getInst()->getDBTransform();
-
-  // if (xform.getOffset().getX() != 0 || xform.getOffset().getY() != 0
-  //     || xform.getOrient() != 0) {
-  //   logger_->report("[BNMFW] Impl::add:1: x={} y={} orient={}",
-  //                   xform.getOffset().getX(),
-  //                   xform.getOffset().getY(),
-  //                   xform.getOrient());
-  //   int* ptr = nullptr;
-  //   *ptr = 0;
-  // }
-
-  // if (xform.getOffset().getX() != xform2.getOffset().getX()
-  //     || xform.getOffset().getY() != xform2.getOffset().getY()
-  //     || xform.getOrient() != xform2.getOrient()) {
-  //   logger_->report("[BNMFW] Impl::add:1: x={} y={} orient={}",
-  //                   xform.getOffset().getX(),
-  //                   xform.getOffset().getY(),
-  //                   xform.getOrient());
-  //   logger_->report("[BNMFW] Impl::add:2: x={} y={} orient={}",
-  //                   xform2.getOffset().getX(),
-  //                   xform2.getOffset().getY(),
-  //                   xform2.getOrient());
-  //   int* ptr = nullptr;
-  //   *ptr = 0;
-  // }
   auto blk = instBlk->getBlockage();
   auto pin = blk->getPin();
   for (auto& uFig : pin->getFigs()) {

@@ -125,24 +125,10 @@ void io::Parser::setInst(odb::dbInst* inst)
   auto tmpInst = uInst.get();
 
   int x, y;
-
-  // Parte evil aqui
   inst->getLocation(x, y);
   tmpInst->setOrigin(Point(x, y));
-  // Fim da Parte evil aqui
   tmpInst->setDBInst(inst);
   tmpInst->setOrient(inst->getOrient());
-  if (tmpInst->getName() == "_13636_") {
-    std::cout << "[BNMFW] Im initializing inst " << tmpInst->getName()
-              << " this is where I'm have:\n"
-                 "the odb origin x="
-              << x << " y=" << y << std::endl
-              << "the bbox origin x=" << inst->getBBox()->xMin()
-              << " y=" << inst->getBBox()->yMin() << std::endl
-              << "the transform origin x="
-              << inst->getTransform().getOffset().getX()
-              << " y=" << inst->getTransform().getOffset().getY() << std::endl;
-  }
   int numInstTerms = 0;
   tmpInst->setPinAccessIdx(inst->getPinAccessIdx());
   for (auto& uTerm : tmpInst->getMaster()->getTerms()) {
@@ -837,11 +823,6 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
         auto tmpPWire = std::make_unique<frPatchWire>();
         tmpPWire->setLayerNum(layerNum);
         tmpPWire->setOrigin({beginX, beginY});
-        // if (true || tmpPWire->getName() == "_13636_") {
-        //   std::cout << "[BNMFW] io2 " << tmpPWire->getName() << " x=" <<
-        //   beginX
-        //             << " y=" << beginY << std::endl;
-        // }
         tmpPWire->setOffsetBox(Rect(left, bottom, right, top));
         netIn->addPatchWire(std::move(tmpPWire));
       }
@@ -914,11 +895,6 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
           auto viaDef = getTech()->name2via_[viaName];
           auto tmpP = std::make_unique<frVia>(viaDef);
           tmpP->setOrigin(p);
-          // if (true || tmpP->getName() == "_13636_") {
-          //   std::cout << "[BNMFW] io3 " << tmpP->getName() << " x=" <<
-          //   p.getX()
-          //             << " y=" << p.getY() << std::endl;
-          // }
           tmpP->addToNet(netIn);
           netIn->addVia(std::move(tmpP));
         }
@@ -983,11 +959,6 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
             auto viaDef = getTech()->name2via_[viaName];
             auto tmpP = std::make_unique<frVia>(viaDef);
             tmpP->setOrigin(p);
-            // if (true || tmpP->getName() == "_13636_") {
-            //   std::cout << "[BNMFW] io4 " << tmpP->getName()
-            //             << " x=" << p.getX() << " y=" << p.getY() <<
-            //             std::endl;
-            // }
             tmpP->addToNet(netIn);
             netIn->addVia(std::move(tmpP));
           }
@@ -2643,10 +2614,6 @@ void io::Parser::setMasters(odb::dbDatabase* db)
               auto viaDef = getTech()->name2via_[box->getTechVia()->getName()];
               auto tmpP = std::make_unique<frVia>(viaDef);
               tmpP->setOrigin({x, y});
-              // if (true || tmpP->getName() == "_13636_") {
-              //   std::cout << "[BNMFW] io5 " << tmpP->getName() << " x=" << x
-              //             << " y=" << y << std::endl;
-              // }
               // layer1 rect
               addPinFig(
                   tmpP->getLayer1BBox(), viaDef->getLayer1Num(), pinIn.get());

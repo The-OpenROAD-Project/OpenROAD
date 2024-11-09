@@ -231,7 +231,6 @@ void FlexGCWorker::Impl::addPAObj(frConnFig* obj, frBlockObject* owner)
     auto via = static_cast<frVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
     dbTransform xform = via->getTransform();
-    // logger_->report("[BNMFW] dbTransform FlexGCWorker::Impl::addPAObj");
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
       Rect box = fig->getBBox();
       xform.apply(box);
@@ -301,7 +300,6 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
     auto via = static_cast<drVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
     xform = via->getTransform();
-    // logger_->report("[BNMFW] getTransform FlexGCWorker::Impl::initDRObj");
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
       Rect box = fig->getBBox();
       xform.apply(box);
@@ -361,7 +359,6 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
     auto via = static_cast<frVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
     xform = via->getTransform();
-    // logger_->report("[BNMFW] getTransform FlexGCWorker::Impl::initRouteObj");
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
       Rect box = fig->getBBox();
       xform.apply(box);
