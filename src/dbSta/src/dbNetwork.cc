@@ -2032,22 +2032,6 @@ Pin* dbNetwork::connect(Instance* inst, Port* port, Net* net)
   }
   return pin;
 }
-/*
-bool dbNetwork::isDriver(const Pin* pin) const{
-  PortDirection *dir = direction(pin);
-  const Instance *inst = instance(pin);
-  odb::dbInst* db_inst;
-  odb::dbModInst* mod_inst;
-  staToDb(inst, db_inst, mod_inst);
-  if (isLeaf(inst) && dir->isAnyOutput()){
-    return true;
-  }
-  else if (mod_inst && dir->isAnyOutput()){
-    return true;
-  }
-  return false;
-}
-*/
 
 // Used by dbStaCbk
 // Incrementally update drivers.

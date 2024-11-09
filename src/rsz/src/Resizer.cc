@@ -3104,7 +3104,6 @@ Instance* Resizer::journalCloneInstance(LibertyCell* cell,
 
 void Resizer::journalUndoGateCloning(int& cloned_gate_count)
 {
-  printf("Undoing jouranl cloning\n");
   // Undo gate cloning
   while (!cloned_gates_.empty()) {
     auto element = cloned_gates_.top();
