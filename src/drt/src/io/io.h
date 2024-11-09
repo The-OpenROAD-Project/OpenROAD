@@ -156,8 +156,6 @@ class Parser
   // temporary variables
   int readLayerCnt_;
   odb::dbTechLayer* masterSliceLayer_;
-  std::map<frNet*, std::vector<frRect>, frBlockObjectComp> tmpGuides_;
-  std::vector<std::pair<frBlockObject*, Point>> tmpGRPins_;
   std::map<frMaster*,
            std::map<dbOrientType,
                     std::map<std::vector<frCoord>,
