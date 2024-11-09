@@ -58,6 +58,7 @@ using namespace odb;
 %typemap(in) (uint) = (int);
 %typemap(out) (uint) = (int);
 %typemap(out) (uint64) = (long);
+%typemap(out) (int64_t) = (long);
 %apply int* OUTPUT {int* x, int* y};
 
 %ignore odb::dbTechLayerAntennaRule::pwl_pair;
