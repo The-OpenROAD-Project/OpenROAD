@@ -361,9 +361,6 @@ dbModITerm* dbModITerm::getModITerm(dbBlock* block, uint dbid)
 
 void dbModITerm::destroy(dbModITerm* val)
 {
-  printf("Destroying mod iterm %d\n", val->getId());
-  printf("Which is connected to net %s\n",
-         val->getModNet() ? val->getModNet()->getName() : "empty");
   _dbModITerm* _moditerm = (_dbModITerm*) val;
   _dbBlock* block = (_dbBlock*) _moditerm->getOwner();
 

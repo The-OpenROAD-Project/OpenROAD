@@ -473,7 +473,6 @@ dbModBTerm* dbModBTerm::getModBTerm(dbBlock* block, uint dbid)
 
 void dbModBTerm::destroy(dbModBTerm* val)
 {
-  printf("Destroying mod bterm %d\n", val->getId());
   _dbModBTerm* _modbterm = (_dbModBTerm*) val;
   _dbBlock* block = (_dbBlock*) (_modbterm->getOwner());
   _dbModule* module = block->_module_tbl->getPtr(_modbterm->_parent);

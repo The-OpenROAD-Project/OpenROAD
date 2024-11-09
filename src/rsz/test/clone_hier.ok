@@ -152,9 +152,6 @@ worst slack -0.16
       135 |       0 |       0 |        0 |      3 |     1 |   -0.091 |      -19.3 |     16 | load82/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
-Destroying mod iterm 7
-Which is connected to net empty
-Destroying mod bterm 7
       137 |       0 |       0 |        0 |      3 |     1 |   -0.092 |      -19.4 |     15 | load90/D
       138 |       0 |       0 |        0 |      3 |     1 |   -0.092 |      -19.4 |     14 | load90/D
       139 |       0 |       0 |        0 |      3 |     1 |   -0.092 |      -19.4 |     13 | load90/D
@@ -167,9 +164,6 @@ Destroying mod bterm 7
       145 |       0 |       0 |        0 |      3 |     1 |   -0.092 |      -19.4 |      7 | load90/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
-Destroying mod iterm 7
-Which is connected to net empty
-Destroying mod bterm 7
       147 |       0 |       0 |        0 |      3 |     1 |   -0.096 |      -19.4 |      6 | load95/D
       148 |       0 |       0 |        0 |      3 |     1 |   -0.096 |      -19.4 |      5 | load95/D
       149 |       0 |       0 |        0 |      3 |     1 |   -0.096 |      -19.4 |      4 | load95/D
