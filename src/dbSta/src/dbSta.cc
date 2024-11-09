@@ -492,12 +492,12 @@ dbSta::InstType dbSta::getInstanceType(odb::dbInst* inst)
   return STD_COMBINATIONAL;
 }
 
-std::map<dbSta::InstType, dbSta::TypeStats> dbSta::countInstancesByType()
+std::map<dbSta::InstType, dbSta::TypeStats> dbSta::countInstancesByType(
+    odb::dbModule* module)
 {
-  auto insts = db_->getChip()->getBlock()->getInsts();
   std::map<InstType, TypeStats> inst_type_stats;
 
-  for (auto inst : insts) {
+  for (auto inst : module->getLeafInsts()) {
     InstType type = getInstanceType(inst);
     auto& stats = inst_type_stats[type];
     stats.count++;
@@ -515,11 +515,11 @@ std::string toLowerCase(std::string str)
   return str;
 }
 
-void dbSta::report_cell_usage(const bool verbose)
+void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
 {
-  auto instances_types = countInstancesByType();
+  auto instances_types = countInstancesByType(module);
   auto block = db_->getChip()->getBlock();
-  auto insts = block->getInsts();
+  auto insts = module->getLeafInsts();
   const int total_usage = insts.size();
   int64_t total_area = 0;
   const double area_to_microns = std::pow(block->getDbUnitsPerMicron(), 2);
