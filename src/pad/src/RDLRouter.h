@@ -81,6 +81,7 @@ struct RouteTarget
   odb::Rect shape;
   odb::dbITerm* terminal;
   odb::dbTechLayer* layer;
+  std::set<odb::Point> grid_access;
 };
 
 class RDLGui;
@@ -99,10 +100,16 @@ class RDLRouter
     odb::Point pt0;
     odb::Point pt1;
   };
+  struct GridEdge
+  {
+    odb::Point source;
+    odb::Point target;
+    float weight;
+  };
   struct NetRoute
   {
     std::vector<grid_vertex> route;
-    std::set<std::tuple<odb::Point, odb::Point, float>> removed_edges;
+    std::vector<GridEdge> removed_edges;
     const RouteTarget* source;
     const RouteTarget* target;
   };
@@ -110,6 +117,12 @@ class RDLRouter
   {
     std::vector<odb::dbITerm*> terminals;
     std::vector<odb::dbITerm*>::iterator next;
+  };
+  struct TerminalAccess
+  {
+    std::vector<GridEdge> removed_edges;
+    std::vector<Edge> added_edges;
+    std::set<odb::Point> added_points;
   };
 
   using NetRoutingTargetMap
@@ -136,7 +149,8 @@ class RDLRouter
   static int64_t distance(const odb::Point& p0, const odb::Point& p1);
   static int64_t distance(const TargetPair& pair);
 
-  using ObsValue = std::tuple<odb::Rect, odb::Polygon, odb::dbNet*>;
+  using ObsValue
+      = std::tuple<odb::Rect, odb::Polygon, odb::dbNet*, odb::dbObject*>;
   using ObsTree
       = boost::geometry::index::rtree<ObsValue,
                                       boost::geometry::index::quadratic<16>>;
@@ -160,6 +174,7 @@ class RDLRouter
   std::vector<RDLRoutePtr> getFailedRoutes() const;
 
   void setRDLGui(RDLGui* gui) { gui_ = gui; }
+  void setRDLDebugNet(odb::dbNet* net) { debug_net_ = net; }
 
   odb::Rect getPointObstruction(const odb::Point& pt) const;
   odb::Polygon getEdgeObstruction(const odb::Point& pt0,
@@ -170,36 +185,42 @@ class RDLRouter
 
  private:
   void makeGraph();
-  void addGraphVertex(const odb::Point& point);
+  bool addGraphVertex(const odb::Point& point);
+  void removeGraphVertex(const odb::Point& point);
   bool addGraphEdge(const odb::Point& point0,
                     const odb::Point& point1,
                     float edge_weight_scale = 1.0,
-                    bool check_obstructions = true);
+                    bool check_obstructions = true,
+                    bool check_routes = true);
+  GridEdge removeGraphEdge(const grid_edge& edge);
 
   std::vector<grid_vertex> run(const odb::Point& source,
                                const odb::Point& dest);
-  std::set<std::tuple<odb::Point, odb::Point, float>> commitRoute(
-      const std::vector<grid_vertex>& route);
-  void uncommitRoute(
-      const std::set<std::tuple<odb::Point, odb::Point, float>>& route);
+  std::vector<GridEdge> commitRoute(const std::vector<grid_vertex>& route);
+  void uncommitRoute(const std::vector<GridEdge>& route);
 
   void writeToDb(odb::dbNet* net,
-                 const std::vector<grid_vertex>& route,
+                 const std::vector<odb::Point>& route,
                  const RouteTarget& source,
                  const RouteTarget& target);
   std::vector<std::pair<odb::Point, odb::Point>> simplifyRoute(
-      const std::vector<grid_vertex>& route) const;
+      const std::vector<odb::Point>& route) const;
   odb::Rect correctEndPoint(const odb::Rect& route,
                             bool is_horizontal,
                             const odb::Rect& target) const;
 
   std::set<odb::Polygon> getITermShapes(odb::dbITerm* iterm) const;
   void populateObstructions(const std::vector<odb::dbNet*>& nets);
-  bool isEdgeObstructed(const odb::Point& pt0, const odb::Point& pt1) const;
+  bool isEdgeObstructed(const odb::Point& pt0,
+                        const odb::Point& pt1,
+                        bool use_routes) const;
 
-  std::vector<Edge> insertTerminalVertex(const RouteTarget& target,
-                                         const RouteTarget& source);
-  void removeTerminalEdges(const std::vector<Edge>& edges);
+  void populateTerminalAccessPoints(RouteTarget& target) const;
+  std::set<odb::Point> generateTerminalAccessPoints(const odb::Point& pt,
+                                                    bool do_x) const;
+  TerminalAccess insertTerminalAccess(const RouteTarget& target,
+                                      const RouteTarget& source);
+  void removeTerminalAccess(const TerminalAccess& access);
 
   std::map<odb::dbITerm*, std::vector<RouteTarget>> generateRoutingTargets(
       odb::dbNet* net) const;
@@ -213,6 +234,7 @@ class RDLRouter
   int getRoutingInstanceCount() const;
 
   int getBloatFactor() const;
+  bool isDebugNet(odb::dbNet* net) const;
 
   utl::Logger* logger_;
   odb::dbBlock* block_;
@@ -246,7 +268,9 @@ class RDLRouter
   NetRoutingTargetMap routing_targets_;
   std::vector<RDLRoutePtr> routes_;
 
+  // Debugging
   RDLGui* gui_;
+  odb::dbNet* debug_net_;
 };
 
 }  // namespace pad
