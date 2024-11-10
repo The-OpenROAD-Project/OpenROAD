@@ -121,6 +121,15 @@ class dbStaReport : public sta::ReportTcl
       __attribute__((format(printf, 3, 4)));
   size_t printString(const char* buffer, size_t length) override;
 
+  // Redirect output to filename until redirectFileEnd is called.
+  void redirectFileBegin(const char* filename) override;
+  // Redirect append output to filename until redirectFileEnd is called.
+  void redirectFileAppendBegin(const char* filename) override;
+  void redirectFileEnd() override;
+  // Redirect output to a string until redirectStringEnd is called.
+  void redirectStringBegin() override;
+  const char* redirectStringEnd() override;
+
  protected:
   void printLine(const char* line, size_t length) override;
 
@@ -627,32 +636,12 @@ void dbStaReport::setLogger(Logger* logger)
 // Line return \n is implicit.
 void dbStaReport::printLine(const char* line, size_t length)
 {
-  if (redirect_to_string_) {
-    redirectStringPrint(line, length);
-    redirectStringPrint("\n", 1);
-    return;
-  }
-  if (redirect_stream_) {
-    fwrite(line, sizeof(char), length, redirect_stream_);
-    fwrite("\n", sizeof(char), 1, redirect_stream_);
-    return;
-  }
-
   logger_->report("{}", line);
 }
 
 // Only used by encapsulated Tcl channels, ie puts and command prompt.
 size_t dbStaReport::printString(const char* buffer, size_t length)
 {
-  if (redirect_to_string_) {
-    redirectStringPrint(buffer, length);
-    return length;
-  }
-  if (redirect_stream_) {
-    size_t ret = fwrite(buffer, sizeof(char), length, redirect_stream_);
-    return std::min(ret, length);
-  }
-
   // prepend saved buffer
   string buf = tcl_buffer_ + string(buffer);
   tcl_buffer_.clear();  // clear buffer
@@ -780,6 +769,32 @@ void dbStaReport::critical(int id, const char* fmt, ...)
   // Don't give std::format a chance to interpret the message.
   logger_->critical(STA, id, "{}", buffer_);
   va_end(args);
+}
+
+void dbStaReport::redirectFileBegin(const char* filename)
+{
+  logger_->redirectFileBegin(filename);
+}
+
+void dbStaReport::redirectFileAppendBegin(const char* filename)
+{
+  logger_->redirectFileAppendBegin(filename);
+}
+
+void dbStaReport::redirectFileEnd()
+{
+  logger_->redirectFileEnd();
+}
+
+void dbStaReport::redirectStringBegin()
+{
+  logger_->redirectStringBegin();
+}
+
+const char* dbStaReport::redirectStringEnd()
+{
+  const std::string string = logger_->redirectStringEnd();
+  return stringPrintTmp("%s", string.c_str());
 }
 
 ////////////////////////////////////////////////////////////////

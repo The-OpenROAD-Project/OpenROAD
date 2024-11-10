@@ -233,6 +233,16 @@ class Logger
   void pushMetricsStage(std::string_view format);
   std::string popMetricsStage();
 
+  // interface from sta::Report
+  // Redirect output to filename until redirectFileEnd is called.
+  void redirectFileBegin(const std::string& filename);
+  // Redirect append output to filename until redirectFileEnd is called.
+  void redirectFileAppendBegin(const std::string& filename);
+  void redirectFileEnd();
+  // Redirect output to a string until redirectStringEnd is called.
+  void redirectStringBegin();
+  std::string redirectStringEnd();
+
  private:
   std::vector<std::string> metrics_sinks_;
   std::list<MetricsEntry> metrics_entries_;
@@ -284,6 +294,9 @@ class Logger
   void flushMetrics();
   void finalizeMetrics();
 
+  void setRedirectSink(std::ostream& sink_stream);
+  void restoreFromRedirect();
+
   // Allows for lookup by a compatible key (ie string_view)
   // to avoid constructing a key (string) just for lookup
   struct StringViewCmp
@@ -304,6 +317,10 @@ class Logger
   std::vector<spdlog::sink_ptr> sinks_;
   std::shared_ptr<spdlog::logger> logger_;
   std::stack<std::string> metrics_stages_;
+
+  // interface to handle string and file redirections
+  std::unique_ptr<std::ostringstream> string_redirect_;
+  std::unique_ptr<std::ofstream> file_redirect_;
 
   // This matrix is pre-allocated so it can be safely updated
   // from multiple threads without locks.

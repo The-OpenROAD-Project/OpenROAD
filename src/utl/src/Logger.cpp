@@ -40,14 +40,18 @@
 #include <mutex>
 
 #include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/ostream_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
 
 namespace utl {
 
 Logger::Logger(const char* log_filename, const char* metrics_filename)
-    : debug_on_(false), warning_count_(0), error_count_(0)
-
+    : string_redirect_(nullptr),
+      file_redirect_(nullptr),
+      debug_on_(false),
+      warning_count_(0),
+      error_count_(0)
 {
   sinks_.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
   if (log_filename)
@@ -207,6 +211,67 @@ void Logger::suppressMessage(ToolId tool, int id)
 void Logger::unsuppressMessage(ToolId tool, int id)
 {
   message_counters_[tool][id] = 0;
+}
+
+void Logger::redirectFileBegin(const std::string& filename)
+{
+  file_redirect_ = std::make_unique<std::ofstream>(filename.c_str());
+  setRedirectSink(*file_redirect_);
+}
+
+void Logger::redirectFileAppendBegin(const std::string& filename)
+{
+  file_redirect_
+      = std::make_unique<std::ofstream>(filename.c_str(), std::ofstream::app);
+  setRedirectSink(*file_redirect_);
+}
+
+void Logger::redirectFileEnd()
+{
+  if (file_redirect_ == nullptr) {
+    return;
+  }
+
+  restoreFromRedirect();
+
+  file_redirect_->close();
+  file_redirect_ = nullptr;
+}
+
+void Logger::redirectStringBegin()
+{
+  string_redirect_ = std::make_unique<std::ostringstream>();
+  setRedirectSink(*string_redirect_);
+}
+
+std::string Logger::redirectStringEnd()
+{
+  if (string_redirect_ == nullptr) {
+    return "";
+  }
+
+  restoreFromRedirect();
+
+  std::string string = string_redirect_->str();
+  string_redirect_ = nullptr;
+
+  return string;
+}
+
+void Logger::setRedirectSink(std::ostream& sink_stream)
+{
+  logger_->sinks().clear();
+
+  logger_->sinks().push_back(
+      std::make_shared<spdlog::sinks::ostream_sink_mt>(sink_stream, true));
+  logger_->set_pattern(pattern_);  // updates the new sink
+}
+
+void Logger::restoreFromRedirect()
+{
+  logger_->sinks().clear();
+  logger_->sinks().insert(
+      logger_->sinks().begin(), sinks_.begin(), sinks_.end());
 }
 
 }  // namespace utl
