@@ -307,5 +307,6 @@ class OpenRoad
 };
 
 int tclAppInit(Tcl_Interp* interp);
+int tclInit(Tcl_Interp* interp);
 
 }  // namespace ord

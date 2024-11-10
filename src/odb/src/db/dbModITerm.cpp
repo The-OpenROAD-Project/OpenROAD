@@ -273,7 +273,6 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
 
   moditerm->_name = strdup(name);
   ZALLOCATED(moditerm->_name);
-
   moditerm->_parent = parent->getOID();
   moditerm->_next_entry = parent->_moditerms;
   moditerm->_prev_entry = 0;

@@ -395,7 +395,7 @@ class Resizer : public dbStaState
   //  restore resized gates
   // resizeSlackPreamble must be called before the first findResizeSlacks.
   void resizeSlackPreamble();
-  void findResizeSlacks();
+  void findResizeSlacks(bool run_journal_restore);
   // Return nets with worst slack.
   NetSeq& resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).
@@ -479,7 +479,6 @@ class Resizer : public dbStaState
 
   void resizePreamble();
   LibertyCellSeq getSwappableCells(LibertyCell* source_cell);
-  bool footprintsMatch(LibertyCell* source, LibertyCell* target);
 
   // Resize drvr_pin instance to target slew.
   // Return 1 if resized.

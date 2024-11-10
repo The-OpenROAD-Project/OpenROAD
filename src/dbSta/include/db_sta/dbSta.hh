@@ -59,6 +59,7 @@ class dbStaCbk;
 class AbstractPathRenderer;
 class AbstractPowerDensityDataSource;
 class PatternMatch;
+class TestCell;
 
 using utl::Logger;
 
@@ -185,10 +186,10 @@ class dbSta : public Sta, public ord::OpenRoadObserver
     int count{0};
     int64_t area{0};
   };
-  std::map<InstType, TypeStats> countInstancesByType();
+  std::map<InstType, TypeStats> countInstancesByType(odb::dbModule* module);
   std::string getInstanceTypeText(InstType type);
   InstType getInstanceType(odb::dbInst* inst);
-  void report_cell_usage(bool verbose);
+  void report_cell_usage(odb::dbModule* module, bool verbose);
 
   BufferUse getBufferUse(sta::LibertyCell* buffer);
 
@@ -217,5 +218,11 @@ class dbSta : public Sta, public ord::OpenRoadObserver
   std::unique_ptr<AbstractPathRenderer> path_renderer_;
   std::unique_ptr<AbstractPowerDensityDataSource> power_density_data_source_;
 };
+
+// Utilities for TestCell
+
+sta::LibertyPort* getLibertyScanEnable(const TestCell* test_cell);
+sta::LibertyPort* getLibertyScanIn(const TestCell* test_cell);
+sta::LibertyPort* getLibertyScanOut(const TestCell* test_cell);
 
 }  // namespace sta
