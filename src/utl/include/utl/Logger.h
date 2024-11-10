@@ -48,6 +48,7 @@
 #include <vector>
 
 #include "Metrics.h"
+#include "spdlog/details/os.h"
 #include "spdlog/fmt/fmt.h"
 #include "spdlog/fmt/ostr.h"
 #include "spdlog/spdlog.h"
@@ -116,6 +117,14 @@ class Logger
   template <typename... Args>
   inline void report(const std::string& message, const Args&... args)
   {
+    logger_->log(spdlog::level::level_enum::off,
+                 FMT_RUNTIME(message + spdlog::details::os::default_eol),
+                 args...);
+  }
+
+  template <typename... Args>
+  inline void reportNoNewline(const std::string& message, const Args&... args)
+  {
     logger_->log(spdlog::level::level_enum::off, FMT_RUNTIME(message), args...);
   }
 
@@ -128,12 +137,13 @@ class Logger
                     const Args&... args)
   {
     // Message counters do NOT apply to debug messages.
-    logger_->log(spdlog::level::level_enum::debug,
-                 FMT_RUNTIME("[{} {}-{}] " + message),
-                 level_names[spdlog::level::level_enum::debug],
-                 tool_names_[tool],
-                 group,
-                 args...);
+    logger_->log(
+        spdlog::level::level_enum::debug,
+        FMT_RUNTIME("[{} {}-{}] " + message + spdlog::details::os::default_eol),
+        level_names[spdlog::level::level_enum::debug],
+        tool_names_[tool],
+        group,
+        args...);
     logger_->flush();
   }
 
@@ -260,7 +270,8 @@ class Logger
     auto count = counter++;
     if (count < max_message_print) {
       logger_->log(level,
-                   FMT_RUNTIME("[{} {}-{:04d}] " + message),
+                   FMT_RUNTIME("[{} {}-{:04d}] " + message
+                               + spdlog::details::os::default_eol),
                    level_names[level],
                    tool_names_[tool],
                    id,
@@ -271,7 +282,8 @@ class Logger
     if (count == max_message_print) {
       logger_->log(level,
                    "[{} {}-{:04d}] message limit reached, "
-                   "this message will no longer print",
+                   "this message will no longer print"
+                       + std::string(spdlog::details::os::default_eol),
                    level_names[level],
                    tool_names_[tool],
                    id);
@@ -296,6 +308,8 @@ class Logger
 
   void setRedirectSink(std::ostream& sink_stream);
   void restoreFromRedirect();
+
+  void setFormatter();
 
   // Allows for lookup by a compatible key (ie string_view)
   // to avoid constructing a key (string) just for lookup

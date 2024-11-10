@@ -39,6 +39,7 @@
 #include <fstream>
 #include <mutex>
 
+#include "spdlog/pattern_formatter.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/ostream_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
@@ -60,7 +61,7 @@ Logger::Logger(const char* log_filename, const char* metrics_filename)
 
   logger_ = std::make_shared<spdlog::logger>(
       "logger", sinks_.begin(), sinks_.end());
-  logger_->set_pattern(pattern_);
+  setFormatter();
   logger_->set_level(spdlog::level::level_enum::debug);
 
   if (metrics_filename)
@@ -129,7 +130,7 @@ void Logger::addSink(spdlog::sink_ptr sink)
 {
   sinks_.push_back(sink);
   logger_->sinks().push_back(sink);
-  logger_->set_pattern(pattern_);  // updates the new sink
+  setFormatter();  // updates the new sink
 }
 
 void Logger::removeSink(spdlog::sink_ptr sink)
@@ -264,7 +265,7 @@ void Logger::setRedirectSink(std::ostream& sink_stream)
 
   logger_->sinks().push_back(
       std::make_shared<spdlog::sinks::ostream_sink_mt>(sink_stream, true));
-  logger_->set_pattern(pattern_);  // updates the new sink
+  setFormatter();
 }
 
 void Logger::restoreFromRedirect()
@@ -272,6 +273,15 @@ void Logger::restoreFromRedirect()
   logger_->sinks().clear();
   logger_->sinks().insert(
       logger_->sinks().begin(), sinks_.begin(), sinks_.end());
+}
+
+void Logger::setFormatter()
+{
+  // create formatter without a newline
+  std::unique_ptr<spdlog::formatter> formatter
+      = std::make_unique<spdlog::pattern_formatter>(
+          pattern_, spdlog::pattern_time_type::local, "");
+  logger_->set_formatter(std::move(formatter));
 }
 
 }  // namespace utl

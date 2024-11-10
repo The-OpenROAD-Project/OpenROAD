@@ -88,7 +88,7 @@ using utl::STA;
 class dbStaReport : public sta::ReportTcl
 {
  public:
-  explicit dbStaReport(bool gui_is_on) : gui_is_on_(gui_is_on) {}
+  explicit dbStaReport() {}
 
   void setLogger(Logger* logger);
   void warn(int id, const char* fmt, ...) override
@@ -134,11 +134,6 @@ class dbStaReport : public sta::ReportTcl
   void printLine(const char* line, size_t length) override;
 
   Logger* logger_ = nullptr;
-
- private:
-  // text buffer for tcl puts output when in GUI mode.
-  std::string tcl_buffer_;
-  bool gui_is_on_;
 };
 
 class dbStaCbk : public dbBlockCallBackObj
@@ -248,7 +243,7 @@ std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
 
 void dbSta::makeReport()
 {
-  db_report_ = new dbStaReport(/*gui_is_on=*/path_renderer_ != nullptr);
+  db_report_ = new dbStaReport();
   report_ = db_report_;
 }
 
@@ -642,43 +637,7 @@ void dbStaReport::printLine(const char* line, size_t length)
 // Only used by encapsulated Tcl channels, ie puts and command prompt.
 size_t dbStaReport::printString(const char* buffer, size_t length)
 {
-  // prepend saved buffer
-  string buf = tcl_buffer_ + string(buffer);
-  tcl_buffer_.clear();  // clear buffer
-
-  if (buffer[length - 1] != '\n') {
-    // does not end with a newline, so might need to buffer the information
-
-    auto last_newline = buf.find_last_of('\n');
-    if (last_newline == string::npos) {
-      // no newlines found, so add entire buf to tcl_buffer_
-      tcl_buffer_ = buf;
-      buf.clear();
-    } else {
-      // save partial line to buffer
-      tcl_buffer_ = buf.substr(last_newline + 1);
-      buf = buf.substr(0, last_newline + 1);
-    }
-  }
-
-  if (!buf.empty()) {
-    // Trim trailing \r\n.
-    buf.erase(buf.find_last_not_of("\r\n") + 1);
-    logger_->report("{}", buf.c_str());
-  }
-
-  // if gui enabled, keep tcl_buffer_ until a newline appears
-  // otherwise proceed to print directly to console
-  if (!gui_is_on_) {
-    // puts without a trailing \n in the string.
-    // Tcl command prompts get here.
-    // puts "xyz" makes a separate call for the '\n '.
-    // This seems to be the only way to get the output.
-    // It will not be logged.
-    printConsole(tcl_buffer_.c_str(), tcl_buffer_.length());
-    tcl_buffer_.clear();
-  }
-
+  logger_->reportNoNewline(buffer);
   return length;
 }
 
@@ -773,26 +732,31 @@ void dbStaReport::critical(int id, const char* fmt, ...)
 
 void dbStaReport::redirectFileBegin(const char* filename)
 {
+  flush();
   logger_->redirectFileBegin(filename);
 }
 
 void dbStaReport::redirectFileAppendBegin(const char* filename)
 {
+  flush();
   logger_->redirectFileAppendBegin(filename);
 }
 
 void dbStaReport::redirectFileEnd()
 {
+  flush();
   logger_->redirectFileEnd();
 }
 
 void dbStaReport::redirectStringBegin()
 {
+  flush();
   logger_->redirectStringBegin();
 }
 
 const char* dbStaReport::redirectStringEnd()
 {
+  flush();
   const std::string string = logger_->redirectStringEnd();
   return stringPrintTmp("%s", string.c_str());
 }
