@@ -88,7 +88,7 @@ using utl::STA;
 class dbStaReport : public sta::ReportTcl
 {
  public:
-  explicit dbStaReport() {}
+  explicit dbStaReport() = default;
 
   void setLogger(Logger* logger);
   void warn(int id, const char* fmt, ...) override
