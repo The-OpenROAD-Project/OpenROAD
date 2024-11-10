@@ -34,6 +34,7 @@ record_tests {
   read_verilog11
 
   report_cell_usage
+  report_cell_usage_modinsts
 
   write_verilog1
   write_verilog2
