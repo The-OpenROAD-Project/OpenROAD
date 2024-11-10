@@ -507,8 +507,12 @@ void OpenRoad::writeDb(std::ostream& stream)
 
 void OpenRoad::writeDb(const char* filename)
 {
-  utl::StreamHandler stream_handler(filename, true);
-
+  utl::StreamHandler stream_handler;
+  try {
+    stream_handler.open(filename, true);
+  } catch (const std::ios_base::failure& f) {
+    logger_->error(ORD, 56, "{}", f.what());
+  }
   db_->write(stream_handler.getStream());
 }
 

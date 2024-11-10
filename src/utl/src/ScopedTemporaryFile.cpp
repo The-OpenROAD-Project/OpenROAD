@@ -50,9 +50,25 @@ ScopedTemporaryFile::~ScopedTemporaryFile()
 }
 
 StreamHandler::StreamHandler(const char* filename, bool binary)
-    : filename_(filename)
 {
-  tmp_filename_ = generate_unused_filename(filename_);
+  open(filename, binary);
+}
+
+StreamHandler::~StreamHandler()
+{
+  if (!filename_.empty()) {
+    if (os_.is_open()) {
+      // Any pending output sequence is written to the file.
+      os_.close();
+    }
+    // If filename_ exists it will be overwritten
+    fs::rename(tmp_filename_, filename_);
+  }
+}
+
+void StreamHandler::open(const char* filename, bool binary)
+{
+  tmp_filename_ = generate_unused_filename(filename);
 
   os_.exceptions(std::ofstream::failbit | std::ofstream::badbit);
   std::ios_base::openmode mode = std::ios_base::out | std::ios::trunc;
@@ -66,16 +82,7 @@ StreamHandler::StreamHandler(const char* filename, bool binary)
     std::throw_with_nested(std::ios_base::failure(error + " (failed to open '"
                                                   + tmp_filename_ + "')"));
   }
-}
-
-StreamHandler::~StreamHandler()
-{
-  if (os_.is_open()) {
-    // Any pending output sequence is written to the file.
-    os_.close();
-  }
-  // If filename_ exists it will be overwritten
-  fs::rename(tmp_filename_, filename_);
+  filename_ = filename;
 }
 
 std::ofstream& StreamHandler::getStream()
