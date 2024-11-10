@@ -526,6 +526,11 @@ void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
 
   const char* header_format = "{:37} {:>7} {:>10}";
   const char* format = "  {:35} {:>7} {:>10.2f}";
+  if (block->getTopModule() != module) {
+    logger_->report("Cell type report for {} ({})",
+                    module->getModInst()->getHierarchicalName(),
+                    module->getName());
+  }
   logger_->report(header_format, "Cell type report:", "Count", "Area");
   for (auto [type, stats] : instances_types) {
     std::string type_name = getInstanceTypeText(type);
