@@ -105,6 +105,7 @@ void _dbGuide::out(dbDiff& diff, char side, const char* field) const
 
 _dbGuide::_dbGuide(_dbDatabase* db)
 {
+  is_congested_ = false;
 }
 
 _dbGuide::_dbGuide(_dbDatabase* db, const _dbGuide& r)
