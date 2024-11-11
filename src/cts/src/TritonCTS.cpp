@@ -299,7 +299,8 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
           if (visitedClockNets_.find(outputNet) == visitedClockNets_.end()
               && !openSta_->sdc()->isLeafPinClock(
                   network_->dbToSta(outputPin))) {
-            initOneClockTree(outputNet, clkInputNet, sdcClockName, clockBuilder);
+            initOneClockTree(
+                outputNet, clkInputNet, sdcClockName, clockBuilder);
           }
         }
       }
@@ -1230,8 +1231,8 @@ Clock TritonCTS::forkRegisterClockNetwork(
   odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
   topBufferName = "clkbuf_regs_" + std::to_string(regTreeRootBufIndex_++) + "_"
                   + clockNet.getSdcName();
-  odb::dbInst* clockBuf
-      = odb::dbInst::create(block_, master, topBufferName.c_str(), false, target_module);
+  odb::dbInst* clockBuf = odb::dbInst::create(
+      block_, master, topBufferName.c_str(), false, target_module);
   odb::dbITerm* inputTerm = getFirstInput(clockBuf);
   odb::dbITerm* outputTerm = clockBuf->getFirstOutput();
   inputTerm->connect(firstNet);
@@ -2082,9 +2083,10 @@ void TritonCTS::balanceMacroRegisterLatencies()
   }
 }
 
-float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex, odb::dbNet* topNet, odb::dbITerm* iterm)
+float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex,
+                                     odb::dbNet* topNet,
+                                     odb::dbITerm* iterm)
 {
-
   sta::VertexPathIterator pathIter(sinkVertex, openSta_);
   float clkPathArrival = 0.0;
   int pathsAccepted = 0;
@@ -2095,8 +2097,7 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex, odb::dbNet* topNet
       continue;
     }
 
-    if (path->dcalcAnalysisPt(openSta_)->delayMinMax()
-        != sta::MinMax::max()) {
+    if (path->dcalcAnalysisPt(openSta_)->delayMinMax() != sta::MinMax::max()) {
       continue;
       // only populate with max delay
     }
@@ -2105,7 +2106,6 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex, odb::dbNet* topNet
     if (clock) {
       sta::PathExpanded expand(path, openSta_);
       const sta::PathRef* start = expand.startPath();
-      
 
       odb::dbNet* pathStartNet = nullptr;
 
@@ -2119,7 +2119,6 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex, odb::dbNet* topNet
       }
       if (port) {
         pathStartNet = port->getNet();
-	
       }
       if (pathStartNet == topNet) {
         clkPathArrival = path->arrival(openSta_);
@@ -2129,10 +2128,10 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex, odb::dbNet* topNet
     }
   }
   if (pathsAccepted > 1 || pathsAccepted == 0) {
-    
-    logger_->report("Number of clock paths is not 1 for pin {}. Number of clock paths: {}",
-                   iterm->getName(),
-                   pathsAccepted);
+    logger_->report(
+        "Number of clock paths is not 1 for pin {}. Number of clock paths: {}",
+        iterm->getName(),
+        pathsAccepted);
   }
   return clkPathArrival;
 }
@@ -2149,7 +2148,8 @@ void TritonCTS::computeAveSinkArrivals(TreeBuilder* builder, sta::Graph* graph)
   unsigned numSinks = 0;
   clock.forEachSink([&](const ClockInst& sink) {
     odb::dbITerm* iterm = sink.getDbInputPin();
-    computeSinkArrivalRecur(topInputClockNet, iterm, sumArrivals, numSinks, graph);
+    computeSinkArrivalRecur(
+        topInputClockNet, iterm, sumArrivals, numSinks, graph);
   });
   float aveArrival = sumArrivals / (float) numSinks;
   builder->setAveSinkArrival(aveArrival);
