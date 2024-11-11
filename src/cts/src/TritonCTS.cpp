@@ -2103,8 +2103,9 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex, odb::dbNet* topNet
 
     const sta::Clock* clock = path->clock(openSta_);
     if (clock) {
-      const sta::PathRef* start = expand.startPath();
       sta::PathExpanded expand(path, openSta_);
+      const sta::PathRef* start = expand.startPath();
+      
 
       odb::dbNet* pathStartNet = nullptr;
 
