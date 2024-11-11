@@ -571,104 +571,103 @@ bool RepairDesign::performGainBuffering(Net* net,
   const float max_buf_load = bufferCin(buffer_sizes_.back()) * buffer_gain_;
 
   float cin;
+  float has_driver_cin = getLargestSizeCin(drvr_pin, cin);
   static float gate_gain = 4.0f; // use a fanout-of-4 rule for gates
   bool repaired_net = false;
 
-  if (getLargestSizeCin(drvr_pin, cin)) {
-    float load = 0.0;
-    for (auto& sink : sinks) {
-      load += sink.capacitance(network_);
-    }
-    std::sort(sinks.begin(), sinks.end(), PinRequiredHigher(network_));
+  float load = 0.0;
+  for (auto& sink : sinks) {
+    load += sink.capacitance(network_);
+  }
+  std::sort(sinks.begin(), sinks.end(), PinRequiredHigher(network_));
 
-    // Iterate until we satisfy both the gain condition and max_fanout
-    // on drvr_pin
-    while (sinks.size() > max_fanout || load > cin * gate_gain) {
-      float load_acc = 0;
-      auto it = sinks.begin();
-      for (; it != sinks.end(); it++) {
-        if (it - sinks.begin() == max_fanout) {
-          break;
-        }
-        float sink_load = it->capacitance(network_);
-        if (load_acc + sink_load > max_buf_load
-            // always include at least one load
-            && it != sinks.begin()) {
-          break;
-        }
-        load_acc += sink_load;
-      }
-      auto group_end = it;
-
-      // Find the smallest buffer satisfying the gain condition on
-      // its output pin
-      auto size = buffer_sizes_.begin();
-      for (; size != buffer_sizes_.end() - 1; size++) {
-        if (bufferCin(*size) > load_acc / buffer_gain_) {
-          break;
-        }
-      }
-
-      if (bufferCin(*size) >= 0.9f * load_acc) {
-        // We are getting dimishing returns on inserting a buffer, stop
-        // the algorithm here (we might have been called with a low gain value)
+  // Iterate until we satisfy both the gain condition and max_fanout
+  // on drvr_pin
+  while (sinks.size() > max_fanout || (has_driver_cin && load > cin * gate_gain)) {
+    float load_acc = 0;
+    auto it = sinks.begin();
+    for (; it != sinks.end(); it++) {
+      if (it - sinks.begin() == max_fanout) {
         break;
       }
-
-      Net* new_net = resizer_->makeUniqueNet();
-      dbNet* net_db = db_network_->staToDb(net);
-      dbNet* new_net_db = db_network_->staToDb(new_net);
-      new_net_db->setSigType(net_db->getSigType());
-
-      string buffer_name = resizer_->makeUniqueInstName("gain");
-      const Point drvr_loc = db_network_->location(drvr_pin);
-      Instance* inst = resizer_->makeBuffer(*size,
-                                            buffer_name.c_str(),
-                                            // TODO: non-top module handling?
-                                            db_network_->topInstance(),
-                                            drvr_loc);
-      LibertyPort *size_in, *size_out;
-      (*size)->bufferPorts(size_in, size_out);
-      sta_->connectPin(inst, size_in, net);
-      sta_->connectPin(inst, size_out, new_net);
-
-      repaired_net = true;
-      inserted_buffer_count_++;
-
-      int max_level = 0;
-      for (auto it = sinks.begin(); it != group_end; it++) {
-        LibertyPort* sink_port = network_->libertyPort(it->pin);
-        Instance* sink_inst = network_->instance(it->pin);
-        load -= sink_port->capacitance();
-        if (it->level > max_level) {
-          max_level = it->level;
-        }
-        sta_->disconnectPin(it->pin);
-        sta_->connectPin(sink_inst, sink_port, new_net);
-        if (it->level == 0) {
-          Pin* new_pin = network_->findPin(sink_inst, sink_port);
-          tree_boundary.push_back(graph_->pinLoadVertex(new_pin));
-        }
+      float sink_load = it->capacitance(network_);
+      if (load_acc + sink_load > max_buf_load
+          // always include at least one load
+          && it != sinks.begin()) {
+        break;
       }
-
-      Pin* new_input_pin = network_->findPin(inst, size_in);
-
-      Delay buffer_delay = resizer_->bufferDelay(
-          *size, load_acc, resizer_->tgt_slew_dcalc_ap_);
-
-      auto new_pin = EnqueuedPin{new_input_pin,
-                                 (group_end - 1)->required_path,
-                                 (group_end - 1)->required_delay + buffer_delay,
-                                 max_level + 1};
-
-      sinks.erase(sinks.begin(), group_end);
-      sinks.insert(
-          std::upper_bound(
-              sinks.begin(), sinks.end(), new_pin, PinRequiredHigher(network_)),
-          new_pin);
-
-      load += size_in->capacitance();
+      load_acc += sink_load;
     }
+    auto group_end = it;
+
+    // Find the smallest buffer satisfying the gain condition on
+    // its output pin
+    auto size = buffer_sizes_.begin();
+    for (; size != buffer_sizes_.end() - 1; size++) {
+      if (bufferCin(*size) > load_acc / buffer_gain_) {
+        break;
+      }
+    }
+
+    if (bufferCin(*size) >= 0.9f * load_acc) {
+      // We are getting dimishing returns on inserting a buffer, stop
+      // the algorithm here (we might have been called with a low gain value)
+      break;
+    }
+
+    Net* new_net = resizer_->makeUniqueNet();
+    dbNet* net_db = db_network_->staToDb(net);
+    dbNet* new_net_db = db_network_->staToDb(new_net);
+    new_net_db->setSigType(net_db->getSigType());
+
+    string buffer_name = resizer_->makeUniqueInstName("gain");
+    const Point drvr_loc = db_network_->location(drvr_pin);
+    Instance* inst = resizer_->makeBuffer(*size,
+                                          buffer_name.c_str(),
+                                          // TODO: non-top module handling?
+                                          db_network_->topInstance(),
+                                          drvr_loc);
+    LibertyPort *size_in, *size_out;
+    (*size)->bufferPorts(size_in, size_out);
+    sta_->connectPin(inst, size_in, net);
+    sta_->connectPin(inst, size_out, new_net);
+
+    repaired_net = true;
+    inserted_buffer_count_++;
+
+    int max_level = 0;
+    for (auto it = sinks.begin(); it != group_end; it++) {
+      LibertyPort* sink_port = network_->libertyPort(it->pin);
+      Instance* sink_inst = network_->instance(it->pin);
+      load -= sink_port->capacitance();
+      if (it->level > max_level) {
+        max_level = it->level;
+      }
+      sta_->disconnectPin(it->pin);
+      sta_->connectPin(sink_inst, sink_port, new_net);
+      if (it->level == 0) {
+        Pin* new_pin = network_->findPin(sink_inst, sink_port);
+        tree_boundary.push_back(graph_->pinLoadVertex(new_pin));
+      }
+    }
+
+    Pin* new_input_pin = network_->findPin(inst, size_in);
+
+    Delay buffer_delay = resizer_->bufferDelay(
+        *size, load_acc, resizer_->tgt_slew_dcalc_ap_);
+
+    auto new_pin = EnqueuedPin{new_input_pin,
+                               (group_end - 1)->required_path,
+                               (group_end - 1)->required_delay + buffer_delay,
+                               max_level + 1};
+
+    sinks.erase(sinks.begin(), group_end);
+    sinks.insert(
+        std::upper_bound(
+            sinks.begin(), sinks.end(), new_pin, PinRequiredHigher(network_)),
+        new_pin);
+
+    load += size_in->capacitance();
   }
 
   sta_->ensureLevelized();
