@@ -64,7 +64,6 @@ def clock_tree_synthesis(
     parms.setSinkClustering(sink_clustering_enable)
     parms.setBalanceLevels(balance_levels)
     parms.setObstructionAware(obstruction_aware)
-    parms.enableInsertionDelay(insertion_delay)
     parms.setApplyNDR(apply_ndr)
 
     if is_pos_int(sink_clustering_size):
