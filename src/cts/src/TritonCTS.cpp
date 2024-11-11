@@ -2090,24 +2090,23 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex, odb::dbNet* topNet
   int pathsAccepted = 0;
   while (pathIter.hasNext()) {
     sta::Path* path = pathIter.next();
+    if (path->clkEdge(openSta_)->transition() != sta::RiseFall::rise()) {
+      // only populate with rising edges
+      continue;
+    }
 
-    sta::PathExpanded expand(path, openSta_);
+    if (path->dcalcAnalysisPt(openSta_)->delayMinMax()
+        != sta::MinMax::max()) {
+      continue;
+      // only populate with max delay
+    }
 
     const sta::Clock* clock = path->clock(openSta_);
-    if (clock || !clock) {
+    if (clock) {
       const sta::PathRef* start = expand.startPath();
+      sta::PathExpanded expand(path, openSta_);
 
       odb::dbNet* pathStartNet = nullptr;
-      if (start->clkEdge(openSta_)->transition() != sta::RiseFall::rise()) {
-        // only populate with rising edges
-        continue;
-      }
-
-      if (start->dcalcAnalysisPt(openSta_)->delayMinMax()
-          != sta::MinMax::max()) {
-	      continue;
-        // only populate with max delay
-      }
 
       odb::dbITerm* term;
       odb::dbBTerm* port;
