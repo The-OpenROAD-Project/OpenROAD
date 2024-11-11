@@ -463,10 +463,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       if (!virtual_td_iter) {        
         nbc_->fixPointers();
-        // Reset timing-driven net wegiths to default since non-virtual iteration.
-        for (auto& gNet : nbc_->gNets()) {
-          gNet->setTimingWeight(1.0);
-        }
 
         // Calling this here because we need access to nesterovBase, but this
         // goes along with fixpointers(), which is called inside timingBase!

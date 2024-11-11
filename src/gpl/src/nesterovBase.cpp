@@ -181,6 +181,7 @@ void GCell::setSize(int dx, int dy)
   uy_ = centerY + dy / 2;
 }
 
+// Used for initialization
 void GCell::setDensityLocation(int dLx, int dLy)
 {
   dUx_ = dLx + (dUx_ - dLx_);
@@ -194,6 +195,7 @@ void GCell::setDensityLocation(int dLx, int dLy)
   }
 }
 
+// Used for updating density locations
 void GCell::setDensityCenterLocation(int dCx, int dCy)
 {
   const int halfDDx = dDx() / 2;
