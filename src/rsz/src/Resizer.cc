@@ -3696,8 +3696,8 @@ void Resizer::eliminateDeadLogic()
       auto iter = network_->pinIterator(inst);
       while (iter->hasNext()) {
         Pin* pin = iter->next();
-        Net* net;
-        if ((net = network_->net(pin)) && dontTouch(net)) {
+        Net* net = network_->net(pin);
+        if (net && dontTouch(net)) {
           keepInst(inst);
         }
       }
