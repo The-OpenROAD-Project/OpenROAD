@@ -1052,36 +1052,20 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
   std::vector<Rect> drv_boxes;
   for (const auto& marker : getDesign()->getTopBlock()->getMarkers()) {
     auto box = marker->getBBox();
-    // logger_->report("Marker {} {}", marker->getBBox(), getDRVBBox(box));
     drv_boxes.push_back(getDRVBBox(box));
   }
   auto merged_boxes = stub_tiles::mergeBoxes(drv_boxes);
   auto expanded_boxes = stub_tiles::expandBoxes(merged_boxes);
   for (int worker_id = 0; worker_id < merged_boxes.size(); worker_id++) {
-    // logger_->report("Worker {} {} number of boxes {}",
-    //                 worker_id,
-    //                 merged_boxes[worker_id],
-    //                 expanded_boxes[worker_id].size());
     for (const auto& gcell_box : expanded_boxes[worker_id]) {
       auto min_idx = gcell_box.ll();
       auto max_idx = gcell_box.ur();
       Rect route_box(getDesign()->getTopBlock()->getGCellBox(min_idx).ll(),
                      getDesign()->getTopBlock()->getGCellBox(max_idx).ur());
-      // logger_->report("Box {} {}", gcell_box, route_box);
     }
   }
   auto route_boxes_batches
       = stub_tiles::getWorkerBatchesBoxes(getDesign(), expanded_boxes);
-  // logger_->report("Worker batches size {} MTSAFEDIST {} gcellsize {}",
-  //                 route_boxes_batches.size(),
-  //                 MTSAFEDIST,
-  //                 getDesign()->getTopBlock()->getGCellSizeHorizontal());
-  // for (auto batch : route_boxes_batches) {
-  //   logger_->report("Batch");
-  //   for (auto worker_id : batch) {
-  //     logger_->report("Worker Id {}", worker_id);
-  //   }
-  // }
   std::vector<frUInt4> drc_costs
       = {args.workerDRCCost, args.workerDRCCost / 2, args.workerDRCCost * 2};
   std::vector<frUInt4> marker_costs = {args.workerMarkerCost,
@@ -1132,20 +1116,10 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
       }
     }
     for (auto [_, worker] : worker_best_result) {
-      if (worker->getBestNumMarkers() != 0) {
-        continue;
-      }
-      // logger_->report("Accepted results {} {} {} markers {}->{}",
-      //                 worker->getRouteBox(),
-      //                 worker->getWorkerDRCCost(),
-      //                 worker->getWorkerMarkerCost(),
-      //                 worker->getInitNumMarkers(),
-      //                 worker->getBestNumMarkers());
-      changed |= worker->end(getDesign())
-                 && worker->getBestNumMarkers() != worker->getInitNumMarkers();
+      changed
+          |= (worker->end(getDesign())
+              && worker->getBestNumMarkers() != worker->getInitNumMarkers());
     }
-    // logger_->report("Num markers {}",
-    //                 getDesign()->getTopBlock()->getNumMarkers());
     batch.clear();
   }
   if (!changed) {
