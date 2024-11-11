@@ -5,6 +5,7 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 253 components and 1357 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 155 connections.
+[INFO PPL-0060] Restrict pins [ clk req_rdy req_val reset resp_rdy ... ] to region (170.00u, 200.00u)-(250.00u, 250.00u) at routing layer met5.
 Found 1 macro blocks.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0001] Number of slots           1016

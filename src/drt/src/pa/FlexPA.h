@@ -138,6 +138,13 @@ class FlexPA
   bool isStdCell(frInst* inst);
   bool isMacroCell(frInst* inst);
   /**
+   * @brief initializes all access points of a single unique instance
+   *
+   * @param inst the unique instance
+   */
+  void initInstAccessPoints(frInst* inst);
+
+  /**
    * @brief initializes all access points of all unique instances
    */
   void initAllAccessPoints();
@@ -277,10 +284,33 @@ class FlexPA
    * @param rect pin rectangle to which via is bounded
    * @param layer_num number of the layer
    */
+
   void genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
                              const gtl::rectangle_data<frCoord>& rect,
                              frLayerNum layer_num,
                              bool is_curr_layer_horz);
+
+  /**
+   * @brief Calls the other genAP functions according to the informed cost
+   *
+   * @param cost access point cost
+   * @param coords access points cost map (will get at least one new entry)
+   * @param track_coords coordinates of tracks on the layer
+   * @param base_layer_num if two layers are being considered this is the lower,
+   * if only one is being considered this is the layer
+   * @param layer_num number of the current layer
+   * @param rect rectangle representing pin shape
+   * @param is_curr_layer_horz if the current layer is horizontal
+   * @param offset TODO: not sure, something to do with macro cells
+   */
+  void genAPCosted(frAccessPointEnum cost,
+                   std::map<frCoord, frAccessPointEnum>& coords,
+                   const std::map<frCoord, frAccessPointEnum>& track_coords,
+                   frLayerNum base_layer_num,
+                   frLayerNum layer_num,
+                   const gtl::rectangle_data<frCoord>& rect,
+                   bool is_curr_layer_horz,
+                   int offset = 0);
 
   void gen_initializeAccessPoints(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
@@ -373,6 +403,14 @@ class FlexPA
       T* pin,
       frInstTerm* inst_term);
 
+  template <typename T>
+  bool isPlanarViolationFree(frAccessPoint* ap,
+                             T* pin,
+                             frPathSeg* ps,
+                             frInstTerm* inst_term,
+                             Point point,
+                             frLayer* layer);
+
   /**
    * @brief Generates an end_point given an begin_point in the direction
    *
@@ -451,6 +489,14 @@ class FlexPA
       frInstTerm* inst_term,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       frDirEnum dir);
+
+  template <typename T>
+  bool isViaViolationFree(frAccessPoint* ap,
+                          frVia* via,
+                          T* pin,
+                          frPathSeg* ps,
+                          frInstTerm* inst_term,
+                          Point point);
 
   template <typename T>
   void updatePinStats(

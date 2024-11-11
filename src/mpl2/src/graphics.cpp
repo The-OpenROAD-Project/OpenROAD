@@ -315,8 +315,6 @@ void Graphics::setXMarksSizeAndPosition(
   x_mark_size_ = (die.dx() + die.dy()) * 0.03;
 
   for (Boundary boundary : blocked_boundaries) {
-    logger_->report("{} is blocked", toString(boundary));
-
     odb::Point x_mark_point;
 
     switch (boundary) {

@@ -626,6 +626,7 @@ class Gui
                           const std::string& corner = "",
                           int width_px = 0,
                           int height_px = 0);
+  void selectClockviewerClock(const std::string& clock_name);
 
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);
@@ -682,8 +683,8 @@ class Gui
   void timingCone(odbTerm term, bool fanin, bool fanout);
   void timingPathsThrough(const std::set<odbTerm>& terms);
 
-  // open DRC
-  void loadDRC(const std::string& filename);
+  // open markers
+  void selectMarkers(odb::dbMarkerCategory* markers);
 
   // Force an immediate redraw.
   void redraw();
@@ -704,7 +705,9 @@ class Gui
   void hideGui();
 
   // Called to show the gui and return to tcl command line
-  void showGui(const std::string& cmds = "", bool interactive = true);
+  void showGui(const std::string& cmds = "",
+               bool interactive = true,
+               bool load_settings = true);
 
   // set the system logger
   void setLogger(utl::Logger* logger);
@@ -810,6 +813,7 @@ int startGui(int& argc,
              char* argv[],
              Tcl_Interp* interp,
              const std::string& script = "",
-             bool interactive = true);
+             bool interactive = true,
+             bool load_settings = true);
 
 }  // namespace gui

@@ -87,6 +87,19 @@ SACoreHardMacro::SACoreHardMacro(
   flip_prob_ = flip_prob;
 }
 
+void SACoreHardMacro::run()
+{
+  if (graphics_) {
+    graphics_->startSA();
+  }
+
+  fastSA();
+
+  if (graphics_) {
+    graphics_->endSA(calNormCost());
+  }
+}
+
 float SACoreHardMacro::getAreaPenalty() const
 {
   const float outline_area = outline_.getWidth() * outline_.getHeight();

@@ -286,6 +286,14 @@ class frBlock : public frBlockObject
     }
     return Point(idxX, idxY);
   }
+  bool isValidGCellIdx(const Point& pt) const
+  {
+    const auto& gp = getGCellPatterns();
+    const auto& xgp = gp[0];
+    const auto& ygp = gp[1];
+    return pt.x() >= 0 && pt.x() < xgp.getCount() && pt.y() >= 0
+           && pt.y() < ygp.getCount();
+  }
   const frList<std::unique_ptr<frMarker>>& getMarkers() const
   {
     return markers_;

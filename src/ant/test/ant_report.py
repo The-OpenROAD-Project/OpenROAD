@@ -8,7 +8,7 @@ import ant
 tech = Tech()
 tech.readLef("ant_check.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("ant_check.def")
 ack = design.getAntennaChecker()
 

@@ -36,6 +36,7 @@
 %{
 
 #include <cstdint>
+#include <fstream>
 
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
@@ -212,6 +213,8 @@ tclListNetworkSet(Tcl_Obj *const source,
     $1 = ParasiticsSrc::placement;
   else if (stringEq(arg, "global_routing"))
     $1 = ParasiticsSrc::global_routing;
+  else if (stringEq(arg, "detailed_routing"))
+    $1 = ParasiticsSrc::detailed_routing;
   else {
     Tcl_SetResult(interp,const_cast<char*>("Error: parasitics source."), TCL_STATIC);
     return TCL_ERROR;
@@ -542,11 +545,17 @@ repair_design_cmd(double max_length,
                   double slew_margin,
                   double cap_margin,
                   double buffer_gain,
+                  bool match_cell_footprint,
                   bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairDesign(max_length, slew_margin, cap_margin, buffer_gain, verbose);
+  resizer->repairDesign(max_length,
+                        slew_margin,
+                        cap_margin,
+                        buffer_gain,
+                        match_cell_footprint,
+                        verbose);
 }
 
 int
@@ -583,20 +592,22 @@ repair_net_cmd(Net *net,
   resizer->repairNet(net, max_length, slew_margin, cap_margin); 
 }
 
-void
+bool
 repair_setup(double setup_margin,
              double repair_tns_end_percent,
              int max_passes,
-             bool verbose,
+             bool match_cell_footprint, bool verbose,
              bool skip_pin_swap, bool skip_gate_cloning,
-             bool skip_buffering, bool skip_buffer_removal)
+             bool skip_buffering, bool skip_buffer_removal,
+             bool skip_last_gasp)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairSetup(setup_margin, repair_tns_end_percent,
-                       max_passes, verbose,
+  return resizer->repairSetup(setup_margin, repair_tns_end_percent,
+                       max_passes, match_cell_footprint, verbose,
                        skip_pin_swap, skip_gate_cloning,
-                       skip_buffering, skip_buffer_removal);
+                       skip_buffering, skip_buffer_removal,
+                       skip_last_gasp);
 }
 
 void
@@ -615,20 +626,21 @@ report_swappable_pins_cmd()
   resizer->reportSwappablePins();
 }
 
-void
+bool
 repair_hold(double setup_margin,
             double hold_margin,
             bool allow_setup_violations,
             float max_buffer_percent,
             int max_passes,
+            bool match_cell_footprint,
             bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairHold(setup_margin, hold_margin,
+  return resizer->repairHold(setup_margin, hold_margin,
                       allow_setup_violations,
                       max_buffer_percent, max_passes,
-                      verbose);
+                      match_cell_footprint, verbose);
 }
 
 void
@@ -654,12 +666,12 @@ hold_buffer_count()
 }
 
 ////////////////////////////////////////////////////////////////
-void
-recover_power(float recover_power_percent)
+bool
+recover_power(float recover_power_percent, bool match_cell_footprint)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->recoverPower(recover_power_percent);
+  return resizer->recoverPower(recover_power_percent, match_cell_footprint);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -697,7 +709,7 @@ void
 find_resize_slacks()
 {
   Resizer *resizer = getResizer();
-  resizer->findResizeSlacks();
+  resizer->findResizeSlacks(true);
 }
 
 NetSeq *
@@ -804,6 +816,13 @@ set_worst_slack_nets_percent(float percent)
 {
   Resizer *resizer = getResizer();
   resizer->setWorstSlackNetsPercent(percent);
+}
+
+void
+set_parasitics_src(ParasiticsSrc src)
+{
+  Resizer *resizer = getResizer();
+  resizer->setParasiticsSrc(src);
 }
 
 } // namespace

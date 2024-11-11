@@ -158,9 +158,9 @@ void Opendp::detailedPlacement(const int max_displacement_x,
       logger_->info(DPL, 35, " {}", cell->name());
     }
 
+    saveFailures({}, {}, {}, {}, {}, {}, placement_failures_);
     if (!report_file_name.empty()) {
-      writeJsonReport(
-          report_file_name, {}, {}, {}, {}, {}, {}, placement_failures_);
+      writeJsonReport(report_file_name);
     }
     logger_->error(DPL, 36, "Detailed placement failed.");
   }

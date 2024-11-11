@@ -872,14 +872,16 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       || logger_->debugCheck(DRT, "autotuner", 1)
       || logger_->debugCheck(DRT, "report", 1)) {
     router_->reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt",
-                       design_->getTopBlock()->getMarkers());
+                       design_->getTopBlock()->getMarkers(),
+                       "DRC - iter " + std::to_string(iter));
   }
 }
 
 void FlexDR::end(bool done)
 {
-  if (done && DRC_RPT_FILE != std::string("")) {
-    router_->reportDRC(DRC_RPT_FILE, design_->getTopBlock()->getMarkers());
+  if (done) {
+    router_->reportDRC(
+        DRC_RPT_FILE, design_->getTopBlock()->getMarkers(), "DRC");
   }
   if (done && VERBOSE > 0) {
     logger_->info(DRT, 198, "Complete detail routing.");
@@ -1429,12 +1431,8 @@ int FlexDR::main()
       break;
     }
     if (logger_->debugCheck(DRT, "snapshot", 1)) {
-      io::Writer writer(router_, logger_);
+      io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, false, true);
-      // insert the stack of vias for bterms above max layer again.
-      // all routing is deleted in updateDb, so it is necessary to insert the
-      // stack again.
-      router_->processBTermsAboveTopLayer(true);
       ord::OpenRoad::openRoad()->writeDb(
           fmt::format("drt_iter{}.odb", iter_ - 1).c_str());
     }

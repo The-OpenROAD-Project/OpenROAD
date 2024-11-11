@@ -4,7 +4,7 @@ import gpl_aux
 
 tech = Tech()
 tech.readLef("./sky130hd.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("./simple08.def")
 
 gpl_aux.global_placement(design, density=0.75, bin_grid_count=64, overflow=0.2)

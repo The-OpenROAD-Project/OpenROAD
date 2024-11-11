@@ -4,7 +4,7 @@ import gpl_aux
 
 tech = Tech()
 tech.readLef("./nangate45.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("./simple05.def")
 
 gpl_aux.global_placement(design, skip_initial_place=True)

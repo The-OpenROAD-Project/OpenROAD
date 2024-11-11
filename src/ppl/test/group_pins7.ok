@@ -3,6 +3,10 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 294 components and 1577 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 131 connections.
+[INFO PPL-0048] Restrict pins [ req_msg[0] req_msg[10] req_msg[11] req_msg[12] req_msg[13] ... ] to region 0.00u-100.80u at the LEFT edge.
+[INFO PPL-0048] Restrict pins [ req_msg[24] req_msg[25] req_msg[26] req_msg[27] req_msg[28] ... ] to region 0.00u-100.13u at the BOTTOM edge.
+[INFO PPL-0048] Restrict pins [ clk req_rdy req_val reset resp_msg[0] ... ] to region 0.00u-100.13u at the TOP edge.
+[INFO PPL-0048] Restrict pins [ resp_msg[1] resp_msg[2] resp_msg[3] resp_msg[4] resp_msg[5] ... ] to region 0.00u-100.80u at the RIGHT edge.
 Found 0 macro blocks.
 [INFO PPL-0044] Pin group: [ req_msg[10] req_msg[11] req_msg[12] req_msg[13] req_msg[14] ... ]
 [INFO PPL-0044] Pin group: [ req_msg[24] req_msg[25] req_msg[26] req_msg[27] req_msg[28] ... ]

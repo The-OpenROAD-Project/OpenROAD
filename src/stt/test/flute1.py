@@ -4,7 +4,7 @@ import helpers
 import stt_aux
 
 tech = Tech()
-design = Design(tech)
+design = helpers.make_design(tech)
 
 net = [
     ["net250", 0],

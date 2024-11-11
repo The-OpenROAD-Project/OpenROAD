@@ -45,9 +45,6 @@ class dbTechLayer;
 namespace utl {
 class Logger;
 }
-namespace drt {
-class TritonRoute;
-}
 namespace drt::io {
 using viaRawPriorityTuple = std::tuple<bool,          // not default via
                                        frCoord,       // lowerWidth
@@ -63,7 +60,7 @@ class Parser
 {
  public:
   // constructors
-  Parser(odb::dbDatabase* dbIn, frDesign* designIn, Logger* loggerIn);
+  Parser(odb::dbDatabase* dbIn, frDesign* design, Logger* loggerIn);
 
   // others
   void readDesign(odb::dbDatabase*);
@@ -90,7 +87,9 @@ class Parser
   void updateDesign();
 
  private:
-  frBlock* getBlock() const { return design_->getTopBlock(); }
+  frDesign* getDesign() const;
+  frBlock* getBlock() const;
+  frTechObject* getTech() const;
   void setMasters(odb::dbDatabase*);
   void setTechVias(odb::dbTech*);
   void setTechViaRules(odb::dbTech*);
@@ -108,6 +107,7 @@ class Parser
   void setVias(odb::dbBlock*);
   void updateNetRouting(frNet*, odb::dbNet*);
   void setNets(odb::dbBlock*);
+  frNet* addNet(odb::dbNet* db_net);
   void setAccessPoints(odb::dbDatabase*);
   void getSBoxCoords(odb::dbSBox*,
                      frCoord&,
@@ -152,13 +152,10 @@ class Parser
 
   odb::dbDatabase* db_;
   frDesign* design_;
-  frTechObject* tech_;
   Logger* logger_;
   // temporary variables
   int readLayerCnt_;
   odb::dbTechLayer* masterSliceLayer_;
-  std::map<frNet*, std::vector<frRect>, frBlockObjectComp> tmpGuides_;
-  std::vector<std::pair<frBlockObject*, Point>> tmpGRPins_;
   std::map<frMaster*,
            std::map<dbOrientType,
                     std::map<std::vector<frCoord>,
@@ -172,8 +169,8 @@ class Writer
 {
  public:
   // constructors
-  Writer(drt::TritonRoute* router, Logger* loggerIn)
-      : router_(router), logger_(loggerIn)
+  Writer(frDesign* design, Logger* loggerIn)
+      : design_(design), logger_(loggerIn)
   {
   }
   // getters
@@ -208,11 +205,44 @@ class Writer
                            odb::dbTech* db_tech,
                            odb::dbBlock* block);
 
-  drt::TritonRoute* router_;
+  frDesign* design_;
   Logger* logger_;
   std::map<frString, std::list<std::shared_ptr<frConnFig>>>
       connFigs_;  // all connFigs ready to def
   std::vector<frViaDef*> viaDefs_;
 };
 
+/**
+ * This class handles BTerms above top routing layer. It creates a stack of vias
+ * from the lowest pin shape down to the top routing layer so that the pin is
+ * accessible to the router.
+ */
+class TopLayerBTermHandler
+{
+ public:
+  TopLayerBTermHandler(frDesign* design, odb::dbDatabase* db, Logger* logger)
+      : design_(design), db_(db), logger_(logger)
+  {
+  }
+  void processBTermsAboveTopLayer(bool has_routing = false);
+
+ private:
+  void stackVias(odb::dbBTerm* bterm,
+                 int top_layer_idx,
+                 int bterm_bottom_layer_idx,
+                 bool has_routing);
+  int countNetBTermsAboveMaxLayer(odb::dbNet* net);
+  bool netHasStackedVias(odb::dbNet* net);
+  /**
+   * @brief Finds the best track on the TOP_ROUTING_LAYER to be the via position
+   *
+   * @param pin_rect The BTerm pin rectange shape.
+   * @returns The chosen via location for stacking the vias up to the
+   * TOP_ROUTING_LAYER
+   */
+  Point getBestViaPosition(Rect pin_rect);
+  frDesign* design_;
+  odb::dbDatabase* db_;
+  Logger* logger_;
+};
 }  // namespace drt::io

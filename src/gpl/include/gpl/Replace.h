@@ -136,6 +136,7 @@ class Replace
 
   void addTimingNetWeightOverflow(int overflow);
   void setTimingNetWeightMax(float max);
+  void setKeepResizeBelowOverflow(float overflow);
 
   void setDebug(int pause_iterations,
                 int update_iterations,
@@ -197,6 +198,7 @@ class Replace
   int routabilityMaxInflationIter_ = 4;
 
   float timingNetWeightMax_ = 1.9;
+  float keepResizeBelowOverflow_ = 0.0;
 
   bool timingDrivenMode_ = true;
   bool routabilityDrivenMode_ = true;

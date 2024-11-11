@@ -165,6 +165,7 @@ class OpenRoad
   // Tools should use their initialization functions to get the
   // OpenRoad object and/or any other tools they need to reference.
   static OpenRoad* openRoad();
+  static void setOpenRoad(OpenRoad* app, bool reinit_ok = false);
   void init(Tcl_Interp* tcl_interp);
 
   Tcl_Interp* tclInterp() { return tcl_interp_; }
@@ -293,8 +294,13 @@ class OpenRoad
   std::set<OpenRoadObserver*> observers_;
 
   int threads_ = 1;
+
+  static OpenRoad* app_;
+
+  friend class Tech;
 };
 
 int tclAppInit(Tcl_Interp* interp);
+int tclInit(Tcl_Interp* interp);
 
 }  // namespace ord

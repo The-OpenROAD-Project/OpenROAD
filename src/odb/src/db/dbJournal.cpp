@@ -571,15 +571,30 @@ void dbJournal::redo_connectObject()
       dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
       uint net_id;
       _log.pop(net_id);
-      dbNet* net = dbNet::getNet(_block, net_id);
-      debugPrint(_logger,
-                 utl::ODB,
-                 "DB_ECO",
-                 2,
-                 "REDO ECO: connect dbITermObj, iterm_id {}, net_id {}",
-                 iterm_id,
-                 net_id);
-      iterm->connect(net);
+      if (net_id != 0) {
+        dbNet* net = dbNet::getNet(_block, net_id);
+        debugPrint(_logger,
+                   utl::ODB,
+                   "DB_ECO",
+                   2,
+                   "REDO ECO: connect dbITermObj, iterm_id {}, net_id {}",
+                   iterm_id,
+                   net_id);
+        iterm->connect(net);
+      }
+      uint mod_net_id;
+      _log.pop(mod_net_id);
+      if (mod_net_id != 0) {
+        dbModNet* mod_net = dbModNet::getModNet(_block, mod_net_id);
+        debugPrint(_logger,
+                   utl::ODB,
+                   "DB_ECO",
+                   2,
+                   "REDO ECO: connect dbITermObj, iterm_id {}, mod_net_id {}",
+                   iterm_id,
+                   mod_net_id);
+        iterm->connect(mod_net);
+      }
       break;
     }
 
@@ -622,6 +637,7 @@ void dbJournal::redo_disconnectObject()
                  2,
                  "REDO ECO: disconnect dbITermObj, iterm_id {}",
                  iterm_id);
+      // note: this will disconnect the modnet and the dbNet
       iterm->disconnect();
       break;
     }
@@ -911,6 +927,14 @@ void dbJournal::redo_updateInstField()
       _log.pop(prev_flags);
       uint* flags = (uint*) &inst->_flags;
       _log.pop(*flags);
+
+      // Changing the orientation flag requires updating the cached bbox
+      _dbInstFlags* a = (_dbInstFlags*) flags;
+      _dbInstFlags* b = (_dbInstFlags*) &prev_flags;
+      if (a->_orient != b->_orient) {
+        _dbInst::setInstBBox(inst);
+      }
+
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
@@ -1520,6 +1544,7 @@ void dbJournal::undo_deleteObject()
       int y_max;
       uint layer_id;
       uint via_layer_id;
+      bool is_congested;
       _log.pop(net_id);
       _log.pop(x_min);
       _log.pop(y_min);
@@ -1527,11 +1552,13 @@ void dbJournal::undo_deleteObject()
       _log.pop(y_max);
       _log.pop(layer_id);
       _log.pop(via_layer_id);
+      _log.pop(is_congested);
       auto net = dbNet::getNet(_block, net_id);
       auto layer = dbTechLayer::getTechLayer(_block->getTech(), layer_id);
       auto via_layer
           = dbTechLayer::getTechLayer(_block->getTech(), via_layer_id);
-      dbGuide::create(net, layer, via_layer, {x_min, y_min, x_max, y_max});
+      dbGuide::create(
+          net, layer, via_layer, {x_min, y_min, x_max, y_max}, is_congested);
       break;
     }
     case dbInstObj: {
@@ -1610,6 +1637,7 @@ void dbJournal::undo_connectObject()
       dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
       uint net_id;
       _log.pop(net_id);
+      // disconnects everything: modnet and dbnet
       iterm->disconnect();
       break;
     }
@@ -1645,8 +1673,17 @@ void dbJournal::undo_disconnectObject()
       dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
       uint net_id;
       _log.pop(net_id);
-      dbNet* net = dbNet::getNet(_block, net_id);
-      iterm->connect(net);
+      if (net_id != 0) {
+        dbNet* net = dbNet::getNet(_block, net_id);
+        iterm->connect(net);
+      }
+      uint mnet_id;
+      _log.pop(mnet_id);
+      if (mnet_id != 0) {
+        dbModNet* mod_net = dbModNet::getModNet(_block, mnet_id);
+        iterm->connect(mod_net);
+      }
+
       break;
     }
 
@@ -1783,6 +1820,13 @@ void dbJournal::undo_updateInstField()
       _log.pop(*flags);
       uint new_flags;
       _log.pop(new_flags);
+
+      // Changing the orientation flag requires updating the cached bbox
+      _dbInstFlags* a = (_dbInstFlags*) flags;
+      _dbInstFlags* b = (_dbInstFlags*) &new_flags;
+      if (a->_orient != b->_orient) {
+        _dbInst::setInstBBox(inst);
+      }
       break;
     }
 

@@ -4645,9 +4645,15 @@ void Snapper::attemptSnapToExtraLayers(
   bool all_layers_snapped = false;
 
   while (remaining_attempts > 0) {
-    // Move one track ahead.
-    new_origin += snap_layer_params.pitch;
-    setOrigin(new_origin, target_direction);
+    const bool is_first_attempt = remaining_attempts == total_attempts;
+    // The pins may already be aligned for all extra layers (in that case,
+    // we don't need to move the macro at all), hence, we use the first
+    // attempt to check if there are in fact any extra layers to snap.
+    if (!is_first_attempt) {
+      // Move one track ahead.
+      new_origin += snap_layer_params.pitch;
+      setOrigin(new_origin, target_direction);
+    }
 
     int curr_number_of_snapped_layers = 1;
     for (const auto [layer, pin] : layers_data.layer_to_pin) {

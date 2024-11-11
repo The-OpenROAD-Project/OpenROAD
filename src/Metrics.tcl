@@ -239,6 +239,22 @@ proc report_design_area_metrics { args } {
     set stdcell_util -1.0
   }
 
+  set std_rows 0
+  set std_sites 0
+  set rows [dict create]
+  set sites [dict create]
+  foreach row [$block getRows] {
+    set site [$row getSite]
+
+    if { [$site getClass] == "NONE" || [$site getClass] == "CORE" } {
+      incr std_rows
+      set std_sites [expr { $std_sites + [$row getSiteCount] }]
+    }
+
+    dict incr rows [$site getName] 1
+    dict incr sites [$site getName] [$row getSiteCount]
+  }
+
   utl::metric_int "design__io" $num_ios
   utl::metric_float "design__die__area" $die_area
   utl::metric_float "design__core__area" $core_area
@@ -248,8 +264,22 @@ proc report_design_area_metrics { args } {
   utl::metric_float "design__instance__area__stdcell" $stdcell_area
   utl::metric_int "design__instance__count__macros" $num_macros
   utl::metric_float "design__instance__area__macros" $macro_area
+  utl::metric_int "design__instance__count__padcells" $num_padcells
+  utl::metric_float "design__instance__area__padcells" $padcell_area
+  utl::metric_int "design__instance__count__cover" $num_cover
+  utl::metric_float "design__instance__area__cover" $cover_area
   utl::metric_float "design__instance__utilization" $core_util
   utl::metric_float "design__instance__utilization__stdcell" $stdcell_util
+
+  utl::metric_int "design__rows" $std_rows
+  dict for {site_name count} $rows {
+    utl::metric_int "design__rows:$site_name" $count
+  }
+
+  utl::metric_int "design__sites" $std_sites
+  dict for {site_name count} $sites {
+    utl::metric_int "design__sites:$site_name" $count
+  }
 }
 
 # namespace
