@@ -186,10 +186,10 @@ class dbSta : public Sta, public ord::OpenRoadObserver
     int count{0};
     int64_t area{0};
   };
-  std::map<InstType, TypeStats> countInstancesByType();
+  std::map<InstType, TypeStats> countInstancesByType(odb::dbModule* module);
   std::string getInstanceTypeText(InstType type);
   InstType getInstanceType(odb::dbInst* inst);
-  void report_cell_usage(bool verbose);
+  void report_cell_usage(odb::dbModule* module, bool verbose);
 
   BufferUse getBufferUse(sta::LibertyCell* buffer);
 
