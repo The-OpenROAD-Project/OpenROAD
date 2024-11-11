@@ -80,7 +80,9 @@ class GuideProcessor
                                  frCoord& GCELLOFFSETX,
                                  frCoord& GCELLOFFSETY);
 
-  void genGuides(frNet* net, std::vector<frRect>& rects);
+  std::vector<std::pair<frBlockObject*, Point>> genGuides(
+      frNet* net,
+      std::vector<frRect> rects);
   void genGuides_addCoverGuide(frNet* net, std::vector<frRect>& rects);
   void genGuides_addCoverGuide_helper(frInstTerm* term,
                                       std::vector<frRect>& rects);
@@ -224,7 +226,6 @@ class GuideProcessor
   Logger* logger_;
   odb::dbDatabase* db_;
   std::map<frNet*, std::vector<frRect>, frBlockObjectComp> tmp_guides_;
-  std::vector<std::pair<frBlockObject*, Point>> tmpGRPins_;
 };
 
 /**
@@ -288,12 +289,11 @@ class GuidePathFinder
    *
    * @param rects A vector of guide rectangles.
    * @param pin_gcell_map A map of pins and their corresponding GCell indices.
-   * @param gr_pins A vector of pin-gcell pair to be updated.
+   * @returns A vector of pin-gcell pair to be updated.
    */
-  void commitPathToGuides(
+  std::vector<std::pair<frBlockObject*, Point>> commitPathToGuides(
       std::vector<frRect>& rects,
-      const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
-      std::vector<std::pair<frBlockObject*, Point>>& gr_pins);
+      const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map);
 
  private:
   struct Wavefront
@@ -392,19 +392,18 @@ class GuidePathFinder
   void updateNodeMap(const std::vector<frRect>& rects,
                      const std::vector<std::vector<Point3D>>& pin_to_gcell);
   /**
-   * @brief Updates the GR pins with the GCell locations of pins.
+   * @brief Returns vector of pins with their GCell locations.
    *
    * This function takes the computed pin-to-GCell mappings and updates the
    * corresponding gr pins with their respective GCell locations.
    *
    * @param pins A vector of block objects representing the pins.
    * @param pin_to_gcell A vector mapping pins to their GCell locations.
-   * @param gr_pins A vector of pin-to-gcell pairs to be updated.
+   * @returns A vector of pin-to-gcell pairs to be updated.
    */
-  void updateGRPins(
+  std::vector<std::pair<frBlockObject*, Point>> getGRPins(
       const std::vector<frBlockObject*>& pins,
-      const std::vector<std::vector<Point3D>>& pin_to_gcell,
-      std::vector<std::pair<frBlockObject*, Point>>& gr_pins) const;
+      const std::vector<std::vector<Point3D>>& pin_to_gcell) const;
   /**
    * @brief Does a bfs search from the given node idx.
    */

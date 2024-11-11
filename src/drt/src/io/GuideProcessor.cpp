@@ -32,7 +32,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "GuideProcessor.h"
 
+#include <omp.h>
+
+#include "db/infra/frTime.h"
 #include "frProfileTask.h"
+#include "utl/exception.h"
+
 namespace drt::io {
 using Interval = boost::icl::interval<frCoord>;
 namespace {
@@ -982,11 +987,6 @@ void GuideProcessor::patchGuides(frNet* net,
   // the guides
 
   const std::string name = getPinName(pin);
-  logger_->info(DRT,
-                1000,
-                "Pin {} not in any guide. Attempting to patch guides to cover "
-                "(at least part of) the pin.",
-                name);
   const Point3D best_pin_loc_idx
       = findBestPinLocation(getDesign(), pin, guides);
   // The x/y/z coordinates of best_pin_loc_idx
@@ -1353,7 +1353,9 @@ void GuideProcessor::genGuides_addCoverGuide_helper(frInstTerm* iterm,
   }
 }
 
-void GuideProcessor::genGuides(frNet* net, std::vector<frRect>& rects)
+std::vector<std::pair<frBlockObject*, Point>> GuideProcessor::genGuides(
+    frNet* net,
+    std::vector<frRect> rects)
 {
   net->clearGuides();
 
@@ -1375,7 +1377,6 @@ void GuideProcessor::genGuides(frNet* net, std::vector<frRect>& rects)
   initGCellPinMap(net, gcell_pin_map);
   initPinGCellMap(net, pin_gcell_map);
 
-  bool path_found = false;
   // Run for 3 iterations max
   for (int i = 0; i < 4; i++) {
     const bool force_pin_feed_through = (i >= 2);
@@ -1428,17 +1429,14 @@ void GuideProcessor::genGuides(frNet* net, std::vector<frRect>& rects)
         design_, logger_, net, force_pin_feed_through, rects, pin_gcell_map);
     path_finder.setAllowWarnings(i != 0);
     if (path_finder.traverseGraph()) {
-      path_found = true;
-      path_finder.commitPathToGuides(rects, pin_gcell_map, tmpGRPins_);
-      break;
+      return path_finder.commitPathToGuides(rects, pin_gcell_map);
     }
     if (patch_guides_on_failure) {
       path_finder.connectDisconnectedComponents(rects, intvs);
     }
   }
-  if (!path_found) {
-    logger_->error(DRT, 218, "Guide is not connected to design.");
-  }
+  logger_->error(DRT, 218, "Guide is not connected to design.");
+  return {};
 }
 
 GuidePathFinder::GuidePathFinder(
@@ -1521,11 +1519,11 @@ std::vector<std::vector<Point3D>> GuidePathFinder::getPinToGCellList(
   return pin_to_gcell;
 }
 
-void GuidePathFinder::updateGRPins(
+std::vector<std::pair<frBlockObject*, Point>> GuidePathFinder::getGRPins(
     const std::vector<frBlockObject*>& pins,
-    const std::vector<std::vector<Point3D>>& pin_to_gcell,
-    std::vector<std::pair<frBlockObject*, Point>>& gr_pins) const
+    const std::vector<std::vector<Point3D>>& pin_to_gcell) const
 {
+  std::vector<std::pair<frBlockObject*, Point>> gr_pins;
   for (int i = 0; i < getPinCount(); i++) {
     auto pin = pins[i];
     for (auto& pt : pin_to_gcell[i]) {
@@ -1533,6 +1531,7 @@ void GuidePathFinder::updateGRPins(
       gr_pins.emplace_back(pin, abs_pt);
     }
   }
+  return gr_pins;
 }
 
 void GuidePathFinder::updateNodeMap(
@@ -1631,10 +1630,10 @@ void GuidePathFinder::mergeGuides(std::vector<frRect>& rects)
   }
 }
 
-void GuidePathFinder::commitPathToGuides(
+std::vector<std::pair<frBlockObject*, Point>>
+GuidePathFinder::commitPathToGuides(
     std::vector<frRect>& rects,
-    const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
-    std::vector<std::pair<frBlockObject*, Point>>& gr_pins)
+    const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map)
 {
   std::vector<frBlockObject*> pins;
   pins.reserve(getPinCount());
@@ -1655,7 +1654,8 @@ void GuidePathFinder::commitPathToGuides(
     ++pin_idx;
   }
   updateNodeMap(rects, pin_to_gcell);
-  updateGRPins(pins, pin_to_gcell, gr_pins);
+  std::vector<std::pair<frBlockObject*, Point>> gr_pins
+      = getGRPins(pins, pin_to_gcell);
   clipGuides(rects);
   mergeGuides(rects);
   for (int i = 0; i < getGuideCount(); i++) {
@@ -1673,6 +1673,7 @@ void GuidePathFinder::commitPathToGuides(
     guide->addToNet(net_);
     net_->addGuide(std::move(guide));
   }
+  return gr_pins;
 }
 
 void GuidePathFinder::constructAdjList()
@@ -1802,24 +1803,6 @@ bool GuidePathFinder::traverseGraph()
   int visited_pin_count
       = count(visited_.begin() + guide_count_, visited_.end(), true);
   const bool success = (visited_pin_count == getPinCount());
-  // true error when allowing feedthrough
-  if (!success && allowWarnings()) {
-    if (ALLOW_PIN_AS_FEEDTHROUGH || isForceFeedThrough()) {
-      logger_->warn(DRT,
-                    224,
-                    "{} {} pin not visited, number of guides = {}.",
-                    net_->getName(),
-                    getPinCount() - visited_pin_count,
-                    getGuideCount());
-    } else {
-      // fallback to feedthrough in next iter
-      logger_->warn(DRT,
-                    225,
-                    "{} {} pin not visited, fall back to feedthrough mode.",
-                    net_->getName(),
-                    getPinCount() - visited_pin_count);
-    }
-  }
   return success;
 }
 
@@ -1953,6 +1936,7 @@ void GuideProcessor::processGuides()
   if (tmp_guides_.empty()) {
     return;
   }
+  frTime t;
   ProfileTask profile("IO:postProcessGuide");
   if (VERBOSE > 0) {
     logger_->info(DRT, 169, "Post process guides.");
@@ -1961,21 +1945,45 @@ void GuideProcessor::processGuides()
 
   getDesign()->getRegionQuery()->initOrigGuide(tmp_guides_);
   int cnt = 0;
+  std::vector<std::pair<frNet*, std::vector<frRect>>> nets_to_guides;
+  frBlockObjectMap<std::vector<std::pair<frBlockObject*, Point>>>
+      net_to_gr_pins;
   for (auto& [net, rects] : tmp_guides_) {
+    nets_to_guides.push_back({net, rects});
     net->setOrigGuides(rects);
-    genGuides(net, rects);
-    cnt++;
-    if (VERBOSE > 0) {
-      if (cnt < 1000000) {
-        if (cnt % 100000 == 0) {
-          logger_->report("  complete {} nets.", cnt);
-        }
-      } else {
-        if (cnt % 1000000 == 0) {
-          logger_->report("  complete {} nets.", cnt);
+    net_to_gr_pins[net];
+  }
+  omp_set_num_threads(MAX_THREADS);
+  utl::ThreadException exception;
+#pragma omp parallel for
+  for (int i = 0; i < nets_to_guides.size(); i++) {
+    try {
+      net_to_gr_pins[nets_to_guides[i].first]
+          = genGuides(nets_to_guides[i].first, nets_to_guides[i].second);
+
+#pragma omp critical
+      {
+        cnt++;
+        if (VERBOSE > 0) {
+          if (cnt < 1000000) {
+            if (cnt % 100000 == 0) {
+              logger_->report("  complete {} nets.", cnt);
+            }
+          } else {
+            if (cnt % 1000000 == 0) {
+              logger_->report("  complete {} nets.", cnt);
+            }
+          }
         }
       }
+    } catch (...) {
+      exception.capture();
     }
+  }
+  exception.rethrow();
+  std::vector<std::pair<frBlockObject*, Point>> all_gr_pins;
+  for (auto [_, gr_pins] : net_to_gr_pins) {
+    all_gr_pins.insert(all_gr_pins.end(), gr_pins.begin(), gr_pins.end());
   }
 
   // global unique id for guides
@@ -1991,8 +1999,11 @@ void GuideProcessor::processGuides()
   getDesign()->getRegionQuery()->initGuide();
   getDesign()->getRegionQuery()->printGuide();
   logger_->info(DRT, 179, "Init gr pin query.");
-  getDesign()->getRegionQuery()->initGRPin(tmpGRPins_);
+  getDesign()->getRegionQuery()->initGRPin(all_gr_pins);
 
+  if (VERBOSE > 0) {
+    t.print(logger_);
+  }
   if (!SAVE_GUIDE_UPDATES) {
     if (VERBOSE > 0) {
       logger_->info(DRT, 245, "skipped writing guide updates to database.");
