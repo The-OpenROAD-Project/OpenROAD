@@ -3739,6 +3739,7 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
         to_delete.push_back(net);
       }
     }
+    delete net_iter;
     for (auto net : to_delete) {
       sta_->deleteNet(net);
       remove_net_count++;
