@@ -2326,7 +2326,6 @@ void GlobalRouter::saveGuides()
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
 
-  int jumper_count = 0;
   bool is_congested = fastroute_->has2Doverflow() && !allow_congestion_;
 
   for (odb::dbNet* db_net : block_->getNets()) {
@@ -2376,12 +2375,12 @@ void GlobalRouter::saveGuides()
           }
 
           odb::dbTechLayer* layer = routing_layers_[segment.init_layer];
+	  // Set guide flag when it is jumper
           bool is_jumper = segment.isJumper();
           auto guide = odb::dbGuide::create(db_net, layer, layer, box, is_congested);
           if (is_jumper) {
             guide->setIsJumper(true);
           }
-          jumper_count += guide->isJumper();
         }
       }
     }
@@ -2389,7 +2388,6 @@ void GlobalRouter::saveGuides()
     if (dbGuides.orderReversed() && dbGuides.reversible())
       dbGuides.reverse();
   }
-  printf("%d jumpers marked!!\n", jumper_count);
 }
 
 void GlobalRouter::writeSegments(const char* file_name)
