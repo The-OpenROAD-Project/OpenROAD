@@ -802,43 +802,32 @@ void FlexDR::endWorkersBatch(
   workers_batch.clear();
 }
 
-Rect FlexDR::getWorkerRouteBox(const Rect& drv_rect) const
+Rect FlexDR::getDRVBBox(const Rect& drv_rect) const
 {
   Rect route_box = drv_rect;
   auto min_idx = getDesign()->getTopBlock()->getGCellIdx(route_box.ll());
   auto max_idx = getDesign()->getTopBlock()->getGCellIdx(route_box.ur());
   return {min_idx, max_idx};
-  // min_idx.addX(-1);
-  // min_idx.addY(-1);
-  // max_idx.addX(1);
-  // max_idx.addY(1);
-  // route_box.merge(getDesign()->getTopBlock()->getGCellBox(min_idx));
-  // route_box.merge(getDesign()->getTopBlock()->getGCellBox(max_idx));
-  // return route_box;
 }
 
 namespace stub_tiles {
-std::vector<std::pair<Rect, std::vector<Rect*>>> mergeBoxes(
-    std::vector<Rect>& drv_boxes)
+std::vector<Rect> mergeBoxes(std::vector<Rect>& drv_boxes)
 {
-  std::vector<std::pair<Rect, std::vector<Rect*>>> merge_boxes;
+  std::vector<Rect> merge_boxes;
   for (auto& box : drv_boxes) {
-    merge_boxes.emplace_back(box, std::vector<Rect*>());
-    merge_boxes.back().second.emplace_back(&box);
+    merge_boxes.emplace_back(box);
   }
   bool merged;
   do {
     merged = false;
     for (auto it1 = merge_boxes.begin(); it1 != merge_boxes.end(); ++it1) {
       for (auto it2 = it1 + 1; it2 != merge_boxes.end(); ++it2) {
-        Rect merge_box = (*it1).first;
-        merge_box.merge((*it2).first);
+        Rect merge_box = (*it1);
+        merge_box.merge((*it2));
         if (merge_box.dx() > 4 || merge_box.dy() > 4) {
           continue;
         }
-        (*it1).first.merge((*it2).first);
-        (*it1).second.insert(
-            (*it1).second.end(), (*it2).second.begin(), (*it2).second.end());
+        (*it1).merge((*it2));
         merge_boxes.erase(it2);
         merged = true;
         break;
@@ -850,9 +839,24 @@ std::vector<std::pair<Rect, std::vector<Rect*>>> mergeBoxes(
   } while (merged);
   return merge_boxes;
 }
+bool hasOtherRect(const std::vector<std::vector<int>>& grid,
+                  const Rect& rect,
+                  const int rect_id)
+{
+  return std::any_of(grid.begin() + rect.xMin(),
+                     grid.begin() + rect.xMax() + 1,
+                     [&](const std::vector<int>& row) {
+                       return std::any_of(row.begin() + rect.yMin(),
+                                          row.begin() + rect.yMax() + 1,
+                                          [rect_id](int id) {
+                                            return id != -1 && id != rect_id;
+                                          });
+                     });
+}
 
 int expandBox(Rect& box,
-              std::vector<std::pair<Rect, std::vector<Rect*>>>& merged_boxes,
+              const int id,
+              const std::vector<std::vector<int>>& grid,
               const frDirEnum dir,
               const int max_expansion)
 {
@@ -864,84 +868,172 @@ int expandBox(Rect& box,
         max_idx.addX(1);
         break;
       case frDirEnum::W:
+        if (min_idx.x() == 0) {
+          return i - 1;
+        }
         min_idx.addX(-1);
         break;
       case frDirEnum::N:
         max_idx.addY(1);
         break;
       case frDirEnum::S:
+        if (min_idx.y() == 0) {
+          return i - 1;
+        }
         min_idx.addY(-1);
         break;
       default:
         break;
     }
     Rect expanded_box = {min_idx, max_idx};
-    for (auto& [other_rect, drvs] : merged_boxes) {
-      if (&other_rect == &box) {
-        continue;
-      }
-      if (expanded_box.intersects(other_rect)) {
-        return i - 1;
-      }
+    if (hasOtherRect(grid, expanded_box, id)) {
+      return i - 1;
     }
     box = expanded_box;
   }
   return max_expansion;
 }
 
-void expandBoxes(std::vector<std::pair<Rect, std::vector<Rect*>>>& merged_boxes)
+void populateGrid(std::vector<std::vector<int>>& grid,
+                  const Rect& box,
+                  const int id)
 {
-  for (auto it1 = merged_boxes.begin(); it1 != merged_boxes.end(); ++it1) {
-    auto& box = (*it1).first;
-    int horizontal_expand = 6 - box.dx();
-    int vertical_expand = 6 - box.dy();
-    horizontal_expand
-        -= expandBox(box, merged_boxes, frDirEnum::E, horizontal_expand / 2);
-    expandBox(box, merged_boxes, frDirEnum::W, horizontal_expand);
-    vertical_expand
-        -= expandBox(box, merged_boxes, frDirEnum::N, vertical_expand / 2);
-    expandBox(box, merged_boxes, frDirEnum::S, vertical_expand);
+  for (auto x = box.xMin(); x <= box.xMax(); x++) {
+    std::fill(
+        grid[x].begin() + box.yMin(), grid[x].begin() + box.yMax() + 1, id);
   }
 }
 
-std::vector<std::vector<Rect>> getWorkerBatchesBoxes(
-    frDesign* design,
-    std::vector<std::pair<Rect, std::vector<Rect*>>>& merged_boxes)
+struct Wavefront
 {
-  if (merged_boxes.empty()) {
+  int id;
+  int expansions_done;
+  int expansion_east;
+  int expansion_west;
+  int expansion_north;
+  int expansion_south;
+  bool operator<(const Wavefront& rhs) const
+  {
+    return expansions_done > rhs.expansions_done;
+  }
+};
+
+std::vector<std::set<Rect>> expandBoxes(std::vector<Rect>& merged_boxes)
+{
+  frUInt4 min_x_idx = std::numeric_limits<frUInt4>::max();
+  frUInt4 min_y_idx = std::numeric_limits<frUInt4>::max();
+  frUInt4 max_x_idx = std::numeric_limits<frUInt4>::min();
+  frUInt4 max_y_idx = std::numeric_limits<frUInt4>::min();
+  for (const auto& box : merged_boxes) {
+    min_x_idx = std::min(min_x_idx, (frUInt4) box.xMin());
+    min_y_idx = std::min(min_y_idx, (frUInt4) box.yMin());
+    max_x_idx = std::max(max_x_idx, (frUInt4) box.xMax());
+    max_y_idx = std::max(max_y_idx, (frUInt4) box.yMax());
+  }
+  max_x_idx += 7;
+  max_y_idx += 7;
+  std::vector<std::vector<int>> grid(max_x_idx);
+  std::fill(grid.begin(), grid.end(), std::vector<int>(max_y_idx, -1));
+  int id = 0;
+  for (const auto& box : merged_boxes) {
+    populateGrid(grid, box, id++);
+  }
+
+  std::vector<std::set<Rect>> expanded_boxes;
+  std::priority_queue<Wavefront> expansions;
+  // first we create route boxes centering the violations
+  id = 0;
+  for (auto box : merged_boxes) {
+    const int horizontal_expand = 6 - box.dx();
+    const int half_horizontal_expand = horizontal_expand / 2;
+    const int vertical_expand = 6 - box.dy();
+    const int half_vertical_expand = vertical_expand / 2;
+    const int expansion_east
+        = expandBox(box, id, grid, frDirEnum::E, half_horizontal_expand);
+    const int expansion_west = expandBox(
+        box, id, grid, frDirEnum::W, horizontal_expand - expansion_east);
+    const int expansion_north
+        = expandBox(box, id, grid, frDirEnum::N, half_vertical_expand);
+    const int expansion_south = expandBox(
+        box, id, grid, frDirEnum::S, vertical_expand - expansion_north);
+
+    expansions.push(
+        {id, 1, 0, horizontal_expand, expansion_north, expansion_south});
+    expansions.push(
+        {id, 1, horizontal_expand, 0, expansion_north, expansion_south});
+    expansions.push(
+        {id, 1, expansion_east, expansion_west, 0, vertical_expand});
+    expansions.push(
+        {id, 1, expansion_east, expansion_west, vertical_expand, 0});
+    expanded_boxes.push_back({box});
+    populateGrid(grid, box, id++);
+  }
+  while (!expansions.empty()) {
+    auto wavefront = expansions.top();
+    expansions.pop();
+    if (expanded_boxes[wavefront.id].size() != wavefront.expansions_done) {
+      wavefront.expansions_done = expanded_boxes[wavefront.id].size();
+      expansions.push(wavefront);
+      continue;
+    }
+    auto box = merged_boxes[wavefront.id];
+    expandBox(box, wavefront.id, grid, frDirEnum::E, wavefront.expansion_east);
+    expandBox(box, wavefront.id, grid, frDirEnum::W, wavefront.expansion_west);
+    expandBox(box, wavefront.id, grid, frDirEnum::N, wavefront.expansion_north);
+    expandBox(box, wavefront.id, grid, frDirEnum::S, wavefront.expansion_south);
+    expanded_boxes[wavefront.id].insert(box);
+    populateGrid(grid, box, wavefront.id);
+  }
+  return expanded_boxes;
+}
+
+std::vector<std::vector<int>> getWorkerBatchesBoxes(
+    frDesign* design,
+    std::vector<std::set<Rect>>& expanded_boxes)
+{
+  if (expanded_boxes.empty()) {
     return {};
   }
-  for (auto& [box, drvs] : merged_boxes) {
-    auto min_idx = box.ll();
-    auto max_idx = box.ur();
-    box = {design->getTopBlock()->getGCellBox(min_idx).ll(),
-           design->getTopBlock()->getGCellBox(max_idx).ur()};
+  std::vector<Rect> boxes_max;
+  int id = 0;
+  for (auto& boxes : expanded_boxes) {
+    bool first = true;
+    for (auto& box : boxes) {
+      auto min_idx = box.ll();
+      auto max_idx = box.ur();
+      Rect rect(design->getTopBlock()->getGCellBox(min_idx).ll(),
+                design->getTopBlock()->getGCellBox(max_idx).ur());
+      rect.bloat(MTSAFEDIST, rect);
+      if (first) {
+        boxes_max.emplace_back(rect);
+        first = false;
+        continue;
+      }
+      boxes_max[id].merge(rect);
+    }
+    id++;
   }
-  std::vector<std::vector<Rect>> batches(1);
-  batches[0].emplace_back(merged_boxes[0].first);
-  for (int i = 1; i < merged_boxes.size(); i++) {
-    auto curr_box = merged_boxes[i].first;
-    Rect curr_ext_box;
-    curr_box.bloat(MTSAFEDIST, curr_ext_box);
+  std::vector<std::vector<int>> batches;
+  batches.push_back({0});
+  for (int i = 1; i < boxes_max.size(); i++) {
+    auto curr_box = boxes_max[i];
     bool added = false;
     for (auto& batch : batches) {
       bool intersects = false;
-      for (const auto& route_box : batch) {
-        Rect ext_box;
-        route_box.bloat(MTSAFEDIST, ext_box);
-        if (ext_box.intersects(curr_ext_box)) {
+      for (const auto& id : batch) {
+        if (curr_box.intersects(boxes_max[id])) {
           intersects = true;
           break;
         }
       }
       if (!intersects) {
-        batch.emplace_back(curr_box);
+        batch.emplace_back(i);
         added = true;
         break;
       }
     }
     if (!added) {
-      batches.push_back({curr_box});
+      batches.push_back({i});
     }
   }
   return batches;
@@ -954,15 +1046,42 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
   if (VERBOSE > 0) {
     logger_->info(DRT, 196, "Start Stubborn Tiles iteration({}).", iter_);
   }
+  if (graphics_) {
+    graphics_->startIter(iter_);
+  }
   std::vector<Rect> drv_boxes;
   for (const auto& marker : getDesign()->getTopBlock()->getMarkers()) {
     auto box = marker->getBBox();
-    drv_boxes.push_back(getWorkerRouteBox(box));
+    // logger_->report("Marker {} {}", marker->getBBox(), getDRVBBox(box));
+    drv_boxes.push_back(getDRVBBox(box));
   }
   auto merged_boxes = stub_tiles::mergeBoxes(drv_boxes);
-  stub_tiles::expandBoxes(merged_boxes);
+  auto expanded_boxes = stub_tiles::expandBoxes(merged_boxes);
+  for (int worker_id = 0; worker_id < merged_boxes.size(); worker_id++) {
+    // logger_->report("Worker {} {} number of boxes {}",
+    //                 worker_id,
+    //                 merged_boxes[worker_id],
+    //                 expanded_boxes[worker_id].size());
+    for (const auto& gcell_box : expanded_boxes[worker_id]) {
+      auto min_idx = gcell_box.ll();
+      auto max_idx = gcell_box.ur();
+      Rect route_box(getDesign()->getTopBlock()->getGCellBox(min_idx).ll(),
+                     getDesign()->getTopBlock()->getGCellBox(max_idx).ur());
+      // logger_->report("Box {} {}", gcell_box, route_box);
+    }
+  }
   auto route_boxes_batches
-      = stub_tiles::getWorkerBatchesBoxes(getDesign(), merged_boxes);
+      = stub_tiles::getWorkerBatchesBoxes(getDesign(), expanded_boxes);
+  // logger_->report("Worker batches size {} MTSAFEDIST {} gcellsize {}",
+  //                 route_boxes_batches.size(),
+  //                 MTSAFEDIST,
+  //                 getDesign()->getTopBlock()->getGCellSizeHorizontal());
+  // for (auto batch : route_boxes_batches) {
+  //   logger_->report("Batch");
+  //   for (auto worker_id : batch) {
+  //     logger_->report("Worker Id {}", worker_id);
+  //   }
+  // }
   std::vector<frUInt4> drc_costs
       = {args.workerDRCCost, args.workerDRCCost / 2, args.workerDRCCost * 2};
   std::vector<frUInt4> marker_costs = {args.workerMarkerCost,
@@ -973,15 +1092,21 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
   iter_prog.total_num_workers = 0;
   for (int batch_id = 0; batch_id < route_boxes_batches.size(); batch_id++) {
     auto& batch = route_boxes_batches[batch_id];
-    iter_prog.total_num_workers += batch.size();
-    for (int worker_id = 0; worker_id < batch.size(); worker_id++) {
-      for (auto drc_cost : drc_costs) {
-        for (auto marker_cost : marker_costs) {
-          auto worker_args = args;
-          worker_args.workerDRCCost = drc_cost;
-          worker_args.workerMarkerCost = marker_cost;
-          workers_batches[batch_id].emplace_back(
-              worker_id, createWorker(0, 0, worker_args, batch[worker_id]));
+    for (const auto worker_id : batch) {
+      for (auto gcell_box : expanded_boxes[worker_id]) {
+        auto min_idx = gcell_box.ll();
+        auto max_idx = gcell_box.ur();
+        Rect route_box(getDesign()->getTopBlock()->getGCellBox(min_idx).ll(),
+                       getDesign()->getTopBlock()->getGCellBox(max_idx).ur());
+        for (auto drc_cost : drc_costs) {
+          for (auto marker_cost : marker_costs) {
+            auto worker_args = args;
+            worker_args.workerDRCCost = drc_cost;
+            worker_args.workerMarkerCost = marker_cost;
+            workers_batches[batch_id].emplace_back(
+                worker_id, createWorker(0, 0, worker_args, route_box));
+            iter_prog.total_num_workers++;
+          }
         }
       }
     }
@@ -1007,8 +1132,20 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
       }
     }
     for (auto [_, worker] : worker_best_result) {
-      changed |= worker->end(getDesign());
+      if (worker->getBestNumMarkers() != 0) {
+        continue;
+      }
+      // logger_->report("Accepted results {} {} {} markers {}->{}",
+      //                 worker->getRouteBox(),
+      //                 worker->getWorkerDRCCost(),
+      //                 worker->getWorkerMarkerCost(),
+      //                 worker->getInitNumMarkers(),
+      //                 worker->getBestNumMarkers());
+      changed |= worker->end(getDesign())
+                 && worker->getBestNumMarkers() != worker->getInitNumMarkers();
     }
+    // logger_->report("Num markers {}",
+    //                 getDesign()->getTopBlock()->getNumMarkers());
     batch.clear();
   }
   if (!changed) {

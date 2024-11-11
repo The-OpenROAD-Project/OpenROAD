@@ -214,7 +214,7 @@ class FlexDR
       std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch,
       int& version,
       IterationProgress& iter_prog);
-  Rect getWorkerRouteBox(const Rect& drv_rect) const;
+  Rect getDRVBBox(const Rect& drv_rect) const;
   void stubbornTilesFlow(const SearchRepairArgs& args,
                          IterationProgress& iter_prog);
 };
