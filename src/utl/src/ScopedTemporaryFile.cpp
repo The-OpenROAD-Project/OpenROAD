@@ -62,9 +62,8 @@ StreamHandler::StreamHandler(const char* filename, bool binary)
   try {
     os_.open(tmp_filename_, mode);
   } catch (std::ios_base::failure& e) {
-    std::string error = e.what();
-    std::throw_with_nested(std::ios_base::failure(error + " (failed to open '"
-                                                  + tmp_filename_ + "')"));
+    std::throw_with_nested(std::runtime_error("Failed to open '" + tmp_filename_
+                                              + "' for writing"));
   }
 }
 
