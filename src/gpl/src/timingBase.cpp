@@ -146,6 +146,10 @@ bool TimingBase::updateGNetWeights(bool run_journal_restore)
 {  
   rs_->findResizeSlacks(run_journal_restore);
 
+  if(!run_journal_restore) {
+    nbc_->fixPointers();
+  }
+
   // get worst resize nets
   sta::NetSeq& worst_slack_nets = rs_->resizeWorstSlackNets();
 
