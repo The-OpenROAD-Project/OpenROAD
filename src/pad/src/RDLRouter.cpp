@@ -952,10 +952,45 @@ RDLRouter::TerminalAccess RDLRouter::insertTerminalAccess(
 
     for (const auto& vertex : vertex_to_modify) {
       const odb::Point& pt = vertex_point_map_[vertex];
-      // TODO: check for min-step
-      // TODO: remove nearby edges that would cause a violation
       if (addGraphEdge(snap, pt)) {
         access.added_edges.push_back(Edge{snap, pt});
+      }
+
+      if (allow45_) {
+        // remove accute edges
+        for (const auto& edge : getVertexEdges(vertex)) {
+          bool remove = false;
+
+          const auto other
+              = edge.m_source == vertex ? edge.m_target : edge.m_source;
+          const odb::Point& other_pt = vertex_point_map_[other];
+          if (other_pt == snap) {
+            continue;
+          }
+          if (pt.x() == other_pt.x() || pt.y() == other_pt.y()) {
+            // right angle
+            continue;
+          }
+          const int snap_dx = pt.x() - snap.x();
+          const int snap_dy = pt.y() - snap.y();
+
+          const int edge_dx = pt.x() - other_pt.x();
+          const int edge_dy = pt.y() - other_pt.y();
+
+          if (snap_dy == 0) {
+            if ((snap_dx < 0 && edge_dx < 0) || (snap_dx > 0 && edge_dx > 0)) {
+              remove = true;
+            }
+          } else {
+            if ((snap_dy < 0 && edge_dy < 0) || (snap_dy > 0 && edge_dy > 0)) {
+              remove = true;
+            }
+          }
+
+          if (remove) {
+            access.removed_edges.push_back(removeGraphEdge(edge));
+          }
+        }
       }
     }
 
