@@ -703,7 +703,7 @@ sta::proc_redirect report_long_wires {
 
 sta::define_cmd_args "eliminate_dead_logic" {}
 proc eliminate_dead_logic { } {
-  rsz::eliminate_dead_logic_cmd
+  rsz::eliminate_dead_logic_cmd 1
 }
 
 namespace eval rsz {

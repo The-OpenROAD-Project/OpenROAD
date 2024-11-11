@@ -826,11 +826,11 @@ set_parasitics_src(ParasiticsSrc src)
 }
 
 void
-eliminate_dead_logic_cmd()
+eliminate_dead_logic_cmd(bool clean_nets)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->eliminateDeadLogic(); 
+  resizer->eliminateDeadLogic(clean_nets);
 }
 
 } // namespace
