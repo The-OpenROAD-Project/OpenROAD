@@ -263,7 +263,7 @@ void extMain::setExtractionOptions_v2(ExtractOptions options)
   _dbgOption = options._dbg;
   _overCell = _v2 && options.over_cell; // Use inside cell context for coupling cap extraction
 
-  // TODO _cornerCnt
+  // TODO _cornerCnt?
   _diagFlow = true;
   _couplingFlag = options.cc_model;
   _coupleThreshold = options.coupling_threshold; // 
@@ -476,7 +476,6 @@ uint extMain::makeNetRCsegs_v2(dbNet* net, bool skipStartWarning)
         if (!s.isVia()) {
           _rsegJid.push_back(pshape.junction_id);
         }
-        // FIXME
         addRSeg_v2(net,
                    srcId,
                    prevPoint,
@@ -485,8 +484,6 @@ uint extMain::makeNetRCsegs_v2(dbNet* net, bool skipStartWarning)
                    path.is_branch,
                    _tmpResTable,
                    _tmpCapTable);
-        //  addRSeg(net, _rsegJid, srcId, prevPoint, path, pshape,
-        //  path.is_branch, _tmpResTable, _tmpCapTable);
         rcCnt++;
         continue;
       }
@@ -905,7 +902,6 @@ double extMain::getMetalRes_v2(dbNet* net,
       getFringe(level, width, ii, areaCap);
 
       _tmpCapTable[ii] = 0;
-      // TODO bool newResModel = true;
     }
   }
   return res;

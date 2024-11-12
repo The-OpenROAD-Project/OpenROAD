@@ -33,11 +33,8 @@
 #ifndef ADS_EXTSEGMENT_H
 #define ADS_EXTSEGMENT_H
 
-// FIXME #include <dbExtControl.h>
-// #include <dbShape.h>
 #include <dbUtil.h>
 #include <gseq.h>
-// FIXME #include <util.h>
 
 #include "odb/db.h"
 #include "odb/dbExtControl.h"

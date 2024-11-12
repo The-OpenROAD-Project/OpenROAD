@@ -49,7 +49,7 @@ namespace rcx
     using utl::RCX;
     using namespace odb;
     
-    void extMeasureRC::GetOUname(char buf[20], int met, int metOver, int metUnder)
+    void extMeasureRC::GetOUname(char buf[200], int met, int metOver, int metUnder)
     {
         if (metUnder > 0 && metOver > 0)
             sprintf(buf, "M%doM%duM%d", met, metUnder, metOver);
@@ -64,7 +64,7 @@ namespace rcx
     {
         if (fp==NULL)
             return;
-        char buf[20];
+        char buf[200];
         GetOUname(buf,  met,  metOver,  metUnder);
         fprintf(fp, "%s%7.3f %7.3f %7s %dL\n",prefix, GetDBcoords(x1), GetDBcoords(x1+len), buf, len);
     }
@@ -72,7 +72,7 @@ namespace rcx
     {
         if (fp==NULL)
             return;
-        char buf[20];
+        char buf[200];
         GetOUname(buf,  met,  metOver,  metUnder);
         fprintf(fp, "%s%7.3f %7.3f %7s %dL up%d down%d\n",prefix, GetDBcoords(x1), GetDBcoords(x1+len), buf, len, up_dist, down_dist);
     }
@@ -282,9 +282,8 @@ bool extMeasureRC::DebugDiagCoords(int met, int targetMet, int len1, int diagDis
     return false;
   }
 
-  /* FIXME
   debugPrint(
-      logger_,
+      _extMain->getLogger(),
       RCX,
       "debug_net",
       1,
@@ -310,7 +309,6 @@ bool extMeasureRC::DebugDiagCoords(int met, int targetMet, int len1, int diagDis
       GetDBcoords(ur[0]) - GetDBcoords(ll[0]),
       ur[1] - ll[1],
       GetDBcoords(ur[1]) - GetDBcoords(ll[1]));
-      */
   return true;
 }
 void extMeasureRC::DebugEnd_res(FILE *fp, int rseg1, int len_covered, const char *msg)
@@ -333,20 +331,6 @@ double extMeasureRC::getCC(int rsegId)
         dbCCSeg* cc = *ccitr;
         tot_cc += cc->getCapacitance();
   }
-
-
-
-
-
-/*
-  std::vector<dbCCSeg*> ccSegs;
-  rseg->getCcSegs(ccSegs);
-  for (uint ii= 0; ii<ccSegs.size(); ii++)
-  {
-    dbCCSeg *c= ccSegs[ii];
-    cc += c->getCapacitance();
-  }
-  */
   return tot_cc;
 }
 

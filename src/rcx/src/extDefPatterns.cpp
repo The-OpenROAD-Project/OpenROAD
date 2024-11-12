@@ -98,7 +98,7 @@ namespace rcx
     PrintOrigin(stdout, _init_origin, 0, "Pattern Initial");
     _def_fp= stdout;
     
-   _create_net_util= new dbCreateNetUtil(nullptr);
+   _create_net_util= new dbCreateNetUtil(xt->getLogger());
 
    // _create_net_util.setBlock(_block, false);
   }

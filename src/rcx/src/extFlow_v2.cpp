@@ -40,6 +40,7 @@
 #include "wire.h"
 
 namespace rcx {
+
 using namespace odb;
 
 void extMain::initRunEnv(extMeasureRC &m)
@@ -70,7 +71,6 @@ void extMain::initRunEnv(extMeasureRC &m)
     m._dgContextCnt = 0;
 
     m._ccContextArray = _ccContextArray;
-    // FIXME m._ccContextLength = _ccContextLength;
 
     m._pixelTable = _geomSeq;
     m._minModelIndex = 0;  // couplimg threshold will be appled to this cap
@@ -172,9 +172,6 @@ void extMeasureRC::resetTrackIndices(uint dir)
 }
 uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
 {
-    // if (_dbgOption==21) // NEW Flow optimized for memory
-    //    return  couplingFlow_v2_opt(extRect, ccDist, m1);
-
   getPeakMemory("Start Coupling Flow: ");
 
   if (_ccContextDepth) {
@@ -202,12 +199,7 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
   setExtControl_v2(mrc->_seqPool);
   _seqPool = mrc->_seqPool;
 
-  const uint trackStep = 1000;
-  // Extraction step = tracks * pitch of level 1
-  uint step_nm = trackStep * tables.pitchTable[1];
   uint maxPitch = tables.pitchTable[layerCnt - 1];
-  if (tables.maxWidth > ccDist * maxPitch)
-    step_nm= std::max(bounds.ur[1] - bounds.ll[1], bounds.ur[0] - bounds.ll[0]);
 
   // TODO mrc->_progressTracker =
   // std::make_unique<ExtProgressTracker>(totWireCnt);
@@ -365,10 +357,7 @@ uint extMain::couplingFlow_v2_opt(Rect & extRect, uint ccDist, extMeasure * m1)
       mrc->FindCouplingNeighbors(dir, bounds);
 
       // Lateral and diagonal coupling
-      const int minExtracted = mrc->CouplingFlow_opt(dir, bounds,
-                                                 totWireCnt,
-                                                 totalWiresExtracted,
-                                                 previous_percent_extracted);
+      mrc->CouplingFlow_opt(dir, bounds, totWireCnt, totalWiresExtracted,  previous_percent_extracted);
       float tmpCnt = -10;
       mrc->printProgress(totalWiresExtracted, totWireCnt, tmpCnt);
 
@@ -865,45 +854,6 @@ bool extRCModel::readRules(char* name, bool bin, bool over, bool under,
   }
   return true;
 }
-/* TODO for v1 flow
-bool extRCModel::createModelProcessTable(uint rulesFileModelCnt, uint cornerCnt)
-{
-    if (cornerCnt==0) // NEW v2 flow -- should not be called by old flow
-    {
-
-
-  if ((rulesFileModelCnt > 0) && (rulesFileModelCnt < cornerCnt)) {
-          logger_->warn(
-              RCX, 224,
-              "There were {} extraction models defined but only {} exists "
-              "in the extraction rules file {}",
-              cornerCnt, rulesFileModelCnt, name);
-          return false;
-        }
-        // createModelTable(cornerCnt, _layerCnt);
-        createModelTable(rulesFileModelCnt, _layerCnt);
-
-        for (uint jj = 0; jj < cornerCnt; jj++) {
-          uint modelIndex = cornerTable[jj];
-
-          uint kk;
-          for (kk = 0; kk < rulesFileModelCnt; kk++) {
-            if (modelIndex != kk)
-              continue;
-            _dataRateTable->add(parser.getDouble(kk + 2));
-            break;
-          }
-          if (kk == rulesFileModelCnt) {
-            logger_->warn(RCX, 225,
-                          "Cannot find model index {} in extRules file {}",
-                          modelIndex, name);
-            return false;
-          }
-        }
-      }
-      return true;
-}
-*/
 bool extRCModel::readRules_v2(char* name, bool bin, bool over, bool under,
                            bool overUnder, bool diag, double dbFactor) 
 {

@@ -189,10 +189,7 @@ int extMeasureRC::ConnectWires(uint dir, BoundaryData& bounds)
     }
     int extMeasureRC::FindCouplingNeighbors_down_opt(uint dir, BoundaryData &bounds)
     {
-        uint couplingDist = bounds.maxCouplingTracks;
-        uint diag_met_limit= bounds.diag_met_limit;
-            // uint limitTrackNum = 10;
-            uint limitTrackNum = bounds.maxCouplingTracks;
+        uint limitTrackNum = bounds.maxCouplingTracks;
         Ath__array1D<Ath__wire *> firstWireTable;
         uint colCnt = _search->getColCnt();
         for (uint jj = 1; jj < colCnt; jj++)
@@ -354,8 +351,7 @@ int extMeasureRC::ConnectWires(uint dir, BoundaryData& bounds)
 {
   uint metalLevelCnt = _search->getColCnt();
   uint couplingDist= bounds.maxCouplingTracks;
-  uint diag_met_limit= bounds.diag_met_limit;
-
+  
   CouplingConfig config(_extMain, metalLevelCnt);
   _segFP = NULL;
   if (config.debug_enabled) {
@@ -400,7 +396,7 @@ int extMeasureRC::ConnectWires(uint dir, BoundaryData& bounds)
           // DebugWire(w, 0, 0, 17091); --- Placeholder for stopping during
 
         totalWiresExtracted++;
-        // FIXME _progressTracker->updateProgress();
+        // TODO use progress object _progressTracker->updateProgress();
 
         if (counts.wire_count % _extMain->_wire_extracted_progress_count == 0) {
           printProgress(totalWiresExtracted, totWireCnt, previous_percent_extracted);

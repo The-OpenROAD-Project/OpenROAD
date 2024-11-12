@@ -258,7 +258,6 @@ void Ext::extract(ExtractOptions options)
   if (options.lef_rc) {
     if (!_ext->checkLayerResistance())
       return;
-    // FIXME _ext->addExtModel();
     logger_->info(RCX, 375, "Using LEF RC values to extract!");
   }
   _ext->setExtractionOptions_v2(options);
@@ -535,21 +534,10 @@ bool Ext::rc_estimate(const std::string& ext_model_file,  const std::string& out
     if (!(m->readRules((char *) ext_model_file.c_str(), false, true, true, true, true, extDbCnt, cornerTable, dbFactor))) {
         fprintf(stderr, "Failed to parse %s\n",  ext_model_file.c_str());
     }
-    /* FIXME
     char buff[1000];
     sprintf(buff, "%s.estimate.wire.rc", out_file_prefix.c_str());
-    uint metCnt= m->calcMinMaxRC(tech, buff);
-    sprintf(buff, "%s.via.res", out_file_prefix.c_str());
-    uint viaCnt= m->getViaTechRes(tech, buff);
-    fprintf(stdout, "model file stats: %d corners, %d metal levels, %d vias\n", extDbCnt, metCnt, viaCnt);
-*/
+    m->calcMinMaxRC(tech, buff);
 
-/*
-    for (uint ii=0; ii<m->getModelCnt(); ii++)
-    {
-        extMetRCTable met_rc= m->getMetRCTable(ii);
-    }
-    */
     return true;
 }
 bool Ext::get_model_corners(const std::string& ext_model_file)

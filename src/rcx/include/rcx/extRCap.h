@@ -2474,6 +2474,7 @@ public:
   void setMinRC(uint ii, uint jj, extDistRC* rc);
   void setMaxRC(uint ii, uint jj, extDistRC* rc);
 
+    Logger* getLogger() { return logger_ ; }
  private:
   Logger* logger_;
 

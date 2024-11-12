@@ -80,7 +80,7 @@ uint extMain::GenExtModel(std::list<std::string> spef_file_list, std::list<std::
         const char *out = "1.model";
         if (cnt == 1)
            out = "2.model";
-        extRulesModel->ReadRCDB(_block, widthCnt, diagOption, (char *) out); // FIXME
+        extRulesModel->ReadRCDB(_block, widthCnt, diagOption, (char *) out);
         if (outFP==NULL)
             outFP = extRulesModel->InitWriteRules(out_file, corner_list, comment, binary, fileCnt);
 

@@ -55,9 +55,9 @@ class extPattern
     public:
     char patternName[1000];
     char targetMetName[1000];
-    char contextName[10000];
+    char contextName[1000];
     char lastName[1000];
-    char currentName[1000];
+    char currentName[10000];
     int met;
     int over_met;
     int over_met2;
@@ -166,7 +166,7 @@ class extPattern
   int center_ur[2];
   uint cnt;
   char name[1000][20];
-  char tmp_pattern_name[2000];
+  char tmp_pattern_name[20000];
   uint units;
 
     extWirePattern(extPattern *p, uint dir, float minWidth, float minSpacing, const PatternOptions &opt);

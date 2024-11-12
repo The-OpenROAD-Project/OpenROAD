@@ -424,7 +424,7 @@ int extMeasureRC::CouplingFlow(uint dir,
           // DebugWire(w, 0, 0, 17091); --- Placeholder for stopping during
 
         totalWiresExtracted++;
-        // FIXME _progressTracker->updateProgress();
+        // TODO: use progress object _progressTracker->updateProgress();
 
         if (counts.wire_count % _extMain->_wire_extracted_progress_count == 0) {
           printProgress(totalWiresExtracted, totWireCnt, previous_percent_extracted);
@@ -908,9 +908,10 @@ uint extMeasureRC::FindAllNeigbors_down(
 
     bool w2_next_covered = false;
     Ath__wire* w2_next = w2->getNext();
-    if (w2_next != NULL)  // TODO: because more 2 wires at different distance
-                          // can reside in same track
+    if (w2_next != NULL) 
     {
+        // TODO: because more 2 wires at different distance
+        // can reside in same track
       if (OverlapOnly(
               w->getXY(), w->getLen(), w2_next->getXY(), w2_next->getLen())) {
         resTable->add(w2_next);

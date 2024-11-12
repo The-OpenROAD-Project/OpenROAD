@@ -1943,7 +1943,6 @@ void extMain::makeBlockRCsegs(const char* netNames,
     m._dgContextCnt = 0;
 
     m._ccContextArray = _ccContextArray;
-    // FIXME m._ccContextLength = _ccContextLength;
 
     m._pixelTable = _geomSeq;
     m._minModelIndex = 0;  // couplimg threshold will be appled to this cap
@@ -2337,7 +2336,6 @@ uint extMain::readSPEF(char* filename,
   _spef->_moreToRead = moreToRead;
   _spef->incr_rRun();
 
-  // FIXME _spef->setUseIdsFlag(false, diff, calib);
   if (_extRun == 0) {
     getPrevControl();
   }

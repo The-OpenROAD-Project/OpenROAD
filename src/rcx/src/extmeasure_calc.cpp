@@ -49,7 +49,6 @@ namespace rcx
 
 void extMeasureRC::VerticalCap(Ath__array1D<extSegment *> *segTable, bool look_up)
 {
-    // TODO: can be use for look down ?
     for (uint ii = 0; ii < segTable->getCnt(); ii++)
     {
         extSegment *s= segTable->get(0);

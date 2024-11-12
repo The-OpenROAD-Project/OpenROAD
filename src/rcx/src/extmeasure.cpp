@@ -1334,7 +1334,6 @@ uint extMeasure::computeDiag(SEQ* s,
     uint tgWidth = tgt->_ur[_dir] - tgt->_ll[_dir];
     uint len1 = getLength(tgt, !_dir);
 
-    // FIXME DebugDiagCoords(_met, targetMet, len1, diagDist, tgt->_ll, tgt->_ur);
     len += len1;
     bool skip_high_acc = true;
     bool verticalOverlap = false;
@@ -2069,9 +2068,8 @@ void extMeasure::createCap(int rsegId1, uint rsegId2, double* capTable)
       addCCcap(ccCap, capTable[model], model);
     } else {
       _rc[model]->_diag += capTable[model];
-      // FIXME
       addFringe(nullptr, rseg2, capTable[model], model);
-      // addFringe(rseg1, rseg2, capTable[model], model);
+      // FIXME IMPORTANT-TEST-FIRST addFringe(rseg1, rseg2, capTable[model], model);
     }
   }
 }

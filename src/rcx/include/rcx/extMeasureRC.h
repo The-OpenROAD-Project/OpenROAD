@@ -141,9 +141,6 @@ struct CouplingConfig
   // Destructor to clean up resources
   ~CouplingConfig()
   {
-   // TODO if (debug_fp) {
-   //   fclose(debug_fp);
-    // }
   }
 
   // Prevent copying

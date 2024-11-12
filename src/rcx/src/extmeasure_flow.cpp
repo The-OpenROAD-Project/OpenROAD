@@ -758,13 +758,13 @@ namespace rcx
         bool COMPUTE_OVER_SUB = true;
 
         rcSegInfo();
-        /* FIXME
+        
         if (IsDebugNet())
-            debugPrint(logger_, RCX, "debug_net", 1,
+            debugPrint(      _extMain->getLogger(), RCX, "debug_net", 1,
                        "measureRC:"
                        "C"
                        "\t[BEGIN-OUD] ----- OverUnder/Diagonal RC ----- BEGIN");
-*/
+
         //_diagLen = 0;
         int totLenCovered = 0;
         _lenOUtable->resetCnt();
@@ -909,13 +909,11 @@ namespace rcx
                 tot2 += _rc[jj]->_coupling;
             }
             rcSegInfo();
-            /* FIXME
             if (IsDebugNet())
-                debugPrint(logger_, RCX, "debug_net", 1,
+                debugPrint(_extMain->getLogger(), RCX, "debug_net", 1,
                            "measureRC:"
                            "C"
                            "\t[END-OUD] ------ OverUnder/Diagonal RC ------ END");
-            */
             OverSubRC_dist_new(rseg1, rseg2, totLenCovered, _diagLen, _len);
         }
         if (IsDebugNet())

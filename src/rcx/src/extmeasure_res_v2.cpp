@@ -147,9 +147,7 @@ int extMeasure::SingleDiagTrackDist_opt(SEQ* s, Ath__array1D<SEQ*>* dgContext, b
 
     int scnt = (int) dgContext->getCnt();
     int search_start= start;
-    // TODO: maybe optimize if (start>(scnt-start/2))
-      search_start= binarySearch(dgContext, s->_ll[!_dir], start, scnt, !_dir);
-    // int search_end= binarySearch(dgContext, s->_ur[!_dir], start, scnt, !_dir);
+    search_start= binarySearch(dgContext, s->_ll[!_dir], start, scnt, !_dir);
     uint idx= search_start;
     for (; idx < scnt; idx++) {
       SEQ* tseq = dgContext->get(idx);
@@ -487,7 +485,6 @@ uint extMeasure::computeRes(SEQ* s,
     uint diagDist = calcDist(tgt->_ll, tgt->_ur);
     uint len1 = getLength(tgt, !_dir);
 
-    DebugDiagCoords(_met, targetMet, len1, diagDist, tgt->_ll, tgt->_ur, "RES_DIST");
     len += len1;
     calcRes(_rsegSrcId, len1, _dist, diagDist, _met);
 

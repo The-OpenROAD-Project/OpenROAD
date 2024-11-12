@@ -108,29 +108,6 @@ void extMeasureRC::measureRC_ids_flags(CoupleOptions& options) {
               "init_measureRC %d met= %d  len= %d  dist= %d r1= %d r2= %d\n", _totSignalSegCnt,
               _met, _len, _dist, rsegId1, rsegId2);
   }
-  /* TODO - dkf 091423
-  if (_extMain->_measureRcCnt >= 0) {
-    if (_extMain->_printFile == NULL)
-      _extMain->_printFile = fopen("measureRC.1", "w");
-    fprintf(_extMain->_printFile,
-            "%d met= %d  len= %d  dist= %d r1= %d r2= %d\n", _totSignalSegCnt,
-            _met, _len, _dist, rsegId1, rsegId2);
-  }
-  if (_extMain->_geoThickTable != NULL) {
-    double diff = 0.0;
-
-    if ((_extMain->_geoThickTable[_met] != NULL) &&
-        !_extMain->_geoThickTable[_met]
-             ->getThicknessDiff(_ll[0], _ll[1], _width, diff)) {
-      _metRCTable.set(0, _extMain->getRCmodel(0)->getMetRCTable(0));
-    } else {
-      uint n = _extMain->getRCmodel(0)->findBiggestDatarateIndex(diff);
-      n = _extMain->getRCmodel(0)->findClosestDataRate(n, diff);
-      _metRCTable.set(0, _extMain->getRCmodel(0)->getMetRCTable(n));
-    }
-  }
-  */
-  //	uint modelCnt= _metRCTable.getCnt();
 }
 bool extMeasureRC::updateCoupCap(dbRSeg* rseg1, dbRSeg* rseg2, int jj, double v, const char *dbg_msg) {
   if (rseg1 != NULL && rseg2 != NULL) {

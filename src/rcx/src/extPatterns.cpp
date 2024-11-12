@@ -79,7 +79,7 @@ uint extMain::benchPatternsGen(const PatternOptions& opt1)
 
   // opt->_block = _block;
 
-  dbCreateNetUtil *db_net_util= new dbCreateNetUtil(NULL);
+  dbCreateNetUtil *db_net_util= new dbCreateNetUtil(logger_);
   db_net_util->setBlock(_block);
 
   int origin[2]= {0, 0}; // TODO - input
@@ -572,9 +572,9 @@ bool extPattern::createContextName_under( float uw, float us, float offsetUnder,
 {
   if (under_met > 0) {
     if (uw > 0 && us > 0)
-      sprintf(contextName, "%s__M%d_w%g_s%g", contextName, under_met, uw, us);
+      sprintf(contextName, "__M%d_w%g_s%g", under_met, uw, us);
     if (under_met2>0 && (uw2 > 0 && us2 > 0))
-      sprintf(contextName, "%s__f%g_M%d_w%g_s%g", contextName, offsetUnder, under_met2, uw2, us2);
+      sprintf(contextName, "__f%g_M%d_w%g_s%g", offsetUnder, under_met2, uw2, us2);
   }
   return false;
 }
@@ -582,9 +582,9 @@ bool extPattern::createContextName_over(float ow, float os, float offsetOver, fl
 {
   if (over_met > 0) {
     if (ow > 0 && os > 0)
-      sprintf(contextName,  "%s__M%d_w%g_s%g", contextName, over_met, ow, os);
+      sprintf(contextName,  "__M%d_w%g_s%g", over_met, ow, os);
     if ((over_met2>0) && (ow2 > 0 && os2 > 0))
-      sprintf(contextName, "%s__f%g_M%d_w%g_s%g", contextName, offsetOver, over_met2, ow2, os2);
+      sprintf(contextName, "__f%g_M%d_w%g_s%g", offsetOver, over_met2, ow2, os2);
   }
   return false;
 }
