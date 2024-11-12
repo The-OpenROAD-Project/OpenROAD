@@ -158,8 +158,7 @@ RDLRouter::RDLRouter(utl::Logger* logger,
       turn_penalty_(turn_penalty),
       max_router_iterations_(max_iterations),
       routing_map_(routing_map),
-      gui_(nullptr),
-      debug_net_(nullptr)
+      gui_(nullptr)
 {
   if (width_ == 0) {
     width_ = layer_->getWidth();
@@ -1142,6 +1141,7 @@ std::vector<RDLRouter::GridEdge> RDLRouter::commitRoute(
   }
 
   std::vector<GridEdge> removed_edges;
+  removed_edges.reserve(edges.size());
   for (const auto& edge : edges) {
     removed_edges.push_back(removeGraphEdge(edge));
   }

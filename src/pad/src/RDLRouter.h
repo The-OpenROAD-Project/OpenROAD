@@ -270,7 +270,7 @@ class RDLRouter
 
   // Debugging
   RDLGui* gui_;
-  odb::dbNet* debug_net_;
+  odb::dbNet* debug_net_{nullptr};
 };
 
 }  // namespace pad
