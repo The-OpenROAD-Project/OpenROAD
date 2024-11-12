@@ -105,7 +105,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
   Rect box;
   box = Rect(bp, bp);
   nbrGuides.clear();
-  if (layerNum - 2 >= BOTTOM_ROUTING_LAYER) {
+  if (layerNum - 2 >= globals_->BOTTOM_ROUTING_LAYER) {
     rq->queryGuide(box, layerNum - 2, nbrGuides);
     for (auto& nbrGuide : nbrGuides) {
       if (nbrGuide->getNet() == net) {
@@ -358,7 +358,7 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
       box = Rect(ep, ep);
       cp = ep;
     }
-    if (layerNum - 2 >= BOTTOM_ROUTING_LAYER) {
+    if (layerNum - 2 >= globals_->BOTTOM_ROUTING_LAYER) {
       rq->queryGuide(box, layerNum - 2, nbrGuides);
     }
     if (layerNum + 2 < (int) design_->getTech()->getLayers().size()) {
@@ -695,7 +695,7 @@ void FlexTAWorker::initFixedObjs()
       auto type = obj->typeId();
       // instterm term
       if (type == frcInstTerm || type == frcBTerm) {
-        bloatDist = TASHAPEBLOATWIDTH * width;
+        bloatDist = globals_->TASHAPEBLOATWIDTH * width;
         frNet* netPtr = nullptr;
         if (type == frcBTerm) {
           netPtr = static_cast<frBTerm*>(obj)->getNet();
@@ -834,7 +834,7 @@ frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
   frCoord viaLength = viaBox.maxDXDY();
 
   frCoord obsWidth = box.minDXDY();
-  if (USEMINSPACING_OBS && isOBS) {
+  if (globals_->USEMINSPACING_OBS && isOBS) {
     obsWidth = layer->getWidth();
   }
 
@@ -869,7 +869,7 @@ frCoord FlexTAWorker::initFixedObjs_calcBloatDist(frBlockObject* obj,
   frCoord prl
       = (layer->getDir() == dbTechLayerDir::HORIZONTAL) ? box.dx() : box.dy();
   if (obj->typeId() == frcBlockage || obj->typeId() == frcInstBlockage) {
-    if (USEMINSPACING_OBS) {
+    if (globals_->USEMINSPACING_OBS) {
       objWidth = width;
     }
   }

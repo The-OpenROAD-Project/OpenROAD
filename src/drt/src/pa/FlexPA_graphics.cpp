@@ -39,7 +39,8 @@ namespace drt {
 FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
                                frDesign* design,
                                odb::dbDatabase* db,
-                               Logger* logger)
+                               Logger* logger,
+                               Globals* globals)
     : logger_(logger),
       settings_(settings),
       inst_(nullptr),
@@ -63,9 +64,9 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
     }
   }
 
-  if (MAX_THREADS > 1) {
+  if (globals->MAX_THREADS > 1) {
     logger_->info(DRT, 115, "Setting MAX_THREADS=1 for use with the PA GUI.");
-    MAX_THREADS = 1;
+    globals->MAX_THREADS = 1;
   }
 
   if (!settings_->pinName.empty()) {

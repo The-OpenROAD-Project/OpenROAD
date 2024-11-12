@@ -27,6 +27,7 @@
  */
 
 #include "fixture.h"
+#include "global.h"
 
 #include <stdexcept>
 
@@ -36,7 +37,8 @@ namespace drt {
 
 Fixture::Fixture()
     : logger(std::make_unique<Logger>()),
-      design(std::make_unique<frDesign>(logger.get())),
+      globals(std::make_unique<Globals>()),
+      design(std::make_unique<frDesign>(logger.get(), globals.get())),
       numBlockages(0),
       numTerms(0),
       numMasters(0),
@@ -212,18 +214,18 @@ void Fixture::makeDesign()
   auto block = std::make_unique<frBlock>("test");
 
   // GC assumes these fake nets exist
-  auto vssFakeNet = std::make_unique<frNet>("frFakeVSS");
+  auto vssFakeNet = std::make_unique<frNet>("frFakeVSS", globals.get());
   vssFakeNet->setType(dbSigType::GROUND);
   vssFakeNet->setIsFake(true);
   block->addFakeSNet(std::move(vssFakeNet));
 
-  auto vddFakeNet = std::make_unique<frNet>("frFakeVDD");
+  auto vddFakeNet = std::make_unique<frNet>("frFakeVDD", globals.get());
   vddFakeNet->setType(dbSigType::POWER);
   vddFakeNet->setIsFake(true);
   block->addFakeSNet(std::move(vddFakeNet));
 
   design->setTopBlock(std::move(block));
-  USEMINSPACING_OBS = false;
+  globals->USEMINSPACING_OBS = false;
 }
 
 frLef58CornerSpacingConstraint* Fixture::makeCornerConstraint(
@@ -666,7 +668,7 @@ void Fixture::makeMinimumCut(frLayerNum layerNum,
 frNet* Fixture::makeNet(const char* name)
 {
   frBlock* block = design->getTopBlock();
-  auto net_p = std::make_unique<frNet>(name);
+  auto net_p = std::make_unique<frNet>(name, globals.get());
   frNet* net = net_p.get();
   block->addNet(std::move(net_p));
   return net;

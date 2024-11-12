@@ -94,7 +94,8 @@ class FlexDR
   FlexDR(TritonRoute* router,
          frDesign* designIn,
          Logger* loggerIn,
-         odb::dbDatabase* dbIn);
+         odb::dbDatabase* dbIn,
+         Globals* globals);
   ~FlexDR();
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
@@ -139,6 +140,7 @@ class FlexDR
   frDesign* design_;
   Logger* logger_;
   odb::dbDatabase* db_;
+  Globals* globals_;
   std::vector<std::vector<std::map<frNet*,
                                    std::set<std::pair<Point, frLayerNum>>,
                                    frBlockObjectComp>>>
@@ -241,16 +243,17 @@ class FlexDRWorker
 {
  public:
   // constructors
-  FlexDRWorker(FlexDRViaData* via_data, frDesign* design, Logger* logger)
+  FlexDRWorker(FlexDRViaData* via_data, frDesign* design, Logger* logger, Globals* globals)
       : design_(design),
         logger_(logger),
+        globals_(globals),
         via_data_(via_data),
         mazeEndIter_(1),
         ripupMode_(RipUpMode::ALL),
-        workerDRCCost_(ROUTESHAPECOST),
-        workerMarkerCost_(MARKERCOST),
+        workerDRCCost_(globals->ROUTESHAPECOST),
+        workerMarkerCost_(globals->MARKERCOST),
         historyMarkers_(std::vector<std::set<FlexMazeIdx>>(3)),
-        gridGraph_(design->getTech(), logger, this),
+        gridGraph_(design->getTech(), logger, this, globals),
         rq_(this)
   {
   }
@@ -463,6 +466,7 @@ class FlexDRWorker
   };
   frDesign* design_ = nullptr;
   Logger* logger_ = nullptr;
+  Globals* globals_;
   FlexDRGraphics* graphics_ = nullptr;  // owned by FlexDR
   frDebugSettings* debugSettings_ = nullptr;
   FlexDRViaData* via_data_ = nullptr;

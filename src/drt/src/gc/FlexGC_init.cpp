@@ -293,7 +293,7 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
     if (pathSeg->isTapered()) {
       currNet->addTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
     } else if (pathSeg->hasNet() && pathSeg->getNet()->hasNDR()
-               && AUTO_TAPER_NDR_NETS) {
+               && globals_->AUTO_TAPER_NDR_NETS) {
       currNet->addNonTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
     }
   } else if (obj->typeId() == drcVia) {
@@ -306,7 +306,7 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
       } else if (via->hasNet() && via->getNet()->hasNDR()
-                 && AUTO_TAPER_NDR_NETS) {
+                 && globals_->AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
       }
       currNet->addPolygon(box, layerNum, via->getNet()->isFixed());
@@ -326,7 +326,7 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
       } else if (via->hasNet() && via->getNet()->hasNDR()
-                 && AUTO_TAPER_NDR_NETS) {
+                 && globals_->AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
       }
       currNet->addPolygon(box, layerNum, via->getNet()->isFixed());
@@ -352,7 +352,7 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
     if (pathSeg->isTapered()) {
       currNet->addTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
     } else if (pathSeg->hasNet() && pathSeg->getNet()->hasNDR()
-               && AUTO_TAPER_NDR_NETS) {
+               && globals_->AUTO_TAPER_NDR_NETS) {
       currNet->addNonTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
     }
   } else if (obj->typeId() == frcVia) {
@@ -365,7 +365,7 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
       } else if (via->hasNet() && via->getNet()->hasNDR()
-                 && AUTO_TAPER_NDR_NETS) {
+                 && globals_->AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
       }
       currNet->addPolygon(box, layerNum);
@@ -385,7 +385,7 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
       } else if (via->hasNet() && via->getNet()->hasNDR()
-                 && AUTO_TAPER_NDR_NETS) {
+                 && globals_->AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
       }
       currNet->addPolygon(box, layerNum);

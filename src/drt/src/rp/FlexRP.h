@@ -37,8 +37,8 @@ class FlexRP
 {
  public:
   // constructor
-  FlexRP(frDesign* designIn, frTechObject* techIn, Logger* logger)
-      : design_(designIn), tech_(techIn), logger_(logger)
+  FlexRP(frDesign* designIn, frTechObject* techIn, Logger* logger, Globals* globals)
+      : design_(designIn), tech_(techIn), logger_(logger), globals_(globals)
   {
   }
 
@@ -50,6 +50,7 @@ class FlexRP
   frDesign* design_;
   frTechObject* tech_;
   Logger* logger_;
+  Globals* globals_;
 
   // init
   void init();

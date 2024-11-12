@@ -219,12 +219,12 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   if (dstMazeIdx1.z() == dstMazeIdx2.z() && gridZ == dstMazeIdx1.z()) {
     auto layerNum = (gridZ + 1) * 2;
     auto layer = getTech()->getLayer(layerNum);
-    if (!USENONPREFTRACKS || layer->isUnidirectional()) {
+    if (!globals_->USENONPREFTRACKS || layer->isUnidirectional()) {
       bool isH = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
       if (isH && dstMazeIdx1.y() == dstMazeIdx2.y()) {
         auto gap = abs(nextPoint.y() - dstPoint1.y());
         if (gap
-            && (layerNum - 2 < BOTTOM_ROUTING_LAYER
+            && (layerNum - 2 < globals_->BOTTOM_ROUTING_LAYER
                 || getTech()->isVia2ViaForbiddenLen(
                     gridZ - 1, false, false, false, gap, ndr_))
             && (layerNum + 2 > getTech()->getTopLayerNum()
@@ -235,7 +235,7 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
       } else if (!isH && dstMazeIdx1.x() == dstMazeIdx2.x()) {
         auto gap = abs(nextPoint.x() - dstPoint1.x());
         if (gap
-            && (layerNum - 2 < BOTTOM_ROUTING_LAYER
+            && (layerNum - 2 < globals_->BOTTOM_ROUTING_LAYER
                 || getTech()->isVia2ViaForbiddenLen(
                     gridZ - 1, false, false, true, gap, ndr_))
             && (layerNum + 2 > getTech()->getTopLayerNum()
@@ -496,12 +496,12 @@ frCost FlexGridGraph::getCosts(frMIdx gridX,
 
   // temporarily disable guideCost
   return getEdgeLength(gridX, gridY, gridZ, dir)
-         + (gridCost ? GRIDCOST * edgeLength : 0)
+         + (gridCost ? globals_->GRIDCOST * edgeLength : 0)
          + (drcCost ? ggDRCCost_ * edgeLength : 0)
          + (markerCost ? ggMarkerCost_ * edgeLength : 0)
          + (shapeCost ? ggFixedShapeCost_ * edgeLength : 0)
-         + (blockCost ? BLOCKCOST * layer->getMinWidth() * 20 : 0)
-         + (!guideCost ? GUIDECOST * edgeLength : 0);
+         + (blockCost ? globals_->BLOCKCOST * layer->getMinWidth() * 20 : 0)
+         + (!guideCost ? globals_->GUIDECOST * edgeLength : 0);
 }
 
 bool FlexGridGraph::useNDRCosts(const FlexWavefrontGrid& p) const
@@ -706,7 +706,7 @@ bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
         currDist,
         0,
         getEstCost(idx, dstMazeIdx1, dstMazeIdx2, frDirEnum::UNKNOWN));
-    if (ndr_ && AUTO_TAPER_NDR_NETS) {
+    if (ndr_ && globals_->AUTO_TAPER_NDR_NETS) {
       auto it = mazeIdx2TaperBox.find(idx);
       if (it != mazeIdx2TaperBox.end()) {
         currGrid.setSrcTaperBox(it->second);

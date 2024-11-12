@@ -48,8 +48,8 @@ class FlexGRGridGraph
 {
  public:
   // constructors
-  FlexGRGridGraph(frDesign* designIn, FlexGRWorker* workerIn)
-      : design_(designIn), grWorker_(workerIn)
+  FlexGRGridGraph(frDesign* designIn, FlexGRWorker* workerIn, Globals* globals)
+      : design_(designIn), grWorker_(workerIn), globals_(globals)
   {
   }
   // getters
@@ -612,6 +612,8 @@ class FlexGRGridGraph
   FlexGRWorker* grWorker_{nullptr};
   frGCellPattern* xgp_{nullptr};
   frGCellPattern* ygp_{nullptr};
+  Globals* globals_;
+
 
   // [0] hasEEdge; [1] hasNEdge; [2] hasUEdge
   // [3] blockE;   [4] blockN;   [5] blockU

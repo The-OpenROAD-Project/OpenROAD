@@ -67,7 +67,7 @@ class RoutingCallBack : public dst::JobCallBack
         dist_(dist),
         logger_(logger),
         init_(true),
-        pa_(router->getDesign(), logger, nullptr)
+        pa_(router->getDesign(), logger, nullptr, router->getGlobals())
   {
   }
   void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override

@@ -48,8 +48,9 @@ class GuideProcessor
  public:
   GuideProcessor(frDesign* designIn,
                  odb::dbDatabase* dbIn,
-                 utl::Logger* loggerIn)
-      : design_(designIn), logger_(loggerIn), db_(dbIn){};
+                 utl::Logger* loggerIn,
+                 Globals* globals)
+      : design_(designIn), logger_(loggerIn), db_(dbIn), globals_(globals) {};
   /**
    * @brief Reads guides from odb and fill the tmp_guides_ list of unprocessed
    * guides
@@ -223,6 +224,7 @@ class GuideProcessor
   frDesign* design_;
   Logger* logger_;
   odb::dbDatabase* db_;
+  Globals* globals_;
   std::map<frNet*, std::vector<frRect>, frBlockObjectComp> tmp_guides_;
   std::vector<std::pair<frBlockObject*, Point>> tmpGRPins_;
 };
@@ -247,6 +249,7 @@ class GuidePathFinder
    */
   GuidePathFinder(frDesign* design,
                   Logger* logger,
+                  Globals* globals,
                   frNet* net,
                   bool force_feed_through,
                   const std::vector<frRect>& rects,
@@ -422,6 +425,7 @@ class GuidePathFinder
 
   frDesign* design_{nullptr};
   Logger* logger_{nullptr};
+  Globals* globals_{nullptr};
   frNet* net_{nullptr};
   bool force_feed_through_{false};
   std::map<Point3D, std::set<int>> node_map_;

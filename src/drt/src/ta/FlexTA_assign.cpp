@@ -689,20 +689,20 @@ frUInt4 FlexTAWorker::assignIroute_getPinCost(taPin* iroute, frCoord trackLoc)
           // if cannot use bottom or upper layer to bridge, then add cost
           if ((getTech()->isVia2ViaForbiddenLen(
                    zIdx, false, false, false, sol, nullptr)
-               || layerNum - 2 < BOTTOM_ROUTING_LAYER)
+               || layerNum - 2 < globals_->BOTTOM_ROUTING_LAYER)
               && (getTech()->isVia2ViaForbiddenLen(
                       zIdx, true, true, false, sol, nullptr)
                   || layerNum + 2 > getTech()->getTopLayerNum())) {
-            sol += TADRCCOST;
+            sol += globals_->TADRCCOST;
           }
         } else {
           if ((getTech()->isVia2ViaForbiddenLen(
                    zIdx, false, false, true, sol, nullptr)
-               || layerNum - 2 < BOTTOM_ROUTING_LAYER)
+               || layerNum - 2 < globals_->BOTTOM_ROUTING_LAYER)
               && (getTech()->isVia2ViaForbiddenLen(
                       zIdx, true, true, true, sol, nullptr)
                   || layerNum + 2 > getTech()->getTopLayerNum())) {
-            sol += TADRCCOST;
+            sol += globals_->TADRCCOST;
           }
         }
       }
@@ -934,15 +934,15 @@ frUInt4 FlexTAWorker::assignIroute_getCost(taPin* iroute,
   frCoord irouteLayerPitch
       = getTech()->getLayer(iroute->getGuide()->getBeginLayerNum())->getPitch();
   outDrcCost = assignIroute_getDRCCost(iroute, trackLoc);
-  int drcCost = (isInitTA()) ? (0.05 * outDrcCost) : (TADRCCOST * outDrcCost);
+  int drcCost = (isInitTA()) ? (0.05 * outDrcCost) : (globals_->TADRCCOST * outDrcCost);
   int nextIrouteDirCost = assignIroute_getNextIrouteDirCost(iroute, trackLoc);
   // int pinCost    = TAPINCOST * assignIroute_getPinCost(iroute, trackLoc);
   int tmpPinCost = assignIroute_getPinCost(iroute, trackLoc);
   int pinCost
-      = (tmpPinCost == 0) ? 0 : TAPINCOST * irouteLayerPitch + tmpPinCost;
+      = (tmpPinCost == 0) ? 0 : globals_->TAPINCOST * irouteLayerPitch + tmpPinCost;
   int tmpAlignCost = assignIroute_getAlignCost(iroute, trackLoc);
   int alignCost
-      = (tmpAlignCost == 0) ? 0 : TAALIGNCOST * irouteLayerPitch + tmpAlignCost;
+      = (tmpAlignCost == 0) ? 0 : globals_->TAALIGNCOST * irouteLayerPitch + tmpAlignCost;
   return std::max(drcCost + nextIrouteDirCost + pinCost - alignCost, 0);
 }
 

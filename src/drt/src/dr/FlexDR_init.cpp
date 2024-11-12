@@ -1140,7 +1140,7 @@ bool FlexDRWorker::findAPTracks(const frLayerNum startLayerNum,
 bool FlexDRWorker::isRestrictedRouting(const frLayerNum lNum)
 {
   return getTech()->getLayer(lNum)->isUnidirectional()
-         || lNum < BOTTOM_ROUTING_LAYER || lNum > TOP_ROUTING_LAYER;
+         || lNum < globals_->BOTTOM_ROUTING_LAYER || lNum > globals_->TOP_ROUTING_LAYER;
 }
 
 // when isHorzTracks == true, it means track loc == y loc
@@ -1242,7 +1242,7 @@ void FlexDRWorker::initNet_term_helper(const frDesign* design,
         dAp->setPinCost(1);
       }
       // set min area
-      if (ENABLE_BOUNDARY_MAR_FIX) {
+      if (globals_->ENABLE_BOUNDARY_MAR_FIX) {
         auto minAreaConstraint = getTech()->getLayer(bNum)->getAreaConstraint();
         if (minAreaConstraint) {
           auto reqArea = minAreaConstraint->getMinArea();
@@ -1345,7 +1345,7 @@ void FlexDRWorker::initNet(const frDesign* design,
                            const std::vector<frBlockObject*>& terms,
                            std::vector<std::pair<Point, frLayerNum>> bounds)
 {
-  auto dNet = std::make_unique<drNet>(net);
+  auto dNet = std::make_unique<drNet>(net, globals_);
   // true pin
   initNet_term(design, dNet.get(), terms);
   // boundary pin, could overlap with any of true pins
@@ -1566,7 +1566,7 @@ void FlexDRWorker::initNets(const frDesign* design)
 
   initNets_numPinsIn();
   // here because region query is needed
-  if (ENABLE_BOUNDARY_MAR_FIX) {
+  if (globals_->ENABLE_BOUNDARY_MAR_FIX) {
     initNets_boundaryArea();
   }
   // fill ndrs_ for all nets in the worker
@@ -2738,7 +2738,7 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
             // unblock planar edge for obs over pin, ap will unblock via edge
             // for legal pin access
             modBlockedPlanar(box, zIdx, false);
-            if (zIdx <= (VIA_ACCESS_LAYERNUM / 2 - 1)) {
+            if (zIdx <= (globals_->VIA_ACCESS_LAYERNUM / 2 - 1)) {
               modMinSpacingCostPlanar(
                   box, zIdx, ModCostType::addFixedShape, true);
               modEolSpacingRulesCost(box, zIdx, ModCostType::addFixedShape);
@@ -3212,7 +3212,7 @@ void FlexDRWorker::init(const frDesign* design)
   initGridGraph(design);
   initMazeIdx();
   std::unique_ptr<FlexGCWorker> gcWorker
-      = std::make_unique<FlexGCWorker>(design->getTech(), logger_, this);
+      = std::make_unique<FlexGCWorker>(design->getTech(), logger_, globals_, this);
   gcWorker->setExtBox(getExtBox());
   gcWorker->setDrcBox(getDrcBox());
   gcWorker->init(design);

@@ -75,6 +75,7 @@ struct frDebugSettings;
 class FlexDR;
 struct FlexDRViaData;
 class frMarker;
+struct Globals;
 
 struct ParamStruct
 {
@@ -113,6 +114,7 @@ class TritonRoute
             stt::SteinerTreeBuilder* stt_builder);
 
   frDesign* getDesign() const { return design_.get(); }
+  Globals* getGlobals() const { return globals_.get(); }
 
   int main();
   void endFR();
@@ -199,6 +201,7 @@ class TritonRoute
   std::unique_ptr<frDesign> design_;
   std::unique_ptr<frDebugSettings> debug_;
   std::unique_ptr<DesignCallBack> db_callback_;
+  std::unique_ptr<Globals> globals_;
   odb::dbDatabase* db_{nullptr};
   utl::Logger* logger_{nullptr};
   std::unique_ptr<FlexDR> dr_;  // kept for single stepping

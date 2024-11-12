@@ -47,8 +47,8 @@ class FlexGridGraph
 {
  public:
   // constructors
-  FlexGridGraph(frTechObject* techIn, Logger* loggerIn, FlexDRWorker* workerIn)
-      : tech_(techIn), logger_(loggerIn), drWorker_(workerIn)
+  FlexGridGraph(frTechObject* techIn, Logger* loggerIn, FlexDRWorker* workerIn, Globals* globals)
+      : tech_(techIn), logger_(loggerIn), drWorker_(workerIn), globals_(globals)
   {
     ap_locs_.resize(tech_->getTopLayerNum() + 1);
   }
@@ -1017,6 +1017,7 @@ class FlexGridGraph
   frTechObject* tech_ = nullptr;
   Logger* logger_ = nullptr;
   FlexDRWorker* drWorker_ = nullptr;
+  Globals* globals_;
   FlexDRGraphics* graphics_;  // owned by FlexDR
                               //
 #ifdef DEBUG_DRT_UNDERFLOW

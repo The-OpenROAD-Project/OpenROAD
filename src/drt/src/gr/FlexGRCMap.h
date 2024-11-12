@@ -42,14 +42,14 @@ class FlexGRCMap
 {
  public:
   // constructors
-  FlexGRCMap(frDesign* designIn) : design_(designIn)
+  FlexGRCMap(frDesign* designIn, Globals* globals) : design_(designIn), globals_(globals)
   {
     auto& gCellPatterns = design_->getTopBlock()->getGCellPatterns();
     numLayers_ = design_->getTech()->getLayers().size();
     xgp_ = &(gCellPatterns.at(0));
     ygp_ = &(gCellPatterns.at(1));
   }
-  FlexGRCMap(FlexGRCMap* in)
+  FlexGRCMap(FlexGRCMap* in, Globals* globals)
       : design_(in->design_),
         xgp_(in->xgp_),
         ygp_(in->ygp_),
@@ -58,7 +58,8 @@ class FlexGRCMap
         zMap_(in->zMap_),
         layerTrackPitches_(in->layerTrackPitches_),
         layerLine2ViaPitches_(in->layerLine2ViaPitches_),
-        layerPitches_(in->layerPitches_)
+        layerPitches_(in->layerPitches_),
+        globals_(globals)
   {
   }
   // getters
@@ -528,6 +529,8 @@ class FlexGRCMap
   std::vector<frCoord> layerTrackPitches_;
   std::vector<frCoord> layerLine2ViaPitches_;
   std::vector<frCoord> layerPitches_;
+
+  Globals* globals_;
 
   // internal getters
   bool getBit(unsigned idx, unsigned pos) const

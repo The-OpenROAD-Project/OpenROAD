@@ -53,6 +53,7 @@ struct frRegionQuery::Impl
 
   frDesign* design_;
   Logger* logger_;
+  Globals* globals_;
   // only for pin shapes, obs and snet
   RTreesByLayer<frBlockObject*> shapes_;
   RTreesByLayer<frGuide*> guides_;
@@ -94,11 +95,12 @@ struct frRegionQuery::Impl
   void addGRObj(grVia* via);
 };
 
-frRegionQuery::frRegionQuery(frDesign* design, Logger* logger)
+frRegionQuery::frRegionQuery(frDesign* design, Logger* logger, Globals* globals)
     : impl_(std::make_unique<Impl>())
 {
   impl_->design_ = design;
   impl_->logger_ = logger;
+  impl_->globals_ = globals;
 }
 
 frRegionQuery::frRegionQuery() : impl_(nullptr)
@@ -747,7 +749,7 @@ void frRegionQuery::Impl::init()
       add(instBlk.get(), allShapes);
     }
     cnt++;
-    if (VERBOSE > 0) {
+    if (globals_->VERBOSE > 0) {
       if (cnt < 1000000) {
         if (cnt % 100000 == 0) {
           logger_->info(DRT, 18, "  Complete {} insts.", cnt);
@@ -763,7 +765,7 @@ void frRegionQuery::Impl::init()
   for (auto& term : design_->getTopBlock()->getTerms()) {
     add(term.get(), allShapes);
     cnt++;
-    if (VERBOSE > 0) {
+    if (globals_->VERBOSE > 0) {
       if (cnt < 100000) {
         if (cnt % 10000 == 0) {
           logger_->info(DRT, 20, "  Complete {} terms.", cnt);
@@ -785,7 +787,7 @@ void frRegionQuery::Impl::init()
       add(via.get(), allShapes);
     }
     cnt++;
-    if (VERBOSE > 0) {
+    if (globals_->VERBOSE > 0) {
       if (cnt % 10000 == 0) {
         logger_->info(DRT, 22, "  Complete {} snets.", cnt);
       }
@@ -796,7 +798,7 @@ void frRegionQuery::Impl::init()
   for (auto& blk : design_->getTopBlock()->getBlockages()) {
     add(blk.get(), allShapes);
     cnt++;
-    if (VERBOSE > 0) {
+    if (globals_->VERBOSE > 0) {
       if (cnt % 10000 == 0) {
         logger_->info(DRT, 23, "  Complete {} blockages.", cnt);
       }
@@ -807,7 +809,7 @@ void frRegionQuery::Impl::init()
     shapes_.at(i) = boost::move(RTree<frBlockObject*>(allShapes.at(i)));
     allShapes.at(i).clear();
     allShapes.at(i).shrink_to_fit();
-    if (VERBOSE > 0) {
+    if (globals_->VERBOSE > 0) {
       logger_->info(DRT,
                     24,
                     "  Complete {}.",
@@ -835,7 +837,7 @@ void frRegionQuery::Impl::initOrigGuide(
     for (auto& rect : rects) {
       addOrigGuide(net, rect, allShapes);
       cnt++;
-      if (VERBOSE > 0) {
+      if (globals_->VERBOSE > 0) {
         if (cnt < 1000000) {
           if (cnt % 100000 == 0) {
             logger_->info(DRT, 26, "  Complete {} origin guides.", cnt);
@@ -852,7 +854,7 @@ void frRegionQuery::Impl::initOrigGuide(
     origGuides_.at(i) = boost::move(RTree<frNet*>(allShapes.at(i)));
     allShapes.at(i).clear();
     allShapes.at(i).shrink_to_fit();
-    if (VERBOSE > 0) {
+    if (globals_->VERBOSE > 0) {
       logger_->info(DRT,
                     28,
                     "  Complete {}.",
@@ -879,7 +881,7 @@ void frRegionQuery::Impl::initGuide()
       addGuide(guide.get(), allGuides);
     }
     cnt++;
-    if (VERBOSE > 0) {
+    if (globals_->VERBOSE > 0) {
       if (cnt < 1000000) {
         if (cnt % 100000 == 0) {
           logger_->info(DRT, 29, "  Complete {} nets (guide).", cnt);
@@ -895,7 +897,7 @@ void frRegionQuery::Impl::initGuide()
     guides_.at(i) = boost::move(RTree<frGuide*>(allGuides.at(i)));
     allGuides.at(i).clear();
     allGuides.at(i).shrink_to_fit();
-    if (VERBOSE > 0) {
+    if (globals_->VERBOSE > 0) {
       logger_->info(DRT,
                     35,
                     "  Complete {} (guide).",

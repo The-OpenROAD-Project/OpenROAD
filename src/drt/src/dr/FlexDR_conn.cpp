@@ -1177,7 +1177,7 @@ void FlexDRConnectivityChecker::check(int iter)
   }
 
   const int numLayers = getTech()->getLayers().size();
-  omp_set_num_threads(MAX_THREADS);
+  omp_set_num_threads(globals_->MAX_THREADS);
   for (auto& batch : batches) {
     ProfileTask profile("batch");
     // prefix a = all batch
@@ -1338,17 +1338,19 @@ void FlexDRConnectivityChecker::check(int iter)
       graphics_->debugWholeDesign();
     }
     auto writer = io::Writer(getDesign(), logger_);
-    writer.updateDb(router_->getDb());
+    writer.updateDb(router_->getDb(), globals_);
     logger_->error(utl::DRT, 206, "checkConnectivity error.");
   }
 }
 
 FlexDRConnectivityChecker::FlexDRConnectivityChecker(drt::TritonRoute* router,
                                                      Logger* logger,
+                                                     Globals* globals,
                                                      FlexDRGraphics* graphics,
                                                      bool save_updates)
     : router_(router),
       logger_(logger),
+      globals_(globals),
       graphics_(graphics),
       save_updates_(save_updates)
 {

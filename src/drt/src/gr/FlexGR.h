@@ -53,13 +53,15 @@ class FlexGR
   // constructors
   FlexGR(frDesign* designIn,
          Logger* logger,
-         stt::SteinerTreeBuilder* stt_builder)
+         stt::SteinerTreeBuilder* stt_builder,
+         Globals* globals)
       : db_(nullptr),
         design_(designIn),
         cmap_(nullptr),
         cmap2D_(nullptr),
         logger_(logger),
-        stt_builder_(stt_builder)
+        stt_builder_(stt_builder),
+        globals_(globals)
   {
   }
 
@@ -85,6 +87,7 @@ class FlexGR
   std::unique_ptr<FlexGRCMap> cmap2D_;
   Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
+  Globals* globals_;
   std::map<frNet*,
            std::map<std::pair<int, int>, std::vector<frNode*>>,
            frBlockObjectComp>
@@ -282,10 +285,10 @@ class FlexGRWorker
 {
  public:
   // constructors
-  FlexGRWorker(FlexGR* grIn)
+  FlexGRWorker(FlexGR* grIn, Globals* globals)
       : design_(grIn->getDesign()),
         gr_(grIn),
-        gridGraph_(grIn->getDesign(), this),
+        gridGraph_(grIn->getDesign(), this, globals),
         rq_(this)
   {
   }
@@ -355,7 +358,7 @@ class FlexGRWorker
   double congThresh_{1.0};
   bool is2DRouting_{false};
   RipUpMode ripupMode_{RipUpMode::DRC};
-
+  
   // local storage
   std::vector<std::unique_ptr<grNet>> nets_;
   std::map<frNet*, std::vector<grNet*>, frBlockObjectComp> owner2nets_;

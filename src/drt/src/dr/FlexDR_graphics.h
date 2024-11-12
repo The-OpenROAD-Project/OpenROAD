@@ -46,6 +46,7 @@ class FlexDRWorker;
 class drNet;
 class frDesign;
 class frBlockObject;
+struct Globals;
 
 // This class draws debugging graphics on the layout
 class FlexDRGraphics : public gui::Renderer
@@ -59,7 +60,7 @@ class FlexDRGraphics : public gui::Renderer
 
   void startWorker(FlexDRWorker* worker);
 
-  void startIter(int iter);
+  void startIter(int iter, Globals* globals);
 
   void endWorker(int iter);
 

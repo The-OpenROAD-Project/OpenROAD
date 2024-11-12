@@ -66,7 +66,7 @@ class FlexPA
     Commit
   };
 
-  FlexPA(frDesign* in, Logger* logger, dst::Distributed* dist);
+  FlexPA(frDesign* in, Logger* logger, dst::Distributed* dist, Globals* globals);
   ~FlexPA();
 
   void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
@@ -82,6 +82,7 @@ class FlexPA
   frDesign* design_;
   Logger* logger_;
   dst::Distributed* dist_;
+  Globals* globals_;
 
   std::unique_ptr<FlexPAGraphics> graphics_;
   std::string debugPinName_;

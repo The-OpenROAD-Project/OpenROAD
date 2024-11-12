@@ -34,6 +34,7 @@
 #include <iostream>
 
 #include "DesignCallBack.h"
+#include "global.h"
 #include "db/tech/frTechObject.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingCallBack.h"
@@ -73,6 +74,7 @@ namespace drt {
 TritonRoute::TritonRoute()
     : debug_(std::make_unique<frDebugSettings>()),
       db_callback_(std::make_unique<DesignCallBack>(this)),
+      globals_(std::make_unique<Globals>()),
       gui_(gui::Gui::get())
 {
 }
@@ -222,7 +224,7 @@ std::string TritonRoute::runDRWorker(const std::string& workerStr,
   worker->setSharedVolume(shared_volume_);
   worker->setDebugSettings(debug_.get());
   if (graphics_) {
-    graphics_->startIter(worker->getDRIter());
+    graphics_->startIter(worker->getDRIter(), globals_.get());
   }
   std::string result = worker->reloadedMain();
   return result;
@@ -278,7 +280,7 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
   worker->setDebugSettings(debug_.get());
   worker->setViaData(&viaData);
   if (graphics_) {
-    graphics_->startIter(worker->getDRIter());
+    graphics_->startIter(worker->getDRIter(), globals_.get());
   }
   std::string result = worker->reloadedMain();
   bool updated = worker->end(design_.get());
@@ -305,13 +307,13 @@ void TritonRoute::updateGlobals(const char* file_name)
   }
   frIArchive ar(file);
   registerTypes(ar);
-  serializeGlobals(ar);
+  serializeGlobals(ar, globals_.get());
   file.close();
 }
 
 void TritonRoute::resetDb(const char* file_name)
 {
-  design_ = std::make_unique<frDesign>(logger_);
+  design_ = std::make_unique<frDesign>(logger_, globals_.get());
   ord::OpenRoad::openRoad()->readDb(file_name);
   initDesign();
   if (!db_->getChip()->getBlock()->getAccessPoints().empty()) {
@@ -323,7 +325,7 @@ void TritonRoute::resetDb(const char* file_name)
 
 void TritonRoute::clearDesign()
 {
-  design_ = std::make_unique<frDesign>(logger_);
+  design_ = std::make_unique<frDesign>(logger_, globals_.get());
 }
 
 static void deserializeUpdate(frDesign* design,
@@ -535,7 +537,7 @@ void TritonRoute::init(Tcl_Interp* tcl_interp,
   logger_ = logger;
   dist_ = dist;
   stt_builder_ = stt_builder;
-  design_ = std::make_unique<frDesign>(logger_);
+  design_ = std::make_unique<frDesign>(logger_, globals_.get());
   dist->addCallBack(new RoutingCallBack(this, dist, logger));
   // Define swig TCL commands.
   Drt_Init(tcl_interp);
@@ -545,10 +547,10 @@ void TritonRoute::init(Tcl_Interp* tcl_interp,
 
 bool TritonRoute::initGuide()
 {
-  io::GuideProcessor guide_processor(getDesign(), db_, logger_);
+  io::GuideProcessor guide_processor(getDesign(), db_, logger_, globals_.get());
   bool guideOk = guide_processor.readGuides();
   guide_processor.processGuides();
-  io::Parser parser(db_, getDesign(), logger_);
+  io::Parser parser(db_, getDesign(), logger_, globals_.get());
   parser.initRPin();
   return guideOk;
 }
@@ -558,7 +560,7 @@ void TritonRoute::initDesign()
       || db_->getChip()->getBlock() == nullptr) {
     logger_->error(utl::DRT, 151, "Database, chip or block not initialized.");
   }
-  io::Parser parser(db_, getDesign(), logger_);
+  io::Parser parser(db_, getDesign(), logger_, globals_.get());
   if (getDesign()->getTopBlock() != nullptr) {
     parser.updateDesign();
     return;
@@ -567,37 +569,37 @@ void TritonRoute::initDesign()
   parser.readDesign(db_);
   auto tech = getDesign()->getTech();
 
-  if (!VIAINPIN_BOTTOMLAYER_NAME.empty()) {
-    frLayer* layer = tech->getLayer(VIAINPIN_BOTTOMLAYER_NAME);
+  if (!globals_->VIAINPIN_BOTTOMLAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(globals_->VIAINPIN_BOTTOMLAYER_NAME);
     if (layer) {
-      VIAINPIN_BOTTOMLAYERNUM = layer->getLayerNum();
+      globals_->VIAINPIN_BOTTOMLAYERNUM = layer->getLayerNum();
     } else {
       logger_->warn(utl::DRT,
                     606,
                     "via in pin bottom layer {} not found.",
-                    VIAINPIN_BOTTOMLAYER_NAME);
+                    globals_->VIAINPIN_BOTTOMLAYER_NAME);
     }
   }
 
-  if (!VIAINPIN_TOPLAYER_NAME.empty()) {
-    frLayer* layer = tech->getLayer(VIAINPIN_TOPLAYER_NAME);
+  if (!globals_->VIAINPIN_TOPLAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(globals_->VIAINPIN_TOPLAYER_NAME);
     if (layer) {
-      VIAINPIN_TOPLAYERNUM = layer->getLayerNum();
+      globals_->VIAINPIN_TOPLAYERNUM = layer->getLayerNum();
     } else {
       logger_->warn(utl::DRT,
                     607,
                     "via in pin top layer {} not found.",
-                    VIAINPIN_TOPLAYER_NAME);
+                    globals_->VIAINPIN_TOPLAYER_NAME);
     }
   }
 
-  if (!REPAIR_PDN_LAYER_NAME.empty()) {
-    frLayer* layer = tech->getLayer(REPAIR_PDN_LAYER_NAME);
+  if (!globals_->REPAIR_PDN_LAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(globals_->REPAIR_PDN_LAYER_NAME);
     if (layer) {
-      GC_IGNORE_PDN_LAYER_NUM = layer->getLayerNum();
+      globals_->GC_IGNORE_PDN_LAYER_NUM = layer->getLayerNum();
     } else {
       logger_->warn(
-          utl::DRT, 617, "PDN layer {} not found.", REPAIR_PDN_LAYER_NAME);
+          utl::DRT, 617, "PDN layer {} not found.", globals_->REPAIR_PDN_LAYER_NAME);
     }
   }
   parser.postProcess();
@@ -606,19 +608,19 @@ void TritonRoute::initDesign()
 
 void TritonRoute::prep()
 {
-  FlexRP rp(getDesign(), getDesign()->getTech(), logger_);
+  FlexRP rp(getDesign(), getDesign()->getTech(), logger_, globals_.get());
   rp.main();
 }
 
 void TritonRoute::gr()
 {
-  FlexGR gr(getDesign(), logger_, stt_builder_);
+  FlexGR gr(getDesign(), logger_, stt_builder_, globals_.get());
   gr.main(db_);
 }
 
 void TritonRoute::ta()
 {
-  FlexTA ta(getDesign(), logger_, distributed_);
+  FlexTA ta(getDesign(), logger_, globals_.get(), distributed_);
   ta.setDebug(debug_.get(), db_);
   ta.main();
 }
@@ -626,12 +628,12 @@ void TritonRoute::ta()
 void TritonRoute::dr()
 {
   num_drvs_ = -1;
-  dr_ = std::make_unique<FlexDR>(this, getDesign(), logger_, db_);
+  dr_ = std::make_unique<FlexDR>(this, getDesign(), logger_, db_, globals_.get());
   dr_->setDebug(debug_.get());
   if (distributed_) {
     dr_->setDistributed(dist_, dist_ip_, dist_port_, shared_volume_);
   }
-  if (SINGLE_STEP_DR) {
+  if (globals_->SINGLE_STEP_DR) {
     dr_->init();
   } else {
     dr_->main();
@@ -662,12 +664,12 @@ void TritonRoute::stepDR(int size,
 
 void TritonRoute::endFR()
 {
-  if (SINGLE_STEP_DR) {
+  if (globals_->SINGLE_STEP_DR) {
     dr_->end(/* done */ true);
   }
   dr_.reset();
   io::Writer writer(getDesign(), logger_);
-  writer.updateDb(db_);
+  writer.updateDb(db_, globals_.get());
   if (debug_->writeNetTracks) {
     writer.updateTrackAssignment(db_->getChip()->getBlock());
   }
@@ -679,17 +681,17 @@ void TritonRoute::endFR()
 
 void TritonRoute::repairPDNVias()
 {
-  if (REPAIR_PDN_LAYER_NAME.empty()) {
+  if (globals_->REPAIR_PDN_LAYER_NAME.empty()) {
     return;
   }
 
   auto dbBlock = db_->getChip()->getBlock();
-  auto pdnLayer = design_->getTech()->getLayer(REPAIR_PDN_LAYER_NAME);
+  auto pdnLayer = design_->getTech()->getLayer(globals_->REPAIR_PDN_LAYER_NAME);
   frLayerNum pdnLayerNum = pdnLayer->getLayerNum();
   frList<std::unique_ptr<frMarker>> markers;
   auto blockBox = design_->getTopBlock()->getBBox();
-  REPAIR_PDN_LAYER_NUM = pdnLayerNum;
-  GC_IGNORE_PDN_LAYER_NUM = -1;
+  globals_->REPAIR_PDN_LAYER_NUM = pdnLayerNum;
+  globals_->GC_IGNORE_PDN_LAYER_NUM = -1;
   getDRCMarkers(markers, blockBox);
   markers.erase(std::remove_if(markers.begin(),
                                markers.end(),
@@ -808,7 +810,7 @@ bool TritonRoute::writeGlobals(const std::string& name)
   }
   frOArchive ar(file);
   registerTypes(ar);
-  serializeGlobals(ar);
+  serializeGlobals(ar, globals_.get());
   file.close();
   return true;
 }
@@ -887,7 +889,7 @@ void TritonRoute::sendDesignUpdates(const std::string& globals_path)
     serializeTask = std::make_unique<ProfileTask>("DIST: SERIALIZE_UPDATES");
   }
   const auto& designUpdates = design_->getUpdates();
-  omp_set_num_threads(MAX_THREADS);
+  omp_set_num_threads(globals_->MAX_THREADS);
   std::vector<std::string> updates(designUpdates.size());
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < designUpdates.size(); i++) {
@@ -923,8 +925,8 @@ void TritonRoute::sendDesignUpdates(const std::string& globals_path)
 
 int TritonRoute::main()
 {
-  if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
-    USENONPREFTRACKS = false;
+  if (globals_->DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
+    globals_->USENONPREFTRACKS = false;
   }
   asio::thread_pool pa_pool(1);
   if (!distributed_) {
@@ -932,12 +934,12 @@ int TritonRoute::main()
   }
   if (debug_->debugDumpDR) {
     std::string globals_path
-        = fmt::format("{}/init_globals.bin", debug_->dumpDir);
+        = fmt::format("{}/init_globals_->bin", debug_->dumpDir);
     writeGlobals(globals_path);
   }
-  MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
+  globals_->MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
   if (distributed_) {
-    if (DO_PA) {
+    if (globals_->DO_PA) {
       asio::post(pa_pool, [this]() {
         sendDesignDist();
         dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
@@ -967,15 +969,15 @@ int TritonRoute::main()
                   "(with at least 2 terms)");
     return 0;
   }
-  if (DO_PA) {
-    FlexPA pa(getDesign(), logger_, dist_);
+  if (globals_->DO_PA) {
+    FlexPA pa(getDesign(), logger_, dist_, globals_.get());
     pa.setDistributed(dist_ip_, dist_port_, shared_volume_, cloud_sz_);
     pa.setDebug(debug_.get(), db_);
     pa_pool.join();
     pa.main();
     if (distributed_ || debug_->debugDR || debug_->debugDumpDR) {
       io::Writer writer(getDesign(), logger_);
-      writer.updateDb(db_, true);
+      writer.updateDb(db_, globals_.get(), true);
     }
     if (distributed_) {
       asio::post(dist_pool_, [this]() {
@@ -992,8 +994,8 @@ int TritonRoute::main()
   }
   if (!initGuide()) {
     gr();
-    ENABLE_VIA_GEN = true;
-    io::GuideProcessor guide_processor(getDesign(), db_, logger_);
+    globals_->ENABLE_VIA_GEN = true;
+    io::GuideProcessor guide_processor(getDesign(), db_, logger_, globals_.get());
     guide_processor.readGuides();
     guide_processor.processGuides();
   }
@@ -1004,7 +1006,7 @@ int TritonRoute::main()
                boost::bind(&TritonRoute::sendDesignUpdates, this, ""));
   }
   dr();
-  if (!SINGLE_STEP_DR) {
+  if (!globals_->SINGLE_STEP_DR) {
     endFR();
   }
   return 0;
@@ -1025,10 +1027,10 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
     });
   }
   clearDesign();
-  MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
-  ENABLE_VIA_GEN = true;
+  globals_->MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
+  globals_->ENABLE_VIA_GEN = true;
   initDesign();
-  FlexPA pa(getDesign(), logger_, dist_);
+  FlexPA pa(getDesign(), logger_, dist_, globals_.get());
   pa.setTargetInstances(target_insts);
   pa.setDebug(debug_.get(), db_);
   if (distributed_) {
@@ -1037,7 +1039,7 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
   }
   pa.main();
   io::Writer writer(getDesign(), logger_);
-  writer.updateDb(db_, true);
+  writer.updateDb(db_, globals_.get(), true);
 }
 
 void TritonRoute::fixMaxSpacing()
@@ -1045,17 +1047,17 @@ void TritonRoute::fixMaxSpacing()
   initDesign();
   initGuide();
   prep();
-  dr_ = std::make_unique<FlexDR>(this, getDesign(), logger_, db_);
+  dr_ = std::make_unique<FlexDR>(this, getDesign(), logger_, db_, globals_.get());
   dr_->init();
   dr_->fixMaxSpacing();
   io::Writer writer(getDesign(), logger_);
-  writer.updateDb(db_);
+  writer.updateDb(db_, globals_.get());
 }
 
 void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
                                 const Rect& requiredDrcBox)
 {
-  MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
+  globals_->MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
   std::vector<std::vector<std::unique_ptr<FlexGCWorker>>> workersBatches(1);
   auto size = 7;
   auto offset = 0;
@@ -1074,23 +1076,23 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
                     routeBox2.yMax());
       Rect extBox;
       Rect drcBox;
-      routeBox.bloat(DRCSAFEDIST, drcBox);
-      routeBox.bloat(MTSAFEDIST, extBox);
+      routeBox.bloat(globals_->DRCSAFEDIST, drcBox);
+      routeBox.bloat(globals_->MTSAFEDIST, extBox);
       if (!drcBox.intersects(requiredDrcBox)) {
         continue;
       }
       auto gcWorker
-          = std::make_unique<FlexGCWorker>(design_->getTech(), logger_);
+          = std::make_unique<FlexGCWorker>(design_->getTech(), logger_, globals_.get());
       gcWorker->setDrcBox(drcBox);
       gcWorker->setExtBox(extBox);
-      if (workersBatches.back().size() >= BATCHSIZE) {
+      if (workersBatches.back().size() >= globals_->BATCHSIZE) {
         workersBatches.emplace_back();
       }
       workersBatches.back().push_back(std::move(gcWorker));
     }
   }
   std::map<MarkerId, frMarker*> mapMarkers;
-  omp_set_num_threads(MAX_THREADS);
+  omp_set_num_threads(globals_->MAX_THREADS);
   for (auto& workers : workersBatches) {
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < workers.size(); i++) {  // NOLINT
@@ -1125,13 +1127,13 @@ void TritonRoute::checkDRC(const char* filename,
                            int y2,
                            const std::string& marker_name)
 {
-  GC_IGNORE_PDN_LAYER_NUM = -1;
-  REPAIR_PDN_LAYER_NUM = -1;
+  globals_->GC_IGNORE_PDN_LAYER_NUM = -1;
+  globals_->REPAIR_PDN_LAYER_NUM = -1;
   initDesign();
   auto gcellGrid = db_->getChip()->getBlock()->getGCellGrid();
   if (gcellGrid != nullptr && gcellGrid->getNumGridPatternsX() == 1
       && gcellGrid->getNumGridPatternsY() == 1) {
-    io::GuideProcessor guide_processor(getDesign(), db_, logger_);
+    io::GuideProcessor guide_processor(getDesign(), db_, logger_, globals_.get());
     guide_processor.readGuides();
     guide_processor.buildGCellPatterns();
   } else if (!initGuide()) {
@@ -1183,40 +1185,40 @@ void TritonRoute::setUnidirectionalLayer(const std::string& layerName)
 
 void TritonRoute::setParams(const ParamStruct& params)
 {
-  OUT_MAZE_FILE = params.outputMazeFile;
-  DRC_RPT_FILE = params.outputDrcFile;
-  DRC_RPT_ITER_STEP = params.drcReportIterStep;
-  CMAP_FILE = params.outputCmapFile;
-  GUIDE_REPORT_FILE = params.outputGuideCoverageFile;
-  VERBOSE = params.verbose;
-  ENABLE_VIA_GEN = params.enableViaGen;
-  DBPROCESSNODE = params.dbProcessNode;
-  CLEAN_PATCHES = params.cleanPatches;
-  DO_PA = params.doPa;
-  SINGLE_STEP_DR = params.singleStepDR;
+  globals_->OUT_MAZE_FILE = params.outputMazeFile;
+  globals_->DRC_RPT_FILE = params.outputDrcFile;
+  globals_->DRC_RPT_ITER_STEP = params.drcReportIterStep;
+  globals_->CMAP_FILE = params.outputCmapFile;
+  globals_->GUIDE_REPORT_FILE = params.outputGuideCoverageFile;
+  globals_->VERBOSE = params.verbose;
+  globals_->ENABLE_VIA_GEN = params.enableViaGen;
+  globals_->DBPROCESSNODE = params.dbProcessNode;
+  globals_->CLEAN_PATCHES = params.cleanPatches;
+  globals_->DO_PA = params.doPa;
+  globals_->SINGLE_STEP_DR = params.singleStepDR;
   if (!params.viaInPinBottomLayer.empty()) {
-    VIAINPIN_BOTTOMLAYER_NAME = params.viaInPinBottomLayer;
+    globals_->VIAINPIN_BOTTOMLAYER_NAME = params.viaInPinBottomLayer;
   }
   if (!params.viaInPinTopLayer.empty()) {
-    VIAINPIN_TOPLAYER_NAME = params.viaInPinTopLayer;
+    globals_->VIAINPIN_TOPLAYER_NAME = params.viaInPinTopLayer;
   }
   if (params.drouteEndIter >= 0) {
-    END_ITERATION = params.drouteEndIter;
+    globals_->END_ITERATION = params.drouteEndIter;
   }
-  OR_SEED = params.orSeed;
-  OR_K = params.orK;
+  globals_->OR_SEED = params.orSeed;
+  globals_->OR_K = params.orK;
   if (!params.bottomRoutingLayer.empty()) {
-    BOTTOM_ROUTING_LAYER_NAME = params.bottomRoutingLayer;
+    globals_->BOTTOM_ROUTING_LAYER_NAME = params.bottomRoutingLayer;
   }
   if (!params.topRoutingLayer.empty()) {
-    TOP_ROUTING_LAYER_NAME = params.topRoutingLayer;
+    globals_->TOP_ROUTING_LAYER_NAME = params.topRoutingLayer;
   }
   if (params.minAccessPoints > 0) {
-    MINNUMACCESSPOINT_STDCELLPIN = params.minAccessPoints;
-    MINNUMACCESSPOINT_MACROCELLPIN = params.minAccessPoints;
+    globals_->MINNUMACCESSPOINT_STDCELLPIN = params.minAccessPoints;
+    globals_->MINNUMACCESSPOINT_MACROCELLPIN = params.minAccessPoints;
   }
-  SAVE_GUIDE_UPDATES = params.saveGuideUpdates;
-  REPAIR_PDN_LAYER_NAME = params.repairPDNLayerName;
+  globals_->SAVE_GUIDE_UPDATES = params.saveGuideUpdates;
+  globals_->REPAIR_PDN_LAYER_NAME = params.repairPDNLayerName;
 }
 
 void TritonRoute::addWorkerResults(
@@ -1351,7 +1353,7 @@ void TritonRoute::reportDRC(const std::string& file_name,
   }
 
   if (file_name.empty()) {
-    if (VERBOSE > 0) {
+    if (globals_->VERBOSE > 0) {
       logger_->warn(
           DRT,
           290,

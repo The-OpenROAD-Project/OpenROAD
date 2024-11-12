@@ -35,7 +35,6 @@
 
 #include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
-#include "global.h"
 
 namespace drt {
 class FlexGRWavefrontGrid

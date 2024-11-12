@@ -52,11 +52,12 @@ BOOST_CLASS_EXPORT(drt::PinAccessJobDescription)
 
 namespace drt {
 
-FlexPA::FlexPA(frDesign* in, Logger* logger, dst::Distributed* dist)
+FlexPA::FlexPA(frDesign* in, Logger* logger, dst::Distributed* dist, Globals* globals)
     : design_(in),
       logger_(logger),
       dist_(dist),
-      unique_insts_(design_, target_insts_, logger_)
+      globals_(globals),
+      unique_insts_(design_, target_insts_, logger_, globals)
 {
 }
 
@@ -68,7 +69,7 @@ void FlexPA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
   const bool on = settings->debugPA;
   graphics_
       = on && FlexPAGraphics::guiActive()
-            ? std::make_unique<FlexPAGraphics>(settings, design_, db, logger_)
+            ? std::make_unique<FlexPAGraphics>(settings, design_, db, logger_, globals_)
             : nullptr;
 }
 
@@ -177,7 +178,7 @@ int FlexPA::main()
   ProfileTask profile("PA:main");
 
   frTime t;
-  if (VERBOSE > 0) {
+  if (globals_->VERBOSE > 0) {
     logger_->info(DRT, 165, "Start pin access.");
   }
 
@@ -199,7 +200,7 @@ int FlexPA::main()
     }
   }
 
-  if (VERBOSE > 0) {
+  if (globals_->VERBOSE > 0) {
     unique_insts_.report();
     //clang-format off
     logger_->report("#stdCellGenAp          = {}", std_cell_pin_gen_ap_cnt_);
@@ -219,7 +220,7 @@ int FlexPA::main()
     //clang-format on
   }
 
-  if (VERBOSE > 0) {
+  if (globals_->VERBOSE > 0) {
     logger_->info(DRT, 166, "Complete pin access.");
     t.print(logger_);
   }

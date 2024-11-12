@@ -45,6 +45,7 @@ class FlexGCWorker
   // constructors
   FlexGCWorker(frTechObject* techIn,
                Logger* logger,
+               Globals* globals,
                FlexDRWorker* drWorkerIn = nullptr);
   ~FlexGCWorker();
   // setters

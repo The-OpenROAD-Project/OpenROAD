@@ -401,7 +401,7 @@ frCost FlexGRGridGraph::getNextPathCost(const FlexGRWavefrontGrid& currGrid,
                            * getEdgeLength(gridX, gridY, gridZ, dir)
                      : 0)
          + (blockCost
-                ? BLOCKCOST * getEdgeLength(gridX, gridY, gridZ, dir) * 100
+                ? globals_->BLOCKCOST * getEdgeLength(gridX, gridY, gridZ, dir) * 100
                 : 0)
          + (overflowCost ? 128 * getEdgeLength(gridX, gridY, gridZ, dir) : 0);
   return nextPathCost;
