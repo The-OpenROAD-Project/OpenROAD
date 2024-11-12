@@ -248,7 +248,7 @@ class TreeBuilder
   odb::dbInst* getTopBuffer() const { return topBuffer_; }
   void setTopBuffer(odb::dbInst* inst) { topBuffer_ = inst; }
   std::string getTopBufferName() const { return topBufferName_; }
-  void setTopBufferName(std::string name) { topBufferName_ = name; }
+  void setTopBufferName(std::string name) { topBufferName_ = std::move(name); }
   odb::dbNet* getTopInputNet() const { return topInputNet_; }
   void setTopInputNet(odb::dbNet* net) { topInputNet_ = net; }
   odb::dbNet* getDrivingNet() const { return drivingNet_; }

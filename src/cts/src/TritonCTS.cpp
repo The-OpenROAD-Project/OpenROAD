@@ -2089,7 +2089,6 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex,
 {
   sta::VertexPathIterator pathIter(sinkVertex, openSta_);
   float clkPathArrival = 0.0;
-  int pathsAccepted = 0;
   while (pathIter.hasNext()) {
     sta::Path* path = pathIter.next();
     if (path->clkEdge(openSta_)->transition() != sta::RiseFall::rise()) {
@@ -2111,9 +2110,9 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex,
 
       odb::dbITerm* term;
       odb::dbBTerm* port;
-      odb::dbModITerm* moditerm;
-      odb::dbModBTerm* modbterm;
-      network_->staToDb(start->pin(openSta_), term, port, moditerm, modbterm);
+      odb::dbModITerm* modIterm;
+      odb::dbModBTerm* modBterm;
+      network_->staToDb(start->pin(openSta_), term, port, modIterm, modBterm);
       if (term) {
         pathStartNet = term->getNet();
       }
@@ -2122,17 +2121,11 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex,
       }
       if (pathStartNet == topNet) {
         clkPathArrival = path->arrival(openSta_);
-        pathsAccepted += 1;
         return clkPathArrival;
       }
     }
   }
-  if (pathsAccepted > 1 || pathsAccepted == 0) {
-    logger_->report(
-        "Number of clock paths is not 1 for pin {}. Number of clock paths: {}",
-        iterm->getName(),
-        pathsAccepted);
-  }
+  logger_->warn(CTS, 2, "No paths found for pin {}.", iterm->getName());
   return clkPathArrival;
 }
 
@@ -2201,7 +2194,6 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
           sumArrivals += (arrival + insDelay);
           numSinks++;
         }
-        return;
       } else {
         // not a sink, but a clock gater
         odb::dbITerm* outTerm = inst->getFirstOutput();
@@ -2222,7 +2214,6 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
       }
     }
   }
-  return;
 }
 
 // Balance latencies between macro tree and register tree
