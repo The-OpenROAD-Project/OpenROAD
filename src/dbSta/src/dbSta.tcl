@@ -79,9 +79,9 @@ proc highlight_path { args } {
   }
 }
 
-define_cmd_args "report_cell_usage" {[-verbose] [module_inst]}
+define_cmd_args "report_cell_usage" {[-verbose] [module_inst] [> filename] [>> filename]} ;# checker off
 
-proc report_cell_usage { args } {
+sta::proc_redirect report_cell_usage {
   parse_key_args "highlight_path" args keys {} \
     flags {-verbose} 0
 
