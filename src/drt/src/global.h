@@ -124,8 +124,6 @@ struct Globals
   frLayerNum GC_IGNORE_PDN_LAYER_NUM = -1;
 };
 
-// extern thread_local Globals globals;
-
 constexpr int DIRBITSIZE = 3;
 constexpr int WAVEFRONTBUFFERSIZE = 2;
 constexpr int WAVEFRONTBITSIZE = (WAVEFRONTBUFFERSIZE * DIRBITSIZE);
