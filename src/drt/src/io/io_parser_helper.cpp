@@ -464,7 +464,8 @@ void io::Parser::initCutLayerWidth()
         auto viaWidth = cutRect->width();
         layer->setWidth(viaWidth);
       } else {
-        if (layerNum >= globals_->BOTTOM_ROUTING_LAYER && layerNum <= globals_->TOP_ROUTING_LAYER) {
+        if (layerNum >= globals_->BOTTOM_ROUTING_LAYER
+            && layerNum <= globals_->TOP_ROUTING_LAYER) {
           logger_->error(DRT,
                          242,
                          "CUT layer {} does not have default via.",
@@ -697,7 +698,8 @@ void io::Parser::convertLef58MinCutConstraints()
       }
 
       if (dbRule->isLengthValid()) {
-        globals_->MTSAFEDIST = std::max(globals_->MTSAFEDIST, dbRule->getLengthWithinDist());
+        globals_->MTSAFEDIST
+            = std::max(globals_->MTSAFEDIST, dbRule->getLengthWithinDist());
         rptr->setLength(dbRule->getLength(), dbRule->getLengthWithinDist());
       }
       rptr->setWidth(dbRule->getWidth());

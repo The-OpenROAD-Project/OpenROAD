@@ -42,7 +42,7 @@ class FlexTA
 {
  public:
   // constructors
-  FlexTA(frDesign* in, Logger* logger,  Globals* globals, bool save_updates_);
+  FlexTA(frDesign* in, Logger* logger, Globals* globals, bool save_updates_);
   ~FlexTA();
   // getters
   frTechObject* getTech() const { return tech_; }
@@ -118,7 +118,10 @@ class FlexTAWorker
 {
  public:
   // constructors
-  FlexTAWorker(frDesign* designIn, Logger* logger, Globals* globals, bool save_updates)
+  FlexTAWorker(frDesign* designIn,
+               Logger* logger,
+               Globals* globals,
+               bool save_updates)
       : design_(designIn),
         logger_(logger),
         globals_(globals),

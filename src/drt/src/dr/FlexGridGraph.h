@@ -47,7 +47,10 @@ class FlexGridGraph
 {
  public:
   // constructors
-  FlexGridGraph(frTechObject* techIn, Logger* loggerIn, FlexDRWorker* workerIn, Globals* globals)
+  FlexGridGraph(frTechObject* techIn,
+                Logger* loggerIn,
+                FlexDRWorker* workerIn,
+                Globals* globals)
       : tech_(techIn), logger_(loggerIn), drWorker_(workerIn), globals_(globals)
   {
     ap_locs_.resize(tech_->getTopLayerNum() + 1);

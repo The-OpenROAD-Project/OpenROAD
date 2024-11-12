@@ -441,12 +441,14 @@ bool isValidGuideLayerNum(odb::dbGuide* db_guide,
 
   // Ignore guide as invalid if above top routing layer for a net with bterms
   // above top routing layer
-  const bool guide_above_top_routing_layer = layer_num > globals->TOP_ROUTING_LAYER;
+  const bool guide_above_top_routing_layer
+      = layer_num > globals->TOP_ROUTING_LAYER;
   if (guide_above_top_routing_layer && net->hasBTermsAboveTopLayer()) {
     return false;
   }
   const bool guide_below_bottom_routing_layer
-      = layer_num < globals->BOTTOM_ROUTING_LAYER && layer_num != globals->VIA_ACCESS_LAYERNUM;
+      = layer_num < globals->BOTTOM_ROUTING_LAYER
+        && layer_num != globals->VIA_ACCESS_LAYERNUM;
   if (guide_below_bottom_routing_layer || guide_above_top_routing_layer) {
     logger->error(DRT,
                   155,
@@ -711,7 +713,8 @@ bool GuideProcessor::readGuides()
     }
     for (auto db_guide : db_net->getGuides()) {
       frLayerNum layer_num;
-      if (!isValidGuideLayerNum(db_guide, getTech(), net, logger_, layer_num, globals_)) {
+      if (!isValidGuideLayerNum(
+              db_guide, getTech(), net, logger_, layer_num, globals_)) {
         continue;
       }
       frRect rect;
@@ -1422,8 +1425,13 @@ void GuideProcessor::genGuides(frNet* net, std::vector<frRect>& rects)
         }
       }
     }
-    GuidePathFinder path_finder(
-        design_, logger_, globals_, net, force_pin_feed_through, rects, pin_gcell_map);
+    GuidePathFinder path_finder(design_,
+                                logger_,
+                                globals_,
+                                net,
+                                force_pin_feed_through,
+                                rects,
+                                pin_gcell_map);
     path_finder.setAllowWarnings(i != 0);
     if (path_finder.traverseGraph()) {
       path_found = true;

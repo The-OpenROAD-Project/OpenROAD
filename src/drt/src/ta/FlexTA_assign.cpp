@@ -934,15 +934,18 @@ frUInt4 FlexTAWorker::assignIroute_getCost(taPin* iroute,
   frCoord irouteLayerPitch
       = getTech()->getLayer(iroute->getGuide()->getBeginLayerNum())->getPitch();
   outDrcCost = assignIroute_getDRCCost(iroute, trackLoc);
-  int drcCost = (isInitTA()) ? (0.05 * outDrcCost) : (globals_->TADRCCOST * outDrcCost);
+  int drcCost
+      = (isInitTA()) ? (0.05 * outDrcCost) : (globals_->TADRCCOST * outDrcCost);
   int nextIrouteDirCost = assignIroute_getNextIrouteDirCost(iroute, trackLoc);
   // int pinCost    = TAPINCOST * assignIroute_getPinCost(iroute, trackLoc);
   int tmpPinCost = assignIroute_getPinCost(iroute, trackLoc);
-  int pinCost
-      = (tmpPinCost == 0) ? 0 : globals_->TAPINCOST * irouteLayerPitch + tmpPinCost;
+  int pinCost = (tmpPinCost == 0)
+                    ? 0
+                    : globals_->TAPINCOST * irouteLayerPitch + tmpPinCost;
   int tmpAlignCost = assignIroute_getAlignCost(iroute, trackLoc);
-  int alignCost
-      = (tmpAlignCost == 0) ? 0 : globals_->TAALIGNCOST * irouteLayerPitch + tmpAlignCost;
+  int alignCost = (tmpAlignCost == 0)
+                      ? 0
+                      : globals_->TAALIGNCOST * irouteLayerPitch + tmpAlignCost;
   return std::max(drcCost + nextIrouteDirCost + pinCost - alignCost, 0);
 }
 

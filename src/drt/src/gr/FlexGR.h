@@ -358,7 +358,7 @@ class FlexGRWorker
   double congThresh_{1.0};
   bool is2DRouting_{false};
   RipUpMode ripupMode_{RipUpMode::DRC};
-  
+
   // local storage
   std::vector<std::unique_ptr<grNet>> nets_;
   std::map<frNet*, std::vector<grNet*>, frBlockObjectComp> owner2nets_;

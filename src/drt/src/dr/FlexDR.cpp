@@ -624,8 +624,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   int xIdx = 0, yIdx = 0;
   for (int i = offset; i < (int) xgp.getCount(); i += size) {
     for (int j = offset; j < (int) ygp.getCount(); j += size) {
-      auto worker
-          = std::make_unique<FlexDRWorker>(&via_data_, design_, logger_, globals_);
+      auto worker = std::make_unique<FlexDRWorker>(
+          &via_data_, design_, logger_, globals_);
       Rect routeBox1 = getDesign()->getTopBlock()->getGCellBox(Point(i, j));
       const int max_i = std::min((int) xgp.getCount() - 1, i + size - 1);
       const int max_j = std::min((int) ygp.getCount(), j + size - 1);
@@ -669,7 +669,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
       if (workers[batchIdx].empty()
           || (!dist_on_
-              && (int) workers[batchIdx].back().size() >= globals_->BATCHSIZE)) {
+              && (int) workers[batchIdx].back().size()
+                     >= globals_->BATCHSIZE)) {
         workers[batchIdx].push_back(
             std::vector<std::unique_ptr<FlexDRWorker>>());
       }
@@ -870,12 +871,14 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
     std::cout << std::flush;
   }
   end();
-  if ((globals_->DRC_RPT_ITER_STEP && iter > 0 && iter % globals_->DRC_RPT_ITER_STEP.value() == 0)
+  if ((globals_->DRC_RPT_ITER_STEP && iter > 0
+       && iter % globals_->DRC_RPT_ITER_STEP.value() == 0)
       || logger_->debugCheck(DRT, "autotuner", 1)
       || logger_->debugCheck(DRT, "report", 1)) {
-    router_->reportDRC(globals_->DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt",
-                       design_->getTopBlock()->getMarkers(),
-                       "DRC - iter " + std::to_string(iter));
+    router_->reportDRC(
+        globals_->DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt",
+        design_->getTopBlock()->getMarkers(),
+        "DRC - iter " + std::to_string(iter));
   }
 }
 
@@ -1038,7 +1041,8 @@ void FlexDR::end(bool done)
   }
 }
 
-std::vector<FlexDR::SearchRepairArgs> strategy(const frUInt4 shapeCost, const frUInt4 markerCost)
+std::vector<FlexDR::SearchRepairArgs> strategy(const frUInt4 shapeCost,
+                                               const frUInt4 markerCost)
 {
   // clang-format off
   return {
@@ -1313,7 +1317,8 @@ void FlexDR::fixMaxSpacing()
 #pragma omp parallel for schedule(dynamic)
   for (size_t i = 0; i < merged_regions.size(); i++) {
     auto route_box = merged_regions.at(i);
-    auto worker = std::make_unique<FlexDRWorker>(&via_data_, design_, logger_, globals_);
+    auto worker = std::make_unique<FlexDRWorker>(
+        &via_data_, design_, logger_, globals_);
     Rect ext_box;
     Rect drc_box;
     route_box.bloat(globals_->MTSAFEDIST, ext_box);
@@ -1416,7 +1421,8 @@ int FlexDR::main()
       } else {
         clipSizeInc_ = std::max((float) 0, clipSizeInc_ - 0.2f);
       }
-      clipSize += std::min(globals_->MAX_CLIPSIZE_INCREASE, (int) round(clipSizeInc_));
+      clipSize += std::min(globals_->MAX_CLIPSIZE_INCREASE,
+                           (int) round(clipSizeInc_));
     }
     args.size = clipSize;
     if (args.ripupMode == RipUpMode::ALL) {

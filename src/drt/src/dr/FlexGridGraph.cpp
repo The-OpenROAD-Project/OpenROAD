@@ -339,9 +339,10 @@ void FlexGridGraph::initEdges(
            zIdx += inc, nextLNum += inc * 2) {
         addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
         frLayer* nextLayer = getTech()->getLayer(nextLNum);
-        const bool restrictedRouting = nextLayer->isUnidirectional()
-                                       || nextLNum < globals_->BOTTOM_ROUTING_LAYER
-                                       || nextLNum > globals_->TOP_ROUTING_LAYER;
+        const bool restrictedRouting
+            = nextLayer->isUnidirectional()
+              || nextLNum < globals_->BOTTOM_ROUTING_LAYER
+              || nextLNum > globals_->TOP_ROUTING_LAYER;
         if (!restrictedRouting || nextLayer->isVertical()) {
           auto& xSubMap = xMap[apPt.x()];
           auto xTrack = xSubMap.find(nextLNum);

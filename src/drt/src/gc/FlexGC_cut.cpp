@@ -380,12 +380,14 @@ inline bool isSupplyVia(gcRect* rect)
 
 inline bool isSkipVia(gcRect* rect, Globals* globals)
 {
-  return rect->getLayerNum() == globals->GC_IGNORE_PDN_LAYER_NUM && isSupplyVia(rect);
+  return rect->getLayerNum() == globals->GC_IGNORE_PDN_LAYER_NUM
+         && isSupplyVia(rect);
 }
 
 inline bool isFixedVia(gcRect* rect, Globals* globals)
 {
-  if (rect->getLayerNum() == globals->REPAIR_PDN_LAYER_NUM && isSupplyVia(rect)) {
+  if (rect->getLayerNum() == globals->REPAIR_PDN_LAYER_NUM
+      && isSupplyVia(rect)) {
     return false;
   }
   return rect->isFixed();

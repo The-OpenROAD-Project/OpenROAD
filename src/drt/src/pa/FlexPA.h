@@ -66,7 +66,10 @@ class FlexPA
     Commit
   };
 
-  FlexPA(frDesign* in, Logger* logger, dst::Distributed* dist, Globals* globals);
+  FlexPA(frDesign* in,
+         Logger* logger,
+         dst::Distributed* dist,
+         Globals* globals);
   ~FlexPA();
 
   void setDebug(frDebugSettings* settings, odb::dbDatabase* db);

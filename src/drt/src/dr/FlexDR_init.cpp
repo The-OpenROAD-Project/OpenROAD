@@ -1140,7 +1140,8 @@ bool FlexDRWorker::findAPTracks(const frLayerNum startLayerNum,
 bool FlexDRWorker::isRestrictedRouting(const frLayerNum lNum)
 {
   return getTech()->getLayer(lNum)->isUnidirectional()
-         || lNum < globals_->BOTTOM_ROUTING_LAYER || lNum > globals_->TOP_ROUTING_LAYER;
+         || lNum < globals_->BOTTOM_ROUTING_LAYER
+         || lNum > globals_->TOP_ROUTING_LAYER;
 }
 
 // when isHorzTracks == true, it means track loc == y loc
@@ -3211,8 +3212,8 @@ void FlexDRWorker::init(const frDesign* design)
   }
   initGridGraph(design);
   initMazeIdx();
-  std::unique_ptr<FlexGCWorker> gcWorker
-      = std::make_unique<FlexGCWorker>(design->getTech(), logger_, globals_, this);
+  std::unique_ptr<FlexGCWorker> gcWorker = std::make_unique<FlexGCWorker>(
+      design->getTech(), logger_, globals_, this);
   gcWorker->setExtBox(getExtBox());
   gcWorker->setDrcBox(getDrcBox());
   gcWorker->init(design);

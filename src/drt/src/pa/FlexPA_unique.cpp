@@ -35,7 +35,10 @@ UniqueInsts::UniqueInsts(frDesign* design,
                          const frCollection<odb::dbInst*>& target_insts,
                          Logger* logger,
                          Globals* globals)
-    : design_(design), target_insts_(target_insts), logger_(logger), globals_(globals)
+    : design_(design),
+      target_insts_(target_insts),
+      logger_(logger),
+      globals_(globals)
 {
 }
 

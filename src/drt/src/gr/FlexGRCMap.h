@@ -42,7 +42,8 @@ class FlexGRCMap
 {
  public:
   // constructors
-  FlexGRCMap(frDesign* designIn, Globals* globals) : design_(designIn), globals_(globals)
+  FlexGRCMap(frDesign* designIn, Globals* globals)
+      : design_(designIn), globals_(globals)
   {
     auto& gCellPatterns = design_->getTopBlock()->getGCellPatterns();
     numLayers_ = design_->getTech()->getLayers().size();

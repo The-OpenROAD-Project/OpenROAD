@@ -44,83 +44,84 @@ class Rect;
 
 namespace drt {
 
-struct Globals {
-    std::string DBPROCESSNODE = "";
-    std::string OUT_MAZE_FILE = "";
-    std::string DRC_RPT_FILE = "";
-    std::optional<int> DRC_RPT_ITER_STEP = std::nullopt;
-    std::string CMAP_FILE = "";
-    std::string GUIDE_REPORT_FILE = "";
+struct Globals
+{
+  std::string DBPROCESSNODE = "";
+  std::string OUT_MAZE_FILE = "";
+  std::string DRC_RPT_FILE = "";
+  std::optional<int> DRC_RPT_ITER_STEP = std::nullopt;
+  std::string CMAP_FILE = "";
+  std::string GUIDE_REPORT_FILE = "";
 
-    // to be removed
-    int OR_SEED = -1;
-    double OR_K = 0;
+  // to be removed
+  int OR_SEED = -1;
+  double OR_K = 0;
 
-    int MAX_THREADS = 1;
-    int BATCHSIZE = 1024;
-    int BATCHSIZETA = 8;
-    int MTSAFEDIST = 2000;
-    int DRCSAFEDIST = 500;
-    int VERBOSE = 1;
-    std::string BOTTOM_ROUTING_LAYER_NAME = "";
-    std::string TOP_ROUTING_LAYER_NAME = "";
-    int BOTTOM_ROUTING_LAYER = 2;
-    int TOP_ROUTING_LAYER = std::numeric_limits<int>::max();
-    bool ALLOW_PIN_AS_FEEDTHROUGH = true;
-    bool USENONPREFTRACKS = true;
-    bool USEMINSPACING_OBS = true;
-    bool ENABLE_BOUNDARY_MAR_FIX = true;
-    bool ENABLE_VIA_GEN = true;
-    bool CLEAN_PATCHES = false;
-    bool DO_PA = true;
-    bool SINGLE_STEP_DR = false;
-    bool SAVE_GUIDE_UPDATES = false;
+  int MAX_THREADS = 1;
+  int BATCHSIZE = 1024;
+  int BATCHSIZETA = 8;
+  int MTSAFEDIST = 2000;
+  int DRCSAFEDIST = 500;
+  int VERBOSE = 1;
+  std::string BOTTOM_ROUTING_LAYER_NAME = "";
+  std::string TOP_ROUTING_LAYER_NAME = "";
+  int BOTTOM_ROUTING_LAYER = 2;
+  int TOP_ROUTING_LAYER = std::numeric_limits<int>::max();
+  bool ALLOW_PIN_AS_FEEDTHROUGH = true;
+  bool USENONPREFTRACKS = true;
+  bool USEMINSPACING_OBS = true;
+  bool ENABLE_BOUNDARY_MAR_FIX = true;
+  bool ENABLE_VIA_GEN = true;
+  bool CLEAN_PATCHES = false;
+  bool DO_PA = true;
+  bool SINGLE_STEP_DR = false;
+  bool SAVE_GUIDE_UPDATES = false;
 
-    std::string VIAINPIN_BOTTOMLAYER_NAME = "";
-    std::string VIAINPIN_TOPLAYER_NAME = "";
-    frLayerNum VIAINPIN_BOTTOMLAYERNUM = std::numeric_limits<frLayerNum>::max();
-    frLayerNum VIAINPIN_TOPLAYERNUM = std::numeric_limits<frLayerNum>::max();
+  std::string VIAINPIN_BOTTOMLAYER_NAME = "";
+  std::string VIAINPIN_TOPLAYER_NAME = "";
+  frLayerNum VIAINPIN_BOTTOMLAYERNUM = std::numeric_limits<frLayerNum>::max();
+  frLayerNum VIAINPIN_TOPLAYERNUM = std::numeric_limits<frLayerNum>::max();
 
-    frLayerNum VIA_ACCESS_LAYERNUM = 2;
+  frLayerNum VIA_ACCESS_LAYERNUM = 2;
 
-    int MINNUMACCESSPOINT_MACROCELLPIN = 3;
-    int MINNUMACCESSPOINT_STDCELLPIN = 3;
-    int ACCESS_PATTERN_END_ITERATION_NUM = 10;
-    float CONGESTION_THRESHOLD = 0.4;
-    int MAX_CLIPSIZE_INCREASE = 18;
+  int MINNUMACCESSPOINT_MACROCELLPIN = 3;
+  int MINNUMACCESSPOINT_STDCELLPIN = 3;
+  int ACCESS_PATTERN_END_ITERATION_NUM = 10;
+  float CONGESTION_THRESHOLD = 0.4;
+  int MAX_CLIPSIZE_INCREASE = 18;
 
-    int END_ITERATION = 80;
+  int END_ITERATION = 80;
 
-    int NDR_NETS_RIPUP_HARDINESS = 3;  // max ripup avoids
-    int CLOCK_NETS_TRUNK_RIPUP_HARDINESS = 100;
-    int CLOCK_NETS_LEAF_RIPUP_HARDINESS = 10;
-    bool AUTO_TAPER_NDR_NETS = true;
-    int TAPERBOX_RADIUS = 3;
-    int NDR_NETS_ABS_PRIORITY = 2;
-    int CLOCK_NETS_ABS_PRIORITY = 4;
+  int NDR_NETS_RIPUP_HARDINESS = 3;  // max ripup avoids
+  int CLOCK_NETS_TRUNK_RIPUP_HARDINESS = 100;
+  int CLOCK_NETS_LEAF_RIPUP_HARDINESS = 10;
+  bool AUTO_TAPER_NDR_NETS = true;
+  int TAPERBOX_RADIUS = 3;
+  int NDR_NETS_ABS_PRIORITY = 2;
+  int CLOCK_NETS_ABS_PRIORITY = 4;
 
-    frUInt4 TAPINCOST = 4;
-    frUInt4 TAALIGNCOST = 4;
-    frUInt4 TADRCCOST = 32;
-    float TASHAPEBLOATWIDTH = 1.5;
+  frUInt4 TAPINCOST = 4;
+  frUInt4 TAALIGNCOST = 4;
+  frUInt4 TADRCCOST = 32;
+  float TASHAPEBLOATWIDTH = 1.5;
 
-    frUInt4 VIACOST = 4;
-    // new cost used
-    frUInt4 GRIDCOST = 2;
-    frUInt4 ROUTESHAPECOST = 8;
-    frUInt4 MARKERCOST = 32;
-    frUInt4 MARKERBLOATWIDTH = 1; // unused
-    frUInt4 BLOCKCOST = 32;
-    frUInt4 GUIDECOST = 1;  // disabled change getNextPathCost to enable
-    float SHAPEBLOATWIDTH = 3;  // unused
+  frUInt4 VIACOST = 4;
+  // new cost used
+  frUInt4 GRIDCOST = 2;
+  frUInt4 ROUTESHAPECOST = 8;
+  frUInt4 MARKERCOST = 32;
+  frUInt4 MARKERBLOATWIDTH = 1;  // unused
+  frUInt4 BLOCKCOST = 32;
+  frUInt4 GUIDECOST = 1;      // disabled change getNextPathCost to enable
+  float SHAPEBLOATWIDTH = 3;  // unused
 
-    // GR
-    int CONGCOST = 8;
-    int HISTCOST = 32;
+  // GR
+  int CONGCOST = 8;
+  int HISTCOST = 32;
 
-    std::string REPAIR_PDN_LAYER_NAME = "";
-    frLayerNum REPAIR_PDN_LAYER_NUM = -1;
-    frLayerNum GC_IGNORE_PDN_LAYER_NUM = -1;
+  std::string REPAIR_PDN_LAYER_NAME = "";
+  frLayerNum REPAIR_PDN_LAYER_NUM = -1;
+  frLayerNum GC_IGNORE_PDN_LAYER_NUM = -1;
 };
 
 // extern thread_local Globals globals;

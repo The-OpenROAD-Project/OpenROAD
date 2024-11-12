@@ -60,7 +60,10 @@ class Parser
 {
  public:
   // constructors
-  Parser(odb::dbDatabase* dbIn, frDesign* design, Logger* loggerIn, Globals* globals);
+  Parser(odb::dbDatabase* dbIn,
+         frDesign* design,
+         Logger* loggerIn,
+         Globals* globals);
 
   // others
   void readDesign(odb::dbDatabase*);
@@ -224,7 +227,10 @@ class Writer
 class TopLayerBTermHandler
 {
  public:
-  TopLayerBTermHandler(frDesign* design, odb::dbDatabase* db, Logger* logger, Globals* globals)
+  TopLayerBTermHandler(frDesign* design,
+                       odb::dbDatabase* db,
+                       Logger* logger,
+                       Globals* globals)
       : design_(design), db_(db), logger_(logger), globals_(globals)
   {
   }

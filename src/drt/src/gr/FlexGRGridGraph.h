@@ -614,7 +614,6 @@ class FlexGRGridGraph
   frGCellPattern* ygp_{nullptr};
   Globals* globals_;
 
-
   // [0] hasEEdge; [1] hasNEdge; [2] hasUEdge
   // [3] blockE;   [4] blockN;   [5] blockU
   // [6] empty;    [7] empty

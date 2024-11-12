@@ -52,7 +52,10 @@ BOOST_CLASS_EXPORT(drt::PinAccessJobDescription)
 
 namespace drt {
 
-FlexPA::FlexPA(frDesign* in, Logger* logger, dst::Distributed* dist, Globals* globals)
+FlexPA::FlexPA(frDesign* in,
+               Logger* logger,
+               dst::Distributed* dist,
+               Globals* globals)
     : design_(in),
       logger_(logger),
       dist_(dist),
@@ -67,10 +70,10 @@ FlexPA::~FlexPA() = default;
 void FlexPA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
 {
   const bool on = settings->debugPA;
-  graphics_
-      = on && FlexPAGraphics::guiActive()
-            ? std::make_unique<FlexPAGraphics>(settings, design_, db, logger_, globals_)
-            : nullptr;
+  graphics_ = on && FlexPAGraphics::guiActive()
+                  ? std::make_unique<FlexPAGraphics>(
+                      settings, design_, db, logger_, globals_)
+                  : nullptr;
 }
 
 void FlexPA::init()

@@ -49,11 +49,11 @@ class drNet : public drBlockObject
       maxRipupAvoids_ = globals->NDR_NETS_RIPUP_HARDINESS;
     }
     if (isClockNetTrunk()) {
-      maxRipupAvoids_
-          = std::max((int) maxRipupAvoids_, globals->CLOCK_NETS_TRUNK_RIPUP_HARDINESS);
+      maxRipupAvoids_ = std::max((int) maxRipupAvoids_,
+                                 globals->CLOCK_NETS_TRUNK_RIPUP_HARDINESS);
     } else if (isClockNetLeaf()) {
-      maxRipupAvoids_
-          = std::max((int) maxRipupAvoids_, globals->CLOCK_NETS_LEAF_RIPUP_HARDINESS);
+      maxRipupAvoids_ = std::max((int) maxRipupAvoids_,
+                                 globals->CLOCK_NETS_LEAF_RIPUP_HARDINESS);
     }
   }
   // getters

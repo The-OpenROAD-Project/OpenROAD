@@ -894,8 +894,8 @@ void FlexGCWorker::Impl::checkMetalSpacing()
           checkMetalSpacing_wrongDir(pin.get(), currLayer);
         }
         for (auto& maxrect : pin->getMaxRectangles()) {
-          checkMetalSpacing_main(maxrect.get(),
-                                 getDRWorker() || !globals_->AUTO_TAPER_NDR_NETS);
+          checkMetalSpacing_main(
+              maxrect.get(), getDRWorker() || !globals_->AUTO_TAPER_NDR_NETS);
           if (currLayer->hasTwoWiresForbiddenSpacingConstraints()) {
             for (auto con :
                  currLayer->getTwoWiresForbiddenSpacingConstraints()) {
@@ -932,8 +932,8 @@ void FlexGCWorker::Impl::checkMetalSpacing()
           }
           for (auto& maxrect : pin->getMaxRectangles()) {
             // Short, NSMetal, metSpc
-            checkMetalSpacing_main(maxrect.get(),
-                                   getDRWorker() || !globals_->AUTO_TAPER_NDR_NETS);
+            checkMetalSpacing_main(
+                maxrect.get(), getDRWorker() || !globals_->AUTO_TAPER_NDR_NETS);
             if (currLayer->hasTwoWiresForbiddenSpacingConstraints()) {
               for (auto con :
                    currLayer->getTwoWiresForbiddenSpacingConstraints()) {

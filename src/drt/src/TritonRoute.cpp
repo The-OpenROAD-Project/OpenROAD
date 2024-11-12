@@ -34,7 +34,6 @@
 #include <iostream>
 
 #include "DesignCallBack.h"
-#include "global.h"
 #include "db/tech/frTechObject.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingCallBack.h"
@@ -598,8 +597,10 @@ void TritonRoute::initDesign()
     if (layer) {
       globals_->GC_IGNORE_PDN_LAYER_NUM = layer->getLayerNum();
     } else {
-      logger_->warn(
-          utl::DRT, 617, "PDN layer {} not found.", globals_->REPAIR_PDN_LAYER_NAME);
+      logger_->warn(utl::DRT,
+                    617,
+                    "PDN layer {} not found.",
+                    globals_->REPAIR_PDN_LAYER_NAME);
     }
   }
   parser.postProcess();
@@ -628,7 +629,8 @@ void TritonRoute::ta()
 void TritonRoute::dr()
 {
   num_drvs_ = -1;
-  dr_ = std::make_unique<FlexDR>(this, getDesign(), logger_, db_, globals_.get());
+  dr_ = std::make_unique<FlexDR>(
+      this, getDesign(), logger_, db_, globals_.get());
   dr_->setDebug(debug_.get());
   if (distributed_) {
     dr_->setDistributed(dist_, dist_ip_, dist_port_, shared_volume_);
@@ -995,7 +997,8 @@ int TritonRoute::main()
   if (!initGuide()) {
     gr();
     globals_->ENABLE_VIA_GEN = true;
-    io::GuideProcessor guide_processor(getDesign(), db_, logger_, globals_.get());
+    io::GuideProcessor guide_processor(
+        getDesign(), db_, logger_, globals_.get());
     guide_processor.readGuides();
     guide_processor.processGuides();
   }
@@ -1047,7 +1050,8 @@ void TritonRoute::fixMaxSpacing()
   initDesign();
   initGuide();
   prep();
-  dr_ = std::make_unique<FlexDR>(this, getDesign(), logger_, db_, globals_.get());
+  dr_ = std::make_unique<FlexDR>(
+      this, getDesign(), logger_, db_, globals_.get());
   dr_->init();
   dr_->fixMaxSpacing();
   io::Writer writer(getDesign(), logger_);
@@ -1081,8 +1085,8 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
       if (!drcBox.intersects(requiredDrcBox)) {
         continue;
       }
-      auto gcWorker
-          = std::make_unique<FlexGCWorker>(design_->getTech(), logger_, globals_.get());
+      auto gcWorker = std::make_unique<FlexGCWorker>(
+          design_->getTech(), logger_, globals_.get());
       gcWorker->setDrcBox(drcBox);
       gcWorker->setExtBox(extBox);
       if (workersBatches.back().size() >= globals_->BATCHSIZE) {
@@ -1133,7 +1137,8 @@ void TritonRoute::checkDRC(const char* filename,
   auto gcellGrid = db_->getChip()->getBlock()->getGCellGrid();
   if (gcellGrid != nullptr && gcellGrid->getNumGridPatternsX() == 1
       && gcellGrid->getNumGridPatternsY() == 1) {
-    io::GuideProcessor guide_processor(getDesign(), db_, logger_, globals_.get());
+    io::GuideProcessor guide_processor(
+        getDesign(), db_, logger_, globals_.get());
     guide_processor.readGuides();
     guide_processor.buildGCellPatterns();
   } else if (!initGuide()) {

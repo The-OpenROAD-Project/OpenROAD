@@ -243,7 +243,10 @@ class FlexDRWorker
 {
  public:
   // constructors
-  FlexDRWorker(FlexDRViaData* via_data, frDesign* design, Logger* logger, Globals* globals)
+  FlexDRWorker(FlexDRViaData* via_data,
+               frDesign* design,
+               Logger* logger,
+               Globals* globals)
       : design_(design),
         logger_(logger),
         globals_(globals),

@@ -27,10 +27,10 @@
  */
 
 #include "fixture.h"
-#include "global.h"
 
 #include <stdexcept>
 
+#include "global.h"
 #include "odb/db.h"
 
 namespace drt {

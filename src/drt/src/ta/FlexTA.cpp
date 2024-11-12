@@ -98,7 +98,10 @@ int FlexTAWorker::main_mt()
   return 0;
 }
 
-FlexTA::FlexTA(frDesign* in, Logger* logger, Globals* globals, bool save_updates)
+FlexTA::FlexTA(frDesign* in,
+               Logger* logger,
+               Globals* globals,
+               bool save_updates)
     : tech_(in->getTech()),
       design_(in),
       logger_(logger),
@@ -123,8 +126,8 @@ int FlexTA::initTA_helper(int iter,
   std::vector<std::vector<std::unique_ptr<FlexTAWorker>>> workers;
   if (isH) {
     for (int i = offset; i < (int) ygp.getCount(); i += size) {
-      auto uworker
-          = std::make_unique<FlexTAWorker>(getDesign(), logger_, globals_, save_updates_);
+      auto uworker = std::make_unique<FlexTAWorker>(
+          getDesign(), logger_, globals_, save_updates_);
       auto& worker = *(uworker.get());
       Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(0, i));
       Rect endBox = getDesign()->getTopBlock()->getGCellBox(
@@ -138,15 +141,16 @@ int FlexTA::initTA_helper(int iter,
       worker.setExtBox(extBox);
       worker.setDir(dbTechLayerDir::HORIZONTAL);
       worker.setTAIter(iter);
-      if (workers.empty() || (int) workers.back().size() >= globals_->BATCHSIZETA) {
+      if (workers.empty()
+          || (int) workers.back().size() >= globals_->BATCHSIZETA) {
         workers.emplace_back(std::vector<std::unique_ptr<FlexTAWorker>>());
       }
       workers.back().emplace_back(std::move(uworker));
     }
   } else {
     for (int i = offset; i < (int) xgp.getCount(); i += size) {
-      auto uworker
-          = std::make_unique<FlexTAWorker>(getDesign(), logger_, globals_, save_updates_);
+      auto uworker = std::make_unique<FlexTAWorker>(
+          getDesign(), logger_, globals_, save_updates_);
       auto& worker = *(uworker.get());
       Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(i, 0));
       Rect endBox = getDesign()->getTopBlock()->getGCellBox(
@@ -160,7 +164,8 @@ int FlexTA::initTA_helper(int iter,
       worker.setExtBox(extBox);
       worker.setDir(dbTechLayerDir::VERTICAL);
       worker.setTAIter(iter);
-      if (workers.empty() || (int) workers.back().size() >= globals_->BATCHSIZETA) {
+      if (workers.empty()
+          || (int) workers.back().size() >= globals_->BATCHSIZETA) {
         workers.emplace_back(std::vector<std::unique_ptr<FlexTAWorker>>());
       }
       workers.back().push_back(std::move(uworker));

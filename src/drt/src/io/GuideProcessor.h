@@ -50,7 +50,7 @@ class GuideProcessor
                  odb::dbDatabase* dbIn,
                  utl::Logger* loggerIn,
                  Globals* globals)
-      : design_(designIn), logger_(loggerIn), db_(dbIn), globals_(globals) {};
+      : design_(designIn), logger_(loggerIn), db_(dbIn), globals_(globals){};
   /**
    * @brief Reads guides from odb and fill the tmp_guides_ list of unprocessed
    * guides

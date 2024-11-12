@@ -45,7 +45,10 @@
 
 namespace drt {
 
-io::Parser::Parser(odb::dbDatabase* dbIn, frDesign* designIn, Logger* loggerIn, Globals* globals)
+io::Parser::Parser(odb::dbDatabase* dbIn,
+                   frDesign* designIn,
+                   Logger* loggerIn,
+                   Globals* globals)
     : db_(dbIn),
       design_(designIn),
       logger_(loggerIn),
@@ -985,7 +988,8 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
                    db_net->getName(),
                    db_net->getSigType().getString());
   }
-  std::unique_ptr<frNet> uNetIn = std::make_unique<frNet>(db_net->getName(), globals_);
+  std::unique_ptr<frNet> uNetIn
+      = std::make_unique<frNet>(db_net->getName(), globals_);
   auto netIn = uNetIn.get();
   if (db_net->getNonDefaultRule()) {
     uNetIn->updateNondefaultRule(
@@ -1297,7 +1301,8 @@ void io::Parser::readDesign(odb::dbDatabase* db)
   setTracks(block);
   setInsts(block);
   setObstructions(block);
-  TopLayerBTermHandler(getDesign(), db, logger_, globals_).processBTermsAboveTopLayer(false);
+  TopLayerBTermHandler(getDesign(), db, logger_, globals_)
+      .processBTermsAboveTopLayer(false);
   setBTerms(block);
   setAccessPoints(db);
   setNets(block);
@@ -2996,7 +3001,8 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
     logger_->error(DRT, 136, "Load design first.");
   }
   getTech()->setDBUPerUU(tech->getDbUnitsPerMicron());
-  globals_->USEMINSPACING_OBS = tech->getUseMinSpacingObs() == odb::dbOnOffType::ON;
+  globals_->USEMINSPACING_OBS
+      = tech->getUseMinSpacingObs() == odb::dbOnOffType::ON;
   getTech()->setManufacturingGrid(frUInt4(tech->getManufacturingGrid()));
   setLayers(tech);
 

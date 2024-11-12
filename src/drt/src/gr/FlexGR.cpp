@@ -83,11 +83,23 @@ void FlexGR::main(odb::dbDatabase* db)
                     true,
                     /*mode*/ RipUpMode::ALL);
   // reportCong2D();
-  searchRepairMacro(
-      2, 50, 2, 1 * globals_->CONGCOST, 1.5 * globals_->HISTCOST, 0.9, true, RipUpMode::ALL);
+  searchRepairMacro(2,
+                    50,
+                    2,
+                    1 * globals_->CONGCOST,
+                    1.5 * globals_->HISTCOST,
+                    0.9,
+                    true,
+                    RipUpMode::ALL);
   // reportCong2D();
-  searchRepairMacro(
-      3, 80, 2, 2 * globals_->CONGCOST, 2 * globals_->HISTCOST, 0.9, true, RipUpMode::ALL);
+  searchRepairMacro(3,
+                    80,
+                    2,
+                    2 * globals_->CONGCOST,
+                    2 * globals_->HISTCOST,
+                    0.9,
+                    true,
+                    RipUpMode::ALL);
   // reportCong2D();
 
   //  reportCong2D();

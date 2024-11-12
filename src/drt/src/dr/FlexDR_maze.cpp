@@ -833,7 +833,8 @@ void FlexDRWorker::modMinSpacingCostViaHelper(const Rect& box,
           }
         }
       }
-      bool use_min_spacing = isBlockage && globals_->USEMINSPACING_OBS && !isFatVia;
+      bool use_min_spacing
+          = isBlockage && globals_->USEMINSPACING_OBS && !isFatVia;
       frCoord reqDist = getTech()->getLayer(lNum)->getMinSpacingValue(
           width1, width2, prl, use_min_spacing);
       reqDist = std::max(reqDist, minSpacing);

@@ -1150,7 +1150,8 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
       design_rule_checker.addTargetObj(inst_term->getInst());
     }
   } else {
-    if (!pin_net || !pin_net->getNondefaultRule() || globals_->AUTO_TAPER_NDR_NETS) {
+    if (!pin_net || !pin_net->getNondefaultRule()
+        || globals_->AUTO_TAPER_NDR_NETS) {
       design_rule_checker.addTargetObj(pin_term);
     }
   }
@@ -1227,9 +1228,10 @@ void FlexPA::check_setAPsAccesses(
                     pin,
                     inst_term);
     if (is_std_cell_pin) {
-      has_access
-          |= ((layer_num == globals_->VIA_ACCESS_LAYERNUM && ap->hasAccess(frDirEnum::U))
-              || (layer_num != globals_->VIA_ACCESS_LAYERNUM && ap->hasAccess()));
+      has_access |= ((layer_num == globals_->VIA_ACCESS_LAYERNUM
+                      && ap->hasAccess(frDirEnum::U))
+                     || (layer_num != globals_->VIA_ACCESS_LAYERNUM
+                         && ap->hasAccess()));
     } else {
       has_access |= ap->hasAccess();
     }
@@ -1321,7 +1323,8 @@ bool FlexPA::initPinAccessCostBounded(
     // and (ii) access if exist access for macro, allow pure planar ap
     if (is_std_cell_pin) {
       const auto layer_num = ap->getLayerNum();
-      if ((layer_num == globals_->VIA_ACCESS_LAYERNUM && ap->hasAccess(frDirEnum::U))
+      if ((layer_num == globals_->VIA_ACCESS_LAYERNUM
+           && ap->hasAccess(frDirEnum::U))
           || (layer_num != globals_->VIA_ACCESS_LAYERNUM && ap->hasAccess())) {
         aps.push_back(std::move(ap));
       }
@@ -1828,7 +1831,8 @@ void FlexPA::genInstRowPattern(std::vector<frInst*>& insts)
     return;
   }
 
-  const int num_node = (insts.size() + 2) * globals_->ACCESS_PATTERN_END_ITERATION_NUM;
+  const int num_node
+      = (insts.size() + 2) * globals_->ACCESS_PATTERN_END_ITERATION_NUM;
 
   std::vector<FlexDPNode> nodes(num_node);
 
@@ -1856,8 +1860,8 @@ void FlexPA::genInstRowPatternInit(std::vector<FlexDPNode>& nodes,
     const int unique_inst_idx = unique_insts_.getIndex(inst);
     auto& inst_patterns = unique_inst_patterns_[unique_inst_idx];
     for (int idx_2 = 0; idx_2 < (int) inst_patterns.size(); idx_2++) {
-      const int node_idx
-          = getFlatIdx(idx_1, idx_2, globals_->ACCESS_PATTERN_END_ITERATION_NUM);
+      const int node_idx = getFlatIdx(
+          idx_1, idx_2, globals_->ACCESS_PATTERN_END_ITERATION_NUM);
       auto access_pattern = inst_patterns[idx_2].get();
       nodes[node_idx].setNodeCost(access_pattern->getCost());
     }
@@ -1872,9 +1876,10 @@ void FlexPA::genInstRowPatternPerform(std::vector<FlexDPNode>& nodes,
     for (int curr_acc_pattern_idx = 0;
          curr_acc_pattern_idx < globals_->ACCESS_PATTERN_END_ITERATION_NUM;
          curr_acc_pattern_idx++) {
-      const auto curr_node_idx = getFlatIdx(curr_inst_idx,
-                                            curr_acc_pattern_idx,
-                                            globals_->ACCESS_PATTERN_END_ITERATION_NUM);
+      const auto curr_node_idx
+          = getFlatIdx(curr_inst_idx,
+                       curr_acc_pattern_idx,
+                       globals_->ACCESS_PATTERN_END_ITERATION_NUM);
       auto& curr_node = nodes[curr_node_idx];
       if (curr_node.getNodeCost() == std::numeric_limits<int>::max()) {
         continue;
@@ -1883,9 +1888,10 @@ void FlexPA::genInstRowPatternPerform(std::vector<FlexDPNode>& nodes,
       for (int prev_acc_pattern_idx = 0;
            prev_acc_pattern_idx < globals_->ACCESS_PATTERN_END_ITERATION_NUM;
            prev_acc_pattern_idx++) {
-        const int prev_node_idx = getFlatIdx(prev_inst_idx,
-                                             prev_acc_pattern_idx,
-                                             globals_->ACCESS_PATTERN_END_ITERATION_NUM);
+        const int prev_node_idx
+            = getFlatIdx(prev_inst_idx,
+                         prev_acc_pattern_idx,
+                         globals_->ACCESS_PATTERN_END_ITERATION_NUM);
         const auto& prev_node = nodes[prev_node_idx];
         if (prev_node.getPathCost() == std::numeric_limits<int>::max()) {
           continue;
