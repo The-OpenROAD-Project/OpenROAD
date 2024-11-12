@@ -609,7 +609,7 @@ std::unique_ptr<FlexDRWorker> FlexDR::createWorker(const int x_offset,
 }
 
 namespace {
-void printIteration(Logger* logger, const int iter)
+void printIteration(Logger* logger, const int iter, const bool stubborn_flow)
 {
   if (VERBOSE == 0) {
     return;
@@ -624,7 +624,12 @@ void printIteration(Logger* logger, const int iter)
   } else {
     suffix = "th";
   }
-  logger->info(DRT, 195, "Start {}{} optimization iteration.", iter, suffix);
+  logger->info(DRT,
+               195,
+               "Start {}{} {} iteration.",
+               iter,
+               suffix,
+               stubborn_flow ? "stubborn tiles" : "optimization");
 }
 
 void printIterationProgress(Logger* logger,
@@ -811,6 +816,18 @@ Rect FlexDR::getDRVBBox(const Rect& drv_rect) const
 }
 
 namespace stub_tiles {
+/**
+ * @brief Clusters DRV boxes.
+ *
+ * The function uses a greedy algorithm. It starts with a box and tries to merge
+ * all other boxes with the following condition:
+ * - The resulting merged box is smaller than or equal to 5x5 GCells.
+ * It keeps merging untill there is no other possible merges.
+ *
+ * @param drv_boxes A list of gcell rectangles(with the gcell indices) that hold
+ * the violations.
+ * @returns a list of merged boxes.
+ */
 std::vector<Rect> mergeBoxes(std::vector<Rect>& drv_boxes)
 {
   std::vector<Rect> merge_boxes;
@@ -839,6 +856,16 @@ std::vector<Rect> mergeBoxes(std::vector<Rect>& drv_boxes)
   } while (merged);
   return merge_boxes;
 }
+/**
+ * @brief Checks if the passed rectangle intersects with any other rectangle in
+ * the grid.
+ *
+ * @param grid A 2-d grid representing the current grid. (-1 value means
+ * unoccupied).
+ * @param rect_id the current rectangle id to disregard in the check.
+ * @return True if the rectangle intersects with an occupied cell by another
+ * rectangle.
+ */
 bool hasOtherRect(const std::vector<std::vector<int>>& grid,
                   const Rect& rect,
                   const int rect_id)
@@ -853,7 +880,21 @@ bool hasOtherRect(const std::vector<std::vector<int>>& grid,
                                           });
                      });
 }
-
+/**
+ * @brief Expands the passed rectangle in the required direction.
+ *
+ * The function expands the passed rectangle in the required direction a gcell
+ * at a time with the following conditions:
+ * - The expansion is less than or equal to the max_expansion
+ * - The expansion does not result a rectangle that intersects with another
+ *   rectangle in the grid.
+ * @param box The rectangle to be expanded.
+ * @param id The rectangle's id.
+ * @param grid A 2-d grid representing the current grid. (-1 value means
+ * unoccupied).
+ * @param dir The direction of the expansion (East, West, North, South).
+ * @return The number of expanded gcells (less than or equal to max_expansion)
+ */
 int expandBox(Rect& box,
               const int id,
               const std::vector<std::vector<int>>& grid,
@@ -918,6 +959,22 @@ struct Wavefront
   }
 };
 
+/**
+ * @brief Expand the boxes to reach a max size of 7x7 gcells.
+ *
+ * The function tries to expand each of the passed merged_boxes into a 7x7 gcell
+ * grids. There are 5 variantions of expansions that we consider in this
+ * function:
+ * - DRVs in Center-Center (Highest priority)
+ * - DRVs in Center-East
+ * - DRVs in Center-West
+ * - DRVs in Center-North
+ * - DRVs in Center-South
+ * We first expand the first type and then work on the other 4 types of
+ * expansions. We prioritize boxes with lower number of expansions done. That
+ * way we try to balance the resulting boxes so that each DRV box optimally has
+ * the same number of expanded boxes.
+ */
 std::vector<std::set<Rect>> expandBoxes(std::vector<Rect>& merged_boxes)
 {
   frUInt4 min_x_idx = std::numeric_limits<frUInt4>::max();
@@ -933,7 +990,9 @@ std::vector<std::set<Rect>> expandBoxes(std::vector<Rect>& merged_boxes)
   max_x_idx += 7;
   max_y_idx += 7;
   std::vector<std::vector<int>> grid(max_x_idx);
-  std::fill(grid.begin(), grid.end(), std::vector<int>(max_y_idx, -1));
+  std::fill(grid.begin(),
+            grid.end(),
+            std::vector<int>(max_y_idx, -1));  // -1 means unoccupied
   int id = 0;
   for (const auto& box : merged_boxes) {
     populateGrid(grid, box, id++);
@@ -987,6 +1046,15 @@ std::vector<std::set<Rect>> expandBoxes(std::vector<Rect>& merged_boxes)
   return expanded_boxes;
 }
 
+/**
+ * @brief Distributes the workers into batches of non-intersecting borders.
+ *
+ * The function first calculates the external box to each of the passed route
+ * boxes by bloating them by MTSAFEDIST. Then, it calculates the max box of
+ * each worker by merging all possible variations of expanded boxes. Finally, it
+ * distributes the workers into batches where each batch holds a set of workers
+ * that do not intersect.
+ */
 std::vector<std::vector<int>> getWorkerBatchesBoxes(
     frDesign* design,
     std::vector<std::set<Rect>>& expanded_boxes)
@@ -1043,9 +1111,6 @@ std::vector<std::vector<int>> getWorkerBatchesBoxes(
 void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
                                IterationProgress& iter_prog)
 {
-  if (VERBOSE > 0) {
-    logger_->info(DRT, 196, "Start Stubborn Tiles iteration({}).", iter_);
-  }
   if (graphics_) {
     graphics_->startIter(iter_);
   }
@@ -1056,14 +1121,6 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
   }
   auto merged_boxes = stub_tiles::mergeBoxes(drv_boxes);
   auto expanded_boxes = stub_tiles::expandBoxes(merged_boxes);
-  for (int worker_id = 0; worker_id < merged_boxes.size(); worker_id++) {
-    for (const auto& gcell_box : expanded_boxes[worker_id]) {
-      auto min_idx = gcell_box.ll();
-      auto max_idx = gcell_box.ur();
-      Rect route_box(getDesign()->getTopBlock()->getGCellBox(min_idx).ll(),
-                     getDesign()->getTopBlock()->getGCellBox(max_idx).ur());
-    }
-  }
   auto route_boxes_batches
       = stub_tiles::getWorkerBatchesBoxes(getDesign(), expanded_boxes);
   std::vector<frUInt4> drc_costs
@@ -1071,8 +1128,8 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
   std::vector<frUInt4> marker_costs = {args.workerMarkerCost,
                                        args.workerMarkerCost / 2,
                                        args.workerMarkerCost * 2};
-  std::vector<std::vector<std::pair<int, std::unique_ptr<FlexDRWorker>>>>
-      workers_batches(route_boxes_batches.size());
+  std::vector<std::vector<std::unique_ptr<FlexDRWorker>>> workers_batches(
+      route_boxes_batches.size());
   iter_prog.total_num_workers = 0;
   for (int batch_id = 0; batch_id < route_boxes_batches.size(); batch_id++) {
     auto& batch = route_boxes_batches[batch_id];
@@ -1088,7 +1145,8 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
             worker_args.workerDRCCost = drc_cost;
             worker_args.workerMarkerCost = marker_cost;
             workers_batches[batch_id].emplace_back(
-                worker_id, createWorker(0, 0, worker_args, route_box));
+                createWorker(0, 0, worker_args, route_box));
+            workers_batches[batch_id].back()->setWorkerId(worker_id);
             iter_prog.total_num_workers++;
           }
         }
@@ -1098,17 +1156,11 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
   bool changed = false;
   omp_set_num_threads(MAX_THREADS);
   for (auto& batch : workers_batches) {
-    const auto num_markers = getDesign()->getTopBlock()->getNumMarkers();
-#pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i < batch.size(); i++) {
-      batch[i].second->main(getDesign());
-#pragma omp critical
-      {
-        printIterationProgress(logger_, iter_prog, num_markers);
-      }
-    }
-    std::map<int, FlexDRWorker*> worker_best_result;
-    for (auto& [worker_id, worker] : batch) {
+    processWorkersBatch(batch, iter_prog);
+    std::map<int, FlexDRWorker*>
+        worker_best_result;  // holds the best worker in results
+    for (auto& worker : batch) {
+      const int worker_id = worker->getWorkerId();
       if (worker_best_result.find(worker_id) == worker_best_result.end()
           || worker->getBestNumMarkers()
                  < worker_best_result[worker_id]->getBestNumMarkers()) {
@@ -1128,10 +1180,79 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
   }
 }
 
-void FlexDR::searchRepair(const SearchRepairArgs& args)
+void FlexDR::optimizationFlow(const SearchRepairArgs& args,
+                              IterationProgress& iter_prog)
 {
+  if (graphics_) {
+    graphics_->startIter(iter_);
+  }
+  auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
+  auto& xgp = gCellPatterns.at(0);
+  auto& ygp = gCellPatterns.at(1);
   const int size = args.size;
   const int offset = args.offset;
+  iter_prog.total_num_workers
+      = (((int) xgp.getCount() - 1 - offset) / size + 1)
+        * (((int) ygp.getCount() - 1 - offset) / size + 1);
+
+  std::vector<std::unique_ptr<FlexDRWorker>> uworkers;
+  int batchStepX, batchStepY;
+
+  getBatchInfo(batchStepX, batchStepY);
+
+  std::vector<std::vector<std::vector<std::unique_ptr<FlexDRWorker>>>> workers(
+      batchStepX * batchStepY);
+
+  int xIdx = 0, yIdx = 0;
+  for (int i = offset; i < (int) xgp.getCount(); i += size) {
+    for (int j = offset; j < (int) ygp.getCount(); j += size) {
+      auto worker = createWorker(i, j, args);
+      int batch_idx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
+      const bool create_new_batch
+          = workers[batch_idx].empty()
+            || (!dist_on_ && workers[batch_idx].back().size() >= BATCHSIZE);
+      if (create_new_batch) {
+        workers[batch_idx].push_back(
+            std::vector<std::unique_ptr<FlexDRWorker>>());
+      }
+      workers[batch_idx].back().push_back(std::move(worker));
+
+      yIdx++;
+    }
+    yIdx = 0;
+    xIdx++;
+  }
+
+  omp_set_num_threads(MAX_THREADS);
+  int version = 0;
+  increaseClipsize_ = false;
+  numWorkUnits_ = 0;
+  // parallel execution
+  for (auto& workerBatch : workers) {
+    ProfileTask profile("DR:checkerboard");
+    for (auto& workersInBatch : workerBatch) {
+      {
+        const std::string batch_name = std::string("DR:batch<")
+                                       + std::to_string(workersInBatch.size())
+                                       + ">";
+        ProfileTask profile(batch_name.c_str());
+        if (dist_on_) {
+          processWorkersBatchDistributed(workersInBatch, version, iter_prog);
+        } else {
+          processWorkersBatch(workersInBatch, iter_prog);
+        }
+      }
+      endWorkersBatch(workersInBatch);
+    }
+  }
+
+  if (!iter_) {
+    removeGCell2BoundaryPin();
+  }
+}
+
+void FlexDR::searchRepair(const SearchRepairArgs& args)
+{
   const RipUpMode ripupMode = args.ripupMode;
   if ((ripupMode == RipUpMode::DRC || ripupMode == RipUpMode::NEARDRC)
       && getDesign()->getTopBlock()->getMarkers().empty()) {
@@ -1149,74 +1270,14 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   IterationProgress iter_prog;
   auto block = getDesign()->getTopBlock();
   const auto num_drvs = block->getNumMarkers();
-  if (iter_ >= 1 && num_drvs <= 11 && ripupMode != RipUpMode::ALL
-      && !control_.fixing_max_spacing) {
+  const bool stubborn_flow = num_drvs <= 11 && ripupMode != RipUpMode::ALL
+                             && ripupMode != RipUpMode::INCR
+                             && !control_.fixing_max_spacing;
+  printIteration(logger_, iter_, stubborn_flow);
+  if (stubborn_flow) {
     stubbornTilesFlow(args, iter_prog);
   } else {
-    printIteration(logger_, iter_);
-    if (graphics_) {
-      graphics_->startIter(iter_);
-    }
-    auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
-    auto& xgp = gCellPatterns.at(0);
-    auto& ygp = gCellPatterns.at(1);
-    iter_prog.total_num_workers
-        = (((int) xgp.getCount() - 1 - offset) / size + 1)
-          * (((int) ygp.getCount() - 1 - offset) / size + 1);
-
-    std::vector<std::unique_ptr<FlexDRWorker>> uworkers;
-    int batchStepX, batchStepY;
-
-    getBatchInfo(batchStepX, batchStepY);
-
-    std::vector<std::vector<std::vector<std::unique_ptr<FlexDRWorker>>>>
-        workers(batchStepX * batchStepY);
-
-    int xIdx = 0, yIdx = 0;
-    for (int i = offset; i < (int) xgp.getCount(); i += size) {
-      for (int j = offset; j < (int) ygp.getCount(); j += size) {
-        auto worker = createWorker(i, j, args);
-        int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
-        if (workers[batchIdx].empty()
-            || (!dist_on_
-                && (int) workers[batchIdx].back().size() >= BATCHSIZE)) {
-          workers[batchIdx].push_back(
-              std::vector<std::unique_ptr<FlexDRWorker>>());
-        }
-        workers[batchIdx].back().push_back(std::move(worker));
-
-        yIdx++;
-      }
-      yIdx = 0;
-      xIdx++;
-    }
-
-    omp_set_num_threads(MAX_THREADS);
-    int version = 0;
-    increaseClipsize_ = false;
-    numWorkUnits_ = 0;
-    // parallel execution
-    for (auto& workerBatch : workers) {
-      ProfileTask profile("DR:checkerboard");
-      for (auto& workersInBatch : workerBatch) {
-        {
-          const std::string batch_name = std::string("DR:batch<")
-                                         + std::to_string(workersInBatch.size())
-                                         + ">";
-          ProfileTask profile(batch_name.c_str());
-          if (dist_on_) {
-            processWorkersBatchDistributed(workersInBatch, version, iter_prog);
-          } else {
-            processWorkersBatch(workersInBatch, iter_prog);
-          }
-        }
-        endWorkersBatch(workersInBatch);
-      }
-    }
-
-    if (!iter_) {
-      removeGCell2BoundaryPin();
-    }
+    optimizationFlow(args, iter_prog);
   }
 
   if (VERBOSE > 0) {

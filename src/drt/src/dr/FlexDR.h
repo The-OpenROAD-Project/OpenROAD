@@ -217,6 +217,8 @@ class FlexDR
   Rect getDRVBBox(const Rect& drv_rect) const;
   void stubbornTilesFlow(const SearchRepairArgs& args,
                          IterationProgress& iter_prog);
+  void optimizationFlow(const SearchRepairArgs& args,
+                        IterationProgress& iter_prog);
 };
 
 class FlexDRWorker;
@@ -390,6 +392,7 @@ class FlexDRWorker
     gridGraph_.setGraphics(in);
   }
   void setViaData(FlexDRViaData* viaData) { via_data_ = viaData; }
+  void setWorkerId(const int id) { worker_id_ = id; }
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
   void getRouteBox(Rect& boxIn) const { boxIn = routeBox_; }
@@ -431,6 +434,7 @@ class FlexDRWorker
   const FlexGridGraph& getGridGraph() const { return gridGraph_; }
   frUInt4 getWorkerMarkerCost() const { return workerMarkerCost_; }
   frUInt4 getWorkerDRCCost() const { return workerDRCCost_; }
+  int getWorkerId() const { return worker_id_; }
   // others
   int main(frDesign* design);
   void distributedMain(frDesign* design);
@@ -503,30 +507,30 @@ class FlexDRWorker
     {
     }
   };
-  frDesign* design_ = nullptr;
-  Logger* logger_ = nullptr;
-  FlexDRGraphics* graphics_ = nullptr;  // owned by FlexDR
-  frDebugSettings* debugSettings_ = nullptr;
-  FlexDRViaData* via_data_ = nullptr;
+  frDesign* design_{nullptr};
+  Logger* logger_{nullptr};
+  FlexDRGraphics* graphics_{nullptr};  // owned by FlexDR
+  frDebugSettings* debugSettings_{nullptr};
+  FlexDRViaData* via_data_{nullptr};
   Rect routeBox_;
   Rect extBox_;
   Rect drcBox_;
-  int drIter_ = 0;
-  int mazeEndIter_ = 0;
-  bool followGuide_ = false;
-  bool needRecheck_ = false;
-  bool skipRouting_ = false;
-  RipUpMode ripupMode_ = RipUpMode::DRC;
+  int drIter_{0};
+  int mazeEndIter_{0};
+  bool followGuide_{false};
+  bool needRecheck_{false};
+  bool skipRouting_{false};
+  RipUpMode ripupMode_{RipUpMode::DRC};
   // drNetOrderingEnum netOrderingMode;
-  frUInt4 workerDRCCost_ = 0;
-  frUInt4 workerMarkerCost_ = 0;
-  frUInt4 workerFixedShapeCost_ = 0;
-  float workerMarkerDecay_ = 0;
+  frUInt4 workerDRCCost_{0};
+  frUInt4 workerMarkerCost_{0};
+  frUInt4 workerFixedShapeCost_{0};
+  float workerMarkerDecay_{0};
   // used in init route as gr boundary pin
   std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
       boundaryPin_;
-  int pinCnt_ = 0;
-  int initNumMarkers_ = 0;
+  int pinCnt_{0};
+  int initNumMarkers_{0};
   std::map<FlexMazeIdx, drAccessPattern*> apSVia_;
   std::set<FlexMazeIdx> planarHistoryMarkers_;
   std::set<FlexMazeIdx> viaHistoryMarkers_;
@@ -548,13 +552,14 @@ class FlexDRWorker
   std::vector<Point3D> specialAccessAPs;
 
   // distributed
-  dst::Distributed* dist_ = nullptr;
+  dst::Distributed* dist_{nullptr};
   std::string dist_ip_;
-  uint16_t dist_port_ = 0;
+  uint16_t dist_port_{0};
   std::string dist_dir_;
-  bool dist_on_ = false;
-  bool isCongested_ = false;
-  bool save_updates_ = false;
+  bool dist_on_{false};
+  bool isCongested_{false};
+  bool save_updates_{false};
+  int worker_id_{0};
 
   // hellpers
   bool isRoutePatchWire(const frPatchWire* pwire) const;
