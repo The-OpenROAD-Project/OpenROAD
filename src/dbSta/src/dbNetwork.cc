@@ -1273,8 +1273,6 @@ Port* dbNetwork::port(const Pin* pin) const
   dbModITerm* moditerm;
   dbModBTerm* modbterm;
   Port* ret = nullptr;
-  static int debug;
-  debug++;
   // Will return the bterm for a top level pin
   staToDb(pin, iterm, bterm, moditerm, modbterm);
 
@@ -1738,9 +1736,11 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
 
   // Use the default liberty for "linking" the db/LEF masters.
   LibertyCell* lib_cell = findLibertyCell(cell_name);
+  TestCell* test_cell = nullptr;
   if (lib_cell) {
     ccell->setLibertyCell(lib_cell);
     lib_cell->setExtCell(reinterpret_cast<void*>(master));
+    test_cell = lib_cell->testCell();
   }
 
   for (dbMTerm* mterm : master->getMTerms()) {
@@ -1764,6 +1764,12 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
                       cell_name,
                       port_name);
       }
+      if (test_cell) {
+        LibertyPort* test_port = test_cell->findLibertyPort(port_name);
+        if (test_port) {
+          test_port->setExtPort(mterm);
+        }
+      }
     }
   }
   // Assume msb first busses because LEF has no clue about busses.
@@ -1778,12 +1784,19 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
     LibertyCell* lib_cell = lib->findLibertyCell(cell_name);
     if (lib_cell) {
       lib_cell->setExtCell(reinterpret_cast<void*>(master));
+      TestCell* test_cell = lib_cell->testCell();
 
       for (dbMTerm* mterm : master->getMTerms()) {
         const char* port_name = mterm->getConstName();
         LibertyPort* lib_port = lib_cell->findLibertyPort(port_name);
         if (lib_port) {
           lib_port->setExtPort(mterm);
+        }
+        if (test_cell) {
+          LibertyPort* test_port = test_cell->findLibertyPort(port_name);
+          if (test_port) {
+            test_port->setExtPort(mterm);
+          }
         }
       }
     }
@@ -1888,6 +1901,7 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
         if (ccell->libertyCell() == nullptr) {
           LibertyCell* lcell = lib->findLibertyCell(ccell->name());
           if (lcell) {
+            TestCell* test_cell = lcell->testCell();
             lcell->setExtCell(ccell->extCell());
             ccell->setLibertyCell(lcell);
             ConcreteCellPortBitIterator* port_iter = ccell->portBitIterator();
@@ -1907,6 +1921,13 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
                               "Liberty cell {} pin {} missing from LEF macro.",
                               lcell->name(),
                               port_name);
+              }
+
+              if (test_cell) {
+                LibertyPort* test_port = test_cell->findLibertyPort(port_name);
+                if (test_port) {
+                  test_port->setExtPort(cport->extPort());
+                }
               }
             }
             delete port_iter;

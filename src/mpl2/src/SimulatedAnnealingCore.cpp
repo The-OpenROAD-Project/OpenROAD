@@ -576,8 +576,8 @@ void SimulatedAnnealingCore<T>::fastSA()
   int num_restart = 1;
   const int max_num_restart = 2;
 
-  if (best_valid_result_ && isValid()) {
-    updateBestValidSoftResult();
+  if (isValid()) {
+    updateBestValidResult();
   }
 
   while (step <= max_num_step_) {
@@ -585,13 +585,11 @@ void SimulatedAnnealingCore<T>::fastSA()
       perturb();
       cost = calNormCost();
 
-      if (best_valid_result_) {
-        const bool keep_result
-            = cost < pre_cost
-              || best_valid_result_->sequence_pair.pos_sequence.empty();
-        if (isValid() && keep_result) {
-          updateBestValidSoftResult();
-        }
+      const bool keep_result
+          = cost < pre_cost
+            || best_valid_result_.sequence_pair.pos_sequence.empty();
+      if (isValid() && keep_result) {
+        updateBestValidResult();
       }
 
       delta_cost = cost - pre_cost;
@@ -637,18 +635,52 @@ void SimulatedAnnealingCore<T>::fastSA()
     graphics_->doNotSkip();
   }
   calPenalty();
+
+  if (!isValid() && !best_valid_result_.sequence_pair.pos_sequence.empty()) {
+    useBestValidResult();
+  }
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::updateBestValidSoftResult()
+void SimulatedAnnealingCore<T>::updateBestValidResult()
 {
-  best_valid_result_->sequence_pair.pos_sequence = pos_seq_;
-  best_valid_result_->sequence_pair.neg_sequence = neg_seq_;
+  best_valid_result_.sequence_pair.pos_sequence = pos_seq_;
+  best_valid_result_.sequence_pair.neg_sequence = neg_seq_;
 
-  for (const int macro_id : pos_seq_) {
-    T& macro = macros_[macro_id];
-    best_valid_result_->macro_id_to_width[macro_id] = macro.getWidth();
+  if constexpr (std::is_same_v<T, SoftMacro>) {
+    for (const int macro_id : pos_seq_) {
+      SoftMacro& macro = macros_[macro_id];
+      best_valid_result_.macro_id_to_width[macro_id] = macro.getWidth();
+    }
   }
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::useBestValidResult()
+{
+  pos_seq_ = best_valid_result_.sequence_pair.pos_sequence;
+  neg_seq_ = best_valid_result_.sequence_pair.neg_sequence;
+
+  if constexpr (std::is_same_v<T, SoftMacro>) {
+    for (const int macro_id : pos_seq_) {
+      SoftMacro& macro = macros_[macro_id];
+      const float valid_result_width
+          = best_valid_result_.macro_id_to_width.at(macro_id);
+
+      if (macro.isMacroCluster()) {
+        const float valid_result_height = macro.getArea() / valid_result_width;
+        macro.setShapeF(valid_result_width, valid_result_height);
+      } else {
+        macro.setWidth(valid_result_width);
+      }
+    }
+  }
+
+  packFloorplan();
+  if (graphics_) {
+    graphics_->doNotSkip();
+  }
+  calPenalty();
 }
 
 template <class T>

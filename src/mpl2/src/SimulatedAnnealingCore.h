@@ -123,18 +123,19 @@ class SimulatedAnnealingCore
   virtual void fillDeadSpace() = 0;
 
  protected:
-  // The same sequence pair can represent different floorplan
-  // arrangements depending on the macros' shapes.
-  struct SoftResult
+  struct Result
   {
     SequencePair sequence_pair;
-    std::map<int, float> macro_id_to_width;  // Macros' shapes.
+    // [Only for SoftMacro] The same sequence pair can represent different
+    // floorplan arrangements depending on the macros' shapes.
+    std::map<int, float> macro_id_to_width;
   };
 
   void fastSA();
 
   void initSequencePair();
-  void updateBestValidSoftResult();
+  void updateBestValidResult();
+  void useBestValidResult();
 
   virtual float calNormCost() const = 0;
   virtual void calPenalty() = 0;
@@ -239,7 +240,7 @@ class SimulatedAnnealingCore
   utl::Logger* logger_ = nullptr;
   Mpl2Observer* graphics_ = nullptr;
 
-  std::unique_ptr<SoftResult> best_valid_result_;
+  Result best_valid_result_;
 
   std::vector<float> cost_list_;  // store the cost in the list
   std::vector<float> T_list_;     // store the temperature

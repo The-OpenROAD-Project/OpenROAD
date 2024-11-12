@@ -526,7 +526,7 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
   std::map<frCoord, frAccessPointEnum> y_coords;
   int hwidth = layer->getWidth() / 2;
   bool use_center_line = false;
-  if (is_macro_cell_pin) {
+  if (is_macro_cell_pin && !layer->getLef58RightWayOnGridOnlyConstraint()) {
     auto rect_dir = gtl::guess_orientation(rect);
     if ((rect_dir == gtl::HORIZONTAL && is_layer1_horz)
         || (rect_dir == gtl::VERTICAL && !is_layer1_horz)) {

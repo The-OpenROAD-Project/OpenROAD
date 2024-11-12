@@ -2536,7 +2536,7 @@ void FlexGR::updateDb()
              lNum += 2) {
           auto layer = design_->getTech()->getLayer(lNum);
           auto dbLayer = dbTech->findLayer(layer->getName().c_str());
-          odb::dbGuide::create(dbNet, dbLayer, dbLayer, bbox);
+          odb::dbGuide::create(dbNet, dbLayer, dbLayer, bbox, false);
         }
       } else {
         auto layer = design_->getTech()->getLayer(bNum);
@@ -2545,7 +2545,8 @@ void FlexGR::updateDb()
             dbNet,
             dbLayer,
             dbLayer,
-            {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()});
+            {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()},
+            false);
       }
     }
     auto dbGuides = dbNet->getGuides();
