@@ -11,16 +11,3 @@ RUN apt-get install -y lsb-release wget software-properties-common gnupg \
       && chmod +x llvm.sh \
       && ./llvm.sh 16 all \
       && rm llvm.sh
-
-# Install Patched LEMON # Current LEMON does not compile with C++20
-# https://lemon.cs.elte.hu/trac/lemon/ticket/631#no1
-RUN apt-get install -y mercurial \
-      && hg clone http://lemon.cs.elte.hu/hg/lemon \
-      && cd lemon \
-      && hg co a278d16bd2d082aa3c52ff4a9b0e2224ddc0549a \
-      && wget https://raw.githubusercontent.com/The-OpenROAD-Project/OpenROAD/master/third-party/lemon/patches/allocator-patch.patch \
-      && hg import allocator-patch.patch \
-      && cmake -B build \
-      && cmake --build build \
-      && cmake --build build --target install \
-      && cd .. && rm -rf lemon
