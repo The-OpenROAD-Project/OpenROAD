@@ -278,8 +278,8 @@ proc clear_global_connect { } {
   [ord::get_db_block] clearGlobalConnect
 }
 
-sta::define_cmd_args "report_global_connect" {}
-proc report_global_connect { } {
+sta::define_cmd_args "report_global_connect" {[> filename] [>> filename]} ;# checker off
+sta::proc_redirect report_global_connect {
   [ord::get_db_block] reportGlobalConnect
 }
 
