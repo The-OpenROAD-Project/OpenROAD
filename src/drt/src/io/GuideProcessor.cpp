@@ -1962,21 +1962,9 @@ void GuideProcessor::processGuides()
   for (auto& [net, rects] : tmp_guides_) {
     nets_to_guides.push_back({net, rects});
     net->setOrigGuides(rects);
-<<<<<<< HEAD
-    genGuides(net, rects);
-    cnt++;
-    if (globals_->VERBOSE > 0) {
-      if (cnt < 1000000) {
-        if (cnt % 100000 == 0) {
-          logger_->report("  complete {} nets.", cnt);
-        }
-      } else {
-        if (cnt % 1000000 == 0) {
-          logger_->report("  complete {} nets.", cnt);
-=======
     net_to_gr_pins[net];
   }
-  omp_set_num_threads(MAX_THREADS);
+  omp_set_num_threads(globals_->MAX_THREADS);
   utl::ThreadException exception;
 #pragma omp parallel for
   for (int i = 0; i < nets_to_guides.size(); i++) {
@@ -1987,7 +1975,7 @@ void GuideProcessor::processGuides()
 #pragma omp critical
       {
         cnt++;
-        if (VERBOSE > 0) {
+        if (globals_->VERBOSE > 0) {
           if (cnt < 1000000) {
             if (cnt % 100000 == 0) {
               logger_->report("  complete {} nets.", cnt);
@@ -1997,7 +1985,6 @@ void GuideProcessor::processGuides()
               logger_->report("  complete {} nets.", cnt);
             }
           }
->>>>>>> dcba5786c8e714e3b7682a98d73de40e875699b1
         }
       }
     } catch (...) {
@@ -2025,16 +2012,11 @@ void GuideProcessor::processGuides()
   logger_->info(DRT, 179, "Init gr pin query.");
   getDesign()->getRegionQuery()->initGRPin(all_gr_pins);
 
-<<<<<<< HEAD
-  if (!globals_->SAVE_GUIDE_UPDATES) {
-    if (globals_->VERBOSE > 0) {
-=======
-  if (VERBOSE > 0) {
+  if (globals_->VERBOSE > 0) {
     t.print(logger_);
   }
-  if (!SAVE_GUIDE_UPDATES) {
-    if (VERBOSE > 0) {
->>>>>>> dcba5786c8e714e3b7682a98d73de40e875699b1
+  if (!globals_->SAVE_GUIDE_UPDATES) {
+    if (globals_->VERBOSE > 0) {
       logger_->info(DRT, 245, "skipped writing guide updates to database.");
     }
   } else {
