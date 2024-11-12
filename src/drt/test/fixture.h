@@ -72,7 +72,7 @@ class Fixture
                        frCoord yh,
                        frLayerNum lNum = 2);
 
-  frInst* makeInst(const char* name, frMaster* master, frCoord x, frCoord y);
+  frInst* makeInst(const char* name, frMaster* master, odb::dbInst* db_inst);
 
   frLef58CornerSpacingConstraint* makeCornerConstraint(
       frLayerNum layer_num,

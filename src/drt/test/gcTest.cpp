@@ -136,15 +136,33 @@ BOOST_AUTO_TEST_CASE(metal_short_obs)
   auto block = makeMacro("OBS");
   makeMacroObs(block, 450, -50, 750, 200, 2);
   makeMacroPin(block, "in", 450, 40, 550, 90, 2);
-  auto i1 = makeInst("i1", block, 0, 0);
+  // Bookmark
+
+  std::cout << "[BNMFW] Ping 0" << std::endl;
+  auto db_inst = std::make_unique<odb::dbInst>();
+  dbTransform trans = dbTransform();
+  std::cout << "[BNMFW] Ping 0-1" << std::endl;
+  db_inst->setTransform(trans);
+  // db_inst->setOrigin(0,0);
+  std::cout << "[BNMFW] Ping 0-2" << std::endl;
+  // db_inst->setOrient(odb::dbOrientType::R0);
+
+  std::cout << "[BNMFW] Ping 1" << std::endl;
+  auto i1 = makeInst("i1", block, db_inst.get());
   auto instTerm = i1->getInstTerms()[0].get();
   instTerm->addToNet(n1);
 
+  std::cout << "[BNMFW] Ping 2" << std::endl;
   n1->addInstTerm(instTerm);
+  std::cout << "[BNMFW] Ping 3" << std::endl;
   auto instTermNode = std::make_unique<frNode>();
+  std::cout << "[BNMFW] Ping 4" << std::endl;
   instTermNode->setPin(instTerm);
+  std::cout << "[BNMFW] Ping 5" << std::endl;
   instTermNode->setType(frNodeTypeEnum::frcPin);
+  std::cout << "[BNMFW] Ping 6" << std::endl;
   n1->addNode(instTermNode);
+  std::cout << "[BNMFW] Ping !" << std::endl;
   runGC();
 
   // Test the results
@@ -445,7 +463,12 @@ BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
   makePathseg(n1, 2, {0, 50}, {500, 50}, 100);
   auto block = makeMacro("DRW");
   makeMacroObs(block, 0, 140, 500, 340, 2, legal ? 100 : -1);
-  makeInst("i1", block, 0, 0);
+  // Bookmark
+
+  auto db_inst = std::make_unique<odb::dbInst>();
+  db_inst->setOrigin(0, 0);
+  db_inst->setOrient(odb::dbOrientType::R0);
+  makeInst("i1", block, db_inst.get());
   /*
   If DESIGNRULEWIDTH is 100
     width(n1) = 100      width(obs) = 100 : reqSpcVal = 0

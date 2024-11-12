@@ -490,7 +490,7 @@ void FlexDRWorker::initNets_initDR_helper(
     Rect rect;
     if (netTerms.at(i)->typeId() == frcInstTerm) {
       auto iterm = static_cast<frInstTerm*>(netTerms.at(i));
-      rect = iterm->getBBox(true);
+      rect = iterm->getBBox();
     } else {
       auto bterm = static_cast<frBTerm*>(netTerms.at(i));
       rect = bterm->getBBox();
@@ -560,7 +560,7 @@ void FlexDRWorker::initNets_initDR_helper(
     Rect rect;
     if (netTerms.at(i)->typeId() == frcInstTerm) {
       auto iterm = static_cast<frInstTerm*>(netTerms.at(i));
-      rect = iterm->getBBox(true);
+      rect = iterm->getBBox();
     } else {
       auto bterm = static_cast<frBTerm*>(netTerms.at(i));
       rect = bterm->getBBox();
@@ -1183,9 +1183,7 @@ void FlexDRWorker::initNet_term(const frDesign* design,
       case frcInstTerm: {
         auto instTerm = static_cast<frInstTerm*>(term);
         frInst* inst = instTerm->getInst();
-        shiftXform = inst->getTransform();
-        // logger_->report("[BNMFW] geTransform FlexDRWorker::initNet_term");
-        shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+        shiftXform = inst->getNoRotationTransform();
         instXform = inst->getDBTransform();
         auto trueTerm = instTerm->getTerm();
         const std::string name = inst->getName() + "/" + trueTerm->getName();
@@ -2899,7 +2897,7 @@ void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
       auto instTerm = static_cast<frInstTerm*>(obj);
       auto inst = instTerm->getInst();
       const dbTransform xform = inst->getDBTransform();
-      const dbTransform shiftXform(inst->getTransform().getOffset());
+      const dbTransform shiftXform = inst->getNoRotationTransform();
       const dbMasterType masterType = inst->getMaster()->getMasterType();
       bool accessHorz = false;
       bool accessVert = false;

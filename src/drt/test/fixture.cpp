@@ -101,6 +101,7 @@ frMaster* Fixture::makeMacro(const char* name,
                              frCoord sizeY)
 {
   auto block = std::make_unique<frMaster>(name);
+  // auto db_master = std::make_unique<odb::dbMaster>();
   std::vector<frBoundary> bounds;
   frBoundary bound;
   std::vector<Point> points;
@@ -176,14 +177,11 @@ frTerm* Fixture::makeMacroPin(frMaster* master,
 
 frInst* Fixture::makeInst(const char* name,
                           frMaster* master,
-                          frCoord x,
-                          frCoord y)
+                          odb::dbInst* db_inst)
 {
-  auto uInst = std::make_unique<frInst>(name, master);
+  auto uInst = std::make_unique<frInst>(name, master, db_inst);
   auto tmpInst = uInst.get();
   tmpInst->setId(numInsts++);
-  tmpInst->setOrigin(Point(x, y));
-  tmpInst->setOrient(dbOrientType::R0);
   for (auto& uTerm : tmpInst->getMaster()->getTerms()) {
     auto term = uTerm.get();
     std::unique_ptr<frInstTerm> instTerm
