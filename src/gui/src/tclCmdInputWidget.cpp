@@ -108,7 +108,7 @@ void TclCmdInputWidget::setTclInterp(
     // OpenRoad is not initialized
     emit commandAboutToExecute();
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-    const bool setup_tcl_result = ord::tclAppInit(interp_) == TCL_OK;
+    const bool setup_tcl_result = ord::tclInit(interp_) == TCL_OK;
     post_or_init();
     processTclResult(setup_tcl_result);
     emit commandFinishedExecuting(setup_tcl_result);
