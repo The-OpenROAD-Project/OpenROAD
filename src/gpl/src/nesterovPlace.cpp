@@ -455,18 +455,13 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       else
         db_cbk_->removeOwner();
 
-      // auto block = pbc_->db()->getChip()->getBlock();
+      auto block = pbc_->db()->getChip()->getBlock();
       bool shouldTdProceed = tb_->updateGNetWeights(virtual_td_iter);
 
       db_cbk_->printCallCounts();
       db_cbk_->resetCallCounts();
 
-      if (!virtual_td_iter) {        
-        // nbc_->fixPointers();
-
-        // Calling this here because we need access to nesterovBase, but this
-        // goes along with fixpointers(), which is called inside timingBase!
-        // nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
+      if (!virtual_td_iter) {
         for (auto& nesterov : nbVec_) {
           nesterov->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
           // order in routability:
@@ -475,24 +470,15 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           // 3. updateareas
           // 4. updateDensitySize
 
-          // log_->report("prev nesterov->targetDensity():     {}",
-          //              nesterov->targetDensity());
-          // log_->report("nbc_->getDeltaArea():              {}",
-          //              block->dbuAreaToMicrons(nbc_->getDeltaArea()));
-          // log_->report("nesterov->nesterovInstsArea():     {}",
-          //              block->dbuAreaToMicrons(nesterov->nesterovInstsArea()));
-          // log_->report("nesterov->totalFillerArea():       {}",
-          //              block->dbuAreaToMicrons(nesterov->totalFillerArea()));
-          // log_->report("nesterov->whiteSpaceArea():        {}",
-          //              block->dbuAreaToMicrons(nesterov->whiteSpaceArea()));
-
           nesterov->setTargetDensity(
               static_cast<float>(nbc_->getDeltaArea()
                                  + nesterov->nesterovInstsArea()
                                  + nesterov->totalFillerArea())
               / static_cast<float>(nesterov->whiteSpaceArea()));
 
-          log_->report("new nesterov->targetDensity():     {}",
+          log_->info(GPL, 107, "Timing-driven: RSZ delta area:     {}",
+                       block->dbuAreaToMicrons(nbc_->getDeltaArea()));
+          log_->info(GPL, 108, "Timing-driven: new target density: {}",
                        nesterov->targetDensity());
           nbc_->resetDeltaArea();
           nesterov->updateAreas();
