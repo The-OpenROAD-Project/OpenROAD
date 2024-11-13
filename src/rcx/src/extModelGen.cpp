@@ -55,6 +55,14 @@ uint extRCModel::GenExtModel(std::list<std::string> &corner_list, const char *ou
 
 uint extMain::GenExtModel(std::list<std::string> spef_file_list, std::list<std::string> corner_list, const char *out_file, const char *comment, const char *version, int pattern)
 {
+    std::vector<std::string> corner_name;
+
+    std::list<std::string>::iterator it1;
+    for (it1 = corner_list.begin(); it1 != corner_list.end(); ++it1)
+    {
+        std::string str = *it1;
+        corner_name.push_back(str);
+    }
     uint widthCnt = 12;
     uint layerCnt = _tech->getRoutingLayerCount() + 1;
     FILE *outFP= NULL;
@@ -77,10 +85,10 @@ uint extMain::GenExtModel(std::list<std::string> spef_file_list, std::list<std::
         extRulesModel->setExtMain(this);
 
         uint diagOption = 1;
-        const char *out = "1.model";
-        if (cnt == 1)
-           out = "2.model";
-        extRulesModel->ReadRCDB(_block, widthCnt, diagOption, (char *) out);
+        char *out = (char *) corner_name[cnt].c_str();
+       // if (cnt == 1)
+       //    out = "2.model";
+        extRulesModel->ReadRCDB(_block, widthCnt, diagOption, out);
         if (outFP==NULL)
             outFP = extRulesModel->InitWriteRules(out_file, corner_list, comment, binary, fileCnt);
 
@@ -359,7 +367,7 @@ uint extModelGen::ReadRCDB(dbBlock *block, uint widthCnt, uint diagOption, char 
     extMain *extMain= get_extMain();
     // ORIG: setDiagModel(1);
     setDiagModel(diagOption);
-    setOptions("./", "", false, true, false, false);
+  //  setOptions("./", "", false, true, false, false);
 
     uint layerCnt= getLayerCnt();
     extMetRCTable *rcModel = initCapTables(layerCnt, widthCnt);
