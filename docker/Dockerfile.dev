@@ -21,4 +21,3 @@ RUN echo "$fromImage" | grep -q "ubuntu" && \
     echo "Skipping strip command as fromImage does not contain 'ubuntu'"
     
 RUN rm -f /tmp/DependencyInstaller.sh
-
