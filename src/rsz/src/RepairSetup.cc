@@ -561,6 +561,9 @@ bool RepairSetup::repairPath(PathRef& path,
                        drvr_index,
                        &expanded,
                        setup_slack_margin)) {
+          Pin* drvr_pin = drvr_path->pin(this);
+          Instance* drvr = network_->instance(drvr_pin);
+          buf_to_remove_.push_back(drvr);
           changed = true;
           break;
         }
@@ -625,6 +628,10 @@ bool RepairSetup::repairPath(PathRef& path,
         }
       }
     }
+    for (auto inst : buf_to_remove_) {
+      resizer_->removeBuffer(inst, /* recordJournal */ true);
+    }
+    buf_to_remove_.clear();
   }
   return changed;
 }
@@ -858,8 +865,7 @@ bool RepairSetup::removeDrvr(const PathRef* drvr_path,
       return false;
     }
 
-    if (resizer_->removeBuffer(
-            drvr, /* honorDontTouch */ true, /* recordJournal */ true)) {
+    if (resizer_->canRemoveBuffer(drvr, /* honorDontTouch */ true)) {
       removed_buffer_count_++;
       return true;
     }
@@ -977,7 +983,7 @@ bool RepairSetup::estimatedSlackOK(const SlackEstimatorParams& params)
                  "because side input pin {} will have a violating slack of {}:"
                  " old slack={}, slack margin={}, delay_degrad={}",
                  db_network_->name(params.driver),
-                 db_network_->name(side_input_pin), new_slack, old_slack, 
+                 db_network_->name(side_input_pin), new_slack, old_slack,
                  params.setup_slack_margin, delay_degrad);
       // clang-format on
       return false;

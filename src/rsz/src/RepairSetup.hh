@@ -235,6 +235,7 @@ class RepairSetup : public sta::dbStaState
                          int num_endpts);
   void repairSetupLastGasp(const OptoParams& params, int& num_viols);
 
+  std::vector<Instance*> buf_to_remove_;
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;

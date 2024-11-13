@@ -261,7 +261,8 @@ void Resizer::removeBuffers(sta::InstanceSeq insts, bool recordJournal)
     // remove all the buffers
     for (dbInst* db_inst : block_->getInsts()) {
       Instance* buffer = db_network_->dbToSta(db_inst);
-      if (removeBuffer(buffer, /* honor dont touch */ true, recordJournal)) {
+      if (removeBufferIfPossible(
+              buffer, /* honor dont touch */ true, recordJournal)) {
         remove_count++;
       }
     }
@@ -270,7 +271,7 @@ void Resizer::removeBuffers(sta::InstanceSeq insts, bool recordJournal)
     InstanceSeq::Iterator inst_iter(insts);
     while (inst_iter.hasNext()) {
       Instance* buffer = const_cast<Instance*>(inst_iter.next());
-      if (removeBuffer(
+      if (removeBufferIfPossible(
               buffer, /* don't honor dont touch */ false, recordJournal)) {
         remove_count++;
       } else {
@@ -299,6 +300,17 @@ bool Resizer::bufferBetweenPorts(Instance* buffer)
   return hasPort(in_net) && hasPort(out_net);
 }
 
+bool Resizer::removeBufferIfPossible(Instance* buffer,
+                                     bool honorDontTouchFixed,
+                                     bool recordJournal)
+{
+  if (canRemoveBuffer(buffer, honorDontTouchFixed)) {
+    removeBuffer(buffer, recordJournal);
+    return true;
+  }
+  return false;
+}
+
 // There are two buffer removal modes: auto and manual:
 // 1) auto mode: this happens during setup fixing, power recovery, buffer
 // removal
@@ -306,9 +318,7 @@ bool Resizer::bufferBetweenPorts(Instance* buffer)
 // 2) manual mode: this happens during manual buffer removal during ECO
 //      This ignores dont-touch and fixed cell (boundary buffer constraints are
 //      still honored)
-bool Resizer::removeBuffer(Instance* buffer,
-                           bool honorDontTouchFixed,
-                           bool recordJournal)
+bool Resizer::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
 {
   LibertyCell* lib_cell = network_->libertyCell(buffer);
   if (!lib_cell || !lib_cell->isBuffer()) {
@@ -320,17 +330,54 @@ bool Resizer::removeBuffer(Instance* buffer,
     return false;
   }
   dbInst* db_inst = db_network_->staToDb(buffer);
-  if (db_inst->isDoNotTouch()) {
-    if (honorDontTouchFixed) {
+  if (honorDontTouchFixed) {
+    if (db_inst->isDoNotTouch() || db_inst->isFixed()) {
       return false;
     }
+  }
+  LibertyPort *in_port, *out_port;
+  lib_cell->bufferPorts(in_port, out_port);
+  Pin* in_pin = db_network_->findPin(buffer, in_port);
+  Pin* out_pin = db_network_->findPin(buffer, out_port);
+  Net* in_net = db_network_->net(in_pin);
+  Net* out_net = db_network_->net(out_pin);
+  dbNet* in_db_net = db_network_->staToDb(in_net);
+  dbNet* out_db_net = db_network_->staToDb(out_net);
+  // honor net dont-touch on input net or output net
+  if (honorDontTouchFixed) {
+    if ((in_db_net && in_db_net->isDoNotTouch())
+        || (out_db_net && out_db_net->isDoNotTouch())) {
+      return false;
+    }
+  }
+  bool out_net_ports = hasPort(out_net);
+  Net* removed;
+  if (out_net_ports) {
+    if (hasPort(in_net)) {
+      return false;
+    }
+    removed = in_net;
+  } else {
+    // default or out_net_ports
+    // Default to in_net surviving so drivers (cached in dbNetwork)
+    // do not change.
+    removed = out_net;
+  }
+  return (!sdc_->isConstrained(in_pin) && !sdc_->isConstrained(out_pin)
+          && !sdc_->isConstrained(removed) && !sdc_->isConstrained(buffer));
+}
+
+void Resizer::removeBuffer(Instance* buffer, bool recordJournal)
+{
+  LibertyCell* lib_cell = network_->libertyCell(buffer);
+  // Do not remove buffers connected to input/output ports
+  // because verilog netlists use the net name for the port.
+  dbInst* db_inst = db_network_->staToDb(buffer);
+  if (db_inst->isDoNotTouch()) {
     //  remove instance dont touch
     db_inst->setDoNotTouch(false);
   }
   if (db_inst->isFixed()) {
-    if (honorDontTouchFixed) {
-      return false;
-    }
     // change FIXED to PLACED just in case
     db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }
@@ -345,9 +392,6 @@ bool Resizer::removeBuffer(Instance* buffer,
   // honor net dont-touch on input net or output net
   if ((in_db_net && in_db_net->isDoNotTouch())
       || (out_db_net && out_db_net->isDoNotTouch())) {
-    if (honorDontTouchFixed) {
-      return false;
-    }
     // remove net dont touch for manual ECO
     if (in_db_net) {
       in_db_net->setDoNotTouch(false);
@@ -359,9 +403,6 @@ bool Resizer::removeBuffer(Instance* buffer,
   bool out_net_ports = hasPort(out_net);
   Net *survivor, *removed;
   if (out_net_ports) {
-    if (hasPort(in_net)) {
-      return false;
-    }
     survivor = out_net;
     removed = in_net;
   } else {
@@ -375,33 +416,23 @@ bool Resizer::removeBuffer(Instance* buffer,
   if (recordJournal) {
     journalRemoveBuffer(buffer);
   }
-  bool buffer_removed = false;
-  if (!sdc_->isConstrained(in_pin) && !sdc_->isConstrained(out_pin)
-      && !sdc_->isConstrained(removed) && !sdc_->isConstrained(buffer)) {
-    debugPrint(logger_,
-               RSZ,
-               "remove_buffer",
-               1,
-               "remove {}",
-               db_network_->name(buffer));
-    buffer_removed = true;
+  debugPrint(
+      logger_, RSZ, "remove_buffer", 1, "remove {}", db_network_->name(buffer));
 
-    if (removed) {
-      odb::dbNet* db_survivor = db_network_->staToDb(survivor);
-      odb::dbNet* db_removed = db_network_->staToDb(removed);
-      db_survivor->mergeNet(db_removed);
+  if (removed) {
+    odb::dbNet* db_survivor = db_network_->staToDb(survivor);
+    odb::dbNet* db_removed = db_network_->staToDb(removed);
+    db_survivor->mergeNet(db_removed);
 
-      sta_->disconnectPin(in_pin);
-      sta_->disconnectPin(out_pin);
-      sta_->deleteInstance(buffer);
+    sta_->disconnectPin(in_pin);
+    sta_->disconnectPin(out_pin);
+    sta_->deleteInstance(buffer);
 
-      sta_->deleteNet(removed);
-      parasitics_invalid_.erase(removed);
-    }
-    parasiticsInvalid(survivor);
-    updateParasitics();
+    sta_->deleteNet(removed);
+    parasitics_invalid_.erase(removed);
   }
-  return buffer_removed;
+  parasiticsInvalid(survivor);
+  updateParasitics();
 }
 
 void Resizer::ensureLevelDrvrVertices()
