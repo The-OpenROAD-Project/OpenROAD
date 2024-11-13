@@ -975,7 +975,7 @@ class NesterovBaseCommon
     }
   }
 
-  // TODO how to do this for each region?
+  // TODO how to do this for each region? Also, manage this properly if other callbacks are implemented.
   int64_t getDeltaArea() { return deltaArea_; }
   void resetDeltaArea() { deltaArea_ = 0; }
 
@@ -997,11 +997,11 @@ class NesterovBaseCommon
   std::unordered_map<Pin*, GPin*> gPinMap_;
   std::unordered_map<Net*, GNet*> gNetMap_;
 
-  // TODO maybe change this map to be in NB instead of NBC, from NB we can
-  // access the gcell in NBC.
   std::unordered_map<odb::dbInst*, size_t> db_inst_map_;
   std::unordered_map<odb::dbNet*, size_t> db_net_map_;
   std::unordered_map<odb::dbITerm*, size_t> db_iterm_map_;
+
+  std::deque<Instance> pb_insts_stor;
 
   int num_threads_;
   int64_t deltaArea_;
@@ -1183,15 +1183,14 @@ class NesterovBase
 
   bool isDiverged() const { return isDiverged_; }
 
-  //  void resizeGCell();
   void createGCell(odb::dbInst* db_inst, size_t stor_index, RouteBase* rb);
-  void updateGCellState(float wlCoeffX, float wlCoeffY);
   void destroyGCell(odb::dbInst* db_inst);
   void destroyFillerGCell(size_t index_remove);
 
-  //  void insertGCells(std::vector<GCell*> new_gcells);
+  // Resets all pointers to storages of gcells, gpins, and gnets. 
   void fixPointers(std::vector<size_t> new_gcells);
-  // void fixGPinsPositions();
+  // Must be called after fixPointers() to initialize internal values of gcells, including parallel vectors.
+  void updateGCellState(float wlCoeffX, float wlCoeffY);  
 
   void printAllGCellState()
   {
@@ -1203,8 +1202,6 @@ class NesterovBase
   void printGCellState(size_t gcells_index)
   {
     log_->report("printGCellState, gcells_index:{}", gcells_index);
-    // GCellHandle& handle = gCells_[gcells_index];
-    // handle->print(log_);
     log_->report("curSLPCoordi_: {}, {}",
                  curSLPCoordi_[gcells_index].x,
                  curSLPCoordi_[gcells_index].y);
@@ -1287,9 +1284,8 @@ class NesterovBase
   std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
 
-  // map used to go from dbInst to GCellHandle, and also to index in
-  // NBC::gcellStor_ or NB::fillerStor_ this accesses are important to remove
-  // gcells and maintain index consistency
+  // map used to go from dbInst to GCellHandle, and to 
+  // NBC::gcellStor_ or NB::fillerStor_ index. 
   std::unordered_map<odb::dbInst*, size_t> db_inst_index_map_;
 
   // used to update gcell states after fixPointers() is called
@@ -1363,7 +1359,7 @@ class NesterovBase
   int iter_ = 0;
   bool isConverged_ = false;
 
-  // Snapshot data
+  // Snapshot data for routability, parallel vectors
   std::vector<FloatPoint> snapshotCoordi_;
   std::vector<FloatPoint> snapshotSLPCoordi_;
   std::vector<FloatPoint> snapshotSLPSumGrads_;
@@ -1417,42 +1413,6 @@ class NesterovBase
     swapAndPop(snapshotCoordi_, remove_index, last_index);
     swapAndPop(snapshotSLPCoordi_, remove_index, last_index);
     swapAndPop(snapshotSLPSumGrads_, remove_index, last_index);
-    // log_->report("Processing curSLPCoordi_");
-    // swapAndPop(curSLPCoordi_, remove_index, last_index);
-    // log_->report("Processing curSLPWireLengthGrads_");
-    // swapAndPop(curSLPWireLengthGrads_, remove_index, last_index);
-    // log_->report("Processing curSLPDensityGrads_");
-    // swapAndPop(curSLPDensityGrads_, remove_index, last_index);
-    // log_->report("Processing curSLPSumGrads_");
-    // swapAndPop(curSLPSumGrads_, remove_index, last_index);
-    // log_->report("Processing nextSLPCoordi_");
-    // swapAndPop(nextSLPCoordi_, remove_index, last_index);
-    // log_->report("Processing nextSLPWireLengthGrads_");
-    // swapAndPop(nextSLPWireLengthGrads_, remove_index, last_index);
-    // log_->report("Processing nextSLPDensityGrads_");
-    // swapAndPop(nextSLPDensityGrads_, remove_index, last_index);
-    // log_->report("Processing nextSLPSumGrads_");
-    // swapAndPop(nextSLPSumGrads_, remove_index, last_index);
-    // log_->report("Processing prevSLPCoordi_");
-    // swapAndPop(prevSLPCoordi_, remove_index, last_index);
-    // log_->report("Processing prevSLPWireLengthGrads_");
-    // swapAndPop(prevSLPWireLengthGrads_, remove_index, last_index);
-    // log_->report("Processing prevSLPDensityGrads_");
-    // swapAndPop(prevSLPDensityGrads_, remove_index, last_index);
-    // log_->report("Processing prevSLPSumGrads_");
-    // swapAndPop(prevSLPSumGrads_, remove_index, last_index);
-    // log_->report("Processing curCoordi_");
-    // swapAndPop(curCoordi_, remove_index, last_index);
-    // log_->report("Processing nextCoordi_");
-    // swapAndPop(nextCoordi_, remove_index, last_index);
-    // log_->report("Processing initCoordi_");
-    // swapAndPop(initCoordi_, remove_index, last_index);
-    // log_->report("Processing snapshotCoordi_");
-    // swapAndPop(snapshotCoordi_, remove_index, last_index);
-    // log_->report("Processing snapshotSLPCoordi_");
-    // swapAndPop(snapshotSLPCoordi_, remove_index, last_index);
-    // log_->report("Processing snapshotSLPSumGrads_");
-    // swapAndPop(snapshotSLPSumGrads_, remove_index, last_index);
   }
 };
 
