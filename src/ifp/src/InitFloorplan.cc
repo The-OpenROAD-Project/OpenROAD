@@ -225,7 +225,7 @@ void InitFloorplan::initFloorplan(
       if (row_parity != RowParity::NONE) {
         logger_->error(
             IFP,
-            41,
+            51,  // old was 41
             "Constraining row parity is not supported for hybrid rows.");
       }
       makeHybridRows(base_site, sites_by_name, snapped_core);
@@ -408,7 +408,7 @@ void InitFloorplan::addUsedSites(
         }
       } else {
         logger_->warn(IFP,
-                      43,
+                      52,  // old was 43
                       "No site found for instance {} in block {}.",
                       inst->getName(),
                       block_->getName());
@@ -475,7 +475,7 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
     if (site->getHeight() % base_site->getHeight() != 0) {
       logger_->error(
           IFP,
-          40,
+          54,  // old was 40
           "Site {} height {} of  is not a multiple of site {} height {}.",
           site->getName(),
           site->getHeight(),
@@ -644,7 +644,7 @@ void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term,
   auto* lib_port = network_->libertyPort(port);
   if (!lib_port) {
     logger_->error(utl::IFP,
-                   39,
+                   53,  // old was 39
                    "Liberty cell or port {}/{} not found.",
                    master->getName(),
                    tie_term->getName());
