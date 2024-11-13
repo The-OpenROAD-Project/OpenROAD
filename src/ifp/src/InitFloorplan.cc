@@ -112,10 +112,14 @@ void InitFloorplan::initFloorplan(
 {
   utl::Validator v(logger_, IFP);
   v.check_non_negative("utilization", utilization, 12);
-  v.check_non_negative("core_space_bottom", core_space_bottom, 32);
-  v.check_non_negative("core_space_top", core_space_top, 33);
-  v.check_non_negative("core_space_left", core_space_left, 34);
-  v.check_non_negative("core_space_right", core_space_right, 35);
+  v.check_non_negative(
+      "core_space_bottom (um) ", block_->dbuToMicrons(core_space_bottom), 32);
+  v.check_non_negative(
+      "core_space_top (um) ", block_->dbuToMicrons(core_space_top), 33);
+  v.check_non_negative(
+      "core_space_left (um) ", block_->dbuToMicrons(core_space_left), 34);
+  v.check_non_negative(
+      "core_space_right (um) ", block_->dbuToMicrons(core_space_right), 35);
   v.check_positive("aspect_ratio", aspect_ratio, 36);
 
   utilization /= 100;
@@ -476,11 +480,11 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
       logger_->error(
           IFP,
           54,  // old was 40
-          "Site {} height {} of  is not a multiple of site {} height {}.",
+          "Site {} height {}um of  is not a multiple of site {} height {}um.",
           site->getName(),
-          site->getHeight(),
+          block_->dbuToMicrons(site->getHeight()),
           base_site->getName(),
-          base_site->getHeight());
+          block_->dbuToMicrons(base_site->getHeight()));
     }
     make_rows(site);
   }
