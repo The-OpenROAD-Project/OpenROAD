@@ -464,7 +464,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       if (!virtual_td_iter) {
         for (auto& nesterov : nbVec_) {
           nesterov->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
-          // order in routability:
+          // updates order in routability:
           // 1. change areas
           // 2. set target density with delta area
           // 3. updateareas

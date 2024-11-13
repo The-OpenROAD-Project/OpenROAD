@@ -2754,15 +2754,14 @@ void NesterovBase::createGCell(odb::dbInst* db_inst,
 
 size_t NesterovBaseCommon::createGCell(odb::dbInst* db_inst)
 {
-  // //TODO: for now pbc and pb does not support dynamic creation of instances
-  Instance* gpl_inst = new Instance(db_inst,
-                                    pbc_->padLeft() * pbc_->siteSizeX(),
-                                    pbc_->padRight() * pbc_->siteSizeX(),
-                                    pbc_->siteSizeY(),
-                                    log_);
-  GCell gcell(gpl_inst);
-  // TODO it should be more efficient to push_back every cell once (change
-  // vector size first).
+  Instance gpl_inst(db_inst,
+                    pbc_->padLeft() * pbc_->siteSizeX(),
+                    pbc_->padRight() * pbc_->siteSizeX(),
+                    pbc_->siteSizeY(),
+                    log_);
+
+  pb_insts_stor_.push_back(gpl_inst);
+  GCell gcell(&pb_insts_stor_.back());
   gCellStor_.push_back(gcell);
   GCell* gcell_ptr = &gCellStor_.back();
   gCellMap_[gcell_ptr->instance()] = gcell_ptr;
@@ -2772,8 +2771,9 @@ size_t NesterovBaseCommon::createGCell(odb::dbInst* db_inst)
 
 void NesterovBaseCommon::createGNet(odb::dbNet* db_net, bool skip_io_mode)
 {
-  Net* pb_net = new Net(db_net, skip_io_mode);
-  GNet gnet(pb_net);
+  Net gpl_net(db_net, skip_io_mode);
+  pb_nets_stor_.push_back(gpl_net);
+  GNet gnet(&pb_nets_stor_.back());
   gNetStor_.push_back(gnet);
   GNet* gnet_ptr = &gNetStor_.back();
   gNetMap_[gnet_ptr->net()] = gnet_ptr;
@@ -2782,8 +2782,9 @@ void NesterovBaseCommon::createGNet(odb::dbNet* db_net, bool skip_io_mode)
 
 void NesterovBaseCommon::createITerm(odb::dbITerm* iTerm)
 {
-  Pin* gpl_pin = new Pin(iTerm);
-  GPin gpin(gpl_pin);
+  Pin gpl_pin(iTerm);
+  pb_pins_stor_.push_back(gpl_pin);
+  GPin gpin(&pb_pins_stor_.back());
   gPinStor_.push_back(gpin);
   GPin* gpin_ptr = &gPinStor_.back();
   gPinMap_[gpin_ptr->pin()] = gpin_ptr;
@@ -2793,7 +2794,6 @@ void NesterovBaseCommon::createITerm(odb::dbITerm* iTerm)
 
 
 // assuming fixpointers will be called later
-// only worried about maitaining index consistency.
 //  consistency must be maintened in both NBC::gcellStor_ and NB::gCells_
 void NesterovBase::destroyGCell(odb::dbInst* db_inst)
 {
@@ -2806,19 +2806,15 @@ void NesterovBase::destroyGCell(odb::dbInst* db_inst)
     if (handle.isNesterovBaseCommon()) {
       nbc_->destroyGCell(handle.getIndex());
     } else {
-      // This might never happen, depends if we wish to change gpl filler cells,
-      // or whitespace during the processing of callbacks
       destroyFillerGCell(handle.getIndex());
     }
 
     if (gcell_index != last_index) {
       std::swap(gCells_[gcell_index], gCells_[last_index]);
     }
-    // TODO: do the same for routability parallel vector
     swapAndPopParallelVectors(gcell_index, last_index);
     gCells_.pop_back();
     db_inst_index_map_.erase(db_it);
-    // TODO destroy from gcellmap_? maybe not required because of fixpointers.
   } else {
     log_->report(
         "warning: db_inst not found in db_inst_index_map_ for instance: {}",

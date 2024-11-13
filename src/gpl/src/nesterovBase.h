@@ -992,7 +992,6 @@ class NesterovBaseCommon
   std::vector<GNet*> gNets_;
   std::vector<GPin*> gPins_;
 
-  // TODO change gCellMap_ second to access by index instead of pointer.
   std::unordered_map<Instance*, GCell*> gCellMap_;
   std::unordered_map<Pin*, GPin*> gPinMap_;
   std::unordered_map<Net*, GNet*> gNetMap_;
@@ -1001,7 +1000,10 @@ class NesterovBaseCommon
   std::unordered_map<odb::dbNet*, size_t> db_net_map_;
   std::unordered_map<odb::dbITerm*, size_t> db_iterm_map_;
 
-  std::deque<Instance> pb_insts_stor;
+  //These three deques should not be required if placerBase allows for dynamic modifications on its vectors.
+  std::deque<Instance> pb_insts_stor_;
+  std::deque<Net> pb_nets_stor_;
+  std::deque<Pin> pb_pins_stor_;
 
   int num_threads_;
   int64_t deltaArea_;
