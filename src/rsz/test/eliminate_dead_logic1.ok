@@ -1,0 +1,4 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+Removed 5 unused instances and 5 unused nets.
+No differences found.
