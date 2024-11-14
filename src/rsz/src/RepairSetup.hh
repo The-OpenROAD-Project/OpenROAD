@@ -128,7 +128,7 @@ class RepairSetup : public sta::dbStaState
                    // Percent of violating ends to repair to
                    // reduce tns (0.0-1.0).
                    double repair_tns_end_percent,
-                   int max_passes,
+                   int max_passes_per_iter,
                    bool verbose,
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
