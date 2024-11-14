@@ -216,14 +216,18 @@ void Logger::unsuppressMessage(ToolId tool, int id)
 
 void Logger::redirectFileBegin(const std::string& filename)
 {
-  file_redirect_ = std::make_unique<std::ofstream>(filename.c_str());
+  assertNoRedirect();
+
+  file_redirect_ = std::make_unique<std::ofstream>(filename);
   setRedirectSink(*file_redirect_);
 }
 
 void Logger::redirectFileAppendBegin(const std::string& filename)
 {
+  assertNoRedirect();
+
   file_redirect_
-      = std::make_unique<std::ofstream>(filename.c_str(), std::ofstream::app);
+      = std::make_unique<std::ofstream>(filename, std::ofstream::app);
   setRedirectSink(*file_redirect_);
 }
 
@@ -239,8 +243,32 @@ void Logger::redirectFileEnd()
   file_redirect_ = nullptr;
 }
 
+void Logger::teeFileBegin(const std::string& filename)
+{
+  assertNoRedirect();
+
+  file_redirect_ = std::make_unique<std::ofstream>(filename);
+  setRedirectSink(*file_redirect_, true);
+}
+
+void Logger::teeFileAppendBegin(const std::string& filename)
+{
+  assertNoRedirect();
+
+  file_redirect_
+      = std::make_unique<std::ofstream>(filename, std::ofstream::app);
+  setRedirectSink(*file_redirect_, true);
+}
+
+void Logger::teeFileEnd()
+{
+  redirectFileEnd();
+}
+
 void Logger::redirectStringBegin()
 {
+  assertNoRedirect();
+
   string_redirect_ = std::make_unique<std::ostringstream>();
   setRedirectSink(*string_redirect_);
 }
@@ -259,9 +287,32 @@ std::string Logger::redirectStringEnd()
   return string;
 }
 
-void Logger::setRedirectSink(std::ostream& sink_stream)
+void Logger::teeStringBegin()
 {
-  logger_->sinks().clear();
+  assertNoRedirect();
+
+  string_redirect_ = std::make_unique<std::ostringstream>();
+  setRedirectSink(*string_redirect_, true);
+}
+
+std::string Logger::teeStringEnd()
+{
+  return redirectStringEnd();
+}
+
+void Logger::assertNoRedirect()
+{
+  if (string_redirect_ != nullptr || file_redirect_ != nullptr) {
+    error(
+        UTL, 102, "Unable to start new log redirect while another is active.");
+  }
+}
+
+void Logger::setRedirectSink(std::ostream& sink_stream, bool keep_sinks)
+{
+  if (!keep_sinks) {
+    logger_->sinks().clear();
+  }
 
   logger_->sinks().push_back(
       std::make_shared<spdlog::sinks::ostream_sink_mt>(sink_stream, true));

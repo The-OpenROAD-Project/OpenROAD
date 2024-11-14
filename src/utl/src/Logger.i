@@ -62,3 +62,70 @@ using ord::getLogger;
 
 %include "LoggerCommon.h"
 
+%inline %{
+
+namespace utl {
+
+void teeFileBegin(const std::string& filename)
+{
+  utl::Logger* logger = ord::getLogger();
+  logger->teeFileBegin(filename);
+}
+
+void teeFileAppendBegin(const std::string& filename)
+{
+  utl::Logger* logger = ord::getLogger();
+  logger->teeFileAppendBegin(filename);
+}
+
+void teeFileEnd()
+{
+  utl::Logger* logger = ord::getLogger();
+  logger->teeFileEnd();
+}
+
+void redirectFileBegin(const std::string& filename)
+{
+  utl::Logger* logger = ord::getLogger();
+  logger->redirectFileBegin(filename);
+}
+
+void redirectFileAppendBegin(const std::string& filename)
+{
+  utl::Logger* logger = ord::getLogger();
+  logger->redirectFileAppendBegin(filename);
+}
+
+void redirectFileEnd()
+{
+  utl::Logger* logger = ord::getLogger();
+  logger->redirectFileEnd();
+}
+
+void teeStringBegin()
+{
+  utl::Logger* logger = ord::getLogger();
+  logger->teeStringBegin();
+}
+
+std::string teeStringEnd()
+{
+  utl::Logger* logger = ord::getLogger();
+  return logger->teeStringEnd();
+}
+
+void redirectStringBegin()
+{
+  utl::Logger* logger = ord::getLogger();
+  logger->redirectStringBegin();
+}
+
+std::string redirectStringEnd()
+{
+  utl::Logger* logger = ord::getLogger();
+  return logger->redirectStringEnd();
+}
+
+} // namespace
+
+%} // inline

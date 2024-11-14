@@ -2896,6 +2896,7 @@ class PinModuleConnection : public PinVisitor
   const Pin* drvr_pin_;
   const dbModule* target_module_;
   dbModBTerm* dest_modbterm_;
+  dbModITerm* dest_moditerm_;
   friend class dbNetwork;
 };
 
@@ -2907,6 +2908,7 @@ PinModuleConnection::PinModuleConnection(const dbNetwork* nwk,
   drvr_pin_ = drvr_pin;
   target_module_ = target_module;
   dest_modbterm_ = nullptr;
+  dest_moditerm_ = nullptr;
 }
 
 void PinModuleConnection::operator()(const Pin* pin)
@@ -2915,6 +2917,7 @@ void PinModuleConnection::operator()(const Pin* pin)
   dbBTerm* bterm;
   dbModBTerm* modbterm;
   dbModITerm* moditerm;
+
   db_network_->staToDb(pin, iterm, bterm, moditerm, modbterm);
   (void) (iterm);
   (void) (bterm);
@@ -2924,17 +2927,30 @@ void PinModuleConnection::operator()(const Pin* pin)
     if (modbterm->getParent() == target_module_) {
       dest_modbterm_ = modbterm;
     }
+  } else if (modbterm) {
+    if (modbterm->getParent() == target_module_) {
+      dest_modbterm_ = modbterm;
+    }
+    dbModITerm* moditerm = modbterm->getParentModITerm();
+    if (moditerm->getParent()->getParent() == target_module_) {
+      dest_moditerm_ = moditerm;
+    }
   }
 }
 
 bool dbNetwork::ConnectionToModuleExists(dbITerm* source_pin,
                                          dbModule* dest_module,
-                                         dbModBTerm*& dest_modbterm)
+                                         dbModBTerm*& dest_modbterm,
+                                         dbModITerm*& dest_moditerm)
 {
   PinModuleConnection visitor(this, dbToSta(source_pin), dest_module);
   network_->visitConnectedPins(dbToSta(source_pin), visitor);
   if (visitor.dest_modbterm_ != nullptr) {
     dest_modbterm = visitor.dest_modbterm_;
+    return true;
+  }
+  if (visitor.dest_moditerm_ != nullptr) {
+    dest_moditerm = visitor.dest_moditerm_;
     return true;
   }
   return false;
@@ -2964,9 +2980,17 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
     dest_pin->connect(source_db_mod_net);
   } else {
     // Attempt to factor connection (minimize punch through)
-    dbModBTerm* dest_modbterm;
-    if (ConnectionToModuleExists(source_pin, dest_db_module, dest_modbterm)) {
-      dbModNet* dest_mod_net = dest_modbterm->getModNet();
+    //
+    dbModBTerm* dest_modbterm = nullptr;
+    dbModITerm* dest_moditerm = nullptr;
+    if (ConnectionToModuleExists(
+            source_pin, dest_db_module, dest_modbterm, dest_moditerm)) {
+      dbModNet* dest_mod_net = nullptr;
+      if (dest_modbterm) {
+        dest_mod_net = dest_modbterm->getModNet();
+      } else if (dest_moditerm) {
+        dest_mod_net = dest_moditerm->getModNet();
+      }
       if (dest_mod_net) {
         dest_pin->connect(dest_mod_net);
         return;
@@ -2992,6 +3016,11 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
           = std::string(connection_name) + std::string("_o");
       dbModBTerm* mod_bterm
           = dbModBTerm::create(cur_module, connection_name_o.c_str());
+      if (!source_db_mod_net) {
+        source_db_mod_net
+            = dbModNet::create(source_db_module, connection_name_o.c_str());
+      }
+      source_pin->connect(source_db_mod_net);
       mod_bterm->connect(source_db_mod_net);
       mod_bterm->setIoType(dbIoType::OUTPUT);
       mod_bterm->setSigType(dbSigType::SIGNAL);
@@ -3000,10 +3029,12 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       dbModITerm* mod_iterm
           = dbModITerm::create(parent_inst, connection_name_o.c_str());
       mod_iterm->setChildModBTerm(mod_bterm);
+      mod_bterm->setParentModITerm(mod_iterm);
       source_db_mod_net = dbModNet::create(cur_module, connection_name);
       mod_iterm->connect(source_db_mod_net);
       top_net = source_db_mod_net;
     }
+
     // make dest hierarchy
     cur_module = dest_db_module;
     while (cur_module != highest_common_module) {
@@ -3028,6 +3059,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       dbModITerm* mod_iterm
           = dbModITerm::create(parent_inst, connection_name_i.c_str());
       mod_iterm->setChildModBTerm(mod_bterm);
+      mod_bterm->setParentModITerm(mod_iterm);
       if (cur_module != highest_common_module) {
         dest_db_mod_net = dbModNet::create(cur_module, connection_name);
         mod_iterm->connect(dest_db_mod_net);

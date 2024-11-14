@@ -261,6 +261,22 @@ To close the GUI and return to the command-line:
 gui::hide
 ```
 
+### Minimize the GUI
+
+To minimize the GUI window to an icon:
+
+```tcl
+gui::minimize
+```
+
+### Unminimize the GUI
+
+To unminimize the GUI window from an icon:
+
+```tcl
+gui::unminimize
+```
+
 ### Layout Fit
 
 To fit the whole layout in the window:
