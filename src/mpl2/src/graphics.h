@@ -138,7 +138,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   // so for this case, the current cluster is actually the current parent.
   Cluster* current_cluster_{nullptr};
 
-  int x_mark_size_ {0}; // For blocked boundaries.
+  int x_mark_size_{0};  // For blocked boundaries.
 
   bool active_ = true;
   bool coarse_;
