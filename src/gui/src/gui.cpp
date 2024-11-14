@@ -1265,12 +1265,12 @@ void Gui::showGui(const std::string& cmds, bool interactive, bool load_settings)
   startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive, load_settings);
 }
 
-void Gui::iconify()
+void Gui::minimize()
 {
   main_window->showMinimized();
 }
 
-void Gui::deiconify()
+void Gui::unminimize()
 {
   main_window->showNormal();
 }
@@ -1313,7 +1313,7 @@ int startGui(int& argc,
              const std::string& script,
              bool interactive,
              bool load_settings,
-             bool iconify)
+             bool minimize)
 {
   auto gui = gui::Gui::get();
   // ensure continue after close is false
@@ -1331,7 +1331,7 @@ int startGui(int& argc,
 
   // create new MainWindow
   main_window = new gui::MainWindow(load_settings);
-  if (iconify) {
+  if (minimize) {
     main_window->showMinimized();
   }
 

@@ -723,22 +723,22 @@ bool supported()
   return true;
 }
 
-void iconify()
+void minimize()
 {
-  if (!check_gui("iconify")) {
+  if (!check_gui("minimize")) {
     return;
   }
   auto gui = gui::Gui::get();
-  gui->iconify();
+  gui->minimize();
 }
 
-void deiconify()
+void unminimize()
 {
-  if (!check_gui("deiconify")) {
+  if (!check_gui("unminimize")) {
     return;
   }
   auto gui = gui::Gui::get();
-  gui->deiconify();
+  gui->unminimize();
 }
 
 %} // inline
