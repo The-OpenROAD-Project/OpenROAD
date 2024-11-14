@@ -216,12 +216,16 @@ void Logger::unsuppressMessage(ToolId tool, int id)
 
 void Logger::redirectFileBegin(const std::string& filename)
 {
+  assertNoRedirect();
+
   file_redirect_ = std::make_unique<std::ofstream>(filename);
   setRedirectSink(*file_redirect_);
 }
 
 void Logger::redirectFileAppendBegin(const std::string& filename)
 {
+  assertNoRedirect();
+
   file_redirect_
       = std::make_unique<std::ofstream>(filename, std::ofstream::app);
   setRedirectSink(*file_redirect_);
@@ -241,12 +245,16 @@ void Logger::redirectFileEnd()
 
 void Logger::teeFileBegin(const std::string& filename)
 {
+  assertNoRedirect();
+
   file_redirect_ = std::make_unique<std::ofstream>(filename);
   setRedirectSink(*file_redirect_, true);
 }
 
 void Logger::teeFileAppendBegin(const std::string& filename)
 {
+  assertNoRedirect();
+
   file_redirect_
       = std::make_unique<std::ofstream>(filename, std::ofstream::app);
   setRedirectSink(*file_redirect_, true);
@@ -259,6 +267,8 @@ void Logger::teeFileEnd()
 
 void Logger::redirectStringBegin()
 {
+  assertNoRedirect();
+
   string_redirect_ = std::make_unique<std::ostringstream>();
   setRedirectSink(*string_redirect_);
 }
@@ -275,6 +285,26 @@ std::string Logger::redirectStringEnd()
   string_redirect_ = nullptr;
 
   return string;
+}
+
+void Logger::teeStringBegin()
+{
+  assertNoRedirect();
+
+  string_redirect_ = std::make_unique<std::ostringstream>();
+  setRedirectSink(*string_redirect_, true);
+}
+
+std::string Logger::teeStringEnd()
+{
+  return redirectStringEnd();
+}
+
+void Logger::assertNoRedirect()
+{
+  if (string_redirect_ != nullptr || file_redirect_ != nullptr) {
+    error(UTL, 102, "Unable to start new log redirect while another is active.");
+  }
 }
 
 void Logger::setRedirectSink(std::ostream& sink_stream, bool keep_sinks)

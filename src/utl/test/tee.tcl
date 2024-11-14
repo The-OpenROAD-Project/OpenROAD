@@ -45,3 +45,25 @@ diff_file tee_5.rptok $rpt5
 diff_file tee_6.rptok $rpt6
 diff_file tee_7.rptok $rpt7
 diff_file tee_8.rptok $rpt8
+
+puts "string redirect start"
+tee -variable puts_redirect {puts "PUTS REDIRECT"}
+tee -variable logger_redirect {utl::info FLW 4 "LOGGER REDIRECT"}
+tee -append -variable logger_redirect_append {utl::info FLW 5 "LOGGER REDIRECT"}
+tee -append -variable logger_redirect_append {utl::info FLW 6 "LOGGER REDIRECT"}
+puts "string redirect end"
+
+puts "PUTS: $puts_redirect"
+puts "LOGGER: $logger_redirect"
+puts "LOGGER: $logger_redirect_append"
+
+puts "string redirect start - quiet"
+tee -quiet -variable puts_redirect {puts "PUTS REDIRECT"}
+tee -quiet -variable logger_redirect {utl::info FLW 7 "LOGGER REDIRECT"}
+tee -quiet -append -variable logger_redirect_append {utl::info FLW 8 "LOGGER REDIRECT"}
+tee -quiet -append -variable logger_redirect_append {utl::info FLW 9 "LOGGER REDIRECT"}
+puts "string redirect end - quiet"
+
+puts "PUTS: $puts_redirect"
+puts "LOGGER: $logger_redirect"
+puts "LOGGER: $logger_redirect_append"

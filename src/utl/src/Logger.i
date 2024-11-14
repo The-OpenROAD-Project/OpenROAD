@@ -102,6 +102,30 @@ void redirectFileEnd()
   logger->redirectFileEnd();
 }
 
+void teeStringBegin()
+{
+  utl::Logger* logger = ord::getLogger();
+  logger->teeStringBegin();
+}
+
+std::string teeStringEnd()
+{
+  utl::Logger* logger = ord::getLogger();
+  return logger->teeStringEnd();
+}
+
+void redirectStringBegin()
+{
+  utl::Logger* logger = ord::getLogger();
+  logger->redirectStringBegin();
+}
+
+std::string redirectStringEnd()
+{
+  utl::Logger* logger = ord::getLogger();
+  return logger->redirectStringEnd();
+}
+
 } // namespace
 
 %} // inline

@@ -56,7 +56,7 @@ man CTS-0005
 Redirect a commands output to a file and standard out.
 
 ```tcl
-tee -file filename
+tee (-file filename | -variable name)
     [-append]
     [-quiet]
     command
@@ -66,7 +66,8 @@ tee -file filename
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `filename` | File to redirect output into. |
+| `-file filename` | File to redirect output into. |
+| `-variable name` | Direct output into a variable. |
 | `-append` | Append to file. |
 | `-quiet` | Do not send output to standard out. |
 | `command` | Command to execute. |

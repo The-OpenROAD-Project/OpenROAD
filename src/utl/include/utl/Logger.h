@@ -257,6 +257,9 @@ class Logger
   // Tee append output to filename until teeFileEnd is called.
   void teeFileAppendBegin(const std::string& filename);
   void teeFileEnd();
+  // Redirect output to a string until teeStringEnd is called.
+  void teeStringBegin();
+  std::string teeStringEnd();
 
  private:
   std::vector<std::string> metrics_sinks_;
@@ -313,6 +316,7 @@ class Logger
 
   void setRedirectSink(std::ostream& sink_stream, bool keep_sinks = false);
   void restoreFromRedirect();
+  void assertNoRedirect();
 
   void setFormatter();
 
