@@ -153,84 +153,22 @@ class nesterovDbCbk : public odb::dbBlockCallBackObj
  public:
   nesterovDbCbk(NesterovPlace* nesterov_place_);
 
-  //buffer insertion
   virtual void inDbInstCreate(odb::dbInst*);
   virtual void inDbInstCreate(odb::dbInst*, odb::dbRegion*);
   virtual void inDbInstDestroy(odb::dbInst*);
 
-  //buffer removal
   virtual void inDbITermCreate(odb::dbITerm*) ;
-  virtual void inDbITermDestroy(odb::dbITerm*) ;
-//  virtual void inDbITermPreDisconnect(odb::dbITerm*) ;
-  virtual void inDbITermPostDisconnect(odb::dbITerm*, odb::dbNet*) ;
-//  virtual void inDbITermPreConnect(odb::dbITerm*, odb::dbNet*) ;
-  virtual void inDbITermPostConnect(odb::dbITerm*) ;
+  virtual void inDbITermDestroy(odb::dbITerm*) ;  
 
+  virtual void inDbNetCreate(odb::dbNet*) override;
+  virtual void inDbNetDestroy(odb::dbNet*) override;
 
-// virtual void inDbPreMoveInst(odb::dbInst*) override;
-virtual void inDbPostMoveInst(odb::dbInst*) override;
-virtual void inDbNetCreate(odb::dbNet*) override;
-virtual void inDbNetDestroy(odb::dbNet*) override;
-virtual void inDbNetPreMerge(odb::dbNet*, odb::dbNet*) override;
-virtual void inDbBTermCreate(odb::dbBTerm*) override;
-virtual void inDbBTermDestroy(odb::dbBTerm*) override;
-virtual void inDbBTermPreConnect(odb::dbBTerm*, odb::dbNet*) override;
-virtual void inDbBTermPostConnect(odb::dbBTerm*) override;
-virtual void inDbBTermPreDisconnect(odb::dbBTerm*) override;
-virtual void inDbBTermPostDisConnect(odb::dbBTerm*, odb::dbNet*) override;
-virtual void inDbBTermSetIoType(odb::dbBTerm*, const odb::dbIoType&) override;
-virtual void inDbBPinCreate(odb::dbBPin*) override;
-virtual void inDbBPinDestroy(odb::dbBPin*) override;
-virtual void inDbBlockageCreate(odb::dbBlockage*) override;
-virtual void inDbObstructionCreate(odb::dbObstruction*) override;
-virtual void inDbObstructionDestroy(odb::dbObstruction*) override;
-virtual void inDbRegionCreate(odb::dbRegion*) override;
-virtual void inDbRegionAddBox(odb::dbRegion*, odb::dbBox*) override;
-virtual void inDbRegionDestroy(odb::dbRegion*) override;
-virtual void inDbRowCreate(odb::dbRow*) override;
-virtual void inDbRowDestroy(odb::dbRow*) override;
-
-  //cell resizing
-//  virtual void inDbInstSwapMasterBefore(odb::dbInst*, odb::dbMaster*);
   virtual void inDbInstSwapMasterAfter(odb::dbInst*);
+  virtual void inDbPostMoveInst(odb::dbInst*) override;
 
-  void printCallCounts();
-  void resetCallCounts();
+
  private:
   NesterovPlace* nesterov_place_;
-  utl::Logger log_;
-
-    int inDbInstSwapMasterAfterCount = 0;
-    int inDbInstCreateCount = 0;
-    int inDbInstDestroyCount = 0;
-    int inDbITermCreateCount = 0;
-    int inDbITermDestroyCount = 0;
-    int inDbITermPreDisconnectCount = 0;
-    int inDbITermPostDisconnectCount = 0;
-    int inDbITermPreConnectCount = 0;
-    int inDbITermPostConnectCount = 0;
-    int inDbPreMoveInstCount = 0;
-    int inDbPostMoveInstCount = 0;
-    int inDbNetCreateCount = 0;
-    int inDbNetDestroyCount = 0;
-    int inDbNetPreMergeCount = 0;
-    int inDbBTermCreateCount = 0;
-    int inDbBTermDestroyCount = 0;
-    int inDbBTermPreConnectCount = 0;
-    int inDbBTermPostConnectCount = 0;
-    int inDbBTermPreDisconnectCount = 0;
-    int inDbBTermPostDisConnectCount = 0;
-    int inDbBTermSetIoTypeCount = 0;
-    int inDbBPinCreateCount = 0;
-    int inDbBPinDestroyCount = 0;
-    int inDbBlockageCreateCount = 0;
-    int inDbObstructionCreateCount = 0;
-    int inDbObstructionDestroyCount = 0;
-    int inDbRegionCreateCount = 0;
-    int inDbRegionAddBoxCount = 0;
-    int inDbRegionDestroyCount = 0;
-    int inDbRowCreateCount = 0;
-    int inDbRowDestroyCount = 0;
 };
 
 }  // namespace gpl

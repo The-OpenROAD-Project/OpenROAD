@@ -114,7 +114,7 @@ class GCell
   int dDy() const;
 
   void setCenterLocation(int cx, int cy);
-  void setLocation(int x, int y);
+  // void setLocation(int x, int y);
   void setSize(int dx, int dy);
   void setAllLocations(int lx, int ly, int ux, int uy);
 
@@ -136,22 +136,7 @@ class GCell
   bool isMacroInstance() const;
   bool isStdInstance() const;
 
-  void print(utl::Logger* logger) const
-  {
-    if (insts_.size() > 0)
-      logger->report("print gcell:{}", insts_[0]->dbInst()->getName());
-    else
-      logger->report("print gcell insts_ empty! (filler cell)");
-    logger->report(
-        "insts_ size: {}, gPins_ size: {}", insts_.size(), gPins_.size());
-    logger->report("lx_: {} ly_: {} ux_: {} uy_: {}", lx_, ly_, ux_, uy_);
-    logger->report(
-        "dLx_: {} dLy_: {} dUx_: {} dUy_: {}", dLx_, dLy_, dUx_, dUy_);
-    logger->report("densityScale_: {} gradientX_: {} gradientY_: {}",
-                   densityScale_,
-                   gradientX_,
-                   gradientY_);
-  }
+  void print(utl::Logger* logger) const;
 
  private:
   std::vector<Instance*> insts_;
@@ -254,11 +239,10 @@ class GNet
 {
  public:
   GNet(Net* net);
-  GNet(Net net_obj);
-  // GNet(const std::vector<Net*>& nets);
+  GNet(const std::vector<Net*>& nets);
 
   Net* net() const;
-  // const std::vector<Net*>& nets() const { return nets_; }
+  const std::vector<Net*>& nets() const { return nets_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
 
   int lx() const;
@@ -308,32 +292,11 @@ class GNet
   float waExpMaxSumY() const;
   float waYExpMaxSumY() const;
 
-  void disconnectPin(GPin* gPin);
-
-  void print(utl::Logger* log) const
-  {
-    log->report("print net: {}", nets_[0]->dbNet()->getName());
-    log->report("gPins_ size: {}", gPins_.size());
-    log->report("nets_ size: {}", nets_.size());
-    // log->report("gpl_net_: {}", pb_net->);
-    log->report("lx_: {}, ly_: {}, ux_: {}, uy_: {}", lx_, ly_, ux_, uy_);
-    log->report("timingWeight_: {}", timingWeight_);
-    log->report("customWeight_: {}", customWeight_);
-    log->report(
-        "waExpMinSumX_: {}, waXExpMinSumX_: {}", waExpMinSumX_, waXExpMinSumX_);
-    log->report(
-        "waExpMaxSumX_: {}, waXExpMaxSumX_: {}", waExpMaxSumX_, waXExpMaxSumX_);
-    log->report(
-        "waExpMinSumY_: {}, waYExpMinSumY_: {}", waExpMinSumY_, waYExpMinSumY_);
-    log->report(
-        "waExpMaxSumY_: {}, waYExpMaxSumY_: {}", waExpMaxSumY_, waYExpMaxSumY_);
-    log->report("isDontCare_: {}", isDontCare_ ? "true" : "false");
-  }
+  void print(utl::Logger* log) const;
 
  private:
   std::vector<GPin*> gPins_;
   std::vector<Net*> nets_;
-  // Net pb_net_;
   int lx_ = 0;
   int ly_ = 0;
   int ux_ = 0;
@@ -523,45 +486,8 @@ class GPin
   void updateLocation(const GCell* gCell);
   void updateDensityLocation(const GCell* gCell);
 
-  void disconnectNet() { gNet_ = nullptr; }
-
-  void updateCoordi()
-  {
-    Pin* pb_pin = pins_[0];
-    cx_ = pb_pin->cx();
-    cy_ = pb_pin->cy();
-    offsetCx_ = pb_pin->offsetCx();
-    offsetCy_ = pb_pin->offsetCy();
-  }
-
-  void print(utl::Logger* log) const
-  {
-    if (pin()->dbITerm() != nullptr)
-      log->report("--> print pin: {}", pin()->dbITerm()->getName());
-    else
-      log->report("pin()->dbIterm() is nullptr!");
-    if (gCell_) {
-      if (gCell_->isInstance())
-        log->report("GCell*: {}", gCell_->instance()->dbInst()->getName());
-      else
-        log->report("GCell of gpin is filler!");
-    } else
-      log->report("gcell of gpin is null");
-    log->report("GNet: {}", gNet_->net()->dbNet()->getName());
-    log->report("pins_.size(): {}", pins_.size());
-    log->report("offsetCx_: {}", offsetCx_);
-    log->report("offsetCy_: {}", offsetCy_);
-    log->report("cx_: {}", cx_);
-    log->report("cy_: {}", cy_);
-    log->report("maxExpSumX_: {}", maxExpSumX_);
-    log->report("maxExpSumY_: {}", maxExpSumY_);
-    log->report("minExpSumX_: {}", minExpSumX_);
-    log->report("minExpSumY_: {}", minExpSumY_);
-    log->report("hasMaxExpSumX_: {}", hasMaxExpSumX_);
-    log->report("hasMaxExpSumY_: {}", hasMaxExpSumY_);
-    log->report("hasMinExpSumX_: {}", hasMinExpSumX_);
-    log->report("hasMinExpSumY_: {}", hasMinExpSumY_);
-  }
+  void print(utl::Logger* log) const;
+  void updateCoordi();
 
  private:
   GCell* gCell_ = nullptr;
@@ -880,8 +806,6 @@ class NesterovBaseCommon
   const std::vector<GNet*>& gNets() const { return gNets_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
 
-  std::unordered_map<odb::dbInst*, size_t>& dbInstMap() { return db_inst_map_; }
-
   //
   // placerBase To NesterovBase functions
   //
@@ -926,22 +850,17 @@ class NesterovBaseCommon
   size_t getNumThreads() { return num_threads_; }
 
   GCell* getGCellByIndex(size_t i);
-  std::vector<size_t> insertGCellsTestOnly();
-  void fixPointers(std::vector<size_t> new_gcells);
-  void fixPointers();
 
   void setCbk(nesterovDbCbk* cbk) { db_cbk_ = cbk; }
-
-  void createGNet(odb::dbNet* net, bool skip_io_mode);
-  void createITerm(odb::dbITerm* iTerm);
   size_t createGCell(odb::dbInst* db_inst);
-  void moveGCell(odb::dbInst* db_inst);
-
+  void createGNet(odb::dbNet* net, bool skip_io_mode);
+  void createITerm(odb::dbITerm* iTerm);  
   void destroyGCell(size_t);
   void destroyGNet(odb::dbNet*);
   void destroyITerm(odb::dbITerm*);
-
   void resizeGCell(odb::dbInst* db_inst);
+  void moveGCell(odb::dbInst* db_inst);
+  void fixPointers();
 
   GCell& getGCell(size_t index) { return gCellStor_[index]; }
 
@@ -950,32 +869,10 @@ class NesterovBaseCommon
     return std::distance(gCellStor_.data(), gCell);
   }
 
-  // TODO this can be placed elsewhere, not necessarly inside NBC
-  bool isValidSigType(odb::dbSigType db_type)
-  {
-    if (db_type == odb::dbSigType::SIGNAL
-        || db_type == odb::dbSigType::CLOCK)  // || db_type ==
-                                              // odb::dbSigType::ANALOG)
-      return true;
-    else
-      return false;
-  }
+  void printGCells();
+  void printGPins();
 
-  void printGCells()
-  {
-    for (auto& gcell : gCellStor_) {
-      gcell.print(log_);
-    }
-  }
-
-  void printGPins()
-  {
-    for (auto& gpin : gPinStor_) {
-      gpin.print(log_);
-    }
-  }
-
-  // TODO how to do this for each region? Also, manage this properly if other callbacks are implemented.
+  // TODO do this for each region? Also, manage this properly if other callbacks are implemented.
   int64_t getDeltaArea() { return deltaArea_; }
   void resetDeltaArea() { deltaArea_ = 0; }
 
@@ -1008,8 +905,6 @@ class NesterovBaseCommon
   int num_threads_;
   int64_t deltaArea_;
   nesterovDbCbk* db_cbk_;
-  // TODO check if this is actually needed
-  friend class NesterovBase;
 };
 
 // Stores instances belonging to a specific power domain
@@ -1194,74 +1089,6 @@ class NesterovBase
   // Must be called after fixPointers() to initialize internal values of gcells, including parallel vectors.
   void updateGCellState(float wlCoeffX, float wlCoeffY);  
 
-  void printAllGCellState()
-  {
-    for (size_t i = 0; i < gCells_.size(); ++i) {
-      printGCellState(i);
-    }
-  }
-
-  void printGCellState(size_t gcells_index)
-  {
-    log_->report("printGCellState, gcells_index:{}", gcells_index);
-    log_->report("curSLPCoordi_: {}, {}",
-                 curSLPCoordi_[gcells_index].x,
-                 curSLPCoordi_[gcells_index].y);
-    log_->report("curSLPWireLengthGrads_: {}, {}",
-                 curSLPWireLengthGrads_[gcells_index].x,
-                 curSLPWireLengthGrads_[gcells_index].y);
-    log_->report("curSLPDensityGrads_: {}, {}",
-                 curSLPDensityGrads_[gcells_index].x,
-                 curSLPDensityGrads_[gcells_index].y);
-    log_->report("curSLPSumGrads_: {}, {}",
-                 curSLPSumGrads_[gcells_index].x,
-                 curSLPSumGrads_[gcells_index].y);
-    log_->report("nextSLPCoordi_: {}, {}",
-                 nextSLPCoordi_[gcells_index].x,
-                 nextSLPCoordi_[gcells_index].y);
-    log_->report("nextSLPWireLengthGrads_: {}, {}",
-                 nextSLPWireLengthGrads_[gcells_index].x,
-                 nextSLPWireLengthGrads_[gcells_index].y);
-    log_->report("nextSLPDensityGrads_: {}, {}",
-                 nextSLPDensityGrads_[gcells_index].x,
-                 nextSLPDensityGrads_[gcells_index].y);
-    log_->report("nextSLPSumGrads_: {}, {}",
-                 nextSLPSumGrads_[gcells_index].x,
-                 nextSLPSumGrads_[gcells_index].y);
-    log_->report("prevSLPCoordi_: {}, {}",
-                 prevSLPCoordi_[gcells_index].x,
-                 prevSLPCoordi_[gcells_index].y);
-    log_->report("prevSLPWireLengthGrads_: {}, {}",
-                 prevSLPWireLengthGrads_[gcells_index].x,
-                 prevSLPWireLengthGrads_[gcells_index].y);
-    log_->report("prevSLPDensityGrads_: {}, {}",
-                 prevSLPDensityGrads_[gcells_index].x,
-                 prevSLPDensityGrads_[gcells_index].y);
-    log_->report("prevSLPSumGrads_: {}, {}",
-                 prevSLPSumGrads_[gcells_index].x,
-                 prevSLPSumGrads_[gcells_index].y);
-    log_->report("curCoordi_: {}, {}",
-                 curCoordi_[gcells_index].x,
-                 curCoordi_[gcells_index].y);
-    log_->report("nextCoordi_: {}, {}",
-                 nextCoordi_[gcells_index].x,
-                 nextCoordi_[gcells_index].y);
-    log_->report("initCoordi_: {}, {}",
-                 initCoordi_[gcells_index].x,
-                 initCoordi_[gcells_index].y);
-    if (snapshotCoordi_.size() > gcells_index) {
-      log_->report("snapshotCoordi_: {}, {}",
-                   snapshotCoordi_[gcells_index].x,
-                   snapshotCoordi_[gcells_index].y);
-      log_->report("snapshotSLPCoordi_: {}, {}",
-                   snapshotSLPCoordi_[gcells_index].x,
-                   snapshotSLPCoordi_[gcells_index].y);
-      log_->report("snapshotSLPSumGrads_: {}, {}",
-                   snapshotSLPSumGrads_[gcells_index].x,
-                   snapshotSLPSumGrads_[gcells_index].y);
-    }
-  }
-
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
@@ -1286,8 +1113,6 @@ class NesterovBase
   std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
 
-  // map used to go from dbInst to GCellHandle, and to 
-  // NBC::gcellStor_ or NB::fillerStor_ index. 
   std::unordered_map<odb::dbInst*, size_t> db_inst_index_map_;
 
   // used to update gcell states after fixPointers() is called
@@ -1297,7 +1122,7 @@ class NesterovBase
   float targetDensity_ = 0;
   float uniformTargetDensity_ = 0;
 
-  // Nesterov loop data for each region
+  // Nesterov loop data for each region, using parallel vectors
   // SLP is Step Length Prediction.
   //
   // y_st, y_dst, y_wdst, w_pdst
@@ -1372,50 +1197,8 @@ class NesterovBase
 
   void swapAndPop(std::vector<FloatPoint>& vec,
                   size_t remove_index,
-                  size_t last_index)
-  {
-    if (last_index != vec.size() - 1) {
-      log_->report(
-          "Error: last_index {} does not match the actual last index {}.",
-          last_index,
-          vec.size() - 1);
-      return;
-    }
-
-    if (remove_index != last_index) {
-      log_->report(
-          "Swapping index {} with last_index {}", remove_index, last_index);
-      std::swap(vec[remove_index], vec[last_index]);
-    }
-    vec.pop_back();
-  }
-
-  void swapAndPopParallelVectors(size_t remove_index, size_t last_index)
-  {
-    log_->report(
-        "Swapping and popping parallel vectors with remove_index {} and "
-        "last_index {}",
-        remove_index,
-        last_index);
-    swapAndPop(curSLPCoordi_, remove_index, last_index);
-    swapAndPop(curSLPWireLengthGrads_, remove_index, last_index);
-    swapAndPop(curSLPDensityGrads_, remove_index, last_index);
-    swapAndPop(curSLPSumGrads_, remove_index, last_index);
-    swapAndPop(nextSLPCoordi_, remove_index, last_index);
-    swapAndPop(nextSLPWireLengthGrads_, remove_index, last_index);
-    swapAndPop(nextSLPDensityGrads_, remove_index, last_index);
-    swapAndPop(nextSLPSumGrads_, remove_index, last_index);
-    swapAndPop(prevSLPCoordi_, remove_index, last_index);
-    swapAndPop(prevSLPWireLengthGrads_, remove_index, last_index);
-    swapAndPop(prevSLPDensityGrads_, remove_index, last_index);
-    swapAndPop(prevSLPSumGrads_, remove_index, last_index);
-    swapAndPop(curCoordi_, remove_index, last_index);
-    swapAndPop(nextCoordi_, remove_index, last_index);
-    swapAndPop(initCoordi_, remove_index, last_index);
-    swapAndPop(snapshotCoordi_, remove_index, last_index);
-    swapAndPop(snapshotSLPCoordi_, remove_index, last_index);
-    swapAndPop(snapshotSLPSumGrads_, remove_index, last_index);
-  }
+                  size_t last_index);
+  void swapAndPopParallelVectors(size_t remove_index, size_t last_index);
 };
 
 inline std::vector<Bin>& NesterovBase::bins()
@@ -1475,5 +1258,15 @@ class GCellHandle
   StorageVariant storage_;
   size_t index_;
 };
+
+inline bool isValidSigType(odb::dbSigType db_type)
+{
+  if (db_type == odb::dbSigType::SIGNAL
+      || db_type == odb::dbSigType::CLOCK)  // || db_type ==
+                                            // odb::dbSigType::ANALOG)
+    return true;
+  else
+    return false;
+}
 
 }  // namespace gpl
