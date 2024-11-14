@@ -78,7 +78,7 @@ void FlexGRGridGraph::initCoords()
   frCoord zHeight = 0;
   for (auto& [k, v] : zMap) {
     zCoords_.push_back(k);
-    zHeight += getTech()->getLayer(k)->getPitch() * globals_->VIACOST;
+    zHeight += getTech()->getLayer(k)->getPitch() * router_cfg_->VIACOST;
     zHeights_.push_back(zHeight);
     zDirs_.push_back((v == dbTechLayerDir::HORIZONTAL));
   }

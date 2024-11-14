@@ -755,13 +755,13 @@ void FlexDRGraphics::endNet(drNet* net)
   net_ = nullptr;
 }
 
-void FlexDRGraphics::startIter(int iter, Globals* globals)
+void FlexDRGraphics::startIter(int iter, RouterConfiguration* router_cfg)
 {
   current_iter_ = iter;
   if (iter >= settings_->iter) {
-    if (globals->MAX_THREADS > 1) {
+    if (router_cfg->MAX_THREADS > 1) {
       logger_->info(DRT, 207, "Setting MAX_THREADS=1 for use with the DR GUI.");
-      globals->MAX_THREADS = 1;
+      router_cfg->MAX_THREADS = 1;
     }
 
     status("Start iter: " + std::to_string(iter));

@@ -44,7 +44,7 @@ class Rect;
 
 namespace drt {
 
-struct Globals
+struct RouterConfiguration
 {
   std::string DBPROCESSNODE;
   std::string OUT_MAZE_FILE;

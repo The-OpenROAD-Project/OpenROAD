@@ -49,7 +49,10 @@ class frNet : public frBlockObject
 {
  public:
   // constructors
-  frNet(const frString& in, Globals* globals) : name_(in), globals_(globals) {}
+  frNet(const frString& in, RouterConfiguration* router_cfg)
+      : name_(in), router_cfg_(router_cfg)
+  {
+  }
   // getters
   const frString& getName() const { return name_; }
   const std::vector<frInstTerm*>& getInstTerms() const { return instTerms_; }
@@ -224,10 +227,10 @@ class frNet : public frBlockObject
   {
     int max = absPriorityLvl;
     if (hasNDR()) {
-      max = std::max(max, globals_->NDR_NETS_ABS_PRIORITY);
+      max = std::max(max, router_cfg_->NDR_NETS_ABS_PRIORITY);
     }
     if (isClock()) {
-      max = std::max(max, globals_->CLOCK_NETS_ABS_PRIORITY);
+      max = std::max(max, router_cfg_->CLOCK_NETS_ABS_PRIORITY);
     }
     absPriorityLvl = max;
   }
@@ -242,7 +245,7 @@ class frNet : public frBlockObject
 
  protected:
   frString name_;
-  Globals* globals_;
+  RouterConfiguration* router_cfg_;
   std::vector<frInstTerm*> instTerms_;
   std::vector<frBTerm*> bterms_;
   // dr

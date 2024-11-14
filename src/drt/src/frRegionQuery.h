@@ -51,7 +51,7 @@ class grBlockObject;
 class grShape;
 class grVia;
 class FlexDR;
-struct Globals;
+struct RouterConfiguration;
 
 class frRegionQuery
 {
@@ -59,7 +59,9 @@ class frRegionQuery
   template <typename T>
   using Objects = std::vector<rq_box_value_t<T*>>;
 
-  frRegionQuery(frDesign* design, Logger* logger, Globals* globals);
+  frRegionQuery(frDesign* design,
+                Logger* logger,
+                RouterConfiguration* router_cfg);
   ~frRegionQuery();
   // getters
   frDesign* getDesign() const;

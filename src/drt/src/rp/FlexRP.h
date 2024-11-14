@@ -40,8 +40,11 @@ class FlexRP
   FlexRP(frDesign* designIn,
          frTechObject* techIn,
          Logger* logger,
-         Globals* globals)
-      : design_(designIn), tech_(techIn), logger_(logger), globals_(globals)
+         RouterConfiguration* router_cfg)
+      : design_(designIn),
+        tech_(techIn),
+        logger_(logger),
+        router_cfg_(router_cfg)
   {
   }
 
@@ -53,7 +56,7 @@ class FlexRP
   frDesign* design_;
   frTechObject* tech_;
   Logger* logger_;
-  Globals* globals_;
+  RouterConfiguration* router_cfg_;
 
   // init
   void init();

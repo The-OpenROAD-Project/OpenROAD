@@ -116,22 +116,23 @@ void io::Parser::initDefaultVias()
       if (iter_1cut != cuts2ViaDefs.end() && !iter_1cut->second.empty()) {
         auto defaultSingleCutVia = iter_1cut->second.begin()->second;
         getTech()->getLayer(layerNum)->setDefaultViaDef(defaultSingleCutVia);
-      } else if (layerNum > globals_->TOP_ROUTING_LAYER) {
+      } else if (layerNum > router_cfg_->TOP_ROUTING_LAYER) {
         // We may need vias here to stack up to bumps.  However there
         // may not be a single cut via.  Since we aren't routing, but
         // just stacking, we'll use the best via we can find.
         auto via_map = cuts2ViaDefs.begin()->second;
         getTech()->getLayer(layerNum)->setDefaultViaDef(
             via_map.begin()->second);
-      } else if (layerNum >= globals_->BOTTOM_ROUTING_LAYER) {
+      } else if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER) {
         logger_->error(DRT,
                        234,
                        "{} does not have single-cut via.",
                        getTech()->getLayer(layerNum)->getName());
       }
     } else {
-      if (layerNum >= globals_->BOTTOM_ROUTING_LAYER
-          && (layerNum <= std::max(globals_->TOP_ROUTING_LAYER, topPinLayer))) {
+      if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
+          && (layerNum
+              <= std::max(router_cfg_->TOP_ROUTING_LAYER, topPinLayer))) {
         logger_->error(DRT,
                        233,
                        "{} does not have any vias.",
@@ -139,8 +140,9 @@ void io::Parser::initDefaultVias()
       }
     }
     // generate via if default via enclosure is not along pref dir
-    if (globals_->ENABLE_VIA_GEN && layerNum >= globals_->BOTTOM_ROUTING_LAYER
-        && layerNum <= globals_->TOP_ROUTING_LAYER) {
+    if (router_cfg_->ENABLE_VIA_GEN
+        && layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
+        && layerNum <= router_cfg_->TOP_ROUTING_LAYER) {
       auto techDefautlViaDef
           = getTech()->getLayer(layerNum)->getDefaultViaDef();
       frVia via(techDefautlViaDef);
@@ -464,8 +466,8 @@ void io::Parser::initCutLayerWidth()
         auto viaWidth = cutRect->width();
         layer->setWidth(viaWidth);
       } else {
-        if (layerNum >= globals_->BOTTOM_ROUTING_LAYER
-            && layerNum <= globals_->TOP_ROUTING_LAYER) {
+        if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
+            && layerNum <= router_cfg_->TOP_ROUTING_LAYER) {
           logger_->error(DRT,
                          242,
                          "CUT layer {} does not have default via.",
@@ -698,8 +700,8 @@ void io::Parser::convertLef58MinCutConstraints()
       }
 
       if (dbRule->isLengthValid()) {
-        globals_->MTSAFEDIST
-            = std::max(globals_->MTSAFEDIST, dbRule->getLengthWithinDist());
+        router_cfg_->MTSAFEDIST
+            = std::max(router_cfg_->MTSAFEDIST, dbRule->getLengthWithinDist());
         rptr->setLength(dbRule->getLength(), dbRule->getLengthWithinDist());
       }
       rptr->setWidth(dbRule->getWidth());
@@ -776,7 +778,7 @@ void io::Parser::checkFig(frPinFig* uFig,
     getTrackLocs(true, layer, getBlock(), box.yMin(), box.yMax(), horzTracks);
     getTrackLocs(false, layer, getBlock(), box.xMin(), box.xMax(), vertTracks);
     bool allowWrongWayRouting
-        = (globals_->USENONPREFTRACKS && !layer->isUnidirectional());
+        = (router_cfg_->USENONPREFTRACKS && !layer->isUnidirectional());
     if (allowWrongWayRouting) {
       foundTracks |= (!horzTracks.empty() || !vertTracks.empty());
       foundCenterTracks
@@ -826,7 +828,7 @@ void io::Parser::checkFig(frPinFig* uFig,
       getTrackLocs(
           false, layer, getBlock(), gtl::xl(rect), gtl::xh(rect), vertTracks);
       bool allowWrongWayRouting
-          = (globals_->USENONPREFTRACKS && !layer->isUnidirectional());
+          = (router_cfg_->USENONPREFTRACKS && !layer->isUnidirectional());
       if (allowWrongWayRouting) {
         foundTracks |= (!horzTracks.empty() || !vertTracks.empty());
       } else {
@@ -916,12 +918,12 @@ void io::Parser::postProcess()
 {
   checkPins();
   initDefaultVias();
-  if (globals_->DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
-    initDefaultVias_GF14(globals_->DBPROCESSNODE);
+  if (router_cfg_->DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
+    initDefaultVias_GF14(router_cfg_->DBPROCESSNODE);
   }
   initCutLayerWidth();
   initConstraintLayerIdx();
-  getTech()->printDefaultVias(logger_, globals_);
+  getTech()->printDefaultVias(logger_, router_cfg_);
   instAnalysis();
   convertLef58MinCutConstraints();
   // init region query
@@ -934,7 +936,7 @@ void io::Parser::postProcess()
 // instantiate RPin and region query for RPin
 void io::Parser::initRPin()
 {
-  if (globals_->VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 185, "Post process initialize RPin region query.");
   }
   initRPin_rpin();

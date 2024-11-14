@@ -34,9 +34,10 @@ namespace drt {
 
 FlexGCWorker::FlexGCWorker(frTechObject* techIn,
                            Logger* logger,
-                           Globals* globals,
+                           RouterConfiguration* router_cfg,
                            FlexDRWorker* drWorkerIn)
-    : impl_(std::make_unique<Impl>(techIn, logger, globals, drWorkerIn, this))
+    : impl_(
+        std::make_unique<Impl>(techIn, logger, router_cfg, drWorkerIn, this))
 {
 }
 
@@ -48,12 +49,12 @@ FlexGCWorker::Impl::Impl() : Impl(nullptr, nullptr, nullptr, nullptr, nullptr)
 
 FlexGCWorker::Impl::Impl(frTechObject* techIn,
                          Logger* logger,
-                         Globals* globals,
+                         RouterConfiguration* router_cfg,
                          FlexDRWorker* drWorkerIn,
                          FlexGCWorker* gcWorkerIn)
     : tech_(techIn),
       logger_(logger),
-      globals_(globals),
+      router_cfg_(router_cfg),
       drWorker_(drWorkerIn),
       rq_(gcWorkerIn),
       printMarker_(false),

@@ -50,7 +50,7 @@ class UniqueInsts
   UniqueInsts(frDesign* design,
               const frCollection<odb::dbInst*>& target_insts,
               Logger* logger,
-              Globals* globals_);
+              RouterConfiguration* router_cfg_);
 
   /**
    * @brief Initializes Unique Instances and Pin Acess data.
@@ -151,7 +151,7 @@ class UniqueInsts
   frDesign* design_;
   const frCollection<odb::dbInst*>& target_insts_;
   Logger* logger_;
-  Globals* globals_;
+  RouterConfiguration* router_cfg_;
 
   // All the unique instances
   std::vector<frInst*> unique_;

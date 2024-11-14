@@ -435,7 +435,7 @@ bool isValidGuideLayerNum(odb::dbGuide* db_guide,
                           frNet* net,
                           utl::Logger* logger,
                           frLayerNum& layer_num,
-                          Globals* globals)
+                          RouterConfiguration* router_cfg)
 {
   frLayer* layer = tech->getLayer(db_guide->getLayer()->getName());
   if (layer == nullptr) {
@@ -447,13 +447,13 @@ bool isValidGuideLayerNum(odb::dbGuide* db_guide,
   // Ignore guide as invalid if above top routing layer for a net with bterms
   // above top routing layer
   const bool guide_above_top_routing_layer
-      = layer_num > globals->TOP_ROUTING_LAYER;
+      = layer_num > router_cfg->TOP_ROUTING_LAYER;
   if (guide_above_top_routing_layer && net->hasBTermsAboveTopLayer()) {
     return false;
   }
   const bool guide_below_bottom_routing_layer
-      = layer_num < globals->BOTTOM_ROUTING_LAYER
-        && layer_num != globals->VIA_ACCESS_LAYERNUM;
+      = layer_num < router_cfg->BOTTOM_ROUTING_LAYER
+        && layer_num != router_cfg->VIA_ACCESS_LAYERNUM;
   if (guide_below_bottom_routing_layer || guide_above_top_routing_layer) {
     logger->error(DRT,
                   155,
@@ -463,12 +463,12 @@ bool isValidGuideLayerNum(odb::dbGuide* db_guide,
                   net->getName(),
                   layer->getName(),
                   layer_num,
-                  tech->getLayer(globals->BOTTOM_ROUTING_LAYER)->getName(),
-                  globals->BOTTOM_ROUTING_LAYER,
-                  tech->getLayer(globals->TOP_ROUTING_LAYER)->getName(),
-                  globals->TOP_ROUTING_LAYER,
-                  tech->getLayer(globals->VIA_ACCESS_LAYERNUM)->getName(),
-                  globals->VIA_ACCESS_LAYERNUM);
+                  tech->getLayer(router_cfg->BOTTOM_ROUTING_LAYER)->getName(),
+                  router_cfg->BOTTOM_ROUTING_LAYER,
+                  tech->getLayer(router_cfg->TOP_ROUTING_LAYER)->getName(),
+                  router_cfg->TOP_ROUTING_LAYER,
+                  tech->getLayer(router_cfg->VIA_ACCESS_LAYERNUM)->getName(),
+                  router_cfg->VIA_ACCESS_LAYERNUM);
   }
   return true;
 }
@@ -722,7 +722,7 @@ bool GuideProcessor::readGuides()
       }
       frLayerNum layer_num;
       if (!isValidGuideLayerNum(
-              db_guide, getTech(), net, logger_, layer_num, globals_)) {
+              db_guide, getTech(), net, logger_, layer_num, router_cfg_)) {
         continue;
       }
       frRect rect;
@@ -733,7 +733,7 @@ bool GuideProcessor::readGuides()
       logGuidesRead(num_guides, logger_);
     }
   }
-  if (globals_->VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->report("");
     logger_->info(utl::DRT, 157, "Number of guides:     {}", num_guides);
     logger_->report("");
@@ -917,7 +917,7 @@ void GuideProcessor::buildGCellPatterns()
     ygp.setCount((dieBox.yMax() - startCoordY) / (frCoord) GCELLGRIDY);
   }
 
-  if (globals_->VERBOSE > 0 || logger_->debugCheck(DRT, "autotuner", 1)) {
+  if (router_cfg_->VERBOSE > 0 || logger_->debugCheck(DRT, "autotuner", 1)) {
     logger_->info(DRT,
                   176,
                   "GCELLGRID X {} DO {} STEP {} ;",
@@ -1186,7 +1186,7 @@ void GuideProcessor::genGuides_split(
         auto end_idx = intv.upper();
         std::set<frCoord> split_indices;
         // hardcode layerNum <= VIA_ACCESS_LAYERNUM not used for GR
-        if (via_access_only && layer_num <= globals_->VIA_ACCESS_LAYERNUM) {
+        if (via_access_only && layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM) {
           // split by pin
           split::splitByPins(pin_helper,
                              layer_num,
@@ -1366,12 +1366,12 @@ std::vector<std::pair<frBlockObject*, Point>> GuideProcessor::genGuides(
   coverPins(net, rects);
 
   int size = (int) getTech()->getLayers().size();
-  if (globals_->TOP_ROUTING_LAYER < std::numeric_limits<int>::max()
-      && globals_->TOP_ROUTING_LAYER >= 0) {
-    size = std::min(size, globals_->TOP_ROUTING_LAYER + 1);
+  if (router_cfg_->TOP_ROUTING_LAYER < std::numeric_limits<int>::max()
+      && router_cfg_->TOP_ROUTING_LAYER >= 0) {
+    size = std::min(size, router_cfg_->TOP_ROUTING_LAYER + 1);
   }
   TrackIntervalsByLayer intvs(size);
-  if (globals_->DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
+  if (router_cfg_->DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     genGuides_addCoverGuide(net, rects);
   }
   genGuides_prep(rects, intvs);
@@ -1431,7 +1431,7 @@ std::vector<std::pair<frBlockObject*, Point>> GuideProcessor::genGuides(
     }
     GuidePathFinder path_finder(design_,
                                 logger_,
-                                globals_,
+                                router_cfg_,
                                 net,
                                 force_pin_feed_through,
                                 rects,
@@ -1451,14 +1451,14 @@ std::vector<std::pair<frBlockObject*, Point>> GuideProcessor::genGuides(
 GuidePathFinder::GuidePathFinder(
     frDesign* design,
     Logger* logger,
-    Globals* globals,
+    RouterConfiguration* router_cfg,
     frNet* net,
     const bool force_feed_through,
     const std::vector<frRect>& rects,
     const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map)
     : design_(design),
       logger_(logger),
-      globals_(globals),
+      router_cfg_(router_cfg),
       net_(net),
       force_feed_through_(force_feed_through)
 {
@@ -1707,7 +1707,7 @@ void GuidePathFinder::constructAdjList()
           // no M1 cross-gcell routing allowed
           // BX200307: in general VIA_ACCESS_LAYER should not be used (instead
           // of 0)
-          if (layer_num != globals_->VIA_ACCESS_LAYERNUM) {
+          if (layer_num != router_cfg_->VIA_ACCESS_LAYERNUM) {
             adj_list_[idx1].push_back(idx2);
             adj_list_[idx2].push_back(idx1);
           }
@@ -1715,7 +1715,7 @@ void GuidePathFinder::constructAdjList()
           // one pin, one gcell
           auto guide_idx = std::min(idx1, idx2);
           auto pin_idx = std::max(idx1, idx2);
-          if (globals_->ALLOW_PIN_AS_FEEDTHROUGH || isForceFeedThrough()) {
+          if (router_cfg_->ALLOW_PIN_AS_FEEDTHROUGH || isForceFeedThrough()) {
             adj_list_[pin_idx].push_back(guide_idx);
             adj_list_[guide_idx].push_back(pin_idx);
           } else {
@@ -1754,7 +1754,7 @@ GuidePathFinder::getInitSearchQueue()
     // push every visited node into pq
     for (int i = 0; i < getNodeCount(); i++) {
       if (is_on_path_[i]) {
-        if (globals_->ALLOW_PIN_AS_FEEDTHROUGH && isPinIdx(i)) {
+        if (router_cfg_->ALLOW_PIN_AS_FEEDTHROUGH && isPinIdx(i)) {
           // penalize feedthrough in normal mode
           queue.push({i, prev_idx_[i], 2});
         } else if (isForceFeedThrough() && isPinIdx(i)) {
@@ -1949,7 +1949,7 @@ void GuideProcessor::processGuides()
   }
   frTime t;
   ProfileTask profile("IO:postProcessGuide");
-  if (globals_->VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 169, "Post process guides.");
   }
   buildGCellPatterns();
@@ -1964,7 +1964,7 @@ void GuideProcessor::processGuides()
     net->setOrigGuides(rects);
     net_to_gr_pins[net];
   }
-  omp_set_num_threads(globals_->MAX_THREADS);
+  omp_set_num_threads(router_cfg_->MAX_THREADS);
   utl::ThreadException exception;
 #pragma omp parallel for
   for (int i = 0; i < nets_to_guides.size(); i++) {
@@ -1975,7 +1975,7 @@ void GuideProcessor::processGuides()
 #pragma omp critical
       {
         cnt++;
-        if (globals_->VERBOSE > 0) {
+        if (router_cfg_->VERBOSE > 0) {
           if (cnt < 1000000) {
             if (cnt % 100000 == 0) {
               logger_->report("  complete {} nets.", cnt);
@@ -2012,11 +2012,11 @@ void GuideProcessor::processGuides()
   logger_->info(DRT, 179, "Init gr pin query.");
   getDesign()->getRegionQuery()->initGRPin(all_gr_pins);
 
-  if (globals_->VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     t.print(logger_);
   }
-  if (!globals_->SAVE_GUIDE_UPDATES) {
-    if (globals_->VERBOSE > 0) {
+  if (!router_cfg_->SAVE_GUIDE_UPDATES) {
+    if (router_cfg_->VERBOSE > 0) {
       logger_->info(DRT, 245, "skipped writing guide updates to database.");
     }
   } else {

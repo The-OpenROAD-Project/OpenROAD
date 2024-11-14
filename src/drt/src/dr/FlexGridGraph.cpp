@@ -77,7 +77,7 @@ void FlexGridGraph::initGrids(
   zCoords_.reserve(zMap.size());
   for (auto& [k, v] : zMap) {
     zCoords_.push_back(k);
-    zHeight += getTech()->getLayer(k)->getPitch() * globals_->VIACOST;
+    zHeight += getTech()->getLayer(k)->getPitch() * router_cfg_->VIACOST;
     zHeights_.push_back(zHeight);
     layerRouteDirections_.push_back(v);
   }
@@ -241,8 +241,8 @@ void FlexGridGraph::initEdges(
         bool isOutOfDieVia = outOfDieVia(xIdx, yIdx, zIdx, dieBox_);
         // add edge for preferred direction
         if (dir == dbTechLayerDir::HORIZONTAL && yFound) {
-          if (layerNum >= globals_->BOTTOM_ROUTING_LAYER
-              && layerNum <= globals_->TOP_ROUTING_LAYER) {
+          if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
+              && layerNum <= router_cfg_->TOP_ROUTING_LAYER) {
             if ((!isOutOfDieVia || !hasOutOfDieViol(xIdx, yIdx, zIdx))
                 && (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
                     || yIt->second != nullptr)) {
@@ -267,8 +267,8 @@ void FlexGridGraph::initEdges(
             }
           }
         } else if (dir == dbTechLayerDir::VERTICAL && xFound) {
-          if (layerNum >= globals_->BOTTOM_ROUTING_LAYER
-              && layerNum <= globals_->TOP_ROUTING_LAYER) {
+          if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
+              && layerNum <= router_cfg_->TOP_ROUTING_LAYER) {
             if ((!isOutOfDieVia || !hasOutOfDieViol(xIdx, yIdx, zIdx))
                 && (layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
                     || xIt->second != nullptr)) {
@@ -296,19 +296,19 @@ void FlexGridGraph::initEdges(
         }
         // get non pref track layer --> use upper layer pref dir track if
         // possible
-        if (globals_->USENONPREFTRACKS && !layer->isUnidirectional()) {
+        if (router_cfg_->USENONPREFTRACKS && !layer->isUnidirectional()) {
           // add edge for non-preferred direction
           // vertical non-pref track
           if (dir == dbTechLayerDir::HORIZONTAL && xFound3) {
-            if (layerNum >= globals_->BOTTOM_ROUTING_LAYER
-                && layerNum <= globals_->TOP_ROUTING_LAYER) {
+            if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
+                && layerNum <= router_cfg_->TOP_ROUTING_LAYER) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::N, bbox, initDR);
               setGridCostN(xIdx, yIdx, zIdx);
             }
             // horizontal non-pref track
           } else if (dir == dbTechLayerDir::VERTICAL && yFound3) {
-            if (layerNum >= globals_->BOTTOM_ROUTING_LAYER
-                && layerNum <= globals_->TOP_ROUTING_LAYER) {
+            if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
+                && layerNum <= router_cfg_->TOP_ROUTING_LAYER) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::E, bbox, initDR);
               setGridCostE(xIdx, yIdx, zIdx);
             }
@@ -341,8 +341,8 @@ void FlexGridGraph::initEdges(
         frLayer* nextLayer = getTech()->getLayer(nextLNum);
         const bool restrictedRouting
             = nextLayer->isUnidirectional()
-              || nextLNum < globals_->BOTTOM_ROUTING_LAYER
-              || nextLNum > globals_->TOP_ROUTING_LAYER;
+              || nextLNum < router_cfg_->BOTTOM_ROUTING_LAYER
+              || nextLNum > router_cfg_->TOP_ROUTING_LAYER;
         if (!restrictedRouting || nextLayer->isVertical()) {
           auto& xSubMap = xMap[apPt.x()];
           auto xTrack = xSubMap.find(nextLNum);
@@ -358,7 +358,8 @@ void FlexGridGraph::initEdges(
           }
         }
         // didn't find default track, then create tracks if possible
-        if (!restrictedRouting && nextLNum >= globals_->VIA_ACCESS_LAYERNUM) {
+        if (!restrictedRouting
+            && nextLNum >= router_cfg_->VIA_ACCESS_LAYERNUM) {
           dbTechLayerDir prefDir
               = design->getTech()->getLayer(nextLNum)->getDir();
           xMap[apPt.x()][nextLNum] = nullptr;  // to keep coherence
@@ -431,7 +432,7 @@ void FlexGridGraph::initTracks(
     for (auto& tp : design->getTopBlock()->getTrackPatterns(currLayerNum)) {
       // allow wrongway if global variable and design rule allow
       bool flag
-          = (globals_->USENONPREFTRACKS && !layer->isUnidirectional())
+          = (router_cfg_->USENONPREFTRACKS && !layer->isUnidirectional())
                 ? (tp->isHorizontal()
                    && currPrefRouteDir == dbTechLayerDir::VERTICAL)
                       || (!tp->isHorizontal()
@@ -491,7 +492,7 @@ void FlexGridGraph::resetPrevNodeDir()
 // print the grid graph with edge and vertex for debug purpose
 void FlexGridGraph::print() const
 {
-  std::ofstream mazeLog(globals_->OUT_MAZE_FILE.c_str());
+  std::ofstream mazeLog(router_cfg_->OUT_MAZE_FILE.c_str());
   if (mazeLog.is_open()) {
     // print edges
     Rect gridBBox;

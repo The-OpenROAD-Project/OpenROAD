@@ -270,7 +270,7 @@ void FlexGRCMap::init()
 
           unsigned numRPins = rpinQueryResult.size();
 
-          if (layerIdx > globals_->VIA_ACCESS_LAYERNUM) {
+          if (layerIdx > router_cfg_->VIA_ACCESS_LAYERNUM) {
             addRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::E, numRPins);
           } else {
             addRawDemand(xIdx, yIdx, cmapLayerIdx + 1, frDirEnum::N, numRPins);
@@ -287,7 +287,7 @@ void FlexGRCMap::init()
 
           unsigned numRPins = rpinQueryResult.size();
 
-          if (layerIdx > globals_->VIA_ACCESS_LAYERNUM) {
+          if (layerIdx > router_cfg_->VIA_ACCESS_LAYERNUM) {
             addRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::N, numRPins);
           } else {
             addRawDemand(xIdx, yIdx, cmapLayerIdx + 1, frDirEnum::E, numRPins);
@@ -387,7 +387,7 @@ frCoord FlexGRCMap::calcBloatDist(frBlockObject* obj,
                     ? (box.xMax() - box.xMin())
                     : (box.yMax() - box.yMin());
   if (obj->typeId() == frcBlockage || obj->typeId() == frcInstBlockage) {
-    if (isOBS && globals_->USEMINSPACING_OBS) {
+    if (isOBS && router_cfg_->USEMINSPACING_OBS) {
       objWidth = width;
     }
   }
@@ -559,8 +559,8 @@ void FlexGRCMap::print(bool isAll)
   std::ofstream congMap;
   std::cout << "printing congestion map...\n";
 
-  if (!globals_->CMAP_FILE.empty()) {
-    congMap.open(globals_->CMAP_FILE.c_str());
+  if (!router_cfg_->CMAP_FILE.empty()) {
+    congMap.open(router_cfg_->CMAP_FILE.c_str());
   }
 
   if (congMap.is_open()) {
@@ -616,8 +616,8 @@ void FlexGRCMap::print2D(bool isAll)
 {
   std::cout << "printing 2D congestion map...\n";
   std::ofstream congMap;
-  if (!globals_->CMAP_FILE.empty()) {
-    congMap.open(globals_->CMAP_FILE.c_str());
+  if (!router_cfg_->CMAP_FILE.empty()) {
+    congMap.open(router_cfg_->CMAP_FILE.c_str());
   }
 
   if (congMap.is_open()) {

@@ -69,7 +69,7 @@ class FlexPA
   FlexPA(frDesign* in,
          Logger* logger,
          dst::Distributed* dist,
-         Globals* globals);
+         RouterConfiguration* router_cfg);
   ~FlexPA();
 
   void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
@@ -85,7 +85,7 @@ class FlexPA
   frDesign* design_;
   Logger* logger_;
   dst::Distributed* dist_;
-  Globals* globals_;
+  RouterConfiguration* router_cfg_;
 
   std::unique_ptr<FlexPAGraphics> graphics_;
   std::string debugPinName_;

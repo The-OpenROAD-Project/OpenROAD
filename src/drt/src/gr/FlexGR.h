@@ -54,14 +54,14 @@ class FlexGR
   FlexGR(frDesign* designIn,
          Logger* logger,
          stt::SteinerTreeBuilder* stt_builder,
-         Globals* globals)
+         RouterConfiguration* router_cfg)
       : db_(nullptr),
         design_(designIn),
         cmap_(nullptr),
         cmap2D_(nullptr),
         logger_(logger),
         stt_builder_(stt_builder),
-        globals_(globals)
+        router_cfg_(router_cfg)
   {
   }
 
@@ -87,7 +87,7 @@ class FlexGR
   std::unique_ptr<FlexGRCMap> cmap2D_;
   Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
-  Globals* globals_;
+  RouterConfiguration* router_cfg_;
   std::map<frNet*,
            std::map<std::pair<int, int>, std::vector<frNode*>>,
            frBlockObjectComp>
@@ -285,10 +285,10 @@ class FlexGRWorker
 {
  public:
   // constructors
-  FlexGRWorker(FlexGR* grIn, Globals* globals)
+  FlexGRWorker(FlexGR* grIn, RouterConfiguration* router_cfg)
       : design_(grIn->getDesign()),
         gr_(grIn),
-        gridGraph_(grIn->getDesign(), this, globals),
+        gridGraph_(grIn->getDesign(), this, router_cfg),
         rq_(this)
   {
   }

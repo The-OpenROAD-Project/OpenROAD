@@ -105,12 +105,12 @@ FlexDR::FlexDR(TritonRoute* router,
                frDesign* designIn,
                Logger* loggerIn,
                odb::dbDatabase* dbIn,
-               Globals* globals)
+               RouterConfiguration* router_cfg)
     : router_(router),
       design_(designIn),
       logger_(loggerIn),
       db_(dbIn),
-      globals_(globals),
+      router_cfg_(router_cfg),
       numWorkUnits_(0),
       dist_(nullptr),
       dist_on_(false),
@@ -209,7 +209,7 @@ int FlexDRWorker::main(frDesign* design)
   using std::chrono::high_resolution_clock;
   high_resolution_clock::time_point t0 = high_resolution_clock::now();
   auto micronPerDBU = 1.0 / getTech()->getDBUPerUU();
-  if (globals_->VERBOSE > 1) {
+  if (router_cfg_->VERBOSE > 1) {
     logger_->report("start DR worker (BOX) ( {} {} ) ( {} {} )",
                     routeBox_.xMin() * micronPerDBU,
                     routeBox_.yMin() * micronPerDBU,
@@ -259,12 +259,12 @@ int FlexDRWorker::main(frDesign* design)
       workerFile.close();
     }
     {
-      std::ofstream globalsFile(
-          fmt::format("{}/worker_globals_->bin", workerPath).c_str());
-      frOArchive ar(globalsFile);
+      std::ofstream router_cfgFile(
+          fmt::format("{}/worker_router_cfg_->bin", workerPath).c_str());
+      frOArchive ar(router_cfgFile);
       registerTypes(ar);
-      serializeGlobals(ar, globals_);
-      globalsFile.close();
+      serializeGlobals(ar, router_cfg_);
+      router_cfgFile.close();
     }
   }
   if (!skipRouting_) {
@@ -285,7 +285,7 @@ int FlexDRWorker::main(frDesign* design)
   duration<double> time_span1 = duration_cast<duration<double>>(t2 - t1);
   duration<double> time_span2 = duration_cast<duration<double>>(t3 - t2);
 
-  if (globals_->VERBOSE > 1) {
+  if (router_cfg_->VERBOSE > 1) {
     std::stringstream ss;
     ss << "time (INIT/ROUTE/POST) " << time_span0.count() << " "
        << time_span1.count() << " " << time_span2.count() << " " << std::endl;
@@ -312,7 +312,7 @@ int FlexDRWorker::main(frDesign* design)
 void FlexDRWorker::distributedMain(frDesign* design)
 {
   ProfileTask profile("DR:main");
-  if (globals_->VERBOSE > 1) {
+  if (router_cfg_->VERBOSE > 1) {
     logger_->report("start DR worker (BOX) ( {} {} ) ( {} {} )",
                     routeBox_.xMin() * 1.0 / getTech()->getDBUPerUU(),
                     routeBox_.yMin() * 1.0 / getTech()->getDBUPerUU(),
@@ -462,7 +462,7 @@ void FlexDR::init()
 {
   ProfileTask profile("DR:init");
   frTime t;
-  if (globals_->VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 187, "Start routing data preparation.");
   }
   initGCell2BoundaryPin();
@@ -470,13 +470,13 @@ void FlexDR::init()
 
   init_halfViaEncArea();
 
-  if (globals_->VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     t.print(logger_);
   }
 
   iter_ = 0;
 
-  if (globals_->VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 194, "Start detail routing.");
   }
   for (const auto& net : getDesign()->getTopBlock()->getNets()) {
@@ -583,12 +583,12 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   }
   if (dist_on_) {
     if ((iter % 10 == 0 && iter != 60) || iter == 3 || iter == 15) {
-      globals_path_ = fmt::format("{}globals_->{}.ar", dist_dir_, iter);
-      router_->writeGlobals(globals_path_);
+      router_cfg_path_ = fmt::format("{}router_cfg_->{}.ar", dist_dir_, iter);
+      router_->writeGlobals(router_cfg_path_);
     }
   }
   frTime t;
-  if (globals_->VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     std::string suffix;
     if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
       suffix = "st";
@@ -602,7 +602,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
     logger_->info(DRT, 195, "Start {}{} optimization iteration.", iter, suffix);
   }
   if (graphics_) {
-    graphics_->startIter(iter, globals_);
+    graphics_->startIter(iter, router_cfg_);
   }
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
@@ -625,7 +625,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   for (int i = offset; i < (int) xgp.getCount(); i += size) {
     for (int j = offset; j < (int) ygp.getCount(); j += size) {
       auto worker = std::make_unique<FlexDRWorker>(
-          &via_data_, design_, logger_, globals_);
+          &via_data_, design_, logger_, router_cfg_);
       Rect routeBox1 = getDesign()->getTopBlock()->getGCellBox(Point(i, j));
       const int max_i = std::min((int) xgp.getCount() - 1, i + size - 1);
       const int max_j = std::min((int) ygp.getCount(), j + size - 1);
@@ -637,8 +637,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
                     routeBox2.yMax());
       Rect extBox;
       Rect drcBox;
-      routeBox.bloat(globals_->MTSAFEDIST, extBox);
-      routeBox.bloat(globals_->DRCSAFEDIST, drcBox);
+      routeBox.bloat(router_cfg_->MTSAFEDIST, extBox);
+      routeBox.bloat(router_cfg_->DRCSAFEDIST, drcBox);
       worker->setRouteBox(routeBox);
       worker->setExtBox(extBox);
       worker->setDrcBox(drcBox);
@@ -670,7 +670,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       if (workers[batchIdx].empty()
           || (!dist_on_
               && (int) workers[batchIdx].back().size()
-                     >= globals_->BATCHSIZE)) {
+                     >= router_cfg_->BATCHSIZE)) {
         workers[batchIdx].push_back(
             std::vector<std::unique_ptr<FlexDRWorker>>());
       }
@@ -682,7 +682,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
     xIdx++;
   }
 
-  omp_set_num_threads(globals_->MAX_THREADS);
+  omp_set_num_threads(router_cfg_->MAX_THREADS);
   int version = 0;
   increaseClipsize_ = false;
   numWorkUnits_ = 0;
@@ -700,9 +700,9 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
           if (version++ == 0 && !design_->hasUpdates()) {
             std::string serializedViaData;
             serializeViaData(via_data_, serializedViaData);
-            router_->sendGlobalsUpdates(globals_path_, serializedViaData);
+            router_->sendGlobalsUpdates(router_cfg_path_, serializedViaData);
           } else {
-            router_->sendDesignUpdates(globals_path_);
+            router_->sendDesignUpdates(router_cfg_path_);
           }
         }
         {
@@ -720,7 +720,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
 #pragma omp critical
               {
                 cnt++;
-                if (globals_->VERBOSE > 0) {
+                if (router_cfg_->VERBOSE > 0) {
                   if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
                       && prev_perc < 90) {
                     if (prev_perc == 0 && t.isExceed(0)) {
@@ -794,7 +794,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   if (!iter) {
     removeGCell2BoundaryPin();
   }
-  if (globals_->VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1 && prev_perc >= 90) {
       if (prev_perc == 0 && t.isExceed(0)) {
         isExceed = true;
@@ -809,7 +809,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
     }
   }
   FlexDRConnectivityChecker checker(
-      router_, logger_, globals_, graphics_.get(), dist_on_);
+      router_, logger_, router_cfg_, graphics_.get(), dist_on_);
   checker.check(iter);
   if (getDesign()->getTopBlock()->getNumMarkers() == 0
       && getTech()->hasMaxSpacingConstraints()) {
@@ -822,7 +822,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
              1,
              "Number of work units = {}.",
              numWorkUnits_);
-  if (globals_->VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT,
                   199,
                   "  Number of violations = {}.",
@@ -871,12 +871,12 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
     std::cout << std::flush;
   }
   end();
-  if ((globals_->DRC_RPT_ITER_STEP && iter > 0
-       && iter % globals_->DRC_RPT_ITER_STEP.value() == 0)
+  if ((router_cfg_->DRC_RPT_ITER_STEP && iter > 0
+       && iter % router_cfg_->DRC_RPT_ITER_STEP.value() == 0)
       || logger_->debugCheck(DRT, "autotuner", 1)
       || logger_->debugCheck(DRT, "report", 1)) {
     router_->reportDRC(
-        globals_->DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt",
+        router_cfg_->DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt",
         design_->getTopBlock()->getMarkers(),
         "DRC - iter " + std::to_string(iter));
   }
@@ -886,9 +886,9 @@ void FlexDR::end(bool done)
 {
   if (done) {
     router_->reportDRC(
-        globals_->DRC_RPT_FILE, design_->getTopBlock()->getMarkers(), "DRC");
+        router_cfg_->DRC_RPT_FILE, design_->getTopBlock()->getMarkers(), "DRC");
   }
-  if (done && globals_->VERBOSE > 0) {
+  if (done && router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 198, "Complete detail routing.");
   }
 
@@ -935,7 +935,7 @@ void FlexDR::end(bool done)
                     totWlen / topBlock->getDBUPerUU());
   }
 
-  if (globals_->VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->report("Total wire length = {} um.",
                     totWlen / topBlock->getDBUPerUU());
 
@@ -1136,7 +1136,7 @@ void FlexDR::reportGuideCoverage()
   std::vector<uint64_t> totalCoveredAreaByLayerNum(numLayers, 0);
   std::map<frNet*, std::vector<float>> netsCoverage;
   const auto& nets = getDesign()->getTopBlock()->getNets();
-  omp_set_num_threads(globals_->MAX_THREADS);
+  omp_set_num_threads(router_cfg_->MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < nets.size(); i++) {  // NOLINT
     const auto& net = nets.at(i);
@@ -1171,7 +1171,7 @@ void FlexDR::reportGuideCoverage()
 
     for (frLayerNum lNum = 0; lNum < numLayers; lNum++) {
       if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING
-          || lNum > globals_->TOP_ROUTING_LAYER) {
+          || lNum > router_cfg_->TOP_ROUTING_LAYER) {
         continue;
       }
       float coveredPercentage = -1.0;
@@ -1197,11 +1197,11 @@ void FlexDR::reportGuideCoverage()
     }
   }
 
-  std::ofstream file(globals_->GUIDE_REPORT_FILE);
+  std::ofstream file(router_cfg_->GUIDE_REPORT_FILE);
   file << "Net,";
   for (const auto& layer : getTech()->getLayers()) {
     if (layer->getType() == dbTechLayerType::ROUTING
-        && layer->getLayerNum() <= globals_->TOP_ROUTING_LAYER) {
+        && layer->getLayerNum() <= router_cfg_->TOP_ROUTING_LAYER) {
       file << layer->getName() << ",";
     }
   }
@@ -1222,7 +1222,7 @@ void FlexDR::reportGuideCoverage()
   uint64_t totalCoveredArea = 0;
   for (const auto& layer : getTech()->getLayers()) {
     if (layer->getType() == dbTechLayerType::ROUTING
-        && layer->getLayerNum() <= globals_->TOP_ROUTING_LAYER) {
+        && layer->getLayerNum() <= router_cfg_->TOP_ROUTING_LAYER) {
       if (totalAreaByLayerNum[layer->getLayerNum()] == 0) {
         file << "NA,";
         continue;
@@ -1247,7 +1247,7 @@ void FlexDR::reportGuideCoverage()
 void FlexDR::fixMaxSpacing()
 {
   logger_->info(DRT, 227, "Checking For LEF58_MAXSPACING violations");
-  io::Parser parser(db_, getDesign(), logger_, globals_);
+  io::Parser parser(db_, getDesign(), logger_, router_cfg_);
   parser.initSecondaryVias();
   std::vector<frVia*> lonely_vias;
   for (const auto& layer : getTech()->getLayers()) {
@@ -1313,16 +1313,16 @@ void FlexDR::fixMaxSpacing()
     }
   }
   // create drWorkers for the final regions
-  omp_set_num_threads(globals_->MAX_THREADS);
+  omp_set_num_threads(router_cfg_->MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
   for (size_t i = 0; i < merged_regions.size(); i++) {
     auto route_box = merged_regions.at(i);
     auto worker = std::make_unique<FlexDRWorker>(
-        &via_data_, design_, logger_, globals_);
+        &via_data_, design_, logger_, router_cfg_);
     Rect ext_box;
     Rect drc_box;
-    route_box.bloat(globals_->MTSAFEDIST, ext_box);
-    route_box.bloat(globals_->DRCSAFEDIST, drc_box);
+    route_box.bloat(router_cfg_->MTSAFEDIST, ext_box);
+    route_box.bloat(router_cfg_->DRCSAFEDIST, drc_box);
     worker->setRouteBox(route_box);
     worker->setExtBox(ext_box);
     worker->setDrcBox(drc_box);
@@ -1413,7 +1413,8 @@ int FlexDR::main()
     }
   }
 
-  for (auto& args : strategy(globals_->ROUTESHAPECOST, globals_->MARKERCOST)) {
+  for (auto& args :
+       strategy(router_cfg_->ROUTESHAPECOST, router_cfg_->MARKERCOST)) {
     int clipSize = args.size;
     if (args.ripupMode != RipUpMode::ALL) {
       if (increaseClipsize_) {
@@ -1421,7 +1422,7 @@ int FlexDR::main()
       } else {
         clipSizeInc_ = std::max((float) 0, clipSizeInc_ - 0.2f);
       }
-      clipSize += std::min(globals_->MAX_CLIPSIZE_INCREASE,
+      clipSize += std::min(router_cfg_->MAX_CLIPSIZE_INCREASE,
                            (int) round(clipSizeInc_));
     }
     args.size = clipSize;
@@ -1434,22 +1435,22 @@ int FlexDR::main()
     if (getDesign()->getTopBlock()->getNumMarkers() == 0) {
       break;
     }
-    if (iter_ > globals_->END_ITERATION) {
+    if (iter_ > router_cfg_->END_ITERATION) {
       break;
     }
     if (logger_->debugCheck(DRT, "snapshot", 1)) {
       io::Writer writer(getDesign(), logger_);
-      writer.updateDb(db_, globals_, false, true);
+      writer.updateDb(db_, router_cfg_, false, true);
       ord::OpenRoad::openRoad()->writeDb(
           fmt::format("drt_iter{}.odb", iter_ - 1).c_str());
     }
   }
 
   end(/* done */ true);
-  if (!globals_->GUIDE_REPORT_FILE.empty()) {
+  if (!router_cfg_->GUIDE_REPORT_FILE.empty()) {
     reportGuideCoverage();
   }
-  if (globals_->VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     t.print(logger_);
     std::cout << std::endl;
   }

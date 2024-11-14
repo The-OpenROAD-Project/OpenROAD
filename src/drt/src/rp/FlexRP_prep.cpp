@@ -145,7 +145,7 @@ void FlexRP::prep_minStepViasCheck()
     // add to polygon edges
     testPin->addPolygonEdges(tmpEdges);
     // check gc minstep violations
-    FlexGCWorker worker(tech_, logger_, globals_);
+    FlexGCWorker worker(tech_, logger_, router_cfg_);
     worker.checkMinStep(testPin);
     auto& markers = worker.getMarkers();
     if (!markers.empty()) {
@@ -537,7 +537,7 @@ void FlexRP::prep_viaForbiddenTurnLen(frNonDefaultRule* ndr)
 {
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
   auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
-  int bottom = globals_->BOTTOM_ROUTING_LAYER;
+  int bottom = router_cfg_->BOTTOM_ROUTING_LAYER;
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     if (getDesign()->getTech()->getLayer(lNum)->getType()
@@ -670,7 +670,7 @@ void FlexRP::prep_via2viaForbiddenLen(frNonDefaultRule* ndr)
 {
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
   auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
-  int bottom = globals_->BOTTOM_ROUTING_LAYER;
+  int bottom = router_cfg_->BOTTOM_ROUTING_LAYER;
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     if (getDesign()->getTech()->getLayer(lNum)->getType()
@@ -822,7 +822,7 @@ bool FlexRP::hasMinStepViol(Rect& r1, Rect& r2, frLayerNum lNum)
   // add to polygon edges
   testPin->addPolygonEdges(tmpEdges);
   // check gc minstep violations
-  FlexGCWorker worker(tech_, logger_, globals_);
+  FlexGCWorker worker(tech_, logger_, router_cfg_);
   worker.checkMinStep(testPin);
   return !worker.getMarkers().empty();
 }
@@ -1005,7 +1005,7 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpc(
     return;
   }
 
-  if (globals_->DBPROCESSNODE != "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
+  if (router_cfg_->DBPROCESSNODE != "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     return;
   }
 

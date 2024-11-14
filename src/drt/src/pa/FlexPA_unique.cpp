@@ -34,11 +34,11 @@ namespace drt {
 UniqueInsts::UniqueInsts(frDesign* design,
                          const frCollection<odb::dbInst*>& target_insts,
                          Logger* logger,
-                         Globals* globals)
+                         RouterConfiguration* router_cfg)
     : design_(design),
       target_insts_(target_insts),
       logger_(logger),
-      globals_(globals)
+      router_cfg_(router_cfg)
 {
 }
 
@@ -152,7 +152,7 @@ void UniqueInsts::computeUnique(
         && target_frinsts.find(inst.get()) == target_frinsts.end()) {
       continue;
     }
-    if (!globals_->AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
+    if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
       ndr_insts.push_back(inst.get());
       continue;
     }

@@ -46,7 +46,7 @@ class FlexDRConnectivityChecker
  public:
   FlexDRConnectivityChecker(drt::TritonRoute* router,
                             Logger* logger,
-                            Globals* globals,
+                            RouterConfiguration* router_cfg,
                             FlexDRGraphics* graphics,
                             bool save_updates = false);
   void check(int iter = -1);
@@ -177,7 +177,7 @@ class FlexDRConnectivityChecker
   frDesign* getDesign() const;
   drt::TritonRoute* router_;
   Logger* logger_;
-  Globals* globals_;
+  RouterConfiguration* router_cfg_;
   FlexDRGraphics* graphics_;
   bool save_updates_;
 };

@@ -90,7 +90,7 @@ class FlexGCWorker::Impl
   Impl();  // for serialization
   Impl(frTechObject* techIn,
        Logger* logger,
-       Globals* globals,
+       RouterConfiguration* router_cfg,
        FlexDRWorker* drWorkerIn,
        FlexGCWorker* gcWorkerIn);
   frLayerNum getMinLayerNum()  // inclusive
@@ -138,7 +138,7 @@ class FlexGCWorker::Impl
  private:
   frTechObject* tech_;
   Logger* logger_;
-  Globals* globals_;
+  RouterConfiguration* router_cfg_;
   FlexDRWorker* drWorker_;
 
   Rect extBox_;

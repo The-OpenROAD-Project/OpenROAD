@@ -50,8 +50,11 @@ class FlexGridGraph
   FlexGridGraph(frTechObject* techIn,
                 Logger* loggerIn,
                 FlexDRWorker* workerIn,
-                Globals* globals)
-      : tech_(techIn), logger_(loggerIn), drWorker_(workerIn), globals_(globals)
+                RouterConfiguration* router_cfg)
+      : tech_(techIn),
+        logger_(loggerIn),
+        drWorker_(workerIn),
+        router_cfg_(router_cfg)
   {
     ap_locs_.resize(tech_->getTopLayerNum() + 1);
   }
@@ -1020,7 +1023,7 @@ class FlexGridGraph
   frTechObject* tech_ = nullptr;
   Logger* logger_ = nullptr;
   FlexDRWorker* drWorker_ = nullptr;
-  Globals* globals_;
+  RouterConfiguration* router_cfg_;
   FlexDRGraphics* graphics_;  // owned by FlexDR
                               //
 #ifdef DEBUG_DRT_UNDERFLOW

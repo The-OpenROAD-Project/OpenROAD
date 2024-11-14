@@ -63,7 +63,7 @@ class Parser
   Parser(odb::dbDatabase* dbIn,
          frDesign* design,
          Logger* loggerIn,
-         Globals* globals);
+         RouterConfiguration* router_cfg);
 
   // others
   void readDesign(odb::dbDatabase*);
@@ -156,7 +156,7 @@ class Parser
   odb::dbDatabase* db_;
   frDesign* design_;
   Logger* logger_;
-  Globals* globals_;
+  RouterConfiguration* router_cfg_;
   // temporary variables
   int readLayerCnt_;
   odb::dbTechLayer* masterSliceLayer_;
@@ -182,7 +182,7 @@ class Writer
   frDesign* getDesign() const;
   // others
   void updateDb(odb::dbDatabase* db,
-                Globals* globals,
+                RouterConfiguration* router_cfg,
                 bool pin_access = false,
                 bool snapshot = false);
   void updateTrackAssignment(odb::dbBlock* block);
@@ -228,8 +228,8 @@ class TopLayerBTermHandler
   TopLayerBTermHandler(frDesign* design,
                        odb::dbDatabase* db,
                        Logger* logger,
-                       Globals* globals)
-      : design_(design), db_(db), logger_(logger), globals_(globals)
+                       RouterConfiguration* router_cfg)
+      : design_(design), db_(db), logger_(logger), router_cfg_(router_cfg)
   {
   }
   void processBTermsAboveTopLayer(bool has_routing = false);
@@ -252,6 +252,6 @@ class TopLayerBTermHandler
   frDesign* design_;
   odb::dbDatabase* db_;
   Logger* logger_;
-  Globals* globals_;
+  RouterConfiguration* router_cfg_;
 };
 }  // namespace drt::io

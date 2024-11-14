@@ -400,7 +400,7 @@ frCost FlexGRGridGraph::getNextPathCost(const FlexGRWavefrontGrid& currGrid,
                            * getHistoryCost(gridX, gridY, gridZ)
                            * getEdgeLength(gridX, gridY, gridZ, dir)
                      : 0)
-         + (blockCost ? globals_->BLOCKCOST
+         + (blockCost ? router_cfg_->BLOCKCOST
                             * getEdgeLength(gridX, gridY, gridZ, dir) * 100
                       : 0)
          + (overflowCost ? 128 * getEdgeLength(gridX, gridY, gridZ, dir) : 0);

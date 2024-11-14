@@ -48,11 +48,11 @@ namespace drt {
 io::Parser::Parser(odb::dbDatabase* dbIn,
                    frDesign* designIn,
                    Logger* loggerIn,
-                   Globals* globals)
+                   RouterConfiguration* router_cfg)
     : db_(dbIn),
       design_(designIn),
       logger_(loggerIn),
-      globals_(globals),
+      router_cfg_(router_cfg),
       readLayerCnt_(0),
       masterSliceLayer_(nullptr)
 {
@@ -469,8 +469,8 @@ void io::Parser::setNDRs(odb::dbDatabase* db)
     if (layer->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
-    globals_->MTSAFEDIST = std::max(
-        globals_->MTSAFEDIST,
+    router_cfg_->MTSAFEDIST = std::max(
+        router_cfg_->MTSAFEDIST,
         getTech()->getMaxNondefaultSpacing(getZIdx(layer->getLayerNum())));
   }
 }
@@ -989,7 +989,7 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
                    db_net->getSigType().getString());
   }
   std::unique_ptr<frNet> uNetIn
-      = std::make_unique<frNet>(db_net->getName(), globals_);
+      = std::make_unique<frNet>(db_net->getName(), router_cfg_);
   auto netIn = uNetIn.get();
   if (db_net->getNonDefaultRule()) {
     uNetIn->updateNondefaultRule(
@@ -1108,7 +1108,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
       }
     }
 
-    if (bterm_bottom_layer_idx > globals_->TOP_ROUTING_LAYER
+    if (bterm_bottom_layer_idx > router_cfg_->TOP_ROUTING_LAYER
         && term->getNet()->getWire() != nullptr) {
       frLayerNum finalLayerNum = 0;
       odb::Rect bbox = getViaBoxForTermAboveMaxLayer(term, finalLayerNum);
@@ -1169,7 +1169,7 @@ odb::Rect io::Parser::getViaBoxForTermAboveMaxLayer(odb::dbBTerm* term,
                 = getTech()
                       ->name2layer_[vbox->getTechLayer()->getName()]
                       ->getLayerNum();
-            if (layerNum == globals_->TOP_ROUTING_LAYER) {
+            if (layerNum == router_cfg_->TOP_ROUTING_LAYER) {
               odb::Rect viaBox = vbox->getBox();
               odb::dbTransform xform;
               odb::Point path_origin = pshape.point;
@@ -1281,7 +1281,7 @@ void io::Parser::readDesign(odb::dbDatabase* db)
   if (getBlock() != nullptr) {
     return;
   }
-  if (globals_->VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 150, "Reading design.");
   }
 
@@ -1301,7 +1301,7 @@ void io::Parser::readDesign(odb::dbDatabase* db)
   setTracks(block);
   setInsts(block);
   setObstructions(block);
-  TopLayerBTermHandler(getDesign(), db, logger_, globals_)
+  TopLayerBTermHandler(getDesign(), db, logger_, router_cfg_)
       .processBTermsAboveTopLayer(false);
   setBTerms(block);
   setAccessPoints(db);
@@ -1310,7 +1310,7 @@ void io::Parser::readDesign(odb::dbDatabase* db)
   addFakeNets();
 
   auto numLefVia = getTech()->vias_.size();
-  if (globals_->VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->report("");
     Rect dieBox = getBlock()->getDieBox();
     logger_->report("Design:                   {}", getBlock()->getName());
@@ -1335,12 +1335,14 @@ void io::Parser::readDesign(odb::dbDatabase* db)
 void io::Parser::addFakeNets()
 {
   // add VSS fake net
-  auto vssFakeNet = std::make_unique<frNet>(std::string("frFakeVSS"), globals_);
+  auto vssFakeNet
+      = std::make_unique<frNet>(std::string("frFakeVSS"), router_cfg_);
   vssFakeNet->setType(dbSigType::GROUND);
   vssFakeNet->setIsFake(true);
   getBlock()->addFakeSNet(std::move(vssFakeNet));
   // add VDD fake net
-  auto vddFakeNet = std::make_unique<frNet>(std::string("frFakeVDD"), globals_);
+  auto vddFakeNet
+      = std::make_unique<frNet>(std::string("frFakeVDD"), router_cfg_);
   vddFakeNet->setType(dbSigType::POWER);
   vddFakeNet->setIsFake(true);
   getBlock()->addFakeSNet(std::move(vddFakeNet));
@@ -2992,7 +2994,7 @@ void io::Parser::setTechVias(odb::dbTech* db_tech)
 
 void io::Parser::readTechAndLibs(odb::dbDatabase* db)
 {
-  if (globals_->VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 149, "Reading tech and libs.");
   }
 
@@ -3001,33 +3003,33 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
     logger_->error(DRT, 136, "Load design first.");
   }
   getTech()->setDBUPerUU(tech->getDbUnitsPerMicron());
-  globals_->USEMINSPACING_OBS
+  router_cfg_->USEMINSPACING_OBS
       = tech->getUseMinSpacingObs() == odb::dbOnOffType::ON;
   getTech()->setManufacturingGrid(frUInt4(tech->getManufacturingGrid()));
   setLayers(tech);
 
   auto fr_tech = getTech();
-  if (!globals_->BOTTOM_ROUTING_LAYER_NAME.empty()) {
-    frLayer* layer = fr_tech->getLayer(globals_->BOTTOM_ROUTING_LAYER_NAME);
+  if (!router_cfg_->BOTTOM_ROUTING_LAYER_NAME.empty()) {
+    frLayer* layer = fr_tech->getLayer(router_cfg_->BOTTOM_ROUTING_LAYER_NAME);
     if (layer) {
-      globals_->BOTTOM_ROUTING_LAYER = layer->getLayerNum();
+      router_cfg_->BOTTOM_ROUTING_LAYER = layer->getLayerNum();
     } else {
       logger_->warn(utl::DRT,
                     272,
                     "bottomRoutingLayer {} not found.",
-                    globals_->BOTTOM_ROUTING_LAYER_NAME);
+                    router_cfg_->BOTTOM_ROUTING_LAYER_NAME);
     }
   }
 
-  if (!globals_->TOP_ROUTING_LAYER_NAME.empty()) {
-    frLayer* layer = fr_tech->getLayer(globals_->TOP_ROUTING_LAYER_NAME);
+  if (!router_cfg_->TOP_ROUTING_LAYER_NAME.empty()) {
+    frLayer* layer = fr_tech->getLayer(router_cfg_->TOP_ROUTING_LAYER_NAME);
     if (layer) {
-      globals_->TOP_ROUTING_LAYER = layer->getLayerNum();
+      router_cfg_->TOP_ROUTING_LAYER = layer->getLayerNum();
     } else {
       logger_->warn(utl::DRT,
                     273,
                     "topRoutingLayer {} not found.",
-                    globals_->TOP_ROUTING_LAYER_NAME);
+                    router_cfg_->TOP_ROUTING_LAYER_NAME);
     }
   }
 
@@ -3040,7 +3042,7 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
   setNDRs(db);
   initDefaultVias();
 
-  if (globals_->VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->report("");
     logger_->report("Units:                {}", getTech()->getDBUPerUU());
     logger_->report("Number of layers:     {}", getTech()->layers_.size());
@@ -3184,7 +3186,7 @@ void io::Writer::splitVia_helper(
 void io::Writer::mergeSplitConnFigs(
     std::list<std::shared_ptr<frConnFig>>& connFigs)
 {
-  // if (globals_->VERBOSE > 0) {
+  // if (router_cfg_->VERBOSE > 0) {
   //   std::cout <<std::endl << "merge and split." <<std::endl;
   // }
   //  initialize pathseg and via map
@@ -3784,7 +3786,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
 }
 
 void io::Writer::updateDb(odb::dbDatabase* db,
-                          Globals* globals,
+                          RouterConfiguration* router_cfg,
                           bool pin_access_only,
                           bool snapshot)
 {
@@ -3810,9 +3812,9 @@ void io::Writer::updateDb(odb::dbDatabase* db,
         odb::dbWire::destroy(net->getWire());
       }
     }
-    fillConnFigs(false, globals->VERBOSE);
+    fillConnFigs(false, router_cfg->VERBOSE);
     updateDbConn(block, db_tech, snapshot);
-    TopLayerBTermHandler(getDesign(), db, logger_, globals)
+    TopLayerBTermHandler(getDesign(), db, logger_, router_cfg)
         .processBTermsAboveTopLayer(true);
   }
 }
@@ -3854,10 +3856,10 @@ Point io::TopLayerBTermHandler::getBestViaPosition(Rect pin_rect)
 {
   Point center_pt = pin_rect.center();
   const auto top_routing_layer
-      = design_->getTech()->getLayer(globals_->TOP_ROUTING_LAYER);
+      = design_->getTech()->getLayer(router_cfg_->TOP_ROUTING_LAYER);
   const bool is_horizontal = top_routing_layer->isHorizontal();
   const auto track_patterns = design_->getTopBlock()->getTrackPatterns(
-      globals_->TOP_ROUTING_LAYER, !is_horizontal);
+      router_cfg_->TOP_ROUTING_LAYER, !is_horizontal);
   std::vector<frCoord> valid_tracks;
   for (const auto tp : track_patterns) {
     const auto result
@@ -3889,7 +3891,7 @@ int io::TopLayerBTermHandler::countNetBTermsAboveMaxLayer(odb::dbNet* net)
 {
   odb::dbTech* tech = db_->getTech();
   odb::dbTechLayer* top_tech_layer
-      = tech->findLayer(globals_->TOP_ROUTING_LAYER_NAME.c_str());
+      = tech->findLayer(router_cfg_->TOP_ROUTING_LAYER_NAME.c_str());
   int bterm_count = 0;
   for (auto bterm : net->getBTerms()) {
     int bterm_bottom_layer_idx = std::numeric_limits<int>::max();
@@ -4004,14 +4006,14 @@ void io::TopLayerBTermHandler::stackVias(odb::dbBTerm* bterm,
 
 void io::TopLayerBTermHandler::processBTermsAboveTopLayer(bool has_routing)
 {
-  if (globals_->TOP_ROUTING_LAYER_NAME.empty()) {
+  if (router_cfg_->TOP_ROUTING_LAYER_NAME.empty()) {
     return;
   }
   odb::dbTech* tech = db_->getTech();
   odb::dbBlock* block = db_->getChip()->getBlock();
 
   odb::dbTechLayer* top_tech_layer
-      = tech->findLayer(globals_->TOP_ROUTING_LAYER_NAME.c_str());
+      = tech->findLayer(router_cfg_->TOP_ROUTING_LAYER_NAME.c_str());
   if (top_tech_layer != nullptr) {
     int top_layer_idx = top_tech_layer->getRoutingLevel();
     for (auto bterm : block->getBTerms()) {

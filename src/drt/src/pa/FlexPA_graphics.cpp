@@ -40,7 +40,7 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
                                frDesign* design,
                                odb::dbDatabase* db,
                                Logger* logger,
-                               Globals* globals)
+                               RouterConfiguration* router_cfg)
     : logger_(logger),
       settings_(settings),
       inst_(nullptr),
@@ -64,9 +64,9 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
     }
   }
 
-  if (globals->MAX_THREADS > 1) {
+  if (router_cfg->MAX_THREADS > 1) {
     logger_->info(DRT, 115, "Setting MAX_THREADS=1 for use with the PA GUI.");
-    globals->MAX_THREADS = 1;
+    router_cfg->MAX_THREADS = 1;
   }
 
   if (!settings_->pinName.empty()) {
