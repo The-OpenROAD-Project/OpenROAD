@@ -130,7 +130,7 @@ proc man { args } {
 
 sta::define_cmd_args "tee" {-file filename
                             [-append]
-                            [-quite]
+                            [-quiet]
                             command}
 proc tee { args } {
   sta::parse_key_args "tee" args \
