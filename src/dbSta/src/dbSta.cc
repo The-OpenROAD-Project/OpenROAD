@@ -538,7 +538,7 @@ void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
   logger_->report(header_format, "Cell type report:", "Count", "Area");
 
   const std::regex regexp(" |/|-");
-  std::string metrics_suffix = "";
+  std::string metrics_suffix;
   if (block->getTopModule() != module) {
     metrics_suffix = fmt::format("__in_module:{}", module->getName());
   }
@@ -551,13 +551,12 @@ void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
 
     const std::string type_class
         = toLowerCase(regex_replace(type_name, regexp, "_"));
+    const std::string metric_suffix = type_class + metrics_suffix;
 
-    logger_->metric(
-        "design__instance__count__class:" + type_class + metrics_suffix,
-        stats.count);
-    logger_->metric(
-        "design__instance__area__class:" + type_class + metrics_suffix,
-        stats.area / area_to_microns);
+    logger_->metric("design__instance__count__class:" + metric_suffix,
+                    stats.count);
+    logger_->metric("design__instance__area__class:" + metric_suffix,
+                    stats.area / area_to_microns);
   }
   logger_->metric("design__instance__count" + metrics_suffix, total_usage);
   logger_->metric("design__instance__area" + metrics_suffix,
