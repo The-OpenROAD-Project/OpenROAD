@@ -77,8 +77,6 @@ Recommended conclusion: use map for concrete cells. They are invariant.
  */
 #include "db_sta/dbNetwork.hh"
 
-#include <iostream>
-
 #include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "sta/PatternMatch.hh"

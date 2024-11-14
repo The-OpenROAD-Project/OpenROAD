@@ -51,15 +51,6 @@
 namespace odb {
 template class dbTable<_dbModInst>;
 
-class sortModBTerm
-{
- public:
-  bool operator()(_dbModBTerm* m1, _dbModBTerm* m2)
-  {
-    return strcmp(m1->_name, m2->_name) < 0;
-  }
-};
-
 bool _dbModInst::operator==(const _dbModInst& rhs) const
 {
   if (_name != rhs._name) {
@@ -456,8 +447,16 @@ bool dbModInst::swapMaster(dbModule* new_module)
     new_ports.push_back((_dbModBTerm*) *iter);
   }
   std::map<dbModNet*, dbModNet*> mod_map;  // old mod net -> new mod net
-  std::sort(new_ports.begin(), new_ports.end(), sortModBTerm());
-  std::sort(old_ports.begin(), old_ports.end(), sortModBTerm());
+  std::sort(new_ports.begin(),
+            new_ports.end(),
+            [](_dbModBTerm* port1, _dbModBTerm* port2) {
+              return strcmp(port1->_name, port2->_name) < 0;
+            });
+  std::sort(old_ports.begin(),
+            old_ports.end(),
+            [](_dbModBTerm* port1, _dbModBTerm* port2) {
+              return strcmp(port1->_name, port2->_name) < 0;
+            });
   std::vector<_dbModBTerm*>::iterator i1 = new_ports.begin();
   std::vector<_dbModBTerm*>::iterator i2 = old_ports.begin();
   for (; i1 != new_ports.end() && i2 != old_ports.end(); ++i1, ++i2) {

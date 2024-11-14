@@ -30,8 +30,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <iostream>
 // Generator Code Begin Cpp
+#include "dbModule.h"
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -39,7 +40,6 @@
 #include "dbInst.h"
 #include "dbModBTerm.h"
 #include "dbModInst.h"
-#include "dbModule.h"
 #include "dbModulePortItr.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
