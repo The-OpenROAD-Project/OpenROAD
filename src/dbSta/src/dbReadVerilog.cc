@@ -296,12 +296,13 @@ void Verilog2db::recordBusPortsOrder()
 dbModule* Verilog2db::makeUniqueDbModule(Cell* cell, Instance* inst)
 {
   std::string orig_cell_name(network_->name(cell));
-  dbModule *module = dbModule::create(block_, orig_cell_name.c_str());
+  dbModule* module = dbModule::create(block_, orig_cell_name.c_str());
   if (module != nullptr) {
     return module;
   }
 
-  std::string module_name = orig_cell_name + '.' + std::string(network_->name(inst));
+  std::string module_name
+      = orig_cell_name + '.' + std::string(network_->name(inst));
   do {
     std::string full_name = module_name;
     int& id = uniquify_id_[module_name];

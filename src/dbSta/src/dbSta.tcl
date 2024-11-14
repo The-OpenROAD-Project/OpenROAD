@@ -126,11 +126,11 @@ proc replace_design { instance module } {
 
 proc get_design_error { arg } {
   set design "NULL"
-  if {[llength $arg] > 1} {
-      sta_error 200 "module must be a single module."
+  if { [llength $arg] > 1 } {
+    sta_error 200 "module must be a single module."
   }
   set design [find_module_cmd $arg]
-  if {$design == "NULL"} {
+  if { $design == "NULL" } {
     sta_error 201 "module $arg cannot be found."
   }
   return $design
