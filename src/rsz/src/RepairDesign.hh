@@ -101,7 +101,6 @@ class RepairDesign : dbStaState
                     int& fanout_violations,
                     int& length_violations);
   int insertedBufferCount() const { return inserted_buffer_count_; }
-  int resizedCount() const { return resize_count_; }
   void repairNet(Net* net,
                  double max_wire_length,
                  double slew_margin,
