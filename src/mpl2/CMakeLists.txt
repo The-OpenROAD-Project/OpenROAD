@@ -46,6 +46,10 @@ add_library(mpl2_lib
   src/SACoreSoftMacro.cpp
   src/bus_synthesis.cpp
   src/clusterEngine.cpp
+  src/leidenClustering.cpp
+  src/leidenInterface.cpp
+  src/Optimizer.cpp
+  src/ModularityVertexPartition.cpp
 )
 
 target_include_directories(mpl2_lib

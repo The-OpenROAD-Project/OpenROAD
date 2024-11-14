@@ -329,3 +329,17 @@ proc mpl_debug { args } {
 }
 
 }
+
+sta::define_cmd_args "cluster_std_cell_leiden_algorithm" {-i test_input}
+
+proc cluster_std_cell_leiden_algorithm { args } {
+  sta::parse_key_args "cluster_std_cell_leiden_algorithm" args \
+    keys {-i} flags {}
+  if {[info exists keys(-i)]} {
+    set test_input $keys(-i)
+  } else {
+    utl::error MPL 23 "-test_input is required."
+  }
+  mpl2::cluster_std_cell_leiden_algorithm_cmd $test_input
+}
+

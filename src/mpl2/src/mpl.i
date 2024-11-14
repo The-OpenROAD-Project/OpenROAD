@@ -154,6 +154,27 @@ set_macro_placement_file(std::string file_name)
   getMacroPlacer2()->setMacroPlacementFile(file_name);
 }
 
+/**
+ * @brief Executes the Leiden clustering algorithm on standard cells.
+ *
+ * This command calls the Leiden algorithm and prints the provided number input.
+ * It retrieves the database from the OpenROAD instance and performs clustering
+ * on the standard cells within the chip's block.
+ *
+ * @param number_input An integer input that is printed for logging purposes.
+ * @return Returns true upon successful execution of the clustering algorithm.
+ */
+bool cluster_std_cell_leiden_algorithm_cmd()
+{
+  auto logger_ = ord::getLogger();
+  logger_->report("Running Leiden Clustering on standard cells...\n");
+  auto db = ord::OpenRoad::openRoad()->getDb();
+  logger_->report("\topenroad->getDb(): {}\n", fmt::ptr(db));
+  auto leiden_clustering = std::make_unique<leidenClustering>(db, db->getChip()->getBlock(), logger_);
+  leiden_clustering->run();
+  return true;
+}
+
 } // namespace
 
 %} // inline
