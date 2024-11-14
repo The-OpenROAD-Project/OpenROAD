@@ -128,6 +128,50 @@ proc man { args } {
   }
 }
 
+sta::define_cmd_args "tee" {-file filename
+                            [-append]
+                            [-quite]
+                            command}
+proc tee { args } {
+  sta::parse_key_args "tee" args \
+    keys {-file} flags {-append -quiet}
+
+  sta::check_argc_eq1 "tee" $args
+
+  if { ![info exists keys(-file)] } {
+    utl::error UTL 101 "-file is required"
+  }
+
+  if { [info exists flags(-quiet)] } {
+    if { [info exists flags(-append)] } {
+      utl::redirectFileAppendBegin $keys(-file)
+    } else {
+      utl::redirectFileBegin $keys(-file)
+    }
+  } else {
+    if { [info exists flags(-append)] } {
+      utl::teeFileAppendBegin $keys(-file)
+    } else {
+      utl::teeFileBegin $keys(-file)
+    }
+  }
+
+  global errorCode errorInfo;
+  set code [catch { eval [lindex $args 0] } ret ]
+
+  if { [info exists flags(-quiet)] } {
+    utl::redirectFileEnd
+  } else {
+    utl::teeFileEnd
+  }
+
+  if {$code == 1} {
+    return -code $code -errorcode $errorCode -errorinfo $errorInfo $ret
+  } else {
+    return $ret
+  }
+}
+
 namespace eval utl {
 proc get_input { } {
   # Get the relative path from the user

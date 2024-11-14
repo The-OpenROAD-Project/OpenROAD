@@ -239,6 +239,24 @@ void Logger::redirectFileEnd()
   file_redirect_ = nullptr;
 }
 
+void Logger::teeFileBegin(const std::string& filename)
+{
+  file_redirect_ = std::make_unique<std::ofstream>(filename.c_str());
+  setRedirectSink(*file_redirect_, true);
+}
+
+void Logger::teeFileAppendBegin(const std::string& filename)
+{
+  file_redirect_
+      = std::make_unique<std::ofstream>(filename.c_str(), std::ofstream::app);
+  setRedirectSink(*file_redirect_, true);
+}
+
+void Logger::teeFileEnd()
+{
+  redirectFileEnd();
+}
+
 void Logger::redirectStringBegin()
 {
   string_redirect_ = std::make_unique<std::ostringstream>();
@@ -259,9 +277,11 @@ std::string Logger::redirectStringEnd()
   return string;
 }
 
-void Logger::setRedirectSink(std::ostream& sink_stream)
+void Logger::setRedirectSink(std::ostream& sink_stream, bool keep_sinks)
 {
-  logger_->sinks().clear();
+  if (!keep_sinks) {
+    logger_->sinks().clear();
+  }
 
   logger_->sinks().push_back(
       std::make_shared<spdlog::sinks::ostream_sink_mt>(sink_stream, true));

@@ -62,3 +62,46 @@ using ord::getLogger;
 
 %include "LoggerCommon.h"
 
+%inline %{
+
+namespace utl {
+
+void teeFileBegin(const std::string& filename)
+{
+  utl::Logger* logger = ord::getLogger();
+  logger->teeFileBegin(filename);
+}
+
+void teeFileAppendBegin(const std::string& filename)
+{
+  utl::Logger* logger = ord::getLogger();
+  logger->teeFileAppendBegin(filename);
+}
+
+void teeFileEnd()
+{
+  utl::Logger* logger = ord::getLogger();
+  logger->teeFileEnd();
+}
+
+void redirectFileBegin(const std::string& filename)
+{
+  utl::Logger* logger = ord::getLogger();
+  logger->redirectFileBegin(filename);
+}
+
+void redirectFileAppendBegin(const std::string& filename)
+{
+  utl::Logger* logger = ord::getLogger();
+  logger->redirectFileAppendBegin(filename);
+}
+
+void redirectFileEnd()
+{
+  utl::Logger* logger = ord::getLogger();
+  logger->redirectFileEnd();
+}
+
+} // namespace
+
+%} // inline
