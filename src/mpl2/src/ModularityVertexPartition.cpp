@@ -32,7 +32,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "ModularityVertexPartition.h"
-#include "Optimiser.h"
+#include "Optimizer.h"
 #include <algorithm>
 #include <iostream>
 #include <queue>

@@ -23,6 +23,7 @@ __pycache__
 include/ord/Version.hh
 
 build
+build_release
 test/results
 flow
 

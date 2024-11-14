@@ -254,10 +254,10 @@ void leidenClustering::runLeidenClustering()
   ModularityVertexPartition part(graph_);
 
   // Initialize the optimizer
-  Optimiser optimiser;
+  Optimizer optimizer;
   logger_->report("Start Running Leiden Clustering");
   // Perform optimization on the partition
-  optimiser.optimise_partition(&part);
+  optimizer.optimise_partition(&part);
 
   logger_->report("Finished running Leiden Clustering");
 }

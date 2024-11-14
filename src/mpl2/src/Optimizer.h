@@ -41,10 +41,10 @@
 
 
 namespace mpl2 {
-class Optimiser
+class Optimizer
 {
  public:
-  Optimiser();
+  Optimizer();
   double optimise_partition(ModularityVertexPartition* partition);
   double optimise_partition(ModularityVertexPartition* partition,
                             std::vector<bool> const& is_membership_fixed);
@@ -111,7 +111,7 @@ class Optimiser
                      bool renumber_fixed_nodes,
                      size_t max_comm_size);
 
-  ~Optimiser();
+  ~Optimizer();
 
   int refine_partition;          // Refine partition before aggregating
   int optimise_routine;          // What routine to use for optimisation

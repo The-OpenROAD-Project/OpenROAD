@@ -37,6 +37,7 @@
 #include "Mpl2Observer.h"
 #include "graphics.h"
 #include "odb/db.h"
+#include "leidenClustering.h"
 
 namespace ord {
 // Defined in OpenRoad.i

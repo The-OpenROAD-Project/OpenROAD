@@ -32,7 +32,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "leidenInterface.h"
-#include "Optimiser.h"
+#include "Optimizer.h"
 #include "ModularityVertexPartition.h"
 #include <algorithm>
 #include <iostream>
@@ -43,21 +43,21 @@ namespace mpl2
 {
 
 /****************************************************************************
-Create a new Optimiser object
+Create a new Optimizer object
 ****************************************************************************/
-Optimiser::Optimiser()
+Optimizer::Optimizer()
 {
-  this->optimise_routine = Optimiser::MOVE_NODES;
+  this->optimise_routine = Optimizer::MOVE_NODES;
   this->refine_partition = true;
   this->consider_empty_community = true;
   this->max_comm_size = 0;
 }
 
-Optimiser::~Optimiser()
+Optimizer::~Optimizer()
 {
 }
 
-void Optimiser::print_settings()
+void Optimizer::print_settings()
 {
   std::cerr << "Refine partition:\t" << this->refine_partition << std::endl;
 }
@@ -65,14 +65,14 @@ void Optimiser::print_settings()
 /*****************************************************************************
   optimise the provided partition.
 *****************************************************************************/
-double Optimiser::optimise_partition(ModularityVertexPartition *partition)
+double Optimizer::optimise_partition(ModularityVertexPartition *partition)
 {
   size_t n = partition->get_graph()->numVertices();
   std::vector<bool> is_membership_fixed(n, false);
   return this->optimise_partition(partition, is_membership_fixed);
 }
 
-double Optimiser::optimise_partition(
+double Optimizer::optimise_partition(
     ModularityVertexPartition *partition,
     std::vector<bool> const &is_membership_fixed)
 {
@@ -80,7 +80,7 @@ double Optimiser::optimise_partition(
       partition, is_membership_fixed, this->max_comm_size);
 }
 
-double Optimiser::optimise_partition(
+double Optimizer::optimise_partition(
     ModularityVertexPartition *partition,
     std::vector<bool> const &is_membership_fixed,
     size_t max_comm_size)
@@ -92,7 +92,7 @@ double Optimiser::optimise_partition(
       partitions, layer_weights, is_membership_fixed, max_comm_size);
 }
 
-double Optimiser::optimise_partition(
+double Optimizer::optimise_partition(
     std::vector<ModularityVertexPartition *> partitions,
     std::vector<double> layer_weights,
     std::vector<bool> const &is_membership_fixed)
@@ -109,7 +109,7 @@ double Optimiser::optimise_partition(
 /*****************************************************************************
   optimise the provided partition.
 *****************************************************************************/
-double Optimiser::optimise_partition(
+double Optimizer::optimise_partition(
     std::vector<ModularityVertexPartition *> partitions,
     std::vector<double> layer_weights,
     std::vector<bool> const &is_membership_fixed,
@@ -176,7 +176,7 @@ double Optimiser::optimise_partition(
   do
   {
     // Optimise partition for collapsed graph
-    if (this->optimise_routine == Optimiser::MOVE_NODES)
+    if (this->optimise_routine == Optimizer::MOVE_NODES)
       improv += this->move_nodes(collapsed_partitions,
                                   layer_weights,
                                   is_collapsed_membership_fixed,
@@ -185,7 +185,7 @@ double Optimiser::optimise_partition(
                                   false,
                                   max_comm_size);
 
-    else if (this->optimise_routine == Optimiser::MERGE_NODES)
+    else if (this->optimise_routine == Optimizer::MERGE_NODES)
       improv += this->merge_nodes(collapsed_partitions,
                                   layer_weights,
                                   is_collapsed_membership_fixed,
@@ -350,13 +350,13 @@ double Optimiser::optimise_partition(
     Parameters:
       partition -- The partition to optimise.
 ******************************************************************************/
-double Optimiser::move_nodes(ModularityVertexPartition *partition)
+double Optimizer::move_nodes(ModularityVertexPartition *partition)
 {
   std::vector<bool> is_membership_fixed(partition->get_graph()->numVertices());
   return this->move_nodes(partition, is_membership_fixed, false);
 }
 
-double Optimiser::move_nodes(ModularityVertexPartition *partition,
+double Optimizer::move_nodes(ModularityVertexPartition *partition,
                               std::vector<bool> const &is_membership_fixed,
                               bool renumber_fixed_nodes)
 {
@@ -366,7 +366,7 @@ double Optimiser::move_nodes(ModularityVertexPartition *partition,
                           this->max_comm_size);
 }
 
-double Optimiser::move_nodes(ModularityVertexPartition *partition,
+double Optimizer::move_nodes(ModularityVertexPartition *partition,
                               std::vector<bool> const &is_membership_fixed,
                               bool renumber_fixed_nodes,
                               size_t max_comm_size)
@@ -382,13 +382,13 @@ double Optimiser::move_nodes(ModularityVertexPartition *partition,
                           max_comm_size);
 }
 
-double Optimiser::merge_nodes(ModularityVertexPartition *partition)
+double Optimizer::merge_nodes(ModularityVertexPartition *partition)
 {
   std::vector<bool> is_membership_fixed(partition->get_graph()->numVertices());
   return this->merge_nodes(partition, is_membership_fixed, false);
 }
 
-double Optimiser::merge_nodes(ModularityVertexPartition *partition,
+double Optimizer::merge_nodes(ModularityVertexPartition *partition,
                               std::vector<bool> const &is_membership_fixed,
                               bool renumber_fixed_nodes)
 {
@@ -398,7 +398,7 @@ double Optimiser::merge_nodes(ModularityVertexPartition *partition,
                             this->max_comm_size);
 }
 
-double Optimiser::merge_nodes(ModularityVertexPartition *partition,
+double Optimizer::merge_nodes(ModularityVertexPartition *partition,
                               std::vector<bool> const &is_membership_fixed,
                               bool renumber_fixed_nodes,
                               size_t max_comm_size)
@@ -427,7 +427,7 @@ double Optimiser::merge_nodes(ModularityVertexPartition *partition,
     layer_weights -- The weights used for the different layers.
 ******************************************************************************/
 
-double Optimiser::move_nodes(std::vector<ModularityVertexPartition *> partitions,
+double Optimizer::move_nodes(std::vector<ModularityVertexPartition *> partitions,
                               std::vector<double> layer_weights,
                               std::vector<bool> const &is_membership_fixed,
                               bool renumber_fixed_nodes)
@@ -439,7 +439,7 @@ double Optimiser::move_nodes(std::vector<ModularityVertexPartition *> partitions
                           renumber_fixed_nodes);
 }
 
-double Optimiser::move_nodes(std::vector<ModularityVertexPartition *> partitions,
+double Optimizer::move_nodes(std::vector<ModularityVertexPartition *> partitions,
                               std::vector<double> layer_weights,
                               std::vector<bool> const &is_membership_fixed,
                               int consider_empty_community)
@@ -451,7 +451,7 @@ double Optimiser::move_nodes(std::vector<ModularityVertexPartition *> partitions
                           true);
 }
 
-double Optimiser::move_nodes(std::vector<ModularityVertexPartition *> partitions,
+double Optimizer::move_nodes(std::vector<ModularityVertexPartition *> partitions,
                               std::vector<double> layer_weights,
                               std::vector<bool> const &is_membership_fixed,
                               int consider_empty_community,
@@ -489,7 +489,7 @@ double Optimiser::move_nodes(std::vector<ModularityVertexPartition *> partitions
  * @throws Exception if the number of vertices in the graphs of different
  *                   layers are not equal.
  */
-double Optimiser::move_nodes(std::vector<ModularityVertexPartition *> partitions,
+double Optimizer::move_nodes(std::vector<ModularityVertexPartition *> partitions,
                               std::vector<double> layer_weights,
                               std::vector<bool> const &is_membership_fixed,
                               int consider_empty_community,
@@ -685,7 +685,7 @@ double Optimiser::move_nodes(std::vector<ModularityVertexPartition *> partitions
   return total_improv;
 }
 
-double Optimiser::merge_nodes(std::vector<ModularityVertexPartition *> partitions,
+double Optimizer::merge_nodes(std::vector<ModularityVertexPartition *> partitions,
                               std::vector<double> layer_weights,
                               std::vector<bool> const &is_membership_fixed,
                               bool renumber_fixed_nodes)
@@ -697,7 +697,7 @@ double Optimiser::merge_nodes(std::vector<ModularityVertexPartition *> partition
                             this->max_comm_size);
 }
 
-double Optimiser::merge_nodes(std::vector<ModularityVertexPartition *> partitions,
+double Optimizer::merge_nodes(std::vector<ModularityVertexPartition *> partitions,
                               std::vector<double> layer_weights,
                               std::vector<bool> const &is_membership_fixed,
                               bool renumber_fixed_nodes,
