@@ -178,7 +178,8 @@ int startGui(int& argc,
              Tcl_Interp* interp,
              const std::string& script,
              bool interactive,
-             bool load_settings)
+             bool load_settings,
+             bool iconify)
 {
   printf(
       "[ERROR] This code was compiled with the GUI disabled.  Please recompile "
