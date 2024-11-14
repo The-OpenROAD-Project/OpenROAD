@@ -9,7 +9,6 @@ _versionCompare() {
     printf -v a %08d $1; printf -v b %08d $3
     test $a "$2" $b
 }
-
 _equivalenceDeps() {
     yosysVersion=yosys-0.43
 
@@ -227,7 +226,8 @@ _installCommonDev() {
     CMAKE_PACKAGE_ROOT_ARGS+=" -D GTest_ROOT=$(realpath $gtestPrefix) "
 
     if [[ ${equivalenceDeps} == "yes" ]]; then
-        _equivalenceDeps
+        # _equivalenceDeps
+        echo "Installing equivalence dependencies... skip ${equivalenceDeps}"
     fi
 
     if [[ ${CI} == "yes" ]]; then
