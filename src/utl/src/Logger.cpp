@@ -303,7 +303,8 @@ std::string Logger::teeStringEnd()
 void Logger::assertNoRedirect()
 {
   if (string_redirect_ != nullptr || file_redirect_ != nullptr) {
-    error(UTL, 102, "Unable to start new log redirect while another is active.");
+    error(
+        UTL, 102, "Unable to start new log redirect while another is active.");
   }
 }
 
