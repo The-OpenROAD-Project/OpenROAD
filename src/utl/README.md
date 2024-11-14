@@ -51,6 +51,34 @@ man clock_tree_synthesis
 man CTS-0005
 ```
 
+### tee
+
+Redirect a commands output to a file and standard out.
+
+```tcl
+tee (-file filename | -variable name)
+    [-append]
+    [-quiet]
+    command
+```
+
+#### Options
+
+| Switch Name | Description | 
+| ----- | ----- |
+| `-file filename` | File to redirect output into. |
+| `-variable name` | Direct output into a variable. |
+| `-append` | Append to file. |
+| `-quiet` | Do not send output to standard out. |
+| `command` | Command to execute. |
+
+## Example scripts
+
+```
+tee -file output.rpt { report_design_area }
+tee -quiet -file output.rpt { report_floating_nets }
+```
+
 ## Regression tests
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 

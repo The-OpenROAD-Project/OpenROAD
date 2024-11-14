@@ -252,6 +252,14 @@ class Logger
   // Redirect output to a string until redirectStringEnd is called.
   void redirectStringBegin();
   std::string redirectStringEnd();
+  // Tee output to filename until teeFileEnd is called.
+  void teeFileBegin(const std::string& filename);
+  // Tee append output to filename until teeFileEnd is called.
+  void teeFileAppendBegin(const std::string& filename);
+  void teeFileEnd();
+  // Redirect output to a string until teeStringEnd is called.
+  void teeStringBegin();
+  std::string teeStringEnd();
 
  private:
   std::vector<std::string> metrics_sinks_;
@@ -306,8 +314,9 @@ class Logger
   void flushMetrics();
   void finalizeMetrics();
 
-  void setRedirectSink(std::ostream& sink_stream);
+  void setRedirectSink(std::ostream& sink_stream, bool keep_sinks = false);
   void restoreFromRedirect();
+  void assertNoRedirect();
 
   void setFormatter();
 

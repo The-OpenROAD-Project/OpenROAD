@@ -213,4 +213,9 @@ void MacroPlacer2::setDebugOnlyFinalResult(bool only_final_result)
   hier_rtlmp_->setDebugOnlyFinalResult(only_final_result);
 }
 
+void MacroPlacer2::setDebugTargetClusterId(const int target_cluster_id)
+{
+  hier_rtlmp_->setDebugTargetClusterId(target_cluster_id);
+}
+
 }  // namespace mpl2

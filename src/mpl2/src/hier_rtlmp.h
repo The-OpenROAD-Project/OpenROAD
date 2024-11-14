@@ -144,6 +144,7 @@ class HierRTLMP
   void setDebugShowBundledNets(bool show_bundled_nets);
   void setDebugSkipSteps(bool skip_steps);
   void setDebugOnlyFinalResult(bool only_final_result);
+  void setDebugTargetClusterId(int target_cluster_id);
   void setBusPlanningOn(bool bus_planning_on);
 
   void setNumThreads(int threads) { num_threads_ = threads; }

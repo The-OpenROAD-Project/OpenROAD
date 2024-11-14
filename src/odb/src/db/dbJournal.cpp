@@ -1521,6 +1521,22 @@ void dbJournal::undo_createObject()
       break;
     }
 
+    case dbModBTermObj: {
+      uint modbterm_id;
+      _log.pop(modbterm_id);
+      dbModBTerm* modbterm = dbModBTerm::getModBTerm(_block, modbterm_id);
+      dbModBTerm::destroy(modbterm);
+      break;
+    }
+
+    case dbModITermObj: {
+      uint moditerm_id;
+      _log.pop(moditerm_id);
+      dbModITerm* moditerm = dbModITerm::getModITerm(_block, moditerm_id);
+      dbModITerm::destroy(moditerm);
+      break;
+    }
+
     default: {
       _logger->critical(utl::ODB,
                         441,
@@ -1631,6 +1647,26 @@ void dbJournal::undo_connectObject()
   auto obj_type = popObjectType();
 
   switch (obj_type) {
+    case dbModITermObj: {
+      uint moditerm_id;
+      _log.pop(moditerm_id);
+      dbModITerm* moditerm = dbModITerm::getModITerm(_block, moditerm_id);
+      uint net_id;
+      _log.pop(net_id);
+      moditerm->disconnect();
+      break;
+    }
+
+    case dbModBTermObj: {
+      uint modbterm_id;
+      _log.pop(modbterm_id);
+      dbModBTerm* modbterm = dbModBTerm::getModBTerm(_block, modbterm_id);
+      uint net_id;
+      _log.pop(net_id);
+      modbterm->disconnect();
+      break;
+    }
+
     case dbITermObj: {
       uint iterm_id;
       _log.pop(iterm_id);
