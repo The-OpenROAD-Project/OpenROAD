@@ -26,3 +26,5 @@ put "done reading verilog"
 put "reading def"
 read_def "./BP/1.def"
 put "done reading def"
+
+write_db bp_io.odb
