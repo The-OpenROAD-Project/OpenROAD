@@ -179,7 +179,7 @@ class Verilog2db
 
   bool hasTerminals(Net* net) const;
   dbMaster* getMaster(Cell* cell);
-  dbModule* makeUniqueDbModule(const char* name);
+  dbModule* makeUniqueDbModule(Cell* cell, Instance* inst);
   std::optional<LineInfo> parseLineInfo(const std::string& attribute);
 
   Network* network_;
@@ -293,14 +293,20 @@ void Verilog2db::recordBusPortsOrder()
   }
 }
 
-dbModule* Verilog2db::makeUniqueDbModule(const char* name)
+dbModule* Verilog2db::makeUniqueDbModule(Cell* cell, Instance* inst)
 {
-  dbModule* module;
+  std::string orig_cell_name(network_->name(cell));
+  dbModule *module = dbModule::create(block_, orig_cell_name.c_str());
+  if (module != nullptr) {
+    return module;
+  }
+
+  std::string module_name = orig_cell_name + '.' + std::string(network_->name(inst));
   do {
-    std::string full_name(name);
-    int& id = uniquify_id_[name];
+    std::string full_name = module_name;
+    int& id = uniquify_id_[module_name];
     if (id > 0) {
-      full_name += '-' + std::to_string(id);
+      full_name += "_" + std::to_string(id);
     }
     ++id;
     module = dbModule::create(block_, full_name.c_str());
@@ -339,7 +345,7 @@ void Verilog2db::makeDbModule(
     module = block_->getTopModule();
   } else {
     // This uniquifies the cell
-    module = makeUniqueDbModule(network_->name(cell));
+    module = makeUniqueDbModule(cell, inst);
 
     // Strip out the full hiearchical name. We are now
     // storing the module instances in the scope of their

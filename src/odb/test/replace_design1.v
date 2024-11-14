@@ -7,6 +7,8 @@ module top (clk);
  wire u3z;
  wire u4z;
  wire u5z;
+ wire u6z;
+ wire u7z;
 
  DFF_X1 r1 (.CK(clk),
     .Q(r1q));
@@ -14,15 +16,18 @@ module top (clk);
     .Z(u1z));
 
  buffer_chain bc1 (.I(u1z), .O(u3z));
+ buffer_chain bc2 (.I(u1z), .O(u6z));
+ 
  inv_chain ic1 (.I(u1z), .O(u5z));
+ inv_chain ic2 (.I(u1z), .O(u7z));
    
  DFF_X1 r2 (.D(u3z),
     .CK(clk));
  DFF_X1 r3 (.D(u5z),
     .CK(clk));
- DFF_X1 r4 (.D(r1q),
+ DFF_X1 r4 (.D(u6z),
     .CK(clk));
- DFF_X1 r5 (.D(r1q),
+ DFF_X1 r5 (.D(u7z),
     .CK(clk));
  DFF_X1 r6 (.D(r1q),
     .CK(clk));
@@ -49,9 +54,9 @@ module inv_chain (I, O);
    input I;
    output O;
  INV_X1 u4 (.A(I),
-    .Z(u4z));
+    .ZN(u4z));
  INV_X1 u5 (.A(u4z),
-    .Z(O));
+    .ZN(O));
 endmodule // inv_chain
 
 

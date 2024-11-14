@@ -415,33 +415,37 @@ void dbModInst::RemoveUnusedPortsAndPins()
   }
 }
 
+// Swap one hierarchical module with another one.
+// Two modules must have identical number of ports and port names need to match.
+// Functional equivalence is not required.
+// New module is not allowed to have multiple levels of hierarchy for now.
+// Newly instantiated modules are uniquified and old module instances are
+// deleted.
 bool dbModInst::swapMaster(dbModule* new_module)
 {
   _dbModInst* inst = (_dbModInst*) this;
+  utl::Logger* logger = getImpl()->getLogger();
 
   dbModule* old_module = getMaster();
-  _dbModule* old_master = (_dbModule*) old_module;
-  _dbModule* new_master = (_dbModule*) new_module;
-
   const char* old_module_name = old_module->getName();
   const char* new_module_name = new_module->getName();
 
-  // check if number of module ports match
+  // Check if number of module ports match
   dbSet<dbModBTerm> old_bterms = old_module->getModBTerms();
   dbSet<dbModBTerm> new_bterms = new_module->getModBTerms();
   if (old_bterms.size() != new_bterms.size()) {
-    getImpl()->getLogger()->warn(utl::ODB,
-                                 453,
-                                 "modules cannot be swapped because module {} "
-                                 "has {} ports but module {} has {} ports",
-                                 old_module_name,
-                                 old_bterms.size(),
-                                 new_module_name,
-                                 new_bterms.size());
+    logger->warn(utl::ODB,
+                 453,
+                 "modules cannot be swapped because module {} "
+                 "has {} ports but module {} has {} ports",
+                 old_module_name,
+                 old_bterms.size(),
+                 new_module_name,
+                 new_bterms.size());
     return false;
   }
 
-  // check if module port names match
+  // Check if module port names match
   std::vector<_dbModBTerm*> new_ports;
   std::vector<_dbModBTerm*> old_ports;
   dbSet<dbModBTerm>::iterator iter;
@@ -451,7 +455,7 @@ bool dbModInst::swapMaster(dbModule* new_module)
   for (iter = new_bterms.begin(); iter != new_bterms.end(); ++iter) {
     new_ports.push_back((_dbModBTerm*) *iter);
   }
-  std::unordered_map<uint, uint> index_map;
+  std::map<dbModNet*, dbModNet*> mod_map;  // old mod net -> new mod net
   std::sort(new_ports.begin(), new_ports.end(), sortModBTerm());
   std::sort(old_ports.begin(), old_ports.end(), sortModBTerm());
   std::vector<_dbModBTerm*>::iterator i1 = new_ports.begin();
@@ -462,53 +466,68 @@ bool dbModInst::swapMaster(dbModule* new_module)
     if (strcmp(t1->_name, t2->_name) != 0) {
       break;
     }
-    index_map[t2->getId()] = t1->getId();
+    // Map old mod net to new mod net
+    mod_map[((dbModBTerm*) t2)->getModNet()] = ((dbModBTerm*) t1)->getModNet();
   }
   if (i1 != new_ports.end() || i2 != old_ports.end()) {
-    getImpl()->getLogger()->warn(utl::ODB,
-                                 454,
-                                 "modules cannot be swapped because module {} "
-                                 "has port {} but module {} has port {}",
-                                 old_module_name,
-                                 (*i1)->_name,
-                                 new_module_name,
-                                 (*i2)->_name);
+    logger->warn(utl::ODB,
+                 454,
+                 "modules cannot be swapped because module {} "
+                 "has port {} but module {} has port {}",
+                 old_module_name,
+                 (*i1)->_name,
+                 new_module_name,
+                 (*i2)->_name);
     return false;
   }
 
-  // remove all existing instances
-  /*
-  uint id;
-  _dbBlock* block = (_dbBlock*) old_module->getOwner();
-  dbModuleModInstItr itr(block->_modinst_tbl);
-  for (id = itr.begin(this); id != itr.end(this); id = itr.next(id)) {
-    dbModInst* m_inst = (dbModInst*) itr.getObject(id);
-    std::cout << m_inst->getName() << std::endl;
+  _dbModule* new_master = (_dbModule*) dbModule::copy(new_module, this);
+
+  // Patch connections such that boundary nets connect to new module iterms
+  // instead of old module iterms
+  debugPrint(logger,
+             utl::ODB,
+             "replace_design",
+             1,
+             "Connecting nets that span module boundary");
+  for (const auto& [old_mod_net, new_mod_net] : mod_map) {
+    dbSet<dbITerm> old_iterms = old_mod_net->getITerms();
+    dbSet<dbITerm> new_iterms = new_mod_net->getITerms();
+    dbSet<dbITerm>::iterator it_iter;
+    for (it_iter = old_iterms.begin(); it_iter != old_iterms.end(); ++it_iter) {
+      dbITerm* old_iterm = *it_iter;
+      dbNet* flat_net = old_iterm->getNet();
+      old_iterm->disconnect();
+      debugPrint(logger,
+                 utl::ODB,
+                 "replace_design",
+                 1,
+                 "  disconnected old iterm {} from flat net {} for mod net {}",
+                 old_iterm->getName(),
+                 flat_net->getName(),
+                 old_mod_net->getName());
+      dbSet<dbITerm>::iterator new_it_iter;
+      for (new_it_iter = new_iterms.begin(); new_it_iter != new_iterms.end();
+           ++new_it_iter) {
+        dbITerm* new_iterm = *new_it_iter;
+        new_iterm->connect(flat_net);
+        debugPrint(logger,
+                   utl::ODB,
+                   "replace_design",
+                   1,
+                   "  connected new iterm {} to flat net {} for mod net {}",
+                   new_iterm->getName(),
+                   flat_net->getName(),
+                   old_mod_net->getName());
+      }
+    }
   }
-  */
 
-  // instance -> master
-  // library of masters..
-  //
-  //
-  // new_name = master_1...
-  // dbModule* uniquified_module = makeUniqueDbModule(master->getName())
-  // then populate..
-  // recursively copy contents of master into uniquified_module.
-  //
-  // dbModule::duplicate(uniquified_module,master);
-  //
-
-  // dbModule* new_module = UniquifyAndDuplicate(master){
-  /*
-  dbModule* uniquified_module = makeUniqueDbModule(master->getName())
-   ..fill out uniquified_module...
-    return uniquified_module;
-  */
-
+  // TODO: remove old module insts without destroying old module itself
+  // dbModule::destroy(old_module);
   inst->_master = new_master->getOID();
   new_master->_mod_inst = inst->getOID();
-  old_master->_mod_inst = dbId<_dbModInst>();
+
   return true;
 }
 

@@ -8217,6 +8217,7 @@ class dbModule : public dbObject
 
   static dbModule* getModule(dbBlock* block_, uint dbid_);
 
+  static dbModule* copy(dbModule* module, dbModInst *new_mod_inst);
   // User Code End dbModule
 };
 
