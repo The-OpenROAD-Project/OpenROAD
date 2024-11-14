@@ -105,7 +105,7 @@ class frDesign
   void addUpdate(const drUpdate& update)
   {
     if (updates_.empty()) {
-      updates_.resize(globals_->MAX_THREADS * 2);
+      updates_.resize(static_cast<size_t>(globals_->MAX_THREADS * 2));
     }
     auto num_batches = updates_.size();
     updates_[updates_sz_++ % num_batches].push_back(update);

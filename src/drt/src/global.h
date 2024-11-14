@@ -46,12 +46,12 @@ namespace drt {
 
 struct Globals
 {
-  std::string DBPROCESSNODE = "";
-  std::string OUT_MAZE_FILE = "";
-  std::string DRC_RPT_FILE = "";
+  std::string DBPROCESSNODE;
+  std::string OUT_MAZE_FILE;
+  std::string DRC_RPT_FILE;
   std::optional<int> DRC_RPT_ITER_STEP = std::nullopt;
-  std::string CMAP_FILE = "";
-  std::string GUIDE_REPORT_FILE = "";
+  std::string CMAP_FILE;
+  std::string GUIDE_REPORT_FILE;
 
   // to be removed
   int OR_SEED = -1;
@@ -63,8 +63,8 @@ struct Globals
   int MTSAFEDIST = 2000;
   int DRCSAFEDIST = 500;
   int VERBOSE = 1;
-  std::string BOTTOM_ROUTING_LAYER_NAME = "";
-  std::string TOP_ROUTING_LAYER_NAME = "";
+  std::string BOTTOM_ROUTING_LAYER_NAME;
+  std::string TOP_ROUTING_LAYER_NAME;
   int BOTTOM_ROUTING_LAYER = 2;
   int TOP_ROUTING_LAYER = std::numeric_limits<int>::max();
   bool ALLOW_PIN_AS_FEEDTHROUGH = true;
@@ -77,8 +77,8 @@ struct Globals
   bool SINGLE_STEP_DR = false;
   bool SAVE_GUIDE_UPDATES = false;
 
-  std::string VIAINPIN_BOTTOMLAYER_NAME = "";
-  std::string VIAINPIN_TOPLAYER_NAME = "";
+  std::string VIAINPIN_BOTTOMLAYER_NAME;
+  std::string VIAINPIN_TOPLAYER_NAME;
   frLayerNum VIAINPIN_BOTTOMLAYERNUM = std::numeric_limits<frLayerNum>::max();
   frLayerNum VIAINPIN_TOPLAYERNUM = std::numeric_limits<frLayerNum>::max();
 
@@ -119,7 +119,7 @@ struct Globals
   int CONGCOST = 8;
   int HISTCOST = 32;
 
-  std::string REPAIR_PDN_LAYER_NAME = "";
+  std::string REPAIR_PDN_LAYER_NAME;
   frLayerNum REPAIR_PDN_LAYER_NUM = -1;
   frLayerNum GC_IGNORE_PDN_LAYER_NUM = -1;
 };
