@@ -280,6 +280,7 @@ if (NOT USE_SYSTEM_OPENSTA)
   if (TCL_READLINE_LIBRARY AND TCL_READLINE_H)
     # Pass along tcl readline enablement to OpenSTA build
     set(USE_TCL_READLINE ON)
+    set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
   endif()
   add_subdirectory(sta)
 endif()
