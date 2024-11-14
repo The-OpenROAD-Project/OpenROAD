@@ -723,4 +723,22 @@ bool supported()
   return true;
 }
 
+void iconify()
+{
+  if (!check_gui("iconify")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->iconify();
+}
+
+void deiconify()
+{
+  if (!check_gui("deiconify")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->deiconify();
+}
+
 %} // inline

@@ -261,6 +261,22 @@ To close the GUI and return to the command-line:
 gui::hide
 ```
 
+### Iconify the GUI
+
+To iconify the GUI:
+
+```tcl
+gui::iconify
+```
+
+### De-iconify the GUI
+
+To de-iconify the GUI:
+
+```tcl
+gui::deiconify
+```
+
 ### Layout Fit
 
 To fit the whole layout in the window:
