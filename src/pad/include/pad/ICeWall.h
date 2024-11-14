@@ -122,6 +122,7 @@ class ICeWall
                 float turn_penalty = 2.0,
                 int max_iterations = 10);
   void routeRDLDebugGUI(bool enable);
+  void routeRDLDebugNet(const char* net);
 
   void connectByAbutment();
 
@@ -200,6 +201,7 @@ class ICeWall
 
   std::unique_ptr<RDLRouter> router_;
   std::unique_ptr<RDLGui> router_gui_;
+  odb::dbNet* rdl_net_debug_ = nullptr;
 
   constexpr static const char* fake_library_name_ = "FAKE_IO";
   constexpr static const char* row_north_ = "IO_NORTH";

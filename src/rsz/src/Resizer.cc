@@ -3648,4 +3648,107 @@ void Resizer::resetInputSlews()
   input_slew_map_.clear();
 }
 
+void Resizer::eliminateDeadLogic(bool clean_nets)
+{
+  std::vector<const Instance*> queue;
+  std::set<const Instance*> kept_instances;
+
+  auto keepInst = [&](const Instance* inst) {
+    if (!kept_instances.count(inst)) {
+      kept_instances.insert(inst);
+      queue.push_back(inst);
+    }
+  };
+
+  auto keepPinDriver = [&](Pin* pin) {
+    PinSet* drivers = network_->drivers(pin);
+    if (drivers) {
+      for (const Pin* drvr_pin : *drivers) {
+        if (auto inst = network_->instance(drvr_pin)) {
+          keepInst(inst);
+        }
+      }
+    }
+  };
+
+  auto top_inst = network_->topInstance();
+  if (top_inst) {
+    auto iter = network_->pinIterator(top_inst);
+    while (iter->hasNext()) {
+      Pin* pin = iter->next();
+      Net* net = network_->net(network_->term(pin));
+      PinSet* drivers = network_->drivers(net);
+      if (drivers) {
+        for (const Pin* drvr_pin : *drivers) {
+          if (auto inst = network_->instance(drvr_pin)) {
+            keepInst(inst);
+          }
+        }
+      }
+    }
+    delete iter;
+  }
+
+  for (auto inst : network_->leafInstances()) {
+    if (!isLogicStdCell(inst) || dontTouch(inst)) {
+      keepInst(inst);
+    } else {
+      auto iter = network_->pinIterator(inst);
+      while (iter->hasNext()) {
+        Pin* pin = iter->next();
+        Net* net = network_->net(pin);
+        if (net && dontTouch(net)) {
+          keepInst(inst);
+        }
+      }
+      delete iter;
+    }
+  }
+
+  while (!queue.empty()) {
+    const Instance* inst = queue.back();
+    queue.pop_back();
+    auto iter = network_->pinIterator(inst);
+    while (iter->hasNext()) {
+      keepPinDriver(iter->next());
+    }
+    delete iter;
+  }
+
+  int remove_inst_count = 0, remove_net_count = 0;
+  for (auto inst : network_->leafInstances()) {
+    if (!kept_instances.count(inst)) {
+      sta_->deleteInstance((Instance*) inst);
+      remove_inst_count++;
+    }
+  }
+
+  if (clean_nets) {
+    std::vector<Net*> to_delete;
+    NetIterator* net_iter = network_->netIterator(network_->topInstance());
+    while (net_iter->hasNext()) {
+      Net* net = net_iter->next();
+      PinSeq loads;
+      PinSeq drvrs;
+      PinSet visited_drvrs(db_network_);
+      FindNetDrvrLoads visitor(nullptr, visited_drvrs, loads, drvrs, network_);
+      network_->visitConnectedPins(net, visitor);
+      if (drvrs.empty() && loads.empty() && !dontTouch(net)) {
+        // defer deletion for later as it's not clear whether the iterator
+        // doesn't get invalidated
+        to_delete.push_back(net);
+      }
+    }
+    delete net_iter;
+    for (auto net : to_delete) {
+      sta_->deleteNet(net);
+      remove_net_count++;
+    }
+  }
+
+  logger_->report("Removed {} unused instances and {} unused nets.",
+                  remove_inst_count,
+                  remove_net_count);
+}
+
 }  // namespace rsz

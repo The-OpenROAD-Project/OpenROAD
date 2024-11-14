@@ -797,7 +797,7 @@ gtl::rectangle_data<frCoord> bloatRectangle(
   gtl::rectangle_data<frCoord> temp_rect(rect);
   gtl::bloat(temp_rect, dir, spacing);
   return temp_rect;
-};
+}
 gtl::polygon_90_set_data<frCoord> getQueryPolygonSet(
     const gtl::rectangle_data<frCoord>& marker_rect,
     const gtl::rectangle_data<frCoord>& rect1,
@@ -810,7 +810,7 @@ gtl::polygon_90_set_data<frCoord> getQueryPolygonSet(
   query_polygon_set.insert(bloatRectangle(rect1, dir, spacing));
   query_polygon_set.insert(bloatRectangle(rect2, dir, spacing));
   return query_polygon_set;
-};
+}
 
 }  // namespace orth
 
