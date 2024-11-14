@@ -75,6 +75,10 @@ void Graphics::startSA()
     return;
   }
 
+  if (target_cluster_id_ != -1 && !isTargetCluster()) {
+    return;
+  }
+
   logger_->report("------ Start ------");
   best_norm_cost_ = std::numeric_limits<float>::max();
   skipped_ = 0;
@@ -90,12 +94,21 @@ void Graphics::endSA(const float norm_cost)
     return;
   }
 
+  if (target_cluster_id_ != -1 && !isTargetCluster()) {
+    return;
+  }
+
   if (skipped_ > 0) {
     logger_->report("Skipped to end: {}", skipped_);
   }
   logger_->report("------ End ------");
   report(norm_cost);
   gui::Gui::get()->pause();
+}
+
+bool Graphics::isTargetCluster()
+{
+  return current_cluster_->getId() == target_cluster_id_;
 }
 
 void Graphics::saStep(const std::vector<SoftMacro>& macros)
@@ -213,6 +226,10 @@ void Graphics::penaltyCalculated(float norm_cost)
   }
 
   if (is_skipping_) {
+    return;
+  }
+
+  if (target_cluster_id_ != -1 && !isTargetCluster()) {
     return;
   }
 
@@ -567,6 +584,11 @@ void Graphics::setBundledNets(const std::vector<BundledNet>& bundled_nets)
   bundled_nets_ = bundled_nets;
 }
 
+void Graphics::setTargetClusterId(const int target_cluster_id)
+{
+  target_cluster_id_ = target_cluster_id;
+}
+
 void Graphics::setOutline(const odb::Rect& outline)
 {
   if (only_final_result_) {
@@ -574,6 +596,11 @@ void Graphics::setOutline(const odb::Rect& outline)
   }
 
   outline_ = outline;
+}
+
+void Graphics::setCurrentCluster(Cluster* current_cluster)
+{
+  current_cluster_ = current_cluster;
 }
 
 void Graphics::eraseDrawing()
