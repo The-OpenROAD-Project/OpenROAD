@@ -216,14 +216,14 @@ void Logger::unsuppressMessage(ToolId tool, int id)
 
 void Logger::redirectFileBegin(const std::string& filename)
 {
-  file_redirect_ = std::make_unique<std::ofstream>(filename.c_str());
+  file_redirect_ = std::make_unique<std::ofstream>(filename);
   setRedirectSink(*file_redirect_);
 }
 
 void Logger::redirectFileAppendBegin(const std::string& filename)
 {
   file_redirect_
-      = std::make_unique<std::ofstream>(filename.c_str(), std::ofstream::app);
+      = std::make_unique<std::ofstream>(filename, std::ofstream::app);
   setRedirectSink(*file_redirect_);
 }
 
@@ -241,14 +241,14 @@ void Logger::redirectFileEnd()
 
 void Logger::teeFileBegin(const std::string& filename)
 {
-  file_redirect_ = std::make_unique<std::ofstream>(filename.c_str());
+  file_redirect_ = std::make_unique<std::ofstream>(filename);
   setRedirectSink(*file_redirect_, true);
 }
 
 void Logger::teeFileAppendBegin(const std::string& filename)
 {
   file_redirect_
-      = std::make_unique<std::ofstream>(filename.c_str(), std::ofstream::app);
+      = std::make_unique<std::ofstream>(filename, std::ofstream::app);
   setRedirectSink(*file_redirect_, true);
 }
 
