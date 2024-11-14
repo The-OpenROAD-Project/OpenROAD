@@ -156,8 +156,8 @@ proc tee { args } {
     }
   }
 
-  global errorCode errorInfo;
-  set code [catch { eval [lindex $args 0] } ret ]
+  global errorCode errorInfo
+  set code [catch { eval [lindex $args 0] } ret]
 
   if { [info exists flags(-quiet)] } {
     utl::redirectFileEnd
@@ -165,7 +165,7 @@ proc tee { args } {
     utl::teeFileEnd
   }
 
-  if {$code == 1} {
+  if { $code == 1 } {
     return -code $code -errorcode $errorCode -errorinfo $errorInfo $ret
   } else {
     return $ret
