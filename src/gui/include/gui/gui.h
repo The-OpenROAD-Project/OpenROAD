@@ -708,6 +708,8 @@ class Gui
   void showGui(const std::string& cmds = "",
                bool interactive = true,
                bool load_settings = true);
+  void minimize();
+  void unminimize();
 
   // set the system logger
   void setLogger(utl::Logger* logger);
@@ -814,6 +816,7 @@ int startGui(int& argc,
              Tcl_Interp* interp,
              const std::string& script = "",
              bool interactive = true,
-             bool load_settings = true);
+             bool load_settings = true,
+             bool minimize = false);
 
 }  // namespace gui
