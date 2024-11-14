@@ -37,6 +37,7 @@ record_tests {
   rdl_route_45_with_2port_bump
   rdl_route_45_with_oct_bump
   rdl_route_single_target
+  rdl_route_bump_to_bump_only
 
   skywater130_overlapping_filler
 

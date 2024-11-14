@@ -53,6 +53,7 @@
 #include "sta/Sdc.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Units.hh"
+#include "sta/VerilogWriter.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
@@ -258,6 +259,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         break;
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
+
       const bool changed = repairPath(end_path,
                                       end_slack,
                                       skip_pin_swap,
@@ -1239,7 +1241,9 @@ bool RepairSetup::cloneDriver(const PathRef* drvr_path,
   }
 
   const string buffer_name = resizer_->makeUniqueInstName("clone");
-  Instance* parent = db_network_->topInstance();
+
+  // Hierarchy fix
+  Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);
 
   // This is the meat of the gate cloning code.
   // We need to downsize the current driver AND we need to insert another
@@ -1273,21 +1277,39 @@ bool RepairSetup::cloneDriver(const PathRef* drvr_path,
              network_->pathName(clone_inst),
              clone_cell->name());
 
-  Net* out_net = resizer_->makeUniqueNet();
+  // Hierarchy fix, make out_net in parent.
+
+  //  Net* out_net = resizer_->makeUniqueNet();
+  std::string out_net_name = resizer_->makeUniqueNetName();
+  Net* out_net = db_network_->makeNet(out_net_name.c_str(), parent);
+
   std::unique_ptr<InstancePinIterator> inst_pin_iter{
       network_->pinIterator(drvr_inst)};
+
   while (inst_pin_iter->hasNext()) {
     Pin* pin = inst_pin_iter->next();
     if (network_->direction(pin)->isInput()) {
       // Connect to all the inputs of the original cell.
       auto libPort = network_->libertyPort(
           pin);  // get the liberty port of the original inst/pin
-      auto net = network_->net(pin);
+      // Hierarchy fix: make sure modnet on input supported
+      dbNet* dbnet = db_network_->flatNet(pin);
+      odb::dbModNet* modnet = db_network_->hierNet(pin);
+      // get the iterm
+      Pin* clone_pin = db_network_->findPin(clone_inst, libPort->name());
+      dbITerm* iterm = db_network_->flatPin(clone_pin);
+
       sta_->connectPin(
           clone_inst,
           libPort,
-          net);  // connect the same liberty port of the new instance
-      resizer_->parasiticsInvalid(net);
+          db_network_->dbToSta(
+              dbnet));  // connect the same liberty port of the new instance
+
+      // Hierarchy fix
+      if (modnet) {
+        iterm->connect(modnet);
+      }
+      resizer_->parasiticsInvalid(db_network_->dbToSta(dbnet));
     }
   }
 
@@ -1303,9 +1325,14 @@ bool RepairSetup::cloneDriver(const PathRef* drvr_path,
       break;
     }
   }
+
   // Connect to the new output net we just created
   auto* clone_output_port = network_->port(clone_output_pin);
   sta_->connectPin(clone_inst, clone_output_port, out_net);
+  // Hierarchy: stash the iterm just in case we need to do some
+  // hierarchical wiring
+
+  odb::dbITerm* clone_output_iterm = db_network_->flatPin(clone_output_pin);
 
   // Divide the list of pins in half and connect them to the new net we
   // created as part of gate cloning. Skip ports connected to the original net
@@ -1314,13 +1341,27 @@ bool RepairSetup::cloneDriver(const PathRef* drvr_path,
     pair<Vertex*, Slack> fanout_slack = fanout_slacks[i];
     Vertex* load_vertex = fanout_slack.first;
     Pin* load_pin = load_vertex->pin();
-    // Leave ports connected to original net so verilog port names are
+    dbITerm* load_iterm = db_network_->flatPin(load_pin);
+
+    // Leave top level ports connected to original net so verilog port names are
     // preserved.
     if (!network_->isTopLevelPort(load_pin)) {
       auto* load_port = network_->port(load_pin);
       Instance* load = network_->instance(load_pin);
+      Instance* load_parent_inst
+          = db_network_->getOwningInstanceParent(load_pin);
+
+      // disconnects everything
       sta_->disconnectPin(load_pin);
-      sta_->connectPin(load, load_port, out_net);
+      // hierarchy fix: if load and clone in different modules
+      // do the cross module wiring.
+      if (load_parent_inst != parent) {
+        std::string unique_connection_name = resizer_->makeUniqueNetName();
+        db_network_->hierarchicalConnect(
+            clone_output_iterm, load_iterm, unique_connection_name.c_str());
+      } else {
+        sta_->connectPin(load, load_port, out_net);
+      }
     }
   }
   resizer_->parasiticsInvalid(out_net);
@@ -1333,6 +1374,7 @@ void RepairSetup::splitLoads(const PathRef* drvr_path,
                              PathExpanded* expanded)
 {
   Pin* drvr_pin = drvr_path->pin(this);
+
   const PathRef* load_path = expanded->path(drvr_index + 1);
   Vertex* load_vertex = load_path->vertex(sta_);
   Pin* load_pin = load_vertex->pin();
@@ -1379,18 +1421,35 @@ void RepairSetup::splitLoads(const PathRef* drvr_path,
                                                pair2.first->pin())));
        });
 
-  Net* net = network_->net(drvr_pin);
+  // H-fix get both the mod net and db net (if present).
+  dbNet* db_drvr_net;
+  odb::dbModNet* db_mod_drvr_net;
+  db_network_->net(drvr_pin, db_drvr_net, db_mod_drvr_net);
+
   const string buffer_name = resizer_->makeUniqueInstName("split");
-  Instance* parent = db_network_->topInstance();
+
+  // H-Fix Use driver parent for hierarchy, not the top instance
+  Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);
+
   LibertyCell* buffer_cell = resizer_->buffer_lowest_drive_;
   const Point drvr_loc = db_network_->location(drvr_pin);
+
+  // H-Fix make the buffer in the parent of the driver pin
   Instance* buffer = resizer_->makeBuffer(
       buffer_cell, buffer_name.c_str(), parent, drvr_loc);
   inserted_buffer_count_++;
 
-  Net* out_net = resizer_->makeUniqueNet();
+  // H-fix make the out net in the driver parent
+  std::string out_net_name = resizer_->makeUniqueNetName();
+  Net* out_net = db_network_->makeNet(out_net_name.c_str(), parent);
+
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
+
+  Pin* buffer_ip_pin;
+  Pin* buffer_op_pin;
+  resizer_->getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
+  (void) buffer_ip_pin;
 
   // Split the loads with extra slack to an inserted buffer.
   // before
@@ -1398,27 +1457,97 @@ void RepairSetup::splitLoads(const PathRef* drvr_path,
   // after
   // drvr_pin -> net -> load_pins with low slack
   //                 -> buffer_in -> net -> rest of loads
-  sta_->connectPin(buffer, input, net);
-  resizer_->parasiticsInvalid(net);
+
+  // Hierarchical case:
+  // If the driver was hooked to a modnet.
+  //
+  // If the loads are partitioned then we introduce new modnets
+  // punch through.
+  //
+  // Create the buffer in the driver module.
+  //
+  // For non-buffered loads, use original modnet (if any).
+  //
+  // For buffered loads use dbNetwork::hierarchicalConnect
+  // which may introduce new modnets.
+  //
+  // Before:
+  // drvr_pin -> modnet -> load pins {Partition1, Partition2}
+  //
+  // after
+  // drvr_pin -> mod_net -> load pins with low slack {Partition1}
+  //                    -> buffer_in -> mod_net* -> rest of loads {Partition2}
+  //
+
+  // connect input of buffer to the original driver db net
+  sta_->connectPin(buffer, input, db_network_->dbToSta(db_drvr_net));
+
+  // invalidate the dbNet
+  resizer_->parasiticsInvalid(db_network_->dbToSta(db_drvr_net));
+
+  // out_net is the db net
   sta_->connectPin(buffer, output, out_net);
+
   const int split_index = fanout_slacks.size() / 2;
   for (int i = 0; i < split_index; i++) {
     pair<Vertex*, Slack> fanout_slack = fanout_slacks[i];
     Vertex* load_vertex = fanout_slack.first;
     Pin* load_pin = load_vertex->pin();
+
+    odb::dbITerm* load_iterm;
+    odb::dbBTerm* load_bterm;
+    odb::dbModITerm* load_moditerm;
+    odb::dbModBTerm* load_modbterm;
+
+    db_network_->staToDb(
+        load_pin, load_iterm, load_bterm, load_moditerm, load_modbterm);
+
     // Leave ports connected to original net so verilog port names are
     // preserved.
     if (!network_->isTopLevelPort(load_pin)) {
       LibertyPort* load_port = network_->libertyPort(load_pin);
       Instance* load = network_->instance(load_pin);
+      (void) (load_port);
+      (void) (load);
 
-      sta_->disconnectPin(load_pin);
-      sta_->connectPin(load, load_port, out_net);
+      // stash the modnet,if any,  for the load
+      odb::dbModNet* db_mod_load_net = db_network_->hierNet(load_pin);
+
+      // This will kill both the flat (dbNet) and hier (modnet) connection
+      load_iterm->disconnect();
+
+      // Flat connection to dbNet
+      load_iterm->connect(db_network_->staToDb(out_net));
+
+      //
+      // H-Fix. Support connecting across hierachy.
+      //
+      Instance* load_parent = db_network_->getOwningInstanceParent(load_pin);
+
+      if (load_parent != parent) {
+        std::string unique_connection_name = resizer_->makeUniqueNetName();
+        odb::dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
+        odb::dbITerm* load_pin_iterm = db_network_->flatPin(load_pin);
+        if (load_pin_iterm && buffer_op_pin_iterm) {
+          db_network_->hierarchicalConnect(buffer_op_pin_iterm,
+                                           load_pin_iterm,
+                                           unique_connection_name.c_str());
+        }
+      } else {
+        odb::dbITerm* iterm;
+        iterm = db_network_->flatPin(load_pin);
+        if (iterm && db_mod_load_net) {
+          iterm->connect(db_mod_load_net);
+        }
+      }
     }
   }
+
   Pin* buffer_out_pin = network_->findPin(buffer, output);
   resizer_->resizeToTargetSlew(buffer_out_pin);
-  resizer_->parasiticsInvalid(net);
+  // H-Fix, only invalidate db nets.
+  // resizer_->parasiticsInvalid(net);
+  resizer_->parasiticsInvalid(db_network_->dbToSta(db_drvr_net));
   resizer_->parasiticsInvalid(out_net);
 }
 
@@ -1828,6 +1957,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
         break;
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
+
       const bool changed = repairPath(end_path,
                                       end_slack,
                                       true /* skip_pin_swap */,

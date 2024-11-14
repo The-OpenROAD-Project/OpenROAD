@@ -1227,7 +1227,7 @@ class dbBlock : public dbObject
   ///
   /// Convert an area from database units squared (DBU^2) to square microns.
   ///
-  double dbuAreaToMicrons(const int64_t dbu_area);
+  double dbuAreaToMicrons(int64_t dbu_area);
 
   ///
   /// Convert a length from microns to database units (DBUs).
@@ -1237,7 +1237,7 @@ class dbBlock : public dbObject
   ///
   /// Convert an area from square microns to database units squared (DBU^2).
   ///
-  int64_t micronsAreaToDbu(const double micronsArea);
+  int64_t micronsAreaToDbu(double micronsArea);
 
   ///
   /// Get the hierarchy delimeter.
@@ -7732,10 +7732,13 @@ class dbGuide : public dbObject
 
   dbTechLayer* getViaLayer() const;
 
+  bool isCongested() const;
+
   static dbGuide* create(dbNet* net,
                          dbTechLayer* layer,
                          dbTechLayer* via_layer,
-                         Rect box);
+                         Rect box,
+                         bool is_congested);
 
   static dbGuide* getGuide(dbBlock* block, uint dbid);
 
@@ -8082,6 +8085,7 @@ class dbModBTerm : public dbObject
   dbBusPort* getBusPort() const;
   static dbModBTerm* create(dbModule* parentModule, const char* name);
   static void destroy(dbModBTerm*);
+  static dbModBTerm* getModBTerm(dbBlock* block, uint dbid);
 
  private:
   // User Code End dbModBTerm
@@ -8141,6 +8145,7 @@ class dbModITerm : public dbObject
   void disconnect();
   static dbModITerm* create(dbModInst* parentInstance, const char* name);
   static void destroy(dbModITerm*);
+  static dbModITerm* getModITerm(dbBlock* block, uint dbid);
   // User Code End dbModITerm
 };
 
@@ -8156,8 +8161,11 @@ class dbModNet : public dbObject
   dbSet<dbBTerm> getBTerms();
 
   const char* getName() const;
+  void rename(const char* new_name);
+  static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* name);
   static void destroy(dbModNet*);
+
   // User Code End dbModNet
 };
 

@@ -178,7 +178,7 @@ class Design
   int micronToDBU(double coord);
 
   // This is intended as a temporary back door to tcl from Python
-  const std::string evalTclString(const std::string& cmd);
+  std::string evalTclString(const std::string& cmd);
 
   Tech* getTech();
 

@@ -395,7 +395,7 @@ class Resizer : public dbStaState
   //  restore resized gates
   // resizeSlackPreamble must be called before the first findResizeSlacks.
   void resizeSlackPreamble();
-  void findResizeSlacks();
+  void findResizeSlacks(bool run_journal_restore);
   // Return nets with worst slack.
   NetSeq& resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).
@@ -427,6 +427,7 @@ class Resizer : public dbStaState
   Logger* logger() const { return logger_; }
   void invalidateParasitics(const Pin* pin, const Net* net);
   void eraseParasitics(const Net* net);
+  void eliminateDeadLogic(bool clean_nets);
 
  protected:
   void init();

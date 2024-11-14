@@ -1843,6 +1843,7 @@ void ICeWall::routeRDL(odb::dbTechLayer* layer,
                                         allow45,
                                         turn_penalty,
                                         max_iterations);
+  router_->setRDLDebugNet(rdl_net_debug_);
   if (router_gui_ != nullptr) {
     router_gui_->setRouter(router_.get());
   }
@@ -1867,6 +1868,20 @@ void ICeWall::routeRDLDebugGUI(bool enable)
       gui::Gui::get()->unregisterRenderer(router_gui_.get());
       router_gui_ = nullptr;
     }
+  }
+}
+
+void ICeWall::routeRDLDebugNet(const char* net)
+{
+  auto* block = getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  rdl_net_debug_ = block->findNet(net);
+
+  if (router_ != nullptr) {
+    router_->setRDLDebugNet(rdl_net_debug_);
   }
 }
 

@@ -709,7 +709,7 @@ void
 find_resize_slacks()
 {
   Resizer *resizer = getResizer();
-  resizer->findResizeSlacks();
+  resizer->findResizeSlacks(true);
 }
 
 NetSeq *
@@ -823,6 +823,14 @@ set_parasitics_src(ParasiticsSrc src)
 {
   Resizer *resizer = getResizer();
   resizer->setParasiticsSrc(src);
+}
+
+void
+eliminate_dead_logic_cmd(bool clean_nets)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->eliminateDeadLogic(clean_nets);
 }
 
 } // namespace

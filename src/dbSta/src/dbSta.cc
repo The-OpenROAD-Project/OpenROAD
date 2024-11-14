@@ -88,7 +88,7 @@ using utl::STA;
 class dbStaReport : public sta::ReportTcl
 {
  public:
-  explicit dbStaReport(bool gui_is_on) : gui_is_on_(gui_is_on) {}
+  explicit dbStaReport() = default;
 
   void setLogger(Logger* logger);
   void warn(int id, const char* fmt, ...) override
@@ -121,15 +121,19 @@ class dbStaReport : public sta::ReportTcl
       __attribute__((format(printf, 3, 4)));
   size_t printString(const char* buffer, size_t length) override;
 
+  // Redirect output to filename until redirectFileEnd is called.
+  void redirectFileBegin(const char* filename) override;
+  // Redirect append output to filename until redirectFileEnd is called.
+  void redirectFileAppendBegin(const char* filename) override;
+  void redirectFileEnd() override;
+  // Redirect output to a string until redirectStringEnd is called.
+  void redirectStringBegin() override;
+  const char* redirectStringEnd() override;
+
  protected:
   void printLine(const char* line, size_t length) override;
 
   Logger* logger_ = nullptr;
-
- private:
-  // text buffer for tcl puts output when in GUI mode.
-  std::string tcl_buffer_;
-  bool gui_is_on_;
 };
 
 class dbStaCbk : public dbBlockCallBackObj
@@ -150,6 +154,7 @@ class dbStaCbk : public dbBlockCallBackObj
   void inDbBTermCreate(dbBTerm*) override;
   void inDbBTermDestroy(dbBTerm* bterm) override;
   void inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type) override;
+  void inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type) override;
 
  private:
   dbSta* sta_;
@@ -238,7 +243,7 @@ std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
 
 void dbSta::makeReport()
 {
-  db_report_ = new dbStaReport(/*gui_is_on=*/path_renderer_ != nullptr);
+  db_report_ = new dbStaReport();
   report_ = db_report_;
 }
 
@@ -491,12 +496,12 @@ dbSta::InstType dbSta::getInstanceType(odb::dbInst* inst)
   return STD_COMBINATIONAL;
 }
 
-std::map<dbSta::InstType, dbSta::TypeStats> dbSta::countInstancesByType()
+std::map<dbSta::InstType, dbSta::TypeStats> dbSta::countInstancesByType(
+    odb::dbModule* module)
 {
-  auto insts = db_->getChip()->getBlock()->getInsts();
   std::map<InstType, TypeStats> inst_type_stats;
 
-  for (auto inst : insts) {
+  for (auto inst : module->getLeafInsts()) {
     InstType type = getInstanceType(inst);
     auto& stats = inst_type_stats[type];
     stats.count++;
@@ -514,17 +519,22 @@ std::string toLowerCase(std::string str)
   return str;
 }
 
-void dbSta::report_cell_usage(const bool verbose)
+void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
 {
-  auto instances_types = countInstancesByType();
+  auto instances_types = countInstancesByType(module);
   auto block = db_->getChip()->getBlock();
-  auto insts = block->getInsts();
+  auto insts = module->getLeafInsts();
   const int total_usage = insts.size();
   int64_t total_area = 0;
   const double area_to_microns = std::pow(block->getDbUnitsPerMicron(), 2);
 
   const char* header_format = "{:37} {:>7} {:>10}";
   const char* format = "  {:35} {:>7} {:>10.2f}";
+  if (block->getTopModule() != module) {
+    logger_->report("Cell type report for {} ({})",
+                    module->getModInst()->getHierarchicalName(),
+                    module->getName());
+  }
   logger_->report(header_format, "Cell type report:", "Count", "Area");
   for (auto [type, stats] : instances_types) {
     std::string type_name = getInstanceTypeText(type);
@@ -621,69 +631,13 @@ void dbStaReport::setLogger(Logger* logger)
 // Line return \n is implicit.
 void dbStaReport::printLine(const char* line, size_t length)
 {
-  if (redirect_to_string_) {
-    redirectStringPrint(line, length);
-    redirectStringPrint("\n", 1);
-    return;
-  }
-  if (redirect_stream_) {
-    fwrite(line, sizeof(char), length, redirect_stream_);
-    fwrite("\n", sizeof(char), 1, redirect_stream_);
-    return;
-  }
-
   logger_->report("{}", line);
 }
 
 // Only used by encapsulated Tcl channels, ie puts and command prompt.
 size_t dbStaReport::printString(const char* buffer, size_t length)
 {
-  if (redirect_to_string_) {
-    redirectStringPrint(buffer, length);
-    return length;
-  }
-  if (redirect_stream_) {
-    size_t ret = fwrite(buffer, sizeof(char), length, redirect_stream_);
-    return std::min(ret, length);
-  }
-
-  // prepend saved buffer
-  string buf = tcl_buffer_ + string(buffer);
-  tcl_buffer_.clear();  // clear buffer
-
-  if (buffer[length - 1] != '\n') {
-    // does not end with a newline, so might need to buffer the information
-
-    auto last_newline = buf.find_last_of('\n');
-    if (last_newline == string::npos) {
-      // no newlines found, so add entire buf to tcl_buffer_
-      tcl_buffer_ = buf;
-      buf.clear();
-    } else {
-      // save partial line to buffer
-      tcl_buffer_ = buf.substr(last_newline + 1);
-      buf = buf.substr(0, last_newline + 1);
-    }
-  }
-
-  if (!buf.empty()) {
-    // Trim trailing \r\n.
-    buf.erase(buf.find_last_not_of("\r\n") + 1);
-    logger_->report("{}", buf.c_str());
-  }
-
-  // if gui enabled, keep tcl_buffer_ until a newline appears
-  // otherwise proceed to print directly to console
-  if (!gui_is_on_) {
-    // puts without a trailing \n in the string.
-    // Tcl command prompts get here.
-    // puts "xyz" makes a separate call for the '\n '.
-    // This seems to be the only way to get the output.
-    // It will not be logged.
-    printConsole(tcl_buffer_.c_str(), tcl_buffer_.length());
-    tcl_buffer_.clear();
-  }
-
+  logger_->reportNoNewline(buffer);
   return length;
 }
 
@@ -774,6 +728,37 @@ void dbStaReport::critical(int id, const char* fmt, ...)
   // Don't give std::format a chance to interpret the message.
   logger_->critical(STA, id, "{}", buffer_);
   va_end(args);
+}
+
+void dbStaReport::redirectFileBegin(const char* filename)
+{
+  flush();
+  logger_->redirectFileBegin(filename);
+}
+
+void dbStaReport::redirectFileAppendBegin(const char* filename)
+{
+  flush();
+  logger_->redirectFileAppendBegin(filename);
+}
+
+void dbStaReport::redirectFileEnd()
+{
+  flush();
+  logger_->redirectFileEnd();
+}
+
+void dbStaReport::redirectStringBegin()
+{
+  flush();
+  logger_->redirectStringBegin();
+}
+
+const char* dbStaReport::redirectStringEnd()
+{
+  flush();
+  const std::string string = logger_->redirectStringEnd();
+  return stringPrintTmp("%s", string.c_str());
 }
 
 ////////////////////////////////////////////////////////////////
@@ -882,6 +867,16 @@ void dbStaCbk::inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type)
   sta_->getDbNetwork()->setTopPortDirection(bterm, io_type);
 }
 
+void dbStaCbk::inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type)
+{
+  // sta can't handle such changes, see OpenROAD#6025, so just reset the whole
+  // thing.
+  sta_->networkChanged();
+  // The above is insufficient, see OpenROAD#6089, clear the vertex id as a
+  // workaround.
+  bterm->staSetVertexId(object_id_null);
+}
+
 ////////////////////////////////////////////////////////////////
 
 // Highlight path in the gui.
@@ -910,6 +905,50 @@ BufferUse BufferUseAnalyser::getBufferUse(sta::LibertyCell* buffer)
   }
 
   return DATA;
+}
+
+////////////////////////////////////////////////////////////////
+
+sta::LibertyPort* getLibertyScanEnable(const sta::TestCell* test_cell)
+{
+  sta::LibertyCellPortIterator iter(test_cell);
+  while (iter.hasNext()) {
+    sta::LibertyPort* port = iter.next();
+    sta::ScanSignalType signal_type = port->scanSignalType();
+    if (signal_type == sta::ScanSignalType::enable
+        || signal_type == sta::ScanSignalType::enable_inverted) {
+      return port;
+    }
+  }
+  return nullptr;
+}
+
+sta::LibertyPort* getLibertyScanIn(const sta::TestCell* test_cell)
+{
+  sta::LibertyCellPortIterator iter(test_cell);
+  while (iter.hasNext()) {
+    sta::LibertyPort* port = iter.next();
+    sta::ScanSignalType signal_type = port->scanSignalType();
+    if (signal_type == sta::ScanSignalType::input
+        || signal_type == sta::ScanSignalType::input_inverted) {
+      return port;
+    }
+  }
+  return nullptr;
+}
+
+sta::LibertyPort* getLibertyScanOut(const sta::TestCell* test_cell)
+{
+  sta::LibertyCellPortIterator iter(test_cell);
+  while (iter.hasNext()) {
+    sta::LibertyPort* port = iter.next();
+    sta::ScanSignalType signal_type = port->scanSignalType();
+    if (signal_type == sta::ScanSignalType::output
+        || signal_type == sta::ScanSignalType::output_inverted) {
+      return port;
+    }
+  }
+  return nullptr;
 }
 
 }  // namespace sta

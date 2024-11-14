@@ -183,6 +183,11 @@ class dbNetwork : public ConcreteNetwork
   dbModule* getNetDriverParentModule(Net* net);
   Instance* getOwningInstanceParent(Pin* pin);
 
+  bool ConnectionToModuleExists(dbITerm* source_pin,
+                                dbModule* dest_module,
+                                dbModBTerm*& dest_modbterm,
+                                dbModITerm*& dest_moditerm);
+
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
                            const char* connection_name);
@@ -238,6 +243,11 @@ class dbNetwork : public ConcreteNetwork
   Instance* instance(const Pin* pin) const override;
   Net* net(const Pin* pin) const override;
   void net(const Pin* pin, dbNet*& db_net, dbModNet*& db_modnet) const;
+  dbNet* flatNet(const Pin* pin) const;
+  dbModNet* hierNet(const Pin* pin) const;
+  dbITerm* flatPin(const Pin* pin) const;
+  dbModITerm* hierPin(const Pin* pin) const;
+
   Term* term(const Pin* pin) const override;
   PortDirection* direction(const Pin* pin) const override;
   VertexId vertexId(const Pin* pin) const override;
@@ -262,6 +272,7 @@ class dbNetwork : public ConcreteNetwork
 
   ////////////////////////////////////////////////////////////////
   // Port functions
+
   Cell* cell(const Port* port) const override;
   void registerConcretePort(const Port*);
 
@@ -287,6 +298,7 @@ class dbNetwork : public ConcreteNetwork
   NetTermIterator* termIterator(const Net* net) const override;
   const Net* highestConnectedNet(Net* net) const override;
   bool isSpecial(Net* net);
+  dbNet* flatNet(const Net* net) const;
 
   ////////////////////////////////////////////////////////////////
   // Edit functions
