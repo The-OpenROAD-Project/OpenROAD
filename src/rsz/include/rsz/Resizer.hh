@@ -354,7 +354,6 @@ class Resizer : public dbStaState
       bool match_cell_footprint,
       bool verbose);
   int repairDesignBufferCount() const;
-  int repairDesignResizedCount() const;
   // for debugging
   void repairNet(Net* net,
                  double max_wire_length,  // meters
@@ -420,7 +419,6 @@ class Resizer : public dbStaState
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
   void makeEquivCells();
-  float getTotalNegativeSlack();
 
   ////////////////////////////////////////////////////////////////
   void initBlock();

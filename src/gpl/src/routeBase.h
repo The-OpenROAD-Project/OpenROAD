@@ -202,8 +202,6 @@ class RouteBase
 
   void revertGCellSizeToMinRc();
   void pushBackMinRcCellSize(int dx, int dy) {
-    //  minRcCellSize_[&gCell - nbc_->gCells().data()]
-    // = std::make_pair(gCell->dx(), gCell->dy());
     minRcCellSize_.push_back(std::make_pair(dx, dy));
   }
 
@@ -242,7 +240,5 @@ class RouteBase
 
   // routability funcs
   void initGCells();
-
-  const RouteBaseVars& getRbVars() const { return rbVars_; }
 };
 }  // namespace gpl

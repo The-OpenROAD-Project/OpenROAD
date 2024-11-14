@@ -1093,11 +1093,6 @@ void Resizer::makeEquivCells()
   sta_->makeEquivCells(&libs, nullptr);
 }
 
-float Resizer::getTotalNegativeSlack()
-{
-  return sta_->totalNegativeSlack(max_);
-}
-
 int Resizer::resizeToTargetSlew(const Pin* drvr_pin)
 {
   Instance* inst = network_->instance(drvr_pin);
@@ -2724,11 +2719,6 @@ void Resizer::repairDesign(double max_wire_length,
 int Resizer::repairDesignBufferCount() const
 {
   return repair_design_->insertedBufferCount();
-}
-
-int Resizer::repairDesignResizedCount() const
-{
-  return repair_design_->resizedCount();
 }
 
 void Resizer::repairNet(Net* net,
