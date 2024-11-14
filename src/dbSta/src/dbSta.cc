@@ -538,6 +538,11 @@ void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
   logger_->report(header_format, "Cell type report:", "Count", "Area");
 
   const std::regex regexp(" |/|-");
+  std::string metrics_suffix = "";
+  if (block->getTopModule() != module) {
+    metrics_suffix = fmt::format("__in_module:{}", module->getName());
+  }
+
   for (auto [type, stats] : instances_types) {
     const std::string type_name = getInstanceTypeText(type);
     logger_->report(
@@ -547,13 +552,15 @@ void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
     const std::string type_class
         = toLowerCase(regex_replace(type_name, regexp, "_"));
 
-    logger_->metric("design__instance__count__class:" + type_class,
-                    stats.count);
-    logger_->metric("design__instance__area__class:" + type_class,
-                    stats.area / area_to_microns);
+    logger_->metric(
+        "design__instance__count__class:" + type_class + metrics_suffix,
+        stats.count);
+    logger_->metric(
+        "design__instance__area__class:" + type_class + metrics_suffix,
+        stats.area / area_to_microns);
   }
-  logger_->metric("design__instance__count__class:total", total_usage);
-  logger_->metric("design__instance__area__class:total",
+  logger_->metric("design__instance__count" + metrics_suffix, total_usage);
+  logger_->metric("design__instance__area" + metrics_suffix,
                   total_area / area_to_microns);
   logger_->report(format, "Total", total_usage, total_area / area_to_microns);
 
