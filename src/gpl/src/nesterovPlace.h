@@ -38,8 +38,8 @@
 #include <vector>
 
 #include "nesterovBase.h"
-#include "point.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "point.h"
 
 namespace utl {
 class Logger;
@@ -94,7 +94,7 @@ class NesterovPlace
   void resizeGCell(odb::dbInst*);
   void moveGCell(odb::dbInst*);
 
-  void createGCell(odb::dbInst*);  
+  void createGCell(odb::dbInst*);
   void createGNet(odb::dbNet*);
   void createITerm(odb::dbITerm*);
 
@@ -157,15 +157,14 @@ class nesterovDbCbk : public odb::dbBlockCallBackObj
   virtual void inDbInstCreate(odb::dbInst*, odb::dbRegion*);
   virtual void inDbInstDestroy(odb::dbInst*);
 
-  virtual void inDbITermCreate(odb::dbITerm*) ;
-  virtual void inDbITermDestroy(odb::dbITerm*) ;  
+  virtual void inDbITermCreate(odb::dbITerm*);
+  virtual void inDbITermDestroy(odb::dbITerm*);
 
   virtual void inDbNetCreate(odb::dbNet*) override;
   virtual void inDbNetDestroy(odb::dbNet*) override;
 
   virtual void inDbInstSwapMasterAfter(odb::dbInst*);
   virtual void inDbPostMoveInst(odb::dbInst*) override;
-
 
  private:
   NesterovPlace* nesterov_place_;

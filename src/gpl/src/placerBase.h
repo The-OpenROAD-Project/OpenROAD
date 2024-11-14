@@ -211,7 +211,7 @@ class Pin
   unsigned char minPinYField_ : 1;
   unsigned char maxPinXField_ : 1;
   unsigned char maxPinYField_ : 1;
-  
+
   void updateCoordi(odb::dbBTerm* bTerm, utl::Logger* logger);
 };
 

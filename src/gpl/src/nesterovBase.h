@@ -854,7 +854,7 @@ class NesterovBaseCommon
   void setCbk(nesterovDbCbk* cbk) { db_cbk_ = cbk; }
   size_t createGCell(odb::dbInst* db_inst);
   void createGNet(odb::dbNet* net, bool skip_io_mode);
-  void createITerm(odb::dbITerm* iTerm);  
+  void createITerm(odb::dbITerm* iTerm);
   void destroyGCell(size_t);
   void destroyGNet(odb::dbNet*);
   void destroyITerm(odb::dbITerm*);
@@ -872,7 +872,8 @@ class NesterovBaseCommon
   void printGCells();
   void printGPins();
 
-  // TODO do this for each region? Also, manage this properly if other callbacks are implemented.
+  // TODO do this for each region? Also, manage this properly if other callbacks
+  // are implemented.
   int64_t getDeltaArea() { return deltaArea_; }
   void resetDeltaArea() { deltaArea_ = 0; }
 
@@ -897,7 +898,8 @@ class NesterovBaseCommon
   std::unordered_map<odb::dbNet*, size_t> db_net_map_;
   std::unordered_map<odb::dbITerm*, size_t> db_iterm_map_;
 
-  //These three deques should not be required if placerBase allows for dynamic modifications on its vectors.
+  // These three deques should not be required if placerBase allows for dynamic
+  // modifications on its vectors.
   std::deque<Instance> pb_insts_stor_;
   std::deque<Net> pb_nets_stor_;
   std::deque<Pin> pb_pins_stor_;
@@ -1084,10 +1086,11 @@ class NesterovBase
   void destroyGCell(odb::dbInst* db_inst);
   void destroyFillerGCell(size_t index_remove);
 
-  // Resets all pointers to storages of gcells, gpins, and gnets. 
+  // Resets all pointers to storages of gcells, gpins, and gnets.
   void fixPointers(std::vector<size_t> new_gcells);
-  // Must be called after fixPointers() to initialize internal values of gcells, including parallel vectors.
-  void updateGCellState(float wlCoeffX, float wlCoeffY);  
+  // Must be called after fixPointers() to initialize internal values of gcells,
+  // including parallel vectors.
+  void updateGCellState(float wlCoeffX, float wlCoeffY);
 
  private:
   NesterovBaseVars nbVars_;

@@ -439,16 +439,19 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       bool virtual_td_iter
           = (average_overflow_ > npVars_.keepResizeBelowOverflow);
 
-      log_->info(
-          GPL, 100, "Timing-driven iteration {}/{}, virtual: {}.", 
-          ++npVars_.timingDrivenIterCounter, 
-          tb_->getTimingNetWeightOverflowSize(),
-          virtual_td_iter);
+      log_->info(GPL,
+                 100,
+                 "Timing-driven iteration {}/{}, virtual: {}.",
+                 ++npVars_.timingDrivenIterCounter,
+                 tb_->getTimingNetWeightOverflowSize(),
+                 virtual_td_iter);
 
-      log_->info(GPL, 101, "Iter: {}, overflow: {:.3f}, keep rsz at: {}",
-          iter,
-          average_overflow_,
-          npVars_.keepResizeBelowOverflow);
+      log_->info(GPL,
+                 101,
+                 "Iter: {}, overflow: {:.3f}, keep rsz at: {}",
+                 iter,
+                 average_overflow_,
+                 npVars_.keepResizeBelowOverflow);
 
       if (!virtual_td_iter)
         db_cbk_->addOwner(pbc_->db()->getChip()->getBlock());
@@ -473,10 +476,14 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                                  + nesterov->totalFillerArea())
               / static_cast<float>(nesterov->whiteSpaceArea()));
 
-          log_->info(GPL, 107, "Timing-driven: RSZ delta area:     {}",
-                       block->dbuAreaToMicrons(nbc_->getDeltaArea()));
-          log_->info(GPL, 108, "Timing-driven: new target density: {}",
-                       nesterov->targetDensity());
+          log_->info(GPL,
+                     107,
+                     "Timing-driven: RSZ delta area:     {}",
+                     block->dbuAreaToMicrons(nbc_->getDeltaArea()));
+          log_->info(GPL,
+                     108,
+                     "Timing-driven: new target density: {}",
+                     nesterov->targetDensity());
           nbc_->resetDeltaArea();
           nesterov->updateAreas();
           nesterov->updateDensitySize();
@@ -671,7 +678,7 @@ void NesterovPlace::destroyGCell(odb::dbInst* db_inst)
 }
 
 void NesterovPlace::createGNet(odb::dbNet* db_net)
-{  
+{
   odb::dbSigType netType = db_net->getSigType();
   if (!isValidSigType(netType)) {
     log_->report("db_net:{} is not signal or clock: {}",
@@ -716,9 +723,6 @@ void NesterovPlace::moveGCell(odb::dbInst* db_inst)
   nbc_->moveGCell(db_inst);
 }
 
-
-
-
 void nesterovDbCbk::inDbInstSwapMasterAfter(odb::dbInst* db_inst)
 {
   nesterov_place_->resizeGCell(db_inst);
@@ -740,22 +744,22 @@ void nesterovDbCbk::inDbInstCreate(odb::dbInst* db_inst, odb::dbRegion* region)
 }
 
 void nesterovDbCbk::inDbInstDestroy(odb::dbInst* db_inst)
-{  
+{
   nesterov_place_->destroyGCell(db_inst);
 }
 
 void nesterovDbCbk::inDbITermCreate(odb::dbITerm* iterm)
-{  
+{
   nesterov_place_->createITerm(iterm);
 }
 
 void nesterovDbCbk::inDbITermDestroy(odb::dbITerm* iterm)
-{  
+{
   nesterov_place_->destroyITerm(iterm);
 }
 
 void nesterovDbCbk::inDbNetCreate(odb::dbNet* db_net)
-{  
+{
   nesterov_place_->createGNet(db_net);
 }
 

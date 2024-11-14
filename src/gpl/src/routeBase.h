@@ -201,7 +201,8 @@ class RouteBase
   int inflationIterCnt() const;
 
   void revertGCellSizeToMinRc();
-  void pushBackMinRcCellSize(int dx, int dy) {
+  void pushBackMinRcCellSize(int dx, int dy)
+  {
     minRcCellSize_.push_back(std::make_pair(dx, dy));
   }
 

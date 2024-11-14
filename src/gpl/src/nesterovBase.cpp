@@ -268,12 +268,11 @@ void GCell::print(utl::Logger* logger) const
   logger->report(
       "insts_ size: {}, gPins_ size: {}", insts_.size(), gPins_.size());
   logger->report("lx_: {} ly_: {} ux_: {} uy_: {}", lx_, ly_, ux_, uy_);
-  logger->report(
-      "dLx_: {} dLy_: {} dUx_: {} dUy_: {}", dLx_, dLy_, dUx_, dUy_);
+  logger->report("dLx_: {} dLy_: {} dUx_: {} dUy_: {}", dLx_, dLy_, dUx_, dUy_);
   logger->report("densityScale_: {} gradientX_: {} gradientY_: {}",
-                  densityScale_,
-                  gradientX_,
-                  gradientY_);
+                 densityScale_,
+                 gradientX_,
+                 gradientY_);
 }
 
 ////////////////////////////////////////////////
@@ -1375,9 +1374,11 @@ GCell* NesterovBaseCommon::getGCellByIndex(size_t i)
   return &gCellStor_[i];
 }
 
-// fixPointers() member functions assumes there was push_backs to storage vectors, invalidating them. This function resets the pointers and maintain consistency among parallel vectors.
-// Most of the code here is based on nesterovBaseCommon constructor. 
-// 
+// fixPointers() member functions assumes there was push_backs to storage
+// vectors, invalidating them. This function resets the pointers and maintain
+// consistency among parallel vectors. Most of the code here is based on
+// nesterovBaseCommon constructor.
+//
 void NesterovBaseCommon::fixPointers()
 {
   gCells_.clear();
@@ -2747,7 +2748,8 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
           getDensityCoordiLayoutInsideY(curGCell, prevCoordiY));
       prevSLPCoordi_[gcells_index] = newCoordi;
 
-      // analogous to NesterovBase::updateGCellDensityCenterLocation(prevSLPCoordi_)
+      // analogous to
+      // NesterovBase::updateGCellDensityCenterLocation(prevSLPCoordi_)
       gCells_[gcells_index]->setDensityCenterLocation(
           prevSLPCoordi_[gcells_index].x, prevSLPCoordi_[gcells_index].y);
 
@@ -2930,8 +2932,8 @@ void NesterovBaseCommon::destroyITerm(odb::dbITerm* db_iterm)
 }
 
 void NesterovBase::swapAndPop(std::vector<FloatPoint>& vec,
-                size_t remove_index,
-                size_t last_index)
+                              size_t remove_index,
+                              size_t last_index)
 {
   if (last_index != vec.size() - 1) {
     log_->report(
@@ -2949,7 +2951,8 @@ void NesterovBase::swapAndPop(std::vector<FloatPoint>& vec,
   vec.pop_back();
 }
 
-void NesterovBase::swapAndPopParallelVectors(size_t remove_index, size_t last_index)
+void NesterovBase::swapAndPopParallelVectors(size_t remove_index,
+                                             size_t last_index)
 {
   log_->report(
       "Swapping and popping parallel vectors with remove_index {} and "
