@@ -150,6 +150,7 @@ class LayoutViewer : public QWidget
                Gui* gui,
                const std::function<bool(void)>& usingDBU,
                const std::function<bool(void)>& showRulerAsEuclidian,
+               const std::function<bool(void)>& showDBView,
                QWidget* parent = nullptr);
 
   odb::dbBlock* getBlock() const { return block_; }
@@ -273,6 +274,8 @@ class LayoutViewer : public QWidget
 
   void exit();
 
+  void resetCache();
+
   void commandAboutToExecute();
   void commandFinishedExecuting();
   void executionPaused();
@@ -287,8 +290,8 @@ class LayoutViewer : public QWidget
  private:
   struct Boxes
   {
-    std::vector<QRect> obs;
-    std::vector<QRect> mterms;
+    std::vector<QPolygon> obs;
+    std::map<odb::dbMTerm*, std::vector<QPolygon>> mterms;
   };
 
   using LayerBoxes = std::map<odb::dbTechLayer*, Boxes>;
@@ -320,7 +323,7 @@ class LayoutViewer : public QWidget
   int instanceSizeLimit() const;
   int shapeSizeLimit() const;
 
-  std::vector<std::pair<odb::dbObject*, odb::Rect>> getRowRects(
+  std::vector<std::tuple<odb::dbObject*, odb::Rect, int>> getRowRects(
       odb::dbBlock* block,
       const odb::Rect& bounds);
 
@@ -393,6 +396,7 @@ class LayoutViewer : public QWidget
 
   std::function<bool(void)> usingDBU_;
   std::function<bool(void)> showRulerAsEuclidian_;
+  std::function<bool(void)> showDBView_;
 
   const std::map<odb::dbModule*, ModuleSettings>& modules_;
 

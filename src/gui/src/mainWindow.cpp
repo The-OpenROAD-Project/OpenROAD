@@ -66,6 +66,8 @@
 #include "layoutViewer.h"
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
+#include "sta/Liberty.hh"
+#include "staDescriptors.h"
 #include "staGui.h"
 #include "timingWidget.h"
 #include "utl/Logger.h"
@@ -79,7 +81,7 @@ static void loadQTResources()
 
 namespace gui {
 
-MainWindow::MainWindow(QWidget* parent)
+MainWindow::MainWindow(bool load_settings, QWidget* parent)
     : QMainWindow(parent),
       db_(nullptr),
       logger_(nullptr),
@@ -94,6 +96,7 @@ MainWindow::MainWindow(QWidget* parent)
           rulers_,
           Gui::get(),
           [this]() -> bool { return show_dbu_->isChecked(); },
+          [this]() -> bool { return show_poly_decomp_view_->isChecked(); },
           [this]() -> bool { return default_ruler_style_->isChecked(); },
           [this]() -> bool { return default_mouse_wheel_zoom_->isChecked(); },
           [this]() -> int { return arrow_keys_scroll_step_; },
@@ -179,12 +182,10 @@ MainWindow::MainWindow(QWidget* parent)
           qOverload<const Selected&, bool>(&MainWindow::setSelected));
   connect(viewers_,
           qOverload<const Selected&>(&LayoutTabs::addSelected),
-          this,
-          qOverload<const Selected&>(&MainWindow::addSelected));
+          [this](const Selected& selection) { addSelected(selection); });
   connect(viewers_,
           qOverload<const SelectionSet&>(&LayoutTabs::addSelected),
-          this,
-          qOverload<const SelectionSet&>(&MainWindow::addSelected));
+          [this](const SelectionSet& selections) { addSelected(selections); });
 
   connect(
       viewers_, &LayoutTabs::addRuler, [this](int x0, int y0, int x1, int y1) {
@@ -207,8 +208,7 @@ MainWindow::MainWindow(QWidget* parent)
           qOverload<const Selected&, bool>(&MainWindow::setSelected));
   connect(inspector_,
           &Inspector::addSelected,
-          this,
-          qOverload<const Selected&>(&MainWindow::addSelected));
+          [this](const Selected& selection) { addSelected(selection); });
   connect(inspector_,
           &Inspector::removeSelected,
           this,
@@ -291,8 +291,15 @@ MainWindow::MainWindow(QWidget* parent)
           &SelectHighlightWindow::updateHighlightModel);
   connect(clock_viewer_,
           &ClockWidget::selected,
-          this,
-          qOverload<const Selected&>(&MainWindow::addSelected));
+          [this](const Selected& selection) { addSelected(selection); });
+  connect(this,
+          qOverload<const Selected&>(&MainWindow::findInCts),
+          clock_viewer_,
+          qOverload<const Selected&>(&ClockWidget::findInCts));
+  connect(this,
+          qOverload<const SelectionSet&>(&MainWindow::findInCts),
+          clock_viewer_,
+          qOverload<const SelectionSet&>(&ClockWidget::findInCts));
 
   connect(selection_browser_,
           &SelectHighlightWindow::clearAllSelections,
@@ -378,31 +385,34 @@ MainWindow::MainWindow(QWidget* parent)
   createMenus();
   createStatusBar();
 
-  // Restore the settings (if none this is a no-op)
-  QSettings settings("OpenRoad Project", "openroad");
-  settings.beginGroup("main");
-  restoreGeometry(settings.value("geometry").toByteArray());
-  restoreState(settings.value("state").toByteArray());
-  QApplication::setFont(
-      settings.value("font", QApplication::font()).value<QFont>());
-  hide_option_->setChecked(
-      settings.value("check_exit", hide_option_->isChecked()).toBool());
-  show_dbu_->setChecked(
-      settings.value("use_dbu", show_dbu_->isChecked()).toBool());
-  default_ruler_style_->setChecked(
-      settings.value("ruler_style", default_ruler_style_->isChecked())
-          .toBool());
-  default_mouse_wheel_zoom_->setChecked(
-      settings.value("mouse_wheel_zoom", default_mouse_wheel_zoom_->isChecked())
-          .toBool());
-  arrow_keys_scroll_step_
-      = settings.value("arrow_keys_scroll_step", arrow_keys_scroll_step_)
-            .toInt();
-  script_->readSettings(&settings);
-  controls_->readSettings(&settings);
-  timing_widget_->readSettings(&settings);
-  hierarchy_widget_->readSettings(&settings);
-  settings.endGroup();
+  if (load_settings) {
+    // Restore the settings (if none this is a no-op)
+    QSettings settings("OpenRoad Project", "openroad");
+    settings.beginGroup("main");
+    restoreGeometry(settings.value("geometry").toByteArray());
+    restoreState(settings.value("state").toByteArray());
+    QApplication::setFont(
+        settings.value("font", QApplication::font()).value<QFont>());
+    hide_option_->setChecked(
+        settings.value("check_exit", hide_option_->isChecked()).toBool());
+    show_dbu_->setChecked(
+        settings.value("use_dbu", show_dbu_->isChecked()).toBool());
+    default_ruler_style_->setChecked(
+        settings.value("ruler_style", default_ruler_style_->isChecked())
+            .toBool());
+    default_mouse_wheel_zoom_->setChecked(
+        settings
+            .value("mouse_wheel_zoom", default_mouse_wheel_zoom_->isChecked())
+            .toBool());
+    arrow_keys_scroll_step_
+        = settings.value("arrow_keys_scroll_step", arrow_keys_scroll_step_)
+              .toInt();
+    script_->readSettings(&settings);
+    controls_->readSettings(&settings);
+    timing_widget_->readSettings(&settings);
+    hierarchy_widget_->readSettings(&settings);
+    settings.endGroup();
+  }
 
   // load resources and set window icon and title
   loadQTResources();
@@ -427,6 +437,8 @@ MainWindow::~MainWindow()
   gui->unregisterDescriptor<odb::dbNet*>();
   gui->unregisterDescriptor<DbNetDescriptor::NetWithSink>();
   gui->unregisterDescriptor<BufferTree>();
+  gui->unregisterDescriptor<odb::dbITerm*>();
+  gui->unregisterDescriptor<odb::dbMTerm*>();
 }
 
 void MainWindow::setDatabase(odb::dbDatabase* db)
@@ -477,8 +489,12 @@ void MainWindow::init(sta::dbSta* sta)
                           viewers_->getFocusNets(),
                           viewers_->getRouteGuides(),
                           viewers_->getNetTracks()));
-  gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
+  gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(
+      db_, [this]() -> bool { return show_poly_decomp_view_->isChecked(); }));
+  gui->registerDescriptor<odb::dbMTerm*>(new DbMTermDescriptor(
+      db_, [this]() -> bool { return show_poly_decomp_view_->isChecked(); }));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
+  gui->registerDescriptor<odb::dbBPin*>(new DbBPinDescriptor(db_));
   gui->registerDescriptor<odb::dbVia*>(new DbViaDescriptor(db_));
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
   gui->registerDescriptor<odb::dbObstruction*>(
@@ -499,7 +515,7 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbTechNonDefaultRule*>(
       new DbNonDefaultRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbTechLayerRule*>(
-      new DbTechLayerRuleDescriptor());
+      new DbTechLayerRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbTechSameNetRule*>(
       new DbTechSameNetRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbSite*>(new DbSiteDescriptor(db_));
@@ -511,6 +527,21 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbTech*>(new DbTechDescriptor(db_));
   gui->registerDescriptor<odb::dbMetalWidthViaMap*>(
       new DbMetalWidthViaMapDescriptor(db_));
+  gui->registerDescriptor<odb::dbMarkerCategory*>(
+      new DbMarkerCategoryDescriptor(db_));
+  gui->registerDescriptor<odb::dbMarker*>(new DbMarkerDescriptor(db_));
+
+  gui->registerDescriptor<sta::Corner*>(new CornerDescriptor(db_, sta));
+  gui->registerDescriptor<sta::LibertyLibrary*>(
+      new LibertyLibraryDescriptor(db_, sta));
+  gui->registerDescriptor<sta::LibertyCell*>(
+      new LibertyCellDescriptor(db_, sta));
+  gui->registerDescriptor<sta::LibertyPort*>(
+      new LibertyPortDescriptor(db_, sta));
+  gui->registerDescriptor<sta::LibertyPgPort*>(
+      new LibertyPgPortDescriptor(db_, sta));
+  gui->registerDescriptor<sta::Instance*>(new StaInstanceDescriptor(db_, sta));
+  gui->registerDescriptor<sta::Clock*>(new ClockDescriptor(db_, sta));
 
   gui->registerDescriptor<BufferTree>(
       new BufferTreeDescriptor(db_,
@@ -592,6 +623,13 @@ void MainWindow::createActions()
   show_dbu_->setCheckable(true);
   show_dbu_->setChecked(false);
 
+  enable_developer_mode_ = new QShortcut(QKeySequence("Ctrl+="), this);
+
+  show_poly_decomp_view_ = new QAction("Show polygon decomposition", this);
+  show_poly_decomp_view_->setCheckable(true);
+  show_poly_decomp_view_->setChecked(false);
+  show_poly_decomp_view_->setVisible(false);
+
   default_ruler_style_ = new QAction("Make euclidian rulers", this);
   default_ruler_style_->setCheckable(true);
   default_ruler_style_->setChecked(true);
@@ -646,6 +684,16 @@ void MainWindow::createActions()
           &SelectHighlightWindow::updateModels);
   connect(show_dbu_, &QAction::toggled, this, &MainWindow::setUseDBU);
   connect(show_dbu_, &QAction::toggled, this, &MainWindow::setClearLocation);
+
+  connect(enable_developer_mode_,
+          &QShortcut::activated,
+          this,
+          &MainWindow::enableDeveloper);
+
+  connect(show_poly_decomp_view_,
+          &QAction::toggled,
+          viewers_,
+          &LayoutTabs::resetCache);
 
   connect(arrow_keys_scroll_step_dialog_,
           &QAction::triggered,
@@ -745,6 +793,7 @@ void MainWindow::createMenus()
   option_menu->addAction(default_mouse_wheel_zoom_);
   option_menu->addAction(arrow_keys_scroll_step_dialog_);
   option_menu->addAction(font_);
+  option_menu->addAction(show_poly_decomp_view_);
 
   menuBar()->addAction(help_);
 }
@@ -964,11 +1013,14 @@ void MainWindow::updateSelectedStatus(const Selected& selection)
   status(selection ? selection.getName() : "");
 }
 
-void MainWindow::addSelected(const Selected& selection)
+void MainWindow::addSelected(const Selected& selection, bool find_in_cts)
 {
   if (selection) {
     selected_.emplace(selection);
     emit selectionChanged(selection);
+    if (find_in_cts) {
+      emit findInCts(selection);
+    }
   }
   emit updateSelectedStatus(selection);
 }
@@ -1012,7 +1064,7 @@ void MainWindow::removeSelectedByType(const std::string& type)
   }
 }
 
-void MainWindow::addSelected(const SelectionSet& selections)
+void MainWindow::addSelected(const SelectionSet& selections, bool find_in_cts)
 {
   int prev_selected_size = selected_.size();
   for (const auto& selection : selections) {
@@ -1023,6 +1075,10 @@ void MainWindow::addSelected(const SelectionSet& selections)
   status(std::string("Added ")
          + std::to_string(selected_.size() - prev_selected_size));
   emit selectionChanged();
+
+  if (find_in_cts) {
+    emit findInCts(selections);
+  }
 }
 
 void MainWindow::setSelected(const SelectionSet& selections)
@@ -1552,7 +1608,7 @@ std::string MainWindow::convertDBUToString(int value, bool add_units) const
   auto str = utl::to_numeric_string(micron_value, precision);
 
   if (add_units) {
-    str += " \u03BCm";  // micro meter
+    str += " μm";
   }
 
   return str;
@@ -1566,8 +1622,8 @@ int MainWindow::convertStringToDBU(const std::string& value, bool* ok) const
     new_value = new_value.left(new_value.indexOf(" "));
   } else if (new_value.contains("u")) {
     new_value = new_value.left(new_value.indexOf("u"));
-  } else if (new_value.contains("\u03BC")) {
-    new_value = new_value.left(new_value.indexOf("\u03BC"));
+  } else if (new_value.contains("μ")) {
+    new_value = new_value.left(new_value.indexOf("μ"));
   }
 
   if (show_dbu_->isChecked()) {
@@ -1680,9 +1736,15 @@ void MainWindow::saveDesign()
   }
 }
 
+void MainWindow::enableDeveloper()
+{
+  show_poly_decomp_view_->setVisible(true);
+}
+
 #ifdef ENABLE_CHARTS
 void MainWindow::reportSlackHistogramPaths(
-    const std::set<const sta::Pin*>& report_pins)
+    const std::set<const sta::Pin*>& report_pins,
+    const std::string& path_group_name)
 {
   if (!timing_widget_->isVisible()) {
     timing_widget_->show();
@@ -1694,7 +1756,7 @@ void MainWindow::reportSlackHistogramPaths(
     timing_widget_->raise();
   }
 
-  timing_widget_->reportSlackHistogramPaths(report_pins);
+  timing_widget_->reportSlackHistogramPaths(report_pins, path_group_name);
 }
 #endif
 }  // namespace gui

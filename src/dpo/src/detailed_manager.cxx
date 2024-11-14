@@ -185,6 +185,9 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
   blockages_.resize(numSingleHeightRows_);
 
   for (Node* nd : fixedCells_) {
+    if (nd->isTerminal()) {
+      continue;
+    }
     int xmin = std::max(arch_->getMinX(), nd->getLeft());
     int xmax = std::min(arch_->getMaxX(), nd->getRight());
     const int ymin = std::max(arch_->getMinY(), nd->getBottom());
@@ -827,6 +830,10 @@ bool DetailedMgr::findClosestSpanOfSegments(Node* nd,
 
         DetailedSeg* segPtr = candidates_i[0];
 
+        // Work with bottom edge.
+        const double ymin = arch_->getRow(segPtr->getRowId())->getBottom();
+        const double dy = std::fabs(nd->getBottom() - ymin);
+
         int xmin = segPtr->getMinX();
         int xmax = segPtr->getMaxX();
         for (size_t j = 1; j < candidates_i.size(); j++) {
@@ -835,10 +842,6 @@ bool DetailedMgr::findClosestSpanOfSegments(Node* nd,
           xmax = std::min(xmax, segPtr->getMaxX());
         }
         const int width = xmax - xmin;
-
-        // Work with bottom edge.
-        const double ymin = arch_->getRow(segPtr->getRowId())->getBottom();
-        const double dy = std::fabs(nd->getBottom() - ymin);
 
         // Still work with cell center.
         const double ww = std::min(nd->getWidth(), width);

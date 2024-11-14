@@ -2,7 +2,8 @@
 
 set -euo pipefail
 
-cd "$(dirname $(readlink -f $0))/../"
+DIR="$(dirname $(readlink -f $0))"
+cd "$DIR/../"
 
 # default values, can be overwritten by cmdline args
 buildDir="build"
@@ -19,6 +20,7 @@ EOF
 fi
 cmakeOptions=""
 cleanBefore=no
+depsPrefixesFile=""
 keepLog=no
 compiler=gcc
 
@@ -30,7 +32,7 @@ OPTIONS:
   -cmake='-<key>=<value> [-<key>=<value> ...]'  User defined cmake options
                                                   Note: use single quote after
                                                   -cmake= and double quotes if
-                                                  <key> has muliple <values>
+                                                  <key> has multiple <values>
                                                   e.g.: -cmake='-DFLAGS="-a -b"'
   -compiler=COMPILER_NAME                       Compiler name: gcc or clang
                                                   Default: gcc
@@ -50,6 +52,11 @@ OPTIONS:
   -keep-log                                     Keep a compile log in build dir
   -help                                         Shows this message
   -gpu                                          Enable GPU to accelerate the process
+  -deps-prefixes-file=FILE                      File with CMake packages roots,
+                                                  its content extends -cmake argument.
+                                                  By default, "openroad_deps_prefixes.txt"
+                                                  file from OpenROAD's "etc" directory
+                                                  or from system "/etc".
 
 EOF
     exit "${1:-1}"
@@ -102,7 +109,15 @@ while [ "$#" -gt 0 ]; do
         -threads=* )
             numThreads="${1#*=}"
             ;;
-        -compiler | -cmake | -dir | -threads )
+        -deps-prefixes-file=*)
+            file="${1#-deps-prefixes-file=}"
+            if [[ ! -f "$file" ]]; then 
+                echo "${file} does not exist" >&2
+                _help
+            fi
+            depsPrefixesFile="$file"
+            ;;
+        -compiler | -cmake | -dir | -threads | -install | -deps-prefixes-file )
             echo "${1} requires an argument" >&2
             _help
             ;;
@@ -116,6 +131,20 @@ while [ "$#" -gt 0 ]; do
     esac
     shift 1
 done
+
+if [[ -z "$depsPrefixesFile" ]]; then
+    if [[ -f "$DIR/openroad_deps_prefixes.txt" ]]; then
+        depsPrefixesFile="$DIR/openroad_deps_prefixes.txt"
+    elif [[ -f "/etc/openroad_deps_prefixes.txt" ]]; then
+        depsPrefixesFile="/etc/openroad_deps_prefixes.txt"
+    fi
+fi
+if [[ -f "$depsPrefixesFile" ]]; then
+    cmakeOptions+=" $(cat "$depsPrefixesFile")"
+    echo "[INFO] Using additional CMake parameters from $depsPrefixesFile"
+else
+    echo "[INFO] Auto-generated prefix file does not exist - CMake will choose the dependencies automatically"
+fi
 
 case "${compiler}" in
     "gcc" )

@@ -1006,6 +1006,24 @@ frCoord FlexGCWorker::Impl::getPrl(gcSegment* edge,
   return std::min(edge1_max, edge2_max) - std::max(edge1_min, edge2_min);
 }
 
+std::pair<frCoord, frCoord> FlexGCWorker::Impl::getRectsPrl(gcRect* rect1,
+                                                            gcRect* rect2) const
+{
+  gtl::rectangle_data<frCoord> marker_rect(*rect1);
+  gtl::generalized_intersect(marker_rect, *rect2);
+  auto prl_x = gtl::delta(marker_rect, gtl::HORIZONTAL);
+  auto prl_y = gtl::delta(marker_rect, gtl::VERTICAL);
+  auto dist_x = gtl::euclidean_distance(*rect1, *rect2, gtl::HORIZONTAL);
+  auto dist_y = gtl::euclidean_distance(*rect1, *rect2, gtl::VERTICAL);
+  if (dist_x) {
+    prl_x = -prl_x;
+  }
+  if (dist_y) {
+    prl_y = -prl_y;
+  }
+  return {prl_x, prl_y};
+}
+
 void FlexGCWorker::Impl::checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer)
 {
   auto lef58WrongDirCons = layer->getLef58SpacingWrongDirConstraints();
@@ -2131,6 +2149,14 @@ bool FlexGCWorker::Impl::checkMetalShape_lef58Area_rectWidth(
   return false;
 }
 
+namespace gc_patch {
+bool isPatchValid(drPatchWire* pwire, const Rect& boundary_box)
+{
+  return pwire->getBBox().intersects(boundary_box)
+         || boundary_box.intersects(pwire->getOrigin());
+}
+}  // namespace gc_patch
+
 void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
 {
   auto poly = pin->getPolygon();
@@ -2208,6 +2234,9 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
     return;
   }
 
+  if (!gc_patch::isPatchValid(patch.get(), getDRWorker()->getRouteBox())) {
+    return;
+  }
   pwires_.push_back(std::move(patch));
 }
 
@@ -2977,6 +3006,9 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
     const gtl::rectangle_data<frCoord>& markerRect,
     frLef58CutSpacingConstraint* con)
 {
+  if (rect1->isFixed() && rect2->isFixed()) {
+    return;
+  }
   auto layerNum = rect1->getLayerNum();
   auto secondLayerNum = rect2->getLayerNum();
   auto net1 = rect1->getNet();
@@ -3217,7 +3249,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
           edgeY = std::min(edgeY, int(gtl::length(*(corner->getPrevEdge()))));
         }
         // outside of keepout zone
-        if (edgeX * dy + edgeY * dx >= edgeX * edgeY) {
+        if (edgeX * dy + edgeY * dx >= static_cast<uint64_t>(edgeX) * edgeY) {
           continue;
         }
 
@@ -3509,6 +3541,9 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect)
           rect, aboveLayer->getLef58DefaultInterCutSpcTblConstraint());
     }
   }
+  if (layer->hasOrthSpacingTableConstraint()) {
+    checkCutSpacingTableOrthogonal(rect);
+  }
 }
 
 void FlexGCWorker::Impl::checkCutSpacing()
@@ -3659,6 +3694,9 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
     patch->setOrigin(origin);
     patch->setOffsetBox(markerBBox);
     patch->addToNet(net);
+    if (!gc_patch::isPatchValid(patch.get(), getDRWorker()->getRouteBox())) {
+      continue;
+    }
     pwires_.push_back(std::move(patch));
   }
 }
@@ -3677,7 +3715,9 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
     }
     auto lNum = marker->getLayerNum();
     auto layer = tech_->getLayer(lNum);
-    if (!layer->hasVia2ViaMinStepViol()) {
+    if (!layer->hasVia2ViaMinStepViol()
+        && !tech_->getLayer(lNum - 1)->hasLef58MaxSpacingConstraints()
+        && !tech_->getLayer(lNum + 1)->hasLef58MaxSpacingConstraints()) {
       continue;
     }
 
@@ -3717,9 +3757,55 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
         } else {
           downViaFound = true;
         }
-        if (upViaFound && downViaFound) {
+        if (upViaFound && downViaFound && layer->hasVia2ViaMinStepViol()) {
           net = obj->getNet();
           origin = tmpOrigin;
+          break;
+        }
+        if (obj->isLonely() && getDRWorker()
+            && getDRWorker()->getRipupMode() == RipUpMode::VIASWAP) {
+          Rect enc_box;
+          if (obj->getViaDef()->getLayer1Num() == lNum) {
+            enc_box = obj->getLayer1BBox();
+          } else {
+            enc_box = obj->getLayer2BBox();
+          }
+          int min_step_length = 0;
+          if (layer->getMinStepConstraint()) {
+            min_step_length = layer->getMinStepConstraint()->getMinStepLength();
+          } else {
+            continue;
+          }
+          if (enc_box.getDir() == 1 && markerBBox.yMin() == enc_box.yMin()
+              && markerBBox.yMax() == enc_box.yMax()) {
+            int bloating_dist = std::max(0, min_step_length - markerBBox.dx());
+            if (markerBBox.xMin() >= enc_box.xMin()
+                && markerBBox.xMax() == enc_box.xMax()) {
+              markerBBox.set_xhi(markerBBox.xMax() + bloating_dist);
+            } else if (markerBBox.xMin() == enc_box.xMin()
+                       && markerBBox.xMax() <= enc_box.xMax()) {
+              markerBBox.set_xlo(markerBBox.xMin() - bloating_dist);
+            } else {
+              continue;
+            }
+          } else if (enc_box.getDir() == 0
+                     && markerBBox.xMin() == enc_box.xMin()
+                     && markerBBox.xMax() == enc_box.xMax()) {
+            int bloating_dist = std::max(0, min_step_length - markerBBox.dy());
+            if (markerBBox.yMin() >= enc_box.yMin()
+                && markerBBox.yMax() == enc_box.yMax()) {
+              markerBBox.set_yhi(markerBBox.yMax() + bloating_dist);
+            } else if (markerBBox.yMin() == enc_box.yMin()
+                       && markerBBox.yMax() <= enc_box.yMax()) {
+              markerBBox.set_ylo(markerBBox.yMin() - bloating_dist);
+            } else {
+              continue;
+            }
+          } else {
+            continue;
+          }
+          origin = tmpOrigin;
+          net = obj->getNet();
           break;
         }
       }
@@ -3733,6 +3819,9 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
     patch->setOrigin(origin);
     patch->setOffsetBox(markerBBox);
     patch->addToNet(net);
+    if (!gc_patch::isPatchValid(patch.get(), getDRWorker()->getRouteBox())) {
+      continue;
+    }
     pwires_.push_back(std::move(patch));
   }
 }

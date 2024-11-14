@@ -248,7 +248,8 @@ void SimulatedAnnealingCore<T>::calOutlinePenalty()
   // normalization
   outline_penalty_ = outline_penalty_ / (outline_area);
   if (graphics_) {
-    graphics_->setOutlinePenalty(outline_penalty_);
+    graphics_->setOutlinePenalty(
+        {outline_weight_, outline_penalty_ / norm_outline_penalty_});
   }
 }
 
@@ -284,7 +285,8 @@ void SimulatedAnnealingCore<T>::calWirelength()
                 / (outline_.getHeight() + outline_.getWidth());
 
   if (graphics_) {
-    graphics_->setWirelength(wirelength_);
+    graphics_->setWirelengthPenalty(
+        {wirelength_weight_, wirelength_ / norm_wirelength_});
   }
 }
 
@@ -328,7 +330,8 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
   // normalization
   fence_penalty_ = fence_penalty_ / fences_.size();
   if (graphics_) {
-    graphics_->setFencePenalty(fence_penalty_);
+    graphics_->setFencePenalty(
+        {fence_weight_, fence_penalty_ / norm_fence_penalty_});
   }
 }
 
@@ -361,7 +364,8 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
   }
   guidance_penalty_ = guidance_penalty_ / guides_.size();
   if (graphics_) {
-    graphics_->setGuidancePenalty(guidance_penalty_);
+    graphics_->setGuidancePenalty(
+        {guidance_weight_, guidance_penalty_ / norm_guidance_penalty_});
   }
 }
 
@@ -556,11 +560,6 @@ float SimulatedAnnealingCore<T>::calAverage(std::vector<float>& value_list)
 template <class T>
 void SimulatedAnnealingCore<T>::fastSA()
 {
-  if (graphics_) {
-    graphics_->startSA();
-  }
-
-  // record the previous status
   float cost = calNormCost();
   float pre_cost = cost;
   float delta_cost = 0.0;
@@ -569,16 +568,30 @@ void SimulatedAnnealingCore<T>::fastSA()
   const float min_t = 1e-10;
   const float t_factor
       = std::exp(std::log(min_t / init_temperature_) / max_num_step_);
-  notch_weight_ = 0.0;  // notch pealty is too expensive, we try to avoid
-                        // calculating notch penalty at very beginning
-  // const for restart
+
+  // Used to ensure notch penalty is used only in the latter steps
+  // as it is too expensive
+  notch_weight_ = 0.0;
+
   int num_restart = 1;
   const int max_num_restart = 2;
-  // SA process
+
+  if (isValid()) {
+    updateBestValidResult();
+  }
+
   while (step <= max_num_step_) {
     for (int i = 0; i < num_perturb_per_step_; i++) {
       perturb();
       cost = calNormCost();
+
+      const bool keep_result
+          = cost < pre_cost
+            || best_valid_result_.sequence_pair.pos_sequence.empty();
+      if (isValid() && keep_result) {
+        updateBestValidResult();
+      }
+
       delta_cost = cost - pre_cost;
       const float num = distribution_(generator_);
       const float prob
@@ -589,13 +602,13 @@ void SimulatedAnnealingCore<T>::fastSA()
         restore();
       }
     }
-    // temperature *= 0.985;
+
     temperature *= t_factor;
+    step++;
+
     cost_list_.push_back(pre_cost);
     T_list_.push_back(temperature);
-    // increase step
-    step++;
-    // check if restart condition
+
     if ((num_restart <= max_num_restart)
         && (step == std::floor(max_num_step_ / max_num_restart)
             && (outline_penalty_ > 0.0))) {
@@ -607,16 +620,15 @@ void SimulatedAnnealingCore<T>::fastSA()
       step = 1;
       num_perturb_per_step_ *= 2;
       temperature = init_temperature_;
-    }  // end if
-    // only consider the last step to optimize notch weight
+    }
+
     if (step == max_num_step_ - macros_.size() * 2) {
       notch_weight_ = original_notch_weight_;
       packFloorplan();
       calPenalty();
       pre_cost = calNormCost();
     }
-  }  // end while
-  // update the final results
+  }
 
   packFloorplan();
   if (graphics_) {
@@ -624,65 +636,50 @@ void SimulatedAnnealingCore<T>::fastSA()
   }
   calPenalty();
 
-  if (centralization_on_) {
-    attemptCentralization(calNormCost());
-  }
-
-  if (graphics_) {
-    graphics_->endSA();
+  if (!isValid() && !best_valid_result_.sequence_pair.pos_sequence.empty()) {
+    useBestValidResult();
   }
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::attemptCentralization(const float pre_cost)
+void SimulatedAnnealingCore<T>::updateBestValidResult()
 {
-  if (outline_penalty_ > 0) {
-    return;
-  }
+  best_valid_result_.sequence_pair.pos_sequence = pos_seq_;
+  best_valid_result_.sequence_pair.neg_sequence = neg_seq_;
 
-  // In order to revert the centralization, we cache the current location
-  // of the clusters to avoid floating-point evilness when creating the
-  // x,y grid to fill the dead space by expanding mixed clusters.
-  std::map<int, std::pair<float, float>> clusters_locations;
-
-  for (int& id : pos_seq_) {
-    clusters_locations[id] = {macros_[id].getX(), macros_[id].getY()};
-  }
-
-  std::pair<float, float> offset((outline_.getWidth() - width_) / 2,
-                                 (outline_.getHeight() - height_) / 2);
-  moveFloorplan(offset);
-
-  // revert centralization
-  if (calNormCost() > pre_cost) {
-    centralization_was_reverted_ = true;
-
-    for (int& id : pos_seq_) {
-      macros_[id].setX(clusters_locations[id].first);
-      macros_[id].setY(clusters_locations[id].second);
+  if constexpr (std::is_same_v<T, SoftMacro>) {
+    for (const int macro_id : pos_seq_) {
+      SoftMacro& macro = macros_[macro_id];
+      best_valid_result_.macro_id_to_width[macro_id] = macro.getWidth();
     }
-
-    if (graphics_) {
-      graphics_->saStep(macros_);
-    }
-
-    calPenalty();
   }
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::moveFloorplan(
-    const std::pair<float, float>& offset)
+void SimulatedAnnealingCore<T>::useBestValidResult()
 {
-  for (auto& id : pos_seq_) {
-    macros_[id].setX(macros_[id].getX() + offset.first);
-    macros_[id].setY(macros_[id].getY() + offset.second);
+  pos_seq_ = best_valid_result_.sequence_pair.pos_sequence;
+  neg_seq_ = best_valid_result_.sequence_pair.neg_sequence;
+
+  if constexpr (std::is_same_v<T, SoftMacro>) {
+    for (const int macro_id : pos_seq_) {
+      SoftMacro& macro = macros_[macro_id];
+      const float valid_result_width
+          = best_valid_result_.macro_id_to_width.at(macro_id);
+
+      if (macro.isMacroCluster()) {
+        const float valid_result_height = macro.getArea() / valid_result_width;
+        macro.setShapeF(valid_result_width, valid_result_height);
+      } else {
+        macro.setWidth(valid_result_width);
+      }
+    }
   }
 
+  packFloorplan();
   if (graphics_) {
-    graphics_->saStep(macros_);
+    graphics_->doNotSkip();
   }
-
   calPenalty();
 }
 

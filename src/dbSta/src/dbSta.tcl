@@ -34,7 +34,6 @@
 ############################################################################
 
 namespace eval sta {
-
 define_cmd_args "highlight_path" {[-min|-max] pin ^|r|rise|v|f|fall}
 
 proc highlight_path { args } {
@@ -45,11 +44,11 @@ proc highlight_path { args } {
     sta_error "No design block found."
   }
 
-  if {[info exists flags(-min)] && [info exists flags(-max)]} {
+  if { [info exists flags(-min)] && [info exists flags(-max)] } {
     sta_error "-min and -max cannot both be specified."
-  } elseif {[info exists flags(-min)]} {
+  } elseif { [info exists flags(-min)] } {
     set min_max "min"
-  } elseif {[info exists flags(-max)]} {
+  } elseif { [info exists flags(-max)] } {
     set min_max "max"
   } else {
     # Default to max path.
@@ -80,13 +79,28 @@ proc highlight_path { args } {
   }
 }
 
-define_cmd_args "report_cell_usage" {}
+define_cmd_args "report_cell_usage" {[-verbose] [module_inst]}
 
-proc report_cell_usage {} {
+proc report_cell_usage { args } {
+  parse_key_args "highlight_path" args keys {} \
+    flags {-verbose} 0
+
+  check_argc_eq0or1 "report_cell_usage" $args
+
   if { [ord::get_db_block] == "NULL" } {
-    sta_error "No design block found."
+    sta_error 1001 "No design block found."
   }
-  report_cell_usage_cmd
+
+  set module [[ord::get_db_block] getTopModule]
+  if { $args != "" } {
+    set modinst [[ord::get_db_block] findModInst $args]
+    if { $modinst == "NULL" } {
+      sta_error 1002 "Unable to find $args"
+    }
+    set module [$modinst getMaster]
+  }
+
+  report_cell_usage_cmd $module [info exists flags(-verbose)]
 }
 
 # redefine sta::sta_warn/error to call utl::warn/error

@@ -1,0 +1,57 @@
+module top (clk,
+    in1,
+    in2,
+    out);
+ input clk;
+ input in1;
+ input in2;
+ output out;
+
+
+ CLKBUF_X1 hold2 (.A(u2z),
+    .Z(net2));
+ BUF_X1 i1 (.A(clk),
+    .Z(i1z));
+ BUF_X1 i2 (.A(i1z),
+    .Z(i2z));
+ BUF_X1 i3 (.A(i2z),
+    .Z(i3z));
+ BUF_X1 i4 (.A(i3z),
+    .Z(i4z));
+ BUF_X1 i5 (.A(i4z),
+    .Z(i5z));
+ BUF_X1 i6 (.A(i5z),
+    .Z(i6z));
+ BUF_X1 i7 (.A(i6z),
+    .Z(i7z));
+ BUF_X1 i8 (.A(i7z),
+    .Z(i8z));
+ DFF_X1 r2 (.D(in2),
+    .CK(i4z),
+    .Q(r2q));
+ DFF_X1 r3 (.D(net2),
+    .CK(i8z),
+    .Q(out));
+ BUF_X1 u1 (.A(r2q),
+    .Z(u1z));
+ AND2_X1 u2 (.A1(r1q),
+    .A2(u1z),
+    .ZN(u2z));
+ hier1 h1 (.in1(in1),
+    .i1z(i1z),
+    .op(r1q));
+endmodule
+module hier1 (in1,
+    i1z,
+    op);
+ input in1;
+ input i1z;
+ output op;
+
+
+ CLKBUF_X1 hold1 (.A(r1q),
+    .Z(op));
+ DFF_X1 r1 (.D(in1),
+    .CK(i1z),
+    .Q(r1q));
+endmodule

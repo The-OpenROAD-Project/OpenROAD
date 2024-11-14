@@ -90,6 +90,7 @@ class frNet : public frBlockObject
   bool hasInitialRouting() const { return hasInitialRouting_; }
   bool isFixed() const { return isFixed_; }
   bool hasGuides() const { return !guides_.empty(); }
+  bool hasBTermsAboveTopLayer() const;
   // setters
   void addInstTerm(frInstTerm* in) { instTerms_.push_back(in); }
   void removeInstTerm(frInstTerm* in)

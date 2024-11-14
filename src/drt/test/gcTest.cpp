@@ -1175,7 +1175,8 @@ BOOST_DATA_TEST_CASE(cut_spc_tbl, (bdata::make({true, false})), viol)
     table.push_back({{301, 301}, {301, 300}});
   }
 
-  dbRule->setSpacingTable(table, row_map, col_map);
+  dbRule->setSpacingTable(
+      std::move(table), std::move(row_map), std::move(col_map));
   makeLef58CutSpcTbl(3, dbRule);
   frNet* n1 = makeNet("n1");
 
@@ -1470,6 +1471,28 @@ BOOST_AUTO_TEST_CASE(lef58_enclosure)
                4,
                frConstraintTypeEnum::frcLef58EnclosureConstraint,
                Rect(0, 0, 200, 100));
+  }
+}
+
+BOOST_DATA_TEST_CASE(cut_spc_tbl_orth,
+                     (bdata::make({true, false}) ^ bdata::make({140, 150})),
+                     violating,
+                     y)
+{
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  makeSpacingTableOrthConstraint(3, 150, 50);
+  frViaDef* vd = makeViaDef("v", 3, {0, 0}, {100, 100});
+  frNet* n1 = makeNet("n1");
+  makeVia(vd, n1, {0, 0});
+  makeVia(vd, n1, {0, 240});
+  makeVia(vd, n1, {y, 110});
+  runGC();
+  auto& markers = worker.getMarkers();
+  if (violating) {
+    BOOST_TEST(markers.size() == 1);
+  } else {
+    BOOST_TEST(markers.size() == 0);
   }
 }
 

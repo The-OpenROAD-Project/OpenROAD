@@ -42,26 +42,27 @@ Node::Node(const odb::Point& pt, odb::dbTechLayer* layer)
 {
 }
 
+Node::CompareInformation Node::compareTuple() const
+{
+  const int x = pt_.getX();
+  const int y = pt_.getY();
+  const int layer = layer_->getNumber();
+
+  return {layer, x, y, getType(), getTypeCompareInfo()};
+}
+
+Node::CompareInformation Node::dummyCompareTuple()
+{
+  return {-1, 0, 0, NodeType::Unknown, -1};
+}
+
 bool Node::compare(const Node* other) const
 {
   if (other == nullptr) {
     return true;
   }
 
-  const int lhs_x = pt_.getX();
-  const int lhs_y = pt_.getY();
-  const int lhs_l = layer_->getNumber();
-  const NodeType lhs_t = getType();
-  const int lhs_s = getTypeCompareInfo();
-
-  const int rhs_x = other->pt_.getX();
-  const int rhs_y = other->pt_.getY();
-  const int rhs_l = other->layer_->getNumber();
-  const NodeType rhs_t = other->getType();
-  const int rhs_s = other->getTypeCompareInfo();
-
-  return std::tie(lhs_l, lhs_x, lhs_y, lhs_t, lhs_s)
-         < std::tie(rhs_l, rhs_x, rhs_y, rhs_t, rhs_s);
+  return compareTuple() < other->compareTuple();
 }
 
 bool Node::compare(const std::unique_ptr<Node>& other) const
@@ -112,6 +113,8 @@ std::string Node::getTypeName() const
       return "ITerm Node";
     case NodeType::BPin:
       return "BPin Node";
+    case NodeType::Unknown:
+      return "Unknown";
   }
 
   return "unknown";
@@ -120,7 +123,7 @@ std::string Node::getTypeName() const
 ///////////////////
 
 TerminalNode::TerminalNode(const odb::Rect& shape, odb::dbTechLayer* layer)
-    : Node(odb::Point(shape.xCenter(), shape.yCenter()), layer), shape_(shape)
+    : Node(odb::Point(shape.center()), layer), shape_(shape)
 {
 }
 

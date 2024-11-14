@@ -21,6 +21,8 @@ add_subdirectory(src/lefout)
 add_subdirectory(src/def)
 add_subdirectory(src/zutil)
 add_subdirectory(src/cdl)
+add_subdirectory(src/gdsin)
+add_subdirectory(src/gdsout)
 
 if(ENABLE_TESTS)
   add_subdirectory(test)
@@ -37,6 +39,8 @@ target_link_libraries(odb
     lefout
     zutil
     utl_lib
+    gdsin
+    gdsout
     ${TCL_LIBRARY}
 )
 
@@ -79,3 +83,23 @@ if(ENABLE_TESTS)
     odb
   )
 endif()
+
+add_custom_command(
+  OUTPUT messages_checked
+  COMMAND ${CMAKE_SOURCE_DIR}/etc/find_messages.py > messages.txt && touch ${CMAKE_CURRENT_BINARY_DIR}/messages_checked
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  DEPENDS
+    db
+    cdl
+    defin
+    defout
+    lefin
+    lefout
+    zutil
+    gdsin
+    gdsout
+)
+
+add_custom_target(odb_messages DEPENDS messages_checked)
+
+add_dependencies(odb odb_messages)

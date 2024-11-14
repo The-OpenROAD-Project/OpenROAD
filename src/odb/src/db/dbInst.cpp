@@ -214,6 +214,23 @@ dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
   stream >> inst._halo;
   stream >> inst.pin_access_idx_;
 
+  dbDatabase* db = (dbDatabase*) (inst.getDatabase());
+  if (((_dbDatabase*) db)->isSchema(db_schema_db_remove_hash)) {
+    _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
+    _dbModule* module = nullptr;
+    // if the instance has no module parent put in the top module
+    // We sometimes see instances with _module set to 0 (possibly
+    // introduced downstream) so we stick them in the hash for the
+    // top module.
+    if (inst._module == 0) {
+      module = (_dbModule*) (((dbBlock*) block)->getTopModule());
+    } else {
+      module = block->_module_tbl->getPtr(inst._module);
+    }
+    if (inst._name) {
+      module->_dbinst_hash[inst._name] = dbId<_dbInst>(inst.getId());
+    }
+  }
   return stream;
 }
 
@@ -1393,6 +1410,7 @@ dbInst* dbInst::create(dbBlock* block_,
   _dbBlock* block = (_dbBlock*) block_;
   _dbMaster* master = (_dbMaster*) master_;
   _dbInstHdr* inst_hdr = block->_inst_hdr_hash.find(master->_id);
+
   if (inst_hdr == nullptr) {
     inst_hdr
         = (_dbInstHdr*) dbInstHdr::create((dbBlock*) block, (dbMaster*) master);
@@ -1407,6 +1425,8 @@ dbInst* dbInst::create(dbBlock* block_,
         name_);
   }
 
+  _dbInst* inst = block->_inst_tbl->create();
+
   if (block->_journal) {
     debugPrint(block->getImpl()->getLogger(),
                utl::ODB,
@@ -1419,10 +1439,12 @@ dbInst* dbInst::create(dbBlock* block_,
     block->_journal->pushParam(lib->getId());
     block->_journal->pushParam(master_->getId());
     block->_journal->pushParam(name_);
+    // need to add dbModNet
+    // dbModule (scope)
+    block->_journal->pushParam(inst->getOID());
     block->_journal->endAction();
   }
 
-  _dbInst* inst = block->_inst_tbl->create();
   inst->_name = strdup(name_);
   ZALLOCATED(inst->_name);
   inst->_inst_hdr = inst_hdr->getOID();
@@ -1545,41 +1567,32 @@ void dbInst::destroy(dbInst* inst_)
                              inst->_name);
   }
 
-  dbRegion* region = inst_->getRegion();
-
-  if (region) {
-    region->removeInst(inst_);
-  }
-
-  dbModule* module = inst_->getModule();
-  if (module) {
-    ((_dbModule*) module)->removeInst(inst_);
-  }
-
-  if (inst->_group) {
-    inst_->getGroup()->removeInst(inst_);
-  }
-
   uint i;
   uint n = inst->_iterms.size();
 
+  // Delete these in reverse order so undo creates the in
+  // the correct order.
   for (i = 0; i < n; ++i) {
-    dbId<_dbITerm> id = inst->_iterms[i];
+    dbId<_dbITerm> id = inst->_iterms[n - 1 - i];
     _dbITerm* it = block->_iterm_tbl->getPtr(id);
     ((dbITerm*) it)->disconnect();
 
-    // Bugzilla #7: notify when pins are deleted (assumption: pins
-    // are destroyed only when the related instance is destroyed)
-    // payam 01/10/2006
+    // Notify when pins are deleted (assumption: pins are destroyed only when
+    // the related instance is destroyed)
     std::list<dbBlockCallBackObj*>::iterator cbitr;
     for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
          ++cbitr) {
-      (**cbitr)().inDbITermDestroy(
-          (dbITerm*) it);  // client ECO optimization - payam
+      (**cbitr)().inDbITermDestroy((dbITerm*) it);
+    }
+
+    dbModule* module = inst_->getModule();
+    if (module) {
+      ((_dbModule*) module)->_dbinst_hash.erase(inst_->getName());
     }
 
     dbProperty::destroyProperties(it);
     block->_iterm_tbl->destroy(it);
+    inst->_iterms.pop_back();
   }
 
   //    Move this part after inDbInstDestroy
@@ -1597,15 +1610,38 @@ void dbInst::destroy(dbInst* inst_)
                "DB_ECO",
                1,
                "ECO: dbInst:destroy");
+    auto master = inst_->getMaster();
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbInstObj);
-    block->_journal->pushParam(inst->getId());
+    block->_journal->pushParam(master->getLib()->getId());
+    block->_journal->pushParam(master->getId());
+    block->_journal->pushParam(inst_->getName().c_str());
+    block->_journal->pushParam(inst_->getId());
+    uint* flags = (uint*) &inst->_flags;
+    block->_journal->pushParam(*flags);
+    block->_journal->pushParam(inst->_x);
+    block->_journal->pushParam(inst->_y);
+    block->_journal->pushParam(inst->_group);
+    block->_journal->pushParam(inst->_module);
+    block->_journal->pushParam(inst->_region);
     block->_journal->endAction();
   }
 
-  // Bugzilla #7: The notification of the the instance destruction must
-  // be done after pin manipulation is completed. The notification is
-  // now after the pin disconnection - payam 01/10/2006
+  dbRegion* region = inst_->getRegion();
+
+  if (region) {
+    region->removeInst(inst_);
+  }
+
+  dbModule* module = inst_->getModule();
+  if (module) {
+    ((_dbModule*) module)->removeInst(inst_);
+  }
+
+  if (inst->_group) {
+    inst_->getGroup()->removeInst(inst_);
+  }
+
   std::list<dbBlockCallBackObj*>::iterator cbitr;
   for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
        ++cbitr) {

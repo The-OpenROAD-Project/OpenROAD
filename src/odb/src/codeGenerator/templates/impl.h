@@ -72,7 +72,7 @@ namespace odb {
   // User Code Begin Structs
   // User Code End Structs
 
-  class _{{klass.name}} : public _dbObject
+  class _{{klass.name}} : public _{{klass.type if klass.type else "dbObject"}}
   {
     public:
     {% for _enum in klass.enums %}

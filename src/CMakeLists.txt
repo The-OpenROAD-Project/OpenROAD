@@ -174,6 +174,12 @@ include(UseSWIG)
 
 find_package(Boost REQUIRED)
 message(STATUS "boost: ${Boost_VERSION}")
+
+if (ENABLE_TESTS)
+  find_package(GTest REQUIRED)
+  message(STATUS "GTest: ${GTest_VERSION}")
+endif()
+
 find_package(Python3 COMPONENTS Development REQUIRED)
 option(BUILD_PYTHON "Build the Python3 interface" ON)
 
@@ -200,10 +206,26 @@ add_compile_options(
   $<$<BOOL:${ASAN}>:-fsanitize=address>
   $<$<BOOL:${ASAN}>:-fno-omit-frame-pointer>
   $<$<BOOL:${ASAN}>:-g>
+  $<$<BOOL:${TSAN}>:-fsanitize=thread>
+  $<$<BOOL:${TSAN}>:-g>
+  $<$<BOOL:${UBSAN}>:-fsanitize=undefined>
+  $<$<BOOL:${UBSAN}>:-g>
+  $<$<BOOL:${UBSAN}>:-fno-omit-frame-pointer>
 )
 
 if (ASAN)
   add_link_options(-fsanitize=address)
+  message(STATUS "Address Sanitizer is enabled")
+endif()
+
+if (TSAN)
+  add_link_options(-fsanitize=thread)
+  message(STATUS "Thread Sanitizer is enabled")
+endif()
+
+if (UBSAN)
+  add_link_options(-fsanitize=undefined)
+  message(STATUS "Undefined Behavior Sanitizer is enabled")
 endif()
 
 ################################################################
@@ -258,6 +280,7 @@ if (NOT USE_SYSTEM_OPENSTA)
   if (TCL_READLINE_LIBRARY AND TCL_READLINE_H)
     # Pass along tcl readline enablement to OpenSTA build
     set(USE_TCL_READLINE ON)
+    set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
   endif()
   add_subdirectory(sta)
 endif()
@@ -400,6 +423,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       dbSta
       odb
       OpenSTA
+      ifp
   )
   target_link_libraries(openroad
     openroad_swig_py

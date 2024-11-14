@@ -45,6 +45,7 @@
 
 #include <algorithm>  // min
 #include <mutex>
+#include <regex>
 
 #include "AbstractPathRenderer.h"
 #include "AbstractPowerDensityDataSource.h"
@@ -60,6 +61,7 @@
 #include "sta/Liberty.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PathRef.hh"
+#include "sta/PatternMatch.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
@@ -86,7 +88,7 @@ using utl::STA;
 class dbStaReport : public sta::ReportTcl
 {
  public:
-  explicit dbStaReport(bool gui_is_on) : gui_is_on_(gui_is_on) {}
+  explicit dbStaReport() = default;
 
   void setLogger(Logger* logger);
   void warn(int id, const char* fmt, ...) override
@@ -119,15 +121,19 @@ class dbStaReport : public sta::ReportTcl
       __attribute__((format(printf, 3, 4)));
   size_t printString(const char* buffer, size_t length) override;
 
+  // Redirect output to filename until redirectFileEnd is called.
+  void redirectFileBegin(const char* filename) override;
+  // Redirect append output to filename until redirectFileEnd is called.
+  void redirectFileAppendBegin(const char* filename) override;
+  void redirectFileEnd() override;
+  // Redirect output to a string until redirectStringEnd is called.
+  void redirectStringBegin() override;
+  const char* redirectStringEnd() override;
+
  protected:
   void printLine(const char* line, size_t length) override;
 
   Logger* logger_ = nullptr;
-
- private:
-  // text buffer for tcl puts output when in GUI mode.
-  std::string tcl_buffer_;
-  bool gui_is_on_;
 };
 
 class dbStaCbk : public dbBlockCallBackObj
@@ -148,6 +154,7 @@ class dbStaCbk : public dbBlockCallBackObj
   void inDbBTermCreate(dbBTerm*) override;
   void inDbBTermDestroy(dbBTerm* bterm) override;
   void inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type) override;
+  void inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type) override;
 
  private:
   dbSta* sta_;
@@ -188,6 +195,7 @@ void dbSta::initVars(Tcl_Interp* tcl_interp,
   db_report_->setLogger(logger);
   db_network_->init(db, logger);
   db_cbk_ = std::make_unique<dbStaCbk>(this, logger);
+  buffer_use_analyser_ = std::make_unique<BufferUseAnalyser>();
 }
 
 void dbSta::updateComponentsState()
@@ -235,7 +243,7 @@ std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
 
 void dbSta::makeReport()
 {
-  db_report_ = new dbStaReport(/*gui_is_on=*/path_renderer_ != nullptr);
+  db_report_ = new dbStaReport();
   report_ = db_report_;
 }
 
@@ -356,12 +364,18 @@ std::string dbSta::getInstanceTypeText(InstType type)
       return "Other";
     case STD_CELL:
       return "Standard cell";
-    case STD_BUFINV:
-      return "Buffer/inverter";
-    case STD_BUFINV_CLK_TREE:
-      return "Clock buffer/inverter";
-    case STD_BUFINV_TIMING_REPAIR:
-      return "Timing Repair Buffer/inverter";
+    case STD_BUF:
+      return "Buffer";
+    case STD_BUF_CLK_TREE:
+      return "Clock buffer";
+    case STD_BUF_TIMING_REPAIR:
+      return "Timing Repair Buffer";
+    case STD_INV:
+      return "Inverter";
+    case STD_INV_CLK_TREE:
+      return "Clock inverter";
+    case STD_INV_TIMING_REPAIR:
+      return "Timing Repair inverter";
     case STD_CLOCK_GATE:
       return "Clock gate cell";
     case STD_LEVEL_SHIFT:
@@ -449,7 +463,8 @@ dbSta::InstType dbSta::getInstanceType(odb::dbInst* inst)
     return STD_OTHER;
   }
 
-  if (lib_cell->isInverter() || lib_cell->isBuffer()) {
+  const bool is_inverter = lib_cell->isInverter();
+  if (is_inverter || lib_cell->isBuffer()) {
     if (source_type == odb::dbSourceType::TIMING) {
       for (auto* iterm : inst->getITerms()) {
         // look through iterms and check for clock nets
@@ -458,12 +473,12 @@ dbSta::InstType dbSta::getInstanceType(odb::dbInst* inst)
           continue;
         }
         if (net->getSigType() == odb::dbSigType::CLOCK) {
-          return STD_BUFINV_CLK_TREE;
+          return is_inverter ? STD_INV_CLK_TREE : STD_BUF_CLK_TREE;
         }
       }
-      return STD_BUFINV_TIMING_REPAIR;
+      return is_inverter ? STD_INV_TIMING_REPAIR : STD_BUF_TIMING_REPAIR;
     }
-    return STD_BUFINV;
+    return is_inverter ? STD_INV : STD_BUF;
   }
   if (lib_cell->isClockGate()) {
     return STD_CLOCK_GATE;
@@ -481,29 +496,78 @@ dbSta::InstType dbSta::getInstanceType(odb::dbInst* inst)
   return STD_COMBINATIONAL;
 }
 
-std::map<dbSta::InstType, int> dbSta::countInstancesByType()
+std::map<dbSta::InstType, dbSta::TypeStats> dbSta::countInstancesByType(
+    odb::dbModule* module)
 {
-  auto insts = db_->getChip()->getBlock()->getInsts();
-  std::map<InstType, int> inst_type_count;
+  std::map<InstType, TypeStats> inst_type_stats;
 
-  for (auto inst : insts) {
+  for (auto inst : module->getLeafInsts()) {
     InstType type = getInstanceType(inst);
-    inst_type_count[type] = inst_type_count[type] + 1;
+    auto& stats = inst_type_stats[type];
+    stats.count++;
+    auto master = inst->getMaster();
+    stats.area += master->getArea();
   }
-  return inst_type_count;
+  return inst_type_stats;
 }
 
-void dbSta::report_cell_usage()
+std::string toLowerCase(std::string str)
 {
-  std::map<InstType, int> instances_types = countInstancesByType();
-  int total_usage = db_->getChip()->getBlock()->getInsts().size();
+  std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
+    return std::tolower(c);
+  });
+  return str;
+}
 
-  logger_->report("Cell usage report:");
-  for (auto [type, count] : instances_types) {
-    std::string type_name = getInstanceTypeText(type);
-    logger_->report("  {}s: {}", type_name, count);
+void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
+{
+  auto instances_types = countInstancesByType(module);
+  auto block = db_->getChip()->getBlock();
+  auto insts = module->getLeafInsts();
+  const int total_usage = insts.size();
+  int64_t total_area = 0;
+  const double area_to_microns = std::pow(block->getDbUnitsPerMicron(), 2);
+
+  const char* header_format = "{:37} {:>7} {:>10}";
+  const char* format = "  {:35} {:>7} {:>10.2f}";
+  if (block->getTopModule() != module) {
+    logger_->report("Cell type report for {} ({})",
+                    module->getModInst()->getHierarchicalName(),
+                    module->getName());
   }
-  logger_->report("  Total: {}", total_usage);
+  logger_->report(header_format, "Cell type report:", "Count", "Area");
+  for (auto [type, stats] : instances_types) {
+    std::string type_name = getInstanceTypeText(type);
+    logger_->report(
+        format, type_name, stats.count, stats.area / area_to_microns);
+    total_area += stats.area;
+
+    std::regex regexp(" |/|-");
+    logger_->metric("design__instance__count__class:"
+                        + toLowerCase(regex_replace(type_name, regexp, "_")),
+                    stats.count);
+  }
+  logger_->report(format, "Total", total_usage, total_area / area_to_microns);
+
+  if (verbose) {
+    logger_->report("\nCell instance report:");
+    std::map<dbMaster*, TypeStats> usage_count;
+    for (auto inst : insts) {
+      auto master = inst->getMaster();
+      auto& stats = usage_count[master];
+      stats.count++;
+      stats.area += master->getArea();
+    }
+    for (auto [master, stats] : usage_count) {
+      logger_->report(
+          format, master->getName(), stats.count, stats.area / area_to_microns);
+    }
+  }
+}
+
+BufferUse dbSta::getBufferUse(sta::LibertyCell* buffer)
+{
+  return buffer_use_analyser_->getBufferUse(buffer);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -567,69 +631,13 @@ void dbStaReport::setLogger(Logger* logger)
 // Line return \n is implicit.
 void dbStaReport::printLine(const char* line, size_t length)
 {
-  if (redirect_to_string_) {
-    redirectStringPrint(line, length);
-    redirectStringPrint("\n", 1);
-    return;
-  }
-  if (redirect_stream_) {
-    fwrite(line, sizeof(char), length, redirect_stream_);
-    fwrite("\n", sizeof(char), 1, redirect_stream_);
-    return;
-  }
-
   logger_->report("{}", line);
 }
 
 // Only used by encapsulated Tcl channels, ie puts and command prompt.
 size_t dbStaReport::printString(const char* buffer, size_t length)
 {
-  if (redirect_to_string_) {
-    redirectStringPrint(buffer, length);
-    return length;
-  }
-  if (redirect_stream_) {
-    size_t ret = fwrite(buffer, sizeof(char), length, redirect_stream_);
-    return std::min(ret, length);
-  }
-
-  // prepend saved buffer
-  string buf = tcl_buffer_ + string(buffer);
-  tcl_buffer_.clear();  // clear buffer
-
-  if (buffer[length - 1] != '\n') {
-    // does not end with a newline, so might need to buffer the information
-
-    auto last_newline = buf.find_last_of('\n');
-    if (last_newline == string::npos) {
-      // no newlines found, so add entire buf to tcl_buffer_
-      tcl_buffer_ = buf;
-      buf.clear();
-    } else {
-      // save partial line to buffer
-      tcl_buffer_ = buf.substr(last_newline + 1);
-      buf = buf.substr(0, last_newline + 1);
-    }
-  }
-
-  if (!buf.empty()) {
-    // Trim trailing \r\n.
-    buf.erase(buf.find_last_not_of("\r\n") + 1);
-    logger_->report("{}", buf.c_str());
-  }
-
-  // if gui enabled, keep tcl_buffer_ until a newline appears
-  // otherwise proceed to print directly to console
-  if (!gui_is_on_) {
-    // puts without a trailing \n in the string.
-    // Tcl command prompts get here.
-    // puts "xyz" makes a separate call for the '\n '.
-    // This seems to be the only way to get the output.
-    // It will not be logged.
-    printConsole(tcl_buffer_.c_str(), tcl_buffer_.length());
-    tcl_buffer_.clear();
-  }
-
+  logger_->reportNoNewline(buffer);
   return length;
 }
 
@@ -720,6 +728,37 @@ void dbStaReport::critical(int id, const char* fmt, ...)
   // Don't give std::format a chance to interpret the message.
   logger_->critical(STA, id, "{}", buffer_);
   va_end(args);
+}
+
+void dbStaReport::redirectFileBegin(const char* filename)
+{
+  flush();
+  logger_->redirectFileBegin(filename);
+}
+
+void dbStaReport::redirectFileAppendBegin(const char* filename)
+{
+  flush();
+  logger_->redirectFileAppendBegin(filename);
+}
+
+void dbStaReport::redirectFileEnd()
+{
+  flush();
+  logger_->redirectFileEnd();
+}
+
+void dbStaReport::redirectStringBegin()
+{
+  flush();
+  logger_->redirectStringBegin();
+}
+
+const char* dbStaReport::redirectStringEnd()
+{
+  flush();
+  const std::string string = logger_->redirectStringEnd();
+  return stringPrintTmp("%s", string.c_str());
 }
 
 ////////////////////////////////////////////////////////////////
@@ -828,12 +867,88 @@ void dbStaCbk::inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type)
   sta_->getDbNetwork()->setTopPortDirection(bterm, io_type);
 }
 
+void dbStaCbk::inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type)
+{
+  // sta can't handle such changes, see OpenROAD#6025, so just reset the whole
+  // thing.
+  sta_->networkChanged();
+  // The above is insufficient, see OpenROAD#6089, clear the vertex id as a
+  // workaround.
+  bterm->staSetVertexId(object_id_null);
+}
+
 ////////////////////////////////////////////////////////////////
 
 // Highlight path in the gui.
 void dbSta::highlight(PathRef* path)
 {
   path_renderer_->highlight(path);
+}
+
+////////////////////////////////////////////////////////////////
+
+BufferUseAnalyser::BufferUseAnalyser()
+{
+  clkbuf_pattern_
+      = std::make_unique<sta::PatternMatch>(".*CLKBUF.*",
+                                            /* is_regexp */ true,
+                                            /* nocase */ true,
+                                            /* Tcl_interp* */ nullptr);
+}
+
+BufferUse BufferUseAnalyser::getBufferUse(sta::LibertyCell* buffer)
+{
+  // is_clock_cell is a custom lib attribute that may not exist,
+  // so we also use the name pattern to help
+  if (buffer->isClockCell() || clkbuf_pattern_->match(buffer->name())) {
+    return CLOCK;
+  }
+
+  return DATA;
+}
+
+////////////////////////////////////////////////////////////////
+
+sta::LibertyPort* getLibertyScanEnable(const sta::TestCell* test_cell)
+{
+  sta::LibertyCellPortIterator iter(test_cell);
+  while (iter.hasNext()) {
+    sta::LibertyPort* port = iter.next();
+    sta::ScanSignalType signal_type = port->scanSignalType();
+    if (signal_type == sta::ScanSignalType::enable
+        || signal_type == sta::ScanSignalType::enable_inverted) {
+      return port;
+    }
+  }
+  return nullptr;
+}
+
+sta::LibertyPort* getLibertyScanIn(const sta::TestCell* test_cell)
+{
+  sta::LibertyCellPortIterator iter(test_cell);
+  while (iter.hasNext()) {
+    sta::LibertyPort* port = iter.next();
+    sta::ScanSignalType signal_type = port->scanSignalType();
+    if (signal_type == sta::ScanSignalType::input
+        || signal_type == sta::ScanSignalType::input_inverted) {
+      return port;
+    }
+  }
+  return nullptr;
+}
+
+sta::LibertyPort* getLibertyScanOut(const sta::TestCell* test_cell)
+{
+  sta::LibertyCellPortIterator iter(test_cell);
+  while (iter.hasNext()) {
+    sta::LibertyPort* port = iter.next();
+    sta::ScanSignalType signal_type = port->scanSignalType();
+    if (signal_type == sta::ScanSignalType::output
+        || signal_type == sta::ScanSignalType::output_inverted) {
+      return port;
+    }
+  }
+  return nullptr;
 }
 
 }  // namespace sta

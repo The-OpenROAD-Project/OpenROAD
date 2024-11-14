@@ -63,6 +63,7 @@ enum dbObjectType
 
   // Design Objects
   dbChipObj,
+  dbGdsLibObj,
   dbBlockObj,
   dbInstHdrObj,
   dbInstObj,
@@ -87,14 +88,24 @@ enum dbObjectType
   dbBPinObj,
   // Generator Code Begin DbObjectType
   dbAccessPointObj,
+  dbBusPortObj,
   dbDftObj,
   dbGCellGridObj,
+  dbGDSBoundaryObj,
+  dbGDSBoxObj,
+  dbGDSNodeObj,
+  dbGDSPathObj,
+  dbGDSSRefObj,
+  dbGDSStructureObj,
+  dbGDSTextObj,
   dbGlobalConnectObj,
   dbGroupObj,
   dbGuideObj,
   dbIsolationObj,
   dbLevelShifterObj,
   dbLogicPortObj,
+  dbMarkerObj,
+  dbMarkerCategoryObj,
   dbMetalWidthViaMapObj,
   dbModBTermObj,
   dbModInstObj,
@@ -102,6 +113,7 @@ enum dbObjectType
   dbModNetObj,
   dbModuleObj,
   dbNetTrackObj,
+  dbPolygonObj,
   dbPowerDomainObj,
   dbPowerSwitchObj,
   dbScanChainObj,
@@ -122,6 +134,7 @@ enum dbObjectType
   dbTechLayerEolKeepOutRuleObj,
   dbTechLayerForbiddenSpacingRuleObj,
   dbTechLayerKeepOutZoneRuleObj,
+  dbTechLayerMaxSpacingRuleObj,
   dbTechLayerMinCutRuleObj,
   dbTechLayerMinStepRuleObj,
   dbTechLayerSpacingEolRuleObj,
@@ -133,6 +146,7 @@ enum dbObjectType
 
   // Lib Objects
   dbLibObj,
+  dbGDSLibObj,
   dbSiteObj,
   dbMasterObj,
   dbMPinObj,
@@ -171,6 +185,7 @@ class dbObject
   const char* getTypeName() const;
 
   static const char* getTypeName(dbObjectType type);
+  static dbObjectType getType(const char* name, utl::Logger* logger);
   // These are not intended for client use as the returned class is
   // not exported.  They are for internal db convenience.
   _dbObject* getImpl();

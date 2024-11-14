@@ -4,6 +4,7 @@
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 4 components and 24 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 4 connections.
+[WARNING GRT-0008] The read_guides command does not allow parasitics estimation from the guides file.
 [WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer mcon
 [WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer mcon
 [WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via
@@ -42,7 +43,7 @@
 [INFO DRT-0036] FR_VIA guide region query size = 0.
 [INFO DRT-0036] li1 guide region query size = 4.
 [INFO DRT-0036] mcon guide region query size = 0.
-[INFO DRT-0036] met1 guide region query size = 4.
+[INFO DRT-0036] met1 guide region query size = 2.
 [INFO DRT-0036] via guide region query size = 0.
 [INFO DRT-0036] met2 guide region query size = 2.
 [INFO DRT-0036] via2 guide region query size = 0.

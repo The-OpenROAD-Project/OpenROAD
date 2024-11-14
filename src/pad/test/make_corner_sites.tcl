@@ -13,7 +13,7 @@ make_io_sites \
   -vertical_site IOSITE \
   -corner_site IOSITE \
   -offset 15 \
-  -rotation_corner R270
+  -rotation_corner MY
 
 set def_file [make_result_file "make_corner_sites.def"]
 write_def $def_file

@@ -72,6 +72,8 @@
 
 namespace gpl {
 
+using utl::GPL;
+
 struct Point
 {
   float x;
@@ -137,7 +139,12 @@ float MBFF::GetDist(const Point& a, const Point& b)
   return (abs(a.x - b.x) + abs(a.y - b.y));
 }
 
-int MBFF::GetRows(int slot_cnt, std::vector<int> array_mask)
+float MBFF::GetDistAR(const Point& a, const Point& b, const float AR)
+{
+  return (abs(a.x - b.x) / AR + abs(a.y - b.y));
+}
+
+int MBFF::GetRows(int slot_cnt, const Mask& array_mask)
 {
   const int idx = GetBitIdx(slot_cnt);
 
@@ -161,14 +168,14 @@ int MBFF::GetBitIdx(int bit_cnt)
       return i;
     }
   }
-  log_->error(utl::GPL, 122, "{} is not in 2^[0,{}]", bit_cnt, num_sizes_);
+  log_->error(GPL, 122, "{} is not in 2^[0,{}]", bit_cnt, num_sizes_);
 }
 
 bool MBFF::IsClockPin(odb::dbITerm* iterm)
 {
   const bool yes = (iterm->getSigType() == odb::dbSigType::CLOCK);
   const sta::Pin* pin = network_->dbToSta(iterm);
-  return yes || sta_->isClock(pin);
+  return yes || network_->isRegClkPin(pin);
 }
 
 bool MBFF::ClockOn(odb::dbInst* inst)
@@ -267,7 +274,11 @@ bool MBFF::IsInvertingQPin(odb::dbITerm* iterm)
 
   sta::Pin* pin = network_->dbToSta(iterm);
   sta::LibertyPort* lib_port = network_->libertyPort(pin);
-  sta::LibertyPort* func_port = getFunction(lib_port)->port();
+  sta::FuncExpr* func = getFunction(lib_port);
+  if (!func) {
+    return false;
+  }
+  sta::LibertyPort* func_port = func->port();
   if (!func_port) {
     return false;
   }
@@ -363,8 +374,8 @@ bool MBFF::IsScanCell(odb::dbInst* inst)
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
   sta::TestCell* test_cell = lib_cell->testCell();
-  if (test_cell != nullptr && test_cell->scanIn() != nullptr
-      && test_cell->scanEnable() != nullptr) {
+  if (test_cell != nullptr && getLibertyScanIn(test_cell) != nullptr
+      && getLibertyScanEnable(test_cell) != nullptr) {
     return true;
   }
   return false;
@@ -375,8 +386,8 @@ bool MBFF::IsScanIn(odb::dbITerm* iterm)
   sta::Cell* cell = network_->dbToSta(iterm->getInst()->getMaster());
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
   sta::TestCell* test_cell = lib_cell->testCell();
-  if (test_cell != nullptr && test_cell->scanIn() != nullptr) {
-    odb::dbMTerm* mterm = network_->staToDb(test_cell->scanIn());
+  if (test_cell != nullptr && getLibertyScanIn(test_cell) != nullptr) {
+    odb::dbMTerm* mterm = network_->staToDb(getLibertyScanIn(test_cell));
     return (iterm->getInst()->getITerm(mterm) == iterm);
   }
   return false;
@@ -387,8 +398,8 @@ odb::dbITerm* MBFF::GetScanIn(odb::dbInst* inst)
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
   sta::TestCell* test_cell = lib_cell->testCell();
-  if (test_cell != nullptr && test_cell->scanIn() != nullptr) {
-    odb::dbMTerm* mterm = network_->staToDb(test_cell->scanIn());
+  if (test_cell != nullptr && getLibertyScanIn(test_cell) != nullptr) {
+    odb::dbMTerm* mterm = network_->staToDb(getLibertyScanIn(test_cell));
     return inst->getITerm(mterm);
   }
   return nullptr;
@@ -399,8 +410,8 @@ bool MBFF::IsScanEnable(odb::dbITerm* iterm)
   sta::Cell* cell = network_->dbToSta(iterm->getInst()->getMaster());
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
   sta::TestCell* test_cell = lib_cell->testCell();
-  if (test_cell != nullptr && test_cell->scanEnable() != nullptr) {
-    odb::dbMTerm* mterm = network_->staToDb(test_cell->scanEnable());
+  if (test_cell != nullptr && getLibertyScanEnable(test_cell) != nullptr) {
+    odb::dbMTerm* mterm = network_->staToDb(getLibertyScanEnable(test_cell));
     return (iterm->getInst()->getITerm(mterm) == iterm);
   }
   return false;
@@ -411,8 +422,8 @@ odb::dbITerm* MBFF::GetScanEnable(odb::dbInst* inst)
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
   sta::TestCell* test_cell = lib_cell->testCell();
-  if (test_cell != nullptr && test_cell->scanEnable() != nullptr) {
-    odb::dbMTerm* mterm = network_->staToDb(test_cell->scanEnable());
+  if (test_cell != nullptr && getLibertyScanEnable(test_cell) != nullptr) {
+    odb::dbMTerm* mterm = network_->staToDb(getLibertyScanEnable(test_cell));
     return inst->getITerm(mterm);
   }
   return nullptr;
@@ -546,7 +557,7 @@ PortName MBFF::PortType(sta::LibertyPort* lib_port, odb::dbInst* inst)
     }
   }
 
-  log_->error(utl::GPL, 9032, "Could not recognize port {}", lib_port->name());
+  log_->error(GPL, 9032, "Could not recognize port {}", lib_port->name());
   return d;
 }
 
@@ -588,9 +599,10 @@ int MBFF::GetMatchingFunc(sta::FuncExpr* expr,
   return -1;
 }
 
-std::vector<int> MBFF::GetArrayMask(odb::dbInst* inst, bool isTray)
+MBFF::Mask MBFF::GetArrayMask(odb::dbInst* inst, bool isTray)
 {
-  std::vector<int> ret(7, 0);
+  Mask ret;
+  ret.fill(0);
   ret[0] = ClockOn(inst);
   ret[1] = HasClear(inst);
   ret[2] = HasPreset(inst);
@@ -687,7 +699,7 @@ MBFF::DataToOutputsMap MBFF::GetPinMapping(odb::dbInst* tray)
 void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
                                 const std::vector<Tray>& trays,
                                 const std::vector<std::pair<int, int>>& mapping,
-                                const std::vector<int> array_mask)
+                                const Mask& array_mask)
 {
   const int num_flops = static_cast<int>(flops.size());
   std::vector<std::pair<int, int>> new_mapping(mapping);
@@ -906,13 +918,9 @@ float MBFF::RunLP(const std::vector<Flop>& flops,
   }
 
   operations_research::MPObjective* objective = solver->MutableObjective();
-  std::vector<int> coeff(num_flops, 1);
   for (int i = 0; i < num_flops; i++) {
-    if (path_points_.count(flops[i].idx)) {
-      coeff[i] = 1 + occs_[flops[i].idx];
-    }
-    objective->SetCoefficient(disp_x[i], coeff[i]);
-    objective->SetCoefficient(disp_y[i], coeff[i]);
+    objective->SetCoefficient(disp_x[i], 1);
+    objective->SetCoefficient(disp_y[i], 1);
   }
   objective->SetMinimization();
   solver->Solve();
@@ -936,7 +944,8 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
                     const std::vector<Tray>& trays,
                     std::vector<std::pair<int, int>>& final_flop_to_slot,
                     float alpha,
-                    std::vector<int> array_mask)
+                    float beta,
+                    const Mask& array_mask)
 {
   const int num_flops = static_cast<int>(flops.size());
   const int num_trays = static_cast<int>(trays.size());
@@ -1014,11 +1023,84 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
     }
   }
 
-  std::vector<int> coeff(num_flops, 1);
+  // make sure each timing-critical path contains FFs that can be clustered.
+  std::map<int, int> old_to_new_idx;
   for (int i = 0; i < num_flops; i++) {
-    if (path_points_.count(flops[i].idx)) {
-      coeff[i] = 2;
+    old_to_new_idx[flops[i].idx] = i + 1;
+  }
+
+  int num_paths = 0;
+  for (size_t i = 0; i < (int) flops.size(); i++) {
+    for (auto& j : paths_[flops[i].idx]) {
+      if (!old_to_new_idx[j]) {
+        continue;
+      }
+      num_paths++;
     }
+  }
+
+  std::vector<operations_research::sat::IntVar> disp_path_x;
+  std::vector<operations_research::sat::IntVar> disp_path_y;
+  for (int i = 0; i < num_paths; i++) {
+    disp_path_x.push_back(
+        cp_model.NewIntVar(operations_research::Domain(0, inf)));
+    disp_path_y.push_back(
+        cp_model.NewIntVar(operations_research::Domain(0, inf)));
+  }
+
+  int cur_path_num = 0;
+  for (int i = 0; i < flops.size(); i++) {
+    for (const auto& end_point : paths_[flops[i].idx]) {
+      int flop_a_idx = old_to_new_idx[flops[i].idx];
+      int flop_b_idx = old_to_new_idx[end_point];
+      if (!flop_a_idx || !flop_b_idx)
+        continue;
+      flop_a_idx--, flop_b_idx--;
+      operations_research::sat::LinearExpr sum_disp_x_flop_a;
+      operations_research::sat::LinearExpr sum_disp_y_flop_a;
+
+      operations_research::sat::LinearExpr sum_disp_x_flop_b;
+      operations_research::sat::LinearExpr sum_disp_y_flop_b;
+
+      for (int j = 0; j < static_cast<int>(cand_tray[flop_a_idx].size()); j++) {
+        float shift_x
+            = trays[cand_tray[flop_a_idx][j]].slots[cand_slot[flop_a_idx][j]].x
+              - flops[flop_a_idx].pt.x;
+        float shift_y
+            = trays[cand_tray[flop_a_idx][j]].slots[cand_slot[flop_a_idx][j]].y
+              - flops[flop_a_idx].pt.y;
+        sum_disp_x_flop_a
+            += (int(multiplier_ * shift_x) * mapped[flop_a_idx][j]);
+        sum_disp_y_flop_a
+            += (int(multiplier_ * shift_y) * mapped[flop_a_idx][j]);
+      }
+
+      for (int j = 0; j < static_cast<int>(cand_tray[flop_b_idx].size()); j++) {
+        float shift_x
+            = trays[cand_tray[flop_b_idx][j]].slots[cand_slot[flop_b_idx][j]].x
+              - flops[flop_b_idx].pt.x;
+        float shift_y
+            = trays[cand_tray[flop_b_idx][j]].slots[cand_slot[flop_b_idx][j]].y
+              - flops[flop_b_idx].pt.y;
+        sum_disp_x_flop_b
+            += (int(multiplier_ * shift_x) * mapped[flop_b_idx][j]);
+        sum_disp_y_flop_b
+            += (int(multiplier_ * shift_y) * mapped[flop_b_idx][j]);
+      }
+
+      cp_model.AddLessOrEqual(
+          0, disp_path_x[cur_path_num] + sum_disp_x_flop_a - sum_disp_x_flop_b);
+      cp_model.AddLessOrEqual(
+          0, disp_path_x[cur_path_num] - sum_disp_x_flop_a + sum_disp_x_flop_b);
+      cp_model.AddLessOrEqual(
+          0, disp_path_y[cur_path_num] + sum_disp_y_flop_a - sum_disp_y_flop_b);
+      cp_model.AddLessOrEqual(
+          0,
+          disp_path_y[cur_path_num++] - sum_disp_y_flop_a + sum_disp_y_flop_b);
+    }
+  }
+  for (int i = 0; i < num_paths; i++) {
+    cp_model.AddLessOrEqual(disp_path_x[i] + disp_path_y[i], max_dist);
   }
 
   // check that each flop is matched to a single slot
@@ -1092,9 +1174,14 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
   // add the sum of all distances
   for (int i = 0; i < num_flops; i++) {
     for (size_t j = 0; j < cand_tray[i].size(); j++) {
-      obj.AddTerm(disp_x[i][j], coeff[i] * (1 / multiplier_));
-      obj.AddTerm(disp_y[i][j], coeff[i] * (1 / multiplier_));
+      obj.AddTerm(disp_x[i][j], (1 / multiplier_));
+      obj.AddTerm(disp_y[i][j], (1 / multiplier_));
     }
+  }
+
+  for (int i = 0; i < num_paths; i++) {
+    obj.AddTerm(disp_path_x[i], (beta / multiplier_));
+    obj.AddTerm(disp_path_y[i], (beta / multiplier_));
   }
 
   // add the tray usage constraints
@@ -1127,15 +1214,6 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
           slot_disp_y_[flops[i].idx]
               = trays[cand_tray[i][j]].slots[cand_slot[i][j]].y - flops[i].pt.y;
 
-          if (path_points_.count(flops[i].idx)) {
-            ret -= (coeff[i] - 1)
-                   * std::max(slot_disp_x_[flops[i].idx],
-                              -slot_disp_x_[flops[i].idx]);
-            ret -= (coeff[i] - 1)
-                   * std::max(slot_disp_y_[flops[i].idx],
-                              -slot_disp_y_[flops[i].idx]);
-          }
-
           final_flop_to_slot[i] = {cand_tray[i][j], cand_slot[i][j]};
           trays_used.insert(
               {cand_tray[i][j],
@@ -1157,7 +1235,7 @@ void MBFF::GetSlots(const Point& tray,
                     const int rows,
                     const int cols,
                     std::vector<Point>& slots,
-                    const std::vector<int> array_mask)
+                    const Mask& array_mask)
 {
   slots.clear();
   const int idx = GetBitIdx(rows * cols);
@@ -1203,7 +1281,7 @@ void MBFF::GetStartTrays(std::vector<Flop> flops,
 
   float tot_dist = 0;
   for (int i = 0; i < num_flops; i++) {
-    const float contr = GetDist(flops[i].pt, tray_zero.pt) / AR;
+    const float contr = GetDistAR(flops[i].pt, tray_zero.pt, AR);
     flops[i].prob = contr;
     tot_dist += contr;
   }
@@ -1226,7 +1304,7 @@ void MBFF::GetStartTrays(std::vector<Flop> flops,
     trays.push_back(new_tray);
 
     for (int i = 0; i < num_flops; i++) {
-      const float new_contr = GetDist(flops[i].pt, new_tray.pt) / AR;
+      const float new_contr = GetDistAR(flops[i].pt, new_tray.pt, AR);
       flops[i].prob += new_contr;
       tot_dist += new_contr;
     }
@@ -1364,7 +1442,7 @@ void MBFF::RunCapacitatedKMeans(const std::vector<Flop>& flops,
                                 const int sz,
                                 const int iter,
                                 std::vector<std::pair<int, int>>& cluster,
-                                const std::vector<int> array_mask)
+                                const Mask& array_mask)
 {
   cluster.clear();
   const int num_flops = static_cast<int>(flops.size());
@@ -1396,7 +1474,7 @@ void MBFF::RunMultistart(
     std::vector<std::vector<Tray>>& trays,
     const std::vector<Flop>& flops,
     std::vector<std::vector<std::vector<Tray>>>& start_trays,
-    const std::vector<int> array_mask)
+    const Mask& array_mask)
 {
   const int num_flops = static_cast<int>(flops.size());
   trays.resize(num_sizes_);
@@ -1481,12 +1559,15 @@ void MBFF::RunMultistart(
 
 // standard K-means++ implementation
 void MBFF::KMeans(const std::vector<Flop>& flops,
-                  std::vector<std::vector<Flop>>& clusters)
+                  int knn,
+                  std::vector<std::vector<Flop>>& clusters,
+                  std::vector<int>& rand_nums)
 {
   const int num_flops = static_cast<int>(flops.size());
 
   // choose initial center
-  const int seed = std::rand() % num_flops;
+  int rand_ind = 0;
+  const int seed = rand_nums[rand_ind++] % num_flops;
   std::set<int> chosen({seed});
 
   std::vector<Flop> centers;
@@ -1498,7 +1579,7 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
   }
 
   // choose remaining K-1 centers
-  while (static_cast<int>(chosen.size()) < knn_) {
+  while (static_cast<int>(chosen.size()) < knn) {
     float tot_sum = 0;
 
     for (int i = 0; i < num_flops; i++) {
@@ -1510,7 +1591,7 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
       }
     }
 
-    const int rnd = std::rand() % (int(tot_sum * 100));
+    const int rnd = rand_nums[rand_ind++] % (int(tot_sum * 100));
     const float prob = rnd / 100.0;
 
     float cum_sum = 0;
@@ -1526,10 +1607,10 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
     }
   }
 
-  clusters.resize(knn_);
+  clusters.resize(knn);
   float prev = -1;
   while (true) {
-    for (int i = 0; i < knn_; i++) {
+    for (int i = 0; i < knn; i++) {
       clusters[i].clear();
     }
 
@@ -1538,18 +1619,18 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
       float min_cost = std::numeric_limits<float>::max();
       int idx = 0;
 
-      for (int j = 0; j < knn_; j++) {
+      for (int j = 0; j < knn; j++) {
         if (GetDist(flops[i].pt, centers[j].pt) < min_cost) {
           min_cost = GetDist(flops[i].pt, centers[j].pt);
           idx = j;
         }
+        // pq.push({-GetDist(flops[i].pt, centers[j].pt), {j, i}});
       }
-
       clusters[idx].push_back(flops[i]);
     }
 
     // find new center locations
-    for (int i = 0; i < knn_; i++) {
+    for (int i = 0; i < knn; i++) {
       const int cur_sz = static_cast<int>(clusters[i].size());
       float cX = 0;
       float cY = 0;
@@ -1566,7 +1647,7 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
 
     // get total displacement
     float tot_disp = 0;
-    for (int i = 0; i < knn_; i++) {
+    for (int i = 0; i < knn; i++) {
       for (size_t j = 0; j < clusters[i].size(); j++) {
         tot_disp += GetDist(centers[i].pt, clusters[i][j].pt);
       }
@@ -1578,9 +1659,103 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
     prev = tot_disp;
   }
 
-  for (int i = 0; i < knn_; i++) {
+  for (int i = 0; i < knn; i++) {
     clusters[i].push_back(centers[i]);
   }
+}
+
+float MBFF::GetKSilh(const std::vector<std::vector<Flop>>& clusters,
+                     const std::vector<Point>& centers)
+{
+  int num_centers = static_cast<int>(centers.size());
+  int num_flops = 0;
+  float tot = 0;
+
+  for (int i = 0; i < num_centers; i++) {
+    int cur_sz = static_cast<int>(clusters[i].size());
+    num_flops += cur_sz;
+    if (cur_sz <= 1) {
+      tot += -1;
+      continue;
+    }
+
+    /* fast silh score */
+    std::vector<float> all_x(cur_sz + 1, 0);
+    std::vector<float> all_y(cur_sz + 1, 0);
+    for (int j = 0; j < cur_sz; j++) {
+      all_x[j + 1] = (clusters[i][j].pt.x);
+      all_y[j + 1] = (clusters[i][j].pt.y);
+    }
+    std::sort(all_x.begin(), all_x.end());
+    std::sort(all_y.begin(), all_y.end());
+
+    std::vector<float> pref_x(cur_sz + 1, 0);
+    std::vector<float> pref_y(cur_sz + 1, 0);
+    for (int j = 1; j <= cur_sz; j++) {
+      pref_x[j] = pref_x[j - 1] + all_x[j];
+      pref_y[j] = pref_y[j - 1] + all_y[j];
+    }
+
+    for (int j = 0; j < cur_sz; j++) {
+      float a_j = 0;
+      float b_j = std::numeric_limits<float>::max();
+      for (int k = 0; k < num_centers; k++) {
+        if (i != k) {
+          b_j = std::min(b_j, GetDist(clusters[i][j].pt, centers[k]));
+        }
+      }
+
+      /* find first x_loc == current x */
+      int lo = 1, hi = cur_sz, ret = std::numeric_limits<int>::max();
+      while (lo <= hi) {
+        int mid = (lo + hi) / 2;
+        if (all_x[mid] >= clusters[i][j].pt.x) {
+          ret = std::min(ret, mid);
+          hi = mid - 1;
+        } else {
+          lo = mid + 1;
+        }
+      }
+
+      /* get x contribution */
+      float contribution_x = 0;
+      if (ret > 1) {
+        contribution_x += (clusters[i][j].pt.x * (ret - 1)) - (pref_x[ret - 1]);
+      }
+      if (ret < cur_sz) {
+        contribution_x += (pref_x[cur_sz] - pref_x[ret])
+                          - (cur_sz - ret) * (clusters[i][j].pt.x);
+      }
+      a_j += contribution_x;
+
+      /* find first y_loc == current y */
+      lo = 1, hi = cur_sz, ret = std::numeric_limits<int>::max();
+      while (lo <= hi) {
+        int mid = (lo + hi) / 2;
+        if (all_y[mid] >= clusters[i][j].pt.y) {
+          ret = std::min(ret, mid);
+          hi = mid - 1;
+        } else {
+          lo = mid + 1;
+        }
+      }
+
+      /* get y contribution */
+      float contribution_y = 0;
+      if (ret > 1) {
+        contribution_y += (clusters[i][j].pt.y * (ret - 1)) - (pref_y[ret - 1]);
+      }
+      if (ret < cur_sz) {
+        contribution_y += (pref_y[cur_sz] - pref_y[ret])
+                          - (cur_sz - ret) * (clusters[i][j].pt.y);
+      }
+      a_j += contribution_y;
+
+      a_j /= (cur_sz - 1);
+      tot += ((b_j - a_j) / std::max(a_j, b_j));
+    }
+  }
+  return tot / num_flops;
 }
 
 void MBFF::KMeansDecomp(const std::vector<Flop>& flops,
@@ -1593,17 +1768,48 @@ void MBFF::KMeansDecomp(const std::vector<Flop>& flops,
     return;
   }
 
+  int best_k = 4;
+  float best_silh = -20.00;
+  std::vector<float> all_silhs(9);
+
+  std::vector<std::vector<int>> rand_nums(27);
+  for (int i = 0; i < multistart_ + 7; i++) {
+    for (int j = 0; j < 20; j++) {
+      rand_nums[i].push_back(std::rand());
+    }
+  }
+
+#pragma omp parallel for
+  for (int k = 2; k <= 8; k++) {
+    std::vector<std::vector<Flop>> k_clust;
+    KMeans(flops, k, k_clust, rand_nums[k - 2]);
+    std::vector<Point> centers;
+    for (int i = 0; i < k; i++) {
+      centers.push_back(k_clust[i].back().pt);
+      k_clust[i].pop_back();
+    }
+    float cur_silh = GetKSilh(k_clust, centers);
+    all_silhs[k] = cur_silh;
+  }
+
+  for (int i = 2; i <= 8; i++) {
+    if (all_silhs[i] > best_silh) {
+      best_silh = all_silhs[i];
+      best_k = i;
+    }
+  }
+
   std::vector<std::vector<Flop>> tmp_clusters[multistart_];
   std::vector<float> tmp_costs(multistart_);
 
-  // multistart_ K-means++
+#pragma omp parallel for
   for (int i = 0; i < multistart_; i++) {
-    KMeans(flops, tmp_clusters[i]);
+    KMeans(flops, best_k, tmp_clusters[i], rand_nums[i + 7]);
 
     /* cur_cost = sum of distances between flops and its
     matching cluster's center */
     float cur_cost = 0;
-    for (int j = 0; j < knn_; j++) {
+    for (int j = 0; j < best_k; j++) {
       for (size_t k = 0; k + 1 < tmp_clusters[i][j].size(); k++) {
         cur_cost
             += GetDist(tmp_clusters[i][j][k].pt, tmp_clusters[i][j].back().pt);
@@ -1627,8 +1833,8 @@ void MBFF::KMeansDecomp(const std::vector<Flop>& flops,
   */
 
   std::vector<std::pair<float, std::pair<int, int>>> cluster_pairs;
-  for (int i = 0; i < knn_; i++) {
-    for (int j = i + 1; j < knn_; j++) {
+  for (int i = 0; i < best_k; i++) {
+    for (int j = i + 1; j < best_k; j++) {
       const float dist
           = GetDist(k_means_ret[i].back().pt, k_means_ret[j].back().pt);
       cluster_pairs.emplace_back(dist, std::make_pair(i, j));
@@ -1636,15 +1842,15 @@ void MBFF::KMeansDecomp(const std::vector<Flop>& flops,
   }
   std::sort(cluster_pairs.begin(), cluster_pairs.end());
 
-  for (int i = 0; i < knn_; i++) {
+  for (int i = 0; i < best_k; i++) {
     k_means_ret[i].pop_back();
   }
 
   // naive implementation of DSU
-  std::vector<int> id(knn_);
-  std::vector<int> sz(knn_);
+  std::vector<int> id(best_k);
+  std::vector<int> sz(best_k);
 
-  for (int i = 0; i < knn_; i++) {
+  for (int i = 0; i < best_k; i++) {
     id[i] = i;
     sz[i] = static_cast<int>(k_means_ret[i].size());
   }
@@ -1664,22 +1870,22 @@ void MBFF::KMeansDecomp(const std::vector<Flop>& flops,
 
     // merge the two clusters
     const int orig_id = id[idx2];
-    for (int j = 0; j < knn_; j++) {
+    for (int j = 0; j < best_k; j++) {
       if (id[j] == orig_id) {
         id[j] = id[idx1];
       }
     }
   }
 
-  std::vector<std::vector<Flop>> nxt_clusters(knn_);
-  for (int i = 0; i < knn_; i++) {
+  std::vector<std::vector<Flop>> nxt_clusters(best_k);
+  for (int i = 0; i < best_k; i++) {
     for (const Flop& f : k_means_ret[i]) {
       nxt_clusters[id[i]].push_back(f);
     }
   }
 
   // recurse on each new cluster
-  for (int i = 0; i < knn_; i++) {
+  for (int i = 0; i < best_k; i++) {
     if (static_cast<int>(nxt_clusters[i].size())) {
       std::vector<std::vector<Flop>> R;
       KMeansDecomp(nxt_clusters[i], max_sz, R);
@@ -1709,7 +1915,7 @@ float MBFF::RunClustering(const std::vector<Flop>& flops,
                           const int mx_sz,
                           const float alpha,
                           const float beta,
-                          const std::vector<int> array_mask)
+                          const Mask& array_mask)
 {
   std::vector<std::vector<Flop>> pointsets;
   KMeansDecomp(flops, mx_sz, pointsets);
@@ -1783,8 +1989,8 @@ float MBFF::RunClustering(const std::vector<Flop>& flops,
       }
     }
     std::vector<std::pair<int, int>> mapping(num_flops);
-    const float cur_ans
-        = RunILP(pointsets[t], all_final_trays[t], mapping, alpha, array_mask);
+    const float cur_ans = RunILP(
+        pointsets[t], all_final_trays[t], mapping, alpha, beta, array_mask);
     all_mappings[t] = std::move(mapping);
     ans += cur_ans;
   }
@@ -1837,7 +2043,7 @@ void MBFF::SetVars(const std::vector<Flop>& flops)
   }
 }
 
-void MBFF::SetRatios(const std::vector<int> array_mask)
+void MBFF::SetRatios(const Mask& array_mask)
 {
   norm_area_.clear();
   norm_area_.push_back(1.00);
@@ -1877,16 +2083,24 @@ void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
     }
   }
 
-  for (const auto& clks : clk_terms) {
+  for (const auto& [clk_net, indices] : clk_terms) {
     ArrayMaskVector<Flop> flops_by_mask;
-    for (int idx : clks.second) {
-      const std::vector<int> vec_mask = GetArrayMask(insts_[idx], false);
+    for (int idx : indices) {
+      const Mask vec_mask = GetArrayMask(insts_[idx], false);
       flops_by_mask[vec_mask].push_back(flops_[idx]);
     }
 
-    for (const auto& flop_pair : flops_by_mask) {
-      if (!flop_pair.second.empty()) {
-        ffs.push_back(flop_pair.second);
+    for (const auto& [mask, flops] : flops_by_mask) {
+      if (!flops.empty()) {
+        ffs.push_back(flops);
+        debugPrint(log_,
+                   GPL,
+                   "mbff",
+                   1,
+                   "Flop cluster for net {} with mask {} of size {}",
+                   clk_net->getName(),
+                   fmt::join(mask, ""),
+                   flops.size());
       }
     }
   }
@@ -1915,18 +2129,29 @@ void MBFF::Run(const int mx_sz, const float alpha, const float beta)
   SeparateFlops(FFs);
   const int num_chunks = static_cast<int>(FFs.size());
   float tot_ilp = 0;
+  bool any_found = false;
   for (int i = 0; i < num_chunks; i++) {
-    const std::vector<int> array_mask
-        = GetArrayMask(insts_[FFs[i].back().idx], false);
+    auto ff_inst = insts_[FFs[i].back().idx];
+    const Mask array_mask = GetArrayMask(ff_inst, false);
     // do we even have trays to cluster these flops?
     if (!best_master_[array_mask].size()) {
       tot_ilp += (alpha * static_cast<int>(FFs[i].size()));
       tray_sizes_used_[1] += static_cast<int>(FFs[i].size());
+      log_->info(GPL,
+                 137,
+                 "No tray found for group of {} flop instances containing {}",
+                 FFs[i].size(),
+                 ff_inst->getMaster()->getName());
       continue;
     }
+    any_found = true;
     SetVars(FFs[i]);
     SetRatios(array_mask);
     tot_ilp += RunClustering(FFs[i], mx_sz, alpha, beta, array_mask);
+  }
+
+  if (!any_found) {
+    log_->error(GPL, 138, "No clusterable flops found");
   }
 
   float tcp_disp = (beta * GetPairDisplacements());
@@ -1971,7 +2196,7 @@ void MBFF::Run(const int mx_sz, const float alpha, const float beta)
                tray_sizes_used_[4]);
 }
 
-Point MBFF::GetTrayCenter(std::vector<int> array_mask, int idx)
+Point MBFF::GetTrayCenter(const Mask& array_mask, int idx)
 {
   int num_slots = GetBitCnt(idx);
   std::vector<float> all_x;
@@ -2002,8 +2227,15 @@ void MBFF::ReadLibs()
 
       const int num_slots = GetNumD(tmp_tray);
       const int idx = GetBitIdx(num_slots);
-      const std::vector<int> array_mask = GetArrayMask(tmp_tray, true);
+      const Mask array_mask = GetArrayMask(tmp_tray, true);
 
+      debugPrint(log_,
+                 GPL,
+                 "mbff",
+                 1,
+                 "Found tray {} mask: {}",
+                 master->getName(),
+                 fmt::join(array_mask, ""));
       if (!static_cast<int>(best_master_[array_mask].size())) {
         best_master_[array_mask].resize(num_sizes_, nullptr);
         tray_area_[array_mask].resize(num_sizes_,
@@ -2106,7 +2338,7 @@ void MBFF::ReadFFs()
       const Point pt{origin.x() / multiplier_, origin.y() / multiplier_};
       flops_.push_back({pt, num_flops, 0.0});
       insts_.push_back(inst);
-      name_to_idx_[inst->getName()] = num_flops;
+      name_to_idx_[inst->getName()] = num_flops + 1;
       num_flops++;
     }
   }
@@ -2118,7 +2350,7 @@ void MBFF::ReadFFs()
 void MBFF::ReadPaths()
 {
   paths_.resize(flops_.size());
-  occs_.resize(flops_.size());
+  unique_.resize(flops_.size());
 
   sta::ExceptionFrom* e_from = nullptr;
   sta::ExceptionThruSeq* e_thrus = nullptr;
@@ -2132,9 +2364,9 @@ void MBFF::ReadPaths()
                                                    e_thrus,
                                                    e_to,
                                                    false,
-                                                   nullptr,
+                                                   sta_->cmdCorner(),
                                                    sta::MinMaxAll::max(),
-                                                   num_paths_,
+                                                   20,
                                                    num_paths_,
                                                    true,
                                                    -sta::INF,
@@ -2151,11 +2383,11 @@ void MBFF::ReadPaths()
   for (auto& path_end : path_ends) {
     sta::Path* path = path_end->path();
     sta::PathExpanded expanded(path, sta_);
-    sta::PathRef* pathref_front = expanded.path(expanded.startIndex());
+    const sta::PathRef* pathref_front = expanded.path(expanded.startIndex());
     sta::Vertex* pathvertex_front = pathref_front->vertex(sta_);
     sta::Pin* pathpin_front = pathvertex_front->pin();
 
-    sta::PathRef* pathref_back
+    const sta::PathRef* pathref_back
         = expanded.path(static_cast<int>(expanded.size()) - 1);
     sta::Vertex* pathvertex_back = pathref_back->vertex(sta_);
     sta::Pin* pathpin_back = pathvertex_back->pin();
@@ -2165,11 +2397,18 @@ void MBFF::ReadPaths()
 
     int idx1 = name_to_idx_[network_->pathName(start_ff)];
     int idx2 = name_to_idx_[network_->pathName(end_ff)];
+    // ensure that both are FFs
+    if (!idx1 || !idx2) {
+      continue;
+    }
+
+    idx1--, idx2--;
+    // ensure that paths are unique and start != end
+    if (idx1 == idx2 || unique_[idx1].count(idx2)) {
+      continue;
+    }
     paths_[idx1].push_back(idx2);
-    occs_[idx1]++;
-    occs_[idx2]++;
-    path_points_.insert(idx1);
-    path_points_.insert(idx2);
+    unique_[idx1].insert(idx2);
   }
 }
 
@@ -2177,7 +2416,6 @@ MBFF::MBFF(odb::dbDatabase* db,
            sta::dbSta* sta,
            utl::Logger* log,
            int threads,
-           int knn,
            int multistart,
            int num_paths,
            bool debug_graphics)
@@ -2188,7 +2426,6 @@ MBFF::MBFF(odb::dbDatabase* db,
       corner_(sta_->cmdCorner()),
       log_(log),
       num_threads_(threads),
-      knn_(knn),
       multistart_(multistart),
       num_paths_(num_paths),
       multiplier_(static_cast<float>(block_->getDbUnitsPerMicron())),

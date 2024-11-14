@@ -131,6 +131,8 @@ class FlexDR
 
   void reportGuideCoverage();
   void setIter(int iterNum) { iter_ = iterNum; }
+  // maxSpacing fix
+  void fixMaxSpacing();
 
  private:
   TritonRoute* router_;
@@ -172,6 +174,7 @@ class FlexDR
                           int startY,
                           int size,
                           const Rect& routeBox);
+  std::vector<frVia*> getLonelyVias(frLayer* layer, int max_spc, int cut_class);
 };
 
 class FlexDRWorker;
@@ -446,6 +449,17 @@ class FlexDRWorker
     frBlockObject* block;
     int numReroute;
     bool doRoute;
+    frBlockObject* checkingObj;
+    RouteQueueEntry(frBlockObject* block_in,
+                    int num_reroute_in,
+                    bool do_route_in,
+                    frBlockObject* checking_obj_in)
+        : block(block_in),
+          numReroute(num_reroute_in),
+          doRoute(do_route_in),
+          checkingObj(checking_obj_in)
+    {
+    }
   };
   frDesign* design_ = nullptr;
   Logger* logger_ = nullptr;
@@ -484,6 +498,7 @@ class FlexDRWorker
   std::vector<frMarker> markers_;
   std::vector<frMarker> bestMarkers_;
   FlexDRWorkerRegionQuery rq_;
+  std::vector<frNonDefaultRule*> ndrs_;
 
   // persistent gc worker
   std::unique_ptr<FlexGCWorker> gcWorker_;
@@ -542,11 +557,10 @@ class FlexDRWorker
                              std::map<frNet*,
                                       std::vector<std::unique_ptr<drConnFig>>,
                                       frBlockObjectComp>& netExtObjs);
-  void initNets_segmentTerms(
-      const Point& bp,
-      frLayerNum lNum,
-      const frNet* net,
-      std::set<frBlockObject*, frBlockObjectComp>& terms);
+  void initNets_segmentTerms(const Point& bp,
+                             frLayerNum lNum,
+                             const frNet* net,
+                             frBlockObjectSet& terms);
   void initNets_initDR(
       const frDesign* design,
       std::set<frNet*, frBlockObjectComp>& nets,
@@ -649,7 +663,6 @@ class FlexDRWorker
                            drNet* dNet,
                            const std::string& name,
                            const dbTransform& shiftXform);
-  void initNet_termGenAp(const frDesign* design, drPin* dPin);
   bool isRestrictedRouting(frLayerNum lNum);
   void initNet_addNet(std::unique_ptr<drNet> in);
   void getTrackLocs(bool isHorzTracks,
@@ -737,7 +750,8 @@ class FlexDRWorker
       std::set<frBlockObject*>& uniqueVictims,
       std::set<frBlockObject*>& uniqueAggressors,
       std::vector<RouteQueueEntry>& checks,
-      std::vector<RouteQueueEntry>& routes);
+      std::vector<RouteQueueEntry>& routes,
+      frBlockObject* checkingObj);
   void getRipUpNetsFromMarker(frMarker* marker,
                               std::set<drNet*>& nets,
                               frCoord bloatDist = 0);
@@ -746,7 +760,8 @@ class FlexDRWorker
                                 std::queue<RouteQueueEntry>& rerouteQueue);
   void route_queue_update_queue(
       const std::vector<std::unique_ptr<frMarker>>& markers,
-      std::queue<RouteQueueEntry>& rerouteQueue);
+      std::queue<RouteQueueEntry>& rerouteQueue,
+      frBlockObject* checkingObj = nullptr);
   bool canRipup(drNet* n);
   // route
   void addPathCost(drConnFig* connFig,
@@ -768,6 +783,16 @@ class FlexDRWorker
                                bool isMacroPin = false,
                                bool resetHorz = true,
                                bool resetVert = true);
+  void modMinSpacingCostPlanarHelper(const Rect& box,
+                                     frMIdx z,
+                                     ModCostType type,
+                                     frCoord width,
+                                     frCoord minSpacing,
+                                     bool isBlockage,
+                                     bool isMacroPin,
+                                     bool resetHorz,
+                                     bool resetVert,
+                                     bool ndr);
   void modCornerToCornerSpacing(const Rect& box, frMIdx z, ModCostType type);
   void modMinSpacingCostVia(const Rect& box,
                             frMIdx z,
@@ -776,6 +801,17 @@ class FlexDRWorker
                             bool isCurrPs,
                             bool isBlockage = false,
                             frNonDefaultRule* ndr = nullptr);
+  void modMinSpacingCostViaHelper(const Rect& box,
+                                  frMIdx z,
+                                  ModCostType type,
+                                  frCoord width,
+                                  frCoord minSpacing,
+                                  frViaDef* viaDef,
+                                  drEolSpacingConstraint drCon,
+                                  bool isUpperVia,
+                                  bool isCurrPs,
+                                  bool isBlockage,
+                                  bool ndr);
 
   void modCornerToCornerSpacing_helper(const Rect& box,
                                        frMIdx z,
@@ -788,14 +824,16 @@ class FlexDRWorker
                                 const drEolSpacingConstraint& drCon,
                                 frMIdx i,
                                 frMIdx j,
-                                frMIdx z);
+                                frMIdx z,
+                                bool ndr = false);
   void modMinSpacingCostVia_eol_helper(const Rect& box,
                                        const Rect& testBox,
                                        ModCostType type,
                                        bool isUpperVia,
                                        frMIdx i,
                                        frMIdx j,
-                                       frMIdx z);
+                                       frMIdx z,
+                                       bool ndr = false);
   // eolSpc
   void modEolSpacingCost_helper(const Rect& testbox,
                                 frMIdx z,
@@ -884,6 +922,23 @@ class FlexDRWorker
       std::map<FlexMazeIdx, frBox3D*>& mazeIdx2Taperbox,
       const std::set<FlexMazeIdx>& apMazeIdx);
   bool addApPathSegs(const FlexMazeIdx& apIdx, drNet* net);
+  /**
+   * Updates external figures to connect to access-point if needed.
+   *
+   * While routing, there could be a case where we are routing a boundary pin to
+   * an access point at the same location of the boundary pin. In this case, the
+   * path would consist only of one point. The router may fail to addApPathSegs
+   * if planar access is not allowed. In that case, we should update the
+   * external object connected to the boundary pin to connect to the
+   * access-point directly. For each net we keep a list of such updates under
+   * drNet::ext_figs_updates_. This function modifies this list by going through
+   * all external objects of the net and updating the one that begins or ends at
+   * the current access-point/boundary-pin
+   * @param net The current net being routed
+   * @param ap_idx The graph idx of the access-point which is the same as the
+   * boundary pin idx. This is the one point that constructs the current path.
+   */
+  void addApExtFigUpdate(drNet* net, const FlexMazeIdx& ap_idx) const;
   void setNDRStyle(drNet* net,
                    frSegStyle& currStyle,
                    frMIdx startX,
@@ -988,12 +1043,52 @@ class FlexDRWorker
   void endAddNets_merge(frDesign* design,
                         frNet* net,
                         std::set<std::pair<Point, frLayerNum>>& boundPts);
-
+  /**
+   * Commits updates made by FlexDRWorker::addApExtFigUpdate to the design.
+   *
+   * This function goes through the ext_figs_updates_ of each net and applies
+   * the required updates to the external objects.
+   *
+   * @param net The currently being modified drNet
+   */
+  void endAddNets_updateExtFigs(drNet* net);
+  /**
+   * Applies update to external pathsegs.
+   *
+   * This is a helper function for endAddNets_updateExtFigs that is responsible
+   * for handling a pathseg update.
+   *
+   * @param update_pt The boundary point that should touch the external
+   * path_seg.
+   * @param path_seg The external pathseg being updated.
+   * @returns True if the updates apply to the passed pathseg and False
+   * otherwise.
+   */
+  bool endAddNets_updateExtFigs_pathSeg(drNet* net,
+                                        const Point3D& update_pt,
+                                        frPathSeg* path_seg);
+  /**
+   * Applies update to external via.
+   *
+   * This is a helper function for endAddNets_updateExtFigs that is responsible
+   * for handling a via update.
+   *
+   * @param update_pt The boundary point that should touch the external
+   * path_seg.
+   * @param via The external via being updated.
+   * @returns True if the updates apply to the passed via and False otherwise.
+   */
+  bool endAddNets_updateExtFigs_via(drNet* net,
+                                    const Point3D& update_pt,
+                                    frVia* via);
   void endRemoveMarkers(frDesign* design);
   void endAddMarkers(frDesign* design);
 
   // helper functions
   frCoord snapCoordToManufacturingGrid(frCoord coord, int lowerLeftCoord);
+  void writeGCPatchesToDRWorker(drNet* target_net = nullptr,
+                                const std::vector<FlexMazeIdx>& valid_indices
+                                = {});
 
   template <class Archive>
   void serialize(Archive& ar, unsigned int version);

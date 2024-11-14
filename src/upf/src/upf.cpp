@@ -519,10 +519,18 @@ static bool instantiate_logic_ports(utl::Logger* logger, odb::dbBlock* block)
   bool success = true;
   auto lps = block->getLogicPorts();
   for (auto&& port : lps) {
-    if (!odb::dbNet::create(block, port->getName())) {
+    auto net = odb::dbNet::create(block, port->getName());
+    if (!net) {
       logger->warn(utl::UPF,
                    23,
                    "Creation of '{}' dbNet from UPF Logic Port failed",
+                   port->getName());
+      success = false;
+    }
+    if (success && !odb::dbBTerm::create(net, port->getName())) {
+      logger->warn(utl::UPF,
+                   45,
+                   "Creation of '{}' dbBTerm from UPF Logic Port failed",
                    port->getName());
       success = false;
     }
@@ -752,6 +760,9 @@ static bool insert_isolation_cell(odb::dbBlock* block,
     inv_inst->getITerm(input_m)->connect(inverted_out_net);
     output_iterm->connect(inverted_out_net);
 
+    if (target_group) {
+      target_group->addInst(inv_inst);
+    }
   } else {
     output_iterm->connect(output_net);
   }
@@ -770,6 +781,9 @@ static bool insert_isolation_cell(odb::dbBlock* block,
     inv_inst->getITerm(output_m)->connect(inverted_control_net);
     enable_iterm->connect(inverted_control_net);
 
+    if (target_group) {
+      target_group->addInst(inv_inst);
+    }
   } else {
     enable_iterm->connect(control_net);
   }

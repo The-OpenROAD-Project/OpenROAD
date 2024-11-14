@@ -40,6 +40,7 @@
 #include "dbInst.h"
 #include "dbModBTerm.h"
 #include "dbModInst.h"
+#include "dbModulePortItr.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -213,6 +214,23 @@ dbModInst* dbModule::getModInst() const
 
 // User Code Begin dbModulePublicMethods
 
+const dbModBTerm* dbModule::getHeadDbModBTerm() const
+{
+  _dbModule* obj = (_dbModule*) this;
+  _dbBlock* block_ = (_dbBlock*) obj->getOwner();
+  if (obj->_modbterms == 0) {
+    return nullptr;
+  }
+  // note that the odb objects are "pre-pended"
+  // so first object is at tail. This means we are returning
+  // last object added. The application calling this routine
+  // needs to be aware of this (and possibly skip to the end
+  // of the list and then use prev to reconstruct creation order).
+  else {
+    return (dbModBTerm*) (block_->_modbterm_tbl->getPtr(obj->_modbterms));
+  }
+}
+
 int dbModule::getModInstCount()
 {
   _dbModule* module = (_dbModule*) this;
@@ -260,6 +278,7 @@ void dbModule::addInst(dbInst* inst)
   }
 
   _inst->_module = module->getOID();
+  module->_dbinst_hash[inst->getName()] = dbId<_dbInst>(_inst->getOID());
 
   if (module->_insts == 0) {
     _inst->_module_next = 0;
@@ -332,10 +351,12 @@ dbSet<dbModNet> dbModule::getModNets()
 
 dbModNet* dbModule::getModNet(const char* net_name)
 {
-  for (auto mnet : getModNets()) {
-    if (!strcmp(net_name, mnet->getName())) {
-      return mnet;
-    }
+  _dbModule* module = (_dbModule*) this;
+  _dbBlock* block = (_dbBlock*) module->getOwner();
+  auto it = module->_modnet_hash.find(net_name);
+  if (it != module->_modnet_hash.end()) {
+    uint db_id = (*it).second;
+    return (dbModNet*) block->_modnet_tbl->getPtr(db_id);
   }
   return nullptr;
 }
@@ -347,11 +368,38 @@ dbSet<dbModInst> dbModule::getModInsts()
   return dbSet<dbModInst>(module, block->_module_modinst_itr);
 }
 
+//
+// The ports include higher level views. These have a special
+// iterator which knows about how to skip the contents
+// of the hierarchical objects (busports)
+//
+
+dbSet<dbModBTerm> dbModule::getPorts()
+{
+  _dbModule* obj = (_dbModule*) this;
+  if (obj->_port_iter == nullptr) {
+    _dbBlock* block = (_dbBlock*) obj->getOwner();
+    obj->_port_iter = new dbModulePortItr(block->_modbterm_tbl);
+  }
+  return dbSet<dbModBTerm>(this, obj->_port_iter);
+}
+
+//
+// The modbterms are the leaf level connections
+//"flat view"
+//
 dbSet<dbModBTerm> dbModule::getModBTerms()
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
   return dbSet<dbModBTerm>(module, block->_module_modbterm_itr);
+}
+
+dbModBTerm* dbModule::getModBTerm(uint id)
+{
+  _dbModule* module = (_dbModule*) this;
+  _dbBlock* block = (_dbBlock*) module->getOwner();
+  return (dbModBTerm*) (block->_modbterm_tbl->getObject(id));
 }
 
 dbSet<dbInst> dbModule::getInsts()
@@ -423,20 +471,24 @@ dbModule* dbModule::getModule(dbBlock* block_, uint dbid_)
 
 dbModInst* dbModule::findModInst(const char* name)
 {
-  for (dbModInst* mod_inst : getModInsts()) {
-    if (!strcmp(mod_inst->getName(), name)) {
-      return mod_inst;
-    }
+  _dbModule* obj = (_dbModule*) this;
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+  auto it = obj->_modinst_hash.find(name);
+  if (it != obj->_modinst_hash.end()) {
+    auto db_id = (*it).second;
+    return (dbModInst*) par->_modinst_tbl->getPtr(db_id);
   }
   return nullptr;
 }
 
 dbInst* dbModule::findDbInst(const char* name)
 {
-  for (dbInst* inst : getInsts()) {
-    if (!strcmp(inst->getName().c_str(), name)) {
-      return inst;
-    }
+  _dbModule* obj = (_dbModule*) this;
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+  auto it = obj->_dbinst_hash.find(name);
+  if (it != obj->_dbinst_hash.end()) {
+    auto db_id = (*it).second;
+    return (dbInst*) par->_inst_tbl->getPtr(db_id);
   }
   return nullptr;
 }
@@ -461,16 +513,17 @@ std::vector<dbInst*> dbModule::getLeafInsts()
 
 dbModBTerm* dbModule::findModBTerm(const char* name)
 {
-  std::string bterm_name(name);
-  size_t last_idx = bterm_name.find_last_of('/');
+  std::string modbterm_name(name);
+  size_t last_idx = modbterm_name.find_last_of('/');
   if (last_idx != std::string::npos) {
-    bterm_name = bterm_name.substr(last_idx + 1);
+    modbterm_name = modbterm_name.substr(last_idx + 1);
   }
-
-  for (dbModBTerm* mod_bterm : getModBTerms()) {
-    if (!strcmp(mod_bterm->getName(), bterm_name.c_str())) {
-      return mod_bterm;
-    }
+  _dbModule* obj = (_dbModule*) this;
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+  auto it = obj->_modbterm_hash.find(name);
+  if (it != obj->_modbterm_hash.end()) {
+    auto db_id = (*it).second;
+    return (dbModBTerm*) par->_modbterm_tbl->getPtr(db_id);
   }
   return nullptr;
 }
@@ -482,18 +535,6 @@ std::string dbModule::getHierarchicalName() const
     return inst->getHierarchicalName();
   }
   return "<top>";
-}
-
-void* dbModule::getStaCell()
-{
-  _dbModule* module = (_dbModule*) this;
-  return module->_sta_cell;
-}
-
-void dbModule::staSetCell(void* cell)
-{
-  _dbModule* module = (_dbModule*) this;
-  module->_sta_cell = cell;
 }
 
 dbBlock* dbModule::getOwner()

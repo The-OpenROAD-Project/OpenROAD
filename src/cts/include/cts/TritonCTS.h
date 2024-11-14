@@ -42,20 +42,11 @@
 #include <unordered_set>
 #include <vector>
 
+#include "odb/db.h"
+
 namespace utl {
 class Logger;
 }
-
-namespace odb {
-class dbDatabase;
-class dbBlock;
-class dbInst;
-class dbNet;
-class dbITerm;
-class dbMTerm;
-class Rect;
-class dbMaster;
-}  // namespace odb
 
 namespace rsz {
 class Resizer;
@@ -105,9 +96,6 @@ class TritonCTS
   int setClockNets(const char* names);
   void setBufferList(const char* buffers);
   void inferBufferList(std::vector<std::string>& buffers);
-  std::vector<std::string> findMatchingSubset(
-      const std::string& pattern,
-      const std::vector<std::string>& buffers);
   bool isClockCellCandidate(sta::LibertyCell* cell);
   void setRootBuffer(const char* buffers);
   std::string selectRootBuffer(std::vector<std::string>& buffers);
@@ -121,6 +109,7 @@ class TritonCTS
   void forEachBuilder(
       const std::function<void(const TreeBuilder*)>& func) const;
 
+  int getBufferFanoutLimit(const std::string& bufferName);
   void setupCharacterization();
   void checkCharacterization();
   void findClockRoots();
@@ -144,7 +133,7 @@ class TritonCTS
   void disconnectAllSinksFromNet(odb::dbNet* net);
   void disconnectAllPinsFromNet(odb::dbNet* net);
   void checkUpstreamConnections(odb::dbNet* net);
-  void createClockBuffers(Clock& clockNet);
+  void createClockBuffers(Clock& clockNet, odb::dbModule* parent);
   HTreeBuilder* initClockTreeForMacrosAndRegs(
       odb::dbNet*& net,
       const std::unordered_set<odb::dbMaster*>& buffer_masters,

@@ -44,6 +44,7 @@
 #include "dbMaster.h"
 #include "dbNet.h"
 #include "dbObstruction.h"
+#include "dbPolygon.h"
 #include "dbRegion.h"
 #include "dbSWire.h"
 #include "dbTable.h"
@@ -94,10 +95,10 @@ bool _dbBox::operator==(const _dbBox& rhs) const
   if (_flags._octilinear != rhs._flags._octilinear) {
     return false;
   }
-  if (isOct() && _shape._oct != _shape._oct) {
+  if (isOct() && _shape._oct != rhs._shape._oct) {
     return false;
   }
-  if (_shape._rect != _shape._rect) {
+  if (_shape._rect != rhs._shape._rect) {
     return false;
   }
 
@@ -163,10 +164,10 @@ int _dbBox::equal(const _dbBox& rhs) const
   if (design_rule_width_ != rhs.design_rule_width_) {
     return false;
   }
-  if (isOct() && _shape._oct != _shape._oct) {
+  if (isOct() && _shape._oct != rhs._shape._oct) {
     return false;
   }
-  if (_shape._rect != _shape._rect) {
+  if (_shape._rect != rhs._shape._rect) {
     return false;
   }
 
@@ -373,7 +374,8 @@ _dbTechLayer* _dbBox::getTechLayer() const
     }
 
     case dbBoxOwner::MASTER:
-    case dbBoxOwner::MPIN: {
+    case dbBoxOwner::MPIN:
+    case dbBoxOwner::PBOX: {
       _dbMaster* master = (_dbMaster*) getOwner();
       _dbLib* lib = (_dbLib*) master->getOwner();
       _dbTech* tech = lib->getTech();
@@ -401,6 +403,7 @@ _dbTechVia* _dbBox::getTechVia() const
     case dbBoxOwner::BLOCKAGE:
     case dbBoxOwner::OBSTRUCTION:
     case dbBoxOwner::REGION:
+    case dbBoxOwner::PBOX:
       return nullptr;
 
     case dbBoxOwner::BLOCK:
@@ -441,6 +444,7 @@ _dbVia* _dbBox::getBlockVia() const
   switch (_flags._owner_type) {
     case dbBoxOwner::UNKNOWN:
     case dbBoxOwner::REGION:
+    case dbBoxOwner::PBOX:
       return nullptr;
 
     case dbBoxOwner::BLOCK:
@@ -762,6 +766,10 @@ dbObject* dbBox::getBoxOwner()
       return master->_mpin_tbl->getPtr(box->_owner);
     }
 
+    case dbBoxOwner::PBOX: {
+      return owner;
+    }
+
     case dbBoxOwner::TECH_VIA: {
       _dbTech* tech = (_dbTech*) owner;
       return tech->_via_tbl->getPtr(box->_owner);
@@ -945,6 +953,23 @@ dbBox* dbBox::create(dbMaster* master_, dbTechVia* via_, int x, int y)
   // link box to master
   box->_next_box = master->_obstructions;
   master->_obstructions = box->getOID();
+  return (dbBox*) box;
+}
+
+dbBox* dbBox::create(dbPolygon* pbox, int x1, int y1, int x2, int y2)
+{
+  _dbPolygon* pbox_ = (_dbPolygon*) pbox;
+  _dbMaster* master = (_dbMaster*) pbox_->getOwner();
+  _dbBox* box = master->_box_tbl->create();
+  box->_flags._octilinear = false;
+  box->_flags._layer_id = pbox_->flags_.layer_id_;
+  box->_flags._owner_type = dbBoxOwner::PBOX;
+  box->_owner = pbox_->getOID();
+  box->_shape._rect.init(x1, y1, x2, y2);
+
+  // link box to pin
+  box->_next_box = pbox_->boxes_;
+  pbox_->boxes_ = box->getOID();
   return (dbBox*) box;
 }
 

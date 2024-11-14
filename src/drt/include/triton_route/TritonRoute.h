@@ -182,12 +182,18 @@ class TritonRoute
                           const std::string& serializedViaData);
   void reportDRC(const std::string& file_name,
                  const std::list<std::unique_ptr<frMarker>>& markers,
+                 const std::string& marker_name,
                  odb::Rect drcBox = odb::Rect(0, 0, 0, 0));
-  void checkDRC(const char* filename, int x1, int y1, int x2, int y2);
+  void checkDRC(const char* filename,
+                int x1,
+                int y1,
+                int x2,
+                int y2,
+                const std::string& marker_name);
   bool initGuide();
   void prep();
-  void processBTermsAboveTopLayer(bool has_routing = false);
   odb::dbDatabase* getDb() const { return db_; }
+  void fixMaxSpacing();
 
  private:
   std::unique_ptr<frDesign> design_;
@@ -217,12 +223,6 @@ class TritonRoute
   void applyUpdates(const std::vector<std::vector<drUpdate>>& updates);
   void getDRCMarkers(std::list<std::unique_ptr<frMarker>>& markers,
                      const odb::Rect& requiredDrcBox);
-  void stackVias(odb::dbBTerm* bterm,
-                 int top_layer_idx,
-                 int bterm_bottom_layer_idx,
-                 bool has_routing);
-  int countNetBTermsAboveMaxLayer(odb::dbNet* net);
-  bool netHasStackedVias(odb::dbNet* net);
   void repairPDNVias();
   friend class FlexDR;
 };

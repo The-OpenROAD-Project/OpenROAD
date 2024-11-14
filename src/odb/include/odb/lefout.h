@@ -72,7 +72,7 @@ class lefout
   bool bloat_occupied_layers_;
 
   template <typename GenericBox>
-  void writeBoxes(dbSet<GenericBox>& boxes, const char* indent);
+  void writeBoxes(dbBlock* block, dbSet<GenericBox>& boxes, const char* indent);
 
   using ObstructionMap
       = std::map<dbTechLayer*, boost::polygon::polygon_90_set_data<int>>;
@@ -80,7 +80,7 @@ class lefout
   void writeTechBody(dbTech* tech);
   void writeLayer(dbTechLayer* layer);
   void writeVia(dbTechVia* via);
-  void writeBlockVia(dbVia* via);
+  void writeBlockVia(dbBlock* db_block, dbVia* via);
   void writeHeader(dbLib* lib);
   void writeHeader(dbBlock* db_block);
   void writeLibBody(dbLib* lib);
@@ -103,6 +103,7 @@ class lefout
   void writeObstructions(dbBlock* db_block);
   void getObstructions(dbBlock* db_block, ObstructionMap& obstructions) const;
   void writeBox(const std::string& indent, dbBox* box);
+  void writePolygon(const std::string& indent, dbPolygon* polygon);
   void writeRect(const std::string& indent,
                  const boost::polygon::rectangle_data<int>& rect);
   void findInstsObstructions(ObstructionMap& obstructions,
@@ -129,9 +130,8 @@ class lefout
   void insertObstruction(dbBox* box, ObstructionMap& obstructions) const;
 
  public:
-  double lefdist(int value) { return ((double) value * _dist_factor); }
-
-  double lefarea(int value) { return ((double) value * _area_factor); }
+  double lefdist(int value) { return value * _dist_factor; }
+  double lefarea(int value) { return value * _area_factor; }
 
   lefout(utl::Logger* logger, std::ostream& out) : _out(out)
   {

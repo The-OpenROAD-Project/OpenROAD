@@ -33,7 +33,7 @@
 
 #include <map>
 #include <queue>
-#include <unordered_set>
+#include <set>
 
 #include "odb/db.h"
 #include "odb/dbWireGraph.h"
@@ -70,6 +70,11 @@ struct NodeInfo
   double diff_CAR;
   double diff_CSR;
 
+  // Defines the ratio between the current PAR and the allowed PAR
+  double excess_ratio_PAR;
+  // Defines the ratio between the current PSR and the allowed PSR
+  double excess_ratio_PSR;
+
   std::vector<odb::dbITerm*> iterms;
 
   NodeInfo& operator+=(const NodeInfo& a)
@@ -98,7 +103,17 @@ struct NodeInfo
     CSR = 0.0;
     diff_CAR = 0.0;
     diff_CSR = 0.0;
+
+    excess_ratio_PAR = 1.0;
+    excess_ratio_PSR = 1.0;
   }
+};
+
+struct ViolationReport
+{
+  bool violated;
+  std::string report;
+  ViolationReport() { violated = false; }
 };
 
 class GlobalRouteSource
@@ -116,15 +131,16 @@ struct Violation
   int routing_level;
   std::vector<odb::dbITerm*> gates;
   int diode_count_per_gate;
+  double excess_ratio;
 };
 
 using LayerToNodeInfo = std::map<odb::dbTechLayer*, NodeInfo>;
-using GraphNodes = std::vector<GraphNode*>;
-using LayerToGraphNodes = std::unordered_map<odb::dbTechLayer*, GraphNodes>;
-using GateToLayerToNodeInfo = std::map<std::string, LayerToNodeInfo>;
+using GraphNodes = std::vector<std::unique_ptr<GraphNode>>;
+using LayerToGraphNodes = std::map<odb::dbTechLayer*, GraphNodes>;
+using GateToLayerToNodeInfo = std::map<odb::dbITerm*, LayerToNodeInfo>;
 using Violations = std::vector<Violation>;
 using GateToViolationLayers
-    = std::unordered_map<std::string, std::unordered_set<odb::dbTechLayer*>>;
+    = std::map<odb::dbITerm*, std::set<odb::dbTechLayer*>>;
 
 class AntennaChecker
 {
@@ -177,16 +193,14 @@ class AntennaChecker
                       GateToLayerToNodeInfo& gate_info);
   void calculatePAR(GateToLayerToNodeInfo& gate_info);
   void calculateCAR(GateToLayerToNodeInfo& gate_info);
-  bool checkRatioViolations(odb::dbTechLayer* layer,
-                            const NodeInfo& node_info,
+  bool checkRatioViolations(odb::dbNet* db_net,
+                            odb::dbTechLayer* layer,
+                            NodeInfo& node_info,
+                            float ratio_margin,
                             bool verbose,
-                            bool report,
-                            std::ofstream& report_file);
-  void reportNet(odb::dbNet* db_net,
-                 GateToLayerToNodeInfo& gate_info,
-                 GateToViolationLayers& gates_with_violations,
-                 bool verbose,
-                 std::ofstream& report_file);
+                            bool report);
+  void writeReport(std::ofstream& report_file, bool verbose);
+  void printReport();
   int checkGates(odb::dbNet* db_net,
                  bool verbose,
                  bool report_if_no_violation,
@@ -197,26 +211,28 @@ class AntennaChecker
                  Violations& antenna_violations);
   void calculateViaPar(odb::dbTechLayer* tech_layer, NodeInfo& info);
   void calculateWirePar(odb::dbTechLayer* tech_layer, NodeInfo& info);
-  bool checkPAR(odb::dbTechLayer* tech_layer,
+  bool checkPAR(odb::dbNet* db_net,
+                odb::dbTechLayer* tech_layer,
+                NodeInfo& info,
+                float ratio_margin,
+                bool verbose,
+                bool report);
+  bool checkPSR(odb::dbNet* db_net,
+                odb::dbTechLayer* tech_layer,
+                NodeInfo& info,
+                float ratio_margin,
+                bool verbose,
+                bool report);
+  bool checkCAR(odb::dbNet* db_net,
+                odb::dbTechLayer* tech_layer,
                 const NodeInfo& info,
                 bool verbose,
-                bool report,
-                std::ofstream& report_file);
-  bool checkPSR(odb::dbTechLayer* tech_layer,
+                bool report);
+  bool checkCSR(odb::dbNet* db_net,
+                odb::dbTechLayer* tech_layer,
                 const NodeInfo& info,
                 bool verbose,
-                bool report,
-                std::ofstream& report_file);
-  bool checkCAR(odb::dbTechLayer* tech_layer,
-                const NodeInfo& info,
-                bool verbose,
-                bool report,
-                std::ofstream& report_file);
-  bool checkCSR(odb::dbTechLayer* tech_layer,
-                const NodeInfo& info,
-                bool verbose,
-                bool report,
-                std::ofstream& report_file);
+                bool report);
 
   odb::dbDatabase* db_{nullptr};
   odb::dbBlock* block_{nullptr};
@@ -224,10 +240,9 @@ class AntennaChecker
   utl::Logger* logger_{nullptr};
   std::map<odb::dbTechLayer*, AntennaModel> layer_info_;
   int net_violation_count_{0};
-  float ratio_margin_{0};
   std::string report_file_name_;
-  odb::dbTechLayer* min_layer_{nullptr};
   std::vector<odb::dbNet*> nets_;
+  std::map<odb::dbNet*, ViolationReport> net_to_report_;
   // consts
   static constexpr int max_diode_count_per_gate = 10;
 };

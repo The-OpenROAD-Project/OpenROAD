@@ -51,6 +51,7 @@
 #include "dbBlockage.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
+#include "dbBusPort.h"
 #include "dbCCSeg.h"
 #include "dbCCSegItr.h"
 #include "dbCapNode.h"
@@ -81,6 +82,7 @@
 #include "dbJournal.h"
 #include "dbLevelShifter.h"
 #include "dbLogicPort.h"
+#include "dbMarkerCategory.h"
 #include "dbModBTerm.h"
 #include "dbModITerm.h"
 #include "dbModInst.h"
@@ -163,6 +165,7 @@ template class dbHashTable<_dbNet>;
 template class dbHashTable<_dbInst>;
 template class dbIntHashTable<_dbInstHdr>;
 template class dbHashTable<_dbBTerm>;
+template class dbHashTable<_dbMarkerCategory>;
 
 _dbBlock::_dbBlock(_dbDatabase* db)
 {
@@ -180,6 +183,10 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _maxCapNodeId = 0;
   _maxRSegId = 0;
   _maxCCSegId = 0;
+  _min_routing_layer = 1;
+  _max_routing_layer = -1;
+  _min_layer_for_clock = -1;
+  _max_layer_for_clock = -2;
 
   _currentCcAdjOrder = 0;
   _bterm_tbl = new dbTable<_dbBTerm>(
@@ -211,6 +218,9 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _modnet_tbl = new dbTable<_dbModNet>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModNetObj);
+
+  _busport_tbl = new dbTable<_dbBusPort>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbBusPortObj);
 
   _powerdomain_tbl = new dbTable<_dbPowerDomain>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbPowerDomainObj);
@@ -341,13 +351,13 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   dft_ptr->initialize();
   _dft = dft_ptr->getId();
 
+  _marker_categories_tbl = new dbTable<_dbMarkerCategory>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbMarkerCategoryObj);
+
   _net_hash.setTable(_net_tbl);
   _inst_hash.setTable(_inst_tbl);
   _module_hash.setTable(_module_tbl);
   _modinst_hash.setTable(_modinst_tbl);
-  _modbterm_hash.setTable(_modbterm_tbl);
-  _moditerm_hash.setTable(_moditerm_tbl);
-  _modnet_hash.setTable(_modnet_tbl);
   _powerdomain_hash.setTable(_powerdomain_tbl);
   _logicport_hash.setTable(_logicport_tbl);
   _powerswitch_hash.setTable(_powerswitch_tbl);
@@ -356,6 +366,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _group_hash.setTable(_group_tbl);
   _inst_hdr_hash.setTable(_inst_hdr_tbl);
   _bterm_hash.setTable(_bterm_tbl);
+  _marker_category_hash.setTable(_marker_categories_tbl);
 
   _net_bterm_itr = new dbNetBTermItr(_bterm_tbl);
 
@@ -363,7 +374,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _inst_iterm_itr = new dbInstITermItr(_iterm_tbl);
 
-  _box_itr = new dbBoxItr(_box_tbl);
+  _box_itr = new dbBoxItr(_box_tbl, nullptr, false);
 
   _swire_itr = new dbSWireItr(_swire_tbl);
 
@@ -458,7 +469,11 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       _children(block._children),
       _component_mask_shift(block._component_mask_shift),
       _currentCcAdjOrder(block._currentCcAdjOrder),
-      _dft(block._dft)
+      _dft(block._dft),
+      _min_routing_layer(block._min_routing_layer),
+      _max_routing_layer(block._max_routing_layer),
+      _min_layer_for_clock(block._min_layer_for_clock),
+      _max_layer_for_clock(block._max_layer_for_clock)
 {
   if (block._name) {
     _name = strdup(block._name);
@@ -558,6 +573,9 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
 
   _dft_tbl = new dbTable<_dbDft>(db, this, *block._dft_tbl);
 
+  _marker_categories_tbl
+      = new dbTable<_dbMarkerCategory>(db, this, *block._marker_categories_tbl);
+
   _net_hash.setTable(_net_tbl);
   _inst_hash.setTable(_inst_tbl);
   _module_hash.setTable(_module_tbl);
@@ -570,6 +588,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _powerswitch_hash.setTable(_powerswitch_tbl);
   _isolation_hash.setTable(_isolation_tbl);
   _levelshifter_hash.setTable(_levelshifter_tbl);
+  _marker_category_hash.setTable(_marker_categories_tbl);
 
   _net_bterm_itr = new dbNetBTermItr(_bterm_tbl);
 
@@ -577,7 +596,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
 
   _inst_iterm_itr = new dbInstITermItr(_iterm_tbl);
 
-  _box_itr = new dbBoxItr(_box_tbl);
+  _box_itr = new dbBoxItr(_box_tbl, nullptr, false);
 
   _swire_itr = new dbSWireItr(_swire_tbl);
 
@@ -710,6 +729,7 @@ _dbBlock::~_dbBlock()
   delete _bpin_itr;
   delete _prop_itr;
   delete _dft_tbl;
+  delete _marker_categories_tbl;
 
   std::list<dbBlockCallBackObj*>::iterator _cbitr;
   while (_callbacks.begin() != _callbacks.end()) {
@@ -922,6 +942,9 @@ dbObjectTable* _dbBlock::getObjectTable(dbObjectType type)
     case dbDftObj:
       return _dft_tbl;
 
+    case dbMarkerCategoryObj:
+      return _marker_categories_tbl;
+
     default:
       break;
   }
@@ -949,6 +972,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._corner_name_list;
   stream << block._name;
   stream << block._die_area;
+  if (db->isSchema(db_schema_dbblock_blocked_regions_for_pins)) {
+    stream << block._blocked_regions_for_pins;
+  }
   stream << block._tech;
   stream << block._chip;
   stream << block._bbox;
@@ -962,11 +988,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._inst_hash;
   stream << block._module_hash;
   stream << block._modinst_hash;
-  if (db->isSchema(db_schema_update_hierarchy)) {
-    stream << block._modbterm_hash;
-    stream << block._moditerm_hash;
-    stream << block._modnet_hash;
-  }
+
   stream << block._powerdomain_hash;
   stream << block._logicport_hash;
   stream << block._powerswitch_hash;
@@ -986,11 +1008,19 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._iterm_tbl;
   stream << *block._net_tbl;
   stream << *block._inst_hdr_tbl;
-  stream << *block._inst_tbl;
-  stream << *block._module_tbl;
+  if (db->isSchema(db_schema_db_remove_hash)) {
+    stream << *block._module_tbl;
+    stream << *block._inst_tbl;
+  } else {
+    stream << *block._inst_tbl;
+    stream << *block._module_tbl;
+  }
   stream << *block._modinst_tbl;
   if (db->isSchema(db_schema_update_hierarchy)) {
     stream << *block._modbterm_tbl;
+    if (db->isSchema(db_schema_db_remove_hash)) {
+      stream << *block._busport_tbl;
+    }
     stream << *block._moditerm_tbl;
     stream << *block._modnet_tbl;
   }
@@ -1032,6 +1062,14 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._extControl;
   stream << block._dft;
   stream << *block._dft_tbl;
+  stream << *block._marker_categories_tbl;
+  stream << block._marker_category_hash;
+  if (block.getDatabase()->isSchema(db_schema_dbblock_layers_ranges)) {
+    stream << block._min_routing_layer;
+    stream << block._max_routing_layer;
+    stream << block._min_layer_for_clock;
+    stream << block._max_layer_for_clock;
+  }
 
   //---------------------------------------------------------- stream out
   // properties
@@ -1064,6 +1102,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._corner_name_list;
   stream >> block._name;
   stream >> block._die_area;
+  if (db->isSchema(db_schema_dbblock_blocked_regions_for_pins)) {
+    stream >> block._blocked_regions_for_pins;
+  }
   // In the older schema we can't set the tech here, we handle this later in
   // dbDatabase.
   if (db->isSchema(db_schema_block_tech)) {
@@ -1082,9 +1123,16 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._module_hash;
   stream >> block._modinst_hash;
   if (db->isSchema(db_schema_update_hierarchy)) {
-    stream >> block._modbterm_hash;
-    stream >> block._moditerm_hash;
-    stream >> block._modnet_hash;
+    if (!db->isSchema(db_schema_db_remove_hash)) {
+      dbHashTable<_dbModBTerm> unused_modbterm_hash;
+      dbHashTable<_dbModITerm> unused_moditerm_hash;
+      dbHashTable<_dbModNet> unused_modnet_hash;
+      dbHashTable<_dbBusPort> unused_busport_hash;
+      stream >> unused_modbterm_hash;
+      stream >> unused_moditerm_hash;
+      stream >> unused_modnet_hash;
+      stream >> unused_busport_hash;
+    }
   }
   stream >> block._powerdomain_hash;
   stream >> block._logicport_hash;
@@ -1114,11 +1162,19 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block._iterm_tbl;
   stream >> *block._net_tbl;
   stream >> *block._inst_hdr_tbl;
-  stream >> *block._inst_tbl;
-  stream >> *block._module_tbl;
+  if (db->isSchema(db_schema_db_remove_hash)) {
+    stream >> *block._module_tbl;
+    stream >> *block._inst_tbl;
+  } else {
+    stream >> *block._inst_tbl;
+    stream >> *block._module_tbl;
+  }
   stream >> *block._modinst_tbl;
   if (db->isSchema(db_schema_update_hierarchy)) {
     stream >> *block._modbterm_tbl;
+    if (db->isSchema(db_schema_db_remove_hash)) {
+      stream >> *block._busport_tbl;
+    }
     stream >> *block._moditerm_tbl;
     stream >> *block._modnet_tbl;
   }
@@ -1166,6 +1222,16 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   if (db->isSchema(db_schema_add_scan)) {
     stream >> block._dft;
     stream >> *block._dft_tbl;
+  }
+  if (db->isSchema(db_schema_dbmarkergroup)) {
+    stream >> *block._marker_categories_tbl;
+    stream >> block._marker_category_hash;
+  }
+  if (db->isSchema(db_schema_dbblock_layers_ranges)) {
+    stream >> block._min_routing_layer;
+    stream >> block._max_routing_layer;
+    stream >> block._min_layer_for_clock;
+    stream >> block._max_layer_for_clock;
   }
 
   //---------------------------------------------------------- stream in
@@ -1544,6 +1610,10 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
     return false;
   }
 
+  if (*_marker_categories_tbl != *rhs._marker_categories_tbl) {
+    return false;
+  }
+
   return true;
 }
 
@@ -1631,6 +1701,11 @@ void _dbBlock::differences(dbDiff& diff,
   DIFF_NAME_CACHE(_name_cache);
   DIFF_FIELD(_dft);
   DIFF_TABLE(_dft_tbl);
+  DIFF_TABLE(_marker_categories_tbl);
+  DIFF_FIELD(_min_routing_layer);
+  DIFF_FIELD(_max_routing_layer);
+  DIFF_FIELD(_min_layer_for_clock);
+  DIFF_FIELD(_max_layer_for_clock);
 
   if (*_r_val_tbl != *rhs._r_val_tbl) {
     _r_val_tbl->differences(diff, "_r_val_tbl", *rhs._r_val_tbl);
@@ -1732,6 +1807,11 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_NAME_CACHE(_name_cache);
   DIFF_OUT_FIELD(_dft);
   DIFF_OUT_TABLE(_dft_tbl);
+  DIFF_OUT_TABLE(_marker_categories_tbl);
+  DIFF_OUT_FIELD(_min_routing_layer);
+  DIFF_OUT_FIELD(_max_routing_layer);
+  DIFF_OUT_FIELD(_min_layer_for_clock);
+  DIFF_OUT_FIELD(_max_layer_for_clock);
 
   _r_val_tbl->out(diff, side, "_r_val_tbl");
   _c_val_tbl->out(diff, side, "_c_val_tbl");
@@ -2435,6 +2515,18 @@ Rect dbBlock::getDieArea()
   return block->_die_area;
 }
 
+void dbBlock::addBlockedRegionForPins(const Rect& region)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  block->_blocked_regions_for_pins.push_back(region);
+}
+
+const std::vector<Rect>& dbBlock::getBlockedRegionsForPins()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return block->_blocked_regions_for_pins;
+}
+
 Rect dbBlock::getCoreArea()
 {
   Rect rect;
@@ -2476,6 +2568,54 @@ dbDft* dbBlock::getDft() const
 {
   _dbBlock* block = (_dbBlock*) this;
   return (dbDft*) block->_dft_tbl->getPtr(block->_dft);
+}
+
+int dbBlock::getMinRoutingLayer() const
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return block->_min_routing_layer;
+}
+
+void dbBlock::setMinRoutingLayer(const int min_routing_layer)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  block->_min_routing_layer = min_routing_layer;
+}
+
+int dbBlock::getMaxRoutingLayer() const
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return block->_max_routing_layer;
+}
+
+void dbBlock::setMaxRoutingLayer(const int max_routing_layer)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  block->_max_routing_layer = max_routing_layer;
+}
+
+int dbBlock::getMinLayerForClock() const
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return block->_min_layer_for_clock;
+}
+
+void dbBlock::setMinLayerForClock(const int min_layer_for_clock)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  block->_min_layer_for_clock = min_layer_for_clock;
+}
+
+int dbBlock::getMaxLayerForClock() const
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return block->_max_layer_for_clock;
+}
+
+void dbBlock::setMaxLayerForClock(const int max_layer_for_clock)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  block->_max_layer_for_clock = max_layer_for_clock;
 }
 
 void dbBlock::getExtCornerNames(std::list<std::string>& ecl)
@@ -3996,6 +4136,33 @@ void dbBlock::preExttreeMergeRC(double max_cap, uint corner)
   }
 }
 
+bool dbBlock::designIsRouted(bool verbose)
+{
+  bool design_is_routed = true;
+  for (dbNet* net : getNets()) {
+    if (net->isSpecial()) {
+      continue;
+    }
+
+    const int pin_count = net->getBTermCount() + net->getITerms().size();
+
+    odb::uint wire_cnt = 0, via_cnt = 0;
+    net->getWireCount(wire_cnt, via_cnt);
+    bool has_wires = wire_cnt != 0 || via_cnt != 0;
+
+    if (pin_count > 1 && !has_wires && !net->isConnectedByAbutment()) {
+      if (verbose) {
+        getImpl()->getLogger()->warn(
+            utl::ODB, 232, "Net {} is not routed.", net->getName());
+        design_is_routed = false;
+      } else {
+        return false;
+      }
+    }
+  }
+  return design_is_routed;
+}
+
 int dbBlock::globalConnect()
 {
   dbSet<dbGlobalConnect> gcs = getGlobalConnects();
@@ -4155,6 +4322,44 @@ dbTech* dbBlock::getTech()
 {
   _dbBlock* block = (_dbBlock*) this;
   return (dbTech*) block->getTech();
+}
+
+dbSet<dbMarkerCategory> dbBlock::getMarkerCategories()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbMarkerCategory>(block, block->_marker_categories_tbl);
+}
+
+dbMarkerCategory* dbBlock::findMarkerCategory(const char* name)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return (dbMarkerCategory*) block->_marker_category_hash.find(name);
+}
+
+void dbBlock::writeMarkerCategories(const std::string& file)
+{
+  std::ofstream report(file);
+
+  if (!report) {
+    _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
+    utl::Logger* logger = obj->getLogger();
+
+    logger->error(utl::ODB, 272, "Unable to open {} to write markers", file);
+  }
+
+  writeMarkerCategories(report);
+
+  report.close();
+}
+
+void dbBlock::writeMarkerCategories(std::ofstream& report)
+{
+  std::set<_dbMarkerCategory*> groups;
+  for (dbMarkerCategory* group : getMarkerCategories()) {
+    groups.insert((_dbMarkerCategory*) group);
+  }
+
+  _dbMarkerCategory::writeJSON(report, groups);
 }
 
 }  // namespace odb

@@ -151,6 +151,9 @@ class CtsOptions
     clusteringCapacity_ = capacity;
   }
 
+  void setMaxFanout(unsigned maxFanout) { maxFanout_ = maxFanout; }
+  unsigned getMaxFanout() const { return maxFanout_; }
+
   // BufferDistance is in DBU
   int32_t getBufferDistance() const
   {
@@ -246,6 +249,9 @@ class CtsOptions
   float getDelayBufferDerate() const { return delayBufferDerate_; }
   void enableDummyLoad(bool dummyLoad) { dummyLoad_ = dummyLoad; }
   bool dummyLoadEnabled() const { return dummyLoad_; }
+  void setCtsLibrary(const char* name) { ctsLibrary_ = name; }
+  const char* getCtsLibrary() { return ctsLibrary_.c_str(); }
+  bool isCtsLibrarySet() { return !ctsLibrary_.empty(); }
 
  private:
   std::string clockNets_ = "";
@@ -266,6 +272,7 @@ class CtsOptions
   double clusteringCapacity_ = 0.6;
   unsigned clusteringPower_ = 4;
   unsigned numMaxLeafSinks_ = 15;
+  unsigned maxFanout_ = 0;
   unsigned maxSlew_ = 4;
   double maxCharSlew_ = 0;
   double maxCharCap_ = 0;
@@ -303,6 +310,7 @@ class CtsOptions
   float sinkBufferMaxCapDerate_ = sinkBufferMaxCapDerateDefault_;
   bool dummyLoad_ = true;
   float delayBufferDerate_ = 1.0;  // no derate
+  std::string ctsLibrary_;
 };
 
 }  // namespace cts

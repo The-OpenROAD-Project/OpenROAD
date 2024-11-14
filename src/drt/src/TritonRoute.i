@@ -227,16 +227,20 @@ void detailed_route_step_drt(int size,
                  workerMarkerCost, workerFixedShapeCost,
                  workerMarkerDecay, ripupMode, followGuide);
 }
-
+void fix_max_spacing_cmd()
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->fixMaxSpacing();
+}
 void step_end()
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->endFR();
 }
 
-void check_drc_cmd(const char* drc_file, int x1, int y1, int x2, int y2)
+void check_drc_cmd(const char* drc_file, int x1, int y1, int x2, int y2, const char* marker_name)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->checkDRC(drc_file, x1, y1, x2, y2);
+  router->checkDRC(drc_file, x1, y1, x2, y2, marker_name);
 }
 %} // inline

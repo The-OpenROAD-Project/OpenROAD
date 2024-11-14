@@ -1,0 +1,33 @@
+{
+    "name":"dbGDSBoundary",
+    "type":"dbObject",
+    "fields":[
+      {
+        "name":"_layer",
+        "type":"int16_t",
+        "default":"0",
+        "flags":[]
+      },
+      {
+        "name":"_datatype",
+        "type":"int16_t",
+        "default":"0",
+        "flags":[]
+      },
+      {
+        "name":"_xy",
+        "type":"std::vector<Point>",
+        "flags":["no-template"]
+      },
+      {
+        "name":"_propattr",
+        "type":"std::vector<std::pair<std::int16_t, std::string>>",
+        "flags":["no-template", "no-get", "no-set"]
+      }
+    ],
+    "h_includes": [
+      "dbGDSStructure.h"
+    ],
+    "cpp_includes": ["odb/dbTypes.h"]
+  }
+  

@@ -99,7 +99,7 @@ proc analyze_power_grid { args } {
 
   set enable_em [info exists flags(-enable_em)]
   set em_file ""
-  if { [info exists keys(-em_outfile)]} {
+  if { [info exists keys(-em_outfile)] } {
     set em_file $keys(-em_outfile)
     if { !$enable_em } {
       utl::error PSM 55 "EM file cannot be specified without enabling em analysis."
@@ -136,7 +136,7 @@ proc insert_decap { args } {
 
   # Check even size
   set cells_and_decap $keys(-cells)
-  if { [expr [llength $cells_and_decap] % 2] != 0 } {
+  if { [llength $cells_and_decap] % 2 != 0 } {
     utl::error PSM 181 "-cells must be a list of cell and decap pairs"
   }
 
@@ -263,13 +263,11 @@ proc set_pdnsim_source_settings { args } {
 }
 
 namespace eval psm {
-
-proc find_net {net_name} {
+proc find_net { net_name } {
   set net [[ord::get_db_block] findNet $net_name]
   if { $net == "NULL" } {
     utl::error PSM 28 "Cannot find net $net_name in the design."
   }
   return $net
 }
-
 }

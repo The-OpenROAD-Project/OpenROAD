@@ -160,6 +160,7 @@ class ClockNodeGraphicsViewItem : public QGraphicsItem
 
   virtual QString getType() const = 0;
   virtual QString getName() const { return name_; };
+  virtual QString getInstName() const { return inst_name_; };
   virtual QColor getColor() const = 0;
 
   void setupToolTip();
@@ -188,6 +189,7 @@ class ClockNodeGraphicsViewItem : public QGraphicsItem
   constexpr static qreal default_size_ = 100.0;
 
   static QString getITermName(odb::dbITerm* term);
+  static QString getITermInstName(odb::dbITerm* term);
 
  protected:
   void addDelayFin(QPainterPath& path, const qreal delay) const;
@@ -195,6 +197,7 @@ class ClockNodeGraphicsViewItem : public QGraphicsItem
  private:
   qreal size_;
   QString name_;
+  QString inst_name_;
   QString extra_tooltip_;
 };
 
@@ -397,6 +400,11 @@ class ClockTreeView : public QGraphicsView
 
   void updateRendererState() const;
   ClockTreeRenderer* getRenderer() const { return renderer_.get(); }
+  ClockNodeGraphicsViewItem* getItemFromName(const std::string& name);
+  void clearSelection() { scene_->clearSelection(); };
+  std::set<ClockNodeGraphicsViewItem*> getNodes(const SelectionSet& selections);
+  bool changeSelection(const SelectionSet& selections);
+  void fitSelection();
 
  signals:
   void selected(const Selected& selected);
@@ -445,6 +453,7 @@ class ClockTreeView : public QGraphicsView
   std::vector<ClockNodeGraphicsViewItem*> buildTree(const ClockTree* tree,
                                                     const STAGuiInterface* sta,
                                                     int center_index);
+  std::map<std::string, ClockNodeGraphicsViewItem*> items_;
 
   struct PinArrival
   {
@@ -461,6 +470,10 @@ class ClockTreeView : public QGraphicsView
   ClockNodeGraphicsViewItem* addLeafToScene(qreal x,
                                             const PinArrival& input_pin,
                                             sta::dbNetwork* network);
+  void addNode(qreal x,
+               ClockNodeGraphicsViewItem* node,
+               const QString& tooltip,
+               sta::Delay delay);
 
   constexpr static int default_scene_height_
       = 75.0 * ClockNodeGraphicsViewItem::default_size_;
@@ -506,6 +519,7 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
                  const std::string& corner,
                  const std::optional<int>& width_px,
                  const std::optional<int>& height_px);
+  void selectClock(const std::string& clock_name);
 
   virtual void postReadLiberty() override;
 
@@ -516,6 +530,8 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
   void setBlock(odb::dbBlock* block);
   void populate(sta::Corner* corner = nullptr);
   void fit();
+  void findInCts(const Selected& selection);
+  void findInCts(const SelectionSet& selections);
 
  private slots:
   void currentClockChanged(int index);

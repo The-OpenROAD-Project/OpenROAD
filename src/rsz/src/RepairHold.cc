@@ -83,7 +83,7 @@ void RepairHold::init()
   db_network_ = resizer_->db_network_;
 }
 
-void RepairHold::repairHold(
+bool RepairHold::repairHold(
     const double setup_margin,
     const double hold_margin,
     const bool allow_setup_violations,
@@ -92,6 +92,7 @@ void RepairHold::repairHold(
     const int max_passes,
     const bool verbose)
 {
+  bool repaired = false;
   init();
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
@@ -109,18 +110,20 @@ void RepairHold::repairHold(
   // Prevent it from being too small on trivial designs
   max_buffer_count = std::max(max_buffer_count, 100);
   resizer_->incrementalParasiticsBegin();
-  repairHold(ends1,
-             buffer_cell,
-             setup_margin,
-             hold_margin,
-             allow_setup_violations,
-             max_buffer_count,
-             max_passes,
-             verbose);
+  repaired = repairHold(ends1,
+                        buffer_cell,
+                        setup_margin,
+                        hold_margin,
+                        allow_setup_violations,
+                        max_buffer_count,
+                        max_passes,
+                        verbose);
 
   // Leave the parasitices up to date.
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
+
+  return repaired;
 }
 
 // For testing/debug.
@@ -236,7 +239,7 @@ void RepairHold::bufferHoldDelays(LibertyCell* buffer,
   }
 }
 
-void RepairHold::repairHold(VertexSeq& ends,
+bool RepairHold::repairHold(VertexSeq& ends,
                             LibertyCell* buffer_cell,
                             const double setup_margin,
                             const double hold_margin,
@@ -245,16 +248,17 @@ void RepairHold::repairHold(VertexSeq& ends,
                             const int max_passes,
                             const bool verbose)
 {
+  bool repaired = false;
   // Find endpoints with hold violations.
   VertexSeq hold_failures;
   Slack worst_slack;
   findHoldViolations(ends, hold_margin, worst_slack, hold_failures);
+  inserted_buffer_count_ = 0;
   if (!hold_failures.empty()) {
     logger_->info(RSZ,
                   46,
                   "Found {} endpoints with hold violations.",
                   hold_failures.size());
-    inserted_buffer_count_ = 0;
     bool progress = true;
     if (verbose) {
       printProgress(0, true, false);
@@ -302,6 +306,7 @@ void RepairHold::repairHold(VertexSeq& ends,
     }
 
     if (inserted_buffer_count_ > 0) {
+      repaired = true;
       logger_->info(
           RSZ, 32, "Inserted {} hold buffers.", inserted_buffer_count_);
       resizer_->level_drvr_vertices_valid_ = false;
@@ -313,10 +318,13 @@ void RepairHold::repairHold(VertexSeq& ends,
       logger_->error(RSZ, 50, "Max utilization reached.");
     }
   } else {
+    repaired = false;
     logger_->info(RSZ, 33, "No hold violations found.");
   }
   logger_->metric("design__instance__count__hold_buffer",
                   inserted_buffer_count_);
+
+  return repaired;
 }
 
 void RepairHold::findHoldViolations(VertexSeq& ends,
@@ -392,7 +400,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
     const int path_length = expanded.size();
     if (path_length > 1) {
       for (int i = expanded.startIndex(); i < path_length; i++) {
-        PathRef* path = expanded.path(i);
+        const PathRef* path = expanded.path(i);
         Vertex* path_vertex = path->vertex(sta_);
         Pin* path_pin = path_vertex->pin();
         Net* path_net = network_->isTopLevelPort(path_pin)
@@ -473,6 +481,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
               // reduce setup slack in ways that are too expensive to
               // predict. Use the journal to back out the change if
               // the hold buffer blows through the setup margin.
+              resizer_->incrementalParasiticsEnd();
               resizer_->journalBegin();
               Slack setup_slack_before = sta_->worstSlack(max_);
               Slew slew_before = sta_->vertexSlew(path_vertex, max_);
@@ -490,10 +499,15 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                   || (!allow_setup_violations
                       && fuzzyLess(setup_slack_after, setup_slack_before)
                       && setup_slack_after < setup_margin)) {
-                resizer_->journalRestore(
-                    resize_count_, inserted_buffer_count_, cloned_gate_count_);
+                resizer_->journalRestore(resize_count_,
+                                         inserted_buffer_count_,
+                                         cloned_gate_count_,
+                                         swap_pin_count_,
+                                         removed_buffer_count_);
+              } else {
+                resizer_->journalEnd();
               }
-              resizer_->journalEnd();
+              resizer_->incrementalParasiticsBegin();
             }
           }
         }
@@ -524,60 +538,165 @@ void RepairHold::mergeInto(Slacks& from, Slacks& result)
 
 void RepairHold::makeHoldDelay(Vertex* drvr,
                                PinSeq& load_pins,
-                               bool loads_have_out_port,
+                               bool loads_have_out_port,  // top level port
                                LibertyCell* buffer_cell,
                                const Point& loc)
 {
   Pin* drvr_pin = drvr->pin();
-  Instance* parent = db_network_->topInstance();
-  Net* drvr_net = network_->isTopLevelPort(drvr_pin)
-                      ? db_network_->net(db_network_->term(drvr_pin))
-                      : db_network_->net(drvr_pin);
-  Net *in_net, *out_net;
+  odb::dbModNet* mod_drvr_net = nullptr;  // hierarchical driver, default none
+  dbNet* db_drvr_net = nullptr;           // regular flat driver
+
+  Instance* parent = nullptr;
+  if (db_network_->hasHierarchy()) {
+    // get the nets on the driver pin (possibly both flat and hierarchical)
+    db_network_->net(drvr_pin, db_drvr_net, mod_drvr_net);
+    // Get the parent instance (owning the instance of the driver pin)
+    // we will put the new buffer in that parent
+    parent = db_network_->getOwningInstanceParent(drvr_pin);
+    // exception case: drvr pin is a top level, fix the db_drvr_net to be
+    // the lower level net
+    if (network_->isTopLevelPort(drvr_pin)) {
+      db_drvr_net
+          = db_network_->staToDb(db_network_->net(db_network_->term(drvr_pin)));
+    }
+  } else {
+    // original flat code (which handles exception case at top level &
+    // defaults to top level instance as parent).
+    db_drvr_net = db_network_->staToDb(
+        network_->isTopLevelPort(drvr_pin)
+            ? db_network_->net(db_network_->term(drvr_pin))
+            : db_network_->net(drvr_pin));
+    parent = db_network_->topInstance();
+  }
+
+  Net *in_net = nullptr, *out_net = nullptr;
+
   if (loads_have_out_port) {
     // Verilog uses nets as ports, so the net connected to an output port has
     // to be preserved.
     // Move the driver pin over to gensym'd net.
+    //
     in_net = resizer_->makeUniqueNet();
     Port* drvr_port = network_->port(drvr_pin);
     Instance* drvr_inst = network_->instance(drvr_pin);
     sta_->disconnectPin(drvr_pin);
     sta_->connectPin(drvr_inst, drvr_port, in_net);
-    out_net = drvr_net;
+    out_net = db_network_->dbToSta(db_drvr_net);
   } else {
-    in_net = drvr_net;
-    out_net = resizer_->makeUniqueNet();
+    in_net = db_network_->dbToSta(db_drvr_net);
+    // make the output net, put in same module as buffer
+    std::string net_name = resizer_->makeUniqueNetName();
+    out_net = db_network_->makeNet(net_name.c_str(), parent);
+  }
+
+  // Disconnect the original drvr pin from everything (hierarchical nets
+  // and flat nets).
+  odb::dbITerm* drvr_pin_iterm;
+  odb::dbBTerm* drvr_pin_bterm;
+  odb::dbModITerm* drvr_pin_moditerm;
+  odb::dbModBTerm* drvr_pin_modbterm;
+  db_network_->staToDb(drvr_pin,
+                       drvr_pin_iterm,
+                       drvr_pin_bterm,
+                       drvr_pin_moditerm,
+                       drvr_pin_modbterm);
+  if (drvr_pin_iterm) {
+    // disconnect the iterm from both the modnet and the dbnet
+    // note we will rewire the drvr_pin to connect to the new buffer later.
+    drvr_pin_iterm->disconnect();
+  }
+  if (drvr_pin_moditerm) {
+    drvr_pin_moditerm->disconnect();
+  }
+  if (drvr_pin_modbterm) {
+    drvr_pin_modbterm->disconnect();
   }
 
   resizer_->parasiticsInvalid(in_net);
 
   Net* buf_in_net = in_net;
+
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
+
   // drvr_pin->drvr_net->hold_buffer->net2->load_pins
+
   string buffer_name = resizer_->makeUniqueInstName("hold");
+
+  // make the buffer in the driver pin's parent
   Instance* buffer
       = resizer_->makeBuffer(buffer_cell, buffer_name.c_str(), parent, loc);
   inserted_buffer_count_++;
   debugPrint(
       logger_, RSZ, "repair_hold", 3, " insert {}", network_->name(buffer));
 
+  // wire in the buffer
   sta_->connectPin(buffer, input, buf_in_net);
   sta_->connectPin(buffer, output, out_net);
+
+  // Fix up the original driver pin (which we totally disconnected before)
+  // patch in the buf_in_net driver to be driven by the original drvr_pin_iterm
+
+  // First the dbnet.
+  if (drvr_pin_iterm) {
+    drvr_pin_iterm->connect(db_network_->staToDb(buf_in_net));
+  }
+
+  // Now patch in the output of the new buffer to the original hierarchical
+  // net,if any, from the original driver
+  if (mod_drvr_net != nullptr) {
+    Pin* ip_pin = nullptr;
+    Pin* op_pin = nullptr;
+    resizer_->getBufferPins(buffer, ip_pin, op_pin);
+    (void) ip_pin;
+    if (op_pin) {
+      // get the iterm of the op_pin of the buffer (a dbInst)
+      // and connect to the hierarchical net.
+      odb::dbITerm* iterm;
+      odb::dbBTerm* bterm;
+      odb::dbModITerm* moditerm;
+      odb::dbModBTerm* modbterm;
+      db_network_->staToDb(op_pin, iterm, bterm, moditerm, modbterm);
+      // we only need to look at the iterm, the buffer is a dbInst
+      if (iterm) {
+        // hook up the hierarchical net
+        iterm->connect(mod_drvr_net);
+      }
+    }
+  }
+
   resizer_->parasiticsInvalid(out_net);
 
+  // hook up loads to buffer
   for (const Pin* load_pin : load_pins) {
     Net* load_net = network_->isTopLevelPort(load_pin)
                         ? network_->net(network_->term(load_pin))
                         : network_->net(load_pin);
+
     if (load_net != out_net) {
       Instance* load = db_network_->instance(load_pin);
       Port* load_port = db_network_->port(load_pin);
+      // record the original connections
+      odb::dbModNet* original_mod_net = nullptr;
+      odb::dbNet* original_flat_net = nullptr;
+      db_network_->net(load_pin, original_flat_net, original_mod_net);
+      (void) original_flat_net;
+      // Remove all the connections on load_pin
       sta_->disconnectPin(const_cast<Pin*>(load_pin));
+      // Connect it to the correct output driver net
       sta_->connectPin(load, load_port, out_net);
+      // connect the original load  modnet (hierarchical net), if any,
+      // on the iterm of the buffer created.
+      odb::dbITerm* iterm;
+      odb::dbBTerm* bterm;
+      odb::dbModITerm* moditerm;
+      odb::dbModBTerm* modbterm;
+      db_network_->staToDb(load_pin, iterm, bterm, moditerm, modbterm);
+      if (iterm && original_mod_net) {
+        iterm->connect(original_mod_net);
+      }
     }
   }
-
   Pin* buffer_out_pin = network_->findPin(buffer, output);
   Vertex* buffer_out_vertex = graph_->pinDrvrVertex(buffer_out_pin);
   resizer_->updateParasitics();

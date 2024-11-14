@@ -9,7 +9,6 @@
 
 #include <array>
 #include <filesystem>
-#include <iostream>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -20,14 +19,18 @@
 #include "base/io/ioAbc.h"
 #include "base/main/abcapis.h"
 #include "db_sta/MakeDbSta.hh"
+#include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "logic_extractor.h"
 #include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
 #include "odb/lefin.h"
 #include "sta/FuncExpr.hh"
+#include "sta/Graph.hh"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
@@ -41,6 +44,8 @@ void* Abc_FrameReadLibGen();
 }
 
 namespace rmp {
+
+using ::testing::Contains;
 
 std::once_flag init_sta_flag;
 
@@ -70,13 +75,53 @@ class AbcTest : public ::testing::Test
         = std::filesystem::canonical("./Nangate45/Nangate45_tech.lef");
     auto stdcell_lef
         = std::filesystem::canonical("./Nangate45/Nangate45_stdcell.lef");
-    odb::dbLib* lib = lef_reader.createTechAndLib(
-        "nangate45", stdcell_lef.string().c_str(), tech_lef.string().c_str());
+    odb::dbTech* tech
+        = lef_reader.createTech("nangate45", tech_lef.string().c_str());
+    odb::dbLib* lib
+        = lef_reader.createLib(tech, "nangate45", stdcell_lef.string().c_str());
 
     sta_->postReadLef(/*tech=*/nullptr, lib);
 
     sta::Units* units = library_->units();
     power_unit_ = units->powerUnit();
+  }
+
+  void LoadVerilog(const std::string& file_name, const std::string& top = "top")
+  {
+    // Assumes module name is "top" and clock name is "clk"
+    sta::dbNetwork* network = sta_->getDbNetwork();
+    ord::dbVerilogNetwork verilog_network;
+    verilog_network.init(network);
+    ord::dbReadVerilog(file_name.c_str(), &verilog_network);
+    ord::dbLinkDesign(top.c_str(),
+                      &verilog_network,
+                      db_.get(),
+                      &logger_,
+                      /*hierarchy = */ false);
+
+    sta_->postReadDb(db_.get());
+
+    sta::Cell* top_cell = network->cell(network->topInstance());
+    sta::Port* clk_port = network->findPort(top_cell, "clk");
+    sta::Pin* clk_pin = network->findPin(network->topInstance(), clk_port);
+
+    sta::PinSet* pinset = new sta::PinSet(network);
+    pinset->insert(clk_pin);
+
+    float period = 2.0;
+    sta::FloatSeq* waveform = new sta::FloatSeq;
+    waveform->push_back(0);
+    waveform->push_back(period / 2.0);
+
+    sta_->makeClock("clk",
+                    pinset,
+                    /*add_to_pins=*/false,
+                    /*period=*/2.0,
+                    waveform,
+                    /*comment=*/nullptr);
+
+    sta_->ensureGraph();
+    sta_->ensureLevelized();
   }
 
   utl::deleted_unique_ptr<odb::dbDatabase> db_;
@@ -90,11 +135,11 @@ TEST_F(AbcTest, CellPropertiesMatchOpenSta)
 {
   AbcLibraryFactory factory(&logger_);
   factory.AddDbSta(sta_.get());
-  utl::deleted_unique_ptr<abc::SC_Lib> abc_library = factory.Build();
+  AbcLibrary abc_library = factory.Build();
 
-  for (size_t i = 0; i < Vec_PtrSize(&abc_library->vCells); i++) {
+  for (size_t i = 0; i < Vec_PtrSize(&abc_library.abc_library()->vCells); i++) {
     abc::SC_Cell* abc_cell = static_cast<abc::SC_Cell*>(
-        abc::Vec_PtrEntry(&abc_library->vCells, i));
+        abc::Vec_PtrEntry(&abc_library.abc_library()->vCells, i));
     sta::LibertyCell* sta_cell = library_->findLibertyCell(abc_cell->pName);
     EXPECT_NE(nullptr, sta_cell);
     // Expect area matches
@@ -113,15 +158,15 @@ TEST_F(AbcTest, DoesNotContainPhysicalCells)
 {
   AbcLibraryFactory factory(&logger_);
   factory.AddDbSta(sta_.get());
-  utl::deleted_unique_ptr<abc::SC_Lib> abc_library = factory.Build();
+  AbcLibrary abc_library = factory.Build();
 
   std::set<std::string> abc_cells;
   using ::testing::Contains;
   using ::testing::Not;
 
-  for (size_t i = 0; i < Vec_PtrSize(&abc_library->vCells); i++) {
+  for (size_t i = 0; i < Vec_PtrSize(&abc_library.abc_library()->vCells); i++) {
     abc::SC_Cell* abc_cell = static_cast<abc::SC_Cell*>(
-        abc::Vec_PtrEntry(&abc_library->vCells, i));
+        abc::Vec_PtrEntry(&abc_library.abc_library()->vCells, i));
     abc_cells.emplace(abc_cell->pName);
   }
 
@@ -133,15 +178,15 @@ TEST_F(AbcTest, DoesNotContainSequentialCells)
 {
   AbcLibraryFactory factory(&logger_);
   factory.AddDbSta(sta_.get());
-  utl::deleted_unique_ptr<abc::SC_Lib> abc_library = factory.Build();
+  AbcLibrary abc_library = factory.Build();
 
   std::set<std::string> abc_cells;
   using ::testing::Contains;
   using ::testing::Not;
 
-  for (size_t i = 0; i < Vec_PtrSize(&abc_library->vCells); i++) {
+  for (size_t i = 0; i < Vec_PtrSize(&abc_library.abc_library()->vCells); i++) {
     abc::SC_Cell* abc_cell = static_cast<abc::SC_Cell*>(
-        abc::Vec_PtrEntry(&abc_library->vCells, i));
+        abc::Vec_PtrEntry(&abc_library.abc_library()->vCells, i));
     abc_cells.emplace(abc_cell->pName);
   }
 
@@ -152,15 +197,15 @@ TEST_F(AbcTest, ContainsLogicCells)
 {
   AbcLibraryFactory factory(&logger_);
   factory.AddDbSta(sta_.get());
-  utl::deleted_unique_ptr<abc::SC_Lib> abc_library = factory.Build();
+  AbcLibrary abc_library = factory.Build();
 
   std::set<std::string> abc_cells;
   using ::testing::Contains;
   using ::testing::Not;
 
-  for (size_t i = 0; i < Vec_PtrSize(&abc_library->vCells); i++) {
+  for (size_t i = 0; i < Vec_PtrSize(&abc_library.abc_library()->vCells); i++) {
     abc::SC_Cell* abc_cell = static_cast<abc::SC_Cell*>(
-        abc::Vec_PtrEntry(&abc_library->vCells, i));
+        abc::Vec_PtrEntry(&abc_library.abc_library()->vCells, i));
     abc_cells.emplace(abc_cell->pName);
   }
 
@@ -177,11 +222,11 @@ TEST_F(AbcTest, TestLibraryInstallation)
 {
   AbcLibraryFactory factory(&logger_);
   factory.AddDbSta(sta_.get());
-  utl::deleted_unique_ptr<abc::SC_Lib> abc_library = factory.Build();
+  AbcLibrary abc_library = factory.Build();
 
-  // When you set these params to zero they essentially turned off.
+  // When you set these params to zero they are essentially turned off.
   abc::Abc_SclInstallGenlib(
-      abc_library.get(), /*Slew=*/0, /*Gain=*/0, /*nGatesMin=*/0);
+      abc_library.abc_library(), /*Slew=*/0, /*Gain=*/0, /*nGatesMin=*/0);
   abc::Mio_LibraryTransferCellIds();
   abc::Mio_Library_t* lib
       = static_cast<abc::Mio_Library_t*>(abc::Abc_FrameReadLibGen());
@@ -236,5 +281,159 @@ TEST_F(AbcTest, TestLibraryInstallation)
       &free);
 
   EXPECT_EQ(output_vector.get()[0], 1);  // Expect that 1 & 1 == 1
+}
+
+TEST_F(AbcTest, ExtractsAndGateCorrectly)
+{
+  AbcLibraryFactory factory(&logger_);
+  factory.AddDbSta(sta_.get());
+  AbcLibrary abc_library = factory.Build();
+
+  LoadVerilog("simple_and_gate_extract.v");
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Vertex* flop_input_vertex = nullptr;
+  for (sta::Vertex* vertex : *sta_->endpoints()) {
+    if (std::string(vertex->name(network)) == "output_flop/D") {
+      flop_input_vertex = vertex;
+    }
+  }
+  EXPECT_NE(flop_input_vertex, nullptr);
+
+  LogicExtractorFactory logic_extractor(sta_.get(), &logger_);
+  logic_extractor.AppendEndpoint(flop_input_vertex);
+  LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
+
+  EXPECT_EQ(cut.cut_instances().size(), 1);
+  EXPECT_EQ(std::string(network->name(*cut.cut_instances().begin())), "_403_");
+}
+
+TEST_F(AbcTest, ExtractsEmptyCutSetCorrectly)
+{
+  AbcLibraryFactory factory(&logger_);
+  factory.AddDbSta(sta_.get());
+  AbcLibrary abc_library = factory.Build();
+
+  LoadVerilog("empty_cut_set.v");
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Vertex* flop_input_vertex = nullptr;
+  for (sta::Vertex* vertex : *sta_->endpoints()) {
+    if (std::string(vertex->name(network)) == "output_flop/D") {
+      flop_input_vertex = vertex;
+    }
+  }
+  EXPECT_NE(flop_input_vertex, nullptr);
+
+  LogicExtractorFactory logic_extractor(sta_.get(), &logger_);
+  logic_extractor.AppendEndpoint(flop_input_vertex);
+  LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
+
+  EXPECT_TRUE(cut.IsEmpty());
+}
+
+TEST_F(AbcTest, ExtractSideOutputsCorrectly)
+{
+  AbcLibraryFactory factory(&logger_);
+  factory.AddDbSta(sta_.get());
+  AbcLibrary abc_library = factory.Build();
+
+  LoadVerilog("side_outputs_extract.v");
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Vertex* flop_input_vertex = nullptr;
+  for (sta::Vertex* vertex : *sta_->endpoints()) {
+    if (std::string(vertex->name(network)) == "output_flop/D") {
+      flop_input_vertex = vertex;
+    }
+  }
+  EXPECT_NE(flop_input_vertex, nullptr);
+
+  LogicExtractorFactory logic_extractor(sta_.get(), &logger_);
+  logic_extractor.AppendEndpoint(flop_input_vertex);
+  LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
+
+  std::unordered_set<std::string> primary_output_names;
+  for (sta::Net* net : cut.primary_outputs()) {
+    primary_output_names.insert(network->name(net));
+  }
+
+  // Since a single net feeds both of these outputs should expect just 1 output
+  EXPECT_EQ(cut.primary_outputs().size(), 1);
+  EXPECT_THAT(primary_output_names, Contains("flop_net"));
+}
+
+TEST_F(AbcTest, BuildAbcMappedNetworkFromLogicCut)
+{
+  AbcLibraryFactory factory(&logger_);
+  factory.AddDbSta(sta_.get());
+  AbcLibrary abc_library = factory.Build();
+
+  LoadVerilog("side_outputs_extract_logic_depth.v");
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Vertex* flop_input_vertex = nullptr;
+  for (sta::Vertex* vertex : *sta_->endpoints()) {
+    if (std::string(vertex->name(network)) == "output_flop/D") {
+      flop_input_vertex = vertex;
+    }
+  }
+  EXPECT_NE(flop_input_vertex, nullptr);
+
+  LogicExtractorFactory logic_extractor(sta_.get(), &logger_);
+  logic_extractor.AppendEndpoint(flop_input_vertex);
+  LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
+
+  utl::deleted_unique_ptr<abc::Abc_Ntk_t> abc_network
+      = cut.BuildMappedAbcNetwork(abc_library, network, &logger_);
+
+  abc::Abc_NtkSetName(abc_network.get(), strdup("temp_network_name"));
+
+  utl::deleted_unique_ptr<abc::Abc_Ntk_t> logic_network(
+      abc::Abc_NtkToLogic(abc_network.get()), &abc::Abc_NtkDelete);
+
+  // Build map of primary output names to primary output indicies in ABC
+  std::map<std::string, int> primary_output_name_to_index;
+  for (int i = 0; i < abc::Abc_NtkPoNum(logic_network.get()); i++) {
+    abc::Abc_Obj_t* po = abc::Abc_NtkPo(logic_network.get(), i);
+    std::string po_name = abc::Abc_ObjName(po);
+    primary_output_name_to_index[po_name] = i;
+  }
+
+  std::array<int, 2> input_vector = {1, 1};
+  utl::deleted_unique_ptr<int> output_vector(
+      abc::Abc_NtkVerifySimulatePattern(logic_network.get(),
+                                        input_vector.data()),
+      &free);
+
+  // Both outputs are just the and gate.
+  EXPECT_EQ(output_vector.get()[primary_output_name_to_index.at("flop_net")],
+            0);  // Expect that !(1 & 1) == 0
+  EXPECT_EQ(output_vector.get()[primary_output_name_to_index.at("and_output")],
+            1);  // Expect that (1 & 1) == 1
+}
+
+TEST_F(AbcTest, BuildComplexLogicCone)
+{
+  AbcLibraryFactory factory(&logger_);
+  factory.AddDbSta(sta_.get());
+  AbcLibrary abc_library = factory.Build();
+
+  LoadVerilog("aes_nangate45.v", /*top=*/"aes_cipher_top");
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Vertex* flop_input_vertex = nullptr;
+  for (sta::Vertex* vertex : *sta_->endpoints()) {
+    if (std::string(vertex->name(network)) == "_32989_/D") {
+      flop_input_vertex = vertex;
+    }
+  }
+  EXPECT_NE(flop_input_vertex, nullptr);
+
+  LogicExtractorFactory logic_extractor(sta_.get(), &logger_);
+  logic_extractor.AppendEndpoint(flop_input_vertex);
+  LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
+
+  EXPECT_NO_THROW(cut.BuildMappedAbcNetwork(abc_library, network, &logger_));
 }
 }  // namespace rmp

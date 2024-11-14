@@ -107,44 +107,5 @@ inline _dbMTerm::_dbMTerm(_dbDatabase*)
   _diffarea.clear();
   _sta_port = nullptr;
 }
-inline _dbMTerm::~_dbMTerm()
-{
-  if (_name) {
-    free((void*) _name);
-  }
 
-  /************************************ dimitri_note
-  *********************************** The following 4 vfields should change to
-  look like     dbId<_dbTechAntennaPinModel> _oxide1;
-
-          dbVector<_dbTechAntennaAreaElement *>  _par_met_area;
-          dbVector<_dbTechAntennaAreaElement *>  _par_met_sidearea;
-          dbVector<_dbTechAntennaAreaElement *>  _par_cut_area;
-          dbVector<_dbTechAntennaAreaElement *>  _diffarea;
-  ************************************************************************************************/
-
-  /* dimitri_fix : cooment out delete loops because of the copiler warning
-  *************************** dbMTerm.h:97:15: warning: possible problem
-  detected in invocation of delete operator: [-Wdelete-incomplete] delete
-  *antitr;
-  ****************************************************************************************************/
-
-  /**********************************************************************************
-  dimitri_fix ********
-
-      dbVector<_dbTechAntennaAreaElement *>::iterator  antitr;
-      for (antitr = _par_met_area.begin(); antitr != _par_met_area.end();
-  antitr++) delete *antitr; _par_met_area.clear();
-
-      for (antitr = _par_met_sidearea.begin(); antitr !=
-  _par_met_sidearea.end(); antitr++) delete *antitr; _par_met_sidearea.clear();
-
-      for (antitr = _par_cut_area.begin(); antitr != _par_cut_area.end();
-  antitr++) delete *antitr; _par_cut_area.clear();
-
-      for (antitr = _diffarea.begin(); antitr != _diffarea.end(); antitr++)
-        delete *antitr;
-      _diffarea.clear();
-  ***********************************************************************************************************/
-}
 }  // namespace odb

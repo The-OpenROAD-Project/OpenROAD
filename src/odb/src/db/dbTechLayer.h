@@ -59,6 +59,7 @@ class _dbTechLayerCutEnclosureRule;
 class _dbTechLayerEolExtensionRule;
 class _dbTechLayerArraySpacingRule;
 class _dbTechLayerEolKeepOutRule;
+class _dbTechLayerMaxSpacingRule;
 class _dbTechLayerWidthTableRule;
 class _dbTechLayerMinCutRule;
 class _dbTechLayerAreaRule;
@@ -121,6 +122,7 @@ class _dbTechLayer : public _dbObject
   dbTechLayerFlags flags_;
   uint wrong_way_width_;
   float layer_adjustment_;
+  std::vector<std::pair<int, int>> orth_spacing_tbl_;
 
   dbTable<_dbTechLayerCutClassRule>* cut_class_rules_tbl_;
   dbHashTable<_dbTechLayerCutClassRule> cut_class_rules_hash_;
@@ -146,6 +148,8 @@ class _dbTechLayer : public _dbObject
   dbTable<_dbTechLayerArraySpacingRule>* array_spacing_rules_tbl_;
 
   dbTable<_dbTechLayerEolKeepOutRule>* eol_keep_out_rules_tbl_;
+
+  dbTable<_dbTechLayerMaxSpacingRule>* max_spacing_rules_tbl_;
 
   dbTable<_dbTechLayerWidthTableRule>* width_table_rules_tbl_;
 

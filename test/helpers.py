@@ -2,6 +2,8 @@ import odb
 import os
 import utl
 import re
+from openroad import Design
+
 
 def make_rect(design, xl, yl, xh, yh):
     xl = design.micronToDBU(xl)
@@ -10,8 +12,9 @@ def make_rect(design, xl, yl, xh, yh):
     yh = design.micronToDBU(yh)
     return odb.Rect(xl, yl, xh, yh)
 
+
 def make_result_file(filename):
-    result_dir = os.path.join(os.getcwd(), 'results')
+    result_dir = os.path.join(os.getcwd(), "results")
     if not os.path.exists(result_dir):
         os.mkdir(result_dir)
 
@@ -19,14 +22,15 @@ def make_result_file(filename):
     filename = "{}-py{}".format(*root_ext)
     return os.path.join(result_dir, filename)
 
+
 def diff_files(file1, file2, ignore=None):
     if ignore:
         ignore = re.compile(ignore)
 
-    with open(file1, 'r') as f:
+    with open(file1, "r") as f:
         lines1 = f.readlines()
 
-    with open(file2, 'r') as f:
+    with open(file2, "r") as f:
         lines2 = f.readlines()
 
     num_lines1 = len(lines1)
@@ -47,34 +51,25 @@ def diff_files(file1, file2, ignore=None):
     utl.report("No differences found.")
     return 0
 
-# Output voltage file is specified as ...
-utl.suppress_message(utl.PSM, 2)
-# Output current file specified ...
-utl.suppress_message(utl.PSM, 3)
-# Error file is specified as ...
-utl.suppress_message(utl.PSM, 83)
-# Output spice file is specified as
-utl.suppress_message(utl.PSM, 5)
-# SPICE file is written at
-utl.suppress_message(utl.PSM, 6)
-# Reading DEF file
-utl.suppress_message(utl.ODB, 127)
-# Finished DEF file
-utl.suppress_message(utl.ODB, 134)
 
-# suppress PPL info messages
-utl.suppress_message(utl.PPL, 41)
-utl.suppress_message(utl.PPL, 48)
-utl.suppress_message(utl.PPL, 49)
-utl.suppress_message(utl.PPL, 60)
+def make_design(tech):
+    design = Design(tech)
+    logger = design.getLogger()
 
-# suppress tap info messages
-utl.suppress_message(utl.TAP, 100)
-utl.suppress_message(utl.TAP, 101)
+    # Reading DEF file
+    logger.suppressMessage(utl.ODB, 127)
+    # Finished DEF file
+    logger.suppressMessage(utl.ODB, 134)
 
-# suppress par messages with files' names
-utl.suppress_message(utl.PAR, 6)
-utl.suppress_message(utl.PAR, 38)
+    # suppress tap info messages
+    logger.suppressMessage(utl.TAP, 100)
+    logger.suppressMessage(utl.TAP, 101)
 
-# suppress ord message with number of threads
-utl.suppress_message(utl.ORD, 30)
+    # suppress par messages with files' names
+    logger.suppressMessage(utl.PAR, 6)
+    logger.suppressMessage(utl.PAR, 38)
+
+    # suppress ord message with number of threads
+    logger.suppressMessage(utl.ORD, 30)
+
+    return design

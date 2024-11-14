@@ -94,6 +94,7 @@ using odb::dbMaster;
 using odb::dbMPin;
 using odb::dbMTerm;
 using odb::dbOrientType;
+using odb::dbPolygon;
 using odb::dbRowDir;
 using odb::dbSite;
 using odb::dbTech;
@@ -119,6 +120,7 @@ LayoutViewer::LayoutViewer(
     Gui* gui,
     const std::function<bool(void)>& usingDBU,
     const std::function<bool(void)>& showRulerAsEuclidian,
+    const std::function<bool(void)>& showDBView,
     QWidget* parent)
     : QWidget(parent),
       block_(nullptr),
@@ -137,6 +139,7 @@ LayoutViewer::LayoutViewer(
       gui_(gui),
       usingDBU_(usingDBU),
       showRulerAsEuclidian_(showRulerAsEuclidian),
+      showDBView_(showDBView),
       modules_(module_settings),
       building_ruler_(false),
       ruler_start_(nullptr),
@@ -632,16 +635,22 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
 
       if (inst_osb_visible) {
         for (auto& box : inst_boxes->obs) {
-          odb::Rect trans_box(box.left(), box.bottom(), box.right(), box.top());
+          const QRect rect = box.boundingRect();
+          odb::Rect trans_box(
+              rect.left(), rect.bottom(), rect.right(), rect.top());
           inst_xfm.apply(trans_box);
           check_rect(trans_box);
         }
       }
       if (inst_pins_visible) {
-        for (auto& box : inst_boxes->mterms) {
-          odb::Rect trans_box(box.left(), box.bottom(), box.right(), box.top());
-          inst_xfm.apply(trans_box);
-          check_rect(trans_box);
+        for (const auto& [mterm, boxes] : inst_boxes->mterms) {
+          for (const auto& box : boxes) {
+            const QRect rect = box.boundingRect();
+            odb::Rect trans_box(
+                rect.left(), rect.bottom(), rect.right(), rect.top());
+            inst_xfm.apply(trans_box);
+            check_rect(trans_box);
+          }
         }
       }
     }
@@ -742,7 +751,8 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
   }
 
   if (options_->areSitesVisible()) {
-    for (const auto& [row, row_site] : getRowRects(block_, search_line)) {
+    for (const auto& [row, row_site, index] :
+         getRowRects(block_, search_line)) {
       odb::dbSite* site = nullptr;
       if (row->getObjectType() == odb::dbObjectType::dbSiteObj) {
         site = static_cast<odb::dbSite*>(row);
@@ -943,17 +953,18 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
       if (options_->areInstancePinsVisible()
           && options_->areInstancePinsSelectable()) {
         const odb::dbTransform xform = inst->getTransform();
-        for (auto* iterm : inst->getITerms()) {
-          for (auto* mpin : iterm->getMTerm()->getMPins()) {
-            for (auto* geom : mpin->getGeometry()) {
-              const auto layer = geom->getTechLayer();
-              if (layer == nullptr) {
-                continue;
-              }
-              if (options_->isVisible(layer) && options_->isSelectable(layer)) {
-                Rect pin_rect = geom->getBox();
-                xform.apply(pin_rect);
-                if (region.intersects(pin_rect)) {
+        for (const auto& [layer, boxes] : cell_boxes_[inst->getMaster()]) {
+          if (options_->isVisible(layer) && options_->isSelectable(layer)) {
+            for (const auto& [mterm, geoms] : boxes.mterms) {
+              odb::dbITerm* iterm = inst->getITerm(mterm);
+              for (const auto& geom : geoms) {
+                std::vector<odb::Point> points(geom.size());
+                for (const auto& pt : geom) {
+                  points.emplace_back(pt.x(), pt.y());
+                }
+                odb::Polygon poly(points);
+                xform.apply(poly);
+                if (boost::geometry::intersects(poly, region)) {
                   selections.push_back(gui_->makeSelected(iterm));
                 }
               }
@@ -987,7 +998,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
   }
 
   if (options_->areSitesVisible() && options_->areSitesSelectable()) {
-    for (const auto& [row_obj, rect] : getRowRects(block_, region)) {
+    for (const auto& [row_obj, rect, index] : getRowRects(block_, region)) {
       odb::dbSite* site = nullptr;
       if (row_obj->getObjectType() == odb::dbObjectType::dbSiteObj) {
         site = static_cast<odb::dbSite*>(row_obj);
@@ -1003,8 +1014,8 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
         selections.push_back(
             gui_->makeSelected(static_cast<odb::dbRow*>(row_obj)));
       } else {
-        selections.push_back(
-            gui_->makeSelected(DbSiteDescriptor::SpecificSite{site, rect}));
+        selections.push_back(gui_->makeSelected(
+            DbSiteDescriptor::SpecificSite{site, rect, index}));
       }
     }
   }
@@ -1317,27 +1328,52 @@ void LayoutViewer::updateScaleAndCentering(const QSize& new_size)
 // drawing performance
 void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
 {
-  auto box_to_qrect = [](odb::dbBox* box) -> QRect {
-    return QRect(box->xMin(),
-                 box->yMin(),
-                 box->xMax() - box->xMin(),
-                 box->yMax() - box->yMin());
+  const bool is_db_view = showDBView_();
+  auto box_to_qpolygon = [](odb::dbBox* box) -> QPolygon {
+    QPolygon poly;
+    for (const auto& pt : box->getBox().getPoints()) {
+      poly.append(QPoint(pt.x(), pt.y()));
+    }
+    return poly;
+  };
+  auto pbox_to_qpolygon = [](odb::dbPolygon* box) -> QPolygon {
+    QPolygon poly;
+    for (const auto& pt : box->getPolygon().getPoints()) {
+      poly.append(QPoint(pt.x(), pt.y()));
+    }
+    return poly;
   };
 
   // store obstructions
-  for (dbBox* box : master->getObstructions()) {
-    dbTechLayer* layer = box->getTechLayer();
-    dbTechLayerType type = layer->getType();
-    if (type != dbTechLayerType::ROUTING && type != dbTechLayerType::CUT
-        && type != dbTechLayerType::IMPLANT) {
-      continue;
+  if (!is_db_view) {
+    for (dbPolygon* box : master->getPolygonObstructions()) {
+      dbTechLayer* layer = box->getTechLayer();
+      boxes[layer].obs.emplace_back(pbox_to_qpolygon(box));
     }
-    boxes[layer].obs.emplace_back(box_to_qrect(box));
+    for (dbBox* box : master->getObstructions(false)) {
+      dbTechLayer* layer = box->getTechLayer();
+      boxes[layer].obs.emplace_back(box_to_qpolygon(box));
+    }
+  } else {
+    for (dbBox* box : master->getObstructions()) {
+      dbTechLayer* layer = box->getTechLayer();
+      boxes[layer].obs.emplace_back(box_to_qpolygon(box));
+    }
   }
 
   // store mterms
   for (dbMTerm* mterm : master->getMTerms()) {
     for (dbMPin* mpin : mterm->getMPins()) {
+      if (!is_db_view) {
+        for (dbPolygon* box : mpin->getPolygonGeometry()) {
+          dbTechLayer* layer = box->getTechLayer();
+          boxes[layer].mterms[mterm].emplace_back(pbox_to_qpolygon(box));
+        }
+        for (dbBox* box : mpin->getGeometry(false)) {
+          dbTechLayer* layer = box->getTechLayer();
+          boxes[layer].mterms[mterm].emplace_back(box_to_qpolygon(box));
+        }
+      }
       for (dbBox* box : mpin->getGeometry()) {
         if (box->isVia()) {
           odb::dbTechVia* tech_via = box->getTechVia();
@@ -1349,26 +1385,21 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
           for (auto* via_box : tech_via->getBoxes()) {
             odb::Rect box_rect = via_box->getBox();
             dbTechLayer* layer = via_box->getTechLayer();
-            dbTechLayerType type = layer->getType();
-            if (type != dbTechLayerType::ROUTING
-                && type != dbTechLayerType::CUT) {
-              continue;
-            }
             via_transform.apply(box_rect);
-            boxes[layer].mterms.emplace_back(
+            boxes[layer].mterms[mterm].emplace_back(
                 QRect{box_rect.xMin(),
                       box_rect.yMin(),
                       box_rect.xMax() - box_rect.xMin(),
                       box_rect.yMax() - box_rect.yMin()});
           }
-        } else {
+        } else if (is_db_view) {
+          odb::Rect box_rect = box->getBox();
           dbTechLayer* layer = box->getTechLayer();
-          dbTechLayerType type = layer->getType();
-          if (type != dbTechLayerType::ROUTING
-              && type != dbTechLayerType::CUT) {
-            continue;
-          }
-          boxes[layer].mterms.emplace_back(box_to_qrect(box));
+          boxes[layer].mterms[mterm].emplace_back(
+              QRect{box_rect.xMin(),
+                    box_rect.yMin(),
+                    box_rect.xMax() - box_rect.xMin(),
+                    box_rect.yMax() - box_rect.yMin()});
         }
       }
     }
@@ -1395,9 +1426,8 @@ const LayoutViewer::Boxes* LayoutViewer::boxesByLayer(dbMaster* master,
   return nullptr;
 }
 
-std::vector<std::pair<odb::dbObject*, odb::Rect>> LayoutViewer::getRowRects(
-    odb::dbBlock* block,
-    const odb::Rect& bounds)
+std::vector<std::tuple<odb::dbObject*, odb::Rect, int>>
+LayoutViewer::getRowRects(odb::dbBlock* block, const odb::Rect& bounds)
 {
   const int min_resolution_site = nominalViewableResolution();
   int min_resolution_row = min_resolution_site;
@@ -1414,11 +1444,11 @@ std::vector<std::pair<odb::dbObject*, odb::Rect>> LayoutViewer::getRowRects(
                                  bounds.yMax(),
                                  min_resolution_row);
 
-  std::vector<std::pair<odb::dbObject*, odb::Rect>> rects;
+  std::vector<std::tuple<odb::dbObject*, odb::Rect, int>> rects;
   for (auto& [box, row] : rows) {
     odb::Point pt = row->getOrigin();
 
-    rects.emplace_back(row, row->getBBox());
+    rects.emplace_back(row, row->getBBox(), 0);
 
     dbSite* site = row->getSite();
     int spacing = row->getSpacing();
@@ -1463,7 +1493,7 @@ std::vector<std::pair<odb::dbObject*, odb::Rect>> LayoutViewer::getRowRects(
         const Rect row_rect(pt.x(), pt.y(), pt.x() + w, pt.y() + h);
         if (row_rect.intersects(bounds)) {
           // only paint rows that can be seen
-          rects.emplace_back(obj, row_rect);
+          rects.emplace_back(obj, row_rect, i);
         }
 
         if (dir == dbRowDir::HORIZONTAL) {
@@ -1625,7 +1655,7 @@ void LayoutViewer::drawScaleBar(QPainter* painter, const QRect& rect)
       unit_text = "mm";
     } else if (bar_size > 1) {
       scale_unit = 1;
-      unit_text = "\u03bcm";  // um
+      unit_text = "μm";
     } else if (bar_size > 0.001) {
       scale_unit = 1000;
       unit_text = "nm";
@@ -2423,6 +2453,12 @@ void LayoutViewer::commandFinishedExecuting()
 void LayoutViewer::executionPaused()
 {
   paused_ = true;
+}
+
+void LayoutViewer::resetCache()
+{
+  cell_boxes_.clear();
+  fullRepaint();
 }
 
 ////// LayoutScroll ///////

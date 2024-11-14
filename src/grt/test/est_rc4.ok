@@ -4,6 +4,7 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 676 components and 2850 component-terminals.
 [INFO ODB-0133]     Created 579 nets and 1498 connections.
+[WARNING GRT-0008] The read_guides command does not allow parasitics estimation from the guides file.
 Net clk
  Pin capacitance: 29.975-33.238
  Wire capacitance: 330.569
@@ -100,3 +101,5 @@ Load pins
  _891_/CK input (DFF_X1) 0.856-0.950 (36, 26)
  _892_/CK input (DFF_X1) 0.856-0.950 (53, 38)
 
+No differences found.
+No differences found.

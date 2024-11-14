@@ -4,7 +4,7 @@ source "helpers.tcl"
 read_liberty sky130hd/sky130_fd_sc_hd__ss_n40C_1v40.lib
 read_lef "sky130hd/sky130hd.tlef"
 read_lef "sky130hd/sky130hd_std_cell.lef"
-read_def "insert_decap_gcd.def"
+read_def "sky130hd_data/insert_decap_gcd.def"
 
 source sky130hd/sky130hd.rc
 

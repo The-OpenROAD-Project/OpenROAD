@@ -40,6 +40,7 @@ class Point3D : public Point
   Point3D() = default;
   Point3D(int x, int y, int z) : Point(x, y), z_(z) {}
   Point3D(const Point3D& p) : Point(p.getX(), p.getY()), z_(p.getZ()) {}
+  Point3D(const Point& p, int z) : Point(p), z_(z) {}
 
   int z() const { return getZ(); }
   int getZ() const { return z_; }
@@ -56,6 +57,13 @@ class Point3D : public Point
   }
 
   bool operator!=(const Point3D& pIn) const { return !(*this == pIn); }
+  bool operator<(const Point3D& rhs) const
+  {
+    if (Point::operator!=(rhs)) {
+      return Point::operator<(rhs);
+    }
+    return z_ < rhs.z_;
+  }
 
  private:
   int z_{0};

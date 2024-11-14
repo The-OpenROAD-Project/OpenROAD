@@ -160,6 +160,10 @@ std::string frConstraint::getViolName() const
       return "ForbiddenSpc";
     case frConstraintTypeEnum::frcLef58EnclosureConstraint:
       return "Lef58Enclosure";
+    case frConstraintTypeEnum::frcLef58MaxSpacingConstraint:
+      return "Lef58MaxSpacing";
+    case frConstraintTypeEnum::frcSpacingTableOrth:
+      return "SpacingTableOrth";
   }
   return "";
 }

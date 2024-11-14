@@ -114,6 +114,7 @@ void Replace::reset()
   routabilityMaxInflationIter_ = 4;
 
   timingDrivenMode_ = true;
+  keepResizeBelowOverflow_ = 0.0;
   routabilityDrivenMode_ = true;
   routabilityUseRudy_ = true;
   uniformTargetDensityMode_ = false;
@@ -259,7 +260,7 @@ void Replace::runMBFF(int max_sz,
                       int threads,
                       int num_paths)
 {
-  MBFF pntset(db_, sta_, log_, threads, 4, 10, num_paths, gui_debug_);
+  MBFF pntset(db_, sta_, log_, threads, 20, num_paths, gui_debug_);
   pntset.Run(max_sz, alpha, beta);
 }
 
@@ -342,6 +343,7 @@ bool Replace::initNesterovPlace(int threads)
     npVars.maxPhiCoef = maxPhiCoef_;
     npVars.referenceHpwl = referenceHpwl_;
     npVars.routabilityCheckOverflow = routabilityCheckOverflow_;
+    npVars.keepResizeBelowOverflow = keepResizeBelowOverflow_;
     npVars.initDensityPenalty = initDensityPenalityFactor_;
     npVars.initWireLengthCoef = initWireLengthCoef_;
     npVars.targetOverflow = overflow_;
@@ -505,6 +507,11 @@ void Replace::setRoutabilityUseGrt(bool mode)
 void Replace::setRoutabilityCheckOverflow(float overflow)
 {
   routabilityCheckOverflow_ = overflow;
+}
+
+void Replace::setKeepResizeBelowOverflow(float overflow)
+{
+  keepResizeBelowOverflow_ = overflow;
 }
 
 void Replace::setRoutabilityMaxDensity(float density)

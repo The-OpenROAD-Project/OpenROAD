@@ -75,6 +75,8 @@ record_tests {
   no_pins
   no_tracks
   on_grid
+  partial_tracks_error
+  partial_tracks
   pin_length
   pin_length_error
   pin_extension
@@ -111,6 +113,8 @@ record_tests {
   write_pin_placement2
   write_pin_placement3
   write_pin_placement4
+  write_pin_placement5
+  write_pin_placement6
   #ppl_man_tcl_check
   #ppl_readme_msgs_check
 }

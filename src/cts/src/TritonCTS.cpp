@@ -109,13 +109,97 @@ void TritonCTS::addBuilder(TreeBuilder* builder)
   builders_->push_back(builder);
 }
 
+int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
+{
+  int fanout = std::numeric_limits<int>::max();
+  float tempFanout;
+  bool existMaxFanout;
+  odb::dbMaster* bufferMaster = db_->findMaster(bufferName.c_str());
+  sta::Cell* bufferCell = network_->dbToSta(bufferMaster);
+  sta::Port* buffer_port = nullptr;
+  for (odb::dbMTerm* mterm : bufferMaster->getMTerms()) {
+    odb::dbSigType sig_type = mterm->getSigType();
+    if (sig_type == odb::dbSigType::GROUND
+        || sig_type == odb::dbSigType::POWER) {
+      continue;
+    }
+    odb::dbIoType io_type = mterm->getIoType();
+    if (io_type == odb::dbIoType::OUTPUT) {
+      buffer_port = network_->dbToSta(mterm);
+      break;
+    }
+  }
+  if (buffer_port == nullptr) {
+    return 0;
+  }
+
+  openSta_->sdc()->fanoutLimit(
+      buffer_port, sta::MinMax::max(), tempFanout, existMaxFanout);
+  if (existMaxFanout) {
+    fanout = std::min(fanout, (int) tempFanout);
+  }
+
+  openSta_->sdc()->fanoutLimit(
+      bufferCell, sta::MinMax::max(), tempFanout, existMaxFanout);
+  if (existMaxFanout) {
+    fanout = std::min(fanout, (int) tempFanout);
+  }
+
+  sta::LibertyPort* port = network_->libertyPort(buffer_port);
+  port->fanoutLimit(sta::MinMax::max(), tempFanout, existMaxFanout);
+  if (existMaxFanout) {
+    fanout = std::min(fanout, (int) tempFanout);
+  } else {
+    port->libertyLibrary()->defaultMaxFanout(tempFanout, existMaxFanout);
+    if ((existMaxFanout)) {
+      fanout = std::min(fanout, (int) tempFanout);
+    }
+  }
+  return (int) fanout;
+}
+
 void TritonCTS::setupCharacterization()
 {
+  // Check if CTS library is valid
+  if (options_->isCtsLibrarySet()) {
+    sta::Library* lib = network_->findLibrary(options_->getCtsLibrary());
+    if (lib == nullptr) {
+      logger_->error(CTS,
+                     209,
+                     "Library {} cannot be found because it is not "
+                     "loaded or name is incorrect",
+                     options_->getCtsLibrary());
+    } else {
+      logger_->info(CTS,
+                    210,
+                    "Clock buffers will be chosen from library {}",
+                    options_->getCtsLibrary());
+    }
+  }
+
+  openSta_->checkFanoutLimitPreamble();
   // Finalize root/sink buffers
   std::string rootBuffer = selectRootBuffer(rootBuffers_);
   options_->setRootBuffer(rootBuffer);
   std::string sinkBuffer = selectSinkBuffer(sinkBuffers_);
   options_->setSinkBuffer(sinkBuffer);
+
+  int sinkMaxFanout = getBufferFanoutLimit(sinkBuffer);
+  int rootMaxFanout = getBufferFanoutLimit(rootBuffer);
+
+  if (rootMaxFanout && (options_->getNumMaxLeafSinks() > rootMaxFanout)) {
+    options_->setMaxFanout(rootMaxFanout);
+  }
+
+  if (sinkMaxFanout) {
+    if (options_->getSinkClusteringSize() > sinkMaxFanout) {
+      options_->setSinkClusteringSize(sinkMaxFanout);
+    }
+
+    if (sinkMaxFanout < options_->getMaxFanout()) {
+      options_->setMaxFanout(sinkMaxFanout);
+    }
+  }
 
   // A new characteriztion is always created.
   techChar_->create();
@@ -526,13 +610,19 @@ void TritonCTS::setBufferList(const char* buffers)
 
 void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
 {
+  sta::Vector<sta::LibertyCell*> selected_buffers;
+
   // first, look for buffers with "is_clock_cell: true" cell attribute
   sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* lib = lib_iter->next();
+    if (options_->isCtsLibrarySet()
+        && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
+      continue;
+    }
     for (sta::LibertyCell* buffer : *lib->buffers()) {
       if (buffer->isClockCell() && isClockCellCandidate(buffer)) {
-        buffers.emplace_back(buffer->name());
+        selected_buffers.emplace_back(buffer);
         // clang-format off
         debugPrint(logger_, CTS, "buffering", 1, "{} has clock cell attribute",
                    buffer->name());
@@ -540,84 +630,83 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
       }
     }
   }
+  delete lib_iter;
 
   // second, look for all buffers with name CLKBUF or clkbuf
-  if (buffers.empty()) {
-    sta::PatternMatch patternClkBuf("*CLKBUF*",
+  if (selected_buffers.empty()) {
+    sta::PatternMatch patternClkBuf(".*CLKBUF.*",
                                     /* is_regexp */ true,
                                     /* nocase */ true,
                                     /* Tcl_interp* */ nullptr);
     sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
+      if (options_->isCtsLibrarySet()
+          && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
+        continue;
+      }
       for (sta::LibertyCell* buffer :
            lib->findLibertyCellsMatching(&patternClkBuf)) {
         if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
-          buffers.emplace_back(buffer->name());
+          selected_buffers.emplace_back(buffer);
         }
       }
     }
+    delete lib_iter;
   }
 
   // third, look for all buffers with name BUF or buf
-  if (buffers.empty()) {
-    sta::PatternMatch patternBuf("*BUF*",
+  if (selected_buffers.empty()) {
+    sta::PatternMatch patternBuf(".*BUF.*",
                                  /* is_regexp */ true,
                                  /* nocase */ true,
                                  /* Tcl_interp* */ nullptr);
     lib_iter = network_->libertyLibraryIterator();
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
+      if (options_->isCtsLibrarySet()
+          && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
+        continue;
+      }
       for (sta::LibertyCell* buffer :
            lib->findLibertyCellsMatching(&patternBuf)) {
         if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
-          buffers.emplace_back(buffer->name());
+          selected_buffers.emplace_back(buffer);
         }
       }
     }
+    delete lib_iter;
   }
 
   // abandon attributes & name patterns, just look for all buffers
-  if (buffers.empty()) {
+  if (selected_buffers.empty()) {
     lib_iter = network_->libertyLibraryIterator();
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
+      if (options_->isCtsLibrarySet()
+          && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
+        continue;
+      }
       for (sta::LibertyCell* buffer : *lib->buffers()) {
         if (isClockCellCandidate(buffer)) {
-          buffers.emplace_back(buffer->name());
+          selected_buffers.emplace_back(buffer);
         }
       }
     }
+    delete lib_iter;
 
-    if (buffers.empty()) {
+    if (selected_buffers.empty()) {
       logger_->error(
           CTS,
           110,
           "No clock buffer candidates could be found from any libraries.");
     }
+  }
 
-    // it's possible that pattern-based lib cell search missed
-    // clock buffers (because they are not loaded or linked?)
-    std::string pattern("clkbuf");
-    std::vector<std::string> clockBuffers
-        = findMatchingSubset(pattern, buffers);
-    // clang-format off
-    debugPrint(logger_, CTS, "buffering", 1, "{} buffers with 'clkbuf' "
-               "have been found", clockBuffers.size());
-    // clang-format on
-    if (!clockBuffers.empty()) {
-      buffers = std::move(clockBuffers);
-    } else {
-      pattern = std::string("buf");
-      clockBuffers = findMatchingSubset(pattern, buffers);
-      // clang-format off
-      debugPrint(logger_, CTS, "buffering", 1, "{} buffers with 'buf' "
-                 "have been found", clockBuffers.size());
-      // clang-format on
-      if (!clockBuffers.empty()) {
-        buffers = std::move(clockBuffers);
-      }
-    }
+  resizer_->setClockBuffersList(selected_buffers);
+
+  for (sta::LibertyCell* buffer : selected_buffers) {
+    buffers.emplace_back(buffer->name());
   }
 
   options_->setBufferListInferred(true);
@@ -634,21 +723,6 @@ std::string toLowerCase(std::string str)
     return std::tolower(c);
   });
   return str;
-}
-
-std::vector<std::string> TritonCTS::findMatchingSubset(
-    const std::string& pattern,
-    const std::vector<std::string>& buffers)
-{
-  std::vector<std::string> subset;
-  std::copy_if(buffers.begin(),
-               buffers.end(),
-               std::back_inserter(subset),
-               [&pattern](const std::string& str) {
-                 std::string lowerCaseStr = toLowerCase(str);
-                 return lowerCaseStr.find(pattern) != std::string::npos;
-               });
-  return subset;
 }
 
 bool TritonCTS::isClockCellCandidate(sta::LibertyCell* cell)
@@ -1118,6 +1192,16 @@ Clock TritonCTS::forkRegisterClockNetwork(
   secondNet = odb::dbNet::create(block_, newClockName.c_str());
   secondNet->setSigType(odb::dbSigType::CLOCK);
 
+  odb::dbModule* first_net_module
+      = network_->getNetDriverParentModule(network_->dbToSta(firstNet));
+  odb::dbModule* second_net_module
+      = network_->getNetDriverParentModule(network_->dbToSta(secondNet));
+  odb::dbModule* target_module = nullptr;
+  if ((first_net_module != nullptr)
+      && (first_net_module == second_net_module)) {
+    target_module = first_net_module;
+  }
+
   // move register sinks from previous clock net to new clock net
   for (auto elem : registerSinks) {
     odb::dbInst* inst = elem.first;
@@ -1130,7 +1214,10 @@ Clock TritonCTS::forkRegisterClockNetwork(
   // create a new clock buffer
   odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
   std::string cellName = "clkbuf_regs_0_" + clockNet.getSdcName();
-  odb::dbInst* clockBuf = odb::dbInst::create(block_, master, cellName.c_str());
+
+  odb::dbInst* clockBuf = odb::dbInst::create(
+      block_, master, cellName.c_str(), false, target_module);
+
   odb::dbITerm* inputTerm = getFirstInput(clockBuf);
   odb::dbITerm* outputTerm = clockBuf->getFirstOutput();
   inputTerm->connect(firstNet);
@@ -1179,6 +1266,9 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
                                    std::set<odb::dbNet*>& clkLeafNets)
 {
   odb::dbNet* topClockNet = clockNet.getNetObj();
+  // gets the module for the driver for the net
+  odb::dbModule* top_module
+      = network_->getNetDriverParentModule(network_->dbToSta(topClockNet));
 
   const std::string topRegBufferName = "clkbuf_regs_0_" + clockNet.getSdcName();
   odb::dbInst* topRegBuffer = block_->findInst(topRegBufferName.c_str());
@@ -1194,7 +1284,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
     getFirstInput(topRegBuffer)->connect(topNet);
   }
 
-  createClockBuffers(clockNet);
+  createClockBuffers(clockNet, top_module);
 
   // connect top buffer on the clock pin
   std::string topClockInstName = "clkbuf_0_" + clockNet.getName();
@@ -1219,6 +1309,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
     }
     odb::dbNet* clkSubNet
         = odb::dbNet::create(block_, subNet.getName().c_str());
+
     ++numClkNets_;
     clkSubNet->setSigType(odb::dbSigType::CLOCK);
 
@@ -1252,8 +1343,15 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
           inputPinFound = false;
         }
       }
+
       if (inputPinFound) {
         inputPin->connect(clkSubNet);
+        // get module for input pin
+        // resolve connection in hierarchy
+        if (network_->hasHierarchy()) {
+          network_->hierarchicalConnect(
+              outputPin, inputPin, clkSubNet->getName().c_str());
+        }
       }
     });
 
@@ -1461,13 +1559,13 @@ void TritonCTS::checkUpstreamConnections(odb::dbNet* net)
   }
 }
 
-void TritonCTS::createClockBuffers(Clock& clockNet)
+void TritonCTS::createClockBuffers(Clock& clockNet, odb::dbModule* parent)
 {
   unsigned numBuffers = 0;
   clockNet.forEachClockBuffer([&](ClockInst& inst) {
     odb::dbMaster* master = db_->findMaster(inst.getMaster().c_str());
-    odb::dbInst* newInst
-        = odb::dbInst::create(block_, master, inst.getName().c_str());
+    odb::dbInst* newInst = odb::dbInst::create(
+        block_, master, inst.getName().c_str(), false, parent);
     newInst->setSourceType(odb::dbSourceType::TIMING);
     inst.setInstObj(newInst);
     inst2clkbuf_[newInst] = &inst;
@@ -1578,8 +1676,12 @@ bool TritonCTS::hasInsertionDelay(odb::dbInst* inst, odb::dbMTerm* mterm)
       sta::LibertyPort* libPort
           = libCell->findLibertyPort(mterm->getConstName());
       if (libPort) {
-        sta::RiseFallMinMax insDelays = libPort->clkTreeDelays();
-        if (insDelays.hasValue()) {
+        const float rise = libPort->clkTreeDelay(
+            0.0, sta::RiseFall::rise(), sta::MinMax::max());
+        const float fall = libPort->clkTreeDelay(
+            0.0, sta::RiseFall::fall(), sta::MinMax::max());
+
+        if (rise != 0 || fall != 0) {
           return true;
         }
       }
@@ -1602,14 +1704,15 @@ double TritonCTS::computeInsertionDelay(const std::string& name,
   if (libCell) {
     sta::LibertyPort* libPort = libCell->findLibertyPort(mterm->getConstName());
     if (libPort) {
-      sta::RiseFallMinMax insDelays = libPort->clkTreeDelays();
-      if (insDelays.hasValue()) {
+      const float rise = libPort->clkTreeDelay(
+          0.0, sta::RiseFall::rise(), sta::MinMax::max());
+      const float fall = libPort->clkTreeDelay(
+          0.0, sta::RiseFall::fall(), sta::MinMax::max());
+
+      if (rise != 0 || fall != 0) {
         // use average of max rise and max fall
         // TODO: do we need to look at min insertion delays?
-        double delayPerSec
-            = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())
-               + insDelays.value(sta::RiseFall::fall(), sta::MinMax::max()))
-              / 2.0;
+        double delayPerSec = (rise + fall) / 2.0;
         // convert delay to length because HTree uses lengths
         sta::Corner* corner = openSta_->cmdCorner();
         double capPerMicron = resizer_->wireSignalCapacitance(corner) * 1e-6;
@@ -1780,6 +1883,7 @@ void TritonCTS::findCandidateDummyCells(
       }
     }
   }
+  delete lib_iter;
 
   // second, look for all inverters with name CLKINV or clkinv
   if (inverters.empty()) {
@@ -1798,6 +1902,7 @@ void TritonCTS::findCandidateDummyCells(
         }
       }
     }
+    delete lib_iter;
   }
 
   // third, look for all inverters with name INV or inv
@@ -1816,6 +1921,7 @@ void TritonCTS::findCandidateDummyCells(
         }
       }
     }
+    delete lib_iter;
   }
 
   // abandon attributes & name patterns, just look for all inverters
@@ -1830,6 +1936,7 @@ void TritonCTS::findCandidateDummyCells(
         }
       }
     }
+    delete lib_iter;
   }
 
   // Sort cells in ascending order of input cap
@@ -1855,6 +1962,10 @@ odb::dbInst* TritonCTS::insertDummyCell(
     ClockInst* inst,
     const std::vector<sta::LibertyCell*>& dummyCandidates)
 {
+  ClockSubNet* subNet = driver2subnet_[inst];
+  if (subNet->getNumSinks() == options_->getMaxFanout()) {
+    return nullptr;
+  }
   float deltaCap = inst->getIdealOutputCap() - inst->getOutputCap();
   sta::LibertyCell* dummyCell = findBestDummyCell(dummyCandidates, deltaCap);
   // clang-format off
@@ -1868,7 +1979,6 @@ odb::dbInst* TritonCTS::insertDummyCell(
         CTS, 120, "Subnet was not found for clock buffer {}.", inst->getName());
     return nullptr;
   }
-  ClockSubNet* subNet = driver2subnet_[inst];
   connectDummyCell(inst, dummyInst, *subNet, dummyClock);
   return dummyInst;
 }
@@ -1971,12 +2081,13 @@ void TritonCTS::computeAveSinkArrivals(TreeBuilder* builder)
       sta::LibertyPort* libPort
           = libCell->findLibertyPort(mterm->getConstName());
       if (libPort) {
-        sta::RiseFallMinMax insDelays = libPort->clkTreeDelays();
-        if (insDelays.hasValue()) {
-          ins_delay
-              = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())
-                 + insDelays.value(sta::RiseFall::fall(), sta::MinMax::max()))
-                / 2.0;
+        const float rise = libPort->clkTreeDelay(
+            0.0, sta::RiseFall::rise(), sta::MinMax::max());
+        const float fall = libPort->clkTreeDelay(
+            0.0, sta::RiseFall::fall(), sta::MinMax::max());
+
+        if (rise != 0 || fall != 0) {
+          ins_delay = (rise + fall) / 2.0;
         }
       }
     }
@@ -2127,6 +2238,7 @@ odb::dbInst* TritonCTS::insertDelayBuffer(odb::dbInst* driver,
       = "delaybuf_" + std::to_string(index) + "_" + clockName;
   odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
   odb::dbInst* newBuf = odb::dbInst::create(block_, master, newBufName.c_str());
+
   newBuf->setSourceType(odb::dbSourceType::TIMING);
   newBuf->setLocation(locX, locY);
   newBuf->setPlacementStatus(odb::dbPlacementStatus::PLACED);

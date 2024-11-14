@@ -36,6 +36,7 @@
 #include <QCloseEvent>
 #include <QLabel>
 #include <QMainWindow>
+#include <QShortcut>
 #include <QToolBar>
 #include <memory>
 
@@ -79,7 +80,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   Q_OBJECT
 
  public:
-  MainWindow(QWidget* parent = nullptr);
+  MainWindow(bool load_settings = true, QWidget* parent = nullptr);
   ~MainWindow();
 
   void setDatabase(odb::dbDatabase* db);
@@ -137,6 +138,12 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
 
   void displayUnitsChanged(int dbu_per_micron, bool useDBU);
 
+  // Find selection in the CTS Viewer
+  void findInCts(const Selected& selection);
+
+  // Find selections in the CTS Viewer
+  void findInCts(const SelectionSet& selection);
+
  public slots:
   // Save the current state into settings for the next session.
   void saveSettings();
@@ -148,10 +155,10 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   void updateSelectedStatus(const Selected& selection);
 
   // Add to the selection
-  void addSelected(const Selected& selection);
+  void addSelected(const Selected& selection, bool find_in_cts = false);
 
   // Add the selections to the current selections
-  void addSelected(const SelectionSet& selections);
+  void addSelected(const SelectionSet& selections, bool find_in_cts = false);
 
   // Sets and replaces the current selections
   void setSelected(const SelectionSet& selections);
@@ -262,8 +269,10 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   void openDesign();
   void saveDesign();
 #ifdef ENABLE_CHARTS
-  void reportSlackHistogramPaths(const std::set<const sta::Pin*>& report_pins);
+  void reportSlackHistogramPaths(const std::set<const sta::Pin*>& report_pins,
+                                 const std::string& path_group_name);
 #endif
+  void enableDeveloper();
 
  protected:
   // used to check if user intends to close Openroad or just the GUI.
@@ -335,11 +344,14 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   QAction* help_;
   QAction* build_ruler_;
   QAction* show_dbu_;
+  QAction* show_poly_decomp_view_;
   QAction* default_ruler_style_;
   QAction* default_mouse_wheel_zoom_;
   QAction* arrow_keys_scroll_step_dialog_;
   QAction* font_;
   QAction* global_connect_;
+
+  QShortcut* enable_developer_mode_;
 
   QLabel* location_;
 

@@ -31,6 +31,7 @@ record_tests {
   core_grid_with_routing_obstructions
   core_grid_adjacentcuts
   core_grid_with_fixed_pins
+  core_grid_bad_metal_specs
 
   core_grid_obstruction
 
@@ -71,6 +72,7 @@ record_tests {
   macros_cells_overlapping_ports
   macros_cells_not_fixed
   macros_cells_via_failure
+  repair_channel_inf_loop
 
   region_temp_sensor
   region_secondary_nets

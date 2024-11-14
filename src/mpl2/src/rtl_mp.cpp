@@ -146,8 +146,17 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
   if (!core_area.contains(macro_new_bbox)) {
     logger_->error(MPL,
                    34,
-                   "Specified location results in illegal placement. Cannot "
-                   "place macro outside of the core.");
+                   "Cannot place {} at ({}, {}) ({}, {}), outside of the core "
+                   "({}, {}) ({}, {}).",
+                   inst->getName(),
+                   block->dbuToMicrons(macro_new_bbox.xMin()),
+                   block->dbuToMicrons(macro_new_bbox.yMin()),
+                   block->dbuToMicrons(macro_new_bbox.xMax()),
+                   block->dbuToMicrons(macro_new_bbox.yMax()),
+                   block->dbuToMicrons(core_area.xMin()),
+                   block->dbuToMicrons(core_area.yMin()),
+                   block->dbuToMicrons(core_area.xMax()),
+                   block->dbuToMicrons(core_area.yMax()));
   }
 
   // Orientation must be set before location so we don't end up flipping
@@ -156,7 +165,7 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
   inst->setLocation(x1, y1);
 
   if (!orientation.isRightAngleRotation()) {
-    Snapper snapper(inst);
+    Snapper snapper(logger_, inst);
     snapper.snapMacro();
   } else {
     logger_->warn(

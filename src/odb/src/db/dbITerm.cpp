@@ -241,6 +241,10 @@ dbInst* dbITerm::getInst() const
   _dbITerm* iterm = (_dbITerm*) this;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
   _dbInst* inst = block->_inst_tbl->getPtr(iterm->_inst);
+  if (inst == nullptr) {
+    iterm->getLogger()->critical(
+        utl::ODB, 446, "dbITerm does not have dbInst.");
+  }
   return (dbInst*) inst;
 }
 
@@ -438,6 +442,8 @@ void dbITerm::connect(dbNet* net_)
     block->_journal->pushParam(dbITermObj);
     block->_journal->pushParam(getId());
     block->_journal->pushParam(net_->getId());
+    // put in a fake modnet here
+    block->_journal->pushParam(0);
     block->_journal->endAction();
   }
 
@@ -496,6 +502,22 @@ void dbITerm::connect(dbModNet* mod_net)
         inst->_name);
   }
 
+  if (block->_journal) {
+    debugPrint(iterm->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: connect Iterm {} to modnet {}",
+               getId(),
+               _mod_net->getId());
+    block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
+    block->_journal->pushParam(dbITermObj);
+    block->_journal->pushParam(getId());
+    block->_journal->pushParam(0);
+    block->_journal->pushParam(_mod_net->getId());
+    block->_journal->endAction();
+  }
+
   if (_mod_net->_iterms != 0) {
     _dbITerm* head = block->_iterm_tbl->getPtr(_mod_net->_iterms);
     iterm->_next_modnet_iterm = _mod_net->_iterms;
@@ -547,7 +569,7 @@ void dbITerm::disconnect()
     block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
     block->_journal->pushParam(dbITermObj);
     block->_journal->pushParam(getId());
-    block->_journal->endAction();
+    block->_journal->pushParam(net->getOID());
   }
 
   uint id = iterm->getOID();
@@ -575,9 +597,30 @@ void dbITerm::disconnect()
 
   // the modnet part
   if (iterm->_mnet == 0) {
+    if (block->_journal) {
+      debugPrint(iterm->getImpl()->getLogger(),
+                 utl::ODB,
+                 "DB_ECO",
+                 1,
+                 "ECO: disconnect modnet from Iterm {}",
+                 getId());
+      block->_journal->pushParam(0);
+      block->_journal->endAction();
+    }
     return;
   }
+
   _dbModNet* mod_net = block->_modnet_tbl->getPtr(iterm->_mnet);
+  if (block->_journal) {
+    debugPrint(iterm->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: disconnect Iterm -- modnet part {}",
+               getId());
+    block->_journal->pushParam(mod_net->getOID());
+    block->_journal->endAction();
+  }
 
   if (mod_net->_iterms == id) {
     mod_net->_iterms = iterm->_next_modnet_iterm;

@@ -36,7 +36,6 @@
 #pragma once
 
 #include <limits>
-#include <memory>
 #include <string>
 
 #include "Mpl2Observer.h"
@@ -70,6 +69,22 @@ class Metrics;
 struct Rect;
 class SoftMacro;
 class Snapper;
+class SACoreSoftMacro;
+class SACoreHardMacro;
+
+// The parameters necessary to compute one coordinate of the new
+// origin for aligning the macros' pins to the track-grid
+struct LayerParameters
+{
+  int offset = 0;
+  int pitch = 0;
+  int pin_width = 0;
+  int pin_offset = 0;
+  int lower_left_to_first_pin = 0;
+};
+
+using LayersWithPinsMap = std::map<odb::dbTechLayer*, odb::dbITerm*>;
+using LayerParametersMap = std::map<odb::dbTechLayer*, LayerParameters>;
 
 // Hierarchical RTL-MP
 // Support Multi-Level Clustering.
@@ -137,6 +152,8 @@ class HierRTLMP
   void writeMacroPlacement(const std::string& file_name);
 
  private:
+  using SoftSAVector = std::vector<std::unique_ptr<SACoreSoftMacro>>;
+  using HardSAVector = std::vector<std::unique_ptr<SACoreHardMacro>>;
   using IOSpans = std::map<Boundary, std::pair<float, float>>;
 
   void runMultilevelAutoclustering();
@@ -201,11 +218,11 @@ class HierRTLMP
                               std::map<int, Rect>& fences,
                               std::map<int, Rect>& guides);
   void createFixedTerminals(const Rect& outline,
-                            const std::vector<Cluster*>& macro_clusters,
+                            const UniqueClusterVector& macro_clusters,
                             std::map<int, int>& cluster_to_macro,
                             std::vector<HardMacro>& sa_macros);
   std::vector<BundledNet> computeBundledNets(
-      const std::vector<Cluster*>& macro_clusters,
+      const UniqueClusterVector& macro_clusters,
       const std::map<int, int>& cluster_to_macro);
   void setArrayTilingSequencePair(Cluster* cluster,
                                   int macros_to_place,
@@ -235,9 +252,9 @@ class HierRTLMP
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
   par::PartitionMgr* tritonpart_ = nullptr;
-  std::unique_ptr<ClusteringEngine> clustering_engine_;
+  std::unique_ptr<PhysicalHierarchy> tree_;
 
-  PhysicalHierarchy tree_;
+  std::unique_ptr<ClusteringEngine> clustering_engine_;
 
   // flag variables
   const bool dynamic_congestion_weight_flag_ = false;
@@ -248,9 +265,6 @@ class HierRTLMP
   // limited routing layers such as SkyWater130.  But for NanGate45,
   // ASASP7, you should turn off this option.
   bool bus_planning_on_ = false;
-
-  int num_updated_macros_ = 0;
-  int num_hard_macros_cluster_ = 0;
 
   // Parameters related to macro placement
   std::string report_directory_;
@@ -370,38 +384,49 @@ class Pusher
   std::vector<HardMacro*> hard_macros_;
 };
 
-// The parameters necessary to compute one coordinate of the new
-// origin for aligning the macros' pins to the track-grid
-struct SnapParameters
+struct SameDirectionLayersData
 {
-  int offset = 0;
-  int pitch = 0;
-  int pin_width = 0;
-  int lower_left_to_first_pin = 0;
+  LayersWithPinsMap layer_to_pin;
+  LayerParametersMap layer_to_params;
+  odb::dbTechLayer* snap_layer = nullptr;
 };
 
 class Snapper
 {
  public:
-  Snapper();
-  Snapper(odb::dbInst* inst);
+  Snapper(utl::Logger* logger);
+  Snapper(utl::Logger* logger, odb::dbInst* inst);
 
   void setMacro(odb::dbInst* inst) { inst_ = inst; }
   void snapMacro();
 
  private:
-  odb::Point computeSnapOrigin();
-  SnapParameters computeSnapParameters(odb::dbTechLayer* layer,
-                                       odb::dbBox* box,
-                                       bool vertical_layer);
+  void snap(const odb::dbTechLayerDir& target_direction);
+  void alignWithManufacturingGrid(int& origin);
+  void setOrigin(int origin, const odb::dbTechLayerDir& target_direction);
+  bool pinsAreAlignedWithTrackGrid(odb::dbITerm* pin,
+                                   const LayerParameters& layer_params,
+                                   const odb::dbTechLayerDir& target_direction);
+
+  SameDirectionLayersData computeSameDirectionLayersData(
+      const odb::dbTechLayerDir& target_direction);
+  LayerParameters computeLayerParameters(
+      odb::dbTechLayer* layer,
+      odb::dbITerm* pin,
+      const odb::dbTechLayerDir& target_direction);
   void getTrackGrid(odb::dbTrackGrid* track_grid,
                     std::vector<int>& coordinate_grid,
-                    bool vertical_layer);
-  int getPitch(odb::dbTechLayer* layer, bool vertical_layer);
-  int getOffset(odb::dbTechLayer* layer, bool vertical_layer);
-  int getPinWidth(odb::dbBox* box, bool vertical_layer);
-  int getPinToLowerLeftDistance(odb::dbBox* box, bool vertical_layer);
+                    const odb::dbTechLayerDir& target_direction);
+  int getPinWidth(odb::dbITerm* pin,
+                  const odb::dbTechLayerDir& target_direction);
+  int getPinToLowerLeftDistance(odb::dbITerm* pin,
+                                const odb::dbTechLayerDir& target_direction);
+  void attemptSnapToExtraLayers(int origin,
+                                const SameDirectionLayersData& layers_data,
+                                const LayerParameters& snap_layer_params,
+                                const odb::dbTechLayerDir& target_direction);
 
+  utl::Logger* logger_;
   odb::dbInst* inst_;
 };
 

@@ -42,6 +42,7 @@ sta::define_cmd_args "tapcell" {[-tapcell_master tapcell_master]\
                                 [-disallow_one_site_gaps]\
                                 [-halo_width_x halo_x]\
                                 [-halo_width_y halo_y]\
+                                [-row_min_width row_min_width]\
                                 [-tap_nwin2_master tap_nwin2_master]\
                                 [-tap_nwin3_master tap_nwin3_master]\
                                 [-tap_nwout2_master tap_nwout2_master]\
@@ -61,10 +62,11 @@ sta::define_cmd_args "tapcell" {[-tapcell_master tapcell_master]\
 proc tapcell { args } {
   sta::parse_key_args "tapcell" args \
     keys {-tapcell_master -endcap_master -endcap_cpp -distance -halo_width_x \
-            -halo_width_y -tap_nwin2_master -tap_nwin3_master -tap_nwout2_master \
-              -tap_nwout3_master -tap_nwintie_master -tap_nwouttie_master \
-              -cnrcap_nwin_master -cnrcap_nwout_master -incnrcap_nwin_master \
-              -incnrcap_nwout_master -tbtie_cpp -tap_prefix -endcap_prefix} \
+            -halo_width_y -row_min_width -tap_nwin2_master -tap_nwin3_master \
+              -tap_nwout2_master -tap_nwout3_master -tap_nwintie_master \
+              -tap_nwouttie_master -cnrcap_nwin_master -cnrcap_nwout_master \
+              -incnrcap_nwin_master -incnrcap_nwout_master -tbtie_cpp -tap_prefix \
+              -endcap_prefix} \
     flags {-no_cell_at_top_bottom -disallow_one_site_gaps}
 
   sta::check_argc_eq0 "tapcell" $args
@@ -92,6 +94,11 @@ proc tapcell { args } {
   set halo_x -1
   if { [info exists keys(-halo_width_x)] } {
     set halo_x $keys(-halo_width_x)
+  }
+
+  set row_min_width -1
+  if { [info exists keys(-row_min_width)] } {
+    set row_min_width $keys(-row_min_width)
   }
 
   set tap_nwin2_master ""
@@ -148,7 +155,7 @@ proc tapcell { args } {
     utl::warn TAP 15 "tbtie_cpp option is deprecated."
   }
 
-  if {[info exists flags(-no_cell_at_top_bottom)]} {
+  if { [info exists flags(-no_cell_at_top_bottom)] } {
     utl::warn TAP 16 "no_cell_at_top_bottom option is deprecated."
   }
 
@@ -165,6 +172,7 @@ proc tapcell { args } {
 
   set halo_y [ord::microns_to_dbu $halo_y]
   set halo_x [ord::microns_to_dbu $halo_x]
+  set row_min_width [ord::microns_to_dbu $row_min_width]
   set dist [ord::microns_to_dbu $dist]
 
   set tapcell_master "NULL"
@@ -186,7 +194,7 @@ proc tapcell { args } {
     }
   }
 
-  tap::run $endcap_master $halo_x $halo_y $cnrcap_nwin_master \
+  tap::run $endcap_master $halo_x $halo_y $row_min_width $cnrcap_nwin_master \
     $cnrcap_nwout_master $tap_nwintie_master $tap_nwin2_master \
     $tap_nwin3_master $tap_nwouttie_master $tap_nwout2_master \
     $tap_nwout3_master $incnrcap_nwin_master $incnrcap_nwout_master \
@@ -195,11 +203,12 @@ proc tapcell { args } {
 
 sta::define_cmd_args "cut_rows" {[-endcap_master endcap_master]\
                                  [-halo_width_x halo_x]\
-                                 [-halo_width_y halo_y]
+                                 [-halo_width_y halo_y]\
+                                 [-row_min_width row_min_width]
 }
 proc cut_rows { args } {
   sta::parse_key_args "cut_rows" args \
-    keys {-endcap_master -halo_width_x -halo_width_y} flags {}
+    keys {-endcap_master -halo_width_x -halo_width_y -row_min_width} flags {}
 
   sta::check_argc_eq0 "cut_rows" $args
 
@@ -211,9 +220,14 @@ proc cut_rows { args } {
   if { [info exists keys(-halo_width_y)] } {
     set halo_y $keys(-halo_width_y)
   }
+  set row_min_width -1
+  if { [info exists keys(-row_min_width)] } {
+    set row_min_width $keys(-row_min_width)
+  }
 
   set halo_x [ord::microns_to_dbu $halo_x]
   set halo_y [ord::microns_to_dbu $halo_y]
+  set row_min_width [ord::microns_to_dbu $row_min_width]
 
   set endcap_master "NULL"
   if { [info exists keys(-endcap_master)] } {
@@ -224,7 +238,7 @@ proc cut_rows { args } {
     }
   }
 
-  tap::cut_rows $endcap_master $halo_x $halo_y
+  tap::cut_rows $endcap_master $halo_x $halo_y $row_min_width
 }
 
 sta::define_cmd_args "tapcell_ripup" {[-tap_prefix tap_prefix]\
@@ -315,7 +329,7 @@ proc place_endcaps { args } {
   sta::check_argc_eq0 "place_endcaps" $args
 
   set prefix "PHY_"
-  if { [info exists keys(-prefix)]} {
+  if { [info exists keys(-prefix)] } {
     set prefix $keys(-prefix)
   }
 
@@ -368,8 +382,7 @@ sta::define_cmd_args "place_tapcells" {
   -distance dist
 }
 
-proc place_tapcells {args } {
-
+proc place_tapcells { args } {
   sta::parse_key_args "place_tapcells" args \
     keys {-master -distance} \
     flags {}
@@ -389,13 +402,12 @@ proc place_tapcells {args } {
 }
 
 namespace eval tap {
-
 proc find_master { master } {
   if { $master == "" } {
     return "NULL"
   }
   set m [[ord::get_db] findMaster $master]
-  if {$m == "NULL"} {
+  if { $m == "NULL" } {
     utl::error TAP 102 "Unable to find $master"
   }
   return $m
@@ -409,16 +421,16 @@ proc find_masters { masters } {
   return $ms
 }
 
-proc parse_endcap_key { cmdargs key0 key1 key2 {optional true} } {
+proc parse_endcap_key { cmdargs key0 key1 key2 { optional true } } {
   upvar keys $cmdargs
 
-  if { [info exists keys($key0) ]} {
+  if { [info exists keys($key0)] } {
     return $keys($key0)
   }
-  if { [info exists keys($key1) ]} {
+  if { [info exists keys($key1)] } {
     return $keys($key1)
   }
-  if { [info exists keys($key2) ]} {
+  if { [info exists keys($key2)] } {
     return $keys($key2)
   }
 
@@ -428,5 +440,4 @@ proc parse_endcap_key { cmdargs key0 key1 key2 {optional true} } {
 
   return ""
 }
-
 }

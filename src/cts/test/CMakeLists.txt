@@ -39,8 +39,8 @@ target_include_directories(cts_unittest
 )
 
 target_link_libraries(cts_unittest
-    gtest
-    gtest_main
+    GTest::gtest
+    GTest::gtest_main
     cts_lib
     utl_lib
     dbSta_lib

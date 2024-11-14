@@ -41,6 +41,7 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
+#include "utl/scope.h"
 
 using namespace boost::polygon::operators;
 using namespace odb;
@@ -84,7 +85,9 @@ void lefout::writeVersion(const std::string& version)
 }
 
 template <typename GenericBox>
-void lefout::writeBoxes(dbSet<GenericBox>& boxes, const char* indent)
+void lefout::writeBoxes(dbBlock* block,
+                        dbSet<GenericBox>& boxes,
+                        const char* indent)
 {
   dbTechLayer* cur_layer = nullptr;
 
@@ -103,7 +106,7 @@ void lefout::writeBoxes(dbSet<GenericBox>& boxes, const char* indent)
         via_name = box->getTechVia()->getName();
       }
       if (box->getBlockVia()) {
-        via_name = box->getBlockVia()->getName();
+        via_name = block->getName() + "_" + box->getBlockVia()->getName();
       }
 
       int x, y;
@@ -133,6 +136,36 @@ void lefout::writeBoxes(dbSet<GenericBox>& boxes, const char* indent)
   }
 }
 
+template <>
+void lefout::writeBoxes(dbBlock* block,
+                        dbSet<dbPolygon>& boxes,
+                        const char* indent)
+{
+  dbTechLayer* cur_layer = nullptr;
+
+  for (dbPolygon* box : boxes) {
+    if (box == nullptr) {
+      continue;
+    }
+
+    dbTechLayer* layer = box->getTechLayer();
+
+    std::string layer_name;
+    if (_use_alias && layer->hasAlias()) {
+      layer_name = layer->getAlias();
+    } else {
+      layer_name = layer->getName();
+    }
+
+    if (cur_layer != layer) {
+      fmt::print(_out, "{}LAYER {} ;\n", indent, layer_name.c_str());
+      cur_layer = layer;
+    }
+
+    writePolygon(indent, box);
+  }
+}
+
 void lefout::writeBox(const std::string& indent, dbBox* box)
 {
   int x1 = box->xMin();
@@ -147,6 +180,19 @@ void lefout::writeBox(const std::string& indent, dbBox* box)
              lefdist(y1),
              lefdist(x2),
              lefdist(y2));
+}
+
+void lefout::writePolygon(const std::string& indent, dbPolygon* polygon)
+{
+  fmt::print(_out, "{}  POLYGON  ", indent.c_str());
+
+  for (const Point& pt : polygon->getPolygon().getPoints()) {
+    int x = pt.x();
+    int y = pt.y();
+    fmt::print(_out, "{:.11g} {:.11g} ", lefdist(x), lefdist(y));
+  }
+
+  fmt::print(_out, ";\n");
 }
 
 void lefout::writeRect(const std::string& indent,
@@ -378,9 +424,9 @@ void lefout::writeNameCaseSensitive(const dbOnOffType on_off_type)
   fmt::print(_out, "NAMESCASESENSITIVE {} ;\n", on_off_type.getString());
 }
 
-void lefout::writeBlockVia(dbVia* via)
+void lefout::writeBlockVia(dbBlock* db_block, dbVia* via)
 {
-  std::string name = via->getName();
+  std::string name = db_block->getName() + "_" + via->getName();
 
   if (via->isDefault()) {
     fmt::print(_out, "\nVIA {} DEFAULT\n", name.c_str());
@@ -392,7 +438,7 @@ void lefout::writeBlockVia(dbVia* via)
 
   if (rule == nullptr) {
     dbSet<dbBox> boxes = via->getBoxes();
-    writeBoxes(boxes, "    ");
+    writeBoxes(db_block, boxes, "    ");
   } else {
     std::string rname = rule->getName();
     fmt::print(_out, "  VIARULE {} ;\n", rname.c_str());
@@ -452,12 +498,12 @@ void lefout::writeBlockVia(dbVia* via)
 
 void lefout::writeBlock(dbBlock* db_block)
 {
-  dbBox* bounding_box = db_block->getBBox();
-  double size_x = lefdist(bounding_box->xMax());
-  double size_y = lefdist(bounding_box->yMax());
+  Rect die_area = db_block->getDieArea();
+  double size_x = lefdist(die_area.xMax());
+  double size_y = lefdist(die_area.yMax());
 
   for (auto via : db_block->getVias()) {
-    writeBlockVia(via);
+    writeBlockVia(db_block, via);
   }
 
   fmt::print(_out, "\nMACRO {}\n", db_block->getName().c_str());
@@ -511,7 +557,7 @@ void lefout::writeBlockTerms(dbBlock* db_block)
     for (dbBPin* db_b_pin : b_term->getBPins()) {
       fmt::print(_out, "{}", "    PORT\n");
       dbSet<dbBox> term_pins = db_b_pin->getBoxes();
-      writeBoxes(term_pins, "      ");
+      writeBoxes(db_block, term_pins, "      ");
       fmt::print(_out, "{}", "    END\n");
     }
     fmt::print(_out, "  END {}\n", b_term->getName().c_str());
@@ -535,7 +581,7 @@ void lefout::writePowerPins(dbBlock* db_block)
     for (dbSWire* special_wire : net->getSWires()) {
       fmt::print(_out, "    PORT\n");
       dbSet<dbSBox> wires = special_wire->getWires();
-      writeBoxes(wires, /*indent=*/"      ");
+      writeBoxes(db_block, wires, /*indent=*/"      ");
       fmt::print(_out, "    END\n");
     }
     fmt::print(_out, "  END {}\n", net->getName().c_str());
@@ -1116,7 +1162,7 @@ void lefout::writeVia(dbTechVia* via)
 
   if (rule == nullptr) {
     dbSet<dbBox> boxes = via->getBoxes();
-    writeBoxes(boxes, "    ");
+    writeBoxes(nullptr, boxes, "    ");
   } else {
     std::string rname = rule->getName();
     fmt::print(_out, "\n    VIARULE {} \n", rname.c_str());
@@ -1324,11 +1370,13 @@ void lefout::writeMaster(dbMaster* master)
     writeMTerm(mterm);
   }
 
-  dbSet<dbBox> obs = master->getObstructions();
+  dbSet<dbPolygon> poly_obs = master->getPolygonObstructions();
+  dbSet<dbBox> obs = master->getObstructions(false);
 
-  if (obs.begin() != obs.end()) {
+  if (poly_obs.begin() != poly_obs.end() || obs.begin() != obs.end()) {
     fmt::print(_out, "{}", "    OBS\n");
-    writeBoxes(obs, "      ");
+    writeBoxes(nullptr, poly_obs, "      ");
+    writeBoxes(nullptr, obs, "      ");
     fmt::print(_out, "{}", "    END\n");
   }
 
@@ -1360,11 +1408,14 @@ void lefout::writeMTerm(dbMTerm* mterm)
   for (pitr = pins.begin(); pitr != pins.end(); ++pitr) {
     dbMPin* pin = *pitr;
 
-    dbSet<dbBox> geoms = pin->getGeometry();
+    dbSet<dbPolygon> poly_geoms = pin->getPolygonGeometry();
+    dbSet<dbBox> geoms = pin->getGeometry(false);
 
-    if (geoms.begin() != geoms.end()) {
+    if (poly_geoms.begin() != poly_geoms.end()
+        || geoms.begin() != geoms.end()) {
       fmt::print(_out, "        PORT\n");
-      writeBoxes(geoms, "            ");
+      writeBoxes(nullptr, poly_geoms, "            ");
+      writeBoxes(nullptr, geoms, "            ");
       fmt::print(_out, "        END\n");
     }
   }
@@ -1519,7 +1570,7 @@ void lefout::writePropertyDefinitions(dbLib* lib)
 
 void lefout::writeTech(dbTech* tech)
 {
-  _dist_factor = 1.0 / (double) tech->getDbUnitsPerMicron();
+  _dist_factor = 1.0 / tech->getDbUnitsPerMicron();
   _area_factor = _dist_factor * _dist_factor;
   writeTechBody(tech);
 
@@ -1528,7 +1579,7 @@ void lefout::writeTech(dbTech* tech)
 
 void lefout::writeLib(dbLib* lib)
 {
-  _dist_factor = 1.0 / (double) lib->getDbUnitsPerMicron();
+  _dist_factor = 1.0 / lib->getDbUnitsPerMicron();
   _area_factor = _dist_factor * _dist_factor;
   writeHeader(lib);
   writeLibBody(lib);
@@ -1537,7 +1588,7 @@ void lefout::writeLib(dbLib* lib)
 
 void lefout::writeTechAndLib(dbLib* lib)
 {
-  _dist_factor = 1.0 / (double) lib->getDbUnitsPerMicron();
+  _dist_factor = 1.0 / lib->getDbUnitsPerMicron();
   _area_factor = _dist_factor * _dist_factor;
   dbTech* tech = lib->getTech();
   writeHeader(lib);
@@ -1548,14 +1599,11 @@ void lefout::writeTechAndLib(dbLib* lib)
 
 void lefout::writeAbstractLef(dbBlock* db_block)
 {
-  double temporary_dist_factor = _dist_factor;
-  _dist_factor = 1.0L / db_block->getDbUnitsPerMicron();
-  _area_factor = _dist_factor * _dist_factor;
+  utl::SetAndRestore set_dist(_dist_factor,
+                              1.0 / db_block->getDbUnitsPerMicron());
+  utl::SetAndRestore set_area(_area_factor, _dist_factor * _dist_factor);
 
   writeHeader(db_block);
   writeBlock(db_block);
   fmt::print(_out, "END LIBRARY\n");
-
-  _dist_factor = temporary_dist_factor;
-  _area_factor = _dist_factor * _dist_factor;
 }

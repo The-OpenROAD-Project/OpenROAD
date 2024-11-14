@@ -1,6 +1,6 @@
 record_tests {
   hybrid_rows
-  hybrid_rows2 
+  hybrid_rows2
   init_floorplan1
   init_floorplan2
   init_floorplan3
@@ -24,6 +24,9 @@ record_tests {
   tiecells
   upf_test
   upf_shifter_test
+  init_floorplan_even_rows
+  init_floorplan_odd_rows
+  init_floorplan_flip_sites
   #ifp_man_tcl_check
   #ifp_readme_msgs_check
 }

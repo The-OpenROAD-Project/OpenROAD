@@ -365,6 +365,10 @@ void dbBTerm::setSigType(dbSigType type)
     block->_journal->updateField(
         this, _dbBTerm::FLAGS, prev_flags, flagsToUInt(bterm));
   }
+
+  for (auto callback : block->_callbacks) {
+    callback->inDbBTermSetSigType(this, type);
+  }
 }
 
 dbSigType dbBTerm::getSigType()
@@ -495,6 +499,10 @@ void dbBTerm::connect(dbNet* net_)
                             net->_name);
   }
 
+  if (bterm->_net) {
+    disconnect();
+  }
+
   if (block->_journal) {
     debugPrint(block->getImpl()->getLogger(),
                utl::ODB,
@@ -510,9 +518,6 @@ void dbBTerm::connect(dbNet* net_)
     block->_journal->endAction();
   }
 
-  if (bterm->_net) {
-    bterm->disconnectNet(bterm, block);
-  }
   bterm->connectNet(net, block);
 }
 
@@ -541,6 +546,7 @@ void dbBTerm::disconnect()
       block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
       block->_journal->pushParam(dbBTermObj);
       block->_journal->pushParam(bterm->getId());
+      block->_journal->pushParam(net->getOID());
       block->_journal->endAction();
     }
 

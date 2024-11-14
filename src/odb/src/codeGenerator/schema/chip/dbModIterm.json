@@ -1,6 +1,7 @@
 {
     "name":"dbModITerm",
     "type":"dbObject",
+    "needs_non_default_destructor" : "true",        
     "fields":[
         {
             "name":"_name",
@@ -50,9 +51,16 @@
 	    "flags":["private"],
 	    "schema":"db_schema_update_hierarchy",	    	    	    	    	      	    
             "parent":"dbBlock"
+	},
+	{
+	    "name":"_prev_entry",
+            "type":"dbId<_dbModITerm>",
+	    "flags":["private"],
+	    "schema":"db_schema_hier_port_removal",	    	    	    	    	      	    
+            "parent":"dbBlock"
 	}
 	
     ],
     "constructors":[],
-    "cpp_includes":["dbBlock.h","dbModInst.h","dbModNet.h","dbHashTable.hpp","dbModBTerm.h"]
+    "cpp_includes":["dbBlock.h","dbModInst.h","dbModNet.h","dbHashTable.hpp","dbModBTerm.h", "dbJournal.h"]
 }

@@ -34,8 +34,11 @@ set(TEST_NAMES
     ndr
     gcd_abstract_lef
     gcd_abstract_lef_with_power
+    read_abstract_lef
     abstract_origin
     write_macro_placement
+    smash_vias
+    floorplan_initialize
 )
 
 foreach(TEST_NAME IN LISTS TEST_NAMES)

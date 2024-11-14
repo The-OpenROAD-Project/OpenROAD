@@ -116,7 +116,8 @@ void InitialPlace::placeInstsCenter()
 
   for (auto& inst : pbc_->placeInsts()) {
     if (!inst->isLocked()) {
-      auto group = inst->dbInst()->getGroup();
+      const auto db_inst = inst->dbInst();
+      const auto group = db_inst->getGroup();
       if (group && group->getType() == odb::dbGroupType::POWER_DOMAIN) {
         auto domain_region = group->getRegion();
         int domain_xMin = std::numeric_limits<int>::max();
@@ -131,6 +132,12 @@ void InitialPlace::placeInstsCenter()
         }
         inst->setCenterLocation(domain_xMax - (domain_xMax - domain_xMin) / 2,
                                 domain_yMax - (domain_yMax - domain_yMin) / 2);
+      } else if (ipVars_.maxIter == 0 && db_inst->isPlaced()) {
+        // It is helpful to pick up the placement from mpl2 if available,
+        // particularly when you are going to skip initial placement
+        // (eg skip_io).
+        const auto bbox = db_inst->getBBox()->getBox();
+        inst->setCenterLocation(bbox.xCenter(), bbox.yCenter());
       } else {
         inst->setCenterLocation(centerX, centerY);
       }

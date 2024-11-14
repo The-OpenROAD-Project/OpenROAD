@@ -271,7 +271,7 @@ int dbTechLayerEolKeepOutRule::getWithinHigh() const
   return obj->within_high_;
 }
 
-void dbTechLayerEolKeepOutRule::setClassName(std::string class_name)
+void dbTechLayerEolKeepOutRule::setClassName(const std::string& class_name)
 {
   _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
 

@@ -112,7 +112,7 @@ bool lefTechLayerCutEnclosureRuleParser::parseSubRule(std::string s,
          >> -lit("EOLONLY")[boost::bind(
              &odb::dbTechLayerCutEnclosureRule::setEolOnly, rule, true)]
          >> -lit("SHORTEDGEONEOL")[boost::bind(
-             &odb::dbTechLayerCutEnclosureRule::setShortEdgeOnly, rule, true)]
+             &odb::dbTechLayerCutEnclosureRule::setShortEdgeOnEol, rule, true)]
          >> double_[boost::bind(
              &lefTechLayerCutEnclosureRuleParser::setInt,
              this,

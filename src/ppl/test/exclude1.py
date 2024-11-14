@@ -5,13 +5,18 @@ import ppl_aux
 
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("gcd.def")
 
 
-ppl_aux.place_pins(design, hor_layers="metal3", ver_layers="metal2",
-                   corner_avoidance=0, min_distance=0.12,
-                   exclude=["top:*", "bottom:*"])
+ppl_aux.place_pins(
+    design,
+    hor_layers="metal3",
+    ver_layers="metal2",
+    corner_avoidance=0,
+    min_distance=0.12,
+    exclude=["top:*", "bottom:*"],
+)
 
 def_file = helpers.make_result_file("exclude1.def")
 design.writeDef(def_file)

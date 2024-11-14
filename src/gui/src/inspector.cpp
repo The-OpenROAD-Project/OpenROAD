@@ -34,6 +34,7 @@
 
 #include <QApplication>
 #include <QComboBox>
+#include <QDebug>
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QPushButton>
@@ -628,10 +629,8 @@ Inspector::Inspector(const SelectionSet& selected,
       selected_(selected),
       selected_itr_(selected.begin()),
       button_frame_(new QFrame(this)),
-      button_next_(
-          new QPushButton("Next \u2192", this)),  // \u2192 = right arrow
-      button_prev_(
-          new QPushButton("\u2190 Previous", this)),  // \u2190 = left arrow
+      button_next_(new QPushButton("Next →", this)),
+      button_prev_(new QPushButton("← Previous", this)),
       selected_itr_label_(new QLabel(this)),
       commands_menu_(new QMenu("Commands Menu", this)),
       highlighted_(highlighted)
@@ -710,8 +709,12 @@ void Inspector::setCommandsMenu()
 void Inspector::showCommandsMenu(const QPoint& pos)
 {
   clicked_index_ = view_->indexAt(pos);
-
   QStandardItem* item = model_->itemFromIndex(clicked_index_);
+
+  if (!item) {
+    return;
+  }
+
   Selected selected
       = item->data(EditorItemDelegate::selected_).value<Selected>();
 
@@ -798,6 +801,8 @@ int Inspector::getSelectedIteratorPosition()
 
 void Inspector::inspect(const Selected& object)
 {
+  QApplication::setOverrideCursor(Qt::WaitCursor);
+
   if (deselect_action_) {
     deselect_action_();
   }
@@ -808,6 +813,12 @@ void Inspector::inspect(const Selected& object)
     navigation_history_.clear();
   }
 
+  if (object) {
+    qDebug() << "Inspector change selection to"
+             << QString::fromStdString(object.getName());
+  } else {
+    qDebug() << "Inspector change selection to nothing";
+  }
   selection_ = object;
   emit selection(object);
 
@@ -828,6 +839,8 @@ void Inspector::inspect(const Selected& object)
   }
 
   adjustHeaders();
+
+  QApplication::restoreOverrideCursor();
 }
 
 void Inspector::reload()
@@ -902,7 +915,7 @@ void Inspector::makeAction(const Descriptor::Action& action)
       {"De-focus", ":/defocus.png"},
       {"Navigate back", ":/undo.png"}};
   std::vector<std::pair<std::string, QString>> symbol_replacements{
-      {"Fanin Cone", "\u25B7"}, {"Fanout Cone", "\u25C1"}};
+      {"Fanin Cone", "▷"}, {"Fanout Cone", "◁"}};
 
   const std::string& name = action.name;
 
@@ -942,6 +955,16 @@ void Inspector::clicked(const QModelIndex& index)
   // timer to be able to tell the difference
   if (!mouse_timer_.isActive()) {
     clicked_index_ = index;
+
+    // Bypass the timer for those items for which there's
+    // no double click handling
+    QStandardItem* item = model_->itemFromIndex(index);
+    QVariant edit_data = item->data(EditorItemDelegate::editor_);
+    if (!edit_data.isValid()) {
+      indexClicked();
+      return;
+    }
+
     mouse_timer_.start();
   }
 }
@@ -1125,7 +1148,8 @@ void Inspector::navigateBack()
     }
   }
 
-  emit inspect(next);
+  qDebug() << "Navigate to" << QString::fromStdString(next.getName());
+  emit selected(next);
 }
 
 ////////////

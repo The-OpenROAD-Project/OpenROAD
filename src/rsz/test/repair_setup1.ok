@@ -43,9 +43,8 @@ Path Type: max
 
 [INFO RSZ-0094] Found 4 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 4 out of 4 (100.00%) violating endpoints...
-[INFO RSZ-0040] Inserted 3 buffers.
-[INFO RSZ-0041] Resized 18 instances.
-[WARNING RSZ-0062] Unable to repair all setup violations.
+[INFO RSZ-0059] Removed 4 buffers.
+[INFO RSZ-0041] Resized 1 instances.
 Repair timing output passed/skipped equivalence test
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -57,30 +56,22 @@ Path Type: max
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X2)
-   0.123    0.123 ^ r1/Q (DFF_X2)
-   0.004    0.126 ^ u1/A (BUF_X4)
-   0.027    0.154 ^ u1/Z (BUF_X4)
-   0.004    0.157 ^ u2/A (BUF_X8)
-   0.021    0.179 ^ u2/Z (BUF_X8)
-   0.004    0.182 ^ u3/A (BUF_X8)
-   0.020    0.202 ^ u3/Z (BUF_X8)
-   0.004    0.206 ^ u4/A (BUF_X8)
-   0.021    0.227 ^ u4/Z (BUF_X8)
-   0.005    0.232 ^ u5/A (BUF_X16)
-   0.022    0.254 ^ u5/Z (BUF_X16)
-   0.038    0.292 ^ r2/D (DFF_X1)
-            0.292   data arrival time
+   0.146    0.146 ^ r1/Q (DFF_X2)
+   0.028    0.174 ^ u1/A (BUF_X1)
+   0.067    0.241 ^ u1/Z (BUF_X1)
+   0.007    0.247 ^ r2/D (DFF_X1)
+            0.247   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
    0.000    0.300   clock reconvergence pessimism
             0.300 ^ r2/CK (DFF_X1)
-  -0.042    0.258   library setup time
-            0.258   data required time
+  -0.040    0.260   library setup time
+            0.260   data required time
 -----------------------------------------------------------
-            0.258   data required time
-           -0.292   data arrival time
+            0.260   data required time
+           -0.247   data arrival time
 -----------------------------------------------------------
-           -0.033   slack (VIOLATED)
+            0.013   slack (MET)
 
 

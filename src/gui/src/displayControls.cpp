@@ -264,6 +264,7 @@ DisplayControls::DisplayControls(QWidget* parent)
     : QDockWidget("Display Control", parent),
       view_(new QTreeView(this)),
       model_(new DisplayControlModel(user_data_item_idx_, this)),
+      routing_layers_menu_(new QMenu(this)),
       layers_menu_(new QMenu(this)),
       layers_menu_layer_(nullptr),
       ignore_callback_(false),
@@ -295,6 +296,13 @@ DisplayControls::DisplayControls(QWidget* parent)
   auto layers
       = makeParentItem(layers_group_, "Layers", root, Qt::Checked, true);
   view_->expand(layers->index());
+  auto implant_layer
+      = makeParentItem(layers_.implant, "Implant", layers, Qt::Checked, true);
+  auto other_layer
+      = makeParentItem(layers_.other, "Other", layers, Qt::Unchecked, true);
+  // hide initially
+  view_->setRowHidden(implant_layer->row(), layers->index(), true);
+  view_->setRowHidden(other_layer->row(), layers->index(), true);
 
   // Nets group
   auto nets_parent
@@ -556,10 +564,14 @@ void DisplayControls::createLayerMenu()
           &QAction::triggered,
           [this]() { layerShowOnlySelectedNeighbors(0, 0); });
 
+  connect(routing_layers_menu_->addAction("Show only selected"),
+          &QAction::triggered,
+          [this]() { layerShowOnlySelectedNeighbors(0, 0); });
+
   const QString show_range = "Show layer range ";
-  const QString updown_arrow = "\u2195";
-  const QString down_arrow = "\u2193";
-  const QString up_arrow = "\u2191";
+  const QString updown_arrow = "↕";
+  const QString down_arrow = "↓";
+  const QString up_arrow = "↑";
   auto add_range_action = [&](int up, int down) {
     QString arrows;
     for (int n = 1; n < down; n++) {
@@ -576,7 +588,7 @@ void DisplayControls::createLayerMenu()
       arrows += down_arrow;
     }
 
-    connect(layers_menu_->addAction(show_range + arrows),
+    connect(routing_layers_menu_->addAction(show_range + arrows),
             &QAction::triggered,
             [this, up, down]() { layerShowOnlySelectedNeighbors(down, up); });
   };
@@ -860,6 +872,9 @@ void DisplayControls::toggleParent(const QStandardItem* parent,
   bool all_checked = true;
 
   for (int row = 0; row < parent->rowCount(); ++row) {
+    if (view_->isRowHidden(row, parent->index())) {
+      continue;
+    }
     auto child = parent->child(row, column);
     if (child) {
       bool checked = child->checkState() == Qt::Checked;
@@ -1205,18 +1220,44 @@ void DisplayControls::addTech(odb::dbTech* tech)
   libInit(tech->getDb());
 
   for (dbTechLayer* layer : tech->getLayers()) {
-    dbTechLayerType type = layer->getType();
-    if (type == dbTechLayerType::ROUTING || type == dbTechLayerType::CUT
-        || type == dbTechLayerType::IMPLANT) {
-      auto& row = layer_controls_[layer];
-      makeLeafItem(row,
-                   QString::fromStdString(layer->getName()),
-                   layers_group_.name,
-                   Qt::Checked,
-                   true,
-                   color(layer),
-                   QVariant::fromValue(layer));
+    auto& row = layer_controls_[layer];
+    QStandardItem* parent;
+    Qt::CheckState checked;
+    switch (layer->getType()) {
+      case dbTechLayerType::ROUTING:
+      case dbTechLayerType::CUT:
+        parent = layers_group_.name;
+        checked = Qt::Checked;
+        break;
+      case dbTechLayerType::IMPLANT:
+        parent = layers_.implant.name;
+        checked = Qt::Checked;
+        break;
+      default:
+        parent = layers_.other.name;
+        checked = Qt::Unchecked;
+        break;
     }
+    makeLeafItem(row,
+                 QString::fromStdString(layer->getName()),
+                 parent,
+                 checked,
+                 true,
+                 color(layer),
+                 QVariant::fromValue(layer));
+  }
+
+  if (layers_.implant.name->hasChildren()) {
+    view_->setRowHidden(layers_.implant.name->row(),
+                        layers_group_.name->index(),
+                        !layers_.implant.name->hasChildren());
+    toggleParent(layers_.implant);
+  }
+  if (layers_.other.name->hasChildren()) {
+    view_->setRowHidden(layers_.other.name->row(),
+                        layers_group_.name->index(),
+                        !layers_.other.name->hasChildren());
+    toggleParent(layers_.other);
   }
 
   toggleParent(layers_group_);
@@ -1494,11 +1535,14 @@ const DisplayControls::ModelRow* DisplayControls::getInstRow(
       return &physical_instances_.other;
     case sta::dbSta::InstType::STD_CELL:
       return &instances_.stdcells;
-    case sta::dbSta::InstType::STD_BUFINV:
+    case sta::dbSta::InstType::STD_INV: /* fallthru */
+    case sta::dbSta::InstType::STD_BUF:
       return &bufinv_instances_.other;
-    case sta::dbSta::InstType::STD_BUFINV_CLK_TREE:
+    case sta::dbSta::InstType::STD_BUF_CLK_TREE: /* fallthru */
+    case sta::dbSta::InstType::STD_INV_CLK_TREE:
       return &clock_tree_instances_.bufinv;
-    case sta::dbSta::InstType::STD_BUFINV_TIMING_REPAIR:
+    case sta::dbSta::InstType::STD_BUF_TIMING_REPAIR: /* fallthru */
+    case sta::dbSta::InstType::STD_INV_TIMING_REPAIR:
       return &bufinv_instances_.timing;
     case sta::dbSta::InstType::STD_CLOCK_GATE:
       return &clock_tree_instances_.clock_gates;
@@ -1873,7 +1917,7 @@ void DisplayControls::techInit(odb::dbTech* tech)
                            QColor(254, 0, 0),
                            QColor(9, 221, 0),
                            QColor(190, 244, 81),
-                           QColor(159, 24, 69),
+                           QColor(222, 33, 96),  // Metal 5
                            QColor(32, 216, 253),
                            QColor(253, 108, 160),
                            QColor(117, 63, 194),
@@ -1919,14 +1963,12 @@ void DisplayControls::techInit(odb::dbTech* tech)
                        50 + gen_color() % 200,
                        50 + gen_color() % 200);
       }
-    } else if (type == dbTechLayerType::IMPLANT) {
+    } else {
       // Do not draw from the existing palette so the metal layers can claim
       // those colors.
       color = QColor(50 + gen_color() % 200,
                      50 + gen_color() % 200,
                      50 + gen_color() % 200);
-    } else {
-      continue;
     }
     color.setAlpha(180);
     layer_color_[layer] = std::move(color);
@@ -2009,18 +2051,22 @@ void DisplayControls::itemContextMenu(const QPoint& point)
     return;
   }
 
-  auto* parent_item = model_->itemFromIndex(parent);
-  if (parent_item != layers_group_.name) {
-    // not a member of the layers
-    return;
-  }
-
   const QModelIndex name_index = model_->index(index.row(), Name, parent);
   auto* name_item = model_->itemFromIndex(name_index);
   layers_menu_layer_
       = name_item->data(user_data_item_idx_).value<dbTechLayer*>();
 
-  layers_menu_->popup(view_->viewport()->mapToGlobal(point));
+  if (layers_menu_layer_ != nullptr) {
+    switch (layers_menu_layer_->getType()) {
+      case dbTechLayerType::CUT:
+      case dbTechLayerType::ROUTING:
+        routing_layers_menu_->popup(view_->viewport()->mapToGlobal(point));
+        break;
+      default:
+        layers_menu_->popup(view_->viewport()->mapToGlobal(point));
+        break;
+    }
+  }
 }
 
 void DisplayControls::layerShowOnlySelectedNeighbors(int lower, int upper)
