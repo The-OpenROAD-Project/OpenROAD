@@ -499,6 +499,9 @@ bool dbModInst::swapMaster(dbModule* new_module)
       // iterm may be connected to another hierarchical instance, so save it
       // before disconnecting
       dbModNet* other_mod_net = old_iterm->getModNet();
+      if (other_mod_net == old_mod_net) {
+        other_mod_net = nullptr;
+      }
       old_iterm->disconnect();
       debugPrint(logger,
                  utl::ODB,
