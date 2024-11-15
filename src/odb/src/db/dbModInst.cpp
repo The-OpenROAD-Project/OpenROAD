@@ -496,27 +496,39 @@ bool dbModInst::swapMaster(dbModule* new_module)
     for (it_iter = old_iterms.begin(); it_iter != old_iterms.end(); ++it_iter) {
       dbITerm* old_iterm = *it_iter;
       dbNet* flat_net = old_iterm->getNet();
+      // iterm may be connected to another hierarchical instance, so save it
+      // before disconnecting
+      dbModNet* other_mod_net = old_iterm->getModNet();
       old_iterm->disconnect();
       debugPrint(logger,
                  utl::ODB,
                  "replace_design",
                  1,
-                 "  disconnected old iterm {} from flat net {} for mod net {}",
+                 "  disconnected old iterm {} from flat net {} + other mod net "
+                 "{} for mod net {}",
                  old_iterm->getName(),
-                 flat_net->getName(),
+                 (flat_net ? flat_net->getName() : "none"),
+                 (other_mod_net ? other_mod_net->getName() : "none"),
                  old_mod_net->getName());
       dbSet<dbITerm>::iterator new_it_iter;
       for (new_it_iter = new_iterms.begin(); new_it_iter != new_iterms.end();
            ++new_it_iter) {
         dbITerm* new_iterm = *new_it_iter;
-        new_iterm->connect(flat_net);
+        if (flat_net) {
+          new_iterm->connect(flat_net);
+        }
+        if (other_mod_net) {
+          new_iterm->connect(other_mod_net);
+        }
         debugPrint(logger,
                    utl::ODB,
                    "replace_design",
                    1,
-                   "  connected new iterm {} to flat net {} for mod net {}",
+                   "  connected new iterm {} to flat net {} + other mod net {} "
+                   "for mod net {}",
                    new_iterm->getName(),
-                   flat_net->getName(),
+                   (flat_net ? flat_net->getName() : "none"),
+                   (other_mod_net ? other_mod_net->getName() : "none"),
                    old_mod_net->getName());
       }
     }
