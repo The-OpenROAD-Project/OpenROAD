@@ -125,7 +125,6 @@ proc replace_design { instance module } {
 }
 
 proc get_design_error { arg } {
-  set design "NULL"
   if { [llength $arg] > 1 } {
     sta_error 200 "module must be a single module."
   }

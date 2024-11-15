@@ -543,6 +543,10 @@ dbBlock* dbModule::getOwner()
   return (dbBlock*) obj->getOwner();
 }
 
+// Create a "deep" and unique copy of old_module based on
+// its instance context.   All ports, instances, mod nets and
+// parent/child IO will be copied.  Connections that span
+// multiple modules needs to be done outside this API.
 dbModule* dbModule::copy(dbModule* old_module, dbModInst* new_mod_inst)
 {
   dbBlock* block = old_module->getOwner();
@@ -568,23 +572,46 @@ dbModule* dbModule::copy(dbModule* old_module, dbModInst* new_mod_inst)
         utl::ODB, 455, "Unique module {} cannot be created", new_cell_name);
   }
 
-  // copy module ports
+  // Copy module ports including bus members
+  modBTMap mod_bt_map;  // map old mbterm to new mbterm
+  copyModulePorts(old_module, new_module, mod_bt_map);
+
+  // Copy module instances and create iterm map
+  ITMap it_map;  // map old iterm to new iterm
+  copyModuleInsts(old_module, new_module, new_mod_inst, it_map);
+
+  // TODO: handle hierarchical child instances
+
+  // Copy mod nets and connect ports and iterms
+  copyModuleModNets(old_module, new_module, mod_bt_map, it_map);
+
+  // Establish boundary IO between parent and child
+  copyModuleBoundaryIO(old_module, new_module, new_mod_inst);
+
+  return new_module;
+}
+
+void dbModule::copyModulePorts(dbModule* old_module,
+                               dbModule* new_module,
+                               modBTMap& mod_bt_map)
+{
+  utl::Logger* logger = old_module->getImpl()->getLogger();
   dbSet<dbModBTerm> old_ports = old_module->getModBTerms();
   dbSet<dbModBTerm>::iterator port_iter;
-  std::map<dbModBTerm*, dbModBTerm*> modBT_map;
   for (port_iter = old_ports.begin(); port_iter != old_ports.end();
        ++port_iter) {
     dbModBTerm* old_port = *port_iter;
     dbModBTerm* new_port = dbModBTerm::create(new_module, old_port->getName());
-    modBT_map[old_port] = new_port;
+    mod_bt_map[old_port] = new_port;
     new_port->setIoType(old_port->getIoType());
     if (new_port) {
       debugPrint(logger,
                  utl::ODB,
                  "replace_design",
                  1,
-                 "Created module port {}",
-                 new_port->getName());
+                 "Created module port {} for old port {}",
+                 new_port->getName(),
+                 old_port->getName());
     } else {
       logger->error(utl::ODB,
                     456,
@@ -624,7 +651,7 @@ dbModule* dbModule::copy(dbModule* old_module, dbModInst* new_mod_inst)
         dbModBTerm* old_bus_bit = old_bus_port->getBusIndexedElement(i);
         dbModBTerm* new_bus_bit
             = dbModBTerm::create(new_module, bus_bit_name.c_str());
-        modBT_map[old_bus_bit] = new_bus_bit;
+        mod_bt_map[old_bus_bit] = new_bus_bit;
         if (new_bus_bit) {
           debugPrint(logger,
                      utl::ODB,
@@ -650,21 +677,33 @@ dbModule* dbModule::copy(dbModule* old_module, dbModInst* new_mod_inst)
   }
   new_module->getModBTerms().reverse();
 
-  // TODO: handle hierarchical child instances
+  debugPrint(logger,
+             utl::ODB,
+             "replace_design",
+             1,
+             "copyModulePorts: modBTMap has {} ports",
+             mod_bt_map.size());
+}
 
+void dbModule::copyModuleInsts(dbModule* old_module,
+                               dbModule* new_module,
+                               dbModInst* new_mod_inst,
+                               ITMap& it_map)
+{
+  utl::Logger* logger = old_module->getImpl()->getLogger();
   // Add insts to new module
   dbSet<dbInst> old_insts = old_module->getInsts();
   dbSet<dbInst>::iterator inst_iter;
-  std::map<dbITerm*, dbITerm*> IT_map;
   for (inst_iter = old_insts.begin(); inst_iter != old_insts.end();
        ++inst_iter) {
     dbInst* old_inst = *inst_iter;
+    // Change unique instance name from old_inst/leaf to new_inst/leaf
     std::string old_inst_name = old_inst->getName();
     size_t first_idx = old_inst_name.find_first_of('/');
     assert(first_idx != std::string::npos);
-    std::string old_relative_name = old_inst_name.substr(first_idx);
-    std::string new_inst_name = new_mod_inst->getName() + old_relative_name;
-    dbInst* new_inst = dbInst::create(block,
+    std::string old_leaf_name = old_inst_name.substr(first_idx);
+    std::string new_inst_name = new_mod_inst->getName() + old_leaf_name;
+    dbInst* new_inst = dbInst::create(old_module->getOwner(),
                                       old_inst->getMaster(),
                                       new_inst_name.c_str(),
                                       /* phyical only */ false,
@@ -693,7 +732,7 @@ dbModule* dbModule::copy(dbModule* old_module, dbModInst* new_mod_inst)
          ++iter1, ++iter2) {
       dbITerm* old_iterm = *iter1;
       dbITerm* new_iterm = *iter2;
-      IT_map[old_iterm] = new_iterm;
+      it_map[old_iterm] = new_iterm;
       debugPrint(logger,
                  utl::ODB,
                  "replace_design",
@@ -709,7 +748,8 @@ dbModule* dbModule::copy(dbModule* old_module, dbModInst* new_mod_inst)
         if (first_idx != std::string::npos) {
           std::string new_net_name
               = new_mod_inst->getName() + net_name.substr(first_idx);
-          dbNet* new_net = block->findNet(new_net_name.c_str());
+          dbNet* new_net
+              = old_module->getOwner()->findNet(new_net_name.c_str());
           if (new_net) {
             new_iterm->connect(new_net);
             debugPrint(logger,
@@ -720,7 +760,8 @@ dbModule* dbModule::copy(dbModule* old_module, dbModInst* new_mod_inst)
                        new_iterm->getName(),
                        new_net->getName());
           } else {
-            new_net = dbNet::create(block, new_net_name.c_str());
+            new_net
+                = dbNet::create(old_module->getOwner(), new_net_name.c_str());
             new_iterm->connect(new_net);
             debugPrint(logger,
                        utl::ODB,
@@ -739,7 +780,21 @@ dbModule* dbModule::copy(dbModule* old_module, dbModInst* new_mod_inst)
       && new_module->getInsts().orderReversed()) {
     new_module->getInsts().reverse();
   }
+}
 
+void dbModule::copyModuleModNets(dbModule* old_module,
+                                 dbModule* new_module,
+                                 modBTMap& mod_bt_map,
+                                 ITMap& it_map)
+{
+  utl::Logger* logger = old_module->getImpl()->getLogger();
+  debugPrint(logger,
+             utl::ODB,
+             "replace_design",
+             1,
+             "copyModuleModNets: modBT_map has {} ports, it_map has {} iterms",
+             mod_bt_map.size(),
+             it_map.size());
   // Make boundary port connections.
   dbSet<dbModNet> old_nets = old_module->getModNets();
   dbSet<dbModNet>::iterator net_iter;
@@ -765,7 +820,7 @@ dbModule* dbModule::copy(dbModule* old_module, dbModInst* new_mod_inst)
     dbSet<dbModBTerm>::iterator mb_iter;
     for (mb_iter = mbterms.begin(); mb_iter != mbterms.end(); ++mb_iter) {
       dbModBTerm* old_mbterm = *mb_iter;
-      dbModBTerm* new_mbterm = modBT_map[old_mbterm];
+      dbModBTerm* new_mbterm = mod_bt_map[old_mbterm];
       if (new_mbterm) {
         new_mbterm->connect(new_net);
         debugPrint(logger,
@@ -790,7 +845,7 @@ dbModule* dbModule::copy(dbModule* old_module, dbModInst* new_mod_inst)
     dbSet<dbITerm>::iterator it_iter;
     for (it_iter = iterms.begin(); it_iter != iterms.end(); ++it_iter) {
       dbITerm* old_iterm = *it_iter;
-      dbITerm* new_iterm = IT_map[old_iterm];
+      dbITerm* new_iterm = it_map[old_iterm];
       if (new_iterm) {
         new_iterm->connect(new_net);
         debugPrint(logger,
@@ -810,7 +865,13 @@ dbModule* dbModule::copy(dbModule* old_module, dbModInst* new_mod_inst)
       }
     }
   }
+}
 
+void dbModule::copyModuleBoundaryIO(dbModule* old_module,
+                                    dbModule* new_module,
+                                    dbModInst* new_mod_inst)
+{
+  utl::Logger* logger = old_module->getImpl()->getLogger();
   // Establish "parent/child" port connections
   // dbModBTerm is the port seen from inside the dbModule ("child")
   // dbModITerm is the port seen from outside from the dbModInst ("parent")
@@ -846,8 +907,6 @@ dbModule* dbModule::copy(dbModule* old_module, dbModInst* new_mod_inst)
                     old_mod_iterm->getName());
     }
   }
-
-  return new_module;
 }
 
 // User Code End dbModulePublicMethods

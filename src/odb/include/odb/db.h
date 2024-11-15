@@ -8217,7 +8217,23 @@ class dbModule : public dbObject
 
   static dbModule* getModule(dbBlock* block_, uint dbid_);
 
+  // Copy and uniquify a given module based on current instance
   static dbModule* copy(dbModule* module, dbModInst* new_mod_inst);
+  static void copyModulePorts(dbModule* old_module,
+                              dbModule* new_module,
+                              modBTMap& mod_bt_map);
+  static void copyModuleInsts(dbModule* old_module,
+                              dbModule* new_module,
+                              dbModInst* new_mod_inst,
+                              ITMap& it_map);
+  static void copyModuleModNets(dbModule* old_module,
+                                dbModule* new_module,
+                                modBTMap& mod_bt_map,
+                                ITMap& it_map);
+  static void copyModuleBoundaryIO(dbModule* old_module,
+                                   dbModule* new_module,
+                                   dbModInst* new_mod_inst);
+
   // User Code End dbModule
 };
 
