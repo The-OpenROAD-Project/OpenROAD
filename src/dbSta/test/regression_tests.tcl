@@ -35,6 +35,7 @@ record_tests {
 
   report_cell_usage
   report_cell_usage_modinsts
+  report_cell_usage_modinsts_metrics
 
   write_verilog1
   write_verilog2
