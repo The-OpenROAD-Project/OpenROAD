@@ -398,7 +398,7 @@ std::unordered_map<abc::Abc_Obj_t*, sta::Net*> CreateNets(
     std::string net_name = abc::Abc_ObjName(net_obj);
     sta::Net* net = network->findNet(net_name.c_str());
     if (!net) {
-      logger->error(utl::RMP, 1023, "Cannot find primary net {}", net_name);
+      logger->error(utl::RMP, 1024, "Cannot find primary net {}", net_name);
     }
     result[net_obj] = net;
   }
