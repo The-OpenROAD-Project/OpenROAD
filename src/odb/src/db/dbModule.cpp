@@ -543,35 +543,41 @@ dbBlock* dbModule::getOwner()
   return (dbBlock*) obj->getOwner();
 }
 
-// Create a "deep" and unique copy of old_module based on
-// its instance context.   All ports, instances, mod nets and
-// parent/child IO will be copied.  Connections that span
-// multiple modules needs to be done outside this API.
-dbModule* dbModule::copy(dbModule* old_module, dbModInst* new_mod_inst)
+// Make a unique copy of module based on cell_name and inst_name
+dbModule* dbModule::makeUniqueDbModule(const char* cell_name,
+                                       const char* inst_name,
+                                       dbBlock* block)
+
 {
-  dbBlock* block = old_module->getOwner();
-  // Uniquify new module name as "module_name.inst_name"
-  std::string orig_cell_name(old_module->getName());
-  size_t dot_index = orig_cell_name.find_first_of('.');
-  if (dot_index != std::string::npos) {
-    orig_cell_name = orig_cell_name.substr(0, dot_index);
-  }
-  std::string new_cell_name
-      = orig_cell_name + '.' + std::string(new_mod_inst->getName());
-  dbModule* new_module = create(block, new_cell_name.c_str());
-  utl::Logger* logger = old_module->getImpl()->getLogger();
-  if (new_module) {
-    debugPrint(logger,
-               utl::ODB,
-               "replace_design",
-               1,
-               "Created uniquified module {}",
-               new_module->getName());
-  } else {
-    logger->error(
-        utl::ODB, 455, "Unique module {} cannot be created", new_cell_name);
+  static std::map<std::string, int> name_id_map;
+  dbModule* module = dbModule::create(block, cell_name);
+  if (module != nullptr) {
+    return module;
   }
 
+  std::string orig_cell_name(cell_name);
+  std::string module_name = orig_cell_name + '_' + std::string(inst_name);
+  do {
+    std::string full_name = module_name;
+    int& id = name_id_map[module_name];
+    if (id > 0) {
+      full_name += "_" + std::to_string(id);
+    }
+    ++id;
+    module = dbModule::create(block, full_name.c_str());
+  } while (module == nullptr);
+  return module;
+}
+
+// Do a "deep" copy of old_module based on its instance context into new_module.
+// All ports, instances, mod nets and parent/child IO will be copied.
+// Connections that span multiple modules needs to be done outside this API.
+// new_mod_inst is needed to create module instances for instance name
+// uniquification.
+void dbModule::copy(dbModule* old_module,
+                    dbModule* new_module,
+                    dbModInst* new_mod_inst)
+{
   // Copy module ports including bus members
   modBTMap mod_bt_map;  // map old mbterm to new mbterm
   copyModulePorts(old_module, new_module, mod_bt_map);
@@ -587,8 +593,6 @@ dbModule* dbModule::copy(dbModule* old_module, dbModInst* new_mod_inst)
 
   // Establish boundary IO between parent and child
   copyModuleBoundaryIO(old_module, new_module, new_mod_inst);
-
-  return new_module;
 }
 
 void dbModule::copyModulePorts(dbModule* old_module,

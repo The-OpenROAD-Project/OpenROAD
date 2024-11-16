@@ -36,7 +36,7 @@ module hierclock (a_count_valid_o,
     a_count_o[1],
     a_count_o[0]}),
     .count_valid_o(a_count_valid_o));
- counter.U3 U3 (.clk_i(clk2_int),
+ counter_U3 U3 (.clk_i(clk2_int),
     .rst_n_i(rst_n_i),
     .load_i(b_ld_i),
     .load_value_i({b_i[3],
@@ -200,7 +200,7 @@ module counter (clk_i,
     .Q(counter_q[3]),
     .QN(\U2/_38_ ));
 endmodule
-module counter.U3 (clk_i,
+module counter_U3 (clk_i,
     rst_n_i,
     load_i,
     load_value_i,

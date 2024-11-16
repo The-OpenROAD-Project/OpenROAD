@@ -480,7 +480,23 @@ bool dbModInst::swapMaster(dbModule* new_module)
     return false;
   }
 
-  _dbModule* new_master = (_dbModule*) dbModule::copy(new_module, this);
+  dbModule* new_module_copy = dbModule::makeUniqueDbModule(
+      new_module->getName(), this->getName(), getMaster()->getOwner());
+  if (new_module_copy) {
+    debugPrint(logger,
+               utl::ODB,
+               "replace_design",
+               1,
+               "Created uniquified module {}",
+               new_module_copy->getName());
+  } else {
+    logger->error(utl::ODB,
+                  455,
+                  "Unique module {} cannot be created",
+                  new_module->getName());
+  }
+  dbModule::copy(new_module, new_module_copy, this);
+  _dbModule* new_master = (_dbModule*) new_module_copy;
 
   // Patch connections such that boundary nets connect to new module iterms
   // instead of old module iterms

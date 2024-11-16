@@ -8125,7 +8125,6 @@ class dbModInst : public dbObject
   /// Swap the module of this instance.
   /// Returns true if the operations succeeds.
   bool swapMaster(dbModule* module);
-
   // User Code End dbModInst
 };
 
@@ -8217,8 +8216,14 @@ class dbModule : public dbObject
 
   static dbModule* getModule(dbBlock* block_, uint dbid_);
 
+  static dbModule* makeUniqueDbModule(const char* cell_name,
+                                      const char* inst_name,
+                                      dbBlock* block);
+
   // Copy and uniquify a given module based on current instance
-  static dbModule* copy(dbModule* module, dbModInst* new_mod_inst);
+  static void copy(dbModule* module,
+                   dbModule* module_copy,
+                   dbModInst* new_mod_inst);
   static void copyModulePorts(dbModule* old_module,
                               dbModule* new_module,
                               modBTMap& mod_bt_map);

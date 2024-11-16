@@ -179,7 +179,6 @@ class Verilog2db
 
   bool hasTerminals(Net* net) const;
   dbMaster* getMaster(Cell* cell);
-  dbModule* makeUniqueDbModule(Cell* cell, Instance* inst);
   std::optional<LineInfo> parseLineInfo(const std::string& attribute);
 
   Network* network_;
@@ -187,7 +186,6 @@ class Verilog2db
   dbBlock* block_ = nullptr;
   Logger* logger_;
   std::map<Cell*, dbMaster*> master_map_;
-  std::map<std::string, int> uniquify_id_;  // key: module name
   // Map file names to a unique id to avoid having to store the full file name
   // for each instance
   std::map<std::string, int> src_file_id_;
@@ -293,28 +291,6 @@ void Verilog2db::recordBusPortsOrder()
   }
 }
 
-dbModule* Verilog2db::makeUniqueDbModule(Cell* cell, Instance* inst)
-{
-  std::string orig_cell_name(network_->name(cell));
-  dbModule* module = dbModule::create(block_, orig_cell_name.c_str());
-  if (module != nullptr) {
-    return module;
-  }
-
-  std::string module_name
-      = orig_cell_name + '.' + std::string(network_->name(inst));
-  do {
-    std::string full_name = module_name;
-    int& id = uniquify_id_[module_name];
-    if (id > 0) {
-      full_name += "_" + std::to_string(id);
-    }
-    ++id;
-    module = dbModule::create(block_, full_name.c_str());
-  } while (module == nullptr);
-  return module;
-}
-
 std::optional<Verilog2db::LineInfo> Verilog2db::parseLineInfo(
     const std::string& attribute)
 {
@@ -346,7 +322,8 @@ void Verilog2db::makeDbModule(
     module = block_->getTopModule();
   } else {
     // This uniquifies the cell
-    module = makeUniqueDbModule(cell, inst);
+    module = dbModule::makeUniqueDbModule(
+        network_->name(cell), network_->name(inst), block_);
 
     // Strip out the full hiearchical name. We are now
     // storing the module instances in the scope of their
