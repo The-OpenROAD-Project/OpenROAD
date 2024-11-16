@@ -468,8 +468,8 @@ void DeleteExistingLogicCut(sta::dbNetwork* network,
 void ConnectInstances(
     abc::Abc_Ntk_t* abc_network,
     sta::dbNetwork* network,
-    std::unordered_map<abc::Abc_Obj_t*, sta::Instance*> new_instances,
-    std::unordered_map<abc::Abc_Obj_t*, sta::Net*> new_nets,
+    const std::unordered_map<abc::Abc_Obj_t*, sta::Instance*>& new_instances,
+    const std::unordered_map<abc::Abc_Obj_t*, sta::Net*>& new_nets,
     utl::Logger* logger)
 {
   abc::Mio_Library_t* library

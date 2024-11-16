@@ -15,7 +15,7 @@ class UniqueName
  public:
   UniqueName() = default;
 
-  std::string GetUniqueName(std::string prefix = "rmp_")
+  std::string GetUniqueName(const std::string& prefix = "rmp_")
   {
     int64_t id = counter++;
     return prefix + std::to_string(id);
