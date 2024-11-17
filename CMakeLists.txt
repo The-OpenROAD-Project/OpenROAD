@@ -88,6 +88,7 @@ project(OpenROAD VERSION 1
 )
 
 set(OPENROAD_HOME ${PROJECT_SOURCE_DIR})
+set(OPENROAD_SHARE ${CMAKE_INSTALL_PREFIX}/share/openroad)
 
 # Default c++ standard used unless otherwise specified in target_compile_features.
 set(CMAKE_CXX_STANDARD 17 CACHE STRING "the C++ standard to use for this project")
