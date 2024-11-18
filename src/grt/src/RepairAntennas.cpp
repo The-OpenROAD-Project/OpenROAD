@@ -112,7 +112,7 @@ bool RepairAntennas::checkAntennaViolations(
     destroyNetWires(nets_to_repair);
   }
 
-  run_jumper_insertion_ = false;
+  has_new_violations_ = false;
   // remove nets with zero violations
   for (auto it = antenna_violations_.begin();
        it != antenna_violations_.end();) {
@@ -121,7 +121,7 @@ bool RepairAntennas::checkAntennaViolations(
     } else {
       // check if the net is new to repair
       if (last_nets.find(it->first->getConstName()) == last_nets.end()) {
-        run_jumper_insertion_ = true;
+        has_new_violations_ = true;
       }
       ++it;
     }
@@ -522,10 +522,8 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
         repair_failures = true;
     }
     if (inserted_diodes) {
-      // check if net has jumpers
-      if (db_net->hasJumpers()) {
-        db_net->setJumpers(false);
-      }
+      // Diode insertion deletes the jumpers in guides
+      db_net->setJumpers(false);
       grouter_->addDirtyNet(db_net);
     }
   }

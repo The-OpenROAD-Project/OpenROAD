@@ -212,7 +212,7 @@ class RepairAntennas
   void destroyNetWires(const std::vector<odb::dbNet*>& nets_to_repair);
   odb::dbMTerm* findDiodeMTerm();
   double diffArea(odb::dbMTerm* mterm);
-  bool runJumperInsertion() { return run_jumper_insertion_; }
+  bool hasNewViolations() { return has_new_violations_; }
 
  private:
   typedef int coord_type;
@@ -299,7 +299,7 @@ class RepairAntennas
   AntennaViolations antenna_violations_;
   int unique_diode_index_;
   int illegal_diode_placement_count_;
-  bool run_jumper_insertion_;
+  bool has_new_violations_;
   LayerIdToViaPosition vias_pos_;
   RoutingSource routing_source_;
 };

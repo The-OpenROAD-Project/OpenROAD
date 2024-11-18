@@ -411,7 +411,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                                           num_threads);
     // if run in GRT and it need run jumper insertion
     if (!haveDetailedRoutes(nets_to_repair)
-        && repair_antennas_->runJumperInsertion()) {
+        && repair_antennas_->hasNewViolations()) {
       // Run jumper insertion and clean
       repair_antennas_->jumperInsertion(
           routes_, grid_->getTileSize(), getMaxRoutingLayer());
