@@ -6,15 +6,12 @@
 
 #pragma once
 
-#include <atomic>
 #include <string>
 
 namespace rmp {
 class UniqueName
 {
  public:
-  UniqueName() = default;
-
   std::string GetUniqueName(const std::string& prefix = "rmp_")
   {
     int64_t id = counter++;
@@ -22,6 +19,6 @@ class UniqueName
   }
 
  private:
-  std::atomic<int64_t> counter{0};
+  int64_t counter = 0;
 };
 }  // namespace rmp

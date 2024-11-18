@@ -23,7 +23,6 @@ namespace rmp {
 class LogicCut
 {
  public:
-  LogicCut() = delete;
   LogicCut(std::vector<sta::Net*>& primary_inputs,
            std::vector<sta::Net*>& primary_outputs,
            std::unordered_set<sta::Instance*>& cut_instances)
