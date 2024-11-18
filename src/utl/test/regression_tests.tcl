@@ -3,6 +3,10 @@ record_tests {
     test_error
     test_suppress_message
     test_metrics
+    logger_redirection
+    logger_redirection_nonewline
+    tee
+    tee_fails
     #utl_man_tcl_check
     #utl_readme_msgs_check
     #test_error_exception

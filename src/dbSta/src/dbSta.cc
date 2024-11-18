@@ -88,7 +88,7 @@ using utl::STA;
 class dbStaReport : public sta::ReportTcl
 {
  public:
-  explicit dbStaReport(bool gui_is_on) : gui_is_on_(gui_is_on) {}
+  explicit dbStaReport() = default;
 
   void setLogger(Logger* logger);
   void warn(int id, const char* fmt, ...) override
@@ -121,15 +121,19 @@ class dbStaReport : public sta::ReportTcl
       __attribute__((format(printf, 3, 4)));
   size_t printString(const char* buffer, size_t length) override;
 
+  // Redirect output to filename until redirectFileEnd is called.
+  void redirectFileBegin(const char* filename) override;
+  // Redirect append output to filename until redirectFileEnd is called.
+  void redirectFileAppendBegin(const char* filename) override;
+  void redirectFileEnd() override;
+  // Redirect output to a string until redirectStringEnd is called.
+  void redirectStringBegin() override;
+  const char* redirectStringEnd() override;
+
  protected:
   void printLine(const char* line, size_t length) override;
 
   Logger* logger_ = nullptr;
-
- private:
-  // text buffer for tcl puts output when in GUI mode.
-  std::string tcl_buffer_;
-  bool gui_is_on_;
 };
 
 class dbStaCbk : public dbBlockCallBackObj
@@ -239,7 +243,7 @@ std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
 
 void dbSta::makeReport()
 {
-  db_report_ = new dbStaReport(/*gui_is_on=*/path_renderer_ != nullptr);
+  db_report_ = new dbStaReport();
   report_ = db_report_;
 }
 
@@ -532,17 +536,31 @@ void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
                     module->getName());
   }
   logger_->report(header_format, "Cell type report:", "Count", "Area");
+
+  const std::regex regexp(" |/|-");
+  std::string metrics_suffix;
+  if (block->getTopModule() != module) {
+    metrics_suffix = fmt::format("__in_module:{}", module->getName());
+  }
+
   for (auto [type, stats] : instances_types) {
-    std::string type_name = getInstanceTypeText(type);
+    const std::string type_name = getInstanceTypeText(type);
     logger_->report(
         format, type_name, stats.count, stats.area / area_to_microns);
     total_area += stats.area;
 
-    std::regex regexp(" |/|-");
-    logger_->metric("design__instance__count__class:"
-                        + toLowerCase(regex_replace(type_name, regexp, "_")),
+    const std::string type_class
+        = toLowerCase(regex_replace(type_name, regexp, "_"));
+    const std::string metric_suffix = type_class + metrics_suffix;
+
+    logger_->metric("design__instance__count__class:" + metric_suffix,
                     stats.count);
+    logger_->metric("design__instance__area__class:" + metric_suffix,
+                    stats.area / area_to_microns);
   }
+  logger_->metric("design__instance__count" + metrics_suffix, total_usage);
+  logger_->metric("design__instance__area" + metrics_suffix,
+                  total_area / area_to_microns);
   logger_->report(format, "Total", total_usage, total_area / area_to_microns);
 
   if (verbose) {
@@ -627,69 +645,13 @@ void dbStaReport::setLogger(Logger* logger)
 // Line return \n is implicit.
 void dbStaReport::printLine(const char* line, size_t length)
 {
-  if (redirect_to_string_) {
-    redirectStringPrint(line, length);
-    redirectStringPrint("\n", 1);
-    return;
-  }
-  if (redirect_stream_) {
-    fwrite(line, sizeof(char), length, redirect_stream_);
-    fwrite("\n", sizeof(char), 1, redirect_stream_);
-    return;
-  }
-
   logger_->report("{}", line);
 }
 
 // Only used by encapsulated Tcl channels, ie puts and command prompt.
 size_t dbStaReport::printString(const char* buffer, size_t length)
 {
-  if (redirect_to_string_) {
-    redirectStringPrint(buffer, length);
-    return length;
-  }
-  if (redirect_stream_) {
-    size_t ret = fwrite(buffer, sizeof(char), length, redirect_stream_);
-    return std::min(ret, length);
-  }
-
-  // prepend saved buffer
-  string buf = tcl_buffer_ + string(buffer);
-  tcl_buffer_.clear();  // clear buffer
-
-  if (buffer[length - 1] != '\n') {
-    // does not end with a newline, so might need to buffer the information
-
-    auto last_newline = buf.find_last_of('\n');
-    if (last_newline == string::npos) {
-      // no newlines found, so add entire buf to tcl_buffer_
-      tcl_buffer_ = buf;
-      buf.clear();
-    } else {
-      // save partial line to buffer
-      tcl_buffer_ = buf.substr(last_newline + 1);
-      buf = buf.substr(0, last_newline + 1);
-    }
-  }
-
-  if (!buf.empty()) {
-    // Trim trailing \r\n.
-    buf.erase(buf.find_last_not_of("\r\n") + 1);
-    logger_->report("{}", buf.c_str());
-  }
-
-  // if gui enabled, keep tcl_buffer_ until a newline appears
-  // otherwise proceed to print directly to console
-  if (!gui_is_on_) {
-    // puts without a trailing \n in the string.
-    // Tcl command prompts get here.
-    // puts "xyz" makes a separate call for the '\n '.
-    // This seems to be the only way to get the output.
-    // It will not be logged.
-    printConsole(tcl_buffer_.c_str(), tcl_buffer_.length());
-    tcl_buffer_.clear();
-  }
-
+  logger_->reportNoNewline(buffer);
   return length;
 }
 
@@ -780,6 +742,37 @@ void dbStaReport::critical(int id, const char* fmt, ...)
   // Don't give std::format a chance to interpret the message.
   logger_->critical(STA, id, "{}", buffer_);
   va_end(args);
+}
+
+void dbStaReport::redirectFileBegin(const char* filename)
+{
+  flush();
+  logger_->redirectFileBegin(filename);
+}
+
+void dbStaReport::redirectFileAppendBegin(const char* filename)
+{
+  flush();
+  logger_->redirectFileAppendBegin(filename);
+}
+
+void dbStaReport::redirectFileEnd()
+{
+  flush();
+  logger_->redirectFileEnd();
+}
+
+void dbStaReport::redirectStringBegin()
+{
+  flush();
+  logger_->redirectStringBegin();
+}
+
+const char* dbStaReport::redirectStringEnd()
+{
+  flush();
+  const std::string string = logger_->redirectStringEnd();
+  return stringPrintTmp("%s", string.c_str());
 }
 
 ////////////////////////////////////////////////////////////////

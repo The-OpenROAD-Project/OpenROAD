@@ -117,3 +117,16 @@ target_include_directories(gui
 )
 
 add_subdirectory(test)
+
+set(OPENROAD_SHARE_GUI_DIR ${OPENROAD_SHARE}/gui)
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  # configure desktop file
+  configure_file(
+    resources/openroad.desktop.cmake
+    resources/openroad.desktop
+  )
+
+  install(FILES resources/icon.png DESTINATION ${OPENROAD_SHARE_GUI_DIR})
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/resources/openroad.desktop DESTINATION ${CMAKE_INSTALL_PREFIX}/share/applications/)
+endif()
