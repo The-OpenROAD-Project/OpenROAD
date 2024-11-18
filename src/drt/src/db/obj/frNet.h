@@ -274,7 +274,8 @@ class frNet : public frBlockObject
   bool hasInitialRouting_{false};
   bool isFixed_{false};
 
-  // Flag to mark when a frNet has a jumper
+  // Flag to mark when a frNet has a jumper, which is a special route guide used
+  // to prevent antenna violations
   bool has_jumpers_{false};
   std::vector<frPinFig*> all_pinfigs_;
 };
