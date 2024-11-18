@@ -15,6 +15,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "sta/GraphClass.hh"
 #include "sta/NetworkClass.hh"
+#include "unique_name.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
@@ -22,7 +23,6 @@ namespace rmp {
 class LogicCut
 {
  public:
-  LogicCut() = default;
   LogicCut(std::vector<sta::Net*>& primary_inputs,
            std::vector<sta::Net*>& primary_outputs,
            std::unordered_set<sta::Instance*>& cut_instances)
@@ -56,6 +56,11 @@ class LogicCut
       AbcLibrary& abc_library,
       sta::dbNetwork* network,
       utl::Logger* logger);
+
+  void InsertMappedAbcNetwork(abc::Abc_Ntk_t* abc_network,
+                              sta::dbNetwork* network,
+                              UniqueName& unique_name,
+                              utl::Logger* logger);
 
  private:
   std::vector<sta::Net*> primary_inputs_;
