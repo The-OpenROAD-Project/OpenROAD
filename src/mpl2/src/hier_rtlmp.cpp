@@ -249,8 +249,19 @@ void HierRTLMP::run()
     resetSAParameters();
   }
 
+  std::unique_ptr<Mpl2Observer> save_graphics;
+  if (is_debug_only_final_result_) {
+    save_graphics = std::move(graphics_);
+  }
+
   runCoarseShaping();
   runHierarchicalMacroPlacement();
+
+  if (save_graphics) {
+    graphics_ = std::move(save_graphics);
+    graphics_->setMaxLevel(tree_->max_level);
+    graphics_->drawResult();
+  }
 
   Pusher pusher(logger_, tree_->root.get(), block_, boundary_to_io_blockage_);
   pusher.pushMacrosToCoreBoundaries();
@@ -313,11 +324,6 @@ void HierRTLMP::runHierarchicalMacroPlacement()
     runHierarchicalMacroPlacement(tree_->root.get());
   } else {
     runHierarchicalMacroPlacementWithoutBusPlanning(tree_->root.get());
-  }
-
-  if (graphics_) {
-    graphics_->setMaxLevel(tree_->max_level);
-    graphics_->drawResult();
   }
 }
 
@@ -4122,6 +4128,7 @@ void HierRTLMP::setDebugSkipSteps(bool skip_steps)
 void HierRTLMP::setDebugOnlyFinalResult(bool only_final_result)
 {
   graphics_->setOnlyFinalResult(only_final_result);
+  is_debug_only_final_result_ = only_final_result;
 }
 
 void HierRTLMP::setDebugTargetClusterId(const int target_cluster_id)

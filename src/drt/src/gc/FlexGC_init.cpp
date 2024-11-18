@@ -719,22 +719,22 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges(gcNet* net)
   }
 }
 namespace {
-bool isCornerOnPoly(const frCoord x,
-                    const frCoord y,
-                    const gtl::polygon_90_set_data<frCoord>& poly_set)
+bool isPolygonCorner(const frCoord x,
+                     const frCoord y,
+                     const gtl::polygon_90_set_data<frCoord>& poly_set)
 {
   std::vector<gtl::polygon_90_with_holes_data<frCoord>> polygons;
   poly_set.get(polygons);
   for (const auto& polygon : polygons) {
-    for (auto pt_itr = polygon.begin(); pt_itr != polygon.end(); ++pt_itr) {
-      if ((*pt_itr).x() == x && (*pt_itr).y() == y) {
+    for (const auto& pt : polygon) {
+      if (pt.x() == x && pt.y() == y) {
         return true;
       }
     }
     for (auto hole_itr = polygon.begin_holes(); hole_itr != polygon.end_holes();
          ++hole_itr) {
-      for (auto pt = (*hole_itr).begin(); pt != (*hole_itr).end(); ++pt) {
-        if ((*pt).x() == x && (*pt).y() == y) {
+      for (const auto& pt : (*hole_itr)) {
+        if (pt.x() == x && pt.y() == y) {
           return true;
         }
       }
@@ -818,9 +818,9 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
         }
 
       } else {
-        currCorner->setFixed(isCornerOnPoly(currCorner->x(),
-                                            currCorner->y(),
-                                            net->getPolygons(true)[layerNum]));
+        currCorner->setFixed(isPolygonCorner(currCorner->x(),
+                                             currCorner->y(),
+                                             net->getPolygons(true)[layerNum]));
       }
       // currCorner->setFixed(prevEdge->isFixed() && nextEdge->isFixed());
 
