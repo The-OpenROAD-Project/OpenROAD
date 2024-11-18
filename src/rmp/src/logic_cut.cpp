@@ -14,6 +14,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "map/mio/mio.h"
 #include "sta/Liberty.hh"
+#include "unique_name.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
@@ -28,9 +29,9 @@ std::unordered_map<sta::Net*, abc::Abc_Obj_t*> CreateAbcPrimaryInputs(
   for (sta::Net* input_pin : primary_inputs) {
     abc::Abc_Obj_t* primary_input_abc = abc::Abc_NtkCreatePi(&abc_network);
     abc::Abc_Obj_t* primary_input_net = abc::Abc_NtkCreateNet(&abc_network);
-    std::string net_name(network->name(input_pin));
+    std::string net_name(network->pathName(input_pin));
     abc::Abc_ObjAssignName(
-        primary_input_abc, net_name.data(), /*pSuffix=*/nullptr);
+        primary_input_net, net_name.data(), /*pSuffix=*/nullptr);
     abc::Abc_ObjAddFanin(primary_input_net, primary_input_abc);
 
     name_pin_map[input_pin] = primary_input_net;
@@ -48,7 +49,7 @@ std::unordered_map<sta::Net*, abc::Abc_Obj_t*> CreateAbcPrimaryOutputs(
   for (sta::Net* output_pin : primary_outputs) {
     abc::Abc_Obj_t* primary_output_abc = abc::Abc_NtkCreatePo(&abc_network);
     abc::Abc_Obj_t* primary_output_net = abc::Abc_NtkCreateNet(&abc_network);
-    std::string net_name(network->name(output_pin));
+    std::string net_name(network->pathName(output_pin));
     abc::Abc_ObjAssignName(
         primary_output_net, net_name.data(), /*pSuffix=*/nullptr);
     abc::Abc_ObjAddFanin(primary_output_abc, primary_output_net);
@@ -219,6 +220,7 @@ void CreateNets(
     abc::Abc_Obj_t* abc_driver_instance = abc_instances.at(instance);
     abc::Abc_Obj_t* primary_output = abc_primary_output_nets.at(output_net);
     abc::Abc_ObjAddFanin(primary_output, abc_driver_instance);
+    abc_net_map[output_net] = primary_output;
   }
 
   // ABC expects the inputs to particular gates to happen in a certain implict
@@ -265,9 +267,9 @@ utl::deleted_unique_ptr<abc::Abc_Ntk_t> LogicCut::BuildMappedAbcNetwork(
                         /*fUseMemMan=*/1),
       &abc::Abc_NtkDelete);
 
-  std::unordered_map<sta::Net*, abc::Abc_Obj_t*> abc_input_pins
+  std::unordered_map<sta::Net*, abc::Abc_Obj_t*> abc_input_nets
       = CreateAbcPrimaryInputs(primary_inputs_, *abc_network, network);
-  std::unordered_map<sta::Net*, abc::Abc_Obj_t*> abc_output_pins
+  std::unordered_map<sta::Net*, abc::Abc_Obj_t*> abc_output_nets
       = CreateAbcPrimaryOutputs(primary_outputs_, *abc_network, network);
 
   // Create MIO standard cell library
@@ -282,8 +284,8 @@ utl::deleted_unique_ptr<abc::Abc_Ntk_t> LogicCut::BuildMappedAbcNetwork(
           cut_instances_, *abc_network, network, mio_library, logger);
 
   CreateNets(primary_outputs_,
-             abc_input_pins,
-             abc_output_pins,
+             abc_input_nets,
+             abc_output_nets,
              standard_cells,
              *abc_network,
              network,
@@ -291,6 +293,322 @@ utl::deleted_unique_ptr<abc::Abc_Ntk_t> LogicCut::BuildMappedAbcNetwork(
              logger);
 
   return abc_network;
+}
+
+sta::Instance* GetLogicalParentInstance(
+    const std::unordered_set<sta::Instance*>& cut_instances_,
+    sta::dbNetwork* network,
+    utl::Logger* logger)
+{
+  // In physical designs with hierarchy we need to figure out
+  // the parent module in which instances should be placed.
+  // For now lets just grab the first Instance* we see. RMP
+  // shouldn't be doing anything across modules right now, but
+  // if that changes I assume things will break.
+  if (cut_instances_.empty()) {
+    logger->error(utl::RMP, 1011, "Empty logic cuts are not allowed");
+  }
+
+  sta::Instance* instance = nullptr;
+  for (sta::Instance* cut_instance : cut_instances_) {
+    if (instance == nullptr) {
+      instance = network->parent(cut_instance);
+    }
+
+    if (instance != network->parent(cut_instance)) {
+      logger->error(utl::RMP,
+                    1012,
+                    "LogiCuts with multiple parent modules are not allowed.");
+    }
+  }
+
+  return instance;
+}
+
+std::unordered_map<abc::Abc_Obj_t*, sta::Instance*> CreateInstances(
+    abc::Abc_Ntk_t* abc_network,
+    sta::dbNetwork* network,
+    sta::Instance* parent_instance,
+    UniqueName& unique_name,
+    utl::Logger* logger)
+{
+  std::unordered_map<abc::Abc_Obj_t*, sta::Instance*> result;
+
+  for (int i = 0; i < abc::Abc_NtkObjNumMax(abc_network); i++) {
+    // ABC stores all objects as a list of objs we need to filter
+    // to the ones that represent nodes/standard cells.
+    abc::Abc_Obj_t* node_obj = abc::Abc_NtkObj(abc_network, i);
+    if (node_obj == nullptr || !abc::Abc_ObjIsNode(node_obj)) {
+      continue;
+    }
+
+    auto std_cell = static_cast<abc::Mio_Gate_t*>(abc::Abc_ObjData(node_obj));
+    std::string std_cell_name = abc::Mio_GateReadName(std_cell);
+    sta::LibertyCell* liberty_cell
+        = network->findLibertyCell(std_cell_name.c_str());
+
+    if (liberty_cell == nullptr) {
+      logger->error(
+          utl::RMP,
+          1010,
+          "Could not find cell name {}, please report this internal error",
+          std_cell_name);
+    }
+
+    sta::Instance* new_instance = network->makeInstance(
+        liberty_cell, unique_name.GetUniqueName().c_str(), parent_instance);
+
+    result[node_obj] = new_instance;
+  }
+  return result;
+}
+
+std::unordered_map<abc::Abc_Obj_t*, sta::Net*> CreateNets(
+    abc::Abc_Ntk_t* abc_network,
+    sta::dbNetwork* network,
+    sta::Instance* parent_instance,
+    UniqueName& unique_name,
+    utl::Logger* logger)
+{
+  std::unordered_map<abc::Abc_Obj_t*, sta::Net*> result;
+
+  // Get primary input and output nets
+  for (int i = 0; i < abc::Abc_NtkObjNumMax(abc_network); i++) {
+    abc::Abc_Obj_t* node_obj = abc::Abc_NtkObj(abc_network, i);
+    if (node_obj == nullptr) {
+      continue;
+    }
+
+    abc::Abc_Obj_t* net_obj = nullptr;
+    if (abc::Abc_ObjIsPo(node_obj)) {
+      net_obj = abc::Abc_ObjFanin0(node_obj);
+    } else if (abc::Abc_ObjIsPi(node_obj)) {
+      net_obj = abc::Abc_ObjFanout0(node_obj);
+    } else {
+      continue;
+    }
+
+    if (!abc::Abc_ObjIsNet(net_obj)) {
+      logger->error(utl::RMP,
+                    1013,
+                    "Primary input or output is not connected to an AIG PI/PO, "
+                    "please report this internal error");
+    }
+
+    std::string net_name = abc::Abc_ObjName(net_obj);
+    sta::Net* net = network->findNet(net_name.c_str());
+    if (!net) {
+      logger->error(utl::RMP, 1024, "Cannot find primary net {}", net_name);
+    }
+    result[net_obj] = net;
+  }
+
+  for (int i = 0; i < abc::Abc_NtkObjNumMax(abc_network); i++) {
+    // ABC stores all objects as a list of objs we need to filter
+    // to the ones that represent nodes/standard cells.
+    abc::Abc_Obj_t* node_obj = abc::Abc_NtkObj(abc_network, i);
+    if (node_obj == nullptr || !abc::Abc_ObjIsNet(node_obj)) {
+      continue;
+    }
+
+    if (result.find(node_obj) != result.end()) {
+      continue;
+    }
+
+    sta::Net* sta_net = network->makeNet(unique_name.GetUniqueName().c_str(),
+                                         parent_instance);
+    result[node_obj] = sta_net;
+  }
+
+  return result;
+}
+
+void DeleteExistingLogicCut(sta::dbNetwork* network,
+                            std::vector<sta::Net*>& primary_inputs,
+                            std::vector<sta::Net*>& primary_outputs,
+                            std::unordered_set<sta::Instance*>& cut_instances,
+                            utl::Logger* logger)
+{
+  // Delete nets that only belong to the cut set.
+  std::unordered_set<sta::Net*> nets_to_be_deleted;
+  std::unordered_set<sta::Net*> primary_input_or_output_nets;
+
+  for (sta::Net* net : primary_inputs) {
+    primary_input_or_output_nets.insert(net);
+  }
+  for (sta::Net* net : primary_outputs) {
+    primary_input_or_output_nets.insert(net);
+  }
+
+  for (sta::Instance* instance : cut_instances) {
+    auto pin_iterator = std::unique_ptr<sta::InstancePinIterator>(
+        network->pinIterator(instance));
+    while (pin_iterator->hasNext()) {
+      sta::Pin* pin = pin_iterator->next();
+      sta::Net* connected_net = network->net(pin);
+      // If pin isn't a primary input or output add to deleted list. The only
+      // way this can happen is if a net is only used within the cutset, and
+      // in that case we want to delete it.
+      if (primary_input_or_output_nets.find(connected_net)
+          == primary_input_or_output_nets.end()) {
+        nets_to_be_deleted.insert(connected_net);
+      }
+    }
+  }
+
+  for (sta::Instance* instance : cut_instances) {
+    network->deleteInstance(instance);
+  }
+
+  for (sta::Net* net : nets_to_be_deleted) {
+    network->deleteNet(net);
+  }
+}
+
+void ConnectInstances(
+    abc::Abc_Ntk_t* abc_network,
+    sta::dbNetwork* network,
+    const std::unordered_map<abc::Abc_Obj_t*, sta::Instance*>& new_instances,
+    const std::unordered_map<abc::Abc_Obj_t*, sta::Net*>& new_nets,
+    utl::Logger* logger)
+{
+  abc::Mio_Library_t* library
+      = static_cast<abc::Mio_Library_t*>(abc_network->pManFunc);
+  std::unordered_map<abc::Mio_Gate_t*, std::vector<std::string>>
+      gate_to_port_order = MioGateToPortOrder(library);
+  for (auto& [abc_obj, sta_instance] : new_instances) {
+    auto std_cell = static_cast<abc::Mio_Gate_t*>(abc::Abc_ObjData(abc_obj));
+    if (gate_to_port_order.find(std_cell) == gate_to_port_order.end()) {
+      logger->error(utl::RMP,
+                    1021,
+                    "Cannot find abc gate port order {}, please report this "
+                    "internal error",
+                    abc::Mio_GateReadName(std_cell));
+    }
+
+    // Connect fan-ins for instance
+
+    std::string gate_name = abc::Mio_GateReadName(std_cell);
+    sta::LibertyCell* cell = network->findLibertyCell(gate_name.c_str());
+    if (!cell) {
+      logger->error(utl::RMP, 1014, "Cannot find cell {}", gate_name);
+    }
+
+    int i = 0;
+    // ABC doesn't really have a concept of port names and liberty ports
+    // rather there is an implict order between fan-ins and its standard cell,
+    // loop through in that order, and connect the ports correctly based
+    // on the abc fan-in.
+    for (const std::string& port_name : gate_to_port_order.at(std_cell)) {
+      sta::LibertyPort* port = cell->findLibertyPort(port_name.c_str());
+      if (!port) {
+        logger->error(
+            utl::RMP, 1015, "Cannot find port  {}/{}", gate_name, port_name);
+      }
+
+      abc::Abc_Obj_t* net = abc::Abc_ObjFanin(abc_obj, i);
+      if (!abc::Abc_ObjIsNet(net)) {
+        logger->error(utl::RMP,
+                      1016,
+                      "Object is not a net in ABC netlist {}",
+                      abc::Abc_ObjName(net));
+      }
+
+      if (new_nets.find(net) == new_nets.end()) {
+        logger->error(utl::RMP,
+                      1022,
+                      "Could not find corresponding sta net for abc net: {}",
+                      abc::Abc_ObjName(net));
+      }
+
+      sta::Net* sta_net = new_nets.at(net);
+
+      network->connect(sta_instance, port, sta_net);
+      i++;
+    }
+
+    // Connect the fan-out, in this case the only fan-out since ABC only
+    // deals with single output gates.
+    std::string output_port_name = abc::Mio_GateReadOutName(std_cell);
+    sta::LibertyPort* output_port
+        = cell->findLibertyPort(output_port_name.c_str());
+
+    if (!output_port) {
+      logger->error(utl::RMP,
+                    1017,
+                    "Cannot find port  {}/{}",
+                    gate_name,
+                    output_port_name);
+    }
+    abc::Abc_Obj_t* net = abc::Abc_ObjFanout0(abc_obj);
+    if (!abc::Abc_ObjIsNet(net)) {
+      logger->error(utl::RMP,
+                    1019,
+                    "Object is not a net in ABC netlist {}",
+                    abc::Abc_ObjName(net));
+    }
+
+    if (new_nets.find(net) == new_nets.end()) {
+      logger->error(utl::RMP,
+                    1020,
+                    "Could not find corresponding sta net for abc net: {}",
+                    abc::Abc_ObjName(net));
+    }
+
+    sta::Net* sta_net = new_nets.at(net);
+
+    network->connect(sta_instance, output_port, sta_net);
+  }
+}
+
+void LogicCut::InsertMappedAbcNetwork(abc::Abc_Ntk_t* abc_network,
+                                      sta::dbNetwork* network,
+                                      UniqueName& unique_name,
+                                      utl::Logger* logger)
+{
+  if (!abc::Abc_NtkHasMapping(abc_network)) {
+    logger->error(
+        utl::RMP,
+        1008,
+        "abc_network has no mapping, please report this internal error.");
+  }
+
+  if (!abc::Abc_NtkIsNetlist(abc_network)) {
+    logger->error(
+        utl::RMP,
+        1009,
+        "abc_network is not a netlist, please report this internal error.");
+  }
+
+  sta::Instance* parent_instance
+      = GetLogicalParentInstance(cut_instances_, network, logger);
+  std::unordered_map<abc::Abc_Obj_t*, sta::Instance*> abc_objs_to_instances
+      = CreateInstances(
+          abc_network, network, parent_instance, unique_name, logger);
+  std::unordered_map<abc::Abc_Obj_t*, sta::Net*> abc_nets_to_sta_nets
+      = CreateNets(abc_network, network, parent_instance, unique_name, logger);
+
+  // Get rid of the old cut in preparation to connect the new ones.
+  DeleteExistingLogicCut(
+      network, primary_inputs_, primary_outputs_, cut_instances_, logger);
+
+  // Connects the new instances to each other and to their primary inputs
+  // and outputs.
+  ConnectInstances(abc_network,
+                   network,
+                   abc_objs_to_instances,
+                   abc_nets_to_sta_nets,
+                   logger);
+
+  // Final clean up to make this cut valid again. Replace the old cut instances
+  // with the new ones. This should result in an equally valid LogicCut since
+  // the PI/POs haven't changed just the junk inside.
+  cut_instances_.clear();
+  cut_instances_.reserve(abc_objs_to_instances.size());
+
+  for (const auto& kv : abc_objs_to_instances) {
+    cut_instances_.insert(kv.second);
+  }
 }
 
 }  // namespace rmp
