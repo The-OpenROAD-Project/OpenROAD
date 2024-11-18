@@ -103,8 +103,10 @@ proc set_global_routing_region_adjustment { args } {
     sta::check_positive_float "lower_left_y" $lower_y
     sta::check_positive_float "upper_right_x" $upper_x
     sta::check_positive_float "upper_right_y" $upper_y
-    sta::check_positive_integer "-layer" $layer
     sta::check_positive_float "-adjustment" $adjustment
+
+    set layer_idx [grt::parse_layer_name $layer]
+    grt::check_routing_layer $layer_idx
 
     set lower_x [expr { int($lower_x * $lef_units) }]
     set lower_y [expr { int($lower_y * $lef_units) }]
@@ -113,7 +115,7 @@ proc set_global_routing_region_adjustment { args } {
 
     grt::check_region $lower_x $lower_y $upper_x $upper_y
 
-    grt::add_region_adjustment $lower_x $lower_y $upper_x $upper_y $layer $adjustment
+    grt::add_region_adjustment $lower_x $lower_y $upper_x $upper_y $layer_idx $adjustment
   } else {
     utl::error GRT 50 \
       "Command set_global_routing_region_adjustment needs four arguments\
