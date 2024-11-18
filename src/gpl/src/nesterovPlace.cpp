@@ -453,10 +453,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                  average_overflow_,
                  npVars_.keepResizeBelowOverflow);
 
-      if (!virtual_td_iter)
+      if (!virtual_td_iter) {
         db_cbk_->addOwner(pbc_->db()->getChip()->getBlock());
-      else
+      } else {
         db_cbk_->removeOwner();
+      }
 
       auto block = pbc_->db()->getChip()->getBlock();
       bool shouldTdProceed = tb_->updateGNetWeights(virtual_td_iter);
@@ -609,9 +610,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   }
 
   if (db_cbk_ != nullptr) {
-    log_->report("NesterovPlace::doNesteroPlace() remove owner");
     db_cbk_->removeOwner();
-    db_cbk_ = nullptr;
   }
   return iter;
 }
