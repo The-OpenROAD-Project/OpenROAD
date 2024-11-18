@@ -263,15 +263,18 @@ dbNet* dbITerm::getNet()
 
 dbMTerm* dbITerm::getMTerm() const
 {
-  _dbITerm* iterm = (_dbITerm*) this;
-  _dbBlock* block = (_dbBlock*) iterm->getOwner();
-  _dbInst* inst = block->_inst_tbl->getPtr(iterm->_inst);
-  _dbInstHdr* inst_hdr = block->_inst_hdr_tbl->getPtr(inst->_inst_hdr);
-  _dbDatabase* db = iterm->getDatabase();
-  _dbLib* lib = db->_lib_tbl->getPtr(inst_hdr->_lib);
-  _dbMaster* master = lib->_master_tbl->getPtr(inst_hdr->_master);
-  dbId<_dbMTerm> mterm = inst_hdr->_mterms[iterm->_flags._mterm_idx];
-  return (dbMTerm*) master->_mterm_tbl->getPtr(mterm);
+  if (mterm_cache == nullptr) {
+    _dbITerm* iterm = (_dbITerm*) this;
+    _dbBlock* block = (_dbBlock*) iterm->getOwner();
+    _dbInst* inst = block->_inst_tbl->getPtr(iterm->_inst);
+    _dbInstHdr* inst_hdr = block->_inst_hdr_tbl->getPtr(inst->_inst_hdr);
+    _dbDatabase* db = iterm->getDatabase();
+    _dbLib* lib = db->_lib_tbl->getPtr(inst_hdr->_lib);
+    _dbMaster* master = lib->_master_tbl->getPtr(inst_hdr->_master);
+    dbId<_dbMTerm> mterm = inst_hdr->_mterms[iterm->_flags._mterm_idx];
+    mterm_cache = (dbMTerm*) master->_mterm_tbl->getPtr(mterm);
+  }
+  return mterm_cache;
 }
 
 dbBTerm* dbITerm::getBTerm()
