@@ -261,10 +261,11 @@ bool GCell::isStdInstance() const
 
 void GCell::print(utl::Logger* logger) const
 {
-  if (insts_.size() > 0)
+  if (!insts_.empty()) {
     logger->report("print gcell:{}", insts_[0]->dbInst()->getName());
-  else
+  } else {
     logger->report("print gcell insts_ empty! (filler cell)");
+  }
   logger->report(
       "insts_ size: {}, gPins_ size: {}", insts_.size(), gPins_.size());
   logger->report("lx_: {} ly_: {} ux_: {} uy_: {}", lx_, ly_, ux_, uy_);
@@ -474,17 +475,20 @@ void GPin::updateCoordi()
 
 void GPin::print(utl::Logger* log) const
 {
-  if (pin()->dbITerm() != nullptr)
+  if (pin()->dbITerm() != nullptr) {
     log->report("--> print pin: {}", pin()->dbITerm()->getName());
-  else
+  } else {
     log->report("pin()->dbIterm() is nullptr!");
+  }
   if (gCell_) {
-    if (gCell_->isInstance())
+    if (gCell_->isInstance()) {
       log->report("GCell*: {}", gCell_->instance()->dbInst()->getName());
-    else
+    } else {
       log->report("GCell of gpin is filler!");
-  } else
+    }
+  } else {
     log->report("gcell of gpin is null");
+  }
   log->report("GNet: {}", gNet_->net()->dbNet()->getName());
   log->report("pins_.size(): {}", pins_.size());
   log->report("offsetCx_: {}", offsetCx_);
@@ -1021,8 +1025,9 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
     GPin& gPin = gPinStor_[i];
     gPins_.push_back(&gPin);
     gPinMap_[gPin.pin()] = &gPin;
-    if (gPin.pin()->isITerm())
+    if (gPin.pin()->isITerm()) {
       db_iterm_map_[gPin.pin()->dbITerm()] = i;
+    }
   }
 
   // gNet ptr init
@@ -1332,8 +1337,9 @@ FloatPoint NesterovBaseCommon::getWireLengthPreconditioner(
 
 void NesterovBaseCommon::updateDbGCells()
 {
-  if (db_cbk_)
+  if (db_cbk_) {
     db_cbk_->removeOwner();
+  }
   assert(omp_get_thread_num() == 0);
 #pragma omp parallel for num_threads(num_threads_)
   for (auto it = gCells().begin(); it < gCells().end(); ++it) {
@@ -1349,8 +1355,9 @@ void NesterovBaseCommon::updateDbGCells()
                         gCell->dCy() - replInst->dy() / 2);
     }
   }
-  if (db_cbk_)
+  if (db_cbk_) {
     db_cbk_->addOwner(pbc_->db()->getChip()->getBlock());
+  }
 }
 
 int64_t NesterovBaseCommon::getHpwl()
@@ -2776,24 +2783,24 @@ void NesterovBase::createGCell(odb::dbInst* db_inst,
     size_t gcells_index = gCells_.size() - 1;
     db_inst_index_map_[db_inst] = gcells_index;
 
-    curSLPCoordi_.push_back(FloatPoint());
-    curSLPWireLengthGrads_.push_back(FloatPoint());
-    curSLPDensityGrads_.push_back(FloatPoint());
-    curSLPSumGrads_.push_back(FloatPoint());
-    nextSLPCoordi_.push_back(FloatPoint());
-    nextSLPWireLengthGrads_.push_back(FloatPoint());
-    nextSLPDensityGrads_.push_back(FloatPoint());
-    nextSLPSumGrads_.push_back(FloatPoint());
-    prevSLPCoordi_.push_back(FloatPoint());
-    prevSLPWireLengthGrads_.push_back(FloatPoint());
-    prevSLPDensityGrads_.push_back(FloatPoint());
-    prevSLPSumGrads_.push_back(FloatPoint());
-    curCoordi_.push_back(FloatPoint());
-    nextCoordi_.push_back(FloatPoint());
-    initCoordi_.push_back(FloatPoint());
-    snapshotCoordi_.push_back(FloatPoint());
-    snapshotSLPCoordi_.push_back(FloatPoint());
-    snapshotSLPSumGrads_.push_back(FloatPoint());
+    curSLPCoordi_.emplace_back();
+    curSLPWireLengthGrads_.emplace_back();
+    curSLPDensityGrads_.emplace_back();
+    curSLPSumGrads_.emplace_back();
+    nextSLPCoordi_.emplace_back();
+    nextSLPWireLengthGrads_.emplace_back();
+    nextSLPDensityGrads_.emplace_back();
+    nextSLPSumGrads_.emplace_back();
+    prevSLPCoordi_.emplace_back();
+    prevSLPWireLengthGrads_.emplace_back();
+    prevSLPDensityGrads_.emplace_back();
+    prevSLPSumGrads_.emplace_back();
+    curCoordi_.emplace_back();
+    nextCoordi_.emplace_back();
+    initCoordi_.emplace_back();
+    snapshotCoordi_.emplace_back();
+    snapshotSLPCoordi_.emplace_back();
+    snapshotSLPSumGrads_.emplace_back();
 
     rb->pushBackMinRcCellSize(gcell->dx(), gcell->dy());
   } else {
