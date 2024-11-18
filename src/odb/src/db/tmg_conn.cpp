@@ -38,6 +38,7 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbWireCodec.h"
+#include "tmg_conn_g.h"
 #include "utl/Logger.h"
 
 namespace odb {
