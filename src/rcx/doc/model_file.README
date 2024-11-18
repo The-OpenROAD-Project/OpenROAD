@@ -87,6 +87,8 @@ Metal <num> <model_name>
 		UNDER0 - metal over metal under Substrate - 1-wire model
 		UNDER1 - metal over metal under Substrate - 2-wire model
 		OVERUNDER - metal over metal under metal
+		OVERUNDER0 - metal over metal under Substrate - 1-wire model
+		OVERUNDER1 - metal over metal under Substrate - 2-wire model
 		DIAGUNDER - metal over metal under metal for diagonal coupling
 
 	example: Metal 1 RESOVER
