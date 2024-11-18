@@ -709,6 +709,11 @@ sta::proc_redirect report_long_wires {
   rsz::report_long_wires_cmd $count $digits
 }
 
+sta::define_cmd_args "eliminate_dead_logic" {}
+proc eliminate_dead_logic { } {
+  rsz::eliminate_dead_logic_cmd 1
+}
+
 namespace eval rsz {
 # for testing
 proc repair_setup_pin { end_pin } {

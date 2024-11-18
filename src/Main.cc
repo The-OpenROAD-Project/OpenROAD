@@ -120,6 +120,7 @@ char** cmd_argv;
 const char* log_filename = nullptr;
 const char* metrics_filename = nullptr;
 bool no_settings = false;
+bool minimize = false;
 
 static const char* init_filename = ".openroad";
 
@@ -267,6 +268,7 @@ int main(int argc, char* argv[])
   }
 
   no_settings = findCmdLineFlag(argc, argv, "-no_settings");
+  minimize = findCmdLineFlag(argc, argv, "-minimize");
 
   cmd_argc = argc;
   cmd_argv = argv;
@@ -412,7 +414,7 @@ static int tclAppInit(int& argc,
       ;
     }
 
-    gui::startGui(argc, argv, interp, "", true, !no_settings);
+    gui::startGui(argc, argv, interp, "", true, !no_settings, minimize);
   } else {
     // init tcl
     if (Tcl_Init(interp) == TCL_ERROR) {
@@ -554,7 +556,7 @@ static void showUsage(const char* prog, const char* init_filename)
 {
   printf("Usage: %s [-help] [-version] [-no_init] [-no_splash] [-exit] ", prog);
   printf("[-gui] [-threads count|max] [-log file_name] [-metrics file_name] ");
-  printf("[-no_settings] cmd_file\n");
+  printf("[-no_settings] [-minimize] cmd_file\n");
   printf("  -help                 show help and exit\n");
   printf("  -version              show version and exit\n");
   printf("  -no_init              do not read %s init file\n", init_filename);
@@ -562,6 +564,7 @@ static void showUsage(const char* prog, const char* init_filename)
   printf("  -no_splash            do not show the license splash at startup\n");
   printf("  -exit                 exit after reading cmd_file\n");
   printf("  -gui                  start in gui mode\n");
+  printf("  -minimize             start the gui minimized\n");
   printf("  -no_settings          do not load the previous gui settings\n");
 #ifdef ENABLE_PYTHON3
   printf(

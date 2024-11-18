@@ -145,6 +145,7 @@ class HierRTLMP
   void setDebugShowBundledNets(bool show_bundled_nets);
   void setDebugSkipSteps(bool skip_steps);
   void setDebugOnlyFinalResult(bool only_final_result);
+  void setDebugTargetClusterId(int target_cluster_id);
   void setBusPlanningOn(bool bus_planning_on);
 
   void setNumThreads(int threads) { num_threads_ = threads; }
@@ -344,6 +345,7 @@ class HierRTLMP
   bool skip_macro_placement_ = false;
 
   std::unique_ptr<Mpl2Observer> graphics_;
+  bool is_debug_only_final_result_{false};
 };
 
 class Pusher

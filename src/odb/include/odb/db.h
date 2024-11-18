@@ -7732,10 +7732,13 @@ class dbGuide : public dbObject
 
   dbTechLayer* getViaLayer() const;
 
+  bool isCongested() const;
+
   static dbGuide* create(dbNet* net,
                          dbTechLayer* layer,
                          dbTechLayer* via_layer,
-                         Rect box);
+                         Rect box,
+                         bool is_congested);
 
   static dbGuide* getGuide(dbBlock* block, uint dbid);
 
@@ -8082,6 +8085,7 @@ class dbModBTerm : public dbObject
   dbBusPort* getBusPort() const;
   static dbModBTerm* create(dbModule* parentModule, const char* name);
   static void destroy(dbModBTerm*);
+  static dbModBTerm* getModBTerm(dbBlock* block, uint dbid);
 
  private:
   // User Code End dbModBTerm
@@ -8137,6 +8141,7 @@ class dbModITerm : public dbObject
   void disconnect();
   static dbModITerm* create(dbModInst* parentInstance, const char* name);
   static void destroy(dbModITerm*);
+  static dbModITerm* getModITerm(dbBlock* block, uint dbid);
   // User Code End dbModITerm
 };
 

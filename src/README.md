@@ -222,8 +222,15 @@ report_global_connect
 The `report_cell_usage` command is used to print out the usage of cells for each type of cell.
 
 ```
-report_cell_usage
+report_cell_usage [-verbose] [module instance]
 ```
+
+##### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-verbose` | Add information about all leaf instances. |
+| `module instance` | Report cell usage for a specified module instance. |
 
 ## TCL functions
 

@@ -1521,6 +1521,22 @@ void dbJournal::undo_createObject()
       break;
     }
 
+    case dbModBTermObj: {
+      uint modbterm_id;
+      _log.pop(modbterm_id);
+      dbModBTerm* modbterm = dbModBTerm::getModBTerm(_block, modbterm_id);
+      dbModBTerm::destroy(modbterm);
+      break;
+    }
+
+    case dbModITermObj: {
+      uint moditerm_id;
+      _log.pop(moditerm_id);
+      dbModITerm* moditerm = dbModITerm::getModITerm(_block, moditerm_id);
+      dbModITerm::destroy(moditerm);
+      break;
+    }
+
     default: {
       _logger->critical(utl::ODB,
                         441,
@@ -1544,6 +1560,7 @@ void dbJournal::undo_deleteObject()
       int y_max;
       uint layer_id;
       uint via_layer_id;
+      bool is_congested;
       _log.pop(net_id);
       _log.pop(x_min);
       _log.pop(y_min);
@@ -1551,11 +1568,13 @@ void dbJournal::undo_deleteObject()
       _log.pop(y_max);
       _log.pop(layer_id);
       _log.pop(via_layer_id);
+      _log.pop(is_congested);
       auto net = dbNet::getNet(_block, net_id);
       auto layer = dbTechLayer::getTechLayer(_block->getTech(), layer_id);
       auto via_layer
           = dbTechLayer::getTechLayer(_block->getTech(), via_layer_id);
-      dbGuide::create(net, layer, via_layer, {x_min, y_min, x_max, y_max});
+      dbGuide::create(
+          net, layer, via_layer, {x_min, y_min, x_max, y_max}, is_congested);
       break;
     }
     case dbInstObj: {
@@ -1628,6 +1647,26 @@ void dbJournal::undo_connectObject()
   auto obj_type = popObjectType();
 
   switch (obj_type) {
+    case dbModITermObj: {
+      uint moditerm_id;
+      _log.pop(moditerm_id);
+      dbModITerm* moditerm = dbModITerm::getModITerm(_block, moditerm_id);
+      uint net_id;
+      _log.pop(net_id);
+      moditerm->disconnect();
+      break;
+    }
+
+    case dbModBTermObj: {
+      uint modbterm_id;
+      _log.pop(modbterm_id);
+      dbModBTerm* modbterm = dbModBTerm::getModBTerm(_block, modbterm_id);
+      uint net_id;
+      _log.pop(net_id);
+      modbterm->disconnect();
+      break;
+    }
+
     case dbITermObj: {
       uint iterm_id;
       _log.pop(iterm_id);
