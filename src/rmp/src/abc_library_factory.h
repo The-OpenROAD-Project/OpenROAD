@@ -22,7 +22,7 @@ namespace rmp {
 class AbcLibrary
 {
  public:
-  AbcLibrary(utl::deleted_unique_ptr<abc::SC_Lib> abc_library)
+  AbcLibrary(utl::deleter_unique_ptr<abc::SC_Lib> abc_library)
       : abc_library_(std::move(abc_library))
   {
   }
@@ -31,7 +31,7 @@ class AbcLibrary
   bool IsSupportedCell(const std::string& cell_name);
 
  private:
-  utl::deleted_unique_ptr<abc::SC_Lib> abc_library_;
+  utl::deleter_unique_ptr<abc::SC_Lib> abc_library_;
   std::set<std::string> supported_cells_;
 };
 

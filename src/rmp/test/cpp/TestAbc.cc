@@ -54,7 +54,7 @@ class AbcTest : public ::testing::Test
  protected:
   void SetUp() override
   {
-    db_ = utl::deleted_unique_ptr<odb::dbDatabase>(odb::dbDatabase::create(),
+    db_ = utl::deleter_unique_ptr<odb::dbDatabase>(odb::dbDatabase::create(),
                                                    &odb::dbDatabase::destroy);
     std::call_once(init_sta_flag, []() {
       sta::initSta();
@@ -137,7 +137,7 @@ class AbcTest : public ::testing::Test
     return primary_output_name_to_index;
   }
 
-  utl::deleted_unique_ptr<odb::dbDatabase> db_;
+  utl::deleter_unique_ptr<odb::dbDatabase> db_;
   sta::Unit* power_unit_;
   std::unique_ptr<sta::dbSta> sta_;
   sta::LibertyLibrary* library_;
@@ -251,7 +251,7 @@ TEST_F(AbcTest, TestLibraryInstallation)
     gate = abc::Mio_GateReadNext(gate);
   }
 
-  utl::deleted_unique_ptr<abc::Abc_Ntk_t> network(
+  utl::deleter_unique_ptr<abc::Abc_Ntk_t> network(
       abc::Abc_NtkAlloc(abc::Abc_NtkType_t::ABC_NTK_NETLIST,
                         abc::Abc_NtkFunc_t::ABC_FUNC_MAP,
                         /*fUseMemMan=*/1),
@@ -284,11 +284,11 @@ TEST_F(AbcTest, TestLibraryInstallation)
 
   abc::Abc_ObjAddFanin(output, output_net);
 
-  utl::deleted_unique_ptr<abc::Abc_Ntk_t> logic_network(
+  utl::deleter_unique_ptr<abc::Abc_Ntk_t> logic_network(
       abc::Abc_NtkToLogic(network.get()), &abc::Abc_NtkDelete);
 
   std::array<int, 2> input_vector = {1, 1};
-  utl::deleted_unique_ptr<int> output_vector(
+  utl::deleter_unique_ptr<int> output_vector(
       abc::Abc_NtkVerifySimulatePattern(logic_network.get(),
                                         input_vector.data()),
       &free);
@@ -397,12 +397,12 @@ TEST_F(AbcTest, BuildAbcMappedNetworkFromLogicCut)
   logic_extractor.AppendEndpoint(flop_input_vertex);
   LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
 
-  utl::deleted_unique_ptr<abc::Abc_Ntk_t> abc_network
+  utl::deleter_unique_ptr<abc::Abc_Ntk_t> abc_network
       = cut.BuildMappedAbcNetwork(abc_library, network, &logger_);
 
   abc::Abc_NtkSetName(abc_network.get(), strdup("temp_network_name"));
 
-  utl::deleted_unique_ptr<abc::Abc_Ntk_t> logic_network(
+  utl::deleter_unique_ptr<abc::Abc_Ntk_t> logic_network(
       abc::Abc_NtkToLogic(abc_network.get()), &abc::Abc_NtkDelete);
 
   // Build map of primary output names to primary output indicies in ABC
@@ -410,7 +410,7 @@ TEST_F(AbcTest, BuildAbcMappedNetworkFromLogicCut)
       = AbcLogicNetworkNameToPrimaryOutputIds(logic_network.get());
 
   std::array<int, 2> input_vector = {1, 1};
-  utl::deleted_unique_ptr<int> output_vector(
+  utl::deleter_unique_ptr<int> output_vector(
       abc::Abc_NtkVerifySimulatePattern(logic_network.get(),
                                         input_vector.data()),
       &free);
@@ -467,7 +467,7 @@ TEST_F(AbcTest, InsertingMappedLogicCutDoesNotThrow)
   logic_extractor.AppendEndpoint(flop_input_vertex);
   LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
 
-  utl::deleted_unique_ptr<abc::Abc_Ntk_t> mapped_abc_network
+  utl::deleter_unique_ptr<abc::Abc_Ntk_t> mapped_abc_network
       = cut.BuildMappedAbcNetwork(abc_library, network, &logger_);
 
   rmp::UniqueName unique_name;
@@ -497,7 +497,7 @@ TEST_F(AbcTest,
   logic_extractor.AppendEndpoint(flop_input_vertex);
   LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
 
-  utl::deleted_unique_ptr<abc::Abc_Ntk_t> mapped_abc_network
+  utl::deleter_unique_ptr<abc::Abc_Ntk_t> mapped_abc_network
       = cut.BuildMappedAbcNetwork(abc_library, network, &logger_);
 
   rmp::UniqueName unique_name;
@@ -511,13 +511,13 @@ TEST_F(AbcTest,
   LogicCut cut_post_insert
       = logic_extractor_post_insert.BuildLogicCut(abc_library);
 
-  utl::deleted_unique_ptr<abc::Abc_Ntk_t> mapped_abc_network_post_insert
+  utl::deleter_unique_ptr<abc::Abc_Ntk_t> mapped_abc_network_post_insert
       = cut.BuildMappedAbcNetwork(abc_library, network, &logger_);
 
   abc::Abc_NtkSetName(mapped_abc_network_post_insert.get(),
                       strdup("temp_network_name"));
 
-  utl::deleted_unique_ptr<abc::Abc_Ntk_t> logic_network(
+  utl::deleter_unique_ptr<abc::Abc_Ntk_t> logic_network(
       abc::Abc_NtkToLogic(mapped_abc_network_post_insert.get()),
       &abc::Abc_NtkDelete);
 
@@ -526,7 +526,7 @@ TEST_F(AbcTest,
       = AbcLogicNetworkNameToPrimaryOutputIds(logic_network.get());
 
   std::array<int, 2> input_vector = {1, 1};
-  utl::deleted_unique_ptr<int> output_vector(
+  utl::deleter_unique_ptr<int> output_vector(
       abc::Abc_NtkVerifySimulatePattern(logic_network.get(),
                                         input_vector.data()),
       &free);
