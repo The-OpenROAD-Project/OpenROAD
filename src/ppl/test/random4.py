@@ -5,7 +5,7 @@ import ppl_aux
 
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("gcd.def")
 
 ppl_aux.set_io_pin_constraint(
@@ -13,7 +13,7 @@ ppl_aux.set_io_pin_constraint(
 )
 ppl_aux.set_io_pin_constraint(
     design,
-    pin_names="req_msg\[15\] req_msg\[14\] resp_msg\[15\] resp_msg\[14\]",
+    pin_names=r"req_msg\[15\] req_msg\[14\] resp_msg\[15\] resp_msg\[14\]",
     region="top:*",
 )
 

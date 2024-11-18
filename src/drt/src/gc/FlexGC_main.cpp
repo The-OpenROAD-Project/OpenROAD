@@ -1006,6 +1006,24 @@ frCoord FlexGCWorker::Impl::getPrl(gcSegment* edge,
   return std::min(edge1_max, edge2_max) - std::max(edge1_min, edge2_min);
 }
 
+std::pair<frCoord, frCoord> FlexGCWorker::Impl::getRectsPrl(gcRect* rect1,
+                                                            gcRect* rect2) const
+{
+  gtl::rectangle_data<frCoord> marker_rect(*rect1);
+  gtl::generalized_intersect(marker_rect, *rect2);
+  auto prl_x = gtl::delta(marker_rect, gtl::HORIZONTAL);
+  auto prl_y = gtl::delta(marker_rect, gtl::VERTICAL);
+  auto dist_x = gtl::euclidean_distance(*rect1, *rect2, gtl::HORIZONTAL);
+  auto dist_y = gtl::euclidean_distance(*rect1, *rect2, gtl::VERTICAL);
+  if (dist_x) {
+    prl_x = -prl_x;
+  }
+  if (dist_y) {
+    prl_y = -prl_y;
+  }
+  return {prl_x, prl_y};
+}
+
 void FlexGCWorker::Impl::checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer)
 {
   auto lef58WrongDirCons = layer->getLef58SpacingWrongDirConstraints();
@@ -2988,6 +3006,9 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
     const gtl::rectangle_data<frCoord>& markerRect,
     frLef58CutSpacingConstraint* con)
 {
+  if (rect1->isFixed() && rect2->isFixed()) {
+    return;
+  }
   auto layerNum = rect1->getLayerNum();
   auto secondLayerNum = rect2->getLayerNum();
   auto net1 = rect1->getNet();
@@ -3519,6 +3540,9 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect)
       checkLef58CutSpacingTbl(
           rect, aboveLayer->getLef58DefaultInterCutSpcTblConstraint());
     }
+  }
+  if (layer->hasOrthSpacingTableConstraint()) {
+    checkCutSpacingTableOrthogonal(rect);
   }
 }
 

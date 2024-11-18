@@ -80,7 +80,9 @@ class GuideProcessor
                                  frCoord& GCELLOFFSETX,
                                  frCoord& GCELLOFFSETY);
 
-  void genGuides(frNet* net, std::vector<frRect>& rects);
+  std::vector<std::pair<frBlockObject*, Point>> genGuides(
+      frNet* net,
+      std::vector<frRect> rects);
   void genGuides_addCoverGuide(frNet* net, std::vector<frRect>& rects);
   void genGuides_addCoverGuide_helper(frInstTerm* term,
                                       std::vector<frRect>& rects);
@@ -164,14 +166,16 @@ class GuideProcessor
    * @param intvs The track intervals calculated by genGuides_prep
    * @param gcell_pin_map Map from gcell index to pins.
    * @param pin_gcell_map Map from pin object to gcell indices.
-   * @param first_iter True if this the first iteration.
+   * @param via_access_only True if this the first iteration. Indicates that
+   * splitting is gonna consider Guides on VIA_ACCESS_LAYER_NUM or below as via
+   * guides only.
    *
    */
   void genGuides_split(std::vector<frRect>& rects,
                        const TrackIntervalsByLayer& intvs,
                        const std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
                        frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
-                       bool first_iter) const;
+                       bool via_access_only) const;
   /**
    * Initializes a map of gcell location to set of pins
    *
@@ -199,8 +203,8 @@ class GuideProcessor
   void mapPinShapesToGCells(std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
                             frBlockObject* term) const;
   /**
-   * Populates gcell_pin_map with the values associated with the passed ITerm
-   * based on preferred access points.
+   * Populates gcell_pin_map with the values associated with the passed pin
+   * based on access points.
    *
    * Does a similar job to `mapPinShapesToGCells`. But instead of relying on
    * pin shapes and their intersection with gcells, it relies on the preferred
@@ -208,22 +212,11 @@ class GuideProcessor
    *
    * @param gcell_pin_map The map to be populated with the results.
    * @param term The current pin we are processing.
-   * @returns True if all pins' preferred access points are considered.
    */
-  bool mapITermAccessPointsToGCells(
+  void mapTermAccessPointsToGCells(
       std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
-      frInstTerm* inst_term) const;
-  /**
-   * Populates gcell_pin_map with the values associated with the passed BTerm
-   * based on preferred access points.
-   *
-   * @param gcell_pin_map The map to be populated with the results.
-   * @param term The current pin we are processing.
-   * @returns True if all pins' preferred access points are considered.
-   */
-  bool mapBTermAccessPointsToGCells(
-      std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
-      frBTerm* term) const;
+      frBlockObject* pin) const;
+
   void initPinGCellMap(frNet* net,
                        frBlockObjectMap<std::set<Point3D>>& pin_gcell_map);
   // write guide
@@ -233,7 +226,6 @@ class GuideProcessor
   Logger* logger_;
   odb::dbDatabase* db_;
   std::map<frNet*, std::vector<frRect>, frBlockObjectComp> tmp_guides_;
-  std::vector<std::pair<frBlockObject*, Point>> tmpGRPins_;
 };
 
 /**
@@ -276,6 +268,13 @@ class GuidePathFinder
    * @return True if all pins are visited, false otherwise.
    */
   bool traverseGraph();
+
+  /**
+   * @brief Connects disconnected guides through adding a patch bridge guide.
+   */
+  void connectDisconnectedComponents(const std::vector<frRect>& rects,
+                                     TrackIntervalsByLayer& intvs);
+
   /**
    * @brief Writes the final resulting set of guides to the net and updates the
    * GRPins.
@@ -290,12 +289,11 @@ class GuidePathFinder
    *
    * @param rects A vector of guide rectangles.
    * @param pin_gcell_map A map of pins and their corresponding GCell indices.
-   * @param gr_pins A vector of pin-gcell pair to be updated.
+   * @returns A vector of pin-gcell pair to be updated.
    */
-  void commitPathToGuides(
+  std::vector<std::pair<frBlockObject*, Point>> commitPathToGuides(
       std::vector<frRect>& rects,
-      const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
-      std::vector<std::pair<frBlockObject*, Point>>& gr_pins);
+      const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map);
 
  private:
   struct Wavefront
@@ -394,20 +392,32 @@ class GuidePathFinder
   void updateNodeMap(const std::vector<frRect>& rects,
                      const std::vector<std::vector<Point3D>>& pin_to_gcell);
   /**
-   * @brief Updates the GR pins with the GCell locations of pins.
+   * @brief Returns vector of pins with their GCell locations.
    *
    * This function takes the computed pin-to-GCell mappings and updates the
    * corresponding gr pins with their respective GCell locations.
    *
    * @param pins A vector of block objects representing the pins.
    * @param pin_to_gcell A vector mapping pins to their GCell locations.
-   * @param gr_pins A vector of pin-to-gcell pairs to be updated.
+   * @returns A vector of pin-to-gcell pairs to be updated.
    */
-  void updateGRPins(
+  std::vector<std::pair<frBlockObject*, Point>> getGRPins(
       const std::vector<frBlockObject*>& pins,
-      const std::vector<std::vector<Point3D>>& pin_to_gcell,
-      std::vector<std::pair<frBlockObject*, Point>>& gr_pins) const;
+      const std::vector<std::vector<Point3D>>& pin_to_gcell) const;
+  /**
+   * @brief Does a bfs search from the given node idx.
+   */
+  void bfs(int node_idx);
+  /**
+   * @brief Clips guide endpoints that are going nowhere
+   */
+  void clipGuides(std::vector<frRect>& rects);
+  /**
+   * @brief Merges guides on same layer and same track
+   */
+  void mergeGuides(std::vector<frRect>& rects);
   frDesign* getDesign() const { return design_; }
+  frTechObject* getTech() const { return design_->getTech(); }
 
   frDesign* design_{nullptr};
   Logger* logger_{nullptr};
@@ -421,5 +431,7 @@ class GuidePathFinder
   std::vector<bool> visited_;
   std::vector<bool> is_on_path_;
   std::vector<int> prev_idx_;
+  frBlockObjectMap<std::set<Point3D>> pin_gcell_map_;
+  std::vector<frRect> rects_;
 };
 }  // namespace drt::io

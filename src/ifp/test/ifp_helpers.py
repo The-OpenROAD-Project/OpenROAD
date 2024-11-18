@@ -42,20 +42,18 @@ class IFPError(Exception):
 
 
 # To be removed once we have UPF support
-def create_voltage_domain(domain_name, area):
+def create_voltage_domain(design, domain_name, area):
     # which flavor of error reporting should be used here?
     if len(area) != 4:
         raise IFPError("utl::error ODB 315 '-area is a list of 4 coordinates'")
 
-    db = ord.get_db()
-    chip = db.getChip()
+    block = design.getBlock()
 
-    if chip == None:
+    if block == None:
         raise IFPError(
             "utl::error ODB 317 'please load the design before trying to use this command'"
         )
 
-    block = chip.getBlock()
     region = odb.dbRegion_create(block, domain_name)
 
     if region == None:
@@ -71,13 +69,13 @@ def create_voltage_domain(domain_name, area):
     group.setType("VOLTAGE_DOMAIN")
 
 
-def insert_tiecells(floorplan, args, prefix=None):
+def insert_tiecells(tech, floorplan, args, prefix=None):
     tie_pin_split = args.split("/")
     port = tie_pin_split[-1]
     tie_cell = "/".join(tie_pin_split[0:-1])
     master = None
 
-    db = ord.get_db()
+    db = tech.getDB()
 
     for lib in db.getLibs():
         master = lib.findMaster(tie_cell)

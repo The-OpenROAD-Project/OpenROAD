@@ -7,7 +7,7 @@ tech = Tech()
 tech.readLiberty("Nangate45/Nangate45_typ.lib")
 tech.readLef("Nangate45/Nangate45.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("check_buffers.def")
 
 design.evalTclString("create_clock -period 5 clk")

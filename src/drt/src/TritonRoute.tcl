@@ -473,10 +473,11 @@ proc step_dr { args } {
 sta::define_cmd_args "check_drc" {
     [-box box]
     [-output_file filename]
+    [-marker_name name]
 } ;# checker off
 proc check_drc { args } {
   sta::parse_key_args "check_drc" args \
-    keys { -box -output_file } \
+    keys { -box -output_file -marker_name } \
     flags {} ;# checker off
   sta::check_argc_eq0 "check_drc" $args
   set box { 0 0 0 0 }
@@ -486,13 +487,17 @@ proc check_drc { args } {
       utl::error DRT 612 "-box is a list of 4 coordinates."
     }
   }
+  set marker_name "DRC"
+  if { [info exists keys(-marker_name)] } {
+    set marker_name $keys(-marker_name)
+  }
   lassign $box x1 y1 x2 y2
   if { [info exists keys(-output_file)] } {
     set output_file $keys(-output_file)
   } else {
     utl::error DRT 613 "-output_file is required for check_drc command"
   }
-  drt::check_drc_cmd $output_file $x1 $y1 $x2 $y2
+  drt::check_drc_cmd $output_file $x1 $y1 $x2 $y2 $marker_name
 }
 
 proc fix_max_spacing { args } {

@@ -37,6 +37,7 @@
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.hpp"
+#include "dbJournal.h"
 #include "dbModBTerm.h"
 #include "dbModInst.h"
 #include "dbModNet.h"
@@ -155,6 +156,16 @@ dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
   if (obj.getDatabase()->isSchema(db_schema_hier_port_removal)) {
     stream >> obj._prev_entry;
   }
+  // User Code Begin >>
+  if (obj.getDatabase()->isSchema(db_schema_db_remove_hash)) {
+    dbDatabase* db = (dbDatabase*) (obj.getDatabase());
+    _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
+    _dbModInst* mod_inst = block->_modinst_tbl->getPtr(obj._parent);
+    if (obj._name) {
+      mod_inst->_moditerm_hash[obj._name] = dbId<_dbModITerm>(obj.getId());
+    }
+  }
+  // User Code End >>
   return stream;
 }
 
@@ -263,7 +274,6 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
 
   moditerm->_name = strdup(name);
   ZALLOCATED(moditerm->_name);
-
   moditerm->_parent = parent->getOID();
   moditerm->_next_entry = parent->_moditerms;
   moditerm->_prev_entry = 0;
@@ -272,6 +282,14 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
     new_next->_prev_entry = moditerm->getOID();
   }
   parent->_moditerms = moditerm->getOID();
+  parent->_moditerm_hash[name] = dbId<_dbModITerm>(moditerm->getOID());
+
+  if (block->_journal) {
+    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->pushParam(dbModITermObj);
+    block->_journal->pushParam(moditerm->getId());
+    block->_journal->endAction();
+  }
 
   return (dbModITerm*) moditerm;
 }
@@ -298,6 +316,14 @@ void dbModITerm::connect(dbModNet* net)
   // set up new head
   _moditerm->_prev_net_moditerm = 0;
   _modnet->_moditerms = getId();
+
+  if (_block->_journal) {
+    _block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
+    _block->_journal->pushParam(dbModITermObj);
+    _block->_journal->pushParam(getId());
+    _block->_journal->pushParam(_modnet->getId());
+    _block->_journal->endAction();
+  }
 }
 
 void dbModITerm::disconnect()
@@ -327,6 +353,12 @@ void dbModITerm::disconnect()
   }
 }
 
+dbModITerm* dbModITerm::getModITerm(dbBlock* block, uint dbid)
+{
+  _dbBlock* owner = (_dbBlock*) block;
+  return (dbModITerm*) (owner->_moditerm_tbl->getPtr(dbid));
+}
+
 void dbModITerm::destroy(dbModITerm* val)
 {
   _dbModITerm* _moditerm = (_dbModITerm*) val;
@@ -350,6 +382,7 @@ void dbModITerm::destroy(dbModITerm* val)
   }
   _moditerm->_prev_entry = 0;
   _moditerm->_next_entry = 0;
+  mod_inst->_moditerm_hash.erase(val->getName());
   block->_moditerm_tbl->destroy(_moditerm);
 }
 

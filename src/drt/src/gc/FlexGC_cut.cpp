@@ -788,4 +788,140 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* rect)
   }
 }
 
+namespace orth {
+gtl::rectangle_data<frCoord> bloatRectangle(
+    const gtl::rectangle_data<frCoord>& rect,
+    const gtl::orientation_2d_enum dir,
+    const frCoord spacing)
+{
+  gtl::rectangle_data<frCoord> temp_rect(rect);
+  gtl::bloat(temp_rect, dir, spacing);
+  return temp_rect;
+}
+gtl::polygon_90_set_data<frCoord> getQueryPolygonSet(
+    const gtl::rectangle_data<frCoord>& marker_rect,
+    const gtl::rectangle_data<frCoord>& rect1,
+    const gtl::rectangle_data<frCoord>& rect2,
+    const gtl::orientation_2d_enum dir,
+    const frCoord spacing)
+{
+  gtl::polygon_90_set_data<frCoord> query_polygon_set;
+  query_polygon_set.insert(bloatRectangle(marker_rect, dir, spacing));
+  query_polygon_set.insert(bloatRectangle(rect1, dir, spacing));
+  query_polygon_set.insert(bloatRectangle(rect2, dir, spacing));
+  return query_polygon_set;
+}
+
+}  // namespace orth
+
+void FlexGCWorker::Impl::checkCutSpacingTableOrthogonal_helper(
+    gcRect* rect1,
+    gcRect* rect2,
+    const frCoord spacing)
+{
+  const auto [prl_x, prl_y] = getRectsPrl(rect1, rect2);
+  if (std::max(prl_x, prl_y) <= 0) {  // no prl
+    return;
+  }
+  if (std::min(prl_x, prl_y) > 0) {  // short
+    return;
+  }
+  auto con = getTech()
+                 ->getLayer(rect1->getLayerNum())
+                 ->getOrthSpacingTableConstraint();
+  // start checking orthogonal spacing
+  // initialize query area
+  gtl::rectangle_data<frCoord> prl_rect(*rect1);
+  gtl::generalized_intersect(prl_rect, *rect2);
+  gtl::polygon_90_set_data<frCoord> query_polygon_set
+      = orth::getQueryPolygonSet(prl_rect,
+                                 *rect1,
+                                 *rect2,
+                                 prl_x > 0 ? gtl::HORIZONTAL : gtl::VERTICAL,
+                                 spacing);
+  std::vector<gtl::rectangle_data<frCoord>> query_rects;
+  gtl::get_max_rectangles(query_rects, query_polygon_set);
+  std::vector<rq_box_value_t<gcRect*>> results;
+  for (const auto& query_rect : query_rects) {
+    getWorkerRegionQuery().queryMaxRectangle(
+        query_rect, rect1->getLayerNum(), results);
+  }
+  for (const auto& [box, rect3] : results) {
+    if (rect3 == rect1 || rect3 == rect2) {
+      continue;
+    }
+    if (rect1->isFixed() && rect2->isFixed() && rect3->isFixed()) {
+      continue;
+    }
+    bool is_violating = false;
+    for (const auto& query_rect : query_rects) {
+      if (gtl::intersects(query_rect, *rect3, false)) {
+        is_violating = true;
+        break;
+      }
+    }
+    if (!is_violating) {
+      continue;
+    }
+    // create violation
+    gtl::rectangle_data<frCoord> marker_rect(prl_rect);
+    gtl::generalized_intersect(marker_rect, *rect3);
+    Rect marker_box(gtl::xl(marker_rect),
+                    gtl::yl(marker_rect),
+                    gtl::xh(marker_rect),
+                    gtl::yh(marker_rect));
+    auto net = rect3->getNet();
+    auto marker = std::make_unique<frMarker>();
+    marker->setBBox(marker_box);
+    marker->setLayerNum(rect3->getLayerNum());
+    marker->setConstraint(con);
+    marker->addAggressor(
+        net->getOwner(),
+        std::make_tuple(rect3->getLayerNum(), box, rect3->isFixed()));
+    marker->addSrc(net->getOwner());
+
+    frCoord llx = gtl::xl(*rect1);
+    frCoord lly = gtl::yl(*rect1);
+    frCoord urx = gtl::xh(*rect1);
+    frCoord ury = gtl::xh(*rect1);
+    net = rect1->getNet();
+    marker->addVictim(
+        net->getOwner(),
+        std::make_tuple(
+            rect1->getLayerNum(), Rect(llx, lly, urx, ury), rect1->isFixed()));
+    marker->addSrc(net->getOwner());
+
+    llx = gtl::xl(*rect2);
+    lly = gtl::yl(*rect2);
+    urx = gtl::xh(*rect2);
+    ury = gtl::xh(*rect2);
+    net = rect2->getNet();
+    marker->addVictim(
+        net->getOwner(),
+        std::make_tuple(
+            rect2->getLayerNum(), Rect(llx, lly, urx, ury), rect2->isFixed()));
+    marker->addSrc(net->getOwner());
+
+    addMarker(std::move(marker));
+  }
+}
+
+void FlexGCWorker::Impl::checkCutSpacingTableOrthogonal(gcRect* rect)
+{
+  auto layer = getTech()->getLayer(rect->getLayerNum());
+  auto con = layer->getOrthSpacingTableConstraint();
+  for (const auto& [within, spacing] : con->getSpacingTable()) {
+    box_t query_box;
+    myBloat(*rect, within, query_box);
+    std::vector<rq_box_value_t<gcRect*>> results;
+    getWorkerRegionQuery().queryMaxRectangle(
+        query_box, rect->getLayerNum(), results);
+    for (auto& [box, via_rect] : results) {
+      if (via_rect == rect) {
+        continue;
+      }
+      checkCutSpacingTableOrthogonal_helper(rect, via_rect, spacing);
+    }
+  }
+}
 }  // namespace drt

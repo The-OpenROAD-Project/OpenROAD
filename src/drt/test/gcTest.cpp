@@ -1474,6 +1474,28 @@ BOOST_AUTO_TEST_CASE(lef58_enclosure)
   }
 }
 
+BOOST_DATA_TEST_CASE(cut_spc_tbl_orth,
+                     (bdata::make({true, false}) ^ bdata::make({140, 150})),
+                     violating,
+                     y)
+{
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  makeSpacingTableOrthConstraint(3, 150, 50);
+  frViaDef* vd = makeViaDef("v", 3, {0, 0}, {100, 100});
+  frNet* n1 = makeNet("n1");
+  makeVia(vd, n1, {0, 0});
+  makeVia(vd, n1, {0, 240});
+  makeVia(vd, n1, {y, 110});
+  runGC();
+  auto& markers = worker.getMarkers();
+  if (violating) {
+    BOOST_TEST(markers.size() == 1);
+  } else {
+    BOOST_TEST(markers.size() == 0);
+  }
+}
+
 BOOST_AUTO_TEST_SUITE_END();
 
 }  // namespace drt

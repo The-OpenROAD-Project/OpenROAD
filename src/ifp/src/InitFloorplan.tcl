@@ -40,12 +40,13 @@ sta::define_cmd_args "initialize_floorplan" {[-utilization util]\
 					       [-core_area {lx ly ux uy}]\
 					       [-additional_sites site_names]\
 					       [-site site_name]\
-					       [-row_parity NONE|ODD|EVEN]}
+					       [-row_parity NONE|ODD|EVEN]\
+					       [-flip_sites site_names]}
 
 proc initialize_floorplan { args } {
   sta::parse_key_args "initialize_floorplan" args \
     keys {-utilization -aspect_ratio -core_space \
-	    -die_area -core_area -site -additional_sites -row_parity} \
+    -die_area -core_area -site -additional_sites -row_parity -flip_sites} \
     flags {}
 
   sta::check_argc_eq0 "initialize_floorplan" $args
@@ -54,13 +55,20 @@ proc initialize_floorplan { args } {
   if { [info exists keys(-site)] } {
     set site [ifp::find_site $keys(-site)]
   } else {
-    utl::warn IFP 11 "use -site to add placement rows."
+    utl::error IFP 11 "use -site to add placement rows."
   }
 
   set additional_sites {}
   if { [info exists keys(-additional_sites)] } {
     foreach sitename $keys(-additional_sites) {
       lappend additional_sites [ifp::find_site $sitename]
+    }
+  }
+
+  set flipped_sites {}
+  if { [info exists keys(-flip_sites)] } {
+    foreach sitename $keys(-flip_sites) {
+      lappend flipped_sites [ifp::find_site $sitename]
     }
   }
 
@@ -75,6 +83,12 @@ proc initialize_floorplan { args } {
   sta::check_argc_eq0 "initialize_floorplan" $args
   if { [info exists keys(-utilization)] } {
     set util $keys(-utilization)
+    if { [info exists keys(-die_area)] } {
+      utl::error IFP 14 "-die_area cannot be used with -utilization."
+    }
+    if { [info exists keys(-core_area)] } {
+      utl::error IFP 20 "-core_area cannot be used with -utilization."
+    }
     if { [info exists keys(-core_space)] } {
       set core_sp $keys(-core_space)
       if { [llength $core_sp] == 1 } {
@@ -93,10 +107,7 @@ proc initialize_floorplan { args } {
         utl::error IFP 13 "-core_space is either a list of 4 margins or one value for all margins."
       }
     } else {
-      set core_sp_bottom 0.0
-      set core_sp_top 0.0
-      set core_sp_left 0.0
-      set core_sp_right 0.0
+      utl::error IFP 34 "no -core_space specified."
     }
     if { [info exists keys(-aspect_ratio)] } {
       set aspect_ratio $keys(-aspect_ratio)
@@ -111,8 +122,18 @@ proc initialize_floorplan { args } {
       [ord::microns_to_dbu $core_sp_right] \
       $site \
       $additional_sites \
-      $row_parity
+      $row_parity \
+      $flipped_sites
   } elseif { [info exists keys(-die_area)] } {
+    if { [info exists keys(-utilization)] } {
+      utl::error IFP 23 "-utilization cannot be used with -die_area."
+    }
+    if { [info exists keys(-core_space)] } {
+      utl::error IFP 24 "-core_space cannot be used with -die_area."
+    }
+    if { [info exists keys(-aspect_ratio)] } {
+      utl::error IFP 33 "-aspect_ratio cannot be used with -die_area."
+    }
     set die_area $keys(-die_area)
     if { [llength $die_area] != 4 } {
       utl::error IFP 15 "-die_area is a list of 4 coordinates."
@@ -143,7 +164,8 @@ proc initialize_floorplan { args } {
         [ord::microns_to_dbu $core_ux] [ord::microns_to_dbu $core_uy] \
         $site \
         $additional_sites \
-        $row_parity
+        $row_parity \
+        $flipped_sites
     } else {
       utl::error IFP 17 "no -core_area specified."
     }

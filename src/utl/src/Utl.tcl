@@ -128,6 +128,76 @@ proc man { args } {
   }
 }
 
+sta::define_cmd_args "tee" {-file filename
+                            -variable name
+                            [-append]
+                            [-quiet]
+                            command}
+proc tee { args } {
+  sta::parse_key_args "tee" args \
+    keys {-file -variable} flags {-append -quiet}
+
+  sta::check_argc_eq1 "tee" $args
+
+  if { ![info exists keys(-file)] && ![info exists keys(-variable)] } {
+    utl::error UTL 101 "-file or -variable is required"
+  }
+
+  if { [info exists flags(-quiet)] } {
+    if { [info exists keys(-variable)] } {
+      utl::redirectStringBegin
+    } else {
+      if { [info exists flags(-append)] } {
+        utl::redirectFileAppendBegin $keys(-file)
+      } else {
+        utl::redirectFileBegin $keys(-file)
+      }
+    }
+  } else {
+    if { [info exists keys(-variable)] } {
+      utl::teeStringBegin
+    } else {
+      if { [info exists flags(-append)] } {
+        utl::teeFileAppendBegin $keys(-file)
+      } else {
+        utl::teeFileBegin $keys(-file)
+      }
+    }
+  }
+
+  global errorCode errorInfo
+  set code [catch { eval { {*}[lindex $args 0] } } ret]
+
+  if { [info exists keys(-variable)] } {
+    if { [info exists flags(-quiet)] } {
+      set stream [utl::redirectStringEnd]
+    } else {
+      set stream [utl::teeStringEnd]
+    }
+    upvar 1 $keys(-variable) var
+    if { [info exists flags(-append)] } {
+      if { ![info exists var] } {
+        set var ""
+      }
+      set var "$var$stream"
+    } else {
+      set var $stream
+    }
+  } else {
+    if { [info exists flags(-quiet)] } {
+      utl::redirectFileEnd
+    } else {
+      utl::teeFileEnd
+    }
+  }
+
+  if { $code == 1 } {
+    return -code $code -errorcode $errorCode -errorinfo $errorInfo $ret
+  } else {
+    return $ret
+  }
+}
+
 namespace eval utl {
 proc get_input { } {
   # Get the relative path from the user

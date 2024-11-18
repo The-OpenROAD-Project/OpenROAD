@@ -623,6 +623,7 @@ _installDebianPackages() {
         git \
         groff \
         lcov \
+        libffi-dev \
         libgomp1 \
         libomp-dev \
         libpcre2-dev \
@@ -635,6 +636,7 @@ _installDebianPackages() {
         tcl-dev \
         tcl-tclreadline \
         tcllib \
+        unzip \
         wget \
         zlib1g-dev
 
@@ -664,7 +666,9 @@ _installCI() {
         apt-transport-https \
         ca-certificates \
         curl \
+        gnupg \
         jq \
+        lsb-release \
         parallel \
         software-properties-common
 
@@ -694,6 +698,12 @@ _installCI() {
         docker-ce-cli \
         containerd.io \
         docker-buildx-plugin
+
+    # Install clang for C++20 support
+    wget https://apt.llvm.org/llvm.sh
+    chmod +x llvm.sh
+    ./llvm.sh 16 all
+
 }
 
 _checkIsLocal() {

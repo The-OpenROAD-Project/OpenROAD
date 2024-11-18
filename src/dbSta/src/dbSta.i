@@ -165,12 +165,12 @@ db_network_defined()
 }
 
 void
-report_cell_usage_cmd(const bool verbose)
+report_cell_usage_cmd(odb::dbModule* mod, const bool verbose)
 {
   cmdLinkedNetwork();
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
-  sta->report_cell_usage(verbose);
+  sta->report_cell_usage(mod, verbose);
 }
 
 // Copied from sta/verilog/Verilog.i because we don't want sta::read_verilog

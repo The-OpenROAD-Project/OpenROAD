@@ -5,7 +5,7 @@ import tap
 tech = Tech()
 tech.readLef("Nangate45/Nangate45_tech.lef")
 tech.readLef("symmetry.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("symmetry.def")
 
 options = tap.Options()

@@ -294,6 +294,10 @@ void Resizer::estimateParasitics(ParasiticsSrc src,
       global_router_->estimateRC(spef_writer.get());
       parasitics_src_ = ParasiticsSrc::global_routing;
       break;
+    case ParasiticsSrc::detailed_routing:
+      // TODO: call rcx to extract parasitics and load them to STA
+      parasitics_src_ = ParasiticsSrc::detailed_routing;
+      break;
     case ParasiticsSrc::none:
       break;
   }
@@ -310,6 +314,8 @@ void Resizer::incrementalParasiticsBegin()
     case ParasiticsSrc::placement:
       break;
     case ParasiticsSrc::global_routing:
+    case ParasiticsSrc::detailed_routing:
+      // TODO: add IncrementalDRoute
       incr_groute_ = new IncrementalGRoute(global_router_, block_);
       // Don't print verbose messages for incremental routing
       global_router_->setVerbose(false);
@@ -326,6 +332,8 @@ void Resizer::incrementalParasiticsEnd()
     case ParasiticsSrc::placement:
       break;
     case ParasiticsSrc::global_routing:
+    case ParasiticsSrc::detailed_routing:
+      // TODO: add IncrementalDRoute
       delete incr_groute_;
       incr_groute_ = nullptr;
       break;
@@ -344,7 +352,9 @@ void Resizer::updateParasitics(bool save_guides)
       }
       parasitics_invalid_.clear();
       break;
-    case ParasiticsSrc::global_routing: {
+    case ParasiticsSrc::global_routing:
+    case ParasiticsSrc::detailed_routing: {
+      // TODO: update detailed route for modified nets
       incr_groute_->updateRoutes(save_guides);
       for (const Net* net : parasitics_invalid_) {
         global_router_->estimateRC(db_network_->staToDb(net));
@@ -391,6 +401,9 @@ void Resizer::ensureWireParasitic(const Pin* drvr_pin, const Net* net)
         parasitics_invalid_.erase(net);
         break;
       }
+      case ParasiticsSrc::detailed_routing:
+        // TODO: call incremental drt for the modified net
+        break;
       case ParasiticsSrc::none:
         break;
     }
@@ -743,6 +756,7 @@ bool Resizer::isPad(const Instance* inst) const
 
 void Resizer::parasiticsInvalid(const Net* net)
 {
+  odb::dbNet* db_net = db_network_->flatNet(net);
   if (haveEstimatedParasitics()) {
     debugPrint(logger_,
                RSZ,
@@ -750,7 +764,7 @@ void Resizer::parasiticsInvalid(const Net* net)
                2,
                "parasitics invalid {}",
                network_->pathName(net));
-    parasitics_invalid_.insert(net);
+    parasitics_invalid_.insert(db_network_->dbToSta(db_net));
   }
 }
 

@@ -95,12 +95,6 @@ class SimulatedAnnealingCore
   {
     macros_to_place_ = macros_to_place;
   };
-  void setCentralizationAttemptOn(bool centralization_on)
-  {
-    centralization_on_ = centralization_on;
-  };
-  bool centralizationWasReverted() { return centralization_was_reverted_; }
-
   void setNets(const std::vector<BundledNet>& nets);
   // Fence corresponds to each macro (macro_id, fence)
   void setFences(const std::map<int, Rect>& fences);
@@ -124,16 +118,24 @@ class SimulatedAnnealingCore
   float getNormFencePenalty() const;
   void getMacros(std::vector<T>& macros) const;
 
-  // Initialize the SA worker
   virtual void initialize() = 0;
-  // Run FastSA algorithm
-  void fastSA();
+  virtual void run() = 0;
   virtual void fillDeadSpace() = 0;
 
  protected:
+  struct Result
+  {
+    SequencePair sequence_pair;
+    // [Only for SoftMacro] The same sequence pair can represent different
+    // floorplan arrangements depending on the macros' shapes.
+    std::map<int, float> macro_id_to_width;
+  };
+
+  void fastSA();
+
   void initSequencePair();
-  void attemptCentralization(float pre_cost);
-  void moveFloorplan(const std::pair<float, float>& offset);
+  void updateBestValidResult();
+  void useBestValidResult();
 
   virtual float calNormCost() const = 0;
   virtual void calPenalty() = 0;
@@ -238,6 +240,8 @@ class SimulatedAnnealingCore
   utl::Logger* logger_ = nullptr;
   Mpl2Observer* graphics_ = nullptr;
 
+  Result best_valid_result_;
+
   std::vector<float> cost_list_;  // store the cost in the list
   std::vector<float> T_list_;     // store the temperature
   // we define accuracy to determine whether the floorplan is valid
@@ -245,8 +249,6 @@ class SimulatedAnnealingCore
   static constexpr float acc_tolerance_ = 0.001;
 
   bool has_initial_sequence_pair_ = false;
-  bool centralization_on_ = false;
-  bool centralization_was_reverted_ = false;
 };
 
 // SACore wrapper function
@@ -255,7 +257,7 @@ template <class T>
 void runSA(T* sa_core)
 {
   sa_core->initialize();
-  sa_core->fastSA();
+  sa_core->run();
 }
 
 }  // namespace mpl2

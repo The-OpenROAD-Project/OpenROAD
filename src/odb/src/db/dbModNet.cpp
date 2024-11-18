@@ -227,6 +227,27 @@ const char* dbModNet::getName() const
   return obj->_name;
 }
 
+//
+// Support for renaming hierarchical nets
+//
+void dbModNet::rename(const char* new_name)
+{
+  _dbModNet* obj = (_dbModNet*) this;
+  _dbBlock* block = (_dbBlock*) obj->getOwner();
+  _dbModule* parent = block->_module_tbl->getPtr(obj->_parent);
+  parent->_modnet_hash.erase(obj->_name);
+  free(obj->_name);
+  obj->_name = strdup(new_name);
+  parent->_modnet_hash[new_name] = obj->getOID();
+}
+
+dbModNet* dbModNet::getModNet(dbBlock* block, uint id)
+{
+  _dbBlock* block_ = (_dbBlock*) block;
+  _dbModNet* ret = block_->_modnet_tbl->getPtr(id);
+  return (dbModNet*) ret;
+}
+
 dbModNet* dbModNet::create(dbModule* parentModule, const char* name)
 {
   // give illusion of scoping.
@@ -243,6 +264,7 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* name)
     new_next->_prev_entry = modnet->getOID();
   }
   parent->_modnets = modnet->getOID();
+  parent->_modnet_hash[name] = modnet->getOID();
   return (dbModNet*) modnet;
 }
 
@@ -266,6 +288,7 @@ void dbModNet::destroy(dbModNet* mod_net)
   }
   _modnet->_prev_entry = 0;
   _modnet->_next_entry = 0;
+  module->_modnet_hash.erase(mod_net->getName());
   block->_modnet_tbl->destroy(_modnet);
 }
 
