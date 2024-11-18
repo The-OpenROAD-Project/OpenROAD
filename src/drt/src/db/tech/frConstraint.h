@@ -2323,6 +2323,32 @@ class frLef58MaxSpacingConstraint : public frConstraint
   int cut_class_idx_{-1};
 };
 
+class frLef58WidthTableOrthConstraint : public frConstraint
+{
+ public:
+  frLef58WidthTableOrthConstraint(const frCoord horz_spc,
+                                  const frCoord vert_spc)
+      : horz_spc_(horz_spc), vert_spc_(vert_spc)
+  {
+  }
+  frCoord getHorzSpc() const { return horz_spc_; }
+  frCoord getVertSpc() const { return vert_spc_; }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("LEF58_WIDTHTABLE ORTH");
+  }
+  // typeId
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58WidthTableOrth;
+  }
+
+
+ private:
+  frCoord horz_spc_;
+  frCoord vert_spc_;
+};
+
 class frNonDefaultRule
 {
  public:

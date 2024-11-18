@@ -194,12 +194,12 @@ bool FlexGCWorker::Impl::isOppositeDir(gcCorner* corner, gcSegment* seg)
 
 box_t FlexGCWorker::Impl::checkMetalCornerSpacing_getQueryBox(
     gcCorner* corner,
-    frCoord& maxSpcValX,
-    frCoord& maxSpcValY)
+    const frCoord maxSpcValX,
+    const frCoord maxSpcValY)
 {
   box_t queryBox;
-  frCoord baseX = corner->getNextEdge()->low().x();
-  frCoord baseY = corner->getNextEdge()->low().y();
+  frCoord baseX = corner->x();
+  frCoord baseY = corner->y();
   frCoord llx = baseX;
   frCoord lly = baseY;
   frCoord urx = baseX;
@@ -1380,14 +1380,20 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING
-          || !currLayer->hasLef58CornerSpacingConstraint()) {
+          || (!currLayer->hasLef58CornerSpacingConstraint()
+              && currLayer->getWidthTblOrthCon() == nullptr)) {
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
         for (auto& corners : pin->getPolygonCorners()) {
           for (auto& corner : corners) {
             // LEF58 corner spacing
-            checkMetalCornerSpacing_main(corner.get());
+            if (currLayer->hasLef58CornerSpacingConstraint()) {
+              checkMetalCornerSpacing_main(corner.get());
+            }
+            if (currLayer->getWidthTblOrthCon()) {
+              checkWidthTableOrth(corner.get());
+            }
           }
         }
       }
@@ -1401,7 +1407,8 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING
-          || !currLayer->hasLef58CornerSpacingConstraint()) {
+          || (!currLayer->hasLef58CornerSpacingConstraint()
+              && currLayer->getWidthTblOrthCon() == nullptr)) {
         continue;
       }
       for (auto& net : getNets()) {
@@ -1409,12 +1416,89 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
           for (auto& corners : pin->getPolygonCorners()) {
             for (auto& corner : corners) {
               // LEF58 corner spacing
-              checkMetalCornerSpacing_main(corner.get());
+              if (currLayer->hasLef58CornerSpacingConstraint()) {
+                checkMetalCornerSpacing_main(corner.get());
+              }
+              if (currLayer->getWidthTblOrthCon()) {
+                checkWidthTableOrth(corner.get());
+              }
             }
           }
         }
       }
     }
+  }
+}
+
+void FlexGCWorker::Impl::checkWidthTableOrth_main(gcCorner* corner1,
+                                                  gcCorner* corner2)
+{
+  if (corner2 == nullptr) {
+    return;
+  }
+  if (corner1 == corner2) {
+    return;
+  }
+  if (corner2->getType() != frCornerTypeEnum::CONCAVE) {
+    return;
+  }
+  if (corner1->isFixed() && corner2->isFixed()) {
+    return;
+  }
+  const auto layer_num = corner1->getLayerNum();
+  const auto layer = getTech()->getLayer(layer_num);
+  const auto con = layer->getWidthTblOrthCon();
+  const frCoord horz_spc = con->getHorzSpc();
+  const frCoord vert_spc = con->getVertSpc();
+
+  Rect marker_rect(corner1->x(), corner1->y(), corner2->x(), corner2->y());
+  if (marker_rect.dx() >= horz_spc || marker_rect.dy() >= vert_spc) {
+    return;
+  }
+  const auto owner = corner1->getPin()->getNet()->getOwner();
+  auto marker = std::make_unique<frMarker>();
+  marker->setBBox(marker_rect);
+  marker->setLayerNum(layer_num);
+  marker->setConstraint(con);
+  marker->addSrc(owner);
+  marker->addVictim(
+      owner,
+      std::make_tuple(
+          layer_num,
+          Rect(corner1->x(), corner1->y(), corner1->x(), corner1->y()),
+          corner1->isFixed()));
+  marker->addAggressor(
+      owner,
+      std::make_tuple(
+          layer_num,
+          Rect(corner2->x(), corner2->y(), corner2->x(), corner2->y()),
+          corner2->isFixed()));
+  addMarker(std::move(marker));
+}
+
+void FlexGCWorker::Impl::checkWidthTableOrth(gcCorner* corner)
+{
+  // applied only to inside corners (CONCAVE)
+  if (corner->getType() != frCornerTypeEnum::CONCAVE) {
+    return;
+  }
+  auto layer_num = corner->getLayerNum();
+  auto layer = getTech()->getLayer(layer_num);
+  auto con = layer->getWidthTblOrthCon();
+  const frCoord horz_spc = con->getHorzSpc();
+  const frCoord vert_spc = con->getVertSpc();
+  Rect query_rect(corner->x() - horz_spc,
+                  corner->y() - vert_spc,
+                  corner->x() + horz_spc,
+                  corner->y() + vert_spc);
+  std::vector<std::pair<segment_t, gcSegment*>> result;
+  getWorkerRegionQuery().queryPolygonEdge(query_rect, layer_num, result);
+  for (auto [_, edge] : result) {
+    if (edge->getPin() != corner->getPin()) {
+      continue;
+    }
+    checkWidthTableOrth_main(corner, edge->getLowCorner());
+    checkWidthTableOrth_main(corner, edge->getHighCorner());
   }
 }
 
@@ -4127,7 +4211,7 @@ int FlexGCWorker::Impl::main()
   }
   // clear existing markers
   clearMarkers();
-  // check LEF58CornerSpacing
+  // check LEF58CornerSpacing and LEF58WidthTable ORTH
   checkMetalCornerSpacing();
   // check Short, NSMet, MetSpc based on max rectangles
   checkMetalSpacing();

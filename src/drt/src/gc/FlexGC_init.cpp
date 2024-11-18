@@ -735,8 +735,10 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
       prevEdge->setHighCorner(currCorner);
       nextEdge->setLowCorner(currCorner);
       // set currCorner attributes
+      currCorner->addToPin(pin);
       currCorner->setPrevEdge(prevEdge);
       currCorner->setNextEdge(nextEdge.get());
+      currCorner->setLayerNum(layerNum);
       currCorner->x(prevEdge->high().x());
       currCorner->y(prevEdge->high().y());
       int orient = gtl::orientation(*prevEdge, *nextEdge);

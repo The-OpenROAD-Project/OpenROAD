@@ -1656,6 +1656,37 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tmpLayer->addForbiddenSpacingConstraint(con.get());
     getTech()->addUConstraint(std::move(con));
   }
+  if (!layer->getTechLayerWidthTableRules().empty()) {
+    frUInt4 width = 0;
+    frUInt4 wrongway_width = 0;
+    for (auto rule : layer->getTechLayerWidthTableRules()) {
+      if (!rule->isOrthogonal()) {
+        continue;
+      }
+      if (rule->isWrongDirection()) {
+        wrongway_width = rule->getWidthTable().at(0);
+      } else {
+        width = rule->getWidthTable().at(0);
+      }
+    }
+    if (wrongway_width == 0) {
+      wrongway_width = width;
+    }
+    if (width != 0 || wrongway_width != 0) {
+      const frCoord horz_spc
+          = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL
+                ? wrongway_width
+                : width;
+      const frCoord vert_spc
+          = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL
+                ? width
+                : wrongway_width;
+      auto ucon = std::make_unique<frLef58WidthTableOrthConstraint>(horz_spc,
+                                                                    vert_spc);
+      tmpLayer->setWidthTblOrthCon(ucon.get());
+      getTech()->addUConstraint(std::move(ucon));
+    }
+  }
 }
 
 void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,

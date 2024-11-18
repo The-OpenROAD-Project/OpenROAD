@@ -164,6 +164,8 @@ std::string frConstraint::getViolName() const
       return "Lef58MaxSpacing";
     case frConstraintTypeEnum::frcSpacingTableOrth:
       return "SpacingTableOrth";
+    case frConstraintTypeEnum::frcLef58WidthTableOrth:
+      return "WidthTableOrth";
   }
   return "";
 }

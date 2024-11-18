@@ -293,8 +293,8 @@ class FlexGCWorker::Impl
       gcRect* rect,
       frLef58TwoWiresForbiddenSpcConstraint* con);
   box_t checkMetalCornerSpacing_getQueryBox(gcCorner* corner,
-                                            frCoord& maxSpcValX,
-                                            frCoord& maxSpcValY);
+                                            frCoord maxSpcValX,
+                                            frCoord maxSpcValY);
   void checkMetalCornerSpacing();
   void checkMetalCornerSpacing_getMaxSpcVal(frLayerNum layerNum,
                                             frCoord& maxSpcValX,
@@ -305,6 +305,8 @@ class FlexGCWorker::Impl
                                     gcRect* rect,
                                     frLef58CornerSpacingConstraint* con);
 
+  void checkWidthTableOrth(gcCorner* corner);
+  void checkWidthTableOrth_main(gcCorner* corner1, gcCorner* corner2);
   void checkMetalShape(bool allow_patching = false);
   void checkMetalShape_main(gcPin* pin, bool allow_patching);
   void checkMetalShape_minWidth(const gtl::rectangle_data<frCoord>& rect,
