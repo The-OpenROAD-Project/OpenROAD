@@ -519,16 +519,16 @@ END COMPONENTS
 PINS 3 ;
     - io_1 + NET io_1 + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal5 ( -140 -140 ) ( 140 140 )
-        + PLACED ( 299860 55020 ) N ;
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 187230 140 ) N ;
     - io_2 + NET io_2 + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal6 ( -140 -140 ) ( 140 140 )
-        + PLACED ( 283550 249860 ) N ;
+        + PLACED ( 121150 140 ) N ;
     - io_3 + NET io_3 + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal5 ( -140 -140 ) ( 140 140 )
-        + PLACED ( 299860 238700 ) N ;
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 275710 140 ) N ;
 END PINS
 NETS 3 ;
     - io_1 ( PIN io_1 ) + USE SIGNAL ;

@@ -647,6 +647,11 @@ struct Rect
   float xMax() const { return ux; }
   float yMax() const { return uy; }
 
+  void setXMin(float lx) { this->lx = lx; }
+  void setYMin(float ly) { this->ly = ly; }
+  void setXMax(float ux) { this->ux = ux; }
+  void setYMax(float uy) { this->uy = uy; }
+
   float getX() const { return (lx + ux) / 2.0; }
   float getY() const { return (ly + uy) / 2.0; }
 

@@ -970,33 +970,19 @@ void HierRTLMP::createPinAccessBlockage(Boundary constraint_boundary,
                                         const float depth,
                                         const Rect& die)
 {
+  Rect blockage = die;
   if (constraint_boundary == L) {
-    const Rect left_io_blockage(
-        die.xMin(), die.yMin(), die.xMin() + depth, die.yMax());
-    boundary_to_io_blockage_[L] = left_io_blockage;
-    macro_blockages_.push_back(left_io_blockage);
+    blockage.setXMax(blockage.xMin() + depth);
+  } else if (constraint_boundary == T) {
+    blockage.setYMin(blockage.yMax() - depth);
+  } else if (constraint_boundary == R) {
+    blockage.setXMin(blockage.xMax() - depth);
+  } else {  // Bottom
+    blockage.setYMax(blockage.yMin() + depth);
   }
 
-  if (constraint_boundary == T) {
-    const Rect top_io_blockage(
-        die.xMin(), die.yMax() - depth, die.xMax(), die.yMax());
-    boundary_to_io_blockage_[T] = top_io_blockage;
-    macro_blockages_.push_back(top_io_blockage);
-  }
-
-  if (constraint_boundary == R) {
-    const Rect right_io_blockage(
-        die.xMax() - depth, die.yMin(), die.xMax(), die.yMax());
-    boundary_to_io_blockage_[R] = right_io_blockage;
-    macro_blockages_.push_back(right_io_blockage);
-  }
-
-  if (constraint_boundary == B) {
-    const Rect bottom_io_blockage(
-        die.xMin(), die.yMin(), die.xMax(), die.yMin() + depth);
-    boundary_to_io_blockage_[B] = bottom_io_blockage;
-    macro_blockages_.push_back(bottom_io_blockage);
-  }
+  boundary_to_io_blockage_[constraint_boundary] = blockage;
+  macro_blockages_.push_back(blockage);
 }
 
 std::vector<Cluster*> HierRTLMP::getIOClusters()

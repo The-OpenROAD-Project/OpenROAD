@@ -5,6 +5,7 @@
 [INFO ODB-0128] Design: io_constraints1
 [INFO ODB-0252]     Updated 3 pins.
 [INFO ODB-0253]     Updated 401 components.
+[INFO PPL-0067] Restrict INPUT pins to region 0.0u-125.0u, in the LEFT edge.
 Found 1 macro blocks.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0001] Number of slots           974

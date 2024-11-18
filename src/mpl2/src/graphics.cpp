@@ -418,8 +418,6 @@ void Graphics::drawObjects(gui::Painter& painter)
     drawCluster(root_, painter);
   }
 
-  drawBlockedBoundariesIndication(painter);
-
   // Draw blockages only during SA for SoftMacros
   if (!soft_macros_.empty()) {
     drawAllBlockages(painter);
@@ -524,6 +522,8 @@ void Graphics::drawObjects(gui::Painter& painter)
       drawBundledNets(painter, soft_macros_);
     }
   }
+
+  drawBlockedBoundariesIndication(painter);
 
   painter.setBrush(gui::Painter::transparent);
   if (only_final_result_) {
@@ -796,6 +796,7 @@ void Graphics::eraseDrawing()
   bundled_nets_.clear();
   outline_.reset(0, 0, 0, 0);
   outlines_.clear();
+  blocked_boundary_to_mark_.clear();
 }
 
 }  // namespace mpl2
