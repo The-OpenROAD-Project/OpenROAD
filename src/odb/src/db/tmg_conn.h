@@ -127,6 +127,7 @@ class tmg_conn
 {
  public:
   tmg_conn(utl::Logger* logger);
+  ~tmg_conn();
   void analyzeNet(dbNet* net);
   void loadNet(dbNet* net);
   void loadWire(dbWire* wire);

@@ -64,6 +64,7 @@ class tmg_conn_graph
 {
  public:
   tmg_conn_graph();
+  ~tmg_conn_graph();
   void init(int ptN, int shortN);
   tcg_edge* newEdge(const tmg_conn* conn, int fr, int to);
   tcg_edge* newShortEdge(const tmg_conn* conn, int fr, int to);
@@ -103,6 +104,14 @@ tmg_conn_graph::tmg_conn_graph()
   _path_vis = (int*) malloc(_ptNmax * sizeof(int));
   _eV = (tcg_edge*) malloc(2 * _ptNmax * sizeof(tcg_edge));
   _stackV = (tcg_edge**) malloc(_shortNmax * sizeof(tcg_edge*));
+}
+
+tmg_conn_graph::~tmg_conn_graph()
+{
+  free(_ptV);
+  free(_path_vis);
+  free(_eV);
+  free(_stackV);
 }
 
 void tmg_conn_graph::init(const int ptN, const int shortN)

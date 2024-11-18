@@ -117,6 +117,17 @@ tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
   _swireNetCnt = 0;
 }
 
+tmg_conn::~tmg_conn()
+{
+  free(_termV);
+  free(_tstackV);
+  free(_csNV);
+  free(_shortV);
+
+  delete _search;
+  delete _graph;
+}
+
 int tmg_conn::ptDist(const int fr, const int to) const
 {
   return abs(_ptV[fr]._x - _ptV[to]._x) + abs(_ptV[fr]._y - _ptV[to]._y);
