@@ -75,6 +75,8 @@ record_tests {
   no_pins
   no_tracks
   on_grid
+  partial_tracks_error
+  partial_tracks
   pin_length
   pin_length_error
   pin_extension

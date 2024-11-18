@@ -40,6 +40,7 @@
 #include <random>
 #include <sstream>
 
+#include "AbstractIOPlacerRenderer.h"
 #include "Core.h"
 #include "HungarianMatching.h"
 #include "Netlist.h"
@@ -47,7 +48,6 @@
 #include "Slots.h"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
-#include "ppl/AbstractIOPlacerRenderer.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -121,6 +121,24 @@ std::string IOPlacer::getEdgeString(Edge edge)
   }
 
   return edge_str;
+}
+
+std::string IOPlacer::getDirectionString(Direction direction)
+{
+  std::string direction_str;
+  if (direction == Direction::input) {
+    direction_str = "INPUT";
+  } else if (direction == Direction::output) {
+    direction_str = "OUTPUT";
+  } else if (direction == Direction::inout) {
+    direction_str = "INOUT";
+  } else if (direction == Direction::feedthru) {
+    direction_str = "FEEDTHRU";
+  } else if (direction == Direction::invalid) {
+    direction_str = "INVALID";
+  }
+
+  return direction_str;
 }
 
 void IOPlacer::initNetlistAndCore(const std::set<int>& hor_layer_idx,
@@ -1620,24 +1638,14 @@ void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
 {
   Interval interval(edge, begin, end);
   bool inserted = false;
-  std::string pin_names;
-  int pin_cnt = 0;
-  for (odb::dbBTerm* pin : *pins) {
-    pin_names += pin->getName() + " ";
-    pin_cnt++;
-    if (pin_cnt >= pins_per_report_
-        && !logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
-      pin_names += "... ";
-      break;
-    }
-  }
+  std::string pin_names = getPinSetOrListString(*pins);
 
   if (logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
     debugPrint(logger_,
                utl::PPL,
                "pin_groups",
                1,
-               "Restrict pins [ {}] to region {:.2f}u-{:.2f}u at the {} edge.",
+               "Restrict pins [ {} ] to region {:.2f}u-{:.2f}u at the {} edge.",
                pin_names,
                getBlock()->dbuToMicrons(begin),
                getBlock()->dbuToMicrons(end),
@@ -1646,7 +1654,7 @@ void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
     logger_->info(
         utl::PPL,
         48,
-        "Restrict pins [ {}] to region {:.2f}u-{:.2f}u at the {} edge.",
+        "Restrict pins [ {} ] to region {:.2f}u-{:.2f}u at the {} edge.",
         pin_names,
         getBlock()->dbuToMicrons(begin),
         getBlock()->dbuToMicrons(end),
@@ -1672,6 +1680,14 @@ void IOPlacer::addDirectionConstraint(Direction direction,
                                       int end)
 {
   Interval interval(edge, begin, end);
+  logger_->info(utl::PPL,
+                67,
+                "Restrict {} pins to region {}u-{}u, in the {} edge.",
+                getDirectionString(direction),
+                getBlock()->dbuToMicrons(begin),
+                getBlock()->dbuToMicrons(end),
+                getEdgeString(edge));
+
   Constraint constraint(PinSet(), direction, interval);
   constraints_.push_back(constraint);
 }
@@ -1679,6 +1695,19 @@ void IOPlacer::addDirectionConstraint(Direction direction,
 void IOPlacer::addTopLayerConstraint(PinSet* pins, const odb::Rect& region)
 {
   Constraint constraint(*pins, Direction::invalid, region);
+  std::string pin_names = getPinSetOrListString(*pins);
+
+  logger_->info(utl::PPL,
+                60,
+                "Restrict pins [ {} ] to region ({:.2f}u, {:.2f}u)-({:.2f}u, "
+                "{:.2f}u) at routing layer {}.",
+                pin_names,
+                getBlock()->dbuToMicrons(region.xMin()),
+                getBlock()->dbuToMicrons(region.yMin()),
+                getBlock()->dbuToMicrons(region.xMax()),
+                getBlock()->dbuToMicrons(region.yMax()),
+                getTopLayer()->getConstName());
+
   constraints_.push_back(constraint);
   for (odb::dbBTerm* bterm : *pins) {
     if (!bterm->getFirstPinPlacementStatus().isFixed()) {
@@ -1975,25 +2004,33 @@ Direction IOPlacer::getDirection(const std::string& direction)
   return Direction::feedthru;
 }
 
-void IOPlacer::addPinGroup(PinList* group, bool order)
+/* static */
+template <class PinSetOrList>
+std::string IOPlacer::getPinSetOrListString(const PinSetOrList& group)
 {
   std::string pin_names;
   int pin_cnt = 0;
-  for (odb::dbBTerm* pin : *group) {
-    pin_names += pin->getName() + " ";
+  for (odb::dbBTerm* pin : group) {
+    pin_names += (pin_cnt ? " " : "") + pin->getName();
     pin_cnt++;
     if (pin_cnt >= pins_per_report_
         && !logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
-      pin_names += "... ";
+      pin_names += " ...";
       break;
     }
   }
+  return pin_names;
+}
+
+void IOPlacer::addPinGroup(PinList* group, bool order)
+{
+  std::string pin_names = getPinSetOrListString(*group);
 
   if (logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
     debugPrint(
-        logger_, utl::PPL, "pin_groups", 1, "Pin group: [ {}]", pin_names);
+        logger_, utl::PPL, "pin_groups", 1, "Pin group: [ {} ]", pin_names);
   } else {
-    logger_->info(utl::PPL, 44, "Pin group: [ {}]", pin_names);
+    logger_->info(utl::PPL, 44, "Pin group: [ {} ]", pin_names);
   }
   pin_groups_.push_back({*group, order});
 }

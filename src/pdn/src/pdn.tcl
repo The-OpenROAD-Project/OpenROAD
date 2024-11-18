@@ -35,7 +35,7 @@ sta::define_cmd_args "pdngen" {[-skip_trim] \
                                [-report_only] \
                                [-failed_via_report file] \
                                [-verbose]
-}
+} ;#checker off
 
 proc pdngen { args } {
   sta::parse_key_args "pdngen" args \
@@ -156,7 +156,7 @@ proc set_voltage_domain { args } {
     } else {
       set signal_type [$switched_power getSigType]
       if { $signal_type != "POWER" } {
-        utl::error PDN 199 "Net $switched_power_net_name already exists in the design,\
+        utl::error PDN 212 "Net $switched_power_net_name already exists in the design,\
           but is of signal type ${signal_type}."
       }
     }
@@ -376,6 +376,9 @@ proc add_pdn_stripe { args } {
   }
 
   if { [info exists flags(-followpins)] } {
+    if { [info exists keys(-starts_with)] } {
+      utl::warn PDN 211 "Option -starts_with cannot be used with -followpins and will be ignored."
+    }
     pdn::make_followpin $grid $layer $width $extend
   } else {
     pdn::make_strap \
@@ -408,7 +411,7 @@ sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
                                      [-add_connect] \
                                      [-extend_to_boundary] \
                                      [-connect_to_pads]
-                                     }
+                                     } ;#checker off
 
 proc add_pdn_ring { args } {
   sta::parse_key_args "add_pdn_ring" args \

@@ -5,7 +5,7 @@ import gpl_aux
 tech = Tech()
 tech.readLiberty("./library/nangate45/NangateOpenCellLibrary_typical.lib")
 tech.readLef("./nangate45.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("./simple01-td.def")
 
 design.evalTclString("create_clock -name core_clock -period 2 clk")

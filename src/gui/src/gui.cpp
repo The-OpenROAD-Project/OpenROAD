@@ -96,7 +96,7 @@ static void message_handler(QtMsgType type,
   }
   switch (type) {
     case QtDebugMsg:
-      logger->debug(utl::GUI, "qt", print_msg);
+      debugPrint(logger, utl::GUI, "qt", 1, print_msg);
       break;
     case QtInfoMsg:
       logger->info(utl::GUI, 75, print_msg);
@@ -777,6 +777,14 @@ void Gui::saveClockTreeImage(const std::string& clock_name,
       clock_name, filename, corner, width, height);
 }
 
+void Gui::selectClockviewerClock(const std::string& clock_name)
+{
+  if (!enabled()) {
+    return;
+  }
+  main_window->getClockViewer()->selectClock(clock_name);
+}
+
 static QWidget* findWidget(const std::string& name)
 {
   if (name == "main_window" || name == "OpenROAD") {
@@ -1257,6 +1265,16 @@ void Gui::showGui(const std::string& cmds, bool interactive, bool load_settings)
   startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive, load_settings);
 }
 
+void Gui::minimize()
+{
+  main_window->showMinimized();
+}
+
+void Gui::unminimize()
+{
+  main_window->showNormal();
+}
+
 void Gui::init(odb::dbDatabase* db, utl::Logger* logger)
 {
   db_ = db;
@@ -1294,7 +1312,8 @@ int startGui(int& argc,
              Tcl_Interp* interp,
              const std::string& script,
              bool interactive,
-             bool load_settings)
+             bool load_settings,
+             bool minimize)
 {
   auto gui = gui::Gui::get();
   // ensure continue after close is false
@@ -1312,6 +1331,9 @@ int startGui(int& argc,
 
   // create new MainWindow
   main_window = new gui::MainWindow(load_settings);
+  if (minimize) {
+    main_window->showMinimized();
+  }
 
   open_road->addObserver(main_window);
   if (!interactive) {

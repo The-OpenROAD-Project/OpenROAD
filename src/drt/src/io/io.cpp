@@ -968,36 +968,43 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
 }
 void io::Parser::setNets(odb::dbBlock* block)
 {
-  for (auto net : block->getNets()) {
-    bool is_special = net->isSpecial();
-    if (!is_special && net->getSigType().isSupply()) {
-      logger_->error(DRT,
-                     305,
-                     "Net {} of signal type {} is not routable by TritonRoute. "
-                     "Move to special nets.",
-                     net->getName(),
-                     net->getSigType().getString());
-    }
-    std::unique_ptr<frNet> uNetIn = std::make_unique<frNet>(net->getName());
-    auto netIn = uNetIn.get();
-    if (net->getNonDefaultRule()) {
-      uNetIn->updateNondefaultRule(
-          getTech()->getNondefaultRule(net->getNonDefaultRule()->getName()));
-    }
-    if (net->getSigType() == dbSigType::CLOCK) {
-      uNetIn->updateIsClock(true);
-    }
-    if (is_special) {
-      uNetIn->setIsSpecial(true);
-    }
-    updateNetRouting(netIn, net);
-    netIn->setType(net->getSigType());
-    if (is_special) {
-      getBlock()->addSNet(std::move(uNetIn));
-    } else {
-      getBlock()->addNet(std::move(uNetIn));
-    }
+  for (auto db_net : block->getNets()) {
+    addNet(db_net);
   }
+}
+
+frNet* io::Parser::addNet(odb::dbNet* db_net)
+{
+  bool is_special = db_net->isSpecial();
+  if (!is_special && db_net->getSigType().isSupply()) {
+    logger_->error(DRT,
+                   305,
+                   "Net {} of signal type {} is not routable by TritonRoute. "
+                   "Move to special nets.",
+                   db_net->getName(),
+                   db_net->getSigType().getString());
+  }
+  std::unique_ptr<frNet> uNetIn = std::make_unique<frNet>(db_net->getName());
+  auto netIn = uNetIn.get();
+  if (db_net->getNonDefaultRule()) {
+    uNetIn->updateNondefaultRule(
+        getTech()->getNondefaultRule(db_net->getNonDefaultRule()->getName()));
+  }
+  if (db_net->getSigType() == dbSigType::CLOCK) {
+    uNetIn->updateIsClock(true);
+  }
+  if (is_special) {
+    uNetIn->setIsSpecial(true);
+  }
+  updateNetRouting(netIn, db_net);
+  netIn->setType(db_net->getSigType());
+  if (is_special) {
+    getBlock()->addSNet(std::move(uNetIn));
+  } else {
+    getBlock()->addNet(std::move(uNetIn));
+  }
+
+  return netIn;
 }
 
 void updatefrAccessPoint(odb::dbAccessPoint* db_ap,
@@ -3050,6 +3057,9 @@ void io::Parser::updateDesign()
   }
   for (auto db_net : block->getNets()) {
     auto netIn = getBlock()->findNet(db_net->getName());
+    if (netIn == nullptr) {
+      netIn = addNet(db_net);
+    }
     netIn->clearConns();
     netIn->clearRPins();
     netIn->clearGuides();

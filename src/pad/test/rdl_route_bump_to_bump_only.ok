@@ -1,0 +1,17 @@
+[WARNING ODB-0220] WARNING (LEFPARS-2007): NAMESCASESENSITIVE statement is obsolete in version 5.6 and later.
+The LEF parser will ignore this statement.
+To avoid this warning in the future, remove this statement from the LEF file with version 5.6 or later. See file passive_tech/tech.lef at line 2.
+
+[INFO ODB-0227] LEF file: passive_tech/tech.lef, created 5 layers, 2 vias
+[WARNING ODB-0220] WARNING (LEFPARS-2007): NAMESCASESENSITIVE statement is obsolete in version 5.6 and later.
+The LEF parser will ignore this statement.
+To avoid this warning in the future, remove this statement from the LEF file with version 5.6 or later. See file passive_tech/bumps.lef at line 2.
+
+[INFO ODB-0227] LEF file: passive_tech/bumps.lef, created 2 library cells
+[INFO ODB-0128] Design: interposer
+[INFO ODB-0130]     Created 16 pins.
+[INFO ODB-0131]     Created 33 components and 33 component-terminals.
+[INFO ODB-0132]     Created 16 special nets and 33 connections.
+[INFO PAD-0005] Routing 16 nets
+[INFO PAD-0037] End of routing iteration 1: 100.0% complete
+No differences found.

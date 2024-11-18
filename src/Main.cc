@@ -65,8 +65,10 @@
 #endif
 
 #include "gui/gui.h"
+#include "ord/Design.h"
 #include "ord/InitOpenRoad.hh"
 #include "ord/OpenRoad.hh"
+#include "ord/Tech.h"
 #include "sta/StaMain.hh"
 #include "sta/StringUtil.hh"
 #include "utl/Logger.h"
@@ -118,6 +120,7 @@ char** cmd_argv;
 const char* log_filename = nullptr;
 const char* metrics_filename = nullptr;
 bool no_settings = false;
+bool minimize = false;
 
 static const char* init_filename = ".openroad";
 
@@ -202,6 +205,12 @@ static void initPython()
 
 static volatile sig_atomic_t fatal_error_in_progress = 0;
 
+// When we enter through main() we have a single tech and design.
+// Custom applications using OR as a library might define multiple.
+// Such applications won't allocate or use these objects.
+static std::unique_ptr<ord::Tech> the_tech;
+static std::unique_ptr<ord::Design> the_design;
+
 static void handler(int sig)
 {
   if (fatal_error_in_progress) {
@@ -259,14 +268,19 @@ int main(int argc, char* argv[])
   }
 
   no_settings = findCmdLineFlag(argc, argv, "-no_settings");
+  minimize = findCmdLineFlag(argc, argv, "-minimize");
 
   cmd_argc = argc;
   cmd_argv = argv;
+
 #ifdef ENABLE_PYTHON3
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-python")) {
     // Setup the app with tcl
     auto* interp = Tcl_CreateInterp();
     Tcl_Init(interp);
+    the_tech = std::make_unique<ord::Tech>(interp);
+    the_design = std::make_unique<ord::Design>(the_tech.get());
+    ord::OpenRoad::setOpenRoad(the_design->getOpenRoad());
     ord::initOpenRoad(interp);
     if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash")) {
       showSplash();
@@ -400,7 +414,7 @@ static int tclAppInit(int& argc,
       ;
     }
 
-    gui::startGui(argc, argv, interp, "", true, !no_settings);
+    gui::startGui(argc, argv, interp, "", true, !no_settings, minimize);
   } else {
     // init tcl
     if (Tcl_Init(interp) == TCL_ERROR) {
@@ -520,6 +534,21 @@ static int tclAppInit(int& argc,
 
 int ord::tclAppInit(Tcl_Interp* interp)
 {
+  the_tech = std::make_unique<ord::Tech>(interp);
+  the_design = std::make_unique<ord::Design>(the_tech.get());
+  ord::OpenRoad::setOpenRoad(the_design->getOpenRoad());
+
+  // This is to enable Design.i where a design arg can be
+  // retrieved from the interpreter.  This is necessary for
+  // cases with more than one interpreter (ie more than one Design).
+  // This should replace the use of the singleton OpenRoad::openRoad().
+  Tcl_SetAssocData(interp, "design", nullptr, the_design.get());
+
+  return ord::tclInit(interp);
+}
+
+int ord::tclInit(Tcl_Interp* interp)
+{
   return tclAppInit(cmd_argc, cmd_argv, init_filename, interp);
 }
 
@@ -527,7 +556,7 @@ static void showUsage(const char* prog, const char* init_filename)
 {
   printf("Usage: %s [-help] [-version] [-no_init] [-no_splash] [-exit] ", prog);
   printf("[-gui] [-threads count|max] [-log file_name] [-metrics file_name] ");
-  printf("[-no_settings] cmd_file\n");
+  printf("[-no_settings] [-minimize] cmd_file\n");
   printf("  -help                 show help and exit\n");
   printf("  -version              show version and exit\n");
   printf("  -no_init              do not read %s init file\n", init_filename);
@@ -535,6 +564,7 @@ static void showUsage(const char* prog, const char* init_filename)
   printf("  -no_splash            do not show the license splash at startup\n");
   printf("  -exit                 exit after reading cmd_file\n");
   printf("  -gui                  start in gui mode\n");
+  printf("  -minimize             start the gui minimized\n");
   printf("  -no_settings          do not load the previous gui settings\n");
 #ifdef ENABLE_PYTHON3
   printf(

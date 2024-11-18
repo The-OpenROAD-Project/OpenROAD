@@ -174,7 +174,7 @@ def getParallelTests(String image) {
 
         'Compile with C++20': {
             node {
-                docker.image('openroad/ubuntu-cpp20').inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+                docker.image(image).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
                     stage('Setup C++20 Compile') {
                         sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
                         checkout scm;

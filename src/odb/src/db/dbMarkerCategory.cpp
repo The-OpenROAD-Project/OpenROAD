@@ -519,7 +519,8 @@ void dbMarkerCategory::writeTR(std::ofstream& report) const
   obj->writeTR(report);
 }
 
-void dbMarkerCategory::fromJSON(dbBlock* block, const std::string& path)
+std::set<dbMarkerCategory*> dbMarkerCategory::fromJSON(dbBlock* block,
+                                                       const std::string& path)
 {
   std::ifstream report(path);
   if (!report.is_open()) {
@@ -529,14 +530,17 @@ void dbMarkerCategory::fromJSON(dbBlock* block, const std::string& path)
     logger->error(utl::ODB, 31, "Unable to open marker report: {}", path);
   }
 
-  fromJSON(block, path.c_str(), report);
+  std::set<dbMarkerCategory*> categories
+      = fromJSON(block, path.c_str(), report);
 
   report.close();
+
+  return categories;
 }
 
-void dbMarkerCategory::fromJSON(dbBlock* block,
-                                const char* source,
-                                std::ifstream& report)
+std::set<dbMarkerCategory*> dbMarkerCategory::fromJSON(dbBlock* block,
+                                                       const char* source,
+                                                       std::ifstream& report)
 {
   _dbBlock* _block = (_dbBlock*) block;
   utl::Logger* logger = _block->getLogger();
@@ -548,18 +552,22 @@ void dbMarkerCategory::fromJSON(dbBlock* block,
     logger->error(utl::ODB, 238, "Unable to parse JSON file: {}", e1.what());
   }
 
+  std::set<dbMarkerCategory*> categories;
   for (const auto& [name, subtree] : tree) {
     dbMarkerCategory* top_category
         = dbMarkerCategory::createOrReplace(block, name.c_str());
+    categories.insert(top_category);
     _dbMarkerCategory* top_category_ = (_dbMarkerCategory*) top_category;
 
     top_category_->fromPTree(subtree);
   }
+
+  return categories;
 }
 
-void dbMarkerCategory::fromTR(dbBlock* block,
-                              const char* name,
-                              const std::string& path)
+dbMarkerCategory* dbMarkerCategory::fromTR(dbBlock* block,
+                                           const char* name,
+                                           const std::string& path)
 {
   std::ifstream report(path);
   if (!report.is_open()) {
@@ -570,15 +578,17 @@ void dbMarkerCategory::fromTR(dbBlock* block,
         utl::ODB, 30, "Unable to open TritonRoute DRC report: {}", path);
   }
 
-  fromTR(block, name, path.c_str(), report);
+  dbMarkerCategory* category = fromTR(block, name, path.c_str(), report);
 
   report.close();
+
+  return category;
 }
 
-void dbMarkerCategory::fromTR(dbBlock* block,
-                              const char* name,
-                              const char* source,
-                              std::ifstream& report)
+dbMarkerCategory* dbMarkerCategory::fromTR(dbBlock* block,
+                                           const char* name,
+                                           const char* source,
+                                           std::ifstream& report)
 {
   dbMarkerCategory* marker_category = createOrReplace(block, name);
   marker_category->setSource(source);
@@ -789,6 +799,8 @@ void dbMarkerCategory::fromTR(dbBlock* block,
     comment += comment_information;
     marker->setComment(comment);
   }
+
+  return marker_category;
 }
 
 std::set<dbMarker*> dbMarkerCategory::getAllMarkers() const

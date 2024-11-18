@@ -93,7 +93,7 @@ BOOST_FIXTURE_TEST_CASE(test_undo_net_destroy_guides, F_DEFAULT)
   auto net = dbNet::create(block, "n");
   auto l1 = db->getTech()->findLayer("L1");
   const Rect box{0, 0, 100, 100};
-  dbGuide::create(net, l1, l1, box);
+  dbGuide::create(net, l1, l1, box, false);
 
   in_eco([&]() { dbNet::destroy(net); });
 
@@ -110,7 +110,7 @@ BOOST_FIXTURE_TEST_CASE(test_undo_guide_create, F_DEFAULT)
   auto l1 = db->getTech()->findLayer("L1");
   const Rect box{0, 0, 100, 100};
 
-  in_eco([&]() { dbGuide::create(net, l1, l1, box); });
+  in_eco([&]() { dbGuide::create(net, l1, l1, box, false); });
 
   BOOST_TEST(net->getGuides().size() == 0);
 }
@@ -138,6 +138,20 @@ BOOST_FIXTURE_TEST_CASE(test_undo_inst_move, F_DEFAULT)
   auto bbox = inst->getBBox()->getBox();
 
   in_eco([&]() { inst->setLocation(3000, 4000); });
+
+  BOOST_TEST(inst->getLocation() == point);
+  BOOST_TEST(inst->getBBox()->getBox() == bbox);
+}
+
+BOOST_FIXTURE_TEST_CASE(test_undo_inst_flip, F_DEFAULT)
+{
+  auto inst = dbInst::create(block, and2, "a");
+  inst->setPlacementStatus(dbPlacementStatus::PLACED);
+  const Point point(1000, 2000);
+  inst->setLocation(point.x(), point.y());
+  const auto bbox = inst->getBBox()->getBox();
+
+  in_eco([&]() { inst->setOrient(dbOrientType::MX); });
 
   BOOST_TEST(inst->getLocation() == point);
   BOOST_TEST(inst->getBBox()->getBox() == bbox);

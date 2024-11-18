@@ -90,6 +90,10 @@ void FlexGCWorker::Impl::checkForbiddenSpc_main(
     if (ptr == rect1 || ptr == rect2) {
       continue;
     }
+    if (gtl::intersects(*ptr, *rect1) || gtl::intersects(*ptr, *rect2)) {
+      // same metal or short
+      continue;
+    }
     gtl::polygon_90_set_data<frCoord> tmpPoly;
     using boost::polygon::operators::operator+=;
     using boost::polygon::operators::operator&=;

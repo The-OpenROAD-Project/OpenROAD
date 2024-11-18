@@ -288,6 +288,15 @@ void save_clocktree_image(const char* filename, const char* clock_name, const ch
   gui->saveClockTreeImage(clock_name, filename, corner, width_px, height_px);
 }
 
+void select_clockviewer_clock(const char* clock_name)
+{
+  if (!check_gui("select_clockviewer_clock")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->selectClockviewerClock(clock_name);
+}
+
 void clear_rulers()
 {
   if (!check_gui("clear_rulers")) {
@@ -712,6 +721,24 @@ void trigger_action(const std::string& name)
 bool supported()
 {
   return true;
+}
+
+void minimize()
+{
+  if (!check_gui("minimize")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->minimize();
+}
+
+void unminimize()
+{
+  if (!check_gui("unminimize")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->unminimize();
 }
 
 %} // inline
