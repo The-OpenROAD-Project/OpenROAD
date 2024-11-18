@@ -203,7 +203,7 @@ class RouteBase
   void revertGCellSizeToMinRc();
   void pushBackMinRcCellSize(int dx, int dy)
   {
-    minRcCellSize_.push_back(std::make_pair(dx, dy));
+    minRcCellSize_.emplace_back(dx, dy);
   }
 
  private:

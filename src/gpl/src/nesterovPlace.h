@@ -153,18 +153,18 @@ class nesterovDbCbk : public odb::dbBlockCallBackObj
  public:
   nesterovDbCbk(NesterovPlace* nesterov_place_);
 
-  virtual void inDbInstCreate(odb::dbInst*);
-  virtual void inDbInstCreate(odb::dbInst*, odb::dbRegion*);
-  virtual void inDbInstDestroy(odb::dbInst*);
+  void inDbInstCreate(odb::dbInst*) override;
+  void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
+  void inDbInstDestroy(odb::dbInst*) override;
 
-  virtual void inDbITermCreate(odb::dbITerm*);
-  virtual void inDbITermDestroy(odb::dbITerm*);
+  void inDbITermCreate(odb::dbITerm*) override;
+  void inDbITermDestroy(odb::dbITerm*) override;
 
-  virtual void inDbNetCreate(odb::dbNet*) override;
-  virtual void inDbNetDestroy(odb::dbNet*) override;
+  void inDbNetCreate(odb::dbNet*) override;
+  void inDbNetDestroy(odb::dbNet*) override;
 
-  virtual void inDbInstSwapMasterAfter(odb::dbInst*);
-  virtual void inDbPostMoveInst(odb::dbInst*) override;
+  void inDbInstSwapMasterAfter(odb::dbInst*) override;
+  void inDbPostMoveInst(odb::dbInst*) override;
 
  private:
   NesterovPlace* nesterov_place_;

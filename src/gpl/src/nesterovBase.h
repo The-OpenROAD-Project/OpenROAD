@@ -1262,14 +1262,13 @@ class GCellHandle
   size_t index_;
 };
 
-inline bool isValidSigType(odb::dbSigType db_type)
+inline bool isValidSigType(const odb::dbSigType& db_type)
 {
-  if (db_type == odb::dbSigType::SIGNAL
-      || db_type == odb::dbSigType::CLOCK)  // || db_type ==
-                                            // odb::dbSigType::ANALOG)
+  if (db_type == odb::dbSigType::SIGNAL || db_type == odb::dbSigType::CLOCK) {
     return true;
-  else
+  } else {
     return false;
+  }
 }
 
 }  // namespace gpl
