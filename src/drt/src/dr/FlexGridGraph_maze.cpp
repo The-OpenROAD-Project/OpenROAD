@@ -508,10 +508,9 @@ frCost FlexGridGraph::getCosts(frMIdx gridX,
   bool guideCost = hasGuide(gridX, gridY, gridZ, dir);
   frCoord edgeLength = getEdgeLength(gridX, gridY, gridZ, dir);
 
-  frUInt4 jumper_cost = 1;
-  if (route_with_jumpers) {
-    jumper_cost = 10;
-  }
+  // increase cost when a net has jumper
+  frUInt4 jumper_cost = route_with_jumpers ? 10 : 1;
+
   // temporarily disable guideCost
   return getEdgeLength(gridX, gridY, gridZ, dir)
          + (gridCost ? GRIDCOST * edgeLength : 0)
