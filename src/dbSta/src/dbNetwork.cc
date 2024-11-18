@@ -1778,7 +1778,7 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
 
   // Fill in liberty to db/LEF master correspondence for libraries not used
   // for corners that are not used for "linking".
-  LibertyLibraryIterator* lib_iter = libertyLibraryIterator();
+  std::unique_ptr<LibertyLibraryIterator> lib_iter{libertyLibraryIterator()};
   while (lib_iter->hasNext()) {
     LibertyLibrary* lib = lib_iter->next();
     LibertyCell* lib_cell = lib->findLibertyCell(cell_name);
@@ -1807,8 +1807,6 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
     Port* cur_port = port_iter->next();
     registerConcretePort(cur_port);
   }
-
-  delete lib_iter;
 }
 
 void dbNetwork::readDbNetlistAfter()
@@ -1894,7 +1892,8 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
 {
   for (ConcreteLibrary* clib : library_seq_) {
     if (!clib->isLiberty()) {
-      ConcreteLibraryCellIterator* cell_iter = clib->cellIterator();
+      std::unique_ptr<ConcreteLibraryCellIterator> cell_iter{
+          clib->cellIterator()};
       while (cell_iter->hasNext()) {
         ConcreteCell* ccell = cell_iter->next();
         // Don't clobber an existing liberty cell so link points to the first.
@@ -1904,7 +1903,8 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
             TestCell* test_cell = lcell->testCell();
             lcell->setExtCell(ccell->extCell());
             ccell->setLibertyCell(lcell);
-            ConcreteCellPortBitIterator* port_iter = ccell->portBitIterator();
+            std::unique_ptr<ConcreteCellPortBitIterator> port_iter{
+                ccell->portBitIterator()};
             while (port_iter->hasNext()) {
               ConcretePort* cport = port_iter->next();
               const char* port_name = cport->name();
@@ -1930,11 +1930,9 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
                 }
               }
             }
-            delete port_iter;
           }
         }
       }
-      delete cell_iter;
     }
   }
 
