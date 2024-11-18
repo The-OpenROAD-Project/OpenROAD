@@ -112,10 +112,14 @@ void InitFloorplan::initFloorplan(
 {
   utl::Validator v(logger_, IFP);
   v.check_non_negative("utilization", utilization, 12);
-  v.check_non_negative("core_space_bottom", core_space_bottom, 32);
-  v.check_non_negative("core_space_top", core_space_top, 33);
-  v.check_non_negative("core_space_left", core_space_left, 34);
-  v.check_non_negative("core_space_right", core_space_right, 35);
+  v.check_non_negative(
+      "core_space_bottom (um) ", block_->dbuToMicrons(core_space_bottom), 32);
+  v.check_non_negative(
+      "core_space_top (um) ", block_->dbuToMicrons(core_space_top), 33);
+  v.check_non_negative(
+      "core_space_left (um) ", block_->dbuToMicrons(core_space_left), 34);
+  v.check_non_negative(
+      "core_space_right (um) ", block_->dbuToMicrons(core_space_right), 35);
   v.check_positive("aspect_ratio", aspect_ratio, 36);
 
   utilization /= 100;
@@ -225,7 +229,7 @@ void InitFloorplan::initFloorplan(
       if (row_parity != RowParity::NONE) {
         logger_->error(
             IFP,
-            41,
+            51,
             "Constraining row parity is not supported for hybrid rows.");
       }
       makeHybridRows(base_site, sites_by_name, snapped_core);
@@ -408,7 +412,7 @@ void InitFloorplan::addUsedSites(
         }
       } else {
         logger_->warn(IFP,
-                      43,
+                      52,
                       "No site found for instance {} in block {}.",
                       inst->getName(),
                       block_->getName());
@@ -475,12 +479,12 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
     if (site->getHeight() % base_site->getHeight() != 0) {
       logger_->error(
           IFP,
-          40,
-          "Site {} height {} of  is not a multiple of site {} height {}.",
+          54,
+          "Site {} height {}um of  is not a multiple of site {} height {}um.",
           site->getName(),
-          site->getHeight(),
+          block_->dbuToMicrons(site->getHeight()),
           base_site->getName(),
-          base_site->getHeight());
+          block_->dbuToMicrons(base_site->getHeight()));
     }
     make_rows(site);
   }
@@ -644,7 +648,7 @@ void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term,
   auto* lib_port = network_->libertyPort(port);
   if (!lib_port) {
     logger_->error(utl::IFP,
-                   39,
+                   53,
                    "Liberty cell or port {}/{} not found.",
                    master->getName(),
                    tie_term->getName());
@@ -722,11 +726,21 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
                                int y_pitch)
 {
   utl::Validator v(logger_, IFP);
+  string layer_inform = "On layer " + layer->getName() + ": ";
+
   v.check_non_null("layer", layer, 38);
-  v.check_non_negative("x_offset", x_offset, 39);
-  v.check_positive("x_pitch", x_pitch, 40);
-  v.check_non_negative("y_offset", y_offset, 41);
-  v.check_positive("y_pitch", y_pitch, 42);
+  v.check_non_negative((layer_inform + "x_offset (um)").c_str(),
+                       block_->dbuToMicrons(x_offset),
+                       39);
+  v.check_positive((layer_inform + "x_pitch (um)").c_str(),
+                   block_->dbuToMicrons(x_pitch),
+                   40);
+  v.check_non_negative((layer_inform + "y_offset (um)").c_str(),
+                       block_->dbuToMicrons(y_offset),
+                       41);
+  v.check_positive((layer_inform + "y_pitch (um)").c_str(),
+                   block_->dbuToMicrons(y_pitch),
+                   42);
 
   Rect die_area = block_->getDieArea();
 

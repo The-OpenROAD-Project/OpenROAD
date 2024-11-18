@@ -858,7 +858,7 @@ void RDLRouter::populateTerminalAccessPoints(RouteTarget& target) const
     gui_->clearSnap();
   }
 
-  target.grid_access = snap_pts;
+  target.grid_access = std::move(snap_pts);
 }
 
 RDLRouter::TerminalAccess RDLRouter::insertTerminalAccess(
