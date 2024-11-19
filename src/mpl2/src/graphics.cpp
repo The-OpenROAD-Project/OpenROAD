@@ -614,14 +614,10 @@ void Graphics::drawDistToIoConstraintBoundary(gui::Painter& painter,
   } else {
     // For NONE, the shape of the io cluster is the die area.
     const Rect die = io_cluster->getBBox();
-    Boundary closest_boundary = getClosestBoundary(macro, die);
+    Boundary closest_unblocked_boundary
+        = getClosestUnblockedBoundary(macro, die);
 
-    if (blocked_boundary_to_mark_.find(closest_boundary)
-        != blocked_boundary_to_mark_.end()) {
-      return;
-    }
-
-    to = getClosestBoundaryPoint(macro, die, closest_boundary);
+    to = getClosestBoundaryPoint(macro, die, closest_unblocked_boundary);
   }
 
   addOutlineOffsetToLine(from, to);
@@ -679,32 +675,52 @@ void Graphics::addOutlineOffsetToLine(odb::Point& from, odb::Point& to)
 }
 
 template <typename T>
-Boundary Graphics::getClosestBoundary(const T& macro, const Rect& die)
+Boundary Graphics::getClosestUnblockedBoundary(const T& macro, const Rect& die)
 {
   const float macro_x = macro.getPinX();
   const float macro_y = macro.getPinY();
 
-  const float dist_to_left = std::abs(macro_x - die.xMin());
-  float shortest_distance = dist_to_left;
-  Boundary closest_boundary = Boundary::L;
+  float shortest_distance = std::numeric_limits<float>::max();
+  Boundary closest_boundary = Boundary::NONE;
 
-  const float dist_to_right = std::abs(macro_x - die.xMax());
-  if (dist_to_right < shortest_distance) {
-    closest_boundary = Boundary::R;
-    shortest_distance = dist_to_right;
+  if (!isBlockedBoundary(Boundary::L)) {
+    const float dist_to_left = std::abs(macro_x - die.xMin());
+    if (dist_to_left < shortest_distance) {
+      shortest_distance = dist_to_left;
+      closest_boundary = Boundary::L;
+    }
   }
 
-  const float dist_to_bottom = std::abs(macro_y - die.yMin());
-  if (dist_to_bottom < shortest_distance) {
-    closest_boundary = Boundary::B;
+  if (!isBlockedBoundary(Boundary::R)) {
+    const float dist_to_right = std::abs(macro_x - die.xMax());
+    if (dist_to_right < shortest_distance) {
+      shortest_distance = dist_to_right;
+      closest_boundary = Boundary::R;
+    }
   }
 
-  const float dist_to_top = std::abs(macro_y - die.yMax());
-  if (dist_to_top < shortest_distance) {
-    closest_boundary = Boundary::T;
+  if (!isBlockedBoundary(Boundary::B)) {
+    const float dist_to_bottom = std::abs(macro_y - die.yMin());
+    if (dist_to_bottom < shortest_distance) {
+      shortest_distance = dist_to_bottom;
+      closest_boundary = Boundary::B;
+    }
+  }
+
+  if (!isBlockedBoundary(Boundary::T)) {
+    const float dist_to_top = std::abs(macro_y - die.yMax());
+    if (dist_to_top < shortest_distance) {
+      closest_boundary = Boundary::T;
+    }
   }
 
   return closest_boundary;
+}
+
+bool Graphics::isBlockedBoundary(Boundary boundary)
+{
+  return blocked_boundary_to_mark_.find(boundary)
+         != blocked_boundary_to_mark_.end();
 }
 
 // Give some transparency to mixed and hard so we can see overlap with
