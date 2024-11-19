@@ -317,7 +317,7 @@ AbcLibrary AbcLibraryFactory::Build()
   }
   abc::Abc_SclLibNormalize(abc_library);
 
-  return AbcLibrary(utl::deleter_unique_ptr<abc::SC_Lib>(
+  return AbcLibrary(utl::UniquePtrWithDeleter<abc::SC_Lib>(
       abc_library, [](abc::SC_Lib* lib) { abc::Abc_SclLibFree(lib); }));
 }
 

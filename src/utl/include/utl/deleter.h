@@ -10,6 +10,6 @@
 namespace utl {
 
 template <typename T>
-using deleter_unique_ptr = std::unique_ptr<T, std::function<void(T*)>>;
+using UniquePtrWithDeleter = std::unique_ptr<T, std::function<void(T*)>>;
 
 }

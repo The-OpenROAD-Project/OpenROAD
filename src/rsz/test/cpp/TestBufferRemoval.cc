@@ -48,8 +48,8 @@ class BufRemTest : public ::testing::Test
   void SetUp() override
   {
     // this will be so much easier with read_def
-    db_ = utl::deleter_unique_ptr<odb::dbDatabase>(odb::dbDatabase::create(),
-                                                   &odb::dbDatabase::destroy);
+    db_ = utl::UniquePtrWithDeleter<odb::dbDatabase>(odb::dbDatabase::create(),
+                                                     &odb::dbDatabase::destroy);
     std::call_once(init_sta_flag, []() { sta::initSta(); });
     sta_ = std::unique_ptr<sta::dbSta>(ord::makeDbSta());
     sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
@@ -197,7 +197,7 @@ class BufRemTest : public ::testing::Test
     return nullptr;
   }
 
-  utl::deleter_unique_ptr<odb::dbDatabase> db_;
+  utl::UniquePtrWithDeleter<odb::dbDatabase> db_;
   sta::Unit* power_unit_;
   std::unique_ptr<sta::dbSta> sta_;
   sta::LibertyLibrary* library_;
