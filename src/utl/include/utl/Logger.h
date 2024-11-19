@@ -289,14 +289,13 @@ class Logger
 
     if (count == max_message_print) {
       logger_->log(level,
-                   FMT_RUNTIME("[{} {}-{:04d}] message limit ("
-                               + std::to_string(max_message_print)
-                               + ") reached. This message will no longer print "
-                                 "(update in Logger.h)."
-                               + std::string(spdlog::details::os::default_eol)),
+                   "[{} {}-{:04d}] message limit ({})"
+                   " reached. This message will no longer print.{}",
                    level_names[level],
                    tool_names_[tool],
-                   id);
+                   id,
+                   max_message_print,
+                   spdlog::details::os::default_eol);
     } else {
       counter--;  // to avoid counter overflow
     }
