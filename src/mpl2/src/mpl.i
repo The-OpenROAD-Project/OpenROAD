@@ -143,6 +143,16 @@ void set_debug_cmd(odb::dbBlock* block,
 }
 
 void
+add_guidance_region(odb::dbInst* macro,
+                    float x1,
+                    float y1,
+                    float x2,
+                    float y2)
+{
+  getMacroPlacer2()->addGuidanceRegion(macro, Rect(x1, y1, x2, y2));
+}
+
+void
 place_macro(odb::dbInst* inst, float x_origin, float y_origin, std::string orientation_string)
 {
   odb::dbOrientType orientation(orientation_string.c_str());

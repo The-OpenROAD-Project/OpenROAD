@@ -783,12 +783,16 @@ struct Rect
     return (lx > 0.0) && (ly > 0.0) && (ux > 0.0) && (uy > 0.0);
   }
 
+  void mergeInit()
+  {
+    lx = std::numeric_limits<float>::max();
+    ly = lx;
+    ux = std::numeric_limits<float>::min();
+    uy = ux;
+  }
+
   void merge(const Rect& rect)
   {
-    if (!isValid()) {
-      return;
-    }
-
     lx = std::min(lx, rect.lx);
     ly = std::min(ly, rect.ly);
     ux = std::max(ux, rect.ux);

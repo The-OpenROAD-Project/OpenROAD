@@ -36,7 +36,6 @@
 #include "Mpl2Observer.h"
 #include "hier_rtlmp.h"
 #include "object.h"
-#include "odb/db.h"
 
 namespace mpl2 {
 using odb::dbDatabase;
@@ -122,6 +121,8 @@ bool MacroPlacer2::place(const int num_threads,
   hier_rtlmp_->setReportDirectory(report_directory);
   hier_rtlmp_->setNumThreads(num_threads);
 
+  hier_rtlmp_->setGuidanceRegions(guidance_regions_);
+
   hier_rtlmp_->init();
   hier_rtlmp_->run();
 
@@ -188,6 +189,39 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
                 block->dbuToMicrons(inst->getBBox()->xMax()),
                 block->dbuToMicrons(inst->getBBox()->yMax()),
                 orientation.getString());
+}
+
+void MacroPlacer2::addGuidanceRegion(odb::dbInst* macro, const Rect& region)
+{
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  const odb::Rect& core = block->getCoreArea();
+  odb::Rect dbu_region(block->micronsToDbu(region.xMin()),
+                       block->micronsToDbu(region.yMin()),
+                       block->micronsToDbu(region.xMax()),
+                       block->micronsToDbu(region.yMax()));
+
+  if (!core.contains(dbu_region)) {
+    logger_->error(MPL,
+                   42,
+                   "Specified guidance region ({}, {}) ({}, {}) for the macro "
+                   "{} is outside of the core ({}, {}) ({}, {}).",
+                   region.xMin(),
+                   region.yMin(),
+                   region.xMax(),
+                   region.yMax(),
+                   macro->getName(),
+                   block->dbuToMicrons(core.xMin()),
+                   block->dbuToMicrons(core.yMin()),
+                   block->dbuToMicrons(core.xMax()),
+                   block->dbuToMicrons(core.yMax()));
+  }
+
+  if (guidance_regions_.find(macro) != guidance_regions_.end()) {
+    logger_->warn(
+        MPL, 41, "Overwriting guidance region for macro {}", macro->getName());
+  }
+
+  guidance_regions_[macro] = region;
 }
 
 void MacroPlacer2::setMacroPlacementFile(const std::string& file_name)

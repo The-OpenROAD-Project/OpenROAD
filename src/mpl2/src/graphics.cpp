@@ -477,6 +477,29 @@ void Graphics::drawObjects(gui::Painter& painter)
     // Hightlight current outline so we see where SA is working
     painter.setPen(gui::Painter::cyan, true);
     painter.drawRect(outline_);
+
+    drawGuides(painter);
+  }
+}
+
+// Draw guidance regions for macros.
+void Graphics::drawGuides(gui::Painter& painter)
+{
+  painter.setPen(gui::Painter::green, true);
+
+  for (const auto& [macro_id, guidance_region] : guides_) {
+    odb::Rect guide(block_->micronsToDbu(guidance_region.xMin()),
+                    block_->micronsToDbu(guidance_region.yMin()),
+                    block_->micronsToDbu(guidance_region.xMax()),
+                    block_->micronsToDbu(guidance_region.yMax()));
+    guide.moveDelta(outline_.xMin(), outline_.yMin());
+
+    painter.drawRect(guide);
+    painter.drawString(guide.xCenter(),
+                       guide.yCenter(),
+                       gui::Painter::Anchor::CENTER,
+                       std::to_string(macro_id),
+                       false /* rotate 90 */);
   }
 }
 
@@ -583,6 +606,11 @@ void Graphics::setCurrentCluster(Cluster* current_cluster)
   current_cluster_ = current_cluster;
 }
 
+void Graphics::setGuides(const std::map<int, Rect>& guides)
+{
+  guides_ = guides;
+}
+
 void Graphics::eraseDrawing()
 {
   // Ensure we don't try to access the clusters after they were deleted
@@ -595,6 +623,7 @@ void Graphics::eraseDrawing()
   bundled_nets_.clear();
   outline_.reset(0, 0, 0, 0);
   outlines_.clear();
+  guides_.clear();
 }
 
 }  // namespace mpl2

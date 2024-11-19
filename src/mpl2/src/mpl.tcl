@@ -294,6 +294,45 @@ proc place_macro { args } {
   mpl2::place_macro $macro $x_origin $y_origin $orientation
 }
 
+sta::define_cmd_args "set_macro_guidance_region" { [-macro_name macro_name] \
+                                                   [-region region] }
+proc set_macro_guidance_region { args } {
+  sta::parse_key_args "set_macro_guidance_region" args \
+    keys { -macro_name -region } \
+  sta::check_argc_eq0 "set_macro_guidance_region" $args
+
+  if { [info exists keys(-macro_name)] } {
+    set macro_name $keys(-macro_name)
+  } else {
+    utl::error MPL 37 "-macro_name is required."
+  }
+
+  set macro [mpl2::parse_macro_name "set_macro_guidance_region" $macro_name]
+
+  if { [info exists keys(-region)] } {
+    set region $keys(-region)
+  } else {
+    utl::error MPL 30 "-region is required."
+  }
+
+  if { [llength $region] != 4 } {
+    utl::error MPL 31 "-region is not a list of 4 values."
+  }
+
+  lassign $region x1 y1 x2 y2
+  set x1 $x1
+  set y1 $y1
+  set x2 $x2
+  set y2 $y2
+  if { $x1 > $x2 } {
+    utl::error MPL 32 "Invalid region: x1 > x2."
+  } elseif { $y1 > $y2 } {
+    utl::error MPL 33 "Invalid region: y1 > y2."
+  }
+
+  mpl2::add_guidance_region $macro $x1 $y1 $x2 $y2
+}
+
 namespace eval mpl2 {
 proc parse_macro_name { cmd macro_name } {
   set block [ord::get_db_block]

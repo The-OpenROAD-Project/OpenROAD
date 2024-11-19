@@ -87,6 +87,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void setTargetClusterId(int target_cluster_id) override;
   void setOutline(const odb::Rect& outline) override;
   void setCurrentCluster(Cluster* current_cluster) override;
+  void setGuides(const std::map<int, Rect>& guides) override;
 
   void eraseDrawing() override;
 
@@ -95,6 +96,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void drawCluster(Cluster* cluster, gui::Painter& painter);
   void drawAllBlockages(gui::Painter& painter);
   void drawBlockage(const Rect& blockage, gui::Painter& painter);
+  void drawGuides(gui::Painter& painter);
   template <typename T>
   void drawBundledNets(gui::Painter& painter, const std::vector<T>& macros);
   void setSoftMacroBrush(gui::Painter& painter, const SoftMacro& soft_macro);
@@ -120,6 +122,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   // In Soft SA, we're shaping/placing the children of a certain parent,
   // so for this case, the current cluster is actually the current parent.
   Cluster* current_cluster_{nullptr};
+  std::map<int, Rect> guides_; // Id -> Guidance Region
 
   bool active_ = true;
   bool coarse_;

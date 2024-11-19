@@ -35,6 +35,7 @@
 
 #include <memory>
 
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -56,6 +57,7 @@ namespace mpl2 {
 
 class HierRTLMP;
 class Mpl2Observer;
+struct Rect;
 
 class MacroPlacer2
 {
@@ -108,6 +110,7 @@ class MacroPlacer2
                   const odb::dbOrientType& orientation);
 
   void setMacroPlacementFile(const std::string& file_name);
+  void addGuidanceRegion(odb::dbInst* macro, const Rect& region);
 
   void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
@@ -117,9 +120,10 @@ class MacroPlacer2
 
  private:
   std::unique_ptr<HierRTLMP> hier_rtlmp_;
-
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
+
+  std::map<odb::dbInst*, Rect> guidance_regions_;
 };
 
 }  // namespace mpl2

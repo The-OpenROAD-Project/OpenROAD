@@ -115,8 +115,9 @@ class HierRTLMP
                       float fence_uy);
   void setHaloWidth(float halo_width);
   void setHaloHeight(float halo_height);
+  void setGuidanceRegions(const std::map<odb::dbInst*, Rect>& guidance_regions);
 
-  // Hierarchical Clustering Related Options
+  // Clustering Related Options
   void setNumBundledIOsPerBoundary(int num_bundled_ios);
   void setClusterSize(int max_num_macro,
                       int min_num_macro,
@@ -312,9 +313,8 @@ class HierRTLMP
   float notch_weight_ = 1.0;
   float macro_blockage_weight_ = 1.0;
 
-  // guidances, fences, constraints
-  std::map<std::string, Rect> fences_;  // macro_name, fence
-  std::map<std::string, Rect> guides_;  // macro_name, guide
+  std::map<std::string, Rect> fences_;   // macro_name, fence
+  std::map<odb::dbInst*, Rect> guides_;  // Macro -> Guidance Region
   std::vector<Rect> placement_blockages_;
   std::vector<Rect> macro_blockages_;
   std::map<Boundary, Rect> boundary_to_io_blockage_;
