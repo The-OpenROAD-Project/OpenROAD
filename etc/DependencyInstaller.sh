@@ -12,6 +12,7 @@ _versionCompare() {
 
 _equivalenceDeps() {
     yosysVersion=0.47
+    eqyYosysVersion=yosys-0.47
 
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}
@@ -35,7 +36,7 @@ _equivalenceDeps() {
             source /opt/rh/llvm-toolset-7.0/enable
         fi
         cd "${baseDir}"
-        git clone --depth=1 -b "${yosysVersion}" https://github.com/YosysHQ/eqy
+        git clone --depth=1 -b "${eqyYosysVersion}" https://github.com/YosysHQ/eqy
         cd eqy
         export PATH="${yosysPrefix}/bin:${PATH}"
         make -j $(nproc) PREFIX="${eqyPrefix}"
@@ -50,7 +51,7 @@ _equivalenceDeps() {
             source /opt/rh/llvm-toolset-7.0/enable
         fi
         cd "${baseDir}"
-        git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/sby
+        git clone --depth=1 -b "${eqyYosysVersion}" --recursive https://github.com/YosysHQ/sby
         cd sby
         export PATH="${eqyPrefix}/bin:${PATH}"
         make -j $(nproc) PREFIX="${sbyPrefix}" install
