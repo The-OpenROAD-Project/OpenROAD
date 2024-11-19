@@ -60,6 +60,7 @@ class AbcTest : public ::testing::Test
       sta::initSta();
       abc::Abc_Start();
     });
+    db_->setLogger(&logger_);
     sta_ = std::unique_ptr<sta::dbSta>(ord::makeDbSta());
     sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
     auto path = std::filesystem::canonical("./Nangate45/Nangate45_fast.lib");
@@ -122,6 +123,18 @@ class AbcTest : public ::testing::Test
 
     sta_->ensureGraph();
     sta_->ensureLevelized();
+  }
+  std::map<std::string, int> AbcLogicNetworkNameToPrimaryOutputIds(
+      abc::Abc_Ntk_t* network)
+  {
+    std::map<std::string, int> primary_output_name_to_index;
+    for (int i = 0; i < abc::Abc_NtkPoNum(network); i++) {
+      abc::Abc_Obj_t* po = abc::Abc_NtkPo(network, i);
+      std::string po_name = abc::Abc_ObjName(po);
+      primary_output_name_to_index[po_name] = i;
+    }
+
+    return primary_output_name_to_index;
   }
 
   utl::deleted_unique_ptr<odb::dbDatabase> db_;
@@ -393,12 +406,8 @@ TEST_F(AbcTest, BuildAbcMappedNetworkFromLogicCut)
       abc::Abc_NtkToLogic(abc_network.get()), &abc::Abc_NtkDelete);
 
   // Build map of primary output names to primary output indicies in ABC
-  std::map<std::string, int> primary_output_name_to_index;
-  for (int i = 0; i < abc::Abc_NtkPoNum(logic_network.get()); i++) {
-    abc::Abc_Obj_t* po = abc::Abc_NtkPo(logic_network.get(), i);
-    std::string po_name = abc::Abc_ObjName(po);
-    primary_output_name_to_index[po_name] = i;
-  }
+  std::map<std::string, int> primary_output_name_to_index
+      = AbcLogicNetworkNameToPrimaryOutputIds(logic_network.get());
 
   std::array<int, 2> input_vector = {1, 1};
   utl::deleted_unique_ptr<int> output_vector(
@@ -436,4 +445,97 @@ TEST_F(AbcTest, BuildComplexLogicCone)
 
   EXPECT_NO_THROW(cut.BuildMappedAbcNetwork(abc_library, network, &logger_));
 }
+
+TEST_F(AbcTest, InsertingMappedLogicCutDoesNotThrow)
+{
+  AbcLibraryFactory factory(&logger_);
+  factory.AddDbSta(sta_.get());
+  AbcLibrary abc_library = factory.Build();
+
+  LoadVerilog("aes_nangate45.v", /*top=*/"aes_cipher_top");
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Vertex* flop_input_vertex = nullptr;
+  for (sta::Vertex* vertex : *sta_->endpoints()) {
+    if (std::string(vertex->name(network)) == "_32989_/D") {
+      flop_input_vertex = vertex;
+    }
+  }
+  EXPECT_NE(flop_input_vertex, nullptr);
+
+  LogicExtractorFactory logic_extractor(sta_.get(), &logger_);
+  logic_extractor.AppendEndpoint(flop_input_vertex);
+  LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
+
+  utl::deleted_unique_ptr<abc::Abc_Ntk_t> mapped_abc_network
+      = cut.BuildMappedAbcNetwork(abc_library, network, &logger_);
+
+  rmp::UniqueName unique_name;
+  EXPECT_NO_THROW(cut.InsertMappedAbcNetwork(
+      mapped_abc_network.get(), network, unique_name, &logger_));
+}
+
+TEST_F(AbcTest,
+       AfterExtractingAndReinsertingCuttingAgainResultsInCorrectSimulation)
+{
+  AbcLibraryFactory factory(&logger_);
+  factory.AddDbSta(sta_.get());
+  AbcLibrary abc_library = factory.Build();
+
+  LoadVerilog("side_outputs_extract_logic_depth.v");
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Vertex* flop_input_vertex = nullptr;
+  for (sta::Vertex* vertex : *sta_->endpoints()) {
+    if (std::string(vertex->name(network)) == "output_flop/D") {
+      flop_input_vertex = vertex;
+    }
+  }
+  EXPECT_NE(flop_input_vertex, nullptr);
+
+  LogicExtractorFactory logic_extractor(sta_.get(), &logger_);
+  logic_extractor.AppendEndpoint(flop_input_vertex);
+  LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
+
+  utl::deleted_unique_ptr<abc::Abc_Ntk_t> mapped_abc_network
+      = cut.BuildMappedAbcNetwork(abc_library, network, &logger_);
+
+  rmp::UniqueName unique_name;
+  cut.InsertMappedAbcNetwork(
+      mapped_abc_network.get(), network, unique_name, &logger_);
+
+  // Re-extract the same cone, and try to simulate it to make sure everything
+  // still simulates correctly
+  LogicExtractorFactory logic_extractor_post_insert(sta_.get(), &logger_);
+  logic_extractor_post_insert.AppendEndpoint(flop_input_vertex);
+  LogicCut cut_post_insert
+      = logic_extractor_post_insert.BuildLogicCut(abc_library);
+
+  utl::deleted_unique_ptr<abc::Abc_Ntk_t> mapped_abc_network_post_insert
+      = cut.BuildMappedAbcNetwork(abc_library, network, &logger_);
+
+  abc::Abc_NtkSetName(mapped_abc_network_post_insert.get(),
+                      strdup("temp_network_name"));
+
+  utl::deleted_unique_ptr<abc::Abc_Ntk_t> logic_network(
+      abc::Abc_NtkToLogic(mapped_abc_network_post_insert.get()),
+      &abc::Abc_NtkDelete);
+
+  // Build map of primary output names to primary output indicies in ABC
+  std::map<std::string, int> primary_output_name_to_index
+      = AbcLogicNetworkNameToPrimaryOutputIds(logic_network.get());
+
+  std::array<int, 2> input_vector = {1, 1};
+  utl::deleted_unique_ptr<int> output_vector(
+      abc::Abc_NtkVerifySimulatePattern(logic_network.get(),
+                                        input_vector.data()),
+      &free);
+
+  // Both outputs are just the and gate.
+  EXPECT_EQ(output_vector.get()[primary_output_name_to_index.at("flop_net")],
+            0);  // Expect that !(1 & 1) == 0
+  EXPECT_EQ(output_vector.get()[primary_output_name_to_index.at("and_output")],
+            1);  // Expect that (1 & 1) == 1
+}
+
 }  // namespace rmp

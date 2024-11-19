@@ -1573,6 +1573,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tmpLayer->setLef58RightWayOnGridOnlyConstraint(
         rightWayOnGridOnlyConstraint.get());
     getTech()->addUConstraint(std::move(rightWayOnGridOnlyConstraint));
+    ALLOW_PIN_AS_FEEDTHROUGH = false;
   }
   for (auto rule : layer->getTechLayerMinStepRules()) {
     if (rule->getMaxEdges() > 1) {
