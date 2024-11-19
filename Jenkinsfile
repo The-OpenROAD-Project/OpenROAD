@@ -191,19 +191,17 @@ def getParallelTests(String image) {
     return ret;
 }
 
-timeout(time: 2, unit: 'HOURS') {
-    node {
-        stage('Checkout') {
-            checkout scm;
-        }
-        def DOCKER_IMAGE;
-        stage('Build and Push Docker Image') {
-            DOCKER_IMAGE = dockerPush('ubuntu22.04', 'openroad');
-            echo "Docker image is ${DOCKER_IMAGE}";
-        }
-        parallel(getParallelTests(DOCKER_IMAGE));
-        stage('Send Email Report') {
-            sendEmail();
-        }
+node {
+    stage('Checkout') {
+        checkout scm;
+    }
+    def DOCKER_IMAGE;
+    stage('Build and Push Docker Image') {
+        DOCKER_IMAGE = dockerPush('ubuntu22.04', 'openroad');
+        echo "Docker image is ${DOCKER_IMAGE}";
+    }
+    parallel(getParallelTests(DOCKER_IMAGE));
+    stage('Send Email Report') {
+        sendEmail();
     }
 }
