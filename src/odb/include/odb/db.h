@@ -8222,7 +8222,7 @@ class dbModule : public dbObject
 
   // Copy and uniquify a given module based on current instance
   static void copy(dbModule* old_module,
-                   dbModule* new_copy,
+                   dbModule* new_module,
                    dbModInst* new_mod_inst);
   static void copyModulePorts(dbModule* old_module,
                               dbModule* new_module,
