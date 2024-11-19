@@ -49,14 +49,14 @@ proc man { args } {
 
   # check the default man path based on executable path
   set exec_output [info nameofexecutable]
+  set install_path [file normalize [file dirname [file dirname [info nameofexecutable]]]]
 
   # Check if the output contains 'build/src'
   if { [string match "*build/src*" $exec_output] } {
-    set executable_path [file normalize [file dirname [info nameofexecutable]]]
-    set man_path [file normalize [file dirname [file dirname $executable_path]]]
+    set man_path [file normalize [file dirname $install_path]]
     set DEFAULT_MAN_PATH [file join $man_path "docs" "cat"]
   } else {
-    set DEFAULT_MAN_PATH "/usr/local/share/man/cat"
+    set DEFAULT_MAN_PATH [file join $install_path "share" "openroad" "man" "cat"]
   }
 
   global MAN_PATH
