@@ -622,9 +622,9 @@ void FlexPA::genAPsFromLayerShapes(
   bool is_macro_cell_pin = false;
   if (inst_term) {
     if (isStdCell(inst_term->getInst())) {
-      if ((layer_num >= VIAINPIN_BOTTOMLAYERNUM
-           && layer_num <= VIAINPIN_TOPLAYERNUM)
-          || layer_num <= VIA_ACCESS_LAYERNUM) {
+      if ((layer_num >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
+           && layer_num <= router_cfg_->VIAINPIN_TOPLAYERNUM)
+          || layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM) {
         allow_planar = false;
       }
     }
@@ -830,7 +830,7 @@ bool FlexPA::isPlanarViolationFree(frAccessPoint* ap,
                                    frLayer* layer)
 {
   // Runs the DRC Engine to check for any violations
-  FlexGCWorker design_rule_checker(getTech(), logger_);
+  FlexGCWorker design_rule_checker(getTech(), logger_, router_cfg_);
   design_rule_checker.setIgnoreMinArea();
   design_rule_checker.setIgnoreCornerSpacing();
   const auto pitch = layer->getPitch();
@@ -956,8 +956,8 @@ void FlexPA::check_addViaAccess(
   bool via_in_pin = false;
   const auto lower_type = ap->getType(true);
   const auto upper_type = ap->getType(false);
-  if (layer_num >= VIAINPIN_BOTTOMLAYERNUM
-      && layer_num <= VIAINPIN_TOPLAYERNUM) {
+  if (layer_num >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
+      && layer_num <= router_cfg_->VIAINPIN_TOPLAYERNUM) {
     via_in_pin = true;
   } else if ((lower_type == frAccessPointEnum::EncOpt
               && upper_type != frAccessPointEnum::NearbyGrid)
@@ -1082,7 +1082,7 @@ bool FlexPA::checkDirectionalViaAccess(
   auto style = upper_layer->getDefaultSegStyle();
 
   if (wrong_dir) {
-    if (!USENONPREFTRACKS || upper_layer->isUnidirectional()) {
+    if (!router_cfg_->USENONPREFTRACKS || upper_layer->isUnidirectional()) {
       return false;
     }
     style.setWidth(upper_layer->getWrongDirWidth());
@@ -1131,7 +1131,7 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
                                 const Point point)
 {
   // Runs the DRC Engine to check for any violations
-  FlexGCWorker design_rule_checker(getTech(), logger_);
+  FlexGCWorker design_rule_checker(getTech(), logger_, router_cfg_);
   design_rule_checker.setIgnoreMinArea();
   design_rule_checker.setIgnoreLongSideEOL();
   design_rule_checker.setIgnoreCornerSpacing();
@@ -1146,11 +1146,12 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
   design_rule_checker.setDrcBox(ext_box);
   if (inst_term) {
     if (!inst_term->getNet() || !inst_term->getNet()->getNondefaultRule()
-        || AUTO_TAPER_NDR_NETS) {
+        || router_cfg_->AUTO_TAPER_NDR_NETS) {
       design_rule_checker.addTargetObj(inst_term->getInst());
     }
   } else {
-    if (!pin_net || !pin_net->getNondefaultRule() || AUTO_TAPER_NDR_NETS) {
+    if (!pin_net || !pin_net->getNondefaultRule()
+        || router_cfg_->AUTO_TAPER_NDR_NETS) {
       design_rule_checker.addTargetObj(pin_term);
     }
   }
@@ -1227,9 +1228,10 @@ void FlexPA::check_setAPsAccesses(
                     pin,
                     inst_term);
     if (is_std_cell_pin) {
-      has_access
-          |= ((layer_num == VIA_ACCESS_LAYERNUM && ap->hasAccess(frDirEnum::U))
-              || (layer_num != VIA_ACCESS_LAYERNUM && ap->hasAccess()));
+      has_access |= ((layer_num == router_cfg_->VIA_ACCESS_LAYERNUM
+                      && ap->hasAccess(frDirEnum::U))
+                     || (layer_num != router_cfg_->VIA_ACCESS_LAYERNUM
+                         && ap->hasAccess()));
     } else {
       has_access |= ap->hasAccess();
     }
@@ -1321,8 +1323,10 @@ bool FlexPA::initPinAccessCostBounded(
     // and (ii) access if exist access for macro, allow pure planar ap
     if (is_std_cell_pin) {
       const auto layer_num = ap->getLayerNum();
-      if ((layer_num == VIA_ACCESS_LAYERNUM && ap->hasAccess(frDirEnum::U))
-          || (layer_num != VIA_ACCESS_LAYERNUM && ap->hasAccess())) {
+      if ((layer_num == router_cfg_->VIA_ACCESS_LAYERNUM
+           && ap->hasAccess(frDirEnum::U))
+          || (layer_num != router_cfg_->VIA_ACCESS_LAYERNUM
+              && ap->hasAccess())) {
         aps.push_back(std::move(ap));
       }
     } else if ((is_macro_cell_pin || is_io_pin) && ap->hasAccess()) {
@@ -1345,7 +1349,7 @@ bool FlexPA::initPinAccessCostBounded(
     }
   }
   if (is_std_cell_pin
-      && n_sparse_access_points >= MINNUMACCESSPOINT_STDCELLPIN) {
+      && n_sparse_access_points >= router_cfg_->MINNUMACCESSPOINT_STDCELLPIN) {
     updatePinStats(aps, pin, inst_term);
     // write to pa
     const int pin_access_idx = unique_insts_.getPAIndex(inst_term->getInst());
@@ -1355,7 +1359,8 @@ bool FlexPA::initPinAccessCostBounded(
     return true;
   }
   if (is_macro_cell_pin
-      && n_sparse_access_points >= MINNUMACCESSPOINT_MACROCELLPIN) {
+      && n_sparse_access_points
+             >= router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN) {
     updatePinStats(aps, pin, inst_term);
     // write to pa
     const int pin_access_idx = unique_insts_.getPAIndex(inst_term->getInst());
@@ -1493,7 +1498,7 @@ void FlexPA::initAllAccessPoints()
   ProfileTask profile("PA:point");
   int pin_count = 0;
 
-  omp_set_num_threads(MAX_THREADS);
+  omp_set_num_threads(router_cfg_->MAX_THREADS);
   ThreadException exception;
 
   const std::vector<frInst*>& unique = unique_insts_.getUnique();
@@ -1508,7 +1513,7 @@ void FlexPA::initAllAccessPoints()
       }
 
       initInstAccessPoints(inst);
-      if (VERBOSE <= 0) {
+      if (router_cfg_->VERBOSE <= 0) {
         continue;
       }
 
@@ -1528,7 +1533,7 @@ void FlexPA::initAllAccessPoints()
 
   // PA for IO terms
   if (target_insts_.empty()) {
-    omp_set_num_threads(MAX_THREADS);
+    omp_set_num_threads(router_cfg_->MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
     for (unsigned i = 0;  // NOLINT
          i < getDesign()->getTopBlock()->getTerms().size();
@@ -1557,7 +1562,7 @@ void FlexPA::initAllAccessPoints()
     exception.rethrow();
   }
 
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 78, "  Complete {} pins.", pin_count);
   }
 }
@@ -1607,7 +1612,7 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
           }
           for (i = 0; i < batch.size(); i++) {
             cnt++;
-            if (VERBOSE > 0) {
+            if (router_cfg_->VERBOSE > 0) {
               if (cnt % (cnt > 100000 ? 100000 : 10000) == 0) {
                 logger_->info(DRT, 110, "  Complete {} groups.", cnt);
               }
@@ -1636,7 +1641,7 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
       logger_->error(utl::DRT, 332, "Error sending UPDATE_PA Job to cloud");
     }
   } else {
-    omp_set_num_threads(MAX_THREADS);
+    omp_set_num_threads(router_cfg_->MAX_THREADS);
     // choose access pattern of a row of insts
     int rowIdx = 0;
 #pragma omp parallel for schedule(dynamic)
@@ -1648,7 +1653,7 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
         {
           rowIdx++;
           cnt++;
-          if (VERBOSE > 0) {
+          if (router_cfg_->VERBOSE > 0) {
             if (cnt % (cnt > 100000 ? 100000 : 10000) == 0) {
               logger_->info(DRT, 82, "  Complete {} groups.", cnt);
             }
@@ -1660,7 +1665,7 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
     }
   }
   exception.rethrow();
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 84, "  Complete {} groups.", cnt);
   }
 }
@@ -1676,7 +1681,7 @@ void FlexPA::prepPattern()
 
   int cnt = 0;
 
-  omp_set_num_threads(MAX_THREADS);
+  omp_set_num_threads(router_cfg_->MAX_THREADS);
   ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
   for (int curr_unique_inst_idx = 0; curr_unique_inst_idx < (int) unique.size();
@@ -1708,7 +1713,7 @@ void FlexPA::prepPattern()
 #pragma omp critical
       {
         cnt++;
-        if (VERBOSE > 0) {
+        if (router_cfg_->VERBOSE > 0) {
           if (cnt % (cnt > 1000 ? 1000 : 100) == 0) {
             logger_->info(DRT, 79, "  Complete {} unique inst patterns.", cnt);
           }
@@ -1719,7 +1724,7 @@ void FlexPA::prepPattern()
     }
   }
   exception.rethrow();
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 81, "  Complete {} unique inst patterns.", cnt);
   }
   if (isDistributed()) {
@@ -1828,7 +1833,8 @@ void FlexPA::genInstRowPattern(std::vector<frInst*>& insts)
     return;
   }
 
-  const int num_node = (insts.size() + 2) * ACCESS_PATTERN_END_ITERATION_NUM;
+  const int num_node
+      = (insts.size() + 2) * router_cfg_->ACCESS_PATTERN_END_ITERATION_NUM;
 
   std::vector<FlexDPNode> nodes(num_node);
 
@@ -1843,9 +1849,9 @@ void FlexPA::genInstRowPatternInit(std::vector<FlexDPNode>& nodes,
 {
   // init virtual nodes
   const int start_node_idx
-      = getFlatIdx(-1, 0, ACCESS_PATTERN_END_ITERATION_NUM);
-  const int end_node_Idx
-      = getFlatIdx(insts.size(), 0, ACCESS_PATTERN_END_ITERATION_NUM);
+      = getFlatIdx(-1, 0, router_cfg_->ACCESS_PATTERN_END_ITERATION_NUM);
+  const int end_node_Idx = getFlatIdx(
+      insts.size(), 0, router_cfg_->ACCESS_PATTERN_END_ITERATION_NUM);
   nodes[start_node_idx].setNodeCost(0);
   nodes[start_node_idx].setPathCost(0);
   nodes[end_node_Idx].setNodeCost(0);
@@ -1856,8 +1862,8 @@ void FlexPA::genInstRowPatternInit(std::vector<FlexDPNode>& nodes,
     const int unique_inst_idx = unique_insts_.getIndex(inst);
     auto& inst_patterns = unique_inst_patterns_[unique_inst_idx];
     for (int idx_2 = 0; idx_2 < (int) inst_patterns.size(); idx_2++) {
-      const int node_idx
-          = getFlatIdx(idx_1, idx_2, ACCESS_PATTERN_END_ITERATION_NUM);
+      const int node_idx = getFlatIdx(
+          idx_1, idx_2, router_cfg_->ACCESS_PATTERN_END_ITERATION_NUM);
       auto access_pattern = inst_patterns[idx_2].get();
       nodes[node_idx].setNodeCost(access_pattern->getCost());
     }
@@ -1870,22 +1876,24 @@ void FlexPA::genInstRowPatternPerform(std::vector<FlexDPNode>& nodes,
   for (int curr_inst_idx = 0; curr_inst_idx <= (int) insts.size();
        curr_inst_idx++) {
     for (int curr_acc_pattern_idx = 0;
-         curr_acc_pattern_idx < ACCESS_PATTERN_END_ITERATION_NUM;
+         curr_acc_pattern_idx < router_cfg_->ACCESS_PATTERN_END_ITERATION_NUM;
          curr_acc_pattern_idx++) {
-      const auto curr_node_idx = getFlatIdx(curr_inst_idx,
-                                            curr_acc_pattern_idx,
-                                            ACCESS_PATTERN_END_ITERATION_NUM);
+      const auto curr_node_idx
+          = getFlatIdx(curr_inst_idx,
+                       curr_acc_pattern_idx,
+                       router_cfg_->ACCESS_PATTERN_END_ITERATION_NUM);
       auto& curr_node = nodes[curr_node_idx];
       if (curr_node.getNodeCost() == std::numeric_limits<int>::max()) {
         continue;
       }
       const int prev_inst_idx = curr_inst_idx - 1;
       for (int prev_acc_pattern_idx = 0;
-           prev_acc_pattern_idx < ACCESS_PATTERN_END_ITERATION_NUM;
+           prev_acc_pattern_idx < router_cfg_->ACCESS_PATTERN_END_ITERATION_NUM;
            prev_acc_pattern_idx++) {
-        const int prev_node_idx = getFlatIdx(prev_inst_idx,
-                                             prev_acc_pattern_idx,
-                                             ACCESS_PATTERN_END_ITERATION_NUM);
+        const int prev_node_idx
+            = getFlatIdx(prev_inst_idx,
+                         prev_acc_pattern_idx,
+                         router_cfg_->ACCESS_PATTERN_END_ITERATION_NUM);
         const auto& prev_node = nodes[prev_node_idx];
         if (prev_node.getPathCost() == std::numeric_limits<int>::max()) {
           continue;
@@ -1907,8 +1915,8 @@ void FlexPA::genInstRowPattern_commit(std::vector<FlexDPNode>& nodes,
                                       const std::vector<frInst*>& insts)
 {
   const bool is_debug_mode = false;
-  int curr_node_idx
-      = getFlatIdx(insts.size(), 0, ACCESS_PATTERN_END_ITERATION_NUM);
+  int curr_node_idx = getFlatIdx(
+      insts.size(), 0, router_cfg_->ACCESS_PATTERN_END_ITERATION_NUM);
   auto curr_node = &(nodes[curr_node_idx]);
   int inst_cnt = insts.size();
   std::vector<int> inst_access_pattern_idx(insts.size(), -1);
@@ -1919,7 +1927,7 @@ void FlexPA::genInstRowPattern_commit(std::vector<FlexDPNode>& nodes,
       getNestedIdx(curr_node_idx,
                    curr_inst_idx,
                    curr_acc_patterns_idx,
-                   ACCESS_PATTERN_END_ITERATION_NUM);
+                   router_cfg_->ACCESS_PATTERN_END_ITERATION_NUM);
       inst_access_pattern_idx[curr_inst_idx] = curr_acc_patterns_idx;
 
       auto& inst = insts[curr_inst_idx];
@@ -1970,8 +1978,8 @@ void FlexPA::genInstRowPattern_commit(std::vector<FlexDPNode>& nodes,
 void FlexPA::genInstRowPattern_print(std::vector<FlexDPNode>& nodes,
                                      const std::vector<frInst*>& insts)
 {
-  int curr_node_idx
-      = getFlatIdx(insts.size(), 0, ACCESS_PATTERN_END_ITERATION_NUM);
+  int curr_node_idx = getFlatIdx(
+      insts.size(), 0, router_cfg_->ACCESS_PATTERN_END_ITERATION_NUM);
   auto curr_node = &(nodes[curr_node_idx]);
   int inst_cnt = insts.size();
   std::vector<int> inst_access_pattern_idx(insts.size(), -1);
@@ -1983,7 +1991,7 @@ void FlexPA::genInstRowPattern_print(std::vector<FlexDPNode>& nodes,
       getNestedIdx(curr_node_idx,
                    curr_inst_idx,
                    curr_acc_pattern_idx,
-                   ACCESS_PATTERN_END_ITERATION_NUM);
+                   router_cfg_->ACCESS_PATTERN_END_ITERATION_NUM);
 
       inst_access_pattern_idx[curr_inst_idx] = curr_acc_pattern_idx;
 
@@ -2042,11 +2050,11 @@ int FlexPA::getEdgeCost(const int prev_node_idx,
   getNestedIdx(prev_node_idx,
                prev_inst_idx,
                prev_acc_pattern_idx,
-               ACCESS_PATTERN_END_ITERATION_NUM);
+               router_cfg_->ACCESS_PATTERN_END_ITERATION_NUM);
   getNestedIdx(curr_node_idx,
                curr_inst_idx,
                curr_acc_pattern_idx,
-               ACCESS_PATTERN_END_ITERATION_NUM);
+               router_cfg_->ACCESS_PATTERN_END_ITERATION_NUM);
   if (prev_inst_idx == -1 || curr_inst_idx == (int) insts.size()) {
     return edge_cost;
   }
@@ -2306,7 +2314,7 @@ int FlexPA::genPatterns_helper(
                   viol_access_points,
                   max_access_point_size);
 
-  for (int i = 0; i < ACCESS_PATTERN_END_ITERATION_NUM; i++) {
+  for (int i = 0; i < router_cfg_->ACCESS_PATTERN_END_ITERATION_NUM; i++) {
     genPatterns_reset(nodes, pins, max_access_point_size);
     genPatterns_perform(nodes,
                         pins,
@@ -2395,13 +2403,13 @@ bool FlexPA::genPatterns_gc(
     std::set<frBlockObject*>* owners)
 {
   if (objs.empty()) {
-    if (VERBOSE > 1) {
+    if (router_cfg_->VERBOSE > 1) {
       logger_->warn(DRT, 89, "genPattern_gc objs empty.");
     }
     return true;
   }
 
-  FlexGCWorker design_rule_checker(getTech(), logger_);
+  FlexGCWorker design_rule_checker(getTech(), logger_, router_cfg_);
   design_rule_checker.setIgnoreMinArea();
   design_rule_checker.setIgnoreLongSideEOL();
   design_rule_checker.setIgnoreCornerSpacing();
