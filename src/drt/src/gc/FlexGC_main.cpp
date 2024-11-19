@@ -3010,9 +3010,6 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
     const gtl::rectangle_data<frCoord>& markerRect,
     frLef58CutSpacingConstraint* con)
 {
-  if (rect1->isFixed() && rect2->isFixed()) {
-    return;
-  }
   auto layerNum = rect1->getLayerNum();
   auto secondLayerNum = rect2->getLayerNum();
   auto net1 = rect1->getNet();
