@@ -38,6 +38,7 @@ import datetime
 from operator import attrgetter
 import operator
 
+
 # Structures used while parsing processfile #
 class Dielectrics:
     name = ""
