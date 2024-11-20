@@ -75,6 +75,7 @@ struct frDebugSettings;
 class FlexDR;
 struct FlexDRViaData;
 class frMarker;
+struct RouterConfiguration;
 
 struct ParamStruct
 {
@@ -113,6 +114,10 @@ class TritonRoute
             stt::SteinerTreeBuilder* stt_builder);
 
   frDesign* getDesign() const { return design_.get(); }
+  RouterConfiguration* getRouterConfiguration() const
+  {
+    return router_cfg_.get();
+  }
 
   int main();
   void endFR();
@@ -177,8 +182,8 @@ class TritonRoute
   int getWorkerResultsSize();
   void sendDesignDist();
   bool writeGlobals(const std::string& name);
-  void sendDesignUpdates(const std::string& globals_path);
-  void sendGlobalsUpdates(const std::string& globals_path,
+  void sendDesignUpdates(const std::string& router_cfg_path);
+  void sendGlobalsUpdates(const std::string& router_cfg_path,
                           const std::string& serializedViaData);
   void reportDRC(const std::string& file_name,
                  const std::list<std::unique_ptr<frMarker>>& markers,
@@ -199,6 +204,7 @@ class TritonRoute
   std::unique_ptr<frDesign> design_;
   std::unique_ptr<frDebugSettings> debug_;
   std::unique_ptr<DesignCallBack> db_callback_;
+  std::unique_ptr<RouterConfiguration> router_cfg_;
   odb::dbDatabase* db_{nullptr};
   utl::Logger* logger_{nullptr};
   std::unique_ptr<FlexDR> dr_;  // kept for single stepping

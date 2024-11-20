@@ -293,7 +293,7 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
     if (pathSeg->isTapered()) {
       currNet->addTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
     } else if (pathSeg->hasNet() && pathSeg->getNet()->hasNDR()
-               && AUTO_TAPER_NDR_NETS) {
+               && router_cfg_->AUTO_TAPER_NDR_NETS) {
       currNet->addNonTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
     }
   } else if (obj->typeId() == drcVia) {
@@ -306,7 +306,7 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
       } else if (via->hasNet() && via->getNet()->hasNDR()
-                 && AUTO_TAPER_NDR_NETS) {
+                 && router_cfg_->AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
       }
       currNet->addPolygon(box, layerNum, via->getNet()->isFixed());
@@ -326,7 +326,7 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
       } else if (via->hasNet() && via->getNet()->hasNDR()
-                 && AUTO_TAPER_NDR_NETS) {
+                 && router_cfg_->AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
       }
       currNet->addPolygon(box, layerNum, via->getNet()->isFixed());
@@ -352,7 +352,7 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
     if (pathSeg->isTapered()) {
       currNet->addTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
     } else if (pathSeg->hasNet() && pathSeg->getNet()->hasNDR()
-               && AUTO_TAPER_NDR_NETS) {
+               && router_cfg_->AUTO_TAPER_NDR_NETS) {
       currNet->addNonTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
     }
   } else if (obj->typeId() == frcVia) {
@@ -365,7 +365,7 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
       } else if (via->hasNet() && via->getNet()->hasNDR()
-                 && AUTO_TAPER_NDR_NETS) {
+                 && router_cfg_->AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
       }
       currNet->addPolygon(box, layerNum);
@@ -385,7 +385,7 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
       } else if (via->hasNet() && via->getNet()->hasNDR()
-                 && AUTO_TAPER_NDR_NETS) {
+                 && router_cfg_->AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
       }
       currNet->addPolygon(box, layerNum);
@@ -718,7 +718,31 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges(gcNet* net)
     }
   }
 }
-
+namespace {
+bool isPolygonCorner(const frCoord x,
+                     const frCoord y,
+                     const gtl::polygon_90_set_data<frCoord>& poly_set)
+{
+  std::vector<gtl::polygon_90_with_holes_data<frCoord>> polygons;
+  poly_set.get(polygons);
+  for (const auto& polygon : polygons) {
+    for (const auto& pt : polygon) {
+      if (pt.x() == x && pt.y() == y) {
+        return true;
+      }
+    }
+    for (auto hole_itr = polygon.begin_holes(); hole_itr != polygon.end_holes();
+         ++hole_itr) {
+      for (const auto& pt : (*hole_itr)) {
+        if (pt.x() == x && pt.y() == y) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+}  // namespace
 void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
                                                             gcPin* pin)
 {
@@ -769,26 +793,32 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
                      && nextEdge->getDir() == frDirEnum::E)) {
         currCorner->setDir(frCornerDirEnum::SE);
       }
+      if (getTech()->getLayer(layerNum)->getType()
+          == odb::dbTechLayerType::CUT) {
+        if (currCorner->getType() == frCornerTypeEnum::CONVEX) {
+          currCorner->setFixed(false);
+          for (auto& rect : net->getRectangles(true)[layerNum]) {
+            if (isCornerOverlap(currCorner, rect)) {
+              currCorner->setFixed(true);
+              break;
+            }
+          }
+        } else if (currCorner->getType() == frCornerTypeEnum::CONCAVE) {
+          currCorner->setFixed(true);
+          auto cornerPt = currCorner->getNextEdge()->low();
+          for (auto& rect : net->getRectangles(false)[layerNum]) {
+            if (gtl::contains(rect, cornerPt, true)
+                && !gtl::contains(rect, cornerPt, false)) {
+              currCorner->setFixed(false);
+              break;
+            }
+          }
+        }
 
-      // set fixed / route status
-      if (currCorner->getType() == frCornerTypeEnum::CONVEX) {
-        currCorner->setFixed(false);
-        for (auto& rect : net->getRectangles(true)[layerNum]) {
-          if (isCornerOverlap(currCorner, rect)) {
-            currCorner->setFixed(true);
-            break;
-          }
-        }
-      } else if (currCorner->getType() == frCornerTypeEnum::CONCAVE) {
-        currCorner->setFixed(true);
-        auto cornerPt = currCorner->getNextEdge()->low();
-        for (auto& rect : net->getRectangles(false)[layerNum]) {
-          if (gtl::contains(rect, cornerPt, true)
-              && !gtl::contains(rect, cornerPt, false)) {
-            currCorner->setFixed(false);
-            break;
-          }
-        }
+      } else {
+        currCorner->setFixed(isPolygonCorner(currCorner->x(),
+                                             currCorner->y(),
+                                             net->getPolygons(true)[layerNum]));
       }
       // currCorner->setFixed(prevEdge->isFixed() && nextEdge->isFixed());
 

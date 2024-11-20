@@ -387,6 +387,24 @@ design_is_routed [-verbose]
 | `verbose` | Flag that allow the command to show all the nets that are not routed. |
 
 
+### Replace Design
+
+This command swaps a hierarchical module with another module.
+Two modules must have identical number of ports and port names must match.
+Functional equivalence is not required.
+New module is not allowed to have multiple levels of hierarchy for now.
+Newly instantiated module is uniquified.
+
+```tcl
+replace_design instance_name module_name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `instance_name` | Name of a hierarchical instance for which the module swap needs to happen.  For example, 'l1/l2/U3' |
+| `module_name`   | Name of a new module that needs to be swapped in.  |
 
 
 ## Example scripts

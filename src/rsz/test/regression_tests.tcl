@@ -1,4 +1,9 @@
 record_tests {
+  clone_flat
+  clone_hier
+  pinswap_flat
+  pinswap_hier
+  split_load_hier
   resize1_hier
   repair_hold1_hier  
   buffer_ports1
@@ -9,6 +14,7 @@ record_tests {
   buffer_ports7
   buffer_ports8
   buffer_varying_lengths
+  eliminate_dead_logic1
   eqy_repair_setup2
   eqy_repair_setup5
   fanin_fanout1
@@ -67,6 +73,8 @@ record_tests {
   repair_setup2
   repair_setup3
   repair_setup4
+  repair_setup4_hier
+  repair_setup4_flat
   repair_setup5
   repair_setup6
   repair_setup7

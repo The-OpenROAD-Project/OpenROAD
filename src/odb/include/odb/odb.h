@@ -54,4 +54,9 @@ using uint64 = std::uint64_t;
 using utl::format_as;
 #endif
 
+class dbITerm;
+class dbModBTerm;
+using ITMap = std::map<dbITerm*, dbITerm*>;
+using modBTMap = std::map<dbModBTerm*, dbModBTerm*>;
+
 }  // namespace odb

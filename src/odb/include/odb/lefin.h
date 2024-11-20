@@ -109,22 +109,8 @@ class lefin
   void init();
   void setDBUPerMicron(int dbu);
 
-  // convert area value to db-units (1nm = 1db unit)
-  int dbarea(double value)
-  {
-    if (value < 0.0)
-      return (int) (value * _area_factor - 0.5);
-    else
-      return (int) (value * _area_factor + 0.5);
-  }
-
-  int round(double value)
-  {
-    if (value < 0.0)
-      return (int) (value - 0.5);
-    else
-      return (int) (value + 0.5);
-  }
+  // convert area value to squared db-units
+  int dbarea(const double value) { return lround(value * _area_factor); }
 
   bool readLefInner(const char* lef_file);
   bool readLef(const char* lef_file);
@@ -140,14 +126,8 @@ class lefin
   dbSite* findSite(const char* name);
 
  public:
-  // convert distance value to db-units (1nm = 1db unit)
-  int dbdist(double value)
-  {
-    if (value < 0.0)
-      return (int) (value * _dist_factor - 0.5);
-    else
-      return (int) (value * _dist_factor + 0.5);
-  }
+  // convert distance value to db-units
+  int dbdist(double value) { return lround(value * _dist_factor); }
 
   enum AntennaType
   {

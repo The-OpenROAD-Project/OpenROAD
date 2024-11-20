@@ -41,12 +41,8 @@
 namespace pad {
 
 RDLRoute::RDLRoute(odb::dbITerm* source,
-                   const std::vector<odb::dbITerm*>& dests,
-                   const std::map<grid_vertex, odb::Point>& vertex_point_map)
-    : iterm_(source),
-      priority_(0),
-      vertex_point_map_(vertex_point_map),
-      terminals_(dests)
+                   const std::vector<odb::dbITerm*>& dests)
+    : iterm_(source), priority_(0), terminals_(dests)
 {
   terminals_.erase(std::remove_if(terminals_.begin(),
                                   terminals_.end(),
@@ -116,24 +112,47 @@ bool RDLRoute::compare(const std::shared_ptr<RDLRoute>& other) const
 }
 
 void RDLRoute::setRoute(
+    const std::map<grid_vertex, odb::Point>& vertex_point_map,
     const std::vector<grid_vertex>& vertex,
-    const std::set<std::tuple<odb::Point, odb::Point, float>>& removed_edges,
+    const std::vector<RDLRouter::GridEdge>& removed_edges,
     const RouteTarget* source,
-    const RouteTarget* target)
+    const RouteTarget* target,
+    const RDLRouter::TerminalAccess& access_source,
+    const RDLRouter::TerminalAccess& access_dest)
 {
   route_vertex_ = vertex;
+  for (const auto& vertex : route_vertex_) {
+    route_pts_.push_back(vertex_point_map.at(vertex));
+  }
   route_edges_ = removed_edges;
   route_source_ = source;
   route_dest_ = target;
+  access_source_ = access_source;
+  access_dest_ = access_dest;
+
+  // Forward removed edges from access
+  for (const auto& edge : access_source_.removed_edges) {
+    if (contains(edge.source) || contains(edge.target)) {
+      route_edges_.push_back(edge);
+    }
+  }
+  for (const auto& edge : access_dest_.removed_edges) {
+    if (contains(edge.source) || contains(edge.target)) {
+      route_edges_.push_back(edge);
+    }
+  }
 }
 
 void RDLRoute::resetRoute()
 {
   route_vertex_.clear();
+  route_pts_.clear();
   route_edges_.clear();
   route_source_ = nullptr;
   route_dest_ = nullptr;
   route_pending_ = true;
+  access_source_ = {};
+  access_dest_ = {};
 
   next_ = terminals_.begin();
 }
@@ -156,8 +175,7 @@ bool RDLRoute::isIntersecting(RDLRoute* other, int extent) const
   const int margin = (priority_ + 1) * extent;
 
   // check intersection with routed other
-  for (const auto& vertex : other->getRouteVerticies()) {
-    const odb::Point& pt = vertex_point_map_.at(vertex);
+  for (const auto& pt : other->getRoutePoints()) {
     const odb::Rect rect(
         pt.x() - margin, pt.y() - margin, pt.x() + margin, pt.y() + margin);
 
@@ -167,6 +185,57 @@ bool RDLRoute::isIntersecting(RDLRoute* other, int extent) const
   }
 
   return false;
+}
+
+bool RDLRoute::isIntersecting(const odb::Line& line, int extent) const
+{
+  if (!isRouted()) {
+    return false;
+  }
+
+  const std::vector<odb::Point> line_segment = line.getPoints();
+
+  for (const auto& pt : route_pts_) {
+    const odb::Rect rect(
+        pt.x() - extent, pt.y() - extent, pt.x() + extent, pt.y() + extent);
+
+    if (boost::geometry::intersects(line_segment, rect)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool RDLRoute::isIntersecting(const odb::Point& point, int extent) const
+{
+  if (!isRouted()) {
+    return false;
+  }
+
+  extent /= 2;
+
+  const odb::Rect point_rect(point.x() - extent,
+                             point.y() - extent,
+                             point.x() + extent,
+                             point.y() + extent);
+
+  for (const auto& pt : route_pts_) {
+    const odb::Rect rect(
+        pt.x() - extent, pt.y() - extent, pt.x() + extent, pt.y() + extent);
+
+    if (point_rect.intersects(rect)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool RDLRoute::contains(const odb::Point& pt) const
+{
+  return std::find(route_pts_.begin(), route_pts_.end(), pt)
+         != route_pts_.end();
 }
 
 }  // namespace pad

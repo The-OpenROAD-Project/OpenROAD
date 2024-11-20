@@ -759,6 +759,7 @@ class NesterovPlaceVars
   float initialPrevCoordiUpdateCoef = 100;  // z_ref_alpha
   float referenceHpwl = 446000000;          // refDeltaHpwl
   float routabilityCheckOverflow = 0.20;
+  float keepResizeBelowOverflow = 0.0;
 
   static const int maxRecursionWlCoef = 10;
   static const int maxRecursionInitSLPCoef = 10;
