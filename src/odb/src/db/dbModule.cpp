@@ -606,8 +606,6 @@ void dbModule::copyModulePorts(dbModule* old_module,
        ++port_iter) {
     dbModBTerm* old_port = *port_iter;
     dbModBTerm* new_port = dbModBTerm::create(new_module, old_port->getName());
-    mod_bt_map[old_port] = new_port;
-    new_port->setIoType(old_port->getIoType());
     if (new_port) {
       debugPrint(logger,
                  utl::ODB,
@@ -616,6 +614,8 @@ void dbModule::copyModulePorts(dbModule* old_module,
                  "Created module port {} for old port {}",
                  new_port->getName(),
                  old_port->getName());
+      mod_bt_map[old_port] = new_port;
+      new_port->setIoType(old_port->getIoType());
     } else {
       logger->error(utl::ODB,
                     456,

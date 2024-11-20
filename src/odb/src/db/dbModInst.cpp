@@ -462,6 +462,14 @@ bool dbModInst::swapMaster(dbModule* new_module)
   for (; i1 != new_ports.end() && i2 != old_ports.end(); ++i1, ++i2) {
     _dbModBTerm* t1 = *i1;
     _dbModBTerm* t2 = *i2;
+    if (t1 == nullptr) {
+      logger->error(
+          utl::ODB, 464, "Module {} has a null port", new_module_name);
+    }
+    if (t2 == nullptr) {
+      logger->error(
+          utl::ODB, 465, "Module {} has a null port", old_module_name);
+    }
     if (strcmp(t1->_name, t2->_name) != 0) {
       break;
     }
@@ -469,14 +477,18 @@ bool dbModInst::swapMaster(dbModule* new_module)
     mod_map[((dbModBTerm*) t2)->getModNet()] = ((dbModBTerm*) t1)->getModNet();
   }
   if (i1 != new_ports.end() || i2 != old_ports.end()) {
+    const char* new_port_name
+        = (i1 != new_ports.end() && *i1) ? (*i1)->_name : "N/A";
+    const char* old_port_name
+        = (i2 != old_ports.end() && *i2) ? (*i2)->_name : "N/A";
     logger->warn(utl::ODB,
                  454,
                  "modules cannot be swapped because module {} "
                  "has port {} but module {} has port {}",
                  old_module_name,
-                 (*i1)->_name,
+                 old_port_name,
                  new_module_name,
-                 (*i2)->_name);
+                 new_port_name);
     return false;
   }
 
