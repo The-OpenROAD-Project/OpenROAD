@@ -38,11 +38,11 @@ def extract_parasitics(
         debug_net_id,
         lef_res,
         no_merge_via_res,
-    	lef_rc,
-    	skip_over_cell,
-    	version,
-	corner,
-    	dbg
+        lef_rc,
+        skip_over_cell,
+        version,
+        corner,
+        dbg,
     )
 
     opts = rcx.ExtractOptions()
@@ -105,7 +105,7 @@ def bench_wires(
     opts.db_only = db_only
     opts.over_dist = over_dist
     opts.under_dist = under_dist
-    opts.v1= v1
+    opts.v1 = v1
     design.getOpenRCX().bench_wires(opts)
 
 
