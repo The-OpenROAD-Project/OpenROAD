@@ -75,6 +75,10 @@ proc man { args } {
     set no_pager 1
   }
 
+  if { [gui::enabled] && !$no_pager } {
+    set no_pager 1
+  }
+
   set man_path $MAN_PATH
   set man_sections {}
   foreach man_section {cat1 cat2 cat3} {
