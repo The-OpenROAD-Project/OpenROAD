@@ -117,10 +117,10 @@ FOREACH_TOOL(X)
 
 int cmd_argc;
 char** cmd_argv;
-const char* log_filename = nullptr;
-const char* metrics_filename = nullptr;
-bool no_settings = false;
-bool minimize = false;
+static const char* log_filename = nullptr;
+static const char* metrics_filename = nullptr;
+static bool no_settings = false;
+static bool minimize = false;
 
 static const char* init_filename = ".openroad";
 
@@ -281,7 +281,7 @@ int main(int argc, char* argv[])
     the_tech = std::make_unique<ord::Tech>(interp);
     the_design = std::make_unique<ord::Design>(the_tech.get());
     ord::OpenRoad::setOpenRoad(the_design->getOpenRoad());
-    ord::initOpenRoad(interp);
+    ord::initOpenRoad(interp, log_filename, metrics_filename);
     if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash")) {
       showSplash();
     }
@@ -448,7 +448,7 @@ static int tclAppInit(int& argc,
     }
 #endif
 
-    ord::initOpenRoad(interp);
+    ord::initOpenRoad(interp, log_filename, metrics_filename);
 
     bool no_splash = findCmdLineFlag(argc, argv, "-no_splash");
     if (!no_splash) {

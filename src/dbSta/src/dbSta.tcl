@@ -112,5 +112,28 @@ proc sta_warn { id msg } {
   utl::warn STA $id $msg
 }
 
+define_cmd_args "replace_design" {instance module}
+
+proc replace_design { instance module } {
+  set design [get_design_error $module]
+  if { $design != "NULL" } {
+    set inst [find_hier_inst_cmd $instance]
+    replace_design_cmd $inst $design
+    return 1
+  }
+  return 0
+}
+
+proc get_design_error { arg } {
+  if { [llength $arg] > 1 } {
+    sta_error 200 "module must be a single module."
+  }
+  set design [find_module_cmd $arg]
+  if { $design == "NULL" } {
+    sta_error 201 "module $arg cannot be found."
+  }
+  return $design
+}
+
 # namespace
 }

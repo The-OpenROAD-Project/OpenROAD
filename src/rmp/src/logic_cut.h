@@ -52,7 +52,7 @@ class LogicCut
            && cut_instances_.empty();
   }
 
-  utl::deleted_unique_ptr<abc::Abc_Ntk_t> BuildMappedAbcNetwork(
+  utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> BuildMappedAbcNetwork(
       AbcLibrary& abc_library,
       sta::dbNetwork* network,
       utl::Logger* logger);

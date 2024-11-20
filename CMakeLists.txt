@@ -179,13 +179,15 @@ target_compile_definitions(openroad PRIVATE ENABLE_CHARTS)
 
 # Build man pages (Optional)
 
-# Use the processor_count command to get the number of cores
-include(ProcessorCount)
-ProcessorCount(PROCESSOR_COUNT)
-message("Number of processor cores: ${PROCESSOR_COUNT}")
-
 option(BUILD_MAN "Enable building man pages" OFF)
 if(BUILD_MAN)
+  message(STATUS "man is enabled")
+
+  # Use the processor_count command to get the number of cores
+  include(ProcessorCount)
+  ProcessorCount(PROCESSOR_COUNT)
+  message(STATUS "Number of processor cores: ${PROCESSOR_COUNT}")
+
   add_custom_target(
     man_page ALL
     COMMAND make clean && make preprocess && make all -j${PROCESSOR_COUNT}
@@ -194,6 +196,5 @@ if(BUILD_MAN)
   
   # Based on ${CMAKE_INSTALL_PREFIX}, we want to go to ${CMAKE_INSTALL_PREFIX}/share/man
   set(MANPAGE_DIR ${OPENROAD_HOME}/docs/cat)
-  install(DIRECTORY ${MANPAGE_DIR} DESTINATION ${CMAKE_INSTALL_PREFIX}/share/man)
-
+  install(DIRECTORY ${MANPAGE_DIR} DESTINATION ${OPENROAD_SHARE}/man)
 endif()

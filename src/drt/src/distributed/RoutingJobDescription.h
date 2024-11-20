@@ -39,7 +39,7 @@ namespace drt {
 class RoutingJobDescription : public dst::JobDescription
 {
  public:
-  void setGlobalsPath(const std::string& path) { globals_path_ = path; }
+  void setGlobalsPath(const std::string& path) { router_cfg_path_ = path; }
   void setSharedDir(const std::string& path) { shared_dir_ = path; }
   void setDesignPath(const std::string& path) { design_path_ = path; }
   void setGuidePath(const std::string& path) { guide_path_ = path; }
@@ -54,7 +54,7 @@ class RoutingJobDescription : public dst::JobDescription
   void setSendEvery(int val) { send_every_ = val; }
   void setViaData(const std::string& val) { via_data_ = val; }
   void setDesignUpdate(const bool& value) { design_update_ = value; }
-  const std::string& getGlobalsPath() const { return globals_path_; }
+  const std::string& getGlobalsPath() const { return router_cfg_path_; }
   const std::string& getSharedDir() const { return shared_dir_; }
   const std::string& getDesignPath() const { return design_path_; }
   const std::string& getGuidePath() const { return guide_path_; }
@@ -68,7 +68,7 @@ class RoutingJobDescription : public dst::JobDescription
   const std::string& getViaData() const { return via_data_; }
 
  private:
-  std::string globals_path_;
+  std::string router_cfg_path_;
   std::string design_path_;
   std::string shared_dir_;
   std::string guide_path_;
@@ -82,7 +82,7 @@ class RoutingJobDescription : public dst::JobDescription
   void serialize(Archive& ar, const unsigned int version)
   {
     (ar) & boost::serialization::base_object<dst::JobDescription>(*this);
-    (ar) & globals_path_;
+    (ar) & router_cfg_path_;
     (ar) & design_path_;
     (ar) & shared_dir_;
     (ar) & guide_path_;
