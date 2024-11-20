@@ -1227,7 +1227,7 @@ class dbBlock : public dbObject
   ///
   /// Convert an area from database units squared (DBU^2) to square microns.
   ///
-  double dbuAreaToMicrons(const int64_t dbu_area);
+  double dbuAreaToMicrons(int64_t dbu_area);
 
   ///
   /// Convert a length from microns to database units (DBUs).
@@ -1237,7 +1237,7 @@ class dbBlock : public dbObject
   ///
   /// Convert an area from square microns to database units squared (DBU^2).
   ///
-  int64_t micronsAreaToDbu(const double micronsArea);
+  int64_t micronsAreaToDbu(double micronsArea);
 
   ///
   /// Get the hierarchy delimeter.
@@ -7732,10 +7732,13 @@ class dbGuide : public dbObject
 
   dbTechLayer* getViaLayer() const;
 
+  bool isCongested() const;
+
   static dbGuide* create(dbNet* net,
                          dbTechLayer* layer,
                          dbTechLayer* via_layer,
-                         Rect box);
+                         Rect box,
+                         bool is_congested);
 
   static dbGuide* getGuide(dbBlock* block, uint dbid);
 
@@ -8082,6 +8085,7 @@ class dbModBTerm : public dbObject
   dbBusPort* getBusPort() const;
   static dbModBTerm* create(dbModule* parentModule, const char* name);
   static void destroy(dbModBTerm*);
+  static dbModBTerm* getModBTerm(dbBlock* block, uint dbid);
 
  private:
   // User Code End dbModBTerm
@@ -8118,6 +8122,9 @@ class dbModInst : public dbObject
 
   static dbModInst* getModInst(dbBlock* block_, uint dbid_);
 
+  /// Swap the module of this instance.
+  /// Returns true if the operations succeeds.
+  bool swapMaster(dbModule* module);
   // User Code End dbModInst
 };
 
@@ -8137,6 +8144,7 @@ class dbModITerm : public dbObject
   void disconnect();
   static dbModITerm* create(dbModInst* parentInstance, const char* name);
   static void destroy(dbModITerm*);
+  static dbModITerm* getModITerm(dbBlock* block, uint dbid);
   // User Code End dbModITerm
 };
 
@@ -8152,8 +8160,11 @@ class dbModNet : public dbObject
   dbSet<dbBTerm> getBTerms();
 
   const char* getName() const;
+  void rename(const char* new_name);
+  static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* name);
   static void destroy(dbModNet*);
+
   // User Code End dbModNet
 };
 
@@ -8204,6 +8215,29 @@ class dbModule : public dbObject
   static void destroy(dbModule* module);
 
   static dbModule* getModule(dbBlock* block_, uint dbid_);
+
+  static dbModule* makeUniqueDbModule(const char* cell_name,
+                                      const char* inst_name,
+                                      dbBlock* block);
+
+  // Copy and uniquify a given module based on current instance
+  static void copy(dbModule* old_module,
+                   dbModule* new_module,
+                   dbModInst* new_mod_inst);
+  static void copyModulePorts(dbModule* old_module,
+                              dbModule* new_module,
+                              modBTMap& mod_bt_map);
+  static void copyModuleInsts(dbModule* old_module,
+                              dbModule* new_module,
+                              dbModInst* new_mod_inst,
+                              ITMap& it_map);
+  static void copyModuleModNets(dbModule* old_module,
+                                dbModule* new_module,
+                                modBTMap& mod_bt_map,
+                                ITMap& it_map);
+  static void copyModuleBoundaryIO(dbModule* old_module,
+                                   dbModule* new_module,
+                                   dbModInst* new_mod_inst);
 
   // User Code End dbModule
 };

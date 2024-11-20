@@ -129,7 +129,8 @@ void set_debug_cmd(odb::dbBlock* block,
                    bool fine,
                    bool show_bundled_nets,
                    bool skip_steps,
-                   bool only_final_result)
+                   bool only_final_result,
+                   int target_cluster_id)
 {
   auto macro_placer = getMacroPlacer2();
   std::unique_ptr<Mpl2Observer> graphics
@@ -138,6 +139,7 @@ void set_debug_cmd(odb::dbBlock* block,
   macro_placer->setDebugShowBundledNets(show_bundled_nets);
   macro_placer->setDebugSkipSteps(skip_steps);
   macro_placer->setDebugOnlyFinalResult(only_final_result);
+  macro_placer->setDebugTargetClusterId(target_cluster_id);
 }
 
 void

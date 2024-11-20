@@ -66,7 +66,10 @@ class FlexPA
     Commit
   };
 
-  FlexPA(frDesign* in, Logger* logger, dst::Distributed* dist);
+  FlexPA(frDesign* in,
+         Logger* logger,
+         dst::Distributed* dist,
+         RouterConfiguration* router_cfg);
   ~FlexPA();
 
   void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
@@ -82,6 +85,7 @@ class FlexPA
   frDesign* design_;
   Logger* logger_;
   dst::Distributed* dist_;
+  RouterConfiguration* router_cfg_;
 
   std::unique_ptr<FlexPAGraphics> graphics_;
   std::string debugPinName_;

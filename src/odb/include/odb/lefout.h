@@ -130,9 +130,8 @@ class lefout
   void insertObstruction(dbBox* box, ObstructionMap& obstructions) const;
 
  public:
-  double lefdist(int value) { return ((double) value * _dist_factor); }
-
-  double lefarea(int value) { return ((double) value * _area_factor); }
+  double lefdist(int value) { return value * _dist_factor; }
+  double lefarea(int value) { return value * _area_factor; }
 
   lefout(utl::Logger* logger, std::ostream& out) : _out(out)
   {

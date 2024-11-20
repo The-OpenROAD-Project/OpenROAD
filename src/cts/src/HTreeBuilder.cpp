@@ -1954,8 +1954,7 @@ void HTreeBuilder::createSingleBufferClockNet()
 
 void HTreeBuilder::plotSolution()
 {
-  static int cnt = 0;
-  auto name = std::string("plot") + std::to_string(cnt++) + ".py";
+  auto name = std::string("plot_") + clock_.getName() + ".py";
   std::ofstream file(name);
   file << "import numpy as np\n";
   file << "import matplotlib.pyplot as plt\n";
