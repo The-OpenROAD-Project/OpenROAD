@@ -2641,6 +2641,37 @@ int FlexPA::getEdgeCost(
   return edge_cost;
 }
 
+std::vector<int> FlexPA::extractAccessPatternFromNodes(
+    const std::vector<FlexDPNode>& nodes,
+    const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
+    std::set<std::pair<int, int>>& used_access_points,
+    const int max_access_point_size)
+{
+  std::vector<int> access_pattern(pins.size(), -1);
+
+  const int source_node_idx = getFlatIdx(-1, 0, max_access_point_size);
+  const int sink_node_idx = getFlatIdx(pins.size(), 0, max_access_point_size);
+  const FlexDPNode& sink_node = nodes[sink_node_idx];
+  int curr_node_idx = sink_node.getPrevNodeIdx();
+
+  while (curr_node_idx != source_node_idx) {
+    if (curr_node_idx == -1) {
+      logger_->error(DRT, 90, "Valid access pattern not found.");
+    }
+
+    auto& curr_node = nodes[curr_node_idx];
+
+    int curr_pin_idx, curr_acc_point_idx;
+    getNestedIdx(
+        curr_node_idx, curr_pin_idx, curr_acc_point_idx, max_access_point_size);
+    access_pattern[curr_pin_idx] = curr_acc_point_idx;
+    used_access_points.insert({curr_pin_idx, curr_acc_point_idx});
+
+    curr_node_idx = curr_node.getPrevNodeIdx();
+  }
+  return access_pattern;
+}
+
 bool FlexPA::genPatterns_commit(
     const std::vector<FlexDPNode>& nodes,
     const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
@@ -2651,139 +2682,116 @@ bool FlexPA::genPatterns_commit(
     const int curr_unique_inst_idx,
     const int max_access_point_size)
 {
-  bool has_new_pattern = false;
-  int curr_node_idx = getFlatIdx(pins.size(), 0, max_access_point_size);
-  auto curr_node = &(nodes[curr_node_idx]);
-  int pin_cnt = pins.size();
-  std::vector<int> access_pattern(pin_cnt, -1);
-  while (curr_node->getPrevNodeIdx() != -1) {
-    // non-virtual node
-    if (pin_cnt != (int) pins.size()) {
-      int curr_pin_idx, curr_acc_point_idx;
-      getNestedIdx(curr_node_idx,
-                   curr_pin_idx,
-                   curr_acc_point_idx,
-                   max_access_point_size);
-      access_pattern[curr_pin_idx] = curr_acc_point_idx;
-      used_access_points.insert(
-          std::make_pair(curr_pin_idx, curr_acc_point_idx));
-    }
-
-    curr_node_idx = curr_node->getPrevNodeIdx();
-    curr_node = &(nodes[curr_node->getPrevNodeIdx()]);
-    pin_cnt--;
+  std::vector<int> access_pattern = extractAccessPatternFromNodes(
+      nodes, pins, used_access_points, max_access_point_size);
+  // not a new access pattern
+  if (inst_access_patterns.find(access_pattern) != inst_access_patterns.end()) {
+    return false;
   }
 
-  if (pin_cnt != -1) {
-    logger_->error(DRT, 90, "Valid access pattern not found.");
+  inst_access_patterns.insert(access_pattern);
+  // create new access pattern and push to uniqueInstances
+  auto pin_access_pattern = std::make_unique<FlexPinAccessPattern>();
+  std::map<frMPin*, frAccessPoint*> pin_to_access_point;
+  // check DRC for the whole pattern
+  std::vector<std::pair<frConnFig*, frBlockObject*>> objs;
+  std::vector<std::unique_ptr<frVia>> temp_vias;
+  frInst* target_obj = nullptr;
+  for (int pin_idx = 0; pin_idx < (int) pins.size(); pin_idx++) {
+    auto acc_point_idx = access_pattern[pin_idx];
+    auto& [pin, inst_term] = pins[pin_idx];
+    auto inst = inst_term->getInst();
+    target_obj = inst;
+    const int pin_access_idx = unique_insts_.getPAIndex(inst);
+    const auto pa = pin->getPinAccess(pin_access_idx);
+    const auto access_point = pa->getAccessPoint(acc_point_idx);
+    pin_to_access_point[pin] = access_point;
+
+    // add objs
+    std::unique_ptr<frVia> via;
+    if (access_point->hasAccess(frDirEnum::U)) {
+      via = std::make_unique<frVia>(access_point->getViaDef());
+      auto rvia = via.get();
+      temp_vias.push_back(std::move(via));
+
+      dbTransform xform = inst->getUpdatedXform(true);
+      Point pt(access_point->getPoint());
+      xform.apply(pt);
+      rvia->setOrigin(pt);
+      if (inst_term->hasNet()) {
+        objs.emplace_back(rvia, inst_term->getNet());
+      } else {
+        objs.emplace_back(rvia, inst_term);
+      }
+    }
   }
 
-  // add to pattern set if unique
-  if (inst_access_patterns.find(access_pattern) == inst_access_patterns.end()) {
-    inst_access_patterns.insert(access_pattern);
-    // create new access pattern and push to uniqueInstances
-    auto pin_access_pattern = std::make_unique<FlexPinAccessPattern>();
-    std::map<frMPin*, frAccessPoint*> pin_to_access_point;
-    // check DRC for the whole pattern
-    std::vector<std::pair<frConnFig*, frBlockObject*>> objs;
-    std::vector<std::unique_ptr<frVia>> temp_vias;
-    frInst* target_obj = nullptr;
-    for (int pin_idx = 0; pin_idx < (int) pins.size(); pin_idx++) {
-      auto acc_point_idx = access_pattern[pin_idx];
-      auto& [pin, inst_term] = pins[pin_idx];
-      auto inst = inst_term->getInst();
-      target_obj = inst;
-      const int pin_access_idx = unique_insts_.getPAIndex(inst);
-      const auto pa = pin->getPinAccess(pin_access_idx);
-      const auto access_point = pa->getAccessPoint(acc_point_idx);
-      pin_to_access_point[pin] = access_point;
+  frAccessPoint* left_access_point = nullptr;
+  frAccessPoint* right_access_point = nullptr;
+  frCoord left_pt = std::numeric_limits<frCoord>::max();
+  frCoord right_pt = std::numeric_limits<frCoord>::min();
 
-      // add objs
-      std::unique_ptr<frVia> via;
-      if (access_point->hasAccess(frDirEnum::U)) {
-        via = std::make_unique<frVia>(access_point->getViaDef());
-        auto rvia = via.get();
-        temp_vias.push_back(std::move(via));
-
-        dbTransform xform = inst->getUpdatedXform(true);
-        Point pt(access_point->getPoint());
-        xform.apply(pt);
-        rvia->setOrigin(pt);
-        if (inst_term->hasNet()) {
-          objs.emplace_back(rvia, inst_term->getNet());
-        } else {
-          objs.emplace_back(rvia, inst_term);
+  const auto& [pin, inst_term] = pins[0];
+  const auto inst = inst_term->getInst();
+  for (auto& inst_term : inst->getInstTerms()) {
+    if (isSkipInstTerm(inst_term.get())) {
+      continue;
+    }
+    uint64_t n_no_ap_pins = 0;
+    for (auto& pin : inst_term->getTerm()->getPins()) {
+      if (pin_to_access_point.find(pin.get()) == pin_to_access_point.end()) {
+        n_no_ap_pins++;
+        pin_access_pattern->addAccessPoint(nullptr);
+      } else {
+        const auto& ap = pin_to_access_point[pin.get()];
+        const Point tmpPt = ap->getPoint();
+        if (tmpPt.x() < left_pt) {
+          left_access_point = ap;
+          left_pt = tmpPt.x();
         }
+        if (tmpPt.x() > right_pt) {
+          right_access_point = ap;
+          right_pt = tmpPt.x();
+        }
+        pin_access_pattern->addAccessPoint(ap);
       }
     }
-
-    frAccessPoint* left_access_point = nullptr;
-    frAccessPoint* right_access_point = nullptr;
-    frCoord left_pt = std::numeric_limits<frCoord>::max();
-    frCoord right_pt = std::numeric_limits<frCoord>::min();
-
-    const auto& [pin, inst_term] = pins[0];
-    const auto inst = inst_term->getInst();
-    for (auto& inst_term : inst->getInstTerms()) {
-      if (isSkipInstTerm(inst_term.get())) {
-        continue;
-      }
-      uint64_t n_no_ap_pins = 0;
-      for (auto& pin : inst_term->getTerm()->getPins()) {
-        if (pin_to_access_point.find(pin.get()) == pin_to_access_point.end()) {
-          n_no_ap_pins++;
-          pin_access_pattern->addAccessPoint(nullptr);
-        } else {
-          const auto& ap = pin_to_access_point[pin.get()];
-          const Point tmp_pt = ap->getPoint();
-          if (tmp_pt.x() < left_pt) {
-            left_access_point = ap;
-            left_pt = tmp_pt.x();
-          }
-          if (tmp_pt.x() > right_pt) {
-            right_access_point = ap;
-            right_pt = tmp_pt.x();
-          }
-          pin_access_pattern->addAccessPoint(ap);
-        }
-      }
-      if (n_no_ap_pins == inst_term->getTerm()->getPins().size()) {
-        logger_->error(DRT, 91, "Pin does not have valid ap.");
-      }
+    if (n_no_ap_pins == inst_term->getTerm()->getPins().size()) {
+      logger_->error(DRT,
+                     91,
+                     "{} does not have valid access points.",
+                     inst_term->getName());
     }
-    pin_access_pattern->setBoundaryAP(true, left_access_point);
-    pin_access_pattern->setBoundaryAP(false, right_access_point);
+  }
+  pin_access_pattern->setBoundaryAP(true, left_access_point);
+  pin_access_pattern->setBoundaryAP(false, right_access_point);
 
-    std::set<frBlockObject*> owners;
-    if (target_obj != nullptr
-        && genPatterns_gc({target_obj}, objs, Commit, &owners)) {
-      pin_access_pattern->updateCost();
-      unique_inst_patterns_[curr_unique_inst_idx].push_back(
-          std::move(pin_access_pattern));
-      // genPatterns_print(nodes, pins, max_access_point_size);
-      is_valid = true;
-    } else {
-      for (int idx_1 = 0; idx_1 < (int) pins.size(); idx_1++) {
-        auto idx_2 = access_pattern[idx_1];
-        auto& [pin, inst_term] = pins[idx_1];
-        if (inst_term->hasNet()) {
-          if (owners.find(inst_term->getNet()) != owners.end()) {
-            viol_access_points.insert(std::make_pair(idx_1, idx_2));  // idx ;
-          }
-        } else {
-          if (owners.find(inst_term) != owners.end()) {
-            viol_access_points.insert(std::make_pair(idx_1, idx_2));  // idx ;
-          }
-        }
-      }
-    }
-
-    has_new_pattern = true;
+  std::set<frBlockObject*> owners;
+  if (target_obj != nullptr
+      && genPatterns_gc({target_obj}, objs, Commit, &owners)) {
+    pin_access_pattern->updateCost();
+    unique_inst_patterns_[curr_unique_inst_idx].push_back(
+        std::move(pin_access_pattern));
+    // genPatterns_print(nodes, pins, max_access_point_size);
+    is_valid = true;
   } else {
-    has_new_pattern = false;
+    for (int idx_1 = 0; idx_1 < (int) pins.size(); idx_1++) {
+      auto idx_2 = access_pattern[idx_1];
+      auto& [pin, inst_term] = pins[idx_1];
+      if (inst_term->hasNet()) {
+        if (owners.find(inst_term->getNet()) != owners.end()) {
+          viol_access_points.insert(std::make_pair(idx_1, idx_2));  // idx ;
+        }
+      } else {
+        if (owners.find(inst_term) != owners.end()) {
+          viol_access_points.insert(std::make_pair(idx_1, idx_2));  // idx ;
+        }
+      }
+    }
   }
 
-  return has_new_pattern;
+  // new access pattern
+  return true;
 }
 
 void FlexPA::genPatternsPrintDebug(
