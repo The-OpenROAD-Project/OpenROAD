@@ -443,7 +443,7 @@ sta::define_cmd_args "bench_wires_gen" {
     [	 -width	  	multiplier_width_list	 ]
     [	 -spacing	  	multiplier_spacing_list	 ]
     [	 -couple_width	  	multiplier_coupling_width_list	 ]
-    [	 -couple_spacing	  	multiplier_coupling_spacing_list	 
+    [	 -couple_spacing	  	multiplier_coupling_spacing_list ]
     [	 -over_width	  	multiplier_over_width_list	 ]
     [	 -over_spacing	  	multiplier_over_spacing_list	 ]
     [	 -under_width	  	multiplier_under_width_list	 ]
@@ -455,9 +455,9 @@ sta::define_cmd_args "bench_wires_gen" {
     [	 -dbg	  	dbg_flag	 ]
     [	 -wire_cnt	  	wire_count	 ]
     [	 -offset_over	  	offset_over	 ]
-    [	 -offset_under	  	offset_under	 ] 
-    [	 -under_dist	  	max_dist_to_under_met	 ] 
-    [	 -over_dist	  	max_dist_to_over_met	 ] 
+    [	 -offset_under	  	offset_under	 ]
+    [	 -under_dist	  	max_dist_to_under_met	 ]
+    [	 -over_dist	  	max_dist_to_over_met	 ]
     [  -diag ]
     [  -over ]
     [  -under ]
@@ -473,8 +473,10 @@ proc get_arg_val { keys name default_value } {
 }
 proc bench_wires_gen { args } {
   sta::parse_key_args "bench_wires_gen" args keys \
-    { -len -width -spacing -couple_width -couple_spacing -over_width -over_spacing -under_width -under_spacing -over2_width -over2_spacing \
-      -under2_width -under2_spacing -dbg -wire_cnt -mlist -offset_over -offset_under -under_dist -over_dist -met } \
+      { -len -width -spacing -couple_width -couple_spacing -over_width \
+        -over_spacing -under_width -under_spacing -over2_width -over2_spacing \
+        -under2_width -under2_spacing -dbg -wire_cnt -mlist -offset_over \
+        -offset_under -under_dist -over_dist -met } \
     flags { -diag -over -under -over_under }
 
   set width "1, 1.5, 2"
@@ -552,5 +554,9 @@ proc bench_wires_gen { args } {
     puts "over_under = $over_under"
     puts "met = $met"
   }
-  rcx::bench_wires_gen $width $spacing $couple_width $couple_spacing $over_width $over_spacing $under_width $under_spacing $over2_width $over2_spacing $under2_width $under2_spacing $dbg $wire_cnt $mlist $len $offset_over $offset_under $under_dist $over_dist $over $under $over_under $met
+  rcx::bench_wires_gen $width $spacing $couple_width $couple_spacing \
+      $over_width $over_spacing $under_width $under_spacing $over2_width \
+      $over2_spacing $under2_width $under2_spacing $dbg $wire_cnt $mlist \
+      $len $offset_over $offset_under $under_dist $over_dist $over $under \
+      $over_under $met
 }

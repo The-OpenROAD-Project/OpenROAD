@@ -102,7 +102,8 @@ proc rules_gen { args } {
 
   set win [info exists flags(-win)]
 
-  rcx::rules_gen $name $dir $filename $write_to_solver $read_from_solver $run_solver $pattern $keep_file $len $version $win
+  rcx::rules_gen $name $dir $filename $write_to_solver $read_from_solver \
+    $run_solver $pattern $keep_file $len $version $win
 }
 
 sta::define_cmd_args "metal_rules_gen" {
@@ -145,7 +146,8 @@ proc metal_rules_gen { args } {
   set run_solver [info exists flags(-run_solver)]
   set keep_file [info exists flags(-keep_file)]
 
-  rcx::metal_rules_gen $name $dir $file $write_to_solver $read_from_solver $run_solver $pattern $keep_file $metal
+  rcx::metal_rules_gen $name $dir $file $write_to_solver $read_from_solver \
+    $run_solver $pattern $keep_file $metal
 }
 
 sta::define_cmd_args "run_solver" {
@@ -248,7 +250,8 @@ sta::define_cmd_args "gen_solver_patterns" {
 
 proc gen_solver_patterns { args } {
   sta::parse_key_args "gen_solver_patterns" args \
-    keys {-process_file -process_name -version -wire_cnt -len -w_list -s_list -over_dist -under_dist } flags { }
+    keys {-process_file -process_name -version -wire_cnt -len -w_list \
+        -s_list -over_dist -under_dist } flags { }
 
   set process_file "MINTYPMAX"
   if { [info exists keys(-process_file)] } {
@@ -288,5 +291,6 @@ proc gen_solver_patterns { args } {
     set under_dist $keys(-under_dist)
   }
 
-  rcx::gen_solver_patterns $process_file $process_name $version $cnt $len $over_dist $under_dist $w_list $s_list
+  rcx::gen_solver_patterns $process_file $process_name $version $cnt $len \
+    $over_dist $under_dist $w_list $s_list
 }
