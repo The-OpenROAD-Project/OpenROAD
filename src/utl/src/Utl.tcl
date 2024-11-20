@@ -49,14 +49,14 @@ proc man { args } {
 
   # check the default man path based on executable path
   set exec_output [info nameofexecutable]
+  set install_path [file normalize [file dirname [file dirname [info nameofexecutable]]]]
 
   # Check if the output contains 'build/src'
   if { [string match "*build/src*" $exec_output] } {
-    set executable_path [file normalize [file dirname [info nameofexecutable]]]
-    set man_path [file normalize [file dirname [file dirname $executable_path]]]
+    set man_path [file normalize [file dirname $install_path]]
     set DEFAULT_MAN_PATH [file join $man_path "docs" "cat"]
   } else {
-    set DEFAULT_MAN_PATH "/usr/local/share/man/cat"
+    set DEFAULT_MAN_PATH [file join $install_path "share" "openroad" "man" "cat"]
   }
 
   global MAN_PATH
@@ -125,6 +125,76 @@ proc man { args } {
 
   if { $man_found == false } {
     utl::error UTL 100 "Man page for $name is not found."
+  }
+}
+
+sta::define_cmd_args "tee" {-file filename
+                            -variable name
+                            [-append]
+                            [-quiet]
+                            command}
+proc tee { args } {
+  sta::parse_key_args "tee" args \
+    keys {-file -variable} flags {-append -quiet}
+
+  sta::check_argc_eq1 "tee" $args
+
+  if { ![info exists keys(-file)] && ![info exists keys(-variable)] } {
+    utl::error UTL 101 "-file or -variable is required"
+  }
+
+  if { [info exists flags(-quiet)] } {
+    if { [info exists keys(-variable)] } {
+      utl::redirectStringBegin
+    } else {
+      if { [info exists flags(-append)] } {
+        utl::redirectFileAppendBegin $keys(-file)
+      } else {
+        utl::redirectFileBegin $keys(-file)
+      }
+    }
+  } else {
+    if { [info exists keys(-variable)] } {
+      utl::teeStringBegin
+    } else {
+      if { [info exists flags(-append)] } {
+        utl::teeFileAppendBegin $keys(-file)
+      } else {
+        utl::teeFileBegin $keys(-file)
+      }
+    }
+  }
+
+  global errorCode errorInfo
+  set code [catch { eval { {*}[lindex $args 0] } } ret]
+
+  if { [info exists keys(-variable)] } {
+    if { [info exists flags(-quiet)] } {
+      set stream [utl::redirectStringEnd]
+    } else {
+      set stream [utl::teeStringEnd]
+    }
+    upvar 1 $keys(-variable) var
+    if { [info exists flags(-append)] } {
+      if { ![info exists var] } {
+        set var ""
+      }
+      set var "$var$stream"
+    } else {
+      set var $stream
+    }
+  } else {
+    if { [info exists flags(-quiet)] } {
+      utl::redirectFileEnd
+    } else {
+      utl::teeFileEnd
+    }
+  }
+
+  if { $code == 1 } {
+    return -code $code -errorcode $errorCode -errorinfo $errorInfo $ret
+  } else {
+    return $ret
   }
 }
 

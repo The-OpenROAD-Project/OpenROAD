@@ -83,7 +83,9 @@ class Mpl2Observer
   virtual void setSkipSteps(bool skip_steps) {}
   virtual void doNotSkip() {}
   virtual void setOnlyFinalResult(bool skip_to_end) {}
+  virtual void setTargetClusterId(int target_cluster_id) {}
   virtual void setOutline(const odb::Rect& outline) {}
+  virtual void setCurrentCluster(Cluster* current_cluster) {}
 
   virtual void setAreaPenalty(const Penalty& penalty) {}
   virtual void setBoundaryPenalty(const Penalty& penalty) {}

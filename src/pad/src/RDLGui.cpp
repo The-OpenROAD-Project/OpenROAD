@@ -80,7 +80,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
     obs_color.a = 127;
     painter.setPenAndBrush(obs_color, true);
 
-    for (const auto& [rect, poly, ptr] : router_->getObstructions()) {
+    for (const auto& [rect, poly, ptr, src] : router_->getObstructions()) {
       painter.drawPolygon(poly);
     }
   }
@@ -93,7 +93,11 @@ void RDLGui::drawObjects(gui::Painter& painter)
     GridGraph::vertex_iterator v, vend;
     for (boost::tie(v, vend) = boost::vertices(router_->getGraph()); v != vend;
          ++v) {
-      const odb::Point& pt = vertex_map.at(*v);
+      const auto find_pt = vertex_map.find(*v);
+      if (find_pt == vertex_map.end()) {
+        continue;
+      }
+      const odb::Point& pt = find_pt->second;
       if (box.contains({pt, pt})) {
         vertex.push_back(*v);
       }
@@ -163,10 +167,10 @@ void RDLGui::drawObjects(gui::Painter& painter)
       if (!route->isRouted()) {
         continue;
       }
-      const auto& verticies = route->getRouteVerticies();
-      for (size_t i = 1; i < verticies.size(); i++) {
-        const odb::Point& src = vertex_map.at(verticies.at(i - 1));
-        const odb::Point& dst = vertex_map.at(verticies.at(i));
+      const auto& route_pts = route->getRoutePoints();
+      for (size_t i = 1; i < route_pts.size(); i++) {
+        const odb::Point& src = route_pts[i - 1];
+        const odb::Point& dst = route_pts[i];
 
         painter.drawLine(src, dst);
       }
@@ -199,10 +203,10 @@ void RDLGui::drawObjects(gui::Painter& painter)
       if (!route->isRouted()) {
         continue;
       }
-      const auto& verticies = route->getRouteVerticies();
-      for (size_t i = 1; i < verticies.size(); i++) {
-        const odb::Point& src = vertex_map.at(verticies.at(i - 1));
-        const odb::Point& dst = vertex_map.at(verticies.at(i));
+      const auto& route_pts = route->getRoutePoints();
+      for (size_t i = 1; i < route_pts.size(); i++) {
+        const odb::Point& src = route_pts[i - 1];
+        const odb::Point& dst = route_pts[i];
 
         painter.drawLine(src, dst);
       }
@@ -214,10 +218,10 @@ void RDLGui::drawObjects(gui::Painter& painter)
       if (!route->isRouted()) {
         continue;
       }
-      const auto& verticies = route->getRouteVerticies();
-      for (size_t i = 1; i < verticies.size(); i++) {
-        const odb::Point& src = vertex_map.at(verticies.at(i - 1));
-        const odb::Point& dst = vertex_map.at(verticies.at(i));
+      const auto& route_pts = route->getRoutePoints();
+      for (size_t i = 1; i < route_pts.size(); i++) {
+        const odb::Point& src = route_pts[i - 1];
+        const odb::Point& dst = route_pts[i];
 
         painter.setPenAndBrush(
             gui::Painter::green, true, gui::Painter::Brush::NONE, 2);
@@ -231,6 +235,44 @@ void RDLGui::drawObjects(gui::Painter& painter)
       }
     }
   }
+
+  painter.setPenAndBrush(snap_color_, true, gui::Painter::Brush::SOLID, 2);
+  for (const auto& [pt0, pt1] : snap_) {
+    painter.drawLine(pt0, pt1);
+  }
+}
+
+void RDLGui::addSnap(const odb::Point& pt0, const odb::Point& pt1)
+{
+  snap_.emplace(pt0, pt1);
+}
+
+void RDLGui::zoomToSnap(bool preview)
+{
+  if (snap_.empty()) {
+    return;
+  }
+
+  odb::Rect zoom;
+  zoom.mergeInit();
+  for (const auto& [p0, p1] : snap_) {
+    zoom.merge(odb::Rect(p0, p1));
+  }
+
+  if (preview) {
+    snap_color_ = gui::Painter::gray;
+  } else {
+    snap_color_ = gui::Painter::white;
+  }
+
+  odb::Rect zoomto;
+  zoom.bloat(zoom.maxDXDY(), zoomto);
+  gui::Gui::get()->zoomTo(zoomto);
+}
+
+void RDLGui::clearSnap()
+{
+  snap_.clear();
 }
 
 void RDLGui::setRouter(RDLRouter* router)

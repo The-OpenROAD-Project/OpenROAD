@@ -98,7 +98,6 @@ GlobalRouter::GlobalRouter()
       macro_extension_(0),
       initialized_(false),
       total_diodes_count_(0),
-      incremental_(false),
       verbose_(false),
       seed_(0),
       caps_perturbation_percentage_(0),
@@ -286,7 +285,7 @@ void GlobalRouter::globalRoute(bool save_guides,
     }
     grouter_cbk_ = new GRouteDbCbk(this);
     grouter_cbk_->addOwner(block_);
-    incremental_ = true;
+    skip_drt_aps_ = true;
   } else {
     try {
       if (end_incremental) {
@@ -294,7 +293,7 @@ void GlobalRouter::globalRoute(bool save_guides,
         grouter_cbk_->removeOwner();
         delete grouter_cbk_;
         grouter_cbk_ = nullptr;
-        incremental_ = false;
+        skip_drt_aps_ = false;
       } else {
         clear();
         block_ = db_->getChip()->getBlock();
@@ -913,9 +912,9 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(
 
   // temporarily ignore odb access points when incremental changes
   // are made, in order to avoid getting invalid APs
-  // TODO: remove the !incremental_ flag and update APs incrementally in odb
+  // TODO: remove the !skip_drt_aps_ flag and update APs incrementally in odb
   has_access_points
-      = findPinAccessPointPositions(pin, ap_positions) && !incremental_;
+      = findPinAccessPointPositions(pin, ap_positions) && !skip_drt_aps_;
 
   std::vector<odb::Point> positions_on_grid;
 
@@ -2078,6 +2077,7 @@ void GlobalRouter::loadGuidesFromDB()
   if (!routes_.empty()) {
     return;
   }
+  skip_drt_aps_ = true;
   initGridAndNets();
   for (odb::dbNet* net : block_->getNets()) {
     for (odb::dbGuide* guide : net->getGuides()) {

@@ -71,7 +71,11 @@ void Graphics::startSA()
     return;
   }
 
-  if (only_final_result_ || skip_steps_) {
+  if (skip_steps_) {
+    return;
+  }
+
+  if (target_cluster_id_ != -1 && !isTargetCluster()) {
     return;
   }
 
@@ -86,7 +90,11 @@ void Graphics::endSA(const float norm_cost)
     return;
   }
 
-  if (only_final_result_ || skip_steps_) {
+  if (skip_steps_) {
+    return;
+  }
+
+  if (target_cluster_id_ != -1 && !isTargetCluster()) {
     return;
   }
 
@@ -98,12 +106,13 @@ void Graphics::endSA(const float norm_cost)
   gui::Gui::get()->pause();
 }
 
+bool Graphics::isTargetCluster()
+{
+  return current_cluster_->getId() == target_cluster_id_;
+}
+
 void Graphics::saStep(const std::vector<SoftMacro>& macros)
 {
-  if (only_final_result_) {
-    return;
-  }
-
   resetPenalties();
   soft_macros_ = macros;
   hard_macros_.clear();
@@ -111,10 +120,6 @@ void Graphics::saStep(const std::vector<SoftMacro>& macros)
 
 void Graphics::saStep(const std::vector<HardMacro>& macros)
 {
-  if (only_final_result_) {
-    return;
-  }
-
   resetPenalties();
   hard_macros_ = macros;
   soft_macros_.clear();
@@ -149,10 +154,6 @@ void Graphics::report(const float norm_cost)
 
 void Graphics::drawResult()
 {
-  if (!only_final_result_) {
-    return;
-  }
-
   if (max_level_) {
     std::vector<std::vector<odb::Rect>> outlines(max_level_.value() + 1);
     int level = 0;
@@ -208,11 +209,11 @@ void Graphics::penaltyCalculated(float norm_cost)
     return;
   }
 
-  if (only_final_result_) {
+  if (is_skipping_) {
     return;
   }
 
-  if (is_skipping_) {
+  if (target_cluster_id_ != -1 && !isTargetCluster()) {
     return;
   }
 
@@ -567,13 +568,19 @@ void Graphics::setBundledNets(const std::vector<BundledNet>& bundled_nets)
   bundled_nets_ = bundled_nets;
 }
 
+void Graphics::setTargetClusterId(const int target_cluster_id)
+{
+  target_cluster_id_ = target_cluster_id;
+}
+
 void Graphics::setOutline(const odb::Rect& outline)
 {
-  if (only_final_result_) {
-    return;
-  }
-
   outline_ = outline;
+}
+
+void Graphics::setCurrentCluster(Cluster* current_cluster)
+{
+  current_cluster_ = current_cluster;
 }
 
 void Graphics::eraseDrawing()

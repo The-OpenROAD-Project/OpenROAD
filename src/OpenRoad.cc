@@ -98,10 +98,6 @@ extern int Odbtcl_Init(Tcl_Interp* interp);
 extern int Upf_Init(Tcl_Interp* interp);
 }
 
-// Main.cc set by main()
-extern const char* log_filename;
-extern const char* metrics_filename;
-
 namespace ord {
 
 using odb::dbBlock;
@@ -176,12 +172,16 @@ void OpenRoad::setOpenRoad(OpenRoad* app, bool reinit_ok)
 
 ////////////////////////////////////////////////////////////////
 
-void initOpenRoad(Tcl_Interp* interp)
+void initOpenRoad(Tcl_Interp* interp,
+                  const char* log_filename,
+                  const char* metrics_filename)
 {
-  OpenRoad::openRoad()->init(interp);
+  OpenRoad::openRoad()->init(interp, log_filename, metrics_filename);
 }
 
-void OpenRoad::init(Tcl_Interp* tcl_interp)
+void OpenRoad::init(Tcl_Interp* tcl_interp,
+                    const char* log_filename,
+                    const char* metrics_filename)
 {
   tcl_interp_ = tcl_interp;
 
