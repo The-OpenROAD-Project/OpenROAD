@@ -32,21 +32,21 @@ def extract_parasitics(
 
     opts.ext_model_file = ext_model_file
     opts.corner_cnt = corner_cnt
-    opts.corner = corner;
+    opts.corner = corner
     opts.max_res = max_res
     opts.coupling_threshold = coupling_threshold
-    opts.signal_table = 3;
+    opts.signal_table = 3
     opts.cc_model = cc_model
     opts.context_depth = context_depth
     opts.lef_res = lef_res
-    opts.lef_rc = lef_rc;
+    opts.lef_rc = lef_rc
     opts.debug_net = debug_net_id
     opts.no_merge_via_res = no_merge_via_res
     opts.over_cell = not skip_over_cell
 
     if version >= 2.0:
-      opts._v2= true
-    opts._version= version
+        opts._v2 = true
+    opts._version = version
 
     opts._dbg = dbg
 
