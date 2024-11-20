@@ -267,6 +267,7 @@ static void deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln)
     }
     delete[] numsoln;
     delete[] LUT;
+    LUT = nullptr;
   }
 }
 

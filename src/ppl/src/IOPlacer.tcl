@@ -172,9 +172,6 @@ proc set_io_pin_constraint { args } {
       if { [info exists keys(-direction)] } {
         set direction $keys(-direction)
         set dir [ppl::parse_direction "set_io_pin_constraint" $direction]
-        utl::info PPL 49 "Restrict $direction pins to region\
-          [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u,\
-          in the $edge edge."
         ppl::add_direction_constraint $dir $edge_ $begin $end
       }
 
@@ -397,6 +394,23 @@ proc place_pin { args } {
     set layer $keys(-layer)
   } else {
     utl::error PPL 65 "-layer is required."
+  }
+
+  set tech_layer [ppl::parse_layer_name $layer]
+  set layer_direction [$tech_layer getDirection]
+  if {
+    ($layer_direction == "HORIZONTAL" && ![ord::db_layer_has_hor_tracks $tech_layer])
+    || ($layer_direction == "VERTICAL" && ![ord::db_layer_has_ver_tracks $tech_layer])
+  } {
+    utl::error PPL 22 "Routing tracks not found for layer $layer."
+  }
+
+  if {
+    ($layer_direction == "VERTICAL" && ![ord::db_layer_has_hor_tracks $tech_layer])
+    || ($layer_direction == "HORIZONTAL" && ![ord::db_layer_has_ver_tracks $tech_layer])
+  } {
+    utl::warn PPL 10 \
+      "Routing tracks in the non-preferred direction were not found for the layer $layer."
   }
 
   if { [info exists keys(-location)] } {
@@ -622,7 +636,6 @@ proc place_pins { args } {
   if { [llength $pin_groups] != 0 } {
     set group_idx 0
     foreach group $pin_groups {
-      utl::info PPL 41 "Pin group $group_idx: \[$group\]"
       set pin_list {}
       foreach pin_name $group {
         set db_bterm [$dbBlock findBTerm $pin_name]
@@ -644,7 +657,7 @@ proc place_pins { args } {
   if { [info exists flags(-annealing)] } {
     ppl::run_annealing [info exists flags(-random)]
   } else {
-    ppl::run_io_placement [info exists flags(-random)]
+    ppl::run_hungarian_matching [info exists flags(-random)]
   }
 }
 
@@ -732,10 +745,6 @@ proc add_pins_to_top_layer { cmd names llx lly urx ury } {
   }
 
   set top_layer_name [$top_layer getConstName]
-  utl::info PPL 60 "Restrict pins \[$names\] to region\
-    ([ord::dbu_to_microns $llx]u, [ord::dbu_to_microns $lly]u)-\
-    ([ord::dbu_to_microns $urx]u, [ord::dbu_to_microns $urx]u) at\
-    routing layer $top_layer_name."
   set pin_list [ppl::parse_pin_names $cmd $names]
   ppl::add_top_layer_constraint $pin_list $llx $lly $urx $ury
 }

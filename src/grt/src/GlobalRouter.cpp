@@ -98,7 +98,6 @@ GlobalRouter::GlobalRouter()
       macro_extension_(0),
       initialized_(false),
       total_diodes_count_(0),
-      incremental_(false),
       verbose_(false),
       seed_(0),
       caps_perturbation_percentage_(0),
@@ -219,9 +218,7 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
 // previous congestion report file.
 void GlobalRouter::saveCongestion()
 {
-  if (congestion_file_name_ != nullptr) {
-    fastroute_->saveCongestion();
-  }
+  fastroute_->saveCongestion();
 }
 
 bool GlobalRouter::haveRoutes()
@@ -281,9 +278,14 @@ void GlobalRouter::globalRoute(bool save_guides,
                    "The start_incremental and end_incremental flags cannot be "
                    "defined together");
   } else if (start_incremental) {
+    if (!initialized_ || haveDetailedRoutes()) {
+      int min_layer, max_layer;
+      getMinMaxLayer(min_layer, max_layer);
+      initFastRoute(min_layer, max_layer);
+    }
     grouter_cbk_ = new GRouteDbCbk(this);
     grouter_cbk_->addOwner(block_);
-    incremental_ = true;
+    skip_drt_aps_ = true;
   } else {
     try {
       if (end_incremental) {
@@ -291,7 +293,7 @@ void GlobalRouter::globalRoute(bool save_guides,
         grouter_cbk_->removeOwner();
         delete grouter_cbk_;
         grouter_cbk_ = nullptr;
-        incremental_ = false;
+        skip_drt_aps_ = false;
       } else {
         clear();
         block_ = db_->getChip()->getBlock();
@@ -315,10 +317,6 @@ void GlobalRouter::globalRoute(bool save_guides,
 
     updateDbCongestion();
     saveCongestion();
-    checkOverflow();
-    if (fastroute_->totalOverflow() > 0 && verbose_) {
-      logger_->warn(GRT, 115, "Global routing finished with overflow.");
-    }
 
     if (verbose_) {
       reportCongestion();
@@ -329,6 +327,20 @@ void GlobalRouter::globalRoute(bool save_guides,
     }
     if (save_guides) {
       saveGuides();
+    }
+  }
+
+  if (fastroute_->totalOverflow() > 0) {
+    if (allow_congestion_) {
+      logger_->warn(GRT,
+                    115,
+                    "Global routing finished with congestion. Check the "
+                    "congestion regions in the DRC Viewer.");
+    } else {
+      logger_->error(GRT,
+                     116,
+                     "Global routing finished with congestion. Check the "
+                     "congestion regions in the DRC Viewer.");
     }
   }
 }
@@ -678,7 +690,7 @@ void GlobalRouter::shrinkNetRoute(odb::dbNet* db_net)
     root = alternate_root;
     // If driverless nets issue is fixed there should be no alternate_root and
     // this should become an Error
-    logger_->warn(GRT, 268, "Net {} has no driver pin.", net->getName());
+    logger_->error(GRT, 268, "Net {} has no driver pin.", net->getName());
   }
   AdjacencyList graph = buildNetGraph(db_net);
 
@@ -900,9 +912,9 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(
 
   // temporarily ignore odb access points when incremental changes
   // are made, in order to avoid getting invalid APs
-  // TODO: remove the !incremental_ flag and update APs incrementally in odb
+  // TODO: remove the !skip_drt_aps_ flag and update APs incrementally in odb
   has_access_points
-      = findPinAccessPointPositions(pin, ap_positions) && !incremental_;
+      = findPinAccessPointPositions(pin, ap_positions) && !skip_drt_aps_;
 
   std::vector<odb::Point> positions_on_grid;
 
@@ -1570,6 +1582,43 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
   }
 }
 
+bool GlobalRouter::hasAvailableResources(bool is_horizontal,
+                                         const int& pos_x,
+                                         const int& pos_y,
+                                         const int& layer_level)
+{
+  // transform from real position to grid pos of fastroute
+  int grid_x = (int) ((pos_x - grid_->getXMin()) / grid_->getTileSize());
+  int grid_y = (int) ((pos_y - grid_->getYMin()) / grid_->getTileSize());
+  int cap = 0;
+  if (is_horizontal) {
+    cap = fastroute_->getAvailableResources(
+        grid_x, grid_y, grid_x + 1, grid_y, layer_level);
+  } else {
+    cap = fastroute_->getAvailableResources(
+        grid_x, grid_y, grid_x, grid_y + 1, layer_level);
+  }
+  return cap > 0;
+}
+
+void GlobalRouter::updateResources(const int& init_x,
+                                   const int& init_y,
+                                   const int& final_x,
+                                   const int& final_y,
+                                   const int& layer_level,
+                                   int used)
+{
+  // transform from real position to grid pos of fastrouter
+  int grid_init_x = (int) ((init_x - grid_->getXMin()) / grid_->getTileSize());
+  int grid_init_y = (int) ((init_y - grid_->getYMin()) / grid_->getTileSize());
+  int grid_final_x
+      = (int) ((final_x - grid_->getXMin()) / grid_->getTileSize());
+  int grid_final_y
+      = (int) ((final_y - grid_->getYMin()) / grid_->getTileSize());
+  fastroute_->updateEdge2DAnd3DUsage(
+      grid_init_x, grid_init_y, grid_final_x, grid_final_y, layer_level, used);
+}
+
 void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
                                               odb::dbTechLayer* tech_layer,
                                               bool is_macro)
@@ -1870,6 +1919,10 @@ void GlobalRouter::perturbCapacities()
 
 void GlobalRouter::initGridAndNets()
 {
+  if (db_->getChip() == nullptr) {
+    logger_->error(
+        GRT, 170, "Load a design before running the global router commands.");
+  }
   block_ = db_->getChip()->getBlock();
   routes_.clear();
   if (getMaxRoutingLayer() == -1) {
@@ -1925,28 +1978,6 @@ void GlobalRouter::getMinMaxLayer(int& min_layer, int& max_layer)
                   ? std::min(getMinRoutingLayer(), getMinLayerForClock())
                   : getMinRoutingLayer();
   max_layer = std::max(getMaxRoutingLayer(), getMaxLayerForClock());
-}
-
-void GlobalRouter::checkOverflow()
-{
-  if (fastroute_->has2Doverflow()) {
-    if (!allow_congestion_) {
-      if (congestion_file_name_ != nullptr) {
-        logger_->error(
-            GRT,
-            119,
-            "Routing congestion too high. Check the congestion heatmap "
-            "in the GUI and load {} in the DRC viewer.",
-            congestion_file_name_);
-      } else {
-        logger_->error(
-            GRT,
-            118,
-            "Routing congestion too high. Check the congestion heatmap "
-            "in the GUI.");
-      }
-    }
-  }
 }
 
 void GlobalRouter::readGuides(const char* file_name)
@@ -2046,6 +2077,7 @@ void GlobalRouter::loadGuidesFromDB()
   if (!routes_.empty()) {
     return;
   }
+  skip_drt_aps_ = true;
   initGridAndNets();
   for (odb::dbNet* net : block_->getNets()) {
     for (odb::dbGuide* guide : net->getGuides()) {
@@ -2265,7 +2297,7 @@ void GlobalRouter::saveGuidesFromFile(
       for (const auto& guide : guide_boxes) {
         ph_layer_final = routing_layers_[guide.first];
         odb::dbGuide::create(
-            db_net, ph_layer_final, ph_layer_final, guide.second);
+            db_net, ph_layer_final, ph_layer_final, guide.second, false);
       }
     }
   }
@@ -2275,6 +2307,8 @@ void GlobalRouter::saveGuides()
 {
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
+
+  bool is_congested = fastroute_->has2Doverflow() && !allow_congestion_;
 
   for (odb::dbNet* db_net : block_->getNets()) {
     auto iter = routes_.find(db_net);
@@ -2302,15 +2336,15 @@ void GlobalRouter::saveGuides()
             int layer_idx2 = segment.final_layer;
             odb::dbTechLayer* layer1 = routing_layers_[layer_idx1];
             odb::dbTechLayer* layer2 = routing_layers_[layer_idx2];
-            odb::dbGuide::create(db_net, layer1, layer2, box);
-            odb::dbGuide::create(db_net, layer2, layer1, box);
+            odb::dbGuide::create(db_net, layer1, layer2, box, is_congested);
+            odb::dbGuide::create(db_net, layer2, layer1, box, is_congested);
           } else {
             int layer_idx = std::min(segment.init_layer, segment.final_layer);
             int via_layer_idx
                 = std::max(segment.init_layer, segment.final_layer);
             odb::dbTechLayer* layer = routing_layers_[layer_idx];
             odb::dbTechLayer* via_layer = routing_layers_[via_layer_idx];
-            odb::dbGuide::create(db_net, layer, via_layer, box);
+            odb::dbGuide::create(db_net, layer, via_layer, box, is_congested);
           }
         } else if (segment.init_layer == segment.final_layer) {
           if (segment.init_layer < getMinRoutingLayer()
@@ -2323,7 +2357,7 @@ void GlobalRouter::saveGuides()
           }
 
           odb::dbTechLayer* layer = routing_layers_[segment.init_layer];
-          odb::dbGuide::create(db_net, layer, layer, box);
+          odb::dbGuide::create(db_net, layer, layer, box, is_congested);
         }
       }
     }
@@ -4657,6 +4691,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
   std::vector<Net*> dirty_nets;
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);
+    fastroute_->clearNetsToRoute();
 
     updateDirtyNets(dirty_nets);
     if (verbose_) {

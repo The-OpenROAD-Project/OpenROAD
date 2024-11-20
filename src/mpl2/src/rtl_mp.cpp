@@ -165,7 +165,7 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
   inst->setLocation(x1, y1);
 
   if (!orientation.isRightAngleRotation()) {
-    Snapper snapper(inst);
+    Snapper snapper(logger_, inst);
     snapper.snapMacro();
   } else {
     logger_->warn(
@@ -213,6 +213,11 @@ void MacroPlacer2::setDebugSkipSteps(bool skip_steps)
 void MacroPlacer2::setDebugOnlyFinalResult(bool only_final_result)
 {
   hier_rtlmp_->setDebugOnlyFinalResult(only_final_result);
+}
+
+void MacroPlacer2::setDebugTargetClusterId(const int target_cluster_id)
+{
+  hier_rtlmp_->setDebugTargetClusterId(target_cluster_id);
 }
 
 }  // namespace mpl2

@@ -5,7 +5,7 @@ import tap
 tech = Tech()
 tech.readLef("Nangate45/Nangate45_tech.lef")
 tech.readLef("Nangate45/Nangate45_stdcell.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("gcd_nangate45.def")
 
 options = tap.Options()

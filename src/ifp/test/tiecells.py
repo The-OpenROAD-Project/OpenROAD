@@ -19,8 +19,8 @@ floorplan.initFloorplan(
 )
 
 
-ifp_helpers.insert_tiecells(floorplan, "LOGIC0_X1/Z", "TIE_ZERO_")
-ifp_helpers.insert_tiecells(floorplan, "LOGIC1_X1/Z")
+ifp_helpers.insert_tiecells(tech, floorplan, "LOGIC0_X1/Z", "TIE_ZERO_")
+ifp_helpers.insert_tiecells(tech, floorplan, "LOGIC1_X1/Z")
 
 def_file = helpers.make_result_file("tiecells.def")
 design.writeDef(def_file)

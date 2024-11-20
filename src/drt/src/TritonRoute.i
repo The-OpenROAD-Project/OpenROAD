@@ -203,11 +203,11 @@ void
 run_worker_cmd(const char* dump_dir, const char* worker_dir, const char* drc_rpt)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->updateGlobals(fmt::format("{}/init_globals.bin", dump_dir).c_str());
+  router->updateGlobals(fmt::format("{}/init_router_cfg.bin", dump_dir).c_str());
   router->resetDb(fmt::format("{}/design.odb", dump_dir).c_str());
-  router->updateGlobals(fmt::format("{}/{}/globals.bin", dump_dir, worker_dir).c_str());
+  router->updateGlobals(fmt::format("{}/{}/router_cfg.bin", dump_dir, worker_dir).c_str());
   router->updateDesign(fmt::format("{}/{}/updates.bin", dump_dir, worker_dir).c_str());
-  router->updateGlobals(fmt::format("{}/{}/worker_globals.bin", dump_dir, worker_dir).c_str());
+  router->updateGlobals(fmt::format("{}/{}/worker_router_cfg.bin", dump_dir, worker_dir).c_str());
   
   router->debugSingleWorker(fmt::format("{}/{}", dump_dir, worker_dir), drc_rpt);
 }
@@ -238,9 +238,9 @@ void step_end()
   router->endFR();
 }
 
-void check_drc_cmd(const char* drc_file, int x1, int y1, int x2, int y2)
+void check_drc_cmd(const char* drc_file, int x1, int y1, int x2, int y2, const char* marker_name)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->checkDRC(drc_file, x1, y1, x2, y2);
+  router->checkDRC(drc_file, x1, y1, x2, y2, marker_name);
 }
 %} // inline

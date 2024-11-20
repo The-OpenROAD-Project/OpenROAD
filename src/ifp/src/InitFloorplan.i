@@ -38,6 +38,7 @@
 #include "db_sta/dbSta.hh"
 #include "ifp/InitFloorplan.hh"
 #include "ord/OpenRoad.hh"
+#include "ord/Design.h"
 #include "utl/Logger.h"
 
 // Defined by OpenRoad.i
@@ -57,19 +58,6 @@ static utl::Logger* getLogger() {
   return ord::OpenRoad::openRoad()->getLogger();
 }
  
-static ifp::InitFloorplan get_floorplan()
-{
-  auto app = ord::getOpenRoad();
-  auto chip = app->getDb()->getChip();
-  auto logger = app->getLogger();
-  if (!chip || !chip->getBlock()) {
-    logger->error(utl::IFP, 38, "No design is loaded.");
-  }
-  auto block = chip->getBlock();
-  auto network = app->getDbNetwork();
-  return ifp::InitFloorplan(block, logger, network);
-}
-
 %}
 
 ////////////////////////////////////////////////////////////////
@@ -82,6 +70,7 @@ static ifp::InitFloorplan get_floorplan()
 %import <std_vector.i>
 %import "dbtypes.i"
 %include "../../Exception.i"
+%include "../../Design.i"
 
 %typemap(in) ifp::RowParity {
   char *str = Tcl_GetStringFromObj($input, 0);
@@ -101,65 +90,78 @@ static ifp::InitFloorplan get_floorplan()
 namespace ifp {
 
 void
-init_floorplan_core(int die_lx,
-		    int die_ly,
-		    int die_ux,
-		    int die_uy,
-		    int core_lx,
-		    int core_ly,
-		    int core_ux,
-		    int core_uy,
-		    odb::dbSite* site,
-		    const std::vector<odb::dbSite*>& additional_sites,
-		    ifp::RowParity row_parity)
+init_floorplan_core(ord::Design* design,
+                    int die_lx,
+                    int die_ly,
+                    int die_ux,
+                    int die_uy,
+                    int core_lx,
+                    int core_ly,
+                    int core_ux,
+                    int core_uy,
+                    odb::dbSite* site,
+                    const std::vector<odb::dbSite*>& additional_sites,
+                    ifp::RowParity row_parity,
+                    const std::vector<odb::dbSite*>& flipped_sites)
 {
-  get_floorplan().initFloorplan({die_lx, die_ly, die_ux, die_uy},
+  std::set<odb::dbSite*> flipped_sites_set(flipped_sites.begin(),
+                                           flipped_sites.end());
+  design->getFloorplan().initFloorplan({die_lx, die_ly, die_ux, die_uy},
                                 {core_lx, core_ly, core_ux, core_uy},
-                                site, additional_sites, row_parity);
+                                site, additional_sites, row_parity, flipped_sites_set); 
 }
 
 void
-init_floorplan_util(double util,
+init_floorplan_util(ord::Design* design,
+                    double util,
                     double aspect_ratio,
                     int core_space_bottom,
-                     int core_space_top,
+                    int core_space_top,
                     int core_space_left,
                     int core_space_right,
-		    odb::dbSite* site,
-		    const std::vector<odb::dbSite*>& additional_sites,
-		    ifp::RowParity row_parity)
+                    odb::dbSite* site,
+                    const std::vector<odb::dbSite*>& additional_sites,
+                    ifp::RowParity row_parity,
+                    const std::vector<odb::dbSite*>& flipped_sites)
 {
-  get_floorplan().initFloorplan(util, aspect_ratio,
+  std::set<odb::dbSite*> flipped_sites_set(flipped_sites.begin(),
+                                           flipped_sites.end());
+  design->getFloorplan().initFloorplan(util, aspect_ratio,
                                 core_space_bottom, core_space_top,
                                 core_space_left, core_space_right,
-                                site, additional_sites, row_parity);
+                                site, additional_sites, row_parity,
+                                flipped_sites_set);
 }
 
 void
-insert_tiecells_cmd(odb::dbMTerm* tie_term, const char* prefix)
+insert_tiecells_cmd(ord::Design* design,
+                    odb::dbMTerm* tie_term, const char* prefix)
 {
-  get_floorplan().insertTiecells(tie_term, prefix);
+  design->getFloorplan().insertTiecells(tie_term, prefix);
 }
 
 void
-make_layer_tracks()
+make_layer_tracks(ord::Design* design)
 {
-  get_floorplan().makeTracks();
+  design->getFloorplan().makeTracks();
 }
 
 void
-make_layer_tracks(odb::dbTechLayer* layer,
+make_layer_tracks(ord::Design* design,
+                  odb::dbTechLayer* layer,
                   int x_offset,
                   int x_pitch,
                   int y_offset,
                   int y_pitch)
 {
-  get_floorplan().makeTracks(layer, x_offset, x_pitch, y_offset, y_pitch);
+  design->getFloorplan().makeTracks(layer, x_offset, x_pitch,
+                                     y_offset, y_pitch);
 }
 
-odb::dbSite* find_site(const char* site_name)
+odb::dbSite* find_site(ord::Design* design,
+                       const char* site_name)
 {
-  auto site = get_floorplan().findSite(site_name);
+  auto site = design->getFloorplan().findSite(site_name);
   if (!site) {
     getLogger()->error(utl::IFP, 18, "Unable to find site: {}", site_name);
   }

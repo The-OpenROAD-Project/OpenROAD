@@ -3,9 +3,17 @@
 [INFO ODB-0130]     Created 400 pins.
 [INFO ODB-0131]     Created 1 components and 6 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 1 connections.
+[INFO PPL-0048] Restrict pins [ pin0 pin1 pin10 pin100 pin101 ... ] to region 0.00u-100.13u at the TOP edge.
 [INFO PPL-0044] Pin group: [ pin0 pin1 pin2 pin3 pin4 ... ]
+[INFO PPL-0048] Restrict pins [ pin300 pin301 pin302 pin303 pin304 ... ] to region 0.00u-100.13u at the TOP edge.
 [INFO PPL-0044] Pin group: [ pin300 pin301 pin302 pin303 pin304 ... ]
 Found 0 macro blocks.
+[INFO PPL-0001] Number of slots           1754
+[INFO PPL-0002] Number of I/O             400
+[INFO PPL-0003] Number of I/O w/sink      400
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0006] Number of I/O Groups    2
+[INFO PPL-0005] Slots per section         200
 [INFO PPL-0100] Group of size 300 placed during fallback mode.
 [WARNING PPL-0078] Not enough available positions (36) in section (47.215, 100.8)-(14.915, 100.8) at edge TOP to place the pin group of size 71.
 [WARNING PPL-0078] Not enough available positions (35) in section (85.215, 100.8)-(47.405, 100.8) at edge TOP to place the pin group of size 71.

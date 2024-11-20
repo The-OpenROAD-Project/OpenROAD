@@ -4,7 +4,7 @@ import dpl_aux
 
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("one_site_gap_disallow.def")
 
 dpl_aux.detailed_placement(design, disallow_one_site_gaps=True)

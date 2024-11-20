@@ -62,5 +62,5 @@
 	
     ],
     "constructors":[],
-    "cpp_includes":["dbBlock.h","dbModInst.h","dbModNet.h","dbHashTable.hpp","dbModBTerm.h"]
+    "cpp_includes":["dbBlock.h","dbModInst.h","dbModNet.h","dbHashTable.hpp","dbModBTerm.h", "dbJournal.h"]
 }

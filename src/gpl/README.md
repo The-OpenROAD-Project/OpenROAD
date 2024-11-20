@@ -43,6 +43,8 @@ overflow values for recalculating weights can be modified with
 `-timing_driven_net_reweight_overflow`, you may use less overflow threshold 
 values to decrease runtime, for example.
 
+You can also set an overflow value for `keep_resize_below_overflow`, when below that, the modifications made by the rsz tool are maintained (non-virtual `repair_design`).
+
 When the routability-driven option is enabled, each of its iterations will 
 execute RUDY to provide an estimation of routing congestion. Congested tiles 
 will have the area of their logic cells inflated to reduce routing congestion. 
@@ -59,7 +61,7 @@ Routability-driven arguments
 
 Timing-driven arguments
 - They begin with `-timing_driven`.
-- `-timing_driven_net_reweight_overflow`, `-timing_driven_net_weight_max`, `-timing_driven_nets_percentage`
+- `-timing_driven_net_reweight_overflow`, `-timing_driven_net_weight_max`, `-timing_driven_nets_percentage`, `keep_resize_below_overflow`
 
 ```tcl
 global_placement
@@ -95,6 +97,7 @@ global_placement
     [-timing_driven_net_reweight_overflow]
     [-timing_driven_net_weight_max]
     [-timing_driven_nets_percentage]
+    [-keep_resize_below_overflow]
 ```
 
 #### Options
@@ -139,6 +142,7 @@ global_placement
 | `-timing_driven_net_reweight_overflow` | Set overflow threshold for timing-driven net reweighting. Allowed value is a Tcl list of integers where each number is `[0, 100]`. Default values are [79, 64, 49, 29, 21, 15] |
 | `-timing_driven_net_weight_max` | Set the multiplier for the most timing-critical nets. The default value is `1.9`, and the allowed values are floats. |
 | `-timing_driven_nets_percentage` | Set the reweighted percentage of nets in timing-driven mode. The default value is 10. Allowed values are floats `[0, 100]`. |
+| `-keep_resize_below_overflow` | When the overflow is below the set value, timing-driven iterations will retain the resizer changes instead of reverting them. The default value is 0. Allowed values are floats `[0, 1]`. |
 
 ### Cluster Flops
 
