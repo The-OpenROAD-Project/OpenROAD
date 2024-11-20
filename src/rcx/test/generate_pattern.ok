@@ -1,6 +1,6 @@
 [INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
 [INFO RCX-0055] Finished 252 bench measurements for pattern MET_OVER_MET
-[INFO RCX-0055] Finished 330 bench measurements for pattern MET_OVER_MET
+[INFO RCX-0055] Finished 396 bench measurements for pattern MET_OVER_MET
 [INFO RCX-0007] Finished 240 measurements for pattern MET_UNDER_MET
 [INFO RCX-0057] Finished 180 bench measurements for pattern MET_UNDER_MET
 [INFO RCX-0058] Finished 182 bench measurements for pattern MET_DIAGUNDER_MET
