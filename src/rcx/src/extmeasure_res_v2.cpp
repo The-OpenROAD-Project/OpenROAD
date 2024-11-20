@@ -40,7 +40,6 @@ namespace rcx {
 using utl::RCX;
 using namespace odb;
 
-
 class compareSEQ_H
 {
  public:
@@ -52,10 +51,7 @@ class compareSEQ_H
 class compare_int
 {
  public:
-  bool operator()(int x, int y)
-  {
-    return (x<=y);
-  }
+  bool operator()(int x, int y) { return (x <= y); }
 };
 class compareSEQ_V
 {
@@ -65,216 +61,258 @@ class compareSEQ_V
     return (wire1->_ll[1] > wire2->_ll[1] ? true : false);
   }
 };
-int extMeasure::DebugPrint(SEQ* s, Ath__array1D<SEQ*>* dgContext, int trackNum, int plane)
+int extMeasure::DebugPrint(SEQ* s,
+                           Ath__array1D<SEQ*>* dgContext,
+                           int trackNum,
+                           int plane)
 {
   int scnt = (int) dgContext->getCnt();
-  fprintf(stdout, "cnt %d  plane %d  track %d  ------- \n", scnt, plane, trackNum);
-  fprintf(stdout, "     target: %d  %d  %d  %d id %d\n", s->_ll[0], s->_ll[1], s->_ur[0], s->_ur[1], s->type);
-    uint idx= 0; // at idx=0, index info
-    for (; idx < scnt; idx++) {
-      SEQ* tseq = dgContext->get(idx);
+  fprintf(
+      stdout, "cnt %d  plane %d  track %d  ------- \n", scnt, plane, trackNum);
+  fprintf(stdout,
+          "     target: %d  %d  %d  %d id %d\n",
+          s->_ll[0],
+          s->_ll[1],
+          s->_ur[0],
+          s->_ur[1],
+          s->type);
+  uint idx = 0;  // at idx=0, index info
+  for (; idx < scnt; idx++) {
+    SEQ* tseq = dgContext->get(idx);
 
-      char same_net= ' ';
-     if (tseq->type == _rsegSrcId)
-      same_net= 'S';
-    
-     int dd= s->_ll[_dir] - tseq->_ur[_dir]; // look below
-     fprintf(stdout, "%d  %d  %d  %d id %d  DIST= %d %c\n", tseq->_ll[0], tseq->_ll[1], tseq->_ur[0], tseq->_ur[1], tseq->type, dd, same_net );
-    }
-return scnt;
-}
-int binarySearch(Ath__array1D<SEQ*>* arr, int target, int begin, int end, int dir) {
-    int left = begin;
-    int right = end;
+    char same_net = ' ';
+    if (tseq->type == _rsegSrcId)
+      same_net = 'S';
 
-    while (left <= right) {
-        int mid = left + (right - left) / 2;
-        if (mid==end)
-          return mid;
-        int xy1= arr->get(mid)->_ll[dir]; 
-        if (xy1 < target) {
-            left = mid + 1; // Target is in the right half
-        } else {
-            right = mid - 1; // Target is in the left half
-        }
-    }
-    return left;
-}
-
-int extMeasure::SingleDiagTrackDist_opt(SEQ* s, Ath__array1D<SEQ*>* dgContext, bool skipZeroDist, bool skipNegativeDist, Ath__array1D<int>* sortedDistTable, Ath__array1D<SEQ*>* segFilteredTable)
-{
-  if (dgContext->getCnt()==0)
-    return 0;
-  
-  SEQ* first = dgContext->get(1);
-  if (s->_ur[!_dir] <= first->_ll[!_dir]) 
-    return 0;
-  SEQ* last = dgContext->get(dgContext->getCnt()-1);
-  if (last->type==_rsegSrcId) { // same net
-    if (dgContext->getCnt()<2)
-      return 0;
-    last = dgContext->get(dgContext->getCnt()-2);
+    int dd = s->_ll[_dir] - tseq->_ur[_dir];  // look below
+    fprintf(stdout,
+            "%d  %d  %d  %d id %d  DIST= %d %c\n",
+            tseq->_ll[0],
+            tseq->_ll[1],
+            tseq->_ur[0],
+            tseq->_ur[1],
+            tseq->type,
+            dd,
+            same_net);
   }
-  if (s->_ll[!_dir] >= last->_ur[!_dir]) 
+  return scnt;
+}
+int binarySearch(Ath__array1D<SEQ*>* arr,
+                 int target,
+                 int begin,
+                 int end,
+                 int dir)
+{
+  int left = begin;
+  int right = end;
+
+  while (left <= right) {
+    int mid = left + (right - left) / 2;
+    if (mid == end)
+      return mid;
+    int xy1 = arr->get(mid)->_ll[dir];
+    if (xy1 < target) {
+      left = mid + 1;  // Target is in the right half
+    } else {
+      right = mid - 1;  // Target is in the left half
+    }
+  }
+  return left;
+}
+
+int extMeasure::SingleDiagTrackDist_opt(SEQ* s,
+                                        Ath__array1D<SEQ*>* dgContext,
+                                        bool skipZeroDist,
+                                        bool skipNegativeDist,
+                                        Ath__array1D<int>* sortedDistTable,
+                                        Ath__array1D<SEQ*>* segFilteredTable)
+{
+  if (dgContext->getCnt() == 0)
     return 0;
-  
+
+  SEQ* first = dgContext->get(1);
+  if (s->_ur[!_dir] <= first->_ll[!_dir])
+    return 0;
+  SEQ* last = dgContext->get(dgContext->getCnt() - 1);
+  if (last->type == _rsegSrcId) {  // same net
+    if (dgContext->getCnt() < 2)
+      return 0;
+    last = dgContext->get(dgContext->getCnt() - 2);
+  }
+  if (s->_ll[!_dir] >= last->_ur[!_dir])
+    return 0;
+
   sortedDistTable->resetCnt();
   std::vector<int> distTable;
 
-    // find first overlap
-    SEQ* indexInfo = dgContext->get(0);
-    // DELETE int init_index= indexInfo->type;
-    int ii= indexInfo->type;
-    int back_cnt= 0;
-    for ( ; ii>0; ii--) {
-      SEQ* tseq = dgContext->get(ii);
-      back_cnt ++;
-      int xy1= s->_ll[!_dir];
-      int xy2= tseq->_ur[!_dir];
-      if (xy1 > xy2)
-      // if (s->_ll[!_dir] < tseq->_ll[!_dir]) 
-        break;
+  // find first overlap
+  SEQ* indexInfo = dgContext->get(0);
+  // DELETE int init_index= indexInfo->type;
+  int ii = indexInfo->type;
+  int back_cnt = 0;
+  for (; ii > 0; ii--) {
+    SEQ* tseq = dgContext->get(ii);
+    back_cnt++;
+    int xy1 = s->_ll[!_dir];
+    int xy2 = tseq->_ur[!_dir];
+    if (xy1 > xy2)
+      // if (s->_ll[!_dir] < tseq->_ll[!_dir])
+      break;
+  }
+  int start
+      = indexInfo->type == 0 ? 1 : ii - 1;  // -1 means 2 segments with same lo
+                                            // xy on different tracks
+  if (start < 0)
+    start = 0;
+
+  bool same_net = false;
+  int min_dist = 100000000;
+  int max_dist = 0;
+  uint cnt = 0;
+  uint tot_cnt = 0;
+
+  int scnt = (int) dgContext->getCnt();
+  int search_start = start;
+  search_start = binarySearch(dgContext, s->_ll[!_dir], start, scnt, !_dir);
+  uint idx = search_start;
+  for (; idx < scnt; idx++) {
+    SEQ* tseq = dgContext->get(idx);
+    tot_cnt++;
+
+    // ---------   ----------------------       ---------  ------      --------
+    // s segment:                    ___________________
+
+    if (s->_ur[!_dir] <= tseq->_ll[!_dir]) {
+      indexInfo->type = idx;  // starting point next segment
+      break;
     }
-    int start= indexInfo->type==0 ? 1 : ii-1; // -1 means 2 segments with same lo xy on different tracks
-    if (start<0)
-      start= 0;
+    if (s->_ll[!_dir] >= tseq->_ur[!_dir]) {
+      continue;  // on  the right
+    }
+    if (tseq->type == _rsegSrcId) {
+      same_net = true;
+      continue;  // same net
+    }
+    int dd = s->_ll[_dir] - tseq->_ur[_dir];  // look below
 
-    bool same_net= false;
-    int min_dist= 100000000;
-    int max_dist= 0;
-    uint cnt= 0;
-    uint tot_cnt= 0;
-
-    int scnt = (int) dgContext->getCnt();
-    int search_start= start;
-    search_start= binarySearch(dgContext, s->_ll[!_dir], start, scnt, !_dir);
-    uint idx= search_start;
-    for (; idx < scnt; idx++) {
-      SEQ* tseq = dgContext->get(idx);
-      tot_cnt ++;
-
-      // ---------   ----------------------       ---------  ------      --------
-      //s segment:                    ___________________
-
-      if (s->_ur[!_dir] <= tseq->_ll[!_dir]) {
-        indexInfo->type= idx; // starting point next segment
-        break;
-      }
-      if (s->_ll[!_dir] >= tseq->_ur[!_dir]) {
-        continue; // on  the right
-      }
-     if (tseq->type == _rsegSrcId) {
-      same_net= true;
-      continue; // same net
-     }
-     int dd= s->_ll[_dir] - tseq->_ur[_dir]; // look below
-
-    if (skipZeroDist && dd==0)
+    if (skipZeroDist && dd == 0)
       continue;
-    if (skipNegativeDist && dd<0)
+    if (skipNegativeDist && dd < 0)
       continue;
-    cnt ++;
-      
-    if (min_dist>dd)
-      min_dist= dd;
-    if (max_dist<dd)
-      max_dist= dd;
-    
+    cnt++;
+
+    if (min_dist > dd)
+      min_dist = dd;
+    if (max_dist < dd)
+      max_dist = dd;
+
     segFilteredTable->add(tseq);
   }
-  // fprintf(stdout, "%5d     track_cnt %5d    overlapped %5d    init_index %5d    back_cnt %5d   start %5d    search_start %5d  end_index %5d\n", tot_cnt, scnt, cnt, init_index, back_cnt, start, search_start, indexInfo->type);
-  // if (tot_cnt==74 && cnt==0)
-  // fprintf(stdout, "%5d     track_cnt %5d    overlapped %5d    init_index %5d    back_cnt %5d   start %5d    search_start %5d  end_index %5d\n", tot_cnt, scnt, cnt, init_index, back_cnt, start, search_start, indexInfo->type);
-  if (cnt==0)
+  // fprintf(stdout, "%5d     track_cnt %5d    overlapped %5d    init_index %5d
+  // back_cnt %5d   start %5d    search_start %5d  end_index %5d\n", tot_cnt,
+  // scnt, cnt, init_index, back_cnt, start, search_start, indexInfo->type); if
+  // (tot_cnt==74 && cnt==0) fprintf(stdout, "%5d     track_cnt %5d overlapped
+  // %5d    init_index %5d    back_cnt %5d   start %5d    search_start %5d
+  // end_index %5d\n", tot_cnt, scnt, cnt, init_index, back_cnt, start,
+  // search_start, indexInfo->type);
+  if (cnt == 0)
     return -1;
   if (same_net) {
-    if (cnt==0) // only same net wire on the table
+    if (cnt == 0)  // only same net wire on the table
       return -1;
-    if (min_dist==max_dist && same_net && cnt==scnt-1 ) // only one track, filter same_net, zero, negative dist
+    if (min_dist == max_dist && same_net
+        && cnt == scnt - 1)  // only one track, filter same_net, zero, negative
+                             // dist
       return 1;
   }
-  if (min_dist==max_dist && !same_net && cnt==scnt-1) { // normal!
-    if (segFilteredTable->getCnt()==0)
+  if (min_dist == max_dist && !same_net && cnt == scnt - 1) {  // normal!
+    if (segFilteredTable->getCnt() == 0)
       return 0;
   }
-  if (segFilteredTable->getCnt()==1) {
+  if (segFilteredTable->getCnt() == 1) {
     sortedDistTable->add(min_dist);
     return 1;
   }
-  if (segFilteredTable->getCnt()==2) {
+  if (segFilteredTable->getCnt() == 2) {
     sortedDistTable->add(min_dist);
     sortedDistTable->add(max_dist);
     return 2;
   }
-  int prev_dist= -100000;
-  for (uint ii=0; ii<cnt; ii++) {
-    SEQ* tseq= segFilteredTable->get(ii);
-    int dd= s->_ll[_dir] - tseq->_ur[_dir]; // look below
-    if (dd!=prev_dist) {
+  int prev_dist = -100000;
+  for (uint ii = 0; ii < cnt; ii++) {
+    SEQ* tseq = segFilteredTable->get(ii);
+    int dd = s->_ll[_dir] - tseq->_ur[_dir];  // look below
+    if (dd != prev_dist) {
       distTable.push_back(dd);
-      prev_dist= dd;
+      prev_dist = dd;
     }
   }
-  if (distTable.size()>1)
+  if (distTable.size() > 1)
     std::sort(distTable.begin(), distTable.end(), compare_int());
-   for (uint k= 0; k<distTable.size(); k++)
-   {
-        int dist= distTable[k];
-        sortedDistTable->add(dist);
-   }
-   distTable.clear();
+  for (uint k = 0; k < distTable.size(); k++) {
+    int dist = distTable[k];
+    sortedDistTable->add(dist);
+  }
+  distTable.clear();
 
   return sortedDistTable->getCnt();
 }
-int extMeasure::SingleDiagTrackDist(SEQ* s, Ath__array1D<SEQ*>* dgContext, bool skipZeroDist, bool skipNegativeDist, std::vector<int> &distTable, Ath__array1D<SEQ*>* segFilteredTable)
+int extMeasure::SingleDiagTrackDist(SEQ* s,
+                                    Ath__array1D<SEQ*>* dgContext,
+                                    bool skipZeroDist,
+                                    bool skipNegativeDist,
+                                    std::vector<int>& distTable,
+                                    Ath__array1D<SEQ*>* segFilteredTable)
 {
-    bool same_net= false;
-    int min_dist= 100000000;
-    int max_dist= 0;
-    uint cnt= 0;
+  bool same_net = false;
+  int min_dist = 100000000;
+  int max_dist = 0;
+  uint cnt = 0;
 
-    int scnt = (int) dgContext->getCnt();
-    uint idx= 1; // at idx=0, index info
-    for (; idx < scnt; idx++) {
-      SEQ* tseq = dgContext->get(idx);
+  int scnt = (int) dgContext->getCnt();
+  uint idx = 1;  // at idx=0, index info
+  for (; idx < scnt; idx++) {
+    SEQ* tseq = dgContext->get(idx);
 
-     if (tseq->type == _rsegSrcId) {
-      same_net= true;
-      continue; // same net
-     }
-     int dd= s->_ll[_dir] - tseq->_ur[_dir]; // look below
+    if (tseq->type == _rsegSrcId) {
+      same_net = true;
+      continue;  // same net
+    }
+    int dd = s->_ll[_dir] - tseq->_ur[_dir];  // look below
 
-    if (skipZeroDist && dd==0)
+    if (skipZeroDist && dd == 0)
       continue;
-    if (skipNegativeDist && dd<0)
+    if (skipNegativeDist && dd < 0)
       continue;
-    cnt ++;
-      
-    if (min_dist>dd)
-      min_dist= dd;
-    if (max_dist<dd)
-      max_dist= dd;
-    
+    cnt++;
+
+    if (min_dist > dd)
+      min_dist = dd;
+    if (max_dist < dd)
+      max_dist = dd;
+
     segFilteredTable->add(tseq);
   }
-  if (cnt==0)
+  if (cnt == 0)
     return -1;
   if (same_net) {
-    if (cnt==0) // only same net wire on the table
+    if (cnt == 0)  // only same net wire on the table
       return -1;
-    if (min_dist==max_dist && same_net && cnt==scnt-1 ) // only one track, filter same_net, zero, negative dist
+    if (min_dist == max_dist && same_net
+        && cnt == scnt - 1)  // only one track, filter same_net, zero, negative
+                             // dist
       return 1;
   }
-  if (min_dist==max_dist && !same_net && cnt==scnt-1) // normal!
+  if (min_dist == max_dist && !same_net && cnt == scnt - 1)  // normal!
     return 0;
 
-  int prev_dist= -100000;
-  for (uint ii=0; ii<cnt; ii++) {
-    SEQ* tseq= segFilteredTable->get(ii);
-    int dd= s->_ll[_dir] - tseq->_ur[_dir]; // look below
-    if (dd!=prev_dist) {
+  int prev_dist = -100000;
+  for (uint ii = 0; ii < cnt; ii++) {
+    SEQ* tseq = segFilteredTable->get(ii);
+    int dd = s->_ll[_dir] - tseq->_ur[_dir];  // look below
+    if (dd != prev_dist) {
       distTable.push_back(dd);
-      prev_dist= dd;
+      prev_dist = dd;
     }
   }
   return distTable.size();
@@ -289,19 +327,20 @@ int extMeasure::computeResDist(SEQ* s,
   int trackDist = 20;
   int loTrack;
   int hiTrack;
-  int planeIndex = getDgPlaneAndTrackIndex(targetMet, trackDist, loTrack, hiTrack);
+  int planeIndex
+      = getDgPlaneAndTrackIndex(targetMet, trackDist, loTrack, hiTrack);
   if (planeIndex < 0)
     return 0;
 
   uint len = 0;
 
-  Ath__array1D<SEQ*>* tmpTable= new Ath__array1D<SEQ*>(16);
+  Ath__array1D<SEQ*>* tmpTable = new Ath__array1D<SEQ*>(16);
   copySeqUsingPool(s, tmpTable);
 
-  Ath__array1D<SEQ*>* residueTable= new Ath__array1D<SEQ*>(16);
-  Ath__array1D<SEQ*>* dgTable= new Ath__array1D<SEQ*>(16);
-  Ath__array1D<SEQ*>* seqTable= new Ath__array1D<SEQ*>(16);
-  Ath__array1D<int>* distTable= new Ath__array1D<int>(4);
+  Ath__array1D<SEQ*>* residueTable = new Ath__array1D<SEQ*>(16);
+  Ath__array1D<SEQ*>* dgTable = new Ath__array1D<SEQ*>(16);
+  Ath__array1D<SEQ*>* seqTable = new Ath__array1D<SEQ*>(16);
+  Ath__array1D<int>* distTable = new Ath__array1D<int>(4);
 
   int trackTable[200];
   uint cnt = 0;
@@ -317,72 +356,78 @@ int extMeasure::computeResDist(SEQ* s,
 
     if (_dgContextArray[planeIndex][trackn]->getCnt() <= 1)
       continue;
-    
+
     // Check for same track
     // DELETE bool same_track = false;
     Ath__array1D<SEQ*>* dTable = _dgContextArray[planeIndex][trackn];
     // DELETE int cnt = (int) dTable->getCnt();
 
-    bool dbg1= IsDebugNet();
-    bool filteringRequired= true;
+    bool dbg1 = IsDebugNet();
+    bool filteringRequired = true;
     if (IsDebugNet())
       DebugPrint(s, dTable, trackn, planeIndex);
 
     seqTable->resetCnt();
     // int res= SingleDiagTrackDist(s, dTable, true, true, distTable, seqTable);
-    int res= SingleDiagTrackDist_opt(s, dTable, true, true, distTable, seqTable);
-    if (res<0) {
+    int res
+        = SingleDiagTrackDist_opt(s, dTable, true, true, distTable, seqTable);
+    if (res < 0) {
       if (dbg1)
         fprintf(stdout, "res= %d -- skip diag overlap\n", res);
       continue;
-    } else if (res==0) {
-      filteringRequired= true;
+    } else if (res == 0) {
+      filteringRequired = true;
       // NEED TO EXCLUDE idx=0; keep as reference
 
       if (dbg1)
         fprintf(stdout, "Normal\n");
-    } else if (res==1 &&distTable->getCnt()==0){
+    } else if (res == 1 && distTable->getCnt() == 0) {
       if (dbg1)
         fprintf(stdout, "single dist same net\n");
-    } else if (res==1 && distTable->getCnt()>0 ){
+    } else if (res == 1 && distTable->getCnt() > 0) {
       if (dbg1)
         fprintf(stdout, "dist %d\n", distTable->get(0));
     } else {
       if (dbg1)
-        for (uint ii=0; ii<res; ii++)
+        for (uint ii = 0; ii < res; ii++)
           fprintf(stdout, " dist %d\n", distTable->get(ii));
     }
-    bool covered= false;
+    bool covered = false;
     // if (filteringRequired && res>1) {
-    if (filteringRequired ) {
+    if (filteringRequired) {
       if (IsDebugNet()) {
-          fprintf(stdout, "---- FILTERED ----\n");
-          DebugPrint(s, seqTable, trackn, planeIndex);
-        }
-      for (uint k= 0; k<distTable->getCnt(); k++)
-      {
+        fprintf(stdout, "---- FILTERED ----\n");
+        DebugPrint(s, seqTable, trackn, planeIndex);
+      }
+      for (uint k = 0; k < distTable->getCnt(); k++) {
         dgTable->resetCnt();
-        int dist= distTable->get(k);
-        for (uint n= 0; n<seqTable->getCnt(); n++) {
-          SEQ *t= seqTable->get(n);
-          int dd= s->_ll[_dir] - t->_ur[_dir]; // look below
-          if (dd==dist)
+        int dist = distTable->get(k);
+        for (uint n = 0; n < seqTable->getCnt(); n++) {
+          SEQ* t = seqTable->get(n);
+          int dd = s->_ll[_dir] - t->_ur[_dir];  // look below
+          if (dd == dist)
             dgTable->add(t);
         }
         if (IsDebugNet()) {
           fprintf(stdout, "---- dist target %d ----\n", dist);
           DebugPrint(s, dgTable, trackn, planeIndex);
         }
-        len += computeResLoop(tmpTable, dgTable, targetMet, _dir, planeIndex, trackn, residueTable);
-        if (tmpTable->getCnt()==0) {
-          covered= true;
+        len += computeResLoop(tmpTable,
+                              dgTable,
+                              targetMet,
+                              _dir,
+                              planeIndex,
+                              trackn,
+                              residueTable);
+        if (tmpTable->getCnt() == 0) {
+          covered = true;
           break;
         }
-      }   
-    if (covered)
-      break;
+      }
+      if (covered)
+        break;
 
-    continue;
+      continue;
     }
     /*
     bool add_all_diag = false;
@@ -396,7 +441,8 @@ int extMeasure::computeResDist(SEQ* s,
                           trackn,
                           &residueTable);
     } else {
-      len += computeRes(s, NULL, targetMet, _dir, planeIndex, trackn, &residueTable);
+      len += computeRes(s, NULL, targetMet, _dir, planeIndex, trackn,
+    &residueTable);
     }
     seq_release(&tmpTable);
     tableCopyP(&residueTable, &tmpTable);
@@ -415,42 +461,44 @@ int extMeasure::computeResDist(SEQ* s,
   return len;
 }
 uint extMeasure::computeResLoop(Ath__array1D<SEQ*>* tmpTable,
-                            Ath__array1D<SEQ*>* dgTable,
-                            uint targetMet,
-                            uint dir,
-                            uint planeIndex,
-                            uint trackn,
-                            Ath__array1D<SEQ*>* residueTable)
+                                Ath__array1D<SEQ*>* dgTable,
+                                uint targetMet,
+                                uint dir,
+                                uint planeIndex,
+                                uint trackn,
+                                Ath__array1D<SEQ*>* residueTable)
 {
-  uint len= 0;
+  uint len = 0;
   // bool add_all_diag = false;
   //  if (!add_all_diag) {
-      for (uint jj = 0; jj < tmpTable->getCnt(); jj++) {
-        SEQ *tseq= tmpTable->get(jj);
-        len += computeRes(tseq,
-                          dgTable,
-                          targetMet,
-                          dir,
-                          planeIndex,
-                          trackn,
-                          residueTable);
-        if (residueTable->getCnt()==0) {
-          seq_release(tmpTable);
-          tmpTable->resetCnt(0);
-          if (IsDebugNet()) {
-            fprintf(stdout, "COVERED: %d  %d  %d  %d id %d \n", tseq->_ll[0], tseq->_ll[1], tseq->_ur[0], tseq->_ur[1], tseq->type);
-          }
-          return len;
-        }
+  for (uint jj = 0; jj < tmpTable->getCnt(); jj++) {
+    SEQ* tseq = tmpTable->get(jj);
+    len += computeRes(
+        tseq, dgTable, targetMet, dir, planeIndex, trackn, residueTable);
+    if (residueTable->getCnt() == 0) {
+      seq_release(tmpTable);
+      tmpTable->resetCnt(0);
+      if (IsDebugNet()) {
+        fprintf(stdout,
+                "COVERED: %d  %d  %d  %d id %d \n",
+                tseq->_ll[0],
+                tseq->_ll[1],
+                tseq->_ur[0],
+                tseq->_ur[1],
+                tseq->type);
       }
-   // } 
-    // TODO else {
-    // TODO  len += computeRes(s, targetMet, _dir, planeIndex, trackn, &residueTable);
-    // TODO }
-    seq_release(tmpTable);
-    tableCopyP(residueTable, tmpTable);
-    residueTable->resetCnt();
-    return len;
+      return len;
+    }
+  }
+  // }
+  // TODO else {
+  // TODO  len += computeRes(s, targetMet, _dir, planeIndex, trackn,
+  // &residueTable);
+  // TODO }
+  seq_release(tmpTable);
+  tableCopyP(residueTable, tmpTable);
+  residueTable->resetCnt();
+  return len;
 }
 
 uint extMeasure::computeRes(SEQ* s,
@@ -601,10 +649,10 @@ void extMeasure::getDgOverlap_res(SEQ* sseq,
   SEQ* tseq;
   SEQ* wseq;
   int covered = sseq->_ll[lp];
-  int min_dist= 1000000000;
-  int max_dist= -100000000;
+  int min_dist = 1000000000;
+  int max_dist = -100000000;
 
-  if (dgContext->getCnt()==0) {
+  if (dgContext->getCnt() == 0) {
     rseq = _seqPool->alloc();
     rseq->_ll[wp] = sseq->_ll[wp];
     rseq->_ur[wp] = sseq->_ur[wp];
@@ -619,49 +667,57 @@ void extMeasure::getDgOverlap_res(SEQ* sseq,
   std::vector<SEQ*> segVector2;
   std::vector<SEQ*> segVectorDist[10000];
   int idx = 0;
-  int scnt= (int) dgContext->getCnt();
- 
+  int scnt = (int) dgContext->getCnt();
+
   for (; idx < scnt; idx++) {
     tseq = dgContext->get(idx);
-     if (tseq->type == _rsegSrcId) 
-      continue; // same net
-    if (tseq->_ur[0]==0 && tseq->_ur[0]==0 && tseq->_ll[0]==0 && tseq->_ll[1]==0)
+    if (tseq->type == _rsegSrcId)
+      continue;  // same net
+    if (tseq->_ur[0] == 0 && tseq->_ur[0] == 0 && tseq->_ll[0] == 0
+        && tseq->_ll[1] == 0)
       continue;
 
-    int dd= sseq->_ll[_dir] - tseq->_ur[_dir]; // look below
+    int dd = sseq->_ll[_dir] - tseq->_ur[_dir];  // look below
 
-    if (dd<=0)
+    if (dd <= 0)
       continue;
-      
-    if (min_dist>dd)
-      min_dist= dd;
-    if (max_dist<dd)
-      max_dist= dd;
+
+    if (min_dist > dd)
+      min_dist = dd;
+    if (max_dist < dd)
+      max_dist = dd;
     if (IsDebugNet()) {
-            int dd= sseq->_ll[_dir] - tseq->_ur[_dir];
-      fprintf(stdout, "%d  %d  %d  %d   DIST= %d\n", tseq->_ll[0], tseq->_ll[1], tseq->_ur[0], tseq->_ur[1], dd );
-      }
+      int dd = sseq->_ll[_dir] - tseq->_ur[_dir];
+      fprintf(stdout,
+              "%d  %d  %d  %d   DIST= %d\n",
+              tseq->_ll[0],
+              tseq->_ll[1],
+              tseq->_ur[0],
+              tseq->_ur[1],
+              dd);
+    }
   }
-   if (IsDebugNet()) {
+  if (IsDebugNet()) {
     fprintf(stdout, "minDist= %d ________________\n", min_dist);
     fprintf(stdout, "maxDist= %d ________________\n", max_dist);
   }
 
-  bool skipSorting= true;
-  if (segVector.size()>1 && !skipSorting) {
+  bool skipSorting = true;
+  if (segVector.size() > 1 && !skipSorting) {
     if (_dir)
       std::sort(segVector.begin(), segVector.end(), compareSEQ_V());
     else
       std::sort(segVector.begin(), segVector.end(), compareSEQ_H());
   }
-  idx=0;
+  idx = 0;
   for (; idx < dgContext->getCnt(); idx++) {
     tseq = dgContext->get(idx);
-  
+
     if (tseq->_ur[lp] <= covered)
       continue;
-    
-    if (tseq->_ur[0]==0 && tseq->_ur[0]==0 && tseq->_ll[0]==0 && tseq->_ll[1]==0)
+
+    if (tseq->_ur[0] == 0 && tseq->_ur[0] == 0 && tseq->_ll[0] == 0
+        && tseq->_ll[1] == 0)
       continue;
 
     if (tseq->_ll[lp] >= sseq->_ur[lp]) {
@@ -709,9 +765,9 @@ void extMeasure::getDgOverlap_res(SEQ* sseq,
       residueSeq->add(rseq);
     }
   }
-  
+
   // TODO dgContext->get(0)->_ll[0] = idx;
-  if (residueSeq->getCnt() == 0 && overlapSeq->getCnt()==0 ) {
+  if (residueSeq->getCnt() == 0 && overlapSeq->getCnt() == 0) {
     rseq = _seqPool->alloc();
     rseq->_ll[wp] = sseq->_ll[wp];
     rseq->_ur[wp] = sseq->_ur[wp];
@@ -721,7 +777,11 @@ void extMeasure::getDgOverlap_res(SEQ* sseq,
   }
 }
 
-void extMeasure::calcRes(int rsegId1, uint len, int dist1, int dist2, int tgtMet) 
+void extMeasure::calcRes(int rsegId1,
+                         uint len,
+                         int dist1,
+                         int dist2,
+                         int tgtMet)
 {
   if (dist1 == -1)
     dist1 = 0;
@@ -743,17 +803,44 @@ void extMeasure::calcRes(int rsegId1, uint len, int dist1, int dist2, int tgtMet
     if (rc != NULL) {
       double R1 = rc->_diag > 0 ? rc->_diag : rc->_res;
       double R = len * R1;
-      double prev= _rc[ii]->_res;
+      double prev = _rc[ii]->_res;
       _rc[ii]->_res += R;
 
       if (IsDebugNet()) {
-        DebugRes_calc(_debugFP, "calcRes", rsegId1, "len_down ", len, dist1, dist2, tgtMet, _rc[ii]->_res, R, R1, prev);
-        DebugRes_calc(stdout, "calcRes", rsegId1, "len_down ", len, dist1, dist2, tgtMet, _rc[ii]->_res, R, R1, prev);
+        DebugRes_calc(_debugFP,
+                      "calcRes",
+                      rsegId1,
+                      "len_down ",
+                      len,
+                      dist1,
+                      dist2,
+                      tgtMet,
+                      _rc[ii]->_res,
+                      R,
+                      R1,
+                      prev);
+        DebugRes_calc(stdout,
+                      "calcRes",
+                      rsegId1,
+                      "len_down ",
+                      len,
+                      dist1,
+                      dist2,
+                      tgtMet,
+                      _rc[ii]->_res,
+                      R,
+                      R1,
+                      prev);
       }
     }
   }
 }
-void extMeasure::calcRes0(double* deltaRes, uint tgtMet, uint len, int dist1, int dist2) {
+void extMeasure::calcRes0(double* deltaRes,
+                          uint tgtMet,
+                          uint len,
+                          int dist1,
+                          int dist2)
+{
   uint modelCnt = _metRCTable.getCnt();
   for (uint ii = 0; ii < modelCnt; ii++) {
     extMetRCTable* rcModel = _metRCTable.get(ii);
@@ -765,13 +852,40 @@ void extMeasure::calcRes0(double* deltaRes, uint tgtMet, uint len, int dist1, in
     deltaRes[ii] = R;
 
     if (IsDebugNet()) {
-        DebugRes_calc(_debugFP, "calcRes0", 0, "len_delta ", len, dist1, dist2, tgtMet, _rc[ii]->_res, R, rc->_res, 0);
-        DebugRes_calc(_debugFP, "calcRes0", 0, "len_delta ", len, dist1, dist2, tgtMet, _rc[ii]->_res, R, rc->_res, 0);
+      DebugRes_calc(_debugFP,
+                    "calcRes0",
+                    0,
+                    "len_delta ",
+                    len,
+                    dist1,
+                    dist2,
+                    tgtMet,
+                    _rc[ii]->_res,
+                    R,
+                    rc->_res,
+                    0);
+      DebugRes_calc(_debugFP,
+                    "calcRes0",
+                    0,
+                    "len_delta ",
+                    len,
+                    dist1,
+                    dist2,
+                    tgtMet,
+                    _rc[ii]->_res,
+                    R,
+                    rc->_res,
+                    0);
     }
   }
 }
-void extMain::calcRes0(double* deltaRes, uint tgtMet, uint width, uint len,
-                       int dist1, int dist2) {
+void extMain::calcRes0(double* deltaRes,
+                       uint tgtMet,
+                       uint width,
+                       uint len,
+                       int dist1,
+                       int dist2)
+{
   for (uint jj = 0; jj < _modelMap.getCnt(); jj++) {
     uint modelIndex = _modelMap.get(jj);
     extMetRCTable* rcModel = _currentModel->getMetRCTable(modelIndex);
@@ -786,7 +900,8 @@ void extMain::calcRes0(double* deltaRes, uint tgtMet, uint width, uint len,
     deltaRes[jj] = R;
   }
 }
-extDistRC* extDistRCTable::findRes(int dist1, int dist2, bool compute) {
+extDistRC* extDistRCTable::findRes(int dist1, int dist2, bool compute)
+{
   Ath__array1D<extDistRC*>* table = _computeTable;
   if (!compute)
     table = _measureTable;
@@ -834,7 +949,8 @@ extDistRC* extDistRCTable::findRes(int dist1, int dist2, bool compute) {
   }
   return NULL;
 }
-extDistRC* extDistRCTable::findIndexed_res(uint dist1, uint dist2) {
+extDistRC* extDistRCTable::findIndexed_res(uint dist1, uint dist2)
+{
   extDistRC* firstRC = _measureTable->get(0);
   uint firstDist = firstRC->_sep;
   if (dist2 <= firstDist) {
@@ -852,7 +968,8 @@ extDistRC* extDistRCTable::findIndexed_res(uint dist1, uint dist2) {
   return res;
 }
 
-extDistRC* extDistWidthRCTable::getRes(uint mou, uint w, int dist1, int dist2) {
+extDistRC* extDistWidthRCTable::getRes(uint mou, uint w, int dist1, int dist2)
+{
   int wIndex = getWidthIndex(w);
   if (wIndex < 0)
     return NULL;
@@ -862,13 +979,13 @@ extDistRC* extDistWidthRCTable::getRes(uint mou, uint w, int dist1, int dist2) {
 
   return rc;
 }
-extDistRCTable* extDistWidthRCTable::getRuleTable(uint mou, uint w) {
+extDistRCTable* extDistWidthRCTable::getRuleTable(uint mou, uint w)
+{
   int wIndex = getWidthIndex(w);
   if (wIndex < 0)
     return NULL;
 
   return _rcDistTable[mou][wIndex];
 }
-
 
 }  // namespace rcx

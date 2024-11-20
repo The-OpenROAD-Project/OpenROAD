@@ -439,10 +439,7 @@ void extSpef::writeCapNode(dbCapNode* capNode, uint netId)
 
 void extSpef::writeCapITerm(const uint node, const uint capIndex)
 {
-  if ((dbITerm::getITerm(_block, node))
-          ->getInst()
-          ->getMaster()
-          ->isMarked()) {
+  if ((dbITerm::getITerm(_block, node))->getInst()->getMaster()->isMarked()) {
     return;
   }
   writeCNodeNumber();
@@ -638,8 +635,7 @@ void extSpef::computeCaps(dbSet<dbRSeg>& rcSet, double* totCap)
   }
 }
 
-void extSpef::computeCapsAdd2Target(dbSet<dbRSeg>& rcSet,
-                                    double* totCap)
+void extSpef::computeCapsAdd2Target(dbSet<dbRSeg>& rcSet, double* totCap)
 {
   double cap[ADS_MAX_CORNER];
   for (dbRSeg* rc : rcSet) {
@@ -732,8 +728,7 @@ void extSpef::writePorts(dbNet* net)
   }
 }
 
-void extSpef::writeInternalCaps(dbNet* net,
-                                dbSet<dbCapNode>& capSet)
+void extSpef::writeInternalCaps(dbNet* net, dbSet<dbCapNode>& capSet)
 {
   for (dbCapNode* capNode : capSet) {
     if (!capNode->isInternal()) {
@@ -852,9 +847,8 @@ class compareCC
       const uint id1 = cp1->getNode();
       const uint id2 = cp2->getNode();
       if (cp1->isBTerm() && cp2->isBTerm()) {
-        const int rc
-            = strcmp(dbBTerm::getBTerm(block, id1)->getName().c_str(),
-                     dbBTerm::getBTerm(block, id2)->getName().c_str());
+        const int rc = strcmp(dbBTerm::getBTerm(block, id1)->getName().c_str(),
+                              dbBTerm::getBTerm(block, id2)->getName().c_str());
         if (rc != 0) {
           return (rc < 0 ? true : false);
         }
@@ -892,9 +886,8 @@ class compareCC
       const uint id1 = cp1->getNode();
       const uint id2 = cp2->getNode();
       if (cp1->isBTerm() && cp2->isBTerm()) {
-        const int rc
-            = strcmp(dbBTerm::getBTerm(block, id1)->getName().c_str(),
-                     dbBTerm::getBTerm(block, id2)->getName().c_str());
+        const int rc = strcmp(dbBTerm::getBTerm(block, id1)->getName().c_str(),
+                              dbBTerm::getBTerm(block, id2)->getName().c_str());
         if (rc != 0) {
           return (rc < 0 ? true : false);
         }
@@ -925,8 +918,7 @@ class compareCC
     }
   }
 };
-void extSpef::writeCouplingCapsNoSort(dbSet<dbCCSeg>& capSet,
-                                      const uint netId)
+void extSpef::writeCouplingCapsNoSort(dbSet<dbCCSeg>& capSet, const uint netId)
 {
   for (dbCCSeg* cc : capSet) {
     writeCNodeNumber();
@@ -946,8 +938,7 @@ void extSpef::writeCouplingCapsNoSort(dbSet<dbCCSeg>& capSet,
   }
 }
 
-void extSpef::writeCouplingCaps(dbSet<dbCCSeg>& capSet,
-                                const uint netId)
+void extSpef::writeCouplingCaps(dbSet<dbCCSeg>& capSet, const uint netId)
 {
   if (_preserveCapValues) {
     return writeCouplingCapsNoSort(capSet, netId);
@@ -1059,8 +1050,7 @@ void extSpef::writeNodeCoords(const uint netId, dbSet<dbRSeg>& rSet)
       continue;
     }
 
-    dbCapNode* capNode
-        = dbCapNode::getCapNode(_block, rc->getTargetNode());
+    dbCapNode* capNode = dbCapNode::getCapNode(_block, rc->getTargetNode());
 
     if (capNode->isITerm() || capNode->isBTerm()) {
       continue;

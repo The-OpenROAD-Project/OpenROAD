@@ -122,9 +122,9 @@ void extMain::resetSumRCtable()
 void extMain::addToSumRCtable()
 {
   _sumUpdated = 1;
-  uint ii= 0;
-  _tmpSumCapTable[ii] += _tmpCapTable[ii]; // _lefRC option
-  _tmpSumResTable[ii] += _tmpResTable[ii]; // _lefRC option
+  uint ii = 0;
+  _tmpSumCapTable[ii] += _tmpCapTable[ii];  // _lefRC option
+  _tmpSumResTable[ii] += _tmpResTable[ii];  // _lefRC option
   for (uint ii = 1; ii < _metRCTable.getCnt(); ii++) {
     _tmpSumCapTable[ii] += _tmpCapTable[ii];
     _tmpSumResTable[ii] += _tmpResTable[ii];
@@ -133,9 +133,9 @@ void extMain::addToSumRCtable()
 
 void extMain::copyToSumRCtable()
 {
-    uint ii= 0;
-  _tmpSumCapTable[ii]= _tmpCapTable[ii]; // _lefRC option
-  _tmpSumResTable[ii]= _tmpResTable[ii]; // _lefRC option
+  uint ii = 0;
+  _tmpSumCapTable[ii] = _tmpCapTable[ii];  // _lefRC option
+  _tmpSumResTable[ii] = _tmpResTable[ii];  // _lefRC option
   for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
     _tmpSumCapTable[ii] = _tmpCapTable[ii];
     _tmpSumResTable[ii] = _tmpResTable[ii];
@@ -288,9 +288,9 @@ void extMain::getShapeRC(dbNet* net,
                          Point& prevPoint,
                          const dbWirePathShape& pshape)
 {
-    double viaResTable[1000];
-  bool viaModelFound= false;
-    double areaCap;
+  double viaResTable[1000];
+  bool viaModelFound = false;
+  double areaCap;
 
   if (s.isVia()) {
     double res = 0.0;
@@ -334,7 +334,7 @@ void extMain::getShapeRC(dbNet* net,
       if (_lefRC) {
         dbVia* bvia = s.getVia();
         uint width = bvia->getBottomLayer()->getWidth();
-          double areaCap;
+        double areaCap;
         _tmpCapTable[0] = width * 2 * getFringe(level, width, 0, areaCap);
         _tmpCapTable[0] += 2 * areaCap * width * width;
         _tmpResTable[0] = res;
@@ -353,9 +353,10 @@ void extMain::getShapeRC(dbNet* net,
     computePathDir(prevPoint, pshape.point, &len);
 
     const uint level = s.getTechLayer()->getRoutingLevel();
-    uint width= std::min(pshape.shape.getDX(), pshape.shape.getDY());
-    len= std::max(pshape.shape.getDX(), pshape.shape.getDY());
-    //    const auto [width, len]= std::minmax({pshape.shape.getDX(), pshape.shape.getDY()});
+    uint width = std::min(pshape.shape.getDX(), pshape.shape.getDY());
+    len = std::max(pshape.shape.getDX(), pshape.shape.getDY());
+    //    const auto [width, len]= std::minmax({pshape.shape.getDX(),
+    //    pshape.shape.getDY()});
     if (_lefRC) {
       double res = getResistance(level, width, len, 0);
       double unitCap = getFringe(level, width, 0, areaCap);
@@ -393,7 +394,7 @@ void extMain::getShapeRC(dbNet* net,
       _ccMaxY = std::max(s.yMax(), _ccMaxY);
     }
   }
-    prevPoint= pshape.point;
+  prevPoint = pshape.point;
 }
 
 void extMain::setResCapFromLef(dbRSeg* rc,
@@ -467,7 +468,6 @@ void extMain::resetMapping(dbBTerm* bterm, dbITerm* iterm, uint junction)
   }
   _nodeTable->set(junction, 0);
 }
-
 
 bool extMain::isTermPathEnded(dbBTerm* bterm, dbITerm* iterm)
 {
@@ -1655,9 +1655,8 @@ bool extMain::setCorners(const char* rulesFileName)
     fclose(rules_file);
     bool v2_rules_file = m->isRulesFile_v2((char*) rulesFileName, false);
 
-    if (_v2 || v2_rules_file)
-    {
-        m->_v2_flow= _v2;
+    if (_v2 || v2_rules_file) {
+      m->_v2_flow = _v2;
 
       if (!(m->readRules((char*) rulesFileName,
                          false,
@@ -1702,22 +1701,19 @@ bool extMain::setCorners(const char* rulesFileName)
     }
   }
   _currentModel = getRCmodel(0);
-  if (_v2)
-  {
-       if (_processCornerTable != nullptr && _couplingFlag > 0 ) {
+  if (_v2) {
+    if (_processCornerTable != nullptr && _couplingFlag > 0) {
       for (uint ii = 0; ii < _processCornerTable->getCnt(); ii++) {
         extCorner* s = _processCornerTable->get(ii);
         _modelMap.add(s->_model);
-            _metRCTable.add(_currentModel->getMetRCTable(s->_model));
-
+        _metRCTable.add(_currentModel->getMetRCTable(s->_model));
       }
     }
-  }
-  else {
-  for (uint ii = 0; (_couplingFlag > 0) && ii < _modelMap.getCnt(); ii++) {
-    uint jj = _modelMap.get(ii);
-    _metRCTable.add(_currentModel->getMetRCTable(jj));
-  }
+  } else {
+    for (uint ii = 0; (_couplingFlag > 0) && ii < _modelMap.getCnt(); ii++) {
+      uint jj = _modelMap.get(ii);
+      _metRCTable.add(_currentModel->getMetRCTable(jj));
+    }
   }
   _extDbCnt = _processCornerTable->getCnt();
 
@@ -1802,8 +1798,8 @@ void extMain::makeBlockRCsegs(const char* netNames,
                               int contextDepth,
                               const char* extRules)
 {
-    if (!modelExists(extRules))
-        return;
+  if (!modelExists(extRules))
+    return;
 
   uint debugNetId = 0;
 
@@ -1819,7 +1815,8 @@ void extMain::makeBlockRCsegs(const char* netNames,
 
   if ((_processCornerTable != nullptr)
       || ((_processCornerTable == nullptr) && (extRules != nullptr))) {
-    const char* rulesfile= extRules ? extRules : _prevControl->_ruleFileName.c_str();
+    const char* rulesfile
+        = extRules ? extRules : _prevControl->_ruleFileName.c_str();
 
     // Reading model file
     if (!setCorners(rulesfile)) {
@@ -1833,9 +1830,9 @@ void extMain::makeBlockRCsegs(const char* netNames,
 
   _foreign = false;  // extract after read_spef
 
-   std::vector<dbNet*> inets;
+  std::vector<dbNet*> inets;
   _allNet = !((dbBlock*) _block)->findSomeNet(netNames, inets);
-    for (uint j = 0; j < inets.size(); j++) {
+  for (uint j = 0; j < inets.size(); j++) {
     dbNet* net = inets[j];
     net->setMark(true);
   }
@@ -1852,14 +1849,14 @@ void extMain::makeBlockRCsegs(const char* netNames,
 
   _seqPool = m._seqPool;
 
-    getPeakMemory("Start makeNetRCsegs");
+  getPeakMemory("Start makeNetRCsegs");
   if (!_allNet) {
     _ccMinX = MAX_INT;
     _ccMinY = MAX_INT;
     _ccMaxX = -MAX_INT;
     _ccMaxY = -MAX_INT;
   }
-      setupMapping();
+  setupMapping();
 
   if (_couplingFlag > 1) {
     calcMinMaxRC();
@@ -1871,7 +1868,7 @@ void extMain::makeBlockRCsegs(const char* netNames,
                 "RC segment generation {} (max_merge_res {:.1f}) ...",
                 getBlock()->getName().c_str(),
                 _mergeResBound);
-  
+
   uint cnt = 0;
   for (dbNet* net : _block->getNets()) {
     if (net->getSigType().isSupply()) {
@@ -1975,9 +1972,9 @@ void extMain::makeBlockRCsegs(const char* netNames,
     getPeakMemory("Start CouplingFlow");
     Rect maxRect = _block->getDieArea();
     if (_v2)
-       couplingFlow_v2(maxRect, _couplingFlag, &m);
+      couplingFlow_v2(maxRect, _couplingFlag, &m);
     else
-       couplingFlow(maxRect, _couplingFlag, &m, extCompute1);
+      couplingFlow(maxRect, _couplingFlag, &m, extCompute1);
 
     getPeakMemory("End CouplingFlow");
 
@@ -2025,13 +2022,13 @@ void extMain::makeBlockRCsegs(const char* netNames,
     }
   }
 
-/*
-  if (_geomSeq != NULL) {
-    delete _geomSeq;
-    _geomSeq = NULL;
-  }
+  /*
+    if (_geomSeq != NULL) {
+      delete _geomSeq;
+      _geomSeq = NULL;
+    }
 
-*/
+  */
   _modelTable->resetCnt(0);
   if (_batchScaleExt) {
     genScaledExt();

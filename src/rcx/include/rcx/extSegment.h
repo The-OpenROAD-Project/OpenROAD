@@ -36,15 +36,14 @@
 #include <dbUtil.h>
 #include <gseq.h>
 
+#include "extprocess.h"
+#include "gseq.h"
 #include "odb/db.h"
 #include "odb/dbExtControl.h"
 #include "odb/dbShape.h"
 #include "odb/odb.h"
 #include "odb/util.h"
-
 #include "wire.h"
-#include "extprocess.h"
-#include "gseq.h"
 
 #ifndef _WIN32
 #define D2I_ROUND (name) rint(name)
@@ -64,55 +63,61 @@
 
 #include <map>
 
-namespace utl
-{
-    class Logger;
+namespace utl {
+class Logger;
 }
 
-namespace rcx
+namespace rcx {
+using namespace odb;
+class Ath__wire;
+
+class extMeasure;
+
+using utl::Logger;
+
+class extSegment  // assume cross-section on the z-direction
 {
-    using namespace odb;
-    class Ath__wire;
+ public:
+  uint _dir;
+  int _xy;
+  int _base;
+  int _len;
+  int _width;
+  int _dist;
+  int _dist_down;
 
-    class extMeasure;
+  int _ll[2];
+  int _ur[2];
+  uint _met;
+  int _metUnder;
+  int _metOver;
+  uint _id;
 
-    using utl::Logger;
+  Ath__wire* _wire;
+  Ath__wire* _up;
+  Ath__wire* _down;
 
-    class extSegment // assume cross-section on the z-direction
-    {
-    public:
-        uint _dir;
-        int _xy;
-        int _base;
-        int _len;
-        int _width;
-        int _dist;
-        int _dist_down;
+  // extSegment(uint dir, Ath__wire *w2, int dist);
+  //  ~extSegment();
 
-        int _ll[2];
-        int _ur[2];
-        uint _met;
-        int _metUnder;
-        int _metOver;
-        uint _id;
+  // extSegment();
+  // extSegment(uint d, Ath__wire *w, int xy, int len, Ath__wire *up, Ath__wire
+  // *down, int metOver=-1, int metUnder=-1);
+  void set(uint d,
+           Ath__wire* w,
+           int xy,
+           int len,
+           Ath__wire* up,
+           Ath__wire* down,
+           int metOver = -1,
+           int metUnder = -1);
+  int GetDist(Ath__wire* w1, Ath__wire* w2);
+  int setUpDown(bool up, Ath__wire* w1);
 
-        Ath__wire *_wire;
-        Ath__wire *_up;
-        Ath__wire *_down;
+  friend class extMeasure;
+  friend class extRCModel;
+};
 
-        //extSegment(uint dir, Ath__wire *w2, int dist);
-        // ~extSegment();
-
-        // extSegment();
-        // extSegment(uint d, Ath__wire *w, int xy, int len, Ath__wire *up, Ath__wire *down, int metOver=-1, int metUnder=-1);
-        void set(uint d, Ath__wire *w, int xy, int len, Ath__wire *up, Ath__wire *down, int metOver=-1, int metUnder=-1);
-        int GetDist(Ath__wire *w1, Ath__wire *w2);
-        int setUpDown(bool up, Ath__wire *w1);
-
-        friend class extMeasure;
-        friend class extRCModel;
-    };
-
-} // namespace rcx
+}  // namespace rcx
 
 #endif

@@ -101,8 +101,8 @@ uint extRCModel::getCorners(std::list<std::string>& corners)
 uint extRCModel::initModel(std::list<std::string>& corners, int met_cnt)
 {
   int cornerCnt = defineCorners(corners);
-  _logFP= openFile("./", "corners", ".log", "w");
-  _dbg_logFP= openFile("./", "corners", ".debug.log", "w");
+  _logFP = openFile("./", "corners", ".log", "w");
+  _dbg_logFP = openFile("./", "corners", ".debug.log", "w");
   createModelTable(cornerCnt, (uint) (met_cnt + 1));
   for (uint m = 0; m < cornerCnt; m++) {
     for (uint ii = 1; ii < _layerCnt; ii++) {
@@ -113,24 +113,25 @@ uint extRCModel::initModel(std::list<std::string>& corners, int met_cnt)
 }
 int extSolverGen::getLastCharInt(const char* name)
 {
-    // Assume single digit -- only simulate 1, 2, 3, 5 wires
+  // Assume single digit -- only simulate 1, 2, 3, 5 wires
 
   char word[2];
   uint len = strlen(name);
   char lastChar = name[len - 1];
-  if (isdigit(lastChar))
-  {
-    word[0]=lastChar;
-    word[1]='\0';
-    int n= atoi(word);
+  if (isdigit(lastChar)) {
+    word[0] = lastChar;
+    word[1] = '\0';
+    int n = atoi(word);
 
     return n;
-  }
-  else
+  } else
     return -1;
 }
-bool extRCModel::getAllowedPatternWireNums(Ath__parser& p, extMeasure& m,const char* fullPatternName,
-                                      int input_target_wire, int& pattern_num)
+bool extRCModel::getAllowedPatternWireNums(Ath__parser& p,
+                                           extMeasure& m,
+                                           const char* fullPatternName,
+                                           int input_target_wire,
+                                           int& pattern_num)
 {
   // parsing Under5/M6uM7/W0.42_W0.42/S8.4_S8.4/wire_5
 
@@ -150,24 +151,27 @@ bool extRCModel::getAllowedPatternWireNums(Ath__parser& p, extMeasure& m,const c
     if (wire_num != 0)  // for Resistance, wire is 0
       return false;
     else
-        return true;
+      return true;
   }
 
   // for OpenEnded patterns: Over1, Under1, etc, wire is 1
   m._open = pattern_num == 1;
 
   // for one side OpenEnded patterns: Over2, Under2, wire is 1
-  // User should set it to 1 only when fully coupled patterns are to used for One Side OpenEnded patterns
-  m._over1= (pattern_num==2 && wire_num == 1) || (pattern_num >2 && pattern_num<6 && wire_num == 1 && input_target_wire==1); // OpenEnded on one  side
+  // User should set it to 1 only when fully coupled patterns are to used for
+  // One Side OpenEnded patterns
+  m._over1 = (pattern_num == 2 && wire_num == 1)
+             || (pattern_num > 2 && pattern_num < 6 && wire_num == 1
+                 && input_target_wire == 1);  // OpenEnded on one  side
 
   if (m._open || m._over1)
     return true;
 
-   // for fully coupled patterns: Over3, Under3, wire is 2
-   // for fully coupled patterns: Over5, Under5, wire is 3
-   if (pattern_num==3 && wire_num==2)
+  // for fully coupled patterns: Over3, Under3, wire is 2
+  // for fully coupled patterns: Over5, Under5, wire is 3
+  if (pattern_num == 3 && wire_num == 2)
     return true;
-   if (pattern_num==5 && wire_num==3)
+  if (pattern_num == 5 && wire_num == 3)
     return true;
 
   return false;
@@ -181,12 +185,13 @@ uint extRCModel::readRCvalues(const char* corner,
                               bool over_under,
                               bool diag)
 {
-    // for Resistance, wire is 0
-    // for OpenEnded patterns: Over1, Under1, etc, wire is 1
-    // for one side OpenEnded patterns: Over2, Under2, wire is 1
-    // for fully coupled patterns: Over3, Under3, wire is 2
-    // for fully coupled patterns: Over5, Under5, wire is 3
-    // wire default is 0, User should set it to 1 only when fully coupled patterns are to used for One Side OpenEnded patterns
+  // for Resistance, wire is 0
+  // for OpenEnded patterns: Over1, Under1, etc, wire is 1
+  // for one side OpenEnded patterns: Over2, Under2, wire is 1
+  // for fully coupled patterns: Over3, Under3, wire is 2
+  // for fully coupled patterns: Over5, Under5, wire is 3
+  // wire default is 0, User should set it to 1 only when fully coupled patterns
+  // are to used for One Side OpenEnded patterns
 
   uint cnt = 0;
 
@@ -203,17 +208,23 @@ uint extRCModel::readRCvalues(const char* corner,
   // DELETE uint openWireNumber = 1;
   // DELETE int n = 0;
   // DELETE double via_res_1 = 0;
-/*
-  char buff[2000];
-  sprintf(buff, "%s.log", corner);
-  FILE* logFP = fopen(buff, "w");
-  sprintf(buff, "%s.debug.log", corner);
-  FILE* dbg_logFP = fopen(buff, "w");
-*/
-FILE* logFP= _logFP;
-FILE* dbg_logFP= _dbg_logFP;
-fprintf(logFP, "REading corner %s File: %s -------------------------\n\n", corner, filename);
-fprintf(dbg_logFP, "REading corner %s File: %s ----------------------\n\n", corner, filename);
+  /*
+    char buff[2000];
+    sprintf(buff, "%s.log", corner);
+    FILE* logFP = fopen(buff, "w");
+    sprintf(buff, "%s.debug.log", corner);
+    FILE* dbg_logFP = fopen(buff, "w");
+  */
+  FILE* logFP = _logFP;
+  FILE* dbg_logFP = _dbg_logFP;
+  fprintf(logFP,
+          "REading corner %s File: %s -------------------------\n\n",
+          corner,
+          filename);
+  fprintf(dbg_logFP,
+          "REading corner %s File: %s ----------------------\n\n",
+          corner,
+          filename);
 
   _ruleFileName = strdup(filename);
   Ath__parser p(logger_);
@@ -227,9 +238,9 @@ fprintf(dbg_logFP, "REading corner %s File: %s ----------------------\n\n", corn
   // Metal 1 Over 0 DiagUnder 2 Dist 0.14 Width LEN 10 0.14 CC 0.239133 FR
   // 0.138103 TC 0.377236 CC2 0.009553 DiagDist 0.14 DiagWidth 0.14 DiagCC
   // 0.019350 M1duM2/W0.14_W0.14/S0.14_S0.14/wire_1
-  
-  uint skippedCnt= 0;
-  uint skippedWireCnt= 0;
+
+  uint skippedCnt = 0;
+  uint skippedWireCnt = 0;
 
   while (parser.parseNextLine() > 0) {
     cnt++;
@@ -243,15 +254,14 @@ fprintf(dbg_logFP, "REading corner %s File: %s ----------------------\n\n", corn
 
     const char* fullPatternName = parser.get(n - 1);
     int pattern_num;
-    if (!getAllowedPatternWireNums(p,  m, fullPatternName, wire, pattern_num))
-    {
-        skippedWireCnt ++;
-        continue;
+    if (!getAllowedPatternWireNums(p, m, fullPatternName, wire, pattern_num)) {
+      skippedWireCnt++;
+      continue;
     }
 
     double totCC = parser.getDouble(13);
     if (m._open)
-        totCC= 0;
+      totCC = 0;
     double totGnd = parser.getDouble(15);
     double contextCoupling = parser.getDouble(19);
     if (m._open && contextCoupling > 0) {
@@ -351,8 +361,14 @@ fprintf(dbg_logFP, "REading corner %s File: %s ----------------------\n\n", corn
     // fprintf(dbg_logFP, "Metal %d Over %d Under %d Width %g -- ", m._met,
     // m._underMet, m._overMet,  m._w_nm); rc->writeRC(dbg_logFP, false);
   }
-  logger_->info(RCX, 446, "{} lines parsed, {} lines skipped not starting with <Metal>, {} lines skipped for wrong wire number, filename: {}\n",
-                        cnt, skippedCnt, skippedWireCnt, filename);
+  logger_->info(RCX,
+                446,
+                "{} lines parsed, {} lines skipped not starting with <Metal>, "
+                "{} lines skipped for wrong wire number, filename: {}\n",
+                cnt,
+                skippedCnt,
+                skippedWireCnt,
+                filename);
   return cnt;
 }
 bool extRCModel::parseMets(Ath__parser& parser, extMeasure& m)
@@ -376,7 +392,7 @@ double extRCModel::parseWidthDistLen(Ath__parser& parser, extMeasure& m)
 
   double s1 = parser.getDouble(7);
   if (m._open)
-    s1= 0;
+    s1 = 0;
   double s2 = s1;
 
   m._s_m = s1;
@@ -390,17 +406,22 @@ double extRCModel::parseWidthDistLen(Ath__parser& parser, extMeasure& m)
 
   return wLen;
 }
-void extMetRCTable::allocOverUnderTable(uint met, bool open, Ath__array1D<double>* wTable, double dbFactor) 
+void extMetRCTable::allocOverUnderTable(uint met,
+                                        bool open,
+                                        Ath__array1D<double>* wTable,
+                                        double dbFactor)
 {
   if (met < 2)
     return;
 
   int n = extRCModel::getMaxMetIndexOverUnder(met, _layerCnt);
   if (!open)
-    _capOverUnder[met] = new extDistWidthRCTable(false, met, _layerCnt, n + 1, wTable, _rcPoolPtr, dbFactor);
+    _capOverUnder[met] = new extDistWidthRCTable(
+        false, met, _layerCnt, n + 1, wTable, _rcPoolPtr, dbFactor);
   else {
-    for (uint ii= 0; ii<_wireCnt; ii++)
-      _capOverUnder_open[met][ii] = new extDistWidthRCTable(false, met, _layerCnt, n + 1, wTable, _rcPoolPtr, dbFactor);
+    for (uint ii = 0; ii < _wireCnt; ii++)
+      _capOverUnder_open[met][ii] = new extDistWidthRCTable(
+          false, met, _layerCnt, n + 1, wTable, _rcPoolPtr, dbFactor);
   }
 }
 void extMetRCTable::allocOverTable(uint met,
@@ -415,15 +436,29 @@ void extMetRCTable::allocOverTable(uint met,
     _capOver_open[met][ii] = new extDistWidthRCTable(
         true, met, _layerCnt, met, wTable, _rcPoolPtr, dbFactor);
 }
-void extMetRCTable::allocUnderTable(uint met, bool open, Ath__array1D<double>* wTable, double dbFactor) 
+void extMetRCTable::allocUnderTable(uint met,
+                                    bool open,
+                                    Ath__array1D<double>* wTable,
+                                    double dbFactor)
 {
   if (!open) {
-    _capUnder[met] = new extDistWidthRCTable(false, met, _layerCnt, _layerCnt - met - 1, wTable, _rcPoolPtr, dbFactor);
+    _capUnder[met] = new extDistWidthRCTable(false,
+                                             met,
+                                             _layerCnt,
+                                             _layerCnt - met - 1,
+                                             wTable,
+                                             _rcPoolPtr,
+                                             dbFactor);
   } else {
-    for (uint ii= 0; ii<_wireCnt; ii++)
-      _capUnder_open[met][ii]= new extDistWidthRCTable(false, met, _layerCnt, _layerCnt - met - 1, wTable, _rcPoolPtr, dbFactor);
+    for (uint ii = 0; ii < _wireCnt; ii++)
+      _capUnder_open[met][ii] = new extDistWidthRCTable(false,
+                                                        met,
+                                                        _layerCnt,
+                                                        _layerCnt - met - 1,
+                                                        wTable,
+                                                        _rcPoolPtr,
+                                                        dbFactor);
   }
-
 }
 uint extRCModel::allocateTables(uint m, uint met, uint diagModel)
 {

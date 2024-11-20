@@ -30,9 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "rcx/extSegment.h"
+
 #include "dbUtil.h"
 #include "rcx/extRCap.h"
-#include "rcx/extSegment.h"
 #include "utl/Logger.h"
 
 #ifdef HI_ACC_1
@@ -41,89 +42,95 @@
 // #define CHECK_SAME_NET
 // #define MIN_FOR_LOOPS
 
-namespace rcx
+namespace rcx {
+
+using utl::RCX;
+using namespace odb;
+
+/*
+extSegment::extSegment(uint d, Ath__wire *w2, int dist)
 {
+    _wire= w2;
+    _dir= d;
+    _dist= dist;
+}
+*/
+/* Working
+ extSegment::extSegment(uint dir, Ath__wire *w, int xy, int len, Ath__wire *up,
+ Ath__wire *down, int metOver, int metUnder)
+ {
+     _dir = dir;
+     _wire = w;
 
-    using utl::RCX;
-    using namespace odb;
+     _base = w->getBase();
+     _width = w->getWidth();
+     _xy = xy;
+     _len = len;
 
-    /*
-    extSegment::extSegment(uint d, Ath__wire *w2, int dist)
-    {
-        _wire= w2;
-        _dir= d;
-        _dist= dist;
-    }
-    */
-   /* Working
-    extSegment::extSegment(uint dir, Ath__wire *w, int xy, int len, Ath__wire *up, Ath__wire *down, int metOver, int metUnder)
-    {
-        _dir = dir;
-        _wire = w;
+     uint d = !dir;
+     _ll[d] = xy;
+     _ur[d] = xy + len;
+     _ll[dir] = w->getBase();
+     _ur[dir] = _ll[dir] + w->getWidth();
 
-        _base = w->getBase();
-        _width = w->getWidth();
-        _xy = xy;
-        _len = len;
+     _up = up;
+     _down = down;
+     _dist= GetDist(_wire, _up);
+     _dist_down = GetDist(_down, _wire);
 
-        uint d = !dir;
-        _ll[d] = xy;
-        _ur[d] = xy + len;
-        _ll[dir] = w->getBase();
-        _ur[dir] = _ll[dir] + w->getWidth();
+     _metUnder= metUnder;
+     _metOver= metOver;
+ }
+ */
+void extSegment::set(uint dir,
+                     Ath__wire* w,
+                     int xy,
+                     int len,
+                     Ath__wire* up,
+                     Ath__wire* down,
+                     int metOver,
+                     int metUnder)
+{
+  _dir = dir;
+  _wire = w;
 
-        _up = up;
-        _down = down;
-        _dist= GetDist(_wire, _up);
-        _dist_down = GetDist(_down, _wire);
+  _base = w->getBase();
+  _width = w->getWidth();
+  _xy = xy;
+  _len = len;
 
-        _metUnder= metUnder;
-        _metOver= metOver;
-    }
-    */
-    void extSegment::set(uint dir, Ath__wire *w, int xy, int len, Ath__wire *up, Ath__wire *down, int metOver, int metUnder)
-    {
-        _dir = dir;
-        _wire = w;
+  uint d = !dir;
+  _ll[d] = xy;
+  _ur[d] = xy + len;
+  _ll[dir] = w->getBase();
+  _ur[dir] = _ll[dir] + w->getWidth();
 
-        _base = w->getBase();
-        _width = w->getWidth();
-        _xy = xy;
-        _len = len;
+  _up = up;
+  _down = down;
+  _dist = GetDist(_wire, _up);
+  _dist_down = GetDist(_down, _wire);
 
-        uint d = !dir;
-        _ll[d] = xy;
-        _ur[d] = xy + len;
-        _ll[dir] = w->getBase();
-        _ur[dir] = _ll[dir] + w->getWidth();
-
-        _up = up;
-        _down = down;
-        _dist= GetDist(_wire, _up);
-        _dist_down = GetDist(_down, _wire);
-
-        _metUnder= metUnder;
-        _metOver= metOver;
-    }
-    int extSegment::setUpDown(bool up, Ath__wire *w1)
-    {
-        if (up)
-        {
-            _up = w1;
-            _dist = GetDist(_wire, _up);
-            return _dist;
-        }
-        _down = w1;
-        _dist_down = GetDist(_down, _wire);
-        return _dist_down;
-    }
-    int extSegment::GetDist(Ath__wire *w1, Ath__wire *w2)
-    {
-        if (w2 == NULL)
-            return -1;
-        if (w1 == NULL)
-            return -1;
-        return w2->getBase() - (w1->getBase() + w1->getWidth());
-    }
-    // void extSegment::setMets(int metover, int metUnder);
-} // namespace rcx
+  _metUnder = metUnder;
+  _metOver = metOver;
+}
+int extSegment::setUpDown(bool up, Ath__wire* w1)
+{
+  if (up) {
+    _up = w1;
+    _dist = GetDist(_wire, _up);
+    return _dist;
+  }
+  _down = w1;
+  _dist_down = GetDist(_down, _wire);
+  return _dist_down;
+}
+int extSegment::GetDist(Ath__wire* w1, Ath__wire* w2)
+{
+  if (w2 == NULL)
+    return -1;
+  if (w1 == NULL)
+    return -1;
+  return w2->getBase() - (w1->getBase() + w1->getWidth());
+}
+// void extSegment::setMets(int metover, int metUnder);
+}  // namespace rcx

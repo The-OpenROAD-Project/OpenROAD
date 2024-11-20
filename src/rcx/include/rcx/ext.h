@@ -36,8 +36,8 @@
 #include <memory>
 
 #include "extPattern.h"
-#include "ext_options.h"
 #include "extRCap.h"
+#include "ext_options.h"
 #include "rcx/extModelGen.h"
 
 namespace utl {
@@ -62,26 +62,39 @@ class Ext
 
   void bench_wires_gen(const PatternOptions& opt);
 
-
-  bool gen_rcx_model( const std::string& spef_file_list,
-                    const std::string& corner_list,
-                    const std::string& out_file,
-                    const std::string& comment,
-                    const std::string& version,
-                    int pattern);
+  bool gen_rcx_model(const std::string& spef_file_list,
+                     const std::string& corner_list,
+                     const std::string& out_file,
+                     const std::string& comment,
+                     const std::string& version,
+                     int pattern);
   bool define_rcx_corners(const std::string& corner_list);
   static bool get_model_corners(const std::string& ext_model_file);
-  bool rc_estimate(const std::string& ext_model_file,  const std::string& out_file_prefix);
-  
+  bool rc_estimate(const std::string& ext_model_file,
+                   const std::string& out_file_prefix);
 
   // ---------------------------- dkf 092524 ---------------------------------
-  bool gen_solver_patterns(const char* process_file, const char* process_name, int version, int wire_cnt, int len, int over_dist, int under_dist, const char* w_list, const char* s_list);
+  bool gen_solver_patterns(const char* process_file,
+                           const char* process_name,
+                           int version,
+                           int wire_cnt,
+                           int len,
+                           int over_dist,
+                           int under_dist,
+                           const char* w_list,
+                           const char* s_list);
 
   // ---------------------------- dkf 092024 ---------------------------------
   bool init_rcx_model(const char* corner_names, int metal_cnt);
-  bool read_rcx_tables(const char* corner, const char* filename, int wire, bool over, bool under, bool over_under, bool diag);
+  bool read_rcx_tables(const char* corner,
+                       const char* filename,
+                       int wire,
+                       bool over,
+                       bool under,
+                       bool over_under,
+                       bool diag);
   bool write_rcx_model(const char* filename);
-  
+
   void write_rules(const std::string& name,
                    const std::string& dir,
                    const std::string& file,
@@ -118,21 +131,33 @@ class Ext
                  bool m_map,
                  float upper_limit,
                  float lower_limit);
-bool read_process(const std::string& name, const std::string& file);
-bool rules_gen(const std::string& name, const std::string& dir,
-                    const std::string& file, bool write_to_solver,
-                    bool read_from_solver, bool run_solver, int pattern,
-                    bool keep_file, int len, int version, bool win);
-bool metal_rules_gen(const std::string& name, const std::string& dir,
-                          const std::string& file, bool write_to_solver,
-                          bool read_from_solver, bool run_solver, int pattern,
-                          bool keep_file, int metal);
-bool run_solver(const std::string& dir, int net, int shape);
+  bool read_process(const std::string& name, const std::string& file);
+  bool rules_gen(const std::string& name,
+                 const std::string& dir,
+                 const std::string& file,
+                 bool write_to_solver,
+                 bool read_from_solver,
+                 bool run_solver,
+                 int pattern,
+                 bool keep_file,
+                 int len,
+                 int version,
+                 bool win);
+  bool metal_rules_gen(const std::string& name,
+                       const std::string& dir,
+                       const std::string& file,
+                       bool write_to_solver,
+                       bool read_from_solver,
+                       bool run_solver,
+                       int pattern,
+                       bool keep_file,
+                       int metal);
+  bool run_solver(const std::string& dir, int net, int shape);
 
  private:
   odb::dbDatabase* _db = nullptr;
   // ::unique_ptr<extMain> _ext;
-  extMain *_ext= nullptr;
+  extMain* _ext = nullptr;
   Logger* logger_ = nullptr;
   const char* spef_version_ = nullptr;
 };  // namespace rcx

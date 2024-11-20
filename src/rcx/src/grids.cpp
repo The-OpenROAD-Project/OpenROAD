@@ -281,10 +281,10 @@ void Ath__wire::reset()
   _otherId = 0;
   _track = NULL;
   _next = NULL;
-  _upNext= NULL;
-  _downNext= NULL; 
-  _aboveNext= NULL;
-  _belowNext= NULL;
+  _upNext = NULL;
+  _downNext = NULL;
+  _aboveNext = NULL;
+  _belowNext = NULL;
   _ouLen = 0;
 
   _xy = 0;  // offset from track start
@@ -3067,27 +3067,27 @@ void Ath__gridTable::setExtControl(dbBlock* block,
   _seqPool = seqPool;
 }
 void Ath__gridTable::setExtControl_v2(dbBlock* block,
-                                   bool useDbSdb,
-                                   uint adj,
-                                   uint npsrc,
-                                   uint nptgt,
-                                   uint ccUp,
-                                   bool allNet,
-                                   uint contextDepth,
-                                   Ath__array1D<int>** contextArray,
-                                   uint* contextLength,
-                                   Ath__array1D<SEQ*>*** dgContextArray,
-                                   uint* dgContextDepth,
-                                   uint* dgContextPlanes,
-                                   uint* dgContextTracks,
-                                   uint* dgContextBaseLvl,
-                                   int* dgContextLowLvl,
-                                   int* dgContextHiLvl,
-                                   uint* dgContextBaseTrack,
-                                   int* dgContextLowTrack,
-                                   int* dgContextHiTrack,
-                                   int** dgContextTrackBase,
-                                   AthPool<SEQ>* seqPool)
+                                      bool useDbSdb,
+                                      uint adj,
+                                      uint npsrc,
+                                      uint nptgt,
+                                      uint ccUp,
+                                      bool allNet,
+                                      uint contextDepth,
+                                      Ath__array1D<int>** contextArray,
+                                      uint* contextLength,
+                                      Ath__array1D<SEQ*>*** dgContextArray,
+                                      uint* dgContextDepth,
+                                      uint* dgContextPlanes,
+                                      uint* dgContextTracks,
+                                      uint* dgContextBaseLvl,
+                                      int* dgContextLowLvl,
+                                      int* dgContextHiLvl,
+                                      uint* dgContextBaseTrack,
+                                      int* dgContextLowTrack,
+                                      int* dgContextHiTrack,
+                                      int** dgContextTrackBase,
+                                      AthPool<SEQ>* seqPool)
 {
   _block = block;
   _useDbSdb = useDbSdb;
@@ -3166,7 +3166,8 @@ uint Ath__gridTable::addBox(int x1,
   bb.setType(wireType);
 
   uint dir = bb.getDir();
-  uint trackNum = !_v2 ? getGrid(dir, level)->placeWire(&bb) : getGrid(dir, level)->placeWire_v2(&bb);
+  uint trackNum = !_v2 ? getGrid(dir, level)->placeWire(&bb)
+                       : getGrid(dir, level)->placeWire_v2(&bb);
   _wireCnt++;
   return trackNum;
 }

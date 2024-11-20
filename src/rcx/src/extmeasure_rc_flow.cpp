@@ -237,7 +237,8 @@ uint extMeasureRC::CalcDiagBelow(extSegment* s, Ath__wire* dw)
   uint below = 0;
   Ath__array1D<extSegment*> table(4);
 
-  FindSegments(true, _dir, 1000 /* TODO */, s->_wire, s->_xy, s->_len, dw, &table);
+  FindSegments(
+      true, _dir, 1000 /* TODO */, s->_wire, s->_xy, s->_len, dw, &table);
 
   for (uint ii = 0; ii < table.getCnt(); ii++) {
     extSegment* s1 = table.get(ii);

@@ -103,7 +103,8 @@ class AthList
 };
 
 // A simple hash implementation
-template <class T> class AthHash
+template <class T>
+class AthHash
 {
   unsigned int* m_listOfPrimes;
 
