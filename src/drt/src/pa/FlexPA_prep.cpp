@@ -2737,10 +2737,10 @@ bool FlexPA::genPatterns_commit(
     if (isSkipInstTerm(inst_term.get())) {
       continue;
     }
-    uint64_t n_no_AP_pins = 0;
+    uint64_t n_no_ap_pins = 0;
     for (auto& pin : inst_term->getTerm()->getPins()) {
       if (pin_to_access_point.find(pin.get()) == pin_to_access_point.end()) {
-        n_no_AP_pins++;
+        n_no_ap_pins++;
         pin_access_pattern->addAccessPoint(nullptr);
       } else {
         const auto& ap = pin_to_access_point[pin.get()];
@@ -2756,10 +2756,10 @@ bool FlexPA::genPatterns_commit(
         pin_access_pattern->addAccessPoint(ap);
       }
     }
-    if (n_no_AP_pins == inst_term->getTerm()->getPins().size()) {
+    if (n_no_ap_pins == inst_term->getTerm()->getPins().size()) {
       logger_->error(DRT,
                      91,
-                     "{} Pins do not have valid access points.",
+                     "{} does not have valid access points.",
                      inst_term->getName());
     }
   }

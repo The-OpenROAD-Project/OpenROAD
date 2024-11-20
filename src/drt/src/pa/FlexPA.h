@@ -600,7 +600,7 @@ class FlexPA
    * access points relationship
    *
    * @param nodes {pin,access_point} nodes of the access pattern graph
-   * @param pins vector os pins of the unique instance
+   * @param pins vector of pins of the unique instance
    * @param used_access_points a set of all used access points
    * @param max_access_point_size the maximum number of access points across
    * all instances
