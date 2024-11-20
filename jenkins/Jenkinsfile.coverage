@@ -41,6 +41,11 @@ timeout(time: 2, unit: 'HOURS') {
             }
         }
 
+        stage('Save Artifacts') {
+            sh label: "Save code coverage results", script: "find . -name results -type d -exec tar zcvf code-coverage.tgz {} '+'";
+            archiveArtifacts artifacts: "code-coverage.tgz";
+        }
+
         stage('Send Email Report') {
             sendEmail();
         }
