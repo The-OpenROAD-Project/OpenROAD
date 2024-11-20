@@ -75,12 +75,6 @@ proc man { args } {
     set no_pager 1
   }
 
-  #set MAN_PATH [utl::get_input]
-  #if { [utl::check_valid_man_path $MAN_PATH] == false } {
-  #  puts "Using default manpath."
-  #  set MAN_PATH $DEFAULT_MAN_PATH
-  #}
-
   set man_path $MAN_PATH
   set man_sections {}
   foreach man_section {cat1 cat2 cat3} {
@@ -107,11 +101,12 @@ proc man { args } {
       set page_size 40
 
       for { set i 0 } { $i < $num_lines } { incr i $page_size } {
-        set page [lrange $lines $i [expr { $i + $page_size - 1 }]]
+        set page_end [expr { $i + $page_size - 1 }]
+        set page [lrange $lines $i $page_end]
         puts [join $page "\n"]
 
         # Ask user to continue or quit
-        if { !$no_pager && [llength $lines] > $page_size } {
+        if { !$no_pager && $num_lines > $page_size && $page_end < $num_lines } {
           puts -nonewline "---\nPress 'q' to quit or any other key to continue: \n---"
           flush stdout
           set input [gets stdin]
