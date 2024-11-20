@@ -1778,7 +1778,7 @@ int extVariation::readVariation(Ath__parser* parser) {
   return 0;
 }
 uint extProcess::readProcess(const char* name, char* filename) {
-  uint debug = 0;
+  // uint debug = 0;
   // create process object
 
   // read process numbers
@@ -1795,8 +1795,8 @@ uint extProcess::readProcess(const char* name, char* filename) {
     } else if (strcmp("THICKNESS_VARIATION", parser.get(0)) == 0) {
       readDataRateTable(&parser, "THICKNESS_VARIATION");
     } else if (strcmp("VAR_TABLE", parser.get(0)) == 0) {
-        extParser *xp= (extParser *) &parser;
-        xp->setDbg(debug);
+        // extParser *xp= (extParser *) &parser;
+        // xp->setDbg(debug);
 
         //parser.setDbg(debug);
       parser.getInt(1);
@@ -1809,8 +1809,8 @@ uint extProcess::readProcess(const char* name, char* filename) {
           break;
         extVar->readVariation(&parser);
 
-        extParser *xp= (extParser *) &parser;
-        xp->setDbg(0);
+        // extParser *xp= (extParser *) &parser;
+        // xp->setDbg(0);
 
         // parser.setDbg(0);
 
