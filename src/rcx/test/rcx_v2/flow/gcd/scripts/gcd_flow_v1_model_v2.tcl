@@ -5,7 +5,7 @@ set model_v2 /home/dimitris-ic/icb/icbrcx/src/rcx/test/via_res/corners.0322/data
 # set model_v2 rcx.model.max
 set test_nets ""
 
-read_lef $test_dir/sky130hs/sky130hs.tlef 
+read_lef $test_dir/sky130hs/sky130hs.tlef
 read_lef $test_dir/sky130hs/sky130hs_std_cell.lef
 read_liberty $test_dir/sky130hs/sky130hs_tt.lib
 
@@ -18,7 +18,7 @@ define_process_corner -ext_model_index 0 X
 define_process_corner -ext_model_index 1 Y
 extract_parasitics -ext_model_file $model_v2 -max_res 0 -coupling_threshold 0.1 -version 1.0
 
-set spef_file $test_case.spef 
+set spef_file $test_case.spef
 write_spef $spef_file -nets $test_nets
 
 # read_spef $spef_file

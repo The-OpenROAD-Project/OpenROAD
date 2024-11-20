@@ -7,4 +7,3 @@ bench_wires_gen -dbg 2 -over_under
 
 bench_verilog $test_case.verilog
 write_def $test_case.def
-
