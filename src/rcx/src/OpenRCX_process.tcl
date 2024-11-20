@@ -39,19 +39,19 @@ sta::define_cmd_args "read_process" {
   [-file file_name]
 }
 
-proc read_process {args} {
-    sta::parse_key_args "read_process" args keys { -name -file } flags { }
+proc read_process { args } {
+  sta::parse_key_args "read_process" args keys { -name -file } flags { }
 
-    set name "TYP"
-    if {[info exists keys(-name)]} {
-        set name $keys(-name)
-    }
-    set filename ""
-    if {[info exists keys(-file)]} {
-        set filename $keys(-file)
-    }
+  set name "TYP"
+  if { [info exists keys(-name)] } {
+    set name $keys(-name)
+  }
+  set filename ""
+  if { [info exists keys(-file)] } {
+    set filename $keys(-file)
+  }
 
-    rcx::read_process $name $filename
+  rcx::read_process $name $filename
 }
 
 sta::define_cmd_args "rules_gen" {
@@ -67,42 +67,42 @@ sta::define_cmd_args "rules_gen" {
   [-keep_file]
   [-win]
 }
-proc rules_gen {args} {
-    sta::parse_key_args "rules_gen" args keys { -name -dir -file -pattern -len -version } \
-        flags { -write_to_solver -read_from_solver -run_solver -keep_file -win }
+proc rules_gen { args } {
+  sta::parse_key_args "rules_gen" args keys { -name -dir -file -pattern -len -version } \
+    flags { -write_to_solver -read_from_solver -run_solver -keep_file -win }
 
-    set name "TYP"
-    if {[info exists keys(-name)]} {
-        set name $keys(-name)
-    }
-    set dir "./extRulesGen"
-    if {[info exists keys(-dir)]} {
-        set dir $keys(-dir)
-    }
-    set filename "extRules"
-    if {[info exists keys(-file)]} {
-        set filename $keys(-file)
-    }
-    set pattern 105
-    if {[info exists keys(-pattern)]} {
-        set pattern $keys(-pattern)
-    }
-    set len 10
-    if {[info exists keys(-len)]} {
-        set pattern $keys(-len)
-    }
-    set version 1
-    if {[info exists keys(-version)]} {
-        set version $keys(-version)
-    }
-    set read_from_solver [info exists flags(-read_from_solver)]
-    set write_to_solver [info exists flags(-write_to_solver)]
-    set run_solver [info exists flags(-run_solver)]
-    set keep_file [info exists flags(-keep_file)]
+  set name "TYP"
+  if { [info exists keys(-name)] } {
+    set name $keys(-name)
+  }
+  set dir "./extRulesGen"
+  if { [info exists keys(-dir)] } {
+    set dir $keys(-dir)
+  }
+  set filename "extRules"
+  if { [info exists keys(-file)] } {
+    set filename $keys(-file)
+  }
+  set pattern 105
+  if { [info exists keys(-pattern)] } {
+    set pattern $keys(-pattern)
+  }
+  set len 10
+  if { [info exists keys(-len)] } {
+    set pattern $keys(-len)
+  }
+  set version 1
+  if { [info exists keys(-version)] } {
+    set version $keys(-version)
+  }
+  set read_from_solver [info exists flags(-read_from_solver)]
+  set write_to_solver [info exists flags(-write_to_solver)]
+  set run_solver [info exists flags(-run_solver)]
+  set keep_file [info exists flags(-keep_file)]
 
-    set win [info exists flags(-win)]
+  set win [info exists flags(-win)]
 
-    rcx::rules_gen $name $dir $filename $write_to_solver $read_from_solver $run_solver $pattern $keep_file $len $version $win
+  rcx::rules_gen $name $dir $filename $write_to_solver $read_from_solver $run_solver $pattern $keep_file $len $version $win
 }
 
 sta::define_cmd_args "metal_rules_gen" {
@@ -116,36 +116,36 @@ sta::define_cmd_args "metal_rules_gen" {
   [-run_solver]
   [-keep_file]
 }
-proc metal_rules_gen {args} {
-    sta::parse_key_args "metal_rules_gen" args keys { -name -dir -file -pattern -metal } \
-        flags { -write_to_solver -read_from_solver -run_solver -keep_file }
+proc metal_rules_gen { args } {
+  sta::parse_key_args "metal_rules_gen" args keys { -name -dir -file -pattern -metal } \
+    flags { -write_to_solver -read_from_solver -run_solver -keep_file }
 
-    set name "TYP"
-    if {[info exists keys(-name)]} {
-        set name $keys(-name)
-    }
-    set dir "./extRulesGen"
-    if {[info exists keys(-dir)]} {
-        set dir $keys(-dir)
-    }
-    set filename "extRules"
-    if {[info exists keys(-file)]} {
-        set filename $keys(-file)
-    }
-    set pattern 0
-    if {[info exists keys(-pattern)]} {
-        set pattern $keys(-pattern)
-    }
-    set metal -1
-    if {[info exists keys(-metal)]} {
-        set metal $keys(-metal)
-    }
-    set read_from_solver [info exists flags(-read_from_solver)]
-    set write_from_solver [info exists flags(-write_from_solver)]
-    set run_solver [info exists flags(-run_solver)]
-    set keep_file [info exists flags(-keep_file)]
+  set name "TYP"
+  if { [info exists keys(-name)] } {
+    set name $keys(-name)
+  }
+  set dir "./extRulesGen"
+  if { [info exists keys(-dir)] } {
+    set dir $keys(-dir)
+  }
+  set filename "extRules"
+  if { [info exists keys(-file)] } {
+    set filename $keys(-file)
+  }
+  set pattern 0
+  if { [info exists keys(-pattern)] } {
+    set pattern $keys(-pattern)
+  }
+  set metal -1
+  if { [info exists keys(-metal)] } {
+    set metal $keys(-metal)
+  }
+  set read_from_solver [info exists flags(-read_from_solver)]
+  set write_from_solver [info exists flags(-write_from_solver)]
+  set run_solver [info exists flags(-run_solver)]
+  set keep_file [info exists flags(-keep_file)]
 
-    rcx::metal_rules_gen $name $dir $file $write_to_solver $read_from_solver $run_solver $pattern $keep_file $metal
+  rcx::metal_rules_gen $name $dir $file $write_to_solver $read_from_solver $run_solver $pattern $keep_file $metal
 }
 
 sta::define_cmd_args "run_solver" {
@@ -153,53 +153,53 @@ sta::define_cmd_args "run_solver" {
   [-net net_id]
   [-shape shape_id]
 }
-proc run_solver {args} {
-    sta::parse_key_args "run_solver" args keys { -dir -net -shape } flags { }
+proc run_solver { args } {
+  sta::parse_key_args "run_solver" args keys { -dir -net -shape } flags { }
 
-    set dir "./extRulesGen"
-    if {[info exists keys(-dir)]} {
-        set dir $keys(-dir)
-    }
-    set net 0
-    if {[info exists keys(-net)]} {
-        set net $keys(-net)
-    }
-    set shape 0
-    if {[info exists keys(-shape)]} {
-        set shape $keys(-shape)
-    }
+  set dir "./extRulesGen"
+  if { [info exists keys(-dir)] } {
+    set dir $keys(-dir)
+  }
+  set net 0
+  if { [info exists keys(-net)] } {
+    set net $keys(-net)
+  }
+  set shape 0
+  if { [info exists keys(-shape)] } {
+    set shape $keys(-shape)
+  }
 
-    rcx::run_solver $dir $net $shape
+  rcx::run_solver $dir $net $shape
 }
 sta::define_cmd_args "write_rcx_model" {
   [-file out_file_name]
 }
-proc write_rcx_model {args} {
-    sta::parse_key_args "write_rcx_model" args keys { -file } flags { }
+proc write_rcx_model { args } {
+  sta::parse_key_args "write_rcx_model" args keys { -file } flags { }
 
-    set filename "rcx.model"
-    if {[info exists keys(-file)]} {
-        set filename $keys(-file)
-    }
-    rcx::write_rcx_model $filename
+  set filename "rcx.model"
+  if { [info exists keys(-file)] } {
+    set filename $keys(-file)
+  }
+  rcx::write_rcx_model $filename
 }
 sta::define_cmd_args "init_rcx_model" {
   [-corner_names name_list]
   [-met_cnt met_cnt]
 }
-proc init_rcx_model {args} {
-    sta::parse_key_args "init_rcx_model" args keys { -corner_names -met_cnt } flags { }
+proc init_rcx_model { args } {
+  sta::parse_key_args "init_rcx_model" args keys { -corner_names -met_cnt } flags { }
 
-    set metal_cnt 0
-    if {[info exists keys(-met_cnt)]} {
-        set metal_cnt $keys(-met_cnt)
-    }
+  set metal_cnt 0
+  if { [info exists keys(-met_cnt)] } {
+    set metal_cnt $keys(-met_cnt)
+  }
 
-    set corner_names ""
-    if {[info exists keys(-corner_names)]} {
-        set corner_names $keys(-corner_names)
-    }
-    rcx::init_rcx_model $corner_names $metal_cnt
+  set corner_names ""
+  if { [info exists keys(-corner_names)] } {
+    set corner_names $keys(-corner_names)
+  }
+  rcx::init_rcx_model $corner_names $metal_cnt
 }
 sta::define_cmd_args "read_rcx_tables" {
   [-corner_name corner_name]
@@ -210,28 +210,28 @@ sta::define_cmd_args "read_rcx_tables" {
   [-over_under]
   [-diag]
 }
-proc read_rcx_tables {args} {
-    sta::parse_key_args "read_rcx_tables" args keys { -corner_name -file -wire_index } \
-        flags { -over -under -over_under -diag }
+proc read_rcx_tables { args } {
+  sta::parse_key_args "read_rcx_tables" args keys { -corner_name -file -wire_index } \
+    flags { -over -under -over_under -diag }
 
-    set filename ""
-    if {[info exists keys(-file)]} {
-        set filename $keys(-file)
-    }
-    set corner ""
-    if {[info exists keys(-corner_name)]} {
-        set corner $keys(-corner_name)
-    }
-    set wire 0
-    if {[info exists keys(-wire_index)]} {
-        set wire $keys(-wire_index)
-    }
-    set over [info exists flags(-over)]
-    set under [info exists flags(-under)]
-    set over_under [info exists flags(-over_under)]
-    set diag [info exists flags(-diag)]
+  set filename ""
+  if { [info exists keys(-file)] } {
+    set filename $keys(-file)
+  }
+  set corner ""
+  if { [info exists keys(-corner_name)] } {
+    set corner $keys(-corner_name)
+  }
+  set wire 0
+  if { [info exists keys(-wire_index)] } {
+    set wire $keys(-wire_index)
+  }
+  set over [info exists flags(-over)]
+  set under [info exists flags(-under)]
+  set over_under [info exists flags(-over_under)]
+  set diag [info exists flags(-diag)]
 
-    rcx::read_rcx_tables $corner $filename $wire $over $under $over_under $diag
+  rcx::read_rcx_tables $corner $filename $wire $over $under $over_under $diag
 }
 
 sta::define_cmd_args "gen_solver_patterns" {
@@ -246,47 +246,47 @@ sta::define_cmd_args "gen_solver_patterns" {
     [-under_dist dist]
 }
 
-proc gen_solver_patterns {args} {
-    sta::parse_key_args "gen_solver_patterns" args \
-        keys {-process_file -process_name -version -wire_cnt -len -w_list -s_list -over_dist -under_dist } flags { }
+proc gen_solver_patterns { args } {
+  sta::parse_key_args "gen_solver_patterns" args \
+    keys {-process_file -process_name -version -wire_cnt -len -w_list -s_list -over_dist -under_dist } flags { }
 
-    set process_file "MINTYPMAX"
-    if {[info exists keys(-process_file)]} {
-        set process_file $keys(-process_file)
-    }
-    set process_name ""
-    if {[info exists keys(-process_name)]} {
-        set process_name $keys(-process_name)
-    }
-    set version 1
-    if {[info exists keys(-version)]} {
-        set version $keys(-version)
-    }
-    set cnt 3
-    if {[info exists keys(-wire_cnt)]} {
-        set cnt $keys(-wire_cnt)
-    }
+  set process_file "MINTYPMAX"
+  if { [info exists keys(-process_file)] } {
+    set process_file $keys(-process_file)
+  }
+  set process_name ""
+  if { [info exists keys(-process_name)] } {
+    set process_name $keys(-process_name)
+  }
+  set version 1
+  if { [info exists keys(-version)] } {
+    set version $keys(-version)
+  }
+  set cnt 3
+  if { [info exists keys(-wire_cnt)] } {
+    set cnt $keys(-wire_cnt)
+  }
 
-    set len 10
-    if {[info exists keys(-len)]} {
-        set len $keys(-len)
-    }
-    set w_list "1"
-    if {[info exists keys(-w_list)]} {
-        set w_list $keys(-w_list)
-    }
-    set s_list "1.0 1.5 2.0 3 5"
-    if {[info exists keys(-s_list)]} {
-        set s_list $keys(-s_list)
-    }
-    set over_dist 4
-    if {[info exists keys(-over_dist)]} {
-        set over_dist $keys(-over_dist)
-    }
-    set under_dist 4
-    if {[info exists keys(-under_dist)]} {
-        set under_dist $keys(-under_dist)
-    }
+  set len 10
+  if { [info exists keys(-len)] } {
+    set len $keys(-len)
+  }
+  set w_list "1"
+  if { [info exists keys(-w_list)] } {
+    set w_list $keys(-w_list)
+  }
+  set s_list "1.0 1.5 2.0 3 5"
+  if { [info exists keys(-s_list)] } {
+    set s_list $keys(-s_list)
+  }
+  set over_dist 4
+  if { [info exists keys(-over_dist)] } {
+    set over_dist $keys(-over_dist)
+  }
+  set under_dist 4
+  if { [info exists keys(-under_dist)] } {
+    set under_dist $keys(-under_dist)
+  }
 
-    rcx::gen_solver_patterns $process_file $process_name $version $cnt $len $over_dist $under_dist $w_list $s_list
+  rcx::gen_solver_patterns $process_file $process_name $version $cnt $len $over_dist $under_dist $w_list $s_list
 }
