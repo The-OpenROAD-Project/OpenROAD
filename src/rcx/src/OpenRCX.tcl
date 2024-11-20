@@ -473,7 +473,7 @@ proc get_arg_val { keys name default_value } {
 }
 proc bench_wires_gen { args } {
   sta::parse_key_args "bench_wires_gen" args keys \
-      { -len -width -spacing -couple_width -couple_spacing -over_width \
+    { -len -width -spacing -couple_width -couple_spacing -over_width \
         -over_spacing -under_width -under_spacing -over2_width -over2_spacing \
         -under2_width -under2_spacing -dbg -wire_cnt -mlist -offset_over \
         -offset_under -under_dist -over_dist -met } \
@@ -555,8 +555,8 @@ proc bench_wires_gen { args } {
     puts "met = $met"
   }
   rcx::bench_wires_gen $width $spacing $couple_width $couple_spacing \
-      $over_width $over_spacing $under_width $under_spacing $over2_width \
-      $over2_spacing $under2_width $under2_spacing $dbg $wire_cnt $mlist \
-      $len $offset_over $offset_under $under_dist $over_dist $over $under \
-      $over_under $met
+    $over_width $over_spacing $under_width $under_spacing $over2_width \
+    $over2_spacing $under2_width $under2_spacing $dbg $wire_cnt $mlist \
+    $len $offset_over $offset_under $under_dist $over_dist $over $under \
+    $over_under $met
 }
