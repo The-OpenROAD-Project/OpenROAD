@@ -217,8 +217,8 @@ static void checkLUT(LUT_TYPE LUT1,
 static constexpr int lut_initial_d = 8;
 static int lut_valid_d = 0;
 
-extern std::string post9;
-extern std::string powv9;
+extern const std::string post9;
+extern const std::string powv9;
 
 static void readLUT()
 {
