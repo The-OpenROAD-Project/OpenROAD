@@ -189,11 +189,10 @@ def getParallelTests(String image) {
     ];
 
     deb_os = [
-        [name: 'Ubuntu 20.04' , image: 'openroad/ubuntu20.04-dev'],
-        [name: 'Ubuntu 22.04' , image: 'openroad/ubuntu22.04-dev'],
-        [name: 'Debian 11' , image: 'openroad/debian11-dev']
+        [name: 'Ubuntu 20.04' , artifact_name: 'ubuntu-20.04', image: 'openroad/ubuntu20.04-dev'],
+        [name: 'Ubuntu 22.04' , artifact_name: 'ubuntu-22.04', image: 'openroad/ubuntu22.04-dev'],
+        [name: 'Debian 11' , artifact_name: 'debian11', image: 'openroad/debian11-dev']
     ];
-
     deb_os.each { os ->
         ret["Build .deb - ${os.name}"] = {
             node {
@@ -215,7 +214,7 @@ def getParallelTests(String image) {
                         def version = sh(script: 'git describe | sed s,^v,,', returnStdout: true).trim();
                         sh label: 'Create Changelog', script: "./debian/create-changelog.sh ${version}";
                         sh label: 'Run debuild', script: 'debuild --preserve-env --preserve-envvar=PATH -B -j$(nproc)';
-                        sh label: 'Move generated files', script: "./debian/move-artifacts.sh ${version}";
+                        sh label: 'Move generated files', script: "./debian/move-artifacts.sh ${version} ${os.artifact_name}";
                         archiveArtifacts artifacts: '*' + "${version}" + '*';
                     }
                 }
