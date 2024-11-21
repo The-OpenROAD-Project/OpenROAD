@@ -80,9 +80,7 @@ class Flute
   using NUMSOLN_TYPE = int**;
 
  public:
-  Flute(){
-
-  };
+  Flute()= default;;
   ~Flute() { deleteLUT(); }
 
   // User-Callable Functions
