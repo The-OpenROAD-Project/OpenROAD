@@ -46,6 +46,8 @@ class Fixture
                 dbTechLayerType type,
                 dbTechLayerDir dir = dbTechLayerDir::NONE);
 
+  odb::dbInst* createDummyInst();
+
   void setupTech(frTechObject* tech);
 
   void makeDesign();

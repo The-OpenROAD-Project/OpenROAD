@@ -81,6 +81,31 @@ void Fixture::addLayer(frTechObject* tech,
   tech->addLayer(std::move(layer));
 }
 
+odb::dbInst* Fixture::createDummyInst()
+{
+  utl::Logger* logger = new utl::Logger();
+  odb::dbDatabase* db = odb::dbDatabase::create();
+  db->setLogger(logger);
+  odb::dbTech* tech = odb::dbTech::create(db, "tech");
+  odb::dbTechLayer::create(tech, "L1", dbTechLayerType::MASTERSLICE);
+  odb::dbLib* lib = odb::dbLib::create(db, "lib1", tech, ',');
+  odb::dbChip* chip = odb::dbChip::create(db);
+  odb::dbBlock::create(chip, "simple_block");
+  odb::dbMaster* master = odb::dbMaster::create(lib, "dummy");
+  master->setWidth(1000);
+  master->setHeight(1000);
+  master->setType(dbMasterType::CORE);
+  odb::dbMTerm::create(master, "a", dbIoType::INPUT, dbSigType::SIGNAL);
+  odb::dbMTerm::create(master, "b", dbIoType::INPUT, dbSigType::SIGNAL);
+  odb::dbMTerm::create(master, "c", dbIoType::OUTPUT, dbSigType::SIGNAL);
+  master->setFrozen();
+  auto ptr_db_inst = std::make_unique<odb::dbInst>();
+  odb::dbInst* db_inst = ptr_db_inst->create(chip->getBlock(), master, "dummy");
+  dbTransform trans = dbTransform();
+  db_inst->setTransform(trans);
+  return db_inst;
+}
+
 void Fixture::setupTech(frTechObject* tech)
 {
   tech->setManufacturingGrid(10);
@@ -101,7 +126,6 @@ frMaster* Fixture::makeMacro(const char* name,
                              frCoord sizeY)
 {
   auto block = std::make_unique<frMaster>(name);
-  // auto db_master = std::make_unique<odb::dbMaster>();
   std::vector<frBoundary> bounds;
   frBoundary bound;
   std::vector<Point> points;
