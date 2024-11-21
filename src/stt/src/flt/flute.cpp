@@ -58,32 +58,11 @@ namespace stt {
 
 namespace flt {
 
-#if FLUTE_D <= 7
-#define MGROUP 5040 / 4  // Max. # of groups, 7! = 5040
-#define MPOWV 15         // Max. # of POWVs per group
-#elif FLUTE_D == 8
-#define MGROUP 40320 / 4  // Max. # of groups, 8! = 40320
-#define MPOWV 33          // Max. # of POWVs per group
-#elif FLUTE_D == 9
-#define MGROUP 362880 / 4  // Max. # of groups, 9! = 362880
-#define MPOWV 79           // Max. # of POWVs per group
-#endif
-int numgrp[10] = {0, 0, 0, 0, 6, 30, 180, 1260, 10080, 90720};
-
-struct csoln
-{
-  unsigned char parent;
-  unsigned char seg[11];  // Add: 0..i, Sub: j..10; seg[i+1]=seg[j-1]=0
-  unsigned char rowcol[FLUTE_D - 2];  // row = rowcol[]/16, col = rowcol[]%16,
-  unsigned char neighbor[2 * FLUTE_D - 2];
-};
-
 // struct csoln *LUT[FLUTE_D + 1][MGROUP];  // storing 4 .. FLUTE_D
 // int numsoln[FLUTE_D + 1][MGROUP];
 
-// Dynamically allocate LUTs.
-LUT_TYPE LUT = nullptr;
-NUMSOLN_TYPE numsoln;
+using LUT_TYPE = struct Flute::csoln***;
+using NUMSOLN_TYPE = int**;
 
 struct point
 {
@@ -199,10 +178,6 @@ static void checkLUT(LUT_TYPE LUT1,
                      LUT_TYPE LUT2,
                      NUMSOLN_TYPE numsoln2);
 #endif
-
-// LUTs are initialized to this order at startup.
-static constexpr int lut_initial_d = 8;
-static int lut_valid_d = 0;
 
 extern const std::string post9;
 extern const std::string powv9;

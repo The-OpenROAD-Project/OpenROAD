@@ -55,13 +55,34 @@ using stt::Tree;
 #define FLUTE_POSTFILE "POST9.dat"  // LUT for POST (Steiner Tree)
 #define FLUTE_D 9  // LUT is used for d <= FLUTE_D, FLUTE_D <= 9
 
-using LUT_TYPE = struct csoln***;
-using NUMSOLN_TYPE = int**;
+#if FLUTE_D <= 7
+#define MGROUP 5040 / 4  // Max. # of groups, 7! = 5040
+#define MPOWV 15         // Max. # of POWVs per group
+#elif FLUTE_D == 8
+#define MGROUP 40320 / 4  // Max. # of groups, 8! = 40320
+#define MPOWV 33          // Max. # of POWVs per group
+#elif FLUTE_D == 9
+#define MGROUP 362880 / 4  // Max. # of groups, 9! = 362880
+#define MPOWV 79           // Max. # of POWVs per group
+#endif
 
 class Flute
 {
  public:
-  Flute(){};
+  struct csoln
+  {
+    unsigned char parent;
+    unsigned char seg[11];  // Add: 0..i, Sub: j..10; seg[i+1]=seg[j-1]=0
+    unsigned char rowcol[FLUTE_D - 2];  // row = rowcol[]/16, col = rowcol[]%16,
+    unsigned char neighbor[2 * FLUTE_D - 2];
+  };
+  using LUT_TYPE = struct csoln***;
+  using NUMSOLN_TYPE = int**;
+
+ public:
+  Flute(){
+    
+  };
   ~Flute()
   {
     deleteLUT();
@@ -188,6 +209,16 @@ class Flute
     }
     return flutes_MD(d, xs, ys, s, acc);
   }
+
+ private:
+  // Dynamically allocate LUTs.
+  LUT_TYPE LUT = nullptr;
+  NUMSOLN_TYPE numsoln;
+  // LUTs are initialized to this order at startup.
+  const int lut_initial_d = 8;
+  int lut_valid_d = 0;
+
+  const int numgrp[10] = {0, 0, 0, 0, 6, 30, 180, 1260, 10080, 90720};
 };
 
 }  // namespace flt
