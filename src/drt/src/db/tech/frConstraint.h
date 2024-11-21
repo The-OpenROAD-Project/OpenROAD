@@ -2343,7 +2343,6 @@ class frLef58WidthTableOrthConstraint : public frConstraint
     return frConstraintTypeEnum::frcLef58WidthTableOrth;
   }
 
-
  private:
   frCoord horz_spc_;
   frCoord vert_spc_;
