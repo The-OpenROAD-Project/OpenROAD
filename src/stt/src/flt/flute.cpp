@@ -480,9 +480,9 @@ static std::string base64_decode(std::string const& encoded_string)
 ////////////////////////////////////////////////////////////////
 
 int Flute::flute_wl(int d,
-             const std::vector<int>& x,
-             const std::vector<int>& y,
-             int acc)
+                    const std::vector<int>& x,
+                    const std::vector<int>& y,
+                    int acc)
 {
   int minval, l, xu, xl, yu, yl;
   std::vector<int> xs, ys;
@@ -592,10 +592,10 @@ int Flute::flute_wl(int d,
 //             or (xs[i], ys[si[i]]) for i=0..d-1
 
 int Flute::flutes_wl_RDP(int d,
-                  std::vector<int> xs,
-                  std::vector<int> ys,
-                  std::vector<int> s,
-                  int acc)
+                         std::vector<int> xs,
+                         std::vector<int> ys,
+                         std::vector<int> s,
+                         int acc)
 {
   int i, j, ss;
 
@@ -630,9 +630,9 @@ int Flute::flutes_wl_RDP(int d,
 
 // For low-degree, i.e., 2 <= d <= FLUTE_D
 int Flute::flutes_wl_LD(int d,
-                 const std::vector<int>& xs,
-                 const std::vector<int>& ys,
-                 const std::vector<int>& s)
+                        const std::vector<int>& xs,
+                        const std::vector<int>& ys,
+                        const std::vector<int>& s)
 {
   int k, pi, i, j;
   struct csoln* rlist;
@@ -702,10 +702,10 @@ int Flute::flutes_wl_LD(int d,
 
 // For medium-degree, i.e., FLUTE_D+1 <= d
 int Flute::flutes_wl_MD(int d,
-                 const std::vector<int>& xs,
-                 const std::vector<int>& ys,
-                 const std::vector<int>& s,
-                 int acc)
+                        const std::vector<int>& xs,
+                        const std::vector<int>& ys,
+                        const std::vector<int>& s,
+                        int acc)
 {
   float pnlty, dx, dy;
   float *score, *penalty;
@@ -1128,10 +1128,10 @@ Tree Flute::flute(const std::vector<int>& x, const std::vector<int>& y, int acc)
 //             or (xs[i], ys[si[i]]) for i=0..d-1
 
 Tree Flute::flutes_RDP(int d,
-                std::vector<int> xs,
-                std::vector<int> ys,
-                std::vector<int> s,
-                int acc)
+                       std::vector<int> xs,
+                       std::vector<int> ys,
+                       std::vector<int> s,
+                       int acc)
 {
   int i, j, ss;
 
@@ -1166,9 +1166,9 @@ Tree Flute::flutes_RDP(int d,
 
 // For low-degree, i.e., 2 <= d <= FLUTE_D
 Tree Flute::flutes_LD(int d,
-               const std::vector<int>& xs,
-               const std::vector<int>& ys,
-               const std::vector<int>& s)
+                      const std::vector<int>& xs,
+                      const std::vector<int>& ys,
+                      const std::vector<int>& s)
 {
   int k, pi, i, j;
   struct csoln *rlist, *bestrlist;
@@ -1323,10 +1323,10 @@ Tree Flute::flutes_LD(int d,
 
 // For medium-degree, i.e., FLUTE_D+1 <= d
 Tree Flute::flutes_MD(int d,
-               const std::vector<int>& xs,
-               const std::vector<int>& ys,
-               const std::vector<int>& s,
-               int acc)
+                      const std::vector<int>& xs,
+                      const std::vector<int>& ys,
+                      const std::vector<int>& s,
+                      int acc)
 {
   float *score, *penalty, pnlty, dx, dy;
   int ms, mins, maxs, minsi, maxsi;

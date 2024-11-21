@@ -46,7 +46,7 @@ using stt::Tree;
 /*****************************/
 /*  User-Defined Parameters  */
 /*****************************/
-#define FLUTE_ROUTING 1    // 1 to construct routing, 0 to estimate WL only
+#define FLUTE_ROUTING 1  // 1 to construct routing, 0 to estimate WL only
 #define FLUTE_LOCAL_REFINEMENT 1  // Suggestion: Set to 1 if ACCURACY >= 5
 #define FLUTE_REMOVE_DUPLICATE_PIN \
   0  // Remove dup. pin for flute_wl() & flute()
@@ -81,12 +81,9 @@ class Flute
 
  public:
   Flute(){
-    
+
   };
-  ~Flute()
-  {
-    deleteLUT();
-  } 
+  ~Flute() { deleteLUT(); }
 
   // User-Callable Functions
   // Delete LUT tables for exit so they are not leaked.
@@ -98,9 +95,9 @@ class Flute
   void deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln);
 
   int flute_wl(int d,
-              const std::vector<int>& x,
-              const std::vector<int>& y,
-              int acc);
+               const std::vector<int>& x,
+               const std::vector<int>& y,
+               int acc);
   Tree flute(const std::vector<int>& x, const std::vector<int>& y, int acc);
   int wirelength(Tree t);
   void plottree(Tree t);
@@ -113,28 +110,28 @@ class Flute
 
   // Other useful functions
   int flutes_wl_LD(int d,
-                  const std::vector<int>& xs,
-                  const std::vector<int>& ys,
-                  const std::vector<int>& s);
+                   const std::vector<int>& xs,
+                   const std::vector<int>& ys,
+                   const std::vector<int>& s);
   int flutes_wl_MD(int d,
-                  const std::vector<int>& xs,
-                  const std::vector<int>& ys,
-                  const std::vector<int>& s,
-                  int acc);
+                   const std::vector<int>& xs,
+                   const std::vector<int>& ys,
+                   const std::vector<int>& s,
+                   int acc);
   int flutes_wl_RDP(int d,
                     std::vector<int> xs,
                     std::vector<int> ys,
                     std::vector<int> s,
                     int acc);
   Tree flutes_LD(int d,
-                const std::vector<int>& xs,
-                const std::vector<int>& ys,
-                const std::vector<int>& s);
+                 const std::vector<int>& xs,
+                 const std::vector<int>& ys,
+                 const std::vector<int>& s);
   Tree flutes_MD(int d,
-                const std::vector<int>& xs,
-                const std::vector<int>& ys,
-                const std::vector<int>& s,
-                int acc);
+                 const std::vector<int>& xs,
+                 const std::vector<int>& ys,
+                 const std::vector<int>& s,
+                 int acc);
   Tree flutes_RDP(int d,
                   std::vector<int> xs,
                   std::vector<int> ys,
@@ -142,10 +139,10 @@ class Flute
                   int acc);
 
   inline int flutes_wl_LMD(int d,
-                          const std::vector<int>& xs,
-                          const std::vector<int>& ys,
-                          const std::vector<int>& s,
-                          int acc)
+                           const std::vector<int>& xs,
+                           const std::vector<int>& ys,
+                           const std::vector<int>& s,
+                           int acc)
   {
     if (d <= FLUTE_D) {
       return flutes_wl_LD(d, xs, ys, s);
@@ -163,10 +160,10 @@ class Flute
   }
 
   inline int flutes_wl(int d,
-                      const std::vector<int>& xs,
-                      const std::vector<int>& ys,
-                      const std::vector<int>& s,
-                      int acc)
+                       const std::vector<int>& xs,
+                       const std::vector<int>& ys,
+                       const std::vector<int>& s,
+                       int acc)
   {
     if (FLUTE_REMOVE_DUPLICATE_PIN == 1) {
       return flutes_wl_RDP(d, xs, ys, s, acc);
@@ -187,9 +184,9 @@ class Flute
   }
 
   inline Tree flutes(const std::vector<int>& xs,
-                    const std::vector<int>& ys,
-                    const std::vector<int>& s,
-                    int acc)
+                     const std::vector<int>& ys,
+                     const std::vector<int>& s,
+                     int acc)
   {
     int d = xs.size();
     if (FLUTE_REMOVE_DUPLICATE_PIN == 1) {
@@ -199,10 +196,10 @@ class Flute
   }
 
   inline Tree flutes_LMD(int d,
-                        const std::vector<int>& xs,
-                        const std::vector<int>& ys,
-                        const std::vector<int>& s,
-                        int acc)
+                         const std::vector<int>& xs,
+                         const std::vector<int>& ys,
+                         const std::vector<int>& s,
+                         int acc)
   {
     if (d <= FLUTE_D) {
       return flutes_LD(d, xs, ys, s);

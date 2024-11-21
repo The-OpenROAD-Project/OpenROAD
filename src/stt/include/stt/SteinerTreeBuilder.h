@@ -112,7 +112,7 @@ class SteinerTreeBuilder
   void setNetAlpha(const odb::dbNet* net, float alpha);
   void setMinFanoutAlpha(int min_fanout, float alpha);
   void setMinHPWLAlpha(int min_hpwl, float alpha);
-  flt::Flute* getFlute() {return flute_;};
+  flt::Flute* getFlute() { return flute_; };
 
  private:
   int computeHPWL(odb::dbNet* net);
@@ -125,7 +125,7 @@ class SteinerTreeBuilder
 
   Logger* logger_;
   odb::dbDatabase* db_;
-  flt::Flute *flute_;
+  flt::Flute* flute_;
 };
 
 // Used by regressions.

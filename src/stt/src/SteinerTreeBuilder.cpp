@@ -58,7 +58,7 @@ SteinerTreeBuilder::SteinerTreeBuilder()
 
 SteinerTreeBuilder::~SteinerTreeBuilder()
 {
-    delete flute_;
+  delete flute_;
 };
 
 void SteinerTreeBuilder::init(odb::dbDatabase* db, Logger* logger)

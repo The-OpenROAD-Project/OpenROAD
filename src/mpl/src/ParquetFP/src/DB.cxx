@@ -1907,7 +1907,7 @@ float DB::evalSteiner(bool useWts, bool scaleTerms)
       abkfatal(0, "Net too large to use Flute");
     }
   }
-  
+
   return total;
 }
 #endif
