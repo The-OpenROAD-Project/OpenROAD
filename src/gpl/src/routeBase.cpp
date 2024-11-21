@@ -1018,9 +1018,11 @@ void RouteBase::increaseCounter()
 
   log_->info(GPL,
              75,
-             "Routability numCall: {} inflationIterCnt: {} bloatIterCnt: {}",
+             "Routability iteration: {} | Inflation step: {} of {} | Inlfation "
+             "reset(bloat): {}",
              numCall_,
              inflationIterCnt_,
+             rbVars_.maxInflationIter,
              bloatIterCnt_);
 }
 
