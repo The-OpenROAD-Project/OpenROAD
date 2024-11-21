@@ -36,22 +36,22 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "utl/Logger.h"
 #include "rcx/extParse.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
 using odb::Ath__parser;
 
-class extParser : public Ath__parser 
+class extParser : public Ath__parser
 {
  public:
   // Constructor
   extParser(utl::Logger* logger) : Ath__parser(logger) {}
-  void setDbg(int v) { _dbg= v; }
+  void setDbg(int v) { _dbg = v; }
 
  private:
-   int _dbg;
+  int _dbg;
 };
 
 }  // namespace odb

@@ -165,12 +165,12 @@ db_network_defined()
 }
 
 void
-report_cell_usage_cmd(const bool verbose)
+report_cell_usage_cmd(odb::dbModule* mod, const bool verbose)
 {
   cmdLinkedNetwork();
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
-  sta->report_cell_usage(verbose);
+  sta->report_cell_usage(mod, verbose);
 }
 
 // Copied from sta/verilog/Verilog.i because we don't want sta::read_verilog
@@ -188,6 +188,30 @@ write_verilog_cmd(const char *filename,
   Network *network = sta->network();
   sta::writeVerilog(filename, sort, include_pwr_gnd, remove_cells, network);
   delete remove_cells;
+}
+
+Instance*
+find_hier_inst_cmd(const char *name)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  return db_network->findHierInstance(name);
+}
+
+odb::dbModule* 
+find_module_cmd(const char *name)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  return db_network->findModule(name);
+}
+
+void
+replace_design_cmd(Instance* inst, odb::dbModule* module)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  db_network->replaceDesign(inst, module);
 }
 
 %} // inline

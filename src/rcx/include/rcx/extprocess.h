@@ -37,7 +37,6 @@
 #include "odb/parse.h"
 #include "rcx/extParse.h"
 
-
 namespace utl {
 class Logger;
 }
@@ -54,15 +53,27 @@ class extProcess;
 class extConductor
 {
   extConductor(Logger* logger);
-  
+
   void printConductor(FILE* fp, Ath__parser* parse);
   bool readConductor(Ath__parser* parser);
   bool setDoubleVal(Ath__parser* parser, const char* key, int n, double& val);
   bool setIntVal(Ath__parser* parser, const char* key, int n, int& val);
 
-  void printString(FILE* fp, const char* sep, const char* key, char* v, bool pos= false);
-   void printInt(FILE* fp, const char* sep, const char* key, int v, bool pos= false);
-  void printDouble(FILE* fp, const char* sep, const char* key, double v, bool pos= false);
+  void printString(FILE* fp,
+                   const char* sep,
+                   const char* key,
+                   char* v,
+                   bool pos = false);
+  void printInt(FILE* fp,
+                const char* sep,
+                const char* key,
+                int v,
+                bool pos = false);
+  void printDouble(FILE* fp,
+                   const char* sep,
+                   const char* key,
+                   double v,
+                   bool pos = false);
 
   char _name[128];
   double _height;
@@ -93,7 +104,6 @@ class extConductor
   friend class extRCModel;
   friend class extProcess;
   friend class extMasterConductor;
-
 };
 
 class extDielectric
@@ -101,12 +111,27 @@ class extDielectric
   extDielectric(Logger* logger);
   bool readDielectric(Ath__parser* parser);
   void printDielectric(FILE* fp, Ath__parser* parse);
-  void printDielectric(FILE* fp, float planeWidth, float planeThickness) ;
-  void printDielectric3D(FILE* fp, float blockWidth, float blockThickness, float blockLength);
+  void printDielectric(FILE* fp, float planeWidth, float planeThickness);
+  void printDielectric3D(FILE* fp,
+                         float blockWidth,
+                         float blockThickness,
+                         float blockLength);
 
-  void printString(FILE* fp, const char* sep, const char* key, char* v, bool pos= false);
-  void printInt(FILE* fp, const char* sep, const char* key, int v, bool pos= false);
-  void printDouble(FILE* fp, const char* sep, const char* key, double v, bool pos= false);
+  void printString(FILE* fp,
+                   const char* sep,
+                   const char* key,
+                   char* v,
+                   bool pos = false);
+  void printInt(FILE* fp,
+                const char* sep,
+                const char* key,
+                int v,
+                bool pos = false);
+  void printDouble(FILE* fp,
+                   const char* sep,
+                   const char* key,
+                   double v,
+                   bool pos = false);
 
   bool setDoubleVal(Ath__parser* parser, const char* key, int n, double& val);
   bool setIntVal(Ath__parser* parser, const char* key, int n, int& val);
@@ -137,14 +162,26 @@ class extDielectric
 class extMasterConductor
 {
  public:
-  
-  void writeWire3D(FILE* fp, uint wireNum, double X, double width, double length, double height_offset, double volt);
-  void writePointXY(FILE* fp, const char *suffix, double X, double Y, const char *postfix="");
+  void writeWire3D(FILE* fp,
+                   uint wireNum,
+                   double X,
+                   double width,
+                   double length,
+                   double height_offset,
+                   double volt);
+  void writePointXY(FILE* fp,
+                    const char* suffix,
+                    double X,
+                    double Y,
+                    const char* postfix = "");
   void writeWireName(FILE* fp, uint wireNum);
-  void writeDiel(FILE* fp, const char *name, double epsilon, double height_offset);
+  void writeDiel(FILE* fp,
+                 const char* name,
+                 double epsilon,
+                 double height_offset);
   void printDielHeights(FILE* fp, extDielectric* diel);
   double writeGround(FILE* fp, int met, int wire_num, double th);
-  
+
   void reset(double height,
              double top_width,
              double bottom_width,
@@ -158,8 +195,12 @@ class extMasterConductor
                          double X,
                          double volt);
   void writeRaphaelPoly(FILE* fp, uint wireNum, double X, double volt);
-  void writeRaphaelPoly3D_w(FILE* fp, uint wireNum, double X, double width,
-                                            double length, double volt) ;
+  void writeRaphaelPoly3D_w(FILE* fp,
+                            uint wireNum,
+                            double X,
+                            double width,
+                            double length,
+                            double volt);
   void writeRaphaelPoly3D(FILE* fp,
                           uint wireNum,
                           double X,
@@ -207,6 +248,7 @@ class extMasterConductor
                               double length,
                               extDielectric* diel);
   void writeBoxName(FILE* fp, uint wireNum);
+
  private:
   extMasterConductor(uint condId,
                      extConductor* cond,
@@ -241,7 +283,6 @@ class extVarTable
   extVarTable(uint rowCnt);
   ~extVarTable();
 
-
   int readWidthSpacing2D(Ath__parser* parser,
                          const char* keyword1,
                          const char* keyword2,
@@ -255,6 +296,7 @@ class extVarTable
                     const char* trail);
   void printTable(FILE* fp, const char* valKey);
   double getVal(uint ii, uint jj) { return _vTable[ii]->get(jj); };
+
  private:
   Ath__array1D<double>* _width;
   Ath__array1D<double>* _space;
@@ -269,7 +311,6 @@ class extVarTable
 class extVariation
 {
  public:
-
   int readVariation(Ath__parser* parser);
   extVarTable* readVarTable(Ath__parser* parser,
                             const char* key1,
@@ -307,20 +348,30 @@ class extVariation
 
 class extProcess
 {
-    friend class extSolverGen;
+  friend class extSolverGen;
 
  public:
-
-
- double writeProcessHeights(FILE* fp, double X, double width, double length, char* width_name, double height_base, double height_ceiling);
- double writeProcessAndGroundPlanes(FILE* wfp, const char* gndName,
-                                         int underMet, int overMet, double X,
-                                         double width, double length,
-                                         double thickness, double W, bool apply_height_offset, double &height_ceiling,
-                                         bool diag=false) ;
+  double writeProcessHeights(FILE* fp,
+                             double X,
+                             double width,
+                             double length,
+                             char* width_name,
+                             double height_base,
+                             double height_ceiling);
+  double writeProcessAndGroundPlanes(FILE* wfp,
+                                     const char* gndName,
+                                     int underMet,
+                                     int overMet,
+                                     double X,
+                                     double width,
+                                     double length,
+                                     double thickness,
+                                     double W,
+                                     bool apply_height_offset,
+                                     double& height_ceiling,
+                                     bool diag = false);
 
   extProcess(uint condCnt, uint dielCnt, Logger* logger);
-
 
   FILE* openFile(const char* filename, const char* permissions);
   uint readProcess(const char* name, char* filename);
@@ -374,10 +425,13 @@ class extProcess
                    double x1,
                    double volt,
                    bool diag = false);
-  
-void writeGround(FILE* fp, int met, const char* name,
-                             const char* param_width_name, double x1,
-                             double volt);
+
+  void writeGround(FILE* fp,
+                   int met,
+                   const char* name,
+                   const char* param_width_name,
+                   double x1,
+                   double volt);
   void writeGround3D(FILE* fp,
                      int met,
                      const char* name,
@@ -416,7 +470,6 @@ void writeGround(FILE* fp, int met, const char* name,
   bool getMaxMinFlag();
   bool getThickVarFlag();
 
-  
  private:
   Logger* logger_;
 

@@ -1,21 +1,21 @@
 [INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
 [INFO ODB-0128] Design: blk
-[INFO ODB-0130]     Created 141104 pins.
-[INFO ODB-0133]     Created 70552 nets and 0 connections.
+[INFO ODB-0130]     Created 141728 pins.
+[INFO ODB-0133]     Created 70864 nets and 0 connections.
 [INFO RCX-0431] Defined process_corner X with ext_model_index 0
 [INFO RCX-0029] Defined extraction corner X
 [INFO RCX-0435] Reading extraction model file ext_pattern.rules ...
 [INFO RCX-0436] RC segment generation blk (max_merge_res 0.0) ...
-[INFO RCX-0040] Final 70552 rc segments
+[INFO RCX-0040] Final 70864 rc segments
 [INFO RCX-0439] Coupling Cap extraction blk ...
 [INFO RCX-0440] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
-[INFO RCX-0442] 28% of 70552 wires extracted
-[INFO RCX-0442] 36% of 70552 wires extracted
-[INFO RCX-0442] 75% of 70552 wires extracted
-[INFO RCX-0442] 81% of 70552 wires extracted
-[INFO RCX-0442] 85% of 70552 wires extracted
-[INFO RCX-0442] 95% of 70552 wires extracted
-[INFO RCX-0442] 100% of 70552 wires extracted
-[INFO RCX-0045] Extract 70550 nets, 141104 rsegs, 141104 caps, 68533 ccs
+[INFO RCX-0442] 28% of 70864 wires extracted
+[INFO RCX-0442] 36% of 70864 wires extracted
+[INFO RCX-0442] 75% of 70864 wires extracted
+[INFO RCX-0442] 81% of 70864 wires extracted
+[INFO RCX-0442] 85% of 70864 wires extracted
+[INFO RCX-0442] 95% of 70864 wires extracted
+[INFO RCX-0442] 100% of 70864 wires extracted
+[INFO RCX-0045] Extract 70862 nets, 141728 rsegs, 141728 caps, 68780 ccs
 [INFO RCX-0443] 9 nets finished
 No differences found.

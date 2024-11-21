@@ -40,7 +40,7 @@ sta::define_cmd_args "write_rcx_model" {
 proc write_rcx_model { args } {
   sta::parse_key_args "write_rcx_model" args keys { -file } flags { }
 
-  set filename "rcx.model" 
+  set filename "rcx.model"
   if { [info exists keys(-file)] } {
     set filename $keys(-file)
   }
@@ -75,13 +75,13 @@ sta::define_cmd_args "read_rcx_tables" {
 }
 proc read_rcx_tables { args } {
   sta::parse_key_args "read_rcx_tables" args keys { -corner_name -file -wire_index } \
-	  flags { -over -under -over_under -diag }
+    flags { -over -under -over_under -diag }
 
-  set filename "" 
+  set filename ""
   if { [info exists keys(-file)] } {
     set filename $keys(-file)
   }
-  set corner "" 
+  set corner ""
   if { [info exists keys(-corner_name)] } {
     set corner $keys(-corner_name)
   }
@@ -111,7 +111,8 @@ sta::define_cmd_args "gen_solver_patterns" {
 
 proc gen_solver_patterns { args } {
   sta::parse_key_args "gen_solver_patterns" args \
-    keys {-process_file -process_name -version -wire_cnt -len -w_list -s_list -over_dist -under_dist } flags { }
+    keys {-process_file -process_name -version -wire_cnt -len -w_list \
+        -s_list -over_dist -under_dist } flags { }
 
   set process_file "MINTYPMAX"
   if { [info exists keys(-process_file)] } {
@@ -151,7 +152,6 @@ proc gen_solver_patterns { args } {
     set under_dist $keys(-under_dist)
   }
 
-  rcx::gen_solver_patterns $process_file $process_name $version $cnt $len $over_dist $under_dist $w_list $s_list
+  rcx::gen_solver_patterns $process_file $process_name $version $cnt $len \
+    $over_dist $under_dist $w_list $s_list
 }
-
-

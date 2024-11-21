@@ -47,6 +47,7 @@ using rcx::Ext;
 // required to make them available.
 %feature ("flatnested");
 %include "rcx/ext.h"
+%include "rcx/ext_options.h"
 
 // Just reuse the api defined in ext.i
 %inline %{
@@ -97,8 +98,8 @@ void bench_wires(bool db_only,
             int under_met,
             const char* w_list,
             const char* s_list,
-            bool over_dist,
-            bool under_dist,
+            int over_dist,
+            int under_dist,
             bool v1);
 
 void bench_verilog(const char* file);

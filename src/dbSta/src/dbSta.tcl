@@ -79,16 +79,28 @@ proc highlight_path { args } {
   }
 }
 
-define_cmd_args "report_cell_usage" {[-verbose]}
+define_cmd_args "report_cell_usage" {[-verbose] [module_inst]}
 
 proc report_cell_usage { args } {
   parse_key_args "highlight_path" args keys {} \
     flags {-verbose} 0
 
+  check_argc_eq0or1 "report_cell_usage" $args
+
   if { [ord::get_db_block] == "NULL" } {
-    sta_error "No design block found."
+    sta_error 1001 "No design block found."
   }
-  report_cell_usage_cmd [info exists flags(-verbose)]
+
+  set module [[ord::get_db_block] getTopModule]
+  if { $args != "" } {
+    set modinst [[ord::get_db_block] findModInst $args]
+    if { $modinst == "NULL" } {
+      sta_error 1002 "Unable to find $args"
+    }
+    set module [$modinst getMaster]
+  }
+
+  report_cell_usage_cmd $module [info exists flags(-verbose)]
 }
 
 # redefine sta::sta_warn/error to call utl::warn/error
@@ -98,6 +110,29 @@ proc sta_error { id msg } {
 
 proc sta_warn { id msg } {
   utl::warn STA $id $msg
+}
+
+define_cmd_args "replace_design" {instance module}
+
+proc replace_design { instance module } {
+  set design [get_design_error $module]
+  if { $design != "NULL" } {
+    set inst [find_hier_inst_cmd $instance]
+    replace_design_cmd $inst $design
+    return 1
+  }
+  return 0
+}
+
+proc get_design_error { arg } {
+  if { [llength $arg] > 1 } {
+    sta_error 200 "module must be a single module."
+  }
+  set design [find_module_cmd $arg]
+  if { $design == "NULL" } {
+    sta_error 201 "module $arg cannot be found."
+  }
+  return $design
 }
 
 # namespace

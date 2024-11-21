@@ -107,5 +107,4 @@ class Ath__nameTable
                  int* nn = 0);
 };
 
-
 // }  // namespace rcx

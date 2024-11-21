@@ -47,9 +47,9 @@ using utl::Logger;
 
 class extRulesPat
 {
-  public:
+ public:
   bool _dbg;
-  
+
   uint _met;
   int _underMet;
   int _overMet;
@@ -68,7 +68,6 @@ class extRulesPat
 
   uint _sepGridCnt;
 
-
   char _name_prefix[20];
   char _name[500];
   uint _minWidth;
@@ -77,13 +76,26 @@ class extRulesPat
 
   uint _spaceCnt;
   uint _widthCnt;
-  uint _sMult[20]= {1000, 1250, 1500, 2000, 2500, 3000, 4000, 5000, 8000, 10000};
-  uint _wMult[20]= {1};
+  uint _sMult[20]
+      = {1000, 1250, 1500, 2000, 2500, 3000, 4000, 5000, 8000, 10000};
+  uint _wMult[20] = {1};
 
-  int _dMult[20]= {-1000, -500, 0, 500, 1000, 1250, 1500, 2000, 2500, 3000, 4000, 5000, 8000, 10000};
+  int _dMult[20] = {-1000,
+                    -500,
+                    0,
+                    500,
+                    1000,
+                    1250,
+                    1500,
+                    2000,
+                    2500,
+                    3000,
+                    4000,
+                    5000,
+                    8000,
+                    10000};
   uint _diagSpaceCnt;
   int _target_diag_spacing[20];
-
 
   uint _targetSpaceCount;
   uint _targetWidthCount;
@@ -95,7 +107,7 @@ class extRulesPat
   uint _over_minWidthCntx;
   uint _under_minSpaceCntx;
   uint _over_minSpaceCntx;
-  
+
   int _init_origin[2];
   int _origin[2];
 
@@ -109,67 +121,132 @@ class extRulesPat
   int _UR[2000][2];
   char _patName[2000][2000];
 
-  FILE *_def_fp;
-  dbBlock *_block;
-  dbTech *_tech;
-  extMain *_extMain;
+  FILE* _def_fp;
+  dbBlock* _block;
+  dbTech* _tech;
+  extMain* _extMain;
 
-  dbTechLayer *_under_layer;
-  dbTechLayer *_over_layer;
-  dbTechLayer *_layer;
-  dbTechLayer *_diag_layer;
-  dbCreateNetUtil *_create_net_util;
+  dbTechLayer* _under_layer;
+  dbTechLayer* _over_layer;
+  dbTechLayer* _layer;
+  dbTechLayer* _diag_layer;
+  dbCreateNetUtil* _create_net_util;
 
   int _dbunit;
 
-  public: 
-  extRulesPat(const char *pat, bool over, bool under, bool diag, bool res, uint len, int org[2], int LL[2], int UR[2], dbBlock *block, extMain *xt, dbTech *tech); 
-  void PrintOrigin(FILE *fp, int ll[2], uint met, const char *msg);
+ public:
+  extRulesPat(const char* pat,
+              bool over,
+              bool under,
+              bool diag,
+              bool res,
+              uint len,
+              int org[2],
+              int LL[2],
+              int UR[2],
+              dbBlock* block,
+              extMain* xt,
+              dbTech* tech);
+  void PrintOrigin(FILE* fp, int ll[2], uint met, const char* msg);
   void UpdateOrigin_start(uint met);
   void UpdateOrigin_wires(int ll[2], int ur[2]);
   int GetOrigin_end(int ur[2]);
   uint setLayerInfo(dbTechLayer* layer, uint met);
-  uint getMinWidthSpacing(dbTechLayer* layer, uint &w) ;
-  void setMets(int underMet, dbTechLayer* under_layer, int overMet, dbTechLayer* over_layer);
+  uint getMinWidthSpacing(dbTechLayer* layer, uint& w);
+  void setMets(int underMet,
+               dbTechLayer* under_layer,
+               int overMet,
+               dbTechLayer* over_layer);
   void UpdateBBox();
   void Init(int s);
   void SetInitName1(uint n);
-  void SetInitName(uint n, uint w1, uint w2,  uint s1, uint s2, int ds=0);
-  void AddName(uint jj, uint wireIndex, const char *wire="", int met=-1);
-  void AddName1(uint jj, uint w1, uint w2,  uint s1, uint s2, uint wireIndex, const char *wire="", int met=-1);
+  void SetInitName(uint n, uint w1, uint w2, uint s1, uint s2, int ds = 0);
+  void AddName(uint jj, uint wireIndex, const char* wire = "", int met = -1);
+  void AddName1(uint jj,
+                uint w1,
+                uint w2,
+                uint s1,
+                uint s2,
+                uint wireIndex,
+                const char* wire = "",
+                int met = -1);
   uint CreatePatterns();
   uint CreatePatterns_res();
   uint CreatePatterns_diag();
-  uint CreatePattern2s_diag(uint widthIndex, uint spaceIndex1, uint spaceIndex2, uint wcnt, uint spaceDiagIndex, uint spaceDiagIndex2, uint dcnt);
+  uint CreatePattern2s_diag(uint widthIndex,
+                            uint spaceIndex1,
+                            uint spaceIndex2,
+                            uint wcnt,
+                            uint spaceDiagIndex,
+                            uint spaceDiagIndex2,
+                            uint dcnt);
   uint CreatePattern1();
   uint CreatePattern2(uint wcnt);
   uint CreatePattern(uint widthIndex, uint spaceIndex, uint wcnt);
-  uint CreatePattern2s(uint widthIndex, uint spaceIndex1, uint spaceIndex2, uint wcnt);
+  uint CreatePattern2s(uint widthIndex,
+                       uint spaceIndex1,
+                       uint spaceIndex2,
+                       uint wcnt);
 
-  uint CreateContext(uint met, int ll[2], int ur[2], uint w, uint s, uint cntxWidth, uint cntxSpace, dbTechLayer *layer);
+  uint CreateContext(uint met,
+                     int ll[2],
+                     int ur[2],
+                     uint w,
+                     uint s,
+                     uint cntxWidth,
+                     uint cntxSpace,
+                     dbTechLayer* layer);
 
-  void Print(FILE *fp, uint jj);
-  void Print(FILE *fp);
-  void PrintBbox(FILE *fp, int LL[2], int UR[2]);
+  void Print(FILE* fp, uint jj);
+  void Print(FILE* fp);
+  void PrintBbox(FILE* fp, int LL[2], int UR[2]);
   void WriteDB(uint dir, uint met, dbTechLayer* layer);
-  void WriteDB(uint jj, uint dir, uint met, dbTechLayer* layer, FILE *fp);
-  void WriteWire(FILE *fp, int ll[2], int ur[2], char *name);
+  void WriteDB(uint jj, uint dir, uint met, dbTechLayer* layer, FILE* fp);
+  void WriteWire(FILE* fp, int ll[2], int ur[2], char* name);
 
-  dbBTerm* createBterm1(bool lo, dbNet* net, int ll[2], int ur[2], const char *postFix, dbTechLayer* layer, uint width, bool horizontal, bool io);
-  dbNet* createNetSingleWire(const char* netName, int ll[2], int ur[2], uint width, bool vertical, uint met, dbTechLayer* layer);
-    //dkf 12/19/2023
-    uint setLayerInfoVia(dbTechLayer* layer, uint met, bool start=false);
-    uint CreatePatternVia(dbTechVia* via, uint widthIndex, uint spaceIndex, uint wcnt);
-    dbNet *createNetSingleWireAndVia(const char *netName, int ll[2], int ur[2], uint width, bool vertical, dbTechVia *via);
-    void WriteDBWireVia(uint jj, uint dir, dbTechVia* via);
-    //dkf 12/20/2023
-      dbBTerm* createBterm(bool lo, dbNet* net, int ll[2], int ur[2], const char *postFix, dbTechLayer* layer, uint width, bool horizontal, bool io);
-    // dkf 12/26/2023
-    uint GetViaCutCount(dbTechVia* tvia);
-    double GetViaArea(dbTechVia* tvia);
-
+  dbBTerm* createBterm1(bool lo,
+                        dbNet* net,
+                        int ll[2],
+                        int ur[2],
+                        const char* postFix,
+                        dbTechLayer* layer,
+                        uint width,
+                        bool horizontal,
+                        bool io);
+  dbNet* createNetSingleWire(const char* netName,
+                             int ll[2],
+                             int ur[2],
+                             uint width,
+                             bool vertical,
+                             uint met,
+                             dbTechLayer* layer);
+  // dkf 12/19/2023
+  uint setLayerInfoVia(dbTechLayer* layer, uint met, bool start = false);
+  uint CreatePatternVia(dbTechVia* via,
+                        uint widthIndex,
+                        uint spaceIndex,
+                        uint wcnt);
+  dbNet* createNetSingleWireAndVia(const char* netName,
+                                   int ll[2],
+                                   int ur[2],
+                                   uint width,
+                                   bool vertical,
+                                   dbTechVia* via);
+  void WriteDBWireVia(uint jj, uint dir, dbTechVia* via);
+  // dkf 12/20/2023
+  dbBTerm* createBterm(bool lo,
+                       dbNet* net,
+                       int ll[2],
+                       int ur[2],
+                       const char* postFix,
+                       dbTechLayer* layer,
+                       uint width,
+                       bool horizontal,
+                       bool io);
+  // dkf 12/26/2023
+  uint GetViaCutCount(dbTechVia* tvia);
+  double GetViaArea(dbTechVia* tvia);
 };
 }  // namespace rcx
 
 #endif
-

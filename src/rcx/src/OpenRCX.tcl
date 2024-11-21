@@ -160,7 +160,7 @@ proc extract_parasitics { args } {
     set dbg $keys(-dbg)
   }
   set version 1.0
-   if { [info exists keys(-version)] } {
+  if { [info exists keys(-version)] } {
     set version $keys(-version)
     sta::check_positive_float "-version" $version
   }
@@ -168,7 +168,6 @@ proc extract_parasitics { args } {
     $coupling_threshold $cc_model \
     $depth $debug_net_id $lef_res $no_merge_via_res \
     $lef_rc $skip_over_cell $version $corner $dbg
-
 }
 
 sta::define_cmd_args "write_spef" {
@@ -369,25 +368,25 @@ sta::define_cmd_args "gen_rcx_model" {
 
 proc gen_rcx_model { args } {
   sta::parse_key_args "gen_rcx_model" args keys \
-      { -spef_file_list -corner_list -out_file -comment -version -pattern }
-  
-  set spef_file_list "" 
+    { -spef_file_list -corner_list -out_file -comment -version -pattern }
+
+  set spef_file_list ""
   if { [info exists keys(-spef_file_list)] } {
     set spef_file_list $keys(-spef_file_list)
   }
-  set corner_list "" 
+  set corner_list ""
   if { [info exists keys(-corner_list)] } {
     set corner_list $keys(-corner_list)
   }
-  set out_file "rcx.model" 
+  set out_file "rcx.model"
   if { [info exists keys(-out_file)] } {
     set out_file $keys(-out_file)
   }
-  set version "2.0" 
+  set version "2.0"
   if { [info exists keys(-version)] } {
     set version $keys(-version)
   }
-  set comment "RCX Model File" 
+  set comment "RCX Model File"
   if { [info exists keys(-comment)] } {
     set comment $keys(-comment)
   }
@@ -432,7 +431,7 @@ sta::define_cmd_args "bench_wires_gen" {
     [	 -width	  	multiplier_width_list	 ]
     [	 -spacing	  	multiplier_spacing_list	 ]
     [	 -couple_width	  	multiplier_coupling_width_list	 ]
-    [	 -couple_spacing	  	multiplier_coupling_spacing_list	 
+    [	 -couple_spacing	  	multiplier_coupling_spacing_list ]
     [	 -over_width	  	multiplier_over_width_list	 ]
     [	 -over_spacing	  	multiplier_over_spacing_list	 ]
     [	 -under_width	  	multiplier_under_width_list	 ]
@@ -444,9 +443,9 @@ sta::define_cmd_args "bench_wires_gen" {
     [	 -dbg	  	dbg_flag	 ]
     [	 -wire_cnt	  	wire_count	 ]
     [	 -offset_over	  	offset_over	 ]
-    [	 -offset_under	  	offset_under	 ] 
-    [	 -under_dist	  	max_dist_to_under_met	 ] 
-    [	 -over_dist	  	max_dist_to_over_met	 ] 
+    [	 -offset_under	  	offset_under	 ]
+    [	 -under_dist	  	max_dist_to_under_met	 ]
+    [	 -over_dist	  	max_dist_to_over_met	 ]
     [  -diag ]
     [  -over ]
     [  -under ]
@@ -454,7 +453,7 @@ sta::define_cmd_args "bench_wires_gen" {
 }
 proc get_arg_val { keys name default_value } {
   puts " $default_value $name $keys($name) "
-  set v $default_value 
+  set v $default_value
   if { [info exists keys($name)] } {
     set v $keys($name)
   }
@@ -462,10 +461,12 @@ proc get_arg_val { keys name default_value } {
 }
 proc bench_wires_gen { args } {
   sta::parse_key_args "bench_wires_gen" args keys \
-      { -len -width -spacing -couple_width -couple_spacing -over_width -over_spacing -under_width -under_spacing -over2_width -over2_spacing \
-      -under2_width -under2_spacing -dbg -wire_cnt -mlist -offset_over -offset_under -under_dist -over_dist -met } \
-      flags { -diag -over -under -over_under }
-      
+    { -len -width -spacing -couple_width -couple_spacing -over_width \
+        -over_spacing -under_width -under_spacing -over2_width -over2_spacing \
+        -under2_width -under2_spacing -dbg -wire_cnt -mlist -offset_over \
+        -offset_under -under_dist -over_dist -met } \
+    flags { -diag -over -under -over_under }
+
   set width "1, 1.5, 2"
   set spacing "1, 1.5, 2, 3, 4, 6, 8, 10"
   set couple_width "1"
@@ -492,31 +493,31 @@ proc bench_wires_gen { args } {
   set over_under [info exists flags(-over_under)]
   set diag [info exists flags(-diag)]
 
-  if {  [info exists keys(-width)]  } {  set width $keys(-width)  }
-  if {  [info exists keys(-spacing)]  } {  set spacing $keys(-spacing)  }
-  if {  [info exists keys(-couple_width)]  } {  set couple_width $keys(-couple_width)  }
-  if {  [info exists keys(-couple_spacing)]  } {  set couple_spacing $keys(-couple_spacing)  }
-  if {  [info exists keys(-over_width)]  } {  set over_width $keys(-over_width)  }
-  if {  [info exists keys(-over_spacing)]  } {  set over_spacing $keys(-over_spacing)  }
-  if {  [info exists keys(-under_width)]  } {  set under_width $keys(-under_width)  }
-  if {  [info exists keys(-under_spacing)]  } {  set under_spacing $keys(-under_spacing)  }
-  if {  [info exists keys(-over2_width)]  } {  set over2_width $keys(-over2_width)  }
-  if {  [info exists keys(-over2_spacing)]  } {  set over2_spacing $keys(-over2_spacing)  }
-  if {  [info exists keys(-under2_width)]  } {  set under2_width $keys(-under2_width)  }
-  if {  [info exists keys(-under2_spacing)]  } {  set under2_spacing $keys(-under2_spacing)  }
-  if {  [info exists keys(-dbg)]  } {  set dbg $keys(-dbg)  }
-  if {  [info exists keys(-wire_cnt)]  } {  set wire_cnt $keys(-wire_cnt)  }
-  if {  [info exists keys(-mlist)]  } {  set mlist $keys(-mlist)  }
-  if {  [info exists keys(-len)]  } {  set len $keys(-len)  }
+  if { [info exists keys(-width)] } { set width $keys(-width) }
+  if { [info exists keys(-spacing)] } { set spacing $keys(-spacing) }
+  if { [info exists keys(-couple_width)] } { set couple_width $keys(-couple_width) }
+  if { [info exists keys(-couple_spacing)] } { set couple_spacing $keys(-couple_spacing) }
+  if { [info exists keys(-over_width)] } { set over_width $keys(-over_width) }
+  if { [info exists keys(-over_spacing)] } { set over_spacing $keys(-over_spacing) }
+  if { [info exists keys(-under_width)] } { set under_width $keys(-under_width) }
+  if { [info exists keys(-under_spacing)] } { set under_spacing $keys(-under_spacing) }
+  if { [info exists keys(-over2_width)] } { set over2_width $keys(-over2_width) }
+  if { [info exists keys(-over2_spacing)] } { set over2_spacing $keys(-over2_spacing) }
+  if { [info exists keys(-under2_width)] } { set under2_width $keys(-under2_width) }
+  if { [info exists keys(-under2_spacing)] } { set under2_spacing $keys(-under2_spacing) }
+  if { [info exists keys(-dbg)] } { set dbg $keys(-dbg) }
+  if { [info exists keys(-wire_cnt)] } { set wire_cnt $keys(-wire_cnt) }
+  if { [info exists keys(-mlist)] } { set mlist $keys(-mlist) }
+  if { [info exists keys(-len)] } { set len $keys(-len) }
 
-  if {  [info exists keys(-offset_over)]  } {  set offset_over $keys(-offset_over)  }
-  if {  [info exists keys(-offset_under)]  } {  set offset_under $keys(-offset_under)  }
-  if {  [info exists keys(-under_dist)]  } {  set under_dist $keys(-under_dist)  }
-  if {  [info exists keys(-over_dist)]  } {  set over_dist $keys(-over_dist)  }
-  if {  [info exists keys(-met)]  } {  set met $keys(-met)  }
+  if { [info exists keys(-offset_over)] } { set offset_over $keys(-offset_over) }
+  if { [info exists keys(-offset_under)] } { set offset_under $keys(-offset_under) }
+  if { [info exists keys(-under_dist)] } { set under_dist $keys(-under_dist) }
+  if { [info exists keys(-over_dist)] } { set over_dist $keys(-over_dist) }
+  if { [info exists keys(-met)] } { set met $keys(-met) }
 
 
-  if { $dbg>0 } {
+  if { $dbg > 0 } {
     puts "width = $width"
     puts "spacing = $spacing"
     puts "couple_width = $couple_width"
@@ -541,5 +542,9 @@ proc bench_wires_gen { args } {
     puts "over_under = $over_under"
     puts "met = $met"
   }
-  rcx::bench_wires_gen $width  $spacing  $couple_width  $couple_spacing  $over_width  $over_spacing  $under_width  $under_spacing  $over2_width  $over2_spacing  $under2_width  $under2_spacing  $dbg  $wire_cnt  $mlist  $len  $offset_over  $offset_under $under_dist $over_dist $over $under $over_under $met
+  rcx::bench_wires_gen $width $spacing $couple_width $couple_spacing \
+    $over_width $over_spacing $under_width $under_spacing $over2_width \
+    $over2_spacing $under2_width $under2_spacing $dbg $wire_cnt $mlist \
+    $len $offset_over $offset_under $under_dist $over_dist $over $under \
+    $over_under $met
 }

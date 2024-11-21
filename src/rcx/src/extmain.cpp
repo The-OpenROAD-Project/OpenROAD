@@ -134,8 +134,8 @@ void extMain::setupMapping(uint itermCnt1)
 
 extMain::extMain()
 {
-  _modelTable  = new Ath__array1D<extRCModel*>(8);
-} 
+  _modelTable = new Ath__array1D<extRCModel*>(8);
+}
 extMain::~extMain()
 {
   delete _modelTable;
@@ -271,10 +271,9 @@ uint extMain::getResCapTable()
 
       _capacitanceTable[jj][n] = 0.0;
 
-
       extDistRC* rc = rcModel->getOverFringeRC(&m);
-      
-       _capacitanceTable[jj][n]= _minCapTable[n][jj];
+
+      _capacitanceTable[jj][n] = _minCapTable[n][jj];
 
       if (rc != nullptr) {
         const double r1 = rc->getRes();
@@ -312,7 +311,6 @@ uint extMain::getResCapTable()
   }
   return cnt;
 }
-
 
 bool extMain::checkLayerResistance()
 {
@@ -424,7 +422,7 @@ double extMain::getFringe(const uint met,
   if (width == _minWidthTable[met]) {
     return _capacitanceTable[modelIndex][met];
   }
-  extDistRC* rc= _metRCTable.get(modelIndex)->getOverFringeRC_last(met, width);
+  extDistRC* rc = _metRCTable.get(modelIndex)->getOverFringeRC_last(met, width);
 
   if (rc == nullptr) {
     return 0.0;

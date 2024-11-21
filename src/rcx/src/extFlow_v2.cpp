@@ -34,8 +34,8 @@
 #include <vector>
 
 #include "rcx/dbUtil.h"
-#include "rcx/extRCap.h"
 #include "rcx/extMeasureRC.h"
+#include "rcx/extRCap.h"
 #include "utl/Logger.h"
 #include "wire.h"
 
@@ -43,63 +43,63 @@ namespace rcx {
 
 using namespace odb;
 
-void extMain::initRunEnv(extMeasureRC &m)
+void extMain::initRunEnv(extMeasureRC& m)
 {
-    m._extMain = this;
-    m._block = _block;
-    m._diagFlow = _diagFlow;
+  m._extMain = this;
+  m._block = _block;
+  m._diagFlow = _diagFlow;
 
-    m._resFactor = _resFactor;
-    m._resModify = _resModify;
-    m._ccFactor = _ccFactor;
-    m._ccModify = _ccModify;
-    m._gndcFactor = _gndcFactor;
-    m._gndcModify = _gndcModify;
+  m._resFactor = _resFactor;
+  m._resModify = _resModify;
+  m._ccFactor = _ccFactor;
+  m._ccModify = _ccModify;
+  m._gndcFactor = _gndcFactor;
+  m._gndcModify = _gndcModify;
 
-    m._dgContextArray = _dgContextArray;
-    m._dgContextDepth = &_dgContextDepth;
-    m._dgContextPlanes = &_dgContextPlanes;
-    m._dgContextTracks = &_dgContextTracks;
-    m._dgContextBaseLvl = &_dgContextBaseLvl;
-    m._dgContextLowLvl = &_dgContextLowLvl;
-    m._dgContextHiLvl = &_dgContextHiLvl;
-    m._dgContextBaseTrack = _dgContextBaseTrack;
-    m._dgContextLowTrack = _dgContextLowTrack;
-    m._dgContextHiTrack = _dgContextHiTrack;
-    m._dgContextTrackBase = _dgContextTrackBase;
+  m._dgContextArray = _dgContextArray;
+  m._dgContextDepth = &_dgContextDepth;
+  m._dgContextPlanes = &_dgContextPlanes;
+  m._dgContextTracks = &_dgContextTracks;
+  m._dgContextBaseLvl = &_dgContextBaseLvl;
+  m._dgContextLowLvl = &_dgContextLowLvl;
+  m._dgContextHiLvl = &_dgContextHiLvl;
+  m._dgContextBaseTrack = _dgContextBaseTrack;
+  m._dgContextLowTrack = _dgContextLowTrack;
+  m._dgContextHiTrack = _dgContextHiTrack;
+  m._dgContextTrackBase = _dgContextTrackBase;
 
-    m._dgContextCnt = 0;
+  m._dgContextCnt = 0;
 
-    m._ccContextArray = _ccContextArray;
+  m._ccContextArray = _ccContextArray;
 
-    m._pixelTable = _geomSeq;
-    m._minModelIndex = 0;  // couplimg threshold will be appled to this cap
-    m._maxModelIndex = 0;
-    m._currentModel = _currentModel;
-    m._diagModel = _currentModel[0].getDiagModel();
-    for (uint ii = 0; ii < _modelMap.getCnt(); ii++) {
-      uint jj = _modelMap.get(ii);
-      m._metRCTable.add(_currentModel->getMetRCTable(jj));
-    }
-    const uint techLayerCnt = getExtLayerCnt(_tech) + 1;
-    const uint modelLayerCnt = _currentModel->getLayerCnt();
-    m._layerCnt = techLayerCnt < modelLayerCnt ? techLayerCnt : modelLayerCnt;
-    if (techLayerCnt == 5 && modelLayerCnt == 8) {
-      m._layerCnt = modelLayerCnt;
-    }
-    m.getMinWidth(_tech);
-    m.allocOUpool();
+  m._pixelTable = _geomSeq;
+  m._minModelIndex = 0;  // couplimg threshold will be appled to this cap
+  m._maxModelIndex = 0;
+  m._currentModel = _currentModel;
+  m._diagModel = _currentModel[0].getDiagModel();
+  for (uint ii = 0; ii < _modelMap.getCnt(); ii++) {
+    uint jj = _modelMap.get(ii);
+    m._metRCTable.add(_currentModel->getMetRCTable(jj));
+  }
+  const uint techLayerCnt = getExtLayerCnt(_tech) + 1;
+  const uint modelLayerCnt = _currentModel->getLayerCnt();
+  m._layerCnt = techLayerCnt < modelLayerCnt ? techLayerCnt : modelLayerCnt;
+  if (techLayerCnt == 5 && modelLayerCnt == 8) {
+    m._layerCnt = modelLayerCnt;
+  }
+  m.getMinWidth(_tech);
+  m.allocOUpool();
 
-    m._debugFP = nullptr;
-    m._netId = 0;
-    uint debugNetId = this->_debug_net_id;
-   
-    if (debugNetId > 0) {
-      m._netId = debugNetId;
-      char bufName[32];
-      sprintf(bufName, "%d", debugNetId);
-      m._debugFP = fopen(bufName, "w");
-    }
+  m._debugFP = nullptr;
+  m._netId = 0;
+  uint debugNetId = this->_debug_net_id;
+
+  if (debugNetId > 0) {
+    m._netId = debugNetId;
+    char bufName[32];
+    sprintf(bufName, "%d", debugNetId);
+    m._debugFP = fopen(bufName, "w");
+  }
 }
 
 void extMain::initializeLayerTables(LayerDimensionData& tables)
@@ -109,11 +109,12 @@ void extMain::initializeLayerTables(LayerDimensionData& tables)
     tables.widthTable[ii] = 0;
   }
 }
-void extMain::setupBoundaries(BoundaryData& bounds, const Rect& extRect) {
-        bounds.ll[0] = extRect.xMin();
-        bounds.ll[1] = extRect.yMin();
-        bounds.ur[0] = extRect.xMax();
-        bounds.ur[1] = extRect.yMax();
+void extMain::setupBoundaries(BoundaryData& bounds, const Rect& extRect)
+{
+  bounds.ll[0] = extRect.xMin();
+  bounds.ll[1] = extRect.yMin();
+  bounds.ur[0] = extRect.xMax();
+  bounds.ur[1] = extRect.yMax();
 }
 void extMain::updateBoundaries(BoundaryData& bounds,
                                uint dir,
@@ -135,7 +136,9 @@ void extMain::updateBoundaries(BoundaryData& bounds,
   bounds.lo_search[dir] = bounds.ll[dir];
 }
 
-int extMain::initSearch(LayerDimensionData& tables, Rect& extRect, uint &totWireCnt)
+int extMain::initSearch(LayerDimensionData& tables,
+                        Rect& extRect,
+                        uint& totWireCnt)
 {
   int layerCnt = initSearchForNets(tables.baseX,
                                    tables.baseY,
@@ -153,7 +156,7 @@ int extMain::initSearch(LayerDimensionData& tables, Rect& extRect, uint &totWire
   totWireCnt = signalWireCounter(maxWidth);
   totWireCnt += totPowerWireCnt;
 
-    tables.maxWidth= maxWidth;
+  tables.maxWidth = maxWidth;
 
   logger_->info(RCX, 43, "{} wires to be extracted", totWireCnt);
 
@@ -166,7 +169,7 @@ void extMeasureRC::resetTrackIndices(uint dir)
     _hiTrackToExtract[dir][ii] = 0;
     _lowTrackToFree[dir][ii] = 0;
     _hiTrackToFree[dir][ii] = 0;
-     _lowTrackSearch[dir][ii] = 0;
+    _lowTrackSearch[dir][ii] = 0;
     _hiTrackSearch[dir][ii] = 0;
   }
 }
@@ -234,8 +237,10 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
 
     // Add all shapes on a fast track based structure for quick wire coupling
     // detection
-    uint processWireCnt = addPowerNets(dir, bounds.lo_search, bounds.hi_search, 11);  // pwrtype = 11
-    processWireCnt += addSignalNets(dir, bounds.lo_search, bounds.hi_search, 9);  // sigtype = 9
+    uint processWireCnt = addPowerNets(
+        dir, bounds.lo_search, bounds.hi_search, 11);  // pwrtype = 11
+    processWireCnt += addSignalNets(
+        dir, bounds.lo_search, bounds.hi_search, 9);  // sigtype = 9
 
     getPeakMemory("End WiresOnSearch Dir: ", dir);
 
@@ -264,65 +269,71 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
   }
   // delete wire tables  used during diagonal coupling in v1 modeling
   removeDgContextArray();
-  
+
   delete mrc;
   getPeakMemory("Exit CouplingFlow ----------------------------------------- ");
 
   return 0;
 }
-uint extMain::couplingFlow_v2_opt(Rect & extRect, uint ccDist, extMeasure * m1)
+uint extMain::couplingFlow_v2_opt(Rect& extRect, uint ccDist, extMeasure* m1)
 {
-    ccDist= 10; // TODO -- test for different  values and adjust regression tests
+  ccDist
+      = 10;  // TODO -- test for different  values and adjust regression tests
 
-    if (_ccContextDepth) {
-      initContextArray();
-    }
-    // Wire Tables for Diagonal Coupling for v1 modeling
-    initDgContextArray();
+  if (_ccContextDepth) {
+    initContextArray();
+  }
+  // Wire Tables for Diagonal Coupling for v1 modeling
+  initDgContextArray();
 
-    extMeasureRC* mrc = new extMeasureRC(logger_);
-    initRunEnv(*mrc);
-    mrc->resetTrackIndices(0);
-    mrc->resetTrackIndices(1);
+  extMeasureRC* mrc = new extMeasureRC(logger_);
+  initRunEnv(*mrc);
+  mrc->resetTrackIndices(0);
+  mrc->resetTrackIndices(1);
 
+  // Get Width and Pitch for all  layers
+  LayerDimensionData tables;
+  initializeLayerTables(tables);
 
-    // Get Width and Pitch for all  layers
-    LayerDimensionData tables;
-    initializeLayerTables(tables);
+  uint totWireCnt;
+  int layerCnt = initSearch(tables, extRect, totWireCnt);
+  _search->_no_sub_tracks = _v2;
+  _search->_v2 = _v2;
 
-    uint totWireCnt;
-    int layerCnt = initSearch(tables, extRect, totWireCnt);
-    _search->_no_sub_tracks = _v2;
-    _search->_v2 = _v2;
-
-    setExtControl_v2(mrc->_seqPool);
-    _seqPool = mrc->_seqPool;
+  setExtControl_v2(mrc->_seqPool);
+  _seqPool = mrc->_seqPool;
 
   // Setup boundaries and extraction steps
   BoundaryData bounds;
   bounds.setBBox(extRect);
-  bounds.init(ccDist, 5, tables.pitchTable[1], tables.pitchTable[layerCnt - 1], tables.maxWidth, 1000);
+  bounds.init(ccDist,
+              5,
+              tables.pitchTable[1],
+              tables.pitchTable[layerCnt - 1],
+              tables.maxWidth,
+              1000);
 
-  mrc->_seqmentPool= new AthPool<extSegment>(1024);
+  mrc->_seqmentPool = new AthPool<extSegment>(1024);
 
   uint totalWiresExtracted = 0;
   float previous_percent_extracted = 0.0;
-                  
-  // TODO mrc->_progressTracker = std::make_unique<ExtProgressTracker>(totWireCnt);
 
-  for (int dir = 1; dir >= 0; dir--) // dir==1 Horizontal wires
-  {  
+  // TODO mrc->_progressTracker =
+  // std::make_unique<ExtProgressTracker>(totWireCnt);
+
+  for (int dir = 1; dir >= 0; dir--)  // dir==1 Horizontal wires
+  {
     if (dir == 0) {
       enableRotatedFlag();
     }
-        mrc->resetTrackIndices(dir);
+    mrc->resetTrackIndices(dir);
     // TODO -- need it?
     _search->initCouplingCapLoops_v2(dir, ccDist);
-    
+
     bounds.setBBox(extRect);
-    while (true) // Extraction Iteration Loop
+    while (true)  // Extraction Iteration Loop
     {
-      bool lastIteration= bounds.update(dir);
+      bool lastIteration = bounds.update(dir);
 
       // Add all shapes on a compressed bit-based structure for quick cross
       // overlap calculation
@@ -336,16 +347,18 @@ uint extMain::couplingFlow_v2_opt(Rect & extRect, uint ccDist, extMeasure * m1)
                tables.pitchTable,
                tables.widthTable);
 
-        // TODO move up
+      // TODO move up
       mrc->_rotatedGs = getRotatedFlag();
       mrc->_pixelTable = _geomSeq;
 
       // Add all shapes on a fast track based structure for quick wire
       // coupling detection
-      uint processWireCnt = addPowerNets(dir, bounds.lo_search, bounds.hi_search, 11);  // pwrtype = 11
-      processWireCnt += addSignalNets(dir, bounds.lo_search, bounds.hi_search, 9);  // sigtype = 9
+      uint processWireCnt = addPowerNets(
+          dir, bounds.lo_search, bounds.hi_search, 11);  // pwrtype = 11
+      processWireCnt += addSignalNets(
+          dir, bounds.lo_search, bounds.hi_search, 9);  // sigtype = 9
 
-// TODO move up
+      // TODO move up
       mrc->_search = this->_search;
 
       // Create single lists of wires on every track/level/direction
@@ -357,7 +370,11 @@ uint extMain::couplingFlow_v2_opt(Rect & extRect, uint ccDist, extMeasure * m1)
       mrc->FindCouplingNeighbors(dir, bounds);
 
       // Lateral and diagonal coupling
-      mrc->CouplingFlow_opt(dir, bounds, totWireCnt, totalWiresExtracted,  previous_percent_extracted);
+      mrc->CouplingFlow_opt(dir,
+                            bounds,
+                            totWireCnt,
+                            totalWiresExtracted,
+                            previous_percent_extracted);
       float tmpCnt = -10;
       mrc->printProgress(totalWiresExtracted, totWireCnt, tmpCnt);
 
@@ -372,10 +389,10 @@ uint extMain::couplingFlow_v2_opt(Rect & extRect, uint ccDist, extMeasure * m1)
   }
   // delete wire tables  used during diagonal coupling in v1 modeling
   removeDgContextArray();
-delete mrc->_seqmentPool;
-mrc->_seqmentPool= nullptr;
+  delete mrc->_seqmentPool;
+  mrc->_seqmentPool = nullptr;
 
-    delete mrc;
+  delete mrc;
   return 0;
 }
 
@@ -407,15 +424,22 @@ void extMain::setExtControl_v2(AthPool<SEQ>* seqPool)
                             seqPool);
 }
 
-
-void extMain::printUpdateCoup(uint netId1, uint netId2, double v, double org, double totCC)
+void extMain::printUpdateCoup(uint netId1,
+                              uint netId2,
+                              double v,
+                              double org,
+                              double totCC)
 {
-
-        if (netId1==_debug_net_id || netId2== _debug_net_id)
-        {
-            fprintf(stdout, "updateCoupCap: Nets %d %d -- add_cc= %10.6f  org  %10.6f  totCC  %10.6f\n", 
-                netId1, netId2, org, v, totCC);
-        }
+  if (netId1 == _debug_net_id || netId2 == _debug_net_id) {
+    fprintf(stdout,
+            "updateCoupCap: Nets %d %d -- add_cc= %10.6f  org  %10.6f  totCC  "
+            "%10.6f\n",
+            netId1,
+            netId2,
+            org,
+            v,
+            totCC);
+  }
 }
 bool extMeasure::IsDebugNet1()
 {
@@ -431,7 +455,9 @@ bool extMeasure::IsDebugNet1()
   else
     return false;
 }
-void Ath__gridTable::initCouplingCapLoops_v2(uint dir, uint couplingDist, int* startXY)
+void Ath__gridTable::initCouplingCapLoops_v2(uint dir,
+                                             uint couplingDist,
+                                             int* startXY)
 {
   setCCFlag(couplingDist);
 
@@ -444,12 +470,13 @@ void Ath__gridTable::initCouplingCapLoops_v2(uint dir, uint couplingDist, int* s
     if (startXY == nullptr) {
       netGrid->initCouplingCapLoops_v2(couplingDist);
     } else {
-      netGrid->initCouplingCapLoops_v2(
-          couplingDist, false, startXY[jj]);
+      netGrid->initCouplingCapLoops_v2(couplingDist, false, startXY[jj]);
     }
   }
 }
-int Ath__grid::initCouplingCapLoops_v2(uint couplingDist, bool startSearchTrack, int startXY)
+int Ath__grid::initCouplingCapLoops_v2(uint couplingDist,
+                                       bool startSearchTrack,
+                                       int startXY)
 {
   uint TargetHighMarkedNet = _gridtable->targetHighMarkedNet();
   bool allNet = _gridtable->allNet();
@@ -467,13 +494,13 @@ int Ath__grid::initCouplingCapLoops_v2(uint couplingDist, bool startSearchTrack,
 
   return _base + _pitch * _searchHiTrack;
 }
-uint Ath__wire::getLevel() 
-{ 
-    return this->_track->getGrid()->getLevel();
+uint Ath__wire::getLevel()
+{
+  return this->_track->getGrid()->getLevel();
 }
-uint Ath__wire::getPitch() 
-{ 
-    return this->_track->getGrid()->_pitch;
+uint Ath__wire::getPitch()
+{
+  return this->_track->getGrid()->_pitch;
 }
 uint Ath__grid::placeWire_v2(Ath__searchBox* bb)
 {
@@ -495,8 +522,9 @@ uint Ath__grid::placeWire_v2(Ath__searchBox* bb)
     // ** wire base is not always at track base
 #else
 
-// ---------------------------------------------------
-  // DELETE --- v2= true  bool NO_SUB_TRACKS= getGridTable()->_no_sub_tracks; // old flow=false
+  // ---------------------------------------------------
+  // DELETE --- v2= true  bool NO_SUB_TRACKS= getGridTable()->_no_sub_tracks; //
+  // old flow=false
   uint trackNum1 = getMinMaxTrackNum(bb->loXY(_dir));
   // uint trackNum2 = trackNum1;
   // DELETE if NO_SUB_TRACKS=true (!NO_SUB_TRACKS)
@@ -506,15 +534,16 @@ uint Ath__grid::placeWire_v2(Ath__searchBox* bb)
 
   uint wireType = bb->getType();
 
-  Ath__wire* w  = makeWire(_dir, ll, ur, bb->getOwnerId(), bb->getOtherId(), wireType);
-  Ath__track* track= getTrackPtr(trackNum1, _markerCnt);
-/* DELETE 
-  int TTTsubt = NO_SUB_TRACKS ? 0 : 1;
-  if (TTTsubt>0)
-    track = getTrackPtr(trackNum1, _markerCnt, w->_base);
-  else
-    track = getTrackPtr(trackNum1, _markerCnt);
-*/
+  Ath__wire* w
+      = makeWire(_dir, ll, ur, bb->getOwnerId(), bb->getOtherId(), wireType);
+  Ath__track* track = getTrackPtr(trackNum1, _markerCnt);
+  /* DELETE
+    int TTTsubt = NO_SUB_TRACKS ? 0 : 1;
+    if (TTTsubt>0)
+      track = getTrackPtr(trackNum1, _markerCnt, w->_base);
+    else
+      track = getTrackPtr(trackNum1, _markerCnt);
+  */
   // track->place2(w, m1, m2);
   track->place(w, m1);
   /* DELETE
@@ -531,7 +560,9 @@ uint Ath__grid::placeWire_v2(Ath__searchBox* bb)
 */
   return trackNum1;
 }
-extDistRC* extMeasureRC::getDiagUnderCC(extMetRCTable* rcModel, uint dist, uint overMet) 
+extDistRC* extMeasureRC::getDiagUnderCC(extMetRCTable* rcModel,
+                                        uint dist,
+                                        uint overMet)
 {
   if (rcModel->_capDiagUnder[_met] == NULL)
     return NULL;
@@ -605,8 +636,8 @@ void extMeasure::OverSubRC(dbRSeg * rseg1,
 
 */
 
-
-void extMain::setBranchCapNodeId(dbNet* net, uint junction) {
+void extMain::setBranchCapNodeId(dbNet* net, uint junction)
+{
   int capId = _nodeTable->geti(junction);
   if (capId != 0)
     return;
@@ -623,7 +654,8 @@ void extMain::setBranchCapNodeId(dbNet* net, uint junction) {
   _nodeTable->set(junction, -capId);
   return;
 }
-void extMain::markPathHeadTerm(dbWirePath& path) {
+void extMain::markPathHeadTerm(dbWirePath& path)
+{
   if (path.bterm) {
     _connectedBTerm.push_back(path.bterm);
     path.bterm->setMark(1);
@@ -632,88 +664,132 @@ void extMain::markPathHeadTerm(dbWirePath& path) {
     path.iterm->setMark(1);
   }
 }
-bool extRCModel::isRulesFile_v2(char* name, bool bin) 
+bool extRCModel::isRulesFile_v2(char* name, bool bin)
 {
-    bool res_over= false;
-    bool Over= false;
-    bool Under= false;
-    bool OverUnder= false;
-    bool diag_under= false;
-    bool over0= false;
-    bool over1= false;
-    bool under0= false;
-    bool under1= false;
-    bool overunder0= false;
-    bool overunder1= false;
+  bool res_over = false;
+  bool Over = false;
+  bool Under = false;
+  bool OverUnder = false;
+  bool diag_under = false;
+  bool over0 = false;
+  bool over1 = false;
+  bool under0 = false;
+  bool under1 = false;
+  bool overunder0 = false;
+  bool overunder1 = false;
 
-    bool via_res= false;
+  bool via_res = false;
 
-    spotModelsInRules(name, bin, res_over, Over, Under, OverUnder, diag_under, over0, over1, under0, under1, overunder0, overunder1, via_res);
-    bool ret= over0 || over1 || under0 || under1 || overunder0 || overunder1 || via_res;
-    return ret;
+  spotModelsInRules(name,
+                    bin,
+                    res_over,
+                    Over,
+                    Under,
+                    OverUnder,
+                    diag_under,
+                    over0,
+                    over1,
+                    under0,
+                    under1,
+                    overunder0,
+                    overunder1,
+                    via_res);
+  bool ret = over0 || over1 || under0 || under1 || overunder0 || overunder1
+             || via_res;
+  return ret;
 }
-bool extRCModel::spotModelsInRules(char *name, bool bin, bool &res_over, bool &over, bool &under, bool &overUnder, bool &diag_under, bool &over0, bool &over1, bool &under0, bool &under1, bool &overunder0, bool &overunder1, bool &via_res)
+bool extRCModel::spotModelsInRules(char* name,
+                                   bool bin,
+                                   bool& res_over,
+                                   bool& over,
+                                   bool& under,
+                                   bool& overUnder,
+                                   bool& diag_under,
+                                   bool& over0,
+                                   bool& over1,
+                                   bool& under0,
+                                   bool& under1,
+                                   bool& overunder0,
+                                   bool& overunder1,
+                                   bool& via_res)
 {
-	_ruleFileName = strdup(name);
-	Ath__parser parser(NULL);
-	// parser.setDbg(1);
-	parser.addSeparator("\r");
-	parser.openFile(name);
-	while (parser.parseNextLine()>0) {
+  _ruleFileName = strdup(name);
+  Ath__parser parser(NULL);
+  // parser.setDbg(1);
+  parser.addSeparator("\r");
+  parser.openFile(name);
+  while (parser.parseNextLine() > 0) {
+    if (parser.getWordCnt() == 3 && parser.isKeyword(0, "Metal")) {
+      // DBG int met= parser.getInt(1);
+      // if (met==3)
+      //    break;
 
-		if (parser.getWordCnt()==3 && parser.isKeyword(0, "Metal")) {
-           // DBG int met= parser.getInt(1);
-           // if (met==3)
-            //    break;
-
-            if (parser.isKeyword(2, "RESOVER"))
-                res_over= true;
-            else if (parser.isKeyword(2, "OVER"))
-                over= true;
-           else if (parser.isKeyword(2, "UNDER"))
-                under= true;
-           else if (parser.isKeyword(2, "DIAGUNDER"))
-                diag_under= true;
-           else if (parser.isKeyword(2, "OVERUNDER"))
-                overUnder= true;
-           else if (parser.isKeyword(2, "OVER1"))
-                over1= true;
-           else if (parser.isKeyword(2, "OVER0"))
-                over0= true;
-            else if (parser.isKeyword(2, "UNDER1"))
-                under1= true;
-           else if (parser.isKeyword(2, "UNDER0"))
-                under0= true;           
-           else if (parser.isKeyword(2, "OVERUNDER1"))
-                overunder1= true;
-           else if (parser.isKeyword(2, "OVERUNDER0"))
-                overunder0= true;
-        } 
-        else if (parser.isKeyword(0, "VIARES"))
-            via_res= true;
-    }
-    return true;
+      if (parser.isKeyword(2, "RESOVER"))
+        res_over = true;
+      else if (parser.isKeyword(2, "OVER"))
+        over = true;
+      else if (parser.isKeyword(2, "UNDER"))
+        under = true;
+      else if (parser.isKeyword(2, "DIAGUNDER"))
+        diag_under = true;
+      else if (parser.isKeyword(2, "OVERUNDER"))
+        overUnder = true;
+      else if (parser.isKeyword(2, "OVER1"))
+        over1 = true;
+      else if (parser.isKeyword(2, "OVER0"))
+        over0 = true;
+      else if (parser.isKeyword(2, "UNDER1"))
+        under1 = true;
+      else if (parser.isKeyword(2, "UNDER0"))
+        under0 = true;
+      else if (parser.isKeyword(2, "OVERUNDER1"))
+        overunder1 = true;
+      else if (parser.isKeyword(2, "OVERUNDER0"))
+        overunder0 = true;
+    } else if (parser.isKeyword(0, "VIARES"))
+      via_res = true;
+  }
+  return true;
 }
-bool extRCModel::readRules(char* name, bool bin, bool over, bool under,
-                           bool overUnder, bool diag, uint cornerCnt,
-                           uint* cornerTable, double dbFactor) {
+bool extRCModel::readRules(char* name,
+                           bool bin,
+                           bool over,
+                           bool under,
+                           bool overUnder,
+                           bool diag,
+                           uint cornerCnt,
+                           uint* cornerTable,
+                           double dbFactor)
+{
+  bool res_over = false;
+  // DELETE bool exclude_res_over= true;
+  bool Over = false;
+  bool Under = false;
+  bool OverUnder = false;
+  bool diag_under = false;
+  bool over0 = false;
+  bool over1 = false;
+  bool under0 = false;
+  bool under1 = false;
+  bool overunder0 = false;
+  bool overunder1 = false;
 
-    bool res_over= false;
-    // DELETE bool exclude_res_over= true;
-    bool Over= false;
-    bool Under= false;
-    bool OverUnder= false;
-    bool diag_under= false;
-    bool over0= false;
-    bool over1= false;
-    bool under0= false;
-    bool under1= false;
-    bool overunder0= false;
-    bool overunder1= false;
+  bool via_res = false;
 
-    bool via_res= false;
-
-    spotModelsInRules(name, bin, res_over, Over, Under, OverUnder, diag_under, over0, over1, under0, under1, overunder0, overunder1, via_res);
+  spotModelsInRules(name,
+                    bin,
+                    res_over,
+                    Over,
+                    Under,
+                    OverUnder,
+                    diag_under,
+                    over0,
+                    over1,
+                    under0,
+                    under1,
+                    overunder0,
+                    overunder1,
+                    via_res);
 
   diag = false;
   uint cnt = 0;
@@ -724,7 +800,6 @@ bool extRCModel::readRules(char* name, bool bin, bool over, bool under,
   parser.openFile(name);
   while (parser.parseNextLine() > 0) {
     if (parser.isKeyword(0, "OUREVERSEORDER")) {
-     
     }
     if (parser.isKeyword(0, "DIAGMODEL")) {
       if (strcmp(parser.get(1), "ON") == 0) {
@@ -750,10 +825,13 @@ bool extRCModel::readRules(char* name, bool bin, bool over, bool under,
       if (cornerCnt > 0) {
         if ((rulesFileModelCnt > 0) && (rulesFileModelCnt < cornerCnt)) {
           logger_->warn(
-              RCX, 226,
+              RCX,
+              226,
               "There were {} extraction models defined but only {} exists "
               "in the extraction rules file {}",
-              cornerCnt, rulesFileModelCnt, name);
+              cornerCnt,
+              rulesFileModelCnt,
+              name);
           return false;
         }
         // createModelTable(cornerCnt, _layerCnt);
@@ -770,9 +848,11 @@ bool extRCModel::readRules(char* name, bool bin, bool over, bool under,
             break;
           }
           if (kk == rulesFileModelCnt) {
-            logger_->warn(RCX, 228,
+            logger_->warn(RCX,
+                          228,
                           "Cannot find model index {} in extRules file {}",
-                          modelIndex, name);
+                          modelIndex,
+                          name);
             return false;
           }
         }
@@ -809,71 +889,197 @@ bool extRCModel::readRules(char* name, bool bin, bool over, bool under,
 
       for (uint ii = 1; ii < _layerCnt; ii++) {
         if (res_over) {
-          cnt += readRules_v2(&parser, modelIndex, ii, "RESOVER", "WIDTH", over, false, bin, false, res_skipModel, dbFactor);
+          cnt += readRules_v2(&parser,
+                              modelIndex,
+                              ii,
+                              "RESOVER",
+                              "WIDTH",
+                              over,
+                              false,
+                              bin,
+                              false,
+                              res_skipModel,
+                              dbFactor);
         }
-        cnt += readRules_v2(&parser, modelIndex, ii, "OVER", "WIDTH", over, false, bin, false, skipModel, dbFactor);
+        cnt += readRules_v2(&parser,
+                            modelIndex,
+                            ii,
+                            "OVER",
+                            "WIDTH",
+                            over,
+                            false,
+                            bin,
+                            false,
+                            skipModel,
+                            dbFactor);
         if (over0)
-        cnt += readRules_v2(&parser, modelIndex, ii, "OVER0", "WIDTH", over, false, bin, false, skipModel, dbFactor);
+          cnt += readRules_v2(&parser,
+                              modelIndex,
+                              ii,
+                              "OVER0",
+                              "WIDTH",
+                              over,
+                              false,
+                              bin,
+                              false,
+                              skipModel,
+                              dbFactor);
         if (over1)
-        cnt += readRules_v2(&parser, modelIndex, ii, "OVER1", "WIDTH", over, false, bin, false, skipModel, dbFactor);
+          cnt += readRules_v2(&parser,
+                              modelIndex,
+                              ii,
+                              "OVER1",
+                              "WIDTH",
+                              over,
+                              false,
+                              bin,
+                              false,
+                              skipModel,
+                              dbFactor);
 
         if (ii < _layerCnt - 1) {
-          cnt += readRules_v2(&parser, modelIndex, ii, "UNDER", "WIDTH", false, under, bin, false, skipModel, dbFactor);
+          cnt += readRules_v2(&parser,
+                              modelIndex,
+                              ii,
+                              "UNDER",
+                              "WIDTH",
+                              false,
+                              under,
+                              bin,
+                              false,
+                              skipModel,
+                              dbFactor);
           if (under0)
-          cnt += readRules_v2(&parser, modelIndex, ii, "UNDER0", "WIDTH", false, under, bin, false, skipModel, dbFactor);
+            cnt += readRules_v2(&parser,
+                                modelIndex,
+                                ii,
+                                "UNDER0",
+                                "WIDTH",
+                                false,
+                                under,
+                                bin,
+                                false,
+                                skipModel,
+                                dbFactor);
           if (under1)
-          cnt += readRules_v2(&parser, modelIndex, ii, "UNDER1", "WIDTH", false, under, bin, false, skipModel, dbFactor);
+            cnt += readRules_v2(&parser,
+                                modelIndex,
+                                ii,
+                                "UNDER1",
+                                "WIDTH",
+                                false,
+                                under,
+                                bin,
+                                false,
+                                skipModel,
+                                dbFactor);
           if (diag)
-            cnt += readRules_v2(&parser, modelIndex, ii, "DIAGUNDER", "WIDTH", false, false, bin, diag, skipModel, dbFactor);
+            cnt += readRules_v2(&parser,
+                                modelIndex,
+                                ii,
+                                "DIAGUNDER",
+                                "WIDTH",
+                                false,
+                                false,
+                                bin,
+                                diag,
+                                skipModel,
+                                dbFactor);
         }
-        if ((ii > 1) && (ii < _layerCnt - 1))
-        {
-            cnt += readRules_v2(&parser, modelIndex, ii, "OVERUNDER", "WIDTH", overUnder, overUnder, bin, false, skipModel, dbFactor);
-            if (overunder0)
-            cnt += readRules_v2(&parser, modelIndex, ii, "OVERUNDER0", "WIDTH", overUnder, overUnder, bin, false, skipModel, dbFactor);
-            if (overunder1)
-            cnt += readRules_v2(&parser, modelIndex, ii, "OVERUNDER1", "WIDTH", overUnder, overUnder, bin, false, skipModel, dbFactor);
+        if ((ii > 1) && (ii < _layerCnt - 1)) {
+          cnt += readRules_v2(&parser,
+                              modelIndex,
+                              ii,
+                              "OVERUNDER",
+                              "WIDTH",
+                              overUnder,
+                              overUnder,
+                              bin,
+                              false,
+                              skipModel,
+                              dbFactor);
+          if (overunder0)
+            cnt += readRules_v2(&parser,
+                                modelIndex,
+                                ii,
+                                "OVERUNDER0",
+                                "WIDTH",
+                                overUnder,
+                                overUnder,
+                                bin,
+                                false,
+                                skipModel,
+                                dbFactor);
+          if (overunder1)
+            cnt += readRules_v2(&parser,
+                                modelIndex,
+                                ii,
+                                "OVERUNDER1",
+                                "WIDTH",
+                                overUnder,
+                                overUnder,
+                                bin,
+                                false,
+                                skipModel,
+                                dbFactor);
         }
       }
 
       if (!via_res)
         continue;
-      
-      while (parser.parseNextLine())
-      {
-          // if (parser.isKeyword(0, "END") && parser.isKeyword(1, "DensityModel"))
-          //  break;
 
-          if (parser.isKeyword(0, "VIARES"))
-          {
-              _modelTable[modelIndex]->ReadRules(&parser);
-              break;
-          }
+      while (parser.parseNextLine()) {
+        // if (parser.isKeyword(0, "END") && parser.isKeyword(1,
+        // "DensityModel"))
+        //  break;
+
+        if (parser.isKeyword(0, "VIARES")) {
+          _modelTable[modelIndex]->ReadRules(&parser);
+          break;
+        }
       }
-    }  
+    }
   }
   return true;
 }
-bool extRCModel::readRules_v2(char* name, bool bin, bool over, bool under,
-                           bool overUnder, bool diag, double dbFactor) 
+bool extRCModel::readRules_v2(char* name,
+                              bool bin,
+                              bool over,
+                              bool under,
+                              bool overUnder,
+                              bool diag,
+                              double dbFactor)
 {
-    // clean v2 flow
+  // clean v2 flow
 
-    bool res_over= false;
-    bool Over= false;
-    bool Under= false;
-    bool OverUnder= false;
-    bool diag_under= false;
-    bool over0= false;
-    bool over1= false;
-    bool under0= false;
-    bool under1= false;
-    bool overunder0= false;
-    bool overunder1= false;
+  bool res_over = false;
+  bool Over = false;
+  bool Under = false;
+  bool OverUnder = false;
+  bool diag_under = false;
+  bool over0 = false;
+  bool over1 = false;
+  bool under0 = false;
+  bool under1 = false;
+  bool overunder0 = false;
+  bool overunder1 = false;
 
-    bool via_res= false;
+  bool via_res = false;
 
-    spotModelsInRules(name, bin, res_over, Over, Under, OverUnder, diag_under, over0, over1, under0, under1, overunder0, overunder1, via_res);
+  spotModelsInRules(name,
+                    bin,
+                    res_over,
+                    Over,
+                    Under,
+                    OverUnder,
+                    diag_under,
+                    over0,
+                    over1,
+                    under0,
+                    under1,
+                    overunder0,
+                    overunder1,
+                    via_res);
 
   diag = false;
   uint cnt = 0;
@@ -920,60 +1126,175 @@ bool extRCModel::readRules_v2(char* name, bool bin, bool over, bool under,
       // Loop to read all sections of the Model file per Metal Level
       for (uint ii = 1; ii < _layerCnt; ii++) {
         if (res_over) {
-          cnt += readRules_v2(&parser, modelIndex, ii, "RESOVER", "WIDTH", over, false, bin, false, res_skipModel, dbFactor);
+          cnt += readRules_v2(&parser,
+                              modelIndex,
+                              ii,
+                              "RESOVER",
+                              "WIDTH",
+                              over,
+                              false,
+                              bin,
+                              false,
+                              res_skipModel,
+                              dbFactor);
         }
-        cnt += readRules_v2(&parser, modelIndex, ii, "OVER", "WIDTH", over, false, bin, false, skipModel, dbFactor);
+        cnt += readRules_v2(&parser,
+                            modelIndex,
+                            ii,
+                            "OVER",
+                            "WIDTH",
+                            over,
+                            false,
+                            bin,
+                            false,
+                            skipModel,
+                            dbFactor);
         if (over0)
-        cnt += readRules_v2(&parser, modelIndex, ii, "OVER0", "WIDTH", over, false, bin, false, skipModel, dbFactor);
+          cnt += readRules_v2(&parser,
+                              modelIndex,
+                              ii,
+                              "OVER0",
+                              "WIDTH",
+                              over,
+                              false,
+                              bin,
+                              false,
+                              skipModel,
+                              dbFactor);
         if (over1)
-        cnt += readRules_v2(&parser, modelIndex, ii, "OVER1", "WIDTH", over, false, bin, false, skipModel, dbFactor);
+          cnt += readRules_v2(&parser,
+                              modelIndex,
+                              ii,
+                              "OVER1",
+                              "WIDTH",
+                              over,
+                              false,
+                              bin,
+                              false,
+                              skipModel,
+                              dbFactor);
 
         if (ii < _layerCnt - 1) {
-          cnt += readRules_v2(&parser, modelIndex, ii, "UNDER", "WIDTH", false, under, bin, false, skipModel, dbFactor);
+          cnt += readRules_v2(&parser,
+                              modelIndex,
+                              ii,
+                              "UNDER",
+                              "WIDTH",
+                              false,
+                              under,
+                              bin,
+                              false,
+                              skipModel,
+                              dbFactor);
           if (under0)
-          cnt += readRules_v2(&parser, modelIndex, ii, "UNDER0", "WIDTH", false, under, bin, false, skipModel, dbFactor);
+            cnt += readRules_v2(&parser,
+                                modelIndex,
+                                ii,
+                                "UNDER0",
+                                "WIDTH",
+                                false,
+                                under,
+                                bin,
+                                false,
+                                skipModel,
+                                dbFactor);
           if (under1)
-          cnt += readRules_v2(&parser, modelIndex, ii, "UNDER1", "WIDTH", false, under, bin, false, skipModel, dbFactor);
+            cnt += readRules_v2(&parser,
+                                modelIndex,
+                                ii,
+                                "UNDER1",
+                                "WIDTH",
+                                false,
+                                under,
+                                bin,
+                                false,
+                                skipModel,
+                                dbFactor);
           if (diag)
-            cnt += readRules_v2(&parser, modelIndex, ii, "DIAGUNDER", "WIDTH", false, false, bin, diag, skipModel, dbFactor);
+            cnt += readRules_v2(&parser,
+                                modelIndex,
+                                ii,
+                                "DIAGUNDER",
+                                "WIDTH",
+                                false,
+                                false,
+                                bin,
+                                diag,
+                                skipModel,
+                                dbFactor);
         }
-        if ((ii > 1) && (ii < _layerCnt - 1))
-        {
-            cnt += readRules_v2(&parser, modelIndex, ii, "OVERUNDER", "WIDTH", overUnder, overUnder, bin, false, skipModel, dbFactor);
-            if (overunder0)
-            cnt += readRules_v2(&parser, modelIndex, ii, "OVERUNDER0", "WIDTH", overUnder, overUnder, bin, false, skipModel, dbFactor);
-            if (overunder1)
-            cnt += readRules_v2(&parser, modelIndex, ii, "OVERUNDER1", "WIDTH", overUnder, overUnder, bin, false, skipModel, dbFactor);
+        if ((ii > 1) && (ii < _layerCnt - 1)) {
+          cnt += readRules_v2(&parser,
+                              modelIndex,
+                              ii,
+                              "OVERUNDER",
+                              "WIDTH",
+                              overUnder,
+                              overUnder,
+                              bin,
+                              false,
+                              skipModel,
+                              dbFactor);
+          if (overunder0)
+            cnt += readRules_v2(&parser,
+                                modelIndex,
+                                ii,
+                                "OVERUNDER0",
+                                "WIDTH",
+                                overUnder,
+                                overUnder,
+                                bin,
+                                false,
+                                skipModel,
+                                dbFactor);
+          if (overunder1)
+            cnt += readRules_v2(&parser,
+                                modelIndex,
+                                ii,
+                                "OVERUNDER1",
+                                "WIDTH",
+                                overUnder,
+                                overUnder,
+                                bin,
+                                false,
+                                skipModel,
+                                dbFactor);
         }
       }
       // v1 flow can only handle single process corners and NO Via modeling
-      if (!_v2_flow) // v1 flow can only handle one corner
+      if (!_v2_flow)  // v1 flow can only handle one corner
         break;
 
       if (!via_res)
         continue;
-      
-      while (parser.parseNextLine())
-      {
-          if (parser.isKeyword(0, "VIARES"))
-          {
-              _modelTable[modelIndex]->ReadRules(&parser);
-              break;
-          }
+
+      while (parser.parseNextLine()) {
+        if (parser.isKeyword(0, "VIARES")) {
+          _modelTable[modelIndex]->ReadRules(&parser);
+          break;
+        }
       }
-    }   
+    }
   }
   return true;
 }
 
-uint extRCModel::readRules_v2(Ath__parser* parser, uint m, uint ii,
-                           const char* ouKey, const char* wKey, bool over,
-                           bool under, bool bin, bool diag, bool ignore,
-                           double dbFactor) {
+uint extRCModel::readRules_v2(Ath__parser* parser,
+                              uint m,
+                              uint ii,
+                              const char* ouKey,
+                              const char* wKey,
+                              bool over,
+                              bool under,
+                              bool bin,
+                              bool diag,
+                              bool ignore,
+                              double dbFactor)
+{
   uint cnt = 0;
   uint met = 0;
-  Ath__array1D<double>* wTable =
-      readHeaderAndWidth(parser, met, ouKey, wKey, bin, false);
+  Ath__array1D<double>* wTable
+      = readHeaderAndWidth(parser, met, ouKey, wKey, bin, false);
 
   if (wTable == NULL)
     return 0;
@@ -999,49 +1320,66 @@ uint extRCModel::readRules_v2(Ath__parser* parser, uint m, uint ii,
     if (!ignore) {
       if (strcmp(ouKey, "OVERUNDER") == 0) {
         _modelTable[m]->allocOverUnderTable(met, false, wTable, dbFactor);
-        _modelTable[m]->_capOverUnder[met]->readRulesOverUnder(parser, widthCnt, bin, ignore, dbFactor);
+        _modelTable[m]->_capOverUnder[met]->readRulesOverUnder(
+            parser, widthCnt, bin, ignore, dbFactor);
       } else if (strcmp(ouKey, "OVERUNDER0") == 0) {
-        _modelTable[m]->allocOverUnderTable(met, true, wTable, dbFactor); 
-        _modelTable[m]->_capOverUnder_open[met][0]->readRulesOverUnder(parser, widthCnt, bin, ignore, dbFactor);
+        _modelTable[m]->allocOverUnderTable(met, true, wTable, dbFactor);
+        _modelTable[m]->_capOverUnder_open[met][0]->readRulesOverUnder(
+            parser, widthCnt, bin, ignore, dbFactor);
       } else if (strcmp(ouKey, "OVERUNDER1") == 0) {
-        _modelTable[m]->_capOverUnder_open[met][1]->readRulesOverUnder(parser, widthCnt, bin, ignore, dbFactor);
+        _modelTable[m]->_capOverUnder_open[met][1]->readRulesOverUnder(
+            parser, widthCnt, bin, ignore, dbFactor);
       }
     } else
       dummy->readRulesOverUnder(parser, widthCnt, bin, ignore, dbFactor);
   } else if (over) {
     if (strcmp(ouKey, "OVER") == 0) {
-        _modelTable[m]->_capOver[met]->readRulesOver(parser, widthCnt, bin, ignore, "OVER", dbFactor);
+      _modelTable[m]->_capOver[met]->readRulesOver(
+          parser, widthCnt, bin, ignore, "OVER", dbFactor);
     } else if (strcmp(ouKey, "OVER0") == 0) {
-        _modelTable[m]->_capOver_open[met][0]->readRulesOver(parser, widthCnt, bin, ignore, "OVER0", dbFactor);
+      _modelTable[m]->_capOver_open[met][0]->readRulesOver(
+          parser, widthCnt, bin, ignore, "OVER0", dbFactor);
     } else if (strcmp(ouKey, "OVER1") == 0) {
-        _modelTable[m]->_capOver_open[met][1]->readRulesOver(parser, widthCnt, bin, ignore, "OVER1", dbFactor);
+      _modelTable[m]->_capOver_open[met][1]->readRulesOver(
+          parser, widthCnt, bin, ignore, "OVER1", dbFactor);
     } else {  // RESOVER ---- first in rules
-        _modelTable[m]->allocOverTable(met, wTable, dbFactor); // TODO: remove assumption -- RESOVER first
-        _modelTable[m]->_resOver[met]->readRulesOver(parser, widthCnt, bin, ignore, "RESOVER", dbFactor);
+      _modelTable[m]->allocOverTable(
+          met, wTable, dbFactor);  // TODO: remove assumption -- RESOVER first
+      _modelTable[m]->_resOver[met]->readRulesOver(
+          parser, widthCnt, bin, ignore, "RESOVER", dbFactor);
     }
   } else if (under) {
     if (!ignore) {
       if (strcmp(ouKey, "UNDER") == 0) {
         _modelTable[m]->allocUnderTable(met, false, wTable, dbFactor);
-        _modelTable[m]->_capUnder[met]->readRulesUnder(parser, widthCnt, bin, ignore, "UNDER", dbFactor);
+        _modelTable[m]->_capUnder[met]->readRulesUnder(
+            parser, widthCnt, bin, ignore, "UNDER", dbFactor);
       } else if (strcmp(ouKey, "UNDER0") == 0) {
-        _modelTable[m]->allocUnderTable(met, true, wTable, dbFactor); // should be before UNDER1
-        _modelTable[m]->_capUnder_open[met][0]->readRulesUnder(parser, widthCnt, bin, ignore, "UNDER0", dbFactor);
+        _modelTable[m]->allocUnderTable(
+            met, true, wTable, dbFactor);  // should be before UNDER1
+        _modelTable[m]->_capUnder_open[met][0]->readRulesUnder(
+            parser, widthCnt, bin, ignore, "UNDER0", dbFactor);
       } else if (strcmp(ouKey, "UNDER1") == 0) {
-        _modelTable[m]->_capUnder_open[met][1]->readRulesUnder(parser, widthCnt, bin, ignore, "UNDER1", dbFactor);
+        _modelTable[m]->_capUnder_open[met][1]->readRulesUnder(
+            parser, widthCnt, bin, ignore, "UNDER1", dbFactor);
       }
     } else
-      dummy->readRulesUnder(parser, widthCnt, bin, ignore, "OPENUNDER", dbFactor);
+      dummy->readRulesUnder(
+          parser, widthCnt, bin, ignore, "OPENUNDER", dbFactor);
   } else if (diag) {
     if (!ignore && _diagModel == 2) {
-      _modelTable[m]->allocDiagUnderTable(met, wTable, diagWidthCnt, diagDistCnt, dbFactor);
-      _modelTable[m]->_capDiagUnder[met]->readRulesDiagUnder(parser, widthCnt, diagWidthCnt, diagDistCnt, bin, ignore, dbFactor);
+      _modelTable[m]->allocDiagUnderTable(
+          met, wTable, diagWidthCnt, diagDistCnt, dbFactor);
+      _modelTable[m]->_capDiagUnder[met]->readRulesDiagUnder(
+          parser, widthCnt, diagWidthCnt, diagDistCnt, bin, ignore, dbFactor);
     } else if (!ignore && _diagModel == 1) {
       _modelTable[m]->allocDiagUnderTable(met, wTable, dbFactor);
-      _modelTable[m]->_capDiagUnder[met]->readRulesDiagUnder(parser, widthCnt, bin, ignore, dbFactor);
+      _modelTable[m]->_capDiagUnder[met]->readRulesDiagUnder(
+          parser, widthCnt, bin, ignore, dbFactor);
     } else if (ignore) {
       if (_diagModel == 2)
-        dummy->readRulesDiagUnder(parser, widthCnt, diagWidthCnt, diagDistCnt, bin, ignore, dbFactor);
+        dummy->readRulesDiagUnder(
+            parser, widthCnt, diagWidthCnt, diagDistCnt, bin, ignore, dbFactor);
       else if (_diagModel == 1)
         dummy->readRulesDiagUnder(parser, widthCnt, bin, ignore, dbFactor);
     }
@@ -1054,7 +1392,13 @@ uint extRCModel::readRules_v2(Ath__parser* parser, uint m, uint ii,
 
   return cnt;
 }
-uint extDistWidthRCTable::readRulesUnder(Ath__parser* parser, uint widthCnt, bool bin, bool ignore, const char *keyword, double dbFactor) {
+uint extDistWidthRCTable::readRulesUnder(Ath__parser* parser,
+                                         uint widthCnt,
+                                         bool bin,
+                                         bool ignore,
+                                         const char* keyword,
+                                         double dbFactor)
+{
   uint cnt = 0;
   for (uint ii = _met + 1; ii < _layerCnt; ii++) {
     uint met = 0;
@@ -1068,80 +1412,96 @@ uint extDistWidthRCTable::readRulesUnder(Ath__parser* parser, uint widthCnt, boo
     parser->getInt(3);
 
     for (uint jj = 0; jj < widthCnt; jj++) {
-      cnt += _rcDistTable[metIndex][jj]
-                 ->readRules(parser, _rcPoolPtr, true, bin, ignore, dbFactor);
+      cnt += _rcDistTable[metIndex][jj]->readRules(
+          parser, _rcPoolPtr, true, bin, ignore, dbFactor);
     }
   }
   return cnt;
 }
-uint extRCModel::calcMinMaxRC(dbTech *tech, const char *out_file)
+uint extRCModel::calcMinMaxRC(dbTech* tech, const char* out_file)
 {
-    dbSet<dbTechLayer> layers = tech->getLayers();
-    dbSet<dbTechLayer>::iterator itr;
+  dbSet<dbTechLayer> layers = tech->getLayers();
+  dbSet<dbTechLayer>::iterator itr;
 
-    FILE *fp= openFile(out_file, "", "", "w");
-    uint cnt = 0;
-    for (itr = layers.begin(); itr != layers.end(); ++itr)
-    {
-        dbTechLayer *layer = *itr;
+  FILE* fp = openFile(out_file, "", "", "w");
+  uint cnt = 0;
+  for (itr = layers.begin(); itr != layers.end(); ++itr) {
+    dbTechLayer* layer = *itr;
 
-        if (layer->getRoutingLevel() == 0)
-            continue;
-        
-        cnt++;
+    if (layer->getRoutingLevel() == 0)
+      continue;
 
-        int met = layer->getRoutingLevel();
-        int width = layer->getWidth();
-        int dist = layer->getSpacing();
-        if (dist == 0)
-            dist = layer->getPitch() - layer->getWidth();
+    cnt++;
 
-        for (uint jj = 0; jj < _modelCnt; jj++)
-        {
-            extMetRCTable *corner_model = _modelTable[jj];
-            extDistWidthRCTable* rcTable= corner_model->_capOver[met];
+    int met = layer->getRoutingLevel();
+    int width = layer->getWidth();
+    int dist = layer->getSpacing();
+    if (dist == 0)
+      dist = layer->getPitch() - layer->getWidth();
 
-            extDistRC* res_rc_min = corner_model->_resOver[met]->getRes(0, width, 0, 0);
-            extDistRC* res_rc_max = corner_model->_resOver[met]->getRes(0, width, dist, dist);
+    for (uint jj = 0; jj < _modelCnt; jj++) {
+      extMetRCTable* corner_model = _modelTable[jj];
+      extDistWidthRCTable* rcTable = corner_model->_capOver[met];
 
-            extDistRC *rcMin = rcTable->getFringeRC(0, width);
+      extDistRC* res_rc_min
+          = corner_model->_resOver[met]->getRes(0, width, 0, 0);
+      extDistRC* res_rc_max
+          = corner_model->_resOver[met]->getRes(0, width, dist, dist);
 
-            int underMet = met - 1;
-            int overMet = met + 1;
+      extDistRC* rcMin = rcTable->getFringeRC(0, width);
 
-            extDistRC *rcMax = NULL;
-            if (met == _layerCnt - 1) { // over
-                overMet = 0;
-                rcMax = corner_model->_capOver[met]->getFringeRC(underMet, width);
-            }
-            else if (met == 1) { // over
-                uint n = overMet - met - 1;
-                rcMax = corner_model->_capUnder[met]->getRC(n, width, dist);
-            }
-            else
-            {
-                uint maxOverUnderIndex = corner_model->_capOverUnder[met]->_metCnt;
-                uint n = extRCModel::getMetIndexOverUnder(met, underMet, overMet, _layerCnt, maxOverUnderIndex);
-                rcMax = corner_model->_capOverUnder[met]->getRC(n, width, dist);
-            }
-            // rcMin->printBound(stdout, "LO", layer->getConstName(), met, jj, res_rc_min->getRes());
-            rcMin->printBound(fp, "LO", layer->getConstName(), met, jj, res_rc_min->getRes());
-            // rcMax->printBound(stdout, "HI", layer->getConstName(), met, jj, res_rc_max->getRes());
-            rcMax->printBound(fp, "HI", layer->getConstName(), met, jj, res_rc_max->getRes());
+      int underMet = met - 1;
+      int overMet = met + 1;
 
-        }
+      extDistRC* rcMax = NULL;
+      if (met == _layerCnt - 1) {  // over
+        overMet = 0;
+        rcMax = corner_model->_capOver[met]->getFringeRC(underMet, width);
+      } else if (met == 1) {  // over
+        uint n = overMet - met - 1;
+        rcMax = corner_model->_capUnder[met]->getRC(n, width, dist);
+      } else {
+        uint maxOverUnderIndex = corner_model->_capOverUnder[met]->_metCnt;
+        uint n = extRCModel::getMetIndexOverUnder(
+            met, underMet, overMet, _layerCnt, maxOverUnderIndex);
+        rcMax = corner_model->_capOverUnder[met]->getRC(n, width, dist);
+      }
+      // rcMin->printBound(stdout, "LO", layer->getConstName(), met, jj,
+      // res_rc_min->getRes());
+      rcMin->printBound(
+          fp, "LO", layer->getConstName(), met, jj, res_rc_min->getRes());
+      // rcMax->printBound(stdout, "HI", layer->getConstName(), met, jj,
+      // res_rc_max->getRes());
+      rcMax->printBound(
+          fp, "HI", layer->getConstName(), met, jj, res_rc_max->getRes());
     }
-    fclose(fp);
-    return cnt;
+  }
+  fclose(fp);
+  return cnt;
 }
-void extDistRC::printBound(FILE *fp, const char *loHi, const char *layer_name, uint met, uint corner, double res)
+void extDistRC::printBound(FILE* fp,
+                           const char* loHi,
+                           const char* layer_name,
+                           uint met,
+                           uint corner,
+                           double res)
 {
-    fprintf(fp, "%-10s Metal %2d  Corner %2d  %s_Bound cap:aF/nm: total %9.6f coupling %9.6f  Res:mOhm/nm: %10.6f\n",
-        layer_name, met, corner, loHi, 2*(_coupling+_fringe+_diag)*10e+3, 2*_coupling*10e+3, res*1000);
+  fprintf(fp,
+          "%-10s Metal %2d  Corner %2d  %s_Bound cap:aF/nm: total %9.6f "
+          "coupling %9.6f  Res:mOhm/nm: %10.6f\n",
+          layer_name,
+          met,
+          corner,
+          loHi,
+          2 * (_coupling + _fringe + _diag) * 10e+3,
+          2 * _coupling * 10e+3,
+          res * 1000);
 }
 
 uint extMain::addInstsGs(Ath__array1D<uint>* instTable,
-                         Ath__array1D<uint>* tmpInstIdTable, uint dir) {
+                         Ath__array1D<uint>* tmpInstIdTable,
+                         uint dir)
+{
   if (instTable == NULL)
     return 0;
 
@@ -1182,8 +1542,10 @@ uint extMain::addInstsGs(Ath__array1D<uint>* instTable,
   }
   return cnt;
 }
-uint extMain::addItermShapesOnPlanes(dbInst* inst, bool rotatedFlag,
-                                     bool swap_coords) {
+uint extMain::addItermShapesOnPlanes(dbInst* inst,
+                                     bool rotatedFlag,
+                                     bool swap_coords)
+{
   uint cnt = 0;
   dbSet<dbITerm> iterms = inst->getITerms();
   dbSet<dbITerm>::iterator iterm_itr;
@@ -1211,7 +1573,8 @@ uint extMain::addItermShapesOnPlanes(dbInst* inst, bool rotatedFlag,
   }
   return cnt;
 }
-uint extMain::addShapeOnGs(dbShape* s, bool swap_coords) {
+uint extMain::addShapeOnGs(dbShape* s, bool swap_coords)
+{
   int level = s->getTechLayer()->getRoutingLevel();
 
   if (!swap_coords)  // horizontal
@@ -1219,7 +1582,9 @@ uint extMain::addShapeOnGs(dbShape* s, bool swap_coords) {
   else
     return _geomSeq->box(s->yMin(), s->xMin(), s->yMax(), s->xMax(), level);
 }
-uint extMain::addObsShapesOnPlanes(dbInst* inst, bool rotatedFlag, bool swap_coords) 
+uint extMain::addObsShapesOnPlanes(dbInst* inst,
+                                   bool rotatedFlag,
+                                   bool swap_coords)
 {
   uint cnt = 0;
   dbInstShapeItr obs_shapes;
@@ -1240,4 +1605,4 @@ uint extMain::addObsShapesOnPlanes(dbInst* inst, bool rotatedFlag, bool swap_coo
   return cnt;
 }
 
-}  // namespace
+}  // namespace rcx
