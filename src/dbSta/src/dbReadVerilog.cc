@@ -179,7 +179,6 @@ class Verilog2db
 
   bool hasTerminals(Net* net) const;
   dbMaster* getMaster(Cell* cell);
-  dbModule* makeUniqueDbModule(const char* name);
   std::optional<LineInfo> parseLineInfo(const std::string& attribute);
 
   Network* network_;
@@ -187,7 +186,6 @@ class Verilog2db
   dbBlock* block_ = nullptr;
   Logger* logger_;
   std::map<Cell*, dbMaster*> master_map_;
-  std::map<std::string, int> uniquify_id_;  // key: module name
   // Map file names to a unique id to avoid having to store the full file name
   // for each instance
   std::map<std::string, int> src_file_id_;
@@ -293,21 +291,6 @@ void Verilog2db::recordBusPortsOrder()
   }
 }
 
-dbModule* Verilog2db::makeUniqueDbModule(const char* name)
-{
-  dbModule* module;
-  do {
-    std::string full_name(name);
-    int& id = uniquify_id_[name];
-    if (id > 0) {
-      full_name += '-' + std::to_string(id);
-    }
-    ++id;
-    module = dbModule::create(block_, full_name.c_str());
-  } while (module == nullptr);
-  return module;
-}
-
 std::optional<Verilog2db::LineInfo> Verilog2db::parseLineInfo(
     const std::string& attribute)
 {
@@ -339,7 +322,8 @@ void Verilog2db::makeDbModule(
     module = block_->getTopModule();
   } else {
     // This uniquifies the cell
-    module = makeUniqueDbModule(network_->name(cell));
+    module = dbModule::makeUniqueDbModule(
+        network_->name(cell), network_->name(inst), block_);
 
     // Strip out the full hiearchical name. We are now
     // storing the module instances in the scope of their
@@ -466,7 +450,8 @@ void Verilog2db::makeDbModule(
       }
     }
   }
-  InstanceChildIterator* child_iter = network_->childIterator(inst);
+  std::unique_ptr<InstanceChildIterator> child_iter{
+      network_->childIterator(inst)};
   while (child_iter->hasNext()) {
     Instance* child = child_iter->next();
     if (network_->isHierarchical(child)) {
@@ -539,7 +524,6 @@ void Verilog2db::makeDbModule(
       }
     }
   }
-  delete child_iter;
   if (module->getChildren().reversible()
       && module->getChildren().orderReversed()) {
     module->getChildren().reverse();
@@ -640,7 +624,7 @@ dbIoType Verilog2db::staToDb(PortDirection* dir)
 void Verilog2db::makeDbNets(const Instance* inst)
 {
   bool is_top = (inst == network_->topInstance());
-  NetIterator* net_iter = network_->netIterator(inst);
+  std::unique_ptr<NetIterator> net_iter{network_->netIterator(inst)};
   // Todo, put dbnets in the module in case of hierarchy (not block)
   while (net_iter->hasNext()) {
     Net* net = net_iter->next();
@@ -657,12 +641,12 @@ void Verilog2db::makeDbNets(const Instance* inst)
 
       // Sort connected pins for regression stability.
       PinSeq net_pins;
-      NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
+      std::unique_ptr<NetConnectedPinIterator> pin_iter{
+          network_->connectedPinIterator(net)};
       while (pin_iter->hasNext()) {
         const Pin* pin = pin_iter->next();
         net_pins.push_back(pin);
       }
-      delete pin_iter;
       sort(net_pins, PinPathNameLess(network_));
 
       for (const Pin* pin : net_pins) {
@@ -689,13 +673,13 @@ void Verilog2db::makeDbNets(const Instance* inst)
       }
     }
   }
-  delete net_iter;
-  InstanceChildIterator* child_iter = network_->childIterator(inst);
+
+  std::unique_ptr<InstanceChildIterator> child_iter{
+      network_->childIterator(inst)};
   while (child_iter->hasNext()) {
     const Instance* child = child_iter->next();
     makeDbNets(child);
   }
-  delete child_iter;
 }
 
 void Verilog2db::makeVModNets(
@@ -814,10 +798,8 @@ dbModNet* Verilog2db::constructModNet(Net* inst_pin_net, dbModule* module)
 
 bool Verilog2db::hasTerminals(Net* net) const
 {
-  NetTermIterator* term_iter = network_->termIterator(net);
-  bool has_terms = term_iter->hasNext();
-  delete term_iter;
-  return has_terms;
+  std::unique_ptr<NetTermIterator> term_iter{network_->termIterator(net)};
+  return term_iter->hasNext();
 }
 
 dbMaster* Verilog2db::getMaster(Cell* cell)

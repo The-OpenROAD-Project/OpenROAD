@@ -71,7 +71,7 @@ void Graphics::startSA()
     return;
   }
 
-  if (only_final_result_ || skip_steps_) {
+  if (skip_steps_) {
     return;
   }
 
@@ -90,7 +90,7 @@ void Graphics::endSA(const float norm_cost)
     return;
   }
 
-  if (only_final_result_ || skip_steps_) {
+  if (skip_steps_) {
     return;
   }
 
@@ -113,10 +113,6 @@ bool Graphics::isTargetCluster()
 
 void Graphics::saStep(const std::vector<SoftMacro>& macros)
 {
-  if (only_final_result_) {
-    return;
-  }
-
   resetPenalties();
   soft_macros_ = macros;
   hard_macros_.clear();
@@ -124,10 +120,6 @@ void Graphics::saStep(const std::vector<SoftMacro>& macros)
 
 void Graphics::saStep(const std::vector<HardMacro>& macros)
 {
-  if (only_final_result_) {
-    return;
-  }
-
   resetPenalties();
   hard_macros_ = macros;
   soft_macros_.clear();
@@ -162,10 +154,6 @@ void Graphics::report(const float norm_cost)
 
 void Graphics::drawResult()
 {
-  if (!only_final_result_) {
-    return;
-  }
-
   if (max_level_) {
     std::vector<std::vector<odb::Rect>> outlines(max_level_.value() + 1);
     int level = 0;
@@ -218,10 +206,6 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
 void Graphics::penaltyCalculated(float norm_cost)
 {
   if (!active_) {
-    return;
-  }
-
-  if (only_final_result_) {
     return;
   }
 
@@ -788,10 +772,6 @@ void Graphics::setTargetClusterId(const int target_cluster_id)
 
 void Graphics::setOutline(const odb::Rect& outline)
 {
-  if (only_final_result_) {
-    return;
-  }
-
   outline_ = outline;
 }
 

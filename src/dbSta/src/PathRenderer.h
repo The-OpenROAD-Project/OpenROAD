@@ -30,8 +30,8 @@ class PathRenderer : public gui::Renderer, public AbstractPathRenderer
   dbSta* sta_;
   // Expanded path is owned by PathRenderer.
   std::unique_ptr<PathExpanded> path_;
-  static gui::Painter::Color signal_color;
-  static gui::Painter::Color clock_color;
+  static const gui::Painter::Color signal_color;
+  static const gui::Painter::Color clock_color;
 };
 
 }  // namespace sta

@@ -1778,7 +1778,7 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
 
   // Fill in liberty to db/LEF master correspondence for libraries not used
   // for corners that are not used for "linking".
-  LibertyLibraryIterator* lib_iter = libertyLibraryIterator();
+  std::unique_ptr<LibertyLibraryIterator> lib_iter{libertyLibraryIterator()};
   while (lib_iter->hasNext()) {
     LibertyLibrary* lib = lib_iter->next();
     LibertyCell* lib_cell = lib->findLibertyCell(cell_name);
@@ -1807,8 +1807,6 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
     Port* cur_port = port_iter->next();
     registerConcretePort(cur_port);
   }
-
-  delete lib_iter;
 }
 
 void dbNetwork::readDbNetlistAfter()
@@ -1894,7 +1892,8 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
 {
   for (ConcreteLibrary* clib : library_seq_) {
     if (!clib->isLiberty()) {
-      ConcreteLibraryCellIterator* cell_iter = clib->cellIterator();
+      std::unique_ptr<ConcreteLibraryCellIterator> cell_iter{
+          clib->cellIterator()};
       while (cell_iter->hasNext()) {
         ConcreteCell* ccell = cell_iter->next();
         // Don't clobber an existing liberty cell so link points to the first.
@@ -1904,7 +1903,8 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
             TestCell* test_cell = lcell->testCell();
             lcell->setExtCell(ccell->extCell());
             ccell->setLibertyCell(lcell);
-            ConcreteCellPortBitIterator* port_iter = ccell->portBitIterator();
+            std::unique_ptr<ConcreteCellPortBitIterator> port_iter{
+                ccell->portBitIterator()};
             while (port_iter->hasNext()) {
               ConcretePort* cport = port_iter->next();
               const char* port_name = cport->name();
@@ -1930,11 +1930,9 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
                 }
               }
             }
-            delete port_iter;
           }
         }
       }
-      delete cell_iter;
     }
   }
 
@@ -3104,6 +3102,66 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
         }
       }
     }
+  }
+}
+
+// Find a hierarchical module with a given name
+// TODO: support finding uninstantiated modules
+dbModule* dbNetwork::findModule(const char* name)
+{
+  dbModule* module = nullptr;
+  Instance* top_inst = topInstance();
+  std::unique_ptr<InstanceChildIterator> child_iter{childIterator(top_inst)};
+  while (child_iter->hasNext()) {
+    Instance* child = child_iter->next();
+    if (network_->isHierarchical(child)) {
+      dbInst* db_inst;
+      dbModInst* mod_inst;
+      staToDb(child, db_inst, mod_inst);
+      if (mod_inst) {
+        dbModule* master = mod_inst->getMaster();
+        if (master) {
+          if (strcmp(master->getName(), name) == 0) {
+            module = master;
+            break;
+          }
+        }
+      }
+    }
+  }
+  return module;
+}
+
+// Find a hierarchical instance with a given name
+Instance* dbNetwork::findHierInstance(const char* name)
+{
+  Instance* inst = nullptr;
+  Instance* top_inst = topInstance();
+  std::unique_ptr<InstanceChildIterator> child_iter{childIterator(top_inst)};
+  while (child_iter->hasNext()) {
+    Instance* child = child_iter->next();
+    if (network_->isHierarchical(child)
+        && strcmp(network_->name(child), name) == 0) {
+      inst = child;
+      break;
+    }
+  }
+  return inst;
+}
+
+void dbNetwork::replaceDesign(Instance* instance, dbModule* module)
+{
+  dbInst* db_inst;
+  dbModInst* mod_inst;
+  staToDb(instance, db_inst, mod_inst);
+  if (mod_inst) {
+    mod_inst->swapMaster(module);
+  } else {
+    logger_->error(ORD,
+                   1104,
+                   "Instance {} cannot be replaced because it is not a "
+                   "hierarchical module",
+                   network_->name(instance));
   }
 }
 
