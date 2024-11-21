@@ -60,7 +60,10 @@ class Parser
 {
  public:
   // constructors
-  Parser(odb::dbDatabase* dbIn, frDesign* design, Logger* loggerIn);
+  Parser(odb::dbDatabase* dbIn,
+         frDesign* design,
+         Logger* loggerIn,
+         RouterConfiguration* router_cfg);
 
   // others
   void readDesign(odb::dbDatabase*);
@@ -153,11 +156,10 @@ class Parser
   odb::dbDatabase* db_;
   frDesign* design_;
   Logger* logger_;
+  RouterConfiguration* router_cfg_;
   // temporary variables
   int readLayerCnt_;
   odb::dbTechLayer* masterSliceLayer_;
-  std::map<frNet*, std::vector<frRect>, frBlockObjectComp> tmpGuides_;
-  std::vector<std::pair<frBlockObject*, Point>> tmpGRPins_;
   std::map<frMaster*,
            std::map<dbOrientType,
                     std::map<std::vector<frCoord>,
@@ -180,12 +182,13 @@ class Writer
   frDesign* getDesign() const;
   // others
   void updateDb(odb::dbDatabase* db,
+                RouterConfiguration* router_cfg,
                 bool pin_access = false,
                 bool snapshot = false);
   void updateTrackAssignment(odb::dbBlock* block);
 
  private:
-  void fillConnFigs(bool isTA);
+  void fillConnFigs(bool isTA, int verbose);
   void fillConnFigs_net(frNet* net, bool isTA);
   void mergeSplitConnFigs(std::list<std::shared_ptr<frConnFig>>& connFigs);
   void splitVia_helper(
@@ -222,8 +225,11 @@ class Writer
 class TopLayerBTermHandler
 {
  public:
-  TopLayerBTermHandler(frDesign* design, odb::dbDatabase* db, Logger* logger)
-      : design_(design), db_(db), logger_(logger)
+  TopLayerBTermHandler(frDesign* design,
+                       odb::dbDatabase* db,
+                       Logger* logger,
+                       RouterConfiguration* router_cfg)
+      : design_(design), db_(db), logger_(logger), router_cfg_(router_cfg)
   {
   }
   void processBTermsAboveTopLayer(bool has_routing = false);
@@ -246,5 +252,6 @@ class TopLayerBTermHandler
   frDesign* design_;
   odb::dbDatabase* db_;
   Logger* logger_;
+  RouterConfiguration* router_cfg_;
 };
 }  // namespace drt::io
