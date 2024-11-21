@@ -65,7 +65,7 @@ extMetRCTable* extRCModel::initCapTables(uint layerCnt, uint widthCnt)
 }
 AthPool<extDistRC>* extMetRCTable::getRCPool() { return _rcPoolPtr; }
 
-uint extMain::GenExtRules(const char* rulesFileName, int pattern) 
+uint extMain::GenExtRules(const char* rulesFileName) 
 {
   uint widthCnt = 12;
   uint layerCnt = _tech->getRoutingLayerCount() + 1;
@@ -75,7 +75,7 @@ uint extMain::GenExtRules(const char* rulesFileName, int pattern)
   extRulesModel->setDiagModel(1);
   // _modelTable->add(m);
   // extRCModel *model= _modelTable->get(0);
-  extRulesModel->setOptions("./", "", false, true, false, false);
+  extRulesModel->setOptions("./", "", false);
 
   extMetRCTable* rcModel = extRulesModel->initCapTables(layerCnt, widthCnt);
 

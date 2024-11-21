@@ -2106,7 +2106,6 @@ extRCModel::extRCModel(uint layerCnt, const char* name, Logger* logger)
   _ruleFileName = nullptr;
   _diagModel = 0;
   _verticalDiag = false;
-  _keepFile = false;
   _metLevel = 0;
 }
 
@@ -2145,7 +2144,6 @@ extRCModel::extRCModel(const char* name, Logger* logger)
   _ruleFileName = nullptr;
   _diagModel = 0;
   _verticalDiag = false;
-  _keepFile = false;
   _metLevel = 0;
 }
 
@@ -2973,10 +2971,7 @@ int extRCModel::writeBenchWires(FILE* fp, extMeasure* measure)
 
 void extRCModel::setOptions(const char* topDir,
                             const char* pattern,
-                            bool writeFiles,
-                            bool readFiles,
-                            bool runSolver,
-                            bool keepFile)
+                            bool writeFiles)
 {
   _logFP = openFile("./", "rulesGen", ".log", "w");
   _filesFP = openFile("./", "patternFiles.", pattern, "w");
@@ -2985,32 +2980,11 @@ void extRCModel::setOptions(const char* topDir,
   strcpy(_patternName, pattern);
 
   _writeFiles = true;
-  _readSolver = false;
-  _runSolver = runSolver;
-
-  if (writeFiles) {
-    _writeFiles = true;
-    _readSolver = false;
-    _runSolver = false;
-  } else if (readFiles) {
-    _writeFiles = false;
-    _readSolver = true;
-    _runSolver = false;
-  } else if (runSolver) {
-    _writeFiles = false;
-    _readSolver = false;
-    _runSolver = true;
-  }
-  if (keepFile) {
-    _keepFile = true;
-  }
+  _readSolver = true;
+  _runSolver = true;
 }
 
-void extRCModel::setOptions(const char* topDir,
-                            const char* pattern,
-                            bool writeFiles,
-                            bool readFiles,
-                            bool runSolver)
+void extRCModel::setOptions(const char* topDir, const char* pattern)
 {
   _logFP = openFile("./", "rulesGen", ".log", "w");
   strcpy(_topDir, topDir);
@@ -3019,21 +2993,6 @@ void extRCModel::setOptions(const char* topDir,
   _writeFiles = true;
   _readSolver = true;
   _runSolver = true;
-  _keepFile = true;
-
-  if (writeFiles) {
-    _writeFiles = true;
-    _readSolver = false;
-    _runSolver = false;
-  } else if (readFiles) {
-    _writeFiles = false;
-    _readSolver = true;
-    _runSolver = false;
-  } else if (runSolver) {
-    _writeFiles = false;
-    _readSolver = false;
-    _runSolver = true;
-  }
 }
 
 void extRCModel::closeFiles()
@@ -3046,33 +3005,6 @@ void extRCModel::closeFiles()
     fflush(_filesFP);
  if (_filesFP != nullptr) {
     fclose(_filesFP);
-  }
-}
-
-void extRCModel::runSolver(const char* solverOption)
-{
-  char cmd[4000];
-  if (_diagModel == 2) {
-    sprintf(cmd,
-            "ca raphael %s %s/%s -o %s/%s.out",
-            solverOption,
-            _wireDirName,
-            _wireFileName,
-            _wireDirName,
-            _wireFileName);
-  } else {
-    sprintf(cmd,
-            "ca raphael %s %s/%s -o %s/%s.out",
-            solverOption,
-            _wireDirName,
-            _wireFileName,
-            _wireDirName,
-            _wireFileName);
-  }
-
-  logger_->info(RCX, 69, "{}", cmd);
-  if (system(cmd) == -1) {
-    logger_->error(RCX, 490, "system failed: {}", cmd);
   }
 }
 
@@ -3777,108 +3709,6 @@ double extRCModel::measureResistance(extMeasure* m,
   double r = ro / ((top_widthR + bot_widthR) * thicknessR * 0.5);
   return r;
 }
-
-bool extRCModel::solverStep(extMeasure* m)
-{
-  if (_runSolver) {
-    runSolver("rc2 -n -x -z");
-    return true;
-  }
-
-  return false;
-}
-
-/*
-bool extRCModel::measurePatternVar(extMeasure* m,
-                                   double top_width,
-                                   double bot_width,
-                                   double thickness,
-                                   uint wireCnt,
-                                   char* wiresNameSuffix,
-                                   double res)
-{
-  m->setEffParams(top_width, bot_width, thickness);
-  double thicknessChange
-      = _process->adjustMasterLayersForHeight(m->_met, thickness);
-
-  _process->getMasterConductor(m->_met)->resetWidth(top_width, bot_width);
-
-  mkFileNames(m, wiresNameSuffix);
-
-  printCommentLine('$', m);
-  fprintf(_logFP, "%s\n", _commentLine);
-  fprintf(_logFP, "%c %g thicknessChange\n", '$', thicknessChange);
-  fflush(_logFP);
-
-  if (_writeFiles) {
-    FILE* wfp = mkPatternFile();
-
-    if (wfp == nullptr) {
-      return false;  // should be an exception!! and return!
-    }
-
-    double maxHeight
-        = _process->adjustMasterDielectricsForHeight(m->_met, thicknessChange);
-    maxHeight *= 1.2;
-
-    if (m->_diag) {
-      int met = -1;
-      if (m->_overMet + 1 < (int) _layerCnt) {
-        met = m->_overMet + 1;
-      }
-      _process->writeProcessAndGround(
-          wfp, "GND", m->_met - 1, met, -50.0, 100.0, maxHeight, m->_diag);
-    } else {
-      _process->writeProcessAndGround(wfp,
-                                      "GND",
-                                      m->_underMet,
-                                      m->_overMet,
-                                      -50.0,
-                                      100.0,
-                                      maxHeight,
-                                      m->_diag);
-    }
-
-    if (_commentFlag) {
-      fprintf(wfp, "%s\n", _commentLine);
-    }
-
-    writeBenchWires(wfp, m);
-
-    fclose(wfp);
-  }
-  solverStep(m);
-
-  if (_readSolver) {
-    uint lineCnt = 0;
-
-    if (m->_diag) {
-      lineCnt = readCapacitanceBenchDiag(_readCapLog, m);
-    } else {
-      lineCnt = readCapacitanceBench(_readCapLog, m);
-    }
-    if (lineCnt <= 0 && _keepFile) {
-      _readCapLog = false;
-
-      solverStep(m);
-
-      if (m->_diag) {
-        lineCnt = readCapacitanceBenchDiag(_readCapLog, m);
-      } else {
-        lineCnt = readCapacitanceBench(_readCapLog, m);
-      }
-    }
-    if (lineCnt > 0) {
-      getCapMatrixValues(lineCnt, m);
-    }
-  }
-  if (!_keepFile) {
-    cleanFiles();
-  }
-  return true;
-}
-*/
-
 bool extRCModel::measurePatternVar(extMeasure* m,
                                    double top_width,
                                    double bot_width,
@@ -3926,9 +3756,6 @@ bool extRCModel::measurePatternVar(extMeasure* m,
 
     fclose(wfp);
   }
-  solverStep(m);
-
-
   return true;
 }
 void extRCModel::printCommentLine(char commentChar, extMeasure* m)
@@ -4201,12 +4028,9 @@ void extRCModel::allocOverUnderTable(extMeasure* measure)
   }
 }
 
-uint extMain::writeRules(const char* name,
-                         const char* topDir,
-                         const char* rulesFile,
-                         int pattern)
+uint extMain::writeRules(const char* name, const char* rulesFile)
 {
-  GenExtRules(rulesFile, pattern);
+  GenExtRules(rulesFile);
   return 0;
 }
 

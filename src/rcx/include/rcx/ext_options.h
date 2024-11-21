@@ -60,9 +60,6 @@ struct BenchWiresOptions
     bool v1 = false;
     bool ddd = false;
     bool multiple_widths = false;
-    bool write_to_solver = false;
-    bool read_from_solver = false;
-    bool run_solver = false;
     bool diag = false;
     bool over_under = false;
     bool gen_def_patterns = false;

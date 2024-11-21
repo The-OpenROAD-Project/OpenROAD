@@ -493,7 +493,6 @@ uint extRCModel::linesUnder(uint wireCnt, uint widthCnt, uint spaceCnt,
 }
 
 void extRCModel::setOptions(const char* topDir, const char* pattern,
-                            bool writeFiles, bool readFiles, bool runSolver,
                             bool keepFile, uint metLevel) {
   _logFP = openFile("./", "rulesGen", ".log", "w");
   strcpy(_topDir, topDir);
@@ -503,21 +502,6 @@ void extRCModel::setOptions(const char* topDir, const char* pattern,
   _readSolver = true;
   _runSolver = true;
 
-  if (writeFiles) {
-    _writeFiles = true;
-    _readSolver = false;
-    _runSolver = false;
-  } else if (readFiles) {
-    _writeFiles = false;
-    _readSolver = true;
-    _runSolver = false;
-  } else if (runSolver) {
-    _writeFiles = false;
-    _readSolver = false;
-    _runSolver = true;
-  }
-  if (keepFile)
-    _keepFile = true;
   if (metLevel)
     _metLevel = metLevel;
 #ifdef _WIN32
@@ -571,37 +555,11 @@ uint extRCModel::linesOverUnder(uint wireCnt, uint widthCnt, uint spaceCnt,
   closeCapLogFile();
   return cnt;
 }
-
-uint extMain::metRulesGen(const char* name, const char* topDir,
-                          const char* rulesFile, int pattern, bool writeFiles,
-                          bool readFiles, bool runSolver, bool keepFile,
-                          uint met) {
-                            
-  extRCModel* m = _modelTable->get(0);
-
-  m->setOptions(topDir, name, writeFiles, readFiles, runSolver, keepFile, met);
-  if ((pattern > 0) && (pattern <= 9))
-    m->linesOver(pattern, 20, 20, 20, met);
-  else if ((pattern > 10) && (pattern <= 19))
-    m->linesUnder(pattern - 10, 20, 20, 20, met);
-  else if ((pattern > 20) && (pattern <= 29))
-    m->linesOverUnder(pattern - 20, 20, 20, 20, met);
-  else if ((pattern > 30) && (pattern <= 39)) {
-    m->setDiagModel(1);
-    m->linesDiagUnder(pattern - 30, 20, 20, 20, met);
-  } else if ((pattern > 40) && (pattern <= 49)) {
-    m->setDiagModel(2);
-    m->linesDiagUnder(pattern - 40, 20, 20, 20, met);
-  }
-  m->closeFiles();
-  return 0;
-}
 uint extMain::rulesGen(const char* name, const char* topDir,
-                       const char* rulesFile, int pattern, bool writeFiles,
-                       bool readFiles, bool runSolver, bool keepFile, int wLen,  int version, bool win) {
+                       const char* rulesFile, int pattern, bool keepFile, int wLen,  int version, bool win) {
   extRCModel* m = _modelTable->get(0);
 
-  m->setOptions(topDir, name, false, false, false, keepFile);
+  m->setOptions(topDir, name, keepFile);
   m->_winDirFlat= win;
   m->_len= wLen;
   m->_simVersion=version;

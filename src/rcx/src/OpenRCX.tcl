@@ -358,14 +358,6 @@ proc bench_read_spef { args } {
   rcx::read_spef $args
 }
 
-sta::define_cmd_args "write_rules" {
-    [-file filename]
-    [-dir dir]
-    [-name name]
-    [-pattern pattern]
-    [-db]
-}
-
 sta::define_cmd_args "gen_rcx_model" {
     [-spef_file_list spefList]
     [-corner_list cornerList]
@@ -407,9 +399,14 @@ proc gen_rcx_model { args } {
   rcx::gen_rcx_model $spef_file_list $corner_list $out_file $comment $version $pattern
 }
 
+sta::define_cmd_args "write_rules" {
+    [-file filename]
+    [-name name]
+}
+
 proc write_rules { args } {
   sta::parse_key_args "write_rules" args \
-    keys { -file -dir -name -pattern } \
+    keys { -file -dir -name } \
     flags { -db }
 
   set filename "extRules"
@@ -426,16 +423,7 @@ proc write_rules { args } {
   if { [info exists keys(-name)] } {
     set name $keys(-name)
   }
-
-  set pattern 0
-  if { [info exists keys(-pattern)] } {
-    set pattern $keys(-pattern)
-  }
-  if { [info exists flags(-db)] } {
-    utl::warn RCX 149 "-db is deprecated."
-  }
-
-  rcx::write_rules $filename $dir $name $pattern
+  rcx::write_rules $filename $dir $name
 }
 sta::define_cmd_args "bench_wires_gen" {
     [  -len		length_in_min_widths ]

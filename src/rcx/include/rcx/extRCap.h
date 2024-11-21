@@ -557,6 +557,14 @@ bool readRules(char* name, bool bin, bool over, bool under,
   int _simVersion;
   int _maxLevelDist;
   FILE *_filesFP;
+
+  bool measurePatternVar_3D(extMeasure* m,
+                                      double top_width,
+                                      double bot_width,
+                                      double thickness,
+                                      uint wireCnt,
+                                      char* wiresNameSuffix,
+                                      double res);
   uint measureWithVar(extMeasure* measure);
   uint measureDiagWithVar(extMeasure* measure);
   uint linesOver(uint wireCnt, uint widthCnt, uint spaceCnt, uint dCnt, uint metLevel=0);
@@ -564,22 +572,11 @@ bool readRules(char* name, bool bin, bool over, bool under,
   uint linesDiagUnder(uint wireCnt, uint widthCnt, uint spaceCnt, uint dCnt, uint metLevel=0);
   uint linesUnder(uint wireCnt, uint widthCnt, uint spaceCnt, uint dCnt, uint metLevel=0);
   void setOptions(const char* topDir, const char* pattern,
-                            bool writeFiles, bool readFiles, bool runSolver,
                             bool keepFile, uint metLevel);
   void writeRuleWires(FILE* fp, extMeasure* measure, uint wireCnt) ;
-  void writeRuleWires_3D(FILE* fp, extMeasure* measure, uint wireCnt);
   void writeWires2_3D(FILE* fp, extMeasure* measure, uint wireCnt);
-  void writeRaphaelCaps(FILE* fp, extMeasure* measure, uint wireCnt) ;
   void writeWires(FILE* fp, extMeasure* measure, uint wireCnt) ;
-  uint getCapMatrixValues3D(uint lastNode, extMeasure* m);
-  uint readCapacitanceBench3D(bool readCapLog, extMeasure* m, bool skipPrintWires);
-uint getCapValues3D(uint lastNode, double& cc1, double& cc2,
-                                double& fr, double& tot, extMeasure* m);
-void writeRaphaelCaps3D(FILE* fp, extMeasure* measure, uint wireCnt);
-bool measurePatternVar_3D(extMeasure* m, double top_width, double bot_width,double thickness,
-                                   uint wireCnt,
-                                   char* wiresNameSuffix,
-                                   double res);
+
      double writeWirePatterns(FILE* fp, extMeasure* measure, uint wireCnt, double height_offset, double &len, double &max_x);
 double writeWirePatterns_w3(FILE* fp, extMeasure* measure, uint wireCnt, double height_offset, double &len, double &max_x) ;
    // ------------------------------------------------------------------
@@ -648,19 +645,10 @@ double writeWirePatterns_w3(FILE* fp, extMeasure* measure, uint wireCnt, double 
   void mkFileNames(extMeasure* m, char* wiresNameSuffix);
   void writeWires2(FILE* fp, extMeasure* measure, uint wireCnt);
   int writeBenchWires(FILE* fp, extMeasure* measure);
+  void setOptions(const char* topDir, const char* pattern);
   void setOptions(const char* topDir,
                   const char* pattern,
-                  bool writeFiles,
-                  bool readFiles,
-                  bool runSolver);
-  void setOptions(const char* topDir,
-                  const char* pattern,
-                  bool writeFiles,
-                  bool readFiles,
-                  bool runSolver,
                   bool keepFile);
-  void runSolver(const char* solverOption);
-  bool solverStep(extMeasure* m);
   void cleanFiles();
 
   extDistRC* measurePattern(uint met,
@@ -820,7 +808,6 @@ double writeWirePatterns_w3(FILE* fp, extMeasure* measure, uint wireCnt, double 
   bool _verticalDiag;
   bool _maxMinFlag;
   uint _diagModel;
-  bool _keepFile;
   uint _metLevel;
 
   extRCTable* _resOver;
@@ -1427,10 +1414,6 @@ class extMainOptions
   const char* _thTable;
   const char* _dTable;
 
-  bool _write_to_solver;
-  bool _read_from_solver;
-  bool _run_solver;
-
   bool _listsFlag;
   bool _thListFlag;
   bool _wsListFlag;
@@ -1704,13 +1687,8 @@ public:
   uint GenExtModel(std::list<std::string> spef_file_list, std::list<std::string> corner_list, const char *out_file, const char *comment, const char *version, int pattern);
   // --------------------- dkf 092024 ------------------------
    // DKF 07/25/24 -- 3d pattern generation
-   uint metRulesGen(const char* name, const char* topDir,
-                          const char* rulesFile, int pattern, bool writeFiles,
-                          bool readFiles, bool runSolver, bool keepFile,
-                          uint met);
-   uint  rulesGen(const char* name, const char* topDir,
-                       const char* rulesFile, int pattern, bool writeFiles,
-                       bool readFiles, bool runSolver, bool keepFile, int wLen, int version, bool win);
+    uint rulesGen(const char* name, const char* topDir,
+                       const char* rulesFile, int pattern, bool keepFile, int wLen,  int version, bool win);
     uint readProcess(const char* name, const char* filename);
 
   void init(odb::dbDatabase* db, Logger* logger);
@@ -1848,7 +1826,6 @@ public:
                           const int* bb_ur);
 
   uint makeTree(uint netId);
-  uint runSolver(extMainOptions* opt, uint netId, int shapeId);
 
   void resetSumRCtable();
   void addToSumRCtable();
@@ -2060,12 +2037,9 @@ public:
 
   // ruLESgeNf
   bool getFirstShape(odb::dbNet* net, odb::dbShape& shape);
-  uint writeRules(const char* name,
-                  const char* topDir,
-                  const char* rulesFile,
-                  int pattern);
+  uint writeRules(const char* name, const char* rulesFile);
   uint benchWires(extMainOptions* options);
-  uint GenExtRules(const char* rulesFileName, int pattern);
+  uint GenExtRules(const char* rulesFileName);
   int getExtCornerIndex(odb::dbBlock* block, const char* cornerName);
 
   void initExtractedCorners(odb::dbBlock* block);

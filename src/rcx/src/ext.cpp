@@ -70,13 +70,10 @@ void Ext::setLogger(Logger* logger)
     logger_ = logger;
   }
 }
-void Ext::write_rules(const std::string& name,
-                      const std::string& dir,
-                      const std::string& file,
-                      int pattern)
+void Ext::write_rules(const std::string& name, const std::string& file)
 {
   _ext->setBlockFromChip();
-  _ext->writeRules(name.c_str(), dir.c_str(), file.c_str(), pattern);
+  _ext->writeRules(name.c_str(), file.c_str());
 }
 void Ext::bench_wires(const BenchWiresOptions& bwo)
 {
@@ -101,9 +98,6 @@ void Ext::bench_wires(const BenchWiresOptions& bwo)
 
   opt._multiple_widths = bwo.multiple_widths;
 
-  opt._write_to_solver = bwo.write_to_solver;
-  opt._read_from_solver = bwo.read_from_solver;
-  opt._run_solver = bwo.run_solver;
   opt._diag = bwo.diag;
   opt._db_only = bwo.db_only;
   opt._gen_def_patterns = bwo.gen_def_patterns;
@@ -559,15 +553,4 @@ bool Ext::get_model_corners(const std::string& ext_model_file)
     }    
     return true;
 }
-/*
-bool Ext::rules_gen(const std::string& name, const std::string& dir,
-                    const std::string& file, bool write_to_solver,
-                    bool read_from_solver, bool run_solver, int pattern,
-                    bool keep_file) {
-  _ext->rulesGen(name.c_str(), dir.c_str(), file.c_str(), pattern,
-                 write_to_solver, read_from_solver, run_solver, keep_file);
-
-  return TCL_OK;
-}
-*/
 }  // namespace rcx

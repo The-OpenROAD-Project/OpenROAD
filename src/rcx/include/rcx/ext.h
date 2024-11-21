@@ -82,10 +82,7 @@ class Ext
   bool read_rcx_tables(const char* corner, const char* filename, int wire, bool over, bool under, bool over_under, bool diag);
   bool write_rcx_model(const char* filename);
   
-  void write_rules(const std::string& name,
-                   const std::string& dir,
-                   const std::string& file,
-                   int pattern);
+  void write_rules(const std::string& name, const std::string& file);
   void bench_verilog(const std::string& file);
 
   void bench_wires(const BenchWiresOptions& bwo);
@@ -118,16 +115,6 @@ class Ext
                  bool m_map,
                  float upper_limit,
                  float lower_limit);
-bool read_process(const std::string& name, const std::string& file);
-bool rules_gen(const std::string& name, const std::string& dir,
-                    const std::string& file, bool write_to_solver,
-                    bool read_from_solver, bool run_solver, int pattern,
-                    bool keep_file, int len, int version, bool win);
-bool metal_rules_gen(const std::string& name, const std::string& dir,
-                          const std::string& file, bool write_to_solver,
-                          bool read_from_solver, bool run_solver, int pattern,
-                          bool keep_file, int metal);
-bool run_solver(const std::string& dir, int net, int shape);
 
  private:
   odb::dbDatabase* _db = nullptr;

@@ -198,13 +198,11 @@ bench_verilog(const char* file)
 
 void
 write_rules(const char* file,
-            const char* dir,
-            const char* name,
-            int pattern)
+            const char* name)
 {
   Ext* ext = getOpenRCX();
   
-  ext->write_rules(name, dir, file, pattern);
+  ext->write_rules(name, file);
 }
 
 void

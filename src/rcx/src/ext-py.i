@@ -104,9 +104,7 @@ void bench_wires(bool db_only,
 void bench_verilog(const char* file);
 
 void write_rules(const char* file,
-            const char* dir,
-            const char* name,
-            int pattern);
+            const char* name);
 
 void read_spef(const char* file);
 

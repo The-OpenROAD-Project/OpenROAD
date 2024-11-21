@@ -684,7 +684,7 @@ namespace rcx
     m->setDataRateTable(1);
     m = _modelTable->get(0);
 
-    m->setOptions(opt->_topDir, opt->_name, false, false, false);
+    m->setOptions(opt->_topDir, opt->_name);
 
     opt->_tech = _tech;
 

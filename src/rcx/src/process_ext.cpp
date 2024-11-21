@@ -43,43 +43,6 @@ namespace rcx {
 using utl::Logger;
 using utl::RCX;
 
-
-
-bool Ext::read_process(const std::string& name, const std::string& file) {
-  _ext->readProcess(name.c_str(), file.c_str());
-
-  return true;
-}
-
-bool Ext::rules_gen(const std::string& name, const std::string& dir,
-                    const std::string& file, bool write_to_solver,
-                    bool read_from_solver, bool run_solver, int pattern,
-                    bool keep_file, int len, int version, bool win) {
-
-  _ext->rulesGen(name.c_str(), dir.c_str(), file.c_str(), pattern,
-                 write_to_solver, read_from_solver, run_solver, keep_file, len, version, win);
-
-  return true;
-}
-
-bool Ext::metal_rules_gen(const std::string& name, const std::string& dir,
-                          const std::string& file, bool write_to_solver,
-                          bool read_from_solver, bool run_solver, int pattern,
-                          bool keep_file, int metal) {
-  _ext->metRulesGen(name.c_str(), dir.c_str(), file.c_str(), pattern,
-                    write_to_solver, read_from_solver, run_solver, keep_file,
-                    metal);
-  return true;
-}
-
-bool Ext::run_solver(const std::string& dir, int net, int shape) {
-  extMainOptions opt;
-  opt._topDir = dir.c_str();
-  uint netId = net;
-  int shapeId = shape;
-  _ext->runSolver(&opt, netId, shapeId);
-  return true;
-}
 // ----------------------------- dkf 092024 --------------------------------
 bool 
 Ext::init_rcx_model(const char*  corner_names, int metal_cnt)
