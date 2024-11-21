@@ -22,7 +22,9 @@ def report_flute_net(design, net):
     xs = [p[1] for p in pins]
     ys = [p[2] for p in pins]
     logger = design.getLogger()
-    tree = stt.flute(xs, ys, FLUTE_ACCURACY)
+    builder = design.getSteinerTreeBuilder()
+    flt = builder.getFlute()
+    tree = flt.flute(xs, ys, FLUTE_ACCURACY)
     stt.reportSteinerTree(tree, xs[drvr_index], ys[drvr_index], logger)
 
 

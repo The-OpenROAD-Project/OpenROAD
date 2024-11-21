@@ -51,9 +51,15 @@ SteinerTreeBuilder::SteinerTreeBuilder()
       min_fanout_alpha_({0, -1}),
       min_hpwl_alpha_({0, -1}),
       logger_(nullptr),
-      db_(nullptr)
+      db_(nullptr),
+      flute_(new flt::Flute())
 {
 }
+
+SteinerTreeBuilder::~SteinerTreeBuilder()
+{
+    delete flute_;
+};
 
 void SteinerTreeBuilder::init(odb::dbDatabase* db, Logger* logger)
 {
@@ -106,7 +112,7 @@ Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
     }
     // Fall back to flute if PD fails.
   }
-  return flt::flute(x, y, flute_accuracy);
+  return flute_->flute(x, y, flute_accuracy);
 }
 
 Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
@@ -114,7 +120,7 @@ Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
                                          const std::vector<int>& s,
                                          int accuracy)
 {
-  return flt::flutes(x, y, s, accuracy);
+  return flute_->flutes(x, y, s, accuracy);
 }
 
 static bool rectAreaZero(const odb::Rect& rect)
