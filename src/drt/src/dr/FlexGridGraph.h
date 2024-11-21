@@ -48,6 +48,7 @@ namespace drt {
 
 using frLayerCoordTrackPatternMap = boost::container::
     flat_map<frLayerNum, boost::container::flat_map<frCoord, frTrackPattern*>>;
+using frLayerDirMap = boost::container::flat_map<frLayerNum, dbTechLayerDir>;
 
 class FlexDRWorker;
 class FlexDRGraphics;
@@ -1291,21 +1292,18 @@ class FlexGridGraph
   void initTracks(const frDesign* design,
                   frLayerCoordTrackPatternMap& horLoc2TrackPatterns,
                   frLayerCoordTrackPatternMap& vertLoc2TrackPatterns,
-                  boost::container::flat_map<frLayerNum, dbTechLayerDir>&
-                      layerNum2PreRouteDir,
+                  frLayerDirMap& layerNum2PreRouteDir,
                   const Rect& bbox);
-  void initGrids(
-      const frLayerCoordTrackPatternMap& xMap,
-      const frLayerCoordTrackPatternMap& yMap,
-      const boost::container::flat_map<frLayerNum, dbTechLayerDir>& zMap,
-      bool followGuide);
-  void initEdges(
-      const frDesign* design,
-      frLayerCoordTrackPatternMap& xMap,
-      frLayerCoordTrackPatternMap& yMap,
-      const boost::container::flat_map<frLayerNum, dbTechLayerDir>& zMap,
-      const Rect& bbox,
-      bool initDR);
+  void initGrids(const frLayerCoordTrackPatternMap& xMap,
+                 const frLayerCoordTrackPatternMap& yMap,
+                 const frLayerDirMap& zMap,
+                 bool followGuide);
+  void initEdges(const frDesign* design,
+                 frLayerCoordTrackPatternMap& xMap,
+                 frLayerCoordTrackPatternMap& yMap,
+                 const frLayerDirMap& zMap,
+                 const Rect& bbox,
+                 bool initDR);
   frCost getEstCost(const FlexMazeIdx& src,
                     const FlexMazeIdx& dstMazeIdx1,
                     const FlexMazeIdx& dstMazeIdx2,

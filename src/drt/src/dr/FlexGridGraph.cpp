@@ -75,11 +75,10 @@ bool FlexGridGraph::isAccessPointLocation(frLayerNum layer_num,
   const auto& layer_maze_locs = ap_locs_[layer_num];
   return layer_maze_locs.find(Point(x_coord, y_coord)) != layer_maze_locs.end();
 }
-void FlexGridGraph::initGrids(
-    const frLayerCoordTrackPatternMap& xMap,
-    const frLayerCoordTrackPatternMap& yMap,
-    const boost::container::flat_map<frLayerNum, dbTechLayerDir>& zMap,
-    bool followGuide)
+void FlexGridGraph::initGrids(const frLayerCoordTrackPatternMap& xMap,
+                              const frLayerCoordTrackPatternMap& yMap,
+                              const frLayerDirMap& zMap,
+                              bool followGuide)
 {
   // initialize coord vectors
   initCoords(xMap, xCoords_);
@@ -214,13 +213,12 @@ bool FlexGridGraph::hasAlignedUpDefTrack(
   return false;
 }
 
-void FlexGridGraph::initEdges(
-    const frDesign* design,
-    frLayerCoordTrackPatternMap& xMap,
-    frLayerCoordTrackPatternMap& yMap,
-    const boost::container::flat_map<frLayerNum, dbTechLayerDir>& zMap,
-    const Rect& bbox,
-    bool initDR)
+void FlexGridGraph::initEdges(const frDesign* design,
+                              frLayerCoordTrackPatternMap& xMap,
+                              frLayerCoordTrackPatternMap& yMap,
+                              const frLayerDirMap& zMap,
+                              const Rect& bbox,
+                              bool initDR)
 {
   frMIdx xDim, yDim, zDim;
   getDim(xDim, yDim, zDim);
@@ -445,7 +443,7 @@ void FlexGridGraph::init(const frDesign* design,
   halfViaEncArea_ = &via_data->halfViaEncArea;
 
   // get tracks intersecting with the Maze bbox
-  boost::container::flat_map<frLayerNum, dbTechLayerDir> zMap;
+  frLayerDirMap zMap;
   size_t layerCount = design->getTech()->getLayers().size();
   zMap.reserve(layerCount);
 
@@ -462,8 +460,7 @@ void FlexGridGraph::initTracks(
     const frDesign* design,
     frLayerCoordTrackPatternMap& horLoc2TrackPatterns,
     frLayerCoordTrackPatternMap& vertLoc2TrackPatterns,
-    boost::container::flat_map<frLayerNum, dbTechLayerDir>&
-        layerNum2PreRouteDir,
+    frLayerDirMap& layerNum2PreRouteDir,
     const Rect& bbox)
 {
   for (auto& layer : getTech()->getLayers()) {
