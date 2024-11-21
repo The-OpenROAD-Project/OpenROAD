@@ -238,6 +238,10 @@ class HierRTLMP
 
   void correctAllMacrosOrientation();
   float calculateRealMacroWirelength(odb::dbInst* macro);
+  Boundary getClosestBoundary(const odb::Point& from,
+                              const std::set<Boundary>& boundaries);
+  int getDistanceToBoundary(const odb::Point& from, Boundary boundary);
+  odb::Point getClosestBoundaryPoint(const odb::Point& from, Boundary boundary);
   void adjustRealMacroOrientation(const bool& is_vertical_flip);
   void flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip);
 

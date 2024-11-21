@@ -115,6 +115,7 @@ struct PhysicalHierarchy
 
   // This is set according to the ppl -exclude constraints
   std::set<Boundary> blocked_boundaries;
+  std::set<Boundary> unblocked_boundaries;  // For orientation improvement.
 
   float halo_width{0.0f};
   float halo_height{0.0f};
@@ -183,7 +184,7 @@ class ClusteringEngine
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();
-  void setBlockedBoundariesForIOs();
+  void classifyBoundariesStateForIOs();
   std::map<Boundary, float> computeBlockageExtensionMap();
   Boundary getConstraintBoundary(const odb::Rect& die,
                                  const odb::Rect& constraint_region);

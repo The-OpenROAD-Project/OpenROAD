@@ -64,7 +64,7 @@ void ClusteringEngine::run()
   setBaseThresholds();
 
   createIOClusters();
-  setBlockedBoundariesForIOs();
+  classifyBoundariesStateForIOs();
 
   createDataFlow();
 
@@ -414,7 +414,7 @@ void ClusteringEngine::createIOCluster(
   tree_->root->addChild(std::move(cluster));
 }
 
-void ClusteringEngine::setBlockedBoundariesForIOs()
+void ClusteringEngine::classifyBoundariesStateForIOs()
 {
   const float blocked_boundary_threshold = 0.7;
   std::map<Boundary, float> blockage_extension_map
@@ -423,6 +423,8 @@ void ClusteringEngine::setBlockedBoundariesForIOs()
   for (const auto [boundary, blockage_extension] : blockage_extension_map) {
     if (blockage_extension >= blocked_boundary_threshold) {
       tree_->blocked_boundaries.insert(boundary);
+    } else {
+      tree_->unblocked_boundaries.insert(boundary);
     }
   }
 }

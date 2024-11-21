@@ -3969,6 +3969,25 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
           int y = constraint_region->yCenter();
           odb::Rect region_rect(x, y, x, y);
           net_box.merge(region_rect);
+        } else {
+          odb::Point bterm_location(bterm->getBBox().xCenter(),
+                                    bterm->getBBox().yCenter());
+          Boundary closest_boundary
+              = getClosestBoundary(bterm_location, tree_->unblocked_boundaries);
+
+          // As we classify the blocked/unblocked state of the boundary based on
+          // the extension of the -exclude constraint, it's possible to have
+          // all boundaries blocked for IOs even though there are small
+          // unblocked spaces in those boundaries. For this situation, we just
+          // skip IOs without constraint regions.
+          if (closest_boundary == NONE) {
+            continue;
+          }
+
+          odb::Point closest_point
+              = getClosestBoundaryPoint(bterm_location, closest_boundary);
+          odb::Rect closest_point_rect(closest_point, closest_point);
+          net_box.merge(closest_point_rect);
         }
       }
 
@@ -3977,6 +3996,65 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
   }
 
   return wirelength;
+}
+
+// Search the given boundaries list for the closest boundary to the point.
+Boundary HierRTLMP::getClosestBoundary(const odb::Point& from,
+                                       const std::set<Boundary>& boundaries)
+{
+  Boundary closest_boundary = NONE;
+  int shortest_distance = std::numeric_limits<int>::max();
+
+  for (const Boundary boundary : boundaries) {
+    const int dist_to_boundary = getDistanceToBoundary(from, boundary);
+    if (dist_to_boundary < shortest_distance) {
+      shortest_distance = dist_to_boundary;
+      closest_boundary = boundary;
+    }
+  }
+
+  return closest_boundary;
+}
+
+int HierRTLMP::getDistanceToBoundary(const odb::Point& from,
+                                     const Boundary boundary)
+{
+  int distance = 0;
+
+  if (boundary == L) {
+    distance = from.x() - block_->getDieArea().xMin();
+  } else if (boundary == R) {
+    distance = from.x() - block_->getDieArea().xMax();
+  } else if (boundary == B) {
+    distance = from.y() - block_->getDieArea().yMin();
+  } else if (boundary == T) {
+    distance = from.y() - block_->getDieArea().yMax();
+  }
+
+  return std::abs(distance);
+}
+
+odb::Point HierRTLMP::getClosestBoundaryPoint(const odb::Point& from,
+                                              const Boundary boundary)
+{
+  odb::Point closest_boundary_point;
+  const odb::Rect& die = block_->getDieArea();
+
+  if (boundary == L) {
+    closest_boundary_point.setX(die.xMin());
+    closest_boundary_point.setY(from.y());
+  } else if (boundary == R) {
+    closest_boundary_point.setX(die.xMax());
+    closest_boundary_point.setY(from.y());
+  } else if (boundary == B) {
+    closest_boundary_point.setX(from.x());
+    closest_boundary_point.setY(die.yMin());
+  } else {  // Top
+    closest_boundary_point.setX(from.x());
+    closest_boundary_point.setY(die.yMax());
+  }
+
+  return closest_boundary_point;
 }
 
 void HierRTLMP::flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip)
