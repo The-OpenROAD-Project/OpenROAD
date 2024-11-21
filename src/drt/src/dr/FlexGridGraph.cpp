@@ -42,9 +42,7 @@ void FlexGridGraph::addAccessPointLocation(frLayerNum layer_num,
   ap_locs_[layer_num].insert(Point(x_coord, y_coord));
 }
 
-void initCoords(const boost::container::flat_map<
-                    frLayerNum,
-                    boost::container::flat_map<frCoord, frTrackPattern*>>& map,
+void initCoords(const frLayerCoordTrackPatternMap& map,
                 std::vector<frCoord>& coords)
 {
   coords.clear();
@@ -78,12 +76,8 @@ bool FlexGridGraph::isAccessPointLocation(frLayerNum layer_num,
   return layer_maze_locs.find(Point(x_coord, y_coord)) != layer_maze_locs.end();
 }
 void FlexGridGraph::initGrids(
-    const boost::container::flat_map<
-        frLayerNum,
-        boost::container::flat_map<frCoord, frTrackPattern*>>& xMap,
-    const boost::container::flat_map<
-        frLayerNum,
-        boost::container::flat_map<frCoord, frTrackPattern*>>& yMap,
+    const frLayerCoordTrackPatternMap& xMap,
+    const frLayerCoordTrackPatternMap& yMap,
     const boost::container::flat_map<frLayerNum, dbTechLayerDir>& zMap,
     bool followGuide)
 {
@@ -222,12 +216,8 @@ bool FlexGridGraph::hasAlignedUpDefTrack(
 
 void FlexGridGraph::initEdges(
     const frDesign* design,
-    boost::container::flat_map<
-        frLayerNum,
-        boost::container::flat_map<frCoord, frTrackPattern*>>& xMap,
-    boost::container::flat_map<
-        frLayerNum,
-        boost::container::flat_map<frCoord, frTrackPattern*>>& yMap,
+    frLayerCoordTrackPatternMap& xMap,
+    frLayerCoordTrackPatternMap& yMap,
     const boost::container::flat_map<frLayerNum, dbTechLayerDir>& zMap,
     const Rect& bbox,
     bool initDR)
@@ -443,18 +433,13 @@ void FlexGridGraph::initEdges(
 }
 
 // initialization: update grid graph topology, does not assign edge cost
-void FlexGridGraph::init(
-    const frDesign* design,
-    const Rect& routeBBox,
-    const Rect& extBBox,
-    boost::container::flat_map<
-        frLayerNum,
-        boost::container::flat_map<frCoord, frTrackPattern*>>& xMap,
-    boost::container::flat_map<
-        frLayerNum,
-        boost::container::flat_map<frCoord, frTrackPattern*>>& yMap,
-    bool initDR,
-    bool followGuide)
+void FlexGridGraph::init(const frDesign* design,
+                         const Rect& routeBBox,
+                         const Rect& extBBox,
+                         frLayerCoordTrackPatternMap& xMap,
+                         frLayerCoordTrackPatternMap& yMap,
+                         bool initDR,
+                         bool followGuide)
 {
   auto* via_data = getDRWorker()->getViaData();
   halfViaEncArea_ = &via_data->halfViaEncArea;
@@ -475,14 +460,8 @@ void FlexGridGraph::init(
 // get all tracks intersecting with the Maze bbox, left/bottom are inclusive
 void FlexGridGraph::initTracks(
     const frDesign* design,
-    boost::container::flat_map<
-        frLayerNum,
-        boost::container::flat_map<frCoord, frTrackPattern*>>&
-        horLoc2TrackPatterns,
-    boost::container::flat_map<
-        frLayerNum,
-        boost::container::flat_map<frCoord, frTrackPattern*>>&
-        vertLoc2TrackPatterns,
+    frLayerCoordTrackPatternMap& horLoc2TrackPatterns,
+    frLayerCoordTrackPatternMap& vertLoc2TrackPatterns,
     boost::container::flat_map<frLayerNum, dbTechLayerDir>&
         layerNum2PreRouteDir,
     const Rect& bbox)

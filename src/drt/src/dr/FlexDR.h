@@ -729,29 +729,14 @@ class FlexDRWorker
   void initNets_boundaryArea();
 
   void initGridGraph(const frDesign* design);
-  void initTrackCoords(
-      boost::container::flat_map<
-          frCoord,
-          boost::container::flat_map<frLayerNum, frTrackPattern*>>& xMap,
-      boost::container::flat_map<
-          frCoord,
-          boost::container::flat_map<frLayerNum, frTrackPattern*>>& yMap);
-  void initTrackCoords_route(
-      drNet* net,
-      boost::container::flat_map<
-          frCoord,
-          boost::container::flat_map<frLayerNum, frTrackPattern*>>& xMap,
-      boost::container::flat_map<
-          frCoord,
-          boost::container::flat_map<frLayerNum, frTrackPattern*>>& yMap);
-  void initTrackCoords_pin(
-      drNet* net,
-      boost::container::flat_map<
-          frCoord,
-          boost::container::flat_map<frLayerNum, frTrackPattern*>>& xMap,
-      boost::container::flat_map<
-          frCoord,
-          boost::container::flat_map<frLayerNum, frTrackPattern*>>& yMap);
+  void initTrackCoords(frLayerCoordTrackPatternMap& xMap,
+                       frLayerCoordTrackPatternMap& yMap);
+  void initTrackCoords_route(drNet* net,
+                             frLayerCoordTrackPatternMap& xMap,
+                             frLayerCoordTrackPatternMap& yMap);
+  void initTrackCoords_pin(drNet* net,
+                           frLayerCoordTrackPatternMap& xMap,
+                           frLayerCoordTrackPatternMap& yMap);
   void initMazeIdx();
   void initMazeIdx_connFig(drConnFig* connFig);
   void initMazeIdx_ap(drAccessPattern* ap);

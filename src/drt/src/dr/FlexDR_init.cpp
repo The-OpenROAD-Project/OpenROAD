@@ -1577,14 +1577,9 @@ void FlexDRWorker::initNets(const frDesign* design)
   }
 }
 
-void FlexDRWorker::initTrackCoords_route(
-    drNet* net,
-    boost::container::flat_map<
-        frLayerNum,
-        boost::container::flat_map<frCoord, frTrackPattern*>>& xMap,
-    boost::container::flat_map<
-        frLayerNum,
-        boost::container::flat_map<frCoord, frTrackPattern*>>& yMap)
+void FlexDRWorker::initTrackCoords_route(drNet* net,
+                                         frLayerCoordTrackPatternMap& xMap,
+                                         frLayerCoordTrackPatternMap& yMap)
 {
   // add for routes
   std::vector<drConnFig*> allObjs;
@@ -1690,14 +1685,9 @@ void FlexDRWorker::initTrackCoords_route(
   }
 }
 
-void FlexDRWorker::initTrackCoords_pin(
-    drNet* net,
-    boost::container::flat_map<
-        frLayerNum,
-        boost::container::flat_map<frCoord, frTrackPattern*>>& xMap,
-    boost::container::flat_map<
-        frLayerNum,
-        boost::container::flat_map<frCoord, frTrackPattern*>>& yMap)
+void FlexDRWorker::initTrackCoords_pin(drNet* net,
+                                       frLayerCoordTrackPatternMap& xMap,
+                                       frLayerCoordTrackPatternMap& yMap)
 {
   // add for aps
   for (auto& pin : net->getPins()) {
@@ -1729,13 +1719,8 @@ void FlexDRWorker::initTrackCoords_pin(
   }
 }
 
-void FlexDRWorker::initTrackCoords(
-    boost::container::flat_map<
-        frLayerNum,
-        boost::container::flat_map<frCoord, frTrackPattern*>>& xMap,
-    boost::container::flat_map<
-        frLayerNum,
-        boost::container::flat_map<frCoord, frTrackPattern*>>& yMap)
+void FlexDRWorker::initTrackCoords(frLayerCoordTrackPatternMap& xMap,
+                                   frLayerCoordTrackPatternMap& yMap)
 {
   // add boundary points
   // lNum = -10 to indicate routeBox and extBox frCoord
@@ -1759,12 +1744,8 @@ void FlexDRWorker::initTrackCoords(
 void FlexDRWorker::initGridGraph(const frDesign* design)
 {
   // get all track coords based on existing objs and aps
-  boost::container::
-      flat_map<frLayerNum, boost::container::flat_map<frCoord, frTrackPattern*>>
-          xMap;
-  boost::container::
-      flat_map<frLayerNum, boost::container::flat_map<frCoord, frTrackPattern*>>
-          yMap;
+  frLayerCoordTrackPatternMap xMap;
+  frLayerCoordTrackPatternMap yMap;
   size_t layerCount = design->getTech()->getLayers().size();
   xMap.reserve(layerCount + 1);
   yMap.reserve(layerCount + 1);

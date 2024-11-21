@@ -46,6 +46,9 @@
 
 namespace drt {
 
+using frLayerCoordTrackPatternMap = boost::container::
+    flat_map<frLayerNum, boost::container::flat_map<frCoord, frTrackPattern*>>;
+
 class FlexDRWorker;
 class FlexDRGraphics;
 class FlexGridGraph
@@ -940,12 +943,8 @@ class FlexGridGraph
   void init(const frDesign* design,
             const Rect& routeBBox,
             const Rect& extBBox,
-            boost::container::flat_map<
-                frCoord,
-                boost::container::flat_map<frLayerNum, frTrackPattern*>>& xMap,
-            boost::container::flat_map<
-                frCoord,
-                boost::container::flat_map<frLayerNum, frTrackPattern*>>& yMap,
+            frLayerCoordTrackPatternMap& xMap,
+            frLayerCoordTrackPatternMap& yMap,
             bool initDR,
             bool followGuide);
   void print() const;
@@ -1290,34 +1289,20 @@ class FlexGridGraph
   }
   // internal init utility
   void initTracks(const frDesign* design,
-                  boost::container::flat_map<
-                      frCoord,
-                      boost::container::flat_map<frLayerNum, frTrackPattern*>>&
-                      horLoc2TrackPatterns,
-                  boost::container::flat_map<
-                      frCoord,
-                      boost::container::flat_map<frLayerNum, frTrackPattern*>>&
-                      vertLoc2TrackPatterns,
+                  frLayerCoordTrackPatternMap& horLoc2TrackPatterns,
+                  frLayerCoordTrackPatternMap& vertLoc2TrackPatterns,
                   boost::container::flat_map<frLayerNum, dbTechLayerDir>&
                       layerNum2PreRouteDir,
                   const Rect& bbox);
   void initGrids(
-      const boost::container::flat_map<
-          frCoord,
-          boost::container::flat_map<frLayerNum, frTrackPattern*>>& xMap,
-      const boost::container::flat_map<
-          frCoord,
-          boost::container::flat_map<frLayerNum, frTrackPattern*>>& yMap,
+      const frLayerCoordTrackPatternMap& xMap,
+      const frLayerCoordTrackPatternMap& yMap,
       const boost::container::flat_map<frLayerNum, dbTechLayerDir>& zMap,
       bool followGuide);
   void initEdges(
       const frDesign* design,
-      boost::container::flat_map<
-          frCoord,
-          boost::container::flat_map<frLayerNum, frTrackPattern*>>& xMap,
-      boost::container::flat_map<
-          frCoord,
-          boost::container::flat_map<frLayerNum, frTrackPattern*>>& yMap,
+      frLayerCoordTrackPatternMap& xMap,
+      frLayerCoordTrackPatternMap& yMap,
       const boost::container::flat_map<frLayerNum, dbTechLayerDir>& zMap,
       const Rect& bbox,
       bool initDR);
