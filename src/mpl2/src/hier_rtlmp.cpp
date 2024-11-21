@@ -934,7 +934,9 @@ void HierRTLMP::setPinAccessBlockages()
 
   for (Cluster* io_cluster : io_clusters) {
     Boundary constraint_boundary = io_cluster->getConstraintBoundary();
-    createPinAccessBlockage(constraint_boundary, depth, die);
+    if (constraint_boundary != NONE) {
+      createPinAccessBlockage(constraint_boundary, depth, die);
+    }
   }
 
   if (boundary_to_io_blockage_.empty()) {
