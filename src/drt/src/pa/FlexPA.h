@@ -595,6 +595,25 @@ class FlexPA
                   int curr_unique_inst_idx,
                   int max_access_point_size);
 
+  /**
+   * @brief Extracts the access patterns given the graph nodes composing the
+   * access points relationship
+   *
+   * @param nodes {pin,access_point} nodes of the access pattern graph
+   * @param pins vector of pins of the unique instance
+   * @param used_access_points a set of all used access points
+   * @param max_access_point_size the maximum number of access points across
+   * all instances
+   *
+   * @returns a vector of ints representing the access pattern in the form:
+   * access_pattern[pin_idx] = access_point_idx of the pin
+   */
+  std::vector<int> extractAccessPatternFromNodes(
+      const std::vector<FlexDPNode>& nodes,
+      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
+      std::set<std::pair<int, int>>& used_access_points,
+      int max_access_point_size);
+
   bool genPatterns_commit(
       const std::vector<FlexDPNode>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
