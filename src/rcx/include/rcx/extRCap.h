@@ -958,6 +958,7 @@ class extRCModel
 
   extMain* _extMain;
 
+ protected:
   Logger* logger_;
 };
 

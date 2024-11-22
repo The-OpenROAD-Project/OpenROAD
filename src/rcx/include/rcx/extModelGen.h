@@ -51,7 +51,8 @@ class extModelGen : public extRCModel
                        bool binary,
                        uint modelCnt);
   static std::list<std::string> GetCornerNames(const char* filename,
-                                               double& version);
+                                               double& version,
+                                               Logger* logger);
 
   // ----------------------------------- DKF 09212024
   // ---------------------------------------

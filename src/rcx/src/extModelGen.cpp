@@ -519,8 +519,8 @@ uint extModelGen::ReadRCDB(dbBlock* block,
   sprintf(buff, "%s.debug.log", logFilePrefix);
   FILE* dbg_logFP = fopen(buff, "w");
 
-  Ath__parser* p = new Ath__parser(NULL);
-  Ath__parser* w = new Ath__parser(NULL);
+  Ath__parser* p = new Ath__parser(logger_);
+  Ath__parser* w = new Ath__parser(logger_);
 
   int prev_sep = 0;
   int prev_width = 0;
@@ -785,11 +785,12 @@ uint extModelGen::ReadRCDB(dbBlock* block,
 }
 
 std::list<std::string> extModelGen::GetCornerNames(const char* filename,
-                                                   double& version)
+                                                   double& version,
+                                                   Logger* logger)
 {
   bool dbg = false;
   std::list<std::string> corner_list;
-  Ath__parser parser(NULL);
+  Ath__parser parser(logger);
   // parser.setDbg(1);
   parser.addSeparator("\r");
   parser.openFile((char*) filename);

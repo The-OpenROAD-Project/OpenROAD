@@ -466,7 +466,7 @@ bool Ext::gen_rcx_model(const std::string& spef_file_list,
     logger_->error(
         RCX, 145, "\nCorner List option -corner_list  is required\n");
 
-  Ath__parser parser(NULL);
+  Ath__parser parser(logger_);
   int n = parser.mkWords(spef_file_list.c_str());
 
   std::list<std::string> file_list;
@@ -499,7 +499,7 @@ bool Ext::define_rcx_corners(const std::string& corner_list)
 
   _ext->setBlockFromChip();
 
-  Ath__parser parser(NULL);
+  Ath__parser parser(logger_);
   int n1 = parser.mkWords(corner_list.c_str());
   for (int ii = 0; ii < n1; ii++) {
     const char* name = parser.get(ii);
@@ -515,7 +515,7 @@ bool Ext::rc_estimate(const std::string& ext_model_file,
 
   double version = 0.0;
   std::list<std::string> corner_list
-      = extModelGen::GetCornerNames(ext_model_file.c_str(), version);
+      = extModelGen::GetCornerNames(ext_model_file.c_str(), version, logger_);
   uint extDbCnt = corner_list.size();
 
   uint cornerTable[10];
@@ -546,11 +546,11 @@ bool Ext::rc_estimate(const std::string& ext_model_file,
 
   return true;
 }
-bool Ext::get_model_corners(const std::string& ext_model_file)
+bool Ext::get_model_corners(const std::string& ext_model_file, Logger* logger)
 {
   double version = 0.0;
   std::list<std::string> corner_list
-      = extModelGen::GetCornerNames(ext_model_file.c_str(), version);
+      = extModelGen::GetCornerNames(ext_model_file.c_str(), version, logger);
   // out_args->corner_list(corner_list);
 
   std::list<std::string>::iterator it;

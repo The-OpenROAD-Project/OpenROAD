@@ -69,7 +69,8 @@ class Ext
                      const std::string& version,
                      int pattern);
   bool define_rcx_corners(const std::string& corner_list);
-  static bool get_model_corners(const std::string& ext_model_file);
+  static bool get_model_corners(const std::string& ext_model_file,
+                                Logger* logger);
   bool rc_estimate(const std::string& ext_model_file,
                    const std::string& out_file_prefix);
 

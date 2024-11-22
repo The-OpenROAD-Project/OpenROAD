@@ -67,12 +67,18 @@ bool Ext::read_rcx_tables(const char* corner,
                           bool diag)
 {
   extRCModel* m = _ext->getCurrentModel();
+  if (!m) {
+    logger_->error(RCX, 513, "No model present.");
+  }
   m->readRCvalues(corner, filename, wire, over, under, over_under, diag);
   return true;
 }
 bool Ext::write_rcx_model(const char* filename)
 {
   extRCModel* m = _ext->getCurrentModel();
+  if (!m) {
+    logger_->error(RCX, 512, "No model to write.");
+  }
   std::list<std::string> corner_list;
   m->getCorners(corner_list);
 

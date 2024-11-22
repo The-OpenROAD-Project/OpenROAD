@@ -38,6 +38,9 @@
 
 namespace ord {
 // Defined in OpenRoad.i
+utl::Logger *
+getLogger();
+
 rcx::Ext*
 getOpenRCX();
 
@@ -46,6 +49,7 @@ getOpenRoad();
 
 }
 using namespace rcx;
+using ord::getLogger;
 using ord::getOpenRCX;
 using rcx::Ext;
 %}
@@ -231,7 +235,7 @@ get_model_corners(const char *ext_model_file)
 {
   Ext* ext = getOpenRCX();
   
-  ext->get_model_corners(ext_model_file);
+  ext->get_model_corners(ext_model_file, getLogger());
 }
 void
 rc_estimate(const char *ext_model_file, const char *out_file_prefix)

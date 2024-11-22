@@ -1873,7 +1873,7 @@ double extVariation::getP(double w)
 void extProcess::writeProcess(const char* filename)
 {
   FILE* fp = openFile(filename, "w");
-  Ath__parser parse(NULL);
+  Ath__parser parse(logger_);
 
   for (uint kk = 1; kk < _varTable->getCnt(); kk++) {
     _varTable->get(kk)->printVariation(fp, kk);
@@ -2070,7 +2070,7 @@ uint extProcess::readProcess(const char* name, char* filename)
   // create process object
 
   // read process numbers
-  Ath__parser parser(NULL);
+  Ath__parser parser(logger_);
   parser.addSeparator("\r");
   parser.openFile(filename);
 

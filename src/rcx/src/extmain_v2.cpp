@@ -980,7 +980,7 @@ extRCModel* extMain::createCornerMap(const char* rulesFileName)
     // All Model file process corners will  be extracted
     double version = 0.0;
     std::list<std::string> corner_list
-        = extModelGen::GetCornerNames(rulesFileName, version);
+        = extModelGen::GetCornerNames(rulesFileName, version, logger_);
     std::list<std::string>::iterator it;
     for (it = corner_list.begin(); it != corner_list.end(); ++it) {
       std::string str = *it;
