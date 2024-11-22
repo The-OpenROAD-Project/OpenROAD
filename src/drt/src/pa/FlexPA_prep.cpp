@@ -2712,17 +2712,17 @@ bool FlexPA::genPatterns_commit(
       auto rvia = via.get();
       temp_vias.push_back(std::move(via));
 
-        dbTransform xform = inst->getNoRotationTransform();
-        Point pt(access_point->getPoint());
-        xform.apply(pt);
-        rvia->setOrigin(pt);
-        if (inst_term->hasNet()) {
-          objs.emplace_back(rvia, inst_term->getNet());
-        } else {
-          objs.emplace_back(rvia, inst_term);
-        }
+      dbTransform xform = inst->getNoRotationTransform();
+      Point pt(access_point->getPoint());
+      xform.apply(pt);
+      rvia->setOrigin(pt);
+      if (inst_term->hasNet()) {
+        objs.emplace_back(rvia, inst_term->getNet());
+      } else {
+        objs.emplace_back(rvia, inst_term);
       }
     }
+  }
 
   frAccessPoint* left_access_point = nullptr;
   frAccessPoint* right_access_point = nullptr;
