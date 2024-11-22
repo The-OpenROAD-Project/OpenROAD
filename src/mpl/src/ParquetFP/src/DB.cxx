@@ -1800,7 +1800,7 @@ float DB::evalSteiner(bool useWts, bool scaleTerms)
 
   float total = 0.f;
   vector<Point> pointsOnNet;
-  Flute f = Flute();
+  Flute flute;
 
   for (itNet net = _nets->netsBegin(); net != _nets->netsEnd(); ++net) {
     pointsOnNet.clear();
@@ -1896,7 +1896,7 @@ float DB::evalSteiner(bool useWts, bool scaleTerms)
         flute_x[i] = static_cast<double>(pointsOnNet[i].x);
         flute_y[i] = static_cast<double>(pointsOnNet[i].y);
       }
-      Tree flutetree = f.flute(pointsOnNet.size(), flute_x, flute_y, ACCURACY);
+      Tree flutetree = flute.flute(pointsOnNet.size(), flute_x, flute_y, ACCURACY);
       if (useWts) {
         total += net->getWeight() * static_cast<float>(flutetree.length);
       } else {
