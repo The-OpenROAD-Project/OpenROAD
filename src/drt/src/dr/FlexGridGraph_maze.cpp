@@ -32,7 +32,7 @@
 
 namespace drt {
 
-int debugMazeIter = std::numeric_limits<int>::max();
+const int debugMazeIter = std::numeric_limits<int>::max();
 void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
                            const frDirEnum& dir,
                            const FlexMazeIdx& dstMazeIdx1,
