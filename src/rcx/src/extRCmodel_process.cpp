@@ -519,8 +519,10 @@ uint extRCModel::linesUnder(uint wireCnt,
   return cnt;
 }
 
-void extRCModel::setOptions(const char* topDir, const char* pattern,
-                            bool keepFile, uint metLevel) 
+void extRCModel::setOptions(const char* topDir,
+                            const char* pattern,
+                            bool keepFile,
+                            uint metLevel)
 {
   _logFP = openFile("./", "rulesGen", ".log", "w");
   strcpy(_topDir, topDir);
@@ -592,15 +594,22 @@ uint extRCModel::linesOverUnder(uint wireCnt,
   closeCapLogFile();
   return cnt;
 }
-uint extMain::rulesGen(const char* name, const char* topDir,
-                       const char* rulesFile, int pattern, bool keepFile, int wLen,  int version, bool win) {
+uint extMain::rulesGen(const char* name,
+                       const char* topDir,
+                       const char* rulesFile,
+                       int pattern,
+                       bool keepFile,
+                       int wLen,
+                       int version,
+                       bool win)
+{
   extRCModel* m = _modelTable->get(0);
 
   m->setOptions(topDir, name, keepFile);
-  m->_winDirFlat= win;
-  m->_len= wLen;
-  m->_simVersion=version;
-  m->_maxLevelDist= 999;
+  m->_winDirFlat = win;
+  m->_len = wLen;
+  m->_simVersion = version;
+  m->_maxLevelDist = 999;
 
   if ((pattern > 0) && (pattern <= 9))
     m->linesOver(pattern, 20, 20, 20);

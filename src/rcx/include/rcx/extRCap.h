@@ -647,30 +647,58 @@ class extRCModel
   int _len;
   int _simVersion;
   int _maxLevelDist;
-  FILE *_filesFP;
+  FILE* _filesFP;
 
   bool measurePatternVar_3D(extMeasure* m,
-                                      double top_width,
-                                      double bot_width,
-                                      double thickness,
-                                      uint wireCnt,
-                                      char* wiresNameSuffix,
-                                      double res);
+                            double top_width,
+                            double bot_width,
+                            double thickness,
+                            uint wireCnt,
+                            char* wiresNameSuffix,
+                            double res);
   uint measureWithVar(extMeasure* measure);
   uint measureDiagWithVar(extMeasure* measure);
-  uint linesOver(uint wireCnt, uint widthCnt, uint spaceCnt, uint dCnt, uint metLevel=0);
-  uint linesOverUnder(uint wireCnt, uint widthCnt, uint spaceCnt, uint dCnt, uint metLevel=0);
-  uint linesDiagUnder(uint wireCnt, uint widthCnt, uint spaceCnt, uint dCnt, uint metLevel=0);
-  uint linesUnder(uint wireCnt, uint widthCnt, uint spaceCnt, uint dCnt, uint metLevel=0);
-  void setOptions(const char* topDir, const char* pattern,
-                            bool keepFile, uint metLevel);
-  void writeRuleWires(FILE* fp, extMeasure* measure, uint wireCnt) ;
+  uint linesOver(uint wireCnt,
+                 uint widthCnt,
+                 uint spaceCnt,
+                 uint dCnt,
+                 uint metLevel = 0);
+  uint linesOverUnder(uint wireCnt,
+                      uint widthCnt,
+                      uint spaceCnt,
+                      uint dCnt,
+                      uint metLevel = 0);
+  uint linesDiagUnder(uint wireCnt,
+                      uint widthCnt,
+                      uint spaceCnt,
+                      uint dCnt,
+                      uint metLevel = 0);
+  uint linesUnder(uint wireCnt,
+                  uint widthCnt,
+                  uint spaceCnt,
+                  uint dCnt,
+                  uint metLevel = 0);
+  void setOptions(const char* topDir,
+                  const char* pattern,
+                  bool keepFile,
+                  uint metLevel);
+  void writeRuleWires(FILE* fp, extMeasure* measure, uint wireCnt);
   void writeWires2_3D(FILE* fp, extMeasure* measure, uint wireCnt);
-  void writeWires(FILE* fp, extMeasure* measure, uint wireCnt) ;
+  void writeWires(FILE* fp, extMeasure* measure, uint wireCnt);
 
-     double writeWirePatterns(FILE* fp, extMeasure* measure, uint wireCnt, double height_offset, double &len, double &max_x);
-double writeWirePatterns_w3(FILE* fp, extMeasure* measure, uint wireCnt, double height_offset, double &len, double &max_x) ;
-   // ------------------------------------------------------------------
+  double writeWirePatterns(FILE* fp,
+                           extMeasure* measure,
+                           uint wireCnt,
+                           double height_offset,
+                           double& len,
+                           double& max_x);
+  double writeWirePatterns_w3(FILE* fp,
+                              extMeasure* measure,
+                              uint wireCnt,
+                              double height_offset,
+                              double& len,
+                              double& max_x);
+  // ------------------------------------------------------------------
 
   extMetRCTable* getMetRCTable(uint ii) { return _modelTable[ii]; };
 
@@ -737,9 +765,7 @@ double writeWirePatterns_w3(FILE* fp, extMeasure* measure, uint wireCnt, double 
   void writeWires2(FILE* fp, extMeasure* measure, uint wireCnt);
   int writeBenchWires(FILE* fp, extMeasure* measure);
   void setOptions(const char* topDir, const char* pattern);
-  void setOptions(const char* topDir,
-                  const char* pattern,
-                  bool keepFile);
+  void setOptions(const char* topDir, const char* pattern, bool keepFile);
   void cleanFiles();
 
   extDistRC* measurePattern(uint met,
@@ -1698,7 +1724,7 @@ class extMain
   extSolverGen* _currentSolverGen;
 
   // v2 -----------------------------------------------------
-  
+
   uint getPeakMemory(const char* msg, int n = -1);
 
   void setupBoundaries(BoundaryData& bounds, const Rect& extRect);
@@ -1776,9 +1802,14 @@ class extMain
   void setExtControl_v2(AthPool<SEQ>* seqPool);
 
   // --------------------- dkf 092024 ------------------------
-   extRCModel* getCurrentModel() { return _currentModel; }
-   void setCurrentModel(extRCModel* m) { _currentModel= m; }
-   uint GenExtModel(std::list<std::string> spef_file_list, std::list<std::string> corner_list, const char *out_file, const char *comment, const char *version, int pattern);
+  extRCModel* getCurrentModel() { return _currentModel; }
+  void setCurrentModel(extRCModel* m) { _currentModel = m; }
+  uint GenExtModel(std::list<std::string> spef_file_list,
+                   std::list<std::string> corner_list,
+                   const char* out_file,
+                   const char* comment,
+                   const char* version,
+                   int pattern);
   // CLEANUP dkf 10242024 ----------------------------------
 
   uint benchVerilog_bterms(FILE* fp,
@@ -1838,10 +1869,16 @@ class extMain
   void setCurrentSolverGen(extSolverGen* p) { _currentSolverGen = p; }
 
   // --------------------- dkf 092024 ------------------------
-   // DKF 07/25/24 -- 3d pattern generation
-    uint rulesGen(const char* name, const char* topDir,
-                       const char* rulesFile, int pattern, bool keepFile, int wLen,  int version, bool win);
-    uint readProcess(const char* name, const char* filename);
+  // DKF 07/25/24 -- 3d pattern generation
+  uint rulesGen(const char* name,
+                const char* topDir,
+                const char* rulesFile,
+                int pattern,
+                bool keepFile,
+                int wLen,
+                int version,
+                bool win);
+  uint readProcess(const char* name, const char* filename);
 
   void init(odb::dbDatabase* db, Logger* logger);
   double getTotalCouplingCap(odb::dbNet* net,

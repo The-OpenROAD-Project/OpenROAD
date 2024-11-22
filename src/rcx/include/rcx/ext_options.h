@@ -34,37 +34,37 @@
 #define EXT_OPTIONS_H
 
 struct BenchWiresOptions
-  {
-    const char* block = "blk";
-    int over_dist = 100;
-    int under_dist = 100;
-    int met_cnt = 1000;
-    int met = -1;
-    int over_met = -1;
-    int under_met = -1;
-    int len = 200;
-    int cnt = 5;
-    const char* w = "1";
-    const char* s = "1";
-    const char* th = "1";
-    const char* d = "0.0";
-    const char* w_list = "1";
-    const char* s_list = "1 2 2.5 3 3.5 4 4.5 5 6 8 10 12";
-    const char* th_list = "0 1 2 2.5 3 3.5 4 4.5 5 6 8 10 12";
-    const char* grid_list = "";
-    bool default_lef_rules = false;
-    bool nondefault_lef_rules = false;
-    const char* dir = "./Bench";
-    bool Over = false;
-    bool db_only = false;
-    bool v1 = false;
-    bool ddd = false;
-    bool multiple_widths = false;
-    bool diag = false;
-    bool over_under = false;
-    bool gen_def_patterns = false;
-    bool resPatterns = false;
-  };
+{
+  const char* block = "blk";
+  int over_dist = 100;
+  int under_dist = 100;
+  int met_cnt = 1000;
+  int met = -1;
+  int over_met = -1;
+  int under_met = -1;
+  int len = 200;
+  int cnt = 5;
+  const char* w = "1";
+  const char* s = "1";
+  const char* th = "1";
+  const char* d = "0.0";
+  const char* w_list = "1";
+  const char* s_list = "1 2 2.5 3 3.5 4 4.5 5 6 8 10 12";
+  const char* th_list = "0 1 2 2.5 3 3.5 4 4.5 5 6 8 10 12";
+  const char* grid_list = "";
+  bool default_lef_rules = false;
+  bool nondefault_lef_rules = false;
+  const char* dir = "./Bench";
+  bool Over = false;
+  bool db_only = false;
+  bool v1 = false;
+  bool ddd = false;
+  bool multiple_widths = false;
+  bool diag = false;
+  bool over_under = false;
+  bool gen_def_patterns = false;
+  bool resPatterns = false;
+};
 
 struct ExtractOptions
 {
