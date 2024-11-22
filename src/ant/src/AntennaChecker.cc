@@ -1111,6 +1111,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
     for (odb::dbNet* net : block_->getNets()) {
       if (!net->isSpecial()) {
         nets_.push_back(net);
+        net_to_report_[net];
       }
     }
     omp_set_num_threads(num_threads);
