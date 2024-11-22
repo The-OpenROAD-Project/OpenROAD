@@ -11,7 +11,8 @@ _versionCompare() {
 }
 
 _equivalenceDeps() {
-    yosysVersion=yosys-0.43
+    yosysVersion=0.47
+    eqyYosysVersion=yosys-0.47
 
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}
@@ -29,7 +30,7 @@ _equivalenceDeps() {
     eqyPrefix=${PREFIX:-"/usr/local"}
     if ! command -v eqy &> /dev/null; then (
         cd "${baseDir}"
-        git clone --depth=1 -b "${yosysVersion}" https://github.com/YosysHQ/eqy
+        git clone --depth=1 -b "${eqyYosysVersion}" https://github.com/YosysHQ/eqy
         cd eqy
         export PATH="${yosysPrefix}/bin:${PATH}"
         make -j $(nproc) PREFIX="${eqyPrefix}"
@@ -41,7 +42,7 @@ _equivalenceDeps() {
     sbyPrefix=${PREFIX:-"/usr/local"}
     if ! command -v sby &> /dev/null; then (
         cd "${baseDir}"
-        git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/sby
+        git clone --depth=1 -b "${eqyYosysVersion}" --recursive https://github.com/YosysHQ/sby
         cd sby
         export PATH="${eqyPrefix}/bin:${PATH}"
         make -j $(nproc) PREFIX="${sbyPrefix}" install
