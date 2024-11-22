@@ -83,7 +83,7 @@ sta::define_cmd_args "extract_parasitics" {
     [-max_res ohms]
     [-coupling_threshold fF]
     [-debug_net_id id]
-    [ -dbg dbg_num ]
+    [-dbg dbg_num ]
     [-lef_res]
     [-lef_rc]
     [-cc_model track]
@@ -95,14 +95,14 @@ sta::define_cmd_args "extract_parasitics" {
 proc extract_parasitics { args } {
   sta::parse_key_args "extract_parasitics" args \
     keys { -ext_model_file
-           -corner_cnt
            -corner
+           -corner_cnt
            -max_res
            -coupling_threshold
            -debug_net_id
-           -context_depth
-           -cc_model
            -dbg
+           -cc_model
+           -context_depth
            -version } \
     flags { -lef_res -lef_rc
             -no_merge_via_res -skip_over_cell }
@@ -400,7 +400,9 @@ proc gen_rcx_model { args } {
 
 sta::define_cmd_args "write_rules" {
     [-file filename]
+    [-dir dir]
     [-name name]
+    [-db]
 }
 
 proc write_rules { args } {

@@ -51,14 +51,19 @@ returned.
 ```tcl
 extract_parasitics
     [-ext_model_file filename]      
+    [-corner cornerIndex]
     [-corner_cnt count]            
     [-max_res ohms]               
     [-coupling_threshold fF]        
     [-debug_net_id id]
+    [-dbg dbg_num ]
     [-lef_res]                     
+    [-lef_rc]
     [-cc_model track]             
     [-context_depth depth]      
     [-no_merge_via_res]       
+    [-skip_over_cell ]
+    [-version]
 ```
 
 #### Options
@@ -66,14 +71,19 @@ extract_parasitics
 | Switch Name | Description |
 | ----- | ----- |
 | `-ext_model_file` | Specify the Extraction Rules file used for the extraction. |
+| `-corner cornerIndex` | Corner to extract.  Default -1. |
 | `-corner_cnt` | Defines the number of corners used during the parasitic extraction. |
 | `-max_res` | Combines resistors in series up to the threshold value. |
 | `-coupling_threshold` | Coupling below this threshold is grounded. The default value is `0.1`, units are in `fF`, accepted values are floats. |
 | `-debug_net_id` | *Developer Option*: Net ID to evaluate. |
+| `-dbg dbg_num` | Debug messaging level.  Default 0. |
 | `-lef_res` | Override LEF resistance per unit. |
+| `-lef_rc` | Use LEF RC values. Default false. |
 | `-cc_model` | Specify the maximum number of tracks of lateral context that the tool considers on the same routing level. The default value is `10`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-context_depth` | Specify the number of levels of vertical context that OpenRCX needs to consider for the over/under context overlap for capacitance calculation. The default value is `5`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-no_merge_via_res` | Separates the via resistance from the wire resistance. |
+| `-skip_over_cell` | Ignore shapes in cells.  .Default false. |
+| `-version` | select between v1 and v2 modeling.  Defaults to 1.0. |
 
 ### Write SPEF
 
@@ -127,6 +137,8 @@ and contains the RC numbers from the parasitics in the database and the
 ```tcl
 diff_spef
     [-file filename]                
+    [-spef_corner spef_num]
+    [-ext_corner ext_num]
     [-r_res]
     [-r_cap]
     [-r_cc_cap]
@@ -138,6 +150,8 @@ diff_spef
 | Switch Name | Description |
 | ----- | ----- |
 | `-file` | Path to the input `.spef` filename. |
+| `-spef_corner spef_num` | The spef corner to diff. |
+| `-ext_corner ext_num` | The extraction corner to diff. |
 | `-r_res` | Read resistance. |
 | `-r_cap` | Read capacitance. |
 | `-r_cc_cap` | Read coupled capacitance. |
@@ -161,6 +175,7 @@ bench_wires
     [-diag]
     [-all]
     [-db_only]
+    [-v1]
     [-under_met layer]
     [-w_list width]
     [-s_list space]
@@ -177,6 +192,7 @@ bench_wires
 | `-len` | Wirelength in microns in the pattern. The default value is `100`, and the allowed values are integers `[0, MAX_INT]`. | 
 | `-all` | Consider all different pattern geometries (`over`, `under`, `over_under`, and `diagonal`). |
 | `-db_only` | Run with db values only. All parameters in `bench_wires` are ignored. |
+| `-v1` | Generation version one patterns. |
 | `-under_met` | Consider under metal layer. |
 | `-w_list` | Lists of wire width multipliers from the minimum spacing defined in the LEF. |
 | `-s_list` | Lists of wire spacing multipliers from the minimum spacing defined in the LEF. The list will be the input index on the OpenRCX RC table (Extraction Rules file). |
@@ -235,7 +251,6 @@ write_rules
   [-file filename]           
   [-dir dir]
   [-name name]
-  [-pattern pattern]
   [-db]
 ```
 
@@ -246,7 +261,6 @@ write_rules
 | `-file` | Output file name. |
 | `-dir` | Output file directory. |
 | `-name` | Name of rule. |
-| `-pattern` | Flag to write the pattern to rulefile (0/1). | 
 | `-db` | DB tbc. |
 
 ## Example scripts
