@@ -96,11 +96,9 @@ class extSolverGen : public extProcess
   modelCnt); static std::list<std::string> GetCornerNames(const char *filename,
   double &version) ;
 
-  // ----------------------------------- DKF 09212024
-  --------------------------------------- uint GenExtModel(const char *out_file,
-  const char *comment, const char *version, int pattern);
-  //
-  --------------------------------------------------------------------------------------------
+  // ----------------------------------- DKF 09212024 --------------------------------------- 
+  uint GenExtModel(const char *out_file, const char *comment, const char *version, int pattern);
+  // --------------------------------------------------------------------------------------------
 */
 
   // DKF 9/25/2024 -- 3d pattern generation

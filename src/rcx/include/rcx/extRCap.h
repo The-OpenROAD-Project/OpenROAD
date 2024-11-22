@@ -1698,6 +1698,7 @@ class extMain
   extSolverGen* _currentSolverGen;
 
   // v2 -----------------------------------------------------
+  
   uint getPeakMemory(const char* msg, int n = -1);
 
   void setupBoundaries(BoundaryData& bounds, const Rect& extRect);
@@ -1774,6 +1775,10 @@ class extMain
   void infoBeforeCouplingExt();
   void setExtControl_v2(AthPool<SEQ>* seqPool);
 
+  // --------------------- dkf 092024 ------------------------
+   extRCModel* getCurrentModel() { return _currentModel; }
+   void setCurrentModel(extRCModel* m) { _currentModel= m; }
+   uint GenExtModel(std::list<std::string> spef_file_list, std::list<std::string> corner_list, const char *out_file, const char *comment, const char *version, int pattern);
   // CLEANUP dkf 10242024 ----------------------------------
 
   uint benchVerilog_bterms(FILE* fp,
