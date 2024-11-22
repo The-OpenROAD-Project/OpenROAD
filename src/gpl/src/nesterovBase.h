@@ -1264,10 +1264,8 @@ class GCellHandle
 
 inline bool isValidSigType(const odb::dbSigType& db_type)
 {
-  if (db_type == odb::dbSigType::SIGNAL || db_type == odb::dbSigType::CLOCK) {
-    return true;
-  }
-  return false;
+  return (db_type == odb::dbSigType::SIGNAL
+          || db_type == odb::dbSigType::CLOCK);
 }
 
 }  // namespace gpl
