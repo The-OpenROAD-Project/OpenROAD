@@ -97,8 +97,7 @@ void report_flute_tree(std::vector<int> x,
   const int flute_accuracy = 3;
   utl::Logger *logger = ord::getLogger();
   auto builder = getSteinerTreeBuilder();
-  auto flt = builder->getFlute();
-  stt::Tree tree = flt->flute(x, y, flute_accuracy);
+  stt::Tree tree = builder->flute(x, y, flute_accuracy);
   stt::reportSteinerTree(tree, x[drvr_index], y[drvr_index], logger);
 }
 
@@ -157,8 +156,7 @@ highlight_flute_tree(std::vector<int> x,
 {
   gui::Gui *gui = gui::Gui::get();
   auto builder = getSteinerTreeBuilder();
-  auto flt = builder->getFlute();
-  stt::Tree tree = flt->flute(x, y, 3);
+  stt::Tree tree = builder->flute(x, y, 3);
   stt::highlightSteinerTree(tree, gui);
 }
 

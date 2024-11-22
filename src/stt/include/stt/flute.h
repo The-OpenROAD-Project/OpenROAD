@@ -55,27 +55,12 @@ using stt::Tree;
 #define FLUTE_POSTFILE "POST9.dat"  // LUT for POST (Steiner Tree)
 #define FLUTE_D 9  // LUT is used for d <= FLUTE_D, FLUTE_D <= 9
 
-#if FLUTE_D <= 7
-#define MGROUP 5040 / 4  // Max. # of groups, 7! = 5040
-#define MPOWV 15         // Max. # of POWVs per group
-#elif FLUTE_D == 8
-#define MGROUP 40320 / 4  // Max. # of groups, 8! = 40320
-#define MPOWV 33          // Max. # of POWVs per group
-#elif FLUTE_D == 9
-#define MGROUP 362880 / 4  // Max. # of groups, 9! = 362880
-#define MPOWV 79           // Max. # of POWVs per group
-#endif
-
 class Flute
 {
  public:
-  struct csoln
-  {
-    unsigned char parent;
-    unsigned char seg[11];  // Add: 0..i, Sub: j..10; seg[i+1]=seg[j-1]=0
-    unsigned char rowcol[FLUTE_D - 2];  // row = rowcol[]/16, col = rowcol[]%16,
-    unsigned char neighbor[2 * FLUTE_D - 2];
-  };
+  struct csoln;
+
+ private:
   using LUT_TYPE = struct csoln***;
   using NUMSOLN_TYPE = int**;
 
@@ -85,6 +70,24 @@ class Flute
 
   // User-Callable Functions
   // Delete LUT tables for exit so they are not leaked.
+
+  Tree flute(const std::vector<int>& x, const std::vector<int>& y, int acc);
+  int wirelength(Tree t);
+  void plottree(Tree t);
+  void write_svg(Tree t, const char* filename);
+  inline Tree flutes(const std::vector<int>& xs,
+                     const std::vector<int>& ys,
+                     const std::vector<int>& s,
+                     int acc)
+  {
+    int d = xs.size();
+    if (FLUTE_REMOVE_DUPLICATE_PIN == 1) {
+      return flutes_RDP(d, xs, ys, s, acc);
+    }
+    return flutes_ALLD(d, xs, ys, s, acc);
+  }
+
+ private:
   void readLUT();
   void makeLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln);
   void initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln);
@@ -96,10 +99,6 @@ class Flute
                const std::vector<int>& x,
                const std::vector<int>& y,
                int acc);
-  Tree flute(const std::vector<int>& x, const std::vector<int>& y, int acc);
-  int wirelength(Tree t);
-  void plottree(Tree t);
-  void write_svg(Tree t, const char* filename);
 
   Tree dmergetree(Tree t1, Tree t2);
   Tree hmergetree(Tree t1, Tree t2, const std::vector<int>& s);
@@ -179,18 +178,6 @@ class Flute
       return flutes_LD(d, xs, ys, s);
     }
     return flutes_MD(d, xs, ys, s, acc);
-  }
-
-  inline Tree flutes(const std::vector<int>& xs,
-                     const std::vector<int>& ys,
-                     const std::vector<int>& s,
-                     int acc)
-  {
-    int d = xs.size();
-    if (FLUTE_REMOVE_DUPLICATE_PIN == 1) {
-      return flutes_RDP(d, xs, ys, s, acc);
-    }
-    return flutes_ALLD(d, xs, ys, s, acc);
   }
 
   inline Tree flutes_LMD(int d,

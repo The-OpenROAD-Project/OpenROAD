@@ -112,7 +112,15 @@ class SteinerTreeBuilder
   void setNetAlpha(const odb::dbNet* net, float alpha);
   void setMinFanoutAlpha(int min_fanout, float alpha);
   void setMinHPWLAlpha(int min_hpwl, float alpha);
-  flt::Flute* getFlute() { return flute_; };
+
+  Tree flute(const std::vector<int>& x, const std::vector<int>& y, int acc);
+  int wirelength(Tree t);
+  void plottree(Tree t);
+  void write_svg(Tree t, const char* filename);
+  Tree flutes(const std::vector<int>& xs,
+              const std::vector<int>& ys,
+              const std::vector<int>& s,
+              int acc);
 
  private:
   int computeHPWL(odb::dbNet* net);
@@ -125,7 +133,7 @@ class SteinerTreeBuilder
 
   Logger* logger_;
   odb::dbDatabase* db_;
-  flt::Flute* flute_;
+  std::unique_ptr<flt::Flute> flute_;
 };
 
 // Used by regressions.

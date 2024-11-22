@@ -54,15 +54,28 @@
 // #define LUT_SOURCE LUT_VAR_CHECK
 #define LUT_SOURCE LUT_VAR
 
+#if FLUTE_D <= 7
+#define MGROUP 5040 / 4  // Max. # of groups, 7! = 5040
+#define MPOWV 15         // Max. # of POWVs per group
+#elif FLUTE_D == 8
+#define MGROUP 40320 / 4  // Max. # of groups, 8! = 40320
+#define MPOWV 33          // Max. # of POWVs per group
+#elif FLUTE_D == 9
+#define MGROUP 362880 / 4  // Max. # of groups, 9! = 362880
+#define MPOWV 79           // Max. # of POWVs per group
+#endif
+
 namespace stt {
 
 namespace flt {
 
-// struct csoln *LUT[FLUTE_D + 1][MGROUP];  // storing 4 .. FLUTE_D
-// int numsoln[FLUTE_D + 1][MGROUP];
-
-using LUT_TYPE = struct Flute::csoln***;
-using NUMSOLN_TYPE = int**;
+struct Flute::csoln
+{
+  unsigned char parent;
+  unsigned char seg[11];  // Add: 0..i, Sub: j..10; seg[i+1]=seg[j-1]=0
+  unsigned char rowcol[FLUTE_D - 2];  // row = rowcol[]/16, col = rowcol[]%16,
+  unsigned char neighbor[2 * FLUTE_D - 2];
+};
 
 struct point
 {

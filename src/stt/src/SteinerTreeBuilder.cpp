@@ -56,10 +56,7 @@ SteinerTreeBuilder::SteinerTreeBuilder()
 {
 }
 
-SteinerTreeBuilder::~SteinerTreeBuilder()
-{
-  delete flute_;
-};
+SteinerTreeBuilder::~SteinerTreeBuilder() = default;
 
 void SteinerTreeBuilder::init(odb::dbDatabase* db, Logger* logger)
 {
@@ -282,6 +279,36 @@ int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
 
   return hpwl;
 }
+
+Tree SteinerTreeBuilder::flute(const std::vector<int>& x,
+                               const std::vector<int>& y,
+                               int acc)
+{
+  return flute_->flute(x, y, acc);
+}
+
+int SteinerTreeBuilder::wirelength(Tree t)
+{
+  return flute_->wirelength(t);
+}
+
+void SteinerTreeBuilder::plottree(Tree t)
+{
+  flute_->plottree(t);
+}
+
+void SteinerTreeBuilder::write_svg(Tree t, const char* filename)
+{
+  flute_->write_svg(t, filename);
+}
+
+Tree SteinerTreeBuilder::flutes(const std::vector<int>& xs,
+                                const std::vector<int>& ys,
+                                const std::vector<int>& s,
+                                int acc)
+{
+  return flute_->flutes(xs, ys, s, acc);
+};
 
 ////////////////////////////////////////////////////////////////
 
