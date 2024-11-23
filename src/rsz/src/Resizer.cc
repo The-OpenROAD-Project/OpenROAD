@@ -1421,6 +1421,132 @@ int Resizer::resizeToTargetSlew(const Pin* drvr_pin)
   return 0;
 }
 
+bool Resizer::getCin(const LibertyCell *cell, float& cin)
+{
+  sta::LibertyCellPortIterator port_iter(cell);
+  int nports = 0;
+  while (port_iter.hasNext()) {
+    const LibertyPort* port = port_iter.next();
+    if (port->direction() == sta::PortDirection::input()) {
+      cin += port->capacitance();
+      nports++;
+    }
+  }
+  if (nports) {
+    cin /= nports;
+    return true;
+  }
+  return false;
+}
+
+// Will `drvr_pin` max slew be satisfied if we swap in `size`?
+bool Resizer::satisfiesMaxSlew(const Pin* drvr_pin, float load_cap, Slew max_slew, const LibertyCell *size)
+{
+  const Pvt* pvt = tgt_slew_dcalc_ap_->operatingConditions();
+  Instance* inst = network_->instance(drvr_pin);
+
+  for (TimingArcSet *arc_set : size->timingArcSets()) {
+    TimingRole *role = arc_set->role();
+    if (!role->isTimingCheck()
+        && role != TimingRole::tristateDisable()
+        && role != TimingRole::tristateEnable()
+        && role != TimingRole::clockTreePathMin()
+        && role != TimingRole::clockTreePathMax()) {
+      for (TimingArc *arc : arc_set->arcs()) {
+        RiseFall *in_rf = arc->fromEdge()->asRiseFall();
+
+        GateTimingModel *model = dynamic_cast<GateTimingModel*>(arc->model());
+        Pin *in_pin = network_->findPin(inst, arc->from()->name());
+        if (model && in_pin) {
+          Slew in_slew = sta_->vertexSlew(graph_->pinLoadVertex(in_pin), in_rf,
+                                          tgt_slew_dcalc_ap_);
+
+          if (in_slew > max_slew) {
+            // If the incoming slew is over the maximum, cap it to avoid
+            // excessive second order upsizing
+            in_slew = max_slew;
+          }
+
+          ArcDelay arc_delay;
+          Slew arc_slew;
+          model->gateDelay(pvt, in_slew, load_cap, false, arc_delay, arc_slew);
+
+          if (arc_slew > max_slew) {
+            return false;
+          }
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
+int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
+{
+  const float max_cap_ratio = 4.0f;
+
+  bool max_slew_exists = false;
+  Slew max_slew = 0; 
+  //sta_->checkSlew(drvr_pin, nullptr, max_, check_clks);
+
+  Instance* inst = network_->instance(drvr_pin);
+  LibertyCell* cell = inst ? network_->libertyCell(inst) : nullptr;
+  if (!network_->isTopLevelPort(drvr_pin) && inst && !dontTouch(inst) && cell
+      && isLogicStdCell(inst)) {
+    float cin, load_cap;
+    ensureWireParasitic(drvr_pin);
+
+    // Includes net parasitic capacitance.
+    load_cap = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_dcalc_ap_);
+    if (load_cap > 0.0 && getCin(cell, cin)) {
+      bool is_buf_inv = cell->isBuffer() || cell->isInverter();
+      LibertyCellSeq* equiv_cells = cell->isBuffer() ?
+                                    &buffer_fast_sizes_ :
+                                    sta_->equivCells(cell);
+      LibertyCell *best = nullptr, *highest_cin_cell = nullptr;
+      if (equiv_cells) {
+        float highest_cin = 0;
+        for (LibertyCell *size : *equiv_cells) {
+          float size_cin;
+          if (areCellsSwappable(cell, size) && getCin(size, size_cin)) {
+            // To be selected, the cell must both:
+            //  * satisfy the cap ratio
+            //  * do not lead to a max slew violation
+            if (load_cap < size_cin * max_cap_ratio &&
+                (!max_slew_exists || satisfiesMaxSlew(drvr_pin, load_cap, max_slew, size))) {
+              if (upsize_only && size == cell) {
+                // The current size of the cell fits the criteria, apply no sizing
+                return 0;
+              }
+
+              if (!best || size->area() < best->area()) {
+                best = size;
+              }
+            }
+
+            if (size_cin > highest_cin) {
+              highest_cin = size_cin;
+              highest_cin_cell = size;
+            }
+          }
+        }
+      }
+
+      if (best) {
+        if (best != cell) {
+          replaceCell(inst, best, true);
+          return 1;
+        }
+      } else if (highest_cin_cell) {
+        replaceCell(inst, highest_cin_cell, true);
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
 bool Resizer::isLogicStdCell(const Instance* inst)
 {
   return !db_network_->isTopInstance(inst)

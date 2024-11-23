@@ -814,13 +814,11 @@ void RepairDesign::repairNet(Net* net,
       float fanout, max_fanout, fanout_slack;
       sta_->checkFanout(drvr_pin, max_, fanout, max_fanout, fanout_slack);
 
-      int resized = resizer_->resizeToTargetSlew(drvr_pin);
       if (performGainBuffering(net, drvr_pin, max_fanout)) {
         repaired_net = true;
       }
-      // Resize again post buffering as the load changed
-      resized += resizer_->resizeToTargetSlew(drvr_pin);
-      if (resized > 0) {
+      if (resizer_->resizeToCapRatio(drvr_pin, false)) {
+      //if (resizer_->resizeToTargetSlew(drvr_pin)) {
         repaired_net = true;
         resize_count_ += 1;
       }
@@ -851,7 +849,8 @@ void RepairDesign::repairNet(Net* net,
     // TO BE REMOVED: Resize the driver to normalize slews before repairing
     // limit violations.
     if (parasitics_src_ == ParasiticsSrc::placement && resize_drvr) {
-      resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
+      resize_count_ += resizer_->resizeToCapRatio(drvr_pin, false);
+      //resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
     }
 
     float max_cap = INF;
