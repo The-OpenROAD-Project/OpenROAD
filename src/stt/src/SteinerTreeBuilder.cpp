@@ -36,6 +36,7 @@
 #include "stt/SteinerTreeBuilder.h"
 
 #include <map>
+#include <utility>
 #include <vector>
 
 #include "odb/db.h"
@@ -289,17 +290,17 @@ Tree SteinerTreeBuilder::flute(const std::vector<int>& x,
 
 int SteinerTreeBuilder::wirelength(Tree t)
 {
-  return flute_->wirelength(t);
+  return flute_->wirelength(std::move(t));
 }
 
 void SteinerTreeBuilder::plottree(Tree t)
 {
-  flute_->plottree(t);
+  flute_->plottree(std::move(t));
 }
 
 void SteinerTreeBuilder::write_svg(Tree t, const char* filename)
 {
-  flute_->write_svg(t, filename);
+  flute_->write_svg(std::move(t), filename);
 }
 
 Tree SteinerTreeBuilder::flutes(const std::vector<int>& xs,
