@@ -1682,14 +1682,9 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
       wrongway_width = width;
     }
     if (width != 0 || wrongway_width != 0) {
-      const frCoord horz_spc
-          = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL
-                ? wrongway_width
-                : width;
-      const frCoord vert_spc
-          = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL
-                ? width
-                : wrongway_width;
+      const bool is_horz = tmpLayer->isHorizontal();
+      const frCoord horz_spc = is_horz ? wrongway_width : width;
+      const frCoord vert_spc = is_horz ? width : wrongway_width;
       auto ucon = std::make_unique<frLef58WidthTableOrthConstraint>(horz_spc,
                                                                     vert_spc);
       tmpLayer->setWidthTblOrthCon(ucon.get());
