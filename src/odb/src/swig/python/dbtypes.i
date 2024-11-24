@@ -141,6 +141,22 @@
     $result = list;
 }
 
+%typemap(out) std::vector< std::pair< T*, odb::Rect > > {
+    PyObject *list = PyList_New($1.size());
+    for (unsigned int i = 0; i < $1.size(); i++) {
+        PyObject *sub_list = PyList_New(2);
+        std::pair< T*, odb::Rect > p = $1.at(i);
+        T* ptr1 = p.first;
+        odb::Rect* ptr2 = new odb::Rect(p.second);
+        PyObject *obj1 = SWIG_NewInstanceObj(ptr1, $descriptor(T *), 0);
+        PyObject *obj2 = SWIG_NewInstanceObj(ptr2, $descriptor(odb::Rect *), 0);
+        PyList_SetItem(sub_list, 0, obj1);
+        PyList_SetItem(sub_list, 1, obj2);
+        PyList_SetItem(list, i, sub_list);
+    }
+    $result = list;
+}
+
 %typemap(in) std::vector< T* >* (std::vector< T* > *v, std::vector< T* > w),
              std::vector< T* >& (std::vector< T* > *v, std::vector< T* > w) {
 
