@@ -362,11 +362,19 @@ report_design_area
 
 ### Report Floating Nets
 
-The `report_floating_nets` command reports nets with only one pin connection.
+The `report_floating_nets` command reports nets with connected loads but no connected drivers.
 
 ```tcl
 report_floating_nets 
     [-verbose]
+```
+
+### Eliminate Dead Logic
+
+The `eliminate_dead_logic` command eliminates dead logic, i.e. it removes standard cell instances which can be removed without affecting the function of the design.
+
+```tcl
+eliminate_dead_logic
 ```
 
 #### Options

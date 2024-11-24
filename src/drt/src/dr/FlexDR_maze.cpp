@@ -43,7 +43,7 @@ namespace drt {
 
 namespace gtl = boost::polygon;
 
-int beginDebugIter = std::numeric_limits<int>::max();
+const int beginDebugIter = std::numeric_limits<int>::max();
 static frSquaredDistance pt2boxDistSquare(const Point& pt, const Rect& box)
 
 {
@@ -335,7 +335,7 @@ void FlexDRWorker::modMinSpacingCostPlanarHelper(const Rect& box,
   // layer default width
   frCoord halfwidth2 = width2 / 2;
   // spacing value needed
-  bool use_min_spacing = isBlockage && USEMINSPACING_OBS;
+  bool use_min_spacing = isBlockage && router_cfg_->USEMINSPACING_OBS;
   frCoord bloatDist = getTech()->getLayer(lNum)->getMinSpacingValue(
       width1, width2, box.maxDXDY(), use_min_spacing);
   bloatDist = std::max(bloatDist, minSpacing);
@@ -765,7 +765,8 @@ void FlexDRWorker::modMinSpacingCostViaHelper(const Rect& box,
   frCoord width1 = box.minDXDY();
   frCoord length1 = box.maxDXDY();
   frCoord prl = isCurrPs ? (length2_mar) : std::min(length1, length2_mar);
-  bool use_min_spacing = isBlockage && USEMINSPACING_OBS && !isFatVia;
+  bool use_min_spacing
+      = isBlockage && router_cfg_->USEMINSPACING_OBS && !isFatVia;
   frCoord bloatDist = getTech()->getLayer(lNum)->getMinSpacingValue(
       width1, width2, prl, use_min_spacing);
   bloatDist = std::max(minSpacing, bloatDist);
@@ -833,7 +834,8 @@ void FlexDRWorker::modMinSpacingCostViaHelper(const Rect& box,
           }
         }
       }
-      bool use_min_spacing = isBlockage && USEMINSPACING_OBS && !isFatVia;
+      bool use_min_spacing
+          = isBlockage && router_cfg_->USEMINSPACING_OBS && !isFatVia;
       frCoord reqDist = getTech()->getLayer(lNum)->getMinSpacingValue(
           width1, width2, prl, use_min_spacing);
       reqDist = std::max(reqDist, minSpacing);
@@ -1606,11 +1608,11 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(
   if (mazeIter == 0) {
     sort(rerouteNets.begin(), rerouteNets.end(), rerouteNetsComp);
     // to be removed
-    if (OR_SEED != -1 && rerouteNets.size() >= 2) {
+    if (router_cfg_->OR_SEED != -1 && rerouteNets.size() >= 2) {
       std::uniform_int_distribution<int> distribution(0,
                                                       rerouteNets.size() - 1);
-      std::default_random_engine generator(OR_SEED);
-      int numSwap = (double) (rerouteNets.size()) * OR_K;
+      std::default_random_engine generator(router_cfg_->OR_SEED);
+      int numSwap = (double) (rerouteNets.size()) * router_cfg_->OR_K;
       for (int i = 0; i < numSwap; i++) {
         int idx = distribution(generator);
         std::swap(rerouteNets[idx],
@@ -1876,7 +1878,7 @@ void FlexDRWorker::identifyCongestionLevel()
     float congestionFactorLow = nLowBorderCross[z] / (float) nTracks;
     float congestionFactorHigh = nHighBorderCross[z] / (float) nTracks;
     float finalFactor = std::max(congestionFactorLow, congestionFactorHigh);
-    if (finalFactor >= CONGESTION_THRESHOLD) {
+    if (finalFactor >= router_cfg_->CONGESTION_THRESHOLD) {
       isCongested_ = true;
       return;
     }
@@ -1944,8 +1946,8 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
       std::vector<FlexMazeIdx> paths;
       bool isRouted = routeNet(net, paths);
       if (isRouted == false) {
-        if (OUT_MAZE_FILE == std::string("")) {
-          if (VERBOSE > 0) {
+        if (router_cfg_->OUT_MAZE_FILE == std::string("")) {
+          if (router_cfg_->VERBOSE > 0) {
             std::cout
                 << "Warning: no output maze log specified, skipped writing "
                    "maze log"
@@ -2237,13 +2239,13 @@ void FlexDRWorker::routeNet_prep(
     }
     unConnPins.insert(pin.get());
     if (gridGraph_.getNDR()) {
-      if (AUTO_TAPER_NDR_NETS
+      if (router_cfg_->AUTO_TAPER_NDR_NETS
           && pin->isInstPin()) {  // create a taper box for each pin
         auto [l, h] = pin->getAPBbox();
         frCoord pitch
             = getTech()->getLayer(gridGraph_.getLayerNum(l.z()))->getPitch(),
             r;
-        r = TAPERBOX_RADIUS;
+        r = router_cfg_->TAPERBOX_RADIUS;
         l.set(gridGraph_.getMazeXIdx(gridGraph_.xCoord(l.x()) - r * pitch),
               gridGraph_.getMazeYIdx(gridGraph_.yCoord(l.y()) - r * pitch),
               l.z());
@@ -2416,7 +2418,7 @@ drPin* FlexDRWorker::routeNet_getNextDst(
     }
   }
   if (gridGraph_.getNDR()) {
-    if (AUTO_TAPER_NDR_NETS) {
+    if (router_cfg_->AUTO_TAPER_NDR_NETS) {
       for (auto& a : pinTaperBoxes) {
         if (a.first == nextDst) {
           gridGraph_.setDstTaperBox(&a.second);
@@ -2466,7 +2468,7 @@ void FlexDRWorker::routeNet_postAstarUpdate(
           mazeIdx2unConnPins.erase(it);
           gridGraph_.resetDst(mi);
         }
-        if (ALLOW_PIN_AS_FEEDTHROUGH) {
+        if (router_cfg_->ALLOW_PIN_AS_FEEDTHROUGH) {
           localConnComps.insert(mi);
           gridGraph_.setSrc(mi);
         }
@@ -2477,7 +2479,7 @@ void FlexDRWorker::routeNet_postAstarUpdate(
   }
   // must be before comment line ABC so that the used actual src is set in
   // gridgraph
-  if (isFirstConn && (!ALLOW_PIN_AS_FEEDTHROUGH)) {
+  if (isFirstConn && (!router_cfg_->ALLOW_PIN_AS_FEEDTHROUGH)) {
     for (auto& mi : connComps) {
       gridGraph_.resetSrc(mi);
     }
@@ -2523,7 +2525,7 @@ void FlexDRWorker::routeNet_postAstarUpdate(
     }
   }
   for (auto& mi : localConnComps) {
-    if (isFirstConn && !ALLOW_PIN_AS_FEEDTHROUGH) {
+    if (isFirstConn && !router_cfg_->ALLOW_PIN_AS_FEEDTHROUGH) {
       connComps.push_back(mi);
     } else {
       if (!(mi == *(path.cbegin()))) {
@@ -2659,7 +2661,7 @@ void FlexDRWorker::routeNet_postAstarWritePath(
           via = net_ndr->getPrefVia(startLayerNum / 2 - 1);
         }
         auto currVia = std::make_unique<drVia>(via);
-        if (net->hasNDR() && AUTO_TAPER_NDR_NETS) {
+        if (net->hasNDR() && router_cfg_->AUTO_TAPER_NDR_NETS) {
           if (isInsideTaperBox(endX, endY, startZ, endZ, mazeIdx2TaperBox)) {
             currVia->setTapered(true);
           }
@@ -2829,7 +2831,7 @@ bool FlexDRWorker::splitPathSeg(frMIdx& midX,
                                 drNet* net)
 {
   taperFirstPiece = false;
-  if (!net->hasNDR() || !AUTO_TAPER_NDR_NETS) {
+  if (!net->hasNDR() || !router_cfg_->AUTO_TAPER_NDR_NETS) {
     return false;
   }
   frBox3D* bx = nullptr;
@@ -3245,7 +3247,7 @@ bool FlexDRWorker::routeNet(drNet* net, std::vector<FlexMazeIdx>& paths)
                 pinTaperBoxes);
   // prep for area map
   std::map<FlexMazeIdx, frCoord> areaMap;
-  if (ENABLE_BOUNDARY_MAR_FIX) {
+  if (router_cfg_->ENABLE_BOUNDARY_MAR_FIX) {
     routeNet_prepAreaMap(net, areaMap);
   }
 
@@ -3299,7 +3301,7 @@ bool FlexDRWorker::routeNet(drNet* net, std::vector<FlexMazeIdx>& paths)
     }
   }
   if (searchSuccess) {
-    if (CLEAN_PATCHES) {
+    if (router_cfg_->CLEAN_PATCHES) {
       gcWorker_->setTargetNet(net->getFrNet());
       gcWorker_->updateDRNet(net);
       gcWorker_->setEnableSurgicalFix(true);
@@ -3346,7 +3348,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
   auto minAreaConstraint = getTech()->getLayer(layerNum)->getAreaConstraint();
 
   frArea currArea = 0;
-  if (ENABLE_BOUNDARY_MAR_FIX) {
+  if (router_cfg_->ENABLE_BOUNDARY_MAR_FIX) {
     if (areaMap.find(points[0]) != areaMap.end()) {
       currArea = areaMap.find(points[0])->second;
     } else {
@@ -3512,7 +3514,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
     currIdx = nextIdx;
   }
   // add boundary area for last segment
-  if (ENABLE_BOUNDARY_MAR_FIX) {
+  if (router_cfg_->ENABLE_BOUNDARY_MAR_FIX) {
     layerNum = gridGraph_.getLayerNum(currIdx.z());
     minAreaConstraint = getTech()->getLayer(layerNum)->getAreaConstraint();
     frArea reqArea = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;

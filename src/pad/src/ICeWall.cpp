@@ -592,7 +592,7 @@ void ICeWall::placePad(odb::dbMaster* master,
   placeInstance(row, snapToRowSite(row, location), inst, orient.getOrient());
 }
 
-odb::int64 ICeWall::estimateWirelengths(
+int64_t ICeWall::estimateWirelengths(
     odb::dbInst* inst,
     const std::set<odb::dbITerm*>& iterms) const
 {
@@ -605,7 +605,7 @@ odb::int64 ICeWall::estimateWirelengths(
     }
   }
 
-  odb::int64 dist = 0;
+  int64_t dist = 0;
 
   for (const auto& [term0, term1] : terms) {
     dist += odb::Point::manhattanDistance(term0->getBBox().center(),
@@ -615,11 +615,11 @@ odb::int64 ICeWall::estimateWirelengths(
   return dist;
 }
 
-odb::int64 ICeWall::computePadBumpDistance(odb::dbInst* inst,
-                                           int inst_width,
-                                           odb::dbITerm* bump,
-                                           odb::dbRow* row,
-                                           int center_pos) const
+int64_t ICeWall::computePadBumpDistance(odb::dbInst* inst,
+                                        int inst_width,
+                                        odb::dbITerm* bump,
+                                        odb::dbRow* row,
+                                        int center_pos) const
 {
   const odb::Point row_center = row->getBBox().center();
   const odb::Point center = bump->getBBox().center();
@@ -635,7 +635,7 @@ odb::int64 ICeWall::computePadBumpDistance(odb::dbInst* inst,
           odb::Point(row_center.x(), center_pos + inst_width / 2), center);
   }
 
-  return std::numeric_limits<odb::int64>::max();
+  return std::numeric_limits<int64_t>::max();
 }
 
 void ICeWall::placePads(const std::vector<odb::dbInst*>& insts, odb::dbRow* row)
@@ -822,7 +822,7 @@ void ICeWall::performPadFlip(
     const auto& pins = find_assignment->second;
     if (pins.size() > 1) {
       // only need to check if pad has more than one connection
-      const odb::int64 start_wirelength = estimateWirelengths(inst, pins);
+      const int64_t start_wirelength = estimateWirelengths(inst, pins);
       const auto start_orient = inst->getOrient();
 
       // try flipping pad
@@ -839,7 +839,7 @@ void ICeWall::performPadFlip(
       }
 
       // get new wirelength
-      const odb::int64 flipped_wirelength = estimateWirelengths(inst, pins);
+      const int64_t flipped_wirelength = estimateWirelengths(inst, pins);
       const bool undo = flipped_wirelength > start_wirelength;
 
       if (undo) {
@@ -1843,6 +1843,7 @@ void ICeWall::routeRDL(odb::dbTechLayer* layer,
                                         allow45,
                                         turn_penalty,
                                         max_iterations);
+  router_->setRDLDebugNet(rdl_net_debug_);
   if (router_gui_ != nullptr) {
     router_gui_->setRouter(router_.get());
   }
@@ -1867,6 +1868,20 @@ void ICeWall::routeRDLDebugGUI(bool enable)
       gui::Gui::get()->unregisterRenderer(router_gui_.get());
       router_gui_ = nullptr;
     }
+  }
+}
+
+void ICeWall::routeRDLDebugNet(const char* net)
+{
+  auto* block = getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  rdl_net_debug_ = block->findNet(net);
+
+  if (router_ != nullptr) {
+    router_->setRDLDebugNet(rdl_net_debug_);
   }
 }
 

@@ -29,6 +29,17 @@
           openroad = (nixpkgs.lib.callPackageWith pkgs) ./default.nix {
             flake = self;
           };
+          openroad-release = all.openroad.overrideAttrs (fa: pa: {
+            pname = "openroad-release";
+            version = "24Q3";
+            src = pkgs.fetchFromGitHub {
+              owner = "The-OpenROAD-Project";
+              repo = "OpenROAD";
+              rev = fa.version;
+              fetchSubmodules = true;
+              sha256 = "sha256-Ye9XJcoUxtg031eazT4qrexvyN0jZHd8/kmvAr/lPzk=";
+            };
+          });
           default = all.openroad;
         };
       in

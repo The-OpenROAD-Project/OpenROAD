@@ -723,4 +723,22 @@ bool supported()
   return true;
 }
 
+void minimize()
+{
+  if (!check_gui("minimize")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->minimize();
+}
+
+void unminimize()
+{
+  if (!check_gui("unminimize")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->unminimize();
+}
+
 %} // inline

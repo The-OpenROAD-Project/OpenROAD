@@ -42,7 +42,10 @@ class FlexTA
 {
  public:
   // constructors
-  FlexTA(frDesign* in, Logger* logger, bool save_updates_);
+  FlexTA(frDesign* in,
+         Logger* logger,
+         RouterConfiguration* router_cfg,
+         bool save_updates_);
   ~FlexTA();
   // getters
   frTechObject* getTech() const { return tech_; }
@@ -55,6 +58,7 @@ class FlexTA
   frTechObject* tech_;
   frDesign* design_;
   Logger* logger_;
+  RouterConfiguration* router_cfg_;
   bool save_updates_;
   std::unique_ptr<FlexTAGraphics> graphics_;
   // others
@@ -117,9 +121,13 @@ class FlexTAWorker
 {
  public:
   // constructors
-  FlexTAWorker(frDesign* designIn, Logger* logger, bool save_updates)
+  FlexTAWorker(frDesign* designIn,
+               Logger* logger,
+               RouterConfiguration* router_cfg,
+               bool save_updates)
       : design_(designIn),
         logger_(logger),
+        router_cfg_(router_cfg),
         save_updates_(save_updates),
         dir_(dbTechLayerDir::NONE),
         taIter_(0),
@@ -196,6 +204,7 @@ class FlexTAWorker
  private:
   frDesign* design_;
   Logger* logger_;
+  RouterConfiguration* router_cfg_;
   bool save_updates_;
   Rect routeBox_;
   Rect extBox_;

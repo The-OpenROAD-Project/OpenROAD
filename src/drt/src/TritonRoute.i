@@ -203,11 +203,11 @@ void
 run_worker_cmd(const char* dump_dir, const char* worker_dir, const char* drc_rpt)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->updateGlobals(fmt::format("{}/init_globals.bin", dump_dir).c_str());
+  router->updateGlobals(fmt::format("{}/init_router_cfg.bin", dump_dir).c_str());
   router->resetDb(fmt::format("{}/design.odb", dump_dir).c_str());
-  router->updateGlobals(fmt::format("{}/{}/globals.bin", dump_dir, worker_dir).c_str());
+  router->updateGlobals(fmt::format("{}/{}/router_cfg.bin", dump_dir, worker_dir).c_str());
   router->updateDesign(fmt::format("{}/{}/updates.bin", dump_dir, worker_dir).c_str());
-  router->updateGlobals(fmt::format("{}/{}/worker_globals.bin", dump_dir, worker_dir).c_str());
+  router->updateGlobals(fmt::format("{}/{}/worker_router_cfg.bin", dump_dir, worker_dir).c_str());
   
   router->debugSingleWorker(fmt::format("{}/{}", dump_dir, worker_dir), drc_rpt);
 }

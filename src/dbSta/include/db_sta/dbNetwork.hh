@@ -185,7 +185,8 @@ class dbNetwork : public ConcreteNetwork
 
   bool ConnectionToModuleExists(dbITerm* source_pin,
                                 dbModule* dest_module,
-                                dbModBTerm*& dest_modbterm);
+                                dbModBTerm*& dest_modbterm,
+                                dbModITerm*& dest_moditerm);
 
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
@@ -195,6 +196,9 @@ class dbNetwork : public ConcreteNetwork
                           std::vector<dbModule*>& parent_hierarchy);
   dbModule* findHighestCommonModule(std::vector<dbModule*>& itree1,
                                     std::vector<dbModule*>& itree2);
+  dbModule* findModule(const char* name);
+  Instance* findHierInstance(const char* name);
+  void replaceDesign(Instance* instance, dbModule* module);
 
   ////////////////////////////////////////////////////////////////
   //
@@ -268,6 +272,7 @@ class dbNetwork : public ConcreteNetwork
 
   ////////////////////////////////////////////////////////////////
   // Port functions
+
   Cell* cell(const Port* port) const override;
   void registerConcretePort(const Port*);
 

@@ -2054,7 +2054,6 @@ dbRSeg* dbNet::findRSeg(uint srcn, uint tgtn)
   return nullptr;
 }
 
-int ttttsv = 0;
 void dbNet::createZeroRc(bool foreign)
 {
   dbCapNode* cap1 = dbCapNode::create(this, 1, foreign);
@@ -2063,10 +2062,6 @@ void dbNet::createZeroRc(bool foreign)
   cap1->setNode(iterm->getId());
   dbCapNode* cap2 = dbCapNode::create(this, 2, foreign);
   cap2->setInternalFlag();
-  if (ttttsv) {
-    cap1->setCapacitance(0.0001, 0);
-    cap2->setCapacitance(0.0001, 0);
-  }
   dbRSeg* rseg1 = dbRSeg::create(
       this, 0 /*x*/, 0 /*y*/, 0 /*path_dir*/, !foreign /*allocate_cap*/);
   dbRSeg* rseg0 = dbRSeg::create(
@@ -2075,10 +2070,6 @@ void dbNet::createZeroRc(bool foreign)
   rseg0->setTargetNode(cap1->getId());
   rseg1->setSourceNode(cap1->getId());
   rseg1->setTargetNode(cap2->getId());
-  if (ttttsv) {
-    rseg1->setResistance(1.0, 0);
-  }
-  // rseg1->setCapacitance(0.0001, 0);
 }
 
 void dbNet::set1stRSegId(uint rid)

@@ -170,7 +170,9 @@ class OpenRoad
   // OpenRoad object and/or any other tools they need to reference.
   static OpenRoad* openRoad();
   static void setOpenRoad(OpenRoad* app, bool reinit_ok = false);
-  void init(Tcl_Interp* tcl_interp);
+  void init(Tcl_Interp* tcl_interp,
+            const char* log_filename,
+            const char* metrics_filename);
 
   Tcl_Interp* tclInterp() { return tcl_interp_; }
   utl::Logger* getLogger() { return logger_; }
