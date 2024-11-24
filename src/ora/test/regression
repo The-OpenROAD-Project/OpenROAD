@@ -22,6 +22,16 @@ exec tclsh $0 ${1+"$@"}
 # Where test1 is all or the name of a tcl script in /test
 # Wildcard matching with '*' and '?' in test names is supported.
 
+set script_dir [file dirname [file normalize [info script]]]
+set server_pid [exec python3 [file join $script_dir "mockApiServer.py"] &]
+
+after 2000
+
+if {[catch {exec ps -p $server_pid} result]} {
+    puts "Failed to start mockApiServer.py"
+    exit 1
+}
+
 # Directory containing tests.
 set test_dir [file dirname [file normalize [info script]]]
 set openroad_dir [file dirname [file dirname [file dirname $test_dir]]]
