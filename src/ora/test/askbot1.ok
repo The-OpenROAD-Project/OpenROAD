@@ -1,0 +1,5 @@
+[INFO ORA-0101] Sending POST request to http://0.0.0.0:8080/mock
+[INFO ORA-0104] ORAssistant Response: 
+
+Sent Message: testmsg
+
