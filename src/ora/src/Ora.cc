@@ -109,7 +109,6 @@ void Ora::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger)
     if (hostUrlFile.is_open()) {
       std::getline(hostUrlFile, hostUrl);
       hostUrlFile.close();
-      logger_->info(utl::ORA, 110, "ORAssistant host loaded from file.");
     }
   } catch (const std::exception& e) {
     logger_->warn(utl::ORA, 111, "Failed to read ORAssistant host from file.");
