@@ -1063,6 +1063,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
                                   const int num_threads,
                                   bool verbose)
 {
+  printf("Start to checkAntenna\n");
   net_to_report_.clear();
   initAntennaRules();
 
