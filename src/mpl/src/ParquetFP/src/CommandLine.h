@@ -52,7 +52,7 @@ class Command_Line
   std::string inFileName;
   std::string outPlFile;
   std::string capoPlFile;
-  std::string capoBaseFile{""};
+  std::string capoBaseFile;
   std::string baseFile{""};
 
   std::string FPrep{"Best"};
