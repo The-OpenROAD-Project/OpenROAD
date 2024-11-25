@@ -1117,26 +1117,6 @@ int BTreeAreaWireAnnealer::makeMove(int& indexOrient,
   return MISC;
 }
 // --------------------------------------------------------
-int BTreeAreaWireAnnealer::makeMoveSlacks()
-{
-  //  cout << "makeMoveSlacks" << endl;
-  int movedir = rand() % 100;
-  int threshold = 50;
-  bool horizontal = (movedir < threshold);
-
-  makeMoveSlacksCore(horizontal);
-
-  static int total = 0;
-  static int numHoriz = 0;
-
-  total++;
-  numHoriz += ((horizontal) ? 1 : 0);
-
-  if (total % 1000 == 0 && _params->verb > 0)
-    cout << "total: " << total << "horiz: " << numHoriz << endl;
-  return SLACKS_MOVE;
-}
-// --------------------------------------------------------
 int BTreeAreaWireAnnealer::makeARMove()
 {
   //  cout << "makeARMove" << endl;

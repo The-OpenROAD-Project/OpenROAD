@@ -75,7 +75,6 @@ class BTreeAreaWireAnnealer : public BaseAnnealer
   int makeMove(int& indexOrient,
                parquetfp::ORIENT& newOrient,
                parquetfp::ORIENT& oldOrient);  // returns 1,2,3,4,5 or -1
-  int makeMoveSlacks();                        // returns 6
   int makeMoveSlacksOrient() { return 10; }    // returns 10
   int makeMoveOrient() { return 10; }          // returns 10
   int makeARMove();                            // returns 7
@@ -137,7 +136,7 @@ class BTreeAreaWireAnnealer : public BaseAnnealer
 
   void DBfromSoln(const BTree& soln);  // update *_db from "soln"
 
-  void makeMoveSlacksCore(bool);  // used by "makeMoveSlacks" and "makeARMove"
+  void makeMoveSlacksCore(bool);  // used by "makeARMove"
   void locateSearchBlocks(int,
                           std::vector<int>&);  // used by HPWL and ARWL moves
 
