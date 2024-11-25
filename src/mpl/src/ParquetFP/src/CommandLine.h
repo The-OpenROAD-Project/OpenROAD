@@ -90,16 +90,16 @@ class Command_Line
                            // clustering. if -9999 then use sqrt(#nodes)
 
   // -----Annealer performance parameters next-----
-  float timeInit;   // initial temperature default 30000
-  float timeCool;   // cooling temperature default 0.01
-  float startTime;  // default to timeInit
-                    // (this is the time the area & WL are normalized to)
-  float reqdAR;     // required Aspect Ratio of fixed outline
-                    // default -9999(means no fixed outline
-                    // desired)
-  float maxWS;      // if fixed-outline then maximum whitespace
-                    // acceptable
-  bool minWL;       // whether HPWL minimization desired
+  float timeInit;    // initial temperature default 30000
+  float timeCool;    // cooling temperature default 0.01
+  float startTime;   // default to timeInit
+                     // (this is the time the area & WL are normalized to)
+  float reqdAR;      // required Aspect Ratio of fixed outline
+                     // default -9999(means no fixed outline
+                     // desired)
+  float maxWS;       // if fixed-outline then maximum whitespace
+                     // acceptable
+  bool minWL;        // whether HPWL minimization desired
   float areaWeight;  // weight for area minimization
   float wireWeight;  // weight for WL minimization
 

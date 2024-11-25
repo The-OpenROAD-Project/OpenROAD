@@ -222,7 +222,7 @@ class DB
 
   float evalHPWL(bool useWts,
                  bool scaleTerms);  // assumes that placement is updated
-  float evalArea(void) const;  // assumes that placement is updated
+  float evalArea(void) const;       // assumes that placement is updated
   float getXSize(void) const;
   float getYSize(void) const;
   float getAvgHeight(void) const;
