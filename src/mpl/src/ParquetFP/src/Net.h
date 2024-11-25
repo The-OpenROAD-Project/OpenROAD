@@ -79,19 +79,19 @@ class pin
   pin() {}
 
   bool getType() const { return _type; }
-  const std::string getName(void) const { return _name; }
+  const std::string getName() const { return _name; }
   int getNodeIndex() const { return _nodeIndex; }
   int getNetIndex() const { return _netIndex; }
   void putNodeIndex(int nodeIndex) { _nodeIndex = nodeIndex; }
   void putNetIndex(int netIndex) { _netIndex = netIndex; }
   void putType(bool type) { _type = type; }
 
-  float getXOffset(void) const { return _offset.x; }
-  float getYOffset(void) const { return _offset.y; }
-  float getOrigXOffset(void) const { return _origOffset.x; }
-  float getOrigYOffset(void) const { return _origOffset.y; }
+  float getXOffset() const { return _offset.x; }
+  float getYOffset() const { return _offset.y; }
+  float getOrigXOffset() const { return _origOffset.x; }
+  float getOrigYOffset() const { return _origOffset.y; }
 
-  ORIENT getOrient(void) const { return _orient; }
+  ORIENT getOrient() const { return _orient; }
 
   void changeOrient(ORIENT newOrient);
 };
@@ -116,7 +116,7 @@ class Net
   void putName(const std::string name) { _name = name; }
 
   void addNode(const pin& node) { _pins.push_back(node); }
-  void clean(void) { _pins.clear(); }
+  void clean() { _pins.clear(); }
   itPin pinsBegin() { return _pins.begin(); }
   itPin pinsEnd() { return _pins.end(); }
 
@@ -128,9 +128,9 @@ class Net
   void putIndex(int netIndex) { _index = netIndex; }
   float getWeight() const { return _weight; }
   void putWeight(float netWeight) { _weight = netWeight; }
-  const std::string getName(void) const { return _name; }
+  const std::string getName() const { return _name; }
 
-  unsigned getDegree(void) const { return _pins.size(); }
+  unsigned getDegree() const { return _pins.size(); }
 };
 
 }  // namespace parquetfp

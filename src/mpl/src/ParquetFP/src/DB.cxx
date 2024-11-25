@@ -59,7 +59,7 @@ using std::vector;
 
 namespace parquetfp {
 
-void DB::buildTermBBox(void)
+void DB::buildTermBBox()
 {
   termBBox.clear();
   if (_nodes) {
@@ -77,7 +77,7 @@ void DB::buildTermBBox(void)
   }
 }
 
-void DB::scaleTerminals(void)
+void DB::scaleTerminals()
 {
   if (_nodes) {
     _scaledLocs.resize(_nodes->getNumTerminals());
@@ -123,7 +123,7 @@ DB::DB(const std::string& baseName)
   buildTermBBox();
 }
 
-DB::DB(void)
+DB::DB()
 {
   _nodes = new Nodes();
   _nets = new Nets();
@@ -567,7 +567,7 @@ DB::DB(DB& db2, bool compressDB)
   }
 }
 
-void DB::clean(void)
+void DB::clean()
 {
   if (_nodes)
     _nodes->clean();
@@ -579,17 +579,17 @@ void DB::clean(void)
     _obstacles->clean();
 }
 
-Nodes* DB::getNodes(void)
+Nodes* DB::getNodes()
 {
   return _nodes;
 }
 
-Nets* DB::getNets(void)
+Nets* DB::getNets()
 {
   return _nets;
 }
 
-Nodes* DB::getObstacles(void)
+Nodes* DB::getObstacles()
 {
   return _obstacles;
 }
@@ -604,32 +604,32 @@ void DB::addObstacles(Nodes* obstacles, float obstacleFrame[2])
   _obstacleFrame[1] = obstacleFrame[1];
 }
 
-unsigned DB::getNumObstacles(void) const
+unsigned DB::getNumObstacles() const
 {
   return _obstacles->getNumNodes();
 }
 
-unsigned DB::getNumNodes(void) const
+unsigned DB::getNumNodes() const
 {
   return _nodes->getNumNodes();
 }
 
-vector<float> DB::getNodeWidths(void) const
+vector<float> DB::getNodeWidths() const
 {
   return _nodes->getNodeWidths();
 }
 
-vector<float> DB::getNodeHeights(void) const
+vector<float> DB::getNodeHeights() const
 {
   return _nodes->getNodeHeights();
 }
 
-vector<float> DB::getXLocs(void) const
+vector<float> DB::getXLocs() const
 {
   return _nodes->getXLocs();
 }
 
-vector<float> DB::getYLocs(void) const
+vector<float> DB::getYLocs() const
 {
   return _nodes->getYLocs();
 }
@@ -949,7 +949,7 @@ void DB::cornerOptimizeDesign(bool scaleTerms, bool minWL)
   }
 }
 
-float DB::getNodesArea(void) const
+float DB::getNodesArea() const
 {
   if (_initArea)
     return _area;
@@ -960,12 +960,12 @@ float DB::getNodesArea(void) const
   }
 }
 
-float DB::getRowHeight(void) const
+float DB::getRowHeight() const
 {
   return _rowHeight;
 }
 
-float DB::getSiteSpacing(void) const
+float DB::getSiteSpacing() const
 {
   return _siteSpacing;
 }
@@ -980,7 +980,7 @@ void DB::setSiteSpacing(float siteSpacing)
   _siteSpacing = siteSpacing;
 }
 
-float DB::getAvgHeight(void) const
+float DB::getAvgHeight() const
 {
   itNode node;
   float avgHeight = 0;
@@ -1760,7 +1760,7 @@ float DB::evalHPWL(bool useWts, bool scaleTerms)
   return HPWL;
 }
 
-float DB::evalArea(void) const
+float DB::evalArea() const
 {
   BBox area;
   itNode node;
@@ -1778,7 +1778,7 @@ float DB::evalArea(void) const
   return (area.getXSize() * area.getYSize());
 }
 
-float DB::getXSize(void) const
+float DB::getXSize() const
 {
   BBox xSize;
   itNode node;
@@ -1796,7 +1796,7 @@ float DB::getXSize(void) const
   return (xSize.getXSize());
 }
 
-float DB::getYSize(void) const
+float DB::getYSize() const
 {
   BBox ySize;
   itNode node;
@@ -2207,7 +2207,7 @@ void DB::expandDesign(float maxWidth, float maxHeight)
   }
 }
 
-void DB::saveInBestCopy(void)
+void DB::saveInBestCopy()
 {
   successAR = 1;
   itNode node;
@@ -2270,7 +2270,7 @@ void DB::reduceCoreCellsArea(float layoutArea, float maxWS)
   currWS = (layoutArea - newNodesArea) / newNodesArea;
 }
 
-float DB::getXMax(void)
+float DB::getXMax()
 {
   float xMax = -numeric_limits<float>::max();
   for (itNode node = _nodes->nodesBegin(); node != _nodes->nodesEnd(); ++node) {
@@ -2280,7 +2280,7 @@ float DB::getXMax(void)
   return xMax;
 }
 
-float DB::getXMaxWMacroOnly(void)
+float DB::getXMaxWMacroOnly()
 {
   float xMax = -numeric_limits<float>::max();
   for (itNode node = _nodes->nodesBegin(); node != _nodes->nodesEnd(); ++node) {
@@ -2292,7 +2292,7 @@ float DB::getXMaxWMacroOnly(void)
   return xMax;
 }
 
-float DB::getXSizeWMacroOnly(void)
+float DB::getXSizeWMacroOnly()
 {
   BBox xSize;
   itNode node;
@@ -2313,7 +2313,7 @@ float DB::getXSizeWMacroOnly(void)
     return 0;
 }
 
-float DB::getYMax(void)
+float DB::getYMax()
 {
   float yMax = -numeric_limits<float>::max();
   for (itNode node = _nodes->nodesBegin(); node != _nodes->nodesEnd(); ++node) {
@@ -2323,7 +2323,7 @@ float DB::getYMax(void)
   return yMax;
 }
 
-float DB::getYMaxWMacroOnly(void)
+float DB::getYMaxWMacroOnly()
 {
   float yMax = -numeric_limits<float>::max();
   for (itNode node = _nodes->nodesBegin(); node != _nodes->nodesEnd(); ++node) {
@@ -2335,7 +2335,7 @@ float DB::getYMaxWMacroOnly(void)
   return yMax;
 }
 
-float DB::getYSizeWMacroOnly(void)
+float DB::getYSizeWMacroOnly()
 {
   BBox ySize;
   itNode node;

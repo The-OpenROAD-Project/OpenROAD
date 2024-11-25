@@ -51,7 +51,7 @@ class Nodes
 
  public:
   Nodes(const std::string& baseName);
-  Nodes(void) {}
+  Nodes() {}
   Nodes(const Nodes& orig);
   Nodes& operator=(const Nodes& rhs);
 
@@ -59,23 +59,23 @@ class Nodes
   void parseTxt(const std::string& fnameTxt);
   void parsePl(const std::string& fnamePl);
 
-  unsigned getNumNodes(void) const { return _nodes.size(); }
-  itNode nodesBegin(void) { return _nodes.begin(); }
-  itNode nodesEnd(void) { return _nodes.end(); }
+  unsigned getNumNodes() const { return _nodes.size(); }
+  itNode nodesBegin() { return _nodes.begin(); }
+  itNode nodesEnd() { return _nodes.end(); }
   void putNewNode(Node& node) { _nodes.push_back(node); }
   Node& getNode(unsigned index) { return _nodes[index]; }
   const Node& getNode(unsigned index) const { return _nodes[index]; }
-  void clearNodes(void) { _nodes.clear(); }
+  void clearNodes() { _nodes.clear(); }
 
-  unsigned getNumTerminals(void) const { return _terminals.size(); }
-  itNode terminalsBegin(void) { return _terminals.begin(); }
-  itNode terminalsEnd(void) { return _terminals.end(); }
+  unsigned getNumTerminals() const { return _terminals.size(); }
+  itNode terminalsBegin() { return _terminals.begin(); }
+  itNode terminalsEnd() { return _terminals.end(); }
   void putNewTerm(Node& term) { _terminals.push_back(term); }
   Node& getTerminal(unsigned index) { return _terminals[index]; }
   const Node& getTerminal(unsigned index) const { return _terminals[index]; }
-  void clearTerm(void) { _terminals.clear(); }
+  void clearTerm() { _terminals.clear(); }
 
-  void clean(void)
+  void clean()
   {
     _nodes.clear();
     _terminals.clear();
