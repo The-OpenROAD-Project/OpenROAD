@@ -128,7 +128,7 @@ class Net
   void putIndex(int netIndex) { _index = netIndex; }
   float getWeight() const { return _weight; }
   void putWeight(float netWeight) { _weight = netWeight; }
-  const std::string getName() const { return _name; }
+  std::string getName() const { return _name; }
 
   unsigned getDegree() const { return _pins.size(); }
 };
