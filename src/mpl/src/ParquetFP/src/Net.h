@@ -79,7 +79,7 @@ class pin
   pin() {}
 
   bool getType() const { return _type; }
-  const std::string getName() const { return _name; }
+  std::string getName() const { return _name; }
   int getNodeIndex() const { return _nodeIndex; }
   int getNetIndex() const { return _netIndex; }
   void putNodeIndex(int nodeIndex) { _nodeIndex = nodeIndex; }
