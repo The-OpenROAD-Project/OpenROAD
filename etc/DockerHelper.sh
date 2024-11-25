@@ -8,6 +8,7 @@ baseDir="$(pwd)"
 # docker hub organization/user from where to pull/push images
 org=openroad
 depsPrefixesFile="/etc/openroad_deps_prefixes.txt"
+args=("${@}")
 
 _help() {
     cat <<EOF
@@ -19,7 +20,9 @@ usage: $0 [CMD] [OPTIONS]
   push                          Push the docker image to Docker Hub
 
   OPTIONS:
-  -os=OS_NAME                   Choose between ubuntu22.04 (default), ubuntu20.04, rhel, opensuse and debian11.
+  -os=OS_NAME                   Choose between:
+                                  ubuntu20.04, ubuntu22.04 (default),
+                                  ubuntu24.04, rockylinux9, opensuse or debian11.
   -target=TARGET                Choose target for the Docker image:
                                   'dev': os + packages to compile app
                                   'builder': os + packages to compile app +
@@ -57,14 +60,17 @@ _setup() {
         "ubuntu22.04")
             osBaseImage="ubuntu:22.04"
             ;;
+        "ubuntu24.04")
+            osBaseImage="ubuntu:24.04"
+            ;;
         "opensuse")
             osBaseImage="opensuse/leap"
             ;;
         "debian11")
             osBaseImage="debian:bullseye"
             ;;
-        "rhel")
-            osBaseImage="redhat/ubi8"
+        "rockylinux9")
+            osBaseImage="rockylinux:9"
             ;;
         *)
             echo "Target OS ${os} not supported" >&2
@@ -90,7 +96,7 @@ _setup() {
             imageName="${IMAGE_NAME_OVERRIDE:-"${imageName}-${compiler}"}"
             ;;
         "dev" )
-            fromImage="${FROM_IMAGE_OVERRIDE:-$osBaseImage}"
+            fromImage="${FROM_IMAGE_OVERRIDE:-${osBaseImage}}"
             context="etc"
             buildArgs="-save-deps-prefixes=${depsPrefixesFile}"
             if [[ "${isLocal}" == "yes" ]]; then
@@ -99,7 +105,7 @@ _setup() {
             if [[ "${equivalenceDeps}" == "yes" ]]; then
                 buildArgs="${buildArgs} -eqy"
             fi
-            if [[ "$CI" == "yes" ]]; then
+            if [[ "${CI}" == "yes" ]]; then
                 buildArgs="${buildArgs} -ci"
             fi
             if [[ "${buildArgs}" != "" ]]; then
@@ -139,7 +145,56 @@ _test() {
     docker run --rm "${imagePath}" "./docker/test_wrapper.sh" "${compiler}" "ctest --test-dir build -j ${numThreads}"
 }
 
+_checkFromImage() {
+    set +e
+    # Check if the image exists locally
+    if docker image inspect "${fromImage}" > /dev/null 2>&1; then
+        echo "Image '${fromImage}' exists locally."
+    else
+        echo "Image '${fromImage}' does not exist locally. Attempting to pull..."
+        # Try to pull the image
+        if docker pull "${fromImage}"; then
+            echo "Successfully pulled '${fromImage}'."
+        else
+            echo "Unable to pull '${fromImage}'. Attempting to build..."
+            # Build the image using the createImage command
+            newArgs=""
+            newTarget=""
+            for arg in "${args[@]}"; do
+                # Check if the argument matches -target=builder
+                if [[ "${arg}" == "-target=builder" ]]; then
+                    newTarget="dev"
+                elif [[ "${arg}" == "-target=binary" ]]; then
+                    newTarget="builder"
+                else
+                    newArgs+=" ${arg}"
+                fi
+            done
+            if [[ "${newTarget}" == "" ]]; then
+                echo "Error"
+                exit 1
+            fi
+            newArgs+=" -target=${newTarget}"
+            createImage="$0 ${newArgs}"
+            echo "Running: ${createImage}"
+            if ${createImage}; then
+                echo "Successfully built '${newTarget}' image."
+            else
+                echo "Failed to build '${newTarget}' needed for '${target}' target."
+                return 1
+            fi
+        fi
+    fi
+    set -e
+}
+
 _create() {
+    if [[ "${target}" == "binary" ]]; then
+        _checkFromImage "builder"
+    fi
+    if [[ "${target}" == "builder" ]]; then
+        _checkFromImage "dev"
+    fi
     echo "Create docker image ${imagePath} using ${file}"
     eval docker buildx build \
         --file "${file}" \
@@ -260,9 +315,9 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [[ "${numThreads}" == "-1" ]]; then
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    if [[ "${OSTYPE}" == "linux-gnu"* ]]; then
         numThreads=$(nproc --all)
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
+    elif [[ "${OSTYPE}" == "darwin"* ]]; then
         numThreads=$(sysctl -n hw.ncpu)
     else
         numThreads=2

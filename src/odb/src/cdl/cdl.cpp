@@ -105,6 +105,11 @@ std::string getNetName(dbBlock* block,
     return getUnconnectedNet(block, unconnectedNets);
   }
 
+  dbBTerm* bterm = net->get1stBTerm();
+  if (bterm) {
+    return bterm->getName();
+  }
+
   return net->getName();
 }
 
