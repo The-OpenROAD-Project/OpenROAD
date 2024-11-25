@@ -46,10 +46,6 @@
 #include "PlToSP.h"
 #include "SPeval.h"
 
-#ifdef USEFLUTE
-#include "Flute/flute.h"
-#endif
-
 using std::cout;
 using std::endl;
 using std::map;
@@ -876,11 +872,7 @@ void DB::packToCorner(vector<vector<float>>& xlocsAt,
   }
 }
 
-#ifdef USEFLUTE
-void DB::cornerOptimizeDesign(bool scaleTerms, bool minWL, bool useSteiner)
-#else
 void DB::cornerOptimizeDesign(bool scaleTerms, bool minWL)
-#endif
 {
   vector<float> origXLocs;
   vector<float> origYLocs;
@@ -895,11 +887,7 @@ void DB::cornerOptimizeDesign(bool scaleTerms, bool minWL)
   float minObjective = numeric_limits<float>::max();
 
   if (minWL) {
-#ifdef USEFLUTE
-    minObjective = evalHPWL(useWts, scaleTerms, useSteiner);
-#else
     minObjective = evalHPWL(useWts, scaleTerms);
-#endif
     cout << "Original HPWL: " << minObjective << endl;
   } else {
     minObjective = evalArea();
@@ -919,11 +907,7 @@ void DB::cornerOptimizeDesign(bool scaleTerms, bool minWL)
 
       float currObjective = numeric_limits<float>::max();
       if (minWL) {
-#ifdef USEFLUTE
-        currObjective = evalHPWL(useWts, scaleTerms, useSteiner);
-#else
         currObjective = evalHPWL(useWts, scaleTerms);
-#endif
         cout << toString(Corner(i)) << " HPWL: " << currObjective << endl;
       } else {
         currObjective = evalArea();
@@ -959,11 +943,7 @@ void DB::cornerOptimizeDesign(bool scaleTerms, bool minWL)
   } while (minCorner != ORIGINAL);
 
   if (minWL) {
-#ifdef USEFLUTE
-    cout << "final HPWL: " << evalHPWL(useWts, scaleTerms, useSteiner) << endl;
-#else
     cout << "final HPWL: " << evalHPWL(useWts, scaleTerms) << endl;
-#endif
   } else {
     cout << "final Area: " << evalArea() << endl;
   }
@@ -1038,17 +1018,8 @@ void DB::updateSlacks(const vector<float>& xSlack, const vector<float>& ySlack)
   }
 }
 
-#ifdef USEFLUTE
-float DB::evalHPWL(bool useWts, bool scaleTerms, bool useSteiner)
-{
-  exit(1);
-  if (useSteiner)
-    return evalSteiner(useWts, scaleTerms);
-#else
 float DB::evalHPWL(bool useWts, bool scaleTerms)
 {
-#endif
-
   // this function has a lot of code repetition
   // because things have been manually inlined for speed concerns
   // this function accounts for the greatest portion of runtime
@@ -1789,130 +1760,6 @@ float DB::evalHPWL(bool useWts, bool scaleTerms)
   return HPWL;
 }
 
-#ifdef USEFLUTE
-double flute_x[MAXD], flute_y[MAXD];
-
-float DB::evalSteiner(bool useWts, bool scaleTerms)
-{
-  if (scaleTerms) {
-    scaleTerminals();
-  }
-
-  float total = 0.f;
-  vector<Point> pointsOnNet;
-  Flute flute;
-
-  for (itNet net = _nets->netsBegin(); net != _nets->netsEnd(); ++net) {
-    pointsOnNet.clear();
-
-    for (unsigned i = 0; i < net->getDegree(); ++i) {
-      const pin& Pin = net->getPin(i);
-      unsigned nodeIndex = Pin.getNodeIndex();
-      Node* node;
-      float nodeLocx, nodeLocy;
-      if (Pin.getType()) {
-        node = &_nodes->getTerminal(nodeIndex);
-        if (scaleTerms) {
-          nodeLocx = getScaledX(*node);
-          nodeLocy = getScaledY(*node);
-        } else {
-          nodeLocx = node->getX();
-          nodeLocy = node->getY();
-        }
-      } else {
-        node = &_nodes->getNode(nodeIndex);
-        nodeLocx = node->getX();
-        nodeLocy = node->getY();
-      }
-      // Begin Compute pin offsets
-      float width = node->getWidth();
-      float height = node->getHeight();
-      float pinOffsetx, pinOffsety;
-      if (node->allPinsAtCenter) {
-        pinOffsetx = 0.5f * width;
-        pinOffsety = 0.5f * height;
-      } else {
-        pinOffsetx = (0.5f + Pin.getXOffset()) * width;
-        pinOffsety = (0.5f + Pin.getYOffset()) * height;
-      }
-      // End Compute pin offsets
-      float pinLocx = nodeLocx + pinOffsetx;
-      float pinLocy = nodeLocy + pinOffsety;
-
-      pointsOnNet.push_back(Point(pinLocx, pinLocy));
-    }
-
-    sort(pointsOnNet.begin(), pointsOnNet.end());
-    vector<Point>::iterator new_end
-        = unique(pointsOnNet.begin(), pointsOnNet.end());
-    pointsOnNet.erase(new_end, pointsOnNet.end());
-
-    if (pointsOnNet.size() <= 1) { /* do nothing */
-    } else if (pointsOnNet.size() == 2) {
-      if (useWts) {
-        total += net->getWeight()
-                 * (std::abs(pointsOnNet[0].x - pointsOnNet[1].x)
-                    + std::abs(pointsOnNet[0].y - pointsOnNet[1].y));
-      } else {
-        total += std::abs(pointsOnNet[0].x - pointsOnNet[1].x)
-                 + std::abs(pointsOnNet[0].y - pointsOnNet[1].y);
-      }
-    } else if (pointsOnNet.size() == 3) {
-      float minx, maxx, miny, maxy;
-
-      if (pointsOnNet[0].x < pointsOnNet[1].x) {
-        minx = pointsOnNet[0].x;
-        maxx = pointsOnNet[1].x;
-      } else {
-        minx = pointsOnNet[1].x;
-        maxx = pointsOnNet[0].x;
-      }
-      if (pointsOnNet[2].x < minx) {
-        minx = pointsOnNet[2].x;
-      } else if (pointsOnNet[2].x > maxx) {
-        maxx = pointsOnNet[2].x;
-      }
-
-      if (pointsOnNet[0].y < pointsOnNet[1].y) {
-        miny = pointsOnNet[0].y;
-        maxy = pointsOnNet[1].y;
-      } else {
-        miny = pointsOnNet[1].y;
-        maxy = pointsOnNet[0].y;
-      }
-      if (pointsOnNet[2].y < miny) {
-        miny = pointsOnNet[2].y;
-      } else if (pointsOnNet[2].y > maxy) {
-        maxy = pointsOnNet[2].y;
-      }
-
-      if (useWts) {
-        total += net->getWeight() * ((maxx - minx) + (maxy - miny));
-      } else {
-        total += (maxx - minx) + (maxy - miny);
-      }
-    } else if (pointsOnNet.size() <= MAXD) {
-      for (unsigned i = 0; i < pointsOnNet.size(); ++i) {
-        flute_x[i] = static_cast<double>(pointsOnNet[i].x);
-        flute_y[i] = static_cast<double>(pointsOnNet[i].y);
-      }
-      Tree flutetree
-          = flute.flute(pointsOnNet.size(), flute_x, flute_y, ACCURACY);
-      if (useWts) {
-        total += net->getWeight() * static_cast<float>(flutetree.length);
-      } else {
-        total += static_cast<float>(flutetree.length);
-      }
-      free(flutetree.branch);
-    } else {
-      abkfatal(0, "Net too large to use Flute");
-    }
-  }
-
-  return total;
-}
-#endif
-
 float DB::evalArea(void) const
 {
   BBox area;
@@ -2510,18 +2357,10 @@ float DB::getYSizeWMacroOnly(void)
 }
 
 // --------------------------------------------------------
-#ifdef USEFLUTE
-void DB::shiftOptimizeDesign(float outlineWidth,
-                             float outlineHeight,
-                             bool scaleTerms,
-                             bool useSteiner,
-                             int verb)
-#else
 void DB::shiftOptimizeDesign(float outlineWidth,
                              float outlineHeight,
                              bool scaleTerms,
                              int verb)
-#endif
 {
   if (_nodes->getNumTerminals() == 0)
     return;
@@ -2532,27 +2371,13 @@ void DB::shiftOptimizeDesign(float outlineWidth,
   outlineTopRight.x = outlineBottomLeft.x + outlineWidth;
   outlineTopRight.y = outlineBottomLeft.y + outlineHeight;
 
-#ifdef USEFLUTE
-  shiftOptimizeDesign(
-      outlineBottomLeft, outlineTopRight, scaleTerms, useSteiner, verb);
-#else
   shiftOptimizeDesign(outlineBottomLeft, outlineTopRight, scaleTerms, verb);
-#endif
 }
 // --------------------------------------------------------
-#ifdef USEFLUTE
-void DB::shiftOptimizeDesign(const parquetfp::Point& outlineBottomLeft,
-                             const parquetfp::Point& outlineTopRight,
-                             bool scaleTerms,
-                             bool useSteiner,
-                             Verbosity verb)
-#else
 void DB::shiftOptimizeDesign(const parquetfp::Point& outlineBottomLeft,
                              const parquetfp::Point& outlineTopRight,
                              bool scaleTerms,
                              int verb)
-#endif
-
 {
   float designWidth = getXMax();
   float designHeight = getYMax();
@@ -2599,21 +2424,13 @@ void DB::shiftOptimizeDesign(const parquetfp::Point& outlineBottomLeft,
     }
 
     bool useWts = true;
-#ifdef USEFLUTE
-    float origHPWL = evalHPWL(useWts, scaleTerms, useSteiner);
-#else
     float origHPWL = evalHPWL(useWts, scaleTerms);
-#endif
     if (verb > 0)
       cout << "HPWL before shifting: " << origHPWL << endl;
 
     shiftDesign(offset);
 
-#ifdef USEFLUTE
-    float newHPWL = evalHPWL(useWts, scaleTerms, useSteiner);
-#else
     float newHPWL = evalHPWL(useWts, scaleTerms);
-#endif
     if (verb > 0)
       cout << "HPWL after shifting: " << newHPWL << endl;
 
@@ -2625,11 +2442,7 @@ void DB::shiftOptimizeDesign(const parquetfp::Point& outlineBottomLeft,
       shiftDesign(offset);
     }
 
-#ifdef USEFLUTE
-    float finalHPWL = evalHPWL(useWts, scaleTerms, useSteiner);
-#else
     float finalHPWL = evalHPWL(useWts, scaleTerms);
-#endif
     if (verb > 0)
       cout << "Final HPWL: " << finalHPWL << endl;
   } else {

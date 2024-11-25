@@ -100,10 +100,6 @@ class Command_Line
   float maxWS;      // if fixed-outline then maximum whitespace
                     // acceptable
   bool minWL;       // whether HPWL minimization desired
-#ifdef USEFLUTE
-  bool useSteiner;  // use Steiner WL instead of HPWL
-  bool printSteiner;
-#endif
   float areaWeight;  // weight for area minimization
   float wireWeight;  // weight for WL minimization
 

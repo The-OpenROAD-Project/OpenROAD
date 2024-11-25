@@ -88,10 +88,6 @@ Command_Line::Command_Line()
       reqdAR(-9999.0f),
       maxWS(15.0f),
       minWL(0),
-#ifdef USEFLUTE
-      useSteiner(false),
-      printSteiner(false),
-#endif
       areaWeight(0.4f),
       wireWeight(0.4f),
       useFastSP(false),

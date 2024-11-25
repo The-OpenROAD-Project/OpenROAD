@@ -166,11 +166,7 @@ class DB
                     std::vector<std::vector<float>>& ylocsAt) const;
 
   // optimize HPWL by the corner
-#ifdef USEFLUTE
-  void cornerOptimizeDesign(bool scaleTerms, bool minWL, bool useSteiner);
-#else
   void cornerOptimizeDesign(bool scaleTerms, bool minWL);
-#endif
 
   // get total area of ALL nodes
   float getNodesArea(void) const;
@@ -224,33 +220,14 @@ class DB
   void saveBestCopyPl(char* baseFileName) const;
   void saveInBestCopy(void);  // non-const since it modifies "successAR"
 
-#ifdef USEFLUTE
-  float evalHPWL(bool useWts,
-                 bool scaleTerms,
-                 bool useSteiner);  // assumes that placement is updated
-  float evalSteiner(bool useWts, bool scaleTerms);
-#else
   float evalHPWL(bool useWts,
                  bool scaleTerms);  // assumes that placement is updated
-#endif
   float evalArea(void) const;  // assumes that placement is updated
   float getXSize(void) const;
   float getYSize(void) const;
   float getAvgHeight(void) const;
 
   // optimize the BL-corner of the design
-#ifdef USEFLUTE
-  void shiftOptimizeDesign(float outlineWidth,
-                           float outlineHeight,
-                           bool scaleTerms,
-                           bool useSteiner,
-                           Verbosity verb);  // deduce BL-corner from DB
-  void shiftOptimizeDesign(const Point& bottomLeft,
-                           const Point& topRight,
-                           bool scaleTerms,
-                           bool useSteiner,
-                           Verbosity verb);
-#else
   void shiftOptimizeDesign(float outlineWidth,
                            float outlineHeight,
                            bool scaleTerms,
@@ -259,7 +236,6 @@ class DB
                            const Point& topRight,
                            bool scaleTerms,
                            int verb);
-#endif
 
   void shiftDesign(
       const Point& offset);  // shift the entire placement by an offset
