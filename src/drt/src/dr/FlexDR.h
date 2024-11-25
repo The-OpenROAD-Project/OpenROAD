@@ -89,16 +89,7 @@ class FlexDR
     float workerMarkerDecay;
     RipUpMode ripupMode;
     bool followGuide;
-    bool isEqualIgnoringSizeAndOffset(const SearchRepairArgs& other) const
-    {
-      return (mazeEndIter == other.mazeEndIter
-              && workerDRCCost == other.workerDRCCost
-              && workerMarkerCost == other.workerMarkerCost
-              && workerFixedShapeCost == other.workerFixedShapeCost
-              && std::fabs(workerMarkerDecay - other.workerMarkerDecay) < 1e-6
-              && ripupMode == other.ripupMode
-              && followGuide == other.followGuide);
-    }
+    bool isEqualIgnoringSizeAndOffset(const SearchRepairArgs& other) const;
   };
   struct IterationProgress
   {
@@ -204,7 +195,7 @@ class FlexDR
   std::unique_ptr<FlexDRWorker> createWorker(int x_offset,
                                              int y_offset,
                                              const SearchRepairArgs& args,
-                                             Rect routeBox = Rect(0, 0, 0, 0));
+                                             const Rect& routeBox = Rect());
   void reportIterationViolations() const;
   void endWorkersBatch(
       std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch);

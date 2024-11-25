@@ -564,11 +564,12 @@ void FlexDR::getBatchInfo(int& batchStepX, int& batchStepY)
 std::unique_ptr<FlexDRWorker> FlexDR::createWorker(const int x_offset,
                                                    const int y_offset,
                                                    const SearchRepairArgs& args,
-                                                   Rect routeBox)
+                                                   const Rect& routeBoxIn)
 {
   auto worker = std::make_unique<FlexDRWorker>(
       &via_data_, getDesign(), logger_, router_cfg_);
-  if (routeBox == Rect(0, 0, 0, 0)) {
+  Rect route_box(routeBoxIn);
+  if (route_box == Rect(0, 0, 0, 0)) {
     auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
     auto& xgp = gCellPatterns.at(0);
     auto& ygp = gCellPatterns.at(1);
@@ -579,14 +580,14 @@ std::unique_ptr<FlexDRWorker> FlexDR::createWorker(const int x_offset,
     const int max_j = std::min((int) ygp.getCount(), y_offset + args.size - 1);
     Rect routeBox2
         = getDesign()->getTopBlock()->getGCellBox(Point(max_i, max_j));
-    routeBox.init(
+    route_box.init(
         routeBox1.xMin(), routeBox1.yMin(), routeBox2.xMax(), routeBox2.yMax());
   }
   Rect extBox;
   Rect drcBox;
-  routeBox.bloat(router_cfg_->MTSAFEDIST, extBox);
-  routeBox.bloat(router_cfg_->DRCSAFEDIST, drcBox);
-  worker->setRouteBox(routeBox);
+  route_box.bloat(router_cfg_->MTSAFEDIST, extBox);
+  route_box.bloat(router_cfg_->DRCSAFEDIST, drcBox);
+  worker->setRouteBox(route_box);
   worker->setExtBox(extBox);
   worker->setDrcBox(drcBox);
   worker->setMazeEndIter(args.mazeEndIter);
@@ -596,7 +597,7 @@ std::unique_ptr<FlexDRWorker> FlexDR::createWorker(const int x_offset,
     worker->setDistributed(dist_, dist_ip_, dist_port_, dist_dir_);
   }
   if (!iter_) {
-    auto bp = initDR_mergeBoundaryPin(x_offset, y_offset, args.size, routeBox);
+    auto bp = initDR_mergeBoundaryPin(x_offset, y_offset, args.size, route_box);
     worker->setDRIter(0, bp);
   }
   worker->setRipupMode(args.ripupMode);
@@ -823,7 +824,7 @@ namespace stub_tiles {
  *
  * The function uses a greedy algorithm. It starts with a box and tries to merge
  * all other boxes with the following condition:
- * - The resulting merged box is smaller than or equal to 5x5 GCells.
+ * - The resulting merged box is smaller than or equal to 4x4 GCells.
  * It keeps merging untill there is no other possible merges.
  *
  * @param drv_boxes A list of gcell rectangles(with the gcell indices) that hold
@@ -832,10 +833,7 @@ namespace stub_tiles {
  */
 std::vector<Rect> mergeBoxes(std::vector<Rect>& drv_boxes)
 {
-  std::vector<Rect> merge_boxes;
-  for (auto& box : drv_boxes) {
-    merge_boxes.emplace_back(box);
-  }
+  std::vector<Rect> merge_boxes{drv_boxes};
   bool merged;
   do {
     merged = false;
@@ -1955,6 +1953,17 @@ void FlexDR::sendWorkers(
       router_->addWorkerResults(result_desc->getWorkers());
     }
   }
+}
+
+bool FlexDR::SearchRepairArgs::isEqualIgnoringSizeAndOffset(
+    const SearchRepairArgs& other) const
+{
+  return (mazeEndIter == other.mazeEndIter
+          && workerDRCCost == other.workerDRCCost
+          && workerMarkerCost == other.workerMarkerCost
+          && workerFixedShapeCost == other.workerFixedShapeCost
+          && std::fabs(workerMarkerDecay - other.workerMarkerDecay) < 1e-6
+          && ripupMode == other.ripupMode && followGuide == other.followGuide);
 }
 
 template <class Archive>
