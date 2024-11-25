@@ -51,7 +51,7 @@ class Nodes
 
  public:
   Nodes(const std::string& baseName);
-  Nodes() {}
+  Nodes() = default;
   Nodes(const Nodes& orig);
   Nodes& operator=(const Nodes& rhs);
 
