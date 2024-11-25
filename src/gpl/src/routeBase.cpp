@@ -1018,12 +1018,13 @@ void RouteBase::increaseCounter()
 
   log_->info(GPL,
              75,
-             "Routability iteration: {} | Inflation step: {} of {} | Inlfation "
-             "reset(bloat): {}",
+             "Routability iteration: {} | Inflation step: {}/{} | Inlfation "
+             "reset(bloat): {}/{}",
              numCall_,
              inflationIterCnt_,
              rbVars_.maxInflationIter,
-             bloatIterCnt_);
+             bloatIterCnt_,
+             rbVars_.maxBloatIter);
 }
 
 }  // namespace gpl
