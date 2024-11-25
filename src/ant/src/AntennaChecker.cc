@@ -1055,6 +1055,7 @@ Violations AntennaChecker::getAntennaViolations(odb::dbNet* net,
            pin_violation_count,
            antenna_violations);
 
+  net_to_report_.clear();
   return antenna_violations;
 }
 
@@ -1111,7 +1112,6 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
     for (odb::dbNet* net : block_->getNets()) {
       if (!net->isSpecial()) {
         nets_.push_back(net);
-        net_to_report_[net];
       }
     }
     omp_set_num_threads(num_threads);
@@ -1145,7 +1145,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
     writeReport(report_file, verbose);
     report_file.close();
   }
-  net_to_report_.clear();
+  //net_to_report_.clear();
 
   if (use_grt_routes) {
     global_route_source_->destroyNetWires();
