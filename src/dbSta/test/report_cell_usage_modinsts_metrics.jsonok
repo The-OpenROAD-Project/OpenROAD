@@ -1,0 +1,20 @@
+{
+	"design__instance__count__class:buffer": 4,
+	"design__instance__area__class:buffer": 4000,
+	"design__instance__count__class:sequential_cell": 2,
+	"design__instance__area__class:sequential_cell": 2000,
+	"design__instance__count": 6,
+	"design__instance__area": 6000,
+	"design__instance__count__class:buffer__in_module:block1": 2,
+	"design__instance__area__class:buffer__in_module:block1": 2000,
+	"design__instance__count__class:sequential_cell__in_module:block1": 1,
+	"design__instance__area__class:sequential_cell__in_module:block1": 1000,
+	"design__instance__count__in_module:block1": 3,
+	"design__instance__area__in_module:block1": 3000,
+	"design__instance__count__class:buffer__in_module:block1.b2": 2,
+	"design__instance__area__class:buffer__in_module:block1.b2": 2000,
+	"design__instance__count__class:sequential_cell__in_module:block1.b2": 1,
+	"design__instance__area__class:sequential_cell__in_module:block1.b2": 1000,
+	"design__instance__count__in_module:block1.b2": 3,
+	"design__instance__area__in_module:block1.b2": 3000
+}

@@ -159,13 +159,13 @@ class ICeWall
   std::string getRowName(const std::string& name, int ring_index) const;
   odb::Direction2D::Value getRowEdge(odb::dbRow* row) const;
 
-  odb::int64 estimateWirelengths(odb::dbInst* inst,
-                                 const std::set<odb::dbITerm*>& iterms) const;
-  odb::int64 computePadBumpDistance(odb::dbInst* inst,
-                                    int inst_width,
-                                    odb::dbITerm* bump,
-                                    odb::dbRow* row,
-                                    int center_pos) const;
+  int64_t estimateWirelengths(odb::dbInst* inst,
+                              const std::set<odb::dbITerm*>& iterms) const;
+  int64_t computePadBumpDistance(odb::dbInst* inst,
+                                 int inst_width,
+                                 odb::dbITerm* bump,
+                                 odb::dbRow* row,
+                                 int center_pos) const;
   void placePadsUniform(const std::vector<odb::dbInst*>& insts,
                         odb::dbRow* row,
                         const std::map<odb::dbInst*, int>& inst_widths,

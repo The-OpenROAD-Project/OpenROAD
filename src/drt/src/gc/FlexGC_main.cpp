@@ -268,7 +268,7 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1,
   // override width and spacing
   if (rect1->getNet()->isBlockage()) {
     isObs = true;
-    if (USEMINSPACING_OBS) {
+    if (router_cfg_->USEMINSPACING_OBS) {
       width1 = currLayer->getWidth();
     }
     if (rect1->getNet()->getDesignRuleWidth() != -1) {
@@ -277,7 +277,7 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1,
   }
   if (rect2->getNet()->isBlockage()) {
     isObs = true;
-    if (USEMINSPACING_OBS) {
+    if (router_cfg_->USEMINSPACING_OBS) {
       width2 = currLayer->getWidth();
     }
     if (rect2->getNet()->getDesignRuleWidth() != -1) {
@@ -894,8 +894,9 @@ void FlexGCWorker::Impl::checkMetalSpacing()
           checkMetalSpacing_wrongDir(pin.get(), currLayer);
         }
         for (auto& maxrect : pin->getMaxRectangles()) {
-          checkMetalSpacing_main(maxrect.get(),
-                                 getDRWorker() || !AUTO_TAPER_NDR_NETS);
+          checkMetalSpacing_main(
+              maxrect.get(),
+              getDRWorker() || !router_cfg_->AUTO_TAPER_NDR_NETS);
           if (currLayer->hasTwoWiresForbiddenSpacingConstraints()) {
             for (auto con :
                  currLayer->getTwoWiresForbiddenSpacingConstraints()) {
@@ -911,7 +912,7 @@ void FlexGCWorker::Impl::checkMetalSpacing()
       }
       for (auto& sr : targetNet_->getSpecialSpcRects()) {
         checkMetalSpacing_main(
-            sr.get(), getDRWorker() || !AUTO_TAPER_NDR_NETS, true);
+            sr.get(), getDRWorker() || !router_cfg_->AUTO_TAPER_NDR_NETS, true);
       }
     }
   } else {
@@ -932,8 +933,9 @@ void FlexGCWorker::Impl::checkMetalSpacing()
           }
           for (auto& maxrect : pin->getMaxRectangles()) {
             // Short, NSMetal, metSpc
-            checkMetalSpacing_main(maxrect.get(),
-                                   getDRWorker() || !AUTO_TAPER_NDR_NETS);
+            checkMetalSpacing_main(
+                maxrect.get(),
+                getDRWorker() || !router_cfg_->AUTO_TAPER_NDR_NETS);
             if (currLayer->hasTwoWiresForbiddenSpacingConstraints()) {
               for (auto con :
                    currLayer->getTwoWiresForbiddenSpacingConstraints()) {
@@ -949,7 +951,9 @@ void FlexGCWorker::Impl::checkMetalSpacing()
         }
         for (auto& sr : net->getSpecialSpcRects()) {
           checkMetalSpacing_main(
-              sr.get(), getDRWorker() || !AUTO_TAPER_NDR_NETS, true);
+              sr.get(),
+              getDRWorker() || !router_cfg_->AUTO_TAPER_NDR_NETS,
+              true);
         }
       }
     }
@@ -3006,9 +3010,6 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
     const gtl::rectangle_data<frCoord>& markerRect,
     frLef58CutSpacingConstraint* con)
 {
-  if (rect1->isFixed() && rect2->isFixed()) {
-    return;
-  }
   auto layerNum = rect1->getLayerNum();
   auto secondLayerNum = rect2->getLayerNum();
   auto net1 = rect1->getNet();
@@ -3525,7 +3526,7 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect)
     checkLef58CutSpacingTbl(rect,
                             layer->getLef58DefaultInterCutSpcTblConstraint());
   }
-  if (layer->getLayerNum() + 2 < TOP_ROUTING_LAYER
+  if (layer->getLayerNum() + 2 < router_cfg_->TOP_ROUTING_LAYER
       && layer->getLayerNum() + 2 < getTech()->getLayers().size()) {
     auto aboveLayer = getTech()->getLayer(layer->getLayerNum() + 2);
     if (aboveLayer->hasLef58SameNetInterCutSpcTblConstraint()) {

@@ -249,8 +249,19 @@ void HierRTLMP::run()
     resetSAParameters();
   }
 
+  std::unique_ptr<Mpl2Observer> save_graphics;
+  if (is_debug_only_final_result_) {
+    save_graphics = std::move(graphics_);
+  }
+
   runCoarseShaping();
   runHierarchicalMacroPlacement();
+
+  if (save_graphics) {
+    graphics_ = std::move(save_graphics);
+    graphics_->setMaxLevel(tree_->max_level);
+    graphics_->drawResult();
+  }
 
   Pusher pusher(logger_, tree_->root.get(), block_, boundary_to_io_blockage_);
   pusher.pushMacrosToCoreBoundaries();
@@ -313,11 +324,6 @@ void HierRTLMP::runHierarchicalMacroPlacement()
     runHierarchicalMacroPlacement(tree_->root.get());
   } else {
     runHierarchicalMacroPlacementWithoutBusPlanning(tree_->root.get());
-  }
-
-  if (graphics_) {
-    graphics_->setMaxLevel(tree_->max_level);
-    graphics_->drawResult();
   }
 }
 
@@ -449,6 +455,11 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
                "Done visiting children of {}",
                parent->getName());
   }
+
+  if (graphics_) {
+    graphics_->setCurrentCluster(parent);
+  }
+
   // if the current cluster is the root cluster,
   // the shape is fixed, i.e., the fixed die.
   // Thus, we do not need to determine the shapes for it
@@ -698,6 +709,10 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   if (cluster->isArrayOfInterconnectedMacros()) {
     setTightPackingTilings(cluster);
     return;
+  }
+
+  if (graphics_) {
+    graphics_->setCurrentCluster(cluster);
   }
 
   // otherwise call simulated annealing to determine tilings
@@ -1170,6 +1185,10 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
   if (parent->getClusterType() == HardMacroCluster) {
     placeMacros(parent);
     return;
+  }
+
+  if (graphics_) {
+    graphics_->setCurrentCluster(parent);
   }
 
   for (auto& cluster : parent->getChildren()) {
@@ -2156,6 +2175,10 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
     return;
   }
 
+  if (graphics_) {
+    graphics_->setCurrentCluster(parent);
+  }
+
   for (auto& cluster : parent->getChildren()) {
     clustering_engine_->updateInstancesAssociation(cluster.get());
   }
@@ -2657,6 +2680,11 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
       return;
     }
   }
+
+  if (graphics_) {
+    graphics_->setCurrentCluster(parent);
+  }
+
   // Place children clusters
   // map children cluster to soft macro
   for (auto& cluster : parent->getChildren()) {
@@ -3371,6 +3399,10 @@ void HierRTLMP::placeMacros(Cluster* cluster)
              1,
              "Place macros in cluster: {}",
              cluster->getName());
+
+  if (graphics_) {
+    graphics_->setCurrentCluster(cluster);
+  }
 
   UniqueClusterVector macro_clusters;  // needed to calculate connections
   std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
@@ -4096,6 +4128,12 @@ void HierRTLMP::setDebugSkipSteps(bool skip_steps)
 void HierRTLMP::setDebugOnlyFinalResult(bool only_final_result)
 {
   graphics_->setOnlyFinalResult(only_final_result);
+  is_debug_only_final_result_ = only_final_result;
+}
+
+void HierRTLMP::setDebugTargetClusterId(const int target_cluster_id)
+{
+  graphics_->setTargetClusterId(target_cluster_id);
 }
 
 odb::Rect HierRTLMP::micronsToDbu(const Rect& micron_rect)

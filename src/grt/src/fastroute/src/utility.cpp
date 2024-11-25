@@ -2497,7 +2497,9 @@ double FastRouteCore::dbuToMicrons(int dbu)
 void FastRouteCore::saveCongestion(const int iter)
 {
   std::vector<CongestionInformation> congestionGridsV, congestionGridsH;
-  getCongestionGrid(congestionGridsV, congestionGridsH);
+  if (!h_edges_.empty() && !v_edges_.empty()) {
+    getCongestionGrid(congestionGridsV, congestionGridsH);
+  }
 
   const std::string marker_group_name = fmt::format(
       "Global route{}", iter == -1 ? "" : fmt::format(" - iter {}", iter));

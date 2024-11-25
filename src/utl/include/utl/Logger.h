@@ -252,6 +252,14 @@ class Logger
   // Redirect output to a string until redirectStringEnd is called.
   void redirectStringBegin();
   std::string redirectStringEnd();
+  // Tee output to filename until teeFileEnd is called.
+  void teeFileBegin(const std::string& filename);
+  // Tee append output to filename until teeFileEnd is called.
+  void teeFileAppendBegin(const std::string& filename);
+  void teeFileEnd();
+  // Redirect output to a string until teeStringEnd is called.
+  void teeStringBegin();
+  std::string teeStringEnd();
 
  private:
   std::vector<std::string> metrics_sinks_;
@@ -281,12 +289,13 @@ class Logger
 
     if (count == max_message_print) {
       logger_->log(level,
-                   "[{} {}-{:04d}] message limit reached, "
-                   "this message will no longer print"
-                       + std::string(spdlog::details::os::default_eol),
+                   "[{} {}-{:04d}] message limit ({})"
+                   " reached. This message will no longer print.{}",
                    level_names[level],
                    tool_names_[tool],
-                   id);
+                   id,
+                   max_message_print,
+                   spdlog::details::os::default_eol);
     } else {
       counter--;  // to avoid counter overflow
     }
@@ -306,8 +315,9 @@ class Logger
   void flushMetrics();
   void finalizeMetrics();
 
-  void setRedirectSink(std::ostream& sink_stream);
+  void setRedirectSink(std::ostream& sink_stream, bool keep_sinks = false);
   void restoreFromRedirect();
+  void assertNoRedirect();
 
   void setFormatter();
 

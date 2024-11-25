@@ -378,14 +378,16 @@ inline bool isSupplyVia(gcRect* rect)
          && rect->getNet()->getFrNet()->getType().isSupply();
 }
 
-inline bool isSkipVia(gcRect* rect)
+inline bool isSkipVia(gcRect* rect, RouterConfiguration* router_cfg)
 {
-  return rect->getLayerNum() == GC_IGNORE_PDN_LAYER_NUM && isSupplyVia(rect);
+  return rect->getLayerNum() == router_cfg->GC_IGNORE_PDN_LAYER_NUM
+         && isSupplyVia(rect);
 }
 
-inline bool isFixedVia(gcRect* rect)
+inline bool isFixedVia(gcRect* rect, RouterConfiguration* router_cfg)
 {
-  if (rect->getLayerNum() == REPAIR_PDN_LAYER_NUM && isSupplyVia(rect)) {
+  if (rect->getLayerNum() == router_cfg->REPAIR_PDN_LAYER_NUM
+      && isSupplyVia(rect)) {
     return false;
   }
   return rect->isFixed();
@@ -406,7 +408,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
   }
 
   auto dbRule = con->getODBRule();
-  if (isSkipVia(viaRect)) {
+  if (isSkipVia(viaRect, router_cfg_)) {
     return;
   }
 
@@ -443,13 +445,13 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
   auto& workerRegionQuery = getWorkerRegionQuery();
   workerRegionQuery.queryMaxRectangle(queryBox, queryLayerNum, results);
   for (auto& [box, ptr] : results) {
-    if (isFixedVia(ptr) && isFixedVia(viaRect)) {
+    if (isFixedVia(ptr, router_cfg_) && isFixedVia(viaRect, router_cfg_)) {
       continue;
     }
     if (ptr->getPin() == viaRect->getPin()) {
       continue;
     }
-    if (isSkipVia(ptr)) {
+    if (isSkipVia(ptr, router_cfg_)) {
       continue;
     }
     if (isUpperVia) {
@@ -463,7 +465,7 @@ void FlexGCWorker::Impl::checKeepOutZone_main(gcRect* rect,
                                               frLef58KeepOutZoneConstraint* con)
 {
   auto layer = getTech()->getLayer(rect->getLayerNum());
-  if (isSkipVia(rect)) {
+  if (isSkipVia(rect, router_cfg_)) {
     return;
   }
   auto dbRule = con->getODBRule();
@@ -512,13 +514,13 @@ void FlexGCWorker::Impl::checKeepOutZone_main(gcRect* rect,
     allResults.insert(allResults.end(), results.begin(), results.end());
   }
   for (auto& [box, ptr] : allResults) {
-    if (isFixedVia(ptr) && isFixedVia(rect)) {
+    if (isFixedVia(ptr, router_cfg_) && isFixedVia(rect, router_cfg_)) {
       continue;
     }
     if (ptr->getPin() == rect->getPin()) {
       continue;
     }
-    if (isSkipVia(ptr)) {
+    if (isSkipVia(ptr, router_cfg_)) {
       continue;
     }
     auto via2CutClass = layer->getCutClass(ptr->width(), ptr->length());
@@ -556,7 +558,7 @@ void FlexGCWorker::Impl::checKeepOutZone_main(gcRect* rect,
 
 void FlexGCWorker::Impl::checkMetalWidthViaTable_main(gcRect* rect)
 {
-  if (rect->getLayerNum() > TOP_ROUTING_LAYER) {
+  if (rect->getLayerNum() > router_cfg_->TOP_ROUTING_LAYER) {
     return;
   }
   for (auto con : getTech()
