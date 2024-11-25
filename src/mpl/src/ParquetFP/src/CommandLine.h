@@ -49,7 +49,7 @@ class Command_Line
   bool getSeed{false}, budgetTime{false};
   bool softBlocks{false};
   bool initQP{false};  // initialize a QP soln
-  std::string inFileName{""};
+  std::string inFileName;
   std::string outPlFile{""};
   std::string capoPlFile{""};
   std::string capoBaseFile{""};
