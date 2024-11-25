@@ -75,11 +75,6 @@ _installCommonDev() {
     spdlogVersion=1.8.1
     gtestVersion=1.13.0
     gtestChecksum="a1279c6fb5bf7d4a5e0d0b2a4adb39ac"
-    opensslVersion=3.3.2
-    opensslChecksum="015fca2692596560b6fe8a2d8fecd84b"
-    curlVersion="7_81_0"
-    curlVersionDots=$(echo ${curlVersion} | sed 's/_/./g')
-    curlChecksum="9e5e81fc7657eea8dc66672768082c46"
 
 
     rm -rf "${baseDir}"
@@ -223,38 +218,6 @@ _installCommonDev() {
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D GTest_ROOT=$(realpath $gtestPrefix) "
 
-    # openssl
-    opensslPrefix=${PREFIX:-"/usr/local"}
-    if [[ ! -d ${opensslPrefix}/include/openssl ]]; then
-        cd "${baseDir}"
-        eval wget https://github.com/openssl/openssl/releases/download/openssl-${opensslVersion}/openssl-${opensslVersion}.tar.gz
-        md5sum -c <(echo "${opensslChecksum} openssl-${opensslVersion}.tar.gz") || exit 1
-        tar -xf openssl-${opensslVersion}.tar.gz
-        cd openssl-${opensslVersion}
-        ./config --prefix=${opensslPrefix}
-        make -j $(nproc)
-        make install
-    else
-        echo "openssl already installed."
-    fi
-    CMAKE_PACKAGE_ROOT_ARGS+=" -D OpenSSL_ROOT=$(realpath $opensslPrefix) "
-
-    # curl
-    curlPrefix=${PREFIX:-"/usr/local"}
-    if [[ ! -d ${curlPrefix}/include/curl ]]; then
-        cd "${baseDir}"
-        eval wget https://github.com/curl/curl/releases/download/curl-${curlVersion}/curl-${curlVersionDots}.tar.gz
-        md5sum -c <(echo "${curlChecksum} curl-${curlVersionDots}.tar.gz") || exit 1
-        tar -xf curl-${curlVersionDots}.tar.gz
-        cd curl-${curlVersionDots}
-        ./configure --with-openssl --prefix=${curlPrefix}
-        make -j $(nproc)
-        make install
-    else
-        echo "curl already installed."
-    fi
-    CMAKE_PACKAGE_ROOT_ARGS+=" -D CURL_ROOT=$(realpath $curlPrefix) "
-
     if [[ ${equivalenceDeps} == "yes" ]]; then
         _equivalenceDeps
     fi
@@ -356,7 +319,6 @@ _installUbuntuPackages() {
         build-essential \
         ccache \
         clang \
-        curl \
         debhelper \
         devscripts \
         flex \
@@ -365,6 +327,7 @@ _installUbuntuPackages() {
         git \
         groff \
         lcov \
+        libcurl4-openssl-dev \
         libffi-dev \
         libgomp1 \
         libomp-dev \
@@ -429,7 +392,6 @@ _installRHELPackages() {
         automake \
         clang \
         clang-devel \
-        curl \
         gcc \
         gcc-c++ \
         gdb \
@@ -486,7 +448,6 @@ _installOpenSusePackages() {
     zypper -n install \
         binutils \
         clang \
-        curl \
         gcc \
         gcc11-c++ \
         git \
@@ -590,7 +551,6 @@ _installDebianPackages() {
         bison \
         build-essential \
         clang \
-        curl \
         debhelper \
         devscripts \
         flex \
@@ -599,6 +559,8 @@ _installDebianPackages() {
         git \
         groff \
         lcov \
+        libboost-json-dev \
+        libcurl4-openssl-dev \
         libffi-dev \
         libgomp1 \
         libomp-dev \
