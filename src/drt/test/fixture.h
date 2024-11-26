@@ -219,6 +219,11 @@ class Fixture
       std::vector<frCoord> widthTbl,
       std::vector<frCoord> prlTbl,
       std::vector<std::vector<frCoord>> spacingTbl);
+
+  frLef58WidthTableOrthConstraint* makeWidthTblOrthConstraint(
+      frLayerNum layer_num,
+      frCoord horz_spc,
+      frCoord vert_spc);
   void initRegionQuery();
   frLef58CutSpacingConstraint* makeLef58CutSpacingConstraint_parallelOverlap(
       frLayerNum layer_num,

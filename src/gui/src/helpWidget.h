@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
+// Copyright (c) 2024, The Regents of the University of California
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,41 +33,38 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "stt/MakeSteinerTreeBuilder.h"
+#pragma once
 
-#include "ord/OpenRoad.hh"
-#include "sta/StaMain.hh"
-#include "stt/SteinerTreeBuilder.h"
+#include <QComboBox>
+#include <QDockWidget>
+#include <QListWidget>
+#include <QTextBrowser>
 
-namespace sta {
-// Tcl files encoded into strings.
-extern const char* stt_tcl_inits[];
-}  // namespace sta
+#include "gui/gui.h"
 
-extern "C" {
-extern int Stt_Init(Tcl_Interp* interp);
-}
+namespace gui {
 
-namespace ord {
-
-stt::SteinerTreeBuilder* makeSteinerTreeBuilder()
+class HelpWidget : public QDockWidget
 {
-  return new stt::SteinerTreeBuilder();
-}
+  Q_OBJECT
 
-void deleteSteinerTreeBuilder(stt::SteinerTreeBuilder* stt_builder)
-{
-  delete stt_builder;
-}
+ public:
+  HelpWidget(QWidget* parent = nullptr);
 
-void initSteinerTreeBuilder(OpenRoad* openroad)
-{
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
-  // Define swig TCL commands.
-  Stt_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::stt_tcl_inits);
-  openroad->getSteinerTreeBuilder()->init(openroad->getDb(),
-                                          openroad->getLogger());
-}
+  void init(const std::string& path);
+  bool hasHelp() const { return has_help_; }
+  void selectHelp(const std::string& item);
 
-}  // namespace ord
+ public slots:
+  void changeCategory();
+  void showHelpInformation(QListWidgetItem* item);
+
+ private:
+  QComboBox* category_selector_;
+  QListWidget* help_list_;
+  QTextBrowser* viewer_;
+
+  bool has_help_;
+};
+
+}  // namespace gui

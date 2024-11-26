@@ -180,7 +180,7 @@ class Verilog2db
 
   bool hasTerminals(Net* net) const;
   dbMaster* getMaster(Cell* cell);
-  std::optional<LineInfo> parseLineInfo(const std::string& attribute);
+  void storeLineInfo(const std::string& attribute, dbInst* db_inst);
 
   Network* network_;
   dbDatabase* db_;
@@ -194,7 +194,11 @@ class Verilog2db
   // creating iterms; as iterms can't be added to a dont_touch inst
   std::vector<dbInst*> dont_touch_insts;
   bool hierarchy_ = false;
+  static const std::regex line_info_re;
 };
+
+// Example: "./designs/src/gcd/gcd.v:571.3-577.6"
+const std::regex Verilog2db::line_info_re("^(.*):(\\d+)\\.\\d+-\\d+\\.\\d+$");
 
 void dbLinkDesign(const char* top_cell_name,
                   dbVerilogNetwork* verilog_network,
@@ -292,18 +296,30 @@ void Verilog2db::recordBusPortsOrder()
   }
 }
 
-std::optional<Verilog2db::LineInfo> Verilog2db::parseLineInfo(
-    const std::string& attribute)
+void Verilog2db::storeLineInfo(const std::string& attribute, dbInst* db_inst)
 {
-  // Example: "./designs/src/gcd/gcd.v:571.3-577.6"
-  const std::regex re("^(.*):(\\d+)\\.\\d+-\\d+\\.\\d+$");
-  std::smatch match;
-
-  if (!std::regex_match(attribute, match, re)) {
-    return {};
+  if (attribute.empty()) {
+    return;
   }
 
-  return LineInfo{match[1], stoi(match[2])};
+  std::smatch match;
+
+  if (std::regex_match(attribute, match, line_info_re)) {
+    const std::string file_name = match[1];
+    const auto iter = src_file_id_.find(file_name);
+    int file_id;
+    if (iter != src_file_id_.end()) {
+      file_id = iter->second;
+    } else {
+      file_id = src_file_id_.size();
+      src_file_id_[file_name] = file_id;
+      const auto id_string = fmt::format("src_file_{}", file_id);
+      odb::dbStringProperty::create(
+          block_, id_string.c_str(), file_name.c_str());
+    }
+    odb::dbIntProperty::create(db_inst, "src_file_id", file_id);
+    odb::dbIntProperty::create(db_inst, "src_file_line", stoi(match[2]));
+  }
 }
 
 // Recursively builds odb's dbModule/dbModInst hierarchy corresponding
@@ -326,14 +342,7 @@ void Verilog2db::makeDbModule(
     module = dbModule::makeUniqueDbModule(
         network_->name(cell), network_->name(inst), block_);
 
-    // Strip out the full hiearchical name. We are now
-    // storing the module instances in the scope of their
-    // owner
     std::string module_inst_name = network_->name(inst);
-    const size_t last_idx = module_inst_name.find_last_of('/');
-    if (last_idx != string::npos) {
-      module_inst_name = module_inst_name.substr(last_idx + 1);
-    }
 
     dbModInst* modinst
         = dbModInst::create(parent, module, module_inst_name.c_str());
@@ -349,12 +358,11 @@ void Verilog2db::makeDbModule(
                parent->getName());
 
     if (modinst == nullptr) {
-      logger_->warn(ORD,
-                    2014,
-                    "hierachical instance creation failed for {} of {}",
-                    network_->name(inst),
-                    network_->name(cell));
-      return;
+      logger_->error(ORD,
+                     2014,
+                     "hierachical instance creation failed for {} of {}",
+                     network_->name(inst),
+                     network_->name(cell));
     }
     if (hierarchy_) {
       makeModBTerms(cell, module);
@@ -500,27 +508,7 @@ void Verilog2db::makeChildInsts(Instance* inst,
 
       // Yosys writes a src attribute on sequential instances to give the
       // Verilog source info.
-      const auto src = network_->getAttribute(child, "src");
-      if (!src.empty()) {
-        if (auto opt_line_info = parseLineInfo(src)) {
-          const auto& line_info = opt_line_info.value();
-          const auto& file_name = line_info.file_name;
-          const auto iter = src_file_id_.find(file_name);
-          int file_id;
-          if (iter != src_file_id_.end()) {
-            file_id = iter->second;
-          } else {
-            file_id = src_file_id_.size();
-            src_file_id_[file_name] = file_id;
-            const auto id_string = fmt::format("src_file_{}", file_id);
-            odb::dbStringProperty::create(
-                block_, id_string.c_str(), file_name.c_str());
-          }
-          odb::dbIntProperty::create(db_inst, "src_file_id", file_id);
-          odb::dbIntProperty::create(
-              db_inst, "src_file_line", line_info.line_number);
-        }
-      }
+      storeLineInfo(network_->getAttribute(child, "src"), db_inst);
 
       const auto dont_touch = network_->getAttribute(child, "dont_touch");
       if (!dont_touch.empty()) {
@@ -530,12 +518,11 @@ void Verilog2db::makeChildInsts(Instance* inst,
       }
 
       if (db_inst == nullptr) {
-        logger_->warn(ORD,
-                      2015,
-                      "leaf instance creation failed for {} of {}",
-                      network_->name(child),
-                      module->getName());
-        continue;
+        logger_->error(ORD,
+                       2015,
+                       "Leaf instance creation failed for {} of {}",
+                       network_->name(child),
+                       module->getName());
       }
     }
   }
@@ -644,46 +631,48 @@ void Verilog2db::makeDbNets(const Instance* inst)
   // Todo, put dbnets in the module in case of hierarchy (not block)
   while (net_iter->hasNext()) {
     Net* net = net_iter->next();
+
+    if (!is_top && hasTerminals(net)) {
+      continue;
+    }
+
     const char* net_name = network_->pathName(net);
+    dbNet* db_net = dbNet::create(block_, net_name);
+    if (network_->isPower(net)) {
+      db_net->setSigType(odb::dbSigType::POWER);
+    }
+    if (network_->isGround(net)) {
+      db_net->setSigType(odb::dbSigType::GROUND);
+    }
 
-    if (is_top || !hasTerminals(net)) {
-      dbNet* db_net = dbNet::create(block_, net_name);
-      if (network_->isPower(net)) {
-        db_net->setSigType(odb::dbSigType::POWER);
-      }
-      if (network_->isGround(net)) {
-        db_net->setSigType(odb::dbSigType::GROUND);
-      }
+    // Sort connected pins for regression stability.
+    PinSeq net_pins;
+    std::unique_ptr<NetConnectedPinIterator> pin_iter{
+        network_->connectedPinIterator(net)};
+    while (pin_iter->hasNext()) {
+      const Pin* pin = pin_iter->next();
+      net_pins.push_back(pin);
+    }
+    sort(net_pins, PinPathNameLess(network_));
 
-      // Sort connected pins for regression stability.
-      PinSeq net_pins;
-      std::unique_ptr<NetConnectedPinIterator> pin_iter{
-          network_->connectedPinIterator(net)};
-      while (pin_iter->hasNext()) {
-        const Pin* pin = pin_iter->next();
-        net_pins.push_back(pin);
-      }
-      sort(net_pins, PinPathNameLess(network_));
-
-      for (const Pin* pin : net_pins) {
-        if (network_->isTopLevelPort(pin)) {
-          const char* port_name = network_->portName(pin);
-          if (block_->findBTerm(port_name) == nullptr) {
-            dbBTerm* bterm = dbBTerm::create(db_net, port_name);
-            dbIoType io_type = staToDb(network_->direction(pin));
-            bterm->setIoType(io_type);
-          }
-        } else if (network_->isLeaf(pin)) {
-          const char* port_name = network_->portName(pin);
-          Instance* inst = network_->instance(pin);
-          const char* inst_name = network_->pathName(inst);
-          dbInst* db_inst = block_->findInst(inst_name);
-          if (db_inst) {
-            dbMaster* master = db_inst->getMaster();
-            dbMTerm* mterm = master->findMTerm(block_, port_name);
-            if (mterm) {
-              db_inst->getITerm(mterm)->connect(db_net);
-            }
+    for (const Pin* pin : net_pins) {
+      if (network_->isTopLevelPort(pin)) {
+        const char* port_name = network_->portName(pin);
+        if (block_->findBTerm(port_name) == nullptr) {
+          dbBTerm* bterm = dbBTerm::create(db_net, port_name);
+          dbIoType io_type = staToDb(network_->direction(pin));
+          bterm->setIoType(io_type);
+        }
+      } else if (network_->isLeaf(pin)) {
+        const char* port_name = network_->portName(pin);
+        Instance* inst = network_->instance(pin);
+        const char* inst_name = network_->pathName(inst);
+        dbInst* db_inst = block_->findInst(inst_name);
+        if (db_inst) {
+          dbMaster* master = db_inst->getMaster();
+          dbMTerm* mterm = master->findMTerm(block_, port_name);
+          if (mterm) {
+            db_inst->getITerm(mterm)->connect(db_net);
           }
         }
       }
