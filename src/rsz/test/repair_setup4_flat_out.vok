@@ -28,16 +28,16 @@ module reg1 (clk);
     .CK(clk));
  DFF_X1 r8 (.D(net1));
  DFF_X1 r9 (.D(r1q));
- BUF_X1 u1 (.A(r1q),
+ BUF_X2 u1 (.A(r1q),
     .Z(u1z));
- BUF_X1 u2 (.A(u1z),
+ BUF_X4 u2 (.A(u1z),
     .Z(u2z));
- BUF_X1 u3 (.A(u2z),
+ BUF_X4 u3 (.A(u2z),
     .Z(u3z));
- BUF_X1 u4 (.A(u3z),
+ BUF_X4 u4 (.A(u3z),
     .Z(u4z));
- BUF_X1 u5 (.A(u4z),
+ BUF_X4 u5 (.A(u4z),
     .Z(u5z));
- BUF_X4 rebuffer1 (.A(r1q),
+ BUF_X1 rebuffer1 (.A(r1q),
     .Z(net1));
 endmodule
