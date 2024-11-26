@@ -297,12 +297,7 @@ bool BTreeAreaWireAnnealer::go()
   currSoln.width = in_curr_solution.totalWidth();
   currSoln.height = in_curr_solution.totalHeight();
   bool useWts = true;
-#ifdef USEFLUTE
-  currSoln.HPWL
-      = _db->evalHPWL(useWts, _params->scaleTerms, _params->useSteiner);
-#else
   currSoln.HPWL = _db->evalHPWL(useWts, _params->scaleTerms);
-#endif
   printResults(currSoln);
 
   return success;
@@ -400,12 +395,7 @@ bool BTreeAreaWireAnnealer::packOneBlock()
     if (fitsInside && _params->minWL) {
       DBfromSoln(in_curr_solution);
       bool useWts = true;
-#ifdef USEFLUTE
-      float currHPWL
-          = _db->evalHPWL(useWts, _params->scaleTerms, _params->useSteiner);
-#else
       float currHPWL = _db->evalHPWL(useWts, _params->scaleTerms);
-#endif
 
       if (_params->verb > 0)
         cout << " HPWL: " << currHPWL;
@@ -488,12 +478,7 @@ bool BTreeAreaWireAnnealer::anneal()
   _db->updatePlacement(const_cast<vector<float>&>(in_curr_solution.xloc()),
                        const_cast<vector<float>&>(in_curr_solution.yloc()));
   bool useWts = true;
-#ifdef USEFLUTE
-  float currHPWL
-      = _db->evalHPWL(useWts, _params->scaleTerms, _params->useSteiner);
-#else
   float currHPWL = _db->evalHPWL(useWts, _params->scaleTerms);
-#endif
 
   //  float currDist = in_curr_solution.getDistance(real_reqdWidth,
   //  real_reqdHeight);
@@ -681,12 +666,7 @@ bool BTreeAreaWireAnnealer::anneal()
         //          in_next_solution.yloc(i) << endl;
         //        }
 
-#ifdef USEFLUTE
-        tempHPWL
-            = _db->evalHPWL(useWts, _params->scaleTerms, _params->useSteiner);
-#else
         tempHPWL = _db->evalHPWL(useWts, _params->scaleTerms);
-#endif
         if (currHPWL == 0)
           deltaHPWL = 0;
         else {

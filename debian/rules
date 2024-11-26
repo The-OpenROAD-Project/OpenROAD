@@ -18,4 +18,5 @@ override_dh_shlibdeps:
 override_dh_install:
 	dh_install --sourcedir=/opt
 
+override_dh_auto_test:
 override_dh_dwz:

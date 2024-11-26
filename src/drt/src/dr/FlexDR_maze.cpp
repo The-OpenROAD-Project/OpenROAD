@@ -43,7 +43,7 @@ namespace drt {
 
 namespace gtl = boost::polygon;
 
-int beginDebugIter = std::numeric_limits<int>::max();
+const int beginDebugIter = std::numeric_limits<int>::max();
 static frSquaredDistance pt2boxDistSquare(const Point& pt, const Rect& box)
 
 {

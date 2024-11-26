@@ -72,6 +72,7 @@ class DRCWidget;
 class ClockWidget;
 class BrowserWidget;
 class ChartsWidget;
+class HelpWidget;
 
 // This is the main window for the GUI.  Currently we use a single
 // instance of this class.
@@ -84,7 +85,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   ~MainWindow();
 
   void setDatabase(odb::dbDatabase* db);
-  void init(sta::dbSta* sta);
+  void init(sta::dbSta* sta, const std::string& help_path);
 
   odb::dbDatabase* getDb() const { return db_; }
 
@@ -106,6 +107,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   ClockWidget* getClockViewer() const { return clock_viewer_; }
   ScriptWidget* getScriptWidget() const { return script_; }
   Inspector* getInspector() const { return inspector_; }
+  HelpWidget* getHelpViewer() const { return help_widget_; }
 
   std::vector<std::string> getRestoreTclCommands();
 
@@ -318,6 +320,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   ClockWidget* clock_viewer_;
   BrowserWidget* hierarchy_widget_;
   ChartsWidget* charts_widget_;
+  HelpWidget* help_widget_;
 
   FindObjectDialog* find_dialog_;
   GotoLocationDialog* goto_dialog_;
