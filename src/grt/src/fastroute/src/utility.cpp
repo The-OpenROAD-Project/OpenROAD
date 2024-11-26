@@ -494,10 +494,10 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         }
       }
 
-      if (best_cost
-          <= 0) {  // assigning the edge to the layer range would cause overflow
-        // try to assign the edge to the closest layer below the min routing
-        // layer
+      // assigning the edge to the layer range would cause overflow try to
+      // assign the edge to the closest layer below the min routing layer.
+      // if design has 2D overflow, accept the congestion in layer assignment
+      if (best_cost <= 0 && !has_2D_overflow_) {
         int min_layer = net->getMinLayer();
         for (l = net->getMinLayer() - 1; l >= 0; l--) {
           fixEdgeAssignment(min_layer,
@@ -549,10 +549,10 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         }
       }
 
-      if (best_cost
-          <= 0) {  // assigning the edge to the layer range would cause overflow
-        // try to assign the edge to the closest layer below the min routing
-        // layer
+      // assigning the edge to the layer range would cause overflow try to
+      // assign the edge to the closest layer below the min routing layer.
+      // if design has 2D overflow, accept the congestion in layer assignment
+      if (best_cost <= 0 && !has_2D_overflow_) {
         int min_layer = net->getMinLayer();
         for (l = net->getMinLayer() - 1; l >= 0; l--) {
           fixEdgeAssignment(min_layer,
@@ -621,7 +621,8 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       for (l = 0; l < num_layers_; l++) {
         if (layer_grid[l][k] > 0) {
           gridD[l][k + 1] = gridD[l][k] + 1;
-        } else if (layer_grid[l][k] == std::numeric_limits<int>::min()) {
+        } else if (layer_grid[l][k] == std::numeric_limits<int>::min()
+                   || l < net->getMinLayer() || l > net->getMaxLayer()) {
           // when the layer orientation doesn't match the edge orientation,
           // set a larger weight to avoid assigning to this layer when the
           // routing has 3D overflow
@@ -736,7 +737,8 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       for (l = 0; l < num_layers_; l++) {
         if (layer_grid[l][k - 1] > 0) {
           gridD[l][k - 1] = gridD[l][k] + 1;
-        } else if (layer_grid[l][k] == std::numeric_limits<int>::min()) {
+        } else if (layer_grid[l][k] == std::numeric_limits<int>::min()
+                   || l < net->getMinLayer() || l > net->getMaxLayer()) {
           // when the layer orientation doesn't match the edge orientation,
           // set a larger weight to avoid assigning to this layer when the
           // routing has 3D overflow
@@ -964,7 +966,7 @@ void FastRouteCore::layerAssignmentV4()
         treenodes[n2a].assigned = true;
 
       }  // edge len > 0
-    }    // eunmerating edges
+    }  // eunmerating edges
   }
 }
 
@@ -2166,7 +2168,7 @@ int FastRouteCore::edgeShift(Tree& t, int net)
                 }
                 costH[j] += std::min(cost1, cost2);
               }  // if(n3!=n2)
-            }    // loop l
+            }  // loop l
             for (l = 0; l < nbrCnt[n2]; l++) {
               n3 = nbr[n2][l];
               if (n3 != n1)  // exclude current edge n1-n2
@@ -2196,8 +2198,8 @@ int FastRouteCore::edgeShift(Tree& t, int net)
                 }
                 costH[j] += std::min(cost1, cost2);
               }  // if(n3!=n1)
-            }    // loop l
-          }      // loop j
+            }  // loop l
+          }  // loop j
           bestCost = BIG_INT;
           Pos = t.branch[n1].y;
           for (j = minY; j <= maxY; j++) {
@@ -2277,7 +2279,7 @@ int FastRouteCore::edgeShift(Tree& t, int net)
                 }
                 costV[j] += std::min(cost1, cost2);
               }  // if(n3!=n2)
-            }    // loop l
+            }  // loop l
             for (l = 0; l < nbrCnt[n2]; l++) {
               n3 = nbr[n2][l];
               if (n3 != n1)  // exclude current edge n1-n2
@@ -2307,8 +2309,8 @@ int FastRouteCore::edgeShift(Tree& t, int net)
                 }
                 costV[j] += std::min(cost1, cost2);
               }  // if(n3!=n1)
-            }    // loop l
-          }      // loop j
+            }  // loop l
+          }  // loop j
           bestCost = BIG_INT;
           Pos = t.branch[n1].x;
           for (j = minX; j <= maxX; j++) {
