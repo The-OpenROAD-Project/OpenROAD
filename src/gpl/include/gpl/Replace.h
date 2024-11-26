@@ -198,7 +198,7 @@ class Replace
   int routabilityMaxInflationIter_ = 4;
 
   float timingNetWeightMax_ = 1.9;
-  float keepResizeBelowOverflow_ = 0.0;
+  float keepResizeBelowOverflow_ = 0.3;
 
   bool timingDrivenMode_ = true;
   bool routabilityDrivenMode_ = true;

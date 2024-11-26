@@ -59,6 +59,10 @@ namespace stt {
 
 using utl::Logger;
 
+namespace flt {
+class Flute;
+}
+
 struct Branch
 {
   int x, y;  // starting point of the branch
@@ -79,7 +83,7 @@ class SteinerTreeBuilder
 {
  public:
   SteinerTreeBuilder();
-  ~SteinerTreeBuilder() = default;
+  ~SteinerTreeBuilder();
 
   void init(odb::dbDatabase* db, Logger* logger);
 
@@ -109,6 +113,15 @@ class SteinerTreeBuilder
   void setMinFanoutAlpha(int min_fanout, float alpha);
   void setMinHPWLAlpha(int min_hpwl, float alpha);
 
+  Tree flute(const std::vector<int>& x, const std::vector<int>& y, int acc);
+  int wirelength(Tree t);
+  void plottree(Tree t);
+  void write_svg(Tree t, const char* filename);
+  Tree flutes(const std::vector<int>& xs,
+              const std::vector<int>& ys,
+              const std::vector<int>& s,
+              int acc);
+
  private:
   int computeHPWL(odb::dbNet* net);
 
@@ -120,6 +133,7 @@ class SteinerTreeBuilder
 
   Logger* logger_;
   odb::dbDatabase* db_;
+  std::unique_ptr<flt::Flute> flute_;
 };
 
 // Used by regressions.
