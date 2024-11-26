@@ -218,6 +218,7 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
 // previous congestion report file.
 void GlobalRouter::saveCongestion()
 {
+  is_congested_ = fastroute_->totalOverflow() > 0;
   fastroute_->saveCongestion();
 }
 
@@ -228,7 +229,8 @@ bool GlobalRouter::haveRoutes()
     logger_->warn(GRT, 97, "No global routing found for nets.");
   }
 
-  return !routes_.empty();
+  bool congested_routes = is_congested_ && !allow_congestion_;
+  return !routes_.empty() && !congested_routes;
 }
 
 bool GlobalRouter::haveDetailedRoutes()
@@ -330,7 +332,7 @@ void GlobalRouter::globalRoute(bool save_guides,
     }
   }
 
-  if (fastroute_->totalOverflow() > 0) {
+  if (is_congested_) {
     if (allow_congestion_) {
       logger_->warn(GRT,
                     115,
@@ -2099,6 +2101,7 @@ void GlobalRouter::loadGuidesFromDB()
       int via_layer_idx = guide->getViaLayer()->getRoutingLevel();
       boxToGlobalRouting(
           guide->getBox(), layer_idx, via_layer_idx, routes_[net]);
+      is_congested_ = is_congested_ || guide->isCongested();
     }
   }
 
@@ -2322,8 +2325,7 @@ void GlobalRouter::saveGuides()
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
 
-  bool is_congested = fastroute_->has2Doverflow() && !allow_congestion_;
-
+  bool guide_is_congested = is_congested_ && !allow_congestion_;
   for (odb::dbNet* db_net : block_->getNets()) {
     auto iter = routes_.find(db_net);
     if (iter == routes_.end()) {
@@ -2350,15 +2352,18 @@ void GlobalRouter::saveGuides()
             int layer_idx2 = segment.final_layer;
             odb::dbTechLayer* layer1 = routing_layers_[layer_idx1];
             odb::dbTechLayer* layer2 = routing_layers_[layer_idx2];
-            odb::dbGuide::create(db_net, layer1, layer2, box, is_congested);
-            odb::dbGuide::create(db_net, layer2, layer1, box, is_congested);
+            odb::dbGuide::create(
+                db_net, layer1, layer2, box, guide_is_congested);
+            odb::dbGuide::create(
+                db_net, layer2, layer1, box, guide_is_congested);
           } else {
             int layer_idx = std::min(segment.init_layer, segment.final_layer);
             int via_layer_idx
                 = std::max(segment.init_layer, segment.final_layer);
             odb::dbTechLayer* layer = routing_layers_[layer_idx];
             odb::dbTechLayer* via_layer = routing_layers_[via_layer_idx];
-            odb::dbGuide::create(db_net, layer, via_layer, box, is_congested);
+            odb::dbGuide::create(
+                db_net, layer, via_layer, box, guide_is_congested);
           }
         } else if (segment.init_layer == segment.final_layer) {
           if (segment.init_layer < getMinRoutingLayer()
@@ -2371,7 +2376,7 @@ void GlobalRouter::saveGuides()
           }
 
           odb::dbTechLayer* layer = routing_layers_[segment.init_layer];
-          odb::dbGuide::create(db_net, layer, layer, box, is_congested);
+          odb::dbGuide::create(db_net, layer, layer, box, guide_is_congested);
         }
       }
     }
@@ -4770,6 +4775,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         add_max--;
       }
       if (fastroute_->has2Doverflow()) {
+        is_congested_ = true;
         saveCongestion();
         logger_->error(GRT,
                        232,

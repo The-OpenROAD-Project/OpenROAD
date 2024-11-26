@@ -289,12 +289,13 @@ class Logger
 
     if (count == max_message_print) {
       logger_->log(level,
-                   "[{} {}-{:04d}] message limit reached, "
-                   "this message will no longer print"
-                       + std::string(spdlog::details::os::default_eol),
+                   "[{} {}-{:04d}] message limit ({})"
+                   " reached. This message will no longer print.{}",
                    level_names[level],
                    tool_names_[tool],
-                   id);
+                   id,
+                   max_message_print,
+                   spdlog::details::os::default_eol);
     } else {
       counter--;  // to avoid counter overflow
     }

@@ -64,7 +64,8 @@ class FlexPAGraphics : public gui::Renderer
   FlexPAGraphics(frDebugSettings* settings,
                  frDesign* design,
                  odb::dbDatabase* db,
-                 Logger* logger);
+                 Logger* logger,
+                 RouterConfiguration* router_cfg);
 
   void startPin(frBPin* pin,
                 frInstTerm* inst_term,
