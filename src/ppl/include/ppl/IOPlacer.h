@@ -269,7 +269,10 @@ class IOPlacer
   void getBlockedRegionsFromMacros();
   void getBlockedRegionsFromDbObstructions();
   Edge getMirroredEdge(const Edge& edge);
-  int computeNewRegionLength(const Interval& interval, int num_pins);
+  void computeRegionIncrease(const Interval& interval,
+                             int num_pins,
+                             int& new_begin,
+                             int& new_end);
   int64_t computeIncrease(int min_dist, int64_t num_pins, int64_t curr_length);
 
   // db functions
@@ -301,6 +304,7 @@ class IOPlacer
   const int num_tracks_offset_ = 15;
   const int pins_per_report_ = 5;
   const int default_min_dist_ = 2;
+  int corner_avoidance_ = 0;
 
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
