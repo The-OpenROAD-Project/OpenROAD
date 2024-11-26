@@ -1939,7 +1939,13 @@ void GlobalRouter::initGridAndNets()
     initCoreGrid(max_layer);
     setCapacities(min_layer, max_layer);
     applyAdjustments(min_layer, max_layer);
-    updateDbCongestion();
+
+    auto db_gcell = block_->getGCellGrid();
+    // only update db congestion if there are no previous congestion data in the
+    // database
+    if (db_gcell == nullptr) {
+      updateDbCongestion();
+    }
   }
   std::vector<Net*> nets = findNets();
   initNetlist(nets);
