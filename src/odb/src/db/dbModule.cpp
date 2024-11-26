@@ -550,6 +550,7 @@ dbModule* dbModule::makeUniqueDbModule(const char* cell_name,
 
 {
   static std::map<std::string, int> name_id_map;
+  static std::mutex name_id_map_mutex;
   dbModule* module = dbModule::create(block, cell_name);
   if (module != nullptr) {
     return module;
@@ -559,11 +560,15 @@ dbModule* dbModule::makeUniqueDbModule(const char* cell_name,
   std::string module_name = orig_cell_name + '_' + std::string(inst_name);
   do {
     std::string full_name = module_name;
+
+    name_id_map_mutex.lock();
     int& id = name_id_map[module_name];
     if (id > 0) {
       full_name += "_" + std::to_string(id);
     }
     ++id;
+    name_id_map_mutex.unlock();
+
     module = dbModule::create(block, full_name.c_str());
   } while (module == nullptr);
   return module;
