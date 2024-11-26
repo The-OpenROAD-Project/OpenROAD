@@ -608,6 +608,21 @@ To remove all the rulers:
 gui::clear_rulers
 ```
 
+### Display help
+
+To display the help for a specific command or messasge.
+
+```tcl
+gui::show_help
+    cmd_msg
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+| `cmd_msg`| command or message ID. |
+
 ### Set Heatmap
 
 To control the settings in the heat maps:

@@ -257,6 +257,8 @@ using odb::dbTech;
 //
 ////////////////////////////////////////////////////////////////
 
+%include <std_string.i>
+
 #ifdef SWIGTCL
 %include "Exception.i"
 
@@ -612,6 +614,18 @@ void design_created()
 {
   OpenRoad *ord = getOpenRoad();
   ord->designCreated();
+}
+
+std::string get_exe_path()
+{
+  OpenRoad *ord = getOpenRoad();
+  return ord->getExePath();
+}
+
+std::string get_docs_path()
+{
+  OpenRoad *ord = getOpenRoad();
+  return ord->getDocsPath();
 }
 
 }
