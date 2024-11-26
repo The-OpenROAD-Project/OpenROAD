@@ -801,16 +801,16 @@ std::vector<dbAccessPoint*> dbITerm::getPrefAccessPoints() const
   return aps;
 }
 
-std::vector<Rect> dbITerm::getGeometries() const
+std::vector<std::pair<dbTechLayer*, Rect>> dbITerm::getGeometries() const
 {
   const dbTransform transform = getInst()->getTransform();
 
-  std::vector<Rect> geometries;
+  std::vector<std::pair<dbTechLayer*, Rect>> geometries;
   for (dbMPin* mpin : getMTerm()->getMPins()) {
     for (dbBox* box : mpin->getGeometry()) {
       Rect rect = box->getBox();
       transform.apply(rect);
-      geometries.push_back(rect);
+      geometries.emplace_back(box->getTechLayer(), rect);
     }
   }
 

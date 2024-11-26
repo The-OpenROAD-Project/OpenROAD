@@ -43,13 +43,9 @@
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <string>
-// We have had too many problems with this std::filesytem on various platforms
-// so it is disabled but kept for future reference
-#ifdef USE_STD_FILESYSTEM
-#include <filesystem>
-#endif
 #ifdef ENABLE_READLINE
 // If you get an error on this include be sure you have
 //   the package tcl-tclreadline-devel installed
@@ -478,7 +474,6 @@ static int tclAppInit(int& argc,
     const char* home = getenv("HOME");
     if (!findCmdLineFlag(argc, argv, "-no_init") && home) {
       const char* restore_state_cmd = "source -echo -verbose {{{}}}";
-#ifdef USE_STD_FILESYSTEM
       std::filesystem::path init(home);
       init /= init_filename;
       if (std::filesystem::is_regular_file(init)) {
@@ -491,21 +486,6 @@ static int tclAppInit(int& argc,
               fmt::format(FMT_RUNTIME(restore_state_cmd), init.string()));
         }
       }
-#else
-      string init_path = home;
-      init_path += "/";
-      init_path += init_filename;
-      if (is_regular_file(init_path.c_str())) {
-        if (!gui_enabled) {
-          sourceTclFile(init_path.c_str(), true, true, interp);
-        } else {
-          // need to delay loading of file until after GUI is completed
-          // initialized
-          gui::Gui::get()->addRestoreStateCommand(
-              fmt::format(FMT_RUNTIME(restore_state_cmd), init_path));
-        }
-      }
-#endif
     }
 
     if (argc > 2 || (argc > 1 && argv[1][0] == '-')) {
