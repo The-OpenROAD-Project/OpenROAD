@@ -741,4 +741,13 @@ void unminimize()
   gui->unminimize();
 }
 
+void show_help(const std::string& item)
+{
+  if (!check_gui("show_help")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->selectHelp(item);
+}
+
 %} // inline

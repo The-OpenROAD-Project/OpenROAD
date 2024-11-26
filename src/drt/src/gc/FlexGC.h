@@ -45,6 +45,7 @@ class FlexGCWorker
   // constructors
   FlexGCWorker(frTechObject* techIn,
                Logger* logger,
+               RouterConfiguration* router_cfg,
                FlexDRWorker* drWorkerIn = nullptr);
   ~FlexGCWorker();
   // setters

@@ -351,7 +351,7 @@ proc cluster_flops { args } {
     flags {}
 
   if { [ord::get_db_block] == "NULL" } {
-    utl::error GPL 104 "No design block found."
+    utl::error GPL 113 "No design block found."
   }
 
   set tray_weight 32.0
@@ -384,7 +384,7 @@ proc global_placement_debug { args } {
     flags {-draw_bins -initial} ;# checker off
 
   if { [ord::get_db_block] == "NULL" } {
-    utl::error GPL 105 "No design block found."
+    utl::error GPL 117 "No design block found."
   }
 
   set pause 10
@@ -413,7 +413,7 @@ proc global_placement_debug { args } {
 namespace eval gpl {
 proc get_global_placement_uniform_density { args } {
   if { [ord::get_db_block] == "NULL" } {
-    utl::error GPL 106 "No design block found."
+    utl::error GPL 114 "No design block found."
   }
 
   sta::parse_key_args "get_global_placement_uniform_density" args \

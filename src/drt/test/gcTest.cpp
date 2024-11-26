@@ -52,7 +52,7 @@ namespace bdata = boost::unit_test::data;
 // Fixture for GC tests
 struct GCFixture : public Fixture
 {
-  GCFixture() : worker(design->getTech(), logger.get()) {}
+  GCFixture() : worker(design->getTech(), logger.get(), router_cfg.get()) {}
 
   void testMarker(frMarker* marker,
                   frLayerNum layer_num,
@@ -1487,6 +1487,29 @@ BOOST_DATA_TEST_CASE(cut_spc_tbl_orth,
   makeVia(vd, n1, {0, 0});
   makeVia(vd, n1, {0, 240});
   makeVia(vd, n1, {y, 110});
+  runGC();
+  auto& markers = worker.getMarkers();
+  if (violating) {
+    BOOST_TEST(markers.size() == 1);
+  } else {
+    BOOST_TEST(markers.size() == 0);
+  }
+}
+
+BOOST_DATA_TEST_CASE(width_tbl_orth,
+                     (bdata::make({40, 50, 60}) * bdata::make({40, 50, 60})),
+                     horz_spc,
+                     vert_spc)
+{
+  makeWidthTblOrthConstraint(2, horz_spc, vert_spc);
+  design->getTech()->getLayer(2)->setMinWidth(
+      10);  // to ignore NSMetal violations
+  frNet* n1 = makeNet("n1");
+  makePathseg(n1, 2, {0, 100}, {200, 100}, 100);
+  makePathseg(n1, 2, {150, 50}, {350, 50}, 100);
+  const frCoord dx = 50;
+  const frCoord dy = 50;
+  const bool violating = dx < horz_spc && dy < vert_spc;
   runGC();
   auto& markers = worker.getMarkers();
   if (violating) {

@@ -256,12 +256,12 @@ void CreateNets(
   }
 }
 
-utl::deleted_unique_ptr<abc::Abc_Ntk_t> LogicCut::BuildMappedAbcNetwork(
+utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> LogicCut::BuildMappedAbcNetwork(
     AbcLibrary& abc_library,
     sta::dbNetwork* network,
     utl::Logger* logger)
 {
-  utl::deleted_unique_ptr<abc::Abc_Ntk_t> abc_network(
+  utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> abc_network(
       abc::Abc_NtkAlloc(abc::Abc_NtkType_t::ABC_NTK_NETLIST,
                         abc::Abc_NtkFunc_t::ABC_FUNC_MAP,
                         /*fUseMemMan=*/1),

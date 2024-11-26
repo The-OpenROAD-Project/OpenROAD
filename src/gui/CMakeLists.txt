@@ -63,6 +63,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/staGuiInterface.cpp
     src/timingWidget.cpp
     src/drcWidget.cpp
+    src/helpWidget.cpp
     src/ruler.cpp
     src/heatMap.cpp
     src/heatMapSetup.cpp
