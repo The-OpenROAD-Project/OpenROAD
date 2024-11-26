@@ -291,7 +291,7 @@ void Nets::updateNodeInfo(Nodes& nodes)
   }
 }
 
-int Nets::getNumPins(void) const
+int Nets::getNumPins() const
 {
   itNetConst net;
   unsigned numPins = 0;
@@ -316,7 +316,7 @@ int Nets::getIdxFrmName(string netName)
   return _name2IdxMap[netName];
 }
 
-void Nets::initName2IdxMap(void)
+void Nets::initName2IdxMap()
 {
   unsigned netCtr = 0;
   for (itNet net = netsBegin(); net != netsEnd(); ++net) {

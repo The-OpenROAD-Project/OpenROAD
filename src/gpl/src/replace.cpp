@@ -114,7 +114,7 @@ void Replace::reset()
   routabilityMaxInflationIter_ = 4;
 
   timingDrivenMode_ = true;
-  keepResizeBelowOverflow_ = 0.0;
+  keepResizeBelowOverflow_ = 0.3;
   routabilityDrivenMode_ = true;
   routabilityUseRudy_ = true;
   uniformTargetDensityMode_ = false;
