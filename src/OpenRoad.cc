@@ -640,6 +640,44 @@ int OpenRoad::getThreadCount()
   return threads_;
 }
 
+std::string OpenRoad::getExePath() const
+{
+  // use tcl since it already has a cross platform implementation of this
+  if (Tcl_Eval(tcl_interp_, "file normalize [info nameofexecutable]")
+      == TCL_OK) {
+    std::string path = Tcl_GetStringResult(tcl_interp_);
+    Tcl_ResetResult(tcl_interp_);
+    return path;
+  }
+  return "";
+}
+
+std::string OpenRoad::getDocsPath() const
+{
+  const std::string exe = getExePath();
+
+  if (exe.empty()) {
+    return "";
+  }
+
+  // remove binary name
+  std::string path = exe.substr(0, exe.find_last_of('/'));
+
+  const std::size_t build_idx = exe.length() - 13;
+  if (exe.find("/src/openroad") != build_idx - 1) {
+    path = path.substr(0, build_idx);
+
+    // remove build
+    path = path.substr(0, path.find_last_of('/'));
+    return path + "/docs";
+  }
+
+  // remove bin
+  path = path.substr(0, path.find_last_of('/'));
+
+  return path + "/share/openroad/man";
+}
+
 const char* OpenRoad::getVersion()
 {
   return OPENROAD_VERSION;
