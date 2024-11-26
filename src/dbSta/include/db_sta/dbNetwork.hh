@@ -198,7 +198,7 @@ class dbNetwork : public ConcreteNetwork
                                     std::vector<dbModule*>& itree2);
   dbModule* findModule(const char* name);
   Instance* findHierInstance(const char* name);
-  void replaceDesign(Instance* instance, dbModule* module);
+  void replaceDesign(dbModInst* mod_inst, dbModule* module);
 
   ////////////////////////////////////////////////////////////////
   //

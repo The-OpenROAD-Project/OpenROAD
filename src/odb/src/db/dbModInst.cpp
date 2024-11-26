@@ -421,13 +421,19 @@ bool dbModInst::swapMaster(dbModule* new_module)
   const char* old_module_name = old_module->getName();
   const char* new_module_name = new_module->getName();
 
+  // Check if module names differ
+  if (strcmp(old_module_name, new_module_name) == 0) {
+    logger->warn(utl::ODB, 470, "The modules cannot be swapped because the new module {} is identical to the existing module",
+                 new_module_name);
+  }
+
   // Check if number of module ports match
   dbSet<dbModBTerm> old_bterms = old_module->getModBTerms();
   dbSet<dbModBTerm> new_bterms = new_module->getModBTerms();
   if (old_bterms.size() != new_bterms.size()) {
     logger->warn(utl::ODB,
                  453,
-                 "modules cannot be swapped because module {} "
+                 "The modules cannot be swapped because module {} "
                  "has {} ports but module {} has {} ports",
                  old_module_name,
                  old_bterms.size(),
@@ -480,7 +486,7 @@ bool dbModInst::swapMaster(dbModule* new_module)
         = (i2 != old_ports.end() && *i2) ? (*i2)->_name : "N/A";
     logger->warn(utl::ODB,
                  454,
-                 "modules cannot be swapped because module {} "
+                 "The modules cannot be swapped because module {} "
                  "has port {} but module {} has port {}",
                  old_module_name,
                  old_port_name,

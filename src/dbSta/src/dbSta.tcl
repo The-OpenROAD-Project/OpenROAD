@@ -117,8 +117,11 @@ define_cmd_args "replace_design" {instance module}
 proc replace_design { instance module } {
   set design [get_design_error $module]
   if { $design != "NULL" } {
-    set inst [find_hier_inst_cmd $instance]
-    replace_design_cmd $inst $design
+    set modinst [[ord::get_db_block] findModInst $instance]
+    if { $modinst == "NULL" } {
+      sta_error 1003 "Unable to find $instance"
+    }
+    replace_design_cmd $modinst $design
     return 1
   }
   return 0
