@@ -1,9 +1,18 @@
 #
 # replace_design3
 #
-# This gcd instantiates two LCU units:
+# top instantiates gcd module two times: gcd_1, gcd_2
+# Each gcd instantiates two LCU units:
 # 1) LCU_16_BRENT_KUNG instance _551_ (62 cells)
 # 2) LCU_16_KOGGE_STONE instance _552_ (103 cells)
+#
+# top
+#   gcd_1
+#     _551_
+#     _552_
+#   gcd_2
+#     _551_
+#     _552_
 #
 # Instance gcd_1/_552_ is swapped from KS to BK LCU.
 #

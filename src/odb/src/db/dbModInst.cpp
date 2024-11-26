@@ -423,7 +423,10 @@ bool dbModInst::swapMaster(dbModule* new_module)
 
   // Check if module names differ
   if (strcmp(old_module_name, new_module_name) == 0) {
-    logger->warn(utl::ODB, 470, "The modules cannot be swapped because the new module {} is identical to the existing module",
+    logger->warn(utl::ODB,
+                 470,
+                 "The modules cannot be swapped because the new module {} is "
+                 "identical to the existing module",
                  new_module_name);
   }
 
