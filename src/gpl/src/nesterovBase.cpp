@@ -1938,6 +1938,8 @@ void NesterovBase::updateAreas()
                 targetDensity_,
                 uniformTargetDensity_);
     targetDensity_ = uniformTargetDensity_;
+    movableArea_ = whiteSpaceArea_ * targetDensity_;
+    totalFillerArea_ = movableArea_ - nesterovInstsArea();
   }
 }
 
