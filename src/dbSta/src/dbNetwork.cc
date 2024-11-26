@@ -1670,6 +1670,39 @@ Net* dbNetwork::net(const Term* term) const
   return nullptr;
 }
 
+dbNet* dbNetwork::flatNet(const Term* term) const
+{
+  dbITerm* iterm = nullptr;
+  dbBTerm* bterm = nullptr;
+  dbModITerm* moditerm = nullptr;
+  dbModBTerm* modbterm = nullptr;
+  staToDb(term, iterm, bterm, moditerm, modbterm);
+  if (bterm) {
+    dbNet* dnet = bterm->getNet();
+    if (dnet) {
+      return dnet;
+    }
+  }
+  return nullptr;
+}
+
+dbModNet* dbNetwork::hierNet(const Term* term) const
+{
+  dbBTerm* bterm = nullptr;
+  dbModBTerm* modbterm = nullptr;
+
+  if (modbterm) {
+    return modbterm->getModNet();
+  }
+  if (bterm) {
+    dbModNet* mod_net = bterm->getModNet();
+    if (mod_net) {
+      return mod_net;
+    }
+  }
+  return nullptr;
+}
+
 ////////////////////////////////////////////////////////////////
 
 bool dbNetwork::isLinked() const
@@ -2501,6 +2534,11 @@ const Net* dbNetwork::dbToSta(const dbNet* net) const
   return reinterpret_cast<const Net*>(net);
 }
 
+const Net* dbNetwork::dbToSta(const dbModNet* net) const
+{
+  return reinterpret_cast<const Net*>(net);
+}
+
 Pin* dbNetwork::dbToSta(dbBTerm* bterm) const
 {
   return reinterpret_cast<Pin*>(bterm);
@@ -2750,8 +2788,12 @@ bool DbNetworkPortMemberIterator::hasNext()
 Port* DbNetworkPortMemberIterator::next()
 {
   dbModBTerm* ret = *members_;
-  members_++;
   ix_++;
+  // if we are at the end, don't access the next member
+  // as it is null
+  if (ix_ != size_) {
+    members_++;
+  }
   return reinterpret_cast<Port*>(ret);
 }
 

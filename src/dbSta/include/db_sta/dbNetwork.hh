@@ -159,6 +159,7 @@ class dbNetwork : public ConcreteNetwork
   Instance* dbToSta(dbInst* inst) const;
   Net* dbToSta(dbNet* net) const;
   const Net* dbToSta(const dbNet* net) const;
+  const Net* dbToSta(const dbModNet* net) const;
   Cell* dbToSta(dbMaster* master) const;
   Port* dbToSta(dbMTerm* mterm) const;
 
@@ -256,6 +257,8 @@ class dbNetwork : public ConcreteNetwork
   ////////////////////////////////////////////////////////////////
   // Terminal functions
   Net* net(const Term* term) const override;
+  dbNet* flatNet(const Term* term) const;
+  dbModNet* hierNet(const Term* term) const;
   Pin* pin(const Term* term) const override;
   ObjectId id(const Term* term) const override;
 

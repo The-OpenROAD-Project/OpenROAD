@@ -1731,6 +1731,12 @@ void dbJournal::undo_disconnectObject()
       _log.pop(net_id);
       dbNet* net = dbNet::getNet(_block, net_id);
       bterm->connect(net);
+      uint mnet_id;
+      _log.pop(mnet_id);
+      if (mnet_id != 0) {
+        dbModNet* mnet = dbModNet::getModNet(_block, mnet_id);
+        bterm->connect(mnet);
+      }
       break;
     }
     default: {

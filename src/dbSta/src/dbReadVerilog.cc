@@ -385,6 +385,7 @@ void Verilog2db::makeDbModule(
           bool updown = (from_index <= to_index) ? true : false;
           int size
               = updown ? to_index - from_index + 1 : from_index - to_index + 1;
+
           for (int i = 0; i < size; i++) {
             int ix = updown ? from_index + i : from_index - i;
             std::string bus_bit_port = port_name + std::string("[")
