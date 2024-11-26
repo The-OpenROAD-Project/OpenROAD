@@ -428,6 +428,7 @@ bool dbModInst::swapMaster(dbModule* new_module)
                  "The modules cannot be swapped because the new module {} is "
                  "identical to the existing module",
                  new_module_name);
+    return false;
   }
 
   // Check if number of module ports match

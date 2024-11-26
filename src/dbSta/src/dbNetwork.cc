@@ -3105,47 +3105,6 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
   }
 }
 
-// Find a hierarchical module with a given name
-// TODO: support finding uninstantiated modules
-dbModule* dbNetwork::findModule(const char* name)
-{
-  // Helper function for recursive search
-  auto recursiveSearch
-      = [this](Instance* inst, const char* name, auto& self) -> dbModule* {
-    if (!inst) {
-      return nullptr;
-    }
-
-    std::unique_ptr<InstanceChildIterator> child_iter{childIterator(inst)};
-    while (child_iter->hasNext()) {
-      Instance* child = child_iter->next();
-      if (network_->isHierarchical(child)) {
-        dbInst* db_inst = nullptr;
-        dbModInst* mod_inst = nullptr;
-        staToDb(child, db_inst, mod_inst);
-        if (mod_inst) {
-          dbModule* master = mod_inst->getMaster();
-          if (master && strcmp(master->getName(), name) == 0) {
-            return master;
-          }
-
-          // Recursively visit lower levels of hierarchy
-          dbModule* found = self(child, name, self);
-          if (found) {
-            return found;
-          }
-        }
-      }
-    }
-
-    return nullptr;
-  };
-
-  // Seed the initial search
-  Instance* top_inst = topInstance();
-  return recursiveSearch(top_inst, name, recursiveSearch);
-}
-
 void dbNetwork::replaceDesign(dbModInst* mod_inst, dbModule* module)
 {
   mod_inst->swapMaster(module);

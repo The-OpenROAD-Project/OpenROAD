@@ -117,7 +117,7 @@ define_cmd_args "replace_design" {instance module}
 proc replace_design { instance module } {
   set design [get_design_error $module]
   if { $design != "NULL" } {
-    set modinst [[ord::get_db_block] findModInst $instance]
+    set modinst [ [ord::get_db_block] findModInst $instance ]
     if { $modinst == "NULL" } {
       sta_error 1003 "Unable to find $instance"
     }
@@ -131,7 +131,7 @@ proc get_design_error { arg } {
   if { [llength $arg] > 1 } {
     sta_error 200 "module must be a single module."
   }
-  set design [find_module_cmd $arg]
+    set design [ [ord::get_db_block] findModule $arg ]
   if { $design == "NULL" } {
     sta_error 201 "module $arg cannot be found."
   }
