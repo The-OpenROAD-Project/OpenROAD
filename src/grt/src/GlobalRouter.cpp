@@ -229,7 +229,8 @@ bool GlobalRouter::haveRoutes()
     logger_->warn(GRT, 97, "No global routing found for nets.");
   }
 
-  return !routes_.empty();
+  bool congested_routes = is_congested_ && !allow_congestion_;
+  return !routes_.empty() && !congested_routes;
 }
 
 bool GlobalRouter::haveDetailedRoutes()
@@ -2086,6 +2087,7 @@ void GlobalRouter::loadGuidesFromDB()
       int via_layer_idx = guide->getViaLayer()->getRoutingLevel();
       boxToGlobalRouting(
           guide->getBox(), layer_idx, via_layer_idx, routes_[net]);
+      is_congested_ = is_congested_ || guide->isCongested();
     }
   }
 
