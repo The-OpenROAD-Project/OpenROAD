@@ -1922,14 +1922,22 @@ void NesterovBase::updateAreas()
                           / static_cast<float>(whiteSpaceArea_);
 
   if (totalFillerArea_ < 0) {
-    log_->error(GPL,
+    // log_->error(GPL,
+    //             303,
+    //             "Use a higher -density or "
+    //             "re-floorplan with a larger core area.\n"
+    //             "Given target density: {:.2f}\n"
+    //             "Suggested target density: {:.2f}",
+    //             targetDensity_,
+    //             uniformTargetDensity_);
+    log_->warn(GPL,
                 303,
-                "Use a higher -density or "
-                "re-floorplan with a larger core area.\n"
+                "Not enough movable area.\n"
                 "Given target density: {:.2f}\n"
-                "Suggested target density: {:.2f}",
+                "Going further with uniform density: {:.2f}",
                 targetDensity_,
                 uniformTargetDensity_);
+    targetDensity_ = uniformTargetDensity_;
   }
 }
 
