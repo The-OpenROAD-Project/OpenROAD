@@ -35,14 +35,12 @@
 
 #include "helpWidget.h"
 
-#include <dirent.h>
-#include <sys/stat.h>
-
 #include <QFile>
 #include <QHBoxLayout>
 #include <QListWidgetItem>
 #include <QTextStream>
 #include <QVBoxLayout>
+#include <filesystem>
 
 namespace gui {
 
@@ -84,33 +82,34 @@ HelpWidget::HelpWidget(QWidget* parent)
 
 void HelpWidget::init(const std::string& path)
 {
+  has_help_ = false;
   category_selector_->clear();
 
   // validate path
-  struct stat dir_info;
-  if (stat(path.c_str(), &dir_info) == 0) {
-    // check for html
-    const std::string html_path = path + "/html";
-    if (stat(html_path.c_str(), &dir_info) != 0) {
-      return;
-    }
-
-    // add html1, html2, html3
-    auto add_help = [this, &html_path](const std::string& category,
-                                       const std::string dir) {
-      struct stat dir_info;
-      const std::string doc_path = html_path + "/" + dir;
-      if (stat(doc_path.c_str(), &dir_info) == 0) {
-        category_selector_->addItem(QString::fromStdString(category),
-                                    QString::fromStdString(doc_path));
-        has_help_ = true;
-      }
-    };
-
-    add_help("application", "html1");
-    add_help("commands", "html2");
-    add_help("messages", "html3");
+  if (!std::filesystem::exists(path)) {
+    return;
   }
+
+  // check for html
+  const std::filesystem::path html_path(std::filesystem::path(path) / "html");
+  if (!std::filesystem::exists(html_path)) {
+    return;
+  }
+
+  // add html1, html2, html3
+  auto add_help = [this, &html_path](const std::string& category,
+                                     const std::string& dir) {
+    const std::filesystem::path doc_path(html_path / dir);
+    if (std::filesystem::exists(doc_path)) {
+      category_selector_->addItem(QString::fromStdString(category),
+                                  QString::fromStdString(doc_path));
+      has_help_ = true;
+    }
+  };
+
+  add_help("application", "html1");
+  add_help("commands", "html2");
+  add_help("messages", "html3");
 
   if (hasHelp()) {
     category_selector_->setCurrentIndex(1);
@@ -119,33 +118,25 @@ void HelpWidget::init(const std::string& path)
 
 void HelpWidget::changeCategory()
 {
-  help_list_->clear();
-
-  const std::string path
-      = category_selector_->currentData().toString().toStdString();
-
-  DIR* dir = opendir(path.c_str());
-
-  if (dir == nullptr) {
+  const std::filesystem::path dir(
+      category_selector_->currentData().toString().toStdString());
+  if (!std::filesystem::exists(dir)) {
     return;
   }
 
-  struct dirent* ent;
-  while ((ent = readdir(dir)) != nullptr) {
-    const std::string help_path = path + "/" + ent->d_name;
+  help_list_->clear();
 
-    if (help_path.find(".html") == std::string::npos) {
+  for (auto const& dir_entry : std::filesystem::directory_iterator{dir}) {
+    const auto& path = dir_entry.path();
+
+    if (path.extension() != ".html") {
       continue;
     }
 
-    const std::string name = std::string(ent->d_name, strlen(ent->d_name) - 5);
-
-    auto* qitem = new QListWidgetItem(QString::fromStdString(name));
-    qitem->setData(Qt::UserRole, QString::fromStdString(help_path));
+    auto* qitem = new QListWidgetItem(QString::fromStdString(path.stem()));
+    qitem->setData(Qt::UserRole, QString::fromStdString(path));
     help_list_->addItem(qitem);
   }
-
-  closedir(dir);
 
   help_list_->sortItems();
 }
