@@ -35,6 +35,7 @@
 
 #include "ord/OpenRoad.hh"
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <thread>
@@ -660,22 +661,18 @@ std::string OpenRoad::getDocsPath() const
     return "";
   }
 
+  std::filesystem::path path(exe);
+
   // remove binary name
-  std::string path = exe.substr(0, exe.find_last_of('/'));
+  path = path.parent_path();
 
-  const std::size_t build_idx = exe.length() - 13;
-  if (exe.find("/src/openroad") != build_idx - 1) {
-    path = path.substr(0, build_idx);
-
+  if (path.stem() == "src") {
     // remove build
-    path = path.substr(0, path.find_last_of('/'));
-    return path + "/docs";
+    return path.parent_path().parent_path() / "docs";
   }
 
   // remove bin
-  path = path.substr(0, path.find_last_of('/'));
-
-  return path + "/share/openroad/man";
+  return path.parent_path() / "share" / "openroad" / "man";
 }
 
 const char* OpenRoad::getVersion()
