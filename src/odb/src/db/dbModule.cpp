@@ -561,13 +561,13 @@ dbModule* dbModule::makeUniqueDbModule(const char* cell_name,
   do {
     std::string full_name = module_name;
 
-    name_id_map_mutex.lock();
+    std::unique_lock<std::mutex> lock(name_id_map_mutex);
     int& id = name_id_map[module_name];
     if (id > 0) {
       full_name += "_" + std::to_string(id);
     }
     ++id;
-    name_id_map_mutex.unlock();
+    lock.unlock();
 
     module = dbModule::create(block, full_name.c_str());
   } while (module == nullptr);
