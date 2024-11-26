@@ -365,62 +365,6 @@ void Verilog2db::makeDbModule(
                      network_->name(cell));
     }
     if (hierarchy_) {
-      dbBusPort* dbbusport = nullptr;
-      // make the module ports
-      std::unique_ptr<CellPortIterator> cp_iter{network_->portIterator(cell)};
-      while (cp_iter->hasNext()) {
-        Port* port = cp_iter->next();
-        if (network_->isBus(port)) {
-          // make the bus port as part of the port set for the cell.
-          const char* port_name = network_->name(port);
-          dbModBTerm* bmodterm = dbModBTerm::create(module, port_name);
-          dbbusport = dbBusPort::create(module,
-                                        bmodterm,  // the root of the bus port
-                                        network_->fromIndex(port),
-                                        network_->toIndex(port));
-          bmodterm->setBusPort(dbbusport);
-          dbIoType io_type = staToDb(network_->direction(port));
-          bmodterm->setIoType(io_type);
-
-          //
-          // Make a modbterm for each bus bit
-          // Keep traversal in terms of bits
-          // These modbterms are annotated as being
-          // part of the port bus.
-          //
-
-          int from_index = network_->fromIndex(port);
-          int to_index = network_->toIndex(port);
-          bool updown = (from_index <= to_index) ? true : false;
-          int size
-              = updown ? to_index - from_index + 1 : from_index - to_index + 1;
-
-          for (int i = 0; i < size; i++) {
-            int ix = updown ? from_index + i : from_index - i;
-            std::string bus_bit_port = port_name + std::string("[")
-                                       + std::to_string(ix) + std::string("]");
-            dbModBTerm* modbterm
-                = dbModBTerm::create(module, bus_bit_port.c_str());
-            if (i == 0) {
-              dbbusport->setMembers(modbterm);
-            }
-            if (i == size - 1) {
-              dbbusport->setLast(modbterm);
-            }
-            dbIoType io_type = staToDb(network_->direction(port));
-            bmodterm->setIoType(io_type);
-          }
-        } else {
-          std::string port_name = network_->name(port);
-          dbModBTerm* bmodterm = dbModBTerm::create(module, port_name.c_str());
-          dbIoType io_type = staToDb(network_->direction(port));
-          bmodterm->setIoType(io_type);
-          debugPrint(logger_,
-                     utl::ODB,
-                     "dbReadVerilog",
-                     1,
-                     "Created module bterm {} ",
-                     bmodterm->getName());
       makeModBTerms(cell, module);
       makeModITerms(inst, modinst);
     }
@@ -467,7 +411,6 @@ void Verilog2db::makeModBTerms(Cell* cell, dbModule* module)
         dbModBTerm* modbterm = dbModBTerm::create(module, bus_bit_port.c_str());
         if (i == 0) {
           dbbusport->setMembers(modbterm);
->>>>>>> upstream/master
         }
         if (i == size - 1) {
           dbbusport->setLast(modbterm);
