@@ -131,7 +131,7 @@ proc get_design_error { arg } {
   if { [llength $arg] > 1 } {
     sta_error 200 "module must be a single module."
   }
-    set design [[ord::get_db_block] findModule $arg]
+  set design [[ord::get_db_block] findModule $arg]
   if { $design == "NULL" } {
     sta_error 201 "module $arg cannot be found."
   }
