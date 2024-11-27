@@ -83,31 +83,6 @@ void Fixture::addLayer(frTechObject* tech,
   tech->addLayer(std::move(layer));
 }
 
-odb::dbInst* Fixture::createDummyInst()
-{
-  utl::Logger* logger = new utl::Logger();
-  odb::dbDatabase* db = odb::dbDatabase::create();
-  db->setLogger(logger);
-  odb::dbTech* tech = odb::dbTech::create(db, "tech");
-  odb::dbTechLayer::create(tech, "L1", dbTechLayerType::MASTERSLICE);
-  odb::dbLib* lib = odb::dbLib::create(db, "lib1", tech, ',');
-  odb::dbChip* chip = odb::dbChip::create(db);
-  odb::dbBlock::create(chip, "simple_block");
-  odb::dbMaster* master = odb::dbMaster::create(lib, "dummy");
-  master->setWidth(1000);
-  master->setHeight(1000);
-  master->setType(dbMasterType::CORE);
-  odb::dbMTerm::create(master, "a", dbIoType::INPUT, dbSigType::SIGNAL);
-  odb::dbMTerm::create(master, "b", dbIoType::INPUT, dbSigType::SIGNAL);
-  odb::dbMTerm::create(master, "c", dbIoType::OUTPUT, dbSigType::SIGNAL);
-  master->setFrozen();
-  auto ptr_db_inst = std::make_unique<odb::dbInst>();
-  odb::dbInst* db_inst = ptr_db_inst->create(chip->getBlock(), master, "dummy");
-  dbTransform trans = dbTransform();
-  db_inst->setTransform(trans);
-  return db_inst;
-}
-
 void Fixture::setupTech(frTechObject* tech)
 {
   tech->setManufacturingGrid(10);
@@ -121,11 +96,11 @@ void Fixture::setupTech(frTechObject* tech)
   addLayer(tech, "m1", dbTechLayerType::ROUTING, dbTechLayerDir::HORIZONTAL);
 }
 
-frMaster* Fixture::makeMacro(const char* name,
-                             frCoord originX,
-                             frCoord originY,
-                             frCoord sizeX,
-                             frCoord sizeY)
+std::pair<frMaster*, odb::dbMaster*> Fixture::makeMacro(const char* name,
+                                                        frCoord originX,
+                                                        frCoord originY,
+                                                        frCoord sizeX,
+                                                        frCoord sizeY)
 {
   auto block = std::make_unique<frMaster>(name);
   std::vector<frBoundary> bounds;
@@ -142,7 +117,18 @@ frMaster* Fixture::makeMacro(const char* name,
   block->setId(++numMasters);
   auto blkPtr = block.get();
   design->addMaster(std::move(block));
-  return blkPtr;
+
+  odb::dbMaster* master
+      = odb::dbMaster::create(*db_->getLibs().begin(), "dummy");
+  master->setWidth(1000);
+  master->setHeight(1000);
+  master->setType(dbMasterType::CORE);
+  odb::dbMTerm::create(master, "a", dbIoType::INPUT, dbSigType::SIGNAL);
+  odb::dbMTerm::create(master, "b", dbIoType::INPUT, dbSigType::SIGNAL);
+  odb::dbMTerm::create(master, "c", dbIoType::OUTPUT, dbSigType::SIGNAL);
+  master->setFrozen();
+
+  return {blkPtr, master};
 }
 
 frBlockage* Fixture::makeMacroObs(frMaster* master,
@@ -203,8 +189,13 @@ frTerm* Fixture::makeMacroPin(frMaster* master,
 
 frInst* Fixture::makeInst(const char* name,
                           frMaster* master,
-                          odb::dbInst* db_inst)
+                          odb::dbMaster* db_master)
 {
+  auto ptr_db_inst = std::make_unique<odb::dbInst>();
+  odb::dbInst* db_inst
+      = ptr_db_inst->create(db_->getChip()->getBlock(), db_master, "dummy");
+  dbTransform trans = dbTransform();
+  db_inst->setTransform(trans);
   auto uInst = std::make_unique<frInst>(name, master, db_inst);
   auto tmpInst = uInst.get();
   tmpInst->setId(numInsts++);
@@ -248,6 +239,15 @@ void Fixture::makeDesign()
 
   design->setTopBlock(std::move(block));
   router_cfg->USEMINSPACING_OBS = false;
+
+  utl::Logger* logger = new utl::Logger();
+  db_ = odb::dbDatabase::create();
+  db_->setLogger(logger);
+  odb::dbTech* tech = odb::dbTech::create(db_, "tech");
+  odb::dbTechLayer::create(tech, "L1", dbTechLayerType::MASTERSLICE);
+  odb::dbLib::create(db_, "lib1", tech, ',');
+  odb::dbChip* chip = odb::dbChip::create(db_);
+  odb::dbBlock::create(chip, "simple_block");
 }
 
 frLef58CornerSpacingConstraint* Fixture::makeCornerConstraint(
@@ -687,6 +687,7 @@ void Fixture::makeMinimumCut(frLayerNum layerNum,
   design->getTech()->addUConstraint(std::move(con));
   layer->addMinimumcutConstraint(rptr);
 }
+
 frNet* Fixture::makeNet(const char* name)
 {
   frBlock* block = design->getTopBlock();
@@ -790,4 +791,5 @@ void Fixture::makeSpacingTableOrthConstraint(frLayerNum layer_num,
   layer->setOrthSpacingTableConstraint(con.get());
   design->getTech()->addUConstraint(std::move(con));
 }
+
 }  // namespace drt
