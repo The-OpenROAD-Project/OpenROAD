@@ -278,11 +278,18 @@ class Rect
   // Return the point inside rect that is closest to pt.
   Point closestPtInside(Point pt) const;
 
+  // Compute the union of this rectangle and a point.
+  void merge(const Point& p, Rect& result);
+
   // Compute the union of these two rectangles.
   void merge(const Rect& r, Rect& result);
 
   // Compute the union of this rectangle and an octagon.
   void merge(const Oct& o, Rect& result);
+
+  // Compute the union of this rectangle an point.
+  // The result is stored in this rectangle.
+  void merge(const Point& p);
 
   // Compute the union of these two rectangles. The result is stored in this
   // rectangle.
@@ -642,6 +649,14 @@ inline Point Rect::closestPtInside(const Point pt) const
                std::min(std::max(pt.getY(), yMin()), yMax()));
 }
 
+inline void Rect::merge(const Point& p, Rect& result)
+{
+  result.xlo_ = std::min(xlo_, p.getX());
+  result.ylo_ = std::min(ylo_, p.getY());
+  result.xhi_ = std::max(xhi_, p.getX());
+  result.yhi_ = std::max(yhi_, p.getY());
+}
+
 // Compute the union of these two rectangles.
 inline void Rect::merge(const Rect& r, Rect& result)
 {
@@ -657,6 +672,14 @@ inline void Rect::merge(const Oct& o, Rect& result)
   result.ylo_ = std::min(ylo_, o.yMin());
   result.xhi_ = std::max(xhi_, o.xMax());
   result.yhi_ = std::max(yhi_, o.yMax());
+}
+
+inline void Rect::merge(const Point& p)
+{
+  xlo_ = std::min(xlo_, p.getX());
+  ylo_ = std::min(ylo_, p.getY());
+  xhi_ = std::max(xhi_, p.getX());
+  yhi_ = std::max(yhi_, p.getY());
 }
 
 // Compute the union of these two rectangles.
