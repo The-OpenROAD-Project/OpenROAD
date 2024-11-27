@@ -688,7 +688,7 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
   //  Term* term = db_network_->term(top_pin);
   //  odb::dbBTerm* top_ip_bterm = db_network_ -> staToDb(term);
 
-  Net* input_net;
+  Net* input_net = nullptr;
   dbNet* top_pin_flat_net = top_pin_ip_bterm->getNet();
   odb::dbModNet* top_pin_hier_net = top_pin_ip_bterm->getModNet();
 
@@ -718,7 +718,7 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
         logger_->warn(RSZ,
                       85,
                       "Input {} can't be buffered due to dont-touch fanout {}",
-                      network_->name(input_net),
+                      (input_net ? network_->name(input_net) : "no-input-net"),
                       network_->name(pin));
         break;
       }
