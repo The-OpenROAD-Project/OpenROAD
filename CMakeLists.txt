@@ -195,6 +195,6 @@ if(BUILD_MAN)
   )
   
   # Based on ${CMAKE_INSTALL_PREFIX}, we want to go to ${CMAKE_INSTALL_PREFIX}/share/man
-  set(MANPAGE_DIR ${OPENROAD_HOME}/docs/cat)
-  install(DIRECTORY ${MANPAGE_DIR} DESTINATION ${OPENROAD_SHARE}/man)
+  install(DIRECTORY ${OPENROAD_HOME}/docs/cat DESTINATION ${OPENROAD_SHARE}/man)
+  install(DIRECTORY ${OPENROAD_HOME}/docs/html DESTINATION ${OPENROAD_SHARE}/man)
 endif()

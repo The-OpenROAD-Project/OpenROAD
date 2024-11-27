@@ -962,11 +962,11 @@ void dbWire::printWire(FILE* fp, int fid, int tid)
   }
 }
 
-uint64 dbWire::getLength()
+uint64_t dbWire::getLength()
 {
   dbWireShapeItr shapes;
   dbShape s;
-  uint64 rtlen = 0;
+  uint64_t rtlen = 0;
   for (shapes.begin(this); shapes.next(s);) {
     if (!s.isVia()) {
       rtlen += s.getLength();

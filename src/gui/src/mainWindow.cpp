@@ -60,6 +60,7 @@
 #include "drcWidget.h"
 #include "globalConnectDialog.h"
 #include "gui/heatMap.h"
+#include "helpWidget.h"
 #include "highlightGroupDialog.h"
 #include "inspector.h"
 #include "layoutTabs.h"
@@ -109,6 +110,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
       hierarchy_widget_(
           new BrowserWidget(viewers_->getModuleSettings(), controls_, this)),
       charts_widget_(new ChartsWidget(this)),
+      help_widget_(new HelpWidget(this)),
       find_dialog_(new FindObjectDialog(this)),
       goto_dialog_(new GotoLocationDialog(this, viewers_))
 {
@@ -131,6 +133,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
   addDockWidget(Qt::RightDockWidgetArea, drc_viewer_);
   addDockWidget(Qt::RightDockWidgetArea, clock_viewer_);
   addDockWidget(Qt::RightDockWidgetArea, charts_widget_);
+  addDockWidget(Qt::RightDockWidgetArea, help_widget_);
 
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
@@ -140,6 +143,8 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
   tabifyDockWidget(inspector_, drc_viewer_);
   tabifyDockWidget(inspector_, clock_viewer_);
   tabifyDockWidget(inspector_, charts_widget_);
+  tabifyDockWidget(inspector_, help_widget_);
+
   drc_viewer_->hide();
   clock_viewer_->hide();
 
@@ -461,7 +466,7 @@ void MainWindow::setBlock(odb::dbBlock* block)
   hierarchy_widget_->setBlock(block);
 }
 
-void MainWindow::init(sta::dbSta* sta)
+void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
 {
   // Setup widgets
   timing_widget_->init(sta);
@@ -471,6 +476,7 @@ void MainWindow::init(sta::dbSta* sta)
 #ifdef ENABLE_CHARTS
   charts_widget_->setSTA(sta);
 #endif
+  help_widget_->init(help_path);
 
   // register descriptors
   auto* gui = Gui::get();
@@ -785,6 +791,7 @@ void MainWindow::createMenus()
   windows_menu_->addAction(clock_viewer_->toggleViewAction());
   windows_menu_->addAction(hierarchy_widget_->toggleViewAction());
   windows_menu_->addAction(charts_widget_->toggleViewAction());
+  windows_menu_->addAction(help_widget_->toggleViewAction());
 
   auto option_menu = menuBar()->addMenu("&Options");
   option_menu->addAction(hide_option_);

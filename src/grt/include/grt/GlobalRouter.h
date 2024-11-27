@@ -312,6 +312,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   void getMinMaxLayer(int& min_layer, int& max_layer);
   void getCapacityReductionData(CapacityReductionData& cap_red_data);
   bool isInitialized() const { return initialized_; }
+  bool isCongested() const { return is_congested_; }
   void setDbBlock(odb::dbBlock* block) { block_ = block; }
 
   void setRenderer(std::unique_ptr<AbstractGrouteRenderer> groute_renderer);
@@ -492,6 +493,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   int macro_extension_;
   bool initialized_;
   int total_diodes_count_;
+  bool is_congested_{false};
   // TODO: remove this flag after support incremental updates on DRT PA
   bool skip_drt_aps_{false};
 

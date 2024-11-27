@@ -509,7 +509,7 @@ Node& ClusterDB getClosestNodeBFS(Node& currNode,
 }
 */
 
-void ClusterDB::addWSPerNode(void)
+void ClusterDB::addWSPerNode()
 {
   float multFactor = 1 + _params->maxWSHier / 100;
   if (!_params->dontClusterMacros)
