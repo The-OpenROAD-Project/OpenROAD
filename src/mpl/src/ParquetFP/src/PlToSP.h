@@ -68,8 +68,8 @@ class Pl2SP
 
   ~Pl2SP() {}
 
-  void naiveAlgo(void);
-  void TCGAlgo(void);
+  void naiveAlgo();
+  void TCGAlgo();
 
   // Floyd Marshal to find TCG
   void TCG_FM(std::vector<std::vector<bool>>& TCGMatrixHoriz,
@@ -83,11 +83,11 @@ class Pl2SP
               int v,
               std::vector<int>& pre);
 
-  const std::vector<unsigned>& getXSP(void) const { return _XX; }
+  const std::vector<unsigned>& getXSP() const { return _XX; }
 
-  const std::vector<unsigned>& getYSP(void) const { return _YY; }
+  const std::vector<unsigned>& getYSP() const { return _YY; }
 
-  void print(void) const;
+  void print() const;
 };
 
 struct RowElem

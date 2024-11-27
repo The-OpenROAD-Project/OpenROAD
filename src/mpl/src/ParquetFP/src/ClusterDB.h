@@ -77,7 +77,7 @@ class ClusterDB
                        std::vector<bool>& seenNodes,
                        unsigned maxConnId = 1,
                        bool direction = true);
-  void addWSPerNode(void);
+  void addWSPerNode();
 
   void clusterMultiPhysical(DB*& newDB);  // cluster with physical constraints
 };
