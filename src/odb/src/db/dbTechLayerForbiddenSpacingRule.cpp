@@ -33,12 +33,12 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerForbiddenSpacingRule.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
+#include "odb/db.h"
 namespace odb {
 template class dbTable<_dbTechLayerForbiddenSpacingRule>;
 
@@ -140,7 +140,7 @@ dbOStream& operator<<(dbOStream& stream,
 ////////////////////////////////////////////////////////////////////
 
 void dbTechLayerForbiddenSpacingRule::setForbiddenSpacing(
-    std::pair<int, int> forbidden_spacing)
+    const std::pair<int, int>& forbidden_spacing)
 {
   _dbTechLayerForbiddenSpacingRule* obj
       = (_dbTechLayerForbiddenSpacingRule*) this;

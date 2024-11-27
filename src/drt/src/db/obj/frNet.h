@@ -39,7 +39,7 @@
 #include "frBaseTypes.h"
 #include "global.h"
 
-namespace fr {
+namespace drt {
 class frInstTerm;
 class frTerm;
 class frBTerm;
@@ -49,29 +49,8 @@ class frNet : public frBlockObject
 {
  public:
   // constructors
-  frNet(const frString& in)
-      : frBlockObject(),
-        name_(in),
-        instTerms_(),
-        bterms_(),
-        shapes_(),
-        vias_(),
-        pwires_(),
-        grShapes_(),
-        grVias_(),
-        nodes_(),
-        root_(nullptr),
-        rootGCellNode_(nullptr),
-        firstNonRPinNode_(nullptr),
-        rpins_(),
-        guides_(),
-        type_(dbSigType::SIGNAL),
-        modified_(false),
-        isFakeNet_(false),
-        ndr_(nullptr),
-        absPriorityLvl(0),
-        isClock_(false),
-        isSpecial_(false)
+  frNet(const frString& in, RouterConfiguration* router_cfg)
+      : name_(in), router_cfg_(router_cfg)
   {
   }
   // getters
@@ -111,6 +90,10 @@ class frNet : public frBlockObject
   bool isModified() const { return modified_; }
   bool isFake() const { return isFakeNet_; }
   frNonDefaultRule* getNondefaultRule() const { return ndr_; }
+  bool hasInitialRouting() const { return hasInitialRouting_; }
+  bool isFixed() const { return isFixed_; }
+  bool hasGuides() const { return !guides_.empty(); }
+  bool hasBTermsAboveTopLayer() const;
   // setters
   void addInstTerm(frInstTerm* in) { instTerms_.push_back(in); }
   void removeInstTerm(frInstTerm* in)
@@ -192,7 +175,18 @@ class frNet : public frBlockObject
     in->setIndexInOwner(guides_.size());
     guides_.push_back(std::move(in));
   }
+  void clearRPins() { rpins_.clear(); }
   void clearGuides() { guides_.clear(); }
+  void clearOrigGuides() { orig_guides_.clear(); }
+  void clearConns()
+  {
+    instTerms_.clear();
+    bterms_.clear();
+    nodes_.clear();
+    root_ = nullptr;
+    rootGCellNode_ = nullptr;
+    firstNonRPinNode_ = nullptr;
+  }
   void removeShape(frShape* in) { shapes_.erase(in->getIter()); }
   void removeVia(frVia* in) { vias_.erase(in->getIter()); }
   void removePatchWire(frShape* in) { pwires_.erase(in->getIter()); }
@@ -203,10 +197,18 @@ class frNet : public frBlockObject
   void removeNode(frNode* in) { nodes_.erase(in->getIter()); }
   void setModified(bool in) { modified_ = in; }
   void setIsFake(bool in) { isFakeNet_ = in; }
+  void setHasInitialRouting(bool in) { hasInitialRouting_ = in; }
+  void setFixed(bool in) { isFixed_ = in; }
   // others
+  void clearRoutes()
+  {
+    shapes_.clear();
+    vias_.clear();
+    pwires_.clear();
+  }
   dbSigType getType() const { return type_; }
-  void setType(dbSigType in) { type_ = in; }
-  virtual frBlockObjectEnum typeId() const override { return frcNet; }
+  void setType(const dbSigType& in) { type_ = in; }
+  frBlockObjectEnum typeId() const override { return frcNet; }
   void updateNondefaultRule(frNonDefaultRule* n)
   {
     ndr_ = n;
@@ -224,10 +226,12 @@ class frNet : public frBlockObject
   void updateAbsPriority()
   {
     int max = absPriorityLvl;
-    if (hasNDR())
-      max = std::max(max, NDR_NETS_ABS_PRIORITY);
-    if (isClock())
-      max = std::max(max, CLOCK_NETS_ABS_PRIORITY);
+    if (hasNDR()) {
+      max = std::max(max, router_cfg_->NDR_NETS_ABS_PRIORITY);
+    }
+    if (isClock()) {
+      max = std::max(max, router_cfg_->CLOCK_NETS_ABS_PRIORITY);
+    }
     absPriorityLvl = max;
   }
   bool isSpecial() const { return isSpecial_; }
@@ -241,6 +245,7 @@ class frNet : public frBlockObject
 
  protected:
   frString name_;
+  RouterConfiguration* router_cfg_;
   std::vector<frInstTerm*> instTerms_;
   std::vector<frBTerm*> bterms_;
   // dr
@@ -254,21 +259,23 @@ class frNet : public frBlockObject
   std::list<std::unique_ptr<frNode>>
       nodes_;  // the nodes at the beginning of the list correspond to rpins
                // there is no guarantee that first element is root
-  frNode* root_;
-  frNode* rootGCellNode_;
-  frNode* firstNonRPinNode_;
+  frNode* root_{nullptr};
+  frNode* rootGCellNode_{nullptr};
+  frNode* firstNonRPinNode_{nullptr};
   std::vector<std::unique_ptr<frRPin>> rpins_;
   std::vector<std::unique_ptr<frGuide>> guides_;
   std::vector<frRect> orig_guides_;
-  dbSigType type_;
-  bool modified_;
-  bool isFakeNet_;  // indicate floating PG nets
-  frNonDefaultRule* ndr_;
-  int absPriorityLvl;  // absolute priority level: will be checked in net
-                       // ordering before other criteria
-  bool isClock_;
-  bool isSpecial_;
+  dbSigType type_{dbSigType::SIGNAL};
+  bool modified_{false};
+  bool isFakeNet_{false};  // indicate floating PG nets
+  frNonDefaultRule* ndr_{nullptr};
+  int absPriorityLvl{0};  // absolute priority level: will be checked in net
+                          // ordering before other criteria
+  bool isClock_{false};
+  bool isSpecial_{false};
+  bool hasInitialRouting_{false};
+  bool isFixed_{false};
 
   std::vector<frPinFig*> all_pinfigs_;
 };
-}  // namespace fr
+}  // namespace drt

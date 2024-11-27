@@ -149,6 +149,8 @@ class BrowserWidget : public QDockWidget,
 
   QMenu* menu_;
   Selected menu_item_;
+  static const int sort_role;
+
   std::set<odb::dbModule*> getChildren(odb::dbModule* parent);
   std::set<odb::dbModule*> getAllChildren(odb::dbModule* parent);
   SelectionSet getMenuItemChildren();
@@ -158,74 +160,7 @@ class BrowserWidget : public QDockWidget,
 
   std::map<odb::dbModule*, QStandardItem*> modulesmap_;
 
-  struct ModuleStats
-  {
-    int64_t area;
-    int macros;
-    int insts;
-    int modules;
-
-    int hier_macros;
-    int hier_insts;
-    int hier_modules;
-
-    ModuleStats()
-    {
-      area = 0;
-      macros = 0;
-      insts = 0;
-      modules = 0;
-
-      resetInstances();
-      resetMacros();
-      resetModules();
-    }
-
-    void incrementInstances()
-    {
-      insts++;
-      hier_insts++;
-    }
-
-    void resetInstances() { hier_insts = 0; }
-
-    void incrementMacros()
-    {
-      macros++;
-      hier_macros++;
-    }
-
-    void resetMacros() { hier_macros = 0; }
-
-    void incrementModules()
-    {
-      modules++;
-      hier_modules++;
-    }
-
-    void resetModules() { hier_modules = 0; }
-
-    ModuleStats& operator+=(const ModuleStats& other)
-    {
-      area += other.area;
-      macros += other.macros;
-      insts += other.insts;
-      modules += other.modules;
-
-      hier_macros += other.hier_macros;
-      hier_insts += other.hier_insts;
-      hier_modules += other.hier_modules;
-
-      return *this;
-    }
-
-    friend ModuleStats operator+(ModuleStats lhs, const ModuleStats& other)
-    {
-      lhs += other;
-
-      return lhs;
-    }
-  };
+  struct ModuleStats;
 
   ModuleStats populateModule(odb::dbModule* module, QStandardItem* parent);
 
@@ -234,8 +169,7 @@ class BrowserWidget : public QDockWidget,
                               bool create_row);
   ModuleStats addInstanceItems(const std::vector<odb::dbInst*>& insts,
                                const std::string& title,
-                               QStandardItem* parent,
-                               bool check_instance_limits);
+                               QStandardItem* parent);
   ModuleStats addModuleItem(odb::dbModule* module,
                             QStandardItem* parent,
                             bool expand);

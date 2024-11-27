@@ -44,15 +44,6 @@ using std::ifstream;
 using std::string;
 using std::vector;
 
-// ======================
-// Contructors in the end
-// ======================
-const float Dimension::Infty = std::numeric_limits<float>::max();
-const float Dimension::Epsilon_Accuracy = 1e10f;
-const int Dimension::Undefined = -1;
-const int Dimension::Orient_Num = 8;
-
-const int HardBlockInfoType::Orient_Num = Dimension::Orient_Num;
 // ========================================================
 void HardBlockInfoType::set_dimensions(int i,
                                        float w,

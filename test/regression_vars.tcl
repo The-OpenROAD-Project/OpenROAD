@@ -29,6 +29,9 @@ set app_options "-no_init -no_splash -exit"
 set result_dir [file join $test_dir "results"]
 # Collective diffs.
 set diff_file [file join $result_dir "diffs"]
+if { [info exist ::env(DIFF_LOCATION)] } {
+  set diff_file "$::env(DIFF_LOCATION)"
+}
 # File containing list of failed tests.
 set failure_file [file join $result_dir "failures"]
 # Use the DIFF_OPTIONS envar to change the diff options
@@ -69,6 +72,10 @@ proc record_flow_tests { tests } {
 
 proc record_tests1 { tests cmp_logfile } {
   global test_dir
+  if { [info exist ::env(CTEST_TESTNAME)]} {
+    set tests "$::env(CTEST_TESTNAME)"
+    set cmp_logfile "$::env(TEST_TYPE)"
+  }
   foreach test $tests {
     # Prune commented tests from the list.
     if { [string index $test 0] != "#" } {

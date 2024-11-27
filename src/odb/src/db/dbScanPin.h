@@ -34,10 +34,9 @@
 #pragma once
 
 #include "dbBTerm.h"
-#include "dbBlock.h"
 #include "dbCore.h"
 #include "dbITerm.h"
-#include "odb.h"
+#include "odb/odb.h"
 // User Code Begin Includes
 #include <variant>
 // User Code End Includes
@@ -47,6 +46,9 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
+class dbScanPin;
+class dbBTerm;
+class dbITerm;
 
 class _dbScanPin : public _dbObject
 {
@@ -64,9 +66,7 @@ class _dbScanPin : public _dbObject
                    const _dbScanPin& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 
-  // User Code Begin Fields
   std::variant<dbId<_dbBTerm>, dbId<_dbITerm>> pin_;
-  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbScanPin& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbScanPin& obj);

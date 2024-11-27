@@ -32,11 +32,11 @@
 
 #include "dbSite.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbLib.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 
 namespace odb {
 
@@ -173,13 +173,15 @@ _dbSite::_dbSite(_dbDatabase*)
   _flags._y_symmetry = 0;
   _flags._R90_symmetry = 0;
   _flags._class = dbSiteClass::CORE;
+  _flags._is_hybrid = 0;
   _flags._spare_bits = 0;
 }
 
 _dbSite::~_dbSite()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -200,25 +202,25 @@ const char* dbSite::getConstName()
   return site->_name;
 }
 
-uint dbSite::getWidth()
+int dbSite::getWidth()
 {
   _dbSite* site = (_dbSite*) this;
   return site->_width;
 }
 
-void dbSite::setWidth(uint w)
+void dbSite::setWidth(int w)
 {
   _dbSite* site = (_dbSite*) this;
   site->_width = w;
 }
 
-uint dbSite::getHeight() const
+int dbSite::getHeight() const
 {
   _dbSite* site = (_dbSite*) this;
   return site->_height;
 }
 
-void dbSite::setHeight(uint h)
+void dbSite::setHeight(int h)
 {
   _dbSite* site = (_dbSite*) this;
   site->_height = h;
@@ -322,8 +324,9 @@ dbLib* dbSite::getLib()
 
 dbSite* dbSite::create(dbLib* lib_, const char* name_)
 {
-  if (lib_->findSite(name_))
+  if (lib_->findSite(name_)) {
     return nullptr;
+  }
 
   _dbLib* lib = (_dbLib*) lib_;
   _dbSite* site = lib->_site_tbl->create();
@@ -364,6 +367,19 @@ dbIStream& operator>>(dbIStream& stream, _dbSite& site)
     stream >> site._row_pattern;
   }
   return stream;
+}
+
+bool operator==(const dbSite::OrientedSite& lhs,
+                const dbSite::OrientedSite& rhs)
+{
+  return std::tie(lhs.site, lhs.orientation)
+         == std::tie(rhs.site, rhs.orientation);
+}
+
+bool operator!=(const dbSite::OrientedSite& lhs,
+                const dbSite::OrientedSite& rhs)
+{
+  return !(lhs == rhs);
 }
 
 }  // namespace odb

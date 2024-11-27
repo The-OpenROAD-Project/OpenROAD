@@ -745,6 +745,8 @@
 		obj = PyString_FromString("REGION");
 	} else if ($1.getValue() == odb::dbBoxOwner::Value::BPIN) {
 		obj = PyString_FromString("BPIN");
+	} else if ($1.getValue() == odb::dbBoxOwner::Value::PBOX) {
+		obj = PyString_FromString("PBOX");
 	} else {
                 SWIG_exception(SWIG_ValueError, "Unknown box owner");
         }
@@ -778,6 +780,8 @@
 		$1 = odb::dbBoxOwner::Value::REGION;
 	} else if (strcasecmp(str, "BPIN") == 0) {
 		$1 = odb::dbBoxOwner::Value::BPIN;
+	} else if (strcasecmp(str, "PBOX") == 0) {
+		$1 = odb::dbBoxOwner::Value::PBOX;
 	} else {
                 SWIG_exception(SWIG_ValueError, "Unknown box owner");
         }          
@@ -811,6 +815,8 @@
 		} 	else if (strcasecmp(str, "REGION") == 0) {
 			found = true;
 		} 	else if (strcasecmp(str, "BPIN") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "PBOX") == 0) {
 			found = true;
 		}
 	}
@@ -1370,6 +1376,8 @@
 		obj = PyString_FromString("PHYSICAL_CLUSTER");
 	} else if ($1.getValue() == odb::dbGroupType::VOLTAGE_DOMAIN) {
 		obj = PyString_FromString("VOLTAGE_DOMAIN");
+	} else if ($1.getValue() == odb::dbGroupType::POWER_DOMAIN) {
+		obj = PyString_FromString("POWER_DOMAIN");
 	} else {
                 SWIG_exception(SWIG_ValueError, "Unknown group type");
         }
@@ -1381,6 +1389,8 @@
                $1 = odb::dbGroupType::PHYSICAL_CLUSTER;
 	} else if (strcasecmp(str, "VOLTAGE_DOMAIN") == 0) {
                $1 = odb::dbGroupType::VOLTAGE_DOMAIN;
+	} else if (strcasecmp(str, "POWER_DOMAIN") == 0) {
+               $1 = odb::dbGroupType::POWER_DOMAIN;
 	} else {
                 SWIG_exception(SWIG_ValueError, "Unknown group type");
         }
@@ -1392,6 +1402,8 @@
 		if (strcasecmp(str, "PHYSICAL_CLUSTER") == 0) {
 			found = true;
 		} else if (strcasecmp(str, "VOLTAGE_DOMAIN") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "POWER_DOMAIN") == 0) {
 			found = true;
 		}
 	}

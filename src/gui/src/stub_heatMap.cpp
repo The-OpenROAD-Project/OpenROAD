@@ -134,6 +134,15 @@ odb::Rect HeatMapDataSource::getBounds() const
   return {};
 }
 
+void HeatMapDataSource::populateXYGrid()
+{
+}
+
+void HeatMapDataSource::setXYMapGrid(const std::vector<int>& x_grid,
+                                     const std::vector<int>& y_grid)
+{
+}
+
 //////////
 
 RealValueHeatMapDataSource::RealValueHeatMapDataSource(
@@ -184,6 +193,31 @@ void RealValueHeatMapDataSource::correctMapScale(HeatMapDataSource::Map& map)
 void RealValueHeatMapDataSource::determineMinMax(
     const HeatMapDataSource::Map& map)
 {
+}
+
+//////////
+
+GlobalRoutingDataSource::GlobalRoutingDataSource(
+    utl::Logger* logger,
+    const std::string& name,
+    const std::string& short_name,
+    const std::string& settings_group)
+    : HeatMapDataSource(logger, name, short_name, settings_group)
+{
+}
+
+void GlobalRoutingDataSource::populateXYGrid()
+{
+}
+
+double GlobalRoutingDataSource::getGridXSize() const
+{
+  return HeatMapDataSource::getGridXSize();
+}
+
+double GlobalRoutingDataSource::getGridYSize() const
+{
+  return HeatMapDataSource::getGridYSize();
 }
 
 }  // namespace gui

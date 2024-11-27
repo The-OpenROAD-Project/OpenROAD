@@ -1,0 +1,20 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO ODB-0227] LEF file: sky130_temp_sensor/HEADER.lef, created 1 library cells
+[INFO ODB-0227] LEF file: sky130_temp_sensor/SLC.lef, created 1 library cells
+[INFO ODB-0227] LEF file: sky130_power_switch/power_switch.lef, created 1 library cells
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__tapvpwrvgnd_1 has no liberty cell.
+[WARNING ORD-2011] LEF master HEADER has no liberty cell.
+[WARNING ORD-2011] LEF master SLC has no liberty cell.
+[INFO IFP-0001] Added 60 rows of 355 site unithd.
+[INFO IFP-0001] Added 30 rows of 355 site unithddbl.
+[INFO TAP-0005] Inserted 309 tapcells.
+[WARNING ORD-0044] Net created for VIN_SW, if intended as power or ground net add the -power/-ground switch as appropriate.
+[WARNING PDN-0209] Power switch for PS_0 already exists
+[WARNING PDN-0239] Core ring shape falls outside the die bounds.
+[WARNING PDN-0209] Power switch for PS_1 already exists
+[INFO PDN-0001] Inserting grid: Core
+[INFO PDN-0001] Inserting grid: TempSensor
+[WARNING PDN-0110] No via inserted between met4 and met5 at (63.6000, 12.8000) - (64.3700, 14.4000) on VSS
+[WARNING PDN-0110] No via inserted between met4 and met5 at (63.6000, 40.0000) - (64.3700, 41.6000) on VSS
+No differences found.

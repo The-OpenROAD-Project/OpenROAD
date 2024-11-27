@@ -16,7 +16,10 @@ set_layer_rc -corner corner1 -layer metal3 -resistance 4 -capacitance 2
 set_layer_rc -corner corner1 -layer metal4 -resistance 4 -capacitance 2
 
 set_routing_layers -signal metal2-metal10
-estimate_parasitics -global_routing
+estimate_parasitics -global_routing -spef_file results/est_rc4.spef
 
-report_net -corner corner0 -connections -verbose -digits 3 clk
-report_net -corner corner1 -connections -verbose -digits 3 clk
+report_net -corner corner0 -digits 3 clk
+report_net -corner corner1 -digits 3 clk
+
+diff_file est_rc4_corner0.spefok results/est_rc4_corner0.spef
+diff_file est_rc4_corner1.spefok results/est_rc4_corner1.spef

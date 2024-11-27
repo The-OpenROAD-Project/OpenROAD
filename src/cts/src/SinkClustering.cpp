@@ -190,7 +190,7 @@ void SinkClustering::run(const unsigned groupSize,
              "has {} elems", points_.size());
   // clang-format on
   if (firstRun_) {
-    const auto original_points = points_;
+    const auto& original_points = points_;
     if (CtsObserver* observer = options_->getObserver()) {
       observer->initializeWithPoints(this, original_points);
     }

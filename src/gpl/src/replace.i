@@ -40,16 +40,17 @@ void
 replace_nesterov_place_cmd()
 {
   Replace* replace = getReplace();
-  replace->doNesterovPlace();
+  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+  replace->doNesterovPlace(threads);
 }
 
 
 void
-replace_run_mbff_cmd(int max_sz, float alpha, float beta) 
+replace_run_mbff_cmd(int max_sz, float alpha, float beta, int num_paths) 
 {
   Replace* replace = getReplace();
   int threads = ord::OpenRoad::openRoad()->getThreadCount();
-  replace->runMBFF(max_sz, alpha, beta, threads);   
+  replace->runMBFF(max_sz, alpha, beta, threads, num_paths);   
 }
 
 
@@ -141,16 +142,10 @@ void
 replace_incremental_place_cmd()
 {
   Replace* replace = getReplace();
-  replace->doIncrementalPlace();
+  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+  replace->doIncrementalPlace(threads);
 }
 
-
-void
-set_force_cpu(bool force_cpu)
-{
-  Replace* replace = getReplace();
-  replace->setForceCPU(force_cpu);
-}
 
 void set_timing_driven_mode(bool timing_driven)
 {
@@ -160,10 +155,24 @@ void set_timing_driven_mode(bool timing_driven)
 
 
 void
+set_keep_resize_below_overflow_cmd(float overflow) 
+{
+  Replace* replace = getReplace();
+  replace->setKeepResizeBelowOverflow(overflow);
+}
+
+void
 set_routability_driven_mode(bool routability_driven)
 {
   Replace* replace = getReplace();
   replace->setRoutabilityDrivenMode(routability_driven);
+}
+
+void
+  set_routability_use_grt(bool use_grt)
+{
+  Replace* replace = getReplace();
+  replace->setRoutabilityUseGrt(use_grt);
 }
 
 void
@@ -172,7 +181,7 @@ set_routability_check_overflow_cmd(float overflow)
   Replace* replace = getReplace();
   replace->setRoutabilityCheckOverflow(overflow);
 }
-
+ 
 void
 set_routability_max_density_cmd(float density) 
 {
@@ -251,7 +260,8 @@ float
 get_global_placement_uniform_density_cmd() 
 {
   Replace* replace = getReplace();
-  return replace->getUniformTargetDensity();
+  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+  return replace->getUniformTargetDensity(threads);
 }
 
 void 

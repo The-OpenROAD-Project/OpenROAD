@@ -36,12 +36,12 @@
 #include <cstdint>
 #include <cstring>
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
+#include "odb/db.h"
 namespace odb {
 template class dbTable<_dbTechLayerEolKeepOutRule>;
 
@@ -271,7 +271,7 @@ int dbTechLayerEolKeepOutRule::getWithinHigh() const
   return obj->within_high_;
 }
 
-void dbTechLayerEolKeepOutRule::setClassName(std::string class_name)
+void dbTechLayerEolKeepOutRule::setClassName(const std::string& class_name)
 {
   _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
 

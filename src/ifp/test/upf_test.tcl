@@ -23,7 +23,13 @@ set block [$chip getBlock]
 puts "Power Domains List:"
 set pds [$block getPowerDomains]
 foreach pd $pds {
-    puts "PowerDomain: [$pd getName], Elements: [$pd getElements]"
+    lassign [$pd getArea] present area
+    if { $present } {
+        set area [list [$area xMin] [$area yMin] [$area xMax] [$area yMax]]
+    } else {
+        set area "unset"
+    }
+    puts "PowerDomain: [$pd getName], Elements: [$pd getElements], Area: $area"
 }
 
 
@@ -47,8 +53,13 @@ foreach inst $insts {
     }
 }
 
+foreach bterm [$block getBTerms] {
+  puts "bterm [$bterm getName]"
+}
 
-initialize_floorplan -die_area { 0 0 500 500 } -core_area { 100 100 400 400 }
+initialize_floorplan -die_area { 0 0 500 500 } \
+    -core_area { 100 100 400 400 } \
+    -site unithd
 
 
 set insts [$block getInsts]
@@ -78,6 +89,6 @@ foreach inst $insts {
     }
 }
 
-
-
-
+foreach bterm [$block getBTerms] {
+  puts "bterm [$bterm getName]"
+}

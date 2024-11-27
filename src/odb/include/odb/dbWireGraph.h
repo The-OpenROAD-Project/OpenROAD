@@ -35,6 +35,7 @@
 #include <vector>
 
 #include "dbTypes.h"
+#include "geom.h"
 #include "odb.h"
 #include "odbDList.h"
 
@@ -85,8 +86,6 @@ class dbWireGraph
       VARIABLE
     };
 
-    EndStyle() : _type(EXTENDED), _ext(0) {}
-
     void setExtended()
     {
       _type = EXTENDED;
@@ -110,8 +109,8 @@ class dbWireGraph
     }
 
    private:
-    Type _type;
-    int _ext;
+    Type _type{EXTENDED};
+    int _ext{0};
 
     friend class dbWireGraph;
   };
@@ -132,11 +131,7 @@ class dbWireGraph
     };
 
     Edge(Type type, dbWireType::Value wire_type, dbTechLayerRule* rule)
-        : _type(type),
-          _src(nullptr),
-          _tgt(nullptr),
-          _wire_type(wire_type),
-          _non_default_rule(rule)
+        : _type(type), _wire_type(wire_type), _non_default_rule(rule)
     {
     }
 
@@ -160,8 +155,8 @@ class dbWireGraph
     }
 
     const Type _type;
-    Node* _src;
-    Node* _tgt;
+    Node* _src{nullptr};
+    Node* _tgt{nullptr};
     dbWireType::Value _wire_type;
     dbTechLayerRule* _non_default_rule;
     DListEntry<Edge> _edge_entry;
@@ -176,21 +171,14 @@ class dbWireGraph
    public:
     using edge_iterator = DList<Edge, &Edge::outEdgeEntry>::iterator;
 
-    Node(int x, int y, dbTechLayer* layer)
-        : _x(x),
-          _y(y),
-          _jct_id(-1),
-          _layer(layer),
-          _in_edge(nullptr),
-          _object(nullptr)
-    {
-    }
+    Node(int x, int y, dbTechLayer* layer) : _x(x), _y(y), _layer(layer) {}
 
     void xy(int& x, int& y) const
     {
       x = _x;
       y = _y;
     }
+    Point point() const { return {_x, _y}; }
     dbTechLayer* layer() const { return _layer; }
     Edge* in_edge() const { return _in_edge; }
     edge_iterator begin() { return _out_edges.begin(); }
@@ -206,10 +194,10 @@ class dbWireGraph
 
     int _x;
     int _y;
-    int _jct_id;
+    int _jct_id{-1};
     dbTechLayer* _layer;
-    Edge* _in_edge;
-    dbObject* _object;
+    Edge* _in_edge{nullptr};
+    dbObject* _object{nullptr};
     DList<Edge, &Edge::outEdgeEntry> _out_edges;
     DListEntry<Node> _node_entry;
 
@@ -386,6 +374,8 @@ class dbWireGraph
   // The deletion of a edge WILL NOT delete the src/tgt node.
   void deleteEdge(Edge* e);
   edge_iterator deleteEdge(edge_iterator itr);
+
+  void dump(utl::Logger* logger);
 
  private:
   void encodePath(dbWireEncoder& encoder,

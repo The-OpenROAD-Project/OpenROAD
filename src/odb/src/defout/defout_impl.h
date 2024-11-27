@@ -102,6 +102,7 @@ class defout_impl
   void writeBPin(dbBPin* bpin, int n);
   void writeRegions(dbBlock* block);
   void writeGroups(dbBlock* block);
+  void writeScanChains(dbBlock* block);
   void writeBlockages(dbBlock* block);
   void writeFills(dbBlock* block);
   void writeNets(dbBlock* block);
@@ -118,16 +119,19 @@ class defout_impl
  public:
   defout_impl(utl::Logger* logger)
   {
+    _dist_factor = 0;
+    _out = nullptr;
     _use_net_inst_ids = false;
     _use_master_ids = false;
     _use_alias = false;
     _select_net_map = nullptr;
     _select_inst_map = nullptr;
+    _non_default_rule = nullptr;
     _version = defout::DEF_5_8;
     _logger = logger;
   }
 
-  ~defout_impl() {}
+  ~defout_impl() = default;
 
   void setUseLayerAlias(bool value) { _use_alias = value; }
 

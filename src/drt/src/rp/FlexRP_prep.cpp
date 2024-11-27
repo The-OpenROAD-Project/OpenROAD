@@ -38,7 +38,7 @@
 #include "gc/FlexGC.h"
 #include "odb/db.h"
 
-namespace fr {
+namespace drt {
 
 void FlexRP::prep()
 {
@@ -50,7 +50,7 @@ void FlexRP::prep()
   prep_eolForbiddenLen();
   prep_cutSpcTbl();
   prep_viaForbiddenThrough();
-  for (auto& ndr : tech_->nonDefaultRules) {
+  for (auto& ndr : tech_->nonDefaultRules_) {
     prep_via2viaForbiddenLen(ndr.get());
     prep_viaForbiddenTurnLen(ndr.get());
   }
@@ -145,7 +145,7 @@ void FlexRP::prep_minStepViasCheck()
     // add to polygon edges
     testPin->addPolygonEdges(tmpEdges);
     // check gc minstep violations
-    FlexGCWorker worker(tech_, logger_);
+    FlexGCWorker worker(tech_, logger_, router_cfg_);
     worker.checkMinStep(testPin);
     auto& markers = worker.getMarkers();
     if (!markers.empty()) {
@@ -193,7 +193,7 @@ void FlexRP::prep_viaForbiddenThrough_helper(const frLayerNum& lNum,
     isThroughAllowed = false;
   }
 
-  tech_->viaForbiddenThrough[tableLayerIdx][tableEntryIdx] = !isThroughAllowed;
+  tech_->viaForbiddenThrough_[tableLayerIdx][tableEntryIdx] = !isThroughAllowed;
 }
 
 bool FlexRP::prep_viaForbiddenThrough_minStep(const frLayerNum& lNum,
@@ -379,8 +379,8 @@ void FlexRP::prep_cutSpcTbl()
                    odb::dbTechLayerCutSpacingTableDefRule::SECOND)});
           con->setDefaultCenterToCenter(
               dbRule->isCenterToCenter(cutClass1, cutClass2));
-          con->setDefaultCenterAndEdge(
-              dbRule->isCenterAndEdge(cutClass1, cutClass2));
+          con->setDefaultCenterAndEdge(dbRule->isCenterAndEdge(
+              std::move(cutClass1), std::move(cutClass2)));
         }
       }
     }
@@ -429,7 +429,8 @@ void FlexRP::prep_lineForbiddenLen_helper(const frLayerNum& lNum,
     forbiddenRanges.push_back(std::make_pair(beginCoord + 1, endCoord - 1));
   }
 
-  tech_->line2LineForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+  tech_->line2LineForbiddenLen_[tableLayerIdx][tableEntryIdx]
+      = std::move(forbiddenRanges);
 }
 
 void FlexRP::prep_lineForbiddenLen_minSpc(const frLayerNum& lNum,
@@ -520,7 +521,8 @@ void FlexRP::prep_viaForbiddenPlanarLen_helper(const frLayerNum& lNum,
     forbiddenRanges.push_back(std::make_pair(beginCoord + 1, endCoord - 1));
   }
 
-  tech_->viaForbiddenPlanarLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+  tech_->viaForbiddenPlanarLen_[tableLayerIdx][tableEntryIdx]
+      = std::move(forbiddenRanges);
 }
 
 void FlexRP::prep_viaForbiddenPlanarLen_minStep(
@@ -535,7 +537,7 @@ void FlexRP::prep_viaForbiddenTurnLen(frNonDefaultRule* ndr)
 {
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
   auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
-  int bottom = BOTTOM_ROUTING_LAYER;
+  int bottom = router_cfg_->BOTTOM_ROUTING_LAYER;
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     if (getDesign()->getTech()->getLayer(lNum)->getType()
@@ -551,8 +553,8 @@ void FlexRP::prep_viaForbiddenTurnLen(frNonDefaultRule* ndr)
     }
 
     if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1) {
-      if (ndr && ndr->getPrefVia((lNum + 2) / 2 - 1)) {
-        upVia = ndr->getPrefVia((lNum + 2) / 2 - 1);
+      if (ndr && ndr->getPrefVia(lNum / 2 - 1)) {
+        upVia = ndr->getPrefVia(lNum / 2 - 1);
       } else {
         upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
       }
@@ -598,9 +600,11 @@ void FlexRP::prep_viaForbiddenTurnLen_helper(const frLayerNum& lNum,
     forbiddenRanges.push_back(std::make_pair(beginCoord + 1, endCoord - 1));
   }
   if (ndr) {
-    ndr->viaForbiddenTurnLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+    ndr->viaForbiddenTurnLen_[tableLayerIdx][tableEntryIdx]
+        = std::move(forbiddenRanges);
   } else {
-    tech->viaForbiddenTurnLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+    tech->viaForbiddenTurnLen_[tableLayerIdx][tableEntryIdx]
+        = std::move(forbiddenRanges);
   }
 }
 
@@ -666,7 +670,7 @@ void FlexRP::prep_via2viaForbiddenLen(frNonDefaultRule* ndr)
 {
   auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
   auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
-  int bottom = BOTTOM_ROUTING_LAYER;
+  int bottom = router_cfg_->BOTTOM_ROUTING_LAYER;
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     if (getDesign()->getTech()->getLayer(lNum)->getType()
@@ -681,8 +685,8 @@ void FlexRP::prep_via2viaForbiddenLen(frNonDefaultRule* ndr)
       downVia = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
     }
     if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1) {
-      if (ndr && ndr->getPrefVia((lNum + 2) / 2 - 1)) {
-        upVia = ndr->getPrefVia((lNum + 2) / 2 - 1);
+      if (ndr && ndr->getPrefVia(lNum / 2 - 1)) {
+        upVia = ndr->getPrefVia(lNum / 2 - 1);
       } else {
         upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
       }
@@ -742,15 +746,17 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
     forbiddenRanges.push_back(std::make_pair(beginCoord, endCoord));
   }
   if (ndr) {
-    ndr->via2ViaForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+    ndr->via2ViaForbiddenLen_[tableLayerIdx][tableEntryIdx]
+        = std::move(forbiddenRanges);
   } else {
-    tech->via2ViaForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+    tech->via2ViaForbiddenLen_[tableLayerIdx][tableEntryIdx]
+        = std::move(forbiddenRanges);
   }
 
   if (!ndr) {
     frCoord prl = 0;
     prep_via2viaPRL(lNum, viaDef1, viaDef2, isHorizontal, prl);
-    tech->via2ViaPrlLen[tableLayerIdx][tableEntryIdx] = prl;
+    tech->via2ViaPrlLen_[tableLayerIdx][tableEntryIdx] = prl;
   }
 }
 
@@ -816,7 +822,7 @@ bool FlexRP::hasMinStepViol(Rect& r1, Rect& r2, frLayerNum lNum)
   // add to polygon edges
   testPin->addPolygonEdges(tmpEdges);
   // check gc minstep violations
-  FlexGCWorker worker(tech_, logger_);
+  FlexGCWorker worker(tech_, logger_, router_cfg_);
   worker.checkMinStep(testPin);
   return !worker.getMarkers().empty();
 }
@@ -999,7 +1005,7 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpc(
     return;
   }
 
-  if (DBPROCESSNODE != "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
+  if (router_cfg_->DBPROCESSNODE != "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     return;
   }
 
@@ -1716,4 +1722,4 @@ void FlexRP::prep_via2viaPRL(frLayerNum lNum,
   }
 }
 
-}  // namespace fr
+}  // namespace drt

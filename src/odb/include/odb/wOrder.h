@@ -39,9 +39,7 @@ class Logger;
 namespace odb {
 
 class dbBlock;
-class dbNet;
 
 void orderWires(utl::Logger* logger, dbBlock* b);
-void orderWires(utl::Logger* logger, dbNet* net);
 
 }  // namespace odb

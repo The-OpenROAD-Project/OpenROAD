@@ -38,39 +38,66 @@ sta::define_cmd_args "initialize_floorplan" {[-utilization util]\
 					       [-core_space space | {bottom top left right}]\
 					       [-die_area {lx ly ux uy}]\
 					       [-core_area {lx ly ux uy}]\
-					       [-sites site_name]}
+					       [-additional_sites site_names]\
+					       [-site site_name]\
+					       [-row_parity NONE|ODD|EVEN]\
+					       [-flip_sites site_names]}
 
 proc initialize_floorplan { args } {
   sta::parse_key_args "initialize_floorplan" args \
     keys {-utilization -aspect_ratio -core_space \
-	    -die_area -core_area -sites} \
+    -die_area -core_area -site -additional_sites -row_parity -flip_sites} \
     flags {}
 
   sta::check_argc_eq0 "initialize_floorplan" $args
 
-  set sites {}
-  if { [info exists keys(-sites)] } {
-    foreach sitename $keys(-sites) {
-      set site [ifp::find_site $sitename]
-      if { $site == "NULL" } {
-        utl::error IFP 11 "Unable to find site: $sitename"
-      }
-      lappend sites $site
+  set site ""
+  if { [info exists keys(-site)] } {
+    set site [ifp::find_site $keys(-site)]
+  } else {
+    utl::error IFP 11 "use -site to add placement rows."
+  }
+
+  set additional_sites {}
+  if { [info exists keys(-additional_sites)] } {
+    foreach sitename $keys(-additional_sites) {
+      lappend additional_sites [ifp::find_site $sitename]
+    }
+  }
+
+  set flipped_sites {}
+  if { [info exists keys(-flip_sites)] } {
+    foreach sitename $keys(-flip_sites) {
+      lappend flipped_sites [ifp::find_site $sitename]
+    }
+  }
+
+  set row_parity "NONE"
+  if { [info exists keys(-row_parity)] } {
+    set row_parity $keys(-row_parity)
+    if { $row_parity != "NONE" && $row_parity != "ODD" && $row_parity != "EVEN" } {
+      utl::error IFP 12 "-row_parity must be NONE, ODD or EVEN"
     }
   }
 
   sta::check_argc_eq0 "initialize_floorplan" $args
-  if [info exists keys(-utilization)] {
+  if { [info exists keys(-utilization)] } {
     set util $keys(-utilization)
-    if [info exists keys(-core_space)] {
+    if { [info exists keys(-die_area)] } {
+      utl::error IFP 14 "-die_area cannot be used with -utilization."
+    }
+    if { [info exists keys(-core_area)] } {
+      utl::error IFP 20 "-core_area cannot be used with -utilization."
+    }
+    if { [info exists keys(-core_space)] } {
       set core_sp $keys(-core_space)
-      if { [llength $core_sp] == 1} {
+      if { [llength $core_sp] == 1 } {
         sta::check_positive_float "-core_space" $core_sp
         set core_sp_bottom $core_sp
         set core_sp_top $core_sp
         set core_sp_left $core_sp
         set core_sp_right $core_sp
-      } elseif { [llength $core_sp] == 4} {
+      } elseif { [llength $core_sp] == 4 } {
         lassign $core_sp core_sp_bottom core_sp_top core_sp_left core_sp_right
         sta::check_positive_float "-core_space" $core_sp_bottom
         sta::check_positive_float "-core_space" $core_sp_top
@@ -80,12 +107,9 @@ proc initialize_floorplan { args } {
         utl::error IFP 13 "-core_space is either a list of 4 margins or one value for all margins."
       }
     } else {
-      set core_sp_bottom 0.0
-      set core_sp_top 0.0
-      set core_sp_left 0.0
-      set core_sp_right 0.0
+      utl::error IFP 34 "no -core_space specified."
     }
-    if [info exists keys(-aspect_ratio)] {
+    if { [info exists keys(-aspect_ratio)] } {
       set aspect_ratio $keys(-aspect_ratio)
       sta::check_positive_float "-aspect_ratio" $aspect_ratio
     } else {
@@ -96,8 +120,20 @@ proc initialize_floorplan { args } {
       [ord::microns_to_dbu $core_sp_top] \
       [ord::microns_to_dbu $core_sp_left] \
       [ord::microns_to_dbu $core_sp_right] \
-      $sites
-  } elseif [info exists keys(-die_area)] {
+      $site \
+      $additional_sites \
+      $row_parity \
+      $flipped_sites
+  } elseif { [info exists keys(-die_area)] } {
+    if { [info exists keys(-utilization)] } {
+      utl::error IFP 23 "-utilization cannot be used with -die_area."
+    }
+    if { [info exists keys(-core_space)] } {
+      utl::error IFP 24 "-core_space cannot be used with -die_area."
+    }
+    if { [info exists keys(-aspect_ratio)] } {
+      utl::error IFP 33 "-aspect_ratio cannot be used with -die_area."
+    }
     set die_area $keys(-die_area)
     if { [llength $die_area] != 4 } {
       utl::error IFP 15 "-die_area is a list of 4 coordinates."
@@ -109,10 +145,10 @@ proc initialize_floorplan { args } {
     sta::check_positive_float "-die_area" $die_uy
 
     ord::ensure_linked
-    if [info exists keys(-core_area)] {
+    if { [info exists keys(-core_area)] } {
       set core_area $keys(-core_area)
       if { [llength $core_area] != 4 } {
-	utl::error IFP 16 "-core_area is a list of 4 coordinates."
+        utl::error IFP 16 "-core_area is a list of 4 coordinates."
       }
       lassign $core_area core_lx core_ly core_ux core_uy
       sta::check_positive_float "-core_area" $core_lx
@@ -122,11 +158,14 @@ proc initialize_floorplan { args } {
 
       # convert die/core coordinates to dbu.
       ifp::init_floorplan_core \
-	[ord::microns_to_dbu $die_lx] [ord::microns_to_dbu $die_ly] \
-	[ord::microns_to_dbu $die_ux] [ord::microns_to_dbu $die_uy] \
-	[ord::microns_to_dbu $core_lx] [ord::microns_to_dbu $core_ly] \
-	[ord::microns_to_dbu $core_ux] [ord::microns_to_dbu $core_uy] \
-	$sites
+        [ord::microns_to_dbu $die_lx] [ord::microns_to_dbu $die_ly] \
+        [ord::microns_to_dbu $die_ux] [ord::microns_to_dbu $die_uy] \
+        [ord::microns_to_dbu $core_lx] [ord::microns_to_dbu $core_ly] \
+        [ord::microns_to_dbu $core_ux] [ord::microns_to_dbu $core_uy] \
+        $site \
+        $additional_sites \
+        $row_parity \
+        $flipped_sites
     } else {
       utl::error IFP 17 "no -core_area specified."
     }
@@ -151,7 +190,7 @@ proc make_tracks { args } {
   set tech [ord::get_db_tech]
 
   if { [llength $args] == 0 } {
-      ifp::make_layer_tracks
+    ifp::make_layer_tracks
   } elseif { [llength $args] == 1 } {
     set layer_name [lindex $args 0]
     set layer [$tech findLayer $layer_name]
@@ -209,14 +248,14 @@ proc insert_tiecells { args } {
   sta::check_argc_eq1 "insert_tiecells" $args
 
   set prefix "TIEOFF_"
-  if {[info exists keys(-prefix)] } {
+  if { [info exists keys(-prefix)] } {
     set prefix $keys(-prefix)
   }
 
   set tie_pin_split [split $args {/}]
   set port [lindex $tie_pin_split end]
   set tie_cell [join [lrange $tie_pin_split 0 end-1] {/}]
-  
+
   set master NULL
   foreach lib [[ord::get_db] getLibs] {
     set master [$lib findMaster $tie_cell]
@@ -237,7 +276,6 @@ proc insert_tiecells { args } {
 }
 
 namespace eval ifp {
-
 proc microns_to_mfg_grid { microns } {
   set tech [ord::get_db_tech]
   if { [$tech hasManufacturingGrid] } {
@@ -246,7 +284,6 @@ proc microns_to_mfg_grid { microns } {
     return [expr round(round($microns * $dbu / $grid) * $grid)]
   } else {
     return [ord::microns_to_dbu $microns]
-  }  
+  }
 }
-
 }

@@ -58,21 +58,13 @@ class PlacementDensityDataSource
   ~PlacementDensityDataSource() {}
 };
 
-class RUDYDataSource
-{
- public:
-  RUDYDataSource() = default;
-  ~RUDYDataSource() = default;
-};
-
 ////
 
 Gui::Gui()
     : continue_after_close_(false),
       logger_(nullptr),
       db_(nullptr),
-      placement_density_heat_map_(nullptr),
-      rudy_heat_map_(nullptr)
+      placement_density_heat_map_(nullptr)
 {
 }
 
@@ -185,7 +177,9 @@ int startGui(int& argc,
              char* argv[],
              Tcl_Interp* interp,
              const std::string& script,
-             bool interactive)
+             bool interactive,
+             bool load_settings,
+             bool minimize)
 {
   printf(
       "[ERROR] This code was compiled with the GUI disabled.  Please recompile "

@@ -30,38 +30,34 @@
 
 #include "gc/FlexGC_impl.h"
 
-using namespace fr;
+namespace drt {
 
 FlexGCWorker::FlexGCWorker(frTechObject* techIn,
                            Logger* logger,
+                           RouterConfiguration* router_cfg,
                            FlexDRWorker* drWorkerIn)
-    : impl_(std::make_unique<Impl>(techIn, logger, drWorkerIn, this))
+    : impl_(
+        std::make_unique<Impl>(techIn, logger, router_cfg, drWorkerIn, this))
 {
 }
 
 FlexGCWorker::~FlexGCWorker() = default;
 
-FlexGCWorker::Impl::Impl() : Impl(nullptr, nullptr, nullptr, nullptr)
+FlexGCWorker::Impl::Impl() : Impl(nullptr, nullptr, nullptr, nullptr, nullptr)
 {
 }
 
 FlexGCWorker::Impl::Impl(frTechObject* techIn,
                          Logger* logger,
+                         RouterConfiguration* router_cfg,
                          FlexDRWorker* drWorkerIn,
                          FlexGCWorker* gcWorkerIn)
     : tech_(techIn),
       logger_(logger),
+      router_cfg_(router_cfg),
       drWorker_(drWorkerIn),
-      extBox_(),
-      drcBox_(),
-      owner2nets_(),
-      nets_(),
-      markers_(),
-      mapMarkers_(),
-      pwires_(),
       rq_(gcWorkerIn),
       printMarker_(false),
-      modifiedDRNets_(),
       targetNet_(nullptr),
       minLayerNum_(std::numeric_limits<frLayerNum>::min()),
       maxLayerNum_(std::numeric_limits<frLayerNum>::max()),
@@ -78,21 +74,11 @@ void FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in)
   Rect bbox = in->getBBox();
   auto layerNum = in->getLayerNum();
   auto con = in->getConstraint();
-  std::vector<frBlockObject*> srcs(2, nullptr);
-  int i = 0;
-  for (auto& src : in->getSrcs()) {
-    srcs.at(i) = src;
-    i++;
-  }
-  if (mapMarkers_.find({bbox, layerNum, con, srcs[0], srcs[1]})
+  if (mapMarkers_.find({bbox, layerNum, con, in->getSrcs()})
       != mapMarkers_.end()) {
     return;
   }
-  if (mapMarkers_.find({bbox, layerNum, con, srcs[1], srcs[0]})
-      != mapMarkers_.end()) {
-    return;
-  }
-  mapMarkers_[{bbox, layerNum, con, srcs[0], srcs[1]}] = in.get();
+  mapMarkers_[{bbox, layerNum, con, in->getSrcs()}] = in.get();
   markers_.push_back(std::move(in));
 }
 
@@ -167,9 +153,8 @@ bool FlexGCWorker::setTargetNet(frBlockObject* in)
   if (owner2nets.find(in) != owner2nets.end()) {
     impl_->targetNet_ = owner2nets[in];
     return true;
-  } else {
-    return false;
   }
+  return false;
 }
 gcNet* FlexGCWorker::getTargetNet()
 {
@@ -224,3 +209,5 @@ gcNet* FlexGCWorker::getNet(frNet* net)
 {
   return impl_->getNet(net);
 }
+
+}  // namespace drt

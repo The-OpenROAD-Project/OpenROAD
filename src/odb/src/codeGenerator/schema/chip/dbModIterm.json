@@ -1,0 +1,66 @@
+{
+    "name":"dbModITerm",
+    "type":"dbObject",
+    "needs_non_default_destructor" : "true",        
+    "fields":[
+        {
+            "name":"_name",
+            "type":"char *",
+            "flags":["no-set"],
+            "default":"nullptr",
+	    "schema":"db_schema_update_hierarchy"	    
+        },
+        {
+	    "name":"_parent",
+            "type":"dbId<_dbModInst>",
+            "flags":["no-set"],
+	    "schema":"db_schema_update_hierarchy",	    	    
+            "parent":"dbBlock" 
+        },
+	{
+	    "name":"_child_modbterm",
+	    "type":"dbId<_dbModBTerm>",
+	    "parent":"dbBlock",
+	    "flags":["private"],
+	    "schema":"db_schema_update_hierarchy"	    	    	    
+        },
+        {
+	    "name":"_mod_net",
+            "type":"dbId<_dbModNet>",
+	    "flags":["private"],
+	    "schema":"db_schema_update_hierarchy",	    	    	    	    
+            "parent":"dbBlock" 
+        },
+        {
+	    "name":"_next_net_moditerm",
+            "type":"dbId<_dbModITerm>",
+	    "flags":["private"],	    
+            "parent":"dbBlock",
+	    "schema":"db_schema_update_hierarchy"	    	    	    	    	    
+        },
+	{
+	    "name":"_prev_net_moditerm",
+            "type":"dbId<_dbModITerm>",
+	    "flags":["private"],
+	    "schema":"db_schema_update_hierarchy",	    	    	    	    	    	    
+            "parent":"dbBlock" 
+        },
+	{
+	    "name":"_next_entry",
+            "type":"dbId<_dbModITerm>",
+	    "flags":["private"],
+	    "schema":"db_schema_update_hierarchy",	    	    	    	    	      	    
+            "parent":"dbBlock"
+	},
+	{
+	    "name":"_prev_entry",
+            "type":"dbId<_dbModITerm>",
+	    "flags":["private"],
+	    "schema":"db_schema_hier_port_removal",	    	    	    	    	      	    
+            "parent":"dbBlock"
+	}
+	
+    ],
+    "constructors":[],
+    "cpp_includes":["dbBlock.h","dbModInst.h","dbModNet.h","dbHashTable.hpp","dbModBTerm.h", "dbJournal.h"]
+}

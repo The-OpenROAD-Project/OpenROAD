@@ -50,8 +50,8 @@ class Graphics;
 class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 {
  public:
-  SACoreSoftMacro(float outline_width,
-                  float outline_height,  // boundary constraints
+  SACoreSoftMacro(Cluster* root,
+                  const Rect& outline,
                   const std::vector<SoftMacro>& macros,
                   // weight for different penalty
                   float area_weight,
@@ -76,11 +76,12 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                   float init_prob,
                   int max_num_step,
                   int num_perturb_per_step,
-                  int k,
-                  int c,
                   unsigned seed,
                   Mpl2Observer* graphics,
                   utl::Logger* logger);
+
+  void run() override;
+
   // accessors
   float getBoundaryPenalty() const;
   float getNormBoundaryPenalty() const;
@@ -98,6 +99,12 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void alignMacroClusters();
   void addBlockages(const std::vector<Rect>& blockages);
 
+  bool centralizationWasReverted() { return centralization_was_reverted_; }
+  void setCentralizationAttemptOn(bool centralization_on)
+  {
+    centralization_on_ = centralization_on;
+  };
+
  private:
   float getAreaPenalty() const;
   float calNormCost() const override;
@@ -106,7 +113,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void perturb() override;
   void restore() override;
   // actions used
-  void resize();
+  void resizeOneCluster();
 
   void shrink() override;
 
@@ -122,7 +129,14 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void calBoundaryPenalty();
   void calNotchPenalty();
   void calMacroBlockagePenalty();
+
+  // Only for Cluster Placement:
+  void attemptCentralization(float pre_cost);
+  void moveFloorplan(const std::pair<float, float>& offset);
+
   std::vector<Rect> blockages_;
+
+  Cluster* root_;
 
   // notch threshold
   float notch_h_th_;
@@ -151,6 +165,9 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   // action prob
   float resize_prob_ = 0.0;
+
+  bool centralization_on_ = false;
+  bool centralization_was_reverted_ = false;
 };
 
 }  // namespace mpl2

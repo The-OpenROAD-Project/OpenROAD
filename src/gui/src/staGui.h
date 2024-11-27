@@ -70,7 +70,38 @@ class TimingPathsModel : public QAbstractTableModel
 {
   Q_OBJECT
 
+ private:
+  enum Column
+  {
+    Clock,
+    Required,
+    Arrival,
+    Slack,
+    Skew,
+    LogicDelay,
+    LogicDepth,
+    Fanout,
+    Start,
+    End
+  };
+
  public:
+  static const std::map<Column, const char*>& getColumnNames()
+  {
+    static const std::map<Column, const char*> column_names
+        = {{Clock, "Capture Clock"},
+           {Required, "Required"},
+           {Arrival, "Arrival"},
+           {Slack, "Slack"},
+           {Skew, "Skew"},
+           {LogicDelay, "Logic Delay"},
+           {LogicDepth, "Logic Depth"},
+           {Fanout, "Fanout"},
+           {Start, "Start"},
+           {End, "End"}};
+    return column_names;
+  }
+
   TimingPathsModel(bool is_setup,
                    STAGuiInterface* sta,
                    QObject* parent = nullptr);
@@ -90,7 +121,8 @@ class TimingPathsModel : public QAbstractTableModel
   void resetModel();
   void populateModel(const std::set<const sta::Pin*>& from,
                      const std::vector<std::set<const sta::Pin*>>& thru,
-                     const std::set<const sta::Pin*>& to);
+                     const std::set<const sta::Pin*>& to,
+                     const std::string& path_group_name);
 
  public slots:
   void sort(int col_index, Qt::SortOrder sort_order) override;
@@ -98,26 +130,42 @@ class TimingPathsModel : public QAbstractTableModel
  private:
   bool populatePaths(const std::set<const sta::Pin*>& from,
                      const std::vector<std::set<const sta::Pin*>>& thru,
-                     const std::set<const sta::Pin*>& to);
+                     const std::set<const sta::Pin*>& to,
+                     const std::string& path_group_name);
 
   STAGuiInterface* sta_;
   bool is_setup_;
   std::vector<std::unique_ptr<TimingPath>> timing_paths_;
-
-  enum Column
-  {
-    Clock,
-    Required,
-    Arrival,
-    Slack,
-    Start,
-    End
-  };
 };
 
 class TimingPathDetailModel : public QAbstractTableModel
 {
+ private:
+  enum Column
+  {
+    Pin,
+    Fanout,
+    RiseFall,
+    Time,
+    Delay,
+    Slew,
+    Load
+  };
+
  public:
+  static const std::map<Column, const char*>& getColumnNames()
+  {
+    static const std::map<Column, const char*> column_names
+        = {{Pin, "Pin"},
+           {Fanout, "Fanout"},
+           {RiseFall, "RiseFall"},
+           {Time, "Time"},
+           {Delay, "Delay"},
+           {Slew, "Slew"},
+           {Load, "Load"}};
+    return column_names;
+  }
+
   TimingPathDetailModel(bool is_capture,
                         sta::dbSta* sta,
                         QObject* parent = nullptr);
@@ -162,19 +210,9 @@ class TimingPathDetailModel : public QAbstractTableModel
   TimingNodeList* nodes_;
 
   // Unicode symbols
-  static constexpr char up_down_arrows_[] = "\u21C5";
-  static constexpr char up_arrow_[] = "\u2191";
-  static constexpr char down_arrow_[] = "\u2193";
-  enum Column
-  {
-    Pin,
-    Fanout,
-    RiseFall,
-    Time,
-    Delay,
-    Slew,
-    Load
-  };
+  static constexpr char up_down_arrows_[] = "⇅";
+  static constexpr char up_arrow_[] = "↑";
+  static constexpr char down_arrow_[] = "↓";
   static constexpr int clock_summary_row_ = 1;
 };
 
@@ -185,7 +223,7 @@ class TimingPathRenderer : public gui::Renderer
   void highlight(TimingPath* path);
 
   void highlightNode(const TimingPathNode* node);
-  void clearHighlightNodes() { highlight_stage_.clear(); }
+  void clearHighlightNodes();
 
   virtual void drawObjects(gui::Painter& /* painter */) override;
   virtual const char* getDisplayControlGroupName() override
@@ -219,6 +257,7 @@ class TimingPathRenderer : public gui::Renderer
     odb::dbObject* sink;
   };
   std::vector<std::unique_ptr<HighlightStage>> highlight_stage_;
+  std::mutex rendering_;
 
   static const gui::Painter::Color inst_highlight_color_;
   static const gui::Painter::Color path_inst_color_;

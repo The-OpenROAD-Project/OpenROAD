@@ -5,6 +5,7 @@
     {
       "name":"_name",
       "type":"char *",
+      "default": "nullptr",
       "flags":["no-set"]
     },
     {
@@ -38,6 +39,7 @@
     {
       "name":"_top",
       "type":"bool",
+      "default": "false",
       "flags":[]
     },
     {
@@ -46,23 +48,8 @@
       "parent":"dbBlock"
     },
     {
-      "name": "_x1",
-      "type": "int",
-      "flags":["no-set","no-get"]
-    },
-    {
-      "name": "_x2",
-      "type": "int",
-      "flags":["no-set","no-get"]
-    },
-    {
-      "name": "_y1",
-      "type": "int",
-      "flags":["no-set","no-get"]
-    },
-    {
-      "name": "_y2",
-      "type": "int",
+      "name": "_area",
+      "type": "Rect",
       "flags":["no-set","no-get"]
     },
     {
@@ -70,7 +57,13 @@
       "type":"dbVector<dbId<_dbLevelShifter>>",
       "flags":["no-set","no-get", "no-serial"],
       "parent":"dbBlock"
-    } 
+    } ,
+    {
+      "name": "_voltage",
+      "type": "float",
+      "default": "0",
+      "flags":["no-serial"]
+    }
   ],
   "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbVector.h", "dbIsolation.h", "dbPowerSwitch.h", "dbModInst.h"],
   "h_includes": [

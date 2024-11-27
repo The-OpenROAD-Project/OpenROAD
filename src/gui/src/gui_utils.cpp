@@ -132,4 +132,9 @@ void Utils::renderImage(const QString& path,
   }
 }
 
+QString Utils::wrapInCurly(const QString& q_string)
+{
+  return "{" + q_string + "}";
+}
+
 }  // namespace gui

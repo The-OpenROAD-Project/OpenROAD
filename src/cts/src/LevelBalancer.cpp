@@ -176,7 +176,7 @@ void LevelBalancer::fixTreeLevels(TreeBuilder* builder,
     }
 
     clusterCnt++;
-    subNet.removeSinks(instsToRemove);
+    subNet.removeSinks(std::move(instsToRemove));
     subNet.setLeafLevel(false);
     unsigned subClusterCnt = 0;
     for (const auto& cluster : subClusters) {

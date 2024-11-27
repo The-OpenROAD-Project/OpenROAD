@@ -1,7 +1,7 @@
-
 sta::define_cmd_args "create_physical_cluster" {cluster_name}
 
 proc create_physical_cluster { args } {
+  sta::parse_key_args "create_physical_cluster" args keys {} flags {}
   sta::check_argc_eq1 "create_physical_cluster" $args
   set cluster_name $args
   set db [ord::get_db]
@@ -63,6 +63,9 @@ proc create_child_physical_clusters { args } {
     }
   }
 }
+
+sta::define_cmd_args "set_ndr_layer_rule" {tech ndr layerName input isSpacing};# checker off
+
 proc set_ndr_layer_rule { tech ndr layerName input isSpacing} {
   set layer [$tech findLayer $layerName]
   if { $layer == "NULL" } {
@@ -95,6 +98,9 @@ proc set_ndr_layer_rule { tech ndr layerName input isSpacing} {
     $rule setWidth $value
   }
 }
+
+sta::define_cmd_args "set_ndr_rules" {tech ndr values isSpacing};#checker off
+
 proc set_ndr_rules { tech ndr values isSpacing } {
   if { [llength $values] == 1 } {
     # Omitting layers
@@ -144,7 +150,10 @@ proc set_ndr_rules { tech ndr values isSpacing } {
   }
 }
 
-sta::define_cmd_args "create_ndr" { -name name [-spacing val] [-width val] [-via val]}
+sta::define_cmd_args "create_ndr" { -name name \
+                                  [-spacing val] \
+                                  [-width val] \
+                                  [-via val]}
 
 proc create_ndr { args } {
   sta::parse_key_args "create_ndr" args keys {-name -spacing -width -via} flags {}
@@ -225,7 +234,7 @@ proc create_voltage_domain { args } {
   $group setType VOLTAGE_DOMAIN
 }
 
-sta::define_cmd_args "delete_physical_cluster" {cluster_name}
+sta::define_cmd_args "delete_physical_cluster" {cluster_name};# checker off
 
 proc delete_physical_cluster { args } {
   sta::check_argc_eq1 "delete_physical_cluster" $args
@@ -249,6 +258,7 @@ proc delete_physical_cluster { args } {
 sta::define_cmd_args "delete_voltage_domain" {domain_name}
 
 proc delete_voltage_domain { args } {
+  sta::parse_key_args "delete_voltage_domain" args keys {} flags {}
   sta::check_argc_eq1 "delete_voltage_domain" $args
   set domain_name $args
   set db [ord::get_db]
@@ -431,7 +441,8 @@ proc remove_from_physical_cluster { args } {
 
 sta::define_cmd_args "report_physical_clusters" {}
 
-proc report_physical_clusters {} {
+proc report_physical_clusters { args } {
+  sta::parse_key_args "report_physical_clusters" args keys {} flags {}
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
@@ -449,7 +460,8 @@ proc report_physical_clusters {} {
 
 sta::define_cmd_args "report_voltage_domains" {}
 
-proc report_voltage_domains {} {
+proc report_voltage_domains { args } {
+  sta::parse_key_args "report_voltage_domains" args keys {} flags {}
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
@@ -465,6 +477,7 @@ proc report_voltage_domains {} {
   }
 }
 
+sta::define_cmd_args "report_group" {group};# checker off
 proc report_group { group } {
   utl::report "[expr \"[$group getType]\" == \"PHYSICAL_CLUSTER\" ? \"Physical Cluster\": \"Voltage Domain\"]: [$group getName]"
   if { [$group hasBox] } {
@@ -511,6 +524,7 @@ proc report_group { group } {
 sta::define_cmd_args "write_guides" { filename }
 
 proc write_guides { args } {
+  sta::parse_key_args "write_guides" args keys {} flags {}
   sta::check_argc_eq1 "write_guides" $args
   set filename $args
   set db [ord::get_db]
@@ -522,3 +536,130 @@ proc write_guides { args } {
   $block writeGuides $filename
 }
 
+sta::define_cmd_args "write_macro_placement" { file_name }
+
+proc write_macro_placement { args } {
+  sta::parse_key_args "write_macro_placement" args keys {} flags {}
+  sta::check_argc_eq1  "write_macro_placement" $args
+  set file_name $args
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::error ODB 439 "No design loaded. Cannot write macro placement."
+  }
+  set block [$chip getBlock]
+  set macro_placement [odb::generateMacroPlacementString $block]
+
+  set file [open $file_name w]
+  puts $file $macro_placement
+  close $file
+}
+
+sta::define_cmd_args "define_layer_range" { layers };# checker off
+
+proc define_layer_range { layers } {
+  set layer_range [grt::parse_layer_range "-layers" $layers]
+  lassign $layer_range min_layer max_layer
+  grt::check_routing_layer $min_layer
+  grt::check_routing_layer $max_layer
+
+  set_min_layer $min_layer
+  set_max_layer $max_layer
+
+  set tech [ord::get_db_tech]
+  for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
+    set db_layer [$tech findRoutingLayer $layer]
+    if { !([ord::db_layer_has_hor_tracks $db_layer] && \
+         [ord::db_layer_has_ver_tracks $db_layer]) } {
+      set layer_name [$db_layer getName]
+      utl::error GRT 57 "Missing track structure for layer $layer_name."
+    }
+  }
+}
+
+sta::define_cmd_args "define_clock_layer_range" { layers };# checker off
+
+proc define_clock_layer_range { layers } {
+  set layer_range [grt::parse_layer_range "-clock_layers" $layers]
+  lassign $layer_range min_clock_layer max_clock_layer
+  grt::check_routing_layer $min_clock_layer
+  grt::check_routing_layer $max_clock_layer
+
+  if { $min_clock_layer < $max_clock_layer } {
+    set db [ord::get_db]
+    set chip [$db getChip]
+    if { $chip == "NULL" } {
+      utl::error ODB 363 "please load the design before trying to use this command"
+    }
+    set block [$chip getBlock]
+    
+    $block setMinLayerForClock $min_clock_layer
+    $block setMaxLayerForClock $max_clock_layer
+  } else {
+    utl::error GRT 56 "In argument -clock_layers, min routing layer is\
+      greater than max routing layer."
+  }
+}
+
+sta::define_cmd_args "set_routing_layers" { [-signal min-max] \
+                                            [-clock min-max] \
+};# checker off
+proc set_routing_layers { args } {
+  sta::parse_key_args "set_routing_layers" args \
+    keys {-signal -clock} flags {};# checker off
+
+  sta::check_argc_eq0 "set_routing_layers" $args
+
+  if { [info exists keys(-signal)] } {
+    define_layer_range $keys(-signal)
+  }
+
+  if { [info exists keys(-clock)] } {
+    define_clock_layer_range $keys(-clock)
+  }
+}
+
+sta::define_cmd_args "set_min_layer" { minLayer };# checker off
+
+proc set_min_layer { args } {
+  sta::parse_key_args "set_min_layer" args keys {} flags {}
+  sta::check_argc_eq1 "set_min_layer" $args
+  set minLayer $args
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::error ODB 365 "please load the design before trying to use this command"
+  }
+  set block [$chip getBlock]
+  $block setMinRoutingLayer $minLayer
+}
+
+sta::define_cmd_args "set_max_layer" { maxLayer };# checker off
+
+proc set_max_layer { args } {
+  sta::parse_key_args "set_max_layer" args keys {} flags {}
+  sta::check_argc_eq1 "set_max_layer" $args
+  set maxLayer $args
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::error ODB 366 "please load the design before trying to use this command"
+  }
+  set block [$chip getBlock]
+  $block setMaxRoutingLayer $maxLayer
+}
+
+sta::define_cmd_args "design_is_routed" { [-verbose] }
+
+proc design_is_routed { args } {
+  sta::parse_key_args "design_is_routed" args keys {} flags {-verbose}
+
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::error ODB 223 "please load the design before trying to use this command."
+  }
+  set block [$chip getBlock]
+
+  return [$block designIsRouted [info exists flags(-verbose)]]
+}

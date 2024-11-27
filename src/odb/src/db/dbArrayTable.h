@@ -34,10 +34,10 @@
 
 #include <vector>
 
-#include "ZException.h"
 #include "dbCore.h"
 #include "dbVector.h"
-#include "odb.h"
+#include "odb/ZException.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -160,6 +160,7 @@ class dbArrayTable : public dbObjectTable
   void writePage(dbOStream& stream, const dbArrayTablePage* page) const;
   void getObjects(std::vector<T*>& objects);
   dbObject* getObject(uint id, ...) override { return getPtr(id); }
+  bool validObject(uint id, ...) override { return validId(id); }
 
  private:
   T* create();

@@ -45,15 +45,19 @@
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "ord/Tech.h"
-#include "sta/Corner.hh"
-#include "sta/TimingArc.hh"
-#include "sta/TimingRole.hh"
 #include "utl/Logger.h"
 
 namespace ord {
 
+std::mutex Design::interp_mutex;
+
 Design::Design(Tech* tech) : tech_(tech)
 {
+}
+
+ord::OpenRoad* Design::getOpenRoad()
+{
+  return tech_->app_;
 }
 
 odb::dbBlock* Design::getBlock()
@@ -69,8 +73,7 @@ void Design::readVerilog(const std::string& file_name)
     getLogger()->error(utl::ORD, 36, "A block already exists in the db");
   }
 
-  auto app = OpenRoad::openRoad();
-  app->readVerilog(file_name.c_str());
+  getOpenRoad()->readVerilog(file_name.c_str());
 }
 
 void Design::readDef(const std::string& file_name,
@@ -80,7 +83,6 @@ void Design::readDef(const std::string& file_name,
                      bool child                // = false
 )
 {
-  auto app = OpenRoad::openRoad();
   if (floorplan_init && incremental) {
     getLogger()->error(utl::ORD,
                        101,
@@ -90,69 +92,75 @@ void Design::readDef(const std::string& file_name,
   if (tech_->getDB()->getTech() == nullptr) {
     getLogger()->error(utl::ORD, 102, "No technology has been read.");
   }
-  app->readDef(file_name.c_str(),
-               tech_->getDB()->getTech(),
-               continue_on_errors,
-               floorplan_init,
-               incremental,
-               child);
+  getOpenRoad()->readDef(file_name.c_str(),
+                         tech_->getDB()->getTech(),
+                         continue_on_errors,
+                         floorplan_init,
+                         incremental,
+                         child);
 }
 
 void Design::link(const std::string& design_name)
 {
-  auto app = OpenRoad::openRoad();
-  app->linkDesign(design_name.c_str());
+  getOpenRoad()->linkDesign(design_name.c_str(), false);
+}
+
+void Design::readDb(std::istream& stream)
+{
+  getOpenRoad()->readDb(stream);
 }
 
 void Design::readDb(const std::string& file_name)
 {
-  auto app = OpenRoad::openRoad();
-  app->readDb(file_name.c_str());
+  getOpenRoad()->readDb(file_name.c_str());
+}
+
+void Design::writeDb(std::ostream& stream)
+{
+  getOpenRoad()->writeDb(stream);
 }
 
 void Design::writeDb(const std::string& file_name)
 {
-  auto app = OpenRoad::openRoad();
-  app->writeDb(file_name.c_str());
+  getOpenRoad()->writeDb(file_name.c_str());
 }
 
 void Design::writeDef(const std::string& file_name)
 {
-  auto app = OpenRoad::openRoad();
-  app->writeDef(file_name.c_str(), "5.8");
+  getOpenRoad()->writeDef(file_name.c_str(), "5.8");
 }
 
-ifp::InitFloorplan* Design::getFloorplan()
+ifp::InitFloorplan Design::getFloorplan()
 {
-  auto app = OpenRoad::openRoad();
   auto block = getBlock();
   if (!block) {
     getLogger()->error(utl::ORD, 37, "No block loaded.");
   }
-  return new ifp::InitFloorplan(block, app->getLogger(), app->getDbNetwork());
+  return ifp::InitFloorplan(block, getLogger(), getSta()->getDbNetwork());
 }
 
 utl::Logger* Design::getLogger()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getLogger();
+  return getOpenRoad()->getLogger();
 }
 
 int Design::micronToDBU(double coord)
 {
-  int dbuPerMicron = getBlock()->getDbUnitsPerMicron();
+  const int dbuPerMicron = getBlock()->getDbUnitsPerMicron();
   return round(coord * dbuPerMicron);
 }
 
 ant::AntennaChecker* Design::getAntennaChecker()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getAntennaChecker();
+  return getOpenRoad()->getAntennaChecker();
 }
 
-const std::string Design::evalTclString(const std::string& cmd)
+std::string Design::evalTclString(const std::string& cmd)
 {
-  Tcl_Interp* tcl_interp = OpenRoad::openRoad()->tclInterp();
+  const std::lock_guard<std::mutex> lock(interp_mutex);
+  auto openroad = getOpenRoad();
+  ord::OpenRoad::setOpenRoad(openroad, /* reinit_ok */ true);
+  Tcl_Interp* tcl_interp = openroad->tclInterp();
   Tcl_Eval(tcl_interp, cmd.c_str());
   return std::string(Tcl_GetStringResult(tcl_interp));
 }
@@ -164,36 +172,12 @@ Tech* Design::getTech()
 
 sta::dbSta* Design::getSta()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getSta();
-}
-
-std::vector<sta::Corner*> Design::getCorners()
-{
-  sta::Corners* corners = getSta()->corners();
-  return {corners->begin(), corners->end()};
-}
-
-sta::MinMax* Design::getMinMax(MinMax type)
-{
-  return type == Max ? sta::MinMax::max() : sta::MinMax::min();
-}
-
-float Design::getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax)
-{
-  sta::dbSta* sta = getSta();
-  sta::Net* sta_net = sta->getDbNetwork()->dbToSta(net);
-
-  float pin_cap;
-  float wire_cap;
-  sta->connectedCap(sta_net, corner, getMinMax(minmax), pin_cap, wire_cap);
-  return pin_cap + wire_cap;
+  return tech_->getSta();
 }
 
 sta::LibertyCell* Design::getLibertyCell(odb::dbMaster* master)
 {
-  sta::dbSta* sta = getSta();
-  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::dbNetwork* network = getSta()->getDbNetwork();
 
   sta::Cell* cell = network->dbToSta(master);
   if (!cell) {
@@ -229,32 +213,6 @@ bool Design::isSequential(odb::dbMaster* master)
   return lib_cell->hasSequentials();
 }
 
-float Design::staticPower(odb::dbInst* inst, sta::Corner* corner)
-{
-  sta::dbSta* sta = getSta();
-  sta::dbNetwork* network = sta->getDbNetwork();
-
-  sta::Instance* sta_inst = network->dbToSta(inst);
-  if (!sta_inst) {
-    return 0.0;
-  }
-  sta::PowerResult power = sta->power(sta_inst, corner);
-  return power.leakage();
-}
-
-float Design::dynamicPower(odb::dbInst* inst, sta::Corner* corner)
-{
-  sta::dbSta* sta = getSta();
-  sta::dbNetwork* network = sta->getDbNetwork();
-
-  sta::Instance* sta_inst = network->dbToSta(inst);
-  if (!sta_inst) {
-    return 0.0;
-  }
-  sta::PowerResult power = sta->power(sta_inst, corner);
-  return (power.internal() + power.switching());
-}
-
 bool Design::isInClock(odb::dbInst* inst)
 {
   for (auto* iterm : inst->getITerms()) {
@@ -264,6 +222,25 @@ bool Design::isInClock(odb::dbInst* inst)
     }
   }
   return false;
+}
+
+bool Design::isInClock(odb::dbITerm* iterm)
+{
+  auto* net = iterm->getNet();
+  if (net != nullptr && net->getSigType() == odb::dbSigType::CLOCK) {
+    return true;
+  }
+  return false;
+}
+
+std::string Design::getITermName(odb::dbITerm* pin)
+{
+  return pin->getName();
+}
+
+bool Design::isInSupply(odb::dbITerm* pin)
+{
+  return pin->getSigType().isSupply();
 }
 
 std::uint64_t Design::getNetRoutedLength(odb::dbNet* net)
@@ -286,143 +263,118 @@ std::uint64_t Design::getNetRoutedLength(odb::dbNet* net)
   return route_length;
 }
 
-// I'd like to return a std::set but swig gave me way too much grief
-// so I just copy the set to a vector.
-std::vector<odb::dbMTerm*> Design::getTimingFanoutFrom(odb::dbMTerm* input)
-{
-  sta::dbSta* sta = getSta();
-  sta::dbNetwork* network = sta->getDbNetwork();
-
-  odb::dbMaster* master = input->getMaster();
-  sta::Cell* cell = network->dbToSta(master);
-  if (!cell) {
-    return {};
-  }
-
-  sta::LibertyCell* lib_cell = network->libertyCell(cell);
-  if (!lib_cell) {
-    return {};
-  }
-
-  sta::Port* port = network->dbToSta(input);
-  sta::LibertyPort* lib_port = network->libertyPort(port);
-
-  std::set<odb::dbMTerm*> outputs;
-  for (auto arc_set : lib_cell->timingArcSets(lib_port, /* to */ nullptr)) {
-    sta::TimingRole* role = arc_set->role();
-    if (role->isTimingCheck() || role->isAsyncTimingCheck()
-        || role->isNonSeqTimingCheck() || role->isDataCheck()) {
-      continue;
-    }
-    sta::LibertyPort* to_port = arc_set->to();
-    odb::dbMTerm* to_mterm = master->findMTerm(to_port->name());
-    if (to_mterm) {
-      outputs.insert(to_mterm);
-    }
-  }
-  return {outputs.begin(), outputs.end()};
-}
-
 grt::GlobalRouter* Design::getGlobalRouter()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getGlobalRouter();
+  return getOpenRoad()->getGlobalRouter();
 }
 
 gpl::Replace* Design::getReplace()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getReplace();
+  return getOpenRoad()->getReplace();
 }
 
 dpl::Opendp* Design::getOpendp()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getOpendp();
+  return getOpenRoad()->getOpendp();
+}
+
+mpl2::MacroPlacer2* Design::getMacroPlacer2()
+{
+  return getOpenRoad()->getMacroPlacer2();
 }
 
 mpl::MacroPlacer* Design::getMacroPlacer()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getMacroPlacer();
+  return getOpenRoad()->getMacroPlacer();
 }
 
 ppl::IOPlacer* Design::getIOPlacer()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getIOPlacer();
+  return getOpenRoad()->getIOPlacer();
 }
 
 tap::Tapcell* Design::getTapcell()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getTapcell();
+  return getOpenRoad()->getTapcell();
 }
 
 cts::TritonCTS* Design::getTritonCts()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getTritonCts();
+  return getOpenRoad()->getTritonCts();
 }
 
-triton_route::TritonRoute* Design::getTritonRoute()
+drt::TritonRoute* Design::getTritonRoute()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getTritonRoute();
+  return getOpenRoad()->getTritonRoute();
 }
 
 dpo::Optdp* Design::getOptdp()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getOptdp();
+  return getOpenRoad()->getOptdp();
 }
 
 fin::Finale* Design::getFinale()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getFinale();
+  return getOpenRoad()->getFinale();
 }
 
 par::PartitionMgr* Design::getPartitionMgr()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getPartitionMgr();
+  return getOpenRoad()->getPartitionMgr();
 }
 
 rcx::Ext* Design::getOpenRCX()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getOpenRCX();
+  return getOpenRoad()->getOpenRCX();
 }
 
 rmp::Restructure* Design::getRestructure()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getRestructure();
+  return getOpenRoad()->getRestructure();
 }
 
 stt::SteinerTreeBuilder* Design::getSteinerTreeBuilder()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getSteinerTreeBuilder();
+  return getOpenRoad()->getSteinerTreeBuilder();
 }
 
 psm::PDNSim* Design::getPDNSim()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getPDNSim();
+  return getOpenRoad()->getPDNSim();
 }
 
 pdn::PdnGen* Design::getPdnGen()
 {
-  auto app = OpenRoad::openRoad();
-  return app->getPdnGen();
+  return getOpenRoad()->getPdnGen();
 }
 
 pad::ICeWall* Design::getICeWall()
 {
+  return getOpenRoad()->getICeWall();
+}
+
+dft::Dft* Design::getDft()
+{
+  return getOpenRoad()->getDft();
+}
+
+odb::dbDatabase* Design::getDb()
+{
+  return getOpenRoad()->getDb();
+}
+
+rsz::Resizer* Design::getResizer()
+{
+  return getOpenRoad()->getResizer();
+}
+
+/* static */
+odb::dbDatabase* Design::createDetachedDb()
+{
   auto app = OpenRoad::openRoad();
-  return app->getICeWall();
+  auto db = odb::dbDatabase::create();
+  db->setLogger(app->getLogger());
+  return db;
 }
 
 }  // namespace ord

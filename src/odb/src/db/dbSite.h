@@ -34,10 +34,10 @@
 
 #include "dbCore.h"
 #include "dbHashTable.h"
-#include "dbId.h"
-#include "dbTypes.h"
 #include "dbVector.h"
-#include "odb.h"
+#include "odb/dbId.h"
+#include "odb/dbTypes.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -76,8 +76,8 @@ class _dbSite : public _dbObject
   // PERSISTANT-MEMBERS
   dbSiteFlags _flags;
   char* _name;
-  uint _height;
-  uint _width;
+  int _height;
+  int _width;
   dbId<_dbSite> _next_entry;
   dbVector<OrientedSiteInternal> _row_pattern;
 

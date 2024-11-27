@@ -108,9 +108,12 @@ class MacroPlacer2
                   const odb::dbOrientType& orientation);
 
   void setMacroPlacementFile(const std::string& file_name);
-  void writeMacroPlacement(const std::string& file_name);
 
   void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
+  void setDebugShowBundledNets(bool show_bundled_nets);
+  void setDebugSkipSteps(bool skip_steps);
+  void setDebugOnlyFinalResult(bool only_final_result);
+  void setDebugTargetClusterId(int target_cluster_id);
 
  private:
   std::unique_ptr<HierRTLMP> hier_rtlmp_;

@@ -36,9 +36,13 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
+#include "odb/db.h"
+#include "placerBase.h"
 #include "point.h"
+#include "routeBase.h"
 
 namespace odb {
 class dbInst;
@@ -57,6 +61,7 @@ class Instance;
 class Die;
 class PlacerBaseCommon;
 class PlacerBase;
+class GCellHandle;
 
 class Instance;
 class Pin;
@@ -64,6 +69,7 @@ class Net;
 
 class GPin;
 class FFT;
+class nesterovDbCbk;
 
 class GCell
 {
@@ -80,6 +86,7 @@ class GCell
   const std::vector<GPin*>& gPins() const { return gPins_; }
 
   void addGPin(GPin* gPin);
+  void clearGPins() { gPins_.clear(); }
 
   void setClusteredInstance(const std::vector<Instance*>& insts);
   void setInstance(Instance* inst);
@@ -107,7 +114,9 @@ class GCell
   int dDy() const;
 
   void setCenterLocation(int cx, int cy);
+  // void setLocation(int x, int y);
   void setSize(int dx, int dy);
+  void setAllLocations(int lx, int ly, int ux, int uy);
 
   void setDensityLocation(int dLx, int dLy);
   void setDensityCenterLocation(int dCx, int dCy);
@@ -126,6 +135,8 @@ class GCell
   bool isFiller() const;
   bool isMacroInstance() const;
   bool isStdInstance() const;
+
+  void print(utl::Logger* logger) const;
 
  private:
   std::vector<Instance*> insts_;
@@ -247,6 +258,7 @@ class GNet
   float customWeight() const { return customWeight_; }
 
   void addGPin(GPin* gPin);
+  void clearGPins() { gPins_.clear(); }
   void updateBox();
   int64_t hpwl() const;
 
@@ -279,6 +291,8 @@ class GNet
 
   float waExpMaxSumY() const;
   float waYExpMaxSumY() const;
+
+  void print(utl::Logger* log) const;
 
  private:
   std::vector<GPin*> gPins_;
@@ -472,6 +486,9 @@ class GPin
   void updateLocation(const GCell* gCell);
   void updateDensityLocation(const GCell* gCell);
 
+  void print(utl::Logger* log) const;
+  void updateCoordi();
+
  private:
   GCell* gCell_ = nullptr;
   GNet* gNet_ = nullptr;
@@ -509,6 +526,7 @@ class GPin
 class Bin
 {
  public:
+  Bin() = default;
   Bin(int x, int y, int lx, int ly, int ux, int uy, float targetDensity);
 
   int x() const { return x_; };
@@ -669,7 +687,8 @@ class BinGrid
   void setCorePoints(const Die* die);
   void setBinCnt(int binCntX, int binCntY);
   void setTargetDensity(float density);
-  void updateBinsGCellDensityArea(const std::vector<GCell*>& cells);
+  void updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells);
+  void setNumThreads(int num_threads) { num_threads_ = num_threads; }
 
   void initBins();
 
@@ -719,6 +738,7 @@ class BinGrid
   int64_t overflowArea_ = 0;
   int64_t overflowAreaUnscaled_ = 0;
   bool isSetBinCnt_ = false;
+  int num_threads_ = 1;
 };
 
 inline std::vector<Bin>& BinGrid::bins()
@@ -753,14 +773,16 @@ class NesterovPlaceVars
   float minPreconditioner = 1.0;            // MIN_PRE
   float initialPrevCoordiUpdateCoef = 100;  // z_ref_alpha
   float referenceHpwl = 446000000;          // refDeltaHpwl
-  float routabilityCheckOverflow = 0.20;
+  float routabilityCheckOverflow = 0.30;
+  float keepResizeBelowOverflow = 0.3;
 
   static const int maxRecursionWlCoef = 10;
   static const int maxRecursionInitSLPCoef = 10;
 
-  bool forceCPU = false;
   bool timingDrivenMode = true;
+  int timingDrivenIterCounter = 0;
   bool routabilityDrivenMode = true;
+
   bool debug = false;
   int debug_pause_iterations = 10;
   int debug_update_iterations = 10;
@@ -777,7 +799,8 @@ class NesterovBaseCommon
  public:
   NesterovBaseCommon(NesterovBaseVars nbVars,
                      std::shared_ptr<PlacerBaseCommon> pb,
-                     utl::Logger* log);
+                     utl::Logger* log,
+                     int num_threads);
 
   const std::vector<GCell*>& gCells() const { return gCells_; }
   const std::vector<GNet*>& gNets() const { return gNets_; }
@@ -823,6 +846,37 @@ class NesterovBaseCommon
 
   void updateDbGCells();
 
+  // Number of threads of execution
+  size_t getNumThreads() { return num_threads_; }
+
+  GCell* getGCellByIndex(size_t i);
+
+  void setCbk(nesterovDbCbk* cbk) { db_cbk_ = cbk; }
+  size_t createGCell(odb::dbInst* db_inst);
+  void createGNet(odb::dbNet* net, bool skip_io_mode);
+  void createITerm(odb::dbITerm* iTerm);
+  void destroyGCell(size_t);
+  void destroyGNet(odb::dbNet*);
+  void destroyITerm(odb::dbITerm*);
+  void resizeGCell(odb::dbInst* db_inst);
+  void moveGCell(odb::dbInst* db_inst);
+  void fixPointers();
+
+  GCell& getGCell(size_t index) { return gCellStor_[index]; }
+
+  size_t getGCellIndex(const GCell* gCell) const
+  {
+    return std::distance(gCellStor_.data(), gCell);
+  }
+
+  void printGCells();
+  void printGPins();
+
+  // TODO do this for each region? Also, manage this properly if other callbacks
+  // are implemented.
+  int64_t getDeltaArea() { return deltaArea_; }
+  void resetDeltaArea() { deltaArea_ = 0; }
+
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBaseCommon> pbc_;
@@ -839,6 +893,20 @@ class NesterovBaseCommon
   std::unordered_map<Instance*, GCell*> gCellMap_;
   std::unordered_map<Pin*, GPin*> gPinMap_;
   std::unordered_map<Net*, GNet*> gNetMap_;
+
+  std::unordered_map<odb::dbInst*, size_t> db_inst_map_;
+  std::unordered_map<odb::dbNet*, size_t> db_net_map_;
+  std::unordered_map<odb::dbITerm*, size_t> db_iterm_map_;
+
+  // These three deques should not be required if placerBase allows for dynamic
+  // modifications on its vectors.
+  std::deque<Instance> pb_insts_stor_;
+  std::deque<Net> pb_nets_stor_;
+  std::deque<Pin> pb_pins_stor_;
+
+  int num_threads_;
+  int64_t deltaArea_;
+  nesterovDbCbk* db_cbk_;
 };
 
 // Stores instances belonging to a specific power domain
@@ -854,7 +922,9 @@ class NesterovBase
                utl::Logger* log);
   ~NesterovBase();
 
-  const std::vector<GCell*>& gCells() const { return gCells_; }
+  GCell& getFillerGCell(size_t index) { return fillerStor_[index]; }
+
+  const std::vector<GCellHandle>& gCells() const { return gCells_; }
   const std::vector<GCell*>& gCellInsts() const { return gCellInsts_; }
   const std::vector<GCell*>& gCellFillers() const { return gCellFillers_; }
 
@@ -902,6 +972,8 @@ class NesterovBase
   // should be separately defined.
   // This is mainly used for NesterovLoop
   int64_t nesterovInstsArea() const;
+  int64_t getStdInstArea() const { return this->stdInstsArea_; }
+  int64_t getMacroInstArea() const { return this->macroInstsArea_; }
 
   // sum phi and target density
   // used in NesterovPlace
@@ -959,6 +1031,25 @@ class NesterovBase
                        float wlCoeffX,
                        float wlCoeffY);
 
+  void updatePrevGradient(float wlCoeffX, float wlCoeffY);
+  void updateCurGradient(float wlCoeffX, float wlCoeffY);
+  void updateNextGradient(float wlCoeffX, float wlCoeffY);
+
+  // Used for updates based on callbacks
+  void updateSingleGradient(size_t gCellIndex,
+                            std::vector<FloatPoint>& sumGrads,
+                            std::vector<FloatPoint>& wireLengthGrads,
+                            std::vector<FloatPoint>& densityGrads,
+                            float wlCoeffX,
+                            float wlCoeffY);
+
+  void updateSinglePrevGradient(size_t gCellIndex,
+                                float wlCoeffX,
+                                float wlCoeffY);
+  void updateSingleCurGradient(size_t gCellIndex,
+                               float wlCoeffX,
+                               float wlCoeffY);
+
   void updateInitialPrevSLPCoordi();
 
   float getStepLength(const std::vector<FloatPoint>& prevSLPCoordi_,
@@ -976,10 +1067,6 @@ class NesterovBase
   bool checkDivergence();
   bool revertDivergence();
 
-  void updatePrevGradient(float wlCoeffX, float wlCoeffY);
-  void updateCurGradient(float wlCoeffX, float wlCoeffY);
-  void updateNextGradient(float wlCoeffX, float wlCoeffY);
-
   void updateDensityCenterCur();
   void updateDensityCenterCurSLP();
   void updateDensityCenterPrevSLP();
@@ -994,6 +1081,16 @@ class NesterovBase
   void printStepLength() { printf("stepLength = %f\n", stepLength_); }
 
   bool isDiverged() const { return isDiverged_; }
+
+  void createGCell(odb::dbInst* db_inst, size_t stor_index, RouteBase* rb);
+  void destroyGCell(odb::dbInst* db_inst);
+  void destroyFillerGCell(size_t index_remove);
+
+  // Resets all pointers to storages of gcells, gpins, and gnets.
+  void fixPointers(std::vector<size_t> new_gcells);
+  // Must be called after fixPointers() to initialize internal values of gcells,
+  // including parallel vectors.
+  void updateGCellState(float wlCoeffX, float wlCoeffY);
 
  private:
   NesterovBaseVars nbVars_;
@@ -1013,17 +1110,22 @@ class NesterovBase
   int64_t stdInstsArea_ = 0;
   int64_t macroInstsArea_ = 0;
 
-  std::vector<GCell> gCellStor_;
+  std::vector<GCell> fillerStor_;
 
-  std::vector<GCell*> gCells_;
+  std::vector<GCellHandle> gCells_;
   std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
+
+  std::unordered_map<odb::dbInst*, size_t> db_inst_index_map_;
+
+  // used to update gcell states after fixPointers() is called
+  std::vector<odb::dbInst*> new_instances;
 
   float sumPhi_ = 0;
   float targetDensity_ = 0;
   float uniformTargetDensity_ = 0;
 
-  // Nesterov loop data for each region
+  // Nesterov loop data for each region, using parallel vectors
   // SLP is Step Length Prediction.
   //
   // y_st, y_dst, y_wdst, w_pdst
@@ -1087,7 +1189,7 @@ class NesterovBase
   int iter_ = 0;
   bool isConverged_ = false;
 
-  // Snapshot data
+  // Snapshot data for routability, parallel vectors
   std::vector<FloatPoint> snapshotCoordi_;
   std::vector<FloatPoint> snapshotSLPCoordi_;
   std::vector<FloatPoint> snapshotSLPSumGrads_;
@@ -1095,6 +1197,11 @@ class NesterovBase
   float snapshotStepLength_ = 0;
 
   void initFillerGCells();
+
+  void swapAndPop(std::vector<FloatPoint>& vec,
+                  size_t remove_index,
+                  size_t last_index);
+  void swapAndPopParallelVectors(size_t remove_index, size_t last_index);
 };
 
 inline std::vector<Bin>& NesterovBase::bins()
@@ -1114,5 +1221,51 @@ class biNormalParameters
   float ux;
   float uy;
 };
+
+class GCellHandle
+{
+ public:
+  GCellHandle(NesterovBaseCommon* nbc, size_t idx) : storage_(nbc), index_(idx)
+  {
+  }
+  GCellHandle(NesterovBase* nb, size_t idx) : storage_(nb), index_(idx) {}
+
+  // Non-const versions
+  GCell* operator->() { return &getGCell(); }
+  GCell& operator*() { return getGCell(); }
+  operator GCell*() { return &getGCell(); }
+
+  // Const versions
+  const GCell* operator->() const { return &getGCell(); }
+  const GCell& operator*() const { return getGCell(); }
+  operator const GCell*() const { return &getGCell(); }
+
+  bool isNesterovBaseCommon() const
+  {
+    return std::holds_alternative<NesterovBaseCommon*>(storage_);
+  }
+
+  size_t getIndex() const { return index_; }
+
+ private:
+  using StorageVariant = std::variant<NesterovBaseCommon*, NesterovBase*>;
+
+  GCell& getGCell() const
+  {
+    if (std::holds_alternative<NesterovBaseCommon*>(storage_)) {
+      return std::get<NesterovBaseCommon*>(storage_)->getGCell(index_);
+    }
+    return std::get<NesterovBase*>(storage_)->getFillerGCell(index_);
+  }
+
+  StorageVariant storage_;
+  size_t index_;
+};
+
+inline bool isValidSigType(const odb::dbSigType& db_type)
+{
+  return (db_type == odb::dbSigType::SIGNAL
+          || db_type == odb::dbSigType::CLOCK);
+}
 
 }  // namespace gpl

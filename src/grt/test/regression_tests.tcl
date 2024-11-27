@@ -22,6 +22,7 @@ record_tests {
   invalid_routing_layer
   invalid_pin_placement
   macro_obs_not_aligned
+  modeling_instance_obs
   multiple_calls
   ndr_1w_3s
   ndr_2w_3s
@@ -38,7 +39,16 @@ record_tests {
   pin_edge
   pin_track_not_aligned
   pre_routed1
+  read_segments1
+  read_segments2
+  read_segments3
+  read_segments4
+  read_segments_error1
+  read_segments_error2
+  read_segments_error3
   region_adjustment
+  remove_buffers1
+  remove_buffers2
   repair_antennas1
   repair_antennas2
   repair_antennas3
@@ -53,12 +63,17 @@ record_tests {
   report_wire_length6
   set_nets_to_route1
   silence
+  single_row
   top_level_term1
   top_level_term2
   top_level_term3
   tracks1
   tracks2
   tracks3
+  unplaced_inst
   upper_layer_net
-  modeling_instance_obs
+  write_segments1
+  write_segments2
+  #grt_man_tcl_check
+  #grt_readme_msgs_check
 }

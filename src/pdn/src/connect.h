@@ -32,26 +32,15 @@
 
 #pragma once
 
-#include <fstream>
 #include <map>
 #include <set>
 #include <vector>
 
+#include "odb/db.h"
 #include "shape.h"
-
-namespace odb {
-class dbVia;
-class dbTechViaGenerateRule;
-class dbTechLayer;
-class dbTechVia;
-class dbSWire;
-class Rect;
-}  // namespace odb
+#include "via.h"
 
 namespace pdn {
-
-class DbVia;
-class ViaGenerator;
 
 class Connect
 {
@@ -120,7 +109,7 @@ class Connect
   void addFailedVia(failedViaReason reason,
                     const odb::Rect& rect,
                     odb::dbNet* net);
-  void writeFailedVias(std::ofstream& file) const;
+  void recordFailedVias() const;
 
  private:
   Grid* grid_;

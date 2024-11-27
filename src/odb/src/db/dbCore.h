@@ -45,9 +45,9 @@
 ///
 
 #include "dbAttrTable.h"
-#include "dbId.h"
-#include "dbObject.h"
-#include "odb.h"
+#include "odb/dbId.h"
+#include "odb/dbObject.h"
+#include "odb/odb.h"
 namespace utl {
 class Logger;
 }
@@ -117,6 +117,7 @@ class dbObjectTable
   }
 
   virtual dbObject* getObject(uint id, ...) = 0;
+  virtual bool validObject(uint id, ...) = 0;
 
   dbObjectTable* getObjectTable(dbObjectType type)
   {

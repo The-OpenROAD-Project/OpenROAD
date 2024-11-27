@@ -1,0 +1,24 @@
+{
+    "name":"dbGDSStructure",
+    "type":"dbObject",
+    "fields":[
+      {
+        "name":"_name",
+        "type":"char*",
+        "default":"nullptr",
+        "flags":["no-set"]
+      },
+      {
+        "name":"_next_entry",
+        "type":"dbId<_dbGDSStructure>",
+        "flags":["no-set", "no-get"]
+      }
+    ],
+    "h_includes": [
+      "dbVector.h",
+      "odb/db.h",
+      "dbTable.h"
+    ],
+    "cpp_includes": ["odb/dbTypes.h", "dbGDSLib.h","dbHashTable.hpp"]
+  }
+  

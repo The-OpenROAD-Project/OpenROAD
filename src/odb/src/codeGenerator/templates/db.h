@@ -4,9 +4,27 @@ class {{klass.name}};
 {% endfor %}
 //Generator Code End ClassDeclarations
 //Generator Code Begin ClassDefinition
-{% for klass in schema.classes|sort(attribute='name') %}
 
-class {{klass.name}} : public dbObject
+{% set classes = schema.classes | sort(attribute='name') %}
+{% set non_default_types = [] %}
+{% set default_types = [] %}
+
+{% for klass in classes %}
+    {% if klass.type is defined and klass.type != 'dbObject' %}
+        {% set _ = non_default_types.append(klass) %}
+    {% else %}
+        {% set _ = default_types.append(klass) %}
+    {% endif %}
+{% endfor %}
+
+{% for klass in default_types + non_default_types %}
+
+{% if klass.description %}
+  {% for line in klass.description %}
+    // {{ line }}
+  {% endfor %}
+{% endif %}
+class {{klass.name}} : public {{klass.type if klass.type else "dbObject"}}
 {
  public:
   {% for _struct in klass.structs %}
@@ -34,7 +52,7 @@ class {{klass.name}} : public dbObject
   // User Code End {{klass.name}}Enums
   {% for field in klass.fields %}
     {% if 'no-set' not in field.flags %}
-      void {{field.setterFunctionName}} ({{field.setterArgumentType}} {{field.argument}} );
+      void {{field.setterFunctionName}} ({% if field.isSetByRef %}const {{field.setterArgumentType}}&{% else %}{{field.setterArgumentType}}{% endif %} {{field.argument}} );
   
     {% endif %}
     {% if 'no-get' not in field.flags %}

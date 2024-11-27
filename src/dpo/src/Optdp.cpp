@@ -42,6 +42,7 @@
 #include <map>
 
 #include "dpl/Opendp.h"
+#include "odb/util.h"
 #include "ord/OpenRoad.hh"  // closestPtInRect
 #include "utl/Logger.h"
 
@@ -60,6 +61,7 @@ namespace dpo {
 using utl::DPO;
 
 using odb::dbBlock;
+using odb::dbBlockage;
 using odb::dbBox;
 using odb::dbBTerm;
 using odb::dbInst;
@@ -89,96 +91,91 @@ void Optdp::init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp)
 }
 
 ////////////////////////////////////////////////////////////////
-void Optdp::improvePlacement(int seed,
-                             int max_displacement_x,
-                             int max_displacement_y,
-                             bool disallow_one_site_gaps)
+void Optdp::improvePlacement(const int seed,
+                             const int max_displacement_x,
+                             const int max_displacement_y,
+                             const bool disallow_one_site_gaps)
 {
   logger_->report("Detailed placement improvement.");
 
-  opendp_->initBlock();
-  hpwlBefore_ = opendp_->hpwl();
+  odb::WireLengthEvaluator eval(db_->getChip()->getBlock());
+  const int64_t hpwlBefore = eval.hpwl();
 
-  if (hpwlBefore_ != 0) {
-    // Get needed information from DB.
-    import();
-
-    // A manager to track cells.
-    dpo::DetailedMgr mgr(arch_, network_, routeinfo_);
-    mgr.setLogger(logger_);
-    // Various settings.
-    mgr.setSeed(seed);
-    mgr.setMaxDisplacement(max_displacement_x, max_displacement_y);
-    mgr.setDisallowOneSiteGaps(disallow_one_site_gaps);
-
-    // Legalization.  Doesn't particularly do much.  It only
-    // populates the data structures required for detailed
-    // improvement.  If it errors or prints a warning when
-    // given a legal placement, that likely means there is
-    // a bug in my code somewhere.
-    dpo::ShiftLegalizer lg;
-    lg.legalize(mgr);
-
-    // Detailed improvement.  Runs through a number of different
-    // optimizations aimed at wirelength improvement.  The last
-    // call to the random improver can be set to consider things
-    // like density, displacement, etc. in addition to wirelength.
-    // Everything done through a script string.
-
-    dpo::DetailedParams dtParams;
-    dtParams.script_ = "";
-    // Maximum independent set matching.
-    dtParams.script_ += "mis -p 10 -t 0.005;";
-    // Global swaps.
-    dtParams.script_ += "gs -p 10 -t 0.005;";
-    // Vertical swaps.
-    dtParams.script_ += "vs -p 10 -t 0.005;";
-    // Small reordering.
-    dtParams.script_ += "ro -p 10 -t 0.005;";
-    // Random moves and swaps with hpwl as a cost function.  Use
-    // random moves and hpwl objective right now.
-    dtParams.script_ += "default -p 5 -f 20 -gen rng -obj hpwl -cost (hpwl);";
-
-    if (disallow_one_site_gaps) {
-      dtParams.script_ += "disallow_one_site_gaps;";
-    }
-
-    // Run the script.
-    dpo::Detailed dt(dtParams);
-    dt.improve(mgr);
-
-    // Write solution back.
-    updateDbInstLocations();
-
-    // Get final hpwl.
-    hpwlAfter_ = opendp_->hpwl();
-
-    // Cleanup.
-    delete network_;
-    delete arch_;
-    delete routeinfo_;
-  } else {
+  if (hpwlBefore == 0) {
     logger_->report("Skipping detailed improvement since hpwl is zero.");
-    hpwlAfter_ = hpwlBefore_;
+    return;
   }
 
-  double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
+  // Get needed information from DB.
+  import();
+
+  // A manager to track cells.
+  dpo::DetailedMgr mgr(arch_, network_, routeinfo_);
+  mgr.setLogger(logger_);
+  // Various settings.
+  mgr.setSeed(seed);
+  mgr.setMaxDisplacement(max_displacement_x, max_displacement_y);
+  mgr.setDisallowOneSiteGaps(disallow_one_site_gaps);
+
+  // Legalization.  Doesn't particularly do much.  It only
+  // populates the data structures required for detailed
+  // improvement.  If it errors or prints a warning when
+  // given a legal placement, that likely means there is
+  // a bug in my code somewhere.
+  dpo::ShiftLegalizer lg;
+  lg.legalize(mgr);
+
+  // Detailed improvement.  Runs through a number of different
+  // optimizations aimed at wirelength improvement.  The last
+  // call to the random improver can be set to consider things
+  // like density, displacement, etc. in addition to wirelength.
+  // Everything done through a script string.
+
+  dpo::DetailedParams dtParams;
+  dtParams.script_ = "";
+  // Maximum independent set matching.
+  dtParams.script_ += "mis -p 10 -t 0.005;";
+  // Global swaps.
+  dtParams.script_ += "gs -p 10 -t 0.005;";
+  // Vertical swaps.
+  dtParams.script_ += "vs -p 10 -t 0.005;";
+  // Small reordering.
+  dtParams.script_ += "ro -p 10 -t 0.005;";
+  // Random moves and swaps with hpwl as a cost function.  Use
+  // random moves and hpwl objective right now.
+  dtParams.script_ += "default -p 5 -f 20 -gen rng -obj hpwl -cost (hpwl);";
+
+  if (disallow_one_site_gaps) {
+    dtParams.script_ += "disallow_one_site_gaps;";
+  }
+
+  // Run the script.
+  dpo::Detailed dt(dtParams);
+  dt.improve(mgr);
+
+  // Write solution back.
+  updateDbInstLocations();
+
+  // Get final hpwl.
+  const int64_t hpwlAfter = eval.hpwl();
+
+  // Cleanup.
+  delete network_;
+  delete arch_;
+  delete routeinfo_;
+
+  const double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
 
   // Statistics.
   logger_->report("Detailed Improvement Results");
   logger_->report("------------------------------------------");
-  logger_->report("Original HPWL         {:10.1f} u",
-                  (hpwlBefore_ / dbu_micron));
-  logger_->report("Final HPWL            {:10.1f} u",
-                  (hpwlAfter_ / dbu_micron));
-  double hpwl_delta
-      = (hpwlBefore_ == 0.0)
-            ? 0.0
-            : ((double) (hpwlAfter_ - hpwlBefore_) / (double) hpwlBefore_)
-                  * 100.;
-  logger_->report("Delta HPWL            {:10.1f} %", hpwl_delta);
+  logger_->report("Original HPWL         {:10.1f} u", hpwlBefore / dbu_micron);
+  logger_->report("Final HPWL            {:10.1f} u", hpwlAfter / dbu_micron);
+  const double hpwl_delta = (hpwlAfter - hpwlBefore) / (double) hpwlBefore;
+  logger_->report("Delta HPWL            {:10.1f} %", hpwl_delta * 100);
   logger_->report("");
 }
+
 ////////////////////////////////////////////////////////////////
 void Optdp::import()
 {
@@ -198,23 +195,21 @@ void Optdp::import()
   // setUpNdrRules(); // Does nothing right now.
   setUpPlacementRegions();  // Regions.
 }
+
 ////////////////////////////////////////////////////////////////
 void Optdp::updateDbInstLocations()
 {
-  std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
-  dbBlock* block = db_->getChip()->getBlock();
-  dbSet<dbInst> insts = block->getInsts();
-  for (dbInst* inst : insts) {
+  for (dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
     if (!inst->getMaster()->isCoreAutoPlaceable() || inst->isFixed()) {
       continue;
     }
 
-    it_n = instMap_.find(inst);
-    if (instMap_.end() != it_n) {
-      Node* nd = it_n->second;
+    const auto it_n = instMap_.find(inst);
+    if (it_n != instMap_.end()) {
+      const Node* nd = it_n->second;
 
-      int y = nd->getBottom();
-      int x = nd->getLeft();
+      const int y = nd->getBottom();
+      const int x = nd->getLeft();
 
       dbOrientType orient = dbOrientType::R0;
       switch (nd->getCurrOrient()) {
@@ -245,6 +240,7 @@ void Optdp::updateDbInstLocations()
     }
   }
 }
+
 ////////////////////////////////////////////////////////////////
 void Optdp::initPadding()
 {
@@ -267,21 +263,20 @@ void Optdp::initPadding()
   if (site == nullptr) {
     return;
   }
-  int siteWidth = site->getWidth();
-  std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
+  const int siteWidth = site->getWidth();
 
-  dbSet<dbInst> insts = db_->getChip()->getBlock()->getInsts();
-  for (dbInst* inst : insts) {
-    it_n = instMap_.find(inst);
-    if (instMap_.end() != it_n) {
+  for (dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
+    const auto it_n = instMap_.find(inst);
+    if (it_n != instMap_.end()) {
       Node* ndi = it_n->second;
-      int leftPadding = opendp_->padLeft(inst);
-      int rightPadding = opendp_->padRight(inst);
+      const int leftPadding = opendp_->padLeft(inst);
+      const int rightPadding = opendp_->padRight(inst);
       arch_->addCellPadding(
           ndi, leftPadding * siteWidth, rightPadding * siteWidth);
     }
   }
 }
+
 ////////////////////////////////////////////////////////////////
 void Optdp::createLayerMap()
 {
@@ -323,10 +318,10 @@ void Optdp::setupMasterPowers()
   block->getMasters(masters);
 
   for (dbMaster* master : masters) {
-    double maxPwr = std::numeric_limits<double>::lowest();
-    double minPwr = std::numeric_limits<double>::max();
-    double maxGnd = std::numeric_limits<double>::lowest();
-    double minGnd = std::numeric_limits<double>::max();
+    int maxPwr = std::numeric_limits<int>::min();
+    int minPwr = std::numeric_limits<int>::max();
+    int maxGnd = std::numeric_limits<int>::min();
+    int minGnd = std::numeric_limits<int>::max();
 
     bool isVdd = false;
     bool isGnd = false;
@@ -335,7 +330,7 @@ void Optdp::setupMasterPowers()
         isVdd = true;
         for (dbMPin* mpin : mterm->getMPins()) {
           // Geometry or box?
-          double y = 0.5 * (mpin->getBBox().yMin() + mpin->getBBox().yMax());
+          const int y = mpin->getBBox().yCenter();
           minPwr = std::min(minPwr, y);
           maxPwr = std::max(maxPwr, y);
 
@@ -348,7 +343,7 @@ void Optdp::setupMasterPowers()
         isGnd = true;
         for (dbMPin* mpin : mterm->getMPins()) {
           // Geometry or box?
-          double y = 0.5 * (mpin->getBBox().yMin() + mpin->getBBox().yMax());
+          const int y = mpin->getBBox().yCenter();
           minGnd = std::min(minGnd, y);
           maxGnd = std::max(maxGnd, y);
 
@@ -368,18 +363,13 @@ void Optdp::setupMasterPowers()
                                  : Architecture::Row::Power_VSS;
     }
 
-    masterPwrs_[master] = std::make_pair(topPwr, botPwr);
+    masterPwrs_[master] = {topPwr, botPwr};
   }
 }
 
 ////////////////////////////////////////////////////////////////
 void Optdp::createNetwork()
 {
-  std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
-  std::unordered_map<odb::dbNet*, Edge*>::iterator it_e;
-  std::unordered_map<odb::dbBTerm*, Node*>::iterator it_p;
-  std::unordered_map<dbMaster*, std::pair<int, int>>::iterator it_m;
-
   dbBlock* block = db_->getChip()->getBlock();
 
   pwrLayers_.clear();
@@ -387,21 +377,13 @@ void Optdp::createNetwork()
 
   // I allocate things statically, so I need to do some counting.
 
-  std::vector<dbInst*> insts;
-  for (dbInst* inst : block->getInsts()) {
-    insts.push_back(inst);
-  }
+  auto block_insts = block->getInsts();
+  std::vector<dbInst*> insts(block_insts.begin(), block_insts.end());
   std::stable_sort(insts.begin(), insts.end(), [](dbInst* a, dbInst* b) {
     return a->getName() < b->getName();
   });
-  dbSet<dbNet> nets = block->getNets();
-  dbSet<dbBTerm> bterms = block->getBTerms();
 
-  // Number of this and that.
-  int nTerminals = bterms.size();
   int nNodes = 0;
-  int nEdges = 0;
-  int nPins = 0;
   for (dbInst* inst : insts) {
     // Skip instances which are not placeable.
     if (!inst->getMaster()->isCoreAutoPlaceable()) {
@@ -410,6 +392,9 @@ void Optdp::createNetwork()
     ++nNodes;
   }
 
+  dbSet<dbNet> nets = block->getNets();
+  int nEdges = 0;
+  int nPins = 0;
   for (dbNet* net : nets) {
     // Skip supply nets.
     if (net->getSigType().isSupply()) {
@@ -428,14 +413,34 @@ void Optdp::createNetwork()
     nPins += net->getBTerms().size();
   }
 
+  dbSet<dbBTerm> bterms = block->getBTerms();
+  int nTerminals = 0;
+  for (dbBTerm* bterm : bterms) {
+    // Skip supply nets.
+    dbNet* net = bterm->getNet();
+    if (!net || net->getSigType().isSupply()) {
+      continue;
+    }
+    ++nTerminals;
+  }
+
+  int nBlockages = 0;
+  for (dbBlockage* blockage : block->getBlockages()) {
+    if (!blockage->isSoft()) {
+      network_->createAndAddBlockage(blockage->getBBox()->getBox());
+      ++nBlockages;
+    }
+  }
+
   logger_->info(DPO,
                 100,
                 "Creating network with {:d} cells, {:d} terminals, "
-                "{:d} edges and {:d} pins.",
+                "{:d} edges, {:d} pins, and {:d} blockages.",
                 nNodes,
                 nTerminals,
                 nEdges,
-                nPins);
+                nPins,
+                nBlockages);
 
   // Create and allocate the nodes.  I require nodes for
   // placeable instances as well as terminals.
@@ -503,7 +508,7 @@ void Optdp::createNetwork()
     ndi->setLeftEdgeType(EDGETYPE_DEFAULT);
 
     // Set the top and bottom power.
-    it_m = masterPwrs_.find(inst->getMaster());
+    auto it_m = masterPwrs_.find(inst->getMaster());
     if (masterPwrs_.end() == it_m) {
       ndi->setBottomPower(Architecture::Row::Power_UNK);
       ndi->setTopPower(Architecture::Row::Power_UNK);
@@ -518,6 +523,10 @@ void Optdp::createNetwork()
     ++n;  // Next node.
   }
   for (dbBTerm* bterm : bterms) {
+    dbNet* net = bterm->getNet();
+    if (!net || net->getSigType().isSupply()) {
+      continue;
+    }
     Node* ndi = network_->getNode(n);
     termMap_[bterm] = ndi;
 
@@ -526,8 +535,7 @@ void Optdp::createNetwork()
 
     // Fill in data.
     ndi->setId(n);
-    ndi->setType(
-        Node::TERMINAL);  // Should be terminal, not terminal_NI, I think.
+    ndi->setType(Node::TERMINAL);
     ndi->setFixed(Node::FIXED_XY);
     ndi->setAvailOrient(Orientation_N);
     ndi->setCurrOrient(Orientation_N);
@@ -585,7 +593,7 @@ void Optdp::createNetwork()
         continue;
       }
 
-      it_n = instMap_.find(iTerm->getInst());
+      auto it_n = instMap_.find(iTerm->getInst());
       if (instMap_.end() != it_n) {
         n = it_n->second->getId();  // The node id.
 
@@ -626,7 +634,7 @@ void Optdp::createNetwork()
       }
     }
     for (dbBTerm* bTerm : net->getBTerms()) {
-      it_p = termMap_.find(bTerm);
+      auto it_p = termMap_.find(bTerm);
       if (termMap_.end() != it_p) {
         n = it_p->second->getId();  // The node id.
 
@@ -686,12 +694,12 @@ void Optdp::createArchitecture()
 
   odb::Rect dieRect = block->getDieArea();
 
-  odb::uint min_row_height = std::numeric_limits<odb::uint>::max();
+  auto min_row_height = std::numeric_limits<int>::max();
   for (dbRow* row : block->getRows()) {
     min_row_height = std::min(min_row_height, row->getSite()->getHeight());
   }
 
-  std::map<odb::uint, std::unordered_set<std::string>> skip_list;
+  std::map<int, std::unordered_set<std::string>> skip_list;
 
   for (dbRow* row : block->getRows()) {
     if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
@@ -706,14 +714,12 @@ void Optdp::createArchitecture()
       skip_list[site->getHeight()].insert(site->getName());
       continue;
     }
-    int originX;
-    int originY;
-    row->getOrigin(originX, originY);
+    odb::Point origin = row->getOrigin();
 
     Architecture::Row* archRow = arch_->createAndAddRow();
 
-    archRow->setSubRowOrigin(originX);
-    archRow->setBottom(originY);
+    archRow->setSubRowOrigin(origin.x());
+    archRow->setBottom(origin.y());
     archRow->setSiteSpacing(row->getSpacing());
     archRow->setNumSites(row->getSiteCount());
     archRow->setSiteWidth(site->getWidth());

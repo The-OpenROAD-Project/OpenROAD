@@ -60,6 +60,7 @@ class STAGuiInterface;
 using TimingPathList = std::vector<std::unique_ptr<TimingPath>>;
 using TimingNodeList = std::vector<std::unique_ptr<TimingPathNode>>;
 using StaPins = std::set<const sta::Pin*>;
+using EndPointSlackMap = std::map<const sta::Pin*, float>;
 using ConeDepthMapPinSet = std::map<int, StaPins>;
 using ConeDepthMap = std::map<int, TimingNodeList>;
 
@@ -182,6 +183,11 @@ class TimingPath
   void setSlack(float slack) { slack_ = slack; }
   float getPathDelay() const { return path_delay_; }
   void setPathDelay(float del) { path_delay_ = del; }
+  float getSkew() const { return skew_; }
+  void setSkew(float skew) { skew_ = skew; }
+  float getLogicDelay() const { return logic_delay_; }
+  int getLogicDepth() const { return logic_depth_; }
+  int getFanout() const { return fanout_; }
 
   void computeClkEndIndex();
   void setSlackOnPathNodes();
@@ -194,6 +200,9 @@ class TimingPath
 
   std::string getStartStageName() const;
   std::string getEndStageName() const;
+
+  const std::unique_ptr<TimingPathNode>& getStartStageNode() const;
+  const std::unique_ptr<TimingPathNode>& getEndStageNode() const;
 
   void populatePath(sta::Path* path,
                     sta::dbSta* sta,
@@ -211,9 +220,13 @@ class TimingPath
   std::string start_clk_;
   std::string end_clk_;
   float slack_;
+  float skew_;
   float path_delay_;
   float arr_time_;
   float req_time_;
+  float logic_delay_;
+  int logic_depth_;
+  int fanout_;
   int clk_path_end_index_;
   int clk_capture_end_index_;
 
@@ -222,8 +235,21 @@ class TimingPath
                         sta::DcalcAnalysisPt* dcalc_ap,
                         float offset,
                         bool clock_expanded,
+                        bool is_capture_path,
                         TimingNodeList& list);
-
+  bool instanceIsLogic(sta::Instance* inst, sta::Network* network);
+  bool instancesAreInverterPair(sta::Instance* curr_inst,
+                                sta::Instance* prev_inst,
+                                sta::Network* network);
+  void updateLogicMetrics(sta::Network* network,
+                          sta::Instance* inst_of_curr_pin,
+                          sta::Instance* inst_of_prev_pin,
+                          sta::Instance* prev_inst,
+                          float pin_delay,
+                          std::set<sta::Instance*>& logic_insts,
+                          float& curr_inst_delay,
+                          float& prev_inst_delay,
+                          bool& pin_belongs_to_inverter_pair_instance);
   void computeClkEndIndex(TimingNodeList& nodes, int& index);
 };
 
@@ -334,7 +360,8 @@ class STAGuiInterface
 
   TimingPathList getTimingPaths(const StaPins& from,
                                 const std::vector<StaPins>& thrus,
-                                const StaPins& to) const;
+                                const StaPins& to,
+                                const std::string& path_group_name) const;
   TimingPathList getTimingPaths(const sta::Pin* thru) const;
 
   std::unique_ptr<TimingPathNode> getTimingNode(const sta::Pin* pin) const;
@@ -344,12 +371,18 @@ class STAGuiInterface
   ConeDepthMap buildConeConnectivity(const sta::Pin* pin,
                                      ConeDepthMapPinSet& depth_map) const;
 
+  sta::ClockSeq* getClocks() const;
   std::vector<std::unique_ptr<ClockTree>> getClockTrees() const;
 
   int getEndPointCount() const;
   StaPins getEndPoints() const;
+  StaPins getStartPoints() const;
 
   float getPinSlack(const sta::Pin* pin) const;
+  EndPointSlackMap getEndPointToSlackMap(const std::string& path_group_name);
+
+  std::set<std::string> getGroupPathsNames() const;
+  void updatePathGroups();
 
  private:
   sta::dbSta* sta_;

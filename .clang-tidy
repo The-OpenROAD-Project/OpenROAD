@@ -3,6 +3,8 @@ Checks: >
   clang-diagnostic-*,
   clang-analyzer-*,
   -clang-analyzer-core.NonNullParamChecker,
+  -clang-analyzer-core.CallAndMessage,
+  -clang-analyzer-core.uninitialized.UndefReturn,
   -clang-analyzer-cplusplus.NewDeleteLeaks,
   -clang-analyzer-optin.performance.Padding,
   readability-*,
@@ -50,14 +52,19 @@ Checks: >
   -modernize-use-transparent-functors,
   misc-*,
   -misc-const-correctness,
+  -misc-include-cleaner,
   -misc-no-recursion,
   -misc-non-private-member-variables-in-classes,
   -misc-redundant-expression,
   -misc-unused-parameters,
+  -misc-use-anonymous-namespace,
 
 CheckOptions:
    - key:             google-runtime-int.TypeSuffix
      value:           _t
+
+# All modules but sta
+HeaderFilterRegex: ".*/(ant|cts|dbSta|dft|dpl|dpo|drt|dst|fin|gpl|grt|gui|ifp|mpl|mpl2|odb|ord|pad|par|pdn|ppl|psm|rcx|rmp|rsz|stt|tap|upf|utl)/.*"
 
 # Not currently handling identifier naming
 # WarningsAsErrors: "*"

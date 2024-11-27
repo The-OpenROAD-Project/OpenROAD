@@ -13,6 +13,8 @@ configuration file.
 
 ### Density Fill
 
+This command performs density fill to meet metal density DRC rules.
+
 ```tcl
 density_fill
     [-rules rules_file]

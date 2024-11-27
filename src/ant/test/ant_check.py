@@ -2,11 +2,12 @@
 # antenna values for testing
 from openroad import Design, Tech
 import ant
+import helpers
 
 tech = Tech()
 tech.readLef("ant_check.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("ant_check.def")
 ack = design.getAntennaChecker()
 

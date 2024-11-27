@@ -29,13 +29,20 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-sta::define_cmd_args "check_antennas" { [-verbose]\
-                                          [-net net]}
+sta::define_cmd_args "check_antennas" { [-verbose] \
+                                        [-report_violating_nets] \
+                                        [-report_file report_file] \
+                                        [-net net]
+} ;# checker off
 
 proc check_antennas { args } {
   sta::parse_key_args "check_antennas" args \
     keys {-report_file -net} \
-    flags {-verbose -report_violating_nets}
+    flags {-verbose -report_violating_nets} ;# checker off
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error ANT 3 "No design block found."
+  }
 
   sta::check_argc_eq0 "check_antennas" $args
 

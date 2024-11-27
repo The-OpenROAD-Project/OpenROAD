@@ -30,13 +30,40 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbStream.h"
+#include "odb/dbStream.h"
 
 #include <iostream>
+#include <sstream>
 
-#include "db.h"
+#include "dbDatabase.h"
+#include "odb/db.h"
 
 namespace odb {
+
+void dbOStream::pushScope(const std::string& name)
+{
+  _scopes.push_back({name, pos()});
+}
+
+void dbOStream::popScope()
+{
+  auto logger = _db->getLogger();
+  if (logger->debugCheck(utl::ODB, "io_size", 1)) {
+    auto size = pos() - _scopes.back().start_pos;
+    if (size >= 1024) {  // hide tiny contributors
+      std::ostringstream scope_name;
+
+      std::transform(_scopes.begin(),
+                     _scopes.end(),
+                     std::ostream_iterator<std::string>(scope_name, "/"),
+                     [](const Scope& scope) { return scope.name; });
+
+      logger->report("{:8.1f} MB in {}", size / 1048576.0, scope_name.str());
+    }
+  }
+
+  _scopes.pop_back();
+}
 
 dbOStream& operator<<(dbOStream& stream, const Rect& r)
 {
@@ -53,6 +80,32 @@ dbIStream& operator>>(dbIStream& stream, Rect& r)
   stream >> r.ylo_;
   stream >> r.xhi_;
   stream >> r.yhi_;
+  return stream;
+}
+
+dbOStream& operator<<(dbOStream& stream, const Polygon& p)
+{
+  stream << p.points_;
+  return stream;
+}
+
+dbIStream& operator>>(dbIStream& stream, Polygon& p)
+{
+  stream >> p.points_;
+  return stream;
+}
+
+dbOStream& operator<<(dbOStream& stream, const Line& l)
+{
+  stream << l.pt0_;
+  stream << l.pt1_;
+  return stream;
+}
+
+dbIStream& operator>>(dbIStream& stream, Line& l)
+{
+  stream >> l.pt0_;
+  stream >> l.pt1_;
   return stream;
 }
 

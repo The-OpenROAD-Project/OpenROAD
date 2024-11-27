@@ -34,9 +34,9 @@
 
 #include <vector>
 
-#include "dbDiff.h"
-#include "dbStream.h"
-#include "odb.h"
+#include "odb/dbDiff.h"
+#include "odb/dbStream.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -150,7 +150,7 @@ inline dbIStream& operator>>(dbIStream& stream, dbVector<T>& v)
   stream >> sz;
   v.reserve(sz);
 
-  T t;
+  T t{};
   unsigned int i;
   for (i = 0; i < sz; ++i) {
     stream >> t;

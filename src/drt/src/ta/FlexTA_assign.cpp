@@ -30,7 +30,7 @@
 
 #include "ta/FlexTA.h"
 
-namespace fr {
+namespace drt {
 
 frSquaredDistance FlexTAWorker::box2boxDistSquare(const Rect& box1,
                                                   const Rect& box2,
@@ -302,12 +302,12 @@ void FlexTAWorker::modMinSpacingCostVia(
 
     auto con = layer->getMinSpacing();
     if (isAddCost) {
-      workerRegionQuery.addCost(blockBox, cutLNum, fig, con);
+      workerRegionQuery.addViaCost(blockBox, cutLNum, fig, con);
       if (pinS) {
         workerRegionQuery.query(blockBox, cutLNum, *pinS);
       }
     } else {
-      workerRegionQuery.removeCost(blockBox, cutLNum, fig, con);
+      workerRegionQuery.removeViaCost(blockBox, cutLNum, fig, con);
       if (pinS) {
         workerRegionQuery.query(blockBox, cutLNum, *pinS);
       }
@@ -501,12 +501,12 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
       }
       if (hasViol) {
         if (isAddCost) {
-          workerRegionQuery.addCost(blockBox, lNum, fig, con);
+          workerRegionQuery.addViaCost(blockBox, lNum, fig, con);
           if (pinS) {
             workerRegionQuery.query(blockBox, lNum, *pinS);
           }
         } else {
-          workerRegionQuery.removeCost(blockBox, lNum, fig, con);
+          workerRegionQuery.removeViaCost(blockBox, lNum, fig, con);
           if (pinS) {
             workerRegionQuery.query(blockBox, lNum, *pinS);
           }
@@ -689,20 +689,20 @@ frUInt4 FlexTAWorker::assignIroute_getPinCost(taPin* iroute, frCoord trackLoc)
           // if cannot use bottom or upper layer to bridge, then add cost
           if ((getTech()->isVia2ViaForbiddenLen(
                    zIdx, false, false, false, sol, nullptr)
-               || layerNum - 2 < BOTTOM_ROUTING_LAYER)
+               || layerNum - 2 < router_cfg_->BOTTOM_ROUTING_LAYER)
               && (getTech()->isVia2ViaForbiddenLen(
                       zIdx, true, true, false, sol, nullptr)
                   || layerNum + 2 > getTech()->getTopLayerNum())) {
-            sol += TADRCCOST;
+            sol += router_cfg_->TADRCCOST;
           }
         } else {
           if ((getTech()->isVia2ViaForbiddenLen(
                    zIdx, false, false, true, sol, nullptr)
-               || layerNum - 2 < BOTTOM_ROUTING_LAYER)
+               || layerNum - 2 < router_cfg_->BOTTOM_ROUTING_LAYER)
               && (getTech()->isVia2ViaForbiddenLen(
                       zIdx, true, true, true, sol, nullptr)
                   || layerNum + 2 > getTech()->getTopLayerNum())) {
-            sol += TADRCCOST;
+            sol += router_cfg_->TADRCCOST;
           }
         }
       }
@@ -715,6 +715,7 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
                                                      Rect& box,
                                                      frLayerNum lNum)
 {
+  auto layer = getDesign()->getTech()->getLayer(lNum);
   auto& workerRegionQuery = getWorkerRegionQuery();
   std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>> result;
   int overlap = 0;
@@ -727,6 +728,44 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
     box.bloat(r, box);
   }
   workerRegionQuery.queryCost(box, lNum, result);
+
+  auto getPartialBox = [this, lNum](Rect box, bool begin) {
+    auto layer = getTech()->getLayer(lNum);
+    Rect result;
+    frCoord addHorz = 0;
+    frCoord addVert = 0;
+    if (layer->isHorizontal()) {
+      addHorz = getDesign()->getTopBlock()->getGCellSizeHorizontal() / 2;
+    } else {
+      addVert = getDesign()->getTopBlock()->getGCellSizeVertical() / 2;
+    }
+    if (begin) {
+      result.reset(box.xMin(),
+                   box.yMin(),
+                   std::min(box.xMax(), box.xMin() + addHorz),
+                   std::min(box.yMax(), box.yMin() + addVert));
+    } else {
+      result.reset(std::max(box.xMin(), box.xMax() - addHorz),
+                   std::max(box.yMin(), box.yMax() - addVert),
+                   box.xMax(),
+                   box.yMax());
+    }
+    return result;
+  };
+  std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>>
+      tmpResult;
+  if (layer->getType() == dbTechLayerType::CUT) {
+    workerRegionQuery.queryViaCost(box, lNum, tmpResult);
+    result.insert(result.end(), tmpResult.begin(), tmpResult.end());
+  } else {
+    Rect tmpBox = getPartialBox(box, true);
+    workerRegionQuery.queryViaCost(tmpBox, lNum, tmpResult);
+    result.insert(result.end(), tmpResult.begin(), tmpResult.end());
+    tmpResult.clear();
+    tmpBox = getPartialBox(box, false);
+    workerRegionQuery.queryViaCost(tmpBox, lNum, tmpResult);
+    result.insert(result.end(), tmpResult.begin(), tmpResult.end());
+  }
   bool isCut = false;
 
   // save same net overlaps
@@ -895,15 +934,19 @@ frUInt4 FlexTAWorker::assignIroute_getCost(taPin* iroute,
   frCoord irouteLayerPitch
       = getTech()->getLayer(iroute->getGuide()->getBeginLayerNum())->getPitch();
   outDrcCost = assignIroute_getDRCCost(iroute, trackLoc);
-  int drcCost = (isInitTA()) ? (0.05 * outDrcCost) : (TADRCCOST * outDrcCost);
+  int drcCost = (isInitTA()) ? (0.05 * outDrcCost)
+                             : (router_cfg_->TADRCCOST * outDrcCost);
   int nextIrouteDirCost = assignIroute_getNextIrouteDirCost(iroute, trackLoc);
   // int pinCost    = TAPINCOST * assignIroute_getPinCost(iroute, trackLoc);
   int tmpPinCost = assignIroute_getPinCost(iroute, trackLoc);
-  int pinCost
-      = (tmpPinCost == 0) ? 0 : TAPINCOST * irouteLayerPitch + tmpPinCost;
+  int pinCost = (tmpPinCost == 0)
+                    ? 0
+                    : router_cfg_->TAPINCOST * irouteLayerPitch + tmpPinCost;
   int tmpAlignCost = assignIroute_getAlignCost(iroute, trackLoc);
   int alignCost
-      = (tmpAlignCost == 0) ? 0 : TAALIGNCOST * irouteLayerPitch + tmpAlignCost;
+      = (tmpAlignCost == 0)
+            ? 0
+            : router_cfg_->TAALIGNCOST * irouteLayerPitch + tmpAlignCost;
   return std::max(drcCost + nextIrouteDirCost + pinCost - alignCost, 0);
 }
 
@@ -1222,4 +1265,4 @@ void FlexTAWorker::assign()
   }
 }
 
-}  // namespace fr
+}  // namespace drt

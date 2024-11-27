@@ -33,12 +33,13 @@
 // Generator Code Begin Cpp
 #include "dbScanPin.h"
 
-#include "db.h"
+#include "dbBlock.h"
 #include "dbDatabase.h"
+#include "dbDft.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
-
+#include "odb/db.h"
 // User Code Begin Includes
 namespace {
 template <class>
@@ -111,33 +112,13 @@ _dbScanPin::_dbScanPin(_dbDatabase* db, const _dbScanPin& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbScanPin& obj)
 {
-  // User Code Begin >>
-  int index = 0;
-  stream >> index;
-  if (index == 0) {
-    dbId<_dbBTerm> bterm;
-    stream >> bterm;
-    obj.pin_ = bterm;
-  } else if (index == 1) {
-    dbId<_dbITerm> iterm;
-    stream >> iterm;
-    obj.pin_ = iterm;
-  }
-  // User Code End >>
+  stream >> obj.pin_;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbScanPin& obj)
 {
-  // User Code Begin <<
-  int index = obj.pin_.index();
-  stream << index;
-  if (index == 0) {
-    stream << std::get<0>(obj.pin_);
-  } else if (index == 1) {
-    stream << std::get<1>(obj.pin_);
-  }
-  // User Code End <<
+  stream << obj.pin_;
   return stream;
 }
 
@@ -151,15 +132,18 @@ dbOStream& operator<<(dbOStream& stream, const _dbScanPin& obj)
 std::variant<dbBTerm*, dbITerm*> dbScanPin::getPin() const
 {
   const _dbScanPin* scan_pin = (_dbScanPin*) this;
-  const _dbBlock* block = (_dbBlock*) scan_pin->getOwner();
+  const _dbDft* dft = (_dbDft*) scan_pin->getOwner();
+  const _dbBlock* block = (_dbBlock*) dft->getOwner();
 
   return std::visit(
       [block](auto&& pin) {
         using T = std::decay_t<decltype(pin)>;
         if constexpr (std::is_same_v<T, dbId<_dbBTerm>>) {
-          return (dbBTerm*) block->_bterm_tbl->getPtr(pin);
+          return std::variant<dbBTerm*, dbITerm*>(
+              (dbBTerm*) block->_bterm_tbl->getPtr(pin));
         } else if constexpr (std::is_same_v<T, dbId<_dbITerm>>) {
-          return (dbBTerm*) block->_iterm_tbl->getPtr(pin);
+          return std::variant<dbBTerm*, dbITerm*>(
+              (dbITerm*) block->_iterm_tbl->getPtr(pin));
         } else {
           static_assert(always_false_v<T>, "non-exhaustive visitor!");
         }
@@ -170,13 +154,29 @@ std::variant<dbBTerm*, dbITerm*> dbScanPin::getPin() const
 void dbScanPin::setPin(dbBTerm* bterm)
 {
   _dbScanPin* scan_pin = (_dbScanPin*) this;
-  scan_pin->pin_.emplace<dbId<_dbBTerm>>(((_dbBTerm*) this)->getId());
+  scan_pin->pin_.emplace<dbId<_dbBTerm>>(((_dbBTerm*) bterm)->getId());
 }
 
 void dbScanPin::setPin(dbITerm* iterm)
 {
   _dbScanPin* scan_pin = (_dbScanPin*) this;
-  scan_pin->pin_.emplace<dbId<_dbITerm>>(((_dbITerm*) this)->getId());
+  scan_pin->pin_.emplace<dbId<_dbITerm>>(((_dbITerm*) iterm)->getId());
+}
+
+dbId<dbScanPin> dbScanPin::create(dbDft* dft, dbBTerm* bterm)
+{
+  _dbDft* obj = (_dbDft*) dft;
+  _dbScanPin* scan_pin = (_dbScanPin*) obj->scan_pins_->create();
+  ((dbScanPin*) scan_pin)->setPin(bterm);
+  return scan_pin->getId();
+}
+
+dbId<dbScanPin> dbScanPin::create(dbDft* dft, dbITerm* iterm)
+{
+  _dbDft* obj = (_dbDft*) dft;
+  _dbScanPin* scan_pin = (_dbScanPin*) obj->scan_pins_->create();
+  ((dbScanPin*) scan_pin)->setPin(iterm);
+  return scan_pin->getId();
 }
 
 // User Code End dbScanPinPublicMethods

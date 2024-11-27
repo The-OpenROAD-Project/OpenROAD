@@ -1278,7 +1278,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
       // check if the inst is within the fence
       if (box->xMin() >= fence_.lx && box->xMax() <= fence_.ux
           && box->yMin() >= fence_.ly && box->yMax() <= fence_.uy) {
-        const float area = liberty_cell->area();
+        const float area = computeMicronArea(inst);
         std::vector<float> vwts(vertex_dimensions_, area);
         vertex_weights_.emplace_back(vwts);
         if (master->isBlock()) {
@@ -1322,7 +1322,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
       if (master->isPad() || master->isCover()) {
         continue;
       }
-      const float area = liberty_cell->area();
+      const float area = computeMicronArea(inst);
       std::vector<float> vwts(vertex_dimensions_, area);
       vertex_weights_.emplace_back(vwts);
       if (master->isBlock()) {
@@ -1625,7 +1625,7 @@ void TritonPart::BuildTimingPaths()
     expand.path(expand.size() - 1);
     for (size_t i = 0; i < expand.size(); i++) {
       // PathRef is reference to a path vertex
-      sta::PathRef* ref = expand.path(i);
+      const sta::PathRef* ref = expand.path(i);
       sta::Pin* pin = ref->vertex(sta_)->pin();
       // Nets connect pins at a level of the hierarchy
       auto net = network_->net(pin);  // sta::Net*
@@ -1750,7 +1750,12 @@ void TritonPart::BuildTimingPaths()
 // the return value is the partitioning solution
 void TritonPart::MultiLevelPartition()
 {
-  logger_->info(PAR, 16, "Partitioning using multilevel methodology.");
+  debugPrint(logger_,
+             PAR,
+             "multilevel_partitioning",
+             1,
+             "Starting multilevel partitioning.");
+
   auto start_time_stamp_global = std::chrono::high_resolution_clock::now();
 
   // check the base balance constraint
@@ -2085,6 +2090,16 @@ void TritonPart::informFiles(const std::string& fixed_file,
   }
 
   logger_->info(PAR, 38, files);
+}
+
+float TritonPart::computeMicronArea(odb::dbInst* inst)
+{
+  const float width = static_cast<float>(
+      block_->dbuToMicrons(inst->getBBox()->getBox().dx()));
+  const float height = static_cast<float>(
+      block_->dbuToMicrons(inst->getBBox()->getBox().dy()));
+
+  return width * height;
 }
 
 }  // namespace par

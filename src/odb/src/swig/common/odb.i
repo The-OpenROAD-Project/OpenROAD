@@ -44,6 +44,7 @@
 #include "dbTypes.h"
 #include "geom.h"
 #include "wOrder.h"
+#include "util.h"
 
 using namespace odb;
 %}
@@ -57,6 +58,7 @@ using namespace odb;
 %typemap(in) (uint) = (int);
 %typemap(out) (uint) = (int);
 %typemap(out) (uint64) = (long);
+%typemap(out) (int64_t) = (long);
 %apply int* OUTPUT {int* x, int* y};
 
 %ignore odb::dbTechLayerAntennaRule::pwl_pair;
@@ -74,6 +76,8 @@ using namespace odb;
 %ignore odb::Rect::set(Orientation2D orient, Direction1D dir, int value);
 %ignore odb::Point::set(Orientation2D orient, int value);
 %ignore odb::Rect::bloat(int margin, Orientation2D orient) const;
+
+%ignore odb::dbGDSStructure::operator[];
 
 %include "dbenums.i"
 %include "parserenums.i"
@@ -97,3 +101,5 @@ using namespace odb;
 %include "odb/dbNetSet.h"
 %include "odb/dbCCSegSet.h"
 %include "odb/wOrder.h"
+
+std::string generateMacroPlacementString(odb::dbBlock* block);

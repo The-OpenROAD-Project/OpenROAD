@@ -43,7 +43,6 @@ namespace ord {
 mpl2::MacroPlacer2*
 getMacroPlacer2();
 utl::Logger* getLogger();
-odb::dbDatabase* getDb();
 }
 
 using utl::MPL;
@@ -125,13 +124,22 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              report_directory);
 }
 
-void set_debug_cmd(bool coarse, bool fine)
+void set_debug_cmd(odb::dbBlock* block,
+                   bool coarse,
+                   bool fine,
+                   bool show_bundled_nets,
+                   bool skip_steps,
+                   bool only_final_result,
+                   int target_cluster_id)
 {
   auto macro_placer = getMacroPlacer2();
-  int dbu = ord::getDb()->getTech()->getDbUnitsPerMicron();
   std::unique_ptr<Mpl2Observer> graphics
-    = std::make_unique<Graphics>(coarse, fine, dbu, ord::getLogger());
+    = std::make_unique<Graphics>(coarse, fine, block, ord::getLogger());
   macro_placer->setDebug(graphics);
+  macro_placer->setDebugShowBundledNets(show_bundled_nets);
+  macro_placer->setDebugSkipSteps(skip_steps);
+  macro_placer->setDebugOnlyFinalResult(only_final_result);
+  macro_placer->setDebugTargetClusterId(target_cluster_id);
 }
 
 void
@@ -146,12 +154,6 @@ void
 set_macro_placement_file(std::string file_name)
 {
   getMacroPlacer2()->setMacroPlacementFile(file_name);
-}
-
-void
-write_macro_placement(std::string file_name)
-{
-  getMacroPlacer2()->writeMacroPlacement(file_name);
 }
 
 } // namespace

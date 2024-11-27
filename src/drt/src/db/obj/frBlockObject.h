@@ -28,28 +28,26 @@
 
 #pragma once
 
+#include <map>
+#include <set>
+
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frBlockObject
 {
  public:
-  virtual ~frBlockObject() {}
-  // getters
-  int getId() const { return id_; }
-  // setters
-  void setId(int in) { id_ = in; }
-  // others
+  virtual ~frBlockObject() = default;
+
   virtual frBlockObjectEnum typeId() const = 0;
+
+  int getId() const { return id_; }
+  void setId(int in) { id_ = in; }
+
   bool operator<(const frBlockObject& rhs) const { return id_ < rhs.id_; }
 
- protected:
-  // constructors
-  frBlockObject() : id_(-1) {}
-  frBlockObject(const frBlockObject& in) : id_(in.id_) {}
-
  private:
-  int id_;
+  int id_{-1};
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
@@ -67,4 +65,8 @@ struct frBlockObjectComp
     return *lhs < *rhs;
   }
 };
-}  // namespace fr
+
+using frBlockObjectSet = std::set<frBlockObject*, frBlockObjectComp>;
+template <typename T>
+using frBlockObjectMap = std::map<frBlockObject*, T, frBlockObjectComp>;
+}  // namespace drt

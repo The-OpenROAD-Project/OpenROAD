@@ -111,13 +111,13 @@ class BBox
   }
 
   void put(const Point& point);
-  void clear(void);
-  float getHPWL(void) const;
-  float getXSize(void) const;
-  float getYSize(void) const;
-  float getMinX(void) const;
-  float getMinY(void) const;
-  bool isValid(void) const;
+  void clear();
+  float getHPWL() const;
+  float getXSize() const;
+  float getYSize() const;
+  float getMinX() const;
+  float getMinY() const;
+  bool isValid() const;
 };
 
 // global parsing functions

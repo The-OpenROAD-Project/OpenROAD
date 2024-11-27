@@ -1,0 +1,63 @@
+      {
+	  "name":"dbModNet",
+          "type":"dbObject",
+	  "fields":[
+           {
+          "name":"_name",
+          "type":"char *",
+          "flags":["no-set","no-get"],
+          "default":"nullptr",
+	  "schema":"db_schema_update_hierarchy"	    	    	       
+           },
+          {
+	  "name":"_parent",
+          "type":"dbId<_dbModule>",
+          "flags":["no-set"],
+	  "schema":"db_schema_update_hierarchy",	    	    	       	      
+          "parent":"dbBlock" 
+          },
+          {
+          "name":"_next_entry",
+          "type":"dbId<_dbModNet>",
+          "flags":["no-set","no-get"],
+	  "schema":"db_schema_update_hierarchy"	    	    	       	      	      
+          },
+          {
+          "name":"_prev_entry",
+          "type":"dbId<_dbModNet>",
+          "flags":["no-set","no-get"],
+	  "schema":"db_schema_hier_port_removal"	    	    	       	      	      
+          },
+	  {
+          "name": "_moditerms",
+          "type": "dbId<_dbModITerm>",
+          "flags":["no-set","no-get"],
+	  "schema":"db_schema_update_hierarchy"	    	    	       	      	      	      
+	  },
+	  {
+	      "name": "_modbterms",
+	      "type": "dbId<_dbModBTerm>",
+	      "flags":["no-set","no-get"],
+	      "schema":"db_schema_update_hierarchy"	    	    	       	      	      	      	      
+	  },
+	  {
+	      "name": "_iterms",
+	      "type": "dbId<_dbITerm>",
+	      "flags":["no-set","no-get"],
+	      "schema":"db_schema_update_hierarchy"	    	    	       	      	      	      	      	      
+	  },
+	  {
+	      "name": "_bterms",
+	      "type": "dbId<_dbBTerm>",
+	      "flags":["no-set","no-get"],
+	      "schema":"db_schema_update_hierarchy"	    	    	       	      	      	      	      	      	      
+	  }
+	      
+	  ],
+	  "constructors":[],
+	  "cpp_includes":["dbBlock.h","dbVector.h","dbModule.h","dbModInst.h","dbITerm.h", "dbModITerm.h","dbModBTerm.h","dbHashTable.hpp"],
+	  "h_includes": [
+              "dbVector.h"
+	  ]
+
+      }

@@ -4,26 +4,27 @@ MACRO POWER_SWITCH
   CLASS CORE ;
   ORIGIN 0 0 ;
   SIZE 4.6 BY 5.44 ;
-  PIN VPWR
+  SITE unithddbl ;
+  PIN VGND
     DIRECTION INOUT ;
-    USE POWER ;
+    USE GROUND ;
     SHAPE ABUTMENT ;
     PORT
       LAYER met1 ;
         RECT 0.0 -0.24 4.6 0.24 ;
         RECT 0.0  5.20 4.6 5.68 ;
     END
-  END VPWR
-  PIN VGND
+  END VGND
+  PIN VPWR
     DIRECTION INOUT ;
-    USE GROUND ; 
+    USE POWER ; 
     SHAPE ABUTMENT ;
 
     PORT
       LAYER met1 ;
         RECT  0.0 2.48 4.6 2.96 ;
     END
-  END VGND
+  END VPWR
   PIN VDDG
     DIRECTION INOUT ;
     USE POWER ;
@@ -49,7 +50,7 @@ MACRO POWER_SWITCH
     USE SIGNAL ;
     PORT
       LAYER met1 ; 
-        RECT 4.0 3.2 4.2 3.6 ;
+        RECT 3.0 4.0 3.2 4.4 ;
     END
   END SLEEP_OUT
 END POWER_SWITCH

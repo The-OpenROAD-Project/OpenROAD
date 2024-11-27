@@ -1,0 +1,40 @@
+name: Docs Tester
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  docs-test-job:
+    name: 'Test docs for Tcl syntax and README'
+    runs-on: ubuntu-latest
+    container:
+      image: openroad/ubuntu-cpp20
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+
+    - name: Install required package
+      run: |
+        apt-get update 
+        apt-get install -y pandoc
+
+    - name: Build messages
+      run: |
+        python3 docs/src/test/make_messages.py
+
+    - name: Preprocess files
+      run: |
+        cd docs
+        make preprocess -j${nproc}
+    - name: Run Tcl syntax parser
+      run: |
+        python3 docs/src/test/man_tcl_params.py
+    - name: Run readme parser
+      run : |
+        cd docs
+        make clean
+        python3 src/test/readme_check.py

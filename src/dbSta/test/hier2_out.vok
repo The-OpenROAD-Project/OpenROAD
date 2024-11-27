@@ -1,0 +1,26 @@
+module top (a,
+    b,
+    out);
+ input a;
+ input b;
+ output out;
+
+
+ INV_X1 _4_ (.ZN(a_int),
+    .A(a));
+ gate1 gate2_inst (.a1(a_int),
+    .a2(b),
+    .zn(out));
+endmodule
+module gate1 (a1,
+    a2,
+    zn);
+ input a1;
+ input a2;
+ output zn;
+
+
+ AND2_X1 _5_ (.ZN(zn),
+    .A1(a1),
+    .A2(a2));
+endmodule

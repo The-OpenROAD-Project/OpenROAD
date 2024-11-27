@@ -35,14 +35,8 @@
 #include <map>
 #include <set>
 
+#include "odb/db.h"
 #include "shape.h"
-
-namespace odb {
-class dbBlock;
-class dbNet;
-class dbSBox;
-class dbTechLayer;
-}  // namespace odb
 
 namespace utl {
 class Logger;
@@ -52,7 +46,7 @@ namespace pdn {
 
 class ViaRepair
 {
-  using ViaValue = std::pair<Box, odb::dbSBox*>;
+  using ViaValue = std::pair<odb::Rect, odb::dbSBox*>;
   using ViaTree = bgi::rtree<ViaValue, bgi::quadratic<16>>;
   using LayerViaTree = std::map<odb::dbTechLayer*, ViaTree>;
 

@@ -1,0 +1,15 @@
+[INFO ODB-0227] LEF file: liberty1.lef, created 2 layers, 6 library cells
+[DEBUG ODB-dbReadVerilog] Created module instance b1 in parent top 
+[DEBUG ODB-dbReadVerilog] Created module bterm in 
+[DEBUG ODB-dbReadVerilog] Created module bterm clk 
+[DEBUG ODB-dbReadVerilog] Created module bterm out 
+[DEBUG ODB-dbReadVerilog] Created module iterm in for bterm in
+[DEBUG ODB-dbReadVerilog] Created module iterm clk for bterm clk
+[DEBUG ODB-dbReadVerilog] Created module iterm out for bterm out
+[DEBUG ODB-dbReadVerilog] Created module instance b2 in parent top 
+[DEBUG ODB-dbReadVerilog] Created module bterm in 
+[DEBUG ODB-dbReadVerilog] Created module bterm clk 
+[DEBUG ODB-dbReadVerilog] Created module bterm out 
+[DEBUG ODB-dbReadVerilog] Created module iterm in for bterm in
+[DEBUG ODB-dbReadVerilog] Created module iterm clk for bterm clk
+[DEBUG ODB-dbReadVerilog] Created module iterm out for bterm out

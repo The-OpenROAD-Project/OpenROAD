@@ -71,6 +71,12 @@ have_routes()
   return getGlobalRouter()->haveRoutes();
 }
 
+bool
+have_detailed_routes()
+{
+  return getGlobalRouter()->haveDetailedRoutes();
+}
+
 void
 set_capacity_adjustment(float adjustment)
 {
@@ -93,18 +99,6 @@ add_region_adjustment(int minX,
 {
   getGlobalRouter()->addRegionAdjustment(
       minX, minY, maxX, maxY, layer, reductionPercentage);
-}
-
-void
-set_min_layer(int minLayer)
-{
-  getGlobalRouter()->setMinRoutingLayer(minLayer);
-}
-
-void
-set_max_layer(int maxLayer)
-{
-  getGlobalRouter()->setMaxRoutingLayer(maxLayer);
 }
 
 void
@@ -143,13 +137,6 @@ set_allow_congestion(bool allowCongestion)
 }
 
 void
-set_clock_layer_range(int minLayer, int maxLayer)
-{
-  getGlobalRouter()->setMinLayerForClock(minLayer);
-  getGlobalRouter()->setMaxLayerForClock(maxLayer);
-}
-
-void
 set_critical_nets_percentage(float criticalNetsPercentage)
 {
   getGlobalRouter()->setCriticalNetsPercentage(criticalNetsPercentage);
@@ -159,12 +146,6 @@ void
 set_macro_extension(int macroExtension)
 {
   getGlobalRouter()->setMacroExtension(macroExtension);
-}
-
-void
-set_pin_offset(int pin_offset)
-{
-  getGlobalRouter()->setPinOffset(pin_offset);
 }
 
 void
@@ -203,10 +184,11 @@ route_layer_lengths(odb::dbNet* db_net)
   return getGlobalRouter()->routeLayerLengths(db_net);
 }
 
-void
+int
 repair_antennas(odb::dbMTerm* diode_mterm, int iterations, float ratio_margin)
 {
-  getGlobalRouter()->repairAntennas(diode_mterm, iterations, ratio_margin);
+  const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
+  return getGlobalRouter()->repairAntennas(diode_mterm, iterations, ratio_margin, num_threads);
 }
 
 void
@@ -216,7 +198,7 @@ add_net_to_route(odb::dbNet* net)
 }
 
 void
-highlight_net_route(odb::dbNet *net, bool show_pin_locations)
+highlight_net_route(odb::dbNet *net, bool show_segments, bool show_pin_locations)
 {
   if (!gui::Gui::enabled()) {
     return;
@@ -227,7 +209,7 @@ highlight_net_route(odb::dbNet *net, bool show_pin_locations)
     router->setRenderer(std::make_unique<GrouteRenderer>(router, router->db()->getTech()));
   }
 
-  router->getRenderer()->highlightRoute(net, show_pin_locations);
+  router->getRenderer()->highlightRoute(net, show_segments, show_pin_locations);
 }
 
 void
@@ -290,6 +272,16 @@ void
 report_layer_wire_lengths()
 {
   getGlobalRouter()->reportLayerWireLengths();
+}
+
+void write_segments(const char* file_name)
+{
+  getGlobalRouter()->writeSegments(file_name);
+}
+
+void read_segments(const char* file_name)
+{
+  getGlobalRouter()->readSegments(file_name);
 }
 
 } // namespace

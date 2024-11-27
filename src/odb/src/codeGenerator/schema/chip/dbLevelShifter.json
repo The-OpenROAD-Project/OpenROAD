@@ -5,6 +5,7 @@
     {
       "name": "_name",
       "type": "char *",
+      "default": "nullptr",
       "flags": ["no-set"]
     },
     {
@@ -41,6 +42,7 @@
     {
       "name": "_use_functional_equivalence",
       "type": "bool",
+      "default": "false",
       "flags": []
     },
     {
@@ -61,16 +63,19 @@
     {
       "name": "_threshold",
       "type": "float",
+      "default": "0",
       "flags": []
     },
     {
       "name": "_no_shift",
       "type": "bool",
+      "default": "false",
       "flags": []
     },
     {
       "name": "_force_shift",
       "type": "bool",
+      "default": "false",
       "flags": []
     },
     {
@@ -107,6 +112,21 @@
       "name": "_instances", 
       "type": "dbVector<std::pair<std::string, std::string>>",
       "flags": ["no-set", "no-get","no-template"]
+    },
+    {
+      "name" : "_cell_name",
+      "type" : "std::string",
+      "flags": ["no-serial"]
+    },
+    {
+      "name" : "_cell_input",
+      "type" : "std::string",
+      "flags": ["no-serial"]
+    },
+    {
+      "name": "_cell_output",
+      "type": "std::string",
+      "flags": ["no-serial"]
     }
   ],
   "cpp_includes": [

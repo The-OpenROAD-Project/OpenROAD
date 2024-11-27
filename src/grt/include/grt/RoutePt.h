@@ -47,6 +47,7 @@ class RoutePt
   int layer() const { return layer_; };
 
   friend bool operator<(const RoutePt& p1, const RoutePt& p2);
+  friend bool operator==(const RoutePt& p1, const RoutePt& p2);
 
  private:
   int x_;
@@ -55,5 +56,6 @@ class RoutePt
 };
 
 bool operator<(const RoutePt& p1, const RoutePt& p2);
+bool operator==(const RoutePt& p1, const RoutePt& p2);
 
 }  // namespace grt

@@ -85,27 +85,37 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-num_static_layers] \
                                              [-sink_clustering_buffer] \
                                              [-obstruction_aware] \
-					     [-apply_ndr] \
-                                             [-insertion_delay] \
+                                             [-apply_ndr] \
                                              [-sink_buffer_max_cap_derate] \
-                                             [-use_dummy_load]
-                                            }
+                                             [-dont_use_dummy_load] \
+                                             [-delay_buffer_derate] \
+                                             [-library] \
+} ;# checker off
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
-    keys {-root_buf -buf_list -wire_unit -clk_nets -sink_clustering_size -num_static_layers\
-          -sink_clustering_buffer -distance_between_buffers -branching_point_buffers_distance -clustering_exponent\
-          -clustering_unbalance_ratio -sink_clustering_max_diameter -sink_clustering_levels -tree_buf\
-          -sink_buffer_max_cap_derate}\
-      flags {-post_cts_disable -sink_clustering_enable -balance_levels \
-	     -obstruction_aware -apply_ndr -insertion_delay -use_dummy_load}
+    keys {-root_buf -buf_list -wire_unit -clk_nets -sink_clustering_size \
+          -num_static_layers -sink_clustering_buffer \
+          -distance_between_buffers -branching_point_buffers_distance \
+          -clustering_exponent \
+          -clustering_unbalance_ratio -sink_clustering_max_diameter \
+          -sink_clustering_levels -tree_buf \
+          -sink_buffer_max_cap_derate -delay_buffer_derate -library} \
+    flags {-post_cts_disable -sink_clustering_enable -balance_levels \
+           -obstruction_aware -apply_ndr -dont_use_dummy_load
+  } ;# checker off
 
   sta::check_argc_eq0 "clock_tree_synthesis" $args
+
+  if { [info exists keys(-library)] } {
+    set cts_library $keys(-library)
+    cts::set_cts_library $cts_library
+  }
 
   if { [info exists flags(-post_cts_disable)] } {
     utl::warn CTS 115 "-post_cts_disable is obsolete."
   }
-  
+
   cts::set_sink_clustering [info exists flags(-sink_clustering_enable)]
 
   if { [info exists keys(-sink_clustering_size)] } {
@@ -165,7 +175,7 @@ proc clock_tree_synthesis { args } {
   if { [info exists keys(-clk_nets)] } {
     set clk_nets $keys(-clk_nets)
     set fail [cts::set_clock_nets $clk_nets]
-    if {$fail} {
+    if { $fail } {
       utl::error CTS 56 "Error when finding -clk_nets in DB."
     }
   }
@@ -191,20 +201,30 @@ proc clock_tree_synthesis { args } {
 
   if { [info exists keys(-sink_buffer_max_cap_derate)] } {
     set derate $keys(-sink_buffer_max_cap_derate)
-    if {[expr {$derate > 1.0 || $derate < 0.0 }]} {
+    if { $derate > 1.0 || $derate < 0.0 } {
       utl::error CTS 109 "sink_buffer_max_cap_derate needs to be between 0 and 1.0."
     }
     cts::set_sink_buffer_max_cap_derate $derate
   }
 
+  if { [info exists keys(-delay_buffer_derate)] } {
+    set buffer_derate $keys(-delay_buffer_derate)
+    if { $buffer_derate < 0.0 } {
+      utl::error CTS 123 "delay_buffer_derate needs to be greater than or equal to 0."
+    }
+    cts::set_delay_buffer_derate $buffer_derate
+  }
+
   cts::set_obstruction_aware [info exists flags(-obstruction_aware)]
+
+  if { [info exists flags(-dont_use_dummy_load)] } {
+    cts::set_dummy_load false
+  } else {
+    cts::set_dummy_load true
+  }
 
   cts::set_apply_ndr [info exists flags(-apply_ndr)]
 
-  cts::set_insertion_delay [info exists flags(-insertion_delay)]
-    
-  cts::set_dummy_load [info exists flags(-use_dummy_load)]
-    
   if { [ord::get_db_block] == "NULL" } {
     utl::error CTS 103 "No design block found."
   }
@@ -230,7 +250,7 @@ proc report_cts { args } {
 namespace eval cts {
 proc clock_tree_synthesis_debug { args } {
   sta::parse_key_args "clock_tree_synthesis_debug" args \
-    keys {} flags {-plot}
+    keys {} flags {-plot} ;# checker off
 
   sta::check_argc_eq0 "clock_tree_synthesis_debug" $args
   cts::set_plot_option [info exists flags(-plot)]

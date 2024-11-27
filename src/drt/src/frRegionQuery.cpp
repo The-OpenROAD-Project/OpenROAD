@@ -36,7 +36,10 @@
 #include "global.h"
 #include "utl/algorithms.h"
 
-using namespace fr;
+namespace drt {
+
+class FlexDR;
+
 using utl::enumerate;
 namespace gtl = boost::polygon;
 
@@ -50,6 +53,7 @@ struct frRegionQuery::Impl
 
   frDesign* design_;
   Logger* logger_;
+  RouterConfiguration* router_cfg_;
   // only for pin shapes, obs and snet
   RTreesByLayer<frBlockObject*> shapes_;
   RTreesByLayer<frGuide*> guides_;
@@ -72,30 +76,33 @@ struct frRegionQuery::Impl
   void initDRObj();
   void initGRObj();
 
-  void add(frShape* in, ObjectsByLayer<frBlockObject>& allShapes);
-  void add(frVia* in, ObjectsByLayer<frBlockObject>& allShapes);
-  void add(frInstTerm* in, ObjectsByLayer<frBlockObject>& allShapes);
-  void add(frBTerm* in, ObjectsByLayer<frBlockObject>& allShapes);
-  void add(frBlockage* in, ObjectsByLayer<frBlockObject>& allShapes);
-  void add(frInstBlockage* in, ObjectsByLayer<frBlockObject>& allShapes);
-  void addGuide(frGuide* in, ObjectsByLayer<frGuide>& allShapes);
+  void add(frShape* shape, ObjectsByLayer<frBlockObject>& allShapes);
+  void add(frVia* via, ObjectsByLayer<frBlockObject>& allShapes);
+  void add(frInstTerm* instTerm, ObjectsByLayer<frBlockObject>& allShapes);
+  void add(frBTerm* term, ObjectsByLayer<frBlockObject>& allShapes);
+  void add(frBlockage* blk, ObjectsByLayer<frBlockObject>& allShapes);
+  void add(frInstBlockage* instBlk, ObjectsByLayer<frBlockObject>& allShapes);
+  void addGuide(frGuide* guide, ObjectsByLayer<frGuide>& allShapes);
   void addOrigGuide(frNet* net,
                     const frRect& rect,
                     ObjectsByLayer<frNet>& allShapes);
-  void addDRObj(frShape* in, ObjectsByLayer<frBlockObject>& allShapes);
-  void addDRObj(frVia* in, ObjectsByLayer<frBlockObject>& allShapes);
+  void addDRObj(frShape* shape, ObjectsByLayer<frBlockObject>& allShapes);
+  void addDRObj(frVia* via, ObjectsByLayer<frBlockObject>& allShapes);
   void addRPin(frRPin* rpin, ObjectsByLayer<frRPin>& allRPins);
-  void addGRObj(grShape* in, ObjectsByLayer<grBlockObject>& allShapes);
-  void addGRObj(grVia* in, ObjectsByLayer<grBlockObject>& allShapes);
-  void addGRObj(grShape* in);
-  void addGRObj(grVia* in);
+  void addGRObj(grShape* shape, ObjectsByLayer<grBlockObject>& allShapes);
+  void addGRObj(grVia* via, ObjectsByLayer<grBlockObject>& allShapes);
+  void addGRObj(grShape* shape);
+  void addGRObj(grVia* via);
 };
 
-frRegionQuery::frRegionQuery(frDesign* design, Logger* logger)
+frRegionQuery::frRegionQuery(frDesign* design,
+                             Logger* logger,
+                             RouterConfiguration* router_cfg)
     : impl_(std::make_unique<Impl>())
 {
   impl_->design_ = design;
   impl_->logger_ = logger;
+  impl_->router_cfg_ = router_cfg;
 }
 
 frRegionQuery::frRegionQuery() : impl_(nullptr)
@@ -160,6 +167,21 @@ void frRegionQuery::removeDRObj(frShape* shape)
   }
 }
 
+std::vector<std::pair<frBlockObject*, Rect>> frRegionQuery::getVias(
+    frLayerNum layer_num)
+{
+  std::vector<std::pair<frBlockObject*, Rect>> result;
+  result.reserve(impl_->shapes_.at(layer_num).size()
+                 + impl_->drObjs_.at(layer_num).size());
+  for (auto [box, obj] : impl_->shapes_.at(layer_num)) {
+    result.emplace_back(obj, box);
+  }
+  for (auto [box, obj] : impl_->drObjs_.at(layer_num)) {
+    result.emplace_back(obj, box);
+  }
+  return result;
+}
+
 void frRegionQuery::addBlockObj(frBlockObject* obj)
 {
   switch (obj->typeId()) {
@@ -195,14 +217,14 @@ void frRegionQuery::addBlockObj(frBlockObject* obj)
           std::vector<gtl::point_data<frCoord>> points;
           for (Point pt : ((frPolygon*) shape)->getPoints()) {
             xform.apply(pt);
-            points.push_back({pt.x(), pt.y()});
+            points.emplace_back(pt.x(), pt.y());
           }
           gtl::polygon_90_data<frCoord> poly;
           poly.set(points.begin(), points.end());
           // Add the polygon to a polygon set
           gtl::polygon_90_set_data<frCoord> polySet;
           {
-            using namespace boost::polygon::operators;
+            using boost::polygon::operators::operator+=;
             polySet += poly;
           }
           // Decompose the polygon set to rectanges
@@ -220,10 +242,12 @@ void frRegionQuery::addBlockObj(frBlockObject* obj)
     }
     case frcInst: {
       auto inst = static_cast<frInst*>(obj);
-      for (auto& instTerm : inst->getInstTerms())
+      for (auto& instTerm : inst->getInstTerms()) {
         addBlockObj(instTerm.get());
-      for (auto& blkg : inst->getInstBlockages())
+      }
+      for (auto& blkg : inst->getInstBlockages()) {
         addBlockObj(blkg.get());
+      }
       break;
     }
     default:
@@ -266,14 +290,14 @@ void frRegionQuery::removeBlockObj(frBlockObject* obj)
           std::vector<gtl::point_data<frCoord>> points;
           for (Point pt : ((frPolygon*) shape)->getPoints()) {
             xform.apply(pt);
-            points.push_back({pt.x(), pt.y()});
+            points.emplace_back(pt.x(), pt.y());
           }
           gtl::polygon_90_data<frCoord> poly;
           poly.set(points.begin(), points.end());
           // Add the polygon to a polygon set
           gtl::polygon_90_set_data<frCoord> polySet;
           {
-            using namespace boost::polygon::operators;
+            using boost::polygon::operators::operator+=;
             polySet += poly;
           }
           // Decompose the polygon set to rectanges
@@ -291,10 +315,12 @@ void frRegionQuery::removeBlockObj(frBlockObject* obj)
     }
     case frcInst: {
       auto inst = static_cast<frInst*>(obj);
-      for (auto& instTerm : inst->getInstTerms())
+      for (auto& instTerm : inst->getInstTerms()) {
         removeBlockObj(instTerm.get());
-      for (auto& blkg : inst->getInstBlockages())
+      }
+      for (auto& blkg : inst->getInstBlockages()) {
         removeBlockObj(blkg.get());
+      }
       break;
     }
     default:
@@ -485,14 +511,14 @@ void frRegionQuery::Impl::add(frInstBlockage* instBlk,
       std::vector<gtl::point_data<frCoord>> points;
       for (Point pt : ((frPolygon*) shape)->getPoints()) {
         xform.apply(pt);
-        points.push_back({pt.x(), pt.y()});
+        points.emplace_back(pt.x(), pt.y());
       }
       gtl::polygon_90_data<frCoord> poly;
       poly.set(points.begin(), points.end());
       // Add the polygon to a polygon set
       gtl::polygon_90_set_data<frCoord> polySet;
       {
-        using namespace boost::polygon::operators;
+        using boost::polygon::operators::operator+=;
         polySet += poly;
       }
       // Decompose the polygon set to rectanges
@@ -725,13 +751,13 @@ void frRegionQuery::Impl::init()
       add(instBlk.get(), allShapes);
     }
     cnt++;
-    if (VERBOSE > 0) {
-      if (cnt < 100000) {
-        if (cnt % 10000 == 0) {
+    if (router_cfg_->VERBOSE > 0) {
+      if (cnt < 1000000) {
+        if (cnt % 100000 == 0) {
           logger_->info(DRT, 18, "  Complete {} insts.", cnt);
         }
       } else {
-        if (cnt % 100000 == 0) {
+        if (cnt % 1000000 == 0) {
           logger_->info(DRT, 19, "  Complete {} insts.", cnt);
         }
       }
@@ -741,7 +767,7 @@ void frRegionQuery::Impl::init()
   for (auto& term : design_->getTopBlock()->getTerms()) {
     add(term.get(), allShapes);
     cnt++;
-    if (VERBOSE > 0) {
+    if (router_cfg_->VERBOSE > 0) {
       if (cnt < 100000) {
         if (cnt % 10000 == 0) {
           logger_->info(DRT, 20, "  Complete {} terms.", cnt);
@@ -763,7 +789,7 @@ void frRegionQuery::Impl::init()
       add(via.get(), allShapes);
     }
     cnt++;
-    if (VERBOSE > 0) {
+    if (router_cfg_->VERBOSE > 0) {
       if (cnt % 10000 == 0) {
         logger_->info(DRT, 22, "  Complete {} snets.", cnt);
       }
@@ -774,7 +800,7 @@ void frRegionQuery::Impl::init()
   for (auto& blk : design_->getTopBlock()->getBlockages()) {
     add(blk.get(), allShapes);
     cnt++;
-    if (VERBOSE > 0) {
+    if (router_cfg_->VERBOSE > 0) {
       if (cnt % 10000 == 0) {
         logger_->info(DRT, 23, "  Complete {} blockages.", cnt);
       }
@@ -785,7 +811,7 @@ void frRegionQuery::Impl::init()
     shapes_.at(i) = boost::move(RTree<frBlockObject*>(allShapes.at(i)));
     allShapes.at(i).clear();
     allShapes.at(i).shrink_to_fit();
-    if (VERBOSE > 0) {
+    if (router_cfg_->VERBOSE > 0) {
       logger_->info(DRT,
                     24,
                     "  Complete {}.",
@@ -813,13 +839,13 @@ void frRegionQuery::Impl::initOrigGuide(
     for (auto& rect : rects) {
       addOrigGuide(net, rect, allShapes);
       cnt++;
-      if (VERBOSE > 0) {
-        if (cnt < 100000) {
-          if (cnt % 10000 == 0) {
+      if (router_cfg_->VERBOSE > 0) {
+        if (cnt < 1000000) {
+          if (cnt % 100000 == 0) {
             logger_->info(DRT, 26, "  Complete {} origin guides.", cnt);
           }
         } else {
-          if (cnt % 100000 == 0) {
+          if (cnt % 1000000 == 0) {
             logger_->info(DRT, 27, "  Complete {} origin guides.", cnt);
           }
         }
@@ -830,7 +856,7 @@ void frRegionQuery::Impl::initOrigGuide(
     origGuides_.at(i) = boost::move(RTree<frNet*>(allShapes.at(i)));
     allShapes.at(i).clear();
     allShapes.at(i).shrink_to_fit();
-    if (VERBOSE > 0) {
+    if (router_cfg_->VERBOSE > 0) {
       logger_->info(DRT,
                     28,
                     "  Complete {}.",
@@ -857,13 +883,13 @@ void frRegionQuery::Impl::initGuide()
       addGuide(guide.get(), allGuides);
     }
     cnt++;
-    if (VERBOSE > 0) {
-      if (cnt < 100000) {
-        if (cnt % 10000 == 0) {
+    if (router_cfg_->VERBOSE > 0) {
+      if (cnt < 1000000) {
+        if (cnt % 100000 == 0) {
           logger_->info(DRT, 29, "  Complete {} nets (guide).", cnt);
         }
       } else {
-        if (cnt % 100000 == 0) {
+        if (cnt % 1000000 == 0) {
           logger_->info(DRT, 30, "  Complete {} nets (guide).", cnt);
         }
       }
@@ -873,7 +899,7 @@ void frRegionQuery::Impl::initGuide()
     guides_.at(i) = boost::move(RTree<frGuide*>(allGuides.at(i)));
     allGuides.at(i).clear();
     allGuides.at(i).shrink_to_fit();
-    if (VERBOSE > 0) {
+    if (router_cfg_->VERBOSE > 0) {
       logger_->info(DRT,
                     35,
                     "  Complete {} (guide).",
@@ -947,6 +973,9 @@ void frRegionQuery::Impl::initDRObj()
     }
     for (auto& via : net->getVias()) {
       addDRObj(via.get(), allShapes);
+    }
+    for (auto& pwire : net->getPatchWires()) {
+      addDRObj(pwire.get(), allShapes);
     }
   }
 
@@ -1049,3 +1078,5 @@ void frRegionQuery::clearGuides()
     m.clear();
   }
 }
+
+}  // namespace drt

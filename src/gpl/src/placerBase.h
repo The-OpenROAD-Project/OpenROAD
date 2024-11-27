@@ -145,7 +145,7 @@ class Pin
  public:
   Pin();
   Pin(odb::dbITerm* iTerm);
-  Pin(odb::dbBTerm* bTerm);
+  Pin(odb::dbBTerm* bTerm, utl::Logger* logger);
   ~Pin();
 
   odb::dbITerm* dbITerm() const;
@@ -186,6 +186,8 @@ class Pin
   Net* net() const { return net_; }
   std::string name() const;
 
+  void updateCoordi(odb::dbITerm* iTerm);
+
  private:
   void* term_ = nullptr;
   Instance* inst_ = nullptr;
@@ -210,8 +212,7 @@ class Pin
   unsigned char maxPinXField_ : 1;
   unsigned char maxPinYField_ : 1;
 
-  void updateCoordi(odb::dbITerm* iTerm);
-  void updateCoordi(odb::dbBTerm* bTerm);
+  void updateCoordi(odb::dbBTerm* bTerm, utl::Logger* logger);
 };
 
 class Net
@@ -332,6 +333,7 @@ class PlacerBaseCommon
 
   int padLeft() const { return pbVars_.padLeft; }
   int padRight() const { return pbVars_.padRight; }
+  bool skipIoMode() const { return pbVars_.skipIoMode; }
 
   int64_t hpwl() const;
   void printInfo() const;

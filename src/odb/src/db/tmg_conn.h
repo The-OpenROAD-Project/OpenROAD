@@ -36,9 +36,9 @@
 #include <memory>
 #include <vector>
 
-#include "db.h"
-#include "dbWireCodec.h"
-#include "geom.h"
+#include "odb/db.h"
+#include "odb/dbWireCodec.h"
+#include "odb/geom.h"
 
 namespace odb {
 
@@ -126,48 +126,8 @@ struct tmg_connect_shape
 class tmg_conn
 {
  public:
-  int _slicedTilePinCnt;
-  int _stbtx1[200];
-  int _stbty1[200];
-  int _stbtx2[200];
-  int _stbty2[200];
-  dbBTerm* _slicedTileBTerm[200];
-  tmg_conn_search* _search;
-  tmg_conn_graph* _graph;
-  std::vector<tmg_rc> _rcV;
-  std::vector<tmg_rcpt> _ptV;
-  tmg_rcterm* _termV;
-  tmg_rcterm** _tstackV;
-  int _termN;
-  tmg_rcshort* _shortV;
-  int _shortN;
-  dbNet* _net;
-  bool _hasSWire;
-  bool _preserveSWire;
-  int _swireNetCnt;
-  bool _connected;
-  dbWireEncoder _encoder;
-  dbWire* _newWire;
-  dbTechNonDefaultRule* _net_rule;
-  dbTechNonDefaultRule* _path_rule;
-  int _misc_cnt;
-  int _cut_end_extMin;
-  int _need_short_wire_id;
-  std::vector<std::array<tmg_connect_shape, 32>> _csVV;
-  std::array<tmg_connect_shape, 32>* _csV;
-  int* _csNV;
-  int _csN;
-  tmg_rcpt* _first_for_clear;
-
- private:
-  int _termNmax;
-  int _shortNmax;
-  int _last_id;
-  int _firstSegmentAfterVia;
-  utl::Logger* logger_;
-
- public:
   tmg_conn(utl::Logger* logger);
+  ~tmg_conn();
   void analyzeNet(dbNet* net);
   void loadNet(dbNet* net);
   void loadWire(dbWire* wire);
@@ -226,6 +186,46 @@ class tmg_conn
   tmg_rc* addRcPatch(int ifr, int ito);
   int getDisconnectedStart();
   void copyWireIdToVisitedShorts(int j);
+
+  int _slicedTilePinCnt;
+  int _stbtx1[200];
+  int _stbty1[200];
+  int _stbtx2[200];
+  int _stbty2[200];
+  dbBTerm* _slicedTileBTerm[200];
+  tmg_conn_search* _search;
+  tmg_conn_graph* _graph;
+  std::vector<tmg_rc> _rcV;
+  std::vector<tmg_rcpt> _ptV;
+  tmg_rcterm* _termV;
+  tmg_rcterm** _tstackV;
+  int _termN;
+  tmg_rcshort* _shortV;
+  int _shortN;
+  dbNet* _net;
+  bool _hasSWire;
+  bool _preserveSWire;
+  int _swireNetCnt;
+  bool _connected;
+  dbWireEncoder _encoder;
+  dbWire* _newWire;
+  dbTechNonDefaultRule* _net_rule;
+  dbTechNonDefaultRule* _path_rule;
+  int _misc_cnt;
+  int _cut_end_extMin;
+  int _need_short_wire_id;
+  std::vector<std::array<tmg_connect_shape, 32>> _csVV;
+  std::array<tmg_connect_shape, 32>* _csV;
+  int* _csNV;
+  int _csN;
+  tmg_rcpt* _first_for_clear;
+
+  int _termNmax;
+  int _shortNmax;
+  int _last_id;
+  int _firstSegmentAfterVia;
+  utl::Logger* logger_;
+  friend class tmg_conn_graph;
 };
 
 class tmg_conn_search

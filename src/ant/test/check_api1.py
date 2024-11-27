@@ -5,11 +5,11 @@ import ant
 tech = Tech()
 tech.readLef("merged_spacing.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("sw130_random.def")
 ack = design.getAntennaChecker()
 
-ack.checkAntennas()
+ack.checkAntennas(verbose=True)
 count = ack.antennaViolationCount()
 print(f"violation count = {count}", flush=True)
 

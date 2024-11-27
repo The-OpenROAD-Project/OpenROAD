@@ -1,8 +1,4 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: hi_fanout
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 15 components and 105 component-terminals.
@@ -10,23 +6,30 @@
 [WARNING RSZ-0021] no estimated parasitics. Using wire load models.
 Repair timing output passed/skipped equivalence test
 Net RESET
+ Pin capacitance: 26.17-26.68
+ Wire capacitance: 0.00
+ Total capacitance: 26.17-26.68
+ Number of drivers: 1
+ Number of loads: 15
+ Number of pins: 16
+
 Driver pins
  RESET input port
 
 Load pins
- r1/RN input (DFFR_X1) (7, 1)
- r10/RN input (DFFR_X1) (2, 6)
- r11/RN input (DFFR_X1) (7, 6)
- r12/RN input (DFFR_X1) (12, 6)
- r13/RN input (DFFR_X1) (17, 6)
- r14/RN input (DFFR_X1) (22, 6)
- r15/RN input (DFFR_X1) (27, 6)
- r2/RN input (DFFR_X1) (12, 1)
- r3/RN input (DFFR_X1) (17, 1)
- r4/RN input (DFFR_X1) (22, 1)
- r5/RN input (DFFR_X1) (27, 1)
- r6/RN input (DFFR_X1) (32, 1)
- r7/RN input (DFFR_X1) (37, 1)
- r8/RN input (DFFR_X1) (42, 1)
- r9/RN input (DFFR_X1) (47, 1)
+ r1/RN input (DFFR_X1) 1.74-1.78 (7, 1)
+ r10/RN input (DFFR_X1) 1.74-1.78 (2, 6)
+ r11/RN input (DFFR_X1) 1.74-1.78 (7, 6)
+ r12/RN input (DFFR_X1) 1.74-1.78 (12, 6)
+ r13/RN input (DFFR_X1) 1.74-1.78 (17, 6)
+ r14/RN input (DFFR_X1) 1.74-1.78 (22, 6)
+ r15/RN input (DFFR_X1) 1.74-1.78 (27, 6)
+ r2/RN input (DFFR_X1) 1.74-1.78 (12, 1)
+ r3/RN input (DFFR_X1) 1.74-1.78 (17, 1)
+ r4/RN input (DFFR_X1) 1.74-1.78 (22, 1)
+ r5/RN input (DFFR_X1) 1.74-1.78 (27, 1)
+ r6/RN input (DFFR_X1) 1.74-1.78 (32, 1)
+ r7/RN input (DFFR_X1) 1.74-1.78 (37, 1)
+ r8/RN input (DFFR_X1) 1.74-1.78 (42, 1)
+ r9/RN input (DFFR_X1) 1.74-1.78 (47, 1)
 

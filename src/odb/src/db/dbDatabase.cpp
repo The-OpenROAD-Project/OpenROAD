@@ -37,15 +37,13 @@
 #include <map>
 #include <string>
 
-#include "db.h"
 #include "dbArrayTable.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbCCSeg.h"
 #include "dbCapNode.h"
 #include "dbChip.h"
-#include "dbExtControl.h"
+#include "dbGDSLib.h"
 #include "dbITerm.h"
 #include "dbJournal.h"
 #include "dbLib.h"
@@ -54,11 +52,14 @@
 #include "dbProperty.h"
 #include "dbPropertyItr.h"
 #include "dbRSeg.h"
-#include "dbStream.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbWire.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbExtControl.h"
+#include "odb/dbStream.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -72,7 +73,9 @@ constexpr int DB_MAGIC2 = 0x4E414442;  // NADB
 template class dbTable<_dbDatabase>;
 
 static dbTable<_dbDatabase>* db_tbl = nullptr;
-static uint db_unique_id = 0;
+// Must be held to access db_tbl
+static std::mutex* db_tbl_mutex = new std::mutex;
+static std::atomic<uint> db_unique_id = 0;
 
 bool _dbDatabase::operator==(const _dbDatabase& rhs) const
 {
@@ -82,26 +85,37 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   // unique_id, and file,
   // are not used for comparison.
   //
-  if (_master_id != rhs._master_id)
+  if (_master_id != rhs._master_id) {
     return false;
+  }
 
-  if (_chip != rhs._chip)
+  if (_chip != rhs._chip) {
     return false;
+  }
 
-  if (*_tech_tbl != *rhs._tech_tbl)
+  if (*_tech_tbl != *rhs._tech_tbl) {
     return false;
+  }
 
-  if (*_lib_tbl != *rhs._lib_tbl)
+  if (*_lib_tbl != *rhs._lib_tbl) {
     return false;
+  }
 
-  if (*_chip_tbl != *rhs._chip_tbl)
+  if (*_chip_tbl != *rhs._chip_tbl) {
     return false;
+  }
 
-  if (*_prop_tbl != *rhs._prop_tbl)
+  if (*_gds_lib_tbl != *rhs._gds_lib_tbl) {
     return false;
+  }
 
-  if (*_name_cache != *rhs._name_cache)
+  if (*_prop_tbl != *rhs._prop_tbl) {
     return false;
+  }
+
+  if (*_name_cache != *rhs._name_cache) {
+    return false;
+  }
 
   return true;
 }
@@ -116,6 +130,7 @@ void _dbDatabase::differences(dbDiff& diff,
   DIFF_TABLE_NO_DEEP(_tech_tbl);
   DIFF_TABLE_NO_DEEP(_lib_tbl);
   DIFF_TABLE_NO_DEEP(_chip_tbl);
+  DIFF_TABLE_NO_DEEP(_gds_lib_tbl);
   DIFF_TABLE_NO_DEEP(_prop_tbl);
   DIFF_NAME_CACHE(_name_cache);
   DIFF_END
@@ -129,6 +144,7 @@ void _dbDatabase::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE_NO_DEEP(_tech_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_lib_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_chip_tbl);
+  DIFF_OUT_TABLE_NO_DEEP(_gds_lib_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_prop_tbl);
   DIFF_OUT_NAME_CACHE(_name_cache);
   DIFF_END
@@ -137,9 +153,6 @@ void _dbDatabase::out(dbDiff& diff, char side, const char* field) const
 dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
 {
   switch (type) {
-    case dbDatabaseObj:
-      return db_tbl;
-
     case dbTechObj:
       return _tech_tbl;
 
@@ -148,6 +161,9 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
 
     case dbChipObj:
       return _chip_tbl;
+
+    case dbGdsLibObj:
+      return _gds_lib_tbl;
 
     case dbPropertyObj:
       return _prop_tbl;
@@ -182,6 +198,14 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */)
   _chip_tbl = new dbTable<_dbChip>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj, 2, 1);
 
+  _gds_lib_tbl
+      = new dbTable<_dbGDSLib>(this,
+                               this,
+                               (GetObjTbl_t) &_dbDatabase::getObjectTable,
+                               dbGdsLibObj,
+                               2,
+                               1);
+
   _tech_tbl = new dbTable<_dbTech>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbTechObj, 2, 1);
 
@@ -214,6 +238,14 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   _chip_tbl = new dbTable<_dbChip>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj, 2, 1);
 
+  _gds_lib_tbl
+      = new dbTable<_dbGDSLib>(this,
+                               this,
+                               (GetObjTbl_t) &_dbDatabase::getObjectTable,
+                               dbGdsLibObj,
+                               2,
+                               1);
+
   _tech_tbl = new dbTable<_dbTech>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbTechObj, 2, 1);
 
@@ -241,6 +273,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, const _dbDatabase& d)
 {
   _chip_tbl = new dbTable<_dbChip>(this, this, *d._chip_tbl);
 
+  _gds_lib_tbl = new dbTable<_dbGDSLib>(this, this, *d._gds_lib_tbl);
+
   _tech_tbl = new dbTable<_dbTech>(this, this, *d._tech_tbl);
 
   _lib_tbl = new dbTable<_dbLib>(this, this, *d._lib_tbl);
@@ -257,14 +291,15 @@ _dbDatabase::~_dbDatabase()
   delete _tech_tbl;
   delete _lib_tbl;
   delete _chip_tbl;
+  delete _gds_lib_tbl;
   delete _prop_tbl;
   delete _name_cache;
-  // dimitri_fix
-  // delete _prop_itr;
+  delete _prop_itr;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbDatabase& db)
 {
+  dbOStreamScope scope(stream, "dbDatabase");
   stream << db._magic1;
   stream << db._magic2;
   stream << db._schema_major;
@@ -274,8 +309,10 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& db)
   stream << *db._tech_tbl;
   stream << *db._lib_tbl;
   stream << *db._chip_tbl;
-  stream << *db._prop_tbl;
+  stream << *db._gds_lib_tbl;
+  stream << NamedTable("prop_tbl", db._prop_tbl);
   stream << *db._name_cache;
+  stream << *db._gds_lib_tbl;
   return stream;
 }
 
@@ -283,30 +320,35 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& db)
 {
   stream >> db._magic1;
 
-  if (db._magic1 != DB_MAGIC1)
+  if (db._magic1 != DB_MAGIC1) {
     throw ZException("database file is not an OpenDB Database");
+  }
 
   stream >> db._magic2;
 
-  if (db._magic2 != DB_MAGIC2)
+  if (db._magic2 != DB_MAGIC2) {
     throw ZException("database file is not an OpenDB Database");
+  }
 
   stream >> db._schema_major;
 
-  if (db._schema_major != db_schema_major)
+  if (db._schema_major != db_schema_major) {
     throw ZException("Incompatible database schema revision");
+  }
 
   stream >> db._schema_minor;
 
-  if (db._schema_minor < db_schema_initial)
+  if (db._schema_minor < db_schema_initial) {
     throw ZException("incompatible database schema revision");
+  }
 
-  if (db._schema_minor > db_schema_minor)
+  if (db._schema_minor > db_schema_minor) {
     throw ZException("incompatible database schema revision %d.%d > %d.%d",
                      db._schema_major,
                      db._schema_minor,
                      db_schema_major,
                      db_schema_minor);
+  }
 
   stream >> db._master_id;
 
@@ -319,6 +361,9 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& db)
   stream >> *db._tech_tbl;
   stream >> *db._lib_tbl;
   stream >> *db._chip_tbl;
+  if (db.isSchema(db_schema_gds_lib_in_block)) {
+    stream >> *db._gds_lib_tbl;
+  }
   stream >> *db._prop_tbl;
   stream >> *db._name_cache;
 
@@ -374,8 +419,9 @@ dbLib* dbDatabase::findLib(const char* name)
   for (itr = libs.begin(); itr != libs.end(); ++itr) {
     _dbLib* lib = (_dbLib*) *itr;
 
-    if (strcmp(lib->_name, name) == 0)
+    if (strcmp(lib->_name, name) == 0) {
       return (dbLib*) lib;
+    }
   }
 
   return nullptr;
@@ -406,10 +452,46 @@ dbMaster* dbDatabase::findMaster(const char* name)
   for (it = libs.begin(); it != libs.end(); it++) {
     dbLib* lib = *it;
     dbMaster* master = lib->findMaster(name);
-    if (master)
+    if (master) {
       return master;
+    }
   }
   return nullptr;
+}
+
+// Remove unused masters
+int dbDatabase::removeUnusedMasters()
+{
+  std::vector<dbMaster*> unused_masters;
+  dbSet<dbLib> libs = getLibs();
+
+  for (auto lib : libs) {
+    dbSet<dbMaster> masters = lib->getMasters();
+    // Collect all dbMasters for later comparision
+    for (auto master : masters) {
+      unused_masters.push_back(master);
+    }
+  }
+  // Get instances from this Database
+  dbChip* chip = getChip();
+  dbBlock* block = chip->getBlock();
+  dbSet<dbInst> insts = block->getInsts();
+
+  for (auto inst : insts) {
+    dbMaster* master = inst->getMaster();
+    // Filter out the master that matches inst_master
+    auto masterIt
+        = std::find(unused_masters.begin(), unused_masters.end(), master);
+    if (masterIt != unused_masters.end()) {
+      // erase used maseters from container
+      unused_masters.erase(masterIt);
+    }
+  }
+  // Destroy remaining unused masters
+  for (auto& elem : unused_masters) {
+    dbMaster::destroy(elem);
+  }
+  return unused_masters.size();
 }
 
 dbSet<dbChip> dbDatabase::getChips()
@@ -428,8 +510,9 @@ dbChip* dbDatabase::getChip()
 {
   _dbDatabase* db = (_dbDatabase*) this;
 
-  if (db->_chip == 0)
+  if (db->_chip == 0) {
     return nullptr;
+  }
 
   return (dbChip*) db->_chip_tbl->getPtr(db->_chip);
 }
@@ -471,8 +554,9 @@ void dbDatabase::beginEco(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
 
-  if (block->_journal)
+  {
     delete block->_journal;
+  }
 
   block->_journal = new dbJournal(block_);
   assert(block->_journal);
@@ -484,8 +568,9 @@ void dbDatabase::endEco(dbBlock* block_)
   dbJournal* eco = block->_journal;
   block->_journal = nullptr;
 
-  if (block->_journal_pending)
+  {
     delete block->_journal_pending;
+  }
 
   block->_journal_pending = eco;
 }
@@ -494,8 +579,9 @@ bool dbDatabase::ecoEmpty(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
 
-  if (block->_journal)
+  if (block->_journal) {
     return block->_journal->empty();
+  }
 
   return false;
 }
@@ -506,9 +592,8 @@ int dbDatabase::checkEco(dbBlock* block_)
 
   if (block->_journal) {
     return block->_journal->size();
-  } else {
-    return 0;
   }
+  return 0;
 }
 
 void dbDatabase::readEco(dbBlock* block_, const char* filename)
@@ -525,8 +610,9 @@ void dbDatabase::readEco(dbBlock* block_, const char* filename)
   assert(eco);
   stream >> *eco;
 
-  if (block->_journal_pending)
+  {
     delete block->_journal_pending;
+  }
 
   block->_journal_pending = eco;
 }
@@ -557,10 +643,20 @@ void dbDatabase::commitEco(dbBlock* block_)
   _dbBlock* block = (_dbBlock*) block_;
 
   // TODO: Need a check to ensure the commit is not applied to the block of
-  // which
-  //       this eco was generated from.
+  // which this eco was generated from.
   if (block->_journal_pending) {
     block->_journal_pending->redo();
+    delete block->_journal_pending;
+    block->_journal_pending = nullptr;
+  }
+}
+
+void dbDatabase::undoEco(dbBlock* block_)
+{
+  _dbBlock* block = (_dbBlock*) block_;
+
+  if (block->_journal_pending) {
+    block->_journal_pending->undo();
     delete block->_journal_pending;
     block->_journal_pending = nullptr;
   }
@@ -574,6 +670,7 @@ void dbDatabase::setLogger(utl::Logger* logger)
 
 dbDatabase* dbDatabase::create()
 {
+  std::lock_guard<std::mutex> lock(*db_tbl_mutex);
   if (db_tbl == nullptr) {
     db_tbl = new dbTable<_dbDatabase>(
         nullptr, nullptr, (GetObjTbl_t) nullptr, dbDatabaseObj);
@@ -593,12 +690,14 @@ void dbDatabase::clear()
 
 void dbDatabase::destroy(dbDatabase* db_)
 {
+  std::lock_guard<std::mutex> lock(*db_tbl_mutex);
   _dbDatabase* db = (_dbDatabase*) db_;
   db_tbl->destroy(db);
 }
 
 dbDatabase* dbDatabase::duplicate(dbDatabase* db_)
 {
+  std::lock_guard<std::mutex> lock(*db_tbl_mutex);
   _dbDatabase* db = (_dbDatabase*) db_;
   _dbDatabase* d = db_tbl->duplicate(db);
   return (dbDatabase*) d;
@@ -606,12 +705,23 @@ dbDatabase* dbDatabase::duplicate(dbDatabase* db_)
 
 dbDatabase* dbDatabase::getDatabase(uint dbid)
 {
+  std::lock_guard<std::mutex> lock(*db_tbl_mutex);
   return (dbDatabase*) db_tbl->getPtr(dbid);
 }
 
 dbDatabase* dbObject::getDb() const
 {
   return (dbDatabase*) getImpl()->getDatabase();
+}
+
+utl::Logger* _dbDatabase::getLogger() const
+{
+  if (!_logger) {
+    std::cerr << "[CRITICAL ODB-0001] No logger is installed in odb."
+              << std::endl;
+    exit(1);
+  }
+  return _logger;
 }
 
 utl::Logger* _dbObject::getLogger() const

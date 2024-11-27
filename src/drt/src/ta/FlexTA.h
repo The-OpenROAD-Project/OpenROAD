@@ -35,14 +35,17 @@
 #include "db/taObj/taPin.h"
 #include "frDesign.h"
 
-namespace fr {
+namespace drt {
 class FlexTAGraphics;
 
 class FlexTA
 {
  public:
   // constructors
-  FlexTA(frDesign* in, Logger* logger, bool save_updates_);
+  FlexTA(frDesign* in,
+         Logger* logger,
+         RouterConfiguration* router_cfg,
+         bool save_updates_);
   ~FlexTA();
   // getters
   frTechObject* getTech() const { return tech_; }
@@ -55,6 +58,7 @@ class FlexTA
   frTechObject* tech_;
   frDesign* design_;
   Logger* logger_;
+  RouterConfiguration* router_cfg_;
   bool save_updates_;
   std::unique_ptr<FlexTAGraphics> graphics_;
   // others
@@ -92,6 +96,19 @@ class FlexTAWorkerRegionQuery
       frLayerNum layerNum,
       std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>>&
           result) const;
+  void addViaCost(const Rect& box,
+                  frLayerNum layerNum,
+                  frBlockObject* obj,
+                  frConstraint* con);
+  void removeViaCost(const Rect& box,
+                     frLayerNum layerNum,
+                     frBlockObject* obj,
+                     frConstraint* con);
+  void queryViaCost(
+      const Rect& box,
+      frLayerNum layerNum,
+      std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>>&
+          result) const;
 
   void init();
 
@@ -104,9 +121,13 @@ class FlexTAWorker
 {
  public:
   // constructors
-  FlexTAWorker(frDesign* designIn, Logger* logger, bool save_updates)
+  FlexTAWorker(frDesign* designIn,
+               Logger* logger,
+               RouterConfiguration* router_cfg,
+               bool save_updates)
       : design_(designIn),
         logger_(logger),
+        router_cfg_(router_cfg),
         save_updates_(save_updates),
         dir_(dbTechLayerDir::NONE),
         taIter_(0),
@@ -183,6 +204,7 @@ class FlexTAWorker
  private:
   frDesign* design_;
   Logger* logger_;
+  RouterConfiguration* router_cfg_;
   bool save_updates_;
   Rect routeBox_;
   Rect extBox_;
@@ -213,7 +235,8 @@ class FlexTAWorker
   void initFixedObjs_helper(const Rect& box,
                             frCoord bloatDist,
                             frLayerNum lNum,
-                            frNet* net);
+                            frNet* net,
+                            bool isViaCost = false);
   void initTracks();
   void initIroutes();
   void initIroute(frGuide* guide);
@@ -225,8 +248,8 @@ class FlexTAWorker
                          int& nextIrouteDir,
                          frCoord& pinCoord);
   void initIroute_helper_generic(frGuide* guide,
-                                 frCoord& maxBegin,
-                                 frCoord& minEnd,
+                                 frCoord& minBegin,
+                                 frCoord& maxEnd,
                                  std::set<frCoord>& downViaCoordSet,
                                  std::set<frCoord>& upViaCoordSet,
                                  int& nextIrouteDir,
@@ -316,4 +339,4 @@ class FlexTAWorker
   friend class FlexTA;
 };
 
-}  // namespace fr
+}  // namespace drt

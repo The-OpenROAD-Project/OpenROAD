@@ -1,0 +1,70 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+Startpoint: U2/_66_ (rising edge-triggered flip-flop clocked by clk1)
+Endpoint: U2/_66_ (rising edge-triggered flip-flop clocked by clk1)
+Path Group: clk1
+Path Type: min
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                  0.00    0.00    0.00   clock clk1 (rise edge)
+                          0.00    0.00   clock network delay (ideal)
+                  0.00    0.00    0.00 ^ U2/_66_/CK (DFF_X1)
+     1    1.55    0.01    0.06    0.06 v U2/_66_/QN (DFF_X1)
+                                         U2/_41_ (net)
+                  0.01    0.00    0.06 v U2/_49_/A (INV_X1)
+     1    1.68    0.01    0.01    0.08 ^ U2/_49_/ZN (INV_X1)
+                                         U2/_26_ (net)
+                  0.01    0.00    0.08 ^ U2/_53_/B2 (AOI21_X1)
+     1    1.06    0.01    0.01    0.09 v U2/_53_/ZN (AOI21_X1)
+                                         U2/_13_ (net)
+                  0.01    0.00    0.09 v U2/_66_/D (DFF_X1)
+                                  0.09   data arrival time
+
+                  0.00    0.00    0.00   clock clk1 (rise edge)
+                          0.00    0.00   clock network delay (ideal)
+                          0.00    0.00   clock reconvergence pessimism
+                                  0.00 ^ U2/_66_/CK (DFF_X1)
+                          0.00    0.00   library hold time
+                                  0.00   data required time
+-----------------------------------------------------------------------------
+                                  0.00   data required time
+                                 -0.09   data arrival time
+-----------------------------------------------------------------------------
+                                  0.09   slack (MET)
+
+
+Startpoint: U3/_66_ (rising edge-triggered flip-flop clocked by clk2)
+Endpoint: U3/_66_ (rising edge-triggered flip-flop clocked by clk2)
+Path Group: clk2
+Path Type: min
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                  0.00    0.00    0.00   clock clk2 (rise edge)
+                          0.00    0.00   clock network delay (ideal)
+                  0.00    0.00    0.00 ^ U3/_66_/CK (DFF_X1)
+     1    1.55    0.01    0.06    0.06 v U3/_66_/QN (DFF_X1)
+                                         U3/_41_ (net)
+                  0.01    0.00    0.06 v U3/_49_/A (INV_X1)
+     1    1.68    0.01    0.01    0.08 ^ U3/_49_/ZN (INV_X1)
+                                         U3/_26_ (net)
+                  0.01    0.00    0.08 ^ U3/_53_/B2 (AOI21_X1)
+     1    1.06    0.01    0.01    0.09 v U3/_53_/ZN (AOI21_X1)
+                                         U3/_13_ (net)
+                  0.01    0.00    0.09 v U3/_66_/D (DFF_X1)
+                                  0.09   data arrival time
+
+                  0.00    0.00    0.00   clock clk2 (rise edge)
+                          0.00    0.00   clock network delay (ideal)
+                          0.00    0.00   clock reconvergence pessimism
+                                  0.00 ^ U3/_66_/CK (DFF_X1)
+                          0.00    0.00   library hold time
+                                  0.00   data required time
+-----------------------------------------------------------------------------
+                                  0.00   data required time
+                                 -0.09   data arrival time
+-----------------------------------------------------------------------------
+                                  0.09   slack (MET)
+
+
+No differences found.

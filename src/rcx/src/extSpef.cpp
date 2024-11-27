@@ -34,9 +34,9 @@
 
 #include <algorithm>
 
-#include "dbExtControl.h"
 #include "name.h"
-#include "parse.h"
+#include "odb/dbExtControl.h"
+#include "odb/parse.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
@@ -249,7 +249,7 @@ void extSpef::reinitCapTable(Ath__array1D<double*>* table, const uint n)
 {
   if (n > table->getSize()) {
     const uint prevCnt = table->getSize();
-    table->reSize(n);
+    table->resize(n);
     table->resetCnt(prevCnt);
     double* a = new double[_cornerCnt];
     table->add(a);
@@ -355,14 +355,16 @@ void extSpef::writeITerm(const uint node)
     if (wire) {
       jid = wire->getTermJid(iterm->getId());
     }
-    int x1 = 0;
-    int y1 = 0;
+    odb::Point pt;
     if (_termJxy && jid) {
-      wire->getCoord(jid, x1, y1);
+      pt = wire->getCoord(jid);
     } else {
+      int x1 = 0;
+      int y1 = 0;
       iterm->getAvgXY(&x1, &y1);
+      pt = {x1, y1};
     }
-    fprintf(_outFP, "*C %f %f ", db2nm * x1, db2nm * y1);
+    fprintf(_outFP, "*C %f %f ", db2nm * pt.x(), db2nm * pt.y());
   }
   fprintf(_outFP,
           "*D %s\n",
@@ -488,14 +490,16 @@ void extSpef::writePort(const uint node)
   if (wire) {
     jid = wire->getTermJid(-bterm->getId());
   }
-  int x1 = 0;
-  int y1 = 0;
+  odb::Point pt;
   if (_termJxy && jid) {
-    wire->getCoord(jid, x1, y1);
+    pt = wire->getCoord(jid);
   } else {
+    int x1 = 0;
+    int y1 = 0;
     bterm->getFirstPinLocation(x1, y1);
+    pt = {x1, y1};
   }
-  fprintf(_outFP, " *C %f %f\n", db2nm * x1, db2nm * y1);
+  fprintf(_outFP, " *C %f %f\n", db2nm * pt.x(), db2nm * pt.y());
 }
 
 void extSpef::writeSingleRC(const double val, const bool delimeter)

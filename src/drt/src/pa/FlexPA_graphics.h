@@ -41,7 +41,7 @@ class dbDatabase;
 class dbTechLayer;
 }  // namespace odb
 
-namespace fr {
+namespace drt {
 
 class frDesign;
 class frPin;
@@ -64,15 +64,16 @@ class FlexPAGraphics : public gui::Renderer
   FlexPAGraphics(frDebugSettings* settings,
                  frDesign* design,
                  odb::dbDatabase* db,
-                 Logger* logger);
+                 Logger* logger,
+                 RouterConfiguration* router_cfg);
 
   void startPin(frBPin* pin,
                 frInstTerm* inst_term,
-                std::set<frInst*, frBlockObjectComp>* instClass);
+                std::set<frInst*, frBlockObjectComp>* inst_class);
 
   void startPin(frMPin* pin,
                 frInstTerm* inst_term,
-                std::set<frInst*, frBlockObjectComp>* instClass);
+                std::set<frInst*, frBlockObjectComp>* inst_class);
 
   void setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps,
               frAccessPointEnum lower_type,
@@ -89,14 +90,13 @@ class FlexPAGraphics : public gui::Renderer
   void setObjsAndMakers(
       const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
       const std::vector<std::unique_ptr<frMarker>>& markers,
-      const FlexPA::PatternType type);
+      FlexPA::PatternType type);
 
   // Show a message in the status bar
   void status(const std::string& message);
 
   // From Renderer API
-  virtual void drawLayer(odb::dbTechLayer* layer,
-                         gui::Painter& painter) override;
+  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
@@ -112,7 +112,7 @@ class FlexPAGraphics : public gui::Renderer
   frBlock* top_block_;
   std::vector<frAccessPoint> aps_;
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
-  std::vector<frLayerNum> layer_map_;
+  std::vector<std::pair<frLayerNum, std::string>> layer_map_;
   const frAccessPoint* pa_ap_;
   std::vector<const frVia*> pa_vias_;
   std::vector<const frPathSeg*> pa_segs_;
@@ -120,4 +120,4 @@ class FlexPAGraphics : public gui::Renderer
   std::vector<std::pair<Rect, frLayerNum>> shapes_;
 };
 
-}  // namespace fr
+}  // namespace drt

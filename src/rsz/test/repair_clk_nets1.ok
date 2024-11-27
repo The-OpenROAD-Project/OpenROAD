@@ -1,14 +1,10 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: long_wire
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 3 components and 12 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 6 connections.
 [INFO ODB-0133]     Created 4 nets and 6 connections.
-[WARNING RSZ-0065] max wire length less than 720u increases wire delays.
+[WARNING RSZ-0065] max wire length less than 693u increases wire delays.
 [INFO RSZ-0047] Found 1 long wires.
 [INFO RSZ-0048] Inserted 3 buffers in 1 nets.
 CLOCK
@@ -26,15 +22,15 @@ Path Type: max
            0.01    0.00    0.02 ^ u2/A (BUF_X1)
    6.59    0.02    0.03    0.05 ^ u2/Z (BUF_X1)
            0.02    0.00    0.05 ^ wire3/A (BUF_X8)
-  55.14    0.01    0.03    0.08 ^ wire3/Z (BUF_X8)
-           0.06    0.05    0.13 ^ wire2/A (BUF_X16)
-  55.02    0.01    0.03    0.16 ^ wire2/Z (BUF_X16)
-           0.06    0.05    0.21 ^ wire1/A (BUF_X16)
-  43.61    0.01    0.03    0.24 ^ wire1/Z (BUF_X16)
-           0.04    0.03    0.27 ^ u3/A (BUF_X1)
-   0.00    0.01    0.02    0.30 ^ u3/Z (BUF_X1)
-           0.01    0.00    0.30 ^ out1 (out)
-                           0.30   data arrival time
+  42.96    0.01    0.03    0.08 ^ wire3/Z (BUF_X8)
+           0.04    0.03    0.11 ^ wire2/A (BUF_X16)
+  55.02    0.01    0.03    0.14 ^ wire2/Z (BUF_X16)
+           0.06    0.05    0.19 ^ wire1/A (BUF_X16)
+  43.61    0.01    0.03    0.22 ^ wire1/Z (BUF_X16)
+           0.04    0.03    0.25 ^ u3/A (BUF_X1)
+   0.00    0.01    0.02    0.27 ^ u3/Z (BUF_X1)
+           0.01    0.00    0.27 ^ out1 (out)
+                           0.27   data arrival time
 -----------------------------------------------------------------------
 (Path is unconstrained)
 

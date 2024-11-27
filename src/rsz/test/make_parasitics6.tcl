@@ -22,7 +22,10 @@ set_layer_rc -layer metal1 -corner ss \
 set_wire_rc -corner ff -layer metal1
 set_wire_rc -corner ss -layer metal1
 
-estimate_parasitics -placement
+estimate_parasitics -placement -spef_file results/make_parasitics6.spef
 
-report_net -connections -verbose r1/Q -corner ff
-report_net -connections -verbose r1/Q -corner ss
+report_net r1/Q -corner ff
+report_net r1/Q -corner ss
+
+diff_file make_parasitics6_ff.spefok results/make_parasitics6_ff.spef
+diff_file make_parasitics6_ss.spefok results/make_parasitics6_ss.spef

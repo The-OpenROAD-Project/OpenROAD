@@ -43,8 +43,7 @@ using utl::MPL;
 // Class SACoreHardMacro
 // constructors
 SACoreHardMacro::SACoreHardMacro(
-    float outline_width,
-    float outline_height,  // boundary constraints
+    const Rect& outline,
     const std::vector<HardMacro>& macros,
     // weight for different penalty
     float area_weight,
@@ -62,13 +61,10 @@ SACoreHardMacro::SACoreHardMacro(
     float init_prob,
     int max_num_step,
     int num_perturb_per_step,
-    int k,
-    int c,
     unsigned seed,
     Mpl2Observer* graphics,
     utl::Logger* logger)
-    : SimulatedAnnealingCore<HardMacro>(outline_width,
-                                        outline_height,
+    : SimulatedAnnealingCore<HardMacro>(outline,
                                         macros,
                                         area_weight,
                                         outline_weight,
@@ -82,8 +78,6 @@ SACoreHardMacro::SACoreHardMacro(
                                         init_prob,
                                         max_num_step,
                                         num_perturb_per_step,
-                                        k,
-                                        c,
                                         seed,
                                         graphics,
                                         logger)
@@ -91,9 +85,22 @@ SACoreHardMacro::SACoreHardMacro(
   flip_prob_ = flip_prob;
 }
 
+void SACoreHardMacro::run()
+{
+  if (graphics_) {
+    graphics_->startSA();
+  }
+
+  fastSA();
+
+  if (graphics_) {
+    graphics_->endSA(calNormCost());
+  }
+}
+
 float SACoreHardMacro::getAreaPenalty() const
 {
-  const float outline_area = outline_width_ * outline_height_;
+  const float outline_area = outline_.getWidth() * outline_.getHeight();
   return (width_ * height_) / outline_area;
 }
 
@@ -125,15 +132,15 @@ void SACoreHardMacro::calPenalty()
   calGuidancePenalty();
   calFencePenalty();
   if (graphics_) {
-    graphics_->setAreaPenalty(getAreaPenalty());
+    graphics_->setAreaPenalty({area_weight_, getAreaPenalty()});
     graphics_->penaltyCalculated(calNormCost());
   }
 }
 
-void SACoreHardMacro::flipMacro()
+void SACoreHardMacro::flipAllMacros()
 {
-  for (auto& macro : macros_) {
-    macro.flip(false);
+  for (auto& macro_id : pos_seq_) {
+    macros_[macro_id].flip(false);
   }
 }
 
@@ -175,7 +182,7 @@ void SACoreHardMacro::perturb()
   } else {
     action_id_ = 5;
     pre_macros_ = macros_;
-    flipMacro();  // Flip one macro
+    flipAllMacros();
   }
 
   // update the macro locations based on Sequence Pair
@@ -215,6 +222,8 @@ void SACoreHardMacro::restore()
 
 void SACoreHardMacro::initialize()
 {
+  initSequencePair();
+
   std::vector<float> area_penalty_list;
   std::vector<float> outline_penalty_list;
   std::vector<float> wirelength_list;
@@ -222,6 +231,11 @@ void SACoreHardMacro::initialize()
   std::vector<float> fence_penalty_list;
   std::vector<float> width_list;
   std::vector<float> height_list;
+
+  // We don't want to stop in the normalization factor setup
+  Mpl2Observer* save_graphics = graphics_;
+  graphics_ = nullptr;
+
   for (int i = 0; i < num_perturb_per_step_; i++) {
     perturb();
     // store current penalties
@@ -233,6 +247,7 @@ void SACoreHardMacro::initialize()
     guidance_penalty_list.push_back(guidance_penalty_);
     fence_penalty_list.push_back(fence_penalty_);
   }
+  graphics_ = save_graphics;
 
   norm_area_penalty_ = calAverage(area_penalty_list);
   norm_outline_penalty_ = calAverage(outline_penalty_list);
@@ -283,6 +298,15 @@ void SACoreHardMacro::initialize()
   }
 }
 
+void SACoreHardMacro::setWeights(const SACoreWeights& weights)
+{
+  area_weight_ = weights.area;
+  outline_weight_ = weights.outline;
+  wirelength_weight_ = weights.wirelength;
+  guidance_weight_ = weights.guidance;
+  fence_weight_ = weights.fence;
+}
+
 void SACoreHardMacro::printResults()
 {
   debugPrint(
@@ -310,14 +334,14 @@ void SACoreHardMacro::printResults()
              2,
              "width = {}, outline_width = {}",
              width_,
-             outline_width_);
+             outline_.getWidth());
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
              2,
              "height = {}, outline_height = {}",
              height_,
-             outline_height_);
+             outline_.getHeight());
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",

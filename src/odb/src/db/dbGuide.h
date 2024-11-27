@@ -34,7 +34,7 @@
 #pragma once
 
 #include "dbCore.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -61,7 +61,9 @@ class _dbGuide : public _dbObject
   dbId<_dbNet> net_;
   Rect box_;
   dbId<_dbTechLayer> layer_;
+  dbId<_dbTechLayer> via_layer_;
   dbId<_dbGuide> guide_next_;
+  bool is_congested_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGuide& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj);

@@ -14,9 +14,11 @@ foreach ram $rams {
   lappend extra_lef "Nangate45/$ram.lef"
   lappend extra_liberty "Nangate45/$ram.lib"
 }
-set die_area {0 0 924.92 799.4}
-set core_area {10.07 9.8 914.85 789.6}
+set die_area {0 0 500 500}
+set core_area {10 10 490 490}
 
 set cap_margin 35
+
+set global_place_density 0.5
 
 source -echo "flow.tcl"

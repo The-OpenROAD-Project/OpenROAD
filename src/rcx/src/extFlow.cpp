@@ -33,15 +33,13 @@
 #include <map>
 #include <vector>
 
-#include "dbUtil.h"
+#include "rcx/dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 #include "wire.h"
 
 namespace rcx {
 
-using odb::Ath__overlapAdjust;
-using odb::dbCreateNetUtil;
 using odb::dbInst;
 using odb::dbNet;
 using odb::dbRSeg;
@@ -56,7 +54,6 @@ using odb::dbTechLayerType;
 using odb::dbTrackGrid;
 using odb::dbWire;
 using odb::dbWireShapeItr;
-using odb::gs;
 using odb::MAX_INT;
 using odb::MIN_INT;
 using odb::Rect;
@@ -381,8 +378,7 @@ uint extMain::initSearchForNets(int* X1,
   }
   uint layerCnt = n + 1;
 
-  _search = new odb::Ath__gridTable(
-      &maxRect, 2, layerCnt, W, pitchTable, S, X1, Y1);
+  _search = new Ath__gridTable(&maxRect, 2, layerCnt, W, pitchTable, S, X1, Y1);
   _search->setBlock(_block);
   return layerCnt;
 }
@@ -1202,7 +1198,7 @@ uint extMain::couplingFlow(Rect& extRect,
   int lo_sdb[2];
   int hi_sdb[2];
 
-  Ath__overlapAdjust overlapAdj = odb::Z_noAdjust;
+  Ath__overlapAdjust overlapAdj = Z_noAdjust;
   _useDbSdb = true;
   _search->setExtControl(_block,
                          _useDbSdb,
@@ -1232,8 +1228,6 @@ uint extMain::couplingFlow(Rect& extRect,
   uint totPowerWireCnt = powerWireCounter(maxWidth);
   uint totWireCnt = signalWireCounter(maxWidth);
   totWireCnt += totPowerWireCnt;
-
-  logger_->info(RCX, 43, "{} wires to be extracted", totWireCnt);
 
   uint minRes[2];
   minRes[1] = pitchTable[1];
@@ -1352,12 +1346,14 @@ uint extMain::couplingFlow(Rect& extRect,
           = lround(100.0 * (1.0 * totalWiresExtracted / totWireCnt));
 
       if ((totWireCnt > 0) && (totalWiresExtracted > 0)
-          && (percent_extracted - _previous_percent_extracted >= 5.0)) {
+          && (((totWireCnt == totalWiresExtracted)
+               && (percent_extracted > _previous_percent_extracted))
+              || (percent_extracted - _previous_percent_extracted >= 5.0))) {
         logger_->info(RCX,
                       442,
-                      "{:d}% completion -- {:d} wires have been extracted",
+                      "{:d}% of {:d} wires extracted",
                       (int) (100.0 * (1.0 * totalWiresExtracted / totWireCnt)),
-                      totalWiresExtracted);
+                      totWireCnt);
 
         _previous_percent_extracted = percent_extracted;
       }

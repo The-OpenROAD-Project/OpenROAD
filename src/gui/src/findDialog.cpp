@@ -44,7 +44,7 @@ FindObjectDialog::FindObjectDialog(QWidget* parent) : QDialog(parent)
 
 void FindObjectDialog::accept()
 {
-  std::string pattern_to_find = findObjEdit->text().toStdString();
+  std::string pattern_to_find = findObjEdit->text().trimmed().toStdString();
   bool match_case = false;
   if (matchCaseCheckBox->isEnabled()) {
     match_case = matchCaseCheckBox->isChecked();
@@ -79,6 +79,12 @@ void FindObjectDialog::accept()
 void FindObjectDialog::reject()
 {
   QDialog::reject();
+}
+
+int FindObjectDialog::exec()
+{
+  findObjEdit->setFocus();
+  return QDialog::exec();
 }
 
 }  // namespace gui

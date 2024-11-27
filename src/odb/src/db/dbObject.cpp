@@ -32,11 +32,11 @@
 
 #include <cstring>
 
-#include "db.h"
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbProperty.h"
 #include "dbTable.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -67,6 +67,7 @@ static const char* name_tbl[] = {"dbDatabase",
 
                                  // Design Objects
                                  "dbChip",
+                                 "dbGDSLib",
                                  "dbBlock",
                                  "dbInstHdr",
                                  "dbInst",
@@ -91,21 +92,37 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbBPin",
                                  // Generator Code Begin ObjectNames
                                  "dbAccessPoint",
+                                 "dbBusPort",
+                                 "dbDft",
                                  "dbGCellGrid",
+                                 "dbGDSBoundary",
+                                 "dbGDSBox",
+                                 "dbGDSNode",
+                                 "dbGDSPath",
+                                 "dbGDSSRef",
+                                 "dbGDSStructure",
+                                 "dbGDSText",
                                  "dbGlobalConnect",
                                  "dbGroup",
                                  "dbGuide",
                                  "dbIsolation",
                                  "dbLevelShifter",
                                  "dbLogicPort",
+                                 "dbMarker",
+                                 "dbMarkerCategory",
                                  "dbMetalWidthViaMap",
+                                 "dbModBTerm",
                                  "dbModInst",
+                                 "dbModITerm",
+                                 "dbModNet",
                                  "dbModule",
                                  "dbNetTrack",
+                                 "dbPolygon",
                                  "dbPowerDomain",
                                  "dbPowerSwitch",
                                  "dbScanChain",
                                  "dbScanInst",
+                                 "dbScanList",
                                  "dbScanPartition",
                                  "dbScanPin",
                                  "dbTechLayer",
@@ -121,16 +138,19 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbTechLayerEolKeepOutRule",
                                  "dbTechLayerForbiddenSpacingRule",
                                  "dbTechLayerKeepOutZoneRule",
+                                 "dbTechLayerMaxSpacingRule",
                                  "dbTechLayerMinCutRule",
                                  "dbTechLayerMinStepRule",
                                  "dbTechLayerSpacingEolRule",
                                  "dbTechLayerSpacingTablePrlRule",
+                                 "dbTechLayerTwoWiresForbiddenSpcRule",
                                  "dbTechLayerWidthTableRule",
                                  "dbTechLayerWrongDirSpacingRule",
                                  // Generator Code End ObjectNames
 
                                  // Lib Objects
                                  "dbLib",
+                                 "dbGDSLib",
                                  "dbSite",
                                  "dbMaster",
                                  "dbMPin",
@@ -156,14 +176,50 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbProperty",
                                  "dbName"};
 
-const char* dbObject::getObjName() const
+const char* dbObject::getTypeName() const
 {
   return name_tbl[getImpl()->getType()];
 }
 
-const char* dbObject::getObjName(dbObjectType type)
+const char* dbObject::getTypeName(dbObjectType type)
 {
   return name_tbl[type];
+}
+
+dbObjectType dbObject::getType(const char* name, utl::Logger* logger)
+{
+  std::size_t i = 0;
+  for (const char* type_name : name_tbl) {
+    if (strcmp(type_name, name) == 0) {
+      return (dbObjectType) i;
+    }
+
+    i++;
+  }
+
+  logger->error(utl::ODB, 267, "Unable to find {} object type", name);
+
+  // should not get here
+  return (dbObjectType) 0;
+}
+
+// We have to compare the id not only of this object but all its
+// owning objects to properly compare.  For example dbMTerm is owned
+// by dbMaster so two mterms could have the same id within the scope
+// of different masters.
+bool compare_by_id(const dbObject* lhs, const dbObject* rhs)
+{
+  if (lhs == nullptr || rhs == nullptr) {
+    return lhs < rhs;
+  }
+  const auto lhs_id = lhs->getId();
+  const auto rhs_id = rhs->getId();
+  if (lhs_id != rhs_id) {
+    return lhs_id < rhs_id;
+  }
+  const auto lhs_owner = lhs->getImpl()->getOwner();
+  const auto rhs_owner = rhs->getImpl()->getOwner();
+  return compare_by_id(lhs_owner, rhs_owner);
 }
 
 }  // namespace odb

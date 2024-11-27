@@ -33,7 +33,7 @@
 //Generator Code Begin Header
 #pragma once
 
-#include "odb.h"
+#include "odb/odb.h"
 #include "dbCore.h"
 
 {% for include in klass.h_includes %}
@@ -72,7 +72,7 @@ namespace odb {
   // User Code Begin Structs
   // User Code End Structs
 
-  class _{{klass.name}} : public _dbObject
+  class _{{klass.name}} : public _{{klass.type if klass.type else "dbObject"}}
   {
     public:
     {% for _enum in klass.enums %}

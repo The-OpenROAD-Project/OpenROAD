@@ -6,7 +6,7 @@ import grt_aux
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("region_adjustment.def")
 
 gr = design.getGlobalRouter()
@@ -21,7 +21,7 @@ gr.addRegionAdjustment(llx, lly, urx, ury, 2, 0.9)
 guideFile = helpers.make_result_file("region_adjustment.guide")
 
 gr.setVerbose(True)
-gr.globalRoute(True)      # save_guides = True
+gr.globalRoute(True)  # save_guides = True
 
 design.getBlock().writeGuides(guideFile)
 

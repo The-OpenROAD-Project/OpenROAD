@@ -47,7 +47,10 @@ LayoutTabs::LayoutTabs(Options* options,
                        const std::vector<std::unique_ptr<Ruler>>& rulers,
                        Gui* gui,
                        std::function<bool(void)> usingDBU,
+                       std::function<bool(void)> usingPolyDecompView,
                        std::function<bool(void)> showRulerAsEuclidian,
+                       std::function<bool(void)> default_mouse_wheel_zoom,
+                       std::function<int(void)> arrow_keys_scroll_step,
                        QWidget* parent)
     : QTabWidget(parent),
       options_(options),
@@ -57,7 +60,10 @@ LayoutTabs::LayoutTabs(Options* options,
       rulers_(rulers),
       gui_(gui),
       usingDBU_(std::move(usingDBU)),
+      usingPolyDecompView_(std::move(usingPolyDecompView)),
       showRulerAsEuclidian_(std::move(showRulerAsEuclidian)),
+      default_mouse_wheel_zoom_(std::move(default_mouse_wheel_zoom)),
+      arrow_keys_scroll_step_(std::move(arrow_keys_scroll_step)),
       logger_(nullptr)
 {
   setTabBarAutoHide(true);
@@ -86,13 +92,15 @@ void LayoutTabs::blockLoaded(odb::dbBlock* block)
                                  gui_,
                                  usingDBU_,
                                  showRulerAsEuclidian_,
+                                 usingPolyDecompView_,
                                  this);
   viewer->setLogger(logger_);
   viewers_.push_back(viewer);
   if (command_executing_) {
     viewer->commandAboutToExecute();
   }
-  auto scroll = new LayoutScroll(viewer, this);
+  auto scroll = new LayoutScroll(
+      viewer, default_mouse_wheel_zoom_, arrow_keys_scroll_step_, this);
   viewer->blockLoaded(block);
 
   auto tech = block->getTech();
@@ -356,6 +364,13 @@ void LayoutTabs::executionPaused()
 {
   if (current_viewer_) {
     current_viewer_->executionPaused();
+  }
+}
+
+void LayoutTabs::resetCache()
+{
+  for (LayoutViewer* viewer : viewers_) {
+    viewer->resetCache();
   }
 }
 

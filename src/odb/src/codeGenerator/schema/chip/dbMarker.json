@@ -1,0 +1,55 @@
+{
+  "name":"dbMarker",
+  "type":"dbObject",
+  "fields":[
+    {
+      "name":"parent_",
+      "type":"dbId<_dbMarkerCategory>",
+      "flags":["no-set", "no-get"]
+    },
+    {
+      "name":"layer_",
+      "type":"dbId<_dbTechLayer>",
+      "flags":["no-set", "no-get"]
+    },
+    {
+      "name":"visited_",
+      "type":"bool",
+      "bits":1
+    },
+    {
+      "name":"visible_",
+      "type":"bool",
+      "bits":1
+    },
+    {
+      "name":"waived_",
+      "type":"bool",
+      "bits":1
+    },
+    {
+      "name":"comment_",
+      "type":"std::string"
+    },
+    {
+      "name":"line_number_",
+      "type":"int",
+      "default": -1
+    }
+  ],
+  "cpp_includes":[
+    "dbVector.h",
+    "dbMarkerCategory.h",
+    "dbBlock.h",
+    "dbTech.h",
+    "dbTechLayer.h",
+    "dbNet.h",
+    "dbInst.h",
+    "dbObstruction.h",
+    "dbITerm.h",
+    "dbBTerm.h"
+  ],
+  "h_includes": [
+    "dbVector.h"
+  ]
+}

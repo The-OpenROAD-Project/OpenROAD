@@ -49,6 +49,15 @@ struct BundledNet;
 struct Rect;
 class Graphics;
 
+struct SACoreWeights
+{
+  float area = 0.0f;
+  float outline = 0.0f;
+  float wirelength = 0.0f;
+  float guidance = 0.0f;
+  float fence = 0.0f;
+};
+
 // Class SimulatedAnnealingCore is a base class
 // It will have two derived classes:
 // 1) SACoreHardMacro : SA for hard macros.  It will be called by ShapeEngine
@@ -59,8 +68,7 @@ class SimulatedAnnealingCore
 {
  public:
   SimulatedAnnealingCore(
-      float outline_width,
-      float outline_height,          // boundary constraints
+      const Rect& outline,           // boundary constraints
       const std::vector<T>& macros,  // macros (T = HardMacro or T = SoftMacro)
       // weight for different penalty
       float area_weight,
@@ -77,20 +85,25 @@ class SimulatedAnnealingCore
       float init_prob,
       int max_num_step,
       int num_perturb_per_step,
-      int k,
-      int c,
       unsigned seed,
       Mpl2Observer* graphics,
       utl::Logger* logger);
 
+  virtual ~SimulatedAnnealingCore() = default;
+
+  void setNumberOfMacrosToPlace(int macros_to_place)
+  {
+    macros_to_place_ = macros_to_place;
+  };
   void setNets(const std::vector<BundledNet>& nets);
   // Fence corresponds to each macro (macro_id, fence)
   void setFences(const std::map<int, Rect>& fences);
   // Guidance corresponds to each macro (macro_id, guide)
   void setGuides(const std::map<int, Rect>& guides);
+  void setInitialSequencePair(const SequencePair& sequence_pair);
 
   bool isValid() const;
-  bool isValid(float outline_width, float outline_height) const;
+  bool isValid(const Rect& outline) const;
   void writeCostFile(const std::string& file_name) const;
   float getNormCost() const;
   float getWidth() const;
@@ -105,13 +118,25 @@ class SimulatedAnnealingCore
   float getNormFencePenalty() const;
   void getMacros(std::vector<T>& macros) const;
 
-  // Initialize the SA worker
   virtual void initialize() = 0;
-  // Run FastSA algorithm
-  void fastSA();
+  virtual void run() = 0;
   virtual void fillDeadSpace() = 0;
 
  protected:
+  struct Result
+  {
+    SequencePair sequence_pair;
+    // [Only for SoftMacro] The same sequence pair can represent different
+    // floorplan arrangements depending on the macros' shapes.
+    std::map<int, float> macro_id_to_width;
+  };
+
+  void fastSA();
+
+  void initSequencePair();
+  void updateBestValidResult();
+  void useBestValidResult();
+
   virtual float calNormCost() const = 0;
   virtual void calPenalty() = 0;
   void calOutlinePenalty();
@@ -127,6 +152,7 @@ class SimulatedAnnealingCore
   void singleSeqSwap(bool pos);
   void doubleSeqSwap();
   void exchangeMacros();
+  void generateRandomIndices(int& index1, int& index2);
 
   virtual void shrink() = 0;  // Shrink the size of macros
 
@@ -137,8 +163,10 @@ class SimulatedAnnealingCore
   // private member variables
   /////////////////////////////////////////////
   // boundary constraints
-  float outline_width_ = 0.0;
-  float outline_height_ = 0.0;
+  Rect outline_;
+
+  // Number of macros that will actually be part of the sequence pair
+  int macros_to_place_ = 0;
 
   // nets, fences, guides, blockages
   std::vector<BundledNet> nets_;
@@ -160,10 +188,6 @@ class SimulatedAnnealingCore
   float init_temperature_ = 1.0;
   int max_num_step_ = 0;
   int num_perturb_per_step_ = 0;
-  // if step < k_, T = init_T_ / (c_ * step_);
-  // else T = init_T_ / step
-  int k_ = 0;
-  int c_ = 0;
 
   // shrink_factor for dynamic weight
   const float shrink_factor_ = 0.8;
@@ -216,11 +240,15 @@ class SimulatedAnnealingCore
   utl::Logger* logger_ = nullptr;
   Mpl2Observer* graphics_ = nullptr;
 
+  Result best_valid_result_;
+
   std::vector<float> cost_list_;  // store the cost in the list
   std::vector<float> T_list_;     // store the temperature
   // we define accuracy to determine whether the floorplan is valid
   // because the error introduced by the type conversion
   static constexpr float acc_tolerance_ = 0.001;
+
+  bool has_initial_sequence_pair_ = false;
 };
 
 // SACore wrapper function
@@ -229,7 +257,7 @@ template <class T>
 void runSA(T* sa_core)
 {
   sa_core->initialize();
-  sa_core->fastSA();
+  sa_core->run();
 }
 
 }  // namespace mpl2

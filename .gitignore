@@ -27,6 +27,7 @@ test/results
 flow
 
 docs/main
+README2.md
 messages.txt
 Messages.md
 MessagesFinal.md
@@ -37,3 +38,11 @@ debug/
 
 coverage-output
 .metals/
+
+etc/openroad_deps_prefixes.txt
+
+*debhelper*
+debian/changelog
+debian/files
+debian/openroad
+obj-x86_64-linux-gnu/

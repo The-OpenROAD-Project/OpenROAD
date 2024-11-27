@@ -138,6 +138,22 @@
     Tcl_SetObjResult(interp, list);
 }
 
+%typemap(out) std::vector< std::pair< T*, odb::Rect > > {
+    Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
+    for (unsigned int i = 0; i < $1.size(); i++) {
+        Tcl_Obj *sub_list = Tcl_NewListObj(0, nullptr);
+        std::pair< T*, odb::Rect > p = $1.at(i);
+        T* ptr1 = p.first;
+        odb::Rect* ptr2 = new odb::Rect(p.second);
+        Tcl_Obj *obj1 = SWIG_NewInstanceObj(ptr1, $descriptor(T *), 0);
+        Tcl_Obj *obj2 = SWIG_NewInstanceObj(ptr2, $descriptor(odb::Rect *), 0);
+        Tcl_ListObjAppendElement(interp, sub_list, obj1);
+        Tcl_ListObjAppendElement(interp, sub_list, obj2);
+        Tcl_ListObjAppendElement(interp, list, sub_list);
+    }
+    Tcl_SetObjResult(interp, list);
+}
+
 %typemap(in) std::vector< T* >* (std::vector< T* > *v, std::vector< T* > w),
              std::vector< T* >& (std::vector< T* > *v, std::vector< T* > w) {
     Tcl_Obj **listobjv;
@@ -230,6 +246,7 @@ WRAP_OBJECT_RETURN_REF(odb::dbViaParams, params_return)
     Tcl_Obj *obj = Tcl_NewIntObj(*it);
     Tcl_ListObjAppendElement(interp, Tcl_GetObjResult(interp), obj);
   }
+  delete $1;
 }
 
 %apply std::vector<odb::dbShape> &OUTPUT { std::vector<odb::dbShape> & shapes };

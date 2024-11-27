@@ -73,6 +73,28 @@ target_link_libraries(rmp
     ${ABC_LIBRARY}
  )
 
+add_library(rmp_abc_library 
+  abc_library_factory.cpp
+  logic_extractor.cpp
+  logic_cut.cpp
+)
+
+target_include_directories(rmp_abc_library
+  PUBLIC
+    ../include
+  PRIVATE
+    .
+)
+
+target_link_libraries(rmp_abc_library
+  PUBLIC
+    OpenSTA
+    dbSta_lib
+    libabc
+    utl_lib
+    ${ABC_LIBRARY}
+)
+
 if (Python3_FOUND AND BUILD_PYTHON)
   swig_lib(NAME          rmp_py
            NAMESPACE     rmp

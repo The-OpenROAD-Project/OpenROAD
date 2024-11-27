@@ -48,11 +48,11 @@
 #include <limits>
 #include <string>
 
-#include "db.h"
 #include "dbDescriptors.h"
-#include "dbShape.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
+#include "odb/dbShape.h"
 #include "sta/Corner.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/Units.hh"
@@ -77,7 +77,7 @@ const Painter::Color TimingPathRenderer::capture_clock_color_
 static QString convertDelay(float time, sta::Unit* convert)
 {
   if (sta::delayInf(time)) {
-    const QString infinity = "\u221E";
+    const QString infinity = "∞";
 
     if (time < 0) {
       return "-" + infinity;
@@ -110,7 +110,7 @@ int TimingPathsModel::rowCount(const QModelIndex& parent) const
 
 int TimingPathsModel::columnCount(const QModelIndex& parent) const
 {
-  return 6;
+  return getColumnNames().size();
 }
 
 QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
@@ -125,7 +125,11 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
         return Qt::AlignLeft;
       case Required:
       case Arrival:
+      case LogicDelay:
+      case LogicDepth:
+      case Fanout:
       case Slack:
+      case Skew:
         return Qt::AlignRight;
     }
   } else if (role == Qt::DisplayRole) {
@@ -140,6 +144,14 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
         return convertDelay(timing_path->getPathArrivalTime(), time_units);
       case Slack:
         return convertDelay(timing_path->getSlack(), time_units);
+      case Skew:
+        return convertDelay(timing_path->getSkew(), time_units);
+      case LogicDelay:
+        return convertDelay(timing_path->getLogicDelay(), time_units);
+      case LogicDepth:
+        return timing_path->getLogicDepth();
+      case Fanout:
+        return timing_path->getFanout();
       case Start:
         return QString::fromStdString(timing_path->getStartStageName());
       case End:
@@ -153,22 +165,42 @@ QVariant TimingPathsModel::headerData(int section,
                                       Qt::Orientation orientation,
                                       int role) const
 {
-  if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
-    switch (static_cast<Column>(section)) {
+  Column column = static_cast<Column>(section);
+
+  if (role == Qt::ToolTipRole) {
+    switch (column) {
       case Clock:
-        return "Capture Clock";
       case Required:
-        return "Required";
       case Arrival:
-        return "Arrival";
       case Slack:
-        return "Slack";
+      case Fanout:
       case Start:
-        return "Start";
       case End:
-        return "End";
+        // return empty string so that the tooltip goes away
+        // when switching from a header item that has a tooltip
+        // to a header item that doesn't.
+        return "";
+      case Skew:
+        // A rather verbose tooltip, move some of this to a help/documentation
+        // file when one is introduced into OpenROAD. Meanwhile, this is the
+        // best that can be done.
+        return "The difference in arrival times between\n"
+               "source and destination clock pins of a macro/register,\n"
+               "adjusted for CRPR and subtracting a clock period.\n"
+               "Setup and hold times account for internal clock delays.";
+      case LogicDelay:
+        return "Path delay from instances (excluding buffers and consecutive "
+               "inverter pairs)";
+      case LogicDepth:
+        return "Path instances (excluding buffers and consecutive inverter "
+               "pairs)";
     }
   }
+
+  if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
+    return getColumnNames().at(column);
+  }
+
   return QVariant();
 }
 
@@ -204,6 +236,26 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
                    const std::unique_ptr<TimingPath>& path2) {
       return path1->getSlack() < path2->getSlack();
     };
+  } else if (col_index == Skew) {
+    sort_func = [](const std::unique_ptr<TimingPath>& path1,
+                   const std::unique_ptr<TimingPath>& path2) {
+      return path1->getSkew() < path2->getSkew();
+    };
+  } else if (col_index == LogicDelay) {
+    sort_func = [](const std::unique_ptr<TimingPath>& path1,
+                   const std::unique_ptr<TimingPath>& path2) {
+      return path1->getLogicDelay() < path2->getLogicDelay();
+    };
+  } else if (col_index == LogicDepth) {
+    sort_func = [](const std::unique_ptr<TimingPath>& path1,
+                   const std::unique_ptr<TimingPath>& path2) {
+      return path1->getLogicDepth() < path2->getLogicDepth();
+    };
+  } else if (col_index == Fanout) {
+    sort_func = [](const std::unique_ptr<TimingPath>& path1,
+                   const std::unique_ptr<TimingPath>& path2) {
+      return path1->getFanout() < path2->getFanout();
+    };
   } else if (col_index == Start) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
                    const std::unique_ptr<TimingPath>& path2) {
@@ -221,9 +273,11 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
   beginResetModel();
 
   if (sort_order == Qt::AscendingOrder) {
-    std::stable_sort(timing_paths_.begin(), timing_paths_.end(), sort_func);
+    std::stable_sort(
+        timing_paths_.begin(), timing_paths_.end(), std::move(sort_func));
   } else {
-    std::stable_sort(timing_paths_.rbegin(), timing_paths_.rend(), sort_func);
+    std::stable_sort(
+        timing_paths_.rbegin(), timing_paths_.rend(), std::move(sort_func));
   }
 
   endResetModel();
@@ -232,25 +286,27 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
 void TimingPathsModel::populateModel(
     const std::set<const sta::Pin*>& from,
     const std::vector<std::set<const sta::Pin*>>& thru,
-    const std::set<const sta::Pin*>& to)
+    const std::set<const sta::Pin*>& to,
+    const std::string& path_group_name)
 {
   beginResetModel();
   timing_paths_.clear();
-  populatePaths(from, thru, to);
+  populatePaths(from, thru, to, path_group_name);
   endResetModel();
 }
 
 bool TimingPathsModel::populatePaths(
     const std::set<const sta::Pin*>& from,
     const std::vector<std::set<const sta::Pin*>>& thru,
-    const std::set<const sta::Pin*>& to)
+    const std::set<const sta::Pin*>& to,
+    const std::string& path_group_name)
 {
   // On lines of DataBaseHandler
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
   const bool sta_max = sta_->isUseMax();
   sta_->setUseMax(is_setup_);
-  timing_paths_ = sta_->getTimingPaths(from, thru, to);
+  timing_paths_ = sta_->getTimingPaths(from, thru, to, path_group_name);
   sta_->setUseMax(sta_max);
 
   QApplication::restoreOverrideCursor();
@@ -282,7 +338,7 @@ int TimingPathDetailModel::rowCount(const QModelIndex& parent) const
 
 int TimingPathDetailModel::columnCount(const QModelIndex& parent) const
 {
-  return 7;
+  return getColumnNames().size();
 }
 
 const TimingPathNode* TimingPathDetailModel::getNodeAt(
@@ -447,9 +503,18 @@ TimingPathRenderer::TimingPathRenderer() : path_(nullptr), highlight_stage_()
 
 void TimingPathRenderer::highlight(TimingPath* path)
 {
-  path_ = path;
-  highlight_stage_.clear();
+  {
+    std::lock_guard guard(rendering_);
+    path_ = path;
+    highlight_stage_.clear();
+  }
   redraw();
+}
+
+void TimingPathRenderer::clearHighlightNodes()
+{
+  std::lock_guard guard(rendering_);
+  highlight_stage_.clear();
 }
 
 void TimingPathRenderer::highlightNode(const TimingPathNode* node)
@@ -473,6 +538,7 @@ void TimingPathRenderer::highlightNode(const TimingPathNode* node)
     }
 
     if (net != nullptr || inst != nullptr) {
+      std::lock_guard guard(rendering_);
       highlight_stage_.push_back(
           std::make_unique<HighlightStage>(HighlightStage{net, inst, sink}));
     }
@@ -528,6 +594,7 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
 
 void TimingPathRenderer::drawObjects(gui::Painter& painter)
 {
+  std::lock_guard guard(rendering_);
   if (path_ == nullptr) {
     return;
   }
@@ -693,7 +760,9 @@ bool TimingConeRenderer::isSupplyPin(const sta::Pin* pin) const
   auto* network = sta_->getDbNetwork();
   odb::dbITerm* iterm;
   odb::dbBTerm* bterm;
-  network->staToDb(pin, iterm, bterm);
+  odb::dbModITerm* moditerm;
+  odb::dbModBTerm* modbterm;
+  network->staToDb(pin, iterm, bterm, moditerm, modbterm);
   if (iterm != nullptr) {
     if (iterm->getSigType().isSupply()) {
       return true;
@@ -1053,7 +1122,9 @@ void PinSetWidget::showMenu(const QPoint& point)
     auto* gui = Gui::get();
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
-    sta_->getDbNetwork()->staToDb(pin, iterm, bterm);
+    odb::dbModITerm* moditerm;
+    odb::dbModBTerm* modbterm;
+    sta_->getDbNetwork()->staToDb(pin, iterm, bterm, moditerm, modbterm);
     if (iterm != nullptr) {
       emit inspect(gui->makeSelected(iterm));
     } else {

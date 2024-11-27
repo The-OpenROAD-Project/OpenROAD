@@ -38,6 +38,7 @@
 #include "FastRoute.h"
 #include "grt/GlobalRouter.h"
 #include "heatMap.h"
+#include "heatMapRudy.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
@@ -77,7 +78,10 @@ void initGlobalRouter(OpenRoad* openroad)
       openroad->getAntennaChecker(),
       openroad->getOpendp(),
       std::make_unique<grt::RoutingCongestionDataSource>(openroad->getLogger(),
-                                                         openroad->getDb()));
+                                                         openroad->getDb()),
+      std::make_unique<grt::RUDYDataSource>(openroad->getLogger(),
+                                            openroad->getGlobalRouter(),
+                                            openroad->getDb()));
 }
 
 }  // namespace ord

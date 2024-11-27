@@ -82,11 +82,11 @@ class Replace
             utl::Logger* logger);
   void reset();
 
-  void doIncrementalPlace();
+  void doIncrementalPlace(int threads);
   void doInitialPlace();
-  void runMBFF(int max_sz, float alpha, float beta, int threads);
+  void runMBFF(int max_sz, float alpha, float beta, int threads, int num_paths);
 
-  int doNesterovPlace(int start_iter = 0);
+  int doNesterovPlace(int threads, int start_iter = 0);
 
   // Initial Place param settings
   void setInitialPlaceMaxIter(int iter);
@@ -107,7 +107,7 @@ class Replace
   void setMinPhiCoef(float minPhiCoef);
   void setMaxPhiCoef(float maxPhiCoef);
 
-  float getUniformTargetDensity();
+  float getUniformTargetDensity(int threads);
 
   // HPWL: half-parameter wire length.
   void setReferenceHpwl(float refHpwl);
@@ -116,12 +116,12 @@ class Replace
   void setPadLeft(int padding);
   void setPadRight(int padding);
 
-  void setForceCPU(bool force_cpu);
   void setTimingDrivenMode(bool mode);
 
   void setSkipIoMode(bool mode);
 
   void setRoutabilityDrivenMode(bool mode);
+  void setRoutabilityUseGrt(bool mode);
   void setRoutabilityCheckOverflow(float overflow);
   void setRoutabilityMaxDensity(float density);
 
@@ -136,6 +136,7 @@ class Replace
 
   void addTimingNetWeightOverflow(int overflow);
   void setTimingNetWeightMax(float max);
+  void setKeepResizeBelowOverflow(float overflow);
 
   void setDebug(int pause_iterations,
                 int update_iterations,
@@ -144,7 +145,7 @@ class Replace
                 odb::dbInst* inst = nullptr);
 
  private:
-  bool initNesterovPlace();
+  bool initNesterovPlace(int threads);
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
@@ -167,7 +168,6 @@ class Replace
   int initialPlaceMaxSolverIter_ = 100;
   int initialPlaceMaxFanout_ = 200;
   float initialPlaceNetWeightScale_ = 800;
-  bool forceCPU_ = false;
 
   int total_placeable_insts_ = 0;
 
@@ -182,11 +182,11 @@ class Replace
   float maxPhiCoef_ = 1.05;
   float referenceHpwl_ = 446000000;
 
-  float routabilityCheckOverflow_ = 0.2;
+  float routabilityCheckOverflow_ = 0.3;
   float routabilityMaxDensity_ = 0.99;
-  float routabilityTargetRcMetric_ = 1.25;
-  float routabilityInflationRatioCoef_ = 2.5;
-  float routabilityMaxInflationRatio_ = 2.5;
+  float routabilityTargetRcMetric_ = 1.01;
+  float routabilityInflationRatioCoef_ = 5;
+  float routabilityMaxInflationRatio_ = 8;
 
   // routability RC metric coefficients
   float routabilityRcK1_ = 1.0;
@@ -198,9 +198,11 @@ class Replace
   int routabilityMaxInflationIter_ = 4;
 
   float timingNetWeightMax_ = 1.9;
+  float keepResizeBelowOverflow_ = 0.3;
 
   bool timingDrivenMode_ = true;
   bool routabilityDrivenMode_ = true;
+  bool routabilityUseRudy_ = true;
   bool uniformTargetDensityMode_ = false;
   bool skipIoMode_ = false;
 

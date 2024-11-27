@@ -137,8 +137,7 @@ clock_tree_synthesis  -root_buf $cts_buffer \
     -sink_clustering_enable \
     -sink_clustering_max_diameter $cts_cluster_diameter \
     -balance_levels \
-    -obstruction_aware \
-    -insertion_delay
+    -obstruction_aware 
 
 set_propagated_clock [all_clocks]
 estimate_parasitics -placement

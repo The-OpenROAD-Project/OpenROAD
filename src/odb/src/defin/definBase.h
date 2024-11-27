@@ -32,14 +32,15 @@
 
 #pragma once
 
+#include <cmath>
 #include <vector>
 
-#include "dbTypes.h"
 #include "defiMisc.hpp"
-#include "defin.h"
 #include "definTypes.h"
-#include "geom.h"
-#include "odb.h"
+#include "odb/dbTypes.h"
+#include "odb/defin.h"
+#include "odb/geom.h"
+#include "odb/odb.h"
 
 namespace utl {
 class Logger;
@@ -69,23 +70,9 @@ class definBase
   void setMode(defin::MODE mode);
   virtual void init();
 
-  int dbdist(int value) { return (int) (value * _dist_factor); }
+  int dbdist(int value) { return value * _dist_factor; }
 
-  int dbdist(double value)
-  {
-    if (value < 0.0)
-      return (int) (value * _dist_factor - 0.5);
-    else
-      return (int) (value * _dist_factor + 0.5);
-  }
-
-  int round(double value)
-  {
-    if (value < 0.0)
-      return (int) (value - 0.5);
-    else
-      return (int) (value + 0.5);
-  }
+  int dbdist(double value) { return lround(value * _dist_factor); }
 
   void translate(const std::vector<defPoint>& defpoints,
                  std::vector<Point>& points)

@@ -50,7 +50,6 @@ using std::ofstream;
 using std::string;
 using std::vector;
 
-const int BTree::Undefined = Dimension::Undefined;
 // ========================================================
 BTree::BTree(const HardBlockInfoType& blockinfo)
     : tree(in_tree),

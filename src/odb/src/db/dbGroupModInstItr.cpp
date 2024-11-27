@@ -85,8 +85,9 @@ uint dbGroupModInstItr::size(dbObject* parent)
 
   for (id = dbGroupModInstItr::begin(parent);
        id != dbGroupModInstItr::end(parent);
-       id = dbGroupModInstItr::next(id))
+       id = dbGroupModInstItr::next(id)) {
     ++cnt;
+  }
 
   return cnt;
 }

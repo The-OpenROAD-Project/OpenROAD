@@ -51,10 +51,13 @@ const gui::Painter::Color PDNRenderer::obstruction_color_
     = gui::Painter::Color(gui::Painter::gray, 100);
 const gui::Painter::Color PDNRenderer::repair_color_
     = gui::Painter::Color(gui::Painter::light_gray, 100);
+const gui::Painter::Color PDNRenderer::repair_outline_color_
+    = gui::Painter::Color(gui::Painter::yellow, 100);
 
 PDNRenderer::PDNRenderer(PdnGen* pdn) : pdn_(pdn)
 {
   addDisplayControl(grid_obs_text_, false);
+  addDisplayControl(initial_obs_text_, false);
   addDisplayControl(obs_text_, false);
   addDisplayControl(vias_text_, true);
   addDisplayControl(followpins_text_, true);
@@ -70,37 +73,37 @@ PDNRenderer::PDNRenderer(PdnGen* pdn) : pdn_(pdn)
 void PDNRenderer::update()
 {
   shapes_.clear();
+  initial_obstructions_.clear();
   grid_obstructions_.clear();
   vias_.clear();
   repair_.clear();
 
+  if (!pdn_->getDomains().empty()) {
+    auto* domain = pdn_->getDomains()[0];
+    ShapeVectorMap initial_shapes;
+    Grid::makeInitialObstructions(
+        domain->getBlock(), initial_shapes, {}, domain->getLogger());
+    initial_obstructions_
+        = Shape::convertVectorToObstructionTree(initial_shapes);
+  }
+
+  ShapeVectorMap shapes;
+  ShapeVectorMap obs;
+  std::vector<ViaPtr> vias;
   for (const auto& domain : pdn_->getDomains()) {
     for (auto* net : domain->getBlock()->getNets()) {
-      ShapeTreeMap net_shapes;
-      Shape::populateMapFromDb(net, net_shapes);
-      for (const auto& [layer, net_obs_layer] : net_shapes) {
-        auto& obs_layer = grid_obstructions_[layer];
-        for (const auto& [box, shape] : net_obs_layer) {
-          obs_layer.insert({shape->getObstructionBox(), shape});
-        }
-      }
+      Shape::populateMapFromDb(net, obs);
     }
 
     for (const auto& grid : domain->getGrids()) {
-      grid->getGridLevelObstructions(grid_obstructions_);
+      grid->getGridLevelObstructions(obs);
 
-      for (const auto& [layer, shapes] : grid->getShapes()) {
-        auto& save_shapes = shapes_[layer];
-        for (const auto& shape : shapes) {
-          save_shapes.insert(shape);
-        }
+      for (const auto& [layer, grid_shapes] : grid->getShapes()) {
+        shapes[layer].insert(
+            shapes[layer].end(), grid_shapes.begin(), grid_shapes.end());
       }
 
-      std::vector<ViaPtr> vias;
       grid->getVias(vias);
-      for (const auto& via : vias) {
-        vias_.insert({via->getBox(), via});
-      }
 
       for (const auto& repair :
            RepairChannelStraps::findRepairChannels(grid.get())) {
@@ -108,6 +111,7 @@ void PDNRenderer::update()
         channel.source = repair.connect_to;
         channel.target = repair.target->getLayer();
         channel.rect = repair.area;
+        channel.available_rect = repair.available_area;
         std::string nets;
         for (auto* net : repair.nets) {
           if (!nets.empty()) {
@@ -125,6 +129,10 @@ void PDNRenderer::update()
     }
   }
 
+  shapes_ = Shape::convertVectorToTree(shapes);
+  grid_obstructions_ = Shape::convertVectorToObstructionTree(obs);
+  vias_ = Via::convertVectorToTree(vias);
+
   redraw();
 }
 
@@ -136,17 +144,27 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   const int min_shape = 1.0 / painter.getPixelsPerDBU();
 
   const odb::Rect paint_rect = painter.getBounds();
-  Box paint_box(Point(paint_rect.xMin(), paint_rect.yMin()),
-                Point(paint_rect.xMax(), paint_rect.yMax()));
+
+  if (checkDisplayControl(initial_obs_text_)) {
+    painter.setPen(gui::Painter::highlight, true);
+    painter.setBrush(gui::Painter::transparent);
+    auto& shapes = initial_obstructions_[layer];
+    for (auto it = shapes.qbegin(bgi::intersects(paint_rect));
+         it != shapes.qend();
+         it++) {
+      const auto& shape = *it;
+      painter.drawRect(shape->getObstruction());
+    }
+  }
 
   if (checkDisplayControl(grid_obs_text_)) {
     painter.setPen(gui::Painter::highlight, true);
     painter.setBrush(gui::Painter::transparent);
     auto& shapes = grid_obstructions_[layer];
-    for (auto it = shapes.qbegin(bgi::intersects(paint_box));
+    for (auto it = shapes.qbegin(bgi::intersects(paint_rect));
          it != shapes.qend();
          it++) {
-      const auto& shape = it->second;
+      const auto& shape = *it;
       painter.drawRect(shape->getObstruction());
     }
   }
@@ -157,10 +175,10 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   const bool show_obs = checkDisplayControl(obs_text_);
   auto& shapes = shapes_[layer];
   if (show_rings || show_followpins || show_straps) {
-    for (auto it = shapes.qbegin(bgi::intersects(paint_box));
+    for (auto it = shapes.qbegin(bgi::intersects(paint_rect));
          it != shapes.qend();
          it++) {
-      const auto& shape = it->second;
+      const auto& shape = *it;
 
       if (shape->getLayer() != layer) {
         continue;
@@ -237,9 +255,10 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 
   if (checkDisplayControl(vias_text_)) {
-    for (auto it = vias_.qbegin(bgi::intersects(paint_box)); it != vias_.qend();
+    for (auto it = vias_.qbegin(bgi::intersects(paint_rect));
+         it != vias_.qend();
          it++) {
-      const auto& via = it->second;
+      const auto& via = *it;
       if (layer->getNumber() < via->getLowerLayer()->getNumber()
           || layer->getNumber() > via->getUpperLayer()->getNumber()) {
         continue;
@@ -271,6 +290,8 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       if (layer == repair.source || layer == repair.target) {
         painter.setPenAndBrush(repair_color_, true);
         painter.drawRect(repair.rect);
+        painter.setPenAndBrush(repair_outline_color_, true, gui::Painter::NONE);
+        painter.drawRect(repair.available_rect);
 
         const odb::Rect name_box = painter.stringBoundaries(
             0, 0, gui::Painter::Anchor::BOTTOM_LEFT, repair.text);
@@ -288,6 +309,11 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
 void PDNRenderer::drawObjects(gui::Painter& painter)
 {
+}
+
+void PDNRenderer::pause()
+{
+  gui::Gui::get()->pause();
 }
 
 }  // namespace pdn

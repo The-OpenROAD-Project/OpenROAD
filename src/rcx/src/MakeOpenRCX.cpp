@@ -34,7 +34,6 @@
 #include "rcx/MakeOpenRCX.h"
 
 #include "ord/OpenRoad.hh"
-#include "ord/Version.hh"
 #include "rcx/ext.h"
 #include "sta/StaMain.hh"
 
@@ -63,11 +62,14 @@ void deleteOpenRCX(rcx::Ext* extractor)
 
 void initOpenRCX(OpenRoad* openroad)
 {
-  openroad->getOpenRCX()->init(
-      openroad->getDb(), openroad->getLogger(), OPENROAD_VERSION, [openroad] {
-        rcx::Rcx_Init(openroad->tclInterp());
-        sta::evalTclInit(openroad->tclInterp(), sta::rcx_tcl_inits);
-      });
+  openroad->getOpenRCX()->init(openroad->getDb(),
+                               openroad->getLogger(),
+                               ord::OpenRoad::getVersion(),
+                               [openroad] {
+                                 rcx::Rcx_Init(openroad->tclInterp());
+                                 sta::evalTclInit(openroad->tclInterp(),
+                                                  sta::rcx_tcl_inits);
+                               });
 }
 
 }  // namespace ord

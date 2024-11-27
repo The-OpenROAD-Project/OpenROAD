@@ -32,7 +32,7 @@
 
 #include "frDesign.h"
 
-namespace fr {
+namespace drt {
 class drNet;
 class drPatchWire;
 class FlexDRWorker;
@@ -45,6 +45,7 @@ class FlexGCWorker
   // constructors
   FlexGCWorker(frTechObject* techIn,
                Logger* logger,
+               RouterConfiguration* router_cfg,
                FlexDRWorker* drWorkerIn = nullptr);
   ~FlexGCWorker();
   // setters
@@ -89,12 +90,11 @@ struct MarkerId
   Rect box;
   frLayerNum lNum;
   frConstraint* con;
-  frBlockObject* src1;
-  frBlockObject* src2;
+  std::set<frBlockObject*> srcs;
   bool operator<(const MarkerId& rhs) const
   {
-    return std::tie(box, lNum, con, src1, src2)
-           < std::tie(rhs.box, rhs.lNum, rhs.con, rhs.src1, rhs.src2);
+    return std::tie(box, lNum, con, srcs)
+           < std::tie(rhs.box, rhs.lNum, rhs.con, rhs.srcs);
   }
 };
-}  // namespace fr
+}  // namespace drt

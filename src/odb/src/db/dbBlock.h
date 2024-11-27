@@ -39,11 +39,11 @@
 #include "dbHashTable.h"
 #include "dbIntHashTable.h"
 #include "dbPagedVector.h"
-#include "dbTransform.h"
-#include "dbTypes.h"
 #include "dbVector.h"
-#include "geom.h"
-#include "odb.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -90,11 +90,16 @@ class _dbPowerSwitch;
 class _dbIsolation;
 class _dbLevelShifter;
 class _dbModInst;
+class _dbModITerm;
+class _dbModBTerm;
+class _dbModNet;
+class _dbBusPort;
 class _dbGroup;
 class _dbAccessPoint;
 class _dbGlobalConnect;
 class _dbGuide;
 class _dbNetTrack;
+class _dbMarkerCategory;
 class dbJournal;
 
 class dbNetBTermItr;
@@ -104,6 +109,13 @@ class dbInstITermItr;
 class dbRegionInstItr;
 class dbModuleInstItr;
 class dbModuleModInstItr;
+class dbModuleModBTermItr;
+class dbModuleModInstModITermItr;
+class dbModuleModNetItr;
+class dbModuleModNetModBTermItr;
+class dbModuleModNetModITermItr;
+class dbModuleModNetITermItr;
+class dbModuleModNetBTermItr;
 class dbRegionGroupItr;
 class dbGlobalConnect;
 class dbGroupItr;
@@ -126,6 +138,7 @@ class dbBlockSearch;
 class dbBlockCallBackObj;
 class dbGuideItr;
 class dbNetTrackItr;
+class _dbDft;
 
 struct _dbBlockFlags
 {
@@ -154,6 +167,7 @@ class _dbBlock : public _dbObject
   char* _corner_name_list;
   char* _name;
   Rect _die_area;
+  std::vector<Rect> _blocked_regions_for_pins;
   dbId<_dbTech> _tech;
   dbId<_dbChip> _chip;
   dbId<_dbBox> _bbox;
@@ -171,6 +185,8 @@ class _dbBlock : public _dbObject
   dbHashTable<_dbLogicPort> _logicport_hash;
   dbHashTable<_dbPowerSwitch> _powerswitch_hash;
   dbHashTable<_dbIsolation> _isolation_hash;
+  dbHashTable<_dbMarkerCategory> _marker_category_hash;
+
   dbHashTable<_dbLevelShifter> _levelshifter_hash;
   dbHashTable<_dbGroup> _group_hash;
   dbIntHashTable<_dbInstHdr> _inst_hdr_hash;
@@ -181,6 +197,11 @@ class _dbBlock : public _dbObject
   dbVector<dbId<_dbBlock>> _children;
   dbVector<dbId<_dbTechLayer>> _component_mask_shift;
   uint _currentCcAdjOrder;
+  dbId<_dbDft> _dft;
+  int _min_routing_layer;
+  int _max_routing_layer;
+  int _min_layer_for_clock;
+  int _max_layer_for_clock;
 
   // NON-PERSISTANT-STREAMED-MEMBERS
   dbTable<_dbBTerm>* _bterm_tbl;
@@ -218,10 +239,18 @@ class _dbBlock : public _dbObject
   dbTable<_dbGuide>* _guide_tbl;
   dbTable<_dbNetTrack>* _net_tracks_tbl;
   _dbNameCache* _name_cache;
+  dbTable<_dbDft>* _dft_tbl;
+  dbTable<_dbMarkerCategory>* _marker_categories_tbl;
 
   dbPagedVector<float, 4096, 12>* _r_val_tbl;
   dbPagedVector<float, 4096, 12>* _c_val_tbl;
   dbPagedVector<float, 4096, 12>* _cc_val_tbl;
+
+  dbTable<_dbModBTerm>* _modbterm_tbl;
+  dbTable<_dbModITerm>* _moditerm_tbl;
+  dbTable<_dbModNet>* _modnet_tbl;
+  dbTable<_dbBusPort>* _busport_tbl;
+
   dbTable<_dbCapNode>* _cap_node_tbl;
   dbTable<_dbRSeg>* _r_seg_tbl;
   dbTable<_dbCCSeg>* _cc_seg_tbl;
@@ -240,6 +269,15 @@ class _dbBlock : public _dbObject
   dbRegionInstItr* _region_inst_itr;
   dbModuleInstItr* _module_inst_itr;
   dbModuleModInstItr* _module_modinst_itr;
+  dbModuleModBTermItr* _module_modbterm_itr;
+  dbModuleModInstModITermItr* _module_modinstmoditerm_itr;
+
+  dbModuleModNetItr* _module_modnet_itr;
+  dbModuleModNetModITermItr* _module_modnet_moditerm_itr;
+  dbModuleModNetModBTermItr* _module_modnet_modbterm_itr;
+  dbModuleModNetITermItr* _module_modnet_iterm_itr;
+  dbModuleModNetBTermItr* _module_modnet_bterm_itr;
+
   dbRegionGroupItr* _region_group_itr;
   dbGroupItr* _group_itr;
   dbGuideItr* _guide_itr;

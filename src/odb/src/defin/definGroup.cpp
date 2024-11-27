@@ -34,7 +34,7 @@
 
 #include <string>
 
-#include "db.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 namespace odb {
 
@@ -110,37 +110,43 @@ void definGroup::inst(const char* name)
 
 void definGroup::property(const char* name, const char* value)
 {
-  if (cur_group_ == nullptr)
+  if (cur_group_ == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(cur_group_, name);
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbStringProperty::create(cur_group_, name, value);
 }
 
 void definGroup::property(const char* name, int value)
 {
-  if (cur_group_ == nullptr)
+  if (cur_group_ == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(cur_group_, name);
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbIntProperty::create(cur_group_, name, value);
 }
 
 void definGroup::property(const char* name, double value)
 {
-  if (cur_group_ == nullptr)
+  if (cur_group_ == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(cur_group_, name);
 
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbDoubleProperty::create(cur_group_, name, value);
 }
@@ -150,8 +156,9 @@ void definGroup::end()
   if (cur_group_ != nullptr) {
     dbSet<dbProperty> props = dbProperty::getProperties(cur_group_);
 
-    if (!props.empty() && props.orderReversed())
+    if (!props.empty() && props.orderReversed()) {
       props.reverse();
+    }
   }
 }
 

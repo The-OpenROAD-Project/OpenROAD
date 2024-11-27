@@ -59,6 +59,18 @@
     {
       "type": "bit",
       "name": "except_same_corners_"
+    },
+    {
+      "type": "bit",
+      "name": "concave_corner_"
+    },
+    {
+      "type": "bit",
+      "name": "except_rectangle_"
+    },
+    {
+      "type": "bit",
+      "name": "no_adjacent_eol_"
     }
   ],
   "cpp_includes": [

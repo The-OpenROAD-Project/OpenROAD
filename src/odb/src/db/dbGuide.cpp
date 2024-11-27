@@ -33,15 +33,16 @@
 // Generator Code Begin Cpp
 #include "dbGuide.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
+#include "odb/db.h"
 // User Code Begin Includes
 #include "dbBlock.h"
+#include "dbJournal.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbGuide>;
@@ -57,7 +58,13 @@ bool _dbGuide::operator==(const _dbGuide& rhs) const
   if (layer_ != rhs.layer_) {
     return false;
   }
+  if (via_layer_ != rhs.via_layer_) {
+    return false;
+  }
   if (guide_next_ != rhs.guide_next_) {
+    return false;
+  }
+  if (is_congested_ != rhs.is_congested_) {
     return false;
   }
 
@@ -77,7 +84,9 @@ void _dbGuide::differences(dbDiff& diff,
   DIFF_FIELD(net_);
   DIFF_FIELD(box_);
   DIFF_FIELD(layer_);
+  DIFF_FIELD(via_layer_);
   DIFF_FIELD(guide_next_);
+  DIFF_FIELD(is_congested_);
   DIFF_END
 }
 
@@ -87,13 +96,16 @@ void _dbGuide::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(net_);
   DIFF_OUT_FIELD(box_);
   DIFF_OUT_FIELD(layer_);
+  DIFF_OUT_FIELD(via_layer_);
   DIFF_OUT_FIELD(guide_next_);
+  DIFF_OUT_FIELD(is_congested_);
 
   DIFF_END
 }
 
 _dbGuide::_dbGuide(_dbDatabase* db)
 {
+  is_congested_ = false;
 }
 
 _dbGuide::_dbGuide(_dbDatabase* db, const _dbGuide& r)
@@ -101,7 +113,9 @@ _dbGuide::_dbGuide(_dbDatabase* db, const _dbGuide& r)
   net_ = r.net_;
   box_ = r.box_;
   layer_ = r.layer_;
+  via_layer_ = r.via_layer_;
   guide_next_ = r.guide_next_;
+  is_congested_ = r.is_congested_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
@@ -109,7 +123,13 @@ dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
   stream >> obj.net_;
   stream >> obj.box_;
   stream >> obj.layer_;
+  if (obj.getDatabase()->isSchema(db_schema_db_guide_via_layer)) {
+    stream >> obj.via_layer_;
+  }
   stream >> obj.guide_next_;
+  if (obj.getDatabase()->isSchema(db_schema_db_guide_congested)) {
+    stream >> obj.is_congested_;
+  }
   return stream;
 }
 
@@ -118,7 +138,13 @@ dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj)
   stream << obj.net_;
   stream << obj.box_;
   stream << obj.layer_;
+  if (obj.getDatabase()->isSchema(db_schema_db_guide_via_layer)) {
+    stream << obj.via_layer_;
+  }
   stream << obj.guide_next_;
+  if (obj.getDatabase()->isSchema(db_schema_db_guide_congested)) {
+    stream << obj.is_congested_;
+  }
   return stream;
 }
 
@@ -143,6 +169,19 @@ dbTechLayer* dbGuide::getLayer() const
   return odb::dbTechLayer::getTechLayer(tech, obj->layer_);
 }
 
+dbTechLayer* dbGuide::getViaLayer() const
+{
+  _dbGuide* obj = (_dbGuide*) this;
+  auto tech = getDb()->getTech();
+  return odb::dbTechLayer::getTechLayer(tech, obj->via_layer_);
+}
+
+bool dbGuide::isCongested() const
+{
+  _dbGuide* obj = (_dbGuide*) this;
+  return obj->is_congested_;
+}
+
 dbNet* dbGuide::getNet() const
 {
   _dbGuide* obj = (_dbGuide*) this;
@@ -150,14 +189,35 @@ dbNet* dbGuide::getNet() const
   return (dbNet*) block->_net_tbl->getPtr(obj->net_);
 }
 
-dbGuide* dbGuide::create(dbNet* net, dbTechLayer* layer, Rect box)
+dbGuide* dbGuide::create(dbNet* net,
+                         dbTechLayer* layer,
+                         dbTechLayer* via_layer,
+                         Rect box,
+                         bool is_congested)
 {
   _dbNet* owner = (_dbNet*) net;
   _dbBlock* block = (_dbBlock*) owner->getOwner();
   _dbGuide* guide = block->_guide_tbl->create();
+
+  if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: create guide, layer {} box {}",
+               layer->getName(),
+               box);
+    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->pushParam(dbGuideObj);
+    block->_journal->pushParam(guide->getOID());
+    block->_journal->endAction();
+  }
+
   guide->layer_ = layer->getImpl()->getOID();
+  guide->via_layer_ = via_layer->getImpl()->getOID();
   guide->box_ = box;
   guide->net_ = owner->getId();
+  guide->is_congested_ = is_congested;
   guide->guide_next_ = owner->guides_;
   owner->guides_ = guide->getOID();
   return (dbGuide*) guide;
@@ -175,16 +235,37 @@ void dbGuide::destroy(dbGuide* guide)
   _dbNet* net = (_dbNet*) guide->getNet();
   _dbGuide* _guide = (_dbGuide*) guide;
 
+  if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: destroy guide, id: {}",
+               guide->getId());
+    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->pushParam(dbGuideObj);
+    block->_journal->pushParam(net->getOID());
+    block->_journal->pushParam(_guide->box_.xMin());
+    block->_journal->pushParam(_guide->box_.yMin());
+    block->_journal->pushParam(_guide->box_.xMax());
+    block->_journal->pushParam(_guide->box_.yMax());
+    block->_journal->pushParam(_guide->layer_);
+    block->_journal->pushParam(_guide->via_layer_);
+    block->_journal->pushParam(_guide->is_congested_);
+    block->_journal->endAction();
+  }
+
   uint id = _guide->getOID();
   _dbGuide* prev = nullptr;
   uint cur = net->guides_;
   while (cur) {
     _dbGuide* c = block->_guide_tbl->getPtr(cur);
     if (cur == id) {
-      if (prev == nullptr)
+      if (prev == nullptr) {
         net->guides_ = _guide->guide_next_;
-      else
+      } else {
         prev->guide_next_ = _guide->guide_next_;
+      }
       break;
     }
     prev = c;
@@ -193,6 +274,14 @@ void dbGuide::destroy(dbGuide* guide)
 
   dbProperty::destroyProperties(guide);
   block->_guide_tbl->destroy((_dbGuide*) guide);
+}
+
+dbSet<dbGuide>::iterator dbGuide::destroy(dbSet<dbGuide>::iterator& itr)
+{
+  dbGuide* g = *itr;
+  dbSet<dbGuide>::iterator next = ++itr;
+  destroy(g);
+  return next;
 }
 
 // User Code End dbGuidePublicMethods

@@ -34,9 +34,8 @@
 
 #include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
-#include "global.h"
 
-namespace fr {
+namespace drt {
 class FlexWavefrontGrid
 {
  public:
@@ -164,4 +163,4 @@ class FlexWavefront
  private:
   myPriorityQueue wavefrontPQ_;
 };
-}  // namespace fr
+}  // namespace drt

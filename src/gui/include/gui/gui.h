@@ -58,7 +58,6 @@ class Logger;
 namespace gui {
 class HeatMapDataSource;
 class PlacementDensityDataSource;
-class RUDYDataSource;
 class Painter;
 class Selected;
 class Options;
@@ -201,6 +200,7 @@ class Painter
   // height of the X.
   virtual void drawX(int x, int y, int size) = 0;
 
+  virtual void drawPolygon(const odb::Polygon& polygon) = 0;
   virtual void drawPolygon(const std::vector<odb::Point>& points) = 0;
 
   enum Anchor
@@ -265,7 +265,7 @@ class Descriptor
   virtual std::string getName(std::any object) const = 0;
   virtual std::string getShortName(std::any object) const
   {
-    return getName(object);
+    return getName(std::move(object));
   }
   virtual std::string getTypeName() const = 0;
   virtual std::string getTypeName(std::any /* object */) const
@@ -343,6 +343,10 @@ class Descriptor
   // and brush before calling.
   virtual void highlight(std::any object, Painter& painter) const = 0;
   virtual bool isSlowHighlight(std::any /* object */) const { return false; }
+
+  static std::string convertUnits(double value,
+                                  bool area = false,
+                                  int digits = 3);
 };
 
 // An object selected in the gui.  The object is stored as a
@@ -356,7 +360,7 @@ class Selected
   Selected() : object_({}), descriptor_(nullptr) {}
 
   Selected(std::any object, const Descriptor* descriptor)
-      : object_(object), descriptor_(descriptor)
+      : object_(std::move(object)), descriptor_(descriptor)
   {
   }
 
@@ -622,6 +626,7 @@ class Gui
                           const std::string& corner = "",
                           int width_px = 0,
                           int height_px = 0);
+  void selectClockviewerClock(const std::string& clock_name);
 
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);
@@ -678,8 +683,8 @@ class Gui
   void timingCone(odbTerm term, bool fanin, bool fanout);
   void timingPathsThrough(const std::set<odbTerm>& terms);
 
-  // open DRC
-  void loadDRC(const std::string& filename);
+  // open markers
+  void selectMarkers(odb::dbMarkerCategory* markers);
 
   // Force an immediate redraw.
   void redraw();
@@ -700,7 +705,11 @@ class Gui
   void hideGui();
 
   // Called to show the gui and return to tcl command line
-  void showGui(const std::string& cmds = "", bool interactive = true);
+  void showGui(const std::string& cmds = "",
+               bool interactive = true,
+               bool load_settings = true);
+  void minimize();
+  void unminimize();
 
   // set the system logger
   void setLogger(utl::Logger* logger);
@@ -721,6 +730,8 @@ class Gui
   Renderer::Setting getHeatMapSetting(const std::string& name,
                                       const std::string& option);
   void dumpHeatMap(const std::string& name, const std::string& file);
+
+  void selectHelp(const std::string& item);
 
   // accessors for to add and remove commands needed to restore the state of the
   // gui
@@ -797,7 +808,6 @@ class Gui
   std::set<Renderer*> renderers_;
 
   std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map_;
-  std::unique_ptr<RUDYDataSource> rudy_heat_map_;
 
   static Gui* singleton_;
 };
@@ -807,6 +817,8 @@ int startGui(int& argc,
              char* argv[],
              Tcl_Interp* interp,
              const std::string& script = "",
-             bool interactive = true);
+             bool interactive = true,
+             bool load_settings = true,
+             bool minimize = false);
 
 }  // namespace gui

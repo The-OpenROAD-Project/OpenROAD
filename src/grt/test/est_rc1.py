@@ -8,7 +8,7 @@ tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
 tech.readLiberty("Nangate45/Nangate45_typ.lib")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 gcddef = os.path.join(test_path, "gcd.def")
 design.readDef(gcddef)
 gr = design.getGlobalRouter()
@@ -20,4 +20,4 @@ gr.globalRoute(True)
 
 # FIXME Update when we have Python versions of the following
 design.evalTclString("estimate_parasitics -global_routing")
-design.evalTclString("report_net -connections -verbose -digits 3 clk")
+design.evalTclString("report_net -digits 3 clk")

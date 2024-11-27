@@ -5,6 +5,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "ord/OpenRoad.hh"
+#include "sta/Property.hh"
 #include "sta/VerilogWriter.hh"
 
 namespace ord {
@@ -19,12 +20,19 @@ using sta::Instance;
 %import "odb.i"
 %include "../../Exception.i"
 // OpenSTA swig files
-%include "tcl/StaTcl.i"
-%include "tcl/NetworkEdit.i"
-%include "sdf/Sdf.i"
+%include "tcl/StaTclTypes.i"
 %include "dcalc/DelayCalc.i"
+%include "graph/Graph.i"
+%include "liberty/Liberty.i"
+%include "network/Network.i"
+%include "network/NetworkEdit.i"
 %include "parasitics/Parasitics.i"
 %include "power/Power.i"
+%include "sdc/Sdc.i"
+%include "sdf/Sdf.i"
+%include "search/Search.i"
+%include "spice/WriteSpice.i"
+%include "util/Util.i"
 
 %inline %{
 
@@ -102,7 +110,9 @@ sta_to_db_port(Port *port)
   Pin *pin = db_network->findPin(db_network->topInstance(), port);
   dbITerm *iterm;
   dbBTerm *bterm;
-  db_network->staToDb(pin, iterm, bterm);
+  dbModITerm *moditerm;
+  dbModBTerm *modbterm;
+  db_network->staToDb(pin, iterm, bterm, moditerm, modbterm);
   return bterm;
 }
 
@@ -113,8 +123,18 @@ sta_to_db_pin(Pin *pin)
   sta::dbNetwork *db_network = openroad->getDbNetwork();
   dbITerm *iterm;
   dbBTerm *bterm;
-  db_network->staToDb(pin, iterm, bterm);
+  dbModITerm *moditerm;
+  dbModBTerm* modbterm;
+  db_network->staToDb(pin, iterm, bterm, moditerm, modbterm);
   return iterm;
+}
+
+Port *
+sta_pin_to_port(Pin *pin)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  return db_network->port(pin);
 }
 
 odb::dbNet *
@@ -144,6 +164,15 @@ db_network_defined()
   db_network->readDefAfter(block);
 }
 
+void
+report_cell_usage_cmd(odb::dbModule* mod, const bool verbose)
+{
+  cmdLinkedNetwork();
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->report_cell_usage(mod, verbose);
+}
+
 // Copied from sta/verilog/Verilog.i because we don't want sta::read_verilog
 // that is in the same file.
 void
@@ -154,10 +183,19 @@ write_verilog_cmd(const char *filename,
 {
   // This does NOT want the SDC (cmd) network because it wants
   // to see the sta internal names.
-  Sta *sta = Sta::sta();
+  ord::OpenRoad *openroad = ord::getOpenRoad();  
+  sta::dbSta *sta = openroad->getSta();
   Network *network = sta->network();
   sta::writeVerilog(filename, sort, include_pwr_gnd, remove_cells, network);
   delete remove_cells;
+}
+
+void
+replace_design_cmd(odb::dbModInst* mod_inst, odb::dbModule* module)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  db_network->replaceDesign(mod_inst, module);
 }
 
 %} // inline

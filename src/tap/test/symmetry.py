@@ -5,15 +5,15 @@ import tap
 tech = Tech()
 tech.readLef("Nangate45/Nangate45_tech.lef")
 tech.readLef("symmetry.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("symmetry.def")
 
 options = tap.Options()
-options.dist   = design.micronToDBU(120)
+options.dist = design.micronToDBU(120)
 options.halo_x = design.micronToDBU(2)
 options.halo_y = design.micronToDBU(2)
 options.tapcell_master = tech.getDB().findMaster("TAPCELL")
-options.endcap_master  = tech.getDB().findMaster("TAPCELL")
+options.endcap_master = tech.getDB().findMaster("TAPCELL")
 
 design.getTapcell().run(options)
 

@@ -1,0 +1,43 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: aes_cipher_top
+[INFO ODB-0130]     Created 388 pins.
+[INFO ODB-0131]     Created 19835 components and 101835 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 39670 connections.
+[INFO ODB-0133]     Created 18908 nets and 62165 connections.
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0073] Using bump pattern with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with an reduction factor of 3x.
+########## IR report #################
+Net              : VDD
+Corner           : default
+Supply voltage   : 1.10e+00 V
+Worstcase voltage: 1.07e+00 V
+Average voltage  : 1.09e+00 V
+Average IR drop  : 1.13e-02 V
+Worstcase IR drop: 2.59e-02 V
+Percentage drop  : 2.35 %
+######################################
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0071] Using all nodes on metal7 as sources.
+########## IR report #################
+Net              : VDD
+Corner           : default
+Supply voltage   : 1.10e+00 V
+Worstcase voltage: 1.09e+00 V
+Average voltage  : 1.10e+00 V
+Average IR drop  : 1.32e-03 V
+Worstcase IR drop: 7.19e-03 V
+Percentage drop  : 0.65 %
+######################################
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0072] Using strap pattern on metal8 with pitch 8.0000um and offset 4.0000um.
+########## IR report #################
+Net              : VDD
+Corner           : default
+Supply voltage   : 1.10e+00 V
+Worstcase voltage: 1.09e+00 V
+Average voltage  : 1.10e+00 V
+Average IR drop  : 1.32e-03 V
+Worstcase IR drop: 7.19e-03 V
+Percentage drop  : 0.65 %
+######################################

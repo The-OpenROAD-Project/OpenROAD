@@ -1,10 +1,5 @@
-[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
-[INFO ODB-0223]     Created 13 technology layers
-[INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
-[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd_std_cell.lef
-[INFO ODB-0225]     Created 437 library cells
-[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd_std_cell.lef
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
 [INFO ODB-0128] Design: hi_fanout
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 250 components and 1500 component-terminals.
@@ -22,7 +17,7 @@ Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
 r0/Q                                    0.17    0.00    0.17 (MET)
 
-[INFO RSZ-0058] Using max wire length 2395um.
+[INFO RSZ-0058] Using max wire length 2406um.
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0038] Inserted 14 buffers in 1 nets.

@@ -1,0 +1,71 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[WARNING GPL-0001] a1 toplevel port is not placed!
+       Replace will regard a1 is placed in (0, 0)
+[WARNING GPL-0001] a2 toplevel port is not placed!
+       Replace will regard a2 is placed in (0, 0)
+[WARNING GPL-0001] a3 toplevel port is not placed!
+       Replace will regard a3 is placed in (0, 0)
+[WARNING GPL-0001] a4 toplevel port is not placed!
+       Replace will regard a4 is placed in (0, 0)
+[WARNING GPL-0001] a5 toplevel port is not placed!
+       Replace will regard a5 is placed in (0, 0)
+[WARNING GPL-0001] a6 toplevel port is not placed!
+       Replace will regard a6 is placed in (0, 0)
+[WARNING GPL-0001] clk toplevel port is not placed!
+       Replace will regard clk is placed in (0, 0)
+[WARNING GPL-0001] y1 toplevel port is not placed!
+       Replace will regard y1 is placed in (0, 0)
+[WARNING GPL-0001] y2 toplevel port is not placed!
+       Replace will regard y2 is placed in (0, 0)
+[INFO GPL-0006] NumInstances:                 4
+[INFO GPL-0007] NumPlaceInstances:            4
+[INFO GPL-0008] NumFixedInstances:            0
+[INFO GPL-0009] NumDummyInstances:            0
+[INFO GPL-0010] NumNets:                     11
+[INFO GPL-0011] NumPins:                     22
+[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] CoreArea:             47872.020 um^2
+[INFO GPL-0017] NonPlaceInstsArea:        0.000 um^2
+[INFO GPL-0018] PlaceInstsArea:           6.916 um^2
+[INFO GPL-0019] Util:                     0.014 %
+[INFO GPL-0020] StdInstsArea:             6.916 um^2
+[INFO GPL-0021] MacroInstsArea:           0.000 um^2
+[InitialPlace]  Iter: 1 CG residual: 0.00000003 HPWL: 52320
+[InitialPlace]  Iter: 2 CG residual: 0.00000000 HPWL: 54130
+[InitialPlace]  Iter: 3 CG residual: 0.00000000 HPWL: 52513
+[InitialPlace]  Iter: 4 CG residual: 0.00000000 HPWL: 52373
+[InitialPlace]  Iter: 5 CG residual: 0.00000000 HPWL: 52373
+Placement Analysis
+---------------------------------
+total displacement         11.1 u
+average displacement        2.8 u
+max displacement            3.6 u
+original HPWL               1.3 u
+legalized HPWL              7.4 u
+delta HPWL                  470 %
+
+worst slack -0.04
+[INFO RSZ-0058] Using max wire length 693um.
+[INFO RSZ-0094] Found 2 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 2 out of 2 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |    WNS   |   TNS      |  Viol  | Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |            | Endpts | Endpt
+---------------------------------------------------------------------------------------------------
+        0 |       0 |       0 |        0 |      0 |     0 |   -0.039 |       -0.0 |      2 | y2
+       10 |       0 |       6 |        2 |      0 |     2 |   -0.015 |       -0.0 |      2 | y2
+       12 |       0 |       7 |        2 |      0 |     3 |   -0.009 |       -0.0 |      2 | y2
+       13 |       0 |       7 |        2 |      0 |     3 |   -0.009 |       -0.0 |      2 | y2
+      14* |       0 |       7 |        2 |      0 |     3 |   -0.009 |       -0.0 |      2 | y2
+      15* |       0 |       7 |        2 |      0 |     3 |   -0.009 |       -0.0 |      2 | y2
+    final |       0 |       7 |        2 |      0 |     3 |   -0.009 |       -0.0 |      2 | y2
+---------------------------------------------------------------------------------------------------
+[INFO RSZ-0040] Inserted 1 buffers.
+[INFO RSZ-0041] Resized 7 instances.
+[INFO RSZ-0043] Swapped pins on 3 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+No differences found.

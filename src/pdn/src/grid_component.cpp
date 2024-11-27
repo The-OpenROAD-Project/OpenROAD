@@ -37,6 +37,7 @@
 #include "odb/db.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
+#include "via.h"
 
 namespace pdn {
 
@@ -104,11 +105,11 @@ ShapePtr GridComponent::addShape(Shape* shape)
              "Checking against {} shapes",
              shapes.size());
   // check if shape will intersect anything already added
-  std::vector<ShapeValue> intersecting;
-  for (auto it = shapes.qbegin(bgi::intersects(shape_ptr->getRectBox()));
+  std::vector<ShapePtr> intersecting;
+  for (auto it = shapes.qbegin(bgi::intersects(shape_ptr->getRect()));
        it != shapes.qend();
        it++) {
-    auto& intersecting_shape = it->second;
+    auto& intersecting_shape = *it;
     if (!shape_ptr->getRect().overlaps(intersecting_shape->getRect())) {
       continue;
     }
@@ -122,6 +123,10 @@ ShapePtr GridComponent::addShape(Shape* shape)
                  intersecting_shape->getReportText(),
                  shape_ptr->getReportText());
       return nullptr;
+    }
+
+    if (areIntersectionsAllowed()) {
+      continue;
     }
 
     const odb::Rect& other_rect = intersecting_shape->getRect();
@@ -147,12 +152,12 @@ ShapePtr GridComponent::addShape(Shape* shape)
 
   for (const auto& shape_entry : intersecting) {
     // merge and delete intersection
-    shape_ptr->merge(shape_entry.second.get());
+    shape_ptr->merge(shape_entry.get());
     shapes.remove(shape_entry);
   }
 
   shape_ptr->generateObstruction();
-  shapes.insert({shape_ptr->getRectBox(), shape_ptr});
+  shapes.insert(shape_ptr);
 
   // add bpins that touch edges
   odb::Rect die_area = getBlock()->getDieArea();
@@ -197,9 +202,9 @@ void GridComponent::removeShape(Shape* shape)
   }
 
   auto& shapes = shapes_[shape->getLayer()];
-  for (const auto& [box, tree_shape] : shapes) {
+  for (const auto& tree_shape : shapes) {
     if (tree_shape.get() == shape) {
-      shapes.remove({box, tree_shape});
+      shapes.remove(tree_shape);
       return;
     }
   }
@@ -232,7 +237,8 @@ void GridComponent::replaceShape(Shape* shape,
   }
 }
 
-void GridComponent::getObstructions(ShapeTreeMap& obstructions) const
+void GridComponent::getObstructions(
+    Shape::ObstructionTreeMap& obstructions) const
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -242,30 +248,31 @@ void GridComponent::getObstructions(ShapeTreeMap& obstructions) const
              getGrid()->getName());
   for (const auto& [layer, shapes] : shapes_) {
     auto& obs = obstructions[layer];
-    for (const auto& [box, shape] : shapes) {
-      obs.insert({shape->getObstructionBox(), shape});
+    for (const auto& shape : shapes) {
+      obs.insert(shape);
     }
   }
 }
 
-void GridComponent::removeObstructions(ShapeTreeMap& obstructions) const
+void GridComponent::removeObstructions(
+    Shape::ObstructionTreeMap& obstructions) const
 {
   for (const auto& [layer, shapes] : shapes_) {
     auto& obs = obstructions[layer];
-    for (const auto& [box, shape] : shapes) {
-      obs.remove({shape->getObstructionBox(), shape});
+    for (const auto& shape : shapes) {
+      obs.remove(shape);
     }
   }
 }
 
-void GridComponent::getShapes(ShapeTreeMap& shapes) const
+void GridComponent::getShapes(Shape::ShapeTreeMap& shapes) const
 {
   for (const auto& [layer, layer_shapes] : shapes_) {
     shapes[layer].insert(layer_shapes.begin(), layer_shapes.end());
   }
 }
 
-void GridComponent::removeShapes(ShapeTreeMap& shapes) const
+void GridComponent::removeShapes(Shape::ShapeTreeMap& shapes) const
 {
   for (const auto& [layer, layer_shapes] : shapes_) {
     auto& other_shapes = shapes[layer];
@@ -273,7 +280,7 @@ void GridComponent::removeShapes(ShapeTreeMap& shapes) const
   }
 }
 
-void GridComponent::cutShapes(const ShapeTreeMap& obstructions)
+void GridComponent::cutShapes(const Shape::ObstructionTreeMap& obstructions)
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -295,13 +302,13 @@ void GridComponent::cutShapes(const ShapeTreeMap& obstructions)
     }
     const auto& obs = obstructions.at(layer);
     std::map<Shape*, std::vector<Shape*>> replacement_shapes;
-    for (const auto& [box, shape] : shapes) {
+    for (const auto& shape : shapes) {
       std::vector<Shape*> replacements;
       if (!shape->cut(obs, getGrid(), replacements)) {
         continue;
       }
 
-      replacement_shapes[shape.get()] = replacements;
+      replacement_shapes[shape.get()] = std::move(replacements);
     }
 
     for (const auto& [shape, replacement] : replacement_shapes) {
@@ -324,7 +331,7 @@ void GridComponent::writeToDb(
 {
   std::vector<ShapePtr> all_shapes;
   for (const auto& [layer, shapes] : shapes_) {
-    for (const auto& [box, shape] : shapes) {
+    for (const auto& shape : shapes) {
       all_shapes.push_back(shape);
     }
   }
@@ -430,6 +437,19 @@ void GridComponent::checkLayerWidth(odb::dbTechLayer* layer,
                          widths);
     }
   }
+
+  odb::dbTech* tech = layer->getTech();
+  if (tech->hasManufacturingGrid()) {
+    const int double_grid = 2 * tech->getManufacturingGrid();
+    if (width % double_grid != 0) {
+      getLogger()->error(
+          utl::PDN,
+          117,
+          "Width ({:.4f} um) specified must be a multiple of {:.4f} um.",
+          tech_layer.dbuToMicron(width),
+          tech_layer.dbuToMicron(double_grid));
+    }
+  }
 }
 
 void GridComponent::checkLayerSpacing(
@@ -450,6 +470,19 @@ void GridComponent::checkLayerSpacing(
                        tech_layer.dbuToMicron(spacing),
                        layer->getName(),
                        tech_layer.dbuToMicron(min_spacing));
+  }
+
+  odb::dbTech* tech = layer->getTech();
+  if (tech->hasManufacturingGrid()) {
+    const int grid = tech->getManufacturingGrid();
+    if (spacing % grid != 0) {
+      getLogger()->error(
+          utl::PDN,
+          118,
+          "Spacing ({:.4f} um) specified must be a multiple of {:.4f} um.",
+          tech_layer.dbuToMicron(spacing),
+          tech_layer.dbuToMicron(grid));
+    }
   }
 }
 

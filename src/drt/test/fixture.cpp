@@ -30,13 +30,15 @@
 
 #include <stdexcept>
 
+#include "global.h"
 #include "odb/db.h"
 
-using namespace fr;
+namespace drt {
 
 Fixture::Fixture()
     : logger(std::make_unique<Logger>()),
-      design(std::make_unique<frDesign>(logger.get())),
+      router_cfg(std::make_unique<RouterConfiguration>()),
+      design(std::make_unique<frDesign>(logger.get(), router_cfg.get())),
       numBlockages(0),
       numTerms(0),
       numMasters(0),
@@ -91,7 +93,7 @@ void Fixture::setupTech(frTechObject* tech)
   // TR assumes that masterslice always exists
   addLayer(tech, "masterslice", dbTechLayerType::MASTERSLICE);
   addLayer(tech, "v0", dbTechLayerType::CUT);
-  addLayer(tech, "m1", dbTechLayerType::ROUTING);
+  addLayer(tech, "m1", dbTechLayerType::ROUTING, dbTechLayerDir::HORIZONTAL);
 }
 
 frMaster* Fixture::makeMacro(const char* name,
@@ -212,18 +214,18 @@ void Fixture::makeDesign()
   auto block = std::make_unique<frBlock>("test");
 
   // GC assumes these fake nets exist
-  auto vssFakeNet = std::make_unique<frNet>("frFakeVSS");
+  auto vssFakeNet = std::make_unique<frNet>("frFakeVSS", router_cfg.get());
   vssFakeNet->setType(dbSigType::GROUND);
   vssFakeNet->setIsFake(true);
   block->addFakeSNet(std::move(vssFakeNet));
 
-  auto vddFakeNet = std::make_unique<frNet>("frFakeVDD");
+  auto vddFakeNet = std::make_unique<frNet>("frFakeVDD", router_cfg.get());
   vddFakeNet->setType(dbSigType::POWER);
   vddFakeNet->setIsFake(true);
   block->addFakeSNet(std::move(vddFakeNet));
 
   design->setTopBlock(std::move(block));
-  USEMINSPACING_OBS = false;
+  router_cfg->USEMINSPACING_OBS = false;
 }
 
 frLef58CornerSpacingConstraint* Fixture::makeCornerConstraint(
@@ -276,18 +278,18 @@ void Fixture::makeMinStepConstraint(frLayerNum layer_num)
   tech->addUConstraint(std::move(con));
 }
 
-void Fixture::makeMinStep58Constraint(frLayerNum layer_num)
+frLef58MinStepConstraint* Fixture::makeMinStep58Constraint(frLayerNum layer_num)
 {
   auto con = std::make_unique<frLef58MinStepConstraint>();
 
   con->setMinStepLength(50);
   con->setMaxEdges(1);
-  con->setEolWidth(200);
-
+  auto rptr = con.get();
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
   layer->addLef58MinStepConstraint(con.get());
   tech->addUConstraint(std::move(con));
+  return rptr;
 }
 
 void Fixture::makeRectOnlyConstraint(frLayerNum layer_num)
@@ -394,6 +396,21 @@ frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
   return rptr;
 }
 
+frLef58WidthTableOrthConstraint* Fixture::makeWidthTblOrthConstraint(
+    frLayerNum layer_num,
+    frCoord horz_spc,
+    frCoord vert_spc)
+{
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  std::unique_ptr<frConstraint> uCon
+      = std::make_unique<frLef58WidthTableOrthConstraint>(horz_spc, vert_spc);
+  auto rptr = static_cast<frLef58WidthTableOrthConstraint*>(uCon.get());
+  tech->addUConstraint(std::move(uCon));
+  layer->setWidthTblOrthCon(rptr);
+  return rptr;
+}
+
 void Fixture::makeLef58EolKeepOutConstraint(frLayerNum layer_num,
                                             bool cornerOnly,
                                             bool exceptWithin,
@@ -442,11 +459,29 @@ frLef58SpacingEndOfLineConstraint* Fixture::makeLef58SpacingEolConstraint(
   return con;
 }
 
+frSpacingRangeConstraint* Fixture::makeSpacingRangeConstraint(
+    frLayerNum layer_num,
+    frCoord spacing,
+    frCoord minWidth,
+    frCoord maxWidth)
+{
+  auto uCon = std::make_unique<frSpacingRangeConstraint>();
+  auto con = uCon.get();
+  con->setMinSpacing(spacing);
+  con->setMinWidth(minWidth);
+  con->setMaxWidth(maxWidth);
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  layer->addSpacingRangeConstraint(con);
+  tech->addUConstraint(std::move(uCon));
+  return con;
+}
+
 std::shared_ptr<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>
 Fixture::makeLef58SpacingEolParEdgeConstraint(
     frLef58SpacingEndOfLineConstraint* con,
-    fr::frCoord par_space,
-    fr::frCoord par_within,
+    drt::frCoord par_space,
+    drt::frCoord par_within,
     bool two_edges)
 {
   auto parallelEdge
@@ -460,7 +495,7 @@ Fixture::makeLef58SpacingEolParEdgeConstraint(
 std::shared_ptr<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>
 Fixture::makeLef58SpacingEolMinMaxLenConstraint(
     frLef58SpacingEndOfLineConstraint* con,
-    fr::frCoord min_max_length,
+    drt::frCoord min_max_length,
     bool max,
     bool two_sides)
 {
@@ -525,6 +560,47 @@ void Fixture::makeLef58CutSpcTbl(frLayerNum layer_num,
     }
   }
   design->getTech()->addUConstraint(std::move(con));
+}
+
+void Fixture::makeLef58TwoWiresForbiddenSpc(
+    frLayerNum layer_num,
+    odb::dbTechLayerTwoWiresForbiddenSpcRule* dbRule)
+{
+  auto con = std::make_unique<frLef58TwoWiresForbiddenSpcConstraint>(dbRule);
+  auto layer = design->getTech()->getLayer(layer_num);
+  layer->addTwoWiresForbiddenSpacingConstraint(con.get());
+  design->getTech()->addUConstraint(std::move(con));
+}
+
+void Fixture::makeLef58ForbiddenSpc(
+    frLayerNum layer_num,
+    odb::dbTechLayerForbiddenSpacingRule* dbRule)
+{
+  auto con = std::make_unique<frLef58ForbiddenSpcConstraint>(dbRule);
+  auto layer = design->getTech()->getLayer(layer_num);
+  layer->addForbiddenSpacingConstraint(con.get());
+  design->getTech()->addUConstraint(std::move(con));
+}
+
+frLef58EnclosureConstraint* Fixture::makeLef58EnclosureConstrainut(
+    frLayerNum layer_num,
+    int cut_class_idx,
+    frCoord width,
+    frCoord firstOverhang,
+    frCoord secondOverhang)
+{
+  auto layer = design->getTech()->getLayer(layer_num);
+  auto dbRule = odb::dbTechLayerCutEnclosureRule::create(layer->getDbLayer());
+  auto con = std::make_unique<frLef58EnclosureConstraint>(dbRule);
+  auto rptr = con.get();
+  rptr->setCutClassIdx(cut_class_idx);
+  dbRule->setMinWidth(width);
+  dbRule->setFirstOverhang(firstOverhang);
+  dbRule->setSecondOverhang(secondOverhang);
+  dbRule->setType(odb::dbTechLayerCutEnclosureRule::DEFAULT);
+  layer->addLef58EnclosureConstraint(rptr);
+  design->getTech()->addUConstraint(std::move(con));
+  return rptr;
 }
 
 void Fixture::makeMetalWidthViaMap(frLayerNum layer_num,
@@ -607,7 +683,7 @@ void Fixture::makeMinimumCut(frLayerNum layerNum,
 frNet* Fixture::makeNet(const char* name)
 {
   frBlock* block = design->getTopBlock();
-  auto net_p = std::make_unique<frNet>(name);
+  auto net_p = std::make_unique<frNet>(name, router_cfg.get());
   frNet* net = net_p.get();
   block->addNet(std::move(net_p));
   return net;
@@ -696,3 +772,15 @@ void Fixture::makeLef58WrongDirSpcConstraint(
   layer->addLef58SpacingWrongDirConstraint(con.get());
   design->getTech()->addUConstraint(std::move(con));
 }
+
+void Fixture::makeSpacingTableOrthConstraint(frLayerNum layer_num,
+                                             frCoord within,
+                                             frCoord spc)
+{
+  std::vector<std::pair<frCoord, frCoord>> spc_tbl = {{within, spc}};
+  auto con = std::make_unique<frOrthSpacingTableConstraint>(spc_tbl);
+  auto layer = design->getTech()->getLayer(layer_num);
+  layer->setOrthSpacingTableConstraint(con.get());
+  design->getTech()->addUConstraint(std::move(con));
+}
+}  // namespace drt

@@ -32,13 +32,19 @@
 
 #include "frDesign.h"
 
-namespace fr {
+namespace drt {
 class FlexRP
 {
  public:
   // constructor
-  FlexRP(frDesign* designIn, frTechObject* techIn, Logger* logger)
-      : design_(designIn), tech_(techIn), logger_(logger)
+  FlexRP(frDesign* designIn,
+         frTechObject* techIn,
+         Logger* logger,
+         RouterConfiguration* router_cfg)
+      : design_(designIn),
+        tech_(techIn),
+        logger_(logger),
+        router_cfg_(router_cfg)
   {
   }
 
@@ -50,6 +56,7 @@ class FlexRP
   frDesign* design_;
   frTechObject* tech_;
   Logger* logger_;
+  RouterConfiguration* router_cfg_;
 
   // init
   void init();
@@ -166,4 +173,4 @@ class FlexRP
       frCoord reqSpcVal,
       std::pair<frCoord, frCoord>& range);
 };
-}  // namespace fr
+}  // namespace drt

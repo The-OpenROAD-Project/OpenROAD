@@ -32,12 +32,16 @@
 
 #pragma once
 
+#include <optional>
+
+#include "dbStream.h"
+#include "geom.h"
 #include "odb.h"
 
 namespace odb {
 
 ///
-/// This file declares the non-persistant database objects and misc.
+/// This file declares the non-persistent database objects and misc.
 /// type-definitions.
 ///
 
@@ -61,8 +65,12 @@ class dbOrientType
     MXR90  /** mirror about the "X" axis and rotate 90 degrees */
   };
 
+  static const Value DEFAULT = R0;
+
+  static std::optional<Value> fromString(const char* orient);
+
   ///
-  /// Create a dbOrientType instance with an explicit orientation..
+  /// Create a dbOrientType instance with an explicit orientation.
   /// The explicit orientation must be a string of one of the
   ///  following values: "R0", "R90", "R180", "270", "MY", "MX", "MYR90",
   ///  or "MXR90".
@@ -70,7 +78,7 @@ class dbOrientType
   dbOrientType(const char* orient);
 
   ///
-  /// Create a dbOrientType instance with an explicit orientation..
+  /// Create a dbOrientType instance with an explicit orientation.
   ///
   dbOrientType(Value orient);
 
@@ -118,6 +126,60 @@ class dbOrientType
   Value _value;
 };
 
+class dbGDSSTrans
+{
+ public:
+  bool _flipX;
+  bool _absMag, _absAngle;
+  double _mag, _angle;
+
+  dbGDSSTrans();
+
+  dbGDSSTrans(bool flipX, bool absMag, bool absAngle, double mag, double angle);
+
+  bool operator==(const dbGDSSTrans& rhs) const;
+
+  std::string to_string() const;
+
+  bool identity() const;
+};
+
+dbIStream& operator>>(dbIStream& stream, dbGDSSTrans& t);
+dbOStream& operator<<(dbOStream& stream, dbGDSSTrans t);
+
+class dbGDSTextPres
+{
+ public:
+  enum VPres
+  {
+    TOP = 0,
+    MIDDLE = 1,
+    BOTTOM = 2
+  };
+  enum HPres
+  {
+    LEFT = 0,
+    CENTER = 1,
+    RIGHT = 2
+  };
+
+  VPres _vPres;
+  HPres _hPres;
+
+  dbGDSTextPres();
+
+  dbGDSTextPres(VPres vPres, HPres hPres);
+
+  bool operator==(const dbGDSTextPres& rhs) const;
+
+  bool identity() const;
+
+  std::string to_string() const;
+};
+
+dbIStream& operator>>(dbIStream& stream, dbGDSTextPres& t);
+dbOStream& operator<<(dbOStream& stream, dbGDSTextPres t);
+
 ///
 /// The dbGroup's basis.
 ///
@@ -132,19 +194,19 @@ class dbGroupType
   };
 
   ///
-  /// Create a dbGroupType instance with an explicit type..
+  /// Create a dbGroupType instance with an explicit type.
   /// The explicit orientation must be a string of one of the
   ///  following values: "PHYSICAL_CLUSTER", "VOLTAGE_DOMAIN".
   ///
   dbGroupType(const char* type);
 
   ///
-  /// Create a dbGroupType instance with an explicit type..
+  /// Create a dbGroupType instance with an explicit type.
   ///
   dbGroupType(Value type);
 
   ///
-  /// Create a dbGroupType instance with type "PHYSICAL_CLUSTER"".
+  /// Create a dbGroupType instance with type "PHYSICAL_CLUSTER".
   ///
   dbGroupType();
 
@@ -198,7 +260,7 @@ class dbSigType
   dbSigType(const char* value);
 
   ///
-  /// Create a dbSigType instance with an explicit signal value..
+  /// Create a dbSigType instance with an explicit signal value.
   ///
   dbSigType(Value value);
 
@@ -223,7 +285,7 @@ class dbSigType
   const char* getString() const;
 
   ///
-  ///  True Iff value corresponds to POWER or GROUND
+  ///  True if value corresponds to POWER or GROUND
   ///
   bool isSupply() const;
 
@@ -240,7 +302,7 @@ class dbSigType
 };
 
 ///
-/// Specifies the functional electical behavior of a terminal.
+/// Specifies the functional electrical behavior of a terminal.
 ///
 class dbIoType
 {
@@ -254,14 +316,14 @@ class dbIoType
   };
 
   ///
-  /// Create a dbIoType instance with an explicit io-direction..
+  /// Create a dbIoType instance with an explicit io-direction.
   /// The explicit io-direction must be a string of one of the
   ///  following values: "input", "output", "inout"
   ///
   dbIoType(const char* value);
 
   ///
-  /// Create a dbIoType instance with an explicit IO direction..
+  /// Create a dbIoType instance with an explicit IO direction.
   ///
   dbIoType(Value value);
 
@@ -315,7 +377,7 @@ class dbPlacementStatus
   };
 
   ///
-  /// Create a dbPlacementStatus instance with an explicit placement status..
+  /// Create a dbPlacementStatus instance with an explicit placement status.
   /// The explicit status must be a string of one of the
   ///  following values: "none", "unplaced", "suggested", "placed",
   ///  "locked", "firm", "cover".
@@ -353,12 +415,12 @@ class dbPlacementStatus
   operator Value() const { return _value; }
 
   ///
-  ///  True Iff value corresponds to a PLACED, LOCKED, FIRM, or COVER
+  ///  True if value corresponds to a PLACED, LOCKED, FIRM, or COVER
   ///
   bool isPlaced() const;
 
   ///
-  ///  True Iff value corresponds to LOCKED, FIRM, or COVER
+  ///  True if value corresponds to LOCKED, FIRM, or COVER
   ///
   bool isFixed() const;
 
@@ -417,7 +479,7 @@ class dbMasterType
   };
 
   ///
-  /// Create a dbMasterType instance with an explicit placement status..
+  /// Create a dbMasterType instance with an explicit placement status.
   /// The explicit status must be a string of one of the
   ///  following values: "none", "cover", "ring", "block",
   ///  "block blackbox", "block soft",
@@ -506,8 +568,12 @@ class dbTechLayerType
     NONE         /** */
   };
 
+  static const Value DEFAULT = ROUTING;
+
+  static std::optional<Value> fromString(const char* value);
+
   ///
-  /// Create a dbTechLayerType instance with an explicit placement status..
+  /// Create a dbTechLayerType instance with an explicit placement status.
   /// The explicit status must be a string of one of the
   ///  following values: "routing", "cut", "masterslice", "overlap"
   ///
@@ -519,9 +585,9 @@ class dbTechLayerType
   dbTechLayerType(Value value) { _value = value; }
 
   ///
-  /// Create a dbTechLayerType instance with value = "none".
+  /// Create a dbTechLayerType instance with value = "routing".
   ///
-  dbTechLayerType() { _value = ROUTING; }
+  dbTechLayerType() { _value = DEFAULT; }
 
   ///
   /// Copy constructor.
@@ -561,7 +627,7 @@ class dbTechLayerDir
   };
 
   ///
-  /// Create a dbTechLayerDir instance with an explicit placement status..
+  /// Create a dbTechLayerDir instance with an explicit placement status.
   /// The explicit status must be a string of one of the
   ///  following values: "none", "horizontal", "vertical"
   ///
@@ -668,19 +734,19 @@ class dbRowDir
   };
 
   ///
-  /// Create a dbTechLayerDir instance with an explicit placement status..
+  /// Create a dbRowDir instance with an explicit placement status.
   /// The explicit status must be a string of one of the
   ///  following values: "horizontal" or "vertical"
   ///
   dbRowDir(const char* direction);
 
   ///
-  /// Create a dbTechLayerDir instance with an explicit direction.
+  /// Create a dbRowDir instance with an explicit direction.
   ///
   dbRowDir(Value value);
 
   ///
-  /// Create a dbTechLayerDir instance with direction = "none".
+  /// Create a dbRowDir instance with direction = "horizontal".
   ///
   dbRowDir();
 
@@ -728,7 +794,8 @@ class dbBoxOwner
     MPIN,
     TECH_VIA,
     REGION,
-    BPIN
+    BPIN,
+    PBOX
   };
 
   ///
@@ -742,7 +809,7 @@ class dbBoxOwner
   dbBoxOwner(Value value);
 
   ///
-  /// Create a dbBoxOwner instance with value = UNKNOWN.
+  /// Create a dbBoxOwner instance with value = BLOCK.
   ///
   dbBoxOwner();
 
@@ -771,7 +838,7 @@ class dbBoxOwner
 };
 
 ///
-/// Defines the type of objects which own a dbBox.
+/// Defines the type of objects which own a dbPolygon.
 ///
 class dbPolygonOwner
 {
@@ -785,19 +852,24 @@ class dbPolygonOwner
   };
 
   ///
-  /// Create a dbBoxOwner instance with an explicit value.
+  /// Create a dbPolygonOwner instance with an explicit value.
+  ///
+  dbPolygonOwner(const char* value);
+
+  ///
+  /// Create a dbPolygonOwner instance with an explicit value.
   ///
   dbPolygonOwner(Value value);
 
   ///
-  /// Create a dbBoxOwner instance with value = UNKNOWN.
+  /// Create a dbPolygonOwner instance with value = UNKNOWN.
   ///
   dbPolygonOwner();
 
   ///
   /// Copy constructor.
   ///
-  dbPolygonOwner(const dbBoxOwner& value);
+  dbPolygonOwner(const dbPolygonOwner& value);
 
   ///
   /// Returns the owner-value.
@@ -835,13 +907,14 @@ class dbWireType
   };
 
   ///
+  /// Create a dbWireType instance with an explicit value.
   ///  Create a wire type of one of the following
   ///  values "cover", "fixed", "routed"
   ///
   dbWireType(const char* value);
 
   ///
-  /// Create a dbBoxOwner instance with an explicit value.
+  /// Create a dbWireType instance with an explicit value.
   ///
   dbWireType(Value value);
 
@@ -897,6 +970,7 @@ class dbWireShapeType
   };
 
   ///
+  /// Create a dbWireShapeType instance with an explicit value.
   ///  Create a wire type of one of the following
   ///  values "ring", "padring", "blockring", "stripe",
   ///  "followpin", "iowire", "corewire", "blockwire", "blockagewire",
@@ -905,12 +979,12 @@ class dbWireShapeType
   dbWireShapeType(const char* value);
 
   ///
-  /// Create a dbBoxOwner instance with an explicit value.
+  /// Create a dbWireShapeType instance with an explicit value.
   ///
   dbWireShapeType(Value value);
 
   ///
-  /// Create a dbWireType instance with value = RING
+  /// Create a dbWireShapeType instance with value = RING
   ///
   dbWireShapeType();
 
@@ -952,6 +1026,7 @@ class dbSiteClass
   };
 
   ///
+  /// Create a dbSiteClass instance with an explicit value.
   ///  Create a wire type of one of the following
   ///  values "pad", "core"
   ///
@@ -1012,6 +1087,7 @@ class dbOnOffType
   dbOnOffType(int innum);
   dbOnOffType(bool insw);
   dbOnOffType(Value inval);
+  dbOnOffType(const dbOnOffType& value);
   dbOnOffType();
 
   ///
@@ -1048,6 +1124,7 @@ class dbClMeasureType
   ///
   dbClMeasureType(const char* instr);
   dbClMeasureType(Value inval) { _value = inval; }
+  dbClMeasureType(const dbClMeasureType& value) { _value = value; }
   dbClMeasureType() { _value = EUCLIDEAN; }
 
   ///
@@ -1083,7 +1160,9 @@ class dbJournalEntryType
   ///
   /// Construction may take a type value, or default ("NONE")
   ///
+  dbJournalEntryType(const char* instr);
   dbJournalEntryType(Value inval) { _value = inval; }
+  dbJournalEntryType(const dbJournalEntryType& value) { _value = value; }
   dbJournalEntryType() { _value = NONE; }
 
   ///
@@ -1121,7 +1200,9 @@ class dbDirection
   ///
   /// Construction may take a type value, or default ("NONE")
   ///
+  dbDirection(const char* instr);
   dbDirection(Value inval) { _value = inval; }
+  dbDirection(const dbDirection& value) { _value = value; }
   dbDirection() { _value = NONE; }
 
   ///
@@ -1148,11 +1229,16 @@ class dbRegionType
   enum Value
   {
     INCLUSIVE,
-    EXCLUSIVE,  // corrsponds to DEF FENCE type.
-    SUGGESTED   // corrsponds to DEF GUIDE type.
+    EXCLUSIVE,  // corresponds to DEF FENCE type.
+    SUGGESTED   // corresponds to DEF GUIDE type.
   };
 
+  ///
+  /// Construction may take a type value, or default ("INCLUSIVE")
+  ///
+  dbRegionType(const char* instr);
   dbRegionType(Value inval) { _value = inval; }
+  dbRegionType(const dbRegionType& value) { _value = value; }
   dbRegionType() { _value = INCLUSIVE; }
   Value getValue() const { return _value; }
   const char* getString() const;
@@ -1178,8 +1264,12 @@ class dbSourceType
     TEST
   };
 
+  ///
+  /// Construction may take a type value, or default ("NONE")
+  ///
   dbSourceType(const char* value);
   dbSourceType(Value inval) { _value = inval; }
+  dbSourceType(const dbSourceType& value) { _value = value; }
   dbSourceType() { _value = NONE; }
   Value getValue() const { return _value; }
   const char* getString() const;
@@ -1189,13 +1279,13 @@ class dbSourceType
   Value _value;
 };
 
-constexpr uint64 MAX_UINT64 = 0xffffffffffffffffLL;
-constexpr uint64 MIN_UINT64 = 0;
+constexpr uint64_t MAX_UINT64 = 0xffffffffffffffffLL;
+constexpr uint64_t MIN_UINT64 = 0;
 constexpr uint MAX_UINT = 0xffffffff;
 constexpr uint MIN_UINT = 0;
 
-constexpr int64 MAX_INT64 = 0x7fffffffffffffffLL;
-constexpr int64 MIN_INT64 = 0x8000000000000000LL;
+constexpr int64_t MAX_INT64 = 0x7fffffffffffffffLL;
+constexpr int64_t MIN_INT64 = 0x8000000000000000LL;
 constexpr int MAX_INT = 0x7fffffff;
 constexpr int MIN_INT = 0x80000000;
 
@@ -1220,12 +1310,12 @@ class dbMTermShapeType
   dbMTermShapeType(const char* value);
 
   ///
-  /// Create a dbMterm type with an explicit value.
+  /// Create a dbMTermShapeType with an explicit value.
   ///
   dbMTermShapeType(Value value);
 
   ///
-  /// Create a dbMTermType instance with value = NONE
+  /// Create a dbMTermShapeType instance with value = NONE
   ///
   dbMTermShapeType();
 
@@ -1290,7 +1380,7 @@ class dbAccessType
   ///
   /// Copy constructor.
   ///
-  dbAccessType(const dbAccessType& orient) = default;
+  dbAccessType(const dbAccessType& value) = default;
 
   ///
   /// Returns the type

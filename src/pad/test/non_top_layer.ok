@@ -1,0 +1,8 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: non_top_layer.lef, created 1 library cells
+[INFO ODB-0128] Design: soc_bsg_black_parrot
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 1 components and 11 component-terminals.
+[INFO ODB-0133]     Created 1 nets and 1 connections.
+[INFO PAD-0116] Creating terminal for p_ci2_0_o on metal9 at (11.330um, 51.400um) - (21.330um, 56.400um)
+[ERROR PAD-0120] No shape in terminal u_ci2_0_o/PAD found on layer metal10

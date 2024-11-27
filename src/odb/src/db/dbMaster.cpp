@@ -32,7 +32,6 @@
 
 #include "dbMaster.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
@@ -42,13 +41,16 @@
 #include "dbMPin.h"
 #include "dbMPinItr.h"
 #include "dbMTerm.h"
+#include "dbPolygon.h"
+#include "dbPolygonItr.h"
 #include "dbSite.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTarget.h"
 #include "dbTargetItr.h"
 #include "dbTechLayerAntennaRule.h"
-#include "dbTransform.h"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -60,80 +62,113 @@ template class dbTable<_dbMaster>;
 
 bool _dbMaster::operator==(const _dbMaster& rhs) const
 {
-  if (_flags._frozen != rhs._flags._frozen)
+  if (_flags._frozen != rhs._flags._frozen) {
     return false;
+  }
 
-  if (_flags._x_symmetry != rhs._flags._x_symmetry)
+  if (_flags._x_symmetry != rhs._flags._x_symmetry) {
     return false;
+  }
 
-  if (_flags._y_symmetry != rhs._flags._y_symmetry)
+  if (_flags._y_symmetry != rhs._flags._y_symmetry) {
     return false;
+  }
 
-  if (_flags._R90_symmetry != rhs._flags._R90_symmetry)
+  if (_flags._R90_symmetry != rhs._flags._R90_symmetry) {
     return false;
+  }
 
-  if (_flags._type != rhs._flags._type)
+  if (_flags._type != rhs._flags._type) {
     return false;
+  }
 
-  if (_x != rhs._x)
+  if (_x != rhs._x) {
     return false;
+  }
 
-  if (_y != rhs._y)
+  if (_y != rhs._y) {
     return false;
+  }
 
-  if (_height != rhs._height)
+  if (_height != rhs._height) {
     return false;
+  }
 
-  if (_width != rhs._width)
+  if (_width != rhs._width) {
     return false;
+  }
 
-  if (_mterm_cnt != rhs._mterm_cnt)
+  if (_mterm_cnt != rhs._mterm_cnt) {
     return false;
+  }
 
-  if (_id != rhs._id)
+  if (_id != rhs._id) {
     return false;
+  }
 
   if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0)
+    if (strcmp(_name, rhs._name) != 0) {
       return false;
-  } else if (_name || rhs._name)
+    }
+  } else if (_name || rhs._name) {
     return false;
+  }
 
-  if (_next_entry != rhs._next_entry)
+  if (_next_entry != rhs._next_entry) {
     return false;
+  }
 
-  if (_leq != rhs._leq)
+  if (_leq != rhs._leq) {
     return false;
+  }
 
-  if (_eeq != rhs._eeq)
+  if (_eeq != rhs._eeq) {
     return false;
+  }
 
-  if (_obstructions != rhs._obstructions)
+  if (_obstructions != rhs._obstructions) {
     return false;
+  }
 
-  if (_lib_for_site != rhs._lib_for_site)
+  if (_poly_obstructions != rhs._poly_obstructions) {
     return false;
+  }
 
-  if (_site != rhs._site)
+  if (_lib_for_site != rhs._lib_for_site) {
     return false;
+  }
 
-  if (_mterm_hash != rhs._mterm_hash)
+  if (_site != rhs._site) {
     return false;
+  }
 
-  if (*_mterm_tbl != *rhs._mterm_tbl)
+  if (_mterm_hash != rhs._mterm_hash) {
     return false;
+  }
 
-  if (*_mpin_tbl != *rhs._mpin_tbl)
+  if (*_mterm_tbl != *rhs._mterm_tbl) {
     return false;
+  }
 
-  if (*_target_tbl != *rhs._target_tbl)
+  if (*_mpin_tbl != *rhs._mpin_tbl) {
     return false;
+  }
 
-  if (*_box_tbl != *rhs._box_tbl)
+  if (*_target_tbl != *rhs._target_tbl) {
     return false;
+  }
 
-  if (*_antenna_pin_model_tbl != *rhs._antenna_pin_model_tbl)
+  if (*_box_tbl != *rhs._box_tbl) {
     return false;
+  }
+
+  if (*_poly_box_tbl != *rhs._poly_box_tbl) {
+    return false;
+  }
+
+  if (*_antenna_pin_model_tbl != *rhs._antenna_pin_model_tbl) {
+    return false;
+  }
 
   return true;
 }
@@ -159,6 +194,7 @@ void _dbMaster::differences(dbDiff& diff,
   DIFF_FIELD(_leq);
   DIFF_FIELD(_eeq);
   DIFF_FIELD(_obstructions);
+  DIFF_FIELD(_poly_obstructions);
   DIFF_FIELD(_lib_for_site);
   DIFF_FIELD(_site);
   DIFF_HASH_TABLE(_mterm_hash);
@@ -166,6 +202,7 @@ void _dbMaster::differences(dbDiff& diff,
   DIFF_TABLE_NO_DEEP(_mpin_tbl);
   DIFF_TABLE_NO_DEEP(_target_tbl);
   DIFF_TABLE_NO_DEEP(_box_tbl);
+  DIFF_TABLE_NO_DEEP(_poly_box_tbl);
   DIFF_TABLE_NO_DEEP(_antenna_pin_model_tbl);
   DIFF_END
 }
@@ -189,6 +226,7 @@ void _dbMaster::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_leq);
   DIFF_OUT_FIELD(_eeq);
   DIFF_OUT_FIELD(_obstructions);
+  DIFF_OUT_FIELD(_poly_obstructions);
   DIFF_OUT_FIELD(_lib_for_site);
   DIFF_OUT_FIELD(_site);
   DIFF_OUT_HASH_TABLE(_mterm_hash);
@@ -196,6 +234,7 @@ void _dbMaster::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE_NO_DEEP(_mpin_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_target_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_box_tbl);
+  DIFF_OUT_TABLE_NO_DEEP(_poly_box_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_antenna_pin_model_tbl);
   DIFF_END
 }
@@ -237,6 +276,9 @@ _dbMaster::_dbMaster(_dbDatabase* db)
   _box_tbl = new dbTable<_dbBox>(
       db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbBoxObj, 8, 3);
 
+  _poly_box_tbl = new dbTable<_dbPolygon>(
+      db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbPolygonObj, 8, 3);
+
   _antenna_pin_model_tbl = new dbTable<_dbTechAntennaPinModel>(
       db,
       this,
@@ -245,7 +287,11 @@ _dbMaster::_dbMaster(_dbDatabase* db)
       8,
       3);
 
-  _box_itr = new dbBoxItr(_box_tbl);
+  _box_itr = new dbBoxItr(_box_tbl, _poly_box_tbl, true);
+
+  _pbox_itr = new dbPolygonItr(_poly_box_tbl);
+
+  _pbox_box_itr = new dbBoxItr(_box_tbl, _poly_box_tbl, false);
 
   _mpin_itr = new dbMPinItr(_mpin_tbl);
 
@@ -269,6 +315,7 @@ _dbMaster::_dbMaster(_dbDatabase* db, const _dbMaster& m)
       _leq(m._leq),
       _eeq(m._eeq),
       _obstructions(m._obstructions),
+      _poly_obstructions(m._poly_obstructions),
       _lib_for_site(m._lib_for_site),
       _site(m._site),
       _mterm_hash(m._mterm_hash),
@@ -287,10 +334,16 @@ _dbMaster::_dbMaster(_dbDatabase* db, const _dbMaster& m)
 
   _box_tbl = new dbTable<_dbBox>(db, this, *m._box_tbl);
 
+  _poly_box_tbl = new dbTable<_dbPolygon>(db, this, *m._poly_box_tbl);
+
   _antenna_pin_model_tbl = new dbTable<_dbTechAntennaPinModel>(
       db, this, *m._antenna_pin_model_tbl);
 
-  _box_itr = new dbBoxItr(_box_tbl);
+  _box_itr = new dbBoxItr(_box_tbl, _poly_box_tbl, true);
+
+  _pbox_itr = new dbPolygonItr(_poly_box_tbl);
+
+  _pbox_box_itr = new dbBoxItr(_box_tbl, _poly_box_tbl, false);
 
   _mpin_itr = new dbMPinItr(_mpin_tbl);
 
@@ -305,13 +358,17 @@ _dbMaster::~_dbMaster()
   delete _mpin_tbl;
   delete _target_tbl;
   delete _box_tbl;
+  delete _poly_box_tbl;
   delete _antenna_pin_model_tbl;
   delete _box_itr;
+  delete _pbox_itr;
+  delete _pbox_box_itr;
   delete _mpin_itr;
   delete _target_itr;
 
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
@@ -329,6 +386,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
   stream << master._leq;
   stream << master._eeq;
   stream << master._obstructions;
+  stream << master._poly_obstructions;
   stream << master._lib_for_site;
   stream << master._site;
   stream << master._mterm_hash;
@@ -336,12 +394,14 @@ dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
   stream << *master._mpin_tbl;
   stream << *master._target_tbl;
   stream << *master._box_tbl;
+  stream << *master._poly_box_tbl;
   stream << *master._antenna_pin_model_tbl;
   return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
 {
+  _dbDatabase* db = master.getImpl()->getDatabase();
   uint* bit_field = (uint*) &master._flags;
   stream >> *bit_field;
   stream >> master._x;
@@ -355,7 +415,9 @@ dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
   stream >> master._leq;
   stream >> master._eeq;
   stream >> master._obstructions;
-  _dbDatabase* db = master.getImpl()->getDatabase();
+  if (db->isSchema(db_schema_polygon)) {
+    stream >> master._poly_obstructions;
+  }
   if (db->isSchema(db_schema_dbmaster_lib_for_site)) {
     stream >> master._lib_for_site;
   } else {
@@ -368,6 +430,9 @@ dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
   stream >> *master._mpin_tbl;
   stream >> *master._target_tbl;
   stream >> *master._box_tbl;
+  if (db->isSchema(db_schema_polygon)) {
+    stream >> *master._poly_box_tbl;
+  }
   stream >> *master._antenna_pin_model_tbl;
   return stream;
 }
@@ -383,6 +448,8 @@ dbObjectTable* _dbMaster::getObjectTable(dbObjectType type)
       return _target_tbl;
     case dbBoxObj:
       return _box_tbl;
+    case dbPolygonObj:
+      return _poly_box_tbl;
     case dbTechAntennaPinModelObj:
       return _antenna_pin_model_tbl;
     default:
@@ -410,11 +477,10 @@ const char* dbMaster::getConstName()
   return master->_name;
 }
 
-void dbMaster::getOrigin(int& x, int& y)
+Point dbMaster::getOrigin()
 {
   _dbMaster* master = (_dbMaster*) this;
-  x = master->_x;
-  y = master->_y;
+  return {master->_x, master->_y};
 }
 
 void dbMaster::setOrigin(int x, int y)
@@ -460,6 +526,11 @@ void dbMaster::setHeight(uint h)
   master->_height = h;
 }
 
+int64_t dbMaster::getArea() const
+{
+  return getWidth() * static_cast<int64_t>(getHeight());
+}
+
 dbMasterType dbMaster::getType() const
 {
   _dbMaster* master = (_dbMaster*) this;
@@ -476,8 +547,9 @@ dbMaster* dbMaster::getLEQ()
 {
   _dbMaster* master = (_dbMaster*) this;
 
-  if (master->_leq == 0)
+  if (master->_leq == 0) {
     return nullptr;
+  }
 
   _dbLib* lib = (_dbLib*) master->getOwner();
   return (dbMaster*) lib->_master_tbl->getPtr(master->_leq);
@@ -493,8 +565,9 @@ dbMaster* dbMaster::getEEQ()
 {
   _dbMaster* master = (_dbMaster*) this;
 
-  if (master->_eeq == 0)
+  if (master->_eeq == 0) {
     return nullptr;
+  }
 
   _dbLib* lib = (_dbLib*) master->getOwner();
   return (dbMaster*) lib->_master_tbl->getPtr(master->_eeq);
@@ -557,10 +630,19 @@ dbLib* dbMaster::getLib()
   return (dbLib*) getImpl()->getOwner();
 }
 
-dbSet<dbBox> dbMaster::getObstructions()
+dbSet<dbBox> dbMaster::getObstructions(bool include_decomposed_polygons)
 {
   _dbMaster* master = (_dbMaster*) this;
-  return dbSet<dbBox>(master, master->_box_itr);
+  if (include_decomposed_polygons) {
+    return dbSet<dbBox>(master, master->_box_itr);
+  }
+  return dbSet<dbBox>(master, master->_pbox_box_itr);
+}
+
+dbSet<dbPolygon> dbMaster::getPolygonObstructions()
+{
+  _dbMaster* master = (_dbMaster*) this;
+  return dbSet<dbPolygon>(master, master->_pbox_itr);
 }
 
 bool dbMaster::isFrozen()
@@ -586,8 +668,9 @@ dbSite* dbMaster::getSite()
 {
   _dbMaster* master = (_dbMaster*) this;
 
-  if (master->_site == 0)
+  if (master->_site == 0) {
     return nullptr;
+  }
 
   _dbDatabase* db = (_dbDatabase*) getDb();
   _dbLib* lib = (_dbLib*) db->_lib_tbl->getPtr(master->_lib_for_site);
@@ -635,8 +718,9 @@ void dbMaster::setFrozen()
 {
   _dbMaster* master = (_dbMaster*) this;
 
-  if (master->_flags._frozen == 1)
+  if (master->_flags._frozen == 1) {
     return;
+  }
 
   master->_flags._frozen = 1;
 
@@ -736,8 +820,9 @@ int dbMaster::getMasterId()
 
 dbMaster* dbMaster::create(dbLib* lib_, const char* name_)
 {
-  if (lib_->findMaster(name_))
+  if (lib_->findMaster(name_)) {
     return nullptr;
+  }
 
   _dbLib* lib = (_dbLib*) lib_;
   _dbDatabase* db = lib->getDatabase();

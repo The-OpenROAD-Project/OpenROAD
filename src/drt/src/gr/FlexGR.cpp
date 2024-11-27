@@ -41,7 +41,7 @@
 #include "odb/db.h"
 #include "utl/exception.h"
 
-using namespace fr;
+namespace drt {
 
 using utl::ThreadException;
 
@@ -53,8 +53,8 @@ void FlexGR::main(odb::dbDatabase* db)
   ra();
   // cmap->print(true);
 
-  FlexGRCMap baseCMap(cmap_.get());
-  FlexGRCMap baseCMap2D(cmap2D_.get());
+  FlexGRCMap baseCMap(cmap_.get(), router_cfg_);
+  FlexGRCMap baseCMap2D(cmap2D_.get(), router_cfg_);
 
   // gen topology + pattern route for 2D connectivty
   initGR();
@@ -68,8 +68,8 @@ void FlexGR::main(odb::dbDatabase* db)
   searchRepairMacro(0,
                     10,
                     2,
-                    1 * CONGCOST,
-                    0.5 * HISTCOST,
+                    1 * router_cfg_->CONGCOST,
+                    0.5 * router_cfg_->HISTCOST,
                     1.0,
                     true,
                     /*mode*/ RipUpMode::ALL);
@@ -77,17 +77,29 @@ void FlexGR::main(odb::dbDatabase* db)
   searchRepairMacro(1,
                     30,
                     2,
-                    1 * CONGCOST,
-                    1 * HISTCOST,
+                    1 * router_cfg_->CONGCOST,
+                    1 * router_cfg_->HISTCOST,
                     0.9,
                     true,
                     /*mode*/ RipUpMode::ALL);
   // reportCong2D();
-  searchRepairMacro(
-      2, 50, 2, 1 * CONGCOST, 1.5 * HISTCOST, 0.9, true, RipUpMode::ALL);
+  searchRepairMacro(2,
+                    50,
+                    2,
+                    1 * router_cfg_->CONGCOST,
+                    1.5 * router_cfg_->HISTCOST,
+                    0.9,
+                    true,
+                    RipUpMode::ALL);
   // reportCong2D();
-  searchRepairMacro(
-      3, 80, 2, 2 * CONGCOST, 2 * HISTCOST, 0.9, true, RipUpMode::ALL);
+  searchRepairMacro(3,
+                    80,
+                    2,
+                    2 * router_cfg_->CONGCOST,
+                    2 * router_cfg_->HISTCOST,
+                    0.9,
+                    true,
+                    RipUpMode::ALL);
   // reportCong2D();
 
   //  reportCong2D();
@@ -95,8 +107,8 @@ void FlexGR::main(odb::dbDatabase* db)
                /*size*/ 200,
                /*offset*/ 0,
                /*mazeEndIter*/ 2,
-               /*workerCongCost*/ 1 * CONGCOST,
-               /*workerHistCost*/ 0.5 * HISTCOST,
+               /*workerCongCost*/ 1 * router_cfg_->CONGCOST,
+               /*workerHistCost*/ 0.5 * router_cfg_->HISTCOST,
                /*congThresh*/ 0.9,
                /*is2DRouting*/ true,
                /*mode*/ RipUpMode::ALL,
@@ -106,8 +118,8 @@ void FlexGR::main(odb::dbDatabase* db)
                /*size*/ 200,
                /*offset*/ -70,
                /*mazeEndIter*/ 2,
-               /*workerCongCost*/ 1 * CONGCOST,
-               /*workerHistCost*/ 1 * HISTCOST,
+               /*workerCongCost*/ 1 * router_cfg_->CONGCOST,
+               /*workerHistCost*/ 1 * router_cfg_->HISTCOST,
                /*congThresh*/ 0.9,
                /*is2DRouting*/ true,
                /*mode*/ RipUpMode::ALL,
@@ -117,8 +129,8 @@ void FlexGR::main(odb::dbDatabase* db)
                /*size*/ 200,
                /*offset*/ -150,
                /*mazeEndIter*/ 2,
-               /*workerCongCost*/ 2 * CONGCOST,
-               /*workerHistCost*/ 2 * HISTCOST,
+               /*workerCongCost*/ 2 * router_cfg_->CONGCOST,
+               /*workerHistCost*/ 2 * router_cfg_->HISTCOST,
                /*congThresh*/ 0.8,
                /*is2DRouting*/ true,
                /*mode*/ RipUpMode::ALL,
@@ -138,15 +150,16 @@ void FlexGR::main(odb::dbDatabase* db)
                /*size*/ 10,
                /*offset*/ 0,
                /*mazeEndIter*/ 2,
-               /*workerCongCost*/ 4 * CONGCOST,
-               /*workerHistCost*/ 0.25 * HISTCOST,
+               /*workerCongCost*/ 4 * router_cfg_->CONGCOST,
+               /*workerHistCost*/ 0.25 * router_cfg_->HISTCOST,
                /*congThresh*/ 1.0,
                /*is2DRouting*/ false,
                RipUpMode::ALL,
                /*TEST*/ false);
   reportCong3D();
-  if (db != nullptr)
+  if (db != nullptr) {
     updateDbCongestion(db, cmap_.get());
+  }
 
   writeToGuide();
 
@@ -164,7 +177,7 @@ void FlexGR::searchRepairMacro(int iter,
 {
   frTime t;
 
-  if (VERBOSE > 1) {
+  if (router_cfg_->VERBOSE > 1) {
     std::cout << std::endl << "start " << iter;
     std::string suffix;
     if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
@@ -205,7 +218,7 @@ void FlexGR::searchRepairMacro(int iter,
 
   // create separate worker for each macro
   for (auto macro : macros) {
-    auto worker = std::make_unique<FlexGRWorker>(this);
+    auto worker = std::make_unique<FlexGRWorker>(this, router_cfg_);
     Rect macroBBox = macro->getBBox();
     Point macroLL(macroBBox.xMin(), macroBBox.yMin());
     Point macroUR(macroBBox.xMax(), macroBBox.yMax());
@@ -243,10 +256,10 @@ void FlexGR::searchRepairMacro(int iter,
 
   // omp_set_num_threads(1);
   // currently this is not mt-safe
-  for (int i = 0; i < (int) uworkers.size(); i++) {
-    uworkers[i]->initBoundary();
-    uworkers[i]->main_mt();
-    uworkers[i]->end();
+  for (auto& worker : uworkers) {
+    worker->initBoundary();
+    worker->main_mt();
+    worker->end();
   }
   uworkers.clear();
 }
@@ -264,7 +277,7 @@ void FlexGR::searchRepair(int iter,
 {
   frTime t;
 
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     std::cout << std::endl << "start " << iter;
     std::string suffix;
     if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
@@ -286,7 +299,7 @@ void FlexGR::searchRepair(int iter,
   if (TEST) {
     std::cout << "search and repair test mode" << std::endl << std::flush;
 
-    FlexGRWorker worker(this);
+    FlexGRWorker worker(this, router_cfg_);
     Rect extBox(1847999, 440999, 1857000, 461999);
     Rect routeBox(1849499, 442499, 1855499, 460499);
     Point gcellIdxLL(616, 147);
@@ -322,7 +335,7 @@ void FlexGR::searchRepair(int iter,
     // sequential init
     for (int i = 0; i < (int) xgp.getCount(); i += size) {
       for (int j = 0; j < (int) ygp.getCount(); j += size) {
-        auto worker = std::make_unique<FlexGRWorker>(this);
+        auto worker = std::make_unique<FlexGRWorker>(this, router_cfg_);
         Point gcellIdxLL = Point(i, j);
         Point gcellIdxUR
             = Point(std::min((int) xgp.getCount() - 1, i + size - 1),
@@ -354,7 +367,8 @@ void FlexGR::searchRepair(int iter,
 
         int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
         if (workers[batchIdx].empty()
-            || (int) workers[batchIdx].back().size() >= BATCHSIZE) {
+            || (int) workers[batchIdx].back().size()
+                   >= router_cfg_->BATCHSIZE) {
           workers[batchIdx].push_back(
               std::vector<std::unique_ptr<FlexGRWorker>>());
         }
@@ -366,7 +380,7 @@ void FlexGR::searchRepair(int iter,
       xIdx++;
     }
 
-    omp_set_num_threads(std::min(8, MAX_THREADS));
+    omp_set_num_threads(std::min(8, router_cfg_->MAX_THREADS));
     // omp_set_num_threads(1);
 
     // parallel execution
@@ -374,13 +388,13 @@ void FlexGR::searchRepair(int iter,
       for (auto& workersInBatch : workerBatch) {
         // single thread
         // split cross-worker boundary pathSeg
-        for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          workersInBatch[i]->initBoundary();
+        for (auto& worker : workersInBatch) {
+          worker->initBoundary();
         }
         // multi thread
         ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
-        for (int i = 0; i < (int) workersInBatch.size(); i++) {
+        for (int i = 0; i < (int) workersInBatch.size(); i++) {  // NOLINT
           try {
             workersInBatch[i]->main_mt();
           } catch (...) {
@@ -389,8 +403,8 @@ void FlexGR::searchRepair(int iter,
         }
         exception.rethrow();
         // single thread
-        for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          workersInBatch[i]->end();
+        for (auto& worker : workersInBatch) {
+          worker->end();
         }
         workersInBatch.clear();
       }
@@ -403,7 +417,7 @@ void FlexGR::searchRepair(int iter,
 
 void FlexGR::reportCong2DGolden(FlexGRCMap* baseCMap2D)
 {
-  FlexGRCMap goldenCMap2D(baseCMap2D);
+  FlexGRCMap goldenCMap2D(baseCMap2D, router_cfg_);
 
   for (auto& net : design_->getTopBlock()->getNets()) {
     for (auto& uGRShape : net->getGRShapes()) {
@@ -435,7 +449,7 @@ void FlexGR::reportCong2DGolden(FlexGRCMap* baseCMap2D)
 
 void FlexGR::reportCong2D(FlexGRCMap* cmap2D)
 {
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     std::cout << std::endl << "start reporting 2D congestion ...\n\n";
   }
 
@@ -527,7 +541,7 @@ void FlexGR::reportCong2D(FlexGRCMap* cmap2D)
 
 void FlexGR::reportCong2D()
 {
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     std::cout << std::endl << "start reporting 2D congestion ...\n\n";
   }
 
@@ -619,7 +633,7 @@ void FlexGR::reportCong2D()
 
 void FlexGR::reportCong3DGolden(FlexGRCMap* baseCMap)
 {
-  FlexGRCMap goldenCMap3D(baseCMap);
+  FlexGRCMap goldenCMap3D(baseCMap, router_cfg_);
 
   for (auto& net : design_->getTopBlock()->getNets()) {
     for (auto& uGRShape : net->getGRShapes()) {
@@ -653,14 +667,15 @@ void FlexGR::reportCong3DGolden(FlexGRCMap* baseCMap)
 void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
 {
   if (db->getChip() == nullptr || db->getChip()->getBlock() == nullptr
-      || db->getTech() == nullptr)
+      || db->getTech() == nullptr) {
     logger_->error(utl::DRT, 201, "Must load design before global routing.");
+  }
   auto block = db->getChip()->getBlock();
   auto tech = db->getTech();
   auto gcell = block->getGCellGrid();
-  if (gcell == nullptr)
+  if (gcell == nullptr) {
     gcell = odb::dbGCellGrid::create(block);
-  else {
+  } else {
     logger_->warn(
         utl::DRT,
         203,
@@ -689,7 +704,7 @@ void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
       cmapLayerIdx++;
       continue;
     }
-    for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++)
+    for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
       for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
         auto horizontal_capacity
             = cmap->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
@@ -700,16 +715,17 @@ void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
         auto vertical_usage
             = cmap->getRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::N);
         gcell->setCapacity(
-            layer, xIdx, yIdx, horizontal_capacity, vertical_capacity, 0);
-        gcell->setUsage(layer, xIdx, yIdx, horizontal_usage, vertical_usage, 0);
+            layer, xIdx, yIdx, horizontal_capacity + vertical_capacity);
+        gcell->setUsage(layer, xIdx, yIdx, horizontal_usage + vertical_usage);
       }
+    }
     cmapLayerIdx++;
   }
 }
 
 void FlexGR::reportCong3D(FlexGRCMap* cmap)
 {
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     std::cout << std::endl << "start reporting 3D congestion ...\n\n";
   }
 
@@ -783,7 +799,7 @@ void FlexGR::reportCong3D(FlexGRCMap* cmap)
 
 void FlexGR::reportCong3D()
 {
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     std::cout << std::endl << "start reporting 3D congestion ...\n\n";
   }
 
@@ -861,7 +877,7 @@ void FlexGR::reportCong3D()
 void FlexGR::ra()
 {
   frTime t;
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     std::cout << std::endl << "start routing resource analysis ...\n\n";
   }
 
@@ -958,7 +974,7 @@ void FlexGR::ra()
   std::cout << std::setw(5) << std::fixed << std::setprecision(2)
             << totNumBlockedGCell * 100.0 / totNumGCell << "%\n";
 
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     std::cout << std::endl;
     t.print(logger_);
   }
@@ -1137,8 +1153,7 @@ void FlexGR::initGR_patternRoute_init(
         continue;
       }
 
-      patternRoutes.push_back(
-          std::make_pair(std::make_pair(node.get(), parentNode), 0));
+      patternRoutes.emplace_back(std::make_pair(node.get(), parentNode), 0);
     }
   }
 }
@@ -1240,10 +1255,10 @@ void FlexGR::patternRoute_LShape(frNode* child, frNode* parent)
     corner1Cost += getCongCost(rawSupply, rawDemand);
     if (cmap2D_->getRawDemand(xIdx, cornerGCellIdx1.y(), 0, frDirEnum::E)
         >= cmap2D_->getRawSupply(xIdx, cornerGCellIdx1.y(), 0, frDirEnum::E)) {
-      corner1Cost += BLOCKCOST;
+      corner1Cost += router_cfg_->BLOCKCOST;
     }
     if (cmap2D_->hasBlock(xIdx, cornerGCellIdx1.y(), 0, frDirEnum::E)) {
-      corner1Cost += BLOCKCOST * 100;
+      corner1Cost += router_cfg_->BLOCKCOST * 100;
     }
   }
   for (int yIdx = std::min(cornerGCellIdx1.y(), childGCellIdx.y());
@@ -1256,10 +1271,10 @@ void FlexGR::patternRoute_LShape(frNode* child, frNode* parent)
     corner1Cost += getCongCost(rawSupply, rawDemand);
     if (cmap2D_->getRawDemand(cornerGCellIdx1.x(), yIdx, 0, frDirEnum::N)
         >= cmap2D_->getRawSupply(cornerGCellIdx1.x(), yIdx, 0, frDirEnum::N)) {
-      corner1Cost += BLOCKCOST;
+      corner1Cost += router_cfg_->BLOCKCOST;
     }
     if (cmap2D_->hasBlock(cornerGCellIdx1.x(), yIdx, 0, frDirEnum::N)) {
-      corner1Cost += BLOCKCOST * 100;
+      corner1Cost += router_cfg_->BLOCKCOST * 100;
     }
   }
 
@@ -1275,10 +1290,10 @@ void FlexGR::patternRoute_LShape(frNode* child, frNode* parent)
     corner2Cost += getCongCost(rawSupply, rawDemand);
     if (cmap2D_->getRawDemand(xIdx, cornerGCellIdx2.y(), 0, frDirEnum::E)
         >= cmap2D_->getRawSupply(xIdx, cornerGCellIdx2.y(), 0, frDirEnum::E)) {
-      corner2Cost += BLOCKCOST;
+      corner2Cost += router_cfg_->BLOCKCOST;
     }
     if (cmap2D_->hasBlock(xIdx, cornerGCellIdx2.y(), 0, frDirEnum::E)) {
-      corner2Cost += BLOCKCOST * 100;
+      corner2Cost += router_cfg_->BLOCKCOST * 100;
     }
   }
   for (int yIdx = std::min(cornerGCellIdx2.y(), parentGCellIdx.y());
@@ -1291,10 +1306,10 @@ void FlexGR::patternRoute_LShape(frNode* child, frNode* parent)
     corner2Cost += getCongCost(rawSupply, rawDemand);
     if (cmap2D_->getRawDemand(cornerGCellIdx2.x(), yIdx, 0, frDirEnum::N)
         >= cmap2D_->getRawSupply(cornerGCellIdx2.x(), yIdx, 0, frDirEnum::N)) {
-      corner2Cost += BLOCKCOST;
+      corner2Cost += router_cfg_->BLOCKCOST;
     }
     if (cmap2D_->hasBlock(cornerGCellIdx2.x(), yIdx, 0, frDirEnum::N)) {
-      corner2Cost += BLOCKCOST * 100;
+      corner2Cost += router_cfg_->BLOCKCOST * 100;
     }
   }
 
@@ -1549,7 +1564,7 @@ void FlexGR::initGR_genTopology()
 // to be followed by layer assignment
 void FlexGR::initGR_genTopology_net(frNet* net)
 {
-  if (net->getNodes().size() == 0) {
+  if (net->getNodes().empty()) {
     return;
   }
 
@@ -1843,7 +1858,7 @@ void FlexGR::initGR_genTopology_net(frNet* net)
                 << net->getName() << '\n';
     }
   }
-  if (nodes.size() > 1 && nodes[0]->getChildren().size() == 0) {
+  if (nodes.size() > 1 && nodes[0]->getChildren().empty()) {
     std::cout << "Error: root does not have any children\n";
   }
 }
@@ -1871,7 +1886,7 @@ void FlexGR::layerAssign()
     }
     int numRPins = net->getRPins().size();
     int ratio = ((urx - llx) + (ury - lly)) / (numRPins);
-    sortedNets.push_back(std::make_pair(ratio, net));
+    sortedNets.emplace_back(ratio, net);
   }
 
   // sort
@@ -1882,9 +1897,8 @@ void FlexGR::layerAssign()
     {
       if (left.first == right.first) {
         return (left.second->getId() < right.second->getId());
-      } else {
-        return (left.first < right.first);
       }
+      return (left.first < right.first);
     }
   };
   sort(sortedNets.begin(), sortedNets.end(), sort_net());
@@ -2138,7 +2152,7 @@ void FlexGR::layerAssign_node_compute(
           = (std::max(layerNum, std::max(maxPinLayerNum, downstreamMaxLayerNum))
              - std::min(layerNum,
                         std::min(minPinLayerNum, downstreamMinLayerNum)))
-            * VIACOST;
+            * router_cfg_->VIACOST;
 
       // get upstream edge congestion cost
       unsigned congestionCost = 0;
@@ -2154,8 +2168,8 @@ void FlexGR::layerAssign_node_compute(
         parentLoc = currLoc;
       }
 
-      if (layerNum <= (VIA_ACCESS_LAYERNUM / 2 - 1)) {
-        congestionCost += VIACOST * 8;
+      if (layerNum <= (router_cfg_->VIA_ACCESS_LAYERNUM / 2 - 1)) {
+        congestionCost += router_cfg_->VIACOST * 8;
       }
 
       Point beginIdx, endIdx;
@@ -2182,7 +2196,7 @@ void FlexGR::layerAssign_node_compute(
             // block cost
             if (isLayerBlocked
                 || cmap_->hasBlock(xIdx, yIdx, layerNum, frDirEnum::E)) {
-              congestionCost += BLOCKCOST * 100;
+              congestionCost += router_cfg_->BLOCKCOST * 100;
             }
             // congestion cost
             if (demand > supply / 4) {
@@ -2191,7 +2205,7 @@ void FlexGR::layerAssign_node_compute(
 
             // overflow
             if (demand >= supply) {
-              congestionCost += MARKERCOST * 8;
+              congestionCost += router_cfg_->MARKERCOST * 8;
             }
           }
         } else {
@@ -2207,7 +2221,7 @@ void FlexGR::layerAssign_node_compute(
                 = cmap_->getRawDemand(xIdx, yIdx, layerNum, frDirEnum::N);
             if (isLayerBlocked
                 || cmap_->hasBlock(xIdx, yIdx, layerNum, frDirEnum::N)) {
-              congestionCost += BLOCKCOST * 100;
+              congestionCost += router_cfg_->BLOCKCOST * 100;
             }
             // congestion cost
             if (demand > supply / 4) {
@@ -2215,7 +2229,7 @@ void FlexGR::layerAssign_node_compute(
             }
             // overflow
             if (demand >= supply) {
-              congestionCost += MARKERCOST * 8;
+              congestionCost += router_cfg_->MARKERCOST * 8;
             }
           }
         }
@@ -2523,7 +2537,7 @@ void FlexGR::updateDb()
              lNum += 2) {
           auto layer = design_->getTech()->getLayer(lNum);
           auto dbLayer = dbTech->findLayer(layer->getName().c_str());
-          odb::dbGuide::create(dbNet, dbLayer, bbox);
+          odb::dbGuide::create(dbNet, dbLayer, dbLayer, bbox, false);
         }
       } else {
         auto layer = design_->getTech()->getLayer(bNum);
@@ -2531,12 +2545,15 @@ void FlexGR::updateDb()
         odb::dbGuide::create(
             dbNet,
             dbLayer,
-            {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()});
+            dbLayer,
+            {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()},
+            false);
       }
     }
     auto dbGuides = dbNet->getGuides();
-    if (dbGuides.orderReversed() && dbGuides.reversible())
+    if (dbGuides.orderReversed() && dbGuides.reversible()) {
       dbGuides.reverse();
+    }
   }
 }
 
@@ -2552,3 +2569,5 @@ void FlexGRWorker::main_mt()
   init();
   route();
 }
+
+}  // namespace drt

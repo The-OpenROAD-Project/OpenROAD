@@ -55,10 +55,10 @@ proc density_fill { args } {
       utl::error FIN 8 "The -area argument must be a list of 4 coordinates."
     }
     lassign $area lx ly ux uy
-    sta::check_positive_integer "-area" $lx
-    sta::check_positive_integer "-area" $ly
-    sta::check_positive_integer "-area" $ux
-    sta::check_positive_integer "-area" $uy
+    set lx [ord::microns_to_dbu $lx]
+    set ly [ord::microns_to_dbu $ly]
+    set ux [ord::microns_to_dbu $ux]
+    set uy [ord::microns_to_dbu $uy]
     set fill_area [odb::Rect x $lx $ly $ux $uy]
   } else {
     set fill_area [ord::get_db_core]
@@ -66,4 +66,3 @@ proc density_fill { args } {
 
   fin::density_fill_cmd $rules_file $fill_area
 }
-
