@@ -3105,64 +3105,9 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
   }
 }
 
-// Find a hierarchical module with a given name
-// TODO: support finding uninstantiated modules
-dbModule* dbNetwork::findModule(const char* name)
+void dbNetwork::replaceDesign(dbModInst* mod_inst, dbModule* module)
 {
-  dbModule* module = nullptr;
-  Instance* top_inst = topInstance();
-  std::unique_ptr<InstanceChildIterator> child_iter{childIterator(top_inst)};
-  while (child_iter->hasNext()) {
-    Instance* child = child_iter->next();
-    if (network_->isHierarchical(child)) {
-      dbInst* db_inst;
-      dbModInst* mod_inst;
-      staToDb(child, db_inst, mod_inst);
-      if (mod_inst) {
-        dbModule* master = mod_inst->getMaster();
-        if (master) {
-          if (strcmp(master->getName(), name) == 0) {
-            module = master;
-            break;
-          }
-        }
-      }
-    }
-  }
-  return module;
-}
-
-// Find a hierarchical instance with a given name
-Instance* dbNetwork::findHierInstance(const char* name)
-{
-  Instance* inst = nullptr;
-  Instance* top_inst = topInstance();
-  std::unique_ptr<InstanceChildIterator> child_iter{childIterator(top_inst)};
-  while (child_iter->hasNext()) {
-    Instance* child = child_iter->next();
-    if (network_->isHierarchical(child)
-        && strcmp(network_->name(child), name) == 0) {
-      inst = child;
-      break;
-    }
-  }
-  return inst;
-}
-
-void dbNetwork::replaceDesign(Instance* instance, dbModule* module)
-{
-  dbInst* db_inst;
-  dbModInst* mod_inst;
-  staToDb(instance, db_inst, mod_inst);
-  if (mod_inst) {
-    mod_inst->swapMaster(module);
-  } else {
-    logger_->error(ORD,
-                   1104,
-                   "Instance {} cannot be replaced because it is not a "
-                   "hierarchical module",
-                   network_->name(instance));
-  }
+  mod_inst->swapMaster(module);
 }
 
 }  // namespace sta
