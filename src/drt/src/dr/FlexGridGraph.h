@@ -416,7 +416,12 @@ class FlexGridGraph
     return sol;
   }
   // setters
-  void setTech(frTechObject* techIn) { tech_ = techIn; }
+  void setTech(frTechObject* techIn)
+  {
+    tech_ = techIn;
+    ap_locs_.clear();
+    ap_locs_.resize(tech_->getTopLayerNum() + 1);
+  }
   void setLogger(Logger* loggerIn) { logger_ = loggerIn; }
   void setWorker(FlexDRWorker* workerIn) { drWorker_ = workerIn; }
   bool addEdge(frMIdx x,
@@ -1351,6 +1356,7 @@ class FlexGridGraph
     (ar) & ggDRCCost_;
     (ar) & ggMarkerCost_;
     (ar) & halfViaEncArea_;
+    (ar) & ap_locs_;
   }
   friend class boost::serialization::access;
   friend class FlexDRWorker;

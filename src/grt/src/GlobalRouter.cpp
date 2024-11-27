@@ -229,7 +229,8 @@ bool GlobalRouter::haveRoutes()
     logger_->warn(GRT, 97, "No global routing found for nets.");
   }
 
-  return !routes_.empty();
+  bool congested_routes = is_congested_ && !allow_congestion_;
+  return !routes_.empty() && !congested_routes;
 }
 
 bool GlobalRouter::haveDetailedRoutes()
@@ -1956,7 +1957,6 @@ void GlobalRouter::initGridAndNets()
     initCoreGrid(max_layer);
     setCapacities(min_layer, max_layer);
     applyAdjustments(min_layer, max_layer);
-    updateDbCongestion();
   }
   std::vector<Net*> nets = findNets();
   initNetlist(nets);
@@ -2104,6 +2104,7 @@ void GlobalRouter::loadGuidesFromDB()
       int via_layer_idx = guide->getViaLayer()->getRoutingLevel();
       boxToGlobalRouting(
           guide->getBox(), layer_idx, via_layer_idx, routes_[net]);
+      is_congested_ = is_congested_ || guide->isCongested();
     }
   }
 
@@ -2114,6 +2115,9 @@ void GlobalRouter::loadGuidesFromDB()
   }
 
   updateEdgesUsage();
+  if (block_->getGCellGrid() == nullptr) {
+    updateDbCongestion();
+  }
   heatmap_->update();
 }
 
@@ -2174,6 +2178,9 @@ void GlobalRouter::updateDbCongestionFromGuides()
 {
   auto block = db_->getChip()->getBlock();
   auto db_gcell = block->getGCellGrid();
+  if (db_gcell == nullptr) {
+    db_gcell = odb::dbGCellGrid::create(block);
+  }
 
   auto db_tech = db_->getTech();
   for (int k = 0; k < grid_->getNumLayers(); k++) {
@@ -2503,6 +2510,9 @@ void GlobalRouter::readSegments(const char* file_name)
                      pins_not_covered,
                      db_net->getName());
     }
+  }
+  if (block_->getGCellGrid() == nullptr) {
+    updateDbCongestion();
   }
 }
 

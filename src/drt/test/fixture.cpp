@@ -396,6 +396,21 @@ frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
   return rptr;
 }
 
+frLef58WidthTableOrthConstraint* Fixture::makeWidthTblOrthConstraint(
+    frLayerNum layer_num,
+    frCoord horz_spc,
+    frCoord vert_spc)
+{
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  std::unique_ptr<frConstraint> uCon
+      = std::make_unique<frLef58WidthTableOrthConstraint>(horz_spc, vert_spc);
+  auto rptr = static_cast<frLef58WidthTableOrthConstraint*>(uCon.get());
+  tech->addUConstraint(std::move(uCon));
+  layer->setWidthTblOrthCon(rptr);
+  return rptr;
+}
+
 void Fixture::makeLef58EolKeepOutConstraint(frLayerNum layer_num,
                                             bool cornerOnly,
                                             bool exceptWithin,
