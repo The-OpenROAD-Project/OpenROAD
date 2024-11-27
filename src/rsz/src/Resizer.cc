@@ -643,9 +643,6 @@ void Resizer::SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from)
   // random name.
   //
 
-  std::string next_random_name_1 = makeUniqueNetName();
-  std::string next_random_name_2 = makeUniqueNetName();
-
   // we only move name to input dbNet
   dbNet* to_db_net = iterm_to->getNet();
   odb::dbModNet* to_mod_net = iterm_to->getModNet();
@@ -655,11 +652,15 @@ void Resizer::SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from)
 
   std::string required_name
       = from_mod_net ? from_mod_net->getName() : from_db_net->getName();
+  std::string to_name
+      = to_mod_net ? to_mod_net->getName() : to_db_net->getName();
 
   if (from_mod_net) {
+    std::string next_random_name_1 = makeUniqueNetName();
     from_mod_net->rename(next_random_name_1.c_str());
   }
   if (from_db_net) {
+    std::string next_random_name_2 = makeUniqueNetName();
     from_db_net->rename(next_random_name_2.c_str());
   }
 
@@ -874,7 +875,7 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
                        top_pin_op_moditerm,
                        top_pin_op_modbterm);
 
-  Term* term = network_->term(top_pin);
+  //  Term* term = network_->term(top_pin);
   odb::dbNet* flat_op_net = top_pin_op_bterm->getNet();
   odb::dbModNet* hier_op_net = top_pin_op_bterm->getModNet();
 
