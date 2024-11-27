@@ -252,7 +252,6 @@ void RouteBaseVars::reset()
   minInflationRatio = 1.01;
   rcK1 = rcK2 = 1.0;
   rcK3 = rcK4 = 0.0;
-  maxBloatIter = 1;
   maxInflationIter = 4;
   useRudy = true;
 }
@@ -287,7 +286,6 @@ void RouteBase::reset()
   nbc_ = nullptr;
   log_ = nullptr;
 
-  bloatIterCnt_ = inflationIterCnt_ = 0;
   numCall_ = 0;
 
   minRc_ = 1e30;
@@ -351,16 +349,6 @@ int64_t RouteBase::inflatedAreaDelta() const
 int RouteBase::numCall() const
 {
   return numCall_;
-}
-
-int RouteBase::bloatIterCnt() const
-{
-  return bloatIterCnt_;
-}
-
-int RouteBase::inflationIterCnt() const
-{
-  return inflationIterCnt_;
 }
 
 static float getUsageCapacityRatio(Tile* tile,
@@ -1010,21 +998,8 @@ float RouteBase::getGrtRC() const
 void RouteBase::increaseCounter()
 {
   numCall_++;
-  inflationIterCnt_++;
-  if (inflationIterCnt_ > rbVars_.maxInflationIter) {
-    inflationIterCnt_ = 0;
-    bloatIterCnt_++;
-  }
 
-  log_->info(GPL,
-             75,
-             "Routability iteration: {} | Inflation step: {}/{} | Inlfation "
-             "reset(bloat): {}/{}",
-             numCall_,
-             inflationIterCnt_,
-             rbVars_.maxInflationIter,
-             bloatIterCnt_,
-             rbVars_.maxBloatIter);
+  log_->info(GPL, 75, "Routability iteration: {}", numCall_);
 }
 
 }  // namespace gpl
