@@ -471,23 +471,19 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           // 3. updateareas
           // 4. updateDensitySize
 
-          // nesterov->setTargetDensity(
-          //     static_cast<float>(nbc_->getDeltaArea()
-          //                        + nesterov->nesterovInstsArea()
-          //                        + nesterov->totalFillerArea())
-          //     / static_cast<float>(nesterov->whiteSpaceArea()));
           nesterov->setTargetDensity(
               static_cast<float>(nbc_->getDeltaArea()
-                                 + nesterov->nesterovInstsArea())
+                                 + nesterov->nesterovInstsArea()
+                                 + nesterov->totalFillerArea())
               / static_cast<float>(nesterov->whiteSpaceArea()));
 
           log_->info(GPL,
                      107,
-                     "Timing-driven: RSZ delta area:     {:.2f}",
+                     "Timing-driven: RSZ delta area:     {}",
                      block->dbuAreaToMicrons(nbc_->getDeltaArea()));
           log_->info(GPL,
                      108,
-                     "Timing-driven: new target density: {:.4f}",
+                     "Timing-driven: new target density: {}",
                      nesterov->targetDensity());
           nbc_->resetDeltaArea();
           nesterov->updateAreas();
