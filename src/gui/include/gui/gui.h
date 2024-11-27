@@ -731,6 +731,8 @@ class Gui
                                       const std::string& option);
   void dumpHeatMap(const std::string& name, const std::string& file);
 
+  void selectHelp(const std::string& item);
+
   // accessors for to add and remove commands needed to restore the state of the
   // gui
   const std::vector<std::string>& getRestoreStateCommands()
