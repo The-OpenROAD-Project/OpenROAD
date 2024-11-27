@@ -34,6 +34,7 @@
 #include <map>
 #include <queue>
 #include <set>
+#include <mutex>
 
 #include "odb/db.h"
 #include "odb/dbWireGraph.h"
@@ -198,7 +199,8 @@ class AntennaChecker
                             NodeInfo& node_info,
                             float ratio_margin,
                             bool verbose,
-                            bool report);
+                            bool report,
+			    ViolationReport& net_report);
   void writeReport(std::ofstream& report_file, bool verbose);
   void printReport();
   int checkGates(odb::dbNet* db_net,
@@ -216,23 +218,27 @@ class AntennaChecker
                 NodeInfo& info,
                 float ratio_margin,
                 bool verbose,
-                bool report);
+                bool report,
+		ViolationReport& net_report);
   bool checkPSR(odb::dbNet* db_net,
                 odb::dbTechLayer* tech_layer,
                 NodeInfo& info,
                 float ratio_margin,
                 bool verbose,
-                bool report);
+                bool report,
+		ViolationReport& net_report);
   bool checkCAR(odb::dbNet* db_net,
                 odb::dbTechLayer* tech_layer,
                 const NodeInfo& info,
                 bool verbose,
-                bool report);
+                bool report,
+		ViolationReport& net_report);
   bool checkCSR(odb::dbNet* db_net,
                 odb::dbTechLayer* tech_layer,
                 const NodeInfo& info,
                 bool verbose,
-                bool report);
+                bool report,
+		ViolationReport& net_report);
 
   odb::dbDatabase* db_{nullptr};
   odb::dbBlock* block_{nullptr};
@@ -243,6 +249,7 @@ class AntennaChecker
   std::string report_file_name_;
   std::vector<odb::dbNet*> nets_;
   std::map<odb::dbNet*, ViolationReport> net_to_report_;
+  std::mutex mapMutex;
   // consts
   static constexpr int max_diode_count_per_gate = 10;
 };
