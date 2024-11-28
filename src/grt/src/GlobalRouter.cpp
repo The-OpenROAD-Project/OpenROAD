@@ -2387,8 +2387,8 @@ void GlobalRouter::saveGuides()
           odb::dbTechLayer* layer = routing_layers_[segment.init_layer];
           // Set guide flag when it is jumper
           bool is_jumper = segment.isJumper();
-          auto guide
-              = odb::dbGuide::create(db_net, layer, layer, box, guide_is_congested);
+          auto guide = odb::dbGuide::create(
+              db_net, layer, layer, box, guide_is_congested);
           if (is_jumper) {
             guide->setIsJumper(true);
           }
