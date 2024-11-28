@@ -77,10 +77,10 @@ class Point
   int y() const { return y_; }
 
   // compute the square distance between two points
-  static int64 squaredDistance(Point p0, Point p1);
+  static int64_t squaredDistance(Point p0, Point p1);
 
   // compute the manhattan distance between two points
-  static int64 manhattanDistance(Point p0, Point p1);
+  static int64_t manhattanDistance(Point p0, Point p1);
 
   friend dbIStream& operator>>(dbIStream& stream, Point& p);
   friend dbOStream& operator<<(dbOStream& stream, const Point& p);
@@ -278,11 +278,18 @@ class Rect
   // Return the point inside rect that is closest to pt.
   Point closestPtInside(Point pt) const;
 
+  // Compute the union of this rectangle and a point.
+  void merge(const Point& p, Rect& result);
+
   // Compute the union of these two rectangles.
   void merge(const Rect& r, Rect& result);
 
   // Compute the union of this rectangle and an octagon.
   void merge(const Oct& o, Rect& result);
+
+  // Compute the union of this rectangle an point.
+  // The result is stored in this rectangle.
+  void merge(const Point& p);
 
   // Compute the union of these two rectangles. The result is stored in this
   // rectangle.
@@ -304,8 +311,8 @@ class Rect
   // Compute the intersection of these two rectangles.
   Rect intersect(const Rect& r) const;
 
-  int64 area() const;
-  int64 margin() const;
+  int64_t area() const;
+  int64_t margin() const;
 
   void printf(FILE* fp, const char* prefix = "");
   void print(const char* prefix = "");
@@ -431,17 +438,17 @@ inline void Point::rotate270()
   y_ = yp;
 }
 
-inline int64 Point::squaredDistance(Point p0, Point p1)
+inline int64_t Point::squaredDistance(Point p0, Point p1)
 {
-  const int64 dx = p1.x_ - p0.x_;
-  const int64 dy = p1.y_ - p0.y_;
+  const int64_t dx = p1.x_ - p0.x_;
+  const int64_t dy = p1.y_ - p0.y_;
   return dx * dx + dy * dy;
 }
 
-inline int64 Point::manhattanDistance(Point p0, Point p1)
+inline int64_t Point::manhattanDistance(Point p0, Point p1)
 {
-  const int64 dx = std::abs(p1.x_ - p0.x_);
-  const int64 dy = std::abs(p1.y_ - p0.y_);
+  const int64_t dx = std::abs(p1.x_ - p0.x_);
+  const int64_t dy = std::abs(p1.y_ - p0.y_);
   return dx + dy;
 }
 
@@ -642,6 +649,14 @@ inline Point Rect::closestPtInside(const Point pt) const
                std::min(std::max(pt.getY(), yMin()), yMax()));
 }
 
+inline void Rect::merge(const Point& p, Rect& result)
+{
+  result.xlo_ = std::min(xlo_, p.getX());
+  result.ylo_ = std::min(ylo_, p.getY());
+  result.xhi_ = std::max(xhi_, p.getX());
+  result.yhi_ = std::max(yhi_, p.getY());
+}
+
 // Compute the union of these two rectangles.
 inline void Rect::merge(const Rect& r, Rect& result)
 {
@@ -657,6 +672,14 @@ inline void Rect::merge(const Oct& o, Rect& result)
   result.ylo_ = std::min(ylo_, o.yMin());
   result.xhi_ = std::max(xhi_, o.xMax());
   result.yhi_ = std::max(yhi_, o.yMax());
+}
+
+inline void Rect::merge(const Point& p)
+{
+  xlo_ = std::min(xlo_, p.getX());
+  ylo_ = std::min(ylo_, p.getY());
+  xhi_ = std::max(xhi_, p.getX());
+  yhi_ = std::max(yhi_, p.getY());
 }
 
 // Compute the union of these two rectangles.
@@ -730,15 +753,15 @@ inline Rect Rect::intersect(const Rect& r) const
   return result;
 }
 
-inline int64 Rect::area() const
+inline int64_t Rect::area() const
 {
-  return dx() * static_cast<int64>(dy());
+  return dx() * static_cast<int64_t>(dy());
 }
 
-inline int64 Rect::margin() const
+inline int64_t Rect::margin() const
 {
-  const int64 DX = dx();
-  const int64 DY = dy();
+  const int64_t DX = dx();
+  const int64_t DY = dy();
   return DX + DX + DY + DY;
 }
 

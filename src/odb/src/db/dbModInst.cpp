@@ -421,13 +421,23 @@ bool dbModInst::swapMaster(dbModule* new_module)
   const char* old_module_name = old_module->getName();
   const char* new_module_name = new_module->getName();
 
+  // Check if module names differ
+  if (strcmp(old_module_name, new_module_name) == 0) {
+    logger->warn(utl::ODB,
+                 470,
+                 "The modules cannot be swapped because the new module {} is "
+                 "identical to the existing module",
+                 new_module_name);
+    return false;
+  }
+
   // Check if number of module ports match
   dbSet<dbModBTerm> old_bterms = old_module->getModBTerms();
   dbSet<dbModBTerm> new_bterms = new_module->getModBTerms();
   if (old_bterms.size() != new_bterms.size()) {
     logger->warn(utl::ODB,
                  453,
-                 "modules cannot be swapped because module {} "
+                 "The modules cannot be swapped because module {} "
                  "has {} ports but module {} has {} ports",
                  old_module_name,
                  old_bterms.size(),
@@ -446,7 +456,6 @@ bool dbModInst::swapMaster(dbModule* new_module)
   for (iter = new_bterms.begin(); iter != new_bterms.end(); ++iter) {
     new_ports.push_back((_dbModBTerm*) *iter);
   }
-  std::map<dbModNet*, dbModNet*> mod_map;  // old mod net -> new mod net
   std::sort(new_ports.begin(),
             new_ports.end(),
             [](_dbModBTerm* port1, _dbModBTerm* port2) {
@@ -462,21 +471,31 @@ bool dbModInst::swapMaster(dbModule* new_module)
   for (; i1 != new_ports.end() && i2 != old_ports.end(); ++i1, ++i2) {
     _dbModBTerm* t1 = *i1;
     _dbModBTerm* t2 = *i2;
+    if (t1 == nullptr) {
+      logger->error(
+          utl::ODB, 464, "Module {} has a null port", new_module_name);
+    }
+    if (t2 == nullptr) {
+      logger->error(
+          utl::ODB, 465, "Module {} has a null port", old_module_name);
+    }
     if (strcmp(t1->_name, t2->_name) != 0) {
       break;
     }
-    // Map old mod net to new mod net
-    mod_map[((dbModBTerm*) t2)->getModNet()] = ((dbModBTerm*) t1)->getModNet();
   }
   if (i1 != new_ports.end() || i2 != old_ports.end()) {
+    const char* new_port_name
+        = (i1 != new_ports.end() && *i1) ? (*i1)->_name : "N/A";
+    const char* old_port_name
+        = (i2 != old_ports.end() && *i2) ? (*i2)->_name : "N/A";
     logger->warn(utl::ODB,
                  454,
-                 "modules cannot be swapped because module {} "
+                 "The modules cannot be swapped because module {} "
                  "has port {} but module {} has port {}",
                  old_module_name,
-                 (*i1)->_name,
+                 old_port_name,
                  new_module_name,
-                 (*i2)->_name);
+                 new_port_name);
     return false;
   }
 
@@ -497,9 +516,53 @@ bool dbModInst::swapMaster(dbModule* new_module)
   }
   dbModule::copy(new_module, new_module_copy, this);
   _dbModule* new_master = (_dbModule*) new_module_copy;
+  if (logger->debugCheck(utl::ODB, "replace_design", 2)) {
+    dbSet<dbInst> insts = new_module_copy->getInsts();
+    dbSet<dbInst>::iterator inst_iter;
+    for (inst_iter = insts.begin(); inst_iter != insts.end(); ++inst_iter) {
+      dbInst* inst = *inst_iter;
+      logger->report("new_module_copy {} instance {} has the following iterms",
+                     new_module_copy->getName(),
+                     inst->getName());
+      dbSet<dbITerm> iterms = inst->getITerms();
+      dbSet<dbITerm>::iterator it_iter;
+      for (it_iter = iterms.begin(); it_iter != iterms.end(); ++it_iter) {
+        dbITerm* iterm = *it_iter;
+        logger->report("  iterm {}", iterm->getName());
+      }
+    }
+  }
+
+  // Map old mod nets to new mod nets based on new_module_copy
+  std::map<dbModNet*, dbModNet*> mod_map;  // old mod net -> new mod net
+  for (iter = old_bterms.begin(); iter != old_bterms.end(); ++iter) {
+    dbModBTerm* old_bterm = *iter;
+    dbModBTerm* new_bterm = new_module_copy->findModBTerm(old_bterm->getName());
+    if (new_bterm == nullptr) {
+      logger->error(utl::ODB,
+                    466,
+                    "modBTerm for {} is not found in copied module {}",
+                    old_bterm->getName(),
+                    new_module_copy->getName());
+    }
+    dbModNet* old_mod_net = old_bterm->getModNet();
+    dbModNet* new_mod_net = new_bterm->getModNet();
+    if (new_mod_net && old_mod_net) {
+      mod_map[old_mod_net] = new_mod_net;
+      debugPrint(logger,
+                 utl::ODB,
+                 "replace_design",
+                 1,
+                 "old mod net {} maps to new mod net {}",
+                 old_mod_net->getName(),
+                 new_mod_net->getName());
+    }
+  }
 
   // Patch connections such that boundary nets connect to new module iterms
   // instead of old module iterms
+  inst->_master = new_master->getOID();
+  new_master->_mod_inst = inst->getOID();
   debugPrint(logger,
              utl::ODB,
              "replace_design",
@@ -533,6 +596,13 @@ bool dbModInst::swapMaster(dbModule* new_module)
       for (new_it_iter = new_iterms.begin(); new_it_iter != new_iterms.end();
            ++new_it_iter) {
         dbITerm* new_iterm = *new_it_iter;
+        debugPrint(logger,
+                   utl::ODB,
+                   "replace_design",
+                   1,
+                   "  connecting iterm {} of mod net {}",
+                   new_iterm->getName(),
+                   new_mod_net->getName());
         if (flat_net) {
           new_iterm->connect(flat_net);
         }
@@ -555,8 +625,6 @@ bool dbModInst::swapMaster(dbModule* new_module)
 
   // TODO: remove old module insts without destroying old module itself
   // dbModule::destroy(old_module);
-  inst->_master = new_master->getOID();
-  new_master->_mod_inst = inst->getOID();
 
   return true;
 }

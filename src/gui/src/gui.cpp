@@ -41,6 +41,7 @@
 #include "displayControls.h"
 #include "drcWidget.h"
 #include "heatMapPlacementDensity.h"
+#include "helpWidget.h"
 #include "inspector.h"
 #include "layoutViewer.h"
 #include "mainWindow.h"
@@ -1286,6 +1287,15 @@ void Gui::init(odb::dbDatabase* db, utl::Logger* logger)
   placement_density_heat_map_->registerHeatMap();
 }
 
+void Gui::selectHelp(const std::string& item)
+{
+  if (!enabled()) {
+    return;
+  }
+
+  main_window->getHelpViewer()->selectHelp(item);
+}
+
 class SafeApplication : public QApplication
 {
  public:
@@ -1356,7 +1366,7 @@ int startGui(int& argc,
       interp, interactive, init_openroad, [&]() {
         // init remainder of GUI, to be called immediately after OpenRoad is
         // guaranteed to be initialized.
-        main_window->init(open_road->getSta());
+        main_window->init(open_road->getSta(), open_road->getDocsPath());
         // announce design created to ensure GUI gets setup
         main_window->postReadDb(main_window->getDb());
       });
