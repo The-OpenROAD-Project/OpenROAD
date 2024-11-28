@@ -1658,7 +1658,7 @@ bool Resizer::dontTouch(const Instance* inst)
   if (!db_inst) {
     return false;
   }
-  return db_inst->isDoNotTouch() || db_inst->isPad();
+  return db_inst->isDoNotTouch() || !db_inst->isCore();
 }
 
 void Resizer::setDontTouch(const Net* net, bool dont_touch)

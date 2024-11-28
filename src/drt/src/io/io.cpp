@@ -125,7 +125,7 @@ void io::Parser::setTracks(odb::dbBlock* block)
 void io::Parser::setInst(odb::dbInst* inst)
 {
   frMaster* master = getDesign()->name2master_.at(inst->getMaster()->getName());
-  auto uInst = std::make_unique<frInst>(inst->getName(), master);
+  auto uInst = std::make_unique<frInst>(inst->getName(), master, inst);
   auto tmpInst = uInst.get();
 
   int x, y;

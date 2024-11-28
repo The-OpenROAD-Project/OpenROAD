@@ -492,7 +492,6 @@ bool Opendp::isCrWtBlClass(const Cell* cell)
     case dbMasterType::PAD_INOUT:
     case dbMasterType::PAD_POWER:
     case dbMasterType::PAD_SPACER:
-    case dbMasterType::NONE:
       return false;
   }
   // gcc warniing
