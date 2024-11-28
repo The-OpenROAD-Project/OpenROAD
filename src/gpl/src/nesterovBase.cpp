@@ -1925,9 +1925,9 @@ void NesterovBase::updateAreas()
     log_->warn(
         GPL,
         303,
-        "Not enough movable area, negative totalFillerArea_ in updateAreas(). "
+        "Not enough movable area. "
         "Given target density: {:.2f}. "
-        "targetDensity set with uniform density: {:.2f}",
+        "Continuing with uniform density, disregarding filler area: {:.2f}",
         targetDensity_,
         uniformTargetDensity_);
     targetDensity_ = uniformTargetDensity_;
