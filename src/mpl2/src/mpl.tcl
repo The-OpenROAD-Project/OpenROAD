@@ -312,6 +312,7 @@ proc mpl_debug { args } {
   sta::parse_key_args "mpl_debug" args \
     keys { -target_cluster_id target_cluster_id } \
     flags {-coarse -fine -show_bundled_nets \
+           -show_clusters_ids \
            -skip_steps -only_final_result} ;# checker off
 
   set coarse [info exists flags(-coarse)]
@@ -331,6 +332,7 @@ proc mpl_debug { args } {
     $coarse \
     $fine \
     [info exists flags(-show_bundled_nets)] \
+    [info exists flags(-show_clusters_ids)] \
     [info exists flags(-skip_steps)] \
     [info exists flags(-only_final_result)] \
     $target_cluster_id
