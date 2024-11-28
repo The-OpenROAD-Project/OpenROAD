@@ -564,7 +564,7 @@ class FlexPA
       int curr_unique_inst_idx,
       int max_access_point_size);
 
-  void genPatternsInit(std::vector<FlexDPNode>& nodes,
+  void genPatternsInit(std::vector<std::unique_ptr<FlexDPNode>>& nodes,
                        const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                        std::set<std::vector<int>>& inst_access_patterns,
                        std::set<std::pair<int, int>>& used_access_points,
@@ -572,12 +572,12 @@ class FlexPA
                        int max_access_point_size);
 
   void genPatterns_reset(
-      std::vector<FlexDPNode>& nodes,
+      std::vector<std::unique_ptr<FlexDPNode>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       int max_access_point_size);
 
   void genPatterns_perform(
-      std::vector<FlexDPNode>& nodes,
+      std::vector<std::unique_ptr<FlexDPNode>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::vector<int>& vio_edges,
       const std::set<std::pair<int, int>>& used_access_points,
@@ -585,9 +585,9 @@ class FlexPA
       int curr_unique_inst_idx,
       int max_access_point_size);
 
-  int getEdgeCost(FlexDPNode* prev_node_idx,
-                  FlexDPNode* curr_node_idx,
-                  const std::vector<FlexDPNode>& nodes,
+  int getEdgeCost(FlexDPNode* prev_node,
+                  FlexDPNode* curr_node,
+                  const std::vector<std::unique_ptr<FlexDPNode>>& nodes,
                   const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                   std::vector<int>& vio_edges,
                   const std::set<std::pair<int, int>>& used_access_points,
@@ -609,13 +609,13 @@ class FlexPA
    * access_pattern[pin_idx] = access_point_idx of the pin
    */
   std::vector<int> extractAccessPatternFromNodes(
-      const std::vector<FlexDPNode>& nodes,
+      const std::vector<std::unique_ptr<FlexDPNode>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::set<std::pair<int, int>>& used_access_points,
       int max_access_point_size);
 
   bool genPatterns_commit(
-      const std::vector<FlexDPNode>& nodes,
+      const std::vector<std::unique_ptr<FlexDPNode>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       bool& is_valid,
       std::set<std::vector<int>>& inst_access_patterns,
@@ -625,12 +625,12 @@ class FlexPA
       int max_access_point_size);
 
   void genPatternsPrintDebug(
-      std::vector<FlexDPNode>& nodes,
+      std::vector<std::unique_ptr<FlexDPNode>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       int max_access_point_size);
 
   void genPatterns_print(
-      std::vector<FlexDPNode>& nodes,
+      std::vector<std::unique_ptr<FlexDPNode>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       int max_access_point_size);
 
@@ -651,21 +651,21 @@ class FlexPA
 
   void genInstRowPattern(std::vector<frInst*>& insts);
 
-  void genInstRowPatternInit(std::vector<FlexDPNode>& nodes,
+  void genInstRowPatternInit(std::vector<std::unique_ptr<FlexDPNode>>& nodes,
                              const std::vector<frInst*>& insts);
 
-  void genInstRowPatternPerform(std::vector<FlexDPNode>& nodes,
+  void genInstRowPatternPerform(std::vector<std::unique_ptr<FlexDPNode>>& nodes,
                                 const std::vector<frInst*>& insts);
 
-  void genInstRowPattern_commit(std::vector<FlexDPNode>& nodes,
+  void genInstRowPattern_commit(std::vector<std::unique_ptr<FlexDPNode>>& nodes,
                                 const std::vector<frInst*>& insts);
 
-  void genInstRowPattern_print(std::vector<FlexDPNode>& nodes,
+  void genInstRowPattern_print(std::vector<std::unique_ptr<FlexDPNode>>& nodes,
                                const std::vector<frInst*>& insts);
 
-  int getEdgeCost(FlexDPNode* prev_node_idx,
-                  FlexDPNode* curr_node_idx,
-                  const std::vector<FlexDPNode>& nodes,
+  int getEdgeCost(FlexDPNode* prev_node,
+                  FlexDPNode* curr_node,
+                  const std::vector<std::unique_ptr<FlexDPNode>>& nodes,
                   const std::vector<frInst*>& insts);
 
   void revertAccessPoints();
