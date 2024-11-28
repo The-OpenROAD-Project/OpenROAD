@@ -62,7 +62,7 @@ std::vector<frRect> getPinShapes(const frBlockObject* pin)
   if (pin->typeId() == frcBTerm) {
     static_cast<const frBTerm*>(pin)->getShapes(pinShapes);
   } else {
-    static_cast<const frInstTerm*>(pin)->getShapes(pinShapes, true);
+    static_cast<const frInstTerm*>(pin)->getShapes(pinShapes);
   }
   return pinShapes;
 }
@@ -112,8 +112,7 @@ std::vector<Point3D> getAccessPoints(const frBlockObject* pin)
   std::vector<Point3D> result;
   if (pin->typeId() == frcInstTerm) {
     auto iterm = static_cast<const frInstTerm*>(pin);
-    auto transform = iterm->getInst()->getTransform();
-    transform.setOrient(odb::dbOrientType::R0);
+    auto transform = iterm->getInst()->getNoRotationTransform();
     const int pin_access_idx = iterm->getInst()->getPinAccessIdx();
     for (const auto& mpin : iterm->getTerm()->getPins()) {
       if (!mpin->hasPinAccess()) {
@@ -1328,8 +1327,7 @@ void GuideProcessor::genGuides_addCoverGuide_helper(frInstTerm* iterm,
 {
   const frInst* inst = iterm->getInst();
   const size_t num_pins = iterm->getTerm()->getPins().size();
-  dbTransform transform = inst->getTransform();
-  transform.setOrient(dbOrientType(dbOrientType::R0));
+  dbTransform transform = inst->getNoRotationTransform();
   for (int pin_idx = 0; pin_idx < num_pins; pin_idx++) {
     const frAccessPoint* pref_ap = getPrefAp(iterm, pin_idx);
     if (pref_ap) {

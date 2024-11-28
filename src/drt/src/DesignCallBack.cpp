@@ -39,7 +39,7 @@ static inline int defdist(odb::dbBlock* block, int x)
          / (double) block->getDbUnitsPerMicron();
 }
 
-void DesignCallBack::inDbPostMoveInst(odb::dbInst* db_inst)
+void DesignCallBack::inDbPreMoveInst(odb::dbInst* db_inst)
 {
   auto design = router_->getDesign();
   if (design != nullptr && design->getTopBlock() != nullptr) {
@@ -49,6 +49,17 @@ void DesignCallBack::inDbPostMoveInst(odb::dbInst* db_inst)
     }
     if (design->getRegionQuery() != nullptr) {
       design->getRegionQuery()->removeBlockObj(inst);
+    }
+  }
+}
+
+void DesignCallBack::inDbPostMoveInst(odb::dbInst* db_inst)
+{
+  auto design = router_->getDesign();
+  if (design != nullptr && design->getTopBlock() != nullptr) {
+    auto inst = design->getTopBlock()->getInst(db_inst->getName());
+    if (inst == nullptr) {
+      return;
     }
     int x, y;
     db_inst->getLocation(x, y);

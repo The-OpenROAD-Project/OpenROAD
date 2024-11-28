@@ -74,7 +74,7 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
 
   dbTransform xform;
   if (inst) {
-    xform = inst->getUpdatedXform();
+    xform = inst->getDBTransform();
   }
 
   frTechObject* tech = getDesign()->getTech();
@@ -1791,9 +1791,7 @@ void FlexPA::revertAccessPoints()
   for (auto& inst : unique) {
     const dbTransform xform = inst->getTransform();
     const Point offset(xform.getOffset());
-    dbTransform revertXform;
-    revertXform.setOffset(Point(-offset.getX(), -offset.getY()));
-    revertXform.setOrient(dbOrientType::R0);
+    dbTransform revertXform(Point(-offset.getX(), -offset.getY()));
 
     const auto pin_access_idx = unique_insts_.getPAIndex(inst);
     for (auto& inst_term : inst->getInstTerms()) {
@@ -2095,7 +2093,7 @@ void FlexPA::addAccessPatternObj(
     std::vector<std::unique_ptr<frVia>>& vias,
     const bool isPrev)
 {
-  const dbTransform xform = inst->getUpdatedXform(true);
+  const dbTransform xform = inst->getNoRotationTransform();
   int access_point_idx = 0;
   auto& access_points = access_pattern->getPattern();
 
@@ -2537,7 +2535,7 @@ int FlexPA::getEdgeCost(
     has_vio = (vio_edges[edge_idx] == 1);
   } else {
     auto curr_unique_inst = unique_insts_.getUnique(curr_unique_inst_idx);
-    dbTransform xform = curr_unique_inst->getUpdatedXform(true);
+    dbTransform xform = curr_unique_inst->getNoRotationTransform();
     // check DRC
     std::vector<std::pair<frConnFig*, frBlockObject*>> objs;
     const auto& [pin_1, inst_term_1] = pins[prev_pin_idx];
@@ -2714,7 +2712,7 @@ bool FlexPA::genPatterns_commit(
       auto rvia = via.get();
       temp_vias.push_back(std::move(via));
 
-      dbTransform xform = inst->getUpdatedXform(true);
+      dbTransform xform = inst->getNoRotationTransform();
       Point pt(access_point->getPoint());
       xform.apply(pt);
       rvia->setOrigin(pt);
@@ -2807,8 +2805,7 @@ void FlexPA::genPatternsPrintDebug(
   auto& [pin, inst_term] = pins[0];
   if (inst_term) {
     frInst* inst = inst_term->getInst();
-    xform = inst->getTransform();
-    xform.setOrient(dbOrientType::R0);
+    xform = inst->getNoRotationTransform();
   }
 
   std::cout << "failed pattern:";
