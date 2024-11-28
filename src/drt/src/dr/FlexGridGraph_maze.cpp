@@ -518,7 +518,8 @@ frCost FlexGridGraph::getCosts(frMIdx gridX,
          + (markerCost ? ggMarkerCost_ * edgeLength : 0)
          + (shapeCost ? ggFixedShapeCost_ * edgeLength : 0)
          + (blockCost ? router_cfg_->BLOCKCOST * layer->getMinWidth() * 20 : 0)
-         + (!guideCost ? (router_cfg_->GUIDECOST * jumper_cost) * edgeLength : 0);
+         + (!guideCost ? (router_cfg_->GUIDECOST * jumper_cost) * edgeLength
+                       : 0);
 }
 
 bool FlexGridGraph::useNDRCosts(const FlexWavefrontGrid& p) const
