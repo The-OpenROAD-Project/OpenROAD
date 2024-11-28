@@ -68,7 +68,7 @@ class Point3D : public Point
   friend std::size_t hash_value(Point3D const& p)
   {
     std::size_t seed = 0;
-    boost::hash_combine(seed, hash_value(((Point)p)));
+    boost::hash_combine(seed, hash_value(((Point) p)));
     boost::hash_combine(seed, p.getZ());
     return seed;
   }

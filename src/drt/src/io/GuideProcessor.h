@@ -176,11 +176,12 @@ class GuideProcessor
    * guides only.
    *
    */
-  void genGuides_split(std::vector<frRect>& rects,
-                       const TrackIntervalsByLayer& intvs,
-                       const boost::unordered_flat_map<Point3D, frBlockObjectSet>& gcell_pin_map,
-                       frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
-                       bool via_access_only) const;
+  void genGuides_split(
+      std::vector<frRect>& rects,
+      const TrackIntervalsByLayer& intvs,
+      const boost::unordered_flat_map<Point3D, frBlockObjectSet>& gcell_pin_map,
+      frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
+      bool via_access_only) const;
   /**
    * Initializes a map of gcell location to set of pins
    *
@@ -191,9 +192,9 @@ class GuideProcessor
    * considered by this function.
    * @param gcell_pin_map A map to be populated by the result of this function.
    */
-  void initGCellPinMap(
-      const frNet* net,
-      boost::unordered_flat_map<Point3D, frBlockObjectSet>& gcell_pin_map) const;
+  void initGCellPinMap(const frNet* net,
+                       boost::unordered_flat_map<Point3D, frBlockObjectSet>&
+                           gcell_pin_map) const;
   /**
    * Populates gcell_pin_map with the values associated with the passed term
    * based on pin shapes.
@@ -205,8 +206,9 @@ class GuideProcessor
    * @param gcell_pin_map The map to be populated with the results.
    * @param term The current pin we are processing.
    */
-  void mapPinShapesToGCells(boost::unordered_flat_map<Point3D, frBlockObjectSet>& gcell_pin_map,
-                            frBlockObject* term) const;
+  void mapPinShapesToGCells(
+      boost::unordered_flat_map<Point3D, frBlockObjectSet>& gcell_pin_map,
+      frBlockObject* term) const;
   /**
    * Populates gcell_pin_map with the values associated with the passed pin
    * based on access points.

@@ -33,6 +33,7 @@
 #pragma once
 
 #include <algorithm>
+#include <boost/functional/hash.hpp>
 #include <iosfwd>
 #include <tuple>
 #include <vector>
@@ -40,7 +41,6 @@
 #include "isotropy.h"
 #include "odb.h"
 #include "utl/Logger.h"
-#include <boost/functional/hash.hpp>
 
 namespace odb {
 
@@ -94,10 +94,11 @@ class Point
 inline std::size_t hash_value(Point const& p)
 {
   size_t hash = 0;
-  if constexpr (sizeof(size_t) == 8 && sizeof(size_t) == 2*sizeof(int)) {
-    // Use fast identity hash if possible. We don't care about avalanching since it will be mixed later by flat_map anyway
-    return ((size_t)p.getX() << 32) | p.getY();
-   } else {
+  if constexpr (sizeof(size_t) == 8 && sizeof(size_t) == 2 * sizeof(int)) {
+    // Use fast identity hash if possible. We don't care about avalanching since
+    // it will be mixed later by flat_map anyway
+    return ((size_t) p.getX() << 32) | p.getY();
+  } else {
     boost::hash_combine(hash, p.x());
     boost::hash_combine(hash, p.y());
   }
