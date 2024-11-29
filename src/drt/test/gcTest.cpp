@@ -52,7 +52,7 @@ namespace bdata = boost::unit_test::data;
 // Fixture for GC tests
 struct GCFixture : public Fixture
 {
-  GCFixture() : worker(design->getTech(), logger.get()) {}
+  GCFixture() : worker(design->getTech(), logger.get(), router_cfg.get()) {}
 
   void testMarker(frMarker* marker,
                   frLayerNum layer_num,
@@ -133,10 +133,10 @@ BOOST_AUTO_TEST_CASE(metal_short_obs)
   frNet* n1 = makeNet("n1");
 
   makePathseg(n1, 2, {0, 0}, {600, 0});
-  auto block = makeMacro("OBS");
+  auto [block, master] = makeMacro("OBS");
   makeMacroObs(block, 450, -50, 750, 200, 2);
   makeMacroPin(block, "in", 450, 40, 550, 90, 2);
-  auto i1 = makeInst("i1", block, 0, 0);
+  auto i1 = makeInst("i1", block, master);
   auto instTerm = i1->getInstTerms()[0].get();
   instTerm->addToNet(n1);
 
@@ -443,9 +443,9 @@ BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
   frNet* n1 = makeNet("n1");
 
   makePathseg(n1, 2, {0, 50}, {500, 50}, 100);
-  auto block = makeMacro("DRW");
+  auto [block, master] = makeMacro("DRW");
   makeMacroObs(block, 0, 140, 500, 340, 2, legal ? 100 : -1);
-  makeInst("i1", block, 0, 0);
+  makeInst("i1", block, master);
   /*
   If DESIGNRULEWIDTH is 100
     width(n1) = 100      width(obs) = 100 : reqSpcVal = 0
@@ -1471,6 +1471,51 @@ BOOST_AUTO_TEST_CASE(lef58_enclosure)
                4,
                frConstraintTypeEnum::frcLef58EnclosureConstraint,
                Rect(0, 0, 200, 100));
+  }
+}
+
+BOOST_DATA_TEST_CASE(cut_spc_tbl_orth,
+                     (bdata::make({true, false}) ^ bdata::make({140, 150})),
+                     violating,
+                     y)
+{
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  makeSpacingTableOrthConstraint(3, 150, 50);
+  frViaDef* vd = makeViaDef("v", 3, {0, 0}, {100, 100});
+  frNet* n1 = makeNet("n1");
+  makeVia(vd, n1, {0, 0});
+  makeVia(vd, n1, {0, 240});
+  makeVia(vd, n1, {y, 110});
+  runGC();
+  auto& markers = worker.getMarkers();
+  if (violating) {
+    BOOST_TEST(markers.size() == 1);
+  } else {
+    BOOST_TEST(markers.size() == 0);
+  }
+}
+
+BOOST_DATA_TEST_CASE(width_tbl_orth,
+                     (bdata::make({40, 50, 60}) * bdata::make({40, 50, 60})),
+                     horz_spc,
+                     vert_spc)
+{
+  makeWidthTblOrthConstraint(2, horz_spc, vert_spc);
+  design->getTech()->getLayer(2)->setMinWidth(
+      10);  // to ignore NSMetal violations
+  frNet* n1 = makeNet("n1");
+  makePathseg(n1, 2, {0, 100}, {200, 100}, 100);
+  makePathseg(n1, 2, {150, 50}, {350, 50}, 100);
+  const frCoord dx = 50;
+  const frCoord dy = 50;
+  const bool violating = dx < horz_spc && dy < vert_spc;
+  runGC();
+  auto& markers = worker.getMarkers();
+  if (violating) {
+    BOOST_TEST(markers.size() == 1);
+  } else {
+    BOOST_TEST(markers.size() == 0);
   }
 }
 

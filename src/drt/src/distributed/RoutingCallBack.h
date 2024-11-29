@@ -67,7 +67,10 @@ class RoutingCallBack : public dst::JobCallBack
         dist_(dist),
         logger_(logger),
         init_(true),
-        pa_(router->getDesign(), logger, nullptr)
+        pa_(router->getDesign(),
+            logger,
+            nullptr,
+            router->getRouterConfiguration())
   {
   }
   void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override
@@ -124,8 +127,8 @@ class RoutingCallBack : public dst::JobCallBack
     RoutingJobDescription* desc
         = static_cast<RoutingJobDescription*>(msg.getJobDescription());
     if (!desc->getGlobalsPath().empty()) {
-      if (globals_path_ != desc->getGlobalsPath()) {
-        globals_path_ = desc->getGlobalsPath();
+      if (router_cfg_path_ != desc->getGlobalsPath()) {
+        router_cfg_path_ = desc->getGlobalsPath();
         router_->setSharedVolume(desc->getSharedDir());
         router_->updateGlobals(desc->getGlobalsPath().c_str());
       }
@@ -258,7 +261,7 @@ class RoutingCallBack : public dst::JobCallBack
   dst::Distributed* dist_;
   utl::Logger* logger_;
   std::string design_path_;
-  std::string globals_path_;
+  std::string router_cfg_path_;
   bool init_;
   FlexDRViaData via_data_;
   FlexPA pa_;

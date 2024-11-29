@@ -71,6 +71,12 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
   tb_ = std::move(tb);
   log_ = log;
 
+  db_cbk_ = std::make_unique<nesterovDbCbk>(this);
+  nbc_->setCbk(db_cbk_.get());
+  if (npVars_.timingDrivenMode) {
+    db_cbk_->addOwner(pbc_->db()->getChip()->getBlock());
+  }
+
   if (npVars.debug && Graphics::guiActive()) {
     graphics_ = std::make_unique<Graphics>(log_,
                                            this,
@@ -418,7 +424,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
 
     // timing driven feature
-    // do reweight on timing-critical nets.
+    // if virtual, do reweight on timing-critical nets,
+    // otherwise keep all modifications by rsz.
     if (npVars_.timingDrivenMode
         && tb_->isTimingNetWeightOverflow(average_overflow_)) {
       // update db's instance location from current density coordinates
@@ -429,9 +436,60 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       // and update GNet's weights from worst timing paths.
       //
       // See timingBase.cpp in detail
-      log_->info(
-          GPL, 100, "Timing-driven: executing resizer for reweighting nets.");
-      bool shouldTdProceed = tb_->updateGNetWeights(average_overflow_);
+      bool virtual_td_iter
+          = (average_overflow_ > npVars_.keepResizeBelowOverflow);
+
+      log_->info(GPL,
+                 100,
+                 "Timing-driven iteration {}/{}, virtual: {}.",
+                 ++npVars_.timingDrivenIterCounter,
+                 tb_->getTimingNetWeightOverflowSize(),
+                 virtual_td_iter);
+
+      log_->info(GPL,
+                 101,
+                 "Iter: {}, overflow: {:.3f}, keep rsz at: {}",
+                 iter,
+                 average_overflow_,
+                 npVars_.keepResizeBelowOverflow);
+
+      if (!virtual_td_iter) {
+        db_cbk_->addOwner(pbc_->db()->getChip()->getBlock());
+      } else {
+        db_cbk_->removeOwner();
+      }
+
+      auto block = pbc_->db()->getChip()->getBlock();
+      bool shouldTdProceed = tb_->updateGNetWeights(virtual_td_iter);
+
+      if (!virtual_td_iter) {
+        for (auto& nesterov : nbVec_) {
+          nesterov->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
+          // updates order in routability:
+          // 1. change areas
+          // 2. set target density with delta area
+          // 3. updateareas
+          // 4. updateDensitySize
+
+          nesterov->setTargetDensity(
+              static_cast<float>(nbc_->getDeltaArea()
+                                 + nesterov->nesterovInstsArea()
+                                 + nesterov->totalFillerArea())
+              / static_cast<float>(nesterov->whiteSpaceArea()));
+
+          log_->info(GPL,
+                     107,
+                     "Timing-driven: RSZ delta area:     {}",
+                     block->dbuAreaToMicrons(nbc_->getDeltaArea()));
+          log_->info(GPL,
+                     108,
+                     "Timing-driven: new target density: {}",
+                     nesterov->targetDensity());
+          nbc_->resetDeltaArea();
+          nesterov->updateAreas();
+          nesterov->updateDensitySize();
+        }
+      }
 
       // problem occured
       // escape timing driven later
@@ -551,6 +609,9 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     graphics_->cellPlot(true);
   }
 
+  if (db_cbk_ != nullptr) {
+    db_cbk_->removeOwner();
+  }
   return iter;
 }
 
@@ -591,6 +652,118 @@ void NesterovPlace::updateNextIter(const int iter)
 void NesterovPlace::updateDb()
 {
   nbc_->updateDbGCells();
+}
+
+nesterovDbCbk::nesterovDbCbk(NesterovPlace* nesterov_place)
+    : nesterov_place_(nesterov_place)
+{
+}
+
+void NesterovPlace::createGCell(odb::dbInst* db_inst)
+{
+  auto gcell_index = nbc_->createGCell(db_inst);
+  for (auto& nesterov : nbVec_) {
+    // TODO: manage regions, not every NB should create a
+    // gcell.
+    nesterov->createGCell(db_inst, gcell_index, rb_.get());
+  }
+}
+
+void NesterovPlace::destroyGCell(odb::dbInst* db_inst)
+{
+  for (auto& nesterov : nbVec_) {
+    nesterov->destroyGCell(db_inst);
+  }
+}
+
+void NesterovPlace::createGNet(odb::dbNet* db_net)
+{
+  odb::dbSigType netType = db_net->getSigType();
+  if (!isValidSigType(netType)) {
+    log_->report("db_net:{} is not signal or clock: {}",
+                 db_net->getName(),
+                 db_net->getSigType().getString());
+    return;
+  }
+  nbc_->createGNet(db_net, pbc_->skipIoMode());
+}
+
+void NesterovPlace::destroyGNet(odb::dbNet* db_net)
+{
+  nbc_->destroyGNet(db_net);
+}
+
+void NesterovPlace::createITerm(odb::dbITerm* iterm)
+{
+  if (!isValidSigType(iterm->getSigType())) {
+    return;
+  }
+  nbc_->createITerm(iterm);
+}
+
+void NesterovPlace::destroyITerm(odb::dbITerm* iterm)
+{
+  if (!isValidSigType(iterm->getSigType())) {
+    log_->report("iterm:{} is not signal or clock: {}",
+                 iterm->getName('|'),
+                 iterm->getSigType().getString());
+    return;
+  }
+  nbc_->destroyITerm(iterm);
+}
+
+void NesterovPlace::resizeGCell(odb::dbInst* db_inst)
+{
+  nbc_->resizeGCell(db_inst);
+}
+
+void NesterovPlace::moveGCell(odb::dbInst* db_inst)
+{
+  nbc_->moveGCell(db_inst);
+}
+
+void nesterovDbCbk::inDbInstSwapMasterAfter(odb::dbInst* db_inst)
+{
+  nesterov_place_->resizeGCell(db_inst);
+}
+
+void nesterovDbCbk::inDbPostMoveInst(odb::dbInst* db_inst)
+{
+  nesterov_place_->moveGCell(db_inst);
+}
+
+void nesterovDbCbk::inDbInstCreate(odb::dbInst* db_inst)
+{
+  nesterov_place_->createGCell(db_inst);
+}
+
+// TODO: use the region to create new gcell.
+void nesterovDbCbk::inDbInstCreate(odb::dbInst* db_inst, odb::dbRegion* region)
+{
+}
+
+void nesterovDbCbk::inDbInstDestroy(odb::dbInst* db_inst)
+{
+  nesterov_place_->destroyGCell(db_inst);
+}
+
+void nesterovDbCbk::inDbITermCreate(odb::dbITerm* iterm)
+{
+  nesterov_place_->createITerm(iterm);
+}
+
+void nesterovDbCbk::inDbITermDestroy(odb::dbITerm* iterm)
+{
+  nesterov_place_->destroyITerm(iterm);
+}
+
+void nesterovDbCbk::inDbNetCreate(odb::dbNet* db_net)
+{
+  nesterov_place_->createGNet(db_net);
+}
+
+void nesterovDbCbk::inDbNetDestroy(odb::dbNet* db_net)
+{
 }
 
 }  // namespace gpl

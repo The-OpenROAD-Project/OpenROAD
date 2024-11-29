@@ -13,7 +13,7 @@ import utl
 tech = Tech()
 tech.readLef("Nangate45/Nangate45_tech.lef")
 tech.readLef("Nangate45/Nangate45_stdcell.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("aes_nangate45_preroute.def")
 
 gr = design.getGlobalRouter()

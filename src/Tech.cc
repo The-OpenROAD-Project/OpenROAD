@@ -35,6 +35,8 @@
 
 #include "ord/Tech.h"
 
+#include <tcl.h>
+
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/lefin.h"
@@ -42,21 +44,41 @@
 
 namespace ord {
 
-Tech::Tech()
+Tech::Tech(Tcl_Interp* interp,
+           const char* log_filename,
+           const char* metrics_filename)
+    : app_(new OpenRoad())
 {
-  auto app = OpenRoad::openRoad();
-  db_ = app->getDb();
+  if (!interp) {
+    interp = Tcl_CreateInterp();
+    Tcl_Init(interp);
+    app_->init(interp, log_filename, metrics_filename);
+  }
+}
+
+Tech::~Tech()
+{
+  delete app_;
 }
 
 odb::dbDatabase* Tech::getDB()
 {
-  return db_;
+  return app_->getDb();
+}
+
+odb::dbTech* Tech::getTech()
+{
+  return getDB()->getTech();
+}
+
+sta::dbSta* Tech::getSta()
+{
+  return app_->getSta();
 }
 
 void Tech::readLef(const std::string& file_name)
 {
-  auto app = OpenRoad::openRoad();
-  const bool make_tech = db_->getTech() == nullptr;
+  const bool make_tech = getDB()->getTech() == nullptr;
   const bool make_library = true;
   std::string lib_name = file_name;
 
@@ -70,24 +92,17 @@ void Tech::readLef(const std::string& file_name)
     lib_name.erase(lib_name.begin() + dot_pos, lib_name.end());
   }
 
-  app->readLef(
+  app_->readLef(
       file_name.c_str(), lib_name.c_str(), "", make_tech, make_library);
 }
 
 void Tech::readLiberty(const std::string& file_name)
 {
-  auto sta = OpenRoad::openRoad()->getSta();
   // TODO: take corner & min/max args
-  sta->readLiberty(file_name.c_str(),
-                   sta->cmdCorner(),
-                   sta::MinMaxAll::all(),
-                   true /* infer_latches */);
-}
-
-sta::dbSta* Tech::getSta()
-{
-  auto sta = OpenRoad::openRoad()->getSta();
-  return sta;
+  getSta()->readLiberty(file_name.c_str(),
+                        getSta()->cmdCorner(),
+                        sta::MinMaxAll::all(),
+                        true /* infer_latches */);
 }
 
 }  // namespace ord

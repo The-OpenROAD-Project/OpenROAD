@@ -157,7 +157,7 @@ select
 
 | Switch Name | Description |
 | ---- | ---- |
-|`-type`| name of the object type. For example, ``Inst`` for instances, ``Net`` for nets, and ``DRC`` for DRC violations.|
+|`-type`| name of the object type. For example, ``Inst`` for instances, ``Net`` for nets, and ``Marker`` for database markers.|
 |`-name`| (optional) filter selection by the specified name. For example, to only select clk nets ``*clk*``. Use ``-case_insensitive`` to filter based on case insensitive instead of case sensitive.|
 |`-filter`| (optional) filter selection based on the objects' properties. ``attribute`` represents the property's name and ``value`` the property's value. In case the property holds a collection (e. g. BTerms in a Net) or a table (e. g. Layers in a Generate Via Rule) ``value`` can be any element within those. A special case exists for checking whether a collection is empty or not by using the value ``CONNECTED``. This can be useful to select a specific group of elements (e. g. BTerms=CONNECTED will select only Nets connected to Input/Output Pins).|
 |`-highlight`| (optional) add the selection to the specific highlighting group. Values can be 0 to 7. |
@@ -221,20 +221,20 @@ Announce to the GUI that a design was loaded
 gui::design_created
 ```
 
-### Load DRC Result
+### Load Database Markers Result
 
-To load the results of a DRC report:
+To select a marker category
 
 ```tcl
-gui::load_drc 
-    filename
+gui::select_marker_category 
+    category
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ---- | ---- |
-| `filename` | Filename for DRC report. |
+| `category` | Database marker category. |
 
 ### Show GUI
 
@@ -259,6 +259,22 @@ To close the GUI and return to the command-line:
 
 ```tcl
 gui::hide
+```
+
+### Minimize the GUI
+
+To minimize the GUI window to an icon:
+
+```tcl
+gui::minimize
+```
+
+### Unminimize the GUI
+
+To unminimize the GUI window from an icon:
+
+```tcl
+gui::unminimize
 ```
 
 ### Layout Fit
@@ -592,6 +608,21 @@ To remove all the rulers:
 gui::clear_rulers
 ```
 
+### Display help
+
+To display the help for a specific command or messasge.
+
+```tcl
+gui::show_help
+    cmd_msg
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+| `cmd_msg`| command or message ID. |
+
 ### Set Heatmap
 
 To control the settings in the heat maps:
@@ -639,6 +670,21 @@ gui::dump_heatmap
 
 [^RUDY]: RUDY means Rectangular Uniform wire DensitY, which can predict the routing density very rough and quickly. You can see this notion in [this paper](https://past.date-conference.com/proceedings-archive/2007/DATE07/PDFFILES/08.7_1.PDF) 
 
+
+### Clocktree Selection
+
+Select a clock in the clock viewer:
+
+```tcl
+gui::select_clockviewer_clock
+    name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+| `name` |  name of clock to select |
 
 ### GUI Display Controls
 

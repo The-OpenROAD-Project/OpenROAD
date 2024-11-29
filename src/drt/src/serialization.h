@@ -361,7 +361,7 @@ void serialize(Archive& ar,
 template <class Archive>
 void serialize(Archive& ar, odb::dbMasterType& type, const unsigned int version)
 {
-  odb::dbMasterType::Value v = odb::dbMasterType::NONE;
+  odb::dbMasterType::Value v = odb::dbMasterType::CORE;
   if (drt::is_loading(ar)) {
     (ar) & v;
     type = odb::dbMasterType(v);
@@ -761,59 +761,59 @@ void serializeViaDef(Archive& ar, frViaDef*& viadef)
 }
 
 template <class Archive>
-void serializeGlobals(Archive& ar)
+void serializeGlobals(Archive& ar, RouterConfiguration* router_cfg)
 {
-  (ar) & DBPROCESSNODE;
-  (ar) & OUT_MAZE_FILE;
-  (ar) & DRC_RPT_FILE;
-  (ar) & CMAP_FILE;
-  (ar) & OR_SEED;
-  (ar) & OR_K;
-  (ar) & MAX_THREADS;
-  (ar) & BATCHSIZE;
-  (ar) & BATCHSIZETA;
-  (ar) & MTSAFEDIST;
-  (ar) & DRCSAFEDIST;
-  (ar) & VERBOSE;
-  (ar) & BOTTOM_ROUTING_LAYER_NAME;
-  (ar) & TOP_ROUTING_LAYER_NAME;
-  (ar) & BOTTOM_ROUTING_LAYER;
-  (ar) & TOP_ROUTING_LAYER;
-  (ar) & ALLOW_PIN_AS_FEEDTHROUGH;
-  (ar) & USENONPREFTRACKS;
-  (ar) & USEMINSPACING_OBS;
-  (ar) & ENABLE_BOUNDARY_MAR_FIX;
-  (ar) & ENABLE_VIA_GEN;
-  (ar) & VIAINPIN_BOTTOMLAYER_NAME;
-  (ar) & VIAINPIN_TOPLAYER_NAME;
-  (ar) & VIAINPIN_BOTTOMLAYERNUM;
-  (ar) & VIAINPIN_TOPLAYERNUM;
-  (ar) & VIA_ACCESS_LAYERNUM;
-  (ar) & MINNUMACCESSPOINT_MACROCELLPIN;
-  (ar) & MINNUMACCESSPOINT_STDCELLPIN;
-  (ar) & ACCESS_PATTERN_END_ITERATION_NUM;
-  (ar) & END_ITERATION;
-  (ar) & NDR_NETS_RIPUP_HARDINESS;
-  (ar) & CLOCK_NETS_TRUNK_RIPUP_HARDINESS;
-  (ar) & CLOCK_NETS_LEAF_RIPUP_HARDINESS;
-  (ar) & AUTO_TAPER_NDR_NETS;
-  (ar) & TAPERBOX_RADIUS;
-  (ar) & NDR_NETS_ABS_PRIORITY;
-  (ar) & CLOCK_NETS_ABS_PRIORITY;
-  (ar) & TAPINCOST;
-  (ar) & TAALIGNCOST;
-  (ar) & TADRCCOST;
-  (ar) & TASHAPEBLOATWIDTH;
-  (ar) & VIACOST;
-  (ar) & GRIDCOST;
-  (ar) & ROUTESHAPECOST;
-  (ar) & MARKERCOST;
-  (ar) & MARKERBLOATWIDTH;
-  (ar) & BLOCKCOST;
-  (ar) & GUIDECOST;
-  (ar) & SHAPEBLOATWIDTH;
-  (ar) & HISTCOST;
-  (ar) & CONGCOST;
+  (ar) & router_cfg->DBPROCESSNODE;
+  (ar) & router_cfg->OUT_MAZE_FILE;
+  (ar) & router_cfg->DRC_RPT_FILE;
+  (ar) & router_cfg->CMAP_FILE;
+  (ar) & router_cfg->OR_SEED;
+  (ar) & router_cfg->OR_K;
+  (ar) & router_cfg->MAX_THREADS;
+  (ar) & router_cfg->BATCHSIZE;
+  (ar) & router_cfg->BATCHSIZETA;
+  (ar) & router_cfg->MTSAFEDIST;
+  (ar) & router_cfg->DRCSAFEDIST;
+  (ar) & router_cfg->VERBOSE;
+  (ar) & router_cfg->BOTTOM_ROUTING_LAYER_NAME;
+  (ar) & router_cfg->TOP_ROUTING_LAYER_NAME;
+  (ar) & router_cfg->BOTTOM_ROUTING_LAYER;
+  (ar) & router_cfg->TOP_ROUTING_LAYER;
+  (ar) & router_cfg->ALLOW_PIN_AS_FEEDTHROUGH;
+  (ar) & router_cfg->USENONPREFTRACKS;
+  (ar) & router_cfg->USEMINSPACING_OBS;
+  (ar) & router_cfg->ENABLE_BOUNDARY_MAR_FIX;
+  (ar) & router_cfg->ENABLE_VIA_GEN;
+  (ar) & router_cfg->VIAINPIN_BOTTOMLAYER_NAME;
+  (ar) & router_cfg->VIAINPIN_TOPLAYER_NAME;
+  (ar) & router_cfg->VIAINPIN_BOTTOMLAYERNUM;
+  (ar) & router_cfg->VIAINPIN_TOPLAYERNUM;
+  (ar) & router_cfg->VIA_ACCESS_LAYERNUM;
+  (ar) & router_cfg->MINNUMACCESSPOINT_MACROCELLPIN;
+  (ar) & router_cfg->MINNUMACCESSPOINT_STDCELLPIN;
+  (ar) & router_cfg->ACCESS_PATTERN_END_ITERATION_NUM;
+  (ar) & router_cfg->END_ITERATION;
+  (ar) & router_cfg->NDR_NETS_RIPUP_HARDINESS;
+  (ar) & router_cfg->CLOCK_NETS_TRUNK_RIPUP_HARDINESS;
+  (ar) & router_cfg->CLOCK_NETS_LEAF_RIPUP_HARDINESS;
+  (ar) & router_cfg->AUTO_TAPER_NDR_NETS;
+  (ar) & router_cfg->TAPERBOX_RADIUS;
+  (ar) & router_cfg->NDR_NETS_ABS_PRIORITY;
+  (ar) & router_cfg->CLOCK_NETS_ABS_PRIORITY;
+  (ar) & router_cfg->TAPINCOST;
+  (ar) & router_cfg->TAALIGNCOST;
+  (ar) & router_cfg->TADRCCOST;
+  (ar) & router_cfg->TASHAPEBLOATWIDTH;
+  (ar) & router_cfg->VIACOST;
+  (ar) & router_cfg->GRIDCOST;
+  (ar) & router_cfg->ROUTESHAPECOST;
+  (ar) & router_cfg->MARKERCOST;
+  (ar) & router_cfg->MARKERBLOATWIDTH;
+  (ar) & router_cfg->BLOCKCOST;
+  (ar) & router_cfg->GUIDECOST;
+  (ar) & router_cfg->SHAPEBLOATWIDTH;
+  (ar) & router_cfg->HISTCOST;
+  (ar) & router_cfg->CONGCOST;
 }
 
 }  // namespace drt

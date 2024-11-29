@@ -314,6 +314,11 @@ void RenderThread::drawTracks(dbTechLayer* layer,
   const Rect draw_bounds = block_bounds.intersect(bounds);
   const int min_resolution = viewer_->shapeSizeLimit();
 
+  QPen pen(getColor(layer));
+  pen.setCosmetic(true);
+  painter->setPen(pen);
+  painter->setBrush(Qt::NoBrush);
+
   bool is_horizontal = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
   std::vector<int> grids;
   if ((!is_horizontal && viewer_->options_->arePrefTracksVisible())
@@ -377,7 +382,8 @@ void RenderThread::drawRows(QPainter* painter,
     return;
   }
 
-  for (const auto& [row, row_site] : viewer_->getRowRects(block, bounds)) {
+  for (const auto& [row, row_site, index] :
+       viewer_->getRowRects(block, bounds)) {
     if (restart_) {
       break;
     }
@@ -993,10 +999,9 @@ void RenderThread::drawLayer(QPainter* painter,
 
     // Now draw the fills
     if (viewer_->options_->areFillsVisible()) {
-      QColor color = getColor(layer).lighter(50);
-      Qt::BrushStyle brush_pattern = getPattern(layer);
-      painter->setBrush(QBrush(color, brush_pattern));
-      painter->setPen(QPen(color, 0));
+      QColor fill_color = getColor(layer).lighter(50);
+      painter->setBrush(QBrush(fill_color, brush_pattern));
+      painter->setPen(QPen(fill_color, 0));
       auto iter = viewer_->search_.searchFills(block,
                                                layer,
                                                bounds.xMin(),
@@ -1016,6 +1021,9 @@ void RenderThread::drawLayer(QPainter* painter,
       }
     }
   }
+
+  painter->setBrush(QBrush(color, brush_pattern));
+  painter->setPen(QPen(color, 0));
 
   if (draw_shapes) {
     if (viewer_->options_->areIOPinsVisible()) {

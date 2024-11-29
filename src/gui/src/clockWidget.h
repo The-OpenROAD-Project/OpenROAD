@@ -519,6 +519,7 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
                  const std::string& corner,
                  const std::optional<int>& width_px,
                  const std::optional<int>& height_px);
+  void selectClock(const std::string& clock_name);
 
   virtual void postReadLiberty() override;
 

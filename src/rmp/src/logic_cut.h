@@ -15,6 +15,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "sta/GraphClass.hh"
 #include "sta/NetworkClass.hh"
+#include "unique_name.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
@@ -22,9 +23,8 @@ namespace rmp {
 class LogicCut
 {
  public:
-  LogicCut() = default;
-  LogicCut(std::vector<sta::Pin*>& primary_inputs,
-           std::vector<sta::Pin*>& primary_outputs,
+  LogicCut(std::vector<sta::Net*>& primary_inputs,
+           std::vector<sta::Net*>& primary_outputs,
            std::unordered_set<sta::Instance*>& cut_instances)
       : primary_inputs_(std::move(primary_inputs)),
         primary_outputs_(std::move(primary_outputs)),
@@ -33,11 +33,11 @@ class LogicCut
   }
   ~LogicCut() = default;
 
-  const std::vector<sta::Pin*>& primary_inputs() const
+  const std::vector<sta::Net*>& primary_inputs() const
   {
     return primary_inputs_;
   }
-  const std::vector<sta::Pin*>& primary_outputs() const
+  const std::vector<sta::Net*>& primary_outputs() const
   {
     return primary_outputs_;
   }
@@ -52,14 +52,19 @@ class LogicCut
            && cut_instances_.empty();
   }
 
-  utl::deleted_unique_ptr<abc::Abc_Ntk_t> BuildMappedAbcNetwork(
+  utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> BuildMappedAbcNetwork(
       AbcLibrary& abc_library,
       sta::dbNetwork* network,
       utl::Logger* logger);
 
+  void InsertMappedAbcNetwork(abc::Abc_Ntk_t* abc_network,
+                              sta::dbNetwork* network,
+                              UniqueName& unique_name,
+                              utl::Logger* logger);
+
  private:
-  std::vector<sta::Pin*> primary_inputs_;
-  std::vector<sta::Pin*> primary_outputs_;
+  std::vector<sta::Net*> primary_inputs_;
+  std::vector<sta::Net*> primary_outputs_;
   std::unordered_set<sta::Instance*> cut_instances_;
 };
 }  // namespace rmp

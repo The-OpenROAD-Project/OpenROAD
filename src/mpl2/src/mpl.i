@@ -128,16 +128,20 @@ void set_debug_cmd(odb::dbBlock* block,
                    bool coarse,
                    bool fine,
                    bool show_bundled_nets,
+                   bool show_clusters_ids,
                    bool skip_steps,
-                   bool only_final_result)
+                   bool only_final_result,
+                   int target_cluster_id)
 {
   auto macro_placer = getMacroPlacer2();
   std::unique_ptr<Mpl2Observer> graphics
     = std::make_unique<Graphics>(coarse, fine, block, ord::getLogger());
   macro_placer->setDebug(graphics);
   macro_placer->setDebugShowBundledNets(show_bundled_nets);
+  macro_placer->setDebugShowClustersIds(show_clusters_ids);
   macro_placer->setDebugSkipSteps(skip_steps);
   macro_placer->setDebugOnlyFinalResult(only_final_result);
+  macro_placer->setDebugTargetClusterId(target_cluster_id);
 }
 
 void

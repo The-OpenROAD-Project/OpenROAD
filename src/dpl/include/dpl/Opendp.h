@@ -41,8 +41,6 @@
 
 #include <boost/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
 #include <functional>
 #include <map>
 #include <memory>
@@ -186,9 +184,9 @@ class Opendp
   DbuPt pointOffMacro(const Cell& cell);
   void convertDbToCell(dbInst* db_inst, Cell& cell);
   // Return error count.
-  void processViolationsPtree(boost::property_tree::ptree& entry,
-                              const std::vector<Cell*>& failures,
-                              const std::string& violation_type = "") const;
+  void saveViolations(const std::vector<Cell*>& failures,
+                      odb::dbMarkerCategory* category,
+                      const std::string& violation_type = "") const;
   void importDb();
   void importClear();
   Rect getBbox(dbInst* inst);
@@ -288,14 +286,14 @@ class Opendp
       bool verbose,
       const std::function<void(Cell* cell)>& report_failure) const;
   void reportOverlapFailure(Cell* cell) const;
-  void writeJsonReport(const string& filename,
-                       const vector<Cell*>& placed_failures,
-                       const vector<Cell*>& in_rows_failures,
-                       const vector<Cell*>& overlap_failures,
-                       const vector<Cell*>& one_site_gap_failures,
-                       const vector<Cell*>& site_align_failures,
-                       const vector<Cell*>& region_placement_failures,
-                       const vector<Cell*>& placement_failures);
+  void saveFailures(const vector<Cell*>& placed_failures,
+                    const vector<Cell*>& in_rows_failures,
+                    const vector<Cell*>& overlap_failures,
+                    const vector<Cell*>& one_site_gap_failures,
+                    const vector<Cell*>& site_align_failures,
+                    const vector<Cell*>& region_placement_failures,
+                    const vector<Cell*>& placement_failures);
+  void writeJsonReport(const string& filename);
 
   void rectDist(const Cell* cell,
                 const Rect& rect,

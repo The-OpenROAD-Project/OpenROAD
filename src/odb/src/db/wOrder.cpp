@@ -37,30 +37,16 @@
 
 namespace odb {
 
-static tmg_conn* conn = nullptr;
-
 void orderWires(utl::Logger* logger, dbBlock* block)
 {
-  if (conn == nullptr) {
-    conn = new tmg_conn(logger);
-  }
+  tmg_conn conn(logger);
+
   for (auto net : block->getNets()) {
     if (net->getSigType().isSupply() || net->isWireOrdered()) {
       continue;
     }
-    conn->analyzeNet(net);
+    conn.analyzeNet(net);
   }
-}
-
-void orderWires(utl::Logger* logger, dbNet* net)
-{
-  if (conn == nullptr) {
-    conn = new tmg_conn(logger);
-  }
-  if (net->getSigType().isSupply()) {
-    return;
-  }
-  conn->analyzeNet(net);
 }
 
 }  // namespace odb

@@ -11,14 +11,12 @@ _versionCompare() {
 }
 
 _equivalenceDeps() {
-    yosysVersion=yosys-0.43
+    yosysVersion=0.47
+    eqyYosysVersion=yosys-0.47
 
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}
     if [[ ! $(command -v yosys) || ! $(command -v yosys-config)  ]]; then (
-        if [[ -f /opt/rh/llvm-toolset-7.0/enable ]]; then
-            source /opt/rh/llvm-toolset-7.0/enable
-        fi
         cd "${baseDir}"
         git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/yosys
         cd yosys
@@ -31,11 +29,8 @@ _equivalenceDeps() {
     # eqy
     eqyPrefix=${PREFIX:-"/usr/local"}
     if ! command -v eqy &> /dev/null; then (
-        if [[ -f /opt/rh/llvm-toolset-7.0/enable ]]; then
-            source /opt/rh/llvm-toolset-7.0/enable
-        fi
         cd "${baseDir}"
-        git clone --depth=1 -b "${yosysVersion}" https://github.com/YosysHQ/eqy
+        git clone --depth=1 -b "${eqyYosysVersion}" https://github.com/YosysHQ/eqy
         cd eqy
         export PATH="${yosysPrefix}/bin:${PATH}"
         make -j $(nproc) PREFIX="${eqyPrefix}"
@@ -46,11 +41,8 @@ _equivalenceDeps() {
     # sby
     sbyPrefix=${PREFIX:-"/usr/local"}
     if ! command -v sby &> /dev/null; then (
-        if [[ -f /opt/rh/llvm-toolset-7.0/enable ]]; then
-            source /opt/rh/llvm-toolset-7.0/enable
-        fi
         cd "${baseDir}"
-        git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/sby
+        git clone --depth=1 -b "${eqyYosysVersion}" --recursive https://github.com/YosysHQ/sby
         cd sby
         export PATH="${eqyPrefix}/bin:${PATH}"
         make -j $(nproc) PREFIX="${sbyPrefix}" install
@@ -262,10 +254,10 @@ EOF
 
 _installOrTools() {
     os=$1
-    version=$2
+    osVersion=$2
     arch=$3
-    orToolsVersionBig=9.10
-    orToolsVersionSmall=${orToolsVersionBig}.4067
+    orToolsVersionBig=9.11
+    orToolsVersionSmall=${orToolsVersionBig}.4210
 
     rm -rf "${baseDir}"
     mkdir -p "${baseDir}"
@@ -274,7 +266,7 @@ _installOrTools() {
 
     # Disable exit on error for 'find' command, as it might return non zero
     set +euo pipefail
-    LIST=($(find / -type f -name "libortools.so*" 2>/dev/null))
+    LIST=($(find /local* /opt* /lib* /usr* /bin* -type f -name "libortools.so*" 2>/dev/null))
     # Bring back exit on error
     set -euo pipefail
     # Return if right version of or-tools is installed
@@ -295,10 +287,10 @@ _installOrTools() {
         ${cmakePrefix}/bin/cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_SAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_INSTALL_PREFIX=${orToolsPath} -DCMAKE_CXX_FLAGS="-w" -DCMAKE_C_FLAGS="-w"
         ${cmakePrefix}/bin/cmake --build build --config Release --target install -v -j $(nproc)
     else
-        if [[ $version == rodete ]]; then
-            version=11
+        if [[ $osVersion == rodete ]]; then
+            osVersion=11
         fi
-        orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
+        orToolsFile=or-tools_${arch}_${os}-${osVersion}_cpp_v${orToolsVersionSmall}.tar.gz
         eval wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
         if command -v brew &> /dev/null; then
             orToolsPath="$(brew --prefix or-tools)"
@@ -388,17 +380,12 @@ _installRHELCleanUp() {
 
 _installRHELPackages() {
     arch=amd64
-    version=3.1.11.1
+    pandocVersion=3.1.11.1
 
     yum -y update
-    if [[ $(yum repolist | egrep -c "rhel-8-for-x86_64-appstream-rpms") -eq 0 ]]; then
-        yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-8-6.el8.noarch.rpm
-        yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-8-6.el8.noarch.rpm
-        rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
-    fi
     yum -y install tzdata
     yum -y install redhat-rpm-config rpm-build
-    yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+    yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
     yum -y install \
         autoconf \
         automake \
@@ -409,11 +396,11 @@ _installRHELPackages() {
         gdb \
         git \
         glibc-devel \
-        libtool \
         libffi-devel \
-        llvm7.0 \
-        llvm7.0-devel \
-        llvm7.0-libs \
+        libtool \
+        llvm \
+        llvm-devel \
+        llvm-libs \
         make \
         pcre-devel \
         pcre2-devel \
@@ -424,10 +411,9 @@ _installRHELPackages() {
         python3-devel \
         python3-pip \
         qt5-qtbase-devel \
+        qt5-qtcharts-devel \
         qt5-qtimageformats \
         readline \
-        readline-devel \
-        tcl-devel \
         tcl-tclreadline \
         tcl-tclreadline-devel \
         tcl-thread-devel \
@@ -436,65 +422,14 @@ _installRHELPackages() {
         zlib-devel
 
     yum install -y \
-        http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
-        https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm
+        https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/bison-3.7.4-5.el9.x86_64.rpm \
+        https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/flex-2.6.4-9.el9.x86_64.rpm \
+        https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/readline-devel-8.1-4.el9.x86_64.rpm \
+        https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/tcl-devel-8.6.10-7.el9.x86_64.rpm
 
-    eval wget https://github.com/jgm/pandoc/releases/download/${version}/pandoc-${version}-linux-${arch}.tar.gz
-    tar xvzf pandoc-${version}-linux-${arch}.tar.gz --strip-components 1 -C /usr/local/
-    rm -rf pandoc-${version}-linux-${arch}.tar.gz
-}
-
-_installCentosCleanUp() {
-    yum clean -y all
-    rm -rf /var/lib/apt/lists/*
-}
-
-_installCentosPackages() {
-    yum update -y
-    yum install -y tzdata
-    yum groupinstall -y "Development Tools"
-    if ! command -v lcov &> /dev/null; then
-        yum install -y http://downloads.sourceforge.net/ltp/lcov-1.14-1.noarch.rpm
-    fi
-    if ! command -v yum list installed ius-release &> /dev/null; then
-        yum install -y https://repo.ius.io/ius-release-el7.rpm
-    fi
-    if ! command -v yum list installed epel-release &> /dev/null; then
-        yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-    fi
-    yum install -y centos-release-scl
-    yum install -y \
-        devtoolset-8 \
-        devtoolset-8-libatomic-devel \
-        groff \
-        libffi-devel \
-        libgomp \
-        libstdc++ \
-        llvm-toolset-7.0 \
-        llvm-toolset-7.0-libomp-devel \
-        pandoc \
-        pcre-devel \
-        pcre2-devel \
-        python-devel \
-        python36 \
-        python36-devel \
-        python36-libs \
-        python36-pip \
-        qt5-qtbase-devel \
-        qt5-qtimageformats \
-        readline-devel \
-        rh-python38-python \
-        rh-python38-python-libs \
-        rh-python38-python-pip \
-        rh-python38-scldevel \
-        tcl \
-        tcl-devel \
-        tcl-tclreadline \
-        tcl-tclreadline-devel \
-        tcllib \
-        wget \
-        ccache \
-        zlib-devel
+    eval wget https://github.com/jgm/pandoc/releases/download/${pandocVersion}/pandoc-${pandocVersion}-linux-${arch}.tar.gz
+    tar xvzf pandoc-${pandocVersion}-linux-${arch}.tar.gz --strip-components 1 -C /usr/local/
+    rm -rf pandoc-${pandocVersion}-linux-${arch}.tar.gz
 }
 
 _installOpenSuseCleanUp() {
@@ -623,6 +558,7 @@ _installDebianPackages() {
         git \
         groff \
         lcov \
+        libffi-dev \
         libgomp1 \
         libomp-dev \
         libpcre2-dev \
@@ -635,6 +571,7 @@ _installDebianPackages() {
         tcl-dev \
         tcl-tclreadline \
         tcllib \
+        unzip \
         wget \
         zlib1g-dev
 
@@ -664,7 +601,9 @@ _installCI() {
         apt-transport-https \
         ca-certificates \
         curl \
+        gnupg \
         jq \
+        lsb-release \
         parallel \
         software-properties-common
 
@@ -694,6 +633,14 @@ _installCI() {
         docker-ce-cli \
         containerd.io \
         docker-buildx-plugin
+
+    if _versionCompare ${1} -lt 24.04; then
+        # Install clang for C++20 support
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        ./llvm.sh 16 all
+    fi
+
 }
 
 _checkIsLocal() {
@@ -863,50 +810,39 @@ case "${platform}" in
 esac
 
 case "${os}" in
-    "CentOS Linux" )
-        if [[ ${CI} == "yes" ]]; then
-            echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
-        fi
-        if [[ "${option}" == "base" || "${option}" == "all" ]]; then
-            _checkIsLocal
-            _installCentosPackages
-            _installCentosCleanUp
-        fi
-        if [[ "${option}" == "common" || "${option}" == "all" ]]; then
-            _installCommonDev
-            _installOrTools "centos" "7" "amd64"
-        fi
-        cat <<EOF
-To enable Python 3.8 (required for eqy) you need to run:
-    source /opt/rh/rh-python38/enable
-To enable GCC-8 or Clang-7 you need to run:
-    source /opt/rh/devtoolset-8/enable
-    source /opt/rh/llvm-toolset-7.0/enable
-EOF
-        ;;
     "Ubuntu" )
-        version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
+        ubuntuVersion=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
         if [[ ${CI} == "yes" ]]; then
-            _installCI
+            _installCI "${ubuntuVersion}"
         fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
-            _installUbuntuPackages "${version}"
+            _installUbuntuPackages "${ubuntuVersion}"
             _installUbuntuCleanUp
         fi
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev
-            if _versionCompare ${version} -gt 24.04; then
-                version=24.04
-            elif _versionCompare ${version} -gt 22.04; then
-                version=22.04
+            # set version for non LTS
+            if _versionCompare ${ubuntuVersion} -gt 24.04; then
+                ubuntuVersion=24.04
+            elif _versionCompare ${ubuntuVersion} -gt 22.04; then
+                ubuntuVersion=22.04
             else
-                version=20.04
+                ubuntuVersion=20.04
             fi
-            _installOrTools "ubuntu" "${version}" "amd64"
+            _installOrTools "ubuntu" "${ubuntuVersion}" "amd64"
         fi
         ;;
-    "Red Hat Enterprise Linux")
+    "Red Hat Enterprise Linux" | "Rocky Linux")
+    if [[ "${os}" == "Red Hat Enterprise Linux" ]]; then
+        rhelVersion=$(rpm -q --queryformat '%{VERSION}' redhat-release | cut -d. -f1)
+    elif  [[ "${os}" == "Rocky Linux" ]]; then
+        rhelVersion=$(rpm -q --queryformat '%{VERSION}' rocky-release | cut -d. -f1)
+    fi
+        if [[ "${rhelVersion}" != "9" ]]; then
+            echo "ERROR: Unsupported ${rhelVersion} version. Only '9' is supported."
+            exit 1
+        fi
         if [[ ${CI} == "yes" ]]; then
             echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
         fi
@@ -917,7 +853,7 @@ EOF
         fi
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev
-            _installOrTools "centos" "8" "amd64"
+            _installOrTools "rockylinux" "9" "amd64"
         fi
         ;;
     "Darwin" )
@@ -952,21 +888,21 @@ To enable GCC-11 you need to run:
 EOF
         ;;
     "Debian GNU/Linux" | "Debian GNU/Linux rodete" )
-        version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
-        if [[ -z ${version} ]]; then
-            version=$(awk -F= '/^VERSION_CODENAME/{print $2}' /etc/os-release | sed 's/"//g')
+        debianVersion=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
+        if [[ -z ${debianVersion} ]]; then
+            debianVersion=$(awk -F= '/^VERSION_CODENAME/{print $2}' /etc/os-release | sed 's/"//g')
         fi
         if [[ ${CI} == "yes" ]]; then
             echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
         fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
-            _installDebianPackages "${version}"
+            _installDebianPackages "${debianVersion}"
             _installDebianCleanUp
         fi
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev
-            _installOrTools "debian" "${version}" "amd64"
+            _installOrTools "debian" "${debianVersion}" "amd64"
         fi
         ;;
     *)

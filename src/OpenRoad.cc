@@ -35,6 +35,7 @@
 
 #include "ord/OpenRoad.hh"
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <thread>
@@ -98,10 +99,6 @@ extern int Odbtcl_Init(Tcl_Interp* interp);
 extern int Upf_Init(Tcl_Interp* interp);
 }
 
-// Main.cc set by main()
-extern const char* log_filename;
-extern const char* metrics_filename;
-
 namespace ord {
 
 using odb::dbBlock;
@@ -114,6 +111,8 @@ using odb::Rect;
 using sta::evalTclInit;
 
 using utl::ORD;
+
+OpenRoad* OpenRoad::app_ = nullptr;
 
 OpenRoad::OpenRoad()
 {
@@ -159,19 +158,31 @@ sta::dbNetwork* OpenRoad::getDbNetwork()
 /* static */
 OpenRoad* OpenRoad::openRoad()
 {
-  // This will be destroyed at application exit
-  static OpenRoad o;
-  return &o;
+  return app_;
+}
+
+/* static */
+void OpenRoad::setOpenRoad(OpenRoad* app, bool reinit_ok)
+{
+  if (!reinit_ok && app_) {
+    std::cerr << "Attempt to reinitialize the application." << std::endl;
+    exit(1);
+  }
+  app_ = app;
 }
 
 ////////////////////////////////////////////////////////////////
 
-void initOpenRoad(Tcl_Interp* interp)
+void initOpenRoad(Tcl_Interp* interp,
+                  const char* log_filename,
+                  const char* metrics_filename)
 {
-  OpenRoad::openRoad()->init(interp);
+  OpenRoad::openRoad()->init(interp, log_filename, metrics_filename);
 }
 
-void OpenRoad::init(Tcl_Interp* tcl_interp)
+void OpenRoad::init(Tcl_Interp* tcl_interp,
+                    const char* log_filename,
+                    const char* metrics_filename)
 {
   tcl_interp_ = tcl_interp;
 
@@ -628,6 +639,40 @@ void OpenRoad::setThreadCount(const char* threads, bool printInfo)
 int OpenRoad::getThreadCount()
 {
   return threads_;
+}
+
+std::string OpenRoad::getExePath() const
+{
+  // use tcl since it already has a cross platform implementation of this
+  if (Tcl_Eval(tcl_interp_, "file normalize [info nameofexecutable]")
+      == TCL_OK) {
+    std::string path = Tcl_GetStringResult(tcl_interp_);
+    Tcl_ResetResult(tcl_interp_);
+    return path;
+  }
+  return "";
+}
+
+std::string OpenRoad::getDocsPath() const
+{
+  const std::string exe = getExePath();
+
+  if (exe.empty()) {
+    return "";
+  }
+
+  std::filesystem::path path(exe);
+
+  // remove binary name
+  path = path.parent_path();
+
+  if (path.stem() == "src") {
+    // remove build
+    return path.parent_path().parent_path() / "docs";
+  }
+
+  // remove bin
+  return path.parent_path() / "share" / "openroad" / "man";
 }
 
 const char* OpenRoad::getVersion()

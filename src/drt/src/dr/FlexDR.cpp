@@ -104,11 +104,13 @@ void serializeViaData(const FlexDRViaData& viaData, std::string& serializedStr)
 FlexDR::FlexDR(TritonRoute* router,
                frDesign* designIn,
                Logger* loggerIn,
-               odb::dbDatabase* dbIn)
+               odb::dbDatabase* dbIn,
+               RouterConfiguration* router_cfg)
     : router_(router),
       design_(designIn),
       logger_(loggerIn),
       db_(dbIn),
+      router_cfg_(router_cfg),
       numWorkUnits_(0),
       dist_(nullptr),
       dist_on_(false),
@@ -207,7 +209,7 @@ int FlexDRWorker::main(frDesign* design)
   using std::chrono::high_resolution_clock;
   high_resolution_clock::time_point t0 = high_resolution_clock::now();
   auto micronPerDBU = 1.0 / getTech()->getDBUPerUU();
-  if (VERBOSE > 1) {
+  if (router_cfg_->VERBOSE > 1) {
     logger_->report("start DR worker (BOX) ( {} {} ) ( {} {} )",
                     routeBox_.xMin() * micronPerDBU,
                     routeBox_.yMin() * micronPerDBU,
@@ -257,12 +259,12 @@ int FlexDRWorker::main(frDesign* design)
       workerFile.close();
     }
     {
-      std::ofstream globalsFile(
-          fmt::format("{}/worker_globals.bin", workerPath).c_str());
-      frOArchive ar(globalsFile);
+      std::ofstream router_cfgFile(
+          fmt::format("{}/worker_router_cfg_->bin", workerPath).c_str());
+      frOArchive ar(router_cfgFile);
       registerTypes(ar);
-      serializeGlobals(ar);
-      globalsFile.close();
+      serializeGlobals(ar, router_cfg_);
+      router_cfgFile.close();
     }
   }
   if (!skipRouting_) {
@@ -283,7 +285,7 @@ int FlexDRWorker::main(frDesign* design)
   duration<double> time_span1 = duration_cast<duration<double>>(t2 - t1);
   duration<double> time_span2 = duration_cast<duration<double>>(t3 - t2);
 
-  if (VERBOSE > 1) {
+  if (router_cfg_->VERBOSE > 1) {
     std::stringstream ss;
     ss << "time (INIT/ROUTE/POST) " << time_span0.count() << " "
        << time_span1.count() << " " << time_span2.count() << " " << std::endl;
@@ -310,7 +312,7 @@ int FlexDRWorker::main(frDesign* design)
 void FlexDRWorker::distributedMain(frDesign* design)
 {
   ProfileTask profile("DR:main");
-  if (VERBOSE > 1) {
+  if (router_cfg_->VERBOSE > 1) {
     logger_->report("start DR worker (BOX) ( {} {} ) ( {} {} )",
                     routeBox_.xMin() * 1.0 / getTech()->getDBUPerUU(),
                     routeBox_.yMin() * 1.0 / getTech()->getDBUPerUU(),
@@ -460,7 +462,7 @@ void FlexDR::init()
 {
   ProfileTask profile("DR:init");
   frTime t;
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 187, "Start routing data preparation.");
   }
   initGCell2BoundaryPin();
@@ -468,13 +470,13 @@ void FlexDR::init()
 
   init_halfViaEncArea();
 
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     t.print(logger_);
   }
 
   iter_ = 0;
 
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 194, "Start detail routing.");
   }
   for (const auto& net : getDesign()->getTopBlock()->getNets()) {
@@ -483,9 +485,9 @@ void FlexDR::init()
         auto bottomBox = via->getLayer1BBox();
         auto topBox = via->getLayer2BBox();
         for (auto term : net->getInstTerms()) {
-          if (term->getBBox(true).intersects(bottomBox)) {
+          if (term->getBBox().intersects(bottomBox)) {
             std::vector<frRect> shapes;
-            term->getShapes(shapes, true);
+            term->getShapes(shapes);
             for (const auto& shape : shapes) {
               if (shape.getLayerNum() != via->getViaDef()->getLayer1Num()) {
                 continue;
@@ -500,9 +502,9 @@ void FlexDR::init()
           if (via->isBottomConnected()) {
             continue;
           }
-          if (term->getBBox(true).intersects(topBox)) {
+          if (term->getBBox().intersects(topBox)) {
             std::vector<frRect> shapes;
-            term->getShapes(shapes, true);
+            term->getShapes(shapes);
             for (const auto& shape : shapes) {
               if (shape.getLayerNum() != via->getViaDef()->getLayer2Num()) {
                 continue;
@@ -530,7 +532,7 @@ std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
 FlexDR::initDR_mergeBoundaryPin(int startX,
                                 int startY,
                                 int size,
-                                const Rect& routeBox)
+                                const Rect& routeBox) const
 {
   std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
       bp;
@@ -559,267 +561,98 @@ void FlexDR::getBatchInfo(int& batchStepX, int& batchStepY)
   batchStepY = 2;
 }
 
-void FlexDR::searchRepair(const SearchRepairArgs& args)
+std::unique_ptr<FlexDRWorker> FlexDR::createWorker(const int x_offset,
+                                                   const int y_offset,
+                                                   const SearchRepairArgs& args,
+                                                   const Rect& routeBoxIn)
 {
-  const int iter = iter_++;
-  const int size = args.size;
-  const int offset = args.offset;
-  const int mazeEndIter = args.mazeEndIter;
-  const frUInt4 workerDRCCost = args.workerDRCCost;
-  const frUInt4 workerMarkerCost = args.workerMarkerCost;
-  const frUInt4 workerFixedShapeCost = args.workerFixedShapeCost;
-  const float workerMarkerDecay = args.workerMarkerDecay;
-  const RipUpMode ripupMode = args.ripupMode;
-  const bool followGuide = args.followGuide;
-
-  std::string profile_name("DR:searchRepair");
-  profile_name += std::to_string(iter);
-  ProfileTask profile(profile_name.c_str());
-  if ((ripupMode == RipUpMode::DRC || ripupMode == RipUpMode::NEARDRC)
-      && getDesign()->getTopBlock()->getMarkers().empty()) {
-    return;
+  auto worker = std::make_unique<FlexDRWorker>(
+      &via_data_, getDesign(), logger_, router_cfg_);
+  Rect route_box(routeBoxIn);
+  if (route_box == Rect(0, 0, 0, 0)) {
+    auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
+    auto& xgp = gCellPatterns.at(0);
+    auto& ygp = gCellPatterns.at(1);
+    Rect routeBox1
+        = getDesign()->getTopBlock()->getGCellBox(Point(x_offset, y_offset));
+    const int max_i
+        = std::min((int) xgp.getCount() - 1, x_offset + args.size - 1);
+    const int max_j = std::min((int) ygp.getCount(), y_offset + args.size - 1);
+    Rect routeBox2
+        = getDesign()->getTopBlock()->getGCellBox(Point(max_i, max_j));
+    route_box.init(
+        routeBox1.xMin(), routeBox1.yMin(), routeBox2.xMax(), routeBox2.yMax());
   }
+  Rect extBox;
+  Rect drcBox;
+  route_box.bloat(router_cfg_->MTSAFEDIST, extBox);
+  route_box.bloat(router_cfg_->DRCSAFEDIST, drcBox);
+  worker->setRouteBox(route_box);
+  worker->setExtBox(extBox);
+  worker->setDrcBox(drcBox);
+  worker->setMazeEndIter(args.mazeEndIter);
+  worker->setDRIter(iter_);
+  worker->setDebugSettings(router_->getDebugSettings());
   if (dist_on_) {
-    if ((iter % 10 == 0 && iter != 60) || iter == 3 || iter == 15) {
-      globals_path_ = fmt::format("{}globals.{}.ar", dist_dir_, iter);
-      router_->writeGlobals(globals_path_);
-    }
+    worker->setDistributed(dist_, dist_ip_, dist_port_, dist_dir_);
   }
-  frTime t;
-  if (VERBOSE > 0) {
-    std::string suffix;
-    if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
-      suffix = "st";
-    } else if (iter == 2 || (iter > 20 && iter % 10 == 2)) {
-      suffix = "nd";
-    } else if (iter == 3 || (iter > 20 && iter % 10 == 3)) {
-      suffix = "rd";
-    } else {
-      suffix = "th";
-    }
-    logger_->info(DRT, 195, "Start {}{} optimization iteration.", iter, suffix);
+  if (!iter_) {
+    auto bp = initDR_mergeBoundaryPin(x_offset, y_offset, args.size, route_box);
+    worker->setDRIter(0, bp);
   }
-  if (graphics_) {
-    graphics_->startIter(iter);
+  worker->setRipupMode(args.ripupMode);
+  worker->setFollowGuide(args.followGuide);
+  // TODO: only pass to relevant workers
+  worker->setGraphics(graphics_.get());
+  worker->setCost(args.workerDRCCost,
+                  args.workerMarkerCost,
+                  args.workerFixedShapeCost,
+                  args.workerMarkerDecay);
+  return worker;
+}
+
+namespace {
+void printIteration(Logger* logger, const int iter, const bool stubborn_flow)
+{
+  std::string suffix;
+  if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
+    suffix = "st";
+  } else if (iter == 2 || (iter > 20 && iter % 10 == 2)) {
+    suffix = "nd";
+  } else if (iter == 3 || (iter > 20 && iter % 10 == 3)) {
+    suffix = "rd";
+  } else {
+    suffix = "th";
   }
-  auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
-  auto& xgp = gCellPatterns.at(0);
-  auto& ygp = gCellPatterns.at(1);
-  int cnt = 0;
-  int tot = (((int) xgp.getCount() - 1 - offset) / size + 1)
-            * (((int) ygp.getCount() - 1 - offset) / size + 1);
-  int prev_perc = 0;
-  bool isExceed = false;
+  logger->info(DRT,
+               195,
+               "Start {}{} {} iteration.",
+               iter,
+               suffix,
+               stubborn_flow ? "stubborn tiles" : "optimization");
+}
 
-  std::vector<std::unique_ptr<FlexDRWorker>> uworkers;
-  int batchStepX, batchStepY;
-
-  getBatchInfo(batchStepX, batchStepY);
-
-  std::vector<std::vector<std::vector<std::unique_ptr<FlexDRWorker>>>> workers(
-      batchStepX * batchStepY);
-
-  int xIdx = 0, yIdx = 0;
-  for (int i = offset; i < (int) xgp.getCount(); i += size) {
-    for (int j = offset; j < (int) ygp.getCount(); j += size) {
-      auto worker
-          = std::make_unique<FlexDRWorker>(&via_data_, design_, logger_);
-      Rect routeBox1 = getDesign()->getTopBlock()->getGCellBox(Point(i, j));
-      const int max_i = std::min((int) xgp.getCount() - 1, i + size - 1);
-      const int max_j = std::min((int) ygp.getCount(), j + size - 1);
-      Rect routeBox2
-          = getDesign()->getTopBlock()->getGCellBox(Point(max_i, max_j));
-      Rect routeBox(routeBox1.xMin(),
-                    routeBox1.yMin(),
-                    routeBox2.xMax(),
-                    routeBox2.yMax());
-      Rect extBox;
-      Rect drcBox;
-      routeBox.bloat(MTSAFEDIST, extBox);
-      routeBox.bloat(DRCSAFEDIST, drcBox);
-      worker->setRouteBox(routeBox);
-      worker->setExtBox(extBox);
-      worker->setDrcBox(drcBox);
-      worker->setGCellBox(Rect(i, j, max_i, max_j));
-      worker->setMazeEndIter(mazeEndIter);
-      worker->setDRIter(iter);
-      worker->setDebugSettings(router_->getDebugSettings());
-      if (dist_on_) {
-        worker->setDistributed(dist_, dist_ip_, dist_port_, dist_dir_);
-      }
-      if (!iter) {
-        // if (routeBox.xMin() == 441000 && routeBox.yMin() == 816100) {
-        //   std::cout << "@@@ debug: " << i << " " << j << std::endl;
-        // }
-        // set boundary pin
-        auto bp = initDR_mergeBoundaryPin(i, j, size, routeBox);
-        worker->setDRIter(0, bp);
-      }
-      worker->setRipupMode(ripupMode);
-      worker->setFollowGuide(followGuide);
-      // TODO: only pass to relevant workers
-      worker->setGraphics(graphics_.get());
-      worker->setCost(workerDRCCost,
-                      workerMarkerCost,
-                      workerFixedShapeCost,
-                      workerMarkerDecay);
-
-      int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
-      if (workers[batchIdx].empty()
-          || (!dist_on_
-              && (int) workers[batchIdx].back().size() >= BATCHSIZE)) {
-        workers[batchIdx].push_back(
-            std::vector<std::unique_ptr<FlexDRWorker>>());
-      }
-      workers[batchIdx].back().push_back(std::move(worker));
-
-      yIdx++;
-    }
-    yIdx = 0;
-    xIdx++;
+void printIterationProgress(Logger* logger,
+                            FlexDR::IterationProgress& iter_prog,
+                            const int num_markers,
+                            const int max_perc = 90)
+{
+  iter_prog.cnt_done_workers++;
+  if ((iter_prog.cnt_done_workers * 1.0 / iter_prog.total_num_workers)
+          >= (iter_prog.last_reported_perc / 100.0 + 0.1)
+      && iter_prog.last_reported_perc < max_perc) {
+    iter_prog.last_reported_perc += 10;
+    logger->report("    Completing {}% with {} violations.",
+                   iter_prog.last_reported_perc,
+                   num_markers);
+    logger->report("    {}.", iter_prog.time);
   }
+}
+}  // namespace
 
-  omp_set_num_threads(MAX_THREADS);
-  int version = 0;
-  increaseClipsize_ = false;
-  numWorkUnits_ = 0;
-  // parallel execution
-  for (auto& workerBatch : workers) {
-    ProfileTask profile("DR:checkerboard");
-    for (auto& workersInBatch : workerBatch) {
-      {
-        const std::string batch_name = std::string("DR:batch<")
-                                       + std::to_string(workersInBatch.size())
-                                       + ">";
-        ProfileTask profile(batch_name.c_str());
-        if (dist_on_) {
-          router_->dist_pool_.join();
-          if (version++ == 0 && !design_->hasUpdates()) {
-            std::string serializedViaData;
-            serializeViaData(via_data_, serializedViaData);
-            router_->sendGlobalsUpdates(globals_path_, serializedViaData);
-          } else {
-            router_->sendDesignUpdates(globals_path_);
-          }
-        }
-        {
-          ProfileTask task("DIST: PROCESS_BATCH");
-          // multi thread
-          ThreadException exception;
-#pragma omp parallel for schedule(dynamic)
-          for (int i = 0; i < (int) workersInBatch.size(); i++) {  // NOLINT
-            try {
-              if (dist_on_) {
-                workersInBatch[i]->distributedMain(getDesign());
-              } else {
-                workersInBatch[i]->main(getDesign());
-              }
-#pragma omp critical
-              {
-                cnt++;
-                if (VERBOSE > 0) {
-                  if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1
-                      && prev_perc < 90) {
-                    if (prev_perc == 0 && t.isExceed(0)) {
-                      isExceed = true;
-                    }
-                    prev_perc += 10;
-                    if (isExceed) {
-                      logger_->report(
-                          "    Completing {}% with {} violations.",
-                          prev_perc,
-                          getDesign()->getTopBlock()->getNumMarkers());
-                      logger_->report("    {}.", t);
-                    }
-                  }
-                }
-              }
-            } catch (...) {
-              exception.capture();
-            }
-          }
-          exception.rethrow();
-          if (dist_on_) {
-            int j = 0;
-            std::vector<std::vector<std::pair<int, FlexDRWorker*>>>
-                distWorkerBatches(router_->getCloudSize());
-            for (int i = 0; i < workersInBatch.size(); i++) {
-              auto worker = workersInBatch.at(i).get();
-              if (!worker->isSkipRouting()) {
-                distWorkerBatches[j].push_back({i, worker});
-                j = (j + 1) % router_->getCloudSize();
-              }
-            }
-            {
-              ProfileTask task("DIST: SERIALIZE+SEND");
-#pragma omp parallel for schedule(dynamic)
-              for (int i = 0; i < distWorkerBatches.size(); i++)  // NOLINT
-                sendWorkers(distWorkerBatches.at(i), workersInBatch);
-            }
-            logger_->report("    Received Batches:{}.", t);
-            std::vector<std::pair<int, std::string>> workers;
-            router_->getWorkerResults(workers);
-            {
-              ProfileTask task("DIST: DESERIALIZING_BATCH");
-#pragma omp parallel for schedule(dynamic)
-              for (int i = 0; i < workers.size(); i++) {  // NOLINT
-                deserializeWorker(workersInBatch.at(workers.at(i).first).get(),
-                                  design_,
-                                  workers.at(i).second);
-              }
-            }
-            logger_->report("    Deserialized Batches:{}.", t);
-          }
-        }
-      }
-      {
-        ProfileTask profile("DR:end_batch");
-        // single thread
-        for (auto& worker : workersInBatch) {
-          if (worker->end(getDesign())) {
-            numWorkUnits_ += 1;
-          }
-          if (worker->isCongested()) {
-            increaseClipsize_ = true;
-          }
-        }
-        workersInBatch.clear();
-      }
-    }
-  }
-
-  if (!iter) {
-    removeGCell2BoundaryPin();
-  }
-  if (VERBOSE > 0) {
-    if (cnt * 1.0 / tot >= prev_perc / 100.0 + 0.1 && prev_perc >= 90) {
-      if (prev_perc == 0 && t.isExceed(0)) {
-        isExceed = true;
-      }
-      prev_perc += 10;
-      if (isExceed) {
-        logger_->report("    Completing {}% with {} violations.",
-                        prev_perc,
-                        getDesign()->getTopBlock()->getNumMarkers());
-        logger_->report("    {}.", t);
-      }
-    }
-  }
-  FlexDRConnectivityChecker checker(
-      router_, logger_, graphics_.get(), dist_on_);
-  checker.check(iter);
-  if (getDesign()->getTopBlock()->getNumMarkers() == 0
-      && getTech()->hasMaxSpacingConstraints()) {
-    fixMaxSpacing();
-  }
-  numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
-  debugPrint(logger_,
-             utl::DRT,
-             "workers",
-             1,
-             "Number of work units = {}.",
-             numWorkUnits_);
-  if (VERBOSE > 0) {
+void FlexDR::reportIterationViolations() const
+{
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT,
                   199,
                   "  Number of violations = {}.",
@@ -864,24 +697,629 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
         logger_->report(line);
       }
     }
-    t.print(logger_);
+  }
+  if ((router_cfg_->DRC_RPT_ITER_STEP && iter_ > 0
+       && iter_ % router_cfg_->DRC_RPT_ITER_STEP.value() == 0)
+      || logger_->debugCheck(DRT, "autotuner", 1)
+      || logger_->debugCheck(DRT, "report", 1)) {
+    router_->reportDRC(
+        router_cfg_->DRC_RPT_FILE + '-' + std::to_string(iter_) + ".rpt",
+        design_->getTopBlock()->getMarkers(),
+        "DRC - iter " + std::to_string(iter_));
+  }
+}
+
+void FlexDR::processWorkersBatch(
+    std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch,
+    IterationProgress& iter_prog)
+{
+  const int num_markers = getDesign()->getTopBlock()->getNumMarkers();
+  ThreadException exception;
+#pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < (int) workers_batch.size(); i++) {  // NOLINT
+    try {
+      workers_batch[i]->main(getDesign());
+#pragma omp critical
+      {
+        if (router_cfg_->VERBOSE > 0) {
+          printIterationProgress(logger_, iter_prog, num_markers);
+        }
+      }
+    } catch (...) {
+      exception.capture();
+    }
+  }
+  exception.rethrow();
+}
+
+void FlexDR::processWorkersBatchDistributed(
+    std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch,
+    int& version,
+    IterationProgress& iter_prog)
+{
+  router_->dist_pool_.join();
+  if (version++ == 0 && !design_->hasUpdates()) {
+    std::string serializedViaData;
+    serializeViaData(via_data_, serializedViaData);
+    router_->sendGlobalsUpdates(router_cfg_path_, serializedViaData);
+  } else {
+    router_->sendDesignUpdates(router_cfg_path_);
+  }
+
+  ProfileTask task("DIST: PROCESS_BATCH");
+  const int num_markers = getDesign()->getTopBlock()->getNumMarkers();
+  // multi thread
+  ThreadException exception;
+#pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < (int) workers_batch.size(); i++) {  // NOLINT
+    try {
+      workers_batch[i]->distributedMain(getDesign());
+    } catch (...) {
+      exception.capture();
+    }
+  }
+  exception.rethrow();
+  int j = 0;
+  std::vector<std::vector<std::pair<int, FlexDRWorker*>>> distWorkerBatches(
+      router_->getCloudSize());
+  for (int i = 0; i < workers_batch.size(); i++) {
+    auto worker = workers_batch.at(i).get();
+    if (!worker->isSkipRouting()) {
+      distWorkerBatches[j].push_back({i, worker});
+      j = (j + 1) % router_->getCloudSize();
+    }
+  }
+  {
+    ProfileTask task("DIST: SERIALIZE+SEND");
+#pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < distWorkerBatches.size(); i++)  // NOLINT
+      sendWorkers(distWorkerBatches.at(i), workers_batch);
+  }
+  std::vector<std::pair<int, std::string>> workers;
+  router_->getWorkerResults(workers);
+  {
+    ProfileTask task("DIST: DESERIALIZING_BATCH");
+#pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < workers.size(); i++) {  // NOLINT
+      deserializeWorker(workers_batch.at(workers.at(i).first).get(),
+                        design_,
+                        workers.at(i).second);
+#pragma omp critical
+      {
+        if (router_cfg_->VERBOSE > 0) {
+          printIterationProgress(logger_, iter_prog, num_markers);
+        }
+      }
+    }
+  }
+}
+
+void FlexDR::endWorkersBatch(
+    std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch)
+{
+  ProfileTask profile("DR:end_batch");
+  // single thread
+  for (auto& worker : workers_batch) {
+    if (worker->end(getDesign())) {
+      numWorkUnits_ += 1;
+    }
+    if (worker->isCongested()) {
+      increaseClipsize_ = true;
+    }
+  }
+  workers_batch.clear();
+}
+
+Rect FlexDR::getDRVBBox(const Rect& drv_rect) const
+{
+  Rect route_box = drv_rect;
+  auto min_idx = getDesign()->getTopBlock()->getGCellIdx(route_box.ll());
+  auto max_idx = getDesign()->getTopBlock()->getGCellIdx(route_box.ur());
+  return {min_idx, max_idx};
+}
+
+namespace stub_tiles {
+/**
+ * @brief Clusters DRV boxes.
+ *
+ * The function uses a greedy algorithm. It starts with a box and tries to merge
+ * all other boxes with the following condition:
+ * - The resulting merged box is smaller than or equal to 4x4 GCells.
+ * It keeps merging untill there is no other possible merges.
+ *
+ * @param drv_boxes A list of gcell rectangles(with the gcell indices) that hold
+ * the violations.
+ * @returns a list of merged boxes.
+ */
+std::vector<Rect> mergeBoxes(std::vector<Rect>& drv_boxes)
+{
+  std::vector<Rect> merge_boxes{drv_boxes};
+  bool merged;
+  do {
+    merged = false;
+    for (auto it1 = merge_boxes.begin(); it1 != merge_boxes.end(); ++it1) {
+      for (auto it2 = it1 + 1; it2 != merge_boxes.end(); ++it2) {
+        Rect merge_box = (*it1);
+        merge_box.merge((*it2));
+        if (merge_box.dx() > 4 || merge_box.dy() > 4) {
+          continue;
+        }
+        (*it1).merge((*it2));
+        merge_boxes.erase(it2);
+        merged = true;
+        break;
+      }
+      if (merged) {
+        break;
+      }
+    }
+  } while (merged);
+  return merge_boxes;
+}
+/**
+ * @brief Checks if the passed rectangle intersects with any other rectangle in
+ * the grid.
+ *
+ * @param grid A 2-d grid representing the current grid. (-1 value means
+ * unoccupied).
+ * @param rect_id the current rectangle id to disregard in the check.
+ * @return True if the rectangle intersects with an occupied cell by another
+ * rectangle.
+ */
+bool hasOtherRect(const std::vector<std::vector<int>>& grid,
+                  const Rect& rect,
+                  const int rect_id)
+{
+  return std::any_of(grid.begin() + rect.xMin(),
+                     grid.begin() + rect.xMax() + 1,
+                     [&](const std::vector<int>& row) {
+                       return std::any_of(row.begin() + rect.yMin(),
+                                          row.begin() + rect.yMax() + 1,
+                                          [rect_id](int id) {
+                                            return id != -1 && id != rect_id;
+                                          });
+                     });
+}
+/**
+ * @brief Expands the passed rectangle in the required direction.
+ *
+ * The function expands the passed rectangle in the required direction a gcell
+ * at a time with the following conditions:
+ * - The expansion is less than or equal to the max_expansion
+ * - The expansion does not result a rectangle that intersects with another
+ *   rectangle in the grid.
+ * @param box The rectangle to be expanded.
+ * @param id The rectangle's id.
+ * @param grid A 2-d grid representing the current grid. (-1 value means
+ * unoccupied).
+ * @param dir The direction of the expansion (East, West, North, South).
+ * @return The number of expanded gcells (less than or equal to max_expansion)
+ */
+int expandBox(Rect& box,
+              const int id,
+              const std::vector<std::vector<int>>& grid,
+              const frDirEnum dir,
+              const int max_expansion)
+{
+  auto min_idx = box.ll();
+  auto max_idx = box.ur();
+  for (int i = 1; i <= max_expansion; i++) {
+    switch (dir) {
+      case frDirEnum::E:
+        max_idx.addX(1);
+        break;
+      case frDirEnum::W:
+        if (min_idx.x() == 0) {
+          return i - 1;
+        }
+        min_idx.addX(-1);
+        break;
+      case frDirEnum::N:
+        max_idx.addY(1);
+        break;
+      case frDirEnum::S:
+        if (min_idx.y() == 0) {
+          return i - 1;
+        }
+        min_idx.addY(-1);
+        break;
+      default:
+        break;
+    }
+    Rect expanded_box = {min_idx, max_idx};
+    if (hasOtherRect(grid, expanded_box, id)) {
+      return i - 1;
+    }
+    box = expanded_box;
+  }
+  return max_expansion;
+}
+
+void populateGrid(std::vector<std::vector<int>>& grid,
+                  const Rect& box,
+                  const int id)
+{
+  for (auto x = box.xMin(); x <= box.xMax(); x++) {
+    std::fill(
+        grid[x].begin() + box.yMin(), grid[x].begin() + box.yMax() + 1, id);
+  }
+}
+
+struct Wavefront
+{
+  int id;
+  int expansions_done;
+  int expansion_east;
+  int expansion_west;
+  int expansion_north;
+  int expansion_south;
+  bool operator<(const Wavefront& rhs) const
+  {
+    return expansions_done > rhs.expansions_done;
+  }
+};
+
+/**
+ * @brief Expand the boxes to reach a max size of 7x7 gcells.
+ *
+ * The function tries to expand each of the passed merged_boxes into a 7x7 gcell
+ * grids. There are 5 variantions of expansions that we consider in this
+ * function:
+ * - DRVs in Center-Center (Highest priority)
+ * - DRVs in Center-East
+ * - DRVs in Center-West
+ * - DRVs in Center-North
+ * - DRVs in Center-South
+ * We first expand the first type and then work on the other 4 types of
+ * expansions. We prioritize boxes with lower number of expansions done. That
+ * way we try to balance the resulting boxes so that each DRV box optimally has
+ * the same number of expanded boxes.
+ */
+std::vector<std::set<Rect>> expandBoxes(std::vector<Rect>& merged_boxes)
+{
+  frUInt4 min_x_idx = std::numeric_limits<frUInt4>::max();
+  frUInt4 min_y_idx = std::numeric_limits<frUInt4>::max();
+  frUInt4 max_x_idx = std::numeric_limits<frUInt4>::min();
+  frUInt4 max_y_idx = std::numeric_limits<frUInt4>::min();
+  for (const auto& box : merged_boxes) {
+    min_x_idx = std::min(min_x_idx, (frUInt4) box.xMin());
+    min_y_idx = std::min(min_y_idx, (frUInt4) box.yMin());
+    max_x_idx = std::max(max_x_idx, (frUInt4) box.xMax());
+    max_y_idx = std::max(max_y_idx, (frUInt4) box.yMax());
+  }
+  max_x_idx += 7;
+  max_y_idx += 7;
+  std::vector<std::vector<int>> grid(max_x_idx);
+  std::fill(grid.begin(),
+            grid.end(),
+            std::vector<int>(max_y_idx, -1));  // -1 means unoccupied
+  int id = 0;
+  for (const auto& box : merged_boxes) {
+    populateGrid(grid, box, id++);
+  }
+
+  std::vector<std::set<Rect>> expanded_boxes;
+  std::priority_queue<Wavefront> expansions;
+  // first we create route boxes centering the violations
+  id = 0;
+  for (auto box : merged_boxes) {
+    const int horizontal_expand = 6 - box.dx();
+    const int half_horizontal_expand = horizontal_expand / 2;
+    const int vertical_expand = 6 - box.dy();
+    const int half_vertical_expand = vertical_expand / 2;
+    const int expansion_east
+        = expandBox(box, id, grid, frDirEnum::E, half_horizontal_expand);
+    const int expansion_west = expandBox(
+        box, id, grid, frDirEnum::W, horizontal_expand - expansion_east);
+    const int expansion_north
+        = expandBox(box, id, grid, frDirEnum::N, half_vertical_expand);
+    const int expansion_south = expandBox(
+        box, id, grid, frDirEnum::S, vertical_expand - expansion_north);
+
+    expansions.push(
+        {id, 1, 0, horizontal_expand, expansion_north, expansion_south});
+    expansions.push(
+        {id, 1, horizontal_expand, 0, expansion_north, expansion_south});
+    expansions.push(
+        {id, 1, expansion_east, expansion_west, 0, vertical_expand});
+    expansions.push(
+        {id, 1, expansion_east, expansion_west, vertical_expand, 0});
+    expanded_boxes.push_back({box});
+    populateGrid(grid, box, id++);
+  }
+  while (!expansions.empty()) {
+    auto wavefront = expansions.top();
+    expansions.pop();
+    if (expanded_boxes[wavefront.id].size() != wavefront.expansions_done) {
+      wavefront.expansions_done = expanded_boxes[wavefront.id].size();
+      expansions.push(wavefront);
+      continue;
+    }
+    auto box = merged_boxes[wavefront.id];
+    expandBox(box, wavefront.id, grid, frDirEnum::E, wavefront.expansion_east);
+    expandBox(box, wavefront.id, grid, frDirEnum::W, wavefront.expansion_west);
+    expandBox(box, wavefront.id, grid, frDirEnum::N, wavefront.expansion_north);
+    expandBox(box, wavefront.id, grid, frDirEnum::S, wavefront.expansion_south);
+    expanded_boxes[wavefront.id].insert(box);
+    populateGrid(grid, box, wavefront.id);
+  }
+  return expanded_boxes;
+}
+
+/**
+ * @brief Distributes the workers into batches of non-intersecting borders.
+ *
+ * The function first calculates the external box to each of the passed route
+ * boxes by bloating them by MTSAFEDIST. Then, it calculates the max box of
+ * each worker by merging all possible variations of expanded boxes. Finally, it
+ * distributes the workers into batches where each batch holds a set of workers
+ * that do not intersect.
+ */
+std::vector<std::vector<int>> getWorkerBatchesBoxes(
+    frDesign* design,
+    std::vector<std::set<Rect>>& expanded_boxes,
+    const frCoord bloating_dist)
+{
+  if (expanded_boxes.empty()) {
+    return {};
+  }
+  std::vector<Rect> boxes_max;
+  int id = 0;
+  for (auto& boxes : expanded_boxes) {
+    bool first = true;
+    for (auto& box : boxes) {
+      auto min_idx = box.ll();
+      auto max_idx = box.ur();
+      Rect rect(design->getTopBlock()->getGCellBox(min_idx).ll(),
+                design->getTopBlock()->getGCellBox(max_idx).ur());
+      rect.bloat(bloating_dist, rect);
+      if (first) {
+        boxes_max.emplace_back(rect);
+        first = false;
+        continue;
+      }
+      boxes_max[id].merge(rect);
+    }
+    id++;
+  }
+  std::vector<std::vector<int>> batches;
+  batches.push_back({0});
+  for (int i = 1; i < boxes_max.size(); i++) {
+    auto curr_box = boxes_max[i];
+    bool added = false;
+    for (auto& batch : batches) {
+      bool intersects = false;
+      for (const auto& id : batch) {
+        if (curr_box.intersects(boxes_max[id])) {
+          intersects = true;
+          break;
+        }
+      }
+      if (!intersects) {
+        batch.emplace_back(i);
+        added = true;
+        break;
+      }
+    }
+    if (!added) {
+      batches.push_back({i});
+    }
+  }
+  return batches;
+}
+}  // namespace stub_tiles
+
+void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
+                               IterationProgress& iter_prog)
+{
+  if (graphics_) {
+    graphics_->startIter(iter_, router_cfg_);
+  }
+  std::vector<Rect> drv_boxes;
+  for (const auto& marker : getDesign()->getTopBlock()->getMarkers()) {
+    auto box = marker->getBBox();
+    drv_boxes.push_back(getDRVBBox(box));
+  }
+  auto merged_boxes = stub_tiles::mergeBoxes(drv_boxes);
+  auto expanded_boxes = stub_tiles::expandBoxes(merged_boxes);
+  auto route_boxes_batches = stub_tiles::getWorkerBatchesBoxes(
+      getDesign(), expanded_boxes, router_cfg_->MTSAFEDIST);
+  std::vector<frUInt4> drc_costs
+      = {args.workerDRCCost, args.workerDRCCost / 2, args.workerDRCCost * 2};
+  std::vector<frUInt4> marker_costs = {args.workerMarkerCost,
+                                       args.workerMarkerCost / 2,
+                                       args.workerMarkerCost * 2};
+  std::vector<std::vector<std::unique_ptr<FlexDRWorker>>> workers_batches(
+      route_boxes_batches.size());
+  iter_prog.total_num_workers = 0;
+  for (int batch_id = 0; batch_id < route_boxes_batches.size(); batch_id++) {
+    auto& batch = route_boxes_batches[batch_id];
+    for (const auto worker_id : batch) {
+      for (auto gcell_box : expanded_boxes[worker_id]) {
+        auto min_idx = gcell_box.ll();
+        auto max_idx = gcell_box.ur();
+        Rect route_box(getDesign()->getTopBlock()->getGCellBox(min_idx).ll(),
+                       getDesign()->getTopBlock()->getGCellBox(max_idx).ur());
+        for (auto drc_cost : drc_costs) {
+          for (auto marker_cost : marker_costs) {
+            auto worker_args = args;
+            worker_args.workerDRCCost = drc_cost;
+            worker_args.workerMarkerCost = marker_cost;
+            workers_batches[batch_id].emplace_back(
+                createWorker(0, 0, worker_args, route_box));
+            workers_batches[batch_id].back()->setWorkerId(worker_id);
+            iter_prog.total_num_workers++;
+          }
+        }
+      }
+    }
+  }
+  bool changed = false;
+  omp_set_num_threads(router_cfg_->MAX_THREADS);
+  for (auto& batch : workers_batches) {
+    processWorkersBatch(batch, iter_prog);
+    std::map<int, FlexDRWorker*>
+        worker_best_result;  // holds the best worker in results
+    for (auto& worker : batch) {
+      const int worker_id = worker->getWorkerId();
+      if (worker_best_result.find(worker_id) == worker_best_result.end()
+          || worker->getBestNumMarkers()
+                 < worker_best_result[worker_id]->getBestNumMarkers()) {
+        worker_best_result[worker_id] = worker.get();
+      }
+    }
+    for (auto [_, worker] : worker_best_result) {
+      changed
+          |= (worker->end(getDesign())
+              && worker->getBestNumMarkers() != worker->getInitNumMarkers());
+    }
+    batch.clear();
+  }
+  if (!changed) {
+    control_.skip_till_changed = true;
+    control_.last_args = args;
+  }
+}
+
+void FlexDR::optimizationFlow(const SearchRepairArgs& args,
+                              IterationProgress& iter_prog)
+{
+  if (graphics_) {
+    graphics_->startIter(iter_, router_cfg_);
+  }
+  auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
+  auto& xgp = gCellPatterns.at(0);
+  auto& ygp = gCellPatterns.at(1);
+  const int size = args.size;
+  const int offset = args.offset;
+  iter_prog.total_num_workers
+      = (((int) xgp.getCount() - 1 - offset) / size + 1)
+        * (((int) ygp.getCount() - 1 - offset) / size + 1);
+
+  std::vector<std::unique_ptr<FlexDRWorker>> uworkers;
+  int batchStepX, batchStepY;
+
+  getBatchInfo(batchStepX, batchStepY);
+
+  std::vector<std::vector<std::vector<std::unique_ptr<FlexDRWorker>>>> workers(
+      batchStepX * batchStepY);
+
+  int xIdx = 0, yIdx = 0;
+  for (int i = offset; i < (int) xgp.getCount(); i += size) {
+    for (int j = offset; j < (int) ygp.getCount(); j += size) {
+      auto worker = createWorker(i, j, args);
+      int batch_idx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
+      const bool create_new_batch
+          = workers[batch_idx].empty()
+            || (!dist_on_
+                && workers[batch_idx].back().size() >= router_cfg_->BATCHSIZE);
+      if (create_new_batch) {
+        workers[batch_idx].push_back(
+            std::vector<std::unique_ptr<FlexDRWorker>>());
+      }
+      workers[batch_idx].back().push_back(std::move(worker));
+
+      yIdx++;
+    }
+    yIdx = 0;
+    xIdx++;
+  }
+
+  omp_set_num_threads(router_cfg_->MAX_THREADS);
+  int version = 0;
+  increaseClipsize_ = false;
+  numWorkUnits_ = 0;
+  // parallel execution
+  for (auto& workerBatch : workers) {
+    ProfileTask profile("DR:checkerboard");
+    for (auto& workersInBatch : workerBatch) {
+      {
+        const std::string batch_name = std::string("DR:batch<")
+                                       + std::to_string(workersInBatch.size())
+                                       + ">";
+        ProfileTask profile(batch_name.c_str());
+        if (dist_on_) {
+          processWorkersBatchDistributed(workersInBatch, version, iter_prog);
+        } else {
+          processWorkersBatch(workersInBatch, iter_prog);
+        }
+      }
+      endWorkersBatch(workersInBatch);
+    }
+  }
+
+  if (!iter_) {
+    removeGCell2BoundaryPin();
+  }
+}
+
+void FlexDR::searchRepair(const SearchRepairArgs& args)
+{
+  const RipUpMode ripupMode = args.ripupMode;
+  if ((ripupMode == RipUpMode::DRC || ripupMode == RipUpMode::NEARDRC)
+      && getDesign()->getTopBlock()->getMarkers().empty()) {
+    return;
+  }
+  ProfileTask profile(fmt::format("DR:searchRepair{}", iter_).c_str());
+
+  if (dist_on_) {
+    if ((iter_ % 10 == 0 && iter_ != 60) || iter_ == 3 || iter_ == 15) {
+      router_cfg_path_ = fmt::format("{}globals.{}.ar", dist_dir_, iter_);
+      router_->writeGlobals(router_cfg_path_);
+    }
+  }
+  // start timer for the current iteration
+  IterationProgress iter_prog;
+  auto block = getDesign()->getTopBlock();
+  const auto num_drvs = block->getNumMarkers();
+  const bool stubborn_flow = num_drvs <= 11 && ripupMode != RipUpMode::ALL
+                             && ripupMode != RipUpMode::INCR
+                             && !control_.fixing_max_spacing;
+  if (router_cfg_->VERBOSE > 0) {
+    printIteration(logger_, iter_, stubborn_flow);
+  }
+  if (stubborn_flow) {
+    stubbornTilesFlow(args, iter_prog);
+  } else {
+    optimizationFlow(args, iter_prog);
+  }
+
+  if (router_cfg_->VERBOSE > 0) {
+    iter_prog.cnt_done_workers--;  // decrement 1 and increment again in
+                                   // printIterationProgress
+    printIterationProgress(
+        logger_, iter_prog, getDesign()->getTopBlock()->getNumMarkers(), 100);
+  }
+  FlexDRConnectivityChecker checker(
+      router_, logger_, router_cfg_, graphics_.get(), dist_on_);
+  checker.check(iter_);
+  control_.fixing_max_spacing = false;
+  if (getDesign()->getTopBlock()->getNumMarkers() == 0
+      && getTech()->hasMaxSpacingConstraints()) {
+    fixMaxSpacing();
+  }
+  numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
+  debugPrint(logger_,
+             utl::DRT,
+             "workers",
+             1,
+             "Number of work units = {}.",
+             numWorkUnits_);
+  reportIterationViolations();
+  if (router_cfg_->VERBOSE > 0) {
+    iter_prog.time.print(logger_);
     std::cout << std::flush;
   }
   end();
-  if ((DRC_RPT_ITER_STEP && iter > 0 && iter % DRC_RPT_ITER_STEP.value() == 0)
-      || logger_->debugCheck(DRT, "autotuner", 1)
-      || logger_->debugCheck(DRT, "report", 1)) {
-    router_->reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt",
-                       design_->getTopBlock()->getMarkers());
-  }
 }
 
 void FlexDR::end(bool done)
 {
-  if (done && DRC_RPT_FILE != std::string("")) {
-    router_->reportDRC(DRC_RPT_FILE, design_->getTopBlock()->getMarkers());
+  if (done) {
+    router_->reportDRC(
+        router_cfg_->DRC_RPT_FILE, design_->getTopBlock()->getMarkers(), "DRC");
   }
-  if (done && VERBOSE > 0) {
+  if (done && router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 198, "Complete detail routing.");
   }
 
@@ -928,7 +1366,7 @@ void FlexDR::end(bool done)
                     totWlen / topBlock->getDBUPerUU());
   }
 
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->report("Total wire length = {} um.",
                     totWlen / topBlock->getDBUPerUU());
 
@@ -1034,77 +1472,76 @@ void FlexDR::end(bool done)
   }
 }
 
-static std::vector<FlexDR::SearchRepairArgs> strategy()
+std::vector<FlexDR::SearchRepairArgs> strategy(const frUInt4 shapeCost,
+                                               const frUInt4 markerCost)
 {
-  const frUInt4 shapeCost = ROUTESHAPECOST;
-
   // clang-format off
   return {
     {7,  0,  3,      shapeCost,               0,       shapeCost, 0.950, RipUpMode::ALL    ,  true}, //  0
     {7, -2,  3,      shapeCost,       shapeCost,       shapeCost, 0.950, RipUpMode::ALL    ,  true}, //  1
     {7, -5,  3,      shapeCost,       shapeCost,       shapeCost, 0.950, RipUpMode::ALL    ,  true}, //  2
-    {7,  0,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  3
-    {7, -1,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  4
-    {7, -2,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  5
-    {7, -3,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  6
-    {7, -4,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  7
-    {7, -5,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  8
-    {7, -6,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  9
-    {7,  0,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 10
-    {7, -1,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 11
-    {7, -2,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 12
-    {7, -3,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 13
-    {7, -4,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 14
-    {7, -5,  8,  2 * shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 15
-    {7, -6,  8,  2 * shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 16
-    {7, -3,  8,      shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, RipUpMode::ALL    , false}, // 17
-    {7,  0,  8,  4 * shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 18
-    {7, -1,  8,  4 * shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 19
-    {7, -2,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 20
-    {7, -3,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 21
-    {7, -4,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 22
-    {7, -5,  8,      shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::NEARDRC, false}, // 23
-    {7, -6,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 24
-    {5, -2,  8,      shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::ALL    , false}, // 25
-    {7,  0,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 26
-    {7, -1,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 27
-    {7, -2,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 28
-    {7, -3,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 29
-    {7, -4,  8,      shapeCost,      MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::NEARDRC, false}, // 30
-    {7, -5,  8,  8 * shapeCost,  2 * MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 31
-    {7, -6,  8,  8 * shapeCost,  2 * MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 32
-    {3, -1,  8,      shapeCost,      MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::ALL    , false}, // 33
-    {7,  0,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 34
-    {7, -1,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 35
-    {7, -2,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 36
-    {7, -3,  8,      shapeCost,      MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::NEARDRC, false}, // 37
-    {7, -4,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 38
-    {7, -5,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 39
-    {7, -6,  8, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 40
-    {3, -2,  8,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::ALL    , false}, // 41
-    {7,  0, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 42
-    {7, -1, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 43
-    {7, -2, 16,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::NEARDRC, false}, // 44
-    {7, -3, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 45
-    {7, -4, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 46
-    {7, -5, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 47
-    {7, -6, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 48
-    {3, -0,  8,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::ALL    , false}, // 49
-    {7,  0, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 50
-    {7, -1, 32,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::NEARDRC, false}, // 51
-    {7, -2, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 52
-    {7, -3, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 53
-    {7, -4, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 54
-    {7, -5, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 55
-    {7, -6, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 56
-    {3, -1,  8,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::ALL    , false}, // 57
-    {7,  0, 64,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::NEARDRC, false}, // 58
-    {7, -1, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 59
-    {7, -2, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 60
-    {7, -3, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 61
-    {7, -4, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 62
-    {7, -5, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 63
-    {7, -6, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}  // 64
+    {7,  0,  8,      shapeCost,      markerCost,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  3
+    {7, -1,  8,      shapeCost,      markerCost,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  4
+    {7, -2,  8,      shapeCost,      markerCost,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  5
+    {7, -3,  8,      shapeCost,      markerCost,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  6
+    {7, -4,  8,      shapeCost,      markerCost,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  7
+    {7, -5,  8,      shapeCost,      markerCost,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  8
+    {7, -6,  8,      shapeCost,      markerCost,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  9
+    {7,  0,  8,  2 * shapeCost,      markerCost,   3 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 10
+    {7, -1,  8,  2 * shapeCost,      markerCost,   3 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 11
+    {7, -2,  8,  2 * shapeCost,      markerCost,   3 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 12
+    {7, -3,  8,  2 * shapeCost,      markerCost,   3 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 13
+    {7, -4,  8,  2 * shapeCost,      markerCost,   3 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 14
+    {7, -5,  8,  2 * shapeCost,      markerCost,   4 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 15
+    {7, -6,  8,  2 * shapeCost,      markerCost,   4 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 16
+    {7, -3,  8,      shapeCost,      markerCost,   4 * shapeCost, 0.950, RipUpMode::ALL    , false}, // 17
+    {7,  0,  8,  4 * shapeCost,      markerCost,   4 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 18
+    {7, -1,  8,  4 * shapeCost,      markerCost,   4 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 19
+    {7, -2,  8,  4 * shapeCost,      markerCost,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 20
+    {7, -3,  8,  4 * shapeCost,      markerCost,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 21
+    {7, -4,  8,  4 * shapeCost,      markerCost,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 22
+    {7, -5,  8,      shapeCost,      markerCost,  10 * shapeCost, 0.950, RipUpMode::NEARDRC, false}, // 23
+    {7, -6,  8,  4 * shapeCost,      markerCost,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 24
+    {5, -2,  8,      shapeCost,      markerCost,  10 * shapeCost, 0.950, RipUpMode::ALL    , false}, // 25
+    {7,  0,  8,  8 * shapeCost,  2 * markerCost,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 26
+    {7, -1,  8,  8 * shapeCost,  2 * markerCost,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 27
+    {7, -2,  8,  8 * shapeCost,  2 * markerCost,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 28
+    {7, -3,  8,  8 * shapeCost,  2 * markerCost,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 29
+    {7, -4,  8,      shapeCost,      markerCost,  50 * shapeCost, 0.950, RipUpMode::NEARDRC, false}, // 30
+    {7, -5,  8,  8 * shapeCost,  2 * markerCost,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 31
+    {7, -6,  8,  8 * shapeCost,  2 * markerCost,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 32
+    {3, -1,  8,      shapeCost,      markerCost,  50 * shapeCost, 0.950, RipUpMode::ALL    , false}, // 33
+    {7,  0,  8, 16 * shapeCost,  4 * markerCost,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 34
+    {7, -1,  8, 16 * shapeCost,  4 * markerCost,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 35
+    {7, -2,  8, 16 * shapeCost,  4 * markerCost,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 36
+    {7, -3,  8,      shapeCost,      markerCost,  50 * shapeCost, 0.950, RipUpMode::NEARDRC, false}, // 37
+    {7, -4,  8, 16 * shapeCost,  4 * markerCost,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 38
+    {7, -5,  8, 16 * shapeCost,  4 * markerCost,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 39
+    {7, -6,  8, 16 * shapeCost,  4 * markerCost, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 40
+    {3, -2,  8,      shapeCost,      markerCost, 100 * shapeCost, 0.990, RipUpMode::ALL    , false}, // 41
+    {7,  0, 16, 16 * shapeCost,  4 * markerCost, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 42
+    {7, -1, 16, 16 * shapeCost,  4 * markerCost, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 43
+    {7, -2, 16,      shapeCost,      markerCost, 100 * shapeCost, 0.990, RipUpMode::NEARDRC, false}, // 44
+    {7, -3, 16, 16 * shapeCost,  4 * markerCost, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 45
+    {7, -4, 16, 16 * shapeCost,  4 * markerCost, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 46
+    {7, -5, 16, 16 * shapeCost,  4 * markerCost, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 47
+    {7, -6, 16, 16 * shapeCost,  4 * markerCost, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 48
+    {3, -0,  8,      shapeCost,      markerCost, 100 * shapeCost, 0.990, RipUpMode::ALL    , false}, // 49
+    {7,  0, 32, 32 * shapeCost,  8 * markerCost, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 50
+    {7, -1, 32,      shapeCost,      markerCost, 100 * shapeCost, 0.999, RipUpMode::NEARDRC, false}, // 51
+    {7, -2, 32, 32 * shapeCost,  8 * markerCost, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 52
+    {7, -3, 32, 32 * shapeCost,  8 * markerCost, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 53
+    {7, -4, 32, 32 * shapeCost,  8 * markerCost, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 54
+    {7, -5, 32, 32 * shapeCost,  8 * markerCost, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 55
+    {7, -6, 32, 32 * shapeCost,  8 * markerCost, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 56
+    {3, -1,  8,      shapeCost,      markerCost, 100 * shapeCost, 0.999, RipUpMode::ALL    , false}, // 57
+    {7,  0, 64,      shapeCost,      markerCost, 100 * shapeCost, 0.999, RipUpMode::NEARDRC, false}, // 58
+    {7, -1, 64, 64 * shapeCost, 16 * markerCost, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 59
+    {7, -2, 64, 64 * shapeCost, 16 * markerCost, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 60
+    {7, -3, 64, 64 * shapeCost, 16 * markerCost, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 61
+    {7, -4, 64, 64 * shapeCost, 16 * markerCost, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 62
+    {7, -5, 64, 64 * shapeCost, 16 * markerCost, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 63
+    {7, -6, 64, 64 * shapeCost, 16 * markerCost, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}  // 64
   };
   // clang-format on
 }
@@ -1130,7 +1567,7 @@ void FlexDR::reportGuideCoverage()
   std::vector<uint64_t> totalCoveredAreaByLayerNum(numLayers, 0);
   std::map<frNet*, std::vector<float>> netsCoverage;
   const auto& nets = getDesign()->getTopBlock()->getNets();
-  omp_set_num_threads(MAX_THREADS);
+  omp_set_num_threads(router_cfg_->MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < nets.size(); i++) {  // NOLINT
     const auto& net = nets.at(i);
@@ -1165,7 +1602,7 @@ void FlexDR::reportGuideCoverage()
 
     for (frLayerNum lNum = 0; lNum < numLayers; lNum++) {
       if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING
-          || lNum > TOP_ROUTING_LAYER) {
+          || lNum > router_cfg_->TOP_ROUTING_LAYER) {
         continue;
       }
       float coveredPercentage = -1.0;
@@ -1191,11 +1628,11 @@ void FlexDR::reportGuideCoverage()
     }
   }
 
-  std::ofstream file(GUIDE_REPORT_FILE);
+  std::ofstream file(router_cfg_->GUIDE_REPORT_FILE);
   file << "Net,";
   for (const auto& layer : getTech()->getLayers()) {
     if (layer->getType() == dbTechLayerType::ROUTING
-        && layer->getLayerNum() <= TOP_ROUTING_LAYER) {
+        && layer->getLayerNum() <= router_cfg_->TOP_ROUTING_LAYER) {
       file << layer->getName() << ",";
     }
   }
@@ -1216,7 +1653,7 @@ void FlexDR::reportGuideCoverage()
   uint64_t totalCoveredArea = 0;
   for (const auto& layer : getTech()->getLayers()) {
     if (layer->getType() == dbTechLayerType::ROUTING
-        && layer->getLayerNum() <= TOP_ROUTING_LAYER) {
+        && layer->getLayerNum() <= router_cfg_->TOP_ROUTING_LAYER) {
       if (totalAreaByLayerNum[layer->getLayerNum()] == 0) {
         file << "NA,";
         continue;
@@ -1241,7 +1678,7 @@ void FlexDR::reportGuideCoverage()
 void FlexDR::fixMaxSpacing()
 {
   logger_->info(DRT, 227, "Checking For LEF58_MAXSPACING violations");
-  io::Parser parser(db_, getDesign(), logger_);
+  io::Parser parser(db_, getDesign(), logger_, router_cfg_);
   parser.initSecondaryVias();
   std::vector<frVia*> lonely_vias;
   for (const auto& layer : getTech()->getLayers()) {
@@ -1307,15 +1744,16 @@ void FlexDR::fixMaxSpacing()
     }
   }
   // create drWorkers for the final regions
-  omp_set_num_threads(MAX_THREADS);
+  omp_set_num_threads(router_cfg_->MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
   for (size_t i = 0; i < merged_regions.size(); i++) {
     auto route_box = merged_regions.at(i);
-    auto worker = std::make_unique<FlexDRWorker>(&via_data_, design_, logger_);
+    auto worker = std::make_unique<FlexDRWorker>(
+        &via_data_, design_, logger_, router_cfg_);
     Rect ext_box;
     Rect drc_box;
-    route_box.bloat(MTSAFEDIST, ext_box);
-    route_box.bloat(DRCSAFEDIST, drc_box);
+    route_box.bloat(router_cfg_->MTSAFEDIST, ext_box);
+    route_box.bloat(router_cfg_->DRCSAFEDIST, drc_box);
     worker->setRouteBox(route_box);
     worker->setExtBox(ext_box);
     worker->setDrcBox(drc_box);
@@ -1329,6 +1767,7 @@ void FlexDR::fixMaxSpacing()
       worker->end(getDesign());
     }
   }
+  control_.fixing_max_spacing = true;
 }
 
 std::vector<frVia*> FlexDR::getLonelyVias(frLayer* layer,
@@ -1405,7 +1844,11 @@ int FlexDR::main()
       break;
     }
   }
-  for (auto& args : strategy()) {
+  for (auto& args :
+       strategy(router_cfg_->ROUTESHAPECOST, router_cfg_->MARKERCOST)) {
+    if (iter_ > router_cfg_->END_ITERATION) {
+      break;
+    }
     int clipSize = args.size;
     if (args.ripupMode != RipUpMode::ALL) {
       if (increaseClipsize_) {
@@ -1413,7 +1856,8 @@ int FlexDR::main()
       } else {
         clipSizeInc_ = std::max((float) 0, clipSizeInc_ - 0.2f);
       }
-      clipSize += std::min(MAX_CLIPSIZE_INCREASE, (int) round(clipSizeInc_));
+      clipSize += std::min(router_cfg_->MAX_CLIPSIZE_INCREASE,
+                           (int) round(clipSizeInc_));
     }
     args.size = clipSize;
     if (args.ripupMode == RipUpMode::ALL) {
@@ -1421,30 +1865,33 @@ int FlexDR::main()
         args.ripupMode = RipUpMode::INCR;
       }
     }
+    if (control_.skip_till_changed
+        && args.isEqualIgnoringSizeAndOffset(control_.last_args)) {
+      if (router_cfg_->VERBOSE > 0) {
+        logger_->info(DRT, 200, "Skipping iteration {}", iter_);
+      }
+      ++iter_;
+      continue;
+    }
+    control_.skip_till_changed = false;
     searchRepair(args);
     if (getDesign()->getTopBlock()->getNumMarkers() == 0) {
       break;
     }
-    if (iter_ > END_ITERATION) {
-      break;
-    }
     if (logger_->debugCheck(DRT, "snapshot", 1)) {
-      io::Writer writer(router_, logger_);
-      writer.updateDb(db_, false, true);
-      // insert the stack of vias for bterms above max layer again.
-      // all routing is deleted in updateDb, so it is necessary to insert the
-      // stack again.
-      router_->processBTermsAboveTopLayer(true);
+      io::Writer writer(getDesign(), logger_);
+      writer.updateDb(db_, router_cfg_, false, true);
       ord::OpenRoad::openRoad()->writeDb(
-          fmt::format("drt_iter{}.odb", iter_ - 1).c_str());
+          fmt::format("drt_iter{}.odb", iter_).c_str());
     }
+    ++iter_;
   }
 
   end(/* done */ true);
-  if (!GUIDE_REPORT_FILE.empty()) {
+  if (!router_cfg_->GUIDE_REPORT_FILE.empty()) {
     reportGuideCoverage();
   }
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     t.print(logger_);
     std::cout << std::endl;
   }
@@ -1508,6 +1955,17 @@ void FlexDR::sendWorkers(
   }
 }
 
+bool FlexDR::SearchRepairArgs::isEqualIgnoringSizeAndOffset(
+    const SearchRepairArgs& other) const
+{
+  return (mazeEndIter == other.mazeEndIter
+          && workerDRCCost == other.workerDRCCost
+          && workerMarkerCost == other.workerMarkerCost
+          && workerFixedShapeCost == other.workerFixedShapeCost
+          && std::fabs(workerMarkerDecay - other.workerMarkerDecay) < 1e-6
+          && ripupMode == other.ripupMode && followGuide == other.followGuide);
+}
+
 template <class Archive>
 void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
 {
@@ -1528,7 +1986,6 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
   (ar) & routeBox_;
   (ar) & extBox_;
   (ar) & drcBox_;
-  (ar) & gcellBox_;
   (ar) & drIter_;
   (ar) & mazeEndIter_;
   (ar) & followGuide_;

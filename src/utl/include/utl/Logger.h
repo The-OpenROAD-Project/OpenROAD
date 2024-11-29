@@ -48,6 +48,7 @@
 #include <vector>
 
 #include "Metrics.h"
+#include "spdlog/details/os.h"
 #include "spdlog/fmt/fmt.h"
 #include "spdlog/fmt/ostr.h"
 #include "spdlog/spdlog.h"
@@ -116,6 +117,14 @@ class Logger
   template <typename... Args>
   inline void report(const std::string& message, const Args&... args)
   {
+    logger_->log(spdlog::level::level_enum::off,
+                 FMT_RUNTIME(message + spdlog::details::os::default_eol),
+                 args...);
+  }
+
+  template <typename... Args>
+  inline void reportNoNewline(const std::string& message, const Args&... args)
+  {
     logger_->log(spdlog::level::level_enum::off, FMT_RUNTIME(message), args...);
   }
 
@@ -128,12 +137,13 @@ class Logger
                     const Args&... args)
   {
     // Message counters do NOT apply to debug messages.
-    logger_->log(spdlog::level::level_enum::debug,
-                 FMT_RUNTIME("[{} {}-{}] " + message),
-                 level_names[spdlog::level::level_enum::debug],
-                 tool_names_[tool],
-                 group,
-                 args...);
+    logger_->log(
+        spdlog::level::level_enum::debug,
+        FMT_RUNTIME("[{} {}-{}] " + message + spdlog::details::os::default_eol),
+        level_names[spdlog::level::level_enum::debug],
+        tool_names_[tool],
+        group,
+        args...);
     logger_->flush();
   }
 
@@ -166,9 +176,8 @@ class Logger
     log(tool, spdlog::level::err, id, message, args...);
     char tool_id[32];
     sprintf(tool_id, "%s-%04d", tool_names_[tool], id);
-    std::runtime_error except(tool_id);
     // Exception should be caught by swig error handler.
-    throw except;
+    throw std::runtime_error(tool_id);
   }
 
   template <typename... Args>
@@ -234,6 +243,24 @@ class Logger
   void pushMetricsStage(std::string_view format);
   std::string popMetricsStage();
 
+  // interface from sta::Report
+  // Redirect output to filename until redirectFileEnd is called.
+  void redirectFileBegin(const std::string& filename);
+  // Redirect append output to filename until redirectFileEnd is called.
+  void redirectFileAppendBegin(const std::string& filename);
+  void redirectFileEnd();
+  // Redirect output to a string until redirectStringEnd is called.
+  void redirectStringBegin();
+  std::string redirectStringEnd();
+  // Tee output to filename until teeFileEnd is called.
+  void teeFileBegin(const std::string& filename);
+  // Tee append output to filename until teeFileEnd is called.
+  void teeFileAppendBegin(const std::string& filename);
+  void teeFileEnd();
+  // Redirect output to a string until teeStringEnd is called.
+  void teeStringBegin();
+  std::string teeStringEnd();
+
  private:
   std::vector<std::string> metrics_sinks_;
   std::list<MetricsEntry> metrics_entries_;
@@ -251,7 +278,8 @@ class Logger
     auto count = counter++;
     if (count < max_message_print) {
       logger_->log(level,
-                   FMT_RUNTIME("[{} {}-{:04d}] " + message),
+                   FMT_RUNTIME("[{} {}-{:04d}] " + message
+                               + spdlog::details::os::default_eol),
                    level_names[level],
                    tool_names_[tool],
                    id,
@@ -261,28 +289,37 @@ class Logger
 
     if (count == max_message_print) {
       logger_->log(level,
-                   "[{} {}-{:04d}] message limit reached, "
-                   "this message will no longer print",
+                   "[{} {}-{:04d}] message limit ({})"
+                   " reached. This message will no longer print.{}",
                    level_names[level],
                    tool_names_[tool],
-                   id);
+                   id,
+                   max_message_print,
+                   spdlog::details::os::default_eol);
     } else {
       counter--;  // to avoid counter overflow
     }
   }
 
-  inline void log_metric(const std::string metric, const std::string value)
+  inline void log_metric(const std::string& metric, const std::string& value)
   {
     std::string key;
-    if (metrics_stages_.empty())
+    if (metrics_stages_.empty()) {
       key = metric;
-    else
+    } else {
       key = fmt::format(FMT_RUNTIME(metrics_stages_.top()), metric);
+    }
     metrics_entries_.push_back({std::move(key), value});
   }
 
   void flushMetrics();
   void finalizeMetrics();
+
+  void setRedirectSink(std::ostream& sink_stream, bool keep_sinks = false);
+  void restoreFromRedirect();
+  void assertNoRedirect();
+
+  void setFormatter();
 
   // Allows for lookup by a compatible key (ie string_view)
   // to avoid constructing a key (string) just for lookup
@@ -304,6 +341,10 @@ class Logger
   std::vector<spdlog::sink_ptr> sinks_;
   std::shared_ptr<spdlog::logger> logger_;
   std::stack<std::string> metrics_stages_;
+
+  // interface to handle string and file redirections
+  std::unique_ptr<std::ostringstream> string_redirect_;
+  std::unique_ptr<std::ofstream> file_redirect_;
 
   // This matrix is pre-allocated so it can be safely updated
   // from multiple threads without locks.

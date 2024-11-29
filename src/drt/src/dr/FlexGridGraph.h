@@ -47,8 +47,14 @@ class FlexGridGraph
 {
  public:
   // constructors
-  FlexGridGraph(frTechObject* techIn, Logger* loggerIn, FlexDRWorker* workerIn)
-      : tech_(techIn), logger_(loggerIn), drWorker_(workerIn)
+  FlexGridGraph(frTechObject* techIn,
+                Logger* loggerIn,
+                FlexDRWorker* workerIn,
+                RouterConfiguration* router_cfg)
+      : tech_(techIn),
+        logger_(loggerIn),
+        drWorker_(workerIn),
+        router_cfg_(router_cfg)
   {
     ap_locs_.resize(tech_->getTopLayerNum() + 1);
   }
@@ -410,7 +416,12 @@ class FlexGridGraph
     return sol;
   }
   // setters
-  void setTech(frTechObject* techIn) { tech_ = techIn; }
+  void setTech(frTechObject* techIn)
+  {
+    tech_ = techIn;
+    ap_locs_.clear();
+    ap_locs_.resize(tech_->getTopLayerNum() + 1);
+  }
   void setLogger(Logger* loggerIn) { logger_ = loggerIn; }
   void setWorker(FlexDRWorker* workerIn) { drWorker_ = workerIn; }
   bool addEdge(frMIdx x,
@@ -1017,6 +1028,7 @@ class FlexGridGraph
   frTechObject* tech_ = nullptr;
   Logger* logger_ = nullptr;
   FlexDRWorker* drWorker_ = nullptr;
+  RouterConfiguration* router_cfg_;
   FlexDRGraphics* graphics_;  // owned by FlexDR
                               //
 #ifdef DEBUG_DRT_UNDERFLOW
@@ -1339,6 +1351,7 @@ class FlexGridGraph
     (ar) & ggDRCCost_;
     (ar) & ggMarkerCost_;
     (ar) & halfViaEncArea_;
+    (ar) & ap_locs_;
   }
   friend class boost::serialization::access;
   friend class FlexDRWorker;

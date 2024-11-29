@@ -7,7 +7,7 @@ test_path = os.path.abspath(os.path.dirname(__file__))
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 gcddef = os.path.join(test_path, "gcd.def")
 design.readDef(gcddef)
 gr = design.getGlobalRouter()

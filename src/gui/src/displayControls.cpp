@@ -872,6 +872,9 @@ void DisplayControls::toggleParent(const QStandardItem* parent,
   bool all_checked = true;
 
   for (int row = 0; row < parent->rowCount(); ++row) {
+    if (view_->isRowHidden(row, parent->index())) {
+      continue;
+    }
     auto child = parent->child(row, column);
     if (child) {
       bool checked = child->checkState() == Qt::Checked;
@@ -1914,7 +1917,7 @@ void DisplayControls::techInit(odb::dbTech* tech)
                            QColor(254, 0, 0),
                            QColor(9, 221, 0),
                            QColor(190, 244, 81),
-                           QColor(159, 24, 69),
+                           QColor(222, 33, 96),  // Metal 5
                            QColor(32, 216, 253),
                            QColor(253, 108, 160),
                            QColor(117, 63, 194),

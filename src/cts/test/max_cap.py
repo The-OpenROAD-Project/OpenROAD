@@ -8,7 +8,7 @@ tech.readLef("sky130hs/sky130hs.tlef")
 tech.readLef("sky130hs/sky130hs_std_cell.lef")
 tech.readLiberty("sky130hs/sky130hs_tt.lib")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 
 # avoid potential name clash with tcl test
 def_file = "max_cap-py.def"

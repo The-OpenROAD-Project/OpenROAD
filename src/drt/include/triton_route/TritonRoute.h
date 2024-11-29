@@ -75,6 +75,7 @@ struct frDebugSettings;
 class FlexDR;
 struct FlexDRViaData;
 class frMarker;
+struct RouterConfiguration;
 
 struct ParamStruct
 {
@@ -113,6 +114,10 @@ class TritonRoute
             stt::SteinerTreeBuilder* stt_builder);
 
   frDesign* getDesign() const { return design_.get(); }
+  RouterConfiguration* getRouterConfiguration() const
+  {
+    return router_cfg_.get();
+  }
 
   int main();
   void endFR();
@@ -177,16 +182,21 @@ class TritonRoute
   int getWorkerResultsSize();
   void sendDesignDist();
   bool writeGlobals(const std::string& name);
-  void sendDesignUpdates(const std::string& globals_path);
-  void sendGlobalsUpdates(const std::string& globals_path,
+  void sendDesignUpdates(const std::string& router_cfg_path);
+  void sendGlobalsUpdates(const std::string& router_cfg_path,
                           const std::string& serializedViaData);
   void reportDRC(const std::string& file_name,
                  const std::list<std::unique_ptr<frMarker>>& markers,
-                 odb::Rect drcBox = odb::Rect(0, 0, 0, 0));
-  void checkDRC(const char* filename, int x1, int y1, int x2, int y2);
+                 const std::string& marker_name,
+                 odb::Rect drcBox = odb::Rect(0, 0, 0, 0)) const;
+  void checkDRC(const char* filename,
+                int x1,
+                int y1,
+                int x2,
+                int y2,
+                const std::string& marker_name);
   bool initGuide();
   void prep();
-  void processBTermsAboveTopLayer(bool has_routing = false);
   odb::dbDatabase* getDb() const { return db_; }
   void fixMaxSpacing();
 
@@ -194,6 +204,7 @@ class TritonRoute
   std::unique_ptr<frDesign> design_;
   std::unique_ptr<frDebugSettings> debug_;
   std::unique_ptr<DesignCallBack> db_callback_;
+  std::unique_ptr<RouterConfiguration> router_cfg_;
   odb::dbDatabase* db_{nullptr};
   utl::Logger* logger_{nullptr};
   std::unique_ptr<FlexDR> dr_;  // kept for single stepping
@@ -218,12 +229,6 @@ class TritonRoute
   void applyUpdates(const std::vector<std::vector<drUpdate>>& updates);
   void getDRCMarkers(std::list<std::unique_ptr<frMarker>>& markers,
                      const odb::Rect& requiredDrcBox);
-  void stackVias(odb::dbBTerm* bterm,
-                 int top_layer_idx,
-                 int bterm_bottom_layer_idx,
-                 bool has_routing);
-  int countNetBTermsAboveMaxLayer(odb::dbNet* net);
-  bool netHasStackedVias(odb::dbNet* net);
   void repairPDNVias();
   friend class FlexDR;
 };

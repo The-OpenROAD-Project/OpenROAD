@@ -490,7 +490,7 @@ void FlexDRWorker::initNets_initDR_helper(
     Rect rect;
     if (netTerms.at(i)->typeId() == frcInstTerm) {
       auto iterm = static_cast<frInstTerm*>(netTerms.at(i));
-      rect = iterm->getBBox(true);
+      rect = iterm->getBBox();
     } else {
       auto bterm = static_cast<frBTerm*>(netTerms.at(i));
       rect = bterm->getBBox();
@@ -560,7 +560,7 @@ void FlexDRWorker::initNets_initDR_helper(
     Rect rect;
     if (netTerms.at(i)->typeId() == frcInstTerm) {
       auto iterm = static_cast<frInstTerm*>(netTerms.at(i));
-      rect = iterm->getBBox(true);
+      rect = iterm->getBBox();
     } else {
       auto bterm = static_cast<frBTerm*>(netTerms.at(i));
       rect = bterm->getBBox();
@@ -1140,468 +1140,8 @@ bool FlexDRWorker::findAPTracks(const frLayerNum startLayerNum,
 bool FlexDRWorker::isRestrictedRouting(const frLayerNum lNum)
 {
   return getTech()->getLayer(lNum)->isUnidirectional()
-         || lNum < BOTTOM_ROUTING_LAYER || lNum > TOP_ROUTING_LAYER;
-}
-
-void FlexDRWorker::initNet_termGenAp(const frDesign* design, drPin* dPin)
-{
-  // FIXME  using namespace boost::polygon::operators;
-  using bPoint = boost::polygon::point_data<int>;
-
-  const auto routeBox = getRouteBox();
-  Rectangle routeRect(
-      routeBox.xMin(), routeBox.yMin(), routeBox.xMax(), routeBox.yMax());
-  bPoint routeRectCenter;
-  center(routeRectCenter, routeRect);
-  auto dPinTerm = dPin->getFrTerm();
-  if (dPinTerm->typeId() == frcInstTerm) {
-    auto instTerm = static_cast<frInstTerm*>(dPinTerm);
-    auto inst = instTerm->getInst();
-    const dbTransform xform = inst->getUpdatedXform();
-
-    for (auto& uPin : instTerm->getTerm()->getPins()) {
-      auto pin = uPin.get();
-      for (auto& uPinFig : pin->getFigs()) {
-        auto pinFig = uPinFig.get();
-        // horizontal tracks == yLocs
-        std::set<frCoord> xLocs, yLocs;
-        if (pinFig->typeId() == frcRect) {
-          auto rpinRect = static_cast<frRect*>(pinFig);
-          const frLayerNum currLayerNum = rpinRect->getLayerNum();
-          if (getTech()->getLayer(currLayerNum)->getType()
-              != dbTechLayerType::ROUTING) {
-            continue;
-          }
-          frRect instPinRect(*rpinRect);
-          instPinRect.move(xform);
-          const Rect instPinRectBBox = instPinRect.getBBox();
-          Rectangle pinRect(instPinRectBBox.xMin(),
-                            instPinRectBBox.yMin(),
-                            instPinRectBBox.xMax(),
-                            instPinRectBBox.yMax());
-          if (!boost::polygon::intersect(pinRect, routeRect)) {
-            continue;
-          }
-          // pinRect now equals intersection of pinRect and routeRect
-          const auto currPrefRouteDir
-              = getTech()->getLayer(currLayerNum)->getDir();
-          // get intersecting tracks if any
-          if (currPrefRouteDir == dbTechLayerDir::HORIZONTAL) {
-            getTrackLocs(true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
-            if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-              getTrackLocs(
-                  false, currLayerNum + 2, xl(pinRect), xh(pinRect), xLocs);
-            } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
-              getTrackLocs(
-                  false, currLayerNum - 2, xl(pinRect), xh(pinRect), xLocs);
-            }
-          } else {
-            getTrackLocs(false, currLayerNum, xl(pinRect), xh(pinRect), xLocs);
-            if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-              getTrackLocs(
-                  true, currLayerNum + 2, yl(pinRect), yh(pinRect), yLocs);
-            } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
-              getTrackLocs(
-                  true, currLayerNum - 2, yl(pinRect), yh(pinRect), yLocs);
-            }
-          }
-          // gen new temp on-track access point if any
-          if (!xLocs.empty() && !yLocs.empty()) {
-            // TODO: update access pattern information as needed
-            auto uap = std::make_unique<drAccessPattern>();
-            const auto xLoc = *(xLocs.begin());
-            const auto yLoc = *(yLocs.begin());
-            const Point pt(xLoc, yLoc);
-            uap->setBeginLayerNum(currLayerNum);
-            uap->setPoint(pt);
-            // prevent unchecked planar access
-            std::vector<bool> validAccess(6, true);
-            validAccess[5] = false;
-            if (currLayerNum == VIA_ACCESS_LAYERNUM) {
-              validAccess[0] = false;
-              validAccess[1] = false;
-              validAccess[2] = false;
-              validAccess[3] = false;
-            }
-            uap->setValidAccess(validAccess);
-            uap->setOnTrack(false, true);
-            uap->setOnTrack(false, false);
-            uap->setPin(dPin);
-            // any non-zero value works
-            uap->setPinCost(7);
-            // to resolve temp AP end seg minArea patch problem
-            // frCoord reqArea = 0;
-            auto minAreaConstraint
-                = getTech()->getLayer(currLayerNum)->getAreaConstraint();
-            if (minAreaConstraint) {
-              auto reqArea = minAreaConstraint->getMinArea();
-              uap->setBeginArea(reqArea);
-            }
-
-            if (!isInitDR()
-                || (xLoc != xh(routeRect) && yLoc != yh(routeRect))) {
-              dPin->addAccessPattern(std::move(uap));
-              break;
-            }
-          }
-        } else {
-          std::cout << "Error: initNet_termGenAp unsupported pinFig\n";
-        }
-      }
-
-      // no on-track temp ap found
-      for (auto& uPinFig : pin->getFigs()) {
-        auto pinFig = uPinFig.get();
-        // horizontal tracks == yLocs
-        std::set<frCoord> xLocs, yLocs;
-        if (pinFig->typeId() == frcRect) {
-          auto rpinRect = static_cast<frRect*>(pinFig);
-          frLayerNum currLayerNum = rpinRect->getLayerNum();
-          frLayer* layer = getTech()->getLayer(currLayerNum);
-          if (layer->getType() != dbTechLayerType::ROUTING) {
-            continue;
-          }
-          frRect instPinRect(*rpinRect);
-          instPinRect.move(xform);
-          Rect instPinRectBBox = instPinRect.getBBox();
-          Rectangle pinRect(instPinRectBBox.xMin(),
-                            instPinRectBBox.yMin(),
-                            instPinRectBBox.xMax(),
-                            instPinRectBBox.yMax());
-          if (!boost::polygon::intersect(pinRect, routeRect)) {
-            continue;
-          }
-          frCoord xLoc, yLoc;
-          // pinRect now equals intersection of pinRect and routeRect
-          auto currPrefRouteDir = layer->getDir();
-          bool restrictedRouting = isRestrictedRouting(currLayerNum);
-          if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-            restrictedRouting
-                = restrictedRouting || isRestrictedRouting(currLayerNum + 2);
-          }
-          if (currLayerNum - 2 >= getTech()->getBottomLayerNum()
-              && currLayerNum - 2 >= VIA_ACCESS_LAYERNUM) {
-            restrictedRouting
-                = restrictedRouting || isRestrictedRouting(currLayerNum - 2);
-          }
-          // get intersecting tracks if any
-          if (restrictedRouting) {
-            bool found = findAPTracks(
-                currLayerNum + 2,
-                std::min(TOP_ROUTING_LAYER, getTech()->getTopLayerNum()),
-                pinRect,
-                xLocs,
-                yLocs);
-            if (!found) {
-              found = findAPTracks(currLayerNum - 2,
-                                   std::max(BOTTOM_ROUTING_LAYER,
-                                            getTech()->getBottomLayerNum()),
-                                   pinRect,
-                                   xLocs,
-                                   yLocs);
-            }
-            if (!found) {
-              continue;
-            }
-          } else if (currPrefRouteDir == dbTechLayerDir::HORIZONTAL) {
-            getTrackLocs(true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
-            if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-              getTrackLocs(
-                  false, currLayerNum + 2, xl(pinRect), xh(pinRect), xLocs);
-            } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
-              getTrackLocs(
-                  false, currLayerNum - 2, xl(pinRect), xh(pinRect), xLocs);
-            }
-          } else {
-            getTrackLocs(false, currLayerNum, xl(pinRect), xh(pinRect), xLocs);
-            if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-              getTrackLocs(
-                  true, currLayerNum + 2, yl(pinRect), yh(pinRect), yLocs);
-            } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
-              getTrackLocs(
-                  true, currLayerNum - 2, yl(pinRect), yh(pinRect), yLocs);
-            }
-          }
-          // xLoc
-          if (!xLocs.empty()) {
-            xLoc = *(xLocs.begin());
-          } else {
-            xLoc = (xl(pinRect) + xh(pinRect)) / 2;
-            xLoc = snapCoordToManufacturingGrid(xLoc, routeBox.ll().x());
-          }
-          // xLoc
-          if (!yLocs.empty()) {
-            yLoc = *(yLocs.begin());
-          } else {
-            yLoc = (yl(pinRect) + yh(pinRect)) / 2;
-            yLoc = snapCoordToManufacturingGrid(yLoc, routeBox.ll().y());
-          }
-          if (restrictedRouting) {
-            specialAccessAPs.emplace_back(xLoc, yLoc, currLayerNum);
-          }
-          // TODO: update as drAccessPattern updated
-          auto uap = std::make_unique<drAccessPattern>();
-          Point pt(xLoc, yLoc);
-          uap->setBeginLayerNum(currLayerNum);
-          uap->setPoint(pt);
-          // prevent unchecked planar access
-          std::vector<bool> validAccess(6, true);
-          validAccess[5] = false;
-          if (currLayerNum == VIA_ACCESS_LAYERNUM) {
-            validAccess[0] = false;
-            validAccess[1] = false;
-            validAccess[2] = false;
-            validAccess[3] = false;
-          }
-          uap->setValidAccess(validAccess);
-          uap->setOnTrack(false, true);
-          uap->setOnTrack(false, false);
-          uap->setPin(dPin);
-          // any non-zero value works
-          uap->setPinCost(7);
-          // to resolve temp AP end seg minArea patch problem
-          // frCoord reqArea = 0;
-          auto minAreaConstraint
-              = getTech()->getLayer(currLayerNum)->getAreaConstraint();
-          if (minAreaConstraint) {
-            auto reqArea = minAreaConstraint->getMinArea();
-            uap->setBeginArea(reqArea);
-          }
-
-          dPin->addAccessPattern(std::move(uap));
-          if (!restrictedRouting) {
-            break;
-          }
-        } else {
-          std::cout << "Error: initNet_termGenAp unsupported pinFig\n";
-        }
-      }
-    }
-  } else if (dPinTerm->typeId() == frcBTerm) {
-    auto term = static_cast<frBTerm*>(dPinTerm);
-    for (auto& uPin : term->getPins()) {
-      auto pin = uPin.get();
-      bool hasTempAp = false;
-      for (auto& uPinFig : pin->getFigs()) {
-        auto pinFig = uPinFig.get();
-        // horizontal tracks == yLocs
-        std::set<frCoord> xLocs, yLocs;
-        if (pinFig->typeId() == frcRect) {
-          auto rpinRect = static_cast<frRect*>(pinFig);
-          frLayerNum currLayerNum = rpinRect->getLayerNum();
-          if (getTech()->getLayer(currLayerNum)->getType()
-              != dbTechLayerType::ROUTING) {
-            continue;
-          }
-          //          halfWidth =
-          //          getTech()->getLayer(currLayerNum)->getMinWidth() / 2;
-          frRect instPinRect(*rpinRect);
-          // instPinRect.move(xform);
-          Rect instPinRectBBox = instPinRect.getBBox();
-          Rectangle pinRect(instPinRectBBox.xMin(),
-                            instPinRectBBox.yMin(),
-                            instPinRectBBox.xMax(),
-                            instPinRectBBox.yMax());
-          if (!boost::polygon::intersect(pinRect, routeRect)) {
-            continue;
-          }
-          // pinRect now equals intersection of pinRect and routeRect
-          auto xSpan = instPinRectBBox.dx();
-          auto ySpan = instPinRectBBox.dy();
-          bool isPinRectHorz = (xSpan > ySpan);
-
-          int layerWidth = getTech()
-                               ->getLayer(currLayerNum)
-                               ->getWidth();  // for ISPD off track pins
-          if (isPinRectHorz) {
-            frCoord manuGrid = getTech()->getManufacturingGrid();
-            auto centerY = (instPinRectBBox.yMax() + instPinRectBBox.yMin()) / 2
-                           / manuGrid * manuGrid;
-            if (centerY >= yl(routeRect) && centerY < yh(routeRect)) {
-              yLocs.insert(centerY);
-              if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-                getTrackLocs(
-                    false, currLayerNum + 2, xl(pinRect), xh(pinRect), xLocs);
-              } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
-                getTrackLocs(
-                    false, currLayerNum - 2, xl(pinRect), xh(pinRect), xLocs);
-              }
-            } else {
-              getTrackLocs(true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
-              frCoord lowerBoundX = xl(pinRect);
-              frCoord upperBoundX = xh(pinRect);
-              if ((upperBoundX - lowerBoundX) >= 2 * layerWidth) {
-                lowerBoundX += layerWidth;
-                upperBoundX -= layerWidth;
-              }
-              if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-                getTrackLocs(
-                    false, currLayerNum + 2, lowerBoundX, upperBoundX, xLocs);
-              } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
-                getTrackLocs(
-                    false, currLayerNum - 2, lowerBoundX, upperBoundX, xLocs);
-              }
-            }
-          } else {
-            frCoord manuGrid = getTech()->getManufacturingGrid();
-            auto centerX = (instPinRectBBox.xMin() + instPinRectBBox.xMax()) / 2
-                           / manuGrid * manuGrid;
-            if (centerX >= xl(routeRect) && centerX < xh(routeRect)) {
-              xLocs.insert(centerX);
-              if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-                getTrackLocs(
-                    true, currLayerNum + 2, yl(pinRect), yh(pinRect), yLocs);
-              } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
-                getTrackLocs(
-                    true, currLayerNum - 2, yl(pinRect), yh(pinRect), yLocs);
-              }
-            } else {
-              getTrackLocs(
-                  false, currLayerNum, xl(pinRect), xh(pinRect), xLocs);
-              frCoord lowerBoundY = yl(pinRect);
-              frCoord upperBoundY = yh(pinRect);
-              if ((upperBoundY - lowerBoundY) >= 2 * layerWidth) {
-                lowerBoundY += layerWidth;
-                upperBoundY -= layerWidth;
-                if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
-                  getTrackLocs(
-                      true, currLayerNum + 2, lowerBoundY, upperBoundY, yLocs);
-                } else if (currLayerNum - 2 >= getTech()->getBottomLayerNum()) {
-                  getTrackLocs(
-                      true, currLayerNum - 2, lowerBoundY, upperBoundY, yLocs);
-                }
-              }
-            }
-          }
-
-          // gen new temp on-track access point if any
-          if (!xLocs.empty() && !yLocs.empty()) {
-            // TODO: update access pattern information as needed
-            for (auto xLoc : xLocs) {
-              for (auto yLoc : yLocs) {
-                auto uap = std::make_unique<drAccessPattern>();
-                // auto xLoc =*(xLocs.begin());
-                // auto yLoc =*(yLocs.begin());
-                Point pt(xLoc, yLoc);
-                uap->setBeginLayerNum(currLayerNum);
-                uap->setPoint(pt);
-                // to resolve temp AP end seg minArea patch problem
-                // frCoord reqArea = 0;
-                auto minAreaConstraint
-                    = getTech()->getLayer(currLayerNum)->getAreaConstraint();
-                if (minAreaConstraint) {
-                  auto reqArea = minAreaConstraint->getMinArea();
-                  uap->setBeginArea(reqArea);
-                }
-                // io pin pref direction setting
-                // Point pinCenter;
-                // center(pinCenter, pinRect);
-                std::vector<bool> validAccess(6, false);
-                if (isPinRectHorz) {
-                  validAccess[0] = true;
-                  validAccess[2] = true;
-                } else {
-                  validAccess[3] = true;
-                  validAccess[1] = true;
-                }
-                uap->setValidAccess(validAccess);
-                uap->setPin(dPin);
-                if (!isInitDR() || xLoc != xh(routeRect)
-                    || yLoc != yh(routeRect)) {
-                  if (xLoc >= xl(routeRect) && xLoc < xh(routeRect)
-                      && yLoc >= yl(routeRect) && yLoc < yh(routeRect)) {
-                    hasTempAp = true;
-                    dPin->addAccessPattern(std::move(uap));
-                  }
-                }
-              }
-            }
-
-            if (hasTempAp) {
-              break;
-            }
-          }
-        } else {
-          std::cout << "Error: initNet_termGenAp unsupported pinFig\n";
-        }
-      }
-
-      // no on-track temp ap found
-      if (!hasTempAp) {
-        for (auto& uPinFig : pin->getFigs()) {
-          auto pinFig = uPinFig.get();
-          // horizontal tracks == yLocs
-          std::set<frCoord> xLocs, yLocs;
-          if (pinFig->typeId() == frcRect) {
-            auto rpinRect = static_cast<frRect*>(pinFig);
-            frLayerNum currLayerNum = rpinRect->getLayerNum();
-            if (getTech()->getLayer(currLayerNum)->getType()
-                != dbTechLayerType::ROUTING) {
-              continue;
-            }
-            frRect instPinRect(*rpinRect);
-            // instPinRect.move(xform);
-            Rect instPinRectBBox = instPinRect.getBBox();
-            Rectangle pinRect(instPinRectBBox.xMin(),
-                              instPinRectBBox.yMin(),
-                              instPinRectBBox.xMax(),
-                              instPinRectBBox.yMax());
-            if (!boost::polygon::intersect(pinRect, routeRect)) {
-              continue;
-            }
-
-            frCoord xLoc, yLoc;
-            auto instPinCenterX
-                = (instPinRectBBox.xMin() + instPinRectBBox.xMax()) / 2;
-            auto instPinCenterY
-                = (instPinRectBBox.yMin() + instPinRectBBox.yMax()) / 2;
-            auto pinCenterX = (xl(pinRect) + xh(pinRect)) / 2;
-            auto pinCenterY = (yl(pinRect) + yh(pinRect)) / 2;
-            if (instPinCenterX >= xl(routeRect)
-                && instPinCenterX < xh(routeRect)) {
-              xLoc = instPinCenterX;
-              xLoc = snapCoordToManufacturingGrid(xLoc, routeBox.ll().x());
-            } else {
-              xLoc = pinCenterX;
-              xLoc = snapCoordToManufacturingGrid(xLoc, routeBox.ll().x());
-            }
-            if (instPinCenterY >= yl(routeRect)
-                && instPinCenterY < yh(routeRect)) {
-              yLoc = instPinCenterY;
-              yLoc = snapCoordToManufacturingGrid(yLoc, routeBox.ll().y());
-            } else {
-              yLoc = pinCenterY;
-              yLoc = snapCoordToManufacturingGrid(yLoc, routeBox.ll().y());
-            }
-
-            if (!isInitDR() || xLoc != xh(routeRect) || yLoc != yh(routeRect)) {
-              // TODO: update as drAccessPattern updated
-              auto uap = std::make_unique<drAccessPattern>();
-              Point pt(xLoc, yLoc);
-              uap->setBeginLayerNum(currLayerNum);
-              uap->setPoint(pt);
-              uap->setPin(dPin);
-              // to resolve temp AP end seg minArea patch problem
-              // frCoord reqArea = 0;
-              auto minAreaConstraint
-                  = getTech()->getLayer(currLayerNum)->getAreaConstraint();
-              if (minAreaConstraint) {
-                auto reqArea = minAreaConstraint->getMinArea();
-                uap->setBeginArea(reqArea);
-              }
-
-              dPin->addAccessPattern(std::move(uap));
-              break;
-            }
-          } else {
-            std::cout << "Error: initNet_termGenAp unsupported pinFig\n";
-          }
-        }
-      }
-    }
-  } else {
-    std::cout << "Error: initNet_termGenAp unexpected type\n";
-  }
+         || lNum < router_cfg_->BOTTOM_ROUTING_LAYER
+         || lNum > router_cfg_->TOP_ROUTING_LAYER;
 }
 
 // when isHorzTracks == true, it means track loc == y loc
@@ -1644,9 +1184,8 @@ void FlexDRWorker::initNet_term(const frDesign* design,
       case frcInstTerm: {
         auto instTerm = static_cast<frInstTerm*>(term);
         frInst* inst = instTerm->getInst();
-        shiftXform = inst->getTransform();
-        shiftXform.setOrient(dbOrientType(dbOrientType::R0));
-        instXform = inst->getUpdatedXform();
+        shiftXform = inst->getNoRotationTransform();
+        instXform = inst->getDBTransform();
         auto trueTerm = instTerm->getTerm();
         const std::string name = inst->getName() + "/" + trueTerm->getName();
         initNet_term_helper(
@@ -1703,7 +1242,7 @@ void FlexDRWorker::initNet_term_helper(const frDesign* design,
         dAp->setPinCost(1);
       }
       // set min area
-      if (ENABLE_BOUNDARY_MAR_FIX) {
+      if (router_cfg_->ENABLE_BOUNDARY_MAR_FIX) {
         auto minAreaConstraint = getTech()->getLayer(bNum)->getAreaConstraint();
         if (minAreaConstraint) {
           auto reqArea = minAreaConstraint->getMinArea();
@@ -1724,15 +1263,7 @@ void FlexDRWorker::initNet_term_helper(const frDesign* design,
   }
 
   if (dPin->getAccessPatterns().empty()) {
-    initNet_termGenAp(design, dPin.get());
-    if (dPin->getAccessPatterns().empty()) {
-      std::cout << "\nError: pin " << name << " still does not have temp ap"
-                << std::endl;
-      if (graphics_) {
-        graphics_->debugWholeDesign();
-      }
-      exit(1);
-    }
+    logger_->error(DRT, 1231, "Pin {} does not have access point", name);
   }
   dPin->setId(pinCnt_++);
   dNet->addPin(std::move(dPin));
@@ -1814,7 +1345,7 @@ void FlexDRWorker::initNet(const frDesign* design,
                            const std::vector<frBlockObject*>& terms,
                            std::vector<std::pair<Point, frLayerNum>> bounds)
 {
-  auto dNet = std::make_unique<drNet>(net);
+  auto dNet = std::make_unique<drNet>(net, router_cfg_);
   // true pin
   initNet_term(design, dNet.get(), terms);
   // boundary pin, could overlap with any of true pins
@@ -2035,7 +1566,7 @@ void FlexDRWorker::initNets(const frDesign* design)
 
   initNets_numPinsIn();
   // here because region query is needed
-  if (ENABLE_BOUNDARY_MAR_FIX) {
+  if (router_cfg_->ENABLE_BOUNDARY_MAR_FIX) {
     initNets_boundaryArea();
   }
   // fill ndrs_ for all nets in the worker
@@ -3207,7 +2738,7 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
             // unblock planar edge for obs over pin, ap will unblock via edge
             // for legal pin access
             modBlockedPlanar(box, zIdx, false);
-            if (zIdx <= (VIA_ACCESS_LAYERNUM / 2 - 1)) {
+            if (zIdx <= (router_cfg_->VIA_ACCESS_LAYERNUM / 2 - 1)) {
               modMinSpacingCostPlanar(
                   box, zIdx, ModCostType::addFixedShape, true);
               modEolSpacingRulesCost(box, zIdx, ModCostType::addFixedShape);
@@ -3366,8 +2897,8 @@ void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
     } else if (obj->typeId() == frcInstTerm) {
       auto instTerm = static_cast<frInstTerm*>(obj);
       auto inst = instTerm->getInst();
-      const dbTransform xform = inst->getUpdatedXform();
-      const dbTransform shiftXform(inst->getTransform().getOffset());
+      const dbTransform xform = inst->getDBTransform();
+      const dbTransform shiftXform = inst->getNoRotationTransform();
       const dbMasterType masterType = inst->getMaster()->getMasterType();
       bool accessHorz = false;
       bool accessVert = false;
@@ -3680,8 +3211,8 @@ void FlexDRWorker::init(const frDesign* design)
   }
   initGridGraph(design);
   initMazeIdx();
-  std::unique_ptr<FlexGCWorker> gcWorker
-      = std::make_unique<FlexGCWorker>(design->getTech(), logger_, this);
+  std::unique_ptr<FlexGCWorker> gcWorker = std::make_unique<FlexGCWorker>(
+      design->getTech(), logger_, router_cfg_, this);
   gcWorker->setExtBox(getExtBox());
   gcWorker->setDrcBox(getDrcBox());
   gcWorker->init(design);

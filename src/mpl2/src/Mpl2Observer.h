@@ -49,6 +49,13 @@ class Cluster;
 class Mpl2Observer
 {
  public:
+  // The final cost is norm_penalty * weight
+  struct Penalty
+  {
+    float weight;
+    float norm_penalty;
+  };
+
   Mpl2Observer() = default;
   virtual ~Mpl2Observer() = default;
 
@@ -58,7 +65,7 @@ class Mpl2Observer
   virtual void startSA() {}
   virtual void saStep(const std::vector<SoftMacro>& macros) {}
   virtual void saStep(const std::vector<HardMacro>& macros) {}
-  virtual void endSA() {}
+  virtual void endSA(float norm_cost) {}
   virtual void drawResult() {}
 
   virtual void finishedClustering(Cluster* root) {}
@@ -73,19 +80,22 @@ class Mpl2Observer
   }
   virtual void setBundledNets(const std::vector<BundledNet>& bundled_nets) {}
   virtual void setShowBundledNets(bool show_bundled_nets) {}
+  virtual void setShowClustersIds(bool show_clusters_ids) {}
   virtual void setSkipSteps(bool skip_steps) {}
   virtual void doNotSkip() {}
   virtual void setOnlyFinalResult(bool skip_to_end) {}
+  virtual void setTargetClusterId(int target_cluster_id) {}
   virtual void setOutline(const odb::Rect& outline) {}
+  virtual void setCurrentCluster(Cluster* current_cluster) {}
 
-  virtual void setAreaPenalty(float area) {}
-  virtual void setOutlinePenalty(float outline_penalty) {}
-  virtual void setWirelength(float wirelength) {}
-  virtual void setFencePenalty(float fence_penalty) {}
-  virtual void setGuidancePenalty(float guidance_penalty) {}
-  virtual void setBoundaryPenalty(float boundary_penalty) {}
-  virtual void setMacroBlockagePenalty(float macro_blockage_penalty) {}
-  virtual void setNotchPenalty(float notch_penalty) {}
+  virtual void setAreaPenalty(const Penalty& penalty) {}
+  virtual void setBoundaryPenalty(const Penalty& penalty) {}
+  virtual void setFencePenalty(const Penalty& penalty) {}
+  virtual void setGuidancePenalty(const Penalty& penalty) {}
+  virtual void setMacroBlockagePenalty(const Penalty& penalty) {}
+  virtual void setNotchPenalty(const Penalty& penalty) {}
+  virtual void setOutlinePenalty(const Penalty& penalty) {}
+  virtual void setWirelengthPenalty(const Penalty& penalty) {}
   virtual void penaltyCalculated(float norm_cost) {}
 
   virtual void eraseDrawing() {}

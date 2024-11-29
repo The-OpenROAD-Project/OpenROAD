@@ -6,7 +6,7 @@ import grt_aux
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("region_adjustment.def")
 
 gr = design.getGlobalRouter()

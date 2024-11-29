@@ -310,8 +310,9 @@ proc parse_macro_name { cmd macro_name } {
 
 proc mpl_debug { args } {
   sta::parse_key_args "mpl_debug" args \
-    keys {} \
+    keys { -target_cluster_id target_cluster_id } \
     flags {-coarse -fine -show_bundled_nets \
+           -show_clusters_ids \
            -skip_steps -only_final_result} ;# checker off
 
   set coarse [info exists flags(-coarse)]
@@ -322,11 +323,18 @@ proc mpl_debug { args } {
   }
   set block [ord::get_db_block]
 
+  set target_cluster_id -1
+  if { [info exists keys(-target_cluster_id)] } {
+    set target_cluster_id $keys(-target_cluster_id)
+  }
+
   mpl2::set_debug_cmd $block \
     $coarse \
     $fine \
     [info exists flags(-show_bundled_nets)] \
+    [info exists flags(-show_clusters_ids)] \
     [info exists flags(-skip_steps)] \
-    [info exists flags(-only_final_result)]
+    [info exists flags(-only_final_result)] \
+    $target_cluster_id
 }
 }

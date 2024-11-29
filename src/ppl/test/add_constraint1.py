@@ -5,7 +5,7 @@ import ppl_aux
 
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readDef("gcd.def")
 
 ppl_aux.set_io_pin_constraint(design, direction="INPUT", region="top:*")

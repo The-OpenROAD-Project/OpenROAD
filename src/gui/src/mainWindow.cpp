@@ -60,6 +60,7 @@
 #include "drcWidget.h"
 #include "globalConnectDialog.h"
 #include "gui/heatMap.h"
+#include "helpWidget.h"
 #include "highlightGroupDialog.h"
 #include "inspector.h"
 #include "layoutTabs.h"
@@ -81,7 +82,7 @@ static void loadQTResources()
 
 namespace gui {
 
-MainWindow::MainWindow(QWidget* parent)
+MainWindow::MainWindow(bool load_settings, QWidget* parent)
     : QMainWindow(parent),
       db_(nullptr),
       logger_(nullptr),
@@ -109,6 +110,7 @@ MainWindow::MainWindow(QWidget* parent)
       hierarchy_widget_(
           new BrowserWidget(viewers_->getModuleSettings(), controls_, this)),
       charts_widget_(new ChartsWidget(this)),
+      help_widget_(new HelpWidget(this)),
       find_dialog_(new FindObjectDialog(this)),
       goto_dialog_(new GotoLocationDialog(this, viewers_))
 {
@@ -131,6 +133,7 @@ MainWindow::MainWindow(QWidget* parent)
   addDockWidget(Qt::RightDockWidgetArea, drc_viewer_);
   addDockWidget(Qt::RightDockWidgetArea, clock_viewer_);
   addDockWidget(Qt::RightDockWidgetArea, charts_widget_);
+  addDockWidget(Qt::RightDockWidgetArea, help_widget_);
 
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
@@ -140,6 +143,8 @@ MainWindow::MainWindow(QWidget* parent)
   tabifyDockWidget(inspector_, drc_viewer_);
   tabifyDockWidget(inspector_, clock_viewer_);
   tabifyDockWidget(inspector_, charts_widget_);
+  tabifyDockWidget(inspector_, help_widget_);
+
   drc_viewer_->hide();
   clock_viewer_->hide();
 
@@ -385,31 +390,34 @@ MainWindow::MainWindow(QWidget* parent)
   createMenus();
   createStatusBar();
 
-  // Restore the settings (if none this is a no-op)
-  QSettings settings("OpenRoad Project", "openroad");
-  settings.beginGroup("main");
-  restoreGeometry(settings.value("geometry").toByteArray());
-  restoreState(settings.value("state").toByteArray());
-  QApplication::setFont(
-      settings.value("font", QApplication::font()).value<QFont>());
-  hide_option_->setChecked(
-      settings.value("check_exit", hide_option_->isChecked()).toBool());
-  show_dbu_->setChecked(
-      settings.value("use_dbu", show_dbu_->isChecked()).toBool());
-  default_ruler_style_->setChecked(
-      settings.value("ruler_style", default_ruler_style_->isChecked())
-          .toBool());
-  default_mouse_wheel_zoom_->setChecked(
-      settings.value("mouse_wheel_zoom", default_mouse_wheel_zoom_->isChecked())
-          .toBool());
-  arrow_keys_scroll_step_
-      = settings.value("arrow_keys_scroll_step", arrow_keys_scroll_step_)
-            .toInt();
-  script_->readSettings(&settings);
-  controls_->readSettings(&settings);
-  timing_widget_->readSettings(&settings);
-  hierarchy_widget_->readSettings(&settings);
-  settings.endGroup();
+  if (load_settings) {
+    // Restore the settings (if none this is a no-op)
+    QSettings settings("OpenRoad Project", "openroad");
+    settings.beginGroup("main");
+    restoreGeometry(settings.value("geometry").toByteArray());
+    restoreState(settings.value("state").toByteArray());
+    QApplication::setFont(
+        settings.value("font", QApplication::font()).value<QFont>());
+    hide_option_->setChecked(
+        settings.value("check_exit", hide_option_->isChecked()).toBool());
+    show_dbu_->setChecked(
+        settings.value("use_dbu", show_dbu_->isChecked()).toBool());
+    default_ruler_style_->setChecked(
+        settings.value("ruler_style", default_ruler_style_->isChecked())
+            .toBool());
+    default_mouse_wheel_zoom_->setChecked(
+        settings
+            .value("mouse_wheel_zoom", default_mouse_wheel_zoom_->isChecked())
+            .toBool());
+    arrow_keys_scroll_step_
+        = settings.value("arrow_keys_scroll_step", arrow_keys_scroll_step_)
+              .toInt();
+    script_->readSettings(&settings);
+    controls_->readSettings(&settings);
+    timing_widget_->readSettings(&settings);
+    hierarchy_widget_->readSettings(&settings);
+    settings.endGroup();
+  }
 
   // load resources and set window icon and title
   loadQTResources();
@@ -458,7 +466,7 @@ void MainWindow::setBlock(odb::dbBlock* block)
   hierarchy_widget_->setBlock(block);
 }
 
-void MainWindow::init(sta::dbSta* sta)
+void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
 {
   // Setup widgets
   timing_widget_->init(sta);
@@ -468,6 +476,7 @@ void MainWindow::init(sta::dbSta* sta)
 #ifdef ENABLE_CHARTS
   charts_widget_->setSTA(sta);
 #endif
+  help_widget_->init(help_path);
 
   // register descriptors
   auto* gui = Gui::get();
@@ -491,6 +500,7 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbMTerm*>(new DbMTermDescriptor(
       db_, [this]() -> bool { return show_poly_decomp_view_->isChecked(); }));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
+  gui->registerDescriptor<odb::dbBPin*>(new DbBPinDescriptor(db_));
   gui->registerDescriptor<odb::dbVia*>(new DbViaDescriptor(db_));
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
   gui->registerDescriptor<odb::dbObstruction*>(
@@ -511,7 +521,7 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbTechNonDefaultRule*>(
       new DbNonDefaultRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbTechLayerRule*>(
-      new DbTechLayerRuleDescriptor());
+      new DbTechLayerRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbTechSameNetRule*>(
       new DbTechSameNetRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbSite*>(new DbSiteDescriptor(db_));
@@ -523,6 +533,9 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbTech*>(new DbTechDescriptor(db_));
   gui->registerDescriptor<odb::dbMetalWidthViaMap*>(
       new DbMetalWidthViaMapDescriptor(db_));
+  gui->registerDescriptor<odb::dbMarkerCategory*>(
+      new DbMarkerCategoryDescriptor(db_));
+  gui->registerDescriptor<odb::dbMarker*>(new DbMarkerDescriptor(db_));
 
   gui->registerDescriptor<sta::Corner*>(new CornerDescriptor(db_, sta));
   gui->registerDescriptor<sta::LibertyLibrary*>(
@@ -778,6 +791,7 @@ void MainWindow::createMenus()
   windows_menu_->addAction(clock_viewer_->toggleViewAction());
   windows_menu_->addAction(hierarchy_widget_->toggleViewAction());
   windows_menu_->addAction(charts_widget_->toggleViewAction());
+  windows_menu_->addAction(help_widget_->toggleViewAction());
 
   auto option_menu = menuBar()->addMenu("&Options");
   option_menu->addAction(hide_option_);

@@ -90,6 +90,7 @@ class FlexGCWorker::Impl
   Impl();  // for serialization
   Impl(frTechObject* techIn,
        Logger* logger,
+       RouterConfiguration* router_cfg,
        FlexDRWorker* drWorkerIn,
        FlexGCWorker* gcWorkerIn);
   frLayerNum getMinLayerNum()  // inclusive
@@ -137,6 +138,7 @@ class FlexGCWorker::Impl
  private:
   frTechObject* tech_;
   Logger* logger_;
+  RouterConfiguration* router_cfg_;
   FlexDRWorker* drWorker_;
 
   Rect extBox_;
@@ -224,6 +226,8 @@ class FlexGCWorker::Impl
   frCoord getPrl(gcSegment* edge,
                  gcSegment* ptr,
                  const gtl::orientation_2d& orient) const;
+
+  std::pair<frCoord, frCoord> getRectsPrl(gcRect* rect1, gcRect* rect2) const;
   void checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer);
   frCoord checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum,
                                          bool checkNDRs = true);
@@ -291,8 +295,8 @@ class FlexGCWorker::Impl
       gcRect* rect,
       frLef58TwoWiresForbiddenSpcConstraint* con);
   box_t checkMetalCornerSpacing_getQueryBox(gcCorner* corner,
-                                            frCoord& maxSpcValX,
-                                            frCoord& maxSpcValY);
+                                            frCoord maxSpcValX,
+                                            frCoord maxSpcValY);
   void checkMetalCornerSpacing();
   void checkMetalCornerSpacing_getMaxSpcVal(frLayerNum layerNum,
                                             frCoord& maxSpcValX,
@@ -303,6 +307,8 @@ class FlexGCWorker::Impl
                                     gcRect* rect,
                                     frLef58CornerSpacingConstraint* con);
 
+  void checkWidthTableOrth(gcCorner* corner);
+  void checkWidthTableOrth_main(gcCorner* corner1, gcCorner* corner2);
   void checkMetalShape(bool allow_patching = false);
   void checkMetalShape_main(gcPin* pin, bool allow_patching);
   void checkMetalShape_minWidth(const gtl::rectangle_data<frCoord>& rect,
@@ -499,6 +505,10 @@ class FlexGCWorker::Impl
   bool checkLef58CutSpacing_spc_hasTwoCuts_helper(
       gcRect* rect,
       frLef58CutSpacingConstraint* con);
+  void checkCutSpacingTableOrthogonal(gcRect* rect);
+  void checkCutSpacingTableOrthogonal_helper(gcRect* rect1,
+                                             gcRect* rect2,
+                                             frCoord spacing);
   // LEF58_ENCLOSURE
   void checkLef58Enclosure_main(gcRect* rect);
   void checkLef58Enclosure_main(gcRect* via, gcRect* enc);

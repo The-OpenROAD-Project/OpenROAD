@@ -46,6 +46,7 @@ Graphics::Graphics(bool coarse,
     : coarse_(coarse),
       fine_(fine),
       show_bundled_nets_(false),
+      show_clusters_ids_(false),
       skip_steps_(false),
       is_skipping_(false),
       only_final_result_(false),
@@ -71,7 +72,11 @@ void Graphics::startSA()
     return;
   }
 
-  if (only_final_result_ || skip_steps_) {
+  if (skip_steps_) {
+    return;
+  }
+
+  if (target_cluster_id_ != -1 && !isTargetCluster()) {
     return;
   }
 
@@ -80,13 +85,17 @@ void Graphics::startSA()
   skipped_ = 0;
 }
 
-void Graphics::endSA()
+void Graphics::endSA(const float norm_cost)
 {
   if (!active_) {
     return;
   }
 
-  if (only_final_result_ || skip_steps_) {
+  if (skip_steps_) {
+    return;
+  }
+
+  if (target_cluster_id_ != -1 && !isTargetCluster()) {
     return;
   }
 
@@ -94,15 +103,17 @@ void Graphics::endSA()
     logger_->report("Skipped to end: {}", skipped_);
   }
   logger_->report("------ End ------");
+  report(norm_cost);
   gui::Gui::get()->pause();
+}
+
+bool Graphics::isTargetCluster()
+{
+  return current_cluster_->getId() == target_cluster_id_;
 }
 
 void Graphics::saStep(const std::vector<SoftMacro>& macros)
 {
-  if (only_final_result_) {
-    return;
-  }
-
   resetPenalties();
   soft_macros_ = macros;
   hard_macros_.clear();
@@ -110,10 +121,6 @@ void Graphics::saStep(const std::vector<SoftMacro>& macros)
 
 void Graphics::saStep(const std::vector<HardMacro>& macros)
 {
-  if (only_final_result_) {
-    return;
-  }
-
   resetPenalties();
   hard_macros_ = macros;
   soft_macros_.clear();
@@ -123,16 +130,31 @@ template <typename T>
 void Graphics::report(const char* name, const std::optional<T>& value)
 {
   if (value) {
-    logger_->report("{:25}{:>8.4f}", name, value.value());
+    auto penalty = value.value();
+    logger_->report(
+        "{:25}(Norm penalty {:>8.4f}) * (weight {:>8.4f}) = cost {:>8.4f}",
+        name,
+        penalty.norm_penalty,
+        penalty.weight,
+        penalty.norm_penalty * penalty.weight);
   }
+}
+
+void Graphics::report(const float norm_cost)
+{
+  report("Area", area_penalty_);
+  report("Outline Penalty", outline_penalty_);
+  report("Wirelength", wirelength_penalty_);
+  report("Fence Penalty", fence_penalty_);
+  report("Guidance Penalty", guidance_penalty_);
+  report("Boundary Penalty", boundary_penalty_);
+  report("Macro Blockage Penalty", macro_blockage_penalty_);
+  report("Notch Penalty", notch_penalty_);
+  report("Normalized Cost", std::optional<Penalty>({1.0f, norm_cost}));
 }
 
 void Graphics::drawResult()
 {
-  if (!only_final_result_) {
-    return;
-  }
-
   if (max_level_) {
     std::vector<std::vector<odb::Rect>> outlines(max_level_.value() + 1);
     int level = 0;
@@ -188,11 +210,11 @@ void Graphics::penaltyCalculated(float norm_cost)
     return;
   }
 
-  if (only_final_result_) {
+  if (is_skipping_) {
     return;
   }
 
-  if (is_skipping_) {
+  if (target_cluster_id_ != -1 && !isTargetCluster()) {
     return;
   }
 
@@ -200,16 +222,8 @@ void Graphics::penaltyCalculated(float norm_cost)
 
   if (norm_cost < best_norm_cost_ || drawing_last_step) {
     logger_->report("------ Penalty ------");
+    report(norm_cost);
 
-    report("Area", area_penalty_);
-    report("Outline Penalty", outline_penalty_);
-    report("Wirelength", wirelength_);
-    report("Fence Penalty", fence_penalty_);
-    report("Guidance Penalty", guidance_penalty_);
-    report("Boundary Penalty", boundary_penalty_);
-    report("Macro Blockage Penalty", macro_blockage_penalty_);
-    report("Notch Penalty", notch_penalty_);
-    report("Normalized Cost", std::optional<float>(norm_cost));
     if (skipped_ > 0) {
       logger_->report("Skipped: {}", skipped_);
       skipped_ = 0;
@@ -235,7 +249,7 @@ void Graphics::resetPenalties()
 {
   area_penalty_.reset();
   outline_penalty_.reset();
-  wirelength_.reset();
+  wirelength_penalty_.reset();
   fence_penalty_.reset();
   guidance_penalty_.reset();
   boundary_penalty_.reset();
@@ -243,44 +257,44 @@ void Graphics::resetPenalties()
   notch_penalty_.reset();
 }
 
-void Graphics::setNotchPenalty(float notch_penalty)
+void Graphics::setNotchPenalty(const Penalty& penalty)
 {
-  notch_penalty_ = notch_penalty;
+  notch_penalty_ = penalty;
 }
 
-void Graphics::setMacroBlockagePenalty(float macro_blockage_penalty)
+void Graphics::setMacroBlockagePenalty(const Penalty& penalty)
 {
-  macro_blockage_penalty_ = macro_blockage_penalty;
+  macro_blockage_penalty_ = penalty;
 }
 
-void Graphics::setBoundaryPenalty(float boundary_penalty)
+void Graphics::setBoundaryPenalty(const Penalty& penalty)
 {
-  boundary_penalty_ = boundary_penalty;
+  boundary_penalty_ = penalty;
 }
 
-void Graphics::setFencePenalty(float fence_penalty)
+void Graphics::setFencePenalty(const Penalty& penalty)
 {
-  fence_penalty_ = fence_penalty;
+  fence_penalty_ = penalty;
 }
 
-void Graphics::setGuidancePenalty(float guidance_penalty)
+void Graphics::setGuidancePenalty(const Penalty& penalty)
 {
-  guidance_penalty_ = guidance_penalty;
+  guidance_penalty_ = penalty;
 }
 
-void Graphics::setAreaPenalty(float area_penalty)
+void Graphics::setAreaPenalty(const Penalty& penalty)
 {
-  area_penalty_ = area_penalty;
+  area_penalty_ = penalty;
 }
 
-void Graphics::setOutlinePenalty(float outline_penalty)
+void Graphics::setOutlinePenalty(const Penalty& penalty)
 {
-  outline_penalty_ = outline_penalty;
+  outline_penalty_ = penalty;
 }
 
-void Graphics::setWirelength(float wirelength)
+void Graphics::setWirelengthPenalty(const Penalty& penalty)
 {
-  wirelength_ = wirelength;
+  wirelength_penalty_ = penalty;
 }
 
 void Graphics::setMaxLevel(const int max_level)
@@ -371,11 +385,20 @@ void Graphics::drawObjects(gui::Painter& painter)
 
     bbox.moveDelta(outline_.xMin(), outline_.yMin());
 
+    std::string cluster_id_string;
+    if (show_clusters_ids_) {
+      Cluster* cluster = macro.getCluster();
+      cluster_id_string = cluster ? std::to_string(cluster->getId()) : "fixed";
+    } else {
+      // Use the ID of the sequence pair itself.
+      cluster_id_string = std::to_string(i++);
+    }
+
     painter.drawRect(bbox);
     painter.drawString(bbox.xCenter(),
                        bbox.yCenter(),
                        gui::Painter::CENTER,
-                       std::to_string(i++));
+                       cluster_id_string);
   }
 
   painter.setPen(gui::Painter::white, true);
@@ -529,6 +552,11 @@ void Graphics::setShowBundledNets(bool show_bundled_nets)
   show_bundled_nets_ = show_bundled_nets;
 }
 
+void Graphics::setShowClustersIds(bool show_clusters_ids)
+{
+  show_clusters_ids_ = show_clusters_ids;
+}
+
 void Graphics::setSkipSteps(bool skip_steps)
 {
   skip_steps_ = skip_steps;
@@ -555,13 +583,19 @@ void Graphics::setBundledNets(const std::vector<BundledNet>& bundled_nets)
   bundled_nets_ = bundled_nets;
 }
 
+void Graphics::setTargetClusterId(const int target_cluster_id)
+{
+  target_cluster_id_ = target_cluster_id;
+}
+
 void Graphics::setOutline(const odb::Rect& outline)
 {
-  if (only_final_result_) {
-    return;
-  }
-
   outline_ = outline;
+}
+
+void Graphics::setCurrentCluster(Cluster* current_cluster)
+{
+  current_cluster_ = current_cluster;
 }
 
 void Graphics::eraseDrawing()

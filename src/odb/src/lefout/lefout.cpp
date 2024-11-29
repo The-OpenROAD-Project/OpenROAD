@@ -41,6 +41,7 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
+#include "utl/scope.h"
 
 using namespace boost::polygon::operators;
 using namespace odb;
@@ -497,9 +498,9 @@ void lefout::writeBlockVia(dbBlock* db_block, dbVia* via)
 
 void lefout::writeBlock(dbBlock* db_block)
 {
-  dbBox* bounding_box = db_block->getBBox();
-  double size_x = lefdist(bounding_box->xMax());
-  double size_y = lefdist(bounding_box->yMax());
+  Rect die_area = db_block->getDieArea();
+  double size_x = lefdist(die_area.xMax());
+  double size_y = lefdist(die_area.yMax());
 
   for (auto via : db_block->getVias()) {
     writeBlockVia(db_block, via);
@@ -1290,9 +1291,7 @@ void lefout::writeMaster(dbMaster* master)
     fmt::print(_out, "\nMACRO {}\n", name.c_str());
   }
 
-  if (master->getType() != dbMasterType::NONE) {
-    fmt::print(_out, "    CLASS {} ;\n", master->getType().getString());
-  }
+  fmt::print(_out, "    CLASS {} ;\n", master->getType().getString());
 
   const odb::Point origin = master->getOrigin();
 
@@ -1569,7 +1568,7 @@ void lefout::writePropertyDefinitions(dbLib* lib)
 
 void lefout::writeTech(dbTech* tech)
 {
-  _dist_factor = 1.0 / (double) tech->getDbUnitsPerMicron();
+  _dist_factor = 1.0 / tech->getDbUnitsPerMicron();
   _area_factor = _dist_factor * _dist_factor;
   writeTechBody(tech);
 
@@ -1578,7 +1577,7 @@ void lefout::writeTech(dbTech* tech)
 
 void lefout::writeLib(dbLib* lib)
 {
-  _dist_factor = 1.0 / (double) lib->getDbUnitsPerMicron();
+  _dist_factor = 1.0 / lib->getDbUnitsPerMicron();
   _area_factor = _dist_factor * _dist_factor;
   writeHeader(lib);
   writeLibBody(lib);
@@ -1587,7 +1586,7 @@ void lefout::writeLib(dbLib* lib)
 
 void lefout::writeTechAndLib(dbLib* lib)
 {
-  _dist_factor = 1.0 / (double) lib->getDbUnitsPerMicron();
+  _dist_factor = 1.0 / lib->getDbUnitsPerMicron();
   _area_factor = _dist_factor * _dist_factor;
   dbTech* tech = lib->getTech();
   writeHeader(lib);
@@ -1598,14 +1597,11 @@ void lefout::writeTechAndLib(dbLib* lib)
 
 void lefout::writeAbstractLef(dbBlock* db_block)
 {
-  double temporary_dist_factor = _dist_factor;
-  _dist_factor = 1.0L / db_block->getDbUnitsPerMicron();
-  _area_factor = _dist_factor * _dist_factor;
+  utl::SetAndRestore set_dist(_dist_factor,
+                              1.0 / db_block->getDbUnitsPerMicron());
+  utl::SetAndRestore set_area(_area_factor, _dist_factor * _dist_factor);
 
   writeHeader(db_block);
   writeBlock(db_block);
   fmt::print(_out, "END LIBRARY\n");
-
-  _dist_factor = temporary_dist_factor;
-  _area_factor = _dist_factor * _dist_factor;
 }

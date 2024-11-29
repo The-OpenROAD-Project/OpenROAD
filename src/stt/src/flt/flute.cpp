@@ -54,10 +54,6 @@
 // #define LUT_SOURCE LUT_VAR_CHECK
 #define LUT_SOURCE LUT_VAR
 
-namespace stt {
-
-namespace flt {
-
 #if FLUTE_D <= 7
 #define MGROUP 5040 / 4  // Max. # of groups, 7! = 5040
 #define MPOWV 15         // Max. # of POWVs per group
@@ -68,9 +64,12 @@ namespace flt {
 #define MGROUP 362880 / 4  // Max. # of groups, 9! = 362880
 #define MPOWV 79           // Max. # of POWVs per group
 #endif
-int numgrp[10] = {0, 0, 0, 0, 6, 30, 180, 1260, 10080, 90720};
 
-struct csoln
+namespace stt {
+
+namespace flt {
+
+struct Flute::csoln
 {
   unsigned char parent;
   unsigned char seg[11];  // Add: 0..i, Sub: j..10; seg[i+1]=seg[j-1]=0
@@ -78,26 +77,11 @@ struct csoln
   unsigned char neighbor[2 * FLUTE_D - 2];
 };
 
-// struct csoln *LUT[FLUTE_D + 1][MGROUP];  // storing 4 .. FLUTE_D
-// int numsoln[FLUTE_D + 1][MGROUP];
-
-using LUT_TYPE = struct csoln***;
-using NUMSOLN_TYPE = int**;
-
-// Dynamically allocate LUTs.
-LUT_TYPE LUT = nullptr;
-NUMSOLN_TYPE numsoln;
-
 struct point
 {
   int x, y;
   int o;
 };
-
-Tree dmergetree(Tree t1, Tree t2);
-Tree hmergetree(Tree t1, Tree t2, const std::vector<int>& s);
-Tree vmergetree(Tree t1, Tree t2);
-void local_refinement(int deg, Tree* tp, int p);
 
 template <class T>
 inline T ADIFF(T x, T y)
@@ -200,11 +184,6 @@ static void readLUTfiles(LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
 
 ////////////////////////////////////////////////////////////////
 
-static void readLUT();
-static void makeLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln);
-static void deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln);
-static void initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln);
-static void ensureLUT(int d);
 static std::string base64_decode(std::string const& encoded_string);
 #if LUT_SOURCE == LUT_VAR_CHECK
 static void checkLUT(LUT_TYPE LUT1,
@@ -213,14 +192,10 @@ static void checkLUT(LUT_TYPE LUT1,
                      NUMSOLN_TYPE numsoln2);
 #endif
 
-// LUTs are initialized to this order at startup.
-static constexpr int lut_initial_d = 8;
-static int lut_valid_d = 0;
+extern const std::string post9;
+extern const std::string powv9;
 
-extern std::string post9;
-extern std::string powv9;
-
-static void readLUT()
+void Flute::readLUT()
 {
   makeLUT(LUT, numsoln);
 
@@ -243,7 +218,7 @@ static void readLUT()
 #endif
 }
 
-static void makeLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln)
+void Flute::makeLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln)
 {
   LUT = new struct csoln**[FLUTE_D + 1];
   numsoln = new int*[FLUTE_D + 1];
@@ -253,12 +228,12 @@ static void makeLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln)
   }
 }
 
-void deleteLUT()
+void Flute::deleteLUT()
 {
   deleteLUT(LUT, numsoln);
 }
 
-static void deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln)
+void Flute::deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln)
 {
   if (LUT) {
     for (int d = 4; d <= FLUTE_D; d++) {
@@ -267,6 +242,7 @@ static void deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln)
     }
     delete[] numsoln;
     delete[] LUT;
+    LUT = nullptr;
   }
 }
 
@@ -300,7 +276,7 @@ inline const char* readDecimalInt(const char* s, int& value)
 }
 
 // Init LUTs from base64 encoded string variables.
-static void initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
+void Flute::initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
 {
   std::string pwv_string = base64_decode(powv9);
   const char* pwv = pwv_string.c_str();
@@ -376,7 +352,7 @@ static void initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
   lut_valid_d = to_d;
 }
 
-static void ensureLUT(int d)
+void Flute::ensureLUT(int d)
 {
   if (LUT == nullptr) {
     readLUT();
@@ -516,10 +492,10 @@ static std::string base64_decode(std::string const& encoded_string)
 
 ////////////////////////////////////////////////////////////////
 
-int flute_wl(int d,
-             const std::vector<int>& x,
-             const std::vector<int>& y,
-             int acc)
+int Flute::flute_wl(int d,
+                    const std::vector<int>& x,
+                    const std::vector<int>& y,
+                    int acc)
 {
   int minval, l, xu, xl, yu, yl;
   std::vector<int> xs, ys;
@@ -628,11 +604,11 @@ int flute_wl(int d,
 // The points are (xs[s[i]], ys[i]) for i=0..d-1
 //             or (xs[i], ys[si[i]]) for i=0..d-1
 
-int flutes_wl_RDP(int d,
-                  std::vector<int> xs,
-                  std::vector<int> ys,
-                  std::vector<int> s,
-                  int acc)
+int Flute::flutes_wl_RDP(int d,
+                         std::vector<int> xs,
+                         std::vector<int> ys,
+                         std::vector<int> s,
+                         int acc)
 {
   int i, j, ss;
 
@@ -666,10 +642,10 @@ int flutes_wl_RDP(int d,
 }
 
 // For low-degree, i.e., 2 <= d <= FLUTE_D
-int flutes_wl_LD(int d,
-                 const std::vector<int>& xs,
-                 const std::vector<int>& ys,
-                 const std::vector<int>& s)
+int Flute::flutes_wl_LD(int d,
+                        const std::vector<int>& xs,
+                        const std::vector<int>& ys,
+                        const std::vector<int>& s)
 {
   int k, pi, i, j;
   struct csoln* rlist;
@@ -738,11 +714,11 @@ int flutes_wl_LD(int d,
 }
 
 // For medium-degree, i.e., FLUTE_D+1 <= d
-int flutes_wl_MD(int d,
-                 const std::vector<int>& xs,
-                 const std::vector<int>& ys,
-                 const std::vector<int>& s,
-                 int acc)
+int Flute::flutes_wl_MD(int d,
+                        const std::vector<int>& xs,
+                        const std::vector<int>& ys,
+                        const std::vector<int>& s,
+                        int acc)
 {
   float pnlty, dx, dy;
   float *score, *penalty;
@@ -1044,7 +1020,7 @@ static bool ordery(const point* a, const point* b)
   return a->y < b->y;
 }
 
-Tree flute(const std::vector<int>& x, const std::vector<int>& y, int acc)
+Tree Flute::flute(const std::vector<int>& x, const std::vector<int>& y, int acc)
 {
   std::vector<int> xs, ys;
   int minval;
@@ -1164,11 +1140,11 @@ Tree flute(const std::vector<int>& x, const std::vector<int>& y, int acc)
 // The points are (xs[s[i]], ys[i]) for i=0..d-1
 //             or (xs[i], ys[si[i]]) for i=0..d-1
 
-Tree flutes_RDP(int d,
-                std::vector<int> xs,
-                std::vector<int> ys,
-                std::vector<int> s,
-                int acc)
+Tree Flute::flutes_RDP(int d,
+                       std::vector<int> xs,
+                       std::vector<int> ys,
+                       std::vector<int> s,
+                       int acc)
 {
   int i, j, ss;
 
@@ -1202,10 +1178,10 @@ Tree flutes_RDP(int d,
 }
 
 // For low-degree, i.e., 2 <= d <= FLUTE_D
-Tree flutes_LD(int d,
-               const std::vector<int>& xs,
-               const std::vector<int>& ys,
-               const std::vector<int>& s)
+Tree Flute::flutes_LD(int d,
+                      const std::vector<int>& xs,
+                      const std::vector<int>& ys,
+                      const std::vector<int>& s)
 {
   int k, pi, i, j;
   struct csoln *rlist, *bestrlist;
@@ -1359,11 +1335,11 @@ Tree flutes_LD(int d,
 }
 
 // For medium-degree, i.e., FLUTE_D+1 <= d
-Tree flutes_MD(int d,
-               const std::vector<int>& xs,
-               const std::vector<int>& ys,
-               const std::vector<int>& s,
-               int acc)
+Tree Flute::flutes_MD(int d,
+                      const std::vector<int>& xs,
+                      const std::vector<int>& ys,
+                      const std::vector<int>& s,
+                      int acc)
 {
   float *score, *penalty, pnlty, dx, dy;
   int ms, mins, maxs, minsi, maxsi;
@@ -1697,7 +1673,7 @@ Tree flutes_MD(int d,
   return t;
 }
 
-Tree dmergetree(Tree t1, Tree t2)
+Tree Flute::dmergetree(Tree t1, Tree t2)
 {
   int i, d, prev, curr, next, offset1, offset2;
   Tree t;
@@ -1743,7 +1719,7 @@ Tree dmergetree(Tree t1, Tree t2)
   return t;
 }
 
-Tree hmergetree(Tree t1, Tree t2, const std::vector<int>& s)
+Tree Flute::hmergetree(Tree t1, Tree t2, const std::vector<int>& s)
 {
   int i, prev, curr, next, extra, offset1, offset2;
   int p, n1, n2;
@@ -1824,7 +1800,7 @@ Tree hmergetree(Tree t1, Tree t2, const std::vector<int>& s)
   return t;
 }
 
-Tree vmergetree(Tree t1, Tree t2)
+Tree Flute::vmergetree(Tree t1, Tree t2)
 {
   int i, prev, curr, next, extra, offset1, offset2;
   int coord1, coord2;
@@ -1886,7 +1862,7 @@ Tree vmergetree(Tree t1, Tree t2)
   return t;
 }
 
-void local_refinement(int deg, Tree* tp, int p)
+void Flute::local_refinement(int deg, Tree* tp, int p)
 {
   int d, dd, i, ii, j, prev, curr, next, root;
   std::vector<int> SteinerPin, index, ss;
@@ -2003,7 +1979,7 @@ void local_refinement(int deg, Tree* tp, int p)
   }
 }
 
-int wirelength(Tree t)
+int Flute::wirelength(Tree t)
 {
   int i, j;
   int l = 0;
@@ -2018,7 +1994,7 @@ int wirelength(Tree t)
 }
 
 // Output in a format that can be plotted by gnuplot
-void plottree(Tree t)
+void Flute::plottree(Tree t)
 {
   int i;
 
@@ -2029,7 +2005,7 @@ void plottree(Tree t)
 }
 
 // Write svg file viewable in a web browser.
-void write_svg(Tree t, const char* filename)
+void Flute::write_svg(Tree t, const char* filename)
 {
   int x_min = INT_MAX;
   int y_min = INT_MAX;

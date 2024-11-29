@@ -47,8 +47,8 @@ namespace gtl = boost::polygon;
 int io::Parser::getTopPinLayer()
 {
   frLayerNum topPinLayer = 0;
-  if (design_->getTopBlock()) {
-    for (const auto& bTerm : design_->getTopBlock()->getTerms()) {
+  if (getBlock()) {
+    for (const auto& bTerm : getBlock()->getTerms()) {
       if (bTerm->getNet() && !bTerm->getNet()->isSpecial()) {
         for (const auto& pin : bTerm->getPins()) {
           for (const auto& fig : pin->getFigs()) {
@@ -58,7 +58,7 @@ int io::Parser::getTopPinLayer()
         }
       }
     }
-    for (const auto& inst : design_->getTopBlock()->getInsts()) {
+    for (const auto& inst : getBlock()->getInsts()) {
       for (const auto& iTerm : inst->getInstTerms()) {
         if (iTerm->getNet() && !iTerm->getNet()->isSpecial()) {
           for (const auto& pin : iTerm->getTerm()->getPins()) {
@@ -76,25 +76,26 @@ int io::Parser::getTopPinLayer()
 
 void io::Parser::initDefaultVias()
 {
-  for (auto& uViaDef : tech_->getVias()) {
+  for (auto& uViaDef : getTech()->getVias()) {
     auto viaDef = uViaDef.get();
-    tech_->getLayer(viaDef->getCutLayerNum())->addViaDef(viaDef);
+    getTech()->getLayer(viaDef->getCutLayerNum())->addViaDef(viaDef);
   }
-  for (auto& userDefinedVia : design_->getUserSelectedVias()) {
-    if (tech_->name2via_.find(userDefinedVia) == tech_->name2via_.end()) {
+  for (auto& userDefinedVia : getDesign()->getUserSelectedVias()) {
+    if (getTech()->name2via_.find(userDefinedVia)
+        == getTech()->name2via_.end()) {
       logger_->error(
           DRT, 608, "Could not find user defined via {}", userDefinedVia);
     }
-    auto viaDef = tech_->getVia(userDefinedVia);
-    tech_->getLayer(viaDef->getCutLayerNum())->setDefaultViaDef(viaDef);
+    auto viaDef = getTech()->getVia(userDefinedVia);
+    getTech()->getLayer(viaDef->getCutLayerNum())->setDefaultViaDef(viaDef);
   }
   // Check whether there are pins above top routing layer
   frLayerNum topPinLayer = getTopPinLayer();
 
-  for (auto layerNum = design_->getTech()->getBottomLayerNum();
-       layerNum <= design_->getTech()->getTopLayerNum();
+  for (auto layerNum = getTech()->getBottomLayerNum();
+       layerNum <= getTech()->getTopLayerNum();
        ++layerNum) {
-    auto layer = design_->getTech()->getLayer(layerNum);
+    auto layer = getTech()->getLayer(layerNum);
     if (layer->getType() != dbTechLayerType::CUT) {
       continue;
     }
@@ -114,32 +115,36 @@ void io::Parser::initDefaultVias()
       auto iter_1cut = cuts2ViaDefs.find(1);
       if (iter_1cut != cuts2ViaDefs.end() && !iter_1cut->second.empty()) {
         auto defaultSingleCutVia = iter_1cut->second.begin()->second;
-        tech_->getLayer(layerNum)->setDefaultViaDef(defaultSingleCutVia);
-      } else if (layerNum > TOP_ROUTING_LAYER) {
+        getTech()->getLayer(layerNum)->setDefaultViaDef(defaultSingleCutVia);
+      } else if (layerNum > router_cfg_->TOP_ROUTING_LAYER) {
         // We may need vias here to stack up to bumps.  However there
         // may not be a single cut via.  Since we aren't routing, but
         // just stacking, we'll use the best via we can find.
         auto via_map = cuts2ViaDefs.begin()->second;
-        tech_->getLayer(layerNum)->setDefaultViaDef(via_map.begin()->second);
-      } else if (layerNum >= BOTTOM_ROUTING_LAYER) {
+        getTech()->getLayer(layerNum)->setDefaultViaDef(
+            via_map.begin()->second);
+      } else if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER) {
         logger_->error(DRT,
                        234,
                        "{} does not have single-cut via.",
-                       tech_->getLayer(layerNum)->getName());
+                       getTech()->getLayer(layerNum)->getName());
       }
     } else {
-      if (layerNum >= BOTTOM_ROUTING_LAYER
-          && (layerNum <= std::max(TOP_ROUTING_LAYER, topPinLayer))) {
+      if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
+          && (layerNum
+              <= std::max(router_cfg_->TOP_ROUTING_LAYER, topPinLayer))) {
         logger_->error(DRT,
                        233,
                        "{} does not have any vias.",
-                       tech_->getLayer(layerNum)->getName());
+                       getTech()->getLayer(layerNum)->getName());
       }
     }
     // generate via if default via enclosure is not along pref dir
-    if (ENABLE_VIA_GEN && layerNum >= BOTTOM_ROUTING_LAYER
-        && layerNum <= TOP_ROUTING_LAYER) {
-      auto techDefautlViaDef = tech_->getLayer(layerNum)->getDefaultViaDef();
+    if (router_cfg_->ENABLE_VIA_GEN
+        && layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
+        && layerNum <= router_cfg_->TOP_ROUTING_LAYER) {
+      auto techDefautlViaDef
+          = getTech()->getLayer(layerNum)->getDefaultViaDef();
       frVia via(techDefautlViaDef);
       Rect layer1Box = via.getLayer1BBox();
       Rect layer2Box = via.getLayer2BBox();
@@ -149,9 +154,9 @@ void io::Parser::initDefaultVias()
       bool isLayer2Square = layer2Box.dx() == layer2Box.dy();
       bool isLayer1EncHorz = layer1Box.dx() > layer1Box.dy();
       bool isLayer2EncHorz = layer2Box.dx() > layer2Box.dy();
-      bool isLayer1Horz = (tech_->getLayer(layer1Num)->getDir()
+      bool isLayer1Horz = (getTech()->getLayer(layer1Num)->getDir()
                            == dbTechLayerDir::HORIZONTAL);
-      bool isLayer2Horz = (tech_->getLayer(layer2Num)->getDir()
+      bool isLayer2Horz = (getTech()->getLayer(layer2Num)->getDir()
                            == dbTechLayerDir::HORIZONTAL);
       bool needViaGen = false;
       if ((!isLayer1Square && (isLayer1EncHorz != isLayer1Horz))
@@ -162,13 +167,15 @@ void io::Parser::initDefaultVias()
       // generate new via def if needed
       if (needViaGen) {
         std::string viaDefName
-            = tech_->getLayer(techDefautlViaDef->getCutLayerNum())->getName();
+            = getTech()
+                  ->getLayer(techDefautlViaDef->getCutLayerNum())
+                  ->getName();
         viaDefName += std::string("_FR");
         logger_->warn(DRT,
                       160,
                       "Warning: {} does not have viaDef aligned with layer "
                       "direction, generating new viaDef {}.",
-                      tech_->getLayer(layer1Num)->getName(),
+                      getTech()->getLayer(layer1Num)->getName(),
                       viaDefName);
         // routing layer shape
         // rotate if needed
@@ -208,12 +215,12 @@ void io::Parser::initDefaultVias()
         viaDef->addLayer2Fig(std::move(uTopFig));
         viaDef->addCutFig(std::move(uCutFig));
         viaDef->setAddedByRouter(true);
-        auto vdfPtr = tech_->addVia(std::move(viaDef));
+        auto vdfPtr = getTech()->addVia(std::move(viaDef));
         if (vdfPtr == nullptr) {
           logger_->error(
               utl::DRT, 336, "Duplicated via definition for {}", viaDefName);
         }
-        tech_->getLayer(layerNum)->setDefaultViaDef(vdfPtr);
+        getTech()->getLayer(layerNum)->setDefaultViaDef(vdfPtr);
       }
     }
   }
@@ -259,10 +266,10 @@ std::pair<frCoord, frCoord> getBloatingDist(frTechObject* tech,
 
 void io::Parser::initSecondaryVias()
 {
-  for (auto layerNum = design_->getTech()->getBottomLayerNum();
-       layerNum <= design_->getTech()->getTopLayerNum();
+  for (auto layerNum = getTech()->getBottomLayerNum();
+       layerNum <= getTech()->getTopLayerNum();
        ++layerNum) {
-    auto layer = design_->getTech()->getLayer(layerNum);
+    auto layer = getTech()->getLayer(layerNum);
     if (layer->getType() != dbTechLayerType::CUT) {
       continue;
     }
@@ -288,8 +295,8 @@ void io::Parser::initSecondaryVias()
             continue;
           }
           frVia secondary_via(viadef);
-          auto layer1_bloats = getBloatingDist(tech_, secondary_via, false);
-          auto layer2_bloats = getBloatingDist(tech_, secondary_via, true);
+          auto layer1_bloats = getBloatingDist(getTech(), secondary_via, false);
+          auto layer2_bloats = getBloatingDist(getTech(), secondary_via, true);
           int dx = secondary_via.getCutBBox().xCenter();
           int dy = secondary_via.getCutBBox().yCenter();
           if (layer1_bloats != std::pair<int, int>(0, 0)
@@ -332,7 +339,7 @@ void io::Parser::initSecondaryVias()
             new_viadef->addLayer2Fig(std::move(u_topfig));
             new_viadef->addCutFig(std::move(u_cutfig));
             new_viadef->setAddedByRouter(true);
-            auto vdf_ptr = tech_->addVia(std::move(new_viadef));
+            auto vdf_ptr = getTech()->addVia(std::move(new_viadef));
             if (vdf_ptr != nullptr) {
               layer->addSecondaryViaDef(vdf_ptr);
             }
@@ -349,34 +356,33 @@ void io::Parser::initSecondaryVias()
 // corresponding diffnet rule does not exist
 void io::Parser::initConstraintLayerIdx()
 {
-  for (auto layerNum = design_->getTech()->getBottomLayerNum();
-       layerNum <= design_->getTech()->getTopLayerNum();
+  for (auto layerNum = getTech()->getBottomLayerNum();
+       layerNum <= getTech()->getTopLayerNum();
        ++layerNum) {
-    auto layer = design_->getTech()->getLayer(layerNum);
+    auto layer = getTech()->getLayer(layerNum);
     // non-LEF58
     auto& interLayerCutSpacingConstraints
         = layer->getInterLayerCutSpacingConstraintRef(false);
     // diff-net
     if (interLayerCutSpacingConstraints.empty()) {
-      interLayerCutSpacingConstraints.resize(
-          design_->getTech()->getTopLayerNum() + 1, nullptr);
+      interLayerCutSpacingConstraints.resize(getTech()->getTopLayerNum() + 1,
+                                             nullptr);
     }
     for (auto& [secondLayerName, con] :
          layer->getInterLayerCutSpacingConstraintMap(false)) {
-      auto secondLayer = design_->getTech()->getLayer(secondLayerName);
+      auto secondLayer = getTech()->getLayer(secondLayerName);
       if (secondLayer == nullptr) {
         logger_->warn(
             DRT, 235, "Second layer {} does not exist.", secondLayerName);
         continue;
       }
-      auto secondLayerNum
-          = design_->getTech()->getLayer(secondLayerName)->getLayerNum();
+      auto secondLayerNum = getTech()->getLayer(secondLayerName)->getLayerNum();
       con->setSecondLayerNum(secondLayerNum);
       logger_->info(DRT,
                     236,
                     "Updating diff-net cut spacing rule between {} and {}.",
-                    design_->getTech()->getLayer(layerNum)->getName(),
-                    design_->getTech()->getLayer(secondLayerNum)->getName());
+                    getTech()->getLayer(layerNum)->getName(),
+                    getTech()->getLayer(secondLayerNum)->getName());
       interLayerCutSpacingConstraints[secondLayerNum] = con;
     }
     // same-net
@@ -384,24 +390,23 @@ void io::Parser::initConstraintLayerIdx()
         = layer->getInterLayerCutSpacingConstraintRef(true);
     if (interLayerCutSpacingSamenetConstraints.empty()) {
       interLayerCutSpacingSamenetConstraints.resize(
-          design_->getTech()->getTopLayerNum() + 1, nullptr);
+          getTech()->getTopLayerNum() + 1, nullptr);
     }
     for (auto& [secondLayerName, con] :
          layer->getInterLayerCutSpacingConstraintMap(true)) {
-      auto secondLayer = design_->getTech()->getLayer(secondLayerName);
+      auto secondLayer = getTech()->getLayer(secondLayerName);
       if (secondLayer == nullptr) {
         logger_->warn(
             DRT, 237, "Second layer {} does not exist.", secondLayerName);
         continue;
       }
-      auto secondLayerNum
-          = design_->getTech()->getLayer(secondLayerName)->getLayerNum();
+      auto secondLayerNum = getTech()->getLayer(secondLayerName)->getLayerNum();
       con->setSecondLayerNum(secondLayerNum);
       logger_->info(DRT,
                     238,
                     "Updating same-net cut spacing rule between {} and {}.",
-                    design_->getTech()->getLayer(layerNum)->getName(),
-                    design_->getTech()->getLayer(secondLayerNum)->getName());
+                    getTech()->getLayer(layerNum)->getName(),
+                    getTech()->getLayer(secondLayerNum)->getName());
       interLayerCutSpacingSamenetConstraints[secondLayerNum] = con;
     }
     // reset same-net if diff-net does not exist
@@ -418,7 +423,8 @@ void io::Parser::initConstraintLayerIdx()
     // diff-net
     for (auto& con : layer->getLef58CutSpacingConstraints(false)) {
       if (con->hasSecondLayer()) {
-        frLayerNum secondLayerNum = design_->getTech()
+        frLayerNum secondLayerNum = getDesign()
+                                        ->getTech()
                                         ->getLayer(con->getSecondLayerName())
                                         ->getLayerNum();
         con->setSecondLayerNum(secondLayerNum);
@@ -427,7 +433,8 @@ void io::Parser::initConstraintLayerIdx()
     // same-net
     for (auto& con : layer->getLef58CutSpacingConstraints(true)) {
       if (con->hasSecondLayer()) {
-        frLayerNum secondLayerNum = design_->getTech()
+        frLayerNum secondLayerNum = getDesign()
+                                        ->getTech()
                                         ->getLayer(con->getSecondLayerName())
                                         ->getLayerNum();
         con->setSecondLayerNum(secondLayerNum);
@@ -439,14 +446,13 @@ void io::Parser::initConstraintLayerIdx()
 // initialize cut layer width for cut OBS DRC check if not specified in LEF
 void io::Parser::initCutLayerWidth()
 {
-  for (auto layerNum = design_->getTech()->getBottomLayerNum();
-       layerNum <= design_->getTech()->getTopLayerNum();
+  for (auto layerNum = getTech()->getBottomLayerNum();
+       layerNum <= getTech()->getTopLayerNum();
        ++layerNum) {
-    if (design_->getTech()->getLayer(layerNum)->getType()
-        != dbTechLayerType::CUT) {
+    if (getTech()->getLayer(layerNum)->getType() != dbTechLayerType::CUT) {
       continue;
     }
-    auto layer = design_->getTech()->getLayer(layerNum);
+    auto layer = getTech()->getLayer(layerNum);
     // update cut layer width is not specified in LEF
     if (layer->getWidth() == 0) {
       // first check default via size, if it is square, use that size
@@ -460,7 +466,8 @@ void io::Parser::initCutLayerWidth()
         auto viaWidth = cutRect->width();
         layer->setWidth(viaWidth);
       } else {
-        if (layerNum >= BOTTOM_ROUTING_LAYER && layerNum <= TOP_ROUTING_LAYER) {
+        if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
+            && layerNum <= router_cfg_->TOP_ROUTING_LAYER) {
           logger_->error(DRT,
                          242,
                          "CUT layer {} does not have default via.",
@@ -500,12 +507,13 @@ void io::Parser::getViaRawPriority(frViaDef* viaDef,
       = (xh(layer1Rect) - xl(layer1Rect)) > (yh(layer1Rect) - yl(layer1Rect));
   frCoord layer1Width = std::min((xh(layer1Rect) - xl(layer1Rect)),
                                  (yh(layer1Rect) - yl(layer1Rect)));
-  isNotLowerAlign = (isLayer1Horz
-                     && (tech_->getLayer(viaDef->getLayer1Num())->getDir()
-                         == dbTechLayerDir::VERTICAL))
-                    || (!isLayer1Horz
-                        && (tech_->getLayer(viaDef->getLayer1Num())->getDir()
-                            == dbTechLayerDir::HORIZONTAL));
+  isNotLowerAlign
+      = (isLayer1Horz
+         && (getTech()->getLayer(viaDef->getLayer1Num())->getDir()
+             == dbTechLayerDir::VERTICAL))
+        || (!isLayer1Horz
+            && (getTech()->getLayer(viaDef->getLayer1Num())->getDir()
+                == dbTechLayerDir::HORIZONTAL));
 
   PolygonSet viaLayerPS2;
   for (auto& fig : viaDef->getLayer2Figs()) {
@@ -519,12 +527,13 @@ void io::Parser::getViaRawPriority(frViaDef* viaDef,
       = (xh(layer2Rect) - xl(layer2Rect)) > (yh(layer2Rect) - yl(layer2Rect));
   frCoord layer2Width = std::min((xh(layer2Rect) - xl(layer2Rect)),
                                  (yh(layer2Rect) - yl(layer2Rect)));
-  isNotUpperAlign = (isLayer2Horz
-                     && (tech_->getLayer(viaDef->getLayer2Num())->getDir()
-                         == dbTechLayerDir::VERTICAL))
-                    || (!isLayer2Horz
-                        && (tech_->getLayer(viaDef->getLayer2Num())->getDir()
-                            == dbTechLayerDir::HORIZONTAL));
+  isNotUpperAlign
+      = (isLayer2Horz
+         && (getTech()->getLayer(viaDef->getLayer2Num())->getDir()
+             == dbTechLayerDir::VERTICAL))
+        || (!isLayer2Horz
+            && (getTech()->getLayer(viaDef->getLayer2Num())->getDir()
+                == dbTechLayerDir::HORIZONTAL));
 
   frCoord layer1Area = area(viaLayerPS1);
   frCoord layer2Area = area(viaLayerPS2);
@@ -563,76 +572,76 @@ void io::Parser::getViaRawPriority(frViaDef* viaDef,
 // 13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB
 void io::Parser::initDefaultVias_GF14(const std::string& node)
 {
-  for (int layerNum = 1; layerNum < (int) tech_->getLayers().size();
+  for (int layerNum = 1; layerNum < (int) getTech()->getLayers().size();
        layerNum += 2) {
-    for (auto& uViaDef : tech_->getVias()) {
+    for (auto& uViaDef : getTech()->getVias()) {
       auto viaDef = uViaDef.get();
       if (viaDef->getCutLayerNum() == layerNum
           && node == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
         switch (layerNum) {
           case 3:  // VIA1
             if (viaDef->getName() == "V1_0_15_0_25_VH_Vx") {
-              tech_->getLayer(layerNum)->setDefaultViaDef(viaDef);
+              getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 5:  // VIA2
             if (viaDef->getName() == "V2_0_25_0_25_HV_Vx") {
-              tech_->getLayer(layerNum)->setDefaultViaDef(viaDef);
+              getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 7:  // VIA3
             if (viaDef->getName() == "J3_0_25_4_40_VH_Jy") {
-              tech_->getLayer(layerNum)->setDefaultViaDef(viaDef);
+              getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 9:  // VIA4
             if (viaDef->getName() == "A4_0_50_0_50_HV_Ax") {
-              tech_->getLayer(layerNum)->setDefaultViaDef(viaDef);
+              getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 11:  // VIA5
             if (viaDef->getName() == "CK_23_28_0_26_VH_CK") {
-              tech_->getLayer(layerNum)->setDefaultViaDef(viaDef);
+              getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 13:  // VIA6
             if (viaDef->getName() == "U1_0_26_0_26_HV_Ux") {
-              tech_->getLayer(layerNum)->setDefaultViaDef(viaDef);
+              getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 15:  // VIA7
             if (viaDef->getName() == "U2_0_26_0_26_VH_Ux") {
-              tech_->getLayer(layerNum)->setDefaultViaDef(viaDef);
+              getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 17:  // VIA8
             if (viaDef->getName() == "U3_0_26_0_26_HV_Ux") {
-              tech_->getLayer(layerNum)->setDefaultViaDef(viaDef);
+              getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 19:  // VIA9
             if (viaDef->getName() == "KH_18_45_0_45_VH_KH") {
-              tech_->getLayer(layerNum)->setDefaultViaDef(viaDef);
+              getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 21:  // VIA10
             if (viaDef->getName() == "N1_0_45_0_45_HV_Nx") {
-              tech_->getLayer(layerNum)->setDefaultViaDef(viaDef);
+              getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 23:  // VIA11
             if (viaDef->getName() == "HG_18_72_18_72_VH_HG") {
-              tech_->getLayer(layerNum)->setDefaultViaDef(viaDef);
+              getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 25:  // VIA12
             if (viaDef->getName() == "T1_18_72_18_72_HV_Tx") {
-              tech_->getLayer(layerNum)->setDefaultViaDef(viaDef);
+              getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 27:  // VIA13
             if (viaDef->getName() == "VV_450_450_450_450_XX_VV") {
-              tech_->getLayer(layerNum)->setDefaultViaDef(viaDef);
+              getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           default:;
@@ -644,10 +653,10 @@ void io::Parser::initDefaultVias_GF14(const std::string& node)
 
 void io::Parser::convertLef58MinCutConstraints()
 {
-  auto bottomLayerNum = tech_->getBottomLayerNum();
-  auto topLayerNum = tech_->getTopLayerNum();
+  auto bottomLayerNum = getTech()->getBottomLayerNum();
+  auto topLayerNum = getTech()->getTopLayerNum();
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    frLayer* layer = tech_->getLayer(lNum);
+    frLayer* layer = getTech()->getLayer(lNum);
     if (layer->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
@@ -662,11 +671,11 @@ void io::Parser::convertLef58MinCutConstraints()
       if (dbRule->isPerCutClass()) {
         frViaDef* viaDefBelow = nullptr;
         if (lNum > bottomLayerNum) {
-          viaDefBelow = tech_->getLayer(lNum - 1)->getDefaultViaDef();
+          viaDefBelow = getTech()->getLayer(lNum - 1)->getDefaultViaDef();
         }
         frViaDef* viaDefAbove = nullptr;
         if (lNum < topLayerNum) {
-          viaDefAbove = tech_->getLayer(lNum + 1)->getDefaultViaDef();
+          viaDefAbove = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
         }
         bool found = false;
         rptr->setNumCuts(dbRule->getNumCuts());
@@ -691,7 +700,8 @@ void io::Parser::convertLef58MinCutConstraints()
       }
 
       if (dbRule->isLengthValid()) {
-        MTSAFEDIST = std::max(MTSAFEDIST, dbRule->getLengthWithinDist());
+        router_cfg_->MTSAFEDIST
+            = std::max(router_cfg_->MTSAFEDIST, dbRule->getLengthWithinDist());
         rptr->setLength(dbRule->getLength(), dbRule->getLengthWithinDist());
       }
       rptr->setWidth(dbRule->getWidth());
@@ -704,7 +714,7 @@ void io::Parser::convertLef58MinCutConstraints()
       if (dbRule->isFromBelow()) {
         rptr->setConnection(frMinimumcutConnectionEnum::FROMBELOW);
       }
-      tech_->addUConstraint(std::move(uCon));
+      getTech()->addUConstraint(std::move(uCon));
       layer->addMinimumcutConstraint(rptr);
     }
   }
@@ -745,7 +755,7 @@ void io::Parser::checkFig(frPinFig* uFig,
                           bool& foundCenterTracks,
                           bool& hasPolys)
 {
-  int grid = tech_->getManufacturingGrid();
+  int grid = getTech()->getManufacturingGrid();
   if (uFig->typeId() == frcRect) {
     frRect* shape = static_cast<frRect*>(uFig);
     Rect box = shape->getBBox();
@@ -763,22 +773,12 @@ void io::Parser::checkFig(frPinFig* uFig,
     if (foundTracks && foundCenterTracks) {
       return;
     }
-    auto layer = tech_->getLayer(shape->getLayerNum());
+    auto layer = getTech()->getLayer(shape->getLayerNum());
     std::set<int> horzTracks, vertTracks;
-    getTrackLocs(true,
-                 layer,
-                 design_->getTopBlock(),
-                 box.yMin(),
-                 box.yMax(),
-                 horzTracks);
-    getTrackLocs(false,
-                 layer,
-                 design_->getTopBlock(),
-                 box.xMin(),
-                 box.xMax(),
-                 vertTracks);
+    getTrackLocs(true, layer, getBlock(), box.yMin(), box.yMax(), horzTracks);
+    getTrackLocs(false, layer, getBlock(), box.xMin(), box.xMax(), vertTracks);
     bool allowWrongWayRouting
-        = (USENONPREFTRACKS && !layer->isUnidirectional());
+        = (router_cfg_->USENONPREFTRACKS && !layer->isUnidirectional());
     if (allowWrongWayRouting) {
       foundTracks |= (!horzTracks.empty() || !vertTracks.empty());
       foundCenterTracks
@@ -816,27 +816,19 @@ void io::Parser::checkFig(frPinFig* uFig,
     if (foundTracks) {
       return;
     }
-    auto layer = tech_->getLayer(polygon->getLayerNum());
+    auto layer = getTech()->getLayer(polygon->getLayerNum());
     std::vector<gtl::rectangle_data<frCoord>> rects;
     gtl::polygon_90_data<frCoord> poly;
     poly.set(points.begin(), points.end());
     gtl::get_max_rectangles(rects, poly);
     for (const auto& rect : rects) {
       std::set<int> horzTracks, vertTracks;
-      getTrackLocs(true,
-                   layer,
-                   design_->getTopBlock(),
-                   gtl::yl(rect),
-                   gtl::yh(rect),
-                   horzTracks);
-      getTrackLocs(false,
-                   layer,
-                   design_->getTopBlock(),
-                   gtl::xl(rect),
-                   gtl::xh(rect),
-                   vertTracks);
+      getTrackLocs(
+          true, layer, getBlock(), gtl::yl(rect), gtl::yh(rect), horzTracks);
+      getTrackLocs(
+          false, layer, getBlock(), gtl::xl(rect), gtl::xh(rect), vertTracks);
       bool allowWrongWayRouting
-          = (USENONPREFTRACKS && !layer->isUnidirectional());
+          = (router_cfg_->USENONPREFTRACKS && !layer->isUnidirectional());
       if (allowWrongWayRouting) {
         foundTracks |= (!horzTracks.empty() || !vertTracks.empty());
       } else {
@@ -856,7 +848,7 @@ void io::Parser::checkPins()
   bool foundCenterTracks = false;
   bool hasPolys = false;
   // Check BTerms on grid
-  for (const auto& bTerm : design_->getTopBlock()->getTerms()) {
+  for (const auto& bTerm : getBlock()->getTerms()) {
     foundTracks = false;
     foundCenterTracks = false;
     hasPolys = false;
@@ -882,11 +874,11 @@ void io::Parser::checkPins()
     }
   }
 
-  for (const auto& inst : design_->getTopBlock()->getInsts()) {
+  for (const auto& inst : getBlock()->getInsts()) {
     if (!inst->getMaster()->getMasterType().isBlock()) {
       continue;
     }
-    dbTransform xform = inst->getUpdatedXform();
+    dbTransform xform = inst->getDBTransform();
     for (auto& iTerm : inst->getInstTerms()) {
       if (!iTerm->hasNet() || iTerm->getNet()->isSpecial()) {
         continue;
@@ -926,25 +918,25 @@ void io::Parser::postProcess()
 {
   checkPins();
   initDefaultVias();
-  if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
-    initDefaultVias_GF14(DBPROCESSNODE);
+  if (router_cfg_->DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
+    initDefaultVias_GF14(router_cfg_->DBPROCESSNODE);
   }
   initCutLayerWidth();
   initConstraintLayerIdx();
-  tech_->printDefaultVias(logger_);
+  getTech()->printDefaultVias(logger_, router_cfg_);
   instAnalysis();
   convertLef58MinCutConstraints();
   // init region query
   logger_->info(DRT, 168, "Init region query.");
-  design_->getRegionQuery()->init();
-  design_->getRegionQuery()->print();
-  design_->getRegionQuery()->initDRObj();  // second init from FlexDR.cpp
+  getDesign()->getRegionQuery()->init();
+  getDesign()->getRegionQuery()->print();
+  getDesign()->getRegionQuery()->initDRObj();  // second init from FlexDR.cpp
 }
 
 // instantiate RPin and region query for RPin
 void io::Parser::initRPin()
 {
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 185, "Post process initialize RPin region query.");
   }
   initRPin_rpin();
@@ -953,7 +945,7 @@ void io::Parser::initRPin()
 
 void io::Parser::initRPin_rpin()
 {
-  for (auto& net : design_->getTopBlock()->getNets()) {
+  for (auto& net : getBlock()->getNets()) {
     // instTerm
     for (auto& instTerm : net->getInstTerms()) {
       auto inst = instTerm->getInst();
@@ -1013,6 +1005,6 @@ void io::Parser::initRPin_rpin()
 
 void io::Parser::initRPin_rq()
 {
-  design_->getRegionQuery()->initRPin();
+  getDesign()->getRegionQuery()->initRPin();
 }
 }  // namespace drt
