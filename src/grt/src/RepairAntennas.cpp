@@ -83,6 +83,12 @@ bool RepairAntennas::checkAntennaViolations(
     float ratio_margin,
     const int num_threads)
 {
+  // Save nets repaired in last iteration
+  std::unordered_set<std::string> last_nets;
+  for (const auto& violation : antenna_violations_) {
+    last_nets.insert(violation.first->getConstName());
+  }
+
   antenna_violations_.clear();
   for (odb::dbNet* db_net : nets_to_repair) {
     antenna_violations_[db_net];
@@ -106,12 +112,17 @@ bool RepairAntennas::checkAntennaViolations(
     destroyNetWires(nets_to_repair);
   }
 
+  has_new_violations_ = false;
   // remove nets with zero violations
   for (auto it = antenna_violations_.begin();
        it != antenna_violations_.end();) {
     if (it->second.empty()) {
       it = antenna_violations_.erase(it);
     } else {
+      // check if the net is new to repair
+      if (last_nets.find(it->first->getConstName()) == last_nets.end()) {
+        has_new_violations_ = true;
+      }
       ++it;
     }
   }
@@ -511,6 +522,8 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
         repair_failures = true;
     }
     if (inserted_diodes) {
+      // Diode insertion deletes the jumpers in guides
+      db_net->setJumpers(false);
       grouter_->addDirtyNet(db_net);
     }
   }
@@ -873,8 +886,13 @@ void RepairAntennas::addJumperAndVias(GRoute& route,
         GSegment(final_x, final_y, layer, final_x, final_y, layer + 1));
   }
   // Create segment in upper layer (jumper)
-  route.push_back(GSegment(
-      init_x, init_y, layer_level + 2, final_x, final_y, layer_level + 2));
+  route.push_back(GSegment(init_x,
+                           init_y,
+                           layer_level + 2,
+                           final_x,
+                           final_y,
+                           layer_level + 2,
+                           true));
   // Reducing usage in the layer level
   grouter_->updateResources(init_x, init_y, final_x, final_y, layer_level, -1);
   // Increasing usage in the layer level + 2
@@ -1353,11 +1371,12 @@ void RepairAntennas::getSegmentsConnectedToPins(
 ViolationIdToSegmentIds RepairAntennas::getSegmentsWithViolation(
     odb::dbNet* db_net,
     const GRoute& route,
-    const int& max_layer,
-    std::map<int, int>& layer_with_violation)
+    const int& violation_id)
 {
-  // Get segment data by layer below max layer
   LayerToSegmentDataVector segment_by_layer;
+  const auto& violation = antenna_violations_[db_net][violation_id];
+  const int max_layer = violation.routing_level;
+  // Get segment data by layer below max layer
   int added_seg_count = getSegmentByLayer(route, max_layer, segment_by_layer);
 
   // Set connection to adjacent segments (colliding segments)
@@ -1368,7 +1387,6 @@ ViolationIdToSegmentIds RepairAntennas::getSegmentsWithViolation(
   getSegmentsConnectedToPins(db_net, segment_by_layer, seg_connected_to_pin);
 
   // Get violation info
-  const auto& violations = antenna_violations_[db_net];
   ViolationIdToSegmentIds segment_with_violations;
   odb::dbTech* tech = db_->getTech();
 
@@ -1399,12 +1417,10 @@ ViolationIdToSegmentIds RepairAntennas::getSegmentsWithViolation(
     }
     int iter_layer_level = layer_iter->getRoutingLevel();
     // verify if layer has violation
-    if (layer_with_violation.find(iter_layer_level)
-        != layer_with_violation.end()) {
+    if (iter_layer_level == violation.routing_level) {
       for (auto& seg_it : segment_by_layer[layer_iter]) {
         const int& id_u = seg_it.id;
-        const int& violation_id = layer_with_violation[iter_layer_level];
-        for (const auto& iterm : violations[violation_id].gates) {
+        for (const auto& iterm : violation.gates) {
           odb::dbMTerm* mterm = iterm->getMTerm();
           std::string pin_name = getPinName(iterm, mterm);
           bool is_conected = false;
@@ -1431,6 +1447,40 @@ ViolationIdToSegmentIds RepairAntennas::getSegmentsWithViolation(
   return segment_with_violations;
 }
 
+int RepairAntennas::addJumperToViolation(GRoute& route,
+                                         odb::dbNet* db_net,
+                                         const int& violation_id,
+                                         const int& tile_size)
+{
+  odb::dbTech* tech = db_->getTech();
+  const auto& violation = antenna_violations_[db_net][violation_id];
+  const int& violation_layer_level = violation.routing_level;
+  ViolationIdToSegmentIds segment_with_violations_id;
+  // Get segments with violation in each layer
+  segment_with_violations_id
+      = getSegmentsWithViolation(db_net, route, violation_id);
+  // Add jumpers in segments for each layer
+  PinsCountNearSegments pins_count;
+  int jumpers_by_violation = 0;
+  // if the layer has no segments
+  if (segment_with_violations_id[violation_id].size() != 0) {
+    // get info, number of pins near the ends of the segments
+    getPinCountNearEndPoints(segment_with_violations_id[violation_id],
+                             violation.gates,
+                             route,
+                             pins_count);
+    // Add the jumpers in the segments
+    jumpers_by_violation
+        = addJumpers(segment_with_violations_id[violation_id],
+                     route,
+                     tech->findRoutingLayer(violation_layer_level),
+                     tile_size,
+                     violation.excess_ratio,
+                     pins_count);
+  }
+  return jumpers_by_violation;
+}
+
 void RepairAntennas::jumperInsertion(NetRouteMap& routing,
                                      const int& tile_size,
                                      const int& max_routing_layer)
@@ -1438,16 +1488,13 @@ void RepairAntennas::jumperInsertion(NetRouteMap& routing,
   odb::dbTech* tech = db_->getTech();
   int total_jumpers = 0;
   int jumpers_by_net;
-  int jumpers_by_layer;
   int net_with_jumpers = 0;
   // Iterate each violation found
   for (auto const& net_violations : antenna_violations_) {
     odb::dbNet* db_net = net_violations.first;
     const auto& violations = net_violations.second;
-    std::map<int, int> routing_layer_with_violations;
 
     jumpers_by_net = 0;
-    int max_layer_level = 1;
     // Iterate all layers with violations to check if jumper can be added
     int violation_id = 0;
     for (const ant::Violation& violation : violations) {
@@ -1459,45 +1506,17 @@ void RepairAntennas::jumperInsertion(NetRouteMap& routing,
       // type layers
       if (upper_layer && upper_layer->getRoutingLevel() <= max_routing_layer
           && violation_layer->getType() == odb::dbTechLayerType::ROUTING) {
-        routing_layer_with_violations[violation.routing_level] = violation_id;
-        max_layer_level = std::max(max_layer_level, violation.routing_level);
+        jumpers_by_net += addJumperToViolation(
+            routing[db_net], db_net, violation_id, tile_size);
       }
       violation_id++;
     }
 
-    // if there are layers available to add jumper
-    if (routing_layer_with_violations.size()) {
-      ViolationIdToSegmentIds segment_with_violations_id;
-      GRoute& route = routing[db_net];
-      // Get segments with violation in each layer
-      segment_with_violations_id = getSegmentsWithViolation(
-          db_net, route, max_layer_level, routing_layer_with_violations);
-      // Add jumpers in segments for each layer
-      for (auto it : routing_layer_with_violations) {
-        PinsCountNearSegments pins_count;
-        // if the layer has no segments
-        if (segment_with_violations_id[it.second].size() == 0) {
-          continue;
-        }
-        // get info, number of pins near the ends of the segments
-        getPinCountNearEndPoints(segment_with_violations_id[it.second],
-                                 violations[it.second].gates,
-                                 route,
-                                 pins_count);
-        // Add the jumpers in the segments
-        jumpers_by_layer = addJumpers(segment_with_violations_id[it.second],
-                                      route,
-                                      tech->findRoutingLayer(it.first),
-                                      tile_size,
-                                      violations[it.second].excess_ratio,
-                                      pins_count);
-        jumpers_by_net += jumpers_by_layer;
-      }
-      // if jumper was added in net
-      if (jumpers_by_net) {
-        net_with_jumpers++;
-        total_jumpers += jumpers_by_net;
-      }
+    // if jumper was added in net
+    if (jumpers_by_net) {
+      net_with_jumpers++;
+      total_jumpers += jumpers_by_net;
+      db_net->setJumpers(true);
     }
   }
   logger_->info(GRT,

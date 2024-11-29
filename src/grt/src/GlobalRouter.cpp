@@ -400,6 +400,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                   "repair_antennas should perform only one iteration when the "
                   "routing source is detailed routing.");
   }
+
   while (violations && itr < iterations) {
     if (verbose_) {
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
@@ -410,6 +411,23 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                                           diode_mterm,
                                                           ratio_margin,
                                                           num_threads);
+    // if run in GRT and it need run jumper insertion
+    if (!haveDetailedRoutes(nets_to_repair)
+        && repair_antennas_->hasNewViolations()) {
+      // Run jumper insertion and clean
+      repair_antennas_->jumperInsertion(
+          routes_, grid_->getTileSize(), getMaxRoutingLayer());
+      repair_antennas_->clearViolations();
+
+      // run again antenna checker
+      violations
+          = repair_antennas_->checkAntennaViolations(routes_,
+                                                     nets_to_repair,
+                                                     getMaxRoutingLayer(),
+                                                     diode_mterm,
+                                                     ratio_margin,
+                                                     num_threads);
+    }
     if (violations) {
       IncrementalGRoute incr_groute(this, block_);
       repair_antennas_->repairAntennas(diode_mterm);
@@ -2367,7 +2385,13 @@ void GlobalRouter::saveGuides()
           }
 
           odb::dbTechLayer* layer = routing_layers_[segment.init_layer];
-          odb::dbGuide::create(db_net, layer, layer, box, guide_is_congested);
+          // Set guide flag when it is jumper
+          bool is_jumper = segment.isJumper();
+          auto guide = odb::dbGuide::create(
+              db_net, layer, layer, box, guide_is_congested);
+          if (is_jumper) {
+            guide->setIsJumper(true);
+          }
         }
       }
     }
@@ -4875,7 +4899,7 @@ void GRouteDbCbk::inDbBTermPreDisconnect(odb::dbBTerm* bterm)
 
 ////////////////////////////////////////////////////////////////
 
-GSegment::GSegment(int x0, int y0, int l0, int x1, int y1, int l1)
+GSegment::GSegment(int x0, int y0, int l0, int x1, int y1, int l1, bool jumper)
 {
   init_x = std::min(x0, x1);
   init_y = std::min(y0, y1);
@@ -4883,6 +4907,7 @@ GSegment::GSegment(int x0, int y0, int l0, int x1, int y1, int l1)
   final_x = std::max(x0, x1);
   final_y = std::max(y0, y1);
   final_layer = l1;
+  is_jumper = jumper;
 }
 
 bool GSegment::operator==(const GSegment& segment) const

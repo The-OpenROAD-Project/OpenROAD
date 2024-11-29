@@ -67,6 +67,9 @@ bool _dbGuide::operator==(const _dbGuide& rhs) const
   if (is_congested_ != rhs.is_congested_) {
     return false;
   }
+  if (is_jumper_ != rhs.is_jumper_) {
+    return false;
+  }
 
   return true;
 }
@@ -87,6 +90,7 @@ void _dbGuide::differences(dbDiff& diff,
   DIFF_FIELD(via_layer_);
   DIFF_FIELD(guide_next_);
   DIFF_FIELD(is_congested_);
+  DIFF_FIELD(is_jumper_);
   DIFF_END
 }
 
@@ -99,6 +103,7 @@ void _dbGuide::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(via_layer_);
   DIFF_OUT_FIELD(guide_next_);
   DIFF_OUT_FIELD(is_congested_);
+  DIFF_OUT_FIELD(is_jumper_);
 
   DIFF_END
 }
@@ -106,6 +111,7 @@ void _dbGuide::out(dbDiff& diff, char side, const char* field) const
 _dbGuide::_dbGuide(_dbDatabase* db)
 {
   is_congested_ = false;
+  is_jumper_ = false;
 }
 
 _dbGuide::_dbGuide(_dbDatabase* db, const _dbGuide& r)
@@ -116,6 +122,7 @@ _dbGuide::_dbGuide(_dbDatabase* db, const _dbGuide& r)
   via_layer_ = r.via_layer_;
   guide_next_ = r.guide_next_;
   is_congested_ = r.is_congested_;
+  is_jumper_ = r.is_jumper_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
@@ -129,6 +136,9 @@ dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
   stream >> obj.guide_next_;
   if (obj.getDatabase()->isSchema(db_schema_db_guide_congested)) {
     stream >> obj.is_congested_;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_has_jumpers)) {
+    stream >> obj.is_jumper_;
   }
   return stream;
 }
@@ -144,6 +154,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj)
   stream << obj.guide_next_;
   if (obj.getDatabase()->isSchema(db_schema_db_guide_congested)) {
     stream << obj.is_congested_;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_has_jumpers)) {
+    stream << obj.is_jumper_;
   }
   return stream;
 }
@@ -219,6 +232,7 @@ dbGuide* dbGuide::create(dbNet* net,
   guide->net_ = owner->getId();
   guide->is_congested_ = is_congested;
   guide->guide_next_ = owner->guides_;
+  guide->is_jumper_ = false;
   owner->guides_ = guide->getOID();
   return (dbGuide*) guide;
 }
@@ -282,6 +296,26 @@ dbSet<dbGuide>::iterator dbGuide::destroy(dbSet<dbGuide>::iterator& itr)
   dbSet<dbGuide>::iterator next = ++itr;
   destroy(g);
   return next;
+}
+
+bool dbGuide::isJumper()
+{
+  bool is_jumper = false;
+  _dbGuide* guide = (_dbGuide*) this;
+  _dbDatabase* db = guide->getDatabase();
+  if (db->isSchema(db_schema_has_jumpers)) {
+    is_jumper = guide->is_jumper_;
+  }
+  return is_jumper;
+}
+
+void dbGuide::setIsJumper(bool jumper)
+{
+  _dbGuide* guide = (_dbGuide*) this;
+  _dbDatabase* db = guide->getDatabase();
+  if (db->isSchema(db_schema_has_jumpers)) {
+    guide->is_jumper_ = jumper;
+  }
 }
 
 // User Code End dbGuidePublicMethods
