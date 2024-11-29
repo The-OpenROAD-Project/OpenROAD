@@ -585,8 +585,19 @@ void ICeWall::placePad(odb::dbMaster* master,
 
   odb::dbTransform orient(odb::dbOrientType::R0);
   if (mirror) {
-    const odb::dbTransform mirror_transform(odb::dbOrientType::MY);
-    orient.concat(mirror_transform);
+    const auto row_edge = getRowEdge(row);
+    switch (row_edge) {
+      case odb::Direction2D::North:
+      case odb::Direction2D::South: {
+        orient.concat({odb::dbOrientType::MY});
+        break;
+      }
+      case odb::Direction2D::West:
+      case odb::Direction2D::East: {
+        orient.concat({odb::dbOrientType::MX});
+        break;
+      }
+    }
   }
 
   placeInstance(row, snapToRowSite(row, location), inst, orient.getOrient());
