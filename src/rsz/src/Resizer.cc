@@ -630,20 +630,10 @@ void Resizer::getPins(Instance* inst, PinVector& pins) const
 void Resizer::SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from)
 {
   //
-  // Axioms:
-  // iterm_to refers to a single top level Port-> buffer
-  // connection using a dbNet.
+  // The concept of this function is we are moving the name of the net
+  // in the iterm_from to the iterm_to.  We preferentially use
+  // the modnet name, if present.
   //
-  // iterm_from refers to the top level buffer -> core connection
-  // This can include modnets/dbNets. Preferentially take
-  // name of the modnet. (but if not present use the dbnet).
-  //
-  // The concept of this function is we are moving the name in the iterm_from
-  // to the iterm_to. We allow the iterm_from name to be replaced with a unique
-  // random name.
-  //
-
-  // we only move name to input dbNet
   dbNet* to_db_net = iterm_to->getNet();
   odb::dbModNet* to_mod_net = iterm_to->getModNet();
 
@@ -655,20 +645,17 @@ void Resizer::SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from)
   std::string to_name
       = to_mod_net ? to_mod_net->getName() : to_db_net->getName();
 
-  if (from_mod_net) {
-    std::string next_random_name_1 = makeUniqueNetName();
-    from_mod_net->rename(next_random_name_1.c_str());
-  }
-  if (from_db_net) {
-    std::string next_random_name_2 = makeUniqueNetName();
-    from_db_net->rename(next_random_name_2.c_str());
-  }
-
-  if (to_db_net) {
-    to_db_net->rename(required_name.c_str());
-  }
-  if (to_mod_net) {
+  if (from_mod_net && to_mod_net) {
+    from_mod_net->rename(to_name.c_str());
     to_mod_net->rename(required_name.c_str());
+  } else if (from_db_net && to_db_net) {
+    to_db_net->swapNetNames(from_db_net);
+  } else if (from_mod_net && to_db_net) {
+    to_db_net->rename(required_name.c_str());
+    from_mod_net->rename(to_name.c_str());
+  } else if (to_mod_net && from_db_net) {
+    to_mod_net->rename(required_name.c_str());
+    from_db_net->rename(to_name.c_str());
   }
 }
 
@@ -684,9 +671,6 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
                        top_pin_ip_bterm,
                        top_pin_ip_moditerm,
                        top_pin_ip_modbterm);
-
-  //  Term* term = db_network_->term(top_pin);
-  //  odb::dbBTerm* top_ip_bterm = db_network_ -> staToDb(term);
 
   Net* input_net = nullptr;
   dbNet* top_pin_flat_net = top_pin_ip_bterm->getNet();
@@ -741,53 +725,92 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
 
   string buffer_name = makeUniqueInstName("input");
   Instance* parent = db_network_->topInstance();
+  Net* buffer_out = makeUniqueNet();
   Point pin_loc = db_network_->location(top_pin);
   Instance* buffer
       = makeBuffer(buffer_cell, buffer_name.c_str(), parent, pin_loc);
   inserted_buffer_count_++;
 
-  // get the input and outputs
-  Pin* ip_pin;
+  /*
+    Get buffer output iterm
+   */
+  Pin* buffer_ip_pin = nullptr;
+  Pin* buffer_op_pin = nullptr;
   odb::dbITerm* buffer_ip_iterm;
-  odb::dbBTerm* buffer_ip_bterm;
-  odb::dbModITerm* buffer_ip_moditerm;
-  odb::dbModBTerm* buffer_ip_modbterm;
-  Pin* op_pin;
   odb::dbITerm* buffer_op_iterm;
-  odb::dbBTerm* buffer_op_bterm;
-  odb::dbModITerm* buffer_op_moditerm;
-  odb::dbModBTerm* buffer_op_modbterm;
-  getBufferPins(buffer, ip_pin, op_pin);
-  db_network_->staToDb(op_pin,
-                       buffer_op_iterm,
-                       buffer_op_bterm,
-                       buffer_op_moditerm,
-                       buffer_op_modbterm);
-  db_network_->staToDb(ip_pin,
+  odb::dbBTerm* buffer_bterm_ignore;
+  odb::dbModITerm* buffer_moditerm_ignore;
+  odb::dbModBTerm* buffer_modbterm_ignore;
+
+  getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
+  db_network_->staToDb(buffer_ip_pin,
                        buffer_ip_iterm,
-                       buffer_ip_bterm,
-                       buffer_ip_moditerm,
-                       buffer_ip_modbterm);
+                       buffer_bterm_ignore,
+                       buffer_moditerm_ignore,
+                       buffer_modbterm_ignore);
+  db_network_->staToDb(buffer_op_pin,
+                       buffer_op_iterm,
+                       buffer_bterm_ignore,
+                       buffer_moditerm_ignore,
+                       buffer_modbterm_ignore);
+  pin_iter = network_->connectedPinIterator(input_net);
+  while (pin_iter->hasNext()) {
+    const Pin* pin = pin_iter->next();
+    //
+    // Get destination type.
+    // could be moditerm
+    // could be modbterm
+    // could be iterm
+    // could be bterm
+    //
 
-  // disconnect the top level and hook to the buffer
-  db_network_->disconnectPin(const_cast<Pin*>(top_pin));
+    odb::dbITerm* dest_iterm;
+    odb::dbBTerm* dest_bterm;
+    odb::dbModITerm* dest_moditerm;
+    odb::dbModBTerm* dest_modbterm;
+    db_network_->staToDb(
+        pin, dest_iterm, dest_bterm, dest_moditerm, dest_modbterm);
+    odb::dbModNet* dest_modnet = db_network_->hierNet(pin);
+    odb::dbNet* dest_dbnet = db_network_->flatNet(pin);
 
-  if (top_pin_flat_net) {
-    buffer_op_iterm->connect(top_pin_flat_net);
+    // Leave input port pin connected to input_net.
+    // but move any hierarchical nets to output of buffer
+    if (pin == top_pin) {
+      // disconnect any hierarchical net from top pin
+      // and then we later reconnect to the buffer output.
+      // we make sure that the top pin to buffer is a dbnet.
+      if (dest_modnet) {
+        if (dest_iterm) {
+          // disconnect all
+          dest_iterm->disconnect();
+          // re-establish connection to dbnet
+          dest_iterm->connect(dest_dbnet);
+        }
+        if (dest_moditerm) {
+          dest_moditerm->disconnect();
+        }
+      }
+    } else {
+      // disconnect the destination pin from everything
+      sta_->disconnectPin(const_cast<Pin*>(pin));
+
+      // connect the buffer_out_net to the flat pin
+      Port* pin_port = db_network_->port(pin);
+      sta_->connectPin(db_network_->instance(pin), pin_port, buffer_out);
+
+      if (dest_modnet) {
+        buffer_op_iterm->connect(dest_modnet);
+        dest_iterm->connect(dest_modnet);
+      }
+    }
   }
-  if (top_pin_hier_net) {
-    buffer_op_iterm->connect(top_pin_hier_net);
-  }
+  delete pin_iter;
 
-  Net* buffer_in = makeUniqueNet();
-  dbNet* buffer_ip_dbnet = db_network_->flatNet(buffer_in);
-  top_pin_ip_bterm->connect(buffer_ip_dbnet);
-  buffer_ip_iterm->connect(buffer_ip_dbnet);
+  sta_->connectPin(buffer, input, input_net);
+  sta_->connectPin(buffer, output, buffer_out);
 
-  SwapNetNames(buffer_ip_iterm /*to*/,
-               buffer_op_iterm /*from*/ /* required name for ip */);
-  parasiticsInvalid(buffer_ip_dbnet);
-  parasiticsInvalid(top_pin_flat_net);
+  parasiticsInvalid(input_net);
+  parasiticsInvalid(buffer_out);
   return buffer;
 }
 
@@ -930,9 +953,7 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
   Net* buffer_out = makeUniqueNet();
   sta_->connectPin(buffer, output, buffer_out);
   buffer_op_pin_iterm->connect(db_network_->staToDb(buffer_out));
-
   top_pin_op_bterm->connect(db_network_->staToDb(buffer_out));
-
   SwapNetNames(buffer_op_pin_iterm, buffer_ip_pin_iterm);
   parasiticsInvalid(flat_op_net);
   parasiticsInvalid(buffer_out);

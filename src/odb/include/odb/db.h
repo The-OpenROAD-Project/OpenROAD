@@ -2115,6 +2115,10 @@ class dbNet : public dbObject
   bool rename(const char* name);
 
   ///
+  /// Swaps the current db net name with the source db net
+  void swapNetNames(dbNet* source);
+
+  ///
   /// RC netowork disconnect
   ///
   bool isRCDisconnected();

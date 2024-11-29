@@ -726,6 +726,30 @@ bool dbNet::rename(const char* name)
   return true;
 }
 
+void dbNet::swapNetNames(dbNet* source)
+{
+  _dbNet* dest_net = (_dbNet*) this;
+  _dbNet* source_net = (_dbNet*) source;
+  _dbBlock* block = (_dbBlock*) source_net->getOwner();
+
+  std::string source_name = source_net->_name;
+  std::string dest_name = dest_net->_name;
+
+  block->_net_hash.remove(dest_net);
+  free((void*) dest_net->_name);
+
+  block->_net_hash.remove(source_net);
+  free((void*) source_net->_name);
+
+  dest_net->_name = strdup(source_name.c_str());
+  ZALLOCATED(dest_net->_name);
+  block->_net_hash.insert(dest_net);
+
+  source_net->_name = strdup(dest_name.c_str());
+  ZALLOCATED(source_net->_name);
+  block->_net_hash.insert(source_net);
+}
+
 bool dbNet::isRCDisconnected()
 {
   _dbNet* net = (_dbNet*) this;
