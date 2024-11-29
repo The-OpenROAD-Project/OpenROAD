@@ -4120,6 +4120,11 @@ void HierRTLMP::setDebugShowBundledNets(bool show_bundled_nets)
   graphics_->setShowBundledNets(show_bundled_nets);
 }
 
+void HierRTLMP::setDebugShowClustersIds(bool show_clusters_ids)
+{
+  graphics_->setShowClustersIds(show_clusters_ids);
+}
+
 void HierRTLMP::setDebugSkipSteps(bool skip_steps)
 {
   graphics_->setSkipSteps(skip_steps);
