@@ -433,7 +433,7 @@ class GuidePathFinder
   RouterConfiguration* router_cfg_{nullptr};
   frNet* net_{nullptr};
   bool force_feed_through_{false};
-  boost::unordered_flat_map<Point3D, std::set<int>> node_map_;
+  std::map<Point3D, std::set<int>> node_map_;
   int guide_count_{0};
   int node_count_{0};
   bool allow_warnings_{false};
