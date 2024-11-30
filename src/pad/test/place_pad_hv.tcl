@@ -8,7 +8,7 @@ read_lef Nangate45_io/dummy_pads.lef
 read_def Nangate45_blackparrot/floorplan.def
 
 # Test place_pad
-make_io_sites -horizontal_site IOSITE_H -vertical_site IOSITE_V -corner_site IOSITE -offset 15
+make_io_sites -horizontal_site IOSITE_H -vertical_site IOSITE_V -corner_site IOSITE_C -offset 15
 
 place_pad -master PAD_H -row IO_EAST -location 500 "IO_EAST_SIDE"
 place_pad -master PAD_H -row IO_WEST -location 600 "IO_WEST_SIDE"
