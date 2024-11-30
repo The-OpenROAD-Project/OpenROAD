@@ -57,7 +57,7 @@ if the RC is not decreasing for three consecutive iterations.
 
 Routability-driven arguments
 - They begin with `-routability`.
-- `-routability_target_rc_metric`, `-routability_check_overflow`, `-routability_max_density`, `-routability_max_bloat_iter`, `-routability_max_inflation_iter`, `-routability_inflation_ratio_coef`, `-routability_max_inflation_ratio`, `-routability_rc_coefficients`
+- `-routability_target_rc_metric`, `-routability_check_overflow`, `-routability_max_density`, `-routability_max_inflation_iter`, `-routability_inflation_ratio_coef`, `-routability_max_inflation_ratio`, `-routability_rc_coefficients`
 
 Timing-driven arguments
 - They begin with `-timing_driven`.
@@ -89,7 +89,6 @@ global_placement
     [-routability_target_rc_metric routability_target_rc_metric]
     [-routability_check_overflow routability_check_overflow]
     [-routability_max_density routability_max_density]
-    [-routability_max_bloat_iter routability_max_bloat_iter]
     [-routability_max_inflation_iter routability_max_inflation_iter]    
     [-routability_inflation_ratio_coef routability_inflation_ratio_coef]
     [-routability_max_inflation_ratio routability_max_inflation_ratio]
@@ -129,7 +128,6 @@ global_placement
 | `-routability_target_rc_metric` | Set target RC metric for routability mode. The algorithm will try to reach this RC value. The default value is `1.01`, and the allowed values are floats. |
 | `-routability_check_overflow` | Set overflow threshold for routability mode. The default value is `0.3`, and the allowed values are floats `[0, 1]`. |
 | `-routability_max_density` | Set density threshold for routability mode. The default value is `0.99`, and the allowed values are floats `[0, 1]`. |
-| `-routability_max_bloat_iter` | Set bloat iteration threshold for routability mode. The default value is `1`, and the allowed values are integers `[1, MAX_INT]`.|
 | `-routability_max_inflation_iter` | Set inflation iteration threshold for routability mode. The default value is `4`, and the allowed values are integers `[1, MAX_INT]`. |
 | `-routability_inflation_ratio_coef` | Set inflation ratio coefficient for routability mode. The default value is `5`, and the allowed values are floats. |
 | `-routability_max_inflation_ratio` | Set inflation ratio threshold for routability mode to prevent overly aggressive adjustments. The default value is `8`, and the allowed values are floats. |

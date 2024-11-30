@@ -190,13 +190,6 @@ set_routability_max_density_cmd(float density)
 }
 
 void
-set_routability_max_bloat_iter_cmd(int iter)
-{
-  Replace* replace = getReplace();
-  replace->setRoutabilityMaxBloatIter(iter);
-}
-
-void
 set_routability_max_inflation_iter_cmd(int iter) 
 {
   Replace* replace = getReplace();

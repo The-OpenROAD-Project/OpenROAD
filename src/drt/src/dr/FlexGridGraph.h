@@ -925,7 +925,8 @@ class FlexGridGraph
                   frMIdx gridZ,
                   frDirEnum dir,
                   frLayer* layer,
-                  bool considerNDR) const;
+                  bool considerNDR,
+                  bool route_with_jumpers) const;
   bool useNDRCosts(const FlexWavefrontGrid& p) const;
 
   frNonDefaultRule* getNDR() const { return ndr_; }
@@ -949,7 +950,8 @@ class FlexGridGraph
               FlexMazeIdx& ccMazeIdx1,
               FlexMazeIdx& ccMazeIdx2,
               const Point& centerPt,
-              std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox);
+              std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox,
+              bool route_with_jumpers);
   void setCost(frUInt4 drcCostIn,
                frUInt4 markerCostIn,
                frUInt4 FixedShapeCostIn)
@@ -1296,7 +1298,8 @@ class FlexGridGraph
                     const FlexMazeIdx& dstMazeIdx2,
                     const frDirEnum& dir) const;
   frCost getNextPathCost(const FlexWavefrontGrid& currGrid,
-                         const frDirEnum& dir) const;
+                         const frDirEnum& dir,
+                         bool route_with_jumpers) const;
   frDirEnum getLastDir(const std::bitset<WAVEFRONTBITSIZE>& buffer) const;
   void traceBackPath(const FlexWavefrontGrid& currGrid,
                      std::vector<FlexMazeIdx>& path,
@@ -1306,7 +1309,8 @@ class FlexGridGraph
   void expandWavefront(FlexWavefrontGrid& currGrid,
                        const FlexMazeIdx& dstMazeIdx1,
                        const FlexMazeIdx& dstMazeIdx2,
-                       const Point& centerPt);
+                       const Point& centerPt,
+                       bool route_with_jumpers);
   bool isExpandable(const FlexWavefrontGrid& currGrid, frDirEnum dir) const;
   FlexMazeIdx getTailIdx(const FlexMazeIdx& currIdx,
                          const FlexWavefrontGrid& currGrid) const;
@@ -1314,7 +1318,8 @@ class FlexGridGraph
               const frDirEnum& dir,
               const FlexMazeIdx& dstMazeIdx1,
               const FlexMazeIdx& dstMazeIdx2,
-              const Point& centerPt);
+              const Point& centerPt,
+              bool route_with_jumpers);
   bool hasAlignedUpDefTrack(
       frLayerNum layerNum,
       const std::map<frLayerNum, frTrackPattern*>& xSubMap,
