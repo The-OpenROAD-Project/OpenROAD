@@ -36,9 +36,11 @@
 
 #include "FlexMazeTypes.h"
 #include "db/drObj/drPin.h"
+#include "db/infra/frBox.h"
 #include "dr/FlexWavefront.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
 
 namespace drt {
 
