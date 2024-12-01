@@ -73,7 +73,7 @@ def filler_placement(design, prefix=None, masters=None):
 
     filler_masters = get_masters(design, masters)
     if len(filler_masters) > 0:
-        dpl.fillerPlacement(filler_masters, prefix)
+        dpl.fillerPlacement(filler_masters, prefix, False)
 
 
 def get_masters(design, names):
