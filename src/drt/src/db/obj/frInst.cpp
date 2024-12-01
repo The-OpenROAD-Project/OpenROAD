@@ -35,9 +35,7 @@ namespace drt {
 Rect frInst::getBBox() const
 {
   Rect box = getMaster()->getBBox();
-  dbTransform xform = getTransform();
-  Point s(box.xMax(), box.yMax());
-  updateXform(xform, s);
+  dbTransform xform = getDBTransform();
   xform.apply(box);
   return box;
 }
@@ -45,65 +43,16 @@ Rect frInst::getBBox() const
 Rect frInst::getBoundaryBBox() const
 {
   Rect box = getMaster()->getDieBox();
-  dbTransform xform = getTransform();
-  Point s(box.xMax(), box.yMax());
-  updateXform(xform, s);
+  dbTransform xform = getDBTransform();
   xform.apply(box);
   return box;
 }
 
-dbTransform frInst::getUpdatedXform(bool noOrient) const
+dbTransform frInst::getNoRotationTransform() const
 {
   dbTransform xfm = getTransform();
-  Rect mbox = getMaster()->getDieBox();
-  Point origin(mbox.xMin(), mbox.yMin());
-  dbTransform(xfm.getOrient(), Point(0, 0)).apply(origin);
-  Point offset(xfm.getOffset());
-  offset.addX(origin.getX());
-  offset.addY(origin.getY());
-  xfm.setOffset(offset);
-  if (!noOrient) {
-    Point s(mbox.xMax(), mbox.yMax());
-    updateXform(xfm, s);
-  } else {
-    xfm.setOrient(dbOrientType(dbOrientType::R0));
-  }
+  xfm.setOrient(dbOrientType(dbOrientType::R0));
   return xfm;
-}
-
-// Adjust the transform so that when applied to an inst, the origin is in the
-// ll corner of the transformed inst
-void frInst::updateXform(dbTransform& xform, Point& size)
-{
-  Point p = xform.getOffset();
-  switch (xform.getOrient()) {
-    case dbOrientType::R90:
-      p.addX(size.getY());
-      break;
-    case dbOrientType::R180:
-      p.addX(size.getX());
-      p.addY(size.getY());
-      break;
-    case dbOrientType::R270:
-      p.addY(size.getX());
-      break;
-    case dbOrientType::MY:
-      p.addX(size.getX());
-      break;
-    case dbOrientType::MXR90:
-      break;
-    case dbOrientType::MX:
-      p.addY(size.getY());
-      break;
-    case dbOrientType::MYR90:
-      p.addX(size.getY());
-      p.addY(size.getX());
-      break;
-    // case R0: == default
-    default:
-      break;
-  }
-  xform.setOffset(p);
 }
 
 frInstTerm* frInst::getInstTerm(const int index)

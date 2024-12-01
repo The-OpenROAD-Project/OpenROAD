@@ -36,6 +36,7 @@
 #include "stt/SteinerTreeBuilder.h"
 
 #include <map>
+#include <utility>
 #include <vector>
 
 #include "odb/db.h"
@@ -51,9 +52,12 @@ SteinerTreeBuilder::SteinerTreeBuilder()
       min_fanout_alpha_({0, -1}),
       min_hpwl_alpha_({0, -1}),
       logger_(nullptr),
-      db_(nullptr)
+      db_(nullptr),
+      flute_(new flt::Flute())
 {
 }
+
+SteinerTreeBuilder::~SteinerTreeBuilder() = default;
 
 void SteinerTreeBuilder::init(odb::dbDatabase* db, Logger* logger)
 {
@@ -106,7 +110,7 @@ Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
     }
     // Fall back to flute if PD fails.
   }
-  return flt::flute(x, y, flute_accuracy);
+  return flute_->flute(x, y, flute_accuracy);
 }
 
 Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
@@ -114,7 +118,7 @@ Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
                                          const std::vector<int>& s,
                                          int accuracy)
 {
-  return flt::flutes(x, y, s, accuracy);
+  return flute_->flutes(x, y, s, accuracy);
 }
 
 static bool rectAreaZero(const odb::Rect& rect)
@@ -276,6 +280,36 @@ int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
 
   return hpwl;
 }
+
+Tree SteinerTreeBuilder::flute(const std::vector<int>& x,
+                               const std::vector<int>& y,
+                               int acc)
+{
+  return flute_->flute(x, y, acc);
+}
+
+int SteinerTreeBuilder::wirelength(Tree t)
+{
+  return flute_->wirelength(std::move(t));
+}
+
+void SteinerTreeBuilder::plottree(Tree t)
+{
+  flute_->plottree(std::move(t));
+}
+
+void SteinerTreeBuilder::write_svg(Tree t, const char* filename)
+{
+  flute_->write_svg(std::move(t), filename);
+}
+
+Tree SteinerTreeBuilder::flutes(const std::vector<int>& xs,
+                                const std::vector<int>& ys,
+                                const std::vector<int>& s,
+                                int acc)
+{
+  return flute_->flutes(xs, ys, s, acc);
+};
 
 ////////////////////////////////////////////////////////////////
 

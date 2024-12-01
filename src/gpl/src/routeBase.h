@@ -162,7 +162,6 @@ class RouteBaseVars
   // targetRC metric coefficients.
   float rcK1, rcK2, rcK3, rcK4;
 
-  int maxBloatIter;
   int maxInflationIter;
 
   RouteBaseVars();
@@ -197,10 +196,12 @@ class RouteBase
 
   int64_t inflatedAreaDelta() const;
   int numCall() const;
-  int bloatIterCnt() const;
-  int inflationIterCnt() const;
 
   void revertGCellSizeToMinRc();
+  void pushBackMinRcCellSize(int dx, int dy)
+  {
+    minRcCellSize_.emplace_back(dx, dy);
+  }
 
  private:
   RouteBaseVars rbVars_;
@@ -215,8 +216,6 @@ class RouteBase
 
   int64_t inflatedAreaDelta_ = 0;
 
-  int bloatIterCnt_ = 0;
-  int inflationIterCnt_ = 0;
   int numCall_ = 0;
 
   // if solutions are not improved at all,
@@ -232,7 +231,7 @@ class RouteBase
   void reset();
   void resetRoutabilityResources();
 
-  // update inflationIterCnt_, bloatIterCnt_ and numCall_
+  // update numCall_
   void increaseCounter();
 
   // routability funcs

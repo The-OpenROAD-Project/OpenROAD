@@ -37,6 +37,7 @@
 
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
+#include "db/infra/frTime.h"
 #include "dr/FlexDR_graphics.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
@@ -88,7 +89,21 @@ class FlexDR
     float workerMarkerDecay;
     RipUpMode ripupMode;
     bool followGuide;
+    bool isEqualIgnoringSizeAndOffset(const SearchRepairArgs& other) const;
   };
+  struct IterationProgress
+  {
+    int total_num_workers{0};
+    int cnt_done_workers{0};
+    int last_reported_perc{0};
+    frTime time;
+  };
+  struct IterationsControl
+  {
+    bool skip_till_changed{false};
+    SearchRepairArgs last_args;
+    bool fixing_max_spacing{false};
+  } control_;
 
   // constructors
   FlexDR(TritonRoute* router,
@@ -131,7 +146,7 @@ class FlexDR
       std::vector<std::unique_ptr<FlexDRWorker>>& batch);
 
   void reportGuideCoverage();
-  void setIter(int iterNum) { iter_ = iterNum; }
+  void incIter() { ++iter_; }
   // maxSpacing fix
   void fixMaxSpacing();
 
@@ -175,8 +190,28 @@ class FlexDR
   initDR_mergeBoundaryPin(int startX,
                           int startY,
                           int size,
-                          const Rect& routeBox);
+                          const Rect& routeBox) const;
   std::vector<frVia*> getLonelyVias(frLayer* layer, int max_spc, int cut_class);
+  std::unique_ptr<FlexDRWorker> createWorker(int x_offset,
+                                             int y_offset,
+                                             const SearchRepairArgs& args,
+                                             const Rect& routeBox = Rect());
+  void reportIterationViolations() const;
+  void endWorkersBatch(
+      std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch);
+  void processWorkersBatch(
+      std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch,
+      IterationProgress& iter_prog);
+
+  void processWorkersBatchDistributed(
+      std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch,
+      int& version,
+      IterationProgress& iter_prog);
+  Rect getDRVBBox(const Rect& drv_rect) const;
+  void stubbornTilesFlow(const SearchRepairArgs& args,
+                         IterationProgress& iter_prog);
+  void optimizationFlow(const SearchRepairArgs& args,
+                        IterationProgress& iter_prog);
 };
 
 class FlexDRWorker;
@@ -273,7 +308,6 @@ class FlexDRWorker
   void setRouteBox(const Rect& boxIn) { routeBox_ = boxIn; }
   void setExtBox(const Rect& boxIn) { extBox_ = boxIn; }
   void setDrcBox(const Rect& boxIn) { drcBox_ = boxIn; }
-  void setGCellBox(const Rect& boxIn) { gcellBox_ = boxIn; }
   void setDRIter(int in) { drIter_ = in; }
   void setDRIter(int in,
                  std::map<frNet*,
@@ -355,6 +389,7 @@ class FlexDRWorker
     gridGraph_.setGraphics(in);
   }
   void setViaData(FlexDRViaData* viaData) { via_data_ = viaData; }
+  void setWorkerId(const int id) { worker_id_ = id; }
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
   void getRouteBox(Rect& boxIn) const { boxIn = routeBox_; }
@@ -365,7 +400,6 @@ class FlexDRWorker
   Rect& getExtBox() { return extBox_; }
   const Rect& getDrcBox() const { return drcBox_; }
   Rect& getDrcBox() { return drcBox_; }
-  const Rect& getGCellBox() const { return gcellBox_; }
   bool isInitDR() const { return (drIter_ == 0); }
   int getDRIter() const { return drIter_; }
   int getMazeEndIter() const { return mazeEndIter_; }
@@ -395,6 +429,9 @@ class FlexDRWorker
   FlexGCWorker* getGCWorker() { return gcWorker_.get(); }
   const FlexDRViaData* getViaData() const { return via_data_; }
   const FlexGridGraph& getGridGraph() const { return gridGraph_; }
+  frUInt4 getWorkerMarkerCost() const { return workerMarkerCost_; }
+  frUInt4 getWorkerDRCCost() const { return workerDRCCost_; }
+  int getWorkerId() const { return worker_id_; }
   // others
   int main(frDesign* design);
   void distributedMain(frDesign* design);
@@ -467,32 +504,31 @@ class FlexDRWorker
     {
     }
   };
-  frDesign* design_ = nullptr;
-  Logger* logger_ = nullptr;
-  RouterConfiguration* router_cfg_;
-  FlexDRGraphics* graphics_ = nullptr;  // owned by FlexDR
-  frDebugSettings* debugSettings_ = nullptr;
-  FlexDRViaData* via_data_ = nullptr;
+  frDesign* design_{nullptr};
+  Logger* logger_{nullptr};
+  RouterConfiguration* router_cfg_{nullptr};
+  FlexDRGraphics* graphics_{nullptr};  // owned by FlexDR
+  frDebugSettings* debugSettings_{nullptr};
+  FlexDRViaData* via_data_{nullptr};
   Rect routeBox_;
   Rect extBox_;
   Rect drcBox_;
-  Rect gcellBox_;
-  int drIter_ = 0;
-  int mazeEndIter_ = 0;
-  bool followGuide_ = false;
-  bool needRecheck_ = false;
-  bool skipRouting_ = false;
-  RipUpMode ripupMode_ = RipUpMode::DRC;
+  int drIter_{0};
+  int mazeEndIter_{0};
+  bool followGuide_{false};
+  bool needRecheck_{false};
+  bool skipRouting_{false};
+  RipUpMode ripupMode_{RipUpMode::DRC};
   // drNetOrderingEnum netOrderingMode;
-  frUInt4 workerDRCCost_ = 0;
-  frUInt4 workerMarkerCost_ = 0;
-  frUInt4 workerFixedShapeCost_ = 0;
-  float workerMarkerDecay_ = 0;
+  frUInt4 workerDRCCost_{0};
+  frUInt4 workerMarkerCost_{0};
+  frUInt4 workerFixedShapeCost_{0};
+  float workerMarkerDecay_{0};
   // used in init route as gr boundary pin
   std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
       boundaryPin_;
-  int pinCnt_ = 0;
-  int initNumMarkers_ = 0;
+  int pinCnt_{0};
+  int initNumMarkers_{0};
   std::map<FlexMazeIdx, drAccessPattern*> apSVia_;
   std::set<FlexMazeIdx> planarHistoryMarkers_;
   std::set<FlexMazeIdx> viaHistoryMarkers_;
@@ -514,13 +550,14 @@ class FlexDRWorker
   std::vector<Point3D> specialAccessAPs;
 
   // distributed
-  dst::Distributed* dist_ = nullptr;
+  dst::Distributed* dist_{nullptr};
   std::string dist_ip_;
-  uint16_t dist_port_ = 0;
+  uint16_t dist_port_{0};
   std::string dist_dir_;
-  bool dist_on_ = false;
-  bool isCongested_ = false;
-  bool save_updates_ = false;
+  bool dist_on_{false};
+  bool isCongested_{false};
+  bool save_updates_{false};
+  int worker_id_{0};
 
   // hellpers
   bool isRoutePatchWire(const frPatchWire* pwire) const;

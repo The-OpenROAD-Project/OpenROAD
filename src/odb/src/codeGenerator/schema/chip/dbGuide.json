@@ -44,6 +44,15 @@
       "flags": [
         "private"
       ]
+      },
+      {
+      "name":"is_jumper_",
+      "type":"bool",
+      "schema":"db_schema_has_jumpers",
+      "default":"false",
+      "flags": [
+        "private"
+      ]
       }
     ],
     "cpp_includes": [

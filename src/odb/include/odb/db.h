@@ -2879,6 +2879,10 @@ class dbNet : public dbObject
   dbSet<dbNetTrack> getTracks() const;
 
   void clearTracks();
+
+  bool hasJumpers();
+
+  void setJumpers(bool has_jumpers);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3636,7 +3640,8 @@ class dbITerm : public dbObject
   ///
   /// Returns all geometries of all dbMPin associated with
   /// the dbMTerm.
-  std::vector<Rect> getGeometries() const;
+  ///
+  std::vector<std::pair<dbTechLayer*, Rect>> getGeometries() const;
 
   void setAccessPoint(dbMPin* pin, dbAccessPoint* ap);
 
@@ -3912,7 +3917,7 @@ class dbWire : public dbObject
   ///
   /// Get the total path length contained in this wire.
   ///
-  uint64 getLength();
+  uint64_t getLength();
 
   ///
   /// Get the number of entries contained in this wire.
@@ -7745,6 +7750,10 @@ class dbGuide : public dbObject
   static void destroy(dbGuide* guide);
 
   static dbSet<dbGuide>::iterator destroy(dbSet<dbGuide>::iterator& itr);
+
+  bool isJumper();
+
+  void setIsJumper(bool jumper);
 
   // User Code End dbGuide
 };

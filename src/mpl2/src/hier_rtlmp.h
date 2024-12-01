@@ -143,6 +143,7 @@ class HierRTLMP
   void setReportDirectory(const char* report_directory);
   void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
+  void setDebugShowClustersIds(bool show_clusters_ids);
   void setDebugSkipSteps(bool skip_steps);
   void setDebugOnlyFinalResult(bool only_final_result);
   void setDebugTargetClusterId(int target_cluster_id);

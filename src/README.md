@@ -241,6 +241,28 @@ ord::get_die_area
 ord::get_core_area
 ```
 
+The `place_inst` command is used to place an instance.  If -cell is
+given then a new instance may be created as well as placed.
+
+```
+sta::define_cmd_args "place_inst" {-name inst_name \
+                                   -orientation orientation
+                                   -origin xy_origin \
+                                   [-cell library_cell] \
+                                   [-status status]}
+```
+
+##### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-name` | The name of the instance |
+| `-orientaton` | The orientation of the instance. |
+| `-origin` | The x and y coordinates for where the instance is placed. |
+| `[-cell]` | Required if a new instance is to be created. |
+| `[-status]` | The placement status of the instance. Default PLACED |
+
+
 ## FAQs
 
 Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+openroad+in%3Atitle)

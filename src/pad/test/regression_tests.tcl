@@ -11,6 +11,7 @@ record_tests {
   make_io_sites_rotations
   non_top_layer
   place_pad
+  place_pad_hv
   place_pad_with_bumps
   place_pad_outsideofrow
   place_bondpad

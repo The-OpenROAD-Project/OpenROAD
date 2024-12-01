@@ -54,7 +54,6 @@ sta::define_cmd_args "global_placement" {\
     [-routability_target_rc_metric routability_target_rc_metric]\
     [-routability_check_overflow routability_check_overflow]\
     [-routability_max_density routability_max_density]\
-    [-routability_max_bloat_iter routability_max_bloat_iter]\
     [-routability_max_inflation_iter routability_max_inflation_iter]\
     [-routability_inflation_ratio_coef routability_inflation_ratio_coef]\
     [-routability_max_inflation_ratio routability_max_inflation_ratio]\
@@ -75,7 +74,7 @@ proc global_placement { args } {
       -reference_hpwl \
       -initial_place_max_iter -initial_place_max_fanout \
       -routability_check_overflow -routability_max_density \
-      -routability_max_bloat_iter -routability_max_inflation_iter \
+      -routability_max_inflation_iter \
       -routability_target_rc_metric \
       -routability_inflation_ratio_coef \
       -routability_max_inflation_ratio \
@@ -262,13 +261,6 @@ proc global_placement { args } {
     gpl::set_routability_check_overflow_cmd $routability_check_overflow
   }
 
-  # routability bloat iter
-  if { [info exists keys(-routability_max_bloat_iter)] } {
-    set routability_max_bloat_iter $keys(-routability_max_bloat_iter)
-    sta::check_positive_float "-routability_max_bloat_iter" $routability_max_bloat_iter
-    gpl::set_routability_max_bloat_iter_cmd $routability_max_bloat_iter
-  }
-
   # routability inflation iter
   if { [info exists keys(-routability_max_inflation_iter)] } {
     set routability_max_inflation_iter $keys(-routability_max_inflation_iter)
@@ -351,7 +343,7 @@ proc cluster_flops { args } {
     flags {}
 
   if { [ord::get_db_block] == "NULL" } {
-    utl::error GPL 104 "No design block found."
+    utl::error GPL 113 "No design block found."
   }
 
   set tray_weight 32.0
@@ -384,7 +376,7 @@ proc global_placement_debug { args } {
     flags {-draw_bins -initial} ;# checker off
 
   if { [ord::get_db_block] == "NULL" } {
-    utl::error GPL 105 "No design block found."
+    utl::error GPL 117 "No design block found."
   }
 
   set pause 10
@@ -413,7 +405,7 @@ proc global_placement_debug { args } {
 namespace eval gpl {
 proc get_global_placement_uniform_density { args } {
   if { [ord::get_db_block] == "NULL" } {
-    utl::error GPL 106 "No design block found."
+    utl::error GPL 114 "No design block found."
   }
 
   sta::parse_key_args "get_global_placement_uniform_density" args \

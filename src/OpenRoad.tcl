@@ -349,6 +349,88 @@ proc add_global_connection { args } {
     $keys(-pin_pattern) $net $do_connect
 }
 
+sta::define_cmd_args "place_inst" {-name inst_name \
+                                   -orientation orientation
+                                   -origin xy_origin \
+                                   [-cell library_cell] \
+                                   [-status status]}
+proc place_cell { args } {
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error ORD 55 "Design must be loaded before calling place_cell."
+  }
+
+  set db [ord::get_db]
+  set block [ord::get_db_block]
+
+  sta::parse_key_args "place_cell" args \
+    keys {-cell -origin -orientation -name -status}
+
+  set placement_status "PLACED"
+  if { [info exists keys(-status)] } {
+    set placement_status $keys(-status)
+  }
+
+  if { [info exists keys(-cell)] } {
+    set cell_name $keys(-cell)
+    if { [set cell_master [$db findMaster $cell_name]] == "NULL" } {
+      utl::error ORD 56 "Cell $cell_name not loaded into design."
+    }
+  }
+
+  if { [info exists keys(-name)] } {
+    set inst_name [lindex $keys(-name) 0]
+  } else {
+    utl::error ORD 57 "-name is a required argument to the place_cell command."
+  }
+
+  if { [info exists keys(-orientation)] } {
+    set orient $keys(-orientation)
+  } else {
+    utl::error ORD 58 "No orientation specified for $inst_name."
+  }
+
+  # Verify center/origin
+  if { [info exists keys(-origin)] } {
+    set origin $keys(-origin)
+    if { [llength $origin] != 2 } {
+      utl::error ORD 59 "Origin is $origin, but must be a list of 2 numbers."
+    }
+    if { [catch { set x [ord::microns_to_dbu [lindex $origin 0]] } msg] } {
+      utl::error ORD 60 "Invalid value specified for x value, [lindex $origin 0], $msg."
+    }
+    if { [catch { set y [ord::microns_to_dbu [lindex $origin 1]] } msg] } {
+      utl::error ORD 61 "Invalid value specified for y value, [lindex $origin 1], $msg."
+    }
+  } else {
+    utl::error ORD 62 "No origin specified for $inst_name."
+  }
+
+  if { [set inst [$block findInst $inst_name]] == "NULL" } {
+    if { [info exists keys(-cell)] } {
+      set inst [odb::dbInst_create $block $cell_master $inst_name]
+    } else {
+      utl::error ORD 63 \
+        "Instance $inst_name not in the design, -cell must be specified to create a new instance."
+    }
+  } else {
+    if { [info exists keys(-cell)] } {
+      set master_name [[$inst getMaster] getName]
+      if { $master_name != $cell_name } {
+        utl::error ORD 64 \
+          "Instance $inst_name expected to be $cell_name, but is actually $master_name."
+      }
+    }
+  }
+
+  if { $inst == "NULL" } {
+    utl::error ORD 65 "Cannot create instance $inst_name of $cell_name."
+  }
+
+  $inst setOrigin $x $y
+  $inst setOrient $orient
+  $inst setPlacementStatus $placement_status
+}
+
 ################################################################
 
 namespace eval ord {

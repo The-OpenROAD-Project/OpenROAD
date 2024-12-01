@@ -313,9 +313,7 @@
 }
 %typemap(out) odb::dbMasterType, dbMasterType {
 	PyObject *obj;
-	if ($1.getValue() == odb::dbMasterType::Value::NONE) {
-		obj = PyString_FromString("NONE");
-	} else if ($1.getValue() == odb::dbMasterType::Value::COVER) {
+	if ($1.getValue() == odb::dbMasterType::Value::COVER) {
 		obj = PyString_FromString("COVER");
 	} else if ($1.getValue() == odb::dbMasterType::Value::COVER_BUMP) {
 		obj = PyString_FromString("COVER_BUMP");
@@ -400,9 +398,7 @@
 }
 %typemap(in) odb::dbMasterType, dbMasterType {
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
-	if (strcasecmp(str, "NONE") == 0) {
-		$1 = odb::dbMasterType::Value::NONE;
-	} else if (strcasecmp(str, "COVER") == 0) {
+	if (strcasecmp(str, "COVER") == 0) {
 		$1 = odb::dbMasterType::Value::COVER;
 	} else if (strcasecmp(str, "COVER_BUMP") == 0) {
 		$1 = odb::dbMasterType::Value::COVER_BUMP;
@@ -488,9 +484,7 @@
 	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
 	bool found = false;
 	if (str) {
-		if (strcasecmp(str, "NONE") == 0) {
-			found = true;
-		} 	else if (strcasecmp(str, "COVER") == 0) {
+		if (strcasecmp(str, "COVER") == 0) {
 			found = true;
 		} 	else if (strcasecmp(str, "COVER_BUMP") == 0) {
 			found = true;
