@@ -30,6 +30,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <map>
 
@@ -1106,9 +1107,14 @@ class FlexGridGraph
 
   // locations of access points. The vector is indexed by layer number.
   frVector<std::set<Point>> ap_locs_;
+  std::ofstream dump_file_;
+  bool debug_{false};
+  frUInt4 curr_id_{1};
 
   FlexGridGraph() = default;
 
+  void printExpansion(const FlexWavefrontGrid& currGrid,
+                      const std::string& keyword);
   // unsafe access, no idx check
   void setPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
   {

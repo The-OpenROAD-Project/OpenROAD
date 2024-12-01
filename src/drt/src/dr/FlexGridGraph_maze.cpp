@@ -32,6 +32,50 @@
 
 namespace drt {
 
+void FlexGridGraph::printExpansion(const FlexWavefrontGrid& currGrid,
+                                   const std::string& keyword)
+{
+  auto dir = currGrid.getLastDir();
+  auto gridX = currGrid.x();
+  auto gridY = currGrid.y();
+  auto gridZ = currGrid.z();
+  dir = (frDirEnum) (OPPOSITEDIR - (int) dir);
+  bool gridCost = hasGridCost(gridX, gridY, gridZ, dir);
+  bool drcCost = hasRouteShapeCostAdj(gridX, gridY, gridZ, dir, false);
+  bool markerCost = hasMarkerCostAdj(gridX, gridY, gridZ, dir);
+  bool shapeCost = hasFixedShapeCostAdj(gridX, gridY, gridZ, dir, false);
+  bool blockCost = isBlocked(gridX, gridY, gridZ, dir);
+  bool guideCost = hasGuide(gridX, gridY, gridZ, dir);
+  frCoord edgeLength = getEdgeLength(gridX, gridY, gridZ, dir);
+  Point pt;
+  getPoint(pt, currGrid.x(), currGrid.y());
+  dump_file_ << fmt::format(
+      "{} {} pt {} cost {} pathCost {} lastDir {} estCost {} gridX {} gridY "
+      "{} ",
+      keyword,
+      currGrid.z(),
+      pt,
+      currGrid.getCost(),
+      currGrid.getPathCost(),
+      currGrid.getLastDir(),
+      currGrid.getCost() - currGrid.getPathCost(),
+      gridX,
+      gridY);
+  dump_file_ << fmt::format(
+      "gridCost {} drcCost {} markerCost {} shapeCost {} blockCost {} "
+      "guideCost {} edgeLength {} ",
+      gridCost,
+      drcCost,
+      markerCost,
+      shapeCost,
+      blockCost,
+      guideCost,
+      edgeLength);
+  dump_file_ << fmt::format(
+      "id {} parent_id {}\n", currGrid.getId(), currGrid.getParentId());
+  dump_file_.flush();
+}
+
 int debugMazeIter = std::numeric_limits<int>::max();
 void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
                            const frDirEnum& dir,
@@ -134,10 +178,20 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
     if (getPrevAstarNodeDir(tailIdx) == frDirEnum::UNKNOWN
         || getPrevAstarNodeDir(tailIdx) == tailDir) {
       setPrevAstarNodeDir(tailIdx.x(), tailIdx.y(), tailIdx.z(), tailDir);
+      if (debug_) {
+        nextWavefrontGrid.setId(curr_id_++);
+        nextWavefrontGrid.setParentId(currGrid.getId());
+        printExpansion(nextWavefrontGrid, "Pushing");
+      }
       wavefront_.push(nextWavefrontGrid);
     }
   } else {
     // add to wavefront
+    if (debug_) {
+      nextWavefrontGrid.setId(curr_id_++);
+      nextWavefrontGrid.setParentId(currGrid.getId());
+      printExpansion(nextWavefrontGrid, "Pushing");
+    }
     wavefront_.push(nextWavefrontGrid);
   }
   if (drWorker_->getDRIter() >= debugMazeIter) {
@@ -661,6 +715,10 @@ bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
                            const Point& centerPt,
                            std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox)
 {
+  if (debug_) {
+    dump_file_.open("expansions.dump");
+  }
+  curr_id_ = 1;
   if (drWorker_->getDRIter() >= debugMazeIter) {
     std::cout << "INIT search: target pin " << nextPin->getName()
               << "\nsource points:\n";
@@ -712,10 +770,17 @@ bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
         currGrid.setSrcTaperBox(it->second);
       }
     }
+    if (debug_) {
+      currGrid.setId(curr_id_++);
+      printExpansion(currGrid, "Pushing");
+    }
     wavefront_.push(currGrid);
   }
   while (!wavefront_.empty()) {
     auto currGrid = wavefront_.top();
+    if (debug_) {
+      printExpansion(currGrid, "Popping");
+    }
     wavefront_.pop();
     if (getPrevAstarNodeDir({currGrid.x(), currGrid.y(), currGrid.z()})
         != frDirEnum::UNKNOWN) {
