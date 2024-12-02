@@ -564,7 +564,7 @@ class FlexPA
       int curr_unique_inst_idx,
       int max_access_point_size);
 
-  void genPatternsInit(std::vector<FlexDPNode>& nodes,
+  void genPatternsInit(std::vector<std::unique_ptr<FlexDPNode>>& nodes,
                        const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                        std::set<std::vector<int>>& inst_access_patterns,
                        std::set<std::pair<int, int>>& used_access_points,
@@ -572,12 +572,12 @@ class FlexPA
                        int max_access_point_size);
 
   void genPatterns_reset(
-      std::vector<FlexDPNode>& nodes,
+      std::vector<std::unique_ptr<FlexDPNode>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       int max_access_point_size);
 
   void genPatterns_perform(
-      std::vector<FlexDPNode>& nodes,
+      std::vector<std::unique_ptr<FlexDPNode>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::vector<int>& vio_edges,
       const std::set<std::pair<int, int>>& used_access_points,
@@ -585,9 +585,9 @@ class FlexPA
       int curr_unique_inst_idx,
       int max_access_point_size);
 
-  int getEdgeCost(int prev_node_idx,
-                  int curr_node_idx,
-                  const std::vector<FlexDPNode>& nodes,
+  int getEdgeCost(FlexDPNode* prev_node,
+                  FlexDPNode* curr_node,
+                  const std::vector<std::unique_ptr<FlexDPNode>>& nodes,
                   const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                   std::vector<int>& vio_edges,
                   const std::set<std::pair<int, int>>& used_access_points,
@@ -609,13 +609,13 @@ class FlexPA
    * access_pattern[pin_idx] = access_point_idx of the pin
    */
   std::vector<int> extractAccessPatternFromNodes(
-      const std::vector<FlexDPNode>& nodes,
+      const std::vector<std::unique_ptr<FlexDPNode>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::set<std::pair<int, int>>& used_access_points,
       int max_access_point_size);
 
   bool genPatterns_commit(
-      const std::vector<FlexDPNode>& nodes,
+      const std::vector<std::unique_ptr<FlexDPNode>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       bool& is_valid,
       std::set<std::vector<int>>& inst_access_patterns,
@@ -625,18 +625,16 @@ class FlexPA
       int max_access_point_size);
 
   void genPatternsPrintDebug(
-      std::vector<FlexDPNode>& nodes,
+      std::vector<std::unique_ptr<FlexDPNode>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       int max_access_point_size);
 
   void genPatterns_print(
-      std::vector<FlexDPNode>& nodes,
+      std::vector<std::unique_ptr<FlexDPNode>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       int max_access_point_size);
 
   int getFlatIdx(int idx_1, int idx_2, int idx_2_dim);
-
-  void getNestedIdx(int flat_idx, int& idx_1, int& idx_2, int idx_2_dim);
 
   int getFlatEdgeIdx(int prev_idx_1,
                      int prev_idx_2,
@@ -653,21 +651,21 @@ class FlexPA
 
   void genInstRowPattern(std::vector<frInst*>& insts);
 
-  void genInstRowPatternInit(std::vector<FlexDPNode>& nodes,
+  void genInstRowPatternInit(std::vector<std::unique_ptr<FlexDPNode>>& nodes,
                              const std::vector<frInst*>& insts);
 
-  void genInstRowPatternPerform(std::vector<FlexDPNode>& nodes,
+  void genInstRowPatternPerform(std::vector<std::unique_ptr<FlexDPNode>>& nodes,
                                 const std::vector<frInst*>& insts);
 
-  void genInstRowPattern_commit(std::vector<FlexDPNode>& nodes,
+  void genInstRowPattern_commit(std::vector<std::unique_ptr<FlexDPNode>>& nodes,
                                 const std::vector<frInst*>& insts);
 
-  void genInstRowPattern_print(std::vector<FlexDPNode>& nodes,
+  void genInstRowPattern_print(std::vector<std::unique_ptr<FlexDPNode>>& nodes,
                                const std::vector<frInst*>& insts);
 
-  int getEdgeCost(int prev_node_idx,
-                  int curr_node_idx,
-                  const std::vector<FlexDPNode>& nodes,
+  int getEdgeCost(FlexDPNode* prev_node,
+                  FlexDPNode* curr_node,
+                  const std::vector<std::unique_ptr<FlexDPNode>>& nodes,
                   const std::vector<frInst*>& insts);
 
   void revertAccessPoints();
@@ -729,16 +727,30 @@ class FlexDPNode
   // getters
   int getPathCost() const { return pathCost_; }
   int getNodeCost() const { return nodeCost_; }
-  int getPrevNodeIdx() const { return prev_node_idx_; }
+  FlexDPNode* getPrevNode() const { return prev_node_; }
+  std::pair<int, int> getIdx() const { return idx_; }
+  bool isSource() const { return virtual_source_; }
+  bool isSink() const { return virtual_sink_; }
+  bool isVirtual() const { return (virtual_source_ || virtual_sink_); }
 
   // setters
   void setPathCost(int in) { pathCost_ = in; }
   void setNodeCost(int in) { nodeCost_ = in; }
-  void setPrevNodeIdx(int in) { prev_node_idx_ = in; }
+  void setPrevNode(FlexDPNode* in) { prev_node_ = in; }
+  void setIdx(std::pair<int, int> in) { idx_ = in; }
+  void setAsSource() { virtual_source_ = true; }
+  void setAsSink() { virtual_sink_ = true; }
+
+  bool hasPrevNode() const { return prev_node_ != nullptr; }
 
  private:
+  bool virtual_source_ = false;
+  bool virtual_sink_ = false;
   int pathCost_ = std::numeric_limits<int>::max();
   int nodeCost_ = std::numeric_limits<int>::max();
-  int prev_node_idx_ = -1;
+  /*either {pin_idx, acc_point_idx} or {inst_idx, acc_pattern_idx} depending on
+   * context*/
+  std::pair<int, int> idx_ = {-1, -1};
+  FlexDPNode* prev_node_ = nullptr;
 };
 }  // namespace drt

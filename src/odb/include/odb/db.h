@@ -2879,6 +2879,10 @@ class dbNet : public dbObject
   dbSet<dbNetTrack> getTracks() const;
 
   void clearTracks();
+
+  bool hasJumpers();
+
+  void setJumpers(bool has_jumpers);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -7746,6 +7750,10 @@ class dbGuide : public dbObject
   static void destroy(dbGuide* guide);
 
   static dbSet<dbGuide>::iterator destroy(dbSet<dbGuide>::iterator& itr);
+
+  bool isJumper();
+
+  void setIsJumper(bool jumper);
 
   // User Code End dbGuide
 };
