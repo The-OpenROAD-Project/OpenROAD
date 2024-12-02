@@ -63,7 +63,7 @@ def set_placement_padding(design, *, masters=None, right=None, left=None, globl=
         utl.warn(utl.DPL, 103, "No padding target specified")
 
 
-def filler_placement(design, prefix=None, masters=None):
+def filler_placement(design, prefix=None, masters=None, verbose=False):
     dpl = design.getOpendp()
     if prefix == None:
         prefix = "FILLER_"
@@ -73,7 +73,7 @@ def filler_placement(design, prefix=None, masters=None):
 
     filler_masters = get_masters(design, masters)
     if len(filler_masters) > 0:
-        dpl.fillerPlacement(filler_masters, prefix, False)
+        dpl.fillerPlacement(filler_masters, prefix, verbose)
 
 
 def get_masters(design, names):
