@@ -100,7 +100,7 @@ void AntennaChecker::initAntennaRules()
   odb::dbTech* tech = db_->getTech();
   // initialize nets_to_report_ with all nets to avoid issues with
   // multithreading
-  std::lock_guard<std::mutex> lock(mapMutex);
+  //std::lock_guard<std::mutex> lock(mapMutex);
   if (net_to_report_.empty()) {
     for (odb::dbNet* net : block_->getNets()) {
       if (!net->isSpecial()) {
@@ -753,7 +753,7 @@ bool AntennaChecker::checkRatioViolations(odb::dbNet* db_net,
 
 void AntennaChecker::writeReport(std::ofstream& report_file, bool verbose)
 {
-  std::lock_guard<std::mutex> lock(mapMutex);
+  //std::lock_guard<std::mutex> lock(mapMutex);
   for (const auto& [net, violation_report] : net_to_report_) {
     if (verbose || violation_report.violated) {
       report_file << violation_report.report;
@@ -763,7 +763,7 @@ void AntennaChecker::writeReport(std::ofstream& report_file, bool verbose)
 
 void AntennaChecker::printReport()
 {
-  std::lock_guard<std::mutex> lock(mapMutex);
+  //std::lock_guard<std::mutex> lock(mapMutex);
   for (const auto& [net, violation_report] : net_to_report_) {
     if (violation_report.violated) {
       logger_->report("{}", violation_report.report);
@@ -822,7 +822,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
   }
   // Write report on map
   {
-    std::lock_guard<std::mutex> lock(mapMutex);
+    //std::lock_guard<std::mutex> lock(mapMutex);
     net_to_report_.at(db_net) = net_report;
   }
 
@@ -1056,7 +1056,7 @@ Violations AntennaChecker::getAntennaViolations(odb::dbNet* net,
 
   // for the case where the check_net_violation api is called directly
   {
-    std::lock_guard<std::mutex> lock(mapMutex);
+    //std::lock_guard<std::mutex> lock(mapMutex);
     if (net_to_report_.find(net) == net_to_report_.end()) {
       net_to_report_[net];
     }
@@ -1076,7 +1076,7 @@ Violations AntennaChecker::getAntennaViolations(odb::dbNet* net,
            pin_violation_count,
            antenna_violations);
 
-  std::lock_guard<std::mutex> lock(mapMutex);
+  //std::lock_guard<std::mutex> lock(mapMutex);
   net_to_report_.clear();
   return antenna_violations;
 }
@@ -1087,7 +1087,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
 {
   printf("Start to checkAntenna\n");
   {
-    std::lock_guard<std::mutex> lock(mapMutex);
+    //std::lock_guard<std::mutex> lock(mapMutex);
     net_to_report_.clear();
   }
   initAntennaRules();
