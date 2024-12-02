@@ -584,8 +584,8 @@ class FlexPA
       int curr_unique_inst_idx,
       int max_access_point_size);
 
-  int getEdgeCost(FlexDPNode* prev_node_idx,
-                  FlexDPNode* curr_node_idx,
+  int getEdgeCost(FlexDPNode* prev_node,
+                  FlexDPNode* curr_node,
                   const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                   std::vector<int>& vio_edges,
                   const std::set<std::pair<int, int>>& used_access_points,
@@ -730,7 +730,7 @@ class FlexDPNode
   void setPathCost(int in) { pathCost_ = in; }
   void setNodeCost(int in) { nodeCost_ = in; }
   void setPrevNode(FlexDPNode* in) { prev_node_ = in; }
-  void setIdx(std::pair<int, int> in) { idx_ = in; }
+  void setIdx(std::pair<int, int> in) { idx_ = std::move(in); }
   void setAsSource() { virtual_source_ = true; }
   void setAsSink() { virtual_sink_ = true; }
 

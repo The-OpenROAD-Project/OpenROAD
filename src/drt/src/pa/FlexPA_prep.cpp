@@ -2583,7 +2583,7 @@ int FlexPA::getEdgeCost(
     vio_edges[edge_idx] = has_vio;
 
     // look back for GN14
-    if (!has_vio && prev_node != nullptr) {
+    if (!has_vio) {
       // check one more back
       if (prev_node->hasPrevNode()) {
         auto prev_prev_node = prev_node->getPrevNode();
@@ -2631,7 +2631,7 @@ int FlexPA::getEdgeCost(
                       std::make_pair(curr_pin_idx, curr_acc_point_idx))
                       != viol_access_points.end()) {
       edge_cost = 1000;
-    } else if (prev_node != nullptr) {
+    } else {
       const int prev_node_cost = prev_node->getNodeCost();
       const int curr_node_cost = curr_node->getNodeCost();
       edge_cost = (prev_node_cost + curr_node_cost) / 2;
