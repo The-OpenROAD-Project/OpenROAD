@@ -1229,6 +1229,12 @@ void dbNetwork::net(const Pin* pin, dbNet*& db_net, dbModNet*& db_modnet) const
     db_net = iterm->getNet();
     db_modnet = iterm->getModNet();
   }
+  if (bterm) {
+    // in this case we may have both a hierarchical net
+    // and a physical net
+    db_net = bterm->getNet();
+    db_modnet = bterm->getModNet();
+  }
   // pins which act as bterms are top levels and have no net
   // so we skip that case (defaults to null)
 

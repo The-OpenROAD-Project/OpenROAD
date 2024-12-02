@@ -726,6 +726,8 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
   string buffer_name = makeUniqueInstName("input");
   Instance* parent = db_network_->topInstance();
   Net* buffer_out = makeUniqueNet();
+  dbNet* buffer_out_net = db_network_->flatNet(buffer_out);
+
   Point pin_loc = db_network_->location(top_pin);
   Instance* buffer
       = makeBuffer(buffer_cell, buffer_name.c_str(), parent, pin_loc);
@@ -734,9 +736,11 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
   /*
     Get buffer output iterm
    */
+
   Pin* buffer_ip_pin = nullptr;
   Pin* buffer_op_pin = nullptr;
   odb::dbITerm* buffer_ip_iterm;
+
   odb::dbITerm* buffer_op_iterm;
   odb::dbBTerm* buffer_bterm_ignore;
   odb::dbModITerm* buffer_moditerm_ignore;
@@ -753,9 +757,13 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
                        buffer_bterm_ignore,
                        buffer_moditerm_ignore,
                        buffer_modbterm_ignore);
+
   pin_iter = network_->connectedPinIterator(input_net);
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
+
+    if (pin == top_pin) {
+    }
     //
     // Get destination type.
     // could be moditerm
@@ -764,50 +772,60 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
     // could be bterm
     //
 
-    odb::dbITerm* dest_iterm;
     odb::dbBTerm* dest_bterm;
     odb::dbModITerm* dest_moditerm;
     odb::dbModBTerm* dest_modbterm;
+    odb::dbITerm* dest_iterm;
     db_network_->staToDb(
         pin, dest_iterm, dest_bterm, dest_moditerm, dest_modbterm);
     odb::dbModNet* dest_modnet = db_network_->hierNet(pin);
-    odb::dbNet* dest_dbnet = db_network_->flatNet(pin);
+
+    // we are going to push the mod net into the core
+    // so we rename it to avoid conflict with top level
+    // name. We name it the same as the flat net.
+    if (dest_modnet) {
+      dest_modnet->rename(buffer_out_net->getName().c_str());
+    }
 
     // Leave input port pin connected to input_net.
     // but move any hierarchical nets to output of buffer
-    if (pin == top_pin) {
-      // disconnect any hierarchical net from top pin
-      // and then we later reconnect to the buffer output.
-      // we make sure that the top pin to buffer is a dbnet.
-      if (dest_modnet) {
-        if (dest_iterm) {
-          // disconnect all
-          dest_iterm->disconnect();
-          // re-establish connection to dbnet
-          dest_iterm->connect(dest_dbnet);
-        }
-        if (dest_moditerm) {
-          dest_moditerm->disconnect();
-        }
-      }
-    } else {
+    if (pin != top_pin) {
       // disconnect the destination pin from everything
       sta_->disconnectPin(const_cast<Pin*>(pin));
 
+      // handle the modnets.
       // connect the buffer_out_net to the flat pin
+      if (dest_modnet) {
+        if (dest_iterm) {
+          dest_iterm->connect(dest_modnet);
+        }
+        if (dest_moditerm) {
+          dest_moditerm->connect(dest_modnet);
+        }
+      }
+      // now the flat net
+      /*
       Port* pin_port = db_network_->port(pin);
       sta_->connectPin(db_network_->instance(pin), pin_port, buffer_out);
-
-      if (dest_modnet) {
-        buffer_op_iterm->connect(dest_modnet);
-        dest_iterm->connect(dest_modnet);
+      */
+      if (dest_iterm) {
+        dest_iterm->connect(buffer_out_net);
+      } else if (dest_bterm) {
+        dest_bterm->connect(buffer_out_net);
       }
     }
   }
   delete pin_iter;
 
   sta_->connectPin(buffer, input, input_net);
+
   sta_->connectPin(buffer, output, buffer_out);
+
+  // Remove the top net connection to the mod net, if any
+  if (top_pin_hier_net) {
+    top_pin_ip_bterm->disconnect();
+    top_pin_ip_bterm->connect(top_pin_flat_net);
+  }
 
   parasiticsInvalid(input_net);
   parasiticsInvalid(buffer_out);
@@ -908,6 +926,7 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
   buffer_cell->bufferPorts(input, output);
 
   string buffer_name = makeUniqueInstName("output");
+  Net* buffer_out = makeUniqueNet();
   Instance* parent = network->topInstance();
 
   Point pin_loc = db_network_->location(top_pin);
@@ -950,11 +969,15 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
     }
   }
 
-  Net* buffer_out = makeUniqueNet();
-  sta_->connectPin(buffer, output, buffer_out);
   buffer_op_pin_iterm->connect(db_network_->staToDb(buffer_out));
   top_pin_op_bterm->connect(db_network_->staToDb(buffer_out));
   SwapNetNames(buffer_op_pin_iterm, buffer_ip_pin_iterm);
+
+  // rename the mod net to match the flat net.
+  if (buffer_ip_pin_iterm->getNet() && buffer_ip_pin_iterm->getModNet()) {
+    buffer_ip_pin_iterm->getModNet()->rename(
+        buffer_ip_pin_iterm->getNet()->getName().c_str());
+  }
   parasiticsInvalid(flat_op_net);
   parasiticsInvalid(buffer_out);
 }
