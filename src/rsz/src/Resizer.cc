@@ -1675,7 +1675,7 @@ void Resizer::setDontTouch(const Net* net, bool dont_touch)
 bool Resizer::dontTouch(const Net* net)
 {
   dbNet* db_net = db_network_->staToDb(net);
-  return db_net->isDoNotTouch();
+  return db_net->isDoNotTouch() || db_net->isSpecial();
 }
 
 ////////////////////////////////////////////////////////////////
