@@ -71,10 +71,15 @@ set(TEST_NAMES
     simple08
     simple09
     simple10
+    blockage01
 )
 
+# Skipped
+#dpl_man_tcl_check
+#dpl_readme_msgs_check
+
 foreach(TEST_NAME IN LISTS TEST_NAMES)
-  or_integration_test("dpl" ${TEST_NAME}  ${CMAKE_CURRENT_SOURCE_DIR}/regression)
+    or_integration_test("dpl" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
 endforeach()
 
 add_executable(dpl_test dpl_test.cc)
