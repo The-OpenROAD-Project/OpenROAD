@@ -12,6 +12,7 @@ set(TEST_NAMES
     make_io_sites_rotations
     non_top_layer
     place_pad
+    place_pad_hv
     place_pad_with_bumps
     place_pad_outsideofrow
     place_bondpad
@@ -45,6 +46,10 @@ set(TEST_NAMES
     place_pads_bumps
 )
 
+# Skipped
+#pad_man_tcl_check
+#pad_readme_msgs_check
+
 foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("pad" ${TEST_NAME}  ${CMAKE_CURRENT_SOURCE_DIR}/regression)
+    or_integration_test("pad" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
 endforeach()
