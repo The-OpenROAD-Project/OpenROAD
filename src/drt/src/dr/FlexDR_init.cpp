@@ -2797,8 +2797,11 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
 
   // assign terms to each subnet
   for (auto& [net, objs] : frNet2Terms) {
-    for (auto dNet : owner2nets_[net]) {
-      dNet->setFrNetTerms(objs);
+    if (net != nullptr && !net->isSpecial()
+        && owner2nets_.find(net) != owner2nets_.end()) {
+      for (auto dNet : owner2nets_.at(net)) {
+        dNet->setFrNetTerms(objs);
+      }
     }
     initMazeCost_terms(objs, true);
   }
@@ -3069,17 +3072,18 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
 
 void FlexDRWorker::initMazeCost_connFig()
 {
-  for (auto& net : nets_) {
-    for (auto& connFig : net->getExtConnFigs()) {
-      addPathCost(connFig.get(), false, true);
+  for (auto& [fr_net, nets] : owner2nets_) {
+    for (auto& net : nets) {
+      for (auto& connFig : net->getExtConnFigs()) {
+        addPathCost(connFig.get(), false, true);
+      }
+      for (auto& connFig : net->getRouteConnFigs()) {
+        addPathCost(connFig.get(), false, true);
+      }
+      gcWorker_->updateDRNet(net);
+      gcWorker_->updateGCWorker();
     }
-    for (auto& connFig : net->getRouteConnFigs()) {
-      addPathCost(connFig.get(), false, true);
-    }
-    gcWorker_->updateDRNet(net.get());
-    gcWorker_->updateGCWorker();
-    modEolCosts_poly(gcWorker_->getNet(net->getFrNet()),
-                     ModCostType::addRouteShape);
+    modEolCosts_poly(gcWorker_->getNet(fr_net), ModCostType::addRouteShape);
   }
 }
 
