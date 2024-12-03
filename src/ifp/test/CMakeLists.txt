@@ -1,6 +1,6 @@
-include("openroad")
-
-set(TEST_NAMES
+or_integration_tests(
+  "ifp"
+  TESTS
     hybrid_rows
     hybrid_rows2
     init_floorplan1
@@ -34,7 +34,3 @@ set(TEST_NAMES
 # Skipped
 #ifp_man_tcl_check
 #ifp_readme_msgs_check
-
-foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("ifp" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
-endforeach()

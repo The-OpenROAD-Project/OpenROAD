@@ -1,6 +1,6 @@
-include("openroad")
-
-set(TEST_NAMES
+or_integration_tests(
+  "ppl"
+  TESTS
     add_constraint1
     add_constraint2
     add_constraint3
@@ -124,7 +124,3 @@ set(TEST_NAMES
 # Skipped
 #ppl_man_tcl_check
 #ppl_readme_msgs_check
-
-foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("ppl" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
-endforeach()

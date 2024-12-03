@@ -1,6 +1,6 @@
-include("openroad")
-
-set(TEST_NAMES
+or_integration_tests(
+  "odb"
+  TESTS
     abstract_origin
     bterm_hier_create
     check_routing_tracks
@@ -48,14 +48,15 @@ set(TEST_NAMES
     write_lef_and_def
     write_lef_polygon
     write_macro_placement
+  PASSFAIL_TESTS
+    cpp_tests
+    dump_netlists
+    dump_netlists_withfill
+    parser_unit_test
 )
 
 # Skipped
 #odb_man_tcl_check
 #odb_readme_msgs_check
-
-foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("odb" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
-endforeach()
 
 add_subdirectory(cpp)

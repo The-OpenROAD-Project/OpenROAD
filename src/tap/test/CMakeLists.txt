@@ -1,6 +1,6 @@
-include("openroad")
-
-set(TEST_NAMES
+or_integration_tests(
+  "tap"
+  TESTS
     aes_gf180
     avoid_overlap
     boundary_macros
@@ -29,7 +29,3 @@ set(TEST_NAMES
 # Skipped
 #tap_man_tcl_check
 #tap_readme_msgs_check
-
-foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("tap" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
-endforeach()

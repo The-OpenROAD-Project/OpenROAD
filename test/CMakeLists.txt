@@ -1,4 +1,6 @@
-set(TEST_NAMES
+or_integration_tests(
+  "openroad"
+  TESTS
     error1
     get_core_die_areas
     timing_api
@@ -8,8 +10,6 @@ set(TEST_NAMES
     two_designs
     upf_test
     upf_aes
+  PASSFAIL_TESTS
+    commands_without_load
 )
-
-foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("openroad" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
-endforeach()

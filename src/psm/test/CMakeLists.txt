@@ -1,6 +1,6 @@
-include("openroad")
-
-set(TEST_NAMES
+or_integration_tests(
+  "psm"
+  TESTS
     aes_asap7_vdd
     aes_test_bterms
     aes_test_multiple_bterms
@@ -34,7 +34,3 @@ set(TEST_NAMES
 # Skipped
 #psm_man_tcl_check
 #psm_readme_msgs_check
-
-foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("psm" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
-endforeach()

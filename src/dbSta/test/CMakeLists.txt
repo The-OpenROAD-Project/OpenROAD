@@ -1,6 +1,6 @@
-include("openroad")
-
-set(TEST_NAMES
+or_integration_tests(
+  "dbSta"
+  TESTS
     block_sta1
     constant1
     find_clks1
@@ -45,7 +45,3 @@ set(TEST_NAMES
     write_verilog7
     write_verilog8
 )
-
-foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("dbSta" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
-endforeach()
