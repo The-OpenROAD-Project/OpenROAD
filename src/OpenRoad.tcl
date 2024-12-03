@@ -354,7 +354,7 @@ sta::define_cmd_args "place_inst" {-name inst_name \
                                    -origin xy_origin \
                                    [-cell library_cell] \
                                    [-status status]}
-proc place_cell { args } {
+proc place_inst { args } {
   if { [ord::get_db_block] == "NULL" } {
     utl::error ORD 55 "Design must be loaded before calling place_cell."
   }

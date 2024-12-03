@@ -30,14 +30,17 @@
 
 #include <cstdint>
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <map>
 
 #include "FlexMazeTypes.h"
 #include "db/drObj/drPin.h"
+#include "db/infra/frBox.h"
 #include "dr/FlexWavefront.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
 
 namespace drt {
 
@@ -1106,7 +1109,13 @@ class FlexGridGraph
 
   // locations of access points. The vector is indexed by layer number.
   frVector<std::set<Point>> ap_locs_;
+  std::ofstream dump_file_;
+  bool debug_{false};
+  frUInt4 curr_id_{1};
 
+
+  void printExpansion(const FlexWavefrontGrid& currGrid,
+                      const std::string& keyword);
   // unsafe access, no idx check
   void setPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
   {
