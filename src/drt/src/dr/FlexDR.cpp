@@ -2002,8 +2002,6 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
   (ar) & bestMarkers_;
   (ar) & isCongested_;
   if (is_loading(ar)) {
-    gridGraph_.setTech(design_->getTech());
-    gridGraph_.setWorker(this);
     // boundaryPin_
     int sz = 0;
     (ar) & sz;
@@ -2031,19 +2029,16 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
   }
 }
 
-std::unique_ptr<FlexDRWorker> FlexDRWorker::load(const std::string& workerStr,
-                                                 utl::Logger* logger,
-                                                 frDesign* design,
-                                                 FlexDRGraphics* graphics)
+std::unique_ptr<FlexDRWorker> FlexDRWorker::load(
+    const std::string& workerStr,
+    FlexDRViaData* via_data,
+    frDesign* design,
+    utl::Logger* logger,
+    RouterConfiguration* router_cfg)
 {
-  auto worker = std::make_unique<FlexDRWorker>();
+  auto worker
+      = std::make_unique<FlexDRWorker>(via_data, design, logger, router_cfg);
   deserializeWorker(worker.get(), design, workerStr);
-
-  // We need to fix up the fields we want from the current run rather
-  // than the stored ones.
-  worker->setLogger(logger);
-  worker->setGraphics(graphics);
-
   return worker;
 }
 
