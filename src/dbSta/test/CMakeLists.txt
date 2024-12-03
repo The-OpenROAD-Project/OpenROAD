@@ -1,6 +1,9 @@
 include("openroad")
 
 set(TEST_NAMES
+    hierclock
+    hier2
+    readdb_hier
     constant1
     dont_touch_attr
     make_port
@@ -29,7 +32,10 @@ set(TEST_NAMES
     read_verilog8
     read_verilog9
     read_verilog10
+    read_verilog11
     report_cell_usage
+    report_cell_usage_modinsts
+    report_cell_usage_modinsts_metrics
     write_verilog1
     write_verilog2
     write_verilog3
@@ -42,5 +48,5 @@ set(TEST_NAMES
 )
 
 foreach(TEST_NAME IN LISTS TEST_NAMES)
-  or_integration_test("dbSta" ${TEST_NAME}  ${CMAKE_CURRENT_SOURCE_DIR}/regression)
+    or_integration_test("dbSta" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
 endforeach()
