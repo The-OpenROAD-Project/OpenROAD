@@ -1,6 +1,13 @@
 include("openroad")
 
 set(TEST_NAMES
+    clone_flat
+    clone_hier
+    pinswap_flat
+    pinswap_hier
+    split_load_hier
+    resize1_hier
+    repair_hold1_hier
     buffer_ports1
     buffer_ports3
     buffer_ports4
@@ -9,9 +16,11 @@ set(TEST_NAMES
     buffer_ports7
     buffer_ports8
     buffer_varying_lengths
+    eliminate_dead_logic1
     eqy_repair_setup2
     eqy_repair_setup5
     fanin_fanout1
+    gain_buffering1
     make_parasitics1
     make_parasitics2
     make_parasitics3
@@ -28,6 +37,7 @@ set(TEST_NAMES
     resize_slack3
     remove_buffers1
     remove_buffers2
+    remove_buffers3
     repair_clk_nets1
     repair_clk_inverters1
     repair_cap1
@@ -60,12 +70,17 @@ set(TEST_NAMES
     repair_hold12
     repair_hold13
     repair_hold14
+    repair_hold15
     repair_setup1
     repair_setup2
     repair_setup3
     repair_setup4
+    repair_setup4_hier
+    repair_setup4_flat
     repair_setup5
     repair_setup6
+    repair_setup7
+    repair_setup8
     repair_slew1
     repair_slew2
     repair_slew3
@@ -111,10 +126,15 @@ set(TEST_NAMES
     repair_hold9_verbose
     set_dont_touch1
     set_dont_use1
+    repair_setup_undo
 )
 
+# Skipped
+#rsz_man_tcl_check
+#rsz_readme_msgs_check
+
 foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("rsz" ${TEST_NAME}  ${CMAKE_CURRENT_SOURCE_DIR}/regression)
+    or_integration_test("rsz" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
 endforeach()
 
 add_subdirectory(cpp)
