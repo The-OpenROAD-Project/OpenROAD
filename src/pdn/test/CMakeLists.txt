@@ -30,6 +30,7 @@ set(TEST_NAMES
     core_grid_with_routing_obstructions
     core_grid_adjacentcuts
     core_grid_with_fixed_pins
+    core_grid_bad_metal_specs
     core_grid_obstruction
     core_grid_auto_domain
     core_grid_auto_domain_multiple_nets
@@ -103,6 +104,10 @@ set(TEST_NAMES
     bpin_removal
 )
 
+# Skipped
+#pdn_man_tcl_check
+#pdn_readme_msgs_check
+
 foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("pdn" ${TEST_NAME}  ${CMAKE_CURRENT_SOURCE_DIR}/regression)
+    or_integration_test("pdn" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
 endforeach()
