@@ -25,6 +25,8 @@ set(TEST_NAMES
     add_constraint_error5
     add_constraint_error6
     add_constraint_error7
+    add_constraint_error8
+    add_constraint_error9
     annealing1
     annealing2
     annealing3
@@ -77,6 +79,8 @@ set(TEST_NAMES
     no_pins
     no_tracks
     on_grid
+    partial_tracks_error
+    partial_tracks
     pin_length
     pin_length_error
     pin_extension
@@ -113,8 +117,14 @@ set(TEST_NAMES
     write_pin_placement2
     write_pin_placement3
     write_pin_placement4
+    write_pin_placement5
+    write_pin_placement6
 )
 
+# Skipped
+#ppl_man_tcl_check
+#ppl_readme_msgs_check
+
 foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("ppl" ${TEST_NAME}  ${CMAKE_CURRENT_SOURCE_DIR}/regression)
+    or_integration_test("ppl" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
 endforeach()
