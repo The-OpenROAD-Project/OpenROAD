@@ -436,7 +436,6 @@ class dbMasterType
  public:
   enum Value
   {
-    NONE,                           /** */
     COVER,                          /** */
     COVER_BUMP,                     /** */
     RING,                           /** */

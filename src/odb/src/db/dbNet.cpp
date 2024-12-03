@@ -132,6 +132,7 @@ _dbNet::_dbNet(_dbDatabase* db)
   _flags._source = dbSourceType::NONE;
   _flags._rc_disconnected = 0;
   _flags._block_rule = 0;
+  _flags._has_jumpers = 0;
   _name = 0;
   _gndc_calibration_factor = 1.0;
   _cc_calibration_factor = 1.0;
@@ -3325,6 +3326,26 @@ void dbNet::clearTracks()
   while (itr != tracks.end()) {
     auto curTrack = *itr++;
     dbNetTrack::destroy(curTrack);
+  }
+}
+
+bool dbNet::hasJumpers()
+{
+  bool has_jumpers = false;
+  _dbNet* net = (_dbNet*) this;
+  _dbDatabase* db = net->getImpl()->getDatabase();
+  if (db->isSchema(db_schema_has_jumpers)) {
+    has_jumpers = net->_flags._has_jumpers == 1;
+  }
+  return has_jumpers;
+}
+
+void dbNet::setJumpers(bool has_jumpers)
+{
+  _dbNet* net = (_dbNet*) this;
+  _dbDatabase* db = net->getImpl()->getDatabase();
+  if (db->isSchema(db_schema_has_jumpers)) {
+    net->_flags._has_jumpers = has_jumpers ? 1 : 0;
   }
 }
 

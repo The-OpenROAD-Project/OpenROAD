@@ -40,6 +40,7 @@ record_tests {
   floorplan_initialize
   replace_design1
   replace_design2
+  replace_design3
   design_is_routed1
   design_is_routed2
   design_is_routed3

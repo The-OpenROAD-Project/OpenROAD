@@ -81,6 +81,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
       const std::vector<mpl2::Rect>& placement_blockages) override;
   void setBundledNets(const std::vector<BundledNet>& bundled_nets) override;
   void setShowBundledNets(bool show_bundled_nets) override;
+  void setShowClustersIds(bool show_clusters_ids) override;
   void setSkipSteps(bool skip_steps) override;
   void doNotSkip() override;
   void setOnlyFinalResult(bool only_final_result) override;
@@ -125,6 +126,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   bool coarse_;
   bool fine_;
   bool show_bundled_nets_;
+  bool show_clusters_ids_;
   bool skip_steps_;
   bool is_skipping_;
   bool only_final_result_;

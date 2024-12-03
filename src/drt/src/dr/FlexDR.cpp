@@ -485,9 +485,9 @@ void FlexDR::init()
         auto bottomBox = via->getLayer1BBox();
         auto topBox = via->getLayer2BBox();
         for (auto term : net->getInstTerms()) {
-          if (term->getBBox(true).intersects(bottomBox)) {
+          if (term->getBBox().intersects(bottomBox)) {
             std::vector<frRect> shapes;
-            term->getShapes(shapes, true);
+            term->getShapes(shapes);
             for (const auto& shape : shapes) {
               if (shape.getLayerNum() != via->getViaDef()->getLayer1Num()) {
                 continue;
@@ -502,9 +502,9 @@ void FlexDR::init()
           if (via->isBottomConnected()) {
             continue;
           }
-          if (term->getBBox(true).intersects(topBox)) {
+          if (term->getBBox().intersects(topBox)) {
             std::vector<frRect> shapes;
-            term->getShapes(shapes, true);
+            term->getShapes(shapes);
             for (const auto& shape : shapes) {
               if (shape.getLayerNum() != via->getViaDef()->getLayer2Num()) {
                 continue;

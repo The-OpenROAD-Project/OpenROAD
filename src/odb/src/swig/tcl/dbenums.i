@@ -331,9 +331,6 @@
 %typemap(out) odb::dbMasterType, dbMasterType {
 	Tcl_Obj *obj = nullptr;
 	switch ($1.getValue()) {
-		case odb::dbMasterType::Value::NONE:
-			obj = Tcl_NewStringObj("NONE", -1);
-			break;
 	 	case odb::dbMasterType::Value::COVER:
 			obj = Tcl_NewStringObj("COVER", -1);
 			break;
@@ -456,9 +453,7 @@
 }
 %typemap(in) odb::dbMasterType, dbMasterType {
 	char *str = Tcl_GetStringFromObj($input, 0);
-	if (strcasecmp(str, "NONE") == 0) {
-		$1 = odb::dbMasterType::Value::NONE;
-	} else if (strcasecmp(str, "COVER") == 0) {
+	if (strcasecmp(str, "COVER") == 0) {
 		$1 = odb::dbMasterType::Value::COVER;
 	} else if (strcasecmp(str, "COVER_BUMP") == 0) {
 		$1 = odb::dbMasterType::Value::COVER_BUMP;
@@ -542,9 +537,7 @@
 	char *str = Tcl_GetStringFromObj($input, 0);
 	bool found = false;
 	if (str) {
-		if (strcasecmp(str, "NONE") == 0) {
-			found = true;
-		} 	else if (strcasecmp(str, "COVER") == 0) {
+		if (strcasecmp(str, "COVER") == 0) {
 			found = true;
 		} 	else if (strcasecmp(str, "COVER_BUMP") == 0) {
 			found = true;

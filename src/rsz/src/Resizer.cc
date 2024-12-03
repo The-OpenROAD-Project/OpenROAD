@@ -1207,6 +1207,11 @@ void Resizer::resizePreamble()
 //   same user_function_class are electrically compatible.
 LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
 {
+  dbMaster* master = db_network_->staToDb(source_cell);
+  if (master && !master->isCore()) {
+    return {};
+  }
+
   LibertyCellSeq swappable_cells;
   LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
 

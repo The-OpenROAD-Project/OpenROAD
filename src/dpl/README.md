@@ -79,6 +79,7 @@ from `FILLER_` use `-prefix <new prefix>`.
 ```tcl 
 filler_placement
     [-prefix prefix]
+    [-verbose]
     filler_masters
 ```
 
@@ -87,6 +88,7 @@ filler_placement
 | Switch Name | Description |
 | ----- | ----- |
 | `-prefix` | Prefix to name the filler cells. The default value is `FILLER_`. |
+| `-verbose` | Print the filler cell usage. |
 | `filler_masters` | Filler master cells. | 
 
 ### Remove Fillers

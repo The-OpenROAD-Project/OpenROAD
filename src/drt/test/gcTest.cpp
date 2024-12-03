@@ -133,10 +133,10 @@ BOOST_AUTO_TEST_CASE(metal_short_obs)
   frNet* n1 = makeNet("n1");
 
   makePathseg(n1, 2, {0, 0}, {600, 0});
-  auto block = makeMacro("OBS");
+  auto [block, master] = makeMacro("OBS");
   makeMacroObs(block, 450, -50, 750, 200, 2);
   makeMacroPin(block, "in", 450, 40, 550, 90, 2);
-  auto i1 = makeInst("i1", block, 0, 0);
+  auto i1 = makeInst("i1", block, master);
   auto instTerm = i1->getInstTerms()[0].get();
   instTerm->addToNet(n1);
 
@@ -443,9 +443,9 @@ BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
   frNet* n1 = makeNet("n1");
 
   makePathseg(n1, 2, {0, 50}, {500, 50}, 100);
-  auto block = makeMacro("DRW");
+  auto [block, master] = makeMacro("DRW");
   makeMacroObs(block, 0, 140, 500, 340, 2, legal ? 100 : -1);
-  makeInst("i1", block, 0, 0);
+  makeInst("i1", block, master);
   /*
   If DESIGNRULEWIDTH is 100
     width(n1) = 100      width(obs) = 100 : reqSpcVal = 0

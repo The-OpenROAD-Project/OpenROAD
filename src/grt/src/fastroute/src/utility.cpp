@@ -494,10 +494,10 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         }
       }
 
-      if (best_cost
-          <= 0) {  // assigning the edge to the layer range would cause overflow
-        // try to assign the edge to the closest layer below the min routing
-        // layer
+      // assigning the edge to the layer range would cause overflow try to
+      // assign the edge to the closest layer below the min routing layer.
+      // if design has 2D overflow, accept the congestion in layer assignment
+      if (best_cost <= 0 && !has_2D_overflow_) {
         int min_layer = net->getMinLayer();
         for (l = net->getMinLayer() - 1; l >= 0; l--) {
           fixEdgeAssignment(min_layer,
@@ -549,10 +549,10 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         }
       }
 
-      if (best_cost
-          <= 0) {  // assigning the edge to the layer range would cause overflow
-        // try to assign the edge to the closest layer below the min routing
-        // layer
+      // assigning the edge to the layer range would cause overflow try to
+      // assign the edge to the closest layer below the min routing layer.
+      // if design has 2D overflow, accept the congestion in layer assignment
+      if (best_cost <= 0 && !has_2D_overflow_) {
         int min_layer = net->getMinLayer();
         for (l = net->getMinLayer() - 1; l >= 0; l--) {
           fixEdgeAssignment(min_layer,
@@ -621,7 +621,8 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       for (l = 0; l < num_layers_; l++) {
         if (layer_grid[l][k] > 0) {
           gridD[l][k + 1] = gridD[l][k] + 1;
-        } else if (layer_grid[l][k] == std::numeric_limits<int>::min()) {
+        } else if (layer_grid[l][k] == std::numeric_limits<int>::min()
+                   || l < net->getMinLayer() || l > net->getMaxLayer()) {
           // when the layer orientation doesn't match the edge orientation,
           // set a larger weight to avoid assigning to this layer when the
           // routing has 3D overflow
@@ -736,7 +737,8 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       for (l = 0; l < num_layers_; l++) {
         if (layer_grid[l][k - 1] > 0) {
           gridD[l][k - 1] = gridD[l][k] + 1;
-        } else if (layer_grid[l][k] == std::numeric_limits<int>::min()) {
+        } else if (layer_grid[l][k] == std::numeric_limits<int>::min()
+                   || l < net->getMinLayer() || l > net->getMaxLayer()) {
           // when the layer orientation doesn't match the edge orientation,
           // set a larger weight to avoid assigning to this layer when the
           // routing has 3D overflow
@@ -962,9 +964,8 @@ void FastRouteCore::layerAssignmentV4()
         }
 
         treenodes[n2a].assigned = true;
-
-      }  // edge len > 0
-    }    // eunmerating edges
+      }
+    }
   }
 }
 
@@ -2139,8 +2140,7 @@ int FastRouteCore::edgeShift(Tree& t, int net)
             // add the cost of all edges adjacent to the two steiner nodes
             for (l = 0; l < nbrCnt[n1]; l++) {
               n3 = nbr[n1][l];
-              if (n3 != n2)  // exclude current edge n1-n2
-              {
+              if (n3 != n2) {  // exclude current edge n1-n2
                 cost1 = cost2 = 0;
                 if (t.branch[n1].x < t.branch[n3].x) {
                   smallX = t.branch[n1].x;
@@ -2165,12 +2165,11 @@ int FastRouteCore::edgeShift(Tree& t, int net)
                   cost2 += v_edges_[m][smallX].est_usage;
                 }
                 costH[j] += std::min(cost1, cost2);
-              }  // if(n3!=n2)
-            }    // loop l
+              }
+            }
             for (l = 0; l < nbrCnt[n2]; l++) {
               n3 = nbr[n2][l];
-              if (n3 != n1)  // exclude current edge n1-n2
-              {
+              if (n3 != n1) {  // exclude current edge n1-n2
                 cost1 = cost2 = 0;
                 if (t.branch[n2].x < t.branch[n3].x) {
                   smallX = t.branch[n2].x;
@@ -2195,9 +2194,9 @@ int FastRouteCore::edgeShift(Tree& t, int net)
                   cost2 += v_edges_[m][smallX].est_usage;
                 }
                 costH[j] += std::min(cost1, cost2);
-              }  // if(n3!=n1)
-            }    // loop l
-          }      // loop j
+              }
+            }
+          }
           bestCost = BIG_INT;
           Pos = t.branch[n1].y;
           for (j = minY; j <= maxY; j++) {
@@ -2206,8 +2205,7 @@ int FastRouteCore::edgeShift(Tree& t, int net)
               Pos = j;
             }
           }
-          if (Pos != t.branch[n1].y)  // find a better position than current
-          {
+          if (Pos != t.branch[n1].y) {  // find a better position than current
             benefit = costH[t.branch[n1].y] - bestCost;
             if (benefit > bestBenefit) {
               bestBenefit = benefit;
@@ -2217,8 +2215,7 @@ int FastRouteCore::edgeShift(Tree& t, int net)
           }
         }
 
-      } else  // a vertical edge
-      {
+      } else {  // a vertical edge
         // find the shifting range for the edge (minX~maxX)
         maxX1 = minX1 = t.branch[n1].x;
         for (j = 0; j < 3; j++) {
@@ -2240,8 +2237,7 @@ int FastRouteCore::edgeShift(Tree& t, int net)
         maxX = std::min(maxX1, maxX2);
 
         // find the best position (least total usage) to shift
-        if (minX < maxX)  // more than 1 possible positions
-        {
+        if (minX < maxX) {  // more than 1 possible positions
           for (j = minX; j <= maxX; j++) {
             costV[j] = 0;
             for (k = t.branch[n1].y; k < t.branch[n2].y; k++) {
@@ -2276,12 +2272,11 @@ int FastRouteCore::edgeShift(Tree& t, int net)
                   cost2 += v_edges_[m][smallX].est_usage;
                 }
                 costV[j] += std::min(cost1, cost2);
-              }  // if(n3!=n2)
-            }    // loop l
+              }
+            }
             for (l = 0; l < nbrCnt[n2]; l++) {
               n3 = nbr[n2][l];
-              if (n3 != n1)  // exclude current edge n1-n2
-              {
+              if (n3 != n1) {  // exclude current edge n1-n2
                 cost1 = cost2 = 0;
                 if (j < t.branch[n3].x) {
                   smallX = j;
@@ -2306,9 +2301,9 @@ int FastRouteCore::edgeShift(Tree& t, int net)
                   cost2 += v_edges_[m][smallX].est_usage;
                 }
                 costV[j] += std::min(cost1, cost2);
-              }  // if(n3!=n1)
-            }    // loop l
-          }      // loop j
+              }
+            }
+          }
           bestCost = BIG_INT;
           Pos = t.branch[n1].x;
           for (j = minX; j <= maxX; j++) {
@@ -2317,8 +2312,7 @@ int FastRouteCore::edgeShift(Tree& t, int net)
               Pos = j;
             }
           }
-          if (Pos != t.branch[n1].x)  // find a better position than current
-          {
+          if (Pos != t.branch[n1].x) {  // find a better position than current
             benefit = costV[t.branch[n1].x] - bestCost;
             if (benefit > bestBenefit) {
               bestBenefit = benefit;
@@ -2327,27 +2321,23 @@ int FastRouteCore::edgeShift(Tree& t, int net)
             }
           }
         }
-
-      }  // else (a vertical edge)
-
-    }  // loop i
+      }
+    }
 
     if (bestBenefit > 0) {
       n1 = pairN1[bestPair];
       n2 = pairN2[bestPair];
 
-      if (t.branch[n1].y == t.branch[n2].y)  // horizontal edge
-      {
+      if (t.branch[n1].y == t.branch[n2].y) {  // horizontal edge
         t.branch[n1].y = bestPos;
         t.branch[n2].y = bestPos;
-      }  // vertical edge
-      else {
+      } else {  // vertical edge
         t.branch[n1].x = bestPos;
         t.branch[n2].x = bestPos;
       }
       numShift++;
     }
-  }  // while(bestBenefit>0)
+  }
 
   return (numShift);
 }
@@ -2453,13 +2443,12 @@ int FastRouteCore::edgeShiftNew(Tree& t, int net)
           }
           numShift += edgeShift(t, net);
         }
-      }  // if(isPair)
+      }
 
-    }  // if(pairCnt>0)
-    else
+    } else {
       iter = 3;
-
-  }  // while
+    }
+  }
 
   return (numShift);
 }

@@ -2822,6 +2822,10 @@ size_t NesterovBaseCommon::createGCell(odb::dbInst* db_inst)
   GCell* gcell_ptr = &gCellStor_.back();
   gCellMap_[gcell_ptr->instance()] = gcell_ptr;
   db_inst_map_[db_inst] = gCellStor_.size() - 1;
+
+  int64_t areaChange = static_cast<int64_t>(gcell_ptr->dx())
+                       * static_cast<int64_t>(gcell_ptr->dy());
+  deltaArea_ += areaChange;
   return gCellStor_.size() - 1;
 }
 
@@ -2892,6 +2896,7 @@ void NesterovBaseCommon::destroyGCell(size_t index_remove)
   gCellStor_.pop_back();
 
   log_->report("after destroy gCellStor_.size():{}", gCellStor_.size());
+  // TODO: update deltaArea_ after cell destruction.
 }
 
 void NesterovBase::destroyFillerGCell(size_t index_remove)
