@@ -29,10 +29,12 @@ set(TEST_NAMES
     insert_decap1
     insert_decap2
     insert_decap_with_padding1
-    #psm_man_tcl_check
-    #psm_readme_msgs_check
 )
 
+# Skipped
+#psm_man_tcl_check
+#psm_readme_msgs_check
+
 foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("psm" ${TEST_NAME}  ${CMAKE_CURRENT_SOURCE_DIR}/regression)
+    or_integration_test("psm" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
 endforeach()
