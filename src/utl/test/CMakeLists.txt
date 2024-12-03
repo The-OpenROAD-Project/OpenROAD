@@ -12,8 +12,13 @@ set(TEST_NAMES
     tee_fails
 )
 
+# Skipped
+#utl_man_tcl_check
+#utl_readme_msgs_check
+#test_error_exception
+
 foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("utl" ${TEST_NAME}  ${CMAKE_CURRENT_SOURCE_DIR}/regression)
+    or_integration_test("utl" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
 endforeach()
 
 add_subdirectory(cpp)
