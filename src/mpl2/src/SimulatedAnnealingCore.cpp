@@ -344,25 +344,32 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
     return;
   }
 
-  for (const auto& [id, bbox] : guides_) {
-    const float macro_lx = macros_[id].getX();
-    const float macro_ly = macros_[id].getY();
-    const float macro_ux = macro_lx + macros_[id].getWidth();
-    const float macro_uy = macro_ly + macros_[id].getHeight();
-    // center to center distance
-    const float width
-        = ((macro_ux - macro_lx) + (bbox.xMax() - bbox.xMin())) / 2.0;
-    const float height
-        = ((macro_uy - macro_ly) + (bbox.yMax() - bbox.yMin())) / 2.0;
-    float x_dist = std::abs((macro_ux + macro_lx) / 2.0
-                            - (bbox.xMax() + bbox.xMin()) / 2.0);
-    float y_dist = std::abs((macro_uy + macro_ly) / 2.0
-                            - (bbox.yMax() + bbox.yMin()) / 2.0);
-    x_dist = std::max(x_dist - width, 0.0f) / width;
-    y_dist = std::max(y_dist - height, 0.0f) / height;
-    guidance_penalty_ += x_dist * x_dist + y_dist * y_dist;
+  for (const auto& [id, guide] : guides_) {
+    const float macro_x_min = macros_[id].getX();
+    const float macro_y_min = macros_[id].getY();
+    const float macro_x_max = macro_x_min + macros_[id].getWidth();
+    const float macro_y_max = macro_y_min + macros_[id].getHeight();
+
+    const float overlap_width
+            = std::min(guide.xMax(), macro_x_max)
+              - std::max(guide.xMin(), macro_x_min);
+        const float overlap_height
+            = std::min(guide.yMax(), macro_y_max)
+              - std::max(guide.yMin(), macro_y_min);
+
+    // maximum overlap area
+    float penalty = std::min(macros_[id].getWidth(), guide.getWidth()) * std::min(macros_[id].getHeight(), guide.getHeight());
+
+    // subtract overlap
+    if (overlap_width > 0 && overlap_height > 0) {
+      penalty -= (overlap_width * overlap_height);
+    }
+
+    guidance_penalty_ += penalty;
   }
+
   guidance_penalty_ = guidance_penalty_ / guides_.size();
+  
   if (graphics_) {
     graphics_->setGuidancePenalty(
         {guidance_weight_, guidance_penalty_ / norm_guidance_penalty_});
