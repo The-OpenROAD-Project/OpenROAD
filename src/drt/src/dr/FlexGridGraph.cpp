@@ -263,23 +263,24 @@ void FlexGridGraph::initEdges(const frDesign* design,
               }
             }
           }
+          if (isOutOfDieVia) {
+            continue;
+          }
           auto xCoord = xCoords_[xIdx];
           auto xIt2 = xLayer2Map.find(xCoord);
           if (xIt2 == xLayer2Map.end()) {
             continue;
           }
           // via to upper layer
-          if (!isOutOfDieVia) {
-            const bool is_on_grid
-                = yIt->second != nullptr && xIt2->second != nullptr;
-            const bool allow_off_grid
-                = layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
-                  || isAccessPointLocation(layerNum, xCoord, yCoord);
-            if (is_on_grid || allow_off_grid) {
-              addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
-              if (!is_on_grid) {
-                setGridCostU(xIdx, yIdx, zIdx);
-              }
+          const bool is_on_grid
+              = yIt->second != nullptr && xIt2->second != nullptr;
+          const bool allow_off_grid
+              = layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
+                || isAccessPointLocation(layerNum, xCoord, yCoord);
+          if (is_on_grid || allow_off_grid) {
+            addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
+            if (!is_on_grid) {
+              setGridCostU(xIdx, yIdx, zIdx);
             }
           }
         }
@@ -327,24 +328,25 @@ void FlexGridGraph::initEdges(const frDesign* design,
               }
             }
           }
+          if (isOutOfDieVia) {
+            continue;
+          }
           auto yCoord = yCoords_[yIdx];
           auto yIt2 = yLayer2Map.find(yCoord);
           if (yIt2 == yLayer2Map.end()) {
             continue;
           }
           // via to upper layer
-          if (!isOutOfDieVia) {
-            const bool is_on_grid
-                = xIt->second != nullptr && yIt2->second != nullptr;
-            const bool allow_off_grid
-                = layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
-                  || isAccessPointLocation(layerNum, xCoord, yCoord);
+          const bool is_on_grid
+              = xIt->second != nullptr && yIt2->second != nullptr;
+          const bool allow_off_grid
+              = layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
+                || isAccessPointLocation(layerNum, xCoord, yCoord);
 
-            if (is_on_grid || allow_off_grid) {
-              addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
-              if (!is_on_grid) {
-                setGridCostU(xIdx, yIdx, zIdx);
-              }
+          if (is_on_grid || allow_off_grid) {
+            addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
+            if (!is_on_grid) {
+              setGridCostU(xIdx, yIdx, zIdx);
             }
           }
         }
