@@ -20,6 +20,7 @@ define_test_group "non_flow" {
   timing_api
   timing_api_2
   timing_api_3
+  timing_api_4
   upf_test
   upf_aes
   two_designs
