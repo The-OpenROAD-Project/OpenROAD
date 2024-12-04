@@ -916,7 +916,6 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
                        top_pin_op_moditerm,
                        top_pin_op_modbterm);
 
-  //  Term* term = network_->term(top_pin);
   odb::dbNet* flat_op_net = top_pin_op_bterm->getNet();
   odb::dbModNet* hier_op_net = top_pin_op_bterm->getModNet();
 
@@ -940,26 +939,8 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
   Pin* buffer_ip_pin;
   Pin* buffer_op_pin;
   getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
-  odb::dbITerm* buffer_op_pin_iterm;
-  odb::dbBTerm* buffer_op_pin_bterm;
-  odb::dbModITerm* buffer_op_pin_moditerm;
-  odb::dbModBTerm* buffer_op_pin_modbterm;
-  db_network_->staToDb(buffer_op_pin,
-                       buffer_op_pin_iterm,
-                       buffer_op_pin_bterm,
-                       buffer_op_pin_moditerm,
-                       buffer_op_pin_modbterm);
-
-  odb::dbITerm* buffer_ip_pin_iterm;
-  odb::dbBTerm* buffer_ip_pin_bterm;
-  odb::dbModITerm* buffer_ip_pin_moditerm;
-  odb::dbModBTerm* buffer_ip_pin_modbterm;
-  db_network_->staToDb(buffer_ip_pin,
-                       buffer_ip_pin_iterm,
-                       buffer_ip_pin_bterm,
-                       buffer_ip_pin_moditerm,
-                       buffer_ip_pin_modbterm);
-
+  odb::dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
+  odb::dbITerm* buffer_ip_pin_iterm = db_network_->flatPin(buffer_ip_pin);
   if (buffer_ip_pin_iterm) {
     if (flat_op_net) {
       buffer_ip_pin_iterm->connect(flat_op_net);
@@ -968,11 +949,9 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
       buffer_ip_pin_iterm->connect(hier_op_net);
     }
   }
-
   buffer_op_pin_iterm->connect(db_network_->staToDb(buffer_out));
   top_pin_op_bterm->connect(db_network_->staToDb(buffer_out));
   SwapNetNames(buffer_op_pin_iterm, buffer_ip_pin_iterm);
-
   // rename the mod net to match the flat net.
   if (buffer_ip_pin_iterm->getNet() && buffer_ip_pin_iterm->getModNet()) {
     buffer_ip_pin_iterm->getModNet()->rename(
@@ -2394,7 +2373,14 @@ PinSet* Resizer::findFloatingPins()
 
 //
 // Todo update this to apply over whole design
+// There is  a latent bug here. Note that we could
+// be inserting a new net somewhere deep in the hierarchy
+// which might, possibly, have a net called (say) net10 it in
+// which would clash with net10 in the top level. The fix
+// is to have another makeUniqueNetName which takes in a scope
+// prefix.
 //
+
 string Resizer::makeUniqueNetName()
 {
   string node_name;

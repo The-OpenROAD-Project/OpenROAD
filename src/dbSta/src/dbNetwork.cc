@@ -1676,39 +1676,6 @@ Net* dbNetwork::net(const Term* term) const
   return nullptr;
 }
 
-dbNet* dbNetwork::flatNet(const Term* term) const
-{
-  dbITerm* iterm = nullptr;
-  dbBTerm* bterm = nullptr;
-  dbModITerm* moditerm = nullptr;
-  dbModBTerm* modbterm = nullptr;
-  staToDb(term, iterm, bterm, moditerm, modbterm);
-  if (bterm) {
-    dbNet* dnet = bterm->getNet();
-    if (dnet) {
-      return dnet;
-    }
-  }
-  return nullptr;
-}
-
-dbModNet* dbNetwork::hierNet(const Term* term) const
-{
-  dbBTerm* bterm = nullptr;
-  dbModBTerm* modbterm = nullptr;
-
-  if (modbterm) {
-    return modbterm->getModNet();
-  }
-  if (bterm) {
-    dbModNet* mod_net = bterm->getModNet();
-    if (mod_net) {
-      return mod_net;
-    }
-  }
-  return nullptr;
-}
-
 ////////////////////////////////////////////////////////////////
 
 bool dbNetwork::isLinked() const
