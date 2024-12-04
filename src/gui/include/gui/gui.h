@@ -733,6 +733,7 @@ class Gui
 
   void selectHelp(const std::string& item);
   void selectChart(const std::string& name);
+  void updateTimingReport();
 
   // accessors for to add and remove commands needed to restore the state of the
   // gui
