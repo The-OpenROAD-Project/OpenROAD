@@ -750,4 +750,12 @@ void show_help(const std::string& item)
   gui->selectHelp(item);
 }
 
+void select_chart(const std::string& name)
+{
+  if (!check_gui("select_chart")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->selectChart(name);
+}
 %} // inline
