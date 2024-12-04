@@ -1,10 +1,10 @@
 include("openroad")
 
 set(TEST_NAMES
-    generate_pattern
+    45_gcd
     ext_pattern
     gcd
-    45_gcd
+    generate_pattern
     names
 )
 

@@ -1,7 +1,6 @@
 include("openroad")
 
 set(TEST_NAMES
-    add_constraint_debug
     add_constraint1
     add_constraint2
     add_constraint3
@@ -18,6 +17,7 @@ set(TEST_NAMES
     add_constraint14
     add_constraint15
     add_constraint16
+    add_constraint_debug
     add_constraint_error1
     add_constraint_error2
     add_constraint_error3
@@ -79,11 +79,11 @@ set(TEST_NAMES
     no_pins
     no_tracks
     on_grid
-    partial_tracks_error
     partial_tracks
+    partial_tracks_error
+    pin_extension
     pin_length
     pin_length_error
-    pin_extension
     pin_thick_multiplier
     place_pin1
     place_pin2

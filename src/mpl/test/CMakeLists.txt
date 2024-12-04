@@ -1,10 +1,10 @@
 include("openroad")
 
 set(TEST_NAMES
-    level3_01
-    level3_02
     east_west1
     east_west2
+    level3_01
+    level3_02
     snap_layer1
 )
 

@@ -8,6 +8,7 @@ include("openroad")
 
 set(TEST_NAMES
     aes
+    blockage01
     cell_on_block1
     cell_on_block2
     check1
@@ -24,6 +25,7 @@ set(TEST_NAMES
     fence03
     fillers1
     fillers2
+    fillers2_verbose
     fillers3
     fillers4
     fillers5
@@ -31,7 +33,6 @@ set(TEST_NAMES
     fillers7
     fillers8
     fillers9
-    fillers2_verbose
     fillers9_verbose
     fragmented_row01
     fragmented_row02
@@ -71,7 +72,6 @@ set(TEST_NAMES
     simple08
     simple09
     simple10
-    blockage01
 )
 
 # Skipped

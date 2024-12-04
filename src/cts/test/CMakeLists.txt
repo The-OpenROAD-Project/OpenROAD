@@ -7,10 +7,9 @@
 include("openroad")
 
 set(TEST_NAMES
-    simple_test_hier
     array
-    array_no_blockages
     array_ins_delay
+    array_no_blockages
     balance_levels
     check_buffers
     check_buffers_blockages
@@ -22,6 +21,7 @@ set(TEST_NAMES
     find_clock
     find_clock_pad
     insertion_delay
+    lvt_lib
     max_cap
     no_clocks
     no_sinks
@@ -29,12 +29,12 @@ set(TEST_NAMES
     simple_test
     simple_test_clustered
     simple_test_clustered_max_cap
-    lvt_lib
+    simple_test_hier
 )
 
 # Skipped
-#cts_readme_msgs_check
 #cts_man_tcl_check
+#cts_readme_msgs_check
 
 foreach(TEST_NAME IN LISTS TEST_NAMES)
     or_integration_test("cts" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)

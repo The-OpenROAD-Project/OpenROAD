@@ -12,6 +12,9 @@ set(TEST_NAMES
     init_floorplan7
     init_floorplan8
     init_floorplan9
+    init_floorplan_even_rows
+    init_floorplan_flip_sites
+    init_floorplan_odd_rows
     make_tracks1
     make_tracks2
     make_tracks3
@@ -24,11 +27,8 @@ set(TEST_NAMES
     placement_blockage1
     placement_blockage2
     tiecells
-    upf_test
     upf_shifter_test
-    init_floorplan_even_rows
-    init_floorplan_odd_rows
-    init_floorplan_flip_sites
+    upf_test
 )
 
 # Skipped

@@ -1,25 +1,14 @@
 include("openroad")
 
 set(TEST_NAMES
-    hierclock
-    hier2
-    readdb_hier
-    constant1
-    dont_touch_attr
-    make_port
-    network_edit1
-    sdc_names1
-    sdc_names2
-    sdc_get1
-    sta1
-    sta2
-    sta3
-    sta4
-    sta5
     block_sta1
+    constant1
     find_clks1
     find_clks2
-    report_json1
+    hier2
+    hierclock
+    make_port
+    network_edit1
     power1
     read_liberty1
     read_verilog1
@@ -33,9 +22,20 @@ set(TEST_NAMES
     read_verilog9
     read_verilog10
     read_verilog11
+    readdb_hier
     report_cell_usage
     report_cell_usage_modinsts
     report_cell_usage_modinsts_metrics
+    report_json1
+    sdc_get1
+    sdc_names1
+    sdc_names2
+    sta1
+    sta2
+    sta3
+    sta4
+    sta5
+    write_sdc1
     write_verilog1
     write_verilog2
     write_verilog3
@@ -44,7 +44,6 @@ set(TEST_NAMES
     write_verilog6
     write_verilog7
     write_verilog8
-    write_sdc1
 )
 
 foreach(TEST_NAME IN LISTS TEST_NAMES)

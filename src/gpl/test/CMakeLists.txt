@@ -1,37 +1,37 @@
 include("openroad")
 
 set(TEST_NAMES
+    ar01
+    ar02
+    clust01
+    convergence01
+    core01
+    density01
+    diverge01
+    error01
+    incremental01
+    incremental02
+    nograd01
     simple01
     simple01-obs
+    simple01-rd
+    simple01-ref
+    simple01-skip-io
     simple01-td
     simple01-td-tune
     simple01-uniform
-    simple01-ref
-    simple01-skip-io
-    simple01-rd
-    simple02-rd
-    simple03-rd
-    simple04-rd
     simple02
+    simple02-rd
     simple03
+    simple03-rd
     simple04
+    simple04-rd
     simple05
     simple06
     simple07
     simple08
     simple09
     simple10
-    core01
-    ar01
-    ar02
-    incremental01
-    incremental02
-    error01
-    diverge01
-    density01
-    convergence01
-    nograd01
-    clust01
 )
 
 # Skipped

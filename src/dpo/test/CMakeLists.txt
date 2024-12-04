@@ -4,9 +4,9 @@ set(TEST_NAMES
     aes
     blockage1
     gcd
+    gcd_no_one_site_gaps
     ibex
     multi_height1
-    gcd_no_one_site_gaps
     regions1
     regions2
 )

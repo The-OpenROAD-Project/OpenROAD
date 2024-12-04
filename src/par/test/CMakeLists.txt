@@ -1,8 +1,8 @@
 include("openroad")
 
 set(TEST_NAMES
-    read_part
     partition_gcd
+    read_part
 )
 
 # Skipped

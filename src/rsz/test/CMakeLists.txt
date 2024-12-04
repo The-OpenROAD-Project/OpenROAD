@@ -1,13 +1,6 @@
 include("openroad")
 
 set(TEST_NAMES
-    clone_flat
-    clone_hier
-    pinswap_flat
-    pinswap_hier
-    split_load_hier
-    resize1_hier
-    repair_hold1_hier
     buffer_ports1
     buffer_ports3
     buffer_ports4
@@ -16,11 +9,14 @@ set(TEST_NAMES
     buffer_ports7
     buffer_ports8
     buffer_varying_lengths
+    clone_flat
+    clone_hier
     eliminate_dead_logic1
     eqy_repair_setup2
     eqy_repair_setup5
     fanin_fanout1
     gain_buffering1
+    gcd_resize
     make_parasitics1
     make_parasitics2
     make_parasitics3
@@ -28,24 +24,20 @@ set(TEST_NAMES
     make_parasitics5
     make_parasitics6
     pin_swap1
-    resize1
-    resize4
-    resize5
-    resize6
-    resize_slack1
-    resize_slack2
-    resize_slack3
+    pinswap_flat
+    pinswap_hier
     remove_buffers1
     remove_buffers2
     remove_buffers3
-    repair_clk_nets1
-    repair_clk_inverters1
     repair_cap1
     repair_cap2
     repair_cap3
+    repair_clk_inverters1
+    repair_clk_nets1
     repair_design1
     repair_design2
     repair_design3
+    repair_design3_verbose
     repair_design4
     repair_design5
     repair_fanout1
@@ -57,6 +49,7 @@ set(TEST_NAMES
     repair_fanout7
     repair_fanout8
     repair_hold1
+    repair_hold1_hier
     repair_hold2
     repair_hold3
     repair_hold4
@@ -65,6 +58,7 @@ set(TEST_NAMES
     repair_hold7
     repair_hold8
     repair_hold9
+    repair_hold9_verbose
     repair_hold10
     repair_hold11
     repair_hold12
@@ -75,12 +69,14 @@ set(TEST_NAMES
     repair_setup2
     repair_setup3
     repair_setup4
-    repair_setup4_hier
     repair_setup4_flat
+    repair_setup4_hier
+    repair_setup4_verbose
     repair_setup5
     repair_setup6
     repair_setup7
     repair_setup8
+    repair_setup_undo
     repair_slew1
     repair_slew2
     repair_slew3
@@ -98,9 +94,6 @@ set(TEST_NAMES
     repair_slew15
     repair_slew16
     repair_slew17
-    report_floating_nets1
-    report_floating_nets2
-    report_floating_nets3
     repair_tie1
     repair_tie2
     repair_tie3
@@ -120,13 +113,20 @@ set(TEST_NAMES
     repair_wire9
     repair_wire10
     repair_wire11
-    gcd_resize
-    repair_design3_verbose
-    repair_setup4_verbose
-    repair_hold9_verbose
+    report_floating_nets1
+    report_floating_nets2
+    report_floating_nets3
+    resize1
+    resize1_hier
+    resize4
+    resize5
+    resize6
+    resize_slack1
+    resize_slack2
+    resize_slack3
     set_dont_touch1
     set_dont_use1
-    repair_setup_undo
+    split_load_hier
 )
 
 # Skipped

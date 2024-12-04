@@ -21,16 +21,16 @@ set(TEST_NAMES
     gcd
     gcd_flute
     inst_pin_out_of_die
-    invalid_routing_layer
     invalid_pin_placement
+    invalid_routing_layer
     macro_obs_not_aligned
     modeling_instance_obs
     multiple_calls
     ndr_1w_3s
     ndr_2w_3s
     no_tracks
-    obstruction
     obs_out_of_die
+    obstruction
     overlapping_edges
     pd1
     pd2

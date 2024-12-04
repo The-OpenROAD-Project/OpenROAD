@@ -1,9 +1,9 @@
 include("openroad")
 
 set(TEST_NAMES
+    check
     flute1
     flute_gcd
-    check
     parse_clocks
     pd1
     pd2

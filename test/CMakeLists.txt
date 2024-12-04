@@ -5,9 +5,9 @@ set(TEST_NAMES
     timing_api_2
     timing_api_3
     timing_api_4
+    two_designs
     upf_test
     upf_aes
-    two_designs
 )
 
 foreach(TEST_NAME IN LISTS TEST_NAMES)
