@@ -802,6 +802,21 @@ gui::hide_widget
 | ---- | ---- |
 | `name` | of the widget. For example, the display controls would be "Display Control". |
 
+### Select chart
+
+To select a specific chart in the charts widget:
+
+```tcl
+gui::select_chart
+    name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+| `name` | of the chart. For example, "Endpoint Slack". |
+
 
 ## License
 

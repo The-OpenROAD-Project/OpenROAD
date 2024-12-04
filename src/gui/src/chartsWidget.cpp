@@ -132,12 +132,12 @@ ChartsWidget::ChartsWidget(QWidget* parent)
 #ifdef ENABLE_CHARTS
 void ChartsWidget::changeMode()
 {
+  filters_menu_->clear();
+  clearChart();
+
   if (mode_menu_->currentIndex() == SELECT) {
     return;
   }
-
-  filters_menu_->clear();
-  clearChart();
 
   if (mode_menu_->currentIndex() == SLACK_HISTOGRAM) {
     resetting_menu_ = true;
@@ -145,6 +145,11 @@ void ChartsWidget::changeMode()
     setSlackHistogram();
     resetting_menu_ = false;
   }
+}
+
+void ChartsWidget::setMode(Mode mode)
+{
+  mode_menu_->setCurrentIndex(mode);
 }
 
 void ChartsWidget::setSlackHistogramLayout()

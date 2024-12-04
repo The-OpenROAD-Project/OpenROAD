@@ -108,6 +108,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   ScriptWidget* getScriptWidget() const { return script_; }
   Inspector* getInspector() const { return inspector_; }
   HelpWidget* getHelpViewer() const { return help_widget_; }
+  ChartsWidget* getChartsWidget() const { return charts_widget_; }
 
   std::vector<std::string> getRestoreTclCommands();
 

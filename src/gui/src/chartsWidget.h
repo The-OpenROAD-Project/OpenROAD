@@ -89,6 +89,12 @@ class ChartsWidget : public QDockWidget
   Q_OBJECT
 
  public:
+  enum Mode
+  {
+    SELECT,
+    SLACK_HISTOGRAM
+  };
+
   ChartsWidget(QWidget* parent = nullptr);
 #ifdef ENABLE_CHARTS
   void setSTA(sta::dbSta* sta);
@@ -96,6 +102,8 @@ class ChartsWidget : public QDockWidget
   {
     logger_ = logger;
   }
+
+  void setMode(Mode mode);
 
  signals:
   void endPointsToReport(const std::set<const sta::Pin*>& report_pins,
@@ -109,12 +117,6 @@ class ChartsWidget : public QDockWidget
   void emitEndPointsInBucket(int bar_index);
 
  private:
-  enum Mode
-  {
-    SELECT,
-    SLACK_HISTOGRAM
-  };
-
   void setSlackHistogram();
   void setSlackHistogramLayout();
   void setModeMenu();
