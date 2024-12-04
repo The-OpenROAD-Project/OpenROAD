@@ -99,7 +99,7 @@
 [INFO GPL-0101] Iter: 342, overflow: 0.143, keep rsz at: 0.3
 [INFO GPL-0106] Timing-driven: worst slack 1.41e-09
 [INFO GPL-0103] Timing-driven: weighted 31 nets.
-[INFO GPL-0107] Timing-driven: RSZ delta area:     0.0
+[INFO GPL-0107] Timing-driven: RSZ delta area:     0
 [INFO GPL-0108] Timing-driven: new target density: 0.67964303
 [NesterovSolve] Iter:  350 overflow: 0.127 HPWL: 2703881
 [NesterovSolve] Iter:  360 overflow: 0.101 HPWL: 2726281

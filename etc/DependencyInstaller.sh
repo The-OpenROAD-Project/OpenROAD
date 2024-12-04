@@ -72,7 +72,7 @@ _installCommonDev() {
     eigenVersion=3.4
     cuddVersion=3.0.0
     lemonVersion=1.3.1
-    spdlogVersion=1.8.1
+    spdlogVersion=1.15.0
     gtestVersion=1.13.0
     gtestChecksum="a1279c6fb5bf7d4a5e0d0b2a4adb39ac"
 
