@@ -10,7 +10,7 @@ design = Design(tech)
 design.readDef("get_core_die_areas.def")
 timing = Timing(design)
 
-db = openroad.get_db()
+db = tech.getDB()
 
 for corner in timing.getCorners():
     for net in design.getBlock().getNets():
