@@ -1694,11 +1694,6 @@ class dbBlock : public dbObject
 
   void clearUserInstFlags();
 
-  ///
-  /// return the module name id map
-  ///
-  std::map<std::string, int>* getModuleNameIdMap();
-
  public:
   ///
   /// This method copies the via-table from the src block to the destination

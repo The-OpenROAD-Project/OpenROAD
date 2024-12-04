@@ -554,7 +554,8 @@ dbModule* dbModule::makeUniqueDbModule(const char* cell_name,
     return module;
   }
 
-  std::map<std::string, int>& name_id_map = *(block->getModuleNameIdMap());
+  std::map<std::string, int>& name_id_map
+      = ((_dbBlock*) block)->_module_name_id_map;
   std::string orig_cell_name(cell_name);
   std::string module_name = orig_cell_name + '_' + std::string(inst_name);
   do {
