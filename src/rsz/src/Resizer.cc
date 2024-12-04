@@ -733,37 +733,19 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
       = makeBuffer(buffer_cell, buffer_name.c_str(), parent, pin_loc);
   inserted_buffer_count_++;
 
-  /*
-    Get buffer output iterm
-   */
-
   Pin* buffer_ip_pin = nullptr;
   Pin* buffer_op_pin = nullptr;
   odb::dbITerm* buffer_ip_iterm;
-
   odb::dbITerm* buffer_op_iterm;
-  odb::dbBTerm* buffer_bterm_ignore;
-  odb::dbModITerm* buffer_moditerm_ignore;
-  odb::dbModBTerm* buffer_modbterm_ignore;
 
   getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
-  db_network_->staToDb(buffer_ip_pin,
-                       buffer_ip_iterm,
-                       buffer_bterm_ignore,
-                       buffer_moditerm_ignore,
-                       buffer_modbterm_ignore);
-  db_network_->staToDb(buffer_op_pin,
-                       buffer_op_iterm,
-                       buffer_bterm_ignore,
-                       buffer_moditerm_ignore,
-                       buffer_modbterm_ignore);
+  buffer_ip_iterm = db_network_->flatPin(buffer_ip_pin);
+  buffer_op_iterm = db_network_->flatPin(buffer_op_pin);
 
   pin_iter = network_->connectedPinIterator(input_net);
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
 
-    if (pin == top_pin) {
-    }
     //
     // Get destination type.
     // could be moditerm
