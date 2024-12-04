@@ -733,15 +733,6 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
       = makeBuffer(buffer_cell, buffer_name.c_str(), parent, pin_loc);
   inserted_buffer_count_++;
 
-  Pin* buffer_ip_pin = nullptr;
-  Pin* buffer_op_pin = nullptr;
-  odb::dbITerm* buffer_ip_iterm;
-  odb::dbITerm* buffer_op_iterm;
-
-  getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
-  buffer_ip_iterm = db_network_->flatPin(buffer_ip_pin);
-  buffer_op_iterm = db_network_->flatPin(buffer_op_pin);
-
   pin_iter = network_->connectedPinIterator(input_net);
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
@@ -800,7 +791,6 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
   delete pin_iter;
 
   sta_->connectPin(buffer, input, input_net);
-
   sta_->connectPin(buffer, output, buffer_out);
 
   // Remove the top net connection to the mod net, if any
