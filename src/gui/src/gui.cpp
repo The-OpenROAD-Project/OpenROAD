@@ -55,6 +55,7 @@
 #include "ruler.h"
 #include "scriptWidget.h"
 #include "sta/StaMain.hh"
+#include "timingWidget.h"
 #include "utl/Logger.h"
 #include "utl/exception.h"
 
@@ -1316,6 +1317,11 @@ void Gui::selectChart(const std::string& name)
 #else
   logger_->warn(utl::GUI, 106, "Charts are not enabled.");
 #endif
+}
+
+void Gui::updateTimingReport()
+{
+  main_window->getTimingWidget()->populatePaths();
 }
 
 class SafeApplication : public QApplication

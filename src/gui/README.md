@@ -817,6 +817,13 @@ gui::select_chart
 | ---- | ---- |
 | `name` | of the chart. For example, "Endpoint Slack". |
 
+### Update timing report
+
+Update the paths in the Timing Report widget:
+
+```tcl
+gui::update_timing_report
+```
 
 ## License
 
