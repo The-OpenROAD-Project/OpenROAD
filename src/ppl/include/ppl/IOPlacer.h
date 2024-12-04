@@ -127,8 +127,6 @@ class IOPlacer
   void clearConstraints();
   void runHungarianMatching(bool random_mode);
   void runAnnealing(bool random);
-  void reportHPWL();
-  void printConfig(bool annealing = false);
   Parameters* getParameters() { return parms_.get(); }
   int64 computeIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
@@ -159,16 +157,10 @@ class IOPlacer
                 bool force_to_die_bound,
                 bool placed_status);
 
-  static Direction getDirection(const std::string& direction);
-  static Edge getEdge(const std::string& edge);
-
   void setAnnealingConfig(float temperature,
                           int max_iterations,
                           int perturb_per_iter,
                           float alpha);
-  void checkPinPlacement();
-  bool checkPinConstraints();
-  bool checkMirroredPins();
 
   void setRenderer(std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer);
   AbstractIOPlacerRenderer* getRenderer();
@@ -182,7 +174,15 @@ class IOPlacer
 
   void writePinPlacement(const char* file_name, bool placed);
 
+  static Direction getDirection(const std::string& direction);
+  static Edge getEdge(const std::string& edge);
+
  private:
+  void checkPinPlacement();
+  bool checkPinConstraints();
+  bool checkMirroredPins();
+  void reportHPWL();
+  void printConfig(bool annealing = false);
   void createTopLayerPinPattern();
   void initNetlistAndCore(const std::set<int>& hor_layer_idx,
                           const std::set<int>& ver_layer_idx);
