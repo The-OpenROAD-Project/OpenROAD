@@ -4088,6 +4088,13 @@ void dbBlock::clearUserInstFlags()
     inst->clearUserFlag3();
   }
 }
+
+std::map<std::string, int>* dbBlock::getModuleNameIdMap()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return &(block->_module_name_id_map);
+}
+
 void dbBlock::setDrivingItermsforNets()
 {
   dbSet<dbNet> nets = getNets();
