@@ -245,7 +245,9 @@ void FlexGridGraph::initEdges(const frDesign* design,
       for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
         auto yCoord = yCoords_[yIdx];
         auto yIt = yLayerMap.find(yCoord);
-        if (yIt == yLayerMap.end()) continue;
+        if (yIt == yLayerMap.end()) {
+          continue;
+        }
         for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
           // add cost to out-of-die edge
           bool isOutOfDieVia = outOfDieVia(xIdx, yIdx, zIdx, dieBox_);
@@ -263,14 +265,16 @@ void FlexGridGraph::initEdges(const frDesign* design,
           }
           auto xCoord = xCoords_[xIdx];
           auto xIt2 = xLayer2Map.find(xCoord);
-          if (xIt2 == xLayer2Map.end()) continue;
+          if (xIt2 == xLayer2Map.end()) {
+            continue;
+          }
           // via to upper layer
           if (!isOutOfDieVia) {
             const bool is_on_grid
-              = yIt->second != nullptr && xIt2->second != nullptr;
+                = yIt->second != nullptr && xIt2->second != nullptr;
             const bool allow_off_grid
-              = layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
-              || isAccessPointLocation(layerNum, xCoord, yCoord);
+                = layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
+                  || isAccessPointLocation(layerNum, xCoord, yCoord);
             if (is_on_grid || allow_off_grid) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
               if (!is_on_grid) {
@@ -283,7 +287,9 @@ void FlexGridGraph::initEdges(const frDesign* design,
       for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
         auto xCoord = xCoords_[xIdx];
         auto xIt3 = xNonPrefLayerMap.find(xCoord);
-        if (xIt3 == xNonPrefLayerMap.end()) continue;
+        if (xIt3 == xNonPrefLayerMap.end()) {
+          continue;
+        }
         for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
           // get non pref track layer --> use upper layer pref dir track if
           // possible
@@ -303,7 +309,9 @@ void FlexGridGraph::initEdges(const frDesign* design,
       for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
         auto xCoord = xCoords_[xIdx];
         auto xIt = xLayerMap.find(xCoord);
-        if (xIt == xLayerMap.end()) continue;
+        if (xIt == xLayerMap.end()) {
+          continue;
+        }
         for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
           // add cost to out-of-die edge
           bool isOutOfDieVia = outOfDieVia(xIdx, yIdx, zIdx, dieBox_);
@@ -321,7 +329,9 @@ void FlexGridGraph::initEdges(const frDesign* design,
           }
           auto yCoord = yCoords_[yIdx];
           auto yIt2 = yLayer2Map.find(yCoord);
-          if (yIt2 == yLayer2Map.end()) continue;
+          if (yIt2 == yLayer2Map.end()) {
+            continue;
+          }
           // via to upper layer
           if (!isOutOfDieVia) {
             const bool is_on_grid
@@ -342,7 +352,9 @@ void FlexGridGraph::initEdges(const frDesign* design,
       for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
         auto yCoord = yCoords_[yIdx];
         auto yIt3 = yNonPrefLayerMap.find(yCoord);
-        if (yIt3 == yNonPrefLayerMap.end()) continue;
+        if (yIt3 == yNonPrefLayerMap.end()) {
+          continue;
+        }
         for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
           // get non pref track layer --> use upper layer pref dir track if
           // possible
