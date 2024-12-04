@@ -27,10 +27,10 @@ rmp_aux.restructure(
     design,
     liberty_file_name="Nangate45/Nangate45_typ.lib",
     target="area",
+    workdir_name="results/python/gcd",
     abc_logfile="results/abc_rcon.log",
     tielo_port=tielo,
-    tiehi_port=tiehi,
-    workdir_name="./results",
+    tiehi_port=tiehi
 )
 
 design.evalTclString("report_design_area")

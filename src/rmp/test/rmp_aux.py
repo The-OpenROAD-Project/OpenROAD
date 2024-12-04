@@ -1,6 +1,7 @@
 import utl
 from string import Template
 import rmp
+import os
 
 # So, getting back objects from evalTclString is not supported and we
 # end up with this... These lib pins appear to be Liberty lib pins,
@@ -54,6 +55,7 @@ def restructure(
     tiehi_port=None,
     abc_logfile=""
 ):
+    os.makedirs(workdir_name, exist_ok=True)
     rst = design.getRestructure()
     set_tielo(design, tielo_port)
     set_tiehi(design, tiehi_port)
