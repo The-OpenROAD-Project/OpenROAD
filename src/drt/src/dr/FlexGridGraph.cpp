@@ -284,16 +284,16 @@ void FlexGridGraph::initEdges(const frDesign* design,
           }
         }
       }
-      for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
-        auto xCoord = xCoords_[xIdx];
-        auto xIt3 = xNonPrefLayerMap.find(xCoord);
-        if (xIt3 == xNonPrefLayerMap.end()) {
-          continue;
-        }
-        for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
-          // get non pref track layer --> use upper layer pref dir track if
-          // possible
-          if (router_cfg_->USENONPREFTRACKS && !layer->isUnidirectional()) {
+      // get non pref track layer --> use upper layer pref dir track if
+      // possible
+      if (router_cfg_->USENONPREFTRACKS && !layer->isUnidirectional()) {
+        for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
+          auto xCoord = xCoords_[xIdx];
+          auto xIt3 = xNonPrefLayerMap.find(xCoord);
+          if (xIt3 == xNonPrefLayerMap.end()) {
+            continue;
+          }
+          for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
             // add edge for non-preferred direction
             // vertical non-pref track
             if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
@@ -349,16 +349,16 @@ void FlexGridGraph::initEdges(const frDesign* design,
           }
         }
       }
-      for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
-        auto yCoord = yCoords_[yIdx];
-        auto yIt3 = yNonPrefLayerMap.find(yCoord);
-        if (yIt3 == yNonPrefLayerMap.end()) {
-          continue;
-        }
-        for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
-          // get non pref track layer --> use upper layer pref dir track if
-          // possible
-          if (router_cfg_->USENONPREFTRACKS && !layer->isUnidirectional()) {
+      // get non pref track layer --> use upper layer pref dir track if
+      // possible
+      if (router_cfg_->USENONPREFTRACKS && !layer->isUnidirectional()) {
+        for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
+          auto yCoord = yCoords_[yIdx];
+          auto yIt3 = yNonPrefLayerMap.find(yCoord);
+          if (yIt3 == yNonPrefLayerMap.end()) {
+            continue;
+          }
+          for (frMIdx xIdx = 0; xIdx < xCoords_.size(); xIdx++) {
             // add edge for non-preferred direction
             // vertical non-pref track
             if (layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
