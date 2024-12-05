@@ -1,0 +1,71 @@
+module top (clk,
+    \q1[0] ,
+    \q1[1] ,
+    rst);
+ input clk;
+ output \q1[0] ;
+ output \q1[1] ;
+ input rst;
+
+ wire _00_;
+ wire _01_;
+ wire _04_;
+ wire _05_;
+ wire _06_;
+ wire _07_;
+ wire \q2[0] ;
+ wire \q2[1] ;
+ wire VDD;
+ wire VSS;
+
+ sky130_fd_sc_hd__xnor2_1 _09_ (.A(\q1[0] ),
+    .B(\q1[1] ),
+    .Y(_06_),
+    .VGND(VSS),
+    .VPWR(VDD));
+ sky130_fd_sc_hd__nor2_1 _10_ (.A(rst),
+    .B(\q1[0] ),
+    .Y(_05_),
+    .VGND(VSS),
+    .VPWR(VDD));
+ sky130_fd_sc_hd__nor2_1 _11_ (.A(rst),
+    .B(_06_),
+    .Y(_00_),
+    .VGND(VSS),
+    .VPWR(VDD));
+ sky130_fd_sc_hd__xnor2_1 _12_ (.A(\q2[0] ),
+    .B(\q2[1] ),
+    .Y(_07_),
+    .VGND(VSS),
+    .VPWR(VDD));
+ sky130_fd_sc_hd__nor2_1 _13_ (.A(rst),
+    .B(_07_),
+    .Y(_01_),
+    .VGND(VSS),
+    .VPWR(VDD));
+ sky130_fd_sc_hd__nand2b_1 _17_ (.A_N(rst),
+    .B(\q2[0] ),
+    .Y(_04_),
+    .VGND(VSS),
+    .VPWR(VDD));
+ sky130_fd_sc_hd__dfxtp_1 _18_ (.D(_00_),
+    .Q(\q1[1] ),
+    .CLK(clk),
+    .VGND(VSS),
+    .VPWR(VDD));
+ sky130_fd_sc_hd__dfxtp_1 _19_ (.D(_01_),
+    .Q(\q2[1] ),
+    .CLK(clk),
+    .VGND(VSS),
+    .VPWR(VDD));
+ sky130_fd_sc_hd__dfxtp_1 _22_ (.D(_04_),
+    .Q(\q2[0] ),
+    .CLK(clk),
+    .VGND(VSS),
+    .VPWR(VDD));
+ sky130_fd_sc_hd__dfxtp_1 _23_ (.D(_05_),
+    .Q(\q1[0] ),
+    .CLK(clk),
+    .VGND(VSS),
+    .VPWR(VDD));
+endmodule
