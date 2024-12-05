@@ -76,6 +76,4 @@ messages(
   TARGET dst
 )
 
-if(ENABLE_TESTS)
-  add_subdirectory(test/cpp)
-endif()
+add_subdirectory(test)
