@@ -2004,50 +2004,6 @@ void Flute::plottree(Tree t)
   }
 }
 
-// Write svg file viewable in a web browser.
-void Flute::write_svg(Tree t, const char* filename)
-{
-  int x_min = INT_MAX;
-  int y_min = INT_MAX;
-  int x_max = INT_MIN;
-  int y_max = INT_MIN;
-  for (int i = 0; i < 2 * t.deg - 2; i++) {
-    x_min = std::min(x_min, t.branch[i].x);
-    y_min = std::min(y_min, t.branch[i].y);
-    x_max = std::max(x_max, t.branch[i].x);
-    y_max = std::max(y_max, t.branch[i].y);
-  }
-
-  int dx = x_max - x_min;
-  int dy = y_max - y_min;
-  const double sz = std::max(std::max(dx, dy) / 400.0, 1.0);
-  const double hsz = sz / 2;
-
-  FILE* stream = fopen(filename, "w");
-  if (stream) {
-    fprintf(stream,
-            "<svg xmlns=\"http://www.w3.org/2000/svg\" "
-            "viewBox=\"%d %d %d %d\">\n",
-            x_min,
-            y_min,
-            dx,
-            dy);
-
-    for (int i = 0; i < 2 * t.deg - 2; i++) {
-      fprintf(stream,
-              "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" "
-              "style=\"stroke: black; stroke-width: %lf\"/>\n",
-              t.branch[i].x,
-              t.branch[i].y,
-              t.branch[t.branch[i].n].x,
-              t.branch[t.branch[i].n].y,
-              hsz / 2);
-    }
-    fprintf(stream, "</svg>\n");
-    fclose(stream);
-  }
-}
-
 }  // namespace flt
 
 }  // namespace stt
