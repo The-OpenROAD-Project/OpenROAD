@@ -185,12 +185,14 @@ void Ora::setBotHost(const char* host)
 {
   hostUrl = host;
   logger_->info(utl::ORA, 100, "Setting ORAssistant host to {}", hostUrl);
-  std::ofstream hostUrlFile("orassistant_host.txt");
+  
+  std::string hostFilePath = std::string(get_current_dir_name()) + "/orassistant_host.txt";
+  std::ofstream hostUrlFile(hostFilePath);
 
   if (hostUrlFile.is_open()) {
     hostUrlFile << hostUrl;
     hostUrlFile.close();
-    logger_->info(utl::ORA, 109, "ORAssistant host saved to file.");
+    logger_->info(utl::ORA, 109, "ORAssistant host saved to file {}", hostFilePath);
   } else {
     logger_->warn(utl::ORA, 108, "Failed to write ORAssistant host to file.");
   }
