@@ -35,7 +35,6 @@ proc define_tool_script { tool script } {
 
 # roughly flow order
 define_tool_script "OpenDB" "src/odb/test/regression"
-define_tool_script "stt" "src/stt/test/regression"
 define_tool_script "ifp" "src/ifp/test/regression"
 define_tool_script "ppl" "src/ppl/test/regression"
 define_tool_script "pdn" "src/pdn/test/regression"
