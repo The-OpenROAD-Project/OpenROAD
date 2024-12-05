@@ -58,7 +58,7 @@ void FlexGridGraph::printExpansion(const FlexWavefrontGrid& currGrid,
       pt,
       currGrid.getCost(),
       currGrid.getPathCost(),
-      currGrid.getLastDir(),
+      int(currGrid.getLastDir()),
       currGrid.getCost() - currGrid.getPathCost(),
       gridX,
       gridY);

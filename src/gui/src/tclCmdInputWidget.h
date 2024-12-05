@@ -33,6 +33,10 @@
 #pragma once
 
 #include <tcl.h>
+// Workaround for https://github.com/swig/swig/issues/2887
+#ifndef TCL_SIZE_MAX
+using Tcl_Size = int;
+#endif
 
 #include <QCompleter>
 #include <QMenu>

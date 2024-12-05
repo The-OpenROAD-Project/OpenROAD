@@ -35,10 +35,10 @@
 {
   flake,
   lib,
-  clangStdenv,
+  llvmPackages_17,
   fetchFromGitHub,
   libsForQt5,
-  boost183,
+  boost186,
   eigen,
   cudd,
   ninja,
@@ -62,38 +62,30 @@
   gnumake,
   flex,
   bison,
-  clang-tools_14,
   gtest,
   # or-tools
   stdenv,
   overrideSDK,
   git,
 }: let
-  or-tools' =
-    (or-tools.override {
-      ## Alligned alloc not available on the default SDK for x86_64-darwin (10.12!!)
-      stdenv =
-        if stdenv.isDarwin
-        then (overrideSDK stdenv "11.0")
-        else stdenv;
-    })
-    .overrideAttrs (finalAttrs: previousAttrs: {
-      # Based on https://github.com/google/or-tools/commit/af44f98dbeb905656b5a9fc664b5fdcffcbe1f60
-      # Stops CMake going haywire on reconfigures
-      postPatch =
-        previousAttrs.postPatch
-        + ''
-          sed -Ei.bak 's/(NOT\s+\w+_FOUND\s+AND\s+)+//' cmake/ortoolsConfig.cmake.in
-          sed -Ei.bak 's/NOT absl_FOUND/NOT TARGET absl::base/' cmake/ortoolsConfig.cmake.in
-        '';
-    });
-  self = clangStdenv.mkDerivation (finalAttrs: {
+  stdenv = llvmPackages_17.stdenv;
+  or-tools' = or-tools.overrideAttrs (finalAttrs: previousAttrs: {
+    # Based on https://github.com/google/or-tools/commit/af44f98dbeb905656b5a9fc664b5fdcffcbe1f60
+    # Stops CMake going haywire on reconfigures
+    postPatch =
+      previousAttrs.postPatch
+      + ''
+        sed -Ei.bak 's/(NOT\s+\w+_FOUND\s+AND\s+)+//' cmake/ortoolsConfig.cmake.in
+        sed -Ei.bak 's/NOT absl_FOUND/NOT TARGET absl::base/' cmake/ortoolsConfig.cmake.in
+      '';
+  });
+  self = stdenv.mkDerivation (finalAttrs: {
     name = "openroad";
 
     src = flake;
 
     cmakeFlags = [
-      "-DTCL_LIBRARY=${tcl}/lib/libtcl${clangStdenv.hostPlatform.extensions.sharedLibrary}"
+      "-DTCL_LIBRARY=${tcl}/lib/libtcl${stdenv.hostPlatform.extensions.sharedLibrary}"
       "-DTCL_HEADER=${tcl}/include/tcl.h"
       "-DUSE_SYSTEM_BOOST:BOOL=ON"
       "-DVERBOSE=1"
@@ -105,6 +97,8 @@
     
     shellHook = ''
       alias ord-format-changed="${git}/bin/git diff --name-only | grep -E '\.(cpp|cc|c|h|hh)$' | xargs clang-format -i -style=file:.clang-format"; 
+      alias ord-cmake-debug="cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-g" -G Ninja $cmakeFlags .."
+      alias ord-cmake-release="cmake -DCMAKE_BUILD_TYPE=Release -G Ninja $cmakeFlags .."
     '';
     
     qt5Libs = [
@@ -117,7 +111,7 @@
     QT_PLUGIN_PATH = lib.makeSearchPathOutput "bin" "lib/qt-${libsForQt5.qt5.qtbase.version}/plugins" self.qt5Libs;
 
     buildInputs = self.qt5Libs ++ [
-      boost183
+      boost186
       eigen
       cudd
       tcl
@@ -147,7 +141,7 @@
       flex
       bison
       libsForQt5.wrapQtAppsHook
-      clang-tools_14
+      llvmPackages_17.clang-tools
     ];
   });
 in
