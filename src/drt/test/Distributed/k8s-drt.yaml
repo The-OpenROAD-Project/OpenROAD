@@ -35,11 +35,11 @@ spec:
       hostNetwork: true
       containers:
         - name: openroad
-          image: openroad/centos-binary:latest
+          image: ${YOUR_OPENROAD_BINARY_DOCKER_IMAGE}
           imagePullPolicy: Always
           command: ["/bin/sh", "-c"]
           args:
-            - echo -e 'set_thread_count $::env(MY_POD_CPU)\nrun_worker -host $::env(MY_POD_IP) -port 1111' > /home/worker.tcl ;
+            - printf 'set_thread_count %s\nrun_worker -host %s -port 1111\n' "$MY_POD_CPU" "$MY_POD_IP" > /home/worker.tcl ;
               /usr/bin/openroad /home/worker.tcl ;
           ports:
           - containerPort: 1111
@@ -81,11 +81,11 @@ spec:
     spec:
       containers:
         - name: openroad
-          image: openroad/centos-binary:latest
+          image: ${YOUR_OPENROAD_BINARY_DOCKER_IMAGE}
           imagePullPolicy: Always
           command: ["/bin/sh", "-c"]
           args:
-            - echo 'run_load_balancer -host $::env(MY_POD_IP) -port 1111 -workers_domain headless-udp' > /home/balancer.tcl ;
+            - printf 'run_load_balancer -host %s -port 1111 -workers_domain workers' "$MY_POD_IP" > /home/balancer.tcl ;
               /usr/bin/openroad /home/balancer.tcl ;
           ports:
           - containerPort: 1111

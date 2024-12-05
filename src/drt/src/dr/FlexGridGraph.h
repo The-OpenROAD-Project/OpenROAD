@@ -1113,7 +1113,6 @@ class FlexGridGraph
   bool debug_{false};
   frUInt4 curr_id_{1};
 
-
   void printExpansion(const FlexWavefrontGrid& currGrid,
                       const std::string& keyword);
   // unsafe access, no idx check
