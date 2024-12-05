@@ -3763,25 +3763,15 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
   }
 
   if (clean_nets) {
-    std::vector<Net*> to_delete;
-    NetIterator* net_iter = network_->netIterator(network_->topInstance());
-    while (net_iter->hasNext()) {
-      Net* net = net_iter->next();
-      PinSeq loads;
-      PinSeq drvrs;
-      PinSet visited_drvrs(db_network_);
-      FindNetDrvrLoads visitor(nullptr, visited_drvrs, loads, drvrs, network_);
-      network_->visitConnectedPins(net, visitor);
-      if (drvrs.empty() && loads.empty() && !dontTouch(net)) {
-        // defer deletion for later as it's not clear whether the iterator
-        // doesn't get invalidated
-        to_delete.push_back(net);
+    auto nets = db_network_->block()->getNets();
+    for (auto it = nets.begin(); it != nets.end();) {
+      if (!dontTouch(db_network_->dbToSta(*it)) && !it->isSpecial()
+          && it->getITerms().empty() && it->getBTerms().empty()) {
+        it = dbNet::destroy(it);
+        remove_net_count++;
+      } else {
+        it++;
       }
-    }
-    delete net_iter;
-    for (auto net : to_delete) {
-      sta_->deleteNet(net);
-      remove_net_count++;
     }
   }
 
