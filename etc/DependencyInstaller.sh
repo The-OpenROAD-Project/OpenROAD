@@ -420,7 +420,9 @@ _installRHELPackages() {
         tcl-thread-devel \
         tcllib \
         wget \
-        zlib-devel
+        zlib-devel \
+        libcurl-devel \
+        boost-devel
 
     yum install -y \
         https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/bison-3.7.4-5.el9.x86_64.rpm \
@@ -559,8 +561,6 @@ _installDebianPackages() {
         git \
         groff \
         lcov \
-        libboost-json-dev \
-        libcurl4-openssl-dev \
         libffi-dev \
         libgomp1 \
         libomp-dev \
@@ -568,6 +568,8 @@ _installDebianPackages() {
         libpcre3-dev \
         libreadline-dev \
         libtcl${tclver} \
+        libcurl4-openssl-dev \
+        libboost-json-dev \
         pandoc \
         python3-dev \
         qt5-image-formats-plugins \
@@ -577,7 +579,7 @@ _installDebianPackages() {
         unzip \
         wget \
         zlib1g-dev
-
+        
     if [[ $1 == 10 ]]; then
         apt-get install -y --no-install-recommends \
             libpython3.7 \
