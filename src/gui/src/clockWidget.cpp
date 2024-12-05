@@ -738,7 +738,7 @@ ClockTreeView::ClockTreeView(std::shared_ptr<ClockTree> tree,
     : QGraphicsView(new ClockTreeScene(parent), parent),
       tree_(std::move(tree)),
       renderer_(std::make_unique<ClockTreeRenderer>(tree_.get())),
-      renderer_state_(RendererState::OnlyShowOnActiveWidget),
+      renderer_state_(RendererState::NeverShow),
       scene_(nullptr),
       logger_(logger),
       show_mouse_time_tick_(true),
@@ -809,6 +809,7 @@ ClockTreeView::ClockTreeView(std::shared_ptr<ClockTree> tree,
           &ClockTreeScene::changeRendererState,
           this,
           &ClockTreeView::setRendererState);
+  scene_->setRendererState(renderer_state_);
 }
 
 void ClockTreeView::fit()
@@ -1036,6 +1037,10 @@ const char* ClockTreeView::getClockName() const
   return tree_->getClock()->name();
 }
 
+RendererState ClockTreeView::getRendererState() const
+{
+  return renderer_state_;
+}
 void ClockTreeView::setRendererState(RendererState state)
 {
   if (renderer_state_ == state) {
@@ -1591,6 +1596,8 @@ void ClockWidget::saveImage(const std::string& clock_name,
 
   ClockTreeView* view
       = static_cast<ClockTreeView*>(clocks_tab_->currentWidget());
+  auto renderer_state = view->getRendererState();
+  view->setRendererState(RendererState::AlwaysShow);
 
   ClockTreeView print_view(view->getClockTree(), stagui_.get(), logger_, this);
   QSize view_size = view->size();
@@ -1607,6 +1614,8 @@ void ClockWidget::saveImage(const std::string& clock_name,
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
   print_view.fit();
   print_view.save(QString::fromStdString(path));
+
+  view->setRendererState(renderer_state);
 
   setVisible(visible);
 }

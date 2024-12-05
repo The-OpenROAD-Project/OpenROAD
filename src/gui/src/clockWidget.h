@@ -411,6 +411,7 @@ class ClockTreeView : public QGraphicsView
 
  public slots:
   void setRendererState(RendererState state);
+  RendererState getRendererState() const;
   void fit();
   void save(const QString& path = "");
 
