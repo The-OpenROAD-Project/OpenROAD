@@ -569,7 +569,6 @@ _installDebianPackages() {
         libreadline-dev \
         libtcl${tclver} \
         libcurl4-openssl-dev \
-        libboost-json-dev \
         pandoc \
         python3-dev \
         qt5-image-formats-plugins \
