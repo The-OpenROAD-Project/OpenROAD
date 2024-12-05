@@ -727,7 +727,7 @@ bool dbNet::rename(const char* name)
   return true;
 }
 
-void dbNet::swapNetNames(dbNet* source)
+void dbNet::swapNetNames(dbNet* source, bool ok_to_journal)
 {
   _dbNet* dest_net = (_dbNet*) this;
   _dbNet* source_net = (_dbNet*) source;
@@ -735,6 +735,20 @@ void dbNet::swapNetNames(dbNet* source)
 
   char* dest_name_ptr = dest_net->_name;
   char* source_name_ptr = source_net->_name;
+
+  // allow undo..
+  if (block->_journal && ok_to_journal) {
+    block->_journal->beginAction(dbJournal::SWAP_OBJECT);
+    // a name
+    block->_journal->pushParam(dbNameObj);
+    // the type of name swap
+    block->_journal->pushParam(dbNetObj);
+    // stash the source and dest in that order,
+    // let undo reorder
+    block->_journal->pushParam(source_net->getId());
+    block->_journal->pushParam(dest_net->getId());
+    block->_journal->endAction();
+  }
 
   block->_net_hash.remove(dest_net);
   block->_net_hash.remove(source_net);
