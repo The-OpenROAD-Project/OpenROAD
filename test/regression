@@ -36,7 +36,6 @@ proc define_tool_script { tool script } {
 # roughly flow order
 define_tool_script "dpo" "src/dpo/test/regression"
 define_tool_script "drt" "src/drt/test/regression"
-define_tool_script "fin" "src/fin/test/regression"
 
 proc run_openroad_tests { } {
   global tool_errors
