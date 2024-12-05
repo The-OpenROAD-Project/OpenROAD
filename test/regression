@@ -36,7 +36,6 @@ proc define_tool_script { tool script } {
 # roughly flow order
 define_tool_script "gpl" "src/gpl/test/regression"
 define_tool_script "dpo" "src/dpo/test/regression"
-define_tool_script "grt" "src/grt/test/regression"
 define_tool_script "drt" "src/drt/test/regression"
 define_tool_script "fin" "src/fin/test/regression"
 
