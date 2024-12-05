@@ -529,7 +529,7 @@ bool AntennaChecker::checkPAR(odb::dbNet* db_net,
                               const float ratio_margin,
                               bool verbose,
                               bool report,
-			      ViolationReport& net_report)
+                              ViolationReport& net_report)
 {
   // get rules
   const odb::dbTechLayerAntennaRule* antenna_rule
@@ -584,7 +584,7 @@ bool AntennaChecker::checkPSR(odb::dbNet* db_net,
                               const float ratio_margin,
                               bool verbose,
                               bool report,
-			      ViolationReport& net_report)
+                              ViolationReport& net_report)
 {
   // get rules
   const odb::dbTechLayerAntennaRule* antenna_rule
@@ -639,7 +639,7 @@ bool AntennaChecker::checkCAR(odb::dbNet* db_net,
                               const NodeInfo& info,
                               bool verbose,
                               bool report,
-			      ViolationReport& net_report)
+                              ViolationReport& net_report)
 {
   // get rules
   const odb::dbTechLayerAntennaRule* antenna_rule
@@ -687,7 +687,7 @@ bool AntennaChecker::checkCSR(odb::dbNet* db_net,
                               const NodeInfo& info,
                               bool verbose,
                               bool report,
-			      ViolationReport& net_report)
+                              ViolationReport& net_report)
 {
   // get rules
   const odb::dbTechLayerAntennaRule* antenna_rule
@@ -736,15 +736,17 @@ bool AntennaChecker::checkRatioViolations(odb::dbNet* db_net,
                                           const float ratio_margin,
                                           bool verbose,
                                           bool report,
-					  ViolationReport& net_report)
+                                          ViolationReport& net_report)
 {
   bool node_has_violation
-      = checkPAR(db_net, layer, node_info, ratio_margin, verbose, report, net_report)
+      = checkPAR(
+            db_net, layer, node_info, ratio_margin, verbose, report, net_report)
         || checkCAR(db_net, layer, node_info, verbose, report, net_report);
   if (layer->getRoutingLevel() != 0) {
-    bool psr_violation
-        = checkPSR(db_net, layer, node_info, ratio_margin, verbose, report, net_report);
-    bool csr_violation = checkCSR(db_net, layer, node_info, verbose, report, net_report);
+    bool psr_violation = checkPSR(
+        db_net, layer, node_info, ratio_margin, verbose, report, net_report);
+    bool csr_violation
+        = checkCSR(db_net, layer, node_info, verbose, report, net_report);
     node_has_violation = node_has_violation || psr_violation || csr_violation;
   }
 
@@ -848,14 +850,14 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
                                         ratio_margin,
                                         false,
                                         false,
-					net_report);
+                                        net_report);
           bool psr_violation = checkPSR(db_net,
                                         violation_layer,
                                         violation_info,
                                         ratio_margin,
                                         false,
                                         false,
-					net_report);
+                                        net_report);
           bool violated = par_violation || psr_violation;
           double excess_ratio = 1.0;
           if (violated) {
@@ -877,14 +879,14 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
                                        ratio_margin,
                                        false,
                                        false,
-				       net_report);
+                                       net_report);
               psr_violation = checkPSR(db_net,
                                        violation_layer,
                                        violation_info,
                                        ratio_margin,
                                        false,
                                        false,
-				       net_report);
+                                       net_report);
               if (diode_count_per_gate > max_diode_count_per_gate) {
                 debugPrint(logger_,
                            ANT,
@@ -909,10 +911,18 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
                                           excess_ratio});
           }
 
-          bool car_violation
-              = checkCAR(db_net, violation_layer, violation_info, false, false, net_report);
-          bool csr_violation
-              = checkCSR(db_net, violation_layer, violation_info, false, false, net_report);
+          bool car_violation = checkCAR(db_net,
+                                        violation_layer,
+                                        violation_info,
+                                        false,
+                                        false,
+                                        net_report);
+          bool csr_violation = checkCSR(db_net,
+                                        violation_layer,
+                                        violation_info,
+                                        false,
+                                        false,
+                                        net_report);
 
           // naive approach for cumulative area violations. here, all the pins
           // of the net are included, and placing one diode per pin is not the
@@ -1157,7 +1167,6 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
                antenna_violations);
     }
   }
-//#pragma omp barrier
 
   if (verbose) {
     printReport();
