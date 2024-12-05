@@ -777,7 +777,11 @@ void IRSolver::buildNodeCurrentMap(sta::Corner* corner,
       continue;
     }
 
-    const auto find_power = powers.find(corner);
+    auto find_power = powers.find(corner);
+    if (find_power == powers.end()) {
+      find_power = powers.find(nullptr);
+    }
+
     if (find_power == powers.end()) {
       continue;
     }
