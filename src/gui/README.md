@@ -608,6 +608,21 @@ To remove all the rulers:
 gui::clear_rulers
 ```
 
+### Display help
+
+To display the help for a specific command or messasge.
+
+```tcl
+gui::show_help
+    cmd_msg
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+| `cmd_msg`| command or message ID. |
+
 ### Set Heatmap
 
 To control the settings in the heat maps:
@@ -787,6 +802,28 @@ gui::hide_widget
 | ---- | ---- |
 | `name` | of the widget. For example, the display controls would be "Display Control". |
 
+### Select chart
+
+To select a specific chart in the charts widget:
+
+```tcl
+gui::select_chart
+    name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+| `name` | of the chart. For example, "Endpoint Slack". |
+
+### Update timing report
+
+Update the paths in the Timing Report widget:
+
+```tcl
+gui::update_timing_report
+```
 
 ## License
 

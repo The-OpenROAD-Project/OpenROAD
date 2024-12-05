@@ -4088,6 +4088,7 @@ void dbBlock::clearUserInstFlags()
     inst->clearUserFlag3();
   }
 }
+
 void dbBlock::setDrivingItermsforNets()
 {
   dbSet<dbNet> nets = getNets();

@@ -37,10 +37,12 @@
 #include <stdexcept>
 #include <string>
 
+#include "chartsWidget.h"
 #include "clockWidget.h"
 #include "displayControls.h"
 #include "drcWidget.h"
 #include "heatMapPlacementDensity.h"
+#include "helpWidget.h"
 #include "inspector.h"
 #include "layoutViewer.h"
 #include "mainWindow.h"
@@ -53,6 +55,7 @@
 #include "ruler.h"
 #include "scriptWidget.h"
 #include "sta/StaMain.hh"
+#include "timingWidget.h"
 #include "utl/Logger.h"
 #include "utl/exception.h"
 
@@ -1286,6 +1289,37 @@ void Gui::init(odb::dbDatabase* db, utl::Logger* logger)
   placement_density_heat_map_->registerHeatMap();
 }
 
+void Gui::selectHelp(const std::string& item)
+{
+  if (!enabled()) {
+    return;
+  }
+
+  main_window->getHelpViewer()->selectHelp(item);
+}
+
+void Gui::selectChart(const std::string& name)
+{
+  if (!enabled()) {
+    return;
+  }
+
+  ChartsWidget::Mode mode;
+  if (name == "Endpoint Slack") {
+    mode = ChartsWidget::Mode::SLACK_HISTOGRAM;
+  } else if (name == "Select Mode") {
+    mode = ChartsWidget::Mode::SELECT;
+  } else {
+    logger_->error(utl::GUI, 105, "Chart {} is unknown.", name);
+  }
+  main_window->getChartsWidget()->setMode(mode);
+}
+
+void Gui::updateTimingReport()
+{
+  main_window->getTimingWidget()->populatePaths();
+}
+
 class SafeApplication : public QApplication
 {
  public:
@@ -1356,7 +1390,7 @@ int startGui(int& argc,
       interp, interactive, init_openroad, [&]() {
         // init remainder of GUI, to be called immediately after OpenRoad is
         // guaranteed to be initialized.
-        main_window->init(open_road->getSta());
+        main_window->init(open_road->getSta(), open_road->getDocsPath());
         // announce design created to ensure GUI gets setup
         main_window->postReadDb(main_window->getDb());
       });

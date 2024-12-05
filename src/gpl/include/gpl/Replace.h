@@ -125,7 +125,6 @@ class Replace
   void setRoutabilityCheckOverflow(float overflow);
   void setRoutabilityMaxDensity(float density);
 
-  void setRoutabilityMaxBloatIter(int iter);
   void setRoutabilityMaxInflationIter(int iter);
 
   void setRoutabilityTargetRcMetric(float rc);

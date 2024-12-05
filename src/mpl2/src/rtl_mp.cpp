@@ -204,6 +204,10 @@ void MacroPlacer2::setDebugShowBundledNets(bool show_bundled_nets)
 {
   hier_rtlmp_->setDebugShowBundledNets(show_bundled_nets);
 }
+void MacroPlacer2::setDebugShowClustersIds(bool show_clusters_ids)
+{
+  hier_rtlmp_->setDebugShowClustersIds(show_clusters_ids);
+}
 
 void MacroPlacer2::setDebugSkipSteps(bool skip_steps)
 {

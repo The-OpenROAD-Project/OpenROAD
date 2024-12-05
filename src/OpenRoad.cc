@@ -35,6 +35,7 @@
 
 #include "ord/OpenRoad.hh"
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <thread>
@@ -642,6 +643,40 @@ void OpenRoad::setThreadCount(const char* threads, bool printInfo)
 int OpenRoad::getThreadCount()
 {
   return threads_;
+}
+
+std::string OpenRoad::getExePath() const
+{
+  // use tcl since it already has a cross platform implementation of this
+  if (Tcl_Eval(tcl_interp_, "file normalize [info nameofexecutable]")
+      == TCL_OK) {
+    std::string path = Tcl_GetStringResult(tcl_interp_);
+    Tcl_ResetResult(tcl_interp_);
+    return path;
+  }
+  return "";
+}
+
+std::string OpenRoad::getDocsPath() const
+{
+  const std::string exe = getExePath();
+
+  if (exe.empty()) {
+    return "";
+  }
+
+  std::filesystem::path path(exe);
+
+  // remove binary name
+  path = path.parent_path();
+
+  if (path.stem() == "src") {
+    // remove build
+    return path.parent_path().parent_path() / "docs";
+  }
+
+  // remove bin
+  return path.parent_path() / "share" / "openroad" / "man";
 }
 
 const char* OpenRoad::getVersion()

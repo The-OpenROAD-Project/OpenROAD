@@ -1291,9 +1291,7 @@ void lefout::writeMaster(dbMaster* master)
     fmt::print(_out, "\nMACRO {}\n", name.c_str());
   }
 
-  if (master->getType() != dbMasterType::NONE) {
-    fmt::print(_out, "    CLASS {} ;\n", master->getType().getString());
-  }
+  fmt::print(_out, "    CLASS {} ;\n", master->getType().getString());
 
   const odb::Point origin = master->getOrigin();
 

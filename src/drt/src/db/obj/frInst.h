@@ -34,6 +34,7 @@
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frRef.h"
 #include "frBaseTypes.h"
+#include "odb/db.h"
 
 namespace drt {
 class frBlock;
@@ -44,8 +45,12 @@ class frInst : public frRef
 {
  public:
   // constructors
-  frInst(const frString& name, frMaster* master)
-      : name_(name), master_(master), pinAccessIdx_(0), toBeDeleted_(false)
+  frInst(const frString& name, frMaster* master, odb::dbInst* db_inst)
+      : name_(name),
+        master_(master),
+        db_inst_(db_inst),
+        pinAccessIdx_(0),
+        toBeDeleted_(false)
   {
   }
   // getters
@@ -94,6 +99,8 @@ class frInst : public frRef
   void setOrigin(const Point& tmpPoint) override { xform_.setOffset(tmpPoint); }
   dbTransform getTransform() const override { return xform_; }
   void setTransform(const dbTransform& xformIn) override { xform_ = xformIn; }
+  odb::dbInst* getDBInst() const { return db_inst_; }
+  dbTransform getDBTransform() const { return db_inst_->getTransform(); }
 
   /* from frPinFig
    * hasPin
@@ -131,8 +138,7 @@ class frInst : public frRef
   void move(const dbTransform& xform) override { ; }
   bool intersects(const Rect& box) const override { return false; }
   // others
-  dbTransform getUpdatedXform(bool noOrient = false) const;
-  static void updateXform(dbTransform& xform, Point& size);
+  dbTransform getNoRotationTransform() const;
   Rect getBoundaryBBox() const;
 
   frInstTerm* getInstTerm(int index);
@@ -142,6 +148,7 @@ class frInst : public frRef
   frMaster* master_;
   std::vector<std::unique_ptr<frInstTerm>> instTerms_;
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
+  odb::dbInst* db_inst_;
   dbTransform xform_;
   int pinAccessIdx_;
   bool toBeDeleted_;
