@@ -190,6 +190,7 @@ class DbNetDescriptor : public BaseDbDescriptor<odb::dbNet>
   Editors getEditors(std::any object) const override;
   Actions getActions(std::any object) const override;
   Selected makeSelected(std::any obj) const override;
+  bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
 

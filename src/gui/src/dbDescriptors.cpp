@@ -1573,6 +1573,13 @@ Selected DbNetDescriptor::makeSelected(std::any object) const
   return Selected();
 }
 
+bool DbNetDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_net = getObject(l);
+  auto r_net = getObject(r);
+  return BaseDbDescriptor::lessThan(l_net, r_net);
+}
+
 bool DbNetDescriptor::getAllObjects(SelectionSet& objects) const
 {
   auto* chip = db_->getChip();
