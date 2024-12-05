@@ -192,7 +192,7 @@ void Ora::setBotHost(const char* host)
   if (hostUrlFile.is_open()) {
     hostUrlFile << hostUrl;
     hostUrlFile.close();
-    logger_->info(utl::ORA, 109, "ORAssistant host saved to file {}", hostFilePath);
+    logger_->info(utl::ORA, 109, "ORAssistant host saved to orassistant_host.txt");
   } else {
     logger_->warn(utl::ORA, 108, "Failed to write ORAssistant host to file.");
   }
