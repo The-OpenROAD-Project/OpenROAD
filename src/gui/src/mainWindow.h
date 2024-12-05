@@ -53,11 +53,11 @@ class dbDatabase;
 namespace utl {
 class Logger;
 }
-#ifdef ENABLE_CHARTS
+
 namespace sta {
 class Pin;
 }
-#endif
+
 namespace gui {
 
 class LayoutViewer;
@@ -272,10 +272,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   void showGlobalConnect();
   void openDesign();
   void saveDesign();
-#ifdef ENABLE_CHARTS
   void reportSlackHistogramPaths(const std::set<const sta::Pin*>& report_pins,
                                  const std::string& path_group_name);
-#endif
   void enableDeveloper();
 
  protected:
