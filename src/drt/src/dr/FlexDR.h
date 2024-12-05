@@ -409,6 +409,9 @@ class FlexDRWorker
   std::vector<std::unique_ptr<drNet>>& getNets() { return nets_; }
   const std::vector<drNet*>* getDRNets(frNet* net) const
   {
+    if (net == nullptr || net->isSpecial()) {
+      return nullptr;
+    }
     auto it = owner2nets_.find(net);
     if (it != owner2nets_.end()) {
       return &(it->second);
@@ -536,7 +539,7 @@ class FlexDRWorker
 
   // local storage
   std::vector<std::unique_ptr<drNet>> nets_;
-  std::map<frNet*, std::vector<drNet*>> owner2nets_;
+  std::map<frNet*, std::vector<drNet*>, frBlockObjectComp> owner2nets_;
   FlexGridGraph gridGraph_;
   std::vector<frMarker> markers_;
   std::vector<frMarker> bestMarkers_;

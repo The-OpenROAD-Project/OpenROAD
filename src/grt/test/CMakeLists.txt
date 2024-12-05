@@ -21,15 +21,16 @@ set(TEST_NAMES
     gcd
     gcd_flute
     inst_pin_out_of_die
-    invalid_routing_layer
     invalid_pin_placement
+    invalid_routing_layer
     macro_obs_not_aligned
+    modeling_instance_obs
     multiple_calls
     ndr_1w_3s
     ndr_2w_3s
     no_tracks
-    obstruction
     obs_out_of_die
+    obstruction
     overlapping_edges
     pd1
     pd2
@@ -40,7 +41,16 @@ set(TEST_NAMES
     pin_edge
     pin_track_not_aligned
     pre_routed1
+    read_segments1
+    read_segments2
+    read_segments3
+    read_segments4
+    read_segments_error1
+    read_segments_error2
+    read_segments_error3
     region_adjustment
+    remove_buffers1
+    remove_buffers2
     repair_antennas1
     repair_antennas2
     repair_antennas3
@@ -62,10 +72,16 @@ set(TEST_NAMES
     tracks1
     tracks2
     tracks3
+    unplaced_inst
     upper_layer_net
-    modeling_instance_obs
+    write_segments1
+    write_segments2
 )
 
+# Skipped
+#grt_man_tcl_check
+#grt_readme_msgs_check
+
 foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("grt" ${TEST_NAME}  ${CMAKE_CURRENT_SOURCE_DIR}/regression)
+    or_integration_test("grt" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
 endforeach()

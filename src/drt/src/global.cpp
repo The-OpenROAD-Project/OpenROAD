@@ -110,7 +110,6 @@ std::ostream& operator<<(std::ostream& os, const frInstTerm& instTermIn)
   }
   os << "INSTTERM: (INST/CELL/TERM/NET) " << name << " " << cellName << " "
      << termName << " " << netName << std::endl;
-  os << *instTermIn.getTerm() << "END_INSTTERM";
   return os;
 }
 
