@@ -30,7 +30,7 @@ rmp_aux.restructure(
     workdir_name="results/python/gcd",
     abc_logfile="results/abc_rcon.log",
     tielo_port=tielo,
-    tiehi_port=tiehi
+    tiehi_port=tiehi,
 )
 
 design.evalTclString("report_design_area")
