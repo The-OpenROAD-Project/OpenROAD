@@ -243,7 +243,7 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
   frIArchive ar(viaDataFile);
   ar >> viaData;
 
-  std::unique_ptr<FlexDRGraphics> graphics_
+  std::unique_ptr<FlexDRGraphics> graphics
       = on && FlexDRGraphics::guiActive() ? std::make_unique<FlexDRGraphics>(
             debug_.get(), design_.get(), db_, logger_)
                                           : nullptr;
@@ -254,6 +254,7 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
   workerFile.close();
   auto worker = FlexDRWorker::load(
       workerStr, &viaData, design_.get(), logger_, router_cfg_.get());
+  worker->setGraphics(graphics.get());
   if (debug_->mazeEndIter != -1) {
     worker->setMazeEndIter(debug_->mazeEndIter);
   }
@@ -277,8 +278,8 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
   }
   worker->setSharedVolume(shared_volume_);
   worker->setDebugSettings(debug_.get());
-  if (graphics_) {
-    graphics_->startIter(worker->getDRIter(), router_cfg_.get());
+  if (graphics) {
+    graphics->startIter(worker->getDRIter(), router_cfg_.get());
   }
   std::string result = worker->reloadedMain();
   bool updated = worker->end(design_.get());
