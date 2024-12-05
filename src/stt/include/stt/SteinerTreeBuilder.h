@@ -116,7 +116,6 @@ class SteinerTreeBuilder
   Tree flute(const std::vector<int>& x, const std::vector<int>& y, int acc);
   int wirelength(Tree t);
   void plottree(Tree t);
-  void write_svg(Tree t, const char* filename);
   Tree flutes(const std::vector<int>& xs,
               const std::vector<int>& ys,
               const std::vector<int>& s,
