@@ -1774,7 +1774,7 @@ void dbJournal::undo_swapObject()
         }
         default: {
           _logger->critical(utl::ODB,
-                            444,
+                            467,
                             "No undo_swapObject Name support for type {}",
                             dbObject::getTypeName(sub_obj_type));
         }
