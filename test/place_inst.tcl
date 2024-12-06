@@ -20,7 +20,7 @@ place_inst \
 
 place_inst \
     -name test1 \
-    -origin "200 200" \
+    -origin "200 100" \
     -cell HM_100x100_1x1_CENTERED
 
 catch {place_inst \
@@ -42,9 +42,21 @@ puts $msg
 
 place_inst \
     -name test2 \
-    -origin "300 300" \
+    -origin "300 100" \
     -orientation R180 \
     -cell HM_100x100_1x1_CENTERED
+
+place_inst \
+    -name test3 \
+    -origin "150 400" \
+    -orientation R180 \
+    -cell HM_100x100_1x1
+
+place_inst \
+    -name test4 \
+    -location "250 350" \
+    -orientation R180 \
+    -cell HM_100x100_1x1
 
 set def_file [make_result_file place_inst.def]
 write_def $def_file
