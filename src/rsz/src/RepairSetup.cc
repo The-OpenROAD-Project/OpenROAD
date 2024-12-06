@@ -541,7 +541,7 @@ bool RepairSetup::repairPath(PathRef& path,
       const PathRef* drvr_path = expanded.path(drvr_index);
       Vertex* drvr_vertex = drvr_path->vertex(sta_);
       const Pin* drvr_pin = drvr_vertex->pin();
-      const Net* net = network_->net(drvr_pin);
+      const Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
       LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
       LibertyCell* drvr_cell = drvr_port ? drvr_port->libertyCell() : nullptr;
       const int fanout = this->fanout(drvr_vertex);

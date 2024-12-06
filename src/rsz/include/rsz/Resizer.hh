@@ -585,6 +585,7 @@ class Resizer : public dbStaState
   bool hasPins(Net* net);
   void getPins(Net* net, PinVector& pins) const;
   void getPins(Instance* inst, PinVector& pins) const;
+  void SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from);
   Point tieLocation(const Pin* load, int separation);
   bool hasFanout(Vertex* drvr);
   InstanceSeq findClkInverters();
