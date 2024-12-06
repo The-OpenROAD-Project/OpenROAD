@@ -3099,6 +3099,7 @@ void dbNet::destroy(dbNet* net_)
 {
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) net->getOwner();
+  dbBlock* dbblock = (dbBlock*) block;
 
   if (net->_flags._dont_touch) {
     net->getLogger()->error(
@@ -3137,6 +3138,15 @@ void dbNet::destroy(dbNet* net_)
   dbSet<dbGuide> guides = net_->getGuides();
   for (auto gitr = guides.begin(); gitr != guides.end();) {
     gitr = dbGuide::destroy(gitr);
+  }
+
+  dbSet<dbGlobalConnect> connects = dbblock->getGlobalConnects();
+  for (auto gitr = connects.begin(); gitr != connects.end();) {
+    if (gitr->getNet()->getId() == net_->getId()) {
+      gitr = dbGlobalConnect::destroy(gitr);
+    } else {
+      gitr++;
+    }
   }
 
   if (block->_journal) {

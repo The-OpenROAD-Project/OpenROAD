@@ -7665,6 +7665,10 @@ class dbGlobalConnect : public dbObject
                                  const std::string& pin_pattern);
 
   static void destroy(dbGlobalConnect* global_connect);
+
+  static dbSet<dbGlobalConnect>::iterator destroy(
+      dbSet<dbGlobalConnect>::iterator& itr);
+
   // User Code End dbGlobalConnect
 };
 
