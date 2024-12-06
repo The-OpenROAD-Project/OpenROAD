@@ -1365,16 +1365,15 @@ int startGui(int& argc,
 
   // create new MainWindow
   main_window = new gui::MainWindow(load_settings);
-  if (minimize) {
-    main_window->showMinimized();
-  }
 
   open_road->addObserver(main_window);
   if (!interactive) {
     gui->setContinueAfterClose();
     main_window->setAttribute(Qt::WA_DontShowOnScreen);
   }
-  main_window->show();
+  if (!minimize) {
+    main_window->show();
+  }
 
   gui->setLogger(open_road->getLogger());
 
