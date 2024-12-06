@@ -1,6 +1,7 @@
 record_tests {
   error1
   get_core_die_areas
+  place_inst
   timing_api
   timing_api_2
   timing_api_3
@@ -17,6 +18,7 @@ record_pass_fail_tests {
 define_test_group "non_flow" {
   error1
   get_core_die_areas
+  place_inst
   timing_api
   timing_api_2
   timing_api_3
