@@ -55,7 +55,6 @@
   zlib,
   clp,
   cbc,
-  re2,
   swig4,
   pkg-config,
   cmake,
@@ -63,23 +62,14 @@
   flex,
   bison,
   gtest,
-  # or-tools
-  stdenv,
-  overrideSDK,
   git,
+  or-tools_9_11,
+  highs, # for or-tools
+  re2, # for or-tools
 }: let
   stdenv = llvmPackages_17.stdenv;
-  or-tools' = or-tools.overrideAttrs (finalAttrs: previousAttrs: {
-    # Based on https://github.com/google/or-tools/commit/af44f98dbeb905656b5a9fc664b5fdcffcbe1f60
-    # Stops CMake going haywire on reconfigures
-    postPatch =
-      previousAttrs.postPatch
-      + ''
-        sed -Ei.bak 's/(NOT\s+\w+_FOUND\s+AND\s+)+//' cmake/ortoolsConfig.cmake.in
-        sed -Ei.bak 's/NOT absl_FOUND/NOT TARGET absl::base/' cmake/ortoolsConfig.cmake.in
-      '';
-  });
-  self = stdenv.mkDerivation (finalAttrs: {
+in
+  stdenv.mkDerivation (finalAttrs: {
     name = "openroad";
 
     src = flake;
@@ -90,47 +80,50 @@
       "-DUSE_SYSTEM_BOOST:BOOL=ON"
       "-DVERBOSE=1"
     ];
-    
+
     postPatch = ''
       patchShebangs .
     '';
-    
+
     shellHook = ''
-      alias ord-format-changed="${git}/bin/git diff --name-only | grep -E '\.(cpp|cc|c|h|hh)$' | xargs clang-format -i -style=file:.clang-format"; 
+      alias ord-format-changed="${git}/bin/git diff --name-only | grep -E '\.(cpp|cc|c|h|hh)$' | xargs clang-format -i -style=file:.clang-format";
       alias ord-cmake-debug="cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-g" -G Ninja $cmakeFlags .."
       alias ord-cmake-release="cmake -DCMAKE_BUILD_TYPE=Release -G Ninja $cmakeFlags .."
     '';
-    
+
     qt5Libs = [
       libsForQt5.qt5.qtbase
       libsForQt5.qt5.qtcharts
       libsForQt5.qt5.qtsvg
       libsForQt5.qt5.qtdeclarative
     ];
-    
-    QT_PLUGIN_PATH = lib.makeSearchPathOutput "bin" "lib/qt-${libsForQt5.qt5.qtbase.version}/plugins" self.qt5Libs;
 
-    buildInputs = self.qt5Libs ++ [
-      boost186
-      eigen
-      cudd
-      tcl
-      python3
-      readline
-      tclreadline
-      spdlog
-      libffi
-      llvmPackages.openmp
+    QT_PLUGIN_PATH = lib.makeSearchPathOutput "bin" "lib/qt-${libsForQt5.qt5.qtbase.version}/plugins" finalAttrs.qt5Libs;
 
-      lemon-graph
-      or-tools'
-      glpk
-      zlib
-      clp
-      cbc
-      re2
-      gtest
-    ];
+    buildInputs =
+      finalAttrs.qt5Libs
+      ++ [
+        boost186
+        cbc
+        clp
+        cudd
+        eigen
+        glpk
+        gtest
+        lemon-graph
+        libffi
+        llvmPackages.openmp
+        python3
+        readline
+        spdlog
+        tcl
+        tclreadline
+        zlib
+
+        or-tools_9_11
+        highs
+        re2
+      ];
 
     nativeBuildInputs = [
       swig4
@@ -143,6 +136,4 @@
       libsForQt5.wrapQtAppsHook
       llvmPackages_17.clang-tools
     ];
-  });
-in
-  self
+  })
