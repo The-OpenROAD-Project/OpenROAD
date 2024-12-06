@@ -13,10 +13,12 @@ or_integration_tests(
     check_power_grid_macros
     check_power_grid_ok_disconnected
     corners
+    corners_assign_power
     gcd_all_vss
     gcd_em_test_vdd
     gcd_no_vsrc
     gcd_sky130_vdd
+    gcd_test_assign_power
     gcd_test_vdd
     gcd_vss_no_vsrc
     gcd_write_sp_test_vdd

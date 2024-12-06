@@ -578,6 +578,7 @@ _installDebianPackages() {
     if [[ $1 == 10 ]]; then
         apt-get install -y --no-install-recommends \
             libpython3.7 \
+            libqt5charts5-dev \
             qt5-default
 
     else
@@ -588,6 +589,7 @@ _installDebianPackages() {
         fi
         apt-get install -y --no-install-recommends \
             libpython${pythonver} \
+            libqt5charts5-dev \
             qtbase5-dev \
             qtchooser \
             qt5-qmake \

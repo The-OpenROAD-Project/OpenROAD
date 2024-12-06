@@ -59,6 +59,7 @@ IRSolver::IRSolver(
     rsz::Resizer* resizer,
     utl::Logger* logger,
     const std::map<odb::dbNet*, std::map<sta::Corner*, Voltage>>& user_voltages,
+    const std::map<odb::dbInst*, std::map<sta::Corner*, Power>>& user_powers,
     const PDNSim::GeneratedSourceSettings& generated_source_settings)
     : net_(net),
       logger_(logger),
@@ -67,6 +68,7 @@ IRSolver::IRSolver(
       network_(new IRNetwork(net_, logger_, floorplanning)),
       gui_(nullptr),
       user_voltages_(user_voltages),
+      user_powers_(user_powers),
       generated_source_settings_(generated_source_settings)
 {
 }
@@ -763,6 +765,28 @@ void IRSolver::buildNodeCurrentMap(sta::Corner* corner,
     if (find_inst == inst_nodes.end()) {
       continue;
     }
+    const auto& nodes = find_inst->second;
+    for (auto* node : nodes) {
+      currents[node] += current / nodes.size();
+    }
+  }
+
+  for (const auto& [inst, powers] : user_powers_) {
+    auto find_inst = inst_nodes.find(inst);
+    if (find_inst == inst_nodes.end()) {
+      continue;
+    }
+
+    auto find_power = powers.find(corner);
+    if (find_power == powers.end()) {
+      find_power = powers.find(nullptr);
+    }
+
+    if (find_power == powers.end()) {
+      continue;
+    }
+
+    const Current current = find_power->second / power_voltage;
     const auto& nodes = find_inst->second;
     for (auto* node : nodes) {
       currents[node] += current / nodes.size();

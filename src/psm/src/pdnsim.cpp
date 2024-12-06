@@ -95,6 +95,12 @@ void PDNSim::setNetVoltage(odb::dbNet* net, sta::Corner* corner, double voltage)
   voltages[corner] = voltage;
 }
 
+void PDNSim::setInstPower(odb::dbInst* inst, sta::Corner* corner, float power)
+{
+  auto& powers = user_powers_[inst];
+  powers[corner] = power;
+}
+
 void PDNSim::analyzePowerGrid(odb::dbNet* net,
                               sta::Corner* corner,
                               GeneratedSourceType source_type,
@@ -171,6 +177,7 @@ psm::IRSolver* PDNSim::getIRSolver(odb::dbNet* net, bool floorplanning)
                                         resizer_,
                                         logger_,
                                         user_voltages_,
+                                        user_powers_,
                                         generated_source_settings_);
     addOwner(net->getBlock());
   }

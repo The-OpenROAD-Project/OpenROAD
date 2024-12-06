@@ -12,6 +12,7 @@ or_integration_tests(
     clone_flat
     clone_hier
     eliminate_dead_logic1
+    eliminate_dead_logic2
     eqy_repair_setup2
     eqy_repair_setup5
     fanin_fanout1

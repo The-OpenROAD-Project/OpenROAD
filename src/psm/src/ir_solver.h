@@ -88,14 +88,16 @@ class IRSolver
     std::set<ITermNode*, Node::Compare> unconnected_iterms_;
   };
 
-  IRSolver(odb::dbNet* net,
-           bool floorplanning,
-           sta::dbSta* sta,
-           rsz::Resizer* resizer,
-           utl::Logger* logger,
-           const std::map<odb::dbNet*, std::map<sta::Corner*, Voltage>>&
-               user_voltages,
-           const PDNSim::GeneratedSourceSettings& generated_source_settings);
+  IRSolver(
+      odb::dbNet* net,
+      bool floorplanning,
+      sta::dbSta* sta,
+      rsz::Resizer* resizer,
+      utl::Logger* logger,
+      const std::map<odb::dbNet*, std::map<sta::Corner*, Voltage>>&
+          user_voltages,
+      const std::map<odb::dbInst*, std::map<sta::Corner*, Power>>& user_powers,
+      const PDNSim::GeneratedSourceSettings& generated_source_settings);
 
   odb::dbNet* getNet() const { return net_; };
 
@@ -234,6 +236,7 @@ class IRSolver
   std::unique_ptr<DebugGui> gui_;
 
   const std::map<odb::dbNet*, std::map<sta::Corner*, Voltage>>& user_voltages_;
+  const std::map<odb::dbInst*, std::map<sta::Corner*, Power>>& user_powers_;
   std::map<sta::Corner*, Voltage> solution_voltages_;
 
   const PDNSim::GeneratedSourceSettings& generated_source_settings_;
