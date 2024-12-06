@@ -245,11 +245,11 @@ The `place_inst` command is used to place an instance.  If -cell is
 given then a new instance may be created as well as placed.
 
 ```
-sta::define_cmd_args "place_inst" {-name inst_name \
-                                   (-origin xy_origin | -location xy_location) \
-                                   [-orientation orientation] \
-                                   [-cell library_cell] \
-                                   [-status status]}
+place_inst -name inst_name \
+           (-origin xy_origin | -location xy_location) \
+           [-orientation orientation] \
+           [-cell library_cell] \
+           [-status status]
 ```
 
 ##### Options
