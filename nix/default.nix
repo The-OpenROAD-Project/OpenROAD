@@ -35,9 +35,11 @@
 {
   flake,
   lib,
-  llvmPackages_17,
+  clangStdenv,
+  clang-tools,
   fetchFromGitHub,
   libsForQt5,
+  bzip2,
   boost186,
   eigen,
   cudd,
@@ -66,16 +68,13 @@
   or-tools_9_11,
   highs, # for or-tools
   re2, # for or-tools
-}: let
-  stdenv = llvmPackages_17.stdenv;
-in
-  stdenv.mkDerivation (finalAttrs: {
+}: clangStdenv.mkDerivation (finalAttrs: {
     name = "openroad";
 
     src = flake;
 
     cmakeFlags = [
-      "-DTCL_LIBRARY=${tcl}/lib/libtcl${stdenv.hostPlatform.extensions.sharedLibrary}"
+      "-DTCL_LIBRARY=${tcl}/lib/libtcl${clangStdenv.hostPlatform.extensions.sharedLibrary}"
       "-DTCL_HEADER=${tcl}/include/tcl.h"
       "-DUSE_SYSTEM_BOOST:BOOL=ON"
       "-DVERBOSE=1"
@@ -121,8 +120,7 @@ in
         zlib
 
         or-tools_9_11
-        highs
-        re2
+        bzip2
       ];
 
     nativeBuildInputs = [
@@ -134,6 +132,6 @@ in
       flex
       bison
       libsForQt5.wrapQtAppsHook
-      llvmPackages_17.clang-tools
+      clang-tools
     ];
   })

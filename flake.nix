@@ -23,9 +23,14 @@
       default = pkgs': pkgs: {
         or-tools_9_11 = (nixpkgs.lib.callPackageWith pkgs') ./nix/or-tools_9_11.nix {
           inherit (pkgs'.darwin) DarwinTools;
+          clangStdenv =
+            if pkgs'.system == "x86_64-darwin"
+            then (pkgs'.overrideSDK pkgs'.clangStdenv "11.0")
+            else pkgs'.clangStdenv;
         };
         openroad = (nixpkgs.lib.callPackageWith pkgs') ./nix/default.nix {
           flake = self;
+          inherit (pkgs'.llvmPackages_16) clang-tools;
         };
         openroad-release = pkgs'.openroad.overrideAttrs (finalAttrs: previousAttrs: {
           pname = "openroad-release";

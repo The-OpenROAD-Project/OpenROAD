@@ -69,99 +69,97 @@
   pkg-config,
   protobuf,
   re2,
-  llvmPackages_17,
+  clangStdenv,
   swig,
   unzip,
   zlib,
   highs,
-}: let
-  stdenv = llvmPackages_17.stdenv;
-in
-  stdenv.mkDerivation (finalAttrs: {
-    pname = "or-tools";
-    version = "9.11";
+}:
+clangStdenv.mkDerivation (finalAttrs: {
+  pname = "or-tools";
+  version = "9.11";
 
-    src = fetchFromGitHub {
-      owner = "google";
-      repo = "or-tools";
-      rev = "v${finalAttrs.version}";
-      hash = "sha256-aRhUAs9Otvra7VPJvrf0fhDCGpYhOw1//BC4dFJ7/xI=";
-    };
+  src = fetchFromGitHub {
+    owner = "google";
+    repo = "or-tools";
+    rev = "v${finalAttrs.version}";
+    hash = "sha256-aRhUAs9Otvra7VPJvrf0fhDCGpYhOw1//BC4dFJ7/xI=";
+  };
 
-    cmakeFlags =
-      [
-        "-DBUILD_DEPS=OFF"
-        "-DBUILD_absl=OFF"
-        "-DCMAKE_INSTALL_BINDIR=bin"
-        "-DCMAKE_INSTALL_INCLUDEDIR=include"
-        "-DCMAKE_INSTALL_LIBDIR=lib"
-        "-DUSE_GLPK=ON"
-        "-DUSE_SCIP=OFF"
-        "-DPROTOC_PRG=${protobuf}/bin/protoc"
-      ]
-      ++ lib.optionals stdenv.hostPlatform.isDarwin ["-DCMAKE_MACOSX_RPATH=OFF"];
+  cmakeFlags =
+    [
+      "-DBUILD_DEPS=OFF"
+      "-DBUILD_absl=OFF"
+      "-DCMAKE_INSTALL_BINDIR=bin"
+      "-DCMAKE_INSTALL_INCLUDEDIR=include"
+      "-DCMAKE_INSTALL_LIBDIR=lib"
+      "-DUSE_GLPK=ON"
+      "-DUSE_SCIP=OFF"
+      "-DPROTOC_PRG=${protobuf}/bin/protoc"
+    ]
+    ++ lib.optionals clangStdenv.hostPlatform.isDarwin ["-DCMAKE_MACOSX_RPATH=OFF"];
 
-    strictDeps = true;
+  strictDeps = true;
 
-    nativeBuildInputs =
-      [
-        cmake
-        ensureNewerSourcesForZipFilesHook
-        pkg-config
-        swig
-        unzip
-      ]
-      ++ lib.optionals stdenv.hostPlatform.isDarwin [
-        DarwinTools
-      ];
-
-    buildInputs = [
-      abseil-cpp
-      bzip2
-      cbc
-      eigen
-      glpk
-      re2
-      zlib
-      highs
+  nativeBuildInputs =
+    [
+      cmake
+      ensureNewerSourcesForZipFilesHook
+      pkg-config
+      swig
+      unzip
+    ]
+    ++ lib.optionals clangStdenv.hostPlatform.isDarwin [
+      DarwinTools
     ];
 
-    propagatedBuildInputs = [
-      abseil-cpp
-      protobuf
-    ];
+  buildInputs = [
+    abseil-cpp
+    bzip2
+    cbc
+    eigen
+    glpk
+    zlib
+  ];
 
-    env.NIX_CFLAGS_COMPILE = toString [
-      # fatal error: 'python/google/protobuf/proto_api.h' file not found
-      "-I${protobuf.src}"
-    ];
+  propagatedBuildInputs = [
+    abseil-cpp
+    protobuf
+    re2
+    highs
+  ];
 
-    # some tests fail on linux and hang on darwin
-    doCheck = false;
+  env.NIX_CFLAGS_COMPILE = toString [
+    # fatal error: 'python/google/protobuf/proto_api.h' file not found
+    "-I${protobuf.src}"
+  ];
 
-    preCheck = ''
-      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH''${LD_LIBRARY_PATH:+:}$PWD/lib
+  # some tests fail on linux and hang on darwin
+  doCheck = false;
+
+  preCheck = ''
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH''${LD_LIBRARY_PATH:+:}$PWD/lib
+  '';
+
+  # This extra configure step prevents the installer from littering
+  # $out/bin with sample programs that only really function as tests,
+  # and disables the upstream installation of a zipped Python egg that
+  # can’t be imported with our Python setup.
+  installPhase = ''
+    cmake . -DBUILD_EXAMPLES=OFF -DBUILD_PYTHON=OFF -DBUILD_SAMPLES=OFF
+    cmake --install .
+  '';
+
+  outputs = ["out"];
+
+  meta = with lib; {
+    homepage = "https://github.com/google/or-tools";
+    license = licenses.asl20;
+    description = ''
+      Google's software suite for combinatorial optimization.
     '';
-
-    # This extra configure step prevents the installer from littering
-    # $out/bin with sample programs that only really function as tests,
-    # and disables the upstream installation of a zipped Python egg that
-    # can’t be imported with our Python setup.
-    installPhase = ''
-      cmake . -DBUILD_EXAMPLES=OFF -DBUILD_PYTHON=OFF -DBUILD_SAMPLES=OFF
-      cmake --install .
-    '';
-
-    outputs = ["out"];
-
-    meta = with lib; {
-      homepage = "https://github.com/google/or-tools";
-      license = licenses.asl20;
-      description = ''
-        Google's software suite for combinatorial optimization.
-      '';
-      mainProgram = "fzn-ortools";
-      maintainers = with maintainers; [andersk];
-      platforms = with platforms; linux ++ darwin;
-    };
-  })
+    mainProgram = "fzn-ortools";
+    maintainers = with maintainers; [andersk];
+    platforms = with platforms; linux ++ darwin;
+  };
+})
