@@ -20,33 +20,8 @@ def baseTests(String image) {
                     currentBuild.result = 'FAILURE';
                 }
                 sh label: 'Save ctest results', script: 'tar zcvf results-ctest.tgz build/Testing';
-                archiveArtifacts artifacts: 'results-ctest.tgz';
-            }
-        }
-    }
-
-    base_tests['Unit Tests Tcl'] = {
-        node {
-            withDockerContainer(args: '-u root', image: image) {
-                stage('Setup Tcl Tests') {
-                    sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
-                    checkout scm;
-                    unstash 'install';
-                }
-                stage('Unit Tests TCL') {
-                    try {
-                        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                            timeout(time: 30, unit: 'MINUTES') {
-                                sh label: 'Tcl regression', script: './test/regression';
-                            }
-                        }
-                    } catch (e) {
-                        echo 'Failed regressions';
-                        currentBuild.result = 'FAILURE';
-                    }
-                    sh label: 'Save Tcl results', script: "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
-                    archiveArtifacts artifacts: '**/results.tgz';
-                }
+                sh label: 'Save results', script: "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
+                archiveArtifacts artifacts: 'results-ctest.tgz, **/results.tgz';
             }
         }
     }
