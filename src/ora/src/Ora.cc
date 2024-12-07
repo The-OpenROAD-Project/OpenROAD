@@ -105,7 +105,7 @@ void Ora::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger)
         "agent-retriever";
 
   try {
-    std::ifstream hostUrlFile("orassistant_host.txt");
+    std::ifstream hostUrlFile(std::string(getenv("HOME")) + "/.local/orassistant_host.txt");
     if (hostUrlFile.is_open()) {
       std::getline(hostUrlFile, hostUrl);
       hostUrlFile.close();
@@ -186,13 +186,25 @@ void Ora::setBotHost(const char* host)
   hostUrl = host;
   logger_->info(utl::ORA, 100, "Setting ORAssistant host to {}", hostUrl);
   
-  std::string hostFilePath = std::string(get_current_dir_name()) + "/orassistant_host.txt";
+  // checking if .local directory exists
+  std::string localDirPath = std::string(getenv("HOME")) + "/.local";
+  std::ifstream localDir(localDirPath);
+  if (!localDir) {
+    logger_->info(utl::ORA, 110, "Creating ~/.local directory.");
+    std::string mkdirCmd = "mkdir " + localDirPath;
+    int ret = system(mkdirCmd.c_str());
+    if (ret != 0) {
+      logger_->warn(utl::ORA, 112, "Failed to create ~/.local directory.");
+    }
+  }
+
+  std::string hostFilePath = localDirPath + "/orassistant_host.txt";
   std::ofstream hostUrlFile(hostFilePath);
 
   if (hostUrlFile.is_open()) {
     hostUrlFile << hostUrl;
     hostUrlFile.close();
-    logger_->info(utl::ORA, 109, "ORAssistant host saved to orassistant_host.txt");
+    logger_->info(utl::ORA, 109, "ORAssistant host saved to ~/.local/orassistant_host.txt");
   } else {
     logger_->warn(utl::ORA, 108, "Failed to write ORAssistant host to file.");
   }

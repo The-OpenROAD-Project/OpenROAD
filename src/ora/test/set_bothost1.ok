@@ -1,3 +1,4 @@
 Setting ORAssistant host to http://0.0.0.0:8080/mock
 [INFO ORA-0100] Setting ORAssistant host to http://0.0.0.0:8080/mock
-[INFO ORA-0109] ORAssistant host saved to orassistant_host.txt
+[INFO ORA-0110] Creating ~/.local directory.
+[INFO ORA-0109] ORAssistant host saved to ~/.local/orassistant_host.txt
