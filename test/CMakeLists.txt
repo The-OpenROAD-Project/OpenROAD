@@ -1,6 +1,7 @@
 set(TEST_NAMES
     error1
     get_core_die_areas
+    place_inst
     timing_api
     timing_api_2
     timing_api_3

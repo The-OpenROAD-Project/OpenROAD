@@ -727,6 +727,40 @@ bool dbNet::rename(const char* name)
   return true;
 }
 
+void dbNet::swapNetNames(dbNet* source, bool ok_to_journal)
+{
+  _dbNet* dest_net = (_dbNet*) this;
+  _dbNet* source_net = (_dbNet*) source;
+  _dbBlock* block = (_dbBlock*) source_net->getOwner();
+
+  char* dest_name_ptr = dest_net->_name;
+  char* source_name_ptr = source_net->_name;
+
+  // allow undo..
+  if (block->_journal && ok_to_journal) {
+    block->_journal->beginAction(dbJournal::SWAP_OBJECT);
+    // a name
+    block->_journal->pushParam(dbNameObj);
+    // the type of name swap
+    block->_journal->pushParam(dbNetObj);
+    // stash the source and dest in that order,
+    // let undo reorder
+    block->_journal->pushParam(source_net->getId());
+    block->_journal->pushParam(dest_net->getId());
+    block->_journal->endAction();
+  }
+
+  block->_net_hash.remove(dest_net);
+  block->_net_hash.remove(source_net);
+
+  // swap names without copy, just swap the pointers
+  dest_net->_name = source_name_ptr;
+  source_net->_name = dest_name_ptr;
+
+  block->_net_hash.insert(dest_net);
+  block->_net_hash.insert(source_net);
+}
+
 bool dbNet::isRCDisconnected()
 {
   _dbNet* net = (_dbNet*) this;
@@ -3099,6 +3133,7 @@ void dbNet::destroy(dbNet* net_)
 {
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) net->getOwner();
+  dbBlock* dbblock = (dbBlock*) block;
 
   if (net->_flags._dont_touch) {
     net->getLogger()->error(
@@ -3137,6 +3172,15 @@ void dbNet::destroy(dbNet* net_)
   dbSet<dbGuide> guides = net_->getGuides();
   for (auto gitr = guides.begin(); gitr != guides.end();) {
     gitr = dbGuide::destroy(gitr);
+  }
+
+  dbSet<dbGlobalConnect> connects = dbblock->getGlobalConnects();
+  for (auto gitr = connects.begin(); gitr != connects.end();) {
+    if (gitr->getNet()->getId() == net_->getId()) {
+      gitr = dbGlobalConnect::destroy(gitr);
+    } else {
+      gitr++;
+    }
   }
 
   if (block->_journal) {

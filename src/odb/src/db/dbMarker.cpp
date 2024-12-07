@@ -506,8 +506,10 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
       } else if (shape_type.value() == "polygon") {
         shapes_.emplace_back(Polygon(pts));
       } else {
-        getLogger()->warn(
-            utl::ODB, 256, "Unable to find shape of violation: {}", shape_type);
+        getLogger()->warn(utl::ODB,
+                          256,
+                          "Unable to find shape of violation: {}",
+                          shape_type.value());
       }
     }
   }
@@ -561,7 +563,7 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
           src_found = true;
         } else {
           getLogger()->warn(
-              utl::ODB, 262, "Unable to find bterm: {}", src_name);
+              utl::ODB, 262, "Unable to find bterm: {}", src_name.value());
         }
       } else if (src_type.value() == "obstruction") {
         src_found = marker->addObstructionFromBlock(block);

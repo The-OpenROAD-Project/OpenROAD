@@ -298,11 +298,6 @@ void SteinerTreeBuilder::plottree(Tree t)
   flute_->plottree(std::move(t));
 }
 
-void SteinerTreeBuilder::write_svg(Tree t, const char* filename)
-{
-  flute_->write_svg(std::move(t), filename);
-}
-
 Tree SteinerTreeBuilder::flutes(const std::vector<int>& xs,
                                 const std::vector<int>& ys,
                                 const std::vector<int>& s,

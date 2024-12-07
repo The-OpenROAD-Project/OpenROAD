@@ -51,6 +51,10 @@
 #include "spdlog/details/os.h"
 #include "spdlog/fmt/fmt.h"
 #include "spdlog/fmt/ostr.h"
+#if FMT_VERSION >= 110000
+#include "spdlog/fmt/ranges.h"
+#endif
+
 #include "spdlog/spdlog.h"
 
 namespace utl {
@@ -123,10 +127,11 @@ class Logger
                  args...);
   }
 
+  // Reports a string literal with no interpolation or newline.
   template <typename... Args>
-  inline void reportNoNewline(const std::string& message, const Args&... args)
+  inline void reportLiteral(const std::string& message)
   {
-    logger_->log(spdlog::level::level_enum::off, FMT_RUNTIME(message), args...);
+    logger_->log(spdlog::level::level_enum::off, "{}", message);
   }
 
   // Do NOT call this directly, use the debugPrint macro  instead (defined
