@@ -350,8 +350,8 @@ proc add_global_connection { args } {
 }
 
 sta::define_cmd_args "place_inst" {-name inst_name \
-                                   -orientation orientation
-                                   -origin xy_origin \
+                                   (-origin xy_origin | -location xy_location) \
+                                   [-orientation orientation] \
                                    [-cell library_cell] \
                                    [-status status]}
 proc place_inst { args } {
@@ -363,7 +363,7 @@ proc place_inst { args } {
   set block [ord::get_db_block]
 
   sta::parse_key_args "place_cell" args \
-    keys {-cell -origin -orientation -name -status}
+    keys {-cell -origin -orientation -location -name -status}
 
   set placement_status "PLACED"
   if { [info exists keys(-status)] } {
@@ -386,9 +386,15 @@ proc place_inst { args } {
   if { [info exists keys(-orientation)] } {
     set orient $keys(-orientation)
   } else {
-    utl::error ORD 58 "No orientation specified for $inst_name."
+    set orient "R0"
   }
 
+  if { ![info exists keys(-origin)] && ![info exists keys(-location)] } {
+    utl::error ORD 62 "No origin or location specified for $inst_name."
+  }
+  if { [info exists keys(-origin)] && [info exists keys(-location)] } {
+    utl::error ORD 63 "origin and location specified for $inst_name, only one is supported."
+  }
   # Verify center/origin
   if { [info exists keys(-origin)] } {
     set origin $keys(-origin)
@@ -401,8 +407,17 @@ proc place_inst { args } {
     if { [catch { set y [ord::microns_to_dbu [lindex $origin 1]] } msg] } {
       utl::error ORD 61 "Invalid value specified for y value, [lindex $origin 1], $msg."
     }
-  } else {
-    utl::error ORD 62 "No origin specified for $inst_name."
+  } elseif { [info exists keys(-location)] } {
+    set location $keys(-location)
+    if { [llength $location] != 2 } {
+      utl::error ORD 68 "location is $location, but must be a list of 2 numbers."
+    }
+    if { [catch { set x [ord::microns_to_dbu [lindex $location 0]] } msg] } {
+      utl::error ORD 66 "Invalid value specified for x value, [lindex $location 0], $msg."
+    }
+    if { [catch { set y [ord::microns_to_dbu [lindex $location 1]] } msg] } {
+      utl::error ORD 67 "Invalid value specified for y value, [lindex $location 1], $msg."
+    }
   }
 
   if { [set inst [$block findInst $inst_name]] == "NULL" } {
@@ -426,8 +441,12 @@ proc place_inst { args } {
     utl::error ORD 65 "Cannot create instance $inst_name of $cell_name."
   }
 
-  $inst setOrigin $x $y
   $inst setOrient $orient
+  if { [info exists keys(-origin)] } {
+    $inst setOrigin $x $y
+  } else {
+    $inst setLocation $x $y
+  }
   $inst setPlacementStatus $placement_status
 }
 
