@@ -1771,6 +1771,7 @@ void dbJournal::undo_swapObject()
           dbNet* dest_net = dbNet::getNet(_block, source_net_id);
           // don't allow undo to be undone, turn off journaling doing swap
           source_net->swapNetNames(dest_net, false);
+          break;
         }
         default: {
           _logger->critical(utl::ODB,

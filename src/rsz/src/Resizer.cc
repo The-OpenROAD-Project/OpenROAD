@@ -629,33 +629,35 @@ void Resizer::getPins(Instance* inst, PinVector& pins) const
 
 void Resizer::SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from)
 {
-  //
-  // The concept of this function is we are moving the name of the net
-  // in the iterm_from to the iterm_to.  We preferentially use
-  // the modnet name, if present.
-  //
-  dbNet* to_db_net = iterm_to->getNet();
-  odb::dbModNet* to_mod_net = iterm_to->getModNet();
+  if (iterm_to && iterm_from) {
+    //
+    // The concept of this function is we are moving the name of the net
+    // in the iterm_from to the iterm_to.  We preferentially use
+    // the modnet name, if present.
+    //
+    dbNet* to_db_net = iterm_to->getNet();
+    odb::dbModNet* to_mod_net = iterm_to->getModNet();
 
-  odb::dbModNet* from_mod_net = iterm_from->getModNet();
-  dbNet* from_db_net = iterm_from->getNet();
+    odb::dbModNet* from_mod_net = iterm_from->getModNet();
+    dbNet* from_db_net = iterm_from->getNet();
 
-  std::string required_name
-      = from_mod_net ? from_mod_net->getName() : from_db_net->getName();
-  std::string to_name
-      = to_mod_net ? to_mod_net->getName() : to_db_net->getName();
+    std::string required_name
+        = from_mod_net ? from_mod_net->getName() : from_db_net->getName();
+    std::string to_name
+        = to_mod_net ? to_mod_net->getName() : to_db_net->getName();
 
-  if (from_mod_net && to_mod_net) {
-    from_mod_net->rename(to_name.c_str());
-    to_mod_net->rename(required_name.c_str());
-  } else if (from_db_net && to_db_net) {
-    to_db_net->swapNetNames(from_db_net);
-  } else if (from_mod_net && to_db_net) {
-    to_db_net->rename(required_name.c_str());
-    from_mod_net->rename(to_name.c_str());
-  } else if (to_mod_net && from_db_net) {
-    to_mod_net->rename(required_name.c_str());
-    from_db_net->rename(to_name.c_str());
+    if (from_mod_net && to_mod_net) {
+      from_mod_net->rename(to_name.c_str());
+      to_mod_net->rename(required_name.c_str());
+    } else if (from_db_net && to_db_net) {
+      to_db_net->swapNetNames(from_db_net);
+    } else if (from_mod_net && to_db_net) {
+      to_db_net->rename(required_name.c_str());
+      from_mod_net->rename(to_name.c_str());
+    } else if (to_mod_net && from_db_net) {
+      to_mod_net->rename(required_name.c_str());
+      from_db_net->rename(to_name.c_str());
+    }
   }
 }
 
@@ -908,27 +910,37 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
 
   // connect original input (hierarchical or flat) to buffer input
   // handle hierarchy
-  Pin* buffer_ip_pin;
-  Pin* buffer_op_pin;
+  Pin* buffer_ip_pin = nullptr;
+  Pin* buffer_op_pin = nullptr;
   getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
+
+  // get the iterms. Note this are never null (makeBuffer properly instantiates
+  // them and we know to always expect an iterm.). However, the api (flatPin)
+  // truly checks to see if the pins could be moditerms & if they are returns
+  // null, so coverity rationally reasons that the iterm could be null,
+  // so we add some extra checking here. This is a consequence of
+  //"hiding" the full api.
+  //
   odb::dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
   odb::dbITerm* buffer_ip_pin_iterm = db_network_->flatPin(buffer_ip_pin);
-  if (buffer_ip_pin_iterm) {
+
+  if (buffer_ip_pin_iterm && buffer_op_pin_iterm) {
     if (flat_op_net) {
       buffer_ip_pin_iterm->connect(flat_op_net);
     }
     if (hier_op_net) {
       buffer_ip_pin_iterm->connect(hier_op_net);
     }
+    buffer_op_pin_iterm->connect(db_network_->staToDb(buffer_out));
+    top_pin_op_bterm->connect(db_network_->staToDb(buffer_out));
+    SwapNetNames(buffer_op_pin_iterm, buffer_ip_pin_iterm);
+    // rename the mod net to match the flat net.
+    if (buffer_ip_pin_iterm->getNet() && buffer_ip_pin_iterm->getModNet()) {
+      buffer_ip_pin_iterm->getModNet()->rename(
+          buffer_ip_pin_iterm->getNet()->getName().c_str());
+    }
   }
-  buffer_op_pin_iterm->connect(db_network_->staToDb(buffer_out));
-  top_pin_op_bterm->connect(db_network_->staToDb(buffer_out));
-  SwapNetNames(buffer_op_pin_iterm, buffer_ip_pin_iterm);
-  // rename the mod net to match the flat net.
-  if (buffer_ip_pin_iterm->getNet() && buffer_ip_pin_iterm->getModNet()) {
-    buffer_ip_pin_iterm->getModNet()->rename(
-        buffer_ip_pin_iterm->getNet()->getName().c_str());
-  }
+
   parasiticsInvalid(flat_op_net);
   parasiticsInvalid(buffer_out);
 }
