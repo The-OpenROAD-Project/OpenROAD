@@ -128,10 +128,6 @@ void io::Parser::setInst(odb::dbInst* inst)
   auto uInst = std::make_unique<frInst>(inst->getName(), master, inst);
   auto tmpInst = uInst.get();
 
-  int x, y;
-  inst->getLocation(x, y);
-  tmpInst->setOrigin(Point(x, y));
-  tmpInst->setOrient(inst->getOrient());
   int numInstTerms = 0;
   tmpInst->setPinAccessIdx(inst->getPinAccessIdx());
   for (auto& uTerm : tmpInst->getMaster()->getTerms()) {

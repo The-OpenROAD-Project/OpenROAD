@@ -1177,15 +1177,12 @@ void FlexDRWorker::initNet_term(const frDesign* design,
 {
   for (auto term : terms) {
     // ap
-    // TODO is instXform used properly here?
-    dbTransform instXform;  // (0,0), R0
     dbTransform shiftXform;
     switch (term->typeId()) {
       case frcInstTerm: {
         auto instTerm = static_cast<frInstTerm*>(term);
         frInst* inst = instTerm->getInst();
-        shiftXform = inst->getDBTransform();
-        instXform = inst->getDBTransform();
+        shiftXform = inst->getTransform();
         auto trueTerm = instTerm->getTerm();
         const std::string name = inst->getName() + "/" + trueTerm->getName();
         initNet_term_helper(
@@ -2900,8 +2897,7 @@ void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
     } else if (obj->typeId() == frcInstTerm) {
       auto instTerm = static_cast<frInstTerm*>(obj);
       auto inst = instTerm->getInst();
-      const dbTransform xform = inst->getDBTransform();
-      const dbTransform shiftXform = inst->getDBTransform();
+      const dbTransform xform = inst->getTransform();
       const dbMasterType masterType = inst->getMaster()->getMasterType();
       bool accessHorz = false;
       bool accessVert = false;
@@ -2970,7 +2966,7 @@ void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
               if (masterType.isBlock()) {
                 modCornerToCornerSpacing(
                     box, zIdx, type);  // temp solution for ISPD19 benchmarks
-                modBlockedEdgesForMacroPin(instTerm, shiftXform, isAddPathCost);
+                modBlockedEdgesForMacroPin(instTerm, xform, isAddPathCost);
                 if (isAddPathCost) {
                   type = ModCostType::setFixedShape;
                 } else {
