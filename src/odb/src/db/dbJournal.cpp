@@ -1778,8 +1778,10 @@ void dbJournal::undo_swapObject()
                             467,
                             "No undo_swapObject Name support for type {}",
                             dbObject::getTypeName(sub_obj_type));
+          break;
         }
       }
+      break;
     }
     case dbInstObj: {
       uint inst_id;
