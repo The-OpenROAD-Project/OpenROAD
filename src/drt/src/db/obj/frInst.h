@@ -138,7 +138,6 @@ class frInst : public frRef
   void move(const dbTransform& xform) override { ; }
   bool intersects(const Rect& box) const override { return false; }
   // others
-  dbTransform getNoRotationTransform() const;
   Rect getBoundaryBBox() const;
 
   frInstTerm* getInstTerm(int index);

@@ -48,13 +48,6 @@ Rect frInst::getBoundaryBBox() const
   return box;
 }
 
-dbTransform frInst::getNoRotationTransform() const
-{
-  dbTransform xfm = getTransform();
-  xfm.setOrient(dbOrientType(dbOrientType::R0));
-  return xfm;
-}
-
 frInstTerm* frInst::getInstTerm(const int index)
 {
   return instTerms_.at(index).get();

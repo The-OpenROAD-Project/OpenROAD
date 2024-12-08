@@ -1184,7 +1184,7 @@ void FlexDRWorker::initNet_term(const frDesign* design,
       case frcInstTerm: {
         auto instTerm = static_cast<frInstTerm*>(term);
         frInst* inst = instTerm->getInst();
-        shiftXform = inst->getNoRotationTransform();
+        shiftXform = inst->getDBTransform();
         instXform = inst->getDBTransform();
         auto trueTerm = instTerm->getTerm();
         const std::string name = inst->getName() + "/" + trueTerm->getName();
@@ -2901,7 +2901,7 @@ void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
       auto instTerm = static_cast<frInstTerm*>(obj);
       auto inst = instTerm->getInst();
       const dbTransform xform = inst->getDBTransform();
-      const dbTransform shiftXform = inst->getNoRotationTransform();
+      const dbTransform shiftXform = inst->getDBTransform();
       const dbMasterType masterType = inst->getMaster()->getMasterType();
       bool accessHorz = false;
       bool accessVert = false;
