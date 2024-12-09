@@ -735,9 +735,8 @@ bool RepairDesign::repairDriverSlew(const Corner* corner, const Pin* drvr_pin)
             if (a.first == 0 && b.first == 0) {
               // both sizes non-violating: sort by area
               return a.second->area() < b.second->area();
-            } else {
-              return a.first < b.first;
             }
+            return a.first < b.first;
           });
 
       LibertyCell* selected_size = sizes.front().second;
@@ -1675,8 +1674,8 @@ void RepairDesign::makeFanoutRepeater(PinSeq& repeater_loads,
                repeater_in_pin,
                repeater_out_pin);
   Vertex* repeater_out_vertex = graph_->pinDrvrVertex(repeater_out_pin);
-  int repaired_net_count, slew_violations, cap_violations = 0;
-  int fanout_violations, length_violations = 0;
+  int repaired_net_count = 0, slew_violations = 0, cap_violations = 0;
+  int fanout_violations = 0, length_violations = 0;
   repairNet(out_net,
             repeater_out_pin,
             repeater_out_vertex,

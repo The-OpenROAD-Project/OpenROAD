@@ -1169,14 +1169,14 @@ void Resizer::resizePreamble()
 // - User Function Class (Optional - Honored if found): Cells with the
 //   same user_function_class are electrically compatible.
 
-bool Resizer::areCellsSwappable(LibertyCell* existing, LibertyCell* candidate)
+bool Resizer::areCellsSwappable(LibertyCell* existing, LibertyCell* replacement)
 {
-  if (isLinkCell(candidate) && !dontUse(candidate)) {
+  if (isLinkCell(replacement) && !dontUse(replacement)) {
     if (!match_cell_footprint_
-        || sta::stringEqIf(existing->footprint(), candidate->footprint())) {
+        || sta::stringEqIf(existing->footprint(), replacement->footprint())) {
       if (!existing->userFunctionClass()
           || sta::stringEqIf(existing->userFunctionClass(),
-                             candidate->userFunctionClass())) {
+                             replacement->userFunctionClass())) {
         return true;
       }
     }
