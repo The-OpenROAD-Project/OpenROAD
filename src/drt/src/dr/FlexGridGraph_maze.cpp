@@ -26,6 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <limits>
+
 #include "dr/FlexDR.h"
 #include "dr/FlexDR_graphics.h"
 #include "dr/FlexGridGraph.h"
@@ -81,6 +83,7 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
                            const FlexMazeIdx& dstMazeIdx1,
                            const FlexMazeIdx& dstMazeIdx2,
                            const Point& centerPt,
+                           ExpandDir expandDir,
                            bool route_with_jumpers)
 {
   frCost nextEstCost, nextPathCost;
@@ -98,6 +101,7 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
                    dstMazeIdx2,
                    dir);
   nextPathCost = getNextPathCost(currGrid, dir, route_with_jumpers);
+
   Point currPt;
   getPoint(currPt, gridX, gridY);
   frCoord currDist = Point::manhattanDistance(currPt, centerPt);
@@ -154,7 +158,8 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
                                       currDist,
                                       nextPathCost,
                                       nextPathCost + nextEstCost,
-                                      currGrid.getBackTraceBuffer());
+                                      currGrid.getBackTraceBuffer(),
+                                      currGrid.getBackTraceCosts());
   if (dir == frDirEnum::U || dir == frDirEnum::D) {
     nextWavefrontGrid.resetLength();
     if (dir == frDirEnum::U) {
@@ -170,20 +175,25 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
     nextWavefrontGrid.setSrcTaperBox(currGrid.getSrcTaperBox());
   }
   // update wavefront buffer
-  auto tailDir = nextWavefrontGrid.shiftAddBuffer(dir);
+  auto [tailDir, tailCost]
+      = nextWavefrontGrid.shiftAddBuffer(dir, currGrid.getPathCost());
   // non-buffer enablement is faster for ripup all
   // commit grid prev direction if needed
   auto tailIdx = getTailIdx(nextIdx, nextWavefrontGrid);
+  auto& wavefront = (expandDir == ExpandDir::FORWARD) ? wavefrontForward_
+                                                      : wavefrontBackward_;
   if (tailDir != frDirEnum::UNKNOWN) {
     if (getPrevAstarNodeDir(tailIdx) == frDirEnum::UNKNOWN
         || getPrevAstarNodeDir(tailIdx) == tailDir) {
-      setPrevAstarNodeDir(tailIdx.x(), tailIdx.y(), tailIdx.z(), tailDir);
+      setPrevAstarNodeDir(
+          tailIdx.x(), tailIdx.y(), tailIdx.z(), expandDir, tailDir);
+      setPathCost(tailIdx.x(), tailIdx.y(), tailIdx.z(), tailCost);
       if (debug_) {
         nextWavefrontGrid.setId(curr_id_++);
         nextWavefrontGrid.setParentId(currGrid.getId());
         printExpansion(nextWavefrontGrid, "Pushing");
       }
-      wavefront_.push(nextWavefrontGrid);
+      wavefront.push(nextWavefrontGrid);
     }
   } else {
     // add to wavefront
@@ -192,7 +202,7 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
       nextWavefrontGrid.setParentId(currGrid.getId());
       printExpansion(nextWavefrontGrid, "Pushing");
     }
-    wavefront_.push(nextWavefrontGrid);
+    wavefront.push(nextWavefrontGrid);
   }
   if (drWorker_->getDRIter() >= debugMazeIter) {
     std::cout << "Creating " << nextWavefrontGrid.x() << " "
@@ -208,15 +218,17 @@ void FlexGridGraph::expandWavefront(FlexWavefrontGrid& currGrid,
                                     const FlexMazeIdx& dstMazeIdx1,
                                     const FlexMazeIdx& dstMazeIdx2,
                                     const Point& centerPt,
+                                    ExpandDir expandDir,
                                     bool route_with_jumpers)
 {
   for (const auto dir : frDirEnumAll) {
-    if (isExpandable(currGrid, dir)) {
+    if (isExpandable(currGrid, dir, expandDir)) {
       expand(currGrid,
              dir,
              dstMazeIdx1,
              dstMazeIdx2,
              centerPt,
+             expandDir,
              route_with_jumpers);
     }
   }
@@ -625,15 +637,16 @@ FlexMazeIdx FlexGridGraph::getTailIdx(const FlexMazeIdx& currIdx,
 }
 
 bool FlexGridGraph::isExpandable(const FlexWavefrontGrid& currGrid,
-                                 frDirEnum dir) const
+                                 frDirEnum dir,
+                                 ExpandDir expandDir) const
 {
   frMIdx gridX = currGrid.x();
   frMIdx gridY = currGrid.y();
   frMIdx gridZ = currGrid.z();
   bool hg = hasEdge(gridX, gridY, gridZ, dir);
   reverse(gridX, gridY, gridZ, dir);
-  if (!hg || isSrc(gridX, gridY, gridZ)
-      || (getPrevAstarNodeDir({gridX, gridY, gridZ}) != frDirEnum::UNKNOWN)
+  if (!hg || isSrc(gridX, gridY, gridZ, expandDir)
+      || isClosed(gridX, gridY, gridZ, expandDir)
       ||  // comment out for non-buffer enablement
       currGrid.getLastDir() == dir) {
     return false;
@@ -643,7 +656,7 @@ bool FlexGridGraph::isExpandable(const FlexWavefrontGrid& currGrid,
         = (frCoord) getTech()->getLayer(getLayerNum(currGrid.z()))->getWidth()
           / 2;
     if (ndr_->getWidth(currGrid.z()) > 2 * halfWidth
-        && !isSrc(currGrid.x(), currGrid.y(), currGrid.z())) {
+        && !isSrc(currGrid.x(), currGrid.y(), currGrid.z(), expandDir)) {
       halfWidth = ndr_->getWidth(currGrid.z()) / 2;
       // if the expansion goes parallel to a die border and the wire goes out of
       // the die box, forbid expansion
@@ -668,7 +681,8 @@ void FlexGridGraph::traceBackPath(const FlexWavefrontGrid& currGrid,
                                   std::vector<FlexMazeIdx>& path,
                                   std::vector<FlexMazeIdx>& root,
                                   FlexMazeIdx& ccMazeIdx1,
-                                  FlexMazeIdx& ccMazeIdx2) const
+                                  FlexMazeIdx& ccMazeIdx2,
+                                  ExpandDir expandDir) const
 {
   frDirEnum prevDir = frDirEnum::UNKNOWN, currDir = frDirEnum::UNKNOWN;
   int currX = currGrid.x(), currY = currGrid.y(), currZ = currGrid.z();
@@ -676,7 +690,7 @@ void FlexGridGraph::traceBackPath(const FlexWavefrontGrid& currGrid,
   auto backTraceBuffer = currGrid.getBackTraceBuffer();
   for (int i = 0; i < WAVEFRONTBUFFERSIZE; ++i) {
     // current grid is src
-    if (isSrc(currX, currY, currZ)) {
+    if (isSrc(currX, currY, currZ, expandDir)) {
       break;
     }
     // get last direction
@@ -695,7 +709,7 @@ void FlexGridGraph::traceBackPath(const FlexWavefrontGrid& currGrid,
     prevDir = currDir;
   }
   // trace back according to grid prev dir
-  while (isSrc(currX, currY, currZ) == false) {
+  while (!isSrc(currX, currY, currZ, expandDir)) {
     // get last direction
     currDir = getPrevAstarNodeDir({currX, currY, currZ});
     root.emplace_back(currX, currY, currZ);
@@ -724,12 +738,76 @@ void FlexGridGraph::traceBackPath(const FlexWavefrontGrid& currGrid,
   }
 }
 
+void FlexGridGraph::traceBackPath(const FlexMazeIdx& currGrid,
+                                  std::vector<FlexMazeIdx>& path,
+                                  std::vector<FlexMazeIdx>& root,
+                                  FlexMazeIdx& ccMazeIdx1,
+                                  FlexMazeIdx& ccMazeIdx2,
+                                  ExpandDir expandDir) const
+{
+  frDirEnum prevDir = frDirEnum::UNKNOWN, currDir = frDirEnum::UNKNOWN;
+  int currX = currGrid.x(), currY = currGrid.y(), currZ = currGrid.z();
+  // trace back according to grid prev dir
+  while (!isSrc(currX, currY, currZ, expandDir)) {
+    // get last direction
+    currDir = getPrevAstarNodeDir({currX, currY, currZ});
+    root.emplace_back(currX, currY, currZ);
+    if (currDir == frDirEnum::UNKNOWN) {
+      std::cout << "Warning: unexpected direction in tracBackPath\n";
+      break;
+    }
+    if (currDir != prevDir) {
+      path.emplace_back(currX, currY, currZ);
+    }
+    getPrevGrid(currX, currY, currZ, currDir);
+    prevDir = currDir;
+  }
+  // add final path to src, only add when path exists; no path exists (src =
+  // dst)
+  if (!path.empty()) {
+    path.emplace_back(currX, currY, currZ);
+  }
+  for (auto& mi : path) {
+    ccMazeIdx1.set(std::min(ccMazeIdx1.x(), mi.x()),
+                   std::min(ccMazeIdx1.y(), mi.y()),
+                   std::min(ccMazeIdx1.z(), mi.z()));
+    ccMazeIdx2.set(std::max(ccMazeIdx2.x(), mi.x()),
+                   std::max(ccMazeIdx2.y(), mi.y()),
+                   std::max(ccMazeIdx2.z(), mi.z()));
+  }
+}
+
+void FlexGridGraph::traceBackPath(std::vector<FlexMazeIdx>& connComps,
+                                  std::vector<FlexMazeIdx>& path,
+                                  FlexMazeIdx& ccMazeIdx1,
+                                  FlexMazeIdx& ccMazeIdx2,
+                                  ExpandDir expandDir)
+{
+  if (meetingPoint_->wavefrontDir == expandDir) {
+    traceBackPath(meetingPoint_->wavefront,
+                  path,
+                  connComps,
+                  ccMazeIdx1,
+                  ccMazeIdx2,
+                  meetingPoint_->wavefrontDir);
+  } else {
+    traceBackPath({meetingPoint_->wavefront.x(),
+                   meetingPoint_->wavefront.y(),
+                   meetingPoint_->wavefront.z()},
+                  path,
+                  connComps,
+                  ccMazeIdx1,
+                  ccMazeIdx2,
+                  expandDir);
+  }
+}
+
 bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
                            drPin* nextPin,
                            std::vector<FlexMazeIdx>& path,
                            FlexMazeIdx& ccMazeIdx1,
                            FlexMazeIdx& ccMazeIdx2,
-                           const Point& centerPt,
+                           const Point& centerPtForward,
                            std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox,
                            bool route_with_jumpers)
 {
@@ -749,28 +827,29 @@ bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
   // prep nextPinBox
   frMIdx xDim, yDim, zDim;
   getDim(xDim, yDim, zDim);
-  FlexMazeIdx dstMazeIdx1(xDim - 1, yDim - 1, zDim - 1);
-  FlexMazeIdx dstMazeIdx2(0, 0, 0);
+  FlexMazeIdx dstMazeForwardIdx1(xDim - 1, yDim - 1, zDim - 1);
+  FlexMazeIdx dstMazeForwardIdx2(0, 0, 0);
   for (auto& ap : nextPin->getAccessPatterns()) {
     FlexMazeIdx mi = ap->getMazeIdx();
-    dstMazeIdx1.set(std::min(dstMazeIdx1.x(), mi.x()),
-                    std::min(dstMazeIdx1.y(), mi.y()),
-                    std::min(dstMazeIdx1.z(), mi.z()));
-    dstMazeIdx2.set(std::max(dstMazeIdx2.x(), mi.x()),
-                    std::max(dstMazeIdx2.y(), mi.y()),
-                    std::max(dstMazeIdx2.z(), mi.z()));
+    dstMazeForwardIdx1.set(std::min(dstMazeForwardIdx1.x(), mi.x()),
+                           std::min(dstMazeForwardIdx1.y(), mi.y()),
+                           std::min(dstMazeForwardIdx1.z(), mi.z()));
+    dstMazeForwardIdx2.set(std::max(dstMazeForwardIdx2.x(), mi.x()),
+                           std::max(dstMazeForwardIdx2.y(), mi.y()),
+                           std::max(dstMazeForwardIdx2.z(), mi.z()));
   }
 
-  wavefront_.cleanup();
-  // init wavefront
+  wavefrontForward_.cleanup();
+  wavefrontBackward_.cleanup();
+  // init wavefront for forward search
   Point currPt;
   for (auto& idx : connComps) {
-    if (isDst(idx.x(), idx.y(), idx.z())) {
+    if (isDst(idx.x(), idx.y(), idx.z(), ExpandDir::FORWARD)) {
       path.emplace_back(idx.x(), idx.y(), idx.z());
       return true;
     }
     getPoint(currPt, idx.x(), idx.y());
-    frCoord currDist = Point::manhattanDistance(currPt, centerPt);
+    frCoord currDist = Point::manhattanDistance(currPt, centerPtForward);
     FlexWavefrontGrid currGrid(
         idx.x(),
         idx.y(),
@@ -781,7 +860,8 @@ bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
         std::numeric_limits<frCoord>::max(),
         currDist,
         0,
-        getEstCost(idx, dstMazeIdx1, dstMazeIdx2, frDirEnum::UNKNOWN));
+        getEstCost(
+            idx, dstMazeForwardIdx1, dstMazeForwardIdx2, frDirEnum::UNKNOWN));
     if (ndr_ && router_cfg_->AUTO_TAPER_NDR_NETS) {
       auto it = mazeIdx2TaperBox.find(idx);
       if (it != mazeIdx2TaperBox.end()) {
@@ -792,36 +872,137 @@ bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
       currGrid.setId(curr_id_++);
       printExpansion(currGrid, "Pushing");
     }
-    wavefront_.push(currGrid);
+    wavefrontForward_.push(currGrid);
   }
-  while (!wavefront_.empty()) {
-    auto currGrid = wavefront_.top();
+  FlexMazeIdx dstMazeBackwardIdx;
+  dstMazeBackwardIdx = {wavefrontForward_.top().x(),
+                        wavefrontForward_.top().y(),
+                        wavefrontForward_.top().z()};
+  Point centerPtBackward;
+  getPoint(centerPtBackward, dstMazeBackwardIdx.x(), dstMazeBackwardIdx.y());
+  // init wavefront for backward search
+  for (auto& ap : nextPin->getAccessPatterns()) {
+    auto idx = ap->getMazeIdx();
+    getPoint(currPt, idx.x(), idx.y());
+    frCoord currDist = Point::manhattanDistance(currPt, centerPtBackward);
+    FlexWavefrontGrid currGrid(
+        idx.x(),
+        idx.y(),
+        idx.z(),
+        std::numeric_limits<frCoord>::max(),
+        std::numeric_limits<frCoord>::max(),
+        true,
+        std::numeric_limits<frCoord>::max(),
+        currDist,
+        0,
+        getEstCost(
+            idx, dstMazeBackwardIdx, dstMazeBackwardIdx, frDirEnum::UNKNOWN));
+    if (ndr_ && router_cfg_->AUTO_TAPER_NDR_NETS) {
+      auto it = mazeIdx2TaperBox.find(idx);
+      if (it != mazeIdx2TaperBox.end()) {
+        currGrid.setSrcTaperBox(it->second);
+      }
+    }
+    if (debug_) {
+      currGrid.setId(curr_id_++);
+      printExpansion(currGrid, "Pushing");
+    }
+    wavefrontBackward_.push(currGrid);
+  }
+
+  meetingPoint_ = {};
+  ExpandDir expandDir = ExpandDir::BACKWARD;
+  while (!wavefrontForward_.empty() || !wavefrontBackward_.empty()) {
+    if (meetingPoint_) {
+      frCost potentialCost = 0;
+      if (!wavefrontForward_.empty()) {
+        potentialCost += wavefrontForward_.top().getPathCost();
+      }
+      if (!wavefrontBackward_.empty()) {
+        potentialCost += wavefrontBackward_.top().getPathCost();
+      }
+      if (meetingPoint_->wavefront.getPathCost() + meetingPoint_->mazeCost
+          < potentialCost) {
+        break;
+      }
+    }
+    ExpandDir oppositeExpandDir = expandDir;
+    FlexMazeIdx dstMazeIdx1, dstMazeIdx2;
+    Point centerPt;
+    FlexWavefront* wavefront;
+    if (expandDir == ExpandDir::FORWARD) {
+      expandDir = ExpandDir::BACKWARD;
+      dstMazeIdx1 = dstMazeIdx2 = dstMazeBackwardIdx;
+      centerPt = centerPtBackward;
+      wavefront = &wavefrontBackward_;
+    } else {
+      expandDir = ExpandDir::FORWARD;
+      dstMazeIdx1 = dstMazeForwardIdx1;
+      dstMazeIdx2 = dstMazeForwardIdx2;
+      centerPt = centerPtForward;
+      wavefront = &wavefrontForward_;
+    }
+    if (wavefront->empty()) {
+      continue;
+    }
+    auto currGrid = wavefront->top();
     if (debug_) {
       printExpansion(currGrid, "Popping");
     }
-    wavefront_.pop();
-    if (getPrevAstarNodeDir({currGrid.x(), currGrid.y(), currGrid.z()})
-        != frDirEnum::UNKNOWN) {
-      continue;
+    wavefront->pop();
+    if (isClosed(currGrid.x(), currGrid.y(), currGrid.z(), expandDir)) {
+    } else if (isClosed(currGrid.x(),
+                        currGrid.y(),
+                        currGrid.z(),
+                        oppositeExpandDir)) {
+      frCost backwardCost
+          = getPathCost(currGrid.x(), currGrid.y(), currGrid.z());
+      if (!meetingPoint_
+          || meetingPoint_->wavefront.getPathCost() + meetingPoint_->mazeCost
+                 > currGrid.getPathCost() + backwardCost) {
+        meetingPoint_ = MeetingPoint{currGrid, expandDir, backwardCost};
+      }
+    } else {
+      if (graphics_) {
+        graphics_->searchNode(this, currGrid);
+      }
+      if (drWorker_->getDRIter() >= debugMazeIter) {
+        std::cout << "Expanding " << currGrid.x() << " " << currGrid.y() << " "
+                  << currGrid.z() << " coords: " << xCoords_[currGrid.x()]
+                  << " " << yCoords_[currGrid.y()] << " cost "
+                  << currGrid.getCost() << " g " << currGrid.getPathCost()
+                  << "\n";
+      }
+      if (isDst(currGrid.x(), currGrid.y(), currGrid.z(), expandDir)) {
+        traceBackPath(
+            currGrid, path, connComps, ccMazeIdx1, ccMazeIdx2, expandDir);
+        if (expandDir == ExpandDir::BACKWARD) {
+          std::reverse(path.begin(), path.end());
+        }
+        return true;
+      }
+      // expand and update wavefront
+      expandWavefront(currGrid,
+                      dstMazeIdx1,
+                      dstMazeIdx2,
+                      centerPt,
+                      expandDir,
+                      route_with_jumpers);
     }
-    if (graphics_) {
-      graphics_->searchNode(this, currGrid);
-    }
-    if (drWorker_->getDRIter() >= debugMazeIter) {
-      std::cout << "Expanding " << currGrid.x() << " " << currGrid.y() << " "
-                << currGrid.z() << " coords: " << xCoords_[currGrid.x()] << " "
-                << yCoords_[currGrid.y()] << " cost " << currGrid.getCost()
-                << " g " << currGrid.getPathCost() << "\n";
-    }
-    if (isDst(currGrid.x(), currGrid.y(), currGrid.z())) {
-      traceBackPath(currGrid, path, connComps, ccMazeIdx1, ccMazeIdx2);
-      return true;
-    }
-    // expand and update wavefront
-    expandWavefront(
-        currGrid, dstMazeIdx1, dstMazeIdx2, centerPt, route_with_jumpers);
   }
-  return false;
+
+  if (!meetingPoint_) {
+    return false;
+  }
+
+  // traceback forward and backward paths
+  traceBackPath(connComps, path, ccMazeIdx1, ccMazeIdx2, ExpandDir::BACKWARD);
+  if (!path.empty()) {
+    std::reverse(path.begin(), path.end());
+    path.pop_back();
+  }
+  traceBackPath(connComps, path, ccMazeIdx1, ccMazeIdx2, ExpandDir::FORWARD);
+  return true;
 }
 
 }  // namespace drt

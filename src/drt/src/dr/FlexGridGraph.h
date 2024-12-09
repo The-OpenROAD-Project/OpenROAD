@@ -30,6 +30,7 @@
 
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
+#include <unordered_map>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
@@ -45,6 +46,11 @@
 #include "global.h"
 
 namespace drt {
+enum class ExpandDir
+{
+  FORWARD,
+  BACKWARD,
+};
 
 using frLayerCoordTrackPatternMap = boost::container::
     flat_map<frLayerNum, boost::container::flat_map<frCoord, frTrackPattern*>>;
@@ -110,6 +116,26 @@ class FlexGridGraph
   bool hasGridCostU(frMIdx x, frMIdx y, frMIdx z) const
   {
     return nodes_[getIdx(x, y, z)].hasGridCostUp;
+  }
+
+  void setPathCost(frMIdx x, frMIdx y, frMIdx z, frCost in)
+  {
+    path_costs_[getIdx(x, y, z)] = in;
+  }
+  void setPathCost(const FlexMazeIdx& mIdx, frCost in)
+  {
+    path_costs_[getIdx(mIdx.x(), mIdx.y(), mIdx.z())] = in;
+  }
+  frCost getPathCost(frMIdx x, frMIdx y, frMIdx z)
+  {
+    return path_costs_[getIdx(x, y, z)];
+  }
+  bool isClosed(frMIdx x, frMIdx y, frMIdx z, ExpandDir expandDir) const
+  {
+    auto baseIdx = 4 * getIdx(x, y, z);
+    return getPrevAstarNodeDir({x, y, z}) != frDirEnum::UNKNOWN
+           && (prevDirs_[baseIdx + 3] ? expandDir == ExpandDir::FORWARD
+                                      : expandDir == ExpandDir::BACKWARD);
   }
 
   void getBBox(Rect& in) const
@@ -946,6 +972,11 @@ class FlexGridGraph
   void resetPrevNodeDir();
   void resetSrc();
   void resetDst();
+  void traceBackPath(std::vector<FlexMazeIdx>& connComps,
+                     std::vector<FlexMazeIdx>& path,
+                     FlexMazeIdx& ccMazeIdx1,
+                     FlexMazeIdx& ccMazeIdx2,
+                     ExpandDir expandDir);
   bool search(std::vector<FlexMazeIdx>& connComps,
               drPin* nextPin,
               std::vector<FlexMazeIdx>& path,
@@ -989,8 +1020,10 @@ class FlexGridGraph
     yCoords_.shrink_to_fit();
     yCoords_.clear();
     yCoords_.shrink_to_fit();
-    wavefront_.cleanup();
-    wavefront_.fit();
+    wavefrontForward_.cleanup();
+    wavefrontForward_.fit();
+    wavefrontBackward_.cleanup();
+    wavefrontBackward_.fit();
   }
 
   void printNode(frMIdx x, frMIdx y, frMIdx z)
@@ -1095,6 +1128,7 @@ class FlexGridGraph
   std::vector<bool> srcs_;
   std::vector<bool> dsts_;
   std::vector<bool> guides_;
+  std::unordered_map<frMIdx, frCost> path_costs_;
   frVector<frCoord> xCoords_;
   frVector<frCoord> yCoords_;
   frVector<frLayerNum> zCoords_;
@@ -1105,7 +1139,15 @@ class FlexGridGraph
   frUInt4 ggMarkerCost_ = 0;
   frUInt4 ggFixedShapeCost_ = 0;
   // temporary variables
-  FlexWavefront wavefront_;
+  FlexWavefront wavefrontForward_;
+  FlexWavefront wavefrontBackward_;
+  struct MeetingPoint
+  {
+    FlexWavefrontGrid wavefront;
+    ExpandDir wavefrontDir;
+    frCost mazeCost;
+  };
+  std::optional<MeetingPoint> meetingPoint_;
   const std::vector<std::pair<frCoord, frCoord>>* halfViaEncArea_
       = nullptr;  // std::pair<layer1area, layer2area>
   // ndr related
@@ -1122,32 +1164,39 @@ class FlexGridGraph
   void printExpansion(const FlexWavefrontGrid& currGrid,
                       const std::string& keyword);
   // unsafe access, no idx check
-  void setPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
+  void setPrevAstarNodeDir(frMIdx x,
+                           frMIdx y,
+                           frMIdx z,
+                           ExpandDir expandDir,
+                           frDirEnum dir)
   {
-    auto baseIdx = 3 * getIdx(x, y, z);
+    auto baseIdx = 4 * getIdx(x, y, z);
     prevDirs_[baseIdx] = ((uint16_t) dir >> 2) & 1;
     prevDirs_[baseIdx + 1] = ((uint16_t) dir >> 1) & 1;
     prevDirs_[baseIdx + 2] = ((uint16_t) dir) & 1;
+    prevDirs_[baseIdx + 3] = expandDir == ExpandDir::FORWARD;
   }
 
   // unsafe access, no check
   frDirEnum getPrevAstarNodeDir(const FlexMazeIdx& idx) const
   {
-    auto baseIdx = 3 * getIdx(idx.x(), idx.y(), idx.z());
+    auto baseIdx = 4 * getIdx(idx.x(), idx.y(), idx.z());
     return (frDirEnum) (((uint16_t) (prevDirs_[baseIdx]) << 2)
                         + ((uint16_t) (prevDirs_[baseIdx + 1]) << 1)
                         + ((uint16_t) (prevDirs_[baseIdx + 2]) << 0));
   }
 
   // unsafe access, no check
-  bool isSrc(frMIdx x, frMIdx y, frMIdx z) const
+  bool isSrc(frMIdx x, frMIdx y, frMIdx z, ExpandDir expandDir) const
   {
-    return srcs_[getIdx(x, y, z)];
+    auto& srcs = expandDir == ExpandDir::FORWARD ? srcs_ : dsts_;
+    return srcs[getIdx(x, y, z)];
   }
   // unsafe access, no check
-  bool isDst(frMIdx x, frMIdx y, frMIdx z) const
+  bool isDst(frMIdx x, frMIdx y, frMIdx z, ExpandDir expandDir) const
   {
-    return dsts_[getIdx(x, y, z)];
+    auto& dsts = expandDir == ExpandDir::FORWARD ? dsts_ : srcs_;
+    return dsts[getIdx(x, y, z)];
   }
   bool isDst(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {
@@ -1307,13 +1356,23 @@ class FlexGridGraph
                      std::vector<FlexMazeIdx>& path,
                      std::vector<FlexMazeIdx>& root,
                      FlexMazeIdx& ccMazeIdx1,
-                     FlexMazeIdx& ccMazeIdx2) const;
+                     FlexMazeIdx& ccMazeIdx2,
+                     ExpandDir expandDir) const;
+  void traceBackPath(const FlexMazeIdx& currGrid,
+                     std::vector<FlexMazeIdx>& path,
+                     std::vector<FlexMazeIdx>& root,
+                     FlexMazeIdx& ccMazeIdx1,
+                     FlexMazeIdx& ccMazeIdx2,
+                     ExpandDir expandDir) const;
   void expandWavefront(FlexWavefrontGrid& currGrid,
                        const FlexMazeIdx& dstMazeIdx1,
                        const FlexMazeIdx& dstMazeIdx2,
                        const Point& centerPt,
+                       ExpandDir expandDir,
                        bool route_with_jumpers);
-  bool isExpandable(const FlexWavefrontGrid& currGrid, frDirEnum dir) const;
+  bool isExpandable(const FlexWavefrontGrid& currGrid,
+                    frDirEnum dir,
+                    ExpandDir expandDir) const;
   FlexMazeIdx getTailIdx(const FlexMazeIdx& currIdx,
                          const FlexWavefrontGrid& currGrid) const;
   void expand(FlexWavefrontGrid& currGrid,
@@ -1321,6 +1380,7 @@ class FlexGridGraph
               const FlexMazeIdx& dstMazeIdx1,
               const FlexMazeIdx& dstMazeIdx2,
               const Point& centerPt,
+              ExpandDir expandDir,
               bool route_with_jumpers);
   bool hasAlignedUpDefTrack(
       frLayerNum layerNum,
@@ -1332,6 +1392,35 @@ class FlexGridGraph
   bool hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z);
   bool isWorkerBorder(frMIdx v, bool isVert);
 
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    // The wavefront should always be empty here so we don't need to
+    // serialize it.
+    if (!wavefrontForward_.empty() || !wavefrontBackward_.empty()) {
+      throw std::logic_error("don't serialize non-empty wavefront");
+    }
+    if (is_loading(ar)) {
+      tech_ = ar.getDesign()->getTech();
+    }
+    (ar) & drWorker_;
+    (ar) & nodes_;
+    (ar) & prevDirs_;
+    (ar) & srcs_;
+    (ar) & dsts_;
+    (ar) & guides_;
+    (ar) & xCoords_;
+    (ar) & yCoords_;
+    (ar) & zCoords_;
+    (ar) & zHeights_;
+    (ar) & layerRouteDirections_;
+    (ar) & dieBox_;
+    (ar) & ggDRCCost_;
+    (ar) & ggMarkerCost_;
+    (ar) & halfViaEncArea_;
+    (ar) & ap_locs_;
+  }
+  friend class boost::serialization::access;
   friend class FlexDRWorker;
 };
 

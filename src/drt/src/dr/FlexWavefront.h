@@ -39,17 +39,19 @@ namespace drt {
 class FlexWavefrontGrid
 {
  public:
-  FlexWavefrontGrid(int xIn,
-                    int yIn,
-                    int zIn,
-                    frCoord vLengthXIn,
-                    frCoord vLengthYIn,
-                    bool prevViaUpIn,
-                    frCoord tLengthIn,
-                    frCoord distIn,
-                    frCost pathCostIn,
-                    frCost costIn,
-                    const std::bitset<WAVEFRONTBITSIZE>& backTraceBufferIn = {})
+  FlexWavefrontGrid(
+      int xIn,
+      int yIn,
+      int zIn,
+      frCoord vLengthXIn,
+      frCoord vLengthYIn,
+      bool prevViaUpIn,
+      frCoord tLengthIn,
+      frCoord distIn,
+      frCost pathCostIn,
+      frCost costIn,
+      const std::bitset<WAVEFRONTBITSIZE>& backTraceBufferIn = {},
+      const std::array<frCost, WAVEFRONTBUFFERSIZE>& backTraceCostsIn = {})
       : xIdx_(xIn),
         yIdx_(yIn),
         zIdx_(zIn),
@@ -60,7 +62,8 @@ class FlexWavefrontGrid
         dist_(distIn),
         prevViaUp_(prevViaUpIn),
         tLength_(tLengthIn),
-        backTraceBuffer_(backTraceBufferIn)
+        backTraceBuffer_(backTraceBufferIn),
+        backTraceCosts_(backTraceCostsIn)
   {
   }
   bool operator<(const FlexWavefrontGrid& b) const
@@ -86,6 +89,10 @@ class FlexWavefrontGrid
   const std::bitset<WAVEFRONTBITSIZE>& getBackTraceBuffer() const
   {
     return backTraceBuffer_;
+  }
+  const std::array<frCost, WAVEFRONTBUFFERSIZE>& getBackTraceCosts() const
+  {
+    return backTraceCosts_;
   }
   frCoord getLength() const { return vLengthX_; }
   void getVLength(frCoord& vLengthXIn, frCoord& vLengthYIn) const
@@ -115,14 +122,19 @@ class FlexWavefrontGrid
     std::bitset<WAVEFRONTBITSIZE> mask = WAVEFRONTBUFFERHIGHMASK;
     return (mask & backTraceBuffer_).any();
   }
-  frDirEnum shiftAddBuffer(const frDirEnum& dir)
+  std::pair<frDirEnum, frCost> shiftAddBuffer(const frDirEnum& dir, frCost cost)
   {
     auto retBS = static_cast<frDirEnum>(
         (backTraceBuffer_ >> (WAVEFRONTBITSIZE - DIRBITSIZE)).to_ulong());
     backTraceBuffer_ <<= DIRBITSIZE;
     std::bitset<WAVEFRONTBITSIZE> newBS = (unsigned) dir;
     backTraceBuffer_ |= newBS;
-    return retBS;
+    for (int i = WAVEFRONTBUFFERSIZE - 1; i > 0; i--) {
+      backTraceCosts_[i] = backTraceCosts_[i - 1];
+    }
+    frCost prevCost = backTraceCosts_[0];
+    backTraceCosts_[0] = cost;
+    return {retBS, prevCost};
   }
   void setSrcTaperBox(const frBox3D* b) { srcTaperBox = b; }
   const frBox3D* getSrcTaperBox() const { return srcTaperBox; }
@@ -139,6 +151,7 @@ class FlexWavefrontGrid
   bool prevViaUp_;
   frCoord tLength_;  // length since last turn
   std::bitset<WAVEFRONTBITSIZE> backTraceBuffer_;
+  std::array<frCost, WAVEFRONTBUFFERSIZE> backTraceCosts_;
   const frBox3D* srcTaperBox = nullptr;
   frUInt4 id_{0};
   frUInt4 parent_id_{0};
