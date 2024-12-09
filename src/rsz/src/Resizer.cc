@@ -917,6 +917,9 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
   odb::dbITerm* buffer_ip_pin_iterm = db_network_->staToDb(buffer_ip_pin);
   odb::dbITerm* buffer_op_pin_iterm = db_network_->staToDb(buffer_op_pin);
 
+  assert(buffer_ip_pin_iterm != nullptr);
+  assert(buffer_op_pin_iterm != nullptr);
+
   if (flat_op_net) {
     buffer_ip_pin_iterm->connect(flat_op_net);
   }
