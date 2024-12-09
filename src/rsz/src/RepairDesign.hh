@@ -136,29 +136,11 @@ class RepairDesign : dbStaState
                  int& cap_violations,
                  int& fanout_violations,
                  int& length_violations);
-  bool needRepairSlew(const Pin* drvr_pin,
-                      int& slew_violations,
-                      float& max_cap,
-                      const Corner*& corner);
   bool needRepairCap(const Pin* drvr_pin,
                      int& cap_violations,
                      float& max_cap,
                      const Corner*& corner);
   bool needRepairWire(int max_length, int wire_length, int& length_violations);
-  bool needRepair(const Pin* drvr_pin,
-                  const Corner*& corner,
-                  int max_length,
-                  int wire_length,
-                  bool check_cap,
-                  bool check_slew,
-                  float& max_cap,
-                  int& slew_violations,
-                  int& cap_violations,
-                  int& length_violations);
-  bool checkLimits(const Pin* drvr_pin,
-                   bool check_slew,
-                   bool check_cap,
-                   bool check_fanout);
   void checkSlew(const Pin* drvr_pin,
                  // Return values.
                  Slew& slew,
