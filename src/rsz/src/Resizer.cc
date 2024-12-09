@@ -1168,6 +1168,22 @@ void Resizer::resizePreamble()
 //   same footprint have the same layout boundary.
 // - User Function Class (Optional - Honored if found): Cells with the
 //   same user_function_class are electrically compatible.
+
+bool Resizer::areCellsSwappable(LibertyCell* existing, LibertyCell* candidate)
+{
+  if (isLinkCell(candidate) && !dontUse(candidate)) {
+    if (!match_cell_footprint_
+        || sta::stringEqIf(existing->footprint(), candidate->footprint())) {
+      if (!existing->userFunctionClass()
+          || sta::stringEqIf(existing->userFunctionClass(),
+                             candidate->userFunctionClass())) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
 {
   dbMaster* master = db_network_->staToDb(source_cell);
@@ -1180,24 +1196,12 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
 
   if (equiv_cells) {
     for (LibertyCell* equiv_cell : *equiv_cells) {
-      if (match_cell_footprint_) {
-        const bool footprints_match = sta::stringEqIf(source_cell->footprint(),
-                                                      equiv_cell->footprint());
-        if (!footprints_match) {
-          continue;
-        }
+      if (areCellsSwappable(source_cell, equiv_cell)) {
+        swappable_cells.push_back(equiv_cell);
       }
-
-      if (source_cell->userFunctionClass()) {
-        const bool user_function_classes_match = sta::stringEqIf(
-            source_cell->userFunctionClass(), equiv_cell->userFunctionClass());
-        if (!user_function_classes_match) {
-          continue;
-        }
-      }
-
-      swappable_cells.push_back(equiv_cell);
     }
+  } else {
+    swappable_cells.push_back(source_cell);
   }
 
   return swappable_cells;
