@@ -1437,6 +1437,14 @@ void NesterovBaseCommon::fixPointers()
         if (it != db_iterm_map_.end()) {
           size_t gpin_index = it->second;
           gCell.addGPin(&gPinStor_[gpin_index]);
+        } else {
+          debugPrint(log_,
+                     GPL,
+                     "callbacks",
+                     1,
+                     "warning: gpin nullptr (from iterm:{}) in gcell:{}",
+                     iterm->getName(),
+                     gCell.instance()->dbInst()->getName());
         }
       }
     }
@@ -1456,13 +1464,22 @@ void NesterovBaseCommon::fixPointers()
         if (net_it != db_net_map_.end()) {
           gPin.setGNet(&gNetStor_[net_it->second]);
         } else {
-          log_->report("Net not found in db_net_map_ for ITerm: {} -> {}",
-                       iterm->getNet()->getName(),
-                       iterm->getName());
+          debugPrint(
+              log_,
+              GPL,
+              "callbacks",
+              1,
+              "warning: Net not found in db_net_map_ for ITerm: {} -> {}",
+              iterm->getNet()->getName(),
+              iterm->getName());
         }
       } else {
-        log_->report("Warning: invalid type itermType: {}",
-                     iterm->getSigType().getString());
+        debugPrint(log_,
+                   GPL,
+                   "callbacks",
+                   1,
+                   "warning: invalid type itermType: {}",
+                   iterm->getSigType().getString());
       }
     }
   }
@@ -2671,9 +2688,13 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
 {
   GCell* gcell = getGCellByIndex(db_inst_map_.find(db_inst)->second);
   if (gcell->instance()->dbInst()->getName() != db_inst->getName()) {
-    log_->report("warning: gcell {} found in db_inst_map_ as {}",
-                 gcell->instance()->dbInst()->getName(),
-                 db_inst->getName());
+    debugPrint(log_,
+               GPL,
+               "callbacks",
+               1,
+               "warning: gcell {} found in db_inst_map_ as {}",
+               gcell->instance()->dbInst()->getName(),
+               db_inst->getName());
   }
 
   int64_t prevCellArea
@@ -2754,7 +2775,11 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
       // analogous to updatePrevGradient()
       updateSinglePrevGradient(gcells_index, wlCoeffX, wlCoeffY);
     } else {
-      log_->report(
+      debugPrint(
+          log_,
+          GPL,
+          "callbacks",
+          1,
           "warning: updateGCellState, db_inst not found in db_inst_index_map_ "
           "for instance: {}",
           db_inst->getName());
@@ -2795,7 +2820,11 @@ void NesterovBase::createGCell(odb::dbInst* db_inst,
 
     rb->pushBackMinRcCellSize(gcell->dx(), gcell->dy());
   } else {
-    log_->report("Error! gCell is nullptr!");
+    debugPrint(log_,
+               GPL,
+               "callbacks",
+               1,
+               "Error. Trying to create gCell but it is nullptr!");
   }
 }
 
