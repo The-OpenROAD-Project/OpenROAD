@@ -911,19 +911,9 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
   Pin* buffer_ip_pin = nullptr;
   Pin* buffer_op_pin = nullptr;
   getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
-  // get the iterms. Note this are never null (makeBuffer call above
-  // properly instantiates
-  // them and we know to always expect an iterm.).
-  odb::dbITerm* buffer_ip_pin_iterm = db_network_->flatPin(buffer_ip_pin);
-  assert(buffer_ip_pin_iterm);
-  odb::dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
-  assert(buffer_op_pin_iterm);
-  //
-  // axiom: we have created a buffer above therefore we rationally
-  // expect it to have valid iterms.
-  // If the iterm creation fails an assert is thrown elsewhere.
-  // But we put the above in to make it clear (and hopefully
-  // to fool coverity).
+
+  odb::dbITerm* buffer_ip_pin_iterm = db_network_->staToDb(buffer_ip_pin);
+  odb::dbITerm* buffer_op_pin_iterm = db_network_->staToDb(buffer_op_pin);
 
   if (flat_op_net) {
     buffer_ip_pin_iterm->connect(flat_op_net);

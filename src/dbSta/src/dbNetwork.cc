@@ -2339,6 +2339,23 @@ void dbNetwork::staToDb(const Pin* pin,
   }
 }
 
+// Get the iterm for a pin and error check
+dbITerm* dbNetwork::staToDb(const Pin* pin) const
+{
+  dbITerm* ret = nullptr;
+  if (pin) {
+    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Pin*>(pin));
+    dbObjectType type = obj->getObjectType();
+    if (type == dbITermObj) {
+      ret = static_cast<dbITerm*>(obj);
+    }
+  }
+  if (ret == nullptr) {
+    logger_->critical(ORD, 2023, "pin is not an ITerm");
+  }
+  return ret;
+}
+
 dbBTerm* dbNetwork::staToDb(const Term* term) const
 {
   return reinterpret_cast<dbBTerm*>(const_cast<Term*>(term));
