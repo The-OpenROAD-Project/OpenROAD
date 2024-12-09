@@ -488,6 +488,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool hasMultipleOutputs(const Instance* inst);
 
   void resizePreamble();
+  bool areCellsSwappable(LibertyCell* existing, LibertyCell* replacement);
   LibertyCellSeq getSwappableCells(LibertyCell* source_cell);
 
   // Resize drvr_pin instance to target slew.
