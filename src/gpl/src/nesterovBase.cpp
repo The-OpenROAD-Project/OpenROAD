@@ -1426,8 +1426,7 @@ void NesterovBaseCommon::fixPointers()
     db_net_map_[gNet.net()->dbNet()] = i;
   }
 
-  for (auto it = gCellStor_.begin(); it < gCellStor_.end(); ++it) {
-    auto& gCell = *it;  // old-style loop for old OpenMP
+  for (auto& gCell : gCellStor_) {
     if (gCell.isFiller()) {
       continue;
     }
@@ -1438,18 +1437,12 @@ void NesterovBaseCommon::fixPointers()
         if (it != db_iterm_map_.end()) {
           size_t gpin_index = it->second;
           gCell.addGPin(&gPinStor_[gpin_index]);
-        } else {
-          log_->report("error: gpin nullptr (from iterm:{}) in gcell:{}",
-                       iterm->getName(),
-                       gCell.instance()->dbInst()->getName());
         }
       }
     }
   }
 
-  // #pragma omp parallel for num_threads(num_threads_)
-  for (auto it = gPinStor_.begin(); it < gPinStor_.end(); ++it) {
-    auto& gPin = *it;  // old-style loop for old OpenMP
+  for (auto& gPin : gPinStor_) {
     auto iterm = gPin.pin()->dbITerm();
     if (iterm != nullptr) {
       if (isValidSigType(iterm->getSigType())) {
@@ -1474,9 +1467,7 @@ void NesterovBaseCommon::fixPointers()
     }
   }
 
-  // #pragma omp parallel for num_threads(num_threads_)
-  for (auto it = gNetStor_.begin(); it < gNetStor_.end(); ++it) {
-    auto& gNet = *it;  // old-style loop for old OpenMP
+  for (auto& gNet : gNetStor_) {
     gNet.clearGPins();
     for (odb::dbITerm* iterm : gNet.net()->dbNet()->getITerms()) {
       if (isValidSigType(iterm->getSigType())) {
