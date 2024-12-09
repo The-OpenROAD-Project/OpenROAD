@@ -74,7 +74,6 @@ class Flute
   Tree flute(const std::vector<int>& x, const std::vector<int>& y, int acc);
   int wirelength(Tree t);
   void plottree(Tree t);
-  void write_svg(Tree t, const char* filename);
   inline Tree flutes(const std::vector<int>& xs,
                      const std::vector<int>& ys,
                      const std::vector<int>& s,
@@ -195,7 +194,7 @@ class Flute
  private:
   // Dynamically allocate LUTs.
   LUT_TYPE LUT = nullptr;
-  NUMSOLN_TYPE numsoln;
+  NUMSOLN_TYPE numsoln = nullptr;
   // LUTs are initialized to this order at startup.
   const int lut_initial_d = 8;
   int lut_valid_d = 0;

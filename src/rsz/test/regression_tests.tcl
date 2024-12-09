@@ -15,6 +15,7 @@ record_tests {
   buffer_ports8
   buffer_varying_lengths
   eliminate_dead_logic1
+  eliminate_dead_logic2
   eqy_repair_setup2
   eqy_repair_setup5
   fanin_fanout1

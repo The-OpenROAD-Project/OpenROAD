@@ -207,7 +207,8 @@ void RepairDesign::repairDesign(
     Pin* drvr_pin = drvr->pin();
     Net* net = network_->isTopLevelPort(drvr_pin)
                    ? network_->net(network_->term(drvr_pin))
-                   : network_->net(drvr_pin);
+                   // hier fix
+                   : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
     dbNet* net_db = db_network_->staToDb(net);
     bool debug = (drvr_pin == resizer_->debug_pin_);
     if (debug) {
