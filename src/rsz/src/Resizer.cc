@@ -629,7 +629,6 @@ void Resizer::getPins(Instance* inst, PinVector& pins) const
 
 void Resizer::SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from)
 {
-  if (iterm_to && iterm_from) {
     //
     // The concept of this function is we are moving the name of the net
     // in the iterm_from to the iterm_to.  We preferentially use
@@ -658,7 +657,6 @@ void Resizer::SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from)
       to_mod_net->rename(required_name.c_str());
       from_db_net->rename(to_name.c_str());
     }
-  }
 }
 
 Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
@@ -913,32 +911,33 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
   Pin* buffer_ip_pin = nullptr;
   Pin* buffer_op_pin = nullptr;
   getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
-
-  // get the iterms. Note this are never null (makeBuffer properly instantiates
-  // them and we know to always expect an iterm.). However, the api (flatPin)
-  // truly checks to see if the pins could be moditerms & if they are returns
-  // null, so coverity rationally reasons that the iterm could be null,
-  // so we add some extra checking here. This is a consequence of
-  //"hiding" the full api.
+  // get the iterms. Note this are never null (makeBuffer call above
+  //properly instantiates
+  // them and we know to always expect an iterm.).
+  odb::dbITerm* buffer_ip_pin_iterm = db_network_ -> flatPin(buffer_ip_pin);
+  assert(buffer_ip_pin_iterm);
+  odb::dbITerm* buffer_op_pin_iterm = db_network_ -> flatPin(buffer_op_pin);
+  assert(buffer_op_pin_iterm);
   //
-  odb::dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
-  odb::dbITerm* buffer_ip_pin_iterm = db_network_->flatPin(buffer_ip_pin);
-
-  if (buffer_ip_pin_iterm && buffer_op_pin_iterm) {
-    if (flat_op_net) {
-      buffer_ip_pin_iterm->connect(flat_op_net);
-    }
-    if (hier_op_net) {
-      buffer_ip_pin_iterm->connect(hier_op_net);
-    }
-    buffer_op_pin_iterm->connect(db_network_->staToDb(buffer_out));
-    top_pin_op_bterm->connect(db_network_->staToDb(buffer_out));
-    SwapNetNames(buffer_op_pin_iterm, buffer_ip_pin_iterm);
-    // rename the mod net to match the flat net.
-    if (buffer_ip_pin_iterm->getNet() && buffer_ip_pin_iterm->getModNet()) {
-      buffer_ip_pin_iterm->getModNet()->rename(
-          buffer_ip_pin_iterm->getNet()->getName().c_str());
-    }
+  //axiom: we have created a buffer above therefore we rationally
+  //expect it to have valid iterms. 
+  //If the iterm creation fails an assert is thrown elsewhere.
+  //But we put the above in to make it clear (and hopefully
+  //to fool coverity).
+  
+  if (flat_op_net) {
+    buffer_ip_pin_iterm->connect(flat_op_net);
+  }
+  if (hier_op_net) {
+    buffer_ip_pin_iterm->connect(hier_op_net);
+  }
+  buffer_op_pin_iterm->connect(db_network_->staToDb(buffer_out));
+  top_pin_op_bterm->connect(db_network_->staToDb(buffer_out));
+  SwapNetNames(buffer_op_pin_iterm, buffer_ip_pin_iterm);
+  // rename the mod net to match the flat net.
+  if (buffer_ip_pin_iterm->getNet() && buffer_ip_pin_iterm->getModNet()) {
+    buffer_ip_pin_iterm->getModNet()->rename(
+					     buffer_ip_pin_iterm->getNet()->getName().c_str());
   }
 
   parasiticsInvalid(flat_op_net);
