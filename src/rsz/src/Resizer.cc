@@ -912,6 +912,8 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
   Pin* buffer_op_pin = nullptr;
   getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
 
+  // get the iterm for each of the buffer pins
+  // use the db converter function (staToDb) which error checks.
   odb::dbITerm* buffer_ip_pin_iterm = db_network_->staToDb(buffer_ip_pin);
   odb::dbITerm* buffer_op_pin_iterm = db_network_->staToDb(buffer_op_pin);
 
