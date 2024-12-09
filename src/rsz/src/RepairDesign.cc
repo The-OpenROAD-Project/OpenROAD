@@ -697,13 +697,15 @@ bool RepairDesign::repairDriverSlew(const Corner* corner, const Pin* drvr_pin)
 
       for (LibertyCell* size_cell : *equiv_cells) {
         if (resizer_->areCellsSwappable(cell, size_cell)) {
-          float limit, violation = 0;
+          float limit, limit_w_margin, violation = 0;
           bool limit_exists = false;
           LibertyPort* port
               = size_cell->findLibertyPort(network_->portName(drvr_pin));
           sta_->findSlewLimit(port, corner, max_, limit, limit_exists);
 
           if (limit_exists) {
+            float limit_w_margin = maxSlewMargined(limit);
+
             for (TimingArcSet* arc_set : size_cell->timingArcSets()) {
               TimingRole* role = arc_set->role();
               if (!role->isTimingCheck()
@@ -714,7 +716,7 @@ bool RepairDesign::repairDriverSlew(const Corner* corner, const Pin* drvr_pin)
                 for (TimingArc* arc : arc_set->arcs()) {
                   if (arc->to() == port) {
                     checkDriverArcSlew(
-                        corner, inst, arc, load_cap, limit, violation);
+                        corner, inst, arc, load_cap, limit_w_margin, violation);
                   }
                 }
               }
