@@ -697,7 +697,7 @@ bool RepairDesign::repairDriverSlew(const Corner* corner, const Pin* drvr_pin)
 
       for (LibertyCell* size_cell : *equiv_cells) {
         if (resizer_->areCellsSwappable(cell, size_cell)) {
-          float limit, limit_w_margin, violation = 0;
+          float limit, violation = 0;
           bool limit_exists = false;
           LibertyPort* port
               = size_cell->findLibertyPort(network_->portName(drvr_pin));
