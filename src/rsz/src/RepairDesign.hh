@@ -115,6 +115,14 @@ class RepairDesign : dbStaState
   void findBufferSizes();
   bool performGainBuffering(Net* net, const Pin* drvr_pin, int max_fanout);
 
+  void checkDriverArcSlew(const Corner* corner,
+                          const Instance* inst,
+                          const TimingArc* arc,
+                          float load_cap,
+                          float limit,
+                          float& violation);
+  bool repairDriverSlew(const Corner* corner, const Pin* drvr_pin);
+
   void repairNet(Net* net,
                  const Pin* drvr_pin,
                  Vertex* drvr,
