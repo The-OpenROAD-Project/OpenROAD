@@ -2779,7 +2779,7 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net)
       connecting = &end;
     }
     if (inst) {
-      dbTransform trans = inst->getNoRotationTransform();
+      dbTransform trans = inst->getTransform();
       trans.apply(begin);
       trans.apply(end);
       if (end < begin) {  // if rotation swapped order, correct it

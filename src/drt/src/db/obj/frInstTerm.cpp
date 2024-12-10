@@ -40,11 +40,12 @@ frString frInstTerm::getName() const
 frAccessPoint* frInstTerm::getAccessPoint(frCoord x, frCoord y, frLayerNum lNum)
 {
   auto inst = getInst();
-  dbTransform shiftXform = inst->getTransform();
-  Point offset(shiftXform.getOffset());
-  x = x - offset.getX();
-  y = y - offset.getY();
-  return term_->getAccessPoint(x, y, lNum, inst->getPinAccessIdx());
+  dbTransform shiftXform;
+  inst->getTransform().invert(shiftXform);
+  Point pt(x, y);
+  shiftXform.apply(pt);
+  return term_->getAccessPoint(
+      pt.getX(), pt.getY(), lNum, inst->getPinAccessIdx());
 }
 
 bool frInstTerm::hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum)
@@ -56,7 +57,7 @@ void frInstTerm::getShapes(std::vector<frRect>& outShapes) const
 {
   term_->getShapes(outShapes);
   for (auto& shape : outShapes) {
-    dbTransform trans = getInst()->getDBTransform();
+    dbTransform trans = getInst()->getTransform();
     shape.move(trans);
   }
 }
@@ -64,7 +65,7 @@ void frInstTerm::getShapes(std::vector<frRect>& outShapes) const
 Rect frInstTerm::getBBox() const
 {
   Rect bbox(term_->getBBox());
-  dbTransform trans = getInst()->getDBTransform();
+  dbTransform trans = getInst()->getTransform();
   trans.apply(bbox);
   return bbox;
 }

@@ -878,7 +878,7 @@ void io::Parser::checkPins()
     if (!inst->getMaster()->getMasterType().isBlock()) {
       continue;
     }
-    dbTransform xform = inst->getDBTransform();
+    dbTransform xform = inst->getTransform();
     for (auto& iTerm : inst->getInstTerms()) {
       if (!iTerm->hasNet() || iTerm->getNet()->isSpecial()) {
         continue;

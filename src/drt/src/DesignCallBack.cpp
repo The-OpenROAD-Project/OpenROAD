@@ -66,8 +66,6 @@ void DesignCallBack::inDbPostMoveInst(odb::dbInst* db_inst)
     auto block = db_inst->getBlock();
     x = defdist(block, x);
     y = defdist(block, y);
-    inst->setOrigin({x, y});
-    inst->setOrient(db_inst->getOrient());
     if (design->getRegionQuery() != nullptr) {
       design->getRegionQuery()->addBlockObj(inst);
     }
