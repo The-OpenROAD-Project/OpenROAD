@@ -1177,23 +1177,23 @@ void FlexDRWorker::initNet_term(const frDesign* design,
 {
   for (auto term : terms) {
     // ap
-    dbTransform shiftXform;
+    dbTransform transform;
     switch (term->typeId()) {
       case frcInstTerm: {
         auto instTerm = static_cast<frInstTerm*>(term);
         frInst* inst = instTerm->getInst();
-        shiftXform = inst->getTransform();
+        transform = inst->getTransform();
         auto trueTerm = instTerm->getTerm();
         const std::string name = inst->getName() + "/" + trueTerm->getName();
         initNet_term_helper(
-            design, trueTerm, term, inst, dNet, name, shiftXform);
+            design, trueTerm, term, inst, dNet, name, transform);
         break;
       }
       case frcBTerm: {
         auto trueTerm = static_cast<frBTerm*>(term);
         const std::string name = "PIN/" + trueTerm->getName();
         initNet_term_helper(
-            design, trueTerm, term, nullptr, dNet, name, shiftXform);
+            design, trueTerm, term, nullptr, dNet, name, transform);
         break;
       }
       default:
@@ -1210,7 +1210,7 @@ void FlexDRWorker::initNet_term_helper(const frDesign* design,
                                        frInst* inst,
                                        drNet* dNet,
                                        const std::string& name,
-                                       const dbTransform& shiftXform)
+                                       const dbTransform& transform)
 {
   auto dPin = std::make_unique<drPin>();
   dPin->setFrTerm(term);
@@ -1228,7 +1228,7 @@ void FlexDRWorker::initNet_term_helper(const frDesign* design,
     for (auto& ap : pin->getPinAccess(pinAccessIdx)->getAccessPoints()) {
       Point bp = ap->getPoint();
       const auto bNum = ap->getLayerNum();
-      shiftXform.apply(bp);
+      transform.apply(bp);
 
       auto dAp = std::make_unique<drAccessPattern>();
       dAp->setPoint(bp);

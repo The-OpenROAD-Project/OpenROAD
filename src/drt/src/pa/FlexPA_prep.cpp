@@ -1789,8 +1789,8 @@ void FlexPA::revertAccessPoints()
 {
   const auto& unique = unique_insts_.getUnique();
   for (auto& inst : unique) {
-    dbTransform revertXform;
-    inst->getTransform().invert(revertXform);
+    dbTransform revert_transform;
+    inst->getTransform().invert(revert_transform);
 
     const auto pin_access_idx = unique_insts_.getPAIndex(inst);
     for (auto& inst_term : inst->getInstTerms()) {
@@ -1802,13 +1802,13 @@ void FlexPA::revertAccessPoints()
         auto pin_access = pin->getPinAccess(pin_access_idx);
         for (auto& access_point : pin_access->getAccessPoints()) {
           Point unique_AP_point(access_point->getPoint());
-          revertXform.apply(unique_AP_point);
+          revert_transform.apply(unique_AP_point);
           access_point->setPoint(unique_AP_point);
           for (auto& ps : access_point->getPathSegs()) {
             Point begin = ps.getBeginPoint();
             Point end = ps.getEndPoint();
-            revertXform.apply(begin);
-            revertXform.apply(end);
+            revert_transform.apply(begin);
+            revert_transform.apply(end);
             if (end < begin) {
               Point tmp = begin;
               begin = end;

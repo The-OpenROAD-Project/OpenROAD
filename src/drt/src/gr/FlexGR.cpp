@@ -1642,9 +1642,9 @@ void FlexGR::initGR_genTopology_net(frNet* net)
       Point pt;
       if (rpin->getFrTerm()->typeId() == frcInstTerm) {
         auto inst = static_cast<frInstTerm*>(rpin->getFrTerm())->getInst();
-        dbTransform shiftXform = inst->getTransform();
+        dbTransform transform = inst->getTransform();
         pt = rpin->getAccessPoint()->getPoint();
-        shiftXform.apply(pt);
+        transform.apply(pt);
       } else {
         pt = rpin->getAccessPoint()->getPoint();
       }

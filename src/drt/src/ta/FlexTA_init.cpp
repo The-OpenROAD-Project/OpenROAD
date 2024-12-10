@@ -137,7 +137,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
           continue;
         }
         frInst* inst = iterm->getInst();
-        dbTransform shiftXform = inst->getTransform();
+        dbTransform transform = inst->getTransform();
         frMTerm* mterm = iterm->getTerm();
         int pinIdx = 0;
         for (auto& pin : mterm->getPins()) {
@@ -153,7 +153,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
           }
           Point bp = ap->getPoint();
           auto bNum = ap->getLayerNum();
-          shiftXform.apply(bp);
+          transform.apply(bp);
           if (layerNum == bNum && getRouteBox().intersects(bp)) {
             pinCoord = isH ? bp.y() : bp.x();
             maxBegin = isH ? bp.x() : bp.y();
@@ -258,7 +258,7 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
           continue;
         }
         frInst* inst = iterm->getInst();
-        dbTransform shiftXform = inst->getTransform();
+        dbTransform transform = inst->getTransform();
         frMTerm* mterm = iterm->getTerm();
         int pinIdx = 0;
         for (auto& pin : mterm->getPins()) {
@@ -285,7 +285,7 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
             }
           }
           Point bp = ap->getPoint();
-          shiftXform.apply(bp);
+          transform.apply(bp);
           if (getRouteBox().intersects(bp)) {
             pinCoord = isH ? bp.y() : bp.x();
             return;

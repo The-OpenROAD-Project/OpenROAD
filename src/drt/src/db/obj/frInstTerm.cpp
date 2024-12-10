@@ -40,10 +40,10 @@ frString frInstTerm::getName() const
 frAccessPoint* frInstTerm::getAccessPoint(frCoord x, frCoord y, frLayerNum lNum)
 {
   auto inst = getInst();
-  dbTransform shiftXform;
-  inst->getTransform().invert(shiftXform);
+  dbTransform transform;
+  inst->getTransform().invert(transform);
   Point pt(x, y);
-  shiftXform.apply(pt);
+  transform.apply(pt);
   return term_->getAccessPoint(
       pt.getX(), pt.getY(), lNum, inst->getPinAccessIdx());
 }

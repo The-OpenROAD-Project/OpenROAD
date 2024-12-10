@@ -96,7 +96,7 @@ class frInst : public frRef
     return db_inst_->getTransform().getOffset();
   }
   odb::dbInst* getDBInst() const { return db_inst_; }
-  dbTransform getTransform() const { return db_inst_->getTransform(); }
+  dbTransform getTransform() const override { return db_inst_->getTransform(); }
 
   /* from frPinFig
    * hasPin
