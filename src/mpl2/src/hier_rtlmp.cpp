@@ -1174,16 +1174,12 @@ void HierRTLMP::adjustCongestionWeight()
 // summation of pin access size is equal to the area of standard-cell clusters
 void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
 {
-  // base case
-  // If the parent cluster has no macros (parent cluster is a StdCellCluster or
-  // IOCluster) We do not need to determine the positions and shapes of its
-  // children clusters
-  if (parent->getNumMacro() == 0) {
-    return;
-  }
-  // If the parent is a HardMacroCluster
   if (parent->getClusterType() == HardMacroCluster) {
     placeMacros(parent);
+    return;
+  }
+
+  if (parent->isLeaf()) {  // Cover IO Clusters && Leaf Std Cells
     return;
   }
 
@@ -2078,16 +2074,12 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
   }
 
   updateChildrenRealLocation(parent, outline.xMin(), outline.yMin());
+  sa_containers.clear();
 
   // Continue cluster placement on children
   for (auto& cluster : parent->getChildren()) {
-    if (cluster->getClusterType() == MixedCluster
-        || cluster->getClusterType() == HardMacroCluster) {
-      runHierarchicalMacroPlacement(cluster.get());
-    }
+    runHierarchicalMacroPlacement(cluster.get());
   }
-
-  sa_containers.clear();
 
   clustering_engine_->updateInstancesAssociation(parent);
 }
@@ -2159,19 +2151,14 @@ void HierRTLMP::reportSAWeights()
   logger_->report("Macro Blockage = {}\n", macro_blockage_weight_);
 }
 
-// Multilevel macro placement without bus planning
 void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
 {
-  // base case
-  // If the parent cluster has no macros (parent cluster is a StdCellCluster or
-  // IOCluster) We do not need to determine the positions and shapes of its
-  // children clusters
-  if (parent->getNumMacro() == 0) {
-    return;
-  }
-  // If the parent is a HardMacroCluster
   if (parent->getClusterType() == HardMacroCluster) {
     placeMacros(parent);
+    return;
+  }
+
+  if (parent->isLeaf()) {  // Cover IO Clusters && Leaf Std Cells
     return;
   }
 
@@ -2648,10 +2635,7 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
 
   // Continue cluster placement on children
   for (auto& cluster : parent->getChildren()) {
-    if (cluster->getClusterType() == MixedCluster
-        || cluster->getClusterType() == HardMacroCluster) {
-      runHierarchicalMacroPlacementWithoutBusPlanning(cluster.get());
-    }
+    runHierarchicalMacroPlacementWithoutBusPlanning(cluster.get());
   }
 
   clustering_engine_->updateInstancesAssociation(parent);
@@ -2663,18 +2647,12 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
 // This should be only be used in mixed clusters.
 void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
 {
-  // base case
-  // If the parent cluster has no macros (parent cluster is a StdCellCluster or
-  // IOCluster) We do not need to determine the positions and shapes of its
-  // children clusters
-  if (parent->getNumMacro() == 0) {
-    return;
-  }
-  // If the parent is the not the mixed cluster
   if (parent->getClusterType() != MixedCluster) {
     return;
   }
-  // If the parent has children of mixed cluster
+
+  // We only run this enhanced macro placement version if there are no
+  // further levels ahead in the current branch of the physical hierarchy.
   for (auto& cluster : parent->getChildren()) {
     if (cluster->getClusterType() == MixedCluster) {
       return;

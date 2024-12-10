@@ -1731,22 +1731,21 @@ void ClusteringEngine::fetchMixedLeaves(
     Cluster* parent,
     std::vector<std::vector<Cluster*>>& mixed_leaves)
 {
-  if (parent->getChildren().empty() || parent->getNumMacro() == 0) {
-    return;
-  }
-
   std::vector<Cluster*> sister_mixed_leaves;
 
   for (auto& child : parent->getChildren()) {
     updateInstancesAssociation(child.get());
-    if (child->getNumMacro() > 0) {
-      if (child->getChildren().empty()) {
+
+    if (child->getNumMacro() == 0) {
+      child->setClusterType(StdCellCluster);
+    }
+
+    if (child->getChildren().empty()) {
+      if (child->getClusterType() != StdCellCluster) {
         sister_mixed_leaves.push_back(child.get());
-      } else {
-        fetchMixedLeaves(child.get(), mixed_leaves);
       }
     } else {
-      child->setClusterType(StdCellCluster);
+      fetchMixedLeaves(child.get(), mixed_leaves);
     }
   }
 
