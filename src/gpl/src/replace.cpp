@@ -110,7 +110,6 @@ void Replace::reset()
   routabilityMaxInflationRatio_ = 8;
   routabilityRcK1_ = routabilityRcK2_ = 1.0;
   routabilityRcK3_ = routabilityRcK4_ = 0.0;
-  routabilityMaxBloatIter_ = 1;
   routabilityMaxInflationIter_ = 4;
 
   timingDrivenMode_ = true;
@@ -317,7 +316,6 @@ bool Replace::initNesterovPlace(int threads)
     RouteBaseVars rbVars;
     rbVars.useRudy = routabilityUseRudy_;
     rbVars.maxDensity = routabilityMaxDensity_;
-    rbVars.maxBloatIter = routabilityMaxBloatIter_;
     rbVars.maxInflationIter = routabilityMaxInflationIter_;
     rbVars.targetRC = routabilityTargetRcMetric_;
     rbVars.inflationRatioCoef = routabilityInflationRatioCoef_;
@@ -517,11 +515,6 @@ void Replace::setKeepResizeBelowOverflow(float overflow)
 void Replace::setRoutabilityMaxDensity(float density)
 {
   routabilityMaxDensity_ = density;
-}
-
-void Replace::setRoutabilityMaxBloatIter(int iter)
-{
-  routabilityMaxBloatIter_ = iter;
 }
 
 void Replace::setRoutabilityMaxInflationIter(int iter)

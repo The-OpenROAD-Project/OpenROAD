@@ -1229,6 +1229,12 @@ void dbNetwork::net(const Pin* pin, dbNet*& db_net, dbModNet*& db_modnet) const
     db_net = iterm->getNet();
     db_modnet = iterm->getModNet();
   }
+  if (bterm) {
+    // in this case we may have both a hierarchical net
+    // and a physical net
+    db_net = bterm->getNet();
+    db_modnet = bterm->getModNet();
+  }
   // pins which act as bterms are top levels and have no net
   // so we skip that case (defaults to null)
 
@@ -1954,6 +1960,20 @@ Instance* dbNetwork::makeInstance(LibertyCell* cell,
     dbMaster* master = db_->findMaster(cell_name);
     if (master) {
       dbInst* inst = dbInst::create(block_, master, name);
+      //
+      // Register all liberty cells as being concrete
+      // Sometimes this method is called by the sta
+      // to build "test circuits" eg to find the max wire length
+      // And those cells need to use the external api
+      // to get timing characteristics, so they have to be
+      // concrete
+      Cell* inst_cell = dbToSta(master);
+      registerConcreteCell(inst_cell);
+      std::unique_ptr<sta::CellPortIterator> port_iter{portIterator(inst_cell)};
+      while (port_iter->hasNext()) {
+        Port* cur_port = port_iter->next();
+        registerConcretePort(cur_port);
+      }
       return dbToSta(inst);
     }
   } else {
@@ -1964,6 +1984,20 @@ Instance* dbNetwork::makeInstance(LibertyCell* cell,
       dbMaster* master = db_->findMaster(cell_name);
       dbModule* parent = mod_inst->getMaster();
       dbInst* inst = dbInst::create(block_, master, name, false, parent);
+      Cell* inst_cell = dbToSta(master);
+      //
+      // Register all liberty cells as being concrete
+      // Sometimes this method is called by the sta
+      // to build "test circuits" eg to find the max wire length
+      // And those cells need to use the external api
+      // to get timing characteristics, so they have to be
+      // concrete
+      registerConcreteCell(inst_cell);
+      std::unique_ptr<sta::CellPortIterator> port_iter{portIterator(inst_cell)};
+      while (port_iter->hasNext()) {
+        Port* cur_port = port_iter->next();
+        registerConcretePort(cur_port);
+      }
       return dbToSta(inst);
     }
   }
@@ -2501,6 +2535,11 @@ const Net* dbNetwork::dbToSta(const dbNet* net) const
   return reinterpret_cast<const Net*>(net);
 }
 
+const Net* dbNetwork::dbToSta(const dbModNet* net) const
+{
+  return reinterpret_cast<const Net*>(net);
+}
+
 Pin* dbNetwork::dbToSta(dbBTerm* bterm) const
 {
   return reinterpret_cast<Pin*>(bterm);
@@ -2750,8 +2789,12 @@ bool DbNetworkPortMemberIterator::hasNext()
 Port* DbNetworkPortMemberIterator::next()
 {
   dbModBTerm* ret = *members_;
-  members_++;
   ix_++;
+  // if we are at the end, don't access the next member
+  // as it is null
+  if (ix_ != size_) {
+    members_++;
+  }
   return reinterpret_cast<Port*>(ret);
 }
 
@@ -3105,64 +3148,9 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
   }
 }
 
-// Find a hierarchical module with a given name
-// TODO: support finding uninstantiated modules
-dbModule* dbNetwork::findModule(const char* name)
+void dbNetwork::replaceDesign(dbModInst* mod_inst, dbModule* module)
 {
-  dbModule* module = nullptr;
-  Instance* top_inst = topInstance();
-  std::unique_ptr<InstanceChildIterator> child_iter{childIterator(top_inst)};
-  while (child_iter->hasNext()) {
-    Instance* child = child_iter->next();
-    if (network_->isHierarchical(child)) {
-      dbInst* db_inst;
-      dbModInst* mod_inst;
-      staToDb(child, db_inst, mod_inst);
-      if (mod_inst) {
-        dbModule* master = mod_inst->getMaster();
-        if (master) {
-          if (strcmp(master->getName(), name) == 0) {
-            module = master;
-            break;
-          }
-        }
-      }
-    }
-  }
-  return module;
-}
-
-// Find a hierarchical instance with a given name
-Instance* dbNetwork::findHierInstance(const char* name)
-{
-  Instance* inst = nullptr;
-  Instance* top_inst = topInstance();
-  std::unique_ptr<InstanceChildIterator> child_iter{childIterator(top_inst)};
-  while (child_iter->hasNext()) {
-    Instance* child = child_iter->next();
-    if (network_->isHierarchical(child)
-        && strcmp(network_->name(child), name) == 0) {
-      inst = child;
-      break;
-    }
-  }
-  return inst;
-}
-
-void dbNetwork::replaceDesign(Instance* instance, dbModule* module)
-{
-  dbInst* db_inst;
-  dbModInst* mod_inst;
-  staToDb(instance, db_inst, mod_inst);
-  if (mod_inst) {
-    mod_inst->swapMaster(module);
-  } else {
-    logger_->error(ORD,
-                   1104,
-                   "Instance {} cannot be replaced because it is not a "
-                   "hierarchical module",
-                   network_->name(instance));
-  }
+  mod_inst->swapMaster(module);
 }
 
 }  // namespace sta

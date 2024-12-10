@@ -125,7 +125,7 @@ void io::Parser::setTracks(odb::dbBlock* block)
 void io::Parser::setInst(odb::dbInst* inst)
 {
   frMaster* master = getDesign()->name2master_.at(inst->getMaster()->getName());
-  auto uInst = std::make_unique<frInst>(inst->getName(), master);
+  auto uInst = std::make_unique<frInst>(inst->getName(), master, inst);
   auto tmpInst = uInst.get();
 
   int x, y;
@@ -980,6 +980,7 @@ void io::Parser::setNets(odb::dbBlock* block)
 frNet* io::Parser::addNet(odb::dbNet* db_net)
 {
   bool is_special = db_net->isSpecial();
+  bool has_jumpers = db_net->hasJumpers();
   if (!is_special && db_net->getSigType().isSupply()) {
     logger_->error(DRT,
                    305,
@@ -1000,6 +1001,9 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
   }
   if (is_special) {
     uNetIn->setIsSpecial(true);
+  }
+  if (has_jumpers) {
+    uNetIn->setHasJumpers(has_jumpers);
   }
   updateNetRouting(netIn, db_net);
   netIn->setType(db_net->getSigType());

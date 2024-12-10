@@ -251,6 +251,15 @@ void dbGlobalConnect::destroy(dbGlobalConnect* gc)
   block->global_connect_tbl_->destroy(dbgc);
 }
 
+dbSet<dbGlobalConnect>::iterator dbGlobalConnect::destroy(
+    dbSet<dbGlobalConnect>::iterator& itr)
+{
+  dbGlobalConnect* g = *itr;
+  dbSet<dbGlobalConnect>::iterator next = ++itr;
+  destroy(g);
+  return next;
+}
+
 void _dbGlobalConnect::setupRegex()
 {
   inst_regex_

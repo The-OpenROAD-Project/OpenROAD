@@ -37,6 +37,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "chartsWidget.h"
 #include "clockWidget.h"
 #include "displayControls.h"
 #include "drcWidget.h"
@@ -54,6 +55,7 @@
 #include "ruler.h"
 #include "scriptWidget.h"
 #include "sta/StaMain.hh"
+#include "timingWidget.h"
 #include "utl/Logger.h"
 #include "utl/exception.h"
 
@@ -1294,6 +1296,28 @@ void Gui::selectHelp(const std::string& item)
   }
 
   main_window->getHelpViewer()->selectHelp(item);
+}
+
+void Gui::selectChart(const std::string& name)
+{
+  if (!enabled()) {
+    return;
+  }
+
+  ChartsWidget::Mode mode;
+  if (name == "Endpoint Slack") {
+    mode = ChartsWidget::Mode::SLACK_HISTOGRAM;
+  } else if (name == "Select Mode") {
+    mode = ChartsWidget::Mode::SELECT;
+  } else {
+    logger_->error(utl::GUI, 105, "Chart {} is unknown.", name);
+  }
+  main_window->getChartsWidget()->setMode(mode);
+}
+
+void Gui::updateTimingReport()
+{
+  main_window->getTimingWidget()->populatePaths();
 }
 
 class SafeApplication : public QApplication

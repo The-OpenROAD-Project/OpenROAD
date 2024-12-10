@@ -374,7 +374,8 @@ bool Resizer::parasiticsValid() const
 
 void Resizer::ensureWireParasitic(const Pin* drvr_pin)
 {
-  const Net* net = network_->net(drvr_pin);
+  const Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
+
   if (net) {
     ensureWireParasitic(drvr_pin, net);
   }
@@ -747,7 +748,6 @@ bool Resizer::isPad(const Instance* inst) const
     case dbMasterType::PAD_INOUT:
     case dbMasterType::PAD_POWER:
     case dbMasterType::PAD_SPACER:
-    case dbMasterType::NONE:
       return true;
   }
   // gcc warniing

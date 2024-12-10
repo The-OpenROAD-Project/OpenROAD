@@ -159,6 +159,7 @@ class dbNetwork : public ConcreteNetwork
   Instance* dbToSta(dbInst* inst) const;
   Net* dbToSta(dbNet* net) const;
   const Net* dbToSta(const dbNet* net) const;
+  const Net* dbToSta(const dbModNet* net) const;
   Cell* dbToSta(dbMaster* master) const;
   Port* dbToSta(dbMTerm* mterm) const;
 
@@ -196,9 +197,8 @@ class dbNetwork : public ConcreteNetwork
                           std::vector<dbModule*>& parent_hierarchy);
   dbModule* findHighestCommonModule(std::vector<dbModule*>& itree1,
                                     std::vector<dbModule*>& itree2);
-  dbModule* findModule(const char* name);
   Instance* findHierInstance(const char* name);
-  void replaceDesign(Instance* instance, dbModule* module);
+  void replaceDesign(dbModInst* mod_inst, dbModule* module);
 
   ////////////////////////////////////////////////////////////////
   //

@@ -1426,8 +1426,7 @@ void NesterovBaseCommon::fixPointers()
     db_net_map_[gNet.net()->dbNet()] = i;
   }
 
-  for (auto it = gCellStor_.begin(); it < gCellStor_.end(); ++it) {
-    auto& gCell = *it;  // old-style loop for old OpenMP
+  for (auto& gCell : gCellStor_) {
     if (gCell.isFiller()) {
       continue;
     }
@@ -1439,17 +1438,19 @@ void NesterovBaseCommon::fixPointers()
           size_t gpin_index = it->second;
           gCell.addGPin(&gPinStor_[gpin_index]);
         } else {
-          log_->report("error: gpin nullptr (from iterm:{}) in gcell:{}",
-                       iterm->getName(),
-                       gCell.instance()->dbInst()->getName());
+          debugPrint(log_,
+                     GPL,
+                     "callbacks",
+                     1,
+                     "warning: gpin nullptr (from iterm:{}) in gcell:{}",
+                     iterm->getName(),
+                     gCell.instance()->dbInst()->getName());
         }
       }
     }
   }
 
-  // #pragma omp parallel for num_threads(num_threads_)
-  for (auto it = gPinStor_.begin(); it < gPinStor_.end(); ++it) {
-    auto& gPin = *it;  // old-style loop for old OpenMP
+  for (auto& gPin : gPinStor_) {
     auto iterm = gPin.pin()->dbITerm();
     if (iterm != nullptr) {
       if (isValidSigType(iterm->getSigType())) {
@@ -1463,20 +1464,27 @@ void NesterovBaseCommon::fixPointers()
         if (net_it != db_net_map_.end()) {
           gPin.setGNet(&gNetStor_[net_it->second]);
         } else {
-          log_->report("Net not found in db_net_map_ for ITerm: {} -> {}",
-                       iterm->getNet()->getName(),
-                       iterm->getName());
+          debugPrint(
+              log_,
+              GPL,
+              "callbacks",
+              1,
+              "warning: Net not found in db_net_map_ for ITerm: {} -> {}",
+              iterm->getNet()->getName(),
+              iterm->getName());
         }
       } else {
-        log_->report("Warning: invalid type itermType: {}",
-                     iterm->getSigType().getString());
+        debugPrint(log_,
+                   GPL,
+                   "callbacks",
+                   1,
+                   "warning: invalid type itermType: {}",
+                   iterm->getSigType().getString());
       }
     }
   }
 
-  // #pragma omp parallel for num_threads(num_threads_)
-  for (auto it = gNetStor_.begin(); it < gNetStor_.end(); ++it) {
-    auto& gNet = *it;  // old-style loop for old OpenMP
+  for (auto& gNet : gNetStor_) {
     gNet.clearGPins();
     for (odb::dbITerm* iterm : gNet.net()->dbNet()->getITerms()) {
       if (isValidSigType(iterm->getSigType())) {
@@ -2680,9 +2688,13 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
 {
   GCell* gcell = getGCellByIndex(db_inst_map_.find(db_inst)->second);
   if (gcell->instance()->dbInst()->getName() != db_inst->getName()) {
-    log_->report("warning: gcell {} found in db_inst_map_ as {}",
-                 gcell->instance()->dbInst()->getName(),
-                 db_inst->getName());
+    debugPrint(log_,
+               GPL,
+               "callbacks",
+               1,
+               "warning: gcell {} found in db_inst_map_ as {}",
+               gcell->instance()->dbInst()->getName(),
+               db_inst->getName());
   }
 
   int64_t prevCellArea
@@ -2763,7 +2775,11 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
       // analogous to updatePrevGradient()
       updateSinglePrevGradient(gcells_index, wlCoeffX, wlCoeffY);
     } else {
-      log_->report(
+      debugPrint(
+          log_,
+          GPL,
+          "callbacks",
+          1,
           "warning: updateGCellState, db_inst not found in db_inst_index_map_ "
           "for instance: {}",
           db_inst->getName());
@@ -2804,7 +2820,11 @@ void NesterovBase::createGCell(odb::dbInst* db_inst,
 
     rb->pushBackMinRcCellSize(gcell->dx(), gcell->dy());
   } else {
-    log_->report("Error! gCell is nullptr!");
+    debugPrint(log_,
+               GPL,
+               "callbacks",
+               1,
+               "Error. Trying to create gCell but it is nullptr!");
   }
 }
 
@@ -2822,6 +2842,10 @@ size_t NesterovBaseCommon::createGCell(odb::dbInst* db_inst)
   GCell* gcell_ptr = &gCellStor_.back();
   gCellMap_[gcell_ptr->instance()] = gcell_ptr;
   db_inst_map_[db_inst] = gCellStor_.size() - 1;
+
+  int64_t areaChange = static_cast<int64_t>(gcell_ptr->dx())
+                       * static_cast<int64_t>(gcell_ptr->dy());
+  deltaArea_ += areaChange;
   return gCellStor_.size() - 1;
 }
 
@@ -2892,6 +2916,7 @@ void NesterovBaseCommon::destroyGCell(size_t index_remove)
   gCellStor_.pop_back();
 
   log_->report("after destroy gCellStor_.size():{}", gCellStor_.size());
+  // TODO: update deltaArea_ after cell destruction.
 }
 
 void NesterovBase::destroyFillerGCell(size_t index_remove)

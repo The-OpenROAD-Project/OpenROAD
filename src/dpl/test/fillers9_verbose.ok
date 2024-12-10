@@ -1,0 +1,16 @@
+[INFO ODB-0227] LEF file: fillers9.lef, created 5 layers, 14 library cells
+[INFO ODB-0128] Design: fillers9
+[INFO ODB-0131]     Created 8 components and 32 component-terminals.
+[INFO DPL-0001] Placed 22 filler instances.
+Filler usage:
+  FILLCELL_RVT_X1:  1
+  FILLCELL_RVT_X16: 2
+  FILLCELL_RVT_X2:  3
+  FILLCELL_RVT_X32: 1
+  FILLCELL_RVT_X4:  2
+  FILLCELL_RVT_X8:  2
+  FILLCELL_LVT_X1:  1
+  FILLCELL_LVT_X16: 3
+  FILLCELL_LVT_X2:  2
+  FILLCELL_LVT_X4:  3
+  FILLCELL_LVT_X8:  2
