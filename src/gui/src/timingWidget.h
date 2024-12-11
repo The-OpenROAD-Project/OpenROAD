@@ -87,8 +87,10 @@ class TimingWidget : public QDockWidget
   TimingControlsDialog* getSettings() { return settings_; }
 
   void updatePaths();
+#ifdef ENABLE_CHARTS
   void reportSlackHistogramPaths(const std::set<const sta::Pin*>& report_pins,
                                  const std::string& path_group_name);
+#endif
 
  signals:
   void highlightTimingPath(TimingPath* timing_path);

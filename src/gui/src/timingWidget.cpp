@@ -731,6 +731,7 @@ void TimingWidget::showSettings()
   settings_->show();
 }
 
+#ifdef ENABLE_CHARTS
 void TimingWidget::reportSlackHistogramPaths(
     const std::set<const sta::Pin*>& report_pins,
     const std::string& path_group_name)
@@ -738,5 +739,6 @@ void TimingWidget::reportSlackHistogramPaths(
   clearPathDetails();
   populateAndSortModels({}, {report_pins}, {}, path_group_name);
 }
+#endif
 
 }  // namespace gui

@@ -1300,6 +1300,7 @@ void Gui::selectHelp(const std::string& item)
 
 void Gui::selectChart(const std::string& name)
 {
+#ifdef ENABLE_CHARTS
   if (!enabled()) {
     return;
   }
@@ -1313,6 +1314,9 @@ void Gui::selectChart(const std::string& name)
     logger_->error(utl::GUI, 105, "Chart {} is unknown.", name);
   }
   main_window->getChartsWidget()->setMode(mode);
+#else
+  logger_->warn(utl::GUI, 106, "Charts are not enabled.");
+#endif
 }
 
 void Gui::updateTimingReport()

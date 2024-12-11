@@ -343,10 +343,12 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &TimingWidget::setCommand,
           script_,
           &ScriptWidget::setCommand);
+#ifdef ENABLE_CHARTS
   connect(charts_widget_,
           &ChartsWidget::endPointsToReport,
           this,
           &MainWindow::reportSlackHistogramPaths);
+#endif
 
   connect(this, &MainWindow::blockLoaded, this, &MainWindow::setBlock);
   connect(this, &MainWindow::blockLoaded, drc_viewer_, &DRCWidget::setBlock);
@@ -471,7 +473,9 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
   controls_->setSTA(sta);
   hierarchy_widget_->setSTA(sta);
   clock_viewer_->setSTA(sta);
+#ifdef ENABLE_CHARTS
   charts_widget_->setSTA(sta);
+#endif
   help_widget_->init(help_path);
 
   // register descriptors
@@ -1501,7 +1505,9 @@ void MainWindow::setLogger(utl::Logger* logger)
   viewers_->setLogger(logger);
   drc_viewer_->setLogger(logger);
   clock_viewer_->setLogger(logger);
+#ifdef ENABLE_CHARTS
   charts_widget_->setLogger(logger);
+#endif
 }
 
 void MainWindow::fit()
@@ -1742,6 +1748,7 @@ void MainWindow::enableDeveloper()
   show_poly_decomp_view_->setVisible(true);
 }
 
+#ifdef ENABLE_CHARTS
 void MainWindow::reportSlackHistogramPaths(
     const std::set<const sta::Pin*>& report_pins,
     const std::string& path_group_name)
@@ -1758,4 +1765,5 @@ void MainWindow::reportSlackHistogramPaths(
 
   timing_widget_->reportSlackHistogramPaths(report_pins, path_group_name);
 }
+#endif
 }  // namespace gui

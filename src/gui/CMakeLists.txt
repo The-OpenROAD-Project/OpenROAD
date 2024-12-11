@@ -3,7 +3,7 @@ option(BUILD_GUI "Build the GUI" ON)
 
 # If Qt is not installed there will not be cmake
 # support for the package so this needs to be "quiet".
-find_package(Qt5 QUIET COMPONENTS Core Widgets Charts)
+find_package(Qt5 QUIET COMPONENTS Core Widgets OPTIONAL_COMPONENTS Charts)
 
 include("openroad")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -23,6 +23,18 @@ if (Qt5_FOUND AND BUILD_GUI)
            SCRIPTS   src/gui.tcl
            RUNTIME_HEADER tclSwig.h
   )
+
+  if (TARGET Qt5::Charts)
+    message(STATUS "Charts widget is enabled")
+
+    target_compile_definitions(gui PRIVATE ENABLE_CHARTS)
+
+    list(APPEND CHARTS_LIB
+      "Qt5::Charts"
+    )
+  else()
+    message(STATUS "Charts widget is not enabled")
+  endif()
 
   set_property(SOURCE ${GUI_WRAP} PROPERTY SKIP_AUTOMOC ON)
 
@@ -72,7 +84,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     PRIVATE
       Qt5::Core
       Qt5::Widgets
-      Qt5::Charts
+      ${CHARTS_LIB}
       utl
       Boost::boost
   )
