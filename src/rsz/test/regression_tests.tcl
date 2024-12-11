@@ -97,6 +97,8 @@ record_tests {
   repair_slew15
   repair_slew16
   repair_slew17
+  report_dont_touch
+  report_dont_use
   report_floating_nets1
   report_floating_nets2
   report_floating_nets3

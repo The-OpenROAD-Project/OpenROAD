@@ -458,6 +458,20 @@ set_dont_touch_instance(Instance *inst,
 }
 
 void
+report_dont_use()
+{
+  Resizer *resizer = getResizer();
+  resizer->reportDontUse();
+}
+
+void
+report_dont_touch()
+{
+  Resizer *resizer = getResizer();
+  resizer->reportDontTouch();
+}
+
+void
 set_dont_touch_net(Net *net,
                    bool dont_touch)
 {
