@@ -2422,7 +2422,7 @@ string Resizer::makeUniqueNetName()
   Instance* top_inst = network_->topInstance();
   do {
     // sta::stringPrint can lead to string overflow and fatal
-    node_name = std::string("net") + std::to_string(unique_net_index_++);
+    node_name = fmt::format("net{}", unique_net_index_++);
   } while (network_->findNet(top_inst, node_name.c_str()));
   return node_name;
 }
@@ -2445,10 +2445,9 @@ string Resizer::makeUniqueInstName(const char* base_name, bool underscore)
   do {
     // sta::stringPrint can lead to string overflow and fatal
     if (underscore) {
-      inst_name = std::string(base_name) + std::string("_")
-                  + std::to_string(unique_inst_index_++);
+      inst_name = fmt::format("{}_{}", base_name, unique_inst_index_++);
     } else {
-      inst_name = std::string(base_name) + std::to_string(unique_inst_index_++);
+      inst_name = fmt::format("{}{}", base_name, unique_inst_index_++);
     }
   } while (network_->findInstance(inst_name.c_str()));
   return inst_name;
