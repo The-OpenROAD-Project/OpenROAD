@@ -420,16 +420,19 @@ proc global_route_debug { args } {
   set tree2D [info exists flags(-tree2D)]
   set tree3D [info exists flags(-tree3D)]
   set db_block [ord::get_db_block]
-  set net [$db_block findNet $keys(-net)]
 
-  if { [info exists keys(-net)] && $net != "NULL" } {
+  if { [info exists keys(-net)] } {
+    set net [$db_block findNet $keys(-net)]
+    if { $net == "NULL" } {
+      utl::error GRT 231 "Net name not found."
+    }
     grt::set_global_route_debug_cmd $net $st $rst $tree2D $tree3D
     if { [info exists keys(-saveSttInput)] } {
       set file_name $keys(-saveSttInput)
       grt::set_global_route_debug_stt_input_filename $file_name
     }
   } else {
-    utl::error GRT 231 "Net name not found."
+    utl::error GRT 269 "-net argument is required."
   }
 }
 
