@@ -467,6 +467,7 @@ report_dont_use()
 void
 report_dont_touch()
 {
+  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->reportDontTouch();
 }
