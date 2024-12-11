@@ -2445,7 +2445,8 @@ string Resizer::makeUniqueInstName(const char* base_name, bool underscore)
   do {
     // sta::stringPrint can lead to string overflow and fatal
     if (underscore) {
-      inst_name = std::string(base_name) + std::string("_") + std::to_string(unique_inst_index_++);
+      inst_name = std::string(base_name) + std::string("_")
+                  + std::to_string(unique_inst_index_++);
     } else {
       inst_name = std::string(base_name) + std::to_string(unique_inst_index_++);
     }
