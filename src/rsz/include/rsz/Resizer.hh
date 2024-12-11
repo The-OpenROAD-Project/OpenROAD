@@ -262,10 +262,12 @@ class Resizer : public dbStaState
 
   void setDontUse(LibertyCell* cell, bool dont_use);
   bool dontUse(LibertyCell* cell);
+  void reportDontUse() const;
   void setDontTouch(const Instance* inst, bool dont_touch);
   bool dontTouch(const Instance* inst);
   void setDontTouch(const Net* net, bool dont_touch);
   bool dontTouch(const Net* net);
+  void reportDontTouch();
 
   void setMaxUtilization(double max_utilization);
   // Remove all or selected buffers from the netlist.
