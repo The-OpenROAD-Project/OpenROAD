@@ -1810,8 +1810,14 @@ void Resizer::reportDontUse() const
   if (dont_use_.empty()) {
     logger_->report("  none");
   } else {
+    std::set<dbMaster*> cells;
+
     for (auto* cell : dont_use_) {
-      logger_->report("  {}", cell->name());
+      cells.insert(db_network_->staToDb(cell));
+    }
+
+    for (auto* cell : cells) {
+      logger_->report("  {}", cell->getName());
     }
   }
 }
