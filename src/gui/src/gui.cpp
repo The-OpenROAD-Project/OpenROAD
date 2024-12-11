@@ -1002,6 +1002,19 @@ void Gui::dumpHeatMap(const std::string& name, const std::string& file)
   source->dumpToFile(file);
 }
 
+void Gui::setMainWindowTitle(std::string title)
+{
+  main_window_title_ = title;
+  if (main_window) {
+    main_window->setTitle(title);
+  }
+}
+
+std::string Gui::getMainWindowTitle()
+{
+  return main_window_title_;
+}
+
 Renderer::~Renderer()
 {
   gui::Gui::get()->unregisterRenderer(this);

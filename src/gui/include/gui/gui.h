@@ -731,6 +731,9 @@ class Gui
                                       const std::string& option);
   void dumpHeatMap(const std::string& name, const std::string& file);
 
+  void setMainWindowTitle(std::string title);
+  std::string getMainWindowTitle();
+
   void selectHelp(const std::string& item);
   void selectChart(const std::string& name);
   void updateTimingReport();
@@ -812,6 +815,8 @@ class Gui
   std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map_;
 
   static Gui* singleton_;
+
+  std::string main_window_title_ = "OpenROAD";
 };
 
 // The main entry point

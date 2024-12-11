@@ -112,7 +112,8 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
       charts_widget_(new ChartsWidget(this)),
       help_widget_(new HelpWidget(this)),
       find_dialog_(new FindObjectDialog(this)),
-      goto_dialog_(new GotoLocationDialog(this, viewers_))
+      goto_dialog_(new GotoLocationDialog(this, viewers_)),
+      window_title_(Gui::get()->getMainWindowTitle())
 {
   // Size and position the window
   QSize size = QDesktopWidget().availableGeometry(this).size();
@@ -420,7 +421,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
   // load resources and set window icon and title
   loadQTResources();
   setWindowIcon(QIcon(":/icon.png"));
-  setWindowTitle(window_title_);
+  updateTitle();
 
   Descriptor::Property::convert_dbu
       = [this](int value, bool add_units) -> std::string {
@@ -449,13 +450,28 @@ void MainWindow::setDatabase(odb::dbDatabase* db)
   db_ = db;
 }
 
-void MainWindow::setBlock(odb::dbBlock* block)
+void MainWindow::setTitle(std::string title)
 {
+  window_title_ = title;
+  updateTitle();
+}
+
+void MainWindow::updateTitle()
+{
+  odb::dbBlock* block = getBlock();
   if (block != nullptr) {
     const std::string title
         = fmt::format("{} - {}", window_title_, block->getName());
     setWindowTitle(QString::fromStdString(title));
+  } else {
+    setWindowTitle(QString::fromStdString(window_title_));
+  }
+}
 
+void MainWindow::setBlock(odb::dbBlock* block)
+{
+  updateTitle();
+  if (block != nullptr) {
     save_->setEnabled(true);
   }
   for (auto* heat_map : Gui::get()->getHeatMaps()) {

@@ -113,6 +113,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
 
   std::vector<std::string> getRestoreTclCommands();
 
+  void setTitle(std::string title);
+
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
   // to update
@@ -300,6 +302,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   std::string convertDBUToString(int value, bool add_units) const;
   int convertStringToDBU(const std::string& value, bool* ok) const;
 
+  void updateTitle();
+
   odb::dbDatabase* db_;
   utl::Logger* logger_;
   SelectionSet selected_;
@@ -324,6 +328,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
 
   FindObjectDialog* find_dialog_;
   GotoLocationDialog* goto_dialog_;
+
+  std::string window_title_;
 
   QMenu* file_menu_;
   QMenu* view_menu_;
@@ -366,8 +372,6 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
 
   // heat map actions
   std::map<HeatMapDataSource*, QAction*> heatmap_actions_;
-
-  static constexpr const char* window_title_ = "OpenROAD";
 };
 
 }  // namespace gui
