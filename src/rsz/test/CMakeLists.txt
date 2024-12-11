@@ -114,6 +114,8 @@ or_integration_tests(
     repair_wire9
     repair_wire10
     repair_wire11
+    report_dont_touch
+    report_dont_use
     report_floating_nets1
     report_floating_nets2
     report_floating_nets3

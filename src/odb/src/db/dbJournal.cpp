@@ -1731,6 +1731,12 @@ void dbJournal::undo_disconnectObject()
       _log.pop(net_id);
       dbNet* net = dbNet::getNet(_block, net_id);
       bterm->connect(net);
+      uint mnet_id;
+      _log.pop(mnet_id);
+      if (mnet_id != 0) {
+        dbModNet* mnet = dbModNet::getModNet(_block, mnet_id);
+        bterm->connect(mnet);
+      }
       break;
     }
     default: {
@@ -1748,6 +1754,33 @@ void dbJournal::undo_swapObject()
   auto obj_type = popObjectType();
 
   switch (obj_type) {
+    case dbNameObj: {
+      // name swapping undo
+      auto sub_obj_type = popObjectType();
+      switch (sub_obj_type) {
+        // net name swap
+        case dbNetObj: {
+          // assume source and destination
+          uint source_net_id;
+          uint dest_net_id;
+          _log.pop(source_net_id);
+          _log.pop(dest_net_id);
+          // note because we are undoing the source is the prior dest
+          //(we are move dest name back to source name).
+          dbNet* source_net = dbNet::getNet(_block, dest_net_id);
+          dbNet* dest_net = dbNet::getNet(_block, source_net_id);
+          // don't allow undo to be undone, turn off journaling doing swap
+          source_net->swapNetNames(dest_net, false);
+          break;
+        }
+        default: {
+          _logger->critical(utl::ODB,
+                            467,
+                            "No undo_swapObject Name support for type {}",
+                            dbObject::getTypeName(sub_obj_type));
+        }
+      }
+    }
     case dbInstObj: {
       uint inst_id;
       _log.pop(inst_id);

@@ -651,7 +651,7 @@ void dbStaReport::printLine(const char* line, size_t length)
 // Only used by encapsulated Tcl channels, ie puts and command prompt.
 size_t dbStaReport::printString(const char* buffer, size_t length)
 {
-  logger_->reportNoNewline(buffer);
+  logger_->reportLiteral(buffer);
   return length;
 }
 

@@ -2115,6 +2115,10 @@ class dbNet : public dbObject
   bool rename(const char* name);
 
   ///
+  /// Swaps the current db net name with the source db net
+  void swapNetNames(dbNet* source, bool journal = true);
+
+  ///
   /// RC netowork disconnect
   ///
   bool isRCDisconnected();
@@ -7665,6 +7669,10 @@ class dbGlobalConnect : public dbObject
                                  const std::string& pin_pattern);
 
   static void destroy(dbGlobalConnect* global_connect);
+
+  static dbSet<dbGlobalConnect>::iterator destroy(
+      dbSet<dbGlobalConnect>::iterator& itr);
+
   // User Code End dbGlobalConnect
 };
 

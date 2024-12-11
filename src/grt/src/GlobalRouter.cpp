@@ -224,11 +224,10 @@ void GlobalRouter::saveCongestion()
 
 bool GlobalRouter::haveRoutes()
 {
-  loadGuidesFromDB();
-  if (routes_.empty()) {
-    logger_->warn(GRT, 97, "No global routing found for nets.");
+  if (!designIsPlaced()) {
+    return false;
   }
-
+  loadGuidesFromDB();
   bool congested_routes = is_congested_ && !allow_congestion_;
   return !routes_.empty() && !congested_routes;
 }
@@ -244,6 +243,36 @@ bool GlobalRouter::haveDetailedRoutes()
     }
   }
   return false;
+}
+
+bool GlobalRouter::designIsPlaced()
+{
+  if (db_->getChip() == nullptr) {
+    logger_->error(
+        GRT, 270, "Load a design before running the global router commands.");
+  }
+  block_ = db_->getChip()->getBlock();
+
+  for (Pin* port : getAllPorts()) {
+    if (port->getBTerm()->getFirstPinPlacementStatus()
+        == odb::dbPlacementStatus::NONE) {
+      return false;
+    }
+  }
+
+  for (odb::dbNet* net : block_->getNets()) {
+    if (net->isSpecial()) {
+      continue;
+    }
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      odb::dbInst* inst = iterm->getInst();
+      if (!inst->isPlaced()) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 bool GlobalRouter::haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets)
