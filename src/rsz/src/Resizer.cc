@@ -122,7 +122,6 @@ using sta::LoadPinIndexMap;
 using sta::PinConnectedPinIterator;
 using sta::Sdc;
 using sta::SearchPredNonReg2;
-using sta::stringPrint;
 using sta::VertexIterator;
 using sta::VertexOutEdgeIterator;
 
@@ -2422,7 +2421,8 @@ string Resizer::makeUniqueNetName()
   string node_name;
   Instance* top_inst = network_->topInstance();
   do {
-    stringPrint(node_name, "net%d", unique_net_index_++);
+    // sta::stringPrint can lead to string overflow and fatal
+    node_name = fmt::format("net{}", unique_net_index_++);
   } while (network_->findNet(top_inst, node_name.c_str()));
   return node_name;
 }
@@ -2443,10 +2443,12 @@ string Resizer::makeUniqueInstName(const char* base_name, bool underscore)
 {
   string inst_name;
   do {
-    stringPrint(inst_name,
-                underscore ? "%s_%d" : "%s%d",
-                base_name,
-                unique_inst_index_++);
+    // sta::stringPrint can lead to string overflow and fatal
+    if (underscore) {
+      inst_name = fmt::format("{}_{}", base_name, unique_inst_index_++);
+    } else {
+      inst_name = fmt::format("{}{}", base_name, unique_inst_index_++);
+    }
   } while (network_->findInstance(inst_name.c_str()));
   return inst_name;
 }
