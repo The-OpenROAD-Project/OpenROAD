@@ -81,6 +81,20 @@ std::string escapeDollarSign(const char* name)
   return escapeDollarSign(std::string(name));
 }
 
+// Quick fix for wrong pin delimiter.
+// TODO: save the parasitics data to odb and use the existing write_spef
+// mechanism to produce the spef files from estimate_parasitics.
+std::string fixPinDelimiter(const std::string& name)
+{
+  const char delimiter = '/';
+  std::string result = name;
+  size_t pos = result.find_last_of(delimiter);
+  if (pos != std::string::npos) {
+    result.replace(pos, 1, ":");
+  }
+  return result;
+}
+
 void SpefWriter::writeHeader()
 {
   for (auto [_, it] : spef_streams_) {
@@ -192,7 +206,9 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
       network_->staToDb(pin, iterm, bterm, moditerm, modbterm);
 
       if (iterm != nullptr) {
-        stream << "*I " << escapeDollarSign(parasitics_->name(node)) << " ";
+        stream << "*I "
+               << fixPinDelimiter(escapeDollarSign(parasitics_->name(node)))
+               << " ";
         stream << getIoDirectionText(iterm->getIoType());
         stream << " *D " << iterm->getInst()->getMaster()->getName();
         stream << '\n';
@@ -248,9 +264,9 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
     stream << count++ << " ";
 
     auto n1 = parasitics_->node1(res);
-    stream << escapeDollarSign(parasitics_->name(n1)) << " ";
+    stream << fixPinDelimiter(escapeDollarSign(parasitics_->name(n1))) << " ";
     auto n2 = parasitics_->node2(res);
-    stream << escapeDollarSign(parasitics_->name(n2)) << " ";
+    stream << fixPinDelimiter(escapeDollarSign(parasitics_->name(n2))) << " ";
     stream << parasitics_->value(res) / res_scale << '\n';
   }
 
