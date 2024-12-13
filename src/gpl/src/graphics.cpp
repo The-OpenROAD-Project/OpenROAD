@@ -454,7 +454,8 @@ bool Graphics::populateMap()
           0.0f,
           static_cast<float>(bin.instPlacedAreaUnscaled())
               + static_cast<float>(bin.nonPlaceAreaUnscaled()) - scaledBinArea);
-      addToMap(box, value);
+      odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
+      addToMap(box, block->dbuAreaToMicrons(value));
     }
   }
 

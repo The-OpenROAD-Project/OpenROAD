@@ -630,6 +630,29 @@ ObjectId dbNetwork::id(const Port* port) const
   return ConcreteNetwork::id(port);
 }
 
+// Note:
+// This api call is subtly used by the sta/verilog/VerilogWriter in sta.
+// The verilog writer in sta a hash of modules written out, cells.hasKey, which
+// uses the cell id as index and will land here (before it defaulted to the
+// concrete network api, which is ok for flat networks but wont work with
+// hierarchy).
+//
+
+ObjectId dbNetwork::id(const Cell* cell) const
+{
+  // in hierarchical flow we use the object id for the index
+  if (hierarchy_) {
+    if (!isConcreteCell(cell)) {
+      dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Cell*>(cell));
+      dbObjectType type = obj->getObjectType();
+      return getDbNwkObjectId(type, obj->getId());
+    }
+  }
+  // default behaviour use the concrete cell.
+  const ConcreteCell* ccell = reinterpret_cast<const ConcreteCell*>(cell);
+  return ccell->id();
+}
+
 ////////////////////////////////////////////////////////////////
 
 ObjectId dbNetwork::id(const Instance* instance) const
