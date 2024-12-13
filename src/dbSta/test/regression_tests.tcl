@@ -1,4 +1,5 @@
 record_tests {
+  hierwrite
   hierclock    
   hier2
   readdb_hier
