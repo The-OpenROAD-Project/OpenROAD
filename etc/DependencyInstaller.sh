@@ -192,14 +192,19 @@ _installCommonDev() {
 
     # spdlog
     spdlogPrefix=${PREFIX:-"/usr/local"}
-    if [[ ! -d ${spdlogPrefix}/include/spdlog ]]; then
+    installed_version="none"
+    if [ -d ${spdlogPrefix}/include/spdlog ]; then
+        installed_version=`grep "#define SPDLOG_VER_" ${spdlogPrefix}/include/spdlog/version.h | sed 's/.*\s//' | tr '\n' '.' | sed 's/\.$//'`
+    fi
+    if [ ${installed_version} != ${spdlogVersion} ]; then
         cd "${baseDir}"
         git clone --depth=1 -b "v${spdlogVersion}" https://github.com/gabime/spdlog.git
         cd spdlog
         ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${spdlogPrefix}" -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DSPDLOG_BUILD_EXAMPLE=OFF -B build .
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
+        echo "spdlog ${spdlogVersion} installed (from ${installed_version})."
     else
-        echo "spdlog already installed."
+        echo "spdlog ${spdlogVersion} already installed."
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D spdlog_ROOT=$(realpath $spdlogPrefix) "
 
