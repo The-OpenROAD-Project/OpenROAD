@@ -667,12 +667,12 @@ int BinGrid::binSizeY() const
 
 int64_t BinGrid::overflowArea() const
 {
-  return overflowArea_;
+  return sumOverflowArea_;
 }
 
 int64_t BinGrid::overflowAreaUnscaled() const
 {
-  return overflowAreaUnscaled_;
+  return sumOverflowAreaUnscaled_;
 }
 
 static unsigned int roundDownToPowerOfTwo(unsigned int x)
@@ -876,12 +876,13 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
     }
   }
 
-  overflowArea_ = 0;
-  overflowAreaUnscaled_ = 0;
+  odb::dbBlock* block = pb_->db()->getChip()->getBlock();
+  sumOverflowArea_ = 0;
+  sumOverflowAreaUnscaled_ = 0;
   // update density and overflowArea
   // for nesterov use and FFT library
 #pragma omp parallel for num_threads(num_threads_) \
-    reduction(+ : overflowArea_, overflowAreaUnscaled_)
+    reduction(+ : sumOverflowArea_, sumOverflowAreaUnscaled_)
   for (auto it = bins_.begin(); it < bins_.end(); ++it) {
     Bin& bin = *it;  // old-style loop for old OpenMP
 
@@ -896,15 +897,41 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
                     + static_cast<float>(bin.nonPlaceArea()))
                    / scaledBinArea);
 
-    overflowArea_ += std::max(0.0f,
-                              static_cast<float>(bin.instPlacedArea())
-                                  + static_cast<float>(bin.nonPlaceArea())
-                                  - scaledBinArea);
+    sumOverflowArea_ += std::max(0.0f,
+                                 static_cast<float>(bin.instPlacedArea())
+                                     + static_cast<float>(bin.nonPlaceArea())
+                                     - scaledBinArea);
 
-    overflowAreaUnscaled_ += std::max(
+    auto overflowAreaUnscaled = std::max(
         0.0f,
         static_cast<float>(bin.instPlacedAreaUnscaled())
             + static_cast<float>(bin.nonPlaceAreaUnscaled()) - scaledBinArea);
+    sumOverflowAreaUnscaled_ += overflowAreaUnscaled;
+    if (overflowAreaUnscaled > 0) {
+      debugPrint(log_,
+                 GPL,
+                 "overflow",
+                 1,
+                 "overflow:{}, bin:{},{}",
+                 block->dbuAreaToMicrons(overflowAreaUnscaled),
+                 block->dbuToMicrons(bin.lx()),
+                 block->dbuToMicrons(bin.ly()));
+      debugPrint(log_,
+                 GPL,
+                 "overflow",
+                 1,
+                 "binArea:{}, scaledBinArea:{}",
+                 block->dbuAreaToMicrons(binArea),
+                 block->dbuAreaToMicrons(scaledBinArea));
+      debugPrint(
+          log_,
+          GPL,
+          "overflow",
+          1,
+          "bin.instPlacedAreaUnscaled():{}, bin.nonPlaceAreaUnscaled():{}",
+          block->dbuAreaToMicrons(bin.instPlacedAreaUnscaled()),
+          block->dbuAreaToMicrons(bin.nonPlaceAreaUnscaled()));
+    }
   }
 }
 
