@@ -59,7 +59,9 @@ SinkClustering::SinkClustering(const CtsOptions* options,
       techChar_(techChar),
       maxInternalDiameter_(10),
       capPerUnit_(0.0),
-      useMaxCapLimit_(options->getSinkClusteringUseMaxCap()),
+      useMaxCapLimit_((HTree->getTreeType() == TreeType::MacroTree)
+                          ? options_->getMacroSinkClusteringUseMaxCap()
+                          : options->getSinkClusteringUseMaxCap()),
       scaleFactor_(1),
       HTree_(HTree)
 {
@@ -212,6 +214,10 @@ void SinkClustering::run(const unsigned groupSize,
 
 bool SinkClustering::findBestMatching(const unsigned groupSize)
 {
+  logger_->report(
+      "For tree {} using max cap? {}",
+      (HTree_->getTreeType() == TreeType::MacroTree) ? "macro" : "register",
+      useMaxCapLimit_);
   // Counts how many clusters are in each solution.
   vector<unsigned> clusters(groupSize, 0);
   // Keeps track of the total cost of each solution.

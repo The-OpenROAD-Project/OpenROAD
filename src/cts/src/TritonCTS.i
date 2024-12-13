@@ -168,12 +168,14 @@ void
 set_sink_clustering_size(unsigned size)
 {
   getTritonCts()->getParms()->setSinkClusteringSize(size);
+  getTritonCts()->getParms()->setMacroSinkClusteringSize(size);
 }
 
 void
 set_clustering_diameter(double distance)
 {
   getTritonCts()->getParms()->setMaxDiameter(distance);
+  getTritonCts()->getParms()->setMacroMaxDiameter(distance);
 }
 
 void

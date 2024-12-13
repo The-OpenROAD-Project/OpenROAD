@@ -213,6 +213,30 @@ class CtsOptions
   {
     sinkClusteringLevels_ = levels;
   }
+
+  void setMacroSinkClusteringUseMaxCap(bool useMaxCap)
+  {
+    macroSinkClusteringUseMaxCap_ = useMaxCap;
+  }
+  bool getMacroSinkClusteringUseMaxCap() const { return macroSinkClusteringUseMaxCap_; }
+
+  double getMacroMaxDiameter() const { return macroMaxDiameter_; }
+  void setMacroMaxDiameter(double distance)
+  {
+    macroMaxDiameter_ = distance;
+    macroSinkClusteringUseMaxCap_ = false;
+    macroMaxDiameterSet_ = true;
+  }
+  bool isMacroMaxDiameterSet() const { return macroMaxDiameterSet_; }
+  unsigned getMacroSinkClusteringSize() const { return macroSinkClustersSize_; }
+  void setMacroSinkClusteringSize(unsigned size)
+  {
+    macroSinkClustersSize_ = size;
+    macroSinkClusteringUseMaxCap_ = false;
+    macroSinkClustersSizeSet_ = true;
+  }
+  bool isMacroSinkClusteringSizeSet() const { return macroSinkClustersSizeSet_; }
+
   unsigned getNumStaticLayers() const { return numStaticLayers_; }
   void setBalanceLevels(bool balance) { balanceLevels_ = balance; }
   bool getBalanceLevels() const { return balanceLevels_; }
@@ -292,6 +316,11 @@ class CtsOptions
   bool maxDiameterSet_ = false;
   unsigned sinkClustersSize_ = 20;
   bool sinkClustersSizeSet_ = false;
+  bool macroSinkClusteringUseMaxCap_ = true;
+  double macroMaxDiameter_ = 50;
+  bool macroMaxDiameterSet_ = false;
+  unsigned macroSinkClustersSize_ = 20;
+  bool macroSinkClustersSizeSet_ = false;
   bool balanceLevels_ = false;
   unsigned sinkClusteringLevels_ = 0;
   unsigned numStaticLayers_ = 0;

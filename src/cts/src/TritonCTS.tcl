@@ -68,6 +68,39 @@ proc configure_cts_characterization { args } {
   }
 }
 
+sta::define_cmd_args "macro_sink_clustering_size" {[-cluster_size]} ;# checker off
+
+proc "macro_sink_clustering_size" {args} {
+  sta::parse_key_args "macro_sink_clustering_size" args \
+    keys {-cluster_size} flags {}
+
+  sta::check_argc_eq0 "macro_sink_clustering_size" $args
+
+  if { ![info exists keys(-cluster_size)] } {
+    puts "Missing cluster size parameter"
+  } else {
+    set size $keys(-cluster_size)
+    cts::set_sink_clustering_size $size
+  }
+}
+
+sta::define_cmd_args "macro_sink_clustering_max_diameter" {[-cluster_max_diameter]
+                                                          } ;# checker off
+
+proc "macro_sink_clustering_max_diameter" {args} {
+  sta::parse_key_args "macro_sink_clustering_max_diameter" args \
+    keys {-cluster_max_diameter} flags {}
+
+  sta::check_argc_eq0 "macro_sink_clustering_max_diameter" $args
+
+  if { ![info exists keys(-cluster_max_diameter)] } {
+    puts "Missing cluster max diameter parameter"
+  } else {
+    set diameter $keys(-cluster_max_diameter)
+    cts::set_sink_clustering_size $diameter
+  }
+}
+
 sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-buf_list buflist] \
                                              [-root_buf buf] \

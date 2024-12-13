@@ -201,6 +201,10 @@ void TritonCTS::setupCharacterization()
       options_->setSinkClusteringSize(sinkMaxFanout);
     }
 
+    if (options_->getMacroSinkClusteringSize() > sinkMaxFanout) {
+      options_->setMacroSinkClusteringSize(sinkMaxFanout);
+    }
+
     if (sinkMaxFanout < options_->getMaxFanout()) {
       options_->setMaxFanout(sinkMaxFanout);
     }
