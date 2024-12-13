@@ -2894,7 +2894,7 @@ void dbNetwork::getParentHierarchy(dbModule* start_module,
     if (cur_module == top_module) {
       return;
     }
-    cur_module = start_module->getModInst()->getParent();
+    cur_module = cur_module->getModInst()->getParent();
   }
 }
 
@@ -3125,7 +3125,9 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
     } else {
       dest_pin->connect(top_net);
     }
-
+    //TODO: Clean up after everything is resolved.
+    //Turns out that there are intermediate states
+    /*
     // During the addition of new ports and new wiring we may
     // leave orphaned pins, clean them up.
     std::set<dbModInst*> cleaned_up;
@@ -3145,6 +3147,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
         }
       }
     }
+    */
   }
 }
 
