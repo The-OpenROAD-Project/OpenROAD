@@ -655,12 +655,12 @@ int BinGrid::binCntY() const
   return binCntY_;
 }
 
-int BinGrid::binSizeX() const
+double BinGrid::binSizeX() const
 {
   return binSizeX_;
 }
 
-int BinGrid::binSizeY() const
+double BinGrid::binSizeY() const
 {
   return binSizeY_;
 }
@@ -761,8 +761,8 @@ void BinGrid::initBins()
 
   log_->info(GPL, 28, "{:8} {:8} {:6}", "BinCnt:", binCntX_, binCntY_);
 
-  binSizeX_ = std::ceil(static_cast<float>((ux_ - lx_)) / binCntX_);
-  binSizeY_ = std::ceil(static_cast<float>((uy_ - ly_)) / binCntY_);
+  binSizeX_ = static_cast<double>((ux_ - lx_)) / binCntX_;
+  binSizeY_ = static_cast<double>((uy_ - ly_)) / binCntY_;
 
   log_->info(GPL,
              29,
@@ -776,13 +776,13 @@ void BinGrid::initBins()
 #pragma omp parallel for num_threads(num_threads_)
   for (int idxY = 0; idxY < binCntY_; ++idxY) {
     for (int idxX = 0; idxX < binCntX_; ++idxX) {
-      const int x = lx_ + idxX * binSizeX_;
-      const int y = ly_ + idxY * binSizeY_;
-      const int sizeX = std::min(ux_ - x, binSizeX_);
-      const int sizeY = std::min(uy_ - y, binSizeY_);
+      const int bin_lx = lx_ + std::lround(idxX * binSizeX_);
+      const int bin_ly = ly_ + std::lround(idxY * binSizeY_);
+      const int bin_ux = lx_ + std::lround((idxX + 1) * binSizeX_);
+      const int bin_uy = ly_ + std::lround((idxY + 1) * binSizeY_);
 
       bins_[idxY * binCntX_ + idxX]
-          = Bin(idxX, idxY, x, y, x + sizeX, y + sizeY, targetDensity_);
+          = Bin(idxX, idxY, bin_lx, bin_ly, bin_ux, bin_uy, targetDensity_);
     }
   }
 
@@ -1815,12 +1815,12 @@ int NesterovBase::binCntY() const
   return bg_.binCntY();
 }
 
-int NesterovBase::binSizeX() const
+double NesterovBase::binSizeX() const
 {
   return bg_.binSizeX();
 }
 
-int NesterovBase::binSizeY() const
+double NesterovBase::binSizeY() const
 {
   return bg_.binSizeY();
 }
