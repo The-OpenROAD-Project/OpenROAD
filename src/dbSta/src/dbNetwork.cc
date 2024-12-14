@@ -1573,15 +1573,22 @@ const char* dbNetwork::pathName(const Net* net) const
   dbNet* dnet = nullptr;
 
   staToDb(net, dnet, modnet);
+
   if (dnet && modnet == nullptr) {
     return dnet->getConstName();
   }
 
   if (modnet) {
     std::string modnet_name = modnet->getName();
-    std::string accumulated_path_name = modnet_name;
-    // accumulate a hierachical name
+
+    // if a top net, don't prefix with top module name
     dbModule* parent_module = modnet->getParent();
+    if (parent_module == block_->getTopModule()) {
+      return tmpStringCopy(modnet_name.c_str());
+    }
+
+    // accumulate a hierachical name, includes top level name
+    std::string accumulated_path_name = modnet_name;
     std::vector<dbModule*> parent_hierarchy;
     getParentHierarchy(parent_module, parent_hierarchy);
     for (auto db_mod : parent_hierarchy) {
@@ -1599,18 +1606,42 @@ const char* dbNetwork::name(const Net* net) const
   staToDb(net, dnet, modnet);
   std::string name;
 
+  // what we are doing here is see if this net is connected
+  // to a pin which is connected to a mod net.
+  // This means the dnet is equivalent to a hierarchical name
+  // and we preferentially use that name. Note that any dnet
+  // unrelated to a modnet is within the scope of a module (internal
+  // to that module, so we can gets its hierarchical prefix
+  // from any instance it is connected to).
+
+  /*
+  //TODO
+  if (hierarchy_ && dnet && !modnet){
+    modnet = findRelatedModNet(dnet);
+  }
+  */
+
   Network* sta_nwk = (Network*) this;
-  if (dnet) {
+
+  if (dnet && !modnet) {
     name = dnet->getName();
     // strip out the parent name in hierarchy mode
     // turn this off to get full flat names
-    if (hierarchy_ && !modnet) {
+
+    if (hierarchy_) {
+      //
+      // If this is not a hierarchical name, return it
+      //
+      if (name.find_last_of('/') == string::npos) {
+        return tmpStringCopy(name.c_str());
+      }
+
       //
       // Get the net name within this module of the hierarchy
       // Note we know we are dealing with an instance pin
       // of the form parent/instance/Z
       // Strip out the parent/instance part from the net name.
-      // Note also that because this object is not hooked to a modnet
+      // Because this object is not hooked to a modnet
       // then we know it is inside the core of the module..
       //
       dbITerm* connected_iterm = dnet->getFirstOutput();
