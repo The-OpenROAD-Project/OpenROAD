@@ -1560,52 +1560,36 @@ by default in flat flow. So to figure out their path
 name we need to search to see the pins they are connected
 to.
 
-If we have a modnet, we simply use its hierachy.
-Trick: a dbNet unrelated to a modnet is by definition
-an internal net in a module (as are all its pins, else
-it would be a modnet).
+If we have a modnet, we construct its hierarchical name
 */
 const char* dbNetwork::pathName(const Net* net) const
 {
-  if (!hierarchy_) {
-    // note that in non hierarchical mode, everything is in the
-    // top instance.
-    return name(net);
-  }
+  // note that in flat mode, because a net is always
+  // created in the top instance the path name is just
+  // its full name, ditto hierarchical mode.
+  // For a modnet in hierarchy mode things are a bit more interesting.
 
   dbModNet* modnet = nullptr;
   dbNet* dnet = nullptr;
-  Network* sta_nwk = (Network*) this;
+
   staToDb(net, dnet, modnet);
   if (dnet && modnet == nullptr) {
-    //
-    // Algorithm for getting scope of a net in hierarchy
-    // If there is no modnet associate with this dnet
-    // it is by definition in the core.
-    // Go look at what it is connected to.
-    //
-    dbITerm* connected_iterm = dnet->getFirstOutput();
-    if (connected_iterm) {
-      Pin* related_pin = dbToSta(connected_iterm);
-      std::string related_pin_name_string = sta_nwk->pathName(related_pin);
-      const size_t last_idx = related_pin_name_string.find_last_of('/');
-      if (last_idx != string::npos) {
-        related_pin_name_string = related_pin_name_string.substr(0, last_idx);
-        const size_t second_last_idx
-            = related_pin_name_string.find_last_of('/');
-        if (second_last_idx != string::npos) {
-          std::string path_name
-              = related_pin_name_string.substr(0, second_last_idx + 1);
-          return tmpStringCopy(path_name.c_str());
-        }
-      }
-    }
+    return dnet->getConstName();
   }
-  std::string accumulated_path_name;
-  dbModule* parent_module = modnet->getParent();
-  dbModInst* parent_inst = parent_module->getModInst();
-  printf("Path name from dbModule is %s\n", parent_inst->getName());
-  return tmpStringCopy(parent_inst->getName());
+
+  if (modnet) {
+    std::string modnet_name = modnet->getName();
+    std::string accumulated_path_name = modnet_name;
+    // accumulate a hierachical name
+    dbModule* parent_module = modnet->getParent();
+    std::vector<dbModule*> parent_hierarchy;
+    getParentHierarchy(parent_module, parent_hierarchy);
+    for (auto db_mod : parent_hierarchy) {
+      std::string module_name = db_mod->getName();
+      accumulated_path_name = module_name + "/" + accumulated_path_name;
+    }
+    return tmpStringCopy(accumulated_path_name.c_str());
+  }
 }
 
 const char* dbNetwork::name(const Net* net) const
@@ -1650,6 +1634,8 @@ const char* dbNetwork::name(const Net* net) const
       }
     }
   }
+  // Note the fall through: if we have a dnet which has a
+  // little modnet friend, we use the modnet name.
   if (modnet) {
     name = modnet->getName();
   }
@@ -1661,6 +1647,8 @@ const char* dbNetwork::name(const Net* net) const
 
 Instance* dbNetwork::instance(const Net*) const
 {
+  // modnets are in dbModInstance.
+  // for dbNet apply an algorithm
   return top_instance_;
 }
 
@@ -3046,8 +3034,9 @@ dbModule* dbNetwork::getNetDriverParentModule(Net* net)
   return nullptr;
 }
 
-void dbNetwork::getParentHierarchy(dbModule* start_module,
-                                   std::vector<dbModule*>& parent_hierarchy)
+void dbNetwork::getParentHierarchy(
+    dbModule* start_module,
+    std::vector<dbModule*>& parent_hierarchy) const
 {
   dbModule* top_module = block_->getTopModule();
   dbModule* cur_module = start_module;
