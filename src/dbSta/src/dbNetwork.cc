@@ -1502,14 +1502,153 @@ ObjectId dbNetwork::id(const Net* net) const
   return 0;
 }
 
+// copied from Network.cc (note if we have one pathName we
+// need them all).
+
+const char* dbNetwork::pathName(const Instance* inst) const
+{
+  InstanceSeq inst_path;
+  path(inst, inst_path);
+  size_t name_length = 0;
+  InstanceSeq::Iterator path_iter1(inst_path);
+  while (path_iter1.hasNext()) {
+    const Instance* inst = path_iter1.next();
+    name_length += strlen(name(inst)) + 1;
+  }
+  char* path_name = makeTmpString(name_length + 1);
+  char* path_ptr = path_name;
+  // Top instance has null string name, so terminate the string here.
+  *path_name = '\0';
+  while (inst_path.size()) {
+    const Instance* inst = inst_path.back();
+    const char* inst_name = name(inst);
+    strcpy(path_ptr, inst_name);
+    path_ptr += strlen(inst_name);
+    inst_path.pop_back();
+    if (inst_path.size())
+      *path_ptr++ = pathDivider();
+    *path_ptr = '\0';
+  }
+  return path_name;
+}
+
+const char* dbNetwork::pathName(const Pin* pin) const
+{
+  const Instance* inst = instance(pin);
+  if (inst && inst != topInstance()) {
+    const char* inst_name = pathName(inst);
+    size_t inst_name_length = strlen(inst_name);
+    const char* port_name = portName(pin);
+    size_t port_name_length = strlen(port_name);
+    size_t path_name_length = inst_name_length + port_name_length + 2;
+    char* path_name = makeTmpString(path_name_length);
+    char* path_ptr = path_name;
+    strcpy(path_ptr, inst_name);
+    path_ptr += inst_name_length;
+    *path_ptr++ = pathDivider();
+    strcpy(path_ptr, port_name);
+    return path_name;
+  } else
+    return portName(pin);
+}
+
+/*
+Custom dbNetwork code.
+
+All dbNets are created in the top Instance
+by default in flat flow. So to figure out their path
+name we need to search to see the pins they are connected
+to.
+
+If we have a modnet, we simply use its hierachy.
+Trick: a dbNet unrelated to a modnet is by definition
+an internal net in a module (as are all its pins, else
+it would be a modnet).
+*/
+const char* dbNetwork::pathName(const Net* net) const
+{
+  if (!hierarchy_) {
+    // note that in non hierarchical mode, everything is in the
+    // top instance.
+    return name(net);
+  }
+
+  dbModNet* modnet = nullptr;
+  dbNet* dnet = nullptr;
+  Network* sta_nwk = (Network*) this;
+  staToDb(net, dnet, modnet);
+  if (dnet && modnet == nullptr) {
+    //
+    // Algorithm for getting scope of a net in hierarchy
+    // If there is no modnet associate with this dnet
+    // it is by definition in the core.
+    // Go look at what it is connected to.
+    //
+    dbITerm* connected_iterm = dnet->getFirstOutput();
+    if (connected_iterm) {
+      Pin* related_pin = dbToSta(connected_iterm);
+      std::string related_pin_name_string = sta_nwk->pathName(related_pin);
+      const size_t last_idx = related_pin_name_string.find_last_of('/');
+      if (last_idx != string::npos) {
+        related_pin_name_string = related_pin_name_string.substr(0, last_idx);
+        const size_t second_last_idx
+            = related_pin_name_string.find_last_of('/');
+        if (second_last_idx != string::npos) {
+          std::string path_name
+              = related_pin_name_string.substr(0, second_last_idx + 1);
+          return tmpStringCopy(path_name.c_str());
+        }
+      }
+    }
+  }
+  std::string accumulated_path_name;
+  dbModule* parent_module = modnet->getParent();
+  dbModInst* parent_inst = parent_module->getModInst();
+  printf("Path name from dbModule is %s\n", parent_inst->getName());
+  return tmpStringCopy(parent_inst->getName());
+}
+
 const char* dbNetwork::name(const Net* net) const
 {
   dbModNet* modnet = nullptr;
   dbNet* dnet = nullptr;
   staToDb(net, dnet, modnet);
   std::string name;
+
+  Network* sta_nwk = (Network*) this;
   if (dnet) {
     name = dnet->getName();
+    // strip out the parent name in hierarchy mode
+    // turn this off to get full flat names
+    if (hierarchy_ && !modnet) {
+      //
+      // Get the net name within this module of the hierarchy
+      // Note we know we are dealing with an instance pin
+      // of the form parent/instance/Z
+      // Strip out the parent/instance part from the net name.
+      // Note also that because this object is not hooked to a modnet
+      // then we know it is inside the core of the module..
+      //
+      dbITerm* connected_iterm = dnet->getFirstOutput();
+      if (connected_iterm) {
+        Pin* related_pin = dbToSta(connected_iterm);
+        std::string related_pin_name_string = sta_nwk->pathName(related_pin);
+        const size_t last_idx = related_pin_name_string.find_last_of('/');
+        if (last_idx != string::npos) {
+          related_pin_name_string = related_pin_name_string.substr(0, last_idx);
+          const size_t second_last_idx
+              = related_pin_name_string.find_last_of('/');
+          if (second_last_idx != string::npos) {
+            std::string header_to_remove
+                = related_pin_name_string.substr(0, second_last_idx);
+            size_t pos = name.find(header_to_remove);
+            if (pos != std::string::npos) {
+              name.erase(pos, header_to_remove.length() + 1);
+            }
+          }
+        }
+      }
+    }
   }
   if (modnet) {
     name = modnet->getName();
