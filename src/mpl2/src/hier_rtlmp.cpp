@@ -4547,11 +4547,7 @@ LayerParameters Snapper::computeLayerParameters(
   odb::dbTrackGrid* track_grid = block->findTrackGrid(layer);
 
   if (track_grid) {
-    std::vector<int> coordinate_grid;
-    getTrackGrid(track_grid, coordinate_grid, target_direction);
-
-    params.offset = coordinate_grid[0];
-    params.pitch = coordinate_grid[1] - coordinate_grid[0];
+    getTrackGrid(track_grid, params.offset, params.pitch, target_direction);
   } else {
     logger_->error(
         MPL, 39, "No track-grid found for layer {}", layer->getName());
@@ -4599,13 +4595,16 @@ int Snapper::getPinWidth(odb::dbITerm* pin,
 }
 
 void Snapper::getTrackGrid(odb::dbTrackGrid* track_grid,
-                           std::vector<int>& coordinate_grid,
+                           int& origin,
+                           int& step,
                            const odb::dbTechLayerDir& target_direction)
 {
+  // TODO: handle multiple patterns
+  int count;
   if (target_direction == odb::dbTechLayerDir::VERTICAL) {
-    track_grid->getGridX(coordinate_grid);
+    track_grid->getGridPatternX(0, origin, count, step);
   } else {
-    track_grid->getGridY(coordinate_grid);
+    track_grid->getGridPatternY(0, origin, count, step);
   }
 }
 
