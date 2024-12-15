@@ -56,7 +56,7 @@ class drVia : public drRef
     for (auto& fig : viaDef_->getLayer1Figs()) {
       box.merge(fig->getBBox());
     }
-    dbTransform(origin_).apply(box);
+    getTransform().apply(box);
     return box;
   }
   Rect getCutBBox() const
@@ -66,7 +66,7 @@ class drVia : public drRef
     for (auto& fig : viaDef_->getCutFigs()) {
       box.merge(fig->getBBox());
     }
-    dbTransform(origin_).apply(box);
+    getTransform().apply(box);
     return box;
   }
   Rect getLayer2BBox() const
@@ -76,7 +76,7 @@ class drVia : public drRef
     for (auto& fig : viaDef_->getLayer2Figs()) {
       box.merge(fig->getBBox());
     }
-    dbTransform(origin_).apply(box);
+    getTransform().apply(box);
     return box;
   }
   // setters
@@ -97,7 +97,7 @@ class drVia : public drRef
   void setOrient(const dbOrientType& tmpOrient) override { ; }
   Point getOrigin() const override { return origin_; }
   void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
-  dbTransform getTransform() const override { return origin_; }
+  dbTransform getTransform() const override { return dbTransform(origin_); }
   void setTransform(const dbTransform& xformIn) override {}
 
   /* from frPinFig
