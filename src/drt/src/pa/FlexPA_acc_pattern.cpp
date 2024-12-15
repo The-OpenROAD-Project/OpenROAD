@@ -892,4 +892,4 @@ int FlexPA::getFlatEdgeIdx(const int prev_idx_1,
   return ((prev_idx_1 + 1) * idx_2_dim + prev_idx_2) * idx_2_dim + curr_idx_2;
 }
 
-}
+}  // namespace drt
