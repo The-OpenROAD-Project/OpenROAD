@@ -1,10 +1,7 @@
-/* Authors: Lutong Wang, Bangqi Xu and Precision Innovations*/
+/* Authors: Lutong Wang, Bangqi Xu*/
 /*
- * Copyright (c) 2024,
- * The Regents of the University of California and Precision Innovations Inc.
- *
- * BSD 3-Clause License
- *
+ * Copyright (c) 2019, The Regents of the University of California
+ * Copyright (c) 2024, Precision Innovations Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
