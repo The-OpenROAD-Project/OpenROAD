@@ -1562,6 +1562,7 @@ to.
 
 If we have a modnet, we construct its hierarchical name
 */
+
 const char* dbNetwork::pathName(const Net* net) const
 {
   // note that in flat mode, because a net is always
@@ -1597,6 +1598,60 @@ const char* dbNetwork::pathName(const Net* net) const
     }
     return tmpStringCopy(accumulated_path_name.c_str());
   }
+  return nullptr;
+}
+
+/*
+  dbNets which are connected to pins which have mod nets are
+  "boundaries".
+ */
+
+class PinModNetConnection : public PinVisitor
+{
+ public:
+  PinModNetConnection(const dbNetwork* nwk);
+  void operator()(const Pin* pin) override;
+  dbModNet* modnet_;
+
+ protected:
+  const dbNetwork* db_network_;
+};
+
+PinModNetConnection::PinModNetConnection(const dbNetwork* nwk)
+    : db_network_(nwk)
+{
+  modnet_ = nullptr;
+}
+
+void PinModNetConnection::operator()(const Pin* pin)
+{
+  dbITerm* iterm;
+  dbBTerm* bterm;
+  dbModBTerm* modbterm;
+  dbModITerm* moditerm;
+
+  db_network_->staToDb(pin, iterm, bterm, moditerm, modbterm);
+
+  if (iterm && iterm->getModNet()) {
+    modnet_ = iterm->getModNet();
+  }
+  if (bterm && bterm->getModNet()) {
+    modnet_ = bterm->getModNet();
+  }
+  if (moditerm && moditerm->getModNet()) {
+    modnet_ = moditerm->getModNet();
+  }
+  if (modbterm && modbterm->getModNet()) {
+    modnet_ = modbterm->getModNet();
+  }
+}
+
+dbModNet* dbNetwork::findRelatedModNet(const dbNet* net) const
+{
+  PinModNetConnection visitor(this);
+  NetSet visited_nets;
+  visitConnectedPins(dbToSta(net), visitor, visited_nets);
+  return visitor.modnet_;
 }
 
 const char* dbNetwork::name(const Net* net) const
@@ -1606,16 +1661,9 @@ const char* dbNetwork::name(const Net* net) const
   staToDb(net, dnet, modnet);
   std::string name;
 
-  // what we are doing here is see if this net is connected
-  // to a pin which is connected to a mod net.
-  // This means the dnet is equivalent to a hierarchical name
-  // and we preferentially use that name. Note that any dnet
-  // unrelated to a modnet is within the scope of a module (internal
-  // to that module, so we can gets its hierarchical prefix
-  // from any instance it is connected to).
-
+  // modnets "encapsulate" regions of dbinstance
+  // in the same module hierarchy.
   /*
-  //TODO
   if (hierarchy_ && dnet && !modnet){
     modnet = findRelatedModNet(dnet);
   }
@@ -1635,7 +1683,6 @@ const char* dbNetwork::name(const Net* net) const
       if (name.find_last_of('/') == string::npos) {
         return tmpStringCopy(name.c_str());
       }
-
       //
       // Get the net name within this module of the hierarchy
       // Note we know we are dealing with an instance pin

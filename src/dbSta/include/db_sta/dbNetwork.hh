@@ -239,6 +239,7 @@ class dbNetwork : public ConcreteNetwork
   void setAttribute(Instance* instance,
                     const string& key,
                     const string& value) override;
+  dbModNet* findRelatedModNet(const dbNet*) const;
 
   ////////////////////////////////////////////////////////////////
   // Pin functions
