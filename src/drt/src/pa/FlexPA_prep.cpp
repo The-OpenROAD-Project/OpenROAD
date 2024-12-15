@@ -49,20 +49,6 @@ namespace drt {
 
 using utl::ThreadException;
 
-// TODO there should be a better way to get this info by getting the master
-// terms from OpenDB
-bool FlexPA::isStdCell(frInst* inst)
-{
-  return inst->getMaster()->getMasterType().isCore();
-}
-
-bool FlexPA::isMacroCell(frInst* inst)
-{
-  dbMasterType masterType = inst->getMaster()->getMasterType();
-  return (masterType.isBlock() || masterType.isPad()
-          || masterType == dbMasterType::RING);
-}
-
 bool FlexPA::enclosesOnTrackPlanarAccess(
     const gtl::rectangle_data<frCoord>& rect,
     frLayerNum layer_num)
@@ -107,65 +93,6 @@ bool FlexPA::enclosesOnTrackPlanarAccess(
     return false;
   }
   return true;
-}
-
-void FlexPA::getInsts(std::vector<frInst*>& insts)
-{
-  std::set<frInst*> target_frinsts;
-  for (auto inst : target_insts_) {
-    target_frinsts.insert(design_->getTopBlock()->findInst(inst->getName()));
-  }
-  for (auto& inst : design_->getTopBlock()->getInsts()) {
-    if (!target_insts_.empty()
-        && target_frinsts.find(inst.get()) == target_frinsts.end()) {
-      continue;
-    }
-    if (!unique_insts_.hasUnique(inst.get())) {
-      continue;
-    }
-    if (!isStdCell(inst.get())) {
-      continue;
-    }
-    bool is_skip = true;
-    for (auto& inst_term : inst->getInstTerms()) {
-      if (!isSkipInstTerm(inst_term.get())) {
-        is_skip = false;
-        break;
-      }
-    }
-    if (!is_skip) {
-      insts.push_back(inst.get());
-    }
-  }
-}
-
-// Skip power pins, pins connected to special nets, and dangling pins
-// (since we won't route these).
-//
-// Checks only this inst_term and not an equivalent ones.  This
-// is a helper to isSkipInstTerm and initSkipInstTerm.
-bool FlexPA::isSkipInstTermLocal(frInstTerm* in)
-{
-  auto term = in->getTerm();
-  if (term->getType().isSupply()) {
-    return true;
-  }
-  auto in_net = in->getNet();
-  if (in_net && !in_net->isSpecial()) {
-    return false;
-  }
-  return true;
-}
-
-bool FlexPA::isSkipInstTerm(frInstTerm* in)
-{
-  auto inst_class = unique_insts_.getClass(in->getInst());
-  if (inst_class == nullptr) {
-    return isSkipInstTermLocal(in);
-  }
-
-  // This should be already computed in initSkipInstTerm()
-  return skip_unique_inst_term_.at({inst_class, in->getTerm()});
 }
 
 }  // namespace drt

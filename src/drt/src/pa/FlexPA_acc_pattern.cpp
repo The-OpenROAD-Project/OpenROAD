@@ -61,6 +61,36 @@ static inline void serializePatterns(
   file.close();
 }
 
+void FlexPA::getInsts(std::vector<frInst*>& insts)
+{
+  std::set<frInst*> target_frinsts;
+  for (auto inst : target_insts_) {
+    target_frinsts.insert(design_->getTopBlock()->findInst(inst->getName()));
+  }
+  for (auto& inst : design_->getTopBlock()->getInsts()) {
+    if (!target_insts_.empty()
+        && target_frinsts.find(inst.get()) == target_frinsts.end()) {
+      continue;
+    }
+    if (!unique_insts_.hasUnique(inst.get())) {
+      continue;
+    }
+    if (!isStdCell(inst.get())) {
+      continue;
+    }
+    bool is_skip = true;
+    for (auto& inst_term : inst->getInstTerms()) {
+      if (!isSkipInstTerm(inst_term.get())) {
+        is_skip = false;
+        break;
+      }
+    }
+    if (!is_skip) {
+      insts.push_back(inst.get());
+    }
+  }
+}
+
 void FlexPA::prepPattern()
 {
   ProfileTask profile("PA:pattern");
