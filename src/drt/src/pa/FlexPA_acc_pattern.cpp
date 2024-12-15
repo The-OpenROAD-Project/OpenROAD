@@ -49,6 +49,58 @@ namespace drt {
 
 using utl::ThreadException;
 
+// the input inst must be unique instance
+int FlexPA::prepPatternInst(frInst* inst,
+                            const int curr_unique_inst_idx,
+                            const double x_weight)
+{
+  std::vector<std::pair<frCoord, std::pair<frMPin*, frInstTerm*>>> pins;
+  // TODO: add assert in case input inst is not unique inst
+  int pin_access_idx = unique_insts_.getPAIndex(inst);
+  for (auto& inst_term : inst->getInstTerms()) {
+    if (isSkipInstTerm(inst_term.get())) {
+      continue;
+    }
+    int n_aps = 0;
+    for (auto& pin : inst_term->getTerm()->getPins()) {
+      // container of access points
+      auto pin_access = pin->getPinAccess(pin_access_idx);
+      int sum_x_coord = 0;
+      int sum_y_coord = 0;
+      int cnt = 0;
+      // get avg x coord for sort
+      for (auto& access_point : pin_access->getAccessPoints()) {
+        sum_x_coord += access_point->getPoint().x();
+        sum_y_coord += access_point->getPoint().y();
+        cnt++;
+      }
+      n_aps += cnt;
+      if (cnt != 0) {
+        const double coord
+            = (x_weight * sum_x_coord + (1.0 - x_weight) * sum_y_coord) / cnt;
+        pins.push_back({(int) std::round(coord), {pin.get(), inst_term.get()}});
+      }
+    }
+    if (n_aps == 0 && !inst_term->getTerm()->getPins().empty()) {
+      logger_->error(DRT, 86, "Pin does not have an access point.");
+    }
+  }
+  std::sort(pins.begin(),
+            pins.end(),
+            [](const std::pair<frCoord, std::pair<frMPin*, frInstTerm*>>& lhs,
+               const std::pair<frCoord, std::pair<frMPin*, frInstTerm*>>& rhs) {
+              return lhs.first < rhs.first;
+            });
+
+  std::vector<std::pair<frMPin*, frInstTerm*>> pin_inst_term_pairs;
+  pin_inst_term_pairs.reserve(pins.size());
+  for (auto& [x, m] : pins) {
+    pin_inst_term_pairs.push_back(m);
+  }
+
+  return genPatterns(pin_inst_term_pairs, curr_unique_inst_idx);
+}
+
 int FlexPA::genPatterns(
     const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
     int curr_unique_inst_idx)
