@@ -605,8 +605,8 @@ class FlexPA
       int max_access_point_size);
 
   /**
-   * @brief initializes the nodes data strucutes that will be used to solve the
-   * DP problem
+   * @brief initializes the nodes' data structures that will be used to solve
+   * the DP problem
    */
   void genPatternsInit(
       std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
@@ -616,7 +616,7 @@ class FlexPA
       std::set<std::pair<int, int>>& viol_access_points);
 
   /**
-   * @brief resets the nodes data strucutes that will be used to solve the
+   * @brief resets the nodes' data structures that will be used to solve the
    * DP problem
    */
   void genPatternsReset(
@@ -776,7 +776,7 @@ class FlexPA
    * @param access_pattern access pattern
    * @param objs TODO: not sure why this is a parameter at all
    * @param vias TODO: ditto
-   * @param isPrev wether this is the previous or current node
+   * @param isPrev whether this is the previous or current node
    */
   void addAccessPatternObj(
       frInst* inst,
