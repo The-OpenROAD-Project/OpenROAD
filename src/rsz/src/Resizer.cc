@@ -122,7 +122,6 @@ using sta::LoadPinIndexMap;
 using sta::PinConnectedPinIterator;
 using sta::Sdc;
 using sta::SearchPredNonReg2;
-using sta::stringPrint;
 using sta::VertexIterator;
 using sta::VertexOutEdgeIterator;
 
@@ -1803,6 +1802,19 @@ bool Resizer::dontUse(LibertyCell* cell)
   return cell->dontUse() || dont_use_.hasKey(cell);
 }
 
+void Resizer::reportDontUse() const
+{
+  logger_->report("Don't Use Cells:");
+
+  if (dont_use_.empty()) {
+    logger_->report("  none");
+  } else {
+    for (auto* cell : dont_use_) {
+      logger_->report("  {}", cell->name());
+    }
+  }
+}
+
 void Resizer::setDontTouch(const Instance* inst, bool dont_touch)
 {
   dbInst* db_inst = db_network_->staToDb(inst);
@@ -1828,6 +1840,45 @@ bool Resizer::dontTouch(const Net* net)
 {
   dbNet* db_net = db_network_->staToDb(net);
   return db_net->isDoNotTouch();
+}
+
+void Resizer::reportDontTouch()
+{
+  initBlock();
+
+  std::set<odb::dbInst*> insts;
+  std::set<odb::dbNet*> nets;
+
+  for (auto* inst : block_->getInsts()) {
+    if (inst->isDoNotTouch()) {
+      insts.insert(inst);
+    }
+  }
+
+  for (auto* net : block_->getNets()) {
+    if (net->isDoNotTouch()) {
+      nets.insert(net);
+    }
+  }
+
+  logger_->report("Don't Touch Instances:");
+
+  if (insts.empty()) {
+    logger_->report("  none");
+  } else {
+    for (auto* inst : insts) {
+      logger_->report("  {}", inst->getName());
+    }
+  }
+
+  logger_->report("Don't Touch Nets:");
+  if (nets.empty()) {
+    logger_->report("  none");
+  } else {
+    for (auto* net : nets) {
+      logger_->report("  {}", net->getName());
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2370,7 +2421,8 @@ string Resizer::makeUniqueNetName()
   string node_name;
   Instance* top_inst = network_->topInstance();
   do {
-    stringPrint(node_name, "net%d", unique_net_index_++);
+    // sta::stringPrint can lead to string overflow and fatal
+    node_name = fmt::format("net{}", unique_net_index_++);
   } while (network_->findNet(top_inst, node_name.c_str()));
   return node_name;
 }
@@ -2391,10 +2443,12 @@ string Resizer::makeUniqueInstName(const char* base_name, bool underscore)
 {
   string inst_name;
   do {
-    stringPrint(inst_name,
-                underscore ? "%s_%d" : "%s%d",
-                base_name,
-                unique_inst_index_++);
+    // sta::stringPrint can lead to string overflow and fatal
+    if (underscore) {
+      inst_name = fmt::format("{}_{}", base_name, unique_inst_index_++);
+    } else {
+      inst_name = fmt::format("{}{}", base_name, unique_inst_index_++);
+    }
   } while (network_->findInstance(inst_name.c_str()));
   return inst_name;
 }

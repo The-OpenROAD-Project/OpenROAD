@@ -179,6 +179,7 @@ class dbNetwork : public ConcreteNetwork
   dbBTerm* isTopPort(const Port*) const;
   void setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type);
   ObjectId id(const Port* port) const override;
+  ObjectId id(const Cell* cell) const override;
 
   // hierarchical support functions
   dbModule* getNetDriverParentModule(Net* net);

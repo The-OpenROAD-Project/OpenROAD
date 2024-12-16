@@ -1175,10 +1175,8 @@ odb::Rect io::Parser::getViaBoxForTermAboveMaxLayer(odb::dbBTerm* term,
                       ->getLayerNum();
             if (layerNum == router_cfg_->TOP_ROUTING_LAYER) {
               odb::Rect viaBox = vbox->getBox();
-              odb::dbTransform xform;
               odb::Point path_origin = pshape.point;
-              xform.setOffset({path_origin.x(), path_origin.y()});
-              xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
+              odb::dbTransform xform(path_origin);
               xform.apply(viaBox);
               if (bbox.intersects(viaBox)) {
                 bbox = viaBox;
