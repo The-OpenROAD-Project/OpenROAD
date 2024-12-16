@@ -388,9 +388,7 @@ void frRegionQuery::removeMarker(frMarker* in)
 void frRegionQuery::Impl::add(frVia* via,
                               ObjectsByLayer<frBlockObject>& allShapes)
 {
-  dbTransform xform;
-  Point origin = via->getOrigin();
-  xform.setOffset(origin);
+  dbTransform xform = via->getTransform();
   for (auto& uShape : via->getViaDef()->getLayer1Figs()) {
     auto shape = uShape.get();
     if (shape->typeId() == frcRect) {

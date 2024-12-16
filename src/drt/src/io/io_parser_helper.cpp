@@ -852,12 +852,11 @@ void io::Parser::checkPins()
     foundTracks = false;
     foundCenterTracks = false;
     hasPolys = false;
-    dbTransform xform;
     for (auto& pin : bTerm->getPins()) {
       for (auto& uFig : pin->getFigs()) {
         checkFig(uFig.get(),
                  bTerm->getName(),
-                 xform,
+                 dbTransform(),
                  foundTracks,
                  foundCenterTracks,
                  hasPolys);
