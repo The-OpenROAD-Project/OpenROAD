@@ -821,6 +821,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
       if (hasRect) {
         auto tmpPWire = std::make_unique<frPatchWire>();
         tmpPWire->setLayerNum(layerNum);
+        logger_->report("[BNMFW] Patch Net={} x={} y={}", net->getName(), beginX, beginY);
         tmpPWire->setOrigin({beginX, beginY});
         tmpPWire->setOffsetBox(Rect(left, bottom, right, top));
         netIn->addPatchWire(std::move(tmpPWire));
