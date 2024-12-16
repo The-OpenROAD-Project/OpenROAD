@@ -92,7 +92,7 @@ GlobalRouter::GlobalRouter()
       grid_(new Grid),
       adjustment_(0.0),
       layer_for_guide_dimension_(3),
-      overflow_iterations_(50),
+      congestion_iterations_(50),
       congestion_report_iter_step_(0),
       allow_congestion_(false),
       macro_extension_(0),
@@ -1882,9 +1882,9 @@ void GlobalRouter::setVerbose(const bool v)
   verbose_ = v;
 }
 
-void GlobalRouter::setOverflowIterations(int iterations)
+void GlobalRouter::setCongestionIterations(int iterations)
 {
-  overflow_iterations_ = iterations;
+  congestion_iterations_ = iterations;
 }
 
 void GlobalRouter::setCongestionReportIterStep(int congestion_report_iter_step)
@@ -2001,7 +2001,7 @@ void GlobalRouter::ensureLayerForGuideDimension(int max_routing_layer)
 void GlobalRouter::configFastRoute()
 {
   fastroute_->setVerbose(verbose_);
-  fastroute_->setOverflowIterations(overflow_iterations_);
+  fastroute_->setOverflowIterations(congestion_iterations_);
   fastroute_->setCongestionReportIterStep(congestion_report_iter_step_);
 
   if (congestion_file_name_ != nullptr) {
