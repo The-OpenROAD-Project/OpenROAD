@@ -1182,7 +1182,7 @@ void HTreeBuilder::run()
     max_dx = std::max(max_dx, bbox->getDX());
     max_dy = std::max(max_dy, bbox->getDY());
   }
-  logger_->report("max_dx: {}, max_dy: {}", max_dx, max_dy);
+  logger_->report("max_dx: {}, max_dy: {}", max_dx / wireSegmentUnit_, max_dy / wireSegmentUnit_);
   logger_->info(
       CTS, 30, " Number of static layers: {}.", options_->getNumStaticLayers());
 

@@ -316,11 +316,11 @@ class CtsOptions
   bool maxDiameterSet_ = false;
   unsigned sinkClustersSize_ = 20;
   bool sinkClustersSizeSet_ = false;
-  bool macroSinkClusteringUseMaxCap_ = true;
+  bool macroSinkClusteringUseMaxCap_ = false;
   double macroMaxDiameter_ = 50;
-  bool macroMaxDiameterSet_ = false;
+  bool macroMaxDiameterSet_ = true;
   unsigned macroSinkClustersSize_ = 20;
-  bool macroSinkClustersSizeSet_ = false;
+  bool macroSinkClustersSizeSet_ = true;
   bool balanceLevels_ = false;
   unsigned sinkClusteringLevels_ = 0;
   unsigned numStaticLayers_ = 0;
