@@ -89,13 +89,12 @@ void FlexTAWorker::modMinSpacingCostPlanar(
               idx2);
 
   Rect box2(-halfwidth2, -halfwidth2, halfwidth2, halfwidth2);
-  dbTransform xform;
   frCoord dx, dy;
   auto& trackLocs = getTrackLocs(lNum);
   auto& workerRegionQuery = getWorkerRegionQuery();
   for (int i = idx1; i <= idx2; i++) {
     auto trackLoc = trackLocs[i];
-    xform.setOffset(Point(boxLeft, trackLoc));
+    dbTransform xform(Point(boxLeft, trackLoc));
     xform.apply(box2);
     box2boxDistSquare(box1, box2, dx, dy);
     if (dy >= bloatDist) {
@@ -562,9 +561,8 @@ void FlexTAWorker::modCost(taPinFig* fig,
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, true, false, pinS);
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, false, false, pinS);
 
-    dbTransform xform;
     Point pt = obj->getOrigin();
-    xform.setOffset(pt);
+    dbTransform xform(pt);
     for (auto& uFig : obj->getViaDef()->getCutFigs()) {
       auto rect = static_cast<frRect*>(uFig.get());
       box = rect->getBBox();

@@ -108,9 +108,9 @@ set_verbose(bool v)
 }
 
 void
-set_overflow_iterations(int iterations)
+set_congestion_iterations(int iterations)
 {
-  getGlobalRouter()->setOverflowIterations(iterations);
+  getGlobalRouter()->setCongestionIterations(iterations);
 }
 
 void
