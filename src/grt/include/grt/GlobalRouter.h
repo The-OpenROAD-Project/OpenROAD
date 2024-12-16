@@ -486,7 +486,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   // Flow variables
   float adjustment_;
   int layer_for_guide_dimension_;
-  int congestion_iterations_;
+  int congestion_iterations_{50};
   int congestion_report_iter_step_;
   bool allow_congestion_;
   std::vector<int> vertical_capacities_;

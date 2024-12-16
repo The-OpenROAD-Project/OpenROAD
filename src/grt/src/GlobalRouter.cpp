@@ -92,7 +92,6 @@ GlobalRouter::GlobalRouter()
       grid_(new Grid),
       adjustment_(0.0),
       layer_for_guide_dimension_(3),
-      congestion_iterations_(50),
       congestion_report_iter_step_(0),
       allow_congestion_(false),
       macro_extension_(0),
