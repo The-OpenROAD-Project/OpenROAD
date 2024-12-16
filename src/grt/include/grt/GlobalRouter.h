@@ -179,7 +179,7 @@ class GlobalRouter : public ant::GlobalRouteSource
                            int layer,
                            float reduction_percentage);
   void setVerbose(bool v);
-  void setOverflowIterations(int iterations);
+  void setCongestionIterations(int iterations);
   void setCongestionReportIterStep(int congestion_report_iter_step);
   void setCongestionReportFile(const char* file_name);
   void setGridOrigin(int x, int y);
@@ -486,7 +486,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   // Flow variables
   float adjustment_;
   int layer_for_guide_dimension_;
-  int overflow_iterations_;
+  int congestion_iterations_{50};
   int congestion_report_iter_step_;
   bool allow_congestion_;
   std::vector<int> vertical_capacities_;
