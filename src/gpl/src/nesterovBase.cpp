@@ -667,12 +667,12 @@ int BinGrid::binSizeY() const
 
 int64_t BinGrid::overflowArea() const
 {
-  return overflowArea_;
+  return sumOverflowArea_;
 }
 
 int64_t BinGrid::overflowAreaUnscaled() const
 {
-  return overflowAreaUnscaled_;
+  return sumOverflowAreaUnscaled_;
 }
 
 static unsigned int roundDownToPowerOfTwo(unsigned int x)
@@ -876,12 +876,13 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
     }
   }
 
-  overflowArea_ = 0;
-  overflowAreaUnscaled_ = 0;
+  odb::dbBlock* block = pb_->db()->getChip()->getBlock();
+  sumOverflowArea_ = 0;
+  sumOverflowAreaUnscaled_ = 0;
   // update density and overflowArea
   // for nesterov use and FFT library
 #pragma omp parallel for num_threads(num_threads_) \
-    reduction(+ : overflowArea_, overflowAreaUnscaled_)
+    reduction(+ : sumOverflowArea_, sumOverflowAreaUnscaled_)
   for (auto it = bins_.begin(); it < bins_.end(); ++it) {
     Bin& bin = *it;  // old-style loop for old OpenMP
 
@@ -896,15 +897,41 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
                     + static_cast<float>(bin.nonPlaceArea()))
                    / scaledBinArea);
 
-    overflowArea_ += std::max(0.0f,
-                              static_cast<float>(bin.instPlacedArea())
-                                  + static_cast<float>(bin.nonPlaceArea())
-                                  - scaledBinArea);
+    sumOverflowArea_ += std::max(0.0f,
+                                 static_cast<float>(bin.instPlacedArea())
+                                     + static_cast<float>(bin.nonPlaceArea())
+                                     - scaledBinArea);
 
-    overflowAreaUnscaled_ += std::max(
+    auto overflowAreaUnscaled = std::max(
         0.0f,
         static_cast<float>(bin.instPlacedAreaUnscaled())
             + static_cast<float>(bin.nonPlaceAreaUnscaled()) - scaledBinArea);
+    sumOverflowAreaUnscaled_ += overflowAreaUnscaled;
+    if (overflowAreaUnscaled > 0) {
+      debugPrint(log_,
+                 GPL,
+                 "overflow",
+                 1,
+                 "overflow:{}, bin:{},{}",
+                 block->dbuAreaToMicrons(overflowAreaUnscaled),
+                 block->dbuToMicrons(bin.lx()),
+                 block->dbuToMicrons(bin.ly()));
+      debugPrint(log_,
+                 GPL,
+                 "overflow",
+                 1,
+                 "binArea:{}, scaledBinArea:{}",
+                 block->dbuAreaToMicrons(binArea),
+                 block->dbuAreaToMicrons(scaledBinArea));
+      debugPrint(
+          log_,
+          GPL,
+          "overflow",
+          1,
+          "bin.instPlacedAreaUnscaled():{}, bin.nonPlaceAreaUnscaled():{}",
+          block->dbuAreaToMicrons(bin.instPlacedAreaUnscaled()),
+          block->dbuAreaToMicrons(bin.nonPlaceAreaUnscaled()));
+    }
   }
 }
 
@@ -1426,8 +1453,7 @@ void NesterovBaseCommon::fixPointers()
     db_net_map_[gNet.net()->dbNet()] = i;
   }
 
-  for (auto it = gCellStor_.begin(); it < gCellStor_.end(); ++it) {
-    auto& gCell = *it;  // old-style loop for old OpenMP
+  for (auto& gCell : gCellStor_) {
     if (gCell.isFiller()) {
       continue;
     }
@@ -1439,17 +1465,19 @@ void NesterovBaseCommon::fixPointers()
           size_t gpin_index = it->second;
           gCell.addGPin(&gPinStor_[gpin_index]);
         } else {
-          log_->report("error: gpin nullptr (from iterm:{}) in gcell:{}",
-                       iterm->getName(),
-                       gCell.instance()->dbInst()->getName());
+          debugPrint(log_,
+                     GPL,
+                     "callbacks",
+                     1,
+                     "warning: gpin nullptr (from iterm:{}) in gcell:{}",
+                     iterm->getName(),
+                     gCell.instance()->dbInst()->getName());
         }
       }
     }
   }
 
-  // #pragma omp parallel for num_threads(num_threads_)
-  for (auto it = gPinStor_.begin(); it < gPinStor_.end(); ++it) {
-    auto& gPin = *it;  // old-style loop for old OpenMP
+  for (auto& gPin : gPinStor_) {
     auto iterm = gPin.pin()->dbITerm();
     if (iterm != nullptr) {
       if (isValidSigType(iterm->getSigType())) {
@@ -1463,20 +1491,27 @@ void NesterovBaseCommon::fixPointers()
         if (net_it != db_net_map_.end()) {
           gPin.setGNet(&gNetStor_[net_it->second]);
         } else {
-          log_->report("Net not found in db_net_map_ for ITerm: {} -> {}",
-                       iterm->getNet()->getName(),
-                       iterm->getName());
+          debugPrint(
+              log_,
+              GPL,
+              "callbacks",
+              1,
+              "warning: Net not found in db_net_map_ for ITerm: {} -> {}",
+              iterm->getNet()->getName(),
+              iterm->getName());
         }
       } else {
-        log_->report("Warning: invalid type itermType: {}",
-                     iterm->getSigType().getString());
+        debugPrint(log_,
+                   GPL,
+                   "callbacks",
+                   1,
+                   "warning: invalid type itermType: {}",
+                   iterm->getSigType().getString());
       }
     }
   }
 
-  // #pragma omp parallel for num_threads(num_threads_)
-  for (auto it = gNetStor_.begin(); it < gNetStor_.end(); ++it) {
-    auto& gNet = *it;  // old-style loop for old OpenMP
+  for (auto& gNet : gNetStor_) {
     gNet.clearGPins();
     for (odb::dbITerm* iterm : gNet.net()->dbNet()->getITerms()) {
       if (isValidSigType(iterm->getSigType())) {
@@ -2680,9 +2715,13 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
 {
   GCell* gcell = getGCellByIndex(db_inst_map_.find(db_inst)->second);
   if (gcell->instance()->dbInst()->getName() != db_inst->getName()) {
-    log_->report("warning: gcell {} found in db_inst_map_ as {}",
-                 gcell->instance()->dbInst()->getName(),
-                 db_inst->getName());
+    debugPrint(log_,
+               GPL,
+               "callbacks",
+               1,
+               "warning: gcell {} found in db_inst_map_ as {}",
+               gcell->instance()->dbInst()->getName(),
+               db_inst->getName());
   }
 
   int64_t prevCellArea
@@ -2763,7 +2802,11 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
       // analogous to updatePrevGradient()
       updateSinglePrevGradient(gcells_index, wlCoeffX, wlCoeffY);
     } else {
-      log_->report(
+      debugPrint(
+          log_,
+          GPL,
+          "callbacks",
+          1,
           "warning: updateGCellState, db_inst not found in db_inst_index_map_ "
           "for instance: {}",
           db_inst->getName());
@@ -2804,7 +2847,11 @@ void NesterovBase::createGCell(odb::dbInst* db_inst,
 
     rb->pushBackMinRcCellSize(gcell->dx(), gcell->dy());
   } else {
-    log_->report("Error! gCell is nullptr!");
+    debugPrint(log_,
+               GPL,
+               "callbacks",
+               1,
+               "Error. Trying to create gCell but it is nullptr!");
   }
 }
 
