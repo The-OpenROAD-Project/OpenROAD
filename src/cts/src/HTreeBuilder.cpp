@@ -1140,6 +1140,7 @@ void HTreeBuilder::legalize()
 
 void HTreeBuilder::run()
 {
+
   double clusterDiameter = (type_ == TreeType::MacroTree)
                                ? options_->getMacroMaxDiameter()
                                : options_->getMaxDiameter();
@@ -1149,6 +1150,16 @@ void HTreeBuilder::run()
   bool useMaxCap = (type_ == TreeType::MacroTree)
                        ? options_->getMacroSinkClusteringUseMaxCap()
                        : options_->getSinkClusteringUseMaxCap();
+  
+  /*if(type_ == TreeType::MacroTree) {
+    clusterDiameter = options_->getMacroMaxDiameter();
+    clusterSize = options_->getMacroSinkClusteringSize();
+    useMaxCap = options_->getMacroSinkClusteringUseMaxCap();
+  } else {
+    clusterDiameter = options_->getMaxDiameter();
+    clusterSize = options_->getSinkClusteringSize();
+    useMaxCap = options_->getSinkClusteringUseMaxCap();
+  }*/
   logger_->info(
       CTS, 27, "Generating H-Tree topology for net {}.", clock_.getName());
   logger_->info(CTS, 28, " Total number of sinks: {}.", clock_.getNumSinks());
@@ -1165,6 +1176,13 @@ void HTreeBuilder::run()
                     clusterDiameter);
     }
   }
+  uint max_dx = 0, max_dy = 0;
+  
+  for (odb::dbBox* bbox : bboxList_) {
+    max_dx = std::max(max_dx, bbox->getDX());
+    max_dy = std::max(max_dy, bbox->getDY());
+  }
+  logger_->report("max_dx: {}, max_dy: {}", max_dx, max_dy);
   logger_->info(
       CTS, 30, " Number of static layers: {}.", options_->getNumStaticLayers());
 
