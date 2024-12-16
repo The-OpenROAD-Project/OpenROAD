@@ -317,9 +317,9 @@ class CtsOptions
   unsigned sinkClustersSize_ = 20;
   bool sinkClustersSizeSet_ = false;
   bool macroSinkClusteringUseMaxCap_ = false;
-  double macroMaxDiameter_ = 50;
+  double macroMaxDiameter_ = 200;
   bool macroMaxDiameterSet_ = true;
-  unsigned macroSinkClustersSize_ = 20;
+  unsigned macroSinkClustersSize_ = 4;
   bool macroSinkClustersSizeSet_ = true;
   bool balanceLevels_ = false;
   unsigned sinkClusteringLevels_ = 0;

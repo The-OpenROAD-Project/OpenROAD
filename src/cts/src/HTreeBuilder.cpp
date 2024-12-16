@@ -216,10 +216,8 @@ void HTreeBuilder::preSinkClustering(
         // add 4 points to account for insertion delay
         if (sinkHasInsertionDelay(mapPoint)) {
           insDelay = getSinkInsertionDelay(mapPoint);
-          xSum += point.first + insDelay;
-          xSum += point.first - insDelay;
-          ySum += point.second + insDelay;
-          ySum += point.second - insDelay;
+          xSum += point.first;
+          ySum += point.second;
           // clang-format off
           debugPrint(logger_, CTS, "clustering", 1, "added extra ins delay weights "
                      "at sink {}: {:0.3f}", mapPoint, insDelay);
@@ -1183,9 +1181,7 @@ void HTreeBuilder::run()
     max_dy = std::max(max_dy, bbox->getDY());
   }
   logger_->report("max_dx: {}, max_dy: {}", max_dx, max_dy);
-  auto pro_reportx = (int)max_dx / wireSegmentUnit_;
-  auto pro_reporty = (int)max_dy / wireSegmentUnit_;
-  logger_->report("max_dx: {}, max_dy: {}", pro_reportx, pro_reporty);
+  logger_->report("max_dx: {}, max_dy: {}", wireSegmentUnit_, wireSegmentUnit_);
   logger_->info(
       CTS, 30, " Number of static layers: {}.", options_->getNumStaticLayers());
 
