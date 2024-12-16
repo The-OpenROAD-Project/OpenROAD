@@ -1176,15 +1176,15 @@ void HTreeBuilder::run()
                     clusterDiameter);
     }
   }
-  int max_dx = 0, max_dy = 0;
+  uint max_dx = 0, max_dy = 0;
   
   for (odb::dbBox* bbox : bboxList_) {
     max_dx = std::max(max_dx, bbox->getDX());
     max_dy = std::max(max_dy, bbox->getDY());
   }
   logger_->report("max_dx: {}, max_dy: {}", max_dx, max_dy);
-  auto pro_reportx = max_dx / wireSegmentUnit_;
-  auto pro_reporty = max_dy / wireSegmentUnit_;
+  auto pro_reportx = (int)max_dx / wireSegmentUnit_;
+  auto pro_reporty = (int)max_dy / wireSegmentUnit_;
   logger_->report("max_dx: {}, max_dy: {}", pro_reportx, pro_reporty);
   logger_->info(
       CTS, 30, " Number of static layers: {}.", options_->getNumStaticLayers());
