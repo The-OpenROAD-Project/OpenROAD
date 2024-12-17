@@ -41,6 +41,7 @@
 #include "clockWidget.h"
 #include "displayControls.h"
 #include "drcWidget.h"
+#include "heatMapPinDensity.h"
 #include "heatMapPlacementDensity.h"
 #include "helpWidget.h"
 #include "inspector.h"
@@ -228,6 +229,7 @@ Gui::Gui()
     : continue_after_close_(false),
       logger_(nullptr),
       db_(nullptr),
+      pin_density_heat_map_(nullptr),
       placement_density_heat_map_(nullptr)
 {
   resetConversions();
@@ -1283,7 +1285,9 @@ void Gui::init(odb::dbDatabase* db, utl::Logger* logger)
   db_ = db;
   setLogger(logger);
 
-  // placement density heatmap
+  pin_density_heat_map_ = std::make_unique<PinDensityDataSource>(logger);
+  pin_density_heat_map_->registerHeatMap();
+
   placement_density_heat_map_
       = std::make_unique<PlacementDensityDataSource>(logger);
   placement_density_heat_map_->registerHeatMap();
