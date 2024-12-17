@@ -299,7 +299,7 @@ sta::define_cmd_args "set_macro_guidance_region" { [-macro_name macro_name] \
 proc set_macro_guidance_region { args } {
   sta::parse_key_args "set_macro_guidance_region" args \
     keys { -macro_name -region } \
-  sta::check_argc_eq0 "set_macro_guidance_region" $args
+    sta::check_argc_eq0 "set_macro_guidance_region" $args
 
   if { [info exists keys(-macro_name)] } {
     set macro_name $keys(-macro_name)
@@ -316,7 +316,7 @@ proc set_macro_guidance_region { args } {
   }
 
   if { [llength $region] != 4 } {
-    utl::error MPL 31 "-region is not a list of 4 values."
+    utl::error MPL 31 "-region must be a list of 4 values."
   }
 
   lassign $region x1 y1 x2 y2

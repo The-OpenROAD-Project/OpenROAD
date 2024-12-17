@@ -109,6 +109,23 @@ place_macro
 | `-location` | The lower left corner of the macro in microns. |
 | `-orientation` | The orientation according to odb. If nothing is specified, defaults to `R0`.  We only allow `R0`, `MY`, `MX` and `R180`.  |
 
+### Set Macro Guidance Region
+
+Command for setting guidance regions for macros.
+
+```tcl
+set_macro_guidance_region
+    -macro_name macro_name
+    -region {lx ly ux uy}
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-macro_name` | The name of a macro of the design. |
+| `-region` | The lower left corner and upper right corner of the region in microns. |
+
 ## Example scripts
 
 Example of a script demonstrating how to run `mpl2` on a sample design of `bp_fe_top` as follows:
