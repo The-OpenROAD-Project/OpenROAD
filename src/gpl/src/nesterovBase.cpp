@@ -936,7 +936,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
 std::pair<int, int> BinGrid::getDensityMinMaxIdxX(const GCell* gcell) const
 {
   int lowerIdx = (gcell->dLx() - lx()) / binSizeX_;
-  int upperIdx = std::ceil(gcell->dUx() - lx()) / binSizeX_;
+  int upperIdx = std::ceil((gcell->dUx() - lx()) / binSizeX_);
 
   lowerIdx = std::max(lowerIdx, 0);
   upperIdx = std::min(upperIdx, binCntX_);
@@ -946,7 +946,7 @@ std::pair<int, int> BinGrid::getDensityMinMaxIdxX(const GCell* gcell) const
 std::pair<int, int> BinGrid::getDensityMinMaxIdxY(const GCell* gcell) const
 {
   int lowerIdx = (gcell->dLy() - ly()) / binSizeY_;
-  int upperIdx = std::ceil(gcell->dUy() - ly()) / binSizeY_;
+  int upperIdx = std::ceil((gcell->dUy() - ly()) / binSizeY_);
 
   lowerIdx = std::max(lowerIdx, 0);
   upperIdx = std::min(upperIdx, binCntY_);
@@ -956,7 +956,7 @@ std::pair<int, int> BinGrid::getDensityMinMaxIdxY(const GCell* gcell) const
 std::pair<int, int> BinGrid::getMinMaxIdxX(const Instance* inst) const
 {
   int lowerIdx = (inst->lx() - lx()) / binSizeX_;
-  int upperIdx = std::ceil(inst->ux() - lx()) / binSizeX_;
+  int upperIdx = std::ceil((inst->ux() - lx()) / binSizeX_);
 
   return std::make_pair(std::max(lowerIdx, 0), std::min(upperIdx, binCntX_));
 }
@@ -964,7 +964,7 @@ std::pair<int, int> BinGrid::getMinMaxIdxX(const Instance* inst) const
 std::pair<int, int> BinGrid::getMinMaxIdxY(const Instance* inst) const
 {
   int lowerIdx = (inst->ly() - ly()) / binSizeY_;
-  int upperIdx = std::ceil(inst->uy() - ly()) / binSizeY_;
+  int upperIdx = std::ceil((inst->uy() - ly()) / binSizeY_);
 
   return std::make_pair(std::max(lowerIdx, 0), std::min(upperIdx, binCntY_));
 }
