@@ -1086,7 +1086,6 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
                                   const int num_threads,
                                   bool verbose)
 {
-  printf("Start to checkAntenna\n");
   {
     std::lock_guard<std::mutex> lock(mapMutex);
     net_to_report_.clear();
