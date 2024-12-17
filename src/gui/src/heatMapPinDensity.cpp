@@ -72,12 +72,13 @@ bool PinDensityDataSource::populateMap()
       }
 
       odb::dbMaster* master = inst->getMaster();
-      odb::dbBlock* child;
-      if (has_child_blocks
-          && (child = inst->getBlock()->findChild(master->getName().c_str()))) {
-        const odb::dbTransform child_transform = inst->getTransform();
-        blocks.emplace_back(child, child_transform);
-        continue;
+      if (has_child_blocks) {
+        auto child = inst->getBlock()->findChild(master->getName().c_str());
+        if (child) {
+          const odb::dbTransform child_transform = inst->getTransform();
+          blocks.emplace_back(child, child_transform);
+          continue;
+        }
       }
 
       for (odb::dbITerm* iterm : inst->getITerms()) {

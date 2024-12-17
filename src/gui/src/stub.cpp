@@ -53,17 +53,11 @@ StringToDBU Descriptor::Property::convert_string
 // empty heat map class
 class PinDensityDataSource
 {
- public:
-  PinDensityDataSource() {}
-  ~PinDensityDataSource() {}
 };
 
 // empty heat map class
 class PlacementDensityDataSource
 {
- public:
-  PlacementDensityDataSource() {}
-  ~PlacementDensityDataSource() {}
 };
 
 ////
