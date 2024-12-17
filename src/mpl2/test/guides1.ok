@@ -5,7 +5,7 @@
 [INFO ODB-0128] Design: io_constraints1
 [INFO ODB-0252]     Updated 3 pins.
 [INFO ODB-0253]     Updated 401 components.
-Floorplan Outline: (0.0, 0.0) (150.0, 125.0),  Core Outline: (0.0, 0.0) (149.91, 124.6)
+Floorplan Outline: (0, 0) (150, 125),  Core Outline: (0, 0) (149.91, 124.6)
 	Number of std cell instances: 400
 	Area of std cell instances: 1808.79
 	Number of macros: 1
