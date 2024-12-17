@@ -628,6 +628,7 @@ gui::show_help
 To control the settings in the heat maps:
 
 The currently availble heat maps are:
+- ``Pin``
 - ``Power``
 - ``Routing``
 - ``Placement``

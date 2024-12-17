@@ -7,6 +7,7 @@ or_integration_tests(
     find_clks2
     hier2
     hierclock
+    hierwrite
     make_port
     network_edit1
     power1

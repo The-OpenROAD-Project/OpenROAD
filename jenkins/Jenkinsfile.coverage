@@ -21,7 +21,7 @@ node {
 
         stage('Dynamic Code Coverage') {
             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                timeout(time: 2, unit: 'HOURS') {
+                timeout(time: 3, unit: 'HOURS') {
                     sh './etc/CodeCoverage.sh dynamic';
                 }
             }
