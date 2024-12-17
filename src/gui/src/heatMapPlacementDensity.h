@@ -44,38 +44,36 @@ class PlacementDensityDataSource : public HeatMapDataSource,
 {
  public:
   PlacementDensityDataSource(utl::Logger* logger);
-  ~PlacementDensityDataSource() {}
 
-  virtual void onShow() override;
-  virtual void onHide() override;
+  void onShow() override;
+  void onHide() override;
 
   // from dbBlockCallBackObj API
-  virtual void inDbInstCreate(odb::dbInst*) override;
-  virtual void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
-  virtual void inDbInstDestroy(odb::dbInst*) override;
-  virtual void inDbInstPlacementStatusBefore(
-      odb::dbInst*,
-      const odb::dbPlacementStatus&) override;
-  virtual void inDbInstSwapMasterBefore(odb::dbInst*, odb::dbMaster*) override;
-  virtual void inDbInstSwapMasterAfter(odb::dbInst*) override;
-  virtual void inDbPreMoveInst(odb::dbInst*) override;
-  virtual void inDbPostMoveInst(odb::dbInst*) override;
+  void inDbInstCreate(odb::dbInst*) override;
+  void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
+  void inDbInstDestroy(odb::dbInst*) override;
+  void inDbInstPlacementStatusBefore(odb::dbInst*,
+                                     const odb::dbPlacementStatus&) override;
+  void inDbInstSwapMasterBefore(odb::dbInst*, odb::dbMaster*) override;
+  void inDbInstSwapMasterAfter(odb::dbInst*) override;
+  void inDbPreMoveInst(odb::dbInst*) override;
+  void inDbPostMoveInst(odb::dbInst*) override;
 
  protected:
-  virtual bool populateMap() override;
-  virtual void combineMapData(bool base_has_value,
-                              double& base,
-                              const double new_data,
-                              const double data_area,
-                              const double intersection_area,
-                              const double rect_area) override;
+  bool populateMap() override;
+  void combineMapData(bool base_has_value,
+                      double& base,
+                      double new_data,
+                      double data_area,
+                      double intersection_area,
+                      double rect_area) override;
 
-  virtual bool destroyMapOnNotVisible() const override { return true; }
+  bool destroyMapOnNotVisible() const override { return true; }
 
  private:
-  bool include_taps_;
-  bool include_filler_;
-  bool include_io_;
+  bool include_taps_{true};
+  bool include_filler_{false};
+  bool include_io_{false};
 };
 
 }  // namespace gui
