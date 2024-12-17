@@ -53,7 +53,7 @@
 [INFO GPL-0101] Iter: 0, overflow: 0.127, keep rsz at: 0.3
 [INFO GPL-0106] Timing-driven: worst slack 6.35e-09
 [INFO GPL-0103] Timing-driven: weighted 4 nets.
-[INFO GPL-0107] Timing-driven: RSZ delta area:     -1.0206
+[INFO GPL-0107] Timing-driven: repair_design (rsz) delta area:     -1.021 um^2 (-6.57%)
 [INFO GPL-0108] Timing-driven: new target density: 0.49125
 [NesterovSolve] Iter:   10 overflow: 0.379 HPWL: 13036
 [NesterovSolve] Iter:   20 overflow: 0.522 HPWL: 6251
