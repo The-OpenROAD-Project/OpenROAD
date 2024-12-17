@@ -253,6 +253,20 @@ gui::show
 | `script` | TCL script to evaluate in the GUI. |
 | `interactive` | Boolean if true, the GUI should open in an interactive session (default), or if false that the GUI would execute the script and return to the terminal.|
 
+### Set GUI Title
+
+To set the title of the main GUI window:
+
+```tcl
+gui::set_title title
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+| `title` | window title to use for the main GUI window |
+
 ### Hide GUI
 
 To close the GUI and return to the command-line:
