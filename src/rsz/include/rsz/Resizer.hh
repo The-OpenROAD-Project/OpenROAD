@@ -262,7 +262,7 @@ class Resizer : public dbStaState
 
   void setDontUse(LibertyCell* cell, bool dont_use);
   bool dontUse(LibertyCell* cell);
-  void reportDontUse() const;
+  void reportDontUse();
   void setDontTouch(const Instance* inst, bool dont_touch);
   bool dontTouch(const Instance* inst);
   void setDontTouch(const Net* net, bool dont_touch);

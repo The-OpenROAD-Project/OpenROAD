@@ -1803,21 +1803,18 @@ bool Resizer::dontUse(LibertyCell* cell)
   return cell->dontUse() || dont_use_.hasKey(cell);
 }
 
-void Resizer::reportDontUse() const
+void Resizer::reportDontUse()
 {
   logger_->report("Don't Use Cells:");
 
   if (dont_use_.empty()) {
     logger_->report("  none");
   } else {
-    std::set<dbMaster*> cells;
-
     for (auto* cell : dont_use_) {
-      cells.insert(db_network_->staToDb(cell));
-    }
-
-    for (auto* cell : cells) {
-      logger_->report("  {}", cell->getName());
+      if (!isLinkCell(cell)) {
+        continue;
+      }
+      logger_->report("  {}", cell->name());
     }
   }
 }

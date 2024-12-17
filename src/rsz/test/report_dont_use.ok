@@ -11,8 +11,8 @@ Don't Use Cells:
   CLKBUF_X2
   CLKBUF_X3
   INV_X1
-  INV_X16
   INV_X2
-  INV_X32
   INV_X4
   INV_X8
+  INV_X16
+  INV_X32
