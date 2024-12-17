@@ -517,9 +517,18 @@ COMPONENTS 401 ;
     - _400_ DFF_X1 + PLACED ( 38680 123234 ) N ;
 END COMPONENTS
 PINS 3 ;
-    - io_1 + NET io_1 + DIRECTION INPUT + USE SIGNAL ;
-    - io_2 + NET io_2 + DIRECTION INPUT + USE SIGNAL ;
-    - io_3 + NET io_3 + DIRECTION INPUT + USE SIGNAL ;
+    - io_1 + NET io_1 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 140 155820 ) N ;
+    - io_2 + NET io_2 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 140 50540 ) N ;
+    - io_3 + NET io_3 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + PLACED ( 140 12460 ) N ;
 END PINS
 NETS 3 ;
     - io_1 ( PIN io_1 ) + USE SIGNAL ;
