@@ -557,6 +557,8 @@ void Resizer::findBuffers()
   }
 }
 
+// test2
+
 bool Resizer::isLinkCell(LibertyCell* cell)
 {
   return network_->findLibertyCell(cell->name()) == cell;
