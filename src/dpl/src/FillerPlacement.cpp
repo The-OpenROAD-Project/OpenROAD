@@ -75,7 +75,9 @@ Opendp::MasterByImplant Opendp::splitByImplant(dbMasterSeq* filler_masters)
   return mapping;
 }
 
-void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
+void Opendp::fillerPlacement(dbMasterSeq* filler_masters,
+                             const char* prefix,
+                             bool verbose)
 {
   if (cells_.empty()) {
     importDb();
@@ -92,7 +94,7 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
   }
 
   gap_fillers_.clear();
-  filler_count_ = 0;
+  filler_count_.clear();
   initGrid();
   setGridCells();
 
@@ -100,7 +102,28 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
     placeRowFillers(row, prefix, filler_masters_by_implant);
   }
 
-  logger_->info(DPL, 1, "Placed {} filler instances.", filler_count_);
+  int filler_count = 0;
+  int max_filler_master = 0;
+  for (const auto& [master, count] : filler_count_) {
+    filler_count += count;
+    max_filler_master = std::max(max_filler_master, count);
+  }
+  logger_->info(DPL, 1, "Placed {} filler instances.", filler_count);
+
+  if (verbose) {
+    logger_->report("Filler usage:");
+    int max_master_len = 0;
+    for (const auto& [master, count] : filler_count_) {
+      max_master_len = std::max(max_master_len,
+                                static_cast<int>(master->getName().size()));
+    }
+    const int count_offset = fmt::format("{}", max_filler_master).size();
+    for (const auto& [master, count] : filler_count_) {
+      const int line_offset
+          = count_offset + max_master_len - master->getName().size();
+      logger_->report("  {}: {:>{}}", master->getName(), count, line_offset);
+    }
+  }
 }
 
 void Opendp::setGridCells()
@@ -197,7 +220,7 @@ void Opendp::placeRowFillers(GridY row,
         inst->setLocation(x.v, y.v);
         inst->setPlacementStatus(dbPlacementStatus::PLACED);
         inst->setSourceType(odb::dbSourceType::DIST);
-        filler_count_++;
+        filler_count_[master]++;
         k += master->getWidth() / site_width.v;
       }
       j += gap;

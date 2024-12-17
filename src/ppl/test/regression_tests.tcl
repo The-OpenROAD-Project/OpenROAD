@@ -23,6 +23,8 @@ record_tests {
   add_constraint_error5
   add_constraint_error6
   add_constraint_error7
+  add_constraint_error8
+  add_constraint_error9
   annealing1
   annealing2
   annealing3

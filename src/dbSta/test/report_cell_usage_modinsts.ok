@@ -16,7 +16,7 @@ Cell type report:                       Count       Area
 Cell instance report:
   snl_bufx1                                 2    2000.00
   snl_ffqx1                                 1    1000.00
-Cell type report for b2 (block1-1)
+Cell type report for b2 (block1_b2)
 Cell type report:                       Count       Area
   Buffer                                    2    2000.00
   Sequential cell                           1    1000.00

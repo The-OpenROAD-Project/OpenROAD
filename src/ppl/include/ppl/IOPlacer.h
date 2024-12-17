@@ -127,8 +127,6 @@ class IOPlacer
   void clearConstraints();
   void runHungarianMatching(bool random_mode);
   void runAnnealing(bool random);
-  void reportHPWL();
-  void printConfig(bool annealing = false);
   Parameters* getParameters() { return parms_.get(); }
   int64 computeIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
@@ -159,16 +157,10 @@ class IOPlacer
                 bool force_to_die_bound,
                 bool placed_status);
 
-  static Direction getDirection(const std::string& direction);
-  static Edge getEdge(const std::string& edge);
-
   void setAnnealingConfig(float temperature,
                           int max_iterations,
                           int perturb_per_iter,
                           float alpha);
-  void checkPinPlacement();
-  bool checkPinConstraints();
-  bool checkMirroredPins();
 
   void setRenderer(std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer);
   AbstractIOPlacerRenderer* getRenderer();
@@ -182,7 +174,15 @@ class IOPlacer
 
   void writePinPlacement(const char* file_name, bool placed);
 
+  static Direction getDirection(const std::string& direction);
+  static Edge getEdge(const std::string& edge);
+
  private:
+  void checkPinPlacement();
+  bool checkPinConstraints();
+  bool checkMirroredPins();
+  void reportHPWL();
+  void printConfig(bool annealing = false);
   void createTopLayerPinPattern();
   void initNetlistAndCore(const std::set<int>& hor_layer_idx,
                           const std::set<int>& ver_layer_idx);
@@ -269,7 +269,10 @@ class IOPlacer
   void getBlockedRegionsFromMacros();
   void getBlockedRegionsFromDbObstructions();
   Edge getMirroredEdge(const Edge& edge);
-  int computeNewRegionLength(const Interval& interval, int num_pins);
+  void computeRegionIncrease(const Interval& interval,
+                             int num_pins,
+                             int& new_begin,
+                             int& new_end);
   int64_t computeIncrease(int min_dist, int64_t num_pins, int64_t curr_length);
 
   // db functions
@@ -301,6 +304,7 @@ class IOPlacer
   const int num_tracks_offset_ = 15;
   const int pins_per_report_ = 5;
   const int default_min_dist_ = 2;
+  int corner_avoidance_ = 0;
 
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;

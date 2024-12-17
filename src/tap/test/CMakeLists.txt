@@ -1,29 +1,35 @@
 include("openroad")
 
 set(TEST_NAMES
-    disallow_one_site_gaps
-    gcd_fakeram
-    gcd_nangate45
-    gcd_sky130
-    gcd_asap7
-    invalid_cells
-    multiple_calls
+    aes_gf180
     avoid_overlap
     boundary_macros
+    boundary_macros_auto_select
+    boundary_macros_separate
+    boundary_macros_tapcell
+    cut_rows
+    cut_rows_min_width
+    cut_rows_with_endcaps
+    disallow_one_site_gaps
+    gcd_asap7
+    gcd_fakeram
+    gcd_nangate45
     gcd_prefix
     gcd_ripup
-    no_endcap
-    symmetry
-    cut_rows
-    cut_rows_with_endcaps
-    boundary_macros_separate
-    boundary_macros_auto_select
-    boundary_macros_tapcell
+    gcd_sky130
     gcd_sky130_separate
+    invalid_cells
     jpeg_gf180
-    aes_gf180
+    multiple_calls
+    no_endcap
+    region1
+    symmetry
 )
 
+# Skipped
+#tap_man_tcl_check
+#tap_readme_msgs_check
+
 foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("tap" ${TEST_NAME}  ${CMAKE_CURRENT_SOURCE_DIR}/regression)
+    or_integration_test("tap" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
 endforeach()

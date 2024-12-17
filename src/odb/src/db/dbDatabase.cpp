@@ -74,7 +74,7 @@ template class dbTable<_dbDatabase>;
 
 static dbTable<_dbDatabase>* db_tbl = nullptr;
 // Must be held to access db_tbl
-static std::mutex db_tbl_mutex;
+static std::mutex* db_tbl_mutex = new std::mutex;
 static std::atomic<uint> db_unique_id = 0;
 
 bool _dbDatabase::operator==(const _dbDatabase& rhs) const
@@ -670,7 +670,7 @@ void dbDatabase::setLogger(utl::Logger* logger)
 
 dbDatabase* dbDatabase::create()
 {
-  std::lock_guard<std::mutex> lock(db_tbl_mutex);
+  std::lock_guard<std::mutex> lock(*db_tbl_mutex);
   if (db_tbl == nullptr) {
     db_tbl = new dbTable<_dbDatabase>(
         nullptr, nullptr, (GetObjTbl_t) nullptr, dbDatabaseObj);
@@ -690,14 +690,14 @@ void dbDatabase::clear()
 
 void dbDatabase::destroy(dbDatabase* db_)
 {
-  std::lock_guard<std::mutex> lock(db_tbl_mutex);
+  std::lock_guard<std::mutex> lock(*db_tbl_mutex);
   _dbDatabase* db = (_dbDatabase*) db_;
   db_tbl->destroy(db);
 }
 
 dbDatabase* dbDatabase::duplicate(dbDatabase* db_)
 {
-  std::lock_guard<std::mutex> lock(db_tbl_mutex);
+  std::lock_guard<std::mutex> lock(*db_tbl_mutex);
   _dbDatabase* db = (_dbDatabase*) db_;
   _dbDatabase* d = db_tbl->duplicate(db);
   return (dbDatabase*) d;
@@ -705,7 +705,7 @@ dbDatabase* dbDatabase::duplicate(dbDatabase* db_)
 
 dbDatabase* dbDatabase::getDatabase(uint dbid)
 {
-  std::lock_guard<std::mutex> lock(db_tbl_mutex);
+  std::lock_guard<std::mutex> lock(*db_tbl_mutex);
   return (dbDatabase*) db_tbl->getPtr(dbid);
 }
 

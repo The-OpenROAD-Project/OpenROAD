@@ -153,7 +153,9 @@ class Opendp
   void checkPlacement(bool verbose,
                       bool disallow_one_site_gaps = false,
                       const string& report_file_name = "");
-  void fillerPlacement(dbMasterSeq* filler_masters, const char* prefix);
+  void fillerPlacement(dbMasterSeq* filler_masters,
+                       const char* prefix,
+                       bool verbose);
   void removeFillers();
   void optimizeMirroring();
 
@@ -363,7 +365,7 @@ class Opendp
   // Filler placement.
   // gap (in sites) -> seq of masters by implant
   map<dbTechLayer*, GapFillers> gap_fillers_;
-  int filler_count_ = 0;
+  map<dbMaster*, int> filler_count_;
   bool have_fillers_ = false;
   bool have_one_site_cells_ = false;
 

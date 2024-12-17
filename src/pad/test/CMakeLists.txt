@@ -1,50 +1,55 @@
 include("openroad")
 
 set(TEST_NAMES
+    assign_bumps
+    assign_bumps_two_pins
     bump_array_make
+    bump_array_make_error
+    bump_array_make_single_pitch
     bump_array_remove
     bump_array_remove_single
-    bump_array_make_single_pitch
-    bump_array_make_error
+    connect_by_abutment
+    connect_by_abutment_with_single_pinnet
     make_corner_sites
     make_io_sites
     make_io_sites_different_sites
     make_io_sites_rotations
     non_top_layer
-    place_pad
-    place_pad_with_bumps
-    place_pad_outsideofrow
     place_bondpad
     place_bondpad_stagger
+    place_pad
+    place_pad_hv
     place_pad_no_master
+    place_pad_outsideofrow
+    place_pad_with_bumps
     place_pad_wrong_master
-    assign_bumps
-    assign_bumps_two_pins
-    connect_by_abutment
-    connect_by_abutment_with_single_pinnet
+    place_pads_bumps
+    place_pads_too_many
+    place_pads_uniform
     rdl_route
-    rdl_route_ports
-    rdl_route_failed
-    rdl_route_max_iterations
-    rdl_route_assignments
     rdl_route_45
     rdl_route_45_cost
     rdl_route_45_separate
-    rdl_route_via
-    rdl_route_bump_via
-    rdl_route_invalid
     rdl_route_45_with_2port_bump
     rdl_route_45_with_oct_bump
-    rdl_route_single_target
+    rdl_route_assignments
     rdl_route_bump_to_bump_only
-    skywater130_overlapping_filler
+    rdl_route_bump_via
+    rdl_route_failed
+    rdl_route_invalid
+    rdl_route_max_iterations
+    rdl_route_ports
+    rdl_route_single_target
+    rdl_route_via
     skywater130_caravel
     skywater130_coyote_tc
-    place_pads_uniform
-    place_pads_too_many
-    place_pads_bumps
+    skywater130_overlapping_filler
 )
 
+# Skipped
+#pad_man_tcl_check
+#pad_readme_msgs_check
+
 foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("pad" ${TEST_NAME}  ${CMAKE_CURRENT_SOURCE_DIR}/regression)
+    or_integration_test("pad" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
 endforeach()

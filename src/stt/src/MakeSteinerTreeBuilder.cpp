@@ -38,7 +38,6 @@
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 #include "stt/SteinerTreeBuilder.h"
-#include "stt/flute.h"
 
 namespace sta {
 // Tcl files encoded into strings.
@@ -58,7 +57,6 @@ stt::SteinerTreeBuilder* makeSteinerTreeBuilder()
 
 void deleteSteinerTreeBuilder(stt::SteinerTreeBuilder* stt_builder)
 {
-  stt::flt::deleteLUT();
   delete stt_builder;
 }
 

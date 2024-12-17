@@ -2115,6 +2115,10 @@ class dbNet : public dbObject
   bool rename(const char* name);
 
   ///
+  /// Swaps the current db net name with the source db net
+  void swapNetNames(dbNet* source, bool journal = true);
+
+  ///
   /// RC netowork disconnect
   ///
   bool isRCDisconnected();
@@ -2879,6 +2883,10 @@ class dbNet : public dbObject
   dbSet<dbNetTrack> getTracks() const;
 
   void clearTracks();
+
+  bool hasJumpers();
+
+  void setJumpers(bool has_jumpers);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3636,7 +3644,8 @@ class dbITerm : public dbObject
   ///
   /// Returns all geometries of all dbMPin associated with
   /// the dbMTerm.
-  std::vector<Rect> getGeometries() const;
+  ///
+  std::vector<std::pair<dbTechLayer*, Rect>> getGeometries() const;
 
   void setAccessPoint(dbMPin* pin, dbAccessPoint* ap);
 
@@ -3912,7 +3921,7 @@ class dbWire : public dbObject
   ///
   /// Get the total path length contained in this wire.
   ///
-  uint64 getLength();
+  uint64_t getLength();
 
   ///
   /// Get the number of entries contained in this wire.
@@ -7660,6 +7669,10 @@ class dbGlobalConnect : public dbObject
                                  const std::string& pin_pattern);
 
   static void destroy(dbGlobalConnect* global_connect);
+
+  static dbSet<dbGlobalConnect>::iterator destroy(
+      dbSet<dbGlobalConnect>::iterator& itr);
+
   // User Code End dbGlobalConnect
 };
 
@@ -7745,6 +7758,10 @@ class dbGuide : public dbObject
   static void destroy(dbGuide* guide);
 
   static dbSet<dbGuide>::iterator destroy(dbSet<dbGuide>::iterator& itr);
+
+  bool isJumper();
+
+  void setIsJumper(bool jumper);
 
   // User Code End dbGuide
 };
@@ -8122,6 +8139,9 @@ class dbModInst : public dbObject
 
   static dbModInst* getModInst(dbBlock* block_, uint dbid_);
 
+  /// Swap the module of this instance.
+  /// Returns true if the operations succeeds.
+  bool swapMaster(dbModule* module);
   // User Code End dbModInst
 };
 
@@ -8212,6 +8232,29 @@ class dbModule : public dbObject
   static void destroy(dbModule* module);
 
   static dbModule* getModule(dbBlock* block_, uint dbid_);
+
+  static dbModule* makeUniqueDbModule(const char* cell_name,
+                                      const char* inst_name,
+                                      dbBlock* block);
+
+  // Copy and uniquify a given module based on current instance
+  static void copy(dbModule* old_module,
+                   dbModule* new_module,
+                   dbModInst* new_mod_inst);
+  static void copyModulePorts(dbModule* old_module,
+                              dbModule* new_module,
+                              modBTMap& mod_bt_map);
+  static void copyModuleInsts(dbModule* old_module,
+                              dbModule* new_module,
+                              dbModInst* new_mod_inst,
+                              ITMap& it_map);
+  static void copyModuleModNets(dbModule* old_module,
+                                dbModule* new_module,
+                                modBTMap& mod_bt_map,
+                                ITMap& it_map);
+  static void copyModuleBoundaryIO(dbModule* old_module,
+                                   dbModule* new_module,
+                                   dbModInst* new_mod_inst);
 
   // User Code End dbModule
 };

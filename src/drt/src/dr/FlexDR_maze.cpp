@@ -43,7 +43,7 @@ namespace drt {
 
 namespace gtl = boost::polygon;
 
-int beginDebugIter = std::numeric_limits<int>::max();
+const int beginDebugIter = std::numeric_limits<int>::max();
 static frSquaredDistance pt2boxDistSquare(const Point& pt, const Rect& box)
 
 {
@@ -556,7 +556,6 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
 
   FlexMazeIdx mIdx1, mIdx2;
   Rect bx, tmpBx, sViaBox;
-  dbTransform xform;
   Point pt;
   frCoord dx, dy;
   frVia sVia;
@@ -599,7 +598,7 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
       for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
         for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
           gridGraph_.getPoint(pt, i, j);
-          xform.setOffset(pt);
+          dbTransform xform(pt);
           tmpBx = viaBox;
           if (gridGraph_.isSVia(i, j, zIdx)) {
             auto sViaDef = apSVia_[FlexMazeIdx(i, j, zIdx)]->getAccessViaDef();
@@ -797,13 +796,12 @@ void FlexDRWorker::modMinSpacingCostViaHelper(const Rect& box,
   Rect tmpBx;
   frSquaredDistance distSquare = 0;
   frCoord dx, dy;
-  dbTransform xform;
   frVia sVia;
   frMIdx zIdx = isUpperVia ? z : z - 1;
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
     for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
       gridGraph_.getPoint(pt, i, j);
-      xform.setOffset(pt);
+      dbTransform xform(pt);
       tmpBx = viaBox;
       if (gridGraph_.isSVia(i, j, zIdx)) {
         auto sViaDef = apSVia_[FlexMazeIdx(i, j, zIdx)]->getAccessViaDef();
@@ -1223,7 +1221,6 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   frSquaredDistance distSquare = 0;
   frSquaredDistance c2cSquare = 0;
   frCoord dx, dy, prl;
-  dbTransform xform;
   frSquaredDistance reqDistSquare = 0;
   Point boxCenter, tmpBxCenter;
   boxCenter = {(box.xMin() + box.xMax()) / 2, (box.yMin() + box.yMax()) / 2};
@@ -1237,7 +1234,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
       for (auto& uFig : via.getViaDef()->getCutFigs()) {
         auto obj = static_cast<frRect*>(uFig.get());
         gridGraph_.getPoint(pt, i, j);
-        xform.setOffset(pt);
+        dbTransform xform(pt);
         Rect tmpBx = obj->getBBox();
         xform.apply(tmpBx);
         tmpBxCenter = {(tmpBx.xMin() + tmpBx.xMax()) / 2,
@@ -1414,7 +1411,6 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const Rect& box,
   frSquaredDistance distSquare = 0;
   frSquaredDistance c2cSquare = 0;
   frCoord prl, dx, dy;
-  dbTransform xform;
   frSquaredDistance reqDistSquare = 0;
   Point boxCenter, tmpBxCenter;
   boxCenter = {(box.xMin() + box.xMax()) / 2, (box.yMin() + box.yMax()) / 2};
@@ -1425,7 +1421,7 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const Rect& box,
       for (auto& uFig : via.getViaDef()->getCutFigs()) {
         auto obj = static_cast<frRect*>(uFig.get());
         gridGraph_.getPoint(pt, i, j);
-        xform.setOffset(pt);
+        dbTransform xform(pt);
         Rect tmpBx = obj->getBBox();
         xform.apply(tmpBx);
         tmpBxCenter = {(tmpBx.xMin() + tmpBx.xMax()) / 2,
@@ -1561,9 +1557,8 @@ void FlexDRWorker::modPathCost(drConnFig* connFig,
       modEolSpacingRulesCost(box, ei.z(), type, false, ndr);
     }
 
-    dbTransform xform;
     Point pt = obj->getOrigin();
-    xform.setOffset(pt);
+    dbTransform xform(pt);
     for (auto& uFig : obj->getViaDef()->getCutFigs()) {
       auto rect = static_cast<frRect*>(uFig.get());
       box = rect->getBBox();
@@ -2779,8 +2774,7 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net)
       connecting = &end;
     }
     if (inst) {
-      dbTransform trans = inst->getTransform();
-      trans.setOrient(dbOrientType(dbOrientType::R0));
+      dbTransform trans = inst->getNoRotationTransform();
       trans.apply(begin);
       trans.apply(end);
       if (end < begin) {  // if rotation swapped order, correct it
@@ -3224,6 +3218,9 @@ bool FlexDRWorker::routeNet(drNet* net, std::vector<FlexMazeIdx>& paths)
 {
   //  ProfileTask profile("DR:routeNet");
 
+  // Verify if net has jumpers
+  const bool route_with_jumpers = net->getFrNet()->hasJumpers();
+
   if (net->getPins().size() <= 1) {
     return true;
   }
@@ -3275,7 +3272,8 @@ bool FlexDRWorker::routeNet(drNet* net, std::vector<FlexMazeIdx>& paths)
                           ccMazeIdx1,
                           ccMazeIdx2,
                           centerPt,
-                          mazeIdx2TaperBox)) {
+                          mazeIdx2TaperBox,
+                          route_with_jumpers)) {
       routeNet_postAstarUpdate(
           path, connComps, unConnPins, mazeIdx2unConnPins, isFirstConn);
       routeNet_postAstarWritePath(

@@ -159,6 +159,7 @@ class dbNetwork : public ConcreteNetwork
   Instance* dbToSta(dbInst* inst) const;
   Net* dbToSta(dbNet* net) const;
   const Net* dbToSta(const dbNet* net) const;
+  const Net* dbToSta(const dbModNet* net) const;
   Cell* dbToSta(dbMaster* master) const;
   Port* dbToSta(dbMTerm* mterm) const;
 
@@ -178,6 +179,7 @@ class dbNetwork : public ConcreteNetwork
   dbBTerm* isTopPort(const Port*) const;
   void setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type);
   ObjectId id(const Port* port) const override;
+  ObjectId id(const Cell* cell) const override;
 
   // hierarchical support functions
   dbModule* getNetDriverParentModule(Net* net);
@@ -196,6 +198,8 @@ class dbNetwork : public ConcreteNetwork
                           std::vector<dbModule*>& parent_hierarchy);
   dbModule* findHighestCommonModule(std::vector<dbModule*>& itree1,
                                     std::vector<dbModule*>& itree2);
+  Instance* findHierInstance(const char* name);
+  void replaceDesign(dbModInst* mod_inst, dbModule* module);
 
   ////////////////////////////////////////////////////////////////
   //

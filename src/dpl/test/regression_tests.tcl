@@ -23,6 +23,8 @@ record_tests {
   fillers7
   fillers8
   fillers9
+  fillers2_verbose
+  fillers9_verbose
   fragmented_row01
   fragmented_row02
   fragmented_row03

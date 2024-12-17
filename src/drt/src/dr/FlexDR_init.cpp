@@ -490,7 +490,7 @@ void FlexDRWorker::initNets_initDR_helper(
     Rect rect;
     if (netTerms.at(i)->typeId() == frcInstTerm) {
       auto iterm = static_cast<frInstTerm*>(netTerms.at(i));
-      rect = iterm->getBBox(true);
+      rect = iterm->getBBox();
     } else {
       auto bterm = static_cast<frBTerm*>(netTerms.at(i));
       rect = bterm->getBBox();
@@ -560,7 +560,7 @@ void FlexDRWorker::initNets_initDR_helper(
     Rect rect;
     if (netTerms.at(i)->typeId() == frcInstTerm) {
       auto iterm = static_cast<frInstTerm*>(netTerms.at(i));
-      rect = iterm->getBBox(true);
+      rect = iterm->getBBox();
     } else {
       auto bterm = static_cast<frBTerm*>(netTerms.at(i));
       rect = bterm->getBBox();
@@ -1184,9 +1184,8 @@ void FlexDRWorker::initNet_term(const frDesign* design,
       case frcInstTerm: {
         auto instTerm = static_cast<frInstTerm*>(term);
         frInst* inst = instTerm->getInst();
-        shiftXform = inst->getTransform();
-        shiftXform.setOrient(dbOrientType(dbOrientType::R0));
-        instXform = inst->getUpdatedXform();
+        shiftXform = inst->getNoRotationTransform();
+        instXform = inst->getDBTransform();
         auto trueTerm = instTerm->getTerm();
         const std::string name = inst->getName() + "/" + trueTerm->getName();
         initNet_term_helper(
@@ -2798,8 +2797,11 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
 
   // assign terms to each subnet
   for (auto& [net, objs] : frNet2Terms) {
-    for (auto dNet : owner2nets_[net]) {
-      dNet->setFrNetTerms(objs);
+    if (net != nullptr && !net->isSpecial()
+        && owner2nets_.find(net) != owner2nets_.end()) {
+      for (auto dNet : owner2nets_.at(net)) {
+        dNet->setFrNetTerms(objs);
+      }
     }
     initMazeCost_terms(objs, true);
   }
@@ -2898,8 +2900,8 @@ void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
     } else if (obj->typeId() == frcInstTerm) {
       auto instTerm = static_cast<frInstTerm*>(obj);
       auto inst = instTerm->getInst();
-      const dbTransform xform = inst->getUpdatedXform();
-      const dbTransform shiftXform(inst->getTransform().getOffset());
+      const dbTransform xform = inst->getDBTransform();
+      const dbTransform shiftXform = inst->getNoRotationTransform();
       const dbMasterType masterType = inst->getMaster()->getMasterType();
       bool accessHorz = false;
       bool accessVert = false;
@@ -3070,17 +3072,18 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
 
 void FlexDRWorker::initMazeCost_connFig()
 {
-  for (auto& net : nets_) {
-    for (auto& connFig : net->getExtConnFigs()) {
-      addPathCost(connFig.get(), false, true);
+  for (auto& [fr_net, nets] : owner2nets_) {
+    for (auto& net : nets) {
+      for (auto& connFig : net->getExtConnFigs()) {
+        addPathCost(connFig.get(), false, true);
+      }
+      for (auto& connFig : net->getRouteConnFigs()) {
+        addPathCost(connFig.get(), false, true);
+      }
+      gcWorker_->updateDRNet(net);
+      gcWorker_->updateGCWorker();
     }
-    for (auto& connFig : net->getRouteConnFigs()) {
-      addPathCost(connFig.get(), false, true);
-    }
-    gcWorker_->updateDRNet(net.get());
-    gcWorker_->updateGCWorker();
-    modEolCosts_poly(gcWorker_->getNet(net->getFrNet()),
-                     ModCostType::addRouteShape);
+    modEolCosts_poly(gcWorker_->getNet(fr_net), ModCostType::addRouteShape);
   }
 }
 

@@ -98,32 +98,32 @@ class Node
   Node(const Node& orig);
 
   bool getType() const { return _type; }
-  int getIndex(void) const { return _index; }
-  ORIENT getOrient(void) const { return _orient; }
-  bool isOrientFixed(void) const { return _isOrientFixed; }
-  float getHeight(void) const { return _height; }
-  float getWidth(void) const { return _width; }
-  float getOrigHeight(void) const { return _origHeight; }
-  float getOrigWidth(void) const { return _origWidth; }
-  std::string getName(void) const { return _name; }
-  float getX(void) const { return _placement.x; }
-  float getY(void) const { return _placement.y; }
-  float getslackX(void) const { return _slackX; }
-  float getslackY(void) const { return _slackY; }
-  float getminAR(void) const { return _minAr; }
-  float getmaxAR(void) const { return _maxAr; }
-  float getArea(void) const { return _area; }
+  int getIndex() const { return _index; }
+  ORIENT getOrient() const { return _orient; }
+  bool isOrientFixed() const { return _isOrientFixed; }
+  float getHeight() const { return _height; }
+  float getWidth() const { return _width; }
+  float getOrigHeight() const { return _origHeight; }
+  float getOrigWidth() const { return _origWidth; }
+  std::string getName() const { return _name; }
+  float getX() const { return _placement.x; }
+  float getY() const { return _placement.y; }
+  float getslackX() const { return _slackX; }
+  float getslackY() const { return _slackY; }
+  float getminAR() const { return _minAr; }
+  float getmaxAR() const { return _maxAr; }
+  float getArea() const { return _area; }
 
-  float getSnapX(void) const { return _snapX; }
-  float getSnapY(void) const { return _snapY; }
-  float getHaloX(void) const { return _haloX; }
-  float getHaloY(void) const { return _haloY; }
-  float getChannelX(void) const { return _channelX; }
-  float getChannelY(void) const { return _channelY; }
+  float getSnapX() const { return _snapX; }
+  float getSnapY() const { return _snapY; }
+  float getHaloX() const { return _haloX; }
+  float getHaloY() const { return _haloY; }
+  float getChannelX() const { return _channelX; }
+  float getChannelY() const { return _channelY; }
 
-  bool isMacro(void) const { return _isMacro; }
-  bool needsFP(void) const { return _needsFP; }  // <aaronnn>
-  bool isHard(void) const { return equalFloat(_maxAr, _minAr); }
+  bool isMacro() const { return _isMacro; }
+  bool needsFP() const { return _needsFP; }  // <aaronnn>
+  bool isHard() const { return equalFloat(_maxAr, _minAr); }
   void updateMacroInfo(bool isMacro) { _isMacro = isMacro; }
 
   itNodePin pinsBegin() { return _pins.begin(); }

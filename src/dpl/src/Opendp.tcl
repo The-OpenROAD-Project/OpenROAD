@@ -120,11 +120,11 @@ proc set_placement_padding { args } {
   }
 }
 
-sta::define_cmd_args "filler_placement" { [-prefix prefix] filler_masters }
+sta::define_cmd_args "filler_placement" { [-prefix prefix] [-verbose] filler_masters }
 
 proc filler_placement { args } {
   sta::parse_key_args "filler_placement" args \
-    keys {-prefix} flags {}
+    keys {-prefix} flags {-verbose}
 
   set prefix "FILLER_"
   if { [info exists keys(-prefix)] } {
@@ -133,7 +133,7 @@ proc filler_placement { args } {
 
   sta::check_argc_eq1 "filler_placement" $args
   set filler_masters [dpl::get_masters_arg "filler_masters" [lindex $args 0]]
-  dpl::filler_placement_cmd $filler_masters $prefix
+  dpl::filler_placement_cmd $filler_masters $prefix [info exists flags(-verbose)]
 }
 
 sta::define_cmd_args "remove_fillers" {}

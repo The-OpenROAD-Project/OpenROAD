@@ -2,7 +2,7 @@ include("openroad")
 
 set(TEST_NAMES
     hybrid_rows
-    hybrid_rows2 
+    hybrid_rows2
     init_floorplan1
     init_floorplan2
     init_floorplan3
@@ -12,6 +12,9 @@ set(TEST_NAMES
     init_floorplan7
     init_floorplan8
     init_floorplan9
+    init_floorplan_even_rows
+    init_floorplan_flip_sites
+    init_floorplan_odd_rows
     make_tracks1
     make_tracks2
     make_tracks3
@@ -24,10 +27,14 @@ set(TEST_NAMES
     placement_blockage1
     placement_blockage2
     tiecells
-    upf_test
     upf_shifter_test
+    upf_test
 )
 
+# Skipped
+#ifp_man_tcl_check
+#ifp_readme_msgs_check
+
 foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("ifp" ${TEST_NAME}  ${CMAKE_CURRENT_SOURCE_DIR}/regression)
+    or_integration_test("ifp" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
 endforeach()

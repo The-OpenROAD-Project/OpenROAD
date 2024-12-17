@@ -60,6 +60,7 @@
 #include "drcWidget.h"
 #include "globalConnectDialog.h"
 #include "gui/heatMap.h"
+#include "helpWidget.h"
 #include "highlightGroupDialog.h"
 #include "inspector.h"
 #include "layoutTabs.h"
@@ -109,6 +110,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
       hierarchy_widget_(
           new BrowserWidget(viewers_->getModuleSettings(), controls_, this)),
       charts_widget_(new ChartsWidget(this)),
+      help_widget_(new HelpWidget(this)),
       find_dialog_(new FindObjectDialog(this)),
       goto_dialog_(new GotoLocationDialog(this, viewers_))
 {
@@ -131,6 +133,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
   addDockWidget(Qt::RightDockWidgetArea, drc_viewer_);
   addDockWidget(Qt::RightDockWidgetArea, clock_viewer_);
   addDockWidget(Qt::RightDockWidgetArea, charts_widget_);
+  addDockWidget(Qt::RightDockWidgetArea, help_widget_);
 
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
@@ -140,6 +143,8 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
   tabifyDockWidget(inspector_, drc_viewer_);
   tabifyDockWidget(inspector_, clock_viewer_);
   tabifyDockWidget(inspector_, charts_widget_);
+  tabifyDockWidget(inspector_, help_widget_);
+
   drc_viewer_->hide();
   clock_viewer_->hide();
 
@@ -338,12 +343,10 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &TimingWidget::setCommand,
           script_,
           &ScriptWidget::setCommand);
-#ifdef ENABLE_CHARTS
   connect(charts_widget_,
           &ChartsWidget::endPointsToReport,
           this,
           &MainWindow::reportSlackHistogramPaths);
-#endif
 
   connect(this, &MainWindow::blockLoaded, this, &MainWindow::setBlock);
   connect(this, &MainWindow::blockLoaded, drc_viewer_, &DRCWidget::setBlock);
@@ -461,16 +464,15 @@ void MainWindow::setBlock(odb::dbBlock* block)
   hierarchy_widget_->setBlock(block);
 }
 
-void MainWindow::init(sta::dbSta* sta)
+void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
 {
   // Setup widgets
   timing_widget_->init(sta);
   controls_->setSTA(sta);
   hierarchy_widget_->setSTA(sta);
   clock_viewer_->setSTA(sta);
-#ifdef ENABLE_CHARTS
   charts_widget_->setSTA(sta);
-#endif
+  help_widget_->init(help_path);
 
   // register descriptors
   auto* gui = Gui::get();
@@ -785,6 +787,7 @@ void MainWindow::createMenus()
   windows_menu_->addAction(clock_viewer_->toggleViewAction());
   windows_menu_->addAction(hierarchy_widget_->toggleViewAction());
   windows_menu_->addAction(charts_widget_->toggleViewAction());
+  windows_menu_->addAction(help_widget_->toggleViewAction());
 
   auto option_menu = menuBar()->addMenu("&Options");
   option_menu->addAction(hide_option_);
@@ -1498,9 +1501,7 @@ void MainWindow::setLogger(utl::Logger* logger)
   viewers_->setLogger(logger);
   drc_viewer_->setLogger(logger);
   clock_viewer_->setLogger(logger);
-#ifdef ENABLE_CHARTS
   charts_widget_->setLogger(logger);
-#endif
 }
 
 void MainWindow::fit()
@@ -1741,7 +1742,6 @@ void MainWindow::enableDeveloper()
   show_poly_decomp_view_->setVisible(true);
 }
 
-#ifdef ENABLE_CHARTS
 void MainWindow::reportSlackHistogramPaths(
     const std::set<const sta::Pin*>& report_pins,
     const std::string& path_group_name)
@@ -1758,5 +1758,4 @@ void MainWindow::reportSlackHistogramPaths(
 
   timing_widget_->reportSlackHistogramPaths(report_pins, path_group_name);
 }
-#endif
 }  // namespace gui

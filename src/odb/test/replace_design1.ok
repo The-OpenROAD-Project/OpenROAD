@@ -1,0 +1,98 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[WARNING GPL-0001] clk toplevel port is not placed!
+       Replace will regard clk is placed in (0, 0)
+[INFO GPL-0006] NumInstances:                21
+[INFO GPL-0007] NumPlaceInstances:           21
+[INFO GPL-0008] NumFixedInstances:            0
+[INFO GPL-0009] NumDummyInstances:            0
+[INFO GPL-0010] NumNets:                     11
+[INFO GPL-0011] NumPins:                     38
+[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] CoreArea:             47872.020 um^2
+[INFO GPL-0017] NonPlaceInstsArea:        0.000 um^2
+[INFO GPL-0018] PlaceInstsArea:          60.382 um^2
+[INFO GPL-0019] Util:                     0.126 %
+[INFO GPL-0020] StdInstsArea:            60.382 um^2
+[INFO GPL-0021] MacroInstsArea:           0.000 um^2
+[InitialPlace]  Iter: 1 CG residual: 0.00000008 HPWL: 74500
+[InitialPlace]  Iter: 2 CG residual: 0.00000006 HPWL: 86059
+[InitialPlace]  Iter: 3 CG residual: 0.00000007 HPWL: 84408
+[InitialPlace]  Iter: 4 CG residual: 0.00000006 HPWL: 84180
+[InitialPlace]  Iter: 5 CG residual: 0.00000008 HPWL: 83747
+Placement Analysis
+---------------------------------
+total displacement        173.3 u
+average displacement        8.3 u
+max displacement           12.3 u
+original HPWL               4.6 u
+legalized HPWL            127.3 u
+delta HPWL                 2659 %
+
+Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+Corner: slow
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ r1/CK (DFF_X1)
+   0.26    0.26 v r1/Q (DFF_X1)
+   0.11    0.37 v u1/Z (BUF_X1)
+   0.08    0.45 v bc1/u2/Z (BUF_X1)
+   0.08    0.53 v bc1/u3/Z (BUF_X1)
+   0.00    0.53 v r2/D (DFF_X1)
+           0.53   data arrival time
+
+   0.30    0.30   clock clk (rise edge)
+   0.00    0.30   clock network delay (ideal)
+   0.00    0.30   clock reconvergence pessimism
+           0.30 ^ r2/CK (DFF_X1)
+  -0.16    0.14   library setup time
+           0.14   data required time
+---------------------------------------------------------
+           0.14   data required time
+          -0.53   data arrival time
+---------------------------------------------------------
+          -0.39   slack (VIOLATED)
+
+
+Repair timing output passed/skipped equivalence test
+Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+Corner: slow
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ r1/CK (DFF_X1)
+   0.35    0.35 ^ r1/Q (DFF_X1)
+   0.12    0.47 ^ u1/Z (BUF_X1)
+   0.03    0.50 v bc1/u4/ZN (INV_X1)
+   0.03    0.53 ^ bc1/u5/ZN (INV_X1)
+   0.00    0.53 ^ r2/D (DFF_X1)
+           0.53   data arrival time
+
+   0.30    0.30   clock clk (rise edge)
+   0.00    0.30   clock network delay (ideal)
+   0.00    0.30   clock reconvergence pessimism
+           0.30 ^ r2/CK (DFF_X1)
+  -0.07    0.23   library setup time
+           0.23   data required time
+---------------------------------------------------------
+           0.23   data required time
+          -0.53   data arrival time
+---------------------------------------------------------
+          -0.30   slack (VIOLATED)
+
+

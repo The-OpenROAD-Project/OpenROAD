@@ -673,12 +673,9 @@ bool dbPlacementStatus::isFixed() const
 
 dbMasterType::dbMasterType(const char* value)
 {
-  _value = NONE;
+  _value = CORE;
 
-  if (strcasecmp(value, "NONE") == 0) {
-    _value = NONE;
-
-  } else if (strcasecmp(value, "COVER") == 0) {
+  if (strcasecmp(value, "COVER") == 0) {
     _value = COVER;
 
   } else if (strcasecmp(value, "COVER BUMP") == 0) {
@@ -804,7 +801,7 @@ dbMasterType::dbMasterType(Value value)
 
 dbMasterType::dbMasterType()
 {
-  _value = NONE;
+  _value = CORE;
 }
 
 dbMasterType::dbMasterType(const dbMasterType& value)
@@ -817,10 +814,6 @@ const char* dbMasterType::getString() const
   const char* value = "";
 
   switch (_value) {
-    case NONE:
-      value = "NONE";
-      break;
-
     case COVER:
       value = "COVER";
       break;
@@ -988,7 +981,6 @@ bool dbMasterType::isBlock() const
     case BLOCK_BLACKBOX:
     case BLOCK_SOFT:
       return true;
-    case NONE:
     case COVER:
     case COVER_BUMP:
     case RING:
@@ -1042,7 +1034,6 @@ bool dbMasterType::isCore() const
     case CORE_ANTENNACELL:
     case CORE_WELLTAP:
       return true;
-    case NONE:
     case COVER:
     case COVER_BUMP:
     case RING:
@@ -1092,7 +1083,6 @@ bool dbMasterType::isPad() const
     case PAD_SPACER:
     case PAD_AREAIO:
       return true;
-    case NONE:
     case COVER:
     case COVER_BUMP:
     case RING:
@@ -1154,7 +1144,6 @@ bool dbMasterType::isEndCap() const
     case ENDCAP_LEF58_RIGHTTOPCORNER:
     case ENDCAP_LEF58_LEFTTOPCORNER:
       return true;
-    case NONE:
     case COVER:
     case COVER_BUMP:
     case RING:
@@ -1187,7 +1176,6 @@ bool dbMasterType::isCover() const
     case COVER:
     case COVER_BUMP:
       return true;
-    case NONE:
     case RING:
     case BLOCK:
     case BLOCK_BLACKBOX:

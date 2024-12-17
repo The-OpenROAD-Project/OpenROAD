@@ -53,10 +53,10 @@ class SolveMulti
  public:
   SolveMulti(DB* db, Command_Line* params);
   ~SolveMulti();
-  void go(void);
+  void go();
   DB* clusterOnly() const;
 
-  void placeSubBlocks(void);
+  void placeSubBlocks();
   void updatePlaceUnCluster(DB* clusterDB);
 
   mutable float clusterTime;

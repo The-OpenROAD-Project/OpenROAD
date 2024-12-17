@@ -251,6 +251,9 @@ class OpenRoad
   void addObserver(OpenRoadObserver* observer);
   void removeObserver(OpenRoadObserver* observer);
 
+  std::string getExePath() const;
+  std::string getDocsPath() const;
+
   static const char* getVersion();
   static const char* getGitDescribe();
 

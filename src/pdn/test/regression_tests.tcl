@@ -3,7 +3,6 @@ record_tests {
   reset
   report
   ripup
-  convert
   names
 
   min_width

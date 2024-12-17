@@ -906,7 +906,6 @@ bool dbMaster::isFiller()
     case dbMasterType::PAD_INOUT:
     case dbMasterType::PAD_POWER:
     case dbMasterType::PAD_SPACER:
-    case dbMasterType::NONE:
       return false;
   }
   // gcc warning
@@ -958,7 +957,6 @@ bool dbMaster::isCoreAutoPlaceable()
     case dbMasterType::PAD_INOUT:
     case dbMasterType::PAD_POWER:
     case dbMasterType::PAD_SPACER:
-    case dbMasterType::NONE:
       return false;
   }
   // gcc warning

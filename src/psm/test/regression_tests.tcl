@@ -1,6 +1,7 @@
 record_tests {
   aes_test_vdd
   aes_test_vss
+  gcd_test_assign_power
   gcd_test_vdd
   gcd_no_vsrc
   gcd_write_sp_test_vdd
@@ -16,6 +17,7 @@ record_tests {
   check_power_grid_macros
   check_power_grid_disconnected_macro
   corners
+  corners_assign_power
   aes_test_bterms
   aes_test_multiple_bterms
   zerosoc_pads

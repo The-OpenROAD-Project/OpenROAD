@@ -852,12 +852,11 @@ void io::Parser::checkPins()
     foundTracks = false;
     foundCenterTracks = false;
     hasPolys = false;
-    dbTransform xform;
     for (auto& pin : bTerm->getPins()) {
       for (auto& uFig : pin->getFigs()) {
         checkFig(uFig.get(),
                  bTerm->getName(),
-                 xform,
+                 dbTransform(),
                  foundTracks,
                  foundCenterTracks,
                  hasPolys);
@@ -878,7 +877,7 @@ void io::Parser::checkPins()
     if (!inst->getMaster()->getMasterType().isBlock()) {
       continue;
     }
-    dbTransform xform = inst->getUpdatedXform();
+    dbTransform xform = inst->getDBTransform();
     for (auto& iTerm : inst->getInstTerms()) {
       if (!iTerm->hasNet() || iTerm->getNet()->isSpecial()) {
         continue;

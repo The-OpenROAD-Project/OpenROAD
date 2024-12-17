@@ -57,6 +57,7 @@ class Logger;
 
 namespace gui {
 class HeatMapDataSource;
+class PinDensityDataSource;
 class PlacementDensityDataSource;
 class Painter;
 class Selected;
@@ -731,6 +732,10 @@ class Gui
                                       const std::string& option);
   void dumpHeatMap(const std::string& name, const std::string& file);
 
+  void selectHelp(const std::string& item);
+  void selectChart(const std::string& name);
+  void updateTimingReport();
+
   // accessors for to add and remove commands needed to restore the state of the
   // gui
   const std::vector<std::string>& getRestoreStateCommands()
@@ -805,6 +810,7 @@ class Gui
 
   std::set<Renderer*> renderers_;
 
+  std::unique_ptr<PinDensityDataSource> pin_density_heat_map_;
   std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map_;
 
   static Gui* singleton_;

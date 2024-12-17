@@ -46,6 +46,7 @@ Graphics::Graphics(bool coarse,
     : coarse_(coarse),
       fine_(fine),
       show_bundled_nets_(false),
+      show_clusters_ids_(false),
       skip_steps_(false),
       is_skipping_(false),
       only_final_result_(false),
@@ -171,11 +172,6 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
                                 std::vector<std::vector<odb::Rect>>& outlines,
                                 int level)
 {
-  auto& children = parent->getChildren();
-  if (children.empty()) {
-    return;
-  }
-
   Rect outline = parent->getBBox();
   odb::Rect dbu_outline(block_->micronsToDbu(outline.xMin()),
                         block_->micronsToDbu(outline.yMin()),
@@ -183,7 +179,7 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
                         block_->micronsToDbu(outline.yMax()));
   outlines[level].push_back(dbu_outline);
 
-  for (auto& child : children) {
+  for (auto& child : parent->getChildren()) {
     switch (child->getClusterType()) {
       case HardMacroCluster: {
         std::vector<mpl2::HardMacro*> hard_macros = child->getHardMacros();
@@ -192,9 +188,14 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
         }
         break;
       }
-      case StdCellCluster:
-        soft.push_back(*child->getSoftMacro());
+      case StdCellCluster: {
+        if (child->isLeaf()) {
+          soft.push_back(*child->getSoftMacro());
+        } else {
+          fetchSoftAndHard(child.get(), hard, soft, outlines, (level + 1));
+        }
         break;
+      }
       case MixedCluster: {
         fetchSoftAndHard(child.get(), hard, soft, outlines, (level + 1));
         break;
@@ -384,11 +385,20 @@ void Graphics::drawObjects(gui::Painter& painter)
 
     bbox.moveDelta(outline_.xMin(), outline_.yMin());
 
+    std::string cluster_id_string;
+    if (show_clusters_ids_) {
+      Cluster* cluster = macro.getCluster();
+      cluster_id_string = cluster ? std::to_string(cluster->getId()) : "fixed";
+    } else {
+      // Use the ID of the sequence pair itself.
+      cluster_id_string = std::to_string(i++);
+    }
+
     painter.drawRect(bbox);
     painter.drawString(bbox.xCenter(),
                        bbox.yCenter(),
                        gui::Painter::CENTER,
-                       std::to_string(i++));
+                       cluster_id_string);
   }
 
   painter.setPen(gui::Painter::white, true);
@@ -563,6 +573,11 @@ void Graphics::setPlacementBlockages(
 void Graphics::setShowBundledNets(bool show_bundled_nets)
 {
   show_bundled_nets_ = show_bundled_nets;
+}
+
+void Graphics::setShowClustersIds(bool show_clusters_ids)
+{
+  show_clusters_ids_ = show_clusters_ids;
 }
 
 void Graphics::setSkipSteps(bool skip_steps)

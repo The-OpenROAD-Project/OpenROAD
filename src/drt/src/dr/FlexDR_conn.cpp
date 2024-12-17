@@ -837,7 +837,6 @@ void FlexDRConnectivityChecker::handleOverlaps_perform(
   merge_perform_helper(netRouteObjs, segSpans, victims, newSegSpans);
 }
 
-bool debug = false;
 bool isRedundant(std::vector<int>& splitPoints, int v)
 {
   return std::find(splitPoints.begin(), splitPoints.end(), v)

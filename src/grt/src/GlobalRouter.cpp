@@ -92,7 +92,6 @@ GlobalRouter::GlobalRouter()
       grid_(new Grid),
       adjustment_(0.0),
       layer_for_guide_dimension_(3),
-      overflow_iterations_(50),
       congestion_report_iter_step_(0),
       allow_congestion_(false),
       macro_extension_(0),
@@ -218,17 +217,18 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
 // previous congestion report file.
 void GlobalRouter::saveCongestion()
 {
+  is_congested_ = fastroute_->totalOverflow() > 0;
   fastroute_->saveCongestion();
 }
 
 bool GlobalRouter::haveRoutes()
 {
-  loadGuidesFromDB();
-  if (routes_.empty()) {
-    logger_->warn(GRT, 97, "No global routing found for nets.");
+  if (!designIsPlaced()) {
+    return false;
   }
-
-  return !routes_.empty();
+  loadGuidesFromDB();
+  bool congested_routes = is_congested_ && !allow_congestion_;
+  return !routes_.empty() && !congested_routes;
 }
 
 bool GlobalRouter::haveDetailedRoutes()
@@ -242,6 +242,36 @@ bool GlobalRouter::haveDetailedRoutes()
     }
   }
   return false;
+}
+
+bool GlobalRouter::designIsPlaced()
+{
+  if (db_->getChip() == nullptr) {
+    logger_->error(
+        GRT, 270, "Load a design before running the global router commands.");
+  }
+  block_ = db_->getChip()->getBlock();
+
+  for (Pin* port : getAllPorts()) {
+    if (port->getBTerm()->getFirstPinPlacementStatus()
+        == odb::dbPlacementStatus::NONE) {
+      return false;
+    }
+  }
+
+  for (odb::dbNet* net : block_->getNets()) {
+    if (net->isSpecial()) {
+      continue;
+    }
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      odb::dbInst* inst = iterm->getInst();
+      if (!inst->isPlaced()) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 bool GlobalRouter::haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets)
@@ -330,7 +360,7 @@ void GlobalRouter::globalRoute(bool save_guides,
     }
   }
 
-  if (fastroute_->totalOverflow() > 0) {
+  if (is_congested_) {
     if (allow_congestion_) {
       logger_->warn(GRT,
                     115,
@@ -398,6 +428,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                   "repair_antennas should perform only one iteration when the "
                   "routing source is detailed routing.");
   }
+
   while (violations && itr < iterations) {
     if (verbose_) {
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
@@ -408,6 +439,23 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                                           diode_mterm,
                                                           ratio_margin,
                                                           num_threads);
+    // if run in GRT and it need run jumper insertion
+    if (!haveDetailedRoutes(nets_to_repair)
+        && repair_antennas_->hasNewViolations()) {
+      // Run jumper insertion and clean
+      repair_antennas_->jumperInsertion(
+          routes_, grid_->getTileSize(), getMaxRoutingLayer());
+      repair_antennas_->clearViolations();
+
+      // run again antenna checker
+      violations
+          = repair_antennas_->checkAntennaViolations(routes_,
+                                                     nets_to_repair,
+                                                     getMaxRoutingLayer(),
+                                                     diode_mterm,
+                                                     ratio_margin,
+                                                     num_threads);
+    }
     if (violations) {
       IncrementalGRoute incr_groute(this, block_);
       repair_antennas_->repairAntennas(diode_mterm);
@@ -1833,9 +1881,9 @@ void GlobalRouter::setVerbose(const bool v)
   verbose_ = v;
 }
 
-void GlobalRouter::setOverflowIterations(int iterations)
+void GlobalRouter::setCongestionIterations(int iterations)
 {
-  overflow_iterations_ = iterations;
+  congestion_iterations_ = iterations;
 }
 
 void GlobalRouter::setCongestionReportIterStep(int congestion_report_iter_step)
@@ -1937,7 +1985,6 @@ void GlobalRouter::initGridAndNets()
     initCoreGrid(max_layer);
     setCapacities(min_layer, max_layer);
     applyAdjustments(min_layer, max_layer);
-    updateDbCongestion();
   }
   std::vector<Net*> nets = findNets();
   initNetlist(nets);
@@ -1953,7 +2000,7 @@ void GlobalRouter::ensureLayerForGuideDimension(int max_routing_layer)
 void GlobalRouter::configFastRoute()
 {
   fastroute_->setVerbose(verbose_);
-  fastroute_->setOverflowIterations(overflow_iterations_);
+  fastroute_->setOverflowIterations(congestion_iterations_);
   fastroute_->setCongestionReportIterStep(congestion_report_iter_step_);
 
   if (congestion_file_name_ != nullptr) {
@@ -2085,6 +2132,7 @@ void GlobalRouter::loadGuidesFromDB()
       int via_layer_idx = guide->getViaLayer()->getRoutingLevel();
       boxToGlobalRouting(
           guide->getBox(), layer_idx, via_layer_idx, routes_[net]);
+      is_congested_ = is_congested_ || guide->isCongested();
     }
   }
 
@@ -2095,6 +2143,9 @@ void GlobalRouter::loadGuidesFromDB()
   }
 
   updateEdgesUsage();
+  if (block_->getGCellGrid() == nullptr) {
+    updateDbCongestion();
+  }
   heatmap_->update();
 }
 
@@ -2155,6 +2206,9 @@ void GlobalRouter::updateDbCongestionFromGuides()
 {
   auto block = db_->getChip()->getBlock();
   auto db_gcell = block->getGCellGrid();
+  if (db_gcell == nullptr) {
+    db_gcell = odb::dbGCellGrid::create(block);
+  }
 
   auto db_tech = db_->getTech();
   for (int k = 0; k < grid_->getNumLayers(); k++) {
@@ -2308,8 +2362,7 @@ void GlobalRouter::saveGuides()
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
 
-  bool is_congested = fastroute_->has2Doverflow() && !allow_congestion_;
-
+  bool guide_is_congested = is_congested_ && !allow_congestion_;
   for (odb::dbNet* db_net : block_->getNets()) {
     auto iter = routes_.find(db_net);
     if (iter == routes_.end()) {
@@ -2336,15 +2389,18 @@ void GlobalRouter::saveGuides()
             int layer_idx2 = segment.final_layer;
             odb::dbTechLayer* layer1 = routing_layers_[layer_idx1];
             odb::dbTechLayer* layer2 = routing_layers_[layer_idx2];
-            odb::dbGuide::create(db_net, layer1, layer2, box, is_congested);
-            odb::dbGuide::create(db_net, layer2, layer1, box, is_congested);
+            odb::dbGuide::create(
+                db_net, layer1, layer2, box, guide_is_congested);
+            odb::dbGuide::create(
+                db_net, layer2, layer1, box, guide_is_congested);
           } else {
             int layer_idx = std::min(segment.init_layer, segment.final_layer);
             int via_layer_idx
                 = std::max(segment.init_layer, segment.final_layer);
             odb::dbTechLayer* layer = routing_layers_[layer_idx];
             odb::dbTechLayer* via_layer = routing_layers_[via_layer_idx];
-            odb::dbGuide::create(db_net, layer, via_layer, box, is_congested);
+            odb::dbGuide::create(
+                db_net, layer, via_layer, box, guide_is_congested);
           }
         } else if (segment.init_layer == segment.final_layer) {
           if (segment.init_layer < getMinRoutingLayer()
@@ -2357,7 +2413,13 @@ void GlobalRouter::saveGuides()
           }
 
           odb::dbTechLayer* layer = routing_layers_[segment.init_layer];
-          odb::dbGuide::create(db_net, layer, layer, box, is_congested);
+          // Set guide flag when it is jumper
+          bool is_jumper = segment.isJumper();
+          auto guide = odb::dbGuide::create(
+              db_net, layer, layer, box, guide_is_congested);
+          if (is_jumper) {
+            guide->setIsJumper(true);
+          }
         }
       }
     }
@@ -2476,6 +2538,9 @@ void GlobalRouter::readSegments(const char* file_name)
                      pins_not_covered,
                      db_net->getName());
     }
+  }
+  if (block_->getGCellGrid() == nullptr) {
+    updateDbCongestion();
   }
 }
 
@@ -4756,6 +4821,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         add_max--;
       }
       if (fastroute_->has2Doverflow()) {
+        is_congested_ = true;
         saveCongestion();
         logger_->error(GRT,
                        232,
@@ -4861,7 +4927,7 @@ void GRouteDbCbk::inDbBTermPreDisconnect(odb::dbBTerm* bterm)
 
 ////////////////////////////////////////////////////////////////
 
-GSegment::GSegment(int x0, int y0, int l0, int x1, int y1, int l1)
+GSegment::GSegment(int x0, int y0, int l0, int x1, int y1, int l1, bool jumper)
 {
   init_x = std::min(x0, x1);
   init_y = std::min(y0, y1);
@@ -4869,6 +4935,7 @@ GSegment::GSegment(int x0, int y0, int l0, int x1, int y1, int l1)
   final_x = std::max(x0, x1);
   final_y = std::max(y0, y1);
   final_layer = l1;
+  is_jumper = jumper;
 }
 
 bool GSegment::operator==(const GSegment& segment) const

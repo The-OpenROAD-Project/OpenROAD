@@ -8,6 +8,7 @@ include("openroad")
 
 set(TEST_NAMES
     aes
+    blockage01
     cell_on_block1
     cell_on_block2
     check1
@@ -24,6 +25,7 @@ set(TEST_NAMES
     fence03
     fillers1
     fillers2
+    fillers2_verbose
     fillers3
     fillers4
     fillers5
@@ -31,6 +33,7 @@ set(TEST_NAMES
     fillers7
     fillers8
     fillers9
+    fillers9_verbose
     fragmented_row01
     fragmented_row02
     fragmented_row03
@@ -71,8 +74,12 @@ set(TEST_NAMES
     simple10
 )
 
+# Skipped
+#dpl_man_tcl_check
+#dpl_readme_msgs_check
+
 foreach(TEST_NAME IN LISTS TEST_NAMES)
-  or_integration_test("dpl" ${TEST_NAME}  ${CMAKE_CURRENT_SOURCE_DIR}/regression)
+    or_integration_test("dpl" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
 endforeach()
 
 add_executable(dpl_test dpl_test.cc)

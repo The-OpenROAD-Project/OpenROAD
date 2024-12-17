@@ -62,10 +62,10 @@ class DB
   float _siteSpacing;  // site spacing to snap the soln to
 
   BBox termBBox;
-  void buildTermBBox(void);
+  void buildTermBBox();
 
   std::vector<Point> _scaledLocs;
-  void scaleTerminals(void);
+  void scaleTerminals();
 
   inline float getScaledX(const Node& node) const
   {
@@ -91,15 +91,15 @@ class DB
   virtual ~DB();
 
   DB& operator=(DB& db2);
-  void clean(void);
+  void clean();
 
-  unsigned getNumNodes(void) const;
-  Nodes* getNodes(void);
-  Nets* getNets(void);
+  unsigned getNumNodes() const;
+  Nodes* getNodes();
+  Nets* getNets();
 
-  Nodes* getObstacles(void);
+  Nodes* getObstacles();
   float* getObstacleFrame() { return _obstacleFrame; }
-  unsigned getNumObstacles(void) const;
+  unsigned getNumObstacles() const;
   void addObstacles(Nodes* obstacles, float obstacleFrame[2]);
 
   std::vector<float> getNodeWidths() const;
@@ -166,16 +166,12 @@ class DB
                     std::vector<std::vector<float>>& ylocsAt) const;
 
   // optimize HPWL by the corner
-#ifdef USEFLUTE
-  void cornerOptimizeDesign(bool scaleTerms, bool minWL, bool useSteiner);
-#else
   void cornerOptimizeDesign(bool scaleTerms, bool minWL);
-#endif
 
   // get total area of ALL nodes
-  float getNodesArea(void) const;
-  float getRowHeight(void) const;
-  float getSiteSpacing(void) const;
+  float getNodesArea() const;
+  float getRowHeight() const;
+  float getSiteSpacing() const;
   void setRowHeight(float rowHeight);
   void setSiteSpacing(float siteSpacing);
 
@@ -222,35 +218,16 @@ class DB
   void saveWts(const char* baseFileName) const;
 
   void saveBestCopyPl(char* baseFileName) const;
-  void saveInBestCopy(void);  // non-const since it modifies "successAR"
+  void saveInBestCopy();  // non-const since it modifies "successAR"
 
-#ifdef USEFLUTE
-  float evalHPWL(bool useWts,
-                 bool scaleTerms,
-                 bool useSteiner);  // assumes that placement is updated
-  float evalSteiner(bool useWts, bool scaleTerms);
-#else
   float evalHPWL(bool useWts,
                  bool scaleTerms);  // assumes that placement is updated
-#endif
-  float evalArea(void) const;  // assumes that placement is updated
-  float getXSize(void) const;
-  float getYSize(void) const;
-  float getAvgHeight(void) const;
+  float evalArea() const;           // assumes that placement is updated
+  float getXSize() const;
+  float getYSize() const;
+  float getAvgHeight() const;
 
   // optimize the BL-corner of the design
-#ifdef USEFLUTE
-  void shiftOptimizeDesign(float outlineWidth,
-                           float outlineHeight,
-                           bool scaleTerms,
-                           bool useSteiner,
-                           Verbosity verb);  // deduce BL-corner from DB
-  void shiftOptimizeDesign(const Point& bottomLeft,
-                           const Point& topRight,
-                           bool scaleTerms,
-                           bool useSteiner,
-                           Verbosity verb);
-#else
   void shiftOptimizeDesign(float outlineWidth,
                            float outlineHeight,
                            bool scaleTerms,
@@ -259,7 +236,6 @@ class DB
                            const Point& topRight,
                            bool scaleTerms,
                            int verb);
-#endif
 
   void shiftDesign(
       const Point& offset);  // shift the entire placement by an offset
@@ -291,7 +267,7 @@ class DB
  private:
   // help function of shiftOptimizeDesign()
   float getOptimalRangeStart(bool isHorizontal);
-  void _setUpPinOffsets(void) const;
+  void _setUpPinOffsets() const;
 };
 
 // ---------------

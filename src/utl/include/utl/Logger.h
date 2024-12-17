@@ -51,6 +51,10 @@
 #include "spdlog/details/os.h"
 #include "spdlog/fmt/fmt.h"
 #include "spdlog/fmt/ostr.h"
+#if FMT_VERSION >= 110000
+#include "spdlog/fmt/ranges.h"
+#endif
+
 #include "spdlog/spdlog.h"
 
 namespace utl {
@@ -122,10 +126,11 @@ class Logger
                  args...);
   }
 
+  // Reports a string literal with no interpolation or newline.
   template <typename... Args>
-  inline void reportNoNewline(const std::string& message, const Args&... args)
+  inline void reportLiteral(const std::string& message)
   {
-    logger_->log(spdlog::level::level_enum::off, FMT_RUNTIME(message), args...);
+    logger_->log(spdlog::level::level_enum::off, "{}", message);
   }
 
   // Do NOT call this directly, use the debugPrint macro  instead (defined
@@ -289,12 +294,13 @@ class Logger
 
     if (count == max_message_print) {
       logger_->log(level,
-                   "[{} {}-{:04d}] message limit reached, "
-                   "this message will no longer print"
-                       + std::string(spdlog::details::os::default_eol),
+                   "[{} {}-{:04d}] message limit ({})"
+                   " reached. This message will no longer print.{}",
                    level_names[level],
                    tool_names_[tool],
-                   id);
+                   id,
+                   max_message_print,
+                   spdlog::details::os::default_eol);
     } else {
       counter--;  // to avoid counter overflow
     }

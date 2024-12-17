@@ -8,10 +8,9 @@
 [INFO ANT-0002] Found 11 net violations.
 [INFO ANT-0001] Found 11 pin violations.
 [INFO GRT-0012] Found 11 antenna violations.
-[INFO GRT-0015] Inserted 11 diodes.
+[INFO GRT-0302] Inserted 11 jumpers for 11 nets.
+[INFO GRT-0012] Found 0 antenna violations.
 [INFO ANT-0002] Found 0 net violations.
 [INFO ANT-0001] Found 0 pin violations.
-Differences found at line 3912.
-165600 259200 172800 266400 met1
-165600 259200 273600 266400 met1
+No differences found.
 No differences found.

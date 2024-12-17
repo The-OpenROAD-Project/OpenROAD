@@ -836,6 +836,15 @@ class frLayer
 
   void printAllConstraints(utl::Logger* logger);
 
+  void setWidthTblOrthCon(frLef58WidthTableOrthConstraint* con)
+  {
+    width_tbl_orth_con_ = con;
+  }
+  frLef58WidthTableOrthConstraint* getWidthTblOrthCon() const
+  {
+    return width_tbl_orth_con_;
+  }
+
  protected:
   odb::dbTechLayer* db_layer_{nullptr};
   bool fakeCut_{false};
@@ -929,6 +938,7 @@ class frLayer
 
   frOrthSpacingTableConstraint* spc_tbl_orth_con_{nullptr};
   drEolSpacingConstraint drEolCon_;
+  frLef58WidthTableOrthConstraint* width_tbl_orth_con_{nullptr};
 
   friend class io::Parser;
 };

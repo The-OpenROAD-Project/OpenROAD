@@ -100,9 +100,7 @@ Rect drVia::getBBox() const
     }
   }
   Rect box(xl, yl, xh, yh);
-  dbTransform xform;
-  xform.setOffset(origin_);
-  xform.apply(box);
+  getTransform().apply(box);
   return box;
 }
 

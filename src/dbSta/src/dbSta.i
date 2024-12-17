@@ -190,4 +190,12 @@ write_verilog_cmd(const char *filename,
   delete remove_cells;
 }
 
+void
+replace_design_cmd(odb::dbModInst* mod_inst, odb::dbModule* module)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  db_network->replaceDesign(mod_inst, module);
+}
+
 %} // inline

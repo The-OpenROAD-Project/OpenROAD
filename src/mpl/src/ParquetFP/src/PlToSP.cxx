@@ -60,7 +60,7 @@ Pl2SP::Pl2SP(vector<float>& xloc,
   }
 }
 
-void Pl2SP::naiveAlgo(void)
+void Pl2SP::naiveAlgo()
 {
   unsigned size = _xloc.size();
   float rowHeight = std::numeric_limits<float>::max();
@@ -124,7 +124,7 @@ void Pl2SP::naiveAlgo(void)
   }
 }
 
-void Pl2SP::TCGAlgo(void)
+void Pl2SP::TCGAlgo()
 {
   unsigned size = _xloc.size();
 

@@ -76,7 +76,7 @@ DB* SolveMulti::clusterOnly() const
   return clusteredDB;  // Transfer ownership of the DB
 }
 
-void SolveMulti::go(void)
+void SolveMulti::go()
 {
   ClusterDB multiCluster(_db, _params);
 
@@ -330,7 +330,7 @@ void SolveMulti::go(void)
   */
 }
 
-void SolveMulti::placeSubBlocks(void)
+void SolveMulti::placeSubBlocks()
 {
   Nodes* nodes = _newDB->getNodes();
   Nodes* origNodes = _db->getNodes();

@@ -1,0 +1,2691 @@
+module gcd (clk,
+    req_rdy,
+    req_val,
+    reset,
+    resp_rdy,
+    resp_val,
+    req_msg,
+    resp_msg);
+ input clk;
+ output req_rdy;
+ input req_val;
+ input reset;
+ input resp_rdy;
+ output resp_val;
+ input [31:0] req_msg;
+ output [15:0] resp_msg;
+
+
+ GcdUnitCtrlRTL_0x4d0fc71ead8d3d9e ctrl (.a_mux_sel({\ctrl$a_mux_sel[1] ,
+    \ctrl$a_mux_sel[0] }),
+    .a_reg_en(\ctrl$a_reg_en ),
+    .b_mux_sel(\ctrl$b_mux_sel ),
+    .b_reg_en(\ctrl$b_reg_en ),
+    .clk(clk),
+    .is_a_lt_b(\ctrl$is_a_lt_b ),
+    .is_b_zero(\ctrl$is_b_zero ),
+    .req_rdy(req_rdy),
+    .req_val(req_val),
+    .reset(reset),
+    .resp_rdy(resp_rdy),
+    .resp_val(resp_val));
+ GcdUnitDpathRTL_0x4d0fc71ead8d3d9e dpath (.a_mux_sel({\ctrl$a_mux_sel[1] ,
+    \ctrl$a_mux_sel[0] }),
+    .a_reg_en(\ctrl$a_reg_en ),
+    .b_mux_sel(\ctrl$b_mux_sel ),
+    .b_reg_en(\ctrl$b_reg_en ),
+    .clk(clk),
+    .is_a_lt_b(\ctrl$is_a_lt_b ),
+    .is_b_zero(\ctrl$is_b_zero ),
+    .req_msg_a({req_msg[31],
+    req_msg[30],
+    req_msg[29],
+    req_msg[28],
+    req_msg[27],
+    req_msg[26],
+    req_msg[25],
+    req_msg[24],
+    req_msg[23],
+    req_msg[22],
+    req_msg[21],
+    req_msg[20],
+    req_msg[19],
+    req_msg[18],
+    req_msg[17],
+    req_msg[16]}),
+    .req_msg_b({req_msg[15],
+    req_msg[14],
+    req_msg[13],
+    req_msg[12],
+    req_msg[11],
+    req_msg[10],
+    req_msg[9],
+    req_msg[8],
+    req_msg[7],
+    req_msg[6],
+    req_msg[5],
+    req_msg[4],
+    req_msg[3],
+    req_msg[2],
+    req_msg[1],
+    req_msg[0]}),
+    .reset(reset),
+    .resp_msg({resp_msg[15],
+    resp_msg[14],
+    resp_msg[13],
+    resp_msg[12],
+    resp_msg[11],
+    resp_msg[10],
+    resp_msg[9],
+    resp_msg[8],
+    resp_msg[7],
+    resp_msg[6],
+    resp_msg[5],
+    resp_msg[4],
+    resp_msg[3],
+    resp_msg[2],
+    resp_msg[1],
+    resp_msg[0]}));
+endmodule
+module GcdUnitCtrlRTL_0x4d0fc71ead8d3d9e (a_mux_sel,
+    a_reg_en,
+    b_mux_sel,
+    b_reg_en,
+    clk,
+    is_a_lt_b,
+    is_b_zero,
+    req_rdy,
+    req_val,
+    reset,
+    resp_rdy,
+    resp_val);
+ output [1:0] a_mux_sel;
+ output a_reg_en;
+ output b_mux_sel;
+ output b_reg_en;
+ input clk;
+ input is_a_lt_b;
+ input is_b_zero;
+ output req_rdy;
+ input req_val;
+ input reset;
+ input resp_rdy;
+ output resp_val;
+
+ wire \curr_state__0[0] ;
+ wire \curr_state__0[1] ;
+ wire \next_state__0[0] ;
+ wire \next_state__0[1] ;
+
+ INV_X2 _13_ (.A(\curr_state__0[0] ),
+    .ZN(\ctrl/_00_ ));
+ BUF_X4 _14_ (.A(\curr_state__0[1] ),
+    .Z(\ctrl/_01_ ));
+ NOR2_X2 _15_ (.A1(\ctrl/_00_ ),
+    .A2(\ctrl/_01_ ),
+    .ZN(\ctrl/_02_ ));
+ INV_X1 _16_ (.A(\ctrl/_02_ ),
+    .ZN(\ctrl/_03_ ));
+ NOR2_X2 _17_ (.A1(\ctrl/_03_ ),
+    .A2(is_a_lt_b),
+    .ZN(a_mux_sel[0]));
+ NOR2_X1 _18_ (.A1(\ctrl/_01_ ),
+    .A2(\curr_state__0[0] ),
+    .ZN(b_mux_sel));
+ NAND2_X1 _19_ (.A1(\ctrl/_02_ ),
+    .A2(is_a_lt_b),
+    .ZN(\ctrl/_04_ ));
+ INV_X1 _20_ (.A(\ctrl/_04_ ),
+    .ZN(a_mux_sel[1]));
+ INV_X4 _21_ (.A(\ctrl/_01_ ),
+    .ZN(a_reg_en));
+ INV_X1 _22_ (.A(is_a_lt_b),
+    .ZN(\ctrl/_05_ ));
+ AOI21_X1 _23_ (.A(\ctrl/_01_ ),
+    .B1(\ctrl/_05_ ),
+    .B2(\curr_state__0[0] ),
+    .ZN(b_reg_en));
+ NOR2_X2 _24_ (.A1(a_reg_en),
+    .A2(\curr_state__0[0] ),
+    .ZN(resp_val));
+ INV_X1 _25_ (.A(req_val),
+    .ZN(\ctrl/_06_ ));
+ OAI21_X1 _26_ (.A(\ctrl/_00_ ),
+    .B1(\ctrl/_06_ ),
+    .B2(\ctrl/_01_ ),
+    .ZN(\ctrl/_07_ ));
+ NAND2_X1 _27_ (.A1(\ctrl/_05_ ),
+    .A2(is_b_zero),
+    .ZN(\ctrl/_08_ ));
+ OAI21_X2 _28_ (.A(\ctrl/_07_ ),
+    .B1(\ctrl/_03_ ),
+    .B2(\ctrl/_08_ ),
+    .ZN(\ctrl/_09_ ));
+ INV_X1 _29_ (.A(\ctrl/_09_ ),
+    .ZN(\next_state__0[0] ));
+ OAI21_X1 _30_ (.A(a_reg_en),
+    .B1(\ctrl/_08_ ),
+    .B2(\ctrl/_00_ ),
+    .ZN(\ctrl/_10_ ));
+ NAND2_X1 _31_ (.A1(resp_val),
+    .A2(resp_rdy),
+    .ZN(\ctrl/_11_ ));
+ NAND2_X1 _32_ (.A1(\ctrl/_10_ ),
+    .A2(\ctrl/_11_ ),
+    .ZN(\ctrl/_12_ ));
+ INV_X1 _33_ (.A(\ctrl/_12_ ),
+    .ZN(\next_state__0[1] ));
+ BUF_X1 _34_ (.A(b_mux_sel),
+    .Z(req_rdy));
+ RegRst_0x9f365fdf6c8998a state (.clk(clk),
+    .in_({\next_state__0[1] ,
+    \next_state__0[0] }),
+    .out({\curr_state__0[1] ,
+    \curr_state__0[0] }),
+    .reset(reset));
+endmodule
+module RegRst_0x9f365fdf6c8998a (clk,
+    in_,
+    out,
+    reset);
+ input clk;
+ input [1:0] in_;
+ output [1:0] out;
+ input reset;
+
+
+ INV_X1 _6_ (.A(in_[0]),
+    .ZN(\ctrl/state/_2_ ));
+ NOR2_X1 _7_ (.A1(\ctrl/state/_2_ ),
+    .A2(reset),
+    .ZN(\ctrl/state/_0_ ));
+ INV_X1 _8_ (.A(in_[1]),
+    .ZN(\ctrl/state/_3_ ));
+ NOR2_X1 _9_ (.A1(\ctrl/state/_3_ ),
+    .A2(reset),
+    .ZN(\ctrl/state/_1_ ));
+ DFF_X1 \out[0]$_SDFF_PP0_  (.D(\ctrl/state/_0_ ),
+    .CK(clk),
+    .Q(out[0]),
+    .QN(\ctrl/state/_5_ ));
+ DFF_X1 \out[1]$_SDFF_PP0_  (.D(\ctrl/state/_1_ ),
+    .CK(clk),
+    .Q(out[1]),
+    .QN(\ctrl/state/_4_ ));
+endmodule
+module GcdUnitDpathRTL_0x4d0fc71ead8d3d9e (a_mux_sel,
+    a_reg_en,
+    b_mux_sel,
+    b_reg_en,
+    clk,
+    is_a_lt_b,
+    is_b_zero,
+    req_msg_a,
+    req_msg_b,
+    reset,
+    resp_msg);
+ input [1:0] a_mux_sel;
+ input a_reg_en;
+ input b_mux_sel;
+ input b_reg_en;
+ input clk;
+ output is_a_lt_b;
+ output is_b_zero;
+ input [15:0] req_msg_a;
+ input [15:0] req_msg_b;
+ input reset;
+ output [15:0] resp_msg;
+
+ wire \b_mux$out[0] ;
+ wire \b_mux$out[1] ;
+ wire \b_mux$out[2] ;
+ wire \b_mux$out[3] ;
+ wire \b_mux$out[4] ;
+ wire \b_mux$out[5] ;
+ wire \b_mux$out[6] ;
+ wire \b_mux$out[7] ;
+ wire \b_mux$out[8] ;
+ wire \b_mux$out[9] ;
+ wire \b_mux$out[10] ;
+ wire \b_mux$out[11] ;
+ wire \b_mux$out[12] ;
+ wire \b_mux$out[13] ;
+ wire \b_mux$out[14] ;
+ wire \b_mux$out[15] ;
+ wire \a_mux$out[0] ;
+ wire \a_mux$out[1] ;
+ wire \a_mux$out[2] ;
+ wire \a_mux$out[3] ;
+ wire \a_mux$out[4] ;
+ wire \a_mux$out[5] ;
+ wire \a_mux$out[6] ;
+ wire \a_mux$out[7] ;
+ wire \a_mux$out[8] ;
+ wire \a_mux$out[9] ;
+ wire \a_mux$out[10] ;
+ wire \a_mux$out[11] ;
+ wire \a_mux$out[12] ;
+ wire \a_mux$out[13] ;
+ wire \a_mux$out[14] ;
+ wire \a_mux$out[15] ;
+ wire \a_lt_b$in1[0] ;
+ wire \a_lt_b$in1[1] ;
+ wire \a_lt_b$in1[2] ;
+ wire \a_lt_b$in1[3] ;
+ wire \a_lt_b$in1[4] ;
+ wire \a_lt_b$in1[5] ;
+ wire \a_lt_b$in1[6] ;
+ wire \a_lt_b$in1[7] ;
+ wire \a_lt_b$in1[8] ;
+ wire \a_lt_b$in1[9] ;
+ wire \a_lt_b$in1[10] ;
+ wire \a_lt_b$in1[11] ;
+ wire \a_lt_b$in1[12] ;
+ wire \a_lt_b$in1[13] ;
+ wire \a_lt_b$in1[14] ;
+ wire \a_lt_b$in1[15] ;
+ wire \a_lt_b$in0[0] ;
+ wire \a_lt_b$in0[1] ;
+ wire \a_lt_b$in0[2] ;
+ wire \a_lt_b$in0[3] ;
+ wire \a_lt_b$in0[4] ;
+ wire \a_lt_b$in0[5] ;
+ wire \a_lt_b$in0[6] ;
+ wire \a_lt_b$in0[7] ;
+ wire \a_lt_b$in0[8] ;
+ wire \a_lt_b$in0[9] ;
+ wire \a_lt_b$in0[10] ;
+ wire \a_lt_b$in0[11] ;
+ wire \a_lt_b$in0[12] ;
+ wire \a_lt_b$in0[13] ;
+ wire \a_lt_b$in0[14] ;
+ wire \a_lt_b$in0[15] ;
+
+ LtComparator_0x422b1f52edd46a85 a_lt_b (.clk(clk),
+    .in0({\a_lt_b$in0[15] ,
+    \a_lt_b$in0[14] ,
+    \a_lt_b$in0[13] ,
+    \a_lt_b$in0[12] ,
+    \a_lt_b$in0[11] ,
+    \a_lt_b$in0[10] ,
+    \a_lt_b$in0[9] ,
+    \a_lt_b$in0[8] ,
+    \a_lt_b$in0[7] ,
+    \a_lt_b$in0[6] ,
+    \a_lt_b$in0[5] ,
+    \a_lt_b$in0[4] ,
+    \a_lt_b$in0[3] ,
+    \a_lt_b$in0[2] ,
+    \a_lt_b$in0[1] ,
+    \a_lt_b$in0[0] }),
+    .in1({\a_lt_b$in1[15] ,
+    \a_lt_b$in1[14] ,
+    \a_lt_b$in1[13] ,
+    \a_lt_b$in1[12] ,
+    \a_lt_b$in1[11] ,
+    \a_lt_b$in1[10] ,
+    \a_lt_b$in1[9] ,
+    \a_lt_b$in1[8] ,
+    \a_lt_b$in1[7] ,
+    \a_lt_b$in1[6] ,
+    \a_lt_b$in1[5] ,
+    \a_lt_b$in1[4] ,
+    \a_lt_b$in1[3] ,
+    \a_lt_b$in1[2] ,
+    \a_lt_b$in1[1] ,
+    \a_lt_b$in1[0] }),
+    .out(is_a_lt_b),
+    .reset(reset));
+ Mux_0x683fa1a418b072c9 a_mux (.clk(clk),
+    .in_$000({req_msg_a[15],
+    req_msg_a[14],
+    req_msg_a[13],
+    req_msg_a[12],
+    req_msg_a[11],
+    req_msg_a[10],
+    req_msg_a[9],
+    req_msg_a[8],
+    req_msg_a[7],
+    req_msg_a[6],
+    req_msg_a[5],
+    req_msg_a[4],
+    req_msg_a[3],
+    req_msg_a[2],
+    req_msg_a[1],
+    req_msg_a[0]}),
+    .in_$001({resp_msg[15],
+    resp_msg[14],
+    resp_msg[13],
+    resp_msg[12],
+    resp_msg[11],
+    resp_msg[10],
+    resp_msg[9],
+    resp_msg[8],
+    resp_msg[7],
+    resp_msg[6],
+    resp_msg[5],
+    resp_msg[4],
+    resp_msg[3],
+    resp_msg[2],
+    resp_msg[1],
+    resp_msg[0]}),
+    .in_$002({\a_lt_b$in1[15] ,
+    \a_lt_b$in1[14] ,
+    \a_lt_b$in1[13] ,
+    \a_lt_b$in1[12] ,
+    \a_lt_b$in1[11] ,
+    \a_lt_b$in1[10] ,
+    \a_lt_b$in1[9] ,
+    \a_lt_b$in1[8] ,
+    \a_lt_b$in1[7] ,
+    \a_lt_b$in1[6] ,
+    \a_lt_b$in1[5] ,
+    \a_lt_b$in1[4] ,
+    \a_lt_b$in1[3] ,
+    \a_lt_b$in1[2] ,
+    \a_lt_b$in1[1] ,
+    \a_lt_b$in1[0] }),
+    .out({\a_mux$out[15] ,
+    \a_mux$out[14] ,
+    \a_mux$out[13] ,
+    \a_mux$out[12] ,
+    \a_mux$out[11] ,
+    \a_mux$out[10] ,
+    \a_mux$out[9] ,
+    \a_mux$out[8] ,
+    \a_mux$out[7] ,
+    \a_mux$out[6] ,
+    \a_mux$out[5] ,
+    \a_mux$out[4] ,
+    \a_mux$out[3] ,
+    \a_mux$out[2] ,
+    \a_mux$out[1] ,
+    \a_mux$out[0] }),
+    .reset(reset),
+    .sel({a_mux_sel[1],
+    a_mux_sel[0]}));
+ RegEn_0x68db79c4ec1d6e5b a_reg (.clk(clk),
+    .en(a_reg_en),
+    .in_({\a_mux$out[15] ,
+    \a_mux$out[14] ,
+    \a_mux$out[13] ,
+    \a_mux$out[12] ,
+    \a_mux$out[11] ,
+    \a_mux$out[10] ,
+    \a_mux$out[9] ,
+    \a_mux$out[8] ,
+    \a_mux$out[7] ,
+    \a_mux$out[6] ,
+    \a_mux$out[5] ,
+    \a_mux$out[4] ,
+    \a_mux$out[3] ,
+    \a_mux$out[2] ,
+    \a_mux$out[1] ,
+    \a_mux$out[0] }),
+    .out({\a_lt_b$in0[15] ,
+    \a_lt_b$in0[14] ,
+    \a_lt_b$in0[13] ,
+    \a_lt_b$in0[12] ,
+    \a_lt_b$in0[11] ,
+    \a_lt_b$in0[10] ,
+    \a_lt_b$in0[9] ,
+    \a_lt_b$in0[8] ,
+    \a_lt_b$in0[7] ,
+    \a_lt_b$in0[6] ,
+    \a_lt_b$in0[5] ,
+    \a_lt_b$in0[4] ,
+    \a_lt_b$in0[3] ,
+    \a_lt_b$in0[2] ,
+    \a_lt_b$in0[1] ,
+    \a_lt_b$in0[0] }),
+    .reset(reset));
+ Mux_0xdd6473406d1a99a b_mux (.clk(clk),
+    .in_$000({\a_lt_b$in0[15] ,
+    \a_lt_b$in0[14] ,
+    \a_lt_b$in0[13] ,
+    \a_lt_b$in0[12] ,
+    \a_lt_b$in0[11] ,
+    \a_lt_b$in0[10] ,
+    \a_lt_b$in0[9] ,
+    \a_lt_b$in0[8] ,
+    \a_lt_b$in0[7] ,
+    \a_lt_b$in0[6] ,
+    \a_lt_b$in0[5] ,
+    \a_lt_b$in0[4] ,
+    \a_lt_b$in0[3] ,
+    \a_lt_b$in0[2] ,
+    \a_lt_b$in0[1] ,
+    \a_lt_b$in0[0] }),
+    .in_$001({req_msg_b[15],
+    req_msg_b[14],
+    req_msg_b[13],
+    req_msg_b[12],
+    req_msg_b[11],
+    req_msg_b[10],
+    req_msg_b[9],
+    req_msg_b[8],
+    req_msg_b[7],
+    req_msg_b[6],
+    req_msg_b[5],
+    req_msg_b[4],
+    req_msg_b[3],
+    req_msg_b[2],
+    req_msg_b[1],
+    req_msg_b[0]}),
+    .out({\b_mux$out[15] ,
+    \b_mux$out[14] ,
+    \b_mux$out[13] ,
+    \b_mux$out[12] ,
+    \b_mux$out[11] ,
+    \b_mux$out[10] ,
+    \b_mux$out[9] ,
+    \b_mux$out[8] ,
+    \b_mux$out[7] ,
+    \b_mux$out[6] ,
+    \b_mux$out[5] ,
+    \b_mux$out[4] ,
+    \b_mux$out[3] ,
+    \b_mux$out[2] ,
+    \b_mux$out[1] ,
+    \b_mux$out[0] }),
+    .reset(reset),
+    .sel(b_mux_sel));
+ RegEn_0x68db79c4ec1d6e5b_b_reg b_reg (.clk(clk),
+    .en(b_reg_en),
+    .in_({\b_mux$out[15] ,
+    \b_mux$out[14] ,
+    \b_mux$out[13] ,
+    \b_mux$out[12] ,
+    \b_mux$out[11] ,
+    \b_mux$out[10] ,
+    \b_mux$out[9] ,
+    \b_mux$out[8] ,
+    \b_mux$out[7] ,
+    \b_mux$out[6] ,
+    \b_mux$out[5] ,
+    \b_mux$out[4] ,
+    \b_mux$out[3] ,
+    \b_mux$out[2] ,
+    \b_mux$out[1] ,
+    \b_mux$out[0] }),
+    .out({\a_lt_b$in1[15] ,
+    \a_lt_b$in1[14] ,
+    \a_lt_b$in1[13] ,
+    \a_lt_b$in1[12] ,
+    \a_lt_b$in1[11] ,
+    \a_lt_b$in1[10] ,
+    \a_lt_b$in1[9] ,
+    \a_lt_b$in1[8] ,
+    \a_lt_b$in1[7] ,
+    \a_lt_b$in1[6] ,
+    \a_lt_b$in1[5] ,
+    \a_lt_b$in1[4] ,
+    \a_lt_b$in1[3] ,
+    \a_lt_b$in1[2] ,
+    \a_lt_b$in1[1] ,
+    \a_lt_b$in1[0] }),
+    .reset(reset));
+ ZeroComparator_0x422b1f52edd46a85 b_zero (.clk(clk),
+    .in_({\a_lt_b$in1[15] ,
+    \a_lt_b$in1[14] ,
+    \a_lt_b$in1[13] ,
+    \a_lt_b$in1[12] ,
+    \a_lt_b$in1[11] ,
+    \a_lt_b$in1[10] ,
+    \a_lt_b$in1[9] ,
+    \a_lt_b$in1[8] ,
+    \a_lt_b$in1[7] ,
+    \a_lt_b$in1[6] ,
+    \a_lt_b$in1[5] ,
+    \a_lt_b$in1[4] ,
+    \a_lt_b$in1[3] ,
+    \a_lt_b$in1[2] ,
+    \a_lt_b$in1[1] ,
+    \a_lt_b$in1[0] }),
+    .out(is_b_zero),
+    .reset(reset));
+ Subtractor_0x422b1f52edd46a85 sub (.clk(clk),
+    .in0({\a_lt_b$in0[15] ,
+    \a_lt_b$in0[14] ,
+    \a_lt_b$in0[13] ,
+    \a_lt_b$in0[12] ,
+    \a_lt_b$in0[11] ,
+    \a_lt_b$in0[10] ,
+    \a_lt_b$in0[9] ,
+    \a_lt_b$in0[8] ,
+    \a_lt_b$in0[7] ,
+    \a_lt_b$in0[6] ,
+    \a_lt_b$in0[5] ,
+    \a_lt_b$in0[4] ,
+    \a_lt_b$in0[3] ,
+    \a_lt_b$in0[2] ,
+    \a_lt_b$in0[1] ,
+    \a_lt_b$in0[0] }),
+    .in1({\a_lt_b$in1[15] ,
+    \a_lt_b$in1[14] ,
+    \a_lt_b$in1[13] ,
+    \a_lt_b$in1[12] ,
+    \a_lt_b$in1[11] ,
+    \a_lt_b$in1[10] ,
+    \a_lt_b$in1[9] ,
+    \a_lt_b$in1[8] ,
+    \a_lt_b$in1[7] ,
+    \a_lt_b$in1[6] ,
+    \a_lt_b$in1[5] ,
+    \a_lt_b$in1[4] ,
+    \a_lt_b$in1[3] ,
+    \a_lt_b$in1[2] ,
+    \a_lt_b$in1[1] ,
+    \a_lt_b$in1[0] }),
+    .out({resp_msg[15],
+    resp_msg[14],
+    resp_msg[13],
+    resp_msg[12],
+    resp_msg[11],
+    resp_msg[10],
+    resp_msg[9],
+    resp_msg[8],
+    resp_msg[7],
+    resp_msg[6],
+    resp_msg[5],
+    resp_msg[4],
+    resp_msg[3],
+    resp_msg[2],
+    resp_msg[1],
+    resp_msg[0]}),
+    .reset(reset));
+endmodule
+module LtComparator_0x422b1f52edd46a85 (clk,
+    in0,
+    in1,
+    out,
+    reset);
+ input clk;
+ input [15:0] in0;
+ input [15:0] in1;
+ output out;
+ input reset;
+
+
+ INV_X1 _107_ (.A(in0[14]),
+    .ZN(\dpath/a_lt_b/_041_ ));
+ NAND2_X1 _108_ (.A1(\dpath/a_lt_b/_041_ ),
+    .A2(in1[14]),
+    .ZN(\dpath/a_lt_b/_042_ ));
+ INV_X1 _109_ (.A(in0[15]),
+    .ZN(\dpath/a_lt_b/_043_ ));
+ NAND2_X2 _110_ (.A1(\dpath/a_lt_b/_043_ ),
+    .A2(in1[15]),
+    .ZN(\dpath/a_lt_b/_044_ ));
+ NAND2_X2 _111_ (.A1(\dpath/a_lt_b/_042_ ),
+    .A2(\dpath/a_lt_b/_044_ ),
+    .ZN(\dpath/a_lt_b/_045_ ));
+ INV_X2 _112_ (.A(\dpath/a_lt_b/_045_ ),
+    .ZN(\dpath/a_lt_b/_046_ ));
+ OR2_X2 _113_ (.A1(\dpath/a_lt_b/_043_ ),
+    .A2(in1[15]),
+    .ZN(\dpath/a_lt_b/_047_ ));
+ NOR2_X1 _114_ (.A1(\dpath/a_lt_b/_041_ ),
+    .A2(in1[14]),
+    .ZN(\dpath/a_lt_b/_048_ ));
+ INV_X1 _115_ (.A(\dpath/a_lt_b/_048_ ),
+    .ZN(\dpath/a_lt_b/_049_ ));
+ NAND3_X2 _116_ (.A1(\dpath/a_lt_b/_046_ ),
+    .A2(\dpath/a_lt_b/_047_ ),
+    .A3(\dpath/a_lt_b/_049_ ),
+    .ZN(\dpath/a_lt_b/_050_ ));
+ XNOR2_X1 _117_ (.A(in1[12]),
+    .B(in0[12]),
+    .ZN(\dpath/a_lt_b/_051_ ));
+ INV_X1 _118_ (.A(in1[13]),
+    .ZN(\dpath/a_lt_b/_052_ ));
+ NAND2_X1 _119_ (.A1(\dpath/a_lt_b/_052_ ),
+    .A2(in0[13]),
+    .ZN(\dpath/a_lt_b/_053_ ));
+ INV_X1 _120_ (.A(in0[13]),
+    .ZN(\dpath/a_lt_b/_054_ ));
+ NAND2_X1 _121_ (.A1(\dpath/a_lt_b/_054_ ),
+    .A2(in1[13]),
+    .ZN(\dpath/a_lt_b/_055_ ));
+ NAND3_X1 _122_ (.A1(\dpath/a_lt_b/_051_ ),
+    .A2(\dpath/a_lt_b/_053_ ),
+    .A3(\dpath/a_lt_b/_055_ ),
+    .ZN(\dpath/a_lt_b/_056_ ));
+ NOR2_X2 _123_ (.A1(\dpath/a_lt_b/_050_ ),
+    .A2(\dpath/a_lt_b/_056_ ),
+    .ZN(\dpath/a_lt_b/_057_ ));
+ INV_X1 _124_ (.A(in0[9]),
+    .ZN(\dpath/a_lt_b/_058_ ));
+ NAND2_X1 _125_ (.A1(\dpath/a_lt_b/_058_ ),
+    .A2(in1[9]),
+    .ZN(\dpath/a_lt_b/_059_ ));
+ INV_X1 _126_ (.A(in0[8]),
+    .ZN(\dpath/a_lt_b/_060_ ));
+ NAND2_X1 _127_ (.A1(\dpath/a_lt_b/_060_ ),
+    .A2(in1[8]),
+    .ZN(\dpath/a_lt_b/_061_ ));
+ NAND2_X1 _128_ (.A1(\dpath/a_lt_b/_059_ ),
+    .A2(\dpath/a_lt_b/_061_ ),
+    .ZN(\dpath/a_lt_b/_062_ ));
+ INV_X1 _129_ (.A(\dpath/a_lt_b/_062_ ),
+    .ZN(\dpath/a_lt_b/_063_ ));
+ OR2_X1 _130_ (.A1(\dpath/a_lt_b/_058_ ),
+    .A2(in1[9]),
+    .ZN(\dpath/a_lt_b/_064_ ));
+ OR2_X1 _131_ (.A1(\dpath/a_lt_b/_060_ ),
+    .A2(in1[8]),
+    .ZN(\dpath/a_lt_b/_065_ ));
+ NAND3_X1 _132_ (.A1(\dpath/a_lt_b/_063_ ),
+    .A2(\dpath/a_lt_b/_064_ ),
+    .A3(\dpath/a_lt_b/_065_ ),
+    .ZN(\dpath/a_lt_b/_066_ ));
+ INV_X1 _133_ (.A(in0[11]),
+    .ZN(\dpath/a_lt_b/_067_ ));
+ NAND2_X2 _134_ (.A1(\dpath/a_lt_b/_067_ ),
+    .A2(in1[11]),
+    .ZN(\dpath/a_lt_b/_068_ ));
+ INV_X1 _135_ (.A(in1[11]),
+    .ZN(\dpath/a_lt_b/_069_ ));
+ NAND2_X2 _136_ (.A1(\dpath/a_lt_b/_069_ ),
+    .A2(in0[11]),
+    .ZN(\dpath/a_lt_b/_070_ ));
+ AND2_X4 _137_ (.A1(\dpath/a_lt_b/_068_ ),
+    .A2(\dpath/a_lt_b/_070_ ),
+    .ZN(\dpath/a_lt_b/_071_ ));
+ XNOR2_X1 _138_ (.A(in0[10]),
+    .B(in1[10]),
+    .ZN(\dpath/a_lt_b/_072_ ));
+ NAND2_X4 _139_ (.A1(\dpath/a_lt_b/_071_ ),
+    .A2(\dpath/a_lt_b/_072_ ),
+    .ZN(\dpath/a_lt_b/_073_ ));
+ NOR2_X4 _140_ (.A1(\dpath/a_lt_b/_066_ ),
+    .A2(\dpath/a_lt_b/_073_ ),
+    .ZN(\dpath/a_lt_b/_074_ ));
+ NAND2_X2 _141_ (.A1(\dpath/a_lt_b/_057_ ),
+    .A2(\dpath/a_lt_b/_074_ ),
+    .ZN(\dpath/a_lt_b/_075_ ));
+ XNOR2_X1 _142_ (.A(in1[0]),
+    .B(in0[0]),
+    .ZN(\dpath/a_lt_b/_076_ ));
+ INV_X1 _143_ (.A(in0[1]),
+    .ZN(\dpath/a_lt_b/_077_ ));
+ NAND2_X1 _144_ (.A1(\dpath/a_lt_b/_077_ ),
+    .A2(in1[1]),
+    .ZN(\dpath/a_lt_b/_078_ ));
+ NOR2_X1 _145_ (.A1(\dpath/a_lt_b/_077_ ),
+    .A2(in1[1]),
+    .ZN(\dpath/a_lt_b/_079_ ));
+ INV_X1 _146_ (.A(\dpath/a_lt_b/_079_ ),
+    .ZN(\dpath/a_lt_b/_080_ ));
+ NAND3_X1 _147_ (.A1(\dpath/a_lt_b/_076_ ),
+    .A2(\dpath/a_lt_b/_078_ ),
+    .A3(\dpath/a_lt_b/_080_ ),
+    .ZN(\dpath/a_lt_b/_081_ ));
+ INV_X1 _148_ (.A(in0[3]),
+    .ZN(\dpath/a_lt_b/_082_ ));
+ NAND2_X1 _149_ (.A1(\dpath/a_lt_b/_082_ ),
+    .A2(in1[3]),
+    .ZN(\dpath/a_lt_b/_083_ ));
+ INV_X1 _150_ (.A(in1[3]),
+    .ZN(\dpath/a_lt_b/_084_ ));
+ NAND2_X1 _151_ (.A1(\dpath/a_lt_b/_084_ ),
+    .A2(in0[3]),
+    .ZN(\dpath/a_lt_b/_085_ ));
+ NAND2_X1 _152_ (.A1(\dpath/a_lt_b/_083_ ),
+    .A2(\dpath/a_lt_b/_085_ ),
+    .ZN(\dpath/a_lt_b/_086_ ));
+ INV_X1 _153_ (.A(in0[2]),
+    .ZN(\dpath/a_lt_b/_087_ ));
+ NAND2_X1 _154_ (.A1(\dpath/a_lt_b/_087_ ),
+    .A2(in1[2]),
+    .ZN(\dpath/a_lt_b/_088_ ));
+ INV_X1 _155_ (.A(in1[2]),
+    .ZN(\dpath/a_lt_b/_089_ ));
+ NAND2_X1 _156_ (.A1(\dpath/a_lt_b/_089_ ),
+    .A2(in0[2]),
+    .ZN(\dpath/a_lt_b/_090_ ));
+ NAND2_X1 _157_ (.A1(\dpath/a_lt_b/_088_ ),
+    .A2(\dpath/a_lt_b/_090_ ),
+    .ZN(\dpath/a_lt_b/_091_ ));
+ NOR2_X2 _158_ (.A1(\dpath/a_lt_b/_086_ ),
+    .A2(\dpath/a_lt_b/_091_ ),
+    .ZN(\dpath/a_lt_b/_092_ ));
+ INV_X1 _159_ (.A(\dpath/a_lt_b/_092_ ),
+    .ZN(\dpath/a_lt_b/_093_ ));
+ NOR2_X2 _160_ (.A1(\dpath/a_lt_b/_081_ ),
+    .A2(\dpath/a_lt_b/_093_ ),
+    .ZN(\dpath/a_lt_b/_094_ ));
+ INV_X1 _161_ (.A(in0[7]),
+    .ZN(\dpath/a_lt_b/_095_ ));
+ NAND2_X1 _162_ (.A1(\dpath/a_lt_b/_095_ ),
+    .A2(in1[7]),
+    .ZN(\dpath/a_lt_b/_096_ ));
+ INV_X1 _163_ (.A(\dpath/a_lt_b/_096_ ),
+    .ZN(\dpath/a_lt_b/_097_ ));
+ NOR2_X1 _164_ (.A1(\dpath/a_lt_b/_095_ ),
+    .A2(in1[7]),
+    .ZN(\dpath/a_lt_b/_098_ ));
+ NOR2_X2 _165_ (.A1(\dpath/a_lt_b/_097_ ),
+    .A2(\dpath/a_lt_b/_098_ ),
+    .ZN(\dpath/a_lt_b/_099_ ));
+ XNOR2_X1 _166_ (.A(in0[6]),
+    .B(in1[6]),
+    .ZN(\dpath/a_lt_b/_100_ ));
+ NAND2_X1 _167_ (.A1(\dpath/a_lt_b/_099_ ),
+    .A2(\dpath/a_lt_b/_100_ ),
+    .ZN(\dpath/a_lt_b/_101_ ));
+ XNOR2_X1 _168_ (.A(in0[5]),
+    .B(in1[5]),
+    .ZN(\dpath/a_lt_b/_102_ ));
+ XNOR2_X1 _169_ (.A(in1[4]),
+    .B(in0[4]),
+    .ZN(\dpath/a_lt_b/_103_ ));
+ NAND2_X1 _170_ (.A1(\dpath/a_lt_b/_102_ ),
+    .A2(\dpath/a_lt_b/_103_ ),
+    .ZN(\dpath/a_lt_b/_104_ ));
+ NOR2_X2 _171_ (.A1(\dpath/a_lt_b/_101_ ),
+    .A2(\dpath/a_lt_b/_104_ ),
+    .ZN(\dpath/a_lt_b/_105_ ));
+ NAND2_X1 _172_ (.A1(\dpath/a_lt_b/_094_ ),
+    .A2(\dpath/a_lt_b/_105_ ),
+    .ZN(\dpath/a_lt_b/_106_ ));
+ NOR2_X2 _173_ (.A1(\dpath/a_lt_b/_075_ ),
+    .A2(\dpath/a_lt_b/_106_ ),
+    .ZN(\dpath/a_lt_b/_000_ ));
+ INV_X1 _174_ (.A(in0[0]),
+    .ZN(\dpath/a_lt_b/_001_ ));
+ NOR2_X1 _175_ (.A1(\dpath/a_lt_b/_001_ ),
+    .A2(in1[0]),
+    .ZN(\dpath/a_lt_b/_002_ ));
+ OAI21_X1 _176_ (.A(\dpath/a_lt_b/_078_ ),
+    .B1(\dpath/a_lt_b/_079_ ),
+    .B2(\dpath/a_lt_b/_002_ ),
+    .ZN(\dpath/a_lt_b/_003_ ));
+ NAND2_X1 _177_ (.A1(\dpath/a_lt_b/_003_ ),
+    .A2(\dpath/a_lt_b/_092_ ),
+    .ZN(\dpath/a_lt_b/_004_ ));
+ INV_X1 _178_ (.A(\dpath/a_lt_b/_085_ ),
+    .ZN(\dpath/a_lt_b/_005_ ));
+ OAI21_X1 _179_ (.A(\dpath/a_lt_b/_083_ ),
+    .B1(\dpath/a_lt_b/_005_ ),
+    .B2(\dpath/a_lt_b/_088_ ),
+    .ZN(\dpath/a_lt_b/_006_ ));
+ INV_X1 _180_ (.A(\dpath/a_lt_b/_006_ ),
+    .ZN(\dpath/a_lt_b/_007_ ));
+ NAND2_X2 _181_ (.A1(\dpath/a_lt_b/_004_ ),
+    .A2(\dpath/a_lt_b/_007_ ),
+    .ZN(\dpath/a_lt_b/_008_ ));
+ NAND2_X2 _182_ (.A1(\dpath/a_lt_b/_008_ ),
+    .A2(\dpath/a_lt_b/_105_ ),
+    .ZN(\dpath/a_lt_b/_009_ ));
+ INV_X1 _183_ (.A(in0[6]),
+    .ZN(\dpath/a_lt_b/_010_ ));
+ NAND2_X1 _184_ (.A1(\dpath/a_lt_b/_010_ ),
+    .A2(in1[6]),
+    .ZN(\dpath/a_lt_b/_011_ ));
+ OAI21_X1 _185_ (.A(\dpath/a_lt_b/_096_ ),
+    .B1(\dpath/a_lt_b/_098_ ),
+    .B2(\dpath/a_lt_b/_011_ ),
+    .ZN(\dpath/a_lt_b/_012_ ));
+ INV_X1 _186_ (.A(\dpath/a_lt_b/_101_ ),
+    .ZN(\dpath/a_lt_b/_013_ ));
+ INV_X1 _187_ (.A(in0[5]),
+    .ZN(\dpath/a_lt_b/_014_ ));
+ NAND2_X1 _188_ (.A1(\dpath/a_lt_b/_014_ ),
+    .A2(in1[5]),
+    .ZN(\dpath/a_lt_b/_015_ ));
+ NOR2_X1 _189_ (.A1(\dpath/a_lt_b/_014_ ),
+    .A2(in1[5]),
+    .ZN(\dpath/a_lt_b/_016_ ));
+ INV_X1 _190_ (.A(in0[4]),
+    .ZN(\dpath/a_lt_b/_017_ ));
+ NAND2_X1 _191_ (.A1(\dpath/a_lt_b/_017_ ),
+    .A2(in1[4]),
+    .ZN(\dpath/a_lt_b/_018_ ));
+ OAI21_X1 _192_ (.A(\dpath/a_lt_b/_015_ ),
+    .B1(\dpath/a_lt_b/_016_ ),
+    .B2(\dpath/a_lt_b/_018_ ),
+    .ZN(\dpath/a_lt_b/_019_ ));
+ AOI21_X2 _193_ (.A(\dpath/a_lt_b/_012_ ),
+    .B1(\dpath/a_lt_b/_013_ ),
+    .B2(\dpath/a_lt_b/_019_ ),
+    .ZN(\dpath/a_lt_b/_020_ ));
+ NAND2_X2 _194_ (.A1(\dpath/a_lt_b/_009_ ),
+    .A2(\dpath/a_lt_b/_020_ ),
+    .ZN(\dpath/a_lt_b/_021_ ));
+ INV_X2 _195_ (.A(\dpath/a_lt_b/_075_ ),
+    .ZN(\dpath/a_lt_b/_022_ ));
+ NAND2_X2 _196_ (.A1(\dpath/a_lt_b/_021_ ),
+    .A2(\dpath/a_lt_b/_022_ ),
+    .ZN(\dpath/a_lt_b/_023_ ));
+ NAND2_X1 _197_ (.A1(\dpath/a_lt_b/_045_ ),
+    .A2(\dpath/a_lt_b/_047_ ),
+    .ZN(\dpath/a_lt_b/_024_ ));
+ INV_X1 _198_ (.A(\dpath/a_lt_b/_024_ ),
+    .ZN(\dpath/a_lt_b/_025_ ));
+ INV_X1 _199_ (.A(\dpath/a_lt_b/_050_ ),
+    .ZN(\dpath/a_lt_b/_026_ ));
+ INV_X1 _200_ (.A(in1[12]),
+    .ZN(\dpath/a_lt_b/_027_ ));
+ NOR2_X1 _201_ (.A1(\dpath/a_lt_b/_027_ ),
+    .A2(in0[12]),
+    .ZN(\dpath/a_lt_b/_028_ ));
+ NAND3_X1 _202_ (.A1(\dpath/a_lt_b/_028_ ),
+    .A2(\dpath/a_lt_b/_053_ ),
+    .A3(\dpath/a_lt_b/_055_ ),
+    .ZN(\dpath/a_lt_b/_029_ ));
+ NAND2_X1 _203_ (.A1(\dpath/a_lt_b/_029_ ),
+    .A2(\dpath/a_lt_b/_055_ ),
+    .ZN(\dpath/a_lt_b/_030_ ));
+ AOI21_X1 _204_ (.A(\dpath/a_lt_b/_025_ ),
+    .B1(\dpath/a_lt_b/_026_ ),
+    .B2(\dpath/a_lt_b/_030_ ),
+    .ZN(\dpath/a_lt_b/_031_ ));
+ INV_X1 _205_ (.A(in0[10]),
+    .ZN(\dpath/a_lt_b/_032_ ));
+ AND2_X1 _206_ (.A1(\dpath/a_lt_b/_032_ ),
+    .A2(in1[10]),
+    .ZN(\dpath/a_lt_b/_033_ ));
+ INV_X1 _207_ (.A(\dpath/a_lt_b/_068_ ),
+    .ZN(\dpath/a_lt_b/_034_ ));
+ OAI21_X1 _208_ (.A(\dpath/a_lt_b/_070_ ),
+    .B1(\dpath/a_lt_b/_033_ ),
+    .B2(\dpath/a_lt_b/_034_ ),
+    .ZN(\dpath/a_lt_b/_035_ ));
+ NAND2_X1 _209_ (.A1(\dpath/a_lt_b/_062_ ),
+    .A2(\dpath/a_lt_b/_064_ ),
+    .ZN(\dpath/a_lt_b/_036_ ));
+ OAI21_X2 _210_ (.A(\dpath/a_lt_b/_035_ ),
+    .B1(\dpath/a_lt_b/_073_ ),
+    .B2(\dpath/a_lt_b/_036_ ),
+    .ZN(\dpath/a_lt_b/_037_ ));
+ NAND2_X1 _211_ (.A1(\dpath/a_lt_b/_037_ ),
+    .A2(\dpath/a_lt_b/_057_ ),
+    .ZN(\dpath/a_lt_b/_038_ ));
+ NAND2_X1 _212_ (.A1(\dpath/a_lt_b/_031_ ),
+    .A2(\dpath/a_lt_b/_038_ ),
+    .ZN(\dpath/a_lt_b/_039_ ));
+ INV_X1 _213_ (.A(\dpath/a_lt_b/_039_ ),
+    .ZN(\dpath/a_lt_b/_040_ ));
+ AOI21_X2 _214_ (.A(\dpath/a_lt_b/_000_ ),
+    .B1(\dpath/a_lt_b/_023_ ),
+    .B2(\dpath/a_lt_b/_040_ ),
+    .ZN(out));
+endmodule
+module Mux_0x683fa1a418b072c9 (clk,
+    \in_$000 ,
+    \in_$001 ,
+    \in_$002 ,
+    out,
+    reset,
+    sel);
+ input clk;
+ input [15:0] \in_$000 ;
+ input [15:0] \in_$001 ;
+ input [15:0] \in_$002 ;
+ output [15:0] out;
+ input reset;
+ input [1:0] sel;
+
+
+ BUF_X8 _092_ (.A(sel[1]),
+    .Z(\dpath/a_mux/_062_ ));
+ INV_X8 _093_ (.A(\dpath/a_mux/_062_ ),
+    .ZN(\dpath/a_mux/_063_ ));
+ BUF_X4 _094_ (.A(\dpath/a_mux/_063_ ),
+    .Z(\dpath/a_mux/_064_ ));
+ BUF_X8 _095_ (.A(sel[0]),
+    .Z(\dpath/a_mux/_065_ ));
+ BUF_X4 _096_ (.A(\dpath/a_mux/_065_ ),
+    .Z(\dpath/a_mux/_066_ ));
+ NAND3_X1 _097_ (.A1(\dpath/a_mux/_064_ ),
+    .A2(\dpath/a_mux/_066_ ),
+    .A3(\in_$001 [0]),
+    .ZN(\dpath/a_mux/_067_ ));
+ INV_X8 _098_ (.A(\dpath/a_mux/_065_ ),
+    .ZN(\dpath/a_mux/_068_ ));
+ BUF_X4 _099_ (.A(\dpath/a_mux/_068_ ),
+    .Z(\dpath/a_mux/_069_ ));
+ BUF_X4 _100_ (.A(\dpath/a_mux/_062_ ),
+    .Z(\dpath/a_mux/_070_ ));
+ NAND3_X1 _101_ (.A1(\dpath/a_mux/_069_ ),
+    .A2(\dpath/a_mux/_070_ ),
+    .A3(\in_$002 [0]),
+    .ZN(\dpath/a_mux/_071_ ));
+ NAND2_X1 _102_ (.A1(\dpath/a_mux/_067_ ),
+    .A2(\dpath/a_mux/_071_ ),
+    .ZN(\dpath/a_mux/_072_ ));
+ INV_X1 _103_ (.A(\dpath/a_mux/_072_ ),
+    .ZN(\dpath/a_mux/_073_ ));
+ NAND2_X4 _104_ (.A1(\dpath/a_mux/_063_ ),
+    .A2(\dpath/a_mux/_065_ ),
+    .ZN(\dpath/a_mux/_074_ ));
+ BUF_X8 _105_ (.A(\dpath/a_mux/_074_ ),
+    .Z(\dpath/a_mux/_075_ ));
+ NAND2_X4 _106_ (.A1(\dpath/a_mux/_068_ ),
+    .A2(\dpath/a_mux/_062_ ),
+    .ZN(\dpath/a_mux/_076_ ));
+ BUF_X8 _107_ (.A(\dpath/a_mux/_076_ ),
+    .Z(\dpath/a_mux/_077_ ));
+ NAND3_X1 _108_ (.A1(\dpath/a_mux/_075_ ),
+    .A2(\dpath/a_mux/_077_ ),
+    .A3(\in_$000 [0]),
+    .ZN(\dpath/a_mux/_078_ ));
+ NAND2_X1 _109_ (.A1(\dpath/a_mux/_073_ ),
+    .A2(\dpath/a_mux/_078_ ),
+    .ZN(out[0]));
+ NAND3_X1 _110_ (.A1(\dpath/a_mux/_064_ ),
+    .A2(\dpath/a_mux/_066_ ),
+    .A3(\in_$001 [10]),
+    .ZN(\dpath/a_mux/_079_ ));
+ NAND3_X1 _111_ (.A1(\dpath/a_mux/_069_ ),
+    .A2(\dpath/a_mux/_070_ ),
+    .A3(\in_$002 [10]),
+    .ZN(\dpath/a_mux/_080_ ));
+ NAND2_X1 _112_ (.A1(\dpath/a_mux/_079_ ),
+    .A2(\dpath/a_mux/_080_ ),
+    .ZN(\dpath/a_mux/_081_ ));
+ INV_X1 _113_ (.A(\dpath/a_mux/_081_ ),
+    .ZN(\dpath/a_mux/_082_ ));
+ NAND3_X1 _114_ (.A1(\dpath/a_mux/_075_ ),
+    .A2(\dpath/a_mux/_077_ ),
+    .A3(\in_$000 [10]),
+    .ZN(\dpath/a_mux/_083_ ));
+ NAND2_X1 _115_ (.A1(\dpath/a_mux/_082_ ),
+    .A2(\dpath/a_mux/_083_ ),
+    .ZN(out[10]));
+ NAND3_X1 _116_ (.A1(\dpath/a_mux/_064_ ),
+    .A2(\dpath/a_mux/_066_ ),
+    .A3(\in_$001 [11]),
+    .ZN(\dpath/a_mux/_084_ ));
+ NAND3_X1 _117_ (.A1(\dpath/a_mux/_069_ ),
+    .A2(\dpath/a_mux/_070_ ),
+    .A3(\in_$002 [11]),
+    .ZN(\dpath/a_mux/_085_ ));
+ NAND2_X1 _118_ (.A1(\dpath/a_mux/_084_ ),
+    .A2(\dpath/a_mux/_085_ ),
+    .ZN(\dpath/a_mux/_086_ ));
+ INV_X1 _119_ (.A(\dpath/a_mux/_086_ ),
+    .ZN(\dpath/a_mux/_087_ ));
+ NAND3_X1 _120_ (.A1(\dpath/a_mux/_075_ ),
+    .A2(\dpath/a_mux/_077_ ),
+    .A3(\in_$000 [11]),
+    .ZN(\dpath/a_mux/_088_ ));
+ NAND2_X1 _121_ (.A1(\dpath/a_mux/_087_ ),
+    .A2(\dpath/a_mux/_088_ ),
+    .ZN(out[11]));
+ NAND3_X1 _122_ (.A1(\dpath/a_mux/_064_ ),
+    .A2(\dpath/a_mux/_066_ ),
+    .A3(\in_$001 [12]),
+    .ZN(\dpath/a_mux/_089_ ));
+ NAND3_X1 _123_ (.A1(\dpath/a_mux/_069_ ),
+    .A2(\dpath/a_mux/_070_ ),
+    .A3(\in_$002 [12]),
+    .ZN(\dpath/a_mux/_090_ ));
+ NAND2_X1 _124_ (.A1(\dpath/a_mux/_089_ ),
+    .A2(\dpath/a_mux/_090_ ),
+    .ZN(\dpath/a_mux/_091_ ));
+ INV_X1 _125_ (.A(\dpath/a_mux/_091_ ),
+    .ZN(\dpath/a_mux/_000_ ));
+ NAND3_X1 _126_ (.A1(\dpath/a_mux/_075_ ),
+    .A2(\dpath/a_mux/_077_ ),
+    .A3(\in_$000 [12]),
+    .ZN(\dpath/a_mux/_001_ ));
+ NAND2_X1 _127_ (.A1(\dpath/a_mux/_000_ ),
+    .A2(\dpath/a_mux/_001_ ),
+    .ZN(out[12]));
+ NAND3_X1 _128_ (.A1(\dpath/a_mux/_064_ ),
+    .A2(\dpath/a_mux/_066_ ),
+    .A3(\in_$001 [13]),
+    .ZN(\dpath/a_mux/_002_ ));
+ NAND3_X1 _129_ (.A1(\dpath/a_mux/_069_ ),
+    .A2(\dpath/a_mux/_070_ ),
+    .A3(\in_$002 [13]),
+    .ZN(\dpath/a_mux/_003_ ));
+ NAND2_X1 _130_ (.A1(\dpath/a_mux/_002_ ),
+    .A2(\dpath/a_mux/_003_ ),
+    .ZN(\dpath/a_mux/_004_ ));
+ INV_X1 _131_ (.A(\dpath/a_mux/_004_ ),
+    .ZN(\dpath/a_mux/_005_ ));
+ NAND3_X1 _132_ (.A1(\dpath/a_mux/_075_ ),
+    .A2(\dpath/a_mux/_077_ ),
+    .A3(\in_$000 [13]),
+    .ZN(\dpath/a_mux/_006_ ));
+ NAND2_X1 _133_ (.A1(\dpath/a_mux/_005_ ),
+    .A2(\dpath/a_mux/_006_ ),
+    .ZN(out[13]));
+ NAND3_X1 _134_ (.A1(\dpath/a_mux/_064_ ),
+    .A2(\dpath/a_mux/_066_ ),
+    .A3(\in_$001 [14]),
+    .ZN(\dpath/a_mux/_007_ ));
+ NAND3_X1 _135_ (.A1(\dpath/a_mux/_069_ ),
+    .A2(\dpath/a_mux/_070_ ),
+    .A3(\in_$002 [14]),
+    .ZN(\dpath/a_mux/_008_ ));
+ NAND2_X1 _136_ (.A1(\dpath/a_mux/_007_ ),
+    .A2(\dpath/a_mux/_008_ ),
+    .ZN(\dpath/a_mux/_009_ ));
+ INV_X1 _137_ (.A(\dpath/a_mux/_009_ ),
+    .ZN(\dpath/a_mux/_010_ ));
+ NAND3_X1 _138_ (.A1(\dpath/a_mux/_075_ ),
+    .A2(\dpath/a_mux/_077_ ),
+    .A3(\in_$000 [14]),
+    .ZN(\dpath/a_mux/_011_ ));
+ NAND2_X1 _139_ (.A1(\dpath/a_mux/_010_ ),
+    .A2(\dpath/a_mux/_011_ ),
+    .ZN(out[14]));
+ NAND3_X1 _140_ (.A1(\dpath/a_mux/_064_ ),
+    .A2(\dpath/a_mux/_066_ ),
+    .A3(\in_$001 [15]),
+    .ZN(\dpath/a_mux/_012_ ));
+ NAND3_X1 _141_ (.A1(\dpath/a_mux/_069_ ),
+    .A2(\dpath/a_mux/_070_ ),
+    .A3(\in_$002 [15]),
+    .ZN(\dpath/a_mux/_013_ ));
+ NAND2_X1 _142_ (.A1(\dpath/a_mux/_012_ ),
+    .A2(\dpath/a_mux/_013_ ),
+    .ZN(\dpath/a_mux/_014_ ));
+ INV_X1 _143_ (.A(\dpath/a_mux/_014_ ),
+    .ZN(\dpath/a_mux/_015_ ));
+ NAND3_X1 _144_ (.A1(\dpath/a_mux/_075_ ),
+    .A2(\dpath/a_mux/_077_ ),
+    .A3(\in_$000 [15]),
+    .ZN(\dpath/a_mux/_016_ ));
+ NAND2_X1 _145_ (.A1(\dpath/a_mux/_015_ ),
+    .A2(\dpath/a_mux/_016_ ),
+    .ZN(out[15]));
+ NAND3_X1 _146_ (.A1(\dpath/a_mux/_064_ ),
+    .A2(\dpath/a_mux/_066_ ),
+    .A3(\in_$001 [1]),
+    .ZN(\dpath/a_mux/_017_ ));
+ NAND3_X1 _147_ (.A1(\dpath/a_mux/_069_ ),
+    .A2(\dpath/a_mux/_070_ ),
+    .A3(\in_$002 [1]),
+    .ZN(\dpath/a_mux/_018_ ));
+ NAND2_X1 _148_ (.A1(\dpath/a_mux/_017_ ),
+    .A2(\dpath/a_mux/_018_ ),
+    .ZN(\dpath/a_mux/_019_ ));
+ INV_X1 _149_ (.A(\dpath/a_mux/_019_ ),
+    .ZN(\dpath/a_mux/_020_ ));
+ NAND3_X1 _150_ (.A1(\dpath/a_mux/_075_ ),
+    .A2(\dpath/a_mux/_077_ ),
+    .A3(\in_$000 [1]),
+    .ZN(\dpath/a_mux/_021_ ));
+ NAND2_X1 _151_ (.A1(\dpath/a_mux/_020_ ),
+    .A2(\dpath/a_mux/_021_ ),
+    .ZN(out[1]));
+ NAND3_X1 _152_ (.A1(\dpath/a_mux/_064_ ),
+    .A2(\dpath/a_mux/_066_ ),
+    .A3(\in_$001 [2]),
+    .ZN(\dpath/a_mux/_022_ ));
+ NAND3_X1 _153_ (.A1(\dpath/a_mux/_069_ ),
+    .A2(\dpath/a_mux/_070_ ),
+    .A3(\in_$002 [2]),
+    .ZN(\dpath/a_mux/_023_ ));
+ NAND2_X1 _154_ (.A1(\dpath/a_mux/_022_ ),
+    .A2(\dpath/a_mux/_023_ ),
+    .ZN(\dpath/a_mux/_024_ ));
+ INV_X1 _155_ (.A(\dpath/a_mux/_024_ ),
+    .ZN(\dpath/a_mux/_025_ ));
+ NAND3_X1 _156_ (.A1(\dpath/a_mux/_075_ ),
+    .A2(\dpath/a_mux/_077_ ),
+    .A3(\in_$000 [2]),
+    .ZN(\dpath/a_mux/_026_ ));
+ NAND2_X1 _157_ (.A1(\dpath/a_mux/_025_ ),
+    .A2(\dpath/a_mux/_026_ ),
+    .ZN(out[2]));
+ NAND3_X1 _158_ (.A1(\dpath/a_mux/_064_ ),
+    .A2(\dpath/a_mux/_066_ ),
+    .A3(\in_$001 [3]),
+    .ZN(\dpath/a_mux/_027_ ));
+ NAND3_X1 _159_ (.A1(\dpath/a_mux/_069_ ),
+    .A2(\dpath/a_mux/_070_ ),
+    .A3(\in_$002 [3]),
+    .ZN(\dpath/a_mux/_028_ ));
+ NAND2_X1 _160_ (.A1(\dpath/a_mux/_027_ ),
+    .A2(\dpath/a_mux/_028_ ),
+    .ZN(\dpath/a_mux/_029_ ));
+ INV_X1 _161_ (.A(\dpath/a_mux/_029_ ),
+    .ZN(\dpath/a_mux/_030_ ));
+ NAND3_X1 _162_ (.A1(\dpath/a_mux/_075_ ),
+    .A2(\dpath/a_mux/_077_ ),
+    .A3(\in_$000 [3]),
+    .ZN(\dpath/a_mux/_031_ ));
+ NAND2_X1 _163_ (.A1(\dpath/a_mux/_030_ ),
+    .A2(\dpath/a_mux/_031_ ),
+    .ZN(out[3]));
+ NAND3_X1 _164_ (.A1(\dpath/a_mux/_063_ ),
+    .A2(\dpath/a_mux/_065_ ),
+    .A3(\in_$001 [4]),
+    .ZN(\dpath/a_mux/_032_ ));
+ NAND3_X1 _165_ (.A1(\dpath/a_mux/_068_ ),
+    .A2(\dpath/a_mux/_062_ ),
+    .A3(\in_$002 [4]),
+    .ZN(\dpath/a_mux/_033_ ));
+ NAND2_X1 _166_ (.A1(\dpath/a_mux/_032_ ),
+    .A2(\dpath/a_mux/_033_ ),
+    .ZN(\dpath/a_mux/_034_ ));
+ INV_X1 _167_ (.A(\dpath/a_mux/_034_ ),
+    .ZN(\dpath/a_mux/_035_ ));
+ NAND3_X1 _168_ (.A1(\dpath/a_mux/_074_ ),
+    .A2(\dpath/a_mux/_076_ ),
+    .A3(\in_$000 [4]),
+    .ZN(\dpath/a_mux/_036_ ));
+ NAND2_X1 _169_ (.A1(\dpath/a_mux/_035_ ),
+    .A2(\dpath/a_mux/_036_ ),
+    .ZN(out[4]));
+ NAND3_X1 _170_ (.A1(\dpath/a_mux/_063_ ),
+    .A2(\dpath/a_mux/_065_ ),
+    .A3(\in_$001 [5]),
+    .ZN(\dpath/a_mux/_037_ ));
+ NAND3_X1 _171_ (.A1(\dpath/a_mux/_068_ ),
+    .A2(\dpath/a_mux/_062_ ),
+    .A3(\in_$002 [5]),
+    .ZN(\dpath/a_mux/_038_ ));
+ NAND2_X1 _172_ (.A1(\dpath/a_mux/_037_ ),
+    .A2(\dpath/a_mux/_038_ ),
+    .ZN(\dpath/a_mux/_039_ ));
+ INV_X1 _173_ (.A(\dpath/a_mux/_039_ ),
+    .ZN(\dpath/a_mux/_040_ ));
+ NAND3_X1 _174_ (.A1(\dpath/a_mux/_074_ ),
+    .A2(\dpath/a_mux/_076_ ),
+    .A3(\in_$000 [5]),
+    .ZN(\dpath/a_mux/_041_ ));
+ NAND2_X1 _175_ (.A1(\dpath/a_mux/_040_ ),
+    .A2(\dpath/a_mux/_041_ ),
+    .ZN(out[5]));
+ NAND3_X1 _176_ (.A1(\dpath/a_mux/_063_ ),
+    .A2(\dpath/a_mux/_065_ ),
+    .A3(\in_$001 [6]),
+    .ZN(\dpath/a_mux/_042_ ));
+ NAND3_X1 _177_ (.A1(\dpath/a_mux/_068_ ),
+    .A2(\dpath/a_mux/_062_ ),
+    .A3(\in_$002 [6]),
+    .ZN(\dpath/a_mux/_043_ ));
+ NAND2_X1 _178_ (.A1(\dpath/a_mux/_042_ ),
+    .A2(\dpath/a_mux/_043_ ),
+    .ZN(\dpath/a_mux/_044_ ));
+ INV_X1 _179_ (.A(\dpath/a_mux/_044_ ),
+    .ZN(\dpath/a_mux/_045_ ));
+ NAND3_X1 _180_ (.A1(\dpath/a_mux/_074_ ),
+    .A2(\dpath/a_mux/_076_ ),
+    .A3(\in_$000 [6]),
+    .ZN(\dpath/a_mux/_046_ ));
+ NAND2_X1 _181_ (.A1(\dpath/a_mux/_045_ ),
+    .A2(\dpath/a_mux/_046_ ),
+    .ZN(out[6]));
+ NAND3_X1 _182_ (.A1(\dpath/a_mux/_063_ ),
+    .A2(\dpath/a_mux/_065_ ),
+    .A3(\in_$001 [7]),
+    .ZN(\dpath/a_mux/_047_ ));
+ NAND3_X1 _183_ (.A1(\dpath/a_mux/_068_ ),
+    .A2(\dpath/a_mux/_062_ ),
+    .A3(\in_$002 [7]),
+    .ZN(\dpath/a_mux/_048_ ));
+ NAND2_X1 _184_ (.A1(\dpath/a_mux/_047_ ),
+    .A2(\dpath/a_mux/_048_ ),
+    .ZN(\dpath/a_mux/_049_ ));
+ INV_X1 _185_ (.A(\dpath/a_mux/_049_ ),
+    .ZN(\dpath/a_mux/_050_ ));
+ NAND3_X1 _186_ (.A1(\dpath/a_mux/_074_ ),
+    .A2(\dpath/a_mux/_076_ ),
+    .A3(\in_$000 [7]),
+    .ZN(\dpath/a_mux/_051_ ));
+ NAND2_X1 _187_ (.A1(\dpath/a_mux/_050_ ),
+    .A2(\dpath/a_mux/_051_ ),
+    .ZN(out[7]));
+ NAND3_X1 _188_ (.A1(\dpath/a_mux/_063_ ),
+    .A2(\dpath/a_mux/_065_ ),
+    .A3(\in_$001 [8]),
+    .ZN(\dpath/a_mux/_052_ ));
+ NAND3_X1 _189_ (.A1(\dpath/a_mux/_068_ ),
+    .A2(\dpath/a_mux/_062_ ),
+    .A3(\in_$002 [8]),
+    .ZN(\dpath/a_mux/_053_ ));
+ NAND2_X1 _190_ (.A1(\dpath/a_mux/_052_ ),
+    .A2(\dpath/a_mux/_053_ ),
+    .ZN(\dpath/a_mux/_054_ ));
+ INV_X1 _191_ (.A(\dpath/a_mux/_054_ ),
+    .ZN(\dpath/a_mux/_055_ ));
+ NAND3_X1 _192_ (.A1(\dpath/a_mux/_074_ ),
+    .A2(\dpath/a_mux/_076_ ),
+    .A3(\in_$000 [8]),
+    .ZN(\dpath/a_mux/_056_ ));
+ NAND2_X1 _193_ (.A1(\dpath/a_mux/_055_ ),
+    .A2(\dpath/a_mux/_056_ ),
+    .ZN(out[8]));
+ NAND3_X1 _194_ (.A1(\dpath/a_mux/_063_ ),
+    .A2(\dpath/a_mux/_065_ ),
+    .A3(\in_$001 [9]),
+    .ZN(\dpath/a_mux/_057_ ));
+ NAND3_X1 _195_ (.A1(\dpath/a_mux/_068_ ),
+    .A2(\dpath/a_mux/_062_ ),
+    .A3(\in_$002 [9]),
+    .ZN(\dpath/a_mux/_058_ ));
+ NAND2_X1 _196_ (.A1(\dpath/a_mux/_057_ ),
+    .A2(\dpath/a_mux/_058_ ),
+    .ZN(\dpath/a_mux/_059_ ));
+ INV_X1 _197_ (.A(\dpath/a_mux/_059_ ),
+    .ZN(\dpath/a_mux/_060_ ));
+ NAND3_X1 _198_ (.A1(\dpath/a_mux/_074_ ),
+    .A2(\dpath/a_mux/_076_ ),
+    .A3(\in_$000 [9]),
+    .ZN(\dpath/a_mux/_061_ ));
+ NAND2_X1 _199_ (.A1(\dpath/a_mux/_060_ ),
+    .A2(\dpath/a_mux/_061_ ),
+    .ZN(out[9]));
+endmodule
+module RegEn_0x68db79c4ec1d6e5b (clk,
+    en,
+    in_,
+    out,
+    reset);
+ input clk;
+ input en;
+ input [15:0] in_;
+ output [15:0] out;
+ input reset;
+
+
+ BUF_X8 _068_ (.A(en),
+    .Z(\dpath/a_reg/_017_ ));
+ INV_X16 _069_ (.A(\dpath/a_reg/_017_ ),
+    .ZN(\dpath/a_reg/_018_ ));
+ BUF_X32 _070_ (.A(\dpath/a_reg/_018_ ),
+    .Z(\dpath/a_reg/_019_ ));
+ NAND2_X4 _071_ (.A1(\dpath/a_reg/_019_ ),
+    .A2(out[0]),
+    .ZN(\dpath/a_reg/_020_ ));
+ NAND2_X1 _072_ (.A1(in_[0]),
+    .A2(\dpath/a_reg/_017_ ),
+    .ZN(\dpath/a_reg/_021_ ));
+ NAND2_X4 _073_ (.A1(\dpath/a_reg/_020_ ),
+    .A2(\dpath/a_reg/_021_ ),
+    .ZN(\dpath/a_reg/_000_ ));
+ NAND2_X4 _074_ (.A1(\dpath/a_reg/_019_ ),
+    .A2(out[10]),
+    .ZN(\dpath/a_reg/_022_ ));
+ BUF_X16 _075_ (.A(\dpath/a_reg/_017_ ),
+    .Z(\dpath/a_reg/_023_ ));
+ NAND2_X1 _076_ (.A1(\dpath/a_reg/_023_ ),
+    .A2(in_[10]),
+    .ZN(\dpath/a_reg/_024_ ));
+ NAND2_X2 _077_ (.A1(\dpath/a_reg/_022_ ),
+    .A2(\dpath/a_reg/_024_ ),
+    .ZN(\dpath/a_reg/_001_ ));
+ NAND2_X4 _078_ (.A1(\dpath/a_reg/_019_ ),
+    .A2(out[11]),
+    .ZN(\dpath/a_reg/_025_ ));
+ NAND2_X1 _079_ (.A1(\dpath/a_reg/_023_ ),
+    .A2(in_[11]),
+    .ZN(\dpath/a_reg/_026_ ));
+ NAND2_X2 _080_ (.A1(\dpath/a_reg/_025_ ),
+    .A2(\dpath/a_reg/_026_ ),
+    .ZN(\dpath/a_reg/_002_ ));
+ NAND2_X4 _081_ (.A1(\dpath/a_reg/_019_ ),
+    .A2(out[12]),
+    .ZN(\dpath/a_reg/_027_ ));
+ NAND2_X2 _082_ (.A1(\dpath/a_reg/_023_ ),
+    .A2(in_[12]),
+    .ZN(\dpath/a_reg/_028_ ));
+ NAND2_X4 _083_ (.A1(\dpath/a_reg/_027_ ),
+    .A2(\dpath/a_reg/_028_ ),
+    .ZN(\dpath/a_reg/_003_ ));
+ NAND2_X4 _084_ (.A1(\dpath/a_reg/_019_ ),
+    .A2(out[13]),
+    .ZN(\dpath/a_reg/_029_ ));
+ NAND2_X1 _085_ (.A1(\dpath/a_reg/_023_ ),
+    .A2(in_[13]),
+    .ZN(\dpath/a_reg/_030_ ));
+ NAND2_X2 _086_ (.A1(\dpath/a_reg/_029_ ),
+    .A2(\dpath/a_reg/_030_ ),
+    .ZN(\dpath/a_reg/_004_ ));
+ NAND2_X4 _087_ (.A1(\dpath/a_reg/_019_ ),
+    .A2(out[14]),
+    .ZN(\dpath/a_reg/_031_ ));
+ NAND2_X1 _088_ (.A1(\dpath/a_reg/_023_ ),
+    .A2(in_[14]),
+    .ZN(\dpath/a_reg/_032_ ));
+ NAND2_X2 _089_ (.A1(\dpath/a_reg/_031_ ),
+    .A2(\dpath/a_reg/_032_ ),
+    .ZN(\dpath/a_reg/_005_ ));
+ NAND2_X4 _090_ (.A1(\dpath/a_reg/_019_ ),
+    .A2(out[15]),
+    .ZN(\dpath/a_reg/_033_ ));
+ NAND2_X1 _091_ (.A1(\dpath/a_reg/_023_ ),
+    .A2(in_[15]),
+    .ZN(\dpath/a_reg/_034_ ));
+ NAND2_X2 _092_ (.A1(\dpath/a_reg/_033_ ),
+    .A2(\dpath/a_reg/_034_ ),
+    .ZN(\dpath/a_reg/_006_ ));
+ NAND2_X4 _093_ (.A1(\dpath/a_reg/_019_ ),
+    .A2(out[1]),
+    .ZN(\dpath/a_reg/_035_ ));
+ NAND2_X1 _094_ (.A1(\dpath/a_reg/_023_ ),
+    .A2(in_[1]),
+    .ZN(\dpath/a_reg/_036_ ));
+ NAND2_X2 _095_ (.A1(\dpath/a_reg/_035_ ),
+    .A2(\dpath/a_reg/_036_ ),
+    .ZN(\dpath/a_reg/_007_ ));
+ NAND2_X4 _096_ (.A1(\dpath/a_reg/_019_ ),
+    .A2(out[2]),
+    .ZN(\dpath/a_reg/_037_ ));
+ NAND2_X1 _097_ (.A1(\dpath/a_reg/_023_ ),
+    .A2(in_[2]),
+    .ZN(\dpath/a_reg/_038_ ));
+ NAND2_X2 _098_ (.A1(\dpath/a_reg/_037_ ),
+    .A2(\dpath/a_reg/_038_ ),
+    .ZN(\dpath/a_reg/_008_ ));
+ NAND2_X4 _099_ (.A1(\dpath/a_reg/_019_ ),
+    .A2(out[3]),
+    .ZN(\dpath/a_reg/_039_ ));
+ NAND2_X1 _100_ (.A1(\dpath/a_reg/_023_ ),
+    .A2(in_[3]),
+    .ZN(\dpath/a_reg/_040_ ));
+ NAND2_X2 _101_ (.A1(\dpath/a_reg/_039_ ),
+    .A2(\dpath/a_reg/_040_ ),
+    .ZN(\dpath/a_reg/_009_ ));
+ NAND2_X1 _102_ (.A1(\dpath/a_reg/_018_ ),
+    .A2(out[4]),
+    .ZN(\dpath/a_reg/_041_ ));
+ NAND2_X1 _103_ (.A1(\dpath/a_reg/_023_ ),
+    .A2(in_[4]),
+    .ZN(\dpath/a_reg/_042_ ));
+ NAND2_X1 _104_ (.A1(\dpath/a_reg/_041_ ),
+    .A2(\dpath/a_reg/_042_ ),
+    .ZN(\dpath/a_reg/_010_ ));
+ NAND2_X1 _105_ (.A1(\dpath/a_reg/_018_ ),
+    .A2(out[5]),
+    .ZN(\dpath/a_reg/_043_ ));
+ NAND2_X1 _106_ (.A1(\dpath/a_reg/_017_ ),
+    .A2(in_[5]),
+    .ZN(\dpath/a_reg/_044_ ));
+ NAND2_X1 _107_ (.A1(\dpath/a_reg/_043_ ),
+    .A2(\dpath/a_reg/_044_ ),
+    .ZN(\dpath/a_reg/_011_ ));
+ NAND2_X1 _108_ (.A1(\dpath/a_reg/_018_ ),
+    .A2(out[6]),
+    .ZN(\dpath/a_reg/_045_ ));
+ NAND2_X1 _109_ (.A1(\dpath/a_reg/_017_ ),
+    .A2(in_[6]),
+    .ZN(\dpath/a_reg/_046_ ));
+ NAND2_X1 _110_ (.A1(\dpath/a_reg/_045_ ),
+    .A2(\dpath/a_reg/_046_ ),
+    .ZN(\dpath/a_reg/_012_ ));
+ NAND2_X1 _111_ (.A1(\dpath/a_reg/_018_ ),
+    .A2(out[7]),
+    .ZN(\dpath/a_reg/_047_ ));
+ NAND2_X1 _112_ (.A1(\dpath/a_reg/_017_ ),
+    .A2(in_[7]),
+    .ZN(\dpath/a_reg/_048_ ));
+ NAND2_X1 _113_ (.A1(\dpath/a_reg/_047_ ),
+    .A2(\dpath/a_reg/_048_ ),
+    .ZN(\dpath/a_reg/_013_ ));
+ NAND2_X1 _114_ (.A1(\dpath/a_reg/_018_ ),
+    .A2(out[8]),
+    .ZN(\dpath/a_reg/_049_ ));
+ NAND2_X1 _115_ (.A1(\dpath/a_reg/_017_ ),
+    .A2(in_[8]),
+    .ZN(\dpath/a_reg/_050_ ));
+ NAND2_X1 _116_ (.A1(\dpath/a_reg/_049_ ),
+    .A2(\dpath/a_reg/_050_ ),
+    .ZN(\dpath/a_reg/_014_ ));
+ NAND2_X1 _117_ (.A1(\dpath/a_reg/_018_ ),
+    .A2(out[9]),
+    .ZN(\dpath/a_reg/_051_ ));
+ NAND2_X1 _118_ (.A1(\dpath/a_reg/_017_ ),
+    .A2(in_[9]),
+    .ZN(\dpath/a_reg/_016_ ));
+ NAND2_X1 _119_ (.A1(\dpath/a_reg/_051_ ),
+    .A2(\dpath/a_reg/_016_ ),
+    .ZN(\dpath/a_reg/_015_ ));
+ DFF_X1 \out[0]$_DFFE_PP_  (.D(\dpath/a_reg/_000_ ),
+    .CK(clk),
+    .Q(out[0]),
+    .QN(\dpath/a_reg/_067_ ));
+ DFF_X1 \out[10]$_DFFE_PP_  (.D(\dpath/a_reg/_001_ ),
+    .CK(clk),
+    .Q(out[10]),
+    .QN(\dpath/a_reg/_066_ ));
+ DFF_X1 \out[11]$_DFFE_PP_  (.D(\dpath/a_reg/_002_ ),
+    .CK(clk),
+    .Q(out[11]),
+    .QN(\dpath/a_reg/_065_ ));
+ DFF_X1 \out[12]$_DFFE_PP_  (.D(\dpath/a_reg/_003_ ),
+    .CK(clk),
+    .Q(out[12]),
+    .QN(\dpath/a_reg/_064_ ));
+ DFF_X1 \out[13]$_DFFE_PP_  (.D(\dpath/a_reg/_004_ ),
+    .CK(clk),
+    .Q(out[13]),
+    .QN(\dpath/a_reg/_063_ ));
+ DFF_X1 \out[14]$_DFFE_PP_  (.D(\dpath/a_reg/_005_ ),
+    .CK(clk),
+    .Q(out[14]),
+    .QN(\dpath/a_reg/_062_ ));
+ DFF_X1 \out[15]$_DFFE_PP_  (.D(\dpath/a_reg/_006_ ),
+    .CK(clk),
+    .Q(out[15]),
+    .QN(\dpath/a_reg/_061_ ));
+ DFF_X1 \out[1]$_DFFE_PP_  (.D(\dpath/a_reg/_007_ ),
+    .CK(clk),
+    .Q(out[1]),
+    .QN(\dpath/a_reg/_060_ ));
+ DFF_X1 \out[2]$_DFFE_PP_  (.D(\dpath/a_reg/_008_ ),
+    .CK(clk),
+    .Q(out[2]),
+    .QN(\dpath/a_reg/_059_ ));
+ DFF_X1 \out[3]$_DFFE_PP_  (.D(\dpath/a_reg/_009_ ),
+    .CK(clk),
+    .Q(out[3]),
+    .QN(\dpath/a_reg/_058_ ));
+ DFF_X1 \out[4]$_DFFE_PP_  (.D(\dpath/a_reg/_010_ ),
+    .CK(clk),
+    .Q(out[4]),
+    .QN(\dpath/a_reg/_057_ ));
+ DFF_X1 \out[5]$_DFFE_PP_  (.D(\dpath/a_reg/_011_ ),
+    .CK(clk),
+    .Q(out[5]),
+    .QN(\dpath/a_reg/_056_ ));
+ DFF_X1 \out[6]$_DFFE_PP_  (.D(\dpath/a_reg/_012_ ),
+    .CK(clk),
+    .Q(out[6]),
+    .QN(\dpath/a_reg/_055_ ));
+ DFF_X1 \out[7]$_DFFE_PP_  (.D(\dpath/a_reg/_013_ ),
+    .CK(clk),
+    .Q(out[7]),
+    .QN(\dpath/a_reg/_054_ ));
+ DFF_X1 \out[8]$_DFFE_PP_  (.D(\dpath/a_reg/_014_ ),
+    .CK(clk),
+    .Q(out[8]),
+    .QN(\dpath/a_reg/_053_ ));
+ DFF_X1 \out[9]$_DFFE_PP_  (.D(\dpath/a_reg/_015_ ),
+    .CK(clk),
+    .Q(out[9]),
+    .QN(\dpath/a_reg/_052_ ));
+endmodule
+module Mux_0xdd6473406d1a99a (clk,
+    \in_$000 ,
+    \in_$001 ,
+    out,
+    reset,
+    sel);
+ input clk;
+ input [15:0] \in_$000 ;
+ input [15:0] \in_$001 ;
+ output [15:0] out;
+ input reset;
+ input sel;
+
+
+ BUF_X8 _36_ (.A(sel),
+    .Z(\dpath/b_mux/_01_ ));
+ INV_X16 _37_ (.A(\dpath/b_mux/_01_ ),
+    .ZN(\dpath/b_mux/_02_ ));
+ BUF_X32 _38_ (.A(\dpath/b_mux/_02_ ),
+    .Z(\dpath/b_mux/_03_ ));
+ NAND2_X4 _39_ (.A1(\dpath/b_mux/_03_ ),
+    .A2(\in_$000 [0]),
+    .ZN(\dpath/b_mux/_04_ ));
+ NAND2_X1 _40_ (.A1(\in_$001 [0]),
+    .A2(\dpath/b_mux/_01_ ),
+    .ZN(\dpath/b_mux/_05_ ));
+ NAND2_X4 _41_ (.A1(\dpath/b_mux/_04_ ),
+    .A2(\dpath/b_mux/_05_ ),
+    .ZN(out[0]));
+ NAND2_X4 _42_ (.A1(\dpath/b_mux/_03_ ),
+    .A2(\in_$000 [10]),
+    .ZN(\dpath/b_mux/_06_ ));
+ BUF_X16 _43_ (.A(\dpath/b_mux/_01_ ),
+    .Z(\dpath/b_mux/_07_ ));
+ NAND2_X1 _44_ (.A1(\dpath/b_mux/_07_ ),
+    .A2(\in_$001 [10]),
+    .ZN(\dpath/b_mux/_08_ ));
+ NAND2_X2 _45_ (.A1(\dpath/b_mux/_06_ ),
+    .A2(\dpath/b_mux/_08_ ),
+    .ZN(out[10]));
+ NAND2_X4 _46_ (.A1(\dpath/b_mux/_03_ ),
+    .A2(\in_$000 [11]),
+    .ZN(\dpath/b_mux/_09_ ));
+ NAND2_X1 _47_ (.A1(\dpath/b_mux/_07_ ),
+    .A2(\in_$001 [11]),
+    .ZN(\dpath/b_mux/_10_ ));
+ NAND2_X2 _48_ (.A1(\dpath/b_mux/_09_ ),
+    .A2(\dpath/b_mux/_10_ ),
+    .ZN(out[11]));
+ NAND2_X4 _49_ (.A1(\dpath/b_mux/_03_ ),
+    .A2(\in_$000 [12]),
+    .ZN(\dpath/b_mux/_11_ ));
+ NAND2_X2 _50_ (.A1(\dpath/b_mux/_07_ ),
+    .A2(\in_$001 [12]),
+    .ZN(\dpath/b_mux/_12_ ));
+ NAND2_X4 _51_ (.A1(\dpath/b_mux/_11_ ),
+    .A2(\dpath/b_mux/_12_ ),
+    .ZN(out[12]));
+ NAND2_X4 _52_ (.A1(\dpath/b_mux/_03_ ),
+    .A2(\in_$000 [13]),
+    .ZN(\dpath/b_mux/_13_ ));
+ NAND2_X1 _53_ (.A1(\dpath/b_mux/_07_ ),
+    .A2(\in_$001 [13]),
+    .ZN(\dpath/b_mux/_14_ ));
+ NAND2_X2 _54_ (.A1(\dpath/b_mux/_13_ ),
+    .A2(\dpath/b_mux/_14_ ),
+    .ZN(out[13]));
+ NAND2_X4 _55_ (.A1(\dpath/b_mux/_03_ ),
+    .A2(\in_$000 [14]),
+    .ZN(\dpath/b_mux/_15_ ));
+ NAND2_X1 _56_ (.A1(\dpath/b_mux/_07_ ),
+    .A2(\in_$001 [14]),
+    .ZN(\dpath/b_mux/_16_ ));
+ NAND2_X2 _57_ (.A1(\dpath/b_mux/_15_ ),
+    .A2(\dpath/b_mux/_16_ ),
+    .ZN(out[14]));
+ NAND2_X4 _58_ (.A1(\dpath/b_mux/_03_ ),
+    .A2(\in_$000 [15]),
+    .ZN(\dpath/b_mux/_17_ ));
+ NAND2_X1 _59_ (.A1(\dpath/b_mux/_07_ ),
+    .A2(\in_$001 [15]),
+    .ZN(\dpath/b_mux/_18_ ));
+ NAND2_X2 _60_ (.A1(\dpath/b_mux/_17_ ),
+    .A2(\dpath/b_mux/_18_ ),
+    .ZN(out[15]));
+ NAND2_X4 _61_ (.A1(\dpath/b_mux/_03_ ),
+    .A2(\in_$000 [1]),
+    .ZN(\dpath/b_mux/_19_ ));
+ NAND2_X1 _62_ (.A1(\dpath/b_mux/_07_ ),
+    .A2(\in_$001 [1]),
+    .ZN(\dpath/b_mux/_20_ ));
+ NAND2_X2 _63_ (.A1(\dpath/b_mux/_19_ ),
+    .A2(\dpath/b_mux/_20_ ),
+    .ZN(out[1]));
+ NAND2_X4 _64_ (.A1(\dpath/b_mux/_03_ ),
+    .A2(\in_$000 [2]),
+    .ZN(\dpath/b_mux/_21_ ));
+ NAND2_X1 _65_ (.A1(\dpath/b_mux/_07_ ),
+    .A2(\in_$001 [2]),
+    .ZN(\dpath/b_mux/_22_ ));
+ NAND2_X2 _66_ (.A1(\dpath/b_mux/_21_ ),
+    .A2(\dpath/b_mux/_22_ ),
+    .ZN(out[2]));
+ NAND2_X4 _67_ (.A1(\dpath/b_mux/_03_ ),
+    .A2(\in_$000 [3]),
+    .ZN(\dpath/b_mux/_23_ ));
+ NAND2_X1 _68_ (.A1(\dpath/b_mux/_07_ ),
+    .A2(\in_$001 [3]),
+    .ZN(\dpath/b_mux/_24_ ));
+ NAND2_X2 _69_ (.A1(\dpath/b_mux/_23_ ),
+    .A2(\dpath/b_mux/_24_ ),
+    .ZN(out[3]));
+ NAND2_X1 _70_ (.A1(\dpath/b_mux/_02_ ),
+    .A2(\in_$000 [4]),
+    .ZN(\dpath/b_mux/_25_ ));
+ NAND2_X1 _71_ (.A1(\dpath/b_mux/_07_ ),
+    .A2(\in_$001 [4]),
+    .ZN(\dpath/b_mux/_26_ ));
+ NAND2_X1 _72_ (.A1(\dpath/b_mux/_25_ ),
+    .A2(\dpath/b_mux/_26_ ),
+    .ZN(out[4]));
+ NAND2_X1 _73_ (.A1(\dpath/b_mux/_02_ ),
+    .A2(\in_$000 [5]),
+    .ZN(\dpath/b_mux/_27_ ));
+ NAND2_X1 _74_ (.A1(\dpath/b_mux/_01_ ),
+    .A2(\in_$001 [5]),
+    .ZN(\dpath/b_mux/_28_ ));
+ NAND2_X1 _75_ (.A1(\dpath/b_mux/_27_ ),
+    .A2(\dpath/b_mux/_28_ ),
+    .ZN(out[5]));
+ NAND2_X1 _76_ (.A1(\dpath/b_mux/_02_ ),
+    .A2(\in_$000 [6]),
+    .ZN(\dpath/b_mux/_29_ ));
+ NAND2_X1 _77_ (.A1(\dpath/b_mux/_01_ ),
+    .A2(\in_$001 [6]),
+    .ZN(\dpath/b_mux/_30_ ));
+ NAND2_X1 _78_ (.A1(\dpath/b_mux/_29_ ),
+    .A2(\dpath/b_mux/_30_ ),
+    .ZN(out[6]));
+ NAND2_X1 _79_ (.A1(\dpath/b_mux/_02_ ),
+    .A2(\in_$000 [7]),
+    .ZN(\dpath/b_mux/_31_ ));
+ NAND2_X1 _80_ (.A1(\dpath/b_mux/_01_ ),
+    .A2(\in_$001 [7]),
+    .ZN(\dpath/b_mux/_32_ ));
+ NAND2_X1 _81_ (.A1(\dpath/b_mux/_31_ ),
+    .A2(\dpath/b_mux/_32_ ),
+    .ZN(out[7]));
+ NAND2_X1 _82_ (.A1(\dpath/b_mux/_02_ ),
+    .A2(\in_$000 [8]),
+    .ZN(\dpath/b_mux/_33_ ));
+ NAND2_X1 _83_ (.A1(\dpath/b_mux/_01_ ),
+    .A2(\in_$001 [8]),
+    .ZN(\dpath/b_mux/_34_ ));
+ NAND2_X1 _84_ (.A1(\dpath/b_mux/_33_ ),
+    .A2(\dpath/b_mux/_34_ ),
+    .ZN(out[8]));
+ NAND2_X1 _85_ (.A1(\dpath/b_mux/_02_ ),
+    .A2(\in_$000 [9]),
+    .ZN(\dpath/b_mux/_35_ ));
+ NAND2_X1 _86_ (.A1(\dpath/b_mux/_01_ ),
+    .A2(\in_$001 [9]),
+    .ZN(\dpath/b_mux/_00_ ));
+ NAND2_X1 _87_ (.A1(\dpath/b_mux/_35_ ),
+    .A2(\dpath/b_mux/_00_ ),
+    .ZN(out[9]));
+endmodule
+module RegEn_0x68db79c4ec1d6e5b_b_reg (clk,
+    en,
+    in_,
+    out,
+    reset);
+ input clk;
+ input en;
+ input [15:0] in_;
+ output [15:0] out;
+ input reset;
+
+
+ BUF_X8 _068_ (.A(en),
+    .Z(\dpath/b_reg/_017_ ));
+ INV_X16 _069_ (.A(\dpath/b_reg/_017_ ),
+    .ZN(\dpath/b_reg/_018_ ));
+ BUF_X32 _070_ (.A(\dpath/b_reg/_018_ ),
+    .Z(\dpath/b_reg/_019_ ));
+ NAND2_X4 _071_ (.A1(\dpath/b_reg/_019_ ),
+    .A2(out[0]),
+    .ZN(\dpath/b_reg/_020_ ));
+ NAND2_X1 _072_ (.A1(in_[0]),
+    .A2(\dpath/b_reg/_017_ ),
+    .ZN(\dpath/b_reg/_021_ ));
+ NAND2_X4 _073_ (.A1(\dpath/b_reg/_020_ ),
+    .A2(\dpath/b_reg/_021_ ),
+    .ZN(\dpath/b_reg/_000_ ));
+ NAND2_X4 _074_ (.A1(\dpath/b_reg/_019_ ),
+    .A2(out[10]),
+    .ZN(\dpath/b_reg/_022_ ));
+ BUF_X16 _075_ (.A(\dpath/b_reg/_017_ ),
+    .Z(\dpath/b_reg/_023_ ));
+ NAND2_X1 _076_ (.A1(\dpath/b_reg/_023_ ),
+    .A2(in_[10]),
+    .ZN(\dpath/b_reg/_024_ ));
+ NAND2_X2 _077_ (.A1(\dpath/b_reg/_022_ ),
+    .A2(\dpath/b_reg/_024_ ),
+    .ZN(\dpath/b_reg/_001_ ));
+ NAND2_X4 _078_ (.A1(\dpath/b_reg/_019_ ),
+    .A2(out[11]),
+    .ZN(\dpath/b_reg/_025_ ));
+ NAND2_X1 _079_ (.A1(\dpath/b_reg/_023_ ),
+    .A2(in_[11]),
+    .ZN(\dpath/b_reg/_026_ ));
+ NAND2_X2 _080_ (.A1(\dpath/b_reg/_025_ ),
+    .A2(\dpath/b_reg/_026_ ),
+    .ZN(\dpath/b_reg/_002_ ));
+ NAND2_X4 _081_ (.A1(\dpath/b_reg/_019_ ),
+    .A2(out[12]),
+    .ZN(\dpath/b_reg/_027_ ));
+ NAND2_X2 _082_ (.A1(\dpath/b_reg/_023_ ),
+    .A2(in_[12]),
+    .ZN(\dpath/b_reg/_028_ ));
+ NAND2_X4 _083_ (.A1(\dpath/b_reg/_027_ ),
+    .A2(\dpath/b_reg/_028_ ),
+    .ZN(\dpath/b_reg/_003_ ));
+ NAND2_X4 _084_ (.A1(\dpath/b_reg/_019_ ),
+    .A2(out[13]),
+    .ZN(\dpath/b_reg/_029_ ));
+ NAND2_X1 _085_ (.A1(\dpath/b_reg/_023_ ),
+    .A2(in_[13]),
+    .ZN(\dpath/b_reg/_030_ ));
+ NAND2_X2 _086_ (.A1(\dpath/b_reg/_029_ ),
+    .A2(\dpath/b_reg/_030_ ),
+    .ZN(\dpath/b_reg/_004_ ));
+ NAND2_X4 _087_ (.A1(\dpath/b_reg/_019_ ),
+    .A2(out[14]),
+    .ZN(\dpath/b_reg/_031_ ));
+ NAND2_X1 _088_ (.A1(\dpath/b_reg/_023_ ),
+    .A2(in_[14]),
+    .ZN(\dpath/b_reg/_032_ ));
+ NAND2_X2 _089_ (.A1(\dpath/b_reg/_031_ ),
+    .A2(\dpath/b_reg/_032_ ),
+    .ZN(\dpath/b_reg/_005_ ));
+ NAND2_X4 _090_ (.A1(\dpath/b_reg/_019_ ),
+    .A2(out[15]),
+    .ZN(\dpath/b_reg/_033_ ));
+ NAND2_X1 _091_ (.A1(\dpath/b_reg/_023_ ),
+    .A2(in_[15]),
+    .ZN(\dpath/b_reg/_034_ ));
+ NAND2_X2 _092_ (.A1(\dpath/b_reg/_033_ ),
+    .A2(\dpath/b_reg/_034_ ),
+    .ZN(\dpath/b_reg/_006_ ));
+ NAND2_X4 _093_ (.A1(\dpath/b_reg/_019_ ),
+    .A2(out[1]),
+    .ZN(\dpath/b_reg/_035_ ));
+ NAND2_X1 _094_ (.A1(\dpath/b_reg/_023_ ),
+    .A2(in_[1]),
+    .ZN(\dpath/b_reg/_036_ ));
+ NAND2_X2 _095_ (.A1(\dpath/b_reg/_035_ ),
+    .A2(\dpath/b_reg/_036_ ),
+    .ZN(\dpath/b_reg/_007_ ));
+ NAND2_X4 _096_ (.A1(\dpath/b_reg/_019_ ),
+    .A2(out[2]),
+    .ZN(\dpath/b_reg/_037_ ));
+ NAND2_X1 _097_ (.A1(\dpath/b_reg/_023_ ),
+    .A2(in_[2]),
+    .ZN(\dpath/b_reg/_038_ ));
+ NAND2_X2 _098_ (.A1(\dpath/b_reg/_037_ ),
+    .A2(\dpath/b_reg/_038_ ),
+    .ZN(\dpath/b_reg/_008_ ));
+ NAND2_X4 _099_ (.A1(\dpath/b_reg/_019_ ),
+    .A2(out[3]),
+    .ZN(\dpath/b_reg/_039_ ));
+ NAND2_X1 _100_ (.A1(\dpath/b_reg/_023_ ),
+    .A2(in_[3]),
+    .ZN(\dpath/b_reg/_040_ ));
+ NAND2_X2 _101_ (.A1(\dpath/b_reg/_039_ ),
+    .A2(\dpath/b_reg/_040_ ),
+    .ZN(\dpath/b_reg/_009_ ));
+ NAND2_X1 _102_ (.A1(\dpath/b_reg/_018_ ),
+    .A2(out[4]),
+    .ZN(\dpath/b_reg/_041_ ));
+ NAND2_X1 _103_ (.A1(\dpath/b_reg/_023_ ),
+    .A2(in_[4]),
+    .ZN(\dpath/b_reg/_042_ ));
+ NAND2_X1 _104_ (.A1(\dpath/b_reg/_041_ ),
+    .A2(\dpath/b_reg/_042_ ),
+    .ZN(\dpath/b_reg/_010_ ));
+ NAND2_X1 _105_ (.A1(\dpath/b_reg/_018_ ),
+    .A2(out[5]),
+    .ZN(\dpath/b_reg/_043_ ));
+ NAND2_X1 _106_ (.A1(\dpath/b_reg/_017_ ),
+    .A2(in_[5]),
+    .ZN(\dpath/b_reg/_044_ ));
+ NAND2_X1 _107_ (.A1(\dpath/b_reg/_043_ ),
+    .A2(\dpath/b_reg/_044_ ),
+    .ZN(\dpath/b_reg/_011_ ));
+ NAND2_X1 _108_ (.A1(\dpath/b_reg/_018_ ),
+    .A2(out[6]),
+    .ZN(\dpath/b_reg/_045_ ));
+ NAND2_X1 _109_ (.A1(\dpath/b_reg/_017_ ),
+    .A2(in_[6]),
+    .ZN(\dpath/b_reg/_046_ ));
+ NAND2_X1 _110_ (.A1(\dpath/b_reg/_045_ ),
+    .A2(\dpath/b_reg/_046_ ),
+    .ZN(\dpath/b_reg/_012_ ));
+ NAND2_X1 _111_ (.A1(\dpath/b_reg/_018_ ),
+    .A2(out[7]),
+    .ZN(\dpath/b_reg/_047_ ));
+ NAND2_X1 _112_ (.A1(\dpath/b_reg/_017_ ),
+    .A2(in_[7]),
+    .ZN(\dpath/b_reg/_048_ ));
+ NAND2_X1 _113_ (.A1(\dpath/b_reg/_047_ ),
+    .A2(\dpath/b_reg/_048_ ),
+    .ZN(\dpath/b_reg/_013_ ));
+ NAND2_X1 _114_ (.A1(\dpath/b_reg/_018_ ),
+    .A2(out[8]),
+    .ZN(\dpath/b_reg/_049_ ));
+ NAND2_X1 _115_ (.A1(\dpath/b_reg/_017_ ),
+    .A2(in_[8]),
+    .ZN(\dpath/b_reg/_050_ ));
+ NAND2_X1 _116_ (.A1(\dpath/b_reg/_049_ ),
+    .A2(\dpath/b_reg/_050_ ),
+    .ZN(\dpath/b_reg/_014_ ));
+ NAND2_X1 _117_ (.A1(\dpath/b_reg/_018_ ),
+    .A2(out[9]),
+    .ZN(\dpath/b_reg/_051_ ));
+ NAND2_X1 _118_ (.A1(\dpath/b_reg/_017_ ),
+    .A2(in_[9]),
+    .ZN(\dpath/b_reg/_016_ ));
+ NAND2_X1 _119_ (.A1(\dpath/b_reg/_051_ ),
+    .A2(\dpath/b_reg/_016_ ),
+    .ZN(\dpath/b_reg/_015_ ));
+ DFF_X1 \out[0]$_DFFE_PP_  (.D(\dpath/b_reg/_000_ ),
+    .CK(clk),
+    .Q(out[0]),
+    .QN(\dpath/b_reg/_067_ ));
+ DFF_X1 \out[10]$_DFFE_PP_  (.D(\dpath/b_reg/_001_ ),
+    .CK(clk),
+    .Q(out[10]),
+    .QN(\dpath/b_reg/_066_ ));
+ DFF_X1 \out[11]$_DFFE_PP_  (.D(\dpath/b_reg/_002_ ),
+    .CK(clk),
+    .Q(out[11]),
+    .QN(\dpath/b_reg/_065_ ));
+ DFF_X1 \out[12]$_DFFE_PP_  (.D(\dpath/b_reg/_003_ ),
+    .CK(clk),
+    .Q(out[12]),
+    .QN(\dpath/b_reg/_064_ ));
+ DFF_X1 \out[13]$_DFFE_PP_  (.D(\dpath/b_reg/_004_ ),
+    .CK(clk),
+    .Q(out[13]),
+    .QN(\dpath/b_reg/_063_ ));
+ DFF_X1 \out[14]$_DFFE_PP_  (.D(\dpath/b_reg/_005_ ),
+    .CK(clk),
+    .Q(out[14]),
+    .QN(\dpath/b_reg/_062_ ));
+ DFF_X1 \out[15]$_DFFE_PP_  (.D(\dpath/b_reg/_006_ ),
+    .CK(clk),
+    .Q(out[15]),
+    .QN(\dpath/b_reg/_061_ ));
+ DFF_X1 \out[1]$_DFFE_PP_  (.D(\dpath/b_reg/_007_ ),
+    .CK(clk),
+    .Q(out[1]),
+    .QN(\dpath/b_reg/_060_ ));
+ DFF_X1 \out[2]$_DFFE_PP_  (.D(\dpath/b_reg/_008_ ),
+    .CK(clk),
+    .Q(out[2]),
+    .QN(\dpath/b_reg/_059_ ));
+ DFF_X1 \out[3]$_DFFE_PP_  (.D(\dpath/b_reg/_009_ ),
+    .CK(clk),
+    .Q(out[3]),
+    .QN(\dpath/b_reg/_058_ ));
+ DFF_X1 \out[4]$_DFFE_PP_  (.D(\dpath/b_reg/_010_ ),
+    .CK(clk),
+    .Q(out[4]),
+    .QN(\dpath/b_reg/_057_ ));
+ DFF_X1 \out[5]$_DFFE_PP_  (.D(\dpath/b_reg/_011_ ),
+    .CK(clk),
+    .Q(out[5]),
+    .QN(\dpath/b_reg/_056_ ));
+ DFF_X1 \out[6]$_DFFE_PP_  (.D(\dpath/b_reg/_012_ ),
+    .CK(clk),
+    .Q(out[6]),
+    .QN(\dpath/b_reg/_055_ ));
+ DFF_X1 \out[7]$_DFFE_PP_  (.D(\dpath/b_reg/_013_ ),
+    .CK(clk),
+    .Q(out[7]),
+    .QN(\dpath/b_reg/_054_ ));
+ DFF_X1 \out[8]$_DFFE_PP_  (.D(\dpath/b_reg/_014_ ),
+    .CK(clk),
+    .Q(out[8]),
+    .QN(\dpath/b_reg/_053_ ));
+ DFF_X1 \out[9]$_DFFE_PP_  (.D(\dpath/b_reg/_015_ ),
+    .CK(clk),
+    .Q(out[9]),
+    .QN(\dpath/b_reg/_052_ ));
+endmodule
+module ZeroComparator_0x422b1f52edd46a85 (clk,
+    in_,
+    out,
+    reset);
+ input clk;
+ input [15:0] in_;
+ output out;
+ input reset;
+
+
+ NOR2_X1 _18_ (.A1(in_[5]),
+    .A2(in_[4]),
+    .ZN(\dpath/b_zero/_00_ ));
+ NOR2_X1 _19_ (.A1(in_[7]),
+    .A2(in_[6]),
+    .ZN(\dpath/b_zero/_01_ ));
+ AND2_X1 _20_ (.A1(\dpath/b_zero/_00_ ),
+    .A2(\dpath/b_zero/_01_ ),
+    .ZN(\dpath/b_zero/_02_ ));
+ NOR2_X1 _21_ (.A1(in_[1]),
+    .A2(in_[0]),
+    .ZN(\dpath/b_zero/_03_ ));
+ NOR2_X1 _22_ (.A1(in_[3]),
+    .A2(in_[2]),
+    .ZN(\dpath/b_zero/_04_ ));
+ AND2_X1 _23_ (.A1(\dpath/b_zero/_03_ ),
+    .A2(\dpath/b_zero/_04_ ),
+    .ZN(\dpath/b_zero/_05_ ));
+ NAND2_X1 _24_ (.A1(\dpath/b_zero/_02_ ),
+    .A2(\dpath/b_zero/_05_ ),
+    .ZN(\dpath/b_zero/_06_ ));
+ NOR2_X2 _25_ (.A1(in_[13]),
+    .A2(in_[12]),
+    .ZN(\dpath/b_zero/_07_ ));
+ NOR2_X1 _26_ (.A1(in_[15]),
+    .A2(in_[14]),
+    .ZN(\dpath/b_zero/_08_ ));
+ AND2_X2 _27_ (.A1(\dpath/b_zero/_07_ ),
+    .A2(\dpath/b_zero/_08_ ),
+    .ZN(\dpath/b_zero/_09_ ));
+ INV_X1 _28_ (.A(in_[9]),
+    .ZN(\dpath/b_zero/_10_ ));
+ INV_X1 _29_ (.A(in_[8]),
+    .ZN(\dpath/b_zero/_11_ ));
+ NAND2_X1 _30_ (.A1(\dpath/b_zero/_10_ ),
+    .A2(\dpath/b_zero/_11_ ),
+    .ZN(\dpath/b_zero/_12_ ));
+ INV_X1 _31_ (.A(in_[11]),
+    .ZN(\dpath/b_zero/_13_ ));
+ INV_X2 _32_ (.A(in_[10]),
+    .ZN(\dpath/b_zero/_14_ ));
+ NAND2_X2 _33_ (.A1(\dpath/b_zero/_13_ ),
+    .A2(\dpath/b_zero/_14_ ),
+    .ZN(\dpath/b_zero/_15_ ));
+ NOR2_X2 _34_ (.A1(\dpath/b_zero/_12_ ),
+    .A2(\dpath/b_zero/_15_ ),
+    .ZN(\dpath/b_zero/_16_ ));
+ NAND2_X2 _35_ (.A1(\dpath/b_zero/_09_ ),
+    .A2(\dpath/b_zero/_16_ ),
+    .ZN(\dpath/b_zero/_17_ ));
+ NOR2_X2 _36_ (.A1(\dpath/b_zero/_06_ ),
+    .A2(\dpath/b_zero/_17_ ),
+    .ZN(out));
+endmodule
+module Subtractor_0x422b1f52edd46a85 (clk,
+    in0,
+    in1,
+    out,
+    reset);
+ input clk;
+ input [15:0] in0;
+ input [15:0] in1;
+ output [15:0] out;
+ input reset;
+
+
+ INV_X1 _237_ (.A(in0[0]),
+    .ZN(\dpath/sub/_187_ ));
+ XNOR2_X1 _238_ (.A(\dpath/sub/_187_ ),
+    .B(in1[0]),
+    .ZN(out[0]));
+ INV_X1 _239_ (.A(in0[5]),
+    .ZN(\dpath/sub/_188_ ));
+ NAND2_X2 _240_ (.A1(\dpath/sub/_188_ ),
+    .A2(in1[5]),
+    .ZN(\dpath/sub/_189_ ));
+ INV_X1 _241_ (.A(in1[5]),
+    .ZN(\dpath/sub/_190_ ));
+ NAND2_X2 _242_ (.A1(\dpath/sub/_190_ ),
+    .A2(in0[5]),
+    .ZN(\dpath/sub/_191_ ));
+ NAND2_X4 _243_ (.A1(\dpath/sub/_189_ ),
+    .A2(\dpath/sub/_191_ ),
+    .ZN(\dpath/sub/_192_ ));
+ INV_X2 _244_ (.A(\dpath/sub/_192_ ),
+    .ZN(\dpath/sub/_193_ ));
+ XNOR2_X1 _245_ (.A(in0[4]),
+    .B(in1[4]),
+    .ZN(\dpath/sub/_194_ ));
+ NAND2_X1 _246_ (.A1(\dpath/sub/_193_ ),
+    .A2(\dpath/sub/_194_ ),
+    .ZN(\dpath/sub/_195_ ));
+ INV_X1 _247_ (.A(in1[3]),
+    .ZN(\dpath/sub/_196_ ));
+ NAND2_X2 _248_ (.A1(\dpath/sub/_196_ ),
+    .A2(in0[3]),
+    .ZN(\dpath/sub/_197_ ));
+ INV_X2 _249_ (.A(in1[2]),
+    .ZN(\dpath/sub/_198_ ));
+ NAND2_X2 _250_ (.A1(\dpath/sub/_198_ ),
+    .A2(in0[2]),
+    .ZN(\dpath/sub/_199_ ));
+ NAND2_X1 _251_ (.A1(\dpath/sub/_197_ ),
+    .A2(\dpath/sub/_199_ ),
+    .ZN(\dpath/sub/_200_ ));
+ INV_X1 _252_ (.A(in0[3]),
+    .ZN(\dpath/sub/_201_ ));
+ NAND2_X2 _253_ (.A1(\dpath/sub/_201_ ),
+    .A2(in1[3]),
+    .ZN(\dpath/sub/_202_ ));
+ NAND2_X1 _254_ (.A1(\dpath/sub/_200_ ),
+    .A2(\dpath/sub/_202_ ),
+    .ZN(\dpath/sub/_203_ ));
+ NOR2_X2 _255_ (.A1(\dpath/sub/_195_ ),
+    .A2(\dpath/sub/_203_ ),
+    .ZN(\dpath/sub/_204_ ));
+ INV_X1 _256_ (.A(in1[4]),
+    .ZN(\dpath/sub/_205_ ));
+ NAND2_X2 _257_ (.A1(\dpath/sub/_205_ ),
+    .A2(in0[4]),
+    .ZN(\dpath/sub/_206_ ));
+ NAND2_X1 _258_ (.A1(\dpath/sub/_191_ ),
+    .A2(\dpath/sub/_206_ ),
+    .ZN(\dpath/sub/_207_ ));
+ NAND2_X1 _259_ (.A1(\dpath/sub/_207_ ),
+    .A2(\dpath/sub/_189_ ),
+    .ZN(\dpath/sub/_208_ ));
+ INV_X1 _260_ (.A(\dpath/sub/_208_ ),
+    .ZN(\dpath/sub/_209_ ));
+ NOR2_X2 _261_ (.A1(\dpath/sub/_204_ ),
+    .A2(\dpath/sub/_209_ ),
+    .ZN(\dpath/sub/_210_ ));
+ INV_X1 _262_ (.A(in1[1]),
+    .ZN(\dpath/sub/_211_ ));
+ NAND2_X1 _263_ (.A1(\dpath/sub/_211_ ),
+    .A2(in0[1]),
+    .ZN(\dpath/sub/_212_ ));
+ NAND2_X2 _264_ (.A1(\dpath/sub/_187_ ),
+    .A2(in1[0]),
+    .ZN(\dpath/sub/_213_ ));
+ INV_X1 _265_ (.A(\dpath/sub/_213_ ),
+    .ZN(\dpath/sub/_214_ ));
+ NOR2_X1 _266_ (.A1(\dpath/sub/_211_ ),
+    .A2(in0[1]),
+    .ZN(\dpath/sub/_215_ ));
+ OAI21_X1 _267_ (.A(\dpath/sub/_212_ ),
+    .B1(\dpath/sub/_214_ ),
+    .B2(\dpath/sub/_215_ ),
+    .ZN(\dpath/sub/_216_ ));
+ INV_X1 _268_ (.A(in0[4]),
+    .ZN(\dpath/sub/_217_ ));
+ NAND2_X2 _269_ (.A1(\dpath/sub/_217_ ),
+    .A2(in1[4]),
+    .ZN(\dpath/sub/_218_ ));
+ NAND2_X2 _270_ (.A1(\dpath/sub/_206_ ),
+    .A2(\dpath/sub/_218_ ),
+    .ZN(\dpath/sub/_219_ ));
+ NOR2_X1 _271_ (.A1(\dpath/sub/_192_ ),
+    .A2(\dpath/sub/_219_ ),
+    .ZN(\dpath/sub/_220_ ));
+ NAND2_X4 _272_ (.A1(\dpath/sub/_197_ ),
+    .A2(\dpath/sub/_202_ ),
+    .ZN(\dpath/sub/_221_ ));
+ INV_X1 _273_ (.A(in0[2]),
+    .ZN(\dpath/sub/_222_ ));
+ NAND2_X2 _274_ (.A1(\dpath/sub/_222_ ),
+    .A2(in1[2]),
+    .ZN(\dpath/sub/_223_ ));
+ NAND2_X4 _275_ (.A1(\dpath/sub/_199_ ),
+    .A2(\dpath/sub/_223_ ),
+    .ZN(\dpath/sub/_224_ ));
+ NOR2_X4 _276_ (.A1(\dpath/sub/_221_ ),
+    .A2(\dpath/sub/_224_ ),
+    .ZN(\dpath/sub/_225_ ));
+ NAND3_X1 _277_ (.A1(\dpath/sub/_216_ ),
+    .A2(\dpath/sub/_220_ ),
+    .A3(\dpath/sub/_225_ ),
+    .ZN(\dpath/sub/_226_ ));
+ NAND2_X2 _278_ (.A1(\dpath/sub/_210_ ),
+    .A2(\dpath/sub/_226_ ),
+    .ZN(\dpath/sub/_227_ ));
+ INV_X1 _279_ (.A(in1[6]),
+    .ZN(\dpath/sub/_228_ ));
+ NAND2_X2 _280_ (.A1(\dpath/sub/_228_ ),
+    .A2(in0[6]),
+    .ZN(\dpath/sub/_229_ ));
+ INV_X1 _281_ (.A(in0[6]),
+    .ZN(\dpath/sub/_230_ ));
+ NAND2_X2 _282_ (.A1(\dpath/sub/_230_ ),
+    .A2(in1[6]),
+    .ZN(\dpath/sub/_231_ ));
+ NAND2_X4 _283_ (.A1(\dpath/sub/_229_ ),
+    .A2(\dpath/sub/_231_ ),
+    .ZN(\dpath/sub/_232_ ));
+ INV_X4 _284_ (.A(\dpath/sub/_232_ ),
+    .ZN(\dpath/sub/_233_ ));
+ XNOR2_X2 _285_ (.A(in0[7]),
+    .B(in1[7]),
+    .ZN(\dpath/sub/_234_ ));
+ NAND2_X2 _286_ (.A1(\dpath/sub/_233_ ),
+    .A2(\dpath/sub/_234_ ),
+    .ZN(\dpath/sub/_235_ ));
+ INV_X1 _287_ (.A(\dpath/sub/_235_ ),
+    .ZN(\dpath/sub/_236_ ));
+ INV_X1 _288_ (.A(in0[9]),
+    .ZN(\dpath/sub/_000_ ));
+ NAND2_X2 _289_ (.A1(\dpath/sub/_000_ ),
+    .A2(in1[9]),
+    .ZN(\dpath/sub/_001_ ));
+ INV_X1 _290_ (.A(in1[9]),
+    .ZN(\dpath/sub/_002_ ));
+ NAND2_X2 _291_ (.A1(\dpath/sub/_002_ ),
+    .A2(in0[9]),
+    .ZN(\dpath/sub/_003_ ));
+ NAND2_X4 _292_ (.A1(\dpath/sub/_001_ ),
+    .A2(\dpath/sub/_003_ ),
+    .ZN(\dpath/sub/_004_ ));
+ INV_X1 _293_ (.A(in0[8]),
+    .ZN(\dpath/sub/_005_ ));
+ NAND2_X4 _294_ (.A1(\dpath/sub/_005_ ),
+    .A2(in1[8]),
+    .ZN(\dpath/sub/_006_ ));
+ INV_X2 _295_ (.A(in1[8]),
+    .ZN(\dpath/sub/_007_ ));
+ NAND2_X4 _296_ (.A1(\dpath/sub/_007_ ),
+    .A2(in0[8]),
+    .ZN(\dpath/sub/_008_ ));
+ NAND2_X4 _297_ (.A1(\dpath/sub/_006_ ),
+    .A2(\dpath/sub/_008_ ),
+    .ZN(\dpath/sub/_009_ ));
+ NOR2_X4 _298_ (.A1(\dpath/sub/_004_ ),
+    .A2(\dpath/sub/_009_ ),
+    .ZN(\dpath/sub/_010_ ));
+ NAND2_X1 _299_ (.A1(\dpath/sub/_236_ ),
+    .A2(\dpath/sub/_010_ ),
+    .ZN(\dpath/sub/_011_ ));
+ INV_X1 _300_ (.A(\dpath/sub/_011_ ),
+    .ZN(\dpath/sub/_012_ ));
+ NAND2_X1 _301_ (.A1(\dpath/sub/_227_ ),
+    .A2(\dpath/sub/_012_ ),
+    .ZN(\dpath/sub/_013_ ));
+ INV_X1 _302_ (.A(in1[7]),
+    .ZN(\dpath/sub/_014_ ));
+ NAND2_X1 _303_ (.A1(\dpath/sub/_014_ ),
+    .A2(in0[7]),
+    .ZN(\dpath/sub/_015_ ));
+ NAND2_X1 _304_ (.A1(\dpath/sub/_015_ ),
+    .A2(\dpath/sub/_229_ ),
+    .ZN(\dpath/sub/_016_ ));
+ OR2_X2 _305_ (.A1(\dpath/sub/_014_ ),
+    .A2(in0[7]),
+    .ZN(\dpath/sub/_017_ ));
+ NAND2_X2 _306_ (.A1(\dpath/sub/_016_ ),
+    .A2(\dpath/sub/_017_ ),
+    .ZN(\dpath/sub/_018_ ));
+ INV_X1 _307_ (.A(\dpath/sub/_018_ ),
+    .ZN(\dpath/sub/_019_ ));
+ NAND2_X1 _308_ (.A1(\dpath/sub/_010_ ),
+    .A2(\dpath/sub/_019_ ),
+    .ZN(\dpath/sub/_020_ ));
+ NAND2_X1 _309_ (.A1(\dpath/sub/_003_ ),
+    .A2(\dpath/sub/_008_ ),
+    .ZN(\dpath/sub/_021_ ));
+ NAND2_X1 _310_ (.A1(\dpath/sub/_021_ ),
+    .A2(\dpath/sub/_001_ ),
+    .ZN(\dpath/sub/_022_ ));
+ NAND2_X1 _311_ (.A1(\dpath/sub/_020_ ),
+    .A2(\dpath/sub/_022_ ),
+    .ZN(\dpath/sub/_023_ ));
+ INV_X1 _312_ (.A(\dpath/sub/_023_ ),
+    .ZN(\dpath/sub/_024_ ));
+ NAND2_X1 _313_ (.A1(\dpath/sub/_013_ ),
+    .A2(\dpath/sub/_024_ ),
+    .ZN(\dpath/sub/_025_ ));
+ INV_X1 _314_ (.A(in0[10]),
+    .ZN(\dpath/sub/_026_ ));
+ NAND2_X2 _315_ (.A1(\dpath/sub/_026_ ),
+    .A2(in1[10]),
+    .ZN(\dpath/sub/_027_ ));
+ INV_X1 _316_ (.A(in1[10]),
+    .ZN(\dpath/sub/_028_ ));
+ NAND2_X2 _317_ (.A1(\dpath/sub/_028_ ),
+    .A2(in0[10]),
+    .ZN(\dpath/sub/_029_ ));
+ NAND2_X4 _318_ (.A1(\dpath/sub/_027_ ),
+    .A2(\dpath/sub/_029_ ),
+    .ZN(\dpath/sub/_030_ ));
+ NAND2_X1 _319_ (.A1(\dpath/sub/_025_ ),
+    .A2(\dpath/sub/_030_ ),
+    .ZN(\dpath/sub/_031_ ));
+ INV_X1 _320_ (.A(\dpath/sub/_030_ ),
+    .ZN(\dpath/sub/_032_ ));
+ NAND3_X1 _321_ (.A1(\dpath/sub/_013_ ),
+    .A2(\dpath/sub/_024_ ),
+    .A3(\dpath/sub/_032_ ),
+    .ZN(\dpath/sub/_033_ ));
+ NAND2_X1 _322_ (.A1(\dpath/sub/_031_ ),
+    .A2(\dpath/sub/_033_ ),
+    .ZN(out[10]));
+ NAND2_X1 _323_ (.A1(\dpath/sub/_229_ ),
+    .A2(\dpath/sub/_191_ ),
+    .ZN(\dpath/sub/_034_ ));
+ NAND2_X2 _324_ (.A1(\dpath/sub/_034_ ),
+    .A2(\dpath/sub/_231_ ),
+    .ZN(\dpath/sub/_035_ ));
+ NAND2_X1 _325_ (.A1(\dpath/sub/_233_ ),
+    .A2(\dpath/sub/_193_ ),
+    .ZN(\dpath/sub/_036_ ));
+ NAND2_X1 _326_ (.A1(\dpath/sub/_206_ ),
+    .A2(\dpath/sub/_197_ ),
+    .ZN(\dpath/sub/_037_ ));
+ NAND2_X1 _327_ (.A1(\dpath/sub/_037_ ),
+    .A2(\dpath/sub/_218_ ),
+    .ZN(\dpath/sub/_038_ ));
+ OAI21_X1 _328_ (.A(\dpath/sub/_035_ ),
+    .B1(\dpath/sub/_036_ ),
+    .B2(\dpath/sub/_038_ ),
+    .ZN(\dpath/sub/_039_ ));
+ NOR2_X4 _329_ (.A1(\dpath/sub/_004_ ),
+    .A2(\dpath/sub/_030_ ),
+    .ZN(\dpath/sub/_040_ ));
+ INV_X1 _330_ (.A(\dpath/sub/_040_ ),
+    .ZN(\dpath/sub/_041_ ));
+ INV_X4 _331_ (.A(\dpath/sub/_009_ ),
+    .ZN(\dpath/sub/_042_ ));
+ NAND2_X4 _332_ (.A1(\dpath/sub/_042_ ),
+    .A2(\dpath/sub/_234_ ),
+    .ZN(\dpath/sub/_043_ ));
+ NOR2_X4 _333_ (.A1(\dpath/sub/_041_ ),
+    .A2(\dpath/sub/_043_ ),
+    .ZN(\dpath/sub/_044_ ));
+ NAND2_X1 _334_ (.A1(\dpath/sub/_039_ ),
+    .A2(\dpath/sub/_044_ ),
+    .ZN(\dpath/sub/_045_ ));
+ NAND2_X1 _335_ (.A1(\dpath/sub/_008_ ),
+    .A2(\dpath/sub/_015_ ),
+    .ZN(\dpath/sub/_046_ ));
+ NAND2_X2 _336_ (.A1(\dpath/sub/_046_ ),
+    .A2(\dpath/sub/_006_ ),
+    .ZN(\dpath/sub/_047_ ));
+ INV_X1 _337_ (.A(\dpath/sub/_047_ ),
+    .ZN(\dpath/sub/_048_ ));
+ NAND2_X1 _338_ (.A1(\dpath/sub/_040_ ),
+    .A2(\dpath/sub/_048_ ),
+    .ZN(\dpath/sub/_049_ ));
+ INV_X1 _339_ (.A(\dpath/sub/_003_ ),
+    .ZN(\dpath/sub/_050_ ));
+ INV_X1 _340_ (.A(\dpath/sub/_029_ ),
+    .ZN(\dpath/sub/_051_ ));
+ OAI21_X2 _341_ (.A(\dpath/sub/_027_ ),
+    .B1(\dpath/sub/_050_ ),
+    .B2(\dpath/sub/_051_ ),
+    .ZN(\dpath/sub/_052_ ));
+ NAND2_X1 _342_ (.A1(\dpath/sub/_049_ ),
+    .A2(\dpath/sub/_052_ ),
+    .ZN(\dpath/sub/_053_ ));
+ INV_X1 _343_ (.A(\dpath/sub/_053_ ),
+    .ZN(\dpath/sub/_054_ ));
+ NAND2_X1 _344_ (.A1(\dpath/sub/_045_ ),
+    .A2(\dpath/sub/_054_ ),
+    .ZN(\dpath/sub/_055_ ));
+ INV_X1 _345_ (.A(\dpath/sub/_221_ ),
+    .ZN(\dpath/sub/_056_ ));
+ NAND2_X1 _346_ (.A1(\dpath/sub/_056_ ),
+    .A2(\dpath/sub/_194_ ),
+    .ZN(\dpath/sub/_057_ ));
+ NOR2_X2 _347_ (.A1(\dpath/sub/_036_ ),
+    .A2(\dpath/sub/_057_ ),
+    .ZN(\dpath/sub/_058_ ));
+ NAND2_X1 _348_ (.A1(\dpath/sub/_044_ ),
+    .A2(\dpath/sub/_058_ ),
+    .ZN(\dpath/sub/_059_ ));
+ XNOR2_X1 _349_ (.A(in0[1]),
+    .B(in1[1]),
+    .ZN(\dpath/sub/_060_ ));
+ NAND2_X1 _350_ (.A1(\dpath/sub/_222_ ),
+    .A2(\dpath/sub/_198_ ),
+    .ZN(\dpath/sub/_061_ ));
+ NAND2_X1 _351_ (.A1(in0[2]),
+    .A2(in1[2]),
+    .ZN(\dpath/sub/_062_ ));
+ NAND2_X1 _352_ (.A1(\dpath/sub/_061_ ),
+    .A2(\dpath/sub/_062_ ),
+    .ZN(\dpath/sub/_063_ ));
+ NAND3_X1 _353_ (.A1(\dpath/sub/_060_ ),
+    .A2(\dpath/sub/_063_ ),
+    .A3(\dpath/sub/_213_ ),
+    .ZN(\dpath/sub/_064_ ));
+ NOR2_X1 _354_ (.A1(\dpath/sub/_198_ ),
+    .A2(in0[2]),
+    .ZN(\dpath/sub/_065_ ));
+ OAI21_X1 _355_ (.A(\dpath/sub/_199_ ),
+    .B1(\dpath/sub/_065_ ),
+    .B2(\dpath/sub/_212_ ),
+    .ZN(\dpath/sub/_066_ ));
+ INV_X1 _356_ (.A(\dpath/sub/_066_ ),
+    .ZN(\dpath/sub/_067_ ));
+ NAND2_X1 _357_ (.A1(\dpath/sub/_064_ ),
+    .A2(\dpath/sub/_067_ ),
+    .ZN(\dpath/sub/_068_ ));
+ INV_X1 _358_ (.A(\dpath/sub/_068_ ),
+    .ZN(\dpath/sub/_069_ ));
+ NOR2_X2 _359_ (.A1(\dpath/sub/_059_ ),
+    .A2(\dpath/sub/_069_ ),
+    .ZN(\dpath/sub/_070_ ));
+ NOR2_X1 _360_ (.A1(\dpath/sub/_055_ ),
+    .A2(\dpath/sub/_070_ ),
+    .ZN(\dpath/sub/_071_ ));
+ INV_X1 _361_ (.A(in0[11]),
+    .ZN(\dpath/sub/_072_ ));
+ NAND2_X2 _362_ (.A1(\dpath/sub/_072_ ),
+    .A2(in1[11]),
+    .ZN(\dpath/sub/_073_ ));
+ INV_X1 _363_ (.A(in1[11]),
+    .ZN(\dpath/sub/_074_ ));
+ NAND2_X2 _364_ (.A1(\dpath/sub/_074_ ),
+    .A2(in0[11]),
+    .ZN(\dpath/sub/_075_ ));
+ NAND2_X4 _365_ (.A1(\dpath/sub/_073_ ),
+    .A2(\dpath/sub/_075_ ),
+    .ZN(\dpath/sub/_076_ ));
+ INV_X1 _366_ (.A(\dpath/sub/_076_ ),
+    .ZN(\dpath/sub/_077_ ));
+ NAND2_X1 _367_ (.A1(\dpath/sub/_071_ ),
+    .A2(\dpath/sub/_077_ ),
+    .ZN(\dpath/sub/_078_ ));
+ OAI21_X1 _368_ (.A(\dpath/sub/_076_ ),
+    .B1(\dpath/sub/_055_ ),
+    .B2(\dpath/sub/_070_ ),
+    .ZN(\dpath/sub/_079_ ));
+ NAND2_X1 _369_ (.A1(\dpath/sub/_078_ ),
+    .A2(\dpath/sub/_079_ ),
+    .ZN(out[11]));
+ OAI21_X1 _370_ (.A(\dpath/sub/_018_ ),
+    .B1(\dpath/sub/_235_ ),
+    .B2(\dpath/sub/_208_ ),
+    .ZN(\dpath/sub/_080_ ));
+ NOR2_X2 _371_ (.A1(\dpath/sub/_030_ ),
+    .A2(\dpath/sub/_076_ ),
+    .ZN(\dpath/sub/_081_ ));
+ AND2_X2 _372_ (.A1(\dpath/sub/_010_ ),
+    .A2(\dpath/sub/_081_ ),
+    .ZN(\dpath/sub/_082_ ));
+ NAND2_X1 _373_ (.A1(\dpath/sub/_080_ ),
+    .A2(\dpath/sub/_082_ ),
+    .ZN(\dpath/sub/_083_ ));
+ NAND2_X1 _374_ (.A1(\dpath/sub/_029_ ),
+    .A2(\dpath/sub/_075_ ),
+    .ZN(\dpath/sub/_084_ ));
+ NAND2_X1 _375_ (.A1(\dpath/sub/_084_ ),
+    .A2(\dpath/sub/_073_ ),
+    .ZN(\dpath/sub/_085_ ));
+ INV_X1 _376_ (.A(\dpath/sub/_085_ ),
+    .ZN(\dpath/sub/_086_ ));
+ INV_X1 _377_ (.A(\dpath/sub/_022_ ),
+    .ZN(\dpath/sub/_087_ ));
+ AOI21_X1 _378_ (.A(\dpath/sub/_086_ ),
+    .B1(\dpath/sub/_087_ ),
+    .B2(\dpath/sub/_081_ ),
+    .ZN(\dpath/sub/_088_ ));
+ NAND2_X1 _379_ (.A1(\dpath/sub/_083_ ),
+    .A2(\dpath/sub/_088_ ),
+    .ZN(\dpath/sub/_089_ ));
+ INV_X1 _380_ (.A(\dpath/sub/_089_ ),
+    .ZN(\dpath/sub/_090_ ));
+ NAND2_X1 _381_ (.A1(\dpath/sub/_216_ ),
+    .A2(\dpath/sub/_225_ ),
+    .ZN(\dpath/sub/_091_ ));
+ NAND2_X1 _382_ (.A1(\dpath/sub/_091_ ),
+    .A2(\dpath/sub/_203_ ),
+    .ZN(\dpath/sub/_092_ ));
+ NOR2_X1 _383_ (.A1(\dpath/sub/_235_ ),
+    .A2(\dpath/sub/_195_ ),
+    .ZN(\dpath/sub/_093_ ));
+ NAND3_X1 _384_ (.A1(\dpath/sub/_092_ ),
+    .A2(\dpath/sub/_082_ ),
+    .A3(\dpath/sub/_093_ ),
+    .ZN(\dpath/sub/_094_ ));
+ NAND2_X1 _385_ (.A1(\dpath/sub/_090_ ),
+    .A2(\dpath/sub/_094_ ),
+    .ZN(\dpath/sub/_095_ ));
+ INV_X1 _386_ (.A(in0[12]),
+    .ZN(\dpath/sub/_096_ ));
+ NAND2_X2 _387_ (.A1(\dpath/sub/_096_ ),
+    .A2(in1[12]),
+    .ZN(\dpath/sub/_097_ ));
+ INV_X1 _388_ (.A(in1[12]),
+    .ZN(\dpath/sub/_098_ ));
+ NAND2_X2 _389_ (.A1(\dpath/sub/_098_ ),
+    .A2(in0[12]),
+    .ZN(\dpath/sub/_099_ ));
+ NAND2_X4 _390_ (.A1(\dpath/sub/_097_ ),
+    .A2(\dpath/sub/_099_ ),
+    .ZN(\dpath/sub/_100_ ));
+ NAND2_X1 _391_ (.A1(\dpath/sub/_095_ ),
+    .A2(\dpath/sub/_100_ ),
+    .ZN(\dpath/sub/_101_ ));
+ INV_X1 _392_ (.A(\dpath/sub/_100_ ),
+    .ZN(\dpath/sub/_102_ ));
+ NAND3_X1 _393_ (.A1(\dpath/sub/_090_ ),
+    .A2(\dpath/sub/_102_ ),
+    .A3(\dpath/sub/_094_ ),
+    .ZN(\dpath/sub/_103_ ));
+ NAND2_X1 _394_ (.A1(\dpath/sub/_101_ ),
+    .A2(\dpath/sub/_103_ ),
+    .ZN(out[12]));
+ OAI21_X2 _395_ (.A(\dpath/sub/_047_ ),
+    .B1(\dpath/sub/_043_ ),
+    .B2(\dpath/sub/_035_ ),
+    .ZN(\dpath/sub/_104_ ));
+ NOR2_X4 _396_ (.A1(\dpath/sub/_076_ ),
+    .A2(\dpath/sub/_100_ ),
+    .ZN(\dpath/sub/_105_ ));
+ NAND2_X1 _397_ (.A1(\dpath/sub/_040_ ),
+    .A2(\dpath/sub/_105_ ),
+    .ZN(\dpath/sub/_106_ ));
+ INV_X1 _398_ (.A(\dpath/sub/_106_ ),
+    .ZN(\dpath/sub/_107_ ));
+ NAND2_X1 _399_ (.A1(\dpath/sub/_104_ ),
+    .A2(\dpath/sub/_107_ ),
+    .ZN(\dpath/sub/_108_ ));
+ NAND2_X1 _400_ (.A1(\dpath/sub/_075_ ),
+    .A2(\dpath/sub/_099_ ),
+    .ZN(\dpath/sub/_109_ ));
+ NAND2_X1 _401_ (.A1(\dpath/sub/_109_ ),
+    .A2(\dpath/sub/_097_ ),
+    .ZN(\dpath/sub/_110_ ));
+ INV_X1 _402_ (.A(\dpath/sub/_110_ ),
+    .ZN(\dpath/sub/_111_ ));
+ INV_X1 _403_ (.A(\dpath/sub/_052_ ),
+    .ZN(\dpath/sub/_112_ ));
+ AOI21_X1 _404_ (.A(\dpath/sub/_111_ ),
+    .B1(\dpath/sub/_112_ ),
+    .B2(\dpath/sub/_105_ ),
+    .ZN(\dpath/sub/_113_ ));
+ NAND2_X1 _405_ (.A1(\dpath/sub/_108_ ),
+    .A2(\dpath/sub/_113_ ),
+    .ZN(\dpath/sub/_114_ ));
+ INV_X1 _406_ (.A(\dpath/sub/_114_ ),
+    .ZN(\dpath/sub/_115_ ));
+ NOR2_X2 _407_ (.A1(\dpath/sub/_219_ ),
+    .A2(\dpath/sub/_221_ ),
+    .ZN(\dpath/sub/_116_ ));
+ NAND2_X1 _408_ (.A1(\dpath/sub/_116_ ),
+    .A2(\dpath/sub/_066_ ),
+    .ZN(\dpath/sub/_117_ ));
+ NAND2_X1 _409_ (.A1(\dpath/sub/_117_ ),
+    .A2(\dpath/sub/_038_ ),
+    .ZN(\dpath/sub/_118_ ));
+ INV_X1 _410_ (.A(\dpath/sub/_118_ ),
+    .ZN(\dpath/sub/_119_ ));
+ INV_X1 _411_ (.A(\dpath/sub/_060_ ),
+    .ZN(\dpath/sub/_120_ ));
+ NOR2_X1 _412_ (.A1(\dpath/sub/_120_ ),
+    .A2(\dpath/sub/_224_ ),
+    .ZN(\dpath/sub/_121_ ));
+ NAND3_X1 _413_ (.A1(\dpath/sub/_121_ ),
+    .A2(\dpath/sub/_116_ ),
+    .A3(\dpath/sub/_213_ ),
+    .ZN(\dpath/sub/_122_ ));
+ NAND2_X2 _414_ (.A1(\dpath/sub/_119_ ),
+    .A2(\dpath/sub/_122_ ),
+    .ZN(\dpath/sub/_123_ ));
+ INV_X2 _415_ (.A(\dpath/sub/_043_ ),
+    .ZN(\dpath/sub/_124_ ));
+ NOR2_X2 _416_ (.A1(\dpath/sub/_232_ ),
+    .A2(\dpath/sub/_192_ ),
+    .ZN(\dpath/sub/_125_ ));
+ NAND2_X1 _417_ (.A1(\dpath/sub/_124_ ),
+    .A2(\dpath/sub/_125_ ),
+    .ZN(\dpath/sub/_126_ ));
+ NOR2_X2 _418_ (.A1(\dpath/sub/_126_ ),
+    .A2(\dpath/sub/_106_ ),
+    .ZN(\dpath/sub/_127_ ));
+ NAND2_X2 _419_ (.A1(\dpath/sub/_123_ ),
+    .A2(\dpath/sub/_127_ ),
+    .ZN(\dpath/sub/_128_ ));
+ NAND2_X1 _420_ (.A1(\dpath/sub/_115_ ),
+    .A2(\dpath/sub/_128_ ),
+    .ZN(\dpath/sub/_129_ ));
+ INV_X1 _421_ (.A(in0[13]),
+    .ZN(\dpath/sub/_130_ ));
+ NAND2_X4 _422_ (.A1(\dpath/sub/_130_ ),
+    .A2(in1[13]),
+    .ZN(\dpath/sub/_131_ ));
+ INV_X2 _423_ (.A(in1[13]),
+    .ZN(\dpath/sub/_132_ ));
+ NAND2_X4 _424_ (.A1(\dpath/sub/_132_ ),
+    .A2(in0[13]),
+    .ZN(\dpath/sub/_133_ ));
+ NAND2_X4 _425_ (.A1(\dpath/sub/_131_ ),
+    .A2(\dpath/sub/_133_ ),
+    .ZN(\dpath/sub/_134_ ));
+ NAND2_X1 _426_ (.A1(\dpath/sub/_129_ ),
+    .A2(\dpath/sub/_134_ ),
+    .ZN(\dpath/sub/_135_ ));
+ INV_X2 _427_ (.A(\dpath/sub/_134_ ),
+    .ZN(\dpath/sub/_136_ ));
+ NAND3_X1 _428_ (.A1(\dpath/sub/_115_ ),
+    .A2(\dpath/sub/_128_ ),
+    .A3(\dpath/sub/_136_ ),
+    .ZN(\dpath/sub/_137_ ));
+ NAND2_X1 _429_ (.A1(\dpath/sub/_135_ ),
+    .A2(\dpath/sub/_137_ ),
+    .ZN(out[13]));
+ NOR2_X2 _430_ (.A1(\dpath/sub/_100_ ),
+    .A2(\dpath/sub/_134_ ),
+    .ZN(\dpath/sub/_138_ ));
+ NAND2_X1 _431_ (.A1(\dpath/sub/_081_ ),
+    .A2(\dpath/sub/_138_ ),
+    .ZN(\dpath/sub/_139_ ));
+ INV_X1 _432_ (.A(\dpath/sub/_139_ ),
+    .ZN(\dpath/sub/_140_ ));
+ NAND2_X1 _433_ (.A1(\dpath/sub/_023_ ),
+    .A2(\dpath/sub/_140_ ),
+    .ZN(\dpath/sub/_141_ ));
+ INV_X1 _434_ (.A(\dpath/sub/_131_ ),
+    .ZN(\dpath/sub/_142_ ));
+ OAI21_X1 _435_ (.A(\dpath/sub/_133_ ),
+    .B1(\dpath/sub/_142_ ),
+    .B2(\dpath/sub/_099_ ),
+    .ZN(\dpath/sub/_143_ ));
+ AOI21_X1 _436_ (.A(\dpath/sub/_143_ ),
+    .B1(\dpath/sub/_086_ ),
+    .B2(\dpath/sub/_138_ ),
+    .ZN(\dpath/sub/_144_ ));
+ NAND2_X1 _437_ (.A1(\dpath/sub/_141_ ),
+    .A2(\dpath/sub/_144_ ),
+    .ZN(\dpath/sub/_145_ ));
+ INV_X1 _438_ (.A(\dpath/sub/_145_ ),
+    .ZN(\dpath/sub/_146_ ));
+ NOR2_X1 _439_ (.A1(\dpath/sub/_011_ ),
+    .A2(\dpath/sub/_139_ ),
+    .ZN(\dpath/sub/_147_ ));
+ NAND2_X1 _440_ (.A1(\dpath/sub/_227_ ),
+    .A2(\dpath/sub/_147_ ),
+    .ZN(\dpath/sub/_148_ ));
+ NAND2_X1 _441_ (.A1(\dpath/sub/_146_ ),
+    .A2(\dpath/sub/_148_ ),
+    .ZN(\dpath/sub/_149_ ));
+ XNOR2_X1 _442_ (.A(in0[14]),
+    .B(in1[14]),
+    .ZN(\dpath/sub/_150_ ));
+ INV_X1 _443_ (.A(\dpath/sub/_150_ ),
+    .ZN(\dpath/sub/_151_ ));
+ NAND2_X1 _444_ (.A1(\dpath/sub/_149_ ),
+    .A2(\dpath/sub/_151_ ),
+    .ZN(\dpath/sub/_152_ ));
+ NAND3_X1 _445_ (.A1(\dpath/sub/_146_ ),
+    .A2(\dpath/sub/_148_ ),
+    .A3(\dpath/sub/_150_ ),
+    .ZN(\dpath/sub/_153_ ));
+ NAND2_X1 _446_ (.A1(\dpath/sub/_152_ ),
+    .A2(\dpath/sub/_153_ ),
+    .ZN(out[14]));
+ NAND2_X1 _447_ (.A1(\dpath/sub/_068_ ),
+    .A2(\dpath/sub/_058_ ),
+    .ZN(\dpath/sub/_154_ ));
+ INV_X1 _448_ (.A(\dpath/sub/_035_ ),
+    .ZN(\dpath/sub/_155_ ));
+ INV_X1 _449_ (.A(\dpath/sub/_038_ ),
+    .ZN(\dpath/sub/_156_ ));
+ AOI21_X2 _450_ (.A(\dpath/sub/_155_ ),
+    .B1(\dpath/sub/_125_ ),
+    .B2(\dpath/sub/_156_ ),
+    .ZN(\dpath/sub/_157_ ));
+ NAND2_X2 _451_ (.A1(\dpath/sub/_154_ ),
+    .A2(\dpath/sub/_157_ ),
+    .ZN(\dpath/sub/_158_ ));
+ INV_X1 _452_ (.A(\dpath/sub/_105_ ),
+    .ZN(\dpath/sub/_159_ ));
+ NAND2_X1 _453_ (.A1(\dpath/sub/_136_ ),
+    .A2(\dpath/sub/_150_ ),
+    .ZN(\dpath/sub/_160_ ));
+ NOR2_X2 _454_ (.A1(\dpath/sub/_159_ ),
+    .A2(\dpath/sub/_160_ ),
+    .ZN(\dpath/sub/_161_ ));
+ AND2_X2 _455_ (.A1(\dpath/sub/_044_ ),
+    .A2(\dpath/sub/_161_ ),
+    .ZN(\dpath/sub/_162_ ));
+ NAND2_X2 _456_ (.A1(\dpath/sub/_158_ ),
+    .A2(\dpath/sub/_162_ ),
+    .ZN(\dpath/sub/_163_ ));
+ NAND2_X1 _457_ (.A1(\dpath/sub/_053_ ),
+    .A2(\dpath/sub/_161_ ),
+    .ZN(\dpath/sub/_164_ ));
+ INV_X1 _458_ (.A(in1[14]),
+    .ZN(\dpath/sub/_165_ ));
+ NAND2_X1 _459_ (.A1(\dpath/sub/_165_ ),
+    .A2(in0[14]),
+    .ZN(\dpath/sub/_166_ ));
+ OAI21_X1 _460_ (.A(\dpath/sub/_166_ ),
+    .B1(\dpath/sub/_151_ ),
+    .B2(\dpath/sub/_133_ ),
+    .ZN(\dpath/sub/_167_ ));
+ NOR2_X1 _461_ (.A1(\dpath/sub/_160_ ),
+    .A2(\dpath/sub/_110_ ),
+    .ZN(\dpath/sub/_168_ ));
+ NOR2_X1 _462_ (.A1(\dpath/sub/_167_ ),
+    .A2(\dpath/sub/_168_ ),
+    .ZN(\dpath/sub/_169_ ));
+ NAND2_X1 _463_ (.A1(\dpath/sub/_164_ ),
+    .A2(\dpath/sub/_169_ ),
+    .ZN(\dpath/sub/_170_ ));
+ INV_X1 _464_ (.A(\dpath/sub/_170_ ),
+    .ZN(\dpath/sub/_171_ ));
+ NAND2_X2 _465_ (.A1(\dpath/sub/_163_ ),
+    .A2(\dpath/sub/_171_ ),
+    .ZN(\dpath/sub/_172_ ));
+ XOR2_X1 _466_ (.A(in0[15]),
+    .B(in1[15]),
+    .Z(\dpath/sub/_173_ ));
+ NAND2_X1 _467_ (.A1(\dpath/sub/_172_ ),
+    .A2(\dpath/sub/_173_ ),
+    .ZN(\dpath/sub/_174_ ));
+ INV_X1 _468_ (.A(\dpath/sub/_173_ ),
+    .ZN(\dpath/sub/_175_ ));
+ NAND3_X1 _469_ (.A1(\dpath/sub/_163_ ),
+    .A2(\dpath/sub/_171_ ),
+    .A3(\dpath/sub/_175_ ),
+    .ZN(\dpath/sub/_176_ ));
+ NAND2_X2 _470_ (.A1(\dpath/sub/_174_ ),
+    .A2(\dpath/sub/_176_ ),
+    .ZN(out[15]));
+ XNOR2_X1 _471_ (.A(\dpath/sub/_060_ ),
+    .B(\dpath/sub/_214_ ),
+    .ZN(out[1]));
+ XNOR2_X1 _472_ (.A(\dpath/sub/_216_ ),
+    .B(\dpath/sub/_224_ ),
+    .ZN(out[2]));
+ XNOR2_X1 _473_ (.A(\dpath/sub/_068_ ),
+    .B(\dpath/sub/_221_ ),
+    .ZN(out[3]));
+ XNOR2_X1 _474_ (.A(\dpath/sub/_092_ ),
+    .B(\dpath/sub/_219_ ),
+    .ZN(out[4]));
+ XNOR2_X1 _475_ (.A(\dpath/sub/_123_ ),
+    .B(\dpath/sub/_192_ ),
+    .ZN(out[5]));
+ XNOR2_X1 _476_ (.A(\dpath/sub/_227_ ),
+    .B(\dpath/sub/_232_ ),
+    .ZN(out[6]));
+ XOR2_X1 _477_ (.A(\dpath/sub/_158_ ),
+    .B(\dpath/sub/_234_ ),
+    .Z(out[7]));
+ NAND2_X1 _478_ (.A1(\dpath/sub/_092_ ),
+    .A2(\dpath/sub/_093_ ),
+    .ZN(\dpath/sub/_177_ ));
+ INV_X1 _479_ (.A(\dpath/sub/_080_ ),
+    .ZN(\dpath/sub/_178_ ));
+ NAND2_X1 _480_ (.A1(\dpath/sub/_177_ ),
+    .A2(\dpath/sub/_178_ ),
+    .ZN(\dpath/sub/_179_ ));
+ XNOR2_X1 _481_ (.A(\dpath/sub/_179_ ),
+    .B(\dpath/sub/_009_ ),
+    .ZN(out[8]));
+ INV_X1 _482_ (.A(\dpath/sub/_126_ ),
+    .ZN(\dpath/sub/_180_ ));
+ NAND2_X2 _483_ (.A1(\dpath/sub/_123_ ),
+    .A2(\dpath/sub/_180_ ),
+    .ZN(\dpath/sub/_181_ ));
+ INV_X1 _484_ (.A(\dpath/sub/_104_ ),
+    .ZN(\dpath/sub/_182_ ));
+ NAND2_X1 _485_ (.A1(\dpath/sub/_181_ ),
+    .A2(\dpath/sub/_182_ ),
+    .ZN(\dpath/sub/_183_ ));
+ NAND2_X1 _486_ (.A1(\dpath/sub/_183_ ),
+    .A2(\dpath/sub/_004_ ),
+    .ZN(\dpath/sub/_184_ ));
+ INV_X1 _487_ (.A(\dpath/sub/_004_ ),
+    .ZN(\dpath/sub/_185_ ));
+ NAND3_X1 _488_ (.A1(\dpath/sub/_181_ ),
+    .A2(\dpath/sub/_185_ ),
+    .A3(\dpath/sub/_182_ ),
+    .ZN(\dpath/sub/_186_ ));
+ NAND2_X1 _489_ (.A1(\dpath/sub/_184_ ),
+    .A2(\dpath/sub/_186_ ),
+    .ZN(out[9]));
+endmodule

@@ -1198,7 +1198,7 @@ worst slack -0.16
 [WARNING RSZ-0075] makeBufferedNet failed for driver clone3/ZN
       840 |       0 |     -14 |        5 |     12 |     2 |   -0.163 |      -20.9 |    150 | load114/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
-[WARNING RSZ-0075] message limit reached, this message will no longer print
+[WARNING RSZ-0075] message limit (1000) reached. This message will no longer print.
       842 |       0 |     -15 |        4 |      9 |     2 |   -0.148 |      -21.3 |    150 | load131/D
       849 |       0 |     -16 |        4 |      9 |     2 |   -0.148 |      -21.3 |    150 | load131/D
       850 |       0 |     -16 |        4 |      9 |     2 |   -0.148 |      -21.3 |    150 | load131/D

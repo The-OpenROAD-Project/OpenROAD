@@ -210,7 +210,8 @@ enum class frConstraintTypeEnum
   frcLef58EnclosureConstraint,
   frcSpacingRangeConstraint,
   frcLef58MaxSpacingConstraint,
-  frcSpacingTableOrth
+  frcSpacingTableOrth,
+  frcLef58WidthTableOrth
 };
 
 std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type);
@@ -263,6 +264,8 @@ enum class frDirEnum
   N = 5,
   U = 6
 };
+
+std::ostream& operator<<(std::ostream& os, frDirEnum dir);
 
 static constexpr frDirEnum frDirEnumAll[] = {frDirEnum::D,
                                              frDirEnum::S,
