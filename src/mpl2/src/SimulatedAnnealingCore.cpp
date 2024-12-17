@@ -350,15 +350,14 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
     const float macro_x_max = macro_x_min + macros_[id].getWidth();
     const float macro_y_max = macro_y_min + macros_[id].getHeight();
 
-    const float overlap_width
-            = std::min(guide.xMax(), macro_x_max)
-              - std::max(guide.xMin(), macro_x_min);
-        const float overlap_height
-            = std::min(guide.yMax(), macro_y_max)
-              - std::max(guide.yMin(), macro_y_min);
+    const float overlap_width = std::min(guide.xMax(), macro_x_max)
+                                - std::max(guide.xMin(), macro_x_min);
+    const float overlap_height = std::min(guide.yMax(), macro_y_max)
+                                 - std::max(guide.yMin(), macro_y_min);
 
     // maximum overlap area
-    float penalty = std::min(macros_[id].getWidth(), guide.getWidth()) * std::min(macros_[id].getHeight(), guide.getHeight());
+    float penalty = std::min(macros_[id].getWidth(), guide.getWidth())
+                    * std::min(macros_[id].getHeight(), guide.getHeight());
 
     // subtract overlap
     if (overlap_width > 0 && overlap_height > 0) {
@@ -369,7 +368,7 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
   }
 
   guidance_penalty_ = guidance_penalty_ / guides_.size();
-  
+
   if (graphics_) {
     graphics_->setGuidancePenalty(
         {guidance_weight_, guidance_penalty_ / norm_guidance_penalty_});

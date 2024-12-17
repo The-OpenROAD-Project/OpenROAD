@@ -778,10 +778,7 @@ struct Rect
     f_y = f_y_;
   }
 
-  bool isValid() const
-  {
-    return (lx < ux) && (ly < uy);
-  }
+  bool isValid() const { return (lx < ux) && (ly < uy); }
 
   void mergeInit()
   {

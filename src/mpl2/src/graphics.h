@@ -123,7 +123,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   // In Soft SA, we're shaping/placing the children of a certain parent,
   // so for this case, the current cluster is actually the current parent.
   Cluster* current_cluster_{nullptr};
-  std::map<int, Rect> guides_; // Id -> Guidance Region
+  std::map<int, Rect> guides_;  // Id -> Guidance Region
 
   bool active_ = true;
   bool coarse_;
