@@ -558,7 +558,7 @@ void Resizer::findBuffers()
   }
 }
 
-bool Resizer::isLinkCell(LibertyCell* cell)
+bool Resizer::isLinkCell(LibertyCell* cell) const
 {
   return network_->findLibertyCell(cell->name()) == cell;
 }
@@ -1803,7 +1803,7 @@ bool Resizer::dontUse(LibertyCell* cell)
   return cell->dontUse() || dont_use_.hasKey(cell);
 }
 
-void Resizer::reportDontUse()
+void Resizer::reportDontUse() const
 {
   logger_->report("Don't Use Cells:");
 
