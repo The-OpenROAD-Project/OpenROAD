@@ -479,8 +479,12 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
           log_->info(GPL,
                      107,
-                     "Timing-driven: RSZ delta area:     {}",
-                     block->dbuAreaToMicrons(nbc_->getDeltaArea()));
+                     "Timing-driven: repair_design (rsz) delta area:     "
+                     "{:.3f} um^2 ({:+.2f}%)",
+                     block->dbuAreaToMicrons(nbc_->getDeltaArea()),
+                     (nbc_->getDeltaArea()
+                      / static_cast<float>(nesterov->nesterovInstsArea()))
+                         * 100.0f);
           log_->info(GPL,
                      108,
                      "Timing-driven: new target density: {}",

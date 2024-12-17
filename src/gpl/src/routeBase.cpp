@@ -675,11 +675,14 @@ std::pair<bool, bool> RouteBase::routability()
   }
 
   dbBlock* block = db_->getChip()->getBlock();
-  log_->info(GPL,
-             45,
-             "{:20} {:10.3f} um^2",
-             "InflatedAreaDelta:",
-             block->dbuAreaToMicrons(inflatedAreaDelta_));
+  log_->info(
+      GPL,
+      45,
+      "{:20} {:10.3f} um^2 ({:+.2f}%)",
+      "InflatedAreaDelta:",
+      block->dbuAreaToMicrons(inflatedAreaDelta_),
+      (static_cast<float>(inflatedAreaDelta_) / nbVec_[0]->nesterovInstsArea())
+          * 100.0f);
   log_->info(
       GPL, 46, "{:20} {:10.3f}", "TargetDensity:", nbVec_[0]->targetDensity());
 
