@@ -780,7 +780,7 @@ struct Rect
 
   bool isValid() const
   {
-    return (lx > 0.0) && (ly > 0.0) && (ux > 0.0) && (uy > 0.0);
+    return (lx < ux) && (ly < uy);
   }
 
   void mergeInit()
