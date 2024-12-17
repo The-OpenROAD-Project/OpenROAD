@@ -287,6 +287,7 @@ BOOST_FIXTURE_TEST_CASE(test_default, F_DEFAULT)
   dbInst::destroy(inst1);
   BOOST_TEST(parent_mod->getInsts().size() == 0);
 }
+
 BOOST_FIXTURE_TEST_CASE(test_find_modinst, F_DEFAULT)
 {
   auto top = block->getTopModule();
@@ -297,6 +298,281 @@ BOOST_FIXTURE_TEST_CASE(test_find_modinst, F_DEFAULT)
   auto minst2 = odb::dbModInst::create(master1, master2, "minst2");
   BOOST_TEST(block->findModInst("minst1/minst2") == minst2);
 }
+
+
+/* 
+   Test fixture for hierarchical connect test
+   ------------------------------------------
+
+   Two module instances, 1 with 1 inverter, second with 4 inverters.
+   Modules have different hierarchical depth and shared terms
+   to stress test the hierarchical connection code.
+   
+   So any reconnection has to go up and down the hierarchy.
+
+   top level module <-- {inv_module, 4inv_module}
+   inv_module <-- 1 inverter
+   
+   
+   Test:
+   Add a buffer in module 1 and make sure connectivity ok
+   (both hierarchical and flat).
+ */
+
+dbDatabase* createSimpleDBDelimiter()
+{
+  utl::Logger* logger = new utl::Logger();
+  dbDatabase* db = dbDatabase::create();
+  db->setLogger(logger);
+  dbTech* tech = dbTech::create(db, "tech");
+  dbTechLayer::create(tech, "L1", dbTechLayerType::MASTERSLICE);
+  dbLib* lib = dbLib::create(db, "lib1", tech, ',');
+  dbChip* chip = dbChip::create(db);
+  //set up the delimiter
+  dbBlock::create(chip, "simple_block",nullptr,'/');
+  createMaster2X1(lib, "and2", 1000, 1000, "a", "b", "o");
+  createMaster2X1(lib, "or2", 500, 500, "a", "b", "o");
+  createMaster1X1(lib, "inv1", 500, 500, "ip0", "op0");  
+  return db;
+}
+
+
+struct F_HCONNECT
+{
+  F_HCONNECT()
+  {
+    db = createSimpleDBDelimiter();
+    block = db->getChip()->getBlock();
+    lib = db->findLib("lib1");
+
+    root_mod = dbModule::create(block, "root_mod") ;
+
+    inv1_mod_master  = dbModule::create(block, "inv1_master_mod");
+    dbModBTerm* inv1_mod_i0_port  = dbModBTerm::create(inv1_mod_master,"i0");
+    dbModBTerm* inv1_mod_o0_port  = dbModBTerm::create(inv1_mod_master,"o0");    
+    inv1_mod_inst = dbModInst::create(root_mod, inv1_mod_master, "inv1_mod_inst");
+    
+    
+    inv4_mod_level0_master = dbModule::create(block, "inv4_master_level0");
+    dbModBTerm* inv_mod_level0_master_i0_port  = dbModBTerm::create(inv4_mod_level0_master,"i0");
+    dbModBTerm* inv_mod_level0_master_i1_port  = dbModBTerm::create(inv4_mod_level0_master,"i1");
+    dbModBTerm* inv_mod_level0_master_i2_port  = dbModBTerm::create(inv4_mod_level0_master,"i2");
+    dbModBTerm* inv_mod_level0_master_i3_port = dbModBTerm::create(inv4_mod_level0_master,"i3");
+    dbModBTerm* inv_mod_level0_master_o0_port=  dbModBTerm::create(inv4_mod_level0_master,"o0");    
+    
+    
+    inv4_mod_level1_master = dbModule::create(block, "inv4_master_level1");
+    inv_mod_level1_master_i0_port  = dbModBTerm::create(inv4_mod_level1_master,"i0");
+    inv_mod_level1_master_i1_port  = dbModBTerm::create(inv4_mod_level1_master,"i1");
+    inv_mod_level1_master_i2_port  = dbModBTerm::create(inv4_mod_level1_master,"i2");
+    inv_mod_level1_master_i3_port = dbModBTerm::create(inv4_mod_level1_master,"i3");
+    inv_mod_level1_master_o0_port=  dbModBTerm::create(inv4_mod_level1_master,"o0");    
+    
+    
+    inv4_mod_level2_master = dbModule::create(block, "inv4_master_level2");
+    inv_mod_level2_master_i0_port  = dbModBTerm::create(inv4_mod_level2_master,"i0");
+    inv_mod_level2_master_i1_port  = dbModBTerm::create(inv4_mod_level2_master,"i1");
+    inv_mod_level2_master_i2_port  = dbModBTerm::create(inv4_mod_level2_master,"i2");
+    inv_mod_level2_master_i3_port = dbModBTerm::create(inv4_mod_level2_master,"i3");
+    inv_mod_level2_master_o0_port=  dbModBTerm::create(inv4_mod_level2_master,"o0");    
+    
+
+
+    //During modinst creation we set the parent.
+    inv4_mod_level0_inst = dbModInst::create(root_mod, //parent
+						  inv4_mod_level0_master,
+						  "inv4_mod_level0_inst");
+    inv4_mod_level1_inst = dbModInst::create(inv4_mod_level0_master, //parent
+						  inv4_mod_level1_master,
+						  "inv4_mod_level1_inst");
+    inv4_mod_level2_inst = dbModInst::create(inv4_mod_level1_master, //parent
+						  inv4_mod_level2_master,
+						  "inv4_mod_level2_inst");
+
+
+    //Use full scoped names for instances for this test
+    inv1_1 = dbInst::create(block, lib->findMaster("inv1"), "inv1_mod_inst/inst1",false,inv1_mod_master);
+    inv1_1_inst_ip0 = block -> findITerm("inv1_mod_inst/inst1/ip0");
+    inv1_1_inst_op0 = block -> findITerm("inv1_mod_inst/inst1/op0");    
+
+
+    //
+    //create the low level inverter instances, for now uniquely name them in the scope of a block.
+    //
+    inv4_1 = dbInst::create(block, lib->findMaster("inv1"),
+			    "inv4_mod_level0_inst/inv4_mod_level1_inst/inv4_mod_level2_inst/inst1");
+
+
+    //get the iterm off the instance. Just give the terminal name
+    //offset used to find iterm.
+    inv4_1_ip = inv4_1 -> findITerm(
+	    "ip0");
+    inv4_1_op = inv4_1 -> findITerm(
+				    "op0");
+    
+    inv4_2 = dbInst::create(block, lib->findMaster("inv1"),
+			    "inv4_mod_level0_inst/inv4_mod_level1_inst/inv4_mod_level2_inst/inst2");   
+    inv4_2_ip = inv4_2 -> findITerm("ip0");
+    inv4_2_op = inv4_2 -> findITerm("op0");
+    
+    inv4_3 = dbInst::create(block, lib->findMaster("inv1"),
+			    "inv4_mod_level0_inst/inv4_mod_level1_inst/inv4_mod_level2_inst/inst3");
+    inv4_3_ip = inv4_3 -> findITerm("ip0");
+    inv4_3_op = inv4_3 -> findITerm("op0");
+    
+    
+    inv4_4 = dbInst::create(block, lib->findMaster("inv1"),
+			    "inv4_mod_level0_inst/inv4_mod_level1_inst/inv4_mod_level2_inst/inst4");
+    inv4_4_ip = inv4_4 -> findITerm("ip0");
+    inv4_4_op = inv4_4 -> findITerm("op0");
+
+    
+    inv4_mod_level2_master -> addInst(inv4_1);
+    inv4_mod_level2_master -> addInst(inv4_2);
+    inv4_mod_level2_master -> addInst(inv4_3);
+    inv4_mod_level2_master -> addInst(inv4_4);
+
+
+    //First make the flat view
+    dbNet* ip0_net = dbNet::create(block,"ip0_flat_net",false);
+    dbNet* inv_op_net = dbNet::create(block,"inv_op_flat_net",false);
+    dbNet* op0_net = dbNet::create(block,"op0_flat_net",false);
+    dbNet* op1_net = dbNet::create(block,"op1_flat_net",false);
+    dbNet* op2_net = dbNet::create(block,"op2_flat_net",false);
+    dbNet* op3_net = dbNet::create(block,"op3_flat_net",false);        
+
+    //connections to the primary (root) ports
+    ip0_bterm = dbBTerm::create(ip0_net,"ip0");
+    op0_bterm = dbBTerm::create(op0_net,"op0");
+    op1_bterm = dbBTerm::create(op1_net,"op1");
+    op2_bterm = dbBTerm::create(op2_net,"op2");
+    op3_bterm = dbBTerm::create(op3_net,"op3");            
+
+
+    //flat connections:
+    //inverter 1 in module inv1_1
+    inv1_1_inst_ip0 -> connect(ip0_net) ;
+    inv1_1_inst_op0 -> connect(inv_op_net);
+
+    //now the 4 inverters in inv4_1
+    inv4_1_ip -> connect(inv_op_net);
+    inv4_2_ip -> connect(inv_op_net);
+    inv4_3_ip -> connect(inv_op_net);
+    inv4_4_ip -> connect(inv_op_net);        
+    
+    //now core to external connections
+    inv4_1_op -> connect(op0_net);
+    inv4_2_op -> connect(op1_net);
+    inv4_3_op -> connect(op2_net);
+    inv4_4_op -> connect(op3_net);            
+
+    std::stringstream str_str;
+    DbStrDebugHierarchy(block, str_str);
+
+    printf("The Flat design created %s\n", str_str.str().c_str());
+    
+  }
+
+  ~F_HCONNECT() { dbDatabase::destroy(db); }
+
+  dbDatabase* db;
+  dbLib* lib;
+  dbBlock* block;
+
+  dbModule* root_mod;  
+  dbModule* inv1_mod_master;
+  dbModule* inv4_mod_level0_master;
+  dbModule* inv4_mod_level1_master;
+  dbModule* inv4_mod_level2_master;
+  
+  dbModBTerm* inv_mod_level0_master_i0_port;
+  dbModBTerm* inv_mod_level0_master_i1_port;
+  dbModBTerm* inv_mod_level0_master_i2_port;
+  dbModBTerm* inv_mod_level0_master_i3_port;
+  dbModBTerm* inv_mod_level0_master_o0_port;
+
+
+  dbModBTerm* inv_mod_level1_master_i0_port;
+  dbModBTerm* inv_mod_level1_master_i1_port;
+  dbModBTerm* inv_mod_level1_master_i2_port;
+  dbModBTerm* inv_mod_level1_master_i3_port;
+  dbModBTerm* inv_mod_level1_master_o0_port;
+
+  dbModBTerm* inv_mod_level2_master_i0_port;
+  dbModBTerm* inv_mod_level2_master_i1_port;
+  dbModBTerm* inv_mod_level2_master_i2_port;
+  dbModBTerm* inv_mod_level2_master_i3_port;
+  dbModBTerm* inv_mod_level2_master_o0_port;
+  
+  
+  dbModInst* inv1_mod_inst;
+  dbModInst* inv4_mod_level0_inst;
+  dbModInst* inv4_mod_level1_inst;
+  dbModInst* inv4_mod_level2_inst;
+  
+  
+  dbInst* inv1_1;
+  dbInst* inv4_1;
+  dbInst* inv4_2;
+  dbInst* inv4_3;
+  dbInst* inv4_4;
+
+  dbNet* ip0_net;
+  dbNet* inv_op__net;
+  dbNet* op0_net;
+  dbNet* op1_net;
+  dbNet* op2_net;
+  dbNet* op3_net;
+
+  dbBTerm* ip0_bterm;
+  dbBTerm* op0_bterm;
+  dbBTerm* op1_bterm;
+  dbBTerm* op2_bterm;
+  dbBTerm* op3_bterm;    
+
+  dbModITerm* inv1_1_ip;
+  dbModITerm* inv1_1_op;
+
+  dbITerm* inv1_1_inst_ip0;
+  dbITerm* inv1_1_inst_op0;
+
+  dbITerm* inv4_1_ip;
+  dbITerm* inv4_2_ip;
+  dbITerm* inv4_3_ip;
+  dbITerm* inv4_4_ip;        
+  dbITerm* inv4_1_op;
+  dbITerm* inv4_2_op;
+  dbITerm* inv4_3_op;
+  dbITerm* inv4_4_op;        
+
+  
+};
+
+  
+BOOST_FIXTURE_TEST_CASE(test_hier, F_HCONNECT)
+{
+  auto top = block->getTopModule();
+  BOOST_TEST(top != nullptr);
+  auto master1 = odb::dbModule::create(block, "master1");
+  
+  odb::dbModInst::create(top, master1, "minst1");
+  
+  auto master2 = odb::dbModule::create(block, "master2");
+  auto minst2 = odb::dbModInst::create(master1, master2, "minst2");
+  
+  BOOST_TEST(block->findModInst("minst1/minst2") == minst2);
+
+}
+
+
+BOOST_FIXTURE_TEST_CASE(test_hierconnect, F_HCONNECT)
+{
+
+}
+
+
+
+
 struct F_DETAILED
 {
   F_DETAILED()
@@ -333,6 +609,8 @@ struct F_DETAILED
   dbInst* inst2;
   dbInst* inst3;
 };
+
+
 BOOST_FIXTURE_TEST_CASE(test_destroy, F_DETAILED)
 {
   BOOST_TEST(block->getModInsts().size() == 3);
