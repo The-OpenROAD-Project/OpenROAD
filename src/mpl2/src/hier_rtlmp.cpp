@@ -952,7 +952,17 @@ void HierRTLMP::setIOClustersBlockages()
                                 io_spans[L].second);
 
     boundary_to_io_blockage_[L] = left_io_blockage;
-    macro_blockages_.push_back(left_io_blockage);
+    if (real_blockage_flag_ == true) {
+      placement_blockages_.push_back(left_io_blockage);
+      logger_->report(
+          "Add left IO blockage : lx = {}, ly = {}, ux = {}, uy = {}",
+          left_io_blockage.xMin(),
+          left_io_blockage.yMin(),
+          left_io_blockage.xMax(),
+          left_io_blockage.yMax());
+    } else {
+      macro_blockages_.push_back(left_io_blockage);
+    }
   }
 
   if (io_spans[T].second > io_spans[T].first) {
@@ -962,7 +972,17 @@ void HierRTLMP::setIOClustersBlockages()
                                root.yMax());
 
     boundary_to_io_blockage_[T] = top_io_blockage;
-    macro_blockages_.push_back(top_io_blockage);
+    if (real_blockage_flag_ == true) {
+      placement_blockages_.push_back(top_io_blockage);
+      logger_->report(
+          "Add top IO blockage : lx = {}, ly = {}, ux = {}, uy = {}",
+          top_io_blockage.xMin(),
+          top_io_blockage.yMin(),
+          top_io_blockage.xMax(),
+          top_io_blockage.yMax());
+    } else {
+      macro_blockages_.push_back(top_io_blockage);
+    }
   }
 
   if (io_spans[R].second > io_spans[R].first) {
@@ -970,9 +990,18 @@ void HierRTLMP::setIOClustersBlockages()
                                  io_spans[R].first,
                                  root.xMax(),
                                  io_spans[R].second);
-
     boundary_to_io_blockage_[R] = right_io_blockage;
-    macro_blockages_.push_back(right_io_blockage);
+    if (real_blockage_flag_ == true) {
+      placement_blockages_.push_back(right_io_blockage);
+      logger_->report(
+          "Add right IO blockage : lx = {}, ly = {}, ux = {}, uy = {}",
+          right_io_blockage.xMin(),
+          right_io_blockage.yMin(),
+          right_io_blockage.xMax(),
+          right_io_blockage.yMax());
+    } else {
+      macro_blockages_.push_back(right_io_blockage);
+    }
   }
 
   if (io_spans[B].second > io_spans[B].first) {
@@ -982,7 +1011,17 @@ void HierRTLMP::setIOClustersBlockages()
                                   root.yMin() + depth);
 
     boundary_to_io_blockage_[B] = bottom_io_blockage;
-    macro_blockages_.push_back(bottom_io_blockage);
+    if (real_blockage_flag_ == true) {
+      placement_blockages_.push_back(bottom_io_blockage);
+      logger_->report(
+          "Add bottom IO blockage : lx = {}, ly = {}, ux = {}, uy = {}",
+          bottom_io_blockage.xMin(),
+          bottom_io_blockage.yMin(),
+          bottom_io_blockage.xMax(),
+          bottom_io_blockage.yMax());
+    } else {
+      macro_blockages_.push_back(bottom_io_blockage);
+    }
   }
 }
 
@@ -2810,6 +2849,22 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
     }
   }
 
+  // Model each placement blockage as macros with fence constraints
+  if (real_blockage_flag_ == true) {
+    for (auto& rect : placement_blockages) {
+      soft_macro_id_map["blockage" + std::to_string(macros.size())]
+          = macros.size();
+      macros.emplace_back(std::pair<float, float>(rect.xMin() - outline.xMin(),
+                                                  rect.yMin() - outline.yMin()),
+                          "blockage" + std::to_string(macros.size()),
+                          rect.getWidth(),
+                          rect.getHeight(),
+                          nullptr);
+      Rect fence(rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
+      fences[macros.size() - 1] = fence;
+    }
+  }
+
   // update the connnection
   clustering_engine_->updateConnections();
   debugPrint(logger_,
@@ -3004,7 +3059,9 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
-      sa->addBlockages(placement_blockages);
+      if (real_blockage_flag_ == false) {
+        sa->addBlockages(placement_blockages);
+      }
       sa->addBlockages(macro_blockages);
       sa_batch.push_back(std::move(sa));
     }

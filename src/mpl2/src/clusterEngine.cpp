@@ -1367,19 +1367,31 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
     cluster_vertex_id_map[cluster_id] = vertex_id++;
     vertex_weight.push_back(0.0f);
   }
-  const int num_other_cluster_vertices = vertex_id;
 
   std::vector<odb::dbInst*> insts;
   std::map<odb::dbInst*, int> inst_vertex_id_map;
-  for (auto& macro : parent->getLeafMacros()) {
-    inst_vertex_id_map[macro] = vertex_id++;
-    vertex_weight.push_back(computeMicronArea(macro));
-    insts.push_back(macro);
-  }
+
+  float std_cell_area = 0.0f;
+  int num_std_cells = 0;
+  int std_cell_start_index = vertex_id;
   for (auto& std_cell : parent->getLeafStdCells()) {
     inst_vertex_id_map[std_cell] = vertex_id++;
     vertex_weight.push_back(computeMicronArea(std_cell));
+    std_cell_area += vertex_weight.back();
+    num_std_cells++;
     insts.push_back(std_cell);
+  }
+  int std_cell_index_end = insts.size();
+
+  float avg_std_cell_area = std_cell_area / num_std_cells;
+  logger_->report(
+      "During partitioning, modeling each macro as a vertex with an area of "
+      "%.2f",
+      avg_std_cell_area);
+  for (auto& macro : parent->getLeafMacros()) {
+    inst_vertex_id_map[macro] = vertex_id++;
+    vertex_weight.push_back(avg_std_cell_area);
+    insts.push_back(macro);
   }
 
   std::vector<std::vector<int>> hyperedges;
@@ -1432,8 +1444,8 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
   }
 
   const int seed = 0;
-  const float balance_constraint = 1.0;
-  const int num_parts = 2;  // We use two-way partitioning here
+  float balance_constraint = 5.0;  // relax the balance constraint to 5%
+  const int num_parts = 2;         // We use two-way partitioning here
   const int num_vertices = static_cast<int>(vertex_weight.size());
   std::vector<float> hyperedge_weights(hyperedges.size(), 1.0f);
 
@@ -1452,6 +1464,50 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
                                               vertex_weight,
                                               hyperedge_weights);
 
+  // Check if the partitioning was successful
+  auto checkBalance = [&]() -> bool {
+    float balance_part_0 = 0.0;
+    float balance_part_1 = 0.0;
+    for (int i = 0; i < num_vertices; i++) {
+      if (part[i] == 0) {
+        balance_part_0 += vertex_weight[i];
+      } else {
+        balance_part_1 += vertex_weight[i];
+      }
+    }
+
+    float balance_ratio
+        = std::abs(balance_part_0 / (balance_part_0 + balance_part_1) - 0.5);
+    if (balance_ratio < balance_constraint) {
+      logger_->report("Partitioning successful with balance ratio of %.2f%%",
+                      balance_ratio * 100);
+      return true;
+    }
+
+    logger_->report("Partitioning failed with balance ratio of %.2f%%",
+                    balance_ratio * 100);
+    return false;
+  };
+
+  if (checkBalance() == false) {
+    logger_->report("Relaxing balance constraint to 10%");
+    balance_constraint = 10.0;
+    part.clear();
+    part = triton_part_->PartitionKWaySimpleMode(num_parts,
+                                                 balance_constraint,
+                                                 seed,
+                                                 hyperedges,
+                                                 vertex_weight,
+                                                 hyperedge_weights);
+    if (checkBalance() == false) {
+      logger_->error(
+          MPL,
+          206,
+          "Partitioning failed with balance constriant of {}. Exiting...",
+          balance_constraint);
+    }
+  }
+
   parent->clearLeafStdCells();
   parent->clearLeafMacros();
 
@@ -1459,9 +1515,8 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
   parent->setName(cluster_name + std::string("_0"));
   auto cluster_part_1 = std::make_unique<Cluster>(
       id_, cluster_name + std::string("_1"), logger_);
-
-  for (int i = num_other_cluster_vertices; i < num_vertices; i++) {
-    odb::dbInst* inst = insts[i - num_other_cluster_vertices];
+  for (int i = std_cell_start_index; i < std_cell_index_end; i++) {
+    odb::dbInst* inst = insts[i - std_cell_start_index];
     if (part[i] == 0) {
       parent->addLeafInst(inst);
     } else {

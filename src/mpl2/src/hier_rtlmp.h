@@ -268,6 +268,9 @@ class HierRTLMP
   // ASASP7, you should turn off this option.
   bool bus_planning_on_ = false;
 
+  // For testing
+  bool real_blockage_flag_ = true;
+
   // Parameters related to macro placement
   std::string report_directory_;
   std::string macro_placement_file_;
