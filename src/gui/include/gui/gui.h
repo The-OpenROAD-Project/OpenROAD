@@ -731,7 +731,7 @@ class Gui
                                       const std::string& option);
   void dumpHeatMap(const std::string& name, const std::string& file);
 
-  void setMainWindowTitle(std::string title);
+  void setMainWindowTitle(const std::string& title);
   std::string getMainWindowTitle();
 
   void selectHelp(const std::string& item);

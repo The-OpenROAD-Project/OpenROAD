@@ -1002,7 +1002,7 @@ void Gui::dumpHeatMap(const std::string& name, const std::string& file)
   source->dumpToFile(file);
 }
 
-void Gui::setMainWindowTitle(std::string title)
+void Gui::setMainWindowTitle(const std::string& title)
 {
   main_window_title_ = title;
   if (main_window) {
@@ -1381,6 +1381,7 @@ int startGui(int& argc,
   if (minimize) {
     main_window->showMinimized();
   }
+  main_window->setTitle(gui->getMainWindowTitle());
 
   open_road->addObserver(main_window);
   if (!interactive) {
