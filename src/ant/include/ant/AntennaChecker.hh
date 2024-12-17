@@ -247,7 +247,7 @@ class AntennaChecker
   std::string report_file_name_;
   std::vector<odb::dbNet*> nets_;
   std::map<odb::dbNet*, ViolationReport> net_to_report_;
-  std::mutex mapMutex;
+  std::mutex map_mutex_;
   // consts
   static constexpr int max_diode_count_per_gate = 10;
 };
