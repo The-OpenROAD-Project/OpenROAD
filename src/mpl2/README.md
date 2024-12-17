@@ -116,7 +116,7 @@ Command for setting guidance regions for macros.
 ```tcl
 set_macro_guidance_region
     -macro_name macro_name
-    -region {lx ly ux uy}
+    -region region
 ```
 
 #### Options
@@ -124,7 +124,7 @@ set_macro_guidance_region
 | Switch Name | Description |
 | ----- | ----- |
 | `-macro_name` | The name of a macro of the design. |
-| `-region` | The lower left corner and upper right corner of the region in microns. |
+| `-region` | The lower left corner and upper right corner {lx ly ux uy} of the region in microns. |
 
 ## Example scripts
 
