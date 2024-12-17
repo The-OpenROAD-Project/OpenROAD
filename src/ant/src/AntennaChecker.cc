@@ -775,6 +775,7 @@ void AntennaChecker::printReport()
 
 int AntennaChecker::checkGates(odb::dbNet* db_net,
                                bool verbose,
+                               bool save_report,
                                odb::dbMTerm* diode_mterm,
                                float ratio_margin,
                                GateToLayerToNodeInfo& gate_info,
@@ -821,7 +822,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
     net_report.report += "\n";
   }
   // Write report on map
-  {
+  if (save_report) {
     std::lock_guard<std::mutex> lock(mapMutex);
     net_to_report_.at(db_net) = net_report;
   }
@@ -1018,6 +1019,7 @@ void AntennaChecker::buildLayerMaps(odb::dbNet* db_net,
 
 void AntennaChecker::checkNet(odb::dbNet* db_net,
                               bool verbose,
+                              bool save_report,
                               odb::dbMTerm* diode_mterm,
                               float ratio_margin,
                               int& net_violation_count,
@@ -1037,6 +1039,7 @@ void AntennaChecker::checkNet(odb::dbNet* db_net,
 
     int pin_violations = checkGates(db_net,
                                     verbose,
+                                    save_report,
                                     diode_mterm,
                                     ratio_margin,
                                     gate_info,
@@ -1058,18 +1061,11 @@ Violations AntennaChecker::getAntennaViolations(odb::dbNet* net,
     return antenna_violations;
   }
 
-  // for the case where the check_net_violation api is called directly
-  {
-    std::lock_guard<std::mutex> lock(mapMutex);
-    if (net_to_report_.find(net) == net_to_report_.end()) {
-      net_to_report_[net];
-    }
-  }
-
   int net_violation_count, pin_violation_count;
   net_violation_count = 0;
   pin_violation_count = 0;
   checkNet(net,
+           false,
            false,
            diode_mterm,
            ratio_margin,
@@ -1077,8 +1073,6 @@ Violations AntennaChecker::getAntennaViolations(odb::dbNet* net,
            pin_violation_count,
            antenna_violations);
 
-  std::lock_guard<std::mutex> lock(mapMutex);
-  net_to_report_.clear();
   return antenna_violations;
 }
 
@@ -1122,6 +1116,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
     if (!net->isSpecial()) {
       checkNet(net,
                verbose,
+               true,
                nullptr,
                0,
                net_violation_count,
@@ -1146,6 +1141,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
       Violations antenna_violations;
       checkNet(net,
                verbose,
+               true,
                nullptr,
                0,
                net_violation_count,

@@ -180,6 +180,7 @@ class AntennaChecker
   void buildLayerMaps(odb::dbNet* net, LayerToGraphNodes& node_by_layer_map);
   void checkNet(odb::dbNet* net,
                 bool verbose,
+                bool save_report,
                 odb::dbMTerm* diode_mterm,
                 float ratio_margin,
                 int& net_violation_count,
@@ -203,6 +204,7 @@ class AntennaChecker
   void printReport();
   int checkGates(odb::dbNet* db_net,
                  bool verbose,
+                 bool save_report,
                  odb::dbMTerm* diode_mterm,
                  float ratio_margin,
                  GateToLayerToNodeInfo& gate_info,
