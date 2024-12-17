@@ -1429,7 +1429,7 @@ void FlexPA::initAllAccessPoints()
 
       int inst_terms_cnt = static_cast<int>(inst->getInstTerms().size());
 #pragma omp critical
-      for (int i = 0; i < inst_terms_cnt; i++) {
+      for (int j = 0; j < inst_terms_cnt; j++) {
         pin_count++;
         if (pin_count % (pin_count > 10000 ? 10000 : 1000) == 0) {
           logger_->info(DRT, 76, "  Complete {} pins.", pin_count);
