@@ -51,6 +51,14 @@ StringToDBU Descriptor::Property::convert_string
     = [](const std::string& value, bool*) { return 0; };
 
 // empty heat map class
+class PinDensityDataSource
+{
+ public:
+  PinDensityDataSource() {}
+  ~PinDensityDataSource() {}
+};
+
+// empty heat map class
 class PlacementDensityDataSource
 {
  public:
@@ -64,6 +72,7 @@ Gui::Gui()
     : continue_after_close_(false),
       logger_(nullptr),
       db_(nullptr),
+      pin_density_heat_map_(nullptr),
       placement_density_heat_map_(nullptr)
 {
 }
