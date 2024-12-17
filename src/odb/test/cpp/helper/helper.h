@@ -41,6 +41,12 @@ odb::dbMaster* createMaster2X1(odb::dbLib* lib,
                                const char* in1,
                                const char* in2,
                                const char* out);
+odb::dbMaster* createMaster1X1(odb::dbLib* lib,
+                               const char* name,
+                               uint width,
+                               uint height,
+                               const char* in1,
+                               const char* out);
 
 odb::dbDatabase* createSimpleDB();
 
