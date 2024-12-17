@@ -113,7 +113,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
 
   std::vector<std::string> getRestoreTclCommands();
 
-  void setTitle(std::string title);
+  void setTitle(const std::string& title);
 
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets

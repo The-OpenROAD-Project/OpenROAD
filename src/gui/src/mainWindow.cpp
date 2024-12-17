@@ -49,7 +49,6 @@
 #include <map>
 #include <sstream>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "browserWidget.h"
@@ -449,9 +448,9 @@ void MainWindow::setDatabase(odb::dbDatabase* db)
   db_ = db;
 }
 
-void MainWindow::setTitle(std::string title)
+void MainWindow::setTitle(const std::string& title)
 {
-  window_title_ = std::move(title);
+  window_title_ = title;
   updateTitle();
 }
 
