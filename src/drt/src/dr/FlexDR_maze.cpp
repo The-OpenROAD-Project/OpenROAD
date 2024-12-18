@@ -537,7 +537,7 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
   frCoord width1 = box.minDXDY();
   frCoord length1 = box.maxDXDY();
   // default via dimension
-  frViaDef* viaDef = nullptr;
+  const frViaDef* viaDef = nullptr;
   if (isUpperVia) {
     viaDef = (lNum < gridGraph_.getMaxLayerNum())
                  ? getTech()->getLayer(lNum + 1)->getDefaultViaDef()
@@ -659,7 +659,7 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
 {
   // mod costs for non-NDR nets
   auto lNum = gridGraph_.getLayerNum(z);
-  frViaDef* defaultViaDef = nullptr;
+  const frViaDef* defaultViaDef = nullptr;
   if (isUpperVia) {
     defaultViaDef = (lNum < gridGraph_.getMaxLayerNum())
                         ? getTech()->getLayer(lNum + 1)->getDefaultViaDef()
@@ -690,7 +690,7 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
   // mod costs for ndrs
   for (auto ndr : ndrs_) {
     frCoord width = defaultWidth;
-    frViaDef* viadef = defaultViaDef;
+    const frViaDef* viadef = defaultViaDef;
     frCoord minSpacing = defaultMinSpacing;
     drEolSpacingConstraint ndrDrCon = ndr->getDrEolSpacingConstraint(z);
     if (isUpperVia && lNum < gridGraph_.getMaxLayerNum()
@@ -723,7 +723,7 @@ void FlexDRWorker::modMinSpacingCostViaHelper(const Rect& box,
                                               ModCostType type,
                                               frCoord width,
                                               frCoord minSpacing,
-                                              frViaDef* viaDef,
+                                              const frViaDef* viaDef,
                                               drEolSpacingConstraint drCon,
                                               bool isUpperVia,
                                               bool isCurrPs,
@@ -884,7 +884,7 @@ void FlexDRWorker::modEolSpacingCost_helper(const Rect& testbox,
             testbox.yMax() + halfwidth2 - 1);
   } else {
     // default via dimension
-    frViaDef* viaDef = nullptr;
+    const frViaDef* viaDef = nullptr;
     if (eolType == 1) {
       viaDef = (lNum > getTech()->getBottomLayerNum())
                    ? getTech()->getLayer(lNum - 1)->getDefaultViaDef()
@@ -1184,7 +1184,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   // obj1 = curr obj
   // obj2 = other obj
   // default via dimension
-  frViaDef* viaDef = cutLayer->getDefaultViaDef();
+  const frViaDef* viaDef = cutLayer->getDefaultViaDef();
   frVia via(viaDef);
   Rect viaBox = via.getCutBBox();
 
@@ -1345,8 +1345,7 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const Rect& box,
   frLayer* layer1 = getTech()->getLayer(cutLayerNum1);
   frLayer* layer2 = getTech()->getLayer(cutLayerNum2);
 
-  frViaDef* viaDef = nullptr;
-  viaDef = layer2->getDefaultViaDef();
+  const frViaDef* viaDef = layer2->getDefaultViaDef();
 
   if (viaDef == nullptr) {
     return;
@@ -2010,7 +2009,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
           if (old_via->isLonely()) {
             auto cutLayer
                 = getTech()->getLayer(old_via->getViaDef()->getCutLayerNum());
-            frViaDef* replacement_via_def = nullptr;
+            const frViaDef* replacement_via_def = nullptr;
             if (cutLayer->getSecondaryViaDefs().size()
                 <= numReroute)  // no more secViaDefs to try
             {
@@ -3177,9 +3176,9 @@ void FlexDRWorker::routeNet_AddCutSpcCost(std::vector<FlexMazeIdx>& path)
   for (uint64_t i = 1; i < path.size(); i++) {
     if (path[i].z() != path[i - 1].z()) {
       frMIdx z = std::min(path[i].z(), path[i - 1].z());
-      frViaDef* viaDef = design_->getTech()
-                             ->getLayer(gridGraph_.getLayerNum(z) + 1)
-                             ->getDefaultViaDef();
+      const frViaDef* viaDef = design_->getTech()
+                                   ->getLayer(gridGraph_.getLayerNum(z) + 1)
+                                   ->getDefaultViaDef();
       int x = gridGraph_.xCoord(path[i].x());
       int y = gridGraph_.yCoord(path[i].y());
       dbTransform xform(Point(x, y));

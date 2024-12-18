@@ -853,7 +853,7 @@ class FlexDRWorker
                                   ModCostType type,
                                   frCoord width,
                                   frCoord minSpacing,
-                                  frViaDef* viaDef,
+                                  const frViaDef* viaDef,
                                   drEolSpacingConstraint drCon,
                                   bool isUpperVia,
                                   bool isCurrPs,
