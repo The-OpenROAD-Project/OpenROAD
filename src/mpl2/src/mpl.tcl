@@ -298,8 +298,9 @@ sta::define_cmd_args "set_macro_guidance_region" { -macro_name macro_name \
                                                    -region region }
 proc set_macro_guidance_region { args } {
   sta::parse_key_args "set_macro_guidance_region" args \
-    keys { -macro_name -region } \
-    sta::check_argc_eq0 "set_macro_guidance_region" $args
+    keys { -macro_name -region } flags {}
+  
+  sta::check_argc_eq0 "set_macro_guidance_region" $args
 
   if { [info exists keys(-macro_name)] } {
     set macro_name $keys(-macro_name)
