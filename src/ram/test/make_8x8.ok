@@ -1,0 +1,13 @@
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO RAM-0003] Generating RAM8x8
+[INFO RAM-0016] Selected inverter cell sky130_fd_sc_hd__clkinv_1
+[INFO RAM-0016] Selected tristate cell sky130_fd_sc_hd__ebufn_1
+[INFO RAM-0016] Selected and2 cell sky130_fd_sc_hd__and2_0
+[INFO RAM-0016] Selected clock gate cell sky130_fd_sc_hd__dlclkp_1
+No differences found.
