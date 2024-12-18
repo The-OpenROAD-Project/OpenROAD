@@ -1,4 +1,4 @@
-module io_constraints1 ( \io_1 , \io_2 , \io_3 );
+module guides1 ( \io_1 , \io_2 , \io_3 );
   HM_100x100_1x1 MACRO_1 ( ) ;
 
   DFF_X1 _001_ ( .CK(), .D(), .Q(), .QN() );

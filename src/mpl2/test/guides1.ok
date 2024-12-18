@@ -2,7 +2,7 @@
 [INFO ODB-0227] LEF file: ./testcases/macro_only.lef, created 9 library cells
 [WARNING STA-1171] ./testcases/macro_only.lib line 32, default_max_transition is 0.0.
 [WARNING ORD-2011] LEF master DFF_X1 has no liberty cell.
-[INFO ODB-0128] Design: io_constraints1
+[INFO ODB-0128] Design: guides1
 [INFO ODB-0252]     Updated 3 pins.
 [INFO ODB-0253]     Updated 401 components.
 [INFO PPL-0067] Restrict INPUT pins to region 0u-125u, in the LEFT edge.
