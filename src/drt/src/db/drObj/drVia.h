@@ -44,11 +44,11 @@ class drVia : public drRef
  public:
   // constructors
   drVia() = default;
-  drVia(frViaDef* in) : viaDef_(in) {}
+  drVia(const frViaDef* in) : viaDef_(in) {}
   drVia(const drVia& in) = default;
   drVia(const frVia& in);
   // getters
-  frViaDef* getViaDef() const { return viaDef_; }
+  const frViaDef* getViaDef() const { return viaDef_; }
   Rect getLayer1BBox() const
   {
     Rect box;
@@ -80,7 +80,7 @@ class drVia : public drRef
     return box;
   }
   // setters
-  void setViaDef(frViaDef* in) { viaDef_ = in; }
+  void setViaDef(const frViaDef* in) { viaDef_ = in; }
   // others
   frBlockObjectEnum typeId() const override { return drcVia; }
 
@@ -165,7 +165,7 @@ class drVia : public drRef
 
  protected:
   Point origin_;
-  frViaDef* viaDef_{nullptr};
+  const frViaDef* viaDef_{nullptr};
   drBlockObject* owner_{nullptr};
   FlexMazeIdx beginMazeIdx_;
   FlexMazeIdx endMazeIdx_;
