@@ -835,7 +835,7 @@ float RouteBase::getRudyRC() const
     }
   }
 
-  log_->info(GPL, 81, "TotalRouteOverflow: {}", totalRouteOverflow);
+  log_->info(GPL, 81, "TotalRouteOverflow: {:.4f}", totalRouteOverflow);
   log_->info(GPL, 82, "OverflowTileCnt: {}", overflowTileCnt);
 
   int arraySize = edgeCongArray.size();
