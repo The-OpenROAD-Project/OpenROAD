@@ -195,7 +195,7 @@ void MacroPlacer2::addGuidanceRegion(odb::dbInst* macro, const Rect& region)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   const odb::Rect& core = block->getCoreArea();
-  odb::Rect dbu_region(block->micronsToDbu(region.xMin()),
+  const odb::Rect dbu_region(block->micronsToDbu(region.xMin()),
                        block->micronsToDbu(region.yMin()),
                        block->micronsToDbu(region.xMax()),
                        block->micronsToDbu(region.yMax()));

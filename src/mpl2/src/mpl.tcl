@@ -294,8 +294,8 @@ proc place_macro { args } {
   mpl2::place_macro $macro $x_origin $y_origin $orientation
 }
 
-sta::define_cmd_args "set_macro_guidance_region" { [-macro_name macro_name] \
-                                                   [-region region] }
+sta::define_cmd_args "set_macro_guidance_region" { -macro_name macro_name \
+                                                   -region region }
 proc set_macro_guidance_region { args } {
   sta::parse_key_args "set_macro_guidance_region" args \
     keys { -macro_name -region } \

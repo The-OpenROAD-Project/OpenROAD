@@ -341,7 +341,6 @@ void HierRTLMP::resetSAParameters()
   exchange_swap_prob_ = 0.2;
   flip_prob_ = 0.2;
   resize_prob_ = 0.0;
-  guidance_weight_ = 0.0;
   fence_weight_ = 0.0;
   boundary_weight_ = 0.0;
   notch_weight_ = 0.0;
