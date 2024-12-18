@@ -1,23 +1,23 @@
-# Test if pin access blockage is generated correctly for a case
-# with pins in a single boundary.
+# This test case places both long macros at the right
+# side, while the normal result have one at each side
+# A guidance weight of 30 had to be used to outweight 
+# the wirelength penalty
 source "helpers.tcl"
 
-# We're not interested in the connections, so don't include the lib.
-read_lef "./Nangate45/Nangate45.lef"
-
+read_lef "./Nangate45/Nangate45_tech.lef"
 read_lef "./testcases/macro_only.lef"
 read_liberty "./testcases/macro_only.lib"
 
-read_verilog "./testcases/io_constraints1.v"
-link_design "io_constraints1"
-read_def "./testcases/io_constraints1.def" -floorplan_initialize
+read_verilog "./testcases/macro_only.v"
+link_design "macro_only"
 
-set_io_pin_constraint -direction INPUT -region left:*
-place_pins -annealing -random -hor_layers metal5 -ver_layer metal6
+read_def "./testcases/macro_only.def" -floorplan_initialize
 
-set_macro_guidance_region -macro_name MACRO_1 -region {40 20 140 120}
+set_macro_guidance_region -macro_name U6 -region {220 5 328 442}
+set_macro_guidance_region -macro_name U1 -region {328 5 436 442}
+
 set_thread_count 0
-rtl_macro_placer -report_directory results/guides2 -halo_width 4.0
+rtl_macro_placer -report_directory results/macro_only -halo_width 4.0 -guidance_weight 30.0
 
 set def_file [make_result_file guides2.def]
 write_def $def_file

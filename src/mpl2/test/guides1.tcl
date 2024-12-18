@@ -1,8 +1,8 @@
-# Test if pin access blockage is generated correctly for a case
-# with pins in a single boundary.
+# Test if the guidance region is moving the macro
+# to the left side (without a guide, the macro ends 
+# up on the right side)
 source "helpers.tcl"
 
-# We're not interested in the connections, so don't include the lib.
 read_lef "./Nangate45/Nangate45.lef"
 
 read_lef "./testcases/macro_only.lef"
