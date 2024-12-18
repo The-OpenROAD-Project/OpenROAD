@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Google LLC
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,44 +29,28 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#pragma once
+
+#include <functional>
 
 #include "ClockDomain.hh"
+#include "ScanArchitectConfig.hh"
 
 namespace dft {
 
-ClockDomain::ClockDomain(const std::string& clock_name, ClockEdge clock_edge)
-    : clock_name_(clock_name), clock_edge_(clock_edge)
-{
-}
-
-std::string_view ClockDomain::getClockName() const
-{
-  return clock_name_;
-}
-
-ClockEdge ClockDomain::getClockEdge() const
-{
-  return clock_edge_;
-}
-
-std::string_view ClockDomain::getClockEdgeName() const
-{
-  switch (clock_edge_) {
-    case ClockEdge::Rising:
-      return "rising";
-      break;
-    case ClockEdge::Falling:
-      return "falling";
-      break;
-  }
-  // TODO replace with std::unreachable() once we reach c++23
-  return "Unknown clock edge";
-}
-
-size_t ClockDomain::getClockDomainId() const
-{
-  return std::hash<std::string_view>{}(clock_name_)
-         ^ std::hash<ClockEdge>{}(clock_edge_);
-}
+// Depending on the ScanArchitectConfig's clock mixing setting, there are
+// different ways to calculate the hash of the clock domain.
+//
+// For No Mix clock, we will generate a different hash value for all the clock
+// domains.
+//
+// If we want to mix all the clocks, then the hash will be the same for all the
+// clock doamins.
+//
+// We refer to the generated hash from a ClockDomain as Hash Domain.
+//
+std::function<size_t(const ClockDomain&)> GetClockDomainHashFn(
+    const ScanArchitectConfig& config,
+    utl::Logger* logger);
 
 }  // namespace dft

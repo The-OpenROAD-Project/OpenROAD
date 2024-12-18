@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Google LLC
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,43 +30,27 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "ClockDomain.hh"
+#include "ClockDomainHash.hh"
 
 namespace dft {
 
-ClockDomain::ClockDomain(const std::string& clock_name, ClockEdge clock_edge)
-    : clock_name_(clock_name), clock_edge_(clock_edge)
+std::function<size_t(const ClockDomain&)> GetClockDomainHashFn(
+    const ScanArchitectConfig& config,
+    utl::Logger* logger)
 {
-}
-
-std::string_view ClockDomain::getClockName() const
-{
-  return clock_name_;
-}
-
-ClockEdge ClockDomain::getClockEdge() const
-{
-  return clock_edge_;
-}
-
-std::string_view ClockDomain::getClockEdgeName() const
-{
-  switch (clock_edge_) {
-    case ClockEdge::Rising:
-      return "rising";
-      break;
-    case ClockEdge::Falling:
-      return "falling";
-      break;
+  switch (config.getClockMixing()) {
+    // For NoMix, every clock domain is different
+    case ScanArchitectConfig::ClockMixing::NoMix:
+      return [](const ClockDomain& clock_domain) {
+        return std::hash<std::string_view>{}(clock_domain.getClockName())
+               ^ std::hash<ClockEdge>{}(clock_domain.getClockEdge());
+      };
+    case ScanArchitectConfig::ClockMixing::ClockMix:
+      return [](const ClockDomain& clock_domain) { return 1; };
+    default:
+      // Not implemented
+      logger->error(utl::DFT, 4, "Clock mix config requested is not supported");
   }
-  // TODO replace with std::unreachable() once we reach c++23
-  return "Unknown clock edge";
-}
-
-size_t ClockDomain::getClockDomainId() const
-{
-  return std::hash<std::string_view>{}(clock_name_)
-         ^ std::hash<ClockEdge>{}(clock_edge_);
 }
 
 }  // namespace dft
