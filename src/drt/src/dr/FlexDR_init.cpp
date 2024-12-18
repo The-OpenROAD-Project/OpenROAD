@@ -3127,7 +3127,7 @@ void FlexDRWorker::initMazeCost_via_helper(drNet* net, bool isAddPathCost)
     }
 
     const Point bp = minCostAP->getPoint();
-    frViaDef* viaDef = minCostAP->getAccessViaDef();
+    const frViaDef* viaDef = minCostAP->getAccessViaDef();
     via = std::make_unique<drVia>(viaDef);
     via->setOrigin(bp);
     via->addToNet(net);

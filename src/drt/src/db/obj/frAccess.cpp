@@ -34,7 +34,7 @@
 
 namespace drt {
 
-void frAccessPoint::addViaDef(frViaDef* in)
+void frAccessPoint::addViaDef(const frViaDef* in)
 {
   auto numCut = in->getNumCut();
   int numCutIdx = numCut - 1;
@@ -62,7 +62,7 @@ void frAccessPoint::serialize(Archive& ar, const unsigned int version)
       int inSz = 0;
       (ar) & inSz;
       while (inSz--) {
-        frViaDef* vd;
+        const frViaDef* vd;
         serializeViaDef(ar, vd);
         viaDefs_[i].push_back(vd);
       }

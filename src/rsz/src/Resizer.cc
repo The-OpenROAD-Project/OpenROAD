@@ -342,13 +342,18 @@ bool Resizer::removeBuffer(Instance* buffer,
   dbNet* in_db_net = db_network_->staToDb(in_net);
   dbNet* out_db_net = db_network_->staToDb(out_net);
   // honor net dont-touch on input net or output net
-  if (in_db_net->isDoNotTouch() || out_db_net->isDoNotTouch()) {
+  if ((in_db_net && in_db_net->isDoNotTouch())
+      || (out_db_net && out_db_net->isDoNotTouch())) {
     if (honorDontTouchFixed) {
       return false;
     }
     // remove net dont touch for manual ECO
-    in_db_net->setDoNotTouch(false);
-    out_db_net->setDoNotTouch(false);
+    if (in_db_net) {
+      in_db_net->setDoNotTouch(false);
+    }
+    if (out_db_net) {
+      out_db_net->setDoNotTouch(false);
+    }
   }
   bool out_net_ports = hasPort(out_net);
   Net *survivor, *removed;
@@ -557,7 +562,7 @@ void Resizer::findBuffers()
   }
 }
 
-bool Resizer::isLinkCell(LibertyCell* cell)
+bool Resizer::isLinkCell(LibertyCell* cell) const
 {
   return network_->findLibertyCell(cell->name()) == cell;
 }
@@ -1810,6 +1815,9 @@ void Resizer::reportDontUse() const
     logger_->report("  none");
   } else {
     for (auto* cell : dont_use_) {
+      if (!isLinkCell(cell)) {
+        continue;
+      }
       logger_->report("  {}", cell->name());
     }
   }

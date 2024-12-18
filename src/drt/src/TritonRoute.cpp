@@ -610,7 +610,7 @@ void TritonRoute::initDesign()
 
 void TritonRoute::prep()
 {
-  FlexRP rp(getDesign(), getDesign()->getTech(), logger_, router_cfg_.get());
+  FlexRP rp(getDesign(), logger_, router_cfg_.get());
   rp.main();
 }
 

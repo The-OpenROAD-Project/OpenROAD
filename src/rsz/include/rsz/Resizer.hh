@@ -441,7 +441,7 @@ class Resizer : public dbStaState
   bool isTristateDriver(const Pin* pin);
   void checkLibertyForAllCorners();
   void findBuffers();
-  bool isLinkCell(LibertyCell* cell);
+  bool isLinkCell(LibertyCell* cell) const;
   void findTargetLoads();
   void balanceBin(const vector<odb::dbInst*>& bin,
                   const std::set<odb::dbSite*>& base_sites);
