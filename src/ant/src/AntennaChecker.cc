@@ -1019,14 +1019,12 @@ void AntennaChecker::buildLayerMaps(odb::dbNet* db_net,
   saveGates(db_net, node_by_layer_map, node_count);
 }
 
-void AntennaChecker::checkNet(odb::dbNet* db_net,
-                              bool verbose,
-                              bool save_report,
-                              odb::dbMTerm* diode_mterm,
-                              float ratio_margin,
-                              int& net_violation_count,
-                              int& pin_violation_count,
-                              Violations& antenna_violations)
+int AntennaChecker::checkNet(odb::dbNet* db_net,
+                             bool verbose,
+                             bool save_report,
+                             odb::dbMTerm* diode_mterm,
+                             float ratio_margin,
+                             Violations& antenna_violations)
 {
   odb::dbWire* wire = db_net->getWire();
   if (wire) {
@@ -1047,10 +1045,7 @@ void AntennaChecker::checkNet(odb::dbNet* db_net,
                                     gate_info,
                                     antenna_violations);
 
-    if (pin_violations > 0) {
-      net_violation_count++;
-      pin_violation_count += pin_violations;
-    }
+    return pin_violations;
   }
 }
 
@@ -1063,17 +1058,8 @@ Violations AntennaChecker::getAntennaViolations(odb::dbNet* net,
     return antenna_violations;
   }
 
-  int net_violation_count, pin_violation_count;
-  net_violation_count = 0;
-  pin_violation_count = 0;
-  checkNet(net,
-           false,
-           false,
-           diode_mterm,
-           ratio_margin,
-           net_violation_count,
-           pin_violation_count,
-           antenna_violations);
+  int pin_violation_count = checkNet(
+      net, false, false, diode_mterm, ratio_margin, antenna_violations);
 
   return antenna_violations;
 }
@@ -1116,14 +1102,11 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
   if (net) {
     Violations antenna_violations;
     if (!net->isSpecial()) {
-      checkNet(net,
-               verbose,
-               true,
-               nullptr,
-               0,
-               net_violation_count,
-               pin_violation_count,
-               antenna_violations);
+      pin_violation_count
+          += checkNet(net, verbose, true, nullptr, 0, antenna_violations);
+      if (pin_violation_count > 0) {
+        net_violation_count++;
+      }
     } else {
       logger_->error(
           ANT, 14, "Skipped net {} because it is special.", net->getName());
@@ -1141,14 +1124,11 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
     for (int i = 0; i < nets_.size(); i++) {
       odb::dbNet* net = nets_[i];
       Violations antenna_violations;
-      checkNet(net,
-               verbose,
-               true,
-               nullptr,
-               0,
-               net_violation_count,
-               pin_violation_count,
-               antenna_violations);
+      pin_violation_count
+          += checkNet(net, verbose, true, nullptr, 0, antenna_violations);
+      if (pin_violation_count > 0) {
+        net_violation_count++;
+      }
     }
   }
 

@@ -178,14 +178,12 @@ class AntennaChecker
   getViolatedWireLength(odb::dbNet* net, int routing_level);
   bool isValidGate(odb::dbMTerm* mterm);
   void buildLayerMaps(odb::dbNet* net, LayerToGraphNodes& node_by_layer_map);
-  void checkNet(odb::dbNet* net,
-                bool verbose,
-                bool save_report,
-                odb::dbMTerm* diode_mterm,
-                float ratio_margin,
-                int& net_violation_count,
-                int& pin_violation_count,
-                Violations& antenna_violations);
+  int checkNet(odb::dbNet* net,
+               bool verbose,
+               bool save_report,
+               odb::dbMTerm* diode_mterm,
+               float ratio_margin,
+               Violations& antenna_violations);
   void saveGates(odb::dbNet* db_net,
                  LayerToGraphNodes& node_by_layer_map,
                  int node_count);
