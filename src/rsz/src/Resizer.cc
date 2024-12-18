@@ -2133,12 +2133,15 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
         if (net && !dontTouch(net)) {
           NetConnectedPinIterator* pin_iter
               = network_->connectedPinIterator(net);
+          bool keep_tie = false;
           while (pin_iter->hasNext()) {
             const Pin* load = pin_iter->next();
-            if (load != drvr_pin) {
+            Instance* load_inst = network_->instance(load);
+            if (dontTouch(load_inst)) {
+              keep_tie = true;
+            } else if (load != drvr_pin) {
               // Make tie inst.
               Point tie_loc = tieLocation(load, separation_dbu);
-              Instance* load_inst = network_->instance(load);
               const char* inst_name = network_->name(load_inst);
               string tie_name = makeUniqueInstName(inst_name, true);
               Instance* tie
@@ -2168,6 +2171,10 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
             }
           }
           delete pin_iter;
+
+          if (keep_tie) {
+            continue;
+          }
 
           // Delete inst output net.
           Pin* tie_pin = network_->findPin(inst, tie_port);
