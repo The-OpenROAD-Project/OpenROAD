@@ -195,6 +195,8 @@ write_verilog $verilog_file
 ################################################################
 # Global routing
 
+detailed_route_debug -pa -pa_markers -pin _066293_:B
+
 pin_access -bottom_routing_layer $min_routing_layer \
            -top_routing_layer $max_routing_layer
 
@@ -218,9 +220,13 @@ utl::metric "GRT::ANT::errors" [ant::antenna_violation_count]
 ################################################################
 # Detailed routing
 
+detailed_route_debug -pa -pa_markers -pin _066293_:B
+
 # Run pin access again after inserting diodes and moving cells
 pin_access -bottom_routing_layer $min_routing_layer \
            -top_routing_layer $max_routing_layer
+
+detailed_route_debug -pa -pa_markers -pin _066293_:B
 
 detailed_route -output_drc [make_result_file "${design}_${platform}_route_drc.rpt"] \
                -output_maze [make_result_file "${design}_${platform}_maze.log"] \

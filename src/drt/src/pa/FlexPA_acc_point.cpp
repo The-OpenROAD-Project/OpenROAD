@@ -958,7 +958,7 @@ bool FlexPA::checkDirectionalViaAccess(
                                       via->getViaDef()->getLayer2Num(),
                                       dir,
                                       is_block);
-
+  // // logger_->report("[BNMFW] begin=({},{}) end=({},{})", begin_point.x(), begin_point.y(), end_point.x(), end_point.y());
   if (inst_term && inst_term->hasNet()) {
     via->addToNet(inst_term->getNet());
   } else {

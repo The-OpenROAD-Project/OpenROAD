@@ -3743,7 +3743,7 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal_addPWire(
   auto tmpPatch = std::make_unique<drPatchWire>();
   tmpPatch->setLayerNum(layerNum);
   tmpPatch->setOrigin(origin);
-  logger_->report("[BNMFW] patch origin=({},{}) net={}", origin.getX(), origin.getY(), net->getFrNet()->getName());
+  // logger_->report("[BNMFW] patch origin=({},{}) net={}", origin.getX(), origin.getY(), net->getFrNet()->getName());
   tmpPatch->setOffsetBox(Rect(patchLL, patchUR));
   tmpPatch->addToNet(net);
   std::unique_ptr<drConnFig> tmp(std::move(tmpPatch));
