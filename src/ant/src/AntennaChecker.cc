@@ -1027,6 +1027,7 @@ int AntennaChecker::checkNet(odb::dbNet* db_net,
                              Violations& antenna_violations)
 {
   odb::dbWire* wire = db_net->getWire();
+  int pin_violations = 0;
   if (wire) {
     LayerToGraphNodes node_by_layer_map;
     GateToLayerToNodeInfo gate_info;
@@ -1037,16 +1038,15 @@ int AntennaChecker::checkNet(odb::dbNet* db_net,
     calculatePAR(gate_info);
     calculateCAR(gate_info);
 
-    int pin_violations = checkGates(db_net,
-                                    verbose,
-                                    save_report,
-                                    diode_mterm,
-                                    ratio_margin,
-                                    gate_info,
-                                    antenna_violations);
-
-    return pin_violations;
+    pin_violations = checkGates(db_net,
+                                verbose,
+                                save_report,
+                                diode_mterm,
+                                ratio_margin,
+                                gate_info,
+                                antenna_violations);
   }
+  return pin_violations;
 }
 
 Violations AntennaChecker::getAntennaViolations(odb::dbNet* net,
@@ -1058,8 +1058,7 @@ Violations AntennaChecker::getAntennaViolations(odb::dbNet* net,
     return antenna_violations;
   }
 
-  int pin_violation_count = checkNet(
-      net, false, false, diode_mterm, ratio_margin, antenna_violations);
+  checkNet(net, false, false, diode_mterm, ratio_margin, antenna_violations);
 
   return antenna_violations;
 }
@@ -1124,10 +1123,11 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
     for (int i = 0; i < nets_.size(); i++) {
       odb::dbNet* net = nets_[i];
       Violations antenna_violations;
-      pin_violation_count
-          += checkNet(net, verbose, true, nullptr, 0, antenna_violations);
-      if (pin_violation_count > 0) {
+      int pin_viol_count
+          = checkNet(net, verbose, true, nullptr, 0, antenna_violations);
+      if (pin_viol_count > 0) {
         net_violation_count++;
+        pin_violation_count += pin_viol_count;
       }
     }
   }
