@@ -108,7 +108,8 @@ class FlexPA
 
   // helper structures
   std::vector<std::map<frCoord, frAccessPointEnum>> track_coords_;
-  std::map<frLayerNum, std::map<int, std::map<ViaRawPriorityTuple, frViaDef*>>>
+  std::map<frLayerNum,
+           std::map<int, std::map<ViaRawPriorityTuple, const frViaDef*>>>
       layer_num_to_via_defs_;
   frCollection<odb::dbInst*> target_insts_;
 
@@ -126,7 +127,7 @@ class FlexPA
     unique_insts_.setDesign(in);
   }
   void applyPatternsFile(const char* file_path);
-  ViaRawPriorityTuple getViaRawPriority(frViaDef* via_def);
+  ViaRawPriorityTuple getViaRawPriority(const frViaDef* via_def);
   bool isSkipInstTermLocal(frInstTerm* in);
   bool isSkipInstTerm(frInstTerm* in);
   bool isDistributed() const { return !remote_host_.empty(); }
@@ -156,7 +157,7 @@ class FlexPA
       const Point& pt,
       frLayerNum layer_num,
       const gtl::polygon_90_set_data<frCoord>& polyset,
-      std::vector<std::pair<int, frViaDef*>>& via_defs);
+      std::vector<std::pair<int, const frViaDef*>>& via_defs);
 
   /**
    * @brief fully initializes a pin's access points

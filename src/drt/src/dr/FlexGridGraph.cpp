@@ -113,7 +113,7 @@ bool FlexGridGraph::outOfDieVia(frMIdx x,
   if (lNum > getTech()->getTopLayerNum()) {
     return false;
   }
-  frViaDef* via = getTech()->getLayer(lNum)->getDefaultViaDef();
+  const frViaDef* via = getTech()->getLayer(lNum)->getDefaultViaDef();
   if (!via) {
     return true;
   }
@@ -130,7 +130,7 @@ bool FlexGridGraph::hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z)
   }
   Rect testBoxUp;
   if (lNum + 1 <= getTech()->getTopLayerNum()) {
-    frViaDef* via = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
+    const frViaDef* via = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
     if (via) {
       testBoxUp = via->getLayer1ShapeBox();
       testBoxUp.merge(via->getLayer2ShapeBox());
@@ -142,7 +142,7 @@ bool FlexGridGraph::hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z)
   }
   Rect testBoxDown;
   if (lNum - 1 >= getTech()->getBottomLayerNum()) {
-    frViaDef* via = getTech()->getLayer(lNum - 1)->getDefaultViaDef();
+    const frViaDef* via = getTech()->getLayer(lNum - 1)->getDefaultViaDef();
     if (via) {
       testBoxDown = via->getLayer1ShapeBox();
       testBoxDown.merge(via->getLayer2ShapeBox());

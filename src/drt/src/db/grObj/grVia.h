@@ -51,10 +51,10 @@ class grVia : public grRef
   }
 
   // getters
-  frViaDef* getViaDef() const { return viaDef; }
+  const frViaDef* getViaDef() const { return viaDef; }
 
   // setters
-  void setViaDef(frViaDef* in) { viaDef = in; }
+  void setViaDef(const frViaDef* in) { viaDef = in; }
 
   // others
   frBlockObjectEnum typeId() const override { return grcVia; }
@@ -150,7 +150,7 @@ class grVia : public grRef
 
  protected:
   Point origin;
-  frViaDef* viaDef{nullptr};
+  const frViaDef* viaDef{nullptr};
   frBlockObject* child{nullptr};
   frBlockObject* parent{nullptr};
   frBlockObject* owner{nullptr};

@@ -55,9 +55,9 @@ class taVia : public taRef
  public:
   // constructors
   taVia() = default;
-  taVia(frViaDef* in) : viaDef_(in) {}
+  taVia(const frViaDef* in) : viaDef_(in) {}
   // getters
-  frViaDef* getViaDef() const { return viaDef_; }
+  const frViaDef* getViaDef() const { return viaDef_; }
   Rect getLayer1BBox() const
   {
     Rect box;
@@ -89,7 +89,7 @@ class taVia : public taRef
     return box;
   }
   // setters
-  void setViaDef(frViaDef* in) { viaDef_ = in; }
+  void setViaDef(const frViaDef* in) { viaDef_ = in; }
   // others
   frBlockObjectEnum typeId() const override { return tacVia; }
 
@@ -213,7 +213,7 @@ class taVia : public taRef
 
  protected:
   Point origin_;
-  frViaDef* viaDef_{nullptr};
+  const frViaDef* viaDef_{nullptr};
   frBlockObject* owner_{nullptr};
 };
 }  // namespace drt

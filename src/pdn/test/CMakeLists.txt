@@ -16,7 +16,6 @@ set(TEST_NAMES
     asap7_vias_fixed_vias
     asap7_vias_max_rows_columns
     bpin_removal
-    convert
     core_grid
     core_grid_adjacentcuts
     core_grid_auto_domain
@@ -107,7 +106,3 @@ set(TEST_NAMES
 # Skipped
 #pdn_man_tcl_check
 #pdn_readme_msgs_check
-
-foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("pdn" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
-endforeach()

@@ -44,10 +44,7 @@ PlacementDensityDataSource::PlacementDensityDataSource(utl::Logger* logger)
     : HeatMapDataSource(logger,
                         "Placement Density",
                         "Placement",
-                        "PlacementDensity"),
-      include_taps_(true),
-      include_filler_(false),
-      include_io_(false)
+                        "PlacementDensity")
 {
   addBooleanSetting(
       "Taps",
@@ -78,12 +75,10 @@ bool PlacementDensityDataSource::populateMap()
       = {{getBlock(), odb::dbTransform()}};
 
   while (!blocks.empty()) {
-    auto [current_block, current_transform] = blocks.back();
+    auto [block, transform] = blocks.back();
     blocks.pop_back();
 
-    const bool has_child_blocks = !current_block->getChildren().empty();
-
-    for (auto* inst : current_block->getInsts()) {
+    for (auto* inst : block->getInsts()) {
       if (!inst->getPlacementStatus().isPlaced()) {
         continue;
       }
@@ -100,16 +95,14 @@ bool PlacementDensityDataSource::populateMap()
         continue;
       }
 
-      odb::dbMaster* master = inst->getMaster();
-      odb::dbBlock* child;
-      if (has_child_blocks
-          && (child = inst->getBlock()->findChild(master->getName().c_str()))) {
-        const odb::dbTransform child_transform = inst->getTransform();
-        blocks.emplace_back(child, child_transform);
+      if (inst->isHierarchical()) {
+        odb::dbTransform child_transform = inst->getTransform();
+        child_transform.concat(transform);
+        blocks.emplace_back(inst->getChild(), child_transform);
         continue;
       }
       odb::Rect inst_box = inst->getBBox()->getBox();
-      current_transform.apply(inst_box);
+      transform.apply(inst_box);
 
       addToMap(inst_box, 100.0);
     }

@@ -323,12 +323,6 @@ openroad_gui_compiled()
   return ord::OpenRoad::getGUICompileOption();
 }
 
-const bool
-openroad_charts_compiled()
-{
-  return ord::OpenRoad::getChartsCompileOption();
-}
-
 void
 read_lef_cmd(const char *filename,
 	     const char *lib_name,
