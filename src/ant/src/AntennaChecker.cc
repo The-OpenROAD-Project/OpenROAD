@@ -100,13 +100,10 @@ void AntennaChecker::initAntennaRules()
   odb::dbTech* tech = db_->getTech();
   // initialize nets_to_report_ with all nets to avoid issues with
   // multithreading
-  {
-    std::lock_guard<std::mutex> lock(map_mutex_);
-    if (net_to_report_.empty()) {
-      for (odb::dbNet* net : block_->getNets()) {
-        if (!net->isSpecial()) {
-          net_to_report_[net];
-        }
+  if (net_to_report_.empty()) {
+    for (odb::dbNet* net : block_->getNets()) {
+      if (!net->isSpecial()) {
+        net_to_report_[net];
       }
     }
   }
