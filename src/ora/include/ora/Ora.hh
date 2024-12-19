@@ -38,11 +38,14 @@ class Ora
   void askbot(const char* pos_arg1);
   void setBotHost(const char* host);
   void setSourceFlag(bool sourceFlag);
+  void setConsent(const char* consent);
 
  private:
   odb::dbDatabase* db_;
   bool sourceFlag_;
   std::string hostUrl;
+  std::string localDirPath;
+  void checkLocalDir();
 
   Logger* logger_ = nullptr;
 };

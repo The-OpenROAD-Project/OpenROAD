@@ -57,6 +57,28 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
   return size * nmemb;
 }
 
+bool checkConsent()
+{
+  std::string folderPath
+      = std::string(getenv("HOME")) + "/.local/share/openroad";
+  std::ifstream folderFile(folderPath);
+  if (!folderFile) {
+    return false;
+  }
+
+  std::string consentFilePath = folderPath + "/orassistant_consent.txt";
+  std::ifstream consentFile(consentFilePath);
+
+  if (consentFile.is_open()) {
+    std::string consent;
+    std::getline(consentFile, consent);
+    consentFile.close();
+    return consent == "y";
+  }
+
+  return false;
+}
+
 std::string sendPostRequest(const std::string& url, const std::string& jsonData)
 {
   CURL* curl;
@@ -103,9 +125,10 @@ void Ora::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger)
   hostUrl
       = "https://bursting-stallion-friendly.ngrok-free.app/graphs/"
         "agent-retriever";
+  localDirPath = std::string(getenv("HOME")) + "/.local/share/openroad";
 
   try {
-    std::ifstream hostUrlFile(std::string(getenv("HOME")) + "/.local/orassistant_host.txt");
+    std::ifstream hostUrlFile(localDirPath + "/orassistant_host.txt");
     if (hostUrlFile.is_open()) {
       std::getline(hostUrlFile, hostUrl);
       hostUrlFile.close();
@@ -116,8 +139,38 @@ void Ora::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger)
 
   sourceFlag_ = true;
 }
+
+void Ora::checkLocalDir()
+{
+  std::ifstream localDir(localDirPath);
+  if (!localDir) {
+    logger_->info(utl::ORA, 112, "Creating ~/.local/share/openroad directory.");
+    std::string mkdirCmd = "mkdir -p " + localDirPath;
+    int ret = system(mkdirCmd.c_str());
+    if (ret != 0) {
+      logger_->warn(
+          utl::ORA, 113, "Failed to create ~/.local/share/openroad directory.");
+    }
+  }
+}
+
 void Ora::askbot(const char* query)
 {
+  if (!checkConsent()) {
+    logger_->info(
+        utl::ORA,
+        110,
+        "The ORAssistant app collects and processes your data in accordance "
+        "with "
+        "the General Data Protection Regulation(GDPR). By using the cloud "
+        "hosted "
+        "version of this app, you consent to the collection and processing of "
+        "your "
+        "queries and the subsequently generated answers. Give consent to use "
+        "the application by using the set_consent command.");
+
+    return;
+  }
   logger_->info(utl::ORA, 101, "Sending POST request to {}", hostUrl);
 
   std::stringstream jsonDataStream;
@@ -184,29 +237,39 @@ void Ora::setSourceFlag(bool sourceFlag)
 void Ora::setBotHost(const char* host)
 {
   hostUrl = host;
-  logger_->info(utl::ORA, 100, "Setting ORAssistant host to {}", hostUrl);
-  
-  // checking if .local directory exists
-  std::string localDirPath = std::string(getenv("HOME")) + "/.local";
-  std::ifstream localDir(localDirPath);
-  if (!localDir) {
-    logger_->info(utl::ORA, 110, "Creating ~/.local directory.");
-    std::string mkdirCmd = "mkdir " + localDirPath;
-    int ret = system(mkdirCmd.c_str());
-    if (ret != 0) {
-      logger_->warn(utl::ORA, 112, "Failed to create ~/.local directory.");
-    }
-  }
+  logger_->info(utl::ORA, 116, "Setting ORAssistant host to {}", hostUrl);
 
+  checkLocalDir();
   std::string hostFilePath = localDirPath + "/orassistant_host.txt";
   std::ofstream hostUrlFile(hostFilePath);
 
   if (hostUrlFile.is_open()) {
     hostUrlFile << hostUrl;
     hostUrlFile.close();
-    logger_->info(utl::ORA, 109, "ORAssistant host saved to ~/.local/orassistant_host.txt");
+    logger_->info(utl::ORA,
+                  109,
+                  "ORAssistant host saved to "
+                  "~/.local/share/openroad/orassistant_host.txt");
   } else {
     logger_->warn(utl::ORA, 108, "Failed to write ORAssistant host to file.");
+  }
+}
+
+void Ora::setConsent(const char* consent)
+{
+  checkLocalDir();
+  std::string consentFilePath = localDirPath + "/orassistant_consent.txt";
+  std::ofstream consentFile(consentFilePath);
+
+  if (consentFile.is_open()) {
+    consentFile << consent;
+    consentFile.close();
+    logger_->info(
+        utl::ORA,
+        114,
+        "Consent saved to ~/.local/share/openroad/orassistant_consent.txt");
+  } else {
+    logger_->warn(utl::ORA, 115, "Failed to write consent to file.");
   }
 }
 

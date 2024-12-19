@@ -50,4 +50,9 @@ void set_bothost(const char *host)
   getOra()->setBotHost(host);
 }
 
+void set_consent(const char *consent)
+{
+  getOra()->setConsent(consent);
+}
+
 %} // inline

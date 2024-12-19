@@ -32,3 +32,12 @@ proc set_bothost { hostUrl } {
 
   ora::set_bothost $hostUrl
 }
+
+proc set_consent { consent } {
+  puts "Setting ORAssistant consent to yes."
+
+  sta::check_argc_eq1 "set_consent" $consent
+
+  ora::set_consent $consent
+}
+
