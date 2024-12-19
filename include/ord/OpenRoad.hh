@@ -265,7 +265,6 @@ class OpenRoad
   static bool getGPUCompileOption();
   static bool getPythonCompileOption();
   static bool getGUICompileOption();
-  static bool getChartsCompileOption();
 
  protected:
   ~OpenRoad();

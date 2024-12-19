@@ -57,6 +57,8 @@ static void populateODBProperties(Descriptor::Properties& props,
                                   odb::dbObject* object,
                                   const std::string& prefix = "")
 {
+  std::optional<int> src_file_id;
+  std::optional<int> src_file_line;
   Descriptor::PropertyList prop_list;
   for (const auto prop : odb::dbProperty::getProperties(object)) {
     std::any value;
@@ -88,7 +90,26 @@ static void populateODBProperties(Descriptor::Properties& props,
         value = static_cast<odb::dbDoubleProperty*>(prop)->getValue();
         break;
     }
-    prop_list.emplace_back(prop->getName(), value);
+    // Look for the file name properties from Verilog2db::storeLineInfo
+    if (prop->getName() == "src_file_id") {
+      src_file_id = std::any_cast<int>(value);
+    } else if (prop->getName() == "src_file_line") {
+      src_file_line = std::any_cast<int>(value);
+    } else {
+      prop_list.emplace_back(prop->getName(), value);
+    }
+  }
+
+  if (src_file_id && src_file_line) {
+    auto block = object->getDb()->getChip()->getBlock();
+    const auto src_file = fmt::format("src_file_{}", src_file_id.value());
+    const auto file_name_prop
+        = odb::dbStringProperty::find(block, src_file.c_str());
+    if (file_name_prop) {
+      const auto info = fmt::format(
+          "{}:{}", file_name_prop->getValue(), src_file_line.value());
+      prop_list.emplace_back("Source", info);
+    }
   }
 
   if (!prop_list.empty()) {

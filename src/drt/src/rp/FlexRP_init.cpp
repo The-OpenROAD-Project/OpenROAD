@@ -35,8 +35,8 @@ void FlexRP::init()
 {
   ProfileTask profile("RP:init");
 
-  const auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
-  const auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
+  const auto bottomLayerNum = tech_->getBottomLayerNum();
+  const auto topLayerNum = tech_->getTopLayerNum();
 
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     if (tech_->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {

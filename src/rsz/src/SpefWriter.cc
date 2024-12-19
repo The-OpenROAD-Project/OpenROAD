@@ -81,6 +81,20 @@ std::string escapeDollarSign(const char* name)
   return escapeDollarSign(std::string(name));
 }
 
+// Quick fix for wrong pin delimiter.
+// TODO: save the parasitics data to odb and use the existing write_spef
+// mechanism to produce the spef files from estimate_parasitics.
+std::string fixPinDelimiter(const std::string& name)
+{
+  const char delimiter = '/';
+  std::string result = name;
+  size_t pos = result.find_last_of(delimiter);
+  if (pos != std::string::npos) {
+    result.replace(pos, 1, ":");
+  }
+  return result;
+}
+
 void SpefWriter::writeHeader()
 {
   for (auto [_, it] : spef_streams_) {
@@ -192,7 +206,9 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
       network_->staToDb(pin, iterm, bterm, moditerm, modbterm);
 
       if (iterm != nullptr) {
-        stream << "*I " << escapeDollarSign(parasitics_->name(node)) << " ";
+        stream << "*I "
+               << fixPinDelimiter(escapeDollarSign(parasitics_->name(node)))
+               << " ";
         stream << getIoDirectionText(iterm->getIoType());
         stream << " *D " << iterm->getInst()->getMaster()->getName();
         stream << '\n';
@@ -248,9 +264,32 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
     stream << count++ << " ";
 
     auto n1 = parasitics_->node1(res);
-    stream << escapeDollarSign(parasitics_->name(n1)) << " ";
     auto n2 = parasitics_->node2(res);
-    stream << escapeDollarSign(parasitics_->name(n2)) << " ";
+
+    odb::dbITerm* iterm = nullptr;
+    odb::dbBTerm* bterm = nullptr;
+    odb::dbModITerm* moditerm = nullptr;
+    odb::dbModBTerm* modbterm = nullptr;
+
+    std::string node1_name = escapeDollarSign(parasitics_->name(n1));
+    auto pin1 = parasitics_->pin(n1);
+    if (pin1 != nullptr) {
+      network_->staToDb(pin1, iterm, bterm, moditerm, modbterm);
+      if (iterm != nullptr) {
+        node1_name = fixPinDelimiter(node1_name);
+      }
+    }
+    std::string node2_name = escapeDollarSign(parasitics_->name(n2));
+    auto pin2 = parasitics_->pin(n2);
+    if (pin2 != nullptr) {
+      network_->staToDb(pin2, iterm, bterm, moditerm, modbterm);
+      if (iterm != nullptr) {
+        node2_name = fixPinDelimiter(node2_name);
+      }
+    }
+
+    stream << node1_name << " ";
+    stream << node2_name << " ";
     stream << parasitics_->value(res) / res_scale << '\n';
   }
 

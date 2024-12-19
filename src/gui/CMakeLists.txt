@@ -55,6 +55,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/ruler.cpp
     src/heatMap.cpp
     src/heatMapSetup.cpp
+    src/heatMapPinDensity.cpp
     src/heatMapPlacementDensity.cpp
     src/browserWidget.cpp
     src/globalConnectDialog.cpp

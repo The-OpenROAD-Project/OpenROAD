@@ -122,7 +122,6 @@ using sta::LoadPinIndexMap;
 using sta::PinConnectedPinIterator;
 using sta::Sdc;
 using sta::SearchPredNonReg2;
-using sta::stringPrint;
 using sta::VertexIterator;
 using sta::VertexOutEdgeIterator;
 
@@ -343,13 +342,18 @@ bool Resizer::removeBuffer(Instance* buffer,
   dbNet* in_db_net = db_network_->staToDb(in_net);
   dbNet* out_db_net = db_network_->staToDb(out_net);
   // honor net dont-touch on input net or output net
-  if (in_db_net->isDoNotTouch() || out_db_net->isDoNotTouch()) {
+  if ((in_db_net && in_db_net->isDoNotTouch())
+      || (out_db_net && out_db_net->isDoNotTouch())) {
     if (honorDontTouchFixed) {
       return false;
     }
     // remove net dont touch for manual ECO
-    in_db_net->setDoNotTouch(false);
-    out_db_net->setDoNotTouch(false);
+    if (in_db_net) {
+      in_db_net->setDoNotTouch(false);
+    }
+    if (out_db_net) {
+      out_db_net->setDoNotTouch(false);
+    }
   }
   bool out_net_ports = hasPort(out_net);
   Net *survivor, *removed;
@@ -558,7 +562,7 @@ void Resizer::findBuffers()
   }
 }
 
-bool Resizer::isLinkCell(LibertyCell* cell)
+bool Resizer::isLinkCell(LibertyCell* cell) const
 {
   return network_->findLibertyCell(cell->name()) == cell;
 }
@@ -629,33 +633,35 @@ void Resizer::getPins(Instance* inst, PinVector& pins) const
 
 void Resizer::SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from)
 {
-  //
-  // The concept of this function is we are moving the name of the net
-  // in the iterm_from to the iterm_to.  We preferentially use
-  // the modnet name, if present.
-  //
-  dbNet* to_db_net = iterm_to->getNet();
-  odb::dbModNet* to_mod_net = iterm_to->getModNet();
+  if (iterm_to && iterm_from) {
+    //
+    // The concept of this function is we are moving the name of the net
+    // in the iterm_from to the iterm_to.  We preferentially use
+    // the modnet name, if present.
+    //
+    dbNet* to_db_net = iterm_to->getNet();
+    odb::dbModNet* to_mod_net = iterm_to->getModNet();
 
-  odb::dbModNet* from_mod_net = iterm_from->getModNet();
-  dbNet* from_db_net = iterm_from->getNet();
+    odb::dbModNet* from_mod_net = iterm_from->getModNet();
+    dbNet* from_db_net = iterm_from->getNet();
 
-  std::string required_name
-      = from_mod_net ? from_mod_net->getName() : from_db_net->getName();
-  std::string to_name
-      = to_mod_net ? to_mod_net->getName() : to_db_net->getName();
+    std::string required_name
+        = from_mod_net ? from_mod_net->getName() : from_db_net->getName();
+    std::string to_name
+        = to_mod_net ? to_mod_net->getName() : to_db_net->getName();
 
-  if (from_mod_net && to_mod_net) {
-    from_mod_net->rename(to_name.c_str());
-    to_mod_net->rename(required_name.c_str());
-  } else if (from_db_net && to_db_net) {
-    to_db_net->swapNetNames(from_db_net);
-  } else if (from_mod_net && to_db_net) {
-    to_db_net->rename(required_name.c_str());
-    from_mod_net->rename(to_name.c_str());
-  } else if (to_mod_net && from_db_net) {
-    to_mod_net->rename(required_name.c_str());
-    from_db_net->rename(to_name.c_str());
+    if (from_mod_net && to_mod_net) {
+      from_mod_net->rename(to_name.c_str());
+      to_mod_net->rename(required_name.c_str());
+    } else if (from_db_net && to_db_net) {
+      to_db_net->swapNetNames(from_db_net);
+    } else if (from_mod_net && to_db_net) {
+      to_db_net->rename(required_name.c_str());
+      from_mod_net->rename(to_name.c_str());
+    } else if (to_mod_net && from_db_net) {
+      to_mod_net->rename(required_name.c_str());
+      from_db_net->rename(to_name.c_str());
+    }
   }
 }
 
@@ -908,27 +914,37 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
 
   // connect original input (hierarchical or flat) to buffer input
   // handle hierarchy
-  Pin* buffer_ip_pin;
-  Pin* buffer_op_pin;
+  Pin* buffer_ip_pin = nullptr;
+  Pin* buffer_op_pin = nullptr;
   getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
+
+  // get the iterms. Note this are never null (makeBuffer properly instantiates
+  // them and we know to always expect an iterm.). However, the api (flatPin)
+  // truly checks to see if the pins could be moditerms & if they are returns
+  // null, so coverity rationally reasons that the iterm could be null,
+  // so we add some extra checking here. This is a consequence of
+  //"hiding" the full api.
+  //
   odb::dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
   odb::dbITerm* buffer_ip_pin_iterm = db_network_->flatPin(buffer_ip_pin);
-  if (buffer_ip_pin_iterm) {
+
+  if (buffer_ip_pin_iterm && buffer_op_pin_iterm) {
     if (flat_op_net) {
       buffer_ip_pin_iterm->connect(flat_op_net);
     }
     if (hier_op_net) {
       buffer_ip_pin_iterm->connect(hier_op_net);
     }
+    buffer_op_pin_iterm->connect(db_network_->staToDb(buffer_out));
+    top_pin_op_bterm->connect(db_network_->staToDb(buffer_out));
+    SwapNetNames(buffer_op_pin_iterm, buffer_ip_pin_iterm);
+    // rename the mod net to match the flat net.
+    if (buffer_ip_pin_iterm->getNet() && buffer_ip_pin_iterm->getModNet()) {
+      buffer_ip_pin_iterm->getModNet()->rename(
+          buffer_ip_pin_iterm->getNet()->getName().c_str());
+    }
   }
-  buffer_op_pin_iterm->connect(db_network_->staToDb(buffer_out));
-  top_pin_op_bterm->connect(db_network_->staToDb(buffer_out));
-  SwapNetNames(buffer_op_pin_iterm, buffer_ip_pin_iterm);
-  // rename the mod net to match the flat net.
-  if (buffer_ip_pin_iterm->getNet() && buffer_ip_pin_iterm->getModNet()) {
-    buffer_ip_pin_iterm->getModNet()->rename(
-        buffer_ip_pin_iterm->getNet()->getName().c_str());
-  }
+
   parasiticsInvalid(flat_op_net);
   parasiticsInvalid(buffer_out);
 }
@@ -1791,6 +1807,22 @@ bool Resizer::dontUse(LibertyCell* cell)
   return cell->dontUse() || dont_use_.hasKey(cell);
 }
 
+void Resizer::reportDontUse() const
+{
+  logger_->report("Don't Use Cells:");
+
+  if (dont_use_.empty()) {
+    logger_->report("  none");
+  } else {
+    for (auto* cell : dont_use_) {
+      if (!isLinkCell(cell)) {
+        continue;
+      }
+      logger_->report("  {}", cell->name());
+    }
+  }
+}
+
 void Resizer::setDontTouch(const Instance* inst, bool dont_touch)
 {
   dbInst* db_inst = db_network_->staToDb(inst);
@@ -1816,6 +1848,45 @@ bool Resizer::dontTouch(const Net* net)
 {
   dbNet* db_net = db_network_->staToDb(net);
   return db_net->isDoNotTouch();
+}
+
+void Resizer::reportDontTouch()
+{
+  initBlock();
+
+  std::set<odb::dbInst*> insts;
+  std::set<odb::dbNet*> nets;
+
+  for (auto* inst : block_->getInsts()) {
+    if (inst->isDoNotTouch()) {
+      insts.insert(inst);
+    }
+  }
+
+  for (auto* net : block_->getNets()) {
+    if (net->isDoNotTouch()) {
+      nets.insert(net);
+    }
+  }
+
+  logger_->report("Don't Touch Instances:");
+
+  if (insts.empty()) {
+    logger_->report("  none");
+  } else {
+    for (auto* inst : insts) {
+      logger_->report("  {}", inst->getName());
+    }
+  }
+
+  logger_->report("Don't Touch Nets:");
+  if (nets.empty()) {
+    logger_->report("  none");
+  } else {
+    for (auto* net : nets) {
+      logger_->report("  {}", net->getName());
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2358,7 +2429,8 @@ string Resizer::makeUniqueNetName()
   string node_name;
   Instance* top_inst = network_->topInstance();
   do {
-    stringPrint(node_name, "net%d", unique_net_index_++);
+    // sta::stringPrint can lead to string overflow and fatal
+    node_name = fmt::format("net{}", unique_net_index_++);
   } while (network_->findNet(top_inst, node_name.c_str()));
   return node_name;
 }
@@ -2379,10 +2451,12 @@ string Resizer::makeUniqueInstName(const char* base_name, bool underscore)
 {
   string inst_name;
   do {
-    stringPrint(inst_name,
-                underscore ? "%s_%d" : "%s%d",
-                base_name,
-                unique_inst_index_++);
+    // sta::stringPrint can lead to string overflow and fatal
+    if (underscore) {
+      inst_name = fmt::format("{}_{}", base_name, unique_inst_index_++);
+    } else {
+      inst_name = fmt::format("{}{}", base_name, unique_inst_index_++);
+    }
   } while (network_->findInstance(inst_name.c_str()));
   return inst_name;
 }

@@ -704,9 +704,4 @@ bool OpenRoad::getGUICompileOption()
   return BUILD_GUI;
 }
 
-bool OpenRoad::getChartsCompileOption()
-{
-  return ENABLE_CHARTS;
-}
-
 }  // namespace ord

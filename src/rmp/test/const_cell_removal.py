@@ -18,6 +18,7 @@ rmp_aux.restructure(
     design,
     liberty_file_name="Nangate45/Nangate45_typ.lib",
     target="area",
+    workdir_name="results/python/const",
     abc_logfile="results/abc_rcon.log",
     tielo_port=tielo,
     tiehi_port=tiehi,
