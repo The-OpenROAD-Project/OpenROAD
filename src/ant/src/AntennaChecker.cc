@@ -1118,14 +1118,14 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
       }
     }
     omp_set_num_threads(num_threads);
-#pragma omp parallel for schedule(dynamic) \
-    reduction(+ : net_violation_count, pin_violation_count)
+#pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < nets_.size(); i++) {
       odb::dbNet* net = nets_[i];
       Violations antenna_violations;
       int pin_viol_count
           = checkNet(net, verbose, true, nullptr, 0, antenna_violations);
       if (pin_viol_count > 0) {
+        std::lock_guard<std::mutex> lock(map_mutex_);
         net_violation_count++;
         pin_violation_count += pin_viol_count;
       }
