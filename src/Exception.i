@@ -16,6 +16,7 @@
 
 %{
 #include <new>
+#include <stdlib.h>
 
 #ifndef TEST_BUILD
 #include <boost/stacktrace.hpp>
@@ -30,7 +31,7 @@
   try { $function }
   catch (std::bad_alloc &) {
     fprintf(stderr, "Error: out of memory.");
-    exit(1);
+    abort();
   }
   // This catches std::runtime_error (utl::error) and sta::Exception.
   catch (std::exception &excp) {
