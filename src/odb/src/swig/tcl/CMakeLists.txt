@@ -5,6 +5,7 @@ swig_lib(NAME          odbtcl
          I_FILE        ../common/odb.i
          SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include
                        ${PROJECT_SOURCE_DIR}/src/swig/tcl
+         DEFINES       TEST_BUILD
 )
 
 target_include_directories(odbtcl

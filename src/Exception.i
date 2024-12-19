@@ -16,6 +16,14 @@
 
 %{
 #include <new>
+
+#ifndef TEST_BUILD
+#include <boost/stacktrace.hpp>
+#include <sstream>
+
+#include "ord/OpenRoad.hh"
+#include "utl/Logger.h"
+#endif
 %}
 
 %exception {
@@ -26,6 +34,16 @@
   }
   // This catches std::runtime_error (utl::error) and sta::Exception.
   catch (std::exception &excp) {
+%#ifndef TEST_BUILD
+    auto logger = ord::OpenRoad::openRoad()->getLogger();
+    if (logger->debugCheck(utl::ORD, "trace", 1)) {
+      std::stringstream trace;
+      trace << boost::stacktrace::stacktrace();
+      logger->report("Stack trace");
+      logger->report(trace.str());
+    }
+%#endif
+
     Tcl_ResetResult(interp);
     Tcl_AppendResult(interp, excp.what(), nullptr);
     return TCL_ERROR;

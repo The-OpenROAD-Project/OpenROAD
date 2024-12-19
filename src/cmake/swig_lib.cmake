@@ -15,7 +15,7 @@ function(swig_lib)
   # Parse args
   set(options "")
   set(oneValueArgs I_FILE NAME NAMESPACE LANGUAGE RUNTIME_HEADER)
-  set(multiValueArgs SWIG_INCLUDES SCRIPTS)
+  set(multiValueArgs SWIG_INCLUDES SCRIPTS DEFINES)
   
   cmake_parse_arguments(
       ARG  # prefix on the parsed args
@@ -127,6 +127,12 @@ function(swig_lib)
     target_include_directories(${ARG_NAME}
       PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}
+    )
+  endif()
+
+  if (DEFINED ARG_DEFINES)
+    target_compile_definitions(${ARG_NAME}
+      PRIVATE ${ARG_DEFINES}
     )
   endif()
 
