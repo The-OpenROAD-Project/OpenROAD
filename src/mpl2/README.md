@@ -111,7 +111,8 @@ place_macro
 
 ### Set Macro Guidance Region
 
-Command for setting guidance regions for macros.
+Command for setting guidance regions for macros. The guidance region can have any size as long it fits inside the core area, as the placer will try to
+maximize the overlap region between macro and guidance region.
 
 ```tcl
 set_macro_guidance_region
