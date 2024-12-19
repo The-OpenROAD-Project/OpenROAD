@@ -38,6 +38,7 @@ target_include_directories(odbtcl-bin
 target_link_libraries(odbtcl-bin
     PUBLIC
         odbtcl
+        dl
 )
 
 set_target_properties(odbtcl-bin
