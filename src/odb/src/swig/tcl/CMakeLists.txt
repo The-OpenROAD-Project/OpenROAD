@@ -5,7 +5,6 @@ swig_lib(NAME          odbtcl
          I_FILE        ../common/odb.i
          SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include
                        ${PROJECT_SOURCE_DIR}/src/swig/tcl
-         DEFINES       TEST_BUILD
 )
 
 target_include_directories(odbtcl
@@ -26,11 +25,14 @@ target_link_libraries(odbtcl
 # Executable
 add_executable(odbtcl-bin
     main.cpp
+    stub.cpp
 )
 
 target_include_directories(odbtcl-bin
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include/odb
+    PRIVATE
+        ${OPENROAD_HOME}/include
 )
 
 target_link_libraries(odbtcl-bin
