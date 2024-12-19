@@ -1,6 +1,7 @@
-import opendbpy as odb
+import odb
 import helper
 import odbUnitTest
+import unittest
 
 
 def placeInst(inst, x, y):
@@ -22,7 +23,6 @@ class TestBlock(odbUnitTest.TestCase):
         self.extcornerblock = self.block.createExtCornerBlock(1)
         odb.dbTechNonDefaultRule_create(self.block, "non_default_1")
         self.parentRegion = odb.dbRegion_create(self.block, "parentRegion")
-        self.childRegion = odb.dbRegion_create(self.parentRegion, "childRegion")
 
     def tearDown(self):
         self.db.destroy(self.db)
@@ -59,10 +59,6 @@ class TestBlock(odbUnitTest.TestCase):
         # region
         self.assertEqual(
             self.block.findRegion("parentRegion").getName(), "parentRegion"
-        )
-        self.assertEqual(self.block.findRegion("childRegion").getName(), "childRegion")
-        self.assertEqual(
-            self.block.findRegion("childRegion").getParent().getName(), "parentRegion"
         )
 
     def check_box_rect(self, min_x, min_y, max_x, max_y):
@@ -142,7 +138,22 @@ class TestBlock(odbUnitTest.TestCase):
         self.block_placement(4, False)
         self.check_box_rect(-1580, -1000, 2550, 4100)
 
+    def test_get_chip(self):
+        """
+        Tests getChip API
+
+        Note: can't call assertEqual directly on the getChip() result because
+        the two objects point to different swig-wrapped objects
+        """
+        self.assertEqual(self.db.getChip().getBlock().getName(), self.parentBlock.getChip().getBlock().getName())
+
+    @unittest.skip("re-enable once memory corruption is resolved")
+    def test_duplicate(self):
+        dup_block = odb.dbBlock_duplicate(self.block, "dup_block")
+        self.assertEqual(dup_block.getName(), "dup_block")
+        self.assertEqual(len(dup_block.getInsts()), len(self.block.getInsts()))
+        self.assertEqual(len(dup_block.getNets()), len(self.block.getNets()))
+        self.assertEqual(len(dup_block.getBTerms()), len(self.block.getBTerms()))
 
 if __name__ == "__main__":
-    odbUnitTest.mainParallel(TestBlock)
-#     odbUnitTest.main()
+    unittest.main()

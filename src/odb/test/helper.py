@@ -1,11 +1,12 @@
-import opendbpy as odb
-
+import odb
+import openroad
+from openroad import Design
 
 def createSimpleDB():
-    db = odb.dbDatabase.create()
-    tech = odb.dbTech.create(db)
+    db = Design.createDetachedDb()
+    tech = odb.dbTech.create(db, "simple_tech")
     L1 = odb.dbTechLayer_create(tech, "L1", "ROUTING")
-    lib = odb.dbLib.create(db, "lib")
+    lib = odb.dbLib.create(db, "lib", tech, "/")
     odb.dbChip.create(db)
     # Creating Master and2 and or2
     and2 = createMaster2X1(lib, "and2", 1000, 1000, "a", "b", "o")
@@ -14,8 +15,8 @@ def createSimpleDB():
 
 
 def createMultiLayerDB():
-    db = odb.dbDatabase.create()
-    tech = odb.dbTech.create(db)
+    db = Design.createDetachedDb()
+    tech = odb.dbTech.create(db, "multi_tech")
 
     m1 = odb.dbTechLayer_create(tech, "M1", "ROUTING")
     m1.setWidth(2000)
@@ -44,7 +45,7 @@ def createMultiLayerDB():
 #            +-----
 def create1LevelBlock(db, lib, parent):
     blockName = "1LevelBlock"
-    block = odb.dbBlock_create(parent, blockName, ",")
+    block = odb.dbBlock_create(parent, blockName, lib.getTech(), ",")
     # Creating Master and2 and instance inst
     and2 = lib.findMaster("and2")
     inst = odb.dbInst.create(block, and2, "inst")
@@ -59,9 +60,12 @@ def create1LevelBlock(db, lib, parent):
     OUT = odb.dbBTerm.create(n3, "OUT")
     OUT.setIoType("OUTPUT")
     # connecting nets
-    odb.dbITerm.connect(inst, n1, inst.getMaster().findMTerm("a"))
-    odb.dbITerm.connect(inst, n2, inst.getMaster().findMTerm("b"))
-    odb.dbITerm.connect(inst, n3, inst.getMaster().findMTerm("o"))
+    a = inst.findITerm("a")
+    a.connect(n1)
+    b = inst.findITerm("b")
+    b.connect(n2)
+    o = inst.findITerm("o")
+    o.connect(n3)
     return block
 
 
@@ -79,7 +83,7 @@ def create1LevelBlock(db, lib, parent):
 #            +-----
 def create2LevelBlock(db, lib, parent):
     blockName = "2LevelBlock"
-    block = odb.dbBlock_create(parent, blockName, ",")
+    block = odb.dbBlock_create(parent, blockName, lib.getTech(), ",")
 
     and2 = lib.findMaster("and2")
     or2 = lib.findMaster("or2")
@@ -107,17 +111,26 @@ def create2LevelBlock(db, lib, parent):
     OUT = odb.dbBTerm.create(n7, "OUT")
     OUT.setIoType("OUTPUT")
     # connecting nets
-    odb.dbITerm.connect(i1, n1, i1.getMaster().findMTerm("a"))
-    odb.dbITerm.connect(i1, n2, i1.getMaster().findMTerm("b"))
-    odb.dbITerm.connect(i1, n5, i1.getMaster().findMTerm("o"))
+    i1_a = i1.findITerm("a")
+    i1_a.connect(n1)
+    i1_b = i1.findITerm("b")
+    i1_b.connect(n2)
+    i1_o = i1.findITerm("o")
+    i1_o.connect(n5)
 
-    odb.dbITerm.connect(i2, n3, i2.getMaster().findMTerm("a"))
-    odb.dbITerm.connect(i2, n4, i2.getMaster().findMTerm("b"))
-    odb.dbITerm.connect(i2, n6, i2.getMaster().findMTerm("o"))
-
-    odb.dbITerm.connect(i3, n5, i3.getMaster().findMTerm("a"))
-    odb.dbITerm.connect(i3, n6, i3.getMaster().findMTerm("b"))
-    odb.dbITerm.connect(i3, n7, i3.getMaster().findMTerm("o"))
+    i2_a = i2.findITerm("a")
+    i2_a.connect(n3)
+    i2_b = i2.findITerm("b")
+    i2_b.connect(n4)
+    i2_o = i2.findITerm("o")
+    i2_o.connect(n6)
+    
+    i3_a = i3.findITerm("a")
+    i3_a.connect(n5)
+    i3_b = i3.findITerm("b")
+    i3_b.connect(n6)
+    i3_o = i3.findITerm("o")
+    i3_o.connect(n7)
 
     P1 = odb.dbBPin_create(IN1)
     P2 = odb.dbBPin_create(IN2)
