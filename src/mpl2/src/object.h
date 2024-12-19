@@ -784,7 +784,7 @@ struct Rect
   {
     lx = std::numeric_limits<float>::max();
     ly = lx;
-    ux = std::numeric_limits<float>::min();
+    ux = std::numeric_limits<float>::lowest();
     uy = ux;
   }
 
