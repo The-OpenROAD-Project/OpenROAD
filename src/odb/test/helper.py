@@ -2,6 +2,7 @@ import odb
 import openroad
 from openroad import Design
 
+
 def createSimpleDB():
     db = Design.createDetachedDb()
     tech = odb.dbTech.create(db, "simple_tech")
@@ -117,21 +118,21 @@ def create2LevelBlock(db, lib, parent):
     i1_b.connect(n2)
     i1_o = i1.findITerm("o")
     i1_o.connect(n5)
-
+    # connect i2
     i2_a = i2.findITerm("a")
     i2_a.connect(n3)
     i2_b = i2.findITerm("b")
     i2_b.connect(n4)
     i2_o = i2.findITerm("o")
     i2_o.connect(n6)
-    
+    # connect i3
     i3_a = i3.findITerm("a")
     i3_a.connect(n5)
     i3_b = i3.findITerm("b")
     i3_b.connect(n6)
     i3_o = i3.findITerm("o")
     i3_o.connect(n7)
-
+    # connect pins
     P1 = odb.dbBPin_create(IN1)
     P2 = odb.dbBPin_create(IN2)
     P3 = odb.dbBPin_create(IN3)

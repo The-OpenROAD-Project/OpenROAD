@@ -94,5 +94,6 @@ class TestITerm(odbUnitTest.TestCase):
         self.assertEqual(x, int(((0 + 50) + (0 + 100)) / 4) * -1)
         self.assertEqual(y, int(((0 + 50) + (0 + 100)) / 4))
 
+
 if __name__ == "__main__":
     unittest.main()
