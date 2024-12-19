@@ -1,6 +1,6 @@
-include("openroad")
-
-set(TEST_NAMES
+or_integration_tests(
+  "pad"
+  TESTS
     assign_bumps
     assign_bumps_two_pins
     bump_array_make
@@ -49,7 +49,3 @@ set(TEST_NAMES
 # Skipped
 #pad_man_tcl_check
 #pad_readme_msgs_check
-
-foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("pad" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
-endforeach()

@@ -37,15 +37,8 @@
 
 set -e
 
-for test_name in "${@:1}"
-do
-    if [ -f "results/${test_name}-tcl.guide" ]; then
-        cp "results/${test_name}-tcl.guide" "${test_name}.guideok"
-        echo "${test_name}"
-    elif [ -f "results/${test_name}-py.guide" ]; then
-        cp "results/${test_name}-py.guide" "${test_name}.guideok"
-        echo "${test_name}"
-    else
-        echo "\"${test_name}\" guide file not found"
-    fi
-done
+tool=$(basename $(dirname $PWD))
+
+cd ../../../build
+
+ctest -L $tool ${@:1}
