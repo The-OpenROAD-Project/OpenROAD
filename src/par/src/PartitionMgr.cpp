@@ -754,8 +754,10 @@ Instance* PartitionMgr::buildPartitionedTopInstance(const char* name,
 odb::dbBlock* PartitionMgr::getDbBlock() const
 {
   odb::dbChip* chip = db_->getChip();
-  odb::dbBlock* block = chip->getBlock();
-  return block;
+  if (!chip) {
+    return nullptr;
+  }
+  return chip->getBlock();
 }
 
 void PartitionMgr::writePartitionVerilog(const char* file_name,
