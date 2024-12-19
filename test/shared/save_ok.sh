@@ -39,13 +39,13 @@ set -e
 
 for test_name in "${@:1}"
 do
-    if [ -f "results/${test_name}-tcl.guide" ]; then
-        cp "results/${test_name}-tcl.guide" "${test_name}.guideok"
+    if [ -f "results/${test_name}-tcl.log" ]; then
+        cp "results/${test_name}-tcl.log" "${test_name}.ok"
         echo "${test_name}"
-    elif [ -f "results/${test_name}-py.guide" ]; then
-        cp "results/${test_name}-py.guide" "${test_name}.guideok"
+    elif [ -f "results/${test_name}-py.log" ]; then
+        cp "results/${test_name}-py.log" "${test_name}.ok"
         echo "${test_name}"
     else
-        echo "\"${test_name}\" guide file not found"
+        echo "\"${test_name}\" log file not found"
     fi
 done
