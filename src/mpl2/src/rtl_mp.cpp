@@ -132,7 +132,8 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
                               const float& x_origin,
                               const float& y_origin,
                               const odb::dbOrientType& orientation,
-                              const bool dont_snap)
+                              const bool dont_snap,
+                              const bool check_overlap)
 {
   odb::dbBlock* block = inst->getBlock();
 
@@ -177,6 +178,23 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
     snapper.snapMacro();
   }
 
+  if (check_overlap) {
+    std::vector<odb::dbInst*> overlapped_macros = findOverlappedMacros(inst);
+    if (!overlapped_macros.empty()) {
+      std::string overlapped_macros_names;
+      for (odb::dbInst* overlapped_macro : overlapped_macros) {
+        overlapped_macros_names
+            += fmt::format(" {}", overlapped_macro->getName());
+      }
+
+      logger_->error(MPL,
+                     41,
+                     "Couldn't place {}. Found overlap with other macros:{}.",
+                     inst->getName(),
+                     overlapped_macros_names);
+    }
+  }
+
   inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
 
   logger_->info(MPL,
@@ -189,6 +207,26 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
                 block->dbuToMicrons(inst->getBBox()->xMax()),
                 block->dbuToMicrons(inst->getBBox()->yMax()),
                 orientation.getString());
+}
+
+std::vector<odb::dbInst*> MacroPlacer2::findOverlappedMacros(odb::dbInst* macro)
+{
+  std::vector<odb::dbInst*> overlapped_macros;
+  odb::dbBlock* block = macro->getBlock();
+  const odb::Rect& source_macro_bbox = macro->getBBox()->getBox();
+
+  for (odb::dbInst* inst : block->getInsts()) {
+    if (!inst->isBlock() || !inst->isPlaced()) {
+      continue;
+    }
+
+    const odb::Rect& target_macro_bbox = inst->getBBox()->getBox();
+    if (source_macro_bbox.overlaps(target_macro_bbox)) {
+      overlapped_macros.push_back(inst);
+    }
+  }
+
+  return overlapped_macros;
 }
 
 void MacroPlacer2::setMacroPlacementFile(const std::string& file_name)

@@ -106,7 +106,9 @@ class MacroPlacer2
                   const float& x_origin,
                   const float& y_origin,
                   const odb::dbOrientType& orientation,
-                  const bool dont_snap);
+                  bool dont_snap,
+                  bool check_overlap);
+  std::vector<odb::dbInst*> findOverlappedMacros(odb::dbInst* macro);
 
   void setMacroPlacementFile(const std::string& file_name);
 

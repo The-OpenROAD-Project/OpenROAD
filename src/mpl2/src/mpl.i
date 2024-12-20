@@ -149,12 +149,13 @@ place_macro(odb::dbInst* inst,
             float x_origin,
             float y_origin,
             std::string orientation_string,
-            bool dont_snap)
+            bool dont_snap,
+            bool check_overlap)
 {
   odb::dbOrientType orientation(orientation_string.c_str());
 
   getMacroPlacer2()->placeMacro(
-    inst, x_origin, y_origin, orientation, dont_snap);
+    inst, x_origin, y_origin, orientation, dont_snap, check_overlap);
 }
 
 void
