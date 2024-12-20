@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2022, The Regents of the University of California
+// Copyright (c) 2024, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,53 +29,14 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
-
-%{
-#include <stdlib.h>
-
-#include <boost/stacktrace.hpp>
-#include <sstream>
 
 #include "ord/OpenRoad.hh"
-#include "utl/Logger.h"
-%}
 
-%exception {
-  try { $function }
-  catch (std::bad_alloc &) {
-    fprintf(stderr, "Error: out of memory.");
-    abort();
-  }
-  // This catches std::runtime_error (utl::error) and sta::Exception.
-  catch (std::exception &excp) {
-    auto* openroad = ord::OpenRoad::openRoad();
-    if (openroad != nullptr) {
-      auto* logger = openroad->getLogger();
-      if (logger->debugCheck(utl::ORD, "trace", 1)) {
-        std::stringstream trace;
-        trace << boost::stacktrace::stacktrace();
-        logger->report("Stack trace");
-        logger->report(trace.str());
-      }
-    }
+namespace ord {
 
-    PyErr_SetString(PyExc_RuntimeError, excp.what());
-    SWIG_fail;
-  }
-  catch (...) {
-    auto* openroad = ord::OpenRoad::openRoad();
-    if (openroad != nullptr) {
-      auto* logger = openroad->getLogger();
-      if (logger->debugCheck(utl::ORD, "trace", 1)) {
-        std::stringstream trace;
-        trace << boost::stacktrace::stacktrace();
-        logger->report("Stack trace");
-        logger->report(trace.str());
-      }
-    }
-
-    PyErr_SetString(PyExc_Exception, "Unknown exception");
-    SWIG_fail;
-  }      
+OpenRoad* OpenRoad::openRoad()
+{
+  return nullptr;
 }
+
+}  // namespace ord
