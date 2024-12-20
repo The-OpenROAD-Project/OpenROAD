@@ -41,6 +41,7 @@
 #include "clockWidget.h"
 #include "displayControls.h"
 #include "drcWidget.h"
+#include "heatMapPinDensity.h"
 #include "heatMapPlacementDensity.h"
 #include "helpWidget.h"
 #include "inspector.h"
@@ -228,6 +229,7 @@ Gui::Gui()
     : continue_after_close_(false),
       logger_(nullptr),
       db_(nullptr),
+      pin_density_heat_map_(nullptr),
       placement_density_heat_map_(nullptr)
 {
   resetConversions();
@@ -1002,6 +1004,19 @@ void Gui::dumpHeatMap(const std::string& name, const std::string& file)
   source->dumpToFile(file);
 }
 
+void Gui::setMainWindowTitle(const std::string& title)
+{
+  main_window_title_ = title;
+  if (main_window) {
+    main_window->setTitle(title);
+  }
+}
+
+std::string Gui::getMainWindowTitle()
+{
+  return main_window_title_;
+}
+
 Renderer::~Renderer()
 {
   gui::Gui::get()->unregisterRenderer(this);
@@ -1283,7 +1298,9 @@ void Gui::init(odb::dbDatabase* db, utl::Logger* logger)
   db_ = db;
   setLogger(logger);
 
-  // placement density heatmap
+  pin_density_heat_map_ = std::make_unique<PinDensityDataSource>(logger);
+  pin_density_heat_map_->registerHeatMap();
+
   placement_density_heat_map_
       = std::make_unique<PlacementDensityDataSource>(logger);
   placement_density_heat_map_->registerHeatMap();
@@ -1368,6 +1385,7 @@ int startGui(int& argc,
   if (minimize) {
     main_window->showMinimized();
   }
+  main_window->setTitle(gui->getMainWindowTitle());
 
   open_road->addObserver(main_window);
   if (!interactive) {

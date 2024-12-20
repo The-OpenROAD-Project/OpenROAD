@@ -174,7 +174,6 @@ add_subdirectory(test)
 target_compile_definitions(openroad PRIVATE GPU)
 target_compile_definitions(openroad PRIVATE BUILD_PYTHON)
 target_compile_definitions(openroad PRIVATE BUILD_GUI)
-target_compile_definitions(openroad PRIVATE ENABLE_CHARTS)
 
 ####################################################################
 
