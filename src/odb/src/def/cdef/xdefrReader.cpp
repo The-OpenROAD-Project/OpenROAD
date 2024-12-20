@@ -127,8 +127,7 @@ void defrSetAssertionCbk(::defrAssertionCbkFnType p0)
 
 void defrSetAssertionsStartCbk(::defrIntegerCbkFnType p0)
 {
-  DefParser::defrSetAssertionsStartCbk(
-      (DefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetAssertionsStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetAssertionsEndCbk(::defrVoidCbkFnType p0)
@@ -143,8 +142,7 @@ void defrSetBlockageCbk(::defrBlockageCbkFnType p0)
 
 void defrSetBlockageStartCbk(::defrIntegerCbkFnType p0)
 {
-  DefParser::defrSetBlockageStartCbk(
-      (DefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetBlockageStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetBlockageEndCbk(::defrVoidCbkFnType p0)
@@ -169,8 +167,7 @@ void defrSetCanplaceCbk(::defrSiteCbkFnType p0)
 
 void defrSetCaseSensitiveCbk(::defrIntegerCbkFnType p0)
 {
-  DefParser::defrSetCaseSensitiveCbk(
-      (DefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetCaseSensitiveCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetComponentCbk(::defrComponentCbkFnType p0)
@@ -185,8 +182,7 @@ void defrSetComponentExtCbk(::defrStringCbkFnType p0)
 
 void defrSetComponentStartCbk(::defrIntegerCbkFnType p0)
 {
-  DefParser::defrSetComponentStartCbk(
-      (DefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetComponentStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetComponentEndCbk(::defrVoidCbkFnType p0)
@@ -201,8 +197,7 @@ void defrSetConstraintCbk(::defrAssertionCbkFnType p0)
 
 void defrSetConstraintsStartCbk(::defrIntegerCbkFnType p0)
 {
-  DefParser::defrSetConstraintsStartCbk(
-      (DefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetConstraintsStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetConstraintsEndCbk(::defrVoidCbkFnType p0)
@@ -329,8 +324,7 @@ void defrSetIOTimingCbk(::defrIOTimingCbkFnType p0)
 
 void defrSetIOTimingsStartCbk(::defrIntegerCbkFnType p0)
 {
-  DefParser::defrSetIOTimingsStartCbk(
-      (DefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetIOTimingsStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetIOTimingsEndCbk(::defrVoidCbkFnType p0)
@@ -355,14 +349,12 @@ void defrSetNetNameCbk(::defrStringCbkFnType p0)
 
 void defrSetNetNonDefaultRuleCbk(::defrStringCbkFnType p0)
 {
-  DefParser::defrSetNetNonDefaultRuleCbk(
-      (DefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetNetNonDefaultRuleCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetNetConnectionExtCbk(::defrStringCbkFnType p0)
 {
-  DefParser::defrSetNetConnectionExtCbk(
-      (DefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetNetConnectionExtCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetNetExtCbk(::defrStringCbkFnType p0)
@@ -392,14 +384,12 @@ void defrSetNetEndCbk(::defrVoidCbkFnType p0)
 
 void defrSetNonDefaultCbk(::defrNonDefaultCbkFnType p0)
 {
-  DefParser::defrSetNonDefaultCbk(
-      (DefParser::defrNonDefaultCbkFnType) p0);
+  DefParser::defrSetNonDefaultCbk((DefParser::defrNonDefaultCbkFnType) p0);
 }
 
 void defrSetNonDefaultStartCbk(::defrIntegerCbkFnType p0)
 {
-  DefParser::defrSetNonDefaultStartCbk(
-      (DefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetNonDefaultStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetNonDefaultEndCbk(::defrVoidCbkFnType p0)
@@ -419,8 +409,7 @@ void defrSetPartitionsExtCbk(::defrStringCbkFnType p0)
 
 void defrSetPartitionsStartCbk(::defrIntegerCbkFnType p0)
 {
-  DefParser::defrSetPartitionsStartCbk(
-      (DefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetPartitionsStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetPartitionsEndCbk(::defrVoidCbkFnType p0)
@@ -535,8 +524,7 @@ void defrSetScanchainCbk(::defrScanchainCbkFnType p0)
 
 void defrSetScanchainsStartCbk(::defrIntegerCbkFnType p0)
 {
-  DefParser::defrSetScanchainsStartCbk(
-      (DefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetScanchainsStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetScanchainsEndCbk(::defrVoidCbkFnType p0)
@@ -608,8 +596,7 @@ void defrSetTimingDisablesStartCbk(::defrIntegerCbkFnType p0)
 
 void defrSetTimingDisablesEndCbk(::defrVoidCbkFnType p0)
 {
-  DefParser::defrSetTimingDisablesEndCbk(
-      (DefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetTimingDisablesEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetTrackCbk(::defrTrackCbkFnType p0)

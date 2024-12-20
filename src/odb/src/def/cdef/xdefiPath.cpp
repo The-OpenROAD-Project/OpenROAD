@@ -98,8 +98,7 @@ void defiPath_getViaRect(const ::defiPath* obj,
                          int* deltaX2,
                          int* deltaY2)
 {
-  ((DefParser::defiPath*) obj)
-      ->getViaRect(deltaX1, deltaY1, deltaX2, deltaY2);
+  ((DefParser::defiPath*) obj)->getViaRect(deltaX1, deltaY1, deltaX2, deltaY2);
 }
 
 const char* defiPath_getViaRotationStr(const ::defiPath* obj)

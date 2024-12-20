@@ -141,8 +141,7 @@ void defiScanchain_floating(const ::defiScanchain* obj,
                             char*** outPin,
                             int** bits)
 {
-  ((DefParser::defiScanchain*) obj)
-      ->floating(size, inst, inPin, outPin, bits);
+  ((DefParser::defiScanchain*) obj)->floating(size, inst, inPin, outPin, bits);
 }
 
 const char* defiScanchain_commonInPin(const ::defiScanchain* obj)

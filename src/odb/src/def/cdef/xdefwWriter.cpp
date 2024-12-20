@@ -55,16 +55,16 @@ int defwInit(FILE* f,
              double units)
 {
   return DefParser::defwInit(f,
-                                vers1,
-                                version2,
-                                caseSensitive,
-                                dividerChar,
-                                busBitChars,
-                                designName,
-                                technology,
-                                array,
-                                floorplan,
-                                units);
+                             vers1,
+                             version2,
+                             caseSensitive,
+                             dividerChar,
+                             busBitChars,
+                             designName,
+                             technology,
+                             array,
+                             floorplan,
+                             units);
 }
 
 int defwInitCbk(FILE* f)
@@ -198,14 +198,14 @@ int defwRow(const char* rowName,
             int ystep)
 {
   return DefParser::defwRow(rowName,
-                               rowType,
-                               x_orig,
-                               y_orig,
-                               orient,
-                               do_count,
-                               do_increment,
-                               xstep,
-                               ystep);
+                            rowType,
+                            x_orig,
+                            y_orig,
+                            orient,
+                            do_count,
+                            do_increment,
+                            xstep,
+                            ystep);
 }
 
 int defwRowStr(const char* rowName,
@@ -219,14 +219,14 @@ int defwRowStr(const char* rowName,
                int ystep)
 {
   return DefParser::defwRowStr(rowName,
-                                  rowType,
-                                  x_orig,
-                                  y_orig,
-                                  orient,
-                                  do_count,
-                                  do_increment,
-                                  xstep,
-                                  ystep);
+                               rowType,
+                               x_orig,
+                               y_orig,
+                               orient,
+                               do_count,
+                               do_increment,
+                               xstep,
+                               ystep);
 }
 
 int defwTracks(const char* master,
@@ -357,17 +357,17 @@ int defwViaViarule(const char* viaRuleName,
                    double yTopEnc)
 {
   return DefParser::defwViaViarule(viaRuleName,
-                                      xCutSize,
-                                      yCutSize,
-                                      botMetalLayer,
-                                      cutLayer,
-                                      topMetalLayer,
-                                      xCutSpacing,
-                                      yCutSpacing,
-                                      xBotEnc,
-                                      yBotEnc,
-                                      xTopEnc,
-                                      yTopEnc);
+                                   xCutSize,
+                                   yCutSize,
+                                   botMetalLayer,
+                                   cutLayer,
+                                   topMetalLayer,
+                                   xCutSpacing,
+                                   yCutSpacing,
+                                   xBotEnc,
+                                   yBotEnc,
+                                   xTopEnc,
+                                   yTopEnc);
 }
 
 int defwViaViaruleRowCol(int numCutRows, int numCutCols)
@@ -464,28 +464,28 @@ int defwComponent(const char* instance,
                   int yh)
 {
   return DefParser::defwComponent(instance,
-                                     master,
-                                     numNetName,
-                                     netNames,
-                                     eeq,
-                                     genName,
-                                     genParemeters,
-                                     source,
-                                     numForeign,
-                                     foreigns,
-                                     foreignX,
-                                     foreignY,
-                                     foreignOrients,
-                                     status,
-                                     statusX,
-                                     statusY,
-                                     statusOrient,
-                                     weight,
-                                     region,
-                                     xl,
-                                     yl,
-                                     xh,
-                                     yh);
+                                  master,
+                                  numNetName,
+                                  netNames,
+                                  eeq,
+                                  genName,
+                                  genParemeters,
+                                  source,
+                                  numForeign,
+                                  foreigns,
+                                  foreignX,
+                                  foreignY,
+                                  foreignOrients,
+                                  status,
+                                  statusX,
+                                  statusY,
+                                  statusOrient,
+                                  weight,
+                                  region,
+                                  xl,
+                                  yl,
+                                  xh,
+                                  yh);
 }
 
 int defwComponentStr(const char* instance,
@@ -513,28 +513,28 @@ int defwComponentStr(const char* instance,
                      int yh)
 {
   return DefParser::defwComponentStr(instance,
-                                        master,
-                                        numNetName,
-                                        netNames,
-                                        eeq,
-                                        genName,
-                                        genParemeters,
-                                        source,
-                                        numForeign,
-                                        foreigns,
-                                        foreignX,
-                                        foreignY,
-                                        foreignOrients,
-                                        status,
-                                        statusX,
-                                        statusY,
-                                        statusOrient,
-                                        weight,
-                                        region,
-                                        xl,
-                                        yl,
-                                        xh,
-                                        yh);
+                                     master,
+                                     numNetName,
+                                     netNames,
+                                     eeq,
+                                     genName,
+                                     genParemeters,
+                                     source,
+                                     numForeign,
+                                     foreigns,
+                                     foreignX,
+                                     foreignY,
+                                     foreignOrients,
+                                     status,
+                                     statusX,
+                                     statusY,
+                                     statusOrient,
+                                     weight,
+                                     region,
+                                     xl,
+                                     yl,
+                                     xh,
+                                     yh);
 }
 
 int defwComponentMaskShift(int shiftLayerMasks)
@@ -585,19 +585,19 @@ int defwPin(const char* name,
             int yh)
 {
   return DefParser::defwPin(name,
-                               net,
-                               special,
-                               direction,
-                               use,
-                               status,
-                               statusX,
-                               statusY,
-                               orient,
-                               layer,
-                               xl,
-                               yl,
-                               xh,
-                               yh);
+                            net,
+                            special,
+                            direction,
+                            use,
+                            status,
+                            statusX,
+                            statusY,
+                            orient,
+                            layer,
+                            xl,
+                            yl,
+                            xh,
+                            yh);
 }
 
 int defwPinStr(const char* name,
@@ -616,19 +616,19 @@ int defwPinStr(const char* name,
                int yh)
 {
   return DefParser::defwPinStr(name,
-                                  net,
-                                  special,
-                                  direction,
-                                  use,
-                                  status,
-                                  statusX,
-                                  statusY,
-                                  orient,
-                                  layer,
-                                  xl,
-                                  yl,
-                                  xh,
-                                  yh);
+                               net,
+                               special,
+                               direction,
+                               use,
+                               status,
+                               statusX,
+                               statusY,
+                               orient,
+                               layer,
+                               xl,
+                               yl,
+                               xh,
+                               yh);
 }
 
 int defwPinLayer(const char* layerName,
@@ -814,8 +814,7 @@ int defwSpecialNetSpacing(const char* layer,
                           double minwidth,
                           double maxwidth)
 {
-  return DefParser::defwSpecialNetSpacing(
-      layer, spacing, minwidth, maxwidth);
+  return DefParser::defwSpecialNetSpacing(layer, spacing, minwidth, maxwidth);
 }
 
 int defwSpecialNetWidth(const char* layer, int width)
@@ -1027,15 +1026,15 @@ int defwNetVpin(const char* vpinName,
                 int orient)
 {
   return DefParser::defwNetVpin(vpinName,
-                                   layerName,
-                                   layerXl,
-                                   layerYl,
-                                   layerXh,
-                                   layerYh,
-                                   status,
-                                   statusX,
-                                   statusY,
-                                   orient);
+                                layerName,
+                                layerXl,
+                                layerYl,
+                                layerXh,
+                                layerYh,
+                                status,
+                                statusX,
+                                statusY,
+                                orient);
 }
 
 int defwNetVpinStr(const char* vpinName,
@@ -1050,15 +1049,15 @@ int defwNetVpinStr(const char* vpinName,
                    const char* orient)
 {
   return DefParser::defwNetVpinStr(vpinName,
-                                      layerName,
-                                      layerXl,
-                                      layerYl,
-                                      layerXh,
-                                      layerYh,
-                                      status,
-                                      statusX,
-                                      statusY,
-                                      orient);
+                                   layerName,
+                                   layerXl,
+                                   layerYl,
+                                   layerXh,
+                                   layerYh,
+                                   status,
+                                   statusX,
+                                   statusY,
+                                   orient);
 }
 
 int defwNetNondefaultRule(const char* name)
@@ -1196,8 +1195,7 @@ int defwNetPathPointWithExt(int numPts,
                             double* pointy,
                             double* optValue)
 {
-  return DefParser::defwNetPathPointWithExt(
-      numPts, pointx, pointy, optValue);
+  return DefParser::defwNetPathPointWithExt(numPts, pointx, pointy, optValue);
 }
 
 int defwNetPathVia(const char* name)
@@ -1350,17 +1348,17 @@ int defwScanchainOrderedBits(const char* name1,
                              int bits2)
 {
   return DefParser::defwScanchainOrderedBits(name1,
-                                                inst1,
-                                                pin1,
-                                                inst2,
-                                                pin2,
-                                                bits1,
-                                                name2,
-                                                inst3,
-                                                pin3,
-                                                inst4,
-                                                pin4,
-                                                bits2);
+                                             inst1,
+                                             pin1,
+                                             inst2,
+                                             pin2,
+                                             bits1,
+                                             name2,
+                                             inst3,
+                                             pin3,
+                                             inst4,
+                                             pin4,
+                                             bits2);
 }
 
 int defwEndScanchain()
@@ -1438,8 +1436,7 @@ int defwGroupSoft(const char* type1,
                   const char* type3,
                   double value3)
 {
-  return DefParser::defwGroupSoft(
-      type1, value1, type2, value2, type3, value3);
+  return DefParser::defwGroupSoft(type1, value1, type2, value2, type3, value3);
 }
 
 int defwGroupRegion(int xl, int yl, int xh, int yh, const char* regionName)

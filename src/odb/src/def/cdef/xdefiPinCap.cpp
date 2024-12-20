@@ -82,8 +82,7 @@ int defiPinAntennaModel_APinGateArea(const ::defiPinAntennaModel* obj,
 int defiPinAntennaModel_hasAPinGateAreaLayer(const ::defiPinAntennaModel* obj,
                                              int index)
 {
-  return ((DefParser::defiPinAntennaModel*) obj)
-      ->hasAPinGateAreaLayer(index);
+  return ((DefParser::defiPinAntennaModel*) obj)->hasAPinGateAreaLayer(index);
 }
 
 const char* defiPinAntennaModel_APinGateAreaLayer(
@@ -113,8 +112,7 @@ int defiPinAntennaModel_APinMaxAreaCar(const ::defiPinAntennaModel* obj,
 int defiPinAntennaModel_hasAPinMaxAreaCarLayer(const ::defiPinAntennaModel* obj,
                                                int index)
 {
-  return ((DefParser::defiPinAntennaModel*) obj)
-      ->hasAPinMaxAreaCarLayer(index);
+  return ((DefParser::defiPinAntennaModel*) obj)->hasAPinMaxAreaCarLayer(index);
 }
 
 const char* defiPinAntennaModel_APinMaxAreaCarLayer(
@@ -176,8 +174,7 @@ int defiPinAntennaModel_APinMaxCutCar(const ::defiPinAntennaModel* obj,
 int defiPinAntennaModel_hasAPinMaxCutCarLayer(const ::defiPinAntennaModel* obj,
                                               int index)
 {
-  return ((DefParser::defiPinAntennaModel*) obj)
-      ->hasAPinMaxCutCarLayer(index);
+  return ((DefParser::defiPinAntennaModel*) obj)->hasAPinMaxCutCarLayer(index);
 }
 
 const char* defiPinAntennaModel_APinMaxCutCarLayer(
@@ -629,8 +626,7 @@ int defiPin_APinPartialMetalSideArea(const ::defiPin* obj, int index)
 
 int defiPin_hasAPinPartialMetalSideAreaLayer(const ::defiPin* obj, int index)
 {
-  return ((DefParser::defiPin*) obj)
-      ->hasAPinPartialMetalSideAreaLayer(index);
+  return ((DefParser::defiPin*) obj)->hasAPinPartialMetalSideAreaLayer(index);
 }
 
 const char* defiPin_APinPartialMetalSideAreaLayer(const ::defiPin* obj,

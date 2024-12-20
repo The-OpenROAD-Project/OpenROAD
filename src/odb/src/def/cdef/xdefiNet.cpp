@@ -125,8 +125,7 @@ int defiSubnet_numPaths(const ::defiSubnet* obj)
 
 const ::defiPath* defiSubnet_path(const ::defiSubnet* obj, int index)
 {
-  return (const ::defiPath*) ((const DefParser::defiSubnet*) obj)
-      ->path(index);
+  return (const ::defiPath*) ((const DefParser::defiSubnet*) obj)->path(index);
 }
 
 const char* defiSubnet_nonDefaultRule(const ::defiSubnet* obj)
@@ -141,8 +140,7 @@ int defiSubnet_numWires(const ::defiSubnet* obj)
 
 const ::defiWire* defiSubnet_wire(const ::defiSubnet* obj, int index)
 {
-  return (const ::defiWire*) ((const DefParser::defiSubnet*) obj)
-      ->wire(index);
+  return (const ::defiWire*) ((const DefParser::defiSubnet*) obj)->wire(index);
 }
 
 int defiVpin_xl(const ::defiVpin* obj)
@@ -212,8 +210,7 @@ int defiShield_numPaths(const ::defiShield* obj)
 
 const ::defiPath* defiShield_path(const ::defiShield* obj, int index)
 {
-  return (const ::defiPath*) ((const DefParser::defiShield*) obj)
-      ->path(index);
+  return (const ::defiPath*) ((const DefParser::defiShield*) obj)->path(index);
 }
 
 const char* defiNet_name(const ::defiNet* obj)
@@ -293,8 +290,7 @@ int defiNet_numSubnets(const ::defiNet* obj)
 
 const ::defiSubnet* defiNet_subnet(const ::defiNet* obj, int index)
 {
-  return (const ::defiSubnet*) ((const DefParser::defiNet*) obj)
-      ->subnet(index);
+  return (const ::defiSubnet*) ((const DefParser::defiNet*) obj)->subnet(index);
 }
 
 int defiNet_isFixed(const ::defiNet* obj)
@@ -507,8 +503,7 @@ int defiNet_numShields(const ::defiNet* obj)
 
 const ::defiShield* defiNet_shield(const ::defiNet* obj, int index)
 {
-  return (const ::defiShield*) ((const DefParser::defiNet*) obj)
-      ->shield(index);
+  return (const ::defiShield*) ((const DefParser::defiNet*) obj)->shield(index);
 }
 
 int defiNet_numShieldNets(const ::defiNet* obj)
