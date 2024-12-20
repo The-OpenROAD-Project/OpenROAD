@@ -132,8 +132,8 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
                               const float& x_origin,
                               const float& y_origin,
                               const odb::dbOrientType& orientation,
-                              const bool dont_snap,
-                              const bool check_overlap)
+                              const bool exact,
+                              const bool allow_overlap)
 {
   odb::dbBlock* block = inst->getBlock();
 
@@ -173,12 +173,12 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
                   "rotation. Snapping is not possible.",
                   orientation.getString(),
                   inst->getName());
-  } else if (!dont_snap) {
+  } else if (!exact) {
     Snapper snapper(logger_, inst);
     snapper.snapMacro();
   }
 
-  if (check_overlap) {
+  if (!allow_overlap) {
     std::vector<odb::dbInst*> overlapped_macros = findOverlappedMacros(inst);
     if (!overlapped_macros.empty()) {
       std::string overlapped_macros_names;

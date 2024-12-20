@@ -259,14 +259,14 @@ proc rtl_macro_placer { args } {
 sta::define_cmd_args "place_macro" {-macro_name macro_name \
                                     -location location \
                                     [-orientation orientation] \
-                                    [-dont_snap] \
-                                    [-check_overlap]
+                                    [-exact] \
+                                    [-allow_overlap]
 }
 
 proc place_macro { args } {
   sta::parse_key_args "place_macro" args \
     keys {-macro_name -location -orientation} \
-    flags {-dont_snap -check_overlap}
+    flags {-exact -allow_overlap}
 
   if { [info exists keys(-macro_name)] } {
     set macro_name $keys(-macro_name)
@@ -294,10 +294,10 @@ proc place_macro { args } {
     set orientation $keys(-orientation)
   }
 
-  set dont_snap [info exists flags(-dont_snap)]
-  set check_overlap [info exists flags(-check_overlap)]
+  set exact [info exists flags(-exact)]
+  set allow_overlap [info exists flags(-allow_overlap)]
 
-  mpl2::place_macro $macro $x_origin $y_origin $orientation $dont_snap $check_overlap
+  mpl2::place_macro $macro $x_origin $y_origin $orientation $exact $allow_overlap
 }
 
 namespace eval mpl2 {
