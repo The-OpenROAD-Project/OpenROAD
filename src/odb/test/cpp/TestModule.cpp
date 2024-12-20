@@ -299,24 +299,23 @@ BOOST_FIXTURE_TEST_CASE(test_find_modinst, F_DEFAULT)
   BOOST_TEST(block->findModInst("minst1/minst2") == minst2);
 }
 
-
-/* 
+/*
    Test fixture for hierarchical connect test
    ------------------------------------------
 
-   Two module instances, 1 with 1 inverter, second with 4 inverters.
-   Modules have different hierarchical depth and shared terms
-   to stress test the hierarchical connection code.
-   
-   So any reconnection has to go up and down the hierarchy.
+   Two modules, 1 with 1 inverter, second with 4 inverters.
 
-   top level module <-- {inv_module, 4inv_module}
-   inv_module <-- 1 inverter
-   
-   
-   Test:
-   Add a buffer in module 1 and make sure connectivity ok
-   (both hierarchical and flat).
+   inv1 is instantiated in the top level
+   inv4 is instantiated three levels down:
+   level0 -- instantiation in root
+   level1
+   level2 -- contains 4 inverters
+
+   Objective of this test is to stress the hierarchical connection code.
+
+
+
+
  */
 
 dbDatabase* createSimpleDBDelimiter()
@@ -328,149 +327,433 @@ dbDatabase* createSimpleDBDelimiter()
   dbTechLayer::create(tech, "L1", dbTechLayerType::MASTERSLICE);
   dbLib* lib = dbLib::create(db, "lib1", tech, ',');
   dbChip* chip = dbChip::create(db);
-  //set up the delimiter
-  dbBlock::create(chip, "simple_block",nullptr,'/');
+  // set up the delimiter
+  dbBlock::create(chip, "simple_block", nullptr, '/');
   createMaster2X1(lib, "and2", 1000, 1000, "a", "b", "o");
   createMaster2X1(lib, "or2", 500, 500, "a", "b", "o");
-  createMaster1X1(lib, "inv1", 500, 500, "ip0", "op0");  
+  createMaster1X1(lib, "inv1", 500, 500, "ip0", "op0");
   return db;
 }
-
 
 struct F_HCONNECT
 {
   F_HCONNECT()
   {
+    // create a db with a delimiter & initialize the db library
     db = createSimpleDBDelimiter();
     block = db->getChip()->getBlock();
     lib = db->findLib("lib1");
 
-    root_mod = dbModule::create(block, "root_mod") ;
+    root_mod = dbModule::create(block, "root_mod");
+    // The bterms are created below during wiring
+    // Note a bterm without a parent is a root bterm.
 
-    inv1_mod_master  = dbModule::create(block, "inv1_master_mod");
-    dbModBTerm* inv1_mod_i0_port  = dbModBTerm::create(inv1_mod_master,"i0");
-    dbModBTerm* inv1_mod_o0_port  = dbModBTerm::create(inv1_mod_master,"o0");    
-    inv1_mod_inst = dbModInst::create(root_mod, inv1_mod_master, "inv1_mod_inst");
-    
-    
+    // Make the inv1 module (contains 1 inverter).
+    inv1_mod_master = dbModule::create(block, "inv1_master_mod");
+    inv1_mod_i0_port = dbModBTerm::create(inv1_mod_master, "i0");
+    inv1_mod_o0_port = dbModBTerm::create(inv1_mod_master, "o0");
+
+    inv1_mod_inst
+        = dbModInst::create(root_mod, inv1_mod_master, "inv1_mod_inst");
+
+    inv1_mod_inst_i0_miterm = dbModITerm::create(inv1_mod_inst, "i0");
+    inv1_mod_inst_o0_miterm = dbModITerm::create(inv1_mod_inst, "o0");
+    // correlate the iterms and bterms
+    inv1_mod_inst_i0_miterm->setChildModBTerm(inv1_mod_i0_port);
+    inv1_mod_i0_port->setParentModITerm(inv1_mod_inst_i0_miterm);
+
+    inv1_mod_inst_o0_miterm->setChildModBTerm(inv1_mod_o0_port);
+    inv1_mod_o0_port->setParentModITerm(inv1_mod_inst_o0_miterm);
+
+    inv1_1 = dbInst::create(block,
+                            lib->findMaster("inv1"),
+                            "inv1_mod_inst/inst1",
+                            false,
+                            inv1_mod_master);
+    inv1_1_inst_ip0 = block->findITerm("inv1_mod_inst/inst1/ip0");
+    inv1_1_inst_op0 = block->findITerm("inv1_mod_inst/inst1/op0");
+
     inv4_mod_level0_master = dbModule::create(block, "inv4_master_level0");
-    dbModBTerm* inv_mod_level0_master_i0_port  = dbModBTerm::create(inv4_mod_level0_master,"i0");
-    dbModBTerm* inv_mod_level0_master_i1_port  = dbModBTerm::create(inv4_mod_level0_master,"i1");
-    dbModBTerm* inv_mod_level0_master_i2_port  = dbModBTerm::create(inv4_mod_level0_master,"i2");
-    dbModBTerm* inv_mod_level0_master_i3_port = dbModBTerm::create(inv4_mod_level0_master,"i3");
-    dbModBTerm* inv_mod_level0_master_o0_port=  dbModBTerm::create(inv4_mod_level0_master,"o0");    
-    
-    
+    inv4_mod_level0_master_i0_port
+        = dbModBTerm::create(inv4_mod_level0_master, "i0");
+    inv4_mod_level0_master_o0_port
+        = dbModBTerm::create(inv4_mod_level0_master, "o0");
+    inv4_mod_level0_master_o1_port
+        = dbModBTerm::create(inv4_mod_level0_master, "o1");
+    inv4_mod_level0_master_o2_port
+        = dbModBTerm::create(inv4_mod_level0_master, "o2");
+    inv4_mod_level0_master_o3_port
+        = dbModBTerm::create(inv4_mod_level0_master, "o3");
+
     inv4_mod_level1_master = dbModule::create(block, "inv4_master_level1");
-    inv_mod_level1_master_i0_port  = dbModBTerm::create(inv4_mod_level1_master,"i0");
-    inv_mod_level1_master_i1_port  = dbModBTerm::create(inv4_mod_level1_master,"i1");
-    inv_mod_level1_master_i2_port  = dbModBTerm::create(inv4_mod_level1_master,"i2");
-    inv_mod_level1_master_i3_port = dbModBTerm::create(inv4_mod_level1_master,"i3");
-    inv_mod_level1_master_o0_port=  dbModBTerm::create(inv4_mod_level1_master,"o0");    
-    
-    
+    inv4_mod_level1_master_i0_port
+        = dbModBTerm::create(inv4_mod_level1_master, "i0");
+    inv4_mod_level1_master_o0_port
+        = dbModBTerm::create(inv4_mod_level1_master, "o0");
+    inv4_mod_level1_master_o1_port
+        = dbModBTerm::create(inv4_mod_level1_master, "o1");
+    inv4_mod_level1_master_o2_port
+        = dbModBTerm::create(inv4_mod_level1_master, "o2");
+    inv4_mod_level1_master_o3_port
+        = dbModBTerm::create(inv4_mod_level1_master, "o3");
+
     inv4_mod_level2_master = dbModule::create(block, "inv4_master_level2");
-    inv_mod_level2_master_i0_port  = dbModBTerm::create(inv4_mod_level2_master,"i0");
-    inv_mod_level2_master_i1_port  = dbModBTerm::create(inv4_mod_level2_master,"i1");
-    inv_mod_level2_master_i2_port  = dbModBTerm::create(inv4_mod_level2_master,"i2");
-    inv_mod_level2_master_i3_port = dbModBTerm::create(inv4_mod_level2_master,"i3");
-    inv_mod_level2_master_o0_port=  dbModBTerm::create(inv4_mod_level2_master,"o0");    
-    
+    inv4_mod_level2_master_i0_port
+        = dbModBTerm::create(inv4_mod_level2_master, "i0");
+    inv4_mod_level2_master_o0_port
+        = dbModBTerm::create(inv4_mod_level2_master, "o0");
+    inv4_mod_level2_master_o1_port
+        = dbModBTerm::create(inv4_mod_level2_master, "o1");
+    inv4_mod_level2_master_o2_port
+        = dbModBTerm::create(inv4_mod_level2_master, "o2");
+    inv4_mod_level2_master_o3_port
+        = dbModBTerm::create(inv4_mod_level2_master, "o3");
 
+    // During modinst creation we set the parent.
+    inv4_mod_level0_inst = dbModInst::create(root_mod,  // parent
+                                             inv4_mod_level0_master,
+                                             "inv4_mod_level0_inst");
+    inv4_mod_level0_inst_i0_miterm
+        = dbModITerm::create(inv4_mod_level0_inst, "i0");
+    inv4_mod_level0_inst_i0_miterm->setChildModBTerm(
+        inv4_mod_level0_master_i0_port);
+    inv4_mod_level0_master_i0_port->setParentModITerm(
+        inv4_mod_level0_inst_i0_miterm);
 
-    //During modinst creation we set the parent.
-    inv4_mod_level0_inst = dbModInst::create(root_mod, //parent
-						  inv4_mod_level0_master,
-						  "inv4_mod_level0_inst");
-    inv4_mod_level1_inst = dbModInst::create(inv4_mod_level0_master, //parent
-						  inv4_mod_level1_master,
-						  "inv4_mod_level1_inst");
-    inv4_mod_level2_inst = dbModInst::create(inv4_mod_level1_master, //parent
-						  inv4_mod_level2_master,
-						  "inv4_mod_level2_inst");
+    inv4_mod_level0_inst_o0_miterm
+        = dbModITerm::create(inv4_mod_level0_inst, "o0");
+    inv4_mod_level0_inst_o0_miterm->setChildModBTerm(
+        inv4_mod_level0_master_o0_port);
+    inv4_mod_level0_master_o0_port->setParentModITerm(
+        inv4_mod_level0_inst_o0_miterm);
 
+    inv4_mod_level0_inst_o1_miterm
+        = dbModITerm::create(inv4_mod_level0_inst, "o1");
+    inv4_mod_level0_inst_o1_miterm->setChildModBTerm(
+        inv4_mod_level0_master_o1_port);
+    inv4_mod_level0_master_o1_port->setParentModITerm(
+        inv4_mod_level0_inst_o1_miterm);
 
-    //Use full scoped names for instances for this test
-    inv1_1 = dbInst::create(block, lib->findMaster("inv1"), "inv1_mod_inst/inst1",false,inv1_mod_master);
-    inv1_1_inst_ip0 = block -> findITerm("inv1_mod_inst/inst1/ip0");
-    inv1_1_inst_op0 = block -> findITerm("inv1_mod_inst/inst1/op0");    
+    inv4_mod_level0_inst_o2_miterm
+        = dbModITerm::create(inv4_mod_level0_inst, "o2");
+    inv4_mod_level0_inst_o2_miterm->setChildModBTerm(
+        inv4_mod_level0_master_o2_port);
+    inv4_mod_level0_master_o2_port->setParentModITerm(
+        inv4_mod_level0_inst_o2_miterm);
 
+    inv4_mod_level0_inst_o3_miterm
+        = dbModITerm::create(inv4_mod_level0_inst, "o3");
+    inv4_mod_level0_inst_o3_miterm->setChildModBTerm(
+        inv4_mod_level0_master_o3_port);
+    inv4_mod_level0_master_o3_port->setParentModITerm(
+        inv4_mod_level0_inst_o3_miterm);
+
+    inv4_mod_level1_inst = dbModInst::create(inv4_mod_level0_master,  // parent
+                                             inv4_mod_level1_master,
+                                             "inv4_mod_level1_inst");
+
+    inv4_mod_level1_inst_i0_miterm
+        = dbModITerm::create(inv4_mod_level1_inst, "i0");
+    inv4_mod_level1_inst_i0_miterm->setChildModBTerm(
+        inv4_mod_level1_master_i0_port);
+    inv4_mod_level1_master_i0_port->setParentModITerm(
+        inv4_mod_level1_inst_i0_miterm);
+
+    inv4_mod_level1_inst_o0_miterm
+        = dbModITerm::create(inv4_mod_level1_inst, "o0");
+    inv4_mod_level1_inst_o0_miterm->setChildModBTerm(
+        inv4_mod_level1_master_o0_port);
+    inv4_mod_level1_master_o0_port->setParentModITerm(
+        inv4_mod_level1_inst_o0_miterm);
+
+    inv4_mod_level1_inst_o1_miterm
+        = dbModITerm::create(inv4_mod_level1_inst, "o1");
+    inv4_mod_level1_inst_o1_miterm->setChildModBTerm(
+        inv4_mod_level1_master_o1_port);
+    inv4_mod_level1_master_o1_port->setParentModITerm(
+        inv4_mod_level1_inst_o1_miterm);
+
+    inv4_mod_level1_inst_o2_miterm
+        = dbModITerm::create(inv4_mod_level1_inst, "o2");
+    inv4_mod_level1_inst_o2_miterm->setChildModBTerm(
+        inv4_mod_level1_master_o2_port);
+    inv4_mod_level1_master_o2_port->setParentModITerm(
+        inv4_mod_level1_inst_o2_miterm);
+
+    inv4_mod_level1_inst_o3_miterm
+        = dbModITerm::create(inv4_mod_level1_inst, "o3");
+    inv4_mod_level1_inst_o3_miterm->setChildModBTerm(
+        inv4_mod_level1_master_o3_port);
+    inv4_mod_level1_master_o3_port->setParentModITerm(
+        inv4_mod_level1_inst_o3_miterm);
+
+    inv4_mod_level2_inst = dbModInst::create(inv4_mod_level1_master,  // parent
+                                             inv4_mod_level2_master,
+                                             "inv4_mod_level2_inst");
+
+    inv4_mod_level2_inst_i0_miterm
+        = dbModITerm::create(inv4_mod_level2_inst, "i0");
+    inv4_mod_level2_inst_i0_miterm->setChildModBTerm(
+        inv4_mod_level2_master_i0_port);
+    inv4_mod_level2_master_i0_port->setParentModITerm(
+        inv4_mod_level2_inst_i0_miterm);
+
+    inv4_mod_level2_inst_o0_miterm
+        = dbModITerm::create(inv4_mod_level2_inst, "o0");
+    inv4_mod_level2_inst_o0_miterm->setChildModBTerm(
+        inv4_mod_level2_master_o0_port);
+    inv4_mod_level2_master_o0_port->setParentModITerm(
+        inv4_mod_level2_inst_o0_miterm);
+
+    inv4_mod_level2_inst_o1_miterm
+        = dbModITerm::create(inv4_mod_level2_inst, "o1");
+    inv4_mod_level2_inst_o1_miterm->setChildModBTerm(
+        inv4_mod_level2_master_o1_port);
+    inv4_mod_level2_master_o1_port->setParentModITerm(
+        inv4_mod_level2_inst_o1_miterm);
+
+    inv4_mod_level2_inst_o2_miterm
+        = dbModITerm::create(inv4_mod_level2_inst, "o2");
+    inv4_mod_level2_inst_o2_miterm->setChildModBTerm(
+        inv4_mod_level2_master_o2_port);
+    inv4_mod_level2_master_o2_port->setParentModITerm(
+        inv4_mod_level2_inst_o2_miterm);
+
+    inv4_mod_level2_inst_o3_miterm
+        = dbModITerm::create(inv4_mod_level2_inst, "o3");
+    inv4_mod_level2_inst_o3_miterm->setChildModBTerm(
+        inv4_mod_level2_master_o3_port);
+    inv4_mod_level2_master_o3_port->setParentModITerm(
+        inv4_mod_level2_inst_o3_miterm);
 
     //
-    //create the low level inverter instances, for now uniquely name them in the scope of a block.
+    // create the low level inverter instances, for now uniquely name them in
+    // the scope of a block.
+
+    inv4_1 = dbInst::create(
+        block,
+        lib->findMaster("inv1"),
+        "inv4_mod_level0_inst/inv4_mod_level1_inst/inv4_mod_level2_inst/inst1");
+
+    // get the iterm off the instance. Just give the terminal name
+    // offset used to find iterm.
+    inv4_1_ip = inv4_1->findITerm("ip0");
+    inv4_1_op = inv4_1->findITerm("op0");
+
+    inv4_2 = dbInst::create(
+        block,
+        lib->findMaster("inv1"),
+        "inv4_mod_level0_inst/inv4_mod_level1_inst/inv4_mod_level2_inst/inst2");
+    inv4_2_ip = inv4_2->findITerm("ip0");
+    inv4_2_op = inv4_2->findITerm("op0");
+
+    inv4_3 = dbInst::create(
+        block,
+        lib->findMaster("inv1"),
+        "inv4_mod_level0_inst/inv4_mod_level1_inst/inv4_mod_level2_inst/inst3");
+    inv4_3_ip = inv4_3->findITerm("ip0");
+    inv4_3_op = inv4_3->findITerm("op0");
+
+    inv4_4 = dbInst::create(
+        block,
+        lib->findMaster("inv1"),
+        "inv4_mod_level0_inst/inv4_mod_level1_inst/inv4_mod_level2_inst/inst4");
+    inv4_4_ip = inv4_4->findITerm("ip0");
+    inv4_4_op = inv4_4->findITerm("op0");
+
     //
-    inv4_1 = dbInst::create(block, lib->findMaster("inv1"),
-			    "inv4_mod_level0_inst/inv4_mod_level1_inst/inv4_mod_level2_inst/inst1");
+    // inv4_mod_level2_master is lowest level in hierarchy
+    //
+    inv4_mod_level2_master->addInst(inv4_1);
+    inv4_mod_level2_master->addInst(inv4_2);
+    inv4_mod_level2_master->addInst(inv4_3);
+    inv4_mod_level2_master->addInst(inv4_4);
 
+    inv4_mod_level2_inst_i0_mnet = dbModNet::create(
+        inv4_mod_level2_master, "inv4_mod_level2_inst_i0_mnet");
+    inv4_mod_level2_inst_o0_mnet = dbModNet::create(
+        inv4_mod_level2_master, "inv4_mod_level2_inst_o0_mnet");
+    inv4_mod_level2_inst_o1_mnet = dbModNet::create(
+        inv4_mod_level2_master, "inv4_mod_level2_inst_o1_mnet");
+    inv4_mod_level2_inst_o2_mnet = dbModNet::create(
+        inv4_mod_level2_master, "inv4_mod_level2_inst_o2_mnet");
+    inv4_mod_level2_inst_o3_mnet = dbModNet::create(
+        inv4_mod_level2_master, "inv4_mod_level2_inst_o3_mnet");
+    inv4_1_ip->connect(inv4_mod_level2_inst_i0_mnet);
+    inv4_2_ip->connect(inv4_mod_level2_inst_i0_mnet);
+    inv4_3_ip->connect(inv4_mod_level2_inst_i0_mnet);
+    inv4_4_ip->connect(inv4_mod_level2_inst_i0_mnet);
 
-    //get the iterm off the instance. Just give the terminal name
-    //offset used to find iterm.
-    inv4_1_ip = inv4_1 -> findITerm(
-	    "ip0");
-    inv4_1_op = inv4_1 -> findITerm(
-				    "op0");
-    
-    inv4_2 = dbInst::create(block, lib->findMaster("inv1"),
-			    "inv4_mod_level0_inst/inv4_mod_level1_inst/inv4_mod_level2_inst/inst2");   
-    inv4_2_ip = inv4_2 -> findITerm("ip0");
-    inv4_2_op = inv4_2 -> findITerm("op0");
-    
-    inv4_3 = dbInst::create(block, lib->findMaster("inv1"),
-			    "inv4_mod_level0_inst/inv4_mod_level1_inst/inv4_mod_level2_inst/inst3");
-    inv4_3_ip = inv4_3 -> findITerm("ip0");
-    inv4_3_op = inv4_3 -> findITerm("op0");
-    
-    
-    inv4_4 = dbInst::create(block, lib->findMaster("inv1"),
-			    "inv4_mod_level0_inst/inv4_mod_level1_inst/inv4_mod_level2_inst/inst4");
-    inv4_4_ip = inv4_4 -> findITerm("ip0");
-    inv4_4_op = inv4_4 -> findITerm("op0");
+    inv4_1_op->connect(inv4_mod_level2_inst_o0_mnet);
+    inv4_2_op->connect(inv4_mod_level2_inst_o1_mnet);
+    inv4_3_op->connect(inv4_mod_level2_inst_o2_mnet);
+    inv4_4_op->connect(inv4_mod_level2_inst_o3_mnet);
 
-    
-    inv4_mod_level2_master -> addInst(inv4_1);
-    inv4_mod_level2_master -> addInst(inv4_2);
-    inv4_mod_level2_master -> addInst(inv4_3);
-    inv4_mod_level2_master -> addInst(inv4_4);
+    inv4_mod_level2_master_i0_port->connect(inv4_mod_level2_inst_i0_mnet);
+    inv4_mod_level2_master_o0_port->connect(inv4_mod_level2_inst_o0_mnet);
+    inv4_mod_level2_master_o1_port->connect(inv4_mod_level2_inst_o1_mnet);
+    inv4_mod_level2_master_o2_port->connect(inv4_mod_level2_inst_o2_mnet);
+    inv4_mod_level2_master_o3_port->connect(inv4_mod_level2_inst_o3_mnet);
 
+    // First make the flat view connectivity
+    dbNet* ip0_net = dbNet::create(block, "ip0_flat_net", false);
+    dbNet* inv_op_net = dbNet::create(block, "inv_op_flat_net", false);
+    op0_net = dbNet::create(block, "op0_flat_net", false);
+    op1_net = dbNet::create(block, "op1_flat_net", false);
+    op2_net = dbNet::create(block, "op2_flat_net", false);
+    op3_net = dbNet::create(block, "op3_flat_net", false);
 
-    //First make the flat view
-    dbNet* ip0_net = dbNet::create(block,"ip0_flat_net",false);
-    dbNet* inv_op_net = dbNet::create(block,"inv_op_flat_net",false);
-    dbNet* op0_net = dbNet::create(block,"op0_flat_net",false);
-    dbNet* op1_net = dbNet::create(block,"op1_flat_net",false);
-    dbNet* op2_net = dbNet::create(block,"op2_flat_net",false);
-    dbNet* op3_net = dbNet::create(block,"op3_flat_net",false);        
+    //
+    // connections to the primary (root) ports
+    // Note: a bterm without a parent is a root port.
+    //
+    ip0_bterm = dbBTerm::create(ip0_net, "ip0");
+    op0_bterm = dbBTerm::create(op0_net, "op0");
+    op1_bterm = dbBTerm::create(op1_net, "op1");
+    op2_bterm = dbBTerm::create(op2_net, "op2");
+    op3_bterm = dbBTerm::create(op3_net, "op3");
 
-    //connections to the primary (root) ports
-    ip0_bterm = dbBTerm::create(ip0_net,"ip0");
-    op0_bterm = dbBTerm::create(op0_net,"op0");
-    op1_bterm = dbBTerm::create(op1_net,"op1");
-    op2_bterm = dbBTerm::create(op2_net,"op2");
-    op3_bterm = dbBTerm::create(op3_net,"op3");            
+    op0_bterm->connect(inv4_mod_level2_inst_o0_mnet);
+    op1_bterm->connect(inv4_mod_level2_inst_o1_mnet);
+    op2_bterm->connect(inv4_mod_level2_inst_o2_mnet);
+    op3_bterm->connect(inv4_mod_level2_inst_o3_mnet);
 
+    // flat connections:
+    // inverter 1 in module inv1_1
+    inv1_1_inst_ip0->connect(ip0_net);
+    inv1_1_inst_op0->connect(inv_op_net);
 
-    //flat connections:
-    //inverter 1 in module inv1_1
-    inv1_1_inst_ip0 -> connect(ip0_net) ;
-    inv1_1_inst_op0 -> connect(inv_op_net);
+    // now the 4 inverters in inv4_1
+    inv4_1_ip->connect(inv_op_net);
+    inv4_2_ip->connect(inv_op_net);
+    inv4_3_ip->connect(inv_op_net);
+    inv4_4_ip->connect(inv_op_net);
 
-    //now the 4 inverters in inv4_1
-    inv4_1_ip -> connect(inv_op_net);
-    inv4_2_ip -> connect(inv_op_net);
-    inv4_3_ip -> connect(inv_op_net);
-    inv4_4_ip -> connect(inv_op_net);        
-    
-    //now core to external connections
-    inv4_1_op -> connect(op0_net);
-    inv4_2_op -> connect(op1_net);
-    inv4_3_op -> connect(op2_net);
-    inv4_4_op -> connect(op3_net);            
+    // now core to external connections
+    inv4_1_op->connect(op0_net);
+    inv4_2_op->connect(op1_net);
+    inv4_3_op->connect(op2_net);
+    inv4_4_op->connect(op3_net);
 
     std::stringstream str_str;
     DbStrDebugHierarchy(block, str_str);
-
     printf("The Flat design created %s\n", str_str.str().c_str());
-    
+
+    // Now build the hierarchical "overlay"
+    // What we are doing here is adding the modnets which hook up
+
+    // wire in hierarchy for inv1
+
+    // Contents of inv1 (modnets from ports to internals).
+    inv1_mod_i0_modnet = dbModNet::create(inv1_mod_master, "inv1_mod_i0_mnet");
+    inv1_mod_o0_modnet = dbModNet::create(inv1_mod_master, "inv1_mod_o0_mnet");
+    // connection from port to net in module
+    inv1_mod_i0_port->connect(inv1_mod_i0_modnet);
+    // connection to inverter ip
+    inv1_1_inst_ip0->connect(inv1_mod_i0_modnet);
+    // from inverter op to port
+    inv1_1_inst_op0->connect(inv1_mod_o0_modnet);
+    inv1_mod_o0_port->connect(inv1_mod_o0_modnet);
+
+    // Instantiation of inv1 connections to top level (root bterms to modnets,
+    // modnets to moditerms on inv1).
+    root_inv1_i0_mnet = dbModNet::create(root_mod, "inv1_inst_i0_mnet");
+    root_inv1_o0_mnet = dbModNet::create(root_mod, "inv1_inst_o0_mnet");
+    inv1_mod_inst_i0_miterm->connect(root_inv1_i0_mnet);
+    inv1_mod_inst_o0_miterm->connect(root_inv1_o0_mnet);
+
+    // top level connections for inv1.
+    // root input to instance, via a modnet.
+    ip0_bterm->connect(root_inv1_i0_mnet);
+    // note the output from out inverter module is inv1_inst_o0_mnet
+    // which now needs to be hooked up the inv4 hierarchy.
+
+    // The inv4 hierarchy connections
+    // inv1 -> inv4 connection
+    inv4_mod_level0_inst_i0_miterm->connect(root_inv1_o0_mnet);
+
+    // level 0 is top of hierarchy, in root
+    // the level 0 instance -> root connections
+    root_inv4_o0_mnet = dbModNet::create(root_mod, "inv4_inst_o0_mnet");
+    inv4_mod_level0_inst_o0_miterm->connect(root_inv4_o0_mnet);
+    op0_bterm->connect(root_inv4_o0_mnet);
+
+    root_inv4_o1_mnet = dbModNet::create(root_mod, "inv4_inst_o1_mnet");
+    inv4_mod_level0_inst_o1_miterm->connect(root_inv4_o1_mnet);
+    op1_bterm->connect(root_inv4_o1_mnet);
+
+    root_inv4_o2_mnet = dbModNet::create(root_mod, "inv4_inst_o2_mnet");
+    inv4_mod_level0_inst_o2_miterm->connect(root_inv4_o2_mnet);
+    op2_bterm->connect(root_inv4_o2_mnet);
+
+    root_inv4_o3_mnet = dbModNet::create(root_mod, "inv4_inst_o3_mnet");
+    inv4_mod_level0_inst_o3_miterm->connect(root_inv4_o3_mnet);
+    op3_bterm->connect(root_inv4_o3_mnet);
+
+    // level 1 is next level down
+    // The level 1 instance connections within the scope of the
+    // inv4_mod_level0_master
+    inv4_mod_level1_inst_i0_mnet = dbModNet::create(
+        inv4_mod_level0_master, "inv4_mod_level1_inst_i0_mnet");
+
+    inv4_mod_level1_inst_i0_miterm->connect(inv4_mod_level1_inst_i0_mnet);
+    inv4_mod_level0_master_i0_port->connect(inv4_mod_level1_inst_i0_mnet);
+
+    inv4_mod_level1_inst_o0_mnet = dbModNet::create(
+        inv4_mod_level0_master, "inv4_mod_level1_inst_o1_mnet");
+    inv4_mod_level1_inst_o0_miterm->connect(inv4_mod_level1_inst_o0_mnet);
+    inv4_mod_level0_master_o0_port->connect(inv4_mod_level1_inst_o0_mnet);
+
+    inv4_mod_level1_inst_o1_mnet = dbModNet::create(
+        inv4_mod_level0_master, "inv4_mod_level1_inst_o1_mnet");
+    inv4_mod_level1_inst_o1_miterm->connect(inv4_mod_level1_inst_o1_mnet);
+    inv4_mod_level0_master_o1_port->connect(inv4_mod_level1_inst_o1_mnet);
+
+    inv4_mod_level1_inst_o2_mnet = dbModNet::create(
+        inv4_mod_level0_master, "inv4_mod_level1_inst_o2_mnet");
+    inv4_mod_level1_inst_o2_miterm->connect(inv4_mod_level1_inst_o2_mnet);
+    inv4_mod_level0_master_o2_port->connect(inv4_mod_level1_inst_o2_mnet);
+
+    inv4_mod_level1_inst_o3_mnet = dbModNet::create(
+        inv4_mod_level0_master, "inv4_mod_level1_inst_o3_mnet");
+    inv4_mod_level1_inst_o3_miterm->connect(inv4_mod_level1_inst_o3_mnet);
+    inv4_mod_level0_master_o3_port->connect(inv4_mod_level1_inst_o3_mnet);
+
+    // The level 2 instance connections within the scope of the
+    // inv4_mod_level1_master level 2 is the cell which contains the 4 inverters
+    inv4_mod_level2_inst_i0_mnet = dbModNet::create(
+        inv4_mod_level1_master, "inv4_mod_level2_inst_i0_mnet");
+
+    inv4_mod_level2_inst_i0_miterm->connect(inv4_mod_level2_inst_i0_mnet);
+    inv4_mod_level1_master_i0_port->connect(inv4_mod_level2_inst_i0_mnet);
+
+    inv4_mod_level2_inst_o0_mnet = dbModNet::create(
+        inv4_mod_level1_master, "inv4_mod_level2_inst_o0_mnet");
+
+    inv4_mod_level2_inst_o0_miterm->connect(inv4_mod_level2_inst_o0_mnet);
+    inv4_mod_level1_master_o0_port->connect(inv4_mod_level2_inst_o0_mnet);
+
+    inv4_mod_level2_inst_o1_mnet = dbModNet::create(
+        inv4_mod_level1_master, "inv4_mod_level2_inst_o1_mnet");
+
+    inv4_mod_level2_inst_o1_miterm->connect(inv4_mod_level2_inst_o1_mnet);
+    inv4_mod_level1_master_o1_port->connect(inv4_mod_level2_inst_o1_mnet);
+
+    inv4_mod_level2_inst_o2_mnet = dbModNet::create(
+        inv4_mod_level1_master, "inv4_mod_level2_inst_o2_mnet");
+
+    inv4_mod_level2_inst_o2_miterm->connect(inv4_mod_level2_inst_o2_mnet);
+    inv4_mod_level1_master_o2_port->connect(inv4_mod_level2_inst_o2_mnet);
+
+    inv4_mod_level2_inst_o3_mnet = dbModNet::create(
+        inv4_mod_level1_master, "inv4_mod_level2_inst_o3_mnet");
+
+    inv4_mod_level2_inst_o3_miterm->connect(inv4_mod_level2_inst_o3_mnet);
+    inv4_mod_level1_master_o3_port->connect(inv4_mod_level2_inst_o3_mnet);
+
+    std::stringstream full_design;
+    DbStrDebugHierarchy(block, full_design);
+    printf("The  design created %s\n", full_design.str().c_str());
   }
 
   ~F_HCONNECT() { dbDatabase::destroy(db); }
@@ -479,38 +762,72 @@ struct F_HCONNECT
   dbLib* lib;
   dbBlock* block;
 
-  dbModule* root_mod;  
+  dbModule* root_mod;
+  dbMTerm* root_mod_i0_mterm;
+  dbMTerm* root_mod_i1_mterm;
+  dbMTerm* root_mod_i2_mterm;
+  dbMTerm* root_mod_i3_mterm;
+  dbMTerm* root_mod_o0_mterm;
+
+  dbBTerm* root_mod_i0_bterm;
+  dbBTerm* root_mod_i1_bterm;
+  dbBTerm* root_mod_i2_bterm;
+  dbBTerm* root_mod_i3_bterm;
+  dbBTerm* root_mod_o0_bterm;
+
   dbModule* inv1_mod_master;
+  dbModInst* inv1_mod_inst;
+  dbModITerm* inv1_mod_inst_i0_miterm;
+  dbModITerm* inv1_mod_inst_o0_miterm;
+  dbModBTerm* inv1_mod_i0_port;
+  dbModBTerm* inv1_mod_o0_port;
+  dbModNet* inv1_mod_i0_modnet;
+  dbModNet* inv1_mod_o0_modnet;
+
   dbModule* inv4_mod_level0_master;
   dbModule* inv4_mod_level1_master;
   dbModule* inv4_mod_level2_master;
-  
-  dbModBTerm* inv_mod_level0_master_i0_port;
-  dbModBTerm* inv_mod_level0_master_i1_port;
-  dbModBTerm* inv_mod_level0_master_i2_port;
-  dbModBTerm* inv_mod_level0_master_i3_port;
-  dbModBTerm* inv_mod_level0_master_o0_port;
 
+  dbModBTerm* inv4_mod_level0_master_i0_port;
+  dbModBTerm* inv4_mod_level0_master_o0_port;
+  dbModBTerm* inv4_mod_level0_master_o1_port;
+  dbModBTerm* inv4_mod_level0_master_o2_port;
+  dbModBTerm* inv4_mod_level0_master_o3_port;
 
-  dbModBTerm* inv_mod_level1_master_i0_port;
-  dbModBTerm* inv_mod_level1_master_i1_port;
-  dbModBTerm* inv_mod_level1_master_i2_port;
-  dbModBTerm* inv_mod_level1_master_i3_port;
-  dbModBTerm* inv_mod_level1_master_o0_port;
+  dbModBTerm* inv4_mod_level1_master_i0_port;
+  dbModBTerm* inv4_mod_level1_master_o0_port;
+  dbModBTerm* inv4_mod_level1_master_o1_port;
+  dbModBTerm* inv4_mod_level1_master_o2_port;
+  dbModBTerm* inv4_mod_level1_master_o3_port;
 
-  dbModBTerm* inv_mod_level2_master_i0_port;
-  dbModBTerm* inv_mod_level2_master_i1_port;
-  dbModBTerm* inv_mod_level2_master_i2_port;
-  dbModBTerm* inv_mod_level2_master_i3_port;
-  dbModBTerm* inv_mod_level2_master_o0_port;
-  
-  
-  dbModInst* inv1_mod_inst;
+  dbModBTerm* inv4_mod_level2_master_i0_port;
+  dbModBTerm* inv4_mod_level2_master_o0_port;
+  dbModBTerm* inv4_mod_level2_master_o1_port;
+  dbModBTerm* inv4_mod_level2_master_o2_port;
+  dbModBTerm* inv4_mod_level2_master_o3_port;
+
   dbModInst* inv4_mod_level0_inst;
   dbModInst* inv4_mod_level1_inst;
   dbModInst* inv4_mod_level2_inst;
-  
-  
+
+  dbModITerm* inv4_mod_level0_inst_i0_miterm;
+  dbModITerm* inv4_mod_level0_inst_o0_miterm;
+  dbModITerm* inv4_mod_level0_inst_o1_miterm;
+  dbModITerm* inv4_mod_level0_inst_o2_miterm;
+  dbModITerm* inv4_mod_level0_inst_o3_miterm;
+
+  dbModITerm* inv4_mod_level1_inst_i0_miterm;
+  dbModITerm* inv4_mod_level1_inst_o0_miterm;
+  dbModITerm* inv4_mod_level1_inst_o1_miterm;
+  dbModITerm* inv4_mod_level1_inst_o2_miterm;
+  dbModITerm* inv4_mod_level1_inst_o3_miterm;
+
+  dbModITerm* inv4_mod_level2_inst_i0_miterm;
+  dbModITerm* inv4_mod_level2_inst_o0_miterm;
+  dbModITerm* inv4_mod_level2_inst_o1_miterm;
+  dbModITerm* inv4_mod_level2_inst_o2_miterm;
+  dbModITerm* inv4_mod_level2_inst_o3_miterm;
+
   dbInst* inv1_1;
   dbInst* inv4_1;
   dbInst* inv4_2;
@@ -528,10 +845,36 @@ struct F_HCONNECT
   dbBTerm* op0_bterm;
   dbBTerm* op1_bterm;
   dbBTerm* op2_bterm;
-  dbBTerm* op3_bterm;    
+  dbBTerm* op3_bterm;
 
   dbModITerm* inv1_1_ip;
   dbModITerm* inv1_1_op;
+
+  dbModNet* root_inv1_i0_mnet;
+  dbModNet* root_inv1_o0_mnet;
+
+  dbModNet* root_inv4_o0_mnet;
+  dbModNet* root_inv4_o1_mnet;
+  dbModNet* root_inv4_o2_mnet;
+  dbModNet* root_inv4_o3_mnet;
+
+  // first input inv4_mod_level_i0 comes from root_inv1_o0_modnet
+  dbModNet* inv4_mod_level0_inst_o0_mnet;
+  dbModNet* inv4_mod_level0_inst_o1_mnet;
+  dbModNet* inv4_mod_level0_inst_o2_mnet;
+  dbModNet* inv4_mod_level0_inst_o3_mnet;
+
+  dbModNet* inv4_mod_level1_inst_i0_mnet;
+  dbModNet* inv4_mod_level1_inst_o0_mnet;
+  dbModNet* inv4_mod_level1_inst_o1_mnet;
+  dbModNet* inv4_mod_level1_inst_o2_mnet;
+  dbModNet* inv4_mod_level1_inst_o3_mnet;
+
+  dbModNet* inv4_mod_level2_inst_i0_mnet;
+  dbModNet* inv4_mod_level2_inst_o0_mnet;
+  dbModNet* inv4_mod_level2_inst_o1_mnet;
+  dbModNet* inv4_mod_level2_inst_o2_mnet;
+  dbModNet* inv4_mod_level2_inst_o3_mnet;
 
   dbITerm* inv1_1_inst_ip0;
   dbITerm* inv1_1_inst_op0;
@@ -539,39 +882,30 @@ struct F_HCONNECT
   dbITerm* inv4_1_ip;
   dbITerm* inv4_2_ip;
   dbITerm* inv4_3_ip;
-  dbITerm* inv4_4_ip;        
+  dbITerm* inv4_4_ip;
   dbITerm* inv4_1_op;
   dbITerm* inv4_2_op;
   dbITerm* inv4_3_op;
-  dbITerm* inv4_4_op;        
-
-  
+  dbITerm* inv4_4_op;
 };
 
-  
 BOOST_FIXTURE_TEST_CASE(test_hier, F_HCONNECT)
 {
   auto top = block->getTopModule();
   BOOST_TEST(top != nullptr);
   auto master1 = odb::dbModule::create(block, "master1");
-  
+
   odb::dbModInst::create(top, master1, "minst1");
-  
+
   auto master2 = odb::dbModule::create(block, "master2");
   auto minst2 = odb::dbModInst::create(master1, master2, "minst2");
-  
+
   BOOST_TEST(block->findModInst("minst1/minst2") == minst2);
-
 }
-
 
 BOOST_FIXTURE_TEST_CASE(test_hierconnect, F_HCONNECT)
 {
-
 }
-
-
-
 
 struct F_DETAILED
 {
@@ -609,7 +943,6 @@ struct F_DETAILED
   dbInst* inst2;
   dbInst* inst3;
 };
-
 
 BOOST_FIXTURE_TEST_CASE(test_destroy, F_DETAILED)
 {
