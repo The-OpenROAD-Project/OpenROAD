@@ -105,7 +105,8 @@ class MacroPlacer2
   void placeMacro(odb::dbInst* inst,
                   const float& x_origin,
                   const float& y_origin,
-                  const odb::dbOrientType& orientation);
+                  const odb::dbOrientType& orientation,
+                  const bool dont_snap);
 
   void setMacroPlacementFile(const std::string& file_name);
 

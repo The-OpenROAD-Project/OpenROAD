@@ -145,11 +145,16 @@ void set_debug_cmd(odb::dbBlock* block,
 }
 
 void
-place_macro(odb::dbInst* inst, float x_origin, float y_origin, std::string orientation_string)
+place_macro(odb::dbInst* inst,
+            float x_origin,
+            float y_origin,
+            std::string orientation_string,
+            bool dont_snap)
 {
   odb::dbOrientType orientation(orientation_string.c_str());
 
-  getMacroPlacer2()->placeMacro(inst, x_origin, y_origin, orientation);
+  getMacroPlacer2()->placeMacro(
+    inst, x_origin, y_origin, orientation, dont_snap);
 }
 
 void

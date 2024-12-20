@@ -131,7 +131,8 @@ bool MacroPlacer2::place(const int num_threads,
 void MacroPlacer2::placeMacro(odb::dbInst* inst,
                               const float& x_origin,
                               const float& y_origin,
-                              const odb::dbOrientType& orientation)
+                              const odb::dbOrientType& orientation,
+                              const bool dont_snap)
 {
   odb::dbBlock* block = inst->getBlock();
 
@@ -164,16 +165,16 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
   inst->setOrient(orientation);
   inst->setLocation(x1, y1);
 
-  if (!orientation.isRightAngleRotation()) {
+  if (orientation.isRightAngleRotation()) {
+    logger_->warn(MPL,
+                  36,
+                  "Orientation {} specified for macro {} is a right angle "
+                  "rotation. Snapping is not possible.",
+                  orientation.getString(),
+                  inst->getName());
+  } else if (!dont_snap) {
     Snapper snapper(logger_, inst);
     snapper.snapMacro();
-  } else {
-    logger_->warn(
-        MPL,
-        36,
-        "Orientation {} specified for macro {} is a right angle rotation.",
-        orientation.getString(),
-        inst->getName());
   }
 
   inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
