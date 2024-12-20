@@ -866,10 +866,10 @@ float RouteBase::getRudyRC() const
   avg020RC /= ceil(0.020 * arraySize);
   avg050RC /= ceil(0.050 * arraySize);
 
-  log_->info(GPL, 83, "0.5%RC: {:.}", avg005RC);
-  log_->info(GPL, 84, "1.0%RC: {}", avg010RC);
-  log_->info(GPL, 85, "2.0%RC: {}", avg020RC);
-  log_->info(GPL, 86, "5.0%RC: {}", avg050RC);
+  log_->info(GPL, 83, "0.5%RC: {:.4f}", avg005RC);
+  log_->info(GPL, 84, "1.0%RC: {:.4f}", avg010RC);
+  log_->info(GPL, 85, "2.0%RC: {:.4f}", avg020RC);
+  log_->info(GPL, 86, "5.0%RC: {:.4f}", avg050RC);
 
   float finalRC = (rbVars_.rcK1 * avg005RC + rbVars_.rcK2 * avg010RC
                    + rbVars_.rcK3 * avg020RC + rbVars_.rcK4 * avg050RC)
