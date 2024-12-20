@@ -37,7 +37,7 @@
 
 #include "lefiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 //=================== General Types and Definitions =================
 
@@ -180,8 +180,8 @@ extern int strcasecmp(const char*, const char*);
 #define strdup _strdup
 #endif
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
-USE_LEFDEF_PARSER_NAMESPACE
+USE_LEF_PARSER_NAMESPACE
 
 #endif

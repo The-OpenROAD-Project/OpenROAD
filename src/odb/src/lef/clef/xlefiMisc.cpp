@@ -39,74 +39,72 @@
 // Wrappers definitions.
 int lefiGeometries_numItems(const ::lefiGeometries* obj)
 {
-  return ((LefDefParser::lefiGeometries*) obj)->numItems();
+  return ((LefParser::lefiGeometries*) obj)->numItems();
 }
 
 enum ::lefiGeomEnum lefiGeometries_itemType(const ::lefiGeometries* obj,
                                             int index)
 {
-  return (::lefiGeomEnum)((LefDefParser::lefiGeometries*) obj)->itemType(index);
+  return (::lefiGeomEnum)((LefParser::lefiGeometries*) obj)->itemType(index);
 }
 
 struct ::lefiGeomRect* lefiGeometries_getRect(const ::lefiGeometries* obj,
                                               int index)
 {
-  return (::lefiGeomRect*) ((LefDefParser::lefiGeometries*) obj)
-      ->getRect(index);
+  return (::lefiGeomRect*) ((LefParser::lefiGeometries*) obj)->getRect(index);
 }
 
 struct ::lefiGeomRectIter* lefiGeometries_getRectIter(
     const ::lefiGeometries* obj,
     int index)
 {
-  return (::lefiGeomRectIter*) ((LefDefParser::lefiGeometries*) obj)
+  return (::lefiGeomRectIter*) ((LefParser::lefiGeometries*) obj)
       ->getRectIter(index);
 }
 
 struct ::lefiGeomPath* lefiGeometries_getPath(const ::lefiGeometries* obj,
                                               int index)
 {
-  return (::lefiGeomPath*) ((LefDefParser::lefiGeometries*) obj)
-      ->getPath(index);
+  return (::lefiGeomPath*) ((LefParser::lefiGeometries*) obj)->getPath(index);
 }
 
 struct ::lefiGeomPathIter* lefiGeometries_getPathIter(
     const ::lefiGeometries* obj,
     int index)
 {
-  return (::lefiGeomPathIter*) ((LefDefParser::lefiGeometries*) obj)
+  return (::lefiGeomPathIter*) ((LefParser::lefiGeometries*) obj)
       ->getPathIter(index);
 }
 
 int lefiGeometries_hasLayerExceptPgNet(const ::lefiGeometries* obj, int index)
 {
-  return ((LefDefParser::lefiGeometries*) obj)->hasLayerExceptPgNet(index);
+  return ((LefParser::lefiGeometries*) obj)->hasLayerExceptPgNet(index);
 }
 
 char* lefiGeometries_getLayer(const ::lefiGeometries* obj, int index)
 {
-  return ((LefDefParser::lefiGeometries*) obj)->getLayer(index);
+  return ((LefParser::lefiGeometries*) obj)->getLayer(index);
 }
 
 double lefiGeometries_getLayerMinSpacing(const ::lefiGeometries* obj, int index)
 {
-  return ((LefDefParser::lefiGeometries*) obj)->getLayerMinSpacing(index);
+  return ((LefParser::lefiGeometries*) obj)->getLayerMinSpacing(index);
 }
 
 double lefiGeometries_getLayerRuleWidth(const ::lefiGeometries* obj, int index)
 {
-  return ((LefDefParser::lefiGeometries*) obj)->getLayerRuleWidth(index);
+  return ((LefParser::lefiGeometries*) obj)->getLayerRuleWidth(index);
 }
 
 double lefiGeometries_getWidth(const ::lefiGeometries* obj, int index)
 {
-  return ((LefDefParser::lefiGeometries*) obj)->getWidth(index);
+  return ((LefParser::lefiGeometries*) obj)->getWidth(index);
 }
 
 struct ::lefiGeomPolygon* lefiGeometries_getPolygon(const ::lefiGeometries* obj,
                                                     int index)
 {
-  return (::lefiGeomPolygon*) ((LefDefParser::lefiGeometries*) obj)
+  return (::lefiGeomPolygon*) ((LefParser::lefiGeometries*) obj)
       ->getPolygon(index);
 }
 
@@ -114,324 +112,324 @@ struct ::lefiGeomPolygonIter* lefiGeometries_getPolygonIter(
     const ::lefiGeometries* obj,
     int index)
 {
-  return (::lefiGeomPolygonIter*) ((LefDefParser::lefiGeometries*) obj)
+  return (::lefiGeomPolygonIter*) ((LefParser::lefiGeometries*) obj)
       ->getPolygonIter(index);
 }
 
 char* lefiGeometries_getClass(const ::lefiGeometries* obj, int index)
 {
-  return ((LefDefParser::lefiGeometries*) obj)->getClass(index);
+  return ((LefParser::lefiGeometries*) obj)->getClass(index);
 }
 
 struct ::lefiGeomVia* lefiGeometries_getVia(const ::lefiGeometries* obj,
                                             int index)
 {
-  return (::lefiGeomVia*) ((LefDefParser::lefiGeometries*) obj)->getVia(index);
+  return (::lefiGeomVia*) ((LefParser::lefiGeometries*) obj)->getVia(index);
 }
 
 struct ::lefiGeomViaIter* lefiGeometries_getViaIter(const ::lefiGeometries* obj,
                                                     int index)
 {
-  return (::lefiGeomViaIter*) ((LefDefParser::lefiGeometries*) obj)
+  return (::lefiGeomViaIter*) ((LefParser::lefiGeometries*) obj)
       ->getViaIter(index);
 }
 
 void lefiGeometries_print(const ::lefiGeometries* obj, FILE* f)
 {
-  ((LefDefParser::lefiGeometries*) obj)->print(f);
+  ((LefParser::lefiGeometries*) obj)->print(f);
 }
 
 int lefiSpacing_hasStack(const ::lefiSpacing* obj)
 {
-  return ((LefDefParser::lefiSpacing*) obj)->hasStack();
+  return ((LefParser::lefiSpacing*) obj)->hasStack();
 }
 
 const char* lefiSpacing_name1(const ::lefiSpacing* obj)
 {
-  return ((const LefDefParser::lefiSpacing*) obj)->name1();
+  return ((const LefParser::lefiSpacing*) obj)->name1();
 }
 
 const char* lefiSpacing_name2(const ::lefiSpacing* obj)
 {
-  return ((const LefDefParser::lefiSpacing*) obj)->name2();
+  return ((const LefParser::lefiSpacing*) obj)->name2();
 }
 
 double lefiSpacing_distance(const ::lefiSpacing* obj)
 {
-  return ((LefDefParser::lefiSpacing*) obj)->distance();
+  return ((LefParser::lefiSpacing*) obj)->distance();
 }
 
 void lefiSpacing_print(const ::lefiSpacing* obj, FILE* f)
 {
-  ((LefDefParser::lefiSpacing*) obj)->print(f);
+  ((LefParser::lefiSpacing*) obj)->print(f);
 }
 
 const char* lefiIRDrop_name(const ::lefiIRDrop* obj)
 {
-  return ((const LefDefParser::lefiIRDrop*) obj)->name();
+  return ((const LefParser::lefiIRDrop*) obj)->name();
 }
 
 double lefiIRDrop_value1(const ::lefiIRDrop* obj, int index)
 {
-  return ((LefDefParser::lefiIRDrop*) obj)->value1(index);
+  return ((LefParser::lefiIRDrop*) obj)->value1(index);
 }
 
 double lefiIRDrop_value2(const ::lefiIRDrop* obj, int index)
 {
-  return ((LefDefParser::lefiIRDrop*) obj)->value2(index);
+  return ((LefParser::lefiIRDrop*) obj)->value2(index);
 }
 
 int lefiIRDrop_numValues(const ::lefiIRDrop* obj)
 {
-  return ((LefDefParser::lefiIRDrop*) obj)->numValues();
+  return ((LefParser::lefiIRDrop*) obj)->numValues();
 }
 
 void lefiIRDrop_print(const ::lefiIRDrop* obj, FILE* f)
 {
-  ((LefDefParser::lefiIRDrop*) obj)->print(f);
+  ((LefParser::lefiIRDrop*) obj)->print(f);
 }
 
 double lefiMinFeature_one(const ::lefiMinFeature* obj)
 {
-  return ((LefDefParser::lefiMinFeature*) obj)->one();
+  return ((LefParser::lefiMinFeature*) obj)->one();
 }
 
 double lefiMinFeature_two(const ::lefiMinFeature* obj)
 {
-  return ((LefDefParser::lefiMinFeature*) obj)->two();
+  return ((LefParser::lefiMinFeature*) obj)->two();
 }
 
 void lefiMinFeature_print(const ::lefiMinFeature* obj, FILE* f)
 {
-  ((LefDefParser::lefiMinFeature*) obj)->print(f);
+  ((LefParser::lefiMinFeature*) obj)->print(f);
 }
 
 const char* lefiSite_name(const ::lefiSite* obj)
 {
-  return ((const LefDefParser::lefiSite*) obj)->name();
+  return ((const LefParser::lefiSite*) obj)->name();
 }
 
 int lefiSite_hasClass(const ::lefiSite* obj)
 {
-  return ((LefDefParser::lefiSite*) obj)->hasClass();
+  return ((LefParser::lefiSite*) obj)->hasClass();
 }
 
 const char* lefiSite_siteClass(const ::lefiSite* obj)
 {
-  return ((const LefDefParser::lefiSite*) obj)->siteClass();
+  return ((const LefParser::lefiSite*) obj)->siteClass();
 }
 
 double lefiSite_sizeX(const ::lefiSite* obj)
 {
-  return ((LefDefParser::lefiSite*) obj)->sizeX();
+  return ((LefParser::lefiSite*) obj)->sizeX();
 }
 
 double lefiSite_sizeY(const ::lefiSite* obj)
 {
-  return ((LefDefParser::lefiSite*) obj)->sizeY();
+  return ((LefParser::lefiSite*) obj)->sizeY();
 }
 
 int lefiSite_hasSize(const ::lefiSite* obj)
 {
-  return ((LefDefParser::lefiSite*) obj)->hasSize();
+  return ((LefParser::lefiSite*) obj)->hasSize();
 }
 
 int lefiSite_hasXSymmetry(const ::lefiSite* obj)
 {
-  return ((LefDefParser::lefiSite*) obj)->hasXSymmetry();
+  return ((LefParser::lefiSite*) obj)->hasXSymmetry();
 }
 
 int lefiSite_hasYSymmetry(const ::lefiSite* obj)
 {
-  return ((LefDefParser::lefiSite*) obj)->hasYSymmetry();
+  return ((LefParser::lefiSite*) obj)->hasYSymmetry();
 }
 
 int lefiSite_has90Symmetry(const ::lefiSite* obj)
 {
-  return ((LefDefParser::lefiSite*) obj)->has90Symmetry();
+  return ((LefParser::lefiSite*) obj)->has90Symmetry();
 }
 
 int lefiSite_hasRowPattern(const ::lefiSite* obj)
 {
-  return ((LefDefParser::lefiSite*) obj)->hasRowPattern();
+  return ((LefParser::lefiSite*) obj)->hasRowPattern();
 }
 
 int lefiSite_numSites(const ::lefiSite* obj)
 {
-  return ((LefDefParser::lefiSite*) obj)->numSites();
+  return ((LefParser::lefiSite*) obj)->numSites();
 }
 
 char* lefiSite_siteName(const ::lefiSite* obj, int index)
 {
-  return ((LefDefParser::lefiSite*) obj)->siteName(index);
+  return ((LefParser::lefiSite*) obj)->siteName(index);
 }
 
 int lefiSite_siteOrient(const ::lefiSite* obj, int index)
 {
-  return ((LefDefParser::lefiSite*) obj)->siteOrient(index);
+  return ((LefParser::lefiSite*) obj)->siteOrient(index);
 }
 
 char* lefiSite_siteOrientStr(const ::lefiSite* obj, int index)
 {
-  return ((LefDefParser::lefiSite*) obj)->siteOrientStr(index);
+  return ((LefParser::lefiSite*) obj)->siteOrientStr(index);
 }
 
 void lefiSite_print(const ::lefiSite* obj, FILE* f)
 {
-  ((LefDefParser::lefiSite*) obj)->print(f);
+  ((LefParser::lefiSite*) obj)->print(f);
 }
 
 const char* lefiSitePattern_name(const ::lefiSitePattern* obj)
 {
-  return ((const LefDefParser::lefiSitePattern*) obj)->name();
+  return ((const LefParser::lefiSitePattern*) obj)->name();
 }
 
 int lefiSitePattern_orient(const ::lefiSitePattern* obj)
 {
-  return ((LefDefParser::lefiSitePattern*) obj)->orient();
+  return ((LefParser::lefiSitePattern*) obj)->orient();
 }
 
 const char* lefiSitePattern_orientStr(const ::lefiSitePattern* obj)
 {
-  return ((const LefDefParser::lefiSitePattern*) obj)->orientStr();
+  return ((const LefParser::lefiSitePattern*) obj)->orientStr();
 }
 
 double lefiSitePattern_x(const ::lefiSitePattern* obj)
 {
-  return ((LefDefParser::lefiSitePattern*) obj)->x();
+  return ((LefParser::lefiSitePattern*) obj)->x();
 }
 
 double lefiSitePattern_y(const ::lefiSitePattern* obj)
 {
-  return ((LefDefParser::lefiSitePattern*) obj)->y();
+  return ((LefParser::lefiSitePattern*) obj)->y();
 }
 
 int lefiSitePattern_hasStepPattern(const ::lefiSitePattern* obj)
 {
-  return ((LefDefParser::lefiSitePattern*) obj)->hasStepPattern();
+  return ((LefParser::lefiSitePattern*) obj)->hasStepPattern();
 }
 
 double lefiSitePattern_xStart(const ::lefiSitePattern* obj)
 {
-  return ((LefDefParser::lefiSitePattern*) obj)->xStart();
+  return ((LefParser::lefiSitePattern*) obj)->xStart();
 }
 
 double lefiSitePattern_yStart(const ::lefiSitePattern* obj)
 {
-  return ((LefDefParser::lefiSitePattern*) obj)->yStart();
+  return ((LefParser::lefiSitePattern*) obj)->yStart();
 }
 
 double lefiSitePattern_xStep(const ::lefiSitePattern* obj)
 {
-  return ((LefDefParser::lefiSitePattern*) obj)->xStep();
+  return ((LefParser::lefiSitePattern*) obj)->xStep();
 }
 
 double lefiSitePattern_yStep(const ::lefiSitePattern* obj)
 {
-  return ((LefDefParser::lefiSitePattern*) obj)->yStep();
+  return ((LefParser::lefiSitePattern*) obj)->yStep();
 }
 
 void lefiSitePattern_print(const ::lefiSitePattern* obj, FILE* f)
 {
-  ((LefDefParser::lefiSitePattern*) obj)->print(f);
+  ((LefParser::lefiSitePattern*) obj)->print(f);
 }
 
 const char* lefiTrackPattern_name(const ::lefiTrackPattern* obj)
 {
-  return ((const LefDefParser::lefiTrackPattern*) obj)->name();
+  return ((const LefParser::lefiTrackPattern*) obj)->name();
 }
 
 double lefiTrackPattern_start(const ::lefiTrackPattern* obj)
 {
-  return ((LefDefParser::lefiTrackPattern*) obj)->start();
+  return ((LefParser::lefiTrackPattern*) obj)->start();
 }
 
 int lefiTrackPattern_numTracks(const ::lefiTrackPattern* obj)
 {
-  return ((LefDefParser::lefiTrackPattern*) obj)->numTracks();
+  return ((LefParser::lefiTrackPattern*) obj)->numTracks();
 }
 
 double lefiTrackPattern_space(const ::lefiTrackPattern* obj)
 {
-  return ((LefDefParser::lefiTrackPattern*) obj)->space();
+  return ((LefParser::lefiTrackPattern*) obj)->space();
 }
 
 int lefiTrackPattern_numLayers(const ::lefiTrackPattern* obj)
 {
-  return ((LefDefParser::lefiTrackPattern*) obj)->numLayers();
+  return ((LefParser::lefiTrackPattern*) obj)->numLayers();
 }
 
 const char* lefiTrackPattern_layerName(const ::lefiTrackPattern* obj, int index)
 {
-  return ((const LefDefParser::lefiTrackPattern*) obj)->layerName(index);
+  return ((const LefParser::lefiTrackPattern*) obj)->layerName(index);
 }
 
 void lefiTrackPattern_print(const ::lefiTrackPattern* obj, FILE* f)
 {
-  ((LefDefParser::lefiTrackPattern*) obj)->print(f);
+  ((LefParser::lefiTrackPattern*) obj)->print(f);
 }
 
 const char* lefiGcellPattern_name(const ::lefiGcellPattern* obj)
 {
-  return ((const LefDefParser::lefiGcellPattern*) obj)->name();
+  return ((const LefParser::lefiGcellPattern*) obj)->name();
 }
 
 double lefiGcellPattern_start(const ::lefiGcellPattern* obj)
 {
-  return ((LefDefParser::lefiGcellPattern*) obj)->start();
+  return ((LefParser::lefiGcellPattern*) obj)->start();
 }
 
 int lefiGcellPattern_numCRs(const ::lefiGcellPattern* obj)
 {
-  return ((LefDefParser::lefiGcellPattern*) obj)->numCRs();
+  return ((LefParser::lefiGcellPattern*) obj)->numCRs();
 }
 
 double lefiGcellPattern_space(const ::lefiGcellPattern* obj)
 {
-  return ((LefDefParser::lefiGcellPattern*) obj)->space();
+  return ((LefParser::lefiGcellPattern*) obj)->space();
 }
 
 void lefiGcellPattern_print(const ::lefiGcellPattern* obj, FILE* f)
 {
-  ((LefDefParser::lefiGcellPattern*) obj)->print(f);
+  ((LefParser::lefiGcellPattern*) obj)->print(f);
 }
 
 const char* lefiUseMinSpacing_name(const ::lefiUseMinSpacing* obj)
 {
-  return ((const LefDefParser::lefiUseMinSpacing*) obj)->name();
+  return ((const LefParser::lefiUseMinSpacing*) obj)->name();
 }
 
 int lefiUseMinSpacing_value(const ::lefiUseMinSpacing* obj)
 {
-  return ((LefDefParser::lefiUseMinSpacing*) obj)->value();
+  return ((LefParser::lefiUseMinSpacing*) obj)->value();
 }
 
 void lefiUseMinSpacing_print(const ::lefiUseMinSpacing* obj, FILE* f)
 {
-  ((LefDefParser::lefiUseMinSpacing*) obj)->print(f);
+  ((LefParser::lefiUseMinSpacing*) obj)->print(f);
 }
 
 int lefiMaxStackVia_maxStackVia(const ::lefiMaxStackVia* obj)
 {
-  return ((LefDefParser::lefiMaxStackVia*) obj)->maxStackVia();
+  return ((LefParser::lefiMaxStackVia*) obj)->maxStackVia();
 }
 
 int lefiMaxStackVia_hasMaxStackViaRange(const ::lefiMaxStackVia* obj)
 {
-  return ((LefDefParser::lefiMaxStackVia*) obj)->hasMaxStackViaRange();
+  return ((LefParser::lefiMaxStackVia*) obj)->hasMaxStackViaRange();
 }
 
 const char* lefiMaxStackVia_maxStackViaBottomLayer(const ::lefiMaxStackVia* obj)
 {
-  return ((const LefDefParser::lefiMaxStackVia*) obj)->maxStackViaBottomLayer();
+  return ((const LefParser::lefiMaxStackVia*) obj)->maxStackViaBottomLayer();
 }
 
 const char* lefiMaxStackVia_maxStackViaTopLayer(const ::lefiMaxStackVia* obj)
 {
-  return ((const LefDefParser::lefiMaxStackVia*) obj)->maxStackViaTopLayer();
+  return ((const LefParser::lefiMaxStackVia*) obj)->maxStackViaTopLayer();
 }
 
 void lefiMaxStackVia_print(const ::lefiMaxStackVia* obj, FILE* f)
 {
-  ((LefDefParser::lefiMaxStackVia*) obj)->print(f);
+  ((LefParser::lefiMaxStackVia*) obj)->print(f);
 }

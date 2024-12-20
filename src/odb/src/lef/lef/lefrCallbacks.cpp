@@ -31,7 +31,7 @@
 
 #include "string.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 lefrCallbacks::lefrCallbacks()
     : AntennaInoutCbk(0),
@@ -106,4 +106,4 @@ void lefrCallbacks::reset()
   lefCallbacks = new lefrCallbacks();
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

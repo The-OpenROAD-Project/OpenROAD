@@ -39,7 +39,7 @@
 #include "odb.h"
 #include "utl/Logger.h"
 
-namespace LefDefParser {
+namespace LefParser {
 class lefiArray;
 struct lefiNoiseMargin;
 class lefiNoiseTable;
@@ -77,7 +77,7 @@ class dbDatabase;
 class dbTechLayer;
 class dbSite;
 
-using namespace LefDefParser;
+using namespace LefParser;
 
 class lefin
 {

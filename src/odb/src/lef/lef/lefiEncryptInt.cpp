@@ -33,7 +33,7 @@
 
 #include "lefrSettings.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // *****************************************************************************
 // Global variables
@@ -44,4 +44,4 @@ void lefrEnableReadEncrypted()
   lefSettings->ReadEncrypted = 1;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

@@ -38,7 +38,7 @@
 #include "lefrSettings.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // ******************
 //   Debug flags:
@@ -154,4 +154,4 @@ const char* CASE(const char* x)
              : x;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

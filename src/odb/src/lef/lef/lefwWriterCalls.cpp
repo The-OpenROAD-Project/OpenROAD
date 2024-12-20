@@ -43,7 +43,7 @@
 
 #include "lefiDebug.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 #define MAXCBS 30
 
@@ -621,4 +621,4 @@ void lefwSetWarningLogFunction(LEFI_WARNING_LOG_FUNCTION f)
 {
   lefwWarningLogFunction = f;
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

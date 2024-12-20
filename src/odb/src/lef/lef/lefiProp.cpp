@@ -35,7 +35,7 @@
 #include "lefiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 lefiProp::lefiProp()
     : propType_(NULL),
@@ -229,4 +229,4 @@ void lefiProp::print(FILE* f) const
   }
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

@@ -40,7 +40,7 @@
 
 #define MAX_LEF_MSGS 4701
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // The reader initialization.  Must be called before lefrRead().
 extern int lefrInit();
@@ -572,8 +572,8 @@ extern void lefrRegisterLef58Type(const char* lef58Type, const char* layerType);
 #define STOP_PARSE 1   // stop parsing with no error message
 #define PARSE_ERROR 2  // stop parsing, print an error message
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
-USE_LEFDEF_PARSER_NAMESPACE
+USE_LEF_PARSER_NAMESPACE
 
 #endif

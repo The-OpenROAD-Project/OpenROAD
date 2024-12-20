@@ -54,7 +54,7 @@
 #include "utl/Logger.h"
 namespace odb {
 
-using LefDefParser::lefrSetRelaxMode;
+using LefParser::lefrSetRelaxMode;
 
 extern bool lefin_parse(lefin*, utl::Logger*, const char*);
 
