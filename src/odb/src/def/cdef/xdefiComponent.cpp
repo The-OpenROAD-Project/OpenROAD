@@ -40,8 +40,7 @@
 int defiComponentMaskShiftLayer_numMaskShiftLayers(
     const ::defiComponentMaskShiftLayer* obj)
 {
-  return ((DefParser::defiComponentMaskShiftLayer*) obj)
-      ->numMaskShiftLayers();
+  return ((DefParser::defiComponentMaskShiftLayer*) obj)->numMaskShiftLayers();
 }
 
 const char* defiComponentMaskShiftLayer_maskShiftLayer(
