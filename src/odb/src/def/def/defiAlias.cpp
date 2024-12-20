@@ -31,7 +31,7 @@
 
 #include "defrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 extern defrContext defContext;
 
@@ -110,4 +110,4 @@ int defiAlias_itr::Marked()
   }
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

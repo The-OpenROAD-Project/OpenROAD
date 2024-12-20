@@ -35,7 +35,7 @@
 #include "defiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 defiPropType::defiPropType()
 {
@@ -129,4 +129,4 @@ const char defiPropType::propType(char* name) const
   }
   return ('N');  // Can't found the name
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

@@ -1398,7 +1398,7 @@ int definReader::scanchainsStartCallback(defrCallbackType_e /* unused: type */,
 }
 
 int definReader::scanchainsCallback(defrCallbackType_e /* unused: type */,
-                                    LefDefParser::defiScanchain* scan_chain,
+                                    DefParser::defiScanchain* scan_chain,
                                     defiUserData data)
 {
   definReader* reader = (definReader*) data;

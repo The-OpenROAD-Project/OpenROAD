@@ -45,7 +45,7 @@
 #define TOKEN_SIZE 4096
 #define MSG_SIZE 100
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 struct defCompareStrings
 {
@@ -304,6 +304,6 @@ int defrData::checkErrors()
   return 0;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

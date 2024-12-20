@@ -49,7 +49,7 @@
 
 #define DEF_INIT def_init(__FUNCTION__)
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 extern int defyyparse(defrData* data);
 
@@ -2210,4 +2210,4 @@ long long defrLongLineNumber()
   return (long long) 0;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

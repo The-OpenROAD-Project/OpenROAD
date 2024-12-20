@@ -38,89 +38,89 @@
 
 union udefiPoints
 {
-  LefDefParser::defiPoints cpp;
+  DefParser::defiPoints cpp;
   ::defiPoints c;
 };
 
 // Wrappers definitions.
 double defiSite_x_num(const ::defiSite* obj)
 {
-  return ((LefDefParser::defiSite*) obj)->x_num();
+  return ((DefParser::defiSite*) obj)->x_num();
 }
 
 double defiSite_y_num(const ::defiSite* obj)
 {
-  return ((LefDefParser::defiSite*) obj)->y_num();
+  return ((DefParser::defiSite*) obj)->y_num();
 }
 
 double defiSite_x_step(const ::defiSite* obj)
 {
-  return ((LefDefParser::defiSite*) obj)->x_step();
+  return ((DefParser::defiSite*) obj)->x_step();
 }
 
 double defiSite_y_step(const ::defiSite* obj)
 {
-  return ((LefDefParser::defiSite*) obj)->y_step();
+  return ((DefParser::defiSite*) obj)->y_step();
 }
 
 double defiSite_x_orig(const ::defiSite* obj)
 {
-  return ((LefDefParser::defiSite*) obj)->x_orig();
+  return ((DefParser::defiSite*) obj)->x_orig();
 }
 
 double defiSite_y_orig(const ::defiSite* obj)
 {
-  return ((LefDefParser::defiSite*) obj)->y_orig();
+  return ((DefParser::defiSite*) obj)->y_orig();
 }
 
 int defiSite_orient(const ::defiSite* obj)
 {
-  return ((LefDefParser::defiSite*) obj)->orient();
+  return ((DefParser::defiSite*) obj)->orient();
 }
 
 const char* defiSite_orientStr(const ::defiSite* obj)
 {
-  return ((const LefDefParser::defiSite*) obj)->orientStr();
+  return ((const DefParser::defiSite*) obj)->orientStr();
 }
 
 const char* defiSite_name(const ::defiSite* obj)
 {
-  return ((const LefDefParser::defiSite*) obj)->name();
+  return ((const DefParser::defiSite*) obj)->name();
 }
 
 void defiSite_print(const ::defiSite* obj, FILE* f)
 {
-  ((LefDefParser::defiSite*) obj)->print(f);
+  ((DefParser::defiSite*) obj)->print(f);
 }
 
 int defiBox_xl(const ::defiBox* obj)
 {
-  return ((LefDefParser::defiBox*) obj)->xl();
+  return ((DefParser::defiBox*) obj)->xl();
 }
 
 int defiBox_yl(const ::defiBox* obj)
 {
-  return ((LefDefParser::defiBox*) obj)->yl();
+  return ((DefParser::defiBox*) obj)->yl();
 }
 
 int defiBox_xh(const ::defiBox* obj)
 {
-  return ((LefDefParser::defiBox*) obj)->xh();
+  return ((DefParser::defiBox*) obj)->xh();
 }
 
 int defiBox_yh(const ::defiBox* obj)
 {
-  return ((LefDefParser::defiBox*) obj)->yh();
+  return ((DefParser::defiBox*) obj)->yh();
 }
 
 ::defiPoints defiBox_getPoint(const ::defiBox* obj)
 {
   udefiPoints tmp;
-  tmp.cpp = ((LefDefParser::defiBox*) obj)->getPoint();
+  tmp.cpp = ((DefParser::defiBox*) obj)->getPoint();
   return tmp.c;
 }
 
 void defiBox_print(const ::defiBox* obj, FILE* f)
 {
-  ((LefDefParser::defiBox*) obj)->print(f);
+  ((DefParser::defiBox*) obj)->print(f);
 }

@@ -39,7 +39,7 @@
 #include "defiUtil.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 namespace {
 
@@ -3081,4 +3081,4 @@ void defiNet::clearVia()
   viaNames_ = 0;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

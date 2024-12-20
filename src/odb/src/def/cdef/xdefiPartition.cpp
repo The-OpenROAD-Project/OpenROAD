@@ -39,180 +39,180 @@
 // Wrappers definitions.
 const char* defiPartition_name(const ::defiPartition* obj)
 {
-  return ((const LefDefParser::defiPartition*) obj)->name();
+  return ((const DefParser::defiPartition*) obj)->name();
 }
 
 char defiPartition_direction(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->direction();
+  return ((DefParser::defiPartition*) obj)->direction();
 }
 
 const char* defiPartition_itemType(const ::defiPartition* obj)
 {
-  return ((const LefDefParser::defiPartition*) obj)->itemType();
+  return ((const DefParser::defiPartition*) obj)->itemType();
 }
 
 const char* defiPartition_pinName(const ::defiPartition* obj)
 {
-  return ((const LefDefParser::defiPartition*) obj)->pinName();
+  return ((const DefParser::defiPartition*) obj)->pinName();
 }
 
 const char* defiPartition_instName(const ::defiPartition* obj)
 {
-  return ((const LefDefParser::defiPartition*) obj)->instName();
+  return ((const DefParser::defiPartition*) obj)->instName();
 }
 
 int defiPartition_numPins(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->numPins();
+  return ((DefParser::defiPartition*) obj)->numPins();
 }
 
 const char* defiPartition_pin(const ::defiPartition* obj, int index)
 {
-  return ((const LefDefParser::defiPartition*) obj)->pin(index);
+  return ((const DefParser::defiPartition*) obj)->pin(index);
 }
 
 int defiPartition_isSetupRise(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->isSetupRise();
+  return ((DefParser::defiPartition*) obj)->isSetupRise();
 }
 
 int defiPartition_isSetupFall(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->isSetupFall();
+  return ((DefParser::defiPartition*) obj)->isSetupFall();
 }
 
 int defiPartition_isHoldRise(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->isHoldRise();
+  return ((DefParser::defiPartition*) obj)->isHoldRise();
 }
 
 int defiPartition_isHoldFall(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->isHoldFall();
+  return ((DefParser::defiPartition*) obj)->isHoldFall();
 }
 
 int defiPartition_hasMin(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->hasMin();
+  return ((DefParser::defiPartition*) obj)->hasMin();
 }
 
 int defiPartition_hasMax(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->hasMax();
+  return ((DefParser::defiPartition*) obj)->hasMax();
 }
 
 int defiPartition_hasRiseMin(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->hasRiseMin();
+  return ((DefParser::defiPartition*) obj)->hasRiseMin();
 }
 
 int defiPartition_hasFallMin(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->hasFallMin();
+  return ((DefParser::defiPartition*) obj)->hasFallMin();
 }
 
 int defiPartition_hasRiseMax(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->hasRiseMax();
+  return ((DefParser::defiPartition*) obj)->hasRiseMax();
 }
 
 int defiPartition_hasFallMax(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->hasFallMax();
+  return ((DefParser::defiPartition*) obj)->hasFallMax();
 }
 
 int defiPartition_hasRiseMinRange(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->hasRiseMinRange();
+  return ((DefParser::defiPartition*) obj)->hasRiseMinRange();
 }
 
 int defiPartition_hasFallMinRange(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->hasFallMinRange();
+  return ((DefParser::defiPartition*) obj)->hasFallMinRange();
 }
 
 int defiPartition_hasRiseMaxRange(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->hasRiseMaxRange();
+  return ((DefParser::defiPartition*) obj)->hasRiseMaxRange();
 }
 
 int defiPartition_hasFallMaxRange(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->hasFallMaxRange();
+  return ((DefParser::defiPartition*) obj)->hasFallMaxRange();
 }
 
 double defiPartition_partitionMin(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->partitionMin();
+  return ((DefParser::defiPartition*) obj)->partitionMin();
 }
 
 double defiPartition_partitionMax(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->partitionMax();
+  return ((DefParser::defiPartition*) obj)->partitionMax();
 }
 
 double defiPartition_riseMin(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->riseMin();
+  return ((DefParser::defiPartition*) obj)->riseMin();
 }
 
 double defiPartition_fallMin(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->fallMin();
+  return ((DefParser::defiPartition*) obj)->fallMin();
 }
 
 double defiPartition_riseMax(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->riseMax();
+  return ((DefParser::defiPartition*) obj)->riseMax();
 }
 
 double defiPartition_fallMax(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->fallMax();
+  return ((DefParser::defiPartition*) obj)->fallMax();
 }
 
 double defiPartition_riseMinLeft(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->riseMinLeft();
+  return ((DefParser::defiPartition*) obj)->riseMinLeft();
 }
 
 double defiPartition_fallMinLeft(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->fallMinLeft();
+  return ((DefParser::defiPartition*) obj)->fallMinLeft();
 }
 
 double defiPartition_riseMaxLeft(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->riseMaxLeft();
+  return ((DefParser::defiPartition*) obj)->riseMaxLeft();
 }
 
 double defiPartition_fallMaxLeft(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->fallMaxLeft();
+  return ((DefParser::defiPartition*) obj)->fallMaxLeft();
 }
 
 double defiPartition_riseMinRight(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->riseMinRight();
+  return ((DefParser::defiPartition*) obj)->riseMinRight();
 }
 
 double defiPartition_fallMinRight(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->fallMinRight();
+  return ((DefParser::defiPartition*) obj)->fallMinRight();
 }
 
 double defiPartition_riseMaxRight(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->riseMaxRight();
+  return ((DefParser::defiPartition*) obj)->riseMaxRight();
 }
 
 double defiPartition_fallMaxRight(const ::defiPartition* obj)
 {
-  return ((LefDefParser::defiPartition*) obj)->fallMaxRight();
+  return ((DefParser::defiPartition*) obj)->fallMaxRight();
 }
 
 void defiPartition_print(const ::defiPartition* obj, FILE* f)
 {
-  ((LefDefParser::defiPartition*) obj)->print(f);
+  ((DefParser::defiPartition*) obj)->print(f);
 }

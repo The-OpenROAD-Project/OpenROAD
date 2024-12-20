@@ -37,7 +37,7 @@
 #include "defiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 namespace {
 
@@ -715,4 +715,4 @@ int defiNonDefault::propIsString(int index) const
   }
   return dvalues_[index] ? 0 : 1;
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

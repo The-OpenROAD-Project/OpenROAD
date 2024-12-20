@@ -72,7 +72,7 @@
 #include "defrSettings.hpp"
 #include "defrCallBacks.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 // Macro to describe how we handle a callback.
 // If the function was set then call it.
@@ -5368,4 +5368,4 @@ styles_rule: '-' K_STYLE NUMBER
 
 %%
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

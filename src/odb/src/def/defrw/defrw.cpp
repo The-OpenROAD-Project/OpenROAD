@@ -3058,9 +3058,9 @@ void freeCB(void* name)
   return;
 }
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 extern long long nlines;
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 static int ccr1131444 = 0;
 
 void lineNumberCB(long long lineNo)

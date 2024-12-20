@@ -198,7 +198,7 @@ class definReader : public definBase
                                      defiUserData data);
 
   static int scanchainsCallback(defrCallbackType_e,
-                                LefDefParser::defiScanchain* scan_chain,
+                                DefParser::defiScanchain* scan_chain,
                                 defiUserData data);
 
   static int slotsCallback(defrCallbackType_e type,

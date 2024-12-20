@@ -64,7 +64,7 @@ class lefiMaxStackVia;
 class lefiObstruction;
 class lefiGeometries;
 struct lefiGeomPolygon;
-}  // namespace LefDefParser
+}  // namespace LefParser
 
 namespace odb {
 
