@@ -1717,4 +1717,30 @@ dbITerm* dbInst::getFirstOutput()
   return nullptr;
 }
 
+dbInst* dbInst::makeUniqueInst(const char* inst_name,
+                               dbMaster* master,
+                               dbModule* module,
+                               dbBlock* block)
+{
+  dbInst* db_inst = dbInst::create(
+      block, master, inst_name, /* physical only */ false, module);
+  if (db_inst != nullptr) {
+    return db_inst;
+  }
+
+  std::map<std::string, int>& name_id_map
+      = ((_dbBlock*) block)->_inst_name_id_map;
+  do {
+    std::string full_name(inst_name);
+    int& id = name_id_map[inst_name];
+    if (id > 0) {
+      full_name += "_" + std::to_string(id);
+    }
+    ++id;
+    db_inst = dbInst::create(
+        block, master, full_name.c_str(), /* physical only */ false, module);
+  } while (db_inst == nullptr);
+  return db_inst;
+}
+
 }  // namespace odb

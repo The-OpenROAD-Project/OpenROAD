@@ -1766,6 +1766,8 @@ class dbBlock : public dbObject
                           FILE* out,
                           int indent_per_level = 4);
 
+  void printContent(std::stringstream& str_db);
+
  private:
   void ComputeBBox();
 };
@@ -3430,6 +3432,13 @@ class dbInst : public dbObject
                         dbBlock* child_block,
                         const char* name);
 
+  ///
+  /// Create a new instance for a hierarchical module based on inst_name
+  ///
+  static dbInst* makeUniqueInst(const char* inst_name,
+                                dbMaster* master,
+                                dbModule* module,
+                                dbBlock* block);
   ///
   /// Delete the instance from the block.
   ///

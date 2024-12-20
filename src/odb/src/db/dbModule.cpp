@@ -705,10 +705,15 @@ void dbModule::copyModuleInsts(dbModule* old_module,
     // Change unique instance name from old_inst/leaf to new_inst/leaf
     std::string old_inst_name = old_inst->getName();
     size_t first_idx = old_inst_name.find_first_of('/');
-    assert(first_idx != std::string::npos);
-    std::string old_leaf_name = old_inst_name.substr(first_idx);
-    std::string new_inst_name = new_mod_inst->getName() + old_leaf_name;
-    dbInst* new_inst = dbInst::create(old_module->getOwner(),
+    std::string new_inst_name;
+    if (first_idx != std::string::npos) {
+      std::string old_leaf_name = old_inst_name.substr(first_idx);
+      new_inst_name = new_mod_inst->getName() + old_leaf_name;
+    } else {
+      // old module was not instantiated so there is no hier divider
+      new_inst_name = new_mod_inst->getName() + '/' + old_inst_name;
+    }
+    dbInst* new_inst = dbInst::create(new_module->getOwner(),
                                       old_inst->getMaster(),
                                       new_inst_name.c_str(),
                                       /* phyical only */ false,
@@ -754,7 +759,7 @@ void dbModule::copyModuleInsts(dbModule* old_module,
           std::string new_net_name
               = new_mod_inst->getName() + net_name.substr(first_idx);
           dbNet* new_net
-              = old_module->getOwner()->findNet(new_net_name.c_str());
+              = new_module->getOwner()->findNet(new_net_name.c_str());
           if (new_net) {
             new_iterm->connect(new_net);
             debugPrint(logger,
@@ -766,7 +771,7 @@ void dbModule::copyModuleInsts(dbModule* old_module,
                        new_net->getName());
           } else {
             new_net
-                = dbNet::create(old_module->getOwner(), new_net_name.c_str());
+                = dbNet::create(new_module->getOwner(), new_net_name.c_str());
             new_iterm->connect(new_net);
             debugPrint(logger,
                        utl::ODB,

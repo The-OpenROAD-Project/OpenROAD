@@ -209,7 +209,8 @@ class dbNetwork : public ConcreteNetwork
 
   bool linkNetwork(const char* top_cell_name,
                    bool make_black_boxes,
-                   Report* report) override;
+                   Report* report,
+                   bool use_top_cell_name) override;
   bool isLinked() const override;
 
   ////////////////////////////////////////////////////////////////

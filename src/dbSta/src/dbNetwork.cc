@@ -1706,7 +1706,10 @@ bool dbNetwork::isLinked() const
   return top_cell_ != nullptr;
 }
 
-bool dbNetwork::linkNetwork(const char*, bool, Report*)
+bool dbNetwork::linkNetwork(const char*,
+                            bool make_black_boxes,
+                            Report* report,
+                            bool use_top_cell_name)
 {
   // Not called.
   return true;

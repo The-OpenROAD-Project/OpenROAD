@@ -37,6 +37,7 @@
 
 #include <odb/dbSet.h>
 
+#include <fstream>
 #include <map>
 #include <string>
 
@@ -44,6 +45,7 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
+#include "sta/ConcreteLibrary.hh"
 #include "sta/ConcreteNetwork.hh"
 #include "sta/NetworkCmp.hh"
 #include "sta/PortDirection.hh"
@@ -61,6 +63,7 @@ using odb::dbDatabase;
 using odb::dbInst;
 using odb::dbIoType;
 using odb::dbITerm;
+using odb::dbLib;
 using odb::dbMaster;
 using odb::dbModBTerm;
 using odb::dbModInst;
@@ -69,12 +72,14 @@ using odb::dbModNet;
 using odb::dbModule;
 using odb::dbMTerm;
 using odb::dbNet;
+using odb::dbSet;
 using odb::dbTech;
 using utl::ORD;
 
 using sta::Cell;
 using sta::CellPortBitIterator;
 using sta::CellPortIterator;
+using sta::ConcreteCell;
 using sta::ConnectedPinIterator;
 using sta::dbNetwork;
 using sta::deleteVerilogReader;
@@ -150,7 +155,13 @@ class Verilog2db
              Logger* logger,
              bool hierarchy);
   void makeBlock();
+  void makeUnusedBlock(const char* name);
   void makeDbNetlist();
+  void makeUnusedDbNetlist();
+  void processUnusedCells(const char* top_cell_name,
+                          dbVerilogNetwork* verilog_network,
+                          bool link_make_black_boxes);
+  void restoreTopBlock(const char* orig_top_cell_name);
 
  private:
   struct LineInfo
@@ -185,6 +196,7 @@ class Verilog2db
   Network* network_;
   dbDatabase* db_;
   dbBlock* block_ = nullptr;
+  dbBlock* top_block_ = nullptr;
   Logger* logger_;
   std::map<Cell*, dbMaster*> master_map_;
   // Map file names to a unique id to avoid having to store the full file name
@@ -195,6 +207,7 @@ class Verilog2db
   std::vector<dbInst*> dont_touch_insts;
   bool hierarchy_ = false;
   static const std::regex line_info_re;
+  std::vector<ConcreteCell*> unused_cells_;
 };
 
 // Example: "./designs/src/gcd/gcd.v:571.3-577.6"
@@ -206,13 +219,18 @@ void dbLinkDesign(const char* top_cell_name,
                   Logger* logger,
                   bool hierarchy)
 {
+  debugPrint(
+      logger, utl::ODB, "dbReadVerilog", 1, "dbLinkDesign {}", top_cell_name);
   bool link_make_black_boxes = true;
   bool success = verilog_network->linkNetwork(
-      top_cell_name, link_make_black_boxes, verilog_network->report());
+      top_cell_name, link_make_black_boxes, verilog_network->report(), false);
   if (success) {
     Verilog2db v2db(verilog_network, db, logger, hierarchy);
     v2db.makeBlock();
     v2db.makeDbNetlist();
+    // Link unused modules in case if we want to swap to such modules later
+    v2db.processUnusedCells(
+        top_cell_name, verilog_network, link_make_black_boxes);
     deleteVerilogReader();
   }
 }
@@ -359,7 +377,7 @@ void Verilog2db::makeDbModule(
 
     if (modinst == nullptr) {
       logger_->error(ORD,
-                     2014,
+                     2023,
                      "hierachical instance creation failed for {} of {}",
                      network_->name(inst),
                      network_->name(cell));
@@ -505,6 +523,12 @@ void Verilog2db::makeChildInsts(Instance* inst,
       }
 
       auto db_inst = dbInst::create(block_, master, child_name, false, module);
+      debugPrint(logger_,
+                 utl::ODB,
+                 "dbReadVerilog",
+                 2,
+                 "Child inst {} created in makeChildInsts",
+                 db_inst->getName());
 
       // Yosys writes a src attribute on sequential instances to give the
       // Verilog source info.
@@ -638,6 +662,12 @@ void Verilog2db::makeDbNets(const Instance* inst)
 
     const char* net_name = network_->pathName(net);
     dbNet* db_net = dbNet::create(block_, net_name);
+    debugPrint(logger_,
+               utl::ODB,
+               "dbReadVerilog",
+               2,
+               "makeDbNets created net {}",
+               db_net->getName());
     if (network_->isPower(net)) {
       db_net->setSigType(odb::dbSigType::POWER);
     }
@@ -660,6 +690,12 @@ void Verilog2db::makeDbNets(const Instance* inst)
         const char* port_name = network_->portName(pin);
         if (block_->findBTerm(port_name) == nullptr) {
           dbBTerm* bterm = dbBTerm::create(db_net, port_name);
+          debugPrint(logger_,
+                     utl::ODB,
+                     "dbReadVerilog",
+                     2,
+                     "makeDbNets created bterm {}",
+                     bterm->getName());
           dbIoType io_type = staToDb(network_->direction(pin));
           bterm->setIoType(io_type);
         }
@@ -673,6 +709,13 @@ void Verilog2db::makeDbNets(const Instance* inst)
           dbMTerm* mterm = master->findMTerm(block_, port_name);
           if (mterm) {
             db_inst->getITerm(mterm)->connect(db_net);
+            debugPrint(logger_,
+                       utl::ODB,
+                       "dbReadVerilog",
+                       2,
+                       "makeDbNets connected mterm {} to net {}",
+                       mterm->getName(),
+                       db_net->getName());
           }
         }
       }
@@ -832,4 +875,126 @@ dbMaster* Verilog2db::getMaster(Cell* cell)
   return nullptr;
 }
 
-}  // namespace ord
+//
+// Collect all unused modules such that they can be linked later
+//
+void Verilog2db::processUnusedCells(const char* top_cell_name,
+                                    dbVerilogNetwork* verilog_network,
+                                    bool link_make_black_boxes)
+{
+  // Collect all unused modules
+  sta::LibraryIterator* libraryIterator = network_->libraryIterator();
+  while (libraryIterator->hasNext()) {
+    sta::ConcreteLibrary* lib
+        = (sta::ConcreteLibrary*) (libraryIterator->next());
+    sta::ConcreteLibraryCellIterator* lib_cell_iter = lib->cellIterator();
+    while (lib_cell_iter->hasNext()) {
+      sta::ConcreteCell* curr_cell = lib_cell_iter->next();
+      if (!(block_->findModule(curr_cell->name()))) {
+        unused_cells_.emplace_back(curr_cell);
+        debugPrint(logger_,
+                   utl::ODB,
+                   "dbReadVerilog",
+                   1,
+                   "Found unused cell {}",
+                   curr_cell->name());
+      }
+    }
+  }
+
+  // Link each unused module and populate content in a separate child block.
+  // There will one child block for each unused module.
+  for (ConcreteCell* cell : unused_cells_) {
+    makeUnusedBlock(cell->name());
+    debugPrint(logger_,
+               utl::ODB,
+               "dbReadVerilog",
+               1,
+               "Linking unused cell {}",
+               cell->name());
+    // It is important to use actual top cell name as top module name
+    (void) verilog_network->linkNetwork(cell->name(),
+                                        link_make_black_boxes,
+                                        verilog_network->report(),
+                                        /* use_top_cell_name */ true);
+
+    makeUnusedDbNetlist();
+    if (logger_->debugCheck(utl::ODB, "dbReadVerilog", 1)) {
+      std::stringstream sstr;
+      block_->printContent(sstr);
+      std::string out_file_name
+          = "child_block_" + std::string(cell->name()) + ".txt";
+      std::ofstream out_file(out_file_name.c_str());
+      out_file << sstr.str();
+      out_file.close();
+    }
+  }
+  restoreTopBlock(top_cell_name);
+  if (logger_->debugCheck(utl::ODB, "dbReadVerilog", 1)) {
+    std::stringstream sstr;
+    block_->printContent(sstr);
+    std::ofstream out_file("top_block.txt");
+    out_file << sstr.str();
+    out_file.close();
+  }
+}
+
+//
+// makeUnusedBlock: create a separate block for each unused module
+//
+void Verilog2db::makeUnusedBlock(const char* name)
+{
+  dbChip* chip = db_->getChip();
+  if (chip == nullptr) {
+    chip = dbChip::create(db_);
+  }
+  // Create a child block
+  if (top_block_ == nullptr) {
+    top_block_ = chip->getBlock();
+  }
+  dbTech* tech = db_->getTech();
+  block_ = dbBlock::create(top_block_, name, tech, network_->pathDivider());
+  block_->setDefUnits(tech->getLefUnits());
+  block_->setBusDelimeters('[', ']');
+  debugPrint(logger_,
+             utl::ODB,
+             "dbReadVerilog",
+             1,
+             "Created child block {} under parent block {}",
+             block_->getName(),
+             top_block_->getName());
+}
+
+//
+// makeUnusedDbNetlist: populate module content
+//
+void Verilog2db::makeUnusedDbNetlist()
+{
+  recordBusPortsOrder();
+  Instance* inst = network_->topInstance();
+  dbModule* module = block_->getTopModule();
+  Cell* cell = network_->cell(inst);
+  makeModBTerms(cell, module);
+  InstPairs inst_pairs;
+  makeChildInsts(inst, module, inst_pairs);
+  makeDbNets(inst);
+  if (hierarchy_) {
+    makeVModNets(inst_pairs);
+  }
+  for (auto inst : dont_touch_insts) {
+    inst->setDoNotTouch(true);
+  }
+}
+
+//
+// restoreTopBlock: restore original top cell and block
+//
+void Verilog2db::restoreTopBlock(const char* orig_top_cell_name)
+{
+  Instance* top_inst = network_->findInstance(orig_top_cell_name);
+  ConcreteNetwork* cnetwork = static_cast<ConcreteNetwork*>(network_);
+  cnetwork->setTopInstance(top_inst);
+  block_ = top_block_;
+}
+
+}  // Namespace ord

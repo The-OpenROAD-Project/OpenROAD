@@ -113,9 +113,8 @@ proc sta_warn { id msg } {
 }
 
 define_cmd_args "replace_design" {instance module}
-
 proc replace_design { instance module } {
-  set design [get_design_error $module]
+  set design [get_design $module]
   if { $design != "NULL" } {
     set modinst [[ord::get_db_block] findModInst $instance]
     if { $modinst == "NULL" } {
@@ -127,14 +126,29 @@ proc replace_design { instance module } {
   return 0
 }
 
-proc get_design_error { arg } {
+define_cmd_args "get_design" {design_name}
+proc get_design { arg } {
   if { [llength $arg] > 1 } {
     sta_error 200 "module must be a single module."
   }
-  set design [[ord::get_db_block] findModule $arg]
+
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    sta_error 202 "database block cannot be found."
+  }
+
+  set design [$block findModule $arg]
+  if { $design == "NULL" } {
+    set child_block [$block findChild $arg]
+    if { $child_block != "NULL" } {
+      set design [$child_block findModule $arg]
+    }
+  }
+
   if { $design == "NULL" } {
     sta_error 201 "module $arg cannot be found."
   }
+
   return $design
 }
 
