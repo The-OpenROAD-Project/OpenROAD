@@ -1646,6 +1646,10 @@ void PinModNetConnection::operator()(const Pin* pin)
   }
 }
 
+/*
+Find if there is a modnet equivalent to a dbNet.
+*/
+
 dbModNet* dbNetwork::findRelatedModNet(const dbNet* net) const
 {
   PinModNetConnection visitor(this);
@@ -1660,14 +1664,6 @@ const char* dbNetwork::name(const Net* net) const
   dbNet* dnet = nullptr;
   staToDb(net, dnet, modnet);
   std::string name;
-
-  // modnets "encapsulate" regions of dbinstance
-  // in the same module hierarchy.
-  /*
-  if (hierarchy_ && dnet && !modnet){
-    modnet = findRelatedModNet(dnet);
-  }
-  */
 
   Network* sta_nwk = (Network*) this;
 
@@ -1791,7 +1787,7 @@ void dbNetwork::visitConnectedPins(const Net* net,
     // visit below nets
     for (dbModITerm* moditerm : mod_net->getModITerms()) {
       dbModInst* mod_inst = moditerm->getParent();
-      // note we are deailing with a uniquified hierarchy
+      // note we are dealing with a uniquified hierarchy
       // so one master per instance..
       dbModule* module = mod_inst->getMaster();
       std::string pin_name = moditerm->getName();
