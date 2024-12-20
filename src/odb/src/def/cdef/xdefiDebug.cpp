@@ -59,5 +59,5 @@ const char* upperCase(const char* c)
 
 const char* DEFCASE(const char* ch)
 {
-  return DefParser::defCASE(ch);
+  return DefParser::DEFCASE(ch);
 }
