@@ -3,8 +3,10 @@
 #include <iostream>
 #include <string>
 
+
 #include "helper.h"
 #include "odb/db.h"
+
 
 namespace odb {
 namespace {
@@ -299,24 +301,6 @@ BOOST_FIXTURE_TEST_CASE(test_find_modinst, F_DEFAULT)
   BOOST_TEST(block->findModInst("minst1/minst2") == minst2);
 }
 
-/*
-   Test fixture for hierarchical connect test
-   ------------------------------------------
-
-   Two modules, 1 with 1 inverter, second with 4 inverters.
-
-   inv1 is instantiated in the top level
-   inv4 is instantiated three levels down:
-   level0 -- instantiation in root
-   level1
-   level2 -- contains 4 inverters
-
-   Objective of this test is to stress the hierarchical connection code.
-
-
-
-
- */
 
 dbDatabase* createSimpleDBDelimiter()
 {
@@ -335,6 +319,27 @@ dbDatabase* createSimpleDBDelimiter()
   return db;
 }
 
+/*
+   Test fixture for hierarchical connect test
+   ------------------------------------------
+
+   Two modules, 1 with 1 inverter, second with 4 inverters.
+
+   inv1 is instantiated in the top level
+   inv4 is instantiated three levels down:
+   level0 -- instantiation in root
+   level1
+   level2 -- contains 4 inverters
+
+   Objective of this test is to stress the hierarchical connection code.
+
+   root {inputs: i0; outputs: o0, o1, o2,o3}
+       --> inv1 (module containing 1 inverter) this drives inv1_level0_inst
+       --> inv4_level0_inst  {wrapper input: i0, outputs o0,o1,o2,o3}
+           --> inv4_level1_inst {wrapper input: i0, outputs o0,o1,o2,o3}
+               --> inv4_level2_inst {contains 4 inverters. Has input i0, outputs o0,01,o2,o3}
+ */
+
 struct F_HCONNECT
 {
   F_HCONNECT()
@@ -344,6 +349,7 @@ struct F_HCONNECT
     block = db->getChip()->getBlock();
     lib = db->findLib("lib1");
 
+    
     root_mod = dbModule::create(block, "root_mod");
     // The bterms are created below during wiring
     // Note a bterm without a parent is a root bterm.
@@ -372,7 +378,9 @@ struct F_HCONNECT
                             inv1_mod_master);
     inv1_1_inst_ip0 = block->findITerm("inv1_mod_inst/inst1/ip0");
     inv1_1_inst_op0 = block->findITerm("inv1_mod_inst/inst1/op0");
+    
 
+    
     inv4_mod_level0_master = dbModule::create(block, "inv4_master_level0");
     inv4_mod_level0_master_i0_port
         = dbModBTerm::create(inv4_mod_level0_master, "i0");
@@ -635,9 +643,9 @@ struct F_HCONNECT
     inv4_3_op->connect(op2_net);
     inv4_4_op->connect(op3_net);
 
-    std::stringstream str_str;
-    DbStrDebugHierarchy(block, str_str);
-    printf("The Flat design created %s\n", str_str.str().c_str());
+    //    std::stringstream str_str;
+    //    DbStrDebugHierarchy(block, str_str);
+    //    printf("The Flat design created %s\n", str_str.str().c_str());
 
     // Now build the hierarchical "overlay"
     // What we are doing here is adding the modnets which hook up
@@ -753,7 +761,7 @@ struct F_HCONNECT
 
     std::stringstream full_design;
     DbStrDebugHierarchy(block, full_design);
-    printf("The  design created %s\n", full_design.str().c_str());
+    printf("The  design created (flat and hierarchical) %s\n", full_design.str().c_str());
   }
 
   ~F_HCONNECT() { dbDatabase::destroy(db); }
@@ -761,7 +769,7 @@ struct F_HCONNECT
   dbDatabase* db;
   dbLib* lib;
   dbBlock* block;
-
+  
   dbModule* root_mod;
   dbMTerm* root_mod_i0_mterm;
   dbMTerm* root_mod_i1_mterm;
@@ -905,6 +913,109 @@ BOOST_FIXTURE_TEST_CASE(test_hier, F_HCONNECT)
 
 BOOST_FIXTURE_TEST_CASE(test_hierconnect, F_HCONNECT)
 {
+  //
+  //
+  //Hierarchical connection test case:
+  //----------------------------------
+  //
+  //add a new inverter to inv1 and connect to the fanout of the
+  //existing one.
+  //remove the driver of the 4th inverter in inv4_4 leaf
+  //and connect to it via hierarchy
+  //
+  //
+  // Before
+  //--inv1_1 -----------inv4_1_ip0
+  //        |----------inv4_2_ip0
+  //        |----------inv4_3_ip0
+  //        |----------inv4_4_ip0
+  //
+  //
+  //After:
+  //
+  //--inv1_1-----------inv4_1_ip0
+  //        |----------inv4_2_ip0
+  //        |----------inv4_3_ip0
+  //
+  //--inv1_2---------inv4_4_ip0
+  //
+  //
+  //
+  //Objects referenced in "before"
+  //
+  //inv1_1 -- dbInst in inv1_1
+  //inv1_1_inst_op0 -- op iterm on inv1
+  //inv1_mod_master -- dbModule parent for inv1_1
+  //inv4_mod_level2_master -- dbModule parent for leaf level inverters in inv4
+  //inv4_4_ip0 -- ip iterm on 4th inverter
+  //
+  //
+
+  std::stringstream str_str_start;
+  DbStrDebugHierarchy(block, str_str_start);
+  printf("The original design: %s\n", str_str_start.str().c_str());
+
+  //
+  //first create the new inverter in inv1_mod_master
+  //and get its pins ready for connection.
+  //Note we are declaring these new objects outside
+  //of the test struct so it is obvious what is in the test harness
+  //and what is in the test
+  //
+  dbInst* inv1_2 = dbInst::create(block,
+                            lib->findMaster("inv2"),
+                            "inv1_mod_inst/inst2",
+                            false,
+                            inv1_mod_master);
+  dbITerm* inv1_2_inst_ip0 = block->findITerm("inv1_mod_inst/inst2/ip0");
+  dbITerm* inv1_2_inst_op0 = block->findITerm("inv1_mod_inst/inst2/op0");
+
+  //Plumb in the new input of the inverter
+  //This is the ip0_net, which is hooked to the top level bterm.
+  //And to the top level modnet (which connects the modbterm on
+  //inv1_mod_master) to the inverter. Note the dual connection:
+  //one flat, one hierarchical.
+  
+  inv1_2_inst_ip0 -> connect(ip0_net); //flat world
+  inv1_2_inst_ip0 -> connect(inv1_mod_i0_modnet); //hierarchical world
+  
+  //now disconnect the 4th inverter in inv4_4 (this is in level 2, the 3rd
+  //level, of the hierarchy).
+  //This kills both the dbNet (flat) connection
+  //and the dbModNet (hierarchical) connection.
+
+  inv4_4_ip -> disconnect();
+
+
+  //
+  //Make the flat connection. 
+  //We keep two worlds: the modnet world
+  //and the dbNet world. The modnet world
+  //exists at the edges eg where a module ports
+  //(dbModITerms) connect to core gates (eg dbITerms).
+  //
+  //The flat world is always there.
+  //
+  //
+  std::string flat_net_name = inv1_2 -> getName() + inv4_4_ip -> getName('/');
+  std::string hier_net_name = "test_hier_"+flat_net_name;
+  dbNet* flat_net = dbNet::create(block,flat_net_name.c_str(),false);
+  inv1_2_inst_op0 -> connect(flat_net);
+  inv4_4_ip -> connect(flat_net);
+  
+  //
+  //The hierarchical test: connect the output of the inverter in inv1_2_inst_op0 to
+  //the input of the inverter inv4_4_ip0;
+  //
+
+  /*
+  ::hierarchicalConnect(inv1_2_inst_op0,
+  inv4_4_ip,
+  hier_net_name.c_str());
+  */				 
+  std::stringstream str_str_final;
+  DbStrDebugHierarchy(block, str_str_final);
+  printf("The final design: %s\n", str_str_final.str().c_str());
 }
 
 struct F_DETAILED
@@ -914,6 +1025,7 @@ struct F_DETAILED
     db = createSimpleDB();
     block = db->getChip()->getBlock();
     lib = db->findLib("lib1");
+    
     master_mod1 = dbModule::create(block, "master_mod1");
     master_mod2 = dbModule::create(block, "master_mod2");
     master_mod3 = dbModule::create(block, "master_mod3");
