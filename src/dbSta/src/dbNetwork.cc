@@ -2917,7 +2917,9 @@ void dbNetwork::getParentHierarchy(dbModule* start_module,
     if (cur_module == top_module) {
       return;
     }
-    cur_module = cur_module->getModInst()->getParent();
+    cur_module = cur_module->getModInst()
+                     ? cur_module->getModInst()->getParent()
+                     : nullptr;
   }
 }
 
@@ -3035,14 +3037,44 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
   // in hierarchy, which is ok, and the source/dest modnet will be null
   dbModNet* source_db_mod_net = source_pin->getModNet();
   dbModNet* dest_db_mod_net = dest_pin->getModNet();
-  // case 1: source/dest in same module
+
+  //
+  // make sure there is a direct flat net connection
+  // Recall the hierarchical connections are overlayed
+  // onto the flat db network, so we have both worlds
+  // co-existing, something we respect even when making
+  // new hierarchical connections.
+
+  dbNet* source_db_net = source_pin->getNet();
+  dbNet* dest_db_net = dest_pin->getNet();
+
+  if (!source_db_net) {
+    std::string connection_name_str(connection_name);
+    std::string flat_name = connection_name_str + "_flat";
+    source_db_net = dbNet::create(block(), flat_name.c_str(), false);
+    source_pin->connect(source_db_net);
+  }
+
+  if (dest_db_net && (dest_db_net != source_db_net)) {
+    // if we have dest_mod_net, keep it
+    dbModNet* dest_mod_net = dest_pin->getModNet();
+    dest_pin->disconnect();
+    dest_pin->connect(source_db_net);
+    if (dest_mod_net) {
+      dest_pin->connect(dest_mod_net);
+    }
+  }
+
   if (source_db_module == dest_db_module) {
     if (!source_db_mod_net) {
       source_db_mod_net = dbModNet::create(source_db_module, connection_name);
       source_pin->connect(source_db_mod_net);
     }
     dest_pin->connect(source_db_mod_net);
-  } else {
+  }
+
+  else {
+    //
     // Attempt to factor connection (minimize punch through)
     //
     dbModBTerm* dest_modbterm = nullptr;
@@ -3148,9 +3180,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
     } else {
       dest_pin->connect(top_net);
     }
-    //TODO: Clean up after everything is resolved.
-    //Turns out that there are intermediate states
-    /*
+
     // During the addition of new ports and new wiring we may
     // leave orphaned pins, clean them up.
     std::set<dbModInst*> cleaned_up;
@@ -3170,7 +3200,6 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
         }
       }
     }
-    */
   }
 }
 

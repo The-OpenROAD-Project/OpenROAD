@@ -49,3 +49,7 @@ record_tests {
 
   write_sdc1
 }
+
+record_pass_fail_tests {
+    cpp_tests
+}
