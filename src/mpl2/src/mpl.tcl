@@ -305,7 +305,7 @@ proc set_macro_guidance_region { args } {
   if { [info exists keys(-macro_name)] } {
     set macro_name $keys(-macro_name)
   } else {
-    utl::error MPL 37 "-macro_name is required."
+    utl::error MPL 43 "-macro_name is required."
   }
 
   set macro [mpl2::parse_macro_name "set_macro_guidance_region" $macro_name]
