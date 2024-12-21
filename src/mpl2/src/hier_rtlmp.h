@@ -418,7 +418,8 @@ class Snapper
       odb::dbITerm* pin,
       const odb::dbTechLayerDir& target_direction);
   void getTrackGrid(odb::dbTrackGrid* track_grid,
-                    std::vector<int>& coordinate_grid,
+                    int& origin,
+                    int& step,
                     const odb::dbTechLayerDir& target_direction);
   int getPinWidth(odb::dbITerm* pin,
                   const odb::dbTechLayerDir& target_direction);
