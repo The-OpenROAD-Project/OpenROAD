@@ -62,7 +62,7 @@ SpefWriter::SpefWriter(Logger* logger,
   writePorts();
 }
 
-std::string escapeDollarSign(const std::string& name)
+std::string escapeSpecial(const std::string& name)
 {
   std::string result = name;
   size_t pos = 0;
@@ -70,15 +70,20 @@ std::string escapeDollarSign(const std::string& name)
     result.replace(pos, 1, "\\$");
     pos += 2;
   }
+  pos = 0;
+  while ((pos = result.find('/', pos)) != std::string::npos) {
+    result.replace(pos, 1, "\\/");
+    pos += 2;
+  }
   return result;
 }
 
-std::string escapeDollarSign(const char* name)
+std::string escapeSpecial(const char* name)
 {
   if (!name) {
     return "";
   }
-  return escapeDollarSign(std::string(name));
+  return escapeSpecial(std::string(name));
 }
 
 // Quick fix for wrong pin delimiter.
@@ -100,7 +105,7 @@ void SpefWriter::writeHeader()
   for (auto [_, it] : spef_streams_) {
     std::ostream& stream = *it;
     stream << "*SPEF \"ieee 1481-1999\"" << '\n';
-    stream << "*DESIGN \"" << escapeDollarSign(network_->block()->getName())
+    stream << "*DESIGN \"" << escapeSpecial(network_->block()->getName())
            << "\"" << '\n';
     stream << "*DATE \"11:11:11 Fri 11 11, 1111\"" << '\n';
     stream << "*VENDOR \"The OpenROAD Project\"" << '\n';
@@ -160,11 +165,11 @@ void SpefWriter::writePorts()
       network_->staToDb(pin, iterm, bterm, moditerm, modbterm);
 
       if (iterm != nullptr) {
-        stream << escapeDollarSign(iterm->getName()) << " ";
+        stream << escapeSpecial(iterm->getName()) << " ";
         stream << getIoDirectionText(iterm->getIoType());
         stream << '\n';
       } else if (bterm != nullptr) {
-        stream << escapeDollarSign(bterm->getName()) << " ";
+        stream << escapeSpecial(bterm->getName()) << " ";
         stream << getIoDirectionText(bterm->getIoType());
         stream << '\n';
       } else {
@@ -191,7 +196,7 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
   float cap_scale = units->capacitanceUnit()->scale();
   float res_scale = units->resistanceUnit()->scale();
 
-  stream << "*D_NET " << escapeDollarSign(network_->staToDb(net)->getName())
+  stream << "*D_NET " << escapeSpecial(network_->staToDb(net)->getName())
          << " ";
   stream << parasitics_->capacitance(parasitic) / cap_scale << '\n';
 
@@ -207,13 +212,13 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
 
       if (iterm != nullptr) {
         stream << "*I "
-               << fixPinDelimiter(escapeDollarSign(parasitics_->name(node)))
+               << escapeSpecial(fixPinDelimiter(parasitics_->name(node)))
                << " ";
         stream << getIoDirectionText(iterm->getIoType());
         stream << " *D " << iterm->getInst()->getMaster()->getName();
         stream << '\n';
       } else if (bterm != nullptr) {
-        stream << "*P " << escapeDollarSign(parasitics_->name(node)) << " ";
+        stream << "*P " << escapeSpecial(parasitics_->name(node)) << " ";
         stream << getIoDirectionText(bterm->getIoType());
         stream << '\n';
       } else {
@@ -235,7 +240,7 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
       }
 
       stream << count++ << " ";
-      stream << escapeDollarSign(parasitics_->name(node)) << " "
+      stream << escapeSpecial(parasitics_->name(node)) << " "
              << parasitics_->nodeGndCap(node) / cap_scale;
       stream << '\n';
     }
@@ -248,9 +253,9 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
     stream << count++ << " ";
 
     auto n1 = parasitics_->node1(cap);
-    stream << escapeDollarSign(parasitics_->name(n1)) << " ";
+    stream << escapeSpecial(parasitics_->name(n1)) << " ";
     auto n2 = parasitics_->node2(cap);
-    stream << escapeDollarSign(parasitics_->name(n2)) << " ";
+    stream << escapeSpecial(parasitics_->name(n2)) << " ";
     stream << parasitics_->value(cap) / cap_scale << '\n';
   }
 
@@ -271,7 +276,7 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
     odb::dbModITerm* moditerm = nullptr;
     odb::dbModBTerm* modbterm = nullptr;
 
-    std::string node1_name = escapeDollarSign(parasitics_->name(n1));
+    std::string node1_name = parasitics_->name(n1);
     auto pin1 = parasitics_->pin(n1);
     if (pin1 != nullptr) {
       network_->staToDb(pin1, iterm, bterm, moditerm, modbterm);
@@ -279,7 +284,9 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
         node1_name = fixPinDelimiter(node1_name);
       }
     }
-    std::string node2_name = escapeDollarSign(parasitics_->name(n2));
+    node1_name = escapeSpecial(node1_name);
+
+    std::string node2_name = parasitics_->name(n2);
     auto pin2 = parasitics_->pin(n2);
     if (pin2 != nullptr) {
       network_->staToDb(pin2, iterm, bterm, moditerm, modbterm);
@@ -287,6 +294,7 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
         node2_name = fixPinDelimiter(node2_name);
       }
     }
+    node2_name = escapeSpecial(node2_name);
 
     stream << node1_name << " ";
     stream << node2_name << " ";
