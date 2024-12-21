@@ -32,6 +32,16 @@
 
 namespace drt {
 
+FlexRP::FlexRP(frDesign* design,
+               Logger* logger,
+               RouterConfiguration* router_cfg)
+    : design_(design),
+      tech_(design->getTech()),
+      logger_(logger),
+      router_cfg_(router_cfg)
+{
+}
+
 void FlexRP::main()
 {
   ProfileTask profile("RP:main");

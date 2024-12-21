@@ -460,6 +460,7 @@ set_dont_touch_instance(Instance *inst,
 void
 report_dont_use()
 {
+  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->reportDontUse();
 }

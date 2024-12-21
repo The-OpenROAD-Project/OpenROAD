@@ -144,7 +144,7 @@ void FlexTAWorker::modMinSpacingCostVia(
   frCoord length1 = box.maxDXDY();
   // obj2 = other obj
   // default via dimension
-  frViaDef* viaDef = nullptr;
+  const frViaDef* viaDef = nullptr;
   frLayerNum cutLNum = 0;
   if (isUpperVia) {
     viaDef
@@ -326,7 +326,8 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
   // obj1 = curr obj
   // obj2 = other obj
   // default via dimension
-  frViaDef* viaDef = getDesign()->getTech()->getLayer(lNum)->getDefaultViaDef();
+  const frViaDef* viaDef
+      = getDesign()->getTech()->getLayer(lNum)->getDefaultViaDef();
   frVia via(viaDef);
   Rect viaBox = via.getCutBBox();
 
@@ -590,7 +591,7 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
   coordHigh--;  // to avoid higher track == guide top/right
   if (getTech()->getLayer(lNum)->isUnidirectional()) {
     const Rect& dieBx = design_->getTopBlock()->getDieBox();
-    frViaDef* via = nullptr;
+    const frViaDef* via = nullptr;
     Rect testBox;
     if (lNum + 1 <= getTech()->getTopLayerNum()) {
       via = getTech()->getLayer(lNum + 1)->getDefaultViaDef();

@@ -33,6 +33,7 @@
 #include "gui/heatMap.h"
 
 #include <QApplication>
+#include <QThread>
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
@@ -533,11 +534,15 @@ void HeatMapDataSource::ensureMap()
   if (build_map || !isPopulated()) {
     debugPrint(logger_, utl::GUI, "HeatMap", 1, "Populating map");
 
-    if (gui::Gui::enabled()) {
+    const bool update_cursor
+        = gui::Gui::enabled()
+          && QApplication::instance()->thread() == QThread::currentThread();
+
+    if (update_cursor) {
       QApplication::setOverrideCursor(Qt::WaitCursor);
     }
     populated_ = populateMap();
-    if (gui::Gui::enabled()) {
+    if (update_cursor) {
       QApplication::restoreOverrideCursor();
     }
 
