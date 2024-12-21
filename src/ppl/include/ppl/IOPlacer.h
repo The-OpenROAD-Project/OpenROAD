@@ -44,6 +44,7 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "ppl/Parameters.h"
+#include "utl/validation.h"
 
 namespace utl {
 class Logger;
@@ -314,6 +315,7 @@ class IOPlacer
   std::map<int, std::vector<odb::Rect>> layer_fixed_pins_shapes_;
 
   Logger* logger_ = nullptr;
+  std::unique_ptr<utl::Validator> validator_;
   std::unique_ptr<Parameters> parms_;
   std::vector<Slot> slots_;
   std::vector<Slot> top_layer_slots_;
