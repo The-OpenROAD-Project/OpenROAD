@@ -1,6 +1,5 @@
 set(TEST_LIBS
     dst
-    dl
     ${TCL_LIBRARY}
 )
 
