@@ -20,7 +20,7 @@ and headers together.
 
 - `src/`
    This folder contains the source files for individual tools.
- 
+
 | `src`           | Purpose |
 |-----------------|--------------|
 | `CMakeLists.txt`  | `add_subdirectory` for each tool|
@@ -245,12 +245,12 @@ file. Detailed documentation should be the `tool/README.md` file.
 Please refer to the README formatting [guide](ReadmeFormat.md).
 Our top-level READMEs, in particular, have to be formatted in this specific
 manner because of the automatic parsing used to convert the READMEs into
-manpages. 
+manpages.
 :::
 
 ## Tool Flow Namespace
 
-Tool namespaces are usually three-lettered lowercase letters. 
+Tool namespaces are usually three-lettered lowercase letters.
 
 - Verilog to DB (dbSTA)
 - OpenDB: Open Database ([odb](../main/src/odb/README.md))
@@ -305,7 +305,7 @@ dependencies make this vastly more complicated.
 1. `regression` script should only write files in a directory that is in the tool's `.gitignore` so the hierarchy does not have modified files in it as a result or running the regressions.
 1. Regressions report no memory errors with `valgrind` (stretch goal).
 1. Regressions report no memory leaks with `valgrind` (difficult).
-1. Ensure the top-level README and Tcl format are compliant. 
+1. Ensure the top-level README and Tcl format are compliant.
 
 ## Code Linting and Formatting
 
@@ -316,6 +316,16 @@ cmake . -B build  # generate build files
 # typically only run these commands on files you changed.
 clang-tidy -p ./build source_file.cpp
 clang-format -i -style=file:.clang-format source_file.cpp
+```
+
+To run `clang-tidy` on all files, you can use the following script that runs
+`clang-tidy` in parallel and also caches the results, so subsequent runs
+only have to operate on changed files.
+
+```shell
+cmake . -B build  # generate build files
+ln -sf build/compile_commands.json .  # make compilation db visible
+/bin/sh etc/run-clang-tidy-cached.cc
 ```
 
 ## Doxygen
