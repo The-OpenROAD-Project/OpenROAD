@@ -47,6 +47,10 @@
 
 #include "cmdInputWidget.h"
 #include "tclCmdHighlighter.h"
+
+#if (TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 7) && !defined(Tcl_Size)
+#define Tcl_Size int
+#endif
 #include "tclSwig.h"  // generated header
 
 namespace gui {
