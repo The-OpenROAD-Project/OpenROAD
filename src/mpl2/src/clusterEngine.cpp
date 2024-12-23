@@ -1455,6 +1455,11 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
         parent->getName(),
         balance_constraint);
 
+    if (balance_constraint >= 90) {
+      logger_->error(
+          MPL, 41, "Cannot find a balanced partitioning for the clusters.");
+    }
+
     solution = triton_part_->PartitionKWaySimpleMode(num_parts,
                                                      balance_constraint,
                                                      seed,
