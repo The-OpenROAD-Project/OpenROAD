@@ -257,7 +257,7 @@ void MacroPlacer2::addGuidanceRegion(odb::dbInst* macro, const Rect& region)
 
   if (guidance_regions_.find(macro) != guidance_regions_.end()) {
     logger_->warn(
-        MPL, 41, "Overwriting guidance region for macro {}", macro->getName());
+        MPL, 44, "Overwriting guidance region for macro {}", macro->getName());
   }
 
   guidance_regions_[macro] = region;
