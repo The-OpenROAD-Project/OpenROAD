@@ -34,25 +34,6 @@
 
 namespace dft {
 
-std::function<size_t(const ClockDomain&)> GetClockDomainHashFn(
-    const ScanArchitectConfig& config,
-    utl::Logger* logger)
-{
-  switch (config.getClockMixing()) {
-    // For NoMix, every clock domain is different
-    case ScanArchitectConfig::ClockMixing::NoMix:
-      return [](const ClockDomain& clock_domain) {
-        return std::hash<std::string_view>{}(clock_domain.getClockName())
-               ^ std::hash<ClockEdge>{}(clock_domain.getClockEdge());
-      };
-    case ScanArchitectConfig::ClockMixing::ClockMix:
-      return [](const ClockDomain& clock_domain) { return 1; };
-    default:
-      // Not implemented
-      logger->error(utl::DFT, 4, "Clock mix config requested is not supported");
-  }
-}
-
 ClockDomain::ClockDomain(const std::string& clock_name, ClockEdge clock_edge)
     : clock_name_(clock_name), clock_edge_(clock_edge)
 {

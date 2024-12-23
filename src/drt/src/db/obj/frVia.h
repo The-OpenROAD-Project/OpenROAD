@@ -42,7 +42,7 @@ class frVia : public frRef
  public:
   // constructors
   frVia() = default;
-  frVia(frViaDef* in) : viaDef_(in) {}
+  frVia(const frViaDef* in) : viaDef_(in) {}
   frVia(const frVia& in)
       : frRef(in),
         origin_(in.origin_),
@@ -56,7 +56,7 @@ class frVia : public frRef
   }
   frVia(const drVia& in);
   // getters
-  frViaDef* getViaDef() const { return viaDef_; }
+  const frViaDef* getViaDef() const { return viaDef_; }
   Rect getLayer1BBox() const
   {
     Rect box;
@@ -88,7 +88,7 @@ class frVia : public frRef
     return box;
   }
   // setters
-  void setViaDef(frViaDef* in) { viaDef_ = in; }
+  void setViaDef(const frViaDef* in) { viaDef_ = in; }
   // others
   frBlockObjectEnum typeId() const override { return frcVia; }
 
@@ -230,7 +230,7 @@ class frVia : public frRef
 
  private:
   Point origin_;
-  frViaDef* viaDef_{nullptr};
+  const frViaDef* viaDef_{nullptr};
   frBlockObject* owner_{nullptr};
   frListIter<std::unique_ptr<frVia>> iter_;
   int index_in_owner_{0};
