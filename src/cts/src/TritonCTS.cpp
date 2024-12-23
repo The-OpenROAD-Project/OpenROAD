@@ -201,10 +201,6 @@ void TritonCTS::setupCharacterization()
       options_->setSinkClusteringSize(sinkMaxFanout);
     }
 
-    if (options_->getMacroSinkClusteringSize() > sinkMaxFanout) {
-      options_->setMacroSinkClusteringSize(sinkMaxFanout);
-    }
-
     if (sinkMaxFanout < options_->getMaxFanout()) {
       options_->setMaxFanout(sinkMaxFanout);
     }
@@ -615,13 +611,6 @@ void TritonCTS::setBufferList(const char* buffers)
   std::vector<std::string> bufferList(begin, end);
   if (bufferList.empty()) {
     inferBufferList(bufferList);
-  } else {
-    for (const std::string& buffer : bufferList) {
-      if (db_->findMaster(buffer.c_str()) == nullptr) {
-        logger_->error(
-            CTS, 126, "No physical master cell found for buffer {}.", buffer);
-      }
-    }
   }
   options_->setBufferList(bufferList);
 }
@@ -755,12 +744,6 @@ void TritonCTS::setRootBuffer(const char* buffers)
   std::istream_iterator<std::string> begin(ss);
   std::istream_iterator<std::string> end;
   std::vector<std::string> bufferList(begin, end);
-  for (const std::string& buffer : bufferList) {
-    if (db_->findMaster(buffer.c_str()) == nullptr) {
-      logger_->error(
-          CTS, 127, "No physical master cell found for buffer {}.", buffer);
-    }
-  }
   rootBuffers_ = std::move(bufferList);
 }
 
@@ -1154,6 +1137,7 @@ bool TritonCTS::separateMacroRegSinks(
     std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& registerSinks,
     std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& macroSinks)
 {
+  int max_dx = 0, max_dy = 0;
   for (odb::dbITerm* iterm : net->getITerms()) {
     odb::dbInst* inst = iterm->getInst();
 
@@ -1165,17 +1149,20 @@ bool TritonCTS::separateMacroRegSinks(
                     inst->getName());
       return false;
     }
-
     if (iterm->isInputSignal() && inst->isPlaced()) {
       odb::dbMTerm* mterm = iterm->getMTerm();
       // Treat clock gaters like macro sink
       if (hasInsertionDelay(inst, mterm) || !isSink(iterm)) {
+        if(inst->getMaster()->isBlock()) {
+          max_dx = inst->getBBox()->getDX();
+        }
         macroSinks.emplace_back(inst, mterm);
       } else {
         registerSinks.emplace_back(inst, mterm);
       }
     }
   }
+  logger_->report("Macro Max dx: {}, max dy: {}", max_dx, max_dy);
   return true;
 }
 
