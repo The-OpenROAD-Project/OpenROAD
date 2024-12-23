@@ -45,7 +45,7 @@ void FlexPA::initViaRawPriority()
         != dbTechLayerType::CUT) {
       continue;
     }
-    for (auto& via_def :
+    for (const auto& via_def :
          design_->getTech()->getLayer(layer_num)->getViaDefs()) {
       const int cutNum = int(via_def->getCutFigs().size());
       const ViaRawPriorityTuple priority = getViaRawPriority(via_def);
@@ -54,7 +54,7 @@ void FlexPA::initViaRawPriority()
   }
 }
 
-ViaRawPriorityTuple FlexPA::getViaRawPriority(frViaDef* via_def)
+ViaRawPriorityTuple FlexPA::getViaRawPriority(const frViaDef* via_def)
 {
   const bool is_not_default_via = !(via_def->getDefault());
   gtl::polygon_90_set_data<frCoord> via_layer_ps1;

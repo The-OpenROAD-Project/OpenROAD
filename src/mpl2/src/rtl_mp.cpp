@@ -36,7 +36,6 @@
 #include "Mpl2Observer.h"
 #include "hier_rtlmp.h"
 #include "object.h"
-#include "odb/db.h"
 
 namespace mpl2 {
 using odb::dbDatabase;
@@ -122,6 +121,8 @@ bool MacroPlacer2::place(const int num_threads,
   hier_rtlmp_->setReportDirectory(report_directory);
   hier_rtlmp_->setNumThreads(num_threads);
 
+  hier_rtlmp_->setGuidanceRegions(guidance_regions_);
+
   hier_rtlmp_->init();
   hier_rtlmp_->run();
 
@@ -131,7 +132,9 @@ bool MacroPlacer2::place(const int num_threads,
 void MacroPlacer2::placeMacro(odb::dbInst* inst,
                               const float& x_origin,
                               const float& y_origin,
-                              const odb::dbOrientType& orientation)
+                              const odb::dbOrientType& orientation,
+                              const bool exact,
+                              const bool allow_overlap)
 {
   odb::dbBlock* block = inst->getBlock();
 
@@ -164,16 +167,33 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
   inst->setOrient(orientation);
   inst->setLocation(x1, y1);
 
-  if (!orientation.isRightAngleRotation()) {
+  if (orientation.isRightAngleRotation()) {
+    logger_->warn(MPL,
+                  36,
+                  "Orientation {} specified for macro {} is a right angle "
+                  "rotation. Snapping is not possible.",
+                  orientation.getString(),
+                  inst->getName());
+  } else if (!exact) {
     Snapper snapper(logger_, inst);
     snapper.snapMacro();
-  } else {
-    logger_->warn(
-        MPL,
-        36,
-        "Orientation {} specified for macro {} is a right angle rotation.",
-        orientation.getString(),
-        inst->getName());
+  }
+
+  if (!allow_overlap) {
+    std::vector<odb::dbInst*> overlapped_macros = findOverlappedMacros(inst);
+    if (!overlapped_macros.empty()) {
+      std::string overlapped_macros_names;
+      for (odb::dbInst* overlapped_macro : overlapped_macros) {
+        overlapped_macros_names
+            += fmt::format(" {}", overlapped_macro->getName());
+      }
+
+      logger_->error(MPL,
+                     41,
+                     "Couldn't place {}. Found overlap with other macros:{}.",
+                     inst->getName(),
+                     overlapped_macros_names);
+    }
   }
 
   inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
@@ -188,6 +208,59 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
                 block->dbuToMicrons(inst->getBBox()->xMax()),
                 block->dbuToMicrons(inst->getBBox()->yMax()),
                 orientation.getString());
+}
+
+std::vector<odb::dbInst*> MacroPlacer2::findOverlappedMacros(odb::dbInst* macro)
+{
+  std::vector<odb::dbInst*> overlapped_macros;
+  odb::dbBlock* block = macro->getBlock();
+  const odb::Rect& source_macro_bbox = macro->getBBox()->getBox();
+
+  for (odb::dbInst* inst : block->getInsts()) {
+    if (!inst->isBlock() || !inst->isPlaced()) {
+      continue;
+    }
+
+    const odb::Rect& target_macro_bbox = inst->getBBox()->getBox();
+    if (source_macro_bbox.overlaps(target_macro_bbox)) {
+      overlapped_macros.push_back(inst);
+    }
+  }
+
+  return overlapped_macros;
+}
+
+void MacroPlacer2::addGuidanceRegion(odb::dbInst* macro, const Rect& region)
+{
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  const odb::Rect& core = block->getCoreArea();
+  const odb::Rect dbu_region(block->micronsToDbu(region.xMin()),
+                             block->micronsToDbu(region.yMin()),
+                             block->micronsToDbu(region.xMax()),
+                             block->micronsToDbu(region.yMax()));
+
+  if (!core.contains(dbu_region)) {
+    logger_->error(MPL,
+                   42,
+                   "Specified guidance region ({}, {}) ({}, {}) for the macro "
+                   "{} is outside of the core ({}, {}) ({}, {}).",
+                   region.xMin(),
+                   region.yMin(),
+                   region.xMax(),
+                   region.yMax(),
+                   macro->getName(),
+                   block->dbuToMicrons(core.xMin()),
+                   block->dbuToMicrons(core.yMin()),
+                   block->dbuToMicrons(core.xMax()),
+                   block->dbuToMicrons(core.yMax()));
+  }
+
+  if (guidance_regions_.find(macro) != guidance_regions_.end()) {
+    logger_->warn(
+        MPL, 44, "Overwriting guidance region for macro {}", macro->getName());
+  }
+
+  guidance_regions_[macro] = region;
 }
 
 void MacroPlacer2::setMacroPlacementFile(const std::string& file_name)

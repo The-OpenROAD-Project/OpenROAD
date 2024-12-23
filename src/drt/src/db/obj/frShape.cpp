@@ -42,6 +42,9 @@ frPathSeg::frPathSeg(const drPathSeg& in)
   style_ = in.getStyle();
   owner_ = nullptr;
   setTapered(in.isTapered());
+  if (in.isApPathSeg()) {
+    setApPathSeg(in.getApLoc());
+  }
 }
 
 frPathSeg::frPathSeg(const taPathSeg& in)

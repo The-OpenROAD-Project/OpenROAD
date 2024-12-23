@@ -610,7 +610,7 @@ void TritonRoute::initDesign()
 
 void TritonRoute::prep()
 {
-  FlexRP rp(getDesign(), getDesign()->getTech(), logger_, router_cfg_.get());
+  FlexRP rp(getDesign(), logger_, router_cfg_.get());
   rp.main();
 }
 
@@ -940,7 +940,7 @@ int TritonRoute::main()
   }
   if (debug_->debugDumpDR) {
     std::string router_cfg_path
-        = fmt::format("{}/init_router_cfg_->bin", debug_->dumpDir);
+        = fmt::format("{}/init_router_cfg.bin", debug_->dumpDir);
     writeGlobals(router_cfg_path);
   }
   router_cfg_->MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();

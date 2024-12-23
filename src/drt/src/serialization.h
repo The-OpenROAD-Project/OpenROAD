@@ -738,7 +738,7 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
 }
 
 template <class Archive>
-void serializeViaDef(Archive& ar, frViaDef*& viadef)
+void serializeViaDef(Archive& ar, const frViaDef*& viadef)
 {
   frDesign* design = ar.getDesign();
   if (is_loading(ar)) {
