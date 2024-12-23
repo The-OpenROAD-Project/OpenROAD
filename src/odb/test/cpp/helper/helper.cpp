@@ -72,7 +72,7 @@ dbMaster* createMaster1X1(dbLib* lib,
   master->setFrozen();
   return master;
 }
-  
+
 dbDatabase* createSimpleDB()
 {
   utl::Logger* logger = new utl::Logger();
@@ -85,7 +85,7 @@ dbDatabase* createSimpleDB()
   dbBlock::create(chip, "simple_block");
   createMaster2X1(lib, "and2", 1000, 1000, "a", "b", "o");
   createMaster2X1(lib, "or2", 500, 500, "a", "b", "o");
-  createMaster1X1(lib, "inv1", 500, 500, "ip0", "op0");  
+  createMaster1X1(lib, "inv1", 500, 500, "ip0", "op0");
   return db;
 }
 
