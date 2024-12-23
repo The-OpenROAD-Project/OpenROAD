@@ -44,6 +44,7 @@ frAccessPoint* frInstTerm::getAccessPoint(frCoord x, frCoord y, frLayerNum lNum)
   inst->getTransform().invert(transform);
   Point pt(x, y);
   transform.apply(pt);
+
   return term_->getAccessPoint(
       pt.getX(), pt.getY(), lNum, inst->getPinAccessIdx());
 }

@@ -958,7 +958,6 @@ bool FlexPA::checkDirectionalViaAccess(
                                       via->getViaDef()->getLayer2Num(),
                                       dir,
                                       is_block);
-  // // logger_->report("[BNMFW] begin=({},{}) end=({},{})", begin_point.x(), begin_point.y(), end_point.x(), end_point.y());
   if (inst_term && inst_term->hasNet()) {
     via->addToNet(inst_term->getNet());
   } else {
@@ -1499,8 +1498,10 @@ void FlexPA::revertAccessPoints()
           for (auto& ps : access_point->getPathSegs()) {
             Point begin = ps.getBeginPoint();
             Point end = ps.getEndPoint();
-            revert_transform.apply(begin);
-            revert_transform.apply(end);
+            dbTransform bad_transform;
+            inst->getBadTransform().invert(bad_transform);
+            bad_transform.apply(begin);
+            bad_transform.apply(end);
             if (end < begin) {
               Point tmp = begin;
               begin = end;

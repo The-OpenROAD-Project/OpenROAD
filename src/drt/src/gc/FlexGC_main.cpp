@@ -2297,7 +2297,6 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
   }
   auto patch = std::make_unique<drPatchWire>();
   patch->setLayerNum(layer_idx);
-  // logger_->report("[BNMFW] patch 2 origin=({},{}) net={}", offset.getX(), offset.getY(), pin->getNet()->getFrNet()->getName());
   patch->setOrigin(offset);
   patch->setOffsetBox(patchBx);
 
@@ -3777,7 +3776,6 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
     markerBBox.moveDelta(-origin.x(), -origin.y());
     auto patch = std::make_unique<drPatchWire>();
     patch->setLayerNum(lNum);
-    // logger_->report("[BNMFW] patch 3 origin=({},{}) net={}", origin.getX(), origin.getY(), net->getFrNet()->getName());
     patch->setOrigin(origin);
     patch->setOffsetBox(markerBBox);
     patch->addToNet(net);
@@ -3904,7 +3902,6 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
     auto patch = std::make_unique<drPatchWire>();
     patch->setLayerNum(lNum);
     patch->setOrigin(origin);
-    // // logger_->report("[BNMFW] patch 4 origin=({},{}) net={}", origin.getX(), origin.getY(), net->getFrNet()->getName());
     patch->setOffsetBox(markerBBox);
     patch->addToNet(net);
     if (!gc_patch::isPatchValid(patch.get(), getDRWorker()->getRouteBox())) {
