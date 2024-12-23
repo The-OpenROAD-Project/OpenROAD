@@ -145,6 +145,20 @@ void set_debug_cmd(odb::dbBlock* block,
 }
 
 void
+place_macro(odb::dbInst* inst,
+            float x_origin,
+            float y_origin,
+            std::string orientation_string,
+            bool exact,
+            bool allow_overlap)
+{
+  odb::dbOrientType orientation(orientation_string.c_str());
+
+  getMacroPlacer2()->placeMacro(
+    inst, x_origin, y_origin, orientation, exact, allow_overlap);
+}
+
+void
 add_guidance_region(odb::dbInst* macro,
                     float x1,
                     float y1,
@@ -154,13 +168,6 @@ add_guidance_region(odb::dbInst* macro,
   getMacroPlacer2()->addGuidanceRegion(macro, Rect(x1, y1, x2, y2));
 }
 
-void
-place_macro(odb::dbInst* inst, float x_origin, float y_origin, std::string orientation_string)
-{
-  odb::dbOrientType orientation(orientation_string.c_str());
-
-  getMacroPlacer2()->placeMacro(inst, x_origin, y_origin, orientation);
-}
 
 void
 set_macro_placement_file(std::string file_name)

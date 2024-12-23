@@ -107,7 +107,10 @@ class MacroPlacer2
   void placeMacro(odb::dbInst* inst,
                   const float& x_origin,
                   const float& y_origin,
-                  const odb::dbOrientType& orientation);
+                  const odb::dbOrientType& orientation,
+                  bool exact,
+                  bool allow_overlap);
+  std::vector<odb::dbInst*> findOverlappedMacros(odb::dbInst* macro);
 
   void setMacroPlacementFile(const std::string& file_name);
   void addGuidanceRegion(odb::dbInst* macro, const Rect& region);
