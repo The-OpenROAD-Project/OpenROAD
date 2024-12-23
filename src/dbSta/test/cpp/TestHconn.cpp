@@ -719,10 +719,11 @@ class TestHconn : public ::testing::Test
     inv4_mod_level2_inst_o3_miterm->connect(inv4_mod_level2_inst_o3_mnet);
     inv4_mod_level1_master_o3_port->connect(inv4_mod_level2_inst_o3_mnet);
 
+    // Uncomment this to see the full design
     //    std::stringstream full_design;
     //    DbStrDebugHierarchy(block, full_design);
     //    printf("The  design created (flat and hierarchical) %s\n",
-    //    full_design.str().c_str());
+    //	   full_design.str().c_str());
   }
 
   utl::UniquePtrWithDeleter<odb::dbDatabase> db_;
@@ -868,6 +869,8 @@ TEST_F(TestHconn, ConnectionMade)
   //  std::stringstream str_str_initial;
   //  DbStrDebugHierarchy(block, str_str_initial);
   //  printf("The initial design: %s\n", str_str_initial.str().c_str());
+  size_t initial_db_net_count = block->getNets().size();
+  size_t initial_mod_net_count = block->getModNets().size();
 
   //
   //
@@ -906,8 +909,6 @@ TEST_F(TestHconn, ConnectionMade)
   // inv4_4_ip0 -- ip iterm on 4th inverter
   //
   //
-
-  size_t initial_count = block->getModNets().size();
 
   //
   // first create the new inverter in inv1_mod_master
@@ -964,12 +965,18 @@ TEST_F(TestHconn, ConnectionMade)
   db_network_->hierarchicalConnect(
       inv1_2_inst_op0, inv4_4_ip, hier_net_name.c_str());
 
+  // Uncomment this to see the final design
   //  std::stringstream str_str_final;
   //  DbStrDebugHierarchy(block, str_str_final);
   //  printf("The final design: %s\n", str_str_final.str().c_str());
 
-  size_t final_count = block->getModNets().size();
-  EXPECT_LE(initial_count, final_count);
+  size_t final_db_net_count = block->getNets().size();
+  size_t final_mod_net_count = block->getModNets().size();
+
+  EXPECT_EQ(initial_db_net_count, 6);
+  EXPECT_EQ(initial_mod_net_count, 23);
+  EXPECT_EQ(final_mod_net_count, 27);
+  EXPECT_EQ(final_db_net_count, 7);
 }
 
 }  // namespace odb
