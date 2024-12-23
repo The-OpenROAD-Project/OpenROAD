@@ -159,6 +159,17 @@ place_macro(odb::dbInst* inst,
 }
 
 void
+add_guidance_region(odb::dbInst* macro,
+                    float x1,
+                    float y1,
+                    float x2,
+                    float y2)
+{
+  getMacroPlacer2()->addGuidanceRegion(macro, Rect(x1, y1, x2, y2));
+}
+
+
+void
 set_macro_placement_file(std::string file_name)
 {
   getMacroPlacer2()->setMacroPlacementFile(file_name);

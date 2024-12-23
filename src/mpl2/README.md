@@ -113,6 +113,24 @@ place_macro
 | `-exact` | Enforce the exact `-location`. Note that the default behavior of `place_macro` is to snap the macro, that is, tune the entered `-location` so that the signal pins get aligned with the track-grid. |
 | `-allow_overlap` | Allow the macro to be placed even if it overlaps with other macros. Note that the default behavior is to only place the macro if no overlap with other macros is found. |
 
+### Set Macro Guidance Region
+
+Command for setting guidance regions for macros. The guidance region can have any size as long it fits inside the core area, as the placer will try to
+maximize the overlap region between macro and guidance region.
+
+```tcl
+set_macro_guidance_region
+    -macro_name macro_name
+    -region region
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-macro_name` | The name of a macro of the design. |
+| `-region` | The lower left corner and upper right corner {lx ly ux uy} of the region in microns. |
+
 ## Example scripts
 
 Example of a script demonstrating how to run `mpl2` on a sample design of `bp_fe_top` as follows:

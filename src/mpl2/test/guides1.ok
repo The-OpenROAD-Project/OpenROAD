@@ -1,0 +1,31 @@
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: ./testcases/macro_only.lef, created 9 library cells
+[WARNING STA-1171] ./testcases/macro_only.lib line 32, default_max_transition is 0.0.
+[WARNING ORD-2011] LEF master DFF_X1 has no liberty cell.
+[INFO ODB-0128] Design: guides1
+[INFO ODB-0252]     Updated 3 pins.
+[INFO ODB-0253]     Updated 401 components.
+[INFO PPL-0067] Restrict INPUT pins to region 0u-125u, in the LEFT edge.
+Found 1 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[INFO PPL-0001] Number of slots           974
+[INFO PPL-0002] Number of I/O             3
+[INFO PPL-0003] Number of I/O w/sink      0
+[INFO PPL-0004] Number of I/O w/o sink    3
+[INFO PPL-0012] I/O nets HPWL: 0.00 um.
+Floorplan Outline: (0, 0) (150, 125),  Core Outline: (0, 0) (149.91, 124.6)
+	Number of std cell instances: 400
+	Area of std cell instances: 1808.79
+	Number of macros: 1
+	Area of macros: 10000.00
+	Halo width: 4.00
+	Halo height: 4.00
+	Area of macros with halos: 11664.00
+	Area of std cell instances + Area of macros: 11808.79
+	Core area: 18678.79
+	Design Utilization: 0.63
+	Core Utilization: 0.21
+	Manufacturing Grid: 10
+
+[WARNING MPL-0014] No Liberty data found for std cells. Continuing without dataflow.
+No differences found.
