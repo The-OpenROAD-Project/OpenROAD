@@ -3385,87 +3385,15 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
 
       // push to minArea violation
       if (currArea < reqArea) {
-        FlexMazeIdx bp, ep;
-        frArea gapArea = reqArea
-                         - (currArea - startViaHalfEncArea - endViaHalfEncArea)
-                         - std::min(startViaHalfEncArea, endViaHalfEncArea);
-        // new
-        bool bpPatchStyle = true;  // style 1: left only; 0: right only
-        bool epPatchStyle = false;
-        // stack via
-        if (i - 1 == prev_i) {
-          bp = points[i - 1];
-          ep = points[i - 1];
-          bpPatchStyle = true;
-          epPatchStyle = false;
-          // planar
-        } else {
-          bp = points[prev_i];
-          ep = points[i - 1];
-          if (getTech()->getLayer(layerNum)->getDir()
-              == dbTechLayerDir::HORIZONTAL) {
-            if (points[prev_i].x() < points[prev_i + 1].x()) {
-              bpPatchStyle = true;
-            } else if (points[prev_i].x() > points[prev_i + 1].x()) {
-              bpPatchStyle = false;
-            } else {
-              if (points[prev_i].x() < points[i - 1].x()) {
-                bpPatchStyle = true;
-              } else if (points[prev_i].x() > points[i - 1].x()) {
-                bpPatchStyle = false;
-              } else {
-                // if fully vertical, bpPatch left and epPatch right
-                bpPatchStyle = false;
-              }
-            }
-            if (points[i - 1].x() < points[i - 2].x()) {
-              epPatchStyle = true;
-            } else if (points[i - 1].x() > points[i - 2].x()) {
-              epPatchStyle = false;
-            } else {
-              if (points[i - 1].x() < points[prev_i].x()) {
-                epPatchStyle = true;
-              } else if (points[i - 1].x() > points[prev_i].x()) {
-                epPatchStyle = false;
-              } else {
-                // if fully vertical, bpPatch left and epPatch right
-                epPatchStyle = true;
-              }
-            }
-          } else {
-            if (points[prev_i].y() < points[prev_i + 1].y()) {
-              bpPatchStyle = true;
-            } else if (points[prev_i].y() > points[prev_i + 1].y()) {
-              bpPatchStyle = false;
-            } else {
-              if (points[prev_i].y() < points[i - 1].y()) {
-                bpPatchStyle = true;
-              } else if (points[prev_i].y() > points[i - 1].y()) {
-                bpPatchStyle = false;
-              } else {
-                // if fully horizontal, bpPatch left and epPatch right
-                bpPatchStyle = false;
-              }
-            }
-            if (points[i - 1].y() < points[i - 2].y()) {
-              epPatchStyle = true;
-            } else if (points[i - 1].y() > points[i - 2].y()) {
-              epPatchStyle = false;
-            } else {
-              if (points[i - 1].y() < points[prev_i].y()) {
-                epPatchStyle = true;
-              } else if (points[i - 1].y() > points[prev_i].y()) {
-                epPatchStyle = false;
-              } else {
-                // if fully horizontal, bpPatch left and epPatch right
-                epPatchStyle = true;
-              }
-            }
-          }
-        }
-        auto patchWidth = getTech()->getLayer(layerNum)->getWidth();
-        routeNet_postAstarAddPatchMetal(
-            net, bp, ep, gapArea, patchWidth, bpPatchStyle, epPatchStyle);
+        routeNet_postAstarPatchMinAreaVio_helper(net,
+                                                 getTech()->getLayer(layerNum),
+                                                 reqArea,
+                                                 currArea,
+                                                 startViaHalfEncArea,
+                                                 endViaHalfEncArea,
+                                                 points,
+                                                 i,
+                                                 prev_i);
       }
       // init for next path
       if (nextIdx.z() < currIdx.z()) {
@@ -3496,10 +3424,10 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
       frArea reqArea
           = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
       auto pathWidth = getTech()->getLayer(layerNum)->getWidth();
-      Point bp, ep;
-      gridGraph_.getPoint(bp, currIdx.x(), currIdx.y());
-      gridGraph_.getPoint(ep, nextIdx.x(), nextIdx.y());
-      frCoord pathLength = Point::manhattanDistance(bp, ep);
+      Point begin_point, end_point;
+      gridGraph_.getPoint(begin_point, currIdx.x(), currIdx.y());
+      gridGraph_.getPoint(end_point, nextIdx.x(), nextIdx.y());
+      frCoord pathLength = Point::manhattanDistance(begin_point, end_point);
       if (currArea < reqArea) {
         if (!prev_is_wire) {
           currArea /= 2;
@@ -3523,85 +3451,77 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
     }
     endViaHalfEncArea = 0;
     if (currArea < reqArea) {
-      FlexMazeIdx bp, ep;
-      frArea gapArea = reqArea
-                       - (currArea - startViaHalfEncArea - endViaHalfEncArea)
-                       - std::min(startViaHalfEncArea, endViaHalfEncArea);
-      // new
-      bool bpPatchStyle = true;  // style 1: left only; 0: right only
-      bool epPatchStyle = false;
-      // stack via
-      if (i - 1 == prev_i) {
-        bp = points[i - 1];
-        ep = points[i - 1];
-        bpPatchStyle = true;
-        epPatchStyle = false;
-        // planar
-      } else {
-        bp = points[prev_i];
-        ep = points[i - 1];
-        if (getTech()->getLayer(layerNum)->getDir()
-            == dbTechLayerDir::HORIZONTAL) {
-          if (points[prev_i].x() < points[prev_i + 1].x()) {
-            bpPatchStyle = true;
-          } else if (points[prev_i].x() > points[prev_i + 1].x()) {
-            bpPatchStyle = false;
-          } else {
-            if (points[prev_i].x() < points[i - 1].x()) {
-              bpPatchStyle = true;
-            } else if (points[prev_i].x() > points[i - 1].x()) {
-              bpPatchStyle = false;
-            } else {
-              bpPatchStyle = false;
-            }
-          }
-          if (points[i - 1].x() < points[i - 2].x()) {
-            epPatchStyle = true;
-          } else if (points[i - 1].x() > points[i - 2].x()) {
-            epPatchStyle = false;
-          } else {
-            if (points[i - 1].x() < points[prev_i].x()) {
-              epPatchStyle = true;
-            } else if (points[i - 1].x() > points[prev_i].x()) {
-              epPatchStyle = false;
-            } else {
-              epPatchStyle = true;
-            }
-          }
-        } else {
-          if (points[prev_i].y() < points[prev_i + 1].y()) {
-            bpPatchStyle = true;
-          } else if (points[prev_i].y() > points[prev_i + 1].y()) {
-            bpPatchStyle = false;
-          } else {
-            if (points[prev_i].y() < points[i - 1].y()) {
-              bpPatchStyle = true;
-            } else if (points[prev_i].y() > points[i - 1].y()) {
-              bpPatchStyle = false;
-            } else {
-              bpPatchStyle = false;
-            }
-          }
-          if (points[i - 1].y() < points[i - 2].y()) {
-            epPatchStyle = true;
-          } else if (points[i - 1].y() > points[i - 2].y()) {
-            epPatchStyle = false;
-          } else {
-            if (points[i - 1].y() < points[prev_i].y()) {
-              epPatchStyle = true;
-            } else if (points[i - 1].y() > points[prev_i].y()) {
-              epPatchStyle = false;
-            } else {
-              epPatchStyle = true;
-            }
-          }
-        }
-      }
-      auto patchWidth = getTech()->getLayer(layerNum)->getWidth();
-      routeNet_postAstarAddPatchMetal(
-          net, bp, ep, gapArea, patchWidth, bpPatchStyle, epPatchStyle);
+      routeNet_postAstarPatchMinAreaVio_helper(net,
+                                               getTech()->getLayer(layerNum),
+                                               reqArea,
+                                               currArea,
+                                               startViaHalfEncArea,
+                                               endViaHalfEncArea,
+                                               points,
+                                               i,
+                                               prev_i);
     }
   }
+}
+
+void FlexDRWorker::routeNet_postAstarPatchMinAreaVio_helper(
+    drNet* net,
+    drt::frLayer* curr_layer,
+    frArea reqArea,
+    frArea currArea,
+    frCoord startViaHalfEncArea,
+    frCoord endViaHalfEncArea,
+    std::vector<FlexMazeIdx>& points,
+    int point_idx,
+    int prev_point_idx)
+{
+  FlexMazeIdx begin_point, end_point;
+  frArea gapArea = reqArea
+                   - (currArea - startViaHalfEncArea - endViaHalfEncArea)
+                   - std::min(startViaHalfEncArea, endViaHalfEncArea);
+  // bp = begin point, ep = endpoint
+  bool is_bp_patch_style_left = true;  // style 1: left only; 0: right only
+  bool is_ep_patch_style_right = false;
+  // stack via
+  if (point_idx - 1 == prev_point_idx) {
+    begin_point = points[point_idx - 1];
+    end_point = points[point_idx - 1];
+    is_bp_patch_style_left = true;
+    is_ep_patch_style_right = false;
+    // planar
+  } else {
+    begin_point = points[prev_point_idx];
+    end_point = points[point_idx - 1];
+    FlexMazeIdx begin_point_successor = points[prev_point_idx + 1],
+                end_point_predecessor = points[point_idx - 2];
+    if (curr_layer->getDir() == dbTechLayerDir::HORIZONTAL) {
+      is_bp_patch_style_left
+          = (begin_point.x() == begin_point_successor.x())
+                ? (begin_point.x() < end_point.x())
+                : (begin_point.x() < begin_point_successor.x());
+      is_ep_patch_style_right
+          = (end_point.x() == end_point_predecessor.x())
+                ? (end_point.x() <= begin_point.x())
+                : (end_point.x() < end_point_predecessor.x());
+    } else {
+      is_bp_patch_style_left
+          = (begin_point.y() == begin_point_successor.y())
+                ? (begin_point.y() < end_point.y())
+                : (begin_point.y() < begin_point_successor.y());
+      is_ep_patch_style_right
+          = (end_point.y() == end_point_predecessor.y())
+                ? (end_point.y() <= begin_point.y())
+                : (end_point.y() < end_point_predecessor.y());
+    }
+  }
+  auto patchWidth = curr_layer->getWidth();
+  routeNet_postAstarAddPatchMetal(net,
+                                  begin_point,
+                                  end_point,
+                                  gapArea,
+                                  patchWidth,
+                                  is_bp_patch_style_left,
+                                  is_ep_patch_style_right);
 }
 
 frCoord FlexDRWorker::getHalfViaEncArea(frMIdx z,
