@@ -33,6 +33,8 @@
 // Generator Code Begin Cpp
 #include "dbLevelShifter.h"
 
+#include <vector>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"

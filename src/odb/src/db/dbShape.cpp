@@ -32,6 +32,8 @@
 
 #include "odb/dbShape.h"
 
+#include <vector>
+
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
 #include "dbVia.h"

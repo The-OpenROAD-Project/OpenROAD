@@ -39,6 +39,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "dbAccessPoint.h"
 #include "dbArrayTable.h"

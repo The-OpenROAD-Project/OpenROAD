@@ -33,6 +33,7 @@
 #include "dbNet.h"
 
 #include <algorithm>
+#include <vector>
 
 #include "dbBTerm.h"
 #include "dbBTermItr.h"

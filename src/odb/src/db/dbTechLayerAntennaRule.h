@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "dbCore.h"
 #include "dbTechLayer.h"
 #include "odb/dbTypes.h"

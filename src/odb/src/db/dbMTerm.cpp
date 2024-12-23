@@ -34,6 +34,8 @@
 
 #include <spdlog/fmt/ostr.h>
 
+#include <vector>
+
 #include "dbDatabase.h"
 #include "dbLib.h"
 #include "dbMPinItr.h"

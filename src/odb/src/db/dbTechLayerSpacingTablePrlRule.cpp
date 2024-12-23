@@ -35,6 +35,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <vector>
 
 #include "dbDatabase.h"
 #include "dbDiff.hpp"

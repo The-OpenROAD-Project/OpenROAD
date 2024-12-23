@@ -33,6 +33,8 @@
 // Generator Code Begin Cpp
 #include "dbGDSBoundary.h"
 
+#include <vector>
+
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"

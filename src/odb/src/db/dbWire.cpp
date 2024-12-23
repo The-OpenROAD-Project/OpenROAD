@@ -33,6 +33,7 @@
 #include "dbWire.h"
 
 #include <algorithm>
+#include <vector>
 
 #include "dbBlock.h"
 #include "dbNet.h"
