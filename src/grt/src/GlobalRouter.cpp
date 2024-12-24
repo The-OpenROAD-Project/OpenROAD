@@ -689,6 +689,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
       dirty_nets.push_back(db_net_map_[db_net]);
       routes_[db_net].clear();
       db_net->clearGuides();
+      fastroute_->clearNetRoute(db_net);
     } else if (net->isMergedNet()) {
       if (!isConnected(db_net)) {
         logger_->error(
