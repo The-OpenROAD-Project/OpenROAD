@@ -29,9 +29,9 @@
 
 #include "defiDebug.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "defrData.hpp"
 #include "defrSettings.hpp"

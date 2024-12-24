@@ -56,8 +56,9 @@
 
 
 %{
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
+
 #include "defrReader.hpp"
 #include "defiUser.hpp"
 #include "defrCallBacks.hpp"

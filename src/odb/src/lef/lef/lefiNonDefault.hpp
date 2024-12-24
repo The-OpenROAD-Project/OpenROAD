@@ -30,7 +30,7 @@
 #ifndef lefiNonDefault_h
 #define lefiNonDefault_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 #include "lefiMisc.hpp"

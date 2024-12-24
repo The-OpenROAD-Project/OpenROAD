@@ -30,7 +30,7 @@
 #ifndef lefiArray_h
 #define lefiArray_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 #include "lefiMisc.hpp"

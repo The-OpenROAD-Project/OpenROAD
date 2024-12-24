@@ -29,8 +29,8 @@
 
 #include "defiPinCap.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiComponent.hpp"
 #include "defiDebug.hpp"

@@ -33,7 +33,7 @@
 #ifndef CLEFIPROPTYPE_H
 #define CLEFIPROPTYPE_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiTypedefs.h"
 

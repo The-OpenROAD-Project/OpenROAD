@@ -32,7 +32,7 @@
 
 #include "odb/dbWireCodec.h"
 
-#include <ctype.h>
+#include <cctype>
 
 #include "dbBlock.h"
 #include "dbDatabase.h"

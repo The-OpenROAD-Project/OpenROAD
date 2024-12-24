@@ -29,7 +29,7 @@
 
 #include "lefrCallBacks.hpp"
 
-#include "string.h"
+#include <cstring>
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 

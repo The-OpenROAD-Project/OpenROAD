@@ -33,7 +33,7 @@
 #ifndef CLEFRREADER_H
 #define CLEFRREADER_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiTypedefs.h"
 

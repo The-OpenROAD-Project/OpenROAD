@@ -32,11 +32,11 @@
 
 #include "odb/lefin.h"
 
-#include <ctype.h>
-#include <stdio.h>
 #include <unistd.h>
 
 #include <algorithm>
+#include <cctype>
+#include <cstdio>
 #include <list>
 #include <sstream>
 #include <string>

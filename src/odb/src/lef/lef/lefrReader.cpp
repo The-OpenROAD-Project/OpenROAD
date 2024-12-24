@@ -28,8 +28,8 @@
 // *****************************************************************************
 #include "lefrReader.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "lefiDebug.hpp"
 #include "lefrCallBacks.hpp"

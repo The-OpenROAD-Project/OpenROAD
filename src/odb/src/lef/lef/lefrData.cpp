@@ -28,10 +28,11 @@
 // *****************************************************************************
 #include "lefrData.hpp"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/stat.h>
+
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
 
 #include "lefrSettings.hpp"
 

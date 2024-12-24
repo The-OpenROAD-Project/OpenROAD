@@ -33,7 +33,7 @@
 #ifndef CDEFIALIAS_H
 #define CDEFIALIAS_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

@@ -15,10 +15,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 %{
-#include <new>
-#include <stdlib.h>
-
 #include <boost/stacktrace.hpp>
+#include <cstdlib>
+#include <new>
 #include <sstream>
 
 #include "ord/OpenRoad.hh"

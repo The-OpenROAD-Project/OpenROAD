@@ -30,7 +30,7 @@
 #ifndef defiBLOCKAGES_h
 #define defiBLOCKAGES_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 #include "defiMisc.hpp"
