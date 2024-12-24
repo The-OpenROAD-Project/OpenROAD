@@ -88,7 +88,7 @@
 [INFO GPL-0101] Iter: 278, overflow: 0.294, keep rsz at: 0.3
 [INFO GPL-0106] Timing-driven: worst slack 1.41e-09
 [INFO GPL-0103] Timing-driven: weighted 32 nets.
-[INFO GPL-0107] Timing-driven: repair_design (rsz) delta area:     -12.768 um^2 (-2.31%)
+[INFO GPL-0107] Timing-driven: repair_design delta area: -12.768 um^2 (-2.31%)
 [INFO GPL-0108] Timing-driven: new target density: 0.6866146
 [NesterovSolve] Iter:  280 overflow: 0.305 HPWL: 2863594
 [NesterovSolve] Iter:  290 overflow: 0.290 HPWL: 2675862
@@ -99,7 +99,7 @@
 [INFO GPL-0101] Iter: 322, overflow: 0.194, keep rsz at: 0.3
 [INFO GPL-0106] Timing-driven: worst slack 1.41e-09
 [INFO GPL-0103] Timing-driven: weighted 35 nets.
-[INFO GPL-0107] Timing-driven: repair_design (rsz) delta area:     -6.650 um^2 (-1.23%)
+[INFO GPL-0107] Timing-driven: repair_design delta area: -6.650 um^2 (-1.23%)
 [INFO GPL-0108] Timing-driven: new target density: 0.67964303
 [NesterovSolve] Iter:  330 overflow: 0.170 HPWL: 2651271
 [NesterovSolve] Iter:  340 overflow: 0.132 HPWL: 2674704
