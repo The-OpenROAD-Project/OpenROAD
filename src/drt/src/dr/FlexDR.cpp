@@ -260,7 +260,7 @@ int FlexDRWorker::main(frDesign* design)
     }
     {
       std::ofstream router_cfgFile(
-          fmt::format("{}/worker_router_cfg_->bin", workerPath).c_str());
+          fmt::format("{}/worker_router_cfg.bin", workerPath).c_str());
       frOArchive ar(router_cfgFile);
       registerTypes(ar);
       serializeGlobals(ar, router_cfg_);
