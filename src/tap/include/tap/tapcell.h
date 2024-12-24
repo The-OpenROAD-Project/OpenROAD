@@ -34,8 +34,16 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <boost/polygon/polygon.hpp>
+#include <map>
+#include <optional>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "odb/geom_boost.h"
 
 namespace ord {
