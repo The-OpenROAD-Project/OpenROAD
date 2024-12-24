@@ -31,6 +31,7 @@ Checks: >
   -google-runtime-references,
   -google-explicit-constructor,
   performance-*,
+  -performance-enum-size,
   bugprone-*,
   -bugprone-branch-clone,
   -bugprone-easily-swappable-parameters,
