@@ -29,7 +29,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-sta::define_cmd_args "preview_dft" { [-verbose]}
+sta::define_cmd_args "preview_dft" {[-verbose]}
 
 proc preview_dft { args } {
   sta::parse_key_args "preview_dft" args \
@@ -58,15 +58,46 @@ proc scan_replace { args } {
   dft::scan_replace
 }
 
-sta::define_cmd_args "insert_dft" { }
+sta::define_cmd_args "write_scan_chains" {[json_file_out]}
+proc write_scan_chains { args } {
+  sta::parse_key_args "write_scan_chains" args \
+    keys {} flags {}
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error DFT 15 "No design block found."
+  }
+
+  dft::write_scan_chains [lindex $args 0]
+}
+
+sta::define_cmd_args "insert_dft" {
+  [-per_chain_enable]
+  [-scan_enable_name_pattern scan_enable_name_pattern]
+  [-scan_in_name_pattern scan_in_name_pattern]
+  [-scan_out_name_pattern scan_out_name_pattern]
+}
 proc insert_dft { args } {
   sta::parse_key_args "insert_dft" args \
-    keys {} flags {}
+    keys {-scan_enable_name_pattern -scan_in_name_pattern -scan_out_name_pattern} \
+    flags {-per_chain_enable}
 
   if { [ord::get_db_block] == "NULL" } {
     utl::error DFT 9 "No design block found."
   }
-  dft::insert_dft
+
+  foreach {flag default} {
+    -scan_enable_name_pattern "scan_enable_{}"
+    -scan_in_name_pattern "scan_in_{}"
+    -scan_out_name_pattern "scan_out_{}"
+  } {
+    if { ![info exists keys($flag)] } {
+      set keys($flag) $default
+    }
+  }
+  dft::insert_dft [info exists flags(-per_chain_enable)] \
+    $keys(-scan_enable_name_pattern) \
+    $keys(-scan_in_name_pattern) \
+    $keys(-scan_out_name_pattern)
 }
 
 sta::define_cmd_args "set_dft_config" { [-max_length max_length] \

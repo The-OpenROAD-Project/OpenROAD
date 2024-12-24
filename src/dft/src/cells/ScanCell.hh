@@ -127,8 +127,15 @@ class ScanCell
 
     odb::dbNet* driver_net = driver->getNet();
     if (!driver_net) {
-      driver_net = odb::dbNet::create(driver->getBlock(), GetTermName(driver));
+      driver_net = odb::dbNet::create(driver->getBlock(), driver->getName().c_str());
+      if (!driver_net) {
+        logger_->error(utl::DFT,
+                    30,
+                    "Failed to create driver net named '{}'",
+                    driver->getName());
+      }
       driver_net->setSigType(odb::dbSigType::SCAN);
+      driver->connect(driver_net);
     }
     debugPrint(logger_,
                utl::DFT,

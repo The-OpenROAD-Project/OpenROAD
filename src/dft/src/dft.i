@@ -38,6 +38,8 @@
 #include "DftConfig.hh"
 #include "ord/OpenRoad.hh"
 #include "ScanArchitect.hh"
+#include "ClockDomain.hh"
+#include "ResetDomain.hh"
 
 dft::Dft * getDft()
 {
@@ -50,6 +52,48 @@ utl::Logger* getLogger()
 }
 
 %}
+
+%include "../../Exception.i"
+
+%typemap(typecheck) dft::ResetActiveEdge {
+  char *str = Tcl_GetStringFromObj($input, 0);
+    if (strcasecmp(str, "LOW") == 0) {
+    $1 = 1;
+  } else if (strcasecmp(str, "HIGH") == 0) {
+    $1 = 1;
+  } else {
+    $1 = 0;
+  }
+}
+
+%typemap(in) dft::ResetActiveEdge {
+  char *str = Tcl_GetStringFromObj($input, 0);
+  if (strcasecmp(str, "LOW") == 0) {
+    $1 = dft::ResetActiveEdge::Low;
+  } else /* other values eliminated in typecheck */ {
+    $1 = dft::ResetActiveEdge::High;
+  };
+}
+
+%typemap(typecheck) dft::ClockEdge {
+  char *str = Tcl_GetStringFromObj($input, 0);
+    if (strcasecmp(str, "RISING") == 0) {
+    $1 = 1;
+  } else if (strcasecmp(str, "FALLING") == 0) {
+    $1 = 1;
+  } else {
+    $1 = 0;
+  }
+}
+
+%typemap(in) dft::ClockEdge {
+  char *str = Tcl_GetStringFromObj($input, 0);
+  if (strcasecmp(str, "FALLING") == 0) {
+    $1 = dft::ClockEdge::Falling;
+  } else /* other values eliminated in typecheck */ {
+    $1 = dft::ClockEdge::Rising;
+  };
+}
 
 %inline
 %{
@@ -64,10 +108,18 @@ void scan_replace()
   getDft()->scanReplace();
 }
 
-
-void insert_dft()
+void insert_dft(bool per_chain_enable,
+                const char* scan_enable_name_pattern,
+                const char* scan_in_name_pattern,
+                const char* scan_out_name_pattern)
 {
-  getDft()->insertDft();
+  getDft()->insertDft(per_chain_enable, scan_enable_name_pattern, scan_in_name_pattern, scan_out_name_pattern);
+}
+
+void write_scan_chains(const char* filename_p)
+{
+  std::string filename(filename_p);
+  getDft()->writeScanChains(filename);
 }
 
 void set_dft_config_max_length(int max_length)

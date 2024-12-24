@@ -119,4 +119,9 @@ const std::string& ScanChain::getName() const
   return name_;
 }
 
+void ScanChain::rename(std::string& new_name)
+{
+  name_ = new_name;
+}
+
 }  // namespace dft

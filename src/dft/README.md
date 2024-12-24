@@ -77,13 +77,51 @@ preview_dft
 
 ### Insert DFT
 
-Architect scan chains and connect them up in a way that minimises wirelength. As a result, this
-should be run after placement, and after `scan_replace`.
+Architect scan chains and connect them up in a way that minimises wirelength. As
+a result, this should be run after placement, and after `scan_replace`.
 
 ```tcl
 insert_dft
+    [-per_chain_enable]
+    [-scan_enable_name_pattern <string>]
+    [-scan_in_name_pattern <string>]
+    [-scan_out_name_pattern <string>]
 ```
 
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+| `-per_chain_enable` | Creates one enable signal per chain instead of reusing the same one for every chain. |
+| `-scan_enable_name_pattern` | A format pattern with exactly one set of braces (`{}`) to use to find or create scan enable drivers. The braces will be replaced with the chain's ordinal number (starting at `0`) if `-per_chain_enable` is defined, otherwise, all will share `0`. If an un-escaped forward slash (`/`) is found, instead of searching for and/or creating a top-level port, an instance's pin will be searched for instead where the part of the string preceding the `/` is interpreted as the instance name and part succeeding it will be interpreted as the pin's name. |
+| `-scan_in_name_pattern` | A format pattern with exactly one set of braces (`{}`) to use to find or create scan in drivers. The braces will be replaced with the chain's ordinal number (starting at `0`). If an un-escaped forward slash (`/`) is found, instead of searching for and/or creating a top-level port, an instance's pin will be searched for instead where the part of the string preceding the `/` is interpreted as the instance name and part succeeding it will be interpreted as the pin's name. |
+| `-scan_out_name_pattern` | A format pattern with exactly one set of braces (`{}`) to use to find or create scan in loads. The braces will be replaced with the chain's ordinal number (starting at `0`). If an un-escaped forward slash (`/`) is found, instead of searching for and/or creating a top-level port, an instance's pin will be searched for instead where the part of the string preceding the `/` is interpreted as the instance name and part succeeding it will be interpreted as the pin's name. |
+
+### Write Scan Chains
+
+Writes a JSON file containing metadata about the current architected scan chain.
+
+The JSON file is currently in this format:
+
+```jsonc
+{
+    "chain_0": {
+        "cells": [
+            "scanflop_0",
+            "scanflop_1",
+            "scanflop_2"
+        ]
+    },
+    /* … other chains … */ 
+}
+```
+
+…where the order of `.chain_name.cells` corresponds to the order of the elements
+in the scan-chain.
+
+```tcl
+write_scan_chains
+```
 
 ## Example scripts
 

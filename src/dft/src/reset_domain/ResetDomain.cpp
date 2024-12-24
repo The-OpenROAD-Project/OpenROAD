@@ -29,46 +29,52 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#pragma once
+#include "ResetDomain.hh"
 
-#include <optional>
+namespace dft {
 
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "sta/Liberty.hh"
-#include "utl/Logger.h"
+std::function<size_t(const ResetDomain&)> GetResetDomainHashFn()
+{
+  return [](const ResetDomain& reset_domain) {
+    return std::hash<std::string_view>{}(reset_domain.getResetName())
+           ^ std::hash<ResetActiveEdge>{}(reset_domain.getResetActiveEdge());
+  };
+}
 
-namespace dft::utils {
+ResetDomain::ResetDomain(const std::string& reset_name,
+                         ResetActiveEdge reset_edge)
+    : reset_name_(reset_name), reset_edge_(reset_edge)
+{
+}
 
-// Replace the old_instance cell with a new master. The connections of the old
-// cell will be preserved by using the given port mapping from
-// <old_port_name, new_port_name>. Returns the new instance and deletes the old
-// one. The name of the new instance is going to be the same as the old one.
-odb::dbInst* ReplaceCell(
-    odb::dbBlock* top_block,
-    odb::dbInst* old_instance,
-    odb::dbMaster* new_master,
-    const std::unordered_map<std::string, std::string>& port_mapping);
+std::string_view ResetDomain::getResetName() const
+{
+  return reset_name_;
+}
 
-// Returns true if the given instance cell's is a sequential cell, false
-// otherwise
-bool IsSequentialCell(sta::dbNetwork* db_network, odb::dbInst* instance);
+ResetActiveEdge ResetDomain::getResetActiveEdge() const
+{
+  return reset_edge_;
+}
 
-// Returns a vector of dbITerm for every clock that there is in the instance.
-// For black boxes or CTLs (Core Test Language), we can have more than one clock
-std::vector<odb::dbITerm*> GetClockPin(odb::dbInst* inst);
+std::string_view ResetDomain::getResetActiveEdgeName() const
+{
+  switch (reset_edge_) {
+    case ResetActiveEdge::High:
+      return "high";
+      break;
+    case ResetActiveEdge::Low:
+      return "low";
+      break;
+  }
+  // TODO replace with std::unreachable() once we reach c++23
+  return "Unknown reset active edge";
+}
 
-// Returns a sta::Clock of the given iterm
-std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm);
+size_t ResetDomain::getResetDomainId() const
+{
+  return std::hash<std::string_view>{}(reset_name_)
+         ^ std::hash<ResetActiveEdge>{}(reset_edge_);
+}
 
-// Checks if the given LibertyCell is really a Scan Cell with a Scan In and a
-// Scan Enable
-bool IsScanCell(const sta::LibertyCell* libertyCell);
-
-// Convenience method to create a new port
-odb::dbBTerm* CreateNewPort(odb::dbBlock* block,
-                            const std::string& port_name,
-                            utl::Logger* logger,
-                            odb::dbNet* net = nullptr);
-
-}  // namespace dft::utils
+}  // namespace dft

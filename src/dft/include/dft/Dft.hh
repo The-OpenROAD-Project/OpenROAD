@@ -31,6 +31,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
+#include "ClockDomain.hh"
+#include "ResetDomain.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
@@ -95,7 +97,10 @@ class Dft
   //
   void scanReplace();
 
-  void insertDft();
+  void insertDft(bool per_chain_enable,
+                 const std::string& scan_enable_name_pattern,
+                 const std::string& scan_in_name_pattern,
+                 const std::string& scan_out_name_pattern);
 
   // Returns a mutable version of DftConfig
   DftConfig* getMutableDftConfig();
@@ -105,6 +110,9 @@ class Dft
 
   // Prints to stdout
   void reportDftConfig() const;
+
+  // Writes scan chains in a JSON format
+  void writeScanChains(const std::string& filename);
 
  private:
   // If we need to run pre_dft to create the internal state

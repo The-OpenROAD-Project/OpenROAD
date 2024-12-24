@@ -85,6 +85,9 @@ class ScanChain
   // Returns the name of the scan chain
   const std::string& getName() const;
 
+  // Changes the name of the scan chain
+  void rename(std::string& new_name);
+
  private:
   std::string name_;
   std::vector<std::unique_ptr<ScanCell>> rising_edge_scan_cells_;
