@@ -50,9 +50,9 @@
 //   Highest message number = 4700
 
 %{
-#include <string.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
 
 #include "lex.h"
 #include "lefiDefs.hpp"

@@ -32,8 +32,7 @@
 
 #pragma once
 
-#include <string.h>
-
+#include <cstring>
 #include <map>
 #include <vector>
 

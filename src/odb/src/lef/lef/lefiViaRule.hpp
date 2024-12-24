@@ -30,7 +30,7 @@
 #ifndef lefiViaRule_h
 #define lefiViaRule_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 

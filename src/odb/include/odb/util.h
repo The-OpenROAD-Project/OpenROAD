@@ -32,9 +32,8 @@
 
 #pragma once
 
-#include <string.h>
-
 #include <cassert>
+#include <cstring>
 #include <string>
 #include <vector>
 

@@ -29,7 +29,7 @@
 
 #include "lefrSettings.hpp"
 
-#include <string.h>
+#include <cstring>
 
 #include "lef_parser.hpp"
 

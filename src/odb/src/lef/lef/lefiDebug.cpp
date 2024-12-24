@@ -29,9 +29,9 @@
 
 #include "lefiDebug.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "lefrData.hpp"
 #include "lefrReader.hpp"

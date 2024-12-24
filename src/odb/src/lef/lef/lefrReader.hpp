@@ -30,8 +30,8 @@
 #ifndef LEFRREADER_H
 #define LEFRREADER_H
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <cstdarg>
+#include <cstdio>
 
 #include "lefiDefs.hpp"
 #include "lefiKRDefs.hpp"

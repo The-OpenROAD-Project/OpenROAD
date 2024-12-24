@@ -32,9 +32,9 @@
 
 #include "dbBlock.h"
 
-#include <errno.h>
 #include <unistd.h>
 
+#include <cerrno>
 #include <fstream>
 #include <memory>
 #include <set>

@@ -32,13 +32,14 @@
 
 #include "definVia.h"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
 
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
+
 namespace odb {
 
 definVia::definVia()

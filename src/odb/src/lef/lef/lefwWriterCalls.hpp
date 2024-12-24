@@ -30,8 +30,8 @@
 #ifndef LEFI_WRITER_H
 #define LEFI_WRITER_H
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <cstdarg>
+#include <cstdio>
 
 #include "lefiDefs.hpp"
 #include "lefiKRDefs.hpp"

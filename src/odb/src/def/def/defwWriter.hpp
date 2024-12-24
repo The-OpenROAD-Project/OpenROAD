@@ -30,8 +30,8 @@
 #ifndef DEFW_WRITER_H
 #define DEFW_WRITER_H
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <cstdarg>
+#include <cstdio>
 
 #include "defiDefs.hpp"
 #include "defiKRDefs.hpp"

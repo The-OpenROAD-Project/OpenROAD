@@ -32,8 +32,8 @@
 #ifndef LEFI_DEFS_H
 #define LEFI_DEFS_H
 
-#include <limits.h>
-#include <stdio.h>
+#include <climits>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 
