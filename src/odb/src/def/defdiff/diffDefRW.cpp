@@ -30,10 +30,10 @@
 // This program is the diffDef core program.  It has all the callback
 // routines and write it out to a temporary file.
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #ifndef WIN32
 #include <unistd.h>
 #endif /* not WIN32 */

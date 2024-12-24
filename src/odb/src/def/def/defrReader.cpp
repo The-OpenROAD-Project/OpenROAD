@@ -29,10 +29,10 @@
 
 #include "defrReader.hpp"
 
-#include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
 
+#include <cstdlib>
+#include <cstring>
 #include <sstream>
 
 #include "defiDebug.hpp"

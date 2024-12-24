@@ -29,9 +29,8 @@
 
 #include "defiNonDefault.hpp"
 
-#include <stdlib.h>
-#include <string.h>
-
+#include <cstdlib>
+#include <cstring>
 #include <sstream>
 
 #include "defiDebug.hpp"

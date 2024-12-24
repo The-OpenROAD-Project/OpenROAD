@@ -33,7 +33,7 @@
 #ifndef CDEFWWRITERCALLS_H
 #define CDEFWWRITERCALLS_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

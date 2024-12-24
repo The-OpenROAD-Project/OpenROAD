@@ -33,9 +33,9 @@
 
 #include "lefwWriter.hpp"
 
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 
 #include "crypt.hpp"
 

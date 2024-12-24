@@ -30,7 +30,7 @@
 #ifndef lefiLayer_h
 #define lefiLayer_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 #include "lefiMisc.hpp"

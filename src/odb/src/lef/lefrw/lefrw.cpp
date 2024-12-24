@@ -31,10 +31,9 @@
 #pragma warning(disable : 4786)
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 
 #ifndef WIN32

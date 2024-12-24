@@ -32,8 +32,8 @@
 #ifndef DEFI_DEFS_H
 #define DEFI_DEFS_H
 
-#include <limits.h>
-#include <stdio.h>
+#include <climits>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 

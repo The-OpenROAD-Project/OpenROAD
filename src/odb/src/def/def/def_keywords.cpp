@@ -33,9 +33,9 @@
 /*                              for PINS + USE, SPECIALNETS + SHAPE    */
 /*                              and other keywords                     */
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
 
 #include "defiDebug.hpp"
 #include "defiDefs.hpp"

@@ -777,8 +777,9 @@ void makect(int nc, int* ip, float* c)
 #define CDFT_4THREADS_BEGIN_N 65536
 #endif
 #include <pthread.h>
-#include <stdio.h>
-#include <stdlib.h>
+
+#include <cstdio>
+#include <cstdlib>
 #define cdft_thread_t pthread_t
 #define cdft_thread_create(thp, func, argp)                   \
   {                                                           \
@@ -804,9 +805,10 @@ void makect(int nc, int* ip, float* c)
 #ifndef CDFT_4THREADS_BEGIN_N
 #define CDFT_4THREADS_BEGIN_N 524288
 #endif
-#include <stdio.h>
-#include <stdlib.h>
 #include <windows.h>
+
+#include <cstdio>
+#include <cstdlibd>
 #define cdft_thread_t HANDLE
 #define cdft_thread_create(thp, func, argp)                               \
   {                                                                       \

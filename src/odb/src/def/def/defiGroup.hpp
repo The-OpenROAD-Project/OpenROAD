@@ -30,7 +30,7 @@
 #ifndef defiGroup_h
 #define defiGroup_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 

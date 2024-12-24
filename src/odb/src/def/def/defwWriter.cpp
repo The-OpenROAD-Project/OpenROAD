@@ -41,9 +41,9 @@
 
 #include "defwWriter.hpp"
 
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 
 #include "defiUtil.hpp"
 

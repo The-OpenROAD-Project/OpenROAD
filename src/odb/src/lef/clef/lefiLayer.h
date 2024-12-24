@@ -33,7 +33,7 @@
 #ifndef CLEFILAYER_H
 #define CLEFILAYER_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiTypedefs.h"
 

@@ -30,8 +30,7 @@
 #ifndef DEFRREADER_H
 #define DEFRREADER_H
 
-#include <stdarg.h>
-
+#include <cstdarg>
 #include <string_view>
 
 #include "defiDefs.hpp"

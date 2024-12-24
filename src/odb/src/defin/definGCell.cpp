@@ -32,9 +32,9 @@
 
 #include "definGCell.h"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
 
 #include "odb/db.h"
 #include "odb/dbShape.h"

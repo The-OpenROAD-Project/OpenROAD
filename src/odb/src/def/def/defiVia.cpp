@@ -29,8 +29,8 @@
 
 #include "defiVia.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
 #include "lex.h"

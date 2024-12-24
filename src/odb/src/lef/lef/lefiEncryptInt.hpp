@@ -30,7 +30,7 @@
 #ifndef DEFI_ENCRYPTINT_H
 #define DEFI_ENCRYPTINT_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 
