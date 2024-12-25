@@ -421,11 +421,10 @@ void dbVia::setViaParams(const dbViaParams& params)
   dbSet<dbBox>::iterator itr;
 
   for (itr = boxes.begin(); itr != boxes.end();) {
-    dbSet<dbBox>::iterator n = ++itr;
-    _dbBox* box = (_dbBox*) *itr;
+    dbSet<dbBox>::iterator cur = itr++;
+    _dbBox* box = (_dbBox*) *cur;
     dbProperty::destroyProperties(box);
     block->_box_tbl->destroy(box);
-    itr = n;
   }
 
   via->_boxes = 0U;
