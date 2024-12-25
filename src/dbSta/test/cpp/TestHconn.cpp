@@ -290,6 +290,8 @@ class TestHconn : public ::testing::Test
     sta::Units* units = library_->units();
     power_unit_ = units->powerUnit();
     db_network_ = sta_->getDbNetwork();
+    // turn on hierarchy
+    db_network_->setHierarchy();
     db_->setLogger(&logger_);
 
     // create a chain consisting of 4 buffers
@@ -958,6 +960,40 @@ TEST_F(TestHconn, ConnectionMade)
   //  std::stringstream str_str_final;
   //  DbStrDebugHierarchy(block, str_str_final);
   //  printf("The final design: %s\n", str_str_final.str().c_str());
+
+  // Example of how to turn on the call backs for all the bterms/iterms
+  // used by the sta
+  dbSet<dbModNet> mod_nets = block->getModNets();
+  for (auto mnet : mod_nets) {
+    sta::NetSet visited_nets;
+    // given one mod net go get all its low level objects to
+    // issue call back on
+    sta::Net* cur_net = db_network_->dbToSta(mnet);
+    sta::NetConnectedPinIterator* npi
+        = db_network_->connectedPinIterator(cur_net);
+    while (npi->hasNext()) {
+      const sta::Pin* cur_pin = npi->next();
+      odb::dbModBTerm* modbterm;
+      odb::dbModITerm* moditerm;
+      odb::dbITerm* iterm;
+      odb::dbBTerm* bterm;
+      db_network_->staToDb(cur_pin, iterm, bterm, moditerm, modbterm);
+      if (iterm) {
+        db_network_->connectPinAfter(const_cast<sta::Pin*>(cur_pin));
+        sta_->connectPinAfter(const_cast<sta::Pin*>(cur_pin));
+      }
+      if (bterm) {
+        db_network_->connectPinAfter(const_cast<sta::Pin*>(cur_pin));
+        sta_->connectPinAfter(const_cast<sta::Pin*>(cur_pin));
+      }
+      if (modbterm) {
+        ;
+      }
+      if (moditerm) {
+        ;
+      }
+    }
+  }
 
   size_t final_db_net_count = block->getNets().size();
   size_t final_mod_net_count = block->getModNets().size();
