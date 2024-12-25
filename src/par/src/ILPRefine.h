@@ -34,9 +34,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include <set>
+#include <memory>
+#include <vector>
 
+#include "Evaluator.h"
+#include "Hypergraph.h"
 #include "Refiner.h"
+#include "Utilities.h"
 
 namespace par {
 

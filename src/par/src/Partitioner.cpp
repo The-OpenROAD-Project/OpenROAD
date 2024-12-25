@@ -35,7 +35,13 @@
 
 #include "Partitioner.h"
 
+#include <algorithm>
+#include <map>
+#include <numeric>
 #include <random>
+#include <set>
+#include <utility>
+#include <vector>
 
 #include "Evaluator.h"
 #include "Hypergraph.h"

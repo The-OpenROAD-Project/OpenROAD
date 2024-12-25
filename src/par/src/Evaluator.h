@@ -34,8 +34,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include <set>
-#include <tuple>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "Hypergraph.h"
 #include "Utilities.h"

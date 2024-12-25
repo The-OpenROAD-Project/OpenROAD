@@ -34,6 +34,15 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "GreedyRefine.h"
 
+#include <memory>
+#include <set>
+#include <vector>
+
+#include "Evaluator.h"
+#include "Hypergraph.h"
+#include "Refiner.h"
+#include "Utilities.h"
+
 // ------------------------------------------------------------------------------
 // K-way hyperedge greedy refinement
 // ------------------------------------------------------------------------------
