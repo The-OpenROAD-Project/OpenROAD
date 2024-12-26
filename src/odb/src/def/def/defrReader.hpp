@@ -755,6 +755,4 @@ extern void defrAddAlias(std::string_view key,
 
 END_DEF_PARSER_NAMESPACE
 
-USE_DEF_PARSER_NAMESPACE
-
 #endif

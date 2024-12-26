@@ -51,8 +51,8 @@
 //  6180 - defiVia.cpp
 //  6500 - def parser, error, def.y
 %define api.pure
-%lex-param {defrData *defData}
-%parse-param {defrData *defData}
+%lex-param {DefParser::defrData *defData}
+%parse-param {DefParser::defrData *defData}
 
 
 %{

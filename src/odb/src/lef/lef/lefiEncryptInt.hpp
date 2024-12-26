@@ -43,6 +43,4 @@ extern void lefrEnableReadEncrypted();
 
 END_LEF_PARSER_NAMESPACE
 
-USE_LEF_PARSER_NAMESPACE
-
 #endif

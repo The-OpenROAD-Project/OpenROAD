@@ -32,6 +32,5 @@
 
 #define BEGIN_LEF_PARSER_NAMESPACE namespace LefParser {
 #define END_LEF_PARSER_NAMESPACE }
-#define USE_LEF_PARSER_NAMESPACE using namespace LefParser;
 
 #endif

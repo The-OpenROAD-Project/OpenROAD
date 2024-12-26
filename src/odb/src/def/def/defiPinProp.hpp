@@ -89,6 +89,4 @@ class defiPinProp
 
 END_DEF_PARSER_NAMESPACE
 
-USE_DEF_PARSER_NAMESPACE
-
 #endif

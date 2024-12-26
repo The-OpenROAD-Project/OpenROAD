@@ -54,6 +54,4 @@ extern const char* DEFCASE(const char* ch, defrData* defData = nullptr);
 
 END_DEF_PARSER_NAMESPACE
 
-USE_DEF_PARSER_NAMESPACE
-
 #endif

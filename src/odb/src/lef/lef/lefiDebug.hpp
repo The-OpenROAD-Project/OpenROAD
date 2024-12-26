@@ -47,6 +47,4 @@ extern const char* CASE(const char* x);
 
 END_LEF_PARSER_NAMESPACE
 
-USE_LEF_PARSER_NAMESPACE
-
 #endif

@@ -211,6 +211,4 @@ extern void defwSetWarningLogFunction(DEFI_WARNING_LOG_FUNCTION);
 
 END_DEF_PARSER_NAMESPACE
 
-USE_DEF_PARSER_NAMESPACE
-
 #endif

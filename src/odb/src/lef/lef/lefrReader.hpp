@@ -574,6 +574,4 @@ extern void lefrRegisterLef58Type(const char* lef58Type, const char* layerType);
 
 END_LEF_PARSER_NAMESPACE
 
-USE_LEF_PARSER_NAMESPACE
-
 #endif

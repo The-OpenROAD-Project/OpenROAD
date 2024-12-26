@@ -202,6 +202,4 @@ extern void lefwSetWarningLogFunction(LEFI_WARNING_LOG_FUNCTION);
 
 END_LEF_PARSER_NAMESPACE
 
-USE_LEF_PARSER_NAMESPACE
-
 #endif

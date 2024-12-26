@@ -32,6 +32,5 @@
 
 #define BEGIN_DEF_PARSER_NAMESPACE namespace DefParser {
 #define END_DEF_PARSER_NAMESPACE }
-#define USE_DEF_PARSER_NAMESPACE using namespace DefParser;
 
 #endif /* defiKRDEFS_h */
