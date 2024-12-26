@@ -374,18 +374,20 @@ static std::string renameBlock(dbBlock* parent, const char* old_name)
   }
 }
 
-int definReader::versionCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                 const char* value,
-                                 defiUserData data)
+int definReader::versionCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    const char* value,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   reader->version_ = value;
   return PARSE_OK;
 }
 
-int definReader::divideCharCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                    const char* value,
-                                    defiUserData data)
+int definReader::divideCharCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    const char* value,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   reader->hier_delimeter_ = value[0];
@@ -395,9 +397,10 @@ int definReader::divideCharCallback(DefParser::defrCallbackType_e /* unused: typ
   }
   return PARSE_OK;
 }
-int definReader::busBitCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                const char* value,
-                                defiUserData data)
+int definReader::busBitCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    const char* value,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   reader->left_bus_delimeter_ = value[0];
@@ -409,9 +412,10 @@ int definReader::busBitCallback(DefParser::defrCallbackType_e /* unused: type */
   }
   return PARSE_OK;
 }
-int definReader::designCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                const char* design,
-                                defiUserData data)
+int definReader::designCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    const char* design,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   std::string block_name;
@@ -462,9 +466,10 @@ int definReader::designCallback(DefParser::defrCallbackType_e /* unused: type */
   return PARSE_OK;
 }
 
-int definReader::blockageCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                  DefParser::defiBlockage* blockage,
-                                  defiUserData data)
+int definReader::blockageCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defiBlockage* blockage,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -550,9 +555,10 @@ int definReader::blockageCallback(DefParser::defrCallbackType_e /* unused: type 
   return PARSE_OK;
 }
 
-int definReader::componentsCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                    DefParser::defiComponent* comp,
-                                    defiUserData data)
+int definReader::componentsCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defiComponent* comp,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -624,9 +630,10 @@ int definReader::componentMaskShiftCallback(
   return PARSE_OK;
 }
 
-int definReader::dieAreaCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                 DefParser::defiBox* box,
-                                 defiUserData data)
+int definReader::dieAreaCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defiBox* box,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -686,9 +693,10 @@ int definReader::dieAreaCallback(DefParser::defrCallbackType_e /* unused: type *
   return PARSE_OK;
 }
 
-int definReader::extensionCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                   const char* /* unused: extension */,
-                                   defiUserData data)
+int definReader::extensionCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    const char* /* unused: extension */,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   UNSUPPORTED("Syntax extensions (BEGINEXT/ENDEXT) are unsupported");
@@ -739,9 +747,10 @@ int definReader::fillCallback(DefParser::defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::gcellGridCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                   DefParser::defiGcellGrid* grid,
-                                   defiUserData data)
+int definReader::gcellGridCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defiGcellGrid* grid,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   defDirection dir = (grid->macro()[0] == 'X') ? DEF_X : DEF_Y;
@@ -751,9 +760,10 @@ int definReader::gcellGridCallback(DefParser::defrCallbackType_e /* unused: type
   return PARSE_OK;
 }
 
-int definReader::groupNameCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                   const char* name,
-                                   defiUserData data)
+int definReader::groupNameCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    const char* name,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -761,9 +771,10 @@ int definReader::groupNameCallback(DefParser::defrCallbackType_e /* unused: type
   return PARSE_OK;
 }
 
-int definReader::groupMemberCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                     const char* member,
-                                     defiUserData data)
+int definReader::groupMemberCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    const char* member,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -787,9 +798,10 @@ int definReader::groupCallback(DefParser::defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::historyCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                 const char* /* unused: extension */,
-                                 defiUserData data)
+int definReader::historyCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    const char* /* unused: extension */,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   UNSUPPORTED("HISTORY is unsupported");
@@ -982,9 +994,10 @@ int definReader::netCallback(DefParser::defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::nonDefaultRuleCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                        DefParser::defiNonDefault* rule,
-                                        defiUserData data)
+int definReader::nonDefaultRuleCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defiNonDefault* rule,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -1191,18 +1204,20 @@ int definReader::pinCallback(DefParser::defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::pinsEndCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                 void* /* unused: v */,
-                                 defiUserData data)
+int definReader::pinsEndCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    void* /* unused: v */,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   reader->_pinR->pinsEnd();
   return PARSE_OK;
 }
 
-int definReader::pinPropCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                 DefParser::defiPinProp* prop,
-                                 defiUserData data)
+int definReader::pinPropCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defiPinProp* prop,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   definPinProps* propR = reader->_pin_propsR;
@@ -1214,9 +1229,10 @@ int definReader::pinPropCallback(DefParser::defrCallbackType_e /* unused: type *
   return PARSE_OK;
 }
 
-int definReader::pinsStartCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                   int number,
-                                   defiUserData data)
+int definReader::pinsStartCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    int number,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -1292,18 +1308,20 @@ int definReader::propCallback(DefParser::defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::propEndCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                 void* /* unused: v */,
-                                 defiUserData data)
+int definReader::propEndCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    void* /* unused: v */,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   reader->_prop_defsR->endDefinitions();
   return PARSE_OK;
 }
 
-int definReader::propStartCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                   void* /* unused: v */,
-                                   defiUserData data)
+int definReader::propStartCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    void* /* unused: v */,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -1311,9 +1329,10 @@ int definReader::propStartCallback(DefParser::defrCallbackType_e /* unused: type
   return PARSE_OK;
 }
 
-int definReader::regionCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                DefParser::defiRegion* region,
-                                defiUserData data)
+int definReader::regionCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defiRegion* region,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -1387,9 +1406,10 @@ int definReader::rowCallback(DefParser::defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::scanchainsStartCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                         int chain_count,
-                                         defiUserData data)
+int definReader::scanchainsStartCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    int chain_count,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -1397,9 +1417,10 @@ int definReader::scanchainsStartCallback(DefParser::defrCallbackType_e /* unused
   return PARSE_OK;
 }
 
-int definReader::scanchainsCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                    DefParser::defiScanchain* scan_chain,
-                                    defiUserData data)
+int definReader::scanchainsCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defiScanchain* scan_chain,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -1506,18 +1527,20 @@ int definReader::slotsCallback(DefParser::defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::stylesCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                int /* unused: count */,
-                                defiUserData data)
+int definReader::stylesCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    int /* unused: count */,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   UNSUPPORTED("STYLES are unsupported");
   return PARSE_OK;
 }
 
-int definReader::technologyCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                    const char* /* unused: name */,
-                                    defiUserData data)
+int definReader::technologyCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    const char* /* unused: name */,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   reader->_logger->warn(utl::ODB, 293, "TECHNOLOGY is ignored");
@@ -1545,7 +1568,9 @@ int definReader::trackCallback(DefParser::defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::unitsCallback(DefParser::defrCallbackType_e, double d, defiUserData data)
+int definReader::unitsCallback(DefParser::defrCallbackType_e,
+                               double d,
+                               defiUserData data)
 {
   definReader* reader = (definReader*) data;
 
@@ -1668,9 +1693,10 @@ int definReader::viaCallback(DefParser::defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::specialNetCallback(DefParser::defrCallbackType_e /* unused: type */,
-                                    DefParser::defiNet* net,
-                                    defiUserData data)
+int definReader::specialNetCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defiNet* net,
+    defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -2110,7 +2136,8 @@ bool definReader::createBlock(const char* file)
       _logger->warn(utl::ODB, 148, "error: Cannot open DEF file {}", file);
       return false;
     }
-    res = DefParser::defrRead(f, file, (defiUserData) this, /* case sensitive */ 1);
+    res = DefParser::defrRead(
+        f, file, (defiUserData) this, /* case sensitive */ 1);
     fclose(f);
   } else {
     DefParser::defrSetGZipReadFunction();
@@ -2159,7 +2186,8 @@ bool definReader::replaceWires(const char* file)
 
   DefParser::defrSetAddPathToNet();
 
-  int res = DefParser::defrRead(f, file, (defiUserData) this, /* case sensitive */ 1);
+  int res = DefParser::defrRead(
+      f, file, (defiUserData) this, /* case sensitive */ 1);
   if (res != 0) {
     if (!_continue_on_errors) {
       _logger->error(utl::ODB, 422, "DEF parser returns an error!");
