@@ -37,7 +37,7 @@
 
 #include "lefiTypedefs.h"
 
-#define MAX_LEF_MSGS 4701
+constexpr int MAX_LEF_MSGS = 4701;
 
 /* The reader initialization.  Must be called before lefrRead().              */
 EXTERN int lefrInit();
