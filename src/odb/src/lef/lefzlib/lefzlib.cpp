@@ -54,7 +54,7 @@ size_t lefGZip_read(FILE* file, char* buf, size_t len)
 lefGZFile lefGZipOpen(const char* gzipPath, const char* mode)
 {
   if (!gzipPath)
-    return NULL;
+    return nullptr;
 
   lefGZFile fptr = gzopen(gzipPath, mode);
   if (fptr) {
@@ -63,7 +63,7 @@ lefGZFile lefGZipOpen(const char* gzipPath, const char* mode)
     lefrSetReadFunction(lefGZip_read);
     return (lefGZFile) fptr;
   } else
-    return NULL;
+    return nullptr;
 }
 
 int lefGZipClose(lefGZFile filePtr)

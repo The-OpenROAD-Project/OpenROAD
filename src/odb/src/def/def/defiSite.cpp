@@ -189,7 +189,7 @@ void defiBox::Init()
   yl_ = 0;
   xh_ = 0;
   yh_ = 0;
-  points_ = 0;
+  points_ = nullptr;
 }
 
 defiBox::~defiBox()

@@ -178,8 +178,8 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _right_bus_delimeter = 0;
   _num_ext_corners = 0;
   _corners_per_block = 0;
-  _corner_name_list = 0;
-  _name = 0;
+  _corner_name_list = nullptr;
+  _name = nullptr;
   _maxCapNodeId = 0;
   _maxRSegId = 0;
   _maxCCSegId = 0;

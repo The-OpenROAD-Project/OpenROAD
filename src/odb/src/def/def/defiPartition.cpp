@@ -52,16 +52,16 @@ defiPartition::defiPartition(defrData* data) : defData(data)
 
 void defiPartition::Init()
 {
-  name_ = 0;
+  name_ = nullptr;
   nameLength_ = 0;
-  pin_ = 0;
+  pin_ = nullptr;
   pinLength_ = 0;
-  inst_ = 0;
+  inst_ = nullptr;
   instLength_ = 0;
 
   pinsAllocated_ = 0;
   numPins_ = 0;
-  pins_ = 0;
+  pins_ = nullptr;
 
   clear();
 }
@@ -75,22 +75,22 @@ void defiPartition::Destroy()
 {
   if (name_)
     free(name_);
-  name_ = 0;
+  name_ = nullptr;
   nameLength_ = 0;
   if (pin_)
     free(pin_);
-  pin_ = 0;
+  pin_ = nullptr;
   pinLength_ = 0;
   if (inst_)
     free(inst_);
-  inst_ = 0;
+  inst_ = nullptr;
   instLength_ = 0;
 
   clear();
 
   if (pins_)
     free((char*) (pins_));
-  pins_ = 0;
+  pins_ = nullptr;
   pinsAllocated_ = 0;
 }
 
@@ -114,7 +114,7 @@ void defiPartition::clear()
   if (numPins_) {
     for (i = 0; i < numPins_; i++) {
       free(pins_[i]);
-      pins_[i] = 0;
+      pins_[i] = nullptr;
     }
     numPins_ = 0;
   }

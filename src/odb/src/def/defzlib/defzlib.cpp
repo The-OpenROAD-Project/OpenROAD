@@ -56,7 +56,7 @@ size_t defGZip_read(FILE* file, char* buf, size_t len)
 defGZFile defGZipOpen(const char* gzipPath, const char* mode)
 {
   if (!gzipPath)
-    return NULL;
+    return nullptr;
 
   defGZFile fptr = gzopen(gzipPath, mode);
 
@@ -66,7 +66,7 @@ defGZFile defGZipOpen(const char* gzipPath, const char* mode)
     defrSetReadFunction(defGZip_read);
     return (defGZFile) fptr;
   } else
-    return NULL;
+    return nullptr;
 }
 
 int defGZipClose(defGZFile filePtr)
@@ -88,7 +88,7 @@ void defrSetGZipReadFunction()
 defGZFile defrGZipOpen(const char* gzipPath, const char* mode)
 {
   if (!gzipPath)
-    return NULL;
+    return nullptr;
 
   return gzopen(gzipPath, mode);
 }

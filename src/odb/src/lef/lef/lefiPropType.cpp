@@ -40,8 +40,8 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 lefiPropType::lefiPropType()
     : numProperties_(0),
       propertiesAllocated_(0),
-      propNames_(NULL),
-      propTypes_(NULL)
+      propNames_(nullptr),
+      propTypes_(nullptr)
 {
   Init();
 }
@@ -50,8 +50,8 @@ void lefiPropType::Init()
 {
   numProperties_ = 0;
   propertiesAllocated_ = 0;
-  propNames_ = 0;
-  propTypes_ = 0;
+  propNames_ = nullptr;
+  propTypes_ = nullptr;
 }
 
 void lefiPropType::Clear()

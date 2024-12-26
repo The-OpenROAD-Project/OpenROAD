@@ -203,8 +203,8 @@ _dbVia::_dbVia(_dbDatabase*)
   _flags._orient = dbOrientType::R0;
   _flags.default_ = false;
   _flags._spare_bits = 0;
-  _name = 0;
-  _pattern = 0;
+  _name = nullptr;
+  _pattern = nullptr;
 }
 
 _dbVia::~_dbVia()
@@ -279,7 +279,7 @@ std::string dbVia::getPattern()
 {
   _dbVia* via = (_dbVia*) this;
 
-  if (via->_pattern == 0) {
+  if (via->_pattern == nullptr) {
     return "";
   }
 
@@ -290,7 +290,7 @@ void dbVia::setPattern(const char* name)
 {
   _dbVia* via = (_dbVia*) this;
 
-  if (via->_pattern != 0) {
+  if (via->_pattern != nullptr) {
     return;
   }
 

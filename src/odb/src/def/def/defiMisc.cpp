@@ -145,7 +145,7 @@ defiStyles::defiStyles()
 void defiStyles::Init()
 {
   styleNum_ = 0;
-  polygon_ = 0;
+  polygon_ = nullptr;
 }
 
 defiStyles::~defiStyles()
@@ -169,7 +169,7 @@ void defiStyles::clear()
     free((char*) (polygon_));
   }
   styleNum_ = 0;
-  polygon_ = 0;
+  polygon_ = nullptr;
 }
 
 void defiStyles::setStyle(int styleNum)
@@ -182,7 +182,7 @@ void defiStyles::setPolygon(defiGeometries* geom)
   struct defiPoints* p;
   int i, x, y;
 
-  if (polygon_ == 0) {
+  if (polygon_ == nullptr) {
     p = (struct defiPoints*) malloc(sizeof(struct defiPoints));
     p->numPoints = geom->numPoints();
     p->x = (int*) malloc(sizeof(int) * p->numPoints);

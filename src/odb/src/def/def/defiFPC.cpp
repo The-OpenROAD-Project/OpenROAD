@@ -52,12 +52,12 @@ defiFPC::defiFPC(defrData* data) : defData(data)
 
 void defiFPC::Init()
 {
-  name_ = 0;
+  name_ = nullptr;
   nameLength_ = 0;
   namesAllocated_ = 0;
   namesUsed_ = 0;
-  names_ = 0;
-  rowOrComp_ = 0;
+  names_ = nullptr;
+  rowOrComp_ = nullptr;
   clear();
 }
 
@@ -72,7 +72,7 @@ void defiFPC::Destroy()
 
   if (name_)
     free(name_);
-  name_ = 0;
+  name_ = nullptr;
   nameLength_ = 0;
 
   free((char*) (names_));

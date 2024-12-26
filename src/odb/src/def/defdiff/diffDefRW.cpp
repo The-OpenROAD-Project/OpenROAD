@@ -1413,7 +1413,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
   defiVia* via;
   defiRegion* re;
   defiGroup* group;
-  defiComponentMaskShiftLayer* maskShiftLayer = NULL;
+  defiComponentMaskShiftLayer* maskShiftLayer = nullptr;
   defiScanchain* sc;
   defiIOTiming* iot;
   defiFPC* fpc;
@@ -1433,10 +1433,10 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
   const char* itemT;
   char dir;
   defiPinAntennaModel* aModel;
-  char* tmpPinName = NULL;
-  char* extraPinName = NULL;
-  char* pName = NULL;
-  char* tmpName = NULL;
+  char* tmpPinName = nullptr;
+  char* extraPinName = nullptr;
+  char* pName = nullptr;
+  char* tmpName = nullptr;
 
   checkType(c);
   if (ud != userData)
@@ -1512,7 +1512,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
       // is set to 1
       if (ignorePE) {
         // check if .extra is in the name, if it is, ignore it
-        if ((extraPinName = strstr(pName, ".extra")) == NULL)
+        if ((extraPinName = strstr(pName, ".extra")) == nullptr)
           tmpPinName = pName;
         else {
           // make sure name ends with .extraNNN
@@ -1520,7 +1520,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
           extraPinName = extraPinName + 6;
           *tmpName = '\0';
           tmpPinName = pName;
-          if (extraPinName != NULL) {
+          if (extraPinName != nullptr) {
             while (*extraPinName != '\0' && *extraPinName != '\n') {
               if (isdigit(*extraPinName++))
                 continue;
@@ -2542,12 +2542,12 @@ int diffDefReadFile(char* inFile,
   if (strcmp(netSegComp, "0") != 0)
     netSeCmp = 1;
 
-  if ((f = fopen(inFile, "r")) == 0) {
+  if ((f = fopen(inFile, "r")) == nullptr) {
     fprintf(stderr, "Couldn't open input file '%s'\n", inFile);
     return (2);
   }
 
-  if ((fout = fopen(outFile, "w")) == 0) {
+  if ((fout = fopen(outFile, "w")) == nullptr) {
     fprintf(stderr, "Couldn't open output file '%s'\n", outFile);
     fclose(f);
     return (2);

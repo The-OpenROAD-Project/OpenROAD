@@ -45,7 +45,7 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 // lefiAntennaPWL
 // *****************************************************************************
 
-lefiAntennaPWL::lefiAntennaPWL() : d_(0), r_(0)
+lefiAntennaPWL::lefiAntennaPWL() : d_(nullptr), r_(nullptr)
 {
   Init();
 }
@@ -54,8 +54,8 @@ lefiAntennaPWL* lefiAntennaPWL::create()
 {
   lefiAntennaPWL* pAntenna
       = (lefiAntennaPWL*) lefMalloc(sizeof(lefiAntennaPWL));
-  pAntenna->d_ = 0;
-  pAntenna->r_ = 0;
+  pAntenna->d_ = nullptr;
+  pAntenna->r_ = nullptr;
   pAntenna->Init();
 
   return pAntenna;
@@ -157,13 +157,13 @@ void lefiLayerDensity::Init(const char* type)
   strcpy(type_, CASE(type));
   oneEntry_ = 0;
   numFrequency_ = 0;
-  frequency_ = 0;
+  frequency_ = nullptr;
   numWidths_ = 0;
-  widths_ = 0;
+  widths_ = nullptr;
   numTableEntries_ = 0;
-  tableEntries_ = 0;
+  tableEntries_ = nullptr;
   numCutareas_ = 0;
-  cutareas_ = 0;
+  cutareas_ = nullptr;
 }
 
 void lefiLayerDensity::Destroy()
@@ -618,9 +618,9 @@ lefiSpacingTable::lefiSpacingTable()
 void lefiSpacingTable::Init()
 {
   hasInfluence_ = 0;
-  parallel_ = 0;
-  influence_ = 0;
-  twoWidths_ = 0;  // 5.7
+  parallel_ = nullptr;
+  influence_ = nullptr;
+  twoWidths_ = nullptr;  // 5.7
 }
 
 void lefiSpacingTable::Destroy()
@@ -649,7 +649,7 @@ void lefiSpacingTable::addParallelLength(int numLength, double* lengths)
 {
   lefiParallel* parallel;
 
-  if (parallel_ == 0) {
+  if (parallel_ == nullptr) {
     parallel = (lefiParallel*) lefMalloc(sizeof(lefiParallel));
     parallel->Init();
     parallel_ = parallel;
@@ -728,7 +728,7 @@ void lefiSpacingTable::addTwoWidths(double width,
 {
   lefiTwoWidths* twoWidths;
 
-  if (twoWidths_ == 0) {
+  if (twoWidths_ == nullptr) {
     twoWidths = (lefiTwoWidths*) lefMalloc(sizeof(lefiTwoWidths));
     twoWidths->Init();
     twoWidths_ = twoWidths;
@@ -750,8 +750,8 @@ void lefiOrthogonal::Init()
 {
   numAllocated_ = 0;
   numCutOrtho_ = 0;
-  cutWithin_ = 0;
-  ortho_ = 0;
+  cutWithin_ = nullptr;
+  ortho_ = nullptr;
 }
 
 lefiOrthogonal::~lefiOrthogonal()
@@ -848,12 +848,12 @@ void lefiAntennaModel::Init()
   hasAntennaCumRoutingPlusCut_ = 0;  // 5.7
   hasAntennaGatePlusDiff_ = 0;       // 5.7
   hasAntennaAreaMinusDiff_ = 0;      // 5.7
-  antennaDiffAreaRatioPWL_ = 0;
-  antennaCumDiffAreaRatioPWL_ = 0;
-  antennaDiffSideAreaRatioPWL_ = 0;
-  antennaCumDiffSideAreaRatioPWL_ = 0;
-  antennaAreaDiffReducePWL_ = 0;  // 5.7
-  oxide_ = 0;
+  antennaDiffAreaRatioPWL_ = nullptr;
+  antennaCumDiffAreaRatioPWL_ = nullptr;
+  antennaDiffSideAreaRatioPWL_ = nullptr;
+  antennaCumDiffSideAreaRatioPWL_ = nullptr;
+  antennaAreaDiffReducePWL_ = nullptr;  // 5.7
+  oxide_ = nullptr;
 }
 
 void lefiAntennaModel::Destroy()
@@ -865,31 +865,31 @@ void lefiAntennaModel::Destroy()
   if (antennaDiffAreaRatioPWL_) {
     antennaDiffAreaRatioPWL_->Destroy();
     lefFree((char*) (antennaDiffAreaRatioPWL_));
-    antennaDiffAreaRatioPWL_ = 0;
+    antennaDiffAreaRatioPWL_ = nullptr;
   }
 
   if (antennaCumDiffAreaRatioPWL_) {
     antennaCumDiffAreaRatioPWL_->Destroy();
     lefFree((char*) (antennaCumDiffAreaRatioPWL_));
-    antennaCumDiffAreaRatioPWL_ = 0;
+    antennaCumDiffAreaRatioPWL_ = nullptr;
   }
 
   if (antennaDiffSideAreaRatioPWL_) {
     antennaDiffSideAreaRatioPWL_->Destroy();
     lefFree((char*) (antennaDiffSideAreaRatioPWL_));
-    antennaDiffSideAreaRatioPWL_ = 0;
+    antennaDiffSideAreaRatioPWL_ = nullptr;
   }
 
   if (antennaCumDiffSideAreaRatioPWL_) {
     antennaCumDiffSideAreaRatioPWL_->Destroy();
     lefFree((char*) (antennaCumDiffSideAreaRatioPWL_));
-    antennaCumDiffSideAreaRatioPWL_ = 0;
+    antennaCumDiffSideAreaRatioPWL_ = nullptr;
   }
 
   if (antennaAreaDiffReducePWL_) {  // 5.7
     antennaAreaDiffReducePWL_->Destroy();
     lefFree((char*) (antennaAreaDiffReducePWL_));
-    antennaAreaDiffReducePWL_ = 0;
+    antennaAreaDiffReducePWL_ = nullptr;
   }
 }
 
@@ -1269,11 +1269,11 @@ lefiAntennaPWL* lefiAntennaModel::antennaAreaDiffReducePWL() const
 // lefiLayer
 // *****************************************************************************
 lefiLayer::lefiLayer()
-    : name_(NULL),
+    : name_(nullptr),
       nameSize_(0),
-      type_(NULL),
+      type_(nullptr),
       typeSize_(0),
-      layerType_(NULL),
+      layerType_(nullptr),
       hasPitch_(0),
       hasMask_(0),
       hasOffset_(0),
@@ -1283,21 +1283,21 @@ lefiLayer::lefiLayer()
       hasDiagPitch_(0),
       hasDiagWidth_(0),
       hasDiagSpacing_(0),
-      hasSpacingName_(NULL),
-      hasSpacingLayerStack_(NULL),
-      hasSpacingAdjacent_(NULL),
-      hasSpacingRange_(NULL),
-      hasSpacingUseLengthThreshold_(NULL),
-      hasSpacingLengthThreshold_(NULL),
-      hasSpacingCenterToCenter_(NULL),
-      hasSpacingParallelOverlap_(NULL),
-      hasSpacingCutArea_(NULL),
-      hasSpacingEndOfLine_(NULL),
-      hasSpacingParellelEdge_(NULL),
-      hasSpacingTwoEdges_(NULL),
-      hasSpacingAdjacentExcept_(NULL),
-      hasSpacingSamenet_(NULL),
-      hasSpacingSamenetPGonly_(NULL),
+      hasSpacingName_(nullptr),
+      hasSpacingLayerStack_(nullptr),
+      hasSpacingAdjacent_(nullptr),
+      hasSpacingRange_(nullptr),
+      hasSpacingUseLengthThreshold_(nullptr),
+      hasSpacingLengthThreshold_(nullptr),
+      hasSpacingCenterToCenter_(nullptr),
+      hasSpacingParallelOverlap_(nullptr),
+      hasSpacingCutArea_(nullptr),
+      hasSpacingEndOfLine_(nullptr),
+      hasSpacingParellelEdge_(nullptr),
+      hasSpacingTwoEdges_(nullptr),
+      hasSpacingAdjacentExcept_(nullptr),
+      hasSpacingSamenet_(nullptr),
+      hasSpacingSamenetPGonly_(nullptr),
       hasArraySpacing_(0),
       hasDirection_(0),
       hasResistance_(0),
@@ -1326,48 +1326,48 @@ lefiLayer::lefiLayer()
       numSpacings_(0),
       spacingsAllocated_(0),
       maskNumber_(0),
-      spacing_(NULL),
-      spacingAdjacentCuts_(NULL),
-      spacingAdjacentWithin_(NULL),
-      spacingCutArea_(NULL),
-      rangeMin_(NULL),
-      rangeMax_(NULL),
-      rangeInfluence_(NULL),
-      rangeInfluenceRangeMin_(NULL),
-      rangeInfluenceRangeMax_(NULL),
-      rangeRangeMin_(NULL),
-      rangeRangeMax_(NULL),
-      lengthThreshold_(NULL),
-      lengthThresholdRangeMin_(NULL),
-      lengthThresholdRangeMax_(NULL),
+      spacing_(nullptr),
+      spacingAdjacentCuts_(nullptr),
+      spacingAdjacentWithin_(nullptr),
+      spacingCutArea_(nullptr),
+      rangeMin_(nullptr),
+      rangeMax_(nullptr),
+      rangeInfluence_(nullptr),
+      rangeInfluenceRangeMin_(nullptr),
+      rangeInfluenceRangeMax_(nullptr),
+      rangeRangeMin_(nullptr),
+      rangeRangeMax_(nullptr),
+      lengthThreshold_(nullptr),
+      lengthThresholdRangeMin_(nullptr),
+      lengthThresholdRangeMax_(nullptr),
       numMinimumcut_(0),
       minimumcutAllocated_(0),
-      minimumcut_(NULL),
-      minimumcutWidth_(NULL),
-      hasMinimumcutWithin_(NULL),
-      minimumcutWithin_(NULL),
-      hasMinimumcutConnection_(NULL),
-      hasMinimumcutNumCuts_(NULL),
-      minimumcutLength_(NULL),
-      minimumcutDistance_(NULL),
+      minimumcut_(nullptr),
+      minimumcutWidth_(nullptr),
+      hasMinimumcutWithin_(nullptr),
+      minimumcutWithin_(nullptr),
+      hasMinimumcutConnection_(nullptr),
+      hasMinimumcutNumCuts_(nullptr),
+      minimumcutLength_(nullptr),
+      minimumcutDistance_(nullptr),
       maxwidth_(0.0),
       minwidth_(0.0),
       numMinenclosedarea_(0),
       minenclosedareaAllocated_(0),
-      minenclosedarea_(NULL),
-      minenclosedareaWidth_(NULL),
+      minenclosedarea_(nullptr),
+      minenclosedareaWidth_(nullptr),
       protrusionWidth1_(0.0),
       protrusionLength_(0.0),
       protrusionWidth2_(0.0),
       numMinstep_(0),
       numMinstepAlloc_(0),
-      minstep_(NULL),
-      minstepLengthsum_(NULL),
-      minstepMaxEdges_(NULL),
-      minstepMinAdjLength_(NULL),
-      minstepMinBetLength_(NULL),
-      minstepXSameCorners_(NULL),
-      direction_(NULL),
+      minstep_(nullptr),
+      minstepLengthsum_(nullptr),
+      minstepMaxEdges_(nullptr),
+      minstepMinAdjLength_(nullptr),
+      minstepMinBetLength_(nullptr),
+      minstepXSameCorners_(nullptr),
+      direction_(nullptr),
       resistance_(0.0),
       capacitance_(0.0),
       height_(0.0),
@@ -1379,29 +1379,29 @@ lefiLayer::lefiLayer()
       antennaLength_(0.0),
       numCurrentPoints_(0),
       currentPointsAllocated_(0),
-      currentWidths_(NULL),
-      current_(NULL),
+      currentWidths_(nullptr),
+      current_(nullptr),
       numCapacitancePoints_(0),
       capacitancePointsAllocated_(0),
-      capacitanceWidths_(NULL),
-      capacitances_(NULL),
+      capacitanceWidths_(nullptr),
+      capacitances_(nullptr),
       numResistancePoints_(0),
       resistancePointsAllocated_(0),
-      resistanceWidths_(NULL),
-      resistances_(NULL),
+      resistanceWidths_(nullptr),
+      resistances_(nullptr),
       numProps_(0),
       propsAllocated_(0),
-      dvalues_(NULL),
-      types_(NULL),
+      dvalues_(nullptr),
+      types_(nullptr),
       numAccurrents_(0),
       accurrentAllocated_(0),
-      accurrents_(NULL),
+      accurrents_(nullptr),
       numDccurrents_(0),
       dccurrentAllocated_(0),
-      dccurrents_(NULL),
+      dccurrents_(nullptr),
       numNums_(0),
       numAllocated_(0),
-      nums_(NULL),
+      nums_(nullptr),
       hasAntennaAreaRatio_(0),
       hasAntennaDiffAreaRatio_(0),
       hasAntennaDiffAreaRatioPWL_(0),
@@ -1418,10 +1418,10 @@ lefiLayer::lefiLayer()
       hasAntennaCumDiffSideAreaRatioPWL_(0),
       hasAntennaSideAreaFactor_(0),
       hasAntennaSideAreaFactorDUO_(0),
-      currentAntennaModel_(0),
+      currentAntennaModel_(nullptr),
       numAntennaModel_(0),
       antennaModelAllocated_(0),
-      antennaModel_(NULL),
+      antennaModel_(nullptr),
       hasSlotWireWidth_(0),
       hasSlotWireLength_(0),
       hasSlotWidth_(0),
@@ -1452,42 +1452,42 @@ lefiLayer::lefiLayer()
       fillActiveSpacing_(0.0),
       numSpacingTable_(0),
       spacingTableAllocated_(0),
-      spacingTable_(NULL),
+      spacingTable_(nullptr),
       numEnclosure_(0),
       enclosureAllocated_(0),
-      overhang1_(NULL),
-      overhang2_(NULL),
-      encminWidth_(NULL),
-      cutWithin_(NULL),
-      minLength_(NULL),
+      overhang1_(nullptr),
+      overhang2_(nullptr),
+      encminWidth_(nullptr),
+      cutWithin_(nullptr),
+      minLength_(nullptr),
       numPreferEnclosure_(0),
       preferEnclosureAllocated_(0),
-      preferOverhang1_(NULL),
-      preferOverhang2_(NULL),
-      preferMinWidth_(NULL),
+      preferOverhang1_(nullptr),
+      preferOverhang2_(nullptr),
+      preferMinWidth_(nullptr),
       resPerCut_(0.0),
       diagMinEdgeLength_(0.0),
       numMinSize_(0),
-      minSizeWidth_(NULL),
-      minSizeLength_(NULL),
-      eolWidth_(NULL),
-      eolWithin_(NULL),
-      parSpace_(NULL),
-      parWithin_(NULL),
+      minSizeWidth_(nullptr),
+      minSizeLength_(nullptr),
+      eolWidth_(nullptr),
+      eolWithin_(nullptr),
+      parSpace_(nullptr),
+      parWithin_(nullptr),
       maxArea_(0.0),
       hasLongArray_(0),
       viaWidth_(0.0),
       cutSpacing_(0.0),
       numArrayCuts_(0),
       arrayCutsAllocated_(0),
-      arrayCuts_(NULL),
-      arraySpacings_(NULL),
+      arrayCuts_(nullptr),
+      arraySpacings_(nullptr),
       hasSpacingTableOrtho_(0),
-      spacingTableOrtho_(NULL),
-      notchLength_(NULL),
-      endOfNotchWidth_(NULL),
-      minNotchSpacing_(NULL),
-      eonotchLength_(NULL)
+      spacingTableOrtho_(nullptr),
+      notchLength_(nullptr),
+      endOfNotchWidth_(nullptr),
+      minNotchSpacing_(nullptr),
+      eonotchLength_(nullptr)
 {
   Init();
 }
@@ -1498,7 +1498,7 @@ void lefiLayer::Init()
   nameSize_ = 16;
   type_ = (char*) lefMalloc(16);
   typeSize_ = 16;
-  layerType_ = 0;
+  layerType_ = nullptr;
   numSpacings_ = 0;
   spacingsAllocated_ = 0;
   numMinimumcut_ = 0;
@@ -1541,49 +1541,49 @@ void lefiLayer::Init()
   numArrayCuts_ = 0;
   arrayCutsAllocated_ = 0;
   cutSpacing_ = 0;  // Initialize ARRAYSPACING
-  currentAntennaModel_ = 0;
+  currentAntennaModel_ = nullptr;
   numAntennaModel_ = 0;
   antennaModelAllocated_ = 0;
-  antennaModel_ = 0;
+  antennaModel_ = nullptr;
   hasSpacingTableOrtho_ = 0;
-  spacing_ = 0;
-  spacingName_ = 0;
-  spacingAdjacentCuts_ = 0;
-  spacingAdjacentWithin_ = 0;
-  hasSpacingName_ = 0;
-  hasSpacingLayerStack_ = 0;
-  hasSpacingAdjacent_ = 0;
-  hasSpacingCenterToCenter_ = 0;
-  hasSpacingParallelOverlap_ = 0;
-  hasSpacingEndOfLine_ = 0;
-  eolWidth_ = 0;
-  eolWithin_ = 0;
-  hasSpacingParellelEdge_ = 0;
-  parSpace_ = 0;
-  parWithin_ = 0;
-  hasSpacingTwoEdges_ = 0;
-  hasSpacingAdjacentExcept_ = 0;
-  hasSpacingSamenet_ = 0;
-  hasSpacingSamenetPGonly_ = 0;
-  hasSpacingCutArea_ = 0;
-  spacingCutArea_ = 0;
-  notchLength_ = 0;
-  endOfNotchWidth_ = 0;
-  minNotchSpacing_ = 0;
-  eonotchLength_ = 0;
-  rangeMin_ = 0;
-  rangeMax_ = 0;
-  rangeInfluence_ = 0;
-  rangeInfluenceRangeMin_ = 0;
-  rangeInfluenceRangeMax_ = 0;
-  rangeRangeMin_ = 0;
-  rangeRangeMax_ = 0;
-  lengthThreshold_ = 0;
-  lengthThresholdRangeMin_ = 0;
-  lengthThresholdRangeMax_ = 0;
-  hasSpacingRange_ = 0;
-  hasSpacingUseLengthThreshold_ = 0;
-  hasSpacingLengthThreshold_ = 0;
+  spacing_ = nullptr;
+  spacingName_ = nullptr;
+  spacingAdjacentCuts_ = nullptr;
+  spacingAdjacentWithin_ = nullptr;
+  hasSpacingName_ = nullptr;
+  hasSpacingLayerStack_ = nullptr;
+  hasSpacingAdjacent_ = nullptr;
+  hasSpacingCenterToCenter_ = nullptr;
+  hasSpacingParallelOverlap_ = nullptr;
+  hasSpacingEndOfLine_ = nullptr;
+  eolWidth_ = nullptr;
+  eolWithin_ = nullptr;
+  hasSpacingParellelEdge_ = nullptr;
+  parSpace_ = nullptr;
+  parWithin_ = nullptr;
+  hasSpacingTwoEdges_ = nullptr;
+  hasSpacingAdjacentExcept_ = nullptr;
+  hasSpacingSamenet_ = nullptr;
+  hasSpacingSamenetPGonly_ = nullptr;
+  hasSpacingCutArea_ = nullptr;
+  spacingCutArea_ = nullptr;
+  notchLength_ = nullptr;
+  endOfNotchWidth_ = nullptr;
+  minNotchSpacing_ = nullptr;
+  eonotchLength_ = nullptr;
+  rangeMin_ = nullptr;
+  rangeMax_ = nullptr;
+  rangeInfluence_ = nullptr;
+  rangeInfluenceRangeMin_ = nullptr;
+  rangeInfluenceRangeMax_ = nullptr;
+  rangeRangeMin_ = nullptr;
+  rangeRangeMax_ = nullptr;
+  lengthThreshold_ = nullptr;
+  lengthThresholdRangeMin_ = nullptr;
+  lengthThresholdRangeMax_ = nullptr;
+  hasSpacingRange_ = nullptr;
+  hasSpacingUseLengthThreshold_ = nullptr;
+  hasSpacingLengthThreshold_ = nullptr;
   clear();
 }
 
@@ -1596,121 +1596,121 @@ void lefiLayer::Destroy()
   typeSize_ = 0;
   if (spacing_)
     lefFree((char*) (spacing_));
-  spacing_ = 0;
+  spacing_ = nullptr;
   if (spacingTable_)
     lefFree((char*) spacingTable_);
-  spacingTable_ = 0;
+  spacingTable_ = nullptr;
   if (spacingName_)
     lefFree((char*) (spacingName_));
-  spacingName_ = 0;
+  spacingName_ = nullptr;
   if (spacingAdjacentCuts_)
     lefFree((char*) (spacingAdjacentCuts_));
-  spacingAdjacentCuts_ = 0;
+  spacingAdjacentCuts_ = nullptr;
   if (spacingAdjacentWithin_)
     lefFree((char*) (spacingAdjacentWithin_));
-  spacingAdjacentWithin_ = 0;
+  spacingAdjacentWithin_ = nullptr;
   if (hasSpacingName_)
     lefFree((char*) (hasSpacingName_));
-  hasSpacingName_ = 0;
+  hasSpacingName_ = nullptr;
   if (hasSpacingLayerStack_)
     lefFree((char*) (hasSpacingLayerStack_));
-  hasSpacingLayerStack_ = 0;
+  hasSpacingLayerStack_ = nullptr;
   if (hasSpacingAdjacent_)
     lefFree((char*) (hasSpacingAdjacent_));
-  hasSpacingAdjacent_ = 0;
+  hasSpacingAdjacent_ = nullptr;
   if (hasSpacingCenterToCenter_)
     lefFree((char*) (hasSpacingCenterToCenter_));
-  hasSpacingCenterToCenter_ = 0;
+  hasSpacingCenterToCenter_ = nullptr;
   if (hasSpacingParallelOverlap_)
     lefFree((char*) (hasSpacingParallelOverlap_));
-  hasSpacingParallelOverlap_ = 0;
+  hasSpacingParallelOverlap_ = nullptr;
   if (hasSpacingEndOfLine_)
     lefFree((char*) (hasSpacingEndOfLine_));
-  hasSpacingEndOfLine_ = 0;
+  hasSpacingEndOfLine_ = nullptr;
   if (eolWidth_)
     lefFree((char*) (eolWidth_));
-  eolWidth_ = 0;
+  eolWidth_ = nullptr;
   if (eolWithin_)
     lefFree((char*) (eolWithin_));
-  eolWithin_ = 0;
+  eolWithin_ = nullptr;
   if (hasSpacingParellelEdge_)
     lefFree((char*) (hasSpacingParellelEdge_));
-  hasSpacingParellelEdge_ = 0;
+  hasSpacingParellelEdge_ = nullptr;
   if (parSpace_)
     lefFree((char*) (parSpace_));
-  parSpace_ = 0;
+  parSpace_ = nullptr;
   if (parWithin_)
     lefFree((char*) (parWithin_));
-  parWithin_ = 0;
+  parWithin_ = nullptr;
   if (hasSpacingTwoEdges_)
     lefFree((char*) (hasSpacingTwoEdges_));
-  hasSpacingTwoEdges_ = 0;
+  hasSpacingTwoEdges_ = nullptr;
   if (hasSpacingAdjacentExcept_)
     lefFree((char*) (hasSpacingAdjacentExcept_));
-  hasSpacingAdjacentExcept_ = 0;
+  hasSpacingAdjacentExcept_ = nullptr;
   if (hasSpacingSamenet_)
     lefFree((char*) (hasSpacingSamenet_));
-  hasSpacingSamenet_ = 0;
+  hasSpacingSamenet_ = nullptr;
   if (hasSpacingSamenetPGonly_)
     lefFree((char*) (hasSpacingSamenetPGonly_));
-  hasSpacingSamenetPGonly_ = 0;
+  hasSpacingSamenetPGonly_ = nullptr;
   if (hasSpacingCutArea_)
     lefFree((char*) (hasSpacingCutArea_));
-  hasSpacingCutArea_ = 0;
+  hasSpacingCutArea_ = nullptr;
   if (spacingCutArea_)
     lefFree((char*) (spacingCutArea_));
-  spacingCutArea_ = 0;
+  spacingCutArea_ = nullptr;
   if (notchLength_)
     lefFree((char*) (notchLength_));
-  notchLength_ = 0;
+  notchLength_ = nullptr;
   if (endOfNotchWidth_)
     lefFree((char*) (endOfNotchWidth_));
-  endOfNotchWidth_ = 0;
+  endOfNotchWidth_ = nullptr;
   if (minNotchSpacing_)
     lefFree((char*) (minNotchSpacing_));
-  minNotchSpacing_ = 0;
+  minNotchSpacing_ = nullptr;
   if (eonotchLength_)
     lefFree((char*) (eonotchLength_));
-  eonotchLength_ = 0;
+  eonotchLength_ = nullptr;
   if (rangeMin_)
     lefFree((char*) (rangeMin_));
-  rangeMin_ = 0;
+  rangeMin_ = nullptr;
   if (rangeMax_)
     lefFree((char*) (rangeMax_));
-  rangeMax_ = 0;
+  rangeMax_ = nullptr;
   if (rangeInfluence_)
     lefFree((char*) (rangeInfluence_));
-  rangeInfluence_ = 0;
+  rangeInfluence_ = nullptr;
   if (rangeInfluenceRangeMin_)
     lefFree((char*) (rangeInfluenceRangeMin_));
-  rangeInfluenceRangeMin_ = 0;
+  rangeInfluenceRangeMin_ = nullptr;
   if (rangeInfluenceRangeMax_)
     lefFree((char*) (rangeInfluenceRangeMax_));
-  rangeInfluenceRangeMax_ = 0;
+  rangeInfluenceRangeMax_ = nullptr;
   if (rangeRangeMin_)
     lefFree((char*) (rangeRangeMin_));
-  rangeRangeMin_ = 0;
+  rangeRangeMin_ = nullptr;
   if (rangeRangeMax_)
     lefFree((char*) (rangeRangeMax_));
-  rangeRangeMax_ = 0;
+  rangeRangeMax_ = nullptr;
   if (lengthThreshold_)
     lefFree((char*) (lengthThreshold_));
-  lengthThreshold_ = 0;
+  lengthThreshold_ = nullptr;
   if (lengthThresholdRangeMin_)
     lefFree((char*) (lengthThresholdRangeMin_));
-  lengthThresholdRangeMin_ = 0;
+  lengthThresholdRangeMin_ = nullptr;
   if (lengthThresholdRangeMax_)
     lefFree((char*) (lengthThresholdRangeMax_));
-  lengthThresholdRangeMax_ = 0;
+  lengthThresholdRangeMax_ = nullptr;
   if (hasSpacingRange_)
     lefFree((char*) (hasSpacingRange_));
-  hasSpacingRange_ = 0;
+  hasSpacingRange_ = nullptr;
   if (hasSpacingUseLengthThreshold_)
     lefFree((char*) (hasSpacingUseLengthThreshold_));
-  hasSpacingUseLengthThreshold_ = 0;
+  hasSpacingUseLengthThreshold_ = nullptr;
   if (hasSpacingLengthThreshold_)
     lefFree((char*) (hasSpacingLengthThreshold_));
-  hasSpacingLengthThreshold_ = 0;
+  hasSpacingLengthThreshold_ = nullptr;
   lefFree((char*) (currentWidths_));
   lefFree((char*) (current_));
   lefFree((char*) (resistanceWidths_));
@@ -1744,7 +1744,7 @@ void lefiLayer::clear()
     *(type_) = 0;
   if (layerType_) {
     lefFree(layerType_);
-    layerType_ = 0;
+    layerType_ = nullptr;
   }
   hasMask_ = 0;
   hasPitch_ = 0;
@@ -1789,7 +1789,7 @@ void lefiLayer::clear()
     numAccurrents_ = 0;
     accurrentAllocated_ = 0;
     lefFree((char*) (accurrents_));
-    accurrents_ = 0;
+    accurrents_ = nullptr;
   }
   if (numDccurrents_) {
     for (i = 0; i < numDccurrents_; i++) {
@@ -1800,7 +1800,7 @@ void lefiLayer::clear()
     numDccurrents_ = 0;
     dccurrentAllocated_ = 0;
     lefFree((char*) (dccurrents_));
-    dccurrents_ = 0;
+    dccurrents_ = nullptr;
   }
   // 8/29/2001 - Wanda da Rosa.  The following are 5.4 enhancements
   hasSlotWireWidth_ = 0;
@@ -1877,10 +1877,10 @@ void lefiLayer::clear()
     }
 
     lefFree((char*) (antennaModel_));
-    antennaModel_ = 0;
+    antennaModel_ = nullptr;
   }
 
-  currentAntennaModel_ = 0;
+  currentAntennaModel_ = nullptr;
   numAntennaModel_ = 0;
   antennaModelAllocated_ = 0;
 
@@ -1929,8 +1929,8 @@ void lefiLayer::clear()
     lefFree((char*) (arrayCuts_));
     lefFree((char*) (arraySpacings_));
   }
-  arrayCuts_ = 0;
-  arraySpacings_ = 0;
+  arrayCuts_ = nullptr;
+  arraySpacings_ = nullptr;
   arrayCutsAllocated_ = 0;
   numArrayCuts_ = 0;
 
@@ -2183,7 +2183,7 @@ void lefiLayer::addMinimumcut(int mincut, double width)
   hasMinimumcutWithin_[numMinimumcut_] = 0;
   minimumcutWithin_[numMinimumcut_] = 0;
   hasMinimumcutConnection_[numMinimumcut_] = 0;
-  minimumcutConnection_[numMinimumcut_] = 0;
+  minimumcutConnection_[numMinimumcut_] = nullptr;
   hasMinimumcutNumCuts_[numMinimumcut_] = 0;
   minimumcutLength_[numMinimumcut_] = 0;
   minimumcutDistance_[numMinimumcut_] = 0;
@@ -2273,7 +2273,7 @@ void lefiLayer::addMinstep(double distance)
     minstepXSameCorners_ = mx;
   }
   minstep_[numMinstep_] = distance;
-  minstepType_[numMinstep_] = 0;
+  minstepType_[numMinstep_] = nullptr;
   minstepLengthsum_[numMinstep_] = -1;
   minstepMaxEdges_[numMinstep_] = -1;
   minstepMinAdjLength_[numMinstep_] = -1;
@@ -2453,7 +2453,7 @@ void lefiLayer::setSpacingMin(double dist)
         if (spacingName_[i])  // is null if is not CUT layer
           nn[i] = spacingName_[i];
         else
-          nn[i] = 0;
+          nn[i] = nullptr;
         nac[i] = spacingAdjacentCuts_[i];
         naw[i] = spacingAdjacentWithin_[i];
         nsn[i] = hasSpacingName_[i];
@@ -2571,7 +2571,7 @@ void lefiLayer::setSpacingMin(double dist)
   }
   hasSpacing_ = 1;
   spacing_[numSpacings_] = dist;
-  spacingName_[numSpacings_] = 0;
+  spacingName_[numSpacings_] = nullptr;
   hasSpacingName_[numSpacings_] = 0;
   hasSpacingLayerStack_[numSpacings_] = 0;
   spacingAdjacentCuts_[numSpacings_] = 0;
@@ -3973,7 +3973,7 @@ const char* lefiLayer::propName(int i) const
             i,
             numProps_);
     lefiError(0, 1300, msg);
-    return 0;
+    return nullptr;
   }
   return names_[i];
 }
@@ -3988,7 +3988,7 @@ const char* lefiLayer::propValue(int i) const
             i,
             numProps_);
     lefiError(0, 1300, msg);
-    return 0;
+    return nullptr;
   }
   return values_[i];
 }
@@ -4088,7 +4088,7 @@ void lefiLayer::addAcFrequency()
   density->addFrequency(numNums_, nums_);
   numNums_ = 0;
   numAllocated_ = 0;
-  nums_ = 0;
+  nums_ = nullptr;
 }
 
 void lefiLayer::addAcCutarea()
@@ -4098,7 +4098,7 @@ void lefiLayer::addAcCutarea()
   density->addCutarea(numNums_, nums_);
   numNums_ = 0;
   numAllocated_ = 0;
-  nums_ = 0;
+  nums_ = nullptr;
 }
 
 void lefiLayer::addAcTableEntry()
@@ -4108,7 +4108,7 @@ void lefiLayer::addAcTableEntry()
   density->addTableEntry(numNums_, nums_);
   numNums_ = 0;
   numAllocated_ = 0;
-  nums_ = 0;
+  nums_ = nullptr;
 }
 
 void lefiLayer::addAcWidth()
@@ -4118,7 +4118,7 @@ void lefiLayer::addAcWidth()
   density->addWidth(numNums_, nums_);
   numNums_ = 0;
   numAllocated_ = 0;
-  nums_ = 0;
+  nums_ = nullptr;
 }
 
 void lefiLayer::setDcOneEntry(double num)
@@ -4156,7 +4156,7 @@ void lefiLayer::addDcCutarea()
   density->addCutarea(numNums_, nums_);
   numNums_ = 0;
   numAllocated_ = 0;
-  nums_ = 0;
+  nums_ = nullptr;
 }
 
 void lefiLayer::addDcTableEntry()
@@ -4166,7 +4166,7 @@ void lefiLayer::addDcTableEntry()
   density->addTableEntry(numNums_, nums_);
   numNums_ = 0;
   numAllocated_ = 0;
-  nums_ = 0;
+  nums_ = nullptr;
 }
 
 void lefiLayer::addDcWidth()
@@ -4176,7 +4176,7 @@ void lefiLayer::addDcWidth()
   density->addWidth(numNums_, nums_);
   numNums_ = 0;
   numAllocated_ = 0;
-  nums_ = 0;
+  nums_ = nullptr;
 }
 
 void lefiLayer::addNumber(double num)
@@ -4223,14 +4223,14 @@ int lefiLayer::numDccurrentDensity() const
 lefiLayerDensity* lefiLayer::accurrent(int index) const
 {
   if (index >= numAccurrents_)
-    return 0;
+    return nullptr;
   return (accurrents_[index]);
 }
 
 lefiLayerDensity* lefiLayer::dccurrent(int index) const
 {
   if (index >= numDccurrents_)
-    return 0;
+    return nullptr;
   return (dccurrents_[index]);
 }
 
@@ -4628,7 +4628,7 @@ void lefiLayer::addSpParallelLength()
   sp->addParallelLength(numNums_, nums_);
   numNums_ = 0;
   numAllocated_ = 0;
-  nums_ = 0;
+  nums_ = nullptr;
 }
 
 void lefiLayer::addSpParallelWidth(double width)
@@ -4648,7 +4648,7 @@ void lefiLayer::addSpParallelWidthSpacing()
   lefFree((char*) (nums_));
   numNums_ = 0;
   numAllocated_ = 0;
-  nums_ = 0;
+  nums_ = nullptr;
 }
 
 void lefiLayer::addSpTwoWidths(double width, double runLength)
@@ -4669,7 +4669,7 @@ void lefiLayer::addSpTwoWidths(double width, double runLength)
   lefFree((char*) (nums_));
   numNums_ = 0;
   numAllocated_ = 0;
-  nums_ = 0;
+  nums_ = nullptr;
   hasTwoWidthPRL_ = 0;
 }
 
@@ -4751,11 +4751,11 @@ void lefiLayer::addEnclosure(char* enclRule, double overhang1, double overhang2)
   }
   if (enclRule) {
     if (strcmp(enclRule, "NULL") == 0)
-      enclosureRules_[numEnclosure_] = NULL;
+      enclosureRules_[numEnclosure_] = nullptr;
     else
       enclosureRules_[numEnclosure_] = strdup(enclRule);
   } else
-    enclosureRules_[numEnclosure_] = NULL;
+    enclosureRules_[numEnclosure_] = nullptr;
   overhang1_[numEnclosure_] = overhang1;
   overhang2_[numEnclosure_] = overhang2;
   encminWidth_[numEnclosure_] = 0;
@@ -4872,7 +4872,7 @@ void lefiLayer::addPreferEnclosure(char* enclRule,
     preferMinWidth_ = mw;
   }
   if (strcmp(enclRule, "NULL") == 0)
-    preferEnclosureRules_[numPreferEnclosure_] = NULL;
+    preferEnclosureRules_[numPreferEnclosure_] = nullptr;
   else
     preferEnclosureRules_[numPreferEnclosure_] = strdup(enclRule);
   preferOverhang1_[numPreferEnclosure_] = overhang1;
@@ -4966,8 +4966,8 @@ void lefiLayer::setMinSize(lefiGeometries* geom)
       minSizeLength_[i] = tempPoly.y[i];
     }
   } else {
-    minSizeWidth_ = 0;
-    minSizeLength_ = 0;
+    minSizeWidth_ = nullptr;
+    minSizeLength_ = nullptr;
   }
 }
 
@@ -5052,7 +5052,7 @@ char* lefiLayer::minstepType(int index) const
             index,
             numMinstep_);
     lefiError(0, 1302, msg);
-    return 0;
+    return nullptr;
   }
   return minstepType_[index];
 }
@@ -5295,10 +5295,10 @@ void lefiLayer::parseSpacing(int index)
       return;
     }
 
-    value = strtok(NULL, " ");
+    value = strtok(nullptr, " ");
     spValue = atof(value);
 
-    value = strtok(NULL, " ");
+    value = strtok(nullptr, " ");
     if ((strcmp(value, "CENTERTOCENTER") == 0)
         || (strcmp(value, "SAMENET") == 0) || (strcmp(value, "LAYER") == 0)
         || (strcmp(value, "ADJACENTCUTS") == 0)
@@ -5328,29 +5328,29 @@ void lefiLayer::parseSpacing(int index)
       if (strcmp(value, "CENTERTOCENTER") == 0) {
         // SPACING minSpacing CENTERTOCENTER ;
         setSpacingCenterToCenter();
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
         if (*value == ';') {
-          value = strtok(NULL, " ");
+          value = strtok(nullptr, " ");
           continue;  // Look for a new statement
         }
       }
       if (strcmp(value, "SAMENET") == 0) {
         // SPACING minSpacing SAMENET ;
         setSpacingSamenet();
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
         if (*value == ';') {
-          value = strtok(NULL, " ");
+          value = strtok(nullptr, " ");
           continue;  // Look for a new statement
         }
       }
       if (strcmp(value, "LAYER") == 0) {
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
         if (value && *value != '\n') {
           setSpacingName(value);
-          value = strtok(NULL, " ");
+          value = strtok(nullptr, " ");
           if (strcmp(value, "STACK") == 0) {
             setSpacingLayerStack();
-            value = strtok(NULL, " ");
+            value = strtok(nullptr, " ");
             if (*value != ';') {
               /*
                                    sprintf(msg, "ERROR (LEFPARS-1320): Incorrect
@@ -5393,12 +5393,12 @@ void lefiLayer::parseSpacing(int index)
             free(wrkingStr);
             return;
           } else {
-            value = strtok(NULL, " ");
+            value = strtok(nullptr, " ");
             continue;
           }
         }
       } else if (strcmp(value, "ADJACENTCUTS") == 0) {
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
         numCuts = atoi(value);
         if ((numCuts < 2) || (numCuts > 4)) {
           /*
@@ -5421,15 +5421,15 @@ void lefiLayer::parseSpacing(int index)
           free(wrkingStr);
           return;
         }
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
         if (strcmp(value, "WITHIN") == 0) {
-          value = strtok(NULL, " ");
+          value = strtok(nullptr, " ");
           within = atof(value);
           setSpacingAdjacent(numCuts, within);
-          value = strtok(NULL, " ");
+          value = strtok(nullptr, " ");
           if (strcmp(value, "EXCEPTSAMEPGNET") == 0) {
             setSpacingAdjacentExcept();
-            value = strtok(NULL, " ");
+            value = strtok(nullptr, " ");
             if (*value != ';') {
               /*
                                    sprintf(msg, "ERROR (LEFPARS-1320): Incorrect
@@ -5472,7 +5472,7 @@ void lefiLayer::parseSpacing(int index)
             free(wrkingStr);
             return;
           } else {
-            value = strtok(NULL, " ");
+            value = strtok(nullptr, " ");
           }
         } else {
           /*
@@ -5498,7 +5498,7 @@ void lefiLayer::parseSpacing(int index)
       } else if (strcmp(value, "PARALLELOVERLAP") == 0) {
         // SPACING minSpacing PARALLELOVERLAP ;
         setSpacingParallelOverlap();
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
         if (*value != ';') {
           /*
                          sprintf(msg, "ERROR (LEFPARS-1320): Incorrect syntax
@@ -5520,13 +5520,13 @@ void lefiLayer::parseSpacing(int index)
           free(wrkingStr);
           return;
         } else {
-          value = strtok(NULL, " ");
+          value = strtok(nullptr, " ");
         }
       } else if (strcmp(value, "AREA") == 0) {
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
         cutArea = atof(value);
         setSpacingArea(cutArea);
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
         if (*value != ';') {
           /*
                          sprintf(msg, "ERROR (LEFPARS-1320): Incorrect syntax
@@ -5548,7 +5548,7 @@ void lefiLayer::parseSpacing(int index)
           free(wrkingStr);
           return;
         } else {
-          value = strtok(NULL, " ");
+          value = strtok(nullptr, " ");
         }
       }
     } else if (strcmp(value, "SAMEMETAL") == 0) {
@@ -5587,32 +5587,32 @@ void lefiLayer::parseSpacing(int index)
 
       twoEdges = 0;
 
-      value = strtok(NULL, " ");
+      value = strtok(nullptr, " ");
       width = atof(value);
-      value = strtok(NULL, " ");
+      value = strtok(nullptr, " ");
       if (strcmp(value, "WITHIN") == 0) {
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
         within = atof(value);
         // * setSpacingMin(spValue);
         // * setSpacingEol(width, within);
         // Check if option [PARALLELEDGE parSpace WITHIN parWithin] is set
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
         if (value && *value != '\n') {
           if (strcmp(value, "PARALLELEDGE") == 0) {
-            value = strtok(NULL, " ");
+            value = strtok(nullptr, " ");
             pValue = atof(value);
-            value = strtok(NULL, " ");
+            value = strtok(nullptr, " ");
             if (strcmp(value, "WITHIN") == 0) {
-              value = strtok(NULL, " ");
+              value = strtok(nullptr, " ");
               pWithin = atof(value);
               // * setSpacingParSW(pValue, pWithin);
               // Check if TWOEDGES is set
-              value = strtok(NULL, " ");
+              value = strtok(nullptr, " ");
               if (value && *value != '\n') {
                 if (strcmp(value, "TWOEDGES") == 0) {
                   // * setSpacingParTwoEdges();
                   twoEdges = 1;
-                  value = strtok(NULL, " ");
+                  value = strtok(nullptr, " ");
                   if (*value == ';') {
                     // Save the value to lefiLayer class
                     setSpacingMin(spValue);
@@ -5620,14 +5620,14 @@ void lefiLayer::parseSpacing(int index)
                     setSpacingParSW(pValue, pWithin);
                     if (twoEdges)
                       setSpacingParTwoEdges();
-                    value = strtok(NULL, " ");
+                    value = strtok(nullptr, " ");
                     continue;  // with the while loop
                   } else {
                     // More rules, skip to ;
                     while ((value) && (*value != ';') && (*value != '\n'))
-                      value = strtok(NULL, " ");
+                      value = strtok(nullptr, " ");
                     if ((value) && (*value == ';')) {
-                      value = strtok(NULL, " ");
+                      value = strtok(nullptr, " ");
                       continue;
                     }
                   }
@@ -5635,14 +5635,14 @@ void lefiLayer::parseSpacing(int index)
                   setSpacingMin(spValue);
                   setSpacingEol(width, within);
                   setSpacingParSW(pValue, pWithin);
-                  value = strtok(NULL, " ");  // done with this
-                  continue;                   // statement with the while loop
+                  value = strtok(nullptr, " ");  // done with this
+                  continue;  // statement with the while loop
                 } else {
                   // More rules, skip to ;
                   while ((value) && (*value != ';') && (*value != '\n'))
-                    value = strtok(NULL, " ");
+                    value = strtok(nullptr, " ");
                   if ((value) && (*value == ';')) {
-                    value = strtok(NULL, " ");
+                    value = strtok(nullptr, " ");
                     continue;
                   }
                 }
@@ -5699,13 +5699,13 @@ void lefiLayer::parseSpacing(int index)
             // Save the data in lefiLayer lefData->first
             setSpacingMin(spValue);
             setSpacingEol(width, within);
-            value = strtok(NULL, " ");  // done with this
+            value = strtok(nullptr, " ");  // done with this
             continue;
           } else {
             while ((value) && (*value != ';') && (*value != '\n'))
-              value = strtok(NULL, " ");
+              value = strtok(nullptr, " ");
             if ((value) && (*value == ';')) {
-              value = strtok(NULL, " ");
+              value = strtok(nullptr, " ");
               continue;
             }
           }
@@ -5813,7 +5813,7 @@ void lefiLayer::parseArraySpacing(int index)
     free(wrkingStr);
     return;
   }
-  value = strtok(NULL, " ");
+  value = strtok(nullptr, " ");
 
   while (strcmp(value, ";") != 0) {
     if (strcmp(value, "LONGARRAY") == 0) {
@@ -5836,7 +5836,7 @@ void lefiLayer::parseArraySpacing(int index)
         return;
       }
       hasLongArray = 1;
-      value = strtok(NULL, " ");
+      value = strtok(nullptr, " ");
     } else if (strcmp(value, "WIDTH") == 0) {
       if (cutSpacing != 0) {  // make sure syntax has correct order
         /*
@@ -5856,9 +5856,9 @@ void lefiLayer::parseArraySpacing(int index)
         free(wrkingStr);
         return;
       }
-      value = strtok(NULL, " ");
+      value = strtok(nullptr, " ");
       viaWidth = atof(value);
-      value = strtok(NULL, " ");
+      value = strtok(nullptr, " ");
     } else if (strcmp(value, "CUTSPACING") == 0) {
       if (cutSpacing != 0) {  // make sure syntax has correct order
         /*
@@ -5878,7 +5878,7 @@ void lefiLayer::parseArraySpacing(int index)
         free(wrkingStr);
         return;
       }
-      value = strtok(NULL, " ");
+      value = strtok(nullptr, " ");
       cutSpacing = atof(value);
       /*
                setArraySpacing(hasLongArray, viaWidth, cutSpacing);
@@ -5887,7 +5887,7 @@ void lefiLayer::parseArraySpacing(int index)
         setArraySpacingLongArray();
       setArraySpacingWidth(viaWidth);
       setArraySpacingCut(cutSpacing);
-      value = strtok(NULL, " ");
+      value = strtok(nullptr, " ");
     } else if (strcmp(value, "ARRAYCUTS") == 0) {
       if (cutSpacing == 0) {  // make sure cutSpacing is already set
         /*
@@ -5909,9 +5909,9 @@ void lefiLayer::parseArraySpacing(int index)
         free(wrkingStr);
         return;
       }
-      value = strtok(NULL, " ");
+      value = strtok(nullptr, " ");
       arrayCuts = atoi(value);
-      value = strtok(NULL, " ");
+      value = strtok(nullptr, " ");
       if (strcmp(value, "SPACING") != 0) {
         /*
                     sprintf(msg, "ERROR (LEFPARS-1312): Incorrect syntax defined
@@ -5931,13 +5931,13 @@ void lefiLayer::parseArraySpacing(int index)
         free(wrkingStr);
         return;
       }
-      value = strtok(NULL, " ");
+      value = strtok(nullptr, " ");
       arraySpacing = atof(value);
       /*
                addArrayCuts(arrayCuts, arraySpacing);
       */
       addArraySpacingArray(arrayCuts, arraySpacing);
-      value = strtok(NULL, " ");
+      value = strtok(nullptr, " ");
       hasArrayCut = 1;
     } else {  // Doesn't match any of the format
       /*
@@ -6032,10 +6032,10 @@ void lefiLayer::parseMinstep(int index)
     return;
   }
 
-  value = strtok(NULL, " ");
+  value = strtok(nullptr, " ");
   minStepLength = atof(value);
   // addMinstep(minStepLength);
-  value = strtok(NULL, " ");
+  value = strtok(nullptr, " ");
   while (done == 0) {
     if (value && *value != '\n') {
       if (strcmp(value, "MAXEDGES") == 0) {
@@ -6059,10 +6059,10 @@ void lefiLayer::parseMinstep(int index)
           free(wrkingStr);  // done parsing
           return;
         }
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
         maxEdges = atoi(value);
         // addMinstepMaxedges(maxEdges);
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
       } else if (strcmp(value, "MINADJACENTLENGTH") == 0) {
         if (minBetLength) {
           // MINBETWEENLENGTH has defined, it is either MINADJACENTLENGTH
@@ -6085,10 +6085,10 @@ void lefiLayer::parseMinstep(int index)
           free(wrkingStr);  // done parsing
           return;
         }
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
         minAdjLength = atof(value);
         // addMinstepMinAdjLength(minAdjLength);
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
       } else if (strcmp(value, "MINBETWEENLENGTH") == 0) {
         if (minAdjLength) {
           // minadjACENTLENGTH has defined, it is either MINBETWEENLENGTH
@@ -6111,15 +6111,15 @@ void lefiLayer::parseMinstep(int index)
           free(wrkingStr);  // done parsing
           return;
         }
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
         minBetLength = atof(value);
         // addMinstepMinBetLength(minBetLength);
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
       } else if (strcmp(value, "EXCEPTSAMECORNERS") == 0) {
         if (minBetLength) {
           xSameCorners = 1;
           // addMinstepXSameCorners();
-          value = strtok(NULL, " ");
+          value = strtok(nullptr, " ");
         } else {
           /*
                          sprintf(msg, "ERROR (LEFPARS-1315): Incorrect syntax
@@ -6255,7 +6255,7 @@ void lefiLayer::parseAntennaGatePlus(int index)
     return;
   }
 
-  value = strtok(NULL, " ");
+  value = strtok(nullptr, " ");
   pDiffFactor = atof(value);
 
   if (numAntennaModel_ == 0) {  // haven't created any antannaModel yet
@@ -6295,7 +6295,7 @@ void lefiLayer::parseAntennaAreaMinus(int index)
     return;
   }
 
-  value = strtok(NULL, " ");
+  value = strtok(nullptr, " ");
   mDiffFactor = atof(value);
 
   if (numAntennaModel_ == 0) {  // haven't created any antannaModel yet
@@ -6339,19 +6339,19 @@ void lefiLayer::parseAntennaAreaDiff(int index)
     return;
   }
 
-  value = strtok(NULL, " ");
+  value = strtok(nullptr, " ");
   if (strcmp(value, "(") == 0) {  // beginning of ( ( d1 r1 ) ( d2 r2 ) ... )
     pwlPtr = lefiAntennaPWL::create();
 
     while (done == 0) {
-      value = strtok(NULL, " ");
+      value = strtok(nullptr, " ");
       if (strcmp(value, "(") == 0) {
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
         diffA = atof(value);
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
         diffF = atof(value);
         pwlPtr->addAntennaPWL(diffA, diffF);
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
         if (strcmp(value, ")") != 0) {
           break;
         }
@@ -6398,7 +6398,7 @@ void lefiLayer::parseLayerEnclosure(int index)
   char* value;
   char msg[1024];
   int overh = 0, width = 0, except = 0, length = 0;
-  char* enclRule = 0;
+  char* enclRule = nullptr;
   double overhang1 = 0, overhang2 = 0, minWidth = 0, cutWithin = 0,
          minLength = 0;
 
@@ -6441,7 +6441,7 @@ void lefiLayer::parseLayerEnclosure(int index)
     return;
   }
 
-  value = strtok(NULL, " ");
+  value = strtok(nullptr, " ");
 
   while (strcmp(value, ";") != 0) {
     if (strcmp(value, "CUTCLASS") == 0) {
@@ -6474,7 +6474,7 @@ void lefiLayer::parseLayerEnclosure(int index)
         return;
       }
       enclRule = strdup(value);
-      value = strtok(NULL, " ");
+      value = strtok(nullptr, " ");
     } else if (strcmp(value, "WIDTH") == 0) {
       if ((!overh)) {
         /*
@@ -6496,14 +6496,14 @@ void lefiLayer::parseLayerEnclosure(int index)
           free(enclRule);
         return;
       }
-      minWidth = strtod(strtok(NULL, " "), 0);
-      value = strtok(NULL, " ");
+      minWidth = strtod(strtok(nullptr, " "), nullptr);
+      value = strtok(nullptr, " ");
       width = 1;
       if (strcmp(value, "EXCEPTEXTRACUT") == 0) {  // continue with WIDTH
         except = 1;
-        value = strtok(NULL, " ");
-        cutWithin = strtod(value, 0);
-        value = strtok(NULL, " ");
+        value = strtok(nullptr, " ");
+        cutWithin = strtod(value, nullptr);
+        value = strtok(nullptr, " ");
         if (strcmp(value, "NOSHAREDEDGE") == 0) {
           // 5.8 syntax but not in OA data model
           free(wrkingStr);
@@ -6533,8 +6533,8 @@ void lefiLayer::parseLayerEnclosure(int index)
           free(enclRule);
         return;
       }
-      minLength = strtod(strtok(NULL, " "), 0);
-      value = strtok(NULL, " ");
+      minLength = strtod(strtok(nullptr, " "), nullptr);
+      value = strtok(nullptr, " ");
       length = 1;
     } else {
       if (overh == 1) {  // Already has overhang value
@@ -6557,10 +6557,10 @@ void lefiLayer::parseLayerEnclosure(int index)
           free(enclRule);
         return;
       }
-      overhang1 = strtod(value, 0);
-      overhang2 = strtod(strtok(NULL, " "), 0);
+      overhang1 = strtod(value, nullptr);
+      overhang2 = strtod(strtok(nullptr, " "), nullptr);
       overh = 1;  // set the flag on
-      value = strtok(NULL, " ");
+      value = strtok(nullptr, " ");
     }
   }
   if (!overh) {

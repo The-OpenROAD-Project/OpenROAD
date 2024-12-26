@@ -47,7 +47,7 @@ using std::endl;
 using std::numeric_limits;
 using std::vector;
 
-SolveMulti::SolveMulti(DB* db, Command_Line* params) : _newDB(0)
+SolveMulti::SolveMulti(DB* db, Command_Line* params) : _newDB(nullptr)
 {
   _db = db;
   _params = params;
@@ -66,7 +66,7 @@ DB* SolveMulti::clusterOnly() const
 {
   ClusterDB multiCluster(_db, _params);
 
-  DB* clusteredDB = 0;
+  DB* clusteredDB = nullptr;
 
   if (_params->clusterPhysical)
     multiCluster.clusterMultiPhysical(clusteredDB);
@@ -138,7 +138,7 @@ void SolveMulti::go()
     _params->FPrep = "BTree";
   }
 
-  BaseAnnealer* annealer = NULL;
+  BaseAnnealer* annealer = nullptr;
   if (_params->FPrep == "BTree") {
     annealer = new BTreeAreaWireAnnealer(_params, _newDB);
   } else if (_params->FPrep == "SeqPair") {
