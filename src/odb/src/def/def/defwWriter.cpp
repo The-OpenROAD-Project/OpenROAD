@@ -41,6 +41,7 @@
 
 #include "defwWriter.hpp"
 
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
@@ -416,7 +417,7 @@ int defwInit(FILE* f,
       case 10000:
       case 16000:
       case 20000:
-        fprintf(defwFile, "UNITS DISTANCE MICRONS %d ;\n", ROUND(units));
+        fprintf(defwFile, "UNITS DISTANCE MICRONS %ld ;\n", std::lround(units));
         defwLines++;
         break;
       default:

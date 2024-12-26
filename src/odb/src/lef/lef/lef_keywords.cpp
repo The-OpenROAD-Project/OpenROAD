@@ -75,10 +75,10 @@ inline int lefGetKeyword(const char* name, int* result)
       = lefSettings->Keyword_set.find(name);
   if (search != lefSettings->Keyword_set.end()) {
     *result = search->second;
-    return TRUE;
+    return true;
   }
 
-  return FALSE;
+  return false;
 }
 
 inline int lefGetStringDefine(const char* name, const char** value)
@@ -88,9 +88,9 @@ inline int lefGetStringDefine(const char* name, const char** value)
 
   if (search != lefData->defines_set.end()) {
     *value = search->second.c_str();
-    return TRUE;
+    return true;
   }
-  return FALSE;
+  return false;
 }
 
 inline int lefGetIntDefine(const char* name, int* value)
@@ -100,9 +100,9 @@ inline int lefGetIntDefine(const char* name, int* value)
 
   if (search != lefData->defineb_set.end()) {
     *value = search->second;
-    return TRUE;
+    return true;
   }
-  return FALSE;
+  return false;
 }
 
 inline int lefGetDoubleDefine(const char* name, double* value)
@@ -112,9 +112,9 @@ inline int lefGetDoubleDefine(const char* name, double* value)
 
   if (search != lefData->define_set.end()) {
     *value = search->second;
-    return TRUE;
+    return true;
   }
-  return FALSE;
+  return false;
 }
 
 inline int lefGetAlias(const char* name, const char** value)
@@ -124,9 +124,9 @@ inline int lefGetAlias(const char* name, const char** value)
 
   if (search != lefData->alias_set.end()) {
     *value = search->second.c_str();
-    return TRUE;
+    return true;
   }
-  return FALSE;
+  return false;
 }
 
 #define yyparse lefyyparse
@@ -281,12 +281,12 @@ char* qStrCopy(char* string)
 
 void lefAddStringDefine(const char* token, const char* str)
 {
-  std::string tmpStr((lefData->lefDefIf == TRUE) ? "" : "\"");
+  std::string tmpStr((lefData->lefDefIf == true) ? "" : "\"");
 
   tmpStr += str;
 
   lefData->defines_set[strip_case(token)] = tmpStr;
-  lefData->lefDefIf = FALSE;
+  lefData->lefDefIf = false;
   lefData->inDefine = 0;
 }
 
@@ -319,7 +319,7 @@ static int GetTokenFromStack(char* s)
       *s = 0;
       if (lefData->lefDebug[11])
         printf("Stack[%d] Newline token\n", lefData->input_level);
-      return TRUE;
+      return true;
     } else {  // we found something
       for (;; ch++) {
         if (*ch == ' ' || *ch == '\t' || *ch == '\n' || *ch == 0) {
@@ -336,7 +336,7 @@ static int GetTokenFromStack(char* s)
                    lefData->input_level,
                    save,
                    lefData->lefDumbMode);
-          return TRUE;
+          return true;
         }
         /* 10/10/2000 - Wanda da Rosa, pcr 341032
         ** Save the location of the previous s
@@ -346,7 +346,7 @@ static int GetTokenFromStack(char* s)
       }
     }
   }
-  return FALSE;  // if we get here, we ran out of input levels
+  return false;  // if we get here, we ran out of input levels
 }
 
 // Increment current position of buffer pointer.
@@ -383,7 +383,7 @@ static int GetToken(char** buffer, int* bufferSize)
 
   if (lefData->input_level >= 0) {  // if we are expanding an alias
     if (GetTokenFromStack(s))       // try to get a token from it
-      return TRUE;                  // if we get one, return it
+      return true;                  // if we get one, return it
   }                                 // but if not, continue
 
   // skip blanks and count lines
@@ -399,7 +399,7 @@ static int GetToken(char** buffer, int* bufferSize)
   }
 
   if (ch == EOF)
-    return FALSE;
+    return false;
 
   if (ch == '\n') {
     *s = ch;
@@ -408,7 +408,7 @@ static int GetToken(char** buffer, int* bufferSize)
     *s = '\0';
     if (lefData->lefDebug[11])
       printf("Newline token\n");
-    return TRUE;
+    return true;
   }
 
   // now get the token
@@ -439,7 +439,7 @@ static int GetToken(char** buffer, int* bufferSize)
             *s = '\0';
             lefError(6015, "Unexpected end of the LEF file.");
             lefData->hasFatalError = 1;
-            return FALSE;
+            return false;
           }
         }
       }
@@ -464,7 +464,7 @@ static int GetToken(char** buffer, int* bufferSize)
         *s = '\0';
         lefError(6015, "Unexpected end of the LEF file.");
         lefData->hasFatalError = 1;
-        return FALSE;
+        return false;
       }
     } while (ch != '"');
     *s = '\0';
@@ -477,11 +477,11 @@ static int GetToken(char** buffer, int* bufferSize)
       if (ch != ' ' && ch != EOF) {
         UNlefGetc(ch);
         lefData->spaceMissing = 1;
-        return FALSE;
+        return false;
       }
       UNlefGetc(ch);
     }
-    return TRUE;
+    return true;
   }
 
   if (lefData->namesCaseSensitive) {
@@ -539,7 +539,7 @@ static int GetToken(char** buffer, int* bufferSize)
   *s = '\0';
   if (ch != EOF)  // shouldn't ungetc an EOF
     UNlefGetc(ch);
-  return TRUE;
+  return true;
 }
 
 // creates an upper case copy of an array
@@ -974,7 +974,7 @@ int lefamper_lookup(char* tkn)
     yylval.dval = dptr;
     return NUMBER;
   }
-  // &defineb returns TRUE or FALSE, encoded as K_TRUE or K_FALSE
+  // &defineb returns true or false, encoded as K_TRUE or K_FALSE
   if (lefGetIntDefine(tkn, &result))
     return result;
   // &defines returns a T_STRING

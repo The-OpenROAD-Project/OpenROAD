@@ -38,7 +38,7 @@
 #include "lefiUser.hpp"
 #include "lefiUtil.hpp"
 
-#define MAX_LEF_MSGS 4701
+constexpr int MAX_LEF_MSGS = 4701;
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
