@@ -1464,7 +1464,7 @@ void lefrSetCaseSensitivity(int caseSense)
 {
   LEF_INIT;
   lefSettings->CaseSensitive = caseSense;
-  lefSettings->CaseSensitiveSet = TRUE;
+  lefSettings->CaseSensitiveSet = true;
   if (lefData) {
     lefData->namesCaseSensitive = caseSense;
   }
@@ -1473,13 +1473,13 @@ void lefrSetCaseSensitivity(int caseSense)
 void lefrSetRelaxMode()
 {
   LEF_INIT;
-  lefSettings->RelaxMode = TRUE;
+  lefSettings->RelaxMode = true;
 }
 
 void lefrUnsetRelaxMode()
 {
   LEF_INIT;
-  lefSettings->RelaxMode = FALSE;
+  lefSettings->RelaxMode = false;
 }
 
 void lefrSetVersionValue(const char* version)
@@ -1491,13 +1491,13 @@ void lefrSetVersionValue(const char* version)
 void lefrSetOpenLogFileAppend()
 {
   LEF_INIT;
-  lefSettings->LogFileAppend = TRUE;
+  lefSettings->LogFileAppend = true;
 }
 
 void lefrUnsetOpenLogFileAppend()
 {
   LEF_INIT;
-  lefSettings->LogFileAppend = FALSE;
+  lefSettings->LogFileAppend = false;
 }
 
 void lefrSetReadFunction(LEFI_READ_FUNCTION f)

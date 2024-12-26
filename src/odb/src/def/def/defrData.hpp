@@ -64,7 +64,7 @@ typedef union
   int integer;
   char* string;
   int keyword;  // really just a nop
-  struct defpoint pt;
+  defPOINT pt;
   defTOKEN* tk;
 } YYSTYPE;
 

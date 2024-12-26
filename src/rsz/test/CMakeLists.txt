@@ -24,6 +24,7 @@ or_integration_tests(
     make_parasitics4
     make_parasitics5
     make_parasitics6
+    make_parasitics7
     pin_swap1
     pinswap_flat
     pinswap_hier

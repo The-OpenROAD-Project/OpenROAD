@@ -62,10 +62,10 @@ int defrData::defGetKeyword(const char* name, int* result)
 
   if (search != settings->Keyword_set.end()) {
     *result = search->second;
-    return TRUE;
+    return true;
   }
 
-  return FALSE;
+  return false;
 }
 
 int defrData::defGetAlias(const std::string& name, std::string& result)
@@ -75,10 +75,10 @@ int defrData::defGetAlias(const std::string& name, std::string& result)
 
   if (search != def_alias_set.end()) {
     result = search->second;
-    return TRUE;
+    return true;
   }
 
-  return FALSE;
+  return false;
 }
 
 int defrData::defGetDefine(const std::string& name, std::string& result)
@@ -88,10 +88,10 @@ int defrData::defGetDefine(const std::string& name, std::string& result)
 
   if (search != def_defines_set.end()) {
     result = search->second;
-    return TRUE;
+    return true;
   }
 
-  return FALSE;
+  return false;
 }
 
 // lex.cpph starts here
@@ -200,7 +200,7 @@ int defrData::DefGetTokenFromStack(char* s)
     else if (*ch == '\n') {
       *s++ = *ch;
       *s = 0;
-      return TRUE;
+      return true;
     } else { /* we found something */
       for (;; ch++) {
         if (*ch == ' ' || *ch == '\t' || *ch == '\n' || *ch == 0) {
@@ -213,7 +213,7 @@ int defrData::DefGetTokenFromStack(char* s)
             *s++ = '\0';
           stack[input_level] = ch;
 
-          return TRUE;
+          return true;
         }
         /* 10/10/2000 - Wanda da Rosa, pcr 341032
         ** Save the location of the previous s
@@ -223,7 +223,7 @@ int defrData::DefGetTokenFromStack(char* s)
       }
     }
   }
-  return FALSE; /* if we get here, we ran out of input levels */
+  return false; /* if we get here, we ran out of input levels */
 }
 
 void defrData::print_lines(long long lines)
@@ -281,7 +281,7 @@ int defrData::DefGetToken(char** buf, int* bufferSize)
 
   if (input_level >= 0) {        /* if we are expanding an alias */
     if (DefGetTokenFromStack(s)) /* try to get a token from it */
-      return TRUE;               /* if we get one, return it */
+      return true;               /* if we get one, return it */
   }                              /* but if not, continue */
 
   /* skip blanks and count lines */
@@ -294,14 +294,14 @@ int defrData::DefGetToken(char** buf, int* bufferSize)
   }
 
   if (ch == EOF)
-    return FALSE;
+    return false;
 
   if (ch == '\n') {
     *s = ch;
     IncCurPos(&s, buf, bufferSize);
 
     *s = '\0';
-    return TRUE;
+    return true;
   }
 
   /* now get the token */
@@ -328,7 +328,7 @@ int defrData::DefGetToken(char** buf, int* bufferSize)
           ch = GETC();
           if ((ch == '\n') || (ch == EOF)) { /* senaty check */
             *s = '\0';
-            return FALSE;
+            return false;
           }
         }
       }
@@ -340,12 +340,12 @@ int defrData::DefGetToken(char** buf, int* bufferSize)
 
       if (ch == EOF) {
         *s = '\0';
-        return FALSE;
+        return false;
       }
     } while (ch != '"');
 
     *s = '\0';
-    return TRUE;
+    return true;
   }
 
   if (names_case_sensitive) {
@@ -386,7 +386,7 @@ int defrData::DefGetToken(char** buf, int* bufferSize)
   *s = '\0';
   if (ch != EOF) /* shouldn't ungetc an EOF */
     UNGETC((char) ch);
-  return TRUE;
+  return true;
 }
 
 /* creates an upper case copy of an array */
