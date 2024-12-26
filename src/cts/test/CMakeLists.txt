@@ -4,9 +4,9 @@
 # license that can be found in the LICENSE file or at
 # https://developers.google.com/open-source/licenses/bsd
 
-include("openroad")
-
-set(TEST_NAMES
+or_integration_tests(
+  "cts"
+  TESTS
     array
     array_ins_delay
     array_no_blockages
@@ -35,11 +35,6 @@ set(TEST_NAMES
 # Skipped
 #cts_man_tcl_check
 #cts_readme_msgs_check
-
-foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("cts" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
-endforeach()
-
 add_executable(cts_unittest cts_unittest.cc)
 target_include_directories(cts_unittest
   PUBLIC

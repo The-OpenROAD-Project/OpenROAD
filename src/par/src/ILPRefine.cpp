@@ -34,6 +34,16 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "ILPRefine.h"
 
+#include <map>
+#include <set>
+#include <vector>
+
+#include "Evaluator.h"
+#include "Hypergraph.h"
+#include "Refiner.h"
+#include "Utilities.h"
+#include "utl/Logger.h"
+
 // ------------------------------------------------------------------------------
 // ILP-based refinement
 // ILP-based hypergraph partitioning cannot optimize path cost

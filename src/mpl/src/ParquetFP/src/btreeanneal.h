@@ -158,10 +158,10 @@ class BTreeAreaWireAnnealer : public BaseAnnealer
 // =========================
 BTreeAreaWireAnnealer::~BTreeAreaWireAnnealer()
 {
-  if (_slackEval != NULL)
+  if (_slackEval != nullptr)
     delete _slackEval;
 
-  if (_blockinfo_cleaner != NULL)
+  if (_blockinfo_cleaner != nullptr)
     delete _blockinfo_cleaner;
 }
 // --------------------------------------------------------

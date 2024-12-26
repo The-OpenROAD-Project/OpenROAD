@@ -29,9 +29,9 @@
 
 #include "lefiDebug.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "lefrData.hpp"
 #include "lefrReader.hpp"
@@ -124,7 +124,7 @@ const char* lefUpperCase(const char* str)
   int len = strlen(str) + 1;
 
   if (len > lefData->shiftBufLength) {
-    if (lefData->shiftBuf == 0) {
+    if (lefData->shiftBuf == nullptr) {
       len = len < 64 ? 64 : len;
       lefData->shiftBuf = (char*) lefMalloc(len);
       lefData->shiftBufLength = len;

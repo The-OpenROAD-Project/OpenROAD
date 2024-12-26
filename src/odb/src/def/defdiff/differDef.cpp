@@ -39,9 +39,9 @@
 //
 // This program support lef/def 5.6.
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #ifdef ibmrs
 #include <strings.h>
 #endif

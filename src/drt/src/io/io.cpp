@@ -3466,7 +3466,7 @@ void io::Writer::fillConnFigs(bool isTA, int verbose)
 
 void io::Writer::writeViaDefToODB(odb::dbBlock* block,
                                   odb::dbTech* db_tech,
-                                  frViaDef* via)
+                                  const frViaDef* via)
 {
   if (!via->isAddedByRouter()) {
     return;
@@ -3984,7 +3984,7 @@ void io::TopLayerBTermHandler::stackVias(odb::dbBTerm* bterm,
   for (auto layer : tech->getLayers()) {
     if (layer->getType() == odb::dbTechLayerType::CUT) {
       frLayer* fr_layer = fr_tech->getLayer(layer->getName());
-      frViaDef* via_def = fr_layer->getDefaultViaDef();
+      const frViaDef* via_def = fr_layer->getDefaultViaDef();
       if (via_def == nullptr) {
         logger_->warn(utl::DRT,
                       204,

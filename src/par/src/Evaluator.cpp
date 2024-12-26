@@ -34,9 +34,21 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "Evaluator.h"
 
+#include <algorithm>
+#include <boost/range/iterator_range_core.hpp>
+#include <cmath>
 #include <fstream>
 #include <functional>
+#include <iomanip>
+#include <ios>
+#include <limits>
+#include <map>
 #include <numeric>
+#include <ostream>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "Hypergraph.h"
 #include "Utilities.h"

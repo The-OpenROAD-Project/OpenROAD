@@ -50,9 +50,9 @@
 //   Highest message number = 4700
 
 %{
-#include <string.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
 
 #include "lex.h"
 #include "lefiDefs.hpp"
@@ -486,7 +486,7 @@ rule:  version | busbitchars | case_sensitivity | units_section
 case_sensitivity: K_NAMESCASESENSITIVE K_ON ';'
           {
             if (lefData->versionNum < 5.6) {
-              lefData->namesCaseSensitive = TRUE;
+              lefData->namesCaseSensitive = true;
               if (lefCallbacks->CaseSensitiveCbk)
                 CALLBACK(lefCallbacks->CaseSensitiveCbk, 
                          lefrCaseSensitiveCbkType,
@@ -500,7 +500,7 @@ case_sensitivity: K_NAMESCASESENSITIVE K_ON ';'
       | K_NAMESCASESENSITIVE K_OFF ';'
           {
             if (lefData->versionNum < 5.6) {
-              lefData->namesCaseSensitive = FALSE;
+              lefData->namesCaseSensitive = false;
               if (lefCallbacks->CaseSensitiveCbk)
                 CALLBACK(lefCallbacks->CaseSensitiveCbk, lefrCaseSensitiveCbkType,
                                lefData->namesCaseSensitive);
@@ -6511,15 +6511,15 @@ one_cap: K_MINPINS int_number K_WIRECAP int_number ';'
     { if (lefCallbacks->ArrayCbk) lefData->lefrArray.addDefaultCap((int)$2, $4); }
 
 msg_statement:
-  K_MESSAGE {lefData->lefDumbMode=1;lefData->lefNlToken=TRUE;} T_STRING '=' s_expr dtrm
+  K_MESSAGE {lefData->lefDumbMode=1;lefData->lefNlToken=true;} T_STRING '=' s_expr dtrm
     {  }
 
 create_file_statement:
-  K_CREATEFILE {lefData->lefDumbMode=1;lefData->lefNlToken=TRUE;} T_STRING '=' s_expr dtrm
+  K_CREATEFILE {lefData->lefDumbMode=1;lefData->lefNlToken=true;} T_STRING '=' s_expr dtrm
     { }
 
 def_statement:
-  K_DEFINE {lefData->lefDumbMode=1;lefData->lefNlToken=TRUE;} T_STRING '=' expression dtrm
+  K_DEFINE {lefData->lefDumbMode=1;lefData->lefNlToken=true;} T_STRING '=' expression dtrm
     {
       if (lefData->versionNum < 5.6)
         lefAddNumDefine($3, $5);
@@ -6528,7 +6528,7 @@ def_statement:
            if (lefData->arrayWarnings++ < lefSettings->ArrayWarnings)
              lefWarning(2067, "DEFINE statement is obsolete in version 5.6 and later.\nThe LEF parser will ignore this statement.\nTo avoid this warning in the future, remove this statement from the LEF file with version 5.6 or later.");
     }
-  |  K_DEFINES {lefData->lefDumbMode=1;lefData->lefNlToken=TRUE;} T_STRING '=' s_expr dtrm
+  |  K_DEFINES {lefData->lefDumbMode=1;lefData->lefNlToken=true;} T_STRING '=' s_expr dtrm
     {
       if (lefData->versionNum < 5.6)
         lefAddStringDefine($3, $5);
@@ -6537,7 +6537,7 @@ def_statement:
            if (lefData->arrayWarnings++ < lefSettings->ArrayWarnings)
              lefWarning(2068, "DEFINES statement is obsolete in version 5.6 and later.\nThe LEF parser will ignore this statement.\nTo avoid this warning in the future, remove this statement from the LEF file with version 5.6 or later.");
     }
-  |  K_DEFINEB {lefData->lefDumbMode=1;lefData->lefNlToken=TRUE;} T_STRING '=' b_expr dtrm
+  |  K_DEFINEB {lefData->lefDumbMode=1;lefData->lefNlToken=true;} T_STRING '=' b_expr dtrm
     {
       if (lefData->versionNum < 5.6)
         lefAddBooleanDefine($3, $5);
@@ -6549,8 +6549,8 @@ def_statement:
 
 // terminator for &defines.  Can be semicolon or newline 
 dtrm:
-  |  ';' {lefData->lefNlToken = FALSE;}
-  |  '\n'        {lefData->lefNlToken = FALSE;}
+  |  ';' {lefData->lefNlToken = false;}
+  |  '\n'        {lefData->lefNlToken = false;}
 
 then:
   K_THEN
@@ -6602,7 +6602,7 @@ s_expr:
     { $$ = $2; }
   | K_IF b_expr then s_expr else s_expr %prec IF
     {
-      lefData->lefDefIf = TRUE;
+      lefData->lefDefIf = true;
       if ($2 != 0) {
         $$ = $4;        
       } else {

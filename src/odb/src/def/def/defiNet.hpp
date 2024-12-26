@@ -30,7 +30,7 @@
 #ifndef defiNet_h
 #define defiNet_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 #include "defiMisc.hpp"

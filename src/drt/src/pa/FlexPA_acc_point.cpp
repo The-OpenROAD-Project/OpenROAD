@@ -133,7 +133,7 @@ void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
     return;
   }
   // hardcode first two single vias
-  std::vector<frViaDef*> via_defs;
+  std::vector<const frViaDef*> via_defs;
   int cnt = 0;
   for (auto& [tup, via] : layer_num_to_via_defs_[layer_num + 1][1]) {
     via_defs.push_back(via);
@@ -741,7 +741,7 @@ void FlexPA::getViasFromMetalWidthMap(
     const Point& pt,
     const frLayerNum layer_num,
     const gtl::polygon_90_set_data<frCoord>& polyset,
-    std::vector<std::pair<int, frViaDef*>>& via_defs)
+    std::vector<std::pair<int, const frViaDef*>>& via_defs)
 {
   const auto tech = getTech();
   if (layer_num == tech->getTopLayerNum()) {
@@ -840,7 +840,7 @@ void FlexPA::check_addViaAccess(
   }
   const int max_num_via_trial = 2;
   // use std:pair to ensure deterministic behavior
-  std::vector<std::pair<int, frViaDef*>> via_defs;
+  std::vector<std::pair<int, const frViaDef*>> via_defs;
   getViasFromMetalWidthMap(begin_point, layer_num, polyset, via_defs);
 
   if (via_defs.empty()) {  // no via map entry
@@ -853,7 +853,7 @@ void FlexPA::check_addViaAccess(
     }
   }
 
-  std::set<std::tuple<frCoord, int, frViaDef*>> valid_via_defs;
+  std::set<std::tuple<frCoord, int, const frViaDef*>> valid_via_defs;
   for (auto& [idx, via_def] : via_defs) {
     auto via = std::make_unique<frVia>(via_def);
     via->setOrigin(begin_point);
@@ -1429,7 +1429,7 @@ void FlexPA::initAllAccessPoints()
 
       int inst_terms_cnt = static_cast<int>(inst->getInstTerms().size());
 #pragma omp critical
-      for (int i = 0; i < inst_terms_cnt; i++) {
+      for (int j = 0; j < inst_terms_cnt; j++) {
         pin_count++;
         if (pin_count % (pin_count > 10000 ? 10000 : 1000) == 0) {
           logger_->info(DRT, 76, "  Complete {} pins.", pin_count);

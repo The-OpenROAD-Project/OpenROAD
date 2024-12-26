@@ -30,7 +30,7 @@
 #ifndef defiIOTiming_h
 #define defiIOTiming_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 

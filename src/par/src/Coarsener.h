@@ -40,8 +40,13 @@
 // It will accept a HGraphPtr (std::shared_ptr<Hypergraph>) as input
 // and return a sequence of coarser hypergraphs
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "Evaluator.h"
 #include "Hypergraph.h"
+#include "Utilities.h"
 #include "utl/Logger.h"
 
 namespace par {

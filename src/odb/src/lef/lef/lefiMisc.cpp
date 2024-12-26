@@ -29,9 +29,8 @@
 
 #include "lefiMisc.hpp"
 
-#include <stdlib.h>
-#include <string.h>
-
+#include <cstdlib>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -58,8 +57,8 @@ void lefiGeometries::Init()
   items_ = (void**) lefMalloc(sizeof(void*) * 2);
   numPoints_ = 0;
   pointsAllocated_ = 0;
-  x_ = 0;
-  y_ = 0;
+  x_ = nullptr;
+  y_ = nullptr;
   xStart_ = -1;
   yStart_ = -1;
   xStep_ = -1;
@@ -215,8 +214,8 @@ void lefiGeometries::addPath(int colorMask)
       p->y[i] = y_[i];
     }
   } else {
-    p->x = 0;
-    p->y = 0;
+    p->x = nullptr;
+    p->y = nullptr;
   }
 
   p->colorMask = colorMask;
@@ -240,8 +239,8 @@ void lefiGeometries::addPathIter(int colorMask)
       p->y[i] = y_[i];
     }
   } else {
-    p->x = 0;
-    p->y = 0;
+    p->x = nullptr;
+    p->y = nullptr;
   }
 
   p->colorMask = colorMask;
@@ -307,8 +306,8 @@ void lefiGeometries::addPolygon(int colorMask)
       p->y[i] = y_[i];
     }
   } else {
-    p->x = 0;
-    p->y = 0;
+    p->x = nullptr;
+    p->y = nullptr;
   }
 
   p->colorMask = colorMask;
@@ -333,8 +332,8 @@ void lefiGeometries::addPolygonIter(int colorMask)
       p->y[i] = y_[i];
     }
   } else {
-    p->x = 0;
-    p->y = 0;
+    p->x = nullptr;
+    p->y = nullptr;
   }
 
   p->xStart = xStart_;
@@ -466,7 +465,7 @@ lefiGeomRect* lefiGeometries::getRect(int index) const
             index,
             numItems_);
     lefiError(0, 1361, msg);
-    return 0;
+    return nullptr;
   }
   return (lefiGeomRect*) (items_[index]);
 }
@@ -481,7 +480,7 @@ lefiGeomRectIter* lefiGeometries::getRectIter(int index) const
             index,
             numItems_);
     lefiError(0, 1362, msg);
-    return 0;
+    return nullptr;
   }
   return (lefiGeomRectIter*) (items_[index]);
 }
@@ -496,7 +495,7 @@ lefiGeomPath* lefiGeometries::getPath(int index) const
             index,
             numItems_);
     lefiError(0, 1363, msg);
-    return 0;
+    return nullptr;
   }
   return (lefiGeomPath*) (items_[index]);
 }
@@ -511,7 +510,7 @@ lefiGeomPathIter* lefiGeometries::getPathIter(int index) const
             index,
             numItems_);
     lefiError(0, 1364, msg);
-    return 0;
+    return nullptr;
   }
   return (lefiGeomPathIter*) (items_[index]);
 }
@@ -526,7 +525,7 @@ char* lefiGeometries::getLayer(int index) const
             index,
             numItems_);
     lefiError(0, 1365, msg);
-    return 0;
+    return nullptr;
   }
   return (char*) (items_[index]);
 }
@@ -602,7 +601,7 @@ lefiGeomPolygon* lefiGeometries::getPolygon(int index) const
             index,
             numItems_);
     lefiError(0, 1370, msg);
-    return 0;
+    return nullptr;
   }
   return (lefiGeomPolygon*) (items_[index]);
 }
@@ -617,7 +616,7 @@ lefiGeomPolygonIter* lefiGeometries::getPolygonIter(int index) const
             index,
             numItems_);
     lefiError(0, 1371, msg);
-    return 0;
+    return nullptr;
   }
   return (lefiGeomPolygonIter*) (items_[index]);
 }
@@ -632,7 +631,7 @@ char* lefiGeometries::getClass(int index) const
             index,
             numItems_);
     lefiError(0, 1372, msg);
-    return 0;
+    return nullptr;
   }
   return (char*) (items_[index]);
 }
@@ -647,7 +646,7 @@ lefiGeomVia* lefiGeometries::getVia(int index) const
             index,
             numItems_);
     lefiError(0, 1373, msg);
-    return 0;
+    return nullptr;
   }
   return (lefiGeomVia*) (items_[index]);
 }
@@ -662,7 +661,7 @@ lefiGeomViaIter* lefiGeometries::getViaIter(int index) const
             index,
             numItems_);
     lefiError(0, 1374, msg);
-    return 0;
+    return nullptr;
   }
   return (lefiGeomViaIter*) (items_[index]);
 }
@@ -1133,8 +1132,8 @@ void lefiSite::Init()
   name_ = (char*) lefMalloc(16);
   numRowPattern_ = 0;
   rowPatternAllocated_ = 0;
-  siteNames_ = 0;
-  siteOrients_ = 0;
+  siteNames_ = nullptr;
+  siteOrients_ = nullptr;
 }
 
 void lefiSite::Destroy()
@@ -1470,7 +1469,7 @@ void lefiTrackPattern::Destroy()
   if (name_)
     lefFree(name_);
   clear();
-  name_ = 0;
+  name_ = nullptr;
   start_ = 0;
   numTracks_ = 0;
   space_ = 0;
@@ -1566,7 +1565,7 @@ const char* lefiTrackPattern::layerName(int index) const
             index,
             numLayers_);
     lefiError(0, 1377, msg);
-    return 0;
+    return nullptr;
   }
   return layerNames_[index];
 }
@@ -1610,7 +1609,7 @@ void lefiGcellPattern::Destroy()
 {
   if (name_)
     lefFree(name_);
-  name_ = 0;
+  name_ = nullptr;
   start_ = 0;
   numCRs_ = 0;
   space_ = 0;
@@ -1680,7 +1679,7 @@ lefiUseMinSpacing::lefiUseMinSpacing()
 
 void lefiUseMinSpacing::Init()
 {
-  name_ = 0;
+  name_ = nullptr;
   value_ = 0;
 }
 
@@ -1724,8 +1723,8 @@ void lefiUseMinSpacing::print(FILE* f) const
 
 lefiMaxStackVia::lefiMaxStackVia()
 {
-  bottomLayer_ = 0;
-  topLayer_ = 0;
+  bottomLayer_ = nullptr;
+  topLayer_ = nullptr;
   Init();
 }
 
@@ -1737,8 +1736,8 @@ void lefiMaxStackVia::Init()
     lefFree(bottomLayer_);  // call this function before calling
   if (topLayer_)            // setMaxStackViaRange when more than 1 lef
     lefFree(topLayer_);     // files are parse. C++ skips this function
-  bottomLayer_ = 0;
-  topLayer_ = 0;
+  bottomLayer_ = nullptr;
+  topLayer_ = nullptr;
 }
 
 void lefiMaxStackVia::Destroy()
@@ -1747,8 +1746,8 @@ void lefiMaxStackVia::Destroy()
     lefFree(bottomLayer_);
   if (topLayer_)
     lefFree(topLayer_);
-  bottomLayer_ = 0;
-  topLayer_ = 0;
+  bottomLayer_ = nullptr;
+  topLayer_ = nullptr;
   hasRange_ = 0;
   value_ = 0;
 }

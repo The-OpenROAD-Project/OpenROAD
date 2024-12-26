@@ -33,7 +33,7 @@
 #ifndef CDEFRREADER_H
 #define CDEFRREADER_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

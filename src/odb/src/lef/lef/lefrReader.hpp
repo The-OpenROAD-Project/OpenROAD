@@ -30,15 +30,15 @@
 #ifndef LEFRREADER_H
 #define LEFRREADER_H
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <cstdarg>
+#include <cstdio>
 
 #include "lefiDefs.hpp"
 #include "lefiKRDefs.hpp"
 #include "lefiUser.hpp"
 #include "lefiUtil.hpp"
 
-#define MAX_LEF_MSGS 4701
+constexpr int MAX_LEF_MSGS = 4701;
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 

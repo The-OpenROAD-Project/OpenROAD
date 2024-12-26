@@ -33,7 +33,7 @@
 #ifndef CDEFWWRITER_H
 #define CDEFWWRITER_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

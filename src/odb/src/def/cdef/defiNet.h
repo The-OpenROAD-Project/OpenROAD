@@ -33,7 +33,7 @@
 #ifndef CDEFINET_H
 #define CDEFINET_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

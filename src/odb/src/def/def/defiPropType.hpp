@@ -30,7 +30,7 @@
 #ifndef defiPropType_h
 #define defiPropType_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 

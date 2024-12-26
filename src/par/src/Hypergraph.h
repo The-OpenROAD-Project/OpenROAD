@@ -43,8 +43,8 @@
 // Rule2 : Each hyperedge can include a vertex at most once.
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
-#include <boost/range/iterator_range.hpp>
-#include <functional>
+#include <boost/range/iterator_range_core.hpp>
+#include <memory>
 #include <set>
 #include <vector>
 

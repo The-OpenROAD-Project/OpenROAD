@@ -61,24 +61,19 @@ bool PinDensityDataSource::populateMap()
       = {{getBlock(), odb::dbTransform()}};
 
   while (!blocks.empty()) {
-    auto [current_block, current_transform] = blocks.back();
+    auto [block, transform] = blocks.back();
     blocks.pop_back();
 
-    const bool has_child_blocks = !current_block->getChildren().empty();
-
-    for (auto* inst : current_block->getInsts()) {
+    for (auto* inst : block->getInsts()) {
       if (!inst->getPlacementStatus().isPlaced()) {
         continue;
       }
 
-      odb::dbMaster* master = inst->getMaster();
-      if (has_child_blocks) {
-        auto child = inst->getBlock()->findChild(master->getName().c_str());
-        if (child) {
-          const odb::dbTransform child_transform = inst->getTransform();
-          blocks.emplace_back(child, child_transform);
-          continue;
-        }
+      if (inst->isHierarchical()) {
+        odb::dbTransform child_transform = inst->getTransform();
+        child_transform.concat(transform);
+        blocks.emplace_back(inst->getChild(), child_transform);
+        continue;
       }
 
       for (odb::dbITerm* iterm : inst->getITerms()) {
@@ -96,7 +91,7 @@ bool PinDensityDataSource::populateMap()
           continue;
         }
 
-        current_transform.apply(bbox);
+        transform.apply(bbox);
         addToMap(bbox, 1);
       }
     }

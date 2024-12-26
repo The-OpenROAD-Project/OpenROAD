@@ -30,7 +30,7 @@
 #ifndef defiPinCap_h
 #define defiPinCap_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 #include "defiMisc.hpp"

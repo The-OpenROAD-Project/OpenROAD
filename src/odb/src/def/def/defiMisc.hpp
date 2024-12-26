@@ -30,7 +30,7 @@
 #ifndef defiMisc_h
 #define defiMisc_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 

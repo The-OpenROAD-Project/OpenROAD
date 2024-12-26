@@ -32,10 +32,10 @@
 
 #include "defout_impl.h"
 
-#include <stdio.h>
 #include <sys/stat.h>
 
 #include <cstdint>
+#include <cstdio>
 #include <limits>
 #include <optional>
 #include <set>

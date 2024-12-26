@@ -33,11 +33,10 @@
 #ifndef FPCOMMON
 #define FPCOMMON
 
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include <algorithm>
+#include <cmath>
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <iomanip>
 #include <iostream>

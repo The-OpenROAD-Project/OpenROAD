@@ -29,8 +29,8 @@
 
 #include "lefiProp.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "lefiDebug.hpp"
 #include "lex.h"
@@ -38,14 +38,14 @@
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
 lefiProp::lefiProp()
-    : propType_(NULL),
-      propName_(NULL),
+    : propType_(nullptr),
+      propName_(nullptr),
       nameSize_(0),
       hasRange_(0),
       hasNumber_(0),
       hasNameMapString_(0),
       dataType_(0),
-      stringData_(NULL),
+      stringData_(nullptr),
       stringLength_(0),
       left_(0.0),
       right_(0.0),
@@ -187,7 +187,7 @@ void lefiProp::clear()
     *(stringData_) = '\0';
   if (stringData_)
     *(propName_) = '\0';
-  propType_ = 0;
+  propType_ = nullptr;
   hasRange_ = 0;
   hasNumber_ = 0;
   hasNameMapString_ = 0;
