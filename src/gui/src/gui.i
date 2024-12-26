@@ -767,4 +767,11 @@ void update_timing_report()
   auto gui = gui::Gui::get();
   gui->updateTimingReport();
 }
+
+void set_title(std::string title)
+{
+  auto gui = gui::Gui::get();
+  gui->setMainWindowTitle(title);
+}
+
 %} // inline

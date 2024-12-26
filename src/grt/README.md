@@ -25,7 +25,6 @@ global_route
     [-grid_origin {x y}]
     [-critical_nets_percentage percent]
     [-allow_congestion]
-    [-overflow_iterations]
     [-verbose]
     [-start_incremental]
     [-end_incremental]
@@ -408,7 +407,7 @@ command. (See `GlobalRouter.h` for a complete list)
 ```python
 gr.setGridOrigin(x, y)                     # int, default 0,0
 gr.setCongestionReportFile(file_name)      # string
-gr.setOverflowIterations(n)                # int, default 50
+gr.setCongestionIterations(n)                # int, default 50
 gr.setAllowCongestion(allowCongestion)     # boolean, default False
 gr.setCriticalNetsPercentage(percentage)   # float
 gr.setMinRoutingLayer(minLayer)            # int
