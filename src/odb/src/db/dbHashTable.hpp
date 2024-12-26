@@ -200,7 +200,7 @@ T* dbHashTable<T>::find(const char* name)
   uint sz = _hash_tbl.size();
 
   if (sz == 0) {
-    return 0;
+    return nullptr;
   }
 
   uint hid = hash_string(name) & (sz - 1);

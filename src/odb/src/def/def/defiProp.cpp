@@ -180,7 +180,7 @@ void defiProp::clear()
     *(stringData_) = '\0';
   if (propName_)
     *(propName_) = '\0';
-  propType_ = 0;
+  propType_ = nullptr;
   hasRange_ = 0;
   hasNumber_ = 0;
   hasNameMapString_ = 0;

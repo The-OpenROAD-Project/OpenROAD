@@ -245,7 +245,7 @@ const char* defiPinProp::propName(int index) const
 {
   if (index < 0 || index >= numProps_) {
     defiError6120(index, numProps_, defData);
-    return 0;
+    return nullptr;
   }
   return propNames_[index];
 }
@@ -254,7 +254,7 @@ const char* defiPinProp::propValue(int index) const
 {
   if (index < 0 || index >= numProps_) {
     defiError6120(index, numProps_, defData);
-    return 0;
+    return nullptr;
   }
   return propValues_[index];
 }

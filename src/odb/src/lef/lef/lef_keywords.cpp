@@ -165,12 +165,12 @@ void lefReloadBuffer()
       if ((nb = (*lefSettings->ReadFunction)(
                lefData->lefrFile, lefData->current_buffer, 4))
           != 4) {
-        lefData->next = NULL;
+        lefData->next = nullptr;
         return;
       }
     } else {
       if ((nb = fread(lefData->current_buffer, 1, 4, lefData->lefrFile)) != 4) {
-        lefData->next = NULL;
+        lefData->next = nullptr;
         return;
       }
     }
@@ -205,7 +205,7 @@ void lefReloadBuffer()
   }
 
   if (nb <= 0) {
-    lefData->next = NULL;
+    lefData->next = nullptr;
   } else {
     lefData->next = lefData->current_buffer;
     lefData->last = lefData->current_buffer + nb - 1;
@@ -225,7 +225,7 @@ int lefGetc()
   for (;;) {
     if (lefData->next > lefData->last)
       lefReloadBuffer();
-    if (lefData->next == NULL)
+    if (lefData->next == nullptr)
       return EOF;
 
     int ch = *lefData->next++;
@@ -302,9 +302,9 @@ void lefAddNumDefine(const char* token, double val)
 
 static int GetTokenFromStack(char* s)
 {
-  const char* ch;    // utility variable
-  char* prS = NULL;  // pointing to the previous char or s
-  char* save = s;    // for debug printing
+  const char* ch;       // utility variable
+  char* prS = nullptr;  // pointing to the previous char or s
+  char* save = s;       // for debug printing
 
   while (lefData->input_level >= 0) {
     for (ch = lefData->current_stack[lefData->input_level]; *ch != 0;
@@ -569,7 +569,7 @@ void lefStoreAlias()
     lefError(1000, "Expecting '='");
 
   /* now keep getting lines till we get one that contains &ENDALIAS */
-  for (char* p = NULL; p == NULL;) {
+  for (char* p = nullptr; p == nullptr;) {
     int i;
     char* s = line;
     for (i = 0; i < tokenSize - 1; i++) {
@@ -591,7 +591,7 @@ void lefStoreAlias()
     lefuc_array(line, uc_line);        // make upper case copy
     p = strstr(uc_line, "&ENDALIAS");  // look for END_ALIAS
 
-    if (p != NULL)                  // if we find it
+    if (p != nullptr)               // if we find it
       *(line + (p - uc_line)) = 0;  // remove it from the line
 
     so_far += line;
@@ -1198,11 +1198,11 @@ void lefInfo(int msgNum, const char* s)
             lefData->lef_nlines);
   } else {
     if (!lefData->hasOpenedLogFile) {
-      if ((lefData->lefrLog = fopen("lefRWarning.log", "w")) == 0) {
+      if ((lefData->lefrLog = fopen("lefRWarning.log", "w")) == nullptr) {
         printf(
             "WARNING (LEFPARS-3500): Unable to open the file lefRWarning.log "
             "in %s.\n",
-            getcwd(NULL, 64));
+            getcwd(nullptr, 64));
         printf("Info messages will not be printed.\n");
       } else {
         lefData->hasOpenedLogFile = 1;
@@ -1216,11 +1216,11 @@ void lefInfo(int msgNum, const char* s)
                 lefData->lef_nlines);
       }
     } else {
-      if ((lefData->lefrLog = fopen("lefRWarning.log", "a")) == 0) {
+      if ((lefData->lefrLog = fopen("lefRWarning.log", "a")) == nullptr) {
         printf(
             "WARNING (LEFPARS-3500): Unable to open the file lefRWarning.log "
             "in %s.\n",
-            getcwd(NULL, 64));
+            getcwd(nullptr, 64));
         printf("Info messages will not be printed.\n");
       } else {
         fprintf(lefData->lefrLog,
@@ -1301,11 +1301,11 @@ void lefWarning(int msgNum, const char* s)
             lefData->lef_nlines);
   } else {
     if (!lefData->hasOpenedLogFile) {
-      if ((lefData->lefrLog = fopen("lefRWarning.log", "w")) == 0) {
+      if ((lefData->lefrLog = fopen("lefRWarning.log", "w")) == nullptr) {
         printf(
             "WARNING (LEFPARS-2500): Unable to open the file lefRWarning.log "
             "in %s.\n",
-            getcwd(NULL, 64));
+            getcwd(nullptr, 64));
         printf("Warning messages will not be printed.\n");
       } else {
         lefData->hasOpenedLogFile = 1;
@@ -1320,11 +1320,11 @@ void lefWarning(int msgNum, const char* s)
                 lefData->lef_nlines);
       }
     } else {
-      if ((lefData->lefrLog = fopen("lefRWarning.log", "a")) == 0) {
+      if ((lefData->lefrLog = fopen("lefRWarning.log", "a")) == nullptr) {
         printf(
             "WARNING (LEFPARS-2501): Unable to open the file lefRWarning.log "
             "in %s.\n",
-            getcwd(NULL, 64));
+            getcwd(nullptr, 64));
         printf("Warning messages will not be printed.\n");
       } else {
         fprintf(lefData->lefrLog,

@@ -114,12 +114,12 @@ void defrData::reload_buffer()
     first_buffer = 0;
     if (settings->ReadFunction) {
       if ((nb = (*settings->ReadFunction)(File, buffer, 4)) != 4) {
-        next = NULL;
+        next = nullptr;
         return;
       }
     } else {
       if ((nb = fread(buffer, 1, 4, File)) != 4) {
-        next = NULL;
+        next = nullptr;
         return;
       }
     }
@@ -134,7 +134,7 @@ void defrData::reload_buffer()
   }
 
   if (nb <= 0) {
-    next = NULL;
+    next = nullptr;
   } else {
     next = buffer;
     last = buffer + nb - 1;
@@ -147,7 +147,7 @@ int defrData::GETC()
   for (;;) {
     if (next > last)
       reload_buffer();
-    if (next == NULL)
+    if (next == nullptr)
       return EOF;
 
     int ch = *next++;
@@ -187,8 +187,8 @@ char* defrData::ringCopy(const char* string)
 
 int defrData::DefGetTokenFromStack(char* s)
 {
-  const char* ch;   /* utility variable */
-  char* prS = NULL; /* pointing to the previous char or s */
+  const char* ch;      /* utility variable */
+  char* prS = nullptr; /* pointing to the previous char or s */
 
   while (input_level >= 0) {
     for (ch = stack[input_level].c_str(); *ch != 0; ch++) /* skip white space */
@@ -418,7 +418,7 @@ void defrData::StoreAlias()
   }
 
   /* now keep getting lines till we get one that contains &ENDALIAS */
-  for (char* p = NULL; p == NULL;) {
+  for (char* p = nullptr; p == nullptr;) {
     int i;
     char* s = line;
     for (i = 0; i < tokenSize - 1; i++) {
@@ -440,7 +440,7 @@ void defrData::StoreAlias()
 
     uc_array(line, uc_line);          /* make upper case copy */
     p = strstr(uc_line, "&ENDALIAS"); /* look for END_ALIAS */
-    if (p != NULL)                    /* if we find it */
+    if (p != nullptr)                 /* if we find it */
       *(line + (p - uc_line)) = 0;    /* remove it from the line */
 
     so_far += line;
@@ -1095,11 +1095,11 @@ void defrData::defInfo(int msgNum, const char* s)
             lines2str(nlines));
   } else {
     if (!hasOpenedDefLogFile) {
-      if ((defrLog = fopen("defRWarning.log", "w")) == 0) {
+      if ((defrLog = fopen("defRWarning.log", "w")) == nullptr) {
         printf(
             "WARNING(DEFPARS-8500): Unable to open the file defRWarning.log in "
             "%s.\n",
-            getcwd(NULL, 64));
+            getcwd(nullptr, 64));
         printf("Info messages will not be printed.\n");
       } else {
         hasOpenedDefLogFile = 1;
@@ -1112,11 +1112,11 @@ void defrData::defInfo(int msgNum, const char* s)
                 lines2str(nlines));
       }
     } else {
-      if ((defrLog = fopen("defRWarning.log", "a")) == 0) {
+      if ((defrLog = fopen("defRWarning.log", "a")) == nullptr) {
         printf(
             "WARNING (DEFPARS-8500): Unable to open the file defRWarning.log "
             "in %s.\n",
-            getcwd(NULL, 64));
+            getcwd(nullptr, 64));
         printf("Info messages will not be printed.\n");
       } else {
         hasOpenedDefLogFile = 1;
@@ -1175,11 +1175,11 @@ void defrData::defWarning(int msgNum, const char* s)
             lines2str(nlines));
   } else {
     if (!hasOpenedDefLogFile) {
-      if ((defrLog = fopen("defRWarning.log", "w")) == 0) {
+      if ((defrLog = fopen("defRWarning.log", "w")) == nullptr) {
         printf(
             "WARNING (DEFPARS-7500): Unable to open the file defRWarning.log "
             "in %s.\n",
-            getcwd(NULL, 64));
+            getcwd(nullptr, 64));
         printf("Warning messages will not be printed.\n");
       } else {
         hasOpenedDefLogFile = 1;
@@ -1192,11 +1192,11 @@ void defrData::defWarning(int msgNum, const char* s)
                 lines2str(nlines));
       }
     } else {
-      if ((defrLog = fopen("defRWarning.log", "a")) == 0) {
+      if ((defrLog = fopen("defRWarning.log", "a")) == nullptr) {
         printf(
             "WARNING (DEFAPRS-7501): Unable to open the file defRWarning.log "
             "in %s.\n",
-            getcwd(NULL, 64));
+            getcwd(nullptr, 64));
         printf("Warning messages will not be printed.\n");
       } else {
         hasOpenedDefLogFile = 1;

@@ -43,7 +43,7 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 // *****************************************************************************
 
 lefiViaRuleLayer::lefiViaRuleLayer()
-    : name_(NULL),
+    : name_(nullptr),
       direction_(0),
       overhang1_(0.0),
       overhang2_(0.0),
@@ -70,7 +70,7 @@ lefiViaRuleLayer::lefiViaRuleLayer()
 
 void lefiViaRuleLayer::Init()
 {
-  name_ = 0;
+  name_ = nullptr;
   overhang1_ = -1;
   overhang2_ = -1;
 }
@@ -339,20 +339,20 @@ void lefiViaRuleLayer::print(FILE* f) const
 // *****************************************************************************
 
 lefiViaRule::lefiViaRule()
-    : name_(NULL),
+    : name_(nullptr),
       nameSize_(0),
       hasGenerate_(0),
       hasDefault_(0),
       numLayers_(0),
       numVias_(0),
       viasAllocated_(0),
-      vias_(NULL),
+      vias_(nullptr),
       numProps_(0),
       propsAllocated_(0),
-      names_(NULL),
-      values_(NULL),
-      dvalues_(NULL),
-      types_(NULL)
+      names_(nullptr),
+      values_(nullptr),
+      dvalues_(nullptr),
+      types_(nullptr)
 {
   Init();
 }
@@ -547,7 +547,7 @@ int lefiViaRule::numLayers() const
 lefiViaRuleLayer* lefiViaRule::layer(int index) const
 {
   if (index < 0 || index > 2)
-    return 0;
+    return nullptr;
   return (lefiViaRuleLayer*) &(layers_[index]);
 }
 
@@ -581,7 +581,7 @@ int lefiViaRule::numVias() const
 char* lefiViaRule::viaName(int index) const
 {
   if (index < 0 || index >= numVias_)
-    return 0;
+    return nullptr;
   return vias_[index];
 }
 
@@ -693,7 +693,7 @@ const char* lefiViaRule::propName(int i) const
             i,
             numProps_);
     lefiError(0, 1431, msg);
-    return 0;
+    return nullptr;
   }
   return names_[i];
 }
@@ -708,7 +708,7 @@ const char* lefiViaRule::propValue(int i) const
             i,
             numProps_);
     lefiError(0, 1431, msg);
-    return 0;
+    return nullptr;
   }
   return values_[i];
 }

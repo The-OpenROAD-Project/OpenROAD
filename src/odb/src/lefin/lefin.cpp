@@ -2343,7 +2343,7 @@ dbLib* lefin::createTechAndLib(const char* tech_name,
     _logger->warn(
         utl::ODB, 231, "Error: technology {} already exists", tech_name);
     ++_errors;
-    return NULL;
+    return nullptr;
   };
 
   _tech = dbTech::create(_db, tech_name, _dbu_per_micron);

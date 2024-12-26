@@ -194,8 +194,8 @@ _dbTechVia::_dbTechVia(_dbDatabase*)
   _flags._has_params = 0;
   _flags._spare_bits = 0;
   _resistance = 0.0;
-  _name = 0;
-  _pattern = 0;
+  _name = nullptr;
+  _pattern = nullptr;
 }
 
 _dbTechVia::~_dbTechVia()

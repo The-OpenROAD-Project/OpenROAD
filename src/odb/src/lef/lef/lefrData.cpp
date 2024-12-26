@@ -40,27 +40,27 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 
 extern void* lefMalloc(size_t lef_size);
 
-lefrData* lefData = NULL;
+lefrData* lefData = nullptr;
 
 lefrData::lefrData()
-    : lefrFile(0),
-      lefrLog(0),
+    : lefrFile(nullptr),
+      lefrLog(nullptr),
       lefPropDefType('\0'),
-      arrayName(NULL),
-      last(NULL),
-      layerName(NULL),
-      lefch(NULL),
-      lefrFileName(NULL),
-      macroName(NULL),
-      ndName(0),
-      next(NULL),
-      nonDefaultRuleName(NULL),
-      outMsg(NULL),
-      pinName(NULL),
-      shiftBuf(0),
-      siteName(NULL),
-      viaName(NULL),
-      viaRuleName(NULL),
+      arrayName(nullptr),
+      last(nullptr),
+      layerName(nullptr),
+      lefch(nullptr),
+      lefrFileName(nullptr),
+      macroName(nullptr),
+      ndName(nullptr),
+      next(nullptr),
+      nonDefaultRuleName(nullptr),
+      outMsg(nullptr),
+      pinName(nullptr),
+      shiftBuf(nullptr),
+      siteName(nullptr),
+      viaName(nullptr),
+      viaRuleName(nullptr),
       layerCutSpacing(0),
       lef_save_x(0.0),
       lef_save_y(0.0),
@@ -195,12 +195,12 @@ lefrData::lefrData()
       viaRuleWarnings(0),
       viaWarnings(0),
       antennaType(lefiAntennaAR),
-      lefrAntennaPWLPtr(0),
+      lefrAntennaPWLPtr(nullptr),
       lefrArray(),
       lefrCorrectionTable(),
       lefrDensity(),
-      lefrGcellPatternPtr(0),
-      lefrGeometriesPtr(0),
+      lefrGcellPatternPtr(nullptr),
+      lefrGeometriesPtr(nullptr),
       lefrIRDrop(),
       lefrLayer(),
       lefrMacro(),
@@ -209,16 +209,16 @@ lefrData::lefrData()
       lefrNoiseMargin(),
       lefrNoiseTable(),
       lefrNonDefault(),
-      nd(0),
+      nd(nullptr),
       macroNum(),
       lefrObstruction(),
       lefrPin(),
       lefrProp(),
       lefrSite(),
-      lefrSitePatternPtr(0),
+      lefrSitePatternPtr(nullptr),
       lefrSpacing(),
       lefrTiming(),
-      lefrTrackPatternPtr(0),
+      lefrTrackPatternPtr(nullptr),
       lefrUnits(),
       lefrUseMinSpacing(),
       lefrVia(),
@@ -293,7 +293,7 @@ lefrData::~lefrData()
   /* Close the file */
   if (lefrLog) {
     fclose(lefrLog);
-    lefrLog = 0;
+    lefrLog = nullptr;
   }
 
   // destroyRingBuffer();

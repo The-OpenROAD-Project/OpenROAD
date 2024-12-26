@@ -108,7 +108,7 @@ void defiAssertion::clear()
                 defData);
     }
     itemTypes_[i] = 'B';  // bogus
-    items_[i] = 0;
+    items_[i] = nullptr;
   }
 
   numItems_ = 0;

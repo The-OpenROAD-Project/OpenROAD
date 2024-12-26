@@ -78,13 +78,13 @@ defiRegion::defiRegion(defrData* data) : defData(data)
 
 void defiRegion::Init()
 {
-  name_ = 0;
+  name_ = nullptr;
   nameLength_ = 0;
-  type_ = 0;
-  xl_ = 0;
-  yl_ = 0;
-  xh_ = 0;
-  yh_ = 0;
+  type_ = nullptr;
+  xl_ = nullptr;
+  yl_ = nullptr;
+  xh_ = nullptr;
+  yh_ = nullptr;
   numProps_ = 0;
   propsAllocated_ = 2;
   propNames_ = (char**) malloc(sizeof(char*) * 2);
@@ -117,7 +117,7 @@ void defiRegion::clear()
   numRectangles_ = 0;
   if (type_)
     free(type_);
-  type_ = 0;
+  type_ = nullptr;
 }
 
 void defiRegion::Destroy()
@@ -125,7 +125,7 @@ void defiRegion::Destroy()
   if (name_)
     free(name_);
   clear();
-  name_ = 0;
+  name_ = nullptr;
   nameLength_ = 0;
   free((char*) (xl_));
   free((char*) (yl_));
@@ -305,7 +305,7 @@ const char* defiRegion::propName(int index) const
 {
   if (index < 0 || index >= numProps_) {
     defiError6130(index, numProps_, defData);
-    return 0;
+    return nullptr;
   }
   return propNames_[index];
 }
@@ -314,7 +314,7 @@ const char* defiRegion::propValue(int index) const
 {
   if (index < 0 || index >= numProps_) {
     defiError6130(index, numProps_, defData);
-    return 0;
+    return nullptr;
   }
   return propValues_[index];
 }
