@@ -217,12 +217,12 @@ void FlexPA::createSingleAccessPoint(
     const frLayerNum layer_num,
     const bool allow_planar,
     const bool allow_via,
-    const frAccessPointEnum low_cost,
-    const frAccessPointEnum high_cost)
+    const frAccessPointEnum lower_type,
+    const frAccessPointEnum upper_type)
 {
   gtl::point_data<frCoord> pt(x, y);
-  if (!gtl::contains(maxrect, pt) && low_cost != frAccessPointEnum::NearbyGrid
-      && high_cost != frAccessPointEnum::NearbyGrid) {
+  if (!gtl::contains(maxrect, pt) && lower_type != frAccessPointEnum::NearbyGrid
+      && upper_type != frAccessPointEnum::NearbyGrid) {
     return;
   }
   Point fpt(x, y);
@@ -243,7 +243,7 @@ void FlexPA::createSingleAccessPoint(
         ap->setMultipleAccesses(frDirEnumVert, false);
       }
       if (lower_layer->getLef58RightWayOnGridOnlyConstraint()
-          && low_cost != frAccessPointEnum::OnGrid) {
+          && lower_type != frAccessPointEnum::OnGrid) {
         ap->setMultipleAccesses(frDirEnumHorz, false);
       }
     }
@@ -253,7 +253,7 @@ void FlexPA::createSingleAccessPoint(
         ap->setMultipleAccesses(frDirEnumHorz, false);
       }
       if (lower_layer->getLef58RightWayOnGridOnlyConstraint()
-          && low_cost != frAccessPointEnum::OnGrid) {
+          && lower_type != frAccessPointEnum::OnGrid) {
         ap->setMultipleAccesses(frDirEnumVert, false);
       }
     }
@@ -262,10 +262,10 @@ void FlexPA::createSingleAccessPoint(
   ap->setAccess(frDirEnum::U, allow_via);
 
   ap->setAllowVia(allow_via);
-  ap->setType((frAccessPointEnum) low_cost, true);
-  ap->setType((frAccessPointEnum) high_cost, false);
-  if ((low_cost == frAccessPointEnum::NearbyGrid
-       || high_cost == frAccessPointEnum::NearbyGrid)) {
+  ap->setType((frAccessPointEnum) lower_type, true);
+  ap->setType((frAccessPointEnum) upper_type, false);
+  if ((lower_type == frAccessPointEnum::NearbyGrid
+       || upper_type == frAccessPointEnum::NearbyGrid)) {
     Point end;
     const int half_width
         = design_->getTech()->getLayer(ap->getLayerNum())->getMinWidth() / 2;
@@ -332,9 +332,9 @@ void FlexPA::createMultipleAccessPoints(
   for (auto& [x_coord, cost_x] : x_coords) {
     for (auto& [y_coord, cost_y] : y_coords) {
       // lower full/half/center
-      auto& low_cost = is_layer1_horz ? cost_y : cost_x;
-      auto& high_cost = (!is_layer1_horz) ? cost_y : cost_x;
-      if (low_cost == lower_type && high_cost == upper_type) {
+      auto& low_layer_type = is_layer1_horz ? cost_y : cost_x;
+      auto& up_layer_type = (!is_layer1_horz) ? cost_y : cost_x;
+      if (low_layer_type == lower_type && up_layer_type == upper_type) {
         createSingleAccessPoint(aps,
                                 apset,
                                 rect,
@@ -343,8 +343,8 @@ void FlexPA::createMultipleAccessPoints(
                                 layer_num,
                                 allow_planar,
                                 allow_via,
-                                low_cost,
-                                high_cost);
+                                lower_type,
+                                upper_type);
       }
     }
   }
