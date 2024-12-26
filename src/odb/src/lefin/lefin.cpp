@@ -205,7 +205,9 @@ static void create_path_box(dbObject* obj,
 //
 // add geoms to master or terminal
 //
-bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
+bool lefin::addGeoms(dbObject* object,
+                     bool is_pin,
+                     LefParser::lefiGeometries* geometry)
 {
   int count = geometry->numItems();
   dbTechLayer* layer = nullptr;
@@ -216,7 +218,7 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
     _master_modified = true;
 
     switch (geometry->itemType(i)) {
-      case lefiGeomLayerE: {
+      case LefParser::lefiGeomLayerE: {
         layer = _tech->findLayer(geometry->getLayer(i));
 
         if (layer == nullptr) {
@@ -231,12 +233,12 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
         designRuleWidth = -1;
         break;
       }
-      case lefiGeomWidthE: {
+      case LefParser::lefiGeomWidthE: {
         dw = dbdist(geometry->getWidth(i)) >> 1;
         break;
       }
-      case lefiGeomPathE: {
-        lefiGeomPath* path = geometry->getPath(i);
+      case LefParser::lefiGeomPathE: {
+        LefParser::lefiGeomPath* path = geometry->getPath(i);
 
         if (path->numPoints == 1) {
           int x = dbdist(path->x[0]);
@@ -268,8 +270,8 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
         }
         break;
       }
-      case lefiGeomPathIterE: {
-        lefiGeomPathIter* pathItr = geometry->getPathIter(i);
+      case LefParser::lefiGeomPathIterE: {
+        LefParser::lefiGeomPathIter* pathItr = geometry->getPathIter(i);
         int j;
         std::vector<Point> points;
 
@@ -330,8 +332,8 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
         }
         break;
       }
-      case lefiGeomRectE: {
-        lefiGeomRect* rect = geometry->getRect(i);
+      case LefParser::lefiGeomRectE: {
+        LefParser::lefiGeomRect* rect = geometry->getRect(i);
         int x1 = dbdist(rect->xl);
         int y1 = dbdist(rect->yl);
         int x2 = dbdist(rect->xh);
@@ -345,8 +347,8 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
         box->setDesignRuleWidth(designRuleWidth);
         break;
       }
-      case lefiGeomRectIterE: {
-        lefiGeomRectIter* rectItr = geometry->getRectIter(i);
+      case LefParser::lefiGeomRectIterE: {
+        LefParser::lefiGeomRectIter* rectItr = geometry->getRectIter(i);
         int x1 = dbdist(rectItr->xl);
         int y1 = dbdist(rectItr->yl);
         int x2 = dbdist(rectItr->xh);
@@ -375,14 +377,14 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
         }
         break;
       }
-      case lefiGeomPolygonE: {
+      case LefParser::lefiGeomPolygonE: {
         createPolygon(
             object, is_pin, layer, geometry->getPolygon(i), designRuleWidth);
         break;
       }
-      case lefiGeomPolygonIterE: {
-        lefiGeomPolygonIter* pItr = geometry->getPolygonIter(i);
-        lefiGeomPolygon p;
+      case LefParser::lefiGeomPolygonIterE: {
+        LefParser::lefiGeomPolygonIter* pItr = geometry->getPolygonIter(i);
+        LefParser::lefiGeomPolygon p;
 
         p.numPoints = pItr->numPoints;
         p.x = pItr->x;
@@ -406,8 +408,8 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
         }
         break;
       }
-      case lefiGeomViaE: {
-        lefiGeomVia* via = geometry->getVia(i);
+      case LefParser::lefiGeomViaE: {
+        LefParser::lefiGeomVia* via = geometry->getVia(i);
         dbTechVia* dbvia = _tech->findVia(via->name);
 
         if (dbvia == nullptr) {
@@ -426,8 +428,8 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
 
         break;
       }
-      case lefiGeomViaIterE: {
-        lefiGeomViaIter* viaItr = geometry->getViaIter(i);
+      case LefParser::lefiGeomViaIterE: {
+        LefParser::lefiGeomViaIter* viaItr = geometry->getViaIter(i);
         dbTechVia* dbvia = _tech->findVia(viaItr->name);
 
         if (dbvia == nullptr) {
@@ -456,15 +458,15 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
         }
         break;
       }
-      case lefiGeomLayerRuleWidthE: {
+      case LefParser::lefiGeomLayerRuleWidthE: {
         designRuleWidth = dbdist(geometry->getLayerRuleWidth(i));
         break;
       }
       // FIXME??
-      case lefiGeomUnknown:  // error
-      case lefiGeomLayerExceptPgNetE:
-      case lefiGeomLayerMinSpacingE:
-      case lefiGeomClassE:
+      case LefParser::lefiGeomUnknown:  // error
+      case LefParser::lefiGeomLayerExceptPgNetE:
+      case LefParser::lefiGeomLayerMinSpacingE:
+      case LefParser::lefiGeomClassE:
 
       default:
         break;
@@ -477,7 +479,7 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
 void lefin::createPolygon(dbObject* object,
                           bool is_pin,
                           dbTechLayer* layer,
-                          lefiGeomPolygon* p,
+                          LefParser::lefiGeomPolygon* p,
                           int design_rule_width,
                           double offset_x,
                           double offset_y)
@@ -512,7 +514,7 @@ void lefin::arrayBegin(const char* /* unused: name */)
   /* Gate arrays not supported */
 }
 
-void lefin::array(lefiArray* /* unused: a */)
+void lefin::array(LefParser::lefiArray* /* unused: a */)
 {
   /* Gate arrays not supported */
 }
@@ -557,7 +559,7 @@ void lefin::noWireExt(const char* name)
   _tech->setNoWireExtAtPin(dbOnOffType(name));
 }
 
-void lefin::noiseMargin(lefiNoiseMargin* /* unused: noise */)
+void lefin::noiseMargin(LefParser::lefiNoiseMargin* /* unused: noise */)
 {
 }
 
@@ -573,11 +575,11 @@ void lefin::edgeScale(double /* unused: name */)
 {
 }
 
-void lefin::noiseTable(lefiNoiseTable* /* unused: noise */)
+void lefin::noiseTable(LefParser::lefiNoiseTable* /* unused: noise */)
 {
 }
 
-void lefin::correction(lefiCorrectionTable* /* unused: corr */)
+void lefin::correction(LefParser::lefiCorrectionTable* /* unused: corr */)
 {
 }
 
@@ -589,7 +591,7 @@ void lefin::irdropBegin(void* /* unused: ptr */)
 {
 }
 
-void lefin::irdrop(lefiIRDrop* /* unused: irdrop */)
+void lefin::irdrop(LefParser::lefiIRDrop* /* unused: irdrop */)
 {
 }
 
@@ -597,7 +599,7 @@ void lefin::irdropEnd(void* /* unused: ptr */)
 {
 }
 
-void lefin::layer(lefiLayer* layer)
+void lefin::layer(LefParser::lefiLayer* layer)
 {
   if (!_create_tech)
     return;
@@ -875,11 +877,11 @@ void lefin::layer(lefiLayer* layer)
     }
   }
 
-  lefiSpacingTable* cur_sptbl;
+  LefParser::lefiSpacingTable* cur_sptbl;
   for (j = 0; j < layer->numSpacingTable(); j++) {
     cur_sptbl = layer->spacingTable(j);
     if (cur_sptbl->isInfluence()) {
-      lefiInfluence* cur_ifl = cur_sptbl->influence();
+      LefParser::lefiInfluence* cur_ifl = cur_sptbl->influence();
       int iflidx;
       dbTechV55InfluenceEntry* iflitem;
       for (iflidx = 0; iflidx < cur_ifl->numInfluenceEntry(); iflidx++) {
@@ -889,7 +891,7 @@ void lefin::layer(lefiLayer* layer)
                                       dbdist(cur_ifl->spacing(iflidx)));
       }
     } else if (cur_sptbl->isParallel()) {
-      lefiParallel* cur_ipl = cur_sptbl->parallel();
+      LefParser::lefiParallel* cur_ipl = cur_sptbl->parallel();
       int wddx, lndx;
 
       l->initV55LengthIndex(cur_ipl->numLength());
@@ -908,7 +910,7 @@ void lefin::layer(lefiLayer* layer)
         }
       }
     } else {  // two width spacing rule
-      lefiTwoWidths* cur_two = cur_sptbl->twoWidths();
+      LefParser::lefiTwoWidths* cur_two = cur_sptbl->twoWidths();
 
       l->initTwoWidths(cur_two->numWidth());
       int defaultPrl = -1;
@@ -969,8 +971,8 @@ void lefin::layer(lefiLayer* layer)
   }
 
   dbTechLayerAntennaRule* cur_ant_rule;
-  lefiAntennaModel* cur_model;
-  lefiAntennaPWL* cur_pwl;
+  LefParser::lefiAntennaModel* cur_model;
+  LefParser::lefiAntennaPWL* cur_pwl;
   std::vector<double> dffdx, dffratio;
   int k;
 
@@ -1187,7 +1189,7 @@ void lefin::macroBegin(const char* name)
   _master_modified = false;
 }
 
-void lefin::macro(lefiMacro* macro)
+void lefin::macro(LefParser::lefiMacro* macro)
 {
   if (_master == nullptr)
     return;
@@ -1284,15 +1286,15 @@ void lefin::manufacturing(double num)
   _tech->setManufacturingGrid(dbdist(num));
 }
 
-void lefin::maxStackVia(lefiMaxStackVia* /* unused: maxStack */)
+void lefin::maxStackVia(LefParser::lefiMaxStackVia* /* unused: maxStack */)
 {
 }
 
-void lefin::minFeature(lefiMinFeature* /* unused: min */)
+void lefin::minFeature(LefParser::lefiMinFeature* /* unused: min */)
 {
 }
 
-void lefin::nonDefault(lefiNonDefault* rule)
+void lefin::nonDefault(LefParser::lefiNonDefault* rule)
 {
   if (!_create_tech)
     return;
@@ -1346,7 +1348,7 @@ void lefin::nonDefault(lefiNonDefault* rule)
   }
 
   for (i = 0; i < rule->numSpacingRules(); ++i) {
-    lefiSpacing* spacing = rule->spacingRule(i);
+    LefParser::lefiSpacing* spacing = rule->spacingRule(i);
     dbTechLayer* l1 = _tech->findLayer(spacing->name1());
     if (l1 == nullptr) {
       _logger->warn(utl::ODB,
@@ -1416,12 +1418,12 @@ void lefin::nonDefault(lefiNonDefault* rule)
   }
 }
 
-void lefin::obstruction(lefiObstruction* obs)
+void lefin::obstruction(LefParser::lefiObstruction* obs)
 {
   if ((_master == nullptr) || (_skip_obstructions == true))
     return;
 
-  lefiGeometries* geometries = obs->geometries();
+  LefParser::lefiGeometries* geometries = obs->geometries();
 
   if (geometries->numItems()) {
     addGeoms(_master, false, geometries);
@@ -1440,7 +1442,7 @@ void lefin::obstruction(lefiObstruction* obs)
   }
 }
 
-void lefin::pin(lefiPin* pin)
+void lefin::pin(LefParser::lefiPin* pin)
 {
   if (_master == nullptr)
     return;
@@ -1457,10 +1459,10 @@ void lefin::pin(lefiPin* pin)
   dbSigType sig_type;
   dbMTermShapeType shape_type;
 
-  if (pin->lefiPin::hasUse())
+  if (pin->LefParser::lefiPin::hasUse())
     sig_type = dbSigType(pin->use());
 
-  if (pin->lefiPin::hasShape())
+  if (pin->LefParser::lefiPin::hasShape())
     shape_type = dbMTermShapeType(pin->shape());
 
   dbMTerm* term = _master->findMTerm(pin->name());
@@ -1487,82 +1489,90 @@ void lefin::pin(lefiPin* pin)
   int i;
   dbTechLayer* tply;
 
-  if (pin->lefiPin::hasAntennaPartialMetalArea())
-    for (i = 0; i < pin->lefiPin::numAntennaPartialMetalArea(); i++) {
+  if (pin->LefParser::lefiPin::hasAntennaPartialMetalArea())
+    for (i = 0; i < pin->LefParser::lefiPin::numAntennaPartialMetalArea();
+         i++) {
       tply = nullptr;
-      if (pin->lefiPin::antennaPartialMetalAreaLayer(i)) {
-        tply = _tech->findLayer(pin->lefiPin::antennaPartialMetalAreaLayer(i));
+      if (pin->LefParser::lefiPin::antennaPartialMetalAreaLayer(i)) {
+        tply = _tech->findLayer(
+            pin->LefParser::lefiPin::antennaPartialMetalAreaLayer(i));
         if (!tply)
-          _logger->warn(utl::ODB,
-                        195,
-                        "Invalid layer name {} in antenna info for term {}",
-                        pin->lefiPin::antennaPartialMetalAreaLayer(i),
-                        term->getName());
+          _logger->warn(
+              utl::ODB,
+              195,
+              "Invalid layer name {} in antenna info for term {}",
+              pin->LefParser::lefiPin::antennaPartialMetalAreaLayer(i),
+              term->getName());
       }
-      term->addPartialMetalAreaEntry(pin->lefiPin::antennaPartialMetalArea(i),
-                                     tply);
+      term->addPartialMetalAreaEntry(
+          pin->LefParser::lefiPin::antennaPartialMetalArea(i), tply);
     }
 
-  if (pin->lefiPin::hasAntennaPartialMetalSideArea())
-    for (i = 0; i < pin->lefiPin::numAntennaPartialMetalSideArea(); i++) {
+  if (pin->LefParser::lefiPin::hasAntennaPartialMetalSideArea())
+    for (i = 0; i < pin->LefParser::lefiPin::numAntennaPartialMetalSideArea();
+         i++) {
       tply = nullptr;
-      if (pin->lefiPin::antennaPartialMetalSideAreaLayer(i)) {
+      if (pin->LefParser::lefiPin::antennaPartialMetalSideAreaLayer(i)) {
         tply = _tech->findLayer(
-            pin->lefiPin::antennaPartialMetalSideAreaLayer(i));
+            pin->LefParser::lefiPin::antennaPartialMetalSideAreaLayer(i));
         if (!tply)
-          _logger->warn(utl::ODB,
-                        196,
-                        "Invalid layer name {} in antenna info for term {}",
-                        pin->lefiPin::antennaPartialMetalSideAreaLayer(i),
-                        term->getName());
+          _logger->warn(
+              utl::ODB,
+              196,
+              "Invalid layer name {} in antenna info for term {}",
+              pin->LefParser::lefiPin::antennaPartialMetalSideAreaLayer(i),
+              term->getName());
       }
 
       term->addPartialMetalSideAreaEntry(
-          pin->lefiPin::antennaPartialMetalSideArea(i), tply);
+          pin->LefParser::lefiPin::antennaPartialMetalSideArea(i), tply);
     }
 
-  if (pin->lefiPin::hasAntennaPartialCutArea())
-    for (i = 0; i < pin->lefiPin::numAntennaPartialCutArea(); i++) {
+  if (pin->LefParser::lefiPin::hasAntennaPartialCutArea())
+    for (i = 0; i < pin->LefParser::lefiPin::numAntennaPartialCutArea(); i++) {
       tply = nullptr;
-      if (pin->lefiPin::antennaPartialCutAreaLayer(i)) {
-        tply = _tech->findLayer(pin->lefiPin::antennaPartialCutAreaLayer(i));
+      if (pin->LefParser::lefiPin::antennaPartialCutAreaLayer(i)) {
+        tply = _tech->findLayer(
+            pin->LefParser::lefiPin::antennaPartialCutAreaLayer(i));
         if (!tply)
           _logger->warn(utl::ODB,
                         197,
                         "Invalid layer name {} in antenna info for term {}",
-                        pin->lefiPin::antennaPartialCutAreaLayer(i),
+                        pin->LefParser::lefiPin::antennaPartialCutAreaLayer(i),
                         term->getName());
       }
 
-      term->addPartialCutAreaEntry(pin->lefiPin::antennaPartialCutArea(i),
-                                   tply);
+      term->addPartialCutAreaEntry(
+          pin->LefParser::lefiPin::antennaPartialCutArea(i), tply);
     }
 
-  if (pin->lefiPin::hasAntennaDiffArea())
-    for (i = 0; i < pin->lefiPin::numAntennaDiffArea(); i++) {
+  if (pin->LefParser::lefiPin::hasAntennaDiffArea())
+    for (i = 0; i < pin->LefParser::lefiPin::numAntennaDiffArea(); i++) {
       tply = nullptr;
-      if (pin->lefiPin::antennaDiffAreaLayer(i)) {
-        tply = _tech->findLayer(pin->lefiPin::antennaDiffAreaLayer(i));
+      if (pin->LefParser::lefiPin::antennaDiffAreaLayer(i)) {
+        tply = _tech->findLayer(
+            pin->LefParser::lefiPin::antennaDiffAreaLayer(i));
         if (!tply)
           _logger->warn(utl::ODB,
                         198,
                         "Invalid layer name {} in antenna info for term {}",
-                        pin->lefiPin::antennaDiffAreaLayer(i),
+                        pin->LefParser::lefiPin::antennaDiffAreaLayer(i),
                         term->getName());
       }
 
-      term->addDiffAreaEntry(pin->lefiPin::antennaDiffArea(i), tply);
+      term->addDiffAreaEntry(pin->LefParser::lefiPin::antennaDiffArea(i), tply);
     }
 
   int j;
   dbTechAntennaPinModel* curmodel;
-  lefiPinAntennaModel* curlefmodel;
-  if (pin->lefiPin::numAntennaModel() > 0) {
+  LefParser::lefiPinAntennaModel* curlefmodel;
+  if (pin->LefParser::lefiPin::numAntennaModel() > 0) {
     // NOTE: Only two different oxides supported for now!
-    for (i = 0; (i < pin->lefiPin::numAntennaModel()) && (i < 2); i++) {
+    for (i = 0; (i < pin->LefParser::lefiPin::numAntennaModel()) && (i < 2);
+         i++) {
       curmodel = (i == 1) ? term->createOxide2AntennaModel()
                           : term->createDefaultAntennaModel();
-      curlefmodel = pin->lefiPin::antennaModel(i);
+      curlefmodel = pin->LefParser::lefiPin::antennaModel(i);
 
       if (curlefmodel->hasAntennaGateArea()) {
         for (j = 0; j < curlefmodel->numAntennaGateArea(); j++) {
@@ -1632,9 +1642,9 @@ void lefin::pin(lefiPin* pin)
   }
 
   bool created_mpins = false;
-  int numPorts = pin->lefiPin::numPorts();
+  int numPorts = pin->LefParser::lefiPin::numPorts();
   for (i = 0; i < numPorts; i++) {
-    lefiGeometries* geometries = pin->lefiPin::port(i);
+    LefParser::lefiGeometries* geometries = pin->LefParser::lefiPin::port(i);
     if (geometries->numItems()) {
       dbMPin* dbpin = dbMPin::create(term);
       created_mpins = true;
@@ -1663,7 +1673,7 @@ void lefin::propDefBegin(void* /* unused: ptr */)
 {
 }
 
-void lefin::propDef(lefiProp* prop)
+void lefin::propDef(LefParser::lefiProp* prop)
 {
   if (std::string(prop->propName()) == "LEF58_METALWIDTHVIAMAP") {
     auto parser = MetalWidthViaMapParser(_tech, this, _incomplete_props);
@@ -1675,7 +1685,7 @@ void lefin::propDefEnd(void* /* unused: ptr */)
 {
 }
 
-void lefin::site(lefiSite* lefsite)
+void lefin::site(LefParser::lefiSite* lefsite)
 {
   if (!_create_lib)
     return;
@@ -1742,7 +1752,7 @@ void lefin::spacingBegin(void* /* unused: ptr */)
 {
 }
 
-void lefin::spacing(lefiSpacing* spacing)
+void lefin::spacing(LefParser::lefiSpacing* spacing)
 {
   if (_create_tech == false)
     return;
@@ -1774,11 +1784,11 @@ void lefin::spacingEnd(void* /* unused: ptr */)
 {
 }
 
-void lefin::timing(lefiTiming* /* unused: timing */)
+void lefin::timing(LefParser::lefiTiming* /* unused: timing */)
 {
 }
 
-void lefin::units(lefiUnits* unit)
+void lefin::units(LefParser::lefiUnits* unit)
 {
   if (unit->hasDatabase()) {
     _lef_units = (int) unit->databaseNumber();
@@ -1838,7 +1848,7 @@ void lefin::setDBUPerMicron(int dbu)
   }
 }
 
-void lefin::useMinSpacing(lefiUseMinSpacing* spacing)
+void lefin::useMinSpacing(LefParser::lefiUseMinSpacing* spacing)
 {
   if (!strncasecmp(spacing->name(), "PIN", 3)) {
     _tech->setUseMinSpacingPin(dbOnOffType(spacing->value()));
@@ -1857,7 +1867,7 @@ void lefin::version(double num)
   _tech->setLefVersion(num);
 }
 
-void lefin::via(lefiVia* via, dbTechNonDefaultRule* rule)
+void lefin::via(LefParser::lefiVia* via, dbTechNonDefaultRule* rule)
 {
   if (_tech->findVia(via->name())) {
     debugPrint(_logger,
@@ -1893,7 +1903,7 @@ void lefin::via(lefiVia* via, dbTechNonDefaultRule* rule)
     int i;
     int j;
 
-    for (i = 0; i < via->lefiVia::numLayers(); i++) {
+    for (i = 0; i < via->LefParser::lefiVia::numLayers(); i++) {
       dbTechLayer* l = _tech->findLayer(via->layerName(i));
 
       if (l == nullptr) {
@@ -2002,7 +2012,7 @@ void lefin::via(lefiVia* via, dbTechNonDefaultRule* rule)
   _via_cnt++;
 }
 
-void lefin::viaRule(lefiViaRule* viaRule)
+void lefin::viaRule(LefParser::lefiViaRule* viaRule)
 {
   if (viaRule->hasGenerate()) {
     viaGenerateRule(viaRule);
@@ -2020,7 +2030,7 @@ void lefin::viaRule(lefiViaRule* viaRule)
 
   int idx;
   for (idx = 0; idx < viaRule->numLayers(); ++idx) {
-    lefiViaRuleLayer* leflay = viaRule->layer(idx);
+    LefParser::lefiViaRuleLayer* leflay = viaRule->layer(idx);
     dbTechLayer* layer = _tech->findLayer(leflay->name());
 
     if (layer == nullptr) {
@@ -2066,7 +2076,7 @@ void lefin::viaRule(lefiViaRule* viaRule)
   }
 }
 
-void lefin::viaGenerateRule(lefiViaRule* viaRule)
+void lefin::viaGenerateRule(LefParser::lefiViaRule* viaRule)
 {
   const char* name = viaRule->name();
   dbTechViaGenerateRule* rule
@@ -2079,7 +2089,7 @@ void lefin::viaGenerateRule(lefiViaRule* viaRule)
 
   int idx;
   for (idx = 0; idx < viaRule->numLayers(); ++idx) {
-    lefiViaRuleLayer* leflay = viaRule->layer(idx);
+    LefParser::lefiViaRuleLayer* leflay = viaRule->layer(idx);
     dbTechLayer* layer = _tech->findLayer(leflay->name());
 
     if (layer == nullptr) {
