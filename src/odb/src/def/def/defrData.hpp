@@ -55,10 +55,10 @@ struct defCompareStrings
   }
 };
 
-typedef std::map<std::string, std::string, defCompareStrings> defAliasMap;
-typedef std::map<std::string, std::string, defCompareStrings> defDefineMap;
+using defAliasMap = std::map<std::string, std::string, defCompareStrings>;
+using defDefineMap = std::map<std::string, std::string, defCompareStrings>;
 
-typedef union
+union YYSTYPE
 {
   double dval;
   int integer;
@@ -66,7 +66,7 @@ typedef union
   int keyword;  // really just a nop
   defPOINT pt;
   defTOKEN* tk;
-} YYSTYPE;
+};
 
 #define YYSTYPE_IS_DECLARED
 

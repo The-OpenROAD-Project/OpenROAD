@@ -199,8 +199,8 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 // *****************************************************************************
 // Global Variables
 // *****************************************************************************
-typedef void (*LEFI_LOG_FUNCTION)(const char*);
-typedef void (*LEFI_WARNING_LOG_FUNCTION)(const char*);
+using LEFI_LOG_FUNCTION = void (*)(const char*);
+using LEFI_WARNING_LOG_FUNCTION = void (*)(const char*);
 
 LEFI_LOG_FUNCTION lefwErrorLogFunction;
 LEFI_WARNING_LOG_FUNCTION lefwWarningLogFunction;
