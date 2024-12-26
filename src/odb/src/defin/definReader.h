@@ -103,146 +103,146 @@ class definReader : public definBase
   int errors();
 
   // Parser callbacks
-  static int blockageCallback(defrCallbackType_e type,
-                              defiBlockage* blockage,
+  static int blockageCallback(DefParser::defrCallbackType_e type,
+                              DefParser::defiBlockage* blockage,
                               defiUserData data);
 
-  static int componentsCallback(defrCallbackType_e type,
-                                defiComponent* comp,
+  static int componentsCallback(DefParser::defrCallbackType_e type,
+                                DefParser::defiComponent* comp,
                                 defiUserData data);
 
   static int componentMaskShiftCallback(
-      defrCallbackType_e type,
-      defiComponentMaskShiftLayer* shiftLayers,
+      DefParser::defrCallbackType_e type,
+      DefParser::defiComponentMaskShiftLayer* shiftLayers,
       defiUserData data);
 
-  static int dieAreaCallback(defrCallbackType_e type,
-                             defiBox* box,
+  static int dieAreaCallback(DefParser::defrCallbackType_e type,
+                             DefParser::defiBox* box,
                              defiUserData data);
 
-  static int extensionCallback(defrCallbackType_e type,
+  static int extensionCallback(DefParser::defrCallbackType_e type,
                                const char* extension,
                                defiUserData data);
 
-  static int fillsCallback(defrCallbackType_e type,
+  static int fillsCallback(DefParser::defrCallbackType_e type,
                            int count,
                            defiUserData data);
 
-  static int fillCallback(defrCallbackType_e type,
-                          defiFill* fill,
+  static int fillCallback(DefParser::defrCallbackType_e type,
+                          DefParser::defiFill* fill,
                           defiUserData data);
 
-  static int gcellGridCallback(defrCallbackType_e type,
-                               defiGcellGrid* grid,
+  static int gcellGridCallback(DefParser::defrCallbackType_e type,
+                               DefParser::defiGcellGrid* grid,
                                defiUserData data);
 
-  static int groupNameCallback(defrCallbackType_e type,
+  static int groupNameCallback(DefParser::defrCallbackType_e type,
                                const char* name,
                                defiUserData data);
-  static int groupMemberCallback(defrCallbackType_e type,
+  static int groupMemberCallback(DefParser::defrCallbackType_e type,
                                  const char* member,
                                  defiUserData data);
 
-  static int groupCallback(defrCallbackType_e type,
-                           defiGroup* group,
+  static int groupCallback(DefParser::defrCallbackType_e type,
+                           DefParser::defiGroup* group,
                            defiUserData data);
 
-  static int historyCallback(defrCallbackType_e type,
+  static int historyCallback(DefParser::defrCallbackType_e type,
                              const char* extension,
                              defiUserData data);
 
-  static int netCallback(defrCallbackType_e type,
-                         defiNet* net,
+  static int netCallback(DefParser::defrCallbackType_e type,
+                         DefParser::defiNet* net,
                          defiUserData data);
 
-  static int nonDefaultRuleCallback(defrCallbackType_e type,
-                                    defiNonDefault* rule,
+  static int nonDefaultRuleCallback(DefParser::defrCallbackType_e type,
+                                    DefParser::defiNonDefault* rule,
                                     defiUserData data);
 
-  static int pinCallback(defrCallbackType_e type,
-                         defiPin* pin,
+  static int pinCallback(DefParser::defrCallbackType_e type,
+                         DefParser::defiPin* pin,
                          defiUserData data);
 
-  static int pinsEndCallback(defrCallbackType_e type,
+  static int pinsEndCallback(DefParser::defrCallbackType_e type,
                              void* v,
                              defiUserData data);
 
-  static int pinPropCallback(defrCallbackType_e type,
-                             defiPinProp* prop,
+  static int pinPropCallback(DefParser::defrCallbackType_e type,
+                             DefParser::defiPinProp* prop,
                              defiUserData data);
 
-  static int pinsStartCallback(defrCallbackType_e type,
+  static int pinsStartCallback(DefParser::defrCallbackType_e type,
                                int number,
                                defiUserData data);
 
-  static int propCallback(defrCallbackType_e type,
-                          defiProp* prop,
+  static int propCallback(DefParser::defrCallbackType_e type,
+                          DefParser::defiProp* prop,
                           defiUserData data);
-  static int propEndCallback(defrCallbackType_e type,
+  static int propEndCallback(DefParser::defrCallbackType_e type,
                              void* v,
                              defiUserData data);
-  static int propStartCallback(defrCallbackType_e type,
+  static int propStartCallback(DefParser::defrCallbackType_e type,
                                void* v,
                                defiUserData data);
 
-  static int regionCallback(defrCallbackType_e type,
-                            defiRegion* region,
+  static int regionCallback(DefParser::defrCallbackType_e type,
+                            DefParser::defiRegion* region,
                             defiUserData data);
 
-  static int rowCallback(defrCallbackType_e type,
-                         defiRow* row,
+  static int rowCallback(DefParser::defrCallbackType_e type,
+                         DefParser::defiRow* row,
                          defiUserData data);
 
-  static int scanchainsStartCallback(defrCallbackType_e type,
+  static int scanchainsStartCallback(DefParser::defrCallbackType_e type,
                                      int count,
                                      defiUserData data);
 
-  static int scanchainsCallback(defrCallbackType_e,
+  static int scanchainsCallback(DefParser::defrCallbackType_e,
                                 DefParser::defiScanchain* scan_chain,
                                 defiUserData data);
 
-  static int slotsCallback(defrCallbackType_e type,
+  static int slotsCallback(DefParser::defrCallbackType_e type,
                            int count,
                            defiUserData data);
 
-  static int specialNetCallback(defrCallbackType_e type,
-                                defiNet* net,
+  static int specialNetCallback(DefParser::defrCallbackType_e type,
+                                DefParser::defiNet* net,
                                 defiUserData data);
 
-  static int stylesCallback(defrCallbackType_e type,
+  static int stylesCallback(DefParser::defrCallbackType_e type,
                             int count,
                             defiUserData data);
 
-  static int technologyCallback(defrCallbackType_e type,
+  static int technologyCallback(DefParser::defrCallbackType_e type,
                                 const char* name,
                                 defiUserData data);
 
-  static int trackCallback(defrCallbackType_e type,
-                           defiTrack* track,
+  static int trackCallback(DefParser::defrCallbackType_e type,
+                           DefParser::defiTrack* track,
                            defiUserData data);
 
-  static int versionCallback(defrCallbackType_e type,
+  static int versionCallback(DefParser::defrCallbackType_e type,
                              const char* version_str,
                              defiUserData data);
 
-  static int divideCharCallback(defrCallbackType_e type,
+  static int divideCharCallback(DefParser::defrCallbackType_e type,
                                 const char* value,
                                 defiUserData data);
 
-  static int busBitCallback(defrCallbackType_e type,
+  static int busBitCallback(DefParser::defrCallbackType_e type,
                             const char* busbit,
                             defiUserData data);
 
-  static int designCallback(defrCallbackType_e type,
+  static int designCallback(DefParser::defrCallbackType_e type,
                             const char* design,
                             defiUserData data);
 
-  static int unitsCallback(defrCallbackType_e type,
+  static int unitsCallback(DefParser::defrCallbackType_e type,
                            double number,
                            defiUserData data);
 
-  static int viaCallback(defrCallbackType_e type,
-                         defiVia* via,
+  static int viaCallback(DefParser::defrCallbackType_e type,
+                         DefParser::defiVia* via,
                          defiUserData data);
 
   static void contextLogFunctionCallback(defiUserData data, const char* msg);
