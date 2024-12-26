@@ -2217,7 +2217,7 @@ struct cdft_arg_st
   int nw;
   float* w;
 };
-typedef struct cdft_arg_st cdft_arg_t;
+using cdft_arg_t = cdft_arg_st;
 
 void cftrec4_th(int n, float* a, int nw, float* w)
 {
