@@ -375,7 +375,7 @@ static std::string renameBlock(dbBlock* parent, const char* old_name)
 }
 
 int definReader::versionCallback(
-    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defrCallbackType_e type /* unused: type */,
     const char* value,
     defiUserData data)
 {
@@ -398,7 +398,7 @@ int definReader::divideCharCallback(
   return PARSE_OK;
 }
 int definReader::busBitCallback(
-    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defrCallbackType_e type /* unused: type */,
     const char* value,
     defiUserData data)
 {
@@ -1568,7 +1568,7 @@ int definReader::trackCallback(DefParser::defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::unitsCallback(DefParser::defrCallbackType_e,
+int definReader::unitsCallback(DefParser::defrCallbackType_e type,
                                double d,
                                defiUserData data)
 {
