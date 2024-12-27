@@ -322,25 +322,39 @@ void defout_impl::writeTracks(dbBlock* block)
     }
 
     for (int i = 0; i < grid->getNumGridPatternsX(); ++i) {
-      int orgX, count, step;
-      grid->getGridPatternX(i, orgX, count, step);
+      int orgX, count, step, firstmask;
+      bool samemask;
+      grid->getGridPatternX(i, orgX, count, step, firstmask, samemask);
       fprintf(_out,
-              "TRACKS X %d DO %d STEP %d LAYER %s ;\n",
+              "TRACKS X %d DO %d STEP %d",
               defdist(orgX),
               count,
-              defdist(step),
-              lname.c_str());
+              defdist(step));
+      if (firstmask != 0) {
+        fprintf(_out, " MASK %d", firstmask);
+        if (samemask) {
+          fprintf(_out, " SAMEMASK");
+        }
+      }
+      fprintf(_out, " LAYER %s ;\n", lname.c_str());
     }
 
     for (int i = 0; i < grid->getNumGridPatternsY(); ++i) {
-      int orgY, count, step;
-      grid->getGridPatternY(i, orgY, count, step);
+      int orgY, count, step, firstmask;
+      bool samemask;
+      grid->getGridPatternY(i, orgY, count, step, firstmask, samemask);
       fprintf(_out,
-              "TRACKS Y %d DO %d STEP %d LAYER %s ;\n",
+              "TRACKS Y %d DO %d STEP %d",
               defdist(orgY),
               count,
-              defdist(step),
-              lname.c_str());
+              defdist(step));
+      if (firstmask != 0) {
+        fprintf(_out, " MASK %d", firstmask);
+        if (samemask) {
+          fprintf(_out, " SAMEMASK");
+        }
+      }
+      fprintf(_out, " LAYER %s ;\n", lname.c_str());
     }
   }
 }
