@@ -2153,13 +2153,13 @@ void defrAddAlias(std::string_view key, std::string_view value, int marked)
 void defrSetOpenLogFileAppend()
 {
   DEF_INIT;
-  defContext.settings->LogFileAppend = TRUE;
+  defContext.settings->LogFileAppend = true;
 }
 
 void defrUnsetOpenLogFileAppend()
 {
   DEF_INIT;
-  defContext.settings->LogFileAppend = FALSE;
+  defContext.settings->LogFileAppend = false;
 }
 
 void defrSetReadFunction(DEFI_READ_FUNCTION f)
