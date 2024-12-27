@@ -72,7 +72,7 @@ const uint db_schema_initial = 57;
 
 const uint db_schema_minor = 99;  // Current revision number
 
-// Revision where the jumper insertion flag is added to dbNet
+// Revision where mask information was added to track grids
 const uint db_track_mask = 99;
 
 // Revision where the jumper insertion flag is added to dbNet
