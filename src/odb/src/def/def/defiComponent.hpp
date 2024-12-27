@@ -30,7 +30,7 @@
 #ifndef defiComponent_h
 #define defiComponent_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 

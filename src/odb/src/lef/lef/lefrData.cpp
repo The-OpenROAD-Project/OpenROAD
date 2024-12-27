@@ -28,10 +28,11 @@
 // *****************************************************************************
 #include "lefrData.hpp"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/stat.h>
+
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
 
 #include "lefrSettings.hpp"
 
@@ -39,27 +40,27 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 
 extern void* lefMalloc(size_t lef_size);
 
-lefrData* lefData = NULL;
+lefrData* lefData = nullptr;
 
 lefrData::lefrData()
-    : lefrFile(0),
-      lefrLog(0),
+    : lefrFile(nullptr),
+      lefrLog(nullptr),
       lefPropDefType('\0'),
-      arrayName(NULL),
-      last(NULL),
-      layerName(NULL),
-      lefch(NULL),
-      lefrFileName(NULL),
-      macroName(NULL),
-      ndName(0),
-      next(NULL),
-      nonDefaultRuleName(NULL),
-      outMsg(NULL),
-      pinName(NULL),
-      shiftBuf(0),
-      siteName(NULL),
-      viaName(NULL),
-      viaRuleName(NULL),
+      arrayName(nullptr),
+      last(nullptr),
+      layerName(nullptr),
+      lefch(nullptr),
+      lefrFileName(nullptr),
+      macroName(nullptr),
+      ndName(nullptr),
+      next(nullptr),
+      nonDefaultRuleName(nullptr),
+      outMsg(nullptr),
+      pinName(nullptr),
+      shiftBuf(nullptr),
+      siteName(nullptr),
+      viaName(nullptr),
+      viaRuleName(nullptr),
       layerCutSpacing(0),
       lef_save_x(0.0),
       lef_save_y(0.0),
@@ -125,7 +126,7 @@ lefrData::lefrData()
       layerMastOver(0),
       layerRout(0),
       layerWarnings(0),
-      lefDefIf(FALSE),
+      lefDefIf(false),
       lefDumbMode(0),
       lefErrMsgPrinted(0),
       lefFixedMask(0),
@@ -133,7 +134,7 @@ lefrData::lefrData()
       lefInvalidChar(0),
       lefNdRule(0),
       lefNewIsKeyword(0),
-      lefNlToken(FALSE),
+      lefNlToken(false),
       lefNoNum(0),
       lefRetVal(0),
       lefWRetVal(0),
@@ -154,7 +155,7 @@ lefrData::lefrData()
       maxStackViaWarnings(0),
       minFeatureWarnings(0),
       msgCnt(1),
-      namesCaseSensitive(TRUE),
+      namesCaseSensitive(true),
       ndLayer(0),
       ndLayerSpace(0),
       ndLayerWidth(0),
@@ -194,12 +195,12 @@ lefrData::lefrData()
       viaRuleWarnings(0),
       viaWarnings(0),
       antennaType(lefiAntennaAR),
-      lefrAntennaPWLPtr(0),
+      lefrAntennaPWLPtr(nullptr),
       lefrArray(),
       lefrCorrectionTable(),
       lefrDensity(),
-      lefrGcellPatternPtr(0),
-      lefrGeometriesPtr(0),
+      lefrGcellPatternPtr(nullptr),
+      lefrGeometriesPtr(nullptr),
       lefrIRDrop(),
       lefrLayer(),
       lefrMacro(),
@@ -208,16 +209,16 @@ lefrData::lefrData()
       lefrNoiseMargin(),
       lefrNoiseTable(),
       lefrNonDefault(),
-      nd(0),
+      nd(nullptr),
       macroNum(),
       lefrObstruction(),
       lefrPin(),
       lefrProp(),
       lefrSite(),
-      lefrSitePatternPtr(0),
+      lefrSitePatternPtr(nullptr),
       lefrSpacing(),
       lefrTiming(),
-      lefrTrackPatternPtr(0),
+      lefrTrackPatternPtr(nullptr),
       lefrUnits(),
       lefrUseMinSpacing(),
       lefrVia(),
@@ -292,7 +293,7 @@ lefrData::~lefrData()
   /* Close the file */
   if (lefrLog) {
     fclose(lefrLog);
-    lefrLog = 0;
+    lefrLog = nullptr;
   }
 
   // destroyRingBuffer();

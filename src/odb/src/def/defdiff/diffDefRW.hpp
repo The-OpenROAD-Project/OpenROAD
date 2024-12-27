@@ -30,8 +30,8 @@
 #ifndef DIFFDEFRW_H
 #define DIFFDEFRW_H
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <cstdarg>
+#include <cstdio>
 
 int diffDefReadFile(char* inFile,
                     char* outFile,

@@ -566,7 +566,7 @@ class FastRouteCore
                            bool is3DVisualization);
   int netCount() const { return nets_.size(); }
 
-  typedef std::tuple<int, int, int> Tile;
+  using Tile = std::tuple<int, int, int>;
 
   static const int BIG_INT = 1e9;  // big integer used as infinity
   static const int HCOST = 5000;

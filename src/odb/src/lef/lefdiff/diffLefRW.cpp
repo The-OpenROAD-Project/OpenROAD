@@ -30,8 +30,8 @@
 // This program is the diffLef core program.  It has all the callback
 // routines and write it out to a temporary file
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #ifndef WIN32
 #include <unistd.h>
 #endif /* not WIN32 */
@@ -2572,12 +2572,12 @@ int diffLefReadFile(char* inFile, char* outFile)
   lefrSetViaCbk(viaCB);
   lefrSetViaRuleCbk(viaRuleCB);
 
-  if ((f = fopen(inFile, "r")) == 0) {
+  if ((f = fopen(inFile, "r")) == nullptr) {
     fprintf(stderr, "Couldn't open input file '%s'\n", inFile);
     return (2);
   }
 
-  if ((fout = fopen(outFile, "w")) == 0) {
+  if ((fout = fopen(outFile, "w")) == nullptr) {
     fprintf(stderr, "Couldn't open output file '%s'\n", outFile);
     fclose(f);
     return (2);

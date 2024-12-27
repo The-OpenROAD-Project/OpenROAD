@@ -33,7 +33,7 @@
 #ifndef CDEFIGROUP_H
 #define CDEFIGROUP_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

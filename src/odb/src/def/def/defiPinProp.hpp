@@ -30,7 +30,7 @@
 #ifndef defiPinProp_h
 #define defiPinProp_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 

@@ -49,7 +49,7 @@ struct defCompareCStrings
   }
 };
 
-typedef std::map<const char*, int, defCompareCStrings> defKeywordMap;
+using defKeywordMap = std::map<const char*, int, defCompareCStrings>;
 
 class defrSettings
 {

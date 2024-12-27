@@ -29,8 +29,8 @@
 
 #include "lefiNonDefault.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "lefiDebug.hpp"
 #include "lefrCallBacks.hpp"
@@ -54,47 +54,47 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 
 lefiNonDefault::lefiNonDefault()
     : nameSize_(0),
-      name_(NULL),
+      name_(nullptr),
       numLayers_(0),
       layersAllocated_(0),
-      layerName_(NULL),
-      width_(NULL),
-      spacing_(NULL),
-      wireExtension_(NULL),
-      hasWidth_(NULL),
-      hasSpacing_(NULL),
-      hasWireExtension_(NULL),
-      resistance_(NULL),
-      capacitance_(NULL),
-      edgeCap_(NULL),
-      hasResistance_(NULL),
-      hasCapacitance_(NULL),
-      hasEdgeCap_(NULL),
-      diagWidth_(NULL),
-      hasDiagWidth_(NULL),
+      layerName_(nullptr),
+      width_(nullptr),
+      spacing_(nullptr),
+      wireExtension_(nullptr),
+      hasWidth_(nullptr),
+      hasSpacing_(nullptr),
+      hasWireExtension_(nullptr),
+      resistance_(nullptr),
+      capacitance_(nullptr),
+      edgeCap_(nullptr),
+      hasResistance_(nullptr),
+      hasCapacitance_(nullptr),
+      hasEdgeCap_(nullptr),
+      diagWidth_(nullptr),
+      hasDiagWidth_(nullptr),
       numVias_(0),
       allocatedVias_(0),
-      viaRules_(NULL),
+      viaRules_(nullptr),
       numSpacing_(0),
       allocatedSpacing_(0),
-      spacingRules_(NULL),
+      spacingRules_(nullptr),
       hardSpacing_(0),
       numUseVias_(0),
       allocatedUseVias_(0),
-      useViaName_(NULL),
+      useViaName_(nullptr),
       numUseViaRules_(0),
       allocatedUseViaRules_(0),
-      useViaRuleName_(NULL),
+      useViaRuleName_(nullptr),
       numMinCuts_(0),
       allocatedMinCuts_(0),
-      cutLayerName_(NULL),
-      numCuts_(NULL),
+      cutLayerName_(nullptr),
+      numCuts_(nullptr),
       numProps_(0),
       propsAllocated_(0),
-      names_(NULL),
-      values_(NULL),
-      dvalues_(NULL),
-      types_(NULL)
+      names_(nullptr),
+      values_(nullptr),
+      dvalues_(nullptr),
+      types_(nullptr)
 {
   Init();
 }
@@ -207,21 +207,21 @@ void lefiNonDefault::clear()
   numProps_ = 0;
   for (i = 0; i < numLayers_; i++) {
     lefFree(layerName_[i]);
-    layerName_[i] = 0;
+    layerName_[i] = nullptr;
   }
   numLayers_ = 0;
   for (i = 0; i < numVias_; i++) {
     vr = viaRules_[i];
     vr->Destroy();
     lefFree((char*) (viaRules_[i]));
-    viaRules_[i] = 0;
+    viaRules_[i] = nullptr;
   }
   numVias_ = 0;
   for (i = 0; i < numSpacing_; i++) {
     sr = spacingRules_[i];
     sr->Destroy();
     lefFree((char*) (spacingRules_[i]));
-    spacingRules_[i] = 0;
+    spacingRules_[i] = nullptr;
   }
   numSpacing_ = 0;
 
@@ -557,7 +557,7 @@ void lefiNonDefault::end()
   // lefrSetSpacingEndCbk(oldSpacingEndCbk);
   // pcr 909010 - global var lefData->nd is used to pass nondefault rule data
   // lefrSetUserData(oldUserData_);
-  lefData->nd = 0;
+  lefData->nd = nullptr;
 }
 
 int lefiNonDefault::numLayers() const
@@ -575,7 +575,7 @@ const char* lefiNonDefault::layerName(int index) const
             index,
             numLayers_);
     lefiError(0, 1402, msg);
-    return 0;
+    return nullptr;
   }
   return layerName_[index];
 }
@@ -805,7 +805,7 @@ lefiVia* lefiNonDefault::viaRule(int index) const
             index,
             numVias_);
     lefiError(0, 1403, msg);
-    return 0;
+    return nullptr;
   }
   return viaRules_[index];
 }
@@ -825,7 +825,7 @@ lefiSpacing* lefiNonDefault::spacingRule(int index) const
             index,
             numSpacing_);
     lefiError(0, 1404, msg);
-    return 0;
+    return nullptr;
   }
   return spacingRules_[index];
 }
@@ -855,7 +855,7 @@ const char* lefiNonDefault::viaName(int index) const
             index,
             numUseVias_);
     lefiError(0, 1405, msg);
-    return 0;
+    return nullptr;
   }
   return useViaName_[index];
 }
@@ -875,7 +875,7 @@ const char* lefiNonDefault::viaRuleName(int index) const
             index,
             numUseViaRules_);
     lefiError(0, 1406, msg);
-    return 0;
+    return nullptr;
   }
   return useViaRuleName_[index];
 }
@@ -895,7 +895,7 @@ const char* lefiNonDefault::cutLayerName(int index) const
             index,
             numMinCuts_);
     lefiError(0, 1407, msg);
-    return 0;
+    return nullptr;
   }
   return cutLayerName_[index];
 }
@@ -1067,7 +1067,7 @@ const char* lefiNonDefault::propName(int index) const
             index,
             numProps_);
     lefiError(0, 1408, msg);
-    return 0;
+    return nullptr;
   }
   return names_[index];
 }
@@ -1082,7 +1082,7 @@ const char* lefiNonDefault::propValue(int index) const
             index,
             numProps_);
     lefiError(0, 1408, msg);
-    return 0;
+    return nullptr;
   }
   return values_[index];
 }

@@ -29,8 +29,8 @@
 
 #include "defiAssertion.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
 #include "lex.h"
@@ -108,7 +108,7 @@ void defiAssertion::clear()
                 defData);
     }
     itemTypes_[i] = 'B';  // bogus
-    items_[i] = 0;
+    items_[i] = nullptr;
   }
 
   numItems_ = 0;

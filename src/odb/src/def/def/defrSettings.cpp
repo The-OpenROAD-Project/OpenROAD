@@ -32,7 +32,7 @@
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
-defrSettings* defSettings = NULL;
+defrSettings* defSettings = nullptr;
 
 const char* defrSettings::defOxides[] = {
     "OXIDE1",  "OXIDE2",  "OXIDE3",  "OXIDE4",  "OXIDE5",  "OXIDE6",  "OXIDE7",
@@ -66,24 +66,24 @@ defrSettings::defrSettings()
       VersionWarnings(999),
       ViaWarnings(999),
       nDDMsgs(0),
-      disableDMsgs(NULL),
+      disableDMsgs(nullptr),
       totalDefMsgLimit(0),
       AddPathToNet(0),
       AllowComponentNets(0),
       CommentChar('#'),
-      ReadFunction(NULL),
-      ErrorLogFunction(NULL),
-      WarningLogFunction(NULL),
-      ContextErrorLogFunction(NULL),
-      ContextWarningLogFunction(NULL),
-      MagicCommentFoundFunction(NULL),
-      MallocFunction(NULL),
-      ReallocFunction(NULL),
-      FreeFunction(NULL),
-      LineNumberFunction(NULL),
-      LongLineNumberFunction(NULL),
-      ContextLineNumberFunction(NULL),
-      ContextLongLineNumberFunction(NULL),
+      ReadFunction(nullptr),
+      ErrorLogFunction(nullptr),
+      WarningLogFunction(nullptr),
+      ContextErrorLogFunction(nullptr),
+      ContextWarningLogFunction(nullptr),
+      MagicCommentFoundFunction(nullptr),
+      MallocFunction(nullptr),
+      ReallocFunction(nullptr),
+      FreeFunction(nullptr),
+      LineNumberFunction(nullptr),
+      LongLineNumberFunction(nullptr),
+      ContextLineNumberFunction(nullptr),
+      ContextLongLineNumberFunction(nullptr),
       reader_case_sensitive_set(0),
       DisPropStrProcess(0),
       LogFileAppend(0)
@@ -367,7 +367,7 @@ void defrSettings::init_symbol_table()
 }
 
 defrSession::defrSession()
-    : FileName(0), reader_case_sensitive(0), UserData(NULL)
+    : FileName(nullptr), reader_case_sensitive(0), UserData(nullptr)
 {
 }
 

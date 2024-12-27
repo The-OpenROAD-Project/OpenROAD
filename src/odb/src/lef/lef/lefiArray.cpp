@@ -29,8 +29,8 @@
 
 #include "lefiArray.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "lefiDebug.hpp"
 #include "lefiMisc.hpp"
@@ -123,31 +123,31 @@ const char* lefiArrayFloorPlan::name() const
 // *****************************************************************************
 lefiArray::lefiArray()
     : nameSize_(0),
-      name_(NULL),
+      name_(nullptr),
       patternsAllocated_(0),
       numPatterns_(0),
-      pattern_(NULL),
+      pattern_(nullptr),
       canAllocated_(0),
       numCan_(0),
-      canPlace_(NULL),
+      canPlace_(nullptr),
       cannotAllocated_(0),
       numCannot_(0),
-      cannotOccupy_(NULL),
+      cannotOccupy_(nullptr),
       tracksAllocated_(0),
       numTracks_(0),
-      track_(NULL),
+      track_(nullptr),
       gAllocated_(0),
       numG_(0),
-      gcell_(NULL),
+      gcell_(nullptr),
       hasDefault_(0),
       tableSize_(0),
       numDefault_(0),
       defaultAllocated_(0),
-      minPins_(NULL),
-      caps_(NULL),
+      minPins_(nullptr),
+      caps_(nullptr),
       numFloorPlans_(0),
       floorPlansAllocated_(0),
-      floors_(0)
+      floors_(nullptr)
 {
   Init();
 }

@@ -27,10 +27,10 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 #ifndef WIN32
 #include <unistd.h>
 #endif /* not WIN32 */
@@ -1943,7 +1943,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
   defiVia* via;
   defiRegion* re;
   defiGroup* group;
-  defiComponentMaskShiftLayer* maskShiftLayer = NULL;
+  defiComponentMaskShiftLayer* maskShiftLayer = nullptr;
   defiScanchain* sc;
   defiIOTiming* iot;
   defiFPC* fpc;
@@ -3144,7 +3144,7 @@ int main(int argc, char** argv)
       argv++;
       argc--;
       outFile = *argv;
-      if ((fout = fopen(outFile, "w")) == 0) {
+      if ((fout = fopen(outFile, "w")) == nullptr) {
         fprintf(stderr, "ERROR: could not open output file\n");
         return 2;
       }
@@ -3388,7 +3388,7 @@ int main(int argc, char** argv)
 
   if (test1) {  // for special tests
     for (fileCt = 0; fileCt < numInFile; fileCt++) {
-      if ((f = fopen(inFile[fileCt], "r")) == 0) {
+      if ((f = fopen(inFile[fileCt], "r")) == nullptr) {
         fprintf(stderr, "Couldn't open input file '%s'\n", inFile[fileCt]);
         return (2);
       }
@@ -3427,7 +3427,7 @@ int main(int argc, char** argv)
       } else
         defrEnableAllMsgs();
 
-      if ((f = fopen(inFile[fileCt], "r")) == 0) {
+      if ((f = fopen(inFile[fileCt], "r")) == nullptr) {
         fprintf(stderr, "Couldn't open input file '%s'\n", inFile[fileCt]);
         return (2);
       }
@@ -3447,7 +3447,7 @@ int main(int argc, char** argv)
     for (fileCt = 0; fileCt < numInFile; fileCt++) {
       if (strcmp(inFile[fileCt], "STDIN") == 0) {
         f = stdin;
-      } else if ((f = fopen(inFile[fileCt], "r")) == 0) {
+      } else if ((f = fopen(inFile[fileCt], "r")) == nullptr) {
         fprintf(stderr, "Couldn't open input file '%s'\n", inFile[fileCt]);
         return (2);
       }
@@ -3463,7 +3463,7 @@ int main(int argc, char** argv)
       defrAddAlias("alias1", "aliasValue1", 1);
 
       defiAlias_itr aliasStore;
-      const char* alias1Value = NULL;
+      const char* alias1Value = nullptr;
 
       while (aliasStore.Next()) {
         if (strcmp(aliasStore.Key(), "alias1") == 0) {

@@ -29,8 +29,8 @@
 
 #include "defiPropType.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
 #include "lex.h"
@@ -46,8 +46,8 @@ void defiPropType::Init()
 {
   numProperties_ = 0;
   propertiesAllocated_ = 0;
-  propNames_ = 0;
-  propTypes_ = 0;
+  propNames_ = nullptr;
+  propTypes_ = nullptr;
 }
 
 void defiPropType::Clear()

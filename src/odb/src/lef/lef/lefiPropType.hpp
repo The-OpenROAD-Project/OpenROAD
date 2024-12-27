@@ -30,7 +30,7 @@
 #ifndef lefiPropType_h
 #define lefiPropType_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 

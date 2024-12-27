@@ -77,10 +77,19 @@ void FlexDRWorker::initNetObjs_pathSeg(
 
   nets.insert(net);
 
+  const auto gridBBox = getRouteBox();
+
+  if (pathSeg->isApPathSeg()) {
+    if (gridBBox.intersects(pathSeg->getApLoc())) {
+      netRouteObjs[net].push_back(std::make_unique<drPathSeg>(*pathSeg));
+    } else {
+      netExtObjs[net].push_back(std::make_unique<drPathSeg>(*pathSeg));
+    }
+    return;
+  }
+
   const auto along = begin.x() == end.x() ? odb::vertical : odb::horizontal;
   const auto ortho = along.turn_90();
-
-  const auto gridBBox = getRouteBox();
   if (begin.get(ortho) < gridBBox.low(ortho)
       || gridBBox.high(ortho) < begin.get(ortho)) {
     // does not cross the routeBBox

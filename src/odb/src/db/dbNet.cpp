@@ -133,7 +133,7 @@ _dbNet::_dbNet(_dbDatabase* db)
   _flags._rc_disconnected = 0;
   _flags._block_rule = 0;
   _flags._has_jumpers = 0;
-  _name = 0;
+  _name = nullptr;
   _gndc_calibration_factor = 1.0;
   _cc_calibration_factor = 1.0;
   _weight = 1;
