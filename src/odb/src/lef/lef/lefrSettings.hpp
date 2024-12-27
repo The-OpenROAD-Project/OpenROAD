@@ -49,10 +49,10 @@ struct lefCompareCStrings
   }
 };
 
-typedef std::map<const char*, int, lefCompareCStrings> lefKeywordMap;
-typedef std::map<int, int> MsgsDisableMap;
+using lefKeywordMap = std::map<const char*, int, lefCompareCStrings>;
+using MsgsDisableMap = std::map<int, int>;
 
-typedef std::set<std::string> StringSet;
+using StringSet = std::set<std::string>;
 
 class lefrProps
 {

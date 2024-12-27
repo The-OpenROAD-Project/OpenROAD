@@ -65,13 +65,13 @@ struct lefCompareStrings
   }
 };
 
-typedef std::map<std::string, std::string, lefCompareStrings> lefAliasMap;
+using lefAliasMap = std::map<std::string, std::string, lefCompareStrings>;
 
-typedef std::map<std::string, std::string, lefCompareStrings> lefStringMap;
+using lefStringMap = std::map<std::string, std::string, lefCompareStrings>;
 
-typedef std::map<std::string, int, lefCompareStrings> lefIntMap;
+using lefIntMap = std::map<std::string, int, lefCompareStrings>;
 
-typedef std::map<std::string, double, lefCompareStrings> lefDoubleMap;
+using lefDoubleMap = std::map<std::string, double, lefCompareStrings>;
 
 class lefrData
 {

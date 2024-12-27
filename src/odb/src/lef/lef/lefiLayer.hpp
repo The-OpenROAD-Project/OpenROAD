@@ -37,7 +37,7 @@
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
-typedef enum lefiAntennaEnum
+enum lefiAntennaEnum
 {
   lefiAntennaAR,
   lefiAntennaDAR,
@@ -51,7 +51,7 @@ typedef enum lefiAntennaEnum
   lefiAntennaSAF,
   lefiAntennaO,
   lefiAntennaADR
-} lefiAntennaEnum;
+};
 
 class lefiAntennaPWL
 {
