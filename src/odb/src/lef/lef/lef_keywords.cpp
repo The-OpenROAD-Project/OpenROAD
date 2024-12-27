@@ -454,7 +454,7 @@ static int GetToken(char** buffer, int* bufferSize)
 
       // 7/23/2003 - pcr 606558 - do not allow \n in a string instead
       // of ;
-      if ((ch == '\n')) {
+      if (ch == '\n') {
         print_nlines(++lefData->lef_nlines);
         // 2/2/2007 - PCR 909714, allow string to go more than 1 line
         //            continue to parse

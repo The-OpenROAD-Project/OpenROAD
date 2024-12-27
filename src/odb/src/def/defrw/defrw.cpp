@@ -1279,7 +1279,7 @@ int snetf(defrCallbackType_e c, defiNet* net, defiUserData ud)
       }
       if (net->polyMask(i)) {
         fprintf(fout,
-                "\n  + MASK %d + POLYGON % s ",
+                "\n  + MASK %d + POLYGON %s ",
                 net->polyMask(i),
                 net->polygonName(i));
       } else {
@@ -3413,7 +3413,6 @@ int main(int argc, char** argv)
     // 2nd will enable 7016 by calling defrEnableParserMsgs
     // 3rd enable all msgs by call defrEnableAllMsgs
 
-    int nMsgs = 2;
     int dMsgs[2];
 
     for (fileCt = 0; fileCt < numInFile; fileCt++) {

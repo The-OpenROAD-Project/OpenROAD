@@ -30,6 +30,8 @@
 #ifndef leh_h
 #define leh_h
 
+#include <cstddef>
+
 #include "lefiKRDefs.hpp"
 
 BEGIN_LEFDEF_PARSER_NAMESPACE

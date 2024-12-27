@@ -57,7 +57,7 @@ class Ath__box
   int _ylo;
   int _xhi;
   int _yhi;
-  Ath__box* _next;
+  Ath__box* _next{nullptr};
 
  public:
   Ath__box();
