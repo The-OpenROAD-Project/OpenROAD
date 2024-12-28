@@ -48,7 +48,7 @@ namespace odb {
 
 static int antennaCB(LefParser::lefrCallbackType_e c,
                      double value,
-                     lefiUserData ud)
+                     LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
 
@@ -80,7 +80,7 @@ static int antennaCB(LefParser::lefrCallbackType_e c,
 
 static int arrayBeginCB(LefParser::lefrCallbackType_e /* unused: c */,
                         const char* name,
-                        lefiUserData ud)
+                        LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->arrayBegin(name);
@@ -89,7 +89,7 @@ static int arrayBeginCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int arrayCB(LefParser::lefrCallbackType_e /* unused: c */,
                    LefParser::lefiArray* a,
-                   lefiUserData ud)
+                   LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->array(a);
@@ -98,7 +98,7 @@ static int arrayCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int arrayEndCB(LefParser::lefrCallbackType_e /* unused: c */,
                       const char* name,
-                      lefiUserData ud)
+                      LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->arrayEnd(name);
@@ -107,7 +107,7 @@ static int arrayEndCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int busBitCharsCB(LefParser::lefrCallbackType_e /* unused: c */,
                          const char* busBit,
-                         lefiUserData ud)
+                         LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->busBitChars(busBit);
@@ -116,7 +116,7 @@ static int busBitCharsCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int caseSensCB(LefParser::lefrCallbackType_e /* unused: c */,
                       int caseSense,
-                      lefiUserData ud)
+                      LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->caseSense(caseSense);
@@ -125,7 +125,7 @@ static int caseSensCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int clearanceCB(LefParser::lefrCallbackType_e /* unused: c */,
                        const char* name,
-                       lefiUserData ud)
+                       LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->clearance(name);
@@ -134,7 +134,7 @@ static int clearanceCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int dividerCB(LefParser::lefrCallbackType_e /* unused: c */,
                      const char* name,
-                     lefiUserData ud)
+                     LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->divider(name);
@@ -143,7 +143,7 @@ static int dividerCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int noWireExtCB(LefParser::lefrCallbackType_e /* unused: c */,
                        const char* name,
-                       lefiUserData ud)
+                       LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->noWireExt(name);
@@ -152,7 +152,7 @@ static int noWireExtCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int noiseMarCB(LefParser::lefrCallbackType_e /* unused: c */,
                       LefParser::lefiNoiseMargin* noise,
-                      lefiUserData ud)
+                      LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->noiseMargin(noise);
@@ -161,7 +161,7 @@ static int noiseMarCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int edge1CB(LefParser::lefrCallbackType_e /* unused: c */,
                    double value,
-                   lefiUserData ud)
+                   LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->edge1(value);
@@ -170,7 +170,7 @@ static int edge1CB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int edge2CB(LefParser::lefrCallbackType_e /* unused: c */,
                    double value,
-                   lefiUserData ud)
+                   LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->edge2(value);
@@ -179,7 +179,7 @@ static int edge2CB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int edgeScaleCB(LefParser::lefrCallbackType_e /* unused: c */,
                        double value,
-                       lefiUserData ud)
+                       LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->edgeScale(value);
@@ -188,7 +188,7 @@ static int edgeScaleCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int noiseTableCB(LefParser::lefrCallbackType_e /* unused: c */,
                         LefParser::lefiNoiseTable* noise,
-                        lefiUserData ud)
+                        LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->noiseTable(noise);
@@ -197,7 +197,7 @@ static int noiseTableCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int correctionCB(LefParser::lefrCallbackType_e /* unused: c */,
                         LefParser::lefiCorrectionTable* corr,
-                        lefiUserData ud)
+                        LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->correction(corr);
@@ -206,7 +206,7 @@ static int correctionCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int dielectricCB(LefParser::lefrCallbackType_e /* unused: c */,
                         double dielectric,
-                        lefiUserData ud)
+                        LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->dielectric(dielectric);
@@ -215,7 +215,7 @@ static int dielectricCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int irdropBeginCB(LefParser::lefrCallbackType_e /* unused: c */,
                          void* ptr,
-                         lefiUserData ud)
+                         LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->irdropBegin(ptr);
@@ -224,7 +224,7 @@ static int irdropBeginCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int irdropCB(LefParser::lefrCallbackType_e /* unused: c */,
                     LefParser::lefiIRDrop* irdrop,
-                    lefiUserData ud)
+                    LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->irdrop(irdrop);
@@ -233,7 +233,7 @@ static int irdropCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int irdropEndCB(LefParser::lefrCallbackType_e /* unused: c */,
                        void* ptr,
-                       lefiUserData ud)
+                       LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->irdropEnd(ptr);
@@ -242,7 +242,7 @@ static int irdropEndCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int layerCB(LefParser::lefrCallbackType_e /* unused: c */,
                    LefParser::lefiLayer* layer,
-                   lefiUserData ud)
+                   LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->layer(layer);
@@ -251,7 +251,7 @@ static int layerCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int macroBeginCB(LefParser::lefrCallbackType_e /* unused: c */,
                         const char* name,
-                        lefiUserData ud)
+                        LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->macroBegin(name);
@@ -260,7 +260,7 @@ static int macroBeginCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int macroCB(LefParser::lefrCallbackType_e /* unused: c */,
                    LefParser::lefiMacro* macro,
-                   lefiUserData ud)
+                   LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->macro(macro);
@@ -269,7 +269,7 @@ static int macroCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int macroEndCB(LefParser::lefrCallbackType_e /* unused: c */,
                       const char* name,
-                      lefiUserData ud)
+                      LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->macroEnd(name);
@@ -278,7 +278,7 @@ static int macroEndCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int manufacturingCB(LefParser::lefrCallbackType_e /* unused: c */,
                            double num,
-                           lefiUserData ud)
+                           LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->manufacturing(num);
@@ -287,7 +287,7 @@ static int manufacturingCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int maxStackViaCB(LefParser::lefrCallbackType_e /* unused: c */,
                          LefParser::lefiMaxStackVia* max,
-                         lefiUserData ud)
+                         LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->maxStackVia(max);
@@ -296,7 +296,7 @@ static int maxStackViaCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int minFeatureCB(LefParser::lefrCallbackType_e /* unused: c */,
                         LefParser::lefiMinFeature* min,
-                        lefiUserData ud)
+                        LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->minFeature(min);
@@ -305,7 +305,7 @@ static int minFeatureCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int nonDefaultCB(LefParser::lefrCallbackType_e /* unused: c */,
                         LefParser::lefiNonDefault* def,
-                        lefiUserData ud)
+                        LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->nonDefault(def);
@@ -314,7 +314,7 @@ static int nonDefaultCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int obstructionCB(LefParser::lefrCallbackType_e /* unused: c */,
                          LefParser::lefiObstruction* obs,
-                         lefiUserData ud)
+                         LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->obstruction(obs);
@@ -323,7 +323,7 @@ static int obstructionCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int pinCB(LefParser::lefrCallbackType_e /* unused: c */,
                  LefParser::lefiPin* pin,
-                 lefiUserData ud)
+                 LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->pin(pin);
@@ -332,7 +332,7 @@ static int pinCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int propDefBeginCB(LefParser::lefrCallbackType_e /* unused: c */,
                           void* ptr,
-                          lefiUserData ud)
+                          LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->propDefBegin(ptr);
@@ -341,7 +341,7 @@ static int propDefBeginCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int propDefCB(LefParser::lefrCallbackType_e /* unused: c */,
                      LefParser::lefiProp* prop,
-                     lefiUserData ud)
+                     LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->propDef(prop);
@@ -350,7 +350,7 @@ static int propDefCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int propDefEndCB(LefParser::lefrCallbackType_e /* unused: c */,
                         void* ptr,
-                        lefiUserData ud)
+                        LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->propDefEnd(ptr);
@@ -359,7 +359,7 @@ static int propDefEndCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int siteCB(LefParser::lefrCallbackType_e /* unused: c */,
                   LefParser::lefiSite* site,
-                  lefiUserData ud)
+                  LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->site(site);
@@ -368,7 +368,7 @@ static int siteCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int spacingBeginCB(LefParser::lefrCallbackType_e /* unused: c */,
                           void* ptr,
-                          lefiUserData ud)
+                          LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->spacingBegin(ptr);
@@ -377,7 +377,7 @@ static int spacingBeginCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int spacingCB(LefParser::lefrCallbackType_e /* unused: c */,
                      LefParser::lefiSpacing* spacing,
-                     lefiUserData ud)
+                     LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->spacing(spacing);
@@ -386,7 +386,7 @@ static int spacingCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int spacingEndCB(LefParser::lefrCallbackType_e /* unused: c */,
                         void* ptr,
-                        lefiUserData ud)
+                        LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->spacingEnd(ptr);
@@ -395,7 +395,7 @@ static int spacingEndCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int timingCB(LefParser::lefrCallbackType_e /* unused: c */,
                     LefParser::lefiTiming* timing,
-                    lefiUserData ud)
+                    LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->timing(timing);
@@ -404,7 +404,7 @@ static int timingCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int unitsCB(LefParser::lefrCallbackType_e /* unused: c */,
                    LefParser::lefiUnits* unit,
-                   lefiUserData ud)
+                   LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->units(unit);
@@ -413,7 +413,7 @@ static int unitsCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int useMinSpacingCB(LefParser::lefrCallbackType_e /* unused: c */,
                            LefParser::lefiUseMinSpacing* spacing,
-                           lefiUserData ud)
+                           LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->useMinSpacing(spacing);
@@ -422,7 +422,7 @@ static int useMinSpacingCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int versionCB(LefParser::lefrCallbackType_e /* unused: c */,
                      double num,
-                     lefiUserData ud)
+                     LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->version(num);
@@ -431,7 +431,7 @@ static int versionCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int viaCB(LefParser::lefrCallbackType_e /* unused: c */,
                  LefParser::lefiVia* via,
-                 lefiUserData ud)
+                 LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->via(via);
@@ -440,7 +440,7 @@ static int viaCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int viaRuleCB(LefParser::lefrCallbackType_e /* unused: c */,
                      LefParser::lefiViaRule* rule,
-                     lefiUserData ud)
+                     LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->viaRule(rule);
@@ -449,7 +449,7 @@ static int viaRuleCB(LefParser::lefrCallbackType_e /* unused: c */,
 
 static int doneCB(LefParser::lefrCallbackType_e /* unused: c */,
                   void* ptr,
-                  lefiUserData ud)
+                  LefParser::lefiUserData ud)
 {
   lefin* lef = (lefin*) ud;
   lef->done(ptr);

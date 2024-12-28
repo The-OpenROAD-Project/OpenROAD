@@ -105,147 +105,148 @@ class definReader : public definBase
   // Parser callbacks
   static int blockageCallback(DefParser::defrCallbackType_e type,
                               DefParser::defiBlockage* blockage,
-                              defiUserData data);
+                              DefParser::defiUserData data);
 
   static int componentsCallback(DefParser::defrCallbackType_e type,
                                 DefParser::defiComponent* comp,
-                                defiUserData data);
+                                DefParser::defiUserData data);
 
   static int componentMaskShiftCallback(
       DefParser::defrCallbackType_e type,
       DefParser::defiComponentMaskShiftLayer* shiftLayers,
-      defiUserData data);
+      DefParser::defiUserData data);
 
   static int dieAreaCallback(DefParser::defrCallbackType_e type,
                              DefParser::defiBox* box,
-                             defiUserData data);
+                             DefParser::defiUserData data);
 
   static int extensionCallback(DefParser::defrCallbackType_e type,
                                const char* extension,
-                               defiUserData data);
+                               DefParser::defiUserData data);
 
   static int fillsCallback(DefParser::defrCallbackType_e type,
                            int count,
-                           defiUserData data);
+                           DefParser::defiUserData data);
 
   static int fillCallback(DefParser::defrCallbackType_e type,
                           DefParser::defiFill* fill,
-                          defiUserData data);
+                          DefParser::defiUserData data);
 
   static int gcellGridCallback(DefParser::defrCallbackType_e type,
                                DefParser::defiGcellGrid* grid,
-                               defiUserData data);
+                               DefParser::defiUserData data);
 
   static int groupNameCallback(DefParser::defrCallbackType_e type,
                                const char* name,
-                               defiUserData data);
+                               DefParser::defiUserData data);
   static int groupMemberCallback(DefParser::defrCallbackType_e type,
                                  const char* member,
-                                 defiUserData data);
+                                 DefParser::defiUserData data);
 
   static int groupCallback(DefParser::defrCallbackType_e type,
                            DefParser::defiGroup* group,
-                           defiUserData data);
+                           DefParser::defiUserData data);
 
   static int historyCallback(DefParser::defrCallbackType_e type,
                              const char* extension,
-                             defiUserData data);
+                             DefParser::defiUserData data);
 
   static int netCallback(DefParser::defrCallbackType_e type,
                          DefParser::defiNet* net,
-                         defiUserData data);
+                         DefParser::defiUserData data);
 
   static int nonDefaultRuleCallback(DefParser::defrCallbackType_e type,
                                     DefParser::defiNonDefault* rule,
-                                    defiUserData data);
+                                    DefParser::defiUserData data);
 
   static int pinCallback(DefParser::defrCallbackType_e type,
                          DefParser::defiPin* pin,
-                         defiUserData data);
+                         DefParser::defiUserData data);
 
   static int pinsEndCallback(DefParser::defrCallbackType_e type,
                              void* v,
-                             defiUserData data);
+                             DefParser::defiUserData data);
 
   static int pinPropCallback(DefParser::defrCallbackType_e type,
                              DefParser::defiPinProp* prop,
-                             defiUserData data);
+                             DefParser::defiUserData data);
 
   static int pinsStartCallback(DefParser::defrCallbackType_e type,
                                int number,
-                               defiUserData data);
+                               DefParser::defiUserData data);
 
   static int propCallback(DefParser::defrCallbackType_e type,
                           DefParser::defiProp* prop,
-                          defiUserData data);
+                          DefParser::defiUserData data);
   static int propEndCallback(DefParser::defrCallbackType_e type,
                              void* v,
-                             defiUserData data);
+                             DefParser::defiUserData data);
   static int propStartCallback(DefParser::defrCallbackType_e type,
                                void* v,
-                               defiUserData data);
+                               DefParser::defiUserData data);
 
   static int regionCallback(DefParser::defrCallbackType_e type,
                             DefParser::defiRegion* region,
-                            defiUserData data);
+                            DefParser::defiUserData data);
 
   static int rowCallback(DefParser::defrCallbackType_e type,
                          DefParser::defiRow* row,
-                         defiUserData data);
+                         DefParser::defiUserData data);
 
   static int scanchainsStartCallback(DefParser::defrCallbackType_e type,
                                      int count,
-                                     defiUserData data);
+                                     DefParser::defiUserData data);
 
   static int scanchainsCallback(DefParser::defrCallbackType_e,
                                 DefParser::defiScanchain* scan_chain,
-                                defiUserData data);
+                                DefParser::defiUserData data);
 
   static int slotsCallback(DefParser::defrCallbackType_e type,
                            int count,
-                           defiUserData data);
+                           DefParser::defiUserData data);
 
   static int specialNetCallback(DefParser::defrCallbackType_e type,
                                 DefParser::defiNet* net,
-                                defiUserData data);
+                                DefParser::defiUserData data);
 
   static int stylesCallback(DefParser::defrCallbackType_e type,
                             int count,
-                            defiUserData data);
+                            DefParser::defiUserData data);
 
   static int technologyCallback(DefParser::defrCallbackType_e type,
                                 const char* name,
-                                defiUserData data);
+                                DefParser::defiUserData data);
 
   static int trackCallback(DefParser::defrCallbackType_e type,
                            DefParser::defiTrack* track,
-                           defiUserData data);
+                           DefParser::defiUserData data);
 
   static int versionCallback(DefParser::defrCallbackType_e type,
                              const char* version_str,
-                             defiUserData data);
+                             DefParser::defiUserData data);
 
   static int divideCharCallback(DefParser::defrCallbackType_e type,
                                 const char* value,
-                                defiUserData data);
+                                DefParser::defiUserData data);
 
   static int busBitCallback(DefParser::defrCallbackType_e type,
                             const char* busbit,
-                            defiUserData data);
+                            DefParser::defiUserData data);
 
   static int designCallback(DefParser::defrCallbackType_e type,
                             const char* design,
-                            defiUserData data);
+                            DefParser::defiUserData data);
 
   static int unitsCallback(DefParser::defrCallbackType_e type,
                            double number,
-                           defiUserData data);
+                           DefParser::defiUserData data);
 
   static int viaCallback(DefParser::defrCallbackType_e type,
                          DefParser::defiVia* via,
-                         defiUserData data);
+                         DefParser::defiUserData data);
 
-  static void contextLogFunctionCallback(defiUserData data, const char* msg);
+  static void contextLogFunctionCallback(DefParser::defiUserData data,
+                                         const char* msg);
 
  public:
   definReader(dbDatabase* db,

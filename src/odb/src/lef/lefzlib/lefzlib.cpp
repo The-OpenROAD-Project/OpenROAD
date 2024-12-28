@@ -72,7 +72,9 @@ int lefGZipClose(lefGZFile filePtr)
   return (gzclose((gzFile) filePtr));
 }
 
-int lefrReadGZip(lefGZFile file, const char* gzipFile, lefiUserData uData)
+int lefrReadGZip(lefGZFile file,
+                 const char* gzipFile,
+                 LefParser::lefiUserData uData)
 {
   return LefParser::lefrRead((FILE*) file, gzipFile, uData);
 }
