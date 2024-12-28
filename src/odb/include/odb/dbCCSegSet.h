@@ -33,6 +33,7 @@
 #pragma once
 
 #include "dbObject.h"
+#include "dbSet.h"
 
 namespace odb {
 

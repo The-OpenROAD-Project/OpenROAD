@@ -2522,9 +2522,6 @@ int viaRuleCB(lefrCallbackType_e c, lefiViaRule* viaRule, lefiUserData ud)
 
 int diffLefReadFile(char* inFile, char* outFile)
 {
-  FILE* f;
-  int res;
-
   userData = (void*) 0x01020304;
   lefrInit();
 
@@ -2572,6 +2569,7 @@ int diffLefReadFile(char* inFile, char* outFile)
   lefrSetViaCbk(viaCB);
   lefrSetViaRuleCbk(viaRuleCB);
 
+  FILE* f;
   if ((f = fopen(inFile, "r")) == nullptr) {
     fprintf(stderr, "Couldn't open input file '%s'\n", inFile);
     return (2);
@@ -2583,10 +2581,10 @@ int diffLefReadFile(char* inFile, char* outFile)
     return (2);
   }
 
-  res = lefrRead(f, inFile, userData);
+  const int res = lefrRead(f, inFile, userData);
 
   fclose(f);
   fclose(fout);
 
-  return 0;
+  return res;
 }

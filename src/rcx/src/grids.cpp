@@ -39,6 +39,7 @@ namespace rcx {
 Ath__box::Ath__box()
 {
   set(0, 0, 0, 0);
+  _layer = 0;
 }
 int Ath__box::getXlo(int bound)
 {
