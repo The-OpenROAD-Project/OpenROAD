@@ -39,7 +39,7 @@
 
 #define lefMaxOxides 32
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 struct lefCompareCStrings
 {
@@ -152,6 +152,6 @@ class lefrSettings
 
 extern lefrSettings* lefSettings;
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

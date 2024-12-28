@@ -55,7 +55,7 @@
 #define IN_BUF_SIZE 16384
 #define TOKEN_SIZE 4096
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 struct lefCompareStrings
 {
@@ -302,6 +302,6 @@ class lefrData
 
 extern lefrData* lefData;
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

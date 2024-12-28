@@ -68,7 +68,7 @@
   #include "lef_parser.hpp"
 #endif
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 #define LYPROP_ECAP "EDGE_CAPACITANCE"
 
@@ -200,7 +200,7 @@ int zeroOrGt(double values) {
         double    dval ;
         int       integer ;
         char *    string ;
-        LefDefParser::lefPOINT  pt;
+        LefParser::lefPOINT  pt;
 }
 
 %token <string> K_HISTORY
@@ -7440,4 +7440,4 @@ extension: K_BEGINEXT
 
 %%
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

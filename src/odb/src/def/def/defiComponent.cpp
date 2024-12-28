@@ -36,7 +36,7 @@
 #include "defiUtil.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 /*********************************************************
  * class defiComponentMaskShiftLayer
@@ -1043,4 +1043,4 @@ int defiComponent::foreignOrient() const
 {
   return Fori_;
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

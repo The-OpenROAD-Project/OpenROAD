@@ -36,7 +36,7 @@
 #include "defiUtil.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 defiPath::defiPath(defrData* data)
     : keys_(nullptr),
@@ -620,4 +620,4 @@ void defiPath::bumpSize(int size)
   numAllocated_ = size;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

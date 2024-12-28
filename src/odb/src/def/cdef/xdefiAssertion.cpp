@@ -39,97 +39,97 @@
 // Wrappers definitions.
 int defiAssertion_isAssertion(const ::defiAssertion* obj)
 {
-  return ((LefDefParser::defiAssertion*) obj)->isAssertion();
+  return ((DefParser::defiAssertion*) obj)->isAssertion();
 }
 
 int defiAssertion_isConstraint(const ::defiAssertion* obj)
 {
-  return ((LefDefParser::defiAssertion*) obj)->isConstraint();
+  return ((DefParser::defiAssertion*) obj)->isConstraint();
 }
 
 int defiAssertion_isWiredlogic(const ::defiAssertion* obj)
 {
-  return ((LefDefParser::defiAssertion*) obj)->isWiredlogic();
+  return ((DefParser::defiAssertion*) obj)->isWiredlogic();
 }
 
 int defiAssertion_isDelay(const ::defiAssertion* obj)
 {
-  return ((LefDefParser::defiAssertion*) obj)->isDelay();
+  return ((DefParser::defiAssertion*) obj)->isDelay();
 }
 
 int defiAssertion_isSum(const ::defiAssertion* obj)
 {
-  return ((LefDefParser::defiAssertion*) obj)->isSum();
+  return ((DefParser::defiAssertion*) obj)->isSum();
 }
 
 int defiAssertion_isDiff(const ::defiAssertion* obj)
 {
-  return ((LefDefParser::defiAssertion*) obj)->isDiff();
+  return ((DefParser::defiAssertion*) obj)->isDiff();
 }
 
 int defiAssertion_hasRiseMin(const ::defiAssertion* obj)
 {
-  return ((LefDefParser::defiAssertion*) obj)->hasRiseMin();
+  return ((DefParser::defiAssertion*) obj)->hasRiseMin();
 }
 
 int defiAssertion_hasRiseMax(const ::defiAssertion* obj)
 {
-  return ((LefDefParser::defiAssertion*) obj)->hasRiseMax();
+  return ((DefParser::defiAssertion*) obj)->hasRiseMax();
 }
 
 int defiAssertion_hasFallMin(const ::defiAssertion* obj)
 {
-  return ((LefDefParser::defiAssertion*) obj)->hasFallMin();
+  return ((DefParser::defiAssertion*) obj)->hasFallMin();
 }
 
 int defiAssertion_hasFallMax(const ::defiAssertion* obj)
 {
-  return ((LefDefParser::defiAssertion*) obj)->hasFallMax();
+  return ((DefParser::defiAssertion*) obj)->hasFallMax();
 }
 
 double defiAssertion_riseMin(const ::defiAssertion* obj)
 {
-  return ((LefDefParser::defiAssertion*) obj)->riseMin();
+  return ((DefParser::defiAssertion*) obj)->riseMin();
 }
 
 double defiAssertion_riseMax(const ::defiAssertion* obj)
 {
-  return ((LefDefParser::defiAssertion*) obj)->riseMax();
+  return ((DefParser::defiAssertion*) obj)->riseMax();
 }
 
 double defiAssertion_fallMin(const ::defiAssertion* obj)
 {
-  return ((LefDefParser::defiAssertion*) obj)->fallMin();
+  return ((DefParser::defiAssertion*) obj)->fallMin();
 }
 
 double defiAssertion_fallMax(const ::defiAssertion* obj)
 {
-  return ((LefDefParser::defiAssertion*) obj)->fallMax();
+  return ((DefParser::defiAssertion*) obj)->fallMax();
 }
 
 const char* defiAssertion_netName(const ::defiAssertion* obj)
 {
-  return ((const LefDefParser::defiAssertion*) obj)->netName();
+  return ((const DefParser::defiAssertion*) obj)->netName();
 }
 
 double defiAssertion_distance(const ::defiAssertion* obj)
 {
-  return ((LefDefParser::defiAssertion*) obj)->distance();
+  return ((DefParser::defiAssertion*) obj)->distance();
 }
 
 int defiAssertion_numItems(const ::defiAssertion* obj)
 {
-  return ((LefDefParser::defiAssertion*) obj)->numItems();
+  return ((DefParser::defiAssertion*) obj)->numItems();
 }
 
 int defiAssertion_isPath(const ::defiAssertion* obj, int index)
 {
-  return ((LefDefParser::defiAssertion*) obj)->isPath(index);
+  return ((DefParser::defiAssertion*) obj)->isPath(index);
 }
 
 int defiAssertion_isNet(const ::defiAssertion* obj, int index)
 {
-  return ((LefDefParser::defiAssertion*) obj)->isNet(index);
+  return ((DefParser::defiAssertion*) obj)->isNet(index);
 }
 
 void defiAssertion_path(const ::defiAssertion* obj,
@@ -139,16 +139,16 @@ void defiAssertion_path(const ::defiAssertion* obj,
                         char** toInst,
                         char** toPin)
 {
-  ((LefDefParser::defiAssertion*) obj)
+  ((DefParser::defiAssertion*) obj)
       ->path(index, fromInst, fromPin, toInst, toPin);
 }
 
 void defiAssertion_net(const ::defiAssertion* obj, int index, char** netName)
 {
-  ((LefDefParser::defiAssertion*) obj)->net(index, netName);
+  ((DefParser::defiAssertion*) obj)->net(index, netName);
 }
 
 void defiAssertion_print(const ::defiAssertion* obj, FILE* f)
 {
-  ((LefDefParser::defiAssertion*) obj)->print(f);
+  ((DefParser::defiAssertion*) obj)->print(f);
 }

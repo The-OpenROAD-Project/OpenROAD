@@ -40,7 +40,7 @@
 #include "defrReader.hpp"
 #include "zlib.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 /*
  * Private functions:
@@ -98,4 +98,4 @@ int defrGZipClose(defGZFile filePtr)
   return (gzclose((gzFile) filePtr));
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

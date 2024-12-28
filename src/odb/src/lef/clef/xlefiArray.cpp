@@ -39,146 +39,145 @@
 // Wrappers definitions.
 int lefiArrayFloorPlan_numPatterns(const ::lefiArrayFloorPlan* obj)
 {
-  return ((LefDefParser::lefiArrayFloorPlan*) obj)->numPatterns();
+  return ((LefParser::lefiArrayFloorPlan*) obj)->numPatterns();
 }
 
 const ::lefiSitePattern* lefiArrayFloorPlan_pattern(
     const ::lefiArrayFloorPlan* obj,
     int index)
 {
-  return (const ::lefiSitePattern*) ((LefDefParser::lefiArrayFloorPlan*) obj)
+  return (const ::lefiSitePattern*) ((LefParser::lefiArrayFloorPlan*) obj)
       ->pattern(index);
 }
 
 char* lefiArrayFloorPlan_typ(const ::lefiArrayFloorPlan* obj, int index)
 {
-  return ((LefDefParser::lefiArrayFloorPlan*) obj)->typ(index);
+  return ((LefParser::lefiArrayFloorPlan*) obj)->typ(index);
 }
 
 const char* lefiArrayFloorPlan_name(const ::lefiArrayFloorPlan* obj)
 {
-  return ((const LefDefParser::lefiArrayFloorPlan*) obj)->name();
+  return ((const LefParser::lefiArrayFloorPlan*) obj)->name();
 }
 
 int lefiArray_numSitePattern(const ::lefiArray* obj)
 {
-  return ((LefDefParser::lefiArray*) obj)->numSitePattern();
+  return ((LefParser::lefiArray*) obj)->numSitePattern();
 }
 
 int lefiArray_numCanPlace(const ::lefiArray* obj)
 {
-  return ((LefDefParser::lefiArray*) obj)->numCanPlace();
+  return ((LefParser::lefiArray*) obj)->numCanPlace();
 }
 
 int lefiArray_numCannotOccupy(const ::lefiArray* obj)
 {
-  return ((LefDefParser::lefiArray*) obj)->numCannotOccupy();
+  return ((LefParser::lefiArray*) obj)->numCannotOccupy();
 }
 
 int lefiArray_numTrack(const ::lefiArray* obj)
 {
-  return ((LefDefParser::lefiArray*) obj)->numTrack();
+  return ((LefParser::lefiArray*) obj)->numTrack();
 }
 
 int lefiArray_numGcell(const ::lefiArray* obj)
 {
-  return ((LefDefParser::lefiArray*) obj)->numGcell();
+  return ((LefParser::lefiArray*) obj)->numGcell();
 }
 
 int lefiArray_hasDefaultCap(const ::lefiArray* obj)
 {
-  return ((LefDefParser::lefiArray*) obj)->hasDefaultCap();
+  return ((LefParser::lefiArray*) obj)->hasDefaultCap();
 }
 
 const char* lefiArray_name(const ::lefiArray* obj)
 {
-  return ((const LefDefParser::lefiArray*) obj)->name();
+  return ((const LefParser::lefiArray*) obj)->name();
 }
 
 const ::lefiSitePattern* lefiArray_sitePattern(const ::lefiArray* obj,
                                                int index)
 {
-  return (const ::lefiSitePattern*) ((LefDefParser::lefiArray*) obj)
+  return (const ::lefiSitePattern*) ((LefParser::lefiArray*) obj)
       ->sitePattern(index);
 }
 
 const ::lefiSitePattern* lefiArray_canPlace(const ::lefiArray* obj, int index)
 {
-  return (const ::lefiSitePattern*) ((LefDefParser::lefiArray*) obj)
+  return (const ::lefiSitePattern*) ((LefParser::lefiArray*) obj)
       ->canPlace(index);
 }
 
 const ::lefiSitePattern* lefiArray_cannotOccupy(const ::lefiArray* obj,
                                                 int index)
 {
-  return (const ::lefiSitePattern*) ((LefDefParser::lefiArray*) obj)
+  return (const ::lefiSitePattern*) ((LefParser::lefiArray*) obj)
       ->cannotOccupy(index);
 }
 
 const ::lefiTrackPattern* lefiArray_track(const ::lefiArray* obj, int index)
 {
-  return (const ::lefiTrackPattern*) ((LefDefParser::lefiArray*) obj)
+  return (const ::lefiTrackPattern*) ((LefParser::lefiArray*) obj)
       ->track(index);
 }
 
 const ::lefiGcellPattern* lefiArray_gcell(const ::lefiArray* obj, int index)
 {
-  return (const ::lefiGcellPattern*) ((LefDefParser::lefiArray*) obj)
+  return (const ::lefiGcellPattern*) ((LefParser::lefiArray*) obj)
       ->gcell(index);
 }
 
 int lefiArray_tableSize(const ::lefiArray* obj)
 {
-  return ((LefDefParser::lefiArray*) obj)->tableSize();
+  return ((LefParser::lefiArray*) obj)->tableSize();
 }
 
 int lefiArray_numDefaultCaps(const ::lefiArray* obj)
 {
-  return ((LefDefParser::lefiArray*) obj)->numDefaultCaps();
+  return ((LefParser::lefiArray*) obj)->numDefaultCaps();
 }
 
 int lefiArray_defaultCapMinPins(const ::lefiArray* obj, int index)
 {
-  return ((LefDefParser::lefiArray*) obj)->defaultCapMinPins(index);
+  return ((LefParser::lefiArray*) obj)->defaultCapMinPins(index);
 }
 
 double lefiArray_defaultCap(const ::lefiArray* obj, int index)
 {
-  return ((LefDefParser::lefiArray*) obj)->defaultCap(index);
+  return ((LefParser::lefiArray*) obj)->defaultCap(index);
 }
 
 int lefiArray_numFloorPlans(const ::lefiArray* obj)
 {
-  return ((LefDefParser::lefiArray*) obj)->numFloorPlans();
+  return ((LefParser::lefiArray*) obj)->numFloorPlans();
 }
 
 const char* lefiArray_floorPlanName(const ::lefiArray* obj, int index)
 {
-  return ((const LefDefParser::lefiArray*) obj)->floorPlanName(index);
+  return ((const LefParser::lefiArray*) obj)->floorPlanName(index);
 }
 
 int lefiArray_numSites(const ::lefiArray* obj, int index)
 {
-  return ((LefDefParser::lefiArray*) obj)->numSites(index);
+  return ((LefParser::lefiArray*) obj)->numSites(index);
 }
 
 const char* lefiArray_siteType(const ::lefiArray* obj,
                                int floorIndex,
                                int siteIndex)
 {
-  return ((const LefDefParser::lefiArray*) obj)
-      ->siteType(floorIndex, siteIndex);
+  return ((const LefParser::lefiArray*) obj)->siteType(floorIndex, siteIndex);
 }
 
 const ::lefiSitePattern* lefiArray_site(const ::lefiArray* obj,
                                         int floorIndex,
                                         int siteIndex)
 {
-  return (const ::lefiSitePattern*) ((LefDefParser::lefiArray*) obj)
+  return (const ::lefiSitePattern*) ((LefParser::lefiArray*) obj)
       ->site(floorIndex, siteIndex);
 }
 
 void lefiArray_print(const ::lefiArray* obj, FILE* f)
 {
-  ((LefDefParser::lefiArray*) obj)->print(f);
+  ((LefParser::lefiArray*) obj)->print(f);
 }

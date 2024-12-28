@@ -39,60 +39,60 @@
 // Wrappers definitions.
 const char* defiProp_string(const ::defiProp* obj)
 {
-  return ((const LefDefParser::defiProp*) obj)->string();
+  return ((const DefParser::defiProp*) obj)->string();
 }
 
 const char* defiProp_propType(const ::defiProp* obj)
 {
-  return ((const LefDefParser::defiProp*) obj)->propType();
+  return ((const DefParser::defiProp*) obj)->propType();
 }
 
 const char* defiProp_propName(const ::defiProp* obj)
 {
-  return ((const LefDefParser::defiProp*) obj)->propName();
+  return ((const DefParser::defiProp*) obj)->propName();
 }
 
 char defiProp_dataType(const ::defiProp* obj)
 {
-  return ((LefDefParser::defiProp*) obj)->dataType();
+  return ((DefParser::defiProp*) obj)->dataType();
 }
 
 int defiProp_hasNumber(const ::defiProp* obj)
 {
-  return ((LefDefParser::defiProp*) obj)->hasNumber();
+  return ((DefParser::defiProp*) obj)->hasNumber();
 }
 
 int defiProp_hasRange(const ::defiProp* obj)
 {
-  return ((LefDefParser::defiProp*) obj)->hasRange();
+  return ((DefParser::defiProp*) obj)->hasRange();
 }
 
 int defiProp_hasString(const ::defiProp* obj)
 {
-  return ((LefDefParser::defiProp*) obj)->hasString();
+  return ((DefParser::defiProp*) obj)->hasString();
 }
 
 int defiProp_hasNameMapString(const ::defiProp* obj)
 {
-  return ((LefDefParser::defiProp*) obj)->hasNameMapString();
+  return ((DefParser::defiProp*) obj)->hasNameMapString();
 }
 
 double defiProp_number(const ::defiProp* obj)
 {
-  return ((LefDefParser::defiProp*) obj)->number();
+  return ((DefParser::defiProp*) obj)->number();
 }
 
 double defiProp_left(const ::defiProp* obj)
 {
-  return ((LefDefParser::defiProp*) obj)->left();
+  return ((DefParser::defiProp*) obj)->left();
 }
 
 double defiProp_right(const ::defiProp* obj)
 {
-  return ((LefDefParser::defiProp*) obj)->right();
+  return ((DefParser::defiProp*) obj)->right();
 }
 
 void defiProp_print(const ::defiProp* obj, FILE* f)
 {
-  ((LefDefParser::defiProp*) obj)->print(f);
+  ((DefParser::defiProp*) obj)->print(f);
 }

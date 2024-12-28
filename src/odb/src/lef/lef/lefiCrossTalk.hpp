@@ -34,7 +34,7 @@
 
 #include "lefiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // Structure returned for the noise margin callback.
 // This lef construct has two floating point numbers.
@@ -276,8 +276,6 @@ class lefiCorrectionTable
   lefiCorrectionEdge** edges_;
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif
