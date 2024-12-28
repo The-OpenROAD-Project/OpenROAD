@@ -566,7 +566,7 @@ void Grid::examineRows(dbBlock* block)
     // Check all sites have equal width
     if (!first_site) {
       first_site = site;
-      site_width_ = DbuX{static_cast<int>(site->getWidth())};
+      site_width_ = DbuX{site->getWidth()};
     } else if (site->getWidth() != site_width_) {
       logger_->error(DPL,
                      51,
