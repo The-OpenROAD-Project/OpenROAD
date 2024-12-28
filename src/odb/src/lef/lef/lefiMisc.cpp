@@ -68,11 +68,11 @@ void lefiGeometries::Init()
 void lefiGeometries::Destroy()
 {
   clear();
-  lefFree((char*) (items_));
-  lefFree((char*) (itemType_));
+  lefFree(items_);
+  lefFree(itemType_);
   if (x_) {
-    lefFree((double*) (x_));
-    lefFree((double*) (y_));
+    lefFree(x_);
+    lefFree(y_);
   }
   pointsAllocated_ = 0;
 }
@@ -86,43 +86,43 @@ void lefiGeometries::clear()
 {
   for (int i = 0; i < numItems_; i++) {
     if (itemType_[i] == lefiGeomViaE) {
-      lefFree(((lefiGeomVia*) (items_[i]))->name);
+      lefFree(((lefiGeomVia*) items_[i])->name);
     }
     if (itemType_[i] == lefiGeomViaIterE) {
-      lefFree(((lefiGeomViaIter*) (items_[i]))->name);
+      lefFree(((lefiGeomViaIter*) items_[i])->name);
     }
     if (itemType_[i] == lefiGeomPathE) {
       ((lefiGeomPath*) (items_[i]))->numPoints = 0;
-      lefFree((double*) ((lefiGeomPath*) items_[i])->x);
-      lefFree((double*) ((lefiGeomPath*) items_[i])->y);
+      lefFree(((lefiGeomPath*) items_[i])->x);
+      lefFree(((lefiGeomPath*) items_[i])->y);
     }
     if (itemType_[i] == lefiGeomPathIterE) {
       ((lefiGeomPathIter*) (items_[i]))->numPoints = 0;
-      lefFree((double*) ((lefiGeomPathIter*) items_[i])->x);
-      lefFree((double*) ((lefiGeomPathIter*) items_[i])->y);
+      lefFree(((lefiGeomPathIter*) items_[i])->x);
+      lefFree(((lefiGeomPathIter*) items_[i])->y);
     }
     if (itemType_[i] == lefiGeomPolygonE) {
       ((lefiGeomPolygon*) (items_[i]))->numPoints = 0;
-      lefFree((double*) ((lefiGeomPolygon*) items_[i])->x);
-      lefFree((double*) ((lefiGeomPolygon*) items_[i])->y);
+      lefFree(((lefiGeomPolygon*) items_[i])->x);
+      lefFree(((lefiGeomPolygon*) items_[i])->y);
     }
     if (itemType_[i] == lefiGeomPolygonIterE) {
       ((lefiGeomPolygonIter*) (items_[i]))->numPoints = 0;
-      lefFree((double*) ((lefiGeomPolygonIter*) items_[i])->x);
-      lefFree((double*) ((lefiGeomPolygonIter*) items_[i])->y);
+      lefFree(((lefiGeomPolygonIter*) items_[i])->x);
+      lefFree(((lefiGeomPolygonIter*) items_[i])->y);
     }
-    lefFree((char*) (items_[i]));
+    lefFree(items_[i]);
   }
   numItems_ = 0;
 }
 
 void lefiGeometries::clearPolyItems()
 {
-  lefFree((char*) (items_));
-  lefFree((char*) (itemType_));
+  lefFree(items_);
+  lefFree(itemType_);
   if (x_) {
-    lefFree((double*) (x_));
-    lefFree((double*) (y_));
+    lefFree(x_);
+    lefFree(y_);
   }
   numPoints_ = 0;
   pointsAllocated_ = 0;
@@ -145,8 +145,8 @@ void lefiGeometries::add(void* v, lefiGeomEnum e)
       newe[i] = itemType_[i];
       newi[i] = items_[i];
     }
-    lefFree((char*) (items_));
-    lefFree((char*) (itemType_));
+    lefFree(items_);
+    lefFree(itemType_);
     items_ = newi;
     itemType_ = newe;
   }
@@ -425,8 +425,8 @@ void lefiGeometries::addToList(double x, double y)
       nx[i] = x_[i];
       ny[i] = y_[i];
     }
-    lefFree((char*) (x_));
-    lefFree((char*) (y_));
+    lefFree(x_);
+    lefFree(y_);
     x_ = nx;
     y_ = ny;
   }
@@ -963,8 +963,8 @@ void lefiIRDrop::Destroy()
 {
   lefFree(name_);
   clear();
-  lefFree((char*) (value1_));
-  lefFree((char*) (value2_));
+  lefFree(value1_);
+  lefFree(value2_);
 }
 
 lefiIRDrop::~lefiIRDrop()
@@ -1011,8 +1011,8 @@ void lefiIRDrop::setValues(double value1, double value2)
         v1[i] = value1_[i];
         v2[i] = value2_[i];
       }
-      lefFree((char*) (value1_));
-      lefFree((char*) (value2_));
+      lefFree(value1_);
+      lefFree(value2_);
     }
     value1_ = v1;
     value2_ = v2;
@@ -1220,8 +1220,8 @@ void lefiSite::addRowPattern(const char* name, int orient)
       so[i] = siteOrients_[i];
     }
     if (siteNames_) {
-      lefFree((char*) (siteNames_));
-      lefFree((char*) (siteOrients_));
+      lefFree(siteNames_);
+      lefFree(siteOrients_);
     }
     siteNames_ = sn;
     siteOrients_ = so;
@@ -1473,7 +1473,7 @@ void lefiTrackPattern::Destroy()
   start_ = 0;
   numTracks_ = 0;
   space_ = 0;
-  lefFree((char*) (layerNames_));
+  lefFree(layerNames_);
 }
 
 void lefiTrackPattern::clear()
@@ -1521,7 +1521,7 @@ void lefiTrackPattern::addLayer(const char* name)
     nn = (char**) lefMalloc(sizeof(char*) * layerAllocated_);
     for (i = 0; i < numLayers_; i++)
       nn[i] = layerNames_[i];
-    lefFree((char*) (layerNames_));
+    lefFree(layerNames_);
     layerNames_ = nn;
   }
   len = strlen(name) + 1;

@@ -416,11 +416,11 @@ void lefiViaRule::Destroy()
 {
   clear();
   lefFree(name_);
-  lefFree((char*) (vias_));
-  lefFree((char*) (names_));
-  lefFree((char*) (values_));
-  lefFree((char*) (dvalues_));
-  lefFree((char*) (types_));
+  lefFree(vias_);
+  lefFree(names_);
+  lefFree(values_);
+  lefFree(dvalues_);
+  lefFree(types_);
   layers_[0].Destroy();
   layers_[1].Destroy();
   layers_[2].Destroy();
@@ -455,7 +455,7 @@ void lefiViaRule::addViaName(const char* name)
     nn = (char**) lefMalloc(sizeof(char*) * viasAllocated_);
     for (i = 0; i < numVias_; i++)
       nn[i] = vias_[i];
-    lefFree((char*) (vias_));
+    lefFree(vias_);
     vias_ = nn;
   }
   vias_[numVias_] = (char*) lefMalloc(len);
@@ -616,10 +616,10 @@ void lefiViaRule::addProp(const char* name, const char* value, const char type)
       nd[i] = dvalues_[i];
       nt[i] = types_[i];
     }
-    lefFree((char*) (names_));
-    lefFree((char*) (values_));
-    lefFree((char*) (dvalues_));
-    lefFree((char*) (types_));
+    lefFree(names_);
+    lefFree(values_);
+    lefFree(dvalues_);
+    lefFree(types_);
     names_ = nn;
     values_ = nv;
     dvalues_ = nd;
@@ -664,10 +664,10 @@ void lefiViaRule::addNumProp(const char* name,
       nd[i] = dvalues_[i];
       nt[i] = types_[i];
     }
-    lefFree((char*) (names_));
-    lefFree((char*) (values_));
-    lefFree((char*) (dvalues_));
-    lefFree((char*) (types_));
+    lefFree(names_);
+    lefFree(values_);
+    lefFree(dvalues_);
+    lefFree(types_);
     names_ = nn;
     values_ = nv;
     dvalues_ = nd;

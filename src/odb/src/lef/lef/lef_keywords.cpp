@@ -1364,7 +1364,7 @@ void* lefRealloc(void* name, size_t lef_size)
   if (lefSettings->ReallocFunction)
     return (*lefSettings->ReallocFunction)(name, lef_size);
   else
-    return (void*) realloc(name, lef_size);
+    return realloc(name, lef_size);
 }
 
 void lefFree(void* name)
