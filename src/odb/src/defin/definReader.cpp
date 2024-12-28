@@ -1530,12 +1530,14 @@ int definReader::trackCallback(defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
-  if (track->firstTrackMask() != 0) {
-    UNSUPPORTED("MASK on track is unsupported");
-  }
 
   defDirection dir = track->macro()[0] == 'X' ? DEF_X : DEF_Y;
-  reader->_tracksR->tracksBegin(dir, track->x(), track->xNum(), track->xStep());
+  reader->_tracksR->tracksBegin(dir,
+                                track->x(),
+                                track->xNum(),
+                                track->xStep(),
+                                track->firstTrackMask(),
+                                track->sameMask() == 1);
 
   for (int i = 0; i < track->numLayers(); ++i) {
     reader->_tracksR->tracksLayer(track->layer(i));

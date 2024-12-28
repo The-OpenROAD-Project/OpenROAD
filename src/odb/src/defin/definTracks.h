@@ -46,6 +46,8 @@ struct Track
   int _orig;
   int _step;
   int _count;
+  int _first_mask;
+  bool _samemask;
 };
 
 class definTracks : public definBase
@@ -54,7 +56,12 @@ class definTracks : public definBase
 
  public:
   /// Track interface methods
-  virtual void tracksBegin(defDirection dir, int orig, int count, int step);
+  virtual void tracksBegin(defDirection dir,
+                           int orig,
+                           int count,
+                           int step,
+                           int first_mask,
+                           bool samemask);
   virtual void tracksLayer(const char* layer);
   virtual void tracksEnd();
 
