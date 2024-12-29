@@ -1253,7 +1253,7 @@ void dumpDecoder4Net(dbNet* innet)
   dbTechLayer* layer;
   dbWireType wtype;
   dbTechLayerRule* lyr_rule = nullptr;
-  while (1) {
+  while (true) {
     opcode = decoder.next();
     if (opcode == dbWireDecoder::END_DECODE) {
       logger->info(

@@ -54,7 +54,7 @@ extern int lefwWrite(FILE* file, const char* fileName, lefiUserData userData);
  * that will add up how many times a given lef data type was ignored
  * (ie no callback was done).  The statistics can later be printed out.
  */
-extern void lefwSetRegisterUnusedCallbacks(void);
+extern void lefwSetRegisterUnusedCallbacks();
 extern void lefwPrintUnusedCallbacks(FILE* f);
 
 /*

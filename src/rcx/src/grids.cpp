@@ -745,7 +745,7 @@ Ath__track* Ath__grid::getTrackPtr(uint ii, uint markerCnt, int base)
   }
   _subTrackCnt[ii]++;
   ntrack = _trackTable[ii];
-  while (1) {
+  while (true) {
     if (ntrack->getBase() > base) {
       break;
     }

@@ -45,7 +45,6 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "odb/dbCompare.h"
 #include "odb/dbShape.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
@@ -1638,9 +1637,8 @@ odb::dbObject* DbNetDescriptor::getSink(const std::any& object) const
 
 //////////////////////////////////////////////////
 
-DbITermDescriptor::DbITermDescriptor(
-    odb::dbDatabase* db,
-    std::function<bool(void)> usingPolyDecompView)
+DbITermDescriptor::DbITermDescriptor(odb::dbDatabase* db,
+                                     std::function<bool()> usingPolyDecompView)
     : BaseDbDescriptor<odb::dbITerm>(db),
       usingPolyDecompView_(std::move(usingPolyDecompView))
 {
@@ -1952,9 +1950,8 @@ bool DbBPinDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbMTermDescriptor::DbMTermDescriptor(
-    odb::dbDatabase* db,
-    std::function<bool(void)> usingPolyDecompView)
+DbMTermDescriptor::DbMTermDescriptor(odb::dbDatabase* db,
+                                     std::function<bool()> usingPolyDecompView)
     : BaseDbDescriptor<odb::dbMTerm>(db),
       usingPolyDecompView_(std::move(usingPolyDecompView))
 {
