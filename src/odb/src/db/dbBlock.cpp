@@ -3799,7 +3799,7 @@ uint dbBlock::levelizeFromPrimaryInputs()
     return 0;
   }
 
-  while (1) {
+  while (true) {
     std::vector<dbInst*> startingInsts = instsToBeLeveled;
     instsToBeLeveled.clear();
 
@@ -3829,7 +3829,7 @@ uint dbBlock::levelizeFromSequential()
     return 0;
   }
 
-  while (1) {
+  while (true) {
     std::vector<dbInst*> startingInsts = instsToBeLeveled;
     instsToBeLeveled.clear();
 
@@ -3865,7 +3865,7 @@ int dbBlock::markBackwardsUser2(dbInst* firstInst,
     return 0;
   }
 
-  while (1) {
+  while (true) {
     std::vector<dbInst*> startingInsts = instsToBeMarked;
     instsToBeMarked.clear();
 
@@ -4029,7 +4029,7 @@ int dbBlock::markBackwardsUser2(dbNet* net,
     return -1;
   }
 
-  while (1) {
+  while (true) {
     std::vector<dbInst*> startingInsts = instsToBeMarked;
     instsToBeMarked.clear();
 

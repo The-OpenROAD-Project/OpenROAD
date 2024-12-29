@@ -53,7 +53,7 @@ class cdl
                        dbBlock* block,
                        const char* outFileName,
                        const std::vector<const char*>& mastersFileNames,
-                       bool includeFillers = 0);
+                       bool includeFillers = false);
 };
 
 }  // namespace odb

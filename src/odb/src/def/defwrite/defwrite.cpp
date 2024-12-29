@@ -90,7 +90,7 @@ int main(int argc, char** argv)
       fprintf(stderr, "Usage: defwrite [-o <filename>] [-help]\n");
       return 1;
     } else if (strncmp(*argv, "-g", 2) == 0) {  // test of group init function.
-      groupInit = 1;
+      groupInit = true;
     } else {
       fprintf(stderr, "ERROR: Illegal command line option: '%s'\n", *argv);
       return 2;

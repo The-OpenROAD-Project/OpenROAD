@@ -554,9 +554,9 @@ class FastRouteCore
    */
   void verify3DEdgesUsage();
   void layerAssignment();
-  void copyBR(void);
-  void copyRS(void);
-  void freeRR(void);
+  void copyBR();
+  void copyRS();
+  void freeRR();
   int edgeShift(Tree& t, int net);
   int edgeShiftNew(Tree& t, int net);
 

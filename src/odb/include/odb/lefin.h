@@ -184,12 +184,12 @@ class lefin
   void viaGenerateRule(lefiViaRule* viaRule);
   void done(void* ptr);
   template <typename... Args>
-  inline void warning(int id, std::string msg, const Args&... args)
+  void warning(int id, std::string msg, const Args&... args)
   {
     _logger->warn(utl::ODB, id, msg, args...);
   }
   template <typename... Args>
-  inline void errorTolerant(int id, std::string msg, const Args&... args)
+  void errorTolerant(int id, std::string msg, const Args&... args)
   {
     _logger->warn(utl::ODB, id, msg, args...);
     ++_errors;

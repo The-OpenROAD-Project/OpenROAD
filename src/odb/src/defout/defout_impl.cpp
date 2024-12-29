@@ -1130,7 +1130,7 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
     fprintf(_out, "+ PORT");
   }
 
-  bool isFirst = 1;
+  bool isFirst = true;
   int dw, dh, x = 0, y = 0;
   int xMin, yMin, xMax, yMax;
 
@@ -1139,7 +1139,7 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
     dh = defdist(int(box->getDY() / 2));
 
     if (isFirst) {
-      isFirst = 0;
+      isFirst = false;
       x = defdist(box->xMin()) + dw;
       y = defdist(box->yMin()) + dh;
     }
