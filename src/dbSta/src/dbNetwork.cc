@@ -3046,7 +3046,6 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
   // new hierarchical connections.
 
   dbNet* source_db_net = source_pin->getNet();
-  dbNet* dest_db_net = dest_pin->getNet();
 
   if (!source_db_net) {
     std::string connection_name_str(connection_name);
