@@ -157,6 +157,9 @@ std::string Descriptor::convertUnits(const double value,
   } else if (log_units <= 6) {
     unit_scale = 1e-6;
     unit = "M";
+  } else if (log_units <= 9) {
+    unit_scale = 1e-9;
+    unit = "G";
   }
   if (area) {
     unit_scale *= unit_scale;
