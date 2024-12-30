@@ -225,6 +225,7 @@ void DRCWidget::clicked(const QModelIndex& index)
     } else {
       Selected t = Gui::get()->makeSelected(marker);
       emit selectDRC(t);
+      focusIndex(index);
     }
   } else {
     if (item->hasChildren()) {

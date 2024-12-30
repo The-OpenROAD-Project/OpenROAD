@@ -344,25 +344,31 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
     return;
   }
 
-  for (const auto& [id, bbox] : guides_) {
-    const float macro_lx = macros_[id].getX();
-    const float macro_ly = macros_[id].getY();
-    const float macro_ux = macro_lx + macros_[id].getWidth();
-    const float macro_uy = macro_ly + macros_[id].getHeight();
-    // center to center distance
-    const float width
-        = ((macro_ux - macro_lx) + (bbox.xMax() - bbox.xMin())) / 2.0;
-    const float height
-        = ((macro_uy - macro_ly) + (bbox.yMax() - bbox.yMin())) / 2.0;
-    float x_dist = std::abs((macro_ux + macro_lx) / 2.0
-                            - (bbox.xMax() + bbox.xMin()) / 2.0);
-    float y_dist = std::abs((macro_uy + macro_ly) / 2.0
-                            - (bbox.yMax() + bbox.yMin()) / 2.0);
-    x_dist = std::max(x_dist - width, 0.0f) / width;
-    y_dist = std::max(y_dist - height, 0.0f) / height;
-    guidance_penalty_ += x_dist * x_dist + y_dist * y_dist;
+  for (const auto& [id, guide] : guides_) {
+    const float macro_x_min = macros_[id].getX();
+    const float macro_y_min = macros_[id].getY();
+    const float macro_x_max = macro_x_min + macros_[id].getWidth();
+    const float macro_y_max = macro_y_min + macros_[id].getHeight();
+
+    const float overlap_width = std::min(guide.xMax(), macro_x_max)
+                                - std::max(guide.xMin(), macro_x_min);
+    const float overlap_height = std::min(guide.yMax(), macro_y_max)
+                                 - std::max(guide.yMin(), macro_y_min);
+
+    // maximum overlap area
+    float penalty = std::min(macros_[id].getWidth(), guide.getWidth())
+                    * std::min(macros_[id].getHeight(), guide.getHeight());
+
+    // subtract overlap
+    if (overlap_width > 0 && overlap_height > 0) {
+      penalty -= (overlap_width * overlap_height);
+    }
+
+    guidance_penalty_ += penalty;
   }
+
   guidance_penalty_ = guidance_penalty_ / guides_.size();
+
   if (graphics_) {
     graphics_->setGuidancePenalty(
         {guidance_weight_, guidance_penalty_ / norm_guidance_penalty_});
@@ -576,8 +582,8 @@ void SimulatedAnnealingCore<T>::fastSA()
   int num_restart = 1;
   const int max_num_restart = 2;
 
-  if (best_valid_result_ && isValid()) {
-    updateBestValidSoftResult();
+  if (isValid()) {
+    updateBestValidResult();
   }
 
   while (step <= max_num_step_) {
@@ -585,13 +591,11 @@ void SimulatedAnnealingCore<T>::fastSA()
       perturb();
       cost = calNormCost();
 
-      if (best_valid_result_) {
-        const bool keep_result
-            = cost < pre_cost
-              || best_valid_result_->sequence_pair.pos_sequence.empty();
-        if (isValid() && keep_result) {
-          updateBestValidSoftResult();
-        }
+      const bool keep_result
+          = cost < pre_cost
+            || best_valid_result_.sequence_pair.pos_sequence.empty();
+      if (isValid() && keep_result) {
+        updateBestValidResult();
       }
 
       delta_cost = cost - pre_cost;
@@ -637,18 +641,52 @@ void SimulatedAnnealingCore<T>::fastSA()
     graphics_->doNotSkip();
   }
   calPenalty();
+
+  if (!isValid() && !best_valid_result_.sequence_pair.pos_sequence.empty()) {
+    useBestValidResult();
+  }
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::updateBestValidSoftResult()
+void SimulatedAnnealingCore<T>::updateBestValidResult()
 {
-  best_valid_result_->sequence_pair.pos_sequence = pos_seq_;
-  best_valid_result_->sequence_pair.neg_sequence = neg_seq_;
+  best_valid_result_.sequence_pair.pos_sequence = pos_seq_;
+  best_valid_result_.sequence_pair.neg_sequence = neg_seq_;
 
-  for (const int macro_id : pos_seq_) {
-    T& macro = macros_[macro_id];
-    best_valid_result_->macro_id_to_width[macro_id] = macro.getWidth();
+  if constexpr (std::is_same_v<T, SoftMacro>) {
+    for (const int macro_id : pos_seq_) {
+      SoftMacro& macro = macros_[macro_id];
+      best_valid_result_.macro_id_to_width[macro_id] = macro.getWidth();
+    }
   }
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::useBestValidResult()
+{
+  pos_seq_ = best_valid_result_.sequence_pair.pos_sequence;
+  neg_seq_ = best_valid_result_.sequence_pair.neg_sequence;
+
+  if constexpr (std::is_same_v<T, SoftMacro>) {
+    for (const int macro_id : pos_seq_) {
+      SoftMacro& macro = macros_[macro_id];
+      const float valid_result_width
+          = best_valid_result_.macro_id_to_width.at(macro_id);
+
+      if (macro.isMacroCluster()) {
+        const float valid_result_height = macro.getArea() / valid_result_width;
+        macro.setShapeF(valid_result_width, valid_result_height);
+      } else {
+        macro.setWidth(valid_result_width);
+      }
+    }
+  }
+
+  packFloorplan();
+  if (graphics_) {
+    graphics_->doNotSkip();
+  }
+  calPenalty();
 }
 
 template <class T>

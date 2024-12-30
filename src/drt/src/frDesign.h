@@ -47,12 +47,13 @@ class frDesign
 {
  public:
   // constructors
-  frDesign(Logger* logger)
+  frDesign(Logger* logger, RouterConfiguration* router_cfg)
       : topBlock_(nullptr),
         tech_(std::make_unique<frTechObject>()),
-        rq_(std::make_unique<frRegionQuery>(this, logger)),
+        rq_(std::make_unique<frRegionQuery>(this, logger, router_cfg)),
         updates_sz_(0),
-        version_(0)
+        version_(0),
+        router_cfg_(router_cfg)
   {
   }
   frDesign() : topBlock_(nullptr), tech_(nullptr), rq_(nullptr) {}
@@ -104,7 +105,7 @@ class frDesign
   void addUpdate(const drUpdate& update)
   {
     if (updates_.empty()) {
-      updates_.resize(MAX_THREADS * 2);
+      updates_.resize(static_cast<size_t>(router_cfg_->MAX_THREADS) * 2);
     }
     auto num_batches = updates_.size();
     updates_[updates_sz_++ % num_batches].push_back(update);
@@ -132,5 +133,6 @@ class frDesign
   int updates_sz_;
   std::vector<std::string> user_selected_vias_;
   int version_;
+  RouterConfiguration* router_cfg_;
 };
 }  // namespace drt

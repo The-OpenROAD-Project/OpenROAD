@@ -77,10 +77,19 @@ void FlexDRWorker::initNetObjs_pathSeg(
 
   nets.insert(net);
 
+  const auto gridBBox = getRouteBox();
+
+  if (pathSeg->isApPathSeg()) {
+    if (gridBBox.intersects(pathSeg->getApLoc())) {
+      netRouteObjs[net].push_back(std::make_unique<drPathSeg>(*pathSeg));
+    } else {
+      netExtObjs[net].push_back(std::make_unique<drPathSeg>(*pathSeg));
+    }
+    return;
+  }
+
   const auto along = begin.x() == end.x() ? odb::vertical : odb::horizontal;
   const auto ortho = along.turn_90();
-
-  const auto gridBBox = getRouteBox();
   if (begin.get(ortho) < gridBBox.low(ortho)
       || gridBBox.high(ortho) < begin.get(ortho)) {
     // does not cross the routeBBox
@@ -490,7 +499,7 @@ void FlexDRWorker::initNets_initDR_helper(
     Rect rect;
     if (netTerms.at(i)->typeId() == frcInstTerm) {
       auto iterm = static_cast<frInstTerm*>(netTerms.at(i));
-      rect = iterm->getBBox(true);
+      rect = iterm->getBBox();
     } else {
       auto bterm = static_cast<frBTerm*>(netTerms.at(i));
       rect = bterm->getBBox();
@@ -560,7 +569,7 @@ void FlexDRWorker::initNets_initDR_helper(
     Rect rect;
     if (netTerms.at(i)->typeId() == frcInstTerm) {
       auto iterm = static_cast<frInstTerm*>(netTerms.at(i));
-      rect = iterm->getBBox(true);
+      rect = iterm->getBBox();
     } else {
       auto bterm = static_cast<frBTerm*>(netTerms.at(i));
       rect = bterm->getBBox();
@@ -1140,7 +1149,8 @@ bool FlexDRWorker::findAPTracks(const frLayerNum startLayerNum,
 bool FlexDRWorker::isRestrictedRouting(const frLayerNum lNum)
 {
   return getTech()->getLayer(lNum)->isUnidirectional()
-         || lNum < BOTTOM_ROUTING_LAYER || lNum > TOP_ROUTING_LAYER;
+         || lNum < router_cfg_->BOTTOM_ROUTING_LAYER
+         || lNum > router_cfg_->TOP_ROUTING_LAYER;
 }
 
 // when isHorzTracks == true, it means track loc == y loc
@@ -1183,9 +1193,8 @@ void FlexDRWorker::initNet_term(const frDesign* design,
       case frcInstTerm: {
         auto instTerm = static_cast<frInstTerm*>(term);
         frInst* inst = instTerm->getInst();
-        shiftXform = inst->getTransform();
-        shiftXform.setOrient(dbOrientType(dbOrientType::R0));
-        instXform = inst->getUpdatedXform();
+        shiftXform = inst->getNoRotationTransform();
+        instXform = inst->getDBTransform();
         auto trueTerm = instTerm->getTerm();
         const std::string name = inst->getName() + "/" + trueTerm->getName();
         initNet_term_helper(
@@ -1242,7 +1251,7 @@ void FlexDRWorker::initNet_term_helper(const frDesign* design,
         dAp->setPinCost(1);
       }
       // set min area
-      if (ENABLE_BOUNDARY_MAR_FIX) {
+      if (router_cfg_->ENABLE_BOUNDARY_MAR_FIX) {
         auto minAreaConstraint = getTech()->getLayer(bNum)->getAreaConstraint();
         if (minAreaConstraint) {
           auto reqArea = minAreaConstraint->getMinArea();
@@ -1345,7 +1354,7 @@ void FlexDRWorker::initNet(const frDesign* design,
                            const std::vector<frBlockObject*>& terms,
                            std::vector<std::pair<Point, frLayerNum>> bounds)
 {
-  auto dNet = std::make_unique<drNet>(net);
+  auto dNet = std::make_unique<drNet>(net, router_cfg_);
   // true pin
   initNet_term(design, dNet.get(), terms);
   // boundary pin, could overlap with any of true pins
@@ -1566,7 +1575,7 @@ void FlexDRWorker::initNets(const frDesign* design)
 
   initNets_numPinsIn();
   // here because region query is needed
-  if (ENABLE_BOUNDARY_MAR_FIX) {
+  if (router_cfg_->ENABLE_BOUNDARY_MAR_FIX) {
     initNets_boundaryArea();
   }
   // fill ndrs_ for all nets in the worker
@@ -2738,7 +2747,7 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
             // unblock planar edge for obs over pin, ap will unblock via edge
             // for legal pin access
             modBlockedPlanar(box, zIdx, false);
-            if (zIdx <= (VIA_ACCESS_LAYERNUM / 2 - 1)) {
+            if (zIdx <= (router_cfg_->VIA_ACCESS_LAYERNUM / 2 - 1)) {
               modMinSpacingCostPlanar(
                   box, zIdx, ModCostType::addFixedShape, true);
               modEolSpacingRulesCost(box, zIdx, ModCostType::addFixedShape);
@@ -2797,8 +2806,11 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
 
   // assign terms to each subnet
   for (auto& [net, objs] : frNet2Terms) {
-    for (auto dNet : owner2nets_[net]) {
-      dNet->setFrNetTerms(objs);
+    if (net != nullptr && !net->isSpecial()
+        && owner2nets_.find(net) != owner2nets_.end()) {
+      for (auto dNet : owner2nets_.at(net)) {
+        dNet->setFrNetTerms(objs);
+      }
     }
     initMazeCost_terms(objs, true);
   }
@@ -2897,8 +2909,8 @@ void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
     } else if (obj->typeId() == frcInstTerm) {
       auto instTerm = static_cast<frInstTerm*>(obj);
       auto inst = instTerm->getInst();
-      const dbTransform xform = inst->getUpdatedXform();
-      const dbTransform shiftXform(inst->getTransform().getOffset());
+      const dbTransform xform = inst->getDBTransform();
+      const dbTransform shiftXform = inst->getNoRotationTransform();
       const dbMasterType masterType = inst->getMaster()->getMasterType();
       bool accessHorz = false;
       bool accessVert = false;
@@ -3069,17 +3081,18 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
 
 void FlexDRWorker::initMazeCost_connFig()
 {
-  for (auto& net : nets_) {
-    for (auto& connFig : net->getExtConnFigs()) {
-      addPathCost(connFig.get(), false, true);
+  for (auto& [fr_net, nets] : owner2nets_) {
+    for (auto& net : nets) {
+      for (auto& connFig : net->getExtConnFigs()) {
+        addPathCost(connFig.get(), false, true);
+      }
+      for (auto& connFig : net->getRouteConnFigs()) {
+        addPathCost(connFig.get(), false, true);
+      }
+      gcWorker_->updateDRNet(net);
+      gcWorker_->updateGCWorker();
     }
-    for (auto& connFig : net->getRouteConnFigs()) {
-      addPathCost(connFig.get(), false, true);
-    }
-    gcWorker_->updateDRNet(net.get());
-    gcWorker_->updateGCWorker();
-    modEolCosts_poly(gcWorker_->getNet(net->getFrNet()),
-                     ModCostType::addRouteShape);
+    modEolCosts_poly(gcWorker_->getNet(fr_net), ModCostType::addRouteShape);
   }
 }
 
@@ -3123,7 +3136,7 @@ void FlexDRWorker::initMazeCost_via_helper(drNet* net, bool isAddPathCost)
     }
 
     const Point bp = minCostAP->getPoint();
-    frViaDef* viaDef = minCostAP->getAccessViaDef();
+    const frViaDef* viaDef = minCostAP->getAccessViaDef();
     via = std::make_unique<drVia>(viaDef);
     via->setOrigin(bp);
     via->addToNet(net);
@@ -3211,8 +3224,8 @@ void FlexDRWorker::init(const frDesign* design)
   }
   initGridGraph(design);
   initMazeIdx();
-  std::unique_ptr<FlexGCWorker> gcWorker
-      = std::make_unique<FlexGCWorker>(design->getTech(), logger_, this);
+  std::unique_ptr<FlexGCWorker> gcWorker = std::make_unique<FlexGCWorker>(
+      design->getTech(), logger_, router_cfg_, this);
   gcWorker->setExtBox(getExtBox());
   gcWorker->setDrcBox(getDrcBox());
   gcWorker->init(design);

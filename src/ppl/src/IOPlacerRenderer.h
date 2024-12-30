@@ -35,9 +35,9 @@
 
 #pragma once
 
+#include "AbstractIOPlacerRenderer.h"
 #include "SimulatedAnnealing.h"
 #include "gui/gui.h"
-#include "ppl/AbstractIOPlacerRenderer.h"
 #include "ppl/IOPlacer.h"
 
 namespace ppl {

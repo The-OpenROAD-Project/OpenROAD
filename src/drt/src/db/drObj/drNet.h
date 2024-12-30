@@ -43,17 +43,17 @@ class drNet : public drBlockObject
 {
  public:
   // constructors
-  drNet(frNet* net) : fNet_(net)
+  drNet(frNet* net, RouterConfiguration* router_cfg) : fNet_(net)
   {
     if (hasNDR()) {
-      maxRipupAvoids_ = NDR_NETS_RIPUP_HARDINESS;
+      maxRipupAvoids_ = router_cfg->NDR_NETS_RIPUP_HARDINESS;
     }
     if (isClockNetTrunk()) {
-      maxRipupAvoids_
-          = std::max((int) maxRipupAvoids_, CLOCK_NETS_TRUNK_RIPUP_HARDINESS);
+      maxRipupAvoids_ = std::max((int) maxRipupAvoids_,
+                                 router_cfg->CLOCK_NETS_TRUNK_RIPUP_HARDINESS);
     } else if (isClockNetLeaf()) {
-      maxRipupAvoids_
-          = std::max((int) maxRipupAvoids_, CLOCK_NETS_LEAF_RIPUP_HARDINESS);
+      maxRipupAvoids_ = std::max((int) maxRipupAvoids_,
+                                 router_cfg->CLOCK_NETS_LEAF_RIPUP_HARDINESS);
     }
   }
   // getters

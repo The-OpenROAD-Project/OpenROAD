@@ -35,6 +35,8 @@
 
 #pragma once
 
+#include <set>
+
 #include "gui/gui.h"
 
 namespace pad {
@@ -53,10 +55,17 @@ class RDLGui : public gui::Renderer
 
   const char* getDisplayControlGroupName() override { return "RDL Router"; }
 
+  void clearSnap();
+  void addSnap(const odb::Point& pt0, const odb::Point& pt1);
+  void zoomToSnap(bool preview);
+
   void pause(bool timeout) const;
 
  private:
   RDLRouter* router_ = nullptr;
+
+  std::set<std::pair<odb::Point, odb::Point>> snap_;
+  gui::Painter::Color snap_color_ = gui::Painter::white;
 
   static constexpr const char* draw_vertex_ = "Vertices";
   static constexpr const char* draw_edge_ = "Edges";

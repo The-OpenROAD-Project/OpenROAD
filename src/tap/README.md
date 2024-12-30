@@ -144,7 +144,7 @@ place_endcaps
 | `[-right_edge]` | Master for the right row endcaps. (overrides `-endcap_vertical`). |
 | `[-right_top_corner]` | Master for the corner cells on the outer top right corner. (overrides `-corner`). |
 | `[-right_top_edge]` | Master for the corner cells on the inner top right corner. (overrides `-edge_corner`). |
-| `[-prefix]` | Prefix to use for the boundary cells. Defaults to "PHY_". |
+| `[-prefix]` | Prefix to use for the boundary cells. The default value is `PHY_`. |
 | `[-top_edge]` | List of masters for the top row endcaps. (overrides `-endcap_horizontal`). |
 
 ### Only adding Tapcells
@@ -171,16 +171,16 @@ This command is used for removing tapcells or endcaps based on their prefix.
 
 ```tcl
 tapcell_ripup
-    -endcap_prefix endcap_prefix
-    -tap_prefix tap_prefix
+    [-endcap_prefix endcap_prefix]
+    [-tap_prefix tap_prefix]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-endcap_prefix` | Remove endcaps with said prefix. |
-| `-tap_prefix` | Remove tapcells with said prefix. |
+| `[-endcap_prefix]` | Remove endcaps with said prefix. The default value is `PHY_`. |
+| `[-tap_prefix]` | Remove tapcells with said prefix. The default value is `TAP_`. |
 
 ## Example scripts
 

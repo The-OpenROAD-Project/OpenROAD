@@ -93,7 +93,7 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
   float getNetSlack(odb::dbNet* net) override;
 
  private:
-  typedef std::map<RoutePt, sta::ParasiticNode*> NodeRoutePtMap;
+  using NodeRoutePtMap = std::map<RoutePt, sta::ParasiticNode*>;
 
   sta::Pin* staPin(Pin& pin) const;
   void makeRouteParasitics(odb::dbNet* net,
@@ -110,11 +110,13 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
                                           sta::Parasitic* parasitic,
                                           sta::Net* net) const;
   void makeParasiticsToPins(std::vector<Pin>& pins,
+                            odb::dbNet* net,
                             NodeRoutePtMap& node_map,
                             sta::Corner* corner,
                             sta::ParasiticAnalysisPt* analysis_point,
                             sta::Parasitic* parasitic);
   void makeParasiticsToPin(Pin& pin,
+                           odb::dbNet* net,
                            NodeRoutePtMap& node_map,
                            sta::Corner* corner,
                            sta::ParasiticAnalysisPt* analysis_point,

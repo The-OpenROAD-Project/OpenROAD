@@ -52,7 +52,8 @@ bool IsScanCell(const sta::LibertyCell* libertyCell)
 {
   const sta::TestCell* test_cell = libertyCell->testCell();
   if (test_cell) {
-    return test_cell->scanIn() != nullptr && test_cell->scanEnable() != nullptr;
+    return getLibertyScanIn(test_cell) != nullptr
+           && getLibertyScanEnable(test_cell) != nullptr;
   }
   return false;
 }
@@ -152,23 +153,20 @@ bool IsScanEquivalent(
     if (seen_on_scan_cell.find(scan_cell_port) != seen_on_scan_cell.end()) {
       continue;
     }
-    auto ignore_port = [scan_cell_port](sta::LibertyPort* other) {
-      if (!other) {
+    // Extra scan related pins are ok
+    if (test_cell) {
+      sta::LibertyPort* test_port
+          = test_cell->findLibertyPort(scan_cell_port->name());
+      if (!test_port) {
         return false;
       }
-      return strcmp(scan_cell_port->name(), other->name()) == 0;
-    };
-    // Extra scan related pins are ok
-    if (test_cell
-        && (ignore_port(test_cell->scanIn())
-            || ignore_port(test_cell->scanEnable())
-            || ignore_port(test_cell->scanOut())
-            || ignore_port(test_cell->scanOutInv()))) {
-      continue;
+
+      if (test_port->scanSignalType() != sta::ScanSignalType::none) {
+        continue;
+      }
     }
     return false;
   }
-
   return true;
 }
 

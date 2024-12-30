@@ -29,8 +29,8 @@
 
 #include "defiSite.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
 #include "defiUtil.hpp"
@@ -189,7 +189,7 @@ void defiBox::Init()
   yl_ = 0;
   xh_ = 0;
   yh_ = 0;
-  points_ = 0;
+  points_ = nullptr;
 }
 
 defiBox::~defiBox()

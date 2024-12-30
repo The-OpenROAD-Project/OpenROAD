@@ -433,7 +433,7 @@ double DetailedRandom::go()
   std::fill(gen_count.begin(), gen_count.end(), 0);
   for (int attempt = 0; attempt < maxAttempts; attempt++) {
     // Pick a generator at random.
-    int g = (int) mgrPtr_->getRandom(generators_.size());
+    int g = mgrPtr_->getRandom(generators_.size());
     ++gen_count[g];
     // Generate a move list.
     if (generators_[g]->generate(mgrPtr_, candidates_) == false) {

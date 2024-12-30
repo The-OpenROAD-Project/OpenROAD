@@ -262,10 +262,12 @@ class Resizer : public dbStaState
 
   void setDontUse(LibertyCell* cell, bool dont_use);
   bool dontUse(LibertyCell* cell);
+  void reportDontUse() const;
   void setDontTouch(const Instance* inst, bool dont_touch);
   bool dontTouch(const Instance* inst);
   void setDontTouch(const Net* net, bool dont_touch);
   bool dontTouch(const Net* net);
+  void reportDontTouch();
 
   void setMaxUtilization(double max_utilization);
   // Remove all or selected buffers from the netlist.
@@ -427,6 +429,7 @@ class Resizer : public dbStaState
   Logger* logger() const { return logger_; }
   void invalidateParasitics(const Pin* pin, const Net* net);
   void eraseParasitics(const Net* net);
+  void eliminateDeadLogic(bool clean_nets);
 
  protected:
   void init();
@@ -438,7 +441,7 @@ class Resizer : public dbStaState
   bool isTristateDriver(const Pin* pin);
   void checkLibertyForAllCorners();
   void findBuffers();
-  bool isLinkCell(LibertyCell* cell);
+  bool isLinkCell(LibertyCell* cell) const;
   void findTargetLoads();
   void balanceBin(const vector<odb::dbInst*>& bin,
                   const std::set<odb::dbSite*>& base_sites);
@@ -584,6 +587,7 @@ class Resizer : public dbStaState
   bool hasPins(Net* net);
   void getPins(Net* net, PinVector& pins) const;
   void getPins(Instance* inst, PinVector& pins) const;
+  void SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from);
   Point tieLocation(const Pin* load, int separation);
   bool hasFanout(Vertex* drvr);
   InstanceSeq findClkInverters();

@@ -142,7 +142,7 @@ class frMaster : public frBlockObject
   std::vector<frBoundary> boundaries_;
   Rect dieBox_;
   frString name_;
-  dbMasterType masterType_{dbMasterType::NONE};
+  dbMasterType masterType_{dbMasterType::CORE};
 
   friend class io::Parser;
 };

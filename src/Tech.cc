@@ -44,12 +44,15 @@
 
 namespace ord {
 
-Tech::Tech(Tcl_Interp* interp) : app_(new OpenRoad())
+Tech::Tech(Tcl_Interp* interp,
+           const char* log_filename,
+           const char* metrics_filename)
+    : app_(new OpenRoad())
 {
   if (!interp) {
     interp = Tcl_CreateInterp();
     Tcl_Init(interp);
-    app_->init(interp);
+    app_->init(interp, log_filename, metrics_filename);
   }
 }
 

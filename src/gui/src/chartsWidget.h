@@ -32,11 +32,9 @@
 
 #pragma once
 
+#include <QComboBox>
 #include <QDockWidget>
 #include <QLabel>
-
-#ifdef ENABLE_CHARTS
-#include <QComboBox>
 #include <QPushButton>
 #include <QString>
 #include <QtCharts>
@@ -50,10 +48,8 @@ class Pin;
 class dbSta;
 class Clock;
 }  // namespace sta
-#endif
 
 namespace gui {
-#ifdef ENABLE_CHARTS
 
 struct SlackHistogramData
 {
@@ -82,20 +78,22 @@ class HistogramView : public QChartView
   void barIndex(int bar_index);
 };
 
-#endif
-
 class ChartsWidget : public QDockWidget
 {
   Q_OBJECT
 
  public:
-  ChartsWidget(QWidget* parent = nullptr);
-#ifdef ENABLE_CHARTS
-  void setSTA(sta::dbSta* sta);
-  void setLogger(utl::Logger* logger)
+  enum Mode
   {
-    logger_ = logger;
-  }
+    SELECT,
+    SLACK_HISTOGRAM
+  };
+
+  ChartsWidget(QWidget* parent = nullptr);
+  void setSTA(sta::dbSta* sta);
+  void setLogger(utl::Logger* logger) { logger_ = logger; }
+
+  void setMode(Mode mode);
 
  signals:
   void endPointsToReport(const std::set<const sta::Pin*>& report_pins,
@@ -109,12 +107,6 @@ class ChartsWidget : public QDockWidget
   void emitEndPointsInBucket(int bar_index);
 
  private:
-  enum Mode
-  {
-    SELECT,
-    SLACK_HISTOGRAM
-  };
-
   void setSlackHistogram();
   void setSlackHistogramLayout();
   void setModeMenu();
@@ -127,10 +119,7 @@ class ChartsWidget : public QDockWidget
   {
     precision_count_ = precision_count;
   }
-  void setClocks(const std::set<sta::Clock*>& clocks)
-  {
-    clocks_ = clocks;
-  }
+  void setClocks(const std::set<sta::Clock*>& clocks) { clocks_ = clocks; }
 
   SlackHistogramData fetchSlackHistogramData();
   void removeUnconstrainedPinsAndSetLimits(StaPins& end_points);
@@ -185,7 +174,6 @@ class ChartsWidget : public QDockWidget
   float bucket_interval_;
 
   int precision_count_;  // Used to configure the x labels.
-#endif
   QLabel* label_;
 };
 

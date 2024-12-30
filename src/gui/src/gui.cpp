@@ -37,10 +37,13 @@
 #include <stdexcept>
 #include <string>
 
+#include "chartsWidget.h"
 #include "clockWidget.h"
 #include "displayControls.h"
 #include "drcWidget.h"
+#include "heatMapPinDensity.h"
 #include "heatMapPlacementDensity.h"
+#include "helpWidget.h"
 #include "inspector.h"
 #include "layoutViewer.h"
 #include "mainWindow.h"
@@ -53,6 +56,7 @@
 #include "ruler.h"
 #include "scriptWidget.h"
 #include "sta/StaMain.hh"
+#include "timingWidget.h"
 #include "utl/Logger.h"
 #include "utl/exception.h"
 
@@ -225,6 +229,7 @@ Gui::Gui()
     : continue_after_close_(false),
       logger_(nullptr),
       db_(nullptr),
+      pin_density_heat_map_(nullptr),
       placement_density_heat_map_(nullptr)
 {
   resetConversions();
@@ -999,6 +1004,19 @@ void Gui::dumpHeatMap(const std::string& name, const std::string& file)
   source->dumpToFile(file);
 }
 
+void Gui::setMainWindowTitle(const std::string& title)
+{
+  main_window_title_ = title;
+  if (main_window) {
+    main_window->setTitle(title);
+  }
+}
+
+std::string Gui::getMainWindowTitle()
+{
+  return main_window_title_;
+}
+
 Renderer::~Renderer()
 {
   gui::Gui::get()->unregisterRenderer(this);
@@ -1265,15 +1283,58 @@ void Gui::showGui(const std::string& cmds, bool interactive, bool load_settings)
   startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive, load_settings);
 }
 
+void Gui::minimize()
+{
+  main_window->showMinimized();
+}
+
+void Gui::unminimize()
+{
+  main_window->showNormal();
+}
+
 void Gui::init(odb::dbDatabase* db, utl::Logger* logger)
 {
   db_ = db;
   setLogger(logger);
 
-  // placement density heatmap
+  pin_density_heat_map_ = std::make_unique<PinDensityDataSource>(logger);
+  pin_density_heat_map_->registerHeatMap();
+
   placement_density_heat_map_
       = std::make_unique<PlacementDensityDataSource>(logger);
   placement_density_heat_map_->registerHeatMap();
+}
+
+void Gui::selectHelp(const std::string& item)
+{
+  if (!enabled()) {
+    return;
+  }
+
+  main_window->getHelpViewer()->selectHelp(item);
+}
+
+void Gui::selectChart(const std::string& name)
+{
+  if (!enabled()) {
+    return;
+  }
+
+  ChartsWidget::Mode mode;
+  if (name == "Endpoint Slack") {
+    mode = ChartsWidget::Mode::SLACK_HISTOGRAM;
+  } else if (name == "Select Mode") {
+    mode = ChartsWidget::Mode::SELECT;
+  } else {
+    logger_->error(utl::GUI, 105, "Chart {} is unknown.", name);
+  }
+  main_window->getChartsWidget()->setMode(mode);
+}
+
+void Gui::updateTimingReport()
+{
+  main_window->getTimingWidget()->populatePaths();
 }
 
 class SafeApplication : public QApplication
@@ -1302,7 +1363,8 @@ int startGui(int& argc,
              Tcl_Interp* interp,
              const std::string& script,
              bool interactive,
-             bool load_settings)
+             bool load_settings,
+             bool minimize)
 {
   auto gui = gui::Gui::get();
   // ensure continue after close is false
@@ -1320,6 +1382,10 @@ int startGui(int& argc,
 
   // create new MainWindow
   main_window = new gui::MainWindow(load_settings);
+  if (minimize) {
+    main_window->showMinimized();
+  }
+  main_window->setTitle(gui->getMainWindowTitle());
 
   open_road->addObserver(main_window);
   if (!interactive) {
@@ -1342,7 +1408,7 @@ int startGui(int& argc,
       interp, interactive, init_openroad, [&]() {
         // init remainder of GUI, to be called immediately after OpenRoad is
         // guaranteed to be initialized.
-        main_window->init(open_road->getSta());
+        main_window->init(open_road->getSta(), open_road->getDocsPath());
         // announce design created to ensure GUI gets setup
         main_window->postReadDb(main_window->getDb());
       });

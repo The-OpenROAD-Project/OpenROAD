@@ -33,10 +33,9 @@
 #ifndef SOLVEMULTI_H
 #define SOLVEMULTI_H
 
-#include <math.h>
-#include <stdlib.h>
-
 #include <algorithm>
+#include <cmath>
+#include <cstdlib>
 #include <vector>
 
 namespace parquetfp {
@@ -53,10 +52,10 @@ class SolveMulti
  public:
   SolveMulti(DB* db, Command_Line* params);
   ~SolveMulti();
-  void go(void);
+  void go();
   DB* clusterOnly() const;
 
-  void placeSubBlocks(void);
+  void placeSubBlocks();
   void updatePlaceUnCluster(DB* clusterDB);
 
   mutable float clusterTime;

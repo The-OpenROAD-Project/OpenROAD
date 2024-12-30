@@ -160,6 +160,11 @@ void route_rdl_gui(bool enable)
   ord::getICeWall()->routeRDLDebugGUI(enable);
 }
 
+void route_rdl_debug_net(const char* name)
+{
+  ord::getICeWall()->routeRDLDebugNet(name);
+}
+
 odb::dbRow* get_row(const char* name)
 {
   odb::dbRow* row = ord::getICeWall()->findRow(name);

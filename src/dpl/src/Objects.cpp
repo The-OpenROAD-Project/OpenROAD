@@ -51,7 +51,7 @@ DbuX Cell::siteWidth() const
   if (db_inst_) {
     auto site = db_inst_->getMaster()->getSite();
     if (site) {
-      return DbuX{static_cast<int>(site->getWidth())};
+      return DbuX{site->getWidth()};
     }
   }
   return DbuX{0};
@@ -131,7 +131,6 @@ bool Cell::isStdCell() const
     case dbMasterType::PAD_INOUT:
     case dbMasterType::PAD_POWER:
     case dbMasterType::PAD_SPACER:
-    case dbMasterType::NONE:
       return false;
   }
   // gcc warniing

@@ -380,8 +380,8 @@ bool MBFF::IsScanCell(odb::dbInst* inst)
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
   sta::TestCell* test_cell = lib_cell->testCell();
-  if (test_cell != nullptr && test_cell->scanIn() != nullptr
-      && test_cell->scanEnable() != nullptr) {
+  if (test_cell != nullptr && getLibertyScanIn(test_cell) != nullptr
+      && getLibertyScanEnable(test_cell) != nullptr) {
     return true;
   }
   return false;
@@ -392,8 +392,8 @@ bool MBFF::IsScanIn(odb::dbITerm* iterm)
   sta::Cell* cell = network_->dbToSta(iterm->getInst()->getMaster());
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
   sta::TestCell* test_cell = lib_cell->testCell();
-  if (test_cell != nullptr && test_cell->scanIn() != nullptr) {
-    odb::dbMTerm* mterm = network_->staToDb(test_cell->scanIn());
+  if (test_cell != nullptr && getLibertyScanIn(test_cell) != nullptr) {
+    odb::dbMTerm* mterm = network_->staToDb(getLibertyScanIn(test_cell));
     return (iterm->getInst()->getITerm(mterm) == iterm);
   }
   return false;
@@ -404,8 +404,8 @@ odb::dbITerm* MBFF::GetScanIn(odb::dbInst* inst)
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
   sta::TestCell* test_cell = lib_cell->testCell();
-  if (test_cell != nullptr && test_cell->scanIn() != nullptr) {
-    odb::dbMTerm* mterm = network_->staToDb(test_cell->scanIn());
+  if (test_cell != nullptr && getLibertyScanIn(test_cell) != nullptr) {
+    odb::dbMTerm* mterm = network_->staToDb(getLibertyScanIn(test_cell));
     return inst->getITerm(mterm);
   }
   return nullptr;
@@ -416,8 +416,8 @@ bool MBFF::IsScanEnable(odb::dbITerm* iterm)
   sta::Cell* cell = network_->dbToSta(iterm->getInst()->getMaster());
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
   sta::TestCell* test_cell = lib_cell->testCell();
-  if (test_cell != nullptr && test_cell->scanEnable() != nullptr) {
-    odb::dbMTerm* mterm = network_->staToDb(test_cell->scanEnable());
+  if (test_cell != nullptr && getLibertyScanEnable(test_cell) != nullptr) {
+    odb::dbMTerm* mterm = network_->staToDb(getLibertyScanEnable(test_cell));
     return (iterm->getInst()->getITerm(mterm) == iterm);
   }
   return false;
@@ -428,8 +428,8 @@ odb::dbITerm* MBFF::GetScanEnable(odb::dbInst* inst)
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
   sta::TestCell* test_cell = lib_cell->testCell();
-  if (test_cell != nullptr && test_cell->scanEnable() != nullptr) {
-    odb::dbMTerm* mterm = network_->staToDb(test_cell->scanEnable());
+  if (test_cell != nullptr && getLibertyScanEnable(test_cell) != nullptr) {
+    odb::dbMTerm* mterm = network_->staToDb(getLibertyScanEnable(test_cell));
     return inst->getITerm(mterm);
   }
   return nullptr;
@@ -2121,8 +2121,6 @@ void MBFF::SetTrayNames()
 
 void MBFF::Run(const int mx_sz, const float alpha, const float beta)
 {
-  auto start = std::chrono::high_resolution_clock::now();
-
   std::srand(1);
   omp_set_num_threads(num_threads_);
 
@@ -2182,10 +2180,6 @@ void MBFF::Run(const int mx_sz, const float alpha, const float beta)
     odb::dbInst* inst = block_->findInst(test_tray_name.c_str());
     odb::dbInst::destroy(inst);
   }
-
-  auto end = std::chrono::high_resolution_clock::now();
-  auto duration
-      = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
   log_->report("Alpha = {}, Beta = {}, #paths = {}, max size = {}",
                alpha,

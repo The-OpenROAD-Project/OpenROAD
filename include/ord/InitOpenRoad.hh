@@ -37,8 +37,12 @@
 
 #include <tcl.h>
 
+#include <string>
+
 namespace ord {
 
 // Call this inside of Tcl_Main.
-void initOpenRoad(Tcl_Interp* interp);
+void initOpenRoad(Tcl_Interp* interp,
+                  const char* log_filename,
+                  const char* metrics_filename);
 }  // namespace ord

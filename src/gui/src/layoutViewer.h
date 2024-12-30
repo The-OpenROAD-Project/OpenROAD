@@ -148,9 +148,9 @@ class LayoutViewer : public QWidget
                const std::set<odb::dbNet*>& route_guides,
                const std::set<odb::dbNet*>& net_tracks,
                Gui* gui,
-               const std::function<bool(void)>& usingDBU,
-               const std::function<bool(void)>& showRulerAsEuclidian,
-               const std::function<bool(void)>& showDBView,
+               const std::function<bool()>& usingDBU,
+               const std::function<bool()>& showRulerAsEuclidian,
+               const std::function<bool()>& showDBView,
                QWidget* parent = nullptr);
 
   odb::dbBlock* getBlock() const { return block_; }
@@ -394,9 +394,9 @@ class LayoutViewer : public QWidget
   bool is_view_dragging_;
   Gui* gui_;
 
-  std::function<bool(void)> usingDBU_;
-  std::function<bool(void)> showRulerAsEuclidian_;
-  std::function<bool(void)> showDBView_;
+  std::function<bool()> usingDBU_;
+  std::function<bool()> showRulerAsEuclidian_;
+  std::function<bool()> showDBView_;
 
   const std::map<odb::dbModule*, ModuleSettings>& modules_;
 
@@ -468,8 +468,8 @@ class LayoutScroll : public QScrollArea
   Q_OBJECT
  public:
   LayoutScroll(LayoutViewer* viewer,
-               const std::function<bool(void)>& default_mouse_wheel_zoom,
-               const std::function<int(void)>& arrow_keys_scroll_step,
+               const std::function<bool()>& default_mouse_wheel_zoom,
+               const std::function<int()>& arrow_keys_scroll_step,
                QWidget* parent = nullptr);
   bool isScrollingWithCursor();
  signals:
@@ -488,8 +488,8 @@ class LayoutScroll : public QScrollArea
   void keyPressEvent(QKeyEvent* event) override;
 
  private:
-  std::function<bool(void)> default_mouse_wheel_zoom_;
-  std::function<int(void)> arrow_keys_scroll_step_;
+  std::function<bool()> default_mouse_wheel_zoom_;
+  std::function<int()> arrow_keys_scroll_step_;
   LayoutViewer* viewer_;
 
   bool scrolling_with_cursor_;

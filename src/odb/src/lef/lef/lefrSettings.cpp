@@ -29,7 +29,7 @@
 
 #include "lefrSettings.hpp"
 
-#include <string.h>
+#include <cstring>
 
 #include "lef_parser.hpp"
 
@@ -42,17 +42,17 @@ const char* lefrSettings::lefOxides[] = {
     "OXIDE22", "OXIDE23", "OXIDE24", "OXIDE25", "OXIDE26", "OXIDE27", "OXIDE28",
     "OXIDE29", "OXIDE30", "OXIDE31", "OXIDE32"};
 
-lefrSettings* lefSettings = NULL;
+lefrSettings* lefSettings = nullptr;
 
 lefrSettings::lefrSettings()
-    : LineNumberFunction(0),
-      ReadFunction(0),
+    : LineNumberFunction(nullptr),
+      ReadFunction(nullptr),
       AntennaInoutWarnings(999),
       AntennaInputWarnings(999),
       AntennaOutputWarnings(999),
       ArrayWarnings(999),
-      CaseSensitive(FALSE),
-      CaseSensitiveSet(FALSE),
+      CaseSensitive(false),
+      CaseSensitiveSet(false),
       CaseSensitiveWarnings(999),
       CommentChar('#'),
       CorrectionTableWarnings(999),
@@ -78,7 +78,7 @@ lefrSettings::lefrSettings()
       PinWarnings(999),
       ReadEncrypted(0),
       RegisterUnused(0),
-      RelaxMode(FALSE),
+      RelaxMode(false),
       ShiftCase(0),
       SiteWarnings(999),
       SpacingWarnings(999),
@@ -88,15 +88,15 @@ lefrSettings::lefrSettings()
       UseMinSpacingWarnings(999),
       ViaRuleWarnings(999),
       ViaWarnings(999),
-      UserData(NULL),
+      UserData(nullptr),
       dAllMsgs(0),
       VersionNum(0.0),
-      MallocFunction(0),
-      ReallocFunction(0),
-      FreeFunction(0),
-      ErrorLogFunction(0),
-      SetLogFunction(0),
-      WarningLogFunction(0)
+      MallocFunction(nullptr),
+      ReallocFunction(nullptr),
+      FreeFunction(nullptr),
+      ErrorLogFunction(nullptr),
+      SetLogFunction(nullptr),
+      WarningLogFunction(nullptr)
 {
   memset(MsgLimit, 0, MAX_LEF_MSGS * sizeof(int));
   init_symbol_table();

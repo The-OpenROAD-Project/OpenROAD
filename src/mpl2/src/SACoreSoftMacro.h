@@ -134,8 +134,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void attemptCentralization(float pre_cost);
   void moveFloorplan(const std::pair<float, float>& offset);
 
-  void useBestValidResult();
-
   std::vector<Rect> blockages_;
 
   Cluster* root_;

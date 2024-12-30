@@ -51,11 +51,13 @@ StringToDBU Descriptor::Property::convert_string
     = [](const std::string& value, bool*) { return 0; };
 
 // empty heat map class
+class PinDensityDataSource
+{
+};
+
+// empty heat map class
 class PlacementDensityDataSource
 {
- public:
-  PlacementDensityDataSource() {}
-  ~PlacementDensityDataSource() {}
 };
 
 ////
@@ -64,6 +66,7 @@ Gui::Gui()
     : continue_after_close_(false),
       logger_(nullptr),
       db_(nullptr),
+      pin_density_heat_map_(nullptr),
       placement_density_heat_map_(nullptr)
 {
 }
@@ -178,7 +181,8 @@ int startGui(int& argc,
              Tcl_Interp* interp,
              const std::string& script,
              bool interactive,
-             bool load_settings)
+             bool load_settings,
+             bool minimize)
 {
   printf(
       "[ERROR] This code was compiled with the GUI disabled.  Please recompile "

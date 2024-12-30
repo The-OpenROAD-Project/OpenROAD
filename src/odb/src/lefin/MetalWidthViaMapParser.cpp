@@ -26,9 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <functional>
-#include <iostream>
 #include <string>
+#include <vector>
 
 #include "boostParser.h"
 #include "lefLayerPropParser.h"
@@ -59,7 +58,7 @@ void MetalWidthViaMapParser::addEntry(
   }
   via_map->setViaName(at_c<5>(params));
   via_map->setViaCutClass(cut_class_);
-  incomplete_props_.push_back({via_map, layer_name});
+  incomplete_props_.emplace_back(via_map, layer_name);
 }
 
 void MetalWidthViaMapParser::setCutClass()

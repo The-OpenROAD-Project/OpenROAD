@@ -30,7 +30,7 @@
 #ifndef lefiCrossTalk_h
 #define lefiCrossTalk_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 

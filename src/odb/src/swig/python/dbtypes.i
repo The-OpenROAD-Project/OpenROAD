@@ -64,6 +64,10 @@
     $result = list;
 }
 
+%typemap(out) uint64_t {
+    $result = PyLong_FromUnsignedLongLong($1);
+}
+
 %typemap(out) std::optional<uint8_t> {
     if ($1.has_value()) {
         $result = PyInt_FromLong((long)$1.value());
@@ -134,6 +138,22 @@
         T* ptr2 = p.second;
         PyObject *obj1 = SWIG_NewInstanceObj(ptr1, $descriptor(T *), 0);
         PyObject *obj2 = SWIG_NewInstanceObj(ptr2, $descriptor(T *), 0);
+        PyList_SetItem(sub_list, 0, obj1);
+        PyList_SetItem(sub_list, 1, obj2);
+        PyList_SetItem(list, i, sub_list);
+    }
+    $result = list;
+}
+
+%typemap(out) std::vector< std::pair< T*, odb::Rect > > {
+    PyObject *list = PyList_New($1.size());
+    for (unsigned int i = 0; i < $1.size(); i++) {
+        PyObject *sub_list = PyList_New(2);
+        std::pair< T*, odb::Rect > p = $1.at(i);
+        T* ptr1 = p.first;
+        odb::Rect* ptr2 = new odb::Rect(p.second);
+        PyObject *obj1 = SWIG_NewInstanceObj(ptr1, $descriptor(T *), 0);
+        PyObject *obj2 = SWIG_NewInstanceObj(ptr2, $descriptor(odb::Rect *), 0);
         PyList_SetItem(sub_list, 0, obj1);
         PyList_SetItem(sub_list, 1, obj2);
         PyList_SetItem(list, i, sub_list);

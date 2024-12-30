@@ -33,6 +33,7 @@
 #include "OneBitScanCell.hh"
 
 #include "ClockDomain.hh"
+#include "db_sta/dbSta.hh"
 
 namespace dft {
 
@@ -56,14 +57,14 @@ uint64_t OneBitScanCell::getBits() const
 
 void OneBitScanCell::connectScanEnable(const ScanDriver& driver) const
 {
-  Connect(ScanLoad(findITerm(test_cell_->scanEnable())),
+  Connect(ScanLoad(findITerm(getLibertyScanEnable(test_cell_))),
           driver,
           /*preserve=*/false);
 }
 
 void OneBitScanCell::connectScanIn(const ScanDriver& driver) const
 {
-  Connect(ScanLoad(findITerm(test_cell_->scanIn())),
+  Connect(ScanLoad(findITerm(getLibertyScanIn(test_cell_))),
           driver,
           /*preserve=*/false);
 }
@@ -73,13 +74,13 @@ void OneBitScanCell::connectScanOut(const ScanLoad& load) const
   // The scan out usually will be connected to functional data paths already, we
   // need to preserve the connections
   Connect(load,
-          ScanDriver(findITerm(test_cell_->scanOut())),
+          ScanDriver(findITerm(getLibertyScanOut(test_cell_))),
           /*preserve=*/true);
 }
 
 ScanDriver OneBitScanCell::getScanOut() const
 {
-  return ScanDriver(findITerm(test_cell_->scanOut()));
+  return ScanDriver(findITerm(getLibertyScanOut(test_cell_)));
 }
 
 odb::dbITerm* OneBitScanCell::findITerm(sta::LibertyPort* liberty_port) const

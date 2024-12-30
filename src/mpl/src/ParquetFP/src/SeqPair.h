@@ -64,19 +64,19 @@ class SeqPair
   inline void putX(const std::vector<unsigned>& X);
   inline void putY(const std::vector<unsigned>& Y);
 
-  inline void printX(void) const;
-  inline void printY(void) const;
+  inline void printX() const;
+  inline void printY() const;
 
-  inline unsigned getSize(void) const;
+  inline unsigned getSize() const;
 };
 
 // -----IMPLEMENTATIONS-----
-const std::vector<unsigned>& SeqPair::getX(void) const
+const std::vector<unsigned>& SeqPair::getX() const
 {
   return _XX;
 }
 
-const std::vector<unsigned>& SeqPair::getY(void) const
+const std::vector<unsigned>& SeqPair::getY() const
 {
   return _YY;
 }
@@ -91,12 +91,12 @@ void SeqPair::putY(const std::vector<unsigned>& Y)
   _YY = Y;
 }
 
-unsigned SeqPair::getSize(void) const
+unsigned SeqPair::getSize() const
 {
   return _XX.size();
 }
 
-void SeqPair::printX(void) const
+void SeqPair::printX() const
 {
   std::cout << "X Seq Pair" << std::endl;
   for (unsigned i = 0; i < _XX.size(); ++i) {
@@ -105,7 +105,7 @@ void SeqPair::printX(void) const
   std::cout << std::endl;
 }
 
-void SeqPair::printY(void) const
+void SeqPair::printY() const
 {
   std::cout << "Y Seq Pair" << std::endl;
   for (unsigned i = 0; i < _XX.size(); ++i) {

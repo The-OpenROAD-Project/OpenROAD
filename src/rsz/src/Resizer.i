@@ -348,13 +348,15 @@ estimate_parasitics_cmd(ParasiticsSrc src, const char* path)
     if (!file_path.empty()) {
       for (Corner* corner : *resizer->getDbNetwork()->corners()) {
         file_path = path;
-        std::string suffix("_");
-        suffix.append(corner->name());
-        if (file_path.find(".spef") != std::string::npos
-            || file_path.find(".SPEF") != std::string::npos) {
-          file_path.insert(file_path.size() - 5, suffix);
-        } else {
-          file_path.append(suffix);
+        if (resizer->getDbNetwork()->corners()->count() > 1) {
+          std::string suffix("_");
+          suffix.append(corner->name());
+          if (file_path.find(".spef") != std::string::npos
+              || file_path.find(".SPEF") != std::string::npos) {
+            file_path.insert(file_path.size() - 5, suffix);
+          } else {
+            file_path.append(suffix);
+          }
         }
 
         std::ofstream* file = new std::ofstream(file_path);
@@ -455,6 +457,22 @@ set_dont_touch_instance(Instance *inst,
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->setDontTouch(inst, dont_touch);
+}
+
+void
+report_dont_use()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->reportDontUse();
+}
+
+void
+report_dont_touch()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->reportDontTouch();
 }
 
 void
@@ -823,6 +841,14 @@ set_parasitics_src(ParasiticsSrc src)
 {
   Resizer *resizer = getResizer();
   resizer->setParasiticsSrc(src);
+}
+
+void
+eliminate_dead_logic_cmd(bool clean_nets)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->eliminateDeadLogic(clean_nets);
 }
 
 } // namespace

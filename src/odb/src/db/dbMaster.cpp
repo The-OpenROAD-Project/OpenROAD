@@ -262,7 +262,7 @@ _dbMaster::_dbMaster(_dbDatabase* db)
   _width = 0;
   _mterm_cnt = 0;
   _id = 0;
-  _name = 0;
+  _name = nullptr;
 
   _mterm_tbl = new dbTable<_dbMTerm>(
       db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbMTermObj, 4, 2);
@@ -906,7 +906,6 @@ bool dbMaster::isFiller()
     case dbMasterType::PAD_INOUT:
     case dbMasterType::PAD_POWER:
     case dbMasterType::PAD_SPACER:
-    case dbMasterType::NONE:
       return false;
   }
   // gcc warning
@@ -958,7 +957,6 @@ bool dbMaster::isCoreAutoPlaceable()
     case dbMasterType::PAD_INOUT:
     case dbMasterType::PAD_POWER:
     case dbMasterType::PAD_SPACER:
-    case dbMasterType::NONE:
       return false;
   }
   // gcc warning

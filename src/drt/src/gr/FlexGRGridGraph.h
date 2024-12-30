@@ -48,8 +48,10 @@ class FlexGRGridGraph
 {
  public:
   // constructors
-  FlexGRGridGraph(frDesign* designIn, FlexGRWorker* workerIn)
-      : design_(designIn), grWorker_(workerIn)
+  FlexGRGridGraph(frDesign* designIn,
+                  FlexGRWorker* workerIn,
+                  RouterConfiguration* router_cfg)
+      : design_(designIn), grWorker_(workerIn), router_cfg_(router_cfg)
   {
   }
   // getters
@@ -612,6 +614,7 @@ class FlexGRGridGraph
   FlexGRWorker* grWorker_{nullptr};
   frGCellPattern* xgp_{nullptr};
   frGCellPattern* ygp_{nullptr};
+  RouterConfiguration* router_cfg_;
 
   // [0] hasEEdge; [1] hasNEdge; [2] hasUEdge
   // [3] blockE;   [4] blockN;   [5] blockU

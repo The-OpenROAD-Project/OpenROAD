@@ -15,6 +15,11 @@ place_pad -master PADCELL_SIG_V -row IO_WEST -location 600 "IO_WEST_SIDE"
 place_pad -master PADCELL_SIG_H -row IO_NORTH -location 500 "IO_NORTH_SIDE"
 place_pad -master PADCELL_SIG_H -row IO_SOUTH -location 600 "IO_SOUTH_SIDE"
 
+place_pad -mirror -master PADCELL_SIG_V -row IO_EAST -location 800 "IO_EAST_SIDE_M"
+place_pad -mirror -master PADCELL_SIG_V -row IO_WEST -location 800 "IO_WEST_SIDE_M"
+place_pad -mirror -master PADCELL_SIG_H -row IO_NORTH -location 800 "IO_NORTH_SIDE_M"
+place_pad -mirror -master PADCELL_SIG_H -row IO_SOUTH -location 800 "IO_SOUTH_SIDE_M"
+
 set def_file [make_result_file "place_pad.def"]
 write_def $def_file
 diff_files $def_file "place_pad.defok"

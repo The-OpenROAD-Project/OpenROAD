@@ -72,8 +72,8 @@ sta::TestCell* GetTestCell(odb::dbMaster* master,
     return nullptr;
   }
   sta::TestCell* test_cell = liberty_cell->testCell();
-  if (test_cell && test_cell->scanIn() != nullptr
-      && test_cell->scanEnable() != nullptr) {
+  if (test_cell && getLibertyScanIn(test_cell) != nullptr
+      && getLibertyScanEnable(test_cell) != nullptr) {
     return test_cell;
   }
   return nullptr;

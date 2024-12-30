@@ -40,7 +40,7 @@ class defrData;
 class defiAlias_itr
 {
  public:
-  defiAlias_itr(defrData* defData = 0);
+  defiAlias_itr(defrData* defData = nullptr);
   void Init();
 
   void Destroy();

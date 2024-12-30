@@ -1,0 +1,40 @@
+FILE TEE: FILE1
+FILE TEE: FILE2
+FILE TEE: FILE3
+[INFO FLW-0003] LOGGER TEE: FILE1
+[INFO FLW-0003] LOGGER TEE: FILE2
+[INFO FLW-0003] LOGGER TEE: FILE3
+No differences found.
+No differences found.
+No differences found.
+No differences found.
+quiet start
+quiet end
+No differences found.
+No differences found.
+No differences found.
+No differences found.
+string redirect start
+PUTS REDIRECT
+[INFO FLW-0004] LOGGER REDIRECT
+[INFO FLW-0005] LOGGER REDIRECT
+[INFO FLW-0006] LOGGER REDIRECT
+string redirect end
+PUTS: PUTS REDIRECT
+
+LOGGER: [INFO FLW-0004] LOGGER REDIRECT
+
+LOGGER: [INFO FLW-0005] LOGGER REDIRECT
+[INFO FLW-0006] LOGGER REDIRECT
+
+string redirect start - quiet
+string redirect end - quiet
+PUTS: PUTS REDIRECT
+
+LOGGER: [INFO FLW-0007] LOGGER REDIRECT
+
+LOGGER: [INFO FLW-0005] LOGGER REDIRECT
+[INFO FLW-0006] LOGGER REDIRECT
+[INFO FLW-0008] LOGGER REDIRECT
+[INFO FLW-0009] LOGGER REDIRECT
+
