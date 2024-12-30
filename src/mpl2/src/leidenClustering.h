@@ -35,14 +35,13 @@
 #include <map>
 #include <queue>
 #include <set>
-#include <unordered_map>
 #include <vector>
-
+#include <igraph/igraph.h>
+#include <algorithm>
+#include "clusterEngine.h"
 #include "db_sta/dbNetwork.hh"
-#include "leidenInterface.h"
 #include "odb/db.h"
 #include "sta/Liberty.hh"
-
 namespace utl {
 class Logger;
 }
@@ -53,80 +52,116 @@ class dbNetwork;
 
 namespace mpl2 {
 
-class GraphForLeidenAlgorithm;
-class HyperGraphForLeidenAlgorithm;
-
 class leidenClustering
 {
  public:
-  ~leidenClustering();
-  leidenClustering(odb::dbDatabase* db,
-                   odb::dbBlock* block,
-                   utl::Logger* logger);
-
-  /**
-   * @brief Executes the Leiden clustering algorithm.
-   *
-   * This function initiates and runs the Leiden clustering algorithm, which is
-   * used for detecting communities in large networks. The algorithm optimizes
-   * modularity to find the best partitioning of the
-   * network.
-   */
+  leidenClustering(sta::dbNetwork* network, odb::dbBlock* block, utl::Logger* logger);
+  void init(bool);
   void run();
-
+  void write_graph_csv(const std::string& edge_file, const std::string& node_file);
+  void write_placement_csv(const std::string& file_name);
+  void write_partition_csv(const std::string& file_name);
+  size_t get_vertex_count() { return igraph_vcount(graph_); }
+  std::vector<int> &get_partition() { return partition_; }
+  void set_iteration(int iteration) { iteration_ = iteration; }
+  void set_resolution(double resolution) { resolution_ = resolution; }
+  void set_large_net_threshold(int threshold) { large_net_threshold_ = threshold; }
+  size_t get_cluster_count() { return max_cluster_id_ + 1; }
  private:
-  /**
-   * @brief Pointer to the database.
-   */
-  odb::dbDatabase* db_;
-
-  /**
-   * @brief Pointer to the database block.
-   */
-  odb::dbBlock* block_;
-
-  /**
-   * @brief Logger for logging messages.
-   */
-  utl::Logger* logger_;
-
-  /**
-   * @brief Graph representation for the Leiden algorithm.
-   */
-  GraphForLeidenAlgorithm* graph_;
-
-  /**
-   * @brief Hypergraph representation for the Leiden algorithm.
-   */
-  HyperGraphForLeidenAlgorithm* hypergraph_;
-
-  /**
-   * @brief Initializes the clustering algorithm.
-   */
-  void init();
-
-  /**
-   * @brief Creates the hypergraph representation.
-   */
-  void createHypergraph();
-
-  /**
-   * @brief Creates the graph representation.
-   */
-  void createGraph();
-
+  sta::dbNetwork* network_{nullptr};
+  odb::dbBlock* block_{nullptr};
+  utl::Logger* logger_{nullptr};
+  igraph_t* graph_;
+  std::vector<double> edge_weights_;
+  std::map<int, std::string> vertex_names_{};
+  std::vector<int> partition_{};
+  int large_net_threshold_{50};
+  int iteration_{10};
+  double resolution_{0.05};
+  size_t max_cluster_id_{0};
+  void create_vertex_id();
+  bool get_vertex_id();
   /**
    * @brief Runs the Leiden clustering algorithm.
    */
   void runLeidenClustering();
 
-  /**
-   * @brief Checks if a master should be ignored.
-   *
-   * @param master The master to check.
-   * @return True if the master should be ignored, false otherwise.
-   */
   bool isIgnoredMaster(odb::dbMaster* master);
+
+  /**
+   * @brief Extracts net information including the source, sinks, and fan-out.
+   *
+   * This lambda function processes a given net to determine its driver (source),
+   * load vertices (sinks), and the fan-out (number of sinks). It skips supply nets,
+   * nets with ignored masters, and nets with high fan-out or invalid drivers/loads.
+   *
+   * @param net Pointer to the net to be processed.
+   * @param source Reference to an integer where the driver vertex ID will be stored.
+   * @param sinks Reference to a set of integers where the load vertex IDs will be stored.
+   * @param fan_out Reference to a size_t where the fan-out (number of sinks) will be stored.
+   * @return True if the net information was successfully extracted, false otherwise.
+   */
+  bool get_net_info(odb::dbNet* net, int &source, std::set<int> &sinks, size_t &fan_out) {
+    if (net->getSigType().isSupply()) {
+      return false;
+    }
+    int driver_id = -1;
+    std::set<int> loads_id;
+    bool ignore = false;
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      odb::dbInst* inst = iterm->getInst();
+      odb::dbMaster* master = inst->getMaster();
+      if (isIgnoredMaster(master)) {
+        ignore = true;
+        break;
+      }
+      int vertex_id = -1;
+      if (master->isBlock()) {
+        vertex_id = odb::dbIntProperty::find(iterm, "vertex_id")->getValue();
+      } else {
+        odb::dbIntProperty* int_prop
+            = odb::dbIntProperty::find(inst, "vertex_id");
+
+        // Std cells without liberty data are not marked as vertices
+        if (int_prop) {
+          vertex_id = int_prop->getValue();
+        } else {
+          ignore = true;
+          break;
+        }
+      }
+
+      if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+        driver_id = vertex_id;
+      } else {
+        loads_id.insert(vertex_id);
+      }
+    }
+
+    if (ignore) {
+      return false;
+    }
+
+    for (odb::dbBTerm* bterm : net->getBTerms()) {
+      const int vertex_id
+          = odb::dbIntProperty::find(bterm, "vertex_id")->getValue();
+      if (bterm->getIoType() == odb::dbIoType::INPUT) {
+        driver_id = vertex_id;
+      } else {
+        loads_id.insert(vertex_id);
+      }
+    }
+
+    // Skip high fanout nets or nets that do not have valid driver or loads
+    if (driver_id < 0 || loads_id.empty()
+        || loads_id.size() > large_net_threshold_) {
+      return false;
+    }
+    source = std::move(driver_id);
+    sinks = std::move(loads_id);
+    fan_out = sinks.size();
+    return true;
+  };
 };
 
 }  // namespace mpl2

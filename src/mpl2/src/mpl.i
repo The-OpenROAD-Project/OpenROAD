@@ -87,6 +87,7 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const float min_ar,
                           const int snap_layer,
                           const bool bus_planning_on,
+                          const int leiden_iterations,
                           const char* report_directory) {
 
   auto macro_placer = getMacroPlacer2();
@@ -122,6 +123,7 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              min_ar,
                              snap_layer,
                              bus_planning_on,
+                             leiden_iterations,
                              report_directory);
 }
 
@@ -165,17 +167,34 @@ set_macro_placement_file(std::string file_name)
  * @param number_input An integer input that is printed for logging purposes.
  * @return Returns true upon successful execution of the clustering algorithm.
  */
-bool cluster_std_cell_leiden_algorithm_cmd()
-{
-  auto logger_ = ord::getLogger();
-  logger_->report("Running Leiden Clustering on standard cells...\n");
-  auto db = ord::OpenRoad::openRoad()->getDb();
-  logger_->report("\topenroad->getDb(): {}\n", fmt::ptr(db));
-  auto leiden_clustering = std::make_unique<leidenClustering>(db, db->getChip()->getBlock(), logger_);
-  leiden_clustering->run();
-  return true;
-}
+// bool cluster_std_cell_leiden_algorithm_cmd(const std::string file_name)
+// {
+//   auto logger_ = ord::getLogger();
+//   logger_->report("Running Leiden Clustering on standard cells...\n");
+//   auto db = ord::OpenRoad::openRoad()->getDb();
+//   logger_->report("\topenroad->getDb(): {}\n", fmt::ptr(db));
+//   auto network = ord::OpenRoad::openRoad()->getDbNetwork();
+//   auto block = db->getChip()->getBlock();
+//   auto leiden_clustering = std::make_unique<leidenClustering>(network, block, logger_);
+//   bool create_vertex_id = true;
+//   leiden_clustering->init(create_vertex_id);
+//   leiden_clustering->run();
+//   leiden_clustering->write_partition_csv(file_name);
+//   return true;
+// }
 
+// void write_graph_csv_cmd(const std::string &edge_file, const std::string &node_file, const std::string &placement_file)
+// {
+//   auto logger_ = ord::getLogger();
+//   logger_->report("Running Leiden Clustering on standard cells...\n");
+//   auto db = ord::OpenRoad::openRoad()->getDb();
+//   logger_->report("\topenroad->getDb(): {}\n", fmt::ptr(db));
+//   auto network = ord::OpenRoad::openRoad()->getDbNetwork();
+//   auto block = db->getChip()->getBlock();
+//   auto leiden_clustering = std::make_unique<leidenClustering>(network, block, logger_);
+//   leiden_clustering->write_graph_csv(edge_file, node_file);
+//   leiden_clustering->write_placement_csv(placement_file);
+// }
 } // namespace
 
 %} // inline

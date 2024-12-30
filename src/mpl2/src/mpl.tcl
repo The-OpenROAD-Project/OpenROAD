@@ -61,6 +61,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -min_ar  min_ar \
                                           -snap_layer snap_layer \
                                           -bus_planning \
+                                          -leiden_iteration leiden_iteration \
                                           -report_directory report_directory \
                                           -write_macro_placement file_name \
                                         }
@@ -72,7 +73,7 @@ proc rtl_macro_placer { args } {
          -fence_lx   -fence_ly  -fence_ux   -fence_uy  \
          -area_weight  -outline_weight -wirelength_weight -guidance_weight -fence_weight \
          -boundary_weight -notch_weight -macro_blockage_weight  \
-         -pin_access_th -target_util \
+         -pin_access_th -target_util -leiden_iteration \
          -target_dead_space -min_ar -snap_layer \
          -report_directory \
          -write_macro_placement } \
@@ -118,6 +119,7 @@ proc rtl_macro_placer { args } {
   set target_dead_space 0.05
   set min_ar 0.33
   set snap_layer -1
+  set leiden_iteration 10
   set report_directory "hier_rtlmp"
 
   if { [info exists keys(-max_num_macro)] } {
@@ -215,6 +217,9 @@ proc rtl_macro_placer { args } {
   if { [info exists keys(-snap_layer)] } {
     set snap_layer $keys(-snap_layer)
   }
+  if { [info exists keys(-leiden_iteration)] } {
+    set leiden_iteration $keys(-leiden_iteration)
+  }
   if { [info exists keys(-report_directory)] } {
     set report_directory $keys(-report_directory)
   }
@@ -248,6 +253,7 @@ proc rtl_macro_placer { args } {
       $min_ar \
       $snap_layer \
       [info exists flags(-bus_planning)] \
+      $leiden_iteration \
       $report_directory]
   } {
     return false
@@ -331,11 +337,45 @@ proc mpl_debug { args } {
 }
 }
 
-sta::define_cmd_args "cluster_std_cell_leiden_algorithm" {}
+# sta::define_cmd_args "cluster_std_cell_leiden_algorithm" {-file file}
 
-proc cluster_std_cell_leiden_algorithm { args } {
-  sta::parse_key_args "cluster_std_cell_leiden_algorithm" args \
-    keys {} flags {}
-  mpl2::cluster_std_cell_leiden_algorithm_cmd $test_input
-}
+# proc cluster_std_cell_leiden_algorithm { args } {
+#   sta::parse_key_args "cluster_std_cell_leiden_algorithm" args \
+#     keys {-file} flags {}
 
+#   if { ![info exists keys(-file)] } {
+#     puts "file is needed."
+#     set file "leiden_partition.csv"
+#   } else {
+#     set file $keys(-file)
+#   }
+  
+#   mpl2::cluster_std_cell_leiden_algorithm_cmd $file
+# }
+
+# sta::define_cmd_args "write_graph_csv" {-edge_file edge_file \
+#                     -node_file node_file -placement_file placement_file}
+
+# proc write_graph_csv { args } {
+#   sta::parse_key_args "write_graph_csv" args \
+#   keys {-edge_file -node_file -placement_file} flags {}
+
+#   if { ![info exists keys(-edge_file)] } {
+#     puts "Edge file is needed."
+#     exit
+#   }
+#   if { ![info exists keys(-node_file)] } {
+#     puts "Node file is needed."
+#     exit
+#   }
+#   if { ![info exists keys(-placement_file)] } {
+#     puts "Placement file is needed."
+#     exit
+#   }
+
+#   set edge_file $keys(-edge_file)
+#   set node_file $keys(-node_file)
+#   set placement_file $keys(-placement_file)
+
+#   mpl2::write_graph_csv_cmd $edge_file $node_file $placement_file
+# }

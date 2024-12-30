@@ -288,6 +288,11 @@ mpl::MacroPlacer* Design::getMacroPlacer()
   return getOpenRoad()->getMacroPlacer();
 }
 
+mpl3::MacroPlacer3* Design::getMacroPlacer3()
+{
+  return getOpenRoad()->getMacroPlacer3();
+}
+
 ppl::IOPlacer* Design::getIOPlacer()
 {
   return getOpenRoad()->getIOPlacer();

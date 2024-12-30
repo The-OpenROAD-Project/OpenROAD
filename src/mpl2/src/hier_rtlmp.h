@@ -146,7 +146,7 @@ class HierRTLMP
   void setDebugSkipSteps(bool skip_steps);
   void setDebugOnlyFinalResult(bool only_final_result);
   void setBusPlanningOn(bool bus_planning_on);
-
+  void setLeidenIterations(int leiden_iterations){ leiden_iterations_ = leiden_iterations; }
   void setNumThreads(int threads) { num_threads_ = threads; }
   void setMacroPlacementFile(const std::string& file_name);
   void writeMacroPlacement(const std::string& file_name);
@@ -330,7 +330,7 @@ class HierRTLMP
   float exchange_swap_prob_ = 0.2;
   float flip_prob_ = 0.4;
   float resize_prob_ = 0.4;
-
+  int leiden_iterations_ = 10;
   // statistics of the design
   Metrics* metrics_ = nullptr;
 

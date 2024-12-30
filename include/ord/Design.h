@@ -87,6 +87,10 @@ namespace mpl2 {
 class MacroPlacer2;
 }
 
+namespace mpl3 {
+class MacroPlacer3;
+}
+
 namespace ppl {
 class IOPlacer;
 }
@@ -204,6 +208,7 @@ class Design
   ifp::InitFloorplan getFloorplan();
   mpl::MacroPlacer* getMacroPlacer();
   mpl2::MacroPlacer2* getMacroPlacer2();
+  mpl3::MacroPlacer3* getMacroPlacer3();
   odb::dbDatabase* getDb();
   pad::ICeWall* getICeWall();
   par::PartitionMgr* getPartitionMgr();

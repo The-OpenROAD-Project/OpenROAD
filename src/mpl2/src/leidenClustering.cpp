@@ -30,14 +30,19 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
-#include "leidenClustering.h"
 
-#include "ModularityVertexPartition.h"
-#include "Optimizer.h"
+#include <chrono>
+#include <fstream>
+#include <iostream>
+#include "leidenClustering.h"
+#include <thread>
+#include <libleidenalg/GraphHelper.h>
+#include <libleidenalg/Optimiser.h>
+#include <libleidenalg/ModularityVertexPartition.h>
 #include "db_sta/dbNetwork.hh"
-#include "leidenInterface.h"
 #include "par/PartitionMgr.h"
 #include "sta/Liberty.hh"
+#include "ord/OpenRoad.hh"
 
 namespace odb {
 class dbBlock;
@@ -55,36 +60,159 @@ class Logger;
 namespace mpl2 {
 /**
  * @brief Constructor for the Leiden Clustering class.
- *
- * @param db Pointer to the database.
- * @param block Pointer to the block.
- * @param logger Pointer to the logger.
  */
-leidenClustering::leidenClustering(odb::dbDatabase* db,
+leidenClustering::leidenClustering(sta::dbNetwork* network,
                                    odb::dbBlock* block,
                                    utl::Logger* logger)
-    : db_(db),
-      block_(block),
-      logger_(logger),
-      graph_(nullptr),
-      hypergraph_(nullptr)
+    : network_(network), block_(block), logger_(logger)
 {
 }
-
-leidenClustering::~leidenClustering()
+bool leidenClustering::get_vertex_id()
 {
-  delete graph_;
-  delete hypergraph_;
+  // Create vertex_id for bterms
+  // extend vertex_names_ to length id if exceeds the current length
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    int id = -1;
+    odb::dbIntProperty* property = odb::dbIntProperty::find(bterm, "vertex_id");
+    if(property) {
+      id = property->getValue();
+    }
+    else{
+      return false;
+    }
+    vertex_names_[id] = bterm->getConstName();
+  }
+  // Create vertex_id for instances that are not pads, covers or end caps
+  for (odb::dbInst* inst : block_->getInsts()) {
+    odb::dbMaster* master = inst->getMaster();
+    if (isIgnoredMaster(master) || master->isBlock()) {
+      continue;
+    }
+    const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
+    if (!liberty_cell) {
+      continue;
+    }
+    int id = -1;
+    odb::dbIntProperty* property = odb::dbIntProperty::find(inst, "vertex_id");
+    if(property) {
+      id = property->getValue();
+    }
+    else{
+      return false;
+    }
+    vertex_names_[id] = inst->getConstName();
+  }
+  // Create vertex_id for macro pins that are not signal pins
+  for (odb::dbInst* inst : block_->getInsts()) {
+    odb::dbMaster* master = inst->getMaster();
+    if (!master->isBlock()) {
+      continue;
+    }
+    for (odb::dbITerm* pin : inst->getITerms()) {
+      if (pin->getSigType() != odb::dbSigType::SIGNAL) {
+        continue;
+      }
+      int id = -1;
+      odb::dbIntProperty* property = odb::dbIntProperty::find(pin, "vertex_id");
+      if(property) {
+        id = property->getValue();
+      }
+      else{
+        return false;
+      }
+      vertex_names_[id] = pin->getName();
+    }
+  }
+  logger_->report("Get vertex_id for vertices, Number of vertices: {}", vertex_names_.size());
+  return true;
 }
-
+void leidenClustering::create_vertex_id() 
+{
+  int max_id = -1;
+  // Create vertex_id for bterms
+  // extend vertex_names_ to length id if exceeds the current length
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    odb::dbIntProperty* property = odb::dbIntProperty::find(bterm, "vertex_id");
+    if(property) {
+      property->setValue(++max_id);
+    }
+    else{
+      odb::dbIntProperty::create(bterm, "vertex_id", ++max_id);
+    }
+    vertex_names_[max_id] = bterm->getConstName();
+  }
+  // Create vertex_id for instances that are not pads, covers or end caps
+  for (odb::dbInst* inst : block_->getInsts()) {
+    odb::dbMaster* master = inst->getMaster();
+    if (isIgnoredMaster(master) || master->isBlock()) {
+      continue;
+    }
+    odb::dbIntProperty* property = odb::dbIntProperty::find(inst, "vertex_id");
+    if(property) {
+      property->setValue(++max_id);
+    }
+    else{
+      odb::dbIntProperty::create(inst, "vertex_id", ++max_id);
+    }
+    vertex_names_[max_id] = inst->getConstName();
+  }
+  // Create vertex_id for macro pins that are not signal pins
+  for (odb::dbInst* inst : block_->getInsts()) {
+    odb::dbMaster* master = inst->getMaster();
+    if (!master->isBlock()) {
+      continue;
+    }
+    for (odb::dbITerm* pin : inst->getITerms()) {
+      if (pin->getSigType() != odb::dbSigType::SIGNAL) {
+        continue;
+      }
+      odb::dbIntProperty* property = odb::dbIntProperty::find(pin, "vertex_id");
+      if(property) {
+        property->setValue(++max_id);
+      }
+      else{
+        odb::dbIntProperty::create(pin, "vertex_id", ++max_id);
+      }
+      vertex_names_[max_id] = pin->getName();
+    }
+  }
+}
 /**
- * @brief Initializes the Leiden Clustering algorithm.
+ * @brief Initializes the igraph for Leiden Clustering algorithm.
  *
  * This function is a placeholder for any initialization steps required
  * before running the clustering algorithm.
  */
-void leidenClustering::init()
+void leidenClustering::init(bool create_new_vertex_id)
 {
+  graph_ = new igraph_t();
+  logger_->report("\tRunning Leiden Clustering, initializing...");
+  if (create_new_vertex_id) {
+    create_vertex_id();
+  }
+  else {
+    if(!get_vertex_id()){
+      logger_->report("\t[Warning]: Get vertex id wrong.");
+    }
+  }
+  // Create the igraph object
+  int v_count = vertex_names_.size();
+  igraph_vector_int_t edges;
+  igraph_vector_int_init(&edges, 0);
+  for (odb::dbNet* net : block_->getNets()) {
+    int source = -1;
+    std::set<int> sinks;
+    size_t fan_out = 0;
+    if (get_net_info(net, source, sinks, fan_out)) {
+      for (int sink : sinks) {
+        igraph_vector_int_push_back(&edges, source);
+        igraph_vector_int_push_back(&edges, sink);
+        edge_weights_.push_back(fan_out);
+      }
+    }
+  }
+  igraph_create(graph_, &edges, v_count, true);
+  igraph_vector_int_destroy(&edges);
 }
 
 /**
@@ -95,60 +223,9 @@ void leidenClustering::init()
  */
 void leidenClustering::run()
 {
-  logger_->report("\tRunning Leiden Clustering, initializing...");
-  init();
-  createHypergraph();
-  createGraph();
+  logger_->report("Running Leiden Clustering...");
   runLeidenClustering();
-}
-
-/**
- * @brief Creates a graph from the hypergraph.
- *
- * This function constructs a graph representation from the hypergraph. The
- * hypergraph is traversed to create a vertex for each hyperedge and an edge
- * between each pair of vertices that share a hyperedge. The function performs
- * the following steps:
- */
-void leidenClustering::createGraph()
-{
-  /**
-   * @brief Creates a graph from the hypergraph.
-   * 1. Initializes an empty graph using GraphForLeidenAlgorithm.
-   * 2. Iterates over each hyperedge in the hypergraph.
-   * 3. For each hyperedge, iterates over each pair of vertices.
-   * 4. Adds an edge between each pair of vertices with the calculated weight.
-   */
-
-  // Initialize the graph with the number of vertices
-  graph_ = new GraphForLeidenAlgorithm(hypergraph_->num_vertices_);
-
-  // Vertex weights are directly copied from the hypergraph
-  graph_->vertex_weights_ = hypergraph_->vertex_weights_;
-
-  logger_->report(
-      "Creating Graph for Leiden algorithm. hypergraph_->numvertices_: {}",
-      hypergraph_->num_vertices_);
-
-  // Iterate over all hyperedges
-  for (size_t i = 0; i < hypergraph_->hyperedges_.size(); ++i) {
-    const std::vector<int>& hyperedge = hypergraph_->hyperedges_[i];
-    float hyperedge_weight = hypergraph_->hyperedge_weights_[i];
-
-    // Compute the weight of each pair of vertices in the hyperedge
-    float edge_weight = hyperedge_weight * (hyperedge.size() - 1);
-
-    // For each pair of vertices (j, k) in the hyperedge, add an edge
-    for (size_t j = 0; j < hyperedge.size(); ++j) {
-      for (size_t k = j + 1; k < hyperedge.size(); ++k) {
-        // Add an edge between vertex j and vertex k with the calculated weight
-        graph_->addEdge(hyperedge[j], hyperedge[k], edge_weight);
-      }
-    }
-  }
-  logger_->report("Creating Graph Finished.");
-  graph_->calculateTotalweight();
-  logger_->report("Calculate total edge weight finished.");
+  igraph_destroy(graph_);
 }
 
 bool leidenClustering::isIgnoredMaster(odb::dbMaster* master)
@@ -157,109 +234,203 @@ bool leidenClustering::isIgnoredMaster(odb::dbMaster* master)
   return master->isPad() || master->isCover() || master->isEndCap();
 }
 
-/**
- * @brief Creates a hypergraph from the block.
- *
- * This function iterates over the nets in the block and constructs a hypergraph
- * representation. Each net is examined to determine its driver and load
- * instances. Instances that are ignored based on their master type are skipped.
- * For each net, a hyperedge is created connecting the driver and load vertices,
- * and added to the hypergraph if it meets the criteria.
- *
- * The function performs the following steps:
- * 1. Initializes an empty list of hyperedges and a vertex counter.
- * 2. Iterates over each net in the block.
- * 3. Skips nets that are of supply type.
- * 4. For each net, iterates over its terminals to determine the driver and load
- * vertices.
- * 5. Skips instances that should be ignored based on their master type.
- * 6. Assigns a unique vertex ID to each instance if it doesn't already have
- * one.
- * 7. Identifies the driver and load vertices based on the terminal I/O type.
- * 8. Creates a hyperedge connecting the driver and load vertices if valid.
- * 9. Adds the hyperedge to the list of hyperedges.
- */
-void leidenClustering::createHypergraph()
-{
-  std::vector<std::vector<int>> hyperedges;
-  size_t num_vertices = 0;
-  logger_->report(
-      "Creating Hypergraph for leiden algorithm. block_->getNets().size(): {}",
-      block_->getNets().size());
-
-  for (odb::dbNet* net : block_->getNets()) {
-    if (net->getSigType().isSupply()) {
-      continue;
-    }
-
-    int driver_id = -1;
-    std::set<int> loads_id;
-    bool ignore = false;
-    // logger_->report("Processing net: {}", net->getName());
-
-    for (odb::dbITerm* iterm : net->getITerms()) {
-      odb::dbInst* inst = iterm->getInst();
-      odb::dbMaster* master = inst->getMaster();
-
-      if (isIgnoredMaster(master)) {
-        ignore = true;
-        break;
-      }
-
-      int vertex_id = -1;
-      odb::dbIntProperty* int_prop
-          = odb::dbIntProperty::find(inst, "vertex_id");
-      if (int_prop) {
-        vertex_id = int_prop->getValue();
-      } else {
-        vertex_id = num_vertices++;
-        odb::dbIntProperty::create(inst, "vertex_id", vertex_id);
-      }
-
-      if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-        driver_id = vertex_id;
-      } else {
-        loads_id.insert(vertex_id);
-      }
-    }
-
-    if (ignore) {
-      continue;
-    }
-
-    loads_id.insert(driver_id);
-
-    if (driver_id != -1 && loads_id.size() > 1) {
-      std::vector<int> hyperedge;
-      hyperedge.insert(hyperedge.end(), loads_id.begin(), loads_id.end());
-      hyperedges.push_back(hyperedge);
-      // logger_->report("Added hyperedge for net: {} with vertices: {}",
-      // net->getName(), fmt::join(hyperedge, ", "));
-    }
-  }
-  hypergraph_ = new HyperGraphForLeidenAlgorithm();
-  hypergraph_->hyperedges_ = std::move(hyperedges);
-  hypergraph_->hyperedge_weights_.resize(hypergraph_->hyperedges_.size(), 1.0);
-  hypergraph_->num_vertices_ = num_vertices;
-  hypergraph_->vertex_weights_.resize(num_vertices, 1.0);
-  logger_->report(
-      "Finished creating hypergraph with {} hyperedges, {} vertices number",
-      hypergraph_->hyperedges_.size(),
-      num_vertices);
-}
-
 void leidenClustering::runLeidenClustering()
 {
   // Initialize the partition using the Modularity partition strategy
-  ModularityVertexPartition part(graph_);
+  logger_->report("\tStart Creating initial partition.");
+  LeidenGraphInterface* graph = LeidenGraphInterface::GraphFromEdgeWeights(graph_, edge_weights_);
+  auto start = std::chrono::high_resolution_clock::now();
+  ModularityVertexPartition part(graph);
+  auto end = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> duration = end - start;
+  logger_->report("\tTime taken to create partition: {} seconds",
+                  duration.count());
 
-  // Initialize the optimizer
-  Optimizer optimizer;
-  logger_->report("Start Running Leiden Clustering");
+  // Initialize the optimiser
+  Optimiser optimiser;
+  logger_->report("\tStart Running Leiden Clustering");
+
   // Perform optimization on the partition
-  optimizer.optimise_partition(&part);
+  start = std::chrono::high_resolution_clock::now();
+  for (int i = 0; i < iteration_; i++) {
+    optimiser.optimise_partition(&part);
+  }
+  end = std::chrono::high_resolution_clock::now();
+  duration = end - start;
 
-  logger_->report("Finished running Leiden Clustering");
+  logger_->report("\tTime taken to optimize partition: {} seconds",
+                  duration.count());
+  partition_.reserve(vertex_names_.size());
+  size_t max_cluster_id = 0;
+  for (int i = 0; i < vertex_names_.size(); i++) {
+    max_cluster_id = std::max(max_cluster_id, part.membership(i));
+    partition_.push_back(part.membership(i));
+  }
+  logger_->report("\tFinished running Leiden Clustering, max cluster id: {}", max_cluster_id);
+  max_cluster_id_ = max_cluster_id;
+}
+
+void leidenClustering::write_partition_csv(const std::string& file_name)
+{
+  logger_->report("\tRunning writing partition, initializing...");
+  std::vector<std::vector<std::string>> groups(max_cluster_id_ + 1);
+  for (size_t i = 0; i < partition_.size(); i++) {
+    groups[partition_[i]].push_back(vertex_names_[i]);
+  }
+  std::ofstream file(file_name);
+  for (size_t i = 0; i < groups.size(); i++) {
+    file << "group: " << i << std::endl;
+    for (size_t j = 0; j < groups[i].size(); j++) {
+      file << " - " << groups[i][j] << std::endl;
+    }
+  }
+  logger_->report("Partition data written to {}", file_name);
+}
+
+void leidenClustering::write_graph_csv(const std::string& edge_file,
+                                       const std::string& node_file)
+{
+  logger_->report("\tRunning writing graph, initializing...");
+
+    auto get_net_fanout = [](odb::dbNet* net) {
+    size_t fanout = 0;
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      if (iterm->getIoType() == odb::dbIoType::INPUT) {
+        fanout++;
+      }
+    }
+    for (odb::dbBTerm* bterm : net->getBTerms()) {
+      if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
+        fanout++;
+      }
+    }
+    return fanout;
+  };
+
+  auto get_net_source = [](odb::dbNet* net) {
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+        return iterm->getInst()->getName();
+      }
+    }
+    for (odb::dbBTerm* bterm : net->getBTerms()) {
+      if (bterm->getIoType() == odb::dbIoType::INPUT) {
+        return bterm->getName();
+      }
+    }
+    return std::string();
+  };
+
+  auto get_net_sinks = [](odb::dbNet* net) {
+    std::vector<std::string> sinks;
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      if (iterm->getIoType() == odb::dbIoType::INPUT) {
+        sinks.push_back(iterm->getInst()->getName());
+      }
+    }
+    for (odb::dbBTerm* bterm : net->getBTerms()) {
+      if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
+        sinks.push_back(bterm->getName());
+      }
+    }
+    return sinks;
+  };
+
+  auto print_node_header
+      = [](std::ofstream& out) { out << "Name,Type,Master,Height,Width\n"; };
+
+  auto print_node = [](std::ofstream& out, odb::dbInst* inst) {
+    odb::dbMaster* master = inst->getMaster();
+    out << inst->getName() << "," << "inst"
+        << "," << master->getName() << "," << master->getHeight() << ","
+        << master->getWidth() << "\n";
+  };
+
+  auto print_edge_header
+      = [](std::ofstream& out) { out << "Source,Sink,Weight,Net\n"; };
+
+  auto print_edge = [&](std::ofstream& out, odb::dbNet* net) {
+    size_t net_fanout = get_net_fanout(net);
+    if (net->getSigType() == odb::dbSigType::POWER || net->getSigType() == odb::dbSigType::GROUND || net_fanout > 50 || net_fanout == 0) {
+      return;
+    }
+
+    float edge_weight = 1.0 / net_fanout;
+    std::string source_name = get_net_source(net);
+    std::vector<std::string> sinks = get_net_sinks(net);
+
+    if (sinks.size() != net_fanout) {
+      logger_->report("Fanout list of {} is not unique.", net->getConstName());
+    }
+
+    for (const std::string& sink : sinks) {
+      out << source_name << "," << sink << "," << edge_weight << ","
+          << net->getConstName() << "\n";
+    }
+  };
+
+  std::ofstream edge_out(edge_file);
+  std::ofstream node_out(node_file);
+
+  if (!edge_out.is_open() || !node_out.is_open()) {
+    logger_->report("Failed to open output files for writing graph data.");
+    return;
+  }
+
+  print_node_header(node_out);
+  print_edge_header(edge_out);
+
+  for (auto inst : block_->getInsts()) {
+    print_node(node_out, inst);
+  }
+
+  for (auto bterm : block_->getBTerms()) {
+    node_out << bterm->getName() << ",term,NA,0.0,0.0\n";
+  }
+
+  for (auto net : block_->getNets()) {
+    print_edge(edge_out, net);
+  }
+
+  edge_out.close();
+  node_out.close();
+  logger_->report("Graph data written to {} and {}", edge_file, node_file);
+}
+
+void leidenClustering::write_placement_csv(const std::string& file_name)
+{
+  logger_->report("\tRunning writing placement, initializing...");
+
+  auto print_header = [](std::ofstream& out) { out << "Name,Type,Master,X,Y\n"; };
+  auto write_placement_info_helper = [](std::ofstream& out, odb::dbInst* inst) {
+    odb::dbPlacementStatus status = inst->getPlacementStatus();
+    if (status == odb::dbPlacementStatus::NONE) {
+      return;
+    }
+    odb::Point pos = inst->getOrigin();
+    odb::dbMaster* master = inst->getMaster();
+    out << inst->getName() << ",inst," << master->getName() << "," << pos.x() << "," << pos.y() << "\n";
+  };
+
+  std::ofstream out(file_name);
+  if (!out.is_open()) {
+    logger_->report("Failed to open output file for writing placement data.");
+    return;
+  }
+
+  print_header(out);
+  for (auto inst : block_->getInsts()) {
+    write_placement_info_helper(out, inst);
+  }
+
+  for (auto term : block_->getBTerms()) {
+    int x, y;
+    term->getFirstPinLocation(x, y);
+    out << term->getName() << ",term,NA," << x << "," << y << "\n";
+  }
+
+  out.close();
+  logger_->report("Placement data written to {}", file_name);
 }
 
 }  // namespace mpl2

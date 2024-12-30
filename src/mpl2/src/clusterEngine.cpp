@@ -31,6 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "leidenClustering.h" 
 #include "clusterEngine.h"
 
 #include "db_sta/dbNetwork.hh"
@@ -1854,6 +1855,87 @@ void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
                                    virtual_conn_clusters[j]);
     }
   }
+}
+
+void ClusteringEngine::createSubLeindenCluster(Cluster* parent, std::vector<int> &partition)
+{
+  // Create a map to store the new clusters
+  std::map<int, Cluster*> new_clusters;
+
+  // Iterate over the instances in the parent cluster
+  for (auto inst : parent->getLeafStdCells()) {
+    odb::dbMaster* master = inst->getMaster();
+    if (isIgnoredMaster(master) || master->isBlock()) {
+      continue;
+    }
+
+    // Get the vertex id and the corresponding cluster id from the partition
+    odb::dbIntProperty* property = odb::dbIntProperty::find(inst, "vertex_id");
+    int vertex_id = property->getValue();
+    int cluster_id = partition[vertex_id];
+
+    // If the cluster id is not in the map, create a new cluster
+    if (new_clusters.find(cluster_id) == new_clusters.end()) {
+      std::string cluster_name = parent->getName() + "_leiden_" + std::to_string(cluster_id);
+      auto new_cluster = std::make_unique<Cluster>(id_, cluster_name, logger_);
+      Cluster* cluster = new_cluster.get();
+      new_clusters[cluster_id] = cluster;
+
+      tree_->maps.id_to_cluster[id_++] = cluster;
+      cluster->setParent(parent);
+      parent->addChild(std::move(new_cluster));
+    }
+
+    // Add the instance to the corresponding cluster
+    new_clusters[cluster_id]->addLeafInst(inst);
+  }
+
+  // reset metrics
+  parent->clearLeafStdCells();
+  updateInstancesAssociation(parent);
+  for (auto& [cluster_id, new_cluster] : new_clusters) {
+    new_cluster->setClusterType(ClusterType::StdCellCluster);
+    updateInstancesAssociation(new_cluster);
+    setClusterMetrics(new_cluster);
+  }
+
+  // std::vector<Cluster*> small_children;
+  // for (auto& child : parent->getChildren()) {
+  //   if (!child->isIOCluster() && child->getNumStdCell() < min_std_cell_
+  //       && child->getNumMacro() < min_macro_) {
+  //     small_children.push_back(child.get());
+  //   }
+  // }
+
+  // mergeChildrenBelowThresholds(small_children);
+  // updateInstancesAssociation(parent);
+}
+
+void ClusteringEngine::mergeLeidenClustering(Cluster* parent, std::vector<int> &partition, std::vector<std::vector<Cluster*>>& mixed_leaves)
+{
+  // get all the leaf clusters
+  if (parent->isLeaf()) {
+    return;
+  }
+  
+  std::vector<Cluster*> sister_mixed_leaves;
+
+  for (auto& child : parent->getChildren()) {
+    updateInstancesAssociation(child.get());
+    if (child->isLeaf()) {
+      // here for the leaf node, we need to create cluster for std cells and leave macros not change.
+      if (child->getNumMacro() == 0) {
+        child->setClusterType(StdCellCluster);
+      } else {
+        sister_mixed_leaves.push_back(child.get());
+        createSubLeindenCluster(child.get(), partition);
+      }
+    } else {
+      mergeLeidenClustering(child.get(), partition, mixed_leaves);
+    }
+  }
+
+  mixed_leaves.push_back(sister_mixed_leaves);
 }
 
 // Map all the macros into their HardMacro objects for all the clusters

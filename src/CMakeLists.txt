@@ -309,7 +309,7 @@ add_subdirectory(pdn)
 add_subdirectory(dft)
 add_subdirectory(mpl2)
 add_subdirectory(par)
-
+add_subdirectory(mpl3)
 ################################################################
 
 add_executable(openroad
@@ -372,6 +372,7 @@ target_link_libraries(openroad
   dft
   mpl2
   par
+  mpl3
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
