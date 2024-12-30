@@ -220,9 +220,8 @@ class dbNetwork : public ConcreteNetwork
   const char* name(const Instance* instance) const override;
   const char* name(const Port* port) const override;
   // Path name functions needed hierarchical verilog netlists.
+  using ConcreteNetwork::pathName;
   const char* pathName(const Net* net) const override;
-  const char* pathName(const Instance* inst) const override;
-  const char* pathName(const Pin* pin) const override;
 
   const char* busName(const Port* port) const override;
   ObjectId id(const Instance* instance) const override;

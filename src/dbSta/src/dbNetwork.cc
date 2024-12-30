@@ -1502,56 +1502,6 @@ ObjectId dbNetwork::id(const Net* net) const
   return 0;
 }
 
-// copied from Network.cc (note if we have one pathName we
-// need them all).
-
-const char* dbNetwork::pathName(const Instance* inst) const
-{
-  InstanceSeq inst_path;
-  path(inst, inst_path);
-  size_t name_length = 0;
-  InstanceSeq::Iterator path_iter1(inst_path);
-  while (path_iter1.hasNext()) {
-    const Instance* inst = path_iter1.next();
-    name_length += strlen(name(inst)) + 1;
-  }
-  char* path_name = makeTmpString(name_length + 1);
-  char* path_ptr = path_name;
-  // Top instance has null string name, so terminate the string here.
-  *path_name = '\0';
-  while (inst_path.size()) {
-    const Instance* inst = inst_path.back();
-    const char* inst_name = name(inst);
-    strcpy(path_ptr, inst_name);
-    path_ptr += strlen(inst_name);
-    inst_path.pop_back();
-    if (inst_path.size())
-      *path_ptr++ = pathDivider();
-    *path_ptr = '\0';
-  }
-  return path_name;
-}
-
-const char* dbNetwork::pathName(const Pin* pin) const
-{
-  const Instance* inst = instance(pin);
-  if (inst && inst != topInstance()) {
-    const char* inst_name = pathName(inst);
-    size_t inst_name_length = strlen(inst_name);
-    const char* port_name = portName(pin);
-    size_t port_name_length = strlen(port_name);
-    size_t path_name_length = inst_name_length + port_name_length + 2;
-    char* path_name = makeTmpString(path_name_length);
-    char* path_ptr = path_name;
-    strcpy(path_ptr, inst_name);
-    path_ptr += inst_name_length;
-    *path_ptr++ = pathDivider();
-    strcpy(path_ptr, port_name);
-    return path_name;
-  } else
-    return portName(pin);
-}
-
 /*
 Custom dbNetwork code.
 
