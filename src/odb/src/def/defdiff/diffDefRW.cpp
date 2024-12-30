@@ -808,10 +808,8 @@ int snetf(defrCallbackType_e c, defiNet* net, defiUserData ud)
         }
       }
       if (net->polyMask(i)) {
-        fprintf(fout,
-                "MASK %d POLYGON % s ",
-                net->polyMask(i),
-                net->polygonName(i));
+        fprintf(
+            fout, "MASK %d POLYGON %s ", net->polyMask(i), net->polygonName(i));
       } else {
         fprintf(fout, "POLYGON %s", net->polygonName(i));
       }
@@ -2467,9 +2465,6 @@ int diffDefReadFile(char* inFile,
                     char* ignoreViaName,
                     char* netSegComp)
 {
-  FILE* f;
-  int res;
-
   userData = (void*) 0x01020304;
   defrInit();
 
@@ -2542,6 +2537,7 @@ int diffDefReadFile(char* inFile,
   if (strcmp(netSegComp, "0") != 0)
     netSeCmp = 1;
 
+  FILE* f;
   if ((f = fopen(inFile, "r")) == nullptr) {
     fprintf(stderr, "Couldn't open input file '%s'\n", inFile);
     return (2);
@@ -2553,7 +2549,7 @@ int diffDefReadFile(char* inFile,
     return (2);
   }
 
-  res = defrRead(f, inFile, userData, 1);
+  const int res = defrRead(f, inFile, userData, 1);
 
   fclose(f);
   fclose(fout);

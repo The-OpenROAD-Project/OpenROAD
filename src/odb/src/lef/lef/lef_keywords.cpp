@@ -454,7 +454,7 @@ static int GetToken(char** buffer, int* bufferSize)
 
       // 7/23/2003 - pcr 606558 - do not allow \n in a string instead
       // of ;
-      if ((ch == '\n')) {
+      if (ch == '\n') {
         print_nlines(++lefData->lef_nlines);
         // 2/2/2007 - PCR 909714, allow string to go more than 1 line
         //            continue to parse
@@ -1364,7 +1364,7 @@ void* lefRealloc(void* name, size_t lef_size)
   if (lefSettings->ReallocFunction)
     return (*lefSettings->ReallocFunction)(name, lef_size);
   else
-    return (void*) realloc(name, lef_size);
+    return realloc(name, lef_size);
 }
 
 void lefFree(void* name)

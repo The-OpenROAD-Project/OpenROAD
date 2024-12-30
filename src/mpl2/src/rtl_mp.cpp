@@ -54,8 +54,7 @@ void MacroPlacer2::init(sta::dbNetwork* network,
                         utl::Logger* logger,
                         par::PartitionMgr* tritonpart)
 {
-  hier_rtlmp_
-      = std::make_unique<HierRTLMP>(network, db, sta, logger, tritonpart);
+  hier_rtlmp_ = std::make_unique<HierRTLMP>(network, db, logger, tritonpart);
   logger_ = logger;
   db_ = db;
 }

@@ -69,12 +69,10 @@ HierRTLMP::~HierRTLMP() = default;
 // Constructors
 HierRTLMP::HierRTLMP(sta::dbNetwork* network,
                      odb::dbDatabase* db,
-                     sta::dbSta* sta,
                      utl::Logger* logger,
                      par::PartitionMgr* tritonpart)
     : network_(network),
       db_(db),
-      sta_(sta),
       logger_(logger),
       tritonpart_(tritonpart),
       tree_(std::make_unique<PhysicalHierarchy>())
@@ -1058,18 +1056,10 @@ HierRTLMP::IOSpans HierRTLMP::computeIOSpans()
 float HierRTLMP::computeIOBlockagesDepth(const IOSpans& io_spans)
 {
   float sum_length = 0.0;
-  int num_hor_access = 0;
-  int num_ver_access = 0;
 
   for (auto& [pin_access, length] : io_spans) {
     if (length.second > length.first) {
       sum_length += std::abs(length.second - length.first);
-
-      if (pin_access == R || pin_access == L) {
-        num_hor_access++;
-      } else {
-        num_ver_access++;
-      }
     }
   }
 

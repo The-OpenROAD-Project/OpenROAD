@@ -99,7 +99,6 @@ class HierRTLMP
  public:
   HierRTLMP(sta::dbNetwork* network,
             odb::dbDatabase* db,
-            sta::dbSta* sta,
             utl::Logger* logger,
             par::PartitionMgr* tritonpart);
   ~HierRTLMP();
@@ -252,7 +251,6 @@ class HierRTLMP
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
-  sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
   par::PartitionMgr* tritonpart_ = nullptr;
   std::unique_ptr<PhysicalHierarchy> tree_;

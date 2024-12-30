@@ -37,6 +37,7 @@
 
 #include <boost/generator_iterator.hpp>
 #include <boost/random.hpp>
+#include <iomanip>
 #include <sstream>
 #include <tuple>
 

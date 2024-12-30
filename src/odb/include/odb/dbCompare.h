@@ -32,6 +32,8 @@
 
 #pragma once
 
+// IWYU pragma: private, include "db.h"
+
 // Provide overloads of std::less for all instantiable, dbObject-derived types.
 // This avoids pointer comparison which is a frequent source of non-determinism.
 //

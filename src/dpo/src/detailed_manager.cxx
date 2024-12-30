@@ -551,9 +551,7 @@ void DetailedMgr::findSegments()
     int originX = arch_->getRow(rowId)->getLeft();
     int siteSpacing = arch_->getRow(rowId)->getSiteSpacing();
 
-    int ix;
-
-    ix = (int) ((segment->getMinX() - originX) / siteSpacing);
+    int ix = (segment->getMinX() - originX) / siteSpacing;
     if (originX + ix * siteSpacing < segment->getMinX()) {
       ++ix;
     }
@@ -562,7 +560,7 @@ void DetailedMgr::findSegments()
       segment->setMinX(originX + ix * siteSpacing);
     }
 
-    ix = (int) ((segment->getMaxX() - originX) / siteSpacing);
+    ix = (segment->getMaxX() - originX) / siteSpacing;
     if (originX + ix * siteSpacing != segment->getMaxX()) {
       segment->setMaxX(originX + ix * siteSpacing);
     }

@@ -41,7 +41,7 @@ struct lefiPoints
   double y;
 };
 
-typedef struct lefiPoints lefiNum;
+using lefiNum = lefiPoints;
 
 extern char* lefiOrientStr(int orient);
 

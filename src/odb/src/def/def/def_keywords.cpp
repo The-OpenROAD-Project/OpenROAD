@@ -784,7 +784,7 @@ int defrData::sublex(YYSTYPE* pYylval)
         int c;
         int prev;
         prev = ' ';
-        while (1) {
+        while (true) {
           c = GETC();
 
           if (c == EOF) {
@@ -808,7 +808,7 @@ int defrData::sublex(YYSTYPE* pYylval)
         int begQuote = 0;
         /* First make sure there is a name after BEGINEXT within quote */
         /* BEGINEXT "name" */
-        while (1) {
+        while (true) {
           cc = GETC();
 
           if (cc == EOF) {
@@ -850,7 +850,7 @@ int defrData::sublex(YYSTYPE* pYylval)
           /* We have handle with the tag, just read the rest until */
           /* ENDEXT */
           begQuote = 0;
-          while (1) {
+          while (true) {
             cc = GETC();
 
             if (cc == EOF) {
