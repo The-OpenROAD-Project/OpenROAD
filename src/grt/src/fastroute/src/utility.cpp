@@ -2495,8 +2495,13 @@ void FastRouteCore::saveCongestion(const int iter)
     const int seed = 42;
     g.seed(seed);
 
-    utl::shuffle(congestionGridsV.begin(), congestionGridsV.end(), g);
-    utl::shuffle(congestionGridsH.begin(), congestionGridsH.end(), g);
+    if (!congestionGridsH.empty()) {
+      utl::shuffle(congestionGridsH.begin(), congestionGridsH.end(), g);
+    }
+
+    if (!congestionGridsV.empty()) {
+      utl::shuffle(congestionGridsV.begin(), congestionGridsV.end(), g);
+    }
   }
 
   const std::string marker_group_name = fmt::format(
