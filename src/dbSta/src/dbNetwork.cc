@@ -3055,6 +3055,16 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
     source_pin->connect(source_db_net);
   }
 
+  // Wire up the destination pin, if not already hooked to the correct
+  // flat net. Note the destination pin could indeed be wired to something
+  // else.
+  // This case can occur during assembly as an intermediate state
+  // (seems to occur in cts). We change the dest_pin's flat net
+  // connection to the correct source (recall buffers are being removed
+  // and we could be in some intermediate state in some other code).
+  // We also preserve any destination pin modnet connection (dest_pin
+  // could be on edge of another module).
+
   if (dest_db_net && (dest_db_net != source_db_net)) {
     // if we have dest_mod_net, keep it
     dbModNet* dest_mod_net = dest_pin->getModNet();
@@ -3065,6 +3075,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
     }
   }
 
+  // case 1: source/dest in same module
   if (source_db_module == dest_db_module) {
     if (!source_db_mod_net) {
       source_db_mod_net = dbModNet::create(source_db_module, connection_name);
