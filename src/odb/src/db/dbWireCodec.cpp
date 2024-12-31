@@ -32,7 +32,7 @@
 
 #include "odb/dbWireCodec.h"
 
-#include <ctype.h>
+#include <cctype>
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
@@ -1253,7 +1253,7 @@ void dumpDecoder4Net(dbNet* innet)
   dbTechLayer* layer;
   dbWireType wtype;
   dbTechLayerRule* lyr_rule = nullptr;
-  while (1) {
+  while (true) {
     opcode = decoder.next();
     if (opcode == dbWireDecoder::END_DECODE) {
       logger->info(

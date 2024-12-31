@@ -29,9 +29,9 @@
 
 #include "defrData.hpp"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
 
 #include "defrSettings.hpp"
 
@@ -80,7 +80,7 @@ defrData::defrData(const defrCallbacks* pCallbacks,
       names_case_sensitive(1),
       needNPCbk(0),
       needSNPCbk(0),
-      nl_token(FALSE),
+      nl_token(false),
       no_num(0),
       nonDefaultWarnings(0),
       nondef_is_keyword(0),
@@ -138,23 +138,23 @@ defrData::defrData(const defrCallbacks* pCallbacks,
       NonDefault(this),
       Styles(),
       Geometries(this),
-      File(0),
+      File(nullptr),
       session(pSession),
-      Subnet(0),
+      Subnet(nullptr),
       settings(pSettings),
       aOxide(0),
       defInvalidChar(0),
       defIgnoreVersion(0),
-      defMsg(NULL),
+      defMsg(nullptr),
       defPrintTokens(0),
       defPropDefType('\0'),
       defaultCapWarnings(0),
-      defrLog(0),
+      defrLog(nullptr),
       input_level(-1),
-      last(NULL),
+      last(nullptr),
       new_is_keyword(0),
       nlines(1),
-      rowName(NULL),
+      rowName(nullptr),
       iOTimingWarnings(0),
       magic((char*) malloc(1)),
       netWarnings(0),
@@ -162,18 +162,18 @@ defrData::defrData(const defrCallbacks* pCallbacks,
       save_y(0.0),
       sNetWarnings(0),
       netOsnet(0),
-      next(NULL),
+      next(nullptr),
       rowWarnings(0),
-      shieldName(NULL),
+      shieldName(nullptr),
       deftokenLength(TOKEN_SIZE),
       xStep(0),
       yStep(0),
       NeedPathData(0),
-      shield(FALSE),
-      shiftBuf(0),
+      shield(false),
+      shiftBuf(nullptr),
       shiftBufLength(0),
       virtual_is_keyword(0),
-      warningMsg(NULL),
+      warningMsg(nullptr),
       lVal(0.0),
       rVal(0.0),
       deftoken((char*) malloc(TOKEN_SIZE)),
@@ -205,8 +205,8 @@ defrData::defrData(const defrCallbacks* pCallbacks,
   next = buffer;
   first_buffer = 1;
 
-  lVal = strtod("-2147483648", NULL);
-  rVal = strtod("2147483647", NULL);
+  lVal = strtod("-2147483648", nullptr);
+  rVal = strtod("2147483647", nullptr);
 }
 
 defrData::~defrData()
@@ -215,7 +215,7 @@ defrData::~defrData()
   /* Close the file */
   if (defrLog) {
     fclose(defrLog);
-    defrLog = 0;
+    defrLog = nullptr;
   }
 
   free(deftoken);
@@ -288,7 +288,7 @@ const char* defrData::upperCase(const char* str)
   int len = strlen(str) + 1;
 
   if (len > shiftBufLength) {
-    if (shiftBuf == 0) {
+    if (shiftBuf == nullptr) {
       len = len < 64 ? 64 : len;
       shiftBuf = (char*) malloc(len);
       shiftBufLength = len;
@@ -396,7 +396,7 @@ double defrData::convert_defname2num(char* versionName)
 {
   char majorNm[80];
   char minorNm[80];
-  char* subMinorNm = NULL;
+  char* subMinorNm = nullptr;
   char* versionNm = strdup(versionName);
 
   double major = 0, minor = 0, subMinor = 0;
@@ -489,12 +489,12 @@ int defrData::defValidNum(int values)
 }
 
 defrContext::defrContext(int ownConf)
-    : settings(0),
-      session(0),
-      data(0),
+    : settings(nullptr),
+      session(nullptr),
+      data(nullptr),
       ownConfig(ownConf),
-      init_call_func(0),
-      callbacks(0)
+      init_call_func(nullptr),
+      callbacks(nullptr)
 {
 }
 

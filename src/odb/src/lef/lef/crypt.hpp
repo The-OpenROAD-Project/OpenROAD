@@ -30,6 +30,8 @@
 #ifndef CRYPT_H
 #define CRYPT_H 1
 
+#include <cstdio>
+
 #include "lefiKRDefs.hpp"
 
 BEGIN_LEFDEF_PARSER_NAMESPACE

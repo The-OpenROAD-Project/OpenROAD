@@ -33,10 +33,9 @@
 #ifndef SOLVEMULTI_H
 #define SOLVEMULTI_H
 
-#include <math.h>
-#include <stdlib.h>
-
 #include <algorithm>
+#include <cmath>
+#include <cstdlib>
 #include <vector>
 
 namespace parquetfp {

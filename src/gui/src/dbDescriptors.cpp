@@ -45,7 +45,6 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "odb/dbCompare.h"
 #include "odb/dbShape.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
@@ -158,6 +157,9 @@ std::string Descriptor::convertUnits(const double value,
   } else if (log_units <= 6) {
     unit_scale = 1e-6;
     unit = "M";
+  } else if (log_units <= 9) {
+    unit_scale = 1e-9;
+    unit = "G";
   }
   if (area) {
     unit_scale *= unit_scale;
@@ -1638,9 +1640,8 @@ odb::dbObject* DbNetDescriptor::getSink(const std::any& object) const
 
 //////////////////////////////////////////////////
 
-DbITermDescriptor::DbITermDescriptor(
-    odb::dbDatabase* db,
-    std::function<bool(void)> usingPolyDecompView)
+DbITermDescriptor::DbITermDescriptor(odb::dbDatabase* db,
+                                     std::function<bool()> usingPolyDecompView)
     : BaseDbDescriptor<odb::dbITerm>(db),
       usingPolyDecompView_(std::move(usingPolyDecompView))
 {
@@ -1952,9 +1953,8 @@ bool DbBPinDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbMTermDescriptor::DbMTermDescriptor(
-    odb::dbDatabase* db,
-    std::function<bool(void)> usingPolyDecompView)
+DbMTermDescriptor::DbMTermDescriptor(odb::dbDatabase* db,
+                                     std::function<bool()> usingPolyDecompView)
     : BaseDbDescriptor<odb::dbMTerm>(db),
       usingPolyDecompView_(std::move(usingPolyDecompView))
 {

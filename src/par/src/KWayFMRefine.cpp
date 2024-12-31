@@ -34,7 +34,20 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "KWayFMRefine.h"
 
+#include <functional>
+#include <limits>
+#include <memory>
+#include <set>
 #include <thread>
+#include <utility>
+#include <vector>
+
+#include "Evaluator.h"
+#include "Hypergraph.h"
+#include "PriorityQueue.h"
+#include "Refiner.h"
+#include "Utilities.h"
+#include "utl/Logger.h"
 
 // Implement the direct k-way FM refinement
 namespace par {

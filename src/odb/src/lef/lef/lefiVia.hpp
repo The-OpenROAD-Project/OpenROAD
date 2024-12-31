@@ -30,7 +30,7 @@
 #ifndef lefiVia_h
 #define lefiVia_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 #include "lefiMisc.hpp"

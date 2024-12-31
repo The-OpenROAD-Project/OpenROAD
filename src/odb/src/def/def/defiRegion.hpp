@@ -30,7 +30,7 @@
 #ifndef defiRegion_h
 #define defiRegion_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 

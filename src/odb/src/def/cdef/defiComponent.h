@@ -33,7 +33,7 @@
 #ifndef CDEFICOMPONENT_H
 #define CDEFICOMPONENT_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

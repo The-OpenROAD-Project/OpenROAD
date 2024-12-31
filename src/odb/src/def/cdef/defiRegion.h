@@ -33,7 +33,7 @@
 #ifndef CDEFIREGION_H
 #define CDEFIREGION_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

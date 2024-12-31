@@ -3066,7 +3066,9 @@ void dbNetwork::getParentHierarchy(
     if (cur_module == top_module) {
       return;
     }
-    cur_module = start_module->getModInst()->getParent();
+    cur_module = cur_module->getModInst()
+                     ? cur_module->getModInst()->getParent()
+                     : nullptr;
   }
 }
 
@@ -3184,6 +3186,25 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
   // in hierarchy, which is ok, and the source/dest modnet will be null
   dbModNet* source_db_mod_net = source_pin->getModNet();
   dbModNet* dest_db_mod_net = dest_pin->getModNet();
+
+  //
+  // make sure there is a direct flat net connection
+  // Recall the hierarchical connections are overlayed
+  // onto the flat db network, so we have both worlds
+  // co-existing, something we respect even when making
+  // new hierarchical connections.
+
+  dbNet* source_db_net = source_pin->getNet();
+
+  if (!source_db_net) {
+    std::string connection_name_str(connection_name);
+    std::string flat_name = connection_name_str + "_flat";
+    source_db_net = dbNet::create(block(), flat_name.c_str(), false);
+    source_pin->connect(source_db_net);
+    dest_pin->connect(source_db_net);
+  }
+
+  // Make the hierarchical connection.
   // case 1: source/dest in same module
   if (source_db_module == dest_db_module) {
     if (!source_db_mod_net) {
@@ -3191,7 +3212,10 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       source_pin->connect(source_db_mod_net);
     }
     dest_pin->connect(source_db_mod_net);
-  } else {
+  }
+
+  else {
+    //
     // Attempt to factor connection (minimize punch through)
     //
     dbModBTerm* dest_modbterm = nullptr;

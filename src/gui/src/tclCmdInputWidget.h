@@ -47,6 +47,10 @@
 
 #include "cmdInputWidget.h"
 #include "tclCmdHighlighter.h"
+
+#if (TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 7) && !defined(Tcl_Size)
+#define Tcl_Size int
+#endif
 #include "tclSwig.h"  // generated header
 
 namespace gui {
@@ -66,7 +70,7 @@ class TclCmdInputWidget : public CmdInputWidget
 
   void setTclInterp(Tcl_Interp* interp,
                     bool do_init_openroad,
-                    const std::function<void(void)>& post_or_init);
+                    const std::function<void()>& post_or_init);
 
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);

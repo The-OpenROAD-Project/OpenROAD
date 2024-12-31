@@ -69,12 +69,10 @@ HierRTLMP::~HierRTLMP() = default;
 // Constructors
 HierRTLMP::HierRTLMP(sta::dbNetwork* network,
                      odb::dbDatabase* db,
-                     sta::dbSta* sta,
                      utl::Logger* logger,
                      par::PartitionMgr* tritonpart)
     : network_(network),
       db_(db),
-      sta_(sta),
       logger_(logger),
       tritonpart_(tritonpart),
       tree_(std::make_unique<PhysicalHierarchy>())
@@ -144,6 +142,12 @@ void HierRTLMP::setHaloWidth(float halo_width)
 void HierRTLMP::setHaloHeight(float halo_height)
 {
   tree_->halo_height = halo_height;
+}
+
+void HierRTLMP::setGuidanceRegions(
+    const std::map<odb::dbInst*, Rect>& guidance_regions)
+{
+  guides_ = guidance_regions;
 }
 
 // Options related to clustering
@@ -335,7 +339,6 @@ void HierRTLMP::resetSAParameters()
   exchange_swap_prob_ = 0.2;
   flip_prob_ = 0.2;
   resize_prob_ = 0.0;
-  guidance_weight_ = 0.0;
   fence_weight_ = 0.0;
   boundary_weight_ = 0.0;
   notch_weight_ = 0.0;
@@ -1053,18 +1056,10 @@ HierRTLMP::IOSpans HierRTLMP::computeIOSpans()
 float HierRTLMP::computeIOBlockagesDepth(const IOSpans& io_spans)
 {
   float sum_length = 0.0;
-  int num_hor_access = 0;
-  int num_ver_access = 0;
 
   for (auto& [pin_access, length] : io_spans) {
     if (length.second > length.first) {
       sum_length += std::abs(length.second - length.first);
-
-      if (pin_access == R || pin_access == L) {
-        num_hor_access++;
-      } else {
-        num_ver_access++;
-      }
     }
   }
 
@@ -1257,15 +1252,18 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
     if (cluster->getClusterType() == StdCellCluster) {
       continue;
     }
-    Rect fence(-1.0, -1.0, -1.0, -1.0);
-    Rect guide(-1.0, -1.0, -1.0, -1.0);
+    Rect fence, guide;
+    fence.mergeInit();
+    guide.mergeInit();
     const std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
     for (auto& hard_macro : hard_macros) {
       if (fences_.find(hard_macro->getName()) != fences_.end()) {
         fence.merge(fences_[hard_macro->getName()]);
       }
-      if (guides_.find(hard_macro->getName()) != guides_.end()) {
-        guide.merge(guides_[hard_macro->getName()]);
+
+      auto itr = guides_.find(hard_macro->getInst());
+      if (itr != guides_.end()) {
+        guide.merge(itr->second);
       }
     }
 
@@ -1282,6 +1280,10 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
       // current macro id is macros.size() - 1
       guides[macros.size() - 1] = guide;
     }
+  }
+
+  if (graphics_) {
+    graphics_->setGuides(guides);
   }
 
   clustering_engine_->updateConnections();
@@ -2236,15 +2238,17 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
     if (cluster->getClusterType() == StdCellCluster) {
       continue;
     }
-    Rect fence(-1.0, -1.0, -1.0, -1.0);
-    Rect guide(-1.0, -1.0, -1.0, -1.0);
+    Rect fence, guide;
+    fence.mergeInit();
+    guide.mergeInit();
     const std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
     for (auto& hard_macro : hard_macros) {
       if (fences_.find(hard_macro->getName()) != fences_.end()) {
         fence.merge(fences_[hard_macro->getName()]);
       }
-      if (guides_.find(hard_macro->getName()) != guides_.end()) {
-        guide.merge(guides_[hard_macro->getName()]);
+      auto itr = guides_.find(hard_macro->getInst());
+      if (itr != guides_.end()) {
+        guide.merge(itr->second);
       }
     }
 
@@ -2262,6 +2266,10 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
       // current macro id is macros.size() - 1
       guides[macros.size() - 1] = guide;
     }
+  }
+
+  if (graphics_) {
+    graphics_->setGuides(guides);
   }
 
   const int num_of_macros_to_place = static_cast<int>(macros.size());
@@ -2730,15 +2738,18 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
     if (cluster->getClusterType() == StdCellCluster) {
       continue;
     }
-    Rect fence(-1.0, -1.0, -1.0, -1.0);
-    Rect guide(-1.0, -1.0, -1.0, -1.0);
+    Rect fence, guide;
+    fence.mergeInit();
+    guide.mergeInit();
     const std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
     for (auto& hard_macro : hard_macros) {
       if (fences_.find(hard_macro->getName()) != fences_.end()) {
         fence.merge(fences_[hard_macro->getName()]);
       }
-      if (guides_.find(hard_macro->getName()) != guides_.end()) {
-        guide.merge(guides_[hard_macro->getName()]);
+
+      auto itr = guides_.find(hard_macro->getInst());
+      if (itr != guides_.end()) {
+        guide.merge(itr->second);
       }
     }
 
@@ -2755,6 +2766,10 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
       // current macro id is macros.size() - 1
       guides[macros.size() - 1] = guide;
     }
+  }
+
+  if (graphics_) {
+    graphics_->setGuides(guides);
   }
 
   const int macros_to_place = static_cast<int>(macros.size());
@@ -3398,6 +3413,9 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   std::map<int, Rect> fences;
   std::map<int, Rect> guides;
   computeFencesAndGuides(hard_macros, outline, fences, guides);
+  if (graphics_) {
+    graphics_->setGuides(guides);
+  }
 
   clustering_engine_->updateConnections();
 
@@ -3611,8 +3629,9 @@ void HierRTLMP::computeFencesAndGuides(
       fences[i].relocate(
           outline.xMin(), outline.yMin(), outline.xMax(), outline.yMax());
     }
-    if (guides_.find(hard_macros[i]->getName()) != guides_.end()) {
-      guides[i] = guides_[hard_macros[i]->getName()];
+    auto itr = guides_.find(hard_macros[i]->getInst());
+    if (itr != guides_.end()) {
+      guides[i] = itr->second;
       guides[i].relocate(
           outline.xMin(), outline.yMin(), outline.xMax(), outline.yMax());
     }
