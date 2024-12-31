@@ -46,9 +46,7 @@ class frInst : public frRef
  public:
   // constructors
   frInst(const frString& name, frMaster* master, odb::dbInst* db_inst)
-      : name_(name),
-        master_(master),
-        db_inst_(db_inst)
+      : name_(name), master_(master), db_inst_(db_inst)
   {
   }
   // getters
