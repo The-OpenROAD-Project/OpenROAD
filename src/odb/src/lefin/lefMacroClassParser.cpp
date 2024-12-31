@@ -32,7 +32,7 @@
 #include "odb/db.h"
 #include "odb/lefin.h"
 
-namespace lefMacroClassType {
+namespace odb::lefMacroClassType {
 
 /**
  * Convient function to encapsulate endcap types.

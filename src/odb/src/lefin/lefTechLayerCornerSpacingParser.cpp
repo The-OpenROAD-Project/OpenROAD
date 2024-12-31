@@ -33,7 +33,7 @@
 #include "odb/db.h"
 #include "odb/lefin.h"
 
-namespace lefTechLayerCornerSpacing {
+namespace odb::lefTechLayerCornerSpacing {
 
 void setWithin(double value,
                odb::dbTechLayerCornerSpacingRule* rule,

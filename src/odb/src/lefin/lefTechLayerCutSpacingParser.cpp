@@ -34,7 +34,7 @@
 #include "odb/db.h"
 #include "odb/lefin.h"
 
-namespace lefTechLayerCutSpacing {
+namespace odb::lefTechLayerCutSpacing {
 
 void setCutSpacing(double value,
                    odb::lefTechLayerCutSpacingParser* parser,

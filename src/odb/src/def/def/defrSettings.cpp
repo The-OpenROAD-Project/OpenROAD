@@ -42,51 +42,6 @@ const char* defrSettings::defOxides[] = {
     "OXIDE29", "OXIDE30", "OXIDE31", "OXIDE32"};
 
 defrSettings::defrSettings()
-    : defiDeltaNumberLines(10000),
-      AssertionWarnings(999),
-      BlockageWarnings(999),
-      CaseSensitiveWarnings(999),
-      ComponentWarnings(999),
-      ConstraintWarnings(999),
-      DefaultCapWarnings(999),
-      FillWarnings(999),
-      GcellGridWarnings(999),
-      IOTimingWarnings(999),
-      NetWarnings(999),
-      NonDefaultWarnings(999),
-      PinExtWarnings(999),
-      PinWarnings(999),
-      RegionWarnings(999),
-      RowWarnings(999),
-      TrackWarnings(999),
-      ScanchainWarnings(999),
-      SNetWarnings(999),
-      StylesWarnings(999),
-      UnitsWarnings(999),
-      VersionWarnings(999),
-      ViaWarnings(999),
-      nDDMsgs(0),
-      disableDMsgs(nullptr),
-      totalDefMsgLimit(0),
-      AddPathToNet(0),
-      AllowComponentNets(0),
-      CommentChar('#'),
-      ReadFunction(nullptr),
-      ErrorLogFunction(nullptr),
-      WarningLogFunction(nullptr),
-      ContextErrorLogFunction(nullptr),
-      ContextWarningLogFunction(nullptr),
-      MagicCommentFoundFunction(nullptr),
-      MallocFunction(nullptr),
-      ReallocFunction(nullptr),
-      FreeFunction(nullptr),
-      LineNumberFunction(nullptr),
-      LongLineNumberFunction(nullptr),
-      ContextLineNumberFunction(nullptr),
-      ContextLongLineNumberFunction(nullptr),
-      reader_case_sensitive_set(0),
-      DisPropStrProcess(0),
-      LogFileAppend(0)
 {
   memset(MsgLimit, 0, DEF_MSGS * sizeof(int));
   memset(UnusedCallbacks, 0, CBMAX * sizeof(int));
@@ -364,11 +319,6 @@ void defrSettings::init_symbol_table()
   Keyword_set["X"] = K_X;
   Keyword_set["XTALK"] = K_XTALK;
   Keyword_set["Y"] = K_Y;
-}
-
-defrSession::defrSession()
-    : FileName(nullptr), reader_case_sensitive(0), UserData(nullptr)
-{
 }
 
 END_LEFDEF_PARSER_NAMESPACE

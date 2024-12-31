@@ -34,7 +34,7 @@
 #include "odb/db.h"
 #include "odb/lefin.h"
 
-namespace lefTechLayerCutSpacingTable {
+namespace odb::lefTechLayerCutSpacingTable {
 
 void createOrthongonalSubRule(
     std::vector<boost::fusion::vector<double, double>> params,

@@ -33,7 +33,7 @@
 #include "odb/db.h"
 #include "odb/lefin.h"
 
-namespace lefTechLayerRectOnly {
+namespace odb::lefTechLayerRectOnly {
 
 template <typename Iterator>
 bool parse(Iterator first,

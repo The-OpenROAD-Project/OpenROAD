@@ -33,7 +33,7 @@
 #include "odb/db.h"
 #include "odb/lefin.h"
 
-namespace lefTechLayerSpacingTablePrl {
+namespace odb::lefTechLayerSpacingTablePrl {
 
 void addInfluence(boost::fusion::vector<double, double, double>& params,
                   odb::lefTechLayerSpacingTablePrlParser* parser,
