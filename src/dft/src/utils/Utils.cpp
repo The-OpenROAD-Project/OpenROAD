@@ -36,6 +36,7 @@
 #include <optional>
 
 #include "db_sta/dbNetwork.hh"
+#include "odb/dbTransform.h"
 
 namespace dft::utils {
 
@@ -87,6 +88,12 @@ odb::dbInst* ReplaceCell(
   odb::dbInst* new_instance
       = odb::dbInst::create(top_block, new_master, /*name=*/"tmp_scan_flop");
   std::string old_cell_name = old_instance->getName();
+
+  odb::dbPlacementStatus placement_status = old_instance->getPlacementStatus();
+  if (placement_status.isPlaced()) {
+    new_instance->setTransform(old_instance->getTransform());
+    new_instance->setPlacementStatus(placement_status);
+  }
 
   // Delete the old cell
   odb::dbInst::destroy(old_instance);
