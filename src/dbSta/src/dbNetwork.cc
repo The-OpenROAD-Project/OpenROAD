@@ -77,6 +77,9 @@ Recommended conclusion: use map for concrete cells. They are invariant.
  */
 #include "db_sta/dbNetwork.hh"
 
+#include <algorithm>
+#include <vector>
+
 #include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "sta/PatternMatch.hh"
@@ -1531,21 +1534,22 @@ const char* dbNetwork::pathName(const Net* net) const
 
   if (modnet) {
     std::string modnet_name = modnet->getName();
-
     // if a top net, don't prefix with top module name
     dbModule* parent_module = modnet->getParent();
     if (parent_module == block_->getTopModule()) {
       return tmpStringCopy(modnet_name.c_str());
     }
-
     // accumulate a hierachical name, includes top level name
-    std::string accumulated_path_name = modnet_name;
+    std::string accumulated_path_name;
     std::vector<dbModule*> parent_hierarchy;
     getParentHierarchy(parent_module, parent_hierarchy);
+    std::reverse(parent_hierarchy.begin(), parent_hierarchy.end());
     for (auto db_mod : parent_hierarchy) {
       std::string module_name = db_mod->getName();
-      accumulated_path_name = module_name + "/" + accumulated_path_name;
+      accumulated_path_name.append(module_name);
+      accumulated_path_name.append("/");
     }
+    accumulated_path_name.append(modnet_name);
     return tmpStringCopy(accumulated_path_name.c_str());
   }
   return nullptr;
