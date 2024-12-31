@@ -67,7 +67,7 @@ namespace dpo {
 DetailedMgr::DetailedMgr(Architecture* arch,
                          Network* network,
                          RoutingParams* rt)
-    : arch_(arch), network_(network), rt_(rt), disallowOneSiteGaps_(false)
+    : arch_(arch), network_(network), rt_(rt)
 {
   singleRowHeight_ = arch_->getRow(0)->getHeight();
   numSingleHeightRows_ = arch_->getNumRows();

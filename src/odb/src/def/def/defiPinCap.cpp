@@ -80,8 +80,7 @@ void defiPinCap::print(FILE* f) const
 ///////////////////////////////////////////////
 ///////////////////////////////////////////////
 
-defiPinAntennaModel::defiPinAntennaModel(defrData* data)
-    : oxide_(nullptr), defData(data)
+defiPinAntennaModel::defiPinAntennaModel(defrData* data) : defData(data)
 {
   Init();
 }

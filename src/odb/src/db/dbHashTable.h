@@ -74,7 +74,7 @@ class dbHashTable
 
   dbHashTable();
   dbHashTable(const dbHashTable<T>& table);
-  ~dbHashTable();
+
   bool operator==(const dbHashTable<T>& rhs) const;
   bool operator!=(const dbHashTable<T>& rhs) const { return !operator==(rhs); }
   void differences(dbDiff& diff,

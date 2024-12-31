@@ -64,7 +64,6 @@ class _dbTarget : public _dbObject
 
   _dbTarget(_dbDatabase*, const _dbTarget& t);
   _dbTarget(_dbDatabase*);
-  ~_dbTarget();
 
   bool operator==(const _dbTarget& rhs) const;
   bool operator!=(const _dbTarget& rhs) const { return !operator==(rhs); }
@@ -84,10 +83,6 @@ inline _dbTarget::_dbTarget(_dbDatabase*, const _dbTarget& t)
 inline _dbTarget::_dbTarget(_dbDatabase*)
 {
   _flags._spare_bits = 0;
-}
-
-inline _dbTarget::~_dbTarget()
-{
 }
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbTarget& target)

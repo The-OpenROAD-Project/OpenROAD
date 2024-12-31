@@ -62,11 +62,11 @@ class lefiNoiseVictim
   double noise(int index) const;
 
  protected:
-  double length_;
+  double length_{0.0};
 
-  int numNoises_;
-  int noisesAllocated_;
-  double* noises_;
+  int numNoises_{0};
+  int noisesAllocated_{0};
+  double* noises_{nullptr};
 };
 
 class lefiNoiseResistance
@@ -91,13 +91,13 @@ class lefiNoiseResistance
   lefiNoiseVictim* victim(int index) const;
 
  protected:
-  int numNums_;
-  int numsAllocated_;
-  double* nums_;
+  int numNums_{0};
+  int numsAllocated_{0};
+  double* nums_{nullptr};
 
-  int numVictims_;
-  int victimsAllocated_;
-  lefiNoiseVictim** victims_;
+  int numVictims_{0};
+  int victimsAllocated_{0};
+  lefiNoiseVictim** victims_{nullptr};
 };
 
 class lefiNoiseEdge

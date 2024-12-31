@@ -76,19 +76,19 @@ class lefiProp
   void print(FILE* f) const;
 
  protected:
-  char* propType_;  // "design" "net" "macro" ...
-  char* propName_;  // name.
-  int nameSize_;    // allocated size of name.
-  char hasRange_;   // either 0:NO or 1:YES.
-  char hasNumber_;  // either 0:NO or 1:YES.
-  char hasNameMapString_;
-  char dataType_;     // either I:integer R:real S:string Q:quotedstring.
+  char* propType_{nullptr};  // "design" "net" "macro" ...
+  char* propName_{nullptr};  // name.
+  int nameSize_{0};          // allocated size of name.
+  char hasRange_{0};         // either 0:NO or 1:YES.
+  char hasNumber_{0};        // either 0:NO or 1:YES.
+  char hasNameMapString_{0};
+  char dataType_{0};  // either I:integer R:real S:string Q:quotedstring.
                       // N:property name is not defined.
-  char* stringData_;  // if it is a string the data is here.
-  int stringLength_;  // allocated size of stringData.
-  double left_;
-  double right_;  // if it has a range the numbers are here.
-  double d_;      // if it is a real or int the number is here.
+  char* stringData_{nullptr};  // if it is a string the data is here.
+  int stringLength_{0};        // allocated size of stringData.
+  double left_{0.0};
+  double right_{0.0};  // if it has a range the numbers are here.
+  double d_{0.0};      // if it is a real or int the number is here.
 };
 
 END_LEFDEF_PARSER_NAMESPACE
