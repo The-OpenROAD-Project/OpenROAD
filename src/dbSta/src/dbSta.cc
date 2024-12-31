@@ -923,9 +923,9 @@ BufferUse BufferUseAnalyser::getBufferUse(sta::LibertyCell* buffer)
 
 ////////////////////////////////////////////////////////////////
 
-sta::LibertyPort* getLibertyScanEnable(const sta::TestCell* test_cell)
+sta::LibertyPort* getLibertyScanEnable(const sta::LibertyCell* lib_cell)
 {
-  sta::LibertyCellPortIterator iter(test_cell);
+  sta::LibertyCellPortIterator iter(lib_cell);
   while (iter.hasNext()) {
     sta::LibertyPort* port = iter.next();
     sta::ScanSignalType signal_type = port->scanSignalType();
@@ -937,9 +937,9 @@ sta::LibertyPort* getLibertyScanEnable(const sta::TestCell* test_cell)
   return nullptr;
 }
 
-sta::LibertyPort* getLibertyScanIn(const sta::TestCell* test_cell)
+sta::LibertyPort* getLibertyScanIn(const sta::LibertyCell* lib_cell)
 {
-  sta::LibertyCellPortIterator iter(test_cell);
+  sta::LibertyCellPortIterator iter(lib_cell);
   while (iter.hasNext()) {
     sta::LibertyPort* port = iter.next();
     sta::ScanSignalType signal_type = port->scanSignalType();
@@ -951,9 +951,9 @@ sta::LibertyPort* getLibertyScanIn(const sta::TestCell* test_cell)
   return nullptr;
 }
 
-sta::LibertyPort* getLibertyScanOut(const sta::TestCell* test_cell)
+sta::LibertyPort* getLibertyScanOut(const sta::LibertyCell* lib_cell)
 {
-  sta::LibertyCellPortIterator iter(test_cell);
+  sta::LibertyCellPortIterator iter(lib_cell);
   while (iter.hasNext()) {
     sta::LibertyPort* port = iter.next();
     sta::ScanSignalType signal_type = port->scanSignalType();
