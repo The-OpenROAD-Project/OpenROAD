@@ -46,3 +46,11 @@ or_integration_tests(
     write_verilog7
     write_verilog8
 )
+
+
+foreach(TEST_NAME IN LISTS TEST_NAMES)
+    or_integration_test("dbSta" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
+endforeach()
+
+add_subdirectory(cpp)
+
