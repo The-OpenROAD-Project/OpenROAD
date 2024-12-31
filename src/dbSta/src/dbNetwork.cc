@@ -1584,14 +1584,11 @@ void PinModNetConnection::operator()(const Pin* pin)
 
   if (iterm && iterm->getModNet()) {
     modnet_ = iterm->getModNet();
-  }
-  if (bterm && bterm->getModNet()) {
+  } else if (bterm && bterm->getModNet()) {
     modnet_ = bterm->getModNet();
-  }
-  if (moditerm && moditerm->getModNet()) {
+  } else if (moditerm && moditerm->getModNet()) {
     modnet_ = moditerm->getModNet();
-  }
-  if (modbterm && modbterm->getModNet()) {
+  } else if (modbterm && modbterm->getModNet()) {
     modnet_ = modbterm->getModNet();
   }
 }
