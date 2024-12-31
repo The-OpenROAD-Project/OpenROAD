@@ -49,6 +49,9 @@ template <class RandomIt, class URBG>
 void shuffle(RandomIt first, RandomIt last, URBG&& g)
 {
   int n = last - first;
+  if (n == 0) {
+    return;
+  }
 
   boost::uniform_int<> distribution(1, n - 1);
   boost::variate_generator<URBG, boost::uniform_int<>> dice(g, distribution);
