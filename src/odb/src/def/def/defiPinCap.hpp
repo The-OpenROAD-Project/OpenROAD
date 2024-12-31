@@ -99,7 +99,7 @@ class defiPinAntennaModel
   const char* APinMaxCutCarLayer(int index) const;
 
  protected:
-  char* oxide_;
+  char* oxide_{nullptr};
 
   int numAPinGateArea_;  // 5.4
   int APinGateAreaAllocated_;

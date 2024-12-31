@@ -42,7 +42,7 @@ class defAliasIterator
 };
 
 defiAlias_itr::defiAlias_itr(defrData* data)
-    : first(1), iterator(nullptr), defData(data ? data : defContext.data)
+    : defData(data ? data : defContext.data)
 {
   defiAlias_itr::Init();
 }

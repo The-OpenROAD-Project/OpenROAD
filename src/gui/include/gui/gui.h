@@ -358,7 +358,7 @@ class Selected
 {
  public:
   // Null case
-  Selected() : object_({}), descriptor_(nullptr) {}
+  Selected() = default;
 
   Selected(std::any object, const Descriptor* descriptor)
       : object_(std::move(object)), descriptor_(descriptor)
@@ -430,7 +430,7 @@ class Selected
 
  private:
   std::any object_;
-  const Descriptor* descriptor_;
+  const Descriptor* descriptor_{nullptr};
 };
 
 // This is an interface for classes that wish to be called to render

@@ -355,9 +355,9 @@ class Logger
   using MessageCounter = std::array<std::atomic_int16_t, max_message_id + 1>;
   std::array<MessageCounter, ToolId::SIZE> message_counters_;
   std::array<DebugGroups, ToolId::SIZE> debug_group_level_;
-  bool debug_on_;
-  std::atomic_int warning_count_;
-  std::atomic_int error_count_;
+  bool debug_on_{false};
+  std::atomic_int warning_count_{0};
+  std::atomic_int error_count_{0};
   static constexpr const char* level_names[]
       = {"TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "OFF"};
   static constexpr const char* pattern_ = "%v";
