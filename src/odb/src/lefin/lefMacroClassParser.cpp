@@ -137,7 +137,7 @@ bool parse(Iterator first, Iterator last, odb::dbMaster* master)
 
   return valid && first == last;
 }
-}  // namespace lefMacroClassType
+}  // namespace odb::lefMacroClassType
 
 namespace odb {
 

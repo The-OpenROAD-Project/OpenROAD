@@ -160,7 +160,7 @@ bool parse(Iterator first,
 
   return valid;
 }
-}  // namespace lefTechLayerCornerSpacing
+}  // namespace odb::lefTechLayerCornerSpacing
 
 namespace odb {
 

@@ -388,8 +388,7 @@ int defrData::defValidNum(int values)
   return 0;
 }
 
-defrContext::defrContext(int ownConf)
-    : ownConfig(ownConf)
+defrContext::defrContext(int ownConf) : ownConfig(ownConf)
 {
 }
 

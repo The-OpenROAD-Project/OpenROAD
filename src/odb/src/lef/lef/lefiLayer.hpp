@@ -962,7 +962,7 @@ class lefiLayer
   double* dvalues_{nullptr};
   char* types_{nullptr};  // I: integer, R: real, S:string
                           // Q: quotedstring
-  int numAccurrents_{0};     // number of ACCURRENTDENSITY
+  int numAccurrents_{0};  // number of ACCURRENTDENSITY
   int accurrentAllocated_{0};
   lefiLayerDensity** accurrents_{nullptr};
   int numDccurrents_{0};  // number of DCCURRENTDENSITY

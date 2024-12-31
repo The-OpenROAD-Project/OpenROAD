@@ -150,10 +150,10 @@ class defrData
   int hasDoStep{0};
   int hasNameCase{0};  // keep track NAMESCASESENSITIVE is in the file
   int hasOpenedDefLogFile{0};
-  int hasPort{0};        // keep track is port defined in a Pin
-  int hadPortOnce{0};    // to restrict implicit ports if the Pin already has any
-                      // port
-  int hasVer{0};         // keep track VERSION is in the file
+  int hasPort{0};      // keep track is port defined in a Pin
+  int hadPortOnce{0};  // to restrict implicit ports if the Pin already has any
+                       // port
+  int hasVer{0};       // keep track VERSION is in the file
   int hasFatalError{0};  // don't report errors after the file end.
   int mask_is_keyword{0};
   int mustjoin_is_keyword{0};

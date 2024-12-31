@@ -117,7 +117,7 @@ bool parse(Iterator first,
 
   return valid && first == last;
 }
-}  // namespace lefTechLayerType
+}  // namespace odb::lefTechLayerType
 
 namespace odb {
 

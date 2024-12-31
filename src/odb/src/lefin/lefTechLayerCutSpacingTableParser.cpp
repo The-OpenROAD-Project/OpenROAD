@@ -463,7 +463,7 @@ bool parse(
 
   return valid;
 }
-}  // namespace lefTechLayerCutSpacingTable
+}  // namespace odb::lefTechLayerCutSpacingTable
 
 namespace odb {
 

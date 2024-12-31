@@ -95,7 +95,7 @@ bool parse(Iterator first,
   }
   return valid;
 }
-}  // namespace lefTechLayerWrongDirSpacing
+}  // namespace odb::lefTechLayerWrongDirSpacing
 
 namespace odb {
 

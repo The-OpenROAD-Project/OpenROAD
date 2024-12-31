@@ -46,9 +46,7 @@
 namespace odb {
 
 dbJournal::dbJournal(dbBlock* block)
-    : _block(block),
-      _logger(block->getImpl()->getLogger()),
-      _log(_logger)
+    : _block(block), _logger(block->getImpl()->getLogger()), _log(_logger)
 {
 }
 

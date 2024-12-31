@@ -140,7 +140,7 @@ bool parse(Iterator first,
   }
   return valid;
 }
-}  // namespace lefTechLayerSpacingTablePrl
+}  // namespace odb::lefTechLayerSpacingTablePrl
 
 namespace odb {
 

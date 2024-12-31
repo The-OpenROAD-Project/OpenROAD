@@ -52,7 +52,7 @@ bool parse(Iterator first,
 
   return valid && first == last;
 }
-}  // namespace lefTechLayerRectOnly
+}  // namespace odb::lefTechLayerRectOnly
 
 namespace odb {
 
