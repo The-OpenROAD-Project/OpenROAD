@@ -3080,7 +3080,7 @@ class dbInst : public dbObject
   /// Set the transform of this instance.
   /// Equivalent to setOrient() and setOrigin()
   ///
-  void setTransform(dbTransform& t);
+  void setTransform(const dbTransform& t);
 
   ///
   /// Get the hierarchical transform of this instance.
