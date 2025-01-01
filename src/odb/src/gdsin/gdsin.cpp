@@ -444,7 +444,11 @@ dbGDSBox* GDSReader::processBox(dbGDSStructure* structure)
 
   readRecord();
   std::vector<Point> points = processXY();
-  Rect bounds(points[0], points[2]);
+  Rect bounds;
+  bounds.mergeInit();
+  for (const Point& point : points) {
+    bounds.merge(point);
+  }
   box->setBounds(bounds);
 
   return box;
