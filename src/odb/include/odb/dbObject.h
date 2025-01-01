@@ -93,7 +93,6 @@ enum dbObjectType
   dbGCellGridObj,
   dbGDSBoundaryObj,
   dbGDSBoxObj,
-  dbGDSNodeObj,
   dbGDSPathObj,
   dbGDSSRefObj,
   dbGDSStructureObj,

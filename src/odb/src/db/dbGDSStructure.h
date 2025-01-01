@@ -48,7 +48,6 @@ class _dbGDSBoundary;
 template <class T>
 class dbTable;
 class _dbGDSBox;
-class _dbGDSNode;
 class _dbGDSPath;
 class _dbGDSSRef;
 class _dbGDSText;
@@ -76,8 +75,6 @@ class _dbGDSStructure : public _dbObject
   dbTable<_dbGDSBoundary>* boundaries_;
 
   dbTable<_dbGDSBox>* boxes_;
-
-  dbTable<_dbGDSNode>* nodes_;
 
   dbTable<_dbGDSPath>* paths_;
 

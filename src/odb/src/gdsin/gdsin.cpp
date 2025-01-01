@@ -244,7 +244,9 @@ bool GDSReader::processXY(T* elem)
   for (int i = 0; i < _r.data32.size(); i += 2) {
     xy.emplace_back(_r.data32[i], _r.data32[i + 1]);
   }
-  elem->setXy(xy);
+  if (elem) {
+    elem->setXy(xy);
+  }
   return true;
 }
 
@@ -263,7 +265,9 @@ void GDSReader::processPropAttr(T* elem)
     checkRType(RecordType::PROPVALUE);
     const std::string value = _r.data8;
 
-    elem->getPropattr().emplace_back(attr, value);
+    if (elem) {
+      elem->getPropattr().emplace_back(attr, value);
+    }
   }
 }
 
@@ -297,8 +301,9 @@ bool GDSReader::processElement(dbGDSStructure* structure)
       break;
     }
     case RecordType::NODE: {
-      auto el = processNode(structure);
-      processPropAttr(el);
+      // Ignored - parse and discard
+      processNode();
+      processPropAttr<dbGDSBox>(nullptr);
       break;
     }
     default: {
@@ -447,22 +452,16 @@ dbGDSBox* GDSReader::processBox(dbGDSStructure* structure)
   return box;
 }
 
-dbGDSNode* GDSReader::processNode(dbGDSStructure* structure)
+void GDSReader::processNode()
 {
-  auto* elem = dbGDSNode::create(structure);
-
   readRecord();
   checkRType(RecordType::LAYER);
-  elem->setLayer(_r.data16[0]);
 
   readRecord();
   checkRType(RecordType::NODETYPE);
-  elem->setDatatype(_r.data16[0]);
 
   readRecord();
-  processXY(elem);
-
-  return elem;
+  processXY<dbGDSBox>(nullptr);
 }
 
 dbGDSSTrans GDSReader::processSTrans()

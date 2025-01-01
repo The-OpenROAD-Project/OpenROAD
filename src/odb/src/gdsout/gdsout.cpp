@@ -235,10 +235,6 @@ void GDSWriter::writeStruct(dbGDSStructure* str)
     writeBox(box);
   }
 
-  for (auto node : str->getGDSNodes()) {
-    writeNode(node);
-  }
-
   for (auto path : str->getGDSPaths()) {
     writePath(path);
   }
@@ -456,27 +452,6 @@ void GDSWriter::writeBox(dbGDSBox* box)
   writeXY(box->getXY());
 
   writePropAttr(box);
-  writeEndel();
-}
-
-void GDSWriter::writeNode(dbGDSNode* node)
-{
-  record_t r;
-  r.type = RecordType::NODE;
-  r.dataType = DataType::NO_DATA;
-  writeRecord(r);
-
-  writeLayer(node->getLayer());
-
-  record_t r2;
-  r2.type = RecordType::NODETYPE;
-  r2.dataType = DataType::INT_2;
-  r2.data16 = {node->getDatatype()};
-  writeRecord(r2);
-
-  writeXY(node->getXY());
-
-  writePropAttr(node);
   writeEndel();
 }
 

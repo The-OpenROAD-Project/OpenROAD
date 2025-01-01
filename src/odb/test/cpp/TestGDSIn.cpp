@@ -36,7 +36,6 @@ BOOST_AUTO_TEST_CASE(reader)
 
   BOOST_TEST(str->getGDSBoundarys().size() == 44);
   BOOST_TEST(str->getGDSBoxs().size() == 0);
-  BOOST_TEST(str->getGDSNodes().size() == 0);
   BOOST_TEST(str->getGDSPaths().size() == 2);
   BOOST_TEST(str->getGDSSRefs().size() == 0);
   BOOST_TEST(str->getGDSTexts().size() == 8);
@@ -105,7 +104,6 @@ BOOST_AUTO_TEST_CASE(writer)
 
   BOOST_TEST(str->getGDSBoundarys().size() == 44);
   BOOST_TEST(str->getGDSBoxs().size() == 0);
-  BOOST_TEST(str->getGDSNodes().size() == 0);
   BOOST_TEST(str->getGDSPaths().size() == 2);
   BOOST_TEST(str->getGDSSRefs().size() == 0);
   BOOST_TEST(str->getGDSTexts().size() == 8);
@@ -163,11 +161,6 @@ BOOST_AUTO_TEST_CASE(edit)
 
   box->getPropattr().emplace_back(12, "test");
 
-  dbGDSNode* node = dbGDSNode::create(str1);
-  node->setLayer(6);
-  node->setDatatype(7);
-  node->setXy({{2, 3}, {4, 5}});
-
   dbGDSSRef* sref = dbGDSSRef::create(str3);
   sref->set_sName("str1");
   sref->setTransform(dbGDSSTrans(false, false, false, 2.0, 90));
@@ -189,7 +182,6 @@ BOOST_AUTO_TEST_CASE(edit)
   dbGDSStructure* str1_read = lib2->findGDSStructure("str1");
   BOOST_TEST(str1_read != nullptr);
   BOOST_TEST(str1_read->getGDSBoxs().size() == 1);
-  BOOST_TEST(str1_read->getGDSNodes().size() == 1);
 
   dbGDSBox* box_read = *str1_read->getGDSBoxs().begin();
   BOOST_TEST(box_read->getLayer() == 3);
@@ -198,10 +190,6 @@ BOOST_AUTO_TEST_CASE(edit)
   BOOST_TEST(box_read->getPropattr().size() == 1);
   BOOST_TEST(box_read->getPropattr()[0].first == 12);
   BOOST_TEST(box_read->getPropattr()[0].second == "test");
-
-  dbGDSNode* node_read = *str1_read->getGDSNodes().begin();
-  BOOST_TEST(node_read->getLayer() == 6);
-  BOOST_TEST(node_read->getDatatype() == 7);
 
   dbGDSStructure* str3_read = lib2->findGDSStructure("str3");
   BOOST_TEST(str3_read != nullptr);

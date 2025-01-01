@@ -129,7 +129,7 @@ class GDSReader
   dbGDSSRef* processSRef(dbGDSStructure* structure);
   dbGDSText* processText(dbGDSStructure* structure);
   dbGDSBox* processBox(dbGDSStructure* structure);
-  dbGDSNode* processNode(dbGDSStructure* structure);
+  void processNode();
 
   /**
    * Parses special attributes of a GDS Element

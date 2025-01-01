@@ -93,7 +93,6 @@ add_library(db
     dbGCellGrid.cpp
     dbGDSBoundary.cpp
     dbGDSBox.cpp
-    dbGDSNode.cpp
     dbGDSPath.cpp
     dbGDSSRef.cpp
     dbGDSStructure.cpp

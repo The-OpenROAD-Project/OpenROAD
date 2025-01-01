@@ -134,7 +134,6 @@ class dbDft;
 class dbGCellGrid;
 class dbGDSBoundary;
 class dbGDSBox;
-class dbGDSNode;
 class dbGDSPath;
 class dbGDSSRef;
 class dbGDSStructure;
@@ -7505,30 +7504,6 @@ class dbGDSBox : public dbObject
   // User Code End dbGDSBox
 };
 
-class dbGDSNode : public dbObject
-{
- public:
-  void setLayer(int16_t layer);
-
-  int16_t getLayer() const;
-
-  void setDatatype(int16_t datatype);
-
-  int16_t getDatatype() const;
-
-  void setXy(const std::vector<Point>& xy);
-
-  void getXy(std::vector<Point>& tbl) const;
-
-  // User Code Begin dbGDSNode
-  const std::vector<Point>& getXY();
-  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
-
-  static dbGDSNode* create(dbGDSStructure* structure);
-  static void destroy(dbGDSNode* node);
-  // User Code End dbGDSNode
-};
-
 class dbGDSPath : public dbObject
 {
  public:
@@ -7608,8 +7583,6 @@ class dbGDSStructure : public dbObject
   dbSet<dbGDSBoundary> getGDSBoundarys() const;
 
   dbSet<dbGDSBox> getGDSBoxs() const;
-
-  dbSet<dbGDSNode> getGDSNodes() const;
 
   dbSet<dbGDSPath> getGDSPaths() const;
 
