@@ -421,7 +421,7 @@ dbGDSText* GDSReader::processText(dbGDSStructure* structure)
     text->setTransform(processSTrans());
   }
 
-  text->setXy(processXY());
+  text->setOrigin(processXY().at(0));
 
   readRecord();
   checkRType(RecordType::STRING);

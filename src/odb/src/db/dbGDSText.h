@@ -61,7 +61,7 @@ class _dbGDSText : public _dbObject
 
   int16_t _layer;
   int16_t _datatype;
-  std::vector<Point> _xy;
+  Point _origin;
   std::vector<std::pair<std::int16_t, std::string>> _propattr;
   dbGDSTextPres _presentation;
   dbGDSSTrans _transform;

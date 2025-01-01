@@ -414,7 +414,8 @@ void GDSWriter::writeText(dbGDSText* text)
     writeSTrans(text->getTransform());
   }
 
-  writeXY(text->getXY());
+  std::vector<Point> origin({text->getOrigin()});
+  writeXY(origin);
 
   record_t r5;
   r5.type = RecordType::STRING;
