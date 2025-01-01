@@ -142,11 +142,9 @@ class GDSReader
   /**
    * Parses the XY data of a GDS Element
    *
-   * @param elem The GDS Element to add the XY data to
-   * @return true if the XY data was successfully read
+   * @return The XY data
    */
-  template <typename T>
-  bool processXY(T* elem);
+  std::vector<Point> processXY();
 
   /**
    * Parses a GDS STrans from the GDS file

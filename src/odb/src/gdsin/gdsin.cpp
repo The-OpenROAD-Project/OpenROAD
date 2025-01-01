@@ -232,8 +232,7 @@ bool GDSReader::processStruct()
   return false;
 }
 
-template <typename T>
-bool GDSReader::processXY(T* elem)
+std::vector<Point> GDSReader::processXY()
 {
   checkRType(RecordType::XY);
   if (_r.data32.size() % 2 != 0) {
@@ -244,10 +243,7 @@ bool GDSReader::processXY(T* elem)
   for (int i = 0; i < _r.data32.size(); i += 2) {
     xy.emplace_back(_r.data32[i], _r.data32[i + 1]);
   }
-  if (elem) {
-    elem->setXy(xy);
-  }
-  return true;
+  return xy;
 }
 
 template <typename T>
@@ -346,7 +342,7 @@ dbGDSPath* GDSReader::processPath(dbGDSStructure* structure)
     path->setWidth(0);
   }
 
-  processXY(path);
+  path->setXy(processXY());
 
   return path;
 }
@@ -364,7 +360,7 @@ dbGDSBoundary* GDSReader::processBoundary(dbGDSStructure* structure)
   bdy->setDatatype(_r.data16[0]);
 
   readRecord();
-  processXY(bdy);
+  bdy->setXy(processXY());
 
   return bdy;
 }
@@ -389,7 +385,7 @@ dbGDSSRef* GDSReader::processSRef(dbGDSStructure* structure)
     sref->set_colRow({1, 1});
   }
 
-  processXY(sref);
+  sref->setXy(processXY());
 
   return sref;
 }
@@ -425,7 +421,7 @@ dbGDSText* GDSReader::processText(dbGDSStructure* structure)
     text->setTransform(processSTrans());
   }
 
-  processXY(text);
+  text->setXy(processXY());
 
   readRecord();
   checkRType(RecordType::STRING);
@@ -447,7 +443,9 @@ dbGDSBox* GDSReader::processBox(dbGDSStructure* structure)
   box->setDatatype(_r.data16[0]);
 
   readRecord();
-  processXY(box);
+  std::vector<Point> points = processXY();
+  Rect bounds(points[0], points[2]);
+  box->setBounds(bounds);
 
   return box;
 }
@@ -461,7 +459,7 @@ void GDSReader::processNode()
   checkRType(RecordType::NODETYPE);
 
   readRecord();
-  processXY<dbGDSBox>(nullptr);
+  processXY();
 }
 
 dbGDSSTrans GDSReader::processSTrans()

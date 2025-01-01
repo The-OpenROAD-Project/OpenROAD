@@ -7491,12 +7491,11 @@ class dbGDSBox : public dbObject
 
   int16_t getDatatype() const;
 
-  void setXy(const std::vector<Point>& xy);
+  void setBounds(Rect bounds);
 
-  void getXy(std::vector<Point>& tbl) const;
+  Rect getBounds() const;
 
   // User Code Begin dbGDSBox
-  const std::vector<Point>& getXY();
   std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
 
   static dbGDSBox* create(dbGDSStructure* structure);

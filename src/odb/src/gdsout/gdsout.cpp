@@ -441,7 +441,9 @@ void GDSWriter::writeBox(dbGDSBox* box)
   r2.data16 = {box->getDatatype()};
   writeRecord(r2);
 
-  writeXY(box->getXY());
+  const Rect b = box->getBounds();
+  std::vector<Point> points({b.ll(), b.lr(), b.ur(), b.ul(), b.ll()});
+  writeXY(points);
 
   writePropAttr(box);
   writeEndel();

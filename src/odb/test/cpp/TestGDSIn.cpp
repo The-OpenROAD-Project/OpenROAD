@@ -157,7 +157,7 @@ BOOST_AUTO_TEST_CASE(edit)
   dbGDSBox* box = dbGDSBox::create(str1);
   box->setLayer(3);
   box->setDatatype(4);
-  box->setXy({{0, 0}, {0, 1000}, {1000, 1000}, {1000, 0}});
+  box->setBounds({0, 0, 1000, 1000});
 
   box->getPropattr().emplace_back(12, "test");
 
@@ -186,7 +186,6 @@ BOOST_AUTO_TEST_CASE(edit)
   dbGDSBox* box_read = *str1_read->getGDSBoxs().begin();
   BOOST_TEST(box_read->getLayer() == 3);
   BOOST_TEST(box_read->getDatatype() == 4);
-  BOOST_TEST(box_read->getXY().size() == 4);
   BOOST_TEST(box_read->getPropattr().size() == 1);
   BOOST_TEST(box_read->getPropattr()[0].first == 12);
   BOOST_TEST(box_read->getPropattr()[0].second == "test");
