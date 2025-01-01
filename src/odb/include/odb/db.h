@@ -7539,14 +7539,6 @@ class dbGDSPath : public dbObject
 class dbGDSSRef : public dbObject
 {
  public:
-  void setLayer(int16_t layer);
-
-  int16_t getLayer() const;
-
-  void setDatatype(int16_t datatype);
-
-  int16_t getDatatype() const;
-
   void setXy(const std::vector<Point>& xy);
 
   void getXy(std::vector<Point>& tbl) const;

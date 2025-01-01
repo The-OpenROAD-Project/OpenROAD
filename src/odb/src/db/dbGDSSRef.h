@@ -64,8 +64,6 @@ class _dbGDSSRef : public _dbObject
 
   // User Code End Methods
 
-  int16_t _layer;
-  int16_t _datatype;
   std::vector<Point> _xy;
   std::vector<std::pair<std::int16_t, std::string>> _propattr;
   std::string _sName;
