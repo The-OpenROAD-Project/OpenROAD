@@ -7611,10 +7611,6 @@ class dbGDSText : public dbObject
 
   dbGDSTextPres getPresentation() const;
 
-  void setWidth(int width);
-
-  int getWidth() const;
-
   void setTransform(dbGDSSTrans transform);
 
   dbGDSSTrans getTransform() const;

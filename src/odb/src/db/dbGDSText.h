@@ -64,7 +64,6 @@ class _dbGDSText : public _dbObject
   std::vector<Point> _xy;
   std::vector<std::pair<std::int16_t, std::string>> _propattr;
   dbGDSTextPres _presentation;
-  int _width;
   dbGDSSTrans _transform;
   std::string _text;
 };

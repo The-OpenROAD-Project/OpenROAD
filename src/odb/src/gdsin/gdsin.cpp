@@ -417,7 +417,7 @@ dbGDSText* GDSReader::processText(dbGDSStructure* structure)
   }
 
   if (_r.type == RecordType::WIDTH) {
-    text->setWidth(_r.data32[0]);
+    // ignored
     readRecord();
   }
 

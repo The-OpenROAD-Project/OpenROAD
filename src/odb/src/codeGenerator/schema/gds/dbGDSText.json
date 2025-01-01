@@ -30,12 +30,6 @@
         "flags":[]
       },
       {
-        "name":"_width",
-        "type":"int",
-        "default":"0",
-        "flags":[]
-      },
-      {
         "name":"_transform",
         "type":"dbGDSSTrans",
         "flags":[]

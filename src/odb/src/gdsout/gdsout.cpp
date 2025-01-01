@@ -410,14 +410,6 @@ void GDSWriter::writeText(dbGDSText* text)
 
   writeTextPres(text->getPresentation());
 
-  if (text->getWidth() != 0) {
-    record_t r4;
-    r4.type = RecordType::WIDTH;
-    r4.dataType = DataType::INT_4;
-    r4.data32 = {text->getWidth()};
-    writeRecord(r4);
-  }
-
   if (!text->getTransform().identity()) {
     writeSTrans(text->getTransform());
   }

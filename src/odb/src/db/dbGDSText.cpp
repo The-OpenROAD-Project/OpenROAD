@@ -50,9 +50,6 @@ bool _dbGDSText::operator==(const _dbGDSText& rhs) const
   if (_datatype != rhs._datatype) {
     return false;
   }
-  if (_width != rhs._width) {
-    return false;
-  }
   if (_text != rhs._text) {
     return false;
   }
@@ -72,7 +69,6 @@ void _dbGDSText::differences(dbDiff& diff,
   DIFF_BEGIN
   DIFF_FIELD(_layer);
   DIFF_FIELD(_datatype);
-  DIFF_FIELD(_width);
   DIFF_FIELD(_text);
   DIFF_END
 }
@@ -82,7 +78,6 @@ void _dbGDSText::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_layer);
   DIFF_OUT_FIELD(_datatype);
-  DIFF_OUT_FIELD(_width);
   DIFF_OUT_FIELD(_text);
 
   DIFF_END
@@ -92,14 +87,12 @@ _dbGDSText::_dbGDSText(_dbDatabase* db)
 {
   _layer = 0;
   _datatype = 0;
-  _width = 0;
 }
 
 _dbGDSText::_dbGDSText(_dbDatabase* db, const _dbGDSText& r)
 {
   _layer = r._layer;
   _datatype = r._datatype;
-  _width = r._width;
   _text = r._text;
 }
 
@@ -110,7 +103,6 @@ dbIStream& operator>>(dbIStream& stream, _dbGDSText& obj)
   stream >> obj._xy;
   stream >> obj._propattr;
   stream >> obj._presentation;
-  stream >> obj._width;
   stream >> obj._transform;
   stream >> obj._text;
   return stream;
@@ -123,7 +115,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSText& obj)
   stream << obj._xy;
   stream << obj._propattr;
   stream << obj._presentation;
-  stream << obj._width;
   stream << obj._transform;
   stream << obj._text;
   return stream;
@@ -185,19 +176,6 @@ dbGDSTextPres dbGDSText::getPresentation() const
 {
   _dbGDSText* obj = (_dbGDSText*) this;
   return obj->_presentation;
-}
-
-void dbGDSText::setWidth(int width)
-{
-  _dbGDSText* obj = (_dbGDSText*) this;
-
-  obj->_width = width;
-}
-
-int dbGDSText::getWidth() const
-{
-  _dbGDSText* obj = (_dbGDSText*) this;
-  return obj->_width;
 }
 
 void dbGDSText::setTransform(dbGDSSTrans transform)
