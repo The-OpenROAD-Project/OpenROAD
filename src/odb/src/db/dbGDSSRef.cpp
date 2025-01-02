@@ -39,6 +39,9 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+// User Code Begin Includes
+#include "dbGDSLib.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbGDSSRef>;
 
@@ -47,7 +50,7 @@ bool _dbGDSSRef::operator==(const _dbGDSSRef& rhs) const
   if (_origin != rhs._origin) {
     return false;
   }
-  if (_sName != rhs._sName) {
+  if (_structure != rhs._structure) {
     return false;
   }
 
@@ -65,7 +68,7 @@ void _dbGDSSRef::differences(dbDiff& diff,
 {
   DIFF_BEGIN
   DIFF_FIELD(_origin);
-  DIFF_FIELD(_sName);
+  DIFF_FIELD(_structure);
   DIFF_END
 }
 
@@ -73,7 +76,7 @@ void _dbGDSSRef::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_origin);
-  DIFF_OUT_FIELD(_sName);
+  DIFF_OUT_FIELD(_structure);
 
   DIFF_END
 }
@@ -85,15 +88,15 @@ _dbGDSSRef::_dbGDSSRef(_dbDatabase* db)
 _dbGDSSRef::_dbGDSSRef(_dbDatabase* db, const _dbGDSSRef& r)
 {
   _origin = r._origin;
-  _sName = r._sName;
+  _structure = r._structure;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSSRef& obj)
 {
   stream >> obj._origin;
   stream >> obj._propattr;
-  stream >> obj._sName;
   stream >> obj._transform;
+  stream >> obj._structure;
   return stream;
 }
 
@@ -101,8 +104,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSSRef& obj)
 {
   stream << obj._origin;
   stream << obj._propattr;
-  stream << obj._sName;
   stream << obj._transform;
+  stream << obj._structure;
   return stream;
 }
 
@@ -125,19 +128,6 @@ Point dbGDSSRef::getOrigin() const
   return obj->_origin;
 }
 
-void dbGDSSRef::set_sName(const std::string& sName)
-{
-  _dbGDSSRef* obj = (_dbGDSSRef*) this;
-
-  obj->_sName = sName;
-}
-
-std::string dbGDSSRef::get_sName() const
-{
-  _dbGDSSRef* obj = (_dbGDSSRef*) this;
-  return obj->_sName;
-}
-
 void dbGDSSRef::setTransform(dbGDSSTrans transform)
 {
   _dbGDSSRef* obj = (_dbGDSSRef*) this;
@@ -153,16 +143,29 @@ dbGDSSTrans dbGDSSRef::getTransform() const
 
 // User Code Begin dbGDSSRefPublicMethods
 
+dbGDSStructure* dbGDSSRef::getStructure() const
+{
+  _dbGDSSRef* obj = (_dbGDSSRef*) this;
+  if (obj->_structure == 0) {
+    return nullptr;
+  }
+  _dbGDSStructure* parent = (_dbGDSStructure*) obj->getOwner();
+  _dbGDSLib* lib = (_dbGDSLib*) parent->getOwner();
+  return (dbGDSStructure*) lib->_gdsstructure_tbl->getPtr(obj->_structure);
+}
+
 std::vector<std::pair<std::int16_t, std::string>>& dbGDSSRef::getPropattr()
 {
   auto* obj = (_dbGDSSRef*) this;
   return obj->_propattr;
 }
 
-dbGDSSRef* dbGDSSRef::create(dbGDSStructure* structure)
+dbGDSSRef* dbGDSSRef::create(dbGDSStructure* parent, dbGDSStructure* child)
 {
-  auto* obj = (_dbGDSStructure*) structure;
-  return (dbGDSSRef*) obj->srefs_->create();
+  auto* obj = (_dbGDSStructure*) parent;
+  _dbGDSSRef* sref = obj->srefs_->create();
+  sref->_structure = child->getImpl()->getOID();
+  return (dbGDSSRef*) sref;
 }
 
 void dbGDSSRef::destroy(dbGDSSRef* sRef)
@@ -172,17 +175,6 @@ void dbGDSSRef::destroy(dbGDSSRef* sRef)
   structure->srefs_->destroy(obj);
 }
 
-dbGDSStructure* dbGDSSRef::getStructure() const
-{
-  _dbGDSSRef* obj = (_dbGDSSRef*) this;
-  return obj->_stucture;
-}
-
-void dbGDSSRef::setStructure(dbGDSStructure* structure) const
-{
-  _dbGDSSRef* obj = (_dbGDSSRef*) this;
-  obj->_stucture = structure;
-}
 // User Code End dbGDSSRefPublicMethods
 }  // namespace odb
    // Generator Code End Cpp

@@ -7456,10 +7456,6 @@ class dbGDSARef : public dbObject
 
   Point getUl() const;
 
-  void set_sName(const std::string& sName);
-
-  std::string get_sName() const;
-
   void setTransform(dbGDSSTrans transform);
 
   dbGDSSTrans getTransform() const;
@@ -7469,12 +7465,10 @@ class dbGDSARef : public dbObject
   std::pair<int16_t, int16_t> get_colRow() const;
 
   // User Code Begin dbGDSARef
+  dbGDSStructure* getStructure() const;
   std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
 
-  dbGDSStructure* getStructure() const;
-  void setStructure(dbGDSStructure* structure) const;
-
-  static dbGDSARef* create(dbGDSStructure* structure);
+  static dbGDSARef* create(dbGDSStructure* parent, dbGDSStructure* child);
   static void destroy(dbGDSARef* aref);
   // User Code End dbGDSARef
 };
@@ -7565,21 +7559,15 @@ class dbGDSSRef : public dbObject
 
   Point getOrigin() const;
 
-  void set_sName(const std::string& sName);
-
-  std::string get_sName() const;
-
   void setTransform(dbGDSSTrans transform);
 
   dbGDSSTrans getTransform() const;
 
   // User Code Begin dbGDSSRef
+  dbGDSStructure* getStructure() const;
   std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
 
-  dbGDSStructure* getStructure() const;
-  void setStructure(dbGDSStructure* structure) const;
-
-  static dbGDSSRef* create(dbGDSStructure* structure);
+  static dbGDSSRef* create(dbGDSStructure* parent, dbGDSStructure* child);
   static void destroy(dbGDSSRef* sref);
   // User Code End dbGDSSRef
 };

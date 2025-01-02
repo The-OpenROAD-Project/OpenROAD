@@ -39,6 +39,9 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+// User Code Begin Includes
+#include "dbGDSLib.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbGDSARef>;
 
@@ -53,7 +56,7 @@ bool _dbGDSARef::operator==(const _dbGDSARef& rhs) const
   if (_ul != rhs._ul) {
     return false;
   }
-  if (_sName != rhs._sName) {
+  if (_structure != rhs._structure) {
     return false;
   }
 
@@ -73,7 +76,7 @@ void _dbGDSARef::differences(dbDiff& diff,
   DIFF_FIELD(_origin);
   DIFF_FIELD(_lr);
   DIFF_FIELD(_ul);
-  DIFF_FIELD(_sName);
+  DIFF_FIELD(_structure);
   DIFF_END
 }
 
@@ -83,7 +86,7 @@ void _dbGDSARef::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_origin);
   DIFF_OUT_FIELD(_lr);
   DIFF_OUT_FIELD(_ul);
-  DIFF_OUT_FIELD(_sName);
+  DIFF_OUT_FIELD(_structure);
 
   DIFF_END
 }
@@ -97,7 +100,7 @@ _dbGDSARef::_dbGDSARef(_dbDatabase* db, const _dbGDSARef& r)
   _origin = r._origin;
   _lr = r._lr;
   _ul = r._ul;
-  _sName = r._sName;
+  _structure = r._structure;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSARef& obj)
@@ -106,9 +109,9 @@ dbIStream& operator>>(dbIStream& stream, _dbGDSARef& obj)
   stream >> obj._lr;
   stream >> obj._ul;
   stream >> obj._propattr;
-  stream >> obj._sName;
   stream >> obj._transform;
   stream >> obj._colRow;
+  stream >> obj._structure;
   return stream;
 }
 
@@ -118,9 +121,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSARef& obj)
   stream << obj._lr;
   stream << obj._ul;
   stream << obj._propattr;
-  stream << obj._sName;
   stream << obj._transform;
   stream << obj._colRow;
+  stream << obj._structure;
   return stream;
 }
 
@@ -169,19 +172,6 @@ Point dbGDSARef::getUl() const
   return obj->_ul;
 }
 
-void dbGDSARef::set_sName(const std::string& sName)
-{
-  _dbGDSARef* obj = (_dbGDSARef*) this;
-
-  obj->_sName = sName;
-}
-
-std::string dbGDSARef::get_sName() const
-{
-  _dbGDSARef* obj = (_dbGDSARef*) this;
-  return obj->_sName;
-}
-
 void dbGDSARef::setTransform(dbGDSSTrans transform)
 {
   _dbGDSARef* obj = (_dbGDSARef*) this;
@@ -210,16 +200,29 @@ std::pair<int16_t, int16_t> dbGDSARef::get_colRow() const
 
 // User Code Begin dbGDSARefPublicMethods
 
+dbGDSStructure* dbGDSARef::getStructure() const
+{
+  _dbGDSARef* obj = (_dbGDSARef*) this;
+  if (obj->_structure == 0) {
+    return nullptr;
+  }
+  _dbGDSStructure* parent = (_dbGDSStructure*) obj->getOwner();
+  _dbGDSLib* lib = (_dbGDSLib*) parent->getOwner();
+  return (dbGDSStructure*) lib->_gdsstructure_tbl->getPtr(obj->_structure);
+}
+
 std::vector<std::pair<std::int16_t, std::string>>& dbGDSARef::getPropattr()
 {
   auto* obj = (_dbGDSARef*) this;
   return obj->_propattr;
 }
 
-dbGDSARef* dbGDSARef::create(dbGDSStructure* structure)
+dbGDSARef* dbGDSARef::create(dbGDSStructure* parent, dbGDSStructure* child)
 {
-  auto* obj = (_dbGDSStructure*) structure;
-  return (dbGDSARef*) obj->arefs_->create();
+  auto* obj = (_dbGDSStructure*) parent;
+  _dbGDSARef* aref = obj->arefs_->create();
+  aref->_structure = child->getImpl()->getOID();
+  return (dbGDSARef*) aref;
 }
 
 void dbGDSARef::destroy(dbGDSARef* aref)
@@ -229,17 +232,6 @@ void dbGDSARef::destroy(dbGDSARef* aref)
   structure->arefs_->destroy(obj);
 }
 
-dbGDSStructure* dbGDSARef::getStructure() const
-{
-  _dbGDSARef* obj = (_dbGDSARef*) this;
-  return obj->_stucture;
-}
-
-void dbGDSARef::setStructure(dbGDSStructure* structure) const
-{
-  _dbGDSARef* obj = (_dbGDSARef*) this;
-  obj->_stucture = structure;
-}
 // User Code End dbGDSARefPublicMethods
 }  // namespace odb
    // Generator Code End Cpp

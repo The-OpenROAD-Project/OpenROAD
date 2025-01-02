@@ -58,7 +58,6 @@ dbGDSLib* GDSReader::read_gds(const std::string& filename, dbDatabase* db)
   }
   _db = nullptr;
 
-  bindAllRefs();
   return _lib;
 }
 
@@ -194,17 +193,21 @@ bool GDSReader::processStruct()
 
   const std::string name(_r.data8.begin(), _r.data8.end());
 
-  if (_lib->findGDSStructure(name.c_str()) != nullptr) {
-    throw std::runtime_error("Corrupted GDS, Duplicate structure name");
+  dbGDSStructure* structure = _lib->findGDSStructure(name.c_str());
+  if (structure) {
+    if (_defined.find(structure) != _defined.end()) {
+      throw std::runtime_error("Corrupted GDS, Duplicate structure name");
+    }
+  } else {
+    structure = dbGDSStructure::create(_lib, name.c_str());
   }
-
-  dbGDSStructure* str = dbGDSStructure::create(_lib, name.c_str());
+  _defined.insert(structure);
 
   while (readRecord()) {
     if (_r.type == RecordType::ENDSTR) {
       return true;
     }
-    if (!processElement(str)) {
+    if (!processElement(structure)) {
       break;
     }
   }
@@ -351,11 +354,18 @@ dbGDSBoundary* GDSReader::processBoundary(dbGDSStructure* structure)
 
 dbGDSSRef* GDSReader::processSRef(dbGDSStructure* structure)
 {
-  auto* sref = dbGDSSRef::create(structure);
-
   readRecord();
   checkRType(RecordType::SNAME);
-  sref->set_sName(std::string(_r.data8.begin(), _r.data8.end()));
+
+  const std::string name(_r.data8.begin(), _r.data8.end());
+  
+  dbGDSStructure* referenced = _lib->findGDSStructure(name.c_str());
+  if (!referenced) {
+    // Empty structure just to reference not yet defined.
+    referenced = dbGDSStructure::create(_lib, name.c_str());
+  }
+  
+  auto* sref = dbGDSSRef::create(structure, referenced);
 
   readRecord();
   if (_r.type == RecordType::STRANS) {
@@ -369,11 +379,18 @@ dbGDSSRef* GDSReader::processSRef(dbGDSStructure* structure)
 
 dbGDSARef* GDSReader::processARef(dbGDSStructure* structure)
 {
-  auto* aref = dbGDSARef::create(structure);
-
   readRecord();
   checkRType(RecordType::SNAME);
-  aref->set_sName(std::string(_r.data8.begin(), _r.data8.end()));
+
+  const std::string name(_r.data8.begin(), _r.data8.end());
+
+  dbGDSStructure* referenced = _lib->findGDSStructure(name.c_str());
+  if (!referenced) {
+    // Empty structure just to reference not yet defined.
+    referenced = dbGDSStructure::create(_lib, name.c_str());
+  }
+
+  auto* aref = dbGDSARef::create(structure, referenced);
 
   readRecord();
   if (_r.type == RecordType::STRANS) {
@@ -502,26 +519,6 @@ dbGDSTextPres GDSReader::processTextPres()
 
   return dbGDSTextPres((dbGDSTextPres::VPres) vpres,
                        (dbGDSTextPres::HPres) hpres);
-}
-
-void GDSReader::bindAllRefs()
-{
-  for (auto str : _lib->getGDSStructures()) {
-    for (auto sref : str->getGDSSRefs()) {
-      dbGDSStructure* ref = _lib->findGDSStructure(sref->get_sName().c_str());
-      if (ref == nullptr) {
-        throw std::runtime_error("Corrupted GDS, SRef to non-existent struct");
-      }
-      sref->setStructure(ref);
-    }
-    for (auto aref : str->getGDSARefs()) {
-      dbGDSStructure* ref = _lib->findGDSStructure(aref->get_sName().c_str());
-      if (ref == nullptr) {
-        throw std::runtime_error("Corrupted GDS, ARef to non-existent struct");
-      }
-      aref->setStructure(ref);
-    }
-  }
 }
 
 }  // namespace odb::gds

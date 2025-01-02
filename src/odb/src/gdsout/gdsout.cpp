@@ -371,7 +371,7 @@ void GDSWriter::writeSRef(dbGDSSRef* sref)
   record_t r2;
   r2.type = RecordType::SNAME;
   r2.dataType = DataType::ASCII_STRING;
-  r2.data8 = sref->get_sName();
+  r2.data8 = sref->getStructure()->getName();
   writeRecord(r2);
 
   if (!sref->getTransform().identity()) {
@@ -396,7 +396,7 @@ void GDSWriter::writeARef(dbGDSARef* aref)
   record_t r2;
   r2.type = RecordType::SNAME;
   r2.dataType = DataType::ASCII_STRING;
-  r2.data8 = aref->get_sName();
+  r2.data8 = aref->getStructure()->getName();
   writeRecord(r2);
 
   if (!aref->getTransform().identity()) {

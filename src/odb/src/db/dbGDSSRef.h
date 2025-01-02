@@ -42,6 +42,7 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
+class _dbGDSStructure;
 
 class _dbGDSSRef : public _dbObject
 {
@@ -58,16 +59,11 @@ class _dbGDSSRef : public _dbObject
                    const char* field,
                    const _dbGDSSRef& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-
-  dbGDSStructure* _stucture = nullptr;
-
-  // User Code End Methods
 
   Point _origin;
   std::vector<std::pair<std::int16_t, std::string>> _propattr;
-  std::string _sName;
   dbGDSSTrans _transform;
+  dbId<_dbGDSStructure> _structure;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSSRef& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSSRef& obj);

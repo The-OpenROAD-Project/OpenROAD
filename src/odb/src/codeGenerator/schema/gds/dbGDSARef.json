@@ -20,11 +20,6 @@
         "flags":["no-template", "no-get", "no-set"]
       },
       {
-        "name":"_sName",
-        "type":"std::string",
-        "flags":[]
-      },
-      {
         "name":"_transform",
         "type":"dbGDSSTrans",
         "flags":[]
@@ -33,6 +28,12 @@
         "name":"_colRow",
         "type":"std::pair<int16_t,int16_t>",
         "flags":["no-template"]
+      },
+      {
+        "name":"_structure",
+        "type":"dbId<_dbGDSStructure>",
+        "parent":"dbGDSStructure",
+        "flags":["no-get", "no-set"]
       }
     ],
     "h_includes": [

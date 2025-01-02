@@ -12,14 +12,15 @@
         "flags":["no-template", "no-get", "no-set"]
       },
       {
-        "name":"_sName",
-        "type":"std::string",
-        "flags":[]
-      },
-      {
         "name":"_transform",
         "type":"dbGDSSTrans",
         "flags":[]
+      },
+      {
+        "name":"_structure",
+        "type":"dbId<_dbGDSStructure>",
+        "parent":"dbGDSStructure",
+        "flags":["no-get", "no-set"]
       }
     ],
     "h_includes": [

@@ -266,13 +266,13 @@ dbGDSStructure* dbGDSStructure::create(dbGDSLib* lib_, const char* name_)
   }
 
   _dbGDSLib* lib = (_dbGDSLib*) lib_;
-  _dbGDSStructure* structure = lib->_structure_tbl->create();
+  _dbGDSStructure* structure = lib->_gdsstructure_tbl->create();
   structure->_name = strdup(name_);
   ZALLOCATED(structure->_name);
 
   // TODO: ID for structure
 
-  lib->_structure_hash.insert(structure);
+  lib->_gdsstructure_hash.insert(structure);
   return (dbGDSStructure*) structure;
 }
 
@@ -280,8 +280,8 @@ void dbGDSStructure::destroy(dbGDSStructure* structure)
 {
   _dbGDSStructure* str_impl = (_dbGDSStructure*) structure;
   _dbGDSLib* lib = (_dbGDSLib*) structure->getGDSLib();
-  lib->_structure_hash.remove(str_impl);
-  lib->_structure_tbl->destroy(str_impl);
+  lib->_gdsstructure_hash.remove(str_impl);
+  lib->_gdsstructure_tbl->destroy(str_impl);
 }
 
 dbGDSLib* dbGDSStructure::getGDSLib()

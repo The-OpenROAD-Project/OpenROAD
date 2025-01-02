@@ -161,8 +161,7 @@ BOOST_AUTO_TEST_CASE(edit)
 
   box->getPropattr().emplace_back(12, "test");
 
-  dbGDSSRef* sref = dbGDSSRef::create(str3);
-  sref->set_sName("str1");
+  dbGDSSRef* sref = dbGDSSRef::create(str3, str1);
   sref->setTransform(dbGDSSTrans(false, 2.0, 90));
 
   std::string outpath = testTmpPath("results", "edit_test_out.gds");
@@ -193,7 +192,7 @@ BOOST_AUTO_TEST_CASE(edit)
   BOOST_TEST(str3_read->getGDSSRefs().size() == 1);
 
   dbGDSSRef* sref_read = *str3_read->getGDSSRefs().begin();
-  BOOST_TEST(sref_read->get_sName() == "str1");
+  BOOST_TEST(sref_read->getStructure()->getName() == "str1");
   BOOST_TEST(sref_read->getTransform()._mag == 2.0);
   BOOST_TEST(sref_read->getTransform()._angle == 90);
 
