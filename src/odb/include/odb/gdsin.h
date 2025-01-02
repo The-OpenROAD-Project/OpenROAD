@@ -127,6 +127,7 @@ class GDSReader
   dbGDSBoundary* processBoundary(dbGDSStructure* structure);
   dbGDSPath* processPath(dbGDSStructure* structure);
   dbGDSSRef* processSRef(dbGDSStructure* structure);
+  dbGDSARef* processARef(dbGDSStructure* structure);
   dbGDSText* processText(dbGDSStructure* structure);
   dbGDSBox* processBox(dbGDSStructure* structure);
   void processNode();
@@ -160,9 +161,9 @@ class GDSReader
 
   /**
    * This function is called after the entire GDS file has been read to bind all
-   * SRefs with the pointers to the referenced structures.
+   * SRefs and ARefs with the pointers to the referenced structures.
    */
-  void bindAllSRefs();
+  void bindAllRefs();
 
   /** Current filestream */
   std::ifstream _file;

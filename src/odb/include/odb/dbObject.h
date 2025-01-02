@@ -91,6 +91,7 @@ enum dbObjectType
   dbBusPortObj,
   dbDftObj,
   dbGCellGridObj,
+  dbGDSARefObj,
   dbGDSBoundaryObj,
   dbGDSBoxObj,
   dbGDSPathObj,

@@ -58,7 +58,7 @@ dbGDSLib* GDSReader::read_gds(const std::string& filename, dbDatabase* db)
   }
   _db = nullptr;
 
-  bindAllSRefs();
+  bindAllRefs();
   return _lib;
 }
 
@@ -275,9 +275,13 @@ bool GDSReader::processElement(dbGDSStructure* structure)
       processPropAttr(el);
       break;
     }
-    case RecordType::SREF:
-    case RecordType::AREF: {
+    case RecordType::SREF: {
       auto el = processSRef(structure);
+      processPropAttr(el);
+      break;
+    }
+    case RecordType::AREF: {
+      auto el = processARef(structure);
       processPropAttr(el);
       break;
     }
@@ -390,6 +394,31 @@ dbGDSSRef* GDSReader::processSRef(dbGDSStructure* structure)
   return sref;
 }
 
+dbGDSARef* GDSReader::processARef(dbGDSStructure* structure)
+{
+  auto* aref = dbGDSARef::create(structure);
+
+  readRecord();
+  checkRType(RecordType::SNAME);
+  aref->set_sName(std::string(_r.data8.begin(), _r.data8.end()));
+
+  readRecord();
+  if (_r.type == RecordType::STRANS) {
+    aref->setTransform(processSTrans());
+  }
+
+  if (_r.type == RecordType::COLROW) {
+    aref->set_colRow({_r.data16[0], _r.data16[1]});
+    readRecord();
+  } else {
+    aref->set_colRow({1, 1});
+  }
+
+  aref->setXy(processXY());
+
+  return aref;
+}
+
 dbGDSText* GDSReader::processText(dbGDSStructure* structure)
 {
   auto* text = dbGDSText::create(structure);
@@ -500,7 +529,7 @@ dbGDSTextPres GDSReader::processTextPres()
                        (dbGDSTextPres::HPres) hpres);
 }
 
-void GDSReader::bindAllSRefs()
+void GDSReader::bindAllRefs()
 {
   for (auto str : _lib->getGDSStructures()) {
     for (auto sref : str->getGDSSRefs()) {
@@ -509,6 +538,13 @@ void GDSReader::bindAllSRefs()
         throw std::runtime_error("Corrupted GDS, SRef to non-existent struct");
       }
       sref->setStructure(ref);
+    }
+    for (auto aref : str->getGDSARefs()) {
+      dbGDSStructure* ref = _lib->findGDSStructure(aref->get_sName().c_str());
+      if (ref == nullptr) {
+        throw std::runtime_error("Corrupted GDS, ARef to non-existent struct");
+      }
+      aref->setStructure(ref);
     }
   }
 }

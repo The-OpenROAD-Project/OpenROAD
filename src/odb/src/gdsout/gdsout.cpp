@@ -243,6 +243,10 @@ void GDSWriter::writeStruct(dbGDSStructure* str)
     writeSRef(sref);
   }
 
+  for (auto aref : str->getGDSARefs()) {
+    writeARef(aref);
+  }
+
   for (auto text : str->getGDSTexts()) {
     writeText(text);
   }
@@ -360,12 +364,7 @@ void GDSWriter::writePath(dbGDSPath* path)
 void GDSWriter::writeSRef(dbGDSSRef* sref)
 {
   record_t r;
-  auto colrow = sref->get_colRow();
-  if (colrow.first == 1 && colrow.second == 1) {
-    r.type = RecordType::SREF;
-  } else {
-    r.type = RecordType::AREF;
-  }
+  r.type = RecordType::SREF;
   r.dataType = DataType::NO_DATA;
   writeRecord(r);
 
@@ -379,6 +378,30 @@ void GDSWriter::writeSRef(dbGDSSRef* sref)
     writeSTrans(sref->getTransform());
   }
 
+  writeXY(sref->getXY());
+
+  writePropAttr(sref);
+  writeEndel();
+}
+
+void GDSWriter::writeARef(dbGDSARef* aref)
+{
+  record_t r;
+  auto colrow = aref->get_colRow();
+  r.type = RecordType::AREF;
+  r.dataType = DataType::NO_DATA;
+  writeRecord(r);
+
+  record_t r2;
+  r2.type = RecordType::SNAME;
+  r2.dataType = DataType::ASCII_STRING;
+  r2.data8 = aref->get_sName();
+  writeRecord(r2);
+
+  if (!aref->getTransform().identity()) {
+    writeSTrans(aref->getTransform());
+  }
+
   if (colrow.first != 1 || colrow.second != 1) {
     record_t r4;
     r4.type = RecordType::COLROW;
@@ -387,9 +410,9 @@ void GDSWriter::writeSRef(dbGDSSRef* sref)
     writeRecord(r4);
   }
 
-  writeXY(sref->getXY());
+  writeXY(aref->getXY());
 
-  writePropAttr(sref);
+  writePropAttr(aref);
   writeEndel();
 }
 

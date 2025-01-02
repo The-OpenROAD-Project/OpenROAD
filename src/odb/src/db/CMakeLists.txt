@@ -91,6 +91,7 @@ add_library(db
     dbBusPort.cpp
     dbDft.cpp
     dbGCellGrid.cpp
+    dbGDSARef.cpp
     dbGDSBoundary.cpp
     dbGDSBox.cpp
     dbGDSPath.cpp

@@ -132,6 +132,7 @@ class dbAccessPoint;
 class dbBusPort;
 class dbDft;
 class dbGCellGrid;
+class dbGDSARef;
 class dbGDSBoundary;
 class dbGDSBox;
 class dbGDSPath;
@@ -7456,6 +7457,37 @@ class dbGCellGrid : public dbObject
   // User Code End dbGCellGrid
 };
 
+class dbGDSARef : public dbObject
+{
+ public:
+  void setXy(const std::vector<Point>& xy);
+
+  void getXy(std::vector<Point>& tbl) const;
+
+  void set_sName(const std::string& sName);
+
+  std::string get_sName() const;
+
+  void setTransform(dbGDSSTrans transform);
+
+  dbGDSSTrans getTransform() const;
+
+  void set_colRow(const std::pair<int16_t, int16_t>& colRow);
+
+  std::pair<int16_t, int16_t> get_colRow() const;
+
+  // User Code Begin dbGDSARef
+  const std::vector<Point>& getXY();
+  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+
+  dbGDSStructure* getStructure() const;
+  void setStructure(dbGDSStructure* structure) const;
+
+  static dbGDSARef* create(dbGDSStructure* structure);
+  static void destroy(dbGDSARef* sref);
+  // User Code End dbGDSARef
+};
+
 class dbGDSBoundary : public dbObject
 {
  public:
@@ -7578,6 +7610,8 @@ class dbGDSStructure : public dbObject
   dbSet<dbGDSPath> getGDSPaths() const;
 
   dbSet<dbGDSSRef> getGDSSRefs() const;
+
+  dbSet<dbGDSARef> getGDSARefs() const;
 
   dbSet<dbGDSText> getGDSTexts() const;
 

@@ -338,6 +338,12 @@
     },
     {
       "first": "dbGDSStructure",
+      "second": "dbGDSARef",
+      "type": "1_n",
+      "tbl_name": "arefs_"
+    },
+    {
+      "first": "dbGDSStructure",
       "second": "dbGDSText",
       "type": "1_n",
       "tbl_name": "texts_"

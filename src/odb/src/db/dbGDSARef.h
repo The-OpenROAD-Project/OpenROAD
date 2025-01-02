@@ -34,9 +34,7 @@
 #pragma once
 
 #include "dbCore.h"
-#include "dbTable.h"
-#include "dbVector.h"
-#include "odb/db.h"
+#include "dbGDSStructure.h"
 #include "odb/odb.h"
 
 namespace odb {
@@ -44,48 +42,35 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class _dbGDSBoundary;
-template <class T>
-class dbTable;
-class _dbGDSBox;
-class _dbGDSPath;
-class _dbGDSSRef;
-class _dbGDSARef;
-class _dbGDSText;
 
-class _dbGDSStructure : public _dbObject
+class _dbGDSARef : public _dbObject
 {
  public:
-  _dbGDSStructure(_dbDatabase*, const _dbGDSStructure& r);
-  _dbGDSStructure(_dbDatabase*);
+  _dbGDSARef(_dbDatabase*, const _dbGDSARef& r);
+  _dbGDSARef(_dbDatabase*);
 
-  ~_dbGDSStructure();
+  ~_dbGDSARef() = default;
 
-  bool operator==(const _dbGDSStructure& rhs) const;
-  bool operator!=(const _dbGDSStructure& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbGDSStructure& rhs) const;
+  bool operator==(const _dbGDSARef& rhs) const;
+  bool operator!=(const _dbGDSARef& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbGDSARef& rhs) const;
   void differences(dbDiff& diff,
                    const char* field,
-                   const _dbGDSStructure& rhs) const;
+                   const _dbGDSARef& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  dbObjectTable* getObjectTable(dbObjectType type);
+  // User Code Begin Methods
 
-  char* _name;
-  dbId<_dbGDSStructure> _next_entry;
+  dbGDSStructure* _stucture = nullptr;
 
-  dbTable<_dbGDSBoundary>* boundaries_;
+  // User Code End Methods
 
-  dbTable<_dbGDSBox>* boxes_;
-
-  dbTable<_dbGDSPath>* paths_;
-
-  dbTable<_dbGDSSRef>* srefs_;
-
-  dbTable<_dbGDSARef>* arefs_;
-
-  dbTable<_dbGDSText>* texts_;
+  std::vector<Point> _xy;
+  std::vector<std::pair<std::int16_t, std::string>> _propattr;
+  std::string _sName;
+  dbGDSSTrans _transform;
+  std::pair<int16_t, int16_t> _colRow;
 };
-dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj);
+dbIStream& operator>>(dbIStream& stream, _dbGDSARef& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbGDSARef& obj);
 }  // namespace odb
    // Generator Code End Header

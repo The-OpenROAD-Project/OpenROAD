@@ -110,6 +110,7 @@ class GDSWriter
   void writeBoundary(dbGDSBoundary* bnd);
   void writePath(dbGDSPath* path);
   void writeSRef(dbGDSSRef* sref);
+  void writeARef(dbGDSARef* aref);
   void writeText(dbGDSText* text);
   void writeBox(dbGDSBox* box);
 

@@ -35,6 +35,7 @@
 
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
+#include "dbGDSARef.h"
 #include "dbGDSBoundary.h"
 #include "dbGDSBox.h"
 #include "dbGDSLib.h"
@@ -70,6 +71,9 @@ bool _dbGDSStructure::operator==(const _dbGDSStructure& rhs) const
   if (*srefs_ != *rhs.srefs_) {
     return false;
   }
+  if (*arefs_ != *rhs.arefs_) {
+    return false;
+  }
   if (*texts_ != *rhs.texts_) {
     return false;
   }
@@ -93,6 +97,7 @@ void _dbGDSStructure::differences(dbDiff& diff,
   DIFF_TABLE(boxes_);
   DIFF_TABLE(paths_);
   DIFF_TABLE(srefs_);
+  DIFF_TABLE(arefs_);
   DIFF_TABLE(texts_);
   DIFF_END
 }
@@ -106,6 +111,7 @@ void _dbGDSStructure::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(boxes_);
   DIFF_OUT_TABLE(paths_);
   DIFF_OUT_TABLE(srefs_);
+  DIFF_OUT_TABLE(arefs_);
   DIFF_OUT_TABLE(texts_);
 
   DIFF_END
@@ -125,6 +131,8 @@ _dbGDSStructure::_dbGDSStructure(_dbDatabase* db)
       db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSPathObj);
   srefs_ = new dbTable<_dbGDSSRef>(
       db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSSRefObj);
+  arefs_ = new dbTable<_dbGDSARef>(
+      db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSARefObj);
   texts_ = new dbTable<_dbGDSText>(
       db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSTextObj);
 }
@@ -137,6 +145,7 @@ _dbGDSStructure::_dbGDSStructure(_dbDatabase* db, const _dbGDSStructure& r)
   boxes_ = new dbTable<_dbGDSBox>(db, this, *r.boxes_);
   paths_ = new dbTable<_dbGDSPath>(db, this, *r.paths_);
   srefs_ = new dbTable<_dbGDSSRef>(db, this, *r.srefs_);
+  arefs_ = new dbTable<_dbGDSARef>(db, this, *r.arefs_);
   texts_ = new dbTable<_dbGDSText>(db, this, *r.texts_);
 }
 
@@ -148,6 +157,7 @@ dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj)
   stream >> *obj.boxes_;
   stream >> *obj.paths_;
   stream >> *obj.srefs_;
+  stream >> *obj.arefs_;
   stream >> *obj.texts_;
   return stream;
 }
@@ -160,6 +170,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj)
   stream << *obj.boxes_;
   stream << *obj.paths_;
   stream << *obj.srefs_;
+  stream << *obj.arefs_;
   stream << *obj.texts_;
   return stream;
 }
@@ -175,6 +186,8 @@ dbObjectTable* _dbGDSStructure::getObjectTable(dbObjectType type)
       return paths_;
     case dbGDSSRefObj:
       return srefs_;
+    case dbGDSARefObj:
+      return arefs_;
     case dbGDSTextObj:
       return texts_;
     default:
@@ -192,6 +205,7 @@ _dbGDSStructure::~_dbGDSStructure()
   delete boxes_;
   delete paths_;
   delete srefs_;
+  delete arefs_;
   delete texts_;
 }
 
@@ -229,6 +243,12 @@ dbSet<dbGDSSRef> dbGDSStructure::getGDSSRefs() const
 {
   _dbGDSStructure* obj = (_dbGDSStructure*) this;
   return dbSet<dbGDSSRef>(obj, obj->srefs_);
+}
+
+dbSet<dbGDSARef> dbGDSStructure::getGDSARefs() const
+{
+  _dbGDSStructure* obj = (_dbGDSStructure*) this;
+  return dbSet<dbGDSARef>(obj, obj->arefs_);
 }
 
 dbSet<dbGDSText> dbGDSStructure::getGDSTexts() const

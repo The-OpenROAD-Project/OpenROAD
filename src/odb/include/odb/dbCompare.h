@@ -527,6 +527,15 @@ struct less<odb::dbGCellGrid*>
 };
 
 template <>
+struct less<odb::dbGDSARef*>
+{
+  bool operator()(const odb::dbGDSARef* lhs, const odb::dbGDSARef* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
 struct less<odb::dbGDSBoundary*>
 {
   bool operator()(const odb::dbGDSBoundary* lhs,
