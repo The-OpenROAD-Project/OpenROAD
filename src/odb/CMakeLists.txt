@@ -84,10 +84,8 @@ if(ENABLE_TESTS)
   )
 endif()
 
-add_custom_command(
-  OUTPUT messages_checked
-  COMMAND ${CMAKE_SOURCE_DIR}/etc/find_messages.py > messages.txt && touch ${CMAKE_CURRENT_BINARY_DIR}/messages_checked
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+messages(
+  TARGET odb
   DEPENDS
     db
     cdl
@@ -99,7 +97,3 @@ add_custom_command(
     gdsin
     gdsout
 )
-
-add_custom_target(odb_messages DEPENDS messages_checked)
-
-add_dependencies(odb odb_messages)
