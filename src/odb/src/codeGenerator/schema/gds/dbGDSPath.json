@@ -31,7 +31,7 @@
         "flags":[]
       },
       {
-        "name":"_pathType",
+        "name":"_path_type",
         "type":"int16_t",
         "default":"0",
         "flags":[]
