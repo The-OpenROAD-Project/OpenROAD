@@ -41,13 +41,14 @@
 #   SOURCE_DIR <dir>: the directory to search for sources from
 #                     [defaults to OUTPUT_DIR]
 #   LOCAL: don't recurse [defaults to false]
+#   DEPENDS: <dep1 ...>: Add extra dependencies [optional]
 
 function(messages)
 
   # Parse args
   set(options LOCAL)
   set(oneValueArgs TARGET OUTPUT_DIR SOURCE_DIR)
-  set(multiValueArgs "")
+  set(multiValueArgs DEPENDS)
 
   cmake_parse_arguments(
       ARG  # prefix on the parsed args
@@ -72,8 +73,10 @@ function(messages)
 
   if (DEFINED ARG_OUTPUT_DIR)
     set(OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${ARG_OUTPUT_DIR})
+    set(OUTPUT_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/${ARG_OUTPUT_DIR})
   else()
     set(OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    set(OUTPUT_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
   endif()
 
   if (DEFINED ARG_SOURCE_DIR)
@@ -86,12 +89,27 @@ function(messages)
     set(local '--local')
   endif()
 
-  add_custom_command(
-    TARGET ${ARG_TARGET}
-    POST_BUILD
-    COMMAND ${CMAKE_SOURCE_DIR}/etc/find_messages.py
+  if (NOT DEFINED ARG_DEPENDS)
+    add_custom_command(
+      TARGET ${ARG_TARGET}
+      POST_BUILD
+      COMMAND ${CMAKE_SOURCE_DIR}/etc/find_messages.py
         ${local}
         > ${OUTPUT_DIR}/messages.txt
-    WORKING_DIRECTORY ${SOURCE_DIR}
-  )
+      WORKING_DIRECTORY ${SOURCE_DIR}
+    )
+  else()
+    add_custom_command(
+      OUTPUT messages_checked
+      COMMAND ${CMAKE_SOURCE_DIR}/etc/find_messages.py
+        ${local}
+        > ${OUTPUT_DIR}/messages.txt
+	&& touch ${OUTPUT_BUILD_DIR}/messages_checked
+      WORKING_DIRECTORY ${SOURCE_DIR}
+      DEPENDS ${ARG_DEPS}
+    )
+    add_custom_target(${ARG_TARGET}_messages DEPENDS messages_checked)
+    add_dependencies(${ARG_TARGET} ${ARG_TARGET}_messages)
+  endif()
+
 endfunction()
