@@ -2767,6 +2767,8 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net)
     drPs->setApPathSeg({x, y});
     Point begin = ps.getBeginPoint();
     Point end = ps.getEndPoint();
+    Point begin_mirror = begin;  // Print
+    Point end_mirror = end;      // Print
     Point* connecting = nullptr;
     if (ps.getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
       connecting = &begin;
@@ -2789,6 +2791,19 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net)
       }
     }
     drPs->setPoints(begin, end);
+    if (net->getFrNet()->getName() == "_031547_")
+      logger_->report("[OSAMA] This is the problematic one");
+    logger_->report("[OSAMA] PathSegs addApPathSegs transformations");
+    logger_->report("[OSAMA] begin: ({},{}) -> ({},{})",
+                    begin_mirror.getX(),
+                    begin_mirror.getY(),
+                    begin.getX(),
+                    begin.getY());
+    logger_->report("[OSAMA] end: ({},{}) -> ({},{})",
+                    end_mirror.getX(),
+                    end_mirror.getY(),
+                    end.getX(),
+                    end.getY());
     drPs->setLayerNum(lNum);
     drPs->addToNet(net);
     auto currStyle = getTech()->getLayer(lNum)->getDefaultSegStyle();

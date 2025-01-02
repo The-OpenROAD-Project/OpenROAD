@@ -205,7 +205,7 @@ void frRegionQuery::addBlockObj(frBlockObject* obj)
       auto blk = instBlk->getBlockage();
       auto pin = blk->getPin();
       for (auto& uFig : pin->getFigs()) {
-        auto shape = uFig.get();
+        frPinFig* shape = uFig.get();
         if (shape->typeId() == frcPathSeg || shape->typeId() == frcRect) {
           Rect frb = shape->getBBox();
           xform.apply(frb);

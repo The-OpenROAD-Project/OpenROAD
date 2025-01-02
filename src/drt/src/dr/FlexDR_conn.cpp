@@ -62,11 +62,22 @@ void FlexDRConnectivityChecker::pin2epMap_helper(
              std::set<std::pair<Point, frLayerNum>>,
              frBlockObjectComp>& pin2epMap)
 {
-  auto regionQuery = getRegionQuery();
+  frRegionQuery* regionQuery = getRegionQuery();
+
   frRegionQuery::Objects<frBlockObject> result;
   Rect query_box(pt.x(), pt.y(), pt.x(), pt.y());
   regionQuery->query(query_box, lNum, result);
+  logger_->report(
+      "[OSAMA] The different transforms will result in a divergence here:");
   for (auto& [bx, rqObj] : result) {
+    if (net->getName() == "_031547_") {
+      logger_->report("[OSAMA] box=({},{}) ({},{}) rqObj={}",
+                      bx.ll().getX(),
+                      bx.ll().getY(),
+                      bx.ur().getX(),
+                      bx.ur().getY(),
+                      rqObj->getId());
+    }
     switch (rqObj->typeId()) {
       case frcInstTerm: {
         auto instTerm = static_cast<frInstTerm*>(rqObj);
@@ -103,14 +114,50 @@ void FlexDRConnectivityChecker::buildPin2epMap(
     }
     auto obj = static_cast<frPathSeg*>(connFig);
     const auto [bp, ep] = obj->getPoints();
+    // if (net->getName() == "_031547_")
+    // logger_->report("[BNMFW] bp = ({},{}) ep = ({},{})", bp.getX(),
+    // bp.getY(), ep.getX(), ep.getY());
     const frSegStyle& style = obj->getStyle();
     auto lNum = obj->getLayerNum();
+    // if (net->getName() == "_031547_") {
+    //   logger_->report("[BNMFW] pin2epMap 1");
+    //   for (auto [block, pset]: pin2epMap) {
+    //     logger_->report("[BNMFW] block {}", block->getId());
+    //     for (auto p: pset) {
+    //       auto [point, layer] = p;
+    //       logger_->report("[BNMFW] ({},{},{}):", point.getX(), point.getY(),
+    //       layer);
+    //     }
+    //   }
+    // }
     if (style.getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
       pin2epMap_helper(net, bp, lNum, pin2epMap);
     }
+    // if (net->getName() == "_031547_") {
+    //   logger_->report("[BNMFW] pin2epMap 2");
+    //   for (auto [block, pset]: pin2epMap) {
+    //     logger_->report("[BNMFW] block {}", block->getId());
+    //     for (auto p: pset) {
+    //       auto [point, layer] = p;
+    //       logger_->report("[BNMFW] ({},{},{}):", point.getX(), point.getY(),
+    //       layer);
+    //     }
+    //   }
+    // }
     if (style.getEndStyle() == frEndStyle(frcTruncateEndStyle)) {
       pin2epMap_helper(net, ep, lNum, pin2epMap);
     }
+    // if (net->getName() == "_031547_") {
+    //   logger_->report("[BNMFW] pin2epMap 3");
+    //   for (auto [block, pset]: pin2epMap) {
+    //     logger_->report("[BNMFW] block {}", block->getId());
+    //     for (auto p: pset) {
+    //       auto [point, layer] = p;
+    //       logger_->report("[BNMFW] ({},{},{}):", point.getX(), point.getY(),
+    //       layer);
+    //     }
+    //   }
+    // }
   }
 
   for (auto& connFig : netRouteObjs) {
@@ -289,6 +336,7 @@ void FlexDRConnectivityChecker::nodeMap_pin(
   }
 }
 
+// Bookmark, this function is building the node map weirdly
 void FlexDRConnectivityChecker::buildNodeMap(
     const frNet* net,
     const NetRouteObjs& netRouteObjs,
@@ -320,6 +368,29 @@ bool FlexDRConnectivityChecker::astar(
   adjPrevIdx.clear();
   adjVisited.resize(nNetObjs, false);
   adjPrevIdx.resize(nNetObjs, -1);
+  // if (net->getName() == "_031547_") {
+  //   logger_->report("[BNMFW] Astar Net {}", net->getName());
+  //   logger_->report("[BNMFW] Route Objs");
+  //   for (auto obj: netRouteObjs) {
+  //     auto bbox = obj->getBBox();
+  //     logger_->report("({},{}) ({},{})", bbox.ll().getX(), bbox.ll().getY(),
+  //     bbox.ur().getX(), bbox.ur().getY());
+  //   }
+  //   logger_->report("[BNMFW] Pins");
+  //   for (auto& pin: net->getRPins()) {
+  //     auto bbox = pin->getBBox();
+  //     logger_->report("[BNMFW] ({},{}) ({},{})", bbox.ll().getX(),
+  //     bbox.ll().getY(), bbox.ur().getX(), bbox.ur().getY());
+  //   }
+  //   logger_->report("[BNMFW] nodeMap");
+  //   for (auto [p, set]: nodeMap) {
+  //     auto [point, layer] = p;
+  //     logger_->report("[BNMFW] ({},{},{}):", point.getX(), point.getY(),
+  //     layer); for (int a: set) {
+  //       logger_->report("[BNMFW]\t{}", a);
+  //     }
+  //   }
+  // }
   for (auto& [pr, idxS] : nodeMap) {
     // auto &[pt, lNum] = pr;
     for (auto it1 = idxS.begin(); it1 != idxS.end(); it1++) {
@@ -367,7 +438,7 @@ bool FlexDRConnectivityChecker::astar(
     }
     int lastNodeIdx = -1;
     while (!pq.empty()) {
-      auto wfront = pq.top();
+      wf wfront = pq.top();
       pq.pop();
       if (!onPathIdx[wfront.nodeIdx] && adjVisited[wfront.nodeIdx]) {
         continue;
@@ -399,9 +470,10 @@ bool FlexDRConnectivityChecker::astar(
       = count(adjVisited.begin() + nNetRouteObjs, adjVisited.end(), true);
   // true error when allowing feedthrough
   if (pinVisited != nNetObjs - nNetRouteObjs) {
-    std::cout << "Error: " << net->getName() << " "
-              << nNetObjs - nNetRouteObjs - pinVisited
-              << " pin not visited #guides = " << nNetRouteObjs << std::endl;
+    logger_->report("Error: {} {} pin not visited #guides = {}",
+                    net->getName(),
+                    nNetObjs - nNetRouteObjs - pinVisited,
+                    nNetRouteObjs);
   }
   return pinVisited == nNetObjs - nNetRouteObjs;
 }
@@ -1278,6 +1350,7 @@ void FlexDRConnectivityChecker::check(int iter)
         auto& adjPrevIdx = aAdjPrevIdx[i];
         netRouteObjs.clear();
         initRouteObjs(net, netRouteObjs);
+        // Bookmark, this is actually wrong
         buildPin2epMap(net, netRouteObjs, pin2epMap);
         buildNodeMap(net, netRouteObjs, netPins, pin2epMap, nodeMap);
 
@@ -1301,6 +1374,21 @@ void FlexDRConnectivityChecker::check(int iter)
     // sequential
     for (int i = 0; i < (int) batch.size(); i++) {
       auto net = batch[i];
+      if (net->getName() == "_031547_") {
+        for (auto inst_term : net->getInstTerms()) {
+          for (auto ap : inst_term->getAccessPoints()) {
+            for (auto ps : ap->getPathSegs()) {
+              logger_->report(
+                  "[BNMFW] Connect path seg in net {} at ({},{}) ({},{})",
+                  net->getName(),
+                  ps.getBeginPoint().getX(),
+                  ps.getBeginPoint().getY(),
+                  ps.getEndPoint().getX(),
+                  ps.getEndPoint().getY());
+            }
+          }
+        }
+      }
       auto& netRouteObjs = aNetRouteObjs[i];
       const auto& netPins = aNetPins[i];
       auto& nodeMap = aNodeMap[i];
@@ -1322,6 +1410,17 @@ void FlexDRConnectivityChecker::check(int iter)
             }
           }
         }
+        // for (auto inst_term: net->getInstTerms()) {
+        //   for (auto ap: inst_term->getAccessPoints()) {
+        //     for (auto ps: ap->getPathSegs()) {
+        //       logger_->report("[BNMFW] Looking path seg in net {} at ({},{})
+        //       ({},{})", net->getName(), ps.getBeginPoint().getX(),
+        //       ps.getBeginPoint().getY(),
+        //       ps.getEndPoint().getX(),
+        //       ps.getEndPoint().getY());
+        //     }
+        //   }
+        // }
         isWrong = true;
       } else {
         // get lock

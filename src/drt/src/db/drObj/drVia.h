@@ -97,8 +97,8 @@ class drVia : public drRef
   void setOrient(const dbOrientType& tmpOrient) override { ; }
   Point getOrigin() const override { return origin_; }
   void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
-  dbTransform getTransform() const override { return dbTransform(origin_); }
-  void setTransform(const dbTransform& xformIn) override {}
+  dbTransform getTransform() const override { return xform_; }
+  void setTransform(const dbTransform& xformIn) override { xform_ = xformIn; }
 
   /* from frPinFig
    * hasPin
@@ -173,6 +173,7 @@ class drVia : public drRef
   bool bottomConnected_{false};
   bool topConnected_{false};
   bool isLonely_{false};
+  dbTransform xform_;
 
   template <class Archive>
   void serialize(Archive& ar, unsigned int version);

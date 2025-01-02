@@ -298,6 +298,12 @@ void FlexPA::gen_createAccessPoint(
       } else if (ps.getEndPoint() == end) {
         ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
       }
+      auto [bp, ep] = ps.getPoints();  // Only for printing
+      logger_->report("[OSAMA] Adding a nearbygrid PathSeg at ({},{}) ({},{})",
+                      bp.getX(),
+                      bp.getY(),
+                      ep.getX(),
+                      ep.getY());
       ap->addPathSeg(ps);
       if (!(e == end)) {
         fpt = e;
@@ -307,6 +313,13 @@ void FlexPA::gen_createAccessPoint(
         } else {
           ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
         }
+        auto [bp, ep] = ps.getPoints();  // Only for printing
+        logger_->report(
+            "[OSAMA] Adding a nearbygrid PathSeg at ({},{}) ({},{})",
+            bp.getX(),
+            bp.getY(),
+            ep.getX(),
+            ep.getY());
         ap->addPathSeg(ps);
       }
     }
@@ -1479,6 +1492,14 @@ void FlexPA::initAllAccessPoints()
 void FlexPA::revertAccessPoints()
 {
   const auto& unique = unique_insts_.getUnique();
+  logger_->report(
+      "[OSAMA] PathSeg coordinates will be inverted to relative coordinates.");
+  logger_->report(
+      "[OSAMA] The path segment is the same in both cases relative to the "
+      "instance");
+  logger_->report(
+      "[OSAMA] Using old_transform gives different results (wrong), using the "
+      "new gives the same");
   for (auto& inst : unique) {
     dbTransform revert_transform;
     inst->getTransform().invert(revert_transform);
@@ -1497,7 +1518,9 @@ void FlexPA::revertAccessPoints()
           access_point->setPoint(unique_AP_point);
           for (auto& ps : access_point->getPathSegs()) {
             Point begin = ps.getBeginPoint();
+            Point begin_mirror = begin;  // Just for printing
             Point end = ps.getEndPoint();
+            Point end_mirror = end;  // Just for printing
             dbTransform bad_transform;
             inst->getBadTransform().invert(bad_transform);
             bad_transform.apply(begin);
@@ -1507,6 +1530,17 @@ void FlexPA::revertAccessPoints()
               begin = end;
               end = tmp;
             }
+            logger_->report("[OSAMA] PathSegs invert transformations");
+            logger_->report("[OSAMA] begin: ({},{}) -> ({},{})",
+                            begin_mirror.getX(),
+                            begin_mirror.getY(),
+                            begin.getX(),
+                            begin.getY());
+            logger_->report("[OSAMA] end: ({},{}) -> ({},{})",
+                            end_mirror.getX(),
+                            end_mirror.getY(),
+                            end.getX(),
+                            end.getY());
             ps.setPoints(begin, end);
           }
         }
