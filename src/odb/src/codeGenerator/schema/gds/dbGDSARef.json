@@ -3,9 +3,16 @@
     "type":"dbObject",
     "fields":[
       {
-        "name":"_xy",
-        "type":"std::vector<Point>",
-        "flags":["no-template"]
+        "name":"_origin",
+        "type":"Point"
+      },
+      {
+        "name":"_lr",
+        "type":"Point"
+      },
+      {
+        "name":"_ul",
+        "type":"Point"
       },
       {
         "name":"_propattr",

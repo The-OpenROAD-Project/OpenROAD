@@ -7444,9 +7444,17 @@ class dbGCellGrid : public dbObject
 class dbGDSARef : public dbObject
 {
  public:
-  void setXy(const std::vector<Point>& xy);
+  void setOrigin(Point origin);
 
-  void getXy(std::vector<Point>& tbl) const;
+  Point getOrigin() const;
+
+  void setLr(Point lr);
+
+  Point getLr() const;
+
+  void setUl(Point ul);
+
+  Point getUl() const;
 
   void set_sName(const std::string& sName);
 
@@ -7461,7 +7469,6 @@ class dbGDSARef : public dbObject
   std::pair<int16_t, int16_t> get_colRow() const;
 
   // User Code Begin dbGDSARef
-  const std::vector<Point>& getXY();
   std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
 
   dbGDSStructure* getStructure() const;

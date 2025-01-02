@@ -64,7 +64,9 @@ class _dbGDSARef : public _dbObject
 
   // User Code End Methods
 
-  std::vector<Point> _xy;
+  Point _origin;
+  Point _lr;
+  Point _ul;
   std::vector<std::pair<std::int16_t, std::string>> _propattr;
   std::string _sName;
   dbGDSSTrans _transform;

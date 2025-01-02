@@ -44,6 +44,15 @@ template class dbTable<_dbGDSARef>;
 
 bool _dbGDSARef::operator==(const _dbGDSARef& rhs) const
 {
+  if (_origin != rhs._origin) {
+    return false;
+  }
+  if (_lr != rhs._lr) {
+    return false;
+  }
+  if (_ul != rhs._ul) {
+    return false;
+  }
   if (_sName != rhs._sName) {
     return false;
   }
@@ -61,6 +70,9 @@ void _dbGDSARef::differences(dbDiff& diff,
                              const _dbGDSARef& rhs) const
 {
   DIFF_BEGIN
+  DIFF_FIELD(_origin);
+  DIFF_FIELD(_lr);
+  DIFF_FIELD(_ul);
   DIFF_FIELD(_sName);
   DIFF_END
 }
@@ -68,6 +80,9 @@ void _dbGDSARef::differences(dbDiff& diff,
 void _dbGDSARef::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
+  DIFF_OUT_FIELD(_origin);
+  DIFF_OUT_FIELD(_lr);
+  DIFF_OUT_FIELD(_ul);
   DIFF_OUT_FIELD(_sName);
 
   DIFF_END
@@ -79,12 +94,17 @@ _dbGDSARef::_dbGDSARef(_dbDatabase* db)
 
 _dbGDSARef::_dbGDSARef(_dbDatabase* db, const _dbGDSARef& r)
 {
+  _origin = r._origin;
+  _lr = r._lr;
+  _ul = r._ul;
   _sName = r._sName;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSARef& obj)
 {
-  stream >> obj._xy;
+  stream >> obj._origin;
+  stream >> obj._lr;
+  stream >> obj._ul;
   stream >> obj._propattr;
   stream >> obj._sName;
   stream >> obj._transform;
@@ -94,7 +114,9 @@ dbIStream& operator>>(dbIStream& stream, _dbGDSARef& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSARef& obj)
 {
-  stream << obj._xy;
+  stream << obj._origin;
+  stream << obj._lr;
+  stream << obj._ul;
   stream << obj._propattr;
   stream << obj._sName;
   stream << obj._transform;
@@ -108,17 +130,43 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSARef& obj)
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbGDSARef::setXy(const std::vector<Point>& xy)
+void dbGDSARef::setOrigin(Point origin)
 {
   _dbGDSARef* obj = (_dbGDSARef*) this;
 
-  obj->_xy = xy;
+  obj->_origin = origin;
 }
 
-void dbGDSARef::getXy(std::vector<Point>& tbl) const
+Point dbGDSARef::getOrigin() const
 {
   _dbGDSARef* obj = (_dbGDSARef*) this;
-  tbl = obj->_xy;
+  return obj->_origin;
+}
+
+void dbGDSARef::setLr(Point lr)
+{
+  _dbGDSARef* obj = (_dbGDSARef*) this;
+
+  obj->_lr = lr;
+}
+
+Point dbGDSARef::getLr() const
+{
+  _dbGDSARef* obj = (_dbGDSARef*) this;
+  return obj->_lr;
+}
+
+void dbGDSARef::setUl(Point ul)
+{
+  _dbGDSARef* obj = (_dbGDSARef*) this;
+
+  obj->_ul = ul;
+}
+
+Point dbGDSARef::getUl() const
+{
+  _dbGDSARef* obj = (_dbGDSARef*) this;
+  return obj->_ul;
 }
 
 void dbGDSARef::set_sName(const std::string& sName)
@@ -166,12 +214,6 @@ std::vector<std::pair<std::int16_t, std::string>>& dbGDSARef::getPropattr()
 {
   auto* obj = (_dbGDSARef*) this;
   return obj->_propattr;
-}
-
-const std::vector<Point>& dbGDSARef::getXY()
-{
-  auto obj = (_dbGDSARef*) this;
-  return obj->_xy;
 }
 
 dbGDSARef* dbGDSARef::create(dbGDSStructure* structure)

@@ -387,7 +387,10 @@ dbGDSARef* GDSReader::processARef(dbGDSStructure* structure)
     aref->set_colRow({1, 1});
   }
 
-  aref->setXy(processXY());
+  std::vector<Point> points = processXY();
+  aref->setOrigin(points.at(0));
+  aref->setLr(points.at(1));
+  aref->setUl(points.at(2));
 
   return aref;
 }

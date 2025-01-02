@@ -411,7 +411,8 @@ void GDSWriter::writeARef(dbGDSARef* aref)
     writeRecord(r4);
   }
 
-  writeXY(aref->getXY());
+  std::vector<Point> points({aref->getOrigin(), aref->getLr(), aref->getUl()});
+  writeXY(points);
 
   writePropAttr(aref);
   writeEndel();
