@@ -4,6 +4,7 @@ or_integration_tests(
     ar01
     ar02
     clust01
+    clust02
     convergence01
     core01
     density01
