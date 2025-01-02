@@ -7543,9 +7543,9 @@ class dbGDSPath : public dbObject
 
   int getWidth() const;
 
-  void set_pathType(int16_t pathType);
+  void setPathType(int16_t path_type);
 
-  int16_t get_pathType() const;
+  int16_t getPathType() const;
 
   // User Code Begin dbGDSPath
   const std::vector<Point>& getXY();

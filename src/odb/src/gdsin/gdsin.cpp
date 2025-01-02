@@ -316,17 +316,13 @@ dbGDSPath* GDSReader::processPath(dbGDSStructure* structure)
 
   readRecord();
   if (_r.type == RecordType::PATHTYPE) {
-    path->set_pathType(_r.data16[0]);
+    path->setPathType(_r.data16[0]);
     readRecord();
-  } else {
-    path->set_pathType(0);
   }
 
   if (_r.type == RecordType::WIDTH) {
     path->setWidth(_r.data32[0]);
     readRecord();
-  } else {
-    path->setWidth(0);
   }
 
   path->setXy(processXY());

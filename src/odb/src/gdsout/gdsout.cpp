@@ -339,11 +339,11 @@ void GDSWriter::writePath(dbGDSPath* path)
   writeLayer(path->getLayer());
   writeDataType(path->getDatatype());
 
-  if (path->get_pathType() != 0) {
+  if (path->getPathType() != 0) {
     record_t r2;
     r2.type = RecordType::PATHTYPE;
     r2.dataType = DataType::INT_2;
-    r2.data16 = {path->get_pathType()};
+    r2.data16 = {path->getPathType()};
     writeRecord(r2);
   }
 
