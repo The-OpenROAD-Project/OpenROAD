@@ -695,7 +695,7 @@ dbTransform dbInst::getTransform()
   return dbTransform(inst->_flags._orient, Point(inst->_x, inst->_y));
 }
 
-void dbInst::setTransform(dbTransform& t)
+void dbInst::setTransform(const dbTransform& t)
 {
   setOrient(t.getOrient());
   Point offset = t.getOffset();

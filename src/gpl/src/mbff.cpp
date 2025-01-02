@@ -134,6 +134,19 @@ static sta::FuncExpr* getFunction(sta::LibertyPort* port)
   return nullptr;
 }
 
+sta::LibertyCell* MBFF::getLibertyCell(sta::Cell* cell)
+{
+  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  if (!lib_cell) {
+    return nullptr;
+  }
+  // Use the test cell if available
+  if (sta::TestCell* test_cell = lib_cell->testCell()) {
+    lib_cell = test_cell;
+  }
+  return lib_cell;
+}
+
 float MBFF::GetDist(const Point& a, const Point& b)
 {
   return (abs(a.x - b.x) + abs(a.y - b.y));
@@ -181,7 +194,7 @@ bool MBFF::IsClockPin(odb::dbITerm* iterm)
 bool MBFF::ClockOn(odb::dbInst* inst)
 {
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  sta::LibertyCell* lib_cell = getLibertyCell(cell);
   for (auto seq : lib_cell->sequentials()) {
     sta::FuncExpr* left = seq->clock()->left();
     sta::FuncExpr* right = seq->clock()->right();
@@ -197,7 +210,7 @@ bool MBFF::IsDPin(odb::dbITerm* iterm)
 {
   odb::dbInst* inst = iterm->getInst();
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  sta::LibertyCell* lib_cell = getLibertyCell(cell);
 
   // check that the iterm isn't a (re)set pin
   auto pin = network_->dbToSta(iterm);
@@ -228,7 +241,7 @@ int MBFF::GetNumD(odb::dbInst* inst)
 {
   int cnt_d = 0;
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  sta::LibertyCell* lib_cell = getLibertyCell(cell);
 
   for (auto seq : lib_cell->sequentials()) {
     auto data = seq->data();
@@ -250,6 +263,7 @@ int MBFF::GetNumD(odb::dbInst* inst)
       }
     }
   }
+
   return cnt_d;
 }
 
@@ -264,7 +278,7 @@ bool MBFF::IsInvertingQPin(odb::dbITerm* iterm)
 {
   odb::dbInst* inst = iterm->getInst();
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  sta::LibertyCell* lib_cell = getLibertyCell(cell);
 
   std::set<std::string> invert;
   for (auto seq : lib_cell->sequentials()) {
@@ -306,7 +320,7 @@ int MBFF::GetNumQ(odb::dbInst* inst)
 bool MBFF::HasClear(odb::dbInst* inst)
 {
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  sta::LibertyCell* lib_cell = getLibertyCell(cell);
   for (auto seq : lib_cell->sequentials()) {
     if (seq->clear()) {
       return true;
@@ -319,7 +333,7 @@ bool MBFF::IsClearPin(odb::dbITerm* iterm)
 {
   odb::dbInst* inst = iterm->getInst();
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  sta::LibertyCell* lib_cell = getLibertyCell(cell);
   sta::Pin* pin = network_->dbToSta(iterm);
   if (pin == nullptr) {
     return false;
@@ -339,7 +353,7 @@ bool MBFF::IsClearPin(odb::dbITerm* iterm)
 bool MBFF::HasPreset(odb::dbInst* inst)
 {
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  sta::LibertyCell* lib_cell = getLibertyCell(cell);
   for (auto seq : lib_cell->sequentials()) {
     if (seq->preset()) {
       return true;
@@ -352,7 +366,7 @@ bool MBFF::IsPresetPin(odb::dbITerm* iterm)
 {
   odb::dbInst* inst = iterm->getInst();
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  sta::LibertyCell* lib_cell = getLibertyCell(cell);
   sta::Pin* pin = network_->dbToSta(iterm);
   if (pin == nullptr) {
     return false;
@@ -372,10 +386,9 @@ bool MBFF::IsPresetPin(odb::dbITerm* iterm)
 bool MBFF::IsScanCell(odb::dbInst* inst)
 {
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
-  sta::TestCell* test_cell = lib_cell->testCell();
-  if (test_cell != nullptr && getLibertyScanIn(test_cell) != nullptr
-      && getLibertyScanEnable(test_cell) != nullptr) {
+  sta::LibertyCell* lib_cell = getLibertyCell(cell);
+  if (lib_cell != nullptr && getLibertyScanIn(lib_cell) != nullptr
+      && getLibertyScanEnable(lib_cell) != nullptr) {
     return true;
   }
   return false;
@@ -384,10 +397,9 @@ bool MBFF::IsScanCell(odb::dbInst* inst)
 bool MBFF::IsScanIn(odb::dbITerm* iterm)
 {
   sta::Cell* cell = network_->dbToSta(iterm->getInst()->getMaster());
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
-  sta::TestCell* test_cell = lib_cell->testCell();
-  if (test_cell != nullptr && getLibertyScanIn(test_cell) != nullptr) {
-    odb::dbMTerm* mterm = network_->staToDb(getLibertyScanIn(test_cell));
+  sta::LibertyCell* lib_cell = getLibertyCell(cell);
+  if (lib_cell != nullptr && getLibertyScanIn(lib_cell) != nullptr) {
+    odb::dbMTerm* mterm = network_->staToDb(getLibertyScanIn(lib_cell));
     return (iterm->getInst()->getITerm(mterm) == iterm);
   }
   return false;
@@ -396,10 +408,9 @@ bool MBFF::IsScanIn(odb::dbITerm* iterm)
 odb::dbITerm* MBFF::GetScanIn(odb::dbInst* inst)
 {
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
-  sta::TestCell* test_cell = lib_cell->testCell();
-  if (test_cell != nullptr && getLibertyScanIn(test_cell) != nullptr) {
-    odb::dbMTerm* mterm = network_->staToDb(getLibertyScanIn(test_cell));
+  sta::LibertyCell* lib_cell = getLibertyCell(cell);
+  if (lib_cell != nullptr && getLibertyScanIn(lib_cell) != nullptr) {
+    odb::dbMTerm* mterm = network_->staToDb(getLibertyScanIn(lib_cell));
     return inst->getITerm(mterm);
   }
   return nullptr;
@@ -408,10 +419,9 @@ odb::dbITerm* MBFF::GetScanIn(odb::dbInst* inst)
 bool MBFF::IsScanEnable(odb::dbITerm* iterm)
 {
   sta::Cell* cell = network_->dbToSta(iterm->getInst()->getMaster());
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
-  sta::TestCell* test_cell = lib_cell->testCell();
-  if (test_cell != nullptr && getLibertyScanEnable(test_cell) != nullptr) {
-    odb::dbMTerm* mterm = network_->staToDb(getLibertyScanEnable(test_cell));
+  sta::LibertyCell* lib_cell = getLibertyCell(cell);
+  if (lib_cell != nullptr && getLibertyScanEnable(lib_cell) != nullptr) {
+    odb::dbMTerm* mterm = network_->staToDb(getLibertyScanEnable(lib_cell));
     return (iterm->getInst()->getITerm(mterm) == iterm);
   }
   return false;
@@ -420,10 +430,9 @@ bool MBFF::IsScanEnable(odb::dbITerm* iterm)
 odb::dbITerm* MBFF::GetScanEnable(odb::dbInst* inst)
 {
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
-  sta::TestCell* test_cell = lib_cell->testCell();
-  if (test_cell != nullptr && getLibertyScanEnable(test_cell) != nullptr) {
-    odb::dbMTerm* mterm = network_->staToDb(getLibertyScanEnable(test_cell));
+  sta::LibertyCell* lib_cell = getLibertyCell(cell);
+  if (lib_cell != nullptr && getLibertyScanEnable(lib_cell) != nullptr) {
+    odb::dbMTerm* mterm = network_->staToDb(getLibertyScanEnable(lib_cell));
     return inst->getITerm(mterm);
   }
   return nullptr;
@@ -440,7 +449,7 @@ bool MBFF::IsValidFlop(odb::dbInst* FF)
   if (cell == nullptr) {
     return false;
   }
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  sta::LibertyCell* lib_cell = getLibertyCell(cell);
   if (lib_cell == nullptr) {
     return false;
   }
@@ -477,7 +486,7 @@ bool MBFF::IsValidTray(odb::dbInst* tray)
   if (cell == nullptr) {
     return false;
   }
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  sta::LibertyCell* lib_cell = getLibertyCell(cell);
   if (lib_cell == nullptr) {
     return false;
   }
@@ -545,7 +554,7 @@ PortName MBFF::PortType(sta::LibertyPort* lib_port, odb::dbInst* inst)
   }
 
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  sta::LibertyCell* lib_cell = getLibertyCell(cell);
   for (auto seq : lib_cell->sequentials()) {
     // function
     if (sta::LibertyPort::equiv(lib_port, seq->output())) {
@@ -615,7 +624,7 @@ MBFF::Mask MBFF::GetArrayMask(odb::dbInst* inst, bool isTray)
   }
 
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  sta::LibertyCell* lib_cell = getLibertyCell(cell);
   for (auto seq : lib_cell->sequentials()) {
     ret[5] = GetMatchingFunc(seq->data(), inst, isTray);
     break;
@@ -629,7 +638,7 @@ MBFF::Mask MBFF::GetArrayMask(odb::dbInst* inst, bool isTray)
 MBFF::DataToOutputsMap MBFF::GetPinMapping(odb::dbInst* tray)
 {
   sta::Cell* cell = network_->dbToSta(tray->getMaster());
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  sta::LibertyCell* lib_cell = getLibertyCell(cell);
   sta::LibertyCellPortIterator port_itr(lib_cell);
 
   std::vector<sta::LibertyPort*> d_pins;
@@ -2220,6 +2229,9 @@ void MBFF::ReadLibs()
       }
 
       const int num_slots = GetNumD(tmp_tray);
+      if ((num_slots & (num_slots - 1)) != 0) {
+        continue;  // non-power of 2 not supported
+      }
       const int idx = GetBitIdx(num_slots);
       const Mask array_mask = GetArrayMask(tmp_tray, true);
 
