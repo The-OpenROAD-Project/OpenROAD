@@ -44,17 +44,19 @@ namespace ppl {
 using odb::Point;
 using odb::Rect;
 
+using LayerToVector = std::map<int, std::vector<int>>;
+
 class Core
 {
  public:
   Core();
   Core(const Rect& boundary,
-       const std::map<int, int>& min_dst_pins_x,
-       const std::map<int, int>& min_dst_pins_y,
-       const std::map<int, int>& init_tracks_x,
-       const std::map<int, int>& init_tracks_y,
-       const std::map<int, int>& num_tracks_x,
-       const std::map<int, int>& num_tracks_y,
+       const LayerToVector& min_dst_pins_x,
+       const LayerToVector& min_dst_pins_y,
+       const LayerToVector& init_tracks_x,
+       const LayerToVector& init_tracks_y,
+       const LayerToVector& num_tracks_x,
+       const LayerToVector& num_tracks_y,
        const std::map<int, int>& min_area_x,
        const std::map<int, int>& min_area_y,
        const std::map<int, int>& min_width_x,
@@ -76,12 +78,12 @@ class Core
   }
 
   Rect getBoundary() const { return boundary_; }
-  std::map<int, int> getMinDstPinsX() const { return min_dst_pins_x_; }
-  std::map<int, int> getMinDstPinsY() const { return min_dst_pins_y_; }
-  std::map<int, int> getInitTracksX() const { return init_tracks_x_; }
-  std::map<int, int> getInitTracksY() const { return init_tracks_y_; }
-  std::map<int, int> getNumTracksX() const { return num_tracks_x_; }
-  std::map<int, int> getNumTracksY() const { return num_tracks_y_; }
+  const LayerToVector& getMinDstPinsX() const { return min_dst_pins_x_; }
+  const LayerToVector& getMinDstPinsY() const { return min_dst_pins_y_; }
+  const LayerToVector& getInitTracksX() const { return init_tracks_x_; }
+  const LayerToVector& getInitTracksY() const { return init_tracks_y_; }
+  const LayerToVector& getNumTracksX() const { return num_tracks_x_; }
+  const LayerToVector& getNumTracksY() const { return num_tracks_y_; }
   std::map<int, int> getMinAreaX() const { return min_area_x_; }
   std::map<int, int> getMinAreaY() const { return min_area_y_; }
   std::map<int, int> getMinWidthX() const { return min_width_x_; }
@@ -92,12 +94,12 @@ class Core
 
  private:
   Rect boundary_;
-  std::map<int, int> min_dst_pins_x_;
-  std::map<int, int> min_dst_pins_y_;
-  std::map<int, int> init_tracks_x_;
-  std::map<int, int> init_tracks_y_;
-  std::map<int, int> num_tracks_x_;
-  std::map<int, int> num_tracks_y_;
+  LayerToVector min_dst_pins_x_;
+  LayerToVector min_dst_pins_y_;
+  LayerToVector init_tracks_x_;
+  LayerToVector init_tracks_y_;
+  LayerToVector num_tracks_x_;
+  LayerToVector num_tracks_y_;
   std::map<int, int> min_area_x_;
   std::map<int, int> min_area_y_;
   std::map<int, int> min_width_x_;
