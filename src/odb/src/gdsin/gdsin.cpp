@@ -358,13 +358,13 @@ dbGDSSRef* GDSReader::processSRef(dbGDSStructure* structure)
   checkRType(RecordType::SNAME);
 
   const std::string name(_r.data8.begin(), _r.data8.end());
-  
+
   dbGDSStructure* referenced = _lib->findGDSStructure(name.c_str());
   if (!referenced) {
     // Empty structure just to reference not yet defined.
     referenced = dbGDSStructure::create(_lib, name.c_str());
   }
-  
+
   auto* sref = dbGDSSRef::create(structure, referenced);
 
   readRecord();
