@@ -388,7 +388,6 @@ void GDSWriter::writeSRef(dbGDSSRef* sref)
 void GDSWriter::writeARef(dbGDSARef* aref)
 {
   record_t r;
-  auto colrow = aref->get_colRow();
   r.type = RecordType::AREF;
   r.dataType = DataType::NO_DATA;
   writeRecord(r);
@@ -403,11 +402,13 @@ void GDSWriter::writeARef(dbGDSARef* aref)
     writeSTrans(aref->getTransform());
   }
 
-  if (colrow.first != 1 || colrow.second != 1) {
+  const int16_t cols = aref->getNumColumns();
+  const int16_t rows = aref->getNumRows();
+  if (cols != 1 || rows != 1) {
     record_t r4;
     r4.type = RecordType::COLROW;
     r4.dataType = DataType::INT_2;
-    r4.data16 = {colrow.first, colrow.second};
+    r4.data16 = {cols, rows};
     writeRecord(r4);
   }
 

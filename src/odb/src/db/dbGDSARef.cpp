@@ -56,6 +56,12 @@ bool _dbGDSARef::operator==(const _dbGDSARef& rhs) const
   if (_ul != rhs._ul) {
     return false;
   }
+  if (_num_rows != rhs._num_rows) {
+    return false;
+  }
+  if (_num_columns != rhs._num_columns) {
+    return false;
+  }
   if (_structure != rhs._structure) {
     return false;
   }
@@ -76,6 +82,8 @@ void _dbGDSARef::differences(dbDiff& diff,
   DIFF_FIELD(_origin);
   DIFF_FIELD(_lr);
   DIFF_FIELD(_ul);
+  DIFF_FIELD(_num_rows);
+  DIFF_FIELD(_num_columns);
   DIFF_FIELD(_structure);
   DIFF_END
 }
@@ -86,6 +94,8 @@ void _dbGDSARef::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_origin);
   DIFF_OUT_FIELD(_lr);
   DIFF_OUT_FIELD(_ul);
+  DIFF_OUT_FIELD(_num_rows);
+  DIFF_OUT_FIELD(_num_columns);
   DIFF_OUT_FIELD(_structure);
 
   DIFF_END
@@ -93,6 +103,8 @@ void _dbGDSARef::out(dbDiff& diff, char side, const char* field) const
 
 _dbGDSARef::_dbGDSARef(_dbDatabase* db)
 {
+  _num_rows = 1;
+  _num_columns = 1;
 }
 
 _dbGDSARef::_dbGDSARef(_dbDatabase* db, const _dbGDSARef& r)
@@ -100,6 +112,8 @@ _dbGDSARef::_dbGDSARef(_dbDatabase* db, const _dbGDSARef& r)
   _origin = r._origin;
   _lr = r._lr;
   _ul = r._ul;
+  _num_rows = r._num_rows;
+  _num_columns = r._num_columns;
   _structure = r._structure;
 }
 
@@ -110,7 +124,8 @@ dbIStream& operator>>(dbIStream& stream, _dbGDSARef& obj)
   stream >> obj._ul;
   stream >> obj._propattr;
   stream >> obj._transform;
-  stream >> obj._colRow;
+  stream >> obj._num_rows;
+  stream >> obj._num_columns;
   stream >> obj._structure;
   return stream;
 }
@@ -122,7 +137,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSARef& obj)
   stream << obj._ul;
   stream << obj._propattr;
   stream << obj._transform;
-  stream << obj._colRow;
+  stream << obj._num_rows;
+  stream << obj._num_columns;
   stream << obj._structure;
   return stream;
 }
@@ -185,17 +201,30 @@ dbGDSSTrans dbGDSARef::getTransform() const
   return obj->_transform;
 }
 
-void dbGDSARef::set_colRow(const std::pair<int16_t, int16_t>& colRow)
+void dbGDSARef::setNumRows(int16_t num_rows)
 {
   _dbGDSARef* obj = (_dbGDSARef*) this;
 
-  obj->_colRow = colRow;
+  obj->_num_rows = num_rows;
 }
 
-std::pair<int16_t, int16_t> dbGDSARef::get_colRow() const
+int16_t dbGDSARef::getNumRows() const
 {
   _dbGDSARef* obj = (_dbGDSARef*) this;
-  return obj->_colRow;
+  return obj->_num_rows;
+}
+
+void dbGDSARef::setNumColumns(int16_t num_columns)
+{
+  _dbGDSARef* obj = (_dbGDSARef*) this;
+
+  obj->_num_columns = num_columns;
+}
+
+int16_t dbGDSARef::getNumColumns() const
+{
+  _dbGDSARef* obj = (_dbGDSARef*) this;
+  return obj->_num_columns;
 }
 
 // User Code Begin dbGDSARefPublicMethods

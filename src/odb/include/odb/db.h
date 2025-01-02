@@ -7460,9 +7460,13 @@ class dbGDSARef : public dbObject
 
   dbGDSSTrans getTransform() const;
 
-  void set_colRow(const std::pair<int16_t, int16_t>& colRow);
+  void setNumRows(int16_t num_rows);
 
-  std::pair<int16_t, int16_t> get_colRow() const;
+  int16_t getNumRows() const;
+
+  void setNumColumns(int16_t num_columns);
+
+  int16_t getNumColumns() const;
 
   // User Code Begin dbGDSARef
   dbGDSStructure* getStructure() const;

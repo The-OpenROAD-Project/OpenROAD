@@ -70,7 +70,8 @@ class _dbGDSARef : public _dbObject
   Point _ul;
   std::vector<std::pair<std::int16_t, std::string>> _propattr;
   dbGDSSTrans _transform;
-  std::pair<int16_t, int16_t> _colRow;
+  int16_t _num_rows;
+  int16_t _num_columns;
   dbId<_dbGDSStructure> _structure;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSARef& obj);

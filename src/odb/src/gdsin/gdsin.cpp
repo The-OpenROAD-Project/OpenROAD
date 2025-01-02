@@ -398,10 +398,9 @@ dbGDSARef* GDSReader::processARef(dbGDSStructure* structure)
   }
 
   if (_r.type == RecordType::COLROW) {
-    aref->set_colRow({_r.data16[0], _r.data16[1]});
+    aref->setNumColumns(_r.data16[0]);
+    aref->setNumRows(_r.data16[1]);
     readRecord();
-  } else {
-    aref->set_colRow({1, 1});
   }
 
   std::vector<Point> points = processXY();
