@@ -9,10 +9,13 @@
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 20000 components and 100000 component-terminals.
 [INFO ODB-0133]     Created 2 nets and 20000 connections.
-Alpha = 60.0, Beta = 1.0, #paths = 0, max size = 50
-Total ILP Cost: 829651.0
-Total Timing Critical Path Displacement: 0.0
+Alpha = 60, Beta = 1, #paths = 0, max size = 50
+Total ILP Cost: 829651
+Total Timing Critical Path Displacement: 0
 Average slot-to-flop displacement: 5.6756682
-Final Objective Value: 829651.0
-1-bit: 494, 2-bit: 7604, 4-bit: 1080
+Final Objective Value: 829651
+Sizes used
+  1-bit: 494
+  2-bit: 7604
+  4-bit: 1080
 No differences found.

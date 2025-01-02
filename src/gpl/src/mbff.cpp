@@ -2193,10 +2193,10 @@ void MBFF::Run(const int mx_sz, const float alpha, const float beta)
   log_->report("Total Timing Critical Path Displacement: {}", tcp_disp);
   log_->report("Average slot-to-flop displacement: {}", avg_disp);
   log_->report("Final Objective Value: {}", tot_ilp + tcp_disp);
-  log_->report("1-bit: {}, 2-bit: {}, 4-bit: {}",
-               tray_sizes_used_[1],
-               tray_sizes_used_[2],
-               tray_sizes_used_[4]);
+  log_->report("Sizes used");
+  for (auto [tray, count] : tray_sizes_used_) {
+    log_->report("  {}-bit: {}", tray, count);
+  }
 }
 
 Point MBFF::GetTrayCenter(const Mask& array_mask, int idx)
