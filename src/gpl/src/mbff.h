@@ -46,6 +46,10 @@ namespace utl {
 class Logger;
 }
 
+namespace rsz {
+class Resizer;
+}
+
 namespace sta {
 class dbNetwork;
 class dbSta;
@@ -81,6 +85,7 @@ class MBFF
   MBFF(odb::dbDatabase* db,
        sta::dbSta* sta,
        utl::Logger* log,
+       rsz::Resizer* resizer,
        int threads,
        int multistart,
        int num_paths,
@@ -239,6 +244,7 @@ class MBFF
   sta::dbNetwork* network_;
   sta::Corner* corner_;
   utl::Logger* log_;
+  rsz::Resizer* resizer_;
   std::unique_ptr<Graphics> graphics_;
   int num_threads_;
   int multistart_;
