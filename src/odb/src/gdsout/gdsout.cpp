@@ -378,7 +378,8 @@ void GDSWriter::writeSRef(dbGDSSRef* sref)
     writeSTrans(sref->getTransform());
   }
 
-  writeXY(sref->getXY());
+  std::vector<Point> origin({sref->getOrigin()});
+  writeXY(origin);
 
   writePropAttr(sref);
   writeEndel();

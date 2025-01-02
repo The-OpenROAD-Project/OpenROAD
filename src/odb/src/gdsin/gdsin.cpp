@@ -382,14 +382,7 @@ dbGDSSRef* GDSReader::processSRef(dbGDSStructure* structure)
     sref->setTransform(processSTrans());
   }
 
-  if (_r.type == RecordType::COLROW) {
-    sref->set_colRow({_r.data16[0], _r.data16[1]});
-    readRecord();
-  } else {
-    sref->set_colRow({1, 1});
-  }
-
-  sref->setXy(processXY());
+  sref->setOrigin(processXY().at(0));
 
   return sref;
 }

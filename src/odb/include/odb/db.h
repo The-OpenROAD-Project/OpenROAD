@@ -7484,7 +7484,7 @@ class dbGDSARef : public dbObject
   void setStructure(dbGDSStructure* structure) const;
 
   static dbGDSARef* create(dbGDSStructure* structure);
-  static void destroy(dbGDSARef* sref);
+  static void destroy(dbGDSARef* aref);
   // User Code End dbGDSARef
 };
 
@@ -7570,9 +7570,9 @@ class dbGDSPath : public dbObject
 class dbGDSSRef : public dbObject
 {
  public:
-  void setXy(const std::vector<Point>& xy);
+  void setOrigin(Point origin);
 
-  void getXy(std::vector<Point>& tbl) const;
+  Point getOrigin() const;
 
   void set_sName(const std::string& sName);
 
@@ -7582,12 +7582,7 @@ class dbGDSSRef : public dbObject
 
   dbGDSSTrans getTransform() const;
 
-  void set_colRow(const std::pair<int16_t, int16_t>& colRow);
-
-  std::pair<int16_t, int16_t> get_colRow() const;
-
   // User Code Begin dbGDSSRef
-  const std::vector<Point>& getXY();
   std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
 
   dbGDSStructure* getStructure() const;

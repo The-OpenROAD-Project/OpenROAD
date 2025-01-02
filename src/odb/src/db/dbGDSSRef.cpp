@@ -44,6 +44,9 @@ template class dbTable<_dbGDSSRef>;
 
 bool _dbGDSSRef::operator==(const _dbGDSSRef& rhs) const
 {
+  if (_origin != rhs._origin) {
+    return false;
+  }
   if (_sName != rhs._sName) {
     return false;
   }
@@ -61,6 +64,7 @@ void _dbGDSSRef::differences(dbDiff& diff,
                              const _dbGDSSRef& rhs) const
 {
   DIFF_BEGIN
+  DIFF_FIELD(_origin);
   DIFF_FIELD(_sName);
   DIFF_END
 }
@@ -68,6 +72,7 @@ void _dbGDSSRef::differences(dbDiff& diff,
 void _dbGDSSRef::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
+  DIFF_OUT_FIELD(_origin);
   DIFF_OUT_FIELD(_sName);
 
   DIFF_END
@@ -79,26 +84,25 @@ _dbGDSSRef::_dbGDSSRef(_dbDatabase* db)
 
 _dbGDSSRef::_dbGDSSRef(_dbDatabase* db, const _dbGDSSRef& r)
 {
+  _origin = r._origin;
   _sName = r._sName;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSSRef& obj)
 {
-  stream >> obj._xy;
+  stream >> obj._origin;
   stream >> obj._propattr;
   stream >> obj._sName;
   stream >> obj._transform;
-  stream >> obj._colRow;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSSRef& obj)
 {
-  stream << obj._xy;
+  stream << obj._origin;
   stream << obj._propattr;
   stream << obj._sName;
   stream << obj._transform;
-  stream << obj._colRow;
   return stream;
 }
 
@@ -108,17 +112,17 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSSRef& obj)
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbGDSSRef::setXy(const std::vector<Point>& xy)
+void dbGDSSRef::setOrigin(Point origin)
 {
   _dbGDSSRef* obj = (_dbGDSSRef*) this;
 
-  obj->_xy = xy;
+  obj->_origin = origin;
 }
 
-void dbGDSSRef::getXy(std::vector<Point>& tbl) const
+Point dbGDSSRef::getOrigin() const
 {
   _dbGDSSRef* obj = (_dbGDSSRef*) this;
-  tbl = obj->_xy;
+  return obj->_origin;
 }
 
 void dbGDSSRef::set_sName(const std::string& sName)
@@ -147,31 +151,12 @@ dbGDSSTrans dbGDSSRef::getTransform() const
   return obj->_transform;
 }
 
-void dbGDSSRef::set_colRow(const std::pair<int16_t, int16_t>& colRow)
-{
-  _dbGDSSRef* obj = (_dbGDSSRef*) this;
-
-  obj->_colRow = colRow;
-}
-
-std::pair<int16_t, int16_t> dbGDSSRef::get_colRow() const
-{
-  _dbGDSSRef* obj = (_dbGDSSRef*) this;
-  return obj->_colRow;
-}
-
 // User Code Begin dbGDSSRefPublicMethods
 
 std::vector<std::pair<std::int16_t, std::string>>& dbGDSSRef::getPropattr()
 {
   auto* obj = (_dbGDSSRef*) this;
   return obj->_propattr;
-}
-
-const std::vector<Point>& dbGDSSRef::getXY()
-{
-  auto obj = (_dbGDSSRef*) this;
-  return obj->_xy;
 }
 
 dbGDSSRef* dbGDSSRef::create(dbGDSStructure* structure)

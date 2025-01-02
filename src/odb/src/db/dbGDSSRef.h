@@ -64,11 +64,10 @@ class _dbGDSSRef : public _dbObject
 
   // User Code End Methods
 
-  std::vector<Point> _xy;
+  Point _origin;
   std::vector<std::pair<std::int16_t, std::string>> _propattr;
   std::string _sName;
   dbGDSSTrans _transform;
-  std::pair<int16_t, int16_t> _colRow;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSSRef& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSSRef& obj);
