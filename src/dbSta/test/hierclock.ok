@@ -1,5 +1,4 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[WARNING STA-0166] unknown field nets.
 Startpoint: U2/_66_ (rising edge-triggered flip-flop clocked by clk1)
 Endpoint: U2/_66_ (rising edge-triggered flip-flop clocked by clk1)
 Path Group: clk1
@@ -11,10 +10,13 @@ Fanout     Cap    Slew   Delay    Time   Description
                           0.00    0.00   clock network delay (ideal)
                   0.00    0.00    0.00 ^ U2/_66_/CK (DFF_X1)
      1    1.55    0.01    0.06    0.06 v U2/_66_/QN (DFF_X1)
+                                         U2/_41_ (net)
                   0.01    0.00    0.06 v U2/_49_/A (INV_X1)
      1    1.68    0.01    0.01    0.08 ^ U2/_49_/ZN (INV_X1)
+                                         U2/_26_ (net)
                   0.01    0.00    0.08 ^ U2/_53_/B2 (AOI21_X1)
      1    1.06    0.01    0.01    0.09 v U2/_53_/ZN (AOI21_X1)
+                                         U2/_13_ (net)
                   0.01    0.00    0.09 v U2/_66_/D (DFF_X1)
                                   0.09   data arrival time
 
@@ -42,10 +44,13 @@ Fanout     Cap    Slew   Delay    Time   Description
                           0.00    0.00   clock network delay (ideal)
                   0.00    0.00    0.00 ^ U3/_66_/CK (DFF_X1)
      1    1.55    0.01    0.06    0.06 v U3/_66_/QN (DFF_X1)
+                                         U3/_41_ (net)
                   0.01    0.00    0.06 v U3/_49_/A (INV_X1)
      1    1.68    0.01    0.01    0.08 ^ U3/_49_/ZN (INV_X1)
+                                         U3/_26_ (net)
                   0.01    0.00    0.08 ^ U3/_53_/B2 (AOI21_X1)
      1    1.06    0.01    0.01    0.09 v U3/_53_/ZN (AOI21_X1)
+                                         U3/_13_ (net)
                   0.01    0.00    0.09 v U3/_66_/D (DFF_X1)
                                   0.09   data arrival time
 
