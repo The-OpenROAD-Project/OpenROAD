@@ -493,8 +493,7 @@ dbGDSSTrans GDSReader::processSTrans()
   checkRType(RecordType::STRANS);
 
   const bool flipX = _r.data8[0] & 0x80;
-  const bool absMag = _r.data8[1] & 0x04;
-  const bool absAngle = _r.data8[1] & 0x02;
+  // absolute magnification and angle are obsolete and ignored
 
   readRecord();
 
@@ -509,7 +508,7 @@ dbGDSSTrans GDSReader::processSTrans()
     readRecord();
   }
 
-  return dbGDSSTrans(flipX, absMag, absAngle, mag, angle);
+  return dbGDSSTrans(flipX, mag, angle);
 }
 
 dbGDSTextPres GDSReader::processTextPres()

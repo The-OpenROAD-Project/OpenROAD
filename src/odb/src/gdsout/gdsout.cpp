@@ -481,8 +481,7 @@ void GDSWriter::writeSTrans(const dbGDSSTrans& strans)
   r.dataType = DataType::BIT_ARRAY;
 
   char data0 = strans._flipX << 7;
-  char data1 = strans._absAngle << 2 | strans._absMag << 1;
-  r.data8 = {data0, data1};
+  r.data8 = {data0, 0};
   writeRecord(r);
 
   if (strans._mag != 1.0) {

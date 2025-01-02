@@ -163,7 +163,7 @@ BOOST_AUTO_TEST_CASE(edit)
 
   dbGDSSRef* sref = dbGDSSRef::create(str3);
   sref->set_sName("str1");
-  sref->setTransform(dbGDSSTrans(false, false, false, 2.0, 90));
+  sref->setTransform(dbGDSSTrans(false, 2.0, 90));
 
   std::string outpath = testTmpPath("results", "edit_test_out.gds");
 
