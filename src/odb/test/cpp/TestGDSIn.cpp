@@ -167,8 +167,6 @@ BOOST_AUTO_TEST_CASE(edit)
 
   std::string outpath = testTmpPath("results", "edit_test_out.gds");
 
-  stampGDSLib(lib);
-
   auto logger = std::make_unique<utl::Logger>();
   GDSWriter writer(logger.get());
   writer.write_gds(lib, outpath);

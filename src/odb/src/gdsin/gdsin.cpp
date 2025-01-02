@@ -163,26 +163,6 @@ bool GDSReader::processLib()
         "Corrupted GDS, BGNLIB record length is not 28 bytes");
   }
 
-  std::tm lastMT;
-  lastMT.tm_year = _r.data16[0];
-  lastMT.tm_mon = _r.data16[1];
-  lastMT.tm_mday = _r.data16[2];
-  lastMT.tm_hour = _r.data16[3];
-  lastMT.tm_min = _r.data16[4];
-  lastMT.tm_sec = _r.data16[5];
-
-  _lib->set_lastModified(lastMT);
-
-  std::tm lastAT;
-  lastAT.tm_year = _r.data16[6];
-  lastAT.tm_mon = _r.data16[7];
-  lastAT.tm_mday = _r.data16[8];
-  lastAT.tm_hour = _r.data16[9];
-  lastAT.tm_min = _r.data16[10];
-  lastAT.tm_sec = _r.data16[11];
-
-  _lib->set_lastAccessed(lastAT);
-
   readRecord();
   checkRType(RecordType::LIBNAME);
   _lib->setLibname(_r.data8);

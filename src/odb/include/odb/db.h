@@ -5827,22 +5827,6 @@ class dbGDSLib : public dbObject
 
   std::string getLibname() const;
 
-  void set_lastAccessed(std::tm lastAccessed);
-
-  std::tm get_lastAccessed() const;
-
-  void set_lastModified(std::tm lastModified);
-
-  std::tm get_lastModified() const;
-
-  void set_libDirSize(int16_t libDirSize);
-
-  int16_t get_libDirSize() const;
-
-  void set_srfName(std::string srfName);
-
-  std::string get_srfName() const;
-
   void setUnits(double uu_per_dbu, double dbu_per_meter);
 
   std::pair<double, double> getUnits() const;
