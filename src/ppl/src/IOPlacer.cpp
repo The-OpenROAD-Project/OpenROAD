@@ -933,8 +933,8 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
                           / min_dst_pins))
             + num_tracks_offset;
       end_idx = std::min((num_tracks - 1),
-                         static_cast<int>(floor((max - half_width - init_tracks)
-                                                / min_dst_pins)))
+                         static_cast<int>((max - half_width - init_tracks)
+                                          / min_dst_pins))
                 - num_tracks_offset;
       if (vertical_pin) {
         curr_x = init_tracks + start_idx * min_dst_pins;
