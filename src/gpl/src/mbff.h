@@ -100,7 +100,19 @@ class MBFF
     sta::LibertyPort* q;
     sta::LibertyPort* qn;
   };
-  using Mask = std::array<int, 7>;
+  struct Mask
+  {
+    int func_idx{0};
+    bool clock_polarity{false};
+    bool has_clear{false};
+    bool has_preset{false};
+    bool pos_output{false};
+    bool inv_output{false};
+    bool is_scan_cell{false};
+
+    std::string to_string() const;
+    bool operator<(const Mask& rhs) const;
+  };
   using DataToOutputsMap = std::map<sta::LibertyPort*, FlopOutputs>;
   DataToOutputsMap GetPinMapping(odb::dbInst* tray);
 
@@ -264,7 +276,6 @@ class MBFF
   std::map<std::string, int> name_to_idx_;
   std::map<int, int> tray_sizes_used_;
   std::vector<std::vector<int>> paths_;
-  std::vector<std::set<int>> unique_;
 
   // MBFF vars
   template <typename T>
@@ -283,7 +294,7 @@ class MBFF
   std::vector<float> norm_power_;
   std::vector<int> unused_;
   // max tray size: 1 << (7 - 1) = 64 bits
-  int num_sizes_ = 7;
+  const int num_sizes_ = 7;
   // ind of last test tray
   int test_idx_;
   // all MBFF next_states
