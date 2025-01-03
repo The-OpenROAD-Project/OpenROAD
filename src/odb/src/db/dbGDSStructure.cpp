@@ -35,10 +35,10 @@
 
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
+#include "dbGDSARef.h"
 #include "dbGDSBoundary.h"
 #include "dbGDSBox.h"
 #include "dbGDSLib.h"
-#include "dbGDSNode.h"
 #include "dbGDSPath.h"
 #include "dbGDSSRef.h"
 #include "dbGDSText.h"
@@ -65,13 +65,13 @@ bool _dbGDSStructure::operator==(const _dbGDSStructure& rhs) const
   if (*boxes_ != *rhs.boxes_) {
     return false;
   }
-  if (*nodes_ != *rhs.nodes_) {
-    return false;
-  }
   if (*paths_ != *rhs.paths_) {
     return false;
   }
   if (*srefs_ != *rhs.srefs_) {
+    return false;
+  }
+  if (*arefs_ != *rhs.arefs_) {
     return false;
   }
   if (*texts_ != *rhs.texts_) {
@@ -95,9 +95,9 @@ void _dbGDSStructure::differences(dbDiff& diff,
   DIFF_FIELD(_next_entry);
   DIFF_TABLE(boundaries_);
   DIFF_TABLE(boxes_);
-  DIFF_TABLE(nodes_);
   DIFF_TABLE(paths_);
   DIFF_TABLE(srefs_);
+  DIFF_TABLE(arefs_);
   DIFF_TABLE(texts_);
   DIFF_END
 }
@@ -109,9 +109,9 @@ void _dbGDSStructure::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_next_entry);
   DIFF_OUT_TABLE(boundaries_);
   DIFF_OUT_TABLE(boxes_);
-  DIFF_OUT_TABLE(nodes_);
   DIFF_OUT_TABLE(paths_);
   DIFF_OUT_TABLE(srefs_);
+  DIFF_OUT_TABLE(arefs_);
   DIFF_OUT_TABLE(texts_);
 
   DIFF_END
@@ -127,12 +127,12 @@ _dbGDSStructure::_dbGDSStructure(_dbDatabase* db)
       dbGDSBoundaryObj);
   boxes_ = new dbTable<_dbGDSBox>(
       db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSBoxObj);
-  nodes_ = new dbTable<_dbGDSNode>(
-      db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSNodeObj);
   paths_ = new dbTable<_dbGDSPath>(
       db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSPathObj);
   srefs_ = new dbTable<_dbGDSSRef>(
       db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSSRefObj);
+  arefs_ = new dbTable<_dbGDSARef>(
+      db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSARefObj);
   texts_ = new dbTable<_dbGDSText>(
       db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSTextObj);
 }
@@ -143,9 +143,9 @@ _dbGDSStructure::_dbGDSStructure(_dbDatabase* db, const _dbGDSStructure& r)
   _next_entry = r._next_entry;
   boundaries_ = new dbTable<_dbGDSBoundary>(db, this, *r.boundaries_);
   boxes_ = new dbTable<_dbGDSBox>(db, this, *r.boxes_);
-  nodes_ = new dbTable<_dbGDSNode>(db, this, *r.nodes_);
   paths_ = new dbTable<_dbGDSPath>(db, this, *r.paths_);
   srefs_ = new dbTable<_dbGDSSRef>(db, this, *r.srefs_);
+  arefs_ = new dbTable<_dbGDSARef>(db, this, *r.arefs_);
   texts_ = new dbTable<_dbGDSText>(db, this, *r.texts_);
 }
 
@@ -155,9 +155,9 @@ dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj)
   stream >> obj._next_entry;
   stream >> *obj.boundaries_;
   stream >> *obj.boxes_;
-  stream >> *obj.nodes_;
   stream >> *obj.paths_;
   stream >> *obj.srefs_;
+  stream >> *obj.arefs_;
   stream >> *obj.texts_;
   return stream;
 }
@@ -168,9 +168,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj)
   stream << obj._next_entry;
   stream << *obj.boundaries_;
   stream << *obj.boxes_;
-  stream << *obj.nodes_;
   stream << *obj.paths_;
   stream << *obj.srefs_;
+  stream << *obj.arefs_;
   stream << *obj.texts_;
   return stream;
 }
@@ -182,12 +182,12 @@ dbObjectTable* _dbGDSStructure::getObjectTable(dbObjectType type)
       return boundaries_;
     case dbGDSBoxObj:
       return boxes_;
-    case dbGDSNodeObj:
-      return nodes_;
     case dbGDSPathObj:
       return paths_;
     case dbGDSSRefObj:
       return srefs_;
+    case dbGDSARefObj:
+      return arefs_;
     case dbGDSTextObj:
       return texts_;
     default:
@@ -203,9 +203,9 @@ _dbGDSStructure::~_dbGDSStructure()
   }
   delete boundaries_;
   delete boxes_;
-  delete nodes_;
   delete paths_;
   delete srefs_;
+  delete arefs_;
   delete texts_;
 }
 
@@ -233,12 +233,6 @@ dbSet<dbGDSBox> dbGDSStructure::getGDSBoxs() const
   return dbSet<dbGDSBox>(obj, obj->boxes_);
 }
 
-dbSet<dbGDSNode> dbGDSStructure::getGDSNodes() const
-{
-  _dbGDSStructure* obj = (_dbGDSStructure*) this;
-  return dbSet<dbGDSNode>(obj, obj->nodes_);
-}
-
 dbSet<dbGDSPath> dbGDSStructure::getGDSPaths() const
 {
   _dbGDSStructure* obj = (_dbGDSStructure*) this;
@@ -249,6 +243,12 @@ dbSet<dbGDSSRef> dbGDSStructure::getGDSSRefs() const
 {
   _dbGDSStructure* obj = (_dbGDSStructure*) this;
   return dbSet<dbGDSSRef>(obj, obj->srefs_);
+}
+
+dbSet<dbGDSARef> dbGDSStructure::getGDSARefs() const
+{
+  _dbGDSStructure* obj = (_dbGDSStructure*) this;
+  return dbSet<dbGDSARef>(obj, obj->arefs_);
 }
 
 dbSet<dbGDSText> dbGDSStructure::getGDSTexts() const
@@ -266,13 +266,13 @@ dbGDSStructure* dbGDSStructure::create(dbGDSLib* lib_, const char* name_)
   }
 
   _dbGDSLib* lib = (_dbGDSLib*) lib_;
-  _dbGDSStructure* structure = lib->_structure_tbl->create();
+  _dbGDSStructure* structure = lib->_gdsstructure_tbl->create();
   structure->_name = strdup(name_);
   ZALLOCATED(structure->_name);
 
   // TODO: ID for structure
 
-  lib->_structure_hash.insert(structure);
+  lib->_gdsstructure_hash.insert(structure);
   return (dbGDSStructure*) structure;
 }
 
@@ -280,8 +280,8 @@ void dbGDSStructure::destroy(dbGDSStructure* structure)
 {
   _dbGDSStructure* str_impl = (_dbGDSStructure*) structure;
   _dbGDSLib* lib = (_dbGDSLib*) structure->getGDSLib();
-  lib->_structure_hash.remove(str_impl);
-  lib->_structure_tbl->destroy(str_impl);
+  lib->_gdsstructure_hash.remove(str_impl);
+  lib->_gdsstructure_tbl->destroy(str_impl);
 }
 
 dbGDSLib* dbGDSStructure::getGDSLib()

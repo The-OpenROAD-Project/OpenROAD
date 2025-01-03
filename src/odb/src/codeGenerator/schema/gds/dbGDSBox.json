@@ -15,8 +15,8 @@
         "flags":[]
       },
       {
-        "name":"_xy",
-        "type":"std::vector<Point>",
+        "name":"_bounds",
+        "type":"Rect",
         "flags":["no-template"]
       },
       {
