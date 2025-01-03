@@ -135,6 +135,36 @@ static sta::FuncExpr* getFunction(sta::LibertyPort* port)
   return nullptr;
 }
 
+std::string MBFF::Mask::to_string() const
+{
+  return fmt::format("{}{}{}{}{}{}{}",
+                     (int) clock_polarity,
+                     (int) has_clear,
+                     (int) has_preset,
+                     (int) pos_output,
+                     (int) inv_output,
+                     func_idx,
+                     (int) is_scan_cell);
+}
+
+bool MBFF::Mask::operator<(const Mask& rhs) const
+{
+  return std::tie(clock_polarity,
+                  has_clear,
+                  has_preset,
+                  pos_output,
+                  inv_output,
+                  func_idx,
+                  is_scan_cell)
+         < std::tie(rhs.clock_polarity,
+                    rhs.has_clear,
+                    rhs.has_preset,
+                    rhs.pos_output,
+                    rhs.inv_output,
+                    rhs.func_idx,
+                    rhs.is_scan_cell);
+}
+
 sta::LibertyCell* MBFF::getLibertyCell(sta::Cell* cell)
 {
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
@@ -613,26 +643,29 @@ int MBFF::GetMatchingFunc(sta::FuncExpr* expr,
 MBFF::Mask MBFF::GetArrayMask(odb::dbInst* inst, bool isTray)
 {
   Mask ret;
-  ret.fill(0);
-  ret[0] = ClockOn(inst);
-  ret[1] = HasClear(inst);
-  ret[2] = HasPreset(inst);
+  ret.clock_polarity = ClockOn(inst);
+  ret.has_clear = HasClear(inst);
+  ret.has_preset = HasPreset(inst);
 
   // check the existance of Q / QN pins
   for (auto iterm : inst->getITerms()) {
     if (IsQPin(iterm)) {
-      ret[(IsInvertingQPin(iterm) ? 4 : 3)] = 1;
+      if (IsInvertingQPin(iterm)) {
+        ret.inv_output = true;
+      } else {
+        ret.pos_output = true;
+      }
     }
   }
 
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
   sta::LibertyCell* lib_cell = getLibertyCell(cell);
   for (auto seq : lib_cell->sequentials()) {
-    ret[5] = GetMatchingFunc(seq->data(), inst, isTray);
+    ret.func_idx = GetMatchingFunc(seq->data(), inst, isTray);
     break;
   }
 
-  ret[6] = IsScanCell(inst);
+  ret.is_scan_cell = IsScanCell(inst);
 
   return ret;
 }
@@ -2110,7 +2143,7 @@ void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
                    1,
                    "Flop cluster for net {} with mask {} of size {}",
                    clk_net->getName(),
-                   fmt::join(mask, ""),
+                   mask.to_string(),
                    flops.size());
       }
     }
@@ -2243,7 +2276,7 @@ void MBFF::ReadLibs()
                  1,
                  "Found tray {} mask: {}",
                  master->getName(),
-                 fmt::join(array_mask, ""));
+                 array_mask.to_string());
       if (!static_cast<int>(best_master_[array_mask].size())) {
         best_master_[array_mask].resize(num_sizes_, nullptr);
         tray_area_[array_mask].resize(num_sizes_,

@@ -100,7 +100,19 @@ class MBFF
     sta::LibertyPort* q;
     sta::LibertyPort* qn;
   };
-  using Mask = std::array<int, 7>;
+  struct Mask
+  {
+    int func_idx{0};
+    bool clock_polarity{false};
+    bool has_clear{false};
+    bool has_preset{false};
+    bool pos_output{false};
+    bool inv_output{false};
+    bool is_scan_cell{false};
+
+    std::string to_string() const;
+    bool operator<(const Mask& rhs) const;
+  };
   using DataToOutputsMap = std::map<sta::LibertyPort*, FlopOutputs>;
   DataToOutputsMap GetPinMapping(odb::dbInst* tray);
 
