@@ -30,7 +30,7 @@
 
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
-#include <unordered_map>
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
@@ -1128,7 +1128,7 @@ class FlexGridGraph
   std::vector<bool> srcs_;
   std::vector<bool> dsts_;
   std::vector<bool> guides_;
-  std::unordered_map<frMIdx, frCost> path_costs_;
+  boost::unordered_flat_map<frMIdx, frCost> path_costs_;
   frVector<frCoord> xCoords_;
   frVector<frCoord> yCoords_;
   frVector<frLayerNum> zCoords_;
