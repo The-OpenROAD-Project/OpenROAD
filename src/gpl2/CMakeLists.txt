@@ -34,13 +34,11 @@
 ###############################################################################
 
 include("openroad")
-add_subdirectory(kokkos-fft)
 find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(fmt REQUIRED)
-find_package(Kokkos REQUIRED)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DEIGEN_NO_CUDA")
+add_subdirectory(kokkos-fft)
 
 swig_lib(NAME      gpl2
          NAMESPACE gpl2
@@ -80,7 +78,7 @@ target_link_libraries(gpl2
     OpenSTA
     rsz
     grt
-    Kokkos::kokkos
+    omp
     KokkosFFT::fft
     fmt::fmt-header-only
 )
