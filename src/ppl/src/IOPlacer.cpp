@@ -890,10 +890,11 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
                        : core_->getNumTracksY().at(layer);
 
     std::vector<Point> slots;
+    int min_dst_pins;
     for (int l = 0; l < layer_min_distances.size(); l++) {
       int curr_x, curr_y, start_idx, end_idx;
       int tech_min_dst = layer_min_distances[l];
-      int min_dst_pins
+      min_dst_pins
           = dist_in_tracks
                 ? tech_min_dst * parms_->getMinDistance()
                 : tech_min_dst
@@ -968,9 +969,15 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
       std::reverse(slots.begin(), slots.end());
     }
 
+    Point last_pos = slots[0];
     for (const Point& pos : slots) {
       bool blocked = checkBlocked(edge, pos, layer);
-      slots_.push_back({blocked, false, pos, layer, edge});
+      if (pos == last_pos
+          || std::abs(last_pos.getX() - pos.getX()) >= min_dst_pins
+          || std::abs(last_pos.getY() - pos.getY()) >= min_dst_pins) {
+        slots_.push_back({blocked, false, pos, layer, edge});
+        last_pos = pos;
+      }
     }
   }
 }
