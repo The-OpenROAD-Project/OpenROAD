@@ -231,9 +231,22 @@ endif()
 find_package(Threads REQUIRED)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-find_package(Kokkos)
-
-if (NOT Kokkos_FOUND)
+if(USE_GPL2)
+  find_package(OpenMP REQUIRED)
+  set(Kokkos_ENABLE_OPENMP ON CACHE BOOL "Set Kokkos OpenMP backend" FORCE)
+  if(GPU)
+    set(Kokkos_ENABLE_CUDA ON CACHE BOOL "Set Kokkos CUDA backend" FORCE)
+    set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "Enable Kokkos CUDA Lambda support" FORCE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DEIGEN_NO_CUDA")
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14")
+      message(FATAL_ERROR "Detected version of GCC is not supported by NVCC. Consider using Clang or disabling GPU support.")
+    endif()
+  else()
+    set(Kokkos_ENABLE_CUDA OFF CACHE BOOL "Set Kokkos CUDA backend" FORCE)
+    set(Kokkos_ENABLE_CUDA_LAMBDA OFF CACHE BOOL "Enable Kokkos CUDA Lambda support" FORCE)
+  endif()
+  set(KokkosFFT_ENABLE_INTERNAL_KOKKOS ON CACHE BOOL "Use Kokkos-FFT to build Kokkos" FORCE)
+else()
   add_compile_options(
     -Wp,-D_GLIBCXX_ASSERTIONS
   )
@@ -257,7 +270,7 @@ add_subdirectory(dbSta)
 add_subdirectory(rsz)
 add_subdirectory(stt)
 add_subdirectory(gpl)
-if (Kokkos_FOUND)
+if(USE_GPL2)
   add_subdirectory(gpl2)
 endif()
 add_subdirectory(dpl)
@@ -285,7 +298,7 @@ add_subdirectory(par)
 add_executable(openroad
   ${OPENROAD_SOURCE}
 )
-if (Kokkos_FOUND)
+if(USE_GPL2)
   target_compile_definitions(openroad PUBLIC ENABLE_KOKKOS)
 endif()
 
@@ -348,11 +361,11 @@ target_link_libraries(openroad
   ${CMAKE_THREAD_LIBS_INIT}
 )
 
-if (Kokkos_FOUND)
+if(USE_GPL2)
   find_package(fmt REQUIRED)
   target_link_libraries(openroad
     gpl2
-    Kokkos::kokkos
+    KokkosFFT::fft
     omp
     fmt::fmt-header-only
   )
@@ -428,8 +441,8 @@ if (Python3_FOUND AND BUILD_PYTHON)
     dft_py
     par_py
   )
-  if (Kokkos_FOUND)
-    target_link_libraries(openroad gpl2_py Kokkos::kokkos)
+  if(USE_GPL2)
+    target_link_libraries(openroad gpl2_py KokkosFFT::fft)
   endif()
 
 else()

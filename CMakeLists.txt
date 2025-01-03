@@ -122,6 +122,10 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_
   link_libraries(stdc++fs)
 endif()
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS "19")
+  link_libraries(stdc++)
+endif()
+
 # Ask CMake to output a compile_commands.json file for use with things like clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
@@ -134,6 +138,8 @@ if(ENABLE_TESTS)
   add_custom_target(build_and_test ${CMAKE_CTEST_COMMAND} --parallel --output-on-failure -LE IntegrationTest)
   include(GoogleTest)
 endif()
+
+option(USE_GPL2 "Enable Kokkos-based DG-RePlAce algorithm" OFF)
 
 add_subdirectory(src)
 add_subdirectory(test)
@@ -171,7 +177,7 @@ if(BUILD_MAN)
     COMMAND make clean && make preprocess && make all -j${PROCESSOR_COUNT}
     WORKING_DIRECTORY ${OPENROAD_HOME}/docs
   )
-  
+
   # Based on ${CMAKE_INSTALL_PREFIX}, we want to go to ${CMAKE_INSTALL_PREFIX}/share/man
   install(DIRECTORY ${OPENROAD_HOME}/docs/cat DESTINATION ${OPENROAD_SHARE}/man)
   install(DIRECTORY ${OPENROAD_HOME}/docs/html DESTINATION ${OPENROAD_SHARE}/man)
