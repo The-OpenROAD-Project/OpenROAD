@@ -64,15 +64,15 @@ class HeatMapDataSource
   {
     std::string name;
     std::string label;
-    std::function<bool(void)> getter;
+    std::function<bool()> getter;
     std::function<void(bool)> setter;
   };
   struct MapSettingMultiChoice
   {
     std::string name;
     std::string label;
-    std::function<std::vector<std::string>(void)> choices;
-    std::function<const std::string(void)> getter;
+    std::function<std::vector<std::string>()> choices;
+    std::function<const std::string()> getter;
     std::function<void(const std::string&)> setter;
   };
 
@@ -189,13 +189,13 @@ class HeatMapDataSource
  protected:
   void addBooleanSetting(const std::string& name,
                          const std::string& label,
-                         const std::function<bool(void)>& getter,
+                         const std::function<bool()>& getter,
                          const std::function<void(bool)>& setter);
   void addMultipleChoiceSetting(
       const std::string& name,
       const std::string& label,
-      const std::function<std::vector<std::string>(void)>& choices,
-      const std::function<std::string(void)>& getter,
+      const std::function<std::vector<std::string>()>& choices,
+      const std::function<std::string()>& getter,
       const std::function<void(std::string)>& setter);
 
   void setupMap();

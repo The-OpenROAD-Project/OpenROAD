@@ -30,7 +30,7 @@
 #ifndef defiSite_h
 #define defiSite_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 #include "defiMisc.hpp"

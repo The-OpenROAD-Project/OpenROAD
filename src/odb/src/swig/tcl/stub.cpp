@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2022, The Regents of the University of California
+// Copyright (c) 2024, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,41 +30,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin Header
-#pragma once
+#include "ord/OpenRoad.hh"
 
-#include "dbCore.h"
-#include "dbGDSStructure.h"
-#include "odb/odb.h"
+namespace ord {
 
-namespace odb {
-class dbIStream;
-class dbOStream;
-class dbDiff;
-class _dbDatabase;
-
-class _dbGDSNode : public _dbObject
+OpenRoad* OpenRoad::openRoad()
 {
- public:
-  _dbGDSNode(_dbDatabase*, const _dbGDSNode& r);
-  _dbGDSNode(_dbDatabase*);
+  return nullptr;
+}
 
-  ~_dbGDSNode() = default;
-
-  bool operator==(const _dbGDSNode& rhs) const;
-  bool operator!=(const _dbGDSNode& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbGDSNode& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbGDSNode& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-
-  int16_t _layer;
-  int16_t _datatype;
-  std::vector<Point> _xy;
-  std::vector<std::pair<std::int16_t, std::string>> _propattr;
-};
-dbIStream& operator>>(dbIStream& stream, _dbGDSNode& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbGDSNode& obj);
-}  // namespace odb
-   // Generator Code End Header
+}  // namespace ord

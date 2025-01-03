@@ -43,8 +43,8 @@ class FindObjectDialog : public QDialog, public Ui::FindObjDialog
  public:
   FindObjectDialog(QWidget* parent = nullptr);
  public slots:
-  void accept();
-  void reject();
+  void accept() override;
+  void reject() override;
   int exec() override;
 };
 }  // namespace gui

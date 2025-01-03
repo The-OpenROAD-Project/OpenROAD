@@ -30,7 +30,7 @@
 #ifndef defiRowTrack_h
 #define defiRowTrack_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 

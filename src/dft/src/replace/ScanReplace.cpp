@@ -406,7 +406,8 @@ void ScanReplace::scanReplace(odb::dbBlock* block)
       continue;
     }
 
-    if (!from_liberty_cell->hasSequentials()) {
+    if (!from_liberty_cell->hasSequentials()
+        || from_liberty_cell->isClockGate()) {
       // If the cell is not sequential, then there is nothing to replace
       continue;
     }

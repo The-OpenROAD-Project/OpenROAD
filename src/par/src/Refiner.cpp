@@ -34,6 +34,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "Refiner.h"
 
+#include <map>
+#include <memory>
+#include <set>
+#include <utility>
+#include <vector>
+
 #include "Evaluator.h"
 #include "Hypergraph.h"
 #include "Utilities.h"

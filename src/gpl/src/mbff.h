@@ -50,6 +50,7 @@ namespace sta {
 class dbNetwork;
 class dbSta;
 class FuncExpr;
+class LibertyCell;
 class LibertyPort;
 }  // namespace sta
 
@@ -99,6 +100,7 @@ class MBFF
   DataToOutputsMap GetPinMapping(odb::dbInst* tray);
 
   // MBFF functions
+  sta::LibertyCell* getLibertyCell(sta::Cell* cell);
   float GetDist(const Point& a, const Point& b);
   float GetDistAR(const Point& a, const Point& b, float AR);
   int GetRows(int slot_cnt, const Mask& array_mask);

@@ -30,7 +30,7 @@
 #ifndef defiPartition_h
 #define defiPartition_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 

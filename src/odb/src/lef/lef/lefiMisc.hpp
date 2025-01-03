@@ -30,8 +30,7 @@
 #ifndef lefiMisc_h
 #define lefiMisc_h
 
-#include <stdio.h>
-
+#include <cstdio>
 #include <string>
 #include <vector>
 

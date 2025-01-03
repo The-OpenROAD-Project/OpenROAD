@@ -70,10 +70,6 @@ _dbBPin::_dbBPin(_dbDatabase*, const _dbBPin& p)
 {
 }
 
-_dbBPin::~_dbBPin()
-{
-}
-
 bool _dbBPin::operator==(const _dbBPin& rhs) const
 {
   if (_flags._status != rhs._flags._status) {

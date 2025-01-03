@@ -68,7 +68,7 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
   size_t start_index = 0;
   int64_t lowest_dist = std::numeric_limits<int64_t>::max();
   // Get points in a form ready to insert into index
-  typedef bg::model::point<int, 2, bg::cs::cartesian> bg_point;
+  using bg_point = bg::model::point<int, 2, bg::cs::cartesian>;
   std::vector<std::pair<bg_point, size_t>> transformed;
 
   for (size_t i = 0; i < cells.size(); i++) {

@@ -154,6 +154,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
   target_link_libraries(par_py
     PUBLIC
       par_lib
+      utl_lib
   )
 
 endif()

@@ -27,9 +27,9 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #ifdef WIN32
 #include <time.h>
 #else /* not WIN32 */

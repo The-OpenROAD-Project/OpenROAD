@@ -14,5 +14,6 @@ Total ILP Cost: 97.22825
 Total Timing Critical Path Displacement: 0
 Average slot-to-flop displacement: 0.865
 Final Objective Value: 97.22825
-1-bit: 0, 2-bit: 2, 4-bit: 0
+Sizes used
+  2-bit: 2
 No differences found.

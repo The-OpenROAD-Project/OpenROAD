@@ -122,7 +122,7 @@ _dbInst::_dbInst(_dbDatabase*)
   _flags._level = 0;
   _flags._input_cone = 0;
   _flags._inside_cone = 0;
-  _name = 0;
+  _name = nullptr;
   _x = 0;
   _y = 0;
   _weight = 0;
@@ -695,7 +695,7 @@ dbTransform dbInst::getTransform()
   return dbTransform(inst->_flags._orient, Point(inst->_x, inst->_y));
 }
 
-void dbInst::setTransform(dbTransform& t)
+void dbInst::setTransform(const dbTransform& t)
 {
   setOrient(t.getOrient());
   Point offset = t.getOffset();

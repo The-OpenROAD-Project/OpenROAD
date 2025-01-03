@@ -1715,13 +1715,28 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
                                          layer_capacity,
                                          is_macro);
 
+  int grid_limit = vertical ? grid_->getYGrids() : grid_->getXGrids();
   if (!vertical) {
+    // if obstruction is inside a single gcell, block the edge between current
+    // gcell and the adjacent gcell
+    if (first_tile.getX() == last_tile.getX()
+        && last_tile.getX() + 1 < grid_limit) {
+      int last_tile_x = last_tile.getX() + 1;
+      last_tile.setX(last_tile_x);
+    }
     fastroute_->addHorizontalAdjustments(first_tile,
                                          last_tile,
                                          layer,
                                          first_tile_reduce_interval,
                                          last_tile_reduce_interval);
   } else {
+    // if obstruction is inside a single gcell, block the edge between current
+    // gcell and the adjacent gcell
+    if (first_tile.getY() == last_tile.getY()
+        && last_tile.getY() + 1 < grid_limit) {
+      int last_tile_y = last_tile.getY() + 1;
+      last_tile.setY(last_tile_y);
+    }
     fastroute_->addVerticalAdjustments(first_tile,
                                        last_tile,
                                        layer,

@@ -33,7 +33,7 @@
 #include "odb/db.h"
 #include "odb/lefin.h"
 
-namespace lefTechLayerWrongDirSpacing {
+namespace odb::lefTechLayerWrongDirSpacing {
 
 void wrongDirParser(double value,
                     odb::dbTechLayerWrongDirSpacingRule* sc,
@@ -95,7 +95,7 @@ bool parse(Iterator first,
   }
   return valid;
 }
-}  // namespace lefTechLayerWrongDirSpacing
+}  // namespace odb::lefTechLayerWrongDirSpacing
 
 namespace odb {
 

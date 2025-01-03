@@ -40,7 +40,7 @@ class defrData;
 class defiAlias_itr
 {
  public:
-  defiAlias_itr(defrData* defData = 0);
+  defiAlias_itr(defrData* defData = nullptr);
   void Init();
 
   void Destroy();
@@ -52,8 +52,8 @@ class defiAlias_itr
   int Marked();
 
  protected:
-  int first;
-  defAliasIterator* iterator;
+  int first{1};
+  defAliasIterator* iterator{nullptr};
   defrData* defData;
 };
 

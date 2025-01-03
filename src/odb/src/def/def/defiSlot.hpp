@@ -30,7 +30,7 @@
 #ifndef defiSLOT_h
 #define defiSLOT_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 #include "defiMisc.hpp"

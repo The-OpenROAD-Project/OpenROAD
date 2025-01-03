@@ -73,7 +73,7 @@ using odb::dbTech;
 using odb::dbTechLayer;
 using odb::Rect;
 
-typedef vector<pair<Partition, Partition>> TwoPartitions;
+using TwoPartitions = vector<pair<Partition, Partition>>;
 
 static CoreEdge getCoreEdge(int cx,
                             int cy,
