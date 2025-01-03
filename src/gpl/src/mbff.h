@@ -294,7 +294,7 @@ class MBFF
   std::vector<float> norm_power_;
   std::vector<int> unused_;
   // max tray size: 1 << (7 - 1) = 64 bits
-  int num_sizes_ = 7;
+  const int num_sizes_ = 7;
   // ind of last test tray
   int test_idx_;
   // all MBFF next_states
