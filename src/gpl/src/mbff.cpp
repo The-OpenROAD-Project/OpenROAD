@@ -2277,7 +2277,7 @@ void MBFF::ReadLibs()
                  "Found tray {} mask: {}",
                  master->getName(),
                  array_mask.to_string());
-      if (!static_cast<int>(best_master_[array_mask].size())) {
+      if (best_master_[array_mask].empty()) {
         best_master_[array_mask].resize(num_sizes_, nullptr);
         tray_area_[array_mask].resize(num_sizes_,
                                       std::numeric_limits<float>::max());
