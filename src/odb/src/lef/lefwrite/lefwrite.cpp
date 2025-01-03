@@ -27,9 +27,9 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #ifndef WIN32
 #include <unistd.h>
 #endif /* not WIN32 */
@@ -77,7 +77,7 @@ int main(int argc, char** argv)
       argv++;
       argc--;
       outfile = *argv;
-      if ((fout = fopen(outfile, "w")) == 0) {
+      if ((fout = fopen(outfile, "w")) == nullptr) {
         fprintf(stderr, "ERROR: could not open output file\n");
         return 2;
       }
@@ -157,37 +157,37 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = lefwRealPropDef("LIBRARY", "realNum", 0, 0, 21.22);
   CHECK_STATUS(status);
-  status = lefwStringPropDef("PIN", "TYPE", 0, 0, 0);
+  status = lefwStringPropDef("PIN", "TYPE", 0, 0, nullptr);
   CHECK_STATUS(status);
   status = lefwIntPropDef("PIN", "intProp", 0, 0, 0);
   CHECK_STATUS(status);
   status = lefwRealPropDef("PIN", "realProp", 0, 0, 0);
   CHECK_STATUS(status);
-  status = lefwStringPropDef("MACRO", "stringProp", 0, 0, 0);
+  status = lefwStringPropDef("MACRO", "stringProp", 0, 0, nullptr);
   CHECK_STATUS(status);
   status = lefwIntPropDef("MACRO", "integerProp", 0, 0, 0);
   CHECK_STATUS(status);
   status = lefwRealPropDef("MACRO", "WEIGHT", 1.0, 100.0, 0);
   CHECK_STATUS(status);
-  status = lefwStringPropDef("VIA", "stringProperty", 0, 0, 0);
+  status = lefwStringPropDef("VIA", "stringProperty", 0, 0, nullptr);
   CHECK_STATUS(status);
   status = lefwRealPropDef("VIA", "realProp", 0, 0, 0);
   CHECK_STATUS(status);
   status = lefwIntPropDef("VIA", "COUNT", 1, 100, 0);
   CHECK_STATUS(status);
-  status = lefwStringPropDef("LAYER", "lsp", 0, 0, 0);
+  status = lefwStringPropDef("LAYER", "lsp", 0, 0, nullptr);
   CHECK_STATUS(status);
   status = lefwIntPropDef("LAYER", "lip", 0, 0, 0);
   CHECK_STATUS(status);
   status = lefwRealPropDef("LAYER", "lrp", 0, 0, 0);
   CHECK_STATUS(status);
-  status = lefwStringPropDef("VIARULE", "vrsp", 0, 0, 0);
+  status = lefwStringPropDef("VIARULE", "vrsp", 0, 0, nullptr);
   CHECK_STATUS(status);
   status = lefwRealPropDef("VIARULE", "vrip", 0, 0, 0);
   CHECK_STATUS(status);
   status = lefwIntPropDef("VIARULE", "vrrp", 0, 0, 0);
   CHECK_STATUS(status);
-  status = lefwStringPropDef("NONDEFAULTRULE", "ndrsp", 0, 0, 0);
+  status = lefwStringPropDef("NONDEFAULTRULE", "ndrsp", 0, 0, nullptr);
   CHECK_STATUS(status);
   status = lefwIntPropDef("NONDEFAULTRULE", "ndrip", 0, 0, 0);
   CHECK_STATUS(status);
@@ -423,7 +423,7 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = lefwLayerAntennaDiffAreaRatio(6.5);
   CHECK_STATUS(status);
-  status = lefwLayerAntennaAreaFactor(5.4, 0);
+  status = lefwLayerAntennaAreaFactor(5.4, nullptr);
   CHECK_STATUS(status);
   status = lefwLayerAntennaCumDiffAreaRatio(4.5);
   CHECK_STATUS(status);
@@ -556,7 +556,7 @@ int main(int argc, char** argv)
   ratios[1] = 6.1;
   status = lefwLayerAntennaCumDiffAreaRatioPwl(2, diffs, ratios);
   CHECK_STATUS(status);
-  status = lefwLayerAntennaAreaFactor(4.5, 0);
+  status = lefwLayerAntennaAreaFactor(4.5, nullptr);
   CHECK_STATUS(status);
   status = lefwLayerAntennaSideAreaRatio(6.5);
   CHECK_STATUS(status);
@@ -616,7 +616,7 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = lefwLayerEnclosure("", 0.02, 0.02, 1.0);
   CHECK_STATUS(status);
-  status = lefwLayerEnclosure(NULL, 0.05, 0.05, 2.0);
+  status = lefwLayerEnclosure(nullptr, 0.05, 0.05, 2.0);
   CHECK_STATUS(status);
   status = lefwLayerEnclosure("BELOW", 0.07, 0.07, 1.0);
   CHECK_STATUS(status);
@@ -875,9 +875,9 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = lefwLayerRoutingMinstep(0.05);
   CHECK_STATUS(status);
-  status = lefwLayerRoutingMinstepWithOptions(0.05, NULL, 0.08);
+  status = lefwLayerRoutingMinstepWithOptions(0.05, nullptr, 0.08);
   CHECK_STATUS(status);
-  status = lefwLayerRoutingMinstepWithOptions(0.05, NULL, 0.16);
+  status = lefwLayerRoutingMinstepWithOptions(0.05, nullptr, 0.16);
   CHECK_STATUS(status);
   status = lefwLayerRoutingMinstepWithOptions(0.05, "INSDECORNER", 0);
   CHECK_STATUS(status);
@@ -976,15 +976,15 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = lefwLayerCutSpacingEnd();  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerEnclosure(0, .05, .01, 0);  // 5.7
+  status = lefwLayerEnclosure(nullptr, .05, .01, 0);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerEnclosureLength(0, .05, 0, 0.7);  // 5.7
+  status = lefwLayerEnclosureLength(nullptr, .05, 0, 0.7);  // 5.7
   CHECK_STATUS(status);
   status = lefwLayerEnclosure("BELOW", .07, .07, 1.0);  // 5.7
   CHECK_STATUS(status);
   status = lefwLayerEnclosure("ABOVE", .09, .09, 1.0);  // 5.7
   CHECK_STATUS(status);
-  status = lefwLayerEnclosureWidth(0, .03, .03, 1.0, 0.2);  // 5.7
+  status = lefwLayerEnclosureWidth(nullptr, .03, .03, 1.0, 0.2);  // 5.7
   CHECK_STATUS(status);
   status = lefwEndLayer("via34");  // 5.7
   CHECK_STATUS(status);
@@ -1146,7 +1146,7 @@ int main(int argc, char** argv)
   status = lefwEndVia("PC");
   CHECK_STATUS(status);
 
-  status = lefwStartVia("M2_M3_PWR", NULL);
+  status = lefwStartVia("M2_M3_PWR", nullptr);
   CHECK_STATUS(status);
   status = lefwViaResistance(0.4);
   CHECK_STATUS(status);
@@ -1171,7 +1171,7 @@ int main(int argc, char** argv)
 
   xl = (double*) malloc(sizeof(double) * 6);
   yl = (double*) malloc(sizeof(double) * 6);
-  status = lefwStartVia("IN1X", 0);
+  status = lefwStartVia("IN1X", nullptr);
   CHECK_STATUS(status);
   //  status = lefwViaTopofstackonly();  5.6
   //  CHECK_STATUS(status);
@@ -1240,7 +1240,7 @@ int main(int argc, char** argv)
   status = lefwEndVia("IN1X");
   CHECK_STATUS(status);
 
-  status = lefwStartVia("myBlockVia", NULL);
+  status = lefwStartVia("myBlockVia", nullptr);
   CHECK_STATUS(status);
   status = lefwViaViarule("DEFAULT",
                           0.1,
@@ -1266,7 +1266,7 @@ int main(int argc, char** argv)
   status = lefwEndVia("myBlockVia");
   CHECK_STATUS(status);
 
-  status = lefwStartVia("myVia23", NULL);
+  status = lefwStartVia("myVia23", nullptr);
   CHECK_STATUS(status);
   status = lefwViaLayer("metal2");
   CHECK_STATUS(status);
@@ -1295,9 +1295,9 @@ int main(int argc, char** argv)
   //  CHECK_STATUS(status);
   //  status = lefwViaRuleLayer("M2", "HORIZONTAL", 3.0, 3.0, 0, 0);  5.6
   //  CHECK_STATUS(status);
-  status = lefwViaRuleLayer("M1", NULL, 9.0, 9.6, 0, 0);
+  status = lefwViaRuleLayer("M1", nullptr, 9.0, 9.6, 0, 0);
   CHECK_STATUS(status);
-  status = lefwViaRuleLayer("M2", NULL, 3.0, 3.0, 0, 0);
+  status = lefwViaRuleLayer("M2", nullptr, 3.0, 3.0, 0, 0);
   CHECK_STATUS(status);
   status = lefwViaRuleVia("VIACENTER12");
   CHECK_STATUS(status);
@@ -1320,9 +1320,9 @@ int main(int argc, char** argv)
   //  CHECK_STATUS(status);
   //  status = lefwViaRuleGenLayer("M2", "HORIZONTAL", 0, 0, 1.4, 0);  5.6
   //  CHECK_STATUS(status);
-  status = lefwViaRuleGenLayer("M1", NULL, 0.1, 19, 0, 0);
+  status = lefwViaRuleGenLayer("M1", nullptr, 0.1, 19, 0, 0);
   CHECK_STATUS(status);
-  status = lefwViaRuleGenLayer("M2", NULL, 0, 0, 0, 0);
+  status = lefwViaRuleGenLayer("M2", nullptr, 0, 0, 0, 0);
   CHECK_STATUS(status);
   status = lefwViaRuleGenLayer3("V1", -0.8, -0.8, 0.8, 0.8, 5.6, 6.0, 0.2);
   CHECK_STATUS(status);
@@ -1361,7 +1361,7 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = lefwNonDefaultRuleLayer("M1", 10.0, 2.2, 0, 0, 0, 0);
   CHECK_STATUS(status);
-  status = lefwStartVia("nd1VARX0", NULL);
+  status = lefwStartVia("nd1VARX0", nullptr);
   CHECK_STATUS(status);
   status = lefwViaResistance(0.2);
   CHECK_STATUS(status);
@@ -1478,7 +1478,7 @@ int main(int argc, char** argv)
   // SPACING
   status = lefwStartSpacing();
   CHECK_STATUS(status);
-  status = lefwSpacing("CUT01", "CA", 1.5, NULL);
+  status = lefwSpacing("CUT01", "CA", 1.5, nullptr);
   CHECK_STATUS(status);
   status = lefwSpacing("CA", "V1", 1.5, "STACK");
   CHECK_STATUS(status);
@@ -1535,7 +1535,7 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   lefwEndSite("MRCORE");
   CHECK_STATUS(status);
-  status = lefwSite("IOWIRED", "PAD", NULL, 57.6, 432);
+  status = lefwSite("IOWIRED", "PAD", nullptr, 57.6, 432);
   CHECK_STATUS(status);
   lefwEndSite("IOWIRED");
   CHECK_STATUS(status);
@@ -1620,7 +1620,7 @@ int main(int argc, char** argv)
   // MACRO
   status = lefwStartMacro("CHK3A");
   CHECK_STATUS(status);
-  status = lefwMacroClass("RING", NULL);
+  status = lefwMacroClass("RING", nullptr);
   CHECK_STATUS(status);
   status = lefwMacroFixedMask();
   CHECK_STATUS(status);
@@ -1655,7 +1655,7 @@ int main(int argc, char** argv)
   status = lefwMacroPinAntennaMetalArea(3, "M1");
   CHECK_STATUS(status);
   // MACRO - PIN
-  status = lefwStartMacroPinPort(NULL);
+  status = lefwStartMacroPinPort(nullptr);
   CHECK_STATUS(status);
   //  status = lefwMacroPinForeign("GROUND", 4, 7, 6);  5.6
   //  CHECK_STATUS(status);
@@ -1693,7 +1693,7 @@ int main(int argc, char** argv)
   status = lefwMacroPinNetExpr("power2 VDD2");
   CHECK_STATUS(status);
   // MACRO - PIN - PORT
-  status = lefwStartMacroPinPort(NULL);
+  status = lefwStartMacroPinPort(nullptr);
   CHECK_STATUS(status);
   status = lefwMacroPinPortLayer("M1", 0);
   CHECK_STATUS(status);
@@ -1760,7 +1760,7 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = lefwMacroPinAntennaGateArea(1, "M1");
   CHECK_STATUS(status);
-  status = lefwMacroPinAntennaGateArea(2, 0);
+  status = lefwMacroPinAntennaGateArea(2, nullptr);
   CHECK_STATUS(status);
   status = lefwMacroPinAntennaGateArea(3, "M3");
   CHECK_STATUS(status);
@@ -1768,17 +1768,17 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = lefwMacroPinAntennaMaxAreaCar(1, "L1");
   CHECK_STATUS(status);
-  status = lefwMacroPinAntennaMaxSideAreaCar(1, 0);
+  status = lefwMacroPinAntennaMaxSideAreaCar(1, nullptr);
   CHECK_STATUS(status);
-  status = lefwMacroPinAntennaPartialCutArea(1, 0);
+  status = lefwMacroPinAntennaPartialCutArea(1, nullptr);
   CHECK_STATUS(status);
   status = lefwMacroPinAntennaPartialCutArea(2, "M2");
   CHECK_STATUS(status);
-  status = lefwMacroPinAntennaPartialCutArea(3, 0);
+  status = lefwMacroPinAntennaPartialCutArea(3, nullptr);
   CHECK_STATUS(status);
   status = lefwMacroPinAntennaPartialCutArea(4, "M4");
   CHECK_STATUS(status);
-  status = lefwMacroPinAntennaMaxCutCar(1, 0);
+  status = lefwMacroPinAntennaMaxCutCar(1, nullptr);
   CHECK_STATUS(status);
   status = lefwStartMacroPinPort("CORE");
   CHECK_STATUS(status);
@@ -1790,7 +1790,7 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = lefwEndMacroPinPort();
   CHECK_STATUS(status);
-  status = lefwStartMacroPinPort(NULL);
+  status = lefwStartMacroPinPort(nullptr);
   CHECK_STATUS(status);
   status = lefwMacroPinPortLayer("PC", 0);
   CHECK_STATUS(status);
@@ -1798,7 +1798,7 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = lefwEndMacroPinPort();
   CHECK_STATUS(status);
-  status = lefwStartMacroPinPort(NULL);
+  status = lefwStartMacroPinPort(nullptr);
   CHECK_STATUS(status);
   status = lefwMacroPinPortDesignRuleWidth("PC", 2);
   CHECK_STATUS(status);
@@ -1903,7 +1903,7 @@ int main(int argc, char** argv)
   */
   status = lefwMacroPinAntennaModel("OXIDE1");
   CHECK_STATUS(status);
-  status = lefwStartMacroPinPort(NULL);
+  status = lefwStartMacroPinPort(nullptr);
   CHECK_STATUS(status);
   status = lefwMacroPinPortLayer("M2", 0);
   CHECK_STATUS(status);
@@ -2048,7 +2048,7 @@ int main(int argc, char** argv)
 
   status = lefwStartMacro("DFF5");
   CHECK_STATUS(status);
-  status = lefwMacroClass("COVER", NULL);
+  status = lefwMacroClass("COVER", nullptr);
   CHECK_STATUS(status);
   status = lefwMacroForeignStr("DFF3S", 0, 0, "");
   CHECK_STATUS(status);
@@ -2089,7 +2089,7 @@ int main(int argc, char** argv)
 
   status = lefwStartMacro("myTest");
   CHECK_STATUS(status);
-  status = lefwMacroClass("CORE", NULL);
+  status = lefwMacroClass("CORE", nullptr);
   CHECK_STATUS(status);
   status = lefwMacroSize(10.0, 14.0);
   CHECK_STATUS(status);

@@ -30,7 +30,7 @@
 #ifndef LEFW_WRITERCALLS_H
 #define LEFW_WRITERCALLS_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiDefs.hpp"
 #include "lefiKRDefs.hpp"

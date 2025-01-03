@@ -33,10 +33,10 @@
 #include "odb/lefout.h"
 
 #include <spdlog/fmt/ostr.h>
-#include <stdio.h>
 
 #include <algorithm>
 #include <boost/polygon/polygon.hpp>
+#include <cstdio>
 
 #include "odb/db.h"
 #include "odb/dbShape.h"

@@ -34,7 +34,7 @@
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
-typedef void* defGZFile;
+using defGZFile = void*;
 class defrContext;
 
 //

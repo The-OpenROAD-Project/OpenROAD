@@ -40,9 +40,17 @@
 
 #include "Coarsener.h"
 
+#include <algorithm>
+#include <chrono>
+#include <cstdlib>
+#include <limits>
+#include <map>
+#include <memory>
 #include <numeric>
 #include <random>
 #include <set>
+#include <utility>
+#include <vector>
 
 #include "Evaluator.h"
 #include "Hypergraph.h"
@@ -511,12 +519,6 @@ void Coarsener::VertexMatching(
         = hgraph->GetNumVertices() + cluster_id - num_visited_vertices;
     // check the early-stop condition
     if (remaining_vertices <= num_early_stop_visited_vertices) {
-      int num_visited_vertices_new = 0;
-      for (auto flag_new : vertex_cluster_id_vec) {
-        if (flag_new > -1) {
-          num_visited_vertices_new++;
-        }
-      }
       v_iter++;
       while (v_iter != unvisited.end()) {
         const int cur_vertex = *v_iter;

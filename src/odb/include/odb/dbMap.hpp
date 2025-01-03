@@ -33,6 +33,7 @@
 #pragma once
 
 #include "ZException.h"
+#include "dbMap.h"
 
 namespace odb {
 

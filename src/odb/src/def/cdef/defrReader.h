@@ -33,7 +33,7 @@
 #ifndef CDEFRREADER_H
 #define CDEFRREADER_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 
@@ -41,7 +41,7 @@
 #define CBMAX 150
 
 /* An enum describing all of the types of reader callbacks.                   */
-typedef enum
+enum defrCallbackType_e
 {
   defrUnspecifiedCbkType = 0,
   defrDesignStartCbkType = 1,
@@ -153,7 +153,7 @@ typedef enum
 
   defrComponentMaskShiftLayerCbkType = 102,
   defrDesignEndCbkType = 103
-} defrCallbackType_e;
+};
 
 /* Declarations of function signatures for each type of callback.             */
 /* These declarations are type-safe when compiling with ANSI C                */
@@ -188,140 +188,125 @@ typedef enum
 /* data.                                                                      */
 
 /* A declaration of the signature of all callbacks that return nothing.       */
-typedef int (*defrVoidCbkFnType)(defrCallbackType_e, void* v, defiUserData);
+using defrVoidCbkFnType = int (*)(defrCallbackType_e, void* v, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a string.      */
-typedef int (*defrStringCbkFnType)(defrCallbackType_e,
-                                   const char* string,
-                                   defiUserData);
+using defrStringCbkFnType
+    = int (*)(defrCallbackType_e, const char* string, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a integer.     */
-typedef int (*defrIntegerCbkFnType)(defrCallbackType_e,
-                                    int number,
-                                    defiUserData);
+using defrIntegerCbkFnType
+    = int (*)(defrCallbackType_e, int number, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a double.      */
-typedef int (*defrDoubleCbkFnType)(defrCallbackType_e,
-                                   double number,
-                                   defiUserData);
+using defrDoubleCbkFnType
+    = int (*)(defrCallbackType_e, double number, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiProp.    */
-typedef int (*defrPropCbkFnType)(defrCallbackType_e,
-                                 defiProp* prop,
-                                 defiUserData);
+using defrPropCbkFnType
+    = int (*)(defrCallbackType_e, defiProp* prop, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiSite.    */
-typedef int (*defrSiteCbkFnType)(defrCallbackType_e,
-                                 defiSite* site,
-                                 defiUserData);
+using defrSiteCbkFnType
+    = int (*)(defrCallbackType_e, defiSite* site, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defComponent */
-typedef int (*defrComponentCbkFnType)(defrCallbackType_e,
-                                      defiComponent* comp,
-                                      defiUserData);
+using defrComponentCbkFnType
+    = int (*)(defrCallbackType_e, defiComponent* comp, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defComponent */
-typedef int (*defrComponentMaskShiftLayerCbkFnType)(
-    defrCallbackType_e,
-    defiComponentMaskShiftLayer* comp,
-    defiUserData);
+using defrComponentMaskShiftLayerCbkFnType
+    = int (*)(defrCallbackType_e,
+              defiComponentMaskShiftLayer* comp,
+              defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defNet.      */
-typedef int (*defrNetCbkFnType)(defrCallbackType_e, defiNet* net, defiUserData);
+using defrNetCbkFnType
+    = int (*)(defrCallbackType_e, defiNet* net, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defPath.     */
-typedef int (*defrPathCbkFnType)(defrCallbackType_e,
-                                 defiPath* path,
-                                 defiUserData);
+using defrPathCbkFnType
+    = int (*)(defrCallbackType_e, defiPath* path, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiBox.     */
-typedef int (*defrBoxCbkFnType)(defrCallbackType_e, defiBox* box, defiUserData);
+using defrBoxCbkFnType
+    = int (*)(defrCallbackType_e, defiBox* box, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiPinCap.  */
-typedef int (*defrPinCapCbkFnType)(defrCallbackType_e,
-                                   defiPinCap* pincap,
-                                   defiUserData);
+using defrPinCapCbkFnType
+    = int (*)(defrCallbackType_e, defiPinCap* pincap, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiPin.     */
-typedef int (*defrPinCbkFnType)(defrCallbackType_e, defiPin* pin, defiUserData);
+using defrPinCbkFnType
+    = int (*)(defrCallbackType_e, defiPin* pin, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiRow.     */
-typedef int (*defrRowCbkFnType)(defrCallbackType_e, defiRow* row, defiUserData);
+using defrRowCbkFnType
+    = int (*)(defrCallbackType_e, defiRow* row, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiTrack.   */
-typedef int (*defrTrackCbkFnType)(defrCallbackType_e,
-                                  defiTrack* track,
-                                  defiUserData);
+using defrTrackCbkFnType
+    = int (*)(defrCallbackType_e, defiTrack* track, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiGcellGri */
-typedef int (*defrGcellGridCbkFnType)(defrCallbackType_e,
-                                      defiGcellGrid* grid,
-                                      defiUserData);
+using defrGcellGridCbkFnType
+    = int (*)(defrCallbackType_e, defiGcellGrid* grid, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiVia.     */
-typedef int (*defrViaCbkFnType)(defrCallbackType_e, defiVia*, defiUserData);
+using defrViaCbkFnType = int (*)(defrCallbackType_e, defiVia*, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiRegion.  */
-typedef int (*defrRegionCbkFnType)(defrCallbackType_e,
-                                   defiRegion*,
-                                   defiUserData);
+using defrRegionCbkFnType
+    = int (*)(defrCallbackType_e, defiRegion*, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiGroup.   */
-typedef int (*defrGroupCbkFnType)(defrCallbackType_e, defiGroup*, defiUserData);
+using defrGroupCbkFnType
+    = int (*)(defrCallbackType_e, defiGroup*, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiAssertio */
-typedef int (*defrAssertionCbkFnType)(defrCallbackType_e,
-                                      defiAssertion*,
-                                      defiUserData);
+using defrAssertionCbkFnType
+    = int (*)(defrCallbackType_e, defiAssertion*, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiScanChai */
-typedef int (*defrScanchainCbkFnType)(defrCallbackType_e,
-                                      defiScanchain*,
-                                      defiUserData);
+using defrScanchainCbkFnType
+    = int (*)(defrCallbackType_e, defiScanchain*, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiIOTiming */
-typedef int (*defrIOTimingCbkFnType)(defrCallbackType_e,
-                                     defiIOTiming*,
-                                     defiUserData);
+using defrIOTimingCbkFnType
+    = int (*)(defrCallbackType_e, defiIOTiming*, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiFPC.     */
-typedef int (*defrFPCCbkFnType)(defrCallbackType_e, defiFPC*, defiUserData);
+using defrFPCCbkFnType = int (*)(defrCallbackType_e, defiFPC*, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiTimingDi */
-typedef int (*defrTimingDisableCbkFnType)(defrCallbackType_e,
-                                          defiTimingDisable*,
-                                          defiUserData);
+using defrTimingDisableCbkFnType
+    = int (*)(defrCallbackType_e, defiTimingDisable*, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiPartitio */
-typedef int (*defrPartitionCbkFnType)(defrCallbackType_e,
-                                      defiPartition*,
-                                      defiUserData);
+using defrPartitionCbkFnType
+    = int (*)(defrCallbackType_e, defiPartition*, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiPinProp. */
-typedef int (*defrPinPropCbkFnType)(defrCallbackType_e,
-                                    defiPinProp*,
-                                    defiUserData);
+using defrPinPropCbkFnType
+    = int (*)(defrCallbackType_e, defiPinProp*, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiBlockage */
-typedef int (*defrBlockageCbkFnType)(defrCallbackType_e,
-                                     defiBlockage*,
-                                     defiUserData);
+using defrBlockageCbkFnType
+    = int (*)(defrCallbackType_e, defiBlockage*, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiSlot.    */
-typedef int (*defrSlotCbkFnType)(defrCallbackType_e, defiSlot*, defiUserData);
+using defrSlotCbkFnType = int (*)(defrCallbackType_e, defiSlot*, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiFill.    */
-typedef int (*defrFillCbkFnType)(defrCallbackType_e, defiFill*, defiUserData);
+using defrFillCbkFnType = int (*)(defrCallbackType_e, defiFill*, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiNonDefau */
-typedef int (*defrNonDefaultCbkFnType)(defrCallbackType_e,
-                                       defiNonDefault*,
-                                       defiUserData);
+using defrNonDefaultCbkFnType
+    = int (*)(defrCallbackType_e, defiNonDefault*, defiUserData);
 
 /* A declaration of the signature of all callbacks that return a defiStyles.  */
-typedef int (*defrStylesCbkFnType)(defrCallbackType_e,
-                                   defiStyles*,
-                                   defiUserData);
+using defrStylesCbkFnType
+    = int (*)(defrCallbackType_e, defiStyles*, defiUserData);
 
 /* NEW CALLBACK - Each callback must return user data, enum, and              */
 /*   OUR-DATA item.  We must define a callback function type for              */
@@ -616,33 +601,33 @@ EXTERN int defrLineNumber();
 EXTERN long long defrLongLineNumber();
 
 /* Routine to set the message logging routine for errors                      */
-typedef void (*DEFI_LOG_FUNCTION)(const char*);
+using DEFI_LOG_FUNCTION = void (*)(const char*);
 EXTERN void defrSetLogFunction(DEFI_LOG_FUNCTION p0);
 
 /* Routine to set the message logging routine for warnings                    */
 #ifndef DEFI_WARNING_LOG_FUNCTION
-typedef void (*DEFI_WARNING_LOG_FUNCTION)(const char*);
+using DEFI_WARNING_LOG_FUNCTION = void (*)(const char*);
 #endif
 EXTERN void defrSetWarningLogFunction(DEFI_WARNING_LOG_FUNCTION p0);
 
 /* Routine to set the user defined malloc routine                             */
-typedef void* (*DEFI_MALLOC_FUNCTION)(size_t);
+using DEFI_MALLOC_FUNCTION = void* (*) (size_t);
 EXTERN void defrSetMallocFunction(DEFI_MALLOC_FUNCTION p0);
 
 /* Routine to set the user defined realloc routine                            */
-typedef void* (*DEFI_REALLOC_FUNCTION)(void*, size_t);
+using DEFI_REALLOC_FUNCTION = void* (*) (void*, size_t);
 EXTERN void defrSetReallocFunction(DEFI_REALLOC_FUNCTION p0);
 
 /* Routine to set the user defined free routine                               */
-typedef void (*DEFI_FREE_FUNCTION)(void*);
+using DEFI_FREE_FUNCTION = void (*)(void*);
 EXTERN void defrSetFreeFunction(DEFI_FREE_FUNCTION p0);
 
 /* Routine to set the line number of the file that is parsing routine (takes  */
-typedef void (*DEFI_LINE_NUMBER_FUNCTION)(int);
+using DEFI_LINE_NUMBER_FUNCTION = void (*)(int);
 EXTERN void defrSetLineNumberFunction(DEFI_LINE_NUMBER_FUNCTION p0);
 
 /* Routine to set the line number of the file that is parsing routine (takes  */
-typedef void (*DEFI_LONG_LINE_NUMBER_FUNCTION)(long long);
+using DEFI_LONG_LINE_NUMBER_FUNCTION = void (*)(long long);
 EXTERN void defrSetLongLineNumberFunction(DEFI_LONG_LINE_NUMBER_FUNCTION p0);
 
 /* Set the number of lines before calling the line function callback routine  */
@@ -650,7 +635,7 @@ EXTERN void defrSetLongLineNumberFunction(DEFI_LONG_LINE_NUMBER_FUNCTION p0);
 EXTERN void defrSetDeltaNumberLines(int p0);
 
 /* Routine to set the read function                                           */
-typedef size_t (*DEFI_READ_FUNCTION)(FILE*, char*, size_t);
+using DEFI_READ_FUNCTION = size_t (*)(FILE*, char*, size_t);
 EXTERN void defrSetReadFunction(DEFI_READ_FUNCTION p0);
 EXTERN void defrUnsetReadFunction();
 
@@ -660,7 +645,7 @@ EXTERN void defrSetOpenLogFileAppend();
 EXTERN void defrUnsetOpenLogFileAppend();
 
 /* Routine to set the magic comment found routine                             */
-typedef void (*DEFI_MAGIC_COMMENT_FOUND_FUNCTION)();
+using DEFI_MAGIC_COMMENT_FOUND_FUNCTION = void (*)();
 EXTERN void defrSetMagicCommentFoundFunction(
     DEFI_MAGIC_COMMENT_FOUND_FUNCTION p0);
 

@@ -1047,7 +1047,7 @@ void ddxt2d_sub(int n1,
 }
 
 #ifdef USE_FFT2D_THREADS
-struct fft2d_arg_st
+struct fft2d_arg_t
 {
   int nthread;
   int n0;
@@ -1060,7 +1060,6 @@ struct fft2d_arg_st
   int* ip;
   float* w;
 };
-typedef struct fft2d_arg_st fft2d_arg_t;
 
 void xdft2d0_subth(int n1,
                    int n2,

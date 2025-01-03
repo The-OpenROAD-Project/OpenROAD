@@ -30,7 +30,7 @@
 #ifndef lefiMacro_h
 #define lefiMacro_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 #include "lefiMisc.hpp"

@@ -41,7 +41,7 @@
 
 namespace parquetfp {
 class Nets;
-typedef std::vector<Node>::iterator itNode;
+using itNode = std::vector<Node>::iterator;
 
 class Nodes
 {

@@ -96,7 +96,7 @@ BaseAnnealer::BaseAnnealer(const parquetfp::Command_Line* const params,
 // --------------------------------------------------------
 BaseAnnealer::~BaseAnnealer()
 {
-  if (_analSolve != NULL)
+  if (_analSolve != nullptr)
     delete _analSolve;
 }
 // --------------------------------------------------------

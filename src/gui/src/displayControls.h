@@ -477,7 +477,7 @@ class DisplayControls : public QDockWidget,
   void saveRendererState(Renderer* renderer);
 
   void setNameItemDoubleClickAction(ModelRow& row,
-                                    const std::function<void(void)>& callback);
+                                    const std::function<void()>& callback);
   void setItemExclusivity(ModelRow& row,
                           const std::set<std::string>& exclusivity);
 

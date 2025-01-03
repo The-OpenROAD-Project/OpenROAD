@@ -348,13 +348,15 @@ estimate_parasitics_cmd(ParasiticsSrc src, const char* path)
     if (!file_path.empty()) {
       for (Corner* corner : *resizer->getDbNetwork()->corners()) {
         file_path = path;
-        std::string suffix("_");
-        suffix.append(corner->name());
-        if (file_path.find(".spef") != std::string::npos
-            || file_path.find(".SPEF") != std::string::npos) {
-          file_path.insert(file_path.size() - 5, suffix);
-        } else {
-          file_path.append(suffix);
+        if (resizer->getDbNetwork()->corners()->count() > 1) {
+          std::string suffix("_");
+          suffix.append(corner->name());
+          if (file_path.find(".spef") != std::string::npos
+              || file_path.find(".SPEF") != std::string::npos) {
+            file_path.insert(file_path.size() - 5, suffix);
+          } else {
+            file_path.append(suffix);
+          }
         }
 
         std::ofstream* file = new std::ofstream(file_path);

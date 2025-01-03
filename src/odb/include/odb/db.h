@@ -49,7 +49,7 @@
 #include "geom.h"
 #include "odb.h"
 
-#define ADS_MAX_CORNER 10
+constexpr int ADS_MAX_CORNER = 10;
 
 namespace utl {
 class Logger;
@@ -4104,12 +4104,20 @@ class dbTrackGrid : public dbObject
   ///
   /// Add a "X" grid pattern.
   ///
-  void addGridPatternX(int origin_x, int line_count, int step);
+  void addGridPatternX(int origin_x,
+                       int line_count,
+                       int step,
+                       int first_mask = 0,
+                       bool samemask = false);
 
   ///
   /// Add a "Y" grid pattern.
   ///
-  void addGridPatternY(int origin_y, int line_count, int step);
+  void addGridPatternY(int origin_y,
+                       int line_count,
+                       int step,
+                       int first_mask = 0,
+                       bool samemask = false);
 
   ///
   /// Get the number of "X" grid patterns.
@@ -4125,11 +4133,23 @@ class dbTrackGrid : public dbObject
   /// Get the "ith" "X" grid pattern.
   ///
   void getGridPatternX(int i, int& origin_x, int& line_count, int& step);
+  void getGridPatternX(int i,
+                       int& origin_x,
+                       int& line_count,
+                       int& step,
+                       int& first_mask,
+                       bool& samemask);
 
   ///
   /// Get the "ith" "Y" grid pattern.
   ///
   void getGridPatternY(int i, int& origin_y, int& line_count, int& step);
+  void getGridPatternY(int i,
+                       int& origin_y,
+                       int& line_count,
+                       int& step,
+                       int& first_mask,
+                       bool& samemask);
   ///
   /// Create an empty Track grid.
   /// Returns nullptr if a the grid for this layer already exists.

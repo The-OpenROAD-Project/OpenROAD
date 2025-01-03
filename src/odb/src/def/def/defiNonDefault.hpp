@@ -30,7 +30,7 @@
 #ifndef defiNonDefault_h
 #define defiNonDefault_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 #include "defiMisc.hpp"

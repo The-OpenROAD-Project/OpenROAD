@@ -70,7 +70,7 @@ class TclCmdInputWidget : public CmdInputWidget
 
   void setTclInterp(Tcl_Interp* interp,
                     bool do_init_openroad,
-                    const std::function<void(void)>& post_or_init);
+                    const std::function<void()>& post_or_init);
 
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);

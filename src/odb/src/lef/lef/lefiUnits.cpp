@@ -29,8 +29,8 @@
 
 #include "lefiUnits.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "lefiDebug.hpp"
 #include "lex.h"
@@ -50,7 +50,7 @@ lefiUnits::lefiUnits()
       hasCurrent_(0),
       hasVoltage_(0),
       hasFrequency_(0),
-      databaseName_(NULL),
+      databaseName_(nullptr),
       databaseNumber_(0.0),
       capacitance_(0.0),
       resistance_(0.0),
@@ -99,7 +99,7 @@ void lefiUnits::clear()
   hasVoltage_ = 0;
   hasDatabase_ = 0;
   hasFrequency_ = 0;
-  databaseName_ = 0;
+  databaseName_ = nullptr;
 }
 
 void lefiUnits::setTime(double num)
