@@ -46,6 +46,7 @@
 #include "db_sta/dbSta.hh"
 #include "graphics.h"
 #include "odb/dbTransform.h"
+#include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -490,7 +491,8 @@ bool MBFF::IsValidTray(odb::dbInst* tray)
   if (lib_cell == nullptr) {
     return false;
   }
-  if (!lib_cell->hasSequentials() || lib_cell->isClockGate()) {
+  if (!lib_cell->hasSequentials() || lib_cell->isClockGate()
+      || resizer_->dontUse(lib_cell)) {
     return false;
   }
 
@@ -2421,6 +2423,7 @@ void MBFF::ReadPaths()
 MBFF::MBFF(odb::dbDatabase* db,
            sta::dbSta* sta,
            utl::Logger* log,
+           rsz::Resizer* resizer,
            int threads,
            int multistart,
            int num_paths,
@@ -2431,6 +2434,7 @@ MBFF::MBFF(odb::dbDatabase* db,
       network_(sta_->getDbNetwork()),
       corner_(sta_->cmdCorner()),
       log_(log),
+      resizer_(resizer),
       num_threads_(threads),
       multistart_(multistart),
       num_paths_(num_paths),
