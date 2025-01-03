@@ -2222,7 +2222,7 @@ void MBFF::ReadLibs()
   test_idx_ = 0;
   for (auto lib : db_->getLibs()) {
     for (auto master : lib->getMasters()) {
-      std::string tray_name = "test_tray_" + std::to_string(test_idx_++);
+      const std::string tray_name = "test_tray_" + std::to_string(test_idx_++);
       odb::dbInst* tmp_tray
           = odb::dbInst::create(block_, master, tray_name.c_str());
 
@@ -2346,7 +2346,7 @@ void MBFF::ReadFFs()
       const Point pt{origin.x() / multiplier_, origin.y() / multiplier_};
       flops_.push_back({pt, num_flops, 0.0});
       insts_.push_back(inst);
-      name_to_idx_[inst->getName()] = num_flops + 1;
+      name_to_idx_[inst->getName()] = num_flops;
       num_flops++;
     }
   }
@@ -2358,7 +2358,7 @@ void MBFF::ReadFFs()
 void MBFF::ReadPaths()
 {
   paths_.resize(flops_.size());
-  unique_.resize(flops_.size());
+  std::vector<std::set<int>> unique(flops_.size());
 
   sta::ExceptionFrom* e_from = nullptr;
   sta::ExceptionThruSeq* e_thrus = nullptr;
@@ -2403,20 +2403,23 @@ void MBFF::ReadPaths()
     sta::Instance* start_ff = network_->instance(pathpin_front);
     sta::Instance* end_ff = network_->instance(pathpin_back);
 
-    int idx1 = name_to_idx_[network_->pathName(start_ff)];
-    int idx2 = name_to_idx_[network_->pathName(end_ff)];
-    // ensure that both are FFs
-    if (!idx1 || !idx2) {
+    auto it1 = name_to_idx_.find(network_->pathName(start_ff));
+    if (it1 == name_to_idx_.end()) {
       continue;
     }
+    const int idx1 = it1->second;
+    auto it2 = name_to_idx_.find(network_->pathName(end_ff));
+    if (it2 == name_to_idx_.end()) {
+      continue;
+    }
+    const int idx2 = it2->second;
 
-    idx1--, idx2--;
     // ensure that paths are unique and start != end
-    if (idx1 == idx2 || unique_[idx1].count(idx2)) {
+    if (idx1 == idx2 || unique[idx1].count(idx2)) {
       continue;
     }
     paths_[idx1].push_back(idx2);
-    unique_[idx1].insert(idx2);
+    unique[idx1].insert(idx2);
   }
 }
 

@@ -264,7 +264,6 @@ class MBFF
   std::map<std::string, int> name_to_idx_;
   std::map<int, int> tray_sizes_used_;
   std::vector<std::vector<int>> paths_;
-  std::vector<std::set<int>> unique_;
 
   // MBFF vars
   template <typename T>
