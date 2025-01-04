@@ -831,8 +831,8 @@ class dbModulePortIterator : public CellPortIterator
  public:
   explicit dbModulePortIterator(dbModule* cell);
   ~dbModulePortIterator() override = default;
-  virtual bool hasNext() override;
-  virtual Port* next() override;
+  bool hasNext() override;
+  Port* next() override;
 
  private:
   dbSet<dbModBTerm>::iterator iter_;
@@ -2929,9 +2929,9 @@ class DbNetworkPortMemberIterator : public PortMemberIterator
 {
  public:
   explicit DbNetworkPortMemberIterator(const Port* port, const dbNetwork* nwk);
-  ~DbNetworkPortMemberIterator() = default;
-  virtual bool hasNext();
-  virtual Port* next();
+
+  bool hasNext() override;
+  Port* next() override;
 
  private:
   dbSet<dbModBTerm>::iterator members_;
