@@ -134,8 +134,8 @@ class definPin : public definBase
   virtual void portEnd();
 
   definPin();
-  virtual ~definPin();
-  void init();
+  ~definPin() override;
+  void init() override;
 };
 
 }  // namespace odb

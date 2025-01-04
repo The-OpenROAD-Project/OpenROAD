@@ -149,7 +149,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   using BlockageRange = Range<RtreeDBox<odb::dbBlockage*>>;
   using RowRange = Range<RtreeRect<odb::dbRow*>>;
 
-  ~Search();
+  ~Search() override;
 
   // Build the structure for the given block.
   void setTopBlock(odb::dbBlock* block);

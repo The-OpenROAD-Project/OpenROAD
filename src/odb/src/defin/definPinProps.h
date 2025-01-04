@@ -55,7 +55,7 @@ class definPinProps : public definBase
   virtual void end();
 
   definPinProps();
-  virtual ~definPinProps();
+  ~definPinProps() override;
 };
 
 }  // namespace odb

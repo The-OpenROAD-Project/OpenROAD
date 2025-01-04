@@ -45,9 +45,9 @@ class definRegion : public definBase
 
  public:
   definRegion();
-  virtual ~definRegion();
+  ~definRegion() override;
 
-  void init();
+  void init() override;
 
   virtual void begin(const char* name);
   virtual void boundary(int x1, int y1, int x2, int y2);
