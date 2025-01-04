@@ -59,7 +59,7 @@ A shared folder on a NFS is used to share routing updates between the leader and
 The main steps on the NFS server machine are:
 
 1. run ` sudo apt install nfs-kernel-server ` and ` sudo apt install nfs-common `
-1. In the etc/exports file, add the following line replacing \${PATH} with the actual shared directory path you choose: ` ${PATH} 10.128.0.0/255.255.0.0(rw,no_subtree_check,no_root_squash) `
+1. In the etc/exports file, add the following line replacing \${PATH} with the actual shared directory path you choose and the 10.128 portion with the actual subnet portion of the network you set up: ` ${PATH} 10.128.0.0/255.255.0.0(rw,no_subtree_check,no_root_squash) `
 2. Run ` sudo systemctl restart nfs-kernel-server ` on the server macine.
 
 Now your NFS server machine is ready and the shared directory can be accessed.
