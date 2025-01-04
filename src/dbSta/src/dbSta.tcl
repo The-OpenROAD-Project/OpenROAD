@@ -103,6 +103,36 @@ proc report_cell_usage { args } {
   report_cell_usage_cmd $module [info exists flags(-verbose)]
 }
 
+
+define_cmd_args "create_cell_usage_snapshot" { \
+                                               [-path path]\
+                                               [-stage stage]
+                                             }
+
+proc create_cell_usage_snapshot { args } {
+  parse_key_args "create_cell_usage_snapshot" args keys {-path -stage} \
+    flags {}
+
+  if { [ord::get_db_block] == "NULL" } {
+    sta_error 1001 "No design block found."
+  }
+  set module_name [[ord::get_db_block] getTopModule]
+
+  if { [info exists keys(-path)] } {
+    set path_name $keys(-path)
+  } else {
+    sta_error 1002 "Missing argument -path"
+  }
+
+  if { [info exists keys(-stage)] } {
+    set stage_name $keys(-stage)
+  } else {
+    sta_error 1003 "Missing argument -stage"
+  }
+
+  create_cell_usage_snapshot_cmd $module_name $path_name $stage_name
+}
+
 # redefine sta::sta_warn/error to call utl::warn/error
 proc sta_error { id msg } {
   utl::error STA $id $msg

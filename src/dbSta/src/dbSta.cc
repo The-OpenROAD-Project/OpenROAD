@@ -44,11 +44,21 @@
 #include <tcl.h>
 
 #include <algorithm>  // min
+#include <cmath>
+#include <cstdint>
+#include <fstream>
+#include <map>
 #include <mutex>
 #include <regex>
+#include <string>
+#include <string_view>
+#include <vector>
 
 #include "AbstractPathRenderer.h"
 #include "AbstractPowerDensityDataSource.h"
+#include "boost/algorithm/string/join.hpp"
+#include "boost/json.hpp"
+#include "boost/json/src.hpp"
 #include "dbSdcNetwork.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
@@ -80,7 +90,53 @@ dbSta* makeDbSta()
 }
 }  // namespace ord
 
+namespace boost::json {
+void tag_invoke(json::value_from_tag, json::value& json_value,
+                ord::dbSta::CellUsageInfo const& cell_usage_info) {
+  json_value = {{"name", cell_usage_info.name},
+                {"count", cell_usage_info.count},
+                {"area", cell_usage_info.area}};
+}
+
+void tag_invoke(json::value_from_tag, json::value& json_value,
+                ord::dbSta::CellUsageSnapshot const& cell_usage_snapshot) {
+  json_value = {
+      {"stage", cell_usage_snapshot.stage},
+      {"cell_usage_info",
+       boost::json::value_from(cell_usage_snapshot.cells_usage_info)}};
+}
+
+ord::dbSta::CellUsageInfo tag_invoke(value_to_tag<ord::dbSta::CellUsageInfo>,
+                                     value const& json_value) {
+  return {value_to<std::string>(json_value.at("name")),
+          value_to<int>(json_value.at("count")),
+          value_to<double>(json_value.at("area"))};
+}
+
+ord::dbSta::CellUsageSnapshot tag_invoke(
+    value_to_tag<ord::dbSta::CellUsageSnapshot>, value const& json_value) {
+  return {value_to<std::string>(json_value.at("stage")),
+          value_to<std::vector<ord::dbSta::CellUsageInfo>>(
+              json_value.at("cell_usage_info"))};
+}
+
+}  // namespace boost::json
+
 namespace sta {
+
+namespace {
+
+constexpr std::string_view kCellUsageSnapshotPrefix = "cell_usage_snapshot";
+constexpr std::string_view kCellUsageSnapshotFileExtension = "json";
+
+std::string GetCellSnapshotName(const std::string& module,
+                                const std::string& stage) {
+  std::vector<std::string> components = {std::string(kCellUsageSnapshotPrefix),
+                                         module, stage};
+  return boost::algorithm::join(components, "-");
+}
+
+}  // namespace
 
 using utl::Logger;
 using utl::STA;
@@ -577,6 +633,43 @@ void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
           format, master->getName(), stats.count, stats.area / area_to_microns);
     }
   }
+}
+
+void dbSta::CreateCellUsageSnapshot(odb::dbModule* module,
+                                    std::string_view path,
+                                    std::string_view stage) {
+  std::map<std::string, CellUsageInfo> name_to_cell_usage_info;
+  dbBlock* block = db_->getChip()->getBlock();
+  const std::vector<dbInst*> insts = module->getLeafInsts();
+  const double area_to_microns = std::pow(block->getDbUnitsPerMicron(), 2);
+  for (const dbInst* inst : insts) {
+    const std::string& cell_name = inst->getMaster()->getName();
+    auto [it, inserted] = name_to_cell_usage_info.insert(
+        {cell_name, CellUsageInfo{
+                        .name = cell_name,
+                        .count = 1,
+                        .area = inst->getMaster()->getArea() / area_to_microns,
+                    }});
+    if (!inserted) {
+      it->second.count++;
+    }
+  }
+
+  CellUsageSnapshot cell_usage_snapshot{.stage = std::string(stage)};
+  cell_usage_snapshot.cells_usage_info.reserve(name_to_cell_usage_info.size());
+  for (const auto& [cell_name, cell_usage_info] : name_to_cell_usage_info) {
+    cell_usage_snapshot.cells_usage_info.push_back(cell_usage_info);
+  }
+  boost::json::value output = boost::json::value_from(cell_usage_snapshot);
+  logger_->report("{}", output.as_object());
+
+  std::ofstream file;
+  file.open(
+      std::string(path) + "/" +
+      GetCellSnapshotName(std::string(module->getName()), std::string(stage)) +
+      "." + std::string(kCellUsageSnapshotFileExtension));
+  file << output.as_object();
+  file.close();
 }
 
 BufferUse dbSta::getBufferUse(sta::LibertyCell* buffer)

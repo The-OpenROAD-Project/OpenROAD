@@ -3,6 +3,13 @@
 set test_dir [file dirname [file normalize [info script]]]
 set result_dir [file join $test_dir "results"]
 
+proc make_result_dir {} {
+  variable result_dir
+  if { ![file exists $result_dir] } {
+    file mkdir $result_dir
+  }
+}
+
 proc make_result_file { filename } {
   variable result_dir
   if { ![file exists $result_dir] } {

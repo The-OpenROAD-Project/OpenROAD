@@ -173,6 +173,16 @@ report_cell_usage_cmd(odb::dbModule* mod, const bool verbose)
   sta->report_cell_usage(mod, verbose);
 }
 
+
+void
+create_cell_usage_snapshot_cmd(
+    odb::dbModule* module, const char* path, const char* stage) {
+  cmdLinkedNetwork();
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->CreateCellUsageSnapshot(module, std::string(path), std::string(stage));
+}
+
 // Copied from sta/verilog/Verilog.i because we don't want sta::read_verilog
 // that is in the same file.
 void

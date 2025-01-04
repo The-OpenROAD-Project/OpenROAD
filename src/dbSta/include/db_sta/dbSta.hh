@@ -35,7 +35,11 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
+#include <string>
+#include <string_view>
+#include <vector>
 
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
@@ -190,6 +194,30 @@ class dbSta : public Sta, public ord::OpenRoadObserver
   std::string getInstanceTypeText(InstType type);
   InstType getInstanceType(odb::dbInst* inst);
   void report_cell_usage(odb::dbModule* module, bool verbose);
+
+  // Creates a cell usage snapshot for the given module at the given stage.
+  // The snapshot is written to the given path as a JSON file.
+  void CreateCellUsageSnapshot(
+      odb::dbModule* module, std::string_view path, std::string_view stage);
+
+  // Holds the usage information of a specific cell.
+  struct CellUsageInfo {
+    // Name of the cell.
+    std::string name;
+
+    // Number of instances of the cell.
+    int count = 0;
+
+    // Area of the cell in microns^2. Total area of the cell instances can be
+    // calculated by multiplying the count by this value.
+    double area = 0.0;
+  };
+
+  // Holds a snapshot of cell usage information at a given stage.
+  struct CellUsageSnapshot {
+    std::string stage;
+    std::vector<CellUsageInfo> cells_usage_info;
+  };
 
   BufferUse getBufferUse(sta::LibertyCell* buffer);
 

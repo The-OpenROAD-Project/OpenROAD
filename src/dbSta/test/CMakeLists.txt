@@ -3,6 +3,7 @@ or_integration_tests(
   TESTS
     block_sta1
     constant1
+    create_cell_usage_snapshot
     find_clks1
     find_clks2
     hier2
