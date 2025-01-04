@@ -43,7 +43,7 @@ class Worker;
 class WorkerConnection : public boost::enable_shared_from_this<WorkerConnection>
 {
  public:
-  WorkerConnection(asio::io_service& io_service,
+  WorkerConnection(asio::io_context& service,
                    Distributed* dist,
                    utl::Logger* logger,
                    Worker* worker);
