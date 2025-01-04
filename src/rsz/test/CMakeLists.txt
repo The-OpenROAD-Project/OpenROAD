@@ -1,6 +1,6 @@
-include("openroad")
-
-set(TEST_NAMES
+or_integration_tests(
+  "rsz"
+  TESTS
     buffer_ports1
     buffer_ports3
     buffer_ports4
@@ -12,6 +12,7 @@ set(TEST_NAMES
     clone_flat
     clone_hier
     eliminate_dead_logic1
+    eliminate_dead_logic2
     eqy_repair_setup2
     eqy_repair_setup5
     fanin_fanout1
@@ -23,6 +24,7 @@ set(TEST_NAMES
     make_parasitics4
     make_parasitics5
     make_parasitics6
+    make_parasitics7
     pin_swap1
     pinswap_flat
     pinswap_hier
@@ -113,6 +115,9 @@ set(TEST_NAMES
     repair_wire9
     repair_wire10
     repair_wire11
+    report_dont_touch
+    report_dont_use
+    report_dont_use_corners
     report_floating_nets1
     report_floating_nets2
     report_floating_nets3
@@ -127,14 +132,12 @@ set(TEST_NAMES
     set_dont_touch1
     set_dont_use1
     split_load_hier
+  PASSFAIL_TESTS
+    cpp_tests
 )
 
 # Skipped
 #rsz_man_tcl_check
 #rsz_readme_msgs_check
-
-foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("rsz" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
-endforeach()
 
 add_subdirectory(cpp)

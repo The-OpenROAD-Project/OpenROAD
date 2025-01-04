@@ -33,7 +33,7 @@
 #ifndef CDEFIBLOCKAGE_H
 #define CDEFIBLOCKAGE_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

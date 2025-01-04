@@ -1,7 +1,6 @@
-# Tests
-include("openroad")
-
-set(TEST_NAMES
+or_integration_tests(
+  "dft"
+  TESTS
     max_chain_count_sky130
     one_cell_nangate45
     one_cell_sky130
@@ -17,10 +16,6 @@ set(TEST_NAMES
 # Skipped
 #dft_man_tcl_check
 #dft_readme_msgs_check
-
-foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("dft" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
-endforeach()
 
 find_package(Boost)
 add_subdirectory(cpp)

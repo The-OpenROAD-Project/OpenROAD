@@ -123,9 +123,9 @@ class BaseAnnealer
 
   BaseAnnealer()
       : annealTime(0),
-        _db(NULL),
-        _params(NULL),
-        _analSolve(NULL),
+        _db(nullptr),
+        _params(nullptr),
+        _analSolve(nullptr),
         _isFixedOutline(false),
         _outlineDeadspaceRatio(basepacking_h::Dimension::Infty),
         _outlineArea(basepacking_h::Dimension::Infty),

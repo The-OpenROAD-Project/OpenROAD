@@ -30,7 +30,7 @@
 #ifndef defiNet_h
 #define defiNet_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 #include "defiMisc.hpp"
@@ -73,11 +73,11 @@ class defiWire
 
  protected:
   defrData* defData;
-  defiPath** paths_;
-  char* type_;
-  char* wireShieldName_;  // It only set from specialnet SHIELD, 5.4
-  int numPaths_;
-  long long pathsAllocated_;
+  defiPath** paths_{nullptr};
+  char* type_{nullptr};
+  char* wireShieldName_{nullptr};  // It only set from specialnet SHIELD, 5.4
+  int numPaths_{0};
+  long long pathsAllocated_{0};
 };
 
 class defiSubnet

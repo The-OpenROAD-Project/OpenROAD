@@ -32,8 +32,8 @@
 
 #pragma once
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include "odb/util.h"
 
@@ -57,7 +57,7 @@ class Ath__box
   int _ylo;
   int _xhi;
   int _yhi;
-  Ath__box* _next;
+  Ath__box* _next{nullptr};
 
  public:
   Ath__box();

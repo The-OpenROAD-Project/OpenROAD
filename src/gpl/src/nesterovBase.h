@@ -735,8 +735,8 @@ class BinGrid
   int binSizeX_ = 0;
   int binSizeY_ = 0;
   float targetDensity_ = 0;
-  int64_t overflowArea_ = 0;
-  int64_t overflowAreaUnscaled_ = 0;
+  int64_t sumOverflowArea_ = 0;
+  int64_t sumOverflowAreaUnscaled_ = 0;
   bool isSetBinCnt_ = false;
   int num_threads_ = 1;
 };

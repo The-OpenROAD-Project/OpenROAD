@@ -70,11 +70,16 @@ void IOPlacer::init(odb::dbDatabase* db, Logger* logger)
   db_ = db;
   logger_ = logger;
   parms_ = std::make_unique<Parameters>();
+  validator_ = std::make_unique<utl::Validator>(logger, PPL);
 }
 
 odb::dbBlock* IOPlacer::getBlock() const
 {
-  return db_->getChip()->getBlock();
+  auto chip = db_->getChip();
+  if (!chip) {
+    return nullptr;
+  }
+  return chip->getBlock();
 }
 
 odb::dbTech* IOPlacer::getTech() const
@@ -693,6 +698,7 @@ void IOPlacer::getBlockedRegionsFromDbObstructions()
 
 void IOPlacer::writePinPlacement(const char* file_name, const bool placed)
 {
+  validator_->check_non_null("Block", getBlock(), 113);
   std::string filename = file_name;
   if (filename.empty()) {
     return;

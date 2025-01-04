@@ -36,6 +36,7 @@
 #include <optional>
 
 #include "db_sta/dbNetwork.hh"
+#include "odb/dbTransform.h"
 
 namespace dft::utils {
 
@@ -84,9 +85,29 @@ odb::dbInst* ReplaceCell(
   std::vector<std::tuple<std::string, odb::dbNet*>> port_name_to_net;
   PopulatePortNameToNet(old_instance, port_name_to_net);
 
-  odb::dbInst* new_instance
-      = odb::dbInst::create(top_block, new_master, /*name=*/"tmp_scan_flop");
-  std::string old_cell_name = old_instance->getName();
+  const std::string cell_name = old_instance->getName();
+  const odb::dbPlacementStatus placement_status
+      = old_instance->getPlacementStatus();
+  const odb::dbSourceType source_type = old_instance->getSourceType();
+  odb::dbRegion* region = old_instance->getRegion();
+  odb::dbGroup* group = old_instance->getGroup();
+  odb::dbModule* module = old_instance->getModule();
+
+  odb::dbInst* new_instance = odb::dbInst::create(top_block,
+                                                  new_master,
+                                                  /*name=*/"tmp_scan_flop",
+                                                  /*physical_only=*/false,
+                                                  module);
+
+  new_instance->setTransform(old_instance->getTransform());
+  new_instance->setPlacementStatus(placement_status);
+  new_instance->setSourceType(source_type);
+  if (region) {
+    region->addInst(new_instance);
+  }
+  if (group) {
+    group->addInst(new_instance);
+  }
 
   // Delete the old cell
   odb::dbInst::destroy(old_instance);
@@ -95,7 +116,7 @@ odb::dbInst* ReplaceCell(
   ConnectPinsToNets(new_instance, port_name_to_net, port_mapping);
 
   // Rename as the old cell
-  new_instance->rename(old_cell_name.c_str());
+  new_instance->rename(cell_name.c_str());
 
   return new_instance;
 }

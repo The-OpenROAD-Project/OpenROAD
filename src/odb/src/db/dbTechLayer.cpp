@@ -692,8 +692,8 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
   _v55sp_length_idx.clear();
   _v55sp_width_idx.clear();
   _v55sp_spacing.clear();
-  _name = 0;
-  _alias = 0;
+  _name = nullptr;
+  _alias = nullptr;
 
   _spacing_rules_tbl = new dbTable<_dbTechLayerSpacingRule>(
       db,

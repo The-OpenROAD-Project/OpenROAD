@@ -33,15 +33,14 @@
 #ifndef PARSERS_H
 #define PARSERS_H
 
-#include <algorithm>
 #include <cmath>
-#include <iomanip>
-#include <iostream>
+#include <cstring>
+#include <fstream>
 
 namespace parse_utils {
 struct ltstr
 {
-  inline bool operator()(const char* s1, const char* s2) const
+  bool operator()(const char* s1, const char* s2) const
   {
     return strcmp(s1, s2) < 0;
   }
@@ -72,25 +71,25 @@ inline bool needCaseChar(std::ifstream& i, char character);
 // =========================
 inline void parse_utils::eatblank(std::ifstream& i)
 {
-  while (i.peek() == ' ' || i.peek() == '\t')
+  while (i.peek() == ' ' || i.peek() == '\t') {
     i.get();
+  }
 }
 // --------------------------------------------------------
 inline void parse_utils::skiptoeol(std::ifstream& i)
 {
-  while (!i.eof() && i.peek() != '\n' && i.peek() != '\r')
+  while (!i.eof() && i.peek() != '\n' && i.peek() != '\r') {
     i.get();
+  }
   i.get();
 }
 // --------------------------------------------------------
 inline bool parse_utils::needCaseChar(std::ifstream& i, char character)
 {
-  while (!i.eof() && i.peek() != character)
+  while (!i.eof() && i.peek() != character) {
     i.get();
-  if (i.eof())
-    return false;
-  else
-    return true;
+  }
+  return !i.eof();
 }
 // --------------------------------------------------------
 inline void parse_utils::eathash(std::ifstream& i)

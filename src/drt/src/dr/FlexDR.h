@@ -726,17 +726,14 @@ class FlexDRWorker
   void initNets_boundaryArea();
 
   void initGridGraph(const frDesign* design);
-  void initTrackCoords(
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap);
-  void initTrackCoords_route(
-      drNet* net,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap);
-  void initTrackCoords_pin(
-      drNet* net,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap);
+  void initTrackCoords(frLayerCoordTrackPatternMap& xMap,
+                       frLayerCoordTrackPatternMap& yMap);
+  void initTrackCoords_route(drNet* net,
+                             frLayerCoordTrackPatternMap& xMap,
+                             frLayerCoordTrackPatternMap& yMap);
+  void initTrackCoords_pin(drNet* net,
+                           frLayerCoordTrackPatternMap& xMap,
+                           frLayerCoordTrackPatternMap& yMap);
   void initMazeIdx();
   void initMazeIdx_connFig(drConnFig* connFig);
   void initMazeIdx_ap(drAccessPattern* ap);
@@ -850,7 +847,7 @@ class FlexDRWorker
                                   ModCostType type,
                                   frCoord width,
                                   frCoord minSpacing,
-                                  frViaDef* viaDef,
+                                  const frViaDef* viaDef,
                                   drEolSpacingConstraint drCon,
                                   bool isUpperVia,
                                   bool isCurrPs,
@@ -1042,6 +1039,16 @@ class FlexDRWorker
       drNet* net,
       const std::vector<FlexMazeIdx>& path,
       const std::map<FlexMazeIdx, frCoord>& areaMap);
+  void routeNet_postAstarPatchMinAreaVio_helper(
+      drNet* net,
+      drt::frLayer* curr_layer,
+      frArea reqArea,
+      frArea currArea,
+      frCoord startViaHalfEncArea,
+      frCoord endViaHalfEncArea,
+      std::vector<FlexMazeIdx>& points,
+      int point_idx,
+      int prev_point_idx);
   void routeNet_postAstarAddPatchMetal(drNet* net,
                                        const FlexMazeIdx& bpIdx,
                                        const FlexMazeIdx& epIdx,

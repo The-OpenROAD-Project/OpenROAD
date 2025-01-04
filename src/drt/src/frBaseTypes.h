@@ -265,6 +265,8 @@ enum class frDirEnum
   U = 6
 };
 
+std::ostream& operator<<(std::ostream& os, frDirEnum dir);
+
 static constexpr frDirEnum frDirEnumAll[] = {frDirEnum::D,
                                              frDirEnum::S,
                                              frDirEnum::W,

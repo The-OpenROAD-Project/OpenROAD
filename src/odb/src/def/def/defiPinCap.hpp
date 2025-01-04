@@ -30,7 +30,7 @@
 #ifndef defiPinCap_h
 #define defiPinCap_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 #include "defiMisc.hpp"
@@ -99,7 +99,7 @@ class defiPinAntennaModel
   const char* APinMaxCutCarLayer(int index) const;
 
  protected:
-  char* oxide_;
+  char* oxide_{nullptr};
 
   int numAPinGateArea_;  // 5.4
   int APinGateAreaAllocated_;

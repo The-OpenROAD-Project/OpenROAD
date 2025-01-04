@@ -92,7 +92,6 @@ GlobalRouter::GlobalRouter()
       grid_(new Grid),
       adjustment_(0.0),
       layer_for_guide_dimension_(3),
-      overflow_iterations_(50),
       congestion_report_iter_step_(0),
       allow_congestion_(false),
       macro_extension_(0),
@@ -224,11 +223,10 @@ void GlobalRouter::saveCongestion()
 
 bool GlobalRouter::haveRoutes()
 {
-  loadGuidesFromDB();
-  if (routes_.empty()) {
-    logger_->warn(GRT, 97, "No global routing found for nets.");
+  if (!designIsPlaced()) {
+    return false;
   }
-
+  loadGuidesFromDB();
   bool congested_routes = is_congested_ && !allow_congestion_;
   return !routes_.empty() && !congested_routes;
 }
@@ -244,6 +242,36 @@ bool GlobalRouter::haveDetailedRoutes()
     }
   }
   return false;
+}
+
+bool GlobalRouter::designIsPlaced()
+{
+  if (db_->getChip() == nullptr) {
+    logger_->error(
+        GRT, 270, "Load a design before running the global router commands.");
+  }
+  block_ = db_->getChip()->getBlock();
+
+  for (Pin* port : getAllPorts()) {
+    if (port->getBTerm()->getFirstPinPlacementStatus()
+        == odb::dbPlacementStatus::NONE) {
+      return false;
+    }
+  }
+
+  for (odb::dbNet* net : block_->getNets()) {
+    if (net->isSpecial()) {
+      continue;
+    }
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      odb::dbInst* inst = iterm->getInst();
+      if (!inst->isPlaced()) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 bool GlobalRouter::haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets)
@@ -1687,13 +1715,28 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
                                          layer_capacity,
                                          is_macro);
 
+  int grid_limit = vertical ? grid_->getYGrids() : grid_->getXGrids();
   if (!vertical) {
+    // if obstruction is inside a single gcell, block the edge between current
+    // gcell and the adjacent gcell
+    if (first_tile.getX() == last_tile.getX()
+        && last_tile.getX() + 1 < grid_limit) {
+      int last_tile_x = last_tile.getX() + 1;
+      last_tile.setX(last_tile_x);
+    }
     fastroute_->addHorizontalAdjustments(first_tile,
                                          last_tile,
                                          layer,
                                          first_tile_reduce_interval,
                                          last_tile_reduce_interval);
   } else {
+    // if obstruction is inside a single gcell, block the edge between current
+    // gcell and the adjacent gcell
+    if (first_tile.getY() == last_tile.getY()
+        && last_tile.getY() + 1 < grid_limit) {
+      int last_tile_y = last_tile.getY() + 1;
+      last_tile.setY(last_tile_y);
+    }
     fastroute_->addVerticalAdjustments(first_tile,
                                        last_tile,
                                        layer,
@@ -1853,9 +1896,9 @@ void GlobalRouter::setVerbose(const bool v)
   verbose_ = v;
 }
 
-void GlobalRouter::setOverflowIterations(int iterations)
+void GlobalRouter::setCongestionIterations(int iterations)
 {
-  overflow_iterations_ = iterations;
+  congestion_iterations_ = iterations;
 }
 
 void GlobalRouter::setCongestionReportIterStep(int congestion_report_iter_step)
@@ -1972,7 +2015,7 @@ void GlobalRouter::ensureLayerForGuideDimension(int max_routing_layer)
 void GlobalRouter::configFastRoute()
 {
   fastroute_->setVerbose(verbose_);
-  fastroute_->setOverflowIterations(overflow_iterations_);
+  fastroute_->setOverflowIterations(congestion_iterations_);
   fastroute_->setCongestionReportIterStep(congestion_report_iter_step_);
 
   if (congestion_file_name_ != nullptr) {

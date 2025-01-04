@@ -29,7 +29,7 @@
 
 #include "lefiEncryptInt.hpp"
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #include "lefrSettings.hpp"
 

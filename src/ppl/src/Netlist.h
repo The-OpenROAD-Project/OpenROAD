@@ -90,7 +90,6 @@ class IOPin
         const odb::dbPlacementStatus& placement_status)
       : bterm_(bterm),
         pos_(pos),
-        orientation_(Orientation::north),
         direction_(dir),
         lower_bound_(lower_bound),
         upper_bound_(upper_bound),
@@ -158,7 +157,7 @@ class IOPin
  private:
   odb::dbBTerm* bterm_;
   odb::Point pos_;
-  Orientation orientation_;
+  Orientation orientation_{Orientation::north};
   Direction direction_;
   odb::Point lower_bound_;
   odb::Point upper_bound_;

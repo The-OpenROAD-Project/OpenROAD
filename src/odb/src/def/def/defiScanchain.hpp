@@ -30,7 +30,7 @@
 #ifndef defiScanchain_h
 #define defiScanchain_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiKRDefs.hpp"
 

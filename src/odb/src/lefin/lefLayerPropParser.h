@@ -268,7 +268,7 @@ class ArraySpacingParser
 {
  public:
   ArraySpacingParser(dbTechLayer* layer, lefin* lefin)
-      : layer_(layer), lefin_(lefin), rule_(nullptr)
+      : layer_(layer), lefin_(lefin)
   {
   }
   bool parse(std::string);
@@ -281,14 +281,14 @@ class ArraySpacingParser
   void setViaWidth(double width);
   dbTechLayer* layer_;
   lefin* lefin_;
-  dbTechLayerArraySpacingRule* rule_;
+  dbTechLayerArraySpacingRule* rule_{nullptr};
 };
 
 class WidthTableParser
 {
  public:
   WidthTableParser(dbTechLayer* layer, lefin* lefin)
-      : layer_(layer), lefin_(lefin), rule_(nullptr)
+      : layer_(layer), lefin_(lefin)
   {
   }
   void parse(const std::string&);
@@ -298,14 +298,13 @@ class WidthTableParser
   bool parseSubRule(std::string s);
   dbTechLayer* layer_;
   lefin* lefin_;
-  dbTechLayerWidthTableRule* rule_;
+  dbTechLayerWidthTableRule* rule_{nullptr};
 };
 
 class MinCutParser
 {
  public:
-  MinCutParser(dbTechLayer* layer, lefin* lefin)
-      : layer_(layer), lefin_(lefin), rule_(nullptr)
+  MinCutParser(dbTechLayer* layer, lefin* lefin) : layer_(layer), lefin_(lefin)
   {
   }
   void parse(const std::string&);
@@ -321,7 +320,7 @@ class MinCutParser
   void setAreaWithin(double);
   dbTechLayer* layer_;
   lefin* lefin_;
-  dbTechLayerMinCutRule* rule_;
+  dbTechLayerMinCutRule* rule_{nullptr};
 };
 
 class MetalWidthViaMapParser
@@ -331,11 +330,7 @@ class MetalWidthViaMapParser
       dbTech* tech,
       lefin* lefin,
       std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
-      : tech_(tech),
-        lefin_(lefin),
-        cut_class_(false),
-        incomplete_props_(incomplete_props),
-        via_map(nullptr)
+      : tech_(tech), lefin_(lefin), incomplete_props_(incomplete_props)
   {
   }
   void parse(const std::string&);
@@ -352,16 +347,16 @@ class MetalWidthViaMapParser
   void setPGVia();
   dbTech* tech_;
   lefin* lefin_;
-  bool cut_class_;
+  bool cut_class_{false};
   std::vector<std::pair<dbObject*, std::string>>& incomplete_props_;
-  dbMetalWidthViaMap* via_map;
+  dbMetalWidthViaMap* via_map{nullptr};
 };
 
 class KeepOutZoneParser
 {
  public:
   KeepOutZoneParser(dbTechLayer* layer, lefin* lefin)
-      : layer_(layer), lefin_(lefin), rule_(nullptr)
+      : layer_(layer), lefin_(lefin)
   {
   }
   void parse(const std::string&);
@@ -371,7 +366,7 @@ class KeepOutZoneParser
   void setInt(double val, void (odb::dbTechLayerKeepOutZoneRule::*func)(int));
   dbTechLayer* layer_;
   lefin* lefin_;
-  dbTechLayerKeepOutZoneRule* rule_;
+  dbTechLayerKeepOutZoneRule* rule_{nullptr};
 };
 
 class MaxSpacingParser

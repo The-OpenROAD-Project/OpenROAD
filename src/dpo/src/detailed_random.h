@@ -47,6 +47,8 @@ namespace dpo {
 class Architecture;
 class DetailedMgr;
 class DetailedObjective;
+class Network;
+class RoutingParams;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.

@@ -575,8 +575,7 @@ static void showSplash()
                  ord::OpenRoad::getGitDescribe());
   logger->report(
       "Features included (+) or not (-): "
-      "{}Charts {}GPU {}GUI {}Python{}",
-      ord::OpenRoad::getChartsCompileOption() ? "+" : "-",
+      "{}GPU {}GUI {}Python{}",
       ord::OpenRoad::getGPUCompileOption() ? "+" : "-",
       ord::OpenRoad::getGUICompileOption() ? "+" : "-",
       ord::OpenRoad::getPythonCompileOption() ? "+" : "-",

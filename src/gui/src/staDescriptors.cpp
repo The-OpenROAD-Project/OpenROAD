@@ -97,9 +97,7 @@ static void add_limit(Descriptor::Properties& props,
 
 //////////////////////////////////////////////////
 
-LibertyLibraryDescriptor::LibertyLibraryDescriptor(odb::dbDatabase* db,
-                                                   sta::dbSta* sta)
-    : db_(db), sta_(sta)
+LibertyLibraryDescriptor::LibertyLibraryDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
@@ -255,9 +253,7 @@ bool LibertyLibraryDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-LibertyCellDescriptor::LibertyCellDescriptor(odb::dbDatabase* db,
-                                             sta::dbSta* sta)
-    : db_(db), sta_(sta)
+LibertyCellDescriptor::LibertyCellDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
@@ -397,9 +393,7 @@ bool LibertyCellDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-LibertyPortDescriptor::LibertyPortDescriptor(odb::dbDatabase* db,
-                                             sta::dbSta* sta)
-    : db_(db), sta_(sta)
+LibertyPortDescriptor::LibertyPortDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
@@ -592,9 +586,7 @@ static const char* typeNameStr(sta::LibertyPgPort::PgType type)
   return "<unexpected>";
 }
 
-LibertyPgPortDescriptor::LibertyPgPortDescriptor(odb::dbDatabase* db,
-                                                 sta::dbSta* sta)
-    : db_(db), sta_(sta)
+LibertyPgPortDescriptor::LibertyPgPortDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
@@ -689,8 +681,7 @@ odb::dbMTerm* LibertyPgPortDescriptor::getMTerm(const std::any& object) const
   return mterm;
 }
 
-CornerDescriptor::CornerDescriptor(odb::dbDatabase* db, sta::dbSta* sta)
-    : db_(db), sta_(sta)
+CornerDescriptor::CornerDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
@@ -756,9 +747,7 @@ bool CornerDescriptor::getAllObjects(SelectionSet& objects) const
   return true;
 }
 
-StaInstanceDescriptor::StaInstanceDescriptor(odb::dbDatabase* db,
-                                             sta::dbSta* sta)
-    : db_(db), sta_(sta)
+StaInstanceDescriptor::StaInstanceDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
@@ -924,8 +913,7 @@ bool StaInstanceDescriptor::getAllObjects(SelectionSet& objects) const
   return true;
 }
 
-ClockDescriptor::ClockDescriptor(odb::dbDatabase* db, sta::dbSta* sta)
-    : db_(db), sta_(sta)
+ClockDescriptor::ClockDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 

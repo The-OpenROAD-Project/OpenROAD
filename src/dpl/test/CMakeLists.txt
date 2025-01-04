@@ -4,9 +4,9 @@
 # license that can be found in the LICENSE file or at
 # https://developers.google.com/open-source/licenses/bsd
 
-include("openroad")
-
-set(TEST_NAMES
+or_integration_tests(
+  "dpl"
+  TESTS
     aes
     blockage01
     cell_on_block1
@@ -77,11 +77,6 @@ set(TEST_NAMES
 # Skipped
 #dpl_man_tcl_check
 #dpl_readme_msgs_check
-
-foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("dpl" ${TEST_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/regression)
-endforeach()
-
 add_executable(dpl_test dpl_test.cc)
 
 target_link_libraries(dpl_test

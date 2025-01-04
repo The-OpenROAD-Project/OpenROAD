@@ -374,7 +374,8 @@ bool Resizer::parasiticsValid() const
 
 void Resizer::ensureWireParasitic(const Pin* drvr_pin)
 {
-  const Net* net = network_->net(drvr_pin);
+  const Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
+
   if (net) {
     ensureWireParasitic(drvr_pin, net);
   }

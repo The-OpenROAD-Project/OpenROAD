@@ -44,9 +44,7 @@ void FlexGRWorkerRegionQuery::add(grConnFig* connFig)
     shapes_.at(obj->getLayerNum()).insert(std::make_pair(boostr, obj));
   } else if (connFig->typeId() == grcVia) {
     auto via = static_cast<grVia*>(connFig);
-    dbTransform xform;
-    Point origin = via->getOrigin();
-    xform.setOffset(origin);
+    dbTransform xform = via->getTransform();
     for (auto& uShape : via->getViaDef()->getLayer1Figs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
@@ -95,9 +93,7 @@ void FlexGRWorkerRegionQuery::add(
     allShapes.at(obj->getLayerNum()).push_back(std::make_pair(frb, obj));
   } else if (connFig->typeId() == grcVia) {
     auto via = static_cast<grVia*>(connFig);
-    dbTransform xform;
-    Point origin = via->getOrigin();
-    xform.setOffset(origin);
+    dbTransform xform = via->getTransform();
     for (auto& uShape : via->getViaDef()->getLayer1Figs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
@@ -144,9 +140,7 @@ void FlexGRWorkerRegionQuery::remove(grConnFig* connFig)
     shapes_.at(obj->getLayerNum()).remove(std::make_pair(frb, obj));
   } else if (connFig->typeId() == grcVia) {
     auto via = static_cast<grVia*>(connFig);
-    dbTransform xform;
-    Point origin = via->getOrigin();
-    xform.setOffset(origin);
+    dbTransform xform = via->getTransform();
     for (auto& uShape : via->getViaDef()->getLayer1Figs()) {
       auto shape = uShape.get();
       if (shape->typeId() == frcRect) {
