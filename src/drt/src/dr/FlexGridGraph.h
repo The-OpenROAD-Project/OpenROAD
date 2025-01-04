@@ -63,9 +63,9 @@ class FlexGridGraph
       : tech_(techIn),
         logger_(loggerIn),
         drWorker_(workerIn),
-        router_cfg_(router_cfg)
+        router_cfg_(router_cfg),
+        ap_locs_(techIn->getTopLayerNum() + 1)
   {
-    ap_locs_.resize(tech_->getTopLayerNum() + 1);
   }
   // getters
   frTechObject* getTech() const { return tech_; }
@@ -425,14 +425,7 @@ class FlexGridGraph
     return sol;
   }
   // setters
-  void setTech(frTechObject* techIn)
-  {
-    tech_ = techIn;
-    ap_locs_.clear();
-    ap_locs_.resize(tech_->getTopLayerNum() + 1);
-  }
   void setLogger(Logger* loggerIn) { logger_ = loggerIn; }
-  void setWorker(FlexDRWorker* workerIn) { drWorker_ = workerIn; }
   bool addEdge(frMIdx x,
                frMIdx y,
                frMIdx z,
@@ -1126,8 +1119,6 @@ class FlexGridGraph
   bool debug_{false};
   frUInt4 curr_id_{1};
 
-  FlexGridGraph() = default;
-
   void printExpansion(const FlexWavefrontGrid& currGrid,
                       const std::string& keyword);
   // unsafe access, no idx check
@@ -1341,35 +1332,6 @@ class FlexGridGraph
   bool hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z);
   bool isWorkerBorder(frMIdx v, bool isVert);
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    // The wavefront should always be empty here so we don't need to
-    // serialize it.
-    if (!wavefront_.empty()) {
-      throw std::logic_error("don't serialize non-empty wavefront");
-    }
-    if (is_loading(ar)) {
-      tech_ = ar.getDesign()->getTech();
-    }
-    (ar) & drWorker_;
-    (ar) & nodes_;
-    (ar) & prevDirs_;
-    (ar) & srcs_;
-    (ar) & dsts_;
-    (ar) & guides_;
-    (ar) & xCoords_;
-    (ar) & yCoords_;
-    (ar) & zCoords_;
-    (ar) & zHeights_;
-    (ar) & layerRouteDirections_;
-    (ar) & dieBox_;
-    (ar) & ggDRCCost_;
-    (ar) & ggMarkerCost_;
-    (ar) & halfViaEncArea_;
-    (ar) & ap_locs_;
-  }
-  friend class boost::serialization::access;
   friend class FlexDRWorker;
 };
 

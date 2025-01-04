@@ -295,11 +295,6 @@ class FlexDRWorker
         rq_(this)
   {
   }
-  FlexDRWorker()
-      :  // for serialization
-        rq_(this)
-  {
-  }
   // setters
   void setDebugSettings(frDebugSettings* settings)
   {
@@ -449,11 +444,13 @@ class FlexDRWorker
     logger_ = logger;
     gridGraph_.setLogger(logger);
   }
+  void setRouterCfg(RouterConfiguration* in) { router_cfg_ = in; }
 
   static std::unique_ptr<FlexDRWorker> load(const std::string& workerStr,
-                                            utl::Logger* logger,
+                                            FlexDRViaData* via_data,
                                             frDesign* design,
-                                            FlexDRGraphics* graphics);
+                                            utl::Logger* logger,
+                                            RouterConfiguration* router_cfg);
 
   // distributed
   void setDistributed(dst::Distributed* dist,
