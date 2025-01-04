@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include <boost/container/flat_map.hpp>
+#include <boost/container/flat_set.hpp>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
@@ -43,6 +45,10 @@
 #include "global.h"
 
 namespace drt {
+
+using frLayerCoordTrackPatternMap = boost::container::
+    flat_map<frLayerNum, boost::container::flat_map<frCoord, frTrackPattern*>>;
+using frLayerDirMap = boost::container::flat_map<frLayerNum, dbTechLayerDir>;
 
 class FlexDRWorker;
 class FlexDRGraphics;
@@ -938,8 +944,8 @@ class FlexGridGraph
   void init(const frDesign* design,
             const Rect& routeBBox,
             const Rect& extBBox,
-            std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-            std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
+            frLayerCoordTrackPatternMap& xMap,
+            frLayerCoordTrackPatternMap& yMap,
             bool initDR,
             bool followGuide);
   void print() const;
@@ -1284,21 +1290,18 @@ class FlexGridGraph
   }
   // internal init utility
   void initTracks(const frDesign* design,
-                  std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>&
-                      horLoc2TrackPatterns,
-                  std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>&
-                      vertLoc2TrackPatterns,
-                  std::map<frLayerNum, dbTechLayerDir>& layerNum2PreRouteDir,
+                  frLayerCoordTrackPatternMap& horLoc2TrackPatterns,
+                  frLayerCoordTrackPatternMap& vertLoc2TrackPatterns,
+                  frLayerDirMap& layerNum2PreRouteDir,
                   const Rect& bbox);
-  void initGrids(
-      const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
-      const std::map<frLayerNum, dbTechLayerDir>& zMap,
-      bool followGuide);
+  void initGrids(const frLayerCoordTrackPatternMap& xMap,
+                 const frLayerCoordTrackPatternMap& yMap,
+                 const frLayerDirMap& zMap,
+                 bool followGuide);
   void initEdges(const frDesign* design,
-                 std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-                 std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
-                 const std::map<frLayerNum, dbTechLayerDir>& zMap,
+                 frLayerCoordTrackPatternMap& xMap,
+                 frLayerCoordTrackPatternMap& yMap,
+                 const frLayerDirMap& zMap,
                  const Rect& bbox,
                  bool initDR);
   frCost getEstCost(const FlexMazeIdx& src,
