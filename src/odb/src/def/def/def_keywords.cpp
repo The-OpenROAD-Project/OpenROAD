@@ -282,7 +282,7 @@ int defrData::DefGetToken(char** buf, int* bufferSize)
   if (input_level >= 0) {        /* if we are expanding an alias */
     if (DefGetTokenFromStack(s)) /* try to get a token from it */
       return true;               /* if we get one, return it */
-  }                              /* but if not, continue */
+  } /* but if not, continue */
 
   /* skip blanks and count lines */
   while ((ch = GETC()) != EOF) {

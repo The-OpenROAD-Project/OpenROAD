@@ -384,7 +384,7 @@ static int GetToken(char** buffer, int* bufferSize)
   if (lefData->input_level >= 0) {  // if we are expanding an alias
     if (GetTokenFromStack(s))       // try to get a token from it
       return true;                  // if we get one, return it
-  }                                 // but if not, continue
+  }  // but if not, continue
 
   // skip blanks and count lines
   while ((ch = lefGetc()) != EOF) {
