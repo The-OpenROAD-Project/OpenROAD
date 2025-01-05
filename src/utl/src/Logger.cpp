@@ -168,9 +168,8 @@ std::string Logger::popMetricsStage()
     std::string stage = metrics_stages_.top();
     metrics_stages_.pop();
     return stage;
-  } else {
-    return "";
   }
+  return "";
 }
 
 void Logger::flushMetrics()

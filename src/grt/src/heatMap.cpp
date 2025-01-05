@@ -93,9 +93,8 @@ RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger,
       [this]() -> std::string {
         if (layer_ == nullptr) {
           return "All";  // default to all
-        } else {
-          return layer_->getName();
         }
+        return layer_->getName();
       },
       [this](const std::string& value) {
         auto* tech = db_->getTech();
