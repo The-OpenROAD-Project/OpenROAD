@@ -2910,16 +2910,11 @@ bool DetailedMgr::tryMove3(Node* ndi,
   // of the cell which should also correspond to the row in which the
   // segment is found.
   int rb = segments_[sj]->getRowId();
-  if (std::abs(yj - arch_->getRow(rb)->getBottom()) != 0) {
-    // Weird.
-    yj = arch_->getRow(rb)->getBottom();
-  }
   while (rb + spanned >= arch_->getRows().size()) {
     --rb;
   }
   // We might need to adjust the target position if we needed to move
   // the rows "down"...
-  yj = arch_->getRow(rb)->getBottom();
   const int rt = rb + spanned - 1;  // Cell would occupy rows [rb,rt].
 
   bool flip = false;

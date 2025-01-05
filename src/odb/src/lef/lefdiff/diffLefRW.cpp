@@ -659,7 +659,7 @@ int caseSensCB(lefrCallbackType_e c, int caseSense, lefiUserData ud)
   if (ud != userData)
     dataError();
 
-  if (caseSense == TRUE)
+  if (caseSense)
     fprintf(fout, "NAMESCASESENSITIVE ON\n");
   else
     fprintf(fout, "NAMESCASESENSITIVE OFF\n");

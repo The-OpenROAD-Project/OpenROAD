@@ -473,6 +473,10 @@ class dbIStream
   {
     char* tmp;
     *this >> tmp;
+    if (!tmp) {
+      s = "";
+      return *this;
+    }
     s = std::string(tmp);
     free((void*) tmp);
     return *this;
