@@ -3102,14 +3102,14 @@ bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
                            ? odb::Point(track_position.x(), nearest_track)
                            : odb::Point(nearest_track, track_position.y());
       return true;
-    } else if (nearest_track2 > min && nearest_track2 < max) {
+    }
+    if (nearest_track2 > min && nearest_track2 < max) {
       track_position = horizontal
                            ? odb::Point(track_position.x(), nearest_track2)
                            : odb::Point(nearest_track2, track_position.y());
       return true;
-    } else {
-      return false;
     }
+    return false;
   }
 
   return false;
@@ -4269,15 +4269,14 @@ std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(
 
     if (prop == nullptr) {
       continue;
-    } else {
-      debugPrint(logger_,
-                 utl::GRT,
-                 "l2v_pitch",
-                 1,
-                 "Default via: {}.",
-                 via->getConstName());
-      default_vias[via->getBottomLayer()->getRoutingLevel()] = via;
     }
+    debugPrint(logger_,
+               utl::GRT,
+               "l2v_pitch",
+               1,
+               "Default via: {}.",
+               via->getConstName());
+    default_vias[via->getBottomLayer()->getRoutingLevel()] = via;
   }
 
   if (default_vias.empty()) {
@@ -4645,10 +4644,7 @@ void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire,
 void GlobalRouter::createWLReportFile(const char* file_name, bool verbose)
 {
   std::ofstream out(file_name);
-  out << "tool "
-      << "net "
-      << "total_wl "
-      << "#pins ";
+  out << "tool net total_wl #pins ";
 
   if (verbose) {
     out << "#vias ";

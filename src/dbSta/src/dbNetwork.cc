@@ -677,35 +677,33 @@ const char* dbNetwork::name(const Port* port) const
   if (isConcretePort(port)) {
     const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
     return cport->name();
-  } else {
-    dbMTerm* mterm = nullptr;
-    dbModBTerm* modbterm = nullptr;
-    dbBTerm* bterm = nullptr;
-    staToDb(port, bterm, mterm, modbterm);
-    std::string name;
-    if (bterm) {
-      name = bterm->getName();
-    }
-    if (mterm) {
-      name = mterm->getName();
-    }
-    if (modbterm) {
-      name = modbterm->getName();
-    }
-
-    if (name.empty()) {
-      return nullptr;
-    }
-
-    if (hierarchy_) {
-      size_t last_idx = name.find_last_of('/');
-      if (last_idx != string::npos) {
-        name = name.substr(last_idx + 1);
-      }
-    }
-    return tmpStringCopy(name.c_str());
   }
-  return nullptr;
+  dbMTerm* mterm = nullptr;
+  dbModBTerm* modbterm = nullptr;
+  dbBTerm* bterm = nullptr;
+  staToDb(port, bterm, mterm, modbterm);
+  std::string name;
+  if (bterm) {
+    name = bterm->getName();
+  }
+  if (mterm) {
+    name = mterm->getName();
+  }
+  if (modbterm) {
+    name = modbterm->getName();
+  }
+
+  if (name.empty()) {
+    return nullptr;
+  }
+
+  if (hierarchy_) {
+    size_t last_idx = name.find_last_of('/');
+    if (last_idx != string::npos) {
+      name = name.substr(last_idx + 1);
+    }
+  }
+  return tmpStringCopy(name.c_str());
 }
 
 const char* dbNetwork::busName(const Port* port) const
@@ -1137,13 +1135,12 @@ ObjectId dbNetwork::id(const Pin* pin) const
     dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Pin*>(pin));
     dbObjectType type = obj->getObjectType();
     return getDbNwkObjectId(type, obj->getId());
-  } else {
-    if (iterm != nullptr) {
-      return iterm->getId() << 1;
-    }
-    if (bterm != nullptr) {
-      return (bterm->getId() << 1) + 1;
-    }
+  }
+  if (iterm != nullptr) {
+    return iterm->getId() << 1;
+  }
+  if (bterm != nullptr) {
+    return (bterm->getId() << 1) + 1;
   }
   return 0;
 }
@@ -1499,10 +1496,8 @@ ObjectId dbNetwork::id(const Net* net) const
     dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Net*>(net));
     dbObjectType type = obj->getObjectType();
     return getDbNwkObjectId(type, obj->getId());
-  } else {
-    return dnet->getId();
   }
-  return 0;
+  return dnet->getId();
 }
 
 /*
@@ -2609,17 +2604,16 @@ void dbNetwork::staToDb(const Port* port,
     const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
     mterm = reinterpret_cast<dbMTerm*>(cport->extPort());
     return;
-  } else {
-    // just get the port directly from odb
-    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Port*>(port));
-    dbObjectType type = obj->getObjectType();
-    if (type == dbModBTermObj) {
-      Port* port_unconst = const_cast<Port*>(port);
-      modbterm = reinterpret_cast<dbModBTerm*>(port_unconst);
-    } else if (type == dbBTermObj) {
-      Port* port_unconst = const_cast<Port*>(port);
-      bterm = reinterpret_cast<dbBTerm*>(port_unconst);
-    }
+  }
+  // just get the port directly from odb
+  dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Port*>(port));
+  dbObjectType type = obj->getObjectType();
+  if (type == dbModBTermObj) {
+    Port* port_unconst = const_cast<Port*>(port);
+    modbterm = reinterpret_cast<dbModBTerm*>(port_unconst);
+  } else if (type == dbBTermObj) {
+    Port* port_unconst = const_cast<Port*>(port);
+    bterm = reinterpret_cast<dbBTerm*>(port_unconst);
   }
 }
 

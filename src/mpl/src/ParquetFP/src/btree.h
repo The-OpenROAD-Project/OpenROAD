@@ -276,8 +276,8 @@ inline bool BTree::operator=(const BTree& newBtree)
     pack_origin = newBtree.pack_origin;
 
     return true;
-  } else
-    return false;
+  }
+  return false;
 }
 // --------------------------------------------------------
 inline const std::vector<float>& BTree::xloc() const

@@ -103,11 +103,7 @@ int defiAlias_itr::Marked()
 {
   const char* value = iterator->me->second.c_str();
 
-  if ((value == nullptr) || (value[0] == '0')) {
-    return 0;
-  } else {
-    return 1;
-  }
+  return value && value[0] != '0';
 }
 
 END_LEFDEF_PARSER_NAMESPACE
