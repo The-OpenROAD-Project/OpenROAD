@@ -484,7 +484,8 @@ struct F_HIERARCHY
     std::stringstream str_str;
     DbStrDebugHierarchy(block, str_str);
     unsigned signature = 0;
-    for (const char* p = str_str.str().c_str(); p && *p != '\0'; p++) {
+    const std::string str = str_str.str();
+    for (const char* p = str.c_str(); p && *p != '\0'; p++) {
       signature += ((*p) * 5);
     }
     (void) (signature);

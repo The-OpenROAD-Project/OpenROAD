@@ -2519,6 +2519,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
       }
       break;
     case defrComponentMaskShiftLayerCbkType:
+      maskShiftLayer = (defiComponentMaskShiftLayer*) cl;
       fprintf(fout, "COMPONENTMASKSHIFT ");
 
       for (i = 0; i < maskShiftLayer->numMaskShiftLayers(); i++) {
@@ -3026,7 +3027,6 @@ int ext(defrCallbackType_e t, const char* c, defiUserData ud)
       name = address("partition");
       break;
     default:
-      name = address("BOGUS");
       return 1;
   }
   fprintf(fout, "  %s extension %s\n", name, c);
