@@ -44,7 +44,7 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 // lefiObstruction
 // *****************************************************************************
 
-lefiObstruction::lefiObstruction() : geometries_(nullptr)
+lefiObstruction::lefiObstruction()
 {
   Init();
 }
@@ -68,7 +68,7 @@ void lefiObstruction::clear()
 {
   if (geometries_) {
     geometries_->Destroy();
-    lefFree((char*) (geometries_));
+    lefFree(geometries_);
   }
   geometries_ = nullptr;
 }
@@ -99,13 +99,6 @@ void lefiObstruction::print(FILE* f) const
 // *****************************************************************************
 
 lefiDensity::lefiDensity()
-    : numLayers_(0),
-      layersAllocated_(0),
-      layerName_(nullptr),
-      numRects_(nullptr),
-      rectsAllocated_(nullptr),
-      rects_(nullptr),
-      densityValue_(nullptr)
 {
   Init();
 }
@@ -130,16 +123,16 @@ void lefiDensity::clear()
 {
   for (int i = 0; i < numLayers_; i++) {
     lefFree(layerName_[i]);
-    lefFree((char*) rects_[i]);
-    lefFree((char*) densityValue_[i]);
+    lefFree(rects_[i]);
+    lefFree(densityValue_[i]);
     numRects_[i] = 0;
     rectsAllocated_[i] = 0;
   }
   lefFree(layerName_);
-  lefFree((char*) (rects_));
-  lefFree((char*) (densityValue_));
-  lefFree((char*) (numRects_));
-  lefFree((char*) (rectsAllocated_));
+  lefFree(rects_);
+  lefFree(densityValue_);
+  lefFree(numRects_);
+  lefFree(rectsAllocated_);
   layerName_ = nullptr;
   numLayers_ = 0;
   layersAllocated_ = 0;
@@ -173,11 +166,11 @@ void lefiDensity::addLayer(const char* name)
       dv[i] = densityValue_[i];
     }
 
-    lefFree((char*) (layerName_));
-    lefFree((char*) (rects_));
-    lefFree((char*) (densityValue_));
-    lefFree((char*) (numRects_));
-    lefFree((char*) (rectsAllocated_));
+    lefFree(layerName_);
+    lefFree(rects_);
+    lefFree(densityValue_);
+    lefFree(numRects_);
+    lefFree(rectsAllocated_);
 
     layerName_ = ln;
     numRects_ = nr;
@@ -220,8 +213,8 @@ void lefiDensity::addRect(double x1,
         dv[i] = odv[i];  // new, larger array
       }
 
-      lefFree((char*) rects_[numLayers_ - 1]);
-      lefFree((char*) densityValue_[numLayers_ - 1]);
+      lefFree(rects_[numLayers_ - 1]);
+      lefFree(densityValue_[numLayers_ - 1]);
     }
 
     rects_[numLayers_ - 1] = rs;
@@ -297,24 +290,6 @@ void lefiDensity::print(FILE* f) const
 // *****************************************************************************
 
 lefiPinAntennaModel::lefiPinAntennaModel()
-    : oxide_(nullptr),
-      hasReturn_(0),
-      numAntennaGateArea_(0),
-      antennaGateAreaAllocated_(0),
-      antennaGateArea_(nullptr),
-      antennaGateAreaLayer_(nullptr),
-      numAntennaMaxAreaCar_(0),
-      antennaMaxAreaCarAllocated_(0),
-      antennaMaxAreaCar_(nullptr),
-      antennaMaxAreaCarLayer_(nullptr),
-      numAntennaMaxSideAreaCar_(0),
-      antennaMaxSideAreaCarAllocated_(0),
-      antennaMaxSideAreaCar_(nullptr),
-      antennaMaxSideAreaCarLayer_(nullptr),
-      numAntennaMaxCutCar_(0),
-      antennaMaxCutCarAllocated_(0),
-      antennaMaxCutCar_(nullptr),
-      antennaMaxCutCarLayer_(nullptr)
 {
   Init();
 }
@@ -357,7 +332,7 @@ void lefiPinAntennaModel::clear()
   int i;
 
   if (oxide_) {
-    lefFree((char*) (oxide_));
+    lefFree(oxide_);
     oxide_ = nullptr;
     hasReturn_ = 0;
   }
@@ -369,7 +344,7 @@ void lefiPinAntennaModel::clear()
     }
 
     numAntennaGateArea_ = 0;
-    lefFree((char*) (antennaGateAreaLayer_));
+    lefFree(antennaGateAreaLayer_);
     antennaGateAreaLayer_ = nullptr;
   }
 
@@ -379,7 +354,7 @@ void lefiPinAntennaModel::clear()
         lefFree(antennaMaxAreaCarLayer_[i]);
     }
     numAntennaMaxAreaCar_ = 0;
-    lefFree((char*) (antennaMaxAreaCarLayer_));
+    lefFree(antennaMaxAreaCarLayer_);
     antennaMaxAreaCarLayer_ = nullptr;
   }
 
@@ -389,7 +364,7 @@ void lefiPinAntennaModel::clear()
         lefFree(antennaMaxSideAreaCarLayer_[i]);
     }
     numAntennaMaxSideAreaCar_ = 0;
-    lefFree((char*) (antennaMaxSideAreaCarLayer_));
+    lefFree(antennaMaxSideAreaCarLayer_);
     antennaMaxSideAreaCarLayer_ = nullptr;
   }
 
@@ -399,20 +374,20 @@ void lefiPinAntennaModel::clear()
         lefFree(antennaMaxCutCarLayer_[i]);
     }
     numAntennaMaxCutCar_ = 0;
-    lefFree((char*) (antennaMaxCutCarLayer_));
+    lefFree(antennaMaxCutCarLayer_);
     antennaMaxCutCarLayer_ = nullptr;
   }
 
-  lefFree((char*) (antennaGateArea_));
+  lefFree(antennaGateArea_);
   antennaGateArea_ = nullptr;
 
-  lefFree((char*) (antennaMaxAreaCar_));
+  lefFree(antennaMaxAreaCar_);
   antennaMaxAreaCar_ = nullptr;
 
-  lefFree((char*) (antennaMaxSideAreaCar_));
+  lefFree(antennaMaxSideAreaCar_);
   antennaMaxSideAreaCar_ = nullptr;
 
-  lefFree((char*) (antennaMaxCutCar_));
+  lefFree(antennaMaxCutCar_);
   antennaMaxCutCar_ = nullptr;
 }
 
@@ -450,8 +425,8 @@ void lefiPinAntennaModel::addAntennaGateArea(double val, const char* layer)
       nl[i] = antennaGateAreaLayer_[i];
       nd[i] = antennaGateArea_[i];
     }
-    lefFree((char*) (antennaGateAreaLayer_));
-    lefFree((char*) (antennaGateArea_));
+    lefFree(antennaGateAreaLayer_);
+    lefFree(antennaGateArea_);
     antennaGateAreaLayer_ = nl;
     antennaGateArea_ = nd;
   }
@@ -485,8 +460,8 @@ void lefiPinAntennaModel::addAntennaMaxAreaCar(double val, const char* layer)
       nl[i] = antennaMaxAreaCarLayer_[i];
       nd[i] = antennaMaxAreaCar_[i];
     }
-    lefFree((char*) (antennaMaxAreaCarLayer_));
-    lefFree((char*) (antennaMaxAreaCar_));
+    lefFree(antennaMaxAreaCarLayer_);
+    lefFree(antennaMaxAreaCar_);
     antennaMaxAreaCarLayer_ = nl;
     antennaMaxAreaCar_ = nd;
   }
@@ -521,8 +496,8 @@ void lefiPinAntennaModel::addAntennaMaxSideAreaCar(double val,
       nl[i] = antennaMaxSideAreaCarLayer_[i];
       nd[i] = antennaMaxSideAreaCar_[i];
     }
-    lefFree((char*) (antennaMaxSideAreaCarLayer_));
-    lefFree((char*) (antennaMaxSideAreaCar_));
+    lefFree(antennaMaxSideAreaCarLayer_);
+    lefFree(antennaMaxSideAreaCar_);
     antennaMaxSideAreaCarLayer_ = nl;
     antennaMaxSideAreaCar_ = nd;
   }
@@ -557,8 +532,8 @@ void lefiPinAntennaModel::addAntennaMaxCutCar(double val, const char* layer)
       nl[i] = antennaMaxCutCarLayer_[i];
       nd[i] = antennaMaxCutCar_[i];
     }
-    lefFree((char*) (antennaMaxCutCarLayer_));
-    lefFree((char*) (antennaMaxCutCar_));
+    lefFree(antennaMaxCutCarLayer_);
+    lefFree(antennaMaxCutCar_);
     antennaMaxCutCarLayer_ = nl;
     antennaMaxCutCar_ = nd;
   }
@@ -674,122 +649,6 @@ int lefiPinAntennaModel::hasReturn() const
 // *****************************************************************************
 
 lefiPin::lefiPin()
-    : nameSize_(0),
-      name_(nullptr),
-      hasLEQ_(0),
-      hasDirection_(0),
-      hasUse_(0),
-      hasShape_(0),
-      hasMustjoin_(0),
-      hasOutMargin_(0),
-      hasOutResistance_(0),
-      hasInMargin_(0),
-      hasPower_(0),
-      hasLeakage_(0),
-      hasMaxload_(0),
-      hasMaxdelay_(0),
-      hasCapacitance_(0),
-      hasResistance_(0),
-      hasPulldownres_(0),
-      hasTieoffr_(0),
-      hasVHI_(0),
-      hasVLO_(0),
-      hasRiseVoltage_(0),
-      hasFallVoltage_(0),
-      hasRiseThresh_(0),
-      hasFallThresh_(0),
-      hasRiseSatcur_(0),
-      hasFallSatcur_(0),
-      hasCurrentSource_(0),
-      hasTables_(0),
-      hasAntennasize_(0),
-      hasRiseSlewLimit_(0),
-      hasFallSlewLimit_(0),
-      numForeigns_(0),
-      foreignAllocated_(0),
-      hasForeignOrient_(nullptr),
-      hasForeignPoint_(nullptr),
-      foreignOrient_(nullptr),
-      foreignX_(nullptr),
-      foreignY_(nullptr),
-      foreign_(nullptr),
-      LEQSize_(0),
-      LEQ_(nullptr),
-      mustjoinSize_(0),
-      mustjoin_(nullptr),
-      outMarginH_(0.0),
-      outMarginL_(0.0),
-      outResistanceH_(0.0),
-      outResistanceL_(0.0),
-      inMarginH_(0.0),
-      inMarginL_(0.0),
-      power_(0.0),
-      leakage_(0.0),
-      maxload_(0.0),
-      maxdelay_(0.0),
-      capacitance_(0.0),
-      resistance_(0.0),
-      pulldownres_(0.0),
-      tieoffr_(0.0),
-      VHI_(0.0),
-      VLO_(0.0),
-      riseVoltage_(0.0),
-      fallVoltage_(0.0),
-      riseThresh_(0.0),
-      fallThresh_(0.0),
-      riseSatcur_(0.0),
-      fallSatcur_(0.0),
-      lowTableSize_(0),
-      lowTable_(nullptr),
-      highTableSize_(0),
-      highTable_(nullptr),
-      riseSlewLimit_(0.0),
-      fallSlewLimit_(0.0),
-      numAntennaModel_(0),
-      antennaModelAllocated_(0),
-      curAntennaModelIndex_(0),
-      pinAntennaModel_(nullptr),
-      numAntennaSize_(0),
-      antennaSizeAllocated_(0),
-      antennaSize_(nullptr),
-      antennaSizeLayer_(nullptr),
-      numAntennaMetalArea_(0),
-      antennaMetalAreaAllocated_(0),
-      antennaMetalArea_(nullptr),
-      antennaMetalAreaLayer_(nullptr),
-      numAntennaMetalLength_(0),
-      antennaMetalLengthAllocated_(0),
-      antennaMetalLength_(nullptr),
-      antennaMetalLengthLayer_(nullptr),
-      numAntennaPartialMetalArea_(0),
-      antennaPartialMetalAreaAllocated_(0),
-      antennaPartialMetalArea_(nullptr),
-      antennaPartialMetalAreaLayer_(nullptr),
-      numAntennaPartialMetalSideArea_(0),
-      antennaPartialMetalSideAreaAllocated_(0),
-      antennaPartialMetalSideArea_(nullptr),
-      antennaPartialMetalSideAreaLayer_(nullptr),
-      numAntennaPartialCutArea_(0),
-      antennaPartialCutAreaAllocated_(0),
-      antennaPartialCutArea_(nullptr),
-      antennaPartialCutAreaLayer_(nullptr),
-      numAntennaDiffArea_(0),
-      antennaDiffAreaAllocated_(0),
-      antennaDiffArea_(nullptr),
-      antennaDiffAreaLayer_(nullptr),
-      taperRule_(nullptr),
-      netEpxr_(nullptr),
-      ssPinName_(nullptr),
-      gsPinName_(nullptr),
-      numProperties_(0),
-      propertiesAllocated_(0),
-      propNames_(nullptr),
-      propValues_(nullptr),
-      propNums_(nullptr),
-      propTypes_(nullptr),
-      numPorts_(0),
-      portsAllocated_(0),
-      ports_(nullptr)
 {
   Init();
 }
@@ -868,44 +727,44 @@ void lefiPin::Destroy()
 {
   clear();
   lefFree(name_);
-  lefFree((char*) (ports_));
+  lefFree(ports_);
   lefFree(LEQ_);
   lefFree(mustjoin_);
   lefFree(lowTable_);
   lefFree(highTable_);
   if (propNames_)
-    lefFree((char*) (propNames_));
+    lefFree(propNames_);
   propNames_ = nullptr;
   if (propValues_)
-    lefFree((char*) (propValues_));
+    lefFree(propValues_);
   propValues_ = nullptr;
   if (propNums_)
-    lefFree((char*) (propNums_));
+    lefFree(propNums_);
   propNums_ = nullptr;
   if (propTypes_)
-    lefFree((char*) (propTypes_));
+    lefFree(propTypes_);
   propTypes_ = nullptr;
-  lefFree((char*) (antennaSize_));
-  lefFree((char*) (antennaSizeLayer_));
-  lefFree((char*) (antennaMetalArea_));
-  lefFree((char*) (antennaMetalAreaLayer_));
-  lefFree((char*) (antennaMetalLength_));
-  lefFree((char*) (antennaMetalLengthLayer_));
-  lefFree((char*) (antennaPartialMetalArea_));
-  lefFree((char*) (antennaPartialMetalAreaLayer_));
-  lefFree((char*) (antennaPartialMetalSideArea_));
-  lefFree((char*) (antennaPartialMetalSideAreaLayer_));
-  lefFree((char*) (antennaPartialCutArea_));
-  lefFree((char*) (antennaPartialCutAreaLayer_));
-  lefFree((char*) (antennaDiffArea_));
-  lefFree((char*) (antennaDiffAreaLayer_));
+  lefFree(antennaSize_);
+  lefFree(antennaSizeLayer_);
+  lefFree(antennaMetalArea_);
+  lefFree(antennaMetalAreaLayer_);
+  lefFree(antennaMetalLength_);
+  lefFree(antennaMetalLengthLayer_);
+  lefFree(antennaPartialMetalArea_);
+  lefFree(antennaPartialMetalAreaLayer_);
+  lefFree(antennaPartialMetalSideArea_);
+  lefFree(antennaPartialMetalSideAreaLayer_);
+  lefFree(antennaPartialCutArea_);
+  lefFree(antennaPartialCutAreaLayer_);
+  lefFree(antennaDiffArea_);
+  lefFree(antennaDiffAreaLayer_);
   if (foreignAllocated_) {
-    lefFree((char*) (hasForeignOrient_));
-    lefFree((char*) (hasForeignPoint_));
-    lefFree((char*) (foreignOrient_));
-    lefFree((char*) (foreignX_));
-    lefFree((char*) (foreignY_));
-    lefFree((char*) (foreign_));
+    lefFree(hasForeignOrient_);
+    lefFree(hasForeignPoint_);
+    lefFree(foreignOrient_);
+    lefFree(foreignX_);
+    lefFree(foreignY_);
+    lefFree(foreign_);
     foreignAllocated_ = 0;
   }
 }
@@ -918,7 +777,7 @@ void lefiPin::clear()
   for (i = 0; i < numPorts_; i++) {
     g = ports_[i];
     g->Destroy();
-    lefFree((char*) g);
+    lefFree(g);
   }
   numPorts_ = 0;
   portsAllocated_ = 0;
@@ -957,7 +816,7 @@ void lefiPin::clear()
     hasForeignOrient_[i] = 0;
     hasForeignPoint_[i] = 0;
     foreignOrient_[i] = -1;
-    lefFree((char*) (foreign_[i]));
+    lefFree(foreign_[i]);
   }
   numForeigns_ = 0;
 
@@ -1008,7 +867,7 @@ void lefiPin::clear()
       delete pinAntennaModel_[i];
     }
     // 5.5
-    lefFree((char*) pinAntennaModel_);
+    lefFree(pinAntennaModel_);
   }
 
   pinAntennaModel_ = nullptr;  // 5.5
@@ -1076,7 +935,7 @@ void lefiPin::addPort(lefiGeometries* g)
                                       * portsAllocated_);
     for (i = 0; i < numPorts_; i++)
       ng[i] = ports_[i];
-    lefFree((char*) (ports_));
+    lefFree(ports_);
     ports_ = ng;
   }
   ports_[numPorts_++] = g;
@@ -1117,12 +976,12 @@ void lefiPin::addForeign(const char* name,
         fy[i] = foreignY_[i];
         f[i] = foreign_[i];
       }
-      lefFree((char*) (hasForeignOrient_));
-      lefFree((char*) (hasForeignPoint_));
-      lefFree((char*) (foreignOrient_));
-      lefFree((char*) (foreignX_));
-      lefFree((char*) (foreignY_));
-      lefFree((char*) (foreign_));
+      lefFree(hasForeignOrient_);
+      lefFree(hasForeignPoint_);
+      lefFree(foreignOrient_);
+      lefFree(foreignX_);
+      lefFree(foreignY_);
+      lefFree(foreign_);
     }
     hasForeignOrient_ = hfo;
     hasForeignPoint_ = hfp;
@@ -1417,13 +1276,13 @@ void lefiPin::bumpProps()
     }
   }
   if (propNames_)
-    lefFree((char*) (propNames_));
+    lefFree(propNames_);
   if (propValues_)
-    lefFree((char*) (propValues_));
+    lefFree(propValues_);
   if (propNums_)
-    lefFree((char*) (propNums_));
+    lefFree(propNums_);
   if (propTypes_)
-    lefFree((char*) (propTypes_));
+    lefFree(propTypes_);
   propNames_ = newpn;
   propValues_ = newpv;
   propNums_ = newd;
@@ -2005,8 +1864,8 @@ void lefiPin::addAntennaMetalLength(double val, const char* layer)
       nl[i] = antennaMetalLengthLayer_[i];
       nd[i] = antennaMetalLength_[i];
     }
-    lefFree((char*) (antennaMetalLengthLayer_));
-    lefFree((char*) (antennaMetalLength_));
+    lefFree(antennaMetalLengthLayer_);
+    lefFree(antennaMetalLength_);
     antennaMetalLengthLayer_ = nl;
     antennaMetalLength_ = nd;
   }
@@ -2118,8 +1977,8 @@ void lefiPin::addAntennaSize(double val, const char* layer)
       nl[i] = antennaSizeLayer_[i];
       nd[i] = antennaSize_[i];
     }
-    lefFree((char*) (antennaSizeLayer_));
-    lefFree((char*) (antennaSize_));
+    lefFree(antennaSizeLayer_);
+    lefFree(antennaSize_);
     antennaSizeLayer_ = nl;
     antennaSize_ = nd;
   }
@@ -2153,8 +2012,8 @@ void lefiPin::addAntennaMetalArea(double val, const char* layer)
       nl[i] = antennaMetalAreaLayer_[i];
       nd[i] = antennaMetalArea_[i];
     }
-    lefFree((char*) (antennaMetalAreaLayer_));
-    lefFree((char*) (antennaMetalArea_));
+    lefFree(antennaMetalAreaLayer_);
+    lefFree(antennaMetalArea_);
     antennaMetalAreaLayer_ = nl;
     antennaMetalArea_ = nd;
   }
@@ -2188,8 +2047,8 @@ void lefiPin::addAntennaPartialMetalArea(double val, const char* layer)
       nl[i] = antennaPartialMetalAreaLayer_[i];
       nd[i] = antennaPartialMetalArea_[i];
     }
-    lefFree((char*) (antennaPartialMetalAreaLayer_));
-    lefFree((char*) (antennaPartialMetalArea_));
+    lefFree(antennaPartialMetalAreaLayer_);
+    lefFree(antennaPartialMetalArea_);
     antennaPartialMetalAreaLayer_ = nl;
     antennaPartialMetalArea_ = nd;
   }
@@ -2225,8 +2084,8 @@ void lefiPin::addAntennaPartialMetalSideArea(double val, const char* layer)
       nl[i] = antennaPartialMetalSideAreaLayer_[i];
       nd[i] = antennaPartialMetalSideArea_[i];
     }
-    lefFree((char*) (antennaPartialMetalSideAreaLayer_));
-    lefFree((char*) (antennaPartialMetalSideArea_));
+    lefFree(antennaPartialMetalSideAreaLayer_);
+    lefFree(antennaPartialMetalSideArea_);
     antennaPartialMetalSideAreaLayer_ = nl;
     antennaPartialMetalSideArea_ = nd;
   }
@@ -2263,8 +2122,8 @@ void lefiPin::addAntennaPartialCutArea(double val, const char* layer)
       nl[i] = antennaPartialCutAreaLayer_[i];
       nd[i] = antennaPartialCutArea_[i];
     }
-    lefFree((char*) (antennaPartialCutAreaLayer_));
-    lefFree((char*) (antennaPartialCutArea_));
+    lefFree(antennaPartialCutAreaLayer_);
+    lefFree(antennaPartialCutArea_);
     antennaPartialCutAreaLayer_ = nl;
     antennaPartialCutArea_ = nd;
   }
@@ -2299,8 +2158,8 @@ void lefiPin::addAntennaDiffArea(double val, const char* layer)
       nl[i] = antennaDiffAreaLayer_[i];
       nd[i] = antennaDiffArea_[i];
     }
-    lefFree((char*) (antennaDiffAreaLayer_));
-    lefFree((char*) (antennaDiffArea_));
+    lefFree(antennaDiffAreaLayer_);
+    lefFree(antennaDiffArea_);
     antennaDiffAreaLayer_ = nl;
     antennaDiffArea_ = nd;
   }
@@ -2456,59 +2315,6 @@ void lefiPin::print(FILE* f) const
 // *****************************************************************************
 
 lefiMacro::lefiMacro()
-    : nameSize_(0),
-      name_(nullptr),
-      generatorSize_(0),
-      generator_(nullptr),
-      hasClass_(0),
-      hasGenerator_(0),
-      hasGenerate_(0),
-      hasPower_(0),
-      hasOrigin_(0),
-      hasSource_(0),
-      hasEEQ_(0),
-      hasLEQ_(0),
-      hasSymmetry_(0),
-      hasSiteName_(0),
-      hasSize_(0),
-      hasClockType_(0),
-      isBuffer_(0),
-      isInverter_(0),
-      EEQ_(nullptr),
-      EEQSize_(0),
-      LEQ_(nullptr),
-      LEQSize_(0),
-      gen1_(nullptr),
-      gen1Size_(0),
-      gen2_(nullptr),
-      gen2Size_(0),
-      power_(0.0),
-      originX_(0.0),
-      originY_(0.0),
-      sizeX_(0.0),
-      sizeY_(0.0),
-      numSites_(0),
-      sitesAllocated_(0),
-      pattern_(nullptr),
-      numForeigns_(0),
-      foreignAllocated_(0),
-      hasForeignOrigin_(nullptr),
-      hasForeignPoint_(nullptr),
-      foreignOrient_(nullptr),
-      foreignX_(nullptr),
-      foreignY_(nullptr),
-      foreign_(nullptr),
-      siteNameSize_(0),
-      siteName_(nullptr),
-      clockType_(nullptr),
-      clockTypeSize_(0),
-      numProperties_(0),
-      propertiesAllocated_(0),
-      propNames_(nullptr),
-      propValues_(nullptr),
-      propNums_(nullptr),
-      propTypes_(nullptr),
-      isFixedMask_(0)
 {
   Init();
 }
@@ -2565,17 +2371,17 @@ void lefiMacro::Destroy()
   lefFree(gen2_);
   lefFree(siteName_);
   lefFree(clockType_);
-  lefFree((char*) (propNames_));
-  lefFree((char*) (propValues_));
-  lefFree((char*) (propNums_));
-  lefFree((char*) (propTypes_));
+  lefFree(propNames_);
+  lefFree(propValues_);
+  lefFree(propNums_);
+  lefFree(propTypes_);
   if (foreignAllocated_) {
-    lefFree((char*) (hasForeignOrigin_));
-    lefFree((char*) (hasForeignPoint_));
-    lefFree((char*) (foreignOrient_));
-    lefFree((char*) (foreignX_));
-    lefFree((char*) (foreignY_));
-    lefFree((char*) (foreign_));
+    lefFree(hasForeignOrigin_);
+    lefFree(hasForeignPoint_);
+    lefFree(foreignOrient_);
+    lefFree(foreignX_);
+    lefFree(foreignY_);
+    lefFree(foreign_);
     foreignAllocated_ = 0;
   }
 }
@@ -2608,18 +2414,18 @@ void lefiMacro::clear()
     hasForeignOrigin_[i] = 0;
     hasForeignPoint_[i] = 0;
     foreignOrient_[i] = -1;
-    lefFree((char*) (foreign_[i]));
+    lefFree(foreign_[i]);
   }
   numForeigns_ = 0;
 
   if (pattern_) {
     for (i = 0; i < numSites_; i++) {
       pattern_[i]->Destroy();
-      lefFree((char*) (pattern_[i]));
+      lefFree(pattern_[i]);
     }
     numSites_ = 0;
     sitesAllocated_ = 0;
-    lefFree((char*) (pattern_));
+    lefFree(pattern_);
     pattern_ = nullptr;
   }
 
@@ -2791,10 +2597,10 @@ void lefiMacro::bumpProps()
     newd[i] = propNums_[i];
     newt[i] = propTypes_[i];
   }
-  lefFree((char*) (propNames_));
-  lefFree((char*) (propValues_));
-  lefFree((char*) (propNums_));
-  lefFree((char*) (propTypes_));
+  lefFree(propNames_);
+  lefFree(propValues_);
+  lefFree(propNums_);
+  lefFree(propTypes_);
   propNames_ = newpn;
   propValues_ = newpv;
   propNums_ = newd;
@@ -2846,12 +2652,12 @@ void lefiMacro::addForeign(const char* name,
         fy[i] = foreignY_[i];
         f[i] = foreign_[i];
       }
-      lefFree((char*) (hasForeignOrigin_));
-      lefFree((char*) (hasForeignPoint_));
-      lefFree((char*) (foreignOrient_));
-      lefFree((char*) (foreignX_));
-      lefFree((char*) (foreignY_));
-      lefFree((char*) (foreign_));
+      lefFree(hasForeignOrigin_);
+      lefFree(hasForeignPoint_);
+      lefFree(foreignOrient_);
+      lefFree(foreignX_);
+      lefFree(foreignY_);
+      lefFree(foreign_);
     }
     hasForeignOrigin_ = hfo;
     hasForeignPoint_ = hfp;
@@ -2920,7 +2726,7 @@ void lefiMacro::setSitePattern(lefiSitePattern* p)
       lim /= 2;
       for (i = 0; i < lim; i++)
         np[i] = pattern_[i];
-      lefFree((char*) (pattern_));
+      lefFree(pattern_);
     }
     pattern_ = np;
   }
@@ -3328,103 +3134,6 @@ void lefiMacro::print(FILE* f) const
 // *****************************************************************************
 
 lefiTiming::lefiTiming()
-    : numFrom_(0),
-      from_(nullptr),
-      fromAllocated_(0),
-      numTo_(0),
-      to_(nullptr),
-      toAllocated_(0),
-      hasTransition_(0),
-      hasDelay_(0),
-      hasRiseSlew_(0),
-      hasRiseSlew2_(0),
-      hasFallSlew_(0),
-      hasFallSlew2_(0),
-      hasRiseIntrinsic_(0),
-      hasFallIntrinsic_(0),
-      hasRiseRS_(0),
-      hasRiseCS_(0),
-      hasFallRS_(0),
-      hasFallCS_(0),
-      hasUnateness_(0),
-      hasFallAtt1_(0),
-      hasRiseAtt1_(0),
-      hasFallTo_(0),
-      hasRiseTo_(0),
-      hasStableTiming_(0),
-      hasSDFonePinTrigger_(0),
-      hasSDFtwoPinTrigger_(0),
-      hasSDFcondStart_(0),
-      hasSDFcondEnd_(0),
-      hasSDFcond_(0),
-      nowRise_(0),
-      numOfAxisNumbers_(0),
-      axisNumbers_(nullptr),
-      axisNumbersAllocated_(0),
-      numOfTableEntries_(0),
-      tableEntriesAllocated_(0),
-      table_(nullptr),  // three numbers per entry
-      delayRiseOrFall_(nullptr),
-      delayUnateness_(nullptr),
-      delayTableOne_(0.0),
-      delayTableTwo_(0.0),
-      delayTableThree_(0.0),
-      transitionRiseOrFall_(nullptr),
-      transitionUnateness_(nullptr),
-      transitionTableOne_(0.0),
-      transitionTableTwo_(0.0),
-      transitionTableThree_(0.0),
-      riseIntrinsicOne_(0.0),
-      riseIntrinsicTwo_(0.0),
-      riseIntrinsicThree_(0.0),
-      riseIntrinsicFour_(0.0),
-      fallIntrinsicOne_(0.0),
-      fallIntrinsicTwo_(0.0),
-      fallIntrinsicThree_(0.0),
-      fallIntrinsicFour_(0.0),
-      riseSlewOne_(0.0),
-      riseSlewTwo_(0.0),
-      riseSlewThree_(0.0),
-      riseSlewFour_(0.0),
-      riseSlewFive_(0.0),
-      riseSlewSix_(0.0),
-      riseSlewSeven_(0.0),
-      fallSlewOne_(0.0),
-      fallSlewTwo_(0.0),
-      fallSlewThree_(0.0),
-      fallSlewFour_(0.0),
-      fallSlewFive_(0.0),
-      fallSlewSix_(0.0),
-      fallSlewSeven_(0.0),
-      riseRSOne_(0.0),
-      riseRSTwo_(0.0),
-      riseCSOne_(0.0),
-      riseCSTwo_(0.0),
-      fallRSOne_(0.0),
-      fallRSTwo_(0.0),
-      fallCSOne_(0.0),
-      fallCSTwo_(0.0),
-      unateness_(nullptr),
-      riseAtt1One_(0.0),
-      riseAtt1Two_(0.0),
-      fallAtt1One_(0.0),
-      fallAtt1Two_(0.0),
-      fallToOne_(0.0),
-      fallToTwo_(0.0),
-      riseToOne_(0.0),
-      riseToTwo_(0.0),
-      stableSetup_(0.0),
-      stableHold_(0.0),
-      stableRiseFall_(nullptr),
-      SDFtriggerType_(nullptr),
-      SDFfromTrigger_(nullptr),
-      SDFtoTrigger_(nullptr),
-      SDFtriggerTableOne_(0.0),
-      SDFtriggerTableTwo_(0.0),
-      SDFtriggerTableThree_(0.0),
-      SDFcondStart_(nullptr),
-      SDFcondEnd_(nullptr),
-      SDFcond_(nullptr)
 {
   Init();
 }
@@ -3452,10 +3161,10 @@ void lefiTiming::Init()
 void lefiTiming::Destroy()
 {
   clear();
-  lefFree((char*) (from_));
-  lefFree((char*) (to_));
-  lefFree((char*) (axisNumbers_));
-  lefFree((char*) (table_));
+  lefFree(from_);
+  lefFree(to_);
+  lefFree(axisNumbers_);
+  lefFree(table_);
 }
 
 lefiTiming::~lefiTiming()
@@ -3575,7 +3284,7 @@ void lefiTiming::addTableEntry(double one, double two, double three)
     for (i = 0; i < lim; i++) {
       n[i] = table_[i];
     }
-    lefFree((char*) (table_));
+    lefFree(table_);
     table_ = n;
   }
   i = numOfTableEntries_ * 3;
@@ -3601,7 +3310,7 @@ void lefiTiming::addTableAxisNumber(double one)
     for (i = 0; i < lim; i++)
       n[i] = axisNumbers_[i];
     if (axisNumbersAllocated_ > 2)
-      lefFree((char*) (axisNumbers_));
+      lefFree(axisNumbers_);
     axisNumbers_ = n;
   }
   axisNumbers_[(numOfAxisNumbers_)++] = one;
@@ -3657,7 +3366,7 @@ void lefiTiming::addFromPin(const char* name)
     lim = numFrom_;
     for (i = 0; i < lim; i++)
       n[i] = from_[i];
-    lefFree((char*) (from_));
+    lefFree(from_);
     from_ = n;
   }
   from_[(numFrom_)++] = (char*) name;
@@ -3678,7 +3387,7 @@ void lefiTiming::addToPin(const char* name)
     lim = numTo_;
     for (i = 0; i < lim; i++)
       n[i] = to_[i];
-    lefFree((char*) (to_));
+    lefFree(to_);
     to_ = n;
   }
   to_[(numTo_)++] = (char*) name;

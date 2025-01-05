@@ -80,8 +80,7 @@ void defiPinCap::print(FILE* f) const
 ///////////////////////////////////////////////
 ///////////////////////////////////////////////
 
-defiPinAntennaModel::defiPinAntennaModel(defrData* data)
-    : oxide_(nullptr), defData(data)
+defiPinAntennaModel::defiPinAntennaModel(defrData* data) : defData(data)
 {
   Init();
 }
@@ -1388,10 +1387,7 @@ int defiPin::hasUse() const
 
 int defiPin::hasLayer() const
 {
-  if (numLayers_ || numPolys_)  // 5.6, either layer or polygon is
-    return 1;                   // non-zero
-  else
-    return 0;
+  return numLayers_ || numPolys_;  // 5.6, either layer or polygon is
 }
 
 int defiPin::hasPlacement() const
@@ -2071,9 +2067,8 @@ int defiPin::viaTopMask(int index) const
 
   if (cutMaskNum) {
     return cutMaskNum /= 10;
-  } else {
-    return 0;
   }
+  return 0;
 }
 
 int defiPin::viaCutMask(int index) const
@@ -2082,9 +2077,8 @@ int defiPin::viaCutMask(int index) const
 
   if (cutMaskNum) {
     return cutMaskNum % 10;
-  } else {
-    return 0;
   }
+  return 0;
 }
 
 int defiPin::viaBottomMask(int index) const

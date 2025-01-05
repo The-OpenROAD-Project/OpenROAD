@@ -64,15 +64,15 @@ class HeatMapDataSource
   {
     std::string name;
     std::string label;
-    std::function<bool(void)> getter;
+    std::function<bool()> getter;
     std::function<void(bool)> setter;
   };
   struct MapSettingMultiChoice
   {
     std::string name;
     std::string label;
-    std::function<std::vector<std::string>(void)> choices;
-    std::function<const std::string(void)> getter;
+    std::function<std::vector<std::string>()> choices;
+    std::function<const std::string()> getter;
     std::function<void(const std::string&)> setter;
   };
 
@@ -189,13 +189,13 @@ class HeatMapDataSource
  protected:
   void addBooleanSetting(const std::string& name,
                          const std::string& label,
-                         const std::function<bool(void)>& getter,
+                         const std::function<bool()>& getter,
                          const std::function<void(bool)>& setter);
   void addMultipleChoiceSetting(
       const std::string& name,
       const std::string& label,
-      const std::function<std::vector<std::string>(void)>& choices,
-      const std::function<std::string(void)>& getter,
+      const std::function<std::vector<std::string>()>& choices,
+      const std::function<std::string()>& getter,
       const std::function<void(std::string)>& setter);
 
   void setupMap();
@@ -274,16 +274,13 @@ class HeatMapRenderer : public Renderer
  public:
   HeatMapRenderer(HeatMapDataSource& datasource);
 
-  virtual const char* getDisplayControlGroupName() override
-  {
-    return "Heat Maps";
-  }
+  const char* getDisplayControlGroupName() override { return "Heat Maps"; }
 
-  virtual void drawObjects(Painter& painter) override;
+  void drawObjects(Painter& painter) override;
 
-  virtual std::string getSettingsGroupName() override;
-  virtual Settings getSettings() override;
-  virtual void setSettings(const Settings& settings) override;
+  std::string getSettingsGroupName() override;
+  Settings getSettings() override;
+  void setSettings(const Settings& settings) override;
 
  private:
   HeatMapDataSource& datasource_;
@@ -301,20 +298,19 @@ class RealValueHeatMapDataSource : public HeatMapDataSource
                              const std::string& name,
                              const std::string& short_name,
                              const std::string& settings_group = "");
-  ~RealValueHeatMapDataSource() {}
 
-  virtual std::string formatValue(double value, bool legend) const override;
-  virtual std::string getValueUnits() const override;
-  virtual double convertValueToPercent(double value) const override;
-  virtual double convertPercentToValue(double percent) const override;
-  virtual double getDisplayRangeIncrement() const override;
+  std::string formatValue(double value, bool legend) const override;
+  std::string getValueUnits() const override;
+  double convertValueToPercent(double value) const override;
+  double convertPercentToValue(double percent) const override;
+  double getDisplayRangeIncrement() const override;
 
-  virtual double getDisplayRangeMaximumValue() const override { return 100.0; }
+  double getDisplayRangeMaximumValue() const override { return 100.0; }
 
  protected:
   void determineUnits();
 
-  virtual void correctMapScale(HeatMapDataSource::Map& map) override;
+  void correctMapScale(HeatMapDataSource::Map& map) override;
   virtual void determineMinMax(const HeatMapDataSource::Map& map);
 
   void setMinValue(double value) { min_ = value; }

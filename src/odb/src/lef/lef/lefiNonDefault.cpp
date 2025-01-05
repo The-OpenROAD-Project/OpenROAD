@@ -53,48 +53,6 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 // *****************************************************************************
 
 lefiNonDefault::lefiNonDefault()
-    : nameSize_(0),
-      name_(nullptr),
-      numLayers_(0),
-      layersAllocated_(0),
-      layerName_(nullptr),
-      width_(nullptr),
-      spacing_(nullptr),
-      wireExtension_(nullptr),
-      hasWidth_(nullptr),
-      hasSpacing_(nullptr),
-      hasWireExtension_(nullptr),
-      resistance_(nullptr),
-      capacitance_(nullptr),
-      edgeCap_(nullptr),
-      hasResistance_(nullptr),
-      hasCapacitance_(nullptr),
-      hasEdgeCap_(nullptr),
-      diagWidth_(nullptr),
-      hasDiagWidth_(nullptr),
-      numVias_(0),
-      allocatedVias_(0),
-      viaRules_(nullptr),
-      numSpacing_(0),
-      allocatedSpacing_(0),
-      spacingRules_(nullptr),
-      hardSpacing_(0),
-      numUseVias_(0),
-      allocatedUseVias_(0),
-      useViaName_(nullptr),
-      numUseViaRules_(0),
-      allocatedUseViaRules_(0),
-      useViaRuleName_(nullptr),
-      numMinCuts_(0),
-      allocatedMinCuts_(0),
-      cutLayerName_(nullptr),
-      numCuts_(nullptr),
-      numProps_(0),
-      propsAllocated_(0),
-      names_(nullptr),
-      values_(nullptr),
-      dvalues_(nullptr),
-      types_(nullptr)
 {
   Init();
 }
@@ -152,14 +110,14 @@ void lefiNonDefault::Destroy()
 
   lefFree(name_);
 
-  lefFree((char*) (layerName_));
-  lefFree((char*) (width_));
-  lefFree((char*) (diagWidth_));
-  lefFree((char*) (spacing_));
-  lefFree((char*) (wireExtension_));
-  lefFree((char*) (resistance_));
-  lefFree((char*) (capacitance_));
-  lefFree((char*) (edgeCap_));
+  lefFree(layerName_);
+  lefFree(width_);
+  lefFree(diagWidth_);
+  lefFree(spacing_);
+  lefFree(wireExtension_);
+  lefFree(resistance_);
+  lefFree(capacitance_);
+  lefFree(edgeCap_);
   lefFree(hasWidth_);
   lefFree(hasDiagWidth_);
   lefFree(hasSpacing_);
@@ -168,20 +126,20 @@ void lefiNonDefault::Destroy()
   lefFree(hasCapacitance_);
   lefFree(hasEdgeCap_);
 
-  lefFree((char*) (viaRules_));
+  lefFree(viaRules_);
 
-  lefFree((char*) (spacingRules_));
-  lefFree((char*) (names_));
-  lefFree((char*) (values_));
-  lefFree((char*) (dvalues_));
-  lefFree((char*) (types_));
+  lefFree(spacingRules_);
+  lefFree(names_);
+  lefFree(values_);
+  lefFree(dvalues_);
+  lefFree(types_);
   if (allocatedUseVias_)
-    lefFree((char*) (useViaName_));
+    lefFree(useViaName_);
   if (allocatedUseViaRules_)
-    lefFree((char*) (useViaRuleName_));
+    lefFree(useViaRuleName_);
   if (allocatedMinCuts_) {
-    lefFree((char*) (cutLayerName_));
-    lefFree((char*) (numCuts_));
+    lefFree(cutLayerName_);
+    lefFree(numCuts_);
   }
   allocatedUseVias_ = 0;
   allocatedUseViaRules_ = 0;
@@ -213,29 +171,29 @@ void lefiNonDefault::clear()
   for (i = 0; i < numVias_; i++) {
     vr = viaRules_[i];
     vr->Destroy();
-    lefFree((char*) (viaRules_[i]));
+    lefFree(viaRules_[i]);
     viaRules_[i] = nullptr;
   }
   numVias_ = 0;
   for (i = 0; i < numSpacing_; i++) {
     sr = spacingRules_[i];
     sr->Destroy();
-    lefFree((char*) (spacingRules_[i]));
+    lefFree(spacingRules_[i]);
     spacingRules_[i] = nullptr;
   }
   numSpacing_ = 0;
 
   hardSpacing_ = 0;
   for (i = 0; i < numUseVias_; i++) {
-    lefFree((char*) (useViaName_[i]));
+    lefFree(useViaName_[i]);
   }
   numUseVias_ = 0;
   for (i = 0; i < numUseViaRules_; i++) {
-    lefFree((char*) (useViaRuleName_[i]));
+    lefFree(useViaRuleName_[i]);
   }
   numUseViaRules_ = 0;
   for (i = 0; i < numMinCuts_; i++) {
-    lefFree((char*) (cutLayerName_[i]));
+    lefFree(cutLayerName_[i]);
   }
   numMinCuts_ = 0;
 }
@@ -254,7 +212,7 @@ void lefiNonDefault::addViaRule(lefiVia* v)
     for (i = 0; i < numVias_; i++) {
       nv[i] = viaRules_[i];
     }
-    lefFree((char*) (viaRules_));
+    lefFree(viaRules_);
     viaRules_ = nv;
   }
   viaRules_[numVias_++] = v->clone();
@@ -274,7 +232,7 @@ void lefiNonDefault::addSpacingRule(lefiSpacing* s)
     for (i = 0; i < numSpacing_; i++) {
       ns[i] = spacingRules_[i];
     }
-    lefFree((char*) (spacingRules_));
+    lefFree(spacingRules_);
     spacingRules_ = ns;
   }
   spacingRules_[numSpacing_++] = s->clone();
@@ -371,21 +329,21 @@ void lefiNonDefault::addLayer(const char* name)
       newhr[i] = hasResistance_[i];
       newhec[i] = hasEdgeCap_[i];
     }
-    lefFree((char*) (layerName_));
-    lefFree((char*) (width_));
-    lefFree((char*) (diagWidth_));
-    lefFree((char*) (spacing_));
-    lefFree((char*) (wireExtension_));
-    lefFree((char*) (capacitance_));
-    lefFree((char*) (resistance_));
-    lefFree((char*) (edgeCap_));
-    lefFree((char*) (hasWireExtension_));
-    lefFree((char*) (hasWidth_));
-    lefFree((char*) (hasDiagWidth_));
-    lefFree((char*) (hasSpacing_));
-    lefFree((char*) (hasCapacitance_));
-    lefFree((char*) (hasResistance_));
-    lefFree((char*) (hasEdgeCap_));
+    lefFree(layerName_);
+    lefFree(width_);
+    lefFree(diagWidth_);
+    lefFree(spacing_);
+    lefFree(wireExtension_);
+    lefFree(capacitance_);
+    lefFree(resistance_);
+    lefFree(edgeCap_);
+    lefFree(hasWireExtension_);
+    lefFree(hasWidth_);
+    lefFree(hasDiagWidth_);
+    lefFree(hasSpacing_);
+    lefFree(hasCapacitance_);
+    lefFree(hasResistance_);
+    lefFree(hasEdgeCap_);
     layerName_ = newl;
     width_ = neww;
     diagWidth_ = newd;
@@ -483,7 +441,7 @@ void lefiNonDefault::addUseVia(const char* name)
       vn[i] = useViaName_[i];
     }
     if (numUseVias_)
-      lefFree((char*) (useViaName_));
+      lefFree(useViaName_);
     useViaName_ = vn;
   }
   useViaName_[numUseVias_] = (char*) lefMalloc(strlen(name) + 1);
@@ -506,7 +464,7 @@ void lefiNonDefault::addUseViaRule(const char* name)
       vn[i] = useViaRuleName_[i];
     }
     if (numUseViaRules_)
-      lefFree((char*) (useViaRuleName_));
+      lefFree(useViaRuleName_);
     useViaRuleName_ = vn;
   }
   useViaRuleName_[numUseViaRules_] = (char*) lefMalloc(strlen(name) + 1);
@@ -532,8 +490,8 @@ void lefiNonDefault::addMinCuts(const char* name, int numCuts)
       nc[i] = numCuts_[i];
     }
     if (numMinCuts_) {
-      lefFree((char*) (cutLayerName_));
-      lefFree((char*) (numCuts_));
+      lefFree(cutLayerName_);
+      lefFree(numCuts_);
     }
     cutLayerName_ = cn;
     numCuts_ = nc;
@@ -990,10 +948,10 @@ void lefiNonDefault::addProp(const char* name,
       nD[i] = dvalues_[i];
       nt[i] = types_[i];
     }
-    lefFree((char*) (names_));
-    lefFree((char*) (values_));
-    lefFree((char*) (dvalues_));
-    lefFree((char*) (types_));
+    lefFree(names_);
+    lefFree(values_);
+    lefFree(dvalues_);
+    lefFree(types_);
     names_ = nn;
     values_ = nv;
     dvalues_ = nD;
@@ -1038,10 +996,10 @@ void lefiNonDefault::addNumProp(const char* name,
       nD[i] = dvalues_[i];
       nt[i] = types_[i];
     }
-    lefFree((char*) (names_));
-    lefFree((char*) (values_));
-    lefFree((char*) (dvalues_));
-    lefFree((char*) (types_));
+    lefFree(names_);
+    lefFree(values_);
+    lefFree(dvalues_);
+    lefFree(types_);
     names_ = nn;
     values_ = nv;
     dvalues_ = nD;

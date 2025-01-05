@@ -3273,8 +3273,8 @@ via_geometry:
         }
       }
       lefData->lefrGeometriesPtr->clearPolyItems(); // free items fields
-      lefFree((char*)(lefData->lefrGeometriesPtr)); // Don't need anymore, poly data has
-      lefData->lefrDoGeometries = 0;                // copied
+      lefFree(lefData->lefrGeometriesPtr); // Don't need anymore, poly data has
+      lefData->lefrDoGeometries = 0;       // copied
     }
 
 end_via: K_END {lefData->lefDumbMode = 1; lefData->lefNoNum = 1;} T_STRING 

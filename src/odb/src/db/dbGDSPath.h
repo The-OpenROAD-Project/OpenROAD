@@ -64,7 +64,7 @@ class _dbGDSPath : public _dbObject
   std::vector<Point> _xy;
   std::vector<std::pair<std::int16_t, std::string>> _propattr;
   int _width;
-  int16_t _pathType;
+  int16_t _path_type;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSPath& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSPath& obj);

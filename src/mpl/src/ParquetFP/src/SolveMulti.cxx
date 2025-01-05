@@ -287,7 +287,7 @@ void SolveMulti::go()
       _params->FPrep = "BTree";
       annealer = new BTreeAreaWireAnnealer(_params, _newDB);
     }
-  } while (1);
+  } while (true);
 
   annealTime += annealer->annealTime;
   delete annealer;
@@ -430,7 +430,7 @@ void SolveMulti::placeSubBlocks()
           satisfied = false;
           break;
         }
-      } while (1);
+      } while (true);
 
       if (!satisfied)  // failed to satisfy constraints. save best soln
       {

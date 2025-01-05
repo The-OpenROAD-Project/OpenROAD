@@ -1816,7 +1816,7 @@ bool FastRouteCore::checkRoute2DTree(int netID)
 }
 
 // Copy Routing Solution for the best routing solution so far
-void FastRouteCore::copyRS(void)
+void FastRouteCore::copyRS()
 {
   int i, j, edgeID, numEdges, numNodes;
 
@@ -1880,7 +1880,7 @@ void FastRouteCore::copyRS(void)
   }
 }
 
-void FastRouteCore::copyBR(void)
+void FastRouteCore::copyBR()
 {
   int i, j, edgeID, numEdges, numNodes, min_y, min_x, edgeCost;
 
@@ -2002,7 +2002,7 @@ void FastRouteCore::copyBR(void)
   }
 }
 
-void FastRouteCore::freeRR(void)
+void FastRouteCore::freeRR()
 {
   int edgeID, numEdges;
   if (!sttrees_bk_.empty()) {
@@ -2495,8 +2495,8 @@ void FastRouteCore::saveCongestion(const int iter)
     const int seed = 42;
     g.seed(seed);
 
-    utl::shuffle(congestionGridsV.begin(), congestionGridsV.end(), g);
     utl::shuffle(congestionGridsH.begin(), congestionGridsH.end(), g);
+    utl::shuffle(congestionGridsV.begin(), congestionGridsV.end(), g);
   }
 
   const std::string marker_group_name = fmt::format(

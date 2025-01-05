@@ -43,18 +43,6 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 // *****************************************************************************
 
 lefiViaLayer::lefiViaLayer()
-    : name_(nullptr),
-      rectColorMask_(nullptr),
-      polyColorMask_(nullptr),
-      numRects_(0),
-      rectsAllocated_(0),
-      xl_(nullptr),
-      yl_(nullptr),
-      xh_(nullptr),
-      yh_(nullptr),
-      numPolys_(0),
-      polysAllocated_(0),
-      polygons_(nullptr)
 {
   Init();
 }
@@ -78,28 +66,28 @@ void lefiViaLayer::Init()
 void lefiViaLayer::Destroy()
 {
   if (xl_) {
-    lefFree((char*) (xl_));
-    lefFree((char*) (yl_));
-    lefFree((char*) (xh_));
-    lefFree((char*) (yh_));
+    lefFree(xl_);
+    lefFree(yl_);
+    lefFree(xh_);
+    lefFree(yh_);
   }
   if (polygons_) {
     lefiGeomPolygon* geom;
     for (int i = 0; i < numPolys_; i++) {
       geom = polygons_[i];
-      lefFree((char*) (geom->x));
-      lefFree((char*) (geom->y));
-      lefFree((char*) (polygons_[i]));
+      lefFree(geom->x);
+      lefFree(geom->y);
+      lefFree(polygons_[i]);
     }
-    lefFree((char*) (polygons_));
+    lefFree(polygons_);
 
     polygons_ = nullptr;
     numPolys_ = 0;
   }
 
   lefFree(name_);
-  lefFree((char*) (rectColorMask_));
-  lefFree((char*) (polyColorMask_));
+  lefFree(rectColorMask_);
+  lefFree(polyColorMask_);
 }
 
 lefiViaLayer::~lefiViaLayer()
@@ -144,11 +132,11 @@ void lefiViaLayer::addRect(int colorMask,
     }
 
     if (xl_) {
-      lefFree((char*) (xl_));
-      lefFree((char*) (yl_));
-      lefFree((char*) (xh_));
-      lefFree((char*) (yh_));
-      lefFree((char*) (rectColorMask_));
+      lefFree(xl_);
+      lefFree(yl_);
+      lefFree(xh_);
+      lefFree(yh_);
+      lefFree(rectColorMask_);
     }
 
     xl_ = newxl;
@@ -185,8 +173,8 @@ void lefiViaLayer::addPoly(int colorMask, lefiGeometries* geom)
     }
 
     if (polygons_) {
-      lefFree((char*) (polygons_));
-      lefFree((char*) (polyColorMask_));
+      lefFree(polygons_);
+      lefFree(polyColorMask_);
     }
 
     polygons_ = poly;
@@ -382,48 +370,6 @@ lefiGeomPolygon* lefiViaLayer::getPolygon(int index) const
 // *****************************************************************************
 
 lefiVia::lefiVia()
-    : name_(nullptr),
-      nameSize_(0),
-      hasDefault_(0),
-      hasGenerated_(0),
-      hasResistance_(0),
-      hasForeignPnt_(0),
-      hasTopOfStack_(0),
-      numProps_(0),
-      propsAllocated_(0),
-      propName_(nullptr),
-      propValue_(nullptr),
-      propDValue_(nullptr),
-      propType_(nullptr),
-      numLayers_(0),
-      layersAllocated_(0),
-      layers_(nullptr),
-      resistance_(0.0),
-      foreign_(nullptr),
-      foreignX_(0.0),
-      foreignY_(0.0),
-      foreignOrient_(0),
-      viaRuleName_(nullptr),
-      xSize_(0.0),
-      ySize_(0.0),
-      botLayer_(nullptr),
-      cutLayer_(nullptr),
-      topLayer_(nullptr),
-      xSpacing_(0.0),
-      ySpacing_(0.0),
-      xBotEnc_(0.0),
-      yBotEnc_(0.0),
-      xTopEnc_(0.0),
-      yTopEnc_(0.0),
-      numRows_(0),
-      numCols_(0),
-      xOffset_(0.0),
-      yOffset_(0.0),
-      xBotOs_(0.0),
-      yBotOs_(0.0),
-      xTopOs_(0.0),
-      yTopOs_(0.0),
-      cutPattern_(nullptr)
 {
   Init();
 }
@@ -447,26 +393,26 @@ void lefiVia::Destroy()
   clear();
   lefFree(name_);
   if (layers_)
-    lefFree((char*) (layers_));
+    lefFree(layers_);
   layers_ = nullptr;
   if (propName_)
-    lefFree((char*) (propName_));
+    lefFree(propName_);
   if (propValue_)
-    lefFree((char*) (propValue_));
+    lefFree(propValue_);
   if (propDValue_)
-    lefFree((char*) (propDValue_));
+    lefFree(propDValue_);
   if (propType_)
-    lefFree((char*) (propType_));
+    lefFree(propType_);
   if (viaRuleName_)
-    lefFree((char*) (viaRuleName_));
+    lefFree(viaRuleName_);
   if (botLayer_)
-    lefFree((char*) (botLayer_));
+    lefFree(botLayer_);
   if (cutLayer_)
-    lefFree((char*) (cutLayer_));
+    lefFree(cutLayer_);
   if (topLayer_)
-    lefFree((char*) (topLayer_));
+    lefFree(topLayer_);
   if (cutPattern_)
-    lefFree((char*) (cutPattern_));
+    lefFree(cutPattern_);
   propName_ = nullptr;
   propValue_ = nullptr;
   propDValue_ = nullptr;
@@ -606,7 +552,7 @@ void lefiVia::clear()
 
   for (i = 0; i < numLayers_; i++) {
     layers_[i]->Destroy();
-    lefFree((char*) (layers_[i]));
+    lefFree(layers_[i]);
     layers_[i] = nullptr;
   }
   numLayers_ = 0;
@@ -701,10 +647,10 @@ void lefiVia::bumpProps()
   }
 
   if (numProps_ > 0) {
-    lefFree((char*) (propDValue_));
-    lefFree((char*) (propName_));
-    lefFree((char*) (propValue_));
-    lefFree((char*) (propType_));
+    lefFree(propDValue_);
+    lefFree(propName_);
+    lefFree(propValue_);
+    lefFree(propType_);
   }
 
   propDValue_ = d;
@@ -795,7 +741,7 @@ void lefiVia::addLayer(const char* name)
     for (i = 0; i < numLayers_; i++) {
       l[i] = layers_[i];
     }
-    lefFree((char*) (layers_));
+    lefFree(layers_);
     layers_ = l;
   }
   newl = (lefiViaLayer*) lefMalloc(sizeof(lefiViaLayer));

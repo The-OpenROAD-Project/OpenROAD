@@ -43,17 +43,7 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 // *****************************************************************************
 
 lefiViaRuleLayer::lefiViaRuleLayer()
-    : name_(nullptr),
-      direction_(0),
-      overhang1_(0.0),
-      overhang2_(0.0),
-      hasWidth_(0),
-      hasResistance_(0),
-      hasOverhang_(0),
-      hasMetalOverhang_(0),
-      hasSpacing_(0),
-      hasRect_(0),
-      widthMin_(0.0),
+    : widthMin_(0.0),
       widthMax_(0.0),
       overhang_(0.0),
       metalOverhang_(0.0),
@@ -339,20 +329,6 @@ void lefiViaRuleLayer::print(FILE* f) const
 // *****************************************************************************
 
 lefiViaRule::lefiViaRule()
-    : name_(nullptr),
-      nameSize_(0),
-      hasGenerate_(0),
-      hasDefault_(0),
-      numLayers_(0),
-      numVias_(0),
-      viasAllocated_(0),
-      vias_(nullptr),
-      numProps_(0),
-      propsAllocated_(0),
-      names_(nullptr),
-      values_(nullptr),
-      dvalues_(nullptr),
-      types_(nullptr)
 {
   Init();
 }
@@ -416,11 +392,11 @@ void lefiViaRule::Destroy()
 {
   clear();
   lefFree(name_);
-  lefFree((char*) (vias_));
-  lefFree((char*) (names_));
-  lefFree((char*) (values_));
-  lefFree((char*) (dvalues_));
-  lefFree((char*) (types_));
+  lefFree(vias_);
+  lefFree(names_);
+  lefFree(values_);
+  lefFree(dvalues_);
+  lefFree(types_);
   layers_[0].Destroy();
   layers_[1].Destroy();
   layers_[2].Destroy();
@@ -455,7 +431,7 @@ void lefiViaRule::addViaName(const char* name)
     nn = (char**) lefMalloc(sizeof(char*) * viasAllocated_);
     for (i = 0; i < numVias_; i++)
       nn[i] = vias_[i];
-    lefFree((char*) (vias_));
+    lefFree(vias_);
     vias_ = nn;
   }
   vias_[numVias_] = (char*) lefMalloc(len);
@@ -616,10 +592,10 @@ void lefiViaRule::addProp(const char* name, const char* value, const char type)
       nd[i] = dvalues_[i];
       nt[i] = types_[i];
     }
-    lefFree((char*) (names_));
-    lefFree((char*) (values_));
-    lefFree((char*) (dvalues_));
-    lefFree((char*) (types_));
+    lefFree(names_);
+    lefFree(values_);
+    lefFree(dvalues_);
+    lefFree(types_);
     names_ = nn;
     values_ = nv;
     dvalues_ = nd;
@@ -664,10 +640,10 @@ void lefiViaRule::addNumProp(const char* name,
       nd[i] = dvalues_[i];
       nt[i] = types_[i];
     }
-    lefFree((char*) (names_));
-    lefFree((char*) (values_));
-    lefFree((char*) (dvalues_));
-    lefFree((char*) (types_));
+    lefFree(names_);
+    lefFree(values_);
+    lefFree(dvalues_);
+    lefFree(types_);
     names_ = nn;
     values_ = nv;
     dvalues_ = nd;
