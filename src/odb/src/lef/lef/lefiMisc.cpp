@@ -38,7 +38,7 @@
 #include "lefiUtil.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // *****************************************************************************
 // lefiGeometries
@@ -1805,4 +1805,4 @@ void lefiMaxStackVia::print(FILE* f) const
     fprintf(f, " RANGE %s %s", maxStackViaBottomLayer(), maxStackViaTopLayer());
   fprintf(f, "\n");
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

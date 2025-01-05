@@ -48,7 +48,7 @@
 
 #include "lefrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 #include "lef_parser.hpp"
 
@@ -2206,4 +2206,4 @@ char* lef_kywd(int num)
   return a;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

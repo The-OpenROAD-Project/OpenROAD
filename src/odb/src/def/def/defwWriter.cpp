@@ -48,7 +48,7 @@
 
 #include "defiUtil.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 // States of the writer.
 #define DEFW_UNINIT 0
@@ -6477,4 +6477,4 @@ void defwAddIndent()
 // - What is the pin properties section mentioned in the 5.1 spec?
 // *****************************
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

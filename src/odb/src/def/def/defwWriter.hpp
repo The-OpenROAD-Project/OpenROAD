@@ -37,7 +37,7 @@
 #include "defiKRDefs.hpp"
 #include "defiUser.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 /* Return codes for writing functions: */
 #define DEFW_OK 0
@@ -1825,8 +1825,6 @@ extern void defwAddComment(const char* comment);
 /* This routine will indent 3 blank spaces */
 extern void defwAddIndent();
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

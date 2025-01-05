@@ -37,7 +37,7 @@
 #include "defiUtil.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 namespace {
 
@@ -630,4 +630,4 @@ void defiGcellGrid::print(FILE* f) const
   fprintf(f, "  DO %d %d STEP %5.1f\n", x(), xNum(), xStep());
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

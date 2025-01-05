@@ -39,65 +39,65 @@
 // Wrappers definitions.
 int defiTimingDisable_hasMacroThru(const ::defiTimingDisable* obj)
 {
-  return ((LefDefParser::defiTimingDisable*) obj)->hasMacroThru();
+  return ((DefParser::defiTimingDisable*) obj)->hasMacroThru();
 }
 
 int defiTimingDisable_hasMacroFromTo(const ::defiTimingDisable* obj)
 {
-  return ((LefDefParser::defiTimingDisable*) obj)->hasMacroFromTo();
+  return ((DefParser::defiTimingDisable*) obj)->hasMacroFromTo();
 }
 
 int defiTimingDisable_hasThru(const ::defiTimingDisable* obj)
 {
-  return ((LefDefParser::defiTimingDisable*) obj)->hasThru();
+  return ((DefParser::defiTimingDisable*) obj)->hasThru();
 }
 
 int defiTimingDisable_hasFromTo(const ::defiTimingDisable* obj)
 {
-  return ((LefDefParser::defiTimingDisable*) obj)->hasFromTo();
+  return ((DefParser::defiTimingDisable*) obj)->hasFromTo();
 }
 
 int defiTimingDisable_hasReentrantPathsFlag(const ::defiTimingDisable* obj)
 {
-  return ((LefDefParser::defiTimingDisable*) obj)->hasReentrantPathsFlag();
+  return ((DefParser::defiTimingDisable*) obj)->hasReentrantPathsFlag();
 }
 
 const char* defiTimingDisable_fromPin(const ::defiTimingDisable* obj)
 {
-  return ((const LefDefParser::defiTimingDisable*) obj)->fromPin();
+  return ((const DefParser::defiTimingDisable*) obj)->fromPin();
 }
 
 const char* defiTimingDisable_toPin(const ::defiTimingDisable* obj)
 {
-  return ((const LefDefParser::defiTimingDisable*) obj)->toPin();
+  return ((const DefParser::defiTimingDisable*) obj)->toPin();
 }
 
 const char* defiTimingDisable_fromInst(const ::defiTimingDisable* obj)
 {
-  return ((const LefDefParser::defiTimingDisable*) obj)->fromInst();
+  return ((const DefParser::defiTimingDisable*) obj)->fromInst();
 }
 
 const char* defiTimingDisable_toInst(const ::defiTimingDisable* obj)
 {
-  return ((const LefDefParser::defiTimingDisable*) obj)->toInst();
+  return ((const DefParser::defiTimingDisable*) obj)->toInst();
 }
 
 const char* defiTimingDisable_macroName(const ::defiTimingDisable* obj)
 {
-  return ((const LefDefParser::defiTimingDisable*) obj)->macroName();
+  return ((const DefParser::defiTimingDisable*) obj)->macroName();
 }
 
 const char* defiTimingDisable_thruPin(const ::defiTimingDisable* obj)
 {
-  return ((const LefDefParser::defiTimingDisable*) obj)->thruPin();
+  return ((const DefParser::defiTimingDisable*) obj)->thruPin();
 }
 
 const char* defiTimingDisable_thruInst(const ::defiTimingDisable* obj)
 {
-  return ((const LefDefParser::defiTimingDisable*) obj)->thruInst();
+  return ((const DefParser::defiTimingDisable*) obj)->thruInst();
 }
 
 void defiTimingDisable_print(const ::defiTimingDisable* obj, FILE* f)
 {
-  ((LefDefParser::defiTimingDisable*) obj)->print(f);
+  ((DefParser::defiTimingDisable*) obj)->print(f);
 }

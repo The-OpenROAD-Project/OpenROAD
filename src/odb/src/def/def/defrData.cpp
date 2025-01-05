@@ -35,7 +35,7 @@
 
 #include "defrSettings.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 defrData::defrData(const defrCallbacks* pCallbacks,
                    const defrSettings* pSettings,
@@ -391,4 +391,4 @@ defrContext::defrContext(int ownConf) : ownConfig(ownConf)
 
 defrContext defContext;
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

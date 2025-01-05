@@ -36,7 +36,7 @@
 #include "lefiKRDefs.hpp"
 #include "lefiUser.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // Return codes for writing functions:
 #define LEFW_OK 0
@@ -2483,8 +2483,6 @@ extern void lefwAddComment(const char* comment);
 // This routine will indent 3 blank spaces
 extern void lefwAddIndent();
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

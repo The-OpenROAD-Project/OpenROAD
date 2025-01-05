@@ -39,5 +39,5 @@
 // Wrappers definitions.
 const char lefiPropType_propType(const ::lefiPropType* obj, char* name)
 {
-  return ((const LefDefParser::lefiPropType*) obj)->propType(name);
+  return ((const LefParser::lefiPropType*) obj)->propType(name);
 }

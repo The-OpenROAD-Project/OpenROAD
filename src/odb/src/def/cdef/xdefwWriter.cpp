@@ -39,7 +39,7 @@
 // Wrappers definitions.
 int defwNewLine()
 {
-  return LefDefParser::defwNewLine();
+  return DefParser::defwNewLine();
 }
 
 int defwInit(FILE* f,
@@ -54,77 +54,77 @@ int defwInit(FILE* f,
              const char* floorplan,
              double units)
 {
-  return LefDefParser::defwInit(f,
-                                vers1,
-                                version2,
-                                caseSensitive,
-                                dividerChar,
-                                busBitChars,
-                                designName,
-                                technology,
-                                array,
-                                floorplan,
-                                units);
+  return DefParser::defwInit(f,
+                             vers1,
+                             version2,
+                             caseSensitive,
+                             dividerChar,
+                             busBitChars,
+                             designName,
+                             technology,
+                             array,
+                             floorplan,
+                             units);
 }
 
 int defwInitCbk(FILE* f)
 {
-  return LefDefParser::defwInitCbk(f);
+  return DefParser::defwInitCbk(f);
 }
 
 int defwVersion(int vers1, int vers2)
 {
-  return LefDefParser::defwVersion(vers1, vers2);
+  return DefParser::defwVersion(vers1, vers2);
 }
 
 int defwCaseSensitive(const char* caseSensitive)
 {
-  return LefDefParser::defwCaseSensitive(caseSensitive);
+  return DefParser::defwCaseSensitive(caseSensitive);
 }
 
 int defwBusBitChars(const char* busBitChars)
 {
-  return LefDefParser::defwBusBitChars(busBitChars);
+  return DefParser::defwBusBitChars(busBitChars);
 }
 
 int defwDividerChar(const char* dividerChar)
 {
-  return LefDefParser::defwDividerChar(dividerChar);
+  return DefParser::defwDividerChar(dividerChar);
 }
 
 int defwDesignName(const char* name)
 {
-  return LefDefParser::defwDesignName(name);
+  return DefParser::defwDesignName(name);
 }
 
 int defwTechnology(const char* technology)
 {
-  return LefDefParser::defwTechnology(technology);
+  return DefParser::defwTechnology(technology);
 }
 
 int defwArray(const char* array)
 {
-  return LefDefParser::defwArray(array);
+  return DefParser::defwArray(array);
 }
 
 int defwFloorplan(const char* floorplan)
 {
-  return LefDefParser::defwFloorplan(floorplan);
+  return DefParser::defwFloorplan(floorplan);
 }
 
 int defwUnits(int units)
 {
-  return LefDefParser::defwUnits(units);
+  return DefParser::defwUnits(units);
 }
 
 int defwHistory(const char* string)
 {
-  return LefDefParser::defwHistory(string);
+  return DefParser::defwHistory(string);
 }
 
 int defwStartPropDef()
 {
-  return LefDefParser::defwStartPropDef();
+  return DefParser::defwStartPropDef();
 }
 
 int defwIntPropDef(const char* objType,
@@ -133,7 +133,7 @@ int defwIntPropDef(const char* objType,
                    double rightRange,
                    int propValue)
 {
-  return LefDefParser::defwIntPropDef(
+  return DefParser::defwIntPropDef(
       objType, propName, leftRange, rightRange, propValue);
 }
 
@@ -143,7 +143,7 @@ int defwRealPropDef(const char* objType,
                     double rightRange,
                     double propValue)
 {
-  return LefDefParser::defwRealPropDef(
+  return DefParser::defwRealPropDef(
       objType, propName, leftRange, rightRange, propValue);
 }
 
@@ -153,38 +153,38 @@ int defwStringPropDef(const char* objType,
                       double rightRange,
                       const char* propValue)
 {
-  return LefDefParser::defwStringPropDef(
+  return DefParser::defwStringPropDef(
       objType, propName, leftRange, rightRange, propValue);
 }
 
 int defwEndPropDef()
 {
-  return LefDefParser::defwEndPropDef();
+  return DefParser::defwEndPropDef();
 }
 
 int defwStringProperty(const char* propName, const char* propValue)
 {
-  return LefDefParser::defwStringProperty(propName, propValue);
+  return DefParser::defwStringProperty(propName, propValue);
 }
 
 int defwRealProperty(const char* propName, double propValue)
 {
-  return LefDefParser::defwRealProperty(propName, propValue);
+  return DefParser::defwRealProperty(propName, propValue);
 }
 
 int defwIntProperty(const char* propName, int propValue)
 {
-  return LefDefParser::defwIntProperty(propName, propValue);
+  return DefParser::defwIntProperty(propName, propValue);
 }
 
 int defwDieArea(int xl, int yl, int xh, int yh)
 {
-  return LefDefParser::defwDieArea(xl, yl, xh, yh);
+  return DefParser::defwDieArea(xl, yl, xh, yh);
 }
 
 int defwDieAreaList(int num_points, int* xl, int* yh)
 {
-  return LefDefParser::defwDieAreaList(num_points, xl, yh);
+  return DefParser::defwDieAreaList(num_points, xl, yh);
 }
 
 int defwRow(const char* rowName,
@@ -197,15 +197,15 @@ int defwRow(const char* rowName,
             int xstep,
             int ystep)
 {
-  return LefDefParser::defwRow(rowName,
-                               rowType,
-                               x_orig,
-                               y_orig,
-                               orient,
-                               do_count,
-                               do_increment,
-                               xstep,
-                               ystep);
+  return DefParser::defwRow(rowName,
+                            rowType,
+                            x_orig,
+                            y_orig,
+                            orient,
+                            do_count,
+                            do_increment,
+                            xstep,
+                            ystep);
 }
 
 int defwRowStr(const char* rowName,
@@ -218,15 +218,15 @@ int defwRowStr(const char* rowName,
                int xstep,
                int ystep)
 {
-  return LefDefParser::defwRowStr(rowName,
-                                  rowType,
-                                  x_orig,
-                                  y_orig,
-                                  orient,
-                                  do_count,
-                                  do_increment,
-                                  xstep,
-                                  ystep);
+  return DefParser::defwRowStr(rowName,
+                               rowType,
+                               x_orig,
+                               y_orig,
+                               orient,
+                               do_count,
+                               do_increment,
+                               xstep,
+                               ystep);
 }
 
 int defwTracks(const char* master,
@@ -238,28 +238,28 @@ int defwTracks(const char* master,
                int mask,
                int sameMask)
 {
-  return LefDefParser::defwTracks(
+  return DefParser::defwTracks(
       master, doStart, doCount, doStep, numLayers, layers, mask, sameMask);
 }
 
 int defwGcellGrid(const char* master, int doStart, int doCount, int doStep)
 {
-  return LefDefParser::defwGcellGrid(master, doStart, doCount, doStep);
+  return DefParser::defwGcellGrid(master, doStart, doCount, doStep);
 }
 
 int defwStartDefaultCap(int count)
 {
-  return LefDefParser::defwStartDefaultCap(count);
+  return DefParser::defwStartDefaultCap(count);
 }
 
 int defwDefaultCap(int pins, double cap)
 {
-  return LefDefParser::defwDefaultCap(pins, cap);
+  return DefParser::defwDefaultCap(pins, cap);
 }
 
 int defwEndDefaultCap()
 {
-  return LefDefParser::defwEndDefaultCap();
+  return DefParser::defwEndDefaultCap();
 }
 
 int defwCanPlace(const char* master,
@@ -271,7 +271,7 @@ int defwCanPlace(const char* master,
                  int xStep,
                  int yStep)
 {
-  return LefDefParser::defwCanPlace(
+  return DefParser::defwCanPlace(
       master, xOrig, yOrig, orient, doCnt, doInc, xStep, yStep);
 }
 
@@ -284,7 +284,7 @@ int defwCanPlaceStr(const char* master,
                     int xStep,
                     int yStep)
 {
-  return LefDefParser::defwCanPlaceStr(
+  return DefParser::defwCanPlaceStr(
       master, xOrig, yOrig, orient, doCnt, doInc, xStep, yStep);
 }
 
@@ -297,7 +297,7 @@ int defwCannotOccupy(const char* master,
                      int xStep,
                      int yStep)
 {
-  return LefDefParser::defwCannotOccupy(
+  return DefParser::defwCannotOccupy(
       master, xOrig, yOrig, orient, doCnt, doInc, xStep, yStep);
 }
 
@@ -310,28 +310,28 @@ int defwCannotOccupyStr(const char* master,
                         int xStep,
                         int yStep)
 {
-  return LefDefParser::defwCannotOccupyStr(
+  return DefParser::defwCannotOccupyStr(
       master, xOrig, yOrig, orient, doCnt, doInc, xStep, yStep);
 }
 
 int defwStartVias(int count)
 {
-  return LefDefParser::defwStartVias(count);
+  return DefParser::defwStartVias(count);
 }
 
 int defwViaName(const char* name)
 {
-  return LefDefParser::defwViaName(name);
+  return DefParser::defwViaName(name);
 }
 
 int defwViaPattern(const char* patternName)
 {
-  return LefDefParser::defwViaPattern(patternName);
+  return DefParser::defwViaPattern(patternName);
 }
 
 int defwViaRect(const char* layerName, int xl, int yl, int xh, int yh, int mask)
 {
-  return LefDefParser::defwViaRect(layerName, xl, yl, xh, yh, mask);
+  return DefParser::defwViaRect(layerName, xl, yl, xh, yh, mask);
 }
 
 int defwViaPolygon(const char* layerName,
@@ -340,7 +340,7 @@ int defwViaPolygon(const char* layerName,
                    double* yl,
                    int mask)
 {
-  return LefDefParser::defwViaPolygon(layerName, num_polys, xl, yl, mask);
+  return DefParser::defwViaPolygon(layerName, num_polys, xl, yl, mask);
 }
 
 int defwViaViarule(const char* viaRuleName,
@@ -356,28 +356,28 @@ int defwViaViarule(const char* viaRuleName,
                    double xTopEnc,
                    double yTopEnc)
 {
-  return LefDefParser::defwViaViarule(viaRuleName,
-                                      xCutSize,
-                                      yCutSize,
-                                      botMetalLayer,
-                                      cutLayer,
-                                      topMetalLayer,
-                                      xCutSpacing,
-                                      yCutSpacing,
-                                      xBotEnc,
-                                      yBotEnc,
-                                      xTopEnc,
-                                      yTopEnc);
+  return DefParser::defwViaViarule(viaRuleName,
+                                   xCutSize,
+                                   yCutSize,
+                                   botMetalLayer,
+                                   cutLayer,
+                                   topMetalLayer,
+                                   xCutSpacing,
+                                   yCutSpacing,
+                                   xBotEnc,
+                                   yBotEnc,
+                                   xTopEnc,
+                                   yTopEnc);
 }
 
 int defwViaViaruleRowCol(int numCutRows, int numCutCols)
 {
-  return LefDefParser::defwViaViaruleRowCol(numCutRows, numCutCols);
+  return DefParser::defwViaViaruleRowCol(numCutRows, numCutCols);
 }
 
 int defwViaViaruleOrigin(int xOffset, int yOffset)
 {
-  return LefDefParser::defwViaViaruleOrigin(xOffset, yOffset);
+  return DefParser::defwViaViaruleOrigin(xOffset, yOffset);
 }
 
 int defwViaViaruleOffset(int xBotOffset,
@@ -385,58 +385,58 @@ int defwViaViaruleOffset(int xBotOffset,
                          int xTopOffset,
                          int yTopOffset)
 {
-  return LefDefParser::defwViaViaruleOffset(
+  return DefParser::defwViaViaruleOffset(
       xBotOffset, yBotOffset, xTopOffset, yTopOffset);
 }
 
 int defwViaViarulePattern(const char* cutPattern)
 {
-  return LefDefParser::defwViaViarulePattern(cutPattern);
+  return DefParser::defwViaViarulePattern(cutPattern);
 }
 
 int defwOneViaEnd()
 {
-  return LefDefParser::defwOneViaEnd();
+  return DefParser::defwOneViaEnd();
 }
 
 int defwEndVias()
 {
-  return LefDefParser::defwEndVias();
+  return DefParser::defwEndVias();
 }
 
 int defwStartRegions(int count)
 {
-  return LefDefParser::defwStartRegions(count);
+  return DefParser::defwStartRegions(count);
 }
 
 int defwRegionName(const char* name)
 {
-  return LefDefParser::defwRegionName(name);
+  return DefParser::defwRegionName(name);
 }
 
 int defwRegionPoints(int xl, int yl, int xh, int yh)
 {
-  return LefDefParser::defwRegionPoints(xl, yl, xh, yh);
+  return DefParser::defwRegionPoints(xl, yl, xh, yh);
 }
 
 int defwRegionType(const char* type)
 {
-  return LefDefParser::defwRegionType(type);
+  return DefParser::defwRegionType(type);
 }
 
 int defwEndRegions()
 {
-  return LefDefParser::defwEndRegions();
+  return DefParser::defwEndRegions();
 }
 
 int defwComponentMaskShiftLayers(const char** layerNames, int numLayerName)
 {
-  return LefDefParser::defwComponentMaskShiftLayers(layerNames, numLayerName);
+  return DefParser::defwComponentMaskShiftLayers(layerNames, numLayerName);
 }
 
 int defwStartComponents(int count)
 {
-  return LefDefParser::defwStartComponents(count);
+  return DefParser::defwStartComponents(count);
 }
 
 int defwComponent(const char* instance,
@@ -463,29 +463,29 @@ int defwComponent(const char* instance,
                   int xh,
                   int yh)
 {
-  return LefDefParser::defwComponent(instance,
-                                     master,
-                                     numNetName,
-                                     netNames,
-                                     eeq,
-                                     genName,
-                                     genParemeters,
-                                     source,
-                                     numForeign,
-                                     foreigns,
-                                     foreignX,
-                                     foreignY,
-                                     foreignOrients,
-                                     status,
-                                     statusX,
-                                     statusY,
-                                     statusOrient,
-                                     weight,
-                                     region,
-                                     xl,
-                                     yl,
-                                     xh,
-                                     yh);
+  return DefParser::defwComponent(instance,
+                                  master,
+                                  numNetName,
+                                  netNames,
+                                  eeq,
+                                  genName,
+                                  genParemeters,
+                                  source,
+                                  numForeign,
+                                  foreigns,
+                                  foreignX,
+                                  foreignY,
+                                  foreignOrients,
+                                  status,
+                                  statusX,
+                                  statusY,
+                                  statusOrient,
+                                  weight,
+                                  region,
+                                  xl,
+                                  yl,
+                                  xh,
+                                  yh);
 }
 
 int defwComponentStr(const char* instance,
@@ -512,61 +512,61 @@ int defwComponentStr(const char* instance,
                      int xh,
                      int yh)
 {
-  return LefDefParser::defwComponentStr(instance,
-                                        master,
-                                        numNetName,
-                                        netNames,
-                                        eeq,
-                                        genName,
-                                        genParemeters,
-                                        source,
-                                        numForeign,
-                                        foreigns,
-                                        foreignX,
-                                        foreignY,
-                                        foreignOrients,
-                                        status,
-                                        statusX,
-                                        statusY,
-                                        statusOrient,
-                                        weight,
-                                        region,
-                                        xl,
-                                        yl,
-                                        xh,
-                                        yh);
+  return DefParser::defwComponentStr(instance,
+                                     master,
+                                     numNetName,
+                                     netNames,
+                                     eeq,
+                                     genName,
+                                     genParemeters,
+                                     source,
+                                     numForeign,
+                                     foreigns,
+                                     foreignX,
+                                     foreignY,
+                                     foreignOrients,
+                                     status,
+                                     statusX,
+                                     statusY,
+                                     statusOrient,
+                                     weight,
+                                     region,
+                                     xl,
+                                     yl,
+                                     xh,
+                                     yh);
 }
 
 int defwComponentMaskShift(int shiftLayerMasks)
 {
-  return LefDefParser::defwComponentMaskShift(shiftLayerMasks);
+  return DefParser::defwComponentMaskShift(shiftLayerMasks);
 }
 
 int defwComponentHalo(int left, int bottom, int right, int top)
 {
-  return LefDefParser::defwComponentHalo(left, bottom, right, top);
+  return DefParser::defwComponentHalo(left, bottom, right, top);
 }
 
 int defwComponentHaloSoft(int left, int bottom, int right, int top)
 {
-  return LefDefParser::defwComponentHaloSoft(left, bottom, right, top);
+  return DefParser::defwComponentHaloSoft(left, bottom, right, top);
 }
 
 int defwComponentRouteHalo(int haloDist,
                            const char* minLayer,
                            const char* maxLayer)
 {
-  return LefDefParser::defwComponentRouteHalo(haloDist, minLayer, maxLayer);
+  return DefParser::defwComponentRouteHalo(haloDist, minLayer, maxLayer);
 }
 
 int defwEndComponents()
 {
-  return LefDefParser::defwEndComponents();
+  return DefParser::defwEndComponents();
 }
 
 int defwStartPins(int count)
 {
-  return LefDefParser::defwStartPins(count);
+  return DefParser::defwStartPins(count);
 }
 
 int defwPin(const char* name,
@@ -584,20 +584,20 @@ int defwPin(const char* name,
             int xh,
             int yh)
 {
-  return LefDefParser::defwPin(name,
-                               net,
-                               special,
-                               direction,
-                               use,
-                               status,
-                               statusX,
-                               statusY,
-                               orient,
-                               layer,
-                               xl,
-                               yl,
-                               xh,
-                               yh);
+  return DefParser::defwPin(name,
+                            net,
+                            special,
+                            direction,
+                            use,
+                            status,
+                            statusX,
+                            statusY,
+                            orient,
+                            layer,
+                            xl,
+                            yl,
+                            xh,
+                            yh);
 }
 
 int defwPinStr(const char* name,
@@ -615,20 +615,20 @@ int defwPinStr(const char* name,
                int xh,
                int yh)
 {
-  return LefDefParser::defwPinStr(name,
-                                  net,
-                                  special,
-                                  direction,
-                                  use,
-                                  status,
-                                  statusX,
-                                  statusY,
-                                  orient,
-                                  layer,
-                                  xl,
-                                  yl,
-                                  xh,
-                                  yh);
+  return DefParser::defwPinStr(name,
+                               net,
+                               special,
+                               direction,
+                               use,
+                               status,
+                               statusX,
+                               statusY,
+                               orient,
+                               layer,
+                               xl,
+                               yl,
+                               xh,
+                               yh);
 }
 
 int defwPinLayer(const char* layerName,
@@ -640,7 +640,7 @@ int defwPinLayer(const char* layerName,
                  int yh,
                  int mask)
 {
-  return LefDefParser::defwPinLayer(
+  return DefParser::defwPinLayer(
       layerName, spacing, designRuleWidth, xl, yl, xh, yh, mask);
 }
 
@@ -652,18 +652,18 @@ int defwPinPolygon(const char* layerName,
                    double* yl,
                    int mask)
 {
-  return LefDefParser::defwPinPolygon(
+  return DefParser::defwPinPolygon(
       layerName, spacing, designRuleWidth, num_polys, xl, yl, mask);
 }
 
 int defwPinVia(const char* viaName, int xl, int yl, int mask)
 {
-  return LefDefParser::defwPinVia(viaName, xl, yl, mask);
+  return DefParser::defwPinVia(viaName, xl, yl, mask);
 }
 
 int defwPinPort()
 {
-  return LefDefParser::defwPinPort();
+  return DefParser::defwPinPort();
 }
 
 int defwPinPortLayer(const char* layerName,
@@ -675,7 +675,7 @@ int defwPinPortLayer(const char* layerName,
                      int yh,
                      int mask)
 {
-  return LefDefParser::defwPinPortLayer(
+  return DefParser::defwPinPortLayer(
       layerName, spacing, designRuleWidth, xl, yl, xh, yh, mask);
 }
 
@@ -687,13 +687,13 @@ int defwPinPortPolygon(const char* layerName,
                        double* yl,
                        int mask)
 {
-  return LefDefParser::defwPinPortPolygon(
+  return DefParser::defwPinPortPolygon(
       layerName, spacing, designRuleWidth, num_polys, xl, yl, mask);
 }
 
 int defwPinPortVia(const char* viaName, int xl, int yl, int mask)
 {
-  return LefDefParser::defwPinPortVia(viaName, xl, yl, mask);
+  return DefParser::defwPinPortVia(viaName, xl, yl, mask);
 }
 
 int defwPinPortLocation(const char* status,
@@ -701,112 +701,112 @@ int defwPinPortLocation(const char* status,
                         int statusY,
                         const char* orient)
 {
-  return LefDefParser::defwPinPortLocation(status, statusX, statusY, orient);
+  return DefParser::defwPinPortLocation(status, statusX, statusY, orient);
 }
 
 int defwPinNetExpr(const char* pinExpr)
 {
-  return LefDefParser::defwPinNetExpr(pinExpr);
+  return DefParser::defwPinNetExpr(pinExpr);
 }
 
 int defwPinSupplySensitivity(const char* pinName)
 {
-  return LefDefParser::defwPinSupplySensitivity(pinName);
+  return DefParser::defwPinSupplySensitivity(pinName);
 }
 
 int defwPinGroundSensitivity(const char* pinName)
 {
-  return LefDefParser::defwPinGroundSensitivity(pinName);
+  return DefParser::defwPinGroundSensitivity(pinName);
 }
 
 int defwPinAntennaPinPartialMetalArea(int value, const char* layerName)
 {
-  return LefDefParser::defwPinAntennaPinPartialMetalArea(value, layerName);
+  return DefParser::defwPinAntennaPinPartialMetalArea(value, layerName);
 }
 
 int defwPinAntennaPinPartialMetalSideArea(int value, const char* layerName)
 {
-  return LefDefParser::defwPinAntennaPinPartialMetalSideArea(value, layerName);
+  return DefParser::defwPinAntennaPinPartialMetalSideArea(value, layerName);
 }
 
 int defwPinAntennaPinPartialCutArea(int value, const char* layerName)
 {
-  return LefDefParser::defwPinAntennaPinPartialCutArea(value, layerName);
+  return DefParser::defwPinAntennaPinPartialCutArea(value, layerName);
 }
 
 int defwPinAntennaPinDiffArea(int value, const char* layerName)
 {
-  return LefDefParser::defwPinAntennaPinDiffArea(value, layerName);
+  return DefParser::defwPinAntennaPinDiffArea(value, layerName);
 }
 
 int defwPinAntennaModel(const char* oxide)
 {
-  return LefDefParser::defwPinAntennaModel(oxide);
+  return DefParser::defwPinAntennaModel(oxide);
 }
 
 int defwPinAntennaPinGateArea(int value, const char* layerName)
 {
-  return LefDefParser::defwPinAntennaPinGateArea(value, layerName);
+  return DefParser::defwPinAntennaPinGateArea(value, layerName);
 }
 
 int defwPinAntennaPinMaxAreaCar(int value, const char* layerName)
 {
-  return LefDefParser::defwPinAntennaPinMaxAreaCar(value, layerName);
+  return DefParser::defwPinAntennaPinMaxAreaCar(value, layerName);
 }
 
 int defwPinAntennaPinMaxSideAreaCar(int value, const char* layerName)
 {
-  return LefDefParser::defwPinAntennaPinMaxSideAreaCar(value, layerName);
+  return DefParser::defwPinAntennaPinMaxSideAreaCar(value, layerName);
 }
 
 int defwPinAntennaPinMaxCutCar(int value, const char* layerName)
 {
-  return LefDefParser::defwPinAntennaPinMaxCutCar(value, layerName);
+  return DefParser::defwPinAntennaPinMaxCutCar(value, layerName);
 }
 
 int defwEndPins()
 {
-  return LefDefParser::defwEndPins();
+  return DefParser::defwEndPins();
 }
 
 int defwStartPinProperties(int count)
 {
-  return LefDefParser::defwStartPinProperties(count);
+  return DefParser::defwStartPinProperties(count);
 }
 
 int defwPinProperty(const char* name, const char* pinName)
 {
-  return LefDefParser::defwPinProperty(name, pinName);
+  return DefParser::defwPinProperty(name, pinName);
 }
 
 int defwEndPinProperties()
 {
-  return LefDefParser::defwEndPinProperties();
+  return DefParser::defwEndPinProperties();
 }
 
 int defwStartSpecialNets(int count)
 {
-  return LefDefParser::defwStartSpecialNets(count);
+  return DefParser::defwStartSpecialNets(count);
 }
 
 int defwSpecialNet(const char* name)
 {
-  return LefDefParser::defwSpecialNet(name);
+  return DefParser::defwSpecialNet(name);
 }
 
 int defwSpecialNetConnection(const char* inst, const char* pin, int synthesized)
 {
-  return LefDefParser::defwSpecialNetConnection(inst, pin, synthesized);
+  return DefParser::defwSpecialNetConnection(inst, pin, synthesized);
 }
 
 int defwSpecialNetFixedbump()
 {
-  return LefDefParser::defwSpecialNetFixedbump();
+  return DefParser::defwSpecialNetFixedbump();
 }
 
 int defwSpecialNetVoltage(double v)
 {
-  return LefDefParser::defwSpecialNetVoltage(v);
+  return DefParser::defwSpecialNetVoltage(v);
 }
 
 int defwSpecialNetSpacing(const char* layer,
@@ -814,93 +814,92 @@ int defwSpecialNetSpacing(const char* layer,
                           double minwidth,
                           double maxwidth)
 {
-  return LefDefParser::defwSpecialNetSpacing(
-      layer, spacing, minwidth, maxwidth);
+  return DefParser::defwSpecialNetSpacing(layer, spacing, minwidth, maxwidth);
 }
 
 int defwSpecialNetWidth(const char* layer, int width)
 {
-  return LefDefParser::defwSpecialNetWidth(layer, width);
+  return DefParser::defwSpecialNetWidth(layer, width);
 }
 
 int defwSpecialNetSource(const char* name)
 {
-  return LefDefParser::defwSpecialNetSource(name);
+  return DefParser::defwSpecialNetSource(name);
 }
 
 int defwSpecialNetOriginal(const char* name)
 {
-  return LefDefParser::defwSpecialNetOriginal(name);
+  return DefParser::defwSpecialNetOriginal(name);
 }
 
 int defwSpecialNetPattern(const char* name)
 {
-  return LefDefParser::defwSpecialNetPattern(name);
+  return DefParser::defwSpecialNetPattern(name);
 }
 
 int defwSpecialNetUse(const char* name)
 {
-  return LefDefParser::defwSpecialNetUse(name);
+  return DefParser::defwSpecialNetUse(name);
 }
 
 int defwSpecialNetWeight(double value)
 {
-  return LefDefParser::defwSpecialNetWeight(value);
+  return DefParser::defwSpecialNetWeight(value);
 }
 
 int defwSpecialNetEstCap(double value)
 {
-  return LefDefParser::defwSpecialNetEstCap(value);
+  return DefParser::defwSpecialNetEstCap(value);
 }
 
 int defwSpecialNetPathStart(const char* typ)
 {
-  return LefDefParser::defwSpecialNetPathStart(typ);
+  return DefParser::defwSpecialNetPathStart(typ);
 }
 
 int defwSpecialNetShieldNetName(const char* name)
 {
-  return LefDefParser::defwSpecialNetShieldNetName(name);
+  return DefParser::defwSpecialNetShieldNetName(name);
 }
 
 int defwSpecialNetPathLayer(const char* name)
 {
-  return LefDefParser::defwSpecialNetPathLayer(name);
+  return DefParser::defwSpecialNetPathLayer(name);
 }
 
 int defwSpecialNetPathWidth(int width)
 {
-  return LefDefParser::defwSpecialNetPathWidth(width);
+  return DefParser::defwSpecialNetPathWidth(width);
 }
 
 int defwSpecialNetPathStyle(int styleNum)
 {
-  return LefDefParser::defwSpecialNetPathStyle(styleNum);
+  return DefParser::defwSpecialNetPathStyle(styleNum);
 }
 
 int defwSpecialNetPathShape(const char* shapeType)
 {
-  return LefDefParser::defwSpecialNetPathShape(shapeType);
+  return DefParser::defwSpecialNetPathShape(shapeType);
 }
 
 int defwSpecialNetPathMask(int colorMask)
 {
-  return LefDefParser::defwSpecialNetPathMask(colorMask);
+  return DefParser::defwSpecialNetPathMask(colorMask);
 }
 
 int defwSpecialNetPathPoint(int numPts, double* pointx, double* pointy)
 {
-  return LefDefParser::defwSpecialNetPathPoint(numPts, pointx, pointy);
+  return DefParser::defwSpecialNetPathPoint(numPts, pointx, pointy);
 }
 
 int defwSpecialNetPathVia(const char* name)
 {
-  return LefDefParser::defwSpecialNetPathVia(name);
+  return DefParser::defwSpecialNetPathVia(name);
 }
 
 int defwSpecialNetPathViaData(int numX, int numY, int stepX, int stepY)
 {
-  return LefDefParser::defwSpecialNetPathViaData(numX, numY, stepX, stepY);
+  return DefParser::defwSpecialNetPathViaData(numX, numY, stepX, stepY);
 }
 
 int defwSpecialNetPathPointWithWireExt(int numPts,
@@ -908,13 +907,13 @@ int defwSpecialNetPathPointWithWireExt(int numPts,
                                        double* pointy,
                                        double* optValue)
 {
-  return LefDefParser::defwSpecialNetPathPointWithWireExt(
+  return DefParser::defwSpecialNetPathPointWithWireExt(
       numPts, pointx, pointy, optValue);
 }
 
 int defwSpecialNetPathEnd()
 {
-  return LefDefParser::defwSpecialNetPathEnd();
+  return DefParser::defwSpecialNetPathEnd();
 }
 
 int defwSpecialNetPolygon(const char* layerName,
@@ -922,97 +921,97 @@ int defwSpecialNetPolygon(const char* layerName,
                           double* xl,
                           double* yl)
 {
-  return LefDefParser::defwSpecialNetPolygon(layerName, num_polys, xl, yl);
+  return DefParser::defwSpecialNetPolygon(layerName, num_polys, xl, yl);
 }
 
 int defwSpecialNetRect(const char* layerName, int xl, int yl, int xh, int yh)
 {
-  return LefDefParser::defwSpecialNetRect(layerName, xl, yl, xh, yh);
+  return DefParser::defwSpecialNetRect(layerName, xl, yl, xh, yh);
 }
 
 int defwSpecialNetVia(const char* layerName)
 {
-  return LefDefParser::defwSpecialNetVia(layerName);
+  return DefParser::defwSpecialNetVia(layerName);
 }
 
 int defwSpecialNetViaWithOrient(const char* layerName, int orient)
 {
-  return LefDefParser::defwSpecialNetViaWithOrient(layerName, orient);
+  return DefParser::defwSpecialNetViaWithOrient(layerName, orient);
 }
 
 int defwSpecialNetViaPoints(int num_points, double* xl, double* yl)
 {
-  return LefDefParser::defwSpecialNetViaPoints(num_points, xl, yl);
+  return DefParser::defwSpecialNetViaPoints(num_points, xl, yl);
 }
 
 int defwSpecialNetEndOneNet()
 {
-  return LefDefParser::defwSpecialNetEndOneNet();
+  return DefParser::defwSpecialNetEndOneNet();
 }
 
 int defwSpecialNetShieldStart(const char* name)
 {
-  return LefDefParser::defwSpecialNetShieldStart(name);
+  return DefParser::defwSpecialNetShieldStart(name);
 }
 
 int defwSpecialNetShieldLayer(const char* name)
 {
-  return LefDefParser::defwSpecialNetShieldLayer(name);
+  return DefParser::defwSpecialNetShieldLayer(name);
 }
 
 int defwSpecialNetShieldWidth(int width)
 {
-  return LefDefParser::defwSpecialNetShieldWidth(width);
+  return DefParser::defwSpecialNetShieldWidth(width);
 }
 
 int defwSpecialNetShieldShape(const char* shapeType)
 {
-  return LefDefParser::defwSpecialNetShieldShape(shapeType);
+  return DefParser::defwSpecialNetShieldShape(shapeType);
 }
 
 int defwSpecialNetShieldPoint(int numPts, double* pointx, double* pointy)
 {
-  return LefDefParser::defwSpecialNetShieldPoint(numPts, pointx, pointy);
+  return DefParser::defwSpecialNetShieldPoint(numPts, pointx, pointy);
 }
 
 int defwSpecialNetShieldVia(const char* name)
 {
-  return LefDefParser::defwSpecialNetShieldVia(name);
+  return DefParser::defwSpecialNetShieldVia(name);
 }
 
 int defwSpecialNetShieldViaData(int numX, int numY, int stepX, int stepY)
 {
-  return LefDefParser::defwSpecialNetShieldViaData(numX, numY, stepX, stepY);
+  return DefParser::defwSpecialNetShieldViaData(numX, numY, stepX, stepY);
 }
 
 int defwSpecialNetShieldEnd()
 {
-  return LefDefParser::defwSpecialNetShieldEnd();
+  return DefParser::defwSpecialNetShieldEnd();
 }
 
 int defwEndSpecialNets()
 {
-  return LefDefParser::defwEndSpecialNets();
+  return DefParser::defwEndSpecialNets();
 }
 
 int defwStartNets(int count)
 {
-  return LefDefParser::defwStartNets(count);
+  return DefParser::defwStartNets(count);
 }
 
 int defwNet(const char* name)
 {
-  return LefDefParser::defwNet(name);
+  return DefParser::defwNet(name);
 }
 
 int defwNetConnection(const char* inst, const char* pin, int synthesized)
 {
-  return LefDefParser::defwNetConnection(inst, pin, synthesized);
+  return DefParser::defwNetConnection(inst, pin, synthesized);
 }
 
 int defwNetMustjoinConnection(const char* inst, const char* pin)
 {
-  return LefDefParser::defwNetMustjoinConnection(inst, pin);
+  return DefParser::defwNetMustjoinConnection(inst, pin);
 }
 
 int defwNetVpin(const char* vpinName,
@@ -1026,16 +1025,16 @@ int defwNetVpin(const char* vpinName,
                 int statusY,
                 int orient)
 {
-  return LefDefParser::defwNetVpin(vpinName,
-                                   layerName,
-                                   layerXl,
-                                   layerYl,
-                                   layerXh,
-                                   layerYh,
-                                   status,
-                                   statusX,
-                                   statusY,
-                                   orient);
+  return DefParser::defwNetVpin(vpinName,
+                                layerName,
+                                layerXl,
+                                layerYl,
+                                layerXh,
+                                layerYh,
+                                status,
+                                statusX,
+                                statusY,
+                                orient);
 }
 
 int defwNetVpinStr(const char* vpinName,
@@ -1049,146 +1048,146 @@ int defwNetVpinStr(const char* vpinName,
                    int statusY,
                    const char* orient)
 {
-  return LefDefParser::defwNetVpinStr(vpinName,
-                                      layerName,
-                                      layerXl,
-                                      layerYl,
-                                      layerXh,
-                                      layerYh,
-                                      status,
-                                      statusX,
-                                      statusY,
-                                      orient);
+  return DefParser::defwNetVpinStr(vpinName,
+                                   layerName,
+                                   layerXl,
+                                   layerYl,
+                                   layerXh,
+                                   layerYh,
+                                   status,
+                                   statusX,
+                                   statusY,
+                                   orient);
 }
 
 int defwNetNondefaultRule(const char* name)
 {
-  return LefDefParser::defwNetNondefaultRule(name);
+  return DefParser::defwNetNondefaultRule(name);
 }
 
 int defwNetXtalk(int xtalk)
 {
-  return LefDefParser::defwNetXtalk(xtalk);
+  return DefParser::defwNetXtalk(xtalk);
 }
 
 int defwNetFixedbump()
 {
-  return LefDefParser::defwNetFixedbump();
+  return DefParser::defwNetFixedbump();
 }
 
 int defwNetFrequency(double frequency)
 {
-  return LefDefParser::defwNetFrequency(frequency);
+  return DefParser::defwNetFrequency(frequency);
 }
 
 int defwNetSource(const char* name)
 {
-  return LefDefParser::defwNetSource(name);
+  return DefParser::defwNetSource(name);
 }
 
 int defwNetOriginal(const char* name)
 {
-  return LefDefParser::defwNetOriginal(name);
+  return DefParser::defwNetOriginal(name);
 }
 
 int defwNetUse(const char* name)
 {
-  return LefDefParser::defwNetUse(name);
+  return DefParser::defwNetUse(name);
 }
 
 int defwNetPattern(const char* name)
 {
-  return LefDefParser::defwNetPattern(name);
+  return DefParser::defwNetPattern(name);
 }
 
 int defwNetEstCap(double value)
 {
-  return LefDefParser::defwNetEstCap(value);
+  return DefParser::defwNetEstCap(value);
 }
 
 int defwNetWeight(double value)
 {
-  return LefDefParser::defwNetWeight(value);
+  return DefParser::defwNetWeight(value);
 }
 
 int defwNetShieldnet(const char* name)
 {
-  return LefDefParser::defwNetShieldnet(name);
+  return DefParser::defwNetShieldnet(name);
 }
 
 int defwNetNoshieldStart(const char* name)
 {
-  return LefDefParser::defwNetNoshieldStart(name);
+  return DefParser::defwNetNoshieldStart(name);
 }
 
 int defwNetNoshieldPoint(int numPts, const char** pointx, const char** pointy)
 {
-  return LefDefParser::defwNetNoshieldPoint(numPts, pointx, pointy);
+  return DefParser::defwNetNoshieldPoint(numPts, pointx, pointy);
 }
 
 int defwNetNoshieldVia(const char* name)
 {
-  return LefDefParser::defwNetNoshieldVia(name);
+  return DefParser::defwNetNoshieldVia(name);
 }
 
 int defwNetNoshieldEnd()
 {
-  return LefDefParser::defwNetNoshieldEnd();
+  return DefParser::defwNetNoshieldEnd();
 }
 
 int defwNetSubnetStart(const char* name)
 {
-  return LefDefParser::defwNetSubnetStart(name);
+  return DefParser::defwNetSubnetStart(name);
 }
 
 int defwNetSubnetPin(const char* compName, const char* pinName)
 {
-  return LefDefParser::defwNetSubnetPin(compName, pinName);
+  return DefParser::defwNetSubnetPin(compName, pinName);
 }
 
 int defwNetSubnetEnd()
 {
-  return LefDefParser::defwNetSubnetEnd();
+  return DefParser::defwNetSubnetEnd();
 }
 
 int defwNetPathStart(const char* typ)
 {
-  return LefDefParser::defwNetPathStart(typ);
+  return DefParser::defwNetPathStart(typ);
 }
 
 int defwNetPathWidth(int w)
 {
-  return LefDefParser::defwNetPathWidth(w);
+  return DefParser::defwNetPathWidth(w);
 }
 
 int defwNetPathLayer(const char* name, int isTaper, const char* rulename)
 {
-  return LefDefParser::defwNetPathLayer(name, isTaper, rulename);
+  return DefParser::defwNetPathLayer(name, isTaper, rulename);
 }
 
 int defwNetPathStyle(int styleNum)
 {
-  return LefDefParser::defwNetPathStyle(styleNum);
+  return DefParser::defwNetPathStyle(styleNum);
 }
 
 int defwNetPathMask(int maskNum)
 {
-  return LefDefParser::defwNetPathMask(maskNum);
+  return DefParser::defwNetPathMask(maskNum);
 }
 
 int defwNetPathRect(int deltaX1, int deltaY1, int deltaX2, int deltaY2)
 {
-  return LefDefParser::defwNetPathRect(deltaX1, deltaY1, deltaX2, deltaY2);
+  return DefParser::defwNetPathRect(deltaX1, deltaY1, deltaX2, deltaY2);
 }
 
 int defwNetPathVirtual(int x, int y)
 {
-  return LefDefParser::defwNetPathVirtual(x, y);
+  return DefParser::defwNetPathVirtual(x, y);
 }
 
 int defwNetPathPoint(int numPts, double* pointx, double* pointy)
 {
-  return LefDefParser::defwNetPathPoint(numPts, pointx, pointy);
+  return DefParser::defwNetPathPoint(numPts, pointx, pointy);
 }
 
 int defwNetPathPointWithExt(int numPts,
@@ -1196,58 +1195,57 @@ int defwNetPathPointWithExt(int numPts,
                             double* pointy,
                             double* optValue)
 {
-  return LefDefParser::defwNetPathPointWithExt(
-      numPts, pointx, pointy, optValue);
+  return DefParser::defwNetPathPointWithExt(numPts, pointx, pointy, optValue);
 }
 
 int defwNetPathVia(const char* name)
 {
-  return LefDefParser::defwNetPathVia(name);
+  return DefParser::defwNetPathVia(name);
 }
 
 int defwNetPathViaWithOrient(const char* name, int orient)
 {
-  return LefDefParser::defwNetPathViaWithOrient(name, orient);
+  return DefParser::defwNetPathViaWithOrient(name, orient);
 }
 
 int defwNetPathViaWithOrientStr(const char* name, const char* orient)
 {
-  return LefDefParser::defwNetPathViaWithOrientStr(name, orient);
+  return DefParser::defwNetPathViaWithOrientStr(name, orient);
 }
 
 int defwNetPathEnd()
 {
-  return LefDefParser::defwNetPathEnd();
+  return DefParser::defwNetPathEnd();
 }
 
 int defwNetEndOneNet()
 {
-  return LefDefParser::defwNetEndOneNet();
+  return DefParser::defwNetEndOneNet();
 }
 
 int defwEndNets()
 {
-  return LefDefParser::defwEndNets();
+  return DefParser::defwEndNets();
 }
 
 int defwStartIOTimings(int count)
 {
-  return LefDefParser::defwStartIOTimings(count);
+  return DefParser::defwStartIOTimings(count);
 }
 
 int defwIOTiming(const char* inst, const char* pin)
 {
-  return LefDefParser::defwIOTiming(inst, pin);
+  return DefParser::defwIOTiming(inst, pin);
 }
 
 int defwIOTimingVariable(const char* riseFall, int num1, int num2)
 {
-  return LefDefParser::defwIOTimingVariable(riseFall, num1, num2);
+  return DefParser::defwIOTimingVariable(riseFall, num1, num2);
 }
 
 int defwIOTimingSlewrate(const char* riseFall, int num1, int num2)
 {
-  return LefDefParser::defwIOTimingSlewrate(riseFall, num1, num2);
+  return DefParser::defwIOTimingSlewrate(riseFall, num1, num2);
 }
 
 int defwIOTimingDrivecell(const char* name,
@@ -1255,27 +1253,27 @@ int defwIOTimingDrivecell(const char* name,
                           const char* toPin,
                           int numDrivers)
 {
-  return LefDefParser::defwIOTimingDrivecell(name, fromPin, toPin, numDrivers);
+  return DefParser::defwIOTimingDrivecell(name, fromPin, toPin, numDrivers);
 }
 
 int defwIOTimingCapacitance(double num)
 {
-  return LefDefParser::defwIOTimingCapacitance(num);
+  return DefParser::defwIOTimingCapacitance(num);
 }
 
 int defwEndIOTimings()
 {
-  return LefDefParser::defwEndIOTimings();
+  return DefParser::defwEndIOTimings();
 }
 
 int defwStartScanchains(int count)
 {
-  return LefDefParser::defwStartScanchains(count);
+  return DefParser::defwStartScanchains(count);
 }
 
 int defwScanchain(const char* name)
 {
-  return LefDefParser::defwScanchain(name);
+  return DefParser::defwScanchain(name);
 }
 
 int defwScanchainCommonscanpins(const char* inst1,
@@ -1283,22 +1281,22 @@ int defwScanchainCommonscanpins(const char* inst1,
                                 const char* inst2,
                                 const char* pin2)
 {
-  return LefDefParser::defwScanchainCommonscanpins(inst1, pin1, inst2, pin2);
+  return DefParser::defwScanchainCommonscanpins(inst1, pin1, inst2, pin2);
 }
 
 int defwScanchainPartition(const char* name, int maxBits)
 {
-  return LefDefParser::defwScanchainPartition(name, maxBits);
+  return DefParser::defwScanchainPartition(name, maxBits);
 }
 
 int defwScanchainStart(const char* inst, const char* pin)
 {
-  return LefDefParser::defwScanchainStart(inst, pin);
+  return DefParser::defwScanchainStart(inst, pin);
 }
 
 int defwScanchainStop(const char* inst, const char* pin)
 {
-  return LefDefParser::defwScanchainStop(inst, pin);
+  return DefParser::defwScanchainStop(inst, pin);
 }
 
 int defwScanchainFloating(const char* name,
@@ -1307,7 +1305,7 @@ int defwScanchainFloating(const char* name,
                           const char* inst2,
                           const char* pin2)
 {
-  return LefDefParser::defwScanchainFloating(name, inst1, pin1, inst2, pin2);
+  return DefParser::defwScanchainFloating(name, inst1, pin1, inst2, pin2);
 }
 
 int defwScanchainFloatingBits(const char* name,
@@ -1317,7 +1315,7 @@ int defwScanchainFloatingBits(const char* name,
                               const char* pin2,
                               int bits)
 {
-  return LefDefParser::defwScanchainFloatingBits(
+  return DefParser::defwScanchainFloatingBits(
       name, inst1, pin1, inst2, pin2, bits);
 }
 
@@ -1332,7 +1330,7 @@ int defwScanchainOrdered(const char* name1,
                          const char* inst4,
                          const char* pin4)
 {
-  return LefDefParser::defwScanchainOrdered(
+  return DefParser::defwScanchainOrdered(
       name1, inst1, pin1, inst2, pin2, name2, inst3, pin3, inst4, pin4);
 }
 
@@ -1349,38 +1347,38 @@ int defwScanchainOrderedBits(const char* name1,
                              const char* pin4,
                              int bits2)
 {
-  return LefDefParser::defwScanchainOrderedBits(name1,
-                                                inst1,
-                                                pin1,
-                                                inst2,
-                                                pin2,
-                                                bits1,
-                                                name2,
-                                                inst3,
-                                                pin3,
-                                                inst4,
-                                                pin4,
-                                                bits2);
+  return DefParser::defwScanchainOrderedBits(name1,
+                                             inst1,
+                                             pin1,
+                                             inst2,
+                                             pin2,
+                                             bits1,
+                                             name2,
+                                             inst3,
+                                             pin3,
+                                             inst4,
+                                             pin4,
+                                             bits2);
 }
 
 int defwEndScanchain()
 {
-  return LefDefParser::defwEndScanchain();
+  return DefParser::defwEndScanchain();
 }
 
 int defwStartConstraints(int count)
 {
-  return LefDefParser::defwStartConstraints(count);
+  return DefParser::defwStartConstraints(count);
 }
 
 int defwConstraintOperand()
 {
-  return LefDefParser::defwConstraintOperand();
+  return DefParser::defwConstraintOperand();
 }
 
 int defwConstraintOperandNet(const char* netName)
 {
-  return LefDefParser::defwConstraintOperandNet(netName);
+  return DefParser::defwConstraintOperandNet(netName);
 }
 
 int defwConstraintOperandPath(const char* comp1,
@@ -1388,47 +1386,47 @@ int defwConstraintOperandPath(const char* comp1,
                               const char* comp2,
                               const char* toPin)
 {
-  return LefDefParser::defwConstraintOperandPath(comp1, fromPin, comp2, toPin);
+  return DefParser::defwConstraintOperandPath(comp1, fromPin, comp2, toPin);
 }
 
 int defwConstraintOperandSum()
 {
-  return LefDefParser::defwConstraintOperandSum();
+  return DefParser::defwConstraintOperandSum();
 }
 
 int defwConstraintOperandSumEnd()
 {
-  return LefDefParser::defwConstraintOperandSumEnd();
+  return DefParser::defwConstraintOperandSumEnd();
 }
 
 int defwConstraintOperandTime(const char* timeType, int time)
 {
-  return LefDefParser::defwConstraintOperandTime(timeType, time);
+  return DefParser::defwConstraintOperandTime(timeType, time);
 }
 
 int defwConstraintOperandEnd()
 {
-  return LefDefParser::defwConstraintOperandEnd();
+  return DefParser::defwConstraintOperandEnd();
 }
 
 int defwConstraintWiredlogic(const char* netName, int distance)
 {
-  return LefDefParser::defwConstraintWiredlogic(netName, distance);
+  return DefParser::defwConstraintWiredlogic(netName, distance);
 }
 
 int defwEndConstraints()
 {
-  return LefDefParser::defwEndConstraints();
+  return DefParser::defwEndConstraints();
 }
 
 int defwStartGroups(int count)
 {
-  return LefDefParser::defwStartGroups(count);
+  return DefParser::defwStartGroups(count);
 }
 
 int defwGroup(const char* groupName, int numExpr, const char** groupExpr)
 {
-  return LefDefParser::defwGroup(groupName, numExpr, groupExpr);
+  return DefParser::defwGroup(groupName, numExpr, groupExpr);
 }
 
 int defwGroupSoft(const char* type1,
@@ -1438,273 +1436,272 @@ int defwGroupSoft(const char* type1,
                   const char* type3,
                   double value3)
 {
-  return LefDefParser::defwGroupSoft(
-      type1, value1, type2, value2, type3, value3);
+  return DefParser::defwGroupSoft(type1, value1, type2, value2, type3, value3);
 }
 
 int defwGroupRegion(int xl, int yl, int xh, int yh, const char* regionName)
 {
-  return LefDefParser::defwGroupRegion(xl, yl, xh, yh, regionName);
+  return DefParser::defwGroupRegion(xl, yl, xh, yh, regionName);
 }
 
 int defwEndGroups()
 {
-  return LefDefParser::defwEndGroups();
+  return DefParser::defwEndGroups();
 }
 
 int defwStartBlockages(int count)
 {
-  return LefDefParser::defwStartBlockages(count);
+  return DefParser::defwStartBlockages(count);
 }
 
 int defwBlockagesLayer(const char* layerName)
 {
-  return LefDefParser::defwBlockagesLayer(layerName);
+  return DefParser::defwBlockagesLayer(layerName);
 }
 
 int defwBlockagesLayerSlots()
 {
-  return LefDefParser::defwBlockagesLayerSlots();
+  return DefParser::defwBlockagesLayerSlots();
 }
 
 int defwBlockagesLayerFills()
 {
-  return LefDefParser::defwBlockagesLayerFills();
+  return DefParser::defwBlockagesLayerFills();
 }
 
 int defwBlockagesLayerPushdown()
 {
-  return LefDefParser::defwBlockagesLayerPushdown();
+  return DefParser::defwBlockagesLayerPushdown();
 }
 
 int defwBlockagesLayerExceptpgnet()
 {
-  return LefDefParser::defwBlockagesLayerExceptpgnet();
+  return DefParser::defwBlockagesLayerExceptpgnet();
 }
 
 int defwBlockagesLayerComponent(const char* compName)
 {
-  return LefDefParser::defwBlockagesLayerComponent(compName);
+  return DefParser::defwBlockagesLayerComponent(compName);
 }
 
 int defwBlockagesLayerSpacing(int minSpacing)
 {
-  return LefDefParser::defwBlockagesLayerSpacing(minSpacing);
+  return DefParser::defwBlockagesLayerSpacing(minSpacing);
 }
 
 int defwBlockagesLayerDesignRuleWidth(int effectiveWidth)
 {
-  return LefDefParser::defwBlockagesLayerDesignRuleWidth(effectiveWidth);
+  return DefParser::defwBlockagesLayerDesignRuleWidth(effectiveWidth);
 }
 
 int defwBlockagesLayerMask(int maskColor)
 {
-  return LefDefParser::defwBlockagesLayerMask(maskColor);
+  return DefParser::defwBlockagesLayerMask(maskColor);
 }
 
 int defwBlockageLayer(const char* layerName, const char* compName)
 {
-  return LefDefParser::defwBlockageLayer(layerName, compName);
+  return DefParser::defwBlockageLayer(layerName, compName);
 }
 
 int defwBlockageLayerSlots(const char* layerName)
 {
-  return LefDefParser::defwBlockageLayerSlots(layerName);
+  return DefParser::defwBlockageLayerSlots(layerName);
 }
 
 int defwBlockageLayerFills(const char* layerName)
 {
-  return LefDefParser::defwBlockageLayerFills(layerName);
+  return DefParser::defwBlockageLayerFills(layerName);
 }
 
 int defwBlockageLayerPushdown(const char* layerName)
 {
-  return LefDefParser::defwBlockageLayerPushdown(layerName);
+  return DefParser::defwBlockageLayerPushdown(layerName);
 }
 
 int defwBlockageLayerExceptpgnet(const char* layerName)
 {
-  return LefDefParser::defwBlockageLayerExceptpgnet(layerName);
+  return DefParser::defwBlockageLayerExceptpgnet(layerName);
 }
 
 int defwBlockageSpacing(int minSpacing)
 {
-  return LefDefParser::defwBlockageSpacing(minSpacing);
+  return DefParser::defwBlockageSpacing(minSpacing);
 }
 
 int defwBlockageDesignRuleWidth(int effectiveWidth)
 {
-  return LefDefParser::defwBlockageDesignRuleWidth(effectiveWidth);
+  return DefParser::defwBlockageDesignRuleWidth(effectiveWidth);
 }
 
 int defwBlockagesPlacement()
 {
-  return LefDefParser::defwBlockagesPlacement();
+  return DefParser::defwBlockagesPlacement();
 }
 
 int defwBlockagesPlacementComponent(const char* compName)
 {
-  return LefDefParser::defwBlockagesPlacementComponent(compName);
+  return DefParser::defwBlockagesPlacementComponent(compName);
 }
 
 int defwBlockagesPlacementPushdown()
 {
-  return LefDefParser::defwBlockagesPlacementPushdown();
+  return DefParser::defwBlockagesPlacementPushdown();
 }
 
 int defwBlockagesPlacementSoft()
 {
-  return LefDefParser::defwBlockagesPlacementSoft();
+  return DefParser::defwBlockagesPlacementSoft();
 }
 
 int defwBlockagesPlacementPartial(double maxDensity)
 {
-  return LefDefParser::defwBlockagesPlacementPartial(maxDensity);
+  return DefParser::defwBlockagesPlacementPartial(maxDensity);
 }
 
 int defwBlockagesRect(int xl, int yl, int xh, int yh)
 {
-  return LefDefParser::defwBlockagesRect(xl, yl, xh, yh);
+  return DefParser::defwBlockagesRect(xl, yl, xh, yh);
 }
 
 int defwBlockagesPolygon(int num_polys, int* xl, int* yl)
 {
-  return LefDefParser::defwBlockagesPolygon(num_polys, xl, yl);
+  return DefParser::defwBlockagesPolygon(num_polys, xl, yl);
 }
 
 int defwBlockagePlacement()
 {
-  return LefDefParser::defwBlockagePlacement();
+  return DefParser::defwBlockagePlacement();
 }
 
 int defwBlockagePlacementComponent(const char* compName)
 {
-  return LefDefParser::defwBlockagePlacementComponent(compName);
+  return DefParser::defwBlockagePlacementComponent(compName);
 }
 
 int defwBlockagePlacementPushdown()
 {
-  return LefDefParser::defwBlockagePlacementPushdown();
+  return DefParser::defwBlockagePlacementPushdown();
 }
 
 int defwBlockagePlacementSoft()
 {
-  return LefDefParser::defwBlockagePlacementSoft();
+  return DefParser::defwBlockagePlacementSoft();
 }
 
 int defwBlockagePlacementPartial(double maxDensity)
 {
-  return LefDefParser::defwBlockagePlacementPartial(maxDensity);
+  return DefParser::defwBlockagePlacementPartial(maxDensity);
 }
 
 int defwBlockageMask(int maskColor)
 {
-  return LefDefParser::defwBlockageMask(maskColor);
+  return DefParser::defwBlockageMask(maskColor);
 }
 
 int defwBlockageRect(int xl, int yl, int xh, int yh)
 {
-  return LefDefParser::defwBlockageRect(xl, yl, xh, yh);
+  return DefParser::defwBlockageRect(xl, yl, xh, yh);
 }
 
 int defwBlockagePolygon(int num_polys, int* xl, int* yl)
 {
-  return LefDefParser::defwBlockagePolygon(num_polys, xl, yl);
+  return DefParser::defwBlockagePolygon(num_polys, xl, yl);
 }
 
 int defwEndBlockages()
 {
-  return LefDefParser::defwEndBlockages();
+  return DefParser::defwEndBlockages();
 }
 
 int defwStartSlots(int count)
 {
-  return LefDefParser::defwStartSlots(count);
+  return DefParser::defwStartSlots(count);
 }
 
 int defwSlotLayer(const char* layerName)
 {
-  return LefDefParser::defwSlotLayer(layerName);
+  return DefParser::defwSlotLayer(layerName);
 }
 
 int defwSlotRect(int xl, int yl, int xh, int yh)
 {
-  return LefDefParser::defwSlotRect(xl, yl, xh, yh);
+  return DefParser::defwSlotRect(xl, yl, xh, yh);
 }
 
 int defwSlotPolygon(int num_polys, double* xl, double* yl)
 {
-  return LefDefParser::defwSlotPolygon(num_polys, xl, yl);
+  return DefParser::defwSlotPolygon(num_polys, xl, yl);
 }
 
 int defwEndSlots()
 {
-  return LefDefParser::defwEndSlots();
+  return DefParser::defwEndSlots();
 }
 
 int defwStartFills(int count)
 {
-  return LefDefParser::defwStartFills(count);
+  return DefParser::defwStartFills(count);
 }
 
 int defwFillLayer(const char* layerName)
 {
-  return LefDefParser::defwFillLayer(layerName);
+  return DefParser::defwFillLayer(layerName);
 }
 
 int defwFillLayerMask(int maskColor)
 {
-  return LefDefParser::defwFillLayerMask(maskColor);
+  return DefParser::defwFillLayerMask(maskColor);
 }
 
 int defwFillLayerOPC()
 {
-  return LefDefParser::defwFillLayerOPC();
+  return DefParser::defwFillLayerOPC();
 }
 
 int defwFillRect(int xl, int yl, int xh, int yh)
 {
-  return LefDefParser::defwFillRect(xl, yl, xh, yh);
+  return DefParser::defwFillRect(xl, yl, xh, yh);
 }
 
 int defwFillPolygon(int num_polys, double* xl, double* yl)
 {
-  return LefDefParser::defwFillPolygon(num_polys, xl, yl);
+  return DefParser::defwFillPolygon(num_polys, xl, yl);
 }
 
 int defwFillVia(const char* viaName)
 {
-  return LefDefParser::defwFillVia(viaName);
+  return DefParser::defwFillVia(viaName);
 }
 
 int defwFillViaMask(int colorMask)
 {
-  return LefDefParser::defwFillViaMask(colorMask);
+  return DefParser::defwFillViaMask(colorMask);
 }
 
 int defwFillViaOPC()
 {
-  return LefDefParser::defwFillViaOPC();
+  return DefParser::defwFillViaOPC();
 }
 
 int defwFillPoints(int num_points, double* xl, double* yl)
 {
-  return LefDefParser::defwFillPoints(num_points, xl, yl);
+  return DefParser::defwFillPoints(num_points, xl, yl);
 }
 
 int defwEndFills()
 {
-  return LefDefParser::defwEndFills();
+  return DefParser::defwEndFills();
 }
 
 int defwStartNonDefaultRules(int count)
 {
-  return LefDefParser::defwStartNonDefaultRules(count);
+  return DefParser::defwStartNonDefaultRules(count);
 }
 
 int defwNonDefaultRule(const char* ruleName, int hardSpacing)
 {
-  return LefDefParser::defwNonDefaultRule(ruleName, hardSpacing);
+  return DefParser::defwNonDefaultRule(ruleName, hardSpacing);
 }
 
 int defwNonDefaultRuleLayer(const char* layerName,
@@ -1713,96 +1710,96 @@ int defwNonDefaultRuleLayer(const char* layerName,
                             int spacing,
                             int wireExt)
 {
-  return LefDefParser::defwNonDefaultRuleLayer(
+  return DefParser::defwNonDefaultRuleLayer(
       layerName, width, diagWidth, spacing, wireExt);
 }
 
 int defwNonDefaultRuleVia(const char* viaName)
 {
-  return LefDefParser::defwNonDefaultRuleVia(viaName);
+  return DefParser::defwNonDefaultRuleVia(viaName);
 }
 
 int defwNonDefaultRuleViaRule(const char* viaRuleName)
 {
-  return LefDefParser::defwNonDefaultRuleViaRule(viaRuleName);
+  return DefParser::defwNonDefaultRuleViaRule(viaRuleName);
 }
 
 int defwNonDefaultRuleMinCuts(const char* cutLayerName, int numCutS)
 {
-  return LefDefParser::defwNonDefaultRuleMinCuts(cutLayerName, numCutS);
+  return DefParser::defwNonDefaultRuleMinCuts(cutLayerName, numCutS);
 }
 
 int defwEndNonDefaultRules()
 {
-  return LefDefParser::defwEndNonDefaultRules();
+  return DefParser::defwEndNonDefaultRules();
 }
 
 int defwStartStyles(int count)
 {
-  return LefDefParser::defwStartStyles(count);
+  return DefParser::defwStartStyles(count);
 }
 
 int defwStyles(int styleNums, int num_points, double* xp, double* yp)
 {
-  return LefDefParser::defwStyles(styleNums, num_points, xp, yp);
+  return DefParser::defwStyles(styleNums, num_points, xp, yp);
 }
 
 int defwEndStyles()
 {
-  return LefDefParser::defwEndStyles();
+  return DefParser::defwEndStyles();
 }
 
 int defwStartBeginext(const char* name)
 {
-  return LefDefParser::defwStartBeginext(name);
+  return DefParser::defwStartBeginext(name);
 }
 
 int defwBeginextCreator(const char* creatorName)
 {
-  return LefDefParser::defwBeginextCreator(creatorName);
+  return DefParser::defwBeginextCreator(creatorName);
 }
 
 int defwBeginextDate()
 {
-  return LefDefParser::defwBeginextDate();
+  return DefParser::defwBeginextDate();
 }
 
 int defwBeginextRevision(int vers1, int vers2)
 {
-  return LefDefParser::defwBeginextRevision(vers1, vers2);
+  return DefParser::defwBeginextRevision(vers1, vers2);
 }
 
 int defwBeginextSyntax(const char* title, const char* string)
 {
-  return LefDefParser::defwBeginextSyntax(title, string);
+  return DefParser::defwBeginextSyntax(title, string);
 }
 
 int defwEndBeginext()
 {
-  return LefDefParser::defwEndBeginext();
+  return DefParser::defwEndBeginext();
 }
 
 int defwEnd()
 {
-  return LefDefParser::defwEnd();
+  return DefParser::defwEnd();
 }
 
 int defwCurrentLineNumber()
 {
-  return LefDefParser::defwCurrentLineNumber();
+  return DefParser::defwCurrentLineNumber();
 }
 
 void defwPrintError(int status)
 {
-  LefDefParser::defwPrintError(status);
+  DefParser::defwPrintError(status);
 }
 
 void defwAddComment(const char* comment)
 {
-  LefDefParser::defwAddComment(comment);
+  DefParser::defwAddComment(comment);
 }
 
 void defwAddIndent()
 {
-  LefDefParser::defwAddIndent();
+  DefParser::defwAddIndent();
 }

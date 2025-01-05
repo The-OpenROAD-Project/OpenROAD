@@ -51,7 +51,7 @@
 #include <unistd.h>
 #endif /* WIN32 */
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 #include "def_parser.hpp"
 
@@ -1648,4 +1648,4 @@ void defrData::pathIsDone(int sh, int reset, int osNet, int* needCbk)
   PathObj.Init();
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

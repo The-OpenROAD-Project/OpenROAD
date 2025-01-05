@@ -39,7 +39,7 @@
 
 #include "crypt.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // States of the writer.
 #define LEFW_UNINIT 0
@@ -9657,4 +9657,4 @@ void lefwAddIndent()
 // - What is the pin properties section mentioned in the 5.1 spec?
 // *****************************
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

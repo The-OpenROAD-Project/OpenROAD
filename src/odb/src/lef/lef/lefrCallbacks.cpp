@@ -31,7 +31,7 @@
 
 #include <cstring>
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 lefrCallbacks* lefCallbacks = nullptr;
 
@@ -44,4 +44,4 @@ void lefrCallbacks::reset()
   lefCallbacks = new lefrCallbacks();
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
