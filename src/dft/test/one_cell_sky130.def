@@ -1,0 +1,28 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN one_cell ;
+UNITS DISTANCE MICRONS 1000 ;
+REGIONS 1 ;
+    - region ( 0 0 ) ( 2000 2000 ) ;
+END REGIONS
+COMPONENTS 1 ;
+    - ff1 sky130_fd_sc_hd__dfstp_1 + PLACED ( 1000 1000 ) N
+        + REGION region ;
+END COMPONENTS
+GROUPS 1 ;
+    - group ff1 + REGION region ;
+END GROUPS
+PINS 4 ;
+    - clock + NET clock + DIRECTION INPUT + USE SIGNAL ;
+    - output1 + NET output1 + DIRECTION OUTPUT + USE SIGNAL ;
+    - port1 + NET port1 + DIRECTION INPUT + USE SIGNAL ;
+    - set_b + NET set_b + DIRECTION INPUT + USE SIGNAL ;
+END PINS
+NETS 4 ;
+    - clock ( PIN clock ) ( ff1 CLK ) + USE SIGNAL ;
+    - output1 ( PIN output1 ) ( ff1 Q ) + USE SIGNAL ;
+    - port1 ( PIN port1 ) ( ff1 D ) + USE SIGNAL ;
+    - set_b ( PIN set_b ) ( ff1 SET_B ) + USE SIGNAL ;
+END NETS
+END DESIGN

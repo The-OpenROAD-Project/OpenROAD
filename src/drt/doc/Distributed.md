@@ -40,7 +40,7 @@ The Diagram above shows four main components to run distributed routing:
 
 * Under the “default-pool” section from the leftside menu select “Nodes”, then:
     * You can configure the type of the machine that your Kuberenets pods would be running on. It is worth noting that a pod (worker/balancer) can acquire a number of CPUs  &lt;= the number of cpus available in the machine selected at this stage. This also applies for the memory.
-* This is all what we need, now click “Create” at the bottom of the page.
+* This is all we need, now click “Create” at the bottom of the page.
 * As the cluster is being created, we move on to setting up a shared folder on a NFS.
 
 
@@ -55,6 +55,15 @@ A shared folder on a NFS is used to share routing updates between the leader and
 3. The machine should be in the same zone of the cluster[^1].
 
 [https://www.digitalocean.com/community/tutorials/how-to-set-up-an-nfs-mount-on-ubuntu-20-04](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-nfs-mount-on-ubuntu-20-04)
+
+The main steps on the NFS server machine are:
+
+1. run ` sudo apt install nfs-kernel-server ` and ` sudo apt install nfs-common `
+1. In the etc/exports file, add the following line replacing \${PATH} with the actual shared directory path you choose and the 10.128 portion with the actual subnet portion of the network you set up: ` ${PATH} 10.128.0.0/255.255.0.0(rw,no_subtree_check,no_root_squash) `
+2. Run ` sudo systemctl restart nfs-kernel-server ` on the server macine.
+
+Now your NFS server machine is ready and the shared directory can be accessed.
+
 
 **N.B:** Since we are using google cloud, we set up our shared folder on a VM instance and record its internal IP to be used in later steps. 
 
@@ -88,7 +97,7 @@ In the first step, we created a cluster on Google cloud. In this step we connect
     1. The value of “replicas” under “spec” represents the number of workers that will be created in the cluster.
     2. The value of “serviceName” under “spec” must match the value of the service name in the first section.
     3.  Under “spec” / “template” / “spec” / “containers”:
-        1. “image” must have the value of openroad docker image directory on docker hub.
+        1. “image” must have the value of openroad docker image on docker hub.
         2. Under “command”, you can find two commands, the first runs openroad. The second runs the tcl file in the shared directory. It’s necessary to change the directory to match your shared folder directory.
         3. Under “volumeMounts”, the value of “mountPath” must match the path of the shared directory.
         4. Under “env” for the “value” under the name: “MY_POD_CPU” determines the thread count that openroad will be using.

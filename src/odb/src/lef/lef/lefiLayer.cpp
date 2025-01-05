@@ -45,7 +45,7 @@ BEGIN_LEF_PARSER_NAMESPACE
 // lefiAntennaPWL
 // *****************************************************************************
 
-lefiAntennaPWL::lefiAntennaPWL() : d_(nullptr), r_(nullptr)
+lefiAntennaPWL::lefiAntennaPWL()
 {
   Init();
 }
@@ -1269,225 +1269,6 @@ lefiAntennaPWL* lefiAntennaModel::antennaAreaDiffReducePWL() const
 // lefiLayer
 // *****************************************************************************
 lefiLayer::lefiLayer()
-    : name_(nullptr),
-      nameSize_(0),
-      type_(nullptr),
-      typeSize_(0),
-      layerType_(nullptr),
-      hasPitch_(0),
-      hasMask_(0),
-      hasOffset_(0),
-      hasWidth_(0),
-      hasArea_(0),
-      hasSpacing_(0),
-      hasDiagPitch_(0),
-      hasDiagWidth_(0),
-      hasDiagSpacing_(0),
-      hasSpacingName_(nullptr),
-      hasSpacingLayerStack_(nullptr),
-      hasSpacingAdjacent_(nullptr),
-      hasSpacingRange_(nullptr),
-      hasSpacingUseLengthThreshold_(nullptr),
-      hasSpacingLengthThreshold_(nullptr),
-      hasSpacingCenterToCenter_(nullptr),
-      hasSpacingParallelOverlap_(nullptr),
-      hasSpacingCutArea_(nullptr),
-      hasSpacingEndOfLine_(nullptr),
-      hasSpacingParellelEdge_(nullptr),
-      hasSpacingTwoEdges_(nullptr),
-      hasSpacingAdjacentExcept_(nullptr),
-      hasSpacingSamenet_(nullptr),
-      hasSpacingSamenetPGonly_(nullptr),
-      hasArraySpacing_(0),
-      hasDirection_(0),
-      hasResistance_(0),
-      hasCapacitance_(0),
-      hasHeight_(0),
-      hasWireExtension_(0),
-      hasThickness_(0),
-      hasShrinkage_(0),
-      hasCapMultiplier_(0),
-      hasEdgeCap_(0),
-      hasAntennaArea_(0),
-      hasAntennaLength_(0),
-      hasCurrentDensityPoint_(0),
-      currentDensity_(0.0),
-      pitchX_(0.0),
-      pitchY_(0.0),
-      offsetX_(0.0),
-      offsetY_(0.0),
-      diagPitchX_(0.0),
-      diagPitchY_(0.0),
-      diagWidth_(0.0),
-      diagSpacing_(0.0),
-      width_(0.0),
-      area_(0.0),
-      wireExtension_(0.0),
-      numSpacings_(0),
-      spacingsAllocated_(0),
-      maskNumber_(0),
-      spacing_(nullptr),
-      spacingAdjacentCuts_(nullptr),
-      spacingAdjacentWithin_(nullptr),
-      spacingCutArea_(nullptr),
-      rangeMin_(nullptr),
-      rangeMax_(nullptr),
-      rangeInfluence_(nullptr),
-      rangeInfluenceRangeMin_(nullptr),
-      rangeInfluenceRangeMax_(nullptr),
-      rangeRangeMin_(nullptr),
-      rangeRangeMax_(nullptr),
-      lengthThreshold_(nullptr),
-      lengthThresholdRangeMin_(nullptr),
-      lengthThresholdRangeMax_(nullptr),
-      numMinimumcut_(0),
-      minimumcutAllocated_(0),
-      minimumcut_(nullptr),
-      minimumcutWidth_(nullptr),
-      hasMinimumcutWithin_(nullptr),
-      minimumcutWithin_(nullptr),
-      hasMinimumcutConnection_(nullptr),
-      hasMinimumcutNumCuts_(nullptr),
-      minimumcutLength_(nullptr),
-      minimumcutDistance_(nullptr),
-      maxwidth_(0.0),
-      minwidth_(0.0),
-      numMinenclosedarea_(0),
-      minenclosedareaAllocated_(0),
-      minenclosedarea_(nullptr),
-      minenclosedareaWidth_(nullptr),
-      protrusionWidth1_(0.0),
-      protrusionLength_(0.0),
-      protrusionWidth2_(0.0),
-      numMinstep_(0),
-      numMinstepAlloc_(0),
-      minstep_(nullptr),
-      minstepLengthsum_(nullptr),
-      minstepMaxEdges_(nullptr),
-      minstepMinAdjLength_(nullptr),
-      minstepMinBetLength_(nullptr),
-      minstepXSameCorners_(nullptr),
-      direction_(nullptr),
-      resistance_(0.0),
-      capacitance_(0.0),
-      height_(0.0),
-      thickness_(0.0),
-      shrinkage_(0.0),
-      capMultiplier_(0.0),
-      edgeCap_(0.0),
-      antennaArea_(0.0),
-      antennaLength_(0.0),
-      numCurrentPoints_(0),
-      currentPointsAllocated_(0),
-      currentWidths_(nullptr),
-      current_(nullptr),
-      numCapacitancePoints_(0),
-      capacitancePointsAllocated_(0),
-      capacitanceWidths_(nullptr),
-      capacitances_(nullptr),
-      numResistancePoints_(0),
-      resistancePointsAllocated_(0),
-      resistanceWidths_(nullptr),
-      resistances_(nullptr),
-      numProps_(0),
-      propsAllocated_(0),
-      dvalues_(nullptr),
-      types_(nullptr),
-      numAccurrents_(0),
-      accurrentAllocated_(0),
-      accurrents_(nullptr),
-      numDccurrents_(0),
-      dccurrentAllocated_(0),
-      dccurrents_(nullptr),
-      numNums_(0),
-      numAllocated_(0),
-      nums_(nullptr),
-      hasAntennaAreaRatio_(0),
-      hasAntennaDiffAreaRatio_(0),
-      hasAntennaDiffAreaRatioPWL_(0),
-      hasAntennaCumAreaRatio_(0),
-      hasAntennaCumDiffAreaRatio_(0),
-      hasAntennaCumDiffAreaRatioPWL_(0),
-      hasAntennaAreaFactor_(0),
-      hasAntennaAreaFactorDUO_(0),
-      hasAntennaSideAreaRatio_(0),
-      hasAntennaDiffSideAreaRatio_(0),
-      hasAntennaDiffSideAreaRatioPWL_(0),
-      hasAntennaCumSideAreaRatio_(0),
-      hasAntennaCumDiffSideAreaRatio_(0),
-      hasAntennaCumDiffSideAreaRatioPWL_(0),
-      hasAntennaSideAreaFactor_(0),
-      hasAntennaSideAreaFactorDUO_(0),
-      currentAntennaModel_(nullptr),
-      numAntennaModel_(0),
-      antennaModelAllocated_(0),
-      antennaModel_(nullptr),
-      hasSlotWireWidth_(0),
-      hasSlotWireLength_(0),
-      hasSlotWidth_(0),
-      hasSlotLength_(0),
-      hasMaxAdjacentSlotSpacing_(0),
-      hasMaxCoaxialSlotSpacing_(0),
-      hasMaxEdgeSlotSpacing_(0),
-      hasSplitWireWidth_(0),
-      hasMinimumDensity_(0),
-      hasMaximumDensity_(0),
-      hasDensityCheckWindow_(0),
-      hasDensityCheckStep_(0),
-      hasFillActiveSpacing_(0),
-      hasTwoWidthPRL_(0),
-      slotWireWidth_(0.0),
-      slotWireLength_(0.0),
-      slotWidth_(0.0),
-      slotLength_(0.0),
-      maxAdjacentSlotSpacing_(0.0),
-      maxCoaxialSlotSpacing_(0.0),
-      maxEdgeSlotSpacing_(0.0),
-      splitWireWidth_(0.0),
-      minimumDensity_(0.0),
-      maximumDensity_(0.0),
-      densityCheckWindowLength_(0.0),
-      densityCheckWindowWidth_(0.0),
-      densityCheckStep_(0.0),
-      fillActiveSpacing_(0.0),
-      numSpacingTable_(0),
-      spacingTableAllocated_(0),
-      spacingTable_(nullptr),
-      numEnclosure_(0),
-      enclosureAllocated_(0),
-      overhang1_(nullptr),
-      overhang2_(nullptr),
-      encminWidth_(nullptr),
-      cutWithin_(nullptr),
-      minLength_(nullptr),
-      numPreferEnclosure_(0),
-      preferEnclosureAllocated_(0),
-      preferOverhang1_(nullptr),
-      preferOverhang2_(nullptr),
-      preferMinWidth_(nullptr),
-      resPerCut_(0.0),
-      diagMinEdgeLength_(0.0),
-      numMinSize_(0),
-      minSizeWidth_(nullptr),
-      minSizeLength_(nullptr),
-      eolWidth_(nullptr),
-      eolWithin_(nullptr),
-      parSpace_(nullptr),
-      parWithin_(nullptr),
-      maxArea_(0.0),
-      hasLongArray_(0),
-      viaWidth_(0.0),
-      cutSpacing_(0.0),
-      numArrayCuts_(0),
-      arrayCutsAllocated_(0),
-      arrayCuts_(nullptr),
-      arraySpacings_(nullptr),
-      hasSpacingTableOrtho_(0),
-      spacingTableOrtho_(nullptr),
-      notchLength_(nullptr),
-      endOfNotchWidth_(nullptr),
-      minNotchSpacing_(nullptr),
-      eonotchLength_(nullptr)
 {
   Init();
 }
@@ -2987,10 +2768,7 @@ int lefiLayer::hasLayerType() const
 
 int lefiLayer::hasPitch() const
 {
-  if (hasPitch_ == 1)
-    return 1;
-  else
-    return 0;
+  return hasPitch_ == 1;
 }
 
 int lefiLayer::hasMask() const
@@ -3004,27 +2782,18 @@ int lefiLayer::hasMask() const
 // 5.6
 int lefiLayer::hasXYPitch() const
 {
-  if (hasPitch_ == 2)
-    return 1;
-  else
-    return 0;
+  return hasPitch_ == 2;
 }
 
 int lefiLayer::hasOffset() const
 {
-  if (hasOffset_ == 1)
-    return 1;
-  else
-    return 0;
+  return hasOffset_ == 1;
 }
 
 // 5.6
 int lefiLayer::hasXYOffset() const
 {
-  if (hasOffset_ == 2)
-    return 1;
-  else
-    return 0;
+  return hasOffset_ == 2;
 }
 
 int lefiLayer::hasWidth() const
@@ -3040,19 +2809,13 @@ int lefiLayer::hasArea() const
 // 5.6
 int lefiLayer::hasDiagPitch() const
 {
-  if (hasDiagPitch_ == 1)
-    return 1;
-  else
-    return 0;
+  return hasDiagPitch_ == 1;
 }
 
 // 5.6
 int lefiLayer::hasXYDiagPitch() const
 {
-  if (hasDiagPitch_ == 2)
-    return 1;
-  else
-    return 0;
+  return hasDiagPitch_ == 2;
 }
 
 // 5.6
@@ -5519,9 +5282,8 @@ void lefiLayer::parseSpacing(int index)
           lefError(1320, msg);
           free(wrkingStr);
           return;
-        } else {
-          value = strtok(nullptr, " ");
         }
+        value = strtok(nullptr, " ");
       } else if (strcmp(value, "AREA") == 0) {
         value = strtok(nullptr, " ");
         cutArea = atof(value);
@@ -5547,9 +5309,8 @@ void lefiLayer::parseSpacing(int index)
           lefError(1320, msg);
           free(wrkingStr);
           return;
-        } else {
-          value = strtok(nullptr, " ");
         }
+        value = strtok(nullptr, " ");
       }
     } else if (strcmp(value, "SAMEMETAL") == 0) {
       // SPACING cutSpacing SAMEMETAL just exit
@@ -5622,14 +5383,13 @@ void lefiLayer::parseSpacing(int index)
                       setSpacingParTwoEdges();
                     value = strtok(nullptr, " ");
                     continue;  // with the while loop
-                  } else {
-                    // More rules, skip to ;
-                    while ((value) && (*value != ';') && (*value != '\n'))
-                      value = strtok(nullptr, " ");
-                    if ((value) && (*value == ';')) {
-                      value = strtok(nullptr, " ");
-                      continue;
-                    }
+                  }
+                  // More rules, skip to ;
+                  while ((value) && (*value != ';') && (*value != '\n'))
+                    value = strtok(nullptr, " ");
+                  if ((value) && (*value == ';')) {
+                    value = strtok(nullptr, " ");
+                    continue;
                   }
                 } else if (*value == ';') {
                   setSpacingMin(spValue);
@@ -6448,7 +6208,8 @@ void lefiLayer::parseLayerEnclosure(int index)
       // This is 58 syntax but is not in OA data model.  Skip the parsing
       free(wrkingStr);
       return;
-    } else if ((strcmp(value, "ABOVE") == 0) || (strcmp(value, "BELOW") == 0)) {
+    }
+    if ((strcmp(value, "ABOVE") == 0) || (strcmp(value, "BELOW") == 0)) {
       // Parse the rest of the property value lefData->first and if it has the
       // syntax ENCLOSURE [ABOVE | BELOW] overhang1 overhang2
       //   [WIDTH minWidth [EXCEPTEXTRACUT cutWithin]

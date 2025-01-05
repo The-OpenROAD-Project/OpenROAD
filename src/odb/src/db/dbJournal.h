@@ -181,9 +181,9 @@ class dbJournal
   dbBlock* _block;
   utl::Logger* _logger;
   dbJournalLog _log;
-  bool _start_action;
-  uint _action_idx;
-  unsigned char _cur_action;
+  bool _start_action{false};
+  uint _action_idx{0};
+  unsigned char _cur_action{0};
 };
 
 dbIStream& operator>>(dbIStream& stream, dbJournal& jrnl);

@@ -42,29 +42,39 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
+class _dbGDSStructure;
 
-class _dbGDSNode : public _dbObject
+class _dbGDSARef : public _dbObject
 {
  public:
-  _dbGDSNode(_dbDatabase*, const _dbGDSNode& r);
-  _dbGDSNode(_dbDatabase*);
+  _dbGDSARef(_dbDatabase*, const _dbGDSARef& r);
+  _dbGDSARef(_dbDatabase*);
 
-  ~_dbGDSNode() = default;
+  ~_dbGDSARef() = default;
 
-  bool operator==(const _dbGDSNode& rhs) const;
-  bool operator!=(const _dbGDSNode& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbGDSNode& rhs) const;
+  bool operator==(const _dbGDSARef& rhs) const;
+  bool operator!=(const _dbGDSARef& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbGDSARef& rhs) const;
   void differences(dbDiff& diff,
                    const char* field,
-                   const _dbGDSNode& rhs) const;
+                   const _dbGDSARef& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin Methods
 
-  int16_t _layer;
-  int16_t _datatype;
-  std::vector<Point> _xy;
+  dbGDSStructure* _stucture = nullptr;
+
+  // User Code End Methods
+
+  Point _origin;
+  Point _lr;
+  Point _ul;
   std::vector<std::pair<std::int16_t, std::string>> _propattr;
+  dbGDSSTrans _transform;
+  int16_t _num_rows;
+  int16_t _num_columns;
+  dbId<_dbGDSStructure> _structure;
 };
-dbIStream& operator>>(dbIStream& stream, _dbGDSNode& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbGDSNode& obj);
+dbIStream& operator>>(dbIStream& stream, _dbGDSARef& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbGDSARef& obj);
 }  // namespace odb
    // Generator Code End Header

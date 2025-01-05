@@ -1,5 +1,9 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
 [INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO ODB-0128] Design: one_cell
+[INFO ODB-0130]     Created 4 pins.
+[INFO ODB-0131]     Created 1 components and 6 component-terminals.
+[INFO ODB-0133]     Created 4 nets and 4 connections.
 Instance ff1
  Cell: sky130_fd_sc_hd__dfstp_1
  Library: sky130_fd_sc_hd_merged
@@ -60,4 +64,5 @@ Instance ff1
  Output pins:
   Q output output1
   Q_N output (unconnected)
+No differences found.
 No differences found.

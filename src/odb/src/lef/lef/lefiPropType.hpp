@@ -54,10 +54,10 @@ class lefiPropType
   void bumpProps();
 
  protected:
-  int numProperties_;
-  int propertiesAllocated_;
-  char** propNames_;  // name.
-  char* propTypes_;   // 'R' == "REAL", 'I' == "INTEGER"
+  int numProperties_{0};
+  int propertiesAllocated_{0};
+  char** propNames_{nullptr};  // name.
+  char* propTypes_{nullptr};   // 'R' == "REAL", 'I' == "INTEGER"
 };
 
 END_LEF_PARSER_NAMESPACE

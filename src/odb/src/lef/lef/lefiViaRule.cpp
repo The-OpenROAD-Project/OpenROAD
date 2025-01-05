@@ -43,17 +43,7 @@ BEGIN_LEF_PARSER_NAMESPACE
 // *****************************************************************************
 
 lefiViaRuleLayer::lefiViaRuleLayer()
-    : name_(nullptr),
-      direction_(0),
-      overhang1_(0.0),
-      overhang2_(0.0),
-      hasWidth_(0),
-      hasResistance_(0),
-      hasOverhang_(0),
-      hasMetalOverhang_(0),
-      hasSpacing_(0),
-      hasRect_(0),
-      widthMin_(0.0),
+    : widthMin_(0.0),
       widthMax_(0.0),
       overhang_(0.0),
       metalOverhang_(0.0),
@@ -339,20 +329,6 @@ void lefiViaRuleLayer::print(FILE* f) const
 // *****************************************************************************
 
 lefiViaRule::lefiViaRule()
-    : name_(nullptr),
-      nameSize_(0),
-      hasGenerate_(0),
-      hasDefault_(0),
-      numLayers_(0),
-      numVias_(0),
-      viasAllocated_(0),
-      vias_(nullptr),
-      numProps_(0),
-      propsAllocated_(0),
-      names_(nullptr),
-      values_(nullptr),
-      dvalues_(nullptr),
-      types_(nullptr)
 {
   Init();
 }

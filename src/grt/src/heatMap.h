@@ -47,15 +47,15 @@ class RoutingCongestionDataSource : public gui::GlobalRoutingDataSource,
   void update() override { gui::HeatMapDataSource::update(); }
 
  protected:
-  virtual bool populateMap() override;
-  virtual void combineMapData(bool base_has_value,
-                              double& base,
-                              const double new_data,
-                              const double data_area,
-                              const double intersection_area,
-                              const double rect_area) override;
-  virtual void correctMapScale(HeatMapDataSource::Map& map) override;
-  virtual std::string formatValue(double value, bool legend) const override;
+  bool populateMap() override;
+  void combineMapData(bool base_has_value,
+                      double& base,
+                      const double new_data,
+                      const double data_area,
+                      const double intersection_area,
+                      const double rect_area) override;
+  void correctMapScale(HeatMapDataSource::Map& map) override;
+  std::string formatValue(double value, bool legend) const override;
 
  private:
   enum Direction

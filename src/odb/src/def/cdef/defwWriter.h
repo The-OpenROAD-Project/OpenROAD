@@ -1740,7 +1740,7 @@ EXTERN int defwCurrentLineNumber();
  * extern void defwVError ( const char *, va_list );
  * extern void defwVWarning ( const char *, va_list );
  * extern int  defwGetCurrentLineNumber (void);
- * extern const char *defwGetCurrentFileName (void);
+ * extern const char *defwGetCurrentFileName();
  */
 
 /* This routine will print the error message. */

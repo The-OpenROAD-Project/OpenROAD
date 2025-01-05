@@ -32,6 +32,8 @@
 
 #pragma once
 
+// IWYU pragma: private, include "db.h"
+
 // Provide overloads of std::less for all instantiable, dbObject-derived types.
 // This avoids pointer comparison which is a frequent source of non-determinism.
 //
@@ -525,6 +527,15 @@ struct less<odb::dbGCellGrid*>
 };
 
 template <>
+struct less<odb::dbGDSARef*>
+{
+  bool operator()(const odb::dbGDSARef* lhs, const odb::dbGDSARef* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
 struct less<odb::dbGDSBoundary*>
 {
   bool operator()(const odb::dbGDSBoundary* lhs,
@@ -538,15 +549,6 @@ template <>
 struct less<odb::dbGDSBox*>
 {
   bool operator()(const odb::dbGDSBox* lhs, const odb::dbGDSBox* rhs) const
-  {
-    return odb::compare_by_id(lhs, rhs);
-  }
-};
-
-template <>
-struct less<odb::dbGDSNode*>
-{
-  bool operator()(const odb::dbGDSNode* lhs, const odb::dbGDSNode* rhs) const
   {
     return odb::compare_by_id(lhs, rhs);
   }

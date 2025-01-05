@@ -43,7 +43,6 @@ BEGIN_LEF_PARSER_NAMESPACE
 // *****************************************************************************
 
 lefiNoiseVictim::lefiNoiseVictim(double d)
-    : length_(0.0), numNoises_(0), noisesAllocated_(0), noises_(nullptr)
 {
   Init(d);
 }
@@ -116,12 +115,6 @@ double lefiNoiseVictim::length() const
 // *****************************************************************************
 
 lefiNoiseResistance::lefiNoiseResistance()
-    : numNums_(0),
-      numsAllocated_(0),
-      nums_(nullptr),
-      numVictims_(0),
-      victimsAllocated_(0),
-      victims_(nullptr)
 {
   Init();
 }

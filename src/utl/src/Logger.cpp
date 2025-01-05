@@ -48,11 +48,6 @@
 namespace utl {
 
 Logger::Logger(const char* log_filename, const char* metrics_filename)
-    : string_redirect_(nullptr),
-      file_redirect_(nullptr),
-      debug_on_(false),
-      warning_count_(0),
-      error_count_(0)
 {
   sinks_.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
   if (log_filename)
@@ -173,9 +168,8 @@ std::string Logger::popMetricsStage()
     std::string stage = metrics_stages_.top();
     metrics_stages_.pop();
     return stage;
-  } else {
-    return "";
   }
+  return "";
 }
 
 void Logger::flushMetrics()
