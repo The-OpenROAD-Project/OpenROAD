@@ -79,7 +79,7 @@ int main(int argc, char** argv)
   if (argc != 9) {  // If pass in from lefdefdiff, argc is
     diffUsage();    // always 9: defdiff file1 file2 out1 out2
     return (1);     // ignorePinExtra ignoreRowName ignoreViaName
-  }                 // newSegCmp
+  }  // newSegCmp
 
   fileName1 = argv[1];
   fileName2 = argv[2];

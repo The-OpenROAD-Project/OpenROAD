@@ -38,7 +38,7 @@
 #include "defiUtil.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 namespace {
 
@@ -767,7 +767,7 @@ const defiPath* defiShield::path(int index) const
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////
 
-defiWire::defiWire(defrData* data) : defData(data), paths_(nullptr)
+defiWire::defiWire(defrData* data) : defData(data)
 {
 }
 
@@ -3080,4 +3080,4 @@ void defiNet::clearVia()
   viaNames_ = nullptr;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

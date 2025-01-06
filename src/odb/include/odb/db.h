@@ -41,7 +41,10 @@
 #include <variant>
 #include <vector>
 
+#include "dbBlockSet.h"
+#include "dbCCSegSet.h"
 #include "dbMatrix.h"
+#include "dbNetSet.h"
 #include "dbObject.h"
 #include "dbSet.h"
 #include "dbTypes.h"
@@ -132,9 +135,9 @@ class dbAccessPoint;
 class dbBusPort;
 class dbDft;
 class dbGCellGrid;
+class dbGDSARef;
 class dbGDSBoundary;
 class dbGDSBox;
-class dbGDSNode;
 class dbGDSPath;
 class dbGDSSRef;
 class dbGDSStructure;
@@ -3080,7 +3083,7 @@ class dbInst : public dbObject
   /// Set the transform of this instance.
   /// Equivalent to setOrient() and setOrigin()
   ///
-  void setTransform(dbTransform& t);
+  void setTransform(const dbTransform& t);
 
   ///
   /// Get the hierarchical transform of this instance.
@@ -5827,22 +5830,6 @@ class dbGDSLib : public dbObject
 
   std::string getLibname() const;
 
-  void set_lastAccessed(std::tm lastAccessed);
-
-  std::tm get_lastAccessed() const;
-
-  void set_lastModified(std::tm lastModified);
-
-  std::tm get_lastModified() const;
-
-  void set_libDirSize(int16_t libDirSize);
-
-  int16_t get_libDirSize() const;
-
-  void set_srfName(std::string srfName);
-
-  std::string get_srfName() const;
-
   void setUnits(double uu_per_dbu, double dbu_per_meter);
 
   std::pair<double, double> getUnits() const;
@@ -7457,6 +7444,42 @@ class dbGCellGrid : public dbObject
   // User Code End dbGCellGrid
 };
 
+class dbGDSARef : public dbObject
+{
+ public:
+  void setOrigin(Point origin);
+
+  Point getOrigin() const;
+
+  void setLr(Point lr);
+
+  Point getLr() const;
+
+  void setUl(Point ul);
+
+  Point getUl() const;
+
+  void setTransform(dbGDSSTrans transform);
+
+  dbGDSSTrans getTransform() const;
+
+  void setNumRows(int16_t num_rows);
+
+  int16_t getNumRows() const;
+
+  void setNumColumns(int16_t num_columns);
+
+  int16_t getNumColumns() const;
+
+  // User Code Begin dbGDSARef
+  dbGDSStructure* getStructure() const;
+  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+
+  static dbGDSARef* create(dbGDSStructure* parent, dbGDSStructure* child);
+  static void destroy(dbGDSARef* aref);
+  // User Code End dbGDSARef
+};
+
 class dbGDSBoundary : public dbObject
 {
  public:
@@ -7492,41 +7515,16 @@ class dbGDSBox : public dbObject
 
   int16_t getDatatype() const;
 
-  void setXy(const std::vector<Point>& xy);
+  void setBounds(Rect bounds);
 
-  void getXy(std::vector<Point>& tbl) const;
+  Rect getBounds() const;
 
   // User Code Begin dbGDSBox
-  const std::vector<Point>& getXY();
   std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
 
   static dbGDSBox* create(dbGDSStructure* structure);
   static void destroy(dbGDSBox* box);
   // User Code End dbGDSBox
-};
-
-class dbGDSNode : public dbObject
-{
- public:
-  void setLayer(int16_t layer);
-
-  int16_t getLayer() const;
-
-  void setDatatype(int16_t datatype);
-
-  int16_t getDatatype() const;
-
-  void setXy(const std::vector<Point>& xy);
-
-  void getXy(std::vector<Point>& tbl) const;
-
-  // User Code Begin dbGDSNode
-  const std::vector<Point>& getXY();
-  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
-
-  static dbGDSNode* create(dbGDSStructure* structure);
-  static void destroy(dbGDSNode* node);
-  // User Code End dbGDSNode
 };
 
 class dbGDSPath : public dbObject
@@ -7548,9 +7546,9 @@ class dbGDSPath : public dbObject
 
   int getWidth() const;
 
-  void set_pathType(int16_t pathType);
+  void setPathType(int16_t path_type);
 
-  int16_t get_pathType() const;
+  int16_t getPathType() const;
 
   // User Code Begin dbGDSPath
   const std::vector<Point>& getXY();
@@ -7564,38 +7562,19 @@ class dbGDSPath : public dbObject
 class dbGDSSRef : public dbObject
 {
  public:
-  void setLayer(int16_t layer);
+  void setOrigin(Point origin);
 
-  int16_t getLayer() const;
-
-  void setDatatype(int16_t datatype);
-
-  int16_t getDatatype() const;
-
-  void setXy(const std::vector<Point>& xy);
-
-  void getXy(std::vector<Point>& tbl) const;
-
-  void set_sName(const std::string& sName);
-
-  std::string get_sName() const;
+  Point getOrigin() const;
 
   void setTransform(dbGDSSTrans transform);
 
   dbGDSSTrans getTransform() const;
 
-  void set_colRow(const std::pair<int16_t, int16_t>& colRow);
-
-  std::pair<int16_t, int16_t> get_colRow() const;
-
   // User Code Begin dbGDSSRef
-  const std::vector<Point>& getXY();
+  dbGDSStructure* getStructure() const;
   std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
 
-  dbGDSStructure* getStructure() const;
-  void setStructure(dbGDSStructure* structure) const;
-
-  static dbGDSSRef* create(dbGDSStructure* structure);
+  static dbGDSSRef* create(dbGDSStructure* parent, dbGDSStructure* child);
   static void destroy(dbGDSSRef* sref);
   // User Code End dbGDSSRef
 };
@@ -7609,11 +7588,11 @@ class dbGDSStructure : public dbObject
 
   dbSet<dbGDSBox> getGDSBoxs() const;
 
-  dbSet<dbGDSNode> getGDSNodes() const;
-
   dbSet<dbGDSPath> getGDSPaths() const;
 
   dbSet<dbGDSSRef> getGDSSRefs() const;
+
+  dbSet<dbGDSARef> getGDSARefs() const;
 
   dbSet<dbGDSText> getGDSTexts() const;
 
@@ -7638,17 +7617,13 @@ class dbGDSText : public dbObject
 
   int16_t getDatatype() const;
 
-  void setXy(const std::vector<Point>& xy);
+  void setOrigin(Point origin);
 
-  void getXy(std::vector<Point>& tbl) const;
+  Point getOrigin() const;
 
   void setPresentation(dbGDSTextPres presentation);
 
   dbGDSTextPres getPresentation() const;
-
-  void setWidth(int width);
-
-  int getWidth() const;
 
   void setTransform(dbGDSSTrans transform);
 
@@ -7659,7 +7634,6 @@ class dbGDSText : public dbObject
   std::string getText() const;
 
   // User Code Begin dbGDSText
-  const std::vector<Point>& getXY();
   std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
 
   static dbGDSText* create(dbGDSStructure* structure);

@@ -46,3 +46,7 @@ or_integration_tests(
     write_verilog7
     write_verilog8
 )
+
+if(ENABLE_TESTS)
+  add_subdirectory(cpp)
+endif()

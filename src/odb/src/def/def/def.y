@@ -51,8 +51,8 @@
 //  6180 - defiVia.cpp
 //  6500 - def parser, error, def.y
 %define api.pure
-%lex-param {defrData *defData}
-%parse-param {defrData *defData}
+%lex-param {DefParser::defrData *defData}
+%parse-param {DefParser::defrData *defData}
 
 
 %{
@@ -74,7 +74,7 @@
 #include "defrSettings.hpp"
 #include "defrCallBacks.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 using std::round;
   
@@ -5372,4 +5372,4 @@ styles_rule: '-' K_STYLE NUMBER
 
 %%
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

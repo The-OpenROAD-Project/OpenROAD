@@ -37,7 +37,7 @@
 
 #include "lefiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 //=================== General Types and Definitions =================
 
@@ -128,8 +128,6 @@ enum lefiMemoryPolicy_e
 using lefiUserData = void*;
 using lefiUserDataHandle = void**;
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

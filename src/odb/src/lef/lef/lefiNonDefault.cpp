@@ -37,7 +37,7 @@
 #include "lefrData.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // 6/16/2000 - Wanda da Rosa
 // Make these variables in globals.  Can't use those defined
@@ -53,48 +53,6 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 // *****************************************************************************
 
 lefiNonDefault::lefiNonDefault()
-    : nameSize_(0),
-      name_(nullptr),
-      numLayers_(0),
-      layersAllocated_(0),
-      layerName_(nullptr),
-      width_(nullptr),
-      spacing_(nullptr),
-      wireExtension_(nullptr),
-      hasWidth_(nullptr),
-      hasSpacing_(nullptr),
-      hasWireExtension_(nullptr),
-      resistance_(nullptr),
-      capacitance_(nullptr),
-      edgeCap_(nullptr),
-      hasResistance_(nullptr),
-      hasCapacitance_(nullptr),
-      hasEdgeCap_(nullptr),
-      diagWidth_(nullptr),
-      hasDiagWidth_(nullptr),
-      numVias_(0),
-      allocatedVias_(0),
-      viaRules_(nullptr),
-      numSpacing_(0),
-      allocatedSpacing_(0),
-      spacingRules_(nullptr),
-      hardSpacing_(0),
-      numUseVias_(0),
-      allocatedUseVias_(0),
-      useViaName_(nullptr),
-      numUseViaRules_(0),
-      allocatedUseViaRules_(0),
-      useViaRuleName_(nullptr),
-      numMinCuts_(0),
-      allocatedMinCuts_(0),
-      cutLayerName_(nullptr),
-      numCuts_(nullptr),
-      numProps_(0),
-      propsAllocated_(0),
-      names_(nullptr),
-      values_(nullptr),
-      dvalues_(nullptr),
-      types_(nullptr)
 {
   Init();
 }
@@ -1146,4 +1104,4 @@ int lefiNonDefault::propIsString(int index) const
   }
   return dvalues_[index] ? 0 : 1;
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

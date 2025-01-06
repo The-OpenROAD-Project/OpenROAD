@@ -35,7 +35,7 @@
 #include "defiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
@@ -550,8 +550,8 @@ int defiVia::hasRowCol() const
 {
   if (rows_)
     return rows_;
-  else
-    return cols_;
+
+  return cols_;
 }
 
 void defiVia::rowCol(int* numCutRows, int* numCutCols) const
@@ -564,8 +564,8 @@ int defiVia::hasOrigin() const
 {
   if (xOffset_)
     return xOffset_;
-  else
-    return yOffset_;
+
+  return yOffset_;
 }
 
 void defiVia::origin(int* xOffset, int* yOffset) const
@@ -578,12 +578,11 @@ int defiVia::hasOffset() const
 {
   if (xBotOffset_)
     return xBotOffset_;
-  else if (yBotOffset_)
+  if (yBotOffset_)
     return yBotOffset_;
-  else if (xTopOffset_)
+  if (xTopOffset_)
     return xTopOffset_;
-  else
-    return yTopOffset_;
+  return yTopOffset_;
 }
 
 void defiVia::offset(int* xBotOffset,
@@ -668,4 +667,4 @@ void defiVia::print(FILE* f) const
       fprintf(f, "    pattern '%s'\n", cutPattern());
   }
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

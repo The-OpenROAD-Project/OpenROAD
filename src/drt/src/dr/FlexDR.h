@@ -295,11 +295,6 @@ class FlexDRWorker
         rq_(this)
   {
   }
-  FlexDRWorker()
-      :  // for serialization
-        rq_(this)
-  {
-  }
   // setters
   void setDebugSettings(frDebugSettings* settings)
   {
@@ -449,11 +444,13 @@ class FlexDRWorker
     logger_ = logger;
     gridGraph_.setLogger(logger);
   }
+  void setRouterCfg(RouterConfiguration* in) { router_cfg_ = in; }
 
   static std::unique_ptr<FlexDRWorker> load(const std::string& workerStr,
-                                            utl::Logger* logger,
+                                            FlexDRViaData* via_data,
                                             frDesign* design,
-                                            FlexDRGraphics* graphics);
+                                            utl::Logger* logger,
+                                            RouterConfiguration* router_cfg);
 
   // distributed
   void setDistributed(dst::Distributed* dist,
@@ -729,17 +726,14 @@ class FlexDRWorker
   void initNets_boundaryArea();
 
   void initGridGraph(const frDesign* design);
-  void initTrackCoords(
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap);
-  void initTrackCoords_route(
-      drNet* net,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap);
-  void initTrackCoords_pin(
-      drNet* net,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap);
+  void initTrackCoords(frLayerCoordTrackPatternMap& xMap,
+                       frLayerCoordTrackPatternMap& yMap);
+  void initTrackCoords_route(drNet* net,
+                             frLayerCoordTrackPatternMap& xMap,
+                             frLayerCoordTrackPatternMap& yMap);
+  void initTrackCoords_pin(drNet* net,
+                           frLayerCoordTrackPatternMap& xMap,
+                           frLayerCoordTrackPatternMap& yMap);
   void initMazeIdx();
   void initMazeIdx_connFig(drConnFig* connFig);
   void initMazeIdx_ap(drAccessPattern* ap);

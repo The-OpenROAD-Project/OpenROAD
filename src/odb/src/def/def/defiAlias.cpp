@@ -31,7 +31,7 @@
 
 #include "defrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 extern defrContext defContext;
 
@@ -42,7 +42,7 @@ class defAliasIterator
 };
 
 defiAlias_itr::defiAlias_itr(defrData* data)
-    : first(1), iterator(nullptr), defData(data ? data : defContext.data)
+    : defData(data ? data : defContext.data)
 {
   defiAlias_itr::Init();
 }
@@ -103,11 +103,7 @@ int defiAlias_itr::Marked()
 {
   const char* value = iterator->me->second.c_str();
 
-  if ((value == nullptr) || (value[0] == '0')) {
-    return 0;
-  } else {
-    return 1;
-  }
+  return value && value[0] != '0';
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

@@ -38,144 +38,144 @@
 
 union udefiPoints
 {
-  LefDefParser::defiPoints cpp;
+  DefParser::defiPoints cpp;
   ::defiPoints c;
 };
 
 // Wrappers definitions.
 int defiBlockage_hasLayer(const ::defiBlockage* obj)
 {
-  return ((LefDefParser::defiBlockage*) obj)->hasLayer();
+  return ((DefParser::defiBlockage*) obj)->hasLayer();
 }
 
 int defiBlockage_hasPlacement(const ::defiBlockage* obj)
 {
-  return ((LefDefParser::defiBlockage*) obj)->hasPlacement();
+  return ((DefParser::defiBlockage*) obj)->hasPlacement();
 }
 
 int defiBlockage_hasComponent(const ::defiBlockage* obj)
 {
-  return ((LefDefParser::defiBlockage*) obj)->hasComponent();
+  return ((DefParser::defiBlockage*) obj)->hasComponent();
 }
 
 int defiBlockage_hasSlots(const ::defiBlockage* obj)
 {
-  return ((LefDefParser::defiBlockage*) obj)->hasSlots();
+  return ((DefParser::defiBlockage*) obj)->hasSlots();
 }
 
 int defiBlockage_hasFills(const ::defiBlockage* obj)
 {
-  return ((LefDefParser::defiBlockage*) obj)->hasFills();
+  return ((DefParser::defiBlockage*) obj)->hasFills();
 }
 
 int defiBlockage_hasPushdown(const ::defiBlockage* obj)
 {
-  return ((LefDefParser::defiBlockage*) obj)->hasPushdown();
+  return ((DefParser::defiBlockage*) obj)->hasPushdown();
 }
 
 int defiBlockage_hasExceptpgnet(const ::defiBlockage* obj)
 {
-  return ((LefDefParser::defiBlockage*) obj)->hasExceptpgnet();
+  return ((DefParser::defiBlockage*) obj)->hasExceptpgnet();
 }
 
 int defiBlockage_hasSoft(const ::defiBlockage* obj)
 {
-  return ((LefDefParser::defiBlockage*) obj)->hasSoft();
+  return ((DefParser::defiBlockage*) obj)->hasSoft();
 }
 
 int defiBlockage_hasPartial(const ::defiBlockage* obj)
 {
-  return ((LefDefParser::defiBlockage*) obj)->hasPartial();
+  return ((DefParser::defiBlockage*) obj)->hasPartial();
 }
 
 int defiBlockage_hasSpacing(const ::defiBlockage* obj)
 {
-  return ((LefDefParser::defiBlockage*) obj)->hasSpacing();
+  return ((DefParser::defiBlockage*) obj)->hasSpacing();
 }
 
 int defiBlockage_hasDesignRuleWidth(const ::defiBlockage* obj)
 {
-  return ((LefDefParser::defiBlockage*) obj)->hasDesignRuleWidth();
+  return ((DefParser::defiBlockage*) obj)->hasDesignRuleWidth();
 }
 
 int defiBlockage_hasMask(const ::defiBlockage* obj)
 {
-  return ((LefDefParser::defiBlockage*) obj)->hasMask();
+  return ((DefParser::defiBlockage*) obj)->hasMask();
 }
 
 int defiBlockage_mask(const ::defiBlockage* obj)
 {
-  return ((LefDefParser::defiBlockage*) obj)->mask();
+  return ((DefParser::defiBlockage*) obj)->mask();
 }
 
 int defiBlockage_minSpacing(const ::defiBlockage* obj)
 {
-  return ((LefDefParser::defiBlockage*) obj)->minSpacing();
+  return ((DefParser::defiBlockage*) obj)->minSpacing();
 }
 
 int defiBlockage_designRuleWidth(const ::defiBlockage* obj)
 {
-  return ((LefDefParser::defiBlockage*) obj)->designRuleWidth();
+  return ((DefParser::defiBlockage*) obj)->designRuleWidth();
 }
 
 double defiBlockage_placementMaxDensity(const ::defiBlockage* obj)
 {
-  return ((LefDefParser::defiBlockage*) obj)->placementMaxDensity();
+  return ((DefParser::defiBlockage*) obj)->placementMaxDensity();
 }
 
 const char* defiBlockage_layerName(const ::defiBlockage* obj)
 {
-  return ((const LefDefParser::defiBlockage*) obj)->layerName();
+  return ((const DefParser::defiBlockage*) obj)->layerName();
 }
 
 const char* defiBlockage_layerComponentName(const ::defiBlockage* obj)
 {
-  return ((const LefDefParser::defiBlockage*) obj)->layerComponentName();
+  return ((const DefParser::defiBlockage*) obj)->layerComponentName();
 }
 
 const char* defiBlockage_placementComponentName(const ::defiBlockage* obj)
 {
-  return ((const LefDefParser::defiBlockage*) obj)->placementComponentName();
+  return ((const DefParser::defiBlockage*) obj)->placementComponentName();
 }
 
 int defiBlockage_numRectangles(const ::defiBlockage* obj)
 {
-  return ((LefDefParser::defiBlockage*) obj)->numRectangles();
+  return ((DefParser::defiBlockage*) obj)->numRectangles();
 }
 
 int defiBlockage_xl(const ::defiBlockage* obj, int index)
 {
-  return ((LefDefParser::defiBlockage*) obj)->xl(index);
+  return ((DefParser::defiBlockage*) obj)->xl(index);
 }
 
 int defiBlockage_yl(const ::defiBlockage* obj, int index)
 {
-  return ((LefDefParser::defiBlockage*) obj)->yl(index);
+  return ((DefParser::defiBlockage*) obj)->yl(index);
 }
 
 int defiBlockage_xh(const ::defiBlockage* obj, int index)
 {
-  return ((LefDefParser::defiBlockage*) obj)->xh(index);
+  return ((DefParser::defiBlockage*) obj)->xh(index);
 }
 
 int defiBlockage_yh(const ::defiBlockage* obj, int index)
 {
-  return ((LefDefParser::defiBlockage*) obj)->yh(index);
+  return ((DefParser::defiBlockage*) obj)->yh(index);
 }
 
 int defiBlockage_numPolygons(const ::defiBlockage* obj)
 {
-  return ((LefDefParser::defiBlockage*) obj)->numPolygons();
+  return ((DefParser::defiBlockage*) obj)->numPolygons();
 }
 
 ::defiPoints defiBlockage_getPolygon(const ::defiBlockage* obj, int index)
 {
   udefiPoints tmp;
-  tmp.cpp = ((LefDefParser::defiBlockage*) obj)->getPolygon(index);
+  tmp.cpp = ((DefParser::defiBlockage*) obj)->getPolygon(index);
   return tmp.c;
 }
 
 void defiBlockage_print(const ::defiBlockage* obj, FILE* f)
 {
-  ((LefDefParser::defiBlockage*) obj)->print(f);
+  ((DefParser::defiBlockage*) obj)->print(f);
 }

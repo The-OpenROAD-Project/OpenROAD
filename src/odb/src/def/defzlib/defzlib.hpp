@@ -32,7 +32,7 @@
 
 #include "defiDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 using defGZFile = void*;
 class defrContext;
@@ -84,8 +84,6 @@ extern defGZFile defGZipOpen(const char* gzipFile, const char* mode);
 //
 extern int defGZipClose(defGZFile filePtr);
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

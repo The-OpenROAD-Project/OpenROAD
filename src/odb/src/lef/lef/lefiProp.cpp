@@ -35,21 +35,9 @@
 #include "lefiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 lefiProp::lefiProp()
-    : propType_(nullptr),
-      propName_(nullptr),
-      nameSize_(0),
-      hasRange_(0),
-      hasNumber_(0),
-      hasNameMapString_(0),
-      dataType_(0),
-      stringData_(nullptr),
-      stringLength_(0),
-      left_(0.0),
-      right_(0.0),
-      d_(0.0)
 {
   Init();
 }
@@ -229,4 +217,4 @@ void lefiProp::print(FILE* f) const
   }
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

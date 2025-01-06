@@ -35,13 +35,9 @@
 #include "lefiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 lefiPropType::lefiPropType()
-    : numProperties_(0),
-      propertiesAllocated_(0),
-      propNames_(nullptr),
-      propTypes_(nullptr)
 {
   Init();
 }
@@ -133,4 +129,4 @@ const char lefiPropType::propType(char* name) const
   }
   return ('N');  // Can't found the name
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

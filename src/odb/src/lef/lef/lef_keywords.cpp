@@ -48,7 +48,7 @@
 
 #include "lefrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 #include "lef_parser.hpp"
 
@@ -384,7 +384,7 @@ static int GetToken(char** buffer, int* bufferSize)
   if (lefData->input_level >= 0) {  // if we are expanding an alias
     if (GetTokenFromStack(s))       // try to get a token from it
       return true;                  // if we get one, return it
-  }                                 // but if not, continue
+  }  // but if not, continue
 
   // skip blanks and count lines
   while ((ch = lefGetc()) != EOF) {
@@ -763,10 +763,10 @@ int lefsublex()
     yylval.dval = strtod(lefData->current_token, &ch);
     if (lefData->lefNoNum < 0 && *ch == '\0') {  // did we use the whole string?
       return NUMBER;
-    } else {  // failed integer conversion, try floating point
-      yylval.string = ringCopy(lefData->current_token);  // NO, it's a string
-      return T_STRING;
     }
+    // failed integer conversion, try floating point
+    yylval.string = ringCopy(lefData->current_token);  // NO, it's a string
+    return T_STRING;
   }
 
   // 5/17/2004 - Special checking for nondefaultrule
@@ -774,12 +774,11 @@ int lefsublex()
     if (strcmp(lefData->current_token, lefData->ndName) == 0) {
       yylval.string = ringCopy(lefData->current_token);  // a nd rule name
       return T_STRING;
-    } else {
-      // Can be NONDEFAULTRULE END without name, this case, string
-      // should be a reserve word  or name is incorrect
-      // lefData->first check if it is a reserve word
-      lefData->lefDumbMode = -1;
     }
+    // Can be NONDEFAULTRULE END without name, this case, string
+    // should be a reserve word  or name is incorrect
+    // lefData->first check if it is a reserve word
+    lefData->lefDumbMode = -1;
   }
   // if we are dumb mode, all we return is punctuation and strings & numbers
   // until we see the lefData->next '+' or ';' token
@@ -799,11 +798,9 @@ int lefsublex()
     if (lefData->lefNdRule) {
       if (strcmp(lefData->current_token, lefData->ndName) == 0)
         return T_STRING;
-      else {
-        // Can be NONDEFAULTRULE END without name, this case, string
-        // should be a reserve word  or name is incorrect
-        // lefData->first check if it is a reserve word
-      }
+      // Can be NONDEFAULTRULE END without name, this case, string
+      // should be a reserve word  or name is incorrect
+      // lefData->first check if it is a reserve word
     }
     return T_STRING;
   }
@@ -906,11 +903,12 @@ int lefsublex()
               if (begQuote)
                 lefError(1006, "Ending \" is missing");
               break;
-            } else if (histTextSize >= 11
-                       && memcmp(&lefData->Hist_text[histTextSize - 11],
-                                 "END LIBRARY",
-                                 11)
-                              == 0) {
+            }
+            if (histTextSize >= 11
+                && memcmp(&lefData->Hist_text[histTextSize - 11],
+                          "END LIBRARY",
+                          11)
+                       == 0) {
               lefError(1007, "ENDEXT is missing");
               return 1;
             }
@@ -919,44 +917,44 @@ int lefsublex()
         lefData->Hist_text.push_back('\0');
       }
       return result;  // YES, return its value
-    } else {          // we don't have a keyword.
-      if (fc == '&')
-        return lefamper_lookup(lefData->current_token);
-      yylval.string = ringCopy(lefData->current_token);  // NO, it's a string
+    }
+    if (fc == '&')
+      return lefamper_lookup(lefData->current_token);
+    yylval.string = ringCopy(lefData->current_token);  // NO, it's a string
+    return T_STRING;
+  }
+  // it should be a punctuation character
+  if (lefData->current_token[1] != '\0') {
+    if (strcmp(lefData->current_token, ">=") == 0)
+      return K_GE;
+    if (strcmp(lefData->current_token, "<=") == 0)
+      return K_LE;
+    if (strcmp(lefData->current_token, "<>") == 0)
+      return K_NE;
+    if (lefData->current_token[0]
+        == ';') {  // we got ';TOKEN' which is not allowed by
+      //';' cannot be attached to other tokens.
+      lefError(1009, "Symbol ';' should be separated by space(s).");
+      return 0;
+      // strcpy(saved_token, &token[1]); // the standard syntax, but
+      // stack[++lefData->input_level] = saved_token; // C3 and GE support.
+    }
+    if (lefData->current_token[0]
+        == '_') {  // name starts with _, return as T_STRING
+      yylval.string = ringCopy(lefData->current_token);
       return T_STRING;
     }
-  } else {  // it should be a punctuation character
-    if (lefData->current_token[1] != '\0') {
-      if (strcmp(lefData->current_token, ">=") == 0)
-        return K_GE;
-      if (strcmp(lefData->current_token, "<=") == 0)
-        return K_LE;
-      if (strcmp(lefData->current_token, "<>") == 0)
-        return K_NE;
-      if (lefData->current_token[0]
-          == ';') {  // we got ';TOKEN' which is not allowed by
-        //';' cannot be attached to other tokens.
-        lefError(1009, "Symbol ';' should be separated by space(s).");
-        return 0;
-        // strcpy(saved_token, &token[1]); // the standard syntax, but
-        // stack[++lefData->input_level] = saved_token; // C3 and GE support.
-      } else if (lefData->current_token[0]
-                 == '_') {  // name starts with _, return as T_STRING
-        yylval.string = ringCopy(lefData->current_token);
-        return T_STRING;
-      } else {
-        lefError(6016, "Odd punctuation found.");
-        lefData->hasFatalError = 1;
-        return 0;
-      }
-    } else if (strlen(lefData->current_token) > 2
-               || strlen(lefData->current_token) == 0) {
-      lefError(6016, "Odd punctuation found.");
-      lefData->hasFatalError = 1;
-      return 0;
-    }
-    return (int) lefData->current_token[0];
+    lefError(6016, "Odd punctuation found.");
+    lefData->hasFatalError = 1;
+    return 0;
   }
+  if (strlen(lefData->current_token) > 2
+      || strlen(lefData->current_token) == 0) {
+    lefError(6016, "Odd punctuation found.");
+    lefData->hasFatalError = 1;
+    return 0;
+  }
+  return (int) lefData->current_token[0];
 }
 
 /* We have found a token beginning with '&'.  If it has been previously
@@ -1152,7 +1150,8 @@ void lefInfo(int msgNum, const char* s)
             msgNum);
     lefWarning(2502, msgStr);
     return;
-  } else if (disableStatus == 2) {
+  }
+  if (disableStatus == 2) {
     return;
   }
 
@@ -1254,7 +1253,8 @@ void lefWarning(int msgNum, const char* s)
               msgNum);
       lefWarning(2502, msgStr);
       return;
-    } else if (disableStatus == 2) {
+    }
+    if (disableStatus == 2) {
       return;
     }
   }
@@ -1348,23 +1348,22 @@ void* lefMalloc(size_t lef_size)
 
   if (lefSettings->MallocFunction)
     return (*lefSettings->MallocFunction)(lef_size);
-  else {
-    mallocVar = (void*) malloc(lef_size);
-    if (!mallocVar) {
-      fprintf(stderr,
-              "ERROR (LEFPARS-1009): Not enough memory, stop parsing!\n");
-      exit(1);
-    }
-    return mallocVar;
+
+  mallocVar = (void*) malloc(lef_size);
+  if (!mallocVar) {
+    fprintf(stderr, "ERROR (LEFPARS-1009): Not enough memory, stop parsing!\n");
+    exit(1);
   }
+  return mallocVar;
 }
 
 void* lefRealloc(void* name, size_t lef_size)
 {
-  if (lefSettings->ReallocFunction)
+  if (lefSettings->ReallocFunction) {
     return (*lefSettings->ReallocFunction)(name, lef_size);
-  else
-    return realloc(name, lef_size);
+  }
+
+  return realloc(name, lef_size);
 }
 
 void lefFree(void* name)
@@ -2207,4 +2206,4 @@ char* lef_kywd(int num)
   return a;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

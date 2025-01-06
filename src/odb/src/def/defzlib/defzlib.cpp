@@ -40,7 +40,7 @@
 #include "defrReader.hpp"
 #include "zlib.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 /*
  * Private functions:
@@ -65,8 +65,8 @@ defGZFile defGZipOpen(const char* gzipPath, const char* mode)
     /* set the read function to read from a compressed file */
     defrSetReadFunction(defGZip_read);
     return (defGZFile) fptr;
-  } else
-    return nullptr;
+  }
+  return nullptr;
 }
 
 int defGZipClose(defGZFile filePtr)
@@ -98,4 +98,4 @@ int defrGZipClose(defGZFile filePtr)
   return (gzclose((gzFile) filePtr));
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
