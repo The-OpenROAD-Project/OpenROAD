@@ -36,6 +36,7 @@
 #include <vector>
 
 #include "ScanChain.hh"
+#include "ScanStitchConfig.hh"
 #include "Utils.hh"
 #include "odb/db.h"
 
@@ -51,44 +52,35 @@ class ScanStitch
 {
  public:
   explicit ScanStitch(odb::dbDatabase* db,
-                      bool per_chain_enable,
-                      std::string scan_enable_name_pattern = "scan_enable_{}",
-                      std::string scan_in_name_pattern = "scan_in_{}",
-                      std::string scan_out_name_pattern = "scan_out_{}");
+                      utl::Logger* logger,
+                      const ScanStitchConfig& config);
 
   // Stitch all the cells inside each one of the scan chains together.
-  void Stitch(const std::vector<std::unique_ptr<ScanChain>>& scan_chains,
-              utl::Logger* logger);
+  void Stitch(const std::vector<std::unique_ptr<ScanChain>>& scan_chains);
   void Stitch(odb::dbBlock* block,
               const ScanChain& scan_chain,
-              utl::Logger* logger,
               size_t ordinal = 1,
               size_t enable_ordinal = 1);
 
  private:
-  ScanDriver FindOrCreateDriver(const char* kind,
+  ScanDriver FindOrCreateDriver(const std::string_view& kind,
                                 odb::dbBlock* block,
-                                const std::string& with_name,
-                                utl::Logger* logger);
+                                const std::string& with_name);
   ScanDriver FindOrCreateScanEnable(odb::dbBlock* block,
-                                    const std::string& with_name,
-                                    utl::Logger* logger);
+                                    const std::string& with_name);
   ScanDriver FindOrCreateScanIn(odb::dbBlock* block,
-                                const std::string& with_name,
-                                utl::Logger* logger);
+                                const std::string& with_name);
   ScanLoad FindOrCreateScanOut(odb::dbBlock* block,
                                const ScanDriver& cell_scan_out,
-                               const std::string& with_name,
-                               utl::Logger* logger);
+                               const std::string& with_name);
 
   // Typesafe function to create Ports for the scan chains.
   template <typename Port>
   inline Port CreateNewPort(odb::dbBlock* block,
                             const std::string& port_name,
-                            utl::Logger* logger,
                             odb::dbNet* net = nullptr)
   {
-    auto port = dft::utils::CreateNewPort(block, port_name, logger, net);
+    auto port = dft::utils::CreateNewPort(block, port_name, logger_, net);
 
     if constexpr (std::is_same_v<Port, ScanLoad>) {
       port->setIoType(odb::dbIoType::OUTPUT);
@@ -101,12 +93,10 @@ class ScanStitch
     return Port(port);
   }
 
+  const ScanStitchConfig& config_;
   odb::dbDatabase* db_;
+  utl::Logger* logger_;
   odb::dbBlock* top_block_;
-  bool per_chain_enable_;
-  std::string scan_enable_name_pattern_;
-  std::string scan_in_name_pattern_;
-  std::string scan_out_name_pattern_;
 };
 
 }  // namespace dft

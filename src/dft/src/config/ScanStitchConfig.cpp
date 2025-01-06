@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Efabless Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,36 +29,70 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#pragma once
 
-#include "ScanArchitectConfig.hh"
 #include "ScanStitchConfig.hh"
-#include "utl/Logger.h"
+
+#include "Formatting.hh"
 
 namespace dft {
 
-// Main class that contains all the DFT configuration.
-// Pass this object by reference to other functions
-class DftConfig
+void ScanStitchConfig::setEnableNamePattern(
+    std::string_view& enable_name_pattern)
 {
- public:
-  DftConfig() = default;
-  // Not copyable or movable.
-  DftConfig(const DftConfig&) = delete;
-  DftConfig& operator=(const DftConfig&) = delete;
-
-  ScanArchitectConfig* getMutableScanArchitectConfig();
-  const ScanArchitectConfig& getScanArchitectConfig() const;
-
-  ScanStitchConfig* getMutableScanStitchConfig();
-  const ScanStitchConfig& getScanStitchConfig() const;
-
-  // Prints the information currently being used by DFT for config
-  void report(utl::Logger* logger) const;
-
- private:
-  ScanArchitectConfig scan_architect_config_;
-  ScanStitchConfig scan_stitch_config_;
+  enable_name_pattern_ = enable_name_pattern;
+}
+const std::string& ScanStitchConfig::getEnableNamePattern() const
+{
+  return enable_name_pattern_;
 };
+
+void ScanStitchConfig::setInNamePattern(std::string_view& in_name_pattern)
+{
+  in_name_pattern_ = in_name_pattern;
+};
+const std::string& ScanStitchConfig::getInNamePattern() const
+{
+  return in_name_pattern_;
+};
+
+void ScanStitchConfig::setOutNamePattern(std::string_view& out_name_pattern)
+{
+  out_name_pattern_ = out_name_pattern;
+};
+const std::string& ScanStitchConfig::getOutNamePattern() const
+{
+  return out_name_pattern_;
+};
+
+void ScanStitchConfig::setEnableMode(ScanStitchConfig::EnableMode enable_mode)
+{
+  enable_mode_ = enable_mode;
+}
+ScanStitchConfig::EnableMode ScanStitchConfig::getEnableMode() const
+{
+  return enable_mode_;
+}
+
+const std::string_view ScanStitchConfig::EnableModeName(
+    ScanStitchConfig::EnableMode enable_mode)
+{
+  switch (enable_mode) {
+    case ScanStitchConfig::EnableMode::Global:
+      return "Global";
+    case ScanStitchConfig::EnableMode::PerChain:
+      return "Per-Chain";
+    default:
+      return "ScanStitchConfig::EnableMode missing case";
+  }
+}
+
+void ScanStitchConfig::report(utl::Logger* logger) const
+{
+  logger->report("Scan Stitch Config:");
+  logger->report("- Enable Mode: '{}'", EnableModeName(enable_mode_));
+  logger->report("- Scan Enable Name Pattern: '{}'", enable_name_pattern_);
+  logger->report("- Scan In Name Pattern: '{}'", in_name_pattern_);
+  logger->report("- Scan Out Name Pattern: '{}'", out_name_pattern_);
+}
 
 }  // namespace dft

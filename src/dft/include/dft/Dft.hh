@@ -97,10 +97,7 @@ class Dft
   //
   void scanReplace();
 
-  void insertDft(bool per_chain_enable,
-                 const std::string& scan_enable_name_pattern,
-                 const std::string& scan_in_name_pattern,
-                 const std::string& scan_out_name_pattern);
+  void insertDft();
 
   // Returns a mutable version of DftConfig
   DftConfig* getMutableDftConfig();

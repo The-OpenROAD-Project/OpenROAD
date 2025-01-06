@@ -28,6 +28,10 @@ set_dft_config
     [-max_length <int>]
     [-max_chains <int>]
     [-clock_mixing <string>]
+    [-scan_enable_mode <string>]
+    [-scan_enable_name_pattern <string>]
+    [-scan_in_name_pattern <string>]
+    [-scan_out_name_pattern <string>]
 ```
 
 #### Options
@@ -38,6 +42,10 @@ set_dft_config
 | `-max_chains` | The maximum number of scan chains that will be generated. This takes priority over `max_length`,
 in `no_mix` clock mode it specifies a maximum number of chains per clock-edge pair. |
 | `-clock_mixing` | How architect will mix the scan flops based on the clock driver. `no_mix`: Creates scan chains with only one type of clock and edge. This may create unbalanced chains. `clock_mix`: Creates scan chains mixing clocks and edges. Falling edge flops are going to be stitched before rising edge. |
+| `-scan_enable_mode` | Experimental: how the scan chain enable signals will be created/assigned by the scan chain stitcher. `global`: All scan chains use the same enable signal. `per_chain`: Each scan chain gets assigned or created its own scan enanle. The default is `global`.  |
+| `-scan_enable_name_pattern` | A format pattern with exactly one set of braces (`{}`) to use to find or create scan enable drivers during scan chain stitching. The braces will be replaced with the chain's ordinal number (starting at `0`) if `-scan_enable_mode` is set to `per_chain`, otherwise, all will share `0`. If an un-escaped forward slash (`/`) is found, instead of searching for and/or creating a top-level port, an instance's pin will be searched for instead where the part of the string preceding the `/` is interpreted as the instance name and part succeeding it will be interpreted as the pin's name. |
+| `-scan_in_name_pattern` | A format pattern with exactly one set of braces (`{}`) to use to find or create scan in drivers during scan chain stitching. The braces will be replaced with the chain's ordinal number (starting at `0`). If an un-escaped forward slash (`/`) is found, instead of searching for and/or creating a top-level port, an instance's pin will be searched for instead where the part of the string preceding the `/` is interpreted as the instance name and part succeeding it will be interpreted as the pin's name. |
+| `-scan_out_name_pattern` | A format pattern with exactly one set of braces (`{}`) to use to find or create scan in loads during scan chain stitching. The braces will be replaced with the chain's ordinal number (starting at `0`). If an un-escaped forward slash (`/`) is found, instead of searching for and/or creating a top-level port, an instance's pin will be searched for instead where the part of the string preceding the `/` is interpreted as the instance name and part succeeding it will be interpreted as the pin's name. |
 
 ### Report DFT Config
 
@@ -82,20 +90,7 @@ a result, this should be run after placement, and after `scan_replace`.
 
 ```tcl
 insert_dft
-    [-per_chain_enable]
-    [-scan_enable_name_pattern <string>]
-    [-scan_in_name_pattern <string>]
-    [-scan_out_name_pattern <string>]
 ```
-
-#### Options
-
-| Switch Name | Description |
-| ---- | ---- |
-| `-per_chain_enable` | Creates one enable signal per chain instead of reusing the same one for every chain. |
-| `-scan_enable_name_pattern` | A format pattern with exactly one set of braces (`{}`) to use to find or create scan enable drivers. The braces will be replaced with the chain's ordinal number (starting at `0`) if `-per_chain_enable` is defined, otherwise, all will share `0`. If an un-escaped forward slash (`/`) is found, instead of searching for and/or creating a top-level port, an instance's pin will be searched for instead where the part of the string preceding the `/` is interpreted as the instance name and part succeeding it will be interpreted as the pin's name. |
-| `-scan_in_name_pattern` | A format pattern with exactly one set of braces (`{}`) to use to find or create scan in drivers. The braces will be replaced with the chain's ordinal number (starting at `0`). If an un-escaped forward slash (`/`) is found, instead of searching for and/or creating a top-level port, an instance's pin will be searched for instead where the part of the string preceding the `/` is interpreted as the instance name and part succeeding it will be interpreted as the pin's name. |
-| `-scan_out_name_pattern` | A format pattern with exactly one set of braces (`{}`) to use to find or create scan in loads. The braces will be replaced with the chain's ordinal number (starting at `0`). If an un-escaped forward slash (`/`) is found, instead of searching for and/or creating a top-level port, an instance's pin will be searched for instead where the part of the string preceding the `/` is interpreted as the instance name and part succeeding it will be interpreted as the pin's name. |
 
 ### Write Scan Chains
 

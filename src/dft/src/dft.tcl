@@ -70,42 +70,29 @@ proc write_scan_chains { args } {
   dft::write_scan_chains [lindex $args 0]
 }
 
-sta::define_cmd_args "insert_dft" {
-  [-per_chain_enable]
-  [-scan_enable_name_pattern scan_enable_name_pattern]
-  [-scan_in_name_pattern scan_in_name_pattern]
-  [-scan_out_name_pattern scan_out_name_pattern]
-}
+sta::define_cmd_args "insert_dft" {}
 proc insert_dft { args } {
   sta::parse_key_args "insert_dft" args \
-    keys {-scan_enable_name_pattern -scan_in_name_pattern -scan_out_name_pattern} \
-    flags {-per_chain_enable}
+    keys {} \
+    flags {}
 
   if { [ord::get_db_block] == "NULL" } {
     utl::error DFT 9 "No design block found."
   }
-
-  foreach {flag default} {
-    -scan_enable_name_pattern "scan_enable_{}"
-    -scan_in_name_pattern "scan_in_{}"
-    -scan_out_name_pattern "scan_out_{}"
-  } {
-    if { ![info exists keys($flag)] } {
-      set keys($flag) $default
-    }
-  }
-  dft::insert_dft [info exists flags(-per_chain_enable)] \
-    $keys(-scan_enable_name_pattern) \
-    $keys(-scan_in_name_pattern) \
-    $keys(-scan_out_name_pattern)
+  dft::insert_dft
 }
 
-sta::define_cmd_args "set_dft_config" { [-max_length max_length] \
-                                        [-max_chains max_chains] \
-                                        [-clock_mixing clock_mixing]}
+sta::define_cmd_args "set_dft_config" { [-max_length max_length]
+                                        [-max_chains max_chains]
+                                        [-clock_mixing clock_mixing]
+                                        [-scan_enable_mode mode]
+                                        [-scan_enable_name_pattern scan_enable_name_pattern]
+                                        [-scan_in_name_pattern scan_in_name_pattern]
+                                        [-scan_out_name_pattern scan_out_name_pattern]
+                                        }
 proc set_dft_config { args } {
   sta::parse_key_args "set_dft_config" args \
-    keys {-max_length -max_chains -clock_mixing} \
+    keys {-max_length -max_chains -clock_mixing -scan_enable_mode -scan_enable_name_pattern -scan_in_name_pattern -scan_out_name_pattern} \
     flags {}
 
   sta::check_argc_eq0 "set_dft_config" $args
@@ -124,8 +111,21 @@ proc set_dft_config { args } {
 
   if { [info exists keys(-clock_mixing)] } {
     set clock_mixing $keys(-clock_mixing)
-    puts $clock_mixing
     dft::set_dft_config_clock_mixing $clock_mixing
+  }
+
+  if { [info exists keys(-scan_enable_mode)] } {
+    dft::set_dft_config_scan_enable_mode $keys(-scan_enable_mode)
+  }
+
+  foreach {flag signal} {
+    -scan_enable_name_pattern "scan_enable"
+    -scan_in_name_pattern "scan_in"
+    -scan_out_name_pattern "scan_out"
+  } {
+    if { [info exists keys($flag)] } {
+      dft::set_dft_config_scan_signal_name_pattern $signal $keys($flag)
+    }
   }
 }
 

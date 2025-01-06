@@ -143,22 +143,15 @@ void Dft::writeScanChains(const std::string& filename)
   }
 }
 
-void Dft::insertDft(bool per_chain_enable,
-                    const std::string& scan_enable_name_pattern,
-                    const std::string& scan_in_name_pattern,
-                    const std::string& scan_out_name_pattern)
+void Dft::insertDft()
 {
   if (need_to_run_pre_dft_) {
     pre_dft();
   }
   std::vector<std::unique_ptr<ScanChain>> scan_chains = scanArchitect();
 
-  ScanStitch stitch(db_,
-                    per_chain_enable,
-                    scan_enable_name_pattern,
-                    scan_in_name_pattern,
-                    scan_out_name_pattern);
-  stitch.Stitch(scan_chains, logger_);
+  ScanStitch stitch(db_, logger_, dft_config_->getScanStitchConfig());
+  stitch.Stitch(scan_chains);
 }
 
 DftConfig* Dft::getMutableDftConfig()

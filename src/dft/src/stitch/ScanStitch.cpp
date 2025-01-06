@@ -1,29 +1,57 @@
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
+//
+// Copyright (c) 2023, Google LLC
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 #include "ScanStitch.hh"
 
 #include <boost/algorithm/string.hpp>
 #include <deque>
 #include <iostream>
 
+constexpr std::string_view kScanEnable = "scan-enable";
+constexpr std::string_view kScanIn = "scan-in";
+constexpr std::string_view kScanOut = "scan-out";
+
 namespace dft {
 
 ScanStitch::ScanStitch(odb::dbDatabase* db,
-                       bool per_chain_enable,
-                       std::string scan_enable_name_pattern,
-                       std::string scan_in_name_pattern,
-                       std::string scan_out_name_pattern)
-    : db_(db),
-      per_chain_enable_(per_chain_enable),
-      scan_enable_name_pattern_(scan_enable_name_pattern),
-      scan_in_name_pattern_(scan_in_name_pattern),
-      scan_out_name_pattern_(scan_out_name_pattern)
+                       utl::Logger* logger,
+                       const ScanStitchConfig& config)
+    : config_(config), db_(db), logger_(logger)
 {
   odb::dbChip* chip = db_->getChip();
   top_block_ = chip->getBlock();
 }
 
 void ScanStitch::Stitch(
-    const std::vector<std::unique_ptr<ScanChain>>& scan_chains,
-    utl::Logger* logger)
+    const std::vector<std::unique_ptr<ScanChain>>& scan_chains)
 {
   if (scan_chains.empty()) {
     return;
@@ -32,27 +60,28 @@ void ScanStitch::Stitch(
   size_t enable_ordinal = 0;
   size_t ordinal = 0;
   for (const std::unique_ptr<ScanChain>& scan_chain : scan_chains) {
-    Stitch(top_block_, *scan_chain, logger, ordinal, enable_ordinal);
+    Stitch(top_block_, *scan_chain, ordinal, enable_ordinal);
     ordinal += 1;
-    if (per_chain_enable_) {
-      enable_ordinal += 1;
-    }
+
+    // If a unique enable signal is ever needed per-chain, simply increment
+    // enable_ordinal as follows:
+    // enable_ordinal += 1;
   }
 }
 
 void ScanStitch::Stitch(odb::dbBlock* block,
                         const ScanChain& scan_chain,
-                        utl::Logger* logger,
                         size_t ordinal,
                         size_t enable_ordinal)
 {
-  auto scan_enable_name
-      = fmt::format(FMT_RUNTIME(scan_enable_name_pattern_), enable_ordinal);
-  auto scan_enable = FindOrCreateScanEnable(block, scan_enable_name, logger);
+  auto scan_enable_name = fmt::format(
+      FMT_RUNTIME(config_.getEnableNamePattern()), enable_ordinal);
+  auto scan_enable = FindOrCreateScanEnable(block, scan_enable_name);
 
   // Let's create the scan in and scan out of the chain
-  auto scan_in_name = fmt::format(FMT_RUNTIME(scan_in_name_pattern_), ordinal);
-  ScanDriver scan_in_driver = FindOrCreateScanIn(block, scan_in_name, logger);
+  auto scan_in_name
+      = fmt::format(FMT_RUNTIME(config_.getInNamePattern()), ordinal);
+  ScanDriver scan_in_driver = FindOrCreateScanIn(block, scan_in_name);
 
   // We need fast pop for front and back
   std::deque<std::reference_wrapper<const std::unique_ptr<ScanCell>>>
@@ -104,16 +133,15 @@ void ScanStitch::Stitch(odb::dbBlock* block,
 
   // Let's connect the last cell
   auto scan_out_name
-      = fmt::format(FMT_RUNTIME(scan_out_name_pattern_), ordinal);
-  ScanLoad scan_out_load = FindOrCreateScanOut(
-      block, last_scan_cell->getScanOut(), scan_out_name, logger);
+      = fmt::format(FMT_RUNTIME(config_.getOutNamePattern()), ordinal);
+  ScanLoad scan_out_load
+      = FindOrCreateScanOut(block, last_scan_cell->getScanOut(), scan_out_name);
   last_scan_cell->connectScanOut(scan_out_load);
 }
 
-static std::pair<std::string, std::optional<std::string>> split_term_identifier(
-    const std::string& input,
-    const char* kind,
-    utl::Logger* logger)
+namespace {
+static std::pair<std::string, std::optional<std::string>> SplitTermIdentifier(
+    const std::string& input)
 {
   size_t tracker = 0;
   size_t slash_position;
@@ -126,40 +154,40 @@ static std::pair<std::string, std::optional<std::string>> split_term_identifier(
   }
   return {input, std::nullopt};
 }
+}  // namespace
 
-ScanDriver ScanStitch::FindOrCreateDriver(const char* kind,
+ScanDriver ScanStitch::FindOrCreateDriver(const std::string_view& kind,
                                           odb::dbBlock* block,
-                                          const std::string& with_name,
-                                          utl::Logger* logger)
+                                          const std::string& with_name)
 {
-  auto term_info = split_term_identifier(with_name, kind, logger);
+  auto term_info = SplitTermIdentifier(with_name);
 
   if (term_info.second.has_value()) {  // Instance/ITerm
     auto inst = block->findInst(term_info.first.c_str());
     if (inst == nullptr) {
-      logger->error(utl::DFT,
-                    34,
-                    "Instance {} not found for {} port",
-                    term_info.first,
-                    kind);
+      logger_->error(utl::DFT,
+                     34,
+                     "Instance {} not found for {} port",
+                     term_info.first,
+                     kind);
     }
     auto iterm = inst->findITerm(term_info.second.value().c_str());
     if (iterm == nullptr) {
-      logger->error(utl::DFT,
-                    35,
-                    "ITerm {}/{} not found for {} port",
-                    term_info.first,
-                    term_info.second.value(),
-                    kind);
+      logger_->error(utl::DFT,
+                     35,
+                     "ITerm {}/{} not found for {} port",
+                     term_info.first,
+                     term_info.second.value(),
+                     kind);
     }
     if (iterm->getIoType() != odb::dbIoType::OUTPUT) {
-      logger->error(utl::DFT,
-                    36,
-                    "ITerm {}/{} for {} port is a {}",
-                    term_info.first,
-                    term_info.second.value(),
-                    kind,
-                    iterm->getIoType().getString());
+      logger_->error(utl::DFT,
+                     36,
+                     "ITerm {}/{} for {} port is a {}",
+                     term_info.first,
+                     term_info.second.value(),
+                     kind,
+                     iterm->getIoType().getString());
     }
     return ScanDriver(iterm);
   } else {  // BTerm
@@ -168,69 +196,65 @@ ScanDriver ScanStitch::FindOrCreateDriver(const char* kind,
       // We don't actually care if it's an output, that works here too.
       return ScanDriver(bterm);
     }
-    return CreateNewPort<ScanDriver>(block, with_name, logger);
+    return CreateNewPort<ScanDriver>(block, with_name);
   }
 }
 
 ScanDriver ScanStitch::FindOrCreateScanEnable(odb::dbBlock* block,
-                                              const std::string& with_name,
-                                              utl::Logger* logger)
+                                              const std::string& with_name)
 {
-  return FindOrCreateDriver("scan-enable", block, with_name, logger);
+  return FindOrCreateDriver(kScanEnable, block, with_name);
 }
 
 ScanDriver ScanStitch::FindOrCreateScanIn(odb::dbBlock* block,
-                                          const std::string& with_name,
-                                          utl::Logger* logger)
+                                          const std::string& with_name)
 {
-  return FindOrCreateDriver("scan-in", block, with_name, logger);
+  return FindOrCreateDriver(kScanIn, block, with_name);
 }
 
 ScanLoad ScanStitch::FindOrCreateScanOut(odb::dbBlock* block,
                                          const ScanDriver& cell_scan_out,
-                                         const std::string& with_name,
-                                         utl::Logger* logger)
+                                         const std::string& with_name)
 {
-  const char* kind = "scan-out";
-  auto term_info = split_term_identifier(with_name, kind, logger);
+  auto term_info = SplitTermIdentifier(with_name);
 
   if (term_info.second.has_value()) {  // Instance/ITerm
     auto inst = block->findInst(term_info.first.c_str());
     if (inst == nullptr) {
-      logger->error(utl::DFT,
-                    37,
-                    "Instance {} not found for {} port",
-                    term_info.first,
-                    kind);
+      logger_->error(utl::DFT,
+                     37,
+                     "Instance {} not found for {} port",
+                     term_info.first,
+                     kScanOut);
     }
     auto iterm = inst->findITerm(term_info.second.value().c_str());
     if (iterm == nullptr) {
-      logger->error(utl::DFT,
-                    38,
-                    "ITerm {}/{} not found for {} port",
-                    term_info.first,
-                    term_info.second.value(),
-                    kind);
+      logger_->error(utl::DFT,
+                     38,
+                     "ITerm {}/{} not found for {} port",
+                     term_info.first,
+                     term_info.second.value(),
+                     kScanOut);
     }
     if (iterm->getIoType() != odb::dbIoType::INPUT) {
-      logger->error(utl::DFT,
-                    39,
-                    "ITerm {}/{} for {} port is a {}",
-                    term_info.first,
-                    term_info.second.value(),
-                    kind,
-                    iterm->getIoType().getString());
+      logger_->error(utl::DFT,
+                     39,
+                     "ITerm {}/{} for {} port is a {}",
+                     term_info.first,
+                     term_info.second.value(),
+                     kScanOut,
+                     iterm->getIoType().getString());
     }
     return ScanLoad(iterm);
   }
   auto bterm = block->findBTerm(with_name.data());
   if (bterm != nullptr) {
     if (bterm->getIoType() != odb::dbIoType::OUTPUT) {
-      logger->error(utl::DFT,
-                    40,
-                    "Top-level pin '{}' specified as {} is not an output port",
-                    term_info.first,
-                    kind);
+      logger_->error(utl::DFT,
+                     40,
+                     "Top-level pin '{}' specified as {} is not an output port",
+                     term_info.first,
+                     kScanEnable);
     }
     return ScanLoad(bterm);
   }
@@ -249,7 +273,7 @@ ScanLoad ScanStitch::FindOrCreateScanOut(odb::dbBlock* block,
     }
   }
 
-  return CreateNewPort<ScanLoad>(block, with_name, logger);
+  return CreateNewPort<ScanLoad>(block, with_name);
 }
 
 }  // namespace dft
