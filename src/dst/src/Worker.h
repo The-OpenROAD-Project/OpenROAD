@@ -50,7 +50,7 @@ class Worker
   ~Worker();
 
  private:
-  asio::io_service service_;
+  asio::io_context service_;
   tcp::acceptor acceptor_;
   Distributed* dist_;
   utl::Logger* logger_;

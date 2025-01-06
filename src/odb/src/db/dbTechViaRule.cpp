@@ -107,7 +107,7 @@ _dbTechViaRule::_dbTechViaRule(_dbDatabase*, const _dbTechViaRule& v)
 
 _dbTechViaRule::_dbTechViaRule(_dbDatabase*)
 {
-  _name = 0;
+  _name = nullptr;
   _flags._spare_bits = 0;
 }
 

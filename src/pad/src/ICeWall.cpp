@@ -585,8 +585,23 @@ void ICeWall::placePad(odb::dbMaster* master,
 
   odb::dbTransform orient(odb::dbOrientType::R0);
   if (mirror) {
-    const odb::dbTransform mirror_transform(odb::dbOrientType::MY);
-    orient.concat(mirror_transform);
+    const auto row_edge = getRowEdge(row);
+    switch (row_edge) {
+      case odb::Direction2D::North:
+      case odb::Direction2D::South: {
+        orient.concat({odb::dbOrientType::MY});
+        break;
+      }
+      case odb::Direction2D::West:
+      case odb::Direction2D::East: {
+        if (row->getSite()->getHeight() < row->getSite()->getWidth()) {
+          orient.concat({odb::dbOrientType::MX});
+        } else {
+          orient.concat({odb::dbOrientType::MY});
+        }
+        break;
+      }
+    }
   }
 
   placeInstance(row, snapToRowSite(row, location), inst, orient.getOrient());
@@ -1203,9 +1218,8 @@ void ICeWall::placeFiller(
         // sort biggest to smallest
         if (use_height) {
           return r_bbox.dy() > l_bbox.dy();
-        } else {
-          return r_bbox.dx() > l_bbox.dx();
         }
+        return r_bbox.dx() > l_bbox.dx();
       });
 
   const odb::Rect rowbbox = row->getBBox();

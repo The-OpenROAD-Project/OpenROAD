@@ -33,7 +33,7 @@
 #include "odb/db.h"
 #include "odb/lefin.h"
 
-namespace lefTechLayerSpacingEol {
+namespace odb::lefTechLayerSpacingEol {
 
 void parallelEdgeParser(
     const boost::fusion::vector<
@@ -485,7 +485,7 @@ bool parse(Iterator first,
   }
   return valid;
 }
-}  // namespace lefTechLayerSpacingEol
+}  // namespace odb::lefTechLayerSpacingEol
 
 namespace odb {
 

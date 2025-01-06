@@ -39,170 +39,170 @@
 // Wrappers definitions.
 const char* defiRow_name(const ::defiRow* obj)
 {
-  return ((const LefDefParser::defiRow*) obj)->name();
+  return ((const DefParser::defiRow*) obj)->name();
 }
 
 const char* defiRow_macro(const ::defiRow* obj)
 {
-  return ((const LefDefParser::defiRow*) obj)->macro();
+  return ((const DefParser::defiRow*) obj)->macro();
 }
 
 double defiRow_x(const ::defiRow* obj)
 {
-  return ((LefDefParser::defiRow*) obj)->x();
+  return ((DefParser::defiRow*) obj)->x();
 }
 
 double defiRow_y(const ::defiRow* obj)
 {
-  return ((LefDefParser::defiRow*) obj)->y();
+  return ((DefParser::defiRow*) obj)->y();
 }
 
 int defiRow_orient(const ::defiRow* obj)
 {
-  return ((LefDefParser::defiRow*) obj)->orient();
+  return ((DefParser::defiRow*) obj)->orient();
 }
 
 const char* defiRow_orientStr(const ::defiRow* obj)
 {
-  return ((const LefDefParser::defiRow*) obj)->orientStr();
+  return ((const DefParser::defiRow*) obj)->orientStr();
 }
 
 int defiRow_hasDo(const ::defiRow* obj)
 {
-  return ((LefDefParser::defiRow*) obj)->hasDo();
+  return ((DefParser::defiRow*) obj)->hasDo();
 }
 
 double defiRow_xNum(const ::defiRow* obj)
 {
-  return ((LefDefParser::defiRow*) obj)->xNum();
+  return ((DefParser::defiRow*) obj)->xNum();
 }
 
 double defiRow_yNum(const ::defiRow* obj)
 {
-  return ((LefDefParser::defiRow*) obj)->yNum();
+  return ((DefParser::defiRow*) obj)->yNum();
 }
 
 int defiRow_hasDoStep(const ::defiRow* obj)
 {
-  return ((LefDefParser::defiRow*) obj)->hasDoStep();
+  return ((DefParser::defiRow*) obj)->hasDoStep();
 }
 
 double defiRow_xStep(const ::defiRow* obj)
 {
-  return ((LefDefParser::defiRow*) obj)->xStep();
+  return ((DefParser::defiRow*) obj)->xStep();
 }
 
 double defiRow_yStep(const ::defiRow* obj)
 {
-  return ((LefDefParser::defiRow*) obj)->yStep();
+  return ((DefParser::defiRow*) obj)->yStep();
 }
 
 int defiRow_numProps(const ::defiRow* obj)
 {
-  return ((LefDefParser::defiRow*) obj)->numProps();
+  return ((DefParser::defiRow*) obj)->numProps();
 }
 
 const char* defiRow_propName(const ::defiRow* obj, int index)
 {
-  return ((const LefDefParser::defiRow*) obj)->propName(index);
+  return ((const DefParser::defiRow*) obj)->propName(index);
 }
 
 const char* defiRow_propValue(const ::defiRow* obj, int index)
 {
-  return ((const LefDefParser::defiRow*) obj)->propValue(index);
+  return ((const DefParser::defiRow*) obj)->propValue(index);
 }
 
 double defiRow_propNumber(const ::defiRow* obj, int index)
 {
-  return ((LefDefParser::defiRow*) obj)->propNumber(index);
+  return ((DefParser::defiRow*) obj)->propNumber(index);
 }
 
 const char defiRow_propType(const ::defiRow* obj, int index)
 {
-  return ((const LefDefParser::defiRow*) obj)->propType(index);
+  return ((const DefParser::defiRow*) obj)->propType(index);
 }
 
 int defiRow_propIsNumber(const ::defiRow* obj, int index)
 {
-  return ((LefDefParser::defiRow*) obj)->propIsNumber(index);
+  return ((DefParser::defiRow*) obj)->propIsNumber(index);
 }
 
 int defiRow_propIsString(const ::defiRow* obj, int index)
 {
-  return ((LefDefParser::defiRow*) obj)->propIsString(index);
+  return ((DefParser::defiRow*) obj)->propIsString(index);
 }
 
 void defiRow_print(const ::defiRow* obj, FILE* f)
 {
-  ((LefDefParser::defiRow*) obj)->print(f);
+  ((DefParser::defiRow*) obj)->print(f);
 }
 
 const char* defiTrack_macro(const ::defiTrack* obj)
 {
-  return ((const LefDefParser::defiTrack*) obj)->macro();
+  return ((const DefParser::defiTrack*) obj)->macro();
 }
 
 double defiTrack_x(const ::defiTrack* obj)
 {
-  return ((LefDefParser::defiTrack*) obj)->x();
+  return ((DefParser::defiTrack*) obj)->x();
 }
 
 double defiTrack_xNum(const ::defiTrack* obj)
 {
-  return ((LefDefParser::defiTrack*) obj)->xNum();
+  return ((DefParser::defiTrack*) obj)->xNum();
 }
 
 double defiTrack_xStep(const ::defiTrack* obj)
 {
-  return ((LefDefParser::defiTrack*) obj)->xStep();
+  return ((DefParser::defiTrack*) obj)->xStep();
 }
 
 int defiTrack_numLayers(const ::defiTrack* obj)
 {
-  return ((LefDefParser::defiTrack*) obj)->numLayers();
+  return ((DefParser::defiTrack*) obj)->numLayers();
 }
 
 const char* defiTrack_layer(const ::defiTrack* obj, int index)
 {
-  return ((const LefDefParser::defiTrack*) obj)->layer(index);
+  return ((const DefParser::defiTrack*) obj)->layer(index);
 }
 
 int defiTrack_firstTrackMask(const ::defiTrack* obj)
 {
-  return ((LefDefParser::defiTrack*) obj)->firstTrackMask();
+  return ((DefParser::defiTrack*) obj)->firstTrackMask();
 }
 
 int defiTrack_sameMask(const ::defiTrack* obj)
 {
-  return ((LefDefParser::defiTrack*) obj)->sameMask();
+  return ((DefParser::defiTrack*) obj)->sameMask();
 }
 
 void defiTrack_print(const ::defiTrack* obj, FILE* f)
 {
-  ((LefDefParser::defiTrack*) obj)->print(f);
+  ((DefParser::defiTrack*) obj)->print(f);
 }
 
 const char* defiGcellGrid_macro(const ::defiGcellGrid* obj)
 {
-  return ((const LefDefParser::defiGcellGrid*) obj)->macro();
+  return ((const DefParser::defiGcellGrid*) obj)->macro();
 }
 
 int defiGcellGrid_x(const ::defiGcellGrid* obj)
 {
-  return ((LefDefParser::defiGcellGrid*) obj)->x();
+  return ((DefParser::defiGcellGrid*) obj)->x();
 }
 
 int defiGcellGrid_xNum(const ::defiGcellGrid* obj)
 {
-  return ((LefDefParser::defiGcellGrid*) obj)->xNum();
+  return ((DefParser::defiGcellGrid*) obj)->xNum();
 }
 
 double defiGcellGrid_xStep(const ::defiGcellGrid* obj)
 {
-  return ((LefDefParser::defiGcellGrid*) obj)->xStep();
+  return ((DefParser::defiGcellGrid*) obj)->xStep();
 }
 
 void defiGcellGrid_print(const ::defiGcellGrid* obj, FILE* f)
 {
-  ((LefDefParser::defiGcellGrid*) obj)->print(f);
+  ((DefParser::defiGcellGrid*) obj)->print(f);
 }

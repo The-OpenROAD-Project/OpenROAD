@@ -29,13 +29,13 @@
 
 #include "defiFPC.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
@@ -52,12 +52,12 @@ defiFPC::defiFPC(defrData* data) : defData(data)
 
 void defiFPC::Init()
 {
-  name_ = 0;
+  name_ = nullptr;
   nameLength_ = 0;
   namesAllocated_ = 0;
   namesUsed_ = 0;
-  names_ = 0;
-  rowOrComp_ = 0;
+  names_ = nullptr;
+  rowOrComp_ = nullptr;
   clear();
 }
 
@@ -72,7 +72,7 @@ void defiFPC::Destroy()
 
   if (name_)
     free(name_);
-  name_ = 0;
+  name_ = nullptr;
   nameLength_ = 0;
 
   free((char*) (names_));
@@ -273,4 +273,4 @@ void defiFPC::addItem(char item, const char* name)
   namesUsed_ += 1;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

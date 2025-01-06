@@ -33,7 +33,7 @@
 #ifndef CLEFIVIA_H
 #define CLEFIVIA_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiTypedefs.h"
 

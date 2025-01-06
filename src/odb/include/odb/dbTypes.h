@@ -130,12 +130,11 @@ class dbGDSSTrans
 {
  public:
   bool _flipX;
-  bool _absMag, _absAngle;
   double _mag, _angle;
 
   dbGDSSTrans();
 
-  dbGDSSTrans(bool flipX, bool absMag, bool absAngle, double mag, double angle);
+  dbGDSSTrans(bool flipX, double mag, double angle);
 
   bool operator==(const dbGDSSTrans& rhs) const;
 
@@ -436,7 +435,6 @@ class dbMasterType
  public:
   enum Value
   {
-    NONE,                           /** */
     COVER,                          /** */
     COVER_BUMP,                     /** */
     RING,                           /** */

@@ -55,14 +55,17 @@ class frLayer
   void setLayerNum(frLayerNum layerNumIn) { layerNum_ = layerNumIn; }
   void setWidth(frUInt4 widthIn) { width_ = widthIn; }
   void setMinWidth(frUInt4 minWidthIn) { minWidth_ = minWidthIn; }
-  void setDefaultViaDef(frViaDef* in) { defaultViaDef_ = in; }
-  void addSecondaryViaDef(frViaDef* in) { secondaryViaDefs_.emplace_back(in); }
-  const std::vector<frViaDef*>& getSecondaryViaDefs() const
+  void setDefaultViaDef(const frViaDef* in) { defaultViaDef_ = in; }
+  void addSecondaryViaDef(const frViaDef* in)
+  {
+    secondaryViaDefs_.emplace_back(in);
+  }
+  const std::vector<const frViaDef*>& getSecondaryViaDefs() const
   {
     return secondaryViaDefs_;
   }
   void addConstraint(frConstraint* consIn) { constraints_.push_back(consIn); }
-  void addViaDef(frViaDef* viaDefIn) { viaDefs_.insert(viaDefIn); }
+  void addViaDef(const frViaDef* viaDefIn) { viaDefs_.insert(viaDefIn); }
   void setHasVia2ViaMinStepViol(bool in) { hasMinStepViol_ = in; }
   void setUnidirectional(bool in) { unidirectional_ = in; }
   // getters
@@ -128,13 +131,13 @@ class frLayer
     style.setEndStyle(frcExtendEndStyle, width_ / 2);
     return style;
   }
-  frViaDef* getDefaultViaDef() const { return defaultViaDef_; }
-  frViaDef* getSecondaryViaDef(int idx) const
+  const frViaDef* getDefaultViaDef() const { return defaultViaDef_; }
+  const frViaDef* getSecondaryViaDef(int idx) const
   {
     return secondaryViaDefs_.at(idx);
   }
   bool hasVia2ViaMinStepViol() { return hasMinStepViol_; }
-  std::set<frViaDef*> getViaDefs() const { return viaDefs_; }
+  std::set<const frViaDef*> getViaDefs() const { return viaDefs_; }
   dbTechLayerType getType() const
   {
     if (fakeCut_) {
@@ -836,6 +839,15 @@ class frLayer
 
   void printAllConstraints(utl::Logger* logger);
 
+  void setWidthTblOrthCon(frLef58WidthTableOrthConstraint* con)
+  {
+    width_tbl_orth_con_ = con;
+  }
+  frLef58WidthTableOrthConstraint* getWidthTblOrthCon() const
+  {
+    return width_tbl_orth_con_;
+  }
+
  protected:
   odb::dbTechLayer* db_layer_{nullptr};
   bool fakeCut_{false};
@@ -844,11 +856,11 @@ class frLayer
   frUInt4 width_{0};
   frUInt4 wrongDirWidth_{0};
   frUInt4 minWidth_{0};
-  frViaDef* defaultViaDef_{nullptr};
-  std::vector<frViaDef*> secondaryViaDefs_;
+  const frViaDef* defaultViaDef_{nullptr};
+  std::vector<const frViaDef*> secondaryViaDefs_;
   bool hasMinStepViol_{false};
   bool unidirectional_{false};
-  std::set<frViaDef*> viaDefs_;
+  std::set<const frViaDef*> viaDefs_;
   std::vector<frLef58CutClass*> cutClasses_;
   std::map<std::string, int> name2CutClassIdxMap_;
   frCollection<frConstraint*> constraints_;
@@ -929,6 +941,7 @@ class frLayer
 
   frOrthSpacingTableConstraint* spc_tbl_orth_con_{nullptr};
   drEolSpacingConstraint drEolCon_;
+  frLef58WidthTableOrthConstraint* width_tbl_orth_con_{nullptr};
 
   friend class io::Parser;
 };

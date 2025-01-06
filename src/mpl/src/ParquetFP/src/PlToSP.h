@@ -68,8 +68,8 @@ class Pl2SP
 
   ~Pl2SP() {}
 
-  void naiveAlgo(void);
-  void TCGAlgo(void);
+  void naiveAlgo();
+  void TCGAlgo();
 
   // Floyd Marshal to find TCG
   void TCG_FM(std::vector<std::vector<bool>>& TCGMatrixHoriz,
@@ -83,11 +83,11 @@ class Pl2SP
               int v,
               std::vector<int>& pre);
 
-  const std::vector<unsigned>& getXSP(void) const { return _XX; }
+  const std::vector<unsigned>& getXSP() const { return _XX; }
 
-  const std::vector<unsigned>& getYSP(void) const { return _YY; }
+  const std::vector<unsigned>& getYSP() const { return _YY; }
 
-  void print(void) const;
+  void print() const;
 };
 
 struct RowElem
@@ -120,22 +120,20 @@ class SPXRelation
   {
     if (i == j) {
       return false;
-    } else if (TCGMatrixHoriz[i][j]) {
-      return true;
-    } else if (TCGMatrixHoriz[j][i]) {
-      return false;
-    } else if (TCGMatrixVert[j][i]) {
-      return true;
-    } else if (TCGMatrixVert[i][j]) {
-      return false;
-    } else {
-      // cout<<"ERROR IN PL2SP SPX "<<i<<"\t"<<j<<endl;
-      if (i < j) {
-        return true;
-      } else {
-        return false;
-      }
     }
+    if (TCGMatrixHoriz[i][j]) {
+      return true;
+    }
+    if (TCGMatrixHoriz[j][i]) {
+      return false;
+    }
+    if (TCGMatrixVert[j][i]) {
+      return true;
+    }
+    if (TCGMatrixVert[i][j]) {
+      return false;
+    }
+    return i < j;
   }
 };
 
@@ -157,19 +155,13 @@ class SPYRelation
     }
     if (TCGMatrixHoriz[i][j])
       return true;
-    else if (TCGMatrixHoriz[j][i])
+    if (TCGMatrixHoriz[j][i])
       return false;
-    else if (TCGMatrixVert[j][i])
+    if (TCGMatrixVert[j][i])
       return false;
-    else if (TCGMatrixVert[i][j])
+    if (TCGMatrixVert[i][j])
       return true;
-    else {
-      // cout<<"ERROR IN PL2SP SPY "<<i<<"\t"<<j<<endl;
-      if (i < j)
-        return true;
-      else
-        return false;
-    }
+    return i < j;
   }
 };
 }  // namespace parquetfp

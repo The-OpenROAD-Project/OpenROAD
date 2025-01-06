@@ -217,9 +217,9 @@ std::string TritonRoute::runDRWorker(const std::string& workerStr,
       = on && FlexDRGraphics::guiActive() ? std::make_unique<FlexDRGraphics>(
             debug_.get(), design_.get(), db_, logger_)
                                           : nullptr;
-  auto worker
-      = FlexDRWorker::load(workerStr, logger_, design_.get(), graphics_.get());
-  worker->setViaData(viaData);
+  auto worker = FlexDRWorker::load(
+      workerStr, viaData, design_.get(), logger_, router_cfg_.get());
+  worker->setGraphics(graphics_.get());
   worker->setSharedVolume(shared_volume_);
   worker->setDebugSettings(debug_.get());
   if (graphics_) {
@@ -243,7 +243,7 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
   frIArchive ar(viaDataFile);
   ar >> viaData;
 
-  std::unique_ptr<FlexDRGraphics> graphics_
+  std::unique_ptr<FlexDRGraphics> graphics
       = on && FlexDRGraphics::guiActive() ? std::make_unique<FlexDRGraphics>(
             debug_.get(), design_.get(), db_, logger_)
                                           : nullptr;
@@ -252,8 +252,9 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
   std::string workerStr((std::istreambuf_iterator<char>(workerFile)),
                         std::istreambuf_iterator<char>());
   workerFile.close();
-  auto worker
-      = FlexDRWorker::load(workerStr, logger_, design_.get(), graphics_.get());
+  auto worker = FlexDRWorker::load(
+      workerStr, &viaData, design_.get(), logger_, router_cfg_.get());
+  worker->setGraphics(graphics.get());
   if (debug_->mazeEndIter != -1) {
     worker->setMazeEndIter(debug_->mazeEndIter);
   }
@@ -277,9 +278,8 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
   }
   worker->setSharedVolume(shared_volume_);
   worker->setDebugSettings(debug_.get());
-  worker->setViaData(&viaData);
-  if (graphics_) {
-    graphics_->startIter(worker->getDRIter(), router_cfg_.get());
+  if (graphics) {
+    graphics->startIter(worker->getDRIter(), router_cfg_.get());
   }
   std::string result = worker->reloadedMain();
   bool updated = worker->end(design_.get());
@@ -610,7 +610,7 @@ void TritonRoute::initDesign()
 
 void TritonRoute::prep()
 {
-  FlexRP rp(getDesign(), getDesign()->getTech(), logger_, router_cfg_.get());
+  FlexRP rp(getDesign(), logger_, router_cfg_.get());
   rp.main();
 }
 
@@ -662,6 +662,7 @@ void TritonRoute::stepDR(int size,
                      workerMarkerDecay,
                      getMode(ripupMode),
                      followGuide});
+  dr_->incIter();
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 }
 
@@ -939,7 +940,7 @@ int TritonRoute::main()
   }
   if (debug_->debugDumpDR) {
     std::string router_cfg_path
-        = fmt::format("{}/init_router_cfg_->bin", debug_->dumpDir);
+        = fmt::format("{}/init_router_cfg.bin", debug_->dumpDir);
     writeGlobals(router_cfg_path);
   }
   router_cfg_->MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
@@ -1259,7 +1260,7 @@ int TritonRoute::getWorkerResultsSize()
 void TritonRoute::reportDRC(const std::string& file_name,
                             const frList<std::unique_ptr<frMarker>>& markers,
                             const std::string& marker_name,
-                            Rect drcBox)
+                            Rect drcBox) const
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   odb::dbMarkerCategory* tool_category

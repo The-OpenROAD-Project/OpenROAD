@@ -41,6 +41,12 @@ Path Type: max
           -1.04   slack (VIOLATED)
 
 
+Cell type report for _551_ (LCU_16_BRENT_KUNG)
+Cell type report:                       Count       Area
+  Buffer                                   16     120.12
+  Inverter                                  9      33.78
+  Multi-Input combinational cell           37     192.68
+  Total                                    62     346.58
 Startpoint: dpath.b_reg.out[3]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by CLK)
 Endpoint: carry_out (output port)
@@ -82,4 +88,10 @@ Path Type: max
           -1.15   slack (VIOLATED)
 
 
+Cell type report for _551_ (LCU_16_KOGGE_STONE__551_)
+Cell type report:                       Count       Area
+  Buffer                                   16     120.12
+  Inverter                                  5      18.77
+  Multi-Input combinational cell           82     384.12
+  Total                                   103     523.00
 Repair timing output passed/skipped equivalence test

@@ -137,5 +137,12 @@ void set_source_settings(int bump_dx, int bump_dy, int bump_size, int bump_inter
   pdnsim->setGeneratedSourceSettings(settings);
 }
 
+void
+set_inst_power(odb::dbInst* inst, Corner* corner, float power)
+{
+  PDNSim* pdnsim = getPDNSim();
+  pdnsim->setInstPower(inst, corner, power);
+}
+
 %} // inline
 

@@ -46,6 +46,7 @@ Graphics::Graphics(bool coarse,
     : coarse_(coarse),
       fine_(fine),
       show_bundled_nets_(false),
+      show_clusters_ids_(false),
       skip_steps_(false),
       is_skipping_(false),
       only_final_result_(false),
@@ -171,11 +172,6 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
                                 std::vector<std::vector<odb::Rect>>& outlines,
                                 int level)
 {
-  auto& children = parent->getChildren();
-  if (children.empty()) {
-    return;
-  }
-
   Rect outline = parent->getBBox();
   odb::Rect dbu_outline(block_->micronsToDbu(outline.xMin()),
                         block_->micronsToDbu(outline.yMin()),
@@ -183,7 +179,7 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
                         block_->micronsToDbu(outline.yMax()));
   outlines[level].push_back(dbu_outline);
 
-  for (auto& child : children) {
+  for (auto& child : parent->getChildren()) {
     switch (child->getClusterType()) {
       case HardMacroCluster: {
         std::vector<mpl2::HardMacro*> hard_macros = child->getHardMacros();
@@ -192,9 +188,14 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
         }
         break;
       }
-      case StdCellCluster:
-        soft.push_back(*child->getSoftMacro());
+      case StdCellCluster: {
+        if (child->isLeaf()) {
+          soft.push_back(*child->getSoftMacro());
+        } else {
+          fetchSoftAndHard(child.get(), hard, soft, outlines, (level + 1));
+        }
         break;
+      }
       case MixedCluster: {
         fetchSoftAndHard(child.get(), hard, soft, outlines, (level + 1));
         break;
@@ -431,11 +432,20 @@ void Graphics::drawObjects(gui::Painter& painter)
 
     bbox.moveDelta(outline_.xMin(), outline_.yMin());
 
+    std::string cluster_id_string;
+    if (show_clusters_ids_) {
+      Cluster* cluster = macro.getCluster();
+      cluster_id_string = cluster ? std::to_string(cluster->getId()) : "fixed";
+    } else {
+      // Use the ID of the sequence pair itself.
+      cluster_id_string = std::to_string(i++);
+    }
+
     painter.drawRect(bbox);
     painter.drawString(bbox.xCenter(),
                        bbox.yCenter(),
                        gui::Painter::CENTER,
-                       std::to_string(i++));
+                       cluster_id_string);
   }
 
   painter.setPen(gui::Painter::white, true);
@@ -526,6 +536,29 @@ void Graphics::drawObjects(gui::Painter& painter)
     // Hightlight current outline so we see where SA is working
     painter.setPen(gui::Painter::cyan, true);
     painter.drawRect(outline_);
+
+    drawGuides(painter);
+  }
+}
+
+// Draw guidance regions for macros.
+void Graphics::drawGuides(gui::Painter& painter)
+{
+  painter.setPen(gui::Painter::green, true);
+
+  for (const auto& [macro_id, guidance_region] : guides_) {
+    odb::Rect guide(block_->micronsToDbu(guidance_region.xMin()),
+                    block_->micronsToDbu(guidance_region.yMin()),
+                    block_->micronsToDbu(guidance_region.xMax()),
+                    block_->micronsToDbu(guidance_region.yMax()));
+    guide.moveDelta(outline_.xMin(), outline_.yMin());
+
+    painter.drawRect(guide);
+    painter.drawString(guide.xCenter(),
+                       guide.yCenter(),
+                       gui::Painter::Anchor::CENTER,
+                       std::to_string(macro_id),
+                       false /* rotate 90 */);
   }
 }
 
@@ -739,6 +772,11 @@ void Graphics::setShowBundledNets(bool show_bundled_nets)
   show_bundled_nets_ = show_bundled_nets;
 }
 
+void Graphics::setShowClustersIds(bool show_clusters_ids)
+{
+  show_clusters_ids_ = show_clusters_ids;
+}
+
 void Graphics::setSkipSteps(bool skip_steps)
 {
   skip_steps_ = skip_steps;
@@ -780,6 +818,11 @@ void Graphics::setCurrentCluster(Cluster* current_cluster)
   current_cluster_ = current_cluster;
 }
 
+void Graphics::setGuides(const std::map<int, Rect>& guides)
+{
+  guides_ = guides;
+}
+
 void Graphics::eraseDrawing()
 {
   // Ensure we don't try to access the clusters after they were deleted
@@ -793,6 +836,7 @@ void Graphics::eraseDrawing()
   outline_.reset(0, 0, 0, 0);
   outlines_.clear();
   blocked_boundary_to_mark_.clear();
+  guides_.clear();
 }
 
 }  // namespace mpl2

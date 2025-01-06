@@ -421,7 +421,7 @@ void Nodes::putNodeHeight(unsigned index, float height)
   _nodes[index].putHeight(height);
 }
 
-vector<float> Nodes::getNodeWidths(void)
+vector<float> Nodes::getNodeWidths()
 {
   vector<float> widths;
   for (itNode iNodes = nodesBegin(); iNodes != nodesEnd(); iNodes++)
@@ -429,7 +429,7 @@ vector<float> Nodes::getNodeWidths(void)
   return widths;
 }
 
-vector<float> Nodes::getNodeHeights(void)
+vector<float> Nodes::getNodeHeights()
 {
   vector<float> heights;
   for (itNode iNodes = nodesBegin(); iNodes != nodesEnd(); iNodes++)
@@ -437,7 +437,7 @@ vector<float> Nodes::getNodeHeights(void)
   return heights;
 }
 
-vector<float> Nodes::getXLocs(void)
+vector<float> Nodes::getXLocs()
 {
   vector<float> xloc;
   for (itNode iNodes = nodesBegin(); iNodes != nodesEnd(); iNodes++)
@@ -445,7 +445,7 @@ vector<float> Nodes::getXLocs(void)
   return xloc;
 }
 
-vector<float> Nodes::getYLocs(void)
+vector<float> Nodes::getYLocs()
 {
   vector<float> yloc;
   for (itNode iNodes = nodesBegin(); iNodes != nodesEnd(); iNodes++)

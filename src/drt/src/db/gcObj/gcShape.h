@@ -76,6 +76,9 @@ class gcCorner : public gtl::point_data<frCoord>
   frCornerTypeEnum getType() const { return cornerType_; }
   frCornerDirEnum getDir() const { return cornerDir_; }
   bool isFixed() const { return fixed_; }
+  bool hasPin() const { return pin_; }
+  gcPin* getPin() const { return pin_; }
+  frLayerNum getLayerNum() const { return layer_num_; }
 
   // setters
   void setPrevCorner(gcCorner* in) { prevCorner_ = in; }
@@ -85,8 +88,12 @@ class gcCorner : public gtl::point_data<frCoord>
   void setType(frCornerTypeEnum in) { cornerType_ = in; }
   void setDir(frCornerDirEnum in) { cornerDir_ = in; }
   void setFixed(bool in) { fixed_ = in; }
+  void addToPin(gcPin* in) { pin_ = in; }
+  void removeFromPin() { pin_ = nullptr; }
+  void setLayerNum(const frLayerNum in) { layer_num_ = in; }
 
  private:
+  gcPin* pin_{nullptr};
   gcCorner* prevCorner_{nullptr};
   gcCorner* nextCorner_{nullptr};
   gcSegment* prevEdge_{nullptr};
@@ -95,6 +102,7 @@ class gcCorner : public gtl::point_data<frCoord>
   // points away from poly for convex and concave
   frCornerDirEnum cornerDir_{frCornerDirEnum::UNKNOWN};
   bool fixed_{false};
+  frLayerNum layer_num_{-1};
 };
 
 class gcSegment : public gtl::segment_data<frCoord>, public gcShape

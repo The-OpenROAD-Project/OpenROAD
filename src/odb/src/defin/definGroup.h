@@ -41,9 +41,9 @@ class definGroup : public definBase
 
  public:
   definGroup();
-  virtual ~definGroup();
+  ~definGroup() override;
 
-  void init();
+  void init() override;
 
   virtual void begin(const char* name);
   virtual void region(const char* region_name);

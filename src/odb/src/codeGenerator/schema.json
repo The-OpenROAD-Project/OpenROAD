@@ -326,12 +326,6 @@
     },
     {
       "first": "dbGDSStructure",
-      "second": "dbGDSNode",
-      "type": "1_n",
-      "tbl_name": "nodes_"
-    },
-    {
-      "first": "dbGDSStructure",
       "second": "dbGDSPath",
       "type": "1_n",
       "tbl_name": "paths_"
@@ -341,6 +335,12 @@
       "second": "dbGDSSRef",
       "type": "1_n",
       "tbl_name": "srefs_"
+    },
+    {
+      "first": "dbGDSStructure",
+      "second": "dbGDSARef",
+      "type": "1_n",
+      "tbl_name": "arefs_"
     },
     {
       "first": "dbGDSStructure",

@@ -210,6 +210,13 @@ class drPathSeg : public drShape
   bool isPatchSeg() const { return patchSeg_; }
   bool isTapered() const { return isTapered_; }
   void setTapered(bool t) { isTapered_ = t; }
+  void setApPathSeg(Point pt)
+  {
+    is_ap_pathseg_ = true;
+    ap_loc_ = pt;
+  }
+  bool isApPathSeg() const { return is_ap_pathseg_; }
+  Point getApLoc() const { return ap_loc_; }
 
  protected:
   Point begin_;  // begin always smaller than end, assumed
@@ -221,6 +228,8 @@ class drPathSeg : public drShape
   FlexMazeIdx endMazeIdx_;
   bool patchSeg_{false};
   bool isTapered_{false};
+  bool is_ap_pathseg_{false};
+  Point ap_loc_;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
@@ -235,6 +244,8 @@ class drPathSeg : public drShape
     (ar) & endMazeIdx_;
     (ar) & patchSeg_;
     (ar) & isTapered_;
+    (ar) & is_ap_pathseg_;
+    (ar) & ap_loc_;
   }
 
   friend class boost::serialization::access;

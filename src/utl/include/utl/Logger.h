@@ -51,6 +51,10 @@
 #include "spdlog/details/os.h"
 #include "spdlog/fmt/fmt.h"
 #include "spdlog/fmt/ostr.h"
+#if FMT_VERSION >= 110000
+#include "spdlog/fmt/ranges.h"
+#endif
+
 #include "spdlog/spdlog.h"
 
 namespace utl {
@@ -115,26 +119,27 @@ class Logger
   static ToolId findToolId(const char* tool_name);
 
   template <typename... Args>
-  inline void report(const std::string& message, const Args&... args)
+  void report(const std::string& message, const Args&... args)
   {
     logger_->log(spdlog::level::level_enum::off,
                  FMT_RUNTIME(message + spdlog::details::os::default_eol),
                  args...);
   }
 
+  // Reports a string literal with no interpolation or newline.
   template <typename... Args>
-  inline void reportNoNewline(const std::string& message, const Args&... args)
+  void reportLiteral(const std::string& message)
   {
-    logger_->log(spdlog::level::level_enum::off, FMT_RUNTIME(message), args...);
+    logger_->log(spdlog::level::level_enum::off, "{}", message);
   }
 
   // Do NOT call this directly, use the debugPrint macro  instead (defined
   // below)
   template <typename... Args>
-  inline void debug(ToolId tool,
-                    const std::string& group,
-                    const std::string& message,
-                    const Args&... args)
+  void debug(ToolId tool,
+             const std::string& group,
+             const std::string& message,
+             const Args&... args)
   {
     // Message counters do NOT apply to debug messages.
     logger_->log(
@@ -148,29 +153,29 @@ class Logger
   }
 
   template <typename... Args>
-  inline void info(ToolId tool,
-                   int id,
-                   const std::string& message,
-                   const Args&... args)
+  void info(ToolId tool,
+            int id,
+            const std::string& message,
+            const Args&... args)
   {
     log(tool, spdlog::level::level_enum::info, id, message, args...);
   }
 
   template <typename... Args>
-  inline void warn(ToolId tool,
-                   int id,
-                   const std::string& message,
-                   const Args&... args)
+  void warn(ToolId tool,
+            int id,
+            const std::string& message,
+            const Args&... args)
   {
     warning_count_++;
     log(tool, spdlog::level::level_enum::warn, id, message, args...);
   }
 
   template <typename... Args>
-  __attribute__((noreturn)) inline void error(ToolId tool,
-                                              int id,
-                                              const std::string& message,
-                                              const Args&... args)
+  __attribute__((noreturn)) void error(ToolId tool,
+                                       int id,
+                                       const std::string& message,
+                                       const Args&... args)
   {
     error_count_++;
     log(tool, spdlog::level::err, id, message, args...);
@@ -193,9 +198,8 @@ class Logger
   // For logging to the metrics file.  This is a much more restricted
   // API as we are writing JSON not user messages.
   // Note: these methods do no escaping so avoid special characters.
-  template <typename T,
-            typename U = std::enable_if_t<std::is_arithmetic<T>::value>>
-  inline void metric(const std::string_view metric_name, T value)
+  template <typename T, typename U = std::enable_if_t<std::is_arithmetic_v<T>>>
+  void metric(const std::string_view metric_name, T value)
   {
     const std::string name = std::string(metric_name);
     if (std::isinf(value)) {
@@ -213,7 +217,7 @@ class Logger
     }
   }
 
-  inline void metric(const std::string_view metric, const std::string& value)
+  void metric(const std::string_view metric, const std::string& value)
   {
     log_metric(std::string(metric), '"' + value + '"');
   }
@@ -267,11 +271,11 @@ class Logger
   std::vector<MetricsPolicy> metrics_policies_;
 
   template <typename... Args>
-  inline void log(ToolId tool,
-                  spdlog::level::level_enum level,
-                  int id,
-                  const std::string& message,
-                  const Args&... args)
+  void log(ToolId tool,
+           spdlog::level::level_enum level,
+           int id,
+           const std::string& message,
+           const Args&... args)
   {
     assert(id >= 0 && id <= max_message_id);
     auto& counter = message_counters_[tool][id];
@@ -301,7 +305,7 @@ class Logger
     }
   }
 
-  inline void log_metric(const std::string& metric, const std::string& value)
+  void log_metric(const std::string& metric, const std::string& value)
   {
     std::string key;
     if (metrics_stages_.empty()) {
@@ -351,9 +355,9 @@ class Logger
   using MessageCounter = std::array<std::atomic_int16_t, max_message_id + 1>;
   std::array<MessageCounter, ToolId::SIZE> message_counters_;
   std::array<DebugGroups, ToolId::SIZE> debug_group_level_;
-  bool debug_on_;
-  std::atomic_int warning_count_;
-  std::atomic_int error_count_;
+  bool debug_on_{false};
+  std::atomic_int warning_count_{0};
+  std::atomic_int error_count_{0};
   static constexpr const char* level_names[]
       = {"TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "OFF"};
   static constexpr const char* pattern_ = "%v";

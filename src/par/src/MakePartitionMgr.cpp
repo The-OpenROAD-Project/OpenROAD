@@ -35,7 +35,6 @@
 
 #include "par/MakePartitionMgr.h"
 
-#include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "par/PartitionMgr.h"
 #include "sta/StaMain.hh"

@@ -110,6 +110,26 @@ set_pdnsim_net_voltage
 | `-voltage` | Sets the voltage on a specific net. If this option is not given, the Liberty file's voltage value is obtained from operating conditions. |
 | `-corner` | Corner to use this voltage. If not specified, this voltage applies to all corners. |
 
+### Set PDNSim Instance power
+
+This command sets PDNSim instance power.
+This should only be used when needing to override the computed power.
+
+```tcl
+set_pdnsim_inst_power
+    -inst inst_name
+    -power power
+    [-corner corner]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-inst` | Name of the instance to set the power dor. |
+| `-power` | Sets the power on a specific instance. |
+| `-corner` | Corner to use this power. If not specified, this power applies to all corners. |
+
 ### Set PDNSim Power Source Settings
 
 Set PDNSim power source setting.

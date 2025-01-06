@@ -30,10 +30,10 @@
 // This program is the diffDef core program.  It has all the callback
 // routines and write it out to a temporary file.
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #ifndef WIN32
 #include <unistd.h>
 #endif /* not WIN32 */
@@ -808,10 +808,8 @@ int snetf(defrCallbackType_e c, defiNet* net, defiUserData ud)
         }
       }
       if (net->polyMask(i)) {
-        fprintf(fout,
-                "MASK %d POLYGON % s ",
-                net->polyMask(i),
-                net->polygonName(i));
+        fprintf(
+            fout, "MASK %d POLYGON %s ", net->polyMask(i), net->polygonName(i));
       } else {
         fprintf(fout, "POLYGON %s", net->polygonName(i));
       }
@@ -1413,7 +1411,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
   defiVia* via;
   defiRegion* re;
   defiGroup* group;
-  defiComponentMaskShiftLayer* maskShiftLayer = NULL;
+  defiComponentMaskShiftLayer* maskShiftLayer = nullptr;
   defiScanchain* sc;
   defiIOTiming* iot;
   defiFPC* fpc;
@@ -1433,10 +1431,10 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
   const char* itemT;
   char dir;
   defiPinAntennaModel* aModel;
-  char* tmpPinName = NULL;
-  char* extraPinName = NULL;
-  char* pName = NULL;
-  char* tmpName = NULL;
+  char* tmpPinName = nullptr;
+  char* extraPinName = nullptr;
+  char* pName = nullptr;
+  char* tmpName = nullptr;
 
   checkType(c);
   if (ud != userData)
@@ -1512,7 +1510,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
       // is set to 1
       if (ignorePE) {
         // check if .extra is in the name, if it is, ignore it
-        if ((extraPinName = strstr(pName, ".extra")) == NULL)
+        if ((extraPinName = strstr(pName, ".extra")) == nullptr)
           tmpPinName = pName;
         else {
           // make sure name ends with .extraNNN
@@ -1520,14 +1518,14 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
           extraPinName = extraPinName + 6;
           *tmpName = '\0';
           tmpPinName = pName;
-          if (extraPinName != NULL) {
+          if (extraPinName != nullptr) {
             while (*extraPinName != '\0' && *extraPinName != '\n') {
-              if (isdigit(*extraPinName++))
+              if (isdigit(*extraPinName++)) {
                 continue;
-              else {  // Name does not end only .extraNNN
-                tmpPinName = strdup(pin->pinName());
-                break;
               }
+              // Name does not end only .extraNNN
+              tmpPinName = strdup(pin->pinName());
+              break;
             }
           }
         }
@@ -2467,9 +2465,6 @@ int diffDefReadFile(char* inFile,
                     char* ignoreViaName,
                     char* netSegComp)
 {
-  FILE* f;
-  int res;
-
   userData = (void*) 0x01020304;
   defrInit();
 
@@ -2542,18 +2537,19 @@ int diffDefReadFile(char* inFile,
   if (strcmp(netSegComp, "0") != 0)
     netSeCmp = 1;
 
-  if ((f = fopen(inFile, "r")) == 0) {
+  FILE* f;
+  if ((f = fopen(inFile, "r")) == nullptr) {
     fprintf(stderr, "Couldn't open input file '%s'\n", inFile);
     return (2);
   }
 
-  if ((fout = fopen(outFile, "w")) == 0) {
+  if ((fout = fopen(outFile, "w")) == nullptr) {
     fprintf(stderr, "Couldn't open output file '%s'\n", outFile);
     fclose(f);
     return (2);
   }
 
-  res = defrRead(f, inFile, userData, 1);
+  const int res = defrRead(f, inFile, userData, 1);
 
   fclose(f);
   fclose(fout);

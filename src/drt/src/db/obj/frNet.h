@@ -242,6 +242,8 @@ class frNet : public frBlockObject
     orig_guides_ = guides;
   }
   const std::vector<frRect>& getOrigGuides() const { return orig_guides_; }
+  void setHasJumpers(bool has_jumpers) { has_jumpers_ = has_jumpers; }
+  bool hasJumpers() { return has_jumpers_; }
 
  protected:
   frString name_;
@@ -276,6 +278,9 @@ class frNet : public frBlockObject
   bool hasInitialRouting_{false};
   bool isFixed_{false};
 
+  // Flag to mark when a frNet has a jumper, which is a special route guide used
+  // to prevent antenna violations
+  bool has_jumpers_{false};
   std::vector<frPinFig*> all_pinfigs_;
 };
 }  // namespace drt

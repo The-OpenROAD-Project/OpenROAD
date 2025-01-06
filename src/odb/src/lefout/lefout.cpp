@@ -33,10 +33,10 @@
 #include "odb/lefout.h"
 
 #include <spdlog/fmt/ostr.h>
-#include <stdio.h>
 
 #include <algorithm>
 #include <boost/polygon/polygon.hpp>
+#include <cstdio>
 
 #include "odb/db.h"
 #include "odb/dbShape.h"
@@ -1291,9 +1291,7 @@ void lefout::writeMaster(dbMaster* master)
     fmt::print(_out, "\nMACRO {}\n", name.c_str());
   }
 
-  if (master->getType() != dbMasterType::NONE) {
-    fmt::print(_out, "    CLASS {} ;\n", master->getType().getString());
-  }
+  fmt::print(_out, "    CLASS {} ;\n", master->getType().getString());
 
   const odb::Point origin = master->getOrigin();
 

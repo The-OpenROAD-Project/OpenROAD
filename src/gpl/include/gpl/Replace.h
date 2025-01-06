@@ -125,7 +125,6 @@ class Replace
   void setRoutabilityCheckOverflow(float overflow);
   void setRoutabilityMaxDensity(float density);
 
-  void setRoutabilityMaxBloatIter(int iter);
   void setRoutabilityMaxInflationIter(int iter);
 
   void setRoutabilityTargetRcMetric(float rc);
@@ -194,7 +193,6 @@ class Replace
   float routabilityRcK3_ = 0.0;
   float routabilityRcK4_ = 0.0;
 
-  int routabilityMaxBloatIter_ = 1;
   int routabilityMaxInflationIter_ = 4;
 
   float timingNetWeightMax_ = 1.9;

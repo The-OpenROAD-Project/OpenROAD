@@ -64,6 +64,10 @@
     $result = list;
 }
 
+%typemap(out) uint64_t {
+    $result = PyLong_FromUnsignedLongLong($1);
+}
+
 %typemap(out) std::optional<uint8_t> {
     if ($1.has_value()) {
         $result = PyInt_FromLong((long)$1.value());

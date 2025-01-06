@@ -29,13 +29,13 @@
 
 #include "defiPropType.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 defiPropType::defiPropType()
 {
@@ -46,8 +46,8 @@ void defiPropType::Init()
 {
   numProperties_ = 0;
   propertiesAllocated_ = 0;
-  propNames_ = 0;
-  propTypes_ = 0;
+  propNames_ = nullptr;
+  propTypes_ = nullptr;
 }
 
 void defiPropType::Clear()
@@ -129,4 +129,4 @@ const char defiPropType::propType(char* name) const
   }
   return ('N');  // Can't found the name
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

@@ -33,7 +33,7 @@
 #ifndef CDEFINONDEFAULT_H
 #define CDEFINONDEFAULT_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

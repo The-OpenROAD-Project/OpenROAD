@@ -228,7 +228,7 @@ class FlexTAWorker
   frCoord initFixedObjs_calcBloatDist(frBlockObject* obj,
                                       frLayerNum lNum,
                                       const Rect& box);
-  frCoord initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
+  frCoord initFixedObjs_calcOBSBloatDistVia(const frViaDef* viaDef,
                                             frLayerNum lNum,
                                             const Rect& box,
                                             bool isOBS = true);

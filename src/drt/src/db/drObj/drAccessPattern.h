@@ -52,7 +52,7 @@ class drAccessPattern : public drBlockObject
   {
     return (dir == frDirEnum::U) ? vU_ : vD_;
   }
-  frViaDef* getAccessViaDef(const frDirEnum& dir = frDirEnum::U)
+  const frViaDef* getAccessViaDef(const frDirEnum& dir = frDirEnum::U)
   {
     return (dir == frDirEnum::U) ? (*vU_)[vUIdx_] : (*vD_)[vDIdx_];
   }
@@ -68,7 +68,8 @@ class drAccessPattern : public drBlockObject
   void setPin(drPin* in) { pin_ = in; }
   void setValidAccess(const std::vector<bool>& in) { validAccess_ = in; }
 
-  void setAccessViaDef(const frDirEnum dir, std::vector<frViaDef*>* viaDef)
+  void setAccessViaDef(const frDirEnum dir,
+                       std::vector<const frViaDef*>* viaDef)
   {
     if (dir == frDirEnum::U) {
       vU_ = viaDef;
@@ -96,8 +97,8 @@ class drAccessPattern : public drBlockObject
   FlexMazeIdx mazeIdx_;
   drPin* pin_{nullptr};
   std::vector<bool> validAccess_ = std::vector<bool>(6, true);
-  std::vector<frViaDef*>* vU_{nullptr};
-  std::vector<frViaDef*>* vD_{nullptr};
+  std::vector<const frViaDef*>* vU_{nullptr};
+  std::vector<const frViaDef*>* vD_{nullptr};
   int vUIdx_{0};
   int vDIdx_{0};
   bool onTrackX_{true};  // initialized in initMazeIdx_ap

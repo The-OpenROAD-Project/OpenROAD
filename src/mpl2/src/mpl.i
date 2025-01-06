@@ -126,6 +126,7 @@ void set_debug_cmd(odb::dbBlock* block,
                    bool coarse,
                    bool fine,
                    bool show_bundled_nets,
+                   bool show_clusters_ids,
                    bool skip_steps,
                    bool only_final_result,
                    int target_cluster_id)
@@ -135,18 +136,36 @@ void set_debug_cmd(odb::dbBlock* block,
     = std::make_unique<Graphics>(coarse, fine, block, ord::getLogger());
   macro_placer->setDebug(graphics);
   macro_placer->setDebugShowBundledNets(show_bundled_nets);
+  macro_placer->setDebugShowClustersIds(show_clusters_ids);
   macro_placer->setDebugSkipSteps(skip_steps);
   macro_placer->setDebugOnlyFinalResult(only_final_result);
   macro_placer->setDebugTargetClusterId(target_cluster_id);
 }
 
 void
-place_macro(odb::dbInst* inst, float x_origin, float y_origin, std::string orientation_string)
+place_macro(odb::dbInst* inst,
+            float x_origin,
+            float y_origin,
+            std::string orientation_string,
+            bool exact,
+            bool allow_overlap)
 {
   odb::dbOrientType orientation(orientation_string.c_str());
 
-  getMacroPlacer2()->placeMacro(inst, x_origin, y_origin, orientation);
+  getMacroPlacer2()->placeMacro(
+    inst, x_origin, y_origin, orientation, exact, allow_overlap);
 }
+
+void
+add_guidance_region(odb::dbInst* macro,
+                    float x1,
+                    float y1,
+                    float x2,
+                    float y2)
+{
+  getMacroPlacer2()->addGuidanceRegion(macro, Rect(x1, y1, x2, y2));
+}
+
 
 void
 set_macro_placement_file(std::string file_name)

@@ -171,7 +171,7 @@ _dbLib::_dbLib(_dbDatabase* db)
   _left_bus_delimeter = 0;
   _right_bus_delimeter = 0;
   _spare = 0;
-  _name = 0;
+  _name = nullptr;
 
   _master_tbl = new dbTable<_dbMaster>(
       db, this, (GetObjTbl_t) &_dbLib::getObjectTable, dbMasterObj);

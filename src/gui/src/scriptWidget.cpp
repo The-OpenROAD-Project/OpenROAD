@@ -175,7 +175,7 @@ ScriptWidget::~ScriptWidget()
 void ScriptWidget::setupTcl(Tcl_Interp* interp,
                             bool interactive,
                             bool do_init_openroad,
-                            const std::function<void(void)>& post_or_init)
+                            const std::function<void()>& post_or_init)
 {
   is_interactive_ = interactive;
   input_->setTclInterp(interp, do_init_openroad, post_or_init);

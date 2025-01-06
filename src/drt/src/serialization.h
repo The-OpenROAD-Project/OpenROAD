@@ -361,7 +361,7 @@ void serialize(Archive& ar,
 template <class Archive>
 void serialize(Archive& ar, odb::dbMasterType& type, const unsigned int version)
 {
-  odb::dbMasterType::Value v = odb::dbMasterType::NONE;
+  odb::dbMasterType::Value v = odb::dbMasterType::CORE;
   if (drt::is_loading(ar)) {
     (ar) & v;
     type = odb::dbMasterType(v);
@@ -738,7 +738,7 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
 }
 
 template <class Archive>
-void serializeViaDef(Archive& ar, frViaDef*& viadef)
+void serializeViaDef(Archive& ar, const frViaDef*& viadef)
 {
   frDesign* design = ar.getDesign();
   if (is_loading(ar)) {

@@ -27,10 +27,10 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 #ifndef WIN32
 #include <unistd.h>
 #endif /* not WIN32 */
@@ -1279,7 +1279,7 @@ int snetf(defrCallbackType_e c, defiNet* net, defiUserData ud)
       }
       if (net->polyMask(i)) {
         fprintf(fout,
-                "\n  + MASK %d + POLYGON % s ",
+                "\n  + MASK %d + POLYGON %s ",
                 net->polyMask(i),
                 net->polygonName(i));
       } else {
@@ -1943,7 +1943,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
   defiVia* via;
   defiRegion* re;
   defiGroup* group;
-  defiComponentMaskShiftLayer* maskShiftLayer = NULL;
+  defiComponentMaskShiftLayer* maskShiftLayer = nullptr;
   defiScanchain* sc;
   defiIOTiming* iot;
   defiFPC* fpc;
@@ -2519,6 +2519,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
       }
       break;
     case defrComponentMaskShiftLayerCbkType:
+      maskShiftLayer = (defiComponentMaskShiftLayer*) cl;
       fprintf(fout, "COMPONENTMASKSHIFT ");
 
       for (i = 0; i < maskShiftLayer->numMaskShiftLayers(); i++) {
@@ -3026,7 +3027,6 @@ int ext(defrCallbackType_e t, const char* c, defiUserData ud)
       name = address("partition");
       break;
     default:
-      name = address("BOGUS");
       return 1;
   }
   fprintf(fout, "  %s extension %s\n", name, c);
@@ -3058,9 +3058,9 @@ void freeCB(void* name)
   return;
 }
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 extern long long nlines;
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 static int ccr1131444 = 0;
 
 void lineNumberCB(long long lineNo)
@@ -3144,7 +3144,7 @@ int main(int argc, char** argv)
       argv++;
       argc--;
       outFile = *argv;
-      if ((fout = fopen(outFile, "w")) == 0) {
+      if ((fout = fopen(outFile, "w")) == nullptr) {
         fprintf(stderr, "ERROR: could not open output file\n");
         return 2;
       }
@@ -3388,7 +3388,7 @@ int main(int argc, char** argv)
 
   if (test1) {  // for special tests
     for (fileCt = 0; fileCt < numInFile; fileCt++) {
-      if ((f = fopen(inFile[fileCt], "r")) == 0) {
+      if ((f = fopen(inFile[fileCt], "r")) == nullptr) {
         fprintf(stderr, "Couldn't open input file '%s'\n", inFile[fileCt]);
         return (2);
       }
@@ -3413,7 +3413,6 @@ int main(int argc, char** argv)
     // 2nd will enable 7016 by calling defrEnableParserMsgs
     // 3rd enable all msgs by call defrEnableAllMsgs
 
-    int nMsgs = 2;
     int dMsgs[2];
 
     for (fileCt = 0; fileCt < numInFile; fileCt++) {
@@ -3427,7 +3426,7 @@ int main(int argc, char** argv)
       } else
         defrEnableAllMsgs();
 
-      if ((f = fopen(inFile[fileCt], "r")) == 0) {
+      if ((f = fopen(inFile[fileCt], "r")) == nullptr) {
         fprintf(stderr, "Couldn't open input file '%s'\n", inFile[fileCt]);
         return (2);
       }
@@ -3447,7 +3446,7 @@ int main(int argc, char** argv)
     for (fileCt = 0; fileCt < numInFile; fileCt++) {
       if (strcmp(inFile[fileCt], "STDIN") == 0) {
         f = stdin;
-      } else if ((f = fopen(inFile[fileCt], "r")) == 0) {
+      } else if ((f = fopen(inFile[fileCt], "r")) == nullptr) {
         fprintf(stderr, "Couldn't open input file '%s'\n", inFile[fileCt]);
         return (2);
       }
@@ -3463,7 +3462,7 @@ int main(int argc, char** argv)
       defrAddAlias("alias1", "aliasValue1", 1);
 
       defiAlias_itr aliasStore;
-      const char* alias1Value = NULL;
+      const char* alias1Value = nullptr;
 
       while (aliasStore.Next()) {
         if (strcmp(aliasStore.Key(), "alias1") == 0) {

@@ -28,18 +28,27 @@
 
 #pragma once
 
+#include <boost/container/flat_map.hpp>
+#include <boost/container/flat_set.hpp>
 #include <cstdint>
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <map>
 
 #include "FlexMazeTypes.h"
 #include "db/drObj/drPin.h"
+#include "db/infra/frBox.h"
 #include "dr/FlexWavefront.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "global.h"
 
 namespace drt {
+
+using frLayerCoordTrackPatternMap = boost::container::
+    flat_map<frLayerNum, boost::container::flat_map<frCoord, frTrackPattern*>>;
+using frLayerDirMap = boost::container::flat_map<frLayerNum, dbTechLayerDir>;
 
 class FlexDRWorker;
 class FlexDRGraphics;
@@ -54,9 +63,9 @@ class FlexGridGraph
       : tech_(techIn),
         logger_(loggerIn),
         drWorker_(workerIn),
-        router_cfg_(router_cfg)
+        router_cfg_(router_cfg),
+        ap_locs_(techIn->getTopLayerNum() + 1)
   {
-    ap_locs_.resize(tech_->getTopLayerNum() + 1);
   }
   // getters
   frTechObject* getTech() const { return tech_; }
@@ -416,9 +425,7 @@ class FlexGridGraph
     return sol;
   }
   // setters
-  void setTech(frTechObject* techIn) { tech_ = techIn; }
   void setLogger(Logger* loggerIn) { logger_ = loggerIn; }
-  void setWorker(FlexDRWorker* workerIn) { drWorker_ = workerIn; }
   bool addEdge(frMIdx x,
                frMIdx y,
                frMIdx z,
@@ -920,7 +927,8 @@ class FlexGridGraph
                   frMIdx gridZ,
                   frDirEnum dir,
                   frLayer* layer,
-                  bool considerNDR) const;
+                  bool considerNDR,
+                  bool route_with_jumpers) const;
   bool useNDRCosts(const FlexWavefrontGrid& p) const;
 
   frNonDefaultRule* getNDR() const { return ndr_; }
@@ -929,8 +937,8 @@ class FlexGridGraph
   void init(const frDesign* design,
             const Rect& routeBBox,
             const Rect& extBBox,
-            std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-            std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
+            frLayerCoordTrackPatternMap& xMap,
+            frLayerCoordTrackPatternMap& yMap,
             bool initDR,
             bool followGuide);
   void print() const;
@@ -944,7 +952,8 @@ class FlexGridGraph
               FlexMazeIdx& ccMazeIdx1,
               FlexMazeIdx& ccMazeIdx2,
               const Point& centerPt,
-              std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox);
+              std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox,
+              bool route_with_jumpers);
   void setCost(frUInt4 drcCostIn,
                frUInt4 markerCostIn,
                frUInt4 FixedShapeCostIn)
@@ -1106,9 +1115,12 @@ class FlexGridGraph
 
   // locations of access points. The vector is indexed by layer number.
   frVector<std::set<Point>> ap_locs_;
+  std::ofstream dump_file_;
+  bool debug_{false};
+  frUInt4 curr_id_{1};
 
-  FlexGridGraph() = default;
-
+  void printExpansion(const FlexWavefrontGrid& currGrid,
+                      const std::string& keyword);
   // unsafe access, no idx check
   void setPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
   {
@@ -1269,21 +1281,18 @@ class FlexGridGraph
   }
   // internal init utility
   void initTracks(const frDesign* design,
-                  std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>&
-                      horLoc2TrackPatterns,
-                  std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>&
-                      vertLoc2TrackPatterns,
-                  std::map<frLayerNum, dbTechLayerDir>& layerNum2PreRouteDir,
+                  frLayerCoordTrackPatternMap& horLoc2TrackPatterns,
+                  frLayerCoordTrackPatternMap& vertLoc2TrackPatterns,
+                  frLayerDirMap& layerNum2PreRouteDir,
                   const Rect& bbox);
-  void initGrids(
-      const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
-      const std::map<frLayerNum, dbTechLayerDir>& zMap,
-      bool followGuide);
+  void initGrids(const frLayerCoordTrackPatternMap& xMap,
+                 const frLayerCoordTrackPatternMap& yMap,
+                 const frLayerDirMap& zMap,
+                 bool followGuide);
   void initEdges(const frDesign* design,
-                 std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-                 std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
-                 const std::map<frLayerNum, dbTechLayerDir>& zMap,
+                 frLayerCoordTrackPatternMap& xMap,
+                 frLayerCoordTrackPatternMap& yMap,
+                 const frLayerDirMap& zMap,
                  const Rect& bbox,
                  bool initDR);
   frCost getEstCost(const FlexMazeIdx& src,
@@ -1291,7 +1300,8 @@ class FlexGridGraph
                     const FlexMazeIdx& dstMazeIdx2,
                     const frDirEnum& dir) const;
   frCost getNextPathCost(const FlexWavefrontGrid& currGrid,
-                         const frDirEnum& dir) const;
+                         const frDirEnum& dir,
+                         bool route_with_jumpers) const;
   frDirEnum getLastDir(const std::bitset<WAVEFRONTBITSIZE>& buffer) const;
   void traceBackPath(const FlexWavefrontGrid& currGrid,
                      std::vector<FlexMazeIdx>& path,
@@ -1301,7 +1311,8 @@ class FlexGridGraph
   void expandWavefront(FlexWavefrontGrid& currGrid,
                        const FlexMazeIdx& dstMazeIdx1,
                        const FlexMazeIdx& dstMazeIdx2,
-                       const Point& centerPt);
+                       const Point& centerPt,
+                       bool route_with_jumpers);
   bool isExpandable(const FlexWavefrontGrid& currGrid, frDirEnum dir) const;
   FlexMazeIdx getTailIdx(const FlexMazeIdx& currIdx,
                          const FlexWavefrontGrid& currGrid) const;
@@ -1309,7 +1320,8 @@ class FlexGridGraph
               const frDirEnum& dir,
               const FlexMazeIdx& dstMazeIdx1,
               const FlexMazeIdx& dstMazeIdx2,
-              const Point& centerPt);
+              const Point& centerPt,
+              bool route_with_jumpers);
   bool hasAlignedUpDefTrack(
       frLayerNum layerNum,
       const std::map<frLayerNum, frTrackPattern*>& xSubMap,
@@ -1320,34 +1332,6 @@ class FlexGridGraph
   bool hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z);
   bool isWorkerBorder(frMIdx v, bool isVert);
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    // The wavefront should always be empty here so we don't need to
-    // serialize it.
-    if (!wavefront_.empty()) {
-      throw std::logic_error("don't serialize non-empty wavefront");
-    }
-    if (is_loading(ar)) {
-      tech_ = ar.getDesign()->getTech();
-    }
-    (ar) & drWorker_;
-    (ar) & nodes_;
-    (ar) & prevDirs_;
-    (ar) & srcs_;
-    (ar) & dsts_;
-    (ar) & guides_;
-    (ar) & xCoords_;
-    (ar) & yCoords_;
-    (ar) & zCoords_;
-    (ar) & zHeights_;
-    (ar) & layerRouteDirections_;
-    (ar) & dieBox_;
-    (ar) & ggDRCCost_;
-    (ar) & ggMarkerCost_;
-    (ar) & halfViaEncArea_;
-  }
-  friend class boost::serialization::access;
   friend class FlexDRWorker;
 };
 

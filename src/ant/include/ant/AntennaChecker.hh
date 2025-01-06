@@ -32,6 +32,7 @@
 #pragma once
 
 #include <map>
+#include <mutex>
 #include <queue>
 #include <set>
 
@@ -177,15 +178,12 @@ class AntennaChecker
   getViolatedWireLength(odb::dbNet* net, int routing_level);
   bool isValidGate(odb::dbMTerm* mterm);
   void buildLayerMaps(odb::dbNet* net, LayerToGraphNodes& node_by_layer_map);
-  void checkNet(odb::dbNet* net,
-                bool verbose,
-                bool report_if_no_violation,
-                std::ofstream& report_file,
-                odb::dbMTerm* diode_mterm,
-                float ratio_margin,
-                int& net_violation_count,
-                int& pin_violation_count,
-                Violations& antenna_violations);
+  int checkNet(odb::dbNet* net,
+               bool verbose,
+               bool save_report,
+               odb::dbMTerm* diode_mterm,
+               float ratio_margin,
+               Violations& antenna_violations);
   void saveGates(odb::dbNet* db_net,
                  LayerToGraphNodes& node_by_layer_map,
                  int node_count);
@@ -198,13 +196,13 @@ class AntennaChecker
                             NodeInfo& node_info,
                             float ratio_margin,
                             bool verbose,
-                            bool report);
+                            bool report,
+                            ViolationReport& net_report);
   void writeReport(std::ofstream& report_file, bool verbose);
   void printReport();
   int checkGates(odb::dbNet* db_net,
                  bool verbose,
-                 bool report_if_no_violation,
-                 std::ofstream& report_file,
+                 bool save_report,
                  odb::dbMTerm* diode_mterm,
                  float ratio_margin,
                  GateToLayerToNodeInfo& gate_info,
@@ -216,23 +214,27 @@ class AntennaChecker
                 NodeInfo& info,
                 float ratio_margin,
                 bool verbose,
-                bool report);
+                bool report,
+                ViolationReport& net_report);
   bool checkPSR(odb::dbNet* db_net,
                 odb::dbTechLayer* tech_layer,
                 NodeInfo& info,
                 float ratio_margin,
                 bool verbose,
-                bool report);
+                bool report,
+                ViolationReport& net_report);
   bool checkCAR(odb::dbNet* db_net,
                 odb::dbTechLayer* tech_layer,
                 const NodeInfo& info,
                 bool verbose,
-                bool report);
+                bool report,
+                ViolationReport& net_report);
   bool checkCSR(odb::dbNet* db_net,
                 odb::dbTechLayer* tech_layer,
                 const NodeInfo& info,
                 bool verbose,
-                bool report);
+                bool report,
+                ViolationReport& net_report);
 
   odb::dbDatabase* db_{nullptr};
   odb::dbBlock* block_{nullptr};
@@ -243,6 +245,7 @@ class AntennaChecker
   std::string report_file_name_;
   std::vector<odb::dbNet*> nets_;
   std::map<odb::dbNet*, ViolationReport> net_to_report_;
+  std::mutex map_mutex_;
   // consts
   static constexpr int max_diode_count_per_gate = 10;
 };

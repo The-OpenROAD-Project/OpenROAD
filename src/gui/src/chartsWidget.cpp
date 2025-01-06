@@ -32,11 +32,9 @@
 
 #include "chartsWidget.h"
 
-#include <QHBoxLayout>
-
-#ifdef ENABLE_CHARTS
 #include <QColor>
 #include <QFrame>
+#include <QHBoxLayout>
 #include <QString>
 #include <QWidget>
 #include <QtCharts>
@@ -48,13 +46,11 @@
 #include "sta/MinMax.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Units.hh"
-#endif
 
 namespace gui {
 
 ChartsWidget::ChartsWidget(QWidget* parent)
     : QDockWidget("Charts", parent),
-#ifdef ENABLE_CHARTS
       logger_(nullptr),
       sta_(nullptr),
       stagui_(nullptr),
@@ -73,7 +69,6 @@ ChartsWidget::ChartsWidget(QWidget* parent)
       min_slack_(std::numeric_limits<float>::max()),
       bucket_interval_(0.0f),
       precision_count_(0),
-#endif
       label_(new QLabel(this))
 {
   setObjectName("charts_widget");  // for settings
@@ -82,7 +77,6 @@ ChartsWidget::ChartsWidget(QWidget* parent)
   QHBoxLayout* controls_layout = new QHBoxLayout;
   controls_layout->addWidget(label_);
 
-#ifdef ENABLE_CHARTS
   QVBoxLayout* layout = new QVBoxLayout;
   QFrame* controls_frame = new QFrame;
 
@@ -120,24 +114,17 @@ ChartsWidget::ChartsWidget(QWidget* parent)
           qOverload<int>(&QComboBox::currentIndexChanged),
           this,
           &ChartsWidget::changePathGroupFilter);
-#else
-  label_->setText("QtCharts is not installed.");
-  label_->setAlignment(Qt::AlignCenter);
-  // We need this layout in order to centralize the label.
-  container->setLayout(controls_layout);
-#endif
   setWidget(container);
 }
 
-#ifdef ENABLE_CHARTS
 void ChartsWidget::changeMode()
 {
+  filters_menu_->clear();
+  clearChart();
+
   if (mode_menu_->currentIndex() == SELECT) {
     return;
   }
-
-  filters_menu_->clear();
-  clearChart();
 
   if (mode_menu_->currentIndex() == SLACK_HISTOGRAM) {
     resetting_menu_ = true;
@@ -145,6 +132,11 @@ void ChartsWidget::changeMode()
     setSlackHistogram();
     resetting_menu_ = false;
   }
+}
+
+void ChartsWidget::setMode(Mode mode)
+{
+  mode_menu_->setCurrentIndex(mode);
 }
 
 void ChartsWidget::setSlackHistogramLayout()
@@ -749,5 +741,4 @@ void HistogramView::mousePressEvent(QMouseEvent* event)
   }
 }
 
-#endif
 }  // namespace gui

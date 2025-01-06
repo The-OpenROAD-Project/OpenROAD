@@ -33,12 +33,12 @@
 
 #include "placerBase.h"
 
-#include <odb/db.h>
-
 #include <iostream>
 #include <utility>
 
 #include "nesterovBase.h"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "utl/Logger.h"
 
 namespace gpl {
@@ -454,35 +454,35 @@ odb::dbBTerm* Pin::dbBTerm() const
 
 void Pin::updateCoordi(odb::dbITerm* iTerm)
 {
-  int offsetLx = INT_MAX;
-  int offsetLy = INT_MAX;
-  int offsetUx = INT_MIN;
-  int offsetUy = INT_MIN;
+  Rect pin_bbox;
+  pin_bbox.mergeInit();
 
   for (dbMPin* mPin : iTerm->getMTerm()->getMPins()) {
     for (dbBox* box : mPin->getGeometry()) {
-      offsetLx = std::min(box->xMin(), offsetLx);
-      offsetLy = std::min(box->yMin(), offsetLy);
-      offsetUx = std::max(box->xMax(), offsetUx);
-      offsetUy = std::max(box->yMax(), offsetUy);
+      pin_bbox.merge(box->getBox());
     }
   }
 
-  int lx = iTerm->getInst()->getBBox()->xMin();
-  int ly = iTerm->getInst()->getBBox()->yMin();
+  odb::dbInst* inst = iTerm->getInst();
+  const int lx = inst->getBBox()->xMin();
+  const int ly = inst->getBBox()->yMin();
 
-  int instCenterX = iTerm->getInst()->getMaster()->getWidth() / 2;
-  int instCenterY = iTerm->getInst()->getMaster()->getHeight() / 2;
+  odb::dbMaster* master = iTerm->getInst()->getMaster();
+  const int instCenterX = master->getWidth() / 2;
+  const int instCenterY = master->getHeight() / 2;
 
-  // Pin SHAPE is NOT FOUND;
-  // (may happen on OpenDB bug case)
-  if (offsetLx == INT_MAX || offsetLy == INT_MAX || offsetUx == INT_MIN
-      || offsetUy == INT_MIN) {
-    // offset is center of instances
-    offsetCx_ = offsetCy_ = 0;
-  }
-  // usual case
-  else {
+  // Pin has no shapes (rare/odd)
+  if (pin_bbox.isInverted()) {
+    offsetCx_ = offsetCy_ = 0;  // offset is center of the instance
+  } else {
+    // Rotate the pin's bbox in correspondence to the instance's orientation.
+    // Rotation consists of (1) shift the instance center to the origin
+    // (2) rotate (3) shift back.
+    const auto inst_orient = inst->getTransform().getOrient();
+    odb::dbTransform xfm({-instCenterX, -instCenterY});
+    xfm.concat(inst_orient);
+    xfm.concat(odb::dbTransform({instCenterX, instCenterY}));
+    xfm.apply(pin_bbox);
     // offset is Pin BBoxs' center, so
     // subtract the Origin coordinates (e.g. instCenterX, instCenterY)
     //
@@ -490,8 +490,8 @@ void Pin::updateCoordi(odb::dbITerm* iTerm)
     // from (origin: 0,0)
     // to (origin: instCenterX, instCenterY)
     //
-    offsetCx_ = (offsetLx + offsetUx) / 2 - instCenterX;
-    offsetCy_ = (offsetLy + offsetUy) / 2 - instCenterY;
+    offsetCx_ = pin_bbox.xCenter() - instCenterX;
+    offsetCy_ = pin_bbox.yCenter() - instCenterY;
   }
 
   cx_ = lx + instCenterX + offsetCx_;

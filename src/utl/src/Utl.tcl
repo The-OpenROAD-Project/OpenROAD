@@ -47,17 +47,7 @@ proc man { args } {
 
   set name [lindex $args 0]
 
-  # check the default man path based on executable path
-  set exec_output [info nameofexecutable]
-  set install_path [file normalize [file dirname [file dirname [info nameofexecutable]]]]
-
-  # Check if the output contains 'build/src'
-  if { [string match "*build/src*" $exec_output] } {
-    set man_path [file normalize [file dirname $install_path]]
-    set DEFAULT_MAN_PATH [file join $man_path "docs" "cat"]
-  } else {
-    set DEFAULT_MAN_PATH [file join $install_path "share" "openroad" "man" "cat"]
-  }
+  set DEFAULT_MAN_PATH [file join [ord::get_docs_path] "cat"]
 
   global MAN_PATH
   if { [info exists keys(-manpath)] } {

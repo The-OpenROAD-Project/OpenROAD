@@ -105,7 +105,6 @@ bool Padding::isPaddedType(dbInst* inst) const
     case dbMasterType::PAD_INOUT:
     case dbMasterType::PAD_POWER:
     case dbMasterType::PAD_SPACER:
-    case dbMasterType::NONE:
       return false;
   }
   // gcc warniing

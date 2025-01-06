@@ -45,15 +45,15 @@ class BalancerConnection
     : public boost::enable_shared_from_this<BalancerConnection>
 {
  public:
-  typedef boost::shared_ptr<BalancerConnection> pointer;
-  BalancerConnection(asio::io_service& io_service,
+  using pointer = boost::shared_ptr<BalancerConnection>;
+  BalancerConnection(asio::io_context& service,
                      LoadBalancer* owner,
                      utl::Logger* logger);
-  static pointer create(asio::io_service& io_service,
+  static pointer create(asio::io_context& service,
                         LoadBalancer* owner,
                         utl::Logger* logger)
   {
-    return boost::make_shared<BalancerConnection>(io_service, owner, logger);
+    return boost::make_shared<BalancerConnection>(service, owner, logger);
   }
   tcp::socket& socket();
   void start();

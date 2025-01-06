@@ -39,87 +39,87 @@
 // Wrappers definitions.
 int defiOrdered_num(const ::defiOrdered* obj)
 {
-  return ((LefDefParser::defiOrdered*) obj)->num();
+  return ((DefParser::defiOrdered*) obj)->num();
 }
 
 char** defiOrdered_inst(const ::defiOrdered* obj)
 {
-  return ((LefDefParser::defiOrdered*) obj)->inst();
+  return ((DefParser::defiOrdered*) obj)->inst();
 }
 
 char** defiOrdered_in(const ::defiOrdered* obj)
 {
-  return ((LefDefParser::defiOrdered*) obj)->in();
+  return ((DefParser::defiOrdered*) obj)->in();
 }
 
 char** defiOrdered_out(const ::defiOrdered* obj)
 {
-  return ((LefDefParser::defiOrdered*) obj)->out();
+  return ((DefParser::defiOrdered*) obj)->out();
 }
 
 int* defiOrdered_bits(const ::defiOrdered* obj)
 {
-  return ((LefDefParser::defiOrdered*) obj)->bits();
+  return ((DefParser::defiOrdered*) obj)->bits();
 }
 
 const char* defiScanchain_name(const ::defiScanchain* obj)
 {
-  return ((const LefDefParser::defiScanchain*) obj)->name();
+  return ((const DefParser::defiScanchain*) obj)->name();
 }
 
 int defiScanchain_hasStart(const ::defiScanchain* obj)
 {
-  return ((LefDefParser::defiScanchain*) obj)->hasStart();
+  return ((DefParser::defiScanchain*) obj)->hasStart();
 }
 
 int defiScanchain_hasStop(const ::defiScanchain* obj)
 {
-  return ((LefDefParser::defiScanchain*) obj)->hasStop();
+  return ((DefParser::defiScanchain*) obj)->hasStop();
 }
 
 int defiScanchain_hasFloating(const ::defiScanchain* obj)
 {
-  return ((LefDefParser::defiScanchain*) obj)->hasFloating();
+  return ((DefParser::defiScanchain*) obj)->hasFloating();
 }
 
 int defiScanchain_hasOrdered(const ::defiScanchain* obj)
 {
-  return ((LefDefParser::defiScanchain*) obj)->hasOrdered();
+  return ((DefParser::defiScanchain*) obj)->hasOrdered();
 }
 
 int defiScanchain_hasCommonInPin(const ::defiScanchain* obj)
 {
-  return ((LefDefParser::defiScanchain*) obj)->hasCommonInPin();
+  return ((DefParser::defiScanchain*) obj)->hasCommonInPin();
 }
 
 int defiScanchain_hasCommonOutPin(const ::defiScanchain* obj)
 {
-  return ((LefDefParser::defiScanchain*) obj)->hasCommonOutPin();
+  return ((DefParser::defiScanchain*) obj)->hasCommonOutPin();
 }
 
 int defiScanchain_hasPartition(const ::defiScanchain* obj)
 {
-  return ((LefDefParser::defiScanchain*) obj)->hasPartition();
+  return ((DefParser::defiScanchain*) obj)->hasPartition();
 }
 
 int defiScanchain_hasPartitionMaxBits(const ::defiScanchain* obj)
 {
-  return ((LefDefParser::defiScanchain*) obj)->hasPartitionMaxBits();
+  return ((DefParser::defiScanchain*) obj)->hasPartitionMaxBits();
 }
 
 void defiScanchain_start(const ::defiScanchain* obj, char** inst, char** pin)
 {
-  ((LefDefParser::defiScanchain*) obj)->start(inst, pin);
+  ((DefParser::defiScanchain*) obj)->start(inst, pin);
 }
 
 void defiScanchain_stop(const ::defiScanchain* obj, char** inst, char** pin)
 {
-  ((LefDefParser::defiScanchain*) obj)->stop(inst, pin);
+  ((DefParser::defiScanchain*) obj)->stop(inst, pin);
 }
 
 int defiScanchain_numOrderedLists(const ::defiScanchain* obj)
 {
-  return ((LefDefParser::defiScanchain*) obj)->numOrderedLists();
+  return ((DefParser::defiScanchain*) obj)->numOrderedLists();
 }
 
 void defiScanchain_ordered(const ::defiScanchain* obj,
@@ -130,7 +130,7 @@ void defiScanchain_ordered(const ::defiScanchain* obj,
                            char*** outPin,
                            int** bits)
 {
-  ((LefDefParser::defiScanchain*) obj)
+  ((DefParser::defiScanchain*) obj)
       ->ordered(index, size, inst, inPin, outPin, bits);
 }
 
@@ -141,31 +141,30 @@ void defiScanchain_floating(const ::defiScanchain* obj,
                             char*** outPin,
                             int** bits)
 {
-  ((LefDefParser::defiScanchain*) obj)
-      ->floating(size, inst, inPin, outPin, bits);
+  ((DefParser::defiScanchain*) obj)->floating(size, inst, inPin, outPin, bits);
 }
 
 const char* defiScanchain_commonInPin(const ::defiScanchain* obj)
 {
-  return ((const LefDefParser::defiScanchain*) obj)->commonInPin();
+  return ((const DefParser::defiScanchain*) obj)->commonInPin();
 }
 
 const char* defiScanchain_commonOutPin(const ::defiScanchain* obj)
 {
-  return ((const LefDefParser::defiScanchain*) obj)->commonOutPin();
+  return ((const DefParser::defiScanchain*) obj)->commonOutPin();
 }
 
 const char* defiScanchain_partitionName(const ::defiScanchain* obj)
 {
-  return ((const LefDefParser::defiScanchain*) obj)->partitionName();
+  return ((const DefParser::defiScanchain*) obj)->partitionName();
 }
 
 int defiScanchain_partitionMaxBits(const ::defiScanchain* obj)
 {
-  return ((LefDefParser::defiScanchain*) obj)->partitionMaxBits();
+  return ((DefParser::defiScanchain*) obj)->partitionMaxBits();
 }
 
 void defiScanchain_print(const ::defiScanchain* obj, FILE* f)
 {
-  ((LefDefParser::defiScanchain*) obj)->print(f);
+  ((DefParser::defiScanchain*) obj)->print(f);
 }

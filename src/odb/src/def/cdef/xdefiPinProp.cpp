@@ -39,55 +39,55 @@
 // Wrappers definitions.
 int defiPinProp_isPin(const ::defiPinProp* obj)
 {
-  return ((LefDefParser::defiPinProp*) obj)->isPin();
+  return ((DefParser::defiPinProp*) obj)->isPin();
 }
 
 const char* defiPinProp_instName(const ::defiPinProp* obj)
 {
-  return ((const LefDefParser::defiPinProp*) obj)->instName();
+  return ((const DefParser::defiPinProp*) obj)->instName();
 }
 
 const char* defiPinProp_pinName(const ::defiPinProp* obj)
 {
-  return ((const LefDefParser::defiPinProp*) obj)->pinName();
+  return ((const DefParser::defiPinProp*) obj)->pinName();
 }
 
 int defiPinProp_numProps(const ::defiPinProp* obj)
 {
-  return ((LefDefParser::defiPinProp*) obj)->numProps();
+  return ((DefParser::defiPinProp*) obj)->numProps();
 }
 
 const char* defiPinProp_propName(const ::defiPinProp* obj, int index)
 {
-  return ((const LefDefParser::defiPinProp*) obj)->propName(index);
+  return ((const DefParser::defiPinProp*) obj)->propName(index);
 }
 
 const char* defiPinProp_propValue(const ::defiPinProp* obj, int index)
 {
-  return ((const LefDefParser::defiPinProp*) obj)->propValue(index);
+  return ((const DefParser::defiPinProp*) obj)->propValue(index);
 }
 
 double defiPinProp_propNumber(const ::defiPinProp* obj, int index)
 {
-  return ((LefDefParser::defiPinProp*) obj)->propNumber(index);
+  return ((DefParser::defiPinProp*) obj)->propNumber(index);
 }
 
 const char defiPinProp_propType(const ::defiPinProp* obj, int index)
 {
-  return ((const LefDefParser::defiPinProp*) obj)->propType(index);
+  return ((const DefParser::defiPinProp*) obj)->propType(index);
 }
 
 int defiPinProp_propIsNumber(const ::defiPinProp* obj, int index)
 {
-  return ((LefDefParser::defiPinProp*) obj)->propIsNumber(index);
+  return ((DefParser::defiPinProp*) obj)->propIsNumber(index);
 }
 
 int defiPinProp_propIsString(const ::defiPinProp* obj, int index)
 {
-  return ((LefDefParser::defiPinProp*) obj)->propIsString(index);
+  return ((DefParser::defiPinProp*) obj)->propIsString(index);
 }
 
 void defiPinProp_print(const ::defiPinProp* obj, FILE* f)
 {
-  ((LefDefParser::defiPinProp*) obj)->print(f);
+  ((DefParser::defiPinProp*) obj)->print(f);
 }

@@ -36,6 +36,10 @@
 
 namespace odb {
 
+class dbBlock;
+class dbCCSeg;
+class dbNet;
+
 template <class T>
 class dbSet;
 
@@ -218,9 +222,18 @@ inline dbSetIterator<T> dbSetIterator<T>::operator++(int)
   return it;
 }
 
-}  // namespace odb
+// Specialization declarations
+template <>
+class dbSetIterator<dbBlock>;
+template <>
+class dbSet<dbBlock>;
+template <>
+class dbSetIterator<dbCCSeg>;
+template <>
+class dbSet<dbCCSeg>;
+template <>
+class dbSetIterator<dbNet>;
+template <>
+class dbSet<dbNet>;
 
-// Specialization definitions
-#include "dbBlockSet.h"
-#include "dbCCSegSet.h"
-#include "dbNetSet.h"
+}  // namespace odb

@@ -145,7 +145,7 @@ void dbTarget::destroy(dbTarget* target_)
   _dbMTerm* mterm = (_dbMTerm*) master->_mterm_tbl->getPtr(target->_mterm);
   uint tid = target->getOID();
   uint id = mterm->_targets;
-  _dbTarget* p = 0;
+  _dbTarget* p = nullptr;
 
   while (id) {
     _dbTarget* t = master->_target_tbl->getPtr(id);

@@ -30,9 +30,9 @@
 
 #include "def_parser.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
-defrSettings* defSettings = NULL;
+defrSettings* defSettings = nullptr;
 
 const char* defrSettings::defOxides[] = {
     "OXIDE1",  "OXIDE2",  "OXIDE3",  "OXIDE4",  "OXIDE5",  "OXIDE6",  "OXIDE7",
@@ -42,51 +42,6 @@ const char* defrSettings::defOxides[] = {
     "OXIDE29", "OXIDE30", "OXIDE31", "OXIDE32"};
 
 defrSettings::defrSettings()
-    : defiDeltaNumberLines(10000),
-      AssertionWarnings(999),
-      BlockageWarnings(999),
-      CaseSensitiveWarnings(999),
-      ComponentWarnings(999),
-      ConstraintWarnings(999),
-      DefaultCapWarnings(999),
-      FillWarnings(999),
-      GcellGridWarnings(999),
-      IOTimingWarnings(999),
-      NetWarnings(999),
-      NonDefaultWarnings(999),
-      PinExtWarnings(999),
-      PinWarnings(999),
-      RegionWarnings(999),
-      RowWarnings(999),
-      TrackWarnings(999),
-      ScanchainWarnings(999),
-      SNetWarnings(999),
-      StylesWarnings(999),
-      UnitsWarnings(999),
-      VersionWarnings(999),
-      ViaWarnings(999),
-      nDDMsgs(0),
-      disableDMsgs(NULL),
-      totalDefMsgLimit(0),
-      AddPathToNet(0),
-      AllowComponentNets(0),
-      CommentChar('#'),
-      ReadFunction(NULL),
-      ErrorLogFunction(NULL),
-      WarningLogFunction(NULL),
-      ContextErrorLogFunction(NULL),
-      ContextWarningLogFunction(NULL),
-      MagicCommentFoundFunction(NULL),
-      MallocFunction(NULL),
-      ReallocFunction(NULL),
-      FreeFunction(NULL),
-      LineNumberFunction(NULL),
-      LongLineNumberFunction(NULL),
-      ContextLineNumberFunction(NULL),
-      ContextLongLineNumberFunction(NULL),
-      reader_case_sensitive_set(0),
-      DisPropStrProcess(0),
-      LogFileAppend(0)
 {
   memset(MsgLimit, 0, DEF_MSGS * sizeof(int));
   memset(UnusedCallbacks, 0, CBMAX * sizeof(int));
@@ -366,9 +321,4 @@ void defrSettings::init_symbol_table()
   Keyword_set["Y"] = K_Y;
 }
 
-defrSession::defrSession()
-    : FileName(0), reader_case_sensitive(0), UserData(NULL)
-{
-}
-
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

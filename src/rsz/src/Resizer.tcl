@@ -386,6 +386,24 @@ proc set_dont_touch_cmd { cmd cmd_args dont_touch } {
   }
 }
 
+sta::define_cmd_args "report_dont_use" {}
+
+proc report_dont_use { args } {
+  sta::parse_key_args "report_dont_use" args keys {} flags {}
+  sta::check_argc_eq0 "report_dont_use" $args
+
+  rsz::report_dont_use
+}
+
+sta::define_cmd_args "report_dont_touch" {}
+
+proc report_dont_touch { args } {
+  sta::parse_key_args "report_dont_touch" args keys {} flags {}
+  sta::check_argc_eq0 "report_dont_touch" $args
+
+  rsz::report_dont_touch
+}
+
 sta::define_cmd_args "buffer_ports" {[-inputs] [-outputs]\
                                        [-max_utilization util]\
                                        [-buffer_cell buf_cell]}

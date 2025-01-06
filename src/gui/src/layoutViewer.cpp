@@ -118,9 +118,9 @@ LayoutViewer::LayoutViewer(
     const std::set<odb::dbNet*>& route_guides,
     const std::set<odb::dbNet*>& net_tracks,
     Gui* gui,
-    const std::function<bool(void)>& usingDBU,
-    const std::function<bool(void)>& showRulerAsEuclidian,
-    const std::function<bool(void)>& showDBView,
+    const std::function<bool()>& usingDBU,
+    const std::function<bool()>& showRulerAsEuclidian,
+    const std::function<bool()>& showDBView,
     QWidget* parent)
     : QWidget(parent),
       block_(nullptr),
@@ -2464,8 +2464,8 @@ void LayoutViewer::resetCache()
 ////// LayoutScroll ///////
 LayoutScroll::LayoutScroll(
     LayoutViewer* viewer,
-    const std::function<bool(void)>& default_mouse_wheel_zoom,
-    const std::function<int(void)>& arrow_keys_scroll_step,
+    const std::function<bool()>& default_mouse_wheel_zoom,
+    const std::function<int()>& arrow_keys_scroll_step,
     QWidget* parent)
     : QScrollArea(parent),
       default_mouse_wheel_zoom_(std::move(default_mouse_wheel_zoom)),

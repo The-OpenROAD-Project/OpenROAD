@@ -44,8 +44,8 @@ class definGCell : public definBase
   virtual void gcell(defDirection dir, int orig, int count, int step);
 
   definGCell();
-  virtual ~definGCell();
-  void init();
+  ~definGCell() override;
+  void init() override;
 };
 
 }  // namespace odb
