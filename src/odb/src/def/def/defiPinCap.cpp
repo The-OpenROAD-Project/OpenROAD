@@ -37,7 +37,7 @@
 #include "defiUtil.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 ///////////////////////////////////////////////
 ///////////////////////////////////////////////
@@ -1387,10 +1387,7 @@ int defiPin::hasUse() const
 
 int defiPin::hasLayer() const
 {
-  if (numLayers_ || numPolys_)  // 5.6, either layer or polygon is
-    return 1;                   // non-zero
-  else
-    return 0;
+  return numLayers_ || numPolys_;  // 5.6, either layer or polygon is
 }
 
 int defiPin::hasPlacement() const
@@ -2070,9 +2067,8 @@ int defiPin::viaTopMask(int index) const
 
   if (cutMaskNum) {
     return cutMaskNum /= 10;
-  } else {
-    return 0;
   }
+  return 0;
 }
 
 int defiPin::viaCutMask(int index) const
@@ -2081,9 +2077,8 @@ int defiPin::viaCutMask(int index) const
 
   if (cutMaskNum) {
     return cutMaskNum % 10;
-  } else {
-    return 0;
   }
+  return 0;
 }
 
 int defiPin::viaBottomMask(int index) const
@@ -2265,4 +2260,4 @@ void defiPin::print(FILE* f) const
   if (hasSpecial())
     fprintf(f, "+ SPECIAL\n");
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

@@ -66,8 +66,8 @@ class definTracks : public definBase
   virtual void tracksEnd();
 
   definTracks();
-  virtual ~definTracks();
-  void init();
+  ~definTracks() override;
+  void init() override;
 };
 
 }  // namespace odb

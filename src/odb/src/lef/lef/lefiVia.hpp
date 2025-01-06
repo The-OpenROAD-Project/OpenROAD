@@ -35,7 +35,7 @@
 #include "lefiKRDefs.hpp"
 #include "lefiMisc.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 class lefiViaLayer
 {
@@ -256,8 +256,6 @@ class lefiVia
   char* cutPattern_{nullptr};   // 5.6
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

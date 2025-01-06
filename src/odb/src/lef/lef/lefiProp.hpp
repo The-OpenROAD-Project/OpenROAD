@@ -34,7 +34,7 @@
 
 #include "lefiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // Struct holds the data for one property.
 class lefiProp
@@ -91,8 +91,6 @@ class lefiProp
   double d_{0.0};      // if it is a real or int the number is here.
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

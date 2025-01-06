@@ -32,9 +32,8 @@
 
 #pragma once
 
-// IWYU pragma: private, include "dbSet.h"
-
 #include "dbObject.h"
+#include "dbSet.h"
 
 namespace odb {
 

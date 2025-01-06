@@ -35,7 +35,7 @@
 
 #include "defrSettings.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 defrData::defrData(const defrCallbacks* pCallbacks,
                    const defrSettings* pSettings,
@@ -328,10 +328,7 @@ double defrData::convert_defname2num(char* versionName)
 
 int defrData::numIsInt(char* volt)
 {
-  if (strchr(volt, '.'))  // a floating point
-    return 0;
-  else
-    return 1;
+  return strchr(volt, '.') == nullptr;  // a floating point
 }
 
 int defrData::defValidNum(int values)
@@ -394,4 +391,4 @@ defrContext::defrContext(int ownConf) : ownConfig(ownConf)
 
 defrContext defContext;
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

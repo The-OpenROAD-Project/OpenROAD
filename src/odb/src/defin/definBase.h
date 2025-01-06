@@ -87,7 +87,8 @@ class definBase
     }
   }
 
-  void translate(const defiPoints& defpoints, std::vector<Point>& points)
+  void translate(const DefParser::defiPoints& defpoints,
+                 std::vector<Point>& points)
   {
     points.clear();
 

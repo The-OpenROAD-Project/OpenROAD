@@ -170,8 +170,8 @@ sta::Pin* MakeWireParasitics::staPin(Pin& pin) const
 {
   if (pin.isPort())
     return network_->dbToSta(pin.getBTerm());
-  else
-    return network_->dbToSta(pin.getITerm());
+
+  return network_->dbToSta(pin.getITerm());
 }
 
 void MakeWireParasitics::makeRouteParasitics(

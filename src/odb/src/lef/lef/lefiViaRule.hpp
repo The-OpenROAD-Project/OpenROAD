@@ -34,7 +34,7 @@
 
 #include "lefiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 class lefiViaRuleLayer
 {
@@ -198,8 +198,6 @@ class lefiViaRule
   char* types_{nullptr};
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

@@ -60,7 +60,7 @@ class ScriptWidget : public QDockWidget
 
  public:
   ScriptWidget(QWidget* parent = nullptr);
-  ~ScriptWidget();
+  ~ScriptWidget() override;
 
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);

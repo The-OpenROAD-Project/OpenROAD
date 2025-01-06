@@ -116,8 +116,8 @@ class definNet : public definBase
   dbTechLayer* getLayer() const { return _cur_layer; }
 
   definNet();
-  virtual ~definNet();
-  virtual void init() override;
+  ~definNet() override;
+  void init() override;
   void skipWires() { _skip_wires = true; }
   void skipConnections() { _skip_signal_connections = true; }
   void replaceWires() { _replace_wires = true; }

@@ -1,9 +1,17 @@
 {
-    "name":"dbGDSSRef",
+    "name":"dbGDSARef",
     "type":"dbObject",
     "fields":[
       {
         "name":"_origin",
+        "type":"Point"
+      },
+      {
+        "name":"_lr",
+        "type":"Point"
+      },
+      {
+        "name":"_ul",
         "type":"Point"
       },
       {
@@ -15,6 +23,16 @@
         "name":"_transform",
         "type":"dbGDSSTrans",
         "flags":[]
+      },
+      {
+        "name":"_num_rows",
+        "type":"int16_t",
+        "default":"1"
+      },
+      {
+        "name":"_num_columns",
+        "type":"int16_t",
+        "default":"1"
       },
       {
         "name":"_structure",

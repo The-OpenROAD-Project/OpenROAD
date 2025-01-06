@@ -36,7 +36,7 @@
 
 #include "lefrSettings.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 extern void* lefMalloc(size_t lef_size);
 
@@ -171,4 +171,4 @@ void lefrData::initRead()
   hasWidth = 0;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

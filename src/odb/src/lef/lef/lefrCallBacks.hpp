@@ -33,7 +33,7 @@
 #include "lefiKRDefs.hpp"
 #include "lefrReader.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 class lefrCallbacks
 {
@@ -105,8 +105,6 @@ class lefrCallbacks
 
 extern lefrCallbacks* lefCallbacks;
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

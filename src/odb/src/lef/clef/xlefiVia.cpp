@@ -38,7 +38,7 @@
 
 union ulefiGeomPolygon
 {
-  LefDefParser::lefiGeomPolygon cpp;
+  LefParser::lefiGeomPolygon cpp;
   ::lefiGeomPolygon c;
 };
 
@@ -46,98 +46,98 @@ union ulefiGeomPolygon
 struct ::lefiGeomPolygon* lefiViaLayer_getPolygon(const ::lefiViaLayer* obj,
                                                   int index)
 {
-  return (::lefiGeomPolygon*) ((LefDefParser::lefiViaLayer*) obj)
+  return (::lefiGeomPolygon*) ((LefParser::lefiViaLayer*) obj)
       ->getPolygon(index);
 }
 
 int lefiVia_hasDefault(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->hasDefault();
+  return ((LefParser::lefiVia*) obj)->hasDefault();
 }
 
 int lefiVia_hasGenerated(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->hasGenerated();
+  return ((LefParser::lefiVia*) obj)->hasGenerated();
 }
 
 int lefiVia_hasForeign(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->hasForeign();
+  return ((LefParser::lefiVia*) obj)->hasForeign();
 }
 
 int lefiVia_hasForeignPnt(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->hasForeignPnt();
+  return ((LefParser::lefiVia*) obj)->hasForeignPnt();
 }
 
 int lefiVia_hasForeignOrient(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->hasForeignOrient();
+  return ((LefParser::lefiVia*) obj)->hasForeignOrient();
 }
 
 int lefiVia_hasProperties(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->hasProperties();
+  return ((LefParser::lefiVia*) obj)->hasProperties();
 }
 
 int lefiVia_hasResistance(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->hasResistance();
+  return ((LefParser::lefiVia*) obj)->hasResistance();
 }
 
 int lefiVia_hasTopOfStack(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->hasTopOfStack();
+  return ((LefParser::lefiVia*) obj)->hasTopOfStack();
 }
 
 int lefiVia_numLayers(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->numLayers();
+  return ((LefParser::lefiVia*) obj)->numLayers();
 }
 
 char* lefiVia_layerName(const ::lefiVia* obj, int layerNum)
 {
-  return ((LefDefParser::lefiVia*) obj)->layerName(layerNum);
+  return ((LefParser::lefiVia*) obj)->layerName(layerNum);
 }
 
 int lefiVia_numRects(const ::lefiVia* obj, int layerNum)
 {
-  return ((LefDefParser::lefiVia*) obj)->numRects(layerNum);
+  return ((LefParser::lefiVia*) obj)->numRects(layerNum);
 }
 
 double lefiVia_xl(const ::lefiVia* obj, int layerNum, int rectNum)
 {
-  return ((LefDefParser::lefiVia*) obj)->xl(layerNum, rectNum);
+  return ((LefParser::lefiVia*) obj)->xl(layerNum, rectNum);
 }
 
 double lefiVia_yl(const ::lefiVia* obj, int layerNum, int rectNum)
 {
-  return ((LefDefParser::lefiVia*) obj)->yl(layerNum, rectNum);
+  return ((LefParser::lefiVia*) obj)->yl(layerNum, rectNum);
 }
 
 double lefiVia_xh(const ::lefiVia* obj, int layerNum, int rectNum)
 {
-  return ((LefDefParser::lefiVia*) obj)->xh(layerNum, rectNum);
+  return ((LefParser::lefiVia*) obj)->xh(layerNum, rectNum);
 }
 
 double lefiVia_yh(const ::lefiVia* obj, int layerNum, int rectNum)
 {
-  return ((LefDefParser::lefiVia*) obj)->yh(layerNum, rectNum);
+  return ((LefParser::lefiVia*) obj)->yh(layerNum, rectNum);
 }
 
 int lefiVia_rectColorMask(const ::lefiVia* obj, int layerNum, int rectNum)
 {
-  return ((LefDefParser::lefiVia*) obj)->rectColorMask(layerNum, rectNum);
+  return ((LefParser::lefiVia*) obj)->rectColorMask(layerNum, rectNum);
 }
 
 int lefiVia_polyColorMask(const ::lefiVia* obj, int layerNum, int polyNum)
 {
-  return ((LefDefParser::lefiVia*) obj)->polyColorMask(layerNum, polyNum);
+  return ((LefParser::lefiVia*) obj)->polyColorMask(layerNum, polyNum);
 }
 
 int lefiVia_numPolygons(const ::lefiVia* obj, int layerNum)
 {
-  return ((LefDefParser::lefiVia*) obj)->numPolygons(layerNum);
+  return ((LefParser::lefiVia*) obj)->numPolygons(layerNum);
 }
 
 ::lefiGeomPolygon lefiVia_getPolygon(const ::lefiVia* obj,
@@ -145,211 +145,211 @@ int lefiVia_numPolygons(const ::lefiVia* obj, int layerNum)
                                      int polyNum)
 {
   ulefiGeomPolygon tmp;
-  tmp.cpp = ((LefDefParser::lefiVia*) obj)->getPolygon(layerNum, polyNum);
+  tmp.cpp = ((LefParser::lefiVia*) obj)->getPolygon(layerNum, polyNum);
   return tmp.c;
 }
 
 char* lefiVia_name(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->name();
+  return ((LefParser::lefiVia*) obj)->name();
 }
 
 double lefiVia_resistance(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->resistance();
+  return ((LefParser::lefiVia*) obj)->resistance();
 }
 
 int lefiVia_numProperties(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->numProperties();
+  return ((LefParser::lefiVia*) obj)->numProperties();
 }
 
 char* lefiVia_propName(const ::lefiVia* obj, int index)
 {
-  return ((LefDefParser::lefiVia*) obj)->propName(index);
+  return ((LefParser::lefiVia*) obj)->propName(index);
 }
 
 char* lefiVia_propValue(const ::lefiVia* obj, int index)
 {
-  return ((LefDefParser::lefiVia*) obj)->propValue(index);
+  return ((LefParser::lefiVia*) obj)->propValue(index);
 }
 
 double lefiVia_propNumber(const ::lefiVia* obj, int index)
 {
-  return ((LefDefParser::lefiVia*) obj)->propNumber(index);
+  return ((LefParser::lefiVia*) obj)->propNumber(index);
 }
 
 char lefiVia_propType(const ::lefiVia* obj, int index)
 {
-  return ((LefDefParser::lefiVia*) obj)->propType(index);
+  return ((LefParser::lefiVia*) obj)->propType(index);
 }
 
 int lefiVia_propIsNumber(const ::lefiVia* obj, int index)
 {
-  return ((LefDefParser::lefiVia*) obj)->propIsNumber(index);
+  return ((LefParser::lefiVia*) obj)->propIsNumber(index);
 }
 
 int lefiVia_propIsString(const ::lefiVia* obj, int index)
 {
-  return ((LefDefParser::lefiVia*) obj)->propIsString(index);
+  return ((LefParser::lefiVia*) obj)->propIsString(index);
 }
 
 char* lefiVia_foreign(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->foreign();
+  return ((LefParser::lefiVia*) obj)->foreign();
 }
 
 double lefiVia_foreignX(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->foreignX();
+  return ((LefParser::lefiVia*) obj)->foreignX();
 }
 
 double lefiVia_foreignY(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->foreignY();
+  return ((LefParser::lefiVia*) obj)->foreignY();
 }
 
 int lefiVia_foreignOrient(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->foreignOrient();
+  return ((LefParser::lefiVia*) obj)->foreignOrient();
 }
 
 char* lefiVia_foreignOrientStr(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->foreignOrientStr();
+  return ((LefParser::lefiVia*) obj)->foreignOrientStr();
 }
 
 int lefiVia_hasViaRule(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->hasViaRule();
+  return ((LefParser::lefiVia*) obj)->hasViaRule();
 }
 
 const char* lefiVia_viaRuleName(const ::lefiVia* obj)
 {
-  return ((const LefDefParser::lefiVia*) obj)->viaRuleName();
+  return ((const LefParser::lefiVia*) obj)->viaRuleName();
 }
 
 double lefiVia_xCutSize(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->xCutSize();
+  return ((LefParser::lefiVia*) obj)->xCutSize();
 }
 
 double lefiVia_yCutSize(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->yCutSize();
+  return ((LefParser::lefiVia*) obj)->yCutSize();
 }
 
 const char* lefiVia_botMetalLayer(const ::lefiVia* obj)
 {
-  return ((const LefDefParser::lefiVia*) obj)->botMetalLayer();
+  return ((const LefParser::lefiVia*) obj)->botMetalLayer();
 }
 
 const char* lefiVia_cutLayer(const ::lefiVia* obj)
 {
-  return ((const LefDefParser::lefiVia*) obj)->cutLayer();
+  return ((const LefParser::lefiVia*) obj)->cutLayer();
 }
 
 const char* lefiVia_topMetalLayer(const ::lefiVia* obj)
 {
-  return ((const LefDefParser::lefiVia*) obj)->topMetalLayer();
+  return ((const LefParser::lefiVia*) obj)->topMetalLayer();
 }
 
 double lefiVia_xCutSpacing(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->xCutSpacing();
+  return ((LefParser::lefiVia*) obj)->xCutSpacing();
 }
 
 double lefiVia_yCutSpacing(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->yCutSpacing();
+  return ((LefParser::lefiVia*) obj)->yCutSpacing();
 }
 
 double lefiVia_xBotEnc(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->xBotEnc();
+  return ((LefParser::lefiVia*) obj)->xBotEnc();
 }
 
 double lefiVia_yBotEnc(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->yBotEnc();
+  return ((LefParser::lefiVia*) obj)->yBotEnc();
 }
 
 double lefiVia_xTopEnc(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->xTopEnc();
+  return ((LefParser::lefiVia*) obj)->xTopEnc();
 }
 
 double lefiVia_yTopEnc(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->yTopEnc();
+  return ((LefParser::lefiVia*) obj)->yTopEnc();
 }
 
 int lefiVia_hasRowCol(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->hasRowCol();
+  return ((LefParser::lefiVia*) obj)->hasRowCol();
 }
 
 int lefiVia_numCutRows(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->numCutRows();
+  return ((LefParser::lefiVia*) obj)->numCutRows();
 }
 
 int lefiVia_numCutCols(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->numCutCols();
+  return ((LefParser::lefiVia*) obj)->numCutCols();
 }
 
 int lefiVia_hasOrigin(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->hasOrigin();
+  return ((LefParser::lefiVia*) obj)->hasOrigin();
 }
 
 double lefiVia_xOffset(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->xOffset();
+  return ((LefParser::lefiVia*) obj)->xOffset();
 }
 
 double lefiVia_yOffset(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->yOffset();
+  return ((LefParser::lefiVia*) obj)->yOffset();
 }
 
 int lefiVia_hasOffset(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->hasOffset();
+  return ((LefParser::lefiVia*) obj)->hasOffset();
 }
 
 double lefiVia_xBotOffset(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->xBotOffset();
+  return ((LefParser::lefiVia*) obj)->xBotOffset();
 }
 
 double lefiVia_yBotOffset(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->yBotOffset();
+  return ((LefParser::lefiVia*) obj)->yBotOffset();
 }
 
 double lefiVia_xTopOffset(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->xTopOffset();
+  return ((LefParser::lefiVia*) obj)->xTopOffset();
 }
 
 double lefiVia_yTopOffset(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->yTopOffset();
+  return ((LefParser::lefiVia*) obj)->yTopOffset();
 }
 
 int lefiVia_hasCutPattern(const ::lefiVia* obj)
 {
-  return ((LefDefParser::lefiVia*) obj)->hasCutPattern();
+  return ((LefParser::lefiVia*) obj)->hasCutPattern();
 }
 
 const char* lefiVia_cutPattern(const ::lefiVia* obj)
 {
-  return ((const LefDefParser::lefiVia*) obj)->cutPattern();
+  return ((const LefParser::lefiVia*) obj)->cutPattern();
 }
 
 void lefiVia_print(const ::lefiVia* obj, FILE* f)
 {
-  ((LefDefParser::lefiVia*) obj)->print(f);
+  ((LefParser::lefiVia*) obj)->print(f);
 }

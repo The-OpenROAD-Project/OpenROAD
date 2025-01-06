@@ -173,11 +173,11 @@ class LayoutViewer : public QWidget
                  double dbu_per_pixel = 0);
 
   // From QWidget
-  virtual void paintEvent(QPaintEvent* event) override;
-  virtual void resizeEvent(QResizeEvent* event) override;
-  virtual void mousePressEvent(QMouseEvent* event) override;
-  virtual void mouseMoveEvent(QMouseEvent* event) override;
-  virtual void mouseReleaseEvent(QMouseEvent* event) override;
+  void paintEvent(QPaintEvent* event) override;
+  void resizeEvent(QResizeEvent* event) override;
+  void mousePressEvent(QMouseEvent* event) override;
+  void mouseMoveEvent(QMouseEvent* event) override;
+  void mouseReleaseEvent(QMouseEvent* event) override;
 
   odb::Rect getVisibleBounds()
   {

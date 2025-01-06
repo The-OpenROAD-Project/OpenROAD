@@ -38,29 +38,29 @@
 
 union udefiPoints
 {
-  LefDefParser::defiPoints cpp;
+  DefParser::defiPoints cpp;
   ::defiPoints c;
 };
 
 // Wrappers definitions.
 const char* defiVia_name(const ::defiVia* obj)
 {
-  return ((const LefDefParser::defiVia*) obj)->name();
+  return ((const DefParser::defiVia*) obj)->name();
 }
 
 const char* defiVia_pattern(const ::defiVia* obj)
 {
-  return ((const LefDefParser::defiVia*) obj)->pattern();
+  return ((const DefParser::defiVia*) obj)->pattern();
 }
 
 int defiVia_hasPattern(const ::defiVia* obj)
 {
-  return ((LefDefParser::defiVia*) obj)->hasPattern();
+  return ((DefParser::defiVia*) obj)->hasPattern();
 }
 
 int defiVia_numLayers(const ::defiVia* obj)
 {
-  return ((LefDefParser::defiVia*) obj)->numLayers();
+  return ((DefParser::defiVia*) obj)->numLayers();
 }
 
 void defiVia_layer(const ::defiVia* obj,
@@ -71,29 +71,29 @@ void defiVia_layer(const ::defiVia* obj,
                    int* xh,
                    int* yh)
 {
-  ((LefDefParser::defiVia*) obj)->layer(index, layer, xl, yl, xh, yh);
+  ((DefParser::defiVia*) obj)->layer(index, layer, xl, yl, xh, yh);
 }
 
 int defiVia_numPolygons(const ::defiVia* obj)
 {
-  return ((LefDefParser::defiVia*) obj)->numPolygons();
+  return ((DefParser::defiVia*) obj)->numPolygons();
 }
 
 const char* defiVia_polygonName(const ::defiVia* obj, int index)
 {
-  return ((const LefDefParser::defiVia*) obj)->polygonName(index);
+  return ((const DefParser::defiVia*) obj)->polygonName(index);
 }
 
 ::defiPoints defiVia_getPolygon(const ::defiVia* obj, int index)
 {
   udefiPoints tmp;
-  tmp.cpp = ((LefDefParser::defiVia*) obj)->getPolygon(index);
+  tmp.cpp = ((DefParser::defiVia*) obj)->getPolygon(index);
   return tmp.c;
 }
 
 int defiVia_hasViaRule(const ::defiVia* obj)
 {
-  return ((LefDefParser::defiVia*) obj)->hasViaRule();
+  return ((DefParser::defiVia*) obj)->hasViaRule();
 }
 
 void defiVia_viaRule(const ::defiVia* obj,
@@ -110,7 +110,7 @@ void defiVia_viaRule(const ::defiVia* obj,
                      int* xTopEnc,
                      int* yTopEnc)
 {
-  ((LefDefParser::defiVia*) obj)
+  ((DefParser::defiVia*) obj)
       ->viaRule(viaRuleName,
                 xSize,
                 ySize,
@@ -127,27 +127,27 @@ void defiVia_viaRule(const ::defiVia* obj,
 
 int defiVia_hasRowCol(const ::defiVia* obj)
 {
-  return ((LefDefParser::defiVia*) obj)->hasRowCol();
+  return ((DefParser::defiVia*) obj)->hasRowCol();
 }
 
 void defiVia_rowCol(const ::defiVia* obj, int* numCutRows, int* numCutCols)
 {
-  ((LefDefParser::defiVia*) obj)->rowCol(numCutRows, numCutCols);
+  ((DefParser::defiVia*) obj)->rowCol(numCutRows, numCutCols);
 }
 
 int defiVia_hasOrigin(const ::defiVia* obj)
 {
-  return ((LefDefParser::defiVia*) obj)->hasOrigin();
+  return ((DefParser::defiVia*) obj)->hasOrigin();
 }
 
 void defiVia_origin(const ::defiVia* obj, int* xOffset, int* yOffset)
 {
-  ((LefDefParser::defiVia*) obj)->origin(xOffset, yOffset);
+  ((DefParser::defiVia*) obj)->origin(xOffset, yOffset);
 }
 
 int defiVia_hasOffset(const ::defiVia* obj)
 {
-  return ((LefDefParser::defiVia*) obj)->hasOffset();
+  return ((DefParser::defiVia*) obj)->hasOffset();
 }
 
 void defiVia_offset(const ::defiVia* obj,
@@ -156,41 +156,41 @@ void defiVia_offset(const ::defiVia* obj,
                     int* xTopOffset,
                     int* yTopOffset)
 {
-  ((LefDefParser::defiVia*) obj)
+  ((DefParser::defiVia*) obj)
       ->offset(xBotOffset, yBotOffset, xTopOffset, yTopOffset);
 }
 
 int defiVia_hasCutPattern(const ::defiVia* obj)
 {
-  return ((LefDefParser::defiVia*) obj)->hasCutPattern();
+  return ((DefParser::defiVia*) obj)->hasCutPattern();
 }
 
 const char* defiVia_cutPattern(const ::defiVia* obj)
 {
-  return ((const LefDefParser::defiVia*) obj)->cutPattern();
+  return ((const DefParser::defiVia*) obj)->cutPattern();
 }
 
 int defiVia_hasRectMask(const ::defiVia* obj, int index)
 {
-  return ((LefDefParser::defiVia*) obj)->hasRectMask(index);
+  return ((DefParser::defiVia*) obj)->hasRectMask(index);
 }
 
 int defiVia_rectMask(const ::defiVia* obj, int index)
 {
-  return ((LefDefParser::defiVia*) obj)->rectMask(index);
+  return ((DefParser::defiVia*) obj)->rectMask(index);
 }
 
 int defiVia_hasPolyMask(const ::defiVia* obj, int index)
 {
-  return ((LefDefParser::defiVia*) obj)->hasPolyMask(index);
+  return ((DefParser::defiVia*) obj)->hasPolyMask(index);
 }
 
 int defiVia_polyMask(const ::defiVia* obj, int index)
 {
-  return ((LefDefParser::defiVia*) obj)->polyMask(index);
+  return ((DefParser::defiVia*) obj)->polyMask(index);
 }
 
 void defiVia_print(const ::defiVia* obj, FILE* f)
 {
-  ((LefDefParser::defiVia*) obj)->print(f);
+  ((DefParser::defiVia*) obj)->print(f);
 }

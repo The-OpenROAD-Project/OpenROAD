@@ -37,7 +37,7 @@
 #include "defiKRDefs.hpp"
 #include "defiUser.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 /*
  * The main writer function.
@@ -209,8 +209,6 @@ using DEFI_WARNING_LOG_FUNCTION = void (*)(const char*);
 
 extern void defwSetWarningLogFunction(DEFI_WARNING_LOG_FUNCTION);
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif
