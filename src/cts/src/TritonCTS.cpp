@@ -1137,7 +1137,7 @@ bool TritonCTS::separateMacroRegSinks(
     std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& registerSinks,
     std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& macroSinks)
 {
-  int max_dx = 0, max_dy = 0;
+  uint max_dx = 0, max_dy = 0;
   for (odb::dbITerm* iterm : net->getITerms()) {
     odb::dbInst* inst = iterm->getInst();
 
@@ -1154,7 +1154,7 @@ bool TritonCTS::separateMacroRegSinks(
       // Treat clock gaters like macro sink
       if (hasInsertionDelay(inst, mterm) || !isSink(iterm)) {
         if(inst->getMaster()->isBlock()) {
-          max_dx = inst->getBBox()->getDX();
+          max_dx = std::max(max_dx, inst->getBBox()->getDX());
         }
         macroSinks.emplace_back(inst, mterm);
       } else {
@@ -1163,6 +1163,7 @@ bool TritonCTS::separateMacroRegSinks(
     }
   }
   logger_->report("Macro Max dx: {}, max dy: {}", max_dx, max_dy);
+  options_->setMacroMaxDiameter(2 * std::max(max_dx, max_dy));
   return true;
 }
 
