@@ -32,7 +32,6 @@
 #pragma once
 
 #include "ClockDomain.hh"
-#include "ResetDomain.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"

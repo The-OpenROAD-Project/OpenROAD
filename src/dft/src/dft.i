@@ -39,7 +39,6 @@
 #include "ord/OpenRoad.hh"
 #include "ScanArchitect.hh"
 #include "ClockDomain.hh"
-#include "ResetDomain.hh"
 
 dft::Dft * getDft()
 {
