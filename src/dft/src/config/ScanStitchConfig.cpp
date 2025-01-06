@@ -41,7 +41,7 @@ void ScanStitchConfig::setEnableNamePattern(
 {
   enable_name_pattern_ = enable_name_pattern;
 }
-const std::string& ScanStitchConfig::getEnableNamePattern() const
+std::string_view ScanStitchConfig::getEnableNamePattern() const
 {
   return enable_name_pattern_;
 };
@@ -50,7 +50,7 @@ void ScanStitchConfig::setInNamePattern(std::string_view& in_name_pattern)
 {
   in_name_pattern_ = in_name_pattern;
 };
-const std::string& ScanStitchConfig::getInNamePattern() const
+std::string_view ScanStitchConfig::getInNamePattern() const
 {
   return in_name_pattern_;
 };
@@ -59,7 +59,7 @@ void ScanStitchConfig::setOutNamePattern(std::string_view& out_name_pattern)
 {
   out_name_pattern_ = out_name_pattern;
 };
-const std::string& ScanStitchConfig::getOutNamePattern() const
+std::string_view ScanStitchConfig::getOutNamePattern() const
 {
   return out_name_pattern_;
 };
@@ -73,7 +73,7 @@ ScanStitchConfig::EnableMode ScanStitchConfig::getEnableMode() const
   return enable_mode_;
 }
 
-const std::string_view ScanStitchConfig::EnableModeName(
+std::string_view ScanStitchConfig::EnableModeName(
     ScanStitchConfig::EnableMode enable_mode)
 {
   switch (enable_mode) {

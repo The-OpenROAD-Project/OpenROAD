@@ -55,12 +55,17 @@ class ScanStitch
                       utl::Logger* logger,
                       const ScanStitchConfig& config);
 
-  // Stitch all the cells inside each one of the scan chains together.
+  // Stitch one or more scan chains.
   void Stitch(const std::vector<std::unique_ptr<ScanChain>>& scan_chains);
+
+  // Stitch all the cells inside each one of the scan chains together.
+  // - Ordinals are used with scan in/out/enable name patterns to produce the
+  // - final name for the signal(s) in question. Enable ordinal is different
+  // - to account for whether you're using global or per-chain enable.
   void Stitch(odb::dbBlock* block,
               const ScanChain& scan_chain,
-              size_t ordinal = 1,
-              size_t enable_ordinal = 1);
+              size_t ordinal = 0,
+              size_t enable_ordinal = 0);
 
  private:
   ScanDriver FindOrCreateDriver(const std::string_view& kind,

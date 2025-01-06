@@ -92,7 +92,15 @@ sta::define_cmd_args "set_dft_config" { [-max_length max_length]
                                         }
 proc set_dft_config { args } {
   sta::parse_key_args "set_dft_config" args \
-    keys {-max_length -max_chains -clock_mixing -scan_enable_mode -scan_enable_name_pattern -scan_in_name_pattern -scan_out_name_pattern} \
+    keys {
+      -max_length
+      -max_chains
+      -clock_mixing
+      -scan_enable_mode
+      -scan_enable_name_pattern
+      -scan_in_name_pattern
+      -scan_out_name_pattern
+    } \
     flags {}
 
   sta::check_argc_eq0 "set_dft_config" $args

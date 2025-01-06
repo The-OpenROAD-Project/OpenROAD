@@ -44,16 +44,16 @@ class ScanStitchConfig
     PerChain
   };
 
-  static const std::string_view EnableModeName(EnableMode enable_mode);
+  static std::string_view EnableModeName(EnableMode enable_mode);
 
   void setEnableNamePattern(std::string_view& enable_name_pattern);
-  const std::string& getEnableNamePattern() const;
+  std::string_view getEnableNamePattern() const;
 
   void setInNamePattern(std::string_view& in_name_pattern);
-  const std::string& getInNamePattern() const;
+  std::string_view getInNamePattern() const;
 
   void setOutNamePattern(std::string_view& out_name_pattern);
-  const std::string& getOutNamePattern() const;
+  std::string_view getOutNamePattern() const;
 
   void setEnableMode(EnableMode enable_mode);
   EnableMode getEnableMode() const;

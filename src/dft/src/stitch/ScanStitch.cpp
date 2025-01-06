@@ -190,14 +190,15 @@ ScanDriver ScanStitch::FindOrCreateDriver(const std::string_view& kind,
                      iterm->getIoType().getString());
     }
     return ScanDriver(iterm);
-  } else {  // BTerm
-    auto bterm = block->findBTerm(with_name.data());
-    if (bterm != nullptr) {
-      // We don't actually care if it's an output, that works here too.
-      return ScanDriver(bterm);
-    }
-    return CreateNewPort<ScanDriver>(block, with_name);
   }
+
+  // BTerm
+  auto bterm = block->findBTerm(with_name.data());
+  if (bterm != nullptr) {
+    // We don't actually care if it's an output, that works here too.
+    return ScanDriver(bterm);
+  }
+  return CreateNewPort<ScanDriver>(block, with_name);
 }
 
 ScanDriver ScanStitch::FindOrCreateScanEnable(odb::dbBlock* block,
