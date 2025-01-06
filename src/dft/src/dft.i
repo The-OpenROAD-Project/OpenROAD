@@ -156,12 +156,6 @@ void insert_dft()
   getDft()->insertDft();
 }
 
-void write_scan_chains(const char* filename_p)
-{
-  std::string filename(filename_p);
-  getDft()->writeScanChains(filename);
-}
-
 void set_dft_config_max_length(int max_length)
 {
   getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setMaxLength(max_length);

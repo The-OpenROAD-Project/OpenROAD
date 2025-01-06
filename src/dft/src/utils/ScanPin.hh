@@ -51,24 +51,22 @@ overloaded(Ts...) -> overloaded<Ts...>;
 class ScanPin
 {
  public:
-  explicit ScanPin(odb::dbITerm* iterm);
-  explicit ScanPin(odb::dbBTerm* bterm);
+  explicit ScanPin(std::variant<odb::dbBTerm*, odb::dbITerm*> term);
   ScanPin(const ScanPin&) = delete;  // no copy
 
   odb::dbNet* getNet() const;
   std::string_view getName() const;
-  const std::variant<odb::dbITerm*, odb::dbBTerm*>& getValue() const;
+  const std::variant<odb::dbBTerm*, odb::dbITerm*>& getValue() const;
 
  protected:
-  std::variant<odb::dbITerm*, odb::dbBTerm*> value_;
+  std::variant<odb::dbBTerm*, odb::dbITerm*> value_;
 };
 
 // Typesafe wrapper for load pins
 class ScanLoad : public ScanPin
 {
  public:
-  explicit ScanLoad(odb::dbITerm* iterm);
-  explicit ScanLoad(odb::dbBTerm* bterm);
+  explicit ScanLoad(std::variant<odb::dbBTerm*, odb::dbITerm*> term);
   ScanLoad(const ScanLoad&) = delete;  // no copy
 };
 
@@ -76,8 +74,7 @@ class ScanLoad : public ScanPin
 class ScanDriver : public ScanPin
 {
  public:
-  explicit ScanDriver(odb::dbITerm* iterm);
-  explicit ScanDriver(odb::dbBTerm* bterm);
+  explicit ScanDriver(std::variant<odb::dbBTerm*, odb::dbITerm*> term);
   ScanDriver(const ScanDriver&) = delete;  // no copy
 };
 

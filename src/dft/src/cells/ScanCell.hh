@@ -64,6 +64,7 @@ class ScanCell
   virtual void connectScanEnable(const ScanDriver& driver) const = 0;
   virtual void connectScanIn(const ScanDriver& driver) const = 0;
   virtual void connectScanOut(const ScanLoad& load) const = 0;
+  virtual ScanLoad getScanIn() const = 0;
   virtual ScanDriver getScanOut() const = 0;
 
   const ClockDomain& getClockDomain() const;

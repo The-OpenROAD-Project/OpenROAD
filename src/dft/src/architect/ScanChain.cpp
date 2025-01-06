@@ -118,4 +118,31 @@ const std::string& ScanChain::getName() const
 {
   return name_;
 }
+
+ScanDriver ScanChain::getScanIn() const
+{
+  return ScanDriver(scan_in_);
+}
+ScanDriver ScanChain::getScanEnable() const
+{
+  return ScanDriver(scan_enable_);
+}
+ScanLoad ScanChain::getScanOut() const
+{
+  return ScanLoad(scan_out_);
+}
+
+void ScanChain::setScanIn(const ScanDriver& signal)
+{
+  scan_in_ = signal.getValue();
+}
+void ScanChain::setScanEnable(const ScanDriver& signal)
+{
+  scan_enable_ = signal.getValue();
+}
+void ScanChain::setScanOut(const ScanLoad& signal)
+{
+  scan_out_ = signal.getValue();
+}
+
 }  // namespace dft

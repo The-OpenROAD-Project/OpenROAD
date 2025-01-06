@@ -107,9 +107,6 @@ class Dft
   // Prints to stdout
   void reportDftConfig() const;
 
-  // Writes scan chains in a JSON format
-  void writeScanChains(const std::string& filename);
-
  private:
   // If we need to run pre_dft to create the internal state
   bool need_to_run_pre_dft_;

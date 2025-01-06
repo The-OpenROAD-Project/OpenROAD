@@ -28,4 +28,16 @@ END NETS
 GROUPS 1 ;
     - group ff1 + REGION region ;
 END GROUPS
+
+SCANCHAINS 1 ;
+
+- chain_0
++ START PIN scan_in_0
++ FLOATING
+  ff1 ( IN SCD ) ( OUT Q )
++ PARTITION default
++ STOP PIN output1 ;
+
+END SCANCHAINS
+
 END DESIGN

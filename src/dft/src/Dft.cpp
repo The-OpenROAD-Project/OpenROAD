@@ -46,6 +46,8 @@
 #include "odb/db.h"
 #include "utl/Logger.h"
 
+constexpr char kDefaultPartition[] = "default";
+
 namespace dft {
 
 Dft::Dft() : dft_config_(std::make_unique<DftConfig>())
@@ -106,43 +108,6 @@ void Dft::scanReplace()
   scan_replace_->scanReplace();
 }
 
-void Dft::writeScanChains(const std::string& filename)
-{
-  using boost::property_tree::ptree;
-  if (need_to_run_pre_dft_) {
-    pre_dft();
-  }
-
-  std::ofstream json_file(filename);
-  if (!json_file.is_open()) {
-    logger_->error(
-        utl::DFT, 13, "Failed to open file {} for writing.", filename);
-  }
-  try {
-    ptree root;
-
-    std::vector<std::unique_ptr<ScanChain>> scan_chains = scanArchitect();
-
-    for (auto& chain : scan_chains) {
-      ptree current_chain;
-      ptree cells;
-      auto& scan_cells = chain->getScanCells();
-      for (auto& cell : scan_cells) {
-        ptree name;
-        name.put("", cell->getName());
-        cells.push_back(std::make_pair("", name));
-      }
-      current_chain.add_child("cells", cells);
-      root.add_child(chain->getName(), current_chain);
-    }
-
-    boost::property_tree::write_json(json_file, root);
-  } catch (std::exception& ex) {
-    logger_->error(
-        utl::DFT, 14, "Failed to write JSON report. Exception: {}", ex.what());
-  }
-}
-
 void Dft::insertDft()
 {
   if (need_to_run_pre_dft_) {
@@ -152,6 +117,41 @@ void Dft::insertDft()
 
   ScanStitch stitch(db_, logger_, dft_config_->getScanStitchConfig());
   stitch.Stitch(scan_chains);
+
+  // Write scan chains to odb
+  odb::dbBlock* db_block = db_->getChip()->getBlock();
+  odb::dbDft* db_dft = db_block->getDft();
+
+  for (auto& chain : scan_chains) {
+    odb::dbScanChain* db_sc = odb::dbScanChain::create(db_dft);
+    db_sc->setName(chain->getName());
+    odb::dbScanPartition* db_part = odb::dbScanPartition::create(db_sc);
+    db_part->setName(kDefaultPartition);
+    odb::dbScanList* db_scanlist = odb::dbScanList::create(db_part);
+
+    for (auto& scan_cell : chain->getScanCells()) {
+      std::string inst_name(scan_cell->getName());
+      odb::dbInst* db_inst = db_block->findInst(inst_name.c_str());
+      odb::dbScanInst* db_scaninst = db_scanlist->add(db_inst);
+      db_scaninst->setBits(scan_cell->getBits());
+      auto scan_in_term = scan_cell->getScanIn().getValue();
+      auto scan_out_term = scan_cell->getScanOut().getValue();
+      db_scaninst->setAccessPins(
+          {.scan_in = scan_in_term, .scan_out = scan_out_term});
+    }
+
+    ScanDriver sc_enable_driver = chain->getScanEnable();
+    ScanDriver sc_in_driver = chain->getScanIn();
+    ScanLoad sc_out_load = chain->getScanOut();
+
+    std::visit(
+        [&](auto&& sc_enable_term) { db_sc->setScanEnable(sc_enable_term); },
+        sc_enable_driver.getValue());
+    std::visit([&](auto&& sc_in_term) { db_sc->setScanIn(sc_in_term); },
+               sc_in_driver.getValue());
+    std::visit([&](auto&& sc_out_term) { db_sc->setScanOut(sc_out_term); },
+               sc_out_load.getValue());
+  }
 }
 
 DftConfig* Dft::getMutableDftConfig()

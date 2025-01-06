@@ -85,6 +85,15 @@ class ScanChain
   // Returns the name of the scan chain
   const std::string& getName() const;
 
+  // For stitchers
+  ScanDriver getScanIn() const;
+  ScanDriver getScanEnable() const;
+  ScanLoad getScanOut() const;
+
+  void setScanIn(const ScanDriver& signal);
+  void setScanEnable(const ScanDriver& signal);
+  void setScanOut(const ScanLoad& signal);
+
  private:
   std::string name_;
   std::vector<std::unique_ptr<ScanCell>> rising_edge_scan_cells_;
@@ -95,6 +104,13 @@ class ScanChain
   // The total bits in this scan chain. Scan cells can contain more than one
   // bit, that's why this is different from the number of cells.
   uint64_t bits_;
+
+  // After stitching: store input/output bterms/iterms
+  std::variant<odb::dbBTerm*, odb::dbITerm*> scan_in_ = (odb::dbBTerm*) nullptr;
+  std::variant<odb::dbBTerm*, odb::dbITerm*> scan_out_
+      = (odb::dbBTerm*) nullptr;
+  std::variant<odb::dbBTerm*, odb::dbITerm*> scan_enable_
+      = (odb::dbBTerm*) nullptr;
 };
 
 }  // namespace dft

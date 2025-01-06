@@ -92,32 +92,6 @@ a result, this should be run after placement, and after `scan_replace`.
 insert_dft
 ```
 
-### Write Scan Chains
-
-Writes a JSON file containing metadata about the current architected scan chain.
-
-The JSON file is currently in this format:
-
-```jsonc
-{
-    "chain_0": {
-        "cells": [
-            "scanflop_0",
-            "scanflop_1",
-            "scanflop_2"
-        ]
-    },
-    /* … other chains … */ 
-}
-```
-
-…where the order of `.chain_name.cells` corresponds to the order of the elements
-in the scan-chain.
-
-```tcl
-write_scan_chains
-```
-
 ## Example scripts
 
 This example will create scan chains with a max length of 10 bits mixing all the

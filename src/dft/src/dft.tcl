@@ -58,18 +58,6 @@ proc scan_replace { args } {
   dft::scan_replace
 }
 
-sta::define_cmd_args "write_scan_chains" {[json_file_out]}
-proc write_scan_chains { args } {
-  sta::parse_key_args "write_scan_chains" args \
-    keys {} flags {}
-
-  if { [ord::get_db_block] == "NULL" } {
-    utl::error DFT 15 "No design block found."
-  }
-
-  dft::write_scan_chains [lindex $args 0]
-}
-
 sta::define_cmd_args "insert_dft" {}
 proc insert_dft { args } {
   sta::parse_key_args "insert_dft" args \

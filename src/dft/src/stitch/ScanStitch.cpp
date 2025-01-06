@@ -70,18 +70,20 @@ void ScanStitch::Stitch(
 }
 
 void ScanStitch::Stitch(odb::dbBlock* block,
-                        const ScanChain& scan_chain,
+                        ScanChain& scan_chain,
                         size_t ordinal,
                         size_t enable_ordinal)
 {
   auto scan_enable_name = fmt::format(
       FMT_RUNTIME(config_.getEnableNamePattern()), enable_ordinal);
-  auto scan_enable = FindOrCreateScanEnable(block, scan_enable_name);
+  auto scan_enable_driver = FindOrCreateScanEnable(block, scan_enable_name);
 
-  // Let's create the scan in and scan out of the chain
   auto scan_in_name
       = fmt::format(FMT_RUNTIME(config_.getInNamePattern()), ordinal);
   ScanDriver scan_in_driver = FindOrCreateScanIn(block, scan_in_name);
+
+  scan_chain.setScanIn(scan_in_driver);
+  scan_chain.setScanEnable(scan_enable_driver);
 
   // We need fast pop for front and back
   std::deque<std::reference_wrapper<const std::unique_ptr<ScanCell>>>
@@ -96,7 +98,7 @@ void ScanStitch::Stitch(odb::dbBlock* block,
 
   // All the cells in the scan chain are controlled by the same scan enable
   for (const std::unique_ptr<ScanCell>& scan_cell : scan_cells) {
-    scan_cell->connectScanEnable(scan_enable);
+    scan_cell->connectScanEnable(scan_enable_driver);
   }
 
   // Lets get the first and last cell
@@ -119,7 +121,7 @@ void ScanStitch::Stitch(odb::dbBlock* block,
   }
 
   // Let's connect the first cell
-  first_scan_cell->connectScanEnable(scan_enable);
+  first_scan_cell->connectScanEnable(scan_enable_driver);
   first_scan_cell->connectScanIn(scan_in_driver);
 
   if (!scan_cells.empty()) {
@@ -137,6 +139,7 @@ void ScanStitch::Stitch(odb::dbBlock* block,
   ScanLoad scan_out_load
       = FindOrCreateScanOut(block, last_scan_cell->getScanOut(), scan_out_name);
   last_scan_cell->connectScanOut(scan_out_load);
+  scan_chain.setScanOut(scan_out_load);
 }
 
 namespace {
