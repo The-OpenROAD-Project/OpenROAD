@@ -39,5 +39,5 @@
 // Wrappers definitions.
 void lefrEnableReadEncrypted()
 {
-  LefDefParser::lefrEnableReadEncrypted();
+  LefParser::lefrEnableReadEncrypted();
 }

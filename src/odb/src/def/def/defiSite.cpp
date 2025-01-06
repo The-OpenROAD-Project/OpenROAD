@@ -36,7 +36,7 @@
 #include "defiUtil.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
@@ -272,4 +272,4 @@ void defiBox::print(FILE* f) const
   fprintf(f, "Box %d,%d %d %d\n", xl(), yl(), xh(), yh());
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

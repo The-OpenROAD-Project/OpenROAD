@@ -74,7 +74,7 @@ class TimingWidget : public QDockWidget
   };
 
   TimingWidget(QWidget* parent = nullptr);
-  ~TimingWidget();
+  ~TimingWidget() override;
 
   void init(sta::dbSta* sta);
 

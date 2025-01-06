@@ -36,7 +36,7 @@
 #include "lefiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // *****************************************************************************
 // lefiViaRuleLayer
@@ -748,4 +748,4 @@ int lefiViaRule::propIsString(int i) const
   }
   return dvalues_[i] ? 0 : 1;
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

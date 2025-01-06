@@ -36,7 +36,7 @@
 #include "defiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 defiOrdered::defiOrdered(defrData* data) : defData(data)
 {
@@ -622,4 +622,4 @@ void defiScanchain::print(FILE* f) const
     fprintf(f, "  common out pin %s\n", commonOutPin());
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

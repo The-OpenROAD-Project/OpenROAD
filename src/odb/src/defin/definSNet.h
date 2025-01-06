@@ -111,8 +111,8 @@ class definSNet : public definBase
   void connect_all(dbNet*, const char* term);
 
   definSNet();
-  virtual ~definSNet();
-  void init();
+  ~definSNet() override;
+  void init() override;
 
   void skipSpecialWires() { _skip_special_wires = true; }
   void skipShields() { _skip_shields = true; }

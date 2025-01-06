@@ -39,38 +39,38 @@
 // Wrappers definitions.
 double lefiNoiseVictim_length(const ::lefiNoiseVictim* obj)
 {
-  return ((LefDefParser::lefiNoiseVictim*) obj)->length();
+  return ((LefParser::lefiNoiseVictim*) obj)->length();
 }
 
 int lefiNoiseVictim_numNoises(const ::lefiNoiseVictim* obj)
 {
-  return ((LefDefParser::lefiNoiseVictim*) obj)->numNoises();
+  return ((LefParser::lefiNoiseVictim*) obj)->numNoises();
 }
 
 double lefiNoiseVictim_noise(const ::lefiNoiseVictim* obj, int index)
 {
-  return ((LefDefParser::lefiNoiseVictim*) obj)->noise(index);
+  return ((LefParser::lefiNoiseVictim*) obj)->noise(index);
 }
 
 int lefiNoiseResistance_numNums(const ::lefiNoiseResistance* obj)
 {
-  return ((LefDefParser::lefiNoiseResistance*) obj)->numNums();
+  return ((LefParser::lefiNoiseResistance*) obj)->numNums();
 }
 
 double lefiNoiseResistance_num(const ::lefiNoiseResistance* obj, int index)
 {
-  return ((LefDefParser::lefiNoiseResistance*) obj)->num(index);
+  return ((LefParser::lefiNoiseResistance*) obj)->num(index);
 }
 
 int lefiNoiseResistance_numVictims(const ::lefiNoiseResistance* obj)
 {
-  return ((LefDefParser::lefiNoiseResistance*) obj)->numVictims();
+  return ((LefParser::lefiNoiseResistance*) obj)->numVictims();
 }
 
 const ::lefiNoiseVictim* lefiNoiseResistance_victim(
     const ::lefiNoiseResistance* obj,
     int index)
 {
-  return (const ::lefiNoiseVictim*) ((LefDefParser::lefiNoiseResistance*) obj)
+  return (const ::lefiNoiseVictim*) ((LefParser::lefiNoiseResistance*) obj)
       ->victim(index);
 }

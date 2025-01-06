@@ -465,7 +465,7 @@ class dbIStream
       return *this;
     } else {
       *this >> std::get<I>(tup);
-      return ((*this).operator>><I + 1>(tup));
+      return ((*this).operator>> <I + 1>(tup));
     }
   }
 
@@ -473,6 +473,10 @@ class dbIStream
   {
     char* tmp;
     *this >> tmp;
+    if (!tmp) {
+      s = "";
+      return *this;
+    }
     s = std::string(tmp);
     free((void*) tmp);
     return *this;
