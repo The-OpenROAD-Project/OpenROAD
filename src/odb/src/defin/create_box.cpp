@@ -32,7 +32,7 @@
 
 #include "create_box.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "utl/Logger.h"
 namespace odb {

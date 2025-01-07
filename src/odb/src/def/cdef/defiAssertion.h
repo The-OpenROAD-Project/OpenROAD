@@ -33,7 +33,7 @@
 #ifndef CDEFIASSERTION_H
 #define CDEFIASSERTION_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

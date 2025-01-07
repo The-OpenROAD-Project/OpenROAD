@@ -29,16 +29,15 @@
 
 #include "defiSlot.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <sstream>
 
 #include "defiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 namespace {
 
@@ -79,8 +78,8 @@ void defiSlot::Init()
   yh_ = (int*) malloc(sizeof(int) * 1);
   rectsAllocated_ = 1;  // At least 1 rectangle will define
   polysAllocated_ = 0;
-  polygons_ = 0;
-  layerName_ = 0;
+  polygons_ = nullptr;
+  layerName_ = nullptr;
 }
 
 defiSlot::~defiSlot()
@@ -117,14 +116,14 @@ void defiSlot::Destroy()
   free((char*) (xh_));
   free((char*) (yh_));
   rectsAllocated_ = 0;
-  xl_ = 0;
-  yl_ = 0;
-  xh_ = 0;
-  yh_ = 0;
+  xl_ = nullptr;
+  yl_ = nullptr;
+  xh_ = nullptr;
+  yh_ = nullptr;
   clearPoly();
   if (polygons_)
     free((char*) (polygons_));
-  polygons_ = 0;
+  polygons_ = nullptr;
   clear();
 }
 
@@ -287,4 +286,4 @@ void defiSlot::print(FILE* f) const
   }
   fprintf(f, "\n");
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

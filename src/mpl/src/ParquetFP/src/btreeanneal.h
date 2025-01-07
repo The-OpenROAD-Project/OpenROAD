@@ -56,21 +56,21 @@ class BTreeAreaWireAnnealer : public BaseAnnealer
                         const parquetfp::Command_Line* const params,
                         parquetfp::DB* const db);
 
-  inline virtual ~BTreeAreaWireAnnealer();
+  ~BTreeAreaWireAnnealer() override;
 
-  virtual bool go();
+  bool go() override;
   bool anneal();  // WARNING: anneal() takes at least TWO blocks
                   //   use packOneBlock() to floorplan ONE block
-  virtual bool packOneBlock();
+  bool packOneBlock() override;
 
-  inline const BTree& currSolution() const;
-  inline const BTree& bestSolution() const;
+  const BTree& currSolution() const;
+  const BTree& bestSolution() const;
 
-  virtual void takePlfromDB();
-  virtual void compactSoln(bool minWL,
-                           bool fixedOutline,
-                           float reqdH,
-                           float reqdW);
+  void takePlfromDB() override;
+  void compactSoln(bool minWL,
+                   bool fixedOutline,
+                   float reqdH,
+                   float reqdW) override;
 
   int makeMove(int& indexOrient,
                parquetfp::ORIENT& newOrient,
@@ -156,21 +156,21 @@ class BTreeAreaWireAnnealer : public BaseAnnealer
 // =========================
 //      IMPLEMENTATIONS
 // =========================
-BTreeAreaWireAnnealer::~BTreeAreaWireAnnealer()
+inline BTreeAreaWireAnnealer::~BTreeAreaWireAnnealer()
 {
-  if (_slackEval != NULL)
+  if (_slackEval != nullptr)
     delete _slackEval;
 
-  if (_blockinfo_cleaner != NULL)
+  if (_blockinfo_cleaner != nullptr)
     delete _blockinfo_cleaner;
 }
 // --------------------------------------------------------
-const BTree& BTreeAreaWireAnnealer::currSolution() const
+inline const BTree& BTreeAreaWireAnnealer::currSolution() const
 {
   return in_curr_solution;
 }
 // --------------------------------------------------------
-const BTree& BTreeAreaWireAnnealer::bestSolution() const
+inline const BTree& BTreeAreaWireAnnealer::bestSolution() const
 {
   return in_best_solution;
 }

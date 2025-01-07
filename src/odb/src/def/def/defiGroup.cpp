@@ -29,13 +29,13 @@
 
 #include "defiGroup.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
@@ -52,9 +52,9 @@ defiGroup::defiGroup(defrData* data) : defData(data)
 
 void defiGroup::Init()
 {
-  name_ = 0;
+  name_ = nullptr;
   nameLength_ = 0;
-  region_ = 0;
+  region_ = nullptr;
   regionLength_ = 0;
 
   numRects_ = 0;
@@ -83,9 +83,9 @@ void defiGroup::Destroy()
     free(name_);
   if (region_)
     free(region_);
-  name_ = 0;
+  name_ = nullptr;
   nameLength_ = 0;
-  region_ = 0;
+  region_ = nullptr;
   regionLength_ = 0;
 
   clear();
@@ -309,7 +309,7 @@ const char* defiGroup::propName(int index) const
             index,
             numProps_);
     defiError(0, 6050, msg, defData);
-    return 0;
+    return nullptr;
   }
   return propNames_[index];
 }
@@ -324,7 +324,7 @@ const char* defiGroup::propValue(int index) const
             index,
             numProps_);
     defiError(0, 6050, msg, defData);
-    return 0;
+    return nullptr;
   }
   return propValues_[index];
 }
@@ -472,4 +472,4 @@ void defiGroup::print(FILE* f) const
   }
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

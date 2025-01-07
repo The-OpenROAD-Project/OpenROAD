@@ -45,7 +45,6 @@ class MixedBlockInfoTypeFromDB : public MixedBlockInfoType
 {
  public:
   MixedBlockInfoTypeFromDB(const DB& db);
-  virtual ~MixedBlockInfoTypeFromDB() {}
 };
 // --------------------------------------------------------
 

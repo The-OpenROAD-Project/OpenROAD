@@ -297,7 +297,7 @@ class Descriptor
 
   // An action is a name and a callback function, the function should return
   // the next object to select (when deleting the object just return Selected())
-  using ActionCallback = std::function<Selected(void)>;
+  using ActionCallback = std::function<Selected()>;
   struct Action
   {
     std::string name;
@@ -358,7 +358,7 @@ class Selected
 {
  public:
   // Null case
-  Selected() : object_({}), descriptor_(nullptr) {}
+  Selected() = default;
 
   Selected(std::any object, const Descriptor* descriptor)
       : object_(std::move(object)), descriptor_(descriptor)
@@ -430,7 +430,7 @@ class Selected
 
  private:
   std::any object_;
-  const Descriptor* descriptor_;
+  const Descriptor* descriptor_{nullptr};
 };
 
 // This is an interface for classes that wish to be called to render
@@ -471,7 +471,7 @@ class Renderer
   // Used to register display controls for this renderer.
   // DisplayControls is a map with the name of the control and the initial
   // setting for the control
-  using DisplayControlCallback = std::function<void(void)>;
+  using DisplayControlCallback = std::function<void()>;
   struct DisplayControl
   {
     bool visibility;

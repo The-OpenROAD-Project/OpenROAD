@@ -39,57 +39,57 @@
 // Wrappers definitions.
 void defiPath_initTraverse(const ::defiPath* obj)
 {
-  ((LefDefParser::defiPath*) obj)->initTraverse();
+  ((DefParser::defiPath*) obj)->initTraverse();
 }
 
 void defiPath_initTraverseBackwards(const ::defiPath* obj)
 {
-  ((LefDefParser::defiPath*) obj)->initTraverseBackwards();
+  ((DefParser::defiPath*) obj)->initTraverseBackwards();
 }
 
 int defiPath_next(const ::defiPath* obj)
 {
-  return ((LefDefParser::defiPath*) obj)->next();
+  return ((DefParser::defiPath*) obj)->next();
 }
 
 int defiPath_prev(const ::defiPath* obj)
 {
-  return ((LefDefParser::defiPath*) obj)->prev();
+  return ((DefParser::defiPath*) obj)->prev();
 }
 
 const char* defiPath_getLayer(const ::defiPath* obj)
 {
-  return ((const LefDefParser::defiPath*) obj)->getLayer();
+  return ((const DefParser::defiPath*) obj)->getLayer();
 }
 
 const char* defiPath_getTaperRule(const ::defiPath* obj)
 {
-  return ((const LefDefParser::defiPath*) obj)->getTaperRule();
+  return ((const DefParser::defiPath*) obj)->getTaperRule();
 }
 
 const char* defiPath_getVia(const ::defiPath* obj)
 {
-  return ((const LefDefParser::defiPath*) obj)->getVia();
+  return ((const DefParser::defiPath*) obj)->getVia();
 }
 
 const char* defiPath_getShape(const ::defiPath* obj)
 {
-  return ((const LefDefParser::defiPath*) obj)->getShape();
+  return ((const DefParser::defiPath*) obj)->getShape();
 }
 
 int defiPath_getTaper(const ::defiPath* obj)
 {
-  return ((LefDefParser::defiPath*) obj)->getTaper();
+  return ((DefParser::defiPath*) obj)->getTaper();
 }
 
 int defiPath_getStyle(const ::defiPath* obj)
 {
-  return ((LefDefParser::defiPath*) obj)->getStyle();
+  return ((DefParser::defiPath*) obj)->getStyle();
 }
 
 int defiPath_getViaRotation(const ::defiPath* obj)
 {
-  return ((LefDefParser::defiPath*) obj)->getViaRotation();
+  return ((DefParser::defiPath*) obj)->getViaRotation();
 }
 
 void defiPath_getViaRect(const ::defiPath* obj,
@@ -98,13 +98,12 @@ void defiPath_getViaRect(const ::defiPath* obj,
                          int* deltaX2,
                          int* deltaY2)
 {
-  ((LefDefParser::defiPath*) obj)
-      ->getViaRect(deltaX1, deltaY1, deltaX2, deltaY2);
+  ((DefParser::defiPath*) obj)->getViaRect(deltaX1, deltaY1, deltaX2, deltaY2);
 }
 
 const char* defiPath_getViaRotationStr(const ::defiPath* obj)
 {
-  return ((const LefDefParser::defiPath*) obj)->getViaRotationStr();
+  return ((const DefParser::defiPath*) obj)->getViaRotationStr();
 }
 
 void defiPath_getViaData(const ::defiPath* obj,
@@ -113,55 +112,55 @@ void defiPath_getViaData(const ::defiPath* obj,
                          int* stepX,
                          int* stepY)
 {
-  ((LefDefParser::defiPath*) obj)->getViaData(numX, numY, stepX, stepY);
+  ((DefParser::defiPath*) obj)->getViaData(numX, numY, stepX, stepY);
 }
 
 int defiPath_getWidth(const ::defiPath* obj)
 {
-  return ((LefDefParser::defiPath*) obj)->getWidth();
+  return ((DefParser::defiPath*) obj)->getWidth();
 }
 
 void defiPath_getPoint(const ::defiPath* obj, int* x, int* y)
 {
-  ((LefDefParser::defiPath*) obj)->getPoint(x, y);
+  ((DefParser::defiPath*) obj)->getPoint(x, y);
 }
 
 void defiPath_getFlushPoint(const ::defiPath* obj, int* x, int* y, int* ext)
 {
-  ((LefDefParser::defiPath*) obj)->getFlushPoint(x, y, ext);
+  ((DefParser::defiPath*) obj)->getFlushPoint(x, y, ext);
 }
 
 void defiPath_getVirtualPoint(const ::defiPath* obj, int* x, int* y)
 {
-  ((LefDefParser::defiPath*) obj)->getVirtualPoint(x, y);
+  ((DefParser::defiPath*) obj)->getVirtualPoint(x, y);
 }
 
 int defiPath_getMask(const ::defiPath* obj)
 {
-  return ((LefDefParser::defiPath*) obj)->getMask();
+  return ((DefParser::defiPath*) obj)->getMask();
 }
 
 int defiPath_getViaTopMask(const ::defiPath* obj)
 {
-  return ((LefDefParser::defiPath*) obj)->getViaTopMask();
+  return ((DefParser::defiPath*) obj)->getViaTopMask();
 }
 
 int defiPath_getViaCutMask(const ::defiPath* obj)
 {
-  return ((LefDefParser::defiPath*) obj)->getViaCutMask();
+  return ((DefParser::defiPath*) obj)->getViaCutMask();
 }
 
 int defiPath_getViaBottomMask(const ::defiPath* obj)
 {
-  return ((LefDefParser::defiPath*) obj)->getViaBottomMask();
+  return ((DefParser::defiPath*) obj)->getViaBottomMask();
 }
 
 int defiPath_getRectMask(const ::defiPath* obj)
 {
-  return ((LefDefParser::defiPath*) obj)->getRectMask();
+  return ((DefParser::defiPath*) obj)->getRectMask();
 }
 
 void defiPath_print(const ::defiPath* obj, FILE* fout)
 {
-  ((LefDefParser::defiPath*) obj)->print(fout);
+  ((DefParser::defiPath*) obj)->print(fout);
 }

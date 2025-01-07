@@ -39,150 +39,150 @@
 // Wrappers definitions.
 const char* defiNonDefault_name(const ::defiNonDefault* obj)
 {
-  return ((const LefDefParser::defiNonDefault*) obj)->name();
+  return ((const DefParser::defiNonDefault*) obj)->name();
 }
 
 int defiNonDefault_hasHardspacing(const ::defiNonDefault* obj)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->hasHardspacing();
+  return ((DefParser::defiNonDefault*) obj)->hasHardspacing();
 }
 
 int defiNonDefault_numProps(const ::defiNonDefault* obj)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->numProps();
+  return ((DefParser::defiNonDefault*) obj)->numProps();
 }
 
 const char* defiNonDefault_propName(const ::defiNonDefault* obj, int index)
 {
-  return ((const LefDefParser::defiNonDefault*) obj)->propName(index);
+  return ((const DefParser::defiNonDefault*) obj)->propName(index);
 }
 
 const char* defiNonDefault_propValue(const ::defiNonDefault* obj, int index)
 {
-  return ((const LefDefParser::defiNonDefault*) obj)->propValue(index);
+  return ((const DefParser::defiNonDefault*) obj)->propValue(index);
 }
 
 double defiNonDefault_propNumber(const ::defiNonDefault* obj, int index)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->propNumber(index);
+  return ((DefParser::defiNonDefault*) obj)->propNumber(index);
 }
 
 const char defiNonDefault_propType(const ::defiNonDefault* obj, int index)
 {
-  return ((const LefDefParser::defiNonDefault*) obj)->propType(index);
+  return ((const DefParser::defiNonDefault*) obj)->propType(index);
 }
 
 int defiNonDefault_propIsNumber(const ::defiNonDefault* obj, int index)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->propIsNumber(index);
+  return ((DefParser::defiNonDefault*) obj)->propIsNumber(index);
 }
 
 int defiNonDefault_propIsString(const ::defiNonDefault* obj, int index)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->propIsString(index);
+  return ((DefParser::defiNonDefault*) obj)->propIsString(index);
 }
 
 int defiNonDefault_numLayers(const ::defiNonDefault* obj)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->numLayers();
+  return ((DefParser::defiNonDefault*) obj)->numLayers();
 }
 
 const char* defiNonDefault_layerName(const ::defiNonDefault* obj, int index)
 {
-  return ((const LefDefParser::defiNonDefault*) obj)->layerName(index);
+  return ((const DefParser::defiNonDefault*) obj)->layerName(index);
 }
 
 double defiNonDefault_layerWidth(const ::defiNonDefault* obj, int index)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->layerWidth(index);
+  return ((DefParser::defiNonDefault*) obj)->layerWidth(index);
 }
 
 int defiNonDefault_layerWidthVal(const ::defiNonDefault* obj, int index)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->layerWidthVal(index);
+  return ((DefParser::defiNonDefault*) obj)->layerWidthVal(index);
 }
 
 int defiNonDefault_hasLayerDiagWidth(const ::defiNonDefault* obj, int index)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->hasLayerDiagWidth(index);
+  return ((DefParser::defiNonDefault*) obj)->hasLayerDiagWidth(index);
 }
 
 double defiNonDefault_layerDiagWidth(const ::defiNonDefault* obj, int index)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->layerDiagWidth(index);
+  return ((DefParser::defiNonDefault*) obj)->layerDiagWidth(index);
 }
 
 int defiNonDefault_layerDiagWidthVal(const ::defiNonDefault* obj, int index)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->layerDiagWidthVal(index);
+  return ((DefParser::defiNonDefault*) obj)->layerDiagWidthVal(index);
 }
 
 int defiNonDefault_hasLayerSpacing(const ::defiNonDefault* obj, int index)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->hasLayerSpacing(index);
+  return ((DefParser::defiNonDefault*) obj)->hasLayerSpacing(index);
 }
 
 double defiNonDefault_layerSpacing(const ::defiNonDefault* obj, int index)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->layerSpacing(index);
+  return ((DefParser::defiNonDefault*) obj)->layerSpacing(index);
 }
 
 int defiNonDefault_layerSpacingVal(const ::defiNonDefault* obj, int index)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->layerSpacingVal(index);
+  return ((DefParser::defiNonDefault*) obj)->layerSpacingVal(index);
 }
 
 int defiNonDefault_hasLayerWireExt(const ::defiNonDefault* obj, int index)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->hasLayerWireExt(index);
+  return ((DefParser::defiNonDefault*) obj)->hasLayerWireExt(index);
 }
 
 double defiNonDefault_layerWireExt(const ::defiNonDefault* obj, int index)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->layerWireExt(index);
+  return ((DefParser::defiNonDefault*) obj)->layerWireExt(index);
 }
 
 int defiNonDefault_layerWireExtVal(const ::defiNonDefault* obj, int index)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->layerWireExtVal(index);
+  return ((DefParser::defiNonDefault*) obj)->layerWireExtVal(index);
 }
 
 int defiNonDefault_numVias(const ::defiNonDefault* obj)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->numVias();
+  return ((DefParser::defiNonDefault*) obj)->numVias();
 }
 
 const char* defiNonDefault_viaName(const ::defiNonDefault* obj, int index)
 {
-  return ((const LefDefParser::defiNonDefault*) obj)->viaName(index);
+  return ((const DefParser::defiNonDefault*) obj)->viaName(index);
 }
 
 int defiNonDefault_numViaRules(const ::defiNonDefault* obj)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->numViaRules();
+  return ((DefParser::defiNonDefault*) obj)->numViaRules();
 }
 
 const char* defiNonDefault_viaRuleName(const ::defiNonDefault* obj, int index)
 {
-  return ((const LefDefParser::defiNonDefault*) obj)->viaRuleName(index);
+  return ((const DefParser::defiNonDefault*) obj)->viaRuleName(index);
 }
 
 int defiNonDefault_numMinCuts(const ::defiNonDefault* obj)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->numMinCuts();
+  return ((DefParser::defiNonDefault*) obj)->numMinCuts();
 }
 
 const char* defiNonDefault_cutLayerName(const ::defiNonDefault* obj, int index)
 {
-  return ((const LefDefParser::defiNonDefault*) obj)->cutLayerName(index);
+  return ((const DefParser::defiNonDefault*) obj)->cutLayerName(index);
 }
 
 int defiNonDefault_numCuts(const ::defiNonDefault* obj, int index)
 {
-  return ((LefDefParser::defiNonDefault*) obj)->numCuts(index);
+  return ((DefParser::defiNonDefault*) obj)->numCuts(index);
 }
 
 void defiNonDefault_print(const ::defiNonDefault* obj, FILE* f)
 {
-  ((LefDefParser::defiNonDefault*) obj)->print(f);
+  ((DefParser::defiNonDefault*) obj)->print(f);
 }

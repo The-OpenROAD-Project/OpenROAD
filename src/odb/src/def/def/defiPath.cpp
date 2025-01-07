@@ -29,21 +29,21 @@
 
 #include "defiPath.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
 #include "defiUtil.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 defiPath::defiPath(defrData* data)
-    : keys_(NULL),
-      data_(NULL),
+    : keys_(nullptr),
+      data_(nullptr),
       numUsed_(0),
       numAllocated_(0),
-      pointer_(NULL),
+      pointer_(nullptr),
       numX_(0),
       numY_(0),
       stepX_(0),
@@ -59,9 +59,9 @@ defiPath::defiPath(defiPath* defiPathRef)
 {
   *this = *defiPathRef;
 
-  defiPathRef->pointer_ = NULL;
-  defiPathRef->keys_ = NULL;
-  defiPathRef->data_ = NULL;
+  defiPathRef->pointer_ = nullptr;
+  defiPathRef->keys_ = nullptr;
+  defiPathRef->data_ = nullptr;
 }
 
 defiPath::~defiPath()
@@ -96,24 +96,24 @@ void defiPath::clear()
 
   for (i = 0; i < numUsed_; i++) {
     free(data_[i]);
-    data_[i] = NULL;
+    data_[i] = nullptr;
   }
 
   numUsed_ = 0;
 
   delete pointer_;
-  pointer_ = NULL;
+  pointer_ = nullptr;
 }
 
 void defiPath::Destroy()
 {
   if (keys_)
     free((char*) (keys_));
-  keys_ = NULL;
+  keys_ = nullptr;
   if (data_) {
     clear();
     free((char*) (data_));
-    data_ = NULL;
+    data_ = nullptr;
   }
 }
 
@@ -211,28 +211,28 @@ int defiPath::getTaper() const
 const char* defiPath::getTaperRule() const
 {
   if (keys_[*(pointer_)] != 'R')
-    return 0;
+    return nullptr;
   return (char*) (data_[*(pointer_)]);
 }
 
 const char* defiPath::getLayer() const
 {
   if (keys_[*(pointer_)] != 'L')
-    return 0;
+    return nullptr;
   return (char*) (data_[*(pointer_)]);
 }
 
 const char* defiPath::getVia() const
 {
   if (keys_[*(pointer_)] != 'V')
-    return 0;
+    return nullptr;
   return (char*) (data_[*(pointer_)]);
 }
 
 const char* defiPath::getShape() const
 {
   if (keys_[*(pointer_)] != 'S')
-    return 0;
+    return nullptr;
   return (char*) (data_[*(pointer_)]);
 }
 
@@ -312,7 +312,7 @@ const char* defiPath::getViaRotationStr() const
 {
   int* wptr;
   if (keys_[*(pointer_)] != 'O')
-    return 0;
+    return nullptr;
   wptr = (int*) (data_[*(pointer_)]);
   return defiOrientStr(*wptr);
 }
@@ -511,7 +511,7 @@ void defiPath::setTaper()
   if (numUsed_ == numAllocated_)
     bumpSize(numAllocated_ * 2);
   keys_[numUsed_] = 'T';
-  data_[numUsed_] = 0;
+  data_[numUsed_] = nullptr;
   (numUsed_)++;
 }
 
@@ -542,7 +542,7 @@ void defiPath::print(FILE* fout) const
 {
   int i;
   int* wptr;
-  if (fout == 0)
+  if (fout == nullptr)
     fout = stdout;
   fprintf(fout, "Path:\n");
   for (i = 0; i < numUsed_; i++) {
@@ -620,4 +620,4 @@ void defiPath::bumpSize(int size)
   numAllocated_ = size;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

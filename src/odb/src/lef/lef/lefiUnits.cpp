@@ -29,36 +29,19 @@
 
 #include "lefiUnits.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "lefiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // *****************************************************************************
 // lefiUnits
 // *****************************************************************************
 
 lefiUnits::lefiUnits()
-    : hasDatabase_(0),
-      hasCapacitance_(0),
-      hasResistance_(0),
-      hasTime_(0),
-      hasPower_(0),
-      hasCurrent_(0),
-      hasVoltage_(0),
-      hasFrequency_(0),
-      databaseName_(NULL),
-      databaseNumber_(0.0),
-      capacitance_(0.0),
-      resistance_(0.0),
-      power_(0.0),
-      time_(0.0),
-      current_(0.0),
-      voltage_(0.0),
-      frequency_(0.0)
 {
   Init();
 }
@@ -99,7 +82,7 @@ void lefiUnits::clear()
   hasVoltage_ = 0;
   hasDatabase_ = 0;
   hasFrequency_ = 0;
-  databaseName_ = 0;
+  databaseName_ = nullptr;
 }
 
 void lefiUnits::setTime(double num)
@@ -250,4 +233,4 @@ void lefiUnits::print(FILE* f) const
     fprintf(f, "  %s %g\n", databaseName(), databaseNumber());
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

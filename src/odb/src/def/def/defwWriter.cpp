@@ -41,13 +41,14 @@
 
 #include "defwWriter.hpp"
 
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <cmath>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 
 #include "defiUtil.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 // States of the writer.
 #define DEFW_UNINIT 0
@@ -162,7 +163,7 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 // *****************************************************************************
 //        Global Variables
 // *****************************************************************************
-FILE* defwFile = 0;           // File to write to.
+FILE* defwFile = nullptr;     // File to write to.
 int defwLines = 0;            // number of lines written
 int defwState = DEFW_UNINIT;  // Current state of writer
 int defwFunc = DEFW_UNINIT;   // Current function of writer
@@ -369,7 +370,7 @@ int defwInit(FILE* f,
   }
 
   if ((vers1 == 5) && (vers2 < 6)) {  // For version before 5.6
-    if (caseSensitive == 0 || *caseSensitive == 0)
+    if (caseSensitive == nullptr || *caseSensitive == 0)
       return DEFW_BAD_DATA;
     fprintf(defwFile, "NAMESCASESENSITIVE %s ;\n", caseSensitive);
   }
@@ -384,7 +385,7 @@ int defwInit(FILE* f,
     defwLines++;
   }
 
-  if (designName == 0 || *designName == 0)
+  if (designName == nullptr || *designName == 0)
     return DEFW_BAD_DATA;
   fprintf(defwFile, "DESIGN %s ;\n", designName);
   defwLines++;
@@ -416,7 +417,7 @@ int defwInit(FILE* f,
       case 10000:
       case 16000:
       case 20000:
-        fprintf(defwFile, "UNITS DISTANCE MICRONS %d ;\n", ROUND(units));
+        fprintf(defwFile, "UNITS DISTANCE MICRONS %ld ;\n", std::lround(units));
         defwLines++;
         break;
       default:
@@ -509,7 +510,7 @@ int defwBusBitChars(const char* busBitChars)
   // Check for repeated casesensitive
   if (defwState == DEFW_BUSBIT)
     return DEFW_BAD_ORDER;
-  if (busBitChars && busBitChars != 0 && *busBitChars != 0) {
+  if (busBitChars && busBitChars != nullptr && *busBitChars != 0) {
     fprintf(defwFile, "BUSBITCHARS \"%s\" ;\n", busBitChars);
     defwLines++;
   }
@@ -528,7 +529,7 @@ int defwDividerChar(const char* dividerChar)
   // Check for repeated busbit
   if (defwState == DEFW_DIVIDER)
     return DEFW_BAD_ORDER;
-  if (dividerChar && dividerChar != 0 && *dividerChar != 0) {
+  if (dividerChar && dividerChar != nullptr && *dividerChar != 0) {
     fprintf(defwFile, "DIVIDERCHAR \"%s\" ;\n", dividerChar);
     defwLines++;
   }
@@ -547,7 +548,7 @@ int defwDesignName(const char* name)
   // Check for repeated design
   if (defwState == DEFW_DESIGN)
     return DEFW_BAD_ORDER;
-  if (name && name != 0 && *name != 0) {
+  if (name && name != nullptr && *name != 0) {
     fprintf(defwFile, "DESIGN %s ;\n", name);
     defwLines++;
   }
@@ -563,7 +564,7 @@ int defwTechnology(const char* technology)
     return DEFW_UNINITIALIZED;
   if (!defwDidInit)
     return DEFW_BAD_ORDER;
-  if (technology && technology != 0 && *technology != 0) {
+  if (technology && technology != nullptr && *technology != 0) {
     fprintf(defwFile, "TECHNOLOGY %s ;\n", technology);
     defwLines++;
   }
@@ -581,7 +582,7 @@ int defwArray(const char* array)
     return DEFW_BAD_ORDER;
   if (defwState == DEFW_ARRAY)
     return DEFW_BAD_ORDER;  // check for repeated array
-  if (array && array != 0 && *array != 0) {
+  if (array && array != nullptr && *array != 0) {
     fprintf(defwFile, "ARRAY %s ;\n", array);
     defwLines++;
   }
@@ -599,7 +600,7 @@ int defwFloorplan(const char* floorplan)
     return DEFW_BAD_ORDER;
   if (defwState == DEFW_FLOORPLAN)
     return DEFW_BAD_ORDER;  // Check for repeated floorplan
-  if (floorplan && floorplan != 0 && *floorplan != 0) {
+  if (floorplan && floorplan != nullptr && *floorplan != 0) {
     fprintf(defwFile, "FLOORPLAN %s ;\n", floorplan);
     defwLines++;
   }
@@ -649,7 +650,7 @@ int defwHistory(const char* string)
     return DEFW_UNINITIALIZED;
   if (!defwDidInit)
     return DEFW_BAD_ORDER;
-  if (string == 0 || *string == 0)
+  if (string == nullptr || *string == 0)
     return DEFW_BAD_DATA;
 
   for (c = (char*) string; *c; c++)
@@ -948,7 +949,8 @@ int defwRow(const char* rowName,
     fprintf(defwFile, ";\n");  // add the ; and newline for the previous row.
 
   // required
-  if ((rowName == 0) || (*rowName == 0) || (rowType == 0) || (*rowType == 0))
+  if ((rowName == nullptr) || (*rowName == 0) || (rowType == nullptr)
+      || (*rowType == 0))
     return DEFW_BAD_DATA;
 
   // do not have ; because the row may have properties
@@ -1157,7 +1159,7 @@ int defwEndDefaultCap()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, "END DEFAULTCAP\n\n");
@@ -1185,7 +1187,7 @@ int defwCanPlace(const char* master,
   if (defwState == DEFW_ROW)
     fprintf(defwFile, ";\n\n");  // add the ; and \n for the previous row.
 
-  if ((master == 0) || (*master == 0))  // required
+  if ((master == nullptr) || (*master == 0))  // required
     return DEFW_BAD_DATA;
   fprintf(defwFile,
           "CANPLACE %s %d %d %s DO %d BY %d STEP %d %d ;\n",
@@ -1254,7 +1256,7 @@ int defwCannotOccupy(const char* master,
   if (!defwDidInit)
     return DEFW_BAD_ORDER;
 
-  if ((master == 0) || (*master == 0))  // required
+  if ((master == nullptr) || (*master == 0))  // required
     return DEFW_BAD_DATA;
   fprintf(defwFile,
           "CANNOTOCCUPY %s %d %d %s DO %d BY %d STEP %d %d ;\n",
@@ -1572,7 +1574,7 @@ int defwEndVias()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, "END VIAS\n\n");
@@ -1664,7 +1666,7 @@ int defwEndRegions()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   if (defwState == DEFW_REGION)
@@ -1764,7 +1766,8 @@ int defwComponent(const char* instance,
   defwCounter--;
 
   // required
-  if ((instance == 0) || (*instance == 0) || (master == 0) || (*master == 0))
+  if ((instance == nullptr) || (*instance == 0) || (master == nullptr)
+      || (*master == 0))
     return DEFW_BAD_DATA;
 
   if (source && strcmp(source, "NETLIST") && strcmp(source, "DIST")
@@ -2039,7 +2042,7 @@ int defwEndComponents()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   defwDidComponents = 1;
@@ -2499,7 +2502,7 @@ int defwPinNetExpr(const char* pinExpr)
     return DEFW_BAD_ORDER;
   if (defVersionNum < 5.6)
     return DEFW_WRONG_VERSION;
-  if (pinExpr && pinExpr != 0 && *pinExpr != 0)
+  if (pinExpr && pinExpr != nullptr && *pinExpr != 0)
     fprintf(defwFile, "\n      + NETEXPR \"%s\"", pinExpr);
 
   defwLines++;
@@ -2514,7 +2517,7 @@ int defwPinSupplySensitivity(const char* pinName)
     return DEFW_BAD_ORDER;
   if (defVersionNum < 5.6)
     return DEFW_WRONG_VERSION;
-  if (pinName && pinName != 0 && *pinName != 0)
+  if (pinName && pinName != nullptr && *pinName != 0)
     fprintf(defwFile, "\n      + SUPPLYSENSITIVITY %s", pinName);
 
   defwLines++;
@@ -2529,7 +2532,7 @@ int defwPinGroundSensitivity(const char* pinName)
     return DEFW_BAD_ORDER;
   if (defVersionNum < 5.6)
     return DEFW_WRONG_VERSION;
-  if (pinName && pinName != 0 && *pinName != 0)
+  if (pinName && pinName != nullptr && *pinName != 0)
     fprintf(defwFile, "\n      + GROUNDSENSITIVITY %s", pinName);
 
   defwLines++;
@@ -2702,7 +2705,7 @@ int defwEndPins()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, " ;\nEND PINS\n\n");
@@ -2760,7 +2763,7 @@ int defwEndPinProperties()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   if (defwState == DEFW_PINPROP_START)
@@ -3500,7 +3503,7 @@ int defwEndSpecialNets()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, "END SPECIALNETS\n\n");
@@ -3663,7 +3666,7 @@ int defwNetVpin(const char* vpinName,
     return DEFW_UNINITIALIZED;
   if (!defwNetOptions())
     return DEFW_BAD_ORDER;
-  if ((vpinName == 0) || (*vpinName == 0))  // required
+  if ((vpinName == nullptr) || (*vpinName == 0))  // required
     return DEFW_BAD_DATA;
 
   if (status && strcmp(status, "PLACED") && strcmp(status, "FIXED")
@@ -4220,7 +4223,7 @@ int defwEndNets()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, "END NETS\n\n");
@@ -4354,7 +4357,7 @@ int defwEndIOTimings()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   if (defwState == DEFW_IOTIMING)
@@ -4746,7 +4749,7 @@ int defwEndScanchain()
 
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, "END SCANCHAINS\n\n");
@@ -4819,9 +4822,9 @@ int defwConstraintOperandPath(const char* comp1,
   if (defwState != DEFW_FPC_OPER && defwState != DEFW_FPC_OPER_SUM)
     return DEFW_BAD_ORDER;  // path can be within SUM
 
-  if ((comp1 == 0) || (*comp1 == 0) || (fromPin == 0) || (*fromPin == 0)
-      || (comp2 == 0) || (*comp2 == 0) || (toPin == 0)
-      || (*toPin == 0))  // require
+  if ((comp1 == nullptr) || (*comp1 == 0) || (fromPin == nullptr)
+      || (*fromPin == 0) || (comp2 == nullptr) || (*comp2 == 0)
+      || (toPin == nullptr) || (*toPin == 0))  // require
     return DEFW_BAD_DATA;
   if (defwFPC > 0)
     fprintf(defwFile, " ,");
@@ -4910,7 +4913,7 @@ int defwEndConstraints()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, "END CONSTRAINTS\n\n");
@@ -4946,8 +4949,8 @@ int defwGroup(const char* groupName, int numExpr, const char** groupExpr)
   if (defwState != DEFW_GROUP_START && defwState != DEFW_GROUP)
     return DEFW_BAD_ORDER;
 
-  if ((groupName == 0) || (*groupName == 0) || (groupExpr == 0)
-      || (*groupExpr == 0))  // require
+  if ((groupName == nullptr) || (*groupName == 0) || (groupExpr == nullptr)
+      || (*groupExpr == nullptr))  // require
     return DEFW_BAD_DATA;
   if (defwState == DEFW_GROUP)
     fprintf(defwFile, " ;\n");  // add ; for the previous group
@@ -5022,7 +5025,7 @@ int defwEndGroups()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   if (defwState != DEFW_GROUP_START)
@@ -5132,7 +5135,7 @@ int defwBlockagesLayerComponent(const char* compName)
   if ((defwState != DEFW_BLOCKAGE_LAYER) && (defwState != DEFW_BLOCKAGE_RECT))
     return DEFW_BAD_ORDER;
 
-  if ((compName == 0) || (*compName == 0))  // require
+  if ((compName == nullptr) || (*compName == 0))  // require
     return DEFW_BAD_DATA;
 
   if (defwState == DEFW_BLOCKAGE_RECT)
@@ -5325,7 +5328,7 @@ int defwBlockageLayerPushdown(const char* layerName)
           || (defwState == DEFW_BLOCKAGE_LAYER)))
     return DEFW_BAD_DATA;
 
-  if ((layerName == 0) || (*layerName == 0))  // require
+  if ((layerName == nullptr) || (*layerName == 0))  // require
     return DEFW_BAD_DATA;
   if (defwState == DEFW_BLOCKAGE_RECT)
     fprintf(defwFile, " ;\n");  // end the previous rectangle
@@ -5349,7 +5352,7 @@ int defwBlockageLayerExceptpgnet(const char* layerName)
           || (defwState == DEFW_BLOCKAGE_LAYER)))
     return DEFW_BAD_DATA;
 
-  if ((layerName == 0) || (*layerName == 0))  // require
+  if ((layerName == nullptr) || (*layerName == 0))  // require
     return DEFW_BAD_DATA;
   if (defwState == DEFW_BLOCKAGE_RECT)
     fprintf(defwFile, " ;\n");  // end the previous rectangle
@@ -5430,7 +5433,7 @@ int defwBlockagesPlacementComponent(const char* compName)
   if ((defwState != DEFW_BLOCKAGE_PLACE) && (defwState != DEFW_BLOCKAGE_RECT))
     return DEFW_BAD_ORDER;
 
-  if ((compName == 0) || (*compName == 0))  // require
+  if ((compName == nullptr) || (*compName == 0))  // require
     return DEFW_BAD_DATA;
   if (defwState == DEFW_BLOCKAGE_RECT)
     fprintf(defwFile, " ;\n");  // end the previous rectangle
@@ -5582,7 +5585,7 @@ int defwBlockagePlacementComponent(const char* compName)
           || (defwState == DEFW_BLOCKAGE_PLACE)))
     return DEFW_BAD_DATA;
 
-  if ((compName == 0) || (*compName == 0))  // require
+  if ((compName == nullptr) || (*compName == 0))  // require
     return DEFW_BAD_DATA;
   if (defwState == DEFW_BLOCKAGE_RECT)
     fprintf(defwFile, " ;\n");  // end the previous rectangle
@@ -5737,7 +5740,7 @@ int defwEndBlockages()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, " ;\n");
@@ -5844,7 +5847,7 @@ int defwEndSlots()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, " ;\n");
@@ -6075,7 +6078,7 @@ int defwEndFills()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, " ;\n");
@@ -6181,7 +6184,7 @@ int defwNonDefaultRuleViaRule(const char* viaRuleName)
   if (defwState != DEFW_NDR)
     return DEFW_BAD_ORDER;
 
-  if ((viaRuleName == 0) || (*viaRuleName == 0))  // require
+  if ((viaRuleName == nullptr) || (*viaRuleName == 0))  // require
     return DEFW_BAD_DATA;
   fprintf(defwFile, "\n      + VIARULE %s ", viaRuleName);
   defwLines++;
@@ -6198,7 +6201,7 @@ int defwNonDefaultRuleMinCuts(const char* cutLayerName, int numCuts)
   if (defwState != DEFW_NDR)
     return DEFW_BAD_ORDER;
 
-  if ((cutLayerName == 0) || (*cutLayerName == 0))  // require
+  if ((cutLayerName == nullptr) || (*cutLayerName == 0))  // require
     return DEFW_BAD_DATA;
   fprintf(defwFile, "\n      + MINCUTS %s %d ", cutLayerName, numCuts);
   defwLines++;
@@ -6215,7 +6218,7 @@ int defwEndNonDefaultRules()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, ";\nEND NONDEFAULTRULES\n\n");
@@ -6284,7 +6287,7 @@ int defwEndStyles()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, "END STYLES\n\n");
@@ -6302,7 +6305,7 @@ int defwStartBeginext(const char* name)
     return DEFW_BAD_ORDER;
   if (defwState == DEFW_BEGINEXT_START || defwState == DEFW_BEGINEXT)
     return DEFW_BAD_ORDER;
-  if (!name || name == 0 || *name == 0)
+  if (!name || name == nullptr || *name == 0)
     return DEFW_BAD_DATA;
   fprintf(defwFile, "BEGINEXT \"%s\"\n", name);
 
@@ -6319,7 +6322,7 @@ int defwBeginextCreator(const char* creatorName)
     return DEFW_BAD_ORDER;
   if (defwState != DEFW_BEGINEXT_START && defwState != DEFW_BEGINEXT)
     return DEFW_BAD_ORDER;
-  if (!creatorName || creatorName == 0 || *creatorName == 0)
+  if (!creatorName || creatorName == nullptr || *creatorName == 0)
     return DEFW_BAD_DATA;
   fprintf(defwFile, "   CREATOR \"%s\"\n", creatorName);
 
@@ -6340,7 +6343,7 @@ int defwBeginextDate()
   if (defwState != DEFW_BEGINEXT_START && defwState != DEFW_BEGINEXT)
     return DEFW_BAD_ORDER;
 
-  todayTime = time(NULL);               // time in UTC
+  todayTime = time(nullptr);            // time in UTC
   rettime = ctime(&todayTime);          // convert to string
   rettime[strlen(rettime) - 1] = '\0';  // replace \n with \0
   fprintf(defwFile, "   DATE \"%s\"", rettime);
@@ -6474,4 +6477,4 @@ void defwAddIndent()
 // - What is the pin properties section mentioned in the 5.1 spec?
 // *****************************
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

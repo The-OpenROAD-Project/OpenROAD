@@ -70,7 +70,6 @@ class _dbBPin : public _dbObject
 
   _dbBPin(_dbDatabase*, const _dbBPin& p);
   _dbBPin(_dbDatabase*);
-  ~_dbBPin();
 
   bool operator==(const _dbBPin& rhs) const;
   bool operator!=(const _dbBPin& rhs) const { return !operator==(rhs); }

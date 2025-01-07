@@ -43,6 +43,9 @@
 // then put remaining vertices into the first block 3) ILP-based Partitioning
 // (INIT_DIRECT_ILP)
 
+#include <memory>
+#include <vector>
+
 #include "Evaluator.h"
 #include "Hypergraph.h"
 #include "Utilities.h"

@@ -482,7 +482,6 @@ dbNet* dbCreateNetUtil::createNetSingleWire(Rect& r,
   if (_currentNet == nullptr) {
     sprintf(netName, "N%d", netId);
 
-    dbShape s;
     dbNet* newNet = createNetSingleWire(netName,
                                         r.xMin(),
                                         r.yMin(),

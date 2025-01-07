@@ -29,13 +29,13 @@
 
 #include "defiVia.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
@@ -52,23 +52,23 @@ defiVia::defiVia(defrData* data) : defData(data)
 
 void defiVia::Init()
 {
-  name_ = 0;
+  name_ = nullptr;
   nameLength_ = 0;
-  pattern_ = 0;
+  pattern_ = nullptr;
   patternLength_ = 0;
-  xl_ = 0;
-  yl_ = 0;
-  xh_ = 0;
-  yh_ = 0;
+  xl_ = nullptr;
+  yl_ = nullptr;
+  xh_ = nullptr;
+  yh_ = nullptr;
   layersLength_ = 0;
-  layers_ = 0;
-  viaRule_ = 0;
+  layers_ = nullptr;
+  viaRule_ = nullptr;
   viaRuleLength_ = 0;
   xSize_ = 0;
   ySize_ = 0;
-  botLayer_ = 0;
-  cutLayer_ = 0;
-  topLayer_ = 0;
+  botLayer_ = nullptr;
+  cutLayer_ = nullptr;
+  topLayer_ = nullptr;
   botLayerLength_ = 0;
   cutLayerLength_ = 0;
   topLayerLength_ = 0;
@@ -78,15 +78,15 @@ void defiVia::Init()
   yBotEnc_ = 0;
   xTopEnc_ = 0;
   yTopEnc_ = 0;
-  cutPattern_ = 0;
+  cutPattern_ = nullptr;
   cutPatternLength_ = 0;
   numLayers_ = 0;
   numPolys_ = 0;
-  polygons_ = 0;
+  polygons_ = nullptr;
   polysAllocated_ = 0;
-  polygonNames_ = 0;
-  rectMask_ = 0;
-  polyMask_ = 0;
+  polygonNames_ = nullptr;
+  rectMask_ = nullptr;
+  polyMask_ = nullptr;
   clear();
 }
 
@@ -121,9 +121,9 @@ void defiVia::clear()
     free(polygons_);
     free(polyMask_);
 
-    polygonNames_ = NULL;
-    polygons_ = NULL;
-    polyMask_ = NULL;
+    polygonNames_ = nullptr;
+    polygons_ = nullptr;
+    polyMask_ = nullptr;
   }
 
   numPolys_ = 0;
@@ -140,10 +140,10 @@ void defiVia::Destroy()
   int i;
 
   free(name_);
-  name_ = NULL;
+  name_ = nullptr;
 
   free(pattern_);
-  pattern_ = NULL;
+  pattern_ = nullptr;
 
   if (layers_) {
     for (i = 0; i < numLayers_; i++) {
@@ -151,41 +151,41 @@ void defiVia::Destroy()
     }
 
     free(layers_);
-    layers_ = NULL;
+    layers_ = nullptr;
 
     free(xl_);
-    xl_ = NULL;
+    xl_ = nullptr;
 
     free(yl_);
-    yl_ = NULL;
+    yl_ = nullptr;
 
     free(xh_);
-    xh_ = NULL;
+    xh_ = nullptr;
 
     free(yh_);
-    yh_ = NULL;
+    yh_ = nullptr;
 
     free(rectMask_);
-    rectMask_ = NULL;
+    rectMask_ = nullptr;
 
     free(polyMask_);
-    polyMask_ = NULL;
+    polyMask_ = nullptr;
   }
 
   free(viaRule_);
-  viaRule_ = NULL;
+  viaRule_ = nullptr;
 
   free(botLayer_);
-  botLayer_ = NULL;
+  botLayer_ = nullptr;
 
   free(cutLayer_);
-  cutLayer_ = NULL;
+  cutLayer_ = nullptr;
 
   free(topLayer_);
-  topLayer_ = NULL;
+  topLayer_ = nullptr;
 
   free(cutPattern_);
-  cutPattern_ = NULL;
+  cutPattern_ = nullptr;
 
   clear();
 }
@@ -204,7 +204,7 @@ void defiVia::setup(const char* name)
   if (layers_) {
     for (i = 0; i < numLayers_; i++) {
       free(layers_[i]);
-      layers_[i] = 0;
+      layers_[i] = nullptr;
     }
   }
 
@@ -504,7 +504,7 @@ const char* defiVia::polygonName(int index) const
             index,
             numPolys_);
     defiError(0, 6180, msg, defData);
-    return 0;
+    return nullptr;
   }
   return polygonNames_[index];
 }
@@ -550,8 +550,8 @@ int defiVia::hasRowCol() const
 {
   if (rows_)
     return rows_;
-  else
-    return cols_;
+
+  return cols_;
 }
 
 void defiVia::rowCol(int* numCutRows, int* numCutCols) const
@@ -564,8 +564,8 @@ int defiVia::hasOrigin() const
 {
   if (xOffset_)
     return xOffset_;
-  else
-    return yOffset_;
+
+  return yOffset_;
 }
 
 void defiVia::origin(int* xOffset, int* yOffset) const
@@ -578,12 +578,11 @@ int defiVia::hasOffset() const
 {
   if (xBotOffset_)
     return xBotOffset_;
-  else if (yBotOffset_)
+  if (yBotOffset_)
     return yBotOffset_;
-  else if (xTopOffset_)
+  if (xTopOffset_)
     return xTopOffset_;
-  else
-    return yTopOffset_;
+  return yTopOffset_;
 }
 
 void defiVia::offset(int* xBotOffset,
@@ -668,4 +667,4 @@ void defiVia::print(FILE* f) const
       fprintf(f, "    pattern '%s'\n", cutPattern());
   }
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

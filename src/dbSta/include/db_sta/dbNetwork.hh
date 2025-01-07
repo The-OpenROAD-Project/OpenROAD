@@ -195,7 +195,7 @@ class dbNetwork : public ConcreteNetwork
                            const char* connection_name);
 
   void getParentHierarchy(dbModule* start_module,
-                          std::vector<dbModule*>& parent_hierarchy);
+                          std::vector<dbModule*>& parent_hierarchy) const;
   dbModule* findHighestCommonModule(std::vector<dbModule*>& itree1,
                                     std::vector<dbModule*>& itree2);
   Instance* findHierInstance(const char* name);
@@ -219,6 +219,10 @@ class dbNetwork : public ConcreteNetwork
   // Name local to containing cell/instance.
   const char* name(const Instance* instance) const override;
   const char* name(const Port* port) const override;
+  // Path name functions needed hierarchical verilog netlists.
+  using ConcreteNetwork::pathName;
+  const char* pathName(const Net* net) const override;
+
   const char* busName(const Port* port) const override;
   ObjectId id(const Instance* instance) const override;
   Cell* cell(const Instance* instance) const override;
@@ -234,6 +238,7 @@ class dbNetwork : public ConcreteNetwork
   void setAttribute(Instance* instance,
                     const string& key,
                     const string& value) override;
+  dbModNet* findRelatedModNet(const dbNet*) const;
 
   ////////////////////////////////////////////////////////////////
   // Pin functions

@@ -54,6 +54,19 @@ void FlexDRWorker::endRemoveNets_pathSeg(
   auto routeBox = getRouteBox();
   auto net = pathSeg->getNet();
   auto regionQuery = design->getRegionQuery();
+  if (pathSeg->isApPathSeg()) {
+    if (getRouteBox().intersects(pathSeg->getApLoc())) {
+      if (save_updates_) {
+        drUpdate update(drUpdate::REMOVE_FROM_NET);
+        update.setNet(net);
+        update.setIndexInOwner(pathSeg->getIndexInOwner());
+        design_->addUpdate(update);
+      }
+      regionQuery->removeDRObj(pathSeg);
+      net->removeShape(pathSeg);
+    }
+    return;
+  }
   // vertical seg
   if (begin.x() == end.x()) {
     // if cross routeBBox

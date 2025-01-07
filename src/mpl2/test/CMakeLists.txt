@@ -3,6 +3,8 @@ or_integration_tests(
   TESTS
     macro_only
     no_unfixed_macros
+    guides1
+    guides2
 )
 
 # Skipped

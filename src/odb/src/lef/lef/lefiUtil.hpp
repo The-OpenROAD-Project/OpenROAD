@@ -32,7 +32,7 @@
 
 #include "lefiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // Structure to return Macro data to FE
 struct lefiPoints
@@ -41,7 +41,7 @@ struct lefiPoints
   double y;
 };
 
-typedef struct lefiPoints lefiNum;
+using lefiNum = lefiPoints;
 
 extern char* lefiOrientStr(int orient);
 
@@ -49,8 +49,6 @@ extern double convert_name2num(const char* versionName);
 
 extern bool validateMaskNumber(int num);
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

@@ -35,14 +35,26 @@
 
 #include "Multilevel.h"
 
+#include <algorithm>
+#include <boost/range/iterator_range_core.hpp>
 #include <functional>
+#include <limits>
+#include <numeric>
 #include <queue>
 #include <random>
 #include <thread>
+#include <utility>
+#include <vector>
 
+#include "Coarsener.h"
 #include "Evaluator.h"
+#include "GreedyRefine.h"
 #include "Hypergraph.h"
+#include "ILPRefine.h"
+#include "KWayFMRefine.h"
+#include "KWayPMRefine.h"
 #include "Partitioner.h"
+#include "Utilities.h"
 #include "utl/Logger.h"
 
 namespace par {

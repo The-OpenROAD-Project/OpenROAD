@@ -39,7 +39,7 @@
 #include "odb.h"
 #include "utl/Logger.h"
 
-namespace LefDefParser {
+namespace LefParser {
 class lefiArray;
 struct lefiNoiseMargin;
 class lefiNoiseTable;
@@ -64,7 +64,7 @@ class lefiMaxStackVia;
 class lefiObstruction;
 class lefiGeometries;
 struct lefiGeomPolygon;
-}  // namespace LefDefParser
+}  // namespace LefParser
 
 namespace odb {
 
@@ -76,8 +76,6 @@ class dbMaster;
 class dbDatabase;
 class dbTechLayer;
 class dbSite;
-
-using namespace LefDefParser;
 
 class lefin
 {
@@ -114,12 +112,14 @@ class lefin
 
   bool readLefInner(const char* lef_file);
   bool readLef(const char* lef_file);
-  bool addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry);
+  bool addGeoms(dbObject* object,
+                bool is_pin,
+                LefParser::lefiGeometries* geometry);
   void createLibrary();
   void createPolygon(dbObject* object,
                      bool is_pin,
                      dbTechLayer* layer,
-                     lefiGeomPolygon* p,
+                     LefParser::lefiGeomPolygon* p,
                      int design_rule_width,
                      double offset_x = 0.0,
                      double offset_y = 0.0);
@@ -141,55 +141,55 @@ class lefin
 
   void antenna(AntennaType type, double value);
   void arrayBegin(const char* name);
-  void array(lefiArray* a);
+  void array(LefParser::lefiArray* a);
   void arrayEnd(const char* name);
   int busBitChars(const char* busBit);
   void caseSense(int caseSense);
   void clearance(const char* name);
   void divider(const char* name);
   void noWireExt(const char* name);
-  void noiseMargin(lefiNoiseMargin* noise);
+  void noiseMargin(LefParser::lefiNoiseMargin* noise);
   void edge1(double value);
   void edge2(double value);
   void edgeScale(double value);
-  void noiseTable(lefiNoiseTable* noise);
-  void correction(lefiCorrectionTable* corr);
+  void noiseTable(LefParser::lefiNoiseTable* noise);
+  void correction(LefParser::lefiCorrectionTable* corr);
   void dielectric(double dielectric);
   void irdropBegin(void* ptr);
-  void irdrop(lefiIRDrop* irdrop);
+  void irdrop(LefParser::lefiIRDrop* irdrop);
   void irdropEnd(void* ptr);
-  void layer(lefiLayer* layer);
+  void layer(LefParser::lefiLayer* layer);
   void macroBegin(const char* macroName);
-  void macro(lefiMacro* macro);
+  void macro(LefParser::lefiMacro* macro);
   void macroEnd(const char* macroName);
   void manufacturing(double num);
-  void maxStackVia(lefiMaxStackVia* maxStack);
-  void minFeature(lefiMinFeature* min);
-  void nonDefault(lefiNonDefault* def);
-  void obstruction(lefiObstruction* obs);
-  void pin(lefiPin* pin);
+  void maxStackVia(LefParser::lefiMaxStackVia* maxStack);
+  void minFeature(LefParser::lefiMinFeature* min);
+  void nonDefault(LefParser::lefiNonDefault* def);
+  void obstruction(LefParser::lefiObstruction* obs);
+  void pin(LefParser::lefiPin* pin);
   void propDefBegin(void* ptr);
-  void propDef(lefiProp* prop);
+  void propDef(LefParser::lefiProp* prop);
   void propDefEnd(void* ptr);
-  void site(lefiSite* site);
+  void site(LefParser::lefiSite* site);
   void spacingBegin(void* ptr);
-  void spacing(lefiSpacing* spacing);
+  void spacing(LefParser::lefiSpacing* spacing);
   void spacingEnd(void* ptr);
-  void timing(lefiTiming* timing);
-  void units(lefiUnits* unit);
-  void useMinSpacing(lefiUseMinSpacing* spacing);
+  void timing(LefParser::lefiTiming* timing);
+  void units(LefParser::lefiUnits* unit);
+  void useMinSpacing(LefParser::lefiUseMinSpacing* spacing);
   void version(double num);
-  void via(lefiVia* via, dbTechNonDefaultRule* rule = nullptr);
-  void viaRule(lefiViaRule* viaRule);
-  void viaGenerateRule(lefiViaRule* viaRule);
+  void via(LefParser::lefiVia* via, dbTechNonDefaultRule* rule = nullptr);
+  void viaRule(LefParser::lefiViaRule* viaRule);
+  void viaGenerateRule(LefParser::lefiViaRule* viaRule);
   void done(void* ptr);
   template <typename... Args>
-  inline void warning(int id, std::string msg, const Args&... args)
+  void warning(int id, std::string msg, const Args&... args)
   {
     _logger->warn(utl::ODB, id, msg, args...);
   }
   template <typename... Args>
-  inline void errorTolerant(int id, std::string msg, const Args&... args)
+  void errorTolerant(int id, std::string msg, const Args&... args)
   {
     _logger->warn(utl::ODB, id, msg, args...);
     ++_errors;

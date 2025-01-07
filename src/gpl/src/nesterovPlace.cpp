@@ -477,10 +477,18 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                                  + nesterov->totalFillerArea())
               / static_cast<float>(nesterov->whiteSpaceArea()));
 
-          log_->info(GPL,
-                     107,
-                     "Timing-driven: RSZ delta area:     {}",
-                     block->dbuAreaToMicrons(nbc_->getDeltaArea()));
+          float rsz_delta_area_microns
+              = block->dbuAreaToMicrons(nbc_->getDeltaArea());
+          float rsz_delta_area_percentage
+              = (nbc_->getDeltaArea()
+                 / static_cast<float>(nesterov->nesterovInstsArea()))
+                * 100.0f;
+          log_->info(
+              GPL,
+              107,
+              "Timing-driven: repair_design delta area: {:.3f} um^2 ({:+.2f}%)",
+              rsz_delta_area_microns,
+              rsz_delta_area_percentage);
           log_->info(GPL,
                      108,
                      "Timing-driven: new target density: {}",

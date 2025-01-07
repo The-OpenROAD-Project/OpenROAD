@@ -38,11 +38,11 @@
 #include "utl/Logger.h"
 namespace dst {
 
-WorkerConnection::WorkerConnection(asio::io_service& io_service,
+WorkerConnection::WorkerConnection(asio::io_context& service,
                                    Distributed* dist,
                                    utl::Logger* logger,
                                    Worker* worker)
-    : sock_(io_service),
+    : sock_(service),
       dist_(dist),
       logger_(logger),
       msg_(JobMessage::NONE),

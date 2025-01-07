@@ -32,8 +32,7 @@
 
 #pragma once
 
-#include <string.h>
-
+#include <cstring>
 #include <map>
 #include <vector>
 
@@ -86,9 +85,9 @@ class definComponent : public definBase
 
  public:
   definComponent();
-  virtual ~definComponent();
+  ~definComponent() override;
 
-  void init();
+  void init() override;
 
   void setLibs(std::vector<dbLib*>& libs) { _libs = libs; }
 };

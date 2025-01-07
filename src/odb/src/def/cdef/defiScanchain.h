@@ -33,7 +33,7 @@
 #ifndef CDEFISCANCHAIN_H
 #define CDEFISCANCHAIN_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

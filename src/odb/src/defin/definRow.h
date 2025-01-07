@@ -32,8 +32,7 @@
 
 #pragma once
 
-#include <string.h>
-
+#include <cstring>
 #include <map>
 #include <vector>
 
@@ -79,8 +78,8 @@ class definRow : public definBase
   dbSite* getSite(const char* name);
 
   definRow();
-  virtual ~definRow();
-  void init();
+  ~definRow() override;
+  void init() override;
   void setLibs(std::vector<dbLib*>& libs) { _libs = libs; }
 };
 

@@ -100,7 +100,7 @@ inline _dbMTerm::_dbMTerm(_dbDatabase*)
   _flags._mark = 0;
   _flags._spare_bits = 0;
   _order_id = 0;
-  _name = 0;
+  _name = nullptr;
   _par_met_area.clear();
   _par_met_sidearea.clear();
   _par_cut_area.clear();

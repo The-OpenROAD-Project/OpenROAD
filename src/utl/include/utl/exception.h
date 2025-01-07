@@ -58,14 +58,7 @@ class ThreadException
     }
   }
 
-  bool hasException() const
-  {
-    if (ptr_) {
-      return true;
-    } else {
-      return false;
-    }
-  }
+  bool hasException() const { return ptr_ != nullptr; }
 
  private:
   std::exception_ptr ptr_;
