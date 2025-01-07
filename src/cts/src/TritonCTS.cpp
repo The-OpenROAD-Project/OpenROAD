@@ -1168,6 +1168,7 @@ bool TritonCTS::separateMacroRegSinks(
       if (hasInsertionDelay(inst, mterm) || !isSink(iterm)) {
         if(inst->getMaster()->isBlock()) {
           max_dx = std::max(max_dx, inst->getBBox()->getDX());
+          max_dy = std::max(max_dy, inst->getBBox()->getDX());
         }
         macroSinks.emplace_back(inst, mterm);
       } else {
