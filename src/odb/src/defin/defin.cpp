@@ -39,61 +39,73 @@ namespace odb {
 
 defin::defin(dbDatabase* db, utl::Logger* logger, MODE mode)
 {
+  std::lock_guard<std::mutex> lock(_def_mutex);
   _reader = new definReader(db, logger, mode);
 }
 
 defin::~defin()
 {
+  std::lock_guard<std::mutex> lock(_def_mutex);
   delete _reader;
 }
 
 void defin::skipConnections()
 {
+  std::lock_guard<std::mutex> lock(_def_mutex);
   _reader->skipConnections();
 }
 
 void defin::skipWires()
 {
+  std::lock_guard<std::mutex> lock(_def_mutex);
   _reader->skipWires();
 }
 
 void defin::skipSpecialWires()
 {
+  std::lock_guard<std::mutex> lock(_def_mutex);
   _reader->skipSpecialWires();
 }
 
 void defin::skipShields()
 {
+  std::lock_guard<std::mutex> lock(_def_mutex);
   _reader->skipShields();
 }
 
 void defin::skipBlockWires()
 {
+  std::lock_guard<std::mutex> lock(_def_mutex);
   _reader->skipBlockWires();
 }
 
 void defin::skipFillWires()
 {
+  std::lock_guard<std::mutex> lock(_def_mutex);
   _reader->skipFillWires();
 }
 
 void defin::continueOnErrors()
 {
+  std::lock_guard<std::mutex> lock(_def_mutex);
   _reader->continueOnErrors();
 }
 
 void defin::namesAreDBIDs()
 {
+  std::lock_guard<std::mutex> lock(_def_mutex);
   _reader->namesAreDBIDs();
 }
 
 void defin::setAssemblyMode()
 {
+  std::lock_guard<std::mutex> lock(_def_mutex);
   _reader->setAssemblyMode();
 }
 
 void defin::useBlockName(const char* name)
 {
+  std::lock_guard<std::mutex> lock(_def_mutex);
   _reader->useBlockName(name);
 }
 
@@ -101,6 +113,7 @@ dbChip* defin::createChip(std::vector<dbLib*>& libs,
                           const char* def_file,
                           dbTech* tech)
 {
+  std::lock_guard<std::mutex> lock(_def_mutex);
   return _reader->createChip(libs, def_file, tech);
 }
 
@@ -109,11 +122,13 @@ dbBlock* defin::createBlock(dbBlock* parent,
                             const char* def_file,
                             dbTech* tech)
 {
+  std::lock_guard<std::mutex> lock(_def_mutex);
   return _reader->createBlock(parent, libs, def_file, tech);
 }
 
 bool defin::replaceWires(dbBlock* block, const char* def_file)
 {
+  std::lock_guard<std::mutex> lock(_def_mutex);
   return _reader->replaceWires(block, def_file);
 }
 

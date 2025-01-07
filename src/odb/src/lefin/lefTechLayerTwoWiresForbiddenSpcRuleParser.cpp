@@ -41,7 +41,7 @@
 namespace odb {
 
 lefTechLayerTwoWiresForbiddenSpcRuleParser::
-    lefTechLayerTwoWiresForbiddenSpcRuleParser(lefin* l)
+    lefTechLayerTwoWiresForbiddenSpcRuleParser(lefinReader* l)
 {
   lefin_ = l;
 }

@@ -36,7 +36,7 @@
 
 namespace odb {
 
-lefTechLayerPitchRuleParser::lefTechLayerPitchRuleParser(lefin* l)
+lefTechLayerPitchRuleParser::lefTechLayerPitchRuleParser(lefinReader* l)
 {
   lefin_ = l;
 }

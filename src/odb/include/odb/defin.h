@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include <mutex>
 #include <vector>
 
 #include "odb.h"
@@ -51,6 +52,7 @@ class dbTech;
 class defin
 {
   definReader* _reader;
+  std::mutex _def_mutex;
 
  public:
   enum MODE

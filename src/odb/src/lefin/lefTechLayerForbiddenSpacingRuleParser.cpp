@@ -41,7 +41,7 @@
 namespace odb {
 
 lefTechLayerForbiddenSpacingRuleParser::lefTechLayerForbiddenSpacingRuleParser(
-    lefin* l)
+    lefinReader* l)
 {
   lefin_ = l;
 }

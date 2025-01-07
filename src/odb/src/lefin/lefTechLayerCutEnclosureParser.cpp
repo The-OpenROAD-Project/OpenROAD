@@ -35,7 +35,8 @@
 
 namespace odb {
 
-lefTechLayerCutEnclosureRuleParser::lefTechLayerCutEnclosureRuleParser(lefin* l)
+lefTechLayerCutEnclosureRuleParser::lefTechLayerCutEnclosureRuleParser(
+    lefinReader* l)
 {
   lefin_ = l;
 }

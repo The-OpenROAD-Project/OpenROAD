@@ -56,11 +56,11 @@ namespace odb {
 
 using LefParser::lefrSetRelaxMode;
 
-extern bool lefin_parse(lefin*, utl::Logger*, const char*);
+extern bool lefin_parse(lefinReader*, utl::Logger*, const char*);
 
-lefin::lefin(dbDatabase* db,
-             utl::Logger* logger,
-             bool ignore_non_routing_layers)
+lefinReader::lefinReader(dbDatabase* db,
+                         utl::Logger* logger,
+                         bool ignore_non_routing_layers)
     : _db(db),
       _tech(nullptr),
       _lib(nullptr),
@@ -87,7 +87,7 @@ lefin::lefin(dbDatabase* db,
 {
 }
 
-void lefin::init()
+void lefinReader::init()
 {
   _tech = nullptr;
   _lib = nullptr;
@@ -110,11 +110,11 @@ void lefin::init()
   }
 }
 
-lefin::~lefin()
+lefinReader::~lefinReader()
 {
 }
 
-dbSite* lefin::findSite(const char* name)
+dbSite* lefinReader::findSite(const char* name)
 {
   dbSite* site = _lib->findSite(name);
 
@@ -131,7 +131,7 @@ dbSite* lefin::findSite(const char* name)
   return site;
 }
 
-void lefin::createLibrary()
+void lefinReader::createLibrary()
 {
   _lib = dbLib::create(_db, _lib_name, _tech, _hier_delimeter);
   _lib->setLefUnits(_lef_units);
@@ -205,9 +205,9 @@ static void create_path_box(dbObject* obj,
 //
 // add geoms to master or terminal
 //
-bool lefin::addGeoms(dbObject* object,
-                     bool is_pin,
-                     LefParser::lefiGeometries* geometry)
+bool lefinReader::addGeoms(dbObject* object,
+                           bool is_pin,
+                           LefParser::lefiGeometries* geometry)
 {
   int count = geometry->numItems();
   dbTechLayer* layer = nullptr;
@@ -476,13 +476,13 @@ bool lefin::addGeoms(dbObject* object,
   return true;
 }
 
-void lefin::createPolygon(dbObject* object,
-                          bool is_pin,
-                          dbTechLayer* layer,
-                          LefParser::lefiGeomPolygon* p,
-                          int design_rule_width,
-                          double offset_x,
-                          double offset_y)
+void lefinReader::createPolygon(dbObject* object,
+                                bool is_pin,
+                                dbTechLayer* layer,
+                                LefParser::lefiGeomPolygon* p,
+                                int design_rule_width,
+                                double offset_x,
+                                double offset_y)
 {
   std::vector<Point> points;
 
@@ -504,27 +504,27 @@ void lefin::createPolygon(dbObject* object,
   }
 }
 
-void lefin::antenna(lefin::AntennaType /* unused: type */,
-                    double /* unused: value */)
+void lefinReader::antenna(lefinReader::AntennaType /* unused: type */,
+                          double /* unused: value */)
 {
 }
 
-void lefin::arrayBegin(const char* /* unused: name */)
-{
-  /* Gate arrays not supported */
-}
-
-void lefin::array(LefParser::lefiArray* /* unused: a */)
+void lefinReader::arrayBegin(const char* /* unused: name */)
 {
   /* Gate arrays not supported */
 }
 
-void lefin::arrayEnd(const char* /* unused: name */)
+void lefinReader::array(LefParser::lefiArray* /* unused: a */)
 {
   /* Gate arrays not supported */
 }
 
-int lefin::busBitChars(const char* busBit)
+void lefinReader::arrayEnd(const char* /* unused: name */)
+{
+  /* Gate arrays not supported */
+}
+
+int lefinReader::busBitChars(const char* busBit)
 {
   if (busBit[0] == '\0' || busBit[1] == '\0')
     _logger->error(utl::ODB, 179, "invalid BUSBITCHARS ({})\n", busBit);
@@ -539,67 +539,67 @@ int lefin::busBitChars(const char* busBit)
   return PARSE_OK;
 }
 
-void lefin::caseSense(int caseSense)
+void lefinReader::caseSense(int caseSense)
 {
   _tech->setNamesCaseSensitive(dbOnOffType(caseSense));
 }
 
-void lefin::clearance(const char* name)
+void lefinReader::clearance(const char* name)
 {
   _tech->setClearanceMeasure(dbClMeasureType(name));
 }
 
-void lefin::divider(const char* div)
+void lefinReader::divider(const char* div)
 {
   _hier_delimeter = div[0];
 }
 
-void lefin::noWireExt(const char* name)
+void lefinReader::noWireExt(const char* name)
 {
   _tech->setNoWireExtAtPin(dbOnOffType(name));
 }
 
-void lefin::noiseMargin(LefParser::lefiNoiseMargin* /* unused: noise */)
+void lefinReader::noiseMargin(LefParser::lefiNoiseMargin* /* unused: noise */)
 {
 }
 
-void lefin::edge1(double /* unused: name */)
+void lefinReader::edge1(double /* unused: name */)
 {
 }
 
-void lefin::edge2(double /* unused: name */)
+void lefinReader::edge2(double /* unused: name */)
 {
 }
 
-void lefin::edgeScale(double /* unused: name */)
+void lefinReader::edgeScale(double /* unused: name */)
 {
 }
 
-void lefin::noiseTable(LefParser::lefiNoiseTable* /* unused: noise */)
+void lefinReader::noiseTable(LefParser::lefiNoiseTable* /* unused: noise */)
 {
 }
 
-void lefin::correction(LefParser::lefiCorrectionTable* /* unused: corr */)
+void lefinReader::correction(LefParser::lefiCorrectionTable* /* unused: corr */)
 {
 }
 
-void lefin::dielectric(double /* unused: dielectric */)
+void lefinReader::dielectric(double /* unused: dielectric */)
 {
 }
 
-void lefin::irdropBegin(void* /* unused: ptr */)
+void lefinReader::irdropBegin(void* /* unused: ptr */)
 {
 }
 
-void lefin::irdrop(LefParser::lefiIRDrop* /* unused: irdrop */)
+void lefinReader::irdrop(LefParser::lefiIRDrop* /* unused: irdrop */)
 {
 }
 
-void lefin::irdropEnd(void* /* unused: ptr */)
+void lefinReader::irdropEnd(void* /* unused: ptr */)
 {
 }
 
-void lefin::layer(LefParser::lefiLayer* layer)
+void lefinReader::layer(LefParser::lefiLayer* layer)
 {
   if (!_create_tech)
     return;
@@ -1172,7 +1172,7 @@ void lefin::layer(LefParser::lefiLayer* layer)
   _layer_cnt++;
 }
 
-void lefin::macroBegin(const char* name)
+void lefinReader::macroBegin(const char* name)
 {
   _master = nullptr;
 
@@ -1189,7 +1189,7 @@ void lefin::macroBegin(const char* name)
   _master_modified = false;
 }
 
-void lefin::macro(LefParser::lefiMacro* macro)
+void lefinReader::macro(LefParser::lefiMacro* macro)
 {
   if (_master == nullptr)
     return;
@@ -1272,7 +1272,7 @@ void lefin::macro(LefParser::lefiMacro* macro)
     _master->setSymmetryR90();
 }
 
-void lefin::macroEnd(const char* /* unused: macroName */)
+void lefinReader::macroEnd(const char* /* unused: macroName */)
 {
   if (_master) {
     _master->setFrozen();
@@ -1281,20 +1281,21 @@ void lefin::macroEnd(const char* /* unused: macroName */)
   }
 }
 
-void lefin::manufacturing(double num)
+void lefinReader::manufacturing(double num)
 {
   _tech->setManufacturingGrid(dbdist(num));
 }
 
-void lefin::maxStackVia(LefParser::lefiMaxStackVia* /* unused: maxStack */)
+void lefinReader::maxStackVia(
+    LefParser::lefiMaxStackVia* /* unused: maxStack */)
 {
 }
 
-void lefin::minFeature(LefParser::lefiMinFeature* /* unused: min */)
+void lefinReader::minFeature(LefParser::lefiMinFeature* /* unused: min */)
 {
 }
 
-void lefin::nonDefault(LefParser::lefiNonDefault* rule)
+void lefinReader::nonDefault(LefParser::lefiNonDefault* rule)
 {
   if (!_create_tech)
     return;
@@ -1418,7 +1419,7 @@ void lefin::nonDefault(LefParser::lefiNonDefault* rule)
   }
 }
 
-void lefin::obstruction(LefParser::lefiObstruction* obs)
+void lefinReader::obstruction(LefParser::lefiObstruction* obs)
 {
   if ((_master == nullptr) || (_skip_obstructions == true))
     return;
@@ -1442,7 +1443,7 @@ void lefin::obstruction(LefParser::lefiObstruction* obs)
   }
 }
 
-void lefin::pin(LefParser::lefiPin* pin)
+void lefinReader::pin(LefParser::lefiPin* pin)
 {
   if (_master == nullptr)
     return;
@@ -1669,11 +1670,11 @@ void lefin::pin(LefParser::lefiPin* pin)
   }
 }
 
-void lefin::propDefBegin(void* /* unused: ptr */)
+void lefinReader::propDefBegin(void* /* unused: ptr */)
 {
 }
 
-void lefin::propDef(LefParser::lefiProp* prop)
+void lefinReader::propDef(LefParser::lefiProp* prop)
 {
   if (std::string(prop->propName()) == "LEF58_METALWIDTHVIAMAP") {
     auto parser = MetalWidthViaMapParser(_tech, this, _incomplete_props);
@@ -1681,11 +1682,11 @@ void lefin::propDef(LefParser::lefiProp* prop)
   }
 }
 
-void lefin::propDefEnd(void* /* unused: ptr */)
+void lefinReader::propDefEnd(void* /* unused: ptr */)
 {
 }
 
-void lefin::site(LefParser::lefiSite* lefsite)
+void lefinReader::site(LefParser::lefiSite* lefsite)
 {
   if (!_create_lib)
     return;
@@ -1748,11 +1749,11 @@ void lefin::site(LefParser::lefiSite* lefsite)
   }
 }
 
-void lefin::spacingBegin(void* /* unused: ptr */)
+void lefinReader::spacingBegin(void* /* unused: ptr */)
 {
 }
 
-void lefin::spacing(LefParser::lefiSpacing* spacing)
+void lefinReader::spacing(LefParser::lefiSpacing* spacing)
 {
   if (_create_tech == false)
     return;
@@ -1780,15 +1781,15 @@ void lefin::spacing(LefParser::lefiSpacing* spacing)
   rule->setSpacing(dbdist(spacing->distance()));
 }
 
-void lefin::spacingEnd(void* /* unused: ptr */)
+void lefinReader::spacingEnd(void* /* unused: ptr */)
 {
 }
 
-void lefin::timing(LefParser::lefiTiming* /* unused: timing */)
+void lefinReader::timing(LefParser::lefiTiming* /* unused: timing */)
 {
 }
 
-void lefin::units(LefParser::lefiUnits* unit)
+void lefinReader::units(LefParser::lefiUnits* unit)
 {
   if (unit->hasDatabase()) {
     _lef_units = (int) unit->databaseNumber();
@@ -1819,7 +1820,7 @@ void lefin::units(LefParser::lefiUnits* unit)
   }
 }
 
-void lefin::setDBUPerMicron(int dbu)
+void lefinReader::setDBUPerMicron(int dbu)
 {
   switch (dbu) {
     case 100:
@@ -1848,7 +1849,7 @@ void lefin::setDBUPerMicron(int dbu)
   }
 }
 
-void lefin::useMinSpacing(LefParser::lefiUseMinSpacing* spacing)
+void lefinReader::useMinSpacing(LefParser::lefiUseMinSpacing* spacing)
 {
   if (!strncasecmp(spacing->name(), "PIN", 3)) {
     _tech->setUseMinSpacingPin(dbOnOffType(spacing->value()));
@@ -1862,17 +1863,17 @@ void lefin::useMinSpacing(LefParser::lefiUseMinSpacing* spacing)
   }
 }
 
-void lefin::version(double num)
+void lefinReader::version(double num)
 {
   _tech->setLefVersion(num);
 }
 
-void lefin::via(LefParser::lefiVia* via, dbTechNonDefaultRule* rule)
+void lefinReader::via(LefParser::lefiVia* via, dbTechNonDefaultRule* rule)
 {
   if (_tech->findVia(via->name())) {
     debugPrint(_logger,
                utl::ODB,
-               "lefin",
+               "lefinReader",
                1,
                "VIA: duplicate VIA ({}) ignored...",
                via->name());
@@ -2012,7 +2013,7 @@ void lefin::via(LefParser::lefiVia* via, dbTechNonDefaultRule* rule)
   _via_cnt++;
 }
 
-void lefin::viaRule(LefParser::lefiViaRule* viaRule)
+void lefinReader::viaRule(LefParser::lefiViaRule* viaRule)
 {
   if (viaRule->hasGenerate()) {
     viaGenerateRule(viaRule);
@@ -2076,7 +2077,7 @@ void lefin::viaRule(LefParser::lefiViaRule* viaRule)
   }
 }
 
-void lefin::viaGenerateRule(LefParser::lefiViaRule* viaRule)
+void lefinReader::viaGenerateRule(LefParser::lefiViaRule* viaRule)
 {
   const char* name = viaRule->name();
   dbTechViaGenerateRule* rule
@@ -2155,16 +2156,16 @@ void lefin::viaGenerateRule(LefParser::lefiViaRule* viaRule)
   }
 }
 
-void lefin::done(void* /* unused: ptr */)
+void lefinReader::done(void* /* unused: ptr */)
 {
 }
 
-void lefin::lineNumber(int lineNo)
+void lefinReader::lineNumber(int lineNo)
 {
   _logger->info(utl::ODB, 221, "{} lines parsed!", lineNo);
 }
 
-bool lefin::readLef(const char* lef_file)
+bool lefinReader::readLef(const char* lef_file)
 {
   try {
     return readLefInner(lef_file);
@@ -2174,7 +2175,7 @@ bool lefin::readLef(const char* lef_file)
   }
 }
 
-bool lefin::readLefInner(const char* lef_file)
+bool lefinReader::readLefInner(const char* lef_file)
 {
   bool r = lefin_parse(this, _logger, lef_file);
   for (auto& [obj, name] : _incomplete_props) {
@@ -2287,7 +2288,7 @@ bool lefin::readLefInner(const char* lef_file)
   return r;
 }
 
-dbTech* lefin::createTech(const char* name, const char* lef_file)
+dbTech* lefinReader::createTech(const char* name, const char* lef_file)
 {
   lefrSetRelaxMode();
   init();
@@ -2304,7 +2305,9 @@ dbTech* lefin::createTech(const char* name, const char* lef_file)
   return _tech;
 }
 
-dbLib* lefin::createLib(dbTech* tech, const char* name, const char* lef_file)
+dbLib* lefinReader::createLib(dbTech* tech,
+                              const char* name,
+                              const char* lef_file)
 {
   lefrSetRelaxMode();
   init();
@@ -2336,9 +2339,9 @@ dbLib* lefin::createLib(dbTech* tech, const char* name, const char* lef_file)
   return _lib;
 }
 
-dbLib* lefin::createTechAndLib(const char* tech_name,
-                               const char* lib_name,
-                               const char* lef_file)
+dbLib* lefinReader::createTechAndLib(const char* tech_name,
+                                     const char* lib_name,
+                                     const char* lef_file)
 {
   lefrSetRelaxMode();
   init();
@@ -2378,7 +2381,7 @@ dbLib* lefin::createTechAndLib(const char* tech_name,
   return _lib;
 }
 
-bool lefin::updateLib(dbLib* lib, const char* lef_file)
+bool lefinReader::updateLib(dbLib* lib, const char* lef_file)
 {
   lefrSetRelaxMode();
   init();
@@ -2396,7 +2399,7 @@ bool lefin::updateLib(dbLib* lib, const char* lef_file)
 //
 // TODO: Recover gracefully from any update errors
 //
-bool lefin::updateTechAndLib(dbLib* lib, const char* lef_file)
+bool lefinReader::updateTechAndLib(dbLib* lib, const char* lef_file)
 {
   lefrSetRelaxMode();
 
@@ -2414,7 +2417,7 @@ bool lefin::updateTechAndLib(dbLib* lib, const char* lef_file)
   return _errors == 0;
 }
 
-bool lefin::updateTech(dbTech* tech, const char* lef_file)
+bool lefinReader::updateTech(dbTech* tech, const char* lef_file)
 {
   lefrSetRelaxMode();
   init();
@@ -2427,6 +2430,63 @@ bool lefin::updateTech(dbTech* tech, const char* lef_file)
     return false;
 
   return _errors == 0;
+}
+
+lefin::lefin(dbDatabase* db,
+             utl::Logger* logger,
+             bool ignore_non_routing_layers)
+{
+  std::lock_guard<std::mutex> lock(_lef_mutex);
+  _reader = new lefinReader(db, logger, ignore_non_routing_layers);
+}
+
+lefin::~lefin()
+{
+  std::lock_guard<std::mutex> lock(_lef_mutex);
+  delete _reader;
+}
+
+int lefin::dbdist(double value)
+{
+  return _reader->dbdist(value);
+}
+
+dbTech* lefin::createTech(const char* name, const char* lef_file)
+{
+  std::lock_guard<std::mutex> lock(_lef_mutex);
+  return _reader->createTech(name, lef_file);
+}
+
+dbLib* lefin::createLib(dbTech* tech, const char* name, const char* lef_file)
+{
+  std::lock_guard<std::mutex> lock(_lef_mutex);
+  return _reader->createLib(tech, name, lef_file);
+}
+
+dbLib* lefin::createTechAndLib(const char* tech_name,
+                               const char* lib_name,
+                               const char* lef_file)
+{
+  std::lock_guard<std::mutex> lock(_lef_mutex);
+  return _reader->createTechAndLib(tech_name, lib_name, lef_file);
+}
+
+bool lefin::updateLib(dbLib* lib, const char* lef_file)
+{
+  std::lock_guard<std::mutex> lock(_lef_mutex);
+  return _reader->updateLib(lib, lef_file);
+}
+
+bool lefin::updateTech(dbTech* tech, const char* lef_file)
+{
+  std::lock_guard<std::mutex> lock(_lef_mutex);
+  return _reader->updateTech(tech, lef_file);
+}
+
+bool lefin::updateTechAndLib(dbLib* lib, const char* lef_file)
+{
+  std::lock_guard<std::mutex> lock(_lef_mutex);
+  return _reader->updateTechAndLib(lib, lef_file);
 }
 
 }  // namespace odb
