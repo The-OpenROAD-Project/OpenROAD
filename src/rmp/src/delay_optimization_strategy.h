@@ -21,7 +21,6 @@ class DelayOptimizationStrategy : public LogicOptimizationStrategy
 
   DelayOptimizationStrategy(sta::dbSta* sta) : sta_(sta) {};
 
-  //
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> Optimize(
       const abc::Abc_Ntk_t* ntk,
       utl::Logger* logger) override;
