@@ -3079,8 +3079,8 @@ static int64_t getOverlapArea(const Bin* bin,
     const biNormalParameters i
         = {meanX,
            meanY,
-           meanX / 4,
-           meanY / 4,
+           meanX / 6,
+           meanY / 6,
            (rectLx - inst->lx()) / (float) dbu_per_micron,
            (rectLy - inst->ly()) / (float) dbu_per_micron,
            (rectUx - inst->lx()) / (float) dbu_per_micron,
@@ -3093,10 +3093,10 @@ static int64_t getOverlapArea(const Bin* bin,
                          * static_cast<float>(inst->uy() - inst->ly());
 
     // For heavily dense regions towards the center of the macro,
-    // we are using an upper limit of 1.15*(overlap) between the macro
+    // we are using an upper limit of 1.10*(overlap) between the macro
     // and the bin.
     if (scaled >= original) {
-      return std::min<float>(scaled, original * 1.15);
+      return std::min<float>(scaled, original * 1.10);
     }
     // If the scaled value is smaller than the actual overlap
     // then use the original overlap value instead.

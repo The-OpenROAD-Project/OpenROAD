@@ -34,7 +34,20 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "KWayPMRefine.h"
 
+#include <algorithm>
+#include <functional>
+#include <map>
+#include <memory>
 #include <thread>
+#include <utility>
+#include <vector>
+
+#include "Evaluator.h"
+#include "Hypergraph.h"
+#include "KWayFMRefine.h"
+#include "PriorityQueue.h"
+#include "Refiner.h"
+#include "Utilities.h"
 
 // ------------------------------------------------------------------------------
 // K-way pair-wise FM refinement

@@ -120,22 +120,20 @@ class SPXRelation
   {
     if (i == j) {
       return false;
-    } else if (TCGMatrixHoriz[i][j]) {
-      return true;
-    } else if (TCGMatrixHoriz[j][i]) {
-      return false;
-    } else if (TCGMatrixVert[j][i]) {
-      return true;
-    } else if (TCGMatrixVert[i][j]) {
-      return false;
-    } else {
-      // cout<<"ERROR IN PL2SP SPX "<<i<<"\t"<<j<<endl;
-      if (i < j) {
-        return true;
-      } else {
-        return false;
-      }
     }
+    if (TCGMatrixHoriz[i][j]) {
+      return true;
+    }
+    if (TCGMatrixHoriz[j][i]) {
+      return false;
+    }
+    if (TCGMatrixVert[j][i]) {
+      return true;
+    }
+    if (TCGMatrixVert[i][j]) {
+      return false;
+    }
+    return i < j;
   }
 };
 
@@ -157,19 +155,13 @@ class SPYRelation
     }
     if (TCGMatrixHoriz[i][j])
       return true;
-    else if (TCGMatrixHoriz[j][i])
+    if (TCGMatrixHoriz[j][i])
       return false;
-    else if (TCGMatrixVert[j][i])
+    if (TCGMatrixVert[j][i])
       return false;
-    else if (TCGMatrixVert[i][j])
+    if (TCGMatrixVert[i][j])
       return true;
-    else {
-      // cout<<"ERROR IN PL2SP SPY "<<i<<"\t"<<j<<endl;
-      if (i < j)
-        return true;
-      else
-        return false;
-    }
+    return i < j;
   }
 };
 }  // namespace parquetfp

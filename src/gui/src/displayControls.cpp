@@ -53,7 +53,7 @@
 
 Q_DECLARE_METATYPE(odb::dbTechLayer*);
 Q_DECLARE_METATYPE(odb::dbSite*);
-Q_DECLARE_METATYPE(std::function<void(void)>);
+Q_DECLARE_METATYPE(std::function<void()>);
 
 namespace gui {
 
@@ -1011,7 +1011,7 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
 
     auto data = name_item->data(doubleclick_item_idx_);
     if (data.isValid()) {
-      auto callback = data.value<std::function<void(void)>>();
+      auto callback = data.value<std::function<void()>>();
       callback();
       emit changed();
     }
@@ -1348,7 +1348,7 @@ void DisplayControls::makeLeafItem(ModelRow& row,
 
 void DisplayControls::setNameItemDoubleClickAction(
     ModelRow& row,
-    const std::function<void(void)>& callback)
+    const std::function<void()>& callback)
 {
   row.name->setData(QVariant::fromValue(callback), doubleclick_item_idx_);
 

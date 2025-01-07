@@ -62,8 +62,8 @@ class definNonDefaultRule : public definBase
   virtual void endRule();
 
   definNonDefaultRule();
-  virtual ~definNonDefaultRule();
-  void init();
+  ~definNonDefaultRule() override;
+  void init() override;
 };
 
 }  // namespace odb

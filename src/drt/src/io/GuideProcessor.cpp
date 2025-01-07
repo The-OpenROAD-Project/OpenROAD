@@ -75,9 +75,8 @@ std::string getPinName(const frBlockObject* pin)
 {
   if (pin->typeId() == frcBTerm) {
     return static_cast<const frBTerm*>(pin)->getName();
-  } else {
-    return static_cast<const frInstTerm*>(pin)->getName();
   }
+  return static_cast<const frInstTerm*>(pin)->getName();
 }
 /**
  * Returns the preferred access point for required pin.

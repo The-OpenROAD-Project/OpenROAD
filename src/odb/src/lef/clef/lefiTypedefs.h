@@ -49,52 +49,52 @@
 #define lefiUserDataHandle void**
 
 /* Typedefs */
-typedef struct lefiPoints lefiNum;
+using lefiNum = struct lefiPoints;
 
 /* Pointers to C++ classes */
-typedef void* lefiArrayFloorPlan;
-typedef void* lefiLayer;
-typedef void* lefiNoiseEdge;
-typedef void* lefiAntennaModel;
-typedef void* lefiCorrectionEdge;
-typedef void* lefiTrackPattern;
-typedef void* lefiIRDrop;
-typedef void* lefiGeometries;
-typedef void* lefiSpacingTable;
-typedef void* lefiMinFeature;
-typedef void* lefiGcellPattern;
-typedef void* lefiTiming;
-typedef void* lefiNoiseTable;
-typedef void* lefiCorrectionVictim;
-typedef void* lefiPinAntennaModel;
-typedef void* lefiProp;
-typedef void* lefiUseMinSpacing;
-typedef void* lefiCorrectionResistance;
-typedef void* lefiAntennaPWL;
-typedef void* lefiArray;
-typedef void* lefiNonDefault;
-typedef void* lefiLayerDensity;
-typedef void* lefiSitePattern;
-typedef void* lefiMacro;
-typedef void* lefiCorrectionTable;
-typedef void* lefiOrthogonal;
-typedef void* lefiVia;
-typedef void* lefiSite;
-typedef void* lefiViaLayer;
-typedef void* lefiParallel;
-typedef void* lefiNoiseVictim;
-typedef void* lefiSpacing;
-typedef void* lefiViaRule;
-typedef void* lefiViaRuleLayer;
-typedef void* lefiTwoWidths;
-typedef void* lefiDensity;
-typedef void* lefiPin;
-typedef void* lefiMaxStackVia;
-typedef void* lefiInfluence;
-typedef void* lefiUnits;
-typedef void* lefiPropType;
-typedef void* lefiObstruction;
-typedef void* lefiNoiseResistance;
+using lefiArrayFloorPlan = void*;
+using lefiLayer = void*;
+using lefiNoiseEdge = void*;
+using lefiAntennaModel = void*;
+using lefiCorrectionEdge = void*;
+using lefiTrackPattern = void*;
+using lefiIRDrop = void*;
+using lefiGeometries = void*;
+using lefiSpacingTable = void*;
+using lefiMinFeature = void*;
+using lefiGcellPattern = void*;
+using lefiTiming = void*;
+using lefiNoiseTable = void*;
+using lefiCorrectionVictim = void*;
+using lefiPinAntennaModel = void*;
+using lefiProp = void*;
+using lefiUseMinSpacing = void*;
+using lefiCorrectionResistance = void*;
+using lefiAntennaPWL = void*;
+using lefiArray = void*;
+using lefiNonDefault = void*;
+using lefiLayerDensity = void*;
+using lefiSitePattern = void*;
+using lefiMacro = void*;
+using lefiCorrectionTable = void*;
+using lefiOrthogonal = void*;
+using lefiVia = void*;
+using lefiSite = void*;
+using lefiViaLayer = void*;
+using lefiParallel = void*;
+using lefiNoiseVictim = void*;
+using lefiSpacing = void*;
+using lefiViaRule = void*;
+using lefiViaRuleLayer = void*;
+using lefiTwoWidths = void*;
+using lefiDensity = void*;
+using lefiPin = void*;
+using lefiMaxStackVia = void*;
+using lefiInfluence = void*;
+using lefiUnits = void*;
+using lefiPropType = void*;
+using lefiObstruction = void*;
+using lefiNoiseResistance = void*;
 
 /* Data structures definitions */
 struct lefiNoiseMargin

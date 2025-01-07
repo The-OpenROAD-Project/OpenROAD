@@ -27,9 +27,9 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #ifndef WIN32
 #include <unistd.h>
 #endif /* not WIN32 */
@@ -132,41 +132,41 @@ int propDefCB(lefwCallbackType_e c, lefiUserData ud)
   CHECK_STATUS(status);
   status = lefwRealPropDef("LIBRARY", "realNum", 0, 0, 21.22);
   CHECK_STATUS(status);
-  status = lefwStringPropDef("PIN", "TYPE", 0, 0, NULL);
+  status = lefwStringPropDef("PIN", "TYPE", 0, 0, nullptr);
   CHECK_STATUS(status);
-  status = lefwIntPropDef("PIN", "intProp", 0, 0, NULL);
+  status = lefwIntPropDef("PIN", "intProp", 0, 0, nullptr);
   CHECK_STATUS(status);
-  status = lefwRealPropDef("PIN", "realProp", 0, 0, NULL);
+  status = lefwRealPropDef("PIN", "realProp", 0, 0, nullptr);
   CHECK_STATUS(status);
-  status = lefwStringPropDef("MACRO", "stringProp", 0, 0, NULL);
+  status = lefwStringPropDef("MACRO", "stringProp", 0, 0, nullptr);
   CHECK_STATUS(status);
-  status = lefwIntPropDef("MACRO", "integerProp", 0, 0, NULL);
+  status = lefwIntPropDef("MACRO", "integerProp", 0, 0, nullptr);
   CHECK_STATUS(status);
-  status = lefwRealPropDef("MACRO", "WEIGHT", 1.0, 100.0, NULL);
+  status = lefwRealPropDef("MACRO", "WEIGHT", 1.0, 100.0, nullptr);
   CHECK_STATUS(status);
-  status = lefwStringPropDef("VIA", "stringProperty", 0, 0, NULL);
+  status = lefwStringPropDef("VIA", "stringProperty", 0, 0, nullptr);
   CHECK_STATUS(status);
-  status = lefwRealPropDef("VIA", "realProp", 0, 0, NULL);
+  status = lefwRealPropDef("VIA", "realProp", 0, 0, nullptr);
   CHECK_STATUS(status);
-  status = lefwIntPropDef("VIA", "COUNT", 1, 100, NULL);
+  status = lefwIntPropDef("VIA", "COUNT", 1, 100, nullptr);
   CHECK_STATUS(status);
-  status = lefwStringPropDef("LAYER", "lsp", 0, 0, NULL);
+  status = lefwStringPropDef("LAYER", "lsp", 0, 0, nullptr);
   CHECK_STATUS(status);
-  status = lefwIntPropDef("LAYER", "lip", 0, 0, NULL);
+  status = lefwIntPropDef("LAYER", "lip", 0, 0, nullptr);
   CHECK_STATUS(status);
-  status = lefwRealPropDef("LAYER", "lrp", 0, 0, NULL);
+  status = lefwRealPropDef("LAYER", "lrp", 0, 0, nullptr);
   CHECK_STATUS(status);
-  status = lefwStringPropDef("VIARULE", "vrsp", 0, 0, NULL);
+  status = lefwStringPropDef("VIARULE", "vrsp", 0, 0, nullptr);
   CHECK_STATUS(status);
-  status = lefwRealPropDef("VIARULE", "vrip", 0, 0, NULL);
+  status = lefwRealPropDef("VIARULE", "vrip", 0, 0, nullptr);
   CHECK_STATUS(status);
-  status = lefwIntPropDef("VIARULE", "vrrp", 0, 0, NULL);
+  status = lefwIntPropDef("VIARULE", "vrrp", 0, 0, nullptr);
   CHECK_STATUS(status);
-  status = lefwStringPropDef("NONDEFAULTRULE", "ndrsp", 0, 0, NULL);
+  status = lefwStringPropDef("NONDEFAULTRULE", "ndrsp", 0, 0, nullptr);
   CHECK_STATUS(status);
-  status = lefwIntPropDef("NONDEFAULTRULE", "ndrip", 0, 0, NULL);
+  status = lefwIntPropDef("NONDEFAULTRULE", "ndrip", 0, 0, nullptr);
   CHECK_STATUS(status);
-  status = lefwRealPropDef("NONDEFAULTRULE", "ndrrp", 0, 0, NULL);
+  status = lefwRealPropDef("NONDEFAULTRULE", "ndrrp", 0, 0, nullptr);
   CHECK_STATUS(status);
   status = lefwEndPropDef();
   return 0;
@@ -509,7 +509,7 @@ int viaCB(lefwCallbackType_e c, lefiUserData ud)
   status = lefwEndVia("RX_PC");
   CHECK_STATUS(status);
 
-  status = lefwStartVia("M2_M3_PWR", NULL);
+  status = lefwStartVia("M2_M3_PWR", nullptr);
   CHECK_STATUS(status);
   status = lefwViaResistance(0.4);
   CHECK_STATUS(status);
@@ -532,7 +532,7 @@ int viaCB(lefwCallbackType_e c, lefiUserData ud)
   status = lefwEndVia("M2_M3_PWR");
   CHECK_STATUS(status);
 
-  status = lefwStartVia("IN1X", NULL);
+  status = lefwStartVia("IN1X", nullptr);
   CHECK_STATUS(status);
   status = lefwViaLayer("CUT01");
   CHECK_STATUS(status);
@@ -555,9 +555,9 @@ int viaRuleCB(lefwCallbackType_e c, lefiUserData ud)
   CHECK_STATUS(status);
   lefwAddComment("Break up the old lefwViaRule into 2 routines");
   lefwAddComment("lefwViaRuleLayer and lefwViaRuleVia");
-  status = lefwViaRuleLayer("M1", NULL, 9.0, 9.6, 0, 0);
+  status = lefwViaRuleLayer("M1", nullptr, 9.0, 9.6, 0, 0);
   CHECK_STATUS(status);
-  status = lefwViaRuleLayer("M2", NULL, 3.0, 3.0, 0, 0);
+  status = lefwViaRuleLayer("M2", nullptr, 3.0, 3.0, 0, 0);
   CHECK_STATUS(status);
   status = lefwViaRuleVia("VIACENTER12");
   CHECK_STATUS(status);
@@ -576,9 +576,9 @@ int viaRuleCB(lefwCallbackType_e c, lefiUserData ud)
   lefwAddComment("lefwViaRuleGenLayer3, and lefwEndViaRuleGen");
   status = lefwStartViaRuleGen("VIAGEN12");
   CHECK_STATUS(status);
-  status = lefwViaRuleGenLayer("M1", NULL, 0.1, 19, 0, 0);
+  status = lefwViaRuleGenLayer("M1", nullptr, 0.1, 19, 0, 0);
   CHECK_STATUS(status);
-  status = lefwViaRuleGenLayer("M2", NULL, 0, 0, 0, 0);
+  status = lefwViaRuleGenLayer("M2", nullptr, 0, 0, 0, 0);
   CHECK_STATUS(status);
   status = lefwViaRuleGenLayer3("V1", -0.8, -0.8, 0.8, 0.8, 5.6, 6.0, 0.2);
   CHECK_STATUS(status);
@@ -601,7 +601,7 @@ int nonDefaultCB(lefwCallbackType_e c, lefiUserData ud)
   CHECK_STATUS(status);
   status = lefwNonDefaultRuleLayer("M1", 10.0, 2.2, 0, 0, 0, 0);
   CHECK_STATUS(status);
-  status = lefwStartVia("nd1VARX0", NULL);
+  status = lefwStartVia("nd1VARX0", nullptr);
   CHECK_STATUS(status);
   status = lefwViaResistance(0.2);
   CHECK_STATUS(status);
@@ -659,7 +659,7 @@ int siteCB(lefwCallbackType_e c, lefiUserData ud)
   CHECK_STATUS(status);
   lefwEndSite("MRCORE");
   CHECK_STATUS(status);
-  status = lefwSite("IOWIRED", "PAD", NULL, 57.6, 432);
+  status = lefwSite("IOWIRED", "PAD", nullptr, 57.6, 432);
   CHECK_STATUS(status);
   lefwEndSite("IOWIRED");
   CHECK_STATUS(status);
@@ -676,7 +676,7 @@ int macroCB(lefwCallbackType_e c, lefiUserData ud)
   checkType(c);
   status = lefwStartMacro("CHK3A");
   CHECK_STATUS(status);
-  status = lefwMacroClass("RING", NULL);
+  status = lefwMacroClass("RING", nullptr);
   CHECK_STATUS(status);
   status = lefwMacroOrigin(0.9, 0.9);
   CHECK_STATUS(status);
@@ -697,7 +697,7 @@ int macroCB(lefwCallbackType_e c, lefiUserData ud)
   status = lefwMacroPinShape("ABUTMENT");
   CHECK_STATUS(status);
   // MACRO - PIN
-  status = lefwStartMacroPinPort(NULL);
+  status = lefwStartMacroPinPort(nullptr);
   CHECK_STATUS(status);
   status = lefwMacroPinPortLayer("M1", 0);
   CHECK_STATUS(status);
@@ -726,7 +726,7 @@ int macroCB(lefwCallbackType_e c, lefiUserData ud)
   status = lefwMacroPinShape("ABUTMENT");
   CHECK_STATUS(status);
   // MACRO - PIN - PORT
-  status = lefwStartMacroPinPort(NULL);
+  status = lefwStartMacroPinPort(nullptr);
   CHECK_STATUS(status);
   status = lefwMacroPinPortLayer("M1", 0);
   CHECK_STATUS(status);
@@ -748,7 +748,7 @@ int macroCB(lefwCallbackType_e c, lefiUserData ud)
   CHECK_STATUS(status);
   status = lefwMacroPinDirection("INPUT");
   CHECK_STATUS(status);
-  status = lefwStartMacroPinPort(NULL);
+  status = lefwStartMacroPinPort(nullptr);
   CHECK_STATUS(status);
   status = lefwMacroPinPortLayer("M1", 0);
   CHECK_STATUS(status);
@@ -758,7 +758,7 @@ int macroCB(lefwCallbackType_e c, lefiUserData ud)
   CHECK_STATUS(status);
   status = lefwEndMacroPinPort();
   CHECK_STATUS(status);
-  status = lefwStartMacroPinPort(NULL);
+  status = lefwStartMacroPinPort(nullptr);
   CHECK_STATUS(status);
   status = lefwMacroPinPortLayer("PC", 0);
   CHECK_STATUS(status);
@@ -766,7 +766,7 @@ int macroCB(lefwCallbackType_e c, lefiUserData ud)
   CHECK_STATUS(status);
   status = lefwEndMacroPinPort();
   CHECK_STATUS(status);
-  status = lefwStartMacroPinPort(NULL);
+  status = lefwStartMacroPinPort(nullptr);
   CHECK_STATUS(status);
   status = lefwMacroPinPortLayer("PC", 0);
   CHECK_STATUS(status);
@@ -809,7 +809,7 @@ int macroCB(lefwCallbackType_e c, lefiUserData ud)
   // 2nd MACRO
   status = lefwStartMacro("INV");
   CHECK_STATUS(status);
-  status = lefwMacroClass("CORE", NULL);
+  status = lefwMacroClass("CORE", nullptr);
   CHECK_STATUS(status);
   status = lefwMacroForeign("INVS", 0, 0, -1);
   CHECK_STATUS(status);
@@ -827,7 +827,7 @@ int macroCB(lefwCallbackType_e c, lefiUserData ud)
   CHECK_STATUS(status);
   status = lefwMacroPinShape("ABUTMENT");
   CHECK_STATUS(status);
-  status = lefwStartMacroPinPort(NULL);
+  status = lefwStartMacroPinPort(nullptr);
   CHECK_STATUS(status);
   status = lefwMacroPinPortLayer("M2", 5.6);
   CHECK_STATUS(status);
@@ -960,7 +960,7 @@ main(int argc, char** argv)
       argv++;
       argc--;
       outfile = *argv;
-      if ((fout = fopen(outfile, "w")) == 0) {
+      if ((fout = fopen(outfile, "w")) == nullptr) {
         fprintf(stderr, "ERROR: could not open output file\n");
         return 2;
       }

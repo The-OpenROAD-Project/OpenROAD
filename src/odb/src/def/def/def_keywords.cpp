@@ -33,9 +33,9 @@
 /*                              for PINS + USE, SPECIALNETS + SHAPE    */
 /*                              and other keywords                     */
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
 
 #include "defiDebug.hpp"
 #include "defiDefs.hpp"
@@ -51,7 +51,7 @@
 #include <unistd.h>
 #endif /* WIN32 */
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 #include "def_parser.hpp"
 
@@ -62,10 +62,10 @@ int defrData::defGetKeyword(const char* name, int* result)
 
   if (search != settings->Keyword_set.end()) {
     *result = search->second;
-    return TRUE;
+    return true;
   }
 
-  return FALSE;
+  return false;
 }
 
 int defrData::defGetAlias(const std::string& name, std::string& result)
@@ -75,10 +75,10 @@ int defrData::defGetAlias(const std::string& name, std::string& result)
 
   if (search != def_alias_set.end()) {
     result = search->second;
-    return TRUE;
+    return true;
   }
 
-  return FALSE;
+  return false;
 }
 
 int defrData::defGetDefine(const std::string& name, std::string& result)
@@ -88,10 +88,10 @@ int defrData::defGetDefine(const std::string& name, std::string& result)
 
   if (search != def_defines_set.end()) {
     result = search->second;
-    return TRUE;
+    return true;
   }
 
-  return FALSE;
+  return false;
 }
 
 // lex.cpph starts here
@@ -114,12 +114,12 @@ void defrData::reload_buffer()
     first_buffer = 0;
     if (settings->ReadFunction) {
       if ((nb = (*settings->ReadFunction)(File, buffer, 4)) != 4) {
-        next = NULL;
+        next = nullptr;
         return;
       }
     } else {
       if ((nb = fread(buffer, 1, 4, File)) != 4) {
-        next = NULL;
+        next = nullptr;
         return;
       }
     }
@@ -134,7 +134,7 @@ void defrData::reload_buffer()
   }
 
   if (nb <= 0) {
-    next = NULL;
+    next = nullptr;
   } else {
     next = buffer;
     last = buffer + nb - 1;
@@ -147,7 +147,7 @@ int defrData::GETC()
   for (;;) {
     if (next > last)
       reload_buffer();
-    if (next == NULL)
+    if (next == nullptr)
       return EOF;
 
     int ch = *next++;
@@ -187,8 +187,8 @@ char* defrData::ringCopy(const char* string)
 
 int defrData::DefGetTokenFromStack(char* s)
 {
-  const char* ch;   /* utility variable */
-  char* prS = NULL; /* pointing to the previous char or s */
+  const char* ch;      /* utility variable */
+  char* prS = nullptr; /* pointing to the previous char or s */
 
   while (input_level >= 0) {
     for (ch = stack[input_level].c_str(); *ch != 0; ch++) /* skip white space */
@@ -200,7 +200,7 @@ int defrData::DefGetTokenFromStack(char* s)
     else if (*ch == '\n') {
       *s++ = *ch;
       *s = 0;
-      return TRUE;
+      return true;
     } else { /* we found something */
       for (;; ch++) {
         if (*ch == ' ' || *ch == '\t' || *ch == '\n' || *ch == 0) {
@@ -213,7 +213,7 @@ int defrData::DefGetTokenFromStack(char* s)
             *s++ = '\0';
           stack[input_level] = ch;
 
-          return TRUE;
+          return true;
         }
         /* 10/10/2000 - Wanda da Rosa, pcr 341032
         ** Save the location of the previous s
@@ -223,7 +223,7 @@ int defrData::DefGetTokenFromStack(char* s)
       }
     }
   }
-  return FALSE; /* if we get here, we ran out of input levels */
+  return false; /* if we get here, we ran out of input levels */
 }
 
 void defrData::print_lines(long long lines)
@@ -281,8 +281,8 @@ int defrData::DefGetToken(char** buf, int* bufferSize)
 
   if (input_level >= 0) {        /* if we are expanding an alias */
     if (DefGetTokenFromStack(s)) /* try to get a token from it */
-      return TRUE;               /* if we get one, return it */
-  }                              /* but if not, continue */
+      return true;               /* if we get one, return it */
+  } /* but if not, continue */
 
   /* skip blanks and count lines */
   while ((ch = GETC()) != EOF) {
@@ -294,14 +294,14 @@ int defrData::DefGetToken(char** buf, int* bufferSize)
   }
 
   if (ch == EOF)
-    return FALSE;
+    return false;
 
   if (ch == '\n') {
     *s = ch;
     IncCurPos(&s, buf, bufferSize);
 
     *s = '\0';
-    return TRUE;
+    return true;
   }
 
   /* now get the token */
@@ -328,7 +328,7 @@ int defrData::DefGetToken(char** buf, int* bufferSize)
           ch = GETC();
           if ((ch == '\n') || (ch == EOF)) { /* senaty check */
             *s = '\0';
-            return FALSE;
+            return false;
           }
         }
       }
@@ -340,12 +340,12 @@ int defrData::DefGetToken(char** buf, int* bufferSize)
 
       if (ch == EOF) {
         *s = '\0';
-        return FALSE;
+        return false;
       }
     } while (ch != '"');
 
     *s = '\0';
-    return TRUE;
+    return true;
   }
 
   if (names_case_sensitive) {
@@ -386,7 +386,7 @@ int defrData::DefGetToken(char** buf, int* bufferSize)
   *s = '\0';
   if (ch != EOF) /* shouldn't ungetc an EOF */
     UNGETC((char) ch);
-  return TRUE;
+  return true;
 }
 
 /* creates an upper case copy of an array */
@@ -418,7 +418,7 @@ void defrData::StoreAlias()
   }
 
   /* now keep getting lines till we get one that contains &ENDALIAS */
-  for (char* p = NULL; p == NULL;) {
+  for (char* p = nullptr; p == nullptr;) {
     int i;
     char* s = line;
     for (i = 0; i < tokenSize - 1; i++) {
@@ -440,7 +440,7 @@ void defrData::StoreAlias()
 
     uc_array(line, uc_line);          /* make upper case copy */
     p = strstr(uc_line, "&ENDALIAS"); /* look for END_ALIAS */
-    if (p != NULL)                    /* if we find it */
+    if (p != nullptr)                 /* if we find it */
       *(line + (p - uc_line)) = 0;    /* remove it from the line */
 
     so_far += line;
@@ -607,63 +607,55 @@ int defrData::sublex(YYSTYPE* pYylval)
       pYylval->dval = strtol(deftoken, &ch, 10); /* try string to long first */
       if (no_num < 0 && *ch == '\0') { /* did we use the whole string? */
         return NUMBER;
-      } else { /* failed strtol, try double */
-        numVal = pYylval->dval = strtod(deftoken, &ch);
-        if (no_num < 0 && *ch == '\0') { /* did we use the whole string? */
-          /* check if the integer has exceed the limit */
-          if ((numVal >= lVal) && (numVal <= rVal))
-            return NUMBER; /* YES, it's really a number */
-          else {
-            char* str = (char*) malloc(strlen(deftoken)
-                                       + strlen(session->FileName) + 350);
-            sprintf(str,
-                    "<Number has exceed the limit for an integer> in %s at "
-                    "line %s\n",
-                    session->FileName,
-                    lines2str(nlines));
-            fflush(stdout);
-            defiError(1, 0, str);
-            free(str);
-            errors++;
-            return NUMBER;
-          }
-        } else {
-          pYylval->string = ringCopy(deftoken); /* NO, it's a string */
-          return T_STRING;
-        }
-      }
-    } else { /* handling PROPERTY, do strtod first instead of strtol */
+      } /* failed strtol, try double */
       numVal = pYylval->dval = strtod(deftoken, &ch);
       if (no_num < 0 && *ch == '\0') { /* did we use the whole string? */
         /* check if the integer has exceed the limit */
-        if (real_num) /* this is for PROPERTYDEF with REAL */
-          return NUMBER;
         if ((numVal >= lVal) && (numVal <= rVal))
           return NUMBER; /* YES, it's really a number */
-        else {
-          char* str = (char*) malloc(strlen(deftoken)
-                                     + strlen(session->FileName) + 350);
-          sprintf(
-              str,
+        char* str = (char*) malloc(strlen(deftoken) + strlen(session->FileName)
+                                   + 350);
+        sprintf(str,
+                "<Number has exceed the limit for an integer> in %s at "
+                "line %s\n",
+                session->FileName,
+                lines2str(nlines));
+        fflush(stdout);
+        defiError(1, 0, str);
+        free(str);
+        errors++;
+        return NUMBER;
+      }
+      pYylval->string = ringCopy(deftoken); /* NO, it's a string */
+      return T_STRING;
+    }
+    /* handling PROPERTY, do strtod first instead of strtol */
+    numVal = pYylval->dval = strtod(deftoken, &ch);
+    if (no_num < 0 && *ch == '\0') { /* did we use the whole string? */
+      /* check if the integer has exceed the limit */
+      if (real_num) /* this is for PROPERTYDEF with REAL */
+        return NUMBER;
+      if ((numVal >= lVal) && (numVal <= rVal))
+        return NUMBER; /* YES, it's really a number */
+      char* str
+          = (char*) malloc(strlen(deftoken) + strlen(session->FileName) + 350);
+      sprintf(str,
               "<Number has exceed the limit for an integer> in %s at line %s\n",
               session->FileName,
               lines2str(nlines));
-          fflush(stdout);
-          defiError(1, 0, str);
-          free(str);
-          errors++;
-          return NUMBER;
-        }
-      } else { /* failed integer conversion, try floating point */
-        pYylval->dval = strtol(deftoken, &ch, 10);
-        if (no_num < 0 && *ch == '\0') /* did we use the whole string? */
-          return NUMBER;
-        else {
-          pYylval->string = ringCopy(deftoken); /* NO, it's a string */
-          return T_STRING;
-        }
-      }
+      fflush(stdout);
+      defiError(1, 0, str);
+      free(str);
+      errors++;
+      return NUMBER;
     }
+    /* failed integer conversion, try floating point */
+    pYylval->dval = strtol(deftoken, &ch, 10);
+    if (no_num < 0 && *ch == '\0') /* did we use the whole string? */
+      return NUMBER;
+
+    pYylval->string = ringCopy(deftoken); /* NO, it's a string */
+    return T_STRING;
   }
 
   /* if we are dumb mode, all we return is punctuation and strings & numbers*/
@@ -784,7 +776,7 @@ int defrData::sublex(YYSTYPE* pYylval)
         int c;
         int prev;
         prev = ' ';
-        while (1) {
+        while (true) {
           c = GETC();
 
           if (c == EOF) {
@@ -808,7 +800,7 @@ int defrData::sublex(YYSTYPE* pYylval)
         int begQuote = 0;
         /* First make sure there is a name after BEGINEXT within quote */
         /* BEGINEXT "name" */
-        while (1) {
+        while (true) {
           cc = GETC();
 
           if (cc == EOF) {
@@ -850,7 +842,7 @@ int defrData::sublex(YYSTYPE* pYylval)
           /* We have handle with the tag, just read the rest until */
           /* ENDEXT */
           begQuote = 0;
-          while (1) {
+          while (true) {
             cc = GETC();
 
             if (cc == EOF) {
@@ -878,11 +870,10 @@ int defrData::sublex(YYSTYPE* pYylval)
                          "The ending '\"' is missing in the tag. Specify the "
                          "ending '\"' in the tag and then try again.");
               break;
-            } else if (histTextSize >= 10
-                       && memcmp(&History_text[histTextSize - 10],
-                                 "END DESIGN",
-                                 10)
-                              == 0) {
+            }
+            if (histTextSize >= 10
+                && memcmp(&History_text[histTextSize - 10], "END DESIGN", 10)
+                       == 0) {
               defError(6007,
                        "The ENDEXT statement is missing in the DEF file. "
                        "Include the statement and then try again.");
@@ -894,29 +885,28 @@ int defrData::sublex(YYSTYPE* pYylval)
         History_text.push_back('\0');
       }
       return result; /* YES, return its value */
-    } else {         /* we don't have a keyword.  */
-      if (fc == '&')
-        return amper_lookup(pYylval, deftoken);
-      pYylval->string = ringCopy(deftoken); /* NO, it's a string */
-      return T_STRING;
     }
-  } else { /* it should be a punctuation character */
-    if (deftoken[1] != '\0') {
-      if (strcmp(deftoken, ">=") == 0)
-        return K_GE;
-      if (strcmp(deftoken, "<=") == 0)
-        return K_LE;
-      if (strcmp(deftoken, "<>") == 0)
-        return K_NE;
-
-      defError(6017, "Odd punctuation found.");
-      hasFatalError = 1;
-    } else if (strlen(deftoken) > 2 || strlen(deftoken) == 0) {
-      defError(6017, "Odd punctuation found.");
-      hasFatalError = 1;
-    }
-    return (int) deftoken[0];
+    if (fc == '&')
+      return amper_lookup(pYylval, deftoken);
+    pYylval->string = ringCopy(deftoken); /* NO, it's a string */
+    return T_STRING;
   }
+  /* it should be a punctuation character */
+  if (deftoken[1] != '\0') {
+    if (strcmp(deftoken, ">=") == 0)
+      return K_GE;
+    if (strcmp(deftoken, "<=") == 0)
+      return K_LE;
+    if (strcmp(deftoken, "<>") == 0)
+      return K_NE;
+
+    defError(6017, "Odd punctuation found.");
+    hasFatalError = 1;
+  } else if (strlen(deftoken) > 2 || strlen(deftoken) == 0) {
+    defError(6017, "Odd punctuation found.");
+    hasFatalError = 1;
+  }
+  return (int) deftoken[0];
 }
 
 /* We have found a deftoken beginning with '&'.  If it has been previously
@@ -1095,11 +1085,11 @@ void defrData::defInfo(int msgNum, const char* s)
             lines2str(nlines));
   } else {
     if (!hasOpenedDefLogFile) {
-      if ((defrLog = fopen("defRWarning.log", "w")) == 0) {
+      if ((defrLog = fopen("defRWarning.log", "w")) == nullptr) {
         printf(
             "WARNING(DEFPARS-8500): Unable to open the file defRWarning.log in "
             "%s.\n",
-            getcwd(NULL, 64));
+            getcwd(nullptr, 64));
         printf("Info messages will not be printed.\n");
       } else {
         hasOpenedDefLogFile = 1;
@@ -1112,11 +1102,11 @@ void defrData::defInfo(int msgNum, const char* s)
                 lines2str(nlines));
       }
     } else {
-      if ((defrLog = fopen("defRWarning.log", "a")) == 0) {
+      if ((defrLog = fopen("defRWarning.log", "a")) == nullptr) {
         printf(
             "WARNING (DEFPARS-8500): Unable to open the file defRWarning.log "
             "in %s.\n",
-            getcwd(NULL, 64));
+            getcwd(nullptr, 64));
         printf("Info messages will not be printed.\n");
       } else {
         hasOpenedDefLogFile = 1;
@@ -1175,11 +1165,11 @@ void defrData::defWarning(int msgNum, const char* s)
             lines2str(nlines));
   } else {
     if (!hasOpenedDefLogFile) {
-      if ((defrLog = fopen("defRWarning.log", "w")) == 0) {
+      if ((defrLog = fopen("defRWarning.log", "w")) == nullptr) {
         printf(
             "WARNING (DEFPARS-7500): Unable to open the file defRWarning.log "
             "in %s.\n",
-            getcwd(NULL, 64));
+            getcwd(nullptr, 64));
         printf("Warning messages will not be printed.\n");
       } else {
         hasOpenedDefLogFile = 1;
@@ -1192,11 +1182,11 @@ void defrData::defWarning(int msgNum, const char* s)
                 lines2str(nlines));
       }
     } else {
-      if ((defrLog = fopen("defRWarning.log", "a")) == 0) {
+      if ((defrLog = fopen("defRWarning.log", "a")) == nullptr) {
         printf(
             "WARNING (DEFAPRS-7501): Unable to open the file defRWarning.log "
             "in %s.\n",
-            getcwd(NULL, 64));
+            getcwd(nullptr, 64));
         printf("Warning messages will not be printed.\n");
       } else {
         hasOpenedDefLogFile = 1;
@@ -1658,4 +1648,4 @@ void defrData::pathIsDone(int sh, int reset, int osNet, int* needCbk)
   PathObj.Init();
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

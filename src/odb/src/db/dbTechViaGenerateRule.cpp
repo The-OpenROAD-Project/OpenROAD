@@ -108,7 +108,7 @@ _dbTechViaGenerateRule::_dbTechViaGenerateRule(_dbDatabase*,
 
 _dbTechViaGenerateRule::_dbTechViaGenerateRule(_dbDatabase*)
 {
-  _name = 0;
+  _name = nullptr;
   _flags._default = 0;
   _flags._spare_bits = 0;
 }

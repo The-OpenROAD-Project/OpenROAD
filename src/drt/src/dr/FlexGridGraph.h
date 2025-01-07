@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include <boost/container/flat_map.hpp>
+#include <boost/container/flat_set.hpp>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
@@ -44,6 +46,10 @@
 
 namespace drt {
 
+using frLayerCoordTrackPatternMap = boost::container::
+    flat_map<frLayerNum, boost::container::flat_map<frCoord, frTrackPattern*>>;
+using frLayerDirMap = boost::container::flat_map<frLayerNum, dbTechLayerDir>;
+
 class FlexDRWorker;
 class FlexDRGraphics;
 class FlexGridGraph
@@ -57,9 +63,9 @@ class FlexGridGraph
       : tech_(techIn),
         logger_(loggerIn),
         drWorker_(workerIn),
-        router_cfg_(router_cfg)
+        router_cfg_(router_cfg),
+        ap_locs_(techIn->getTopLayerNum() + 1)
   {
-    ap_locs_.resize(tech_->getTopLayerNum() + 1);
   }
   // getters
   frTechObject* getTech() const { return tech_; }
@@ -419,14 +425,7 @@ class FlexGridGraph
     return sol;
   }
   // setters
-  void setTech(frTechObject* techIn)
-  {
-    tech_ = techIn;
-    ap_locs_.clear();
-    ap_locs_.resize(tech_->getTopLayerNum() + 1);
-  }
   void setLogger(Logger* loggerIn) { logger_ = loggerIn; }
-  void setWorker(FlexDRWorker* workerIn) { drWorker_ = workerIn; }
   bool addEdge(frMIdx x,
                frMIdx y,
                frMIdx z,
@@ -938,8 +937,8 @@ class FlexGridGraph
   void init(const frDesign* design,
             const Rect& routeBBox,
             const Rect& extBBox,
-            std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-            std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
+            frLayerCoordTrackPatternMap& xMap,
+            frLayerCoordTrackPatternMap& yMap,
             bool initDR,
             bool followGuide);
   void print() const;
@@ -1120,8 +1119,6 @@ class FlexGridGraph
   bool debug_{false};
   frUInt4 curr_id_{1};
 
-  FlexGridGraph() = default;
-
   void printExpansion(const FlexWavefrontGrid& currGrid,
                       const std::string& keyword);
   // unsafe access, no idx check
@@ -1284,21 +1281,18 @@ class FlexGridGraph
   }
   // internal init utility
   void initTracks(const frDesign* design,
-                  std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>&
-                      horLoc2TrackPatterns,
-                  std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>&
-                      vertLoc2TrackPatterns,
-                  std::map<frLayerNum, dbTechLayerDir>& layerNum2PreRouteDir,
+                  frLayerCoordTrackPatternMap& horLoc2TrackPatterns,
+                  frLayerCoordTrackPatternMap& vertLoc2TrackPatterns,
+                  frLayerDirMap& layerNum2PreRouteDir,
                   const Rect& bbox);
-  void initGrids(
-      const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
-      const std::map<frLayerNum, dbTechLayerDir>& zMap,
-      bool followGuide);
+  void initGrids(const frLayerCoordTrackPatternMap& xMap,
+                 const frLayerCoordTrackPatternMap& yMap,
+                 const frLayerDirMap& zMap,
+                 bool followGuide);
   void initEdges(const frDesign* design,
-                 std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-                 std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
-                 const std::map<frLayerNum, dbTechLayerDir>& zMap,
+                 frLayerCoordTrackPatternMap& xMap,
+                 frLayerCoordTrackPatternMap& yMap,
+                 const frLayerDirMap& zMap,
                  const Rect& bbox,
                  bool initDR);
   frCost getEstCost(const FlexMazeIdx& src,
@@ -1338,35 +1332,6 @@ class FlexGridGraph
   bool hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z);
   bool isWorkerBorder(frMIdx v, bool isVert);
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    // The wavefront should always be empty here so we don't need to
-    // serialize it.
-    if (!wavefront_.empty()) {
-      throw std::logic_error("don't serialize non-empty wavefront");
-    }
-    if (is_loading(ar)) {
-      tech_ = ar.getDesign()->getTech();
-    }
-    (ar) & drWorker_;
-    (ar) & nodes_;
-    (ar) & prevDirs_;
-    (ar) & srcs_;
-    (ar) & dsts_;
-    (ar) & guides_;
-    (ar) & xCoords_;
-    (ar) & yCoords_;
-    (ar) & zCoords_;
-    (ar) & zHeights_;
-    (ar) & layerRouteDirections_;
-    (ar) & dieBox_;
-    (ar) & ggDRCCost_;
-    (ar) & ggMarkerCost_;
-    (ar) & halfViaEncArea_;
-    (ar) & ap_locs_;
-  }
-  friend class boost::serialization::access;
   friend class FlexDRWorker;
 };
 

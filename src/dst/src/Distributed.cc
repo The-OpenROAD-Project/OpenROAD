@@ -98,14 +98,14 @@ void Distributed::runLoadBalancer(const char* ip,
                                   const char* workers_domain)
 {
   try {
-    asio::io_service io_service;
-    LoadBalancer balancer(this, io_service, logger_, ip, workers_domain, port);
+    asio::io_context service;
+    LoadBalancer balancer(this, service, logger_, ip, workers_domain, port);
     if (std::strcmp(workers_domain, "") == 0) {
       for (const auto& worker : end_points_) {
         balancer.addWorker(worker.ip, worker.port);
       }
     }
-    io_service.run();
+    service.run();
   } catch (std::exception& e) {
     logger_->error(utl::DST, 9, "LoadBalancer error: {}", e.what());
   }
@@ -167,10 +167,10 @@ bool Distributed::sendJob(JobMessage& msg,
   }
   std::string resultStr;
   while (tries++ < MAX_TRIES) {
-    asio::io_service io_service;
-    dst::socket sock(io_service);
+    asio::io_context service;
+    dst::socket sock(service);
     try {
-      sock.connect(tcp::endpoint(ip::address::from_string(ip), port));
+      sock.connect(tcp::endpoint(ip::make_address(ip), port));
     } catch (const boost::system::system_error& ex) {
       logger_->warn(utl::DST,
                     113,
@@ -228,10 +228,10 @@ bool Distributed::sendJobMultiResult(JobMessage& msg,
   }
   std::string resultStr;
   while (tries++ < MAX_TRIES) {
-    asio::io_service io_service;
-    dst::socket sock(io_service);
+    asio::io_context service;
+    dst::socket sock(service);
     try {
-      sock.connect(tcp::endpoint(ip::address::from_string(ip), port));
+      sock.connect(tcp::endpoint(ip::make_address(ip), port));
     } catch (const boost::system::system_error& ex) {
       logger_->warn(utl::DST,
                     13,

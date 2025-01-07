@@ -29,9 +29,8 @@
 
 #include "defiNet.hpp"
 
-#include <stdlib.h>
-#include <string.h>
-
+#include <cstdlib>
+#include <cstring>
 #include <sstream>
 
 #include "defiDebug.hpp"
@@ -39,7 +38,7 @@
 #include "defiUtil.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 namespace {
 
@@ -95,25 +94,25 @@ defiSubnet::defiSubnet(defrData* data) : defData(data)
 
 void defiSubnet::Init()
 {
-  name_ = 0;
+  name_ = nullptr;
   bumpName(16);
 
-  instances_ = 0;
-  pins_ = 0;
-  musts_ = 0;
-  synthesized_ = 0;
+  instances_ = nullptr;
+  pins_ = nullptr;
+  musts_ = nullptr;
+  synthesized_ = nullptr;
   numPins_ = 0;
   bumpPins(16);
 
   // WMD -- this will be removed by the next release
-  paths_ = 0;
+  paths_ = nullptr;
   numPaths_ = 0;
   pathsAllocated_ = 0;
 
   numWires_ = 0;
   wiresAllocated_ = 0;
-  wires_ = 0;
-  nonDefaultRule_ = 0;
+  wires_ = nullptr;
+  nonDefaultRule_ = nullptr;
 
   clear();
 }
@@ -247,7 +246,7 @@ void defiSubnet::addWire(const char* type)
   }
   wire = wires_[numWires_] = new defiWire(defData);
   numWires_ += 1;
-  wire->Init(type, NULL);
+  wire->Init(type, nullptr);
 }
 
 void defiSubnet::addWirePath(defiPath* p, int reset, int netOsnet, int* needCbk)
@@ -289,14 +288,14 @@ const char* defiSubnet::instance(int index) const
 {
   if (index >= 0 && index < numPins_)
     return instances_[index];
-  return 0;
+  return nullptr;
 }
 
 const char* defiSubnet::pin(int index) const
 {
   if (index >= 0 && index < numPins_)
     return pins_[index];
-  return 0;
+  return nullptr;
 }
 
 int defiSubnet::pinIsMustJoin(int index) const
@@ -381,8 +380,8 @@ void defiSubnet::clear()
   for (i = 0; i < numPins_; i++) {
     free(instances_[i]);
     free(pins_[i]);
-    instances_[i] = 0;
-    pins_[i] = 0;
+    instances_[i] = nullptr;
+    pins_[i] = nullptr;
     musts_[i] = 0;
     synthesized_[i] = 0;
   }
@@ -394,23 +393,23 @@ void defiSubnet::clear()
       delete paths_[i];
     }
     delete[] paths_;
-    paths_ = 0;
+    paths_ = nullptr;
     numPaths_ = 0;
     pathsAllocated_ = 0;
   }
 
   if (nonDefaultRule_) {
     free(nonDefaultRule_);
-    nonDefaultRule_ = 0;
+    nonDefaultRule_ = nullptr;
   }
 
   if (numWires_) {
     for (i = 0; i < numWires_; i++) {
       delete wires_[i];
-      wires_[i] = 0;
+      wires_[i] = nullptr;
     }
     free((char*) (wires_));
-    wires_ = 0;
+    wires_ = nullptr;
     numWires_ = 0;
     wiresAllocated_ = 0;
   }
@@ -461,14 +460,14 @@ defiWire* defiSubnet::wire(int index)
 {
   if (index >= 0 && index < numWires_)
     return wires_[index];
-  return 0;
+  return nullptr;
 }
 
 const defiWire* defiSubnet::wire(int index) const
 {
   if (index >= 0 && index < numWires_)
     return wires_[index];
-  return 0;
+  return nullptr;
 }
 
 // WMD -- this will be removed after the next release
@@ -476,7 +475,7 @@ defiPath* defiSubnet::path(int index)
 {
   if (index >= 0 && index < numPaths_)
     return paths_[index];
-  return 0;
+  return nullptr;
 }
 
 // WMD -- this will be removed after the next release
@@ -484,7 +483,7 @@ const defiPath* defiSubnet::path(int index) const
 {
   if (index >= 0 && index < numPaths_)
     return paths_[index];
-  return 0;
+  return nullptr;
 }
 
 // WMD -- this will be removed after the next release
@@ -527,7 +526,7 @@ void defiVpin::Init(const char* name)
   strcpy(name_, defData->DEFCASE(name));
   orient_ = -1;
   status_ = ' ';
-  layer_ = 0;
+  layer_ = nullptr;
 }
 
 defiVpin::~defiVpin()
@@ -647,7 +646,7 @@ void defiShield::Init(const char* name)
   strcpy(name_, defData->DEFCASE(name));
   numPaths_ = 0;
   pathsAllocated_ = 0;
-  paths_ = NULL;
+  paths_ = nullptr;
 }
 
 void defiShield::Destroy()
@@ -704,7 +703,7 @@ void defiShield::clear()
 
   if (name_) {
     free(name_);
-    name_ = 0;
+    name_ = nullptr;
   }
 
   if (paths_) {
@@ -714,7 +713,7 @@ void defiShield::clear()
 
     delete[] paths_;
 
-    paths_ = 0;
+    paths_ = nullptr;
     numPaths_ = 0;
     pathsAllocated_ = 0;
   }
@@ -750,14 +749,14 @@ defiPath* defiShield::path(int index)
 {
   if (index >= 0 && index < numPaths_)
     return paths_[index];
-  return 0;
+  return nullptr;
 }
 
 const defiPath* defiShield::path(int index) const
 {
   if (index >= 0 && index < numPaths_)
     return paths_[index];
-  return 0;
+  return nullptr;
 }
 
 ////////////////////////////////////////////////////
@@ -768,7 +767,7 @@ const defiPath* defiShield::path(int index) const
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////
 
-defiWire::defiWire(defrData* data) : defData(data), paths_(nullptr)
+defiWire::defiWire(defrData* data) : defData(data)
 {
 }
 
@@ -781,10 +780,10 @@ void defiWire::Init(const char* type, const char* wireShieldName)
     wireShieldName_ = (char*) malloc(strlen(wireShieldName) + 1);
     strcpy(wireShieldName_, wireShieldName);
   } else
-    wireShieldName_ = 0;
+    wireShieldName_ = nullptr;
   numPaths_ = 0;
   pathsAllocated_ = 0;
-  paths_ = 0;
+  paths_ = nullptr;
 }
 
 void defiWire::Destroy()
@@ -843,12 +842,12 @@ void defiWire::clear()
 
   if (type_) {
     free(type_);
-    type_ = 0;
+    type_ = nullptr;
   }
 
   if (wireShieldName_) {
     free(wireShieldName_);
-    wireShieldName_ = 0;
+    wireShieldName_ = nullptr;
   }
 
   if (paths_) {
@@ -857,7 +856,7 @@ void defiWire::clear()
     }
 
     delete[] paths_;
-    paths_ = 0;
+    paths_ = nullptr;
     numPaths_ = 0;
     pathsAllocated_ = 0;
   }
@@ -895,14 +894,14 @@ defiPath* defiWire::path(int index)
 {
   if (index >= 0 && index < numPaths_)
     return paths_[index];
-  return 0;
+  return nullptr;
 }
 
 const defiPath* defiWire::path(int index) const
 {
   if (index >= 0 && index < numPaths_)
     return paths_[index];
-  return 0;
+  return nullptr;
 }
 
 ////////////////////////////////////////////////////
@@ -920,40 +919,40 @@ defiNet::defiNet(defrData* data) : defData(data)
 
 void defiNet::Init()
 {
-  name_ = 0;
-  instances_ = 0;
+  name_ = nullptr;
+  instances_ = nullptr;
   numPins_ = 0;
   numProps_ = 0;
-  propNames_ = 0;
-  subnets_ = 0;
-  source_ = 0;
-  pattern_ = 0;
+  propNames_ = nullptr;
+  subnets_ = nullptr;
+  source_ = nullptr;
+  pattern_ = nullptr;
   style_ = 0;
-  shieldNet_ = 0;
-  original_ = 0;
-  use_ = 0;
-  nonDefaultRule_ = 0;
+  shieldNet_ = nullptr;
+  original_ = nullptr;
+  use_ = nullptr;
+  nonDefaultRule_ = nullptr;
   numWires_ = 0;
   wiresAllocated_ = 0;
-  wires_ = 0;
+  wires_ = nullptr;
 
   numWidths_ = 0;
   widthsAllocated_ = 0;
-  wlayers_ = 0;
-  wdist_ = 0;
+  wlayers_ = nullptr;
+  wdist_ = nullptr;
 
   numSpacing_ = 0;
   spacingAllocated_ = 0;
-  slayers_ = 0;
-  sdist_ = 0;
-  sleft_ = 0;
-  sright_ = 0;
+  slayers_ = nullptr;
+  sdist_ = nullptr;
+  sleft_ = nullptr;
+  sright_ = nullptr;
 
-  vpins_ = 0;
+  vpins_ = nullptr;
   numVpins_ = 0;
   vpinsAllocated_ = 0;
 
-  shields_ = 0;
+  shields_ = nullptr;
   numShields_ = 0;
   numNoShields_ = 0;
   shieldsAllocated_ = 0;
@@ -965,33 +964,33 @@ void defiNet::Init()
   bumpPins(16);
   bumpSubnets(2);
 
-  rectNames_ = 0;
-  rectRouteStatus_ = 0;
-  rectRouteStatusShieldNames_ = 0;
-  rectShapeTypes_ = 0;
-  rectMasks_ = 0;
-  polygonNames_ = 0;
-  polyRouteStatus_ = 0;
-  polyShapeTypes_ = 0;
-  polyRouteStatusShieldNames_ = 0;
+  rectNames_ = nullptr;
+  rectRouteStatus_ = nullptr;
+  rectRouteStatusShieldNames_ = nullptr;
+  rectShapeTypes_ = nullptr;
+  rectMasks_ = nullptr;
+  polygonNames_ = nullptr;
+  polyRouteStatus_ = nullptr;
+  polyShapeTypes_ = nullptr;
+  polyRouteStatusShieldNames_ = nullptr;
   numPolys_ = 0;
   polysAllocated_ = 0;
-  polygons_ = 0;
-  polyMasks_ = 0;
+  polygons_ = nullptr;
+  polyMasks_ = nullptr;
 
   numSubnets_ = 0;
-  paths_ = 0;
+  paths_ = nullptr;
   numPaths_ = 0;
 
   numPts_ = 0;
-  viaNames_ = 0;
-  viaPts_ = 0;
+  viaNames_ = nullptr;
+  viaPts_ = nullptr;
   ptsAllocated_ = 0;
-  viaMasks_ = 0;
-  viaOrients_ = 0;
-  viaRouteStatus_ = 0;
-  viaShapeTypes_ = 0;
-  viaRouteStatusShieldNames_ = 0;
+  viaMasks_ = nullptr;
+  viaOrients_ = nullptr;
+  viaRouteStatus_ = nullptr;
+  viaShapeTypes_ = nullptr;
+  viaRouteStatusShieldNames_ = nullptr;
 
   clear();
 }
@@ -1338,14 +1337,14 @@ const char* defiNet::propName(int index) const
 {
   if (index >= 0 && index < numProps_)
     return propNames_[index];
-  return 0;
+  return nullptr;
 }
 
 const char* defiNet::propValue(int index) const
 {
   if (index >= 0 && index < numProps_)
     return propValues_[index];
-  return 0;
+  return nullptr;
 }
 
 double defiNet::propNumber(int index) const
@@ -1390,14 +1389,14 @@ const char* defiNet::instance(int index) const
 {
   if (index >= 0 && index < numPins_)
     return instances_[index];
-  return 0;
+  return nullptr;
 }
 
 const char* defiNet::pin(int index) const
 {
   if (index >= 0 && index < numPins_)
     return pins_[index];
-  return 0;
+  return nullptr;
 }
 
 int defiNet::pinIsMustJoin(int index) const
@@ -1428,14 +1427,14 @@ defiSubnet* defiNet::subnet(int index)
 {
   if (index >= 0 && index < numSubnets_)
     return subnets_[index];
-  return 0;
+  return nullptr;
 }
 
 const defiSubnet* defiNet::subnet(int index) const
 {
   if (index >= 0 && index < numSubnets_)
     return subnets_[index];
-  return 0;
+  return nullptr;
 }
 
 int defiNet::isFixed() const
@@ -1463,10 +1462,10 @@ void defiNet::freeWire()
     for (i = 0; i < numWires_; i++) {
       wires_[i]->Destroy();
       delete wires_[i];
-      wires_[i] = 0;
+      wires_[i] = nullptr;
     }
     free((char*) (wires_));
-    wires_ = 0;
+    wires_ = nullptr;
     numWires_ = 0;
     wiresAllocated_ = 0;
   }
@@ -1483,7 +1482,7 @@ void defiNet::freeShield()
     for (i = 0; i < numShields_; i++) {
       shields_[i]->Destroy();
       free((char*) (shields_[i]));
-      shields_[i] = 0;
+      shields_[i] = nullptr;
     }
     numShields_ = 0;
     shieldsAllocated_ = 0;
@@ -1722,7 +1721,7 @@ void defiNet::clear()
       delete vpins_[i];
     }
     free((char*) vpins_);
-    vpins_ = 0;
+    vpins_ = nullptr;
     numVpins_ = 0;
     vpinsAllocated_ = 0;
   }
@@ -1730,8 +1729,8 @@ void defiNet::clear()
   for (i = 0; i < numProps_; i++) {
     free(propNames_[i]);
     free(propValues_[i]);
-    propNames_[i] = 0;
-    propValues_[i] = 0;
+    propNames_[i] = nullptr;
+    propValues_[i] = nullptr;
     propDValues_[i] = 0;
   }
   numProps_ = 0;
@@ -1739,8 +1738,8 @@ void defiNet::clear()
   for (i = 0; i < numPins_; i++) {
     free(instances_[i]);
     free(pins_[i]);
-    instances_[i] = 0;
-    pins_[i] = 0;
+    instances_[i] = nullptr;
+    pins_[i] = nullptr;
     musts_[i] = 0;
     synthesized_[i] = 0;
   }
@@ -1748,7 +1747,7 @@ void defiNet::clear()
 
   for (i = 0; i < numSubnets_; i++) {
     delete subnets_[i];
-    subnets_[i] = 0;
+    subnets_[i] = nullptr;
   }
   numSubnets_ = 0;
 
@@ -1762,7 +1761,7 @@ void defiNet::clear()
     }
 
     delete[] paths_;
-    paths_ = 0;
+    paths_ = nullptr;
     numPaths_ = 0;
     pathsAllocated_ = 0;
   }
@@ -1772,33 +1771,33 @@ void defiNet::clear()
 
   if (source_) {
     free(source_);
-    source_ = 0;
+    source_ = nullptr;
   }
   if (pattern_) {
     free(pattern_);
-    pattern_ = 0;
+    pattern_ = nullptr;
   }
   if (original_) {
     free(original_);
-    original_ = 0;
+    original_ = nullptr;
   }
   if (use_) {
     free(use_);
-    use_ = 0;
+    use_ = nullptr;
   }
   if (nonDefaultRule_) {
     free(nonDefaultRule_);
-    nonDefaultRule_ = 0;
+    nonDefaultRule_ = nullptr;
   }
   style_ = 0;
 
   if (numWires_) {
     for (i = 0; i < numWires_; i++) {
       delete wires_[i];
-      wires_[i] = 0;
+      wires_[i] = nullptr;
     }
     free((char*) (wires_));
-    wires_ = 0;
+    wires_ = nullptr;
     numWires_ = 0;
     wiresAllocated_ = 0;
   }
@@ -1806,7 +1805,7 @@ void defiNet::clear()
   if (numShields_) {
     for (i = 0; i < numShields_; i++) {
       delete shields_[i];
-      shields_[i] = 0;
+      shields_[i] = nullptr;
     }
     numShields_ = 0;
     shieldsAllocated_ = 0;
@@ -1815,7 +1814,7 @@ void defiNet::clear()
   if (numNoShields_) {
     for (i = 0; i < numNoShields_; i++) {
       delete shields_[i];
-      shields_[i] = 0;
+      shields_[i] = nullptr;
     }
     numNoShields_ = 0;
     shieldsAllocated_ = 0;
@@ -1823,7 +1822,7 @@ void defiNet::clear()
   if (shields_)
     free((char*) (shields_));
 
-  shields_ = 0;
+  shields_ = nullptr;
 
   if (numWidths_) {
     for (i = 0; i < numWidths_; i++)
@@ -1869,12 +1868,12 @@ void defiNet::clear()
     free((char*) (polyRouteStatus_));
     free((char*) (polyShapeTypes_));
     free((char*) (polyRouteStatusShieldNames_));
-    polygonNames_ = 0;
-    polygons_ = 0;
-    polyMasks_ = 0;
-    polyRouteStatus_ = 0;
-    polyShapeTypes_ = 0;
-    polyRouteStatusShieldNames_ = 0;
+    polygonNames_ = nullptr;
+    polygons_ = nullptr;
+    polyMasks_ = nullptr;
+    polyRouteStatus_ = nullptr;
+    polyShapeTypes_ = nullptr;
+    polyRouteStatusShieldNames_ = nullptr;
   }
   numPolys_ = 0;
   polysAllocated_ = 0;
@@ -1904,17 +1903,17 @@ void defiNet::clear()
     free((char*) (rectRouteStatusShieldNames_));
     free((char*) (rectShapeTypes_));
   }
-  rectNames_ = 0;
-  rectRouteStatus_ = 0;
-  rectShapeTypes_ = 0;
-  rectRouteStatusShieldNames_ = 0;
+  rectNames_ = nullptr;
+  rectRouteStatus_ = nullptr;
+  rectShapeTypes_ = nullptr;
+  rectRouteStatusShieldNames_ = nullptr;
   numRects_ = 0;
   rectsAllocated_ = 0;
-  xl_ = 0;
-  yl_ = 0;
-  xh_ = 0;
-  yh_ = 0;
-  rectMasks_ = 0;
+  xl_ = nullptr;
+  yl_ = nullptr;
+  xh_ = nullptr;
+  yh_ = nullptr;
+  rectMasks_ = nullptr;
 
   if (viaNames_) {
     struct defiPoints* p;
@@ -1944,16 +1943,16 @@ void defiNet::clear()
     free((char*) (viaRouteStatus_));
     free((char*) (viaShapeTypes_));
     free((char*) (viaRouteStatusShieldNames_));
-    viaNames_ = 0;
-    viaPts_ = 0;
-    viaRouteStatus_ = 0;
-    viaShapeTypes_ = 0;
-    viaRouteStatusShieldNames_ = 0;
+    viaNames_ = nullptr;
+    viaPts_ = nullptr;
+    viaRouteStatus_ = nullptr;
+    viaShapeTypes_ = nullptr;
+    viaRouteStatusShieldNames_ = nullptr;
   }
   numPts_ = 0;
   ptsAllocated_ = 0;
-  viaOrients_ = 0;
-  viaMasks_ = 0;
+  viaOrients_ = nullptr;
+  viaMasks_ = nullptr;
 }
 
 void defiNet::clearRectPolyNPath()
@@ -2003,12 +2002,12 @@ void defiNet::clearRectPoly()
   }
   numPolys_ = 0;
   polysAllocated_ = 0;
-  polyMasks_ = 0;
-  polygonNames_ = 0;
-  polyRouteStatus_ = 0;
-  polyShapeTypes_ = 0;
-  polyRouteStatusShieldNames_ = 0;
-  polygons_ = 0;
+  polyMasks_ = nullptr;
+  polygonNames_ = nullptr;
+  polyRouteStatus_ = nullptr;
+  polyShapeTypes_ = nullptr;
+  polyRouteStatusShieldNames_ = nullptr;
+  polygons_ = nullptr;
 
   if (rectNames_) {
     for (i = 0; i < numRects_; i++) {
@@ -2035,17 +2034,17 @@ void defiNet::clearRectPoly()
     free((char*) (rectRouteStatus_));
     free((char*) (rectRouteStatusShieldNames_));
   }
-  rectNames_ = 0;
+  rectNames_ = nullptr;
   rectsAllocated_ = 0;
-  xl_ = 0;
-  yl_ = 0;
-  xh_ = 0;
-  yh_ = 0;
+  xl_ = nullptr;
+  yl_ = nullptr;
+  xh_ = nullptr;
+  yh_ = nullptr;
   numRects_ = 0;
-  rectMasks_ = 0;
-  rectRouteStatus_ = 0;
-  rectShapeTypes_ = 0;
-  rectRouteStatusShieldNames_ = 0;
+  rectMasks_ = nullptr;
+  rectRouteStatus_ = nullptr;
+  rectShapeTypes_ = nullptr;
+  rectRouteStatusShieldNames_ = nullptr;
 }
 
 int defiNet::hasSource() const
@@ -2241,14 +2240,14 @@ defiPath* defiNet::path(int index)
 {
   if (index >= 0 && index < numPaths_)
     return paths_[index];
-  return 0;
+  return nullptr;
 }
 
 const defiPath* defiNet::path(int index) const
 {
   if (index >= 0 && index < numPaths_)
     return paths_[index];
-  return 0;
+  return nullptr;
 }
 
 int defiNet::numWires() const
@@ -2260,14 +2259,14 @@ defiWire* defiNet::wire(int index)
 {
   if (index >= 0 && index < numWires_)
     return wires_[index];
-  return 0;
+  return nullptr;
 }
 
 const defiWire* defiNet::wire(int index) const
 {
   if (index >= 0 && index < numWires_)
     return wires_[index];
-  return 0;
+  return nullptr;
 }
 
 void defiNet::bumpShieldNets(long long size)
@@ -2295,14 +2294,14 @@ defiShield* defiNet::shield(int index)
 {
   if (index >= 0 && index < numShields_)
     return shields_[index];
-  return 0;
+  return nullptr;
 }
 
 const defiShield* defiNet::shield(int index) const
 {
   if (index >= 0 && index < numShields_)
     return shields_[index];
-  return 0;
+  return nullptr;
 }
 
 int defiNet::numNoShields() const
@@ -2314,14 +2313,14 @@ defiShield* defiNet::noShield(int index)
 {
   if (index >= 0 && index < numNoShields_)
     return shields_[index];
-  return 0;
+  return nullptr;
 }
 
 const defiShield* defiNet::noShield(int index) const
 {
   if (index >= 0 && index < numNoShields_)
     return shields_[index];
-  return 0;
+  return nullptr;
 }
 
 int defiNet::hasVoltage() const
@@ -2411,14 +2410,14 @@ int defiNet::numVpins() const
 defiVpin* defiNet::vpin(int index)
 {
   if (index < 0 || index >= numVpins_)
-    return 0;
+    return nullptr;
   return vpins_[index];
 }
 
 const defiVpin* defiNet::vpin(int index) const
 {
   if (index < 0 || index >= numVpins_)
-    return 0;
+    return nullptr;
   return vpins_[index];
 }
 
@@ -2620,7 +2619,7 @@ const char* defiNet::polygonName(int index) const
 {
   if (index < 0 || index > numPolys_) {
     defiError6085(index, numPolys_, defData);
-    return 0;
+    return nullptr;
   }
   return polygonNames_[index];
 }
@@ -2629,7 +2628,7 @@ const char* defiNet::polyRouteStatus(int index) const
 {
   if (index < 0 || index > numPolys_) {
     defiError6085(index, numPolys_, defData);
-    return 0;
+    return nullptr;
   }
   return polyRouteStatus_[index];
 }
@@ -2638,7 +2637,7 @@ const char* defiNet::polyRouteStatusShieldName(int index) const
 {
   if (index < 0 || index > numPolys_) {
     defiError6085(index, numPolys_, defData);
-    return 0;
+    return nullptr;
   }
   return polyRouteStatusShieldNames_[index];
 }
@@ -2647,7 +2646,7 @@ const char* defiNet::polyShapeType(int index) const
 {
   if (index < 0 || index > numPolys_) {
     defiError6085(index, numPolys_, defData);
-    return 0;
+    return nullptr;
   }
   return polyShapeTypes_[index];
 }
@@ -2765,7 +2764,7 @@ int defiNet::numRectangles() const
 const char* defiNet::rectName(int index) const
 {
   if (index < 0 || index > numRects_) {
-    return 0;
+    return nullptr;
   }
   return rectNames_[index];
 }
@@ -2774,7 +2773,7 @@ const char* defiNet::rectRouteStatus(int index) const
 {
   if (index < 0 || index > numRects_) {
     defiError6086(index, numRects_, defData);
-    return 0;
+    return nullptr;
   }
   return rectRouteStatus_[index];
 }
@@ -2783,7 +2782,7 @@ const char* defiNet::rectRouteStatusShieldName(int index) const
 {
   if (index < 0 || index > numRects_) {
     defiError6086(index, numRects_, defData);
-    return 0;
+    return nullptr;
   }
   return rectRouteStatusShieldNames_[index];
 }
@@ -2792,7 +2791,7 @@ const char* defiNet::rectShapeType(int index) const
 {
   if (index < 0 || index > numRects_) {
     defiError6086(index, numRects_, defData);
-    return 0;
+    return nullptr;
   }
   return rectShapeTypes_[index];
 }
@@ -2940,7 +2939,7 @@ const char* defiNet::viaName(int index) const
 {
   if (index < 0 || index > numPts_) {
     defiError6085(index, numPolys_, defData);
-    return 0;
+    return nullptr;
   }
   return viaNames_[index];
 }
@@ -2949,7 +2948,7 @@ const char* defiNet::viaRouteStatus(int index) const
 {
   if (index < 0 || index > numPts_) {
     defiError6085(index, numPolys_, defData);
-    return 0;
+    return nullptr;
   }
   return viaRouteStatus_[index];
 }
@@ -2958,7 +2957,7 @@ const char* defiNet::viaRouteStatusShieldName(int index) const
 {
   if (index < 0 || index > numPts_) {
     defiError6085(index, numPolys_, defData);
-    return 0;
+    return nullptr;
   }
   return viaRouteStatusShieldNames_[index];
 }
@@ -2967,7 +2966,7 @@ const char* defiNet::viaShapeType(int index) const
 {
   if (index < 0 || index > numPts_) {
     defiError6085(index, numPolys_, defData);
-    return 0;
+    return nullptr;
   }
   return viaShapeTypes_[index];
 }
@@ -2985,7 +2984,7 @@ const char* defiNet::viaOrientStr(int index) const
 {
   if (index < 0 || index > numPts_) {
     defiError6085(index, numPolys_, defData);
-    return 0;
+    return nullptr;
   }
   return (defiOrientStr(viaOrients_[index]));
 }
@@ -3070,15 +3069,15 @@ void defiNet::clearVia()
     }
   }
 
-  viaMasks_ = 0;
-  viaOrients_ = 0;
+  viaMasks_ = nullptr;
+  viaOrients_ = nullptr;
   numPts_ = 0;
   ptsAllocated_ = 0;
-  viaPts_ = 0;
-  viaRouteStatus_ = 0;
-  viaShapeTypes_ = 0;
-  viaRouteStatusShieldNames_ = 0;
-  viaNames_ = 0;
+  viaPts_ = nullptr;
+  viaRouteStatus_ = nullptr;
+  viaShapeTypes_ = nullptr;
+  viaRouteStatusShieldNames_ = nullptr;
+  viaNames_ = nullptr;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

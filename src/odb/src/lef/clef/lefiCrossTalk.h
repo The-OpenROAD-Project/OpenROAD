@@ -33,7 +33,7 @@
 #ifndef CLEFICROSSTALK_H
 #define CLEFICROSSTALK_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiTypedefs.h"
 

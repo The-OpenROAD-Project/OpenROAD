@@ -56,6 +56,23 @@ dbMaster* createMaster2X1(dbLib* lib,
   return master;
 }
 
+dbMaster* createMaster1X1(dbLib* lib,
+                          const char* name,
+                          uint width,
+                          uint height,
+                          const char* in1,
+                          const char* out)
+{
+  dbMaster* master = dbMaster::create(lib, name);
+  master->setWidth(width);
+  master->setHeight(height);
+  master->setType(dbMasterType::CORE);
+  dbMTerm::create(master, in1, dbIoType::INPUT, dbSigType::SIGNAL);
+  dbMTerm::create(master, out, dbIoType::OUTPUT, dbSigType::SIGNAL);
+  master->setFrozen();
+  return master;
+}
+
 dbDatabase* createSimpleDB()
 {
   utl::Logger* logger = new utl::Logger();
@@ -68,6 +85,7 @@ dbDatabase* createSimpleDB()
   dbBlock::create(chip, "simple_block");
   createMaster2X1(lib, "and2", 1000, 1000, "a", "b", "o");
   createMaster2X1(lib, "or2", 500, 500, "a", "b", "o");
+  createMaster1X1(lib, "inv1", 500, 500, "ip0", "op0");
   return db;
 }
 

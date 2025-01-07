@@ -45,7 +45,7 @@
 #define TOKEN_SIZE 4096
 #define MSG_SIZE 100
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 struct defCompareStrings
 {
@@ -55,18 +55,18 @@ struct defCompareStrings
   }
 };
 
-typedef std::map<std::string, std::string, defCompareStrings> defAliasMap;
-typedef std::map<std::string, std::string, defCompareStrings> defDefineMap;
+using defAliasMap = std::map<std::string, std::string, defCompareStrings>;
+using defDefineMap = std::map<std::string, std::string, defCompareStrings>;
 
-typedef union
+union YYSTYPE
 {
   double dval;
   int integer;
   char* string;
   int keyword;  // really just a nop
-  struct defpoint pt;
+  defPOINT pt;
   defTOKEN* tk;
-} YYSTYPE;
+};
 
 #define YYSTYPE_IS_DECLARED
 
@@ -119,70 +119,70 @@ class defrData
 
   inline static const char* defkywd(int num);
 
-  int assertionWarnings;
-  int bit_is_keyword;
-  int bitsNum;  // Scanchain Bits value
-  int blockageWarnings;
-  int by_is_keyword;
-  int caseSensitiveWarnings;
-  int componentWarnings;
-  int constraintWarnings;
-  int cover_is_keyword;
-  int defMsgCnt;
-  int defMsgPrinted;  // number of msgs output so far
-  int defRetVal;
-  int def_warnings;
-  int do_is_keyword;
-  int dumb_mode;
-  int errors;
-  int fillWarnings;
-  int first_buffer;
-  int fixed_is_keyword;
-  int gcellGridWarnings;
-  int hasBlkLayerComp;      // only 1 BLOCKAGE/LAYER/COMP
-  int hasBlkLayerSpac;      // only 1 BLOCKAGE/LAYER/SPACING
-  int hasBlkLayerTypeComp;  // SLOTS or FILLS
-  int hasBlkPlaceComp;      // only 1 BLOCKAGE/PLACEMENT/COMP
-  int hasBlkPlaceTypeComp;  // SOFT or PARTIAL
-  int hasBusBit;            // keep track BUSBITCHARS is in the file
-  int hasDes;               // keep track DESIGN is in the file
-  int hasDivChar;           // keep track DIVIDERCHAR is in the file
-  int hasDoStep;
-  int hasNameCase;  // keep track NAMESCASESENSITIVE is in the file
-  int hasOpenedDefLogFile;
-  int hasPort;        // keep track is port defined in a Pin
-  int hadPortOnce;    // to restrict implicit ports if the Pin already has any
-                      // port
-  int hasVer;         // keep track VERSION is in the file
-  int hasFatalError;  // don't report errors after the file end.
-  int mask_is_keyword;
-  int mustjoin_is_keyword;
-  int names_case_sensitive;  // always true in 5.6
-  int needNPCbk;             // if cbk for net path is needed
-  int needSNPCbk;            // if cbk for snet path is needed
-  int nl_token;
-  int no_num;
-  int nonDefaultWarnings;
-  int nondef_is_keyword;
-  int ntokens;
-  int orient_is_keyword;
-  int pinExtWarnings;
-  int pinWarnings;
-  int real_num;
-  int rect_is_keyword;
-  int regTypeDef;  // keep track that region type is defined
-  int regionWarnings;
-  int ringPlace;
-  int routed_is_keyword;
-  int scanchainWarnings;
-  int specialWire_mask;
-  int step_is_keyword;
-  int stylesWarnings;
-  int trackWarnings;
-  int unitsWarnings;
-  int versionWarnings;
-  int viaRule;  // keep track the viarule has called first
-  int viaWarnings;
+  int assertionWarnings{0};
+  int bit_is_keyword{0};
+  int bitsNum{0};  // Scanchain Bits value
+  int blockageWarnings{0};
+  int by_is_keyword{0};
+  int caseSensitiveWarnings{0};
+  int componentWarnings{0};
+  int constraintWarnings{0};
+  int cover_is_keyword{0};
+  int defMsgCnt{0};
+  int defMsgPrinted{0};  // number of msgs output so far
+  int defRetVal{0};
+  int def_warnings{0};
+  int do_is_keyword{0};
+  int dumb_mode{0};
+  int errors{0};
+  int fillWarnings{0};
+  int first_buffer{0};
+  int fixed_is_keyword{0};
+  int gcellGridWarnings{0};
+  int hasBlkLayerComp{0};      // only 1 BLOCKAGE/LAYER/COMP
+  int hasBlkLayerSpac{0};      // only 1 BLOCKAGE/LAYER/SPACING
+  int hasBlkLayerTypeComp{0};  // SLOTS or FILLS
+  int hasBlkPlaceComp{0};      // only 1 BLOCKAGE/PLACEMENT/COMP
+  int hasBlkPlaceTypeComp{0};  // SOFT or PARTIAL
+  int hasBusBit{0};            // keep track BUSBITCHARS is in the file
+  int hasDes{0};               // keep track DESIGN is in the file
+  int hasDivChar{0};           // keep track DIVIDERCHAR is in the file
+  int hasDoStep{0};
+  int hasNameCase{0};  // keep track NAMESCASESENSITIVE is in the file
+  int hasOpenedDefLogFile{0};
+  int hasPort{0};      // keep track is port defined in a Pin
+  int hadPortOnce{0};  // to restrict implicit ports if the Pin already has any
+                       // port
+  int hasVer{0};       // keep track VERSION is in the file
+  int hasFatalError{0};  // don't report errors after the file end.
+  int mask_is_keyword{0};
+  int mustjoin_is_keyword{0};
+  int names_case_sensitive{0};  // always true in 5.6
+  int needNPCbk{0};             // if cbk for net path is needed
+  int needSNPCbk{0};            // if cbk for snet path is needed
+  int nl_token{0};
+  int no_num{0};
+  int nonDefaultWarnings{0};
+  int nondef_is_keyword{0};
+  int ntokens{0};
+  int orient_is_keyword{0};
+  int pinExtWarnings{0};
+  int pinWarnings{0};
+  int real_num{0};
+  int rect_is_keyword{0};
+  int regTypeDef{0};  // keep track that region type is defined
+  int regionWarnings{0};
+  int ringPlace{0};
+  int routed_is_keyword{0};
+  int scanchainWarnings{0};
+  int specialWire_mask{0};
+  int step_is_keyword{0};
+  int stylesWarnings{0};
+  int trackWarnings{0};
+  int unitsWarnings{0};
+  int versionWarnings{0};
+  int viaRule{0};  // keep track the viarule has called first
+  int viaWarnings{0};
 
   std::vector<char> History_text;
   defAliasMap def_alias_set;
@@ -191,7 +191,7 @@ class defrData
   char* specialWire_routeStatus;
   char* specialWire_routeStatusName;
   char* specialWire_shapeType;
-  double VersionNum;
+  double VersionNum{5.7};
 
   // defrParser vars.
   defiPath PathObj;
@@ -234,47 +234,47 @@ class defrData
   YYSTYPE yylval;
   char lineBuffer[MSG_SIZE];
 
-  FILE* File;
+  FILE* File{nullptr};
   defrSession* session;
-  defiSubnet* Subnet;
+  defiSubnet* Subnet{nullptr};
   const defrSettings* settings;
-  int aOxide;  // keep track for oxide
-  int defInvalidChar;
-  int defIgnoreVersion;  // ignore checking version number
-  char* defMsg;
-  int defPrintTokens;
-  char defPropDefType;  // save the current type of the property
-  int defaultCapWarnings;
-  FILE* defrLog;
-  int input_level;
-  char* last;
-  int new_is_keyword;
-  long long nlines;
-  char* rowName;  // to hold the rowName for message
-  int iOTimingWarnings;
+  int aOxide{0};  // keep track for oxide
+  int defInvalidChar{0};
+  int defIgnoreVersion{0};  // ignore checking version number
+  char* defMsg{nullptr};
+  int defPrintTokens{0};
+  char defPropDefType{'\0'};  // save the current type of the property
+  int defaultCapWarnings{0};
+  FILE* defrLog{nullptr};
+  int input_level{-1};
+  char* last{nullptr};
+  int new_is_keyword{0};
+  long long nlines{1};
+  char* rowName{nullptr};  // to hold the rowName for message
+  int iOTimingWarnings{0};
   char* magic;
-  int netWarnings;
-  double save_x;
-  double save_y;
-  int sNetWarnings;
-  int netOsnet;  // net = 1 & snet = 2
-  char* next;
-  int rowWarnings;
-  char* shieldName;  // to hold the shieldNetName
-  int deftokenLength;
-  double xStep;
-  double yStep;
+  int netWarnings{0};
+  double save_x{0.0};
+  double save_y{0.0};
+  int sNetWarnings{0};
+  int netOsnet{0};  // net = 1 & snet = 2
+  char* next{nullptr};
+  int rowWarnings{0};
+  char* shieldName{nullptr};  // to hold the shieldNetName
+  int deftokenLength{TOKEN_SIZE};
+  double xStep{0.0};
+  double yStep{0.0};
   // Flags to control what happens
-  int NeedPathData;
-  int shield;  // To identify if the path is shield for 5.3
-  char* shiftBuf;
-  int shiftBufLength;
-  int virtual_is_keyword;
-  char* warningMsg;
-  double lVal;
-  double rVal;
+  int NeedPathData{0};
+  int shield{0};  // To identify if the path is shield for 5.3
+  char* shiftBuf{nullptr};
+  int shiftBufLength{0};
+  int virtual_is_keyword{0};
+  char* warningMsg{nullptr};
+  double lVal{0.0};
+  double rVal{0.0};
   char* deftoken;
-  int doneDesign;  // keep track if the Design is done parsing
+  int doneDesign{0};  // keep track if the Design is done parsing
   char* uc_token;
   char* pv_deftoken;
   const defrCallbacks* callbacks;
@@ -285,12 +285,12 @@ class defrContext
  public:
   defrContext(int ownConf = 0);
 
-  defrSettings* settings;
-  defrSession* session;
-  defrData* data;
+  defrSettings* settings{nullptr};
+  defrSession* session{nullptr};
+  defrData* data{nullptr};
   int ownConfig;
-  const char* init_call_func;
-  defrCallbacks* callbacks;
+  const char* init_call_func{nullptr};
+  defrCallbacks* callbacks{nullptr};
 };
 
 int defrData::checkErrors()
@@ -304,6 +304,6 @@ int defrData::checkErrors()
   return 0;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

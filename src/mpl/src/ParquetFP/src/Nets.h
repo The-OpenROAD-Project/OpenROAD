@@ -44,8 +44,8 @@
 namespace parquetfp {
 
 class Nodes;
-typedef std::vector<Net>::iterator itNet;
-typedef std::vector<Net>::const_iterator itNetConst;
+using itNet = std::vector<Net>::iterator;
+using itNetConst = std::vector<Net>::const_iterator;
 
 struct eqstr
 {

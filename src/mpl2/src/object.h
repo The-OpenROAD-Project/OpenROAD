@@ -778,17 +778,18 @@ struct Rect
     f_y = f_y_;
   }
 
-  bool isValid() const
+  bool isValid() const { return (lx < ux) && (ly < uy); }
+
+  void mergeInit()
   {
-    return (lx > 0.0) && (ly > 0.0) && (ux > 0.0) && (uy > 0.0);
+    lx = std::numeric_limits<float>::max();
+    ly = lx;
+    ux = std::numeric_limits<float>::lowest();
+    uy = ux;
   }
 
   void merge(const Rect& rect)
   {
-    if (!isValid()) {
-      return;
-    }
-
     lx = std::min(lx, rect.lx);
     ly = std::min(ly, rect.ly);
     ux = std::max(ux, rect.ux);

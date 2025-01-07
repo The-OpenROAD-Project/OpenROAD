@@ -33,22 +33,15 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
-#include <fstream>
-#include <iostream>
-#include <map>
-#include <queue>
 #include <string>
 #include <vector>
 
 #include "Coarsener.h"
 #include "Hypergraph.h"
+#include "Utilities.h"
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "sta/Bfs.hh"
-#include "sta/Graph.hh"
-#include "sta/Liberty.hh"
-#include "sta/Sta.hh"
 #include "utl/Logger.h"
 
 namespace par {
@@ -68,7 +61,7 @@ namespace par {
 class TritonPart
 {
  public:
-  TritonPart(ord::dbNetwork* network,
+  TritonPart(sta::dbNetwork* network,
              odb::dbDatabase* db,
              sta::dbSta* sta,
              utl::Logger* logger);

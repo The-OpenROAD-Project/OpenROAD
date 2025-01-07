@@ -42,8 +42,8 @@
 namespace parquetfp {
 
 class pin;
-typedef std::vector<pin>::iterator itPin;
-typedef std::vector<pin>::const_iterator itPinConst;
+using itPin = std::vector<pin>::iterator;
+using itPinConst = std::vector<pin>::const_iterator;
 
 // this class holds the pin offsets and pinindex on a particular node
 class pin

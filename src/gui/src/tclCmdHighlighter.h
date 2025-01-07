@@ -87,7 +87,7 @@ class TclCmdHighlighter : public QSyntaxHighlighter
                     const std::vector<CommandArguments>& or_cmds,
                     const std::string& command_start,
                     const std::string& command_end);
-  ~TclCmdHighlighter();
+  ~TclCmdHighlighter() override;
 
  protected:
   void highlightBlock(const QString& text) override;

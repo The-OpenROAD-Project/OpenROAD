@@ -88,8 +88,8 @@ bool db_def_diff(odb::dbDatabase* db1, const char* def_filename)
   def_reader.createChip(search_libs, def_filename, db1->getTech());
   if (db2->getChip())
     return db_diff(db1, db2);
-  else
-    return false;
+
+  return false;
 }
 
 odb::dbLib* read_lef(odb::dbDatabase* db, const char* path)
@@ -99,9 +99,8 @@ odb::dbLib* read_lef(odb::dbDatabase* db, const char* path)
   const char* libname = basename(const_cast<char*>(path));
   if (!db->getTech()) {
     return lefParser.createTechAndLib(libname, libname, path);
-  } else {
-    return lefParser.createLib(db->getTech(), libname, path);
   }
+  return lefParser.createLib(db->getTech(), libname, path);
 }
 
 odb::dbChip* read_def(odb::dbTech* tech, std::string path)

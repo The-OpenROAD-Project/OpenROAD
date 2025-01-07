@@ -51,7 +51,7 @@ class LoadBalancer
  public:
   // constructor for accepting connection from client
   LoadBalancer(Distributed* dist,
-               asio::io_service& io_service,
+               asio::io_context& service,
                utl::Logger* logger,
                const char* ip,
                const char* workers_domain,
@@ -90,7 +90,7 @@ class LoadBalancer
 
   Distributed* dist_;
   tcp::acceptor acceptor_;
-  asio::io_service* service;
+  asio::io_context* service_;
   utl::Logger* logger_;
   std::priority_queue<worker, std::vector<worker>, CompareWorker> workers_;
   std::mutex workers_mutex_;

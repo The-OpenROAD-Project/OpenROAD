@@ -1715,13 +1715,28 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
                                          layer_capacity,
                                          is_macro);
 
+  int grid_limit = vertical ? grid_->getYGrids() : grid_->getXGrids();
   if (!vertical) {
+    // if obstruction is inside a single gcell, block the edge between current
+    // gcell and the adjacent gcell
+    if (first_tile.getX() == last_tile.getX()
+        && last_tile.getX() + 1 < grid_limit) {
+      int last_tile_x = last_tile.getX() + 1;
+      last_tile.setX(last_tile_x);
+    }
     fastroute_->addHorizontalAdjustments(first_tile,
                                          last_tile,
                                          layer,
                                          first_tile_reduce_interval,
                                          last_tile_reduce_interval);
   } else {
+    // if obstruction is inside a single gcell, block the edge between current
+    // gcell and the adjacent gcell
+    if (first_tile.getY() == last_tile.getY()
+        && last_tile.getY() + 1 < grid_limit) {
+      int last_tile_y = last_tile.getY() + 1;
+      last_tile.setY(last_tile_y);
+    }
     fastroute_->addVerticalAdjustments(first_tile,
                                        last_tile,
                                        layer,
@@ -3087,14 +3102,14 @@ bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
                            ? odb::Point(track_position.x(), nearest_track)
                            : odb::Point(nearest_track, track_position.y());
       return true;
-    } else if (nearest_track2 > min && nearest_track2 < max) {
+    }
+    if (nearest_track2 > min && nearest_track2 < max) {
       track_position = horizontal
                            ? odb::Point(track_position.x(), nearest_track2)
                            : odb::Point(nearest_track2, track_position.y());
       return true;
-    } else {
-      return false;
     }
+    return false;
   }
 
   return false;
@@ -4254,15 +4269,14 @@ std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(
 
     if (prop == nullptr) {
       continue;
-    } else {
-      debugPrint(logger_,
-                 utl::GRT,
-                 "l2v_pitch",
-                 1,
-                 "Default via: {}.",
-                 via->getConstName());
-      default_vias[via->getBottomLayer()->getRoutingLevel()] = via;
     }
+    debugPrint(logger_,
+               utl::GRT,
+               "l2v_pitch",
+               1,
+               "Default via: {}.",
+               via->getConstName());
+    default_vias[via->getBottomLayer()->getRoutingLevel()] = via;
   }
 
   if (default_vias.empty()) {
@@ -4630,10 +4644,7 @@ void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire,
 void GlobalRouter::createWLReportFile(const char* file_name, bool verbose)
 {
   std::ofstream out(file_name);
-  out << "tool "
-      << "net "
-      << "total_wl "
-      << "#pins ";
+  out << "tool net total_wl #pins ";
 
   if (verbose) {
     out << "#vias ";

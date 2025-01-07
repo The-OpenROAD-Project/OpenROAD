@@ -39,102 +39,102 @@
 // Wrappers definitions.
 int lefwInit(FILE* f)
 {
-  return LefDefParser::lefwInit(f);
+  return LefParser::lefwInit(f);
 }
 
 int lefwInitCbk(FILE* f)
 {
-  return LefDefParser::lefwInitCbk(f);
+  return LefParser::lefwInitCbk(f);
 }
 
 int lefwEncrypt()
 {
-  return LefDefParser::lefwEncrypt();
+  return LefParser::lefwEncrypt();
 }
 
 int lefwCloseEncrypt()
 {
-  return LefDefParser::lefwCloseEncrypt();
+  return LefParser::lefwCloseEncrypt();
 }
 
 int lefwNewLine()
 {
-  return LefDefParser::lefwNewLine();
+  return LefParser::lefwNewLine();
 }
 
 int lefwVersion(int vers1, int vers2)
 {
-  return LefDefParser::lefwVersion(vers1, vers2);
+  return LefParser::lefwVersion(vers1, vers2);
 }
 
 int lefwCaseSensitive(const char* caseSensitive)
 {
-  return LefDefParser::lefwCaseSensitive(caseSensitive);
+  return LefParser::lefwCaseSensitive(caseSensitive);
 }
 
 int lefwNoWireExtensionAtPin(const char* noWireExt)
 {
-  return LefDefParser::lefwNoWireExtensionAtPin(noWireExt);
+  return LefParser::lefwNoWireExtensionAtPin(noWireExt);
 }
 
 int lefwMinfeature(double minFeatureX, double minFeatureY)
 {
-  return LefDefParser::lefwMinfeature(minFeatureX, minFeatureY);
+  return LefParser::lefwMinfeature(minFeatureX, minFeatureY);
 }
 
 int lefwDielectric(double dielectric)
 {
-  return LefDefParser::lefwDielectric(dielectric);
+  return LefParser::lefwDielectric(dielectric);
 }
 
 int lefwBusBitChars(const char* busBitChars)
 {
-  return LefDefParser::lefwBusBitChars(busBitChars);
+  return LefParser::lefwBusBitChars(busBitChars);
 }
 
 int lefwDividerChar(const char* dividerChar)
 {
-  return LefDefParser::lefwDividerChar(dividerChar);
+  return LefParser::lefwDividerChar(dividerChar);
 }
 
 int lefwManufacturingGrid(double grid)
 {
-  return LefDefParser::lefwManufacturingGrid(grid);
+  return LefParser::lefwManufacturingGrid(grid);
 }
 
 int lefwFixedMask()
 {
-  return LefDefParser::lefwFixedMask();
+  return LefParser::lefwFixedMask();
 }
 
 int lefwUseMinSpacing(const char* type, const char* onOff)
 {
-  return LefDefParser::lefwUseMinSpacing(type, onOff);
+  return LefParser::lefwUseMinSpacing(type, onOff);
 }
 
 int lefwClearanceMeasure(const char* type)
 {
-  return LefDefParser::lefwClearanceMeasure(type);
+  return LefParser::lefwClearanceMeasure(type);
 }
 
 int lefwAntennaInputGateArea(double inputGateArea)
 {
-  return LefDefParser::lefwAntennaInputGateArea(inputGateArea);
+  return LefParser::lefwAntennaInputGateArea(inputGateArea);
 }
 
 int lefwAntennaInOutDiffArea(double inOutDiffArea)
 {
-  return LefDefParser::lefwAntennaInOutDiffArea(inOutDiffArea);
+  return LefParser::lefwAntennaInOutDiffArea(inOutDiffArea);
 }
 
 int lefwAntennaOutputDiffArea(double outputDiffArea)
 {
-  return LefDefParser::lefwAntennaOutputDiffArea(outputDiffArea);
+  return LefParser::lefwAntennaOutputDiffArea(outputDiffArea);
 }
 
 int lefwStartUnits()
 {
-  return LefDefParser::lefwStartUnits();
+  return LefParser::lefwStartUnits();
 }
 
 int lefwUnits(double time,
@@ -145,80 +145,80 @@ int lefwUnits(double time,
               double voltage,
               double database)
 {
-  return LefDefParser::lefwUnits(
+  return LefParser::lefwUnits(
       time, capacitance, resistance, power, current, voltage, database);
 }
 
 int lefwUnitsFrequency(double frequency)
 {
-  return LefDefParser::lefwUnitsFrequency(frequency);
+  return LefParser::lefwUnitsFrequency(frequency);
 }
 
 int lefwEndUnits()
 {
-  return LefDefParser::lefwEndUnits();
+  return LefParser::lefwEndUnits();
 }
 
 int lefwStartLayer(const char* layerName, const char* type)
 {
-  return LefDefParser::lefwStartLayer(layerName, type);
+  return LefParser::lefwStartLayer(layerName, type);
 }
 
 int lefwLayerMask(int maskColor)
 {
-  return LefDefParser::lefwLayerMask(maskColor);
+  return LefParser::lefwLayerMask(maskColor);
 }
 
 int lefwLayerWidth(double minWidth)
 {
-  return LefDefParser::lefwLayerWidth(minWidth);
+  return LefParser::lefwLayerWidth(minWidth);
 }
 
 int lefwLayerCutSpacing(double spacing)
 {
-  return LefDefParser::lefwLayerCutSpacing(spacing);
+  return LefParser::lefwLayerCutSpacing(spacing);
 }
 
 int lefwLayerCutSpacingCenterToCenter()
 {
-  return LefDefParser::lefwLayerCutSpacingCenterToCenter();
+  return LefParser::lefwLayerCutSpacingCenterToCenter();
 }
 
 int lefwLayerCutSpacingSameNet()
 {
-  return LefDefParser::lefwLayerCutSpacingSameNet();
+  return LefParser::lefwLayerCutSpacingSameNet();
 }
 
 int lefwLayerCutSpacingLayer(const char* name2, int stack)
 {
-  return LefDefParser::lefwLayerCutSpacingLayer(name2, stack);
+  return LefParser::lefwLayerCutSpacingLayer(name2, stack);
 }
 
 int lefwLayerCutSpacingAdjacent(int viaCuts, double distance, int stack)
 {
-  return LefDefParser::lefwLayerCutSpacingAdjacent(viaCuts, distance, stack);
+  return LefParser::lefwLayerCutSpacingAdjacent(viaCuts, distance, stack);
 }
 
 int lefwLayerCutSpacingParallel()
 {
-  return LefDefParser::lefwLayerCutSpacingParallel();
+  return LefParser::lefwLayerCutSpacingParallel();
 }
 
 int lefwLayerCutSpacingArea(double cutArea)
 {
-  return LefDefParser::lefwLayerCutSpacingArea(cutArea);
+  return LefParser::lefwLayerCutSpacingArea(cutArea);
 }
 
 int lefwLayerCutSpacingEnd()
 {
-  return LefDefParser::lefwLayerCutSpacingEnd();
+  return LefParser::lefwLayerCutSpacingEnd();
 }
 
 int lefwLayerCutSpacingTableOrtho(int numSpacing,
                                   double* cutWithins,
                                   double* orthoSpacings)
 {
-  return LefDefParser::lefwLayerCutSpacingTableOrtho(
+  return LefParser::lefwLayerCutSpacingTableOrtho(
       numSpacing, cutWithins, orthoSpacings);
 }
 
@@ -229,7 +229,7 @@ int lefwLayerArraySpacing(int longArray,
                           int* arrayCuts,
                           double* arraySpacings)
 {
-  return LefDefParser::lefwLayerArraySpacing(
+  return LefParser::lefwLayerArraySpacing(
       longArray, viaWidth, cutSpacing, numArrayCut, arrayCuts, arraySpacings);
 }
 
@@ -238,8 +238,7 @@ int lefwLayerEnclosure(const char* location,
                        double overhang2,
                        double width)
 {
-  return LefDefParser::lefwLayerEnclosure(
-      location, overhang1, overhang2, width);
+  return LefParser::lefwLayerEnclosure(location, overhang1, overhang2, width);
 }
 
 int lefwLayerEnclosureWidth(const char* location,
@@ -248,7 +247,7 @@ int lefwLayerEnclosureWidth(const char* location,
                             double width,
                             double cutWithin)
 {
-  return LefDefParser::lefwLayerEnclosureWidth(
+  return LefParser::lefwLayerEnclosureWidth(
       location, overhang1, overhang2, width, cutWithin);
 }
 
@@ -257,7 +256,7 @@ int lefwLayerEnclosureLength(const char* location,
                              double overhang2,
                              double minLength)
 {
-  return LefDefParser::lefwLayerEnclosureLength(
+  return LefParser::lefwLayerEnclosureLength(
       location, overhang1, overhang2, minLength);
 }
 
@@ -266,298 +265,298 @@ int lefwLayerPreferEnclosure(const char* location,
                              double overhang2,
                              double width)
 {
-  return LefDefParser::lefwLayerPreferEnclosure(
+  return LefParser::lefwLayerPreferEnclosure(
       location, overhang1, overhang2, width);
 }
 
 int lefwLayerResistancePerCut(double resistance)
 {
-  return LefDefParser::lefwLayerResistancePerCut(resistance);
+  return LefParser::lefwLayerResistancePerCut(resistance);
 }
 
 int lefwEndLayer(const char* layerName)
 {
-  return LefDefParser::lefwEndLayer(layerName);
+  return LefParser::lefwEndLayer(layerName);
 }
 
 int lefwStartLayerRouting(const char* layerName)
 {
-  return LefDefParser::lefwStartLayerRouting(layerName);
+  return LefParser::lefwStartLayerRouting(layerName);
 }
 
 int lefwLayerRouting(const char* direction, double width)
 {
-  return LefDefParser::lefwLayerRouting(direction, width);
+  return LefParser::lefwLayerRouting(direction, width);
 }
 
 int lefwLayerRoutingPitch(double pitch)
 {
-  return LefDefParser::lefwLayerRoutingPitch(pitch);
+  return LefParser::lefwLayerRoutingPitch(pitch);
 }
 
 int lefwLayerRoutingPitchXYDistance(double xDistance, double yDistance)
 {
-  return LefDefParser::lefwLayerRoutingPitchXYDistance(xDistance, yDistance);
+  return LefParser::lefwLayerRoutingPitchXYDistance(xDistance, yDistance);
 }
 
 int lefwLayerRoutingDiagPitch(double distance)
 {
-  return LefDefParser::lefwLayerRoutingDiagPitch(distance);
+  return LefParser::lefwLayerRoutingDiagPitch(distance);
 }
 
 int lefwLayerRoutingDiagPitchXYDistance(double diag45Distance,
                                         double diag135Distance)
 {
-  return LefDefParser::lefwLayerRoutingDiagPitchXYDistance(diag45Distance,
-                                                           diag135Distance);
+  return LefParser::lefwLayerRoutingDiagPitchXYDistance(diag45Distance,
+                                                        diag135Distance);
 }
 
 int lefwLayerRoutingDiagWidth(double diagWidth)
 {
-  return LefDefParser::lefwLayerRoutingDiagWidth(diagWidth);
+  return LefParser::lefwLayerRoutingDiagWidth(diagWidth);
 }
 
 int lefwLayerRoutingDiagSpacing(double diagSpacing)
 {
-  return LefDefParser::lefwLayerRoutingDiagSpacing(diagSpacing);
+  return LefParser::lefwLayerRoutingDiagSpacing(diagSpacing);
 }
 
 int lefwLayerRoutingDiagMinEdgeLength(double diagLength)
 {
-  return LefDefParser::lefwLayerRoutingDiagMinEdgeLength(diagLength);
+  return LefParser::lefwLayerRoutingDiagMinEdgeLength(diagLength);
 }
 
 int lefwLayerRoutingOffset(double offset)
 {
-  return LefDefParser::lefwLayerRoutingOffset(offset);
+  return LefParser::lefwLayerRoutingOffset(offset);
 }
 
 int lefwLayerRoutingOffsetXYDistance(double xDistance, double yDistance)
 {
-  return LefDefParser::lefwLayerRoutingOffsetXYDistance(xDistance, yDistance);
+  return LefParser::lefwLayerRoutingOffsetXYDistance(xDistance, yDistance);
 }
 
 int lefwLayerRoutingArea(double area)
 {
-  return LefDefParser::lefwLayerRoutingArea(area);
+  return LefParser::lefwLayerRoutingArea(area);
 }
 
 int lefwLayerRoutingMinsize(int numRect, double* minWidth, double* minLength)
 {
-  return LefDefParser::lefwLayerRoutingMinsize(numRect, minWidth, minLength);
+  return LefParser::lefwLayerRoutingMinsize(numRect, minWidth, minLength);
 }
 
 int lefwLayerRoutingMinimumcut(double numCuts, double minWidth)
 {
-  return LefDefParser::lefwLayerRoutingMinimumcut(numCuts, minWidth);
+  return LefParser::lefwLayerRoutingMinimumcut(numCuts, minWidth);
 }
 
 int lefwLayerRoutingMinimumcutWithin(double numCuts,
                                      double minWidth,
                                      double cutDistance)
 {
-  return LefDefParser::lefwLayerRoutingMinimumcutWithin(
+  return LefParser::lefwLayerRoutingMinimumcutWithin(
       numCuts, minWidth, cutDistance);
 }
 
 int lefwLayerRoutingMinimumcutConnections(const char* direction)
 {
-  return LefDefParser::lefwLayerRoutingMinimumcutConnections(direction);
+  return LefParser::lefwLayerRoutingMinimumcutConnections(direction);
 }
 
 int lefwLayerRoutingMinimumcutLengthWithin(double length, double distance)
 {
-  return LefDefParser::lefwLayerRoutingMinimumcutLengthWithin(length, distance);
+  return LefParser::lefwLayerRoutingMinimumcutLengthWithin(length, distance);
 }
 
 int lefwLayerRoutingSpacing(double spacing)
 {
-  return LefDefParser::lefwLayerRoutingSpacing(spacing);
+  return LefParser::lefwLayerRoutingSpacing(spacing);
 }
 
 int lefwLayerRoutingSpacingRange(double minWidth, double maxWidth)
 {
-  return LefDefParser::lefwLayerRoutingSpacingRange(minWidth, maxWidth);
+  return LefParser::lefwLayerRoutingSpacingRange(minWidth, maxWidth);
 }
 
 int lefwLayerRoutingSpacingRangeUseLengthThreshold()
 {
-  return LefDefParser::lefwLayerRoutingSpacingRangeUseLengthThreshold();
+  return LefParser::lefwLayerRoutingSpacingRangeUseLengthThreshold();
 }
 
 int lefwLayerRoutingSpacingRangeInfluence(double infValue,
                                           double subMinWidth,
                                           double subMaxWidth)
 {
-  return LefDefParser::lefwLayerRoutingSpacingRangeInfluence(
+  return LefParser::lefwLayerRoutingSpacingRangeInfluence(
       infValue, subMinWidth, subMaxWidth);
 }
 
 int lefwLayerRoutingSpacingRangeRange(double minWidth, double maxWidth)
 {
-  return LefDefParser::lefwLayerRoutingSpacingRangeRange(minWidth, maxWidth);
+  return LefParser::lefwLayerRoutingSpacingRangeRange(minWidth, maxWidth);
 }
 
 int lefwLayerRoutingSpacingLengthThreshold(double lengthValue,
                                            double minWidth,
                                            double maxWidth)
 {
-  return LefDefParser::lefwLayerRoutingSpacingLengthThreshold(
+  return LefParser::lefwLayerRoutingSpacingLengthThreshold(
       lengthValue, minWidth, maxWidth);
 }
 
 int lefwLayerRoutingSpacingSameNet(int PGOnly)
 {
-  return LefDefParser::lefwLayerRoutingSpacingSameNet(PGOnly);
+  return LefParser::lefwLayerRoutingSpacingSameNet(PGOnly);
 }
 
 int lefwLayerRoutingSpacingEndOfLine(double eolWidth, double eolWithin)
 {
-  return LefDefParser::lefwLayerRoutingSpacingEndOfLine(eolWidth, eolWithin);
+  return LefParser::lefwLayerRoutingSpacingEndOfLine(eolWidth, eolWithin);
 }
 
 int lefwLayerRoutingSpacingEOLParallel(double parSpace,
                                        double parWithin,
                                        int twoEdges)
 {
-  return LefDefParser::lefwLayerRoutingSpacingEOLParallel(
+  return LefParser::lefwLayerRoutingSpacingEOLParallel(
       parSpace, parWithin, twoEdges);
 }
 
 int lefwLayerRoutingSpacingNotchLength(double minNLength)
 {
-  return LefDefParser::lefwLayerRoutingSpacingNotchLength(minNLength);
+  return LefParser::lefwLayerRoutingSpacingNotchLength(minNLength);
 }
 
 int lefwLayerRoutingSpacingEndOfNotchWidth(double eonWidth,
                                            double minNSpacing,
                                            double minNLength)
 {
-  return LefDefParser::lefwLayerRoutingSpacingEndOfNotchWidth(
+  return LefParser::lefwLayerRoutingSpacingEndOfNotchWidth(
       eonWidth, minNSpacing, minNLength);
 }
 
 int lefwLayerRoutingWireExtension(double wireExtension)
 {
-  return LefDefParser::lefwLayerRoutingWireExtension(wireExtension);
+  return LefParser::lefwLayerRoutingWireExtension(wireExtension);
 }
 
 int lefwLayerRoutingResistance(const char* resistance)
 {
-  return LefDefParser::lefwLayerRoutingResistance(resistance);
+  return LefParser::lefwLayerRoutingResistance(resistance);
 }
 
 int lefwLayerRoutingCapacitance(const char* capacitance)
 {
-  return LefDefParser::lefwLayerRoutingCapacitance(capacitance);
+  return LefParser::lefwLayerRoutingCapacitance(capacitance);
 }
 
 int lefwLayerRoutingHeight(double height)
 {
-  return LefDefParser::lefwLayerRoutingHeight(height);
+  return LefParser::lefwLayerRoutingHeight(height);
 }
 
 int lefwLayerRoutingThickness(double thickness)
 {
-  return LefDefParser::lefwLayerRoutingThickness(thickness);
+  return LefParser::lefwLayerRoutingThickness(thickness);
 }
 
 int lefwLayerRoutingShrinkage(double shrinkage)
 {
-  return LefDefParser::lefwLayerRoutingShrinkage(shrinkage);
+  return LefParser::lefwLayerRoutingShrinkage(shrinkage);
 }
 
 int lefwLayerRoutingCapMultiplier(double capMultiplier)
 {
-  return LefDefParser::lefwLayerRoutingCapMultiplier(capMultiplier);
+  return LefParser::lefwLayerRoutingCapMultiplier(capMultiplier);
 }
 
 int lefwLayerRoutingEdgeCap(double edgeCap)
 {
-  return LefDefParser::lefwLayerRoutingEdgeCap(edgeCap);
+  return LefParser::lefwLayerRoutingEdgeCap(edgeCap);
 }
 
 int lefwLayerRoutingAntennaArea(double antennaArea)
 {
-  return LefDefParser::lefwLayerRoutingAntennaArea(antennaArea);
+  return LefParser::lefwLayerRoutingAntennaArea(antennaArea);
 }
 
 int lefwLayerRoutingAntennaLength(double antennaLength)
 {
-  return LefDefParser::lefwLayerRoutingAntennaLength(antennaLength);
+  return LefParser::lefwLayerRoutingAntennaLength(antennaLength);
 }
 
 int lefwLayerRoutingMaxwidth(double width)
 {
-  return LefDefParser::lefwLayerRoutingMaxwidth(width);
+  return LefParser::lefwLayerRoutingMaxwidth(width);
 }
 
 int lefwLayerRoutingMinwidth(double width)
 {
-  return LefDefParser::lefwLayerRoutingMinwidth(width);
+  return LefParser::lefwLayerRoutingMinwidth(width);
 }
 
 int lefwLayerRoutingMinenclosedarea(int numMinenclosed,
                                     double* area,
                                     double* width)
 {
-  return LefDefParser::lefwLayerRoutingMinenclosedarea(
+  return LefParser::lefwLayerRoutingMinenclosedarea(
       numMinenclosed, area, width);
 }
 
 int lefwLayerRoutingMinstep(double distance)
 {
-  return LefDefParser::lefwLayerRoutingMinstep(distance);
+  return LefParser::lefwLayerRoutingMinstep(distance);
 }
 
 int lefwLayerRoutingMinstepWithOptions(double distance,
                                        const char* rule,
                                        double maxLength)
 {
-  return LefDefParser::lefwLayerRoutingMinstepWithOptions(
+  return LefParser::lefwLayerRoutingMinstepWithOptions(
       distance, rule, maxLength);
 }
 
 int lefwLayerRoutingMinstepMaxEdges(double distance, double maxEdges)
 {
-  return LefDefParser::lefwLayerRoutingMinstepMaxEdges(distance, maxEdges);
+  return LefParser::lefwLayerRoutingMinstepMaxEdges(distance, maxEdges);
 }
 
 int lefwLayerRoutingProtrusion(double width1, double length, double width2)
 {
-  return LefDefParser::lefwLayerRoutingProtrusion(width1, length, width2);
+  return LefParser::lefwLayerRoutingProtrusion(width1, length, width2);
 }
 
 int lefwLayerRoutingStartSpacingtableParallel(int numLength, double* length)
 {
-  return LefDefParser::lefwLayerRoutingStartSpacingtableParallel(numLength,
-                                                                 length);
+  return LefParser::lefwLayerRoutingStartSpacingtableParallel(numLength,
+                                                              length);
 }
 
 int lefwLayerRoutingSpacingtableParallelWidth(double width,
                                               int numSpacing,
                                               double* spacing)
 {
-  return LefDefParser::lefwLayerRoutingSpacingtableParallelWidth(
+  return LefParser::lefwLayerRoutingSpacingtableParallelWidth(
       width, numSpacing, spacing);
 }
 
 int lefwLayerRoutingStartSpacingtableInfluence()
 {
-  return LefDefParser::lefwLayerRoutingStartSpacingtableInfluence();
+  return LefParser::lefwLayerRoutingStartSpacingtableInfluence();
 }
 
 int lefwLayerRoutingSpacingInfluenceWidth(double width,
                                           double distance,
                                           double spacing)
 {
-  return LefDefParser::lefwLayerRoutingSpacingInfluenceWidth(
+  return LefParser::lefwLayerRoutingSpacingInfluenceWidth(
       width, distance, spacing);
 }
 
 int lefwLayerRoutingStartSpacingtableTwoWidths()
 {
-  return LefDefParser::lefwLayerRoutingStartSpacingtableTwoWidths();
+  return LefParser::lefwLayerRoutingStartSpacingtableTwoWidths();
 }
 
 int lefwLayerRoutingSpacingtableTwoWidthsWidth(double width,
@@ -565,209 +564,208 @@ int lefwLayerRoutingSpacingtableTwoWidthsWidth(double width,
                                                int numSpacing,
                                                double* spacing)
 {
-  return LefDefParser::lefwLayerRoutingSpacingtableTwoWidthsWidth(
+  return LefParser::lefwLayerRoutingSpacingtableTwoWidthsWidth(
       width, runLength, numSpacing, spacing);
 }
 
 int lefwLayerRoutineEndSpacingtable()
 {
-  return LefDefParser::lefwLayerRoutineEndSpacingtable();
+  return LefParser::lefwLayerRoutineEndSpacingtable();
 }
 
 int lefwEndLayerRouting(const char* layerName)
 {
-  return LefDefParser::lefwEndLayerRouting(layerName);
+  return LefParser::lefwEndLayerRouting(layerName);
 }
 
 int lefwLayerACCurrentDensity(const char* type, double value)
 {
-  return LefDefParser::lefwLayerACCurrentDensity(type, value);
+  return LefParser::lefwLayerACCurrentDensity(type, value);
 }
 
 int lefwLayerACFrequency(int numFrequency, double* frequency)
 {
-  return LefDefParser::lefwLayerACFrequency(numFrequency, frequency);
+  return LefParser::lefwLayerACFrequency(numFrequency, frequency);
 }
 
 int lefwLayerACWidth(int numWidths, double* widths)
 {
-  return LefDefParser::lefwLayerACWidth(numWidths, widths);
+  return LefParser::lefwLayerACWidth(numWidths, widths);
 }
 
 int lefwLayerACCutarea(int numCutareas, double* cutareas)
 {
-  return LefDefParser::lefwLayerACCutarea(numCutareas, cutareas);
+  return LefParser::lefwLayerACCutarea(numCutareas, cutareas);
 }
 
 int lefwLayerACTableEntries(int numEntries, double* entries)
 {
-  return LefDefParser::lefwLayerACTableEntries(numEntries, entries);
+  return LefParser::lefwLayerACTableEntries(numEntries, entries);
 }
 
 int lefwLayerDCCurrentDensity(const char* type, double value)
 {
-  return LefDefParser::lefwLayerDCCurrentDensity(type, value);
+  return LefParser::lefwLayerDCCurrentDensity(type, value);
 }
 
 int lefwLayerDCWidth(int numWidths, double* widths)
 {
-  return LefDefParser::lefwLayerDCWidth(numWidths, widths);
+  return LefParser::lefwLayerDCWidth(numWidths, widths);
 }
 
 int lefwLayerDCCutarea(int numCutareas, double* cutareas)
 {
-  return LefDefParser::lefwLayerDCCutarea(numCutareas, cutareas);
+  return LefParser::lefwLayerDCCutarea(numCutareas, cutareas);
 }
 
 int lefwLayerDCTableEntries(int numEntries, double* entries)
 {
-  return LefDefParser::lefwLayerDCTableEntries(numEntries, entries);
+  return LefParser::lefwLayerDCTableEntries(numEntries, entries);
 }
 
 int lefwLayerAntennaModel(const char* oxide)
 {
-  return LefDefParser::lefwLayerAntennaModel(oxide);
+  return LefParser::lefwLayerAntennaModel(oxide);
 }
 
 int lefwLayerAntennaAreaRatio(double value)
 {
-  return LefDefParser::lefwLayerAntennaAreaRatio(value);
+  return LefParser::lefwLayerAntennaAreaRatio(value);
 }
 
 int lefwLayerAntennaDiffAreaRatio(double value)
 {
-  return LefDefParser::lefwLayerAntennaDiffAreaRatio(value);
+  return LefParser::lefwLayerAntennaDiffAreaRatio(value);
 }
 
 int lefwLayerAntennaDiffAreaRatioPwl(int numPwls,
                                      double* diffusions,
                                      double* ratios)
 {
-  return LefDefParser::lefwLayerAntennaDiffAreaRatioPwl(
+  return LefParser::lefwLayerAntennaDiffAreaRatioPwl(
       numPwls, diffusions, ratios);
 }
 
 int lefwLayerAntennaCumAreaRatio(double value)
 {
-  return LefDefParser::lefwLayerAntennaCumAreaRatio(value);
+  return LefParser::lefwLayerAntennaCumAreaRatio(value);
 }
 
 int lefwLayerAntennaCumDiffAreaRatio(double value)
 {
-  return LefDefParser::lefwLayerAntennaCumDiffAreaRatio(value);
+  return LefParser::lefwLayerAntennaCumDiffAreaRatio(value);
 }
 
 int lefwLayerAntennaCumDiffAreaRatioPwl(int numPwls,
                                         double* diffusions,
                                         double* ratios)
 {
-  return LefDefParser::lefwLayerAntennaCumDiffAreaRatioPwl(
+  return LefParser::lefwLayerAntennaCumDiffAreaRatioPwl(
       numPwls, diffusions, ratios);
 }
 
 int lefwLayerAntennaAreaFactor(double value, const char* diffUseOnly)
 {
-  return LefDefParser::lefwLayerAntennaAreaFactor(value, diffUseOnly);
+  return LefParser::lefwLayerAntennaAreaFactor(value, diffUseOnly);
 }
 
 int lefwLayerAntennaSideAreaRatio(double value)
 {
-  return LefDefParser::lefwLayerAntennaSideAreaRatio(value);
+  return LefParser::lefwLayerAntennaSideAreaRatio(value);
 }
 
 int lefwLayerAntennaDiffSideAreaRatio(double value)
 {
-  return LefDefParser::lefwLayerAntennaDiffSideAreaRatio(value);
+  return LefParser::lefwLayerAntennaDiffSideAreaRatio(value);
 }
 
 int lefwLayerAntennaDiffSideAreaRatioPwl(int numPwls,
                                          double* diffusions,
                                          double* ratios)
 {
-  return LefDefParser::lefwLayerAntennaDiffSideAreaRatioPwl(
+  return LefParser::lefwLayerAntennaDiffSideAreaRatioPwl(
       numPwls, diffusions, ratios);
 }
 
 int lefwLayerAntennaCumSideAreaRatio(double value)
 {
-  return LefDefParser::lefwLayerAntennaCumSideAreaRatio(value);
+  return LefParser::lefwLayerAntennaCumSideAreaRatio(value);
 }
 
 int lefwLayerAntennaCumDiffSideAreaRatio(double value)
 {
-  return LefDefParser::lefwLayerAntennaCumDiffSideAreaRatio(value);
+  return LefParser::lefwLayerAntennaCumDiffSideAreaRatio(value);
 }
 
 int lefwLayerAntennaCumDiffSideAreaRatioPwl(int numPwls,
                                             double* diffusions,
                                             double* ratios)
 {
-  return LefDefParser::lefwLayerAntennaCumDiffSideAreaRatioPwl(
+  return LefParser::lefwLayerAntennaCumDiffSideAreaRatioPwl(
       numPwls, diffusions, ratios);
 }
 
 int lefwLayerAntennaSideAreaFactor(double value, const char* diffUseOnly)
 {
-  return LefDefParser::lefwLayerAntennaSideAreaFactor(value, diffUseOnly);
+  return LefParser::lefwLayerAntennaSideAreaFactor(value, diffUseOnly);
 }
 
 int lefwLayerAntennaCumRoutingPlusCut()
 {
-  return LefDefParser::lefwLayerAntennaCumRoutingPlusCut();
+  return LefParser::lefwLayerAntennaCumRoutingPlusCut();
 }
 
 int lefwLayerAntennaGatePlusDiff(double plusDiffFactor)
 {
-  return LefDefParser::lefwLayerAntennaGatePlusDiff(plusDiffFactor);
+  return LefParser::lefwLayerAntennaGatePlusDiff(plusDiffFactor);
 }
 
 int lefwLayerAntennaAreaMinusDiff(double minusDiffFactor)
 {
-  return LefDefParser::lefwLayerAntennaAreaMinusDiff(minusDiffFactor);
+  return LefParser::lefwLayerAntennaAreaMinusDiff(minusDiffFactor);
 }
 
 int lefwLayerAntennaAreaDiffReducePwl(int numPwls,
                                       double* diffAreas,
                                       double* metalDiffFactors)
 {
-  return LefDefParser::lefwLayerAntennaAreaDiffReducePwl(
+  return LefParser::lefwLayerAntennaAreaDiffReducePwl(
       numPwls, diffAreas, metalDiffFactors);
 }
 
 int lefwMinimumDensity(double minDensity)
 {
-  return LefDefParser::lefwMinimumDensity(minDensity);
+  return LefParser::lefwMinimumDensity(minDensity);
 }
 
 int lefwMaximumDensity(double maxDensity)
 {
-  return LefDefParser::lefwMaximumDensity(maxDensity);
+  return LefParser::lefwMaximumDensity(maxDensity);
 }
 
 int lefwDensityCheckWindow(double checkWindowLength, double checkWindowWidth)
 {
-  return LefDefParser::lefwDensityCheckWindow(checkWindowLength,
-                                              checkWindowWidth);
+  return LefParser::lefwDensityCheckWindow(checkWindowLength, checkWindowWidth);
 }
 
 int lefwDensityCheckStep(double checkStepValue)
 {
-  return LefDefParser::lefwDensityCheckStep(checkStepValue);
+  return LefParser::lefwDensityCheckStep(checkStepValue);
 }
 
 int lefwFillActiveSpacing(double fillToActiveSpacing)
 {
-  return LefDefParser::lefwFillActiveSpacing(fillToActiveSpacing);
+  return LefParser::lefwFillActiveSpacing(fillToActiveSpacing);
 }
 
 int lefwMaxviastack(int value, const char* bottomLayer, const char* topLayer)
 {
-  return LefDefParser::lefwMaxviastack(value, bottomLayer, topLayer);
+  return LefParser::lefwMaxviastack(value, bottomLayer, topLayer);
 }
 
 int lefwStartPropDef()
 {
-  return LefDefParser::lefwStartPropDef();
+  return LefParser::lefwStartPropDef();
 }
 
 int lefwIntPropDef(const char* objType,
@@ -776,7 +774,7 @@ int lefwIntPropDef(const char* objType,
                    double rightRange,
                    int propValue)
 {
-  return LefDefParser::lefwIntPropDef(
+  return LefParser::lefwIntPropDef(
       objType, propName, leftRange, rightRange, propValue);
 }
 
@@ -786,7 +784,7 @@ int lefwRealPropDef(const char* objType,
                     double rightRange,
                     double propValue)
 {
-  return LefDefParser::lefwRealPropDef(
+  return LefParser::lefwRealPropDef(
       objType, propName, leftRange, rightRange, propValue);
 }
 
@@ -796,28 +794,28 @@ int lefwStringPropDef(const char* objType,
                       double rightRange,
                       const char* propValue)
 {
-  return LefDefParser::lefwStringPropDef(
+  return LefParser::lefwStringPropDef(
       objType, propName, leftRange, rightRange, propValue);
 }
 
 int lefwEndPropDef()
 {
-  return LefDefParser::lefwEndPropDef();
+  return LefParser::lefwEndPropDef();
 }
 
 int lefwStartVia(const char* viaName, const char* isDefault)
 {
-  return LefDefParser::lefwStartVia(viaName, isDefault);
+  return LefParser::lefwStartVia(viaName, isDefault);
 }
 
 int lefwViaTopofstackonly()
 {
-  return LefDefParser::lefwViaTopofstackonly();
+  return LefParser::lefwViaTopofstackonly();
 }
 
 int lefwViaForeign(const char* foreignName, double xl, double yl, int orient)
 {
-  return LefDefParser::lefwViaForeign(foreignName, xl, yl, orient);
+  return LefParser::lefwViaForeign(foreignName, xl, yl, orient);
 }
 
 int lefwViaForeignStr(const char* foreignName,
@@ -825,27 +823,27 @@ int lefwViaForeignStr(const char* foreignName,
                       double yl,
                       const char* orient)
 {
-  return LefDefParser::lefwViaForeignStr(foreignName, xl, yl, orient);
+  return LefParser::lefwViaForeignStr(foreignName, xl, yl, orient);
 }
 
 int lefwViaResistance(double resistance)
 {
-  return LefDefParser::lefwViaResistance(resistance);
+  return LefParser::lefwViaResistance(resistance);
 }
 
 int lefwViaLayer(const char* layerName)
 {
-  return LefDefParser::lefwViaLayer(layerName);
+  return LefParser::lefwViaLayer(layerName);
 }
 
 int lefwViaLayerRect(double x1l, double y1l, double x2l, double y2l, int mask)
 {
-  return LefDefParser::lefwViaLayerRect(x1l, y1l, x2l, y2l, mask);
+  return LefParser::lefwViaLayerRect(x1l, y1l, x2l, y2l, mask);
 }
 
 int lefwViaLayerPolygon(int num_polys, double* xl, double* yl, int mask)
 {
-  return LefDefParser::lefwViaLayerPolygon(num_polys, xl, yl, mask);
+  return LefParser::lefwViaLayerPolygon(num_polys, xl, yl, mask);
 }
 
 int lefwViaViarule(const char* viaRuleName,
@@ -861,28 +859,28 @@ int lefwViaViarule(const char* viaRuleName,
                    double xTopEnc,
                    double yTopEnc)
 {
-  return LefDefParser::lefwViaViarule(viaRuleName,
-                                      xCutSize,
-                                      yCutSize,
-                                      botMetalLayer,
-                                      cutLayer,
-                                      topMetalLayer,
-                                      xCutSpacing,
-                                      yCutSpacing,
-                                      xBotEnc,
-                                      yBotEnc,
-                                      xTopEnc,
-                                      yTopEnc);
+  return LefParser::lefwViaViarule(viaRuleName,
+                                   xCutSize,
+                                   yCutSize,
+                                   botMetalLayer,
+                                   cutLayer,
+                                   topMetalLayer,
+                                   xCutSpacing,
+                                   yCutSpacing,
+                                   xBotEnc,
+                                   yBotEnc,
+                                   xTopEnc,
+                                   yTopEnc);
 }
 
 int lefwViaViaruleRowCol(int numCutRows, int numCutCols)
 {
-  return LefDefParser::lefwViaViaruleRowCol(numCutRows, numCutCols);
+  return LefParser::lefwViaViaruleRowCol(numCutRows, numCutCols);
 }
 
 int lefwViaViaruleOrigin(double xOffset, double yOffset)
 {
-  return LefDefParser::lefwViaViaruleOrigin(xOffset, yOffset);
+  return LefParser::lefwViaViaruleOrigin(xOffset, yOffset);
 }
 
 int lefwViaViaruleOffset(double xBotOffset,
@@ -890,38 +888,38 @@ int lefwViaViaruleOffset(double xBotOffset,
                          double xTopOffset,
                          double yTopOffset)
 {
-  return LefDefParser::lefwViaViaruleOffset(
+  return LefParser::lefwViaViaruleOffset(
       xBotOffset, yBotOffset, xTopOffset, yTopOffset);
 }
 
 int lefwViaViarulePattern(const char* cutPattern)
 {
-  return LefDefParser::lefwViaViarulePattern(cutPattern);
+  return LefParser::lefwViaViarulePattern(cutPattern);
 }
 
 int lefwStringProperty(const char* propName, const char* propValue)
 {
-  return LefDefParser::lefwStringProperty(propName, propValue);
+  return LefParser::lefwStringProperty(propName, propValue);
 }
 
 int lefwRealProperty(const char* propName, double propValue)
 {
-  return LefDefParser::lefwRealProperty(propName, propValue);
+  return LefParser::lefwRealProperty(propName, propValue);
 }
 
 int lefwIntProperty(const char* propName, int propValue)
 {
-  return LefDefParser::lefwIntProperty(propName, propValue);
+  return LefParser::lefwIntProperty(propName, propValue);
 }
 
 int lefwEndVia(const char* viaName)
 {
-  return LefDefParser::lefwEndVia(viaName);
+  return LefParser::lefwEndVia(viaName);
 }
 
 int lefwStartViaRule(const char* viaRuleName)
 {
-  return LefDefParser::lefwStartViaRule(viaRuleName);
+  return LefParser::lefwStartViaRule(viaRuleName);
 }
 
 int lefwViaRuleLayer(const char* layerName,
@@ -931,28 +929,28 @@ int lefwViaRuleLayer(const char* layerName,
                      double overhang,
                      double metalOverhang)
 {
-  return LefDefParser::lefwViaRuleLayer(
+  return LefParser::lefwViaRuleLayer(
       layerName, direction, minWidth, maxWidth, overhang, metalOverhang);
 }
 
 int lefwViaRuleVia(const char* viaName)
 {
-  return LefDefParser::lefwViaRuleVia(viaName);
+  return LefParser::lefwViaRuleVia(viaName);
 }
 
 int lefwEndViaRule(const char* viaRuleName)
 {
-  return LefDefParser::lefwEndViaRule(viaRuleName);
+  return LefParser::lefwEndViaRule(viaRuleName);
 }
 
 int lefwStartViaRuleGen(const char* viaRuleName)
 {
-  return LefDefParser::lefwStartViaRuleGen(viaRuleName);
+  return LefParser::lefwStartViaRuleGen(viaRuleName);
 }
 
 int lefwViaRuleGenDefault()
 {
-  return LefDefParser::lefwViaRuleGenDefault();
+  return LefParser::lefwViaRuleGenDefault();
 }
 
 int lefwViaRuleGenLayer(const char* layerName,
@@ -962,7 +960,7 @@ int lefwViaRuleGenLayer(const char* layerName,
                         double overhang,
                         double metalOverhang)
 {
-  return LefDefParser::lefwViaRuleGenLayer(
+  return LefParser::lefwViaRuleGenLayer(
       layerName, direction, minWidth, maxWidth, overhang, metalOverhang);
 }
 
@@ -972,7 +970,7 @@ int lefwViaRuleGenLayerEnclosure(const char* layerName,
                                  double minWidth,
                                  double maxWidth)
 {
-  return LefDefParser::lefwViaRuleGenLayerEnclosure(
+  return LefParser::lefwViaRuleGenLayerEnclosure(
       layerName, overhang1, overhang2, minWidth, maxWidth);
 }
 
@@ -985,18 +983,18 @@ int lefwViaRuleGenLayer3(const char* layerName,
                          double ySpacing,
                          double resistance)
 {
-  return LefDefParser::lefwViaRuleGenLayer3(
+  return LefParser::lefwViaRuleGenLayer3(
       layerName, xl, yl, xh, yh, xSpacing, ySpacing, resistance);
 }
 
 int lefwEndViaRuleGen(const char* viaRuleName)
 {
-  return LefDefParser::lefwEndViaRuleGen(viaRuleName);
+  return LefParser::lefwEndViaRuleGen(viaRuleName);
 }
 
 int lefwStartNonDefaultRule(const char* ruleName)
 {
-  return LefDefParser::lefwStartNonDefaultRule(ruleName);
+  return LefParser::lefwStartNonDefaultRule(ruleName);
 }
 
 int lefwNonDefaultRuleLayer(const char* routingLayerName,
@@ -1007,53 +1005,53 @@ int lefwNonDefaultRuleLayer(const char* routingLayerName,
                             double capacitance,
                             double edgeCap)
 {
-  return LefDefParser::lefwNonDefaultRuleLayer(routingLayerName,
-                                               width,
-                                               minSpacing,
-                                               wireExtension,
-                                               resistance,
-                                               capacitance,
-                                               edgeCap);
+  return LefParser::lefwNonDefaultRuleLayer(routingLayerName,
+                                            width,
+                                            minSpacing,
+                                            wireExtension,
+                                            resistance,
+                                            capacitance,
+                                            edgeCap);
 }
 
 int lefwNonDefaultRuleHardspacing()
 {
-  return LefDefParser::lefwNonDefaultRuleHardspacing();
+  return LefParser::lefwNonDefaultRuleHardspacing();
 }
 
 int lefwNonDefaultRuleStartVia(const char* viaName, const char* isDefault)
 {
-  return LefDefParser::lefwNonDefaultRuleStartVia(viaName, isDefault);
+  return LefParser::lefwNonDefaultRuleStartVia(viaName, isDefault);
 }
 
 int lefwNonDefaultRuleEndVia(const char* viaName)
 {
-  return LefDefParser::lefwNonDefaultRuleEndVia(viaName);
+  return LefParser::lefwNonDefaultRuleEndVia(viaName);
 }
 
 int lefwNonDefaultRuleUseVia(const char* viaName)
 {
-  return LefDefParser::lefwNonDefaultRuleUseVia(viaName);
+  return LefParser::lefwNonDefaultRuleUseVia(viaName);
 }
 
 int lefwNonDefaultRuleUseViaRule(const char* viaRuleName)
 {
-  return LefDefParser::lefwNonDefaultRuleUseViaRule(viaRuleName);
+  return LefParser::lefwNonDefaultRuleUseViaRule(viaRuleName);
 }
 
 int lefwNonDefaultRuleMinCuts(const char* layerName, int numCuts)
 {
-  return LefDefParser::lefwNonDefaultRuleMinCuts(layerName, numCuts);
+  return LefParser::lefwNonDefaultRuleMinCuts(layerName, numCuts);
 }
 
 int lefwEndNonDefaultRule(const char* ruleName)
 {
-  return LefDefParser::lefwEndNonDefaultRule(ruleName);
+  return LefParser::lefwEndNonDefaultRule(ruleName);
 }
 
 int lefwStartSpacing()
 {
-  return LefDefParser::lefwStartSpacing();
+  return LefParser::lefwStartSpacing();
 }
 
 int lefwSpacing(const char* layerName1,
@@ -1061,87 +1059,87 @@ int lefwSpacing(const char* layerName1,
                 double minSpace,
                 const char* stack)
 {
-  return LefDefParser::lefwSpacing(layerName1, layerName2, minSpace, stack);
+  return LefParser::lefwSpacing(layerName1, layerName2, minSpace, stack);
 }
 
 int lefwEndSpacing()
 {
-  return LefDefParser::lefwEndSpacing();
+  return LefParser::lefwEndSpacing();
 }
 
 int lefwUniversalNoiseMargin(double high, double low)
 {
-  return LefDefParser::lefwUniversalNoiseMargin(high, low);
+  return LefParser::lefwUniversalNoiseMargin(high, low);
 }
 
 int lefwEdgeRateThreshold1(double num)
 {
-  return LefDefParser::lefwEdgeRateThreshold1(num);
+  return LefParser::lefwEdgeRateThreshold1(num);
 }
 
 int lefwEdgeRateThreshold2(double num)
 {
-  return LefDefParser::lefwEdgeRateThreshold2(num);
+  return LefParser::lefwEdgeRateThreshold2(num);
 }
 
 int lefwEdgeRateScaleFactor(double num)
 {
-  return LefDefParser::lefwEdgeRateScaleFactor(num);
+  return LefParser::lefwEdgeRateScaleFactor(num);
 }
 
 int lefwStartNoiseTable(int num)
 {
-  return LefDefParser::lefwStartNoiseTable(num);
+  return LefParser::lefwStartNoiseTable(num);
 }
 
 int lefwEdgeRate(double num)
 {
-  return LefDefParser::lefwEdgeRate(num);
+  return LefParser::lefwEdgeRate(num);
 }
 
 int lefwOutputResistance(int numResists, double* resistance)
 {
-  return LefDefParser::lefwOutputResistance(numResists, resistance);
+  return LefParser::lefwOutputResistance(numResists, resistance);
 }
 
 int lefwVictims(int length, int numNoises, double* noises)
 {
-  return LefDefParser::lefwVictims(length, numNoises, noises);
+  return LefParser::lefwVictims(length, numNoises, noises);
 }
 
 int lefwEndNoiseTable()
 {
-  return LefDefParser::lefwEndNoiseTable();
+  return LefParser::lefwEndNoiseTable();
 }
 
 int lefwStartCorrectTable(int num)
 {
-  return LefDefParser::lefwStartCorrectTable(num);
+  return LefParser::lefwStartCorrectTable(num);
 }
 
 int lefwEndCorrectTable()
 {
-  return LefDefParser::lefwEndCorrectTable();
+  return LefParser::lefwEndCorrectTable();
 }
 
 int lefwMinFeature(double x, double y)
 {
-  return LefDefParser::lefwMinFeature(x, y);
+  return LefParser::lefwMinFeature(x, y);
 }
 
 int lefwStartIrdrop()
 {
-  return LefDefParser::lefwStartIrdrop();
+  return LefParser::lefwStartIrdrop();
 }
 
 int lefwIrdropTable(const char* tableName, const char* currentsNvolts)
 {
-  return LefDefParser::lefwIrdropTable(tableName, currentsNvolts);
+  return LefParser::lefwIrdropTable(tableName, currentsNvolts);
 }
 
 int lefwEndIrdrop()
 {
-  return LefDefParser::lefwEndIrdrop();
+  return LefParser::lefwEndIrdrop();
 }
 
 int lefwSite(const char* siteName,
@@ -1150,27 +1148,27 @@ int lefwSite(const char* siteName,
              double width,
              double height)
 {
-  return LefDefParser::lefwSite(siteName, classType, symmetry, width, height);
+  return LefParser::lefwSite(siteName, classType, symmetry, width, height);
 }
 
 int lefwSiteRowPattern(const char* siteName, int orient)
 {
-  return LefDefParser::lefwSiteRowPattern(siteName, orient);
+  return LefParser::lefwSiteRowPattern(siteName, orient);
 }
 
 int lefwSiteRowPatternStr(const char* siteName, const char* orient)
 {
-  return LefDefParser::lefwSiteRowPatternStr(siteName, orient);
+  return LefParser::lefwSiteRowPatternStr(siteName, orient);
 }
 
 int lefwEndSite(const char* siteName)
 {
-  return LefDefParser::lefwEndSite(siteName);
+  return LefParser::lefwEndSite(siteName);
 }
 
 int lefwStartArray(const char* arrayName)
 {
-  return LefDefParser::lefwStartArray(arrayName);
+  return LefParser::lefwStartArray(arrayName);
 }
 
 int lefwArraySite(const char* name,
@@ -1182,7 +1180,7 @@ int lefwArraySite(const char* name,
                   double spaceX,
                   double spaceY)
 {
-  return LefDefParser::lefwArraySite(
+  return LefParser::lefwArraySite(
       name, origX, origY, orient, numX, numY, spaceX, spaceY);
 }
 
@@ -1195,7 +1193,7 @@ int lefwArraySiteStr(const char* name,
                      double spaceX,
                      double spaceY)
 {
-  return LefDefParser::lefwArraySiteStr(
+  return LefParser::lefwArraySiteStr(
       name, origX, origY, orient, numX, numY, spaceX, spaceY);
 }
 
@@ -1208,7 +1206,7 @@ int lefwArrayCanplace(const char* name,
                       double spaceX,
                       double spaceY)
 {
-  return LefDefParser::lefwArrayCanplace(
+  return LefParser::lefwArrayCanplace(
       name, origX, origY, orient, numX, numY, spaceX, spaceY);
 }
 
@@ -1221,7 +1219,7 @@ int lefwArrayCanplaceStr(const char* name,
                          double spaceX,
                          double spaceY)
 {
-  return LefDefParser::lefwArrayCanplaceStr(
+  return LefParser::lefwArrayCanplaceStr(
       name, origX, origY, orient, numX, numY, spaceX, spaceY);
 }
 
@@ -1234,7 +1232,7 @@ int lefwArrayCannotoccupy(const char* name,
                           double spaceX,
                           double spaceY)
 {
-  return LefDefParser::lefwArrayCannotoccupy(
+  return LefParser::lefwArrayCannotoccupy(
       name, origX, origY, orient, numX, numY, spaceX, spaceY);
 }
 
@@ -1247,7 +1245,7 @@ int lefwArrayCannotoccupyStr(const char* name,
                              double spaceX,
                              double spaceY)
 {
-  return LefDefParser::lefwArrayCannotoccupyStr(
+  return LefParser::lefwArrayCannotoccupyStr(
       name, origX, origY, orient, numX, numY, spaceX, spaceY);
 }
 
@@ -1257,12 +1255,12 @@ int lefwArrayTracks(const char* xy,
                     double space,
                     const char* layers)
 {
-  return LefDefParser::lefwArrayTracks(xy, start, numTracks, space, layers);
+  return LefParser::lefwArrayTracks(xy, start, numTracks, space, layers);
 }
 
 int lefwStartArrayFloorplan(const char* name)
 {
-  return LefDefParser::lefwStartArrayFloorplan(name);
+  return LefParser::lefwStartArrayFloorplan(name);
 }
 
 int lefwArrayFloorplan(const char* site,
@@ -1275,7 +1273,7 @@ int lefwArrayFloorplan(const char* site,
                        double spaceX,
                        double spaceY)
 {
-  return LefDefParser::lefwArrayFloorplan(
+  return LefParser::lefwArrayFloorplan(
       site, name, origX, origY, orient, numX, numY, spaceX, spaceY);
 }
 
@@ -1289,13 +1287,13 @@ int lefwArrayFloorplanStr(const char* site,
                           double spaceX,
                           double spaceY)
 {
-  return LefDefParser::lefwArrayFloorplanStr(
+  return LefParser::lefwArrayFloorplanStr(
       site, name, origX, origY, orient, numX, numY, spaceX, spaceY);
 }
 
 int lefwEndArrayFloorplan(const char* name)
 {
-  return LefDefParser::lefwEndArrayFloorplan(name);
+  return LefParser::lefwEndArrayFloorplan(name);
 }
 
 int lefwArrayGcellgrid(const char* xy,
@@ -1303,52 +1301,52 @@ int lefwArrayGcellgrid(const char* xy,
                        int colRows,
                        double spaceXY)
 {
-  return LefDefParser::lefwArrayGcellgrid(xy, startXY, colRows, spaceXY);
+  return LefParser::lefwArrayGcellgrid(xy, startXY, colRows, spaceXY);
 }
 
 int lefwStartArrayDefaultCap(int size)
 {
-  return LefDefParser::lefwStartArrayDefaultCap(size);
+  return LefParser::lefwStartArrayDefaultCap(size);
 }
 
 int lefwArrayDefaultCap(double numPins, double cap)
 {
-  return LefDefParser::lefwArrayDefaultCap(numPins, cap);
+  return LefParser::lefwArrayDefaultCap(numPins, cap);
 }
 
 int lefwEndArrayDefaultCap()
 {
-  return LefDefParser::lefwEndArrayDefaultCap();
+  return LefParser::lefwEndArrayDefaultCap();
 }
 
 int lefwEndArray(const char* arrayName)
 {
-  return LefDefParser::lefwEndArray(arrayName);
+  return LefParser::lefwEndArray(arrayName);
 }
 
 int lefwStartMacro(const char* macroName)
 {
-  return LefDefParser::lefwStartMacro(macroName);
+  return LefParser::lefwStartMacro(macroName);
 }
 
 int lefwMacroClass(const char* value1, const char* value2)
 {
-  return LefDefParser::lefwMacroClass(value1, value2);
+  return LefParser::lefwMacroClass(value1, value2);
 }
 
 int lefwMacroFixedMask()
 {
-  return LefDefParser::lefwMacroFixedMask();
+  return LefParser::lefwMacroFixedMask();
 }
 
 int lefwMacroSource(const char* value1)
 {
-  return LefDefParser::lefwMacroSource(value1);
+  return LefParser::lefwMacroSource(value1);
 }
 
 int lefwMacroForeign(const char* name, double xl, double yl, int orient)
 {
-  return LefDefParser::lefwMacroForeign(name, xl, yl, orient);
+  return LefParser::lefwMacroForeign(name, xl, yl, orient);
 }
 
 int lefwMacroForeignStr(const char* name,
@@ -1356,37 +1354,37 @@ int lefwMacroForeignStr(const char* name,
                         double yl,
                         const char* orient)
 {
-  return LefDefParser::lefwMacroForeignStr(name, xl, yl, orient);
+  return LefParser::lefwMacroForeignStr(name, xl, yl, orient);
 }
 
 int lefwMacroOrigin(double xl, double yl)
 {
-  return LefDefParser::lefwMacroOrigin(xl, yl);
+  return LefParser::lefwMacroOrigin(xl, yl);
 }
 
 int lefwMacroEEQ(const char* macroName)
 {
-  return LefDefParser::lefwMacroEEQ(macroName);
+  return LefParser::lefwMacroEEQ(macroName);
 }
 
 int lefwMacroLEQ(const char* macroName)
 {
-  return LefDefParser::lefwMacroLEQ(macroName);
+  return LefParser::lefwMacroLEQ(macroName);
 }
 
 int lefwMacroSize(double width, double height)
 {
-  return LefDefParser::lefwMacroSize(width, height);
+  return LefParser::lefwMacroSize(width, height);
 }
 
 int lefwMacroSymmetry(const char* symmetry)
 {
-  return LefDefParser::lefwMacroSymmetry(symmetry);
+  return LefParser::lefwMacroSymmetry(symmetry);
 }
 
 int lefwMacroSite(const char* siteName)
 {
-  return LefDefParser::lefwMacroSite(siteName);
+  return LefParser::lefwMacroSite(siteName);
 }
 
 int lefwMacroSitePattern(const char* name,
@@ -1398,7 +1396,7 @@ int lefwMacroSitePattern(const char* name,
                          double spaceX,
                          double spaceY)
 {
-  return LefDefParser::lefwMacroSitePattern(
+  return LefParser::lefwMacroSitePattern(
       name, origX, origY, orient, numX, numY, spaceX, spaceY);
 }
 
@@ -1411,23 +1409,23 @@ int lefwMacroSitePatternStr(const char* name,
                             double spaceX,
                             double spaceY)
 {
-  return LefDefParser::lefwMacroSitePatternStr(
+  return LefParser::lefwMacroSitePatternStr(
       name, origX, origY, orient, numX, numY, spaceX, spaceY);
 }
 
 int lefwMacroPower(double power)
 {
-  return LefDefParser::lefwMacroPower(power);
+  return LefParser::lefwMacroPower(power);
 }
 
 int lefwEndMacro(const char* macroName)
 {
-  return LefDefParser::lefwEndMacro(macroName);
+  return LefParser::lefwEndMacro(macroName);
 }
 
 int lefwStartMacroDensity(const char* layerName)
 {
-  return LefDefParser::lefwStartMacroDensity(layerName);
+  return LefParser::lefwStartMacroDensity(layerName);
 }
 
 int lefwMacroDensityLayerRect(double x1,
@@ -1436,27 +1434,27 @@ int lefwMacroDensityLayerRect(double x1,
                               double y2,
                               double densityValue)
 {
-  return LefDefParser::lefwMacroDensityLayerRect(x1, y1, x2, y2, densityValue);
+  return LefParser::lefwMacroDensityLayerRect(x1, y1, x2, y2, densityValue);
 }
 
 int lefwEndMacroDensity()
 {
-  return LefDefParser::lefwEndMacroDensity();
+  return LefParser::lefwEndMacroDensity();
 }
 
 int lefwStartMacroPin(const char* pinName)
 {
-  return LefDefParser::lefwStartMacroPin(pinName);
+  return LefParser::lefwStartMacroPin(pinName);
 }
 
 int lefwMacroPinTaperRule(const char* ruleName)
 {
-  return LefDefParser::lefwMacroPinTaperRule(ruleName);
+  return LefParser::lefwMacroPinTaperRule(ruleName);
 }
 
 int lefwMacroPinForeign(const char* name, double xl, double yl, int orient)
 {
-  return LefDefParser::lefwMacroPinForeign(name, xl, yl, orient);
+  return LefParser::lefwMacroPinForeign(name, xl, yl, orient);
 }
 
 int lefwMacroPinForeignStr(const char* name,
@@ -1464,228 +1462,227 @@ int lefwMacroPinForeignStr(const char* name,
                            double yl,
                            const char* orient)
 {
-  return LefDefParser::lefwMacroPinForeignStr(name, xl, yl, orient);
+  return LefParser::lefwMacroPinForeignStr(name, xl, yl, orient);
 }
 
 int lefwMacroPinLEQ(const char* pinName)
 {
-  return LefDefParser::lefwMacroPinLEQ(pinName);
+  return LefParser::lefwMacroPinLEQ(pinName);
 }
 
 int lefwMacroPinDirection(const char* direction)
 {
-  return LefDefParser::lefwMacroPinDirection(direction);
+  return LefParser::lefwMacroPinDirection(direction);
 }
 
 int lefwMacroPinUse(const char* use)
 {
-  return LefDefParser::lefwMacroPinUse(use);
+  return LefParser::lefwMacroPinUse(use);
 }
 
 int lefwMacroPinShape(const char* name)
 {
-  return LefDefParser::lefwMacroPinShape(name);
+  return LefParser::lefwMacroPinShape(name);
 }
 
 int lefwMacroPinMustjoin(const char* name)
 {
-  return LefDefParser::lefwMacroPinMustjoin(name);
+  return LefParser::lefwMacroPinMustjoin(name);
 }
 
 int lefwMacroPinNetExpr(const char* name)
 {
-  return LefDefParser::lefwMacroPinNetExpr(name);
+  return LefParser::lefwMacroPinNetExpr(name);
 }
 
 int lefwMacroPinSupplySensitivity(const char* pinName)
 {
-  return LefDefParser::lefwMacroPinSupplySensitivity(pinName);
+  return LefParser::lefwMacroPinSupplySensitivity(pinName);
 }
 
 int lefwMacroPinGroundSensitivity(const char* pinName)
 {
-  return LefDefParser::lefwMacroPinGroundSensitivity(pinName);
+  return LefParser::lefwMacroPinGroundSensitivity(pinName);
 }
 
 int lefwMacroPinOutputnoisemargin(int high, int low)
 {
-  return LefDefParser::lefwMacroPinOutputnoisemargin(high, low);
+  return LefParser::lefwMacroPinOutputnoisemargin(high, low);
 }
 
 int lefwMacroPinOutputresistance(int high, int low)
 {
-  return LefDefParser::lefwMacroPinOutputresistance(high, low);
+  return LefParser::lefwMacroPinOutputresistance(high, low);
 }
 
 int lefwMacroPinInputnoisemargin(int high, int low)
 {
-  return LefDefParser::lefwMacroPinInputnoisemargin(high, low);
+  return LefParser::lefwMacroPinInputnoisemargin(high, low);
 }
 
 int lefwMacroPinPower(double power)
 {
-  return LefDefParser::lefwMacroPinPower(power);
+  return LefParser::lefwMacroPinPower(power);
 }
 
 int lefwMacroPinLeakage(double leakage)
 {
-  return LefDefParser::lefwMacroPinLeakage(leakage);
+  return LefParser::lefwMacroPinLeakage(leakage);
 }
 
 int lefwMacroPinCapacitance(double capacitance)
 {
-  return LefDefParser::lefwMacroPinCapacitance(capacitance);
+  return LefParser::lefwMacroPinCapacitance(capacitance);
 }
 
 int lefwMacroPinResistance(double resistance)
 {
-  return LefDefParser::lefwMacroPinResistance(resistance);
+  return LefParser::lefwMacroPinResistance(resistance);
 }
 
 int lefwMacroPinPulldownres(double resistance)
 {
-  return LefDefParser::lefwMacroPinPulldownres(resistance);
+  return LefParser::lefwMacroPinPulldownres(resistance);
 }
 
 int lefwMacroPinTieoffr(double resistance)
 {
-  return LefDefParser::lefwMacroPinTieoffr(resistance);
+  return LefParser::lefwMacroPinTieoffr(resistance);
 }
 
 int lefwMacroPinVHI(double voltage)
 {
-  return LefDefParser::lefwMacroPinVHI(voltage);
+  return LefParser::lefwMacroPinVHI(voltage);
 }
 
 int lefwMacroPinVLO(double voltage)
 {
-  return LefDefParser::lefwMacroPinVLO(voltage);
+  return LefParser::lefwMacroPinVLO(voltage);
 }
 
 int lefwMacroPinRisevoltagethreshold(double voltage)
 {
-  return LefDefParser::lefwMacroPinRisevoltagethreshold(voltage);
+  return LefParser::lefwMacroPinRisevoltagethreshold(voltage);
 }
 
 int lefwMacroPinFallvoltagethreshold(double voltage)
 {
-  return LefDefParser::lefwMacroPinFallvoltagethreshold(voltage);
+  return LefParser::lefwMacroPinFallvoltagethreshold(voltage);
 }
 
 int lefwMacroPinRisethresh(double capacitance)
 {
-  return LefDefParser::lefwMacroPinRisethresh(capacitance);
+  return LefParser::lefwMacroPinRisethresh(capacitance);
 }
 
 int lefwMacroPinFallthresh(double capacitance)
 {
-  return LefDefParser::lefwMacroPinFallthresh(capacitance);
+  return LefParser::lefwMacroPinFallthresh(capacitance);
 }
 
 int lefwMacroPinRisesatcur(double current)
 {
-  return LefDefParser::lefwMacroPinRisesatcur(current);
+  return LefParser::lefwMacroPinRisesatcur(current);
 }
 
 int lefwMacroPinFallsatcur(double current)
 {
-  return LefDefParser::lefwMacroPinFallsatcur(current);
+  return LefParser::lefwMacroPinFallsatcur(current);
 }
 
 int lefwMacroPinCurrentsource(const char* name)
 {
-  return LefDefParser::lefwMacroPinCurrentsource(name);
+  return LefParser::lefwMacroPinCurrentsource(name);
 }
 
 int lefwMacroPinIV_Tables(const char* lowName, const char* highName)
 {
-  return LefDefParser::lefwMacroPinIV_Tables(lowName, highName);
+  return LefParser::lefwMacroPinIV_Tables(lowName, highName);
 }
 
 int lefwMacroPinAntennasize(double value, const char* layerName)
 {
-  return LefDefParser::lefwMacroPinAntennasize(value, layerName);
+  return LefParser::lefwMacroPinAntennasize(value, layerName);
 }
 
 int lefwMacroPinAntennaMetalArea(double value, const char* layerName)
 {
-  return LefDefParser::lefwMacroPinAntennaMetalArea(value, layerName);
+  return LefParser::lefwMacroPinAntennaMetalArea(value, layerName);
 }
 
 int lefwMacroPinAntennaMetalLength(double value, const char* layerName)
 {
-  return LefDefParser::lefwMacroPinAntennaMetalLength(value, layerName);
+  return LefParser::lefwMacroPinAntennaMetalLength(value, layerName);
 }
 
 int lefwMacroPinAntennaPartialMetalArea(double value, const char* layerName)
 {
-  return LefDefParser::lefwMacroPinAntennaPartialMetalArea(value, layerName);
+  return LefParser::lefwMacroPinAntennaPartialMetalArea(value, layerName);
 }
 
 int lefwMacroPinAntennaPartialMetalSideArea(double value, const char* layerName)
 {
-  return LefDefParser::lefwMacroPinAntennaPartialMetalSideArea(value,
-                                                               layerName);
+  return LefParser::lefwMacroPinAntennaPartialMetalSideArea(value, layerName);
 }
 
 int lefwMacroPinAntennaPartialCutArea(double value, const char* layerName)
 {
-  return LefDefParser::lefwMacroPinAntennaPartialCutArea(value, layerName);
+  return LefParser::lefwMacroPinAntennaPartialCutArea(value, layerName);
 }
 
 int lefwMacroPinAntennaDiffArea(double value, const char* layerName)
 {
-  return LefDefParser::lefwMacroPinAntennaDiffArea(value, layerName);
+  return LefParser::lefwMacroPinAntennaDiffArea(value, layerName);
 }
 
 int lefwMacroPinAntennaModel(const char* oxide)
 {
-  return LefDefParser::lefwMacroPinAntennaModel(oxide);
+  return LefParser::lefwMacroPinAntennaModel(oxide);
 }
 
 int lefwMacroPinAntennaGateArea(double value, const char* layerName)
 {
-  return LefDefParser::lefwMacroPinAntennaGateArea(value, layerName);
+  return LefParser::lefwMacroPinAntennaGateArea(value, layerName);
 }
 
 int lefwMacroPinAntennaMaxAreaCar(double value, const char* layerName)
 {
-  return LefDefParser::lefwMacroPinAntennaMaxAreaCar(value, layerName);
+  return LefParser::lefwMacroPinAntennaMaxAreaCar(value, layerName);
 }
 
 int lefwMacroPinAntennaMaxSideAreaCar(double value, const char* layerName)
 {
-  return LefDefParser::lefwMacroPinAntennaMaxSideAreaCar(value, layerName);
+  return LefParser::lefwMacroPinAntennaMaxSideAreaCar(value, layerName);
 }
 
 int lefwMacroPinAntennaMaxCutCar(double value, const char* layerName)
 {
-  return LefDefParser::lefwMacroPinAntennaMaxCutCar(value, layerName);
+  return LefParser::lefwMacroPinAntennaMaxCutCar(value, layerName);
 }
 
 int lefwEndMacroPin(const char* pinName)
 {
-  return LefDefParser::lefwEndMacroPin(pinName);
+  return LefParser::lefwEndMacroPin(pinName);
 }
 
 int lefwStartMacroPinPort(const char* classType)
 {
-  return LefDefParser::lefwStartMacroPinPort(classType);
+  return LefParser::lefwStartMacroPinPort(classType);
 }
 
 int lefwMacroPinPortLayer(const char* layerName, double spacing)
 {
-  return LefDefParser::lefwMacroPinPortLayer(layerName, spacing);
+  return LefParser::lefwMacroPinPortLayer(layerName, spacing);
 }
 
 int lefwMacroPinPortDesignRuleWidth(const char* layerName, double width)
 {
-  return LefDefParser::lefwMacroPinPortDesignRuleWidth(layerName, width);
+  return LefParser::lefwMacroPinPortDesignRuleWidth(layerName, width);
 }
 
 int lefwMacroPinPortLayerWidth(double width)
 {
-  return LefDefParser::lefwMacroPinPortLayerWidth(width);
+  return LefParser::lefwMacroPinPortLayerWidth(width);
 }
 
 int lefwMacroPinPortLayerPath(int num_paths,
@@ -1697,7 +1694,7 @@ int lefwMacroPinPortLayerPath(int num_paths,
                               double spaceY,
                               int mask)
 {
-  return LefDefParser::lefwMacroPinPortLayerPath(
+  return LefParser::lefwMacroPinPortLayerPath(
       num_paths, xl, yl, numX, numY, spaceX, spaceY, mask);
 }
 
@@ -1711,7 +1708,7 @@ int lefwMacroPinPortLayerRect(double xl1,
                               double spaceY,
                               int mask)
 {
-  return LefDefParser::lefwMacroPinPortLayerRect(
+  return LefParser::lefwMacroPinPortLayerRect(
       xl1, yl1, xl2, yl2, numX, numY, spaceX, spaceY, mask);
 }
 
@@ -1724,7 +1721,7 @@ int lefwMacroPinPortLayerPolygon(int num_polys,
                                  double spaceY,
                                  int mask)
 {
-  return LefDefParser::lefwMacroPinPortLayerPolygon(
+  return LefParser::lefwMacroPinPortLayerPolygon(
       num_polys, xl, yl, numX, numY, spaceX, spaceY, mask);
 }
 
@@ -1737,38 +1734,38 @@ int lefwMacroPinPortVia(double xl,
                         double spaceY,
                         int mask)
 {
-  return LefDefParser::lefwMacroPinPortVia(
+  return LefParser::lefwMacroPinPortVia(
       xl, yl, viaName, numX, numY, spaceX, spaceY, mask);
 }
 
 int lefwEndMacroPinPort()
 {
-  return LefDefParser::lefwEndMacroPinPort();
+  return LefParser::lefwEndMacroPinPort();
 }
 
 int lefwStartMacroObs()
 {
-  return LefDefParser::lefwStartMacroObs();
+  return LefParser::lefwStartMacroObs();
 }
 
 int lefwMacroObsLayer(const char* layerName, double spacing)
 {
-  return LefDefParser::lefwMacroObsLayer(layerName, spacing);
+  return LefParser::lefwMacroObsLayer(layerName, spacing);
 }
 
 int lefwMacroObsDesignRuleWidth(const char* layerName, double width)
 {
-  return LefDefParser::lefwMacroObsDesignRuleWidth(layerName, width);
+  return LefParser::lefwMacroObsDesignRuleWidth(layerName, width);
 }
 
 int lefwMacroExceptPGNet(const char* layerName)
 {
-  return LefDefParser::lefwMacroExceptPGNet(layerName);
+  return LefParser::lefwMacroExceptPGNet(layerName);
 }
 
 int lefwMacroObsLayerWidth(double width)
 {
-  return LefDefParser::lefwMacroObsLayerWidth(width);
+  return LefParser::lefwMacroObsLayerWidth(width);
 }
 
 int lefwMacroObsLayerPath(int num_paths,
@@ -1780,7 +1777,7 @@ int lefwMacroObsLayerPath(int num_paths,
                           double spaceY,
                           int mask)
 {
-  return LefDefParser::lefwMacroObsLayerPath(
+  return LefParser::lefwMacroObsLayerPath(
       num_paths, xl, yl, numX, numY, spaceX, spaceY, mask);
 }
 
@@ -1794,7 +1791,7 @@ int lefwMacroObsLayerRect(double xl1,
                           double spaceY,
                           int mask)
 {
-  return LefDefParser::lefwMacroObsLayerRect(
+  return LefParser::lefwMacroObsLayerRect(
       xl1, yl1, xl2, yl2, numX, numY, spaceX, spaceY, mask);
 }
 
@@ -1807,7 +1804,7 @@ int lefwMacroObsLayerPolygon(int num_polys,
                              double spaceY,
                              int mask)
 {
-  return LefDefParser::lefwMacroObsLayerPolygon(
+  return LefParser::lefwMacroObsLayerPolygon(
       num_polys, xl, yl, numX, numY, spaceX, spaceY, mask);
 }
 
@@ -1820,23 +1817,23 @@ int lefwMacroObsVia(double xl,
                     double spaceY,
                     int mask)
 {
-  return LefDefParser::lefwMacroObsVia(
+  return LefParser::lefwMacroObsVia(
       xl, yl, viaName, numX, numY, spaceX, spaceY, mask);
 }
 
 int lefwEndMacroObs()
 {
-  return LefDefParser::lefwEndMacroObs();
+  return LefParser::lefwEndMacroObs();
 }
 
 int lefwStartMacroTiming()
 {
-  return LefDefParser::lefwStartMacroTiming();
+  return LefParser::lefwStartMacroTiming();
 }
 
 int lefwMacroTimingPin(const char* fromPin, const char* toPin)
 {
-  return LefDefParser::lefwMacroTimingPin(fromPin, toPin);
+  return LefParser::lefwMacroTimingPin(fromPin, toPin);
 }
 
 int lefwMacroTimingIntrinsic(const char* riseFall,
@@ -1852,126 +1849,126 @@ int lefwMacroTimingIntrinsic(const char* riseFall,
                              double varMin,
                              double varMax)
 {
-  return LefDefParser::lefwMacroTimingIntrinsic(riseFall,
-                                                min,
-                                                max,
-                                                slewT1,
-                                                slewT1Min,
-                                                slewT1Max,
-                                                slewT2,
-                                                slewT2Min,
-                                                slewT2Max,
-                                                slewT3,
-                                                varMin,
-                                                varMax);
+  return LefParser::lefwMacroTimingIntrinsic(riseFall,
+                                             min,
+                                             max,
+                                             slewT1,
+                                             slewT1Min,
+                                             slewT1Max,
+                                             slewT2,
+                                             slewT2Min,
+                                             slewT2Max,
+                                             slewT3,
+                                             varMin,
+                                             varMax);
 }
 
 int lefwMacroTimingRisers(double min, double max)
 {
-  return LefDefParser::lefwMacroTimingRisers(min, max);
+  return LefParser::lefwMacroTimingRisers(min, max);
 }
 
 int lefwMacroTimingFallrs(double min, double max)
 {
-  return LefDefParser::lefwMacroTimingFallrs(min, max);
+  return LefParser::lefwMacroTimingFallrs(min, max);
 }
 
 int lefwMacroTimingRisecs(double min, double max)
 {
-  return LefDefParser::lefwMacroTimingRisecs(min, max);
+  return LefParser::lefwMacroTimingRisecs(min, max);
 }
 
 int lefwMacroTimingFallcs(double min, double max)
 {
-  return LefDefParser::lefwMacroTimingFallcs(min, max);
+  return LefParser::lefwMacroTimingFallcs(min, max);
 }
 
 int lefwMacroTimingRisesatt1(double min, double max)
 {
-  return LefDefParser::lefwMacroTimingRisesatt1(min, max);
+  return LefParser::lefwMacroTimingRisesatt1(min, max);
 }
 
 int lefwMacroTimingFallsatt1(double min, double max)
 {
-  return LefDefParser::lefwMacroTimingFallsatt1(min, max);
+  return LefParser::lefwMacroTimingFallsatt1(min, max);
 }
 
 int lefwMacroTimingRiset0(double min, double max)
 {
-  return LefDefParser::lefwMacroTimingRiset0(min, max);
+  return LefParser::lefwMacroTimingRiset0(min, max);
 }
 
 int lefwMacroTimingFallt0(double min, double max)
 {
-  return LefDefParser::lefwMacroTimingFallt0(min, max);
+  return LefParser::lefwMacroTimingFallt0(min, max);
 }
 
 int lefwMacroTimingUnateness(const char* unateness)
 {
-  return LefDefParser::lefwMacroTimingUnateness(unateness);
+  return LefParser::lefwMacroTimingUnateness(unateness);
 }
 
 int lefwEndMacroTiming()
 {
-  return LefDefParser::lefwEndMacroTiming();
+  return LefParser::lefwEndMacroTiming();
 }
 
 int lefwAntenna(const char* type, double value)
 {
-  return LefDefParser::lefwAntenna(type, value);
+  return LefParser::lefwAntenna(type, value);
 }
 
 int lefwStartBeginext(const char* name)
 {
-  return LefDefParser::lefwStartBeginext(name);
+  return LefParser::lefwStartBeginext(name);
 }
 
 int lefwBeginextCreator(const char* creatorName)
 {
-  return LefDefParser::lefwBeginextCreator(creatorName);
+  return LefParser::lefwBeginextCreator(creatorName);
 }
 
 int lefwBeginextDate()
 {
-  return LefDefParser::lefwBeginextDate();
+  return LefParser::lefwBeginextDate();
 }
 
 int lefwBeginextRevision(int vers1, int vers2)
 {
-  return LefDefParser::lefwBeginextRevision(vers1, vers2);
+  return LefParser::lefwBeginextRevision(vers1, vers2);
 }
 
 int lefwBeginextSyntax(const char* title, const char* string)
 {
-  return LefDefParser::lefwBeginextSyntax(title, string);
+  return LefParser::lefwBeginextSyntax(title, string);
 }
 
 int lefwEndBeginext()
 {
-  return LefDefParser::lefwEndBeginext();
+  return LefParser::lefwEndBeginext();
 }
 
 int lefwCurrentLineNumber()
 {
-  return LefDefParser::lefwCurrentLineNumber();
+  return LefParser::lefwCurrentLineNumber();
 }
 
 int lefwEnd()
 {
-  return LefDefParser::lefwEnd();
+  return LefParser::lefwEnd();
 }
 
 void lefwPrintError(int status)
 {
-  LefDefParser::lefwPrintError(status);
+  LefParser::lefwPrintError(status);
 }
 
 void lefwAddComment(const char* comment)
 {
-  LefDefParser::lefwAddComment(comment);
+  LefParser::lefwAddComment(comment);
 }
 
 void lefwAddIndent()
 {
-  LefDefParser::lefwAddIndent();
+  LefParser::lefwAddIndent();
 }

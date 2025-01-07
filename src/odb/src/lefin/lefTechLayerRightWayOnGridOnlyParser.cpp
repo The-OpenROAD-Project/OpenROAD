@@ -33,7 +33,7 @@
 #include "odb/db.h"
 #include "odb/lefin.h"
 
-namespace lefTechLayerRightWayOnGridOnly {
+namespace odb::lefTechLayerRightWayOnGridOnly {
 
 template <typename Iterator>
 bool parse(Iterator first,
@@ -51,7 +51,7 @@ bool parse(Iterator first,
   bool valid = qi::phrase_parse(first, last, rightWayOnGridOnlyRule, space);
   return valid && first == last;
 }
-}  // namespace lefTechLayerRightWayOnGridOnly
+}  // namespace odb::lefTechLayerRightWayOnGridOnly
 
 namespace odb {
 

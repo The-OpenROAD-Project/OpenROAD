@@ -225,11 +225,8 @@ class TimingPathRenderer : public gui::Renderer
   void highlightNode(const TimingPathNode* node);
   void clearHighlightNodes();
 
-  virtual void drawObjects(gui::Painter& /* painter */) override;
-  virtual const char* getDisplayControlGroupName() override
-  {
-    return "Timing Path";
-  }
+  void drawObjects(gui::Painter& /* painter */) override;
+  const char* getDisplayControlGroupName() override { return "Timing Path"; }
 
   TimingPath* getPathToRender() { return path_; }
 
@@ -280,7 +277,7 @@ class TimingConeRenderer : public gui::Renderer
   void setBTerm(odb::dbBTerm* term, bool fanin, bool fanout);
   void setPin(const sta::Pin* pin, bool fanin, bool fanout);
 
-  virtual void drawObjects(gui::Painter& painter) override;
+  void drawObjects(gui::Painter& painter) override;
 
  private:
   sta::dbSta* sta_;

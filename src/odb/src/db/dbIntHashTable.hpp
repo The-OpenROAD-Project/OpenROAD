@@ -200,7 +200,7 @@ T* dbIntHashTable<T>::find(uint id)
   uint sz = _hash_tbl.size();
 
   if (sz == 0) {
-    return 0;
+    return nullptr;
   }
 
   uint hid = hash_int(id) & (sz - 1);

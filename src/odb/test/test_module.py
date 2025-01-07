@@ -1,6 +1,7 @@
-import opendbpy as odb
+import odb
 import helper
 import odbUnitTest
+import unittest
 
 
 ##################
@@ -32,11 +33,12 @@ class TestModule(odbUnitTest.TestCase):
         self.parent_mod.addInst(self.inst1)
         self.assertEqual(self.parent_mod.getInsts()[0].getName(), "inst")
         self.assertEqual(self.inst1.getModule().getName(), "parent_mod")
-        self.parent_mod.removeInst(self.inst1)
+        odb.dbInst_destroy(self.inst1)
+        self.assertIsNone(self.parent_mod.findModInst("inst"))
         self.assertEqual(self.parent_mod.findModInst("i1").getName(), "i1")
         self.i1.destroy(self.i1)
         self.parent_mod.destroy(self.parent_mod)
 
 
 if __name__ == "__main__":
-    odbUnitTest.mainParallel(TestModule)
+    unittest.main()

@@ -411,12 +411,6 @@ dbIStream& operator>>(dbIStream& stream, _ARuleRatio& arrt)
 //
 ////////////////////////////////////////////////////////////////////
 
-_dbTechAntennaAreaElement::_dbTechAntennaAreaElement()
-{
-  _area = -1.0;
-  _lyidx = dbIdValidation::invalidId();
-}
-
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerAntennaRule& inrule)
 {
   stream << inrule._layer;

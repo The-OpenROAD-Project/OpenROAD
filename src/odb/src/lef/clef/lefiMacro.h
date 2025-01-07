@@ -33,7 +33,7 @@
 #ifndef CLEFIMACRO_H
 #define CLEFIMACRO_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiTypedefs.h"
 

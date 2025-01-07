@@ -295,16 +295,16 @@ struct dbModBTermFlags_str
   uint _spare_bits : 24;
 };
 
-typedef union dbModBTermFlags
+union dbModBTermFlags
 {
   struct dbModBTermFlags_str flags;
   uint uint_val;
-} dbModBTermFlagsU;
+};
 
 void dbModBTerm::setSigType(const dbSigType& type)
 {
   _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
-  dbModBTermFlagsU cur_flags;
+  dbModBTermFlags cur_flags;
   cur_flags.uint_val = _dbmodbterm->_flags;
   cur_flags.flags._sigtype = type.getValue();
   _dbmodbterm->_flags = cur_flags.uint_val;
@@ -313,7 +313,7 @@ void dbModBTerm::setSigType(const dbSigType& type)
 dbSigType dbModBTerm::getSigType()
 {
   _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
-  dbModBTermFlagsU cur_flags;
+  dbModBTermFlags cur_flags;
   cur_flags.uint_val = _dbmodbterm->_flags;
   return dbSigType(cur_flags.flags._sigtype);
 }
@@ -321,7 +321,7 @@ dbSigType dbModBTerm::getSigType()
 void dbModBTerm::setIoType(const dbIoType& type)
 {
   _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
-  dbModBTermFlagsU cur_flags;
+  dbModBTermFlags cur_flags;
   cur_flags.uint_val = _dbmodbterm->_flags;
   cur_flags.flags._iotype = type.getValue();
   _dbmodbterm->_flags = cur_flags.uint_val;
@@ -330,7 +330,7 @@ void dbModBTerm::setIoType(const dbIoType& type)
 dbIoType dbModBTerm::getIoType()
 {
   _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
-  dbModBTermFlagsU cur_flags;
+  dbModBTermFlags cur_flags;
   cur_flags.uint_val = _dbmodbterm->_flags;
   return dbIoType(cur_flags.flags._iotype);
 }
