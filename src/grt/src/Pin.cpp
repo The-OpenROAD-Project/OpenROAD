@@ -189,6 +189,18 @@ bool Pin::isDriver()
   return type == odb::dbIoType::OUTPUT || type == odb::dbIoType::INOUT;
 }
 
+odb::Point Pin::getPositionNearInstEdge(const odb::Rect& pin_box) const
+{
+  odb::Point pin_pos;
+  if (getEdge() == PinEdge::north || getEdge() == PinEdge::east) {
+    pin_pos = odb::Point(pin_box.xMax(), pin_box.yMax());
+  } else if (getEdge() == PinEdge::south || getEdge() == PinEdge::west) {
+    pin_pos = odb::Point(pin_box.xMin(), pin_box.yMin());
+  }
+
+  return pin_pos;
+}
+
 int Pin::getConnectionLayer() const
 {
   return connection_layer_;

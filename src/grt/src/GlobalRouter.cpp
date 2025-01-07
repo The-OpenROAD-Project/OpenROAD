@@ -977,7 +977,12 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(
     const int conn_layer = pin.getConnectionLayer();
     const std::vector<odb::Rect>& pin_boxes = pin.getBoxes().at(conn_layer);
     for (const odb::Rect& pin_box : pin_boxes) {
-      pos_on_grid = grid_->getPositionOnGrid(getRectMiddle(pin_box));
+      if (pin.getEdge() == PinEdge::none) {
+        pos_on_grid = grid_->getPositionOnGrid(getRectMiddle(pin_box));
+      } else {
+        pos_on_grid
+            = grid_->getPositionOnGrid(pin.getPositionNearInstEdge(pin_box));
+      }
       positions_on_grid.push_back(pos_on_grid);
     }
   }

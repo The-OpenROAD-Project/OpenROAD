@@ -94,6 +94,7 @@ class Pin
     on_grid_position_ = on_grid_pos;
   }
   bool isDriver();
+  odb::Point getPositionNearInstEdge(const odb::Rect& pin_box) const;
 
  private:
   void determineEdge(const odb::Rect& bounds,
