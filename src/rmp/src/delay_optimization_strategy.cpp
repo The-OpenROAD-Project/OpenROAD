@@ -42,16 +42,16 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> WrapUnique(abc::Abc_Ntk_t* ntk)
 void AbcPrintStats(const abc::Abc_Ntk_t* ntk)
 {
   abc::Abc_NtkPrintStats(const_cast<abc::Abc_Ntk_t*>(ntk),
-                         false,
-                         false,
-                         false,
-                         false,
-                         false,
-                         false,
-                         false,
-                         false,
-                         false,
-                         false);
+                         /*fFactored=*/false,
+                         /*fSaveBest=*/false,
+                         /*fDumpResult=*/false,
+                         /*fUseLutLib=*/false,
+                         /*fPrintMuxes=*/false,
+                         /*fPower=*/false,
+                         /*fGlitch=*/false,
+                         /*fSkipBuf=*/false,
+                         /*fSkipSmall=*/false,
+                         /*fPrintMem=*/false);
 }
 
 utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> BufferNetwork(
@@ -90,8 +90,6 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> DelayOptimizationStrategy::Optimize(
   AbcLibraryFactory library_factory(logger);
   library_factory.AddDbSta(sta_);
   AbcLibrary abc_sc_library = library_factory.Build();
-  abc::Abc_SclHashCells(abc_sc_library.abc_library());
-  abc::Abc_SclLinkCells(abc_sc_library.abc_library());
 
   AbcPrintStats(ntk);
 
