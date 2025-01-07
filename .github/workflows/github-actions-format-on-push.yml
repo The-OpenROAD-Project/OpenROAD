@@ -10,10 +10,6 @@ jobs:
   format:
     runs-on: ubuntu-latest
     steps:
-      - name: setup
-        run: |
-          sudo apt update
-          sudo apt install -y clang-14 clang-format-14
       - name: Check out repository code
         uses: actions/checkout@v4
         with:
