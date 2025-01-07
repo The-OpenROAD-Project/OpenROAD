@@ -214,10 +214,6 @@ void SinkClustering::run(const unsigned groupSize,
 
 bool SinkClustering::findBestMatching(const unsigned groupSize)
 {
-  logger_->report(
-      "For tree {} using max cap? {}",
-      (HTree_->getTreeType() == TreeType::MacroTree) ? "macro" : "register",
-      useMaxCapLimit_);
   // Counts how many clusters are in each solution.
   vector<unsigned> clusters(groupSize, 0);
   // Keeps track of the total cost of each solution.
