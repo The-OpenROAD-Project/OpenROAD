@@ -29,14 +29,14 @@
 
 #include "defiSite.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
 #include "defiUtil.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
@@ -189,7 +189,7 @@ void defiBox::Init()
   yl_ = 0;
   xh_ = 0;
   yh_ = 0;
-  points_ = 0;
+  points_ = nullptr;
 }
 
 defiBox::~defiBox()
@@ -272,4 +272,4 @@ void defiBox::print(FILE* f) const
   fprintf(f, "Box %d,%d %d %d\n", xl(), yl(), xh(), yh());
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

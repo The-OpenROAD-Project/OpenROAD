@@ -48,7 +48,7 @@ struct NodePin
   unsigned pinOffset;
 };
 
-typedef std::vector<NodePin>::iterator itNodePin;
+using itNodePin = std::vector<NodePin>::iterator;
 
 class Node
 {

@@ -27,9 +27,9 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #ifndef WIN32
 #include <unistd.h>
 #endif /* not WIN32 */
@@ -82,7 +82,7 @@ int main(int argc, char** argv)
       argv++;
       argc--;
       outfile = *argv;
-      if ((fout = fopen(outfile, "w")) == 0) {
+      if ((fout = fopen(outfile, "w")) == nullptr) {
         fprintf(stderr, "ERROR: could not open output file\n");
         return 2;
       }
@@ -90,7 +90,7 @@ int main(int argc, char** argv)
       fprintf(stderr, "Usage: defwrite [-o <filename>] [-help]\n");
       return 1;
     } else if (strncmp(*argv, "-g", 2) == 0) {  // test of group init function.
-      groupInit = 1;
+      groupInit = true;
     } else {
       fprintf(stderr, "ERROR: Illegal command line option: '%s'\n", *argv);
       return 2;
@@ -226,19 +226,19 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   defwAddComment("defwPropDef is broken into 3 routines, defwStringPropDef");
   defwAddComment("defwIntPropDef, and defwRealPropDef");
-  status = defwStringPropDef("REGION", "scum", 0, 0, 0);
+  status = defwStringPropDef("REGION", "scum", 0, 0, nullptr);
   CHECK_STATUS(status);
   status = defwIntPropDef("REGION", "center", 0, 0, 0);
   CHECK_STATUS(status);
   status = defwRealPropDef("REGION", "area", 0, 0, 0);
   CHECK_STATUS(status);
-  status = defwStringPropDef("GROUP", "ggrp", 0, 0, 0);
+  status = defwStringPropDef("GROUP", "ggrp", 0, 0, nullptr);
   CHECK_STATUS(status);
   status = defwIntPropDef("GROUP", "site", 0, 25, 0);
   CHECK_STATUS(status);
   status = defwRealPropDef("GROUP", "maxarea", 0, 0, 0);
   CHECK_STATUS(status);
-  status = defwStringPropDef("COMPONENT", "cc", 0, 0, 0);
+  status = defwStringPropDef("COMPONENT", "cc", 0, 0, nullptr);
   CHECK_STATUS(status);
   status = defwIntPropDef("COMPONENT", "index", 0, 0, 0);
   CHECK_STATUS(status);
@@ -246,11 +246,11 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwIntPropDef("NET", "alt", 0, 0, 0);
   CHECK_STATUS(status);
-  status = defwStringPropDef("NET", "lastName", 0, 0, 0);
+  status = defwStringPropDef("NET", "lastName", 0, 0, nullptr);
   CHECK_STATUS(status);
   status = defwRealPropDef("NET", "length", 0, 0, 0);
   CHECK_STATUS(status);
-  status = defwStringPropDef("SPECIALNET", "contype", 0, 0, 0);
+  status = defwStringPropDef("SPECIALNET", "contype", 0, 0, nullptr);
   CHECK_STATUS(status);
   status = defwIntPropDef("SPECIALNET", "ind", 0, 0, 0);
   CHECK_STATUS(status);
@@ -264,25 +264,25 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwRealPropDef("ROW", "minlength", 1.0, 100.0, 0);
   CHECK_STATUS(status);
-  status = defwStringPropDef("ROW", "firstName", 0, 0, 0);
+  status = defwStringPropDef("ROW", "firstName", 0, 0, nullptr);
   CHECK_STATUS(status);
   status = defwIntPropDef("ROW", "idx", 0, 0, 0);
   CHECK_STATUS(status);
   status = defwIntPropDef("COMPONENTPIN", "dpIgnoreTerm", 0, 0, 0);
   CHECK_STATUS(status);
-  status = defwStringPropDef("COMPONENTPIN", "dpBit", 0, 0, 0);
+  status = defwStringPropDef("COMPONENTPIN", "dpBit", 0, 0, nullptr);
   CHECK_STATUS(status);
   status = defwRealPropDef("COMPONENTPIN", "realProperty", 0, 0, 0);
   CHECK_STATUS(status);
-  status = defwStringPropDef("NET", "IGNOREOPTIMIZATION", 0, 0, 0);
+  status = defwStringPropDef("NET", "IGNOREOPTIMIZATION", 0, 0, nullptr);
   CHECK_STATUS(status);
-  status = defwStringPropDef("SPECIALNET", "IGNOREOPTIMIZATION", 0, 0, 0);
+  status = defwStringPropDef("SPECIALNET", "IGNOREOPTIMIZATION", 0, 0, nullptr);
   CHECK_STATUS(status);
   status = defwRealPropDef("NET", "FREQUENCY", 0, 0, 0);
   CHECK_STATUS(status);
   status = defwRealPropDef("SPECIALNET", "FREQUENCY", 0, 0, 0);
   CHECK_STATUS(status);
-  status = defwStringPropDef("NONDEFAULTRULE", "ndprop1", 0, 0, 0);
+  status = defwStringPropDef("NONDEFAULTRULE", "ndprop1", 0, 0, nullptr);
   CHECK_STATUS(status);
   status = defwIntPropDef("NONDEFAULTRULE", "ndprop2", 0, 0, 0);
   CHECK_STATUS(status);
@@ -556,22 +556,22 @@ int main(int argc, char** argv)
   status = defwComponent("Z38A01",
                          "DFF3",
                          0,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
                          0,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
                          "PLACED",
                          18592,
                          5400,
                          6,
                          0,
-                         NULL,
+                         nullptr,
                          0,
                          0,
                          0,
@@ -584,22 +584,22 @@ int main(int argc, char** argv)
   status = defwComponentStr("Z38A03",
                             "DFF3",
                             0,
-                            NULL,
-                            NULL,
-                            NULL,
-                            NULL,
-                            NULL,
+                            nullptr,
+                            nullptr,
+                            nullptr,
+                            nullptr,
+                            nullptr,
                             0,
-                            NULL,
-                            NULL,
-                            NULL,
-                            NULL,
+                            nullptr,
+                            nullptr,
+                            nullptr,
+                            nullptr,
                             "PLACED",
                             16576,
                             45600,
                             "FS",
                             0,
-                            NULL,
+                            nullptr,
                             0,
                             0,
                             0,
@@ -610,22 +610,22 @@ int main(int argc, char** argv)
   status = defwComponent("Z38A05",
                          "DFF3",
                          0,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
                          0,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
                          "PLACED",
                          51520,
                          9600,
                          6,
                          0,
-                         NULL,
+                         nullptr,
                          0,
                          0,
                          0,
@@ -634,17 +634,17 @@ int main(int argc, char** argv)
   status = defwComponent("|i0",
                          "INV_B",
                          0,
-                         NULL,
+                         nullptr,
                          "INV",
-                         NULL,
-                         NULL,
-                         NULL,
+                         nullptr,
+                         nullptr,
+                         nullptr,
                          0,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
                          0,
                          0,
                          -1,
@@ -660,22 +660,22 @@ int main(int argc, char** argv)
   status = defwComponent("|i1",
                          "INV_B",
                          0,
-                         NULL,
+                         nullptr,
                          "INV",
-                         NULL,
-                         NULL,
-                         NULL,
+                         nullptr,
+                         nullptr,
+                         nullptr,
                          0,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
                          "UNPLACED",
                          1000,
                          1000,
                          0,
                          0,
-                         NULL,
+                         nullptr,
                          0,
                          0,
                          0,
@@ -684,22 +684,22 @@ int main(int argc, char** argv)
   status = defwComponent("cell1",
                          "CHM6A",
                          0,
-                         NULL,
-                         NULL,
+                         nullptr,
+                         nullptr,
                          "generator",
-                         NULL,
+                         nullptr,
                          "USER",
                          0,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
                          "FIXED",
                          0,
                          10,
                          0,
                          100.4534535,
-                         NULL,
+                         nullptr,
                          0,
                          0,
                          0,
@@ -708,22 +708,22 @@ int main(int argc, char** argv)
   status = defwComponent("cell2",
                          "CHM6A",
                          0,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
                          "NETLIST",
                          0,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
                          "COVER",
                          120,
                          10,
                          4,
                          2,
-                         NULL,
+                         nullptr,
                          0,
                          0,
                          0,
@@ -736,10 +736,10 @@ int main(int argc, char** argv)
   status = defwComponent("cell3",
                          "CHM6A",
                          0,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
                          "TIMING",
                          1,
                          foreigns,
@@ -771,10 +771,10 @@ int main(int argc, char** argv)
   status = defwComponentStr("cell4",
                             "CHM3A",
                             0,
-                            NULL,
+                            nullptr,
                             "CHM6A",
-                            NULL,
-                            NULL,
+                            nullptr,
+                            nullptr,
                             "DIST",
                             2,
                             foreigns,
@@ -803,22 +803,22 @@ int main(int argc, char** argv)
   status = defwComponent("scancell1",
                          "CHK3A",
                          0,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
                          0,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
                          "PLACED",
                          500,
                          10,
                          7,
                          0,
-                         NULL,
+                         nullptr,
                          0,
                          0,
                          0,
@@ -827,22 +827,22 @@ int main(int argc, char** argv)
   status = defwComponent("scancell2",
                          "CHK3A",
                          0,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
                          0,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
                          "PLACED",
                          700,
                          10,
                          6,
                          0,
-                         NULL,
+                         nullptr,
                          0,
                          0,
                          0,
@@ -878,15 +878,39 @@ int main(int argc, char** argv)
   // PINS
   status = defwStartPins(11);
   CHECK_STATUS(status);
-  status = defwPin(
-      "scanpin", "net1", 0, "INPUT", NULL, NULL, 0, 0, -1, NULL, 0, 0, 0, 0);
+  status = defwPin("scanpin",
+                   "net1",
+                   0,
+                   "INPUT",
+                   nullptr,
+                   nullptr,
+                   0,
+                   0,
+                   -1,
+                   nullptr,
+                   0,
+                   0,
+                   0,
+                   0);
   CHECK_STATUS(status);
   status = defwPinPolygon("metal1", 0, 1000, 6, xP, yP);
   CHECK_STATUS(status);
   status = defwPinNetExpr("power1 VDD1");
   CHECK_STATUS(status);
-  status = defwPin(
-      "pin0", "net1", 0, "INPUT", "SCAN", NULL, 0, 0, -1, NULL, 0, 0, 0, 0);
+  status = defwPin("pin0",
+                   "net1",
+                   0,
+                   "INPUT",
+                   "SCAN",
+                   nullptr,
+                   0,
+                   0,
+                   -1,
+                   nullptr,
+                   0,
+                   0,
+                   0,
+                   0);
   CHECK_STATUS(status);
   status = defwPinStr("pin0.5",
                       "net1",
@@ -897,7 +921,7 @@ int main(int argc, char** argv)
                       0,
                       0,
                       "S",
-                      NULL,
+                      nullptr,
                       0,
                       0,
                       0,
@@ -910,9 +934,9 @@ int main(int argc, char** argv)
   status = defwPin("pin1",
                    "net1",
                    1,
-                   NULL,
+                   nullptr,
                    "POWER",
-                   NULL,
+                   nullptr,
                    0,
                    0,
                    -1,
@@ -947,7 +971,7 @@ int main(int argc, char** argv)
                    0,
                    "INPUT",
                    "SIGNAL",
-                   NULL,
+                   nullptr,
                    0,
                    0,
                    -1,
@@ -969,13 +993,13 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwPinGroundSensitivity("gndpin1");
   CHECK_STATUS(status);
-  status = defwPinAntennaPinPartialMetalArea(5000, NULL);
+  status = defwPinAntennaPinPartialMetalArea(5000, nullptr);
   CHECK_STATUS(status);
   status = defwPinAntennaPinPartialMetalSideArea(4580, "M2");
   CHECK_STATUS(status);
-  status = defwPinAntennaPinGateArea(5000, NULL);
+  status = defwPinAntennaPinGateArea(5000, nullptr);
   CHECK_STATUS(status);
-  status = defwPinAntennaPinPartialCutArea(5000, NULL);
+  status = defwPinAntennaPinPartialCutArea(5000, nullptr);
   CHECK_STATUS(status);
   status = defwPin("INBUS[1]",
                    "|INBUS[1]",
@@ -1058,8 +1082,20 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwPinNetExpr("gnd1 GND");
   CHECK_STATUS(status);
-  status = defwPin(
-      "VDD", "VDD", 1, "INOUT", "POWER", NULL, 0, 0, -1, NULL, 0, 0, 0, 0);
+  status = defwPin("VDD",
+                   "VDD",
+                   1,
+                   "INOUT",
+                   "POWER",
+                   nullptr,
+                   0,
+                   0,
+                   -1,
+                   nullptr,
+                   0,
+                   0,
+                   0,
+                   0);
   CHECK_STATUS(status);
   status = defwPin("BUSA[0]",
                    "BUSA[0]",
@@ -1070,7 +1106,7 @@ int main(int argc, char** argv)
                    0,
                    2500,
                    1,
-                   NULL,
+                   nullptr,
                    0,
                    0,
                    0,
@@ -1082,8 +1118,20 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwPinVia("via12", 0, 25);
   CHECK_STATUS(status);
-  status = defwPin(
-      "VDD", "VDD", 1, "INOUT", "POWER", NULL, 0, 0, -1, NULL, 0, 0, 0, 0);
+  status = defwPin("VDD",
+                   "VDD",
+                   1,
+                   "INOUT",
+                   "POWER",
+                   nullptr,
+                   0,
+                   0,
+                   -1,
+                   nullptr,
+                   0,
+                   0,
+                   0,
+                   0);
   CHECK_STATUS(status);
   status = defwPinPort();
   CHECK_STATUS(status);
@@ -1491,7 +1539,7 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwNetWeight(2);
   CHECK_STATUS(status);
-  status = defwNetVpin("P1", NULL, 0, 0, 0, 0, "PLACED", 54, 64, 3);
+  status = defwNetVpin("P1", nullptr, 0, 0, 0, 0, "PLACED", 54, 64, 3);
   CHECK_STATUS(status);
   status = defwNetEndOneNet();
   CHECK_STATUS(status);
@@ -1543,7 +1591,7 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwNetPathStart("ROUTED");
   CHECK_STATUS(status);
-  status = defwNetPathLayer("M2", 0, NULL);
+  status = defwNetPathLayer("M2", 0, nullptr);
   CHECK_STATUS(status);
   status = defwNetPathStyle(2);
   CHECK_STATUS(status);
@@ -1563,7 +1611,7 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwNetPathStart("NEW");
   CHECK_STATUS(status);
-  status = defwNetPathLayer("M1", 1, NULL);
+  status = defwNetPathLayer("M1", 1, nullptr);
   CHECK_STATUS(status);
   status = defwNetPathStyle(4);
   CHECK_STATUS(status);
@@ -1630,14 +1678,30 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwNetConnection("Z38A01", "G", 0);
   CHECK_STATUS(status);
-  status = defwNetVpin(
-      "V_SUB3_XX100", NULL, -333, -333, 333, 333, "PLACED", 189560, 27300, 0);
+  status = defwNetVpin("V_SUB3_XX100",
+                       nullptr,
+                       -333,
+                       -333,
+                       333,
+                       333,
+                       "PLACED",
+                       189560,
+                       27300,
+                       0);
+  CHECK_STATUS(status);
+  status = defwNetVpin("V_SUB2_XX100",
+                       nullptr,
+                       -333,
+                       -333,
+                       333,
+                       333,
+                       "PLACED",
+                       169400,
+                       64500,
+                       0);
   CHECK_STATUS(status);
   status = defwNetVpin(
-      "V_SUB2_XX100", NULL, -333, -333, 333, 333, "PLACED", 169400, 64500, 0);
-  CHECK_STATUS(status);
-  status = defwNetVpin(
-      "V_SUB1_XX100", NULL, -333, -333, 333, 333, "PLACED", 55160, 31500, 0);
+      "V_SUB1_XX100", nullptr, -333, -333, 333, 333, "PLACED", 55160, 31500, 0);
   CHECK_STATUS(status);
   status = defwNetSubnetStart("SUB1_XX100");
   CHECK_STATUS(status);
@@ -1692,7 +1756,7 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwNetPathStart("ROUTED");
   CHECK_STATUS(status);
-  status = defwNetPathLayer("M1", 0, NULL);
+  status = defwNetPathLayer("M1", 0, nullptr);
   CHECK_STATUS(status);
   coorX[0] = 168280.0;
   coorY[0] = 63300.0;
@@ -1723,7 +1787,7 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwNetPathStart("ROUTED");
   CHECK_STATUS(status);
-  status = defwNetPathLayer("M1", 0, NULL);
+  status = defwNetPathLayer("M1", 0, nullptr);
   CHECK_STATUS(status);
   coorX[0] = 188400.0;
   coorY[0] = 26100.0;
@@ -1755,7 +1819,7 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwNetPathStart("ROUTED");
   CHECK_STATUS(status);
-  status = defwNetPathLayer("M3", 0, NULL);
+  status = defwNetPathLayer("M3", 0, nullptr);
   CHECK_STATUS(status);
   coorX[0] = 269400.0;
   coorY[0] = 64500.0;
@@ -1821,7 +1885,7 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwNetPathStart("NEW");
   CHECK_STATUS(status);
-  status = defwNetPathLayer("M3", 1, NULL);
+  status = defwNetPathLayer("M3", 1, nullptr);
   CHECK_STATUS(status);
   coorX[0] = 55160.0;
   coorY[0] = 31500.0;
@@ -1885,7 +1949,7 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwNetPathStart("ROUTED");
   CHECK_STATUS(status);
-  status = defwNetPathLayer("M2", 0, NULL);
+  status = defwNetPathLayer("M2", 0, nullptr);
   CHECK_STATUS(status);
   coorX[0] = 100.0;
   coorY[0] = 100.0;
@@ -1909,7 +1973,7 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwNetPathStart("ROUTED");
   CHECK_STATUS(status);
-  status = defwNetPathLayer("M1", 0, NULL);
+  status = defwNetPathLayer("M1", 0, nullptr);
   CHECK_STATUS(status);
   coorX[0] = 1288210.0;
   coorY[0] = 580930.0;
@@ -1927,7 +1991,7 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwNetPathStart("NEW");
   CHECK_STATUS(status);
-  status = defwNetPathLayer("M3", 0, NULL);
+  status = defwNetPathLayer("M3", 0, nullptr);
   CHECK_STATUS(status);
   coorX[0] = 1141350.0;
   coorY[0] = 582820.0;
@@ -1945,7 +2009,7 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwNetPathStart("NEW");
   CHECK_STATUS(status);
-  status = defwNetPathLayer("M1", 0, NULL);
+  status = defwNetPathLayer("M1", 0, nullptr);
   CHECK_STATUS(status);
   coorX[0] = 1278410.0;
   coorY[0] = 275170.0;
@@ -1953,7 +2017,7 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwNetPathStart("NEW");
   CHECK_STATUS(status);
-  status = defwNetPathLayer("M1", 0, NULL);
+  status = defwNetPathLayer("M1", 0, nullptr);
   CHECK_STATUS(status);
   coorX[0] = 1141210.0;
   coorY[0] = 271250.0;
@@ -2047,18 +2111,26 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwScanchainStop("cell4", "PA2");
   CHECK_STATUS(status);
-  status = defwScanchainOrdered(
-      "cell2", "IN", "PA0", NULL, NULL, "cell1", "OUT", "P10", NULL, NULL);
+  status = defwScanchainOrdered("cell2",
+                                "IN",
+                                "PA0",
+                                nullptr,
+                                nullptr,
+                                "cell1",
+                                "OUT",
+                                "P10",
+                                nullptr,
+                                nullptr);
   CHECK_STATUS(status);
-  status = defwScanchainFloating("scancell1", "IN", "PA0", NULL, NULL);
+  status = defwScanchainFloating("scancell1", "IN", "PA0", nullptr, nullptr);
   CHECK_STATUS(status);
-  status = defwScanchainFloating("scancell2", "OUT", "P10", NULL, NULL);
+  status = defwScanchainFloating("scancell2", "OUT", "P10", nullptr, nullptr);
   CHECK_STATUS(status);
   status = defwScanchain("chain1_clock1");
   CHECK_STATUS(status);
   status = defwScanchainPartition("clock1", -1);
   CHECK_STATUS(status);
-  status = defwScanchainStart("block1/current_state_reg_0_QZ", NULL);
+  status = defwScanchainStart("block1/current_state_reg_0_QZ", nullptr);
   CHECK_STATUS(status);
   status
       = defwScanchainFloating("block1/pgm_cgm_en_reg", "IN", "SD", "OUT", "QZ");
@@ -2066,13 +2138,13 @@ int main(int argc, char** argv)
   status = defwScanchainFloating(
       "block1/start_reset_dd_reg", "IN", "SD", "OUT", "QZ");
   CHECK_STATUS(status);
-  status = defwScanchainStop("block1/start_reset_d_reg", NULL);
+  status = defwScanchainStop("block1/start_reset_d_reg", nullptr);
   CHECK_STATUS(status);
   status = defwScanchain("chain2_clock2");
   CHECK_STATUS(status);
   status = defwScanchainPartition("clock2", 1000);
   CHECK_STATUS(status);
-  status = defwScanchainStart("block1/current_state_reg_0_QZ", NULL);
+  status = defwScanchainStart("block1/current_state_reg_0_QZ", nullptr);
   CHECK_STATUS(status);
   status = defwScanchainFloating(
       "block1/port2_phy_addr_reg_0_", "IN", "SD", "OUT", "QZ ");
@@ -2100,11 +2172,13 @@ int main(int argc, char** argv)
   CHECK_STATUS(status);
   status = defwScanchainPartition("clock3", -1);
   CHECK_STATUS(status);
-  status = defwScanchainStart("block1/prescaler_IO/lfsr_reg1", NULL);
+  status = defwScanchainStart("block1/prescaler_IO/lfsr_reg1", nullptr);
   CHECK_STATUS(status);
-  status = defwScanchainFloating("block1/dp1_timers", NULL, NULL, NULL, NULL);
+  status = defwScanchainFloating(
+      "block1/dp1_timers", nullptr, nullptr, nullptr, nullptr);
   CHECK_STATUS(status);
-  status = defwScanchainFloatingBits("block1/bus8", NULL, NULL, NULL, NULL, 8);
+  status = defwScanchainFloatingBits(
+      "block1/bus8", nullptr, nullptr, nullptr, nullptr, 8);
   CHECK_STATUS(status);
   status = defwScanchainOrderedBits("block1/dsl/ffl",
                                     "IN",
@@ -2132,7 +2206,7 @@ int main(int argc, char** argv)
                                     "Y",
                                     0);
   CHECK_STATUS(status);
-  status = defwScanchainStop("block1/start_reset_d_reg", NULL);
+  status = defwScanchainStop("block1/start_reset_d_reg", nullptr);
   CHECK_STATUS(status);
 
   status = defwEndScanchain();
@@ -2196,11 +2270,11 @@ int main(int argc, char** argv)
   status = defwGroup("group2", 1, groupExpr);
   CHECK_STATUS(status);
   free((char*) groupExpr[0]);
-  status = defwGroupRegion(0, 10, 1000, 1010, NULL);
+  status = defwGroupRegion(0, 10, 1000, 1010, nullptr);
   CHECK_STATUS(status);
   status = defwStringProperty("ggrp", "after the fall");
   CHECK_STATUS(status);
-  status = defwGroupSoft("MAXHALFPERIMETER", 4000, "MAXX", 10000, 0, 0);
+  status = defwGroupSoft("MAXHALFPERIMETER", 4000, "MAXX", 10000, nullptr, 0);
   CHECK_STATUS(status);
   status = defwEndGroups();
   CHECK_STATUS(status);

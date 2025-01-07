@@ -33,11 +33,11 @@
 #ifndef CLEFILAYER_H
 #define CLEFILAYER_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiTypedefs.h"
 
-typedef enum lefiAntennaEnum
+enum lefiAntennaEnum
 {
   lefiAntennaAR = 1,
   lefiAntennaDAR = 2,
@@ -51,7 +51,7 @@ typedef enum lefiAntennaEnum
   lefiAntennaSAF = 10,
   lefiAntennaO = 11,
   lefiAntennaADR = 12
-} lefiAntennaEnum;
+};
 
 EXTERN int lefiAntennaPWL_numPWL(const lefiAntennaPWL* obj);
 

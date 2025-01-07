@@ -48,15 +48,15 @@ class dbTechLayerItr : public dbIterator
  public:
   dbTechLayerItr(dbTable<_dbTechLayer>* layer_tbl) { _layer_tbl = layer_tbl; }
 
-  bool reversible();
-  bool orderReversed();
-  void reverse(dbObject* parent);
-  uint sequential();
-  uint size(dbObject* parent);
-  uint begin(dbObject* parent);
-  uint end(dbObject* parent);
-  uint next(uint id, ...);
-  dbObject* getObject(uint id, ...);
+  bool reversible() override;
+  bool orderReversed() override;
+  void reverse(dbObject* parent) override;
+  uint sequential() override;
+  uint size(dbObject* parent) override;
+  uint begin(dbObject* parent) override;
+  uint end(dbObject* parent) override;
+  uint next(uint id, ...) override;
+  dbObject* getObject(uint id, ...) override;
 };
 
 }  // namespace odb

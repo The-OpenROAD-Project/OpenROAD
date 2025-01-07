@@ -32,9 +32,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 %{
-#include <stdlib.h>
 
 #include <boost/stacktrace.hpp>
+#include <cstdlib>
 #include <sstream>
 
 #include "ord/OpenRoad.hh"

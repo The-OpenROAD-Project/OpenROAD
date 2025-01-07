@@ -33,7 +33,7 @@
 #include "odb/db.h"
 #include "odb/lefin.h"
 
-namespace lefTechLayerCutClass {
+namespace odb::lefTechLayerCutClass {
 
 void addCutClassRule(
     boost::fusion::vector<std::string,
@@ -64,7 +64,7 @@ void addCutClassRule(
   }
 }
 
-}  // namespace lefTechLayerCutClass
+}  // namespace odb::lefTechLayerCutClass
 
 namespace odb {
 bool lefTechLayerCutClassParser::parse(std::string s,

@@ -67,8 +67,9 @@ void FlexDRConnectivityChecker::pin2epMap_helper(
   frRegionQuery::Objects<frBlockObject> result;
   Rect query_box(pt.x(), pt.y(), pt.x(), pt.y());
   regionQuery->query(query_box, lNum, result);
-  logger_->report(
-      "[OSAMA] The different transforms will result in a divergence here:");
+  if (net->getName() == "_031547_")
+    logger_->report(
+        "[OSAMA] The different transforms will result in a divergence here:");
   for (auto& [bx, rqObj] : result) {
     if (net->getName() == "_031547_") {
       logger_->report("[OSAMA] box=({},{}) ({},{}) rqObj={}",
@@ -114,50 +115,14 @@ void FlexDRConnectivityChecker::buildPin2epMap(
     }
     auto obj = static_cast<frPathSeg*>(connFig);
     const auto [bp, ep] = obj->getPoints();
-    // if (net->getName() == "_031547_")
-    // logger_->report("[BNMFW] bp = ({},{}) ep = ({},{})", bp.getX(),
-    // bp.getY(), ep.getX(), ep.getY());
     const frSegStyle& style = obj->getStyle();
     auto lNum = obj->getLayerNum();
-    // if (net->getName() == "_031547_") {
-    //   logger_->report("[BNMFW] pin2epMap 1");
-    //   for (auto [block, pset]: pin2epMap) {
-    //     logger_->report("[BNMFW] block {}", block->getId());
-    //     for (auto p: pset) {
-    //       auto [point, layer] = p;
-    //       logger_->report("[BNMFW] ({},{},{}):", point.getX(), point.getY(),
-    //       layer);
-    //     }
-    //   }
-    // }
     if (style.getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
       pin2epMap_helper(net, bp, lNum, pin2epMap);
     }
-    // if (net->getName() == "_031547_") {
-    //   logger_->report("[BNMFW] pin2epMap 2");
-    //   for (auto [block, pset]: pin2epMap) {
-    //     logger_->report("[BNMFW] block {}", block->getId());
-    //     for (auto p: pset) {
-    //       auto [point, layer] = p;
-    //       logger_->report("[BNMFW] ({},{},{}):", point.getX(), point.getY(),
-    //       layer);
-    //     }
-    //   }
-    // }
     if (style.getEndStyle() == frEndStyle(frcTruncateEndStyle)) {
       pin2epMap_helper(net, ep, lNum, pin2epMap);
     }
-    // if (net->getName() == "_031547_") {
-    //   logger_->report("[BNMFW] pin2epMap 3");
-    //   for (auto [block, pset]: pin2epMap) {
-    //     logger_->report("[BNMFW] block {}", block->getId());
-    //     for (auto p: pset) {
-    //       auto [point, layer] = p;
-    //       logger_->report("[BNMFW] ({},{},{}):", point.getX(), point.getY(),
-    //       layer);
-    //     }
-    //   }
-    // }
   }
 
   for (auto& connFig : netRouteObjs) {
@@ -368,29 +333,6 @@ bool FlexDRConnectivityChecker::astar(
   adjPrevIdx.clear();
   adjVisited.resize(nNetObjs, false);
   adjPrevIdx.resize(nNetObjs, -1);
-  // if (net->getName() == "_031547_") {
-  //   logger_->report("[BNMFW] Astar Net {}", net->getName());
-  //   logger_->report("[BNMFW] Route Objs");
-  //   for (auto obj: netRouteObjs) {
-  //     auto bbox = obj->getBBox();
-  //     logger_->report("({},{}) ({},{})", bbox.ll().getX(), bbox.ll().getY(),
-  //     bbox.ur().getX(), bbox.ur().getY());
-  //   }
-  //   logger_->report("[BNMFW] Pins");
-  //   for (auto& pin: net->getRPins()) {
-  //     auto bbox = pin->getBBox();
-  //     logger_->report("[BNMFW] ({},{}) ({},{})", bbox.ll().getX(),
-  //     bbox.ll().getY(), bbox.ur().getX(), bbox.ur().getY());
-  //   }
-  //   logger_->report("[BNMFW] nodeMap");
-  //   for (auto [p, set]: nodeMap) {
-  //     auto [point, layer] = p;
-  //     logger_->report("[BNMFW] ({},{},{}):", point.getX(), point.getY(),
-  //     layer); for (int a: set) {
-  //       logger_->report("[BNMFW]\t{}", a);
-  //     }
-  //   }
-  // }
   for (auto& [pr, idxS] : nodeMap) {
     // auto &[pt, lNum] = pr;
     for (auto it1 = idxS.begin(); it1 != idxS.end(); it1++) {
@@ -997,6 +939,7 @@ void FlexDRConnectivityChecker::splitPathSegs_commit(
     int currIdxSplitSpanIdxs = 0;
     int s;
     // change existing split ps's and spans to match split points
+    // TODO: This part is not handled in distributed detailed routing.
     for (s = 0;
          s <= splitPoints.size() && currIdxSplitSpanIdxs < splitSpanIdxs.size();
          s++, currIdxSplitSpanIdxs++) {
@@ -1157,6 +1100,7 @@ void FlexDRConnectivityChecker::merge_commit(
     regionQuery->removeDRObj(static_cast<frShape*>(victimPathSeg));
 
     Point bp, ep;
+    frCoord high = victimPathSeg->high();
     if (isHorz) {
       bp = {newSegSpan.lo, trackCoord};
       ep = {newSegSpan.hi, trackCoord};
@@ -1170,21 +1114,23 @@ void FlexDRConnectivityChecker::merge_commit(
     frUInt4 end_ext = victimPathSeg->getEndExt();
     for (; cnt < (int) victims.size(); cnt++) {
       frPathSeg* curr = static_cast<frPathSeg*>(netRouteObjs[victims[cnt]]);
-      if (curr->high() <= newSegSpan.hi) {
-        end_style = curr->getEndStyle();
-        end_ext = curr->getEndExt();
-        if (save_updates_) {
-          drUpdate update(drUpdate::REMOVE_FROM_NET);
-          update.setNet(curr->getNet());
-          update.setIndexInOwner(curr->getIndexInOwner());
-          getDesign()->addUpdate(update);
-        }
-        regionQuery->removeDRObj(curr);  // deallocates curr
-        net->removeShape(curr);
-        netRouteObjs[victims[cnt]] = nullptr;
-      } else {
+      if (curr->high() > newSegSpan.hi) {
         break;
       }
+      if (curr->high() >= high) {
+        end_style = curr->getEndStyle();
+        end_ext = curr->getEndExt();
+        high = curr->high();
+      }
+      if (save_updates_) {
+        drUpdate update(drUpdate::REMOVE_FROM_NET);
+        update.setNet(curr->getNet());
+        update.setIndexInOwner(curr->getIndexInOwner());
+        getDesign()->addUpdate(update);
+      }
+      regionQuery->removeDRObj(curr);  // deallocates curr
+      net->removeShape(curr);
+      netRouteObjs[victims[cnt]] = nullptr;
     }
     victimPathSeg->setEndStyle(end_style, end_ext);
     regionQuery->addDRObj(victimPathSeg);
@@ -1197,7 +1143,6 @@ void FlexDRConnectivityChecker::merge_commit(
     }
   }
 }
-
 void FlexDRConnectivityChecker::addMarker(frNet* net,
                                           frLayerNum lNum,
                                           const Rect& bbox)
@@ -1374,21 +1319,6 @@ void FlexDRConnectivityChecker::check(int iter)
     // sequential
     for (int i = 0; i < (int) batch.size(); i++) {
       auto net = batch[i];
-      if (net->getName() == "_031547_") {
-        for (auto inst_term : net->getInstTerms()) {
-          for (auto ap : inst_term->getAccessPoints()) {
-            for (auto ps : ap->getPathSegs()) {
-              logger_->report(
-                  "[BNMFW] Connect path seg in net {} at ({},{}) ({},{})",
-                  net->getName(),
-                  ps.getBeginPoint().getX(),
-                  ps.getBeginPoint().getY(),
-                  ps.getEndPoint().getX(),
-                  ps.getEndPoint().getY());
-            }
-          }
-        }
-      }
       auto& netRouteObjs = aNetRouteObjs[i];
       const auto& netPins = aNetPins[i];
       auto& nodeMap = aNodeMap[i];
@@ -1410,17 +1340,6 @@ void FlexDRConnectivityChecker::check(int iter)
             }
           }
         }
-        // for (auto inst_term: net->getInstTerms()) {
-        //   for (auto ap: inst_term->getAccessPoints()) {
-        //     for (auto ps: ap->getPathSegs()) {
-        //       logger_->report("[BNMFW] Looking path seg in net {} at ({},{})
-        //       ({},{})", net->getName(), ps.getBeginPoint().getX(),
-        //       ps.getBeginPoint().getY(),
-        //       ps.getEndPoint().getX(),
-        //       ps.getEndPoint().getY());
-        //     }
-        //   }
-        // }
         isWrong = true;
       } else {
         // get lock

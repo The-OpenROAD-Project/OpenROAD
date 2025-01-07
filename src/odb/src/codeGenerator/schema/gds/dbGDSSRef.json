@@ -3,21 +3,8 @@
     "type":"dbObject",
     "fields":[
       {
-        "name":"_layer",
-        "type":"int16_t",
-        "default":"0",
-        "flags":[]
-      },
-      {
-        "name":"_datatype",
-        "type":"int16_t",
-        "default":"0",
-        "flags":[]
-      },
-      {
-        "name":"_xy",
-        "type":"std::vector<Point>",
-        "flags":["no-template"]
+        "name":"_origin",
+        "type":"Point"
       },
       {
         "name":"_propattr",
@@ -25,19 +12,15 @@
         "flags":["no-template", "no-get", "no-set"]
       },
       {
-        "name":"_sName",
-        "type":"std::string",
-        "flags":[]
-      },
-      {
         "name":"_transform",
         "type":"dbGDSSTrans",
         "flags":[]
       },
       {
-        "name":"_colRow",
-        "type":"std::pair<int16_t,int16_t>",
-        "flags":["no-template"]
+        "name":"_structure",
+        "type":"dbId<_dbGDSStructure>",
+        "parent":"dbGDSStructure",
+        "flags":["no-get", "no-set"]
       }
     ],
     "h_includes": [

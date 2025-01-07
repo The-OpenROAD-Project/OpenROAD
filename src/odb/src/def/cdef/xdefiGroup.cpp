@@ -39,37 +39,37 @@
 // Wrappers definitions.
 const char* defiGroup_name(const ::defiGroup* obj)
 {
-  return ((const LefDefParser::defiGroup*) obj)->name();
+  return ((const DefParser::defiGroup*) obj)->name();
 }
 
 const char* defiGroup_regionName(const ::defiGroup* obj)
 {
-  return ((const LefDefParser::defiGroup*) obj)->regionName();
+  return ((const DefParser::defiGroup*) obj)->regionName();
 }
 
 int defiGroup_hasRegionBox(const ::defiGroup* obj)
 {
-  return ((LefDefParser::defiGroup*) obj)->hasRegionBox();
+  return ((DefParser::defiGroup*) obj)->hasRegionBox();
 }
 
 int defiGroup_hasRegionName(const ::defiGroup* obj)
 {
-  return ((LefDefParser::defiGroup*) obj)->hasRegionName();
+  return ((DefParser::defiGroup*) obj)->hasRegionName();
 }
 
 int defiGroup_hasMaxX(const ::defiGroup* obj)
 {
-  return ((LefDefParser::defiGroup*) obj)->hasMaxX();
+  return ((DefParser::defiGroup*) obj)->hasMaxX();
 }
 
 int defiGroup_hasMaxY(const ::defiGroup* obj)
 {
-  return ((LefDefParser::defiGroup*) obj)->hasMaxY();
+  return ((DefParser::defiGroup*) obj)->hasMaxY();
 }
 
 int defiGroup_hasPerim(const ::defiGroup* obj)
 {
-  return ((LefDefParser::defiGroup*) obj)->hasPerim();
+  return ((DefParser::defiGroup*) obj)->hasPerim();
 }
 
 void defiGroup_regionRects(const ::defiGroup* obj,
@@ -79,60 +79,60 @@ void defiGroup_regionRects(const ::defiGroup* obj,
                            int** xh,
                            int** yh)
 {
-  ((LefDefParser::defiGroup*) obj)->regionRects(size, xl, yl, xh, yh);
+  ((DefParser::defiGroup*) obj)->regionRects(size, xl, yl, xh, yh);
 }
 
 int defiGroup_maxX(const ::defiGroup* obj)
 {
-  return ((LefDefParser::defiGroup*) obj)->maxX();
+  return ((DefParser::defiGroup*) obj)->maxX();
 }
 
 int defiGroup_maxY(const ::defiGroup* obj)
 {
-  return ((LefDefParser::defiGroup*) obj)->maxY();
+  return ((DefParser::defiGroup*) obj)->maxY();
 }
 
 int defiGroup_perim(const ::defiGroup* obj)
 {
-  return ((LefDefParser::defiGroup*) obj)->perim();
+  return ((DefParser::defiGroup*) obj)->perim();
 }
 
 int defiGroup_numProps(const ::defiGroup* obj)
 {
-  return ((LefDefParser::defiGroup*) obj)->numProps();
+  return ((DefParser::defiGroup*) obj)->numProps();
 }
 
 const char* defiGroup_propName(const ::defiGroup* obj, int index)
 {
-  return ((const LefDefParser::defiGroup*) obj)->propName(index);
+  return ((const DefParser::defiGroup*) obj)->propName(index);
 }
 
 const char* defiGroup_propValue(const ::defiGroup* obj, int index)
 {
-  return ((const LefDefParser::defiGroup*) obj)->propValue(index);
+  return ((const DefParser::defiGroup*) obj)->propValue(index);
 }
 
 double defiGroup_propNumber(const ::defiGroup* obj, int index)
 {
-  return ((LefDefParser::defiGroup*) obj)->propNumber(index);
+  return ((DefParser::defiGroup*) obj)->propNumber(index);
 }
 
 const char defiGroup_propType(const ::defiGroup* obj, int index)
 {
-  return ((const LefDefParser::defiGroup*) obj)->propType(index);
+  return ((const DefParser::defiGroup*) obj)->propType(index);
 }
 
 int defiGroup_propIsNumber(const ::defiGroup* obj, int index)
 {
-  return ((LefDefParser::defiGroup*) obj)->propIsNumber(index);
+  return ((DefParser::defiGroup*) obj)->propIsNumber(index);
 }
 
 int defiGroup_propIsString(const ::defiGroup* obj, int index)
 {
-  return ((LefDefParser::defiGroup*) obj)->propIsString(index);
+  return ((DefParser::defiGroup*) obj)->propIsString(index);
 }
 
 void defiGroup_print(const ::defiGroup* obj, FILE* f)
 {
-  ((LefDefParser::defiGroup*) obj)->print(f);
+  ((DefParser::defiGroup*) obj)->print(f);
 }

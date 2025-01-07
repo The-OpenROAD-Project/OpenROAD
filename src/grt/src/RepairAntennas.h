@@ -215,12 +215,12 @@ class RepairAntennas
   bool hasNewViolations() { return has_new_violations_; }
 
  private:
-  typedef int coord_type;
-  typedef bg::cs::cartesian coord_sys_type;
-  typedef bg::model::point<coord_type, 2, coord_sys_type> point;
-  typedef bg::model::box<point> box;
-  typedef std::pair<box, int> value;
-  typedef bgi::rtree<value, bgi::quadratic<8, 4>> r_tree;
+  using coord_type = int;
+  using coord_sys_type = bg::cs::cartesian;
+  using point = bg::model::point<coord_type, 2, coord_sys_type>;
+  using box = bg::model::box<point>;
+  using value = std::pair<box, int>;
+  using r_tree = bgi::rtree<value, bgi::quadratic<8, 4>>;
 
   void insertDiode(odb::dbNet* net,
                    odb::dbMTerm* diode_mterm,

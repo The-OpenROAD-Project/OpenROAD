@@ -38,15 +38,15 @@
 
 char* lefiOrientStr(int orient)
 {
-  return LefDefParser::lefiOrientStr(orient);
+  return LefParser::lefiOrientStr(orient);
 }
 
 double convert_name2num(const char* versionName)
 {
-  return LefDefParser::convert_name2num(versionName);
+  return LefParser::convert_name2num(versionName);
 }
 
 bool validateMaskNumber(int num)
 {
-  return LefDefParser::validateMaskNumber(num);
+  return LefParser::validateMaskNumber(num);
 }

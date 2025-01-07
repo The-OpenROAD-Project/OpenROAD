@@ -311,7 +311,7 @@ class dbIStream
 
   dbIStream& operator>>(char& c)
   {
-    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
+    _f.read(&c, sizeof(c));
     return *this;
   }
 
@@ -384,7 +384,7 @@ class dbIStream
       c = nullptr;
     } else {
       c = (char*) malloc(l);
-      _f.read(reinterpret_cast<char*>(c), l);
+      _f.read(c, l);
     }
 
     return *this;
@@ -465,7 +465,7 @@ class dbIStream
       return *this;
     } else {
       *this >> std::get<I>(tup);
-      return ((*this).operator>><I + 1>(tup));
+      return ((*this).operator>> <I + 1>(tup));
     }
   }
 
@@ -473,6 +473,10 @@ class dbIStream
   {
     char* tmp;
     *this >> tmp;
+    if (!tmp) {
+      s = "";
+      return *this;
+    }
     s = std::string(tmp);
     free((void*) tmp);
     return *this;

@@ -29,13 +29,13 @@
 
 #include "defiTimingDisable.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
@@ -52,13 +52,13 @@ defiTimingDisable::defiTimingDisable(defrData* data) : defData(data)
 
 void defiTimingDisable::Init()
 {
-  fromInst_ = 0;
+  fromInst_ = nullptr;
   fromInstLength_ = 0;
-  toInst_ = 0;
+  toInst_ = nullptr;
   toInstLength_ = 0;
-  toPin_ = 0;
+  toPin_ = nullptr;
   toPinLength_ = 0;
-  fromPin_ = 0;
+  fromPin_ = nullptr;
   fromPinLength_ = 0;
 }
 
@@ -73,22 +73,22 @@ void defiTimingDisable::Destroy()
 
   if (fromInst_)
     free(fromInst_);
-  fromInst_ = 0;
+  fromInst_ = nullptr;
   fromInstLength_ = 0;
 
   if (toInst_)
     free(toInst_);
-  toInst_ = 0;
+  toInst_ = nullptr;
   toInstLength_ = 0;
 
   if (toPin_)
     free(toPin_);
-  toPin_ = 0;
+  toPin_ = nullptr;
   toPinLength_ = 0;
 
   if (fromPin_)
     free(fromPin_);
-  fromPin_ = 0;
+  fromPin_ = nullptr;
   fromPinLength_ = 0;
 }
 
@@ -333,4 +333,4 @@ const char* defiTimingDisable::thruInst() const
   return fromInst_;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

@@ -33,81 +33,78 @@
 #include "lefiKRDefs.hpp"
 #include "lefrReader.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 class lefrCallbacks
 {
  public:
-  lefrCallbacks();
   static void reset();
 
   // List of call back routines
   // These are filled in by the user.  See the
   // "set" routines at the end of the file
-  lefrDoubleCbkFnType AntennaInoutCbk;
-  lefrDoubleCbkFnType AntennaInputCbk;
-  lefrDoubleCbkFnType AntennaOutputCbk;
-  lefrStringCbkFnType ArrayBeginCbk;
-  lefrArrayCbkFnType ArrayCbk;
-  lefrStringCbkFnType ArrayEndCbk;
-  lefrStringCbkFnType BusBitCharsCbk;
-  lefrIntegerCbkFnType CaseSensitiveCbk;
-  lefrStringCbkFnType ClearanceMeasureCbk;
-  lefrCorrectionTableCbkFnType CorrectionTableCbk;
-  lefrDensityCbkFnType DensityCbk;
-  lefrDoubleCbkFnType DielectricCbk;
-  lefrStringCbkFnType DividerCharCbk;
-  lefrDoubleCbkFnType EdgeRateScaleFactorCbk;
-  lefrDoubleCbkFnType EdgeRateThreshold1Cbk;
-  lefrDoubleCbkFnType EdgeRateThreshold2Cbk;
-  lefrStringCbkFnType ExtensionCbk;
-  lefrIntegerCbkFnType FixedMaskCbk;
-  lefrVoidCbkFnType IRDropBeginCbk;
-  lefrIRDropCbkFnType IRDropCbk;
-  lefrVoidCbkFnType IRDropEndCbk;
-  lefrDoubleCbkFnType InoutAntennaCbk;
-  lefrDoubleCbkFnType InputAntennaCbk;
-  lefrLayerCbkFnType LayerCbk;
-  lefrVoidCbkFnType LibraryEndCbk;
-  lefrStringCbkFnType MacroBeginCbk;
-  lefrMacroCbkFnType MacroCbk;
-  lefrStringCbkFnType MacroClassTypeCbk;
-  lefrStringCbkFnType MacroEndCbk;
-  lefrIntegerCbkFnType MacroFixedMaskCbk;
-  lefrMacroNumCbkFnType MacroOriginCbk;
-  lefrMacroSiteCbkFnType MacroSiteCbk;
-  lefrMacroForeignCbkFnType MacroForeignCbk;
-  lefrMacroNumCbkFnType MacroSizeCbk;
-  lefrDoubleCbkFnType ManufacturingCbk;
-  lefrMaxStackViaCbkFnType MaxStackViaCbk;
-  lefrMinFeatureCbkFnType MinFeatureCbk;
-  lefrStringCbkFnType NoWireExtensionCbk;
-  lefrNoiseMarginCbkFnType NoiseMarginCbk;
-  lefrNoiseTableCbkFnType NoiseTableCbk;
-  lefrNonDefaultCbkFnType NonDefaultCbk;
-  lefrObstructionCbkFnType ObstructionCbk;
-  lefrDoubleCbkFnType OutputAntennaCbk;
-  lefrPinCbkFnType PinCbk;
-  lefrVoidCbkFnType PropBeginCbk;
-  lefrPropCbkFnType PropCbk;
-  lefrVoidCbkFnType PropEndCbk;
-  lefrSiteCbkFnType SiteCbk;
-  lefrVoidCbkFnType SpacingBeginCbk;
-  lefrSpacingCbkFnType SpacingCbk;
-  lefrVoidCbkFnType SpacingEndCbk;
-  lefrTimingCbkFnType TimingCbk;
-  lefrUnitsCbkFnType UnitsCbk;
-  lefrUseMinSpacingCbkFnType UseMinSpacingCbk;
-  lefrDoubleCbkFnType VersionCbk;
-  lefrStringCbkFnType VersionStrCbk;
-  lefrViaCbkFnType ViaCbk;
-  lefrViaRuleCbkFnType ViaRuleCbk;
+  lefrDoubleCbkFnType AntennaInoutCbk{nullptr};
+  lefrDoubleCbkFnType AntennaInputCbk{nullptr};
+  lefrDoubleCbkFnType AntennaOutputCbk{nullptr};
+  lefrStringCbkFnType ArrayBeginCbk{nullptr};
+  lefrArrayCbkFnType ArrayCbk{nullptr};
+  lefrStringCbkFnType ArrayEndCbk{nullptr};
+  lefrStringCbkFnType BusBitCharsCbk{nullptr};
+  lefrIntegerCbkFnType CaseSensitiveCbk{nullptr};
+  lefrStringCbkFnType ClearanceMeasureCbk{nullptr};
+  lefrCorrectionTableCbkFnType CorrectionTableCbk{nullptr};
+  lefrDensityCbkFnType DensityCbk{nullptr};
+  lefrDoubleCbkFnType DielectricCbk{nullptr};
+  lefrStringCbkFnType DividerCharCbk{nullptr};
+  lefrDoubleCbkFnType EdgeRateScaleFactorCbk{nullptr};
+  lefrDoubleCbkFnType EdgeRateThreshold1Cbk{nullptr};
+  lefrDoubleCbkFnType EdgeRateThreshold2Cbk{nullptr};
+  lefrStringCbkFnType ExtensionCbk{nullptr};
+  lefrIntegerCbkFnType FixedMaskCbk{nullptr};
+  lefrVoidCbkFnType IRDropBeginCbk{nullptr};
+  lefrIRDropCbkFnType IRDropCbk{nullptr};
+  lefrVoidCbkFnType IRDropEndCbk{nullptr};
+  lefrDoubleCbkFnType InoutAntennaCbk{nullptr};
+  lefrDoubleCbkFnType InputAntennaCbk{nullptr};
+  lefrLayerCbkFnType LayerCbk{nullptr};
+  lefrVoidCbkFnType LibraryEndCbk{nullptr};
+  lefrStringCbkFnType MacroBeginCbk{nullptr};
+  lefrMacroCbkFnType MacroCbk{nullptr};
+  lefrStringCbkFnType MacroClassTypeCbk{nullptr};
+  lefrStringCbkFnType MacroEndCbk{nullptr};
+  lefrIntegerCbkFnType MacroFixedMaskCbk{nullptr};
+  lefrMacroNumCbkFnType MacroOriginCbk{nullptr};
+  lefrMacroSiteCbkFnType MacroSiteCbk{nullptr};
+  lefrMacroForeignCbkFnType MacroForeignCbk{nullptr};
+  lefrMacroNumCbkFnType MacroSizeCbk{nullptr};
+  lefrDoubleCbkFnType ManufacturingCbk{nullptr};
+  lefrMaxStackViaCbkFnType MaxStackViaCbk{nullptr};
+  lefrMinFeatureCbkFnType MinFeatureCbk{nullptr};
+  lefrStringCbkFnType NoWireExtensionCbk{nullptr};
+  lefrNoiseMarginCbkFnType NoiseMarginCbk{nullptr};
+  lefrNoiseTableCbkFnType NoiseTableCbk{nullptr};
+  lefrNonDefaultCbkFnType NonDefaultCbk{nullptr};
+  lefrObstructionCbkFnType ObstructionCbk{nullptr};
+  lefrDoubleCbkFnType OutputAntennaCbk{nullptr};
+  lefrPinCbkFnType PinCbk{nullptr};
+  lefrVoidCbkFnType PropBeginCbk{nullptr};
+  lefrPropCbkFnType PropCbk{nullptr};
+  lefrVoidCbkFnType PropEndCbk{nullptr};
+  lefrSiteCbkFnType SiteCbk{nullptr};
+  lefrVoidCbkFnType SpacingBeginCbk{nullptr};
+  lefrSpacingCbkFnType SpacingCbk{nullptr};
+  lefrVoidCbkFnType SpacingEndCbk{nullptr};
+  lefrTimingCbkFnType TimingCbk{nullptr};
+  lefrUnitsCbkFnType UnitsCbk{nullptr};
+  lefrUseMinSpacingCbkFnType UseMinSpacingCbk{nullptr};
+  lefrDoubleCbkFnType VersionCbk{nullptr};
+  lefrStringCbkFnType VersionStrCbk{nullptr};
+  lefrViaCbkFnType ViaCbk{nullptr};
+  lefrViaRuleCbkFnType ViaRuleCbk{nullptr};
 };
 
 extern lefrCallbacks* lefCallbacks;
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

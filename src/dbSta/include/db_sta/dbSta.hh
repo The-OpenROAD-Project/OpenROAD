@@ -221,8 +221,8 @@ class dbSta : public Sta, public ord::OpenRoadObserver
 
 // Utilities for TestCell
 
-sta::LibertyPort* getLibertyScanEnable(const TestCell* test_cell);
-sta::LibertyPort* getLibertyScanIn(const TestCell* test_cell);
-sta::LibertyPort* getLibertyScanOut(const TestCell* test_cell);
+sta::LibertyPort* getLibertyScanEnable(const LibertyCell* lib_cell);
+sta::LibertyPort* getLibertyScanIn(const LibertyCell* lib_cell);
+sta::LibertyPort* getLibertyScanOut(const LibertyCell* lib_cell);
 
 }  // namespace sta

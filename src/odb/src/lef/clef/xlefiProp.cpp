@@ -39,60 +39,60 @@
 // Wrappers definitions.
 const char* lefiProp_string(const ::lefiProp* obj)
 {
-  return ((const LefDefParser::lefiProp*) obj)->string();
+  return ((const LefParser::lefiProp*) obj)->string();
 }
 
 const char* lefiProp_propType(const ::lefiProp* obj)
 {
-  return ((const LefDefParser::lefiProp*) obj)->propType();
+  return ((const LefParser::lefiProp*) obj)->propType();
 }
 
 const char* lefiProp_propName(const ::lefiProp* obj)
 {
-  return ((const LefDefParser::lefiProp*) obj)->propName();
+  return ((const LefParser::lefiProp*) obj)->propName();
 }
 
 char lefiProp_dataType(const ::lefiProp* obj)
 {
-  return ((LefDefParser::lefiProp*) obj)->dataType();
+  return ((LefParser::lefiProp*) obj)->dataType();
 }
 
 int lefiProp_hasNumber(const ::lefiProp* obj)
 {
-  return ((LefDefParser::lefiProp*) obj)->hasNumber();
+  return ((LefParser::lefiProp*) obj)->hasNumber();
 }
 
 int lefiProp_hasRange(const ::lefiProp* obj)
 {
-  return ((LefDefParser::lefiProp*) obj)->hasRange();
+  return ((LefParser::lefiProp*) obj)->hasRange();
 }
 
 int lefiProp_hasString(const ::lefiProp* obj)
 {
-  return ((LefDefParser::lefiProp*) obj)->hasString();
+  return ((LefParser::lefiProp*) obj)->hasString();
 }
 
 int lefiProp_hasNameMapString(const ::lefiProp* obj)
 {
-  return ((LefDefParser::lefiProp*) obj)->hasNameMapString();
+  return ((LefParser::lefiProp*) obj)->hasNameMapString();
 }
 
 double lefiProp_number(const ::lefiProp* obj)
 {
-  return ((LefDefParser::lefiProp*) obj)->number();
+  return ((LefParser::lefiProp*) obj)->number();
 }
 
 double lefiProp_left(const ::lefiProp* obj)
 {
-  return ((LefDefParser::lefiProp*) obj)->left();
+  return ((LefParser::lefiProp*) obj)->left();
 }
 
 double lefiProp_right(const ::lefiProp* obj)
 {
-  return ((LefDefParser::lefiProp*) obj)->right();
+  return ((LefParser::lefiProp*) obj)->right();
 }
 
 void lefiProp_print(const ::lefiProp* obj, FILE* f)
 {
-  ((LefDefParser::lefiProp*) obj)->print(f);
+  ((LefParser::lefiProp*) obj)->print(f);
 }

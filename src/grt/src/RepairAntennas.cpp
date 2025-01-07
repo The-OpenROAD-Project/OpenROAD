@@ -283,12 +283,9 @@ odb::dbWire* RepairAntennas::makeNetWire(
     wire_encoder.end();
 
     return wire;
-  } else {
-    logger_->error(
-        GRT, 221, "Cannot create wire for net {}.", db_net->getConstName());
-    // suppress gcc warning
-    return nullptr;
   }
+  logger_->error(
+      GRT, 221, "Cannot create wire for net {}.", db_net->getConstName());
 }
 
 RoutePtPinsMap RepairAntennas::findRoutePtPins(Net* net)

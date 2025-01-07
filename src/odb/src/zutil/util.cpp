@@ -37,6 +37,7 @@
 #include <string>
 
 #include "odb/db.h"
+#include "odb/dbCCSegSet.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
 

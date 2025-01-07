@@ -75,7 +75,7 @@ enum PartClass
 constexpr int part_class_count = None + 1;
 
 // PartClass -> global macro indices
-typedef array<vector<int>, part_class_count> MacroPartMap;
+using MacroPartMap = array<vector<int>, part_class_count>;
 
 class Partition
 {

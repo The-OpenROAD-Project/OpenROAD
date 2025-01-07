@@ -32,45 +32,27 @@
 #ifndef LEFI_DEFS_H
 #define LEFI_DEFS_H
 
-#include <limits.h>
-#include <stdio.h>
+#include <climits>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 //=================== General Types and Definitions =================
 
-#ifndef TRUE
-#define TRUE (1)
-#endif
-
-#ifndef FALSE
-#define FALSE (0)
-#endif
-
-#ifndef NULL
-#define NULL (0)
-#endif
-
-typedef struct point lefPOINT;
-
-struct point
+struct lefPOINT
 {
   double x;
   double y;
 };
 
-typedef struct rect lefRECT;
-
-struct rect
+struct lefRECT
 {
   lefPOINT ll, ur;
 };
 
-typedef struct token lefTOKEN;
-
-struct token
+struct lefTOKEN
 {
   lefTOKEN* next;
   int what;
@@ -78,46 +60,20 @@ struct token
   lefPOINT pt;
 };
 
-#define START_LIST 10001
-#define POINT_SPEC 10002
-#define VIA_SPEC 10003
-#define WIDTH_SPEC 10004
-#define LAYER_SPEC 10005
-#define SHAPE_SPEC 10006
-
-#ifndef MAXINT
-#define MAXINT 0x7FFFFFFF
-#endif
-#ifndef MININT
-#define MININT 0x80000000
-#endif
-
-#ifndef MIN
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
-#endif
-
-#ifndef MIN
-#define MAX(x, y) ((x) > (y) ? (x) : (y))
-#endif
-
-#define ROUND(x) ((x) >= 0 ? (int) ((x) + 0.5) : (int) ((x) -0.5))
-
-// TOKEN *TokenFromRect();
-
 //=================== Enumerated Types ============================
-typedef int lefiBoolean;
+using lefiBoolean = int;
 
 // Every type of object has a unique identifier, and each object
 //  which is created knows its type, by storing the lefiObjectType_e
 //  as the first member in the structure.
 
-typedef enum
+enum lefiObjectType_e
 {
   // decrease likelihood of accidentally correct values by starting
   // at an unusual number
   lefiInvalidObject = 41713,
   lefiUnknownObject  // void *
-} lefiObjectType_e;
+};
 
 // The memory policy controls how an object which refers to or is composed of
 //  other objects manages those sub-objects, particularly when the parent
@@ -153,7 +109,7 @@ typedef enum
 //  made of a child sub-object, the memory policy of the child controls
 //  whether deep or shallow copies are made of the grandchildren.
 //
-typedef enum
+enum lefiMemoryPolicy_e
 {
   // decrease likelihood of accidentally correct values by starting
   // at an unusual number
@@ -162,26 +118,16 @@ typedef enum
   lefiReferencedSubObjects,  // shallow copy, no delete
   lefiOrphanSubObjects,      // deep copy, no delete
   lefiAdoptedSubObjects      // shallow copy + delete
-} lefiMemoryPolicy_e;
+};
 
 // An opaque pointer for passing user data through from one API
 //  function to another.
 //  A handle which a user can set to point to their own data
 //  on a per-callback basis.  (See the comment in lefwWriter.h)
 
-#define lefiUserData void*
-#define lefiUserDataHandle void**
+using lefiUserData = void*;
+using lefiUserDataHandle = void**;
 
-#ifdef __SunOS_4_1_3
-extern int strcasecmp(const char*, const char*);
-#endif
-
-#ifdef WIN32
-#define strdup _strdup
-#endif
-
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

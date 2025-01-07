@@ -50,6 +50,9 @@ bool _dbGDSBox::operator==(const _dbGDSBox& rhs) const
   if (_datatype != rhs._datatype) {
     return false;
   }
+  if (_bounds != rhs._bounds) {
+    return false;
+  }
 
   return true;
 }
@@ -66,6 +69,7 @@ void _dbGDSBox::differences(dbDiff& diff,
   DIFF_BEGIN
   DIFF_FIELD(_layer);
   DIFF_FIELD(_datatype);
+  DIFF_FIELD(_bounds);
   DIFF_END
 }
 
@@ -74,6 +78,7 @@ void _dbGDSBox::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_layer);
   DIFF_OUT_FIELD(_datatype);
+  DIFF_OUT_FIELD(_bounds);
 
   DIFF_END
 }
@@ -88,13 +93,14 @@ _dbGDSBox::_dbGDSBox(_dbDatabase* db, const _dbGDSBox& r)
 {
   _layer = r._layer;
   _datatype = r._datatype;
+  _bounds = r._bounds;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSBox& obj)
 {
   stream >> obj._layer;
   stream >> obj._datatype;
-  stream >> obj._xy;
+  stream >> obj._bounds;
   stream >> obj._propattr;
   return stream;
 }
@@ -103,7 +109,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSBox& obj)
 {
   stream << obj._layer;
   stream << obj._datatype;
-  stream << obj._xy;
+  stream << obj._bounds;
   stream << obj._propattr;
   return stream;
 }
@@ -140,17 +146,17 @@ int16_t dbGDSBox::getDatatype() const
   return obj->_datatype;
 }
 
-void dbGDSBox::setXy(const std::vector<Point>& xy)
+void dbGDSBox::setBounds(Rect bounds)
 {
   _dbGDSBox* obj = (_dbGDSBox*) this;
 
-  obj->_xy = xy;
+  obj->_bounds = bounds;
 }
 
-void dbGDSBox::getXy(std::vector<Point>& tbl) const
+Rect dbGDSBox::getBounds() const
 {
   _dbGDSBox* obj = (_dbGDSBox*) this;
-  tbl = obj->_xy;
+  return obj->_bounds;
 }
 
 // User Code Begin dbGDSBoxPublicMethods
@@ -158,12 +164,6 @@ std::vector<std::pair<std::int16_t, std::string>>& dbGDSBox::getPropattr()
 {
   auto* obj = (_dbGDSBox*) this;
   return obj->_propattr;
-}
-
-const std::vector<Point>& dbGDSBox::getXY()
-{
-  auto obj = (_dbGDSBox*) this;
-  return obj->_xy;
 }
 
 dbGDSBox* dbGDSBox::create(dbGDSStructure* structure)

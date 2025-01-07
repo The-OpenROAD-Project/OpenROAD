@@ -89,9 +89,8 @@ class PatternButton : public QRadioButton
   Q_OBJECT
  public:
   PatternButton(Qt::BrushStyle pattern, QWidget* parent = nullptr);
-  ~PatternButton() {}
 
-  void paintEvent(QPaintEvent* event);
+  void paintEvent(QPaintEvent* event) override;
   Qt::BrushStyle pattern() const { return pattern_; }
 
  private:
@@ -106,7 +105,7 @@ class DisplayColorDialog : public QDialog
                      Qt::BrushStyle pattern,
                      QWidget* parent = nullptr);
   DisplayColorDialog(const QColor& color, QWidget* parent = nullptr);
-  ~DisplayColorDialog();
+  ~DisplayColorDialog() override;
 
   QColor getSelectedColor() const { return color_; }
   Qt::BrushStyle getSelectedPattern() const;
@@ -169,7 +168,7 @@ class DisplayControls : public QDockWidget,
 
  public:
   DisplayControls(QWidget* parent = nullptr);
-  ~DisplayControls();
+  ~DisplayControls() override;
 
   bool eventFilter(QObject* obj, QEvent* event) override;
 
@@ -256,8 +255,8 @@ class DisplayControls : public QDockWidget,
   bool isGCellGridVisible() const override;
 
   // API from dbNetworkObserver
-  virtual void postReadLiberty() override;
-  virtual void postReadDb() override;
+  void postReadLiberty() override;
+  void postReadDb() override;
 
   // API from dbBlockCallBackObj
   void inDbRowCreate(odb::dbRow*) override;
@@ -477,7 +476,7 @@ class DisplayControls : public QDockWidget,
   void saveRendererState(Renderer* renderer);
 
   void setNameItemDoubleClickAction(ModelRow& row,
-                                    const std::function<void(void)>& callback);
+                                    const std::function<void()>& callback);
   void setItemExclusivity(ModelRow& row,
                           const std::set<std::string>& exclusivity);
 

@@ -262,7 +262,7 @@ _dbMaster::_dbMaster(_dbDatabase* db)
   _width = 0;
   _mterm_cnt = 0;
   _id = 0;
-  _name = 0;
+  _name = nullptr;
 
   _mterm_tbl = new dbTable<_dbMTerm>(
       db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbMTermObj, 4, 2);

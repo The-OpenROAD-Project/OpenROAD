@@ -40,186 +40,185 @@
 int defiComponentMaskShiftLayer_numMaskShiftLayers(
     const ::defiComponentMaskShiftLayer* obj)
 {
-  return ((LefDefParser::defiComponentMaskShiftLayer*) obj)
-      ->numMaskShiftLayers();
+  return ((DefParser::defiComponentMaskShiftLayer*) obj)->numMaskShiftLayers();
 }
 
 const char* defiComponentMaskShiftLayer_maskShiftLayer(
     const ::defiComponentMaskShiftLayer* obj,
     int index)
 {
-  return ((const LefDefParser::defiComponentMaskShiftLayer*) obj)
+  return ((const DefParser::defiComponentMaskShiftLayer*) obj)
       ->maskShiftLayer(index);
 }
 
 const char* defiComponent_id(const ::defiComponent* obj)
 {
-  return ((const LefDefParser::defiComponent*) obj)->id();
+  return ((const DefParser::defiComponent*) obj)->id();
 }
 
 const char* defiComponent_name(const ::defiComponent* obj)
 {
-  return ((const LefDefParser::defiComponent*) obj)->name();
+  return ((const DefParser::defiComponent*) obj)->name();
 }
 
 int defiComponent_placementStatus(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->placementStatus();
+  return ((DefParser::defiComponent*) obj)->placementStatus();
 }
 
 int defiComponent_isUnplaced(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->isUnplaced();
+  return ((DefParser::defiComponent*) obj)->isUnplaced();
 }
 
 int defiComponent_isPlaced(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->isPlaced();
+  return ((DefParser::defiComponent*) obj)->isPlaced();
 }
 
 int defiComponent_isFixed(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->isFixed();
+  return ((DefParser::defiComponent*) obj)->isFixed();
 }
 
 int defiComponent_isCover(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->isCover();
+  return ((DefParser::defiComponent*) obj)->isCover();
 }
 
 int defiComponent_placementX(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->placementX();
+  return ((DefParser::defiComponent*) obj)->placementX();
 }
 
 int defiComponent_placementY(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->placementY();
+  return ((DefParser::defiComponent*) obj)->placementY();
 }
 
 int defiComponent_placementOrient(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->placementOrient();
+  return ((DefParser::defiComponent*) obj)->placementOrient();
 }
 
 const char* defiComponent_placementOrientStr(const ::defiComponent* obj)
 {
-  return ((const LefDefParser::defiComponent*) obj)->placementOrientStr();
+  return ((const DefParser::defiComponent*) obj)->placementOrientStr();
 }
 
 int defiComponent_hasRegionName(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->hasRegionName();
+  return ((DefParser::defiComponent*) obj)->hasRegionName();
 }
 
 int defiComponent_hasRegionBounds(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->hasRegionBounds();
+  return ((DefParser::defiComponent*) obj)->hasRegionBounds();
 }
 
 int defiComponent_hasEEQ(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->hasEEQ();
+  return ((DefParser::defiComponent*) obj)->hasEEQ();
 }
 
 int defiComponent_hasGenerate(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->hasGenerate();
+  return ((DefParser::defiComponent*) obj)->hasGenerate();
 }
 
 int defiComponent_hasSource(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->hasSource();
+  return ((DefParser::defiComponent*) obj)->hasSource();
 }
 
 int defiComponent_hasWeight(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->hasWeight();
+  return ((DefParser::defiComponent*) obj)->hasWeight();
 }
 
 int defiComponent_weight(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->weight();
+  return ((DefParser::defiComponent*) obj)->weight();
 }
 
 int defiComponent_maskShiftSize(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->maskShiftSize();
+  return ((DefParser::defiComponent*) obj)->maskShiftSize();
 }
 
 int defiComponent_maskShift(const ::defiComponent* obj, int index)
 {
-  return ((LefDefParser::defiComponent*) obj)->maskShift(index);
+  return ((DefParser::defiComponent*) obj)->maskShift(index);
 }
 
 int defiComponent_hasNets(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->hasNets();
+  return ((DefParser::defiComponent*) obj)->hasNets();
 }
 
 int defiComponent_numNets(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->numNets();
+  return ((DefParser::defiComponent*) obj)->numNets();
 }
 
 const char* defiComponent_net(const ::defiComponent* obj, int index)
 {
-  return ((const LefDefParser::defiComponent*) obj)->net(index);
+  return ((const DefParser::defiComponent*) obj)->net(index);
 }
 
 const char* defiComponent_regionName(const ::defiComponent* obj)
 {
-  return ((const LefDefParser::defiComponent*) obj)->regionName();
+  return ((const DefParser::defiComponent*) obj)->regionName();
 }
 
 const char* defiComponent_source(const ::defiComponent* obj)
 {
-  return ((const LefDefParser::defiComponent*) obj)->source();
+  return ((const DefParser::defiComponent*) obj)->source();
 }
 
 const char* defiComponent_EEQ(const ::defiComponent* obj)
 {
-  return ((const LefDefParser::defiComponent*) obj)->EEQ();
+  return ((const DefParser::defiComponent*) obj)->EEQ();
 }
 
 const char* defiComponent_generateName(const ::defiComponent* obj)
 {
-  return ((const LefDefParser::defiComponent*) obj)->generateName();
+  return ((const DefParser::defiComponent*) obj)->generateName();
 }
 
 const char* defiComponent_macroName(const ::defiComponent* obj)
 {
-  return ((const LefDefParser::defiComponent*) obj)->macroName();
+  return ((const DefParser::defiComponent*) obj)->macroName();
 }
 
 int defiComponent_hasHalo(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->hasHalo();
+  return ((DefParser::defiComponent*) obj)->hasHalo();
 }
 
 int defiComponent_hasHaloSoft(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->hasHaloSoft();
+  return ((DefParser::defiComponent*) obj)->hasHaloSoft();
 }
 
 int defiComponent_hasRouteHalo(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->hasRouteHalo();
+  return ((DefParser::defiComponent*) obj)->hasRouteHalo();
 }
 
 int defiComponent_haloDist(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->haloDist();
+  return ((DefParser::defiComponent*) obj)->haloDist();
 }
 
 const char* defiComponent_minLayer(const ::defiComponent* obj)
 {
-  return ((const LefDefParser::defiComponent*) obj)->minLayer();
+  return ((const DefParser::defiComponent*) obj)->minLayer();
 }
 
 const char* defiComponent_maxLayer(const ::defiComponent* obj)
 {
-  return ((const LefDefParser::defiComponent*) obj)->maxLayer();
+  return ((const DefParser::defiComponent*) obj)->maxLayer();
 }
 
 void defiComponent_regionBounds(const ::defiComponent* obj,
@@ -229,80 +228,80 @@ void defiComponent_regionBounds(const ::defiComponent* obj,
                                 int** xh,
                                 int** yh)
 {
-  ((LefDefParser::defiComponent*) obj)->regionBounds(size, xl, yl, xh, yh);
+  ((DefParser::defiComponent*) obj)->regionBounds(size, xl, yl, xh, yh);
 }
 
 int defiComponent_hasForeignName(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->hasForeignName();
+  return ((DefParser::defiComponent*) obj)->hasForeignName();
 }
 
 const char* defiComponent_foreignName(const ::defiComponent* obj)
 {
-  return ((const LefDefParser::defiComponent*) obj)->foreignName();
+  return ((const DefParser::defiComponent*) obj)->foreignName();
 }
 
 int defiComponent_foreignX(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->foreignX();
+  return ((DefParser::defiComponent*) obj)->foreignX();
 }
 
 int defiComponent_foreignY(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->foreignY();
+  return ((DefParser::defiComponent*) obj)->foreignY();
 }
 
 const char* defiComponent_foreignOri(const ::defiComponent* obj)
 {
-  return ((const LefDefParser::defiComponent*) obj)->foreignOri();
+  return ((const DefParser::defiComponent*) obj)->foreignOri();
 }
 
 int defiComponent_foreignOrient(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->foreignOrient();
+  return ((DefParser::defiComponent*) obj)->foreignOrient();
 }
 
 int defiComponent_hasFori(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->hasFori();
+  return ((DefParser::defiComponent*) obj)->hasFori();
 }
 
 int defiComponent_numProps(const ::defiComponent* obj)
 {
-  return ((LefDefParser::defiComponent*) obj)->numProps();
+  return ((DefParser::defiComponent*) obj)->numProps();
 }
 
 char* defiComponent_propName(const ::defiComponent* obj, int index)
 {
-  return ((LefDefParser::defiComponent*) obj)->propName(index);
+  return ((DefParser::defiComponent*) obj)->propName(index);
 }
 
 char* defiComponent_propValue(const ::defiComponent* obj, int index)
 {
-  return ((LefDefParser::defiComponent*) obj)->propValue(index);
+  return ((DefParser::defiComponent*) obj)->propValue(index);
 }
 
 double defiComponent_propNumber(const ::defiComponent* obj, int index)
 {
-  return ((LefDefParser::defiComponent*) obj)->propNumber(index);
+  return ((DefParser::defiComponent*) obj)->propNumber(index);
 }
 
 char defiComponent_propType(const ::defiComponent* obj, int index)
 {
-  return ((LefDefParser::defiComponent*) obj)->propType(index);
+  return ((DefParser::defiComponent*) obj)->propType(index);
 }
 
 int defiComponent_propIsNumber(const ::defiComponent* obj, int index)
 {
-  return ((LefDefParser::defiComponent*) obj)->propIsNumber(index);
+  return ((DefParser::defiComponent*) obj)->propIsNumber(index);
 }
 
 int defiComponent_propIsString(const ::defiComponent* obj, int index)
 {
-  return ((LefDefParser::defiComponent*) obj)->propIsString(index);
+  return ((DefParser::defiComponent*) obj)->propIsString(index);
 }
 
 void defiComponent_print(const ::defiComponent* obj, FILE* fout)
 {
-  ((LefDefParser::defiComponent*) obj)->print(fout);
+  ((DefParser::defiComponent*) obj)->print(fout);
 }

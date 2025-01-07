@@ -29,13 +29,13 @@
 
 #include "defiIOTiming.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
@@ -52,15 +52,15 @@ defiIOTiming::defiIOTiming(defrData* data) : defData(data)
 
 void defiIOTiming::Init()
 {
-  inst_ = 0;
+  inst_ = nullptr;
   instLength_ = 0;
-  pin_ = 0;
+  pin_ = nullptr;
   pinLength_ = 0;
-  from_ = 0;
+  from_ = nullptr;
   fromLength_ = 0;
-  to_ = 0;
+  to_ = nullptr;
   toLength_ = 0;
-  driveCell_ = 0;
+  driveCell_ = nullptr;
   driveCellLength_ = 0;
   hasVariableRise_ = 0;
   hasVariableFall_ = 0;
@@ -71,7 +71,7 @@ void defiIOTiming::Init()
   hasFrom_ = 0;
   if (pin_)
     free(pin_);
-  pin_ = 0;
+  pin_ = nullptr;
   pinLength_ = 0;
 
   hasTo_ = 0;
@@ -97,27 +97,27 @@ void defiIOTiming::Destroy()
 {
   if (inst_)
     free(inst_);
-  inst_ = 0;
+  inst_ = nullptr;
   instLength_ = 0;
 
   if (pin_)
     free(pin_);
-  pin_ = 0;
+  pin_ = nullptr;
   pinLength_ = 0;
 
   if (from_)
     free(from_);
-  from_ = 0;
+  from_ = nullptr;
   fromLength_ = 0;
 
   if (to_)
     free(to_);
-  to_ = 0;
+  to_ = nullptr;
   toLength_ = 0;
 
   if (driveCell_)
     free(driveCell_);
-  driveCell_ = 0;
+  driveCell_ = nullptr;
   driveCellLength_ = 0;
 
   clear();
@@ -430,4 +430,4 @@ double defiIOTiming::parallel() const
   return parallel_;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
