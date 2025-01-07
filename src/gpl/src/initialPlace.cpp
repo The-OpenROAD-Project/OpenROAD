@@ -65,7 +65,7 @@ InitialPlace::InitialPlace(InitialPlaceVars ipVars,
 {
 }
 
-void InitialPlace::doBicgstabPlace()
+void InitialPlace::doBicgstabPlace(int threads)
 {
   ResidualError error;
 
@@ -79,6 +79,7 @@ void InitialPlace::doBicgstabPlace()
   // set ExtId for idx reference // easy recovery
   setPlaceInstExtId();
 
+  // omp_set_num_threads(threads);
   for (size_t iter = 1; iter <= ipVars_.maxIter; iter++) {
     updatePinInfo();
     createSparseMatrix();
@@ -90,7 +91,8 @@ void InitialPlace::doBicgstabPlace()
                            placeInstForceMatrixY_,
                            fixedInstForceVecY_,
                            instLocVecY_,
-                           log_);
+                           log_,
+                           threads);
     float error_max = std::max(error.x, error.y);
     log_->report("[InitialPlace]  Iter: {} CG residual: {:0.8f} HPWL: {}",
                  iter,
