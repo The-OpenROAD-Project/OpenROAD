@@ -37,6 +37,8 @@
 
 namespace odb {
 
+std::mutex defin::_def_mutex;
+
 defin::defin(dbDatabase* db, utl::Logger* logger, MODE mode)
 {
   std::lock_guard<std::mutex> lock(_def_mutex);

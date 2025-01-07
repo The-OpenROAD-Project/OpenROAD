@@ -55,6 +55,7 @@
 namespace odb {
 
 using LefParser::lefrSetRelaxMode;
+std::mutex lefin::_lef_mutex;
 
 extern bool lefin_parse(lefinReader*, utl::Logger*, const char*);
 

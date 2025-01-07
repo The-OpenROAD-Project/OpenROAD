@@ -274,7 +274,7 @@ class lefin
 
  private:
   lefinReader* _reader;
-  std::mutex _lef_mutex;
+  static std::mutex _lef_mutex;
 };
 
 }  // namespace odb

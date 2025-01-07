@@ -52,7 +52,7 @@ class dbTech;
 class defin
 {
   definReader* _reader;
-  std::mutex _def_mutex;
+  static std::mutex _def_mutex;
 
  public:
   enum MODE
