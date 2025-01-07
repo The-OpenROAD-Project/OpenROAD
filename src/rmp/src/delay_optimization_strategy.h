@@ -18,6 +18,7 @@ class DelayOptimizationStrategy : public LogicOptimizationStrategy
 {
  public:
   ~DelayOptimizationStrategy() override = default;
+
   DelayOptimizationStrategy(sta::dbSta* sta) : sta_(sta) {};
 
   //
