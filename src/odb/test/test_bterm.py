@@ -1,6 +1,7 @@
-import opendbpy as odb
+import odb
 import helper
 import odbUnitTest
+import unittest
 
 
 class TestBTerm(odbUnitTest.TestCase):
@@ -40,5 +41,4 @@ class TestBTerm(odbUnitTest.TestCase):
 
 
 if __name__ == "__main__":
-    odbUnitTest.mainParallel(TestBTerm)
-#     odbUnitTest.main()
+    unittest.main()

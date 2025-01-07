@@ -113,7 +113,7 @@ void FlexPA::applyPatternsFile(const char* file_path)
 void FlexPA::prep()
 {
   ProfileTask profile("PA:prep");
-  initAllAccessPoints();
+  genAllAccessPoints();
   revertAccessPoints();
   if (isDistributed()) {
     std::vector<paUpdate> updates;
