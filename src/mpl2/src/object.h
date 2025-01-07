@@ -475,12 +475,7 @@ class SoftMacro
   // Create a SoftMacro with specified size
   // Create a SoftMacro representing the blockage
   SoftMacro(float width, float height, const std::string& name);
-  // Create a SoftMacro representing fixed hard macro or blockage
-  SoftMacro(float width,
-            float height,
-            const std::string& name,
-            float lx,
-            float ly);
+
   // Create a SoftMacro representing the IO cluster
   SoftMacro(const std::pair<float, float>& pos,
             const std::string& name,
