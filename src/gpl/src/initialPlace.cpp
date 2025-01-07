@@ -79,7 +79,6 @@ void InitialPlace::doBicgstabPlace(int threads)
   // set ExtId for idx reference // easy recovery
   setPlaceInstExtId();
 
-  // omp_set_num_threads(threads);
   for (size_t iter = 1; iter <= ipVars_.maxIter; iter++) {
     updatePinInfo();
     createSparseMatrix();
