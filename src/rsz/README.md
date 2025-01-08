@@ -313,6 +313,7 @@ repair_timing
     [-skip_last_gasp]
     [-repair_tns tns_end_percent]
     [-max_passes passes]
+    [-max_repairs_per_iter max_repairs_per_iter]
     [-max_utilization util]
     [-max_buffer_percent buffer_percent]
     [-match_cell_footprint]
