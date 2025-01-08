@@ -1260,7 +1260,6 @@ std::string HTreeBuilder::plotHTree()
                     ? topLevelBufferLoc
                     : topologyForEachLevel_[levelIdx - 1].getBranchingPoint(
                         parentIdx);
-          // clang-format on
           const std::vector<Point<double>>& sinks
               = topology.getBranchSinksLocations(idx);
 
@@ -1273,6 +1272,7 @@ std::string HTreeBuilder::plotHTree()
           std::string name = "buffer";
           file << levelIdx << " " << x1 << " " << y1 << " " << x2 << " " << y2;
           file << " " << name << std::endl;
+          // clang-format on
         });
   }
 
