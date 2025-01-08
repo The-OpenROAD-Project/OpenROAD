@@ -119,30 +119,30 @@ const std::string& ScanChain::getName() const
   return name_;
 }
 
-ScanDriver ScanChain::getScanIn() const
+std::optional<ScanDriver> ScanChain::getScanIn() const
 {
-  return ScanDriver(scan_in_);
+  return scan_in_;
 }
-ScanDriver ScanChain::getScanEnable() const
+std::optional<ScanDriver> ScanChain::getScanEnable() const
 {
-  return ScanDriver(scan_enable_);
+  return scan_enable_;
 }
-ScanLoad ScanChain::getScanOut() const
+std::optional<ScanLoad> ScanChain::getScanOut() const
 {
-  return ScanLoad(scan_out_);
+  return scan_out_;
 }
 
-void ScanChain::setScanIn(const ScanDriver& signal)
+void ScanChain::setScanIn(const std::optional<ScanDriver>& signal)
 {
-  scan_in_ = signal.getValue();
+  scan_in_ = signal;
 }
-void ScanChain::setScanEnable(const ScanDriver& signal)
+void ScanChain::setScanEnable(const std::optional<ScanDriver>& signal)
 {
-  scan_enable_ = signal.getValue();
+  scan_enable_ = signal;
 }
-void ScanChain::setScanOut(const ScanLoad& signal)
+void ScanChain::setScanOut(const std::optional<ScanLoad>& signal)
 {
-  scan_out_ = signal.getValue();
+  scan_out_ = signal;
 }
 
 }  // namespace dft

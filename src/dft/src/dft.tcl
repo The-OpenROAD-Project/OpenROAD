@@ -73,7 +73,6 @@ proc insert_dft { args } {
 sta::define_cmd_args "set_dft_config" { [-max_length max_length]
                                         [-max_chains max_chains]
                                         [-clock_mixing clock_mixing]
-                                        [-scan_enable_mode mode]
                                         [-scan_enable_name_pattern scan_enable_name_pattern]
                                         [-scan_in_name_pattern scan_in_name_pattern]
                                         [-scan_out_name_pattern scan_out_name_pattern]
@@ -84,7 +83,6 @@ proc set_dft_config { args } {
       -max_length
       -max_chains
       -clock_mixing
-      -scan_enable_mode
       -scan_enable_name_pattern
       -scan_in_name_pattern
       -scan_out_name_pattern
@@ -108,10 +106,6 @@ proc set_dft_config { args } {
   if { [info exists keys(-clock_mixing)] } {
     set clock_mixing $keys(-clock_mixing)
     dft::set_dft_config_clock_mixing $clock_mixing
-  }
-
-  if { [info exists keys(-scan_enable_mode)] } {
-    dft::set_dft_config_scan_enable_mode $keys(-scan_enable_mode)
   }
 
   foreach {flag signal} {

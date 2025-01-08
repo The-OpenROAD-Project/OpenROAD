@@ -35,9 +35,12 @@
 #include <deque>
 #include <iostream>
 
+namespace {
 constexpr std::string_view kScanEnable = "scan-enable";
 constexpr std::string_view kScanIn = "scan-in";
 constexpr std::string_view kScanOut = "scan-out";
+constexpr size_t kEnableNumber = 0;
+}  // namespace
 
 namespace dft {
 
@@ -57,25 +60,19 @@ void ScanStitch::Stitch(
     return;
   }
 
-  size_t enable_ordinal = 0;
   size_t ordinal = 0;
   for (const std::unique_ptr<ScanChain>& scan_chain : scan_chains) {
-    Stitch(top_block_, *scan_chain, ordinal, enable_ordinal);
+    Stitch(top_block_, *scan_chain, ordinal);
     ordinal += 1;
-
-    // If a unique enable signal is ever needed per-chain, simply increment
-    // enable_ordinal as follows:
-    // enable_ordinal += 1;
   }
 }
 
 void ScanStitch::Stitch(odb::dbBlock* block,
                         ScanChain& scan_chain,
-                        size_t ordinal,
-                        size_t enable_ordinal)
+                        size_t ordinal)
 {
-  auto scan_enable_name = fmt::format(
-      FMT_RUNTIME(config_.getEnableNamePattern()), enable_ordinal);
+  auto scan_enable_name
+      = fmt::format(FMT_RUNTIME(config_.getEnableNamePattern()), kEnableNumber);
   auto scan_enable_driver = FindOrCreateScanEnable(block, scan_enable_name);
 
   auto scan_in_name
@@ -159,7 +156,7 @@ static std::pair<std::string, std::optional<std::string>> SplitTermIdentifier(
 }
 }  // namespace
 
-ScanDriver ScanStitch::FindOrCreateDriver(const std::string_view& kind,
+ScanDriver ScanStitch::FindOrCreateDriver(std::string_view kind,
                                           odb::dbBlock* block,
                                           const std::string& with_name)
 {

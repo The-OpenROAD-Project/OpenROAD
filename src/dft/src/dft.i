@@ -54,27 +54,6 @@ utl::Logger* getLogger()
 
 %include "../../Exception.i"
 
-// Enum: dft::ResetActiveEdge
-%typemap(typecheck) dft::ResetActiveEdge {
-  char *str = Tcl_GetStringFromObj($input, 0);
-    if (strcasecmp(str, "LOW") == 0) {
-    $1 = 1;
-  } else if (strcasecmp(str, "HIGH") == 0) {
-    $1 = 1;
-  } else {
-    $1 = 0;
-  }
-}
-
-%typemap(in) dft::ResetActiveEdge {
-  char *str = Tcl_GetStringFromObj($input, 0);
-  if (strcasecmp(str, "LOW") == 0) {
-    $1 = dft::ResetActiveEdge::Low;
-  } else /* other values eliminated in typecheck */ {
-    $1 = dft::ResetActiveEdge::High;
-  };
-}
-
 // Enum: dft::ClockEdge
 %typemap(typecheck) dft::ClockEdge {
   char *str = Tcl_GetStringFromObj($input, 0);
@@ -117,27 +96,6 @@ utl::Logger* getLogger()
   };
 }
 
-// Enum: dft::EnableMode
-%typemap(typecheck) dft::ScanStitchConfig::EnableMode {
-  char *str = Tcl_GetStringFromObj($input, 0);
-    if (strcasecmp(str, "GLOBAL") == 0) {
-    $1 = 1;
-  } else if (strcasecmp(str, "PER_CHAIN") == 0) {
-    $1 = 1;
-  } else {
-    $1 = 0;
-  }
-}
-
-%typemap(in) dft::ScanStitchConfig::EnableMode {
-  char *str = Tcl_GetStringFromObj($input, 0);
-  if (strcasecmp(str, "GLOBAL") == 0) {
-    $1 = dft::ScanStitchConfig::EnableMode::Global;
-  } else /* other values eliminated in typecheck */ {
-    $1 = dft::ScanStitchConfig::EnableMode::PerChain;
-  };
-}
-
 %inline
 %{
 
@@ -171,13 +129,8 @@ void set_dft_config_clock_mixing(dft::ScanArchitectConfig::ClockMixing clock_mix
   getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setClockMixing(clock_mixing);
 }
 
-void set_dft_config_scan_enable_mode(dft::ScanStitchConfig::EnableMode enable_mode)
-{
-  getDft()->getMutableDftConfig()->getMutableScanStitchConfig()->setEnableMode(enable_mode);
-}
-
 void set_dft_config_scan_signal_name_pattern(const char* signal_ptr, const char* pattern_ptr) {
-  auto config = getDft()->getMutableDftConfig()->getMutableScanStitchConfig();
+  dft::ScanStitchConfig* config = getDft()->getMutableDftConfig()->getMutableScanStitchConfig();
   std::string_view signal(signal_ptr), pattern(pattern_ptr);
   
   if (signal == "scan_in") {

@@ -52,7 +52,6 @@ class ScanPin
 {
  public:
   explicit ScanPin(std::variant<odb::dbBTerm*, odb::dbITerm*> term);
-  ScanPin(const ScanPin&) = delete;  // no copy
 
   odb::dbNet* getNet() const;
   std::string_view getName() const;
@@ -67,7 +66,6 @@ class ScanLoad : public ScanPin
 {
  public:
   explicit ScanLoad(std::variant<odb::dbBTerm*, odb::dbITerm*> term);
-  ScanLoad(const ScanLoad&) = delete;  // no copy
 };
 
 // Typesafe wrapper for driver pins
@@ -75,7 +73,6 @@ class ScanDriver : public ScanPin
 {
  public:
   explicit ScanDriver(std::variant<odb::dbBTerm*, odb::dbITerm*> term);
-  ScanDriver(const ScanDriver&) = delete;  // no copy
 };
 
 }  // namespace dft

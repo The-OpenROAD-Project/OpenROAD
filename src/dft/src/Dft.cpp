@@ -46,7 +46,9 @@
 #include "odb/db.h"
 #include "utl/Logger.h"
 
+namespace {
 constexpr char kDefaultPartition[] = "default";
+}  // namespace
 
 namespace dft {
 
@@ -122,14 +124,14 @@ void Dft::insertDft()
   odb::dbBlock* db_block = db_->getChip()->getBlock();
   odb::dbDft* db_dft = db_block->getDft();
 
-  for (auto& chain : scan_chains) {
+  for (const auto& chain : scan_chains) {
     odb::dbScanChain* db_sc = odb::dbScanChain::create(db_dft);
     db_sc->setName(chain->getName());
     odb::dbScanPartition* db_part = odb::dbScanPartition::create(db_sc);
     db_part->setName(kDefaultPartition);
     odb::dbScanList* db_scanlist = odb::dbScanList::create(db_part);
 
-    for (auto& scan_cell : chain->getScanCells()) {
+    for (const auto& scan_cell : chain->getScanCells()) {
       std::string inst_name(scan_cell->getName());
       odb::dbInst* db_inst = db_block->findInst(inst_name.c_str());
       odb::dbScanInst* db_scaninst = db_scanlist->add(db_inst);
@@ -140,17 +142,23 @@ void Dft::insertDft()
           {.scan_in = scan_in_term, .scan_out = scan_out_term});
     }
 
-    ScanDriver sc_enable_driver = chain->getScanEnable();
-    ScanDriver sc_in_driver = chain->getScanIn();
-    ScanLoad sc_out_load = chain->getScanOut();
+    std::optional<ScanDriver> sc_enable_driver = chain->getScanEnable();
+    std::optional<ScanDriver> sc_in_driver = chain->getScanIn();
+    std::optional<ScanLoad> sc_out_load = chain->getScanOut();
 
-    std::visit(
-        [&](auto&& sc_enable_term) { db_sc->setScanEnable(sc_enable_term); },
-        sc_enable_driver.getValue());
-    std::visit([&](auto&& sc_in_term) { db_sc->setScanIn(sc_in_term); },
-               sc_in_driver.getValue());
-    std::visit([&](auto&& sc_out_term) { db_sc->setScanOut(sc_out_term); },
-               sc_out_load.getValue());
+    if (sc_enable_driver.has_value()) {
+      std::visit(
+          [&](auto&& sc_enable_term) { db_sc->setScanEnable(sc_enable_term); },
+          sc_enable_driver.value().getValue());
+    }
+    if (sc_in_driver.has_value()) {
+      std::visit([&](auto&& sc_in_term) { db_sc->setScanIn(sc_in_term); },
+                 sc_in_driver.value().getValue());
+    }
+    if (sc_out_load.has_value()) {
+      std::visit([&](auto&& sc_out_term) { db_sc->setScanOut(sc_out_term); },
+                 sc_out_load.value().getValue());
+    }
   }
 }
 

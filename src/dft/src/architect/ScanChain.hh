@@ -86,13 +86,13 @@ class ScanChain
   const std::string& getName() const;
 
   // For stitchers
-  ScanDriver getScanIn() const;
-  ScanDriver getScanEnable() const;
-  ScanLoad getScanOut() const;
+  std::optional<ScanDriver> getScanIn() const;
+  std::optional<ScanDriver> getScanEnable() const;
+  std::optional<ScanLoad> getScanOut() const;
 
-  void setScanIn(const ScanDriver& signal);
-  void setScanEnable(const ScanDriver& signal);
-  void setScanOut(const ScanLoad& signal);
+  void setScanIn(const std::optional<ScanDriver>& signal);
+  void setScanEnable(const std::optional<ScanDriver>& signal);
+  void setScanOut(const std::optional<ScanLoad>& signal);
 
  private:
   std::string name_;
@@ -106,11 +106,9 @@ class ScanChain
   uint64_t bits_;
 
   // After stitching: store input/output bterms/iterms
-  std::variant<odb::dbBTerm*, odb::dbITerm*> scan_in_ = (odb::dbBTerm*) nullptr;
-  std::variant<odb::dbBTerm*, odb::dbITerm*> scan_out_
-      = (odb::dbBTerm*) nullptr;
-  std::variant<odb::dbBTerm*, odb::dbITerm*> scan_enable_
-      = (odb::dbBTerm*) nullptr;
+  std::optional<ScanDriver> scan_in_;
+  std::optional<ScanLoad> scan_out_;
+  std::optional<ScanDriver> scan_enable_;
 };
 
 }  // namespace dft
