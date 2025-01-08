@@ -1101,7 +1101,8 @@ int definReader::pinCallback(DefParser::defrCallbackType_e /* unused: type */,
         reader->_logger->warn(
             utl::ODB,
             437,
-            "Pin directions are ignored from floorplan DEF files.");
+            "Mismatched pin direction between verilog netlist and floorplan "
+            "DEF, ignoring floorplan DEF direction.");
       }
     } else {
       pinR->pinDirection(pin->direction());
