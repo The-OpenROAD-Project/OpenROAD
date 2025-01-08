@@ -1166,7 +1166,7 @@ bool TritonCTS::separateMacroRegSinks(
       odb::dbMTerm* mterm = iterm->getMTerm();
       // Treat clock gaters like macro sink
       if (hasInsertionDelay(inst, mterm) || !isSink(iterm)) {
-        if(inst->getMaster()->isBlock()) {
+        if (inst->getMaster()->isBlock()) {
           max_dx = std::max(max_dx, inst->getBBox()->getDX());
           max_dy = std::max(max_dy, inst->getBBox()->getDX());
         }

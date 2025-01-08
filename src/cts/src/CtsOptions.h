@@ -218,7 +218,10 @@ class CtsOptions
   {
     macroSinkClusteringUseMaxCap_ = useMaxCap;
   }
-  bool getMacroSinkClusteringUseMaxCap() const { return macroSinkClusteringUseMaxCap_; }
+  bool getMacroSinkClusteringUseMaxCap() const
+  {
+    return macroSinkClusteringUseMaxCap_;
+  }
 
   double getMacroMaxDiameter() const { return macroMaxDiameter_; }
   void setMacroMaxDiameter(double distance)
@@ -235,7 +238,10 @@ class CtsOptions
     macroSinkClusteringUseMaxCap_ = false;
     macroSinkClustersSizeSet_ = true;
   }
-  bool isMacroSinkClusteringSizeSet() const { return macroSinkClustersSizeSet_; }
+  bool isMacroSinkClusteringSizeSet() const
+  {
+    return macroSinkClustersSizeSet_;
+  }
 
   unsigned getNumStaticLayers() const { return numStaticLayers_; }
   void setBalanceLevels(bool balance) { balanceLevels_ = balance; }
