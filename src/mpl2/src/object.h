@@ -723,9 +723,8 @@ struct Rect
     if (lx < core_lx - 1.0 || ly < core_ly - 1.0 || ux > core_ux + 1.0
         || uy > core_uy + 1.0) {
       std::cout << "Error !!!\n"
-                << "core_lx =  " << core_lx << "  "
-                << "core_ly =  " << core_ly << "  "
-                << "core_ux =  " << core_ux << "  "
+                << "core_lx =  " << core_lx << "  " << "core_ly =  " << core_ly
+                << "  " << "core_ux =  " << core_ux << "  "
                 << "core_uy =  " << core_uy << std::endl;
     }
   }
