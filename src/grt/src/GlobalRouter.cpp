@@ -979,7 +979,8 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(
     for (const odb::Rect& pin_box : pin_boxes) {
       odb::Point rect_middle = getRectMiddle(pin_box);
       const int box_length = std::max(pin_box.dx(), pin_box.dy());
-      if (pin.getEdge() != PinEdge::none && box_length >= grid_->getTileSize()) {
+      if (pin.getEdge() != PinEdge::none
+          && box_length >= grid_->getTileSize()) {
         pos_on_grid = grid_->getPositionOnGrid(
             pin.getPositionNearInstEdge(pin_box, rect_middle));
       } else {
