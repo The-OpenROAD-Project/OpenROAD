@@ -113,6 +113,8 @@ class definPin : public definBase
   virtual void pinSpecial();
   virtual void pinUse(dbSigType type);
   virtual void pinDirection(dbIoType type);
+  // Does the pin currently have this direction
+  virtual bool checkPinDirection(dbIoType type);
   virtual void pinPlacement(defPlacement status,
                             int x,
                             int y,
