@@ -68,7 +68,7 @@ proc configure_cts_characterization { args } {
   }
 }
 
-sta::define_cmd_args "macro_sink_clustering_size" {[-cluster_size]} ;# checker off
+sta::define_cmd_args "macro_sink_clustering_size" { [-cluster_size] } ;# checker off
 
 proc "macro_sink_clustering_size" {args} {
   sta::parse_key_args "macro_sink_clustering_size" args \
@@ -84,12 +84,12 @@ proc "macro_sink_clustering_size" {args} {
   }
 }
 
-sta::define_cmd_args "macro_sink_clustering_max_diameter" {[-cluster_max_diameter]
+sta::define_cmd_args "macro_sink_clustering_max_diameter" { [-cluster_max_diameter]
                                                           } ;# checker off
 
 proc "macro_sink_clustering_max_diameter" {args} {
   sta::parse_key_args "macro_sink_clustering_max_diameter" args \
-    keys {-cluster_max_diameter} flags {}
+    keys { -cluster_max_diameter } flags {}
 
   sta::check_argc_eq0 "macro_sink_clustering_max_diameter" $args
 
