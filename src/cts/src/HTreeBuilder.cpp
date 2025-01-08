@@ -962,13 +962,13 @@ void HTreeBuilder::legalizeDummy()
     for (unsigned idx = 0; idx < topology.getBranchingPointSize(); ++idx) {
       Point<double>& branchPoint = topology.getBranchingPoint(idx);
       unsigned parentIdx = topology.getBranchingPointParentIdx(idx);
-
+      // clang-format off
       Point<double> parentPoint
           = (levelIdx == 0)
                 ? topLevelBufferLoc
                 : topologyForEachLevel_[levelIdx - 1].getBranchingPoint(
                     parentIdx);
-
+      // clang-format on
       const std::vector<Point<double>>& sinks
           = topology.getBranchSinksLocations(idx);
 
@@ -1047,13 +1047,13 @@ void HTreeBuilder::legalize()
       // bufferIdx is the buffer id at level levelIdx
       Point<double>& branchPoint = topology.getBranchingPoint(bufferIdx);
       unsigned parentIdx = topology.getBranchingPointParentIdx(bufferIdx);
-
+      // clang-format off
       Point<double> parentPoint
           = (levelIdx == 0)
                 ? newTopBufferLoc
                 : topologyForEachLevel_[levelIdx - 1].getBranchingPoint(
                     parentIdx);
-
+      // clang-format on
       const std::vector<Point<double>>& sinks
           = topology.getBranchSinksLocations(bufferIdx);
 
@@ -1254,12 +1254,13 @@ std::string HTreeBuilder::plotHTree()
         [&](unsigned idx, Point<double> branchPoint) {
           unsigned parentIdx = topology.getBranchingPointParentIdx(idx);
 
+          // clang-format off
           Point<double> parentPoint
               = (levelIdx == 0)
                     ? topLevelBufferLoc
                     : topologyForEachLevel_[levelIdx - 1].getBranchingPoint(
                         parentIdx);
-
+          // clang-format on
           const std::vector<Point<double>>& sinks
               = topology.getBranchSinksLocations(idx);
 
@@ -2043,13 +2044,13 @@ void HTreeBuilder::printHTree()
     for (unsigned idx = 0; idx < topology.getBranchingPointSize(); ++idx) {
       Point<double>& branchPoint = topology.getBranchingPoint(idx);
       unsigned parentIdx = topology.getBranchingPointParentIdx(idx);
-
+      // clang-format off
       Point<double> parentPoint
           = (levelIdx == 0)
                 ? topLevelBufferLoc
                 : topologyForEachLevel_[levelIdx - 1].getBranchingPoint(
                     parentIdx);
-
+      // clang-format on
       const std::vector<Point<double>>& sinks
           = topology.getBranchSinksLocations(idx);
 
