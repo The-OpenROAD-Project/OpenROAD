@@ -1249,12 +1249,10 @@ std::string HTreeBuilder::plotHTree()
 
   for (int levelIdx = 0; levelIdx < topologyForEachLevel_.size(); ++levelIdx) {
     LevelTopology& topology = topologyForEachLevel_[levelIdx];
-
+    // clang-format off
     topology.forEachBranchingPoint(
         [&](unsigned idx, Point<double> branchPoint) {
           unsigned parentIdx = topology.getBranchingPointParentIdx(idx);
-
-          // clang-format off
           Point<double> parentPoint
               = (levelIdx == 0)
                     ? topLevelBufferLoc
@@ -1272,8 +1270,8 @@ std::string HTreeBuilder::plotHTree()
           std::string name = "buffer";
           file << levelIdx << " " << x1 << " " << y1 << " " << x2 << " " << y2;
           file << " " << name << std::endl;
-          // clang-format on
         });
+    // clang-format on
   }
 
   LevelTopology& leafTopology = topologyForEachLevel_.back();
