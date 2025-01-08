@@ -2765,45 +2765,19 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net)
   for (auto& ps : ap->getPathSegs()) {
     std::unique_ptr<drPathSeg> drPs = std::make_unique<drPathSeg>();
     drPs->setApPathSeg({x, y});
+    if (inst) {
+      dbTransform trans = inst->getTransform();
+      ps.transform(trans);
+    }
     Point begin = ps.getBeginPoint();
     Point end = ps.getEndPoint();
-    Point begin_mirror = begin;  // Print
-    Point end_mirror = end;      // Print
     Point* connecting = nullptr;
     if (ps.getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
       connecting = &begin;
     } else if (ps.getEndStyle() == frEndStyle(frcTruncateEndStyle)) {
       connecting = &end;
     }
-    if (inst) {
-      dbTransform trans = inst->getBadTransform();
-      trans.apply(begin);
-      trans.apply(end);
-      if (end < begin) {  // if rotation swapped order, correct it
-        if (connecting == &begin) {
-          connecting = &end;
-        } else {
-          connecting = &begin;
-        }
-        Point tmp = begin;
-        begin = end;
-        end = tmp;
-      }
-    }
     drPs->setPoints(begin, end);
-    if (net->getFrNet()->getName() == "_031547_")
-      logger_->report("[OSAMA] This is the problematic one");
-    logger_->report("[OSAMA] PathSegs addApPathSegs transformations");
-    logger_->report("[OSAMA] begin: ({},{}) -> ({},{})",
-                    begin_mirror.getX(),
-                    begin_mirror.getY(),
-                    begin.getX(),
-                    begin.getY());
-    logger_->report("[OSAMA] end: ({},{}) -> ({},{})",
-                    end_mirror.getX(),
-                    end_mirror.getY(),
-                    end.getX(),
-                    end.getY());
     drPs->setLayerNum(lNum);
     drPs->addToNet(net);
     auto currStyle = getTech()->getLayer(lNum)->getDefaultSegStyle();
