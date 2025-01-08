@@ -230,7 +230,7 @@ class HierRTLMP
 
   // Orientation Improvement
   void generateTemporaryStdCellsPlacement(Cluster* cluster);
-  void setModuleStdCellsLocation(Cluster* cluster, odb::dbModule* module);
+  void setModuleStdCellsLocation(Cluster* cluster, Cluster* module);
   void setTemporaryStdCellLocation(Cluster* cluster, odb::dbInst* std_cell);
 
   void correctAllMacrosOrientation();

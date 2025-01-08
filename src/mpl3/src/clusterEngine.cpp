@@ -52,8 +52,23 @@ ClusteringEngine::ClusteringEngine(odb::dbBlock* block,
 {
 }
 
+void ClusteringEngine::buildLogicalHierarchy()
+{
+  odb::dbModule* top_module = block_->getTopModule();
+  logical_tree_ = std::make_unique<LogicalHierarchy>(logger_);
+  std::unique_ptr<Cluster> root = std::make_unique<Cluster>(0, top_module->getHierarchicalName(), logger_);
+  logical_tree_->setRoot(std::move(root));
+  // DFS logical hierarchy and build logical hierarchy with Cluster
+  logical_tree_->buildLogicalHierarchyDFS(top_module, logical_tree_->getRoot());
+  if (logger_->debugCheck(MPL, "multilevel_autoclustering", 1)) {
+    logger_->report("\nPrint Logical Hierarchy\n");
+    logical_tree_->printLogicalHierarchyTree(logical_tree_->getRoot(), 0);
+  }
+}
+
 void ClusteringEngine::run()
 {
+  buildLogicalHierarchy();
   top_module_ = refineLogicalHierarchy();
 
   design_metrics_ = computeModuleMetrics(top_module_);
@@ -92,97 +107,9 @@ void ClusteringEngine::run()
   }
 }
 
-odb::dbModule* ClusteringEngine::refineLogicalHierarchy()
+Cluster* ClusteringEngine::refineLogicalHierarchy()
 {
   // every module would contain multiple instances in a leiden cluster 
-  using mapModule2InstVec = std::map<odb::dbModule*, std::vector<odb::dbInst*>>;
-  using pairModuleInstVec = std::pair<odb::dbModule*, std::vector<odb::dbInst*>>;
-
-  int new_id_count = 0;
-
-  auto findModulesForCluster = [](std::vector<odb::dbInst*>& cluster) {
-    mapModule2InstVec map_module2inst_vec;
-    for (auto inst : cluster) {
-      odb::dbModule* module = inst->getModule();
-      auto it = map_module2inst_vec.find(module);
-      if (it == map_module2inst_vec.end()) {
-        map_module2inst_vec[module] = {inst};
-      } else {
-        it->second.push_back(inst);
-      }
-    }
-    return map_module2inst_vec;
-  };
-
-  auto findLCA = [](odb::dbModule* module1, odb::dbModule* module2) {
-    std::set<odb::dbModule*> ancestors;
-    while (module1) {
-      ancestors.insert(module1);
-      auto mod_inst = module1->getModInst();
-      if (mod_inst) {
-        ancestors.insert(mod_inst->getParent());
-        module1 = mod_inst->getParent();
-      }
-      else{
-        break;
-      }
-    }
-    while (module2) {
-      if (ancestors.find(module2) != ancestors.end()) {
-        return module2;
-      }
-      auto mod_inst = module2->getModInst();
-      module2 = mod_inst ? mod_inst->getParent() : static_cast<odb::dbModule*>(nullptr);
-    }
-    return static_cast<odb::dbModule*>(nullptr);
-  };
-
-  // findLCAForModules lambda
-  auto findLCAForModules = [findLCA](std::set<odb::dbModule*>& modules) {
-    if (modules.empty()) {
-      return static_cast<odb::dbModule*>(nullptr);
-    }
-    auto it = modules.begin();
-    odb::dbModule* lca = *it;
-    ++it;
-    for (; it != modules.end(); ++it) {
-      lca = findLCA(lca, *it);
-    }
-    return lca;
-  };
-
-  // createChildModuleForModule lambda
-  auto createChildModuleForModule
-      = [this, &new_id_count](odb::dbModule* parent_module,
-                              std::vector<odb::dbInst*>& sub_cluster) {
-          std::string mod_inst_name = fmt::format(
-              "{}_child_{}", parent_module->getName(), new_id_count++);
-          odb::dbModule* new_module
-              = odb::dbModule::create(block_, mod_inst_name.c_str());
-          for (auto inst : sub_cluster) {
-            new_module->addInst(inst);
-          }
-          odb::dbModInst::create(
-              parent_module, new_module, mod_inst_name.c_str());
-          return new_module;
-        };
-
-  // mergeModulesAsChild lambda
-  auto mergeModulesAsChild = [](odb::dbModule* parent_module,
-                                std::set<odb::dbModule*>& modules) {
-    for (auto module : modules) {
-      if (module != parent_module) {
-        for (auto child_mod_inst : module->getModInsts()) {
-          odb::dbModule* child_module = child_mod_inst->getMaster();
-          odb::dbModInst::create(
-              parent_module, child_module, child_module->getName());
-        }
-        for (auto inst : module->getInsts()) {
-          parent_module->addInst(inst);
-        }
-      }
-    }
-  };
 
   std::unique_ptr<leidenClustering> leiden_clustering
       = std::make_unique<leidenClustering>(network_, block_, logger_);
@@ -203,9 +130,9 @@ odb::dbModule* ClusteringEngine::refineLogicalHierarchy()
     }
   }
 
-  odb::dbModule* top_module = block_->getTopModule();
+  Cluster* top_module = logical_tree_->getRoot();
 
-  int small_leiden_cluster_threshold = 2;
+  int small_leiden_cluster_threshold = 50;
   int small_module_threshold = 1000;
 
   for (auto &cluster : leiden_clusters) {
@@ -213,32 +140,37 @@ odb::dbModule* ClusteringEngine::refineLogicalHierarchy()
       continue;
     }
 
-    mapModule2InstVec map_module2inst_vec = findModulesForCluster(cluster);
+    mapModule2InstVec map_module2inst_vec = logical_tree_->findModulesForCluster(cluster);
     if (map_module2inst_vec.size() == 1) {
-      odb::dbModule* module = map_module2inst_vec.begin()->first;
-      createChildModuleForModule(module, cluster);
+      Cluster* module = map_module2inst_vec.begin()->first;
+      logical_tree_->createChildModuleForModule(module, cluster);
     } else {
       std::vector<pairModuleInstVec> small_candidates;
       for (auto& [module, inst_vec] : map_module2inst_vec) {
-        if (module->getInsts().size() > small_module_threshold) {
-          createChildModuleForModule(module, inst_vec);
+        if (logical_tree_->getRecursiveClusterStdCellsSize(module) > small_module_threshold && logical_tree_->getRecursiveClusterMacrosSize(module) == 0) {
+          logical_tree_->createChildModuleForModule(module, inst_vec);
         } else {
           small_candidates.emplace_back(module, std::move(inst_vec));
         }
       }
 
       if (!small_candidates.empty()) {
-        std::set<odb::dbModule*> small_modules;
-        for (auto& [module, _] : small_candidates) {
+        std::set<Cluster*> small_modules;
+        std::vector<odb::dbInst*> elements;
+        for (auto& [module, inst_vec] : small_candidates) {
           small_modules.insert(module);
+          elements.insert(elements.end(), inst_vec.begin(), inst_vec.end());
         }
-        odb::dbModule* lca = findLCAForModules(small_modules);
-        mergeModulesAsChild(lca, small_modules);
-        createChildModuleForModule(lca, cluster);
+        Cluster* lca = logical_tree_->findLCAForModules(small_modules);
+        logical_tree_->mergeModulesAsChild(lca, small_modules);
+        logical_tree_->createChildModuleForModule(lca, elements);
       }
     }
   }
-
+  if (logger_->debugCheck(MPL, "multilevel_autoclustering", 1)) {
+    logger_->report("\nPrint Logical Hierarchy\n");
+    logical_tree_->printLogicalHierarchyTree(logical_tree_->getRoot(), 0);
+  }
   return top_module;
 }
 
@@ -326,14 +258,25 @@ std::vector<odb::dbInst*> ClusteringEngine::getUnfixedMacros()
   return unfixed_macros;
 }
 
-Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
+Metrics* ClusteringEngine::computeModuleMetrics(Cluster* module)
 {
   unsigned int num_std_cell = 0;
   float std_cell_area = 0.0;
   unsigned int num_macro = 0;
   float macro_area = 0.0;
 
-  for (odb::dbInst* inst : module->getInsts()) {
+  for (odb::dbInst* inst : module->getLeafStdCells()) {
+    odb::dbMaster* master = inst->getMaster();
+    if (isIgnoredMaster(master)) {
+      continue;
+    }
+
+    float inst_area = computeMicronArea(inst);
+    num_std_cell += 1;
+    std_cell_area += inst_area;
+  }
+
+  for (odb::dbInst* inst : module->getLeafMacros()) {
     odb::dbMaster* master = inst->getMaster();
     if (isIgnoredMaster(master)) {
       continue;
@@ -341,21 +284,16 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
 
     float inst_area = computeMicronArea(inst);
 
-    if (master->isBlock()) {  // a macro
-      num_macro += 1;
-      macro_area += inst_area;
+    num_macro += 1;
+    macro_area += inst_area;
 
-      auto macro = std::make_unique<HardMacro>(
-          inst, tree_->halo_width, tree_->halo_height);
-      tree_->maps.inst_to_hard[inst] = std::move(macro);
-    } else {
-      num_std_cell += 1;
-      std_cell_area += inst_area;
-    }
+    auto macro = std::make_unique<HardMacro>(
+        inst, tree_->halo_width, tree_->halo_height);
+    tree_->maps.inst_to_hard[inst] = std::move(macro);
   }
 
-  for (odb::dbModInst* child_module_inst : module->getChildren()) {
-    Metrics* metrics = computeModuleMetrics(child_module_inst->getMaster());
+  for (auto& child_module_inst : module->getChildren()) {
+    Metrics* metrics = computeModuleMetrics(child_module_inst.get());
     num_std_cell += metrics->getNumStdCell();
     std_cell_area += metrics->getStdCellArea();
     num_macro += metrics->getNumMacro();
@@ -1098,8 +1036,8 @@ std::set<int> ClusteringEngine::computeSinks(
 
 void ClusteringEngine::treatEachMacroAsSingleCluster()
 {
-  odb::dbModule* module = top_module_;
-  for (odb::dbInst* inst : module->getInsts()) {
+  Cluster* module = top_module_;
+  for (odb::dbInst* inst : module->getLeafMacros()) {
     odb::dbMaster* master = inst->getMaster();
     if (isIgnoredMaster(master)) {
       continue;
@@ -1156,11 +1094,11 @@ void ClusteringEngine::updateInstancesAssociation(Cluster* cluster)
 
   // Note: macro clusters have no module.
   if (cluster_type == StdCellCluster) {
-    for (odb::dbModule* module : cluster->getDbModules()) {
+    for (Cluster* module : cluster->getDbModules()) {
       updateInstancesAssociation(module, cluster_id, false);
     }
   } else if (cluster_type == MixedCluster) {
-    for (odb::dbModule* module : cluster->getDbModules()) {
+    for (Cluster* module : cluster->getDbModules()) {
       updateInstancesAssociation(module, cluster_id, true);
     }
   }
@@ -1168,27 +1106,30 @@ void ClusteringEngine::updateInstancesAssociation(Cluster* cluster)
 
 // Unlike macros, std cells are always considered when when updating
 // the inst -> cluster map with the data from a module.
-void ClusteringEngine::updateInstancesAssociation(odb::dbModule* module,
+void ClusteringEngine::updateInstancesAssociation(Cluster* module,
                                                   int cluster_id,
                                                   bool include_macro)
 {
   if (include_macro) {
-    for (odb::dbInst* inst : module->getInsts()) {
+    for (odb::dbInst* inst : module->getLeafStdCells()) {
+      tree_->maps.inst_to_cluster_id[inst] = cluster_id;
+    }
+    for (odb::dbInst* inst : module->getLeafMacros()) {
       tree_->maps.inst_to_cluster_id[inst] = cluster_id;
     }
   } else {  // only consider standard cells
-    for (odb::dbInst* inst : module->getInsts()) {
+    for (odb::dbInst* inst : module->getLeafStdCells()) {
       odb::dbMaster* master = inst->getMaster();
-      if (isIgnoredMaster(master) || master->isBlock()) {
+      if (isIgnoredMaster(master)) {
         continue;
       }
 
       tree_->maps.inst_to_cluster_id[inst] = cluster_id;
     }
   }
-  for (odb::dbModInst* child_module_inst : module->getChildren()) {
+  for (auto& child_module_inst : module->getChildren()) {
     updateInstancesAssociation(
-        child_module_inst->getMaster(), cluster_id, include_macro);
+        child_module_inst.get(), cluster_id, include_macro);
   }
 }
 
@@ -1342,7 +1283,7 @@ void ClusteringEngine::breakCluster(Cluster* parent)
   }
 
   if (parent->correspondsToLogicalModule()) {
-    odb::dbModule* module = parent->getDbModules().front();
+    Cluster* module = parent->getDbModules().front();
     // Flat module that will be partitioned with TritonPart when updating
     // the subtree later on.
     if (module->getChildren().size() == 0) {
@@ -1356,14 +1297,14 @@ void ClusteringEngine::breakCluster(Cluster* parent)
       return;
     }
 
-    for (odb::dbModInst* child_module_inst : module->getChildren()) {
-      createCluster(child_module_inst->getMaster(), parent);
+    for (auto& child_module_inst : module->getChildren()) {
+      createCluster(child_module_inst.get(), parent);
     }
     createFlatCluster(module, parent);
   } else {
     // Parent is a cluster generated by merging small clusters:
     // It may have a few logical modules or many glue insts.
-    for (odb::dbModule* module : parent->getDbModules()) {
+    for (Cluster* module : parent->getDbModules()) {
       createCluster(module, parent);
     }
 
@@ -1399,7 +1340,7 @@ void ClusteringEngine::breakCluster(Cluster* parent)
 }
 
 // A flat cluster is a cluster created from the leaf instances of a module.
-void ClusteringEngine::createFlatCluster(odb::dbModule* module, Cluster* parent)
+void ClusteringEngine::createFlatCluster(Cluster* module, Cluster* parent)
 {
   const std::string cluster_name
       = std::string("(") + parent->getName() + ")_glue_logic";
@@ -1415,26 +1356,29 @@ void ClusteringEngine::createFlatCluster(odb::dbModule* module, Cluster* parent)
 }
 
 void ClusteringEngine::addModuleLeafInstsToCluster(Cluster* cluster,
-                                                   odb::dbModule* module)
+                                                   Cluster* module)
 {
-  for (odb::dbInst* inst : module->getInsts()) {
+  for (odb::dbInst* inst : module->getLeafStdCells()) {
     odb::dbMaster* master = inst->getMaster();
     if (isIgnoredMaster(master)) {
       continue;
     }
     cluster->addLeafInst(inst);
   }
+  for (odb::dbInst* inst : module->getLeafMacros()) {
+    cluster->addLeafInst(inst);
+  }
 }
 
 // Map a module to a cluster.
-void ClusteringEngine::createCluster(odb::dbModule* module, Cluster* parent)
+void ClusteringEngine::createCluster(Cluster* module, Cluster* parent)
 {
   Metrics* module_metrics = tree_->maps.module_to_metrics.at(module).get();
   if (module_metrics->empty()) {
     return;
   }
 
-  const std::string cluster_name = module->getHierarchicalName();
+  const std::string cluster_name = module->getName();
   auto cluster = std::make_unique<Cluster>(id_, cluster_name, logger_);
   cluster->addDbModule(module);
   incorporateNewCluster(std::move(cluster), parent);
@@ -2017,7 +1961,7 @@ void ClusteringEngine::createSubLeindenCluster(Cluster* parent, std::vector<int>
   // Iterate over the instances in the parent cluster
   for (auto inst : parent->getLeafStdCells()) {
     odb::dbMaster* master = inst->getMaster();
-    if (isIgnoredMaster(master) || master->isBlock()) {
+    if (isIgnoredMaster(master)) {
       continue;
     }
 
@@ -2108,23 +2052,15 @@ void ClusteringEngine::mapMacroInCluster2HardMacro(Cluster* cluster)
 }
 
 // Get all the hard macros in a logical module
-void ClusteringEngine::getHardMacros(odb::dbModule* module,
+void ClusteringEngine::getHardMacros(Cluster* module,
                                      std::vector<HardMacro*>& hard_macros)
 {
-  for (odb::dbInst* inst : module->getInsts()) {
-    odb::dbMaster* master = inst->getMaster();
-
-    if (isIgnoredMaster(master)) {
-      continue;
-    }
-
-    if (master->isBlock()) {
-      hard_macros.push_back(tree_->maps.inst_to_hard.at(inst).get());
-    }
+  for (odb::dbInst* inst : module->getLeafMacros()) {
+    hard_macros.push_back(tree_->maps.inst_to_hard.at(inst).get());
   }
 
-  for (odb::dbModInst* child_module_inst : module->getChildren()) {
-    getHardMacros(child_module_inst->getMaster(), hard_macros);
+  for (auto& child_module_inst : module->getChildren()) {
+    getHardMacros(child_module_inst.get(), hard_macros);
   }
 }
 

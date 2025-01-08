@@ -189,7 +189,7 @@ const ClusterType Cluster::getClusterType() const
 }
 
 // Instances (Here we store dbModule to reduce memory)
-void Cluster::addDbModule(odb::dbModule* db_module)
+void Cluster::addDbModule(Cluster* db_module)
 {
   db_modules_.push_back(db_module);
 }
@@ -218,7 +218,7 @@ void Cluster::specifyHardMacros(std::vector<HardMacro*>& hard_macros)
   hard_macros_ = hard_macros;
 }
 
-const std::vector<odb::dbModule*> Cluster::getDbModules() const
+const std::vector<Cluster*> Cluster::getDbModules() const
 {
   return db_modules_;
 }

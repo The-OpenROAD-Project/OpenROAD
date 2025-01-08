@@ -3896,17 +3896,17 @@ void HierRTLMP::setTemporaryStdCellLocation(Cluster* cluster,
 }
 
 void HierRTLMP::setModuleStdCellsLocation(Cluster* cluster,
-                                          odb::dbModule* module)
+                                          Cluster* module)
 {
-  for (odb::dbInst* inst : module->getInsts()) {
+  for (odb::dbInst* inst : module->getLeafStdCells()) {
     if (!inst->isCore()) {
       continue;
     }
     setTemporaryStdCellLocation(cluster, inst);
   }
 
-  for (odb::dbModInst* mod_insts : module->getChildren()) {
-    setModuleStdCellsLocation(cluster, mod_insts->getMaster());
+  for (auto& mod_insts : module->getChildren()) {
+    setModuleStdCellsLocation(cluster, mod_insts.get());
   }
 }
 
@@ -3916,7 +3916,7 @@ void HierRTLMP::setModuleStdCellsLocation(Cluster* cluster,
 void HierRTLMP::generateTemporaryStdCellsPlacement(Cluster* cluster)
 {
   if (cluster->isLeaf() && cluster->getNumStdCell() != 0) {
-    for (odb::dbModule* module : cluster->getDbModules()) {
+    for (Cluster* module : cluster->getDbModules()) {
       setModuleStdCellsLocation(cluster, module);
     }
 

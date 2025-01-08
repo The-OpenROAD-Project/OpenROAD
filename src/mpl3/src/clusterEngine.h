@@ -52,7 +52,7 @@ class dbNetwork;
 namespace mpl3 {
 
 using InstToHardMap = std::map<odb::dbInst*, std::unique_ptr<HardMacro>>;
-using ModuleToMetricsMap = std::map<odb::dbModule*, std::unique_ptr<Metrics>>;
+using ModuleToMetricsMap = std::map<Cluster*, std::unique_ptr<Metrics>>;
 
 struct DataFlowHypergraph
 {
@@ -108,6 +108,182 @@ struct PhysicalHierarchyMaps
   std::map<odb::dbBTerm*, odb::dbInst*> bterm_to_inst;
 };
 
+class LogicalHierarchy
+{
+ private:
+  std::unique_ptr<Cluster> root;
+  std::unordered_map<odb::dbInst*, Cluster*> inst_to_logical_module;
+  utl::Logger* logger_{nullptr};
+  int id_{0};
+ public:
+  LogicalHierarchy(utl::Logger* logger) : logger_(logger) {}
+  
+  void buildLogicalHierarchyDFS(odb::dbModule* top_module, Cluster* root) {
+    for (odb::dbModInst* child_mod_inst : top_module->getChildren()) {
+      odb::dbModule* child_module = child_mod_inst->getMaster();
+      std::unique_ptr<Cluster> cluster = std::make_unique<Cluster>(++id_, child_module->getHierarchicalName(), logger_);
+      cluster->setParent(root);
+      buildLogicalHierarchyDFS(child_module, cluster.get());
+      root->addChild(std::move(cluster));
+    }
+    for (auto inst : top_module->getInsts()) {
+      root->addLeafInst(inst);
+    }
+    updateInstsCorresponse(root);
+  };
+
+  Cluster* getModule(odb::dbInst* inst)
+  {
+    auto it = inst_to_logical_module.find(inst);
+    if (it != inst_to_logical_module.end()) {
+      return it->second;
+    }
+    return nullptr;
+  }
+  Cluster* getRoot() { return root.get(); }
+  size_t getRecursiveClusterStdCellsSize(Cluster* cluster)
+  {
+    size_t size = cluster->getNumLeafStdCells();
+    for (auto& child : cluster->getChildren()) {
+      size += getRecursiveClusterStdCellsSize(child.get());
+    }
+    return size;
+  }
+  size_t getRecursiveClusterMacrosSize(Cluster* cluster)
+  {
+    size_t size = cluster->getNumLeafMacros();
+    for (auto& child : cluster->getChildren()) {
+      size += getRecursiveClusterMacrosSize(child.get());
+    }
+    return size;
+  }
+  void setRoot(std::unique_ptr<Cluster> root) { this->root = std::move(root); }
+  void updateInstsCorresponse(Cluster* cluster)
+  {
+    for (auto inst : cluster->getLeafStdCells()) {
+      inst_to_logical_module[inst] = cluster;
+    }
+    for (auto inst : cluster->getLeafMacros()) {
+      inst_to_logical_module[inst] = cluster;
+    }
+  }
+
+  mapModule2InstVec findModulesForCluster(std::vector<odb::dbInst*>& cluster)
+  {
+    mapModule2InstVec map_module2inst_vec;
+    for (auto inst : cluster) {
+      Cluster* module = getModule(inst);
+      auto it = map_module2inst_vec.find(module);
+      if (it == map_module2inst_vec.end()) {
+        map_module2inst_vec[module] = {inst};
+      } else {
+        it->second.push_back(inst);
+      }
+    }
+    return map_module2inst_vec;
+  }
+
+  Cluster* findLCA(Cluster* module1, Cluster* module2)
+  {
+    std::set<Cluster*> ancestors;
+    while (module1) {
+      ancestors.insert(module1);
+      module1 = module1->getParent();
+    }
+    while (module2) {
+      if (ancestors.find(module2) != ancestors.end()) {
+        return module2;
+      }
+      module2 = module2->getParent();
+    }
+    return module2;
+  }
+
+  Cluster* findLCAForModules(std::set<Cluster*>& modules)
+  {
+    if (modules.empty()) {
+      return nullptr;
+    }
+    auto it = modules.begin();
+    Cluster* lca = *it;
+    ++it;
+    for (; it != modules.end(); ++it) {
+      lca = findLCA(lca, *it);
+    }
+    return lca;
+  }
+
+  Cluster* createChildModuleForModule(Cluster* parent_module,
+                                      std::vector<odb::dbInst*>& sub_cluster)
+  {
+    std::string module_name
+        = fmt::format("{}_{}", parent_module->getName(), ++id_);
+    std::unique_ptr<Cluster> new_module
+        = std::make_unique<Cluster>(id_, module_name, logger_);
+    for (auto inst : sub_cluster) {
+      // remove the instances from the parent module
+      parent_module->removeLeafInst(inst);
+      new_module->addLeafInst(inst);
+    }
+    Cluster* new_module_ptr = new_module.get();
+    updateInstsCorresponse(new_module_ptr);
+    new_module_ptr->setParent(parent_module);
+    parent_module->addChild(std::move(new_module));
+    return new_module_ptr;
+  }
+
+  void mergeModulesAsChild(Cluster* parent_module,
+                               std::set<Cluster*>& modules)
+  {
+    for (auto candidate : modules) {
+      // merge child module and leaf instances
+      if (candidate != parent_module) {
+        std::unique_ptr<Cluster> module = candidate->getParent()->releaseChild(candidate);
+        std::vector<Cluster*> children;
+        for (auto& child_module : module->getChildren()) {
+          children.push_back(child_module.get());
+        }
+        for (auto child_module : children) {
+          Cluster* child_cur_parent = child_module->getParent();
+          child_module->setParent(parent_module);
+          parent_module->addChild(std::move(child_cur_parent->releaseChild(child_module)));
+        }
+        for (auto inst : module->getLeafStdCells()) {
+          parent_module->addLeafInst(inst);
+        }
+        for (auto inst : module->getLeafMacros()) {
+          parent_module->addLeafInst(inst);
+        }
+        module->clearLeafStdCells();
+        module->clearLeafMacros();
+      }
+    }
+    updateInstsCorresponse(parent_module);
+  }
+
+  void printLogicalHierarchyTree(Cluster* parent, int level)
+  {
+    std::string line;
+    for (int i = 0; i < level; i++) {
+      line += "+---";
+    }
+    line += fmt::format(
+        "{}  ({})  num_macro :  {}   num_std_cell :  {}"
+        " cluster type: {} {}",
+        parent->getName(),
+        parent->getId(),
+        getRecursiveClusterMacrosSize(parent),
+        getRecursiveClusterStdCellsSize(parent),
+        parent->getIsLeafString(),
+        parent->getClusterTypeString());
+    logger_->report("{}", line);
+
+    for (auto& child : parent->getChildren()) {
+      printLogicalHierarchyTree(child.get(), level + 1);
+    }
+  }
+};
+
 struct PhysicalHierarchy
 {
   std::unique_ptr<Cluster> root;
@@ -158,7 +334,7 @@ class ClusteringEngine
   void updateConnections();
   void updateDataFlow();
   void updateInstancesAssociation(Cluster* cluster);
-  void updateInstancesAssociation(odb::dbModule* module,
+  void updateInstancesAssociation(Cluster* module,
                                   int cluster_id,
                                   bool include_macro);
 
@@ -172,12 +348,13 @@ class ClusteringEngine
  private:
   using UniqueClusterQueue = std::queue<std::unique_ptr<Cluster>>;
   void init();
-  Metrics* computeModuleMetrics(odb::dbModule* module);
+  Metrics* computeModuleMetrics(Cluster* module);
   std::vector<odb::dbInst*> getUnfixedMacros();
   float computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
   void reportDesignData(float core_area);
-  odb::dbModule* refineLogicalHierarchy();
+  void buildLogicalHierarchy();
+  Cluster* refineLogicalHierarchy();
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();
@@ -190,9 +367,9 @@ class ClusteringEngine
   void multilevelAutocluster(Cluster* parent);
   void updateSizeThresholds();
   void breakCluster(Cluster* parent);
-  void createFlatCluster(odb::dbModule* module, Cluster* parent);
-  void addModuleLeafInstsToCluster(Cluster* cluster, odb::dbModule* module);
-  void createCluster(odb::dbModule* module, Cluster* parent);
+  void createFlatCluster(Cluster* module, Cluster* parent);
+  void addModuleLeafInstsToCluster(Cluster* cluster, Cluster* module);
+  void createCluster(Cluster* module, Cluster* parent);
   void createCluster(Cluster* parent);
   void updateSubTree(Cluster* parent);
   void breakLargeFlatCluster(Cluster* parent);
@@ -203,7 +380,7 @@ class ClusteringEngine
   void breakMixedLeaves(const std::vector<std::vector<Cluster*>>& mixed_leaves);
   void breakMixedLeaf(Cluster* mixed_leaf);
   void mapMacroInCluster2HardMacro(Cluster* cluster);
-  void getHardMacros(odb::dbModule* module,
+  void getHardMacros(Cluster* module,
                      std::vector<HardMacro*>& hard_macros);
   void createOneClusterForEachMacro(Cluster* parent,
                                     const std::vector<HardMacro*>& hard_macros,
@@ -261,9 +438,10 @@ class ClusteringEngine
   sta::dbNetwork* network_;
   utl::Logger* logger_;
   par::PartitionMgr* triton_part_;
-  odb::dbModule* top_module_{nullptr};
+  Cluster* top_module_{nullptr};
   Metrics* design_metrics_{nullptr};
   PhysicalHierarchy* tree_{nullptr};
+  std::unique_ptr<LogicalHierarchy> logical_tree_{nullptr};
 
   int level_{0};  // Current level
   int id_{0};     // Current "highest" id

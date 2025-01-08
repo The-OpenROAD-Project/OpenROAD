@@ -69,6 +69,8 @@ class SoftMacro;
 class Cluster;
 
 using UniqueClusterVector = std::vector<std::unique_ptr<Cluster>>;
+using mapModule2InstVec = std::map<Cluster*, std::vector<odb::dbInst*>>;
+using pairModuleInstVec = std::pair<Cluster*, std::vector<odb::dbInst*>>;
 
 // ****************************************************************************
 // This file includes the basic functions and basic classes for the HierRTLMP
@@ -184,13 +186,21 @@ class Cluster
   std::string getClusterTypeString() const;
 
   // Instances (Here we store dbModule to reduce memory)
-  void addDbModule(odb::dbModule* db_module);
+  void addDbModule(Cluster* db_module);
   void addLeafStdCell(odb::dbInst* leaf_std_cell);
   void addLeafMacro(odb::dbInst* leaf_macro);
   void addLeafInst(odb::dbInst* inst);
   void specifyHardMacros(std::vector<HardMacro*>& hard_macros);
-  const std::vector<odb::dbModule*> getDbModules() const;
+  const std::vector<Cluster*> getDbModules() const;
   const std::vector<odb::dbInst*> getLeafStdCells() const;
+  size_t getNumLeafStdCells() const { return leaf_std_cells_.size(); }
+  size_t getNumLeafMacros() const { return leaf_macros_.size(); }
+  void removeLeafInst(odb::dbInst* inst) { 
+    auto it = std::find(leaf_std_cells_.begin(), leaf_std_cells_.end(), inst);
+    if (it != leaf_std_cells_.end()) {
+      leaf_std_cells_.erase(it);
+    }
+  };
   const std::vector<odb::dbInst*> getLeafMacros() const;
   std::vector<HardMacro*> getHardMacros() const;
   void clearDbModules();
@@ -289,7 +299,7 @@ class Cluster
   // Instances in the cluster
   // the logical module included in the cluster
   // dbModule is a object representing logical module in the OpenDB
-  std::vector<odb::dbModule*> db_modules_;
+  std::vector<Cluster*> db_modules_;
   // the std cell instances in the cluster (leaf std cell instances)
   std::vector<odb::dbInst*> leaf_std_cells_;
   // the macros in the cluster (leaf macros)
