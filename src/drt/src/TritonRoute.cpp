@@ -287,7 +287,7 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
   if (graphics) {
     graphics->startIter(worker->getDRIter(), router_cfg_.get());
   }
-  std::string result = worker->reloadedMain();
+  worker->reloadedMain();
   bool updated = worker->end(design_.get());
   debugPrint(logger_,
              utl::DRT,
