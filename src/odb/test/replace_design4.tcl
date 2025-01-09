@@ -28,8 +28,8 @@ read_lef "data/sky130hd/sky130_fd_sc_hd.tlef"
 read_lef "data/sky130hd/sky130_fd_sc_hd_merged.lef"
 
 read_liberty "sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib"
-set_debug_level ODB dbReadVerilog 1
-set_debug_level ODB replace_design 1
+#set_debug_level ODB dbReadVerilog 1
+#set_debug_level ODB replace_design 1
 read_verilog gcd_adder4.v
 link_design -hier top
 create_clock -name CLK -period 1 clk
@@ -43,4 +43,4 @@ replace_design gcd_1/_552_ LCU_16_BRENT_KUNG
 report_checks -through gcd_1/_carry_out_and_/B -fields input_pins
 report_cell_usage gcd_1/_552_
 
-#run_equivalence_test replace_design4 ./Nangate45/work_around_yosys/ "None"
+run_equivalence_test replace_design4 ./Nangate45/work_around_yosys/ "None"
