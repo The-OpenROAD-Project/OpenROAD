@@ -3796,7 +3796,7 @@ bool GlobalRouter::layerIsBlocked(
     const std::unordered_map<int, std::vector<odb::Rect>>& macro_obs_per_layer,
     std::vector<odb::Rect>& extended_obs)
 {
-  using namespace boost::polygon::operators;
+  using boost::polygon::operators::operator&;
   using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
 
   // if layer is max or min, then all obs the nearest layer are added
