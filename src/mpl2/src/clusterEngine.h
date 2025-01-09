@@ -152,7 +152,6 @@ class ClusteringEngine
 
   void setDesignMetrics(Metrics* design_metrics);
   void setTree(PhysicalHierarchy* tree);
-  void setIteration(int iteration){iteration_ = iteration;}
   // Methods to update the tree as the hierarchical
   // macro placement runs.
   void updateConnections();
@@ -183,8 +182,6 @@ class ClusteringEngine
   void createIOClusters();
   void mapIOPads();
   void treatEachMacroAsSingleCluster();
-  void createSubLeindenCluster(Cluster* parent, std::vector<int> &partition);
-  void mergeLeidenClustering(Cluster* parent, std::vector<int> &partition, std::vector<std::vector<Cluster*>>& mixed_leaves);
   void incorporateNewCluster(std::unique_ptr<Cluster> cluster, Cluster* parent);
   void setClusterMetrics(Cluster* cluster);
   void multilevelAutocluster(Cluster* parent);
@@ -274,7 +271,6 @@ class ClusteringEngine
   int max_std_cell_{0};
   int min_std_cell_{0};
   const float size_tolerance_ = 0.1;
-  int iteration_{10};
   // Variables for data flow
   DataFlow data_connections_;
 

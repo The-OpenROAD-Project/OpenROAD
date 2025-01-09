@@ -73,7 +73,7 @@ proc rtl_macro_placer { args } {
          -fence_lx   -fence_ly  -fence_ux   -fence_uy  \
          -area_weight  -outline_weight -wirelength_weight -guidance_weight -fence_weight \
          -boundary_weight -notch_weight -macro_blockage_weight  \
-         -pin_access_th -target_util -leiden_iteration \
+         -pin_access_th -target_util \
          -target_dead_space -min_ar -snap_layer \
          -report_directory \
          -write_macro_placement } \
@@ -119,7 +119,6 @@ proc rtl_macro_placer { args } {
   set target_dead_space 0.05
   set min_ar 0.33
   set snap_layer -1
-  set leiden_iteration 10
   set report_directory "hier_rtlmp"
 
   if { [info exists keys(-max_num_macro)] } {
@@ -217,9 +216,6 @@ proc rtl_macro_placer { args } {
   if { [info exists keys(-snap_layer)] } {
     set snap_layer $keys(-snap_layer)
   }
-  if { [info exists keys(-leiden_iteration)] } {
-    set leiden_iteration $keys(-leiden_iteration)
-  }
   if { [info exists keys(-report_directory)] } {
     set report_directory $keys(-report_directory)
   }
@@ -253,7 +249,6 @@ proc rtl_macro_placer { args } {
       $min_ar \
       $snap_layer \
       [info exists flags(-bus_planning)] \
-      $leiden_iteration \
       $report_directory]
   } {
     return false

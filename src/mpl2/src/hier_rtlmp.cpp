@@ -284,7 +284,6 @@ void HierRTLMP::runMultilevelAutoclustering()
   // Set target structures
   clustering_engine_->setDesignMetrics(metrics_);
   clustering_engine_->setTree(tree_.get());
-  clustering_engine_->setIteration(leiden_iterations_);
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {

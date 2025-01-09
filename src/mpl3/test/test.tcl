@@ -1,4 +1,4 @@
-read_db ~/Desktop/OpenROAD-flow-scripts/flow/results/nangate45/ariane133/base/2_2_floorplan_io.odb
+read_db ~/Desktop/OpenROAD-flow-scripts/flow/results/nangate45/bp_quad/base/2_2_floorplan_io.odb
 # read_db ~/Desktop/OpenROAD-flow-scripts/flow/results/nangate45/swerv_wrapper/base/2_2_floorplan_io.odb
 read_liberty ~/Desktop/OpenROAD-flow-scripts/flow/platforms/nangate45/lib/NangateOpenCellLibrary_typical.lib
 # export RTLMP_MAX_INST = 30000
@@ -8,6 +8,6 @@ read_liberty ~/Desktop/OpenROAD-flow-scripts/flow/platforms/nangate45/lib/Nangat
 # export MACRO_PLACE_HALO = 10 10
 # export MACRO_PLACE_CHANNEL = 20 20
 set_debug_level MPL "multilevel_autoclustering" 1
-rtl_macro_placer2 -halo_height 10 -halo_width 10 -leiden_iteration 10
-# rtl_macro_placer2 -halo_height 10 -halo_width 10 -leiden_iteration 10 -max_num_macro 12 -min_num_macro 4 -max_num_inst 30000 -min_num_inst 5000 
+# rtl_macro_placer2 -halo_height 10 -halo_width 10 -leiden_iteration 10
+rtl_macro_placer2 -halo_height 10 -halo_width 10 -leiden_iteration 10 -max_num_macro 16 -min_num_macro 4 -max_num_inst 30000 -min_num_inst 5000 -max_num_level 3
 # rtl_macro_placer2 -halo_height 10 -halo_width 10 -leiden_iteration 10 -max_num_macro 16 -min_num_macro 4 -min_num_inst 5000 
