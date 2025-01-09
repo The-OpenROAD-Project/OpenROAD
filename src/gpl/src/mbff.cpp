@@ -481,10 +481,13 @@ bool MBFF::IsValidFlop(odb::dbInst* FF)
     return false;
   }
   sta::LibertyCell* lib_cell = getLibertyCell(cell);
-  if (lib_cell == nullptr) {
+  if (lib_cell == nullptr || !lib_cell->hasSequentials()) {
     return false;
   }
-  if (!lib_cell->hasSequentials() || lib_cell->isClockGate()) {
+
+  // We don't want the test_cell which lacks global properties
+  sta::LibertyCell* base_cell = network_->libertyCell(cell);
+  if (base_cell->isClockGate()) {
     return false;
   }
 
@@ -518,11 +521,13 @@ bool MBFF::IsValidTray(odb::dbInst* tray)
     return false;
   }
   sta::LibertyCell* lib_cell = getLibertyCell(cell);
-  if (lib_cell == nullptr) {
+  if (lib_cell == nullptr || !lib_cell->hasSequentials()) {
     return false;
   }
-  if (!lib_cell->hasSequentials() || lib_cell->isClockGate()
-      || resizer_->dontUse(lib_cell)) {
+
+  // We don't want the test_cell which lacks global properties
+  sta::LibertyCell* base_cell = network_->libertyCell(cell);
+  if (base_cell->isClockGate() || resizer_->dontUse(base_cell)) {
     return false;
   }
 
