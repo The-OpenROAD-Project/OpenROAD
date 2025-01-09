@@ -101,7 +101,6 @@ using sta::NetTermIterator;
 using sta::NetworkEdit;
 using sta::Port;
 using sta::stringLess;
-using sta::Term;
 using sta::TimingArcSet;
 using sta::TimingArcSetSeq;
 using sta::TimingRole;

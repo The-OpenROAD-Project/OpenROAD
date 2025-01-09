@@ -47,7 +47,6 @@ using odb::dbNet;
 using odb::dbRSeg;
 using odb::dbSet;
 using odb::dbShape;
-using odb::dbSigType;
 using odb::dbWire;
 using odb::dbWirePath;
 using odb::dbWirePathItr;

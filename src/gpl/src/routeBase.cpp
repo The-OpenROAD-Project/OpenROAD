@@ -46,9 +46,7 @@
 #include "utl/Logger.h"
 
 using odb::dbBlock;
-using std::make_pair;
 using std::pair;
-using std::sort;
 using std::string;
 using std::vector;
 

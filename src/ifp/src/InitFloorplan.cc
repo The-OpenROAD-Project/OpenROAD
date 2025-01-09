@@ -55,14 +55,12 @@
 
 namespace ifp {
 
-using std::abs;
 using std::ceil;
 using std::map;
 using std::round;
 using std::set;
 using std::string;
 
-using sta::dbNetwork;
 using sta::StringVector;
 
 using utl::IFP;
@@ -79,10 +77,8 @@ using odb::dbOrientType;
 using odb::dbRegion;
 using odb::dbRow;
 using odb::dbRowDir;
-using odb::dbSet;
 using odb::dbSite;
 using odb::dbTech;
-using odb::dbTechLayer;
 using odb::dbTechLayerDir;
 using odb::dbTechLayerType;
 using odb::dbTrackGrid;

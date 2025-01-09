@@ -38,9 +38,7 @@
 #include "object.h"
 
 namespace mpl2 {
-using odb::dbDatabase;
 using std::string;
-using utl::Logger;
 using utl::MPL;
 
 MacroPlacer2::MacroPlacer2() = default;
