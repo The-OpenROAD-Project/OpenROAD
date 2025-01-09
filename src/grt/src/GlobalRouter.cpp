@@ -37,6 +37,7 @@
 
 #include <algorithm>
 #include <boost/icl/interval.hpp>
+#include <boost/polygon/polygon.hpp>
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -64,6 +65,7 @@
 #include "grt/Rudy.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
+#include "odb/geom_boost.h"
 #include "odb/wOrder.h"
 #include "rsz/Resizer.hh"
 #include "rsz/SpefWriter.hh"
@@ -3794,6 +3796,9 @@ bool GlobalRouter::layerIsBlocked(
     const std::unordered_map<int, std::vector<odb::Rect>>& macro_obs_per_layer,
     std::vector<odb::Rect>& extended_obs)
 {
+  using namespace boost::polygon::operators;
+  using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
+
   // if layer is max or min, then all obs the nearest layer are added
   if (layer == getMaxRoutingLayer()
       && macro_obs_per_layer.find(layer - 1) != macro_obs_per_layer.end()) {
@@ -3815,25 +3820,16 @@ bool GlobalRouter::layerIsBlocked(
     lower_obs = macro_obs_per_layer.at(layer - 1);
   }
 
-  // sort vector by min Rect's xlo (increasing order)
-  sort(upper_obs.begin(), upper_obs.end());
-  sort(lower_obs.begin(), lower_obs.end());
+  const Polygon90Set upper_obs_set(
+      boost::polygon::HORIZONTAL, upper_obs.begin(), upper_obs.end());
+  const Polygon90Set lower_obs_set(
+      boost::polygon::HORIZONTAL, lower_obs.begin(), lower_obs.end());
 
-  // Compare both vectors, find intersection between their rects
-  for (const odb::Rect& cur_obs : upper_obs) {
-    // start on first element to lower vector
-    int pos = 0;
-    while (pos < lower_obs.size() && lower_obs[pos].xMin() < cur_obs.xMax()) {
-      // check if they have comun region (intersection)
-      if (cur_obs.intersects(lower_obs[pos])) {
-        // Get intersection rect
-        odb::Rect inter_obs = cur_obs.intersect(lower_obs[pos]);
-        // add rect in extended vector
-        extended_obs.push_back(inter_obs);
-      }
-      pos++;
-    }
-  }
+  const Polygon90Set intersections_set = lower_obs_set & upper_obs_set;
+  std::vector<odb::Rect> intersections;
+  intersections_set.get_rectangles(intersections);
+  extended_obs.insert(
+      extended_obs.end(), intersections.begin(), intersections.end());
 
   return !extended_obs.empty();
 }
