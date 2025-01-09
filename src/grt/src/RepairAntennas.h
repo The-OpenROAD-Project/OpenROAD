@@ -110,6 +110,29 @@ using LayerToSegmentDataVector
 using PinNameToSegmentIds
     = std::unordered_map<std::string, std::unordered_set<int>>;
 
+////////////////////////////////////////////////////////////////////////
+struct SegmentNode
+{
+  int node_id = -1;
+  int seg_id;
+  odb::Rect rect;
+  std::vector<std::pair<odb::dbTechLayer*, int>> adjs;
+  SegmentNode(int node_id_, int seg_id_, odb::Rect rect_)
+  {
+    node_id = node_id_;
+    seg_id = seg_id_;
+    rect = rect_;
+  }
+  SegmentNode() {}
+};
+
+using LayerToSegmentDataVector2
+    = std::unordered_map<odb::dbTechLayer*, std::vector<SegmentNode>>;
+using SegmentNodeIds
+    = std::unordered_map<odb::dbTechLayer*, std::unordered_set<int>>;
+using SegmentToJumperPos = std::map<int, std::set<int>>;
+////////////////////////////////////////////////////////////////////////
+
 enum class RoutingSource
 {
   DetailedRouting,
@@ -213,7 +236,11 @@ class RepairAntennas
   odb::dbMTerm* findDiodeMTerm();
   double diffArea(odb::dbMTerm* mterm);
   bool hasNewViolations() { return has_new_violations_; }
-
+  /////////////////////////////////////////////////////////////////////////////
+  void jumperInsertion2(NetRouteMap& routing,
+                        const int& tile_size,
+                        const int& max_routing_layer);
+  /////////////////////////////////////////////////////////////////////////////
  private:
   using coord_type = int;
   using coord_sys_type = bg::cs::cartesian;
@@ -222,6 +249,34 @@ class RepairAntennas
   using value = std::pair<box, int>;
   using r_tree = bgi::rtree<value, bgi::quadratic<8, 4>>;
 
+  /////////////////////////////////////////////////////////////////////////////
+  void findSegments(const GRoute& route,
+                    odb::dbITerm* iterm,
+                    const SegmentNodeIds& segment_ids,
+                    LayerToSegmentDataVector2& segment_graph,
+                    const int& num_nodes,
+                    const int& violation_layer,
+                    SegmentToJumperPos& segments_to_repair);
+  bool findPosToJumper(const GRoute& route,
+                       LayerToSegmentDataVector2& segment_graph,
+                       const SegmentNode& seg_node,
+                       const odb::Point& parent_pos,
+                       int& jumper_position);
+  int findPosition(const int& init_pos,
+                   const int& final_pos,
+                   const int& target_pos);
+  void getSegmentsConnectedToPin2(const odb::dbITerm* iterm,
+                                  LayerToSegmentDataVector2& segment_by_layer,
+                                  SegmentNodeIds& seg_connected_to_pin);
+  int buildSegmentGraph(const GRoute& route,
+                        const int& max_layer,
+                        LayerToSegmentDataVector2& graph);
+  void setAdjacentSegments2(LayerToSegmentDataVector2& segment_by_layer);
+  int getSegmentByLayer2(const GRoute& route,
+                         const int& max_layer,
+                         LayerToSegmentDataVector2& segment_by_layer);
+  bool addJumper2(GRoute& route, const int& segment_id, const int& jumper_pos);
+  /////////////////////////////////////////////////////////////////////////////
   void insertDiode(odb::dbNet* net,
                    odb::dbMTerm* diode_mterm,
                    odb::dbITerm* sink_iterm,
@@ -302,6 +357,10 @@ class RepairAntennas
   bool has_new_violations_;
   LayerIdToViaPosition vias_pos_;
   RoutingSource routing_source_;
+  //////////////////////////////////////////
+  int tile_size_;
+  int jumper_size_;
+  //////////////////////////////////////////
 };
 
 }  // namespace grt

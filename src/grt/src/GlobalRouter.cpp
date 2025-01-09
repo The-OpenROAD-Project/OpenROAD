@@ -442,9 +442,12 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     // if run in GRT and it need run jumper insertion
     if (!haveDetailedRoutes(nets_to_repair)
         && repair_antennas_->hasNewViolations()) {
-      // Run jumper insertion and clean
-      repair_antennas_->jumperInsertion(
+      // Test jumper insertion update
+      repair_antennas_->jumperInsertion2(
           routes_, grid_->getTileSize(), getMaxRoutingLayer());
+      // Run jumper insertion and clean
+      //repair_antennas_->jumperInsertion(
+          //routes_, grid_->getTileSize(), getMaxRoutingLayer());
       repair_antennas_->clearViolations();
 
       // run again antenna checker
@@ -455,6 +458,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                                      diode_mterm,
                                                      ratio_margin,
                                                      num_threads);
+      //break;
     }
     if (violations) {
       IncrementalGRoute incr_groute(this, block_);
@@ -1657,6 +1661,15 @@ bool GlobalRouter::hasAvailableResources(bool is_horizontal,
   return cap > 0;
 }
 
+odb::Point GlobalRouter::getPositionOnGrid(const odb::Point& real_position)
+{
+  int grid_x = (int) ((real_position.x() - grid_->getXMin()) / grid_->getTileSize());
+  int new_x = grid_->getTileSize() * (grid_x + 0.5) + grid_->getXMin();
+  int grid_y = (int) ((real_position.y() - grid_->getYMin()) / grid_->getTileSize());
+  int new_y = grid_->getTileSize() * (grid_y + 0.5) + grid_->getYMin();
+  return odb::Point(new_x, new_y);
+}
+
 void GlobalRouter::updateResources(const int& init_x,
                                    const int& init_y,
                                    const int& final_x,
@@ -2386,6 +2399,10 @@ void GlobalRouter::saveGuides()
   int offset_y = grid_origin_.y();
 
   bool guide_is_congested = is_congested_ && !allow_congestion_;
+
+  int net_with_jumpers, total_jumpers;
+  net_with_jumpers = 0;
+  total_jumpers = 0;
   for (odb::dbNet* db_net : block_->getNets()) {
     auto iter = routes_.find(db_net);
     if (iter == routes_.end()) {
@@ -2394,6 +2411,7 @@ void GlobalRouter::saveGuides()
     Net* net = db_net_map_[db_net];
     GRoute& route = iter->second;
 
+    int jumper_count = 0;
     if (!route.empty()) {
       db_net->clearGuides();
       for (GSegment& segment : route) {
@@ -2442,14 +2460,20 @@ void GlobalRouter::saveGuides()
               db_net, layer, layer, box, guide_is_congested);
           if (is_jumper) {
             guide->setIsJumper(true);
+	    jumper_count++;
           }
         }
       }
+    }
+    if (jumper_count) {
+      total_jumpers += jumper_count;
+      net_with_jumpers++;
     }
     auto dbGuides = db_net->getGuides();
     if (dbGuides.orderReversed() && dbGuides.reversible())
       dbGuides.reverse();
   }
+  printf("Remaining jumpers %d in %d repaired nets\n", total_jumpers, net_with_jumpers);
 }
 
 void GlobalRouter::writeSegments(const char* file_name)
@@ -4825,12 +4849,18 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
           updateDirtyNets(dirty_nets);
           for (auto& it : dirty_nets) {
             congestion_nets.insert(it->getDbNet());
+	    //if (it->getDbNet()->hasJumpers()) {
+              //printf("Net %s is routed to congestion release\n", it->getDbNet()->getConstName());
+	    //}
           }
         }
         // Copy the nets from the set to the vector of dirty nets
         dirty_nets.clear();
         for (odb::dbNet* db_net : congestion_nets) {
           dirty_nets.push_back(db_net_map_[db_net]);
+	  //if (db_net->hasJumpers()) {
+            //printf("Net %s is routed to congestion release\n", db_net->getConstName());
+	  //}
         }
         // The dirty nets are initialized and then routed
         initFastRouteIncr(dirty_nets);
