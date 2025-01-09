@@ -204,6 +204,11 @@ class HierRTLMP
   void computeBlockageOverlap(std::vector<Rect>& overlapping_blockages,
                               const Rect& blockage,
                               const Rect& outline);
+  void convertPlacementBlockagesToMacroClusters(
+      const std::vector<Rect>& placement_blockages,
+      std::map<std::string, int>& soft_macro_id_map,
+      std::vector<SoftMacro>& macros,
+      std::map<int, Rect>& fences);
   void updateChildrenShapesAndLocations(
       Cluster* parent,
       const std::vector<SoftMacro>& shaped_macros,

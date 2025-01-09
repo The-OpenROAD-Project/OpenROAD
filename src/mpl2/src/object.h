@@ -446,37 +446,23 @@ class HardMacro
   odb::dbBlock* block_ = nullptr;
 };
 
-// We have three types of SoftMacros
-// Type 1:  a SoftMacro corresponding to a Cluster (MixedCluster,
-// StdCellCluster, HardMacroCluster)
-// Type 2:  a SoftMacro corresponding to a IO cluster
-// Type 3:  a SoftMacro corresponding to a all kinds of blockages
-// Here (x, y) is the lower left corner of the soft macro
-// For all the soft macros, we model the bundled pin at the center
-// of the soft macro. So we do not need private variables for pin positions
-// SoftMacro is a physical abstraction for Cluster.
-// Note that constrast to classical soft macro definition,
-// we allow the soft macro to change its area.
-// For the SoftMacro corresponding to different types of clusters,
-// we allow different shape constraints:
-// For SoftMacro corresponding to MixedCluster and StdCellCluster,
-// the macro must have fixed area
-// For SoftMacro corresponding to HardMacroCluster,
-// the macro can have different sizes. In this case, the width_list and
-// height_list is not sorted. Generally speaking we can have following types of
-// SoftMacro (1) SoftMacro : MixedCluster (2) SoftMacro : StdCellCluster (3)
-// SoftMacro : HardMacroCluster (4) SoftMacro : Fixed Hard Macro (or blockage)
-// (5) SoftMacro : Hard Macro (or pin access blockage)
-// (6) SoftMacro : Fixed Terminals
-
+// This is the object used as the physical abstraction for the Clusters.
+// A SoftMacro can represent:
+//  - a regular Cluster (Mixed, StdCell or Macro);
+//  - an IO Cluster - which has its position fixed;
+//  - a placement blockage.
+//
+// Some Observations:
+//  - The bundled pin of a SoftMacro is always its center.
+//  - SoftMacros that represent StdCell clusters change their area
+//    based on target utilization.
 class SoftMacro
 {
  public:
-  // Create a SoftMacro with specified size
-  // Create a SoftMacro representing the blockage
+  // Create a SoftMacro representing a placement blockage
   SoftMacro(float width, float height, const std::string& name);
 
-  // Create a SoftMacro representing the IO cluster
+  // Create a SoftMacro representing an IO cluster
   SoftMacro(const std::pair<float, float>& pos,
             const std::string& name,
             float width = 0.0,
@@ -536,6 +522,7 @@ class SoftMacro
   Cluster* getCluster() const;
   // calculate macro utilization
   float getMacroUtil() const;
+  bool isBlockage() const { return is_blockage_; }
 
  private:
   // utility function
@@ -558,6 +545,7 @@ class SoftMacro
   // Interfaces with hard macro
   Cluster* cluster_ = nullptr;
   bool fixed_ = false;  // if the macro is fixed
+  bool is_blockage_{false};
 
   // Alignment support
   // if the cluster has been aligned related to other macro_cluster or

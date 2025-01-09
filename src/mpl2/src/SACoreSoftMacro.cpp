@@ -448,7 +448,7 @@ void SACoreSoftMacro::calBoundaryPenalty()
 void SACoreSoftMacro::calMacroBlockagePenalty()
 {
   macro_blockage_penalty_ = 0.0;
-  if (blockages_.empty() || macro_blockage_weight_ <= 0.0) {
+  if (macro_blockages_.empty() || macro_blockage_weight_ <= 0.0) {
     return;
   }
 
@@ -460,7 +460,7 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
     return;
   }
 
-  for (auto& blockage : blockages_) {
+  for (auto& blockage : macro_blockages_) {
     for (const auto& macro_id : pos_seq_) {
       if (macros_[macro_id].getNumMacro() > 0) {
         const float soft_macro_x_min = macros_[macro_id].getX();
@@ -654,8 +654,8 @@ void SACoreSoftMacro::calNotchPenalty()
         if (grids[j][i] != -1) {
           flag = false;  // we cannot extend the current cluster
           break;
-        }           // end if
-      }             // end y
+        }  // end if
+      }  // end y
       if (!flag) {  // extension done
         break;
       }
@@ -671,8 +671,8 @@ void SACoreSoftMacro::calNotchPenalty()
         if (grids[j][i] != -1) {
           flag = false;  // we cannot extend the current cluster
           break;
-        }           // end if
-      }             // end y
+        }  // end if
+      }  // end y
       if (!flag) {  // extension done
         break;
       }
@@ -688,8 +688,8 @@ void SACoreSoftMacro::calNotchPenalty()
         if (grids[j][i] != -1) {
           flag = false;  // we cannot extend the current cluster
           break;
-        }           // end if
-      }             // end y
+        }  // end if
+      }  // end y
       if (!flag) {  // extension done
         break;
       }
@@ -705,8 +705,8 @@ void SACoreSoftMacro::calNotchPenalty()
         if (grids[j][i] != -1) {
           flag = false;  // we cannot extend the current cluster
           break;
-        }           // end if
-      }             // end y
+        }  // end if
+      }  // end y
       if (!flag) {  // extension done
         break;
       }
@@ -1019,8 +1019,8 @@ void SACoreSoftMacro::fillDeadSpace()
           if (grids[j][i] != -1) {
             flag = false;  // we cannot extend the current cluster
             break;
-          }           // end if
-        }             // end y
+          }  // end if
+        }  // end y
         if (!flag) {  // extension done
           break;
         }
@@ -1037,8 +1037,8 @@ void SACoreSoftMacro::fillDeadSpace()
           if (grids[j][i] != -1) {
             flag = false;  // we cannot extend the current cluster
             break;
-          }           // end if
-        }             // end y
+          }  // end if
+        }  // end y
         if (!flag) {  // extension done
           break;
         }
@@ -1055,8 +1055,8 @@ void SACoreSoftMacro::fillDeadSpace()
           if (grids[j][i] != -1) {
             flag = false;  // we cannot extend the current cluster
             break;
-          }           // end if
-        }             // end y
+          }  // end if
+        }  // end y
         if (!flag) {  // extension done
           break;
         }
@@ -1073,8 +1073,8 @@ void SACoreSoftMacro::fillDeadSpace()
           if (grids[j][i] != -1) {
             flag = false;  // we cannot extend the current cluster
             break;
-          }           // end if
-        }             // end y
+          }  // end if
+        }  // end y
         if (!flag) {  // extension done
           break;
         }
@@ -1116,9 +1116,11 @@ void SACoreSoftMacro::calSegmentLoc(float seg_start,
 }
 
 // The blockages here are only those that overlap with the annealing outline.
-void SACoreSoftMacro::addBlockages(const std::vector<Rect>& blockages)
+void SACoreSoftMacro::setMacroBlockages(
+    const std::vector<Rect>& macro_blockages)
 {
-  blockages_.insert(blockages_.end(), blockages.begin(), blockages.end());
+  macro_blockages_.insert(
+      macro_blockages_.end(), macro_blockages.begin(), macro_blockages.end());
 }
 
 void SACoreSoftMacro::attemptCentralization(const float pre_cost)

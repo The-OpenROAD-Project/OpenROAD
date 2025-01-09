@@ -955,7 +955,7 @@ void HierRTLMP::setIOClustersBlockages()
                                 io_spans[L].second);
 
     boundary_to_io_blockage_[L] = left_io_blockage;
-    macro_blockages_.push_back(left_io_blockage);
+    placement_blockages_.push_back(left_io_blockage);
   }
 
   if (io_spans[T].second > io_spans[T].first) {
@@ -965,7 +965,7 @@ void HierRTLMP::setIOClustersBlockages()
                                root.yMax());
 
     boundary_to_io_blockage_[T] = top_io_blockage;
-    macro_blockages_.push_back(top_io_blockage);
+    placement_blockages_.push_back(top_io_blockage);
   }
 
   if (io_spans[R].second > io_spans[R].first) {
@@ -975,7 +975,7 @@ void HierRTLMP::setIOClustersBlockages()
                                  io_spans[R].second);
 
     boundary_to_io_blockage_[R] = right_io_blockage;
-    macro_blockages_.push_back(right_io_blockage);
+    placement_blockages_.push_back(right_io_blockage);
   }
 
   if (io_spans[B].second > io_spans[B].first) {
@@ -985,7 +985,7 @@ void HierRTLMP::setIOClustersBlockages()
                                   root.yMin() + depth);
 
     boundary_to_io_blockage_[B] = bottom_io_blockage;
-    macro_blockages_.push_back(bottom_io_blockage);
+    placement_blockages_.push_back(bottom_io_blockage);
   }
 }
 
@@ -1227,6 +1227,8 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
   std::vector<Rect> macro_blockages;
 
   findOverlappingBlockages(macro_blockages, placement_blockages, outline);
+  convertPlacementBlockagesToMacroClusters(
+      placement_blockages, soft_macro_id_map, macros, fences);
 
   // We store the bundled io clusters to push them into the macros' vector
   // only after it is already populated with the clusters we're trying to
@@ -1704,8 +1706,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
-      sa->addBlockages(placement_blockages);
-      sa->addBlockages(macro_blockages);
+      sa->setMacroBlockages(macro_blockages);
       sa_batch.push_back(std::move(sa));
     }
     if (sa_batch.size() == 1) {
@@ -1962,8 +1963,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
         sa->setFences(fences);
         sa->setGuides(guides);
         sa->setNets(nets);
-        sa->addBlockages(placement_blockages);
-        sa->addBlockages(macro_blockages);
+        sa->setMacroBlockages(macro_blockages);
         sa_batch.push_back(std::move(sa));
       }
       if (sa_batch.size() == 1) {
@@ -2214,6 +2214,8 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
   std::vector<Rect> macro_blockages;
 
   findOverlappingBlockages(macro_blockages, placement_blockages, outline);
+  convertPlacementBlockagesToMacroClusters(
+      placement_blockages, soft_macro_id_map, macros, fences);
 
   // We store the bundled io clusters to push them into the macros' vector
   // only after it is already populated with the clusters we're trying to
@@ -2536,8 +2538,7 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
-      sa->addBlockages(placement_blockages);
-      sa->addBlockages(macro_blockages);
+      sa->setMacroBlockages(macro_blockages);
       sa_batch.push_back(std::move(sa));
     }
     if (sa_batch.size() == 1) {
@@ -2715,6 +2716,8 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
   std::vector<Rect> macro_blockages;
 
   findOverlappingBlockages(macro_blockages, placement_blockages, outline);
+  convertPlacementBlockagesToMacroClusters(
+      placement_blockages, soft_macro_id_map, macros, fences);
 
   // We store the bundled io clusters to push them into the macros' vector
   // only after it is already populated with the clusters we're trying to
@@ -3022,8 +3025,7 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
-      sa->addBlockages(placement_blockages);
-      sa->addBlockages(macro_blockages);
+      sa->setMacroBlockages(macro_blockages);
       sa_batch.push_back(std::move(sa));
     }
     if (sa_batch.size() == 1) {
@@ -3132,8 +3134,19 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
   updateChildrenRealLocation(parent, outline.xMin(), outline.yMin());
 }
 
-// Verify the blockages' areas that have overlapped with current parent
-// cluster. All the blockages will be converted to hard macros with fences.
+// Find blockages' areas that have overlapped with current parent outline.
+// Note that within SA different types of blockages are treated differently:
+//    - Macro Blockages: Modelled as areas which cannot be ocupied by clusters
+//      with macros. A penalty will be added based on overlap area.
+//    - Placement Blockages: Modelled as macro clusters constrained to fences.
+//      The idea of this representation is to allow the generation of more
+//      intelligent results by the annealer: If we use the previous item's
+//      approach, the only way to reduce the overlap penalty is to fill the
+//      macro blockage area with either std cell clusters or leave it empty
+//      (the latter is very challenging because of the sequence pair
+//      representation). So treating the placement blockages as a macro clusters
+//      works as if we could leave the area of that blockage empty using the
+//      macro blockage approach.
 void HierRTLMP::findOverlappingBlockages(std::vector<Rect>& macro_blockages,
                                          std::vector<Rect>& placement_blockages,
                                          const Rect& outline)
@@ -3149,7 +3162,6 @@ void HierRTLMP::findOverlappingBlockages(std::vector<Rect>& macro_blockages,
   if (graphics_) {
     graphics_->setOutline(micronsToDbu(outline));
     graphics_->setMacroBlockages(macro_blockages);
-    graphics_->setPlacementBlockages(placement_blockages);
   }
 }
 
@@ -3167,6 +3179,27 @@ void HierRTLMP::computeBlockageOverlap(std::vector<Rect>& overlapping_blockages,
                                        b_ly - outline.yMin(),
                                        b_ux - outline.xMin(),
                                        b_uy - outline.yMin());
+  }
+}
+
+void HierRTLMP::convertPlacementBlockagesToMacroClusters(
+    const std::vector<Rect>& placement_blockages,
+    std::map<std::string, int>& soft_macro_id_map,
+    std::vector<SoftMacro>& macros,
+    std::map<int, Rect>& fences)
+{
+  for (const Rect& placement_blockage : placement_blockages) {
+    const int current_id = static_cast<int>(macros.size());
+    std::string blockage_soft_macro_name
+        = "blockage" + std::to_string(current_id);
+
+    soft_macro_id_map[blockage_soft_macro_name] = current_id;
+    fences[current_id] = placement_blockage;
+
+    SoftMacro blockage_soft_macro(placement_blockage.getWidth(),
+                                  placement_blockage.getHeight(),
+                                  blockage_soft_macro_name);
+    macros.push_back(blockage_soft_macro);
   }
 }
 

@@ -97,7 +97,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   // adjust the size of MixedCluster to fill the empty space
   void fillDeadSpace() override;
   void alignMacroClusters();
-  void addBlockages(const std::vector<Rect>& blockages);
+  void setMacroBlockages(const std::vector<Rect>& macro_blockages);
 
   bool centralizationWasReverted() { return centralization_was_reverted_; }
   void setCentralizationAttemptOn(bool centralization_on)
@@ -134,7 +134,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void attemptCentralization(float pre_cost);
   void moveFloorplan(const std::pair<float, float>& offset);
 
-  std::vector<Rect> blockages_;
+  std::vector<Rect> macro_blockages_;
 
   Cluster* root_;
 

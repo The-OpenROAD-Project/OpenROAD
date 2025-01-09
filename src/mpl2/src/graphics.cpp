@@ -332,15 +332,6 @@ void Graphics::drawAllBlockages(gui::Painter& painter)
       drawOffsetRect(blockage, "", painter);
     }
   }
-
-  if (!placement_blockages_.empty()) {
-    painter.setPen(gui::Painter::green, true);
-    painter.setBrush(gui::Painter::green, gui::Painter::DIAGONAL);
-
-    for (const auto& blockage : placement_blockages_) {
-      drawOffsetRect(blockage, "", painter);
-    }
-  }
 }
 
 void Graphics::drawFences(gui::Painter& painter)
@@ -569,13 +560,22 @@ void Graphics::drawBundledNets(gui::Painter& painter,
 void Graphics::setSoftMacroBrush(gui::Painter& painter,
                                  const SoftMacro& soft_macro)
 {
-  if (soft_macro.getCluster() == nullptr) {  // fixed terminals
+  if (soft_macro.isBlockage()) {
+    painter.setBrush(gui::Painter::dark_red);
     return;
   }
 
-  if (soft_macro.getCluster()->getClusterType() == StdCellCluster) {
+  const Cluster* cluster = soft_macro.getCluster();
+
+  if (!cluster) {  // fixed terminal
+    return;
+  }
+
+  const mpl2::ClusterType cluster_type = cluster->getClusterType();
+
+  if (cluster_type == StdCellCluster) {
     painter.setBrush(gui::Painter::dark_blue);
-  } else if (soft_macro.getCluster()->getClusterType() == HardMacroCluster) {
+  } else if (cluster_type == HardMacroCluster) {
     // dark red
     painter.setBrush(gui::Painter::Color(0x80, 0x00, 0x00, 150));
   } else {
@@ -587,12 +587,6 @@ void Graphics::setSoftMacroBrush(gui::Painter& painter,
 void Graphics::setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages)
 {
   macro_blockages_ = macro_blockages;
-}
-
-void Graphics::setPlacementBlockages(
-    const std::vector<mpl2::Rect>& placement_blockages)
-{
-  placement_blockages_ = placement_blockages;
 }
 
 void Graphics::setShowBundledNets(bool show_bundled_nets)
@@ -664,7 +658,6 @@ void Graphics::eraseDrawing()
   soft_macros_.clear();
   hard_macros_.clear();
   macro_blockages_.clear();
-  placement_blockages_.clear();
   bundled_nets_.clear();
   outline_.reset(0, 0, 0, 0);
   outlines_.clear();
