@@ -486,7 +486,7 @@ bool RepairDesign::performGainBuffering(Net* net,
     const Network* network_;
 
    public:
-    PinRequiredHigher(const Network* network) : network_(network){};
+    PinRequiredHigher(const Network* network) : network_(network) {}
 
     bool operator()(const EnqueuedPin& a, const EnqueuedPin& b) const
     {
