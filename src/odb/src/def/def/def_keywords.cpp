@@ -51,7 +51,7 @@
 #include <unistd.h>
 #endif /* WIN32 */
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 #include "def_parser.hpp"
 
@@ -282,7 +282,7 @@ int defrData::DefGetToken(char** buf, int* bufferSize)
   if (input_level >= 0) {        /* if we are expanding an alias */
     if (DefGetTokenFromStack(s)) /* try to get a token from it */
       return true;               /* if we get one, return it */
-  }                              /* but if not, continue */
+  } /* but if not, continue */
 
   /* skip blanks and count lines */
   while ((ch = GETC()) != EOF) {
@@ -607,63 +607,55 @@ int defrData::sublex(YYSTYPE* pYylval)
       pYylval->dval = strtol(deftoken, &ch, 10); /* try string to long first */
       if (no_num < 0 && *ch == '\0') { /* did we use the whole string? */
         return NUMBER;
-      } else { /* failed strtol, try double */
-        numVal = pYylval->dval = strtod(deftoken, &ch);
-        if (no_num < 0 && *ch == '\0') { /* did we use the whole string? */
-          /* check if the integer has exceed the limit */
-          if ((numVal >= lVal) && (numVal <= rVal))
-            return NUMBER; /* YES, it's really a number */
-          else {
-            char* str = (char*) malloc(strlen(deftoken)
-                                       + strlen(session->FileName) + 350);
-            sprintf(str,
-                    "<Number has exceed the limit for an integer> in %s at "
-                    "line %s\n",
-                    session->FileName,
-                    lines2str(nlines));
-            fflush(stdout);
-            defiError(1, 0, str);
-            free(str);
-            errors++;
-            return NUMBER;
-          }
-        } else {
-          pYylval->string = ringCopy(deftoken); /* NO, it's a string */
-          return T_STRING;
-        }
-      }
-    } else { /* handling PROPERTY, do strtod first instead of strtol */
+      } /* failed strtol, try double */
       numVal = pYylval->dval = strtod(deftoken, &ch);
       if (no_num < 0 && *ch == '\0') { /* did we use the whole string? */
         /* check if the integer has exceed the limit */
-        if (real_num) /* this is for PROPERTYDEF with REAL */
-          return NUMBER;
         if ((numVal >= lVal) && (numVal <= rVal))
           return NUMBER; /* YES, it's really a number */
-        else {
-          char* str = (char*) malloc(strlen(deftoken)
-                                     + strlen(session->FileName) + 350);
-          sprintf(
-              str,
+        char* str = (char*) malloc(strlen(deftoken) + strlen(session->FileName)
+                                   + 350);
+        sprintf(str,
+                "<Number has exceed the limit for an integer> in %s at "
+                "line %s\n",
+                session->FileName,
+                lines2str(nlines));
+        fflush(stdout);
+        defiError(1, 0, str);
+        free(str);
+        errors++;
+        return NUMBER;
+      }
+      pYylval->string = ringCopy(deftoken); /* NO, it's a string */
+      return T_STRING;
+    }
+    /* handling PROPERTY, do strtod first instead of strtol */
+    numVal = pYylval->dval = strtod(deftoken, &ch);
+    if (no_num < 0 && *ch == '\0') { /* did we use the whole string? */
+      /* check if the integer has exceed the limit */
+      if (real_num) /* this is for PROPERTYDEF with REAL */
+        return NUMBER;
+      if ((numVal >= lVal) && (numVal <= rVal))
+        return NUMBER; /* YES, it's really a number */
+      char* str
+          = (char*) malloc(strlen(deftoken) + strlen(session->FileName) + 350);
+      sprintf(str,
               "<Number has exceed the limit for an integer> in %s at line %s\n",
               session->FileName,
               lines2str(nlines));
-          fflush(stdout);
-          defiError(1, 0, str);
-          free(str);
-          errors++;
-          return NUMBER;
-        }
-      } else { /* failed integer conversion, try floating point */
-        pYylval->dval = strtol(deftoken, &ch, 10);
-        if (no_num < 0 && *ch == '\0') /* did we use the whole string? */
-          return NUMBER;
-        else {
-          pYylval->string = ringCopy(deftoken); /* NO, it's a string */
-          return T_STRING;
-        }
-      }
+      fflush(stdout);
+      defiError(1, 0, str);
+      free(str);
+      errors++;
+      return NUMBER;
     }
+    /* failed integer conversion, try floating point */
+    pYylval->dval = strtol(deftoken, &ch, 10);
+    if (no_num < 0 && *ch == '\0') /* did we use the whole string? */
+      return NUMBER;
+
+    pYylval->string = ringCopy(deftoken); /* NO, it's a string */
+    return T_STRING;
   }
 
   /* if we are dumb mode, all we return is punctuation and strings & numbers*/
@@ -878,11 +870,10 @@ int defrData::sublex(YYSTYPE* pYylval)
                          "The ending '\"' is missing in the tag. Specify the "
                          "ending '\"' in the tag and then try again.");
               break;
-            } else if (histTextSize >= 10
-                       && memcmp(&History_text[histTextSize - 10],
-                                 "END DESIGN",
-                                 10)
-                              == 0) {
+            }
+            if (histTextSize >= 10
+                && memcmp(&History_text[histTextSize - 10], "END DESIGN", 10)
+                       == 0) {
               defError(6007,
                        "The ENDEXT statement is missing in the DEF file. "
                        "Include the statement and then try again.");
@@ -894,29 +885,28 @@ int defrData::sublex(YYSTYPE* pYylval)
         History_text.push_back('\0');
       }
       return result; /* YES, return its value */
-    } else {         /* we don't have a keyword.  */
-      if (fc == '&')
-        return amper_lookup(pYylval, deftoken);
-      pYylval->string = ringCopy(deftoken); /* NO, it's a string */
-      return T_STRING;
     }
-  } else { /* it should be a punctuation character */
-    if (deftoken[1] != '\0') {
-      if (strcmp(deftoken, ">=") == 0)
-        return K_GE;
-      if (strcmp(deftoken, "<=") == 0)
-        return K_LE;
-      if (strcmp(deftoken, "<>") == 0)
-        return K_NE;
-
-      defError(6017, "Odd punctuation found.");
-      hasFatalError = 1;
-    } else if (strlen(deftoken) > 2 || strlen(deftoken) == 0) {
-      defError(6017, "Odd punctuation found.");
-      hasFatalError = 1;
-    }
-    return (int) deftoken[0];
+    if (fc == '&')
+      return amper_lookup(pYylval, deftoken);
+    pYylval->string = ringCopy(deftoken); /* NO, it's a string */
+    return T_STRING;
   }
+  /* it should be a punctuation character */
+  if (deftoken[1] != '\0') {
+    if (strcmp(deftoken, ">=") == 0)
+      return K_GE;
+    if (strcmp(deftoken, "<=") == 0)
+      return K_LE;
+    if (strcmp(deftoken, "<>") == 0)
+      return K_NE;
+
+    defError(6017, "Odd punctuation found.");
+    hasFatalError = 1;
+  } else if (strlen(deftoken) > 2 || strlen(deftoken) == 0) {
+    defError(6017, "Odd punctuation found.");
+    hasFatalError = 1;
+  }
+  return (int) deftoken[0];
 }
 
 /* We have found a deftoken beginning with '&'.  If it has been previously
@@ -1658,4 +1648,4 @@ void defrData::pathIsDone(int sh, int reset, int osNet, int* needCbk)
   PathObj.Init();
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

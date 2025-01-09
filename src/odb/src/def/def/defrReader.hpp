@@ -40,7 +40,7 @@
 #define DEF_MSGS 4013
 #define CBMAX 150  // Number of callbacks.
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 // An enum describing all of the types of reader callbacks.
 enum defrCallbackType_e
@@ -737,8 +737,6 @@ extern void defrAddAlias(std::string_view key,
                          std::string_view value,
                          int marked);
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

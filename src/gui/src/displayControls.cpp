@@ -281,6 +281,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   view_->viewport()->installEventFilter(this);
 
   QHeaderView* header = view_->header();
+  header->setMinimumSectionSize(25);
   header->setSectionResizeMode(Name, QHeaderView::Stretch);
   header->setSectionResizeMode(Swatch, QHeaderView::ResizeToContents);
   header->setSectionResizeMode(Visible, QHeaderView::ResizeToContents);

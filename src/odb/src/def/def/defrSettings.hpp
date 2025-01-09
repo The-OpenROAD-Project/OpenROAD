@@ -39,7 +39,7 @@
 #define DEF_DEBUG_IDS 100
 #define defMaxOxides 32
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 struct defCompareCStrings
 {
@@ -139,6 +139,6 @@ class defrSession
   defiPropType SNetProp;
 };
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif

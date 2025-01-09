@@ -39,7 +39,7 @@
 #include "lefrSettings.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // *****************************************************************************
 // lefiAntennaPWL
@@ -2768,10 +2768,7 @@ int lefiLayer::hasLayerType() const
 
 int lefiLayer::hasPitch() const
 {
-  if (hasPitch_ == 1)
-    return 1;
-  else
-    return 0;
+  return hasPitch_ == 1;
 }
 
 int lefiLayer::hasMask() const
@@ -2785,27 +2782,18 @@ int lefiLayer::hasMask() const
 // 5.6
 int lefiLayer::hasXYPitch() const
 {
-  if (hasPitch_ == 2)
-    return 1;
-  else
-    return 0;
+  return hasPitch_ == 2;
 }
 
 int lefiLayer::hasOffset() const
 {
-  if (hasOffset_ == 1)
-    return 1;
-  else
-    return 0;
+  return hasOffset_ == 1;
 }
 
 // 5.6
 int lefiLayer::hasXYOffset() const
 {
-  if (hasOffset_ == 2)
-    return 1;
-  else
-    return 0;
+  return hasOffset_ == 2;
 }
 
 int lefiLayer::hasWidth() const
@@ -2821,19 +2809,13 @@ int lefiLayer::hasArea() const
 // 5.6
 int lefiLayer::hasDiagPitch() const
 {
-  if (hasDiagPitch_ == 1)
-    return 1;
-  else
-    return 0;
+  return hasDiagPitch_ == 1;
 }
 
 // 5.6
 int lefiLayer::hasXYDiagPitch() const
 {
-  if (hasDiagPitch_ == 2)
-    return 1;
-  else
-    return 0;
+  return hasDiagPitch_ == 2;
 }
 
 // 5.6
@@ -5300,9 +5282,8 @@ void lefiLayer::parseSpacing(int index)
           lefError(1320, msg);
           free(wrkingStr);
           return;
-        } else {
-          value = strtok(nullptr, " ");
         }
+        value = strtok(nullptr, " ");
       } else if (strcmp(value, "AREA") == 0) {
         value = strtok(nullptr, " ");
         cutArea = atof(value);
@@ -5328,9 +5309,8 @@ void lefiLayer::parseSpacing(int index)
           lefError(1320, msg);
           free(wrkingStr);
           return;
-        } else {
-          value = strtok(nullptr, " ");
         }
+        value = strtok(nullptr, " ");
       }
     } else if (strcmp(value, "SAMEMETAL") == 0) {
       // SPACING cutSpacing SAMEMETAL just exit
@@ -5403,14 +5383,13 @@ void lefiLayer::parseSpacing(int index)
                       setSpacingParTwoEdges();
                     value = strtok(nullptr, " ");
                     continue;  // with the while loop
-                  } else {
-                    // More rules, skip to ;
-                    while ((value) && (*value != ';') && (*value != '\n'))
-                      value = strtok(nullptr, " ");
-                    if ((value) && (*value == ';')) {
-                      value = strtok(nullptr, " ");
-                      continue;
-                    }
+                  }
+                  // More rules, skip to ;
+                  while ((value) && (*value != ';') && (*value != '\n'))
+                    value = strtok(nullptr, " ");
+                  if ((value) && (*value == ';')) {
+                    value = strtok(nullptr, " ");
+                    continue;
                   }
                 } else if (*value == ';') {
                   setSpacingMin(spValue);
@@ -6229,7 +6208,8 @@ void lefiLayer::parseLayerEnclosure(int index)
       // This is 58 syntax but is not in OA data model.  Skip the parsing
       free(wrkingStr);
       return;
-    } else if ((strcmp(value, "ABOVE") == 0) || (strcmp(value, "BELOW") == 0)) {
+    }
+    if ((strcmp(value, "ABOVE") == 0) || (strcmp(value, "BELOW") == 0)) {
       // Parse the rest of the property value lefData->first and if it has the
       // syntax ENCLOSURE [ABOVE | BELOW] overhang1 overhang2
       //   [WIDTH minWidth [EXCEPTEXTRACUT cutWithin]
@@ -6490,4 +6470,4 @@ int lefiLayer::need58PropsProcessing() const
   return lefData->versionNum >= 5.7;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

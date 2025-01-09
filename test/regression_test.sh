@@ -14,7 +14,7 @@ fi
 echo "Directory: ${PWD}"
 echo "Command:   $OPENROAD_EXE $ORD_ARGS -no_splash -no_init -exit  $TEST_NAME.$TEST_EXT > $LOG_FILE"
 
-$OPENROAD_EXE $ORD_ARGS -no_splash -no_init -exit $TEST_NAME.$TEST_EXT > $LOG_FILE
+$OPENROAD_EXE $ORD_ARGS -no_splash -no_init -exit $TEST_NAME.$TEST_EXT &> $LOG_FILE
 
 echo "Exitcode:  $?"
 
@@ -24,5 +24,5 @@ if [ "$TEST_CHECK_LOG" == "True" ]; then
 fi
 
 if [ "$TEST_CHECK_PASSFAIL" == "True" ]; then
-    tail -n1 $LOG_FILE | grep -G '^pass$'
+    tail -n1 $LOG_FILE | grep -E '^(pass|OK)'
 fi

@@ -60,19 +60,21 @@ lefGZFile lefGZipOpen(const char* gzipPath, const char* mode)
   if (fptr) {
     /* successfully open the gzip file */
     /* set the read function to read from a compressed file */
-    lefrSetReadFunction(lefGZip_read);
+    LefParser::lefrSetReadFunction(lefGZip_read);
     return (lefGZFile) fptr;
-  } else
-    return nullptr;
+  }
+  return nullptr;
 }
 
 int lefGZipClose(lefGZFile filePtr)
 {
-  lefrUnsetReadFunction();
+  LefParser::lefrUnsetReadFunction();
   return (gzclose((gzFile) filePtr));
 }
 
-int lefrReadGZip(lefGZFile file, const char* gzipFile, lefiUserData uData)
+int lefrReadGZip(lefGZFile file,
+                 const char* gzipFile,
+                 LefParser::lefiUserData uData)
 {
-  return lefrRead((FILE*) file, gzipFile, uData);
+  return LefParser::lefrRead((FILE*) file, gzipFile, uData);
 }

@@ -316,6 +316,8 @@ AbcLibrary AbcLibraryFactory::Build()
     PopulateAbcSclLibFromSta(abc_library, library);
   }
   abc::Abc_SclLibNormalize(abc_library);
+  abc::Abc_SclHashCells(abc_library);
+  abc::Abc_SclLinkCells(abc_library);
 
   return AbcLibrary(utl::UniquePtrWithDeleter<abc::SC_Lib>(
       abc_library, [](abc::SC_Lib* lib) { abc::Abc_SclLibFree(lib); }));

@@ -54,7 +54,7 @@
 #include "defwWriter.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 #define MAXCBS 33
 
@@ -673,4 +673,4 @@ void defwSetWarningLogFunction(DEFI_WARNING_LOG_FUNCTION f)
 {
   defwWarningLogFunction = f;
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

@@ -72,7 +72,7 @@ class HistogramView : public QChartView
  public:
   HistogramView(QChart* chart, QWidget* parent);
 
-  virtual void mousePressEvent(QMouseEvent* event) override;
+  void mousePressEvent(QMouseEvent* event) override;
 
  signals:
   void barIndex(int bar_index);

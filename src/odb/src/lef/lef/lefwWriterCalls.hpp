@@ -37,7 +37,7 @@
 #include "lefiKRDefs.hpp"
 #include "lefiUser.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 /*
  * The main writer function.
@@ -200,8 +200,6 @@ extern void lefwSetLogFunction(LEFI_LOG_FUNCTION);
 using LEFI_WARNING_LOG_FUNCTION = void (*)(const char*);
 extern void lefwSetWarningLogFunction(LEFI_WARNING_LOG_FUNCTION);
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

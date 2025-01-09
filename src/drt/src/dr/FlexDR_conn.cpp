@@ -925,6 +925,7 @@ void FlexDRConnectivityChecker::splitPathSegs_commit(
     int currIdxSplitSpanIdxs = 0;
     int s;
     // change existing split ps's and spans to match split points
+    // TODO: This part is not handled in distributed detailed routing.
     for (s = 0;
          s <= splitPoints.size() && currIdxSplitSpanIdxs < splitSpanIdxs.size();
          s++, currIdxSplitSpanIdxs++) {
@@ -1085,6 +1086,7 @@ void FlexDRConnectivityChecker::merge_commit(
     regionQuery->removeDRObj(static_cast<frShape*>(victimPathSeg));
 
     Point bp, ep;
+    frCoord high = victimPathSeg->high();
     if (isHorz) {
       bp = {newSegSpan.lo, trackCoord};
       ep = {newSegSpan.hi, trackCoord};
@@ -1098,21 +1100,23 @@ void FlexDRConnectivityChecker::merge_commit(
     frUInt4 end_ext = victimPathSeg->getEndExt();
     for (; cnt < (int) victims.size(); cnt++) {
       frPathSeg* curr = static_cast<frPathSeg*>(netRouteObjs[victims[cnt]]);
-      if (curr->high() <= newSegSpan.hi) {
-        end_style = curr->getEndStyle();
-        end_ext = curr->getEndExt();
-        if (save_updates_) {
-          drUpdate update(drUpdate::REMOVE_FROM_NET);
-          update.setNet(curr->getNet());
-          update.setIndexInOwner(curr->getIndexInOwner());
-          getDesign()->addUpdate(update);
-        }
-        regionQuery->removeDRObj(curr);  // deallocates curr
-        net->removeShape(curr);
-        netRouteObjs[victims[cnt]] = nullptr;
-      } else {
+      if (curr->high() > newSegSpan.hi) {
         break;
       }
+      if (curr->high() >= high) {
+        end_style = curr->getEndStyle();
+        end_ext = curr->getEndExt();
+        high = curr->high();
+      }
+      if (save_updates_) {
+        drUpdate update(drUpdate::REMOVE_FROM_NET);
+        update.setNet(curr->getNet());
+        update.setIndexInOwner(curr->getIndexInOwner());
+        getDesign()->addUpdate(update);
+      }
+      regionQuery->removeDRObj(curr);  // deallocates curr
+      net->removeShape(curr);
+      netRouteObjs[victims[cnt]] = nullptr;
     }
     victimPathSeg->setEndStyle(end_style, end_ext);
     regionQuery->addDRObj(victimPathSeg);
@@ -1125,7 +1129,6 @@ void FlexDRConnectivityChecker::merge_commit(
     }
   }
 }
-
 void FlexDRConnectivityChecker::addMarker(frNet* net,
                                           frLayerNum lNum,
                                           const Rect& bbox)

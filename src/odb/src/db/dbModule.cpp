@@ -226,9 +226,7 @@ const dbModBTerm* dbModule::getHeadDbModBTerm() const
   // last object added. The application calling this routine
   // needs to be aware of this (and possibly skip to the end
   // of the list and then use prev to reconstruct creation order).
-  else {
-    return (dbModBTerm*) (block_->_modbterm_tbl->getPtr(obj->_modbterms));
-  }
+  return (dbModBTerm*) (block_->_modbterm_tbl->getPtr(obj->_modbterms));
 }
 
 int dbModule::getModInstCount()

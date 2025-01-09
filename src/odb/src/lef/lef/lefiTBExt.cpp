@@ -34,7 +34,7 @@
 
 #include "lefiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // Convert the orient from integer to string
 //
@@ -62,4 +62,4 @@ char* lefiOrientStr(int orient)
   return ((char*) "");
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

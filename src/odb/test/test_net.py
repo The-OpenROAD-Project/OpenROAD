@@ -1,6 +1,7 @@
-import opendbpy as odb
+import odb
 import helper
 import odbUnitTest
+import unittest
 
 
 # TestNet: A unit test class for class dbNet
@@ -57,4 +58,4 @@ class TestNet(odbUnitTest.TestCase):
 
 
 if __name__ == "__main__":
-    odbUnitTest.mainParallel(TestNet)
+    unittest.main()

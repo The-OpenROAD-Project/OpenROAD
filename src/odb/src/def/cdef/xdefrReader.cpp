@@ -39,62 +39,62 @@
 // Wrappers definitions.
 int defrInit()
 {
-  return LefDefParser::defrInit();
+  return DefParser::defrInit();
 }
 
 int defrInitSession(int startSession)
 {
-  return LefDefParser::defrInitSession(startSession);
+  return DefParser::defrInitSession(startSession);
 }
 
 int defrReset()
 {
-  return LefDefParser::defrReset();
+  return DefParser::defrReset();
 }
 
 int defrClear()
 {
-  return LefDefParser::defrClear();
+  return DefParser::defrClear();
 }
 
 void defrSetCommentChar(char c)
 {
-  LefDefParser::defrSetCommentChar(c);
+  DefParser::defrSetCommentChar(c);
 }
 
 void defrSetAddPathToNet()
 {
-  LefDefParser::defrSetAddPathToNet();
+  DefParser::defrSetAddPathToNet();
 }
 
 void defrSetAllowComponentNets()
 {
-  LefDefParser::defrSetAllowComponentNets();
+  DefParser::defrSetAllowComponentNets();
 }
 
 int defrGetAllowComponentNets()
 {
-  return LefDefParser::defrGetAllowComponentNets();
+  return DefParser::defrGetAllowComponentNets();
 }
 
 void defrSetCaseSensitivity(int caseSense)
 {
-  LefDefParser::defrSetCaseSensitivity(caseSense);
+  DefParser::defrSetCaseSensitivity(caseSense);
 }
 
 void defrSetRegisterUnusedCallbacks()
 {
-  LefDefParser::defrSetRegisterUnusedCallbacks();
+  DefParser::defrSetRegisterUnusedCallbacks();
 }
 
 void defrPrintUnusedCallbacks(FILE* log)
 {
-  LefDefParser::defrPrintUnusedCallbacks(log);
+  DefParser::defrPrintUnusedCallbacks(log);
 }
 
 int defrReleaseNResetMemory()
 {
-  return LefDefParser::defrReleaseNResetMemory();
+  return DefParser::defrReleaseNResetMemory();
 }
 
 int defrRead(FILE* file,
@@ -102,1307 +102,1294 @@ int defrRead(FILE* file,
              defiUserData userData,
              int case_sensitive)
 {
-  return LefDefParser::defrRead(file, fileName, userData, case_sensitive);
+  return DefParser::defrRead(file, fileName, userData, case_sensitive);
 }
 
 void defrSetUserData(defiUserData p0)
 {
-  LefDefParser::defrSetUserData(p0);
+  DefParser::defrSetUserData(p0);
 }
 
 defiUserData defrGetUserData()
 {
-  return LefDefParser::defrGetUserData();
+  return DefParser::defrGetUserData();
 }
 
 void defrSetArrayNameCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetArrayNameCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetArrayNameCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetAssertionCbk(::defrAssertionCbkFnType p0)
 {
-  LefDefParser::defrSetAssertionCbk((LefDefParser::defrAssertionCbkFnType) p0);
+  DefParser::defrSetAssertionCbk((DefParser::defrAssertionCbkFnType) p0);
 }
 
 void defrSetAssertionsStartCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetAssertionsStartCbk(
-      (LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetAssertionsStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetAssertionsEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetAssertionsEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetAssertionsEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetBlockageCbk(::defrBlockageCbkFnType p0)
 {
-  LefDefParser::defrSetBlockageCbk((LefDefParser::defrBlockageCbkFnType) p0);
+  DefParser::defrSetBlockageCbk((DefParser::defrBlockageCbkFnType) p0);
 }
 
 void defrSetBlockageStartCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetBlockageStartCbk(
-      (LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetBlockageStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetBlockageEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetBlockageEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetBlockageEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetBusBitCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetBusBitCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetBusBitCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetCannotOccupyCbk(::defrSiteCbkFnType p0)
 {
-  LefDefParser::defrSetCannotOccupyCbk((LefDefParser::defrSiteCbkFnType) p0);
+  DefParser::defrSetCannotOccupyCbk((DefParser::defrSiteCbkFnType) p0);
 }
 
 void defrSetCanplaceCbk(::defrSiteCbkFnType p0)
 {
-  LefDefParser::defrSetCanplaceCbk((LefDefParser::defrSiteCbkFnType) p0);
+  DefParser::defrSetCanplaceCbk((DefParser::defrSiteCbkFnType) p0);
 }
 
 void defrSetCaseSensitiveCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetCaseSensitiveCbk(
-      (LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetCaseSensitiveCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetComponentCbk(::defrComponentCbkFnType p0)
 {
-  LefDefParser::defrSetComponentCbk((LefDefParser::defrComponentCbkFnType) p0);
+  DefParser::defrSetComponentCbk((DefParser::defrComponentCbkFnType) p0);
 }
 
 void defrSetComponentExtCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetComponentExtCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetComponentExtCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetComponentStartCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetComponentStartCbk(
-      (LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetComponentStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetComponentEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetComponentEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetComponentEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetConstraintCbk(::defrAssertionCbkFnType p0)
 {
-  LefDefParser::defrSetConstraintCbk((LefDefParser::defrAssertionCbkFnType) p0);
+  DefParser::defrSetConstraintCbk((DefParser::defrAssertionCbkFnType) p0);
 }
 
 void defrSetConstraintsStartCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetConstraintsStartCbk(
-      (LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetConstraintsStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetConstraintsEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetConstraintsEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetConstraintsEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetDefaultCapCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetDefaultCapCbk((LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetDefaultCapCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetDesignCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetDesignCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetDesignCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetDesignEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetDesignEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetDesignEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetDieAreaCbk(::defrBoxCbkFnType p0)
 {
-  LefDefParser::defrSetDieAreaCbk((LefDefParser::defrBoxCbkFnType) p0);
+  DefParser::defrSetDieAreaCbk((DefParser::defrBoxCbkFnType) p0);
 }
 
 void defrSetDividerCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetDividerCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetDividerCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetExtensionCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetExtensionCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetExtensionCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetFillCbk(::defrFillCbkFnType p0)
 {
-  LefDefParser::defrSetFillCbk((LefDefParser::defrFillCbkFnType) p0);
+  DefParser::defrSetFillCbk((DefParser::defrFillCbkFnType) p0);
 }
 
 void defrSetFillStartCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetFillStartCbk((LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetFillStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetFillEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetFillEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetFillEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetFPCCbk(::defrFPCCbkFnType p0)
 {
-  LefDefParser::defrSetFPCCbk((LefDefParser::defrFPCCbkFnType) p0);
+  DefParser::defrSetFPCCbk((DefParser::defrFPCCbkFnType) p0);
 }
 
 void defrSetFPCStartCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetFPCStartCbk((LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetFPCStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetFPCEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetFPCEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetFPCEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetFloorPlanNameCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetFloorPlanNameCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetFloorPlanNameCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetGcellGridCbk(::defrGcellGridCbkFnType p0)
 {
-  LefDefParser::defrSetGcellGridCbk((LefDefParser::defrGcellGridCbkFnType) p0);
+  DefParser::defrSetGcellGridCbk((DefParser::defrGcellGridCbkFnType) p0);
 }
 
 void defrSetGroupNameCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetGroupNameCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetGroupNameCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetGroupMemberCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetGroupMemberCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetGroupMemberCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetComponentMaskShiftLayerCbk(
     ::defrComponentMaskShiftLayerCbkFnType p0)
 {
-  LefDefParser::defrSetComponentMaskShiftLayerCbk(
-      (LefDefParser::defrComponentMaskShiftLayerCbkFnType) p0);
+  DefParser::defrSetComponentMaskShiftLayerCbk(
+      (DefParser::defrComponentMaskShiftLayerCbkFnType) p0);
 }
 
 void defrSetGroupCbk(::defrGroupCbkFnType p0)
 {
-  LefDefParser::defrSetGroupCbk((LefDefParser::defrGroupCbkFnType) p0);
+  DefParser::defrSetGroupCbk((DefParser::defrGroupCbkFnType) p0);
 }
 
 void defrSetGroupExtCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetGroupExtCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetGroupExtCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetGroupsStartCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetGroupsStartCbk((LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetGroupsStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetGroupsEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetGroupsEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetGroupsEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetHistoryCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetHistoryCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetHistoryCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetIOTimingCbk(::defrIOTimingCbkFnType p0)
 {
-  LefDefParser::defrSetIOTimingCbk((LefDefParser::defrIOTimingCbkFnType) p0);
+  DefParser::defrSetIOTimingCbk((DefParser::defrIOTimingCbkFnType) p0);
 }
 
 void defrSetIOTimingsStartCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetIOTimingsStartCbk(
-      (LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetIOTimingsStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetIOTimingsEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetIOTimingsEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetIOTimingsEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetIoTimingsExtCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetIoTimingsExtCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetIoTimingsExtCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetNetCbk(::defrNetCbkFnType p0)
 {
-  LefDefParser::defrSetNetCbk((LefDefParser::defrNetCbkFnType) p0);
+  DefParser::defrSetNetCbk((DefParser::defrNetCbkFnType) p0);
 }
 
 void defrSetNetNameCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetNetNameCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetNetNameCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetNetNonDefaultRuleCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetNetNonDefaultRuleCbk(
-      (LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetNetNonDefaultRuleCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetNetConnectionExtCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetNetConnectionExtCbk(
-      (LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetNetConnectionExtCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetNetExtCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetNetExtCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetNetExtCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetNetPartialPathCbk(::defrNetCbkFnType p0)
 {
-  LefDefParser::defrSetNetPartialPathCbk((LefDefParser::defrNetCbkFnType) p0);
+  DefParser::defrSetNetPartialPathCbk((DefParser::defrNetCbkFnType) p0);
 }
 
 void defrSetNetSubnetNameCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetNetSubnetNameCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetNetSubnetNameCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetNetStartCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetNetStartCbk((LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetNetStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetNetEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetNetEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetNetEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetNonDefaultCbk(::defrNonDefaultCbkFnType p0)
 {
-  LefDefParser::defrSetNonDefaultCbk(
-      (LefDefParser::defrNonDefaultCbkFnType) p0);
+  DefParser::defrSetNonDefaultCbk((DefParser::defrNonDefaultCbkFnType) p0);
 }
 
 void defrSetNonDefaultStartCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetNonDefaultStartCbk(
-      (LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetNonDefaultStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetNonDefaultEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetNonDefaultEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetNonDefaultEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetPartitionCbk(::defrPartitionCbkFnType p0)
 {
-  LefDefParser::defrSetPartitionCbk((LefDefParser::defrPartitionCbkFnType) p0);
+  DefParser::defrSetPartitionCbk((DefParser::defrPartitionCbkFnType) p0);
 }
 
 void defrSetPartitionsExtCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetPartitionsExtCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetPartitionsExtCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetPartitionsStartCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetPartitionsStartCbk(
-      (LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetPartitionsStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetPartitionsEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetPartitionsEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetPartitionsEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetPathCbk(::defrPathCbkFnType p0)
 {
-  LefDefParser::defrSetPathCbk((LefDefParser::defrPathCbkFnType) p0);
+  DefParser::defrSetPathCbk((DefParser::defrPathCbkFnType) p0);
 }
 
 void defrSetPinCapCbk(::defrPinCapCbkFnType p0)
 {
-  LefDefParser::defrSetPinCapCbk((LefDefParser::defrPinCapCbkFnType) p0);
+  DefParser::defrSetPinCapCbk((DefParser::defrPinCapCbkFnType) p0);
 }
 
 void defrSetPinCbk(::defrPinCbkFnType p0)
 {
-  LefDefParser::defrSetPinCbk((LefDefParser::defrPinCbkFnType) p0);
+  DefParser::defrSetPinCbk((DefParser::defrPinCbkFnType) p0);
 }
 
 void defrSetPinExtCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetPinExtCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetPinExtCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetPinPropCbk(::defrPinPropCbkFnType p0)
 {
-  LefDefParser::defrSetPinPropCbk((LefDefParser::defrPinPropCbkFnType) p0);
+  DefParser::defrSetPinPropCbk((DefParser::defrPinPropCbkFnType) p0);
 }
 
 void defrSetPinPropStartCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetPinPropStartCbk((LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetPinPropStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetPinPropEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetPinPropEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetPinPropEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetPropCbk(::defrPropCbkFnType p0)
 {
-  LefDefParser::defrSetPropCbk((LefDefParser::defrPropCbkFnType) p0);
+  DefParser::defrSetPropCbk((DefParser::defrPropCbkFnType) p0);
 }
 
 void defrSetPropDefEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetPropDefEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetPropDefEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetPropDefStartCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetPropDefStartCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetPropDefStartCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetRegionCbk(::defrRegionCbkFnType p0)
 {
-  LefDefParser::defrSetRegionCbk((LefDefParser::defrRegionCbkFnType) p0);
+  DefParser::defrSetRegionCbk((DefParser::defrRegionCbkFnType) p0);
 }
 
 void defrSetRegionStartCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetRegionStartCbk((LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetRegionStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetRegionEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetRegionEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetRegionEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetRowCbk(::defrRowCbkFnType p0)
 {
-  LefDefParser::defrSetRowCbk((LefDefParser::defrRowCbkFnType) p0);
+  DefParser::defrSetRowCbk((DefParser::defrRowCbkFnType) p0);
 }
 
 void defrSetSNetCbk(::defrNetCbkFnType p0)
 {
-  LefDefParser::defrSetSNetCbk((LefDefParser::defrNetCbkFnType) p0);
+  DefParser::defrSetSNetCbk((DefParser::defrNetCbkFnType) p0);
 }
 
 void defrSetSNetStartCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetSNetStartCbk((LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetSNetStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetSNetEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetSNetEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetSNetEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetSNetPartialPathCbk(::defrNetCbkFnType p0)
 {
-  LefDefParser::defrSetSNetPartialPathCbk((LefDefParser::defrNetCbkFnType) p0);
+  DefParser::defrSetSNetPartialPathCbk((DefParser::defrNetCbkFnType) p0);
 }
 
 void defrSetSNetWireCbk(::defrNetCbkFnType p0)
 {
-  LefDefParser::defrSetSNetWireCbk((LefDefParser::defrNetCbkFnType) p0);
+  DefParser::defrSetSNetWireCbk((DefParser::defrNetCbkFnType) p0);
 }
 
 void defrSetScanChainExtCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetScanChainExtCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetScanChainExtCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetScanchainCbk(::defrScanchainCbkFnType p0)
 {
-  LefDefParser::defrSetScanchainCbk((LefDefParser::defrScanchainCbkFnType) p0);
+  DefParser::defrSetScanchainCbk((DefParser::defrScanchainCbkFnType) p0);
 }
 
 void defrSetScanchainsStartCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetScanchainsStartCbk(
-      (LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetScanchainsStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetScanchainsEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetScanchainsEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetScanchainsEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetSiteCbk(::defrSiteCbkFnType p0)
 {
-  LefDefParser::defrSetSiteCbk((LefDefParser::defrSiteCbkFnType) p0);
+  DefParser::defrSetSiteCbk((DefParser::defrSiteCbkFnType) p0);
 }
 
 void defrSetSlotCbk(::defrSlotCbkFnType p0)
 {
-  LefDefParser::defrSetSlotCbk((LefDefParser::defrSlotCbkFnType) p0);
+  DefParser::defrSetSlotCbk((DefParser::defrSlotCbkFnType) p0);
 }
 
 void defrSetSlotStartCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetSlotStartCbk((LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetSlotStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetSlotEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetSlotEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetSlotEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetStartPinsCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetStartPinsCbk((LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetStartPinsCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetStylesCbk(::defrStylesCbkFnType p0)
 {
-  LefDefParser::defrSetStylesCbk((LefDefParser::defrStylesCbkFnType) p0);
+  DefParser::defrSetStylesCbk((DefParser::defrStylesCbkFnType) p0);
 }
 
 void defrSetStylesStartCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetStylesStartCbk((LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetStylesStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetStylesEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetStylesEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetStylesEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetPinEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetPinEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetPinEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetTechnologyCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetTechnologyCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetTechnologyCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetTimingDisableCbk(::defrTimingDisableCbkFnType p0)
 {
-  LefDefParser::defrSetTimingDisableCbk(
-      (LefDefParser::defrTimingDisableCbkFnType) p0);
+  DefParser::defrSetTimingDisableCbk(
+      (DefParser::defrTimingDisableCbkFnType) p0);
 }
 
 void defrSetTimingDisablesStartCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetTimingDisablesStartCbk(
-      (LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetTimingDisablesStartCbk(
+      (DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetTimingDisablesEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetTimingDisablesEndCbk(
-      (LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetTimingDisablesEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrSetTrackCbk(::defrTrackCbkFnType p0)
 {
-  LefDefParser::defrSetTrackCbk((LefDefParser::defrTrackCbkFnType) p0);
+  DefParser::defrSetTrackCbk((DefParser::defrTrackCbkFnType) p0);
 }
 
 void defrSetUnitsCbk(::defrDoubleCbkFnType p0)
 {
-  LefDefParser::defrSetUnitsCbk((LefDefParser::defrDoubleCbkFnType) p0);
+  DefParser::defrSetUnitsCbk((DefParser::defrDoubleCbkFnType) p0);
 }
 
 void defrSetVersionCbk(::defrDoubleCbkFnType p0)
 {
-  LefDefParser::defrSetVersionCbk((LefDefParser::defrDoubleCbkFnType) p0);
+  DefParser::defrSetVersionCbk((DefParser::defrDoubleCbkFnType) p0);
 }
 
 void defrSetVersionStrCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetVersionStrCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetVersionStrCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetViaCbk(::defrViaCbkFnType p0)
 {
-  LefDefParser::defrSetViaCbk((LefDefParser::defrViaCbkFnType) p0);
+  DefParser::defrSetViaCbk((DefParser::defrViaCbkFnType) p0);
 }
 
 void defrSetViaExtCbk(::defrStringCbkFnType p0)
 {
-  LefDefParser::defrSetViaExtCbk((LefDefParser::defrStringCbkFnType) p0);
+  DefParser::defrSetViaExtCbk((DefParser::defrStringCbkFnType) p0);
 }
 
 void defrSetViaStartCbk(::defrIntegerCbkFnType p0)
 {
-  LefDefParser::defrSetViaStartCbk((LefDefParser::defrIntegerCbkFnType) p0);
+  DefParser::defrSetViaStartCbk((DefParser::defrIntegerCbkFnType) p0);
 }
 
 void defrSetViaEndCbk(::defrVoidCbkFnType p0)
 {
-  LefDefParser::defrSetViaEndCbk((LefDefParser::defrVoidCbkFnType) p0);
+  DefParser::defrSetViaEndCbk((DefParser::defrVoidCbkFnType) p0);
 }
 
 void defrUnsetCallbacks()
 {
-  LefDefParser::defrUnsetCallbacks();
+  DefParser::defrUnsetCallbacks();
 }
 
 void defrUnsetArrayNameCbk()
 {
-  LefDefParser::defrUnsetArrayNameCbk();
+  DefParser::defrUnsetArrayNameCbk();
 }
 
 void defrUnsetAssertionCbk()
 {
-  LefDefParser::defrUnsetAssertionCbk();
+  DefParser::defrUnsetAssertionCbk();
 }
 
 void defrUnsetAssertionsStartCbk()
 {
-  LefDefParser::defrUnsetAssertionsStartCbk();
+  DefParser::defrUnsetAssertionsStartCbk();
 }
 
 void defrUnsetAssertionsEndCbk()
 {
-  LefDefParser::defrUnsetAssertionsEndCbk();
+  DefParser::defrUnsetAssertionsEndCbk();
 }
 
 void defrUnsetBlockageCbk()
 {
-  LefDefParser::defrUnsetBlockageCbk();
+  DefParser::defrUnsetBlockageCbk();
 }
 
 void defrUnsetBlockageStartCbk()
 {
-  LefDefParser::defrUnsetBlockageStartCbk();
+  DefParser::defrUnsetBlockageStartCbk();
 }
 
 void defrUnsetBlockageEndCbk()
 {
-  LefDefParser::defrUnsetBlockageEndCbk();
+  DefParser::defrUnsetBlockageEndCbk();
 }
 
 void defrUnsetBusBitCbk()
 {
-  LefDefParser::defrUnsetBusBitCbk();
+  DefParser::defrUnsetBusBitCbk();
 }
 
 void defrUnsetCannotOccupyCbk()
 {
-  LefDefParser::defrUnsetCannotOccupyCbk();
+  DefParser::defrUnsetCannotOccupyCbk();
 }
 
 void defrUnsetCanplaceCbk()
 {
-  LefDefParser::defrUnsetCanplaceCbk();
+  DefParser::defrUnsetCanplaceCbk();
 }
 
 void defrUnsetCaseSensitiveCbk()
 {
-  LefDefParser::defrUnsetCaseSensitiveCbk();
+  DefParser::defrUnsetCaseSensitiveCbk();
 }
 
 void defrUnsetComponentCbk()
 {
-  LefDefParser::defrUnsetComponentCbk();
+  DefParser::defrUnsetComponentCbk();
 }
 
 void defrUnsetComponentExtCbk()
 {
-  LefDefParser::defrUnsetComponentExtCbk();
+  DefParser::defrUnsetComponentExtCbk();
 }
 
 void defrUnsetComponentStartCbk()
 {
-  LefDefParser::defrUnsetComponentStartCbk();
+  DefParser::defrUnsetComponentStartCbk();
 }
 
 void defrUnsetComponentEndCbk()
 {
-  LefDefParser::defrUnsetComponentEndCbk();
+  DefParser::defrUnsetComponentEndCbk();
 }
 
 void defrUnsetConstraintCbk()
 {
-  LefDefParser::defrUnsetConstraintCbk();
+  DefParser::defrUnsetConstraintCbk();
 }
 
 void defrUnsetConstraintsStartCbk()
 {
-  LefDefParser::defrUnsetConstraintsStartCbk();
+  DefParser::defrUnsetConstraintsStartCbk();
 }
 
 void defrUnsetConstraintsEndCbk()
 {
-  LefDefParser::defrUnsetConstraintsEndCbk();
+  DefParser::defrUnsetConstraintsEndCbk();
 }
 
 void defrUnsetDefaultCapCbk()
 {
-  LefDefParser::defrUnsetDefaultCapCbk();
+  DefParser::defrUnsetDefaultCapCbk();
 }
 
 void defrUnsetDesignCbk()
 {
-  LefDefParser::defrUnsetDesignCbk();
+  DefParser::defrUnsetDesignCbk();
 }
 
 void defrUnsetDesignEndCbk()
 {
-  LefDefParser::defrUnsetDesignEndCbk();
+  DefParser::defrUnsetDesignEndCbk();
 }
 
 void defrUnsetDieAreaCbk()
 {
-  LefDefParser::defrUnsetDieAreaCbk();
+  DefParser::defrUnsetDieAreaCbk();
 }
 
 void defrUnsetDividerCbk()
 {
-  LefDefParser::defrUnsetDividerCbk();
+  DefParser::defrUnsetDividerCbk();
 }
 
 void defrUnsetExtensionCbk()
 {
-  LefDefParser::defrUnsetExtensionCbk();
+  DefParser::defrUnsetExtensionCbk();
 }
 
 void defrUnsetFillCbk()
 {
-  LefDefParser::defrUnsetFillCbk();
+  DefParser::defrUnsetFillCbk();
 }
 
 void defrUnsetFillStartCbk()
 {
-  LefDefParser::defrUnsetFillStartCbk();
+  DefParser::defrUnsetFillStartCbk();
 }
 
 void defrUnsetFillEndCbk()
 {
-  LefDefParser::defrUnsetFillEndCbk();
+  DefParser::defrUnsetFillEndCbk();
 }
 
 void defrUnsetFPCCbk()
 {
-  LefDefParser::defrUnsetFPCCbk();
+  DefParser::defrUnsetFPCCbk();
 }
 
 void defrUnsetFPCStartCbk()
 {
-  LefDefParser::defrUnsetFPCStartCbk();
+  DefParser::defrUnsetFPCStartCbk();
 }
 
 void defrUnsetFPCEndCbk()
 {
-  LefDefParser::defrUnsetFPCEndCbk();
+  DefParser::defrUnsetFPCEndCbk();
 }
 
 void defrUnsetFloorPlanNameCbk()
 {
-  LefDefParser::defrUnsetFloorPlanNameCbk();
+  DefParser::defrUnsetFloorPlanNameCbk();
 }
 
 void defrUnsetGcellGridCbk()
 {
-  LefDefParser::defrUnsetGcellGridCbk();
+  DefParser::defrUnsetGcellGridCbk();
 }
 
 void defrUnsetGroupCbk()
 {
-  LefDefParser::defrUnsetGroupCbk();
+  DefParser::defrUnsetGroupCbk();
 }
 
 void defrUnsetGroupExtCbk()
 {
-  LefDefParser::defrUnsetGroupExtCbk();
+  DefParser::defrUnsetGroupExtCbk();
 }
 
 void defrUnsetGroupMemberCbk()
 {
-  LefDefParser::defrUnsetGroupMemberCbk();
+  DefParser::defrUnsetGroupMemberCbk();
 }
 
 void defrUnsetComponentMaskShiftLayerCbk()
 {
-  LefDefParser::defrUnsetComponentMaskShiftLayerCbk();
+  DefParser::defrUnsetComponentMaskShiftLayerCbk();
 }
 
 void defrUnsetGroupNameCbk()
 {
-  LefDefParser::defrUnsetGroupNameCbk();
+  DefParser::defrUnsetGroupNameCbk();
 }
 
 void defrUnsetGroupsStartCbk()
 {
-  LefDefParser::defrUnsetGroupsStartCbk();
+  DefParser::defrUnsetGroupsStartCbk();
 }
 
 void defrUnsetGroupsEndCbk()
 {
-  LefDefParser::defrUnsetGroupsEndCbk();
+  DefParser::defrUnsetGroupsEndCbk();
 }
 
 void defrUnsetHistoryCbk()
 {
-  LefDefParser::defrUnsetHistoryCbk();
+  DefParser::defrUnsetHistoryCbk();
 }
 
 void defrUnsetIOTimingCbk()
 {
-  LefDefParser::defrUnsetIOTimingCbk();
+  DefParser::defrUnsetIOTimingCbk();
 }
 
 void defrUnsetIOTimingsStartCbk()
 {
-  LefDefParser::defrUnsetIOTimingsStartCbk();
+  DefParser::defrUnsetIOTimingsStartCbk();
 }
 
 void defrUnsetIOTimingsEndCbk()
 {
-  LefDefParser::defrUnsetIOTimingsEndCbk();
+  DefParser::defrUnsetIOTimingsEndCbk();
 }
 
 void defrUnsetIOTimingsExtCbk()
 {
-  LefDefParser::defrUnsetIOTimingsExtCbk();
+  DefParser::defrUnsetIOTimingsExtCbk();
 }
 
 void defrUnsetNetCbk()
 {
-  LefDefParser::defrUnsetNetCbk();
+  DefParser::defrUnsetNetCbk();
 }
 
 void defrUnsetNetNameCbk()
 {
-  LefDefParser::defrUnsetNetNameCbk();
+  DefParser::defrUnsetNetNameCbk();
 }
 
 void defrUnsetNetNonDefaultRuleCbk()
 {
-  LefDefParser::defrUnsetNetNonDefaultRuleCbk();
+  DefParser::defrUnsetNetNonDefaultRuleCbk();
 }
 
 void defrUnsetNetConnectionExtCbk()
 {
-  LefDefParser::defrUnsetNetConnectionExtCbk();
+  DefParser::defrUnsetNetConnectionExtCbk();
 }
 
 void defrUnsetNetExtCbk()
 {
-  LefDefParser::defrUnsetNetExtCbk();
+  DefParser::defrUnsetNetExtCbk();
 }
 
 void defrUnsetNetPartialPathCbk()
 {
-  LefDefParser::defrUnsetNetPartialPathCbk();
+  DefParser::defrUnsetNetPartialPathCbk();
 }
 
 void defrUnsetNetSubnetNameCbk()
 {
-  LefDefParser::defrUnsetNetSubnetNameCbk();
+  DefParser::defrUnsetNetSubnetNameCbk();
 }
 
 void defrUnsetNetStartCbk()
 {
-  LefDefParser::defrUnsetNetStartCbk();
+  DefParser::defrUnsetNetStartCbk();
 }
 
 void defrUnsetNetEndCbk()
 {
-  LefDefParser::defrUnsetNetEndCbk();
+  DefParser::defrUnsetNetEndCbk();
 }
 
 void defrUnsetNonDefaultCbk()
 {
-  LefDefParser::defrUnsetNonDefaultCbk();
+  DefParser::defrUnsetNonDefaultCbk();
 }
 
 void defrUnsetNonDefaultStartCbk()
 {
-  LefDefParser::defrUnsetNonDefaultStartCbk();
+  DefParser::defrUnsetNonDefaultStartCbk();
 }
 
 void defrUnsetNonDefaultEndCbk()
 {
-  LefDefParser::defrUnsetNonDefaultEndCbk();
+  DefParser::defrUnsetNonDefaultEndCbk();
 }
 
 void defrUnsetPartitionCbk()
 {
-  LefDefParser::defrUnsetPartitionCbk();
+  DefParser::defrUnsetPartitionCbk();
 }
 
 void defrUnsetPartitionsExtCbk()
 {
-  LefDefParser::defrUnsetPartitionsExtCbk();
+  DefParser::defrUnsetPartitionsExtCbk();
 }
 
 void defrUnsetPartitionsStartCbk()
 {
-  LefDefParser::defrUnsetPartitionsStartCbk();
+  DefParser::defrUnsetPartitionsStartCbk();
 }
 
 void defrUnsetPartitionsEndCbk()
 {
-  LefDefParser::defrUnsetPartitionsEndCbk();
+  DefParser::defrUnsetPartitionsEndCbk();
 }
 
 void defrUnsetPathCbk()
 {
-  LefDefParser::defrUnsetPathCbk();
+  DefParser::defrUnsetPathCbk();
 }
 
 void defrUnsetPinCapCbk()
 {
-  LefDefParser::defrUnsetPinCapCbk();
+  DefParser::defrUnsetPinCapCbk();
 }
 
 void defrUnsetPinCbk()
 {
-  LefDefParser::defrUnsetPinCbk();
+  DefParser::defrUnsetPinCbk();
 }
 
 void defrUnsetPinEndCbk()
 {
-  LefDefParser::defrUnsetPinEndCbk();
+  DefParser::defrUnsetPinEndCbk();
 }
 
 void defrUnsetPinExtCbk()
 {
-  LefDefParser::defrUnsetPinExtCbk();
+  DefParser::defrUnsetPinExtCbk();
 }
 
 void defrUnsetPinPropCbk()
 {
-  LefDefParser::defrUnsetPinPropCbk();
+  DefParser::defrUnsetPinPropCbk();
 }
 
 void defrUnsetPinPropStartCbk()
 {
-  LefDefParser::defrUnsetPinPropStartCbk();
+  DefParser::defrUnsetPinPropStartCbk();
 }
 
 void defrUnsetPinPropEndCbk()
 {
-  LefDefParser::defrUnsetPinPropEndCbk();
+  DefParser::defrUnsetPinPropEndCbk();
 }
 
 void defrUnsetPropCbk()
 {
-  LefDefParser::defrUnsetPropCbk();
+  DefParser::defrUnsetPropCbk();
 }
 
 void defrUnsetPropDefEndCbk()
 {
-  LefDefParser::defrUnsetPropDefEndCbk();
+  DefParser::defrUnsetPropDefEndCbk();
 }
 
 void defrUnsetPropDefStartCbk()
 {
-  LefDefParser::defrUnsetPropDefStartCbk();
+  DefParser::defrUnsetPropDefStartCbk();
 }
 
 void defrUnsetRegionCbk()
 {
-  LefDefParser::defrUnsetRegionCbk();
+  DefParser::defrUnsetRegionCbk();
 }
 
 void defrUnsetRegionStartCbk()
 {
-  LefDefParser::defrUnsetRegionStartCbk();
+  DefParser::defrUnsetRegionStartCbk();
 }
 
 void defrUnsetRegionEndCbk()
 {
-  LefDefParser::defrUnsetRegionEndCbk();
+  DefParser::defrUnsetRegionEndCbk();
 }
 
 void defrUnsetRowCbk()
 {
-  LefDefParser::defrUnsetRowCbk();
+  DefParser::defrUnsetRowCbk();
 }
 
 void defrUnsetScanChainExtCbk()
 {
-  LefDefParser::defrUnsetScanChainExtCbk();
+  DefParser::defrUnsetScanChainExtCbk();
 }
 
 void defrUnsetScanchainCbk()
 {
-  LefDefParser::defrUnsetScanchainCbk();
+  DefParser::defrUnsetScanchainCbk();
 }
 
 void defrUnsetScanchainsStartCbk()
 {
-  LefDefParser::defrUnsetScanchainsStartCbk();
+  DefParser::defrUnsetScanchainsStartCbk();
 }
 
 void defrUnsetScanchainsEndCbk()
 {
-  LefDefParser::defrUnsetScanchainsEndCbk();
+  DefParser::defrUnsetScanchainsEndCbk();
 }
 
 void defrUnsetSiteCbk()
 {
-  LefDefParser::defrUnsetSiteCbk();
+  DefParser::defrUnsetSiteCbk();
 }
 
 void defrUnsetSlotCbk()
 {
-  LefDefParser::defrUnsetSlotCbk();
+  DefParser::defrUnsetSlotCbk();
 }
 
 void defrUnsetSlotStartCbk()
 {
-  LefDefParser::defrUnsetSlotStartCbk();
+  DefParser::defrUnsetSlotStartCbk();
 }
 
 void defrUnsetSlotEndCbk()
 {
-  LefDefParser::defrUnsetSlotEndCbk();
+  DefParser::defrUnsetSlotEndCbk();
 }
 
 void defrUnsetSNetWireCbk()
 {
-  LefDefParser::defrUnsetSNetWireCbk();
+  DefParser::defrUnsetSNetWireCbk();
 }
 
 void defrUnsetSNetCbk()
 {
-  LefDefParser::defrUnsetSNetCbk();
+  DefParser::defrUnsetSNetCbk();
 }
 
 void defrUnsetSNetStartCbk()
 {
-  LefDefParser::defrUnsetSNetStartCbk();
+  DefParser::defrUnsetSNetStartCbk();
 }
 
 void defrUnsetSNetEndCbk()
 {
-  LefDefParser::defrUnsetSNetEndCbk();
+  DefParser::defrUnsetSNetEndCbk();
 }
 
 void defrUnsetSNetPartialPathCbk()
 {
-  LefDefParser::defrUnsetSNetPartialPathCbk();
+  DefParser::defrUnsetSNetPartialPathCbk();
 }
 
 void defrUnsetStartPinsCbk()
 {
-  LefDefParser::defrUnsetStartPinsCbk();
+  DefParser::defrUnsetStartPinsCbk();
 }
 
 void defrUnsetStylesCbk()
 {
-  LefDefParser::defrUnsetStylesCbk();
+  DefParser::defrUnsetStylesCbk();
 }
 
 void defrUnsetStylesStartCbk()
 {
-  LefDefParser::defrUnsetStylesStartCbk();
+  DefParser::defrUnsetStylesStartCbk();
 }
 
 void defrUnsetStylesEndCbk()
 {
-  LefDefParser::defrUnsetStylesEndCbk();
+  DefParser::defrUnsetStylesEndCbk();
 }
 
 void defrUnsetTechnologyCbk()
 {
-  LefDefParser::defrUnsetTechnologyCbk();
+  DefParser::defrUnsetTechnologyCbk();
 }
 
 void defrUnsetTimingDisableCbk()
 {
-  LefDefParser::defrUnsetTimingDisableCbk();
+  DefParser::defrUnsetTimingDisableCbk();
 }
 
 void defrUnsetTimingDisablesStartCbk()
 {
-  LefDefParser::defrUnsetTimingDisablesStartCbk();
+  DefParser::defrUnsetTimingDisablesStartCbk();
 }
 
 void defrUnsetTimingDisablesEndCbk()
 {
-  LefDefParser::defrUnsetTimingDisablesEndCbk();
+  DefParser::defrUnsetTimingDisablesEndCbk();
 }
 
 void defrUnsetTrackCbk()
 {
-  LefDefParser::defrUnsetTrackCbk();
+  DefParser::defrUnsetTrackCbk();
 }
 
 void defrUnsetUnitsCbk()
 {
-  LefDefParser::defrUnsetUnitsCbk();
+  DefParser::defrUnsetUnitsCbk();
 }
 
 void defrUnsetVersionCbk()
 {
-  LefDefParser::defrUnsetVersionCbk();
+  DefParser::defrUnsetVersionCbk();
 }
 
 void defrUnsetVersionStrCbk()
 {
-  LefDefParser::defrUnsetVersionStrCbk();
+  DefParser::defrUnsetVersionStrCbk();
 }
 
 void defrUnsetViaCbk()
 {
-  LefDefParser::defrUnsetViaCbk();
+  DefParser::defrUnsetViaCbk();
 }
 
 void defrUnsetViaExtCbk()
 {
-  LefDefParser::defrUnsetViaExtCbk();
+  DefParser::defrUnsetViaExtCbk();
 }
 
 void defrUnsetViaStartCbk()
 {
-  LefDefParser::defrUnsetViaStartCbk();
+  DefParser::defrUnsetViaStartCbk();
 }
 
 void defrUnsetViaEndCbk()
 {
-  LefDefParser::defrUnsetViaEndCbk();
+  DefParser::defrUnsetViaEndCbk();
 }
 
 void defrSetUnusedCallbacks(::defrVoidCbkFnType func)
 {
-  LefDefParser::defrSetUnusedCallbacks((LefDefParser::defrVoidCbkFnType) func);
+  DefParser::defrSetUnusedCallbacks((DefParser::defrVoidCbkFnType) func);
 }
 
 int defrLineNumber()
 {
-  return LefDefParser::defrLineNumber();
+  return DefParser::defrLineNumber();
 }
 
 long long defrLongLineNumber()
 {
-  return LefDefParser::defrLongLineNumber();
+  return DefParser::defrLongLineNumber();
 }
 
 void defrSetLogFunction(::DEFI_LOG_FUNCTION p0)
 {
-  LefDefParser::defrSetLogFunction(p0);
+  DefParser::defrSetLogFunction(p0);
 }
 
 void defrSetWarningLogFunction(::DEFI_WARNING_LOG_FUNCTION p0)
 {
-  LefDefParser::defrSetWarningLogFunction(p0);
+  DefParser::defrSetWarningLogFunction(p0);
 }
 
 void defrSetMallocFunction(::DEFI_MALLOC_FUNCTION p0)
 {
-  LefDefParser::defrSetMallocFunction(p0);
+  DefParser::defrSetMallocFunction(p0);
 }
 
 void defrSetReallocFunction(::DEFI_REALLOC_FUNCTION p0)
 {
-  LefDefParser::defrSetReallocFunction(p0);
+  DefParser::defrSetReallocFunction(p0);
 }
 
 void defrSetFreeFunction(::DEFI_FREE_FUNCTION p0)
 {
-  LefDefParser::defrSetFreeFunction(p0);
+  DefParser::defrSetFreeFunction(p0);
 }
 
 void defrSetLineNumberFunction(::DEFI_LINE_NUMBER_FUNCTION p0)
 {
-  LefDefParser::defrSetLineNumberFunction(p0);
+  DefParser::defrSetLineNumberFunction(p0);
 }
 
 void defrSetLongLineNumberFunction(::DEFI_LONG_LINE_NUMBER_FUNCTION p0)
 {
-  LefDefParser::defrSetLongLineNumberFunction(p0);
+  DefParser::defrSetLongLineNumberFunction(p0);
 }
 
 void defrSetDeltaNumberLines(int p0)
 {
-  LefDefParser::defrSetDeltaNumberLines(p0);
+  DefParser::defrSetDeltaNumberLines(p0);
 }
 
 void defrSetReadFunction(::DEFI_READ_FUNCTION p0)
 {
-  LefDefParser::defrSetReadFunction(p0);
+  DefParser::defrSetReadFunction(p0);
 }
 
 void defrUnsetReadFunction()
 {
-  LefDefParser::defrUnsetReadFunction();
+  DefParser::defrUnsetReadFunction();
 }
 
 void defrSetOpenLogFileAppend()
 {
-  LefDefParser::defrSetOpenLogFileAppend();
+  DefParser::defrSetOpenLogFileAppend();
 }
 
 void defrUnsetOpenLogFileAppend()
 {
-  LefDefParser::defrUnsetOpenLogFileAppend();
+  DefParser::defrUnsetOpenLogFileAppend();
 }
 
 void defrSetMagicCommentFoundFunction(::DEFI_MAGIC_COMMENT_FOUND_FUNCTION p0)
 {
-  LefDefParser::defrSetMagicCommentFoundFunction(p0);
+  DefParser::defrSetMagicCommentFoundFunction(p0);
 }
 
 void defrSetMagicCommentString(char* p0)
 {
-  LefDefParser::defrSetMagicCommentString(p0);
+  DefParser::defrSetMagicCommentString(p0);
 }
 
 void defrDisablePropStrProcess()
 {
-  LefDefParser::defrDisablePropStrProcess();
+  DefParser::defrDisablePropStrProcess();
 }
 
 void defrSetNLines(long long n)
 {
-  LefDefParser::defrSetNLines(n);
+  DefParser::defrSetNLines(n);
 }
 
 void defrSetAssertionWarnings(int warn)
 {
-  LefDefParser::defrSetAssertionWarnings(warn);
+  DefParser::defrSetAssertionWarnings(warn);
 }
 
 void defrSetBlockageWarnings(int warn)
 {
-  LefDefParser::defrSetBlockageWarnings(warn);
+  DefParser::defrSetBlockageWarnings(warn);
 }
 
 void defrSetCaseSensitiveWarnings(int warn)
 {
-  LefDefParser::defrSetCaseSensitiveWarnings(warn);
+  DefParser::defrSetCaseSensitiveWarnings(warn);
 }
 
 void defrSetComponentWarnings(int warn)
 {
-  LefDefParser::defrSetComponentWarnings(warn);
+  DefParser::defrSetComponentWarnings(warn);
 }
 
 void defrSetConstraintWarnings(int warn)
 {
-  LefDefParser::defrSetConstraintWarnings(warn);
+  DefParser::defrSetConstraintWarnings(warn);
 }
 
 void defrSetDefaultCapWarnings(int warn)
 {
-  LefDefParser::defrSetDefaultCapWarnings(warn);
+  DefParser::defrSetDefaultCapWarnings(warn);
 }
 
 void defrSetGcellGridWarnings(int warn)
 {
-  LefDefParser::defrSetGcellGridWarnings(warn);
+  DefParser::defrSetGcellGridWarnings(warn);
 }
 
 void defrSetIOTimingWarnings(int warn)
 {
-  LefDefParser::defrSetIOTimingWarnings(warn);
+  DefParser::defrSetIOTimingWarnings(warn);
 }
 
 void defrSetNetWarnings(int warn)
 {
-  LefDefParser::defrSetNetWarnings(warn);
+  DefParser::defrSetNetWarnings(warn);
 }
 
 void defrSetNonDefaultWarnings(int warn)
 {
-  LefDefParser::defrSetNonDefaultWarnings(warn);
+  DefParser::defrSetNonDefaultWarnings(warn);
 }
 
 void defrSetPinExtWarnings(int warn)
 {
-  LefDefParser::defrSetPinExtWarnings(warn);
+  DefParser::defrSetPinExtWarnings(warn);
 }
 
 void defrSetPinWarnings(int warn)
 {
-  LefDefParser::defrSetPinWarnings(warn);
+  DefParser::defrSetPinWarnings(warn);
 }
 
 void defrSetRegionWarnings(int warn)
 {
-  LefDefParser::defrSetRegionWarnings(warn);
+  DefParser::defrSetRegionWarnings(warn);
 }
 
 void defrSetRowWarnings(int warn)
 {
-  LefDefParser::defrSetRowWarnings(warn);
+  DefParser::defrSetRowWarnings(warn);
 }
 
 void defrSetScanchainWarnings(int warn)
 {
-  LefDefParser::defrSetScanchainWarnings(warn);
+  DefParser::defrSetScanchainWarnings(warn);
 }
 
 void defrSetSNetWarnings(int warn)
 {
-  LefDefParser::defrSetSNetWarnings(warn);
+  DefParser::defrSetSNetWarnings(warn);
 }
 
 void defrSetStylesWarnings(int warn)
 {
-  LefDefParser::defrSetStylesWarnings(warn);
+  DefParser::defrSetStylesWarnings(warn);
 }
 
 void defrSetTrackWarnings(int warn)
 {
-  LefDefParser::defrSetTrackWarnings(warn);
+  DefParser::defrSetTrackWarnings(warn);
 }
 
 void defrSetUnitsWarnings(int warn)
 {
-  LefDefParser::defrSetUnitsWarnings(warn);
+  DefParser::defrSetUnitsWarnings(warn);
 }
 
 void defrSetVersionWarnings(int warn)
 {
-  LefDefParser::defrSetVersionWarnings(warn);
+  DefParser::defrSetVersionWarnings(warn);
 }
 
 void defrSetViaWarnings(int warn)
 {
-  LefDefParser::defrSetViaWarnings(warn);
+  DefParser::defrSetViaWarnings(warn);
 }
 
 void defrDisableParserMsgs(int nMsg, int* msgs)
 {
-  LefDefParser::defrDisableParserMsgs(nMsg, msgs);
+  DefParser::defrDisableParserMsgs(nMsg, msgs);
 }
 
 void defrEnableParserMsgs(int nMsg, int* msgs)
 {
-  LefDefParser::defrEnableParserMsgs(nMsg, msgs);
+  DefParser::defrEnableParserMsgs(nMsg, msgs);
 }
 
 void defrEnableAllMsgs()
 {
-  LefDefParser::defrEnableAllMsgs();
+  DefParser::defrEnableAllMsgs();
 }
 
 void defrSetTotalMsgLimit(int totNumMsgs)
 {
-  LefDefParser::defrSetTotalMsgLimit(totNumMsgs);
+  DefParser::defrSetTotalMsgLimit(totNumMsgs);
 }
 
 void defrSetLimitPerMsg(int msgId, int numMsg)
 {
-  LefDefParser::defrSetLimitPerMsg(msgId, numMsg);
+  DefParser::defrSetLimitPerMsg(msgId, numMsg);
 }
 
 void defrAddAlias(const char* key, const char* value, int marked)
 {
-  LefDefParser::defrAddAlias(key, value, marked);
+  DefParser::defrAddAlias(key, value, marked);
 }

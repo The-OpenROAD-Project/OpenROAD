@@ -977,7 +977,15 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(
     const int conn_layer = pin.getConnectionLayer();
     const std::vector<odb::Rect>& pin_boxes = pin.getBoxes().at(conn_layer);
     for (const odb::Rect& pin_box : pin_boxes) {
-      pos_on_grid = grid_->getPositionOnGrid(getRectMiddle(pin_box));
+      odb::Point rect_middle = getRectMiddle(pin_box);
+      const int box_length = std::max(pin_box.dx(), pin_box.dy());
+      if (pin.getEdge() != PinEdge::none
+          && box_length >= grid_->getTileSize()) {
+        pos_on_grid = grid_->getPositionOnGrid(
+            pin.getPositionNearInstEdge(pin_box, rect_middle));
+      } else {
+        pos_on_grid = grid_->getPositionOnGrid(rect_middle);
+      }
       positions_on_grid.push_back(pos_on_grid);
     }
   }
@@ -3102,14 +3110,14 @@ bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
                            ? odb::Point(track_position.x(), nearest_track)
                            : odb::Point(nearest_track, track_position.y());
       return true;
-    } else if (nearest_track2 > min && nearest_track2 < max) {
+    }
+    if (nearest_track2 > min && nearest_track2 < max) {
       track_position = horizontal
                            ? odb::Point(track_position.x(), nearest_track2)
                            : odb::Point(nearest_track2, track_position.y());
       return true;
-    } else {
-      return false;
     }
+    return false;
   }
 
   return false;
@@ -4269,15 +4277,14 @@ std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(
 
     if (prop == nullptr) {
       continue;
-    } else {
-      debugPrint(logger_,
-                 utl::GRT,
-                 "l2v_pitch",
-                 1,
-                 "Default via: {}.",
-                 via->getConstName());
-      default_vias[via->getBottomLayer()->getRoutingLevel()] = via;
     }
+    debugPrint(logger_,
+               utl::GRT,
+               "l2v_pitch",
+               1,
+               "Default via: {}.",
+               via->getConstName());
+    default_vias[via->getBottomLayer()->getRoutingLevel()] = via;
   }
 
   if (default_vias.empty()) {
@@ -4645,10 +4652,7 @@ void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire,
 void GlobalRouter::createWLReportFile(const char* file_name, bool verbose)
 {
   std::ofstream out(file_name);
-  out << "tool "
-      << "net "
-      << "total_wl "
-      << "#pins ";
+  out << "tool net total_wl #pins ";
 
   if (verbose) {
     out << "#vias ";

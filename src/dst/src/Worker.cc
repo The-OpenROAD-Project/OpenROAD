@@ -51,7 +51,7 @@ Worker::Worker(Distributed* dist,
                utl::Logger* logger,
                const char* ip,
                unsigned short port)
-    : acceptor_(service_, tcp::endpoint(ip::address::from_string(ip), port)),
+    : acceptor_(service_, tcp::endpoint(ip::make_address(ip), port)),
       dist_(dist),
       logger_(logger)
 {

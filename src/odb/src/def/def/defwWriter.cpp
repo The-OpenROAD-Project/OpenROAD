@@ -48,7 +48,7 @@
 
 #include "defiUtil.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 // States of the writer.
 #define DEFW_UNINIT 0
@@ -1159,7 +1159,7 @@ int defwEndDefaultCap()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, "END DEFAULTCAP\n\n");
@@ -1574,7 +1574,7 @@ int defwEndVias()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, "END VIAS\n\n");
@@ -1666,7 +1666,7 @@ int defwEndRegions()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   if (defwState == DEFW_REGION)
@@ -2042,7 +2042,7 @@ int defwEndComponents()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   defwDidComponents = 1;
@@ -2705,7 +2705,7 @@ int defwEndPins()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, " ;\nEND PINS\n\n");
@@ -2763,7 +2763,7 @@ int defwEndPinProperties()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   if (defwState == DEFW_PINPROP_START)
@@ -3503,7 +3503,7 @@ int defwEndSpecialNets()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, "END SPECIALNETS\n\n");
@@ -4223,7 +4223,7 @@ int defwEndNets()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, "END NETS\n\n");
@@ -4357,7 +4357,7 @@ int defwEndIOTimings()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   if (defwState == DEFW_IOTIMING)
@@ -4749,7 +4749,7 @@ int defwEndScanchain()
 
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, "END SCANCHAINS\n\n");
@@ -4913,7 +4913,7 @@ int defwEndConstraints()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, "END CONSTRAINTS\n\n");
@@ -5025,7 +5025,7 @@ int defwEndGroups()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   if (defwState != DEFW_GROUP_START)
@@ -5740,7 +5740,7 @@ int defwEndBlockages()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, " ;\n");
@@ -5847,7 +5847,7 @@ int defwEndSlots()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, " ;\n");
@@ -6078,7 +6078,7 @@ int defwEndFills()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, " ;\n");
@@ -6218,7 +6218,7 @@ int defwEndNonDefaultRules()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, ";\nEND NONDEFAULTRULES\n\n");
@@ -6287,7 +6287,7 @@ int defwEndStyles()
     return DEFW_BAD_ORDER;
   if (defwCounter > 0)
     return DEFW_BAD_DATA;
-  else if (defwCounter < 0)
+  if (defwCounter < 0)
     return DEFW_TOO_MANY_STMS;
 
   fprintf(defwFile, "END STYLES\n\n");
@@ -6477,4 +6477,4 @@ void defwAddIndent()
 // - What is the pin properties section mentioned in the 5.1 spec?
 // *****************************
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

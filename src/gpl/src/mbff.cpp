@@ -46,6 +46,7 @@
 #include "db_sta/dbSta.hh"
 #include "graphics.h"
 #include "odb/dbTransform.h"
+#include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -132,6 +133,36 @@ static sta::FuncExpr* getFunction(sta::LibertyPort* port)
     }
   }
   return nullptr;
+}
+
+std::string MBFF::Mask::to_string() const
+{
+  return fmt::format("{}{}{}{}{}{}{}",
+                     (int) clock_polarity,
+                     (int) has_clear,
+                     (int) has_preset,
+                     (int) pos_output,
+                     (int) inv_output,
+                     func_idx,
+                     (int) is_scan_cell);
+}
+
+bool MBFF::Mask::operator<(const Mask& rhs) const
+{
+  return std::tie(clock_polarity,
+                  has_clear,
+                  has_preset,
+                  pos_output,
+                  inv_output,
+                  func_idx,
+                  is_scan_cell)
+         < std::tie(rhs.clock_polarity,
+                    rhs.has_clear,
+                    rhs.has_preset,
+                    rhs.pos_output,
+                    rhs.inv_output,
+                    rhs.func_idx,
+                    rhs.is_scan_cell);
 }
 
 sta::LibertyCell* MBFF::getLibertyCell(sta::Cell* cell)
@@ -450,10 +481,13 @@ bool MBFF::IsValidFlop(odb::dbInst* FF)
     return false;
   }
   sta::LibertyCell* lib_cell = getLibertyCell(cell);
-  if (lib_cell == nullptr) {
+  if (lib_cell == nullptr || !lib_cell->hasSequentials()) {
     return false;
   }
-  if (!lib_cell->hasSequentials() || lib_cell->isClockGate()) {
+
+  // We don't want the test_cell which lacks global properties
+  sta::LibertyCell* base_cell = network_->libertyCell(cell);
+  if (base_cell->isClockGate()) {
     return false;
   }
 
@@ -487,10 +521,13 @@ bool MBFF::IsValidTray(odb::dbInst* tray)
     return false;
   }
   sta::LibertyCell* lib_cell = getLibertyCell(cell);
-  if (lib_cell == nullptr) {
+  if (lib_cell == nullptr || !lib_cell->hasSequentials()) {
     return false;
   }
-  if (!lib_cell->hasSequentials() || lib_cell->isClockGate()) {
+
+  // We don't want the test_cell which lacks global properties
+  sta::LibertyCell* base_cell = network_->libertyCell(cell);
+  if (base_cell->isClockGate() || resizer_->dontUse(base_cell)) {
     return false;
   }
 
@@ -611,26 +648,29 @@ int MBFF::GetMatchingFunc(sta::FuncExpr* expr,
 MBFF::Mask MBFF::GetArrayMask(odb::dbInst* inst, bool isTray)
 {
   Mask ret;
-  ret.fill(0);
-  ret[0] = ClockOn(inst);
-  ret[1] = HasClear(inst);
-  ret[2] = HasPreset(inst);
+  ret.clock_polarity = ClockOn(inst);
+  ret.has_clear = HasClear(inst);
+  ret.has_preset = HasPreset(inst);
 
   // check the existance of Q / QN pins
   for (auto iterm : inst->getITerms()) {
     if (IsQPin(iterm)) {
-      ret[(IsInvertingQPin(iterm) ? 4 : 3)] = 1;
+      if (IsInvertingQPin(iterm)) {
+        ret.inv_output = true;
+      } else {
+        ret.pos_output = true;
+      }
     }
   }
 
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
   sta::LibertyCell* lib_cell = getLibertyCell(cell);
   for (auto seq : lib_cell->sequentials()) {
-    ret[5] = GetMatchingFunc(seq->data(), inst, isTray);
+    ret.func_idx = GetMatchingFunc(seq->data(), inst, isTray);
     break;
   }
 
-  ret[6] = IsScanCell(inst);
+  ret.is_scan_cell = IsScanCell(inst);
 
   return ret;
 }
@@ -2108,7 +2148,7 @@ void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
                    1,
                    "Flop cluster for net {} with mask {} of size {}",
                    clk_net->getName(),
-                   fmt::join(mask, ""),
+                   mask.to_string(),
                    flops.size());
       }
     }
@@ -2220,7 +2260,7 @@ void MBFF::ReadLibs()
   test_idx_ = 0;
   for (auto lib : db_->getLibs()) {
     for (auto master : lib->getMasters()) {
-      std::string tray_name = "test_tray_" + std::to_string(test_idx_++);
+      const std::string tray_name = "test_tray_" + std::to_string(test_idx_++);
       odb::dbInst* tmp_tray
           = odb::dbInst::create(block_, master, tray_name.c_str());
 
@@ -2241,8 +2281,8 @@ void MBFF::ReadLibs()
                  1,
                  "Found tray {} mask: {}",
                  master->getName(),
-                 fmt::join(array_mask, ""));
-      if (!static_cast<int>(best_master_[array_mask].size())) {
+                 array_mask.to_string());
+      if (best_master_[array_mask].empty()) {
         best_master_[array_mask].resize(num_sizes_, nullptr);
         tray_area_[array_mask].resize(num_sizes_,
                                       std::numeric_limits<float>::max());
@@ -2344,7 +2384,7 @@ void MBFF::ReadFFs()
       const Point pt{origin.x() / multiplier_, origin.y() / multiplier_};
       flops_.push_back({pt, num_flops, 0.0});
       insts_.push_back(inst);
-      name_to_idx_[inst->getName()] = num_flops + 1;
+      name_to_idx_[inst->getName()] = num_flops;
       num_flops++;
     }
   }
@@ -2356,7 +2396,7 @@ void MBFF::ReadFFs()
 void MBFF::ReadPaths()
 {
   paths_.resize(flops_.size());
-  unique_.resize(flops_.size());
+  std::vector<std::set<int>> unique(flops_.size());
 
   sta::ExceptionFrom* e_from = nullptr;
   sta::ExceptionThruSeq* e_thrus = nullptr;
@@ -2401,26 +2441,30 @@ void MBFF::ReadPaths()
     sta::Instance* start_ff = network_->instance(pathpin_front);
     sta::Instance* end_ff = network_->instance(pathpin_back);
 
-    int idx1 = name_to_idx_[network_->pathName(start_ff)];
-    int idx2 = name_to_idx_[network_->pathName(end_ff)];
-    // ensure that both are FFs
-    if (!idx1 || !idx2) {
+    auto it1 = name_to_idx_.find(network_->pathName(start_ff));
+    if (it1 == name_to_idx_.end()) {
       continue;
     }
+    const int idx1 = it1->second;
+    auto it2 = name_to_idx_.find(network_->pathName(end_ff));
+    if (it2 == name_to_idx_.end()) {
+      continue;
+    }
+    const int idx2 = it2->second;
 
-    idx1--, idx2--;
     // ensure that paths are unique and start != end
-    if (idx1 == idx2 || unique_[idx1].count(idx2)) {
+    if (idx1 == idx2 || unique[idx1].count(idx2)) {
       continue;
     }
     paths_[idx1].push_back(idx2);
-    unique_[idx1].insert(idx2);
+    unique[idx1].insert(idx2);
   }
 }
 
 MBFF::MBFF(odb::dbDatabase* db,
            sta::dbSta* sta,
            utl::Logger* log,
+           rsz::Resizer* resizer,
            int threads,
            int multistart,
            int num_paths,
@@ -2431,6 +2475,7 @@ MBFF::MBFF(odb::dbDatabase* db,
       network_(sta_->getDbNetwork()),
       corner_(sta_->cmdCorner()),
       log_(log),
+      resizer_(resizer),
       num_threads_(threads),
       multistart_(multistart),
       num_paths_(num_paths),

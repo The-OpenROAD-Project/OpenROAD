@@ -37,7 +37,7 @@
 #include "lefrData.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // 6/16/2000 - Wanda da Rosa
 // Make these variables in globals.  Can't use those defined
@@ -1104,4 +1104,4 @@ int lefiNonDefault::propIsString(int index) const
   }
   return dvalues_[index] ? 0 : 1;
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

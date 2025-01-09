@@ -1520,12 +1520,12 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
           tmpPinName = pName;
           if (extraPinName != nullptr) {
             while (*extraPinName != '\0' && *extraPinName != '\n') {
-              if (isdigit(*extraPinName++))
+              if (isdigit(*extraPinName++)) {
                 continue;
-              else {  // Name does not end only .extraNNN
-                tmpPinName = strdup(pin->pinName());
-                break;
               }
+              // Name does not end only .extraNNN
+              tmpPinName = strdup(pin->pinName());
+              break;
             }
           }
         }

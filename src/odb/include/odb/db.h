@@ -41,7 +41,10 @@
 #include <variant>
 #include <vector>
 
+#include "dbBlockSet.h"
+#include "dbCCSegSet.h"
 #include "dbMatrix.h"
+#include "dbNetSet.h"
 #include "dbObject.h"
 #include "dbSet.h"
 #include "dbTypes.h"

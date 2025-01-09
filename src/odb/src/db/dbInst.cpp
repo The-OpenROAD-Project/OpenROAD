@@ -34,6 +34,7 @@
 
 #include <algorithm>
 
+#include "dbAccessPoint.h"
 #include "dbArrayTable.h"
 #include "dbArrayTable.hpp"
 #include "dbBTerm.h"
@@ -1574,15 +1575,26 @@ void dbInst::destroy(dbInst* inst_)
   // the correct order.
   for (i = 0; i < n; ++i) {
     dbId<_dbITerm> id = inst->_iterms[n - 1 - i];
-    _dbITerm* it = block->_iterm_tbl->getPtr(id);
-    ((dbITerm*) it)->disconnect();
+    _dbITerm* _iterm = block->_iterm_tbl->getPtr(id);
+    dbITerm* iterm = (dbITerm*) _iterm;
+    iterm->disconnect();
+    for (auto [pin, aps] : iterm->getAccessPoints()) {
+      for (auto ap : aps) {
+        _dbAccessPoint* _ap = (_dbAccessPoint*) ap;
+        _ap->iterms_.erase(
+            std::remove_if(_ap->iterms_.begin(),
+                           _ap->iterms_.end(),
+                           [id](const auto& id_in) { return id_in == id; }),
+            _ap->iterms_.end());
+      }
+    }
 
     // Notify when pins are deleted (assumption: pins are destroyed only when
     // the related instance is destroyed)
     std::list<dbBlockCallBackObj*>::iterator cbitr;
     for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
          ++cbitr) {
-      (**cbitr)().inDbITermDestroy((dbITerm*) it);
+      (**cbitr)().inDbITermDestroy((dbITerm*) _iterm);
     }
 
     dbModule* module = inst_->getModule();
@@ -1590,8 +1602,8 @@ void dbInst::destroy(dbInst* inst_)
       ((_dbModule*) module)->_dbinst_hash.erase(inst_->getName());
     }
 
-    dbProperty::destroyProperties(it);
-    block->_iterm_tbl->destroy(it);
+    dbProperty::destroyProperties(_iterm);
+    block->_iterm_tbl->destroy(_iterm);
     inst->_iterms.pop_back();
   }
 
