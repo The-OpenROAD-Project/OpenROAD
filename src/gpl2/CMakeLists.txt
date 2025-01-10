@@ -38,7 +38,9 @@ find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(fmt REQUIRED)
 
-add_subdirectory(kokkos-fft)
+if(NOT (${Kokkos_FOUND} AND ${KokkosFFT_FOUND}))
+  add_subdirectory(kokkos-fft)
+endif()
 
 swig_lib(NAME      gpl2
          NAMESPACE gpl2
@@ -78,7 +80,6 @@ target_link_libraries(gpl2
     OpenSTA
     rsz
     grt
-    omp
     KokkosFFT::fft
     fmt::fmt-header-only
 )
