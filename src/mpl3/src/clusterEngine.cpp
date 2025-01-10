@@ -54,6 +54,7 @@ ClusteringEngine::ClusteringEngine(odb::dbBlock* block,
 
 void ClusteringEngine::buildLogicalHierarchy()
 {
+  logger_->report("Building logical hierarchy...");
   odb::dbModule* top_module = block_->getTopModule();
   logical_tree_ = std::make_unique<LogicalHierarchy>(logger_);
   std::unique_ptr<Cluster> root = std::make_unique<Cluster>(0, top_module->getHierarchicalName(), logger_);
