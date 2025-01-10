@@ -267,6 +267,12 @@ void Ora::setConsent(const char* consent)
   std::string consentFilePath = localDirPath + "/orassistant_consent.txt";
   std::ofstream consentFile(consentFilePath);
 
+  // check if consent is y or n
+  if (std::string(consent) != "y" && std::string(consent) != "n") {
+    logger_->warn(utl::ORA, 117, "Invalid consent value. Use 'y' or 'n'.");
+    return;
+  }
+
   if (consentFile.is_open()) {
     consentFile << consent;
     consentFile.close();

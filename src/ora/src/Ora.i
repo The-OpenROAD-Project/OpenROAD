@@ -45,12 +45,12 @@ void askbot_listSources(bool listSources)
   getOra()->setSourceFlag(listSources);
 }
 
-void set_bothost(const char *host)
+void set_ora_bothost(const char *host)
 {
   getOra()->setBotHost(host);
 }
 
-void set_consent(const char *consent)
+void set_ora_consent(const char *consent)
 {
   getOra()->setConsent(consent);
 }
