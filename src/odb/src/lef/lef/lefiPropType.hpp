@@ -34,7 +34,7 @@
 
 #include "lefiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // Struct holds the data type for one property, if the property is
 // either REAL or INTEGER.
@@ -60,8 +60,6 @@ class lefiPropType
   char* propTypes_{nullptr};   // 'R' == "REAL", 'I' == "INTEGER"
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

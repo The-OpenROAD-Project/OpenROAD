@@ -35,7 +35,7 @@
 #include "lefiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // *****************************************************************************
 // lefiUnits
@@ -233,4 +233,4 @@ void lefiUnits::print(FILE* f) const
     fprintf(f, "  %s %g\n", databaseName(), databaseNumber());
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

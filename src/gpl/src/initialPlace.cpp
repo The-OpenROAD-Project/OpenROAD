@@ -65,7 +65,7 @@ InitialPlace::InitialPlace(InitialPlaceVars ipVars,
 {
 }
 
-void InitialPlace::doBicgstabPlace()
+void InitialPlace::doBicgstabPlace(int threads)
 {
   ResidualError error;
 
@@ -90,7 +90,8 @@ void InitialPlace::doBicgstabPlace()
                            placeInstForceMatrixY_,
                            fixedInstForceVecY_,
                            instLocVecY_,
-                           log_);
+                           log_,
+                           threads);
     float error_max = std::max(error.x, error.y);
     log_->report("[InitialPlace]  Iter: {} CG residual: {:0.8f} HPWL: {}",
                  iter,

@@ -42,7 +42,7 @@
 
 #define LEF_INIT lef_init(__FUNCTION__)
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 #include "lef_parser.hpp"
 
@@ -1710,4 +1710,4 @@ void lefrRegisterLef58Type(const char* lef58Type, const char* layerType)
   lefSettings->addLef58Type(lef58Type, typeLayers);
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

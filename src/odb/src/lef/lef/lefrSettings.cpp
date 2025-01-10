@@ -33,7 +33,7 @@
 
 #include "lef_parser.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 const char* lefrSettings::lefOxides[] = {
     "OXIDE1",  "OXIDE2",  "OXIDE3",  "OXIDE4",  "OXIDE5",  "OXIDE6",  "OXIDE7",
@@ -619,4 +619,4 @@ std::string lefrSettings::getLayerLef58Types(const char* type) const
   return result;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

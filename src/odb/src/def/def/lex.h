@@ -30,7 +30,7 @@
 #include "defiKRDefs.hpp"
 #include "defrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 void AddStringDefine(char* token, char* string);
 void AddBooleanDefine(char* token, int val);
@@ -38,4 +38,4 @@ void AddNumDefine(char* token, double val);
 
 int fake_ftell();
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

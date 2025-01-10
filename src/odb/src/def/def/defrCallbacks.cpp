@@ -29,7 +29,7 @@
 
 #include "defrCallBacks.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
 {
@@ -237,4 +237,4 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
   /* NEW CALLBACK - Each new callback must have an entry here. */
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

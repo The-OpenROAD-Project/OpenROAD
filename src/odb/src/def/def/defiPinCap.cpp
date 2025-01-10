@@ -37,7 +37,7 @@
 #include "defiUtil.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 ///////////////////////////////////////////////
 ///////////////////////////////////////////////
@@ -2260,4 +2260,4 @@ void defiPin::print(FILE* f) const
   if (hasSpecial())
     fprintf(f, "+ SPECIAL\n");
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

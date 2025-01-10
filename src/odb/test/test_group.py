@@ -1,6 +1,7 @@
-import opendbpy as odb
+import odb
 import helper
 import odbUnitTest
+import unittest
 
 
 ##################
@@ -13,7 +14,8 @@ class TestModule(odbUnitTest.TestCase):
         self.db, self.lib = helper.createSimpleDB()
         self.block = helper.create1LevelBlock(self.db, self.lib, self.db.getChip())
         self.group = odb.dbGroup_create(self.block, "group")
-        self.domain = odb.dbGroup_create(self.block, "domain", 0, 0, 100, 100)
+        self.domain = odb.dbRegion_create(self.block, "domain")
+        odb.dbBox_create(self.domain, 0, 0, 100, 100)
         self.child = odb.dbGroup_create(self.block, "child")
         self.master_mod = odb.dbModule_create(self.block, "master_mod")
         self.parent_mod = odb.dbModule_create(self.block, "parent_mod")
@@ -26,10 +28,12 @@ class TestModule(odbUnitTest.TestCase):
 
     def test_default(self):
         self.check(self.group, "getName", "group")
-        print("")
         self.assertEqual(self.block.findGroup("group").getName(), "group")
-        self.assertEqual(len(self.block.getGroups()), 3)
-        self.assertEqual(self.domain.getBox().xMax(), 100)
+        self.assertEqual(len(self.block.getGroups()), 2)
+        self.assertEqual(len(self.block.getRegions()), 1)
+        region_boundaries = self.domain.getBoundaries()
+        self.assertEqual(len(region_boundaries), 1)
+        self.assertEqual(region_boundaries[0].xMax(), 100)
         self.group.addModInst(self.i1)
         self.assertEqual(self.group.getModInsts()[0].getName(), "i1")
         self.assertEqual(self.i1.getGroup().getName(), "group")
@@ -53,4 +57,4 @@ class TestModule(odbUnitTest.TestCase):
 
 
 if __name__ == "__main__":
-    odbUnitTest.mainParallel(TestModule)
+    unittest.main()

@@ -33,7 +33,7 @@
 #include "defiKRDefs.hpp"
 #include "defrReader.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 class defrCallbacks
 {
@@ -146,8 +146,6 @@ class defrCallbacks
   defrComponentMaskShiftLayerCbkFnType ComponentMaskShiftLayerCbk{nullptr};
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE
 
 #endif
