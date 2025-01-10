@@ -86,14 +86,4 @@ endif()
 
 messages(
   TARGET odb
-  DEPENDS
-    db
-    cdl
-    defin
-    defout
-    lefin
-    lefout
-    zutil
-    gdsin
-    gdsout
 )

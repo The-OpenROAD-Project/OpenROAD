@@ -41,14 +41,13 @@
 #   SOURCE_DIR <dir>: the directory to search for sources from
 #                     [defaults to OUTPUT_DIR]
 #   LOCAL: don't recurse [defaults to false]
-#   DEPENDS: <dep1 ...>: Add extra dependencies [optional]
 
 function(messages)
 
   # Parse args
   set(options LOCAL)
   set(oneValueArgs TARGET OUTPUT_DIR SOURCE_DIR)
-  set(multiValueArgs DEPENDS)
+  set(multiValueArgs "")
 
   cmake_parse_arguments(
       ARG  # prefix on the parsed args
@@ -73,10 +72,8 @@ function(messages)
 
   if (DEFINED ARG_OUTPUT_DIR)
     set(OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${ARG_OUTPUT_DIR})
-    set(OUTPUT_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/${ARG_OUTPUT_DIR})
   else()
     set(OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-    set(OUTPUT_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
   endif()
 
   if (DEFINED ARG_SOURCE_DIR)
@@ -85,11 +82,43 @@ function(messages)
     set(SOURCE_DIR ${OUTPUT_DIR})
   endif()
 
+  set(glob "GLOB_RECURSE")
   if (${ARG_LOCAL})
     set(local '--local')
+    set(glob "GLOB")
   endif()
 
-  if (NOT DEFINED ARG_DEPENDS)
+  get_target_property(target_type ${ARG_TARGET} TYPE)
+  if (${target_type} STREQUAL "INTERFACE_LIBRARY")
+    get_target_property(library_list ${ARG_TARGET} INTERFACE_LINK_LIBRARIES)
+  else()
+    get_target_property(library_list ${ARG_TARGET} LINK_LIBRARIES)
+  endif()
+  if ("${library_list}" STREQUAL "library_list-NOTFOUND")
+    set(library_list "")
+  endif()
+
+  # Search for dependencies within the same tool module
+  set(dependency_list "")
+  file(${glob} makefile_list "${SOURCE_DIR}/CMakeLists.txt")
+  foreach(library ${library_list})
+    set(library_found FALSE)
+    foreach(FILE ${makefile_list})
+      execute_process(
+        COMMAND bash -c "grep 'add_library\\s*(\\s*${library}' ${FILE}"
+        OUTPUT_VARIABLE output
+      )
+      if(NOT "${output}" STREQUAL "")
+        set(library_found TRUE)
+        break()
+      endif()
+    endforeach()
+    if(${library_found})
+      list(APPEND dependency_list ${library})
+    endif()
+  endforeach()
+
+  if ("${dependency_list}" STREQUAL "")
     add_custom_command(
       TARGET ${ARG_TARGET}
       POST_BUILD
@@ -100,15 +129,15 @@ function(messages)
     )
   else()
     add_custom_command(
-      OUTPUT messages_checked
+      OUTPUT messages.checked
       COMMAND ${CMAKE_SOURCE_DIR}/etc/find_messages.py
         ${local}
         > ${OUTPUT_DIR}/messages.txt
-	&& touch ${OUTPUT_BUILD_DIR}/messages_checked
+	&& touch ${OUTPUT_DIR}/messages.checked
       WORKING_DIRECTORY ${SOURCE_DIR}
-      DEPENDS ${ARG_DEPENDS}
+      DEPENDS ${dependency_list}
     )
-    add_custom_target(${ARG_TARGET}_messages DEPENDS messages_checked)
+    add_custom_target(${ARG_TARGET}_messages DEPENDS messages.checked)
     add_dependencies(${ARG_TARGET} ${ARG_TARGET}_messages)
   endif()
 

@@ -102,7 +102,6 @@ target_link_libraries(cts
 messages(
   TARGET cts
   OUTPUT_DIR ..
-  DEPENDS cts_lib
 )
 
 if (Python3_FOUND AND BUILD_PYTHON)
