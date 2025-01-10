@@ -1,7 +1,11 @@
 # Converted from helper.py
 
-proc createSimpleDB {} {
-    set db [odb::dbDatabase_create]
+proc createSimpleDB {{use_default_db 0}} {
+    if {$use_default_db} {
+        set db [ord::get_db]
+    } else {
+        set db [odb::dbDatabase_create]
+    }
     set tech [odb::dbTech_create $db "simple_tech"]
     set L1 [odb::dbTechLayer_create $tech "L1" "ROUTING"]
     set lib [odb::dbLib_create $db "lib" $tech "/"]
