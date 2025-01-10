@@ -28,16 +28,16 @@ proc askbot { args } {
 proc set_ora_bothost { hostUrl } {
   puts "Setting ORAssistant host to $hostUrl"
 
-  sta::check_argc_eq1 "set_bothost" $hostUrl
+  sta::check_argc_eq1 "set_ora_bothost" $hostUrl
 
-  ora::set_bothost $hostUrl
+  ora::set_ora_bothost $hostUrl
 }
 
 proc set_ora_consent { consent } {
-  puts "Setting ORAssistant consent to yes."
+  puts "Setting ORAssistant consent to $consent."
 
-  sta::check_argc_eq1 "set_consent" $consent
+  sta::check_argc_eq1 "set_ora_consent" $consent
 
-  ora::set_consent $consent
+  ora::set_ora_consent $consent
 }
 
