@@ -59,8 +59,7 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
 
 bool checkConsent()
 {
-  std::string folderPath
-      = std::string(getenv("HOME")) + "/.local/share/openroad";
+  std::string folderPath = getLocalDirPath();
   std::ifstream folderFile(folderPath);
   if (!folderFile) {
     return false;
@@ -114,6 +113,10 @@ std::string sendPostRequest(const std::string& url, const std::string& jsonData)
   return response;
 }
 
+std::string getLocalDirPath() {
+    return std::string(getenv("HOME")) + "/.local/share/openroad";
+};
+
 void Ora::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger)
 {
   db_ = db;
@@ -125,7 +128,8 @@ void Ora::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger)
   hostUrl
       = "https://bursting-stallion-friendly.ngrok-free.app/graphs/"
         "agent-retriever";
-  localDirPath = std::string(getenv("HOME")) + "/.local/share/openroad";
+  
+  localDirPath = getLocalDirPath();
 
   try {
     std::ifstream hostUrlFile(localDirPath + "/orassistant_host.txt");
