@@ -19,6 +19,7 @@
 #include <curl/curl.h>
 
 #include <boost/json.hpp>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -113,8 +114,9 @@ std::string sendPostRequest(const std::string& url, const std::string& jsonData)
   return response;
 }
 
-std::string getLocalDirPath() {
-    return std::string(getenv("HOME")) + "/.local/share/openroad";
+std::string getLocalDirPath()
+{
+  return std::string(getenv("HOME")) + "/.local/share/openroad";
 };
 
 void Ora::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger)
@@ -128,7 +130,7 @@ void Ora::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger)
   hostUrl
       = "https://bursting-stallion-friendly.ngrok-free.app/graphs/"
         "agent-retriever";
-  
+
   localDirPath = getLocalDirPath();
 
   try {
@@ -149,9 +151,9 @@ void Ora::checkLocalDir()
   std::ifstream localDir(localDirPath);
   if (!localDir) {
     logger_->info(utl::ORA, 112, "Creating ~/.local/share/openroad directory.");
-    std::string mkdirCmd = "mkdir -p " + localDirPath;
-    int ret = system(mkdirCmd.c_str());
-    if (ret != 0) {
+    try {
+      std::filesystem::create_directories(localDirPath);
+    } catch (const std::exception& e) {
       logger_->warn(
           utl::ORA, 113, "Failed to create ~/.local/share/openroad directory.");
     }
