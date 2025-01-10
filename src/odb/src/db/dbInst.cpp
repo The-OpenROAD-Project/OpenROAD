@@ -1584,8 +1584,8 @@ void dbInst::destroy(dbInst* inst_)
           _dbAccessPoint* _ap = (_dbAccessPoint*) ap;
           _ap->iterms_.erase(
               std::remove_if(_ap->iterms_.begin(),
-                            _ap->iterms_.end(),
-                            [id](const auto& id_in) { return id_in == id; }),
+                             _ap->iterms_.end(),
+                             [id](const auto& id_in) { return id_in == id; }),
               _ap->iterms_.end());
         }
       }
