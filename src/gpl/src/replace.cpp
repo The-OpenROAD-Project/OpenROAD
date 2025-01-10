@@ -190,7 +190,7 @@ void Replace::doIncrementalPlace(int threads)
   constexpr float rough_oveflow = 0.2f;
   float previous_overflow = overflow_;
   setTargetOverflow(std::max(rough_oveflow, overflow_));
-  doInitialPlace();
+  doInitialPlace(threads);
 
   int previous_max_iter = nesterovPlaceMaxIter_;
   initNesterovPlace(threads);
@@ -210,7 +210,7 @@ void Replace::doIncrementalPlace(int threads)
   }
 }
 
-void Replace::doInitialPlace()
+void Replace::doInitialPlace(int threads)
 {
   if (pbc_ == nullptr) {
     PlacerBaseVars pbVars;
@@ -250,7 +250,7 @@ void Replace::doInitialPlace()
   std::unique_ptr<InitialPlace> ip(
       new InitialPlace(ipVars, pbc_, pbVec_, log_));
   ip_ = std::move(ip);
-  ip_->doBicgstabPlace();
+  ip_->doBicgstabPlace(threads);
 }
 
 void Replace::runMBFF(int max_sz,

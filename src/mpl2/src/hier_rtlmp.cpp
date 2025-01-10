@@ -1263,6 +1263,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
 
   if (graphics_) {
     graphics_->setGuides(guides);
+    graphics_->setFences(fences);
   }
 
   clustering_engine_->updateConnections();
@@ -2249,6 +2250,7 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
 
   if (graphics_) {
     graphics_->setGuides(guides);
+    graphics_->setFences(fences);
   }
 
   const int num_of_macros_to_place = static_cast<int>(macros.size());
@@ -2752,6 +2754,7 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
 
   if (graphics_) {
     graphics_->setGuides(guides);
+    graphics_->setFences(fences);
   }
 
   const int macros_to_place = static_cast<int>(macros.size());
@@ -3400,6 +3403,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   computeFencesAndGuides(hard_macros, outline, fences, guides);
   if (graphics_) {
     graphics_->setGuides(guides);
+    graphics_->setFences(fences);
   }
 
   clustering_engine_->updateConnections();

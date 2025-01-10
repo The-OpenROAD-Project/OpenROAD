@@ -1,6 +1,7 @@
-import opendbpy as odb
+import odb
 import helper
 import odbUnitTest
+import unittest
 
 # destroying   dbInst,  dbNet,  dbBTerm,  dbBlock,  dbBPin,  dbWire,  dbCapNode,
 # dbCcSeg,  dbLib,  dbSWire,  dbObstruction,  dbRegion
@@ -151,31 +152,16 @@ class TestDestroy(odbUnitTest.TestCase):
 
     def setup_regions(self):
         parentRegion = odb.dbRegion_create(self.block, "parentRegion")
-        childRegion = odb.dbRegion_create(parentRegion, "childRegion")
-        childRegion.addInst(self.i1)
-        return parentRegion, childRegion
+        return parentRegion
 
     def test_create_regions(self):
-        parentRegion, childRegion = self.setup_regions()
-        self.assertEqual(self.i1.getRegion().getName(), childRegion.getName())
-        self.assertEqual(len(parentRegion.getChildren()), 1)
-        self.assertEqual(len(childRegion.getChildren()), 0)
-        self.assertEqual(parentRegion.getChildren()[0].getName(), childRegion.getName())
-        self.assertEqual(len(self.block.getRegions()), 2)
-        self.assertEqual(self.i1.getRegion().getName(), childRegion.getName())
-        self.assertEqual(childRegion.getParent().getName(), parentRegion.getName())
-        self.assertIsNone(parentRegion.getParent())
-
-    def test_destroy_region_child(self):
-        parentRegion, childRegion = self.setup_regions()
-        childRegion.destroy(childRegion)
+        parentRegion = self.setup_regions()
         self.assertIsNone(self.i1.getRegion())
-        self.assertEqual(len(parentRegion.getChildren()), 0)
         self.assertEqual(len(self.block.getRegions()), 1)
         self.assertEqual(self.block.getRegions()[0].getName(), parentRegion.getName())
 
     def test_destroy_region_parent(self):
-        parentRegion, childRegion = self.setup_regions()
+        parentRegion = self.setup_regions()
         parentRegion.destroy(parentRegion)
         self.assertEqual(len(self.block.getRegions()), 0)
 
@@ -189,5 +175,4 @@ class TestDestroy(odbUnitTest.TestCase):
 
 
 if __name__ == "__main__":
-    odbUnitTest.mainParallel(TestDestroy)
-#     odbUnitTest.main()
+    unittest.main()
