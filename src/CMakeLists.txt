@@ -159,6 +159,7 @@ add_compile_options(
   -Wredundant-decls
   -Wformat-security
   -Wno-sign-compare
+  -Wp,-D_GLIBCXX_ASSERTIONS
   $<$<CXX_COMPILER_ID:Clang>:-Wno-gnu-zero-variadic-macro-arguments>
   # Needed for floating point stability in FFT (fft_test will check this).
   # See also https://kristerw.github.io/2021/11/09/fp-contract/
@@ -233,23 +234,30 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 if(USE_GPL2)
   find_package(OpenMP REQUIRED)
-  set(Kokkos_ENABLE_OPENMP ON CACHE BOOL "Set Kokkos OpenMP backend" FORCE)
-  if(GPU)
-    set(Kokkos_ENABLE_CUDA ON CACHE BOOL "Set Kokkos CUDA backend" FORCE)
-    set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "Enable Kokkos CUDA Lambda support" FORCE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DEIGEN_NO_CUDA")
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14")
-      message(FATAL_ERROR "Detected version of GCC is not supported by NVCC. Consider using Clang or disabling GPU support.")
+  find_package(Kokkos)
+  find_package(KokkosFFT)
+  if(NOT (${Kokkos_FOUND} AND ${KokkosFFT_FOUND}))
+    include(FetchContent)
+    FetchContent_Populate(
+      kokkos-fft
+      SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gpl2/kokkos-fft
+      GIT_REPOSITORY https://github.com/kokkos/kokkos-fft
+      GIT_TAG origin/main
+    )
+    set(Kokkos_ENABLE_OPENMP ON CACHE BOOL "Set Kokkos OpenMP backend" FORCE)
+    if(GPU)
+      set(Kokkos_ENABLE_CUDA ON CACHE BOOL "Set Kokkos CUDA backend" FORCE)
+      set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "Enable Kokkos CUDA Lambda support" FORCE)
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DEIGEN_NO_CUDA")
+      if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS "14")
+        message(FATAL_ERROR "Detected version of GCC is not supported by NVCC. Consider using Clang or disabling GPU support.")
+      endif()
+    else()
+      set(Kokkos_ENABLE_CUDA OFF CACHE BOOL "Set Kokkos CUDA backend" FORCE)
+      set(Kokkos_ENABLE_CUDA_LAMBDA OFF CACHE BOOL "Enable Kokkos CUDA Lambda support" FORCE)
     endif()
-  else()
-    set(Kokkos_ENABLE_CUDA OFF CACHE BOOL "Set Kokkos CUDA backend" FORCE)
-    set(Kokkos_ENABLE_CUDA_LAMBDA OFF CACHE BOOL "Enable Kokkos CUDA Lambda support" FORCE)
+    set(KokkosFFT_ENABLE_INTERNAL_KOKKOS ON CACHE BOOL "Use Kokkos-FFT to build Kokkos" FORCE)
   endif()
-  set(KokkosFFT_ENABLE_INTERNAL_KOKKOS ON CACHE BOOL "Use Kokkos-FFT to build Kokkos" FORCE)
-else()
-  add_compile_options(
-    -Wp,-D_GLIBCXX_ASSERTIONS
-  )
 endif()
 
 ################################################################
@@ -366,7 +374,6 @@ if(USE_GPL2)
   target_link_libraries(openroad
     gpl2
     KokkosFFT::fft
-    omp
     fmt::fmt-header-only
   )
 endif()
