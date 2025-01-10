@@ -119,6 +119,8 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
   auto* solver = getIRSolver(net, false);
   if (!use_prev_solution || !solver->hasSolution(corner)) {
     solver->solve(corner, source_type, voltage_source_file);
+  } else {
+    logger_->info(utl::PSM, 11, "Reusing previous solution");
   }
   solver->report(corner);
 
