@@ -34,6 +34,7 @@ analyze_power_grid
     [-em_outfile em_file]
     [-vsrc voltage_source_file]
     [-source_type FULL|BUMPS|STRAPS]
+    [-allow_reuse]
 ```
 
 #### Options
@@ -48,6 +49,7 @@ analyze_power_grid
 | `-em_outfile` | Write the per-segment current values into a file. This option is only available if used in combination with `-enable_em`. |
 | `-voltage_file` | Write per-instance voltage into the file. |
 | `-source_type` | Indicate the type of voltage source grid to [model](#source-grid-options). FULL uses all the nodes on the top layer as voltage sources, BUMPS will model a bump grid array, and STRAPS will model power straps on the layer above the top layer. |
+| `-allow_reuse` | Allow the analysis to reuse a previous solution, if one exists. |
 
 ### Check Power Grid
 
