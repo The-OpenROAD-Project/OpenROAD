@@ -25,4 +25,4 @@ drt_aux.step_end(design)
 
 def_file = helpers.make_result_file("single_step.def")
 design.writeDef(def_file)
-helpers.diff_files("ispd18_sample.defok", def_file)
+helpers.diff_files("single_step.defok", def_file)

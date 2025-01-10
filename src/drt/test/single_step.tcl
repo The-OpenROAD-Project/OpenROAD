@@ -17,4 +17,4 @@ drt::step_end
 set def_file [make_result_file single_step.def]
 write_def $def_file
 # Single stepping should produce the same result as a regular run
-diff_files ispd18_sample.defok $def_file
+diff_files single_step.defok $def_file
