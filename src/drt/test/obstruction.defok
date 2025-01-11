@@ -35,14 +35,19 @@ BLOCKAGES 1 ;
 END BLOCKAGES
 NETS 1 ;
     - clk ( PIN clk ) ( clkbuf_0_clk A ) ( clkbuf_2_3__f_clk A ) ( clkbuf_2_2__f_clk A ) ( clkbuf_2_1__f_clk A ) + USE SIGNAL
-      + ROUTED met5 ( 2400 155030 0 ) ( 21600 * )
+      + ROUTED met2 ( 145200 144855 ) ( * 147630 )
+      NEW met5 ( 2400 155030 0 ) ( 21600 * )
+      NEW met3 ( 21600 155030 ) ( 25680 * )
       NEW met2 ( 112080 154845 ) ( * 155030 )
+      NEW met3 ( 108960 155030 ) ( 112080 * )
       NEW met1 ( 112080 158175 ) ( 135600 * )
       NEW met2 ( 112080 155030 ) ( * 158175 )
-      NEW met1 ( 135600 158175 ) ( 144240 * )
+      NEW met1 ( 138720 158175 ) ( 144240 * )
+      NEW met1 ( 135600 158175 ) ( 138720 * )
       NEW met1 ( 144240 158175 ) ( 145200 * )
-      NEW met2 ( 145200 144855 ) ( * 158175 )
-      NEW met3 ( 21600 155030 ) ( 112080 * )
+      NEW met2 ( 145200 147630 ) ( * 158175 )
+      NEW met3 ( 25680 155030 ) ( 75360 * )
+      NEW met3 ( 75360 155030 ) ( 108960 * )
       NEW li1 ( 145200 144855 ) L1M1_PR_MR
       NEW met1 ( 145200 144855 ) M1M2_PR
       NEW met3 ( 21600 155030 ) M3M4_PR

@@ -124,7 +124,8 @@ NETS 11 ;
       NEW Metal1 ( 92200 83030 ) VIA12_1C_V
       NEW Metal2 ( 99000 80750 ) RECT ( -70 -442 70 0 )  ;
     - net1238 ( inst3444 Y ) ( inst3428 A ) + USE SIGNAL
-      + ROUTED Metal3 ( 87800 83410 ) ( 97400 * )
+      + ROUTED Metal3 ( 87800 83410 ) ( 88600 * )
+      NEW Metal3 ( 88600 83410 ) ( 97400 * )
       NEW Metal1 ( 87800 83410 ) VIA12_1C_V
       NEW Metal2 ( 87800 83410 ) VIA23_1C
       NEW Metal1 ( 97400 83410 ) VIA12_1C_V

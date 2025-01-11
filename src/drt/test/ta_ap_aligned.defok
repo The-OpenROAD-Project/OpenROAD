@@ -105,11 +105,25 @@ COMPONENTS 4 ;
 END COMPONENTS
 NETS 2 ;
     - net_M2 ( inv_M2_2 A ) ( inv_M2_1 A ) + USE SIGNAL
-      + ROUTED metal2 ( 100130 21140 ) ( * 180460 )
+      + ROUTED metal2 ( 100130 21140 ) ( * 25060 )
+      NEW metal2 ( 100130 178780 ) ( * 180460 )
+      NEW metal2 ( 100130 25060 ) ( * 44100 )
+      NEW metal2 ( 100130 44100 ) ( * 73740 )
+      NEW metal2 ( 100130 73740 ) ( * 103180 )
+      NEW metal2 ( 100130 103180 ) ( * 132300 )
+      NEW metal2 ( 100130 132300 ) ( * 161740 )
+      NEW metal2 ( 100130 161740 ) ( * 178780 )
       NEW metal1 ( 100130 21140 ) via1_4
       NEW metal1 ( 100130 180460 ) via1_4 ;
     - net_M3 ( inv_M3_2 A ) ( inv_M3_1 A ) + USE SIGNAL
-      + ROUTED metal3 ( 20330 102060 ) ( 180310 * )
+      + ROUTED metal3 ( 20330 102060 ) ( 24830 * )
+      NEW metal3 ( 178410 102060 ) ( 180310 * )
+      NEW metal3 ( 24830 102060 ) ( 43890 * )
+      NEW metal3 ( 43890 102060 ) ( 73530 * )
+      NEW metal3 ( 73530 102060 ) ( 103170 * )
+      NEW metal3 ( 103170 102060 ) ( 132050 * )
+      NEW metal3 ( 132050 102060 ) ( 162030 * )
+      NEW metal3 ( 162030 102060 ) ( 178410 * )
       NEW metal1 ( 20330 102060 ) via1_4
       NEW metal2 ( 20330 102060 ) via2_5
       NEW metal1 ( 180310 102060 ) via1_4

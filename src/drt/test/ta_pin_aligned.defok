@@ -119,11 +119,24 @@ PINS 4 ;
 END PINS
 NETS 2 ;
     - Metal2_in ( PIN Metal2_out ) ( PIN Metal2_in ) + USE SIGNAL
-      + ROUTED metal2 ( 97850 19740 0 ) ( * 180180 0 ) ;
+      + ROUTED metal2 ( 97850 19740 0 ) ( * 25060 )
+      NEW metal2 ( 97850 178220 ) ( * 180180 0 )
+      NEW metal2 ( 97850 25060 ) ( * 44100 )
+      NEW metal2 ( 97850 44100 ) ( * 73740 )
+      NEW metal2 ( 97850 73740 ) ( * 103180 )
+      NEW metal2 ( 97850 103180 ) ( * 132300 )
+      NEW metal2 ( 97850 132300 ) ( * 161740 )
+      NEW metal2 ( 97850 161740 ) ( * 178220 ) ;
     - Metal3_in ( PIN Metal3_out ) ( PIN Metal3_in ) + USE SIGNAL
-      + ROUTED metal3 ( 176400 97580 ) ( * 97860 )
+      + ROUTED metal3 ( 19790 97860 0 ) ( 24830 * )
+      NEW metal3 ( 176400 97580 ) ( * 97860 )
       NEW metal3 ( 180510 97580 ) ( * 97860 0 )
+      NEW metal3 ( 24830 97860 ) ( 43890 * )
+      NEW metal3 ( 43890 97860 ) ( 73530 * )
+      NEW metal3 ( 73530 97860 ) ( 103170 * )
+      NEW metal3 ( 103170 97860 ) ( 132050 * )
       NEW metal3 ( 176400 97580 ) ( 180510 * )
-      NEW metal3 ( 19790 97860 0 ) ( 176400 * ) ;
+      NEW metal3 ( 162030 97860 ) ( 176400 * )
+      NEW metal3 ( 132050 97860 ) ( 162030 * ) ;
 END NETS
 END DESIGN
