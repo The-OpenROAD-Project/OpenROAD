@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "definBase.h"
 #include "odb/odb.h"
 

@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "frDesign.h"
 
 namespace drt {

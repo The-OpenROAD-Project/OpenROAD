@@ -38,6 +38,7 @@
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <vector>
 
 #include "AbstractSteinerRenderer.h"
 #include "BufferedNet.hh"
@@ -1327,9 +1328,10 @@ LibertyCell* Resizer::findTargetCell(LibertyCell* cell,
     for (LibertyCell* target_cell : swappable_cells) {
       if (!dontUse(target_cell) && isLinkCell(target_cell)) {
         float target_load = (*target_load_map_)[target_cell];
-        float delay = is_buf_inv ? bufferDelay(
-                          target_cell, load_cap, tgt_slew_dcalc_ap_)
-                                 : 0.0;
+        float delay
+            = is_buf_inv
+                  ? bufferDelay(target_cell, load_cap, tgt_slew_dcalc_ap_)
+                  : 0.0;
         float dist = targetLoadDist(load_cap, target_load);
         debugPrint(logger_,
                    RSZ,

@@ -32,6 +32,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 #include "db/tech/frConstraint.h"
 #include "frProfileTask.h"

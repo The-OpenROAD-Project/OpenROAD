@@ -35,6 +35,8 @@
 
 #include "RepairHold.hh"
 
+#include <vector>
+
 #include "RepairDesign.hh"
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"

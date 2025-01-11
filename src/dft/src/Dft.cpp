@@ -35,6 +35,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <iostream>
+#include <vector>
 
 #include "ClockDomain.hh"
 #include "DftConfig.hh"

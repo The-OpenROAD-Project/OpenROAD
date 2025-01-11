@@ -33,6 +33,7 @@
 #include "layoutTabs.h"
 
 #include <utility>
+#include <vector>
 
 #include "colorGenerator.h"
 #include "layoutViewer.h"

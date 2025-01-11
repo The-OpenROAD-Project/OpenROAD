@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"
 #include "db/obj/frBlockObject.h"

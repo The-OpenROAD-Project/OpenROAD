@@ -33,6 +33,8 @@
 #ifndef PLSPTOBTREE_H
 #define PLSPTOBTREE_H
 
+#include <vector>
+
 #include "btree.h"
 
 namespace parquetfp {

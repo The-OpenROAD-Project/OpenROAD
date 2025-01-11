@@ -34,6 +34,7 @@
 
 #include <iostream>
 #include <limits>
+#include <vector>
 
 #include "Utils.hh"
 #include "db_sta/dbNetwork.hh"

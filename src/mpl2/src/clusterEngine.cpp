@@ -33,6 +33,8 @@
 
 #include "clusterEngine.h"
 
+#include <vector>
+
 #include "db_sta/dbNetwork.hh"
 #include "par/PartitionMgr.h"
 #include "sta/Liberty.hh"

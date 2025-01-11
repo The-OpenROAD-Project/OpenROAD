@@ -36,6 +36,7 @@
 #include <boost/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
 #include <mutex>
+#include <vector>
 
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"

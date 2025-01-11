@@ -37,6 +37,7 @@
 
 #include <map>
 #include <set>
+#include <vector>
 
 #include "connect.h"
 #include "domain.h"

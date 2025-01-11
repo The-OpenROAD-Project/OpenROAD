@@ -47,6 +47,7 @@
 #include <iostream>
 #include <limits>
 #include <string>
+#include <vector>
 
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"

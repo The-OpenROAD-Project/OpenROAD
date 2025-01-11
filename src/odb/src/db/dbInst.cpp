@@ -33,6 +33,7 @@
 #include "dbInst.h"
 
 #include <algorithm>
+#include <vector>
 
 #include "dbAccessPoint.h"
 #include "dbArrayTable.h"

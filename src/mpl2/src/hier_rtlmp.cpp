@@ -38,6 +38,7 @@
 #include <iostream>
 #include <queue>
 #include <thread>
+#include <vector>
 
 #include "Mpl2Observer.h"
 #include "SACoreHardMacro.h"

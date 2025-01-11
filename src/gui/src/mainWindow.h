@@ -39,6 +39,7 @@
 #include <QShortcut>
 #include <QToolBar>
 #include <memory>
+#include <vector>
 
 #include "findDialog.h"
 #include "gotoDialog.h"

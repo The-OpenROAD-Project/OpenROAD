@@ -33,6 +33,8 @@
 
 #include "mpl2/rtl_mp.h"
 
+#include <vector>
+
 #include "Mpl2Observer.h"
 #include "hier_rtlmp.h"
 #include "object.h"

@@ -31,6 +31,7 @@
 #include <chrono>
 #include <random>
 #include <sstream>
+#include <vector>
 
 #include "db/gcObj/gcNet.h"
 #include "db/gcObj/gcPin.h"

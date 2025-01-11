@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "AbstractFastRouteRenderer.h"
 #include "FastRoute.h"
 #include "gui/gui.h"

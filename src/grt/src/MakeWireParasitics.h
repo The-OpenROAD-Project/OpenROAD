@@ -35,6 +35,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "AbstractMakeWireParasitics.h"
 #include "FastRoute.h"
 #include "Grid.h"

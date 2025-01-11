@@ -33,6 +33,7 @@
 #include "renderThread.h"
 
 #include <QPainterPath>
+#include <vector>
 
 #include "layoutViewer.h"
 #include "odb/dbShape.h"

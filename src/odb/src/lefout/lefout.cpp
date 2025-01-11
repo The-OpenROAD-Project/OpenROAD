@@ -37,6 +37,7 @@
 #include <algorithm>
 #include <boost/polygon/polygon.hpp>
 #include <cstdio>
+#include <vector>
 
 #include "odb/db.h"
 #include "odb/dbShape.h"
