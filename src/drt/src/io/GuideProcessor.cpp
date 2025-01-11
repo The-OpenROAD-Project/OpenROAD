@@ -1156,7 +1156,7 @@ void addSplitRect(const frCoord track_idx,
 void GuideProcessor::genGuides_split(
     std::vector<frRect>& rects,
     const TrackIntervalsByLayer& intvs,
-    const std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
+    const boost::unordered_flat_map<Point3D, frBlockObjectSet>& gcell_pin_map,
     frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
     bool via_access_only) const
 {
@@ -1259,7 +1259,7 @@ void GuideProcessor::genGuides_split(
 }
 
 void GuideProcessor::mapPinShapesToGCells(
-    std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
+    boost::unordered_flat_map<Point3D, frBlockObjectSet>& gcell_pin_map,
     frBlockObject* term) const
 {
   const auto pin_shapes = getPinShapes(term);
@@ -1280,7 +1280,7 @@ void GuideProcessor::mapPinShapesToGCells(
 
 void GuideProcessor::initGCellPinMap(
     const frNet* net,
-    std::map<Point3D, frBlockObjectSet>& gcell_pin_map) const
+    boost::unordered_flat_map<Point3D, frBlockObjectSet>& gcell_pin_map) const
 {
   for (auto instTerm : net->getInstTerms()) {
     mapTermAccessPointsToGCells(gcell_pin_map, instTerm);
@@ -1291,7 +1291,7 @@ void GuideProcessor::initGCellPinMap(
 }
 
 void GuideProcessor::mapTermAccessPointsToGCells(
-    std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
+    boost::unordered_flat_map<Point3D, frBlockObjectSet>& gcell_pin_map,
     frBlockObject* pin) const
 {
   for (const auto& ap_loc : getAccessPoints(pin)) {
@@ -1372,7 +1372,7 @@ std::vector<std::pair<frBlockObject*, Point>> GuideProcessor::genGuides(
   }
   genGuides_prep(rects, intvs);
 
-  std::map<Point3D, frBlockObjectSet> gcell_pin_map;
+  boost::unordered_flat_map<Point3D, frBlockObjectSet> gcell_pin_map;
   frBlockObjectMap<std::set<Point3D>> pin_gcell_map;
   initGCellPinMap(net, gcell_pin_map);
   initPinGCellMap(net, pin_gcell_map);

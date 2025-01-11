@@ -484,7 +484,8 @@ void FlexGCWorker::Impl::initNet_pins_polygon(gcNet* net)
 
 void FlexGCWorker::Impl::initNet_pins_polygonEdges_getFixedPolygonEdges(
     gcNet* net,
-    std::vector<std::set<std::pair<Point, Point>>>& fixedPolygonEdges)
+    std::vector<boost::unordered_flat_set<std::pair<Point, Point>>>&
+        fixedPolygonEdges)
 {
   int numLayers = getTech()->getLayers().size();
   std::vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
@@ -550,7 +551,8 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_outer(
     gcPin* pin,
     gcPolygon* poly,
     frLayerNum i,
-    const std::vector<std::set<std::pair<Point, Point>>>& fixedPolygonEdges)
+    const std::vector<boost::unordered_flat_set<std::pair<Point, Point>>>&
+        fixedPolygonEdges)
 {
   Point bp, ep, firstPt;
   gtl::point_data<frCoord> bp1, ep1, firstPt1;
@@ -624,7 +626,8 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_inner(
     gcPin* pin,
     const gtl::polygon_90_data<frCoord>& hole_poly,
     frLayerNum i,
-    const std::vector<std::set<std::pair<Point, Point>>>& fixedPolygonEdges)
+    const std::vector<boost::unordered_flat_set<std::pair<Point, Point>>>&
+        fixedPolygonEdges)
 {
   Point bp, ep, firstPt;
   gtl::point_data<frCoord> bp1, ep1, firstPt1;
@@ -696,7 +699,8 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_inner(
 void FlexGCWorker::Impl::initNet_pins_polygonEdges(gcNet* net)
 {
   int numLayers = getTech()->getLayers().size();
-  std::vector<std::set<std::pair<Point, Point>>> fixedPolygonEdges(numLayers);
+  std::vector<boost::unordered_flat_set<std::pair<Point, Point>>>
+      fixedPolygonEdges(numLayers);
   // get all fixed polygon edges
   initNet_pins_polygonEdges_getFixedPolygonEdges(net, fixedPolygonEdges);
 
@@ -850,7 +854,8 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners(gcNet* net)
 
 void FlexGCWorker::Impl::initNet_pins_maxRectangles_getFixedMaxRectangles(
     gcNet* net,
-    std::vector<std::set<std::pair<Point, Point>>>& fixedMaxRectangles)
+    std::vector<boost::unordered_flat_set<std::pair<Point, Point>>>&
+        fixedMaxRectangles)
 {
   int numLayers = getTech()->getLayers().size();
   std::vector<gtl::rectangle_data<frCoord>> rects;
@@ -876,7 +881,8 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles_helper(
     gcPin* pin,
     const gtl::rectangle_data<frCoord>& rect,
     frLayerNum i,
-    const std::vector<std::set<std::pair<Point, Point>>>& fixedMaxRectangles)
+    const std::vector<boost::unordered_flat_set<std::pair<Point, Point>>>&
+        fixedMaxRectangles)
 {
   auto rectangle = std::make_unique<gcRect>();
   rectangle->setRect(rect);
@@ -914,7 +920,8 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles_helper(
 void FlexGCWorker::Impl::initNet_pins_maxRectangles(gcNet* net)
 {
   int numLayers = getTech()->getLayers().size();
-  std::vector<std::set<std::pair<Point, Point>>> fixedMaxRectangles(numLayers);
+  std::vector<boost::unordered_flat_set<std::pair<Point, Point>>>
+      fixedMaxRectangles(numLayers);
   // get all fixed max rectangles
   initNet_pins_maxRectangles_getFixedMaxRectangles(net, fixedMaxRectangles);
 

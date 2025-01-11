@@ -65,6 +65,14 @@ class Point3D : public Point
     return z_ < rhs.z_;
   }
 
+  friend std::size_t hash_value(Point3D const& p)
+  {
+    std::size_t seed = 0;
+    boost::hash_combine(seed, hash_value(((Point) p)));
+    boost::hash_combine(seed, p.getZ());
+    return seed;
+  }
+
  private:
   int z_{0};
   template <class Archive>
