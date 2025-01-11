@@ -71,7 +71,6 @@
 
 using sta::findCmdLineFlag;
 using sta::findCmdLineKey;
-using sta::is_regular_file;
 using sta::sourceTclFile;
 using sta::stringEq;
 using std::string;

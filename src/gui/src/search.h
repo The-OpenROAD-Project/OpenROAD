@@ -44,7 +44,6 @@
 
 namespace gui {
 
-namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
 
 // This is a geometric search structure.  It wraps up Boost's

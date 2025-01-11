@@ -220,9 +220,10 @@ std::string TritonRoute::runDRWorker(const std::string& workerStr,
 {
   bool on = debug_->debugDR;
   std::unique_ptr<FlexDRGraphics> graphics_
-      = on && FlexDRGraphics::guiActive() ? std::make_unique<FlexDRGraphics>(
-            debug_.get(), design_.get(), db_, logger_)
-                                          : nullptr;
+      = on && FlexDRGraphics::guiActive()
+            ? std::make_unique<FlexDRGraphics>(
+                  debug_.get(), design_.get(), db_, logger_)
+            : nullptr;
   auto worker = FlexDRWorker::load(
       workerStr, viaData, design_.get(), logger_, router_cfg_.get());
   worker->setGraphics(graphics_.get());
@@ -250,9 +251,10 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
   ar >> viaData;
 
   std::unique_ptr<FlexDRGraphics> graphics
-      = on && FlexDRGraphics::guiActive() ? std::make_unique<FlexDRGraphics>(
-            debug_.get(), design_.get(), db_, logger_)
-                                          : nullptr;
+      = on && FlexDRGraphics::guiActive()
+            ? std::make_unique<FlexDRGraphics>(
+                  debug_.get(), design_.get(), db_, logger_)
+            : nullptr;
   std::ifstream workerFile(fmt::format("{}/worker.bin", dumpDir),
                            std::ios::binary);
   std::string workerStr((std::istreambuf_iterator<char>(workerFile)),
@@ -287,7 +289,7 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
   if (graphics) {
     graphics->startIter(worker->getDRIter(), router_cfg_.get());
   }
-  std::string result = worker->reloadedMain();
+  worker->reloadedMain();
   bool updated = worker->end(design_.get());
   debugPrint(logger_,
              utl::DRT,

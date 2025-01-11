@@ -101,7 +101,6 @@ using sta::NetTermIterator;
 using sta::NetworkEdit;
 using sta::Port;
 using sta::stringLess;
-using sta::Term;
 using sta::TimingArcSet;
 using sta::TimingArcSetSeq;
 using sta::TimingRole;
@@ -1327,9 +1326,10 @@ LibertyCell* Resizer::findTargetCell(LibertyCell* cell,
     for (LibertyCell* target_cell : swappable_cells) {
       if (!dontUse(target_cell) && isLinkCell(target_cell)) {
         float target_load = (*target_load_map_)[target_cell];
-        float delay = is_buf_inv ? bufferDelay(
-                          target_cell, load_cap, tgt_slew_dcalc_ap_)
-                                 : 0.0;
+        float delay
+            = is_buf_inv
+                  ? bufferDelay(target_cell, load_cap, tgt_slew_dcalc_ap_)
+                  : 0.0;
         float dist = targetLoadDist(load_cap, target_load);
         debugPrint(logger_,
                    RSZ,

@@ -40,11 +40,8 @@
 
 namespace rcx {
 
-using odb::Ath__array1D;
 using odb::dbBPin;
-using odb::dbIntProperty;
 using odb::dbIoType;
-using odb::dbMaster;
 using odb::dbPlacementStatus;
 using odb::dbSet;
 using odb::dbSigType;
