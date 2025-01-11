@@ -49,6 +49,7 @@
 #include <QToolTip>
 #include <optional>
 #include <variant>
+#include <vector>
 
 #include "gui/gui.h"
 #include "staGuiInterface.h"

@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "DplObserver.h"
 #include "gui/gui.h"
 #include "odb/db.h"

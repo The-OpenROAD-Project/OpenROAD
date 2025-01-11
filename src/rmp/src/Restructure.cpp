@@ -43,6 +43,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 #include "base/abc/abc.h"
 #include "base/main/abcapis.h"

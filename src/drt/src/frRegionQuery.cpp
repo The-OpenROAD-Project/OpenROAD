@@ -30,6 +30,7 @@
 
 #include <boost/polygon/polygon.hpp>
 #include <iostream>
+#include <vector>
 
 #include "frDesign.h"
 #include "frRTree.h"

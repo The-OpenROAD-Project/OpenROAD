@@ -34,6 +34,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "gui/gui.h"
 #include "polygon.h"

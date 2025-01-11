@@ -40,6 +40,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "odb/db.h"
 #include "odb/dbMap.h"

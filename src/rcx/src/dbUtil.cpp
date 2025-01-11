@@ -32,6 +32,8 @@
 
 #include "rcx/dbUtil.h"
 
+#include <vector>
+
 #include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"

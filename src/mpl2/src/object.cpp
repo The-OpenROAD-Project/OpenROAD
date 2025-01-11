@@ -35,6 +35,8 @@
 
 #include "object.h"
 
+#include <vector>
+
 #include "utl/Logger.h"
 
 namespace mpl2 {

@@ -32,6 +32,8 @@
 
 #include "odb/geom.h"
 
+#include <vector>
+
 #include "odb/geom_boost.h"
 
 namespace odb {

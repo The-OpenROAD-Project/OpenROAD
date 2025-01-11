@@ -32,6 +32,8 @@
 
 #include "ScanChain.hh"
 
+#include <vector>
+
 #include "ClockDomain.hh"
 
 namespace dft {

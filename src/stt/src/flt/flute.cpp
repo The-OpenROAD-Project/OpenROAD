@@ -40,6 +40,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <vector>
 
 // Use flute LUT file reader.
 #define LUT_FILE 1

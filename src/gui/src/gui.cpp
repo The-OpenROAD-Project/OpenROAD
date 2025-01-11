@@ -36,6 +36,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "chartsWidget.h"
 #include "clockWidget.h"

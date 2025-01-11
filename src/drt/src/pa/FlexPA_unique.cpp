@@ -27,6 +27,8 @@
 
 #include "FlexPA_unique.h"
 
+#include <vector>
+
 #include "distributed/frArchive.h"
 
 namespace drt {

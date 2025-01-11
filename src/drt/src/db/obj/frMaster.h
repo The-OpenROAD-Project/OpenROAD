@@ -28,6 +28,7 @@
 #pragma once
 
 #include <algorithm>
+#include <vector>
 
 #include "db/obj/frBlockage.h"
 #include "db/obj/frBoundary.h"

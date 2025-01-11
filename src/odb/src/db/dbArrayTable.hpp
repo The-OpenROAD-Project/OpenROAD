@@ -34,6 +34,7 @@
 
 #include <cstring>
 #include <new>
+#include <vector>
 
 #include "dbArrayTable.h"
 #include "odb/ZException.h"

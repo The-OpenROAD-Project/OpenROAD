@@ -39,6 +39,7 @@
 #include <fstream>
 #include <iostream>
 #include <thread>
+#include <vector>
 
 #include "ord/Version.hh"
 #ifdef ENABLE_PYTHON3

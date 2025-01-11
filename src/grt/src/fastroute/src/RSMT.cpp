@@ -31,6 +31,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <algorithm>
+#include <vector>
 
 #include "AbstractFastRouteRenderer.h"
 #include "DataType.h"

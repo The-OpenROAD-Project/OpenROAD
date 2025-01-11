@@ -40,6 +40,7 @@
 #include <iomanip>
 #include <ostream>
 #include <sstream>
+#include <vector>
 
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
@@ -821,7 +822,7 @@ void TechChar::collectSlewsLoadsFromTableAxis(sta::LibertyCell* libCell,
         }
       }
     }  // if (gateModel)
-  }    // for each arc
+  }  // for each arc
 
   if (logger_->debugCheck(utl::CTS, "tech char", 2)) {
     logger_->report("axis slews at {}", libCell->name());
@@ -1663,7 +1664,7 @@ void TechChar::create()
                          topologiesCreated);
             }
           }  // for each slew
-        }    // for each load
+        }  // for each load
         // If the solution is not a pure-wire, update the buffer topologies.
         if (!solution.isPureWire) {
           updateBufferTopologies(solution);

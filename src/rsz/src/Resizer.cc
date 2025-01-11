@@ -38,6 +38,7 @@
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <vector>
 
 #include "AbstractSteinerRenderer.h"
 #include "BufferedNet.hh"

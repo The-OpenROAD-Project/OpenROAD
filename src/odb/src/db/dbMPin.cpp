@@ -32,6 +32,8 @@
 
 #include "dbMPin.h"
 
+#include <vector>
+
 #include "dbAccessPoint.h"
 #include "dbBlock.h"
 #include "dbBoxItr.h"

@@ -36,6 +36,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 #include "FlexPA_graphics.h"
 #include "db/infra/frTime.h"

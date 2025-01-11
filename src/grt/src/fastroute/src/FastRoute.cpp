@@ -39,6 +39,7 @@
 #include <algorithm>
 #include <cmath>
 #include <unordered_set>
+#include <vector>
 
 #include "AbstractFastRouteRenderer.h"
 #include "DataType.h"
