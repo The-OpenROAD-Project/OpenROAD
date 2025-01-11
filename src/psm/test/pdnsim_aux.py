@@ -42,6 +42,7 @@ def analyze_power_grid(
     vsrc=None,
     outfile=None,
     error_file=None,
+    allow_reuse=False,
     enable_em=False,
     em_outfile=None,
     net=None,
@@ -76,7 +77,7 @@ def analyze_power_grid(
         em_outfile = ""
 
     pdnsim.analyzePowerGrid(
-        net, corner, 2, outfile, enable_em, em_outfile, error_file, vsrc
+        net, corner, 2, outfile, allow_reuse, enable_em, em_outfile, error_file, vsrc
     )
 
 
