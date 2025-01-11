@@ -19,6 +19,7 @@ TAGS
 .cache
 Makefile
 __pycache__
+venv/
 
 include/ord/Version.hh
 
