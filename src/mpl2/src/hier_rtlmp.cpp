@@ -4546,8 +4546,6 @@ SameDirectionLayersData Snapper::computeSameDirectionLayersData(
 
           if (data.layer_to_pin.empty()) {
             data.snap_layer = layer;
-            // } else if (layer->getNumber() < data.snap_layer->getNumber()) {
-            //   data.snap_layer = layer;
           }
 
           data.layer_to_pin[layer] = iterm;
