@@ -1426,7 +1426,7 @@ void lefout::writePropertyDefinition(dbProperty* prop)
   std::string propName = prop->getName();
   dbObjectType owner_type = prop->getPropOwner()->getObjectType();
   dbProperty::Type prop_type = prop->getType();
-  std::string objectType, propType, value;
+  std::string objectType, propType;
   switch (owner_type) {
     case dbTechLayerObj:
       objectType = "LAYER";

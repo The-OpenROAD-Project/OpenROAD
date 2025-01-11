@@ -313,6 +313,10 @@ void dbBPin::destroy(dbBPin* bpin_)
     block->_box_tbl->destroy(b);
   }
 
+  for (auto ap : bpin_->getAccessPoints()) {
+    odb::dbAccessPoint::destroy(ap);
+  }
+
   dbProperty::destroyProperties(bpin);
   block->_bpin_tbl->destroy(bpin);
 }

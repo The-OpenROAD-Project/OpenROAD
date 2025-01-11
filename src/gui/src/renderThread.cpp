@@ -42,6 +42,8 @@
 
 namespace gui {
 
+namespace bg = boost::geometry;
+
 using odb::dbBlock;
 using odb::dbInst;
 using odb::dbMaster;

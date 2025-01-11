@@ -106,7 +106,6 @@ using odb::dbChip;
 using odb::dbDatabase;
 using odb::dbLib;
 using odb::dbTech;
-using odb::Rect;
 
 using sta::evalTclInit;
 

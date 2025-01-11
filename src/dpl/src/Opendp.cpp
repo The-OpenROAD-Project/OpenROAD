@@ -62,7 +62,6 @@ using std::string;
 
 using utl::DPL;
 
-using odb::dbMasterType;
 using odb::Rect;
 
 using utl::format_as;

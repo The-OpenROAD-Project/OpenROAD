@@ -160,7 +160,7 @@ def global_placement(
         if incremental:
             gpl.doIncrementalPlace(1)
         else:
-            gpl.doInitialPlace()
+            gpl.doInitialPlace(1)
             if not skip_nesterov_place:
                 gpl.doNesterovPlace(1)
         gpl.reset()

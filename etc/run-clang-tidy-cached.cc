@@ -125,7 +125,8 @@ static constexpr ConfigValues kConfig = {
     .start_dir = "src/",
     .file_exclude_re
     = "src/sta/"  // Don't check 3rd-party submodule
-      "|codeGenerator/templates/",
+      "|codeGenerator/templates/"
+      "|build/",  // Don't check generated code
     .revisit_brokenfiles_if_build_config_newer = false,
 };
 // --------------------------------------------------------------

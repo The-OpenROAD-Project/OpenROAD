@@ -57,8 +57,8 @@ Instance ff1
  Path cells: sky130_fd_sc_hd__sdfsbp_1
  Input pins:
   D input port1
-  SCD input scan_in_1
-  SCE input scan_enable_1
+  SCD input scan_in_0
+  SCE input scan_enable_0
   SET_B input set_b
   CLK input clock
  Output pins:

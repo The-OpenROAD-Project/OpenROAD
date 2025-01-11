@@ -43,6 +43,9 @@ class Logger;
 }
 
 namespace dst {
+
+namespace ip = asio::ip;
+
 const int workers_discovery_period = 15;  // time in seconds between retrying to
                                           // find new workers on the network
 class Distributed;
