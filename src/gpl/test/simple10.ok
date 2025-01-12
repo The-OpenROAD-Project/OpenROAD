@@ -39,7 +39,7 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GPL-0026] IdealBinCnt:           12719687
 [INFO GPL-0027] TotalBinArea:        63659493.251 um^2
 [INFO GPL-0028] BinCnt:      2048   2048
-[INFO GPL-0029] BinSize: (  3.897  3.896 )
+[INFO GPL-0029] BinSize: (  3.896  3.895 )
 [INFO GPL-0030] NumBins: 4194304
 [NesterovSolve] Iter:    1 overflow: 0.000 HPWL: 2065415
 [NesterovSolve] Finished with Overflow: 0.000000
