@@ -1803,9 +1803,9 @@ void Resizer::setDontUse(LibertyCell* cell, bool dont_use)
   buffer_lowest_drive_ = nullptr;
 }
 
-bool Resizer::dontUse(LibertyCell* cell)
+bool Resizer::dontUse(const LibertyCell* cell)
 {
-  return cell->dontUse() || dont_use_.hasKey(cell);
+  return cell->dontUse() || dont_use_.hasKey(const_cast<LibertyCell*>(cell));
 }
 
 void Resizer::reportDontUse() const
