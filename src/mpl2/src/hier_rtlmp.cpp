@@ -4668,13 +4668,16 @@ void Snapper::attemptSnapToExtraLayers(
   int best_snapped_layers = 1;
 
   for (int i = 0; i <= total_attempts; i++) {
+    // Alternates steps from positive to negative incrementally
     int steps = (i % 2 == 1) ? (i + 1) / 2 : -(i / 2);
 
     setOrigin(origin + (pitch * steps), target_direction);
     int snapped_layers = 0;
     for (const auto& [layer, pin] : layers_data.layer_to_pin) {
-      snapped_layers += pinsAreAlignedWithTrackGrid(
-          pin, layers_data.layer_to_params.at(layer), target_direction);
+      if (pinsAreAlignedWithTrackGrid(
+              pin, layers_data.layer_to_params.at(layer), target_direction)) {
+        ++snapped_layers;
+      }
     }
 
     if (snapped_layers > best_snapped_layers) {
@@ -4688,7 +4691,6 @@ void Snapper::attemptSnapToExtraLayers(
     }
   }
 
-  // Set the origin to the best found origin
   setOrigin(best_origin, target_direction);
 }
 
