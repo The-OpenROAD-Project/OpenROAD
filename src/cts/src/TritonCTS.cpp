@@ -1176,7 +1176,23 @@ bool TritonCTS::separateMacroRegSinks(
       }
     }
   }
-  options_->setMacroMaxDiameter(3 * std::max(max_dx, max_dy) / techChar_->getLengthUnit());
+  // Set the macro clustering diameter as 2 * the largest macro, only if there
+  // are macros. If there are no macros use same parameter as the register tree.
+  if (max_dx) {
+    options_->setMacroMaxDiameter(
+        block_->dbuToMicrons(3 * std::max(max_dx, max_dy)));
+  } else {
+    if (options_->getSinkClusteringUseMaxCap()) {
+      options_->setMacroSinkClusteringUseMaxCap(true);
+    } else {
+      if (options_->isMaxDiameterSet()) {
+        options_->setMacroMaxDiameter(options_->getMaxDiameter());
+      }
+      if (options_->isSinkClusteringSizeSet()) {
+        options_->setMacroSinkClusteringSize(options_->getSinkClusteringSize());
+      }
+    }
+  }
   return true;
 }
 

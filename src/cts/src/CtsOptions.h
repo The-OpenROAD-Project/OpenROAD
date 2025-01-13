@@ -217,6 +217,10 @@ class CtsOptions
   void setMacroSinkClusteringUseMaxCap(bool useMaxCap)
   {
     macroSinkClusteringUseMaxCap_ = useMaxCap;
+    if(useMaxCap) {
+      macroMaxDiameterSet_ = false;
+      macroSinkClustersSizeSet_ = false;
+    }
   }
   bool getMacroSinkClusteringUseMaxCap() const
   {
