@@ -40,6 +40,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <vector>
 
 #include "Clustering.h"
 #include "SinkClustering.h"

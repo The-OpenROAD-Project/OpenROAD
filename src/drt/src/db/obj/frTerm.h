@@ -29,6 +29,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frNet.h"

@@ -31,6 +31,7 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <vector>
 
 namespace drt {
 
@@ -592,14 +593,12 @@ void FlexGRCMap::print(bool isAll)
           if (congMap.is_open()) {
             congMap << "(" << gcellBox.xMin() << ", " << gcellBox.yMin()
                     << ") (" << gcellBox.xMax() << ", " << gcellBox.yMax()
-                    << ")"
-                    << " V: " << demandV << "/" << supplyV << " H: " << demandH
-                    << "/" << supplyH << "\n";
+                    << ")" << " V: " << demandV << "/" << supplyV
+                    << " H: " << demandH << "/" << supplyH << "\n";
           } else {
             std::cout << "(" << gcellBox.xMin() << ", " << gcellBox.yMin()
                       << ") (" << gcellBox.xMax() << ", " << gcellBox.yMax()
-                      << ")"
-                      << " V: " << demandV << "/" << supplyV
+                      << ")" << " V: " << demandV << "/" << supplyV
                       << " H: " << demandH << "/" << supplyH << "\n";
           }
         }
@@ -650,9 +649,8 @@ void FlexGRCMap::print2D(bool isAll)
         } else {
           std::cout << "(" << gcellBox.xMin() << ", " << gcellBox.yMin()
                     << ") (" << gcellBox.xMax() << ", " << gcellBox.yMax()
-                    << ")"
-                    << " V: " << demandV << "/" << supplyV << " H: " << demandH
-                    << "/" << supplyH << "\n";
+                    << ")" << " V: " << demandV << "/" << supplyV
+                    << " H: " << demandH << "/" << supplyH << "\n";
         }
       }
     }

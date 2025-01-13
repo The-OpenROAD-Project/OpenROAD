@@ -32,6 +32,8 @@
 
 #include "power_cells.h"
 
+#include <vector>
+
 #include "domain.h"
 #include "grid.h"
 #include "odb/db.h"

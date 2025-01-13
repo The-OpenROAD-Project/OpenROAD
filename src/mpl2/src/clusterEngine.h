@@ -34,6 +34,7 @@
 #pragma once
 
 #include <queue>
+#include <vector>
 
 #include "object.h"
 

@@ -35,6 +35,7 @@
 #include <boost/geometry.hpp>
 #include <boost/polygon/polygon.hpp>
 #include <limits>
+#include <vector>
 
 #include "connect.h"
 #include "domain.h"

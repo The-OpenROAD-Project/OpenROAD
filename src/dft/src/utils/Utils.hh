@@ -61,4 +61,14 @@ std::vector<odb::dbITerm*> GetClockPin(odb::dbInst* inst);
 // Returns a sta::Clock of the given iterm
 std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm);
 
+// Checks if the given LibertyCell is really a Scan Cell with a Scan In and a
+// Scan Enable
+bool IsScanCell(const sta::LibertyCell* libertyCell);
+
+// Convenience method to create a new port
+odb::dbBTerm* CreateNewPort(odb::dbBlock* block,
+                            const std::string& port_name,
+                            utl::Logger* logger,
+                            odb::dbNet* net = nullptr);
+
 }  // namespace dft::utils

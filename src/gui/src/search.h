@@ -36,6 +36,7 @@
 #include <boost/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
 #include <mutex>
+#include <vector>
 
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
@@ -44,7 +45,6 @@
 
 namespace gui {
 
-namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
 
 // This is a geometric search structure.  It wraps up Boost's

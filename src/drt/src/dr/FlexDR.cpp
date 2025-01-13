@@ -737,7 +737,9 @@ void FlexDR::processWorkersBatchDistributed(
     int& version,
     IterationProgress& iter_prog)
 {
-  router_->dist_pool_.join();
+  if (router_->dist_pool_.has_value()) {
+    router_->dist_pool_->join();
+  }
   if (version++ == 0 && !design_->hasUpdates()) {
     std::string serializedViaData;
     serializeViaData(via_data_, serializedViaData);

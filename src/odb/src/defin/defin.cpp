@@ -32,6 +32,8 @@
 
 #include "odb/defin.h"
 
+#include <vector>
+
 #include "definReader.h"
 #include "odb/db.h"
 

@@ -35,6 +35,7 @@
 #include <cmath>
 #include <fstream>
 #include <limits>
+#include <vector>
 
 #include "Grid.h"
 #include "Objects.h"

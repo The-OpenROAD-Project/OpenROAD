@@ -1,6 +1,7 @@
-import opendbpy as odb
+import odb
 import helper
 import odbUnitTest
+import unittest
 
 
 class TestWireCodec(odbUnitTest.TestCase):
@@ -66,122 +67,122 @@ class TestWireCodec(odbUnitTest.TestCase):
 
         # Encoding started with a path
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.PATH
+        self.assertEqual(nextOp, odb.dbWireDecoder.PATH)
 
         # Check first point
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.POINT
+        self.assertEqual(nextOp, odb.dbWireDecoder.POINT)
         point = decoder.getPoint()
-        assert point == [2000, 2000]
+        self.assertEqual(point, [2000, 2000])
 
         # Check second point
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.POINT
+        self.assertEqual(nextOp, odb.dbWireDecoder.POINT)
         point = decoder.getPoint()
-        assert point == [10000, 2000]
+        self.assertEqual(point, [10000, 2000])
 
         # Check third point
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.POINT
+        self.assertEqual(nextOp, odb.dbWireDecoder.POINT)
         point = decoder.getPoint()
-        assert point == [18000, 2000]
+        self.assertEqual(point, [18000, 2000])
 
         # Check first junction id
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.JUNCTION
+        self.assertEqual(nextOp, odb.dbWireDecoder.JUNCTION)
         jid = decoder.getJunctionValue()
-        assert jid == j1
+        self.assertEqual(jid, j1)
 
         # Check junction point
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.POINT
+        self.assertEqual(nextOp, odb.dbWireDecoder.POINT)
         point = decoder.getPoint()
-        assert point == [10000, 2000]
+        self.assertEqual(point, [10000, 2000])
 
         # Check tech via
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.TECH_VIA
+        self.assertEqual(nextOp, odb.dbWireDecoder.TECH_VIA)
         tchVia = decoder.getTechVia()
-        assert tchVia.getName() == self.v12.getName()
+        self.assertEqual(tchVia.getName(), self.v12.getName())
 
         # Check next point
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.POINT
+        self.assertEqual(nextOp, odb.dbWireDecoder.POINT)
         point = decoder.getPoint()
-        assert point == [10000, 10000]
+        self.assertEqual(point, [10000, 10000])
 
         # Check next point
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.POINT
+        self.assertEqual(nextOp, odb.dbWireDecoder.POINT)
         point = decoder.getPoint()
-        assert point == [10000, 18000]
+        self.assertEqual(point, [10000, 18000])
 
         # Check second junction id
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.JUNCTION
+        self.assertEqual(nextOp, odb.dbWireDecoder.JUNCTION)
         jid = decoder.getJunctionValue()
-        assert jid == j2
+        self.assertEqual(jid, j2)
 
         # Check junction point
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.POINT
+        self.assertEqual(nextOp, odb.dbWireDecoder.POINT)
         point = decoder.getPoint()
-        assert point == [10000, 10000]
+        self.assertEqual(point, [10000, 10000])
 
         # Check tech via
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.TECH_VIA
+        self.assertEqual(nextOp, odb.dbWireDecoder.TECH_VIA)
         tchVia = decoder.getTechVia()
-        assert tchVia.getName() == self.v12.getName()
+        self.assertEqual(tchVia.getName(), self.v12.getName())
 
         # Check next point
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.POINT_EXT
+        self.assertEqual(nextOp, odb.dbWireDecoder.POINT_EXT)
         point = decoder.getPoint_ext()
-        assert point == [23000, 10000, 4000]
+        self.assertEqual(point, [23000, 10000, 4000])
 
         # Check third junction id
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.JUNCTION
+        self.assertEqual(nextOp, odb.dbWireDecoder.JUNCTION)
         jid = decoder.getJunctionValue()
-        assert jid == j3
+        self.assertEqual(jid, j3)
 
         # Check junction point
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.POINT
+        self.assertEqual(nextOp, odb.dbWireDecoder.POINT)
         point = decoder.getPoint()
-        assert point == [10000, 10000]
+        self.assertEqual(point, [10000, 10000])
 
         # Check next point
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.POINT
+        self.assertEqual(nextOp, odb.dbWireDecoder.POINT)
         point = decoder.getPoint()
-        assert point == [3000, 10000]
+        self.assertEqual(point, [3000, 10000])
 
         # Check tech via
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.TECH_VIA
+        self.assertEqual(nextOp, odb.dbWireDecoder.TECH_VIA)
         tchVia = decoder.getTechVia()
-        assert tchVia.getName() == self.v12.getName()
+        self.assertEqual(tchVia.getName(), self.v12.getName())
 
         # Check tech via
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.TECH_VIA
+        self.assertEqual(nextOp, odb.dbWireDecoder.TECH_VIA)
         tchVia = decoder.getTechVia()
-        assert tchVia.getName() == self.v23.getName()
+        self.assertEqual(tchVia.getName(), self.v23.getName())
 
         # Check next point
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.POINT_EXT
+        self.assertEqual(nextOp, odb.dbWireDecoder.POINT_EXT)
         point = decoder.getPoint_ext()
-        assert point == [3000, 10000, 4000]
+        self.assertEqual(point, [3000, 10000, 4000])
 
         # Check next point
         nextOp = decoder.next()
-        assert nextOp == odb.dbWireDecoder.POINT_EXT
+        self.assertEqual(nextOp, odb.dbWireDecoder.POINT_EXT)
         point = decoder.getPoint_ext()
-        assert point == [3000, 18000, 6000]
+        self.assertEqual(point, [3000, 18000, 6000])
 
 
 if __name__ == "__main__":
-    odbUnitTest.mainParallel(TestWireCodec)
+    unittest.main()

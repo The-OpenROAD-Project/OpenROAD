@@ -33,6 +33,7 @@
 #include "definPolygon.h"
 
 #include <algorithm>
+#include <vector>
 
 #include "odb/poly_decomp.h"
 

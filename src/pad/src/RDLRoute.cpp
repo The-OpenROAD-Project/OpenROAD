@@ -35,6 +35,8 @@
 
 #include "RDLRoute.h"
 
+#include <vector>
+
 #include "odb/db.h"
 #include "odb/geom_boost.h"
 

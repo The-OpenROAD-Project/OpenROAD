@@ -30,6 +30,7 @@
 
 #include <memory>
 #include <set>
+#include <vector>
 
 #include "db/drObj/drBlockObject.h"
 #include "db/drObj/drPin.h"

@@ -36,6 +36,7 @@
 #include "pad/ICeWall.h"
 
 #include <boost/icl/interval_set.hpp>
+#include <vector>
 
 #include "RDLGui.h"
 #include "RDLRouter.h"

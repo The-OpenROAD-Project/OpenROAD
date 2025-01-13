@@ -33,6 +33,8 @@ constexpr int CMAPSUPPLYSIZE = 8;
 constexpr int CMAPDEMANDSIZE = 16;
 constexpr int CMAPFRACSIZE = 1;
 
+#include <vector>
+
 #include "frBaseTypes.h"
 #include "frDesign.h"
 

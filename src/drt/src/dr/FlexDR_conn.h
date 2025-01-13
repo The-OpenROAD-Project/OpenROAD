@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "dr/FlexDR_graphics.h"
 #include "frDesign.h"
 

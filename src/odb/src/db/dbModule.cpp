@@ -46,6 +46,7 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include <string>
+#include <vector>
 
 #include "dbModNet.h"
 #include "dbModuleInstItr.h"

@@ -35,6 +35,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <vector>
 
 #include "FlexMazeTypes.h"
 #include "db/drObj/drPin.h"

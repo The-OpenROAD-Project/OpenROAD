@@ -30,6 +30,7 @@
 
 #include <boost/bind/bind.hpp>
 #include <boost/thread/thread.hpp>
+#include <vector>
 
 #include "utl/Logger.h"
 
