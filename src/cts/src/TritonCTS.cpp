@@ -1168,7 +1168,7 @@ bool TritonCTS::separateMacroRegSinks(
       if (hasInsertionDelay(inst, mterm) || !isSink(iterm)) {
         if (inst->getMaster()->isBlock()) {
           max_dx = std::max(max_dx, inst->getBBox()->getDX());
-          max_dy = std::max(max_dy, inst->getBBox()->getDX());
+          max_dy = std::max(max_dy, inst->getBBox()->getDY());
         }
         macroSinks.emplace_back(inst, mterm);
       } else {
@@ -1176,7 +1176,7 @@ bool TritonCTS::separateMacroRegSinks(
       }
     }
   }
-  options_->setMacroMaxDiameter(2 * std::max(max_dx, max_dy));
+  options_->setMacroMaxDiameter(3 * std::max(max_dx, max_dy) / techChar_->getLengthUnit());
   return true;
 }
 
