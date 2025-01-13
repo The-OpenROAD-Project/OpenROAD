@@ -847,9 +847,14 @@ bool ClockTreeView::changeSelection(const SelectionSet& selections)
   if (!nodes.empty()) {
     // remove old selection
     clearSelection();
+
+    // prevent ClockTreeView to draw until unlock
+    lockRender();
     for (auto node : nodes) {
       node->setSelected(true);
     }
+    unlockRender();
+    selectionChanged();
     return true;
   }
   return false;
@@ -1012,6 +1017,9 @@ void ClockTreeView::wheelEvent(QWheelEvent* event)
 
 void ClockTreeView::selectionChanged()
 {
+  if (lock_render_) {
+    return;
+  }
   renderer_->resetTree();
 
   for (const auto& sel : scene_->selectedItems()) {
