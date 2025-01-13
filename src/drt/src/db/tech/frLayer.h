@@ -29,6 +29,7 @@
 #pragma once
 
 #include <set>
+#include <vector>
 
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frVia.h"

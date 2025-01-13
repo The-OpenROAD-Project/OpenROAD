@@ -10,10 +10,6 @@ jobs:
   format:
     runs-on: ubuntu-latest
     steps:
-      - name: setup
-        run: |
-          sudo apt update
-          sudo apt install -y clang-14 clang-format-14
       - name: Check out repository code
         uses: actions/checkout@v4
         with:
@@ -23,6 +19,7 @@ jobs:
         uses: tj-actions/changed-files@v41
       - name: Check format of cpp changed files
         run: |
+          clang-format --version
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
             if [[ "${file##*.}" =~ ^(h|C|cc|cp|cpp|c++|CPP|cxx|hh)$ && "${file}" != "src/sta/"* && "${file}" != "src/odb/src/codeGenerator/"* ]]; then
               clang-format --dry-run --Werror $file

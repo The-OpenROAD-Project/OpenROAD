@@ -261,7 +261,7 @@ class Resizer : public dbStaState
   double maxArea() const;
 
   void setDontUse(LibertyCell* cell, bool dont_use);
-  bool dontUse(LibertyCell* cell);
+  bool dontUse(const LibertyCell* cell);
   void reportDontUse() const;
   void setDontTouch(const Instance* inst, bool dont_touch);
   bool dontTouch(const Instance* inst);

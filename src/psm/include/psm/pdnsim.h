@@ -105,6 +105,7 @@ class PDNSim : public odb::dbBlockCallBackObj
                         sta::Corner* corner,
                         GeneratedSourceType source_type,
                         const std::string& voltage_file,
+                        bool use_prev_solution,
                         bool enable_em,
                         const std::string& em_file,
                         const std::string& error_file,

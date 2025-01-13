@@ -34,6 +34,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "graphics.h"
 
+#include <vector>
+
 #include "object.h"
 #include "utl/Logger.h"
 
@@ -329,7 +331,7 @@ void Graphics::drawAllBlockages(gui::Painter& painter)
     painter.setBrush(gui::Painter::gray, gui::Painter::DIAGONAL);
 
     for (const auto& blockage : macro_blockages_) {
-      drawBlockage(blockage, painter);
+      drawOffsetRect(blockage, "", painter);
     }
   }
 
@@ -338,22 +340,46 @@ void Graphics::drawAllBlockages(gui::Painter& painter)
     painter.setBrush(gui::Painter::green, gui::Painter::DIAGONAL);
 
     for (const auto& blockage : placement_blockages_) {
-      drawBlockage(blockage, painter);
+      drawOffsetRect(blockage, "", painter);
     }
   }
 }
 
-void Graphics::drawBlockage(const Rect& blockage, gui::Painter& painter)
+void Graphics::drawFences(gui::Painter& painter)
 {
-  const int lx = block_->micronsToDbu(blockage.xMin());
-  const int ly = block_->micronsToDbu(blockage.yMin());
-  const int ux = block_->micronsToDbu(blockage.xMax());
-  const int uy = block_->micronsToDbu(blockage.yMax());
+  if (fences_.empty()) {
+    return;
+  }
 
-  odb::Rect blockage_bbox(lx, ly, ux, uy);
-  blockage_bbox.moveDelta(outline_.xMin(), outline_.yMin());
+  // slightly transparent dark yellow
+  painter.setBrush(gui::Painter::Color(0x80, 0x80, 0x00, 150),
+                   gui::Painter::DIAGONAL);
+  painter.setPen(gui::Painter::dark_yellow, true);
 
-  painter.drawRect(blockage_bbox);
+  for (const auto& [macro_id, fence] : fences_) {
+    drawOffsetRect(fence, std::to_string(macro_id), painter);
+  }
+}
+
+void Graphics::drawOffsetRect(const Rect& rect,
+                              const std::string& center_text,
+                              gui::Painter& painter)
+{
+  const int lx = block_->micronsToDbu(rect.xMin());
+  const int ly = block_->micronsToDbu(rect.yMin());
+  const int ux = block_->micronsToDbu(rect.xMax());
+  const int uy = block_->micronsToDbu(rect.yMax());
+
+  odb::Rect rect_bbox(lx, ly, ux, uy);
+  rect_bbox.moveDelta(outline_.xMin(), outline_.yMin());
+  painter.drawRect(rect_bbox);
+
+  if (!center_text.empty()) {
+    painter.drawString(rect_bbox.xCenter(),
+                       rect_bbox.yCenter(),
+                       gui::Painter::CENTER,
+                       center_text);
+  }
 }
 
 // We draw the shapes of SoftMacros, HardMacros and blockages based
@@ -489,6 +515,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.drawRect(outline_);
 
     drawGuides(painter);
+    drawFences(painter);
   }
 }
 
@@ -624,6 +651,11 @@ void Graphics::setCurrentCluster(Cluster* current_cluster)
 void Graphics::setGuides(const std::map<int, Rect>& guides)
 {
   guides_ = guides;
+}
+
+void Graphics::setFences(const std::map<int, Rect>& fences)
+{
+  fences_ = fences;
 }
 
 void Graphics::eraseDrawing()

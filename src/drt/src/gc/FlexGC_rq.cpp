@@ -27,6 +27,7 @@
  */
 
 #include <iostream>
+#include <vector>
 
 #include "frRTree.h"
 #include "gc/FlexGC_impl.h"

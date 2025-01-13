@@ -28,6 +28,8 @@
 
 #include "db/drObj/drNet.h"
 
+#include <vector>
+
 #include "distributed/frArchive.h"
 #include "dr/FlexDR.h"
 #include "serialization.h"

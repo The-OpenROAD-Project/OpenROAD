@@ -59,7 +59,6 @@ using sta::fuzzyLessEqual;
 using sta::INF;
 using sta::NetConnectedPinIterator;
 using sta::PinSeq;
-using sta::Port;
 
 // Return inserted buffer count.
 int RepairSetup::rebuffer(const Pin* drvr_pin)

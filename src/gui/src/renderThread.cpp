@@ -33,6 +33,7 @@
 #include "renderThread.h"
 
 #include <QPainterPath>
+#include <vector>
 
 #include "layoutViewer.h"
 #include "odb/dbShape.h"
@@ -41,6 +42,8 @@
 #include "utl/timer.h"
 
 namespace gui {
+
+namespace bg = boost::geometry;
 
 using odb::dbBlock;
 using odb::dbInst;

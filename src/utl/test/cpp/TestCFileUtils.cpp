@@ -32,6 +32,7 @@
 
 #include <filesystem>
 #include <numeric>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "utl/CFileUtils.h"

@@ -11,7 +11,7 @@ jobs:
       - name: setup
         run: |
           sudo apt update
-          sudo apt install -y python3-jinja2 git clang-format-14
+          sudo apt install -y python3-jinja2 git
       - name: Check out repository code
         uses: actions/checkout@v4
         with:

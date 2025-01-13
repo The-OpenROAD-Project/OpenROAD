@@ -220,7 +220,7 @@ class TritonRoute
   std::mutex results_mutex_;
   int results_sz_{0};
   unsigned int cloud_sz_{0};
-  boost::asio::thread_pool dist_pool_{1};
+  std::optional<boost::asio::thread_pool> dist_pool_;
 
   void initDesign();
   void gr();

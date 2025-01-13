@@ -56,7 +56,6 @@ using odb::dbNet;
 using odb::dbRSeg;
 using odb::dbSet;
 using odb::dbShape;
-using odb::dbSigType;
 using odb::dbTechLayer;
 using odb::dbTechLayerType;
 using odb::dbTechVia;

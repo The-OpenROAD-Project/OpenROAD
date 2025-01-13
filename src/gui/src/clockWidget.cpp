@@ -50,6 +50,7 @@
 #include <QVBoxLayout>
 #include <QWheelEvent>
 #include <QWidgetAction>
+#include <vector>
 
 #include "colorGenerator.h"
 #include "dbDescriptors.h"

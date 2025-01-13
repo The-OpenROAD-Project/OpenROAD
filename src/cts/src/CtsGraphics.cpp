@@ -38,6 +38,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <limits>
+#include <vector>
 
 #include "utl/Logger.h"
 

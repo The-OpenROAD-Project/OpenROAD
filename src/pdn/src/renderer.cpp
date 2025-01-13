@@ -32,6 +32,8 @@
 
 #include "renderer.h"
 
+#include <vector>
+
 #include "domain.h"
 #include "grid.h"
 #include "pdn/PdnGen.hh"

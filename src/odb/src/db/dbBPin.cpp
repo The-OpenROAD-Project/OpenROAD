@@ -33,6 +33,7 @@
 #include "dbBPin.h"
 
 #include <iostream>
+#include <vector>
 
 #include "dbAccessPoint.h"
 #include "dbBTerm.h"
@@ -311,6 +312,10 @@ void dbBPin::destroy(dbBPin* bpin_)
     dbProperty::destroyProperties(b);
     block->remove_rect(b->_shape._rect);
     block->_box_tbl->destroy(b);
+  }
+
+  for (auto ap : bpin_->getAccessPoints()) {
+    odb::dbAccessPoint::destroy(ap);
   }
 
   dbProperty::destroyProperties(bpin);

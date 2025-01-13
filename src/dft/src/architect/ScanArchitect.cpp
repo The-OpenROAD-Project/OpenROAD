@@ -32,6 +32,8 @@
 
 #include "ScanArchitect.hh"
 
+#include <vector>
+
 #include "ClockDomain.hh"
 #include "ClockDomainHash.hh"
 #include "ScanArchitectHeuristic.hh"

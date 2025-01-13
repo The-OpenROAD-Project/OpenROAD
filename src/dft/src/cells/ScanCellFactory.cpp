@@ -33,6 +33,7 @@
 #include "ScanCellFactory.hh"
 
 #include <iostream>
+#include <vector>
 
 #include "ClockDomain.hh"
 #include "Utils.hh"

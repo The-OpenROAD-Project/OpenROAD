@@ -37,6 +37,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <map>
+#include <vector>
 
 #include "Ctainers/bitBoard.h"
 #include "DB.h"

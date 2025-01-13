@@ -208,7 +208,7 @@ void FlexPA::genAPCosted(
 }
 
 // Responsible for checking if an AP is valid and configuring it
-void FlexPA::gen_createAccessPoint(
+void FlexPA::createSingleAccessPoint(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     std::set<std::pair<Point, frLayerNum>>& apset,
     const gtl::rectangle_data<frCoord>& maxrect,
@@ -217,12 +217,12 @@ void FlexPA::gen_createAccessPoint(
     const frLayerNum layer_num,
     const bool allow_planar,
     const bool allow_via,
-    const frAccessPointEnum low_cost,
-    const frAccessPointEnum high_cost)
+    const frAccessPointEnum lower_type,
+    const frAccessPointEnum upper_type)
 {
   gtl::point_data<frCoord> pt(x, y);
-  if (!gtl::contains(maxrect, pt) && low_cost != frAccessPointEnum::NearbyGrid
-      && high_cost != frAccessPointEnum::NearbyGrid) {
+  if (!gtl::contains(maxrect, pt) && lower_type != frAccessPointEnum::NearbyGrid
+      && upper_type != frAccessPointEnum::NearbyGrid) {
     return;
   }
   Point fpt(x, y);
@@ -243,7 +243,7 @@ void FlexPA::gen_createAccessPoint(
         ap->setMultipleAccesses(frDirEnumVert, false);
       }
       if (lower_layer->getLef58RightWayOnGridOnlyConstraint()
-          && low_cost != frAccessPointEnum::OnGrid) {
+          && lower_type != frAccessPointEnum::OnGrid) {
         ap->setMultipleAccesses(frDirEnumHorz, false);
       }
     }
@@ -253,7 +253,7 @@ void FlexPA::gen_createAccessPoint(
         ap->setMultipleAccesses(frDirEnumHorz, false);
       }
       if (lower_layer->getLef58RightWayOnGridOnlyConstraint()
-          && low_cost != frAccessPointEnum::OnGrid) {
+          && lower_type != frAccessPointEnum::OnGrid) {
         ap->setMultipleAccesses(frDirEnumVert, false);
       }
     }
@@ -262,10 +262,10 @@ void FlexPA::gen_createAccessPoint(
   ap->setAccess(frDirEnum::U, allow_via);
 
   ap->setAllowVia(allow_via);
-  ap->setType((frAccessPointEnum) low_cost, true);
-  ap->setType((frAccessPointEnum) high_cost, false);
-  if ((low_cost == frAccessPointEnum::NearbyGrid
-       || high_cost == frAccessPointEnum::NearbyGrid)) {
+  ap->setType((frAccessPointEnum) lower_type, true);
+  ap->setType((frAccessPointEnum) upper_type, false);
+  if ((lower_type == frAccessPointEnum::NearbyGrid
+       || upper_type == frAccessPointEnum::NearbyGrid)) {
     Point end;
     const int half_width
         = design_->getTech()->getLayer(ap->getLayerNum())->getMinWidth() / 2;
@@ -315,7 +315,7 @@ void FlexPA::gen_createAccessPoint(
   apset.insert(std::make_pair(fpt, layer_num));
 }
 
-void FlexPA::gen_initializeAccessPoints(
+void FlexPA::createMultipleAccessPoints(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     std::set<std::pair<Point, frLayerNum>>& apset,
     const gtl::rectangle_data<frCoord>& rect,
@@ -332,19 +332,19 @@ void FlexPA::gen_initializeAccessPoints(
   for (auto& [x_coord, cost_x] : x_coords) {
     for (auto& [y_coord, cost_y] : y_coords) {
       // lower full/half/center
-      auto& low_cost = is_layer1_horz ? cost_y : cost_x;
-      auto& high_cost = (!is_layer1_horz) ? cost_y : cost_x;
-      if (low_cost == lower_type && high_cost == upper_type) {
-        gen_createAccessPoint(aps,
-                              apset,
-                              rect,
-                              x_coord,
-                              y_coord,
-                              layer_num,
-                              allow_planar,
-                              allow_via,
-                              low_cost,
-                              high_cost);
+      auto& low_layer_type = is_layer1_horz ? cost_y : cost_x;
+      auto& up_layer_type = (!is_layer1_horz) ? cost_y : cost_x;
+      if (low_layer_type == lower_type && up_layer_type == upper_type) {
+        createSingleAccessPoint(aps,
+                                apset,
+                                rect,
+                                x_coord,
+                                y_coord,
+                                layer_num,
+                                allow_planar,
+                                allow_via,
+                                lower_type,
+                                upper_type);
       }
     }
   }
@@ -452,7 +452,7 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
     lower_type = frAccessPointEnum::OnGrid;
   }
 
-  gen_initializeAccessPoints(aps,
+  createMultipleAccessPoints(aps,
                              apset,
                              rect,
                              layer_num,
@@ -628,7 +628,7 @@ bool FlexPA::isPointOutsideShapes(
 }
 
 template <typename T>
-void FlexPA::check_addPlanarAccess(
+void FlexPA::filterPlanarAccess(
     frAccessPoint* ap,
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     frDirEnum dir,
@@ -798,11 +798,10 @@ void FlexPA::getViasFromMetalWidthMap(
 }
 
 template <typename T>
-void FlexPA::check_addViaAccess(
+void FlexPA::filterViaAccess(
     frAccessPoint* ap,
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     const gtl::polygon_90_set_data<frCoord>& polyset,
-    const frDirEnum dir,
     T* pin,
     frInstTerm* inst_term,
     bool deep_search)
@@ -898,21 +897,21 @@ void FlexPA::check_addViaAccess(
     if (via_in_pin && max_ext) {
       continue;
     }
-    if (checkViaAccess(ap, via.get(), pin, inst_term, layer_polys)) {
+    if (checkViaPlanarAccess(ap, via.get(), pin, inst_term, layer_polys)) {
       valid_via_defs.insert({max_ext, idx, via_def});
       if (valid_via_defs.size() >= max_num_via_trial) {
         break;
       }
     }
   }
-  ap->setAccess(dir, !valid_via_defs.empty());
+  ap->setAccess(frDirEnum::U, !valid_via_defs.empty());
   for (auto& [ext, idx, via_def] : valid_via_defs) {
     ap->addViaDef(via_def);
   }
 }
 
 template <typename T>
-bool FlexPA::checkViaAccess(
+bool FlexPA::checkViaPlanarAccess(
     frAccessPoint* ap,
     frVia* via,
     T* pin,
@@ -1050,7 +1049,7 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
 }
 
 template <typename T>
-void FlexPA::check_addAccess(
+void FlexPA::filterSingleAPAccesses(
     frAccessPoint* ap,
     const gtl::polygon_90_set_data<frCoord>& polyset,
     const std::vector<gtl::polygon_90_data<frCoord>>& polys,
@@ -1060,15 +1059,14 @@ void FlexPA::check_addAccess(
 {
   if (!deep_search) {
     for (const frDirEnum dir : frDirEnumPlanar) {
-      check_addPlanarAccess(ap, polys, dir, pin, inst_term);
+      filterPlanarAccess(ap, polys, dir, pin, inst_term);
     }
   }
-  check_addViaAccess(
-      ap, polys, polyset, frDirEnum::U, pin, inst_term, deep_search);
+  filterViaAccess(ap, polys, polyset, pin, inst_term, deep_search);
 }
 
 template <typename T>
-void FlexPA::check_setAPsAccesses(
+void FlexPA::filterMultipleAPAccesses(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
     T* pin,
@@ -1083,11 +1081,11 @@ void FlexPA::check_setAPsAccesses(
   bool has_access = false;
   for (auto& ap : aps) {
     const auto layer_num = ap->getLayerNum();
-    check_addAccess(ap.get(),
-                    pin_shapes[layer_num],
-                    layer_polys[layer_num],
-                    pin,
-                    inst_term);
+    filterSingleAPAccesses(ap.get(),
+                           pin_shapes[layer_num],
+                           layer_polys[layer_num],
+                           pin,
+                           inst_term);
     if (is_std_cell_pin) {
       has_access |= ((layer_num == router_cfg_->VIA_ACCESS_LAYERNUM
                       && ap->hasAccess(frDirEnum::U))
@@ -1100,12 +1098,12 @@ void FlexPA::check_setAPsAccesses(
   if (!has_access) {
     for (auto& ap : aps) {
       const auto layer_num = ap->getLayerNum();
-      check_addAccess(ap.get(),
-                      pin_shapes[layer_num],
-                      layer_polys[layer_num],
-                      pin,
-                      inst_term,
-                      true);
+      filterSingleAPAccesses(ap.get(),
+                             pin_shapes[layer_num],
+                             layer_polys[layer_num],
+                             pin,
+                             inst_term,
+                             true);
     }
   }
 }
@@ -1148,7 +1146,7 @@ void FlexPA::updatePinStats(
 }
 
 template <typename T>
-bool FlexPA::initPinAccessCostBounded(
+bool FlexPA::genPinAccessCostBounded(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     std::set<std::pair<Point, frLayerNum>>& apset,
     std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
@@ -1167,7 +1165,8 @@ bool FlexPA::initPinAccessCostBounded(
   std::vector<std::unique_ptr<frAccessPoint>> tmp_aps;
   genAPsFromPinShapes(
       tmp_aps, apset, pin, inst_term, pin_shapes, lower_type, upper_type);
-  check_setAPsAccesses(tmp_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
+  filterMultipleAPAccesses(
+      tmp_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
   if (is_std_cell_pin) {
 #pragma omp atomic
     std_cell_pin_gen_ap_cnt_ += tmp_aps.size();
@@ -1311,7 +1310,7 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
 
 // first create all access points with costs
 template <typename T>
-int FlexPA::initPinAccess(T* pin, frInstTerm* inst_term)
+int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
 {
   // aps are after xform
   // before checkPoints, ap->hasAccess(dir) indicates whether to check drc
@@ -1349,7 +1348,7 @@ int FlexPA::initPinAccess(T* pin, frInstTerm* inst_term)
         // nangate45/aes is resolved).
         continue;
       }
-      if (initPinAccessCostBounded(
+      if (genPinAccessCostBounded(
               aps, apset, pin_shapes, pin, inst_term, lower, upper)) {
         return aps.size();
       }
@@ -1357,7 +1356,7 @@ int FlexPA::initPinAccess(T* pin, frInstTerm* inst_term)
   }
 
   // inst_term aps are written back here if not early stopped
-  // IO term aps are are written back in initPinAccessCostBounded and always
+  // IO term aps are are written back in genPinAccessCostBounded and always
   // early stopped
   updatePinStats(aps, pin, inst_term);
   const int n_aps = aps.size();
@@ -1381,7 +1380,7 @@ int FlexPA::initPinAccess(T* pin, frInstTerm* inst_term)
   return n_aps;
 }
 
-void FlexPA::initInstAccessPoints(frInst* inst)
+void FlexPA::genInstAccessPoints(frInst* inst)
 {
   ProfileTask profile("PA:uniqueInstance");
   for (auto& inst_term : inst->getInstTerms()) {
@@ -1391,7 +1390,7 @@ void FlexPA::initInstAccessPoints(frInst* inst)
     }
     int n_aps = 0;
     for (auto& pin : inst_term->getTerm()->getPins()) {
-      n_aps += initPinAccess(pin.get(), inst_term.get());
+      n_aps += genPinAccess(pin.get(), inst_term.get());
     }
     if (!n_aps) {
       logger_->error(DRT,
@@ -1403,7 +1402,7 @@ void FlexPA::initInstAccessPoints(frInst* inst)
   }
 }
 
-void FlexPA::initAllAccessPoints()
+void FlexPA::genAllAccessPoints()
 {
   ProfileTask profile("PA:point");
   int pin_count = 0;
@@ -1422,7 +1421,7 @@ void FlexPA::initAllAccessPoints()
         continue;
       }
 
-      initInstAccessPoints(inst);
+      genInstAccessPoints(inst);
       if (router_cfg_->VERBOSE <= 0) {
         continue;
       }
@@ -1459,7 +1458,7 @@ void FlexPA::initAllAccessPoints()
         }
         int n_aps = 0;
         for (auto& pin : term->getPins()) {
-          n_aps += initPinAccess(pin.get(), nullptr);
+          n_aps += genPinAccess(pin.get(), nullptr);
         }
         if (!n_aps) {
           logger_->error(

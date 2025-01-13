@@ -35,6 +35,8 @@
 
 #include "Pin.h"
 
+#include <vector>
+
 #include "grt/GlobalRouter.h"
 
 namespace grt {
@@ -187,6 +189,23 @@ bool Pin::isDriver()
   odb::dbMTerm* mterm = iterm_->getMTerm();
   odb::dbIoType type = mterm->getIoType();
   return type == odb::dbIoType::OUTPUT || type == odb::dbIoType::INOUT;
+}
+
+odb::Point Pin::getPositionNearInstEdge(const odb::Rect& pin_box,
+                                        const odb::Point& rect_middle) const
+{
+  odb::Point pin_pos = rect_middle;
+  if (getEdge() == PinEdge::north) {
+    pin_pos.setY(pin_box.yMax());
+  } else if (getEdge() == PinEdge::south) {
+    pin_pos.setY(pin_box.yMin());
+  } else if (getEdge() == PinEdge::east) {
+    pin_pos.setX(pin_box.xMax());
+  } else if (getEdge() == PinEdge::west) {
+    pin_pos.setX(pin_box.xMin());
+  }
+
+  return pin_pos;
 }
 
 int Pin::getConnectionLayer() const
