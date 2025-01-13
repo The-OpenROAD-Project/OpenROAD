@@ -1016,8 +1016,9 @@ void ClockTreeView::wheelEvent(QWheelEvent* event)
 
 void ClockTreeView::selectionChanged()
 {
-  if (lock_render_)
+  if (lock_render_) {
     return;
+}
   renderer_->resetTree();
 
   for (const auto& sel : scene_->selectedItems()) {
