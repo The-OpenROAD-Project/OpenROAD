@@ -2191,6 +2191,13 @@ void MBFF::Run(const int mx_sz, const float alpha, const float beta)
     tot_ilp += RunClustering(FFs[i], mx_sz, alpha, beta, array_mask);
   }
 
+  // delete test_trays
+  for (int i = 0; i < test_idx_; i++) {
+    const std::string test_tray_name = "test_tray_" + std::to_string(i);
+    dbInst* inst = block_->findInst(test_tray_name.c_str());
+    dbInst::destroy(inst);
+  }
+
   if (!any_found) {
     log_->warn(GPL, 138, "No clusterable flops found");
     return;
@@ -2211,13 +2218,6 @@ void MBFF::Run(const int mx_sz, const float alpha, const float beta)
     avg_disp += (std::max(dX, -dX) + std::max(dY, -dY));
   }
   avg_disp /= flops_.size();
-
-  // delete test_trays
-  for (int i = 0; i < test_idx_; i++) {
-    const std::string test_tray_name = "test_tray_" + std::to_string(i);
-    dbInst* inst = block_->findInst(test_tray_name.c_str());
-    dbInst::destroy(inst);
-  }
 
   log_->report("Alpha = {}, Beta = {}, #paths = {}, max size = {}",
                alpha,
