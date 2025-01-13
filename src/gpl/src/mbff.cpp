@@ -1317,7 +1317,7 @@ void MBFF::GetStartTrays(std::vector<Flop> flops,
   tray_zero.pt = flops[rand_idx].pt;
 
   std::set<int> used_flops;
-  used_flops.insert(rand_idx);
+  used_flops.insert(flops[rand_idx].idx);
   trays.push_back(tray_zero);
 
   float tot_dist = 0;
