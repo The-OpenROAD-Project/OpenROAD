@@ -377,6 +377,40 @@ void Opendp::groupInitPixels2()
   }
 }
 
+std::pair<dbInst*, dbInst*> Opendp::getAdjacentInstances(dbInst* inst) const
+{
+  const Rect inst_rect = inst->getBBox()->getBox();
+  Point left(inst_rect.xMin() - 1, inst_rect.center().getY());
+  Point right(inst_rect.xMax() + 1, inst_rect.center().getY());
+
+  const Rect core = grid_->getCore();
+  GridX left_x = grid_->gridX(DbuX{left.getX() - core.xMin()});
+  GridY left_y = grid_->gridSnapDownY(DbuY{left.getY() - core.yMin()});
+
+  GridX right_x = grid_->gridX(DbuX{right.getX() - core.xMin()});
+  GridY right_y = grid_->gridSnapDownY(DbuY{right.getY() - core.yMin()});
+
+  Pixel* left_pixel = grid_->gridPixel(left_x, left_y);
+  Pixel* right_pixel = grid_->gridPixel(right_x, right_y);
+
+  dbInst* left_inst = nullptr;
+  dbInst* right_inst = nullptr;
+
+  if (left_pixel != nullptr) {
+    if (left_pixel->cell) {
+      left_inst = left_pixel->cell->db_inst_;
+    }
+  }
+
+  if (right_pixel != nullptr) {
+    if (right_pixel->cell) {
+      right_inst = right_pixel->cell->db_inst_;
+    }
+  }
+
+  return {left_inst, right_inst};
+}
+
 /* static */
 bool Opendp::isInside(const Rect& cell, const Rect& box)
 {
