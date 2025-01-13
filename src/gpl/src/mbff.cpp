@@ -2192,7 +2192,8 @@ void MBFF::Run(const int mx_sz, const float alpha, const float beta)
   }
 
   if (!any_found) {
-    log_->error(GPL, 138, "No clusterable flops found");
+    log_->warn(GPL, 138, "No clusterable flops found");
+    return;
   }
 
   const float tcp_disp = (beta * GetPairDisplacements());
