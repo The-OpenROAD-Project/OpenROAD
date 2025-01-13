@@ -1592,6 +1592,8 @@ const DisplayControls::ModelRow* DisplayControls::getNetRow(
     case odb::dbSigType::ANALOG:
       return &nets_.analog;
   }
+
+  return nullptr;
 }
 
 bool DisplayControls::isNetVisible(odb::dbNet* net)
