@@ -39,6 +39,7 @@
 
 namespace odb {
 
+// Protects the DefParser namespace that has static variables
 std::mutex defin::_def_mutex;
 
 defin::defin(dbDatabase* db, utl::Logger* logger, MODE mode)

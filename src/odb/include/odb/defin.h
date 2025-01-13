@@ -52,6 +52,8 @@ class dbTech;
 class defin
 {
   definReader* _reader;
+
+  // Protects the DefParser namespace that has static variables
   static std::mutex _def_mutex;
 
  public:

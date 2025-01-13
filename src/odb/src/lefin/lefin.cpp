@@ -55,6 +55,8 @@
 namespace odb {
 
 using LefParser::lefrSetRelaxMode;
+
+// Protects the LefParser namespace that has static variables
 std::mutex lefin::_lef_mutex;
 
 extern bool lefin_parse(lefinReader*, utl::Logger*, const char*);

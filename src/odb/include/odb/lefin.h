@@ -274,6 +274,8 @@ class lefin
 
  private:
   lefinReader* _reader;
+
+  // Protects the LefParser namespace that has static variables
   static std::mutex _lef_mutex;
 };
 
