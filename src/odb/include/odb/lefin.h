@@ -199,7 +199,7 @@ class lefinReader
   lefinReader(dbDatabase* db,
               utl::Logger* logger,
               bool ignore_non_routing_layers);
-  ~lefinReader();
+  ~lefinReader() = default;
 
   // Skip macro-obstructions in the lef file.
   void skipObstructions() { _skip_obstructions = true; }

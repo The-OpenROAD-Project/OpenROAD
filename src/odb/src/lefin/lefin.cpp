@@ -111,10 +111,6 @@ void lefinReader::init()
   }
 }
 
-lefinReader::~lefinReader()
-{
-}
-
 dbSite* lefinReader::findSite(const char* name)
 {
   dbSite* site = _lib->findSite(name);
@@ -2437,13 +2433,11 @@ lefin::lefin(dbDatabase* db,
              utl::Logger* logger,
              bool ignore_non_routing_layers)
 {
-  std::lock_guard<std::mutex> lock(_lef_mutex);
   _reader = new lefinReader(db, logger, ignore_non_routing_layers);
 }
 
 lefin::~lefin()
 {
-  std::lock_guard<std::mutex> lock(_lef_mutex);
   delete _reader;
 }
 

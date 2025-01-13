@@ -44,9 +44,10 @@ void createOrthongonalSubRule(
   odb::dbTechLayerCutSpacingTableOrthRule* rule
       = odb::dbTechLayerCutSpacingTableOrthRule::create(parser->layer);
   std::vector<std::pair<int, int>> table;
+  table.reserve(params.size());
   for (const auto& item : params)
-    table.push_back({lefinReader->dbdist(at_c<0>(item)),
-                     lefinReader->dbdist(at_c<1>(item))});
+    table.emplace_back(lefinReader->dbdist(at_c<0>(item)),
+                       lefinReader->dbdist(at_c<1>(item)));
   rule->setSpacingTable(table);
 }
 void createDefSubRule(odb::lefTechLayerCutSpacingTableParser* parser)
