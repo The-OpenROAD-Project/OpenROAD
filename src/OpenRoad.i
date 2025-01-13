@@ -36,8 +36,6 @@
 %{
 
 #include "odb/db.h"
-#include "odb/lefin.h"
-#include "odb/defin.h"
 #include "odb/defout.h"
 #include "sta/Report.hh"
 #include "sta/Network.hh"
