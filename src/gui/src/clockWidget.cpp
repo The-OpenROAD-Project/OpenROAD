@@ -854,6 +854,7 @@ bool ClockTreeView::changeSelection(const SelectionSet& selections)
       node->setSelected(true);
     }
     unlockRender();
+    selectionChanged();
     return true;
   }
   return false;
