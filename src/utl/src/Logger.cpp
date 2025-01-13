@@ -86,7 +86,7 @@ void Logger::removeMetricsSink(const char* metrics_filename)
   auto metrics_file = std::find(
       metrics_sinks_.begin(), metrics_sinks_.end(), metrics_filename);
   if (metrics_file == metrics_sinks_.end()) {
-    error(UTL, 2, "{} is not a metrics file", metrics_filename);
+    this->error(UTL, 11, "{} is not a metrics file", metrics_filename);
   }
   flushMetrics();
 
@@ -181,7 +181,7 @@ void Logger::flushMetrics()
     if (sink_file) {
       sink_file << json;
     } else {
-      warn(UTL, 1, "Unable to open {} to write metrics", sink_path);
+      this->warn(UTL, 10, "Unable to open {} to write metrics", sink_path);
     }
   }
 }
@@ -297,7 +297,7 @@ std::string Logger::teeStringEnd()
 void Logger::assertNoRedirect()
 {
   if (string_redirect_ != nullptr || file_redirect_ != nullptr) {
-    error(
+    this->error(
         UTL, 102, "Unable to start new log redirect while another is active.");
   }
 }
