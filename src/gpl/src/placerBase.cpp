@@ -35,6 +35,7 @@
 
 #include <iostream>
 #include <utility>
+#include <vector>
 
 #include "nesterovBase.h"
 #include "odb/db.h"

@@ -30,6 +30,7 @@
 
 #include <memory>
 #include <set>
+#include <vector>
 
 #include "db/obj/frVia.h"
 #include "db/taObj/taPin.h"
@@ -135,7 +136,9 @@ class FlexTAWorker
         numAssigned_(0),
         totCost_(0),
         maxRetry_(1),
-        hardIroutesMode(false){};
+        hardIroutesMode(false)
+  {
+  }
   // setters
   void setRouteBox(const Rect& boxIn) { routeBox_ = boxIn; }
   void setExtBox(const Rect& boxIn) { extBox_ = boxIn; }

@@ -44,6 +44,7 @@
 #include <list>
 #include <queue>
 #include <set>
+#include <vector>
 
 #include "RDLGui.h"
 #include "RDLRoute.h"

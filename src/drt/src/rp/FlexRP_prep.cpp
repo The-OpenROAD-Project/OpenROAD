@@ -28,6 +28,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 #include "FlexRP.h"
 #include "db/gcObj/gcNet.h"

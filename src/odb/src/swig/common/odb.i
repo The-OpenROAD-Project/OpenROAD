@@ -56,7 +56,7 @@ using namespace odb;
 %typemap(out) (uint) = (int);
 %typemap(out) (uint64) = (long);
 %typemap(out) (int64_t) = (long);
-%apply int* OUTPUT {int* x, int* y};
+%apply int* OUTPUT {int* x, int* y, int& ext};
 
 %ignore odb::dbTechLayerAntennaRule::pwl_pair;
 %ignore odb::dbTechLayerAntennaRule::getDiffPAR() const;
@@ -88,6 +88,8 @@ using namespace odb;
 %include "dbhelpers.i"  
 %include "dbdiff.i"
 
+%rename(getPoint_ext) odb::dbWireDecoder::getPoint(int& x, int& y, int& ext) const;
+
 %include "odb/dbViaParams.h"
 %include "odb/dbWireCodec.h"
 %include "odb/dbBlockCallBackObj.h"
@@ -98,3 +100,4 @@ using namespace odb;
 %include "odb/wOrder.h"
 
 std::string generateMacroPlacementString(odb::dbBlock* block);
+

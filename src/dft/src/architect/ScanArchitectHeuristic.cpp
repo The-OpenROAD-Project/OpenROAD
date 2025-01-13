@@ -34,6 +34,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 #include "ClockDomain.hh"
 #include "Opt.hh"

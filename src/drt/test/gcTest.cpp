@@ -32,6 +32,7 @@
 // Shared library version
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
+#include <vector>
 #else
 // Header only version
 #include <boost/test/included/unit_test.hpp>

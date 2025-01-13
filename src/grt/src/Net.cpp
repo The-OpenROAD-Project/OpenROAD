@@ -35,6 +35,8 @@
 
 #include "Net.h"
 
+#include <vector>
+
 #include "grt/GlobalRouter.h"
 #include "odb/dbShape.h"
 

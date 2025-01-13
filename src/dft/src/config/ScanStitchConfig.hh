@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2024, Efabless Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,87 +29,31 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#pragma once
 
-#include "dbTargetItr.h"
+#include "utl/Logger.h"
 
-#include "dbMTerm.h"
-#include "dbMaster.h"
-#include "dbTable.h"
-#include "dbTarget.h"
+namespace dft {
 
-namespace odb {
-
-////////////////////////////////////////////////////////////////////
-//
-// dbTargetItr - Methods
-//
-////////////////////////////////////////////////////////////////////
-
-bool dbTargetItr::reversible()
+class ScanStitchConfig
 {
-  return true;
-}
+ public:
+  void setEnableNamePattern(std::string_view enable_name_pattern);
+  std::string_view getEnableNamePattern() const;
 
-bool dbTargetItr::orderReversed()
-{
-  return true;
-}
+  void setInNamePattern(std::string_view in_name_pattern);
+  std::string_view getInNamePattern() const;
 
-void dbTargetItr::reverse(dbObject* parent)
-{
-  _dbMTerm* mterm = (_dbMTerm*) parent;
-  uint id = mterm->_targets;
-  uint list = 0;
+  void setOutNamePattern(std::string_view out_name_pattern);
+  std::string_view getOutNamePattern() const;
 
-  while (id != 0) {
-    _dbTarget* target = _target_tbl->getPtr(id);
-    uint n = target->_next;
-    target->_next = list;
-    list = id;
-    id = n;
-  }
+  // Prints using logger->report the config used by Scan Stitch
+  void report(utl::Logger* logger) const;
 
-  mterm->_targets = list;
-}
+ private:
+  std::string enable_name_pattern_ = "scan_enable_{}";
+  std::string in_name_pattern_ = "scan_in_{}";
+  std::string out_name_pattern_ = "scan_out_{}";
+};
 
-uint dbTargetItr::sequential()
-{
-  return 0;
-}
-
-uint dbTargetItr::size(dbObject* parent)
-{
-  uint id;
-  uint cnt = 0;
-
-  for (id = dbTargetItr::begin(parent); id != dbTargetItr::end(parent);
-       id = dbTargetItr::next(id)) {
-    ++cnt;
-  }
-
-  return cnt;
-}
-
-uint dbTargetItr::begin(dbObject* parent)
-{
-  _dbMTerm* mterm = (_dbMTerm*) parent;
-  return mterm->_targets;
-}
-
-uint dbTargetItr::end(dbObject* /* unused: parent */)
-{
-  return 0;
-}
-
-uint dbTargetItr::next(uint id, ...)
-{
-  _dbTarget* target = _target_tbl->getPtr(id);
-  return target->_next;
-}
-
-dbObject* dbTargetItr::getObject(uint id, ...)
-{
-  return _target_tbl->getPtr(id);
-}
-
-}  // namespace odb
+}  // namespace dft

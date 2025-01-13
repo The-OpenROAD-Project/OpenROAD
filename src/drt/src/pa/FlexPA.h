@@ -30,6 +30,7 @@
 
 #include <boost/polygon/polygon.hpp>
 #include <cstdint>
+#include <vector>
 
 #include "FlexPA_unique.h"
 #include "frDesign.h"

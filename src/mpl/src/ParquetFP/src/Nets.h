@@ -38,6 +38,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <unordered_map>
+#include <vector>
 
 #include "Net.h"
 

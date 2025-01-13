@@ -30,6 +30,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "db/obj/frBlock.h"
 #include "db/obj/frMaster.h"

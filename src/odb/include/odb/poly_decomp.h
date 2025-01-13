@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "geom.h"
 #include "odb.h"
 

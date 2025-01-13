@@ -34,6 +34,7 @@
 #include <boost/serialization/export.hpp>
 #include <deque>
 #include <memory>
+#include <vector>
 
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"

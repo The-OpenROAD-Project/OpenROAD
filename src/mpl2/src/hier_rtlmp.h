@@ -37,6 +37,7 @@
 
 #include <limits>
 #include <string>
+#include <vector>
 
 #include "Mpl2Observer.h"
 #include "clusterEngine.h"

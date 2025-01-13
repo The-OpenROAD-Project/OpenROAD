@@ -38,6 +38,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 #include "graphics.h"
 #include "nesterovBase.h"

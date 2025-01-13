@@ -32,11 +32,13 @@
 
 #include "definReader.h"
 
+#include <boost/algorithm/string/replace.hpp>
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "definBlockage.h"
 #include "definComponent.h"
@@ -563,16 +565,23 @@ int definReader::componentsCallback(
   definReader* reader = (definReader*) data;
   CHECKBLOCK
   definComponent* componentR = reader->_componentR;
-  if (reader->_mode != defin::DEFAULT
-      && reader->_block->findInst(comp->id()) == nullptr) {
-    std::string modeStr
-        = reader->_mode == defin::FLOORPLAN ? "FLOORPLAN" : "INCREMENTAL";
-    reader->_logger->warn(utl::ODB,
-                          248,
-                          "skipping undefined comp {} encountered in {} DEF",
-                          comp->id(),
-                          modeStr);
-    return PARSE_OK;
+  std::string id = comp->id();
+  if (reader->_mode != defin::DEFAULT) {
+    if (reader->_block->findInst(id.c_str()) == nullptr) {
+      // Try escaping the hierarchy and see if that matches
+      boost::replace_all(id, "/", "\\/");
+      if (reader->_block->findInst(id.c_str()) == nullptr) {
+        std::string modeStr
+            = reader->_mode == defin::FLOORPLAN ? "FLOORPLAN" : "INCREMENTAL";
+        reader->_logger->warn(
+            utl::ODB,
+            248,
+            "skipping undefined comp {} encountered in {} DEF",
+            comp->id(),
+            modeStr);
+        return PARSE_OK;
+      }
+    }
   }
 
   if (comp->hasEEQ()) {
@@ -587,7 +596,7 @@ int definReader::componentsCallback(
     UNSUPPORTED("ROUTEHALO on component is unsupported");
   }
 
-  componentR->begin(comp->id(), comp->name());
+  componentR->begin(id.c_str(), comp->name());
   if (comp->hasSource()) {
     componentR->source(dbSourceType(comp->source()));
   }

@@ -35,6 +35,8 @@
 
 #include "LevelBalancer.h"
 
+#include <vector>
+
 #include "Clock.h"
 #include "CtsOptions.h"
 #include "TreeBuilder.h"

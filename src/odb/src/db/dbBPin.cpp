@@ -33,6 +33,7 @@
 #include "dbBPin.h"
 
 #include <iostream>
+#include <vector>
 
 #include "dbAccessPoint.h"
 #include "dbBTerm.h"

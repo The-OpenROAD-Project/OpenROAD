@@ -21,7 +21,7 @@ class TestInst(odbUnitTest.TestCase):
         self.assertNotEqual(self.i1.getMaster().getName(), "_g2")
         for iterm in self.i1.getITerms():
             self.assertNotIn(iterm.getMTerm().getName(), ["_a", "_b", "_o"])
-        # testing with a gate with different mterms number - shuld fail
+        # testing with a gate with different mterms number - should fail
         gate = helper.createMaster3X1(self.lib, "_g3", 800, 800, "_a", "_b", "_c", "_o")
         self.assertFalse(self.i1.swapMaster(gate))
         self.assertNotEqual(self.i1.getMaster().getName(), "_g3")

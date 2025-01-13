@@ -36,6 +36,7 @@
 #include <tcl.h>
 
 #include <cstdio>
+#include <vector>
 
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"

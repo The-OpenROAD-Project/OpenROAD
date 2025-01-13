@@ -38,6 +38,7 @@
 #include <list>
 #include <regex>
 #include <string>
+#include <vector>
 
 namespace utl {
 

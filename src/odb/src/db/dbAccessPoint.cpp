@@ -41,6 +41,7 @@
 #include "odb/dbTypes.h"
 // User Code Begin Includes
 #include <algorithm>
+#include <vector>
 
 #include "dbBPin.h"
 #include "dbBTerm.h"
