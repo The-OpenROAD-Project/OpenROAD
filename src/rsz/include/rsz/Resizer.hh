@@ -494,7 +494,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   LibertyCellSeq getSwappableCells(LibertyCell* source_cell);
 
   bool getCin(const LibertyCell *cell, float& cin);
-  bool satisfiesMaxSlew(const Pin* drvr_pin, float load_cap, Slew max_slew, const LibertyCell *size);
   // Resize drvr_pin instance to target slew.
   // Return 1 if resized.
   int resizeToTargetSlew(const Pin* drvr_pin);

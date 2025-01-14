@@ -49,6 +49,7 @@
 #include "sta/PathRef.hh"
 #include "sta/PathVertex.hh"
 #include "sta/PortDirection.hh"
+#include "sta/RiseFallValues.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
@@ -136,6 +137,80 @@ void RepairDesign::repairDesign(double max_wire_length,
   }
 }
 
+void RepairDesign::performEarlySizingRound(float gate_gain, float buffer_gain,
+                                           int &repaired_net_count)
+{
+  // keep track of user annotations so we don't remove them
+  std::set<std::pair<Vertex*, int>> slew_user_annotated;
+
+  // We need to override slews in order to get good required time estimates.
+  for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
+    Vertex* drvr = resizer_->level_drvr_vertices_[i];
+    for (auto rf : {RiseFall::rise(), RiseFall::fall()}) {
+      if (!drvr->slewAnnotated(rf, min_) && !drvr->slewAnnotated(rf, max_)) {
+        sta_->setAnnotatedSlew(drvr,
+                               resizer_->tgt_slew_corner_,
+                               sta::MinMaxAll::all(),
+                               rf->asRiseFallBoth(),
+                               resizer_->tgt_slews_[rf->index()]);
+      } else {
+        slew_user_annotated.insert(std::make_pair(drvr, rf->index()));
+      }
+    }
+  }
+  findBufferSizes();
+
+  sta_->searchPreamble();
+  search_->findAllArrivals();
+
+  for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
+    Vertex* drvr = resizer_->level_drvr_vertices_[i];
+    Pin* drvr_pin = drvr->pin();
+    Net* net = network_->isTopLevelPort(drvr_pin)
+                   ? network_->net(network_->term(drvr_pin))
+                   : network_->net(drvr_pin);
+    dbNet* net_db = db_network_->staToDb(net);
+    search_->findRequireds(drvr->level() + 1);
+
+    if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
+        && !sta_->isClock(drvr_pin)
+        // Exclude tie hi/low cells and supply nets.
+        && !drvr->isConstant()) {
+
+      float fanout, max_fanout, fanout_slack;
+      sta_->checkFanout(drvr_pin, max_, fanout, max_fanout, fanout_slack);
+      max_fanout = 10.0f;
+
+      bool repaired_net = false;
+
+      if (performGainBuffering(net, drvr_pin, max_fanout)) {
+        repaired_net = true;
+      }
+
+      if (resizer_->resizeToCapRatio(drvr_pin, false)) {
+        repaired_net = true;
+      }
+
+      if (repaired_net) {
+        repaired_net_count++;
+      }
+    }
+
+    for (auto mm : sta::MinMaxAll::all()->range()) {
+      for (auto rf : sta::RiseFallBoth::riseFall()->range()) {
+        if (!slew_user_annotated.count(std::make_pair(drvr, rf->index()))) {
+          const DcalcAnalysisPt* dcalc_ap
+              = resizer_->tgt_slew_corner_->findDcalcAnalysisPt(mm);
+          drvr->setSlewAnnotated(false, rf, dcalc_ap->index());
+        }
+      }
+    }
+  }
+
+  resizer_->level_drvr_vertices_valid_ = false;
+  resizer_->ensureLevelDrvrVertices();
+}
+
 void RepairDesign::repairDesign(
     double max_wire_length,  // zero for none (meters)
     double slew_margin,
@@ -163,34 +238,15 @@ void RepairDesign::repairDesign(
   resize_count_ = 0;
   resizer_->resized_multi_output_insts_.clear();
 
-  // keep track of user annotations so we don't remove them
-  std::set<std::pair<Vertex*, int>> slew_user_annotated;
-
-  if (gain_buffering) {
-    // If gain-based buffering is enabled, we need to override slews in order to
-    // get good required time estimates.
-    for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
-      Vertex* drvr = resizer_->level_drvr_vertices_[i];
-      for (auto rf : {RiseFall::rise(), RiseFall::fall()}) {
-        if (!drvr->slewAnnotated(rf, min_) && !drvr->slewAnnotated(rf, max_)) {
-          sta_->setAnnotatedSlew(drvr,
-                                 resizer_->tgt_slew_corner_,
-                                 sta::MinMaxAll::all(),
-                                 rf->asRiseFallBoth(),
-                                 resizer_->tgt_slews_[rf->index()]);
-        } else {
-          slew_user_annotated.insert(std::make_pair(drvr, rf->index()));
-        }
-      }
-    }
-    findBufferSizes();
-  }
-
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
   sta_->checkFanoutLimitPreamble();
   sta_->searchPreamble();
   search_->findAllArrivals();
+
+  if (buffer_gain_ != 0.0) {
+    performEarlySizingRound(4.0f, buffer_gain_, repaired_net_count);
+  }
 
   resizer_->incrementalParasiticsBegin();
   int print_iteration = 0;
@@ -219,9 +275,6 @@ void RepairDesign::repairDesign(
     if (debug) {
       logger_->setDebugLevel(RSZ, "repair_net", 3);
     }
-    if (gain_buffering) {
-      search_->findRequireds(drvr->level() + 1);
-    }
     if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
@@ -242,18 +295,6 @@ void RepairDesign::repairDesign(
     }
     if (debug) {
       logger_->setDebugLevel(RSZ, "repair_net", 0);
-    }
-
-    if (gain_buffering) {
-      for (auto mm : sta::MinMaxAll::all()->range()) {
-        for (auto rf : sta::RiseFallBoth::riseFall()->range()) {
-          if (!slew_user_annotated.count(std::make_pair(drvr, rf->index()))) {
-            const DcalcAnalysisPt* dcalc_ap
-                = resizer_->tgt_slew_corner_->findDcalcAnalysisPt(mm);
-            drvr->setSlewAnnotated(false, rf, dcalc_ap->index());
-          }
-        }
-      }
     }
   }
   resizer_->updateParasitics();

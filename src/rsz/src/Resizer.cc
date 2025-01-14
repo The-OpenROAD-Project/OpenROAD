@@ -1439,57 +1439,9 @@ bool Resizer::getCin(const LibertyCell *cell, float& cin)
   return false;
 }
 
-// Will `drvr_pin` max slew be satisfied if we swap in `size`?
-bool Resizer::satisfiesMaxSlew(const Pin* drvr_pin, float load_cap, Slew max_slew, const LibertyCell *size)
-{
-  const Pvt* pvt = tgt_slew_dcalc_ap_->operatingConditions();
-  Instance* inst = network_->instance(drvr_pin);
-
-  for (TimingArcSet *arc_set : size->timingArcSets()) {
-    TimingRole *role = arc_set->role();
-    if (!role->isTimingCheck()
-        && role != TimingRole::tristateDisable()
-        && role != TimingRole::tristateEnable()
-        && role != TimingRole::clockTreePathMin()
-        && role != TimingRole::clockTreePathMax()) {
-      for (TimingArc *arc : arc_set->arcs()) {
-        RiseFall *in_rf = arc->fromEdge()->asRiseFall();
-
-        GateTimingModel *model = dynamic_cast<GateTimingModel*>(arc->model());
-        Pin *in_pin = network_->findPin(inst, arc->from()->name());
-        if (model && in_pin) {
-          Slew in_slew = sta_->vertexSlew(graph_->pinLoadVertex(in_pin), in_rf,
-                                          tgt_slew_dcalc_ap_);
-
-          if (in_slew > max_slew) {
-            // If the incoming slew is over the maximum, cap it to avoid
-            // excessive second order upsizing
-            in_slew = max_slew;
-          }
-
-          ArcDelay arc_delay;
-          Slew arc_slew;
-          model->gateDelay(pvt, in_slew, load_cap, false, arc_delay, arc_slew);
-
-          if (arc_slew > max_slew) {
-            return false;
-          }
-        }
-      }
-    }
-  }
-
-  return true;
-}
-
 int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
 {
   const float max_cap_ratio = 4.0f;
-
-  bool max_slew_exists = false;
-  Slew max_slew = 0; 
-  //sta_->checkSlew(drvr_pin, nullptr, max_, check_clks);
-
   Instance* inst = network_->instance(drvr_pin);
   LibertyCell* cell = inst ? network_->libertyCell(inst) : nullptr;
   if (!network_->isTopLevelPort(drvr_pin) && inst && !dontTouch(inst) && cell
@@ -1510,11 +1462,7 @@ int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
         for (LibertyCell *size : *equiv_cells) {
           float size_cin;
           if (areCellsSwappable(cell, size) && getCin(size, size_cin)) {
-            // To be selected, the cell must both:
-            //  * satisfy the cap ratio
-            //  * do not lead to a max slew violation
-            if (load_cap < size_cin * max_cap_ratio &&
-                (!max_slew_exists || satisfiesMaxSlew(drvr_pin, load_cap, max_slew, size))) {
+            if (load_cap < size_cin * max_cap_ratio) {
               if (upsize_only && size == cell) {
                 // The current size of the cell fits the criteria, apply no sizing
                 return 0;
