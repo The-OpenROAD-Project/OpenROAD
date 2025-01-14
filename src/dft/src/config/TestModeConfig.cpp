@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2023, Google LLC
+// Copyright (c) 2025, Google LLC
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,51 +30,39 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "DftConfig.hh"
+#include "TestModeConfig.hh"
 
 namespace dft {
 
-namespace {
-constexpr std::string_view kDefaultTestModeName = "default";
-}  // namespace
-
-void DftConfig::report(utl::Logger* logger) const
+ScanArchitectConfig* TestModeConfig::getMutableScanArchitectConfig()
 {
-  logger->report("***************************");
-  logger->report("DFT Config Report:\n");
-
-  for (const auto& [test_mode, test_mode_config] : test_modes_config_) {
-    logger->report("\nTest mode: {}", test_mode);
-    test_mode_config.report(logger);
-  }
-
-  logger->report("***************************");
+  return &scan_architect_config_;
 }
 
-TestModeConfig* DftConfig::createTestMode(const std::string& name)
+const ScanArchitectConfig& TestModeConfig::getScanArchitectConfig() const
 {
-  auto pair = test_modes_config_.try_emplace(name, name);
-  return &pair.first->second;
+  return scan_architect_config_;
 }
 
-TestModeConfig* DftConfig::getOrDefaultMutableTestModeConfig(
-    const std::string& name)
+ScanStitchConfig* TestModeConfig::getMutableScanStitchConfig()
 {
-  auto found = test_modes_config_.find(name);
-  if (found == test_modes_config_.end()) {
-    if (name == kDefaultTestModeName) {
-      return createTestMode(name);
-    } else {
-      return nullptr;
-    }
-  }
-  return &found->second;
+  return &scan_stitch_config_;
 }
 
-const std::unordered_map<std::string, TestModeConfig>&
-DftConfig::getTestModesConfig() const
+const ScanStitchConfig& TestModeConfig::getScanStitchConfig() const
 {
-  return test_modes_config_;
+  return scan_stitch_config_;
+}
+
+void TestModeConfig::report(utl::Logger* logger) const
+{
+  scan_architect_config_.report(logger);
+  scan_stitch_config_.report(logger);
+}
+
+const std::string& TestModeConfig::getName() const
+{
+  return name_;
 }
 
 }  // namespace dft

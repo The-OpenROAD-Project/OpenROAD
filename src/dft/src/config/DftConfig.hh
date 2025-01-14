@@ -31,8 +31,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include "ScanArchitectConfig.hh"
-#include "ScanStitchConfig.hh"
+#include <unordered_map>
+
+#include "TestModeConfig.hh"
 #include "utl/Logger.h"
 
 namespace dft {
@@ -47,18 +48,18 @@ class DftConfig
   DftConfig(const DftConfig&) = delete;
   DftConfig& operator=(const DftConfig&) = delete;
 
-  ScanArchitectConfig* getMutableScanArchitectConfig();
-  const ScanArchitectConfig& getScanArchitectConfig() const;
-
-  ScanStitchConfig* getMutableScanStitchConfig();
-  const ScanStitchConfig& getScanStitchConfig() const;
+  TestModeConfig* createTestMode(const std::string& name);
+  TestModeConfig* getOrDefaultMutableTestModeConfig(const std::string& name);
+  const std::unordered_map<std::string, TestModeConfig>& getTestModesConfig()
+      const;
 
   // Prints the information currently being used by DFT for config
   void report(utl::Logger* logger) const;
 
  private:
-  ScanArchitectConfig scan_architect_config_;
-  ScanStitchConfig scan_stitch_config_;
+  // A DFT config can have multiple test modes. If no test mode was defined by
+  // the user, then we use the "default" test mode.
+  std::unordered_map<std::string, TestModeConfig> test_modes_config_;
 };
 
 }  // namespace dft

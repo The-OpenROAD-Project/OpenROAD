@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2023, Google LLC
+// Copyright (c) 2025, Google LLC
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,52 +29,36 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#pragma once
 
-#include "DftConfig.hh"
+#include "ScanArchitectConfig.hh"
+#include "ScanStitchConfig.hh"
 
 namespace dft {
 
-namespace {
-constexpr std::string_view kDefaultTestModeName = "default";
-}  // namespace
-
-void DftConfig::report(utl::Logger* logger) const
+// Holds the config of this particular test mode.
+class TestModeConfig
 {
-  logger->report("***************************");
-  logger->report("DFT Config Report:\n");
+ public:
+  TestModeConfig(const std::string& name) : name_(name) {}
+  // Not copyable or movable.
+  TestModeConfig(const TestModeConfig&) = delete;
+  TestModeConfig& operator=(const TestModeConfig&) = delete;
 
-  for (const auto& [test_mode, test_mode_config] : test_modes_config_) {
-    logger->report("\nTest mode: {}", test_mode);
-    test_mode_config.report(logger);
-  }
+  ScanArchitectConfig* getMutableScanArchitectConfig();
+  const ScanArchitectConfig& getScanArchitectConfig() const;
 
-  logger->report("***************************");
-}
+  ScanStitchConfig* getMutableScanStitchConfig();
+  const ScanStitchConfig& getScanStitchConfig() const;
 
-TestModeConfig* DftConfig::createTestMode(const std::string& name)
-{
-  auto pair = test_modes_config_.try_emplace(name, name);
-  return &pair.first->second;
-}
+  void report(utl::Logger* logger) const;
 
-TestModeConfig* DftConfig::getOrDefaultMutableTestModeConfig(
-    const std::string& name)
-{
-  auto found = test_modes_config_.find(name);
-  if (found == test_modes_config_.end()) {
-    if (name == kDefaultTestModeName) {
-      return createTestMode(name);
-    } else {
-      return nullptr;
-    }
-  }
-  return &found->second;
-}
+  const std::string& getName() const;
 
-const std::unordered_map<std::string, TestModeConfig>&
-DftConfig::getTestModesConfig() const
-{
-  return test_modes_config_;
-}
+ private:
+  std::string name_;
+  ScanArchitectConfig scan_architect_config_;
+  ScanStitchConfig scan_stitch_config_;
+};
 
 }  // namespace dft

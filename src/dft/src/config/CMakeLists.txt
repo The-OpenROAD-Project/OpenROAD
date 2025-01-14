@@ -1,6 +1,7 @@
 add_library(dft_config_lib
   # Keep sorted
   DftConfig.cpp
+  TestModeConfig.cpp
   ScanArchitectConfig.cpp
   ScanStitchConfig.cpp
 )

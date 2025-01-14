@@ -48,6 +48,8 @@ class ScanArchitectConfig
     ClockMix  // We architect the flops of different clock and edge together
   };
 
+  ScanArchitectConfig() : clock_mixing_(ClockMixing::NoMix) {}
+
   void setClockMixing(ClockMixing clock_mixing);
 
   // The max length in bits that a scan chain can have

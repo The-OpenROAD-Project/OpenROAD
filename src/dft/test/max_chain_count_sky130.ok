@@ -2,6 +2,7 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
 ***************************
 Preview DFT Report
+Test mode: default
 Number of chains: 1
 Clock domain: No Mix
 ***************************

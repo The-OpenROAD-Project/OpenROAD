@@ -70,7 +70,8 @@ proc insert_dft { args } {
   dft::insert_dft
 }
 
-sta::define_cmd_args "set_dft_config" { [-max_length max_length]
+sta::define_cmd_args "set_dft_config" { [-test_mode test_mode]
+                                        [-max_length max_length]
                                         [-max_chains max_chains]
                                         [-clock_mixing clock_mixing]
                                         [-scan_enable_name_pattern scan_enable_name_pattern]
@@ -80,6 +81,7 @@ sta::define_cmd_args "set_dft_config" { [-max_length max_length]
 proc set_dft_config { args } {
   sta::parse_key_args "set_dft_config" args \
     keys {
+      -test_mode
       -max_length
       -max_chains
       -clock_mixing
@@ -91,21 +93,28 @@ proc set_dft_config { args } {
 
   sta::check_argc_eq0 "set_dft_config" $args
 
+  if { [info exists keys(-test_mode)] } {
+    set test_mode $keys(-max_length)
+  } else {
+    # all commands are by default applied to the "default" test mode
+    set test_mode "default"
+  }
+
   if { [info exists keys(-max_length)] } {
     set max_length $keys(-max_length)
     sta::check_positive_integer "-max_length" $max_length
-    dft::set_dft_config_max_length $max_length
+    dft::set_dft_config_max_length $test_mode $max_length
   }
 
   if { [info exists keys(-max_chains)] } {
     set max_chains $keys(-max_chains)
     sta::check_positive_integer "-max_chains" $max_chains
-    dft::set_dft_config_max_chains $max_chains
+    dft::set_dft_config_max_chains $test_mode $max_chains
   }
 
   if { [info exists keys(-clock_mixing)] } {
     set clock_mixing $keys(-clock_mixing)
-    dft::set_dft_config_clock_mixing $clock_mixing
+    dft::set_dft_config_clock_mixing $test_mode $clock_mixing
   }
 
   foreach {flag signal} {
@@ -114,7 +123,7 @@ proc set_dft_config { args } {
     -scan_out_name_pattern "scan_out"
   } {
     if { [info exists keys($flag)] } {
-      dft::set_dft_config_scan_signal_name_pattern $signal $keys($flag)
+      dft::set_dft_config_scan_signal_name_pattern $test_mode $signal $keys($flag)
     }
   }
 }
@@ -123,4 +132,26 @@ sta::define_cmd_args "report_dft_config" { }
 proc report_dft_config { args } {
   sta::parse_key_args "report_dft_config" args keys {} flags {}
   dft::report_dft_config
+}
+
+
+sta::define_cmd_args "create_dft_test_mode" { [-test_mode test_mode] }
+proc create_dft_test_mode { args } {
+  sta::parse_key_args "create_dft_test_mode" args \
+    keys {
+      -test_mode
+      -max_length
+      -max_chains
+      -clock_mixing
+      -scan_enable_name_pattern
+      -scan_in_name_pattern
+      -scan_out_name_pattern
+    } \
+    flags {}
+  sta::check_argc_eq0 "create_dft_test_mode" $args
+
+  if { [info exists keys(-test_mode)] } {
+    set test_mode $keys(-test_mode)
+    dft::create_dft_test_mode $test_mode;
+  }
 }
