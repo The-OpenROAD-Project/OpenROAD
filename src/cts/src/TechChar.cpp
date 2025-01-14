@@ -1545,11 +1545,13 @@ unsigned TechChar::normalizeCharResults(float value,
 void TechChar::create()
 {
   //
-  // Note that none of the techchar uses anything hierarchical
-  // and builds intermediate networks of (liberty) gates in a separate block
-  // Rather than register then as concrete we simply turn of hierarchy
+  // Note that none of the techchar uses anything hierarchical.
+  // Techchar builds intermediate structures of (liberty) gates in a separate
+  // block Rather than register them as concrete we simply turn off hierarchy
   // here so that the default (flat) dbNetwork apis are used
-  // during characterization.
+  // during characterization. This pattern is likely to repeat
+  // whenever a "scratchpad" dbBlock and sta are created for characterizing
+  // structures.
   //
   bool is_hierarchical = db_network_->hasHierarchy();
   if (is_hierarchical) {
