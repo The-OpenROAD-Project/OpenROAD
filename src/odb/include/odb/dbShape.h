@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "ZException.h"
 #include "dbObject.h"
 #include "dbSet.h"

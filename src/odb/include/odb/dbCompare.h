@@ -341,15 +341,6 @@ struct less<odb::dbMPin*>
 };
 
 template <>
-struct less<odb::dbTarget*>
-{
-  bool operator()(const odb::dbTarget* lhs, const odb::dbTarget* rhs) const
-  {
-    return odb::compare_by_id(lhs, rhs);
-  }
-};
-
-template <>
 struct less<odb::dbTech*>
 {
   bool operator()(const odb::dbTech* lhs, const odb::dbTech* rhs) const

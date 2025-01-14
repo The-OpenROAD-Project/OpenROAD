@@ -66,13 +66,14 @@ sta::define_cmd_args "analyze_power_grid" {
   [-em_outfile em_file]
   [-vsrc voltage_source_file]
   [-source_type FULL|BUMPS|STRAPS]
+  [-allow_reuse]
 }
 
 proc analyze_power_grid { args } {
   sta::parse_key_args "analyze_power_grid" args \
     keys {-net -corner -voltage_file -error_file -em_outfile -vsrc \
       -source_type} \
-    flags {-enable_em}
+    flags {-enable_em -allow_reuse}
   if { ![info exists keys(-net)] } {
     utl::error PSM 58 "Argument -net not specified."
   }
@@ -111,6 +112,7 @@ proc analyze_power_grid { args } {
     [sta::parse_corner_or_default keys] \
     $source_type \
     $error_file \
+    [info exists flags(-allow_reuse)] \
     $enable_em \
     $em_file \
     $voltage_file \

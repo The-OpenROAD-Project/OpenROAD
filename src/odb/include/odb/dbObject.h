@@ -151,7 +151,6 @@ enum dbObjectType
   dbMasterObj,
   dbMPinObj,
   dbMTermObj,
-  dbTargetObj,
   dbTechAntennaPinModelObj,
 
   // Tech Objects

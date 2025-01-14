@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2024, Efabless Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,81 +30,46 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#pragma once
+#include "ScanStitchConfig.hh"
 
-#include "dbCore.h"
-#include "odb/dbId.h"
-#include "odb/geom.h"
-#include "odb/odb.h"
+#include "Formatting.hh"
 
-namespace odb {
+namespace dft {
 
-class _dbTechLayer;
-class _dbTarget;
-class _dbDatabase;
-class _dbMTerm;
-class dbIStream;
-class dbOStream;
-class dbDiff;
-
-struct _dbTargetFlags
+void ScanStitchConfig::setEnableNamePattern(
+    std::string_view enable_name_pattern)
 {
-  uint _spare_bits : 32;
+  enable_name_pattern_ = enable_name_pattern;
+}
+std::string_view ScanStitchConfig::getEnableNamePattern() const
+{
+  return enable_name_pattern_;
 };
 
-class _dbTarget : public _dbObject
+void ScanStitchConfig::setInNamePattern(std::string_view in_name_pattern)
 {
- public:
-  // PERSISTANT-MEMBERS
-  _dbTargetFlags _flags;
-  Point _point;
-  dbId<_dbMTerm> _mterm;
-  dbId<_dbTechLayer> _layer;
-  dbId<_dbTarget> _next;
-
-  _dbTarget(_dbDatabase*, const _dbTarget& t);
-  _dbTarget(_dbDatabase*);
-
-  bool operator==(const _dbTarget& rhs) const;
-  bool operator!=(const _dbTarget& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff, const char* field, const _dbTarget& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  in_name_pattern_ = in_name_pattern;
+};
+std::string_view ScanStitchConfig::getInNamePattern() const
+{
+  return in_name_pattern_;
 };
 
-inline _dbTarget::_dbTarget(_dbDatabase*, const _dbTarget& t)
-    : _flags(t._flags),
-      _point(t._point),
-      _mterm(t._mterm),
-      _layer(t._layer),
-      _next(t._next)
+void ScanStitchConfig::setOutNamePattern(std::string_view out_name_pattern)
 {
+  out_name_pattern_ = out_name_pattern;
+};
+std::string_view ScanStitchConfig::getOutNamePattern() const
+{
+  return out_name_pattern_;
+};
+
+void ScanStitchConfig::report(utl::Logger* logger) const
+{
+  logger->report("Scan Stitch Config:");
+  logger->report("- Scan Enable Name Pattern: '{}'", enable_name_pattern_);
+  logger->report("- Scan In Name Pattern: '{}'", in_name_pattern_);
+  logger->report("- Scan Out Name Pattern: '{}'", out_name_pattern_);
 }
 
-inline _dbTarget::_dbTarget(_dbDatabase*)
-{
-  _flags._spare_bits = 0;
-}
-
-inline dbOStream& operator<<(dbOStream& stream, const _dbTarget& target)
-{
-  uint* bit_field = (uint*) &target._flags;
-  stream << *bit_field;
-  stream << target._point;
-  stream << target._mterm;
-  stream << target._layer;
-  stream << target._next;
-  return stream;
-}
-
-inline dbIStream& operator>>(dbIStream& stream, _dbTarget& target)
-{
-  uint* bit_field = (uint*) &target._flags;
-  stream >> *bit_field;
-  stream >> target._point;
-  stream >> target._mterm;
-  stream >> target._layer;
-  stream >> target._next;
-  return stream;
-}
-
-}  // namespace odb
+}  // namespace dft

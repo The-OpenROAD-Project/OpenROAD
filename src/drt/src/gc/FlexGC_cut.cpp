@@ -25,6 +25,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include <boost/geometry.hpp>
+#include <vector>
 
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"

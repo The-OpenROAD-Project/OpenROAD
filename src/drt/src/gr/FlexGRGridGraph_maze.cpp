@@ -27,6 +27,7 @@
  */
 
 #include <cmath>
+#include <vector>
 
 #include "gr/FlexGR.h"
 #include "gr/FlexGRGridGraph.h"

@@ -39,6 +39,7 @@
 #include <QString>
 #include <QtCharts>
 #include <memory>
+#include <vector>
 
 #include "gui/gui.h"
 #include "staGuiInterface.h"

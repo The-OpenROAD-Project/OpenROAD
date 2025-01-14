@@ -33,6 +33,7 @@
 #include "dbTrackGrid.h"
 
 #include <algorithm>
+#include <vector>
 
 #include "dbBlock.h"
 #include "dbChip.h"

@@ -34,6 +34,7 @@
 
 #include <iostream>
 #include <limits>
+#include <vector>
 
 #include "Utils.hh"
 #include "db_sta/dbNetwork.hh"
@@ -45,19 +46,6 @@
 namespace dft {
 
 namespace {
-
-// Checks if the given LibertyCell is really a Scan Cell with a Scan In and a
-// Scan Enable
-bool IsScanCell(const sta::LibertyCell* libertyCell)
-{
-  const sta::TestCell* test_cell = libertyCell->testCell();
-  if (test_cell) {
-    return getLibertyScanIn(test_cell) != nullptr
-           && getLibertyScanEnable(test_cell) != nullptr;
-  }
-  return false;
-}
-
 // Checks the ports
 sta::LibertyPort* FindEquivalentPortInScanCell(
     const sta::LibertyPort* non_scan_cell_port,
@@ -309,7 +297,7 @@ void ScanReplace::collectScanCellAvailable()
         continue;
       }
 
-      if (IsScanCell(liberty_cell)) {
+      if (utils::IsScanCell(liberty_cell)) {
         available_scan_lib_cells_.insert(liberty_cell);
       } else {
         non_scan_cells.push_back(liberty_cell);

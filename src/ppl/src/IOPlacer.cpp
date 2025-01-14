@@ -39,6 +39,7 @@
 #include <fstream>
 #include <random>
 #include <sstream>
+#include <vector>
 
 #include "AbstractIOPlacerRenderer.h"
 #include "Core.h"

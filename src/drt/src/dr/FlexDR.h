@@ -34,6 +34,7 @@
 #include <boost/serialization/export.hpp>
 #include <deque>
 #include <memory>
+#include <vector>
 
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
@@ -861,19 +862,13 @@ class FlexDRWorker
   void modMinSpacingCostVia_eol(const Rect& box,
                                 const Rect& tmpBx,
                                 ModCostType type,
-                                bool isUpperVia,
                                 const drEolSpacingConstraint& drCon,
-                                frMIdx i,
-                                frMIdx j,
-                                frMIdx z,
+                                frMIdx idx,
                                 bool ndr = false);
   void modMinSpacingCostVia_eol_helper(const Rect& box,
                                        const Rect& testBox,
                                        ModCostType type,
-                                       bool isUpperVia,
-                                       frMIdx i,
-                                       frMIdx j,
-                                       frMIdx z,
+                                       frMIdx idx,
                                        bool ndr = false);
   // eolSpc
   void modEolSpacingCost_helper(const Rect& testbox,

@@ -32,10 +32,15 @@
 
 #include "odb/defin.h"
 
+#include <vector>
+
 #include "definReader.h"
 #include "odb/db.h"
 
 namespace odb {
+
+// Protects the DefParser namespace that has static variables
+std::mutex defin::_def_mutex;
 
 defin::defin(dbDatabase* db, utl::Logger* logger, MODE mode)
 {
@@ -101,6 +106,7 @@ dbChip* defin::createChip(std::vector<dbLib*>& libs,
                           const char* def_file,
                           dbTech* tech)
 {
+  std::lock_guard<std::mutex> lock(_def_mutex);
   return _reader->createChip(libs, def_file, tech);
 }
 
@@ -109,11 +115,13 @@ dbBlock* defin::createBlock(dbBlock* parent,
                             const char* def_file,
                             dbTech* tech)
 {
+  std::lock_guard<std::mutex> lock(_def_mutex);
   return _reader->createBlock(parent, libs, def_file, tech);
 }
 
 bool defin::replaceWires(dbBlock* block, const char* def_file)
 {
+  std::lock_guard<std::mutex> lock(_def_mutex);
   return _reader->replaceWires(block, def_file);
 }
 

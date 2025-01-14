@@ -48,6 +48,7 @@
 #include <QToolBar>
 #include <QVariant>
 #include <unordered_map>
+#include <vector>
 
 #include "gui/gui.h"
 #include "ui_selectedWidget.h"

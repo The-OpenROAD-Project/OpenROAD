@@ -33,6 +33,7 @@
 #include "tclCmdHighlighter.h"
 
 #include <QTextDocument>
+#include <vector>
 
 namespace gui {
 

@@ -13,19 +13,31 @@ PINS 6 ;
     - clock + NET clock + DIRECTION INPUT + USE SIGNAL ;
     - output1 + NET output1 + DIRECTION OUTPUT + USE SIGNAL ;
     - port1 + NET port1 + DIRECTION INPUT + USE SIGNAL ;
-    - scan_enable_1 + NET scan_enable_1 + DIRECTION INPUT + USE SCAN ;
-    - scan_in_1 + NET scan_in_1 + DIRECTION INPUT + USE SCAN ;
+    - scan_enable_0 + NET scan_enable_0 + DIRECTION INPUT + USE SCAN ;
+    - scan_in_0 + NET scan_in_0 + DIRECTION INPUT + USE SCAN ;
     - set_b + NET set_b + DIRECTION INPUT + USE SIGNAL ;
 END PINS
 NETS 6 ;
     - clock ( PIN clock ) ( ff1 CLK ) + USE SIGNAL ;
     - output1 ( PIN output1 ) ( ff1 Q ) + USE SIGNAL ;
     - port1 ( PIN port1 ) ( ff1 D ) + USE SIGNAL ;
-    - scan_enable_1 ( PIN scan_enable_1 ) ( ff1 SCE ) + USE SCAN ;
-    - scan_in_1 ( PIN scan_in_1 ) ( ff1 SCD ) + USE SCAN ;
+    - scan_enable_0 ( PIN scan_enable_0 ) ( ff1 SCE ) + USE SCAN ;
+    - scan_in_0 ( PIN scan_in_0 ) ( ff1 SCD ) + USE SCAN ;
     - set_b ( PIN set_b ) ( ff1 SET_B ) + USE SIGNAL ;
 END NETS
 GROUPS 1 ;
     - group ff1 + REGION region ;
 END GROUPS
+
+SCANCHAINS 1 ;
+
+- chain_0
++ START PIN scan_in_0
++ FLOATING
+  ff1 ( IN SCD ) ( OUT Q )
++ PARTITION default
++ STOP PIN output1 ;
+
+END SCANCHAINS
+
 END DESIGN

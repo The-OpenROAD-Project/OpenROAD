@@ -32,6 +32,8 @@
 
 #include "dbRSeg.h"
 
+#include <vector>
+
 #include "dbBlock.h"
 #include "dbCapNode.h"
 #include "dbCommon.h"

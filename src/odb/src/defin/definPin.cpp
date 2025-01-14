@@ -35,6 +35,7 @@
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
+#include <vector>
 
 #include "odb/db.h"
 #include "odb/dbShape.h"
@@ -170,6 +171,15 @@ void definPin::pinDirection(dbIoType type)
   }
 
   _cur_bterm->setIoType(type);
+}
+
+bool definPin::checkPinDirection(dbIoType type)
+{
+  if (_cur_bterm == nullptr) {
+    return true;
+  }
+
+  return _cur_bterm->getIoType() == type;
 }
 
 void definPin::pinPlacement(defPlacement status,

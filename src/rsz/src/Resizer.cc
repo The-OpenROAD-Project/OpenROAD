@@ -38,6 +38,7 @@
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <vector>
 
 #include "AbstractSteinerRenderer.h"
 #include "BufferedNet.hh"
@@ -101,7 +102,6 @@ using sta::NetTermIterator;
 using sta::NetworkEdit;
 using sta::Port;
 using sta::stringLess;
-using sta::Term;
 using sta::TimingArcSet;
 using sta::TimingArcSetSeq;
 using sta::TimingRole;
@@ -1327,9 +1327,10 @@ LibertyCell* Resizer::findTargetCell(LibertyCell* cell,
     for (LibertyCell* target_cell : swappable_cells) {
       if (!dontUse(target_cell) && isLinkCell(target_cell)) {
         float target_load = (*target_load_map_)[target_cell];
-        float delay = is_buf_inv ? bufferDelay(
-                          target_cell, load_cap, tgt_slew_dcalc_ap_)
-                                 : 0.0;
+        float delay
+            = is_buf_inv
+                  ? bufferDelay(target_cell, load_cap, tgt_slew_dcalc_ap_)
+                  : 0.0;
         float dist = targetLoadDist(load_cap, target_load);
         debugPrint(logger_,
                    RSZ,
@@ -1802,9 +1803,9 @@ void Resizer::setDontUse(LibertyCell* cell, bool dont_use)
   buffer_lowest_drive_ = nullptr;
 }
 
-bool Resizer::dontUse(LibertyCell* cell)
+bool Resizer::dontUse(const LibertyCell* cell)
 {
-  return cell->dontUse() || dont_use_.hasKey(cell);
+  return cell->dontUse() || dont_use_.hasKey(const_cast<LibertyCell*>(cell));
 }
 
 void Resizer::reportDontUse() const

@@ -29,6 +29,7 @@
 #include "fixture.h"
 
 #include <stdexcept>
+#include <vector>
 
 #include "global.h"
 #include "odb/db.h"

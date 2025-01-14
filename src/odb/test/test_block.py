@@ -1,6 +1,7 @@
-import opendbpy as odb
+import odb
 import helper
 import odbUnitTest
+import unittest
 
 
 def placeInst(inst, x, y):
@@ -22,7 +23,6 @@ class TestBlock(odbUnitTest.TestCase):
         self.extcornerblock = self.block.createExtCornerBlock(1)
         odb.dbTechNonDefaultRule_create(self.block, "non_default_1")
         self.parentRegion = odb.dbRegion_create(self.block, "parentRegion")
-        self.childRegion = odb.dbRegion_create(self.parentRegion, "childRegion")
 
     def tearDown(self):
         self.db.destroy(self.db)
@@ -59,10 +59,6 @@ class TestBlock(odbUnitTest.TestCase):
         # region
         self.assertEqual(
             self.block.findRegion("parentRegion").getName(), "parentRegion"
-        )
-        self.assertEqual(self.block.findRegion("childRegion").getName(), "childRegion")
-        self.assertEqual(
-            self.block.findRegion("childRegion").getParent().getName(), "parentRegion"
         )
 
     def check_box_rect(self, min_x, min_y, max_x, max_y):
@@ -144,5 +140,4 @@ class TestBlock(odbUnitTest.TestCase):
 
 
 if __name__ == "__main__":
-    odbUnitTest.mainParallel(TestBlock)
-#     odbUnitTest.main()
+    unittest.main()

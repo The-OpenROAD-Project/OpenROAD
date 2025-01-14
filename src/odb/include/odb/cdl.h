@@ -40,6 +40,7 @@
 #include <cstdio>
 #include <list>
 #include <string>
+#include <vector>
 
 #include "db.h"
 #include "odb.h"

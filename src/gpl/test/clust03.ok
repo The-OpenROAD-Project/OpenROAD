@@ -1,0 +1,5 @@
+[INFO ODB-0227] LEF file: ./asap7/asap7_tech_1x_201209.lef, created 24 layers, 9 vias
+[INFO ODB-0227] LEF file: ./SingleBit/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO IFP-0001] Added 370 rows of 1851 site asap7sc7p5t.
+[INFO GPL-0137] No tray found for group of 100 flop instances containing DFFHQNx1_ASAP7_75t_L
+[WARNING GPL-0138] No clusterable flops found

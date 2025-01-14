@@ -32,6 +32,8 @@
 
 #include "dbSite.h"
 
+#include <vector>
+
 #include "dbDatabase.h"
 #include "dbLib.h"
 #include "dbTable.h"
