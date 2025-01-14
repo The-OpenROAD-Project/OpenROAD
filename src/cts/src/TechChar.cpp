@@ -822,7 +822,7 @@ void TechChar::collectSlewsLoadsFromTableAxis(sta::LibertyCell* libCell,
         }
       }
     }  // if (gateModel)
-  }  // for each arc
+  }    // for each arc
 
   if (logger_->debugCheck(utl::CTS, "tech char", 2)) {
     logger_->report("axis slews at {}", libCell->name());
@@ -1544,6 +1544,17 @@ unsigned TechChar::normalizeCharResults(float value,
 
 void TechChar::create()
 {
+  //
+  // Note that none of the techchar uses anything hierarchical
+  // and builds intermediate networks of (liberty) gates in a separate block
+  // Rather than register then as concrete we simply turn of hierarchy
+  // here so that the default (flat) dbNetwork apis are used
+  // during characterization.
+  //
+  bool is_hierarchical = db_network_->hasHierarchy();
+  if (is_hierarchical) {
+    db_network_->disableHierarchy();
+  }
   // Setup of the attributes required to run the characterization.
   initCharacterization();
   long unsigned int topologiesCreated = 0;
@@ -1664,7 +1675,7 @@ void TechChar::create()
                          topologiesCreated);
             }
           }  // for each slew
-        }  // for each load
+        }    // for each load
         // If the solution is not a pure-wire, update the buffer topologies.
         if (!solution.isPureWire) {
           updateBufferTopologies(solution);
@@ -1688,6 +1699,9 @@ void TechChar::create()
     printSolution();
   }
   odb::dbBlock::destroy(charBlock_);
+  if (is_hierarchical) {
+    db_network_->setHierarchy();
+  }
 }
 
 // Compute possible buffering solution combinations given #buffers and
