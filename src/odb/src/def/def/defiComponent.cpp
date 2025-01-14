@@ -29,14 +29,14 @@
 
 #include "defiComponent.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
 #include "defiUtil.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 /*********************************************************
  * class defiComponentMaskShiftLayer
@@ -56,7 +56,7 @@ void defiComponentMaskShiftLayer::Init()
 {
   layersAllocated_ = 0;
   numLayers_ = 0;
-  layers_ = 0;
+  layers_ = nullptr;
 
   bumpLayers(16);
 }
@@ -77,7 +77,7 @@ void defiComponentMaskShiftLayer::Destroy()
   }
   layersAllocated_ = 0;
   numLayers_ = 0;
-  layers_ = 0;
+  layers_ = nullptr;
 }
 
 void defiComponentMaskShiftLayer::addMaskShiftLayer(const char* layer)
@@ -123,7 +123,7 @@ const char* defiComponentMaskShiftLayer::maskShiftLayer(int index) const
     return layers_[index];
   }
 
-  return 0;
+  return nullptr;
 }
 
 /*********************************************************
@@ -136,24 +136,24 @@ defiComponent::defiComponent(defrData* data) : defData(data)
 
 void defiComponent::Init()
 {
-  id_ = 0;
-  name_ = 0;
-  regionName_ = 0;
-  foreignName_ = 0;
+  id_ = nullptr;
+  name_ = nullptr;
+  regionName_ = nullptr;
+  foreignName_ = nullptr;
   Fori_ = 0;
-  EEQ_ = 0;
-  generateName_ = 0;
-  macroName_ = 0;
+  EEQ_ = nullptr;
+  generateName_ = nullptr;
+  macroName_ = nullptr;
   generateNameSize_ = 0;
   maskShiftSize_ = 0;
-  maskShift_ = 0;
+  maskShift_ = nullptr;
   macroNameSize_ = 0;
   minLayerSize_ = 0;
   maxLayerSize_ = 0;
-  minLayer_ = 0;
-  maxLayer_ = 0;
-  nets_ = 0;
-  source_ = 0;
+  minLayer_ = nullptr;
+  maxLayer_ = nullptr;
+  nets_ = nullptr;
+  source_ = nullptr;
   numNets_ = 0;
   bumpName(16);
   bumpId(16);
@@ -567,7 +567,7 @@ void defiComponent::clear()
   if (maskShiftSize_) {
     free((int*) (maskShift_));
   }
-  maskShift_ = 0;
+  maskShift_ = nullptr;
   maskShiftSize_ = 0;
   weight_ = 0;
   if (source_)
@@ -576,7 +576,7 @@ void defiComponent::clear()
     free(nets_[i]);
   }
   numNets_ = 0;
-  source_ = 0;
+  source_ = nullptr;
   hasHalo_ = 0;
   hasHaloSoft_ = 0;
   haloDist_ = 0;
@@ -789,7 +789,7 @@ char* defiComponent::propName(int index) const
 {
   if (index < 0 || index >= numProps_) {
     defiError(1, 0, "bad index for component property", defData);
-    return 0;
+    return nullptr;
   }
   return names_[index];
 }
@@ -798,7 +798,7 @@ char* defiComponent::propValue(int index) const
 {
   if (index < 0 || index >= numProps_) {
     defiError(1, 0, "bad index for component property", defData);
-    return 0;
+    return nullptr;
   }
   return values_[index];
 }
@@ -956,7 +956,7 @@ const char* defiComponent::net(int index) const
   if (index >= 0 && index < numNets_) {
     return nets_[index];
   }
-  return 0;
+  return nullptr;
 }
 
 void defiComponent::bumpForeignName(int size)
@@ -1036,11 +1036,11 @@ const char* defiComponent::foreignOri() const
     case 7:
       return ("FE");
   }
-  return 0;
+  return nullptr;
 }
 
 int defiComponent::foreignOrient() const
 {
   return Fori_;
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

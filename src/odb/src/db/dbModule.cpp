@@ -46,6 +46,7 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include <string>
+#include <vector>
 
 #include "dbModNet.h"
 #include "dbModuleInstItr.h"
@@ -226,9 +227,7 @@ const dbModBTerm* dbModule::getHeadDbModBTerm() const
   // last object added. The application calling this routine
   // needs to be aware of this (and possibly skip to the end
   // of the list and then use prev to reconstruct creation order).
-  else {
-    return (dbModBTerm*) (block_->_modbterm_tbl->getPtr(obj->_modbterms));
-  }
+  return (dbModBTerm*) (block_->_modbterm_tbl->getPtr(obj->_modbterms));
 }
 
 int dbModule::getModInstCount()
@@ -549,12 +548,13 @@ dbModule* dbModule::makeUniqueDbModule(const char* cell_name,
                                        dbBlock* block)
 
 {
-  static std::map<std::string, int> name_id_map;
   dbModule* module = dbModule::create(block, cell_name);
   if (module != nullptr) {
     return module;
   }
 
+  std::map<std::string, int>& name_id_map
+      = ((_dbBlock*) block)->_module_name_id_map;
   std::string orig_cell_name(cell_name);
   std::string module_name = orig_cell_name + '_' + std::string(inst_name);
   do {
@@ -606,8 +606,6 @@ void dbModule::copyModulePorts(dbModule* old_module,
        ++port_iter) {
     dbModBTerm* old_port = *port_iter;
     dbModBTerm* new_port = dbModBTerm::create(new_module, old_port->getName());
-    mod_bt_map[old_port] = new_port;
-    new_port->setIoType(old_port->getIoType());
     if (new_port) {
       debugPrint(logger,
                  utl::ODB,
@@ -616,6 +614,8 @@ void dbModule::copyModulePorts(dbModule* old_module,
                  "Created module port {} for old port {}",
                  new_port->getName(),
                  old_port->getName());
+      mod_bt_map[old_port] = new_port;
+      new_port->setIoType(old_port->getIoType());
     } else {
       logger->error(utl::ODB,
                     456,

@@ -1,0 +1,22 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: single_cell
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 1 components and 4 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 2 connections.
+[INFO ODB-0133]     Created 2 nets and 2 connections.
+Placement Analysis
+---------------------------------
+total displacement          3.7 u
+average displacement        3.7 u
+max displacement            3.7 u
+original HPWL               2.3 u
+legalized HPWL              9.9 u
+delta HPWL                  332 %
+
+[INFO DPL-0001] Placed 8 filler instances.
+Filler usage:
+  FILLCELL_X1:  1
+  FILLCELL_X16: 1
+  FILLCELL_X2:  2
+  FILLCELL_X32: 3
+  FILLCELL_X4:  1

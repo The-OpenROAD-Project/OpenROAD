@@ -96,7 +96,7 @@ BaseAnnealer::BaseAnnealer(const parquetfp::Command_Line* const params,
 // --------------------------------------------------------
 BaseAnnealer::~BaseAnnealer()
 {
-  if (_analSolve != NULL)
+  if (_analSolve != nullptr)
     delete _analSolve;
 }
 // --------------------------------------------------------
@@ -136,18 +136,10 @@ void BaseAnnealer::postHPWLOpt()
     float reqdWidth = sqrt(reqdArea * reqdAR);
     float reqdHeight = sqrt(reqdArea / reqdAR);
 
-//       printf("blocksArea: %.2f reqdWidth: %.2f reqdHeight: %.2f\n",
-//              blocksArea, reqdWidth, reqdHeight);
-#ifdef USEFLUTE
-    _db->shiftOptimizeDesign(reqdWidth,
-                             reqdHeight,
-                             _params->scaleTerms,
-                             _params->useSteiner,
-                             _params->verb);
-#else
+    //       printf("blocksArea: %.2f reqdWidth: %.2f reqdHeight: %.2f\n",
+    //              blocksArea, reqdWidth, reqdHeight);
     _db->shiftOptimizeDesign(
         reqdWidth, reqdHeight, _params->scaleTerms, _params->verb);
-#endif
   }
 }
 // --------------------------------------------------------

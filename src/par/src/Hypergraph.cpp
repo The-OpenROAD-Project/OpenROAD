@@ -35,8 +35,10 @@
 
 #include "Hypergraph.h"
 
-#include <iostream>
-#include <string>
+#include <algorithm>
+#include <limits>
+#include <set>
+#include <vector>
 
 #include "Utilities.h"
 #include "utl/Logger.h"

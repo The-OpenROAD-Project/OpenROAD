@@ -1,0 +1,12 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 88 components and 422 component-terminals.
+[INFO ODB-0133]     Created 54 nets and 88 connections.
+[INFO PPL-0048] Restrict pins [ clk req_msg[31] req_msg[30] req_msg[29] req_msg[28] ... ] to region 0.00u-20.00u at the TOP edge.
+Found 0 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[WARNING PPL-0110] Constraint has 54 pins, but only 51 available slots.
+Increase the region 0.00um-20.00um on the TOP edge to 0.00um-21.52um.
+[ERROR PPL-0111] 1 constraint(s) does not have available slots for the pins.
+PPL-0111

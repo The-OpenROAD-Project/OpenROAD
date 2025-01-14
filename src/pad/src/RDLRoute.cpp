@@ -35,7 +35,9 @@
 
 #include "RDLRoute.h"
 
-#include "odb/dbCompare.h"
+#include <vector>
+
+#include "odb/db.h"
 #include "odb/geom_boost.h"
 
 namespace pad {

@@ -28,6 +28,7 @@
 
 #include <deque>
 #include <iostream>
+#include <vector>
 
 #include "FlexGR.h"
 #include "FlexGRCMap.h"
@@ -82,8 +83,8 @@ void FlexGR::initLayerPitch()
     }
 
     // calculate line-2-via pitch
-    frViaDef* downVia = nullptr;
-    frViaDef* upVia = nullptr;
+    const frViaDef* downVia = nullptr;
+    const frViaDef* upVia = nullptr;
     if (getDesign()->getTech()->getBottomLayerNum() <= lNum - 1) {
       downVia = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
     }

@@ -46,10 +46,15 @@ namespace utl {
 class Logger;
 }
 
+namespace rsz {
+class Resizer;
+}
+
 namespace sta {
 class dbNetwork;
 class dbSta;
 class FuncExpr;
+class LibertyCell;
 class LibertyPort;
 }  // namespace sta
 
@@ -80,6 +85,7 @@ class MBFF
   MBFF(odb::dbDatabase* db,
        sta::dbSta* sta,
        utl::Logger* log,
+       rsz::Resizer* resizer,
        int threads,
        int multistart,
        int num_paths,
@@ -91,14 +97,27 @@ class MBFF
   // get the respective q/qn pins for a d pin
   struct FlopOutputs
   {
-    sta::LibertyPort* q;
-    sta::LibertyPort* qn;
+    const sta::LibertyPort* q;
+    const sta::LibertyPort* qn;
   };
-  using Mask = std::array<int, 7>;
-  using DataToOutputsMap = std::map<sta::LibertyPort*, FlopOutputs>;
+  struct Mask
+  {
+    int func_idx{0};
+    bool clock_polarity{false};
+    bool has_clear{false};
+    bool has_preset{false};
+    bool pos_output{false};
+    bool inv_output{false};
+    bool is_scan_cell{false};
+
+    std::string to_string() const;
+    bool operator<(const Mask& rhs) const;
+  };
+  using DataToOutputsMap = std::map<const sta::LibertyPort*, FlopOutputs>;
   DataToOutputsMap GetPinMapping(odb::dbInst* tray);
 
   // MBFF functions
+  const sta::LibertyCell* getLibertyCell(const sta::Cell* cell);
   float GetDist(const Point& a, const Point& b);
   float GetDistAR(const Point& a, const Point& b, float AR);
   int GetRows(int slot_cnt, const Mask& array_mask);
@@ -138,12 +157,14 @@ class MBFF
   bool IsValidTray(odb::dbInst* tray);
 
   // (MB)FF funcs
-  PortName PortType(sta::LibertyPort* lib_port, odb::dbInst* inst);
-  bool IsSame(sta::FuncExpr* expr1,
+  PortName PortType(const sta::LibertyPort* lib_port, odb::dbInst* inst);
+  bool IsSame(const sta::FuncExpr* expr1,
               odb::dbInst* inst1,
-              sta::FuncExpr* expr2,
+              const sta::FuncExpr* expr2,
               odb::dbInst* inst2);
-  int GetMatchingFunc(sta::FuncExpr* expr, odb::dbInst* inst, bool create_new);
+  int GetMatchingFunc(const sta::FuncExpr* expr,
+                      odb::dbInst* inst,
+                      bool create_new);
   Mask GetArrayMask(odb::dbInst* inst, bool isTray);
 
   Tray GetOneBit(const Point& pt);
@@ -176,7 +197,7 @@ class MBFF
   void KMeans(const std::vector<Flop>& flops,
               int knn,
               std::vector<std::vector<Flop>>& clusters,
-              std::vector<int>& rand_nums);
+              const std::vector<int>& rand_nums);
   float GetKSilh(const std::vector<std::vector<Flop>>& clusters,
                  const std::vector<Point>& centers);
   void KMeansDecomp(const std::vector<Flop>& flops,
@@ -230,6 +251,9 @@ class MBFF
   void ReadLibs();
   void SetTrayNames();
 
+  void displayFlopClusters(const char* stage,
+                           std::vector<std::vector<Flop>>& clusters);
+
   // OpenROAD vars
   odb::dbDatabase* db_;
   odb::dbBlock* block_;
@@ -237,6 +261,7 @@ class MBFF
   sta::dbNetwork* network_;
   sta::Corner* corner_;
   utl::Logger* log_;
+  rsz::Resizer* resizer_;
   std::unique_ptr<Graphics> graphics_;
   int num_threads_;
   int multistart_;
@@ -256,7 +281,6 @@ class MBFF
   std::map<std::string, int> name_to_idx_;
   std::map<int, int> tray_sizes_used_;
   std::vector<std::vector<int>> paths_;
-  std::vector<std::set<int>> unique_;
 
   // MBFF vars
   template <typename T>
@@ -275,10 +299,10 @@ class MBFF
   std::vector<float> norm_power_;
   std::vector<int> unused_;
   // max tray size: 1 << (7 - 1) = 64 bits
-  int num_sizes_ = 7;
+  const int num_sizes_ = 7;
   // ind of last test tray
   int test_idx_;
   // all MBFF next_states
-  std::vector<std::pair<sta::FuncExpr*, odb::dbInst*>> funcs_;
+  std::vector<std::pair<const sta::FuncExpr*, odb::dbInst*>> funcs_;
 };
 }  // namespace gpl

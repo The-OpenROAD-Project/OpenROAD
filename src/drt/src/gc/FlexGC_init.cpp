@@ -27,6 +27,7 @@
  */
 
 #include <iostream>
+#include <vector>
 
 #include "db/drObj/drNet.h"
 #include "dr/FlexDR.h"
@@ -283,7 +284,6 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
   if (currNet == nullptr) {
     currNet = getNet(obj);
   }
-  dbTransform xform;
   frLayerNum layerNum;
   if (obj->typeId() == drcPathSeg) {
     auto pathSeg = static_cast<drPathSeg*>(obj);
@@ -299,7 +299,7 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
   } else if (obj->typeId() == drcVia) {
     auto via = static_cast<drVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
-    xform = via->getTransform();
+    dbTransform xform = via->getTransform();
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
       Rect box = fig->getBBox();
       xform.apply(box);
@@ -343,7 +343,6 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
   if (currNet == nullptr) {
     currNet = getNet(obj);
   }
-  dbTransform xform;
   frLayerNum layerNum;
   if (obj->typeId() == frcPathSeg) {
     auto pathSeg = static_cast<frPathSeg*>(obj);
@@ -358,7 +357,7 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
   } else if (obj->typeId() == frcVia) {
     auto via = static_cast<frVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
-    xform = via->getTransform();
+    dbTransform xform = via->getTransform();
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
       Rect box = fig->getBBox();
       xform.apply(box);
@@ -759,8 +758,10 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
       prevEdge->setHighCorner(currCorner);
       nextEdge->setLowCorner(currCorner);
       // set currCorner attributes
+      currCorner->addToPin(pin);
       currCorner->setPrevEdge(prevEdge);
       currCorner->setNextEdge(nextEdge.get());
+      currCorner->setLayerNum(layerNum);
       currCorner->x(prevEdge->high().x());
       currCorner->y(prevEdge->high().y());
       int orient = gtl::orientation(*prevEdge, *nextEdge);

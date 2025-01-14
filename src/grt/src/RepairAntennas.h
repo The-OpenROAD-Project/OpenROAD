@@ -40,6 +40,7 @@
 #include <boost/iterator/function_output_iterator.hpp>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 #include "ant/AntennaChecker.hh"
 #include "dpl/Opendp.h"
@@ -184,11 +185,9 @@ class RepairAntennas
   void getSegmentsConnectedToPins(odb::dbNet* db_net,
                                   LayerToSegmentDataVector& segment_by_layer,
                                   PinNameToSegmentIds& seg_connected_to_pin);
-  ViolationIdToSegmentIds getSegmentsWithViolation(
-      odb::dbNet* db_net,
-      const GRoute& route,
-      const int& max_layer,
-      std::map<int, int>& layer_with_violation);
+  ViolationIdToSegmentIds getSegmentsWithViolation(odb::dbNet* db_net,
+                                                   const GRoute& route,
+                                                   const int& violation_id);
   void getPinCountNearEndPoints(const std::vector<int>& segment_ids,
                                 const std::vector<odb::dbITerm*>& gates,
                                 const GRoute& route,
@@ -214,14 +213,15 @@ class RepairAntennas
   void destroyNetWires(const std::vector<odb::dbNet*>& nets_to_repair);
   odb::dbMTerm* findDiodeMTerm();
   double diffArea(odb::dbMTerm* mterm);
+  bool hasNewViolations() { return has_new_violations_; }
 
  private:
-  typedef int coord_type;
-  typedef bg::cs::cartesian coord_sys_type;
-  typedef bg::model::point<coord_type, 2, coord_sys_type> point;
-  typedef bg::model::box<point> box;
-  typedef std::pair<box, int> value;
-  typedef bgi::rtree<value, bgi::quadratic<8, 4>> r_tree;
+  using coord_type = int;
+  using coord_sys_type = bg::cs::cartesian;
+  using point = bg::model::point<coord_type, 2, coord_sys_type>;
+  using box = bg::model::box<point>;
+  using value = std::pair<box, int>;
+  using r_tree = bgi::rtree<value, bgi::quadratic<8, 4>>;
 
   void insertDiode(odb::dbNet* net,
                    odb::dbMTerm* diode_mterm,
@@ -284,6 +284,11 @@ class RepairAntennas
                            const int pin_layer,
                            const std::vector<odb::Rect>& pin_boxes,
                            const GRoute& route);
+  // Jumper insertion functions
+  int addJumperToViolation(GRoute& route,
+                           odb::dbNet* db_net,
+                           const int& violation_id,
+                           const int& tile_size);
 
   GlobalRouter* grouter_;
   ant::AntennaChecker* arc_;
@@ -295,6 +300,7 @@ class RepairAntennas
   AntennaViolations antenna_violations_;
   int unique_diode_index_;
   int illegal_diode_placement_count_;
+  bool has_new_violations_;
   LayerIdToViaPosition vias_pos_;
   RoutingSource routing_source_;
 };

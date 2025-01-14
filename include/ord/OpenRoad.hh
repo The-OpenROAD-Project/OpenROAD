@@ -251,13 +251,15 @@ class OpenRoad
   void addObserver(OpenRoadObserver* observer);
   void removeObserver(OpenRoadObserver* observer);
 
+  std::string getExePath() const;
+  std::string getDocsPath() const;
+
   static const char* getVersion();
   static const char* getGitDescribe();
 
   static bool getGPUCompileOption();
   static bool getPythonCompileOption();
   static bool getGUICompileOption();
-  static bool getChartsCompileOption();
 
  protected:
   ~OpenRoad();

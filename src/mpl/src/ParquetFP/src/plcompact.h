@@ -34,6 +34,7 @@
 #define PLCOMPACT_H
 
 #include <iostream>
+#include <vector>
 
 #include "basepacking.h"
 

@@ -95,6 +95,8 @@ class FlexWavefrontGrid
   }
   bool isPrevViaUp() const { return prevViaUp_; }
   frCoord getTLength() const { return tLength_; }
+  frUInt4 getId() const { return id_; }
+  frUInt4 getParentId() const { return parent_id_; }
   // setters
 
   void resetLength()
@@ -124,6 +126,8 @@ class FlexWavefrontGrid
   }
   void setSrcTaperBox(const frBox3D* b) { srcTaperBox = b; }
   const frBox3D* getSrcTaperBox() const { return srcTaperBox; }
+  void setId(const frUInt4 in) { id_ = in; }
+  void setParentId(const frUInt4 in) { parent_id_ = in; }
 
  private:
   frMIdx xIdx_, yIdx_, zIdx_;
@@ -136,6 +140,8 @@ class FlexWavefrontGrid
   frCoord tLength_;  // length since last turn
   std::bitset<WAVEFRONTBITSIZE> backTraceBuffer_;
   const frBox3D* srcTaperBox = nullptr;
+  frUInt4 id_{0};
+  frUInt4 parent_id_{0};
 };
 
 class myPriorityQueue : public std::priority_queue<FlexWavefrontGrid>

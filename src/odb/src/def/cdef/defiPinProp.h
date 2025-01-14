@@ -33,7 +33,7 @@
 #ifndef CDEFIPINPROP_H
 #define CDEFIPINPROP_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defiTypedefs.h"
 

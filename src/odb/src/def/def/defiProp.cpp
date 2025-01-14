@@ -29,13 +29,13 @@
 
 #include "defiProp.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 defiProp::defiProp(defrData* data) : defData(data)
 {
@@ -180,7 +180,7 @@ void defiProp::clear()
     *(stringData_) = '\0';
   if (propName_)
     *(propName_) = '\0';
-  propType_ = 0;
+  propType_ = nullptr;
   hasRange_ = 0;
   hasNumber_ = 0;
   hasNameMapString_ = 0;
@@ -217,4 +217,4 @@ void defiProp::print(FILE* f) const
   }
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

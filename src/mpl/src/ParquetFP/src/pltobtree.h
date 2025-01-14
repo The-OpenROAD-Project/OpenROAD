@@ -33,6 +33,8 @@
 #ifndef PLTOBTREE_H
 #define PLTOBTREE_H
 
+#include <vector>
+
 #include "basepacking.h"
 #include "btree.h"
 

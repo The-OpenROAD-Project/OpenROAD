@@ -53,7 +53,7 @@
 
 Q_DECLARE_METATYPE(odb::dbTechLayer*);
 Q_DECLARE_METATYPE(odb::dbSite*);
-Q_DECLARE_METATYPE(std::function<void(void)>);
+Q_DECLARE_METATYPE(std::function<void()>);
 
 namespace gui {
 
@@ -281,6 +281,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   view_->viewport()->installEventFilter(this);
 
   QHeaderView* header = view_->header();
+  header->setMinimumSectionSize(25);
   header->setSectionResizeMode(Name, QHeaderView::Stretch);
   header->setSectionResizeMode(Swatch, QHeaderView::ResizeToContents);
   header->setSectionResizeMode(Visible, QHeaderView::ResizeToContents);
@@ -313,6 +314,10 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(nets_.power, "Power", nets_parent, Qt::Checked, true);
   makeLeafItem(nets_.ground, "Ground", nets_parent, Qt::Checked, true);
   makeLeafItem(nets_.clock, "Clock", nets_parent, Qt::Checked, true);
+  makeLeafItem(nets_.reset, "Reset", nets_parent, Qt::Checked, true);
+  makeLeafItem(nets_.tieoff, "Tie off", nets_parent, Qt::Checked, true);
+  makeLeafItem(nets_.scan, "Scan", nets_parent, Qt::Checked, true);
+  makeLeafItem(nets_.analog, "Analog", nets_parent, Qt::Checked, true);
   toggleParent(nets_group_);
 
   // Instance group
@@ -1011,7 +1016,7 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
 
     auto data = name_item->data(doubleclick_item_idx_);
     if (data.isValid()) {
-      auto callback = data.value<std::function<void(void)>>();
+      auto callback = data.value<std::function<void()>>();
       callback();
       emit changed();
     }
@@ -1348,7 +1353,7 @@ void DisplayControls::makeLeafItem(ModelRow& row,
 
 void DisplayControls::setNameItemDoubleClickAction(
     ModelRow& row,
-    const std::function<void(void)>& callback)
+    const std::function<void()>& callback)
 {
   row.name->setData(QVariant::fromValue(callback), doubleclick_item_idx_);
 
@@ -1578,9 +1583,17 @@ const DisplayControls::ModelRow* DisplayControls::getNetRow(
       return &nets_.ground;
     case odb::dbSigType::CLOCK:
       return &nets_.clock;
-    default:
-      return nullptr;
+    case odb::dbSigType::RESET:
+      return &nets_.reset;
+    case odb::dbSigType::TIEOFF:
+      return &nets_.tieoff;
+    case odb::dbSigType::SCAN:
+      return &nets_.scan;
+    case odb::dbSigType::ANALOG:
+      return &nets_.analog;
   }
+
+  return nullptr;
 }
 
 bool DisplayControls::isNetVisible(odb::dbNet* net)

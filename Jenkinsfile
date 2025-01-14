@@ -4,7 +4,7 @@ def baseTests(String image) {
     Map base_tests = [failFast: false];
 
     base_tests['Unit Tests CTest'] = {
-        docker.image(image).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+        withDockerContainer(args: '-u root', image: image) {
             stage('Setup CTest') {
                 echo 'Nothing to be done.';
             }
@@ -20,33 +20,8 @@ def baseTests(String image) {
                     currentBuild.result = 'FAILURE';
                 }
                 sh label: 'Save ctest results', script: 'tar zcvf results-ctest.tgz build/Testing';
-                archiveArtifacts artifacts: 'results-ctest.tgz';
-            }
-        }
-    }
-
-    base_tests['Unit Tests Tcl'] = {
-        node {
-            docker.image(image).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
-                stage('Setup Tcl Tests') {
-                    sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
-                    checkout scm;
-                    unstash 'install';
-                }
-                stage('Unit Tests TCL') {
-                    try {
-                        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                            timeout(time: 30, unit: 'MINUTES') {
-                                sh label: 'Tcl regression', script: './test/regression';
-                            }
-                        }
-                    } catch (e) {
-                        echo 'Failed regressions';
-                        currentBuild.result = 'FAILURE';
-                    }
-                    sh label: 'Save Tcl results', script: "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
-                    archiveArtifacts artifacts: '**/results.tgz';
-                }
+                sh label: 'Save results', script: "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
+                archiveArtifacts artifacts: 'results-ctest.tgz, **/results.tgz';
             }
         }
     }
@@ -68,7 +43,7 @@ def baseTests(String image) {
     flow_tests.each { current_test ->
         base_tests["Flow Test - ${current_test}"] = {
             node {
-                docker.image(image).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+                withDockerContainer(args: '-u root', image: image) {
                     stage("Setup ${current_test}") {
                         sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
                         checkout scm;
@@ -104,7 +79,7 @@ def getParallelTests(String image) {
 
         'Build without GUI': {
             node {
-                docker.image(image).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+                withDockerContainer(args: '-u root', image: image) {
                     stage('Setup no-GUI Build') {
                         echo "Build without GUI";
                         sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
@@ -121,7 +96,7 @@ def getParallelTests(String image) {
 
         'Build without Test': {
             node {
-                docker.image(image).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+                withDockerContainer(args: '-u root', image: image) {
                     stage('Setup no-test Build') {
                         echo "Build without Tests";
                         sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
@@ -148,7 +123,7 @@ def getParallelTests(String image) {
 
         'Unit Tests Ninja': {
             node {
-                docker.image(image).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+                withDockerContainer(args: '-u root', image: image) {
                     stage('Setup Ninja Tests') {
                         sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
                         checkout scm;
@@ -174,7 +149,7 @@ def getParallelTests(String image) {
 
         'Compile with C++20': {
             node {
-                docker.image(image).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+                withDockerContainer(args: '-u root', image: image) {
                     stage('Setup C++20 Compile') {
                         sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
                         checkout scm;
@@ -188,6 +163,42 @@ def getParallelTests(String image) {
 
     ];
 
+    if (env.BRANCH_NAME == 'master') {
+        deb_os = [
+            [name: 'Ubuntu 20.04' , artifact_name: 'ubuntu-20.04', image: 'openroad/ubuntu20.04-dev'],
+            [name: 'Ubuntu 22.04' , artifact_name: 'ubuntu-22.04', image: 'openroad/ubuntu22.04-dev'],
+            [name: 'Debian 11' , artifact_name: 'debian11', image: 'openroad/debian11-dev']
+        ];
+        deb_os.each { os ->
+            ret["Build .deb - ${os.name}"] = {
+                node {
+                    stage('Setup and Build') {
+                        sh label: 'Pull latest image', script: "docker pull ${os.image}:latest";
+                        withDockerContainer(args: '-u root', image: "${os.image}") {
+                            sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
+                            checkout([
+                                    $class: 'GitSCM',
+                                    branches: [[name: scm.branches[0].name]],
+                                    doGenerateSubmoduleConfigurations: false,
+                                    extensions: [
+                                    [$class: 'CloneOption', noTags: false],
+                                    [$class: 'SubmoduleOption', recursiveSubmodules: true]
+                                    ],
+                                    submoduleCfg: [],
+                                    userRemoteConfigs: scm.userRemoteConfigs
+                            ]);
+                            def version = sh(script: 'git describe | sed s,^v,,', returnStdout: true).trim();
+                            sh label: 'Create Changelog', script: "./debian/create-changelog.sh ${version}";
+                            sh label: 'Run debuild', script: 'debuild --preserve-env --preserve-envvar=PATH -B -j$(nproc)';
+                            sh label: 'Move generated files', script: "./debian/move-artifacts.sh ${version} ${os.artifact_name}";
+                            archiveArtifacts artifacts: '*' + "${version}" + '*';
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     return ret;
 }
 
@@ -196,7 +207,26 @@ node {
         checkout scm;
     }
     def DOCKER_IMAGE;
-    stage('Build and Push Docker Image') {
+    stage('Build, Test and Push Docker Image') {
+        Map build_docker_images  = [failFast: false];
+        test_os = [
+            [name: 'Ubuntu 20.04', base: 'ubuntu:20.04', image: 'ubuntu20.04'],
+            [name: 'Ubuntu 22.04', base: 'ubuntu:22.04', image: 'ubuntu22.04'],
+            [name: 'Ubuntu 24.04', base: 'ubuntu:24.04', image: 'ubuntu24.04'],
+            [name: 'RockyLinux 9', base: 'rockylinux:9', image: 'rockylinux9'],
+            [name: 'Debian 11', base: 'debian:11', image: 'debian11']
+        ];
+        test_os.each { os ->
+            build_docker_images["Test Installer - ${os.name}"] = {
+                node {
+                    checkout scm;
+                    sh label: 'Build Docker image', script: "./etc/DockerHelper.sh create -target=builder -os=${os.image}";
+                    sh label: 'Test Docker image', script: "./etc/DockerHelper.sh test -target=builder -os=${os.image}";
+                    dockerPush("${os.image}", 'openroad');
+                }
+            }
+        }
+        parallel(build_docker_images);
         DOCKER_IMAGE = dockerPush('ubuntu22.04', 'openroad');
         echo "Docker image is ${DOCKER_IMAGE}";
     }

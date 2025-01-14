@@ -85,7 +85,6 @@ class DRCWidget : public QDockWidget, public odb::dbBlockCallBackObj
 
  public:
   DRCWidget(QWidget* parent = nullptr);
-  ~DRCWidget() {}
 
   void setLogger(utl::Logger* logger);
 

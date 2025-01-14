@@ -179,7 +179,7 @@ class GlobalRouter : public ant::GlobalRouteSource
                            int layer,
                            float reduction_percentage);
   void setVerbose(bool v);
-  void setOverflowIterations(int iterations);
+  void setCongestionIterations(int iterations);
   void setCongestionReportIterStep(int congestion_report_iter_step);
   void setCongestionReportFile(const char* file_name);
   void setGridOrigin(int x, int y);
@@ -236,6 +236,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes() override;
+  bool designIsPlaced();
   bool haveDetailedRoutes();
   bool haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets);
   void makeNetWires() override;
@@ -312,6 +313,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   void getMinMaxLayer(int& min_layer, int& max_layer);
   void getCapacityReductionData(CapacityReductionData& cap_red_data);
   bool isInitialized() const { return initialized_; }
+  bool isCongested() const { return is_congested_; }
   void setDbBlock(odb::dbBlock* block) { block_ = block; }
 
   void setRenderer(std::unique_ptr<AbstractGrouteRenderer> groute_renderer);
@@ -484,7 +486,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   // Flow variables
   float adjustment_;
   int layer_for_guide_dimension_;
-  int overflow_iterations_;
+  int congestion_iterations_{50};
   int congestion_report_iter_step_;
   bool allow_congestion_;
   std::vector<int> vertical_capacities_;
@@ -492,6 +494,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   int macro_extension_;
   bool initialized_;
   int total_diodes_count_;
+  bool is_congested_{false};
   // TODO: remove this flag after support incremental updates on DRT PA
   bool skip_drt_aps_{false};
 

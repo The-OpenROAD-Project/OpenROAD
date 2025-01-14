@@ -32,6 +32,8 @@
 
 #include "dbVia.h"
 
+#include <vector>
+
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
@@ -203,8 +205,8 @@ _dbVia::_dbVia(_dbDatabase*)
   _flags._orient = dbOrientType::R0;
   _flags.default_ = false;
   _flags._spare_bits = 0;
-  _name = 0;
-  _pattern = 0;
+  _name = nullptr;
+  _pattern = nullptr;
 }
 
 _dbVia::~_dbVia()
@@ -279,7 +281,7 @@ std::string dbVia::getPattern()
 {
   _dbVia* via = (_dbVia*) this;
 
-  if (via->_pattern == 0) {
+  if (via->_pattern == nullptr) {
     return "";
   }
 
@@ -290,7 +292,7 @@ void dbVia::setPattern(const char* name)
 {
   _dbVia* via = (_dbVia*) this;
 
-  if (via->_pattern != 0) {
+  if (via->_pattern != nullptr) {
     return;
   }
 
@@ -421,11 +423,10 @@ void dbVia::setViaParams(const dbViaParams& params)
   dbSet<dbBox>::iterator itr;
 
   for (itr = boxes.begin(); itr != boxes.end();) {
-    dbSet<dbBox>::iterator n = ++itr;
-    _dbBox* box = (_dbBox*) *itr;
+    dbSet<dbBox>::iterator cur = itr++;
+    _dbBox* box = (_dbBox*) *cur;
     dbProperty::destroyProperties(box);
     block->_box_tbl->destroy(box);
-    itr = n;
   }
 
   via->_boxes = 0U;

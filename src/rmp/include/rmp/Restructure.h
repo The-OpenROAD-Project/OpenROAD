@@ -37,6 +37,7 @@
 
 #include <functional>
 #include <string>
+#include <vector>
 
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"

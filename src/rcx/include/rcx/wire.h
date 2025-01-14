@@ -35,9 +35,10 @@
 #ifndef ADS_WIRE_H
 #define ADS_WIRE_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <vector>
 
 #include "box.h"
 #include "odb/array1.h"

@@ -38,14 +38,15 @@
 #include <cstdio>
 #include <cstdlib>
 #include <unordered_map>
+#include <vector>
 
 #include "Net.h"
 
 namespace parquetfp {
 
 class Nodes;
-typedef std::vector<Net>::iterator itNet;
-typedef std::vector<Net>::const_iterator itNetConst;
+using itNet = std::vector<Net>::iterator;
+using itNetConst = std::vector<Net>::const_iterator;
 
 struct eqstr
 {
@@ -65,7 +66,7 @@ class Nets
   Nets(const std::string& baseName);
   Nets() {}
 
-  void clean(void) { _nets.clear(); }
+  void clean() { _nets.clear(); }
 
   void parseNets(const std::string& fnameNets);
 
@@ -73,13 +74,13 @@ class Nets
 
   void updateNodeInfo(Nodes& nodes);
 
-  itNet netsBegin(void) { return _nets.begin(); }
+  itNet netsBegin() { return _nets.begin(); }
 
-  itNet netsEnd(void) { return _nets.end(); }
+  itNet netsEnd() { return _nets.end(); }
 
-  itNetConst netsBegin(void) const { return _nets.begin(); }
+  itNetConst netsBegin() const { return _nets.begin(); }
 
-  itNetConst netsEnd(void) const { return _nets.end(); }
+  itNetConst netsEnd() const { return _nets.end(); }
 
   Net& getNet(unsigned index) { return _nets[index]; }
 
@@ -90,13 +91,13 @@ class Nets
     _nets.push_back(net); /*_numPins+=net.getDegree();*/
   }
 
-  int getNumPins(void) const;
-  // unsigned getNumPins(void)
+  int getNumPins() const;
+  // unsigned getNumPins()
   //    { return _numPins; }
 
-  unsigned getNumNets(void) const { return _nets.size(); }
+  unsigned getNumNets() const { return _nets.size(); }
 
-  void initName2IdxMap(void);
+  void initName2IdxMap();
   void putName2IdxEntry(std::string netName, int idx);
   int getIdxFrmName(std::string netName);
 };

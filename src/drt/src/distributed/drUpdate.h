@@ -82,7 +82,7 @@ class drUpdate
   bool bottomConnected_{false};
   bool topConnected_{false};
   bool tapered_{false};
-  frViaDef* viaDef_{nullptr};
+  const frViaDef* viaDef_{nullptr};
   frBlockObjectEnum obj_type_{frcBlock};
   frMarker marker_;
 

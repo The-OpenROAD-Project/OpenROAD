@@ -38,12 +38,12 @@
 
 #include "lefwWriterCalls.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "lefiDebug.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 #define MAXCBS 30
 
@@ -97,8 +97,8 @@ extern int lefwHasInitCbk;
 //   Global variables
 // *****************************************************************************
 
-lefiUserData lefwUserData = 0;
-static char* lefwFileName = 0;
+lefiUserData lefwUserData = nullptr;
+static char* lefwFileName = nullptr;
 static int lefwRegisterUnused = 0;
 
 extern FILE* lefwFile;
@@ -110,37 +110,37 @@ extern FILE* lefwFile;
 // *****************************************************************************
 // The callback routines
 lefwVoidCbkFnType lefwCallbacksSeq[MAXCBS] = {
-    0,  // lefwVersionCbk
-    0,  // lefwCaseSensitiveCbk
-    0,  // lefwNoWireExtensionCbk
-    0,  // lefwBusBitCharsCbk
-    0,  // lefwDividerCharCbk
-    0,  // lefwManufacturingGridCbk
-    0,  // lefwUseMinSpacingCbk
-    0,  // lefwClearanceMeasureCbk
-    0,  // lefwUnitsCbk
-    0,  // lefwAntennaInputGateAreaCbk
-    0,  // lefwAntennaInOutDiffAreaCbk
-    0,  // lefwAntennaOutputDiffAreaCbk
-    0,  // lefwPropDefCbk
-    0,  // lefwLayerCbk
-    0,  // lefwViaCbk
-    0,  // lefwViaRuleCbk
-    0,  // lefwNonDefaultCbk
-    0,  // lefwCrossTalkCbk
-    0,  // lefwNoiseTableCbk
-    0,  // lefwCorrectionTableCbk
-    0,  // lefwSpacingCbk
-    0,  // lefwMinFeatureCbk
-    0,  // lefwDielectricCbk
-    0,  // lefwIRDropCbk
-    0,  // lefwSiteCbk
-    0,  // lefwArrayCbk
-    0,  // lefwMacroCbk
-    0,  // lefwAntennaCbk
-    0,  // lefwExtCbk
-    0,  // lefwEndLibCbk
-        // Add NEW CALLBACK here
+    nullptr,  // lefwVersionCbk
+    nullptr,  // lefwCaseSensitiveCbk
+    nullptr,  // lefwNoWireExtensionCbk
+    nullptr,  // lefwBusBitCharsCbk
+    nullptr,  // lefwDividerCharCbk
+    nullptr,  // lefwManufacturingGridCbk
+    nullptr,  // lefwUseMinSpacingCbk
+    nullptr,  // lefwClearanceMeasureCbk
+    nullptr,  // lefwUnitsCbk
+    nullptr,  // lefwAntennaInputGateAreaCbk
+    nullptr,  // lefwAntennaInOutDiffAreaCbk
+    nullptr,  // lefwAntennaOutputDiffAreaCbk
+    nullptr,  // lefwPropDefCbk
+    nullptr,  // lefwLayerCbk
+    nullptr,  // lefwViaCbk
+    nullptr,  // lefwViaRuleCbk
+    nullptr,  // lefwNonDefaultCbk
+    nullptr,  // lefwCrossTalkCbk
+    nullptr,  // lefwNoiseTableCbk
+    nullptr,  // lefwCorrectionTableCbk
+    nullptr,  // lefwSpacingCbk
+    nullptr,  // lefwMinFeatureCbk
+    nullptr,  // lefwDielectricCbk
+    nullptr,  // lefwIRDropCbk
+    nullptr,  // lefwSiteCbk
+    nullptr,  // lefwArrayCbk
+    nullptr,  // lefwMacroCbk
+    nullptr,  // lefwAntennaCbk
+    nullptr,  // lefwExtCbk
+    nullptr,  // lefwEndLibCbk
+              // Add NEW CALLBACK here
 };
 
 // the optional and required callbacks
@@ -274,7 +274,7 @@ int lefwWrite(FILE* f, const char* fName, lefiUserData uData)
   // callback routines if any are set
 
   for (i = 0; i < MAXCBS; i++) {
-    if (lefwCallbacksSeq[i] != 0) {  // user has set a callback function
+    if (lefwCallbacksSeq[i] != nullptr) {  // user has set a callback function
       WRITER_CALLBACK(lefwCallbacksSeq[i], lefwCallbacksType[i]);
     } else if (lefwCallbacksReq[i]) {  // it is required but user hasn't set up
       fprintf(f,
@@ -297,7 +297,7 @@ void lefwSetUnusedCallbacks(lefwVoidCbkFnType func)
   int i;
 
   for (i = 0; i < MAXCBS; i++) {
-    if (lefwCallbacksSeq[i] == 0)
+    if (lefwCallbacksSeq[i] == nullptr)
       lefwCallbacksSeq[i] = (lefwVoidCbkFnType) func;
   }
 }
@@ -621,4 +621,4 @@ void lefwSetWarningLogFunction(LEFI_WARNING_LOG_FUNCTION f)
 {
   lefwWarningLogFunction = f;
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

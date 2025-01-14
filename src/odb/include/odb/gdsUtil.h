@@ -217,10 +217,5 @@ std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(
  */
 dbGDSLib* createEmptyGDSLib(dbDatabase* db, const std::string& libname);
 
-/**
- * Sets timestamp on a GDSII library object to the current time
- */
-void stampGDSLib(dbGDSLib* lib, bool modified = true);
-
 }  // namespace gds
 }  // namespace odb

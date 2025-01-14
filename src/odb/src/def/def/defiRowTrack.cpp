@@ -29,16 +29,15 @@
 
 #include "defiRowTrack.hpp"
 
-#include <stdlib.h>
-#include <string.h>
-
+#include <cstdlib>
+#include <cstring>
 #include <sstream>
 
 #include "defiDebug.hpp"
 #include "defiUtil.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 namespace {
 
@@ -71,9 +70,9 @@ defiRow::defiRow(defrData* data) : defData(data)
 void defiRow::Init()
 {
   nameLength_ = 0;
-  name_ = 0;
+  name_ = nullptr;
   macroLength_ = 0;
-  macro_ = 0;
+  macro_ = nullptr;
   orient_ = 0;
   x_ = 0.0;
   y_ = 0.0;
@@ -264,7 +263,7 @@ const char* defiRow::propName(int index) const
 {
   if (index < 0 || index >= numProps_) {
     defiError6140(index, numProps_, defData);
-    return 0;
+    return nullptr;
   }
   return propNames_[index];
 }
@@ -273,7 +272,7 @@ const char* defiRow::propValue(int index) const
 {
   if (index < 0 || index >= numProps_) {
     defiError6140(index, numProps_, defData);
-    return 0;
+    return nullptr;
   }
   return propValues_[index];
 }
@@ -402,14 +401,14 @@ defiTrack::defiTrack(defrData* data) : defData(data)
 
 void defiTrack::Init()
 {
-  macro_ = 0;
+  macro_ = nullptr;
   macroLength_ = 0;
   x_ = 0.0;
   xNum_ = 0.0;
   xStep_ = 0.0;
   layersLength_ = 0;
   numLayers_ = 0;
-  layers_ = 0;
+  layers_ = nullptr;
   firstTrackMask_ = 0;
   samemask_ = 0;
 }
@@ -451,7 +450,7 @@ void defiTrack::setup(const char* macro)
     for (i = 0; i < numLayers_; i++)
       if (layers_[i]) {
         free(layers_[i]);
-        layers_[i] = 0;
+        layers_[i] = nullptr;
       }
   }
   numLayers_ = 0;
@@ -530,7 +529,7 @@ const char* defiTrack::layer(int index) const
     return layers_[index];
   }
 
-  return 0;
+  return nullptr;
 }
 
 int defiTrack::firstTrackMask() const
@@ -571,7 +570,7 @@ defiGcellGrid::defiGcellGrid(defrData* data) : defData(data)
 
 void defiGcellGrid::Init()
 {
-  macro_ = 0;
+  macro_ = nullptr;
   macroLength_ = 0;
   x_ = 0;
   xNum_ = 0;
@@ -631,4 +630,4 @@ void defiGcellGrid::print(FILE* f) const
   fprintf(f, "  DO %d %d STEP %5.1f\n", x(), xNum(), xStep());
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

@@ -44,7 +44,7 @@ class CmdInputWidget : public QPlainTextEdit
 
  public:
   CmdInputWidget(const QString& interp_name, QWidget* parent = nullptr);
-  virtual ~CmdInputWidget();
+  ~CmdInputWidget() override;
 
   void setWidgetFont(const QFont& font);
 

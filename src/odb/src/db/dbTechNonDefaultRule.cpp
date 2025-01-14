@@ -32,6 +32,8 @@
 
 #include "dbTechNonDefaultRule.h"
 
+#include <vector>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbTable.h"

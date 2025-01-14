@@ -26,6 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <vector>
+
 #include "ta/FlexTA.h"
 
 namespace drt {
@@ -137,8 +139,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
           continue;
         }
         frInst* inst = iterm->getInst();
-        dbTransform shiftXform = inst->getTransform();
-        shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+        dbTransform shiftXform = inst->getNoRotationTransform();
         frMTerm* mterm = iterm->getTerm();
         int pinIdx = 0;
         for (auto& pin : mterm->getPins()) {
@@ -259,8 +260,7 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
           continue;
         }
         frInst* inst = iterm->getInst();
-        dbTransform shiftXform = inst->getTransform();
-        shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+        dbTransform shiftXform = inst->getNoRotationTransform();
         frMTerm* mterm = iterm->getTerm();
         int pinIdx = 0;
         for (auto& pin : mterm->getPins()) {
@@ -489,7 +489,7 @@ void FlexTAWorker::initIroute(frGuide* guide)
   }
   // owner set when add to taPin
   iroute->addPinFig(std::move(ps));
-  frViaDef* viaDef;
+  const frViaDef* viaDef;
   for (auto coord : upViaCoordSet) {
     if (guide->getNet()->getNondefaultRule()
         && guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1)) {
@@ -817,7 +817,7 @@ void FlexTAWorker::initFixedObjs()
   }
 }
 
-frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
+frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(const frViaDef* viaDef,
                                                         const frLayerNum lNum,
                                                         const Rect& box,
                                                         bool isOBS)

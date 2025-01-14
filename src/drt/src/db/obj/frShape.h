@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frFig.h"
 
@@ -625,6 +627,13 @@ class frPathSeg : public frShape
     return pt.x() >= begin_.x() && pt.x() <= end_.x() && pt.y() >= begin_.y()
            && pt.y() <= end_.y();
   }
+  void setApPathSeg(Point pt)
+  {
+    is_ap_pathseg_ = true;
+    ap_loc_ = pt;
+  }
+  bool isApPathSeg() const { return is_ap_pathseg_; }
+  Point getApLoc() const { return ap_loc_; }
 
  protected:
   Point begin_;  // begin always smaller than end, assumed
@@ -632,6 +641,8 @@ class frPathSeg : public frShape
   frLayerNum layer_{0};
   frSegStyle style_;
   bool tapered_{false};
+  bool is_ap_pathseg_{false};
+  Point ap_loc_;
   frListIter<std::unique_ptr<frShape>> iter_;
 
   template <class Archive>
@@ -643,6 +654,8 @@ class frPathSeg : public frShape
     (ar) & layer_;
     (ar) & style_;
     (ar) & tapered_;
+    (ar) & is_ap_pathseg_;
+    (ar) & ap_loc_;
     // iter is handled by the owner
   }
 

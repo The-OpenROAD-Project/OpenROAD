@@ -29,14 +29,14 @@
 
 #include "defiMisc.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 ////////////////////////////////////////////////////
 //
@@ -145,7 +145,7 @@ defiStyles::defiStyles()
 void defiStyles::Init()
 {
   styleNum_ = 0;
-  polygon_ = 0;
+  polygon_ = nullptr;
 }
 
 defiStyles::~defiStyles()
@@ -169,7 +169,7 @@ void defiStyles::clear()
     free((char*) (polygon_));
   }
   styleNum_ = 0;
-  polygon_ = 0;
+  polygon_ = nullptr;
 }
 
 void defiStyles::setStyle(int styleNum)
@@ -182,7 +182,7 @@ void defiStyles::setPolygon(defiGeometries* geom)
   struct defiPoints* p;
   int i, x, y;
 
-  if (polygon_ == 0) {
+  if (polygon_ == nullptr) {
     p = (struct defiPoints*) malloc(sizeof(struct defiPoints));
     p->numPoints = geom->numPoints();
     p->x = (int*) malloc(sizeof(int) * p->numPoints);
@@ -219,4 +219,4 @@ struct defiPoints defiStyles::getPolygon() const
 {
   return *(polygon_);
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

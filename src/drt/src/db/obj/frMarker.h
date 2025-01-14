@@ -30,6 +30,7 @@
 
 #include <set>
 #include <tuple>
+#include <vector>
 
 #include "db/obj/frFig.h"
 

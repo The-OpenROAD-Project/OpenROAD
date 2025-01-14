@@ -110,9 +110,9 @@ class GDSWriter
   void writeBoundary(dbGDSBoundary* bnd);
   void writePath(dbGDSPath* path);
   void writeSRef(dbGDSSRef* sref);
+  void writeARef(dbGDSARef* aref);
   void writeText(dbGDSText* text);
   void writeBox(dbGDSBox* box);
-  void writeNode(dbGDSNode* node);
 
   /** Writes a Transform to _file */
   void writeSTrans(const dbGDSSTrans& strans);

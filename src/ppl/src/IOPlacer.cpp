@@ -39,6 +39,7 @@
 #include <fstream>
 #include <random>
 #include <sstream>
+#include <vector>
 
 #include "AbstractIOPlacerRenderer.h"
 #include "Core.h"
@@ -70,11 +71,16 @@ void IOPlacer::init(odb::dbDatabase* db, Logger* logger)
   db_ = db;
   logger_ = logger;
   parms_ = std::make_unique<Parameters>();
+  validator_ = std::make_unique<utl::Validator>(logger, PPL);
 }
 
 odb::dbBlock* IOPlacer::getBlock() const
 {
-  return db_->getChip()->getBlock();
+  auto chip = db_->getChip();
+  if (!chip) {
+    return nullptr;
+  }
+  return chip->getBlock();
 }
 
 odb::dbTech* IOPlacer::getTech() const
@@ -251,14 +257,12 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
                     pin_indices.size());
       addGroupToFallback(pin_indices, false);
       return;
-    } else {
-      logger_->error(
-          PPL,
-          72,
-          "Number of pins ({}) exceed number of valid positions ({}).",
-          pin_indices.size(),
-          slot_indices.size());
     }
+    logger_->error(PPL,
+                   72,
+                   "Number of pins ({}) exceed number of valid positions ({}).",
+                   pin_indices.size(),
+                   slot_indices.size());
   }
 
   const auto seed = parms_->getRandSeed();
@@ -693,6 +697,7 @@ void IOPlacer::getBlockedRegionsFromDbObstructions()
 
 void IOPlacer::writePinPlacement(const char* file_name, const bool placed)
 {
+  validator_->check_non_null("Block", getBlock(), 113);
   std::string filename = file_name;
   if (filename.empty()) {
     return;
@@ -777,12 +782,32 @@ Edge IOPlacer::getMirroredEdge(const Edge& edge)
   return mirrored_edge;
 }
 
-int IOPlacer::computeNewRegionLength(const Interval& interval,
-                                     const int num_pins)
+void IOPlacer::computeRegionIncrease(const Interval& interval,
+                                     const int num_pins,
+                                     int& new_begin,
+                                     int& new_end)
 {
   const bool vertical_pin
       = interval.getEdge() == Edge::top || interval.getEdge() == Edge::bottom;
-  const int interval_length = std::abs(interval.getEnd() - interval.getBegin());
+
+  int interval_length = std::abs(interval.getEnd() - interval.getBegin());
+  int interval_begin = std::min(interval.getBegin(), interval.getEnd());
+  int interval_end = std::max(interval.getBegin(), interval.getEnd());
+
+  const int die_min = vertical_pin ? core_->getBoundary().xMin()
+                                   : core_->getBoundary().yMin();
+  const int die_max = vertical_pin ? core_->getBoundary().xMax()
+                                   : core_->getBoundary().yMax();
+
+  const int blocked_coord_min = corner_avoidance_ - die_min;
+  const int blocked_coord_max = die_max - corner_avoidance_;
+
+  if (interval_begin < blocked_coord_min) {
+    interval_length -= blocked_coord_min - interval_begin;
+  } else if (interval_end > blocked_coord_max) {
+    interval_length -= interval_end - blocked_coord_max;
+  }
+
   int min_dist = std::numeric_limits<int>::min();
 
   if (interval.getLayer() != -1) {
@@ -801,7 +826,12 @@ int IOPlacer::computeNewRegionLength(const Interval& interval,
   }
 
   const int increase = computeIncrease(min_dist, num_pins, interval_length);
-  return increase + interval_length;
+
+  if (interval_end > blocked_coord_max) {
+    new_begin -= increase;
+  } else {
+    new_end += increase;
+  }
 }
 
 int64_t IOPlacer::computeIncrease(int min_dist,
@@ -837,7 +867,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
   int min = vertical_pin ? lb_x : lb_y;
   int max = vertical_pin ? ub_x : ub_y;
 
-  int offset = parms_->getCornerAvoidance();
+  corner_avoidance_ = parms_->getCornerAvoidance();
   bool dist_in_tracks = parms_->getMinDistanceInTracks();
   for (int layer : layers) {
     int curr_x, curr_y, start_idx, end_idx;
@@ -854,11 +884,11 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
     min_dst_pins
         = (min_dst_pins == 0) ? default_min_dist_ * tech_min_dst : min_dst_pins;
 
-    if (offset == -1) {
-      offset = num_tracks_offset_ * tech_min_dst;
+    if (corner_avoidance_ == -1) {
+      corner_avoidance_ = num_tracks_offset_ * tech_min_dst;
       // limit default offset to 1um
-      if (offset > getBlock()->micronsToDbu(1.0)) {
-        offset = getBlock()->micronsToDbu(1.0);
+      if (corner_avoidance_ > getBlock()->micronsToDbu(1.0)) {
+        corner_avoidance_ = getBlock()->micronsToDbu(1.0);
       }
     }
 
@@ -877,7 +907,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 
     half_width *= thickness_multiplier;
 
-    int num_tracks_offset = std::ceil(offset / min_dst_pins);
+    int num_tracks_offset = std::ceil(corner_avoidance_ / min_dst_pins);
 
     start_idx
         = std::max(0.0,
@@ -1823,6 +1853,7 @@ void IOPlacer::initConstraints(bool annealing)
   for (Constraint& constraint : constraints_) {
     getPinsFromDirectionConstraint(constraint);
     constraint.sections = createSectionsPerConstraint(constraint);
+
     int num_slots = 0;
     const int region_begin = constraint.interval.getBegin();
     const int region_end = constraint.interval.getEnd();
@@ -1837,23 +1868,22 @@ void IOPlacer::initConstraints(bool annealing)
           = static_cast<float>(constraint.pin_list.size()) / num_slots;
       if (constraint.pins_per_slots > 1) {
         const Interval& interval = constraint.interval;
-        const int interval_length
-            = std::abs(interval.getEnd() - interval.getBegin());
-        int new_length
-            = computeNewRegionLength(interval, constraint.pin_list.size());
+        int new_begin = std::min(region_begin, region_end);
+        int new_end = std::max(region_begin, region_end);
+        computeRegionIncrease(
+            interval, constraint.pin_list.size(), new_begin, new_end);
         logger_->warn(PPL,
                       110,
                       "Constraint has {} pins, but only {} available slots.\n"
                       "Increase the region {:.2f}um-{:.2f}um on the {} edge "
-                      "from {:.2f}um "
-                      "to at least {:.2f}um.",
+                      "to {:.2f}um-{:.2f}um.",
                       constraint.pin_list.size(),
                       num_slots,
                       getBlock()->dbuToMicrons(region_begin),
                       getBlock()->dbuToMicrons(region_end),
                       region_edge,
-                      getBlock()->dbuToMicrons(interval_length),
-                      getBlock()->dbuToMicrons(new_length));
+                      getBlock()->dbuToMicrons(new_begin),
+                      getBlock()->dbuToMicrons(new_end));
         constraints_no_slots++;
       }
     } else {

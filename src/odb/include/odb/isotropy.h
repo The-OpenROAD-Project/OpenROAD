@@ -118,7 +118,7 @@ class Orientation2D
   Orientation2D turn_90() const { return Value(value_ ^ 1); }
 
   // [Horizontal: Low->West, High->East] [Vertical: Low->South, High->North]
-  Direction2D getDirection(Direction1D dir) const;
+  constexpr Direction2D getDirection(Direction1D dir) const;
 
   bool operator==(const Orientation2D& d) const { return value_ == d.value_; }
   bool operator!=(const Orientation2D& d) const { return value_ != d.value_; }
@@ -202,7 +202,7 @@ class Orientation3D
   constexpr operator Value() const { return static_cast<Value>(value_); }
 
   // [Proximal: Low->down, High->Up] [others as Orientation2D]
-  Direction3D getDirection(Direction1D dir) const;
+  constexpr Direction3D getDirection(Direction1D dir) const;
 
   bool operator==(const Orientation3D&& d) const { return value_ == d.value_; }
   bool operator!=(const Orientation3D&& d) const { return value_ != d.value_; }
@@ -254,37 +254,35 @@ class Direction3D
   const unsigned char value_ = Direction2D::West;
 };
 
-inline constexpr Direction1D::Direction1D(const Direction2D& other)
-    : value_(other & 1)
+constexpr Direction1D::Direction1D(const Direction2D& other) : value_(other & 1)
 {
 }
 
-inline constexpr Direction1D::Direction1D(const Direction3D& other)
-    : value_(other & 1)
+constexpr Direction1D::Direction1D(const Direction3D& other) : value_(other & 1)
 {
 }
 
-inline constexpr Orientation2D::Orientation2D(const Direction2D& other)
+constexpr Orientation2D::Orientation2D(const Direction2D& other)
     : value_(other >> 1)
 {
 }
 
-inline Direction2D Orientation2D::getDirection(Direction1D dir) const
+constexpr Direction2D Orientation2D::getDirection(Direction1D dir) const
 {
   return Direction2D(Direction2D::Value((value_ << 1) + dir));
 }
 
-inline constexpr Orientation3D::Orientation3D(const Direction2D& other)
+constexpr Orientation3D::Orientation3D(const Direction2D& other)
     : value_(other >> 1)
 {
 }
 
-inline constexpr Orientation3D::Orientation3D(const Direction3D& other)
+constexpr Orientation3D::Orientation3D(const Direction3D& other)
     : value_(other >> 1)
 {
 }
 
-inline Direction3D Orientation3D::getDirection(Direction1D dir) const
+constexpr Direction3D Orientation3D::getDirection(Direction1D dir) const
 {
   return Direction3D(Direction3D::Value((value_ << 1) + dir));
 }
@@ -296,20 +294,20 @@ std::ostream& operator<<(std::ostream& os, const Direction2D& dir);
 std::ostream& operator<<(std::ostream& os, const Direction3D& dir);
 
 // Convenience objects that will be commonly used.
-inline constexpr Orientation2D horizontal{Orientation2D::Horizontal};
-inline constexpr Orientation2D vertical{Orientation2D::Vertical};
-inline constexpr Orientation3D proximal{Orientation3D::Proximal};
+constexpr Orientation2D horizontal{Orientation2D::Horizontal};
+constexpr Orientation2D vertical{Orientation2D::Vertical};
+constexpr Orientation3D proximal{Orientation3D::Proximal};
 
-inline constexpr Direction1D low{Direction1D::Low};
-inline constexpr Direction1D high{Direction1D::High};
+constexpr Direction1D low{Direction1D::Low};
+constexpr Direction1D high{Direction1D::High};
 
-inline constexpr Direction2D west{Direction2D::West};
-inline constexpr Direction2D east{Direction2D::East};
-inline constexpr Direction2D south{Direction2D::South};
-inline constexpr Direction2D north{Direction2D::North};
+constexpr Direction2D west{Direction2D::West};
+constexpr Direction2D east{Direction2D::East};
+constexpr Direction2D south{Direction2D::South};
+constexpr Direction2D north{Direction2D::North};
 
-inline constexpr Direction3D down{Direction3D::Down};
-inline constexpr Direction3D up{Direction3D::Up};
+constexpr Direction3D down{Direction3D::Down};
+constexpr Direction3D up{Direction3D::Up};
 
 using utl::format_as;
 

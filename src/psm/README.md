@@ -34,6 +34,7 @@ analyze_power_grid
     [-em_outfile em_file]
     [-vsrc voltage_source_file]
     [-source_type FULL|BUMPS|STRAPS]
+    [-allow_reuse]
 ```
 
 #### Options
@@ -48,6 +49,7 @@ analyze_power_grid
 | `-em_outfile` | Write the per-segment current values into a file. This option is only available if used in combination with `-enable_em`. |
 | `-voltage_file` | Write per-instance voltage into the file. |
 | `-source_type` | Indicate the type of voltage source grid to [model](#source-grid-options). FULL uses all the nodes on the top layer as voltage sources, BUMPS will model a bump grid array, and STRAPS will model power straps on the layer above the top layer. |
+| `-allow_reuse` | Allow the analysis to reuse a previous solution, if one exists. |
 
 ### Check Power Grid
 
@@ -109,6 +111,26 @@ set_pdnsim_net_voltage
 | `-net` | Name of the net to analyze. It must be a power or ground net name. |
 | `-voltage` | Sets the voltage on a specific net. If this option is not given, the Liberty file's voltage value is obtained from operating conditions. |
 | `-corner` | Corner to use this voltage. If not specified, this voltage applies to all corners. |
+
+### Set PDNSim Instance power
+
+This command sets PDNSim instance power.
+This should only be used when needing to override the computed power.
+
+```tcl
+set_pdnsim_inst_power
+    -inst inst_name
+    -power power
+    [-corner corner]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-inst` | Name of the instance to set the power dor. |
+| `-power` | Sets the power on a specific instance. |
+| `-corner` | Corner to use this power. If not specified, this power applies to all corners. |
 
 ### Set PDNSim Power Source Settings
 

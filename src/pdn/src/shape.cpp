@@ -33,6 +33,7 @@
 #include "shape.h"
 
 #include <boost/polygon/polygon.hpp>
+#include <vector>
 
 #include "grid.h"
 #include "grid_component.h"

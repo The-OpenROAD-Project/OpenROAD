@@ -259,11 +259,14 @@ proc rtl_macro_placer { args } {
 sta::define_cmd_args "place_macro" {-macro_name macro_name \
                                     -location location \
                                     [-orientation orientation] \
+                                    [-exact] \
+                                    [-allow_overlap]
 }
 
 proc place_macro { args } {
   sta::parse_key_args "place_macro" args \
-    keys {-macro_name -location -orientation} flags {}
+    keys {-macro_name -location -orientation} \
+    flags {-exact -allow_overlap}
 
   if { [info exists keys(-macro_name)] } {
     set macro_name $keys(-macro_name)
@@ -291,7 +294,50 @@ proc place_macro { args } {
     set orientation $keys(-orientation)
   }
 
-  mpl2::place_macro $macro $x_origin $y_origin $orientation
+  set exact [info exists flags(-exact)]
+  set allow_overlap [info exists flags(-allow_overlap)]
+
+  mpl2::place_macro $macro $x_origin $y_origin $orientation $exact $allow_overlap
+}
+
+sta::define_cmd_args "set_macro_guidance_region" { -macro_name macro_name \
+                                                   -region region }
+proc set_macro_guidance_region { args } {
+  sta::parse_key_args "set_macro_guidance_region" args \
+    keys { -macro_name -region } flags {}
+
+  sta::check_argc_eq0 "set_macro_guidance_region" $args
+
+  if { [info exists keys(-macro_name)] } {
+    set macro_name $keys(-macro_name)
+  } else {
+    utl::error MPL 43 "-macro_name is required."
+  }
+
+  set macro [mpl2::parse_macro_name "set_macro_guidance_region" $macro_name]
+
+  if { [info exists keys(-region)] } {
+    set region $keys(-region)
+  } else {
+    utl::error MPL 30 "-region is required."
+  }
+
+  if { [llength $region] != 4 } {
+    utl::error MPL 31 "-region must be a list of 4 values."
+  }
+
+  lassign $region x1 y1 x2 y2
+  set x1 $x1
+  set y1 $y1
+  set x2 $x2
+  set y2 $y2
+  if { $x1 > $x2 } {
+    utl::error MPL 32 "Invalid region: x1 > x2."
+  } elseif { $y1 > $y2 } {
+    utl::error MPL 33 "Invalid region: y1 > y2."
+  }
+
+  mpl2::add_guidance_region $macro $x1 $y1 $x2 $y2
 }
 
 namespace eval mpl2 {
@@ -312,6 +358,7 @@ proc mpl_debug { args } {
   sta::parse_key_args "mpl_debug" args \
     keys { -target_cluster_id target_cluster_id } \
     flags {-coarse -fine -show_bundled_nets \
+           -show_clusters_ids \
            -skip_steps -only_final_result} ;# checker off
 
   set coarse [info exists flags(-coarse)]
@@ -331,6 +378,7 @@ proc mpl_debug { args } {
     $coarse \
     $fine \
     [info exists flags(-show_bundled_nets)] \
+    [info exists flags(-show_clusters_ids)] \
     [info exists flags(-skip_steps)] \
     [info exists flags(-only_final_result)] \
     $target_cluster_id

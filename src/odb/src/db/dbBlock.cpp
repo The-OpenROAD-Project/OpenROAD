@@ -32,13 +32,14 @@
 
 #include "dbBlock.h"
 
-#include <errno.h>
 #include <unistd.h>
 
+#include <cerrno>
 #include <fstream>
 #include <memory>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "dbAccessPoint.h"
 #include "dbArrayTable.h"
@@ -178,8 +179,8 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _right_bus_delimeter = 0;
   _num_ext_corners = 0;
   _corners_per_block = 0;
-  _corner_name_list = 0;
-  _name = 0;
+  _corner_name_list = nullptr;
+  _name = nullptr;
   _maxCapNodeId = 0;
   _maxRSegId = 0;
   _maxCCSegId = 0;
@@ -3799,7 +3800,7 @@ uint dbBlock::levelizeFromPrimaryInputs()
     return 0;
   }
 
-  while (1) {
+  while (true) {
     std::vector<dbInst*> startingInsts = instsToBeLeveled;
     instsToBeLeveled.clear();
 
@@ -3829,7 +3830,7 @@ uint dbBlock::levelizeFromSequential()
     return 0;
   }
 
-  while (1) {
+  while (true) {
     std::vector<dbInst*> startingInsts = instsToBeLeveled;
     instsToBeLeveled.clear();
 
@@ -3865,7 +3866,7 @@ int dbBlock::markBackwardsUser2(dbInst* firstInst,
     return 0;
   }
 
-  while (1) {
+  while (true) {
     std::vector<dbInst*> startingInsts = instsToBeMarked;
     instsToBeMarked.clear();
 
@@ -4029,7 +4030,7 @@ int dbBlock::markBackwardsUser2(dbNet* net,
     return -1;
   }
 
-  while (1) {
+  while (true) {
     std::vector<dbInst*> startingInsts = instsToBeMarked;
     instsToBeMarked.clear();
 
@@ -4088,6 +4089,7 @@ void dbBlock::clearUserInstFlags()
     inst->clearUserFlag3();
   }
 }
+
 void dbBlock::setDrivingItermsforNets()
 {
   dbSet<dbNet> nets = getNets();

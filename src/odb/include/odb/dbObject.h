@@ -91,9 +91,9 @@ enum dbObjectType
   dbBusPortObj,
   dbDftObj,
   dbGCellGridObj,
+  dbGDSARefObj,
   dbGDSBoundaryObj,
   dbGDSBoxObj,
-  dbGDSNodeObj,
   dbGDSPathObj,
   dbGDSSRefObj,
   dbGDSStructureObj,
@@ -151,7 +151,6 @@ enum dbObjectType
   dbMasterObj,
   dbMPinObj,
   dbMTermObj,
-  dbTargetObj,
   dbTechAntennaPinModelObj,
 
   // Tech Objects

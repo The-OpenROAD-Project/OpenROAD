@@ -32,14 +32,16 @@
 
 #include "definBlockage.h"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
+#include <vector>
 
 #include "definPolygon.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
+
 namespace odb {
 
 definBlockage::definBlockage()

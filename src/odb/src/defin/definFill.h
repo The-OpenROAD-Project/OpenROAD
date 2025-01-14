@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "definBase.h"
 #include "odb/odb.h"
 
@@ -53,8 +55,8 @@ class definFill : public definBase
   virtual void fillEnd();
 
   definFill();
-  virtual ~definFill();
-  void init();
+  ~definFill() override;
+  void init() override;
 };
 
 }  // namespace odb

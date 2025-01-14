@@ -153,13 +153,21 @@ class Opendp
   void checkPlacement(bool verbose,
                       bool disallow_one_site_gaps = false,
                       const string& report_file_name = "");
-  void fillerPlacement(dbMasterSeq* filler_masters, const char* prefix);
+  void fillerPlacement(dbMasterSeq* filler_masters,
+                       const char* prefix,
+                       bool verbose);
   void removeFillers();
   void optimizeMirroring();
 
   // Place decap cells
   void addDecapMaster(dbMaster* decap_master, double decap_cap);
   void insertDecapCells(double target, IRDropByPoint& psm_ir_drops);
+
+  // Get the instance adjacent to the left or right of a given instance
+  dbInst* getAdjacentInstance(dbInst* inst, bool left) const;
+
+  // Find a cluster of instances that are touching each other
+  std::vector<dbInst*> getAdjacentInstancesCluster(dbInst* inst) const;
 
  private:
   using bgPoint
@@ -363,7 +371,7 @@ class Opendp
   // Filler placement.
   // gap (in sites) -> seq of masters by implant
   map<dbTechLayer*, GapFillers> gap_fillers_;
-  int filler_count_ = 0;
+  map<dbMaster*, int> filler_count_;
   bool have_fillers_ = false;
   bool have_one_site_cells_ = false;
 

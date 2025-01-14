@@ -46,89 +46,86 @@ class Command_Line
   Command_Line();
 
   // -----public member variables to store params-----
-  bool getSeed, budgetTime;
-  bool softBlocks;
-  bool initQP;  // initialize a QP soln
+  bool getSeed{false}, budgetTime{false};
+  bool softBlocks{false};
+  bool initQP{false};  // initialize a QP soln
   std::string inFileName;
   std::string outPlFile;
   std::string capoPlFile;
   std::string capoBaseFile;
   std::string baseFile;
 
-  std::string FPrep;
+  std::string FPrep{"Best"};
 
-  unsigned seed;    // fixed seed
-  int iterations;   // number of runs
-  int maxIterHier;  // max # iterations during hierarchical flow
+  unsigned seed{0};     // fixed seed
+  int iterations{1};    // number of runs
+  int maxIterHier{10};  // max # iterations during hierarchical flow
 
-  float seconds;
-  bool plot;          // plot to out.plt
-  bool plotNoNets;    // do not plot nets
-  bool plotNoSlacks;  // do not plot slacks
-  bool plotNoNames;   // do not plot names
-  bool savePl;        // save .pl file as output
-  bool saveCapoPl;    // save .pl file in Capo format
-  bool saveCapo;      // save files in Capo format
-  bool save;          // save files in bookshelf format
+  float seconds{0.0f};
+  bool plot{false};          // plot to out.plt
+  bool plotNoNets{false};    // do not plot nets
+  bool plotNoSlacks{false};  // do not plot slacks
+  bool plotNoNames{false};   // do not plot names
+  bool savePl{false};        // save .pl file as output
+  bool saveCapoPl{false};    // save .pl file in Capo format
+  bool saveCapo{false};      // save files in Capo format
+  bool save{false};          // save files in bookshelf format
 
-  bool takePl;  // takes a Placement and converts it
-                // to sequence pair for initial soln
+  bool takePl{false};  // takes a Placement and converts it
+                       // to sequence pair for initial soln
 
   // -----Parameters for 2-level hierarchy-----
-  bool solveMulti;       // use multilevel heirarchy
-  bool clusterPhysical;  // use physical hierarchy instead of
-                         // closest node
-  bool solveTop;         // solve only top level of heirarchy
-  float maxWSHier;       // maximum WS for heirarchical blocks
-                         // default: 15%
-  bool usePhyLocHier;    // use physical locs which updating
+  bool solveMulti{false};       // use multilevel heirarchy
+  bool clusterPhysical{false};  // use physical hierarchy instead of
+                                // closest node
+  bool solveTop{false};         // solve only top level of heirarchy
+  float maxWSHier{15};          // maximum WS for heirarchical blocks
+                                // default: 15%
+  bool usePhyLocHier{false};    // use physical locs which updating
   // locs of sub-blocks of clustered blocks, if using physical
   // clustering. usefull for eco purposes
-  bool dontClusterMacros;  // keep macros out of clustering
-                           // default: false
-  int maxTopLevelNodes;    // number of top-level nodes required during
-                           // clustering. if -9999 then use sqrt(#nodes)
+  bool dontClusterMacros{false};  // keep macros out of clustering
+                                  // default: false
+  int maxTopLevelNodes{-9999};    // number of top-level nodes required during
+                                  // clustering. if -9999 then use sqrt(#nodes)
 
   // -----Annealer performance parameters next-----
-  float timeInit;   // initial temperature default 30000
-  float timeCool;   // cooling temperature default 0.01
-  float startTime;  // default to timeInit
-                    // (this is the time the area & WL are normalized to)
-  float reqdAR;     // required Aspect Ratio of fixed outline
-                    // default -9999(means no fixed outline
-                    // desired)
-  float maxWS;      // if fixed-outline then maximum whitespace
-                    // acceptable
-  bool minWL;       // whether HPWL minimization desired
-#ifdef USEFLUTE
-  bool useSteiner;  // use Steiner WL instead of HPWL
-  bool printSteiner;
-#endif
-  float areaWeight;  // weight for area minimization
-  float wireWeight;  // weight for WL minimization
+  float timeInit{30000.0f};  // initial temperature default 30000
+  float timeCool{0.01f};     // cooling temperature default 0.01
+  float startTime{
+      30000.0f};           // default to timeInit
+                           // (this is the time the area & WL are normalized to)
+  float reqdAR{-9999.0f};  // required Aspect Ratio of fixed outline
+                           // default -9999(means no fixed outline
+                           // desired)
+  float maxWS{15.0f};      // if fixed-outline then maximum whitespace
+                           // acceptable
+  bool minWL{false};       // whether HPWL minimization desired
+  float areaWeight{0.4f};  // weight for area minimization
+  float wireWeight{0.4f};  // weight for WL minimization
 
-  bool useFastSP;  // whether to use fast SP(O(nlog n)) algo
-                   // for SPEval
+  bool useFastSP{false};  // whether to use fast SP(O(nlog n)) algo
+                          // for SPEval
 
-  bool lookAheadFP;  // <aaronnn> run FP in lookahead mode (fast)
+  bool lookAheadFP{false};  // <aaronnn> run FP in lookahead mode (fast)
 
   // -----pre/post-processing-----
-  bool initCompact;  // whether to use compaction to generate
-                     // initial SP (default: false)
-  bool compact;      // compact final soln (default: false)
+  bool initCompact{false};  // whether to use compaction to generate
+                            // initial SP (default: false)
+  bool compact{false};      // compact final soln (default: false)
 
-  int verb;  // by royj to control the verbosity of Parquet
+  int verb{false};  // by royj to control the verbosity of Parquet
 
-  bool packleft;  // directions the SPannealer should use
-  bool packbot;
+  bool packleft{true};  // directions the SPannealer should use
+  bool packbot{true};
 
-  bool scaleTerms;
+  bool scaleTerms{true};
 
   BBox nonTrivialOutline;
 
-  float shrinkToSize;
+  float shrinkToSize{-1.f};
 
-  bool noRotation;
+  bool noRotation{false};
 
   void setSeed();
 };

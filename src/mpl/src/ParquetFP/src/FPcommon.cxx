@@ -81,7 +81,7 @@ parquetfp::BBox::BBox()
   _valid = 0;
 }
 
-void parquetfp::BBox::clear(void)
+void parquetfp::BBox::clear()
 {
   _minX = (std::numeric_limits<float>::max());
   _maxX = (-std::numeric_limits<float>::max());
@@ -103,32 +103,32 @@ void parquetfp::BBox::put(const Point& point)
   _valid = 1;
 }
 
-float parquetfp::BBox::getHPWL(void) const
+float parquetfp::BBox::getHPWL() const
 {
   return ((_maxX - _minX) + (_maxY - _minY));
 }
 
-float parquetfp::BBox::getXSize(void) const
+float parquetfp::BBox::getXSize() const
 {
   return (_maxX - _minX);
 }
 
-float parquetfp::BBox::getYSize(void) const
+float parquetfp::BBox::getYSize() const
 {
   return (_maxY - _minY);
 }
 
-float parquetfp::BBox::getMinX(void) const
+float parquetfp::BBox::getMinX() const
 {
   return _minX;
 }
 
-float parquetfp::BBox::getMinY(void) const
+float parquetfp::BBox::getMinY() const
 {
   return _minY;
 }
 
-bool parquetfp::BBox::isValid(void) const
+bool parquetfp::BBox::isValid() const
 {
   return _valid;
 }

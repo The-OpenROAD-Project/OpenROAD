@@ -30,6 +30,7 @@
 
 #include <memory>
 #include <set>
+#include <vector>
 
 #include "db/obj/frVia.h"
 #include "db/taObj/taPin.h"
@@ -135,7 +136,9 @@ class FlexTAWorker
         numAssigned_(0),
         totCost_(0),
         maxRetry_(1),
-        hardIroutesMode(false){};
+        hardIroutesMode(false)
+  {
+  }
   // setters
   void setRouteBox(const Rect& boxIn) { routeBox_ = boxIn; }
   void setExtBox(const Rect& boxIn) { extBox_ = boxIn; }
@@ -228,7 +231,7 @@ class FlexTAWorker
   frCoord initFixedObjs_calcBloatDist(frBlockObject* obj,
                                       frLayerNum lNum,
                                       const Rect& box);
-  frCoord initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
+  frCoord initFixedObjs_calcOBSBloatDistVia(const frViaDef* viaDef,
                                             frLayerNum lNum,
                                             const Rect& box,
                                             bool isOBS = true);

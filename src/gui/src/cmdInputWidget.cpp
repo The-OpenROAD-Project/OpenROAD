@@ -129,13 +129,12 @@ bool CmdInputWidget::handleEnterKeyPress(QKeyEvent* event)
       // does not get inserted by Qt, so manually inserting
       insertPlainText("\n");
       return true;
-    } else {
-      // Check if command complete and attempt to execute, otherwise do nothing
-      if (isCommandComplete(toPlainText().simplified().toStdString())) {
-        // execute command
-        executeCommand(text());
-        return true;
-      }
+    }
+    // Check if command complete and attempt to execute, otherwise do nothing
+    if (isCommandComplete(toPlainText().simplified().toStdString())) {
+      // execute command
+      executeCommand(text());
+      return true;
     }
   }
 

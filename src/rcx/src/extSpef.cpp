@@ -33,6 +33,7 @@
 #include "rcx/extSpef.h"
 
 #include <algorithm>
+#include <vector>
 
 #include "name.h"
 #include "odb/dbExtControl.h"

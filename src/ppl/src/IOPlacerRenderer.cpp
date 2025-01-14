@@ -35,6 +35,8 @@
 
 #include "IOPlacerRenderer.h"
 
+#include <vector>
+
 namespace ppl {
 
 IOPlacerRenderer::IOPlacerRenderer()

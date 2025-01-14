@@ -34,6 +34,7 @@
 #include "mpl/MacroPlacer.h"
 
 #include <string>
+#include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -73,7 +74,7 @@ using odb::dbTech;
 using odb::dbTechLayer;
 using odb::Rect;
 
-typedef vector<pair<Partition, Partition>> TwoPartitions;
+using TwoPartitions = vector<pair<Partition, Partition>>;
 
 static CoreEdge getCoreEdge(int cx,
                             int cy,
@@ -996,11 +997,14 @@ static CoreEdge getCoreEdge(int cx,
   int minDiff = std::min(lxDx, std::min(uxDx, std::min(lyDy, uyDy)));
   if (minDiff == lxDx) {
     return CoreEdge::West;
-  } else if (minDiff == uxDx) {
+  }
+  if (minDiff == uxDx) {
     return CoreEdge::East;
-  } else if (minDiff == lyDy) {
+  }
+  if (minDiff == lyDy) {
     return CoreEdge::South;
-  } else if (minDiff == uyDy) {
+  }
+  if (minDiff == uyDy) {
     return CoreEdge::North;
   }
   return CoreEdge::West;
@@ -1152,8 +1156,8 @@ sta::Pin* MacroPlacer::findSeqOutPin(sta::Instance* inst,
     }
     delete pin_iter;
     return nullptr;
-  } else
-    return network->findPin(inst, out_port);
+  }
+  return network->findPin(inst, out_port);
 }
 
 void MacroPlacer::findAdjWeights(VertexFaninMap& vertex_fanins,
@@ -1244,8 +1248,8 @@ std::string MacroPlacer::faninName(Macro* macro)
   intptr_t edge_index = reinterpret_cast<intptr_t>(macro);
   if (edge_index < core_edge_count)
     return coreEdgeString(static_cast<CoreEdge>(edge_index));
-  else
-    return macro->name();
+
+  return macro->name();
 }
 
 // This has to be consistent with the accessors in EAST_IDX
@@ -1254,16 +1258,16 @@ int MacroPlacer::macroIndex(Macro* macro)
   intptr_t edge_index = reinterpret_cast<intptr_t>(macro);
   if (edge_index < core_edge_count)
     return macros_.size() + edge_index;
-  else
-    return macro - &macros_[0];
+
+  return macro - &macros_[0];
 }
 
 string MacroPlacer::macroIndexName(int index)
 {
   if (index < macros_.size())
     return macros_[index].name();
-  else
-    return coreEdgeString(static_cast<CoreEdge>(index - macros_.size()));
+
+  return coreEdgeString(static_cast<CoreEdge>(index - macros_.size()));
 }
 
 int MacroPlacer::macroIndex(dbInst* inst)
@@ -1287,48 +1291,50 @@ CoreEdge MacroPlacer::findNearestEdge(dbBTerm* bTerm)
     logger_->warn(
         MPL, 65, "Pin {} is not placed, using west.", bTerm->getConstName());
     return CoreEdge::West;
-  } else {
-    const double dbu = db_->getTech()->getDbUnitsPerMicron();
+  }
+  const double dbu = db_->getTech()->getDbUnitsPerMicron();
 
-    int dbuCoreLx = round(lx_ * dbu);
-    int dbuCoreLy = round(ly_ * dbu);
-    int dbuCoreUx = round(ux_ * dbu);
-    int dbuCoreUy = round(uy_ * dbu);
+  int dbuCoreLx = round(lx_ * dbu);
+  int dbuCoreLy = round(ly_ * dbu);
+  int dbuCoreUx = round(ux_ * dbu);
+  int dbuCoreUy = round(uy_ * dbu);
 
-    int placeX = 0, placeY = 0;
-    bool isAxisFound = false;
-    bTerm->getFirstPinLocation(placeX, placeY);
-    for (dbBPin* bPin : bTerm->getBPins()) {
-      Rect pin_bbox = bPin->getBBox();
-      int boxLx = pin_bbox.xMin();
-      int boxLy = pin_bbox.yMin();
-      int boxUx = pin_bbox.xMax();
-      int boxUy = pin_bbox.yMax();
+  int placeX = 0, placeY = 0;
+  bool isAxisFound = false;
+  bTerm->getFirstPinLocation(placeX, placeY);
+  for (dbBPin* bPin : bTerm->getBPins()) {
+    Rect pin_bbox = bPin->getBBox();
+    int boxLx = pin_bbox.xMin();
+    int boxLy = pin_bbox.yMin();
+    int boxUx = pin_bbox.xMax();
+    int boxUy = pin_bbox.yMax();
 
-      if (isWithIn(dbuCoreLx, boxLx, boxUx)) {
-        return CoreEdge::West;
-      } else if (isWithIn(dbuCoreUx, boxLx, boxUx)) {
-        return CoreEdge::East;
-      } else if (isWithIn(dbuCoreLy, boxLy, boxUy)) {
-        return CoreEdge::South;
-      } else if (isWithIn(dbuCoreUy, boxLy, boxUy)) {
-        return CoreEdge::North;
-      }
+    if (isWithIn(dbuCoreLx, boxLx, boxUx)) {
+      return CoreEdge::West;
     }
-    if (!isAxisFound) {
-      dbBPin* bPin = *(bTerm->getBPins().begin());
-      Rect pin_bbox = bPin->getBBox();
-      int boxLx = pin_bbox.xMin();
-      int boxLy = pin_bbox.yMin();
-      int boxUx = pin_bbox.xMax();
-      int boxUy = pin_bbox.yMax();
-      return getCoreEdge((boxLx + boxUx) / 2,
-                         (boxLy + boxUy) / 2,
-                         dbuCoreLx,
-                         dbuCoreLy,
-                         dbuCoreUx,
-                         dbuCoreUy);
+    if (isWithIn(dbuCoreUx, boxLx, boxUx)) {
+      return CoreEdge::East;
     }
+    if (isWithIn(dbuCoreLy, boxLy, boxUy)) {
+      return CoreEdge::South;
+    }
+    if (isWithIn(dbuCoreUy, boxLy, boxUy)) {
+      return CoreEdge::North;
+    }
+  }
+  if (!isAxisFound) {
+    dbBPin* bPin = *(bTerm->getBPins().begin());
+    Rect pin_bbox = bPin->getBBox();
+    int boxLx = pin_bbox.xMin();
+    int boxLy = pin_bbox.yMin();
+    int boxUx = pin_bbox.xMax();
+    int boxUy = pin_bbox.yMax();
+    return getCoreEdge((boxLx + boxUx) / 2,
+                       (boxLy + boxUy) / 2,
+                       dbuCoreLx,
+                       dbuCoreLy,
+                       dbuCoreUx,
+                       dbuCoreUy);
   }
   return CoreEdge::West;
 }
@@ -1340,8 +1346,8 @@ MacroSpacings& MacroPlacer::getSpacings(const Macro& macro)
   auto itr = macro_spacings_.find(macro.dbInstPtr);
   if (itr == macro_spacings_.end())
     return default_macro_spacings_;
-  else
-    return itr->second;
+
+  return itr->second;
 }
 
 ////////////////////////////////////////////////////////////////

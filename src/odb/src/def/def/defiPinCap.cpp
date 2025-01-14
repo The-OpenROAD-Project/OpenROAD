@@ -29,15 +29,15 @@
 
 #include "defiPinCap.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiComponent.hpp"
 #include "defiDebug.hpp"
 #include "defiUtil.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 ///////////////////////////////////////////////
 ///////////////////////////////////////////////
@@ -80,8 +80,7 @@ void defiPinCap::print(FILE* f) const
 ///////////////////////////////////////////////
 ///////////////////////////////////////////////
 
-defiPinAntennaModel::defiPinAntennaModel(defrData* data)
-    : oxide_(0), defData(data)
+defiPinAntennaModel::defiPinAntennaModel(defrData* data) : defData(data)
 {
   Init();
 }
@@ -90,20 +89,20 @@ void defiPinAntennaModel::Init()
 {
   numAPinGateArea_ = 0;        // 5.4
   APinGateAreaAllocated_ = 0;  // 5.4
-  APinGateArea_ = 0;
-  APinGateAreaLayer_ = 0;
+  APinGateArea_ = nullptr;
+  APinGateAreaLayer_ = nullptr;
   numAPinMaxAreaCar_ = 0;        // 5.4
   APinMaxAreaCarAllocated_ = 0;  // 5.4
-  APinMaxAreaCar_ = 0;
-  APinMaxAreaCarLayer_ = 0;
+  APinMaxAreaCar_ = nullptr;
+  APinMaxAreaCarLayer_ = nullptr;
   numAPinMaxSideAreaCar_ = 0;        // 5.4
   APinMaxSideAreaCarAllocated_ = 0;  // 5.4
-  APinMaxSideAreaCar_ = 0;
-  APinMaxSideAreaCarLayer_ = 0;
+  APinMaxSideAreaCar_ = nullptr;
+  APinMaxSideAreaCarLayer_ = nullptr;
   numAPinMaxCutCar_ = 0;        // 5.4
   APinMaxCutCarAllocated_ = 0;  // 5.4
-  APinMaxCutCar_ = 0;
-  APinMaxCutCarLayer_ = 0;
+  APinMaxCutCar_ = nullptr;
+  APinMaxCutCarLayer_ = nullptr;
 }
 
 defiPinAntennaModel::~defiPinAntennaModel()
@@ -117,7 +116,7 @@ void defiPinAntennaModel::clear()
 
   if (oxide_)
     free((char*) (oxide_));
-  oxide_ = 0;
+  oxide_ = nullptr;
 
   for (i = 0; i < numAPinGateArea_; i++) {
     if (APinGateAreaLayer_[i])
@@ -208,7 +207,7 @@ void defiPinAntennaModel::addAPinGateArea(int value, const char* layer)
     APinGateAreaLayer_[numAPinGateArea_] = (char*) malloc(strlen(layer) + 1);
     strcpy(APinGateAreaLayer_[numAPinGateArea_], defData->DEFCASE(layer));
   } else
-    APinGateAreaLayer_[numAPinGateArea_] = NULL;
+    APinGateAreaLayer_[numAPinGateArea_] = nullptr;
   numAPinGateArea_ += 1;
 }
 
@@ -242,7 +241,7 @@ void defiPinAntennaModel::addAPinMaxAreaCar(int value, const char* layer)
         = (char*) malloc(strlen(layer) + 1);
     strcpy(APinMaxAreaCarLayer_[numAPinMaxAreaCar_], defData->DEFCASE(layer));
   } else
-    APinMaxAreaCarLayer_[numAPinMaxAreaCar_] = NULL;
+    APinMaxAreaCarLayer_[numAPinMaxAreaCar_] = nullptr;
   numAPinMaxAreaCar_ += 1;
 }
 
@@ -277,7 +276,7 @@ void defiPinAntennaModel::addAPinMaxSideAreaCar(int value, const char* layer)
     strcpy(APinMaxSideAreaCarLayer_[numAPinMaxSideAreaCar_],
            defData->DEFCASE(layer));
   } else
-    APinMaxSideAreaCarLayer_[numAPinMaxSideAreaCar_] = NULL;
+    APinMaxSideAreaCarLayer_[numAPinMaxSideAreaCar_] = nullptr;
   numAPinMaxSideAreaCar_ += 1;
 }
 
@@ -310,7 +309,7 @@ void defiPinAntennaModel::addAPinMaxCutCar(int value, const char* layer)
     APinMaxCutCarLayer_[numAPinMaxCutCar_] = (char*) malloc(strlen(layer) + 1);
     strcpy(APinMaxCutCarLayer_[numAPinMaxCutCar_], defData->DEFCASE(layer));
   } else
-    APinMaxCutCarLayer_[numAPinMaxCutCar_] = NULL;
+    APinMaxCutCarLayer_[numAPinMaxCutCar_] = nullptr;
   numAPinMaxCutCar_ += 1;
 }
 
@@ -438,27 +437,27 @@ void defiPinPort::Init()
 {
   layersAllocated_ = 0;
   numLayers_ = 0;
-  layers_ = 0;
-  layerMinSpacing_ = 0;
-  layerMask_ = 0;
-  layerEffectiveWidth_ = 0;
-  xl_ = 0;
-  yl_ = 0;
-  xh_ = 0;
-  yh_ = 0;
+  layers_ = nullptr;
+  layerMinSpacing_ = nullptr;
+  layerMask_ = nullptr;
+  layerEffectiveWidth_ = nullptr;
+  xl_ = nullptr;
+  yl_ = nullptr;
+  xh_ = nullptr;
+  yh_ = nullptr;
   polysAllocated_ = 0;
   numPolys_ = 0;
-  polygonNames_ = 0;
-  polyMinSpacing_ = 0;
-  polyMask_ = 0;
-  polyEffectiveWidth_ = 0;
-  polygons_ = 0;
+  polygonNames_ = nullptr;
+  polyMinSpacing_ = nullptr;
+  polyMask_ = nullptr;
+  polyEffectiveWidth_ = nullptr;
+  polygons_ = nullptr;
   viasAllocated_ = 0;
   numVias_ = 0;
-  viaNames_ = 0;
-  viaX_ = 0;
-  viaY_ = 0;
-  viaMask_ = 0;
+  viaNames_ = nullptr;
+  viaX_ = nullptr;
+  viaY_ = nullptr;
+  viaMask_ = nullptr;
   placeType_ = 0;
   x_ = 0;
   y_ = 0;
@@ -492,10 +491,10 @@ void defiPinPort::clear()
     free((char*) (layerMask_));
     free((char*) (layerEffectiveWidth_));
   }
-  layers_ = 0;
-  layerMinSpacing_ = 0;
-  layerEffectiveWidth_ = 0;
-  layerMask_ = 0;
+  layers_ = nullptr;
+  layerMinSpacing_ = nullptr;
+  layerEffectiveWidth_ = nullptr;
+  layerMask_ = nullptr;
   numLayers_ = 0;
   layersAllocated_ = 0;
   if (polygonNames_) {
@@ -513,11 +512,11 @@ void defiPinPort::clear()
     free((char*) (polyMinSpacing_));
     free((char*) (polyMask_));
     free((char*) (polyEffectiveWidth_));
-    polygonNames_ = 0;
-    polygons_ = 0;
-    polyMinSpacing_ = 0;
-    polyEffectiveWidth_ = 0;
-    polyMask_ = 0;
+    polygonNames_ = nullptr;
+    polygons_ = nullptr;
+    polyMinSpacing_ = nullptr;
+    polyEffectiveWidth_ = nullptr;
+    polyMask_ = nullptr;
   }
   numPolys_ = 0;
   polysAllocated_ = 0;
@@ -530,10 +529,10 @@ void defiPinPort::clear()
     free((char*) (viaY_));
     free((char*) (viaMask_));
   }
-  viaNames_ = 0;
+  viaNames_ = nullptr;
   numVias_ = 0;
   viasAllocated_ = 0;
-  viaMask_ = 0;
+  viaMask_ = nullptr;
 }
 
 void defiPinPort::addLayer(const char* layer)
@@ -655,7 +654,7 @@ void defiPinPort::addPolygon(const char* layerName)
     polyMask_ = pm;
   }
   polygonNames_[numPolys_] = strdup(layerName);
-  polygons_[numPolys_] = 0;
+  polygons_[numPolys_] = nullptr;
   polyMinSpacing_[numPolys_] = -1;
   polyEffectiveWidth_[numPolys_] = -1;
   polyMask_[numPolys_] = 0;
@@ -800,7 +799,7 @@ const char* defiPinPort::polygonName(int index) const
 {
   if (index < 0 || index > numPolys_) {
     defiError(1, 0, "index out of bounds", defData);
-    return 0;
+    return nullptr;
   }
   return polygonNames_[index];
 }
@@ -848,7 +847,7 @@ const char* defiPinPort::viaName(int index) const
 {
   if (index < 0 || index > numVias_) {
     defiError(1, 0, "index out of bounds", defData);
-    return 0;
+    return nullptr;
   }
   return viaNames_[index];
 }
@@ -934,63 +933,63 @@ defiPin::defiPin(defrData* data) : defData(data)
 void defiPin::Init()
 {
   pinNameLength_ = 0;
-  pinName_ = 0;
+  pinName_ = nullptr;
   netNameLength_ = 0;
-  netName_ = 0;
+  netName_ = nullptr;
   useLength_ = 0;
-  use_ = 0;
+  use_ = nullptr;
   directionLength_ = 0;
-  direction_ = 0;
+  direction_ = nullptr;
   hasDirection_ = 0;
   hasUse_ = 0;
   placeType_ = 0;
   orient_ = 0;
-  xl_ = 0;
-  yl_ = 0;
-  xh_ = 0;
-  yh_ = 0;
+  xl_ = nullptr;
+  yl_ = nullptr;
+  xh_ = nullptr;
+  yh_ = nullptr;
   x_ = 0;
   y_ = 0;
   netExprLength_ = 0;                  // 5.6
-  netExpr_ = 0;                        // 5.6
+  netExpr_ = nullptr;                  // 5.6
   hasNetExpr_ = 0;                     // 5.6
   supplySensLength_ = 0;               // 5.6
-  supplySens_ = 0;                     // 5.6
+  supplySens_ = nullptr;               // 5.6
   hasSupplySens_ = 0;                  // 5.6
   groundSensLength_ = 0;               // 5.6
-  groundSens_ = 0;                     // 5.6
+  groundSens_ = nullptr;               // 5.6
   hasGroundSens_ = 0;                  // 5.6
-  layers_ = 0;                         // 5.6
+  layers_ = nullptr;                   // 5.6
   layersAllocated_ = 0;                // 5.6
   numLayers_ = 0;                      // 5.6
-  polygonNames_ = 0;                   // 5.6
+  polygonNames_ = nullptr;             // 5.6
   numPolys_ = 0;                       // 5.6
   polysAllocated_ = 0;                 // 5.6
-  polygons_ = 0;                       // 5.6
+  polygons_ = nullptr;                 // 5.6
   numAPinPartialMetalArea_ = 0;        // 5.4
   APinPartialMetalAreaAllocated_ = 0;  // 5.4
-  APinPartialMetalArea_ = 0;
-  APinPartialMetalAreaLayer_ = 0;
+  APinPartialMetalArea_ = nullptr;
+  APinPartialMetalAreaLayer_ = nullptr;
   numAPinPartialMetalSideArea_ = 0;        // 5.4
   APinPartialMetalSideAreaAllocated_ = 0;  // 5.4
-  APinPartialMetalSideArea_ = 0;
-  APinPartialMetalSideAreaLayer_ = 0;
+  APinPartialMetalSideArea_ = nullptr;
+  APinPartialMetalSideAreaLayer_ = nullptr;
   numAPinDiffArea_ = 0;        // 5.4
   APinDiffAreaAllocated_ = 0;  // 5.4
-  APinDiffArea_ = 0;
-  APinDiffAreaLayer_ = 0;
+  APinDiffArea_ = nullptr;
+  APinDiffAreaLayer_ = nullptr;
   numAPinPartialCutArea_ = 0;        // 5.4
   APinPartialCutAreaAllocated_ = 0;  // 5.4
-  APinPartialCutArea_ = 0;
-  APinPartialCutAreaLayer_ = 0;
-  antennaModel_ = 0;
-  viaNames_ = 0;       // 5.7
-  viasAllocated_ = 0;  // 5.7
-  numVias_ = 0;        // 5.7
-  viaX_ = 0;           // 5.7
-  viaY_ = 0;           // 5.7
-  numPorts_ = 0;       // 5.7
-  pinPort_ = 0;        // 5.7
+  APinPartialCutArea_ = nullptr;
+  APinPartialCutAreaLayer_ = nullptr;
+  antennaModel_ = nullptr;
+  viaNames_ = nullptr;  // 5.7
+  viasAllocated_ = 0;   // 5.7
+  numVias_ = 0;         // 5.7
+  viaX_ = nullptr;      // 5.7
+  viaY_ = nullptr;      // 5.7
+  numPorts_ = 0;        // 5.7
+  pinPort_ = nullptr;   // 5.7
   numAntennaModel_ = 0;
   antennaModelAllocated_ = 0;
 }
@@ -1028,10 +1027,10 @@ void defiPin::clear()
     free((char*) (layerMask_));
     free((char*) (layerEffectiveWidth_));
   }
-  layers_ = 0;
-  layerMinSpacing_ = 0;
-  layerMask_ = 0;
-  layerEffectiveWidth_ = 0;
+  layers_ = nullptr;
+  layerMinSpacing_ = nullptr;
+  layerMask_ = nullptr;
+  layerEffectiveWidth_ = nullptr;
   numLayers_ = 0;
   layersAllocated_ = 0;
   // 5.6
@@ -1050,11 +1049,11 @@ void defiPin::clear()
     free((char*) (polyMinSpacing_));
     free((char*) (polyMask_));
     free((char*) (polyEffectiveWidth_));
-    polygonNames_ = 0;
-    polygons_ = 0;
-    polyMinSpacing_ = 0;
-    polyMask_ = 0;
-    polyEffectiveWidth_ = 0;
+    polygonNames_ = nullptr;
+    polygons_ = nullptr;
+    polyMinSpacing_ = nullptr;
+    polyMask_ = nullptr;
+    polyEffectiveWidth_ = nullptr;
   }
   numPolys_ = 0;
   polysAllocated_ = 0;
@@ -1068,9 +1067,9 @@ void defiPin::clear()
     free((char*) (viaY_));
     free((char*) (viaMask_));
   }
-  viaNames_ = 0;
+  viaNames_ = nullptr;
   numVias_ = 0;
-  viaMask_ = 0;
+  viaMask_ = nullptr;
   viasAllocated_ = 0;
   // 5.7
   if (pinPort_) {
@@ -1082,7 +1081,7 @@ void defiPin::clear()
     }
     free(pinPort_);
   }
-  pinPort_ = 0;
+  pinPort_ = nullptr;
   numPorts_ = 0;
   portsAllocated_ = 0;
 
@@ -1134,13 +1133,13 @@ void defiPin::Destroy()
     free(supplySens_);
   if (groundSens_)
     free(groundSens_);
-  pinName_ = 0;
-  netName_ = 0;
-  use_ = 0;
-  direction_ = 0;
-  netExpr_ = 0;
-  supplySens_ = 0;
-  groundSens_ = 0;
+  pinName_ = nullptr;
+  netName_ = nullptr;
+  use_ = nullptr;
+  direction_ = nullptr;
+  netExpr_ = nullptr;
+  supplySens_ = nullptr;
+  groundSens_ = nullptr;
   pinNameLength_ = 0;
   netNameLength_ = 0;
   useLength_ = 0;
@@ -1388,10 +1387,7 @@ int defiPin::hasUse() const
 
 int defiPin::hasLayer() const
 {
-  if (numLayers_ || numPolys_)  // 5.6, either layer or polygon is
-    return 1;                   // non-zero
-  else
-    return 0;
+  return numLayers_ || numPolys_;  // 5.6, either layer or polygon is
 }
 
 int defiPin::hasPlacement() const
@@ -1580,7 +1576,7 @@ void defiPin::addAPinPartialMetalArea(int value, const char* layer)
     strcpy(APinPartialMetalAreaLayer_[numAPinPartialMetalArea_],
            defData->DEFCASE(layer));
   } else
-    APinPartialMetalAreaLayer_[numAPinPartialMetalArea_] = NULL;
+    APinPartialMetalAreaLayer_[numAPinPartialMetalArea_] = nullptr;
   numAPinPartialMetalArea_ += 1;
 }
 
@@ -1615,7 +1611,7 @@ void defiPin::addAPinPartialMetalSideArea(int value, const char* layer)
     strcpy(APinPartialMetalSideAreaLayer_[numAPinPartialMetalSideArea_],
            defData->DEFCASE(layer));
   } else
-    APinPartialMetalSideAreaLayer_[numAPinPartialMetalSideArea_] = NULL;
+    APinPartialMetalSideAreaLayer_[numAPinPartialMetalSideArea_] = nullptr;
   numAPinPartialMetalSideArea_ += 1;
 }
 
@@ -1655,7 +1651,7 @@ void defiPin::addAPinDiffArea(int value, const char* layer)
     APinDiffAreaLayer_[numAPinDiffArea_] = (char*) malloc(strlen(layer) + 1);
     strcpy(APinDiffAreaLayer_[numAPinDiffArea_], defData->DEFCASE(layer));
   } else
-    APinDiffAreaLayer_[numAPinDiffArea_] = NULL;
+    APinDiffAreaLayer_[numAPinDiffArea_] = nullptr;
   numAPinDiffArea_ += 1;
 }
 
@@ -1704,7 +1700,7 @@ void defiPin::addAPinPartialCutArea(int value, const char* layer)
     strcpy(APinPartialCutAreaLayer_[numAPinPartialCutArea_],
            defData->DEFCASE(layer));
   } else
-    APinPartialCutAreaLayer_[numAPinPartialCutArea_] = NULL;
+    APinPartialCutAreaLayer_[numAPinPartialCutArea_] = nullptr;
   numAPinPartialCutArea_ += 1;
 }
 
@@ -1864,7 +1860,7 @@ void defiPin::addPolygon(const char* layerName)
     polyMask_ = pm;
   }
   polygonNames_[numPolys_] = strdup(layerName);
-  polygons_[numPolys_] = 0;
+  polygons_[numPolys_] = nullptr;
   polyMinSpacing_[numPolys_] = -1;
   polyEffectiveWidth_[numPolys_] = -1;
   polyMask_[numPolys_] = 0;
@@ -1918,7 +1914,7 @@ const char* defiPin::polygonName(int index) const
 {
   if (index < 0 || index > numPolys_) {
     defiError(1, 0, "index out of bounds", defData);
-    return 0;
+    return nullptr;
   }
   return polygonNames_[index];
 }
@@ -2048,7 +2044,7 @@ const char* defiPin::viaName(int index) const
 {
   if (index < 0 || index > numVias_) {
     defiError(1, 0, "index out of bounds", defData);
-    return 0;
+    return nullptr;
   }
   return viaNames_[index];
 }
@@ -2071,9 +2067,8 @@ int defiPin::viaTopMask(int index) const
 
   if (cutMaskNum) {
     return cutMaskNum /= 10;
-  } else {
-    return 0;
   }
+  return 0;
 }
 
 int defiPin::viaCutMask(int index) const
@@ -2082,9 +2077,8 @@ int defiPin::viaCutMask(int index) const
 
   if (cutMaskNum) {
     return cutMaskNum % 10;
-  } else {
-    return 0;
   }
+  return 0;
 }
 
 int defiPin::viaBottomMask(int index) const
@@ -2216,7 +2210,7 @@ defiPinPort* defiPin::pinPort(int index) const
 {
   if (index < 0 || index > numPorts_) {
     defiError(1, 0, "index out of bounds", defData);
-    return 0;
+    return nullptr;
   }
   return pinPort_[index];
 }
@@ -2266,4 +2260,4 @@ void defiPin::print(FILE* f) const
   if (hasSpecial())
     fprintf(f, "+ SPECIAL\n");
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

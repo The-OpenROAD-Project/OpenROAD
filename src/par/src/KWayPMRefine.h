@@ -34,9 +34,16 @@
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include <set>
+#include <map>
+#include <memory>
+#include <utility>
+#include <vector>
 
+#include "Evaluator.h"
+#include "Hypergraph.h"
 #include "KWayFMRefine.h"
+#include "Refiner.h"
+#include "Utilities.h"
 
 namespace par {
 

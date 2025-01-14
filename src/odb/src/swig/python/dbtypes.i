@@ -64,6 +64,10 @@
     $result = list;
 }
 
+%typemap(out) uint64_t {
+    $result = PyLong_FromUnsignedLongLong($1);
+}
+
 %typemap(out) std::optional<uint8_t> {
     if ($1.has_value()) {
         $result = PyInt_FromLong((long)$1.value());
@@ -134,6 +138,22 @@
         T* ptr2 = p.second;
         PyObject *obj1 = SWIG_NewInstanceObj(ptr1, $descriptor(T *), 0);
         PyObject *obj2 = SWIG_NewInstanceObj(ptr2, $descriptor(T *), 0);
+        PyList_SetItem(sub_list, 0, obj1);
+        PyList_SetItem(sub_list, 1, obj2);
+        PyList_SetItem(list, i, sub_list);
+    }
+    $result = list;
+}
+
+%typemap(out) std::vector< std::pair< T*, odb::Rect > > {
+    PyObject *list = PyList_New($1.size());
+    for (unsigned int i = 0; i < $1.size(); i++) {
+        PyObject *sub_list = PyList_New(2);
+        std::pair< T*, odb::Rect > p = $1.at(i);
+        T* ptr1 = p.first;
+        odb::Rect* ptr2 = new odb::Rect(p.second);
+        PyObject *obj1 = SWIG_NewInstanceObj(ptr1, $descriptor(T *), 0);
+        PyObject *obj2 = SWIG_NewInstanceObj(ptr2, $descriptor(odb::Rect *), 0);
         PyList_SetItem(sub_list, 0, obj1);
         PyList_SetItem(sub_list, 1, obj2);
         PyList_SetItem(list, i, sub_list);
@@ -251,7 +271,7 @@ WRAP_OBJECT_RETURN_REF(odb::dbViaParams, params_return)
   swig_type_info *tf = SWIG_TypeQuery("odb::dbShape" "*");
   for(std::vector<odb::dbShape>::iterator it = $1->begin(); it != $1->end(); it++) {
     PyObject *o = SWIG_NewInstanceObj(&(*it), tf, 0);
-    $result = SWIG_Python_AppendOutput($result, o);
+    $result = SWIG_AppendOutput($result, o);
   }
 }
 
@@ -263,14 +283,14 @@ WRAP_OBJECT_RETURN_REF(odb::dbViaParams, params_return)
     auto layer = it->second;
     PyObject *layer_swig = SWIG_NewInstanceObj(layer, tf, 0);
     PyObject *tuple = PyTuple_Pack(2, PyFloat_FromDouble(value), layer_swig);
-    $result = SWIG_Python_AppendOutput($result, tuple);
+    $result = SWIG_AppendOutput($result, tuple);
   }
 }
 
 %typemap(argout) std::vector<int> &OUTPUT {
   for(auto it = $1->begin(); it != $1->end(); it++) {
     PyObject *obj = PyInt_FromLong((long)*it);
-    $result = SWIG_Python_AppendOutput($result, obj);
+    $result = SWIG_AppendOutput($result, obj);
   }
 }
 

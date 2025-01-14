@@ -62,8 +62,8 @@ class definVia : public definBase
   virtual void viaEnd();
 
   definVia();
-  virtual ~definVia();
-  void init();
+  ~definVia() override;
+  void init() override;
 };
 
 }  // namespace odb

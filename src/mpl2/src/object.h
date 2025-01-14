@@ -475,12 +475,7 @@ class SoftMacro
   // Create a SoftMacro with specified size
   // Create a SoftMacro representing the blockage
   SoftMacro(float width, float height, const std::string& name);
-  // Create a SoftMacro representing fixed hard macro or blockage
-  SoftMacro(float width,
-            float height,
-            const std::string& name,
-            float lx,
-            float ly);
+
   // Create a SoftMacro representing the IO cluster
   SoftMacro(const std::pair<float, float>& pos,
             const std::string& name,
@@ -728,9 +723,8 @@ struct Rect
     if (lx < core_lx - 1.0 || ly < core_ly - 1.0 || ux > core_ux + 1.0
         || uy > core_uy + 1.0) {
       std::cout << "Error !!!\n"
-                << "core_lx =  " << core_lx << "  "
-                << "core_ly =  " << core_ly << "  "
-                << "core_ux =  " << core_ux << "  "
+                << "core_lx =  " << core_lx << "  " << "core_ly =  " << core_ly
+                << "  " << "core_ux =  " << core_ux << "  "
                 << "core_uy =  " << core_uy << std::endl;
     }
   }
@@ -778,17 +772,18 @@ struct Rect
     f_y = f_y_;
   }
 
-  bool isValid() const
+  bool isValid() const { return (lx < ux) && (ly < uy); }
+
+  void mergeInit()
   {
-    return (lx > 0.0) && (ly > 0.0) && (ux > 0.0) && (uy > 0.0);
+    lx = std::numeric_limits<float>::max();
+    ly = lx;
+    ux = std::numeric_limits<float>::lowest();
+    uy = ux;
   }
 
   void merge(const Rect& rect)
   {
-    if (!isValid()) {
-      return;
-    }
-
     lx = std::min(lx, rect.lx);
     ly = std::min(ly, rect.ly);
     ux = std::max(ux, rect.ux);

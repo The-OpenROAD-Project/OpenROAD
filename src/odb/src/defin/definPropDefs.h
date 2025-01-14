@@ -69,7 +69,6 @@ class definPropDefs : public definBase
   dbProperty* _prop;
 
  public:
-  virtual ~definPropDefs() {}
   virtual void beginDefinitions();
   virtual void begin(const char* obj_type,
                      const char* name,

@@ -35,6 +35,8 @@
 
 #include "MakeWireParasitics.h"
 
+#include <vector>
+
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
@@ -170,8 +172,8 @@ sta::Pin* MakeWireParasitics::staPin(Pin& pin) const
 {
   if (pin.isPort())
     return network_->dbToSta(pin.getBTerm());
-  else
-    return network_->dbToSta(pin.getITerm());
+
+  return network_->dbToSta(pin.getITerm());
 }
 
 void MakeWireParasitics::makeRouteParasitics(
@@ -190,7 +192,8 @@ void MakeWireParasitics::makeRouteParasitics(
     const int wire_length_dbu = segment.length();
 
     const int init_layer = segment.init_layer;
-    sta::ParasiticNode* n1 = (init_layer >= min_routing_layer)
+    bool is_valid_layer = init_layer >= min_routing_layer;
+    sta::ParasiticNode* n1 = is_valid_layer
                                  ? ensureParasiticNode(segment.init_x,
                                                        segment.init_y,
                                                        init_layer,
@@ -200,7 +203,8 @@ void MakeWireParasitics::makeRouteParasitics(
                                  : nullptr;
 
     const int final_layer = segment.final_layer;
-    sta::ParasiticNode* n2 = (final_layer >= min_routing_layer)
+    is_valid_layer = final_layer >= min_routing_layer;
+    sta::ParasiticNode* n2 = is_valid_layer
                                  ? ensureParasiticNode(segment.final_x,
                                                        segment.final_y,
                                                        final_layer,

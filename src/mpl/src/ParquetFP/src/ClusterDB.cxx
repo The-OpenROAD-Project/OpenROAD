@@ -45,8 +45,8 @@ using std::vector;
 ClusterDB::ClusterDB(DB* db, Command_Line* params)
     : _params(params),
       _db(db),
-      _newDB(0),
-      _oldDB(0),
+      _newDB(nullptr),
+      _oldDB(nullptr),
       _nodesSeenBB(0),
       _numConnections(0, 0)
 {
@@ -131,7 +131,7 @@ void ClusterDB::clusterMulti(DB*& newDB)
 
   // Transfer ownership of the compressed DB to the caller
   newDB = _newDB;
-  _newDB = 0;
+  _newDB = nullptr;
 }
 
 ClusterDB::~ClusterDB()
@@ -509,7 +509,7 @@ Node& ClusterDB getClosestNodeBFS(Node& currNode,
 }
 */
 
-void ClusterDB::addWSPerNode(void)
+void ClusterDB::addWSPerNode()
 {
   float multFactor = 1 + _params->maxWSHier / 100;
   if (!_params->dontClusterMacros)
@@ -770,5 +770,5 @@ void ClusterDB::clusterMultiPhysical(DB*& newDB)
 
   // Transfer ownership of the new DB
   newDB = _newDB;
-  _newDB = 0;
+  _newDB = nullptr;
 }

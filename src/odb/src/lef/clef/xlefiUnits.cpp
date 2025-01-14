@@ -39,90 +39,90 @@
 // Wrappers definitions.
 int lefiUnits_hasDatabase(const ::lefiUnits* obj)
 {
-  return ((LefDefParser::lefiUnits*) obj)->hasDatabase();
+  return ((LefParser::lefiUnits*) obj)->hasDatabase();
 }
 
 int lefiUnits_hasCapacitance(const ::lefiUnits* obj)
 {
-  return ((LefDefParser::lefiUnits*) obj)->hasCapacitance();
+  return ((LefParser::lefiUnits*) obj)->hasCapacitance();
 }
 
 int lefiUnits_hasResistance(const ::lefiUnits* obj)
 {
-  return ((LefDefParser::lefiUnits*) obj)->hasResistance();
+  return ((LefParser::lefiUnits*) obj)->hasResistance();
 }
 
 int lefiUnits_hasTime(const ::lefiUnits* obj)
 {
-  return ((LefDefParser::lefiUnits*) obj)->hasTime();
+  return ((LefParser::lefiUnits*) obj)->hasTime();
 }
 
 int lefiUnits_hasPower(const ::lefiUnits* obj)
 {
-  return ((LefDefParser::lefiUnits*) obj)->hasPower();
+  return ((LefParser::lefiUnits*) obj)->hasPower();
 }
 
 int lefiUnits_hasCurrent(const ::lefiUnits* obj)
 {
-  return ((LefDefParser::lefiUnits*) obj)->hasCurrent();
+  return ((LefParser::lefiUnits*) obj)->hasCurrent();
 }
 
 int lefiUnits_hasVoltage(const ::lefiUnits* obj)
 {
-  return ((LefDefParser::lefiUnits*) obj)->hasVoltage();
+  return ((LefParser::lefiUnits*) obj)->hasVoltage();
 }
 
 int lefiUnits_hasFrequency(const ::lefiUnits* obj)
 {
-  return ((LefDefParser::lefiUnits*) obj)->hasFrequency();
+  return ((LefParser::lefiUnits*) obj)->hasFrequency();
 }
 
 const char* lefiUnits_databaseName(const ::lefiUnits* obj)
 {
-  return ((const LefDefParser::lefiUnits*) obj)->databaseName();
+  return ((const LefParser::lefiUnits*) obj)->databaseName();
 }
 
 double lefiUnits_databaseNumber(const ::lefiUnits* obj)
 {
-  return ((LefDefParser::lefiUnits*) obj)->databaseNumber();
+  return ((LefParser::lefiUnits*) obj)->databaseNumber();
 }
 
 double lefiUnits_capacitance(const ::lefiUnits* obj)
 {
-  return ((LefDefParser::lefiUnits*) obj)->capacitance();
+  return ((LefParser::lefiUnits*) obj)->capacitance();
 }
 
 double lefiUnits_resistance(const ::lefiUnits* obj)
 {
-  return ((LefDefParser::lefiUnits*) obj)->resistance();
+  return ((LefParser::lefiUnits*) obj)->resistance();
 }
 
 double lefiUnits_time(const ::lefiUnits* obj)
 {
-  return ((LefDefParser::lefiUnits*) obj)->time();
+  return ((LefParser::lefiUnits*) obj)->time();
 }
 
 double lefiUnits_power(const ::lefiUnits* obj)
 {
-  return ((LefDefParser::lefiUnits*) obj)->power();
+  return ((LefParser::lefiUnits*) obj)->power();
 }
 
 double lefiUnits_current(const ::lefiUnits* obj)
 {
-  return ((LefDefParser::lefiUnits*) obj)->current();
+  return ((LefParser::lefiUnits*) obj)->current();
 }
 
 double lefiUnits_voltage(const ::lefiUnits* obj)
 {
-  return ((LefDefParser::lefiUnits*) obj)->voltage();
+  return ((LefParser::lefiUnits*) obj)->voltage();
 }
 
 double lefiUnits_frequency(const ::lefiUnits* obj)
 {
-  return ((LefDefParser::lefiUnits*) obj)->frequency();
+  return ((LefParser::lefiUnits*) obj)->frequency();
 }
 
 void lefiUnits_print(const ::lefiUnits* obj, FILE* f)
 {
-  ((LefDefParser::lefiUnits*) obj)->print(f);
+  ((LefParser::lefiUnits*) obj)->print(f);
 }

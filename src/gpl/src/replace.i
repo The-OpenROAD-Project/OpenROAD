@@ -33,7 +33,8 @@ void
 replace_initial_place_cmd()
 {
   Replace* replace = getReplace();
-  replace->doInitialPlace();
+  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+  replace->doInitialPlace(threads);
 }
 
 void 
@@ -181,19 +182,12 @@ set_routability_check_overflow_cmd(float overflow)
   Replace* replace = getReplace();
   replace->setRoutabilityCheckOverflow(overflow);
 }
-
+ 
 void
 set_routability_max_density_cmd(float density) 
 {
   Replace* replace = getReplace();
   replace->setRoutabilityMaxDensity(density);
-}
-
-void
-set_routability_max_bloat_iter_cmd(int iter)
-{
-  Replace* replace = getReplace();
-  replace->setRoutabilityMaxBloatIter(iter);
 }
 
 void

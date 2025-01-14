@@ -1642,8 +1642,7 @@ void FlexGR::initGR_genTopology_net(frNet* net)
       Point pt;
       if (rpin->getFrTerm()->typeId() == frcInstTerm) {
         auto inst = static_cast<frInstTerm*>(rpin->getFrTerm())->getInst();
-        dbTransform shiftXform = inst->getTransform();
-        shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+        dbTransform shiftXform = inst->getNoRotationTransform();
         pt = rpin->getAccessPoint()->getPoint();
         shiftXform.apply(pt);
       } else {
@@ -2521,7 +2520,6 @@ void FlexGR::updateDb()
   for (auto& net : design_->getTopBlock()->getNets()) {
     auto dbNet = block->findNet(net->getName().c_str());
     dbNet->clearGuides();
-    auto netName = net->getName();
     for (auto& guide : net->getGuides()) {
       auto [bp, ep] = guide->getPoints();
       Point bpIdx = design_->getTopBlock()->getGCellIdx(bp);

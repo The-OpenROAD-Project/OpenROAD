@@ -83,7 +83,7 @@ class Replace
   void reset();
 
   void doIncrementalPlace(int threads);
-  void doInitialPlace();
+  void doInitialPlace(int threads);
   void runMBFF(int max_sz, float alpha, float beta, int threads, int num_paths);
 
   int doNesterovPlace(int threads, int start_iter = 0);
@@ -125,7 +125,6 @@ class Replace
   void setRoutabilityCheckOverflow(float overflow);
   void setRoutabilityMaxDensity(float density);
 
-  void setRoutabilityMaxBloatIter(int iter);
   void setRoutabilityMaxInflationIter(int iter);
 
   void setRoutabilityTargetRcMetric(float rc);
@@ -194,11 +193,10 @@ class Replace
   float routabilityRcK3_ = 0.0;
   float routabilityRcK4_ = 0.0;
 
-  int routabilityMaxBloatIter_ = 1;
   int routabilityMaxInflationIter_ = 4;
 
   float timingNetWeightMax_ = 1.9;
-  float keepResizeBelowOverflow_ = 0.0;
+  float keepResizeBelowOverflow_ = 0.3;
 
   bool timingDrivenMode_ = true;
   bool routabilityDrivenMode_ = true;

@@ -31,10 +31,9 @@
 #pragma warning(disable : 4786)
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 
 #ifndef WIN32
@@ -694,7 +693,7 @@ int caseSensCB(lefrCallbackType_e c, int caseSense, lefiUserData)
   checkType(c);
   // if ((long)ud != userData) dataError();
 
-  if (caseSense == TRUE)
+  if (caseSense)
     fprintf(fout, "NAMESCASESENSITIVE ON ;\n");
   else
     fprintf(fout, "NAMESCASESENSITIVE OFF ;\n");
@@ -2550,7 +2549,6 @@ int main(int argc, char** argv)
   int ccr749853 = 0;
   int ccr1688946 = 0;
   int ccr1709089 = 0;
-  int verbose = 0;
 
   // start_mem = (long)sbrk(0);
 
@@ -2588,7 +2586,7 @@ int main(int argc, char** argv)
       argv++;
       argc--;
       outFile = *argv;
-      if ((fout = fopen(outFile, "w")) == 0) {
+      if ((fout = fopen(outFile, "w")) == nullptr) {
         fprintf(stderr, "ERROR: could not open output file\n");
         return 2;
       }
@@ -2782,7 +2780,7 @@ int main(int argc, char** argv)
     for (fileCt = 0; fileCt < numInFile; fileCt++) {
       lefrReset();
 
-      if ((f = fopen(inFile[fileCt], "r")) == 0) {
+      if ((f = fopen(inFile[fileCt], "r")) == nullptr) {
         fprintf(stderr, "Couldn't open input file '%s'\n", inFile[fileCt]);
         return (2);
       }
@@ -2814,7 +2812,6 @@ int main(int argc, char** argv)
     // 2nd will enable 2007 by calling lefrEnableParserMsgs
     // 3rd enable all msgs by call lefrEnableAllMsgs
 
-    int nMsgs = 3;
     int dMsgs[3];
     if (numInFile != 1) {
       fprintf(stderr, "Test 2 mode needs only 1 file\n");
@@ -2843,7 +2840,7 @@ int main(int argc, char** argv)
         lefrSetLimitPerMsg(2007, 2);
       }
 
-      if ((f = fopen(inFile[fileCt], "r")) == 0) {
+      if ((f = fopen(inFile[fileCt], "r")) == nullptr) {
         fprintf(stderr, "Couldn't open input file '%s'\n", inFile[fileCt]);
         return (2);
       }
@@ -2871,7 +2868,7 @@ int main(int argc, char** argv)
     for (fileCt = 0; fileCt < numInFile; fileCt++) {
       lefrReset();
 
-      if ((f = fopen(inFile[fileCt], "r")) == 0) {
+      if ((f = fopen(inFile[fileCt], "r")) == nullptr) {
         fprintf(stderr, "Couldn't open input file '%s'\n", inFile[fileCt]);
         return (2);
       }

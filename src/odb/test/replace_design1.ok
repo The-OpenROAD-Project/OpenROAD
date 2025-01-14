@@ -78,8 +78,8 @@ Corner: slow
    0.00    0.00 ^ r1/CK (DFF_X1)
    0.35    0.35 ^ r1/Q (DFF_X1)
    0.12    0.47 ^ u1/Z (BUF_X1)
-   0.03    0.49 v ic1/u4/ZN (INV_X1)
-   0.03    0.53 ^ ic1/u5/ZN (INV_X1)
+   0.03    0.50 v bc1/u4/ZN (INV_X1)
+   0.03    0.53 ^ bc1/u5/ZN (INV_X1)
    0.00    0.53 ^ r2/D (DFF_X1)
            0.53   data arrival time
 

@@ -39,6 +39,7 @@
 #include <algorithm>
 #include <cmath>
 #include <unordered_set>
+#include <vector>
 
 #include "AbstractFastRouteRenderer.h"
 #include "DataType.h"
@@ -627,15 +628,14 @@ int FastRouteCore::getEdgeCapacity(int x1, int y1, int x2, int y2, int layer)
 
   if (y1 == y2) {  // horizontal edge
     return h_edges_3D_[k][y1][x1].cap;
-  } else if (x1 == x2) {  // vertical edge
-    return v_edges_3D_[k][y1][x1].cap;
-  } else {
-    logger_->error(
-        GRT,
-        214,
-        "Cannot get edge capacity: edge is not vertical or horizontal.");
-    return 0;
   }
+  if (x1 == x2) {  // vertical edge
+    return v_edges_3D_[k][y1][x1].cap;
+  }
+  logger_->error(
+      GRT,
+      214,
+      "Cannot get edge capacity: edge is not vertical or horizontal.");
 }
 
 int FastRouteCore::getEdgeCapacity(FrNet* net,
@@ -1610,8 +1610,8 @@ int FrNet::getLayerEdgeCost(int layer) const
 {
   if (edge_cost_per_layer_)
     return (*edge_cost_per_layer_)[layer];
-  else
-    return 1;
+
+  return 1;
 }
 
 void FrNet::addPin(int x, int y, int layer)

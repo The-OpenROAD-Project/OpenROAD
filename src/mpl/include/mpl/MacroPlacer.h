@@ -70,13 +70,13 @@ using std::string;
 using std::unordered_map;
 using std::vector;
 
-typedef set<Macro*> MacroSet;
+using MacroSet = set<Macro*>;
 // vertex -> fanin macro set
-typedef map<sta::Vertex*, MacroSet> VertexFaninMap;
-typedef pair<Macro*, Macro*> MacroPair;
+using VertexFaninMap = map<sta::Vertex*, MacroSet>;
+using MacroPair = pair<Macro*, Macro*>;
 // from/to -> weight
 // weight = from/pin -> to/pin count
-typedef map<MacroPair, int> AdjWeightMap;
+using AdjWeightMap = map<MacroPair, int>;
 
 enum class CoreEdge
 {

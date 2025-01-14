@@ -33,6 +33,7 @@
 #include "dbTrackGrid.h"
 
 #include <algorithm>
+#include <vector>
 
 #include "dbBlock.h"
 #include "dbChip.h"
@@ -79,6 +80,14 @@ bool _dbTrackGrid::operator==(const _dbTrackGrid& rhs) const
     return false;
   }
 
+  if (_first_mask != rhs._first_mask) {
+    return false;
+  }
+
+  if (_samemask != rhs._samemask) {
+    return false;
+  }
+
   if (_next_grid != rhs._next_grid) {
     return false;
   }
@@ -98,6 +107,8 @@ void _dbTrackGrid::differences(dbDiff& diff,
   DIFF_VECTOR(_y_origin);
   DIFF_VECTOR(_y_count);
   DIFF_VECTOR(_y_step);
+  DIFF_VECTOR(_first_mask);
+  DIFF_VECTOR(_samemask);
   DIFF_FIELD_NO_DEEP(_next_grid);
   DIFF_END
 }
@@ -112,6 +123,8 @@ void _dbTrackGrid::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_VECTOR(_y_origin);
   DIFF_OUT_VECTOR(_y_count);
   DIFF_OUT_VECTOR(_y_step);
+  DIFF_OUT_VECTOR(_first_mask);
+  DIFF_OUT_VECTOR(_samemask);
   DIFF_OUT_FIELD_NO_DEEP(_next_grid);
   DIFF_END
 }
@@ -204,20 +217,32 @@ dbBlock* dbTrackGrid::getBlock()
   return (dbBlock*) getImpl()->getOwner();
 }
 
-void dbTrackGrid::addGridPatternX(int origin_x, int line_count, int step)
+void dbTrackGrid::addGridPatternX(int origin_x,
+                                  int line_count,
+                                  int step,
+                                  int first_mask,
+                                  bool samemask)
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
   grid->_x_origin.push_back(origin_x);
   grid->_x_count.push_back(line_count);
   grid->_x_step.push_back(step);
+  grid->_first_mask.push_back(first_mask);
+  grid->_samemask.push_back(samemask);
 }
 
-void dbTrackGrid::addGridPatternY(int origin_y, int line_count, int step)
+void dbTrackGrid::addGridPatternY(int origin_y,
+                                  int line_count,
+                                  int step,
+                                  int first_mask,
+                                  bool samemask)
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
   grid->_y_origin.push_back(origin_y);
   grid->_y_count.push_back(line_count);
   grid->_y_step.push_back(step);
+  grid->_first_mask.push_back(first_mask);
+  grid->_samemask.push_back(samemask);
 }
 
 int dbTrackGrid::getNumGridPatternsX()
@@ -244,6 +269,22 @@ void dbTrackGrid::getGridPatternX(int i,
   step = grid->_x_step[i];
 }
 
+void dbTrackGrid::getGridPatternX(int i,
+                                  int& origin_x,
+                                  int& line_count,
+                                  int& step,
+                                  int& first_mask,
+                                  bool& samemask)
+{
+  _dbTrackGrid* grid = (_dbTrackGrid*) this;
+  ZASSERT(i < (int) grid->_x_origin.size());
+  origin_x = grid->_x_origin[i];
+  line_count = grid->_x_count[i];
+  step = grid->_x_step[i];
+  first_mask = grid->_first_mask[i];
+  samemask = grid->_samemask[i];
+}
+
 void dbTrackGrid::getGridPatternY(int i,
                                   int& origin_y,
                                   int& line_count,
@@ -254,6 +295,22 @@ void dbTrackGrid::getGridPatternY(int i,
   origin_y = grid->_y_origin[i];
   line_count = grid->_y_count[i];
   step = grid->_y_step[i];
+}
+
+void dbTrackGrid::getGridPatternY(int i,
+                                  int& origin_y,
+                                  int& line_count,
+                                  int& step,
+                                  int& first_mask,
+                                  bool& samemask)
+{
+  _dbTrackGrid* grid = (_dbTrackGrid*) this;
+  ZASSERT(i < (int) grid->_y_origin.size());
+  origin_y = grid->_y_origin[i];
+  line_count = grid->_y_count[i];
+  step = grid->_y_step[i];
+  first_mask = grid->_first_mask[i];
+  samemask = grid->_samemask[i];
 }
 
 void dbTrackGrid::getAverageTrackSpacing(int& track_step,

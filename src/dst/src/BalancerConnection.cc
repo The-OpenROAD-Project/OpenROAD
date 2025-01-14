@@ -38,6 +38,7 @@
 #include <boost/thread/thread.hpp>
 #include <mutex>
 #include <thread>
+#include <vector>
 
 #include "LoadBalancer.h"
 #include "dst/BalancerJobDescription.h"
@@ -50,10 +51,10 @@ using namespace dst;
 BOOST_CLASS_EXPORT(dst::BalancerJobDescription)
 BOOST_CLASS_EXPORT(dst::BroadcastJobDescription)
 
-BalancerConnection::BalancerConnection(asio::io_service& io_service,
+BalancerConnection::BalancerConnection(asio::io_context& service,
                                        LoadBalancer* owner,
                                        utl::Logger* logger)
-    : sock_(io_service), logger_(logger), owner_(owner)
+    : sock_(service), logger_(logger), owner_(owner)
 {
 }
 // socket creation
@@ -112,8 +113,8 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
             owner_->dist_->sendResult(reply, sock_);
             sock_.close();
           } else {
-            asio::io_service io_service;
-            tcp::socket socket(io_service);
+            asio::io_context service;
+            tcp::socket socket(service);
             int failed_workers_trials = 0;
             asio::streambuf receive_buffer;
             bool failure = true;
@@ -181,8 +182,8 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
               pool,
               [worker, data, &failed_workers, &broadcast_failure_mutex]() {
                 try {
-                  asio::io_service io_service;
-                  tcp::socket socket(io_service);
+                  asio::io_context service;
+                  tcp::socket socket(service);
                   socket.connect(tcp::endpoint(worker.ip, worker.port));
                   asio::write(socket, asio::buffer(data));
                   asio::streambuf receive_buffer;
