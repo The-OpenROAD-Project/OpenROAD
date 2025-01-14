@@ -397,13 +397,15 @@ std::pair<dbInst*, dbInst*> Opendp::getAdjacentInstances(dbInst* inst) const
   dbInst* right_inst = nullptr;
 
   if (left_pixel != nullptr) {
-    if (left_pixel->cell) {
+    // do not return macros, endcaps and tapcells
+    if (left_pixel->cell && left_pixel->cell->db_inst_->isCore()) {
       left_inst = left_pixel->cell->db_inst_;
     }
   }
 
   if (right_pixel != nullptr) {
-    if (right_pixel->cell) {
+    // do not return macros, endcaps and tapcells
+    if (right_pixel->cell && right_pixel->cell->db_inst_->isCore()) {
       right_inst = right_pixel->cell->db_inst_;
     }
   }
