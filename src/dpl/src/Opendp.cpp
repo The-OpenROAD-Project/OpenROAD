@@ -379,19 +379,15 @@ void Opendp::groupInitPixels2()
 
 std::pair<dbInst*, dbInst*> Opendp::getAdjacentInstances(dbInst* inst) const
 {
-  const Rect inst_rect = inst->getBBox()->getBox();
-  Point left(inst_rect.xMin() - 1, inst_rect.center().getY());
-  Point right(inst_rect.xMax() + 1, inst_rect.center().getY());
-
   const Rect core = grid_->getCore();
-  GridX left_x = grid_->gridX(DbuX{left.getX() - core.xMin()});
-  GridY left_y = grid_->gridSnapDownY(DbuY{left.getY() - core.yMin()});
+  const Rect inst_rect = inst->getBBox()->getBox();
+  GridX left_x = grid_->gridX(DbuX{inst_rect.xMin() - 1 - core.xMin()});
+  GridX right_x = grid_->gridX(DbuX{inst_rect.xMax() + 1 - core.xMin()});
 
-  GridX right_x = grid_->gridX(DbuX{right.getX() - core.xMin()});
-  GridY right_y = grid_->gridSnapDownY(DbuY{right.getY() - core.yMin()});
+  GridY y = grid_->gridSnapDownY(DbuY{inst_rect.yMin() - core.yMin()});
 
-  Pixel* left_pixel = grid_->gridPixel(left_x, left_y);
-  Pixel* right_pixel = grid_->gridPixel(right_x, right_y);
+  Pixel* left_pixel = grid_->gridPixel(left_x, y);
+  Pixel* right_pixel = grid_->gridPixel(right_x, y);
 
   dbInst* left_inst = nullptr;
   dbInst* right_inst = nullptr;
