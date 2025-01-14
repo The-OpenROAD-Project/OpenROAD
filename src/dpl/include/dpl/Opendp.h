@@ -166,6 +166,9 @@ class Opendp
   // Get instances adjacent to the left/right of an instance
   std::pair<dbInst*, dbInst*> getAdjacentInstances(dbInst* inst) const;
 
+  // Find a cluster of instances that are touching each other
+  std::vector<dbInst*> getAdjacentInstancesCluster(dbInst* inst) const;
+
  private:
   using bgPoint
       = boost::geometry::model::d2::point_xy<int,

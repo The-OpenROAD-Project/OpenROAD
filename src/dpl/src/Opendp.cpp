@@ -411,6 +411,33 @@ std::pair<dbInst*, dbInst*> Opendp::getAdjacentInstances(dbInst* inst) const
   return {left_inst, right_inst};
 }
 
+std::vector<dbInst*> Opendp::getAdjacentInstancesCluster(dbInst* inst) const
+{
+  std::vector<dbInst*> adj_inst_cluster;
+  adj_inst_cluster.push_back(inst);
+
+  auto [left, right] = getAdjacentInstances(inst);
+  while (left != nullptr) {
+    adj_inst_cluster.push_back(left);
+    // the right instance can be ignored, since it was added in the line above
+    auto [l, r] = getAdjacentInstances(left);
+    left = l;
+  }
+
+  while (right != nullptr) {
+    adj_inst_cluster.push_back(right);
+    // the left instance can be ignored, since it was added in the line above
+    auto [l, r] = getAdjacentInstances(right);
+    right = r;
+  }
+
+  auto cmp = [](const dbInst* inst1, const dbInst* inst2) {
+    return inst1->getLocation().getX() < inst2->getLocation().getX();
+  };
+  std::sort(adj_inst_cluster.begin(), adj_inst_cluster.end(), cmp);
+  return adj_inst_cluster;
+}
+
 /* static */
 bool Opendp::isInside(const Rect& cell, const Rect& box)
 {
