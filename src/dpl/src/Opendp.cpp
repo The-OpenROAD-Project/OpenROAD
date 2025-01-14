@@ -377,7 +377,7 @@ void Opendp::groupInitPixels2()
   }
 }
 
-std::pair<dbInst*, dbInst*> Opendp::getAdjacentInstances(dbInst* inst) const
+dbInst* Opendp::getAdjacentInstance(dbInst* inst, bool left) const
 {
   const Rect core = grid_->getCore();
   const Rect inst_rect = inst->getBBox()->getBox();
@@ -386,47 +386,40 @@ std::pair<dbInst*, dbInst*> Opendp::getAdjacentInstances(dbInst* inst) const
 
   GridY y = grid_->gridSnapDownY(DbuY{inst_rect.yMin() - core.yMin()});
 
-  Pixel* left_pixel = grid_->gridPixel(left_x, y);
-  Pixel* right_pixel = grid_->gridPixel(right_x, y);
+  Pixel* pixel
+      = left ? grid_->gridPixel(left_x, y) : grid_->gridPixel(right_x, y);
 
-  dbInst* left_inst = nullptr;
-  dbInst* right_inst = nullptr;
+  dbInst* adjacent_inst = nullptr;
 
-  if (left_pixel != nullptr) {
+  if (pixel != nullptr) {
     // do not return macros, endcaps and tapcells
-    if (left_pixel->cell && left_pixel->cell->db_inst_->isCore()) {
-      left_inst = left_pixel->cell->db_inst_;
+    if (pixel->cell && pixel->cell->db_inst_->isCore()) {
+      adjacent_inst = pixel->cell->db_inst_;
     }
   }
 
-  if (right_pixel != nullptr) {
-    // do not return macros, endcaps and tapcells
-    if (right_pixel->cell && right_pixel->cell->db_inst_->isCore()) {
-      right_inst = right_pixel->cell->db_inst_;
-    }
-  }
-
-  return {left_inst, right_inst};
+  return adjacent_inst;
 }
 
 std::vector<dbInst*> Opendp::getAdjacentInstancesCluster(dbInst* inst) const
 {
+  const bool left = true;
+  const bool right = false;
   std::vector<dbInst*> adj_inst_cluster;
   adj_inst_cluster.push_back(inst);
 
-  auto [left, right] = getAdjacentInstances(inst);
-  while (left != nullptr) {
-    adj_inst_cluster.push_back(left);
+  dbInst* left_inst = getAdjacentInstance(inst, left);
+  while (left_inst != nullptr) {
+    adj_inst_cluster.push_back(left_inst);
     // the right instance can be ignored, since it was added in the line above
-    auto [l, r] = getAdjacentInstances(left);
-    left = l;
+    left_inst = getAdjacentInstance(left_inst, left);
   }
 
-  while (right != nullptr) {
-    adj_inst_cluster.push_back(right);
+  dbInst* right_inst = getAdjacentInstance(inst, right);
+  while (right_inst != nullptr) {
+    adj_inst_cluster.push_back(right_inst);
     // the left instance can be ignored, since it was added in the line above
-    auto [l, r] = getAdjacentInstances(right);
-    right = r;
+    right_inst = getAdjacentInstance(right_inst, right);
   }
 
   auto cmp = [](const dbInst* inst1, const dbInst* inst2) {
