@@ -45,8 +45,11 @@ ResidualError cpuSparseSolve(int maxSolverIter,
                              SMatrix& placeInstForceMatrixY,
                              Eigen::VectorXf& fixedInstForceVecY,
                              Eigen::VectorXf& instLocVecY,
-                             utl::Logger* logger)
+                             utl::Logger* logger,
+                             int threads)
 {
+  omp_set_num_threads(threads);
+
   ResidualError error;
   BiCGSTAB<SMatrix, IdentityPreconditioner> solver;
   solver.setMaxIterations(maxSolverIter);

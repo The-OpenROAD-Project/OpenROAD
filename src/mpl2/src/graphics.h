@@ -89,6 +89,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void setOutline(const odb::Rect& outline) override;
   void setCurrentCluster(Cluster* current_cluster) override;
   void setGuides(const std::map<int, Rect>& guides) override;
+  void setFences(const std::map<int, Rect>& fences) override;
 
   void eraseDrawing() override;
 
@@ -96,7 +97,10 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void resetPenalties();
   void drawCluster(Cluster* cluster, gui::Painter& painter);
   void drawAllBlockages(gui::Painter& painter);
-  void drawBlockage(const Rect& blockage, gui::Painter& painter);
+  void drawOffsetRect(const Rect& rect,
+                      const std::string& center_text,
+                      gui::Painter& painter);
+  void drawFences(gui::Painter& painter);
   void drawGuides(gui::Painter& painter);
   template <typename T>
   void drawBundledNets(gui::Painter& painter, const std::vector<T>& macros);
@@ -124,6 +128,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   // so for this case, the current cluster is actually the current parent.
   Cluster* current_cluster_{nullptr};
   std::map<int, Rect> guides_;  // Id -> Guidance Region
+  std::map<int, Rect> fences_;  // Id -> Fence
 
   bool active_ = true;
   bool coarse_;

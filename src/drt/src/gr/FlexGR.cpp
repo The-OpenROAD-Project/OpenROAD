@@ -2520,7 +2520,6 @@ void FlexGR::updateDb()
   for (auto& net : design_->getTopBlock()->getNets()) {
     auto dbNet = block->findNet(net->getName().c_str());
     dbNet->clearGuides();
-    auto netName = net->getName();
     for (auto& guide : net->getGuides()) {
       auto [bp, ep] = guide->getPoints();
       Point bpIdx = design_->getTopBlock()->getGCellIdx(bp);

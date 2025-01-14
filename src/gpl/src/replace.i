@@ -33,7 +33,8 @@ void
 replace_initial_place_cmd()
 {
   Replace* replace = getReplace();
-  replace->doInitialPlace();
+  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+  replace->doInitialPlace(threads);
 }
 
 void 

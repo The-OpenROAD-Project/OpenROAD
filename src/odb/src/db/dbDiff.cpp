@@ -33,6 +33,7 @@
 #include "odb/dbDiff.h"
 
 #include <cstdarg>
+#include <vector>
 
 namespace odb {
 

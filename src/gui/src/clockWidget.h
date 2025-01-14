@@ -49,6 +49,7 @@
 #include <QToolTip>
 #include <optional>
 #include <variant>
+#include <vector>
 
 #include "gui/gui.h"
 #include "staGuiInterface.h"
@@ -418,8 +419,11 @@ class ClockTreeView : public QGraphicsView
   void mousePressEvent(QMouseEvent* event) override;
   void mouseReleaseEvent(QMouseEvent* event) override;
   void mouseMoveEvent(QMouseEvent* event) override;
+  void lockRender() { lock_render_ = true; };
+  void unlockRender() { lock_render_ = false; };
 
  private:
+  bool lock_render_{false};
   std::shared_ptr<ClockTree> tree_;
   std::unique_ptr<ClockTreeRenderer> renderer_;
   RendererState renderer_state_;
@@ -445,7 +449,7 @@ class ClockTreeView : public QGraphicsView
   std::vector<ClockNodeGraphicsViewItem*> buildTree(const ClockTree* tree,
                                                     const STAGuiInterface* sta,
                                                     int center_index);
-  std::map<std::string, ClockNodeGraphicsViewItem*> items_;
+  std::unordered_map<std::string, ClockNodeGraphicsViewItem*> items_;
 
   struct PinArrival
   {

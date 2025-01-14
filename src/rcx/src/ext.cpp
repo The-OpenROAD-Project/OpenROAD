@@ -115,7 +115,6 @@ void Ext::bench_wires(const BenchWiresOptions& bwo)
 
   Ath__parser parser(logger_);
 
-  std::string th_list(bwo.th_list);
   std::string w_list(bwo.w_list);
   std::string s_list(bwo.s_list);
   std::string th(bwo.th);

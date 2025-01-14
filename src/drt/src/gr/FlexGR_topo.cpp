@@ -28,6 +28,7 @@
 
 #include <deque>
 #include <iostream>
+#include <vector>
 
 #include "FlexGR.h"
 #include "stt/SteinerTreeBuilder.h"

@@ -32,6 +32,8 @@
 
 #include "heatMap.h"
 
+#include <vector>
+
 namespace grt {
 
 RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger,

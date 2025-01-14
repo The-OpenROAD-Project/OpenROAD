@@ -34,6 +34,7 @@
 
 #include <limits>
 #include <optional>
+#include <vector>
 
 #include "utl/Logger.h"
 

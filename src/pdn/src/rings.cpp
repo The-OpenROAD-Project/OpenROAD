@@ -32,6 +32,8 @@
 
 #include "rings.h"
 
+#include <vector>
+
 #include "domain.h"
 #include "grid.h"
 #include "odb/db.h"

@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "frDesign.h"
 
 namespace drt {
@@ -116,7 +118,7 @@ class UniqueInsts
    * @brief Initializes pin access structures
    * Fills unique_to_pa_idx_adds pin access unique points to pins
    */
-  void initPinAccess();
+  void genPinAccess();
 
   /**
    * @brief Creates a map from Master instance to LayerRanges.

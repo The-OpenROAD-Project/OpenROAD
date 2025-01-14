@@ -29,7 +29,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-sta::define_cmd_args "preview_dft" { [-verbose]}
+sta::define_cmd_args "preview_dft" {[-verbose]}
 
 proc preview_dft { args } {
   sta::parse_key_args "preview_dft" args \
@@ -58,10 +58,11 @@ proc scan_replace { args } {
   dft::scan_replace
 }
 
-sta::define_cmd_args "insert_dft" { }
+sta::define_cmd_args "insert_dft" {}
 proc insert_dft { args } {
   sta::parse_key_args "insert_dft" args \
-    keys {} flags {}
+    keys {} \
+    flags {}
 
   if { [ord::get_db_block] == "NULL" } {
     utl::error DFT 9 "No design block found."
@@ -69,12 +70,23 @@ proc insert_dft { args } {
   dft::insert_dft
 }
 
-sta::define_cmd_args "set_dft_config" { [-max_length max_length] \
-                                        [-max_chains max_chains] \
-                                        [-clock_mixing clock_mixing]}
+sta::define_cmd_args "set_dft_config" { [-max_length max_length]
+                                        [-max_chains max_chains]
+                                        [-clock_mixing clock_mixing]
+                                        [-scan_enable_name_pattern scan_enable_name_pattern]
+                                        [-scan_in_name_pattern scan_in_name_pattern]
+                                        [-scan_out_name_pattern scan_out_name_pattern]
+                                        }
 proc set_dft_config { args } {
   sta::parse_key_args "set_dft_config" args \
-    keys {-max_length -max_chains -clock_mixing} \
+    keys {
+      -max_length
+      -max_chains
+      -clock_mixing
+      -scan_enable_name_pattern
+      -scan_in_name_pattern
+      -scan_out_name_pattern
+    } \
     flags {}
 
   sta::check_argc_eq0 "set_dft_config" $args
@@ -93,8 +105,17 @@ proc set_dft_config { args } {
 
   if { [info exists keys(-clock_mixing)] } {
     set clock_mixing $keys(-clock_mixing)
-    puts $clock_mixing
     dft::set_dft_config_clock_mixing $clock_mixing
+  }
+
+  foreach {flag signal} {
+    -scan_enable_name_pattern "scan_enable"
+    -scan_in_name_pattern "scan_in"
+    -scan_out_name_pattern "scan_out"
+  } {
+    if { [info exists keys($flag)] } {
+      dft::set_dft_config_scan_signal_name_pattern $signal $keys($flag)
+    }
   }
 }
 

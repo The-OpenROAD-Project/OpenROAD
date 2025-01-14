@@ -70,7 +70,10 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 99;  // Current revision number
+const uint db_schema_minor = 100;  // Current revision number
+
+// Revision where dbTarget was removed
+const uint db_rm_target = 100;
 
 // Revision where mask information was added to track grids
 const uint db_track_mask = 99;

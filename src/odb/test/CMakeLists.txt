@@ -19,6 +19,7 @@ or_integration_tests(
     edit_def
     edit_via_params
     floorplan_initialize
+    floorplan_initialize2
     gcd_abstract_lef
     gcd_abstract_lef_with_power
     gcd_def_access
@@ -61,6 +62,7 @@ or_integration_tests(
     test_iterm
     test_module
     test_net
+    test_wire_codec
 )
 
 # Skipped

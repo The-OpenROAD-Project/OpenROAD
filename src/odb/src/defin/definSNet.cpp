@@ -35,6 +35,7 @@
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
+#include <vector>
 
 #include "create_box.h"
 #include "definPolygon.h"

@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <limits>
+#include <vector>
 
 #include "FlexPA.h"
 

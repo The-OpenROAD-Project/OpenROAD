@@ -35,6 +35,7 @@
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
+#include <vector>
 
 #include "definPolygon.h"
 #include "odb/db.h"
