@@ -821,8 +821,8 @@ void TechChar::collectSlewsLoadsFromTableAxis(sta::LibertyCell* libCell,
           axisLoads.push_back((*loads)[i]);
         }
       }
-    }  // if (gateModel)
-  }    // for each arc
+    }
+  }
 
   if (logger_->debugCheck(utl::CTS, "tech char", 2)) {
     logger_->report("axis slews at {}", libCell->name());
@@ -1676,8 +1676,8 @@ void TechChar::create()
                          "Number of created patterns = {}.",
                          topologiesCreated);
             }
-          }  // for each slew
-        }    // for each load
+          }
+        }
         // If the solution is not a pure-wire, update the buffer topologies.
         if (!solution.isPureWire) {
           updateBufferTopologies(solution);
