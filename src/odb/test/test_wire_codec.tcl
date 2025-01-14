@@ -75,7 +75,7 @@ assert {[lequal $point [list 10000 2000]]} "point list doesn't match"
 set nextOp [$decoder next]
 assert {$nextOp == $odb::dbWireDecoder_TECH_VIA} [format  "nextop isn't via: %d" $nextOp]
 set tchVia [$decoder getTechVia]
-assert {[string equal [$tchVia getName] [$v12 getName]]} [format "techvia name doesn't match: %s %s" [$tchVia getName] [$v12 getName]]
+assertStringEq [$tchVia getName] [$v12 getName] [format "techvia name doesn't match: %s %s" [$tchVia getName] [$v12 getName]]
 
 # Check next point
 set nextOp [$decoder next]
@@ -105,7 +105,7 @@ assert {[lequal $point [list 10000 10000]]} "point list doesn't match"
 set nextOp [$decoder next]
 assert {$nextOp == $odb::dbWireDecoder_TECH_VIA} [format  "nextop isn't via: %d" $nextOp]
 set tchVia [$decoder getTechVia]
-assert {[string equal [$tchVia getName] [$v12 getName]]} [format "techvia name doesn't match: %s %s" [$tchVia getName] [$v12 getName]]
+assertStringEq [$tchVia getName] [$v12 getName] [format "techvia name doesn't match: %s %s" [$tchVia getName] [$v12 getName]]
 
 # Check next point
 set nextOp [$decoder next]
@@ -135,13 +135,13 @@ assert {[lequal $point [list 3000 10000]]} "point list doesn't match"
 set nextOp [$decoder next]
 assert {$nextOp == $odb::dbWireDecoder_TECH_VIA} [format "nextop isn't via: %d" $nextOp]
 set tchVia [$decoder getTechVia]
-assert {[string equal [$tchVia getName] [$v12 getName]]}  [format "techvia name doesn't match: %s %s" [$tchVia getName] [$v12 getName]]
+assertStringEq [$tchVia getName] [$v12 getName] [format "techvia name doesn't match: %s %s" [$tchVia getName] [$v12 getName]]
 
 # Check tech via
 set nextOp [$decoder next]
 assert {$nextOp == $odb::dbWireDecoder_TECH_VIA} [format "nextop isn't via: %d" $nextOp]
 set tchVia [$decoder getTechVia]
-assert {[string equal [$tchVia getName] [$v23 getName]]}  [format "techvia name doesn't match: %s %s" [$tchVia getName] [$v23 getName]]
+assertStringEq [$tchVia getName] [$v23 getName] [format "techvia name doesn't match: %s %s" [$tchVia getName] [$v23 getName]]
 
 # Check next point
 set nextOp [$decoder next]
