@@ -38,6 +38,7 @@
 #include <iostream>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "grt/GlobalRouter.h"
 #include "grt/Rudy.h"

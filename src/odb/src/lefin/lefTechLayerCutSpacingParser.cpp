@@ -28,6 +28,7 @@
 #include <functional>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "boostParser.h"
 #include "lefLayerPropParser.h"
@@ -39,10 +40,10 @@ namespace odb::lefTechLayerCutSpacing {
 void setCutSpacing(double value,
                    odb::lefTechLayerCutSpacingParser* parser,
                    odb::dbTechLayer* layer,
-                   odb::lefin* lefin)
+                   odb::lefinReader* lefinReader)
 {
   parser->curRule = odb::dbTechLayerCutSpacingRule::create(layer);
-  parser->curRule->setCutSpacing(lefin->dbdist(value));
+  parser->curRule->setCutSpacing(lefinReader->dbdist(value));
   parser->curRule->setType(
       odb::dbTechLayerCutSpacingRule::CutSpacingType::NONE);
 }
@@ -106,7 +107,7 @@ void addAdjacentCutsSubRule(
                           boost::optional<std::string>>& params,
     odb::lefTechLayerCutSpacingParser* parser,
     odb::dbTechLayer* layer,
-    odb::lefin* lefin)
+    odb::lefinReader* lefinReader)
 {
   parser->curRule->setType(
       odb::dbTechLayerCutSpacingRule::CutSpacingType::ADJACENTCUTS);
@@ -130,9 +131,9 @@ void addAdjacentCutsSubRule(
     parser->curRule->setTwoCutsValid(true);
     parser->curRule->setTwoCuts(twocuts.value());
   }
-  parser->curRule->setWithin(lefin->dbdist(within));
+  parser->curRule->setWithin(lefinReader->dbdist(within));
   if (within2.is_initialized()) {
-    parser->curRule->setSecondWithin(lefin->dbdist(within2.value()));
+    parser->curRule->setSecondWithin(lefinReader->dbdist(within2.value()));
   }
   if (except_same_pgnet.is_initialized()) {
     parser->curRule->setExceptSamePgnet(true);
@@ -177,11 +178,11 @@ void addParallelOverlapSubRule(boost::optional<std::string> except,
 void addParallelWithinSubRule(
     boost::fusion::vector<double, boost::optional<std::string>>& params,
     odb::lefTechLayerCutSpacingParser* parser,
-    odb::lefin* lefin)
+    odb::lefinReader* lefinReader)
 {
   parser->curRule->setType(
       odb::dbTechLayerCutSpacingRule::CutSpacingType::PARALLELWITHIN);
-  parser->curRule->setWithin(lefin->dbdist(at_c<0>(params)));
+  parser->curRule->setWithin(lefinReader->dbdist(at_c<0>(params)));
   auto except = at_c<1>(params);
   if (except.is_initialized()) {
     parser->curRule->setExceptSameNet(true);
@@ -195,7 +196,7 @@ void addSameMetalSharedEdgeSubRule(
                           boost::optional<int>>& params,
     odb::lefTechLayerCutSpacingParser* parser,
     odb::dbTechLayer* layer,
-    odb::lefin* lefin)
+    odb::lefinReader* lefinReader)
 {
   parser->curRule->setType(
       odb::dbTechLayerCutSpacingRule::CutSpacingType::SAMEMETALSHAREDEDGE);
@@ -204,7 +205,7 @@ void addSameMetalSharedEdgeSubRule(
   auto CUTCLASS = at_c<2>(params);
   auto EXCEPTTWOEDGES = at_c<3>(params);
   auto EXCEPTSAMEVIA = at_c<4>(params);
-  parser->curRule->setWithin(lefin->dbdist(within));
+  parser->curRule->setWithin(lefinReader->dbdist(within));
   if (ABOVE.is_initialized()) {
     parser->curRule->setAbove(true);
   }
@@ -226,57 +227,57 @@ void addSameMetalSharedEdgeSubRule(
 }
 void addAreaSubRule(double value,
                     odb::lefTechLayerCutSpacingParser* parser,
-                    odb::lefin* lefin)
+                    odb::lefinReader* lefinReader)
 {
   parser->curRule->setType(
       odb::dbTechLayerCutSpacingRule::CutSpacingType::AREA);
-  parser->curRule->setCutArea(lefin->dbdist(value));
+  parser->curRule->setCutArea(lefinReader->dbdist(value));
 }
 
 void setConcaveCornerWidth(
     boost::fusion::vector<double, double, double>& params,
     odb::lefTechLayerCutSpacingParser* parser,
-    odb::lefin* lefin)
+    odb::lefinReader* lefinReader)
 {
   parser->curRule->setConcaveCornerWidth(true);
-  parser->curRule->setWidth(lefin->dbdist(at_c<0>(params)));
-  parser->curRule->setEnclosure(lefin->dbdist(at_c<1>(params)));
-  parser->curRule->setEdgeLength(lefin->dbdist(at_c<2>(params)));
+  parser->curRule->setWidth(lefinReader->dbdist(at_c<0>(params)));
+  parser->curRule->setEnclosure(lefinReader->dbdist(at_c<1>(params)));
+  parser->curRule->setEdgeLength(lefinReader->dbdist(at_c<2>(params)));
 }
 
 void setConcaveCornerParallel(
     boost::fusion::vector<double, double, double>& params,
     odb::lefTechLayerCutSpacingParser* parser,
-    odb::lefin* lefin)
+    odb::lefinReader* lefinReader)
 {
   parser->curRule->setConcaveCornerParallel(true);
-  parser->curRule->setParLength(lefin->dbdist(at_c<0>(params)));
-  parser->curRule->setParWithin(lefin->dbdist(at_c<1>(params)));
-  parser->curRule->setEnclosure(lefin->dbdist(at_c<2>(params)));
+  parser->curRule->setParLength(lefinReader->dbdist(at_c<0>(params)));
+  parser->curRule->setParWithin(lefinReader->dbdist(at_c<1>(params)));
+  parser->curRule->setEnclosure(lefinReader->dbdist(at_c<2>(params)));
 }
 void setPrl(double value,
             odb::lefTechLayerCutSpacingParser* parser,
-            odb::lefin* lefin)
+            odb::lefinReader* lefinReader)
 {
   parser->curRule->setPrlValid(true);
-  parser->curRule->setPrl(lefin->dbdist(value));
+  parser->curRule->setPrl(lefinReader->dbdist(value));
 }
 
 void setConcaveCornerEdgeLength(
     boost::fusion::vector<double, double, double>& params,
     odb::lefTechLayerCutSpacingParser* parser,
-    odb::lefin* lefin)
+    odb::lefinReader* lefinReader)
 {
   parser->curRule->setConcaveCornerEdgeLength(true);
-  parser->curRule->setEdgeLength(lefin->dbdist(at_c<0>(params)));
-  parser->curRule->setEdgeEnclosure(lefin->dbdist(at_c<1>(params)));
-  parser->curRule->setAdjEnclosure(lefin->dbdist(at_c<2>(params)));
+  parser->curRule->setEdgeLength(lefinReader->dbdist(at_c<0>(params)));
+  parser->curRule->setEdgeEnclosure(lefinReader->dbdist(at_c<1>(params)));
+  parser->curRule->setAdjEnclosure(lefinReader->dbdist(at_c<2>(params)));
 }
 
 void setParWithinEnclosure(
     boost::fusion::vector<double, std::string, double, double>& params,
     odb::lefTechLayerCutSpacingParser* parser,
-    odb::lefin* lefin)
+    odb::lefinReader* lefinReader)
 {
   auto aboveBelow = at_c<1>(params);
   if (aboveBelow == "ABOVE") {
@@ -285,52 +286,52 @@ void setParWithinEnclosure(
     parser->curRule->setBelow(true);
   }
   parser->curRule->setParWithinEnclosureValid(true);
-  parser->curRule->setParEnclosure(lefin->dbdist(at_c<0>(params)));
-  parser->curRule->setParLength(lefin->dbdist(at_c<2>(params)));
-  parser->curRule->setParWithin(lefin->dbdist(at_c<3>(params)));
+  parser->curRule->setParEnclosure(lefinReader->dbdist(at_c<0>(params)));
+  parser->curRule->setParLength(lefinReader->dbdist(at_c<2>(params)));
+  parser->curRule->setParWithin(lefinReader->dbdist(at_c<3>(params)));
 }
 
 void setCutClassExtension(double value,
                           odb::lefTechLayerCutSpacingParser* parser,
-                          odb::lefin* lefin)
+                          odb::lefinReader* lefinReader)
 {
   parser->curRule->setExtensionValid(true);
-  parser->curRule->setExtension(lefin->dbdist(value));
+  parser->curRule->setExtension(lefinReader->dbdist(value));
 }
 void setCutClassNonEolConvexCorner(double value,
                                    odb::lefTechLayerCutSpacingParser* parser,
-                                   odb::lefin* lefin)
+                                   odb::lefinReader* lefinReader)
 {
   parser->curRule->setNonEolConvexCorner(true);
-  parser->curRule->setEolWidth(lefin->dbdist(value));
+  parser->curRule->setEolWidth(lefinReader->dbdist(value));
 }
 void setMinLength(double value,
                   odb::lefTechLayerCutSpacingParser* parser,
-                  odb::lefin* lefin)
+                  odb::lefinReader* lefinReader)
 {
   parser->curRule->setMinLengthValid(true);
-  parser->curRule->setMinLength(lefin->dbdist(value));
+  parser->curRule->setMinLength(lefinReader->dbdist(value));
 }
 void setAboveWidth(double value,
                    odb::lefTechLayerCutSpacingParser* parser,
-                   odb::lefin* lefin)
+                   odb::lefinReader* lefinReader)
 {
   parser->curRule->setAboveWidthValid(true);
-  parser->curRule->setAboveWidth(lefin->dbdist(value));
+  parser->curRule->setAboveWidth(lefinReader->dbdist(value));
 }
 void setAboveWidthEnclosure(double value,
                             odb::lefTechLayerCutSpacingParser* parser,
-                            odb::lefin* lefin)
+                            odb::lefinReader* lefinReader)
 {
   parser->curRule->setAboveWidthEnclosureValid(true);
-  parser->curRule->setAboveEnclosure(lefin->dbdist(value));
+  parser->curRule->setAboveEnclosure(lefinReader->dbdist(value));
 }
 void setOrthogonalSpacing(double value,
                           odb::lefTechLayerCutSpacingParser* parser,
-                          odb::lefin* lefin)
+                          odb::lefinReader* lefinReader)
 {
   parser->curRule->setOrthogonalSpacingValid(true);
-  parser->curRule->setOrthogonalSpacingValid(lefin->dbdist(value));
+  parser->curRule->setOrthogonalSpacingValid(lefinReader->dbdist(value));
 }
 void setCutClass(std::string value,
                  odb::lefTechLayerCutSpacingParser* parser,
@@ -347,54 +348,57 @@ bool parse(
     Iterator last,
     odb::lefTechLayerCutSpacingParser* parser,
     odb::dbTechLayer* layer,
-    odb::lefin* lefin,
+    odb::lefinReader* lefinReader,
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
   qi::rule<std::string::iterator, space_type> LAYER_CUTCLASS
       = (lit("CUTCLASS")
-         >> _string[boost::bind(&setCutClass, _1, parser, layer)]
-         >> -(lit("SHORTEDGEONLY")[boost::bind(
-                  &setBool,
-                  parser,
-                  &odb::dbTechLayerCutSpacingRule::setShortEdgeOnly,
-                  true)]
-                  >> -(lit("PRL")
-                       >> double_)[boost::bind(&setPrl, _1, parser, lefin)]
-              | lit("CONCAVECORNER")[boost::bind(
-                    &setBool,
-                    parser,
-                    &odb::dbTechLayerCutSpacingRule::setConcaveCorner,
-                    true)]
-                    >> -((lit("WIDTH") >> double_ >> lit("ENCLOSURE") >> double_
-                          >> lit("EDGELENGTH") >> double_)[boost::bind(
-                             &setConcaveCornerWidth, _1, parser, lefin)]
-                         | (lit("PARALLEL") >> double_ >> lit("WITHIN")
-                            >> double_ >> lit("ENCLOSURE")
-                            >> double_)[boost::bind(
-                             &setConcaveCornerParallel, _1, parser, lefin)]
-                         | (lit("EDGELENGTH") >> double_ >> lit("ENCLOSURE")
-                            >> double_ >> double_)[boost::bind(
-                             &setConcaveCornerEdgeLength, _1, parser, lefin)])
-              | lit("EXTENSION") >> double_[boost::bind(
-                    &setCutClassExtension, _1, parser, lefin)]
-              | lit("NONEOLCONVEXCORNER") >> double_[boost::bind(
-                    &setCutClassNonEolConvexCorner, _1, parser, lefin)]
-                    >> -(lit("MINLENGTH") >> double_[boost::bind(
-                             &setMinLength, _1, parser, lefin)])
-              | lit("ABOVEWIDTH")
-                    >> double_[boost::bind(&setAboveWidth, _1, parser, lefin)]
-                    >> -(lit("ENCLOSURE") >> double_[boost::bind(
-                             &setAboveWidthEnclosure, _1, parser, lefin)])
-              | lit("MASKOVERLAP")[boost::bind(
-                  &setBool,
-                  parser,
-                  &odb::dbTechLayerCutSpacingRule::setMaskOverlap,
-                  true)]
-              | lit("WRONGDIRECTION")[boost::bind(
-                  &setBool,
-                  parser,
-                  &odb::dbTechLayerCutSpacingRule::setWrongDirection,
-                  true)]));
+         >> _string[boost::bind(&setCutClass, _1, parser, layer)] >> -(
+             lit("SHORTEDGEONLY")[boost::bind(
+                 &setBool,
+                 parser,
+                 &odb::dbTechLayerCutSpacingRule::setShortEdgeOnly,
+                 true)]
+                 >> -(lit("PRL")
+                      >> double_)[boost::bind(&setPrl, _1, parser, lefinReader)]
+             | lit("CONCAVECORNER")[boost::bind(
+                   &setBool,
+                   parser,
+                   &odb::dbTechLayerCutSpacingRule::setConcaveCorner,
+                   true)]
+                   >> -((lit("WIDTH") >> double_ >> lit("ENCLOSURE") >> double_
+                         >> lit("EDGELENGTH") >> double_)[boost::bind(
+                            &setConcaveCornerWidth, _1, parser, lefinReader)]
+                        | (lit("PARALLEL") >> double_ >> lit("WITHIN")
+                           >> double_ >> lit("ENCLOSURE")
+                           >> double_)[boost::bind(
+                            &setConcaveCornerParallel, _1, parser, lefinReader)]
+                        | (lit("EDGELENGTH") >> double_ >> lit("ENCLOSURE")
+                           >> double_
+                           >> double_)[boost::bind(&setConcaveCornerEdgeLength,
+                                                   _1,
+                                                   parser,
+                                                   lefinReader)])
+             | lit("EXTENSION") >> double_[boost::bind(
+                   &setCutClassExtension, _1, parser, lefinReader)]
+             | lit("NONEOLCONVEXCORNER") >> double_[boost::bind(
+                   &setCutClassNonEolConvexCorner, _1, parser, lefinReader)]
+                   >> -(lit("MINLENGTH") >> double_[boost::bind(
+                            &setMinLength, _1, parser, lefinReader)])
+             | lit("ABOVEWIDTH") >> double_[boost::bind(
+                   &setAboveWidth, _1, parser, lefinReader)]
+                   >> -(lit("ENCLOSURE") >> double_[boost::bind(
+                            &setAboveWidthEnclosure, _1, parser, lefinReader)])
+             | lit("MASKOVERLAP")[boost::bind(
+                 &setBool,
+                 parser,
+                 &odb::dbTechLayerCutSpacingRule::setMaskOverlap,
+                 true)]
+             | lit("WRONGDIRECTION")[boost::bind(
+                 &setBool,
+                 parser,
+                 &odb::dbTechLayerCutSpacingRule::setWrongDirection,
+                 true)]));
   qi::rule<std::string::iterator, space_type> LAYER
       = (lit("LAYER") >> _string[boost::bind(
              &addLayerSubRule, _1, parser, layer, boost::ref(incomplete_props))]
@@ -404,7 +408,7 @@ bool parse(
                                       &odb::dbTechLayerCutSpacingRule::setStack,
                                       true)]
              | lit("ORTHOGONALSPACING") >> double_[boost::bind(
-                   &setOrthogonalSpacing, _1, parser, lefin)]
+                   &setOrthogonalSpacing, _1, parser, lefinReader)]
              | LAYER_CUTCLASS));
 
   qi::rule<std::string::iterator, space_type> ADJACENTCUTS
@@ -423,7 +427,7 @@ bool parse(
                   true)])
          >> -(string("SIDEPARALLELOVERLAP") | string("NOPRL"))
          >> -string("SAMEMASK"))[boost::bind(
-          &addAdjacentCutsSubRule, _1, parser, layer, lefin)];
+          &addAdjacentCutsSubRule, _1, parser, layer, lefinReader)];
 
   qi::rule<std::string::iterator, space_type> PARALLELOVERLAP
       = (lit("PARALLELOVERLAP")
@@ -441,27 +445,27 @@ bool parse(
               | (lit("ENCLOSURE") >> double_
                  >> (string("ABOVE") | string("BELOW")) >> lit("PARALLEL")
                  >> double_ >> lit("WITHIN") >> double_)[boost::bind(
-                  &setParWithinEnclosure, _1, parser, lefin)]));
+                  &setParWithinEnclosure, _1, parser, lefinReader)]));
 
   qi::rule<std::string::iterator, space_type> PARALLELWITHIN
       = ((lit("PARALLELWITHIN") >> double_
           >> -string("EXCEPTSAMENET"))[boost::bind(
-             &addParallelWithinSubRule, _1, parser, lefin)]
+             &addParallelWithinSubRule, _1, parser, lefinReader)]
          >> -PARALLELWITHIN_CUTCLASS);
 
   qi::rule<std::string::iterator, space_type> SAMEMETALSHAREDEDGE
       = (lit("SAMEMETALSHAREDEDGE") >> double_ >> -string("ABOVE")
          >> -(lit("CUTCLASS") >> _string) >> -string("EXCEPTTWOEDGES")
          >> -(lit("EXCEPTSAMEVIA") >> int_))[boost::bind(
-          &addSameMetalSharedEdgeSubRule, _1, parser, layer, lefin)];
+          &addSameMetalSharedEdgeSubRule, _1, parser, layer, lefinReader)];
 
   qi::rule<std::string::iterator, space_type> AREA
       = (lit("AREA")
-         >> double_)[boost::bind(&addAreaSubRule, _1, parser, lefin)];
+         >> double_)[boost::bind(&addAreaSubRule, _1, parser, lefinReader)];
 
   qi::rule<std::string::iterator, space_type> LEF58_SPACING = (+(
       lit("SPACING")
-      >> double_[boost::bind(&setCutSpacing, _1, parser, layer, lefin)]
+      >> double_[boost::bind(&setCutSpacing, _1, parser, layer, lefinReader)]
       >> -(lit("MAXXY")[boost::bind(&addMaxXYSubRule, parser)]
            | lit("SAMEMASK")[boost::bind(&addSameMaskSubRule, parser)]
            | -lit("CENTERTOCENTER")[boost::bind(&setCenterToCenter, parser)]
@@ -491,7 +495,7 @@ namespace odb {
 bool lefTechLayerCutSpacingParser::parse(
     std::string s,
     odb::dbTechLayer* layer,
-    odb::lefin* l,
+    odb::lefinReader* l,
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
   return lefTechLayerCutSpacing::parse(

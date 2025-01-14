@@ -29,6 +29,7 @@
 #include "distributed/paUpdate.h"
 
 #include <fstream>
+#include <vector>
 
 #include "distributed/frArchive.h"
 #include "serialization.h"

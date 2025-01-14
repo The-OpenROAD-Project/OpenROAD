@@ -35,6 +35,8 @@
 
 #include "HungarianMatching.h"
 
+#include <vector>
+
 #include "utl/Logger.h"
 
 namespace ppl {

@@ -29,6 +29,7 @@
 #pragma once
 #include <boost/serialization/base_object.hpp>
 #include <string>
+#include <vector>
 
 #include "dst/JobMessage.h"
 namespace boost::serialization {

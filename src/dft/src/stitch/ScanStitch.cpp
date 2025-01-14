@@ -34,6 +34,7 @@
 #include <boost/algorithm/string.hpp>
 #include <deque>
 #include <iostream>
+#include <vector>
 
 namespace {
 constexpr std::string_view kScanEnable = "scan-enable";

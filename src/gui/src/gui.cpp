@@ -36,6 +36,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "chartsWidget.h"
 #include "clockWidget.h"
@@ -49,9 +50,7 @@
 #include "mainWindow.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
-#include "odb/defin.h"
 #include "odb/geom.h"
-#include "odb/lefin.h"
 #include "ord/OpenRoad.hh"
 #include "ruler.h"
 #include "scriptWidget.h"

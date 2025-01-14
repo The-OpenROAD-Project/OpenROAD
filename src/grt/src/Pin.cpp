@@ -35,6 +35,8 @@
 
 #include "Pin.h"
 
+#include <vector>
+
 #include "grt/GlobalRouter.h"
 
 namespace grt {

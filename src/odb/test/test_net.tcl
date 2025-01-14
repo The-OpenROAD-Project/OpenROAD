@@ -9,7 +9,7 @@ source "helper.tcl"
 proc changeAndTest { obj SetterName GetterName expectedVal args } {
     $obj $SetterName $args
     if {[string is ascii $expectedVal]} {
-        assert {[string equal [$obj $GetterName] $expectedVal]} [format "%s/%s failed: %s %s" $SetterName $GetterName [$obj $GetterName] $expectedVal]
+        assertStringEq [$obj $GetterName] $expectedVal [format "%s/%s failed: %s %s" $SetterName $GetterName [$obj $GetterName] $expectedVal]
     } else {
         assert {[$obj $GetterName] == $expectedVal} [format "%s/%s failed: %g %g" $SetterName $GetterName [$obj $GetterName] $expectedVal]
     }
@@ -33,7 +33,7 @@ proc tearDown {db} {
 proc test_naming {} {
     lassign [setUp] db n1 n2 n3
     changeAndTest $n1 "rename" "getName" "_n1" "_n1"
-    assert {[string equal [$n1 getConstName] "_n1"]} [format "getConstName failed: %s _n1" [$n1 getConstName]]
+    assertStringEq [$n1 getConstName] "_n1" [format "getConstName failed: %s _n1" [$n1 getConstName]]
     assert {[$n1 rename "n2"] == 0} [format "rename failed: %s" [$n1 getName]]
     tearDown $db
 }

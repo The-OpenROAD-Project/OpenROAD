@@ -155,7 +155,6 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbMaster",
                                  "dbMPin",
                                  "dbMTerm",
-                                 "dbTarget",
                                  "dbTechAntennaPinModel",
 
                                  // Tech Objects

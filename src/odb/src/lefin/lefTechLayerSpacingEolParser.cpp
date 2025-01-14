@@ -27,6 +27,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "boostParser.h"
 #include "lefLayerPropParser.h"
@@ -48,7 +49,7 @@ void parallelEdgeParser(
         boost::optional<std::string>,
         boost::optional<std::string>>& params,
     odb::dbTechLayerSpacingEolRule* sc,
-    odb::lefin* l)
+    odb::lefinReader* l)
 {
   // Decoding struct
   const boost::optional<std::string>& isSubtractEolWidth = at_c<1>(params);
@@ -99,7 +100,7 @@ void parallelEdgeParser(
 void exceptExactParser(
     const boost::fusion::vector<std::string, double, double>& params,
     odb::dbTechLayerSpacingEolRule* sc,
-    odb::lefin* l)
+    odb::lefinReader* l)
 {
   const double& exactWidth = at_c<1>(params);
   const double& otherWidth = at_c<2>(params);
@@ -111,7 +112,7 @@ void exceptExactParser(
 
 void fillConcaveParser(const boost::fusion::vector<std::string, double>& params,
                        odb::dbTechLayerSpacingEolRule* sc,
-                       odb::lefin* l)
+                       odb::lefinReader* l)
 {
   const double& fillTriangle = at_c<1>(params);
 
@@ -131,7 +132,7 @@ void withcutParser(
             boost::optional<boost::fusion::vector2<std::string, double>>>>>&
         params,
     odb::dbTechLayerSpacingEolRule* sc,
-    odb::lefin* l)
+    odb::lefinReader* l)
 {
   const boost::optional<boost::fusion::vector2<std::string, double>>& cutclass
       = at_c<1>(params);
@@ -177,7 +178,7 @@ void endprlspacingParser(
     const boost::fusion::vector<std::string, double, std::string, double>&
         params,
     odb::dbTechLayerSpacingEolRule* sc,
-    odb::lefin* l)
+    odb::lefinReader* l)
 {
   sc->setEndPrlSpacingValid(true);
   sc->setEndPrlSpace(l->dbdist(at_c<1>(params)));
@@ -195,7 +196,7 @@ void endtoendspacingParser(
                                                boost::optional<double>>>,
         boost::optional<boost::fusion::vector2<std::string, double>>>& params,
     odb::dbTechLayerSpacingEolRule* sc,
-    odb::lefin* l)
+    odb::lefinReader* l)
 {
   const boost::optional<boost::fusion::vector2<double, double>>& twoCutSpaces
       = at_c<2>(params);
@@ -241,7 +242,7 @@ void maxminlengthParser(
         boost::fusion::
             vector<std::string, double, boost::optional<std::string>>>& params,
     odb::dbTechLayerSpacingEolRule* sc,
-    odb::lefin* l)
+    odb::lefinReader* l)
 {
   if (boost::get<boost::fusion::vector<std::string, double>>(&params)) {
     boost::fusion::vector<std::string, double> mx
@@ -271,7 +272,7 @@ void enclosecutParser(
         double,
         boost::optional<std::string>>& params,
     odb::dbTechLayerSpacingEolRule* sc,
-    odb::lefin* l)
+    odb::lefinReader* l)
 {
   sc->setEncloseCutValid(true);
   if ((at_c<1>(params)).is_initialized()
@@ -292,7 +293,7 @@ void enclosecutParser(
 void oppositeWidthParser(
     const boost::fusion::vector<std::string, double>& params,
     odb::dbTechLayerSpacingEolRule* sc,
-    odb::lefin* l)
+    odb::lefinReader* l)
 {
   const double& oppositeWidth = at_c<1>(params);
 
@@ -309,7 +310,7 @@ void concaveCornerParser(
             boost::variant<boost::fusion::vector<double, double>, double>>>>&
         params,
     odb::dbTechLayerSpacingEolRule* sc,
-    odb::lefin* l)
+    odb::lefinReader* l)
 {
   const boost::optional<boost::fusion::vector<std::string, double>>& minlength
       = at_c<1>(params);
@@ -345,42 +346,42 @@ void concaveCornerParser(
 
 void eolWithinParser(double value,
                      odb::dbTechLayerSpacingEolRule* sc,
-                     odb::lefin* l)
+                     odb::lefinReader* l)
 {
   sc->setEolWithin(l->dbdist(value));
 }
 
 void wrongDirWithinParser(double value,
                           odb::dbTechLayerSpacingEolRule* sc,
-                          odb::lefin* l)
+                          odb::lefinReader* l)
 {
   sc->setWrongDirWithin(l->dbdist(value));
 }
 
 void notchLengthParser(double value,
                        odb::dbTechLayerSpacingEolRule* sc,
-                       odb::lefin* l)
+                       odb::lefinReader* l)
 {
   sc->setNotchLength(l->dbdist(value));
 }
 
 void eolSpaceParser(double value,
                     odb::dbTechLayerSpacingEolRule* sc,
-                    odb::lefin* l)
+                    odb::lefinReader* l)
 {
   sc->setEolSpace(l->dbdist(value));
 }
 
 void eolwidthParser(double value,
                     odb::dbTechLayerSpacingEolRule* sc,
-                    odb::lefin* l)
+                    odb::lefinReader* l)
 {
   sc->setEolWidth(l->dbdist(value));
 }
 
 void wrongDirSpaceParser(double value,
                          odb::dbTechLayerSpacingEolRule* sc,
-                         odb::lefin* l)
+                         odb::lefinReader* l)
 {
   sc->setWrongDirSpace(l->dbdist(value));
 }
@@ -389,7 +390,7 @@ template <typename Iterator>
 bool parse(Iterator first,
            Iterator last,
            odb::dbTechLayer* layer,
-           odb::lefin* l)
+           odb::lefinReader* l)
 {
   odb::dbTechLayerSpacingEolRule* sc
       = odb::dbTechLayerSpacingEolRule::create(layer);
@@ -491,7 +492,7 @@ namespace odb {
 
 void lefTechLayerSpacingEolParser::parse(const std::string& s,
                                          dbTechLayer* layer,
-                                         odb::lefin* l)
+                                         odb::lefinReader* l)
 {
   std::vector<std::string> rules;
   boost::split(rules, s, boost::is_any_of(";"));

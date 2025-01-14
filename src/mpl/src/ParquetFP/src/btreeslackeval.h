@@ -33,6 +33,8 @@
 #ifndef BTREESLACKEVAL_H
 #define BTREESLACKEVAL_H
 
+#include <vector>
+
 #include "basepacking.h"
 #include "btree.h"
 #include "btreecompact.h"

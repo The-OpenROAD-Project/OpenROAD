@@ -38,6 +38,7 @@
 #include <boost/thread/thread.hpp>
 #include <mutex>
 #include <thread>
+#include <vector>
 
 #include "LoadBalancer.h"
 #include "dst/BalancerJobDescription.h"

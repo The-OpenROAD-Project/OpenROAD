@@ -35,6 +35,7 @@
 
 #include <algorithm>
 #include <boost/lexical_cast.hpp>
+#include <vector>
 
 #include "graphics.h"
 #include "odb/dbShape.h"

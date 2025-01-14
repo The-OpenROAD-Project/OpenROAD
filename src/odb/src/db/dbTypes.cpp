@@ -39,24 +39,6 @@
 
 namespace odb {
 
-//
-// dbIdValidation methods here
-//
-bool dbIdValidation::isId(const char* inid)
-{
-  if (!inid) {
-    return false;
-  }
-
-  for (; *inid; inid++) {
-    if (isdigit(*inid) == 0) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 std::optional<dbOrientType::Value> dbOrientType::fromString(const char* orient)
 {
   std::optional<dbOrientType::Value> ret;

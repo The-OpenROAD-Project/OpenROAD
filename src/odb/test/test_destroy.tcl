@@ -41,29 +41,29 @@ proc test_destroy_net {} {
     lassign [setUp] db block parentBlock i1 n1 n2 n4 n5 n7
     odb::dbNet_destroy $n1
     # check for Inst
-    assert {[[$i1 findITerm "a"] getNet] == "NULL"} "inst term i1/a has non null net"
+    assertObjIsNull [[$i1 findITerm "a"] getNet] "inst term i1/a has non null net"
     # check for Iterms
     foreach iterm [$block getITerms] {
-        if {[$iterm getNet] == "NULL"} {
-            assert {[[$iterm getInst] getName] == "i1"}
-            assert {[[$iterm getMTerm] getName] == "a"}
+        if {[string equal [$iterm getNet] "NULL"]} {
+            assertStringEq [[$iterm getInst] getName] "i1"
+            assertStringEq [[$iterm getMTerm] getName] "a"
         } else {
-            assert {[[$iterm getNet] getName] != "n1"}
+            assertStringNotEq [[$iterm getNet] getName] "n1"
         }
     }
     # check for block and BTerms
     set nets [$block getNets]
     foreach net $nets {
-        assert {[$net getName] != "n1"} "found net n1"
+        assertStringNotEq [$net getName] "n1" "found net n1"
     }
     set bterms [$block getBTerms]
     assert {[llength $bterms] == 4} [format "Found more than four bterms: " [llength $bterms]]
     foreach bterm $bterms {
-        assert {[$bterm getName] != "IN1"}
-        assert {[[$bterm getNet] getName] != "n1"}
+        assertStringNotEq [$bterm getName] "IN1"
+        assertStringNotEq [[$bterm getNet] getName] "n1"
     }
-    assert {[$block findBTerm "IN1"] == "NULL"} "Bterm IN1 was found"
-    assert {[$block findNet "n1"] == "NULL"} "Net n1 was found"
+    assertObjIsNull [$block findBTerm "IN1"] "Bterm IN1 was found"
+    assertObjIsNull [$block findNet "n1"] "Net n1 was found"
     tearDown $db
 }
 
@@ -71,26 +71,26 @@ proc test_destroy_inst {} {
     lassign [setUp] db block parentBlock i1 n1 n2 n4 n5 n7
     odb::dbInst_destroy $i1
     # check for block
-    assert {[$block findInst "i1"] == "NULL"}
+    assertObjIsNull [$block findInst "i1"]
     foreach inst [$block getInsts] {
-        assert {[$inst getName] != "i1"}
+        assertStringNotEq [$inst getName] "i1"
     }
     assert {[llength [$block getITerms]] == 6} [format "Inst term count is not 6: %d" [llength [$block getITerms]]]
     # check for Iterms
     foreach iterm [$block getITerms] {
         assert {[lsearch ["n1" "n2"] [[$iterm getNet] getName]] == -1}
-        assert {[[$iterm getInst] getName] != "i1"}
+        assertStringNotEq [[$iterm getInst] getName] "i1"
     }
     # check for BTERMS
     set IN1 [$block findBTerm "IN1"]
-    assert {[$IN1 getITerm] == "NULL"} "Bterm IN1's inst term isn't null"
+    assertObjIsNull [$IN1 getITerm] "Bterm IN1's inst term isn't null"
     set IN2 [$block findBTerm "IN2"]
-    assert {[$IN2 getITerm] == "NULL"} "Bterm IN2's inst term isn't null"
+    assertObjIsNull [$IN2 getITerm] "Bterm IN2's inst term isn't null"
     # check for nets
     assert {[$n1 getITermCount] == 0} [format "Net %s inst term count is not 0: %d" [$n1 getName] [$n1 getITermCount]]
     assert {[$n2 getITermCount] == 0} [format "Net %s inst term count is not 0: %d" [$n2 getName] [$n2 getITermCount]]
     assert {[$n5 getITermCount] == 1} [format "Net %s inst term count is not 1: %d" [$n5 getName] [$n5 getITermCount]]
-    assert {[[[lindex [$n5 getITerms] 0] getInst] getName] != "i1"}
+    assertStringNotEq [[[lindex [$n5 getITerms] 0] getInst] getName] "i1"
     tearDown $db
 }
 
@@ -99,15 +99,15 @@ proc test_destroy_bterm {} {
     set IN1 [$block findBTerm "IN1"]
     odb::dbBTerm_destroy $IN1
     # check for block and BTerms
-    assert {[$block findBTerm "IN1"] == "NULL"}
+    assertObjIsNull [$block findBTerm "IN1"]
     set bterms [$block getBTerms]
     assert {[llength $bterms] == 4}
     foreach bterm $bterms {
-        assert {[$bterm getName] != "IN1"}
+        assertStringNotEq [$bterm getName] "IN1"
     }
     # check for n1
     assert {[$n1 getBTermCount] == 0}
-    assert {[lequal [$n1 getBTerms] []]}
+    assert {[llength [$n1 getBTerms]] == 0}
     tearDown $db
 }
 
@@ -135,9 +135,9 @@ proc test_destroy_bpin {} {
 proc test_create_destroy_wire {} {
     lassign [setUp] db block parentBlock i1 n1 n2 n4 n5 n7
     set w [odb::dbWire_create $n7]
-    assert {[$n7 getWire] != "NULL"}
+    assertObjIsNotNull [$n7 getWire] "wire is null"
     odb::dbWire_destroy $w
-    assert {[$n7 getWire] == "NULL"}
+    assertObjIsNull [$n7 getWire] "wire is not null" 
     tearDown $db
 }
 
@@ -181,9 +181,9 @@ proc test_destroy_swire {} {
     lassign [setUp] db block parentBlock i1 n1 n2 n4 n5 n7
     set swire [odb::dbSWire_create $n4 "ROUTED"]
     assert {[llength [$n4 getSWires]] == 1} "swire wasn't created"
-    assert {[[$swire getNet] getName] == [$n4 getName]} [format "swire nets don't have same name: %s %s" [[$swire getNet] getName] [$n4 getName]]
+    assertStringEq [[$swire getNet] getName] [$n4 getName] [format "swire nets don't have same name: %s %s" [[$swire getNet] getName] [$n4 getName]]
     odb::dbSWire_destroy $swire
-    assert {[lequal [$n4 getSWires] []])} "swire wasn't destroyed"
+    assert {[llength [$n4 getSWires]] == 0} "swire wasn't destroyed"
     tearDown $db
 }
 
@@ -201,10 +201,10 @@ proc test_destroy_obstruction {} {
 proc test_create_regions {} {
     lassign [setUp] db block parentBlock i1 n1 n2 n4 n5 n7
     set parentRegion [setup_regions $block]
-    assert {[$i1 getRegion] != "NULL"}
+    assertObjIsNull [$i1 getRegion] "region is not null"
     set region_list [$block getRegions]
-    assert {[llength $region_list] == 1}
-    assert {[[lindex region_list 0] getName] == [$parentRegion getName]}
+    assert {[llength $region_list] == 1} [format "region list length is not 1: %d" [llength $region_list]]
+    assertStringEq [[lindex $region_list 0] getName] [$parentRegion getName] [format "first region name doesn't match parent: %s %s" [[lindex $region_list 0] getName] [$parentRegion getName]]
     tearDown $db
 }
 
@@ -221,9 +221,9 @@ proc test_destroy_trackgrid {} {
     set tech [[lindex [$db getLibs] 0] getTech]
     set L1 [$tech findLayer "L1"]
     set grid [odb::dbTrackGrid_create $block $L1]
-    assert {[odb::dbTrackGrid_create $block $L1] == "NULL"}
+    assertObjIsNull [odb::dbTrackGrid_create $block $L1] "able to create already existing track grid"
     odb::dbTrackGrid_destroy $grid
-    assert {[odb::dbTrackGrid_create $block $L1] != "NULL"}
+    assertObjIsNotNull [odb::dbTrackGrid_create $block $L1] "not able to create track grid"
     tearDown $db
 }
 

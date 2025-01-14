@@ -30,6 +30,7 @@
 
 #include <memory>
 #include <set>
+#include <vector>
 
 #include "db/obj/frVia.h"
 #include "db/taObj/taPin.h"

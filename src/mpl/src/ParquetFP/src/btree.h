@@ -36,6 +36,7 @@
 #include <cmath>
 #include <fstream>
 #include <string>
+#include <vector>
 
 #include "basepacking.h"
 

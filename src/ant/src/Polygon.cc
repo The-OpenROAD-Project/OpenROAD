@@ -31,6 +31,8 @@
 
 #include "Polygon.hh"
 
+#include <vector>
+
 #include "odb/dbShape.h"
 
 namespace ant {

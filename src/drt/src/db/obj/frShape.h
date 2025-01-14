@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frFig.h"
 

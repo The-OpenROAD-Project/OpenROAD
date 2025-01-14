@@ -6,6 +6,8 @@
 
 #include "FastRouteRenderer.h"
 
+#include <vector>
+
 namespace grt {
 
 FastRouteRenderer::FastRouteRenderer(odb::dbTech* tech)

@@ -29,6 +29,7 @@
 #pragma once
 
 #include <boost/polygon/polygon.hpp>
+#include <vector>
 
 #include "db/gcObj/gcFig.h"
 

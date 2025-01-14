@@ -32,6 +32,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
 #include <boost/icl/interval_set.hpp>
+#include <vector>
 
 #include "db/tech/frTechObject.h"
 #include "frDesign.h"

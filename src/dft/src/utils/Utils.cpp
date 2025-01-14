@@ -34,6 +34,7 @@
 
 #include <iostream>
 #include <optional>
+#include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "odb/dbTransform.h"

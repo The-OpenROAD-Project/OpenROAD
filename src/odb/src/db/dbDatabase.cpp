@@ -36,6 +36,7 @@
 #include <fstream>
 #include <map>
 #include <string>
+#include <vector>
 
 #include "dbArrayTable.h"
 #include "dbBTerm.h"
