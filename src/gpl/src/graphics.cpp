@@ -305,6 +305,11 @@ void Graphics::drawMBFF(gui::Painter& painter)
   for (const auto& [start, end] : mbff_edges_) {
     painter.drawLine(start, end);
   }
+
+  for (odb::dbInst* inst : mbff_cluster_) {
+    odb::Rect bbox = inst->getBBox()->getBox();
+    painter.drawRect(bbox);
+  }
 }
 
 void Graphics::drawObjects(gui::Painter& painter)
@@ -371,11 +376,20 @@ void Graphics::cellPlot(bool pause)
   }
 }
 
-void Graphics::mbff_mapping(const LineSegs& segs)
+void Graphics::mbffMapping(const LineSegs& segs)
 {
   mbff_edges_ = segs;
   gui::Gui::get()->redraw();
   gui::Gui::get()->pause();
+  mbff_edges_.clear();
+}
+
+void Graphics::mbffFlopClusters(const std::vector<odb::dbInst*>& ffs)
+{
+  mbff_cluster_ = ffs;
+  gui::Gui::get()->redraw();
+  gui::Gui::get()->pause();
+  mbff_cluster_.clear();
 }
 
 gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,

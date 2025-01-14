@@ -26,9 +26,9 @@ proc tearDown {db} {
 
 proc test_idle {} {
     lassign [setUp] db bterm_a n_a n_b
-    assert {[[$bterm_a getNet] getName] == "na"}
+    assertStringEq [[$bterm_a getNet] getName] "na"
     assert {[$n_a getBTermCount] == 1}
-    assert {[[lindex [$n_a getBTerms] 0] getName] == "IN_a"}
+    assertStringEq [[lindex [$n_a getBTerms] 0] getName] "IN_a"
     assert {[$n_b getBTermCount] == 0}
     tearDown $db
 }
@@ -36,20 +36,20 @@ proc test_idle {} {
 proc test_connect {} {
     lassign [setUp] db bterm_a n_a n_b
     $bterm_a connect $n_b
-    assert {[[$bterm_a getNet] getName] == "nb"}
+    assertStringEq [[$bterm_a getNet] getName] "nb"
     assert {[$n_a getBTermCount] == 0}
-    assert {[lequal [$n_a getBTerms] []]}
+    assert {[llength [$n_a getBTerms] == 0}
     assert {[$n_b getBTermCount] == 1}
-    assert {[[lindex [$n_b getBTerms] 0] getName()] == "IN_a"}
+    assertStringEq [[lindex [$n_b getBTerms] 0] getName] "IN_a"
     tearDown $db
 }
 
 proc test_disconnect {} {
     lassign [setUp] db bterm_a n_a n_b
     $bterm_a disconnect
-    assert {[$bterm_a getNet] == "NULL"}
+    assertObjIsNull [$bterm_a getNet]
     assert {[$n_a getBTermCount()] == 0}
-    assert {[lequal [$n_a getBTerms] []]}
+    assert {[llength [$n_a getBTerms]] == 0}
     tearDown $db
 }
 

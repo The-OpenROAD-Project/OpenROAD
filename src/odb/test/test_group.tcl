@@ -27,8 +27,8 @@ proc tearDown {db} {
 
 proc test_default {} {
     lassign [setUp] db block group domain i1 inst1 child n1
-    assert {[$group getName] == "group"}
-    assert {[[$block findGroup "group"] getName] == "group"}
+    assertStringEq [$group getName] "group"
+    assertStringEq [[$block findGroup "group"] getName] "group"
     assert {[llength [$block getGroups]] == 2}
     assert {[llength [$block getRegions]] == 1}
     set region_boundaries [$domain getBoundaries]
@@ -36,22 +36,22 @@ proc test_default {} {
     assert {[[lindex $region_boundaries 0] xMax] == 100}
     $group addModInst $i1
     assert {[[lindex [$group getModInsts] 0] getName] == "i1"}
-    assert {[[$i1 getGroup] getName] == "group"}
+    assertStringEq [[$i1 getGroup] getName] "group"
     $group removeModInst $i1
     $group addInst $inst1
-    assert {[[lindex [$group getInsts] 0] getName] == "inst"}
-    assert {[[$inst1 getGroup] getName] == "group"}
+    assertStringEq [[lindex [$group getInsts] 0] getName] "inst"
+    assertStringEq [[$inst1 getGroup] getName] "group"
     $group removeInst $inst1
     $group addGroup $child
-    assert {[[lindex [$group getGroups] 0] getName] == "child"}
-    assert {[[$child getParentGroup] getName] == "group"}
+    assertStringEq [[lindex [$group getGroups] 0] getName] "child"
+    assertStringEq [[$child getParentGroup] getName] "group"
     $group removeGroup $child
     $group addPowerNet $n1
-    assert {[[lindex [$group getPowerNets] 0] getName] == "n1"}
+    assertStringEq [[lindex [$group getPowerNets] 0] getName] "n1"
     $group addGroundNet $n1
-    assert {[[lindex [$group getGroundNets] 0] getName] == "n1"}
+    assertStringEq [[lindex [$group getGroundNets] 0] getName] "n1"
     $group removeNet $n1
-    assert {[$group getType] == "PHYSICAL_CLUSTER"}
+    assertStringEq [$group getType] "PHYSICAL_CLUSTER"
     $group setType "VOLTAGE_DOMAIN"
     odb::dbGroup_destroy $group
     tearDown $db
