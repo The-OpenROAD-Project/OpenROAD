@@ -1955,6 +1955,23 @@ float MBFF::GetPairDisplacements()
   return ret;
 }
 
+void MBFF::displayFlopClusters(const char* stage,
+                               std::vector<std::vector<Flop>>& clusters)
+{
+  if (graphics_) {
+    for (const std::vector<Flop>& cluster : clusters) {
+      graphics_->status(fmt::format("{} size: {}", stage, cluster.size()));
+      std::vector<odb::dbInst*> inst_cluster;
+      inst_cluster.reserve(cluster.size());
+      for (const Flop& flop : cluster) {
+        inst_cluster.emplace_back(insts_[flop.idx]);
+      }
+      graphics_->mbffFlopClusters(inst_cluster);
+    }
+    graphics_->status("");
+  }
+}
+
 float MBFF::RunClustering(const std::vector<Flop>& flops,
                           const int mx_sz,
                           const float alpha,
@@ -1963,6 +1980,8 @@ float MBFF::RunClustering(const std::vector<Flop>& flops,
 {
   std::vector<std::vector<Flop>> pointsets;
   KMeansDecomp(flops, mx_sz, pointsets);
+
+  displayFlopClusters("Point sets", pointsets);
 
   // all_start_trays[t][i][j]: start trays of size 2^i, multistart = j for
   // pointset[t]
@@ -2062,7 +2081,7 @@ float MBFF::RunClustering(const std::vector<Flop>& flops,
       }
     }
 
-    graphics_->mbff_mapping(segs);
+    graphics_->mbffMapping(segs);
   }
 
   return ans;
@@ -2147,6 +2166,8 @@ void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
       }
     }
   }
+
+  displayFlopClusters("SeparateFlops", ffs);
 }
 
 void MBFF::SetTrayNames()
