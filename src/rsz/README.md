@@ -145,6 +145,14 @@ The `unset_dont_use` command reverses the `set_dont_use` command.
 unset_dont_use lib_cells
 ```
 
+### Reset Don't Use
+
+The `reset_dont_use` restores the default dont use list.
+
+```tcl
+reset_dont_use
+```
+
 ### Report Don't Use
 
 The `report_dont_use` reports all the cells that are marked as dont use.
