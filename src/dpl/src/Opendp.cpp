@@ -381,21 +381,19 @@ dbInst* Opendp::getAdjacentInstance(dbInst* inst, bool left) const
 {
   const Rect core = grid_->getCore();
   const Rect inst_rect = inst->getBBox()->getBox();
-  GridX left_x = grid_->gridX(DbuX{inst_rect.xMin() - 1 - core.xMin()});
-  GridX right_x = grid_->gridX(DbuX{inst_rect.xMax() + 1 - core.xMin()});
+  DbuX x_dbu = left ? DbuX{inst_rect.xMin() - 1} : DbuX{inst_rect.xMax() + 1};
+  x_dbu -= core.xMin();
+  GridX x = grid_->gridX(x_dbu);
 
   GridY y = grid_->gridSnapDownY(DbuY{inst_rect.yMin() - core.yMin()});
 
-  Pixel* pixel
-      = left ? grid_->gridPixel(left_x, y) : grid_->gridPixel(right_x, y);
+  Pixel* pixel = grid_->gridPixel(x, y);
 
   dbInst* adjacent_inst = nullptr;
 
-  if (pixel != nullptr) {
-    // do not return macros, endcaps and tapcells
-    if (pixel->cell && pixel->cell->db_inst_->isCore()) {
-      adjacent_inst = pixel->cell->db_inst_;
-    }
+  // do not return macros, endcaps and tapcells
+  if (pixel != nullptr && pixel->cell && pixel->cell->db_inst_->isCore()) {
+    adjacent_inst = pixel->cell->db_inst_;
   }
 
   return adjacent_inst;
@@ -406,7 +404,6 @@ std::vector<dbInst*> Opendp::getAdjacentInstancesCluster(dbInst* inst) const
   const bool left = true;
   const bool right = false;
   std::vector<dbInst*> adj_inst_cluster;
-  adj_inst_cluster.push_back(inst);
 
   dbInst* left_inst = getAdjacentInstance(inst, left);
   while (left_inst != nullptr) {
@@ -415,6 +412,9 @@ std::vector<dbInst*> Opendp::getAdjacentInstancesCluster(dbInst* inst) const
     left_inst = getAdjacentInstance(left_inst, left);
   }
 
+  std::reverse(adj_inst_cluster.begin(), adj_inst_cluster.end());
+  adj_inst_cluster.push_back(inst);
+
   dbInst* right_inst = getAdjacentInstance(inst, right);
   while (right_inst != nullptr) {
     adj_inst_cluster.push_back(right_inst);
@@ -422,10 +422,6 @@ std::vector<dbInst*> Opendp::getAdjacentInstancesCluster(dbInst* inst) const
     right_inst = getAdjacentInstance(right_inst, right);
   }
 
-  auto cmp = [](const dbInst* inst1, const dbInst* inst2) {
-    return inst1->getLocation().getX() < inst2->getLocation().getX();
-  };
-  std::sort(adj_inst_cluster.begin(), adj_inst_cluster.end(), cmp);
   return adj_inst_cluster;
 }
 
