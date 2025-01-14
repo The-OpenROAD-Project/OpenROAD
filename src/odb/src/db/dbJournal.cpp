@@ -1775,7 +1775,9 @@ void dbJournal::undo_swapObject()
                             dbObject::getTypeName(sub_obj_type));
         }
       }
+      break;
     }
+
     case dbInstObj: {
       uint inst_id;
       _log.pop(inst_id);
