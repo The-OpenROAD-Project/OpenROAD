@@ -372,7 +372,7 @@ proc cluster_flops { args } {
 
 proc global_placement_debug { args } {
   sta::parse_key_args "global_placement_debug" args \
-    keys {-pause -update -inst} \
+    keys {-pause -update -inst -start_iter} \
     flags {-draw_bins -initial} ;# checker off
 
   if { [ord::get_db_block] == "NULL" } {
@@ -396,10 +396,16 @@ proc global_placement_debug { args } {
     set inst $keys(-inst)
   }
 
+  set start_iter 0
+  if { [info exists keys(-start_iter)] } {
+    set start_iter $keys(-start_iter)
+    sta::check_positive_integer "-start_iter" $start_iter
+  }
+
   set draw_bins [info exists flags(-draw_bins)]
   set initial [info exists flags(-initial)]
 
-  gpl::set_debug_cmd $pause $update $draw_bins $initial $inst
+  gpl::set_debug_cmd $pause $update $draw_bins $initial $inst $start_iter
 }
 
 namespace eval gpl {
