@@ -51,11 +51,14 @@ proc define_process_corner { args } {
 
   rcx::define_process_corner $ext_model_index $filename
 }
+
 sta::define_cmd_args "define_rcx_corners" {
     [-corner_list cornerList]
 }
+
 proc define_rcx_corners { args } {
-  sta::parse_key_args "define_rcx_corners" args keys { -corner_list }
+  sta::parse_key_args "define_rcx_corners" args \
+    keys { -corner_list } flags {}
 
   set corner_list ""
   if { [info exists keys(-corner_list)] } {
@@ -65,10 +68,12 @@ proc define_rcx_corners { args } {
 }
 
 sta::define_cmd_args "get_model_corners" {
-    [-ext_model_file cornerList]
+    [-ext_model_file file_name]
 }
+
 proc get_model_corners { args } {
-  sta::parse_key_args "get_model_corners" args keys { -ext_model_file }
+  sta::parse_key_args "get_model_corners" args \
+    keys { -ext_model_file } flags {}
 
   set ext_model_file ""
   if { [info exists keys(-ext_model_file)] } {
@@ -76,6 +81,7 @@ proc get_model_corners { args } {
   }
   rcx::get_model_corners $ext_model_file
 }
+
 sta::define_cmd_args "extract_parasitics" {
     [-ext_model_file filename]
     [-corner cornerIndex]
@@ -367,8 +373,9 @@ sta::define_cmd_args "gen_rcx_model" {
 }
 
 proc gen_rcx_model { args } {
-  sta::parse_key_args "gen_rcx_model" args keys \
-    { -spef_file_list -corner_list -out_file -comment -version -pattern }
+  sta::parse_key_args "gen_rcx_model" args \
+  keys { -spef_file_list -corner_list -out_file -comment -version -pattern } \
+  flags {}
 
   set spef_file_list ""
   if { [info exists keys(-spef_file_list)] } {
