@@ -44,7 +44,7 @@
 
 #include "utl/Logger.h"
 
-//#define SKIP_SOLVER
+// #define SKIP_SOLVER
 namespace rcx {
 
 using namespace odb;

@@ -42,7 +42,7 @@
 #define FRINGE_UP_DOWN
 #endif
 // #define CHECK_SAME_NET
-//#define MIN_FOR_LOOPS
+// #define MIN_FOR_LOOPS
 
 namespace rcx {
 
