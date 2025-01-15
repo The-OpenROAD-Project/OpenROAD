@@ -578,7 +578,7 @@ Point<double> HTreeBuilder::adjustBestLegalLocation(
 
   // try moving beyond blockage boundary
   return adjustBeyondBlockage(
-      currLoc, parentPoint, targetDist, sinks, scalingFactor);
+      currLoc, parentPoint, targetDist, sinks, scalingFactor, direction);
 }
 
 bool HTreeBuilder::adjustAlongBlockage(double targetDist,
