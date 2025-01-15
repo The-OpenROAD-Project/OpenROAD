@@ -64,9 +64,8 @@ TestModeConfig* DftConfig::getOrDefaultMutableTestModeConfig(
   if (found == test_modes_config_.end()) {
     if (name == kDefaultTestModeName) {
       return createTestMode(name);
-    } else {
-      return nullptr;
     }
+    return nullptr;
   }
   return &found->second;
 }

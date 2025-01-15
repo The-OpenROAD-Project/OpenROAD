@@ -140,12 +140,6 @@ proc create_dft_test_mode { args } {
   sta::parse_key_args "create_dft_test_mode" args \
     keys {
       -test_mode
-      -max_length
-      -max_chains
-      -clock_mixing
-      -scan_enable_name_pattern
-      -scan_in_name_pattern
-      -scan_out_name_pattern
     } \
     flags {}
   sta::check_argc_eq0 "create_dft_test_mode" $args
