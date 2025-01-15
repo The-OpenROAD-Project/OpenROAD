@@ -7,7 +7,7 @@ $layer setResistance 9.249146
 
 #via 2
 set layer [$tech findLayer via]
-$layer setResistance 4.5 
+$layer setResistance 4.5
 
 #via 3
 set layer [$tech findLayer via2]

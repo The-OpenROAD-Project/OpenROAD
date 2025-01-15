@@ -208,7 +208,6 @@ dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
                 rule_name,
                 routingLayer,
                 width);
-
   int i;
   for (i = 1; i <= _tech->getRoutingLayerCount(); i++) {
     dbTechLayer* layer = _routingLayers[i];
