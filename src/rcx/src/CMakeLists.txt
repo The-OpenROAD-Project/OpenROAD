@@ -64,7 +64,7 @@ target_include_directories(rcx_lib
 target_link_libraries(rcx_lib
   PUBLIC
     odb
-    utl
+    utl_lib
 )
 
 swig_lib(NAME      rcx
@@ -86,7 +86,7 @@ target_include_directories(rcx
 target_link_libraries(rcx
   PUBLIC
     rcx_lib
-    utl
+    utl_lib
   PRIVATE
     OpenSTA
 )
