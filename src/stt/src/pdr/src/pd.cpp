@@ -36,6 +36,7 @@
 #include <boost/heap/d_ary_heap.hpp>
 #include <numeric>
 #include <utility>
+#include <vector>
 
 #include "lemon/list_graph.h"
 #include "odb/geom.h"

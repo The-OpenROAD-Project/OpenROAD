@@ -32,6 +32,8 @@
 
 #include "dbITerm.h"
 
+#include <vector>
+
 #include "dbAccessPoint.h"
 #include "dbArrayTable.h"
 #include "dbBTerm.h"

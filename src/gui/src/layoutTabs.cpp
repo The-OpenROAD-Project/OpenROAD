@@ -33,6 +33,7 @@
 #include "layoutTabs.h"
 
 #include <utility>
+#include <vector>
 
 #include "colorGenerator.h"
 #include "layoutViewer.h"
@@ -46,11 +47,11 @@ LayoutTabs::LayoutTabs(Options* options,
                        const HighlightSet& highlighted,
                        const std::vector<std::unique_ptr<Ruler>>& rulers,
                        Gui* gui,
-                       std::function<bool(void)> usingDBU,
-                       std::function<bool(void)> usingPolyDecompView,
-                       std::function<bool(void)> showRulerAsEuclidian,
-                       std::function<bool(void)> default_mouse_wheel_zoom,
-                       std::function<int(void)> arrow_keys_scroll_step,
+                       std::function<bool()> usingDBU,
+                       std::function<bool()> usingPolyDecompView,
+                       std::function<bool()> showRulerAsEuclidian,
+                       std::function<bool()> default_mouse_wheel_zoom,
+                       std::function<int()> arrow_keys_scroll_step,
                        QWidget* parent)
     : QTabWidget(parent),
       options_(options),

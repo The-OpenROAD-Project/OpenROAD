@@ -27,6 +27,8 @@
 
 #include "FlexPA_unique.h"
 
+#include <vector>
+
 #include "distributed/frArchive.h"
 
 namespace drt {
@@ -254,7 +256,7 @@ void UniqueInsts::checkFigsOnGrid(const frMPin* pin)
   }
 }
 
-void UniqueInsts::initPinAccess()
+void UniqueInsts::genPinAccess()
 {
   for (auto& inst : unique_) {
     for (auto& inst_term : inst->getInstTerms()) {
@@ -262,7 +264,7 @@ void UniqueInsts::initPinAccess()
         if (unique_to_pa_idx_.find(inst) == unique_to_pa_idx_.end()) {
           unique_to_pa_idx_[inst] = pin->getNumPinAccess();
         } else if (unique_to_pa_idx_[inst] != pin->getNumPinAccess()) {
-          logger_->error(DRT, 69, "initPinAccess error.");
+          logger_->error(DRT, 69, "genPinAccess error.");
         }
         checkFigsOnGrid(pin.get());
         auto pa = std::make_unique<frPinAccess>();
@@ -289,7 +291,7 @@ void UniqueInsts::initPinAccess()
 void UniqueInsts::init()
 {
   initUniqueInstance();
-  initPinAccess();
+  genPinAccess();
 }
 
 void UniqueInsts::report() const

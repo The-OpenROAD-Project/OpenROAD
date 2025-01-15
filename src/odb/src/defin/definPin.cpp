@@ -32,14 +32,16 @@
 
 #include "definPin.h"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
+#include <vector>
 
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "utl/Logger.h"
+
 namespace odb {
 
 definPin::definPin()
@@ -54,7 +56,7 @@ definPin::definPin()
       _effective_width(0),
       _left_bus('['),
       _right_bus(']'),
-      _layer(0),
+      _layer(nullptr),
       _has_min_spacing(false),
       _has_effective_width(false),
       _has_placement(false)
@@ -169,6 +171,15 @@ void definPin::pinDirection(dbIoType type)
   }
 
   _cur_bterm->setIoType(type);
+}
+
+bool definPin::checkPinDirection(dbIoType type)
+{
+  if (_cur_bterm == nullptr) {
+    return true;
+  }
+
+  return _cur_bterm->getIoType() == type;
 }
 
 void definPin::pinPlacement(defPlacement status,
@@ -296,7 +307,7 @@ void definPin::portBegin()
 
 void definPin::portEnd()
 {
-  dbBPin* pin = 0;
+  dbBPin* pin = nullptr;
 
   if (!_rects.empty() || !_polygons.empty()) {
     pin = dbBPin::create(_cur_bterm);

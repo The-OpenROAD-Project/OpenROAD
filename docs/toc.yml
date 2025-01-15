@@ -38,6 +38,8 @@ entries:
     title: Floorplan Initialization
   - file: main/src/ppl/README
     title: Pin Placement
+  - file: main/src/dft/README
+    title: Design for Test
   - file: main/src/pad/README
     title: Chip-level Connections
   - file: main/src/mpl/README

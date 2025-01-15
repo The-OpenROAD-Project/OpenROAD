@@ -27,6 +27,7 @@
 
 #include <functional>
 #include <string>
+#include <vector>
 
 #include "boostParser.h"
 #include "lefLayerPropParser.h"
@@ -35,7 +36,7 @@
 
 namespace odb {
 
-lefTechLayerAreaRuleParser::lefTechLayerAreaRuleParser(lefin* l)
+lefTechLayerAreaRuleParser::lefTechLayerAreaRuleParser(lefinReader* l)
 {
   lefin_ = l;
 }

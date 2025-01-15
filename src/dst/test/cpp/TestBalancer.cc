@@ -26,9 +26,9 @@ BOOST_AUTO_TEST_CASE(test_default)
   unsigned short worker_port_2 = 5557;
   unsigned short worker_port_3 = 5558;
   unsigned short worker_port_4 = 5559;
-  asio::io_service io_service;
+  asio::io_context service;
   LoadBalancer* balancer = new LoadBalancer(
-      dist, io_service, logger, local_ip.c_str(), "", balancer_port);
+      dist, service, logger, local_ip.c_str(), "", balancer_port);
 
   // Checking simple interface functions
   balancer->addWorker(local_ip, worker_port_1);
@@ -42,14 +42,13 @@ BOOST_AUTO_TEST_CASE(test_default)
   balancer->getNextWorker(address, port);
   BOOST_TEST(address.to_string() == local_ip);
   BOOST_TEST(port == worker_port_2);
-  balancer->updateWorker(asio::ip::address::from_string(local_ip),
-                         worker_port_2);
+  balancer->updateWorker(asio::ip::make_address(local_ip), worker_port_2);
   balancer->getNextWorker(address, port);
   BOOST_TEST(address.to_string() == local_ip);
   BOOST_TEST(port == worker_port_2);
 
   // Checking if balancer is up and responding
-  boost::thread t(boost::bind(&asio::io_service::run, &io_service));
+  boost::thread t(boost::bind(&asio::io_context::run, &service));
   JobMessage msg(JobMessage::JobType::BALANCER);
   JobMessage result;
   BOOST_TEST(dist->sendJob(msg, local_ip.c_str(), balancer_port, result));
@@ -58,8 +57,7 @@ BOOST_AUTO_TEST_CASE(test_default)
   // Checking if a balancer can relay a message to a worker and send the result
   // correctly. note we make worker 2, which is not running, the next
   // worker. That should be handled correctly by balancer.
-  balancer->updateWorker(asio::ip::address::from_string(local_ip),
-                         worker_port_2);
+  balancer->updateWorker(asio::ip::make_address(local_ip), worker_port_2);
   dist->addCallBack(new HelperCallBack(dist));
   dist->runWorker(local_ip.c_str(), worker_port_1, true);
   msg.setJobType(JobMessage::JobType::ROUTING);

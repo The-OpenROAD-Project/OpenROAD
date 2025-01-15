@@ -32,6 +32,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
 #include <boost/icl/interval_set.hpp>
+#include <vector>
 
 #include "db/tech/frTechObject.h"
 #include "frDesign.h"
@@ -50,10 +51,9 @@ class GuideProcessor
                  odb::dbDatabase* dbIn,
                  utl::Logger* loggerIn,
                  RouterConfiguration* router_cfg)
-      : design_(designIn),
-        logger_(loggerIn),
-        db_(dbIn),
-        router_cfg_(router_cfg){};
+      : design_(designIn), logger_(loggerIn), db_(dbIn), router_cfg_(router_cfg)
+  {
+  }
   /**
    * @brief Reads guides from odb and fill the tmp_guides_ list of unprocessed
    * guides

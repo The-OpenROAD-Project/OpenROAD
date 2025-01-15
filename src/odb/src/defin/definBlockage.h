@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "definBase.h"
 #include "odb/odb.h"
 
@@ -79,8 +81,8 @@ class definBlockage : public definBase
   virtual void blockagePlacementEnd();
 
   definBlockage();
-  virtual ~definBlockage();
-  void init();
+  ~definBlockage() override;
+  void init() override;
 };
 
 }  // namespace odb

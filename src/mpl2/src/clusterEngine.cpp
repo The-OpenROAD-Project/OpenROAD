@@ -33,6 +33,8 @@
 
 #include "clusterEngine.h"
 
+#include <vector>
+
 #include "db_sta/dbNetwork.hh"
 #include "par/PartitionMgr.h"
 #include "sta/Liberty.hh"
@@ -1432,25 +1434,44 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
   }
 
   const int seed = 0;
-  const float balance_constraint = 1.0;
+  constexpr float default_balance_constraint = 1.0f;
+  float balance_constraint = default_balance_constraint;
   const int num_parts = 2;  // We use two-way partitioning here
   const int num_vertices = static_cast<int>(vertex_weight.size());
   std::vector<float> hyperedge_weights(hyperedges.size(), 1.0f);
 
-  debugPrint(logger_,
-             MPL,
-             "multilevel_autoclustering",
-             1,
-             "Breaking flat cluster {} with TritonPart",
-             parent->getName());
+  // Due to the discrepancy that may exist between the weight of vertices
+  // that represent macros/std cells, the partitioner may fail to meet the
+  // balance constraint. This may cause the output to be completely unbalanced
+  // and lead to infinite partitioning recursion. To handle that, we relax
+  // the constraint until we find a reasonable split.
+  constexpr float balance_constraint_relaxation_factor = 10.0f;
+  std::vector<int> solution;
+  do {
+    debugPrint(
+        logger_,
+        MPL,
+        "multilevel_autoclustering",
+        1,
+        "Attempting flat cluster {} partitioning with balance constraint = {}",
+        parent->getName(),
+        balance_constraint);
 
-  std::vector<int> part
-      = triton_part_->PartitionKWaySimpleMode(num_parts,
-                                              balance_constraint,
-                                              seed,
-                                              hyperedges,
-                                              vertex_weight,
-                                              hyperedge_weights);
+    if (balance_constraint >= 90) {
+      logger_->error(
+          MPL, 45, "Cannot find a balanced partitioning for the clusters.");
+    }
+
+    solution = triton_part_->PartitionKWaySimpleMode(num_parts,
+                                                     balance_constraint,
+                                                     seed,
+                                                     hyperedges,
+                                                     vertex_weight,
+                                                     hyperedge_weights);
+
+    balance_constraint += balance_constraint_relaxation_factor;
+  } while (partitionerSolutionIsFullyUnbalanced(solution,
+                                                num_other_cluster_vertices));
 
   parent->clearLeafStdCells();
   parent->clearLeafMacros();
@@ -1462,7 +1483,7 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
 
   for (int i = num_other_cluster_vertices; i < num_vertices; i++) {
     odb::dbInst* inst = insts[i - num_other_cluster_vertices];
-    if (part[i] == 0) {
+    if (solution[i] == 0) {
       parent->addLeafInst(inst);
     } else {
       cluster_part_1->addLeafInst(inst);
@@ -1479,6 +1500,27 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
   // until the size of the cluster is less than max_num_inst_
   breakLargeFlatCluster(parent);
   breakLargeFlatCluster(raw_part_1);
+}
+
+bool ClusteringEngine::partitionerSolutionIsFullyUnbalanced(
+    const std::vector<int>& solution,
+    const int num_other_cluster_vertices)
+{
+  // The partition of the first vertex which represents
+  // an actual macro or std cell.
+  const int first_vertex_partition = solution[num_other_cluster_vertices];
+  const int number_of_vertices = static_cast<int>(solution.size());
+
+  // Skip all the vertices that represent other clusters.
+  for (int vertex_id = num_other_cluster_vertices;
+       vertex_id < number_of_vertices;
+       ++vertex_id) {
+    if (solution[vertex_id] != first_vertex_partition) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 // Recursively merge children whose number of std cells and macro
@@ -1731,22 +1773,21 @@ void ClusteringEngine::fetchMixedLeaves(
     Cluster* parent,
     std::vector<std::vector<Cluster*>>& mixed_leaves)
 {
-  if (parent->getChildren().empty() || parent->getNumMacro() == 0) {
-    return;
-  }
-
   std::vector<Cluster*> sister_mixed_leaves;
 
   for (auto& child : parent->getChildren()) {
     updateInstancesAssociation(child.get());
-    if (child->getNumMacro() > 0) {
-      if (child->getChildren().empty()) {
+
+    if (child->getNumMacro() == 0) {
+      child->setClusterType(StdCellCluster);
+    }
+
+    if (child->getChildren().empty()) {
+      if (child->getClusterType() != StdCellCluster) {
         sister_mixed_leaves.push_back(child.get());
-      } else {
-        fetchMixedLeaves(child.get(), mixed_leaves);
       }
     } else {
-      child->setClusterType(StdCellCluster);
+      fetchMixedLeaves(child.get(), mixed_leaves);
     }
   }
 

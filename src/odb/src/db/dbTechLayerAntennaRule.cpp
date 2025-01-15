@@ -34,6 +34,8 @@
 
 #include <spdlog/fmt/ostr.h>
 
+#include <vector>
+
 #include "dbDatabase.h"
 #include "dbMaster.h"
 #include "dbTable.h"
@@ -410,12 +412,6 @@ dbIStream& operator>>(dbIStream& stream, _ARuleRatio& arrt)
 // _dbTechLayerAntennaRule - Methods
 //
 ////////////////////////////////////////////////////////////////////
-
-_dbTechAntennaAreaElement::_dbTechAntennaAreaElement()
-{
-  _area = -1.0;
-  _lyidx = dbIdValidation::invalidId();
-}
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerAntennaRule& inrule)
 {
@@ -920,7 +916,7 @@ void _dbTechAntennaAreaElement::writeLef(const char* header,
                                          lefout& writer) const
 {
   fmt::print(writer.out(), "        {} {:g} ", header, _area);
-  if (_lyidx != dbIdValidation::invalidId()) {
+  if (_lyidx.isValid()) {
     fmt::print(writer.out(),
                "LAYER {} ",
                dbTechLayer::getTechLayer(tech, _lyidx)->getName().c_str());

@@ -37,6 +37,7 @@
 #include <cfloat>
 #include <cmath>
 #include <cstdlib>
+#include <vector>
 
 #include "FPcommon.h"
 #include "Nets.h"
@@ -389,8 +390,8 @@ bool DB::updateNodeSlim(int index, const Node& newNode)
     oldNode.putWidth(newNode.getWidth());
     oldNode.putHeight(newNode.getHeight());
     return true;
-  } else
-    return false;
+  }
+  return false;
 }
 // -----------------------------------------------------
 bool DB::updateNodeLocation(int index, float xloc, float yloc)
@@ -400,8 +401,8 @@ bool DB::updateNodeLocation(int index, float xloc, float yloc)
     oldNode.putX(xloc);
     oldNode.putY(yloc);
     return true;
-  } else
-    return false;
+  }
+  return false;
 }
 // -----------------------------------------------------
 bool DB::updateNodeDimensions(int index, float width, float height)
@@ -412,8 +413,8 @@ bool DB::updateNodeDimensions(int index, float width, float height)
     oldNode.putWidth(width);
     oldNode.putHeight(height);
     return true;
-  } else
-    return false;
+  }
+  return false;
 }
 // -----------------------------------------------------
 std::string DB::toString(DB::Corner corner)

@@ -32,6 +32,8 @@
 
 #include "dbTechVia.h"
 
+#include <vector>
+
 #include "dbBox.h"
 #include "dbBoxItr.h"
 #include "dbDatabase.h"
@@ -194,8 +196,8 @@ _dbTechVia::_dbTechVia(_dbDatabase*)
   _flags._has_params = 0;
   _flags._spare_bits = 0;
   _resistance = 0.0;
-  _name = 0;
-  _pattern = 0;
+  _name = nullptr;
+  _pattern = nullptr;
 }
 
 _dbTechVia::~_dbTechVia()
@@ -420,11 +422,10 @@ void dbTechVia::setViaParams(const dbViaParams& params)
   dbSet<dbBox>::iterator itr;
 
   for (itr = boxes.begin(); itr != boxes.end();) {
-    dbSet<dbBox>::iterator n = ++itr;
-    _dbBox* box = (_dbBox*) *itr;
+    dbSet<dbBox>::iterator cur = itr++;
+    _dbBox* box = (_dbBox*) *cur;
     dbProperty::destroyProperties(box);
     tech->_box_tbl->destroy(box);
-    itr = n;
   }
 
   via->_boxes = 0U;

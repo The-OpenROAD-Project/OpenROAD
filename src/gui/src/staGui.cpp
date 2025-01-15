@@ -47,6 +47,7 @@
 #include <iostream>
 #include <limits>
 #include <string>
+#include <vector>
 
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
@@ -81,12 +82,10 @@ static QString convertDelay(float time, sta::Unit* convert)
 
     if (time < 0) {
       return "-" + infinity;
-    } else {
-      return infinity;
     }
-  } else {
-    return convert->asString(time);
+    return infinity;
   }
+  return convert->asString(time);
 }
 
 /////////
@@ -443,11 +442,8 @@ bool TimingPathDetailModel::shouldHide(const QModelIndex& index) const
 
   if (row >= last_clock) {
     return false;
-  } else {
-    return !expand_clock_;
   }
-
-  return false;
+  return !expand_clock_;
 }
 
 Qt::ItemFlags TimingPathDetailModel::flags(const QModelIndex& index) const
@@ -709,9 +705,8 @@ void TimingConeRenderer::setPin(const sta::Pin* pin, bool fanin, bool fanout)
   if (pin == nullptr || (!fanin_ && !fanout_)) {
     Gui::get()->unregisterRenderer(this);
     return;
-  } else {
-    Gui::get()->registerRenderer(this);
   }
+  Gui::get()->registerRenderer(this);
 
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
@@ -1294,9 +1289,8 @@ const sta::Pin* TimingControlsDialog::convertTerm(Gui::odbTerm term) const
 
   if (std::holds_alternative<odb::dbITerm*>(term)) {
     return network->dbToSta(std::get<odb::dbITerm*>(term));
-  } else {
-    return network->dbToSta(std::get<odb::dbBTerm*>(term));
   }
+  return network->dbToSta(std::get<odb::dbBTerm*>(term));
 }
 
 void TimingControlsDialog::setThruPin(

@@ -81,12 +81,15 @@ class Graphics : public gui::Renderer, public Mpl2Observer
       const std::vector<mpl2::Rect>& placement_blockages) override;
   void setBundledNets(const std::vector<BundledNet>& bundled_nets) override;
   void setShowBundledNets(bool show_bundled_nets) override;
+  void setShowClustersIds(bool show_clusters_ids) override;
   void setSkipSteps(bool skip_steps) override;
   void doNotSkip() override;
   void setOnlyFinalResult(bool only_final_result) override;
   void setTargetClusterId(int target_cluster_id) override;
   void setOutline(const odb::Rect& outline) override;
   void setCurrentCluster(Cluster* current_cluster) override;
+  void setGuides(const std::map<int, Rect>& guides) override;
+  void setFences(const std::map<int, Rect>& fences) override;
 
   void eraseDrawing() override;
 
@@ -94,7 +97,11 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void resetPenalties();
   void drawCluster(Cluster* cluster, gui::Painter& painter);
   void drawAllBlockages(gui::Painter& painter);
-  void drawBlockage(const Rect& blockage, gui::Painter& painter);
+  void drawOffsetRect(const Rect& rect,
+                      const std::string& center_text,
+                      gui::Painter& painter);
+  void drawFences(gui::Painter& painter);
+  void drawGuides(gui::Painter& painter);
   template <typename T>
   void drawBundledNets(gui::Painter& painter, const std::vector<T>& macros);
   void setSoftMacroBrush(gui::Painter& painter, const SoftMacro& soft_macro);
@@ -120,11 +127,14 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   // In Soft SA, we're shaping/placing the children of a certain parent,
   // so for this case, the current cluster is actually the current parent.
   Cluster* current_cluster_{nullptr};
+  std::map<int, Rect> guides_;  // Id -> Guidance Region
+  std::map<int, Rect> fences_;  // Id -> Fence
 
   bool active_ = true;
   bool coarse_;
   bool fine_;
   bool show_bundled_nets_;
+  bool show_clusters_ids_;
   bool skip_steps_;
   bool is_skipping_;
   bool only_final_result_;

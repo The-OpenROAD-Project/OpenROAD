@@ -41,6 +41,7 @@
 #include <fstream>
 #include <iterator>
 #include <unordered_set>
+#include <vector>
 
 #include "Clock.h"
 #include "CtsOptions.h"
@@ -611,6 +612,13 @@ void TritonCTS::setBufferList(const char* buffers)
   std::vector<std::string> bufferList(begin, end);
   if (bufferList.empty()) {
     inferBufferList(bufferList);
+  } else {
+    for (const std::string& buffer : bufferList) {
+      if (db_->findMaster(buffer.c_str()) == nullptr) {
+        logger_->error(
+            CTS, 126, "No physical master cell found for buffer {}.", buffer);
+      }
+    }
   }
   options_->setBufferList(bufferList);
 }
@@ -744,6 +752,12 @@ void TritonCTS::setRootBuffer(const char* buffers)
   std::istream_iterator<std::string> begin(ss);
   std::istream_iterator<std::string> end;
   std::vector<std::string> bufferList(begin, end);
+  for (const std::string& buffer : bufferList) {
+    if (db_->findMaster(buffer.c_str()) == nullptr) {
+      logger_->error(
+          CTS, 127, "No physical master cell found for buffer {}.", buffer);
+    }
+  }
   rootBuffers_ = std::move(bufferList);
 }
 
@@ -985,8 +999,8 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* firstNet,
   } else {
     odb::dbInst* inst = iterm->getInst();
     odb::dbMTerm* mterm = iterm->getMTerm();
-    std::string driver = std::string(inst->getConstName()) + "/"
-                         + std::string(mterm->getConstName());
+    driver = std::string(inst->getConstName()) + "/"
+             + std::string(mterm->getConstName());
     int xTmp, yTmp;
     computeITermPosition(iterm, xTmp, yTmp);
     xPin = xTmp;

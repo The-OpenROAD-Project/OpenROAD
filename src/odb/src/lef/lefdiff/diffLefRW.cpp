@@ -30,8 +30,8 @@
 // This program is the diffLef core program.  It has all the callback
 // routines and write it out to a temporary file
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #ifndef WIN32
 #include <unistd.h>
 #endif /* not WIN32 */
@@ -659,7 +659,7 @@ int caseSensCB(lefrCallbackType_e c, int caseSense, lefiUserData ud)
   if (ud != userData)
     dataError();
 
-  if (caseSense == TRUE)
+  if (caseSense)
     fprintf(fout, "NAMESCASESENSITIVE ON\n");
   else
     fprintf(fout, "NAMESCASESENSITIVE OFF\n");
@@ -2522,9 +2522,6 @@ int viaRuleCB(lefrCallbackType_e c, lefiViaRule* viaRule, lefiUserData ud)
 
 int diffLefReadFile(char* inFile, char* outFile)
 {
-  FILE* f;
-  int res;
-
   userData = (void*) 0x01020304;
   lefrInit();
 
@@ -2572,21 +2569,22 @@ int diffLefReadFile(char* inFile, char* outFile)
   lefrSetViaCbk(viaCB);
   lefrSetViaRuleCbk(viaRuleCB);
 
-  if ((f = fopen(inFile, "r")) == 0) {
+  FILE* f;
+  if ((f = fopen(inFile, "r")) == nullptr) {
     fprintf(stderr, "Couldn't open input file '%s'\n", inFile);
     return (2);
   }
 
-  if ((fout = fopen(outFile, "w")) == 0) {
+  if ((fout = fopen(outFile, "w")) == nullptr) {
     fprintf(stderr, "Couldn't open output file '%s'\n", outFile);
     fclose(f);
     return (2);
   }
 
-  res = lefrRead(f, inFile, userData);
+  const int res = lefrRead(f, inFile, userData);
 
   fclose(f);
   fclose(fout);
 
-  return 0;
+  return res;
 }

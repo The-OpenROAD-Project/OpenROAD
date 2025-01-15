@@ -63,7 +63,6 @@ namespace phoenix = boost::phoenix;
 
 using namespace boost::placeholders;
 
-using boost::fusion::at_c;
 using boost::spirit::ascii::space_type;
 using boost::spirit::ascii::string;
 using boost::spirit::qi::lit;
@@ -71,10 +70,6 @@ using qi::lexeme;
 
 using ascii::char_;
 using ascii::space;
-
-using phoenix::ref;
-using qi::double_;
-using qi::int_;
 
 void setNewInput(std::string input, rmp::BlifParser* parser)
 {

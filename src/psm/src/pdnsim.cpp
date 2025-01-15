@@ -95,10 +95,17 @@ void PDNSim::setNetVoltage(odb::dbNet* net, sta::Corner* corner, double voltage)
   voltages[corner] = voltage;
 }
 
+void PDNSim::setInstPower(odb::dbInst* inst, sta::Corner* corner, float power)
+{
+  auto& powers = user_powers_[inst];
+  powers[corner] = power;
+}
+
 void PDNSim::analyzePowerGrid(odb::dbNet* net,
                               sta::Corner* corner,
                               GeneratedSourceType source_type,
                               const std::string& voltage_file,
+                              bool use_prev_solution,
                               bool enable_em,
                               const std::string& em_file,
                               const std::string& error_file,
@@ -110,7 +117,11 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
 
   last_corner_ = corner;
   auto* solver = getIRSolver(net, false);
-  solver->solve(corner, source_type, voltage_source_file);
+  if (!use_prev_solution || !solver->hasSolution(corner)) {
+    solver->solve(corner, source_type, voltage_source_file);
+  } else {
+    logger_->info(utl::PSM, 11, "Reusing previous solution");
+  }
   solver->report(corner);
 
   heatmap_->setNet(net);
@@ -171,6 +182,7 @@ psm::IRSolver* PDNSim::getIRSolver(odb::dbNet* net, bool floorplanning)
                                         resizer_,
                                         logger_,
                                         user_voltages_,
+                                        user_powers_,
                                         generated_source_settings_);
     addOwner(net->getBlock());
   }

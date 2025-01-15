@@ -30,6 +30,7 @@
 
 #include <algorithm>
 #include <type_traits>
+#include <vector>
 
 #include "db/obj/frBTerm.h"
 #include "db/obj/frBlockage.h"

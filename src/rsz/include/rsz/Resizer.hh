@@ -39,6 +39,7 @@
 #include <optional>
 #include <string>
 
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
 #include "rsz/OdbCallBack.hh"
@@ -87,6 +88,7 @@ using sta::ArcDelay;
 using sta::Cell;
 using sta::Corner;
 using sta::dbNetwork;
+using sta::dbNetworkObserver;
 using sta::dbSta;
 using sta::dbStaState;
 using sta::DcalcAnalysisPt;
@@ -189,7 +191,7 @@ struct BufferData
 
 class OdbCallBack;
 
-class Resizer : public dbStaState
+class Resizer : public dbStaState, public dbNetworkObserver
 {
  public:
   Resizer();
@@ -268,17 +270,23 @@ class Resizer : public dbStaState
   double maxArea() const;
 
   void setDontUse(LibertyCell* cell, bool dont_use);
-  bool dontUse(LibertyCell* cell);
+  void resetDontUse();
+  bool dontUse(const LibertyCell* cell);
+  void reportDontUse() const;
   void setDontTouch(const Instance* inst, bool dont_touch);
   bool dontTouch(const Instance* inst);
   void setDontTouch(const Net* net, bool dont_touch);
   bool dontTouch(const Net* net);
+  void reportDontTouch();
 
   void setMaxUtilization(double max_utilization);
   // Remove all or selected buffers from the netlist.
   void removeBuffers(InstanceSeq insts, bool recordJournal = false);
   void bufferInputs();
   void bufferOutputs();
+
+  // from sta::dbNetworkObserver callbacks
+  void postReadLiberty() override;
 
   // Balance the usage of hybrid rows
   void balanceRowUsage();
@@ -445,8 +453,9 @@ class Resizer : public dbStaState
   bool hasTristateOrDontTouchDriver(const Net* net);
   bool isTristateDriver(const Pin* pin);
   void checkLibertyForAllCorners();
+  void copyDontUseFromLiberty();
   void findBuffers();
-  bool isLinkCell(LibertyCell* cell);
+  bool isLinkCell(LibertyCell* cell) const;
   void findTargetLoads();
   void balanceBin(const vector<odb::dbInst*>& bin,
                   const std::set<odb::dbSite*>& base_sites);
@@ -592,6 +601,7 @@ class Resizer : public dbStaState
   bool hasPins(Net* net);
   void getPins(Net* net, PinVector& pins) const;
   void getPins(Instance* inst, PinVector& pins) const;
+  void SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from);
   Point tieLocation(const Pin* load, int separation);
   bool hasFanout(Vertex* drvr);
   InstanceSeq findClkInverters();

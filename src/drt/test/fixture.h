@@ -26,6 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <vector>
+
 #include "frDesign.h"
 
 namespace odb {
@@ -46,15 +48,17 @@ class Fixture
                 dbTechLayerType type,
                 dbTechLayerDir dir = dbTechLayerDir::NONE);
 
+  odb::dbInst* createDummyInst(odb::dbMaster* master);
+
   void setupTech(frTechObject* tech);
 
   void makeDesign();
 
-  frMaster* makeMacro(const char* name,
-                      frCoord originX = 0,
-                      frCoord originY = 0,
-                      frCoord sizeX = 0,
-                      frCoord sizeY = 0);
+  std::pair<frMaster*, odb::dbMaster*> makeMacro(const char* name,
+                                                 frCoord originX = 0,
+                                                 frCoord originY = 0,
+                                                 frCoord sizeX = 0,
+                                                 frCoord sizeY = 0);
 
   frBlockage* makeMacroObs(frMaster* master,
                            frCoord xl,
@@ -72,7 +76,9 @@ class Fixture
                        frCoord yh,
                        frLayerNum lNum = 2);
 
-  frInst* makeInst(const char* name, frMaster* master, frCoord x, frCoord y);
+  frInst* makeInst(const char* name,
+                   frMaster* master,
+                   odb::dbMaster* db_master);
 
   frLef58CornerSpacingConstraint* makeCornerConstraint(
       frLayerNum layer_num,
@@ -246,6 +252,9 @@ class Fixture
   std::unique_ptr<frDesign> design;
   frUInt4 numBlockages, numTerms, numMasters, numInsts;
   odb::dbTech* db_tech;
+
+ private:
+  odb::dbDatabase* db_;
 };
 
 // BOOST_TEST wants an operator<< for any type it compares.  We

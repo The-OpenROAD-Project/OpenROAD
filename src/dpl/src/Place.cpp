@@ -42,6 +42,7 @@
 #include <cstdlib>
 #include <limits>
 #include <memory>
+#include <vector>
 
 #include "DplObserver.h"
 #include "Grid.h"

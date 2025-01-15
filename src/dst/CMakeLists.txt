@@ -63,7 +63,7 @@ target_include_directories(dst
 
 target_link_libraries(dst
   PUBLIC
-    utl
+    utl_lib
     OpenSTA
     ${TCL_LIBRARY}
     ${ZLIB_LIBRARIES}
@@ -76,6 +76,4 @@ messages(
   TARGET dst
 )
 
-if(ENABLE_TESTS)
-  add_subdirectory(test/cpp)
-endif()
+add_subdirectory(test)

@@ -66,13 +66,14 @@ sta::define_cmd_args "analyze_power_grid" {
   [-em_outfile em_file]
   [-vsrc voltage_source_file]
   [-source_type FULL|BUMPS|STRAPS]
+  [-allow_reuse]
 }
 
 proc analyze_power_grid { args } {
   sta::parse_key_args "analyze_power_grid" args \
     keys {-net -corner -voltage_file -error_file -em_outfile -vsrc \
       -source_type} \
-    flags {-enable_em}
+    flags {-enable_em -allow_reuse}
   if { ![info exists keys(-net)] } {
     utl::error PSM 58 "Argument -net not specified."
   }
@@ -111,6 +112,7 @@ proc analyze_power_grid { args } {
     [sta::parse_corner_or_default keys] \
     $source_type \
     $error_file \
+    [info exists flags(-allow_reuse)] \
     $enable_em \
     $em_file \
     $voltage_file \
@@ -226,6 +228,25 @@ proc set_pdnsim_net_voltage { args } {
   }
 }
 
+sta::define_cmd_args "set_pdnsim_inst_power" {
+  -inst instance
+  -power power
+  [-corner corner]}
+
+proc set_pdnsim_inst_power { args } {
+  sta::parse_key_args "set_pdnsim_inst_power" args \
+    keys {-inst -corner -power} flags {}
+  if { [info exists keys(-inst)] && [info exists keys(-power)] } {
+    set inst [psm::find_inst $keys(-inst)]
+    set power $keys(-power)
+    set corner [sta::parse_corner_or_all keys]
+    psm::set_inst_power $inst $corner $power
+  } else {
+    utl::error PSM 63 "Argument -inst or -power not specified.\
+      Please specify both -inst and -power arguments."
+  }
+}
+
 sta::define_cmd_args "set_pdnsim_source_settings" {
   [-bump_dx pitch]
   [-bump_dy pitch]
@@ -269,5 +290,13 @@ proc find_net { net_name } {
     utl::error PSM 28 "Cannot find net $net_name in the design."
   }
   return $net
+}
+
+proc find_inst { inst_name } {
+  set inst [[ord::get_db_block] findInst $inst_name]
+  if { $inst == "NULL" } {
+    utl::error PSM 29 "Cannot find instance $inst_name in the design."
+  }
+  return $inst
 }
 }

@@ -25,6 +25,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#pragma once
+
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/trim_all.hpp>
@@ -43,6 +45,8 @@
 #include <boost/phoenix/operator.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/qi_alternative.hpp>
+
+namespace odb {
 
 namespace qi = boost::spirit::qi;
 namespace ascii = boost::spirit::ascii;
@@ -67,3 +71,5 @@ using phoenix::ref;
 
 static const qi::rule<std::string::iterator, std::string(), ascii::space_type>
     _string = lexeme[(alpha >> *(char_ - blank - '\n'))];
+
+}  // namespace odb

@@ -51,14 +51,19 @@ returned.
 ```tcl
 extract_parasitics
     [-ext_model_file filename]      
+    [-corner cornerIndex]
     [-corner_cnt count]            
     [-max_res ohms]               
     [-coupling_threshold fF]        
     [-debug_net_id id]
+    [-dbg dbg_num ]
     [-lef_res]                     
+    [-lef_rc]
     [-cc_model track]             
     [-context_depth depth]      
     [-no_merge_via_res]       
+    [-skip_over_cell ]
+    [-version]
 ```
 
 #### Options
@@ -66,14 +71,19 @@ extract_parasitics
 | Switch Name | Description |
 | ----- | ----- |
 | `-ext_model_file` | Specify the Extraction Rules file used for the extraction. |
+| `-corner cornerIndex` | Corner to extract.  Default -1. |
 | `-corner_cnt` | Defines the number of corners used during the parasitic extraction. |
 | `-max_res` | Combines resistors in series up to the threshold value. |
 | `-coupling_threshold` | Coupling below this threshold is grounded. The default value is `0.1`, units are in `fF`, accepted values are floats. |
 | `-debug_net_id` | *Developer Option*: Net ID to evaluate. |
+| `-dbg dbg_num` | Debug messaging level.  Default 0. |
 | `-lef_res` | Override LEF resistance per unit. |
+| `-lef_rc` | Use LEF RC values. Default false. |
 | `-cc_model` | Specify the maximum number of tracks of lateral context that the tool considers on the same routing level. The default value is `10`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-context_depth` | Specify the number of levels of vertical context that OpenRCX needs to consider for the over/under context overlap for capacitance calculation. The default value is `5`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-no_merge_via_res` | Separates the via resistance from the wire resistance. |
+| `-skip_over_cell` | Ignore shapes in cells.  .Default false. |
+| `-version` | select between v1 and v2 modeling.  Defaults to 1.0. |
 
 ### Write SPEF
 
@@ -127,6 +137,8 @@ and contains the RC numbers from the parasitics in the database and the
 ```tcl
 diff_spef
     [-file filename]                
+    [-spef_corner spef_num]
+    [-ext_corner ext_num]
     [-r_res]
     [-r_cap]
     [-r_cc_cap]
@@ -138,6 +150,8 @@ diff_spef
 | Switch Name | Description |
 | ----- | ----- |
 | `-file` | Path to the input `.spef` filename. |
+| `-spef_corner spef_num` | The spef corner to diff. |
+| `-ext_corner ext_num` | The extraction corner to diff. |
 | `-r_res` | Read resistance. |
 | `-r_cap` | Read capacitance. |
 | `-r_cc_cap` | Read coupled capacitance. |
@@ -161,6 +175,7 @@ bench_wires
     [-diag]
     [-all]
     [-db_only]
+    [-v1]
     [-under_met layer]
     [-w_list width]
     [-s_list space]
@@ -177,6 +192,7 @@ bench_wires
 | `-len` | Wirelength in microns in the pattern. The default value is `100`, and the allowed values are integers `[0, MAX_INT]`. | 
 | `-all` | Consider all different pattern geometries (`over`, `under`, `over_under`, and `diagonal`). |
 | `-db_only` | Run with db values only. All parameters in `bench_wires` are ignored. |
+| `-v1` | Generation version one patterns. |
 | `-under_met` | Consider under metal layer. |
 | `-w_list` | Lists of wire width multipliers from the minimum spacing defined in the LEF. |
 | `-s_list` | Lists of wire spacing multipliers from the minimum spacing defined in the LEF. The list will be the input index on the OpenRCX RC table (Extraction Rules file). |
@@ -235,7 +251,6 @@ write_rules
   [-file filename]           
   [-dir dir]
   [-name name]
-  [-pattern pattern]
   [-db]
 ```
 
@@ -246,8 +261,219 @@ write_rules
 | `-file` | Output file name. |
 | `-dir` | Output file directory. |
 | `-name` | Name of rule. |
-| `-pattern` | Flag to write the pattern to rulefile (0/1). | 
 | `-db` | DB tbc. |
+
+### Write RCX Model
+
+The `write_rcx_model` command write the model file after reading capacitance/resistance
+Tables from Field Solver.
+
+```tcl
+write_rcx_model
+  [-file filename]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-file` | Output file name. |
+
+### Init RCX Model
+
+The `init_rcx_model` command is used for initialization for creating the model file.
+
+```tcl
+init_rcx_model
+  [-corner_names names]
+  [-met_cnt met_cnt]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-corner_names` | List of corner names. |
+| `-met_cnt` | Number of metal layers. |
+
+### Read RCX Tables
+
+The `read_rcx_tables` command reads the capacitance and resistance tables from Field
+Solver Output.
+
+```tcl
+read_rcx_tables
+  [-corner_name corner_name]
+  [-file in_file_name]
+  [-wire_index wire]
+  [-over]
+  [-under]
+  [-over_under]
+  [-diag]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-corner_name` | Corner name. |
+| `-file` | Input file name. |
+| `-wire_index` | Target wire index. |
+| `-over` | Over pattern family only. |
+| `-under` | Under pattern family only. |
+| `-over_under` | OverUnder pattern family only. |
+| `-diag` | Diagonal pattern family only. |
+
+### Generate Solver Patterns
+
+The `gen_solver_patterns` command generates 3D wire patterns not targeting any particular
+Field Solver.
+
+```tcl
+gen_solver_patterns
+  [-process_file process_file]
+  [-process_name process_name]
+  [-version version]
+  [-wire_cnt wire_count]
+  [-len wire_len]
+  [-w_list widths]
+  [-s_list spacings]
+  [-over_dist dist]
+  [-under_dist dist]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-process_file` | File that contains full process stack with conductor and dielctric dimensions. |
+| `-process_name` | Name of the process. |
+| `-version` | 2 if normalized wires, 1 not normalized; deafult is 1. |
+| `-wire_cnt` | Number of wires. Default is 3. |
+| `-len` | Wire length in microns. Default is 10. |
+| `-w_list` | Min layer Width multiplier list. Default is 1. |
+| `-s_list` | Min layer spacing multiplier list. Default is "1.0 1.5 2.0 3 5". |
+| `-over_dist` | Max number of levels for Under patterns. Default is 4. |
+| `-under_dist` | Max number of levels for Over patterns. Default is 4. |
+
+### Define RCX Corners
+
+The `define_rcx_corners` command defines specific corners to extract parasitics.
+
+```tcl
+define_rcx_corners
+  [-corner_list corner_list]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-corner_list` | List of corner names. |
+
+### Get Model Corners
+
+The `get_model_corners` command lists all the corner names from a model file.
+
+```tcl
+get_model_corners
+  [-ext_model_file file_name]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-ext_model_file` | Input file name. |
+
+### Generate RCX Model
+
+The `gen_rcx_model` command 
+
+```tcl
+gen_rcx_model
+  [-spef_file_list spefList]
+  [-corner_list cornerList]
+  [-out_file outfilename]
+  [-comment comment]
+  [-version version]
+  [-pattern pattern]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-spef_file_list`| List of spef file names. |
+| `-corner_list`| List of corners. |
+| `-out_file`| Output file name. |
+| `-comment`| Comment on the model file. Default: "RCX Model File". |
+| `-version`| Version of the model file. |
+| `-pattern`| Pattern of the model file. |
+
+### Bench Wires Generation
+
+The `bench_wires_gen` command generates comprehensive benchmarking patterns
+(not for model generation).
+
+```tcl
+bench_wires_gen
+  [ -len length_in_min_widths ]
+  [ -met metal ]
+  [ -mlist metal_list ]
+  [ -width multiplier_width_list ]
+  [ -spacing multiplier_spacing_list ]
+  [ -couple_width multiplier_coupling_width_list ]
+  [ -couple_spacing multiplier_coupling_spacing_list ]
+  [ -over_width multiplier_over_width_list ]
+  [ -over_spacing multiplier_over_spacing_list ]
+  [ -under_width multiplier_under_width_list ]
+  [ -under_spacing multiplier_under_spacing_list ]
+  [ -over2_width multiplier_over2_width_list ]
+  [ -over2_spacing multiplier_over2_spacing_list ]
+  [ -under2_width multiplier_under2_width_list ]
+  [ -under2_spacing multiplier_under2_spacing_list ]
+  [ -dbg dbg_flag ]
+  [ -wire_cnt wire_count ]
+  [ -offset_over offset_over ]
+  [ -offset_under offset_under ]
+  [ -under_dist max_dist_to_under_met ]
+  [ -over_dist max_dist_to_over_met ]
+  [ -diag ]
+  [ -over ]
+  [ -under ]
+  [ -over_under ]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-len` | length_in_min_widths.
+| `-met` | target metal.
+| `-mlist` | target metal_list.
+| `-width` | multiplier_width_list.
+| `-spacing` | multiplier_spacing_list.
+| `-couple_width` | multiplier_coupling_width_list.
+| `-couple_spacing` | multiplier_coupling_spacing_list.
+| `-over_width` | multiplier_over_width_list.
+| `-over_spacing` | multiplier_over_spacing_list.
+| `-under_width` | multiplier_under_width_list.
+| `-under_spacing` | multiplier_under_spacing_list.
+| `-over2_width` | multiplier_over2_width_list.
+| `-over2_spacing` | multiplier_over2_spacing_list.	 
+| `-under2_width` | multiplier_under2_width_list.
+| `-under2_spacing` | multiplier_under2_spacing_list.
+| `-dbg` |  dbg_flag.
+| `-wire_cnt` | wire_count.
+| `-offset_over` | offset_over.
+| `-offset_under` | offset_under.
+| `-under_dist` | max_dist_to_under_met.
+| `-over_dist` | max_dist_to_over_met.	  
+| `-diag` | Diag pattern family only.
+| `-over` | Over pattern family only.
+| `-under` | Under pattern family only.
+| `-over_under` | OverUnder pattern family only.
 
 ## Example scripts
 

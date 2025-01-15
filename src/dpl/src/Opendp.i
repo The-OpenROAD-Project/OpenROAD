@@ -146,10 +146,11 @@ set_padding_inst(odb::dbInst *inst,
 
 void
 filler_placement_cmd(dpl::dbMasterSeq *filler_masters,
-                     const char* prefix)
+                     const char* prefix,
+                     bool verbose)
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->fillerPlacement(filler_masters, prefix);
+  opendp->fillerPlacement(filler_masters, prefix, verbose);
 }
 
 void

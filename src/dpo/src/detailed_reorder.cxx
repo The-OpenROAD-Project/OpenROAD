@@ -35,6 +35,7 @@
 #include "detailed_reorder.h"
 
 #include <boost/tokenizer.hpp>
+#include <vector>
 
 #include "architecture.h"
 #include "detailed_manager.h"

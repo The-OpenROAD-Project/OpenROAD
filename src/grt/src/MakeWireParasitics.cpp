@@ -35,6 +35,8 @@
 
 #include "MakeWireParasitics.h"
 
+#include <vector>
+
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
@@ -170,8 +172,8 @@ sta::Pin* MakeWireParasitics::staPin(Pin& pin) const
 {
   if (pin.isPort())
     return network_->dbToSta(pin.getBTerm());
-  else
-    return network_->dbToSta(pin.getITerm());
+
+  return network_->dbToSta(pin.getITerm());
 }
 
 void MakeWireParasitics::makeRouteParasitics(
@@ -184,17 +186,13 @@ void MakeWireParasitics::makeRouteParasitics(
     NodeRoutePtMap& node_map)
 {
   const int min_routing_layer = grouter_->getMinRoutingLayer();
-  const bool is_congested = grouter_->isCongested();
 
   size_t resistor_id_ = 1;
   for (GSegment& segment : route) {
     const int wire_length_dbu = segment.length();
 
     const int init_layer = segment.init_layer;
-    // allow segments out of the layer range only when the design have
-    // congestion, becaus GRT may produce segments out of the layer range in
-    // this scenario.
-    bool is_valid_layer = init_layer >= min_routing_layer || is_congested;
+    bool is_valid_layer = init_layer >= min_routing_layer;
     sta::ParasiticNode* n1 = is_valid_layer
                                  ? ensureParasiticNode(segment.init_x,
                                                        segment.init_y,
@@ -205,7 +203,7 @@ void MakeWireParasitics::makeRouteParasitics(
                                  : nullptr;
 
     const int final_layer = segment.final_layer;
-    is_valid_layer = final_layer >= min_routing_layer || is_congested;
+    is_valid_layer = final_layer >= min_routing_layer;
     sta::ParasiticNode* n2 = is_valid_layer
                                  ? ensureParasiticNode(segment.final_x,
                                                        segment.final_y,

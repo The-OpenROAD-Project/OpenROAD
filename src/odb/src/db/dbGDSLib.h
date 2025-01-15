@@ -52,14 +52,10 @@ class _dbGDSLib : public _dbObject
 {
  public:
   std::string _libname;
-  std::tm _lastAccessed;
-  std::tm _lastModified;
-  int16_t _libDirSize;
-  std::string _srfName;
-  double _uu_per_dbu, _dbu_per_meter;
-  dbHashTable<_dbGDSStructure> _structure_hash;
-
-  dbTable<_dbGDSStructure>* _structure_tbl;
+  double _uu_per_dbu;
+  double _dbu_per_meter;
+  dbHashTable<_dbGDSStructure> _gdsstructure_hash;
+  dbTable<_dbGDSStructure>* _gdsstructure_tbl;
 
   _dbGDSLib(_dbDatabase*, const _dbGDSLib& r);
   _dbGDSLib(_dbDatabase*);

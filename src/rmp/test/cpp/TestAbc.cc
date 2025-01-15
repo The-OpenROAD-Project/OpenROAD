@@ -21,6 +21,7 @@
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
+#include "delay_optimization_strategy.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "logic_extractor.h"
@@ -33,6 +34,7 @@
 #include "sta/NetworkClass.hh"
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
+#include "sta/VerilogWriter.hh"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
@@ -238,8 +240,11 @@ TEST_F(AbcTest, TestLibraryInstallation)
   AbcLibrary abc_library = factory.Build();
 
   // When you set these params to zero they are essentially turned off.
-  abc::Abc_SclInstallGenlib(
-      abc_library.abc_library(), /*Slew=*/0, /*Gain=*/0, /*nGatesMin=*/0);
+  abc::Abc_SclInstallGenlib(abc_library.abc_library(),
+                            /*Slew=*/0,
+                            /*Gain=*/0,
+                            /*fUseAll=*/0,
+                            /*nGatesMin=*/0);
   abc::Mio_LibraryTransferCellIds();
   abc::Mio_Library_t* lib
       = static_cast<abc::Mio_Library_t*>(abc::Abc_FrameReadLibGen());
@@ -457,7 +462,7 @@ TEST_F(AbcTest, InsertingMappedLogicCutDoesNotThrow)
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Vertex* flop_input_vertex = nullptr;
   for (sta::Vertex* vertex : *sta_->endpoints()) {
-    if (std::string(vertex->name(network)) == "_32989_/D") {
+    if (std::string(vertex->name(network)) == "_33122_/D") {
       flop_input_vertex = vertex;
     }
   }
@@ -473,6 +478,39 @@ TEST_F(AbcTest, InsertingMappedLogicCutDoesNotThrow)
   rmp::UniqueName unique_name;
   EXPECT_NO_THROW(cut.InsertMappedAbcNetwork(
       mapped_abc_network.get(), network, unique_name, &logger_));
+}
+
+TEST_F(AbcTest, InsertingMappedLogicAfterOptimizationCutDoesNotThrow)
+{
+  AbcLibraryFactory factory(&logger_);
+  factory.AddDbSta(sta_.get());
+  AbcLibrary abc_library = factory.Build();
+
+  LoadVerilog("aes_nangate45.v", /*top=*/"aes_cipher_top");
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Vertex* flop_input_vertex = nullptr;
+  for (sta::Vertex* vertex : *sta_->endpoints()) {
+    if (std::string(vertex->name(network)) == "_33122_/D") {
+      flop_input_vertex = vertex;
+    }
+  }
+  EXPECT_NE(flop_input_vertex, nullptr);
+
+  LogicExtractorFactory logic_extractor(sta_.get(), &logger_);
+  logic_extractor.AppendEndpoint(flop_input_vertex);
+  LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
+
+  utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> mapped_abc_network
+      = cut.BuildMappedAbcNetwork(abc_library, network, &logger_);
+
+  DelayOptimizationStrategy strat(sta_.get());
+  utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> remapped
+      = strat.Optimize(mapped_abc_network.get(), &logger_);
+
+  rmp::UniqueName unique_name;
+  EXPECT_NO_THROW(cut.InsertMappedAbcNetwork(
+      remapped.get(), network, unique_name, &logger_));
 }
 
 TEST_F(AbcTest,

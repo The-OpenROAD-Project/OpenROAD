@@ -34,6 +34,7 @@
 #pragma once
 
 #include <queue>
+#include <vector>
 
 #include "object.h"
 
@@ -194,6 +195,8 @@ class ClusteringEngine
   void createCluster(Cluster* parent);
   void updateSubTree(Cluster* parent);
   void breakLargeFlatCluster(Cluster* parent);
+  bool partitionerSolutionIsFullyUnbalanced(const std::vector<int>& solution,
+                                            int num_other_cluster_vertices);
   void mergeChildrenBelowThresholds(std::vector<Cluster*>& small_children);
   bool attemptMerge(Cluster* receiver, Cluster* incomer);
   void fetchMixedLeaves(Cluster* parent,

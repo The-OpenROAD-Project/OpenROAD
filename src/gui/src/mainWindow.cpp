@@ -343,12 +343,10 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &TimingWidget::setCommand,
           script_,
           &ScriptWidget::setCommand);
-#ifdef ENABLE_CHARTS
   connect(charts_widget_,
           &ChartsWidget::endPointsToReport,
           this,
           &MainWindow::reportSlackHistogramPaths);
-#endif
 
   connect(this, &MainWindow::blockLoaded, this, &MainWindow::setBlock);
   connect(this, &MainWindow::blockLoaded, drc_viewer_, &DRCWidget::setBlock);
@@ -419,10 +417,9 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
     settings.endGroup();
   }
 
-  // load resources and set window icon and title
+  // load resources and set window icon
   loadQTResources();
   setWindowIcon(QIcon(":/icon.png"));
-  setWindowTitle(window_title_);
 
   Descriptor::Property::convert_dbu
       = [this](int value, bool add_units) -> std::string {
@@ -451,13 +448,30 @@ void MainWindow::setDatabase(odb::dbDatabase* db)
   db_ = db;
 }
 
+void MainWindow::setTitle(const std::string& title)
+{
+  window_title_ = title;
+  updateTitle();
+}
+
+void MainWindow::updateTitle()
+{
+  if (!window_title_.empty()) {
+    odb::dbBlock* block = getBlock();
+    if (block != nullptr) {
+      const std::string title
+          = fmt::format("{} - {}", window_title_, block->getName());
+      setWindowTitle(QString::fromStdString(title));
+    } else {
+      setWindowTitle(QString::fromStdString(window_title_));
+    }
+  }
+}
+
 void MainWindow::setBlock(odb::dbBlock* block)
 {
+  updateTitle();
   if (block != nullptr) {
-    const std::string title
-        = fmt::format("{} - {}", window_title_, block->getName());
-    setWindowTitle(QString::fromStdString(title));
-
     save_->setEnabled(true);
   }
   for (auto* heat_map : Gui::get()->getHeatMaps()) {
@@ -473,9 +487,7 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
   controls_->setSTA(sta);
   hierarchy_widget_->setSTA(sta);
   clock_viewer_->setSTA(sta);
-#ifdef ENABLE_CHARTS
   charts_widget_->setSTA(sta);
-#endif
   help_widget_->init(help_path);
 
   // register descriptors
@@ -537,17 +549,15 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
       new DbMarkerCategoryDescriptor(db_));
   gui->registerDescriptor<odb::dbMarker*>(new DbMarkerDescriptor(db_));
 
-  gui->registerDescriptor<sta::Corner*>(new CornerDescriptor(db_, sta));
+  gui->registerDescriptor<sta::Corner*>(new CornerDescriptor(sta));
   gui->registerDescriptor<sta::LibertyLibrary*>(
-      new LibertyLibraryDescriptor(db_, sta));
-  gui->registerDescriptor<sta::LibertyCell*>(
-      new LibertyCellDescriptor(db_, sta));
-  gui->registerDescriptor<sta::LibertyPort*>(
-      new LibertyPortDescriptor(db_, sta));
+      new LibertyLibraryDescriptor(sta));
+  gui->registerDescriptor<sta::LibertyCell*>(new LibertyCellDescriptor(sta));
+  gui->registerDescriptor<sta::LibertyPort*>(new LibertyPortDescriptor(sta));
   gui->registerDescriptor<sta::LibertyPgPort*>(
-      new LibertyPgPortDescriptor(db_, sta));
-  gui->registerDescriptor<sta::Instance*>(new StaInstanceDescriptor(db_, sta));
-  gui->registerDescriptor<sta::Clock*>(new ClockDescriptor(db_, sta));
+      new LibertyPgPortDescriptor(sta));
+  gui->registerDescriptor<sta::Instance*>(new StaInstanceDescriptor(sta));
+  gui->registerDescriptor<sta::Clock*>(new ClockDescriptor(sta));
 
   gui->registerDescriptor<BufferTree>(
       new BufferTreeDescriptor(db_,
@@ -1505,9 +1515,7 @@ void MainWindow::setLogger(utl::Logger* logger)
   viewers_->setLogger(logger);
   drc_viewer_->setLogger(logger);
   clock_viewer_->setLogger(logger);
-#ifdef ENABLE_CHARTS
   charts_widget_->setLogger(logger);
-#endif
 }
 
 void MainWindow::fit()
@@ -1748,7 +1756,6 @@ void MainWindow::enableDeveloper()
   show_poly_decomp_view_->setVisible(true);
 }
 
-#ifdef ENABLE_CHARTS
 void MainWindow::reportSlackHistogramPaths(
     const std::set<const sta::Pin*>& report_pins,
     const std::string& path_group_name)
@@ -1765,5 +1772,4 @@ void MainWindow::reportSlackHistogramPaths(
 
   timing_widget_->reportSlackHistogramPaths(report_pins, path_group_name);
 }
-#endif
 }  // namespace gui

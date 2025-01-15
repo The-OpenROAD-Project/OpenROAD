@@ -188,7 +188,7 @@ class TritonRoute
   void reportDRC(const std::string& file_name,
                  const std::list<std::unique_ptr<frMarker>>& markers,
                  const std::string& marker_name,
-                 odb::Rect drcBox = odb::Rect(0, 0, 0, 0));
+                 odb::Rect drcBox = odb::Rect(0, 0, 0, 0)) const;
   void checkDRC(const char* filename,
                 int x1,
                 int y1,
@@ -220,7 +220,7 @@ class TritonRoute
   std::mutex results_mutex_;
   int results_sz_{0};
   unsigned int cloud_sz_{0};
-  boost::asio::thread_pool dist_pool_{1};
+  std::optional<boost::asio::thread_pool> dist_pool_;
 
   void initDesign();
   void gr();

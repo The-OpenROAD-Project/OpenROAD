@@ -59,7 +59,7 @@ class _dbGDSBox : public _dbObject
 
   int16_t _layer;
   int16_t _datatype;
-  std::vector<Point> _xy;
+  Rect _bounds;
   std::vector<std::pair<std::int16_t, std::string>> _propattr;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSBox& obj);

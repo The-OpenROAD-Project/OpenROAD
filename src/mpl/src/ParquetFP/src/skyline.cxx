@@ -2,6 +2,7 @@
 
 #include <cfloat>
 #include <iostream>
+#include <vector>
 
 using std::cout;
 using std::endl;
@@ -40,7 +41,7 @@ Skyline::Skyline(const Skyline& prev)
   }
 }
 
-Skyline::Skyline() : arr(0), capacity(0), n(0)
+Skyline::Skyline() : arr(nullptr), capacity(0), n(0)
 {
 }
 
@@ -57,7 +58,7 @@ Skyline::~Skyline()
   if (arr) {
     delete[] arr;
   }
-  arr = 0;
+  arr = nullptr;
   capacity = 0;
 }
 
@@ -225,12 +226,12 @@ Skyline* Skyline::copy()
 }
 
 SkylineContour::SkylineContour()
-    : skyline_(0), width_(FLT_MIN), height_(FLT_MIN)
+    : skyline_(nullptr), width_(FLT_MIN), height_(FLT_MIN)
 {
 }
 
 SkylineContour::SkylineContour(int capacity)
-    : skyline_(0), width_(FLT_MIN), height_(FLT_MIN)
+    : skyline_(nullptr), width_(FLT_MIN), height_(FLT_MIN)
 {
 }
 
@@ -240,14 +241,14 @@ SkylineContour::SkylineContour(const SkylineContour& prev)
   if (prev.skyline_) {
     skyline_ = prev.skyline_->copy();
   } else {
-    skyline_ = 0;
+    skyline_ = nullptr;
   }
 }
 
 // build from ParquetFP's BTree
 // consider rotation of macro cells.
 SkylineContour::SkylineContour(const BTree& bTree, bool isRotate)
-    : skyline_(0), width_(FLT_MIN), height_(FLT_MIN)
+    : skyline_(nullptr), width_(FLT_MIN), height_(FLT_MIN)
 {
   bTreeInfo_.reserve(bTree.NUM_BLOCKS);
   for (int i = 0; i < bTree.NUM_BLOCKS; i++) {
@@ -276,7 +277,7 @@ bool SkylineContour::operator=(const SkylineContour& prev)
   if (prev.skyline_) {
     skyline_ = prev.skyline_->copy();
   } else {
-    skyline_ = 0;
+    skyline_ = nullptr;
   }
   return true;
 }
@@ -289,7 +290,7 @@ void SkylineContour::Clear()
 {
   if (skyline_) {
     delete skyline_;
-    skyline_ = 0;
+    skyline_ = nullptr;
   }
   width_ = height_ = 0;
   std::vector<BTreeNode>().swap(bTreeInfo_);

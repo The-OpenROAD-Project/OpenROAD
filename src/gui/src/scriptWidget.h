@@ -60,7 +60,7 @@ class ScriptWidget : public QDockWidget
 
  public:
   ScriptWidget(QWidget* parent = nullptr);
-  ~ScriptWidget();
+  ~ScriptWidget() override;
 
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);
@@ -70,7 +70,7 @@ class ScriptWidget : public QDockWidget
   void setupTcl(Tcl_Interp* interp,
                 bool interactive,
                 bool do_init_openroad,
-                const std::function<void(void)>& post_or_init);
+                const std::function<void()>& post_or_init);
 
   void setWidgetFont(const QFont& font);
 

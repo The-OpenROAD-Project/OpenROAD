@@ -35,11 +35,12 @@
 
 #pragma once
 
-#include <stdio.h>
 #include <unistd.h>
 
+#include <cstdio>
 #include <list>
 #include <string>
+#include <vector>
 
 #include "db.h"
 #include "odb.h"
@@ -53,7 +54,7 @@ class cdl
                        dbBlock* block,
                        const char* outFileName,
                        const std::vector<const char*>& mastersFileNames,
-                       bool includeFillers = 0);
+                       bool includeFillers = false);
 };
 
 }  // namespace odb

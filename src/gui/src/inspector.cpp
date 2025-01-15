@@ -38,6 +38,7 @@
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QPushButton>
+#include <vector>
 
 #include "gui/gui.h"
 #include "gui_utils.h"

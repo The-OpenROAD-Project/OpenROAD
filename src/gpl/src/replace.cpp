@@ -110,7 +110,6 @@ void Replace::reset()
   routabilityMaxInflationRatio_ = 8;
   routabilityRcK1_ = routabilityRcK2_ = 1.0;
   routabilityRcK3_ = routabilityRcK4_ = 0.0;
-  routabilityMaxBloatIter_ = 1;
   routabilityMaxInflationIter_ = 4;
 
   timingDrivenMode_ = true;
@@ -191,7 +190,7 @@ void Replace::doIncrementalPlace(int threads)
   constexpr float rough_oveflow = 0.2f;
   float previous_overflow = overflow_;
   setTargetOverflow(std::max(rough_oveflow, overflow_));
-  doInitialPlace();
+  doInitialPlace(threads);
 
   int previous_max_iter = nesterovPlaceMaxIter_;
   initNesterovPlace(threads);
@@ -211,7 +210,7 @@ void Replace::doIncrementalPlace(int threads)
   }
 }
 
-void Replace::doInitialPlace()
+void Replace::doInitialPlace(int threads)
 {
   if (pbc_ == nullptr) {
     PlacerBaseVars pbVars;
@@ -251,7 +250,7 @@ void Replace::doInitialPlace()
   std::unique_ptr<InitialPlace> ip(
       new InitialPlace(ipVars, pbc_, pbVec_, log_));
   ip_ = std::move(ip);
-  ip_->doBicgstabPlace();
+  ip_->doBicgstabPlace(threads);
 }
 
 void Replace::runMBFF(int max_sz,
@@ -260,7 +259,7 @@ void Replace::runMBFF(int max_sz,
                       int threads,
                       int num_paths)
 {
-  MBFF pntset(db_, sta_, log_, threads, 20, num_paths, gui_debug_);
+  MBFF pntset(db_, sta_, log_, rs_, threads, 20, num_paths, gui_debug_);
   pntset.Run(max_sz, alpha, beta);
 }
 
@@ -317,7 +316,6 @@ bool Replace::initNesterovPlace(int threads)
     RouteBaseVars rbVars;
     rbVars.useRudy = routabilityUseRudy_;
     rbVars.maxDensity = routabilityMaxDensity_;
-    rbVars.maxBloatIter = routabilityMaxBloatIter_;
     rbVars.maxInflationIter = routabilityMaxInflationIter_;
     rbVars.targetRC = routabilityTargetRcMetric_;
     rbVars.inflationRatioCoef = routabilityInflationRatioCoef_;
@@ -517,11 +515,6 @@ void Replace::setKeepResizeBelowOverflow(float overflow)
 void Replace::setRoutabilityMaxDensity(float density)
 {
   routabilityMaxDensity_ = density;
-}
-
-void Replace::setRoutabilityMaxBloatIter(int iter)
-{
-  routabilityMaxBloatIter_ = iter;
 }
 
 void Replace::setRoutabilityMaxInflationIter(int iter)

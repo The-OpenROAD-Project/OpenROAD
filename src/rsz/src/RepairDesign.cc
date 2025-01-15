@@ -35,6 +35,8 @@
 
 #include "RepairDesign.hh"
 
+#include <vector>
+
 #include "BufferedNet.hh"
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
@@ -207,7 +209,8 @@ void RepairDesign::repairDesign(
     Pin* drvr_pin = drvr->pin();
     Net* net = network_->isTopLevelPort(drvr_pin)
                    ? network_->net(network_->term(drvr_pin))
-                   : network_->net(drvr_pin);
+                   // hier fix
+                   : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
     dbNet* net_db = db_network_->staToDb(net);
     bool debug = (drvr_pin == resizer_->debug_pin_);
     if (debug) {
@@ -485,7 +488,7 @@ bool RepairDesign::performGainBuffering(Net* net,
     const Network* network_;
 
    public:
-    PinRequiredHigher(const Network* network) : network_(network){};
+    PinRequiredHigher(const Network* network) : network_(network) {}
 
     bool operator()(const EnqueuedPin& a, const EnqueuedPin& b) const
     {

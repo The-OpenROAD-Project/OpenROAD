@@ -54,7 +54,6 @@ sta::define_cmd_args "global_placement" {\
     [-routability_target_rc_metric routability_target_rc_metric]\
     [-routability_check_overflow routability_check_overflow]\
     [-routability_max_density routability_max_density]\
-    [-routability_max_bloat_iter routability_max_bloat_iter]\
     [-routability_max_inflation_iter routability_max_inflation_iter]\
     [-routability_inflation_ratio_coef routability_inflation_ratio_coef]\
     [-routability_max_inflation_ratio routability_max_inflation_ratio]\
@@ -75,7 +74,7 @@ proc global_placement { args } {
       -reference_hpwl \
       -initial_place_max_iter -initial_place_max_fanout \
       -routability_check_overflow -routability_max_density \
-      -routability_max_bloat_iter -routability_max_inflation_iter \
+      -routability_max_inflation_iter \
       -routability_target_rc_metric \
       -routability_inflation_ratio_coef \
       -routability_max_inflation_ratio \
@@ -260,13 +259,6 @@ proc global_placement { args } {
     set routability_check_overflow $keys(-routability_check_overflow)
     sta::check_positive_float "-routability_check_overflow" $routability_check_overflow
     gpl::set_routability_check_overflow_cmd $routability_check_overflow
-  }
-
-  # routability bloat iter
-  if { [info exists keys(-routability_max_bloat_iter)] } {
-    set routability_max_bloat_iter $keys(-routability_max_bloat_iter)
-    sta::check_positive_float "-routability_max_bloat_iter" $routability_max_bloat_iter
-    gpl::set_routability_max_bloat_iter_cmd $routability_max_bloat_iter
   }
 
   # routability inflation iter

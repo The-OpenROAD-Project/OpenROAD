@@ -190,28 +190,12 @@ write_verilog_cmd(const char *filename,
   delete remove_cells;
 }
 
-Instance*
-find_hier_inst_cmd(const char *name)
-{
-  ord::OpenRoad *openroad = ord::getOpenRoad();
-  sta::dbNetwork *db_network = openroad->getDbNetwork();
-  return db_network->findHierInstance(name);
-}
-
-odb::dbModule* 
-find_module_cmd(const char *name)
-{
-  ord::OpenRoad *openroad = ord::getOpenRoad();
-  sta::dbNetwork *db_network = openroad->getDbNetwork();
-  return db_network->findModule(name);
-}
-
 void
-replace_design_cmd(Instance* inst, odb::dbModule* module)
+replace_design_cmd(odb::dbModInst* mod_inst, odb::dbModule* module)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbNetwork *db_network = openroad->getDbNetwork();
-  db_network->replaceDesign(inst, module);
+  db_network->replaceDesign(mod_inst, module);
 }
 
 %} // inline

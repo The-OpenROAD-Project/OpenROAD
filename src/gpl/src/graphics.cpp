@@ -38,6 +38,7 @@
 #include <cstdio>
 #include <limits>
 #include <utility>
+#include <vector>
 
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
@@ -100,9 +101,7 @@ void Graphics::initHeatmap()
   addMultipleChoiceSetting(
       "Type",
       "Type:",
-      []() {
-        return std::vector<std::string>{"Density", "Overflow"};
-      },
+      []() { return std::vector<std::string>{"Density", "Overflow"}; },
       [this]() -> std::string {
         switch (heatmap_type_) {
           case Density:
@@ -306,6 +305,11 @@ void Graphics::drawMBFF(gui::Painter& painter)
   for (const auto& [start, end] : mbff_edges_) {
     painter.drawLine(start, end);
   }
+
+  for (odb::dbInst* inst : mbff_cluster_) {
+    odb::Rect bbox = inst->getBBox()->getBox();
+    painter.drawRect(bbox);
+  }
 }
 
 void Graphics::drawObjects(gui::Painter& painter)
@@ -372,11 +376,20 @@ void Graphics::cellPlot(bool pause)
   }
 }
 
-void Graphics::mbff_mapping(const LineSegs& segs)
+void Graphics::mbffMapping(const LineSegs& segs)
 {
   mbff_edges_ = segs;
   gui::Gui::get()->redraw();
   gui::Gui::get()->pause();
+  mbff_edges_.clear();
+}
+
+void Graphics::mbffFlopClusters(const std::vector<odb::dbInst*>& ffs)
+{
+  mbff_cluster_ = ffs;
+  gui::Gui::get()->redraw();
+  gui::Gui::get()->pause();
+  mbff_cluster_.clear();
 }
 
 gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
@@ -454,7 +467,8 @@ bool Graphics::populateMap()
           0.0f,
           static_cast<float>(bin.instPlacedAreaUnscaled())
               + static_cast<float>(bin.nonPlaceAreaUnscaled()) - scaledBinArea);
-      addToMap(box, value);
+      odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
+      addToMap(box, block->dbuAreaToMicrons(value));
     }
   }
 

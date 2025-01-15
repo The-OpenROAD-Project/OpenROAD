@@ -36,22 +36,23 @@
 #include "tap/tapcell.h"
 
 #include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstddef>
 #include <map>
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/util.h"
 #include "ord/OpenRoad.hh"
-#include "sta/StaMain.hh"
 #include "utl/Logger.h"
-#include "utl/algorithms.h"
 
 namespace tap {
 
-using std::max;
-using std::min;
 using std::string;
 using std::vector;
 

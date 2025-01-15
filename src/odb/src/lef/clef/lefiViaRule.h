@@ -33,7 +33,7 @@
 #ifndef CLEFIVIARULE_H
 #define CLEFIVIARULE_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiTypedefs.h"
 

@@ -348,13 +348,15 @@ estimate_parasitics_cmd(ParasiticsSrc src, const char* spef_path, const char* ex
     if (!spef_file_path.empty()) {
       for (Corner* corner : *resizer->getDbNetwork()->corners()) {
         spef_file_path = spef_path;
-        std::string suffix("_");
-        suffix.append(corner->name());
-        if (spef_file_path.find(".spef") != std::string::npos
-            || spef_file_path.find(".SPEF") != std::string::npos) {
-          spef_file_path.insert(spef_file_path.size() - 5, suffix);
-        } else {
-          spef_file_path.append(suffix);
+        if (resizer->getDbNetwork()->corners()->count() > 1) {
+          std::string suffix("_");
+          suffix.append(corner->name());
+          if (spef_file_path.find(".spef") != std::string::npos
+              || spef_file_path.find(".SPEF") != std::string::npos) {
+            spef_file_path.insert(spef_file_path.size() - 5, suffix);
+          } else {
+            spef_file_path.append(suffix);
+          }
         }
 
         std::ofstream* spef_file = new std::ofstream(spef_file_path);
@@ -449,12 +451,36 @@ set_dont_use(LibertyCell *lib_cell,
 }
 
 void
+reset_dont_use()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->resetDontUse();
+}
+
+void
 set_dont_touch_instance(Instance *inst,
                         bool dont_touch)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->setDontTouch(inst, dont_touch);
+}
+
+void
+report_dont_use()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->reportDontUse();
+}
+
+void
+report_dont_touch()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->reportDontTouch();
 }
 
 void

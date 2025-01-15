@@ -35,8 +35,10 @@
 #include <map>
 #include <numeric>
 #include <string>
+#include <vector>
 
 #include "odb/db.h"
+#include "odb/dbCCSegSet.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
 

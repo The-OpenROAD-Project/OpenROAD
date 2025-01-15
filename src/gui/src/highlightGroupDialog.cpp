@@ -35,6 +35,7 @@
 #include <QColor>
 #include <QDialog>
 #include <QPalette>
+#include <vector>
 
 namespace gui {
 HighlightGroupDialog::HighlightGroupDialog(QWidget* parent) : QDialog(parent)

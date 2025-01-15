@@ -37,6 +37,7 @@
 #include <QThread>
 #include <QWaitCondition>
 #include <mutex>
+#include <vector>
 
 #include "gui/gui.h"
 #include "odb/db.h"

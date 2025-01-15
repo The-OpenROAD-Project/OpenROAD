@@ -30,12 +30,12 @@
 #ifndef lefiVia_h
 #define lefiVia_h
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "lefiKRDefs.hpp"
 #include "lefiMisc.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 class lefiViaLayer
 {
@@ -65,19 +65,19 @@ class lefiViaLayer
   lefiGeomPolygon* getPolygon(int index) const;  // 5.6
 
  protected:
-  char* name_;
-  int* rectColorMask_;
-  int* polyColorMask_;
-  int numRects_;
-  int rectsAllocated_;
-  double* xl_;
-  double* yl_;
-  double* xh_;
-  double* yh_;
+  char* name_{nullptr};
+  int* rectColorMask_{nullptr};
+  int* polyColorMask_{nullptr};
+  int numRects_{0};
+  int rectsAllocated_{0};
+  double* xl_{nullptr};
+  double* yl_{nullptr};
+  double* xh_{nullptr};
+  double* yh_{nullptr};
 
-  int numPolys_;
-  int polysAllocated_;
-  lefiGeomPolygon** polygons_;
+  int numPolys_{0};
+  int polysAllocated_{0};
+  lefiGeomPolygon** polygons_{nullptr};
 };
 
 class lefiVia
@@ -203,61 +203,59 @@ class lefiVia
   void print(FILE* f) const;
 
  protected:
-  char* name_;
-  int nameSize_;
+  char* name_{nullptr};
+  int nameSize_{0};
 
-  int hasDefault_;
-  int hasGenerated_;
-  int hasResistance_;
-  int hasForeignPnt_;
-  int hasTopOfStack_;
+  int hasDefault_{0};
+  int hasGenerated_{0};
+  int hasResistance_{0};
+  int hasForeignPnt_{0};
+  int hasTopOfStack_{0};
 
-  int numProps_;
-  int propsAllocated_;
-  char** propName_;
+  int numProps_{0};
+  int propsAllocated_{0};
+  char** propName_{nullptr};
   // The prop value is stored in the propValue_ or the propDValue_.
   // If it is a string it is in propValue_.  If it is a number,
   // then propValue_ is NULL and it is stored in propDValue_;
-  char** propValue_;
-  double* propDValue_;
-  char* propType_;
+  char** propValue_{nullptr};
+  double* propDValue_{nullptr};
+  char* propType_{nullptr};
 
-  int numLayers_;
-  int layersAllocated_;
-  lefiViaLayer** layers_;
+  int numLayers_{0};
+  int layersAllocated_{0};
+  lefiViaLayer** layers_{nullptr};
 
-  double resistance_;
+  double resistance_{0.0};
 
-  char* foreign_;
-  double foreignX_;
-  double foreignY_;
-  int foreignOrient_;
+  char* foreign_{nullptr};
+  double foreignX_{0.0};
+  double foreignY_{0.0};
+  int foreignOrient_{0};
 
-  char* viaRuleName_;  // 5.6
-  double xSize_;       // 5.6
-  double ySize_;       // 5.6
-  char* botLayer_;     // 5.6
-  char* cutLayer_;     // 5.6
-  char* topLayer_;     // 5.6
-  double xSpacing_;    // 5.6
-  double ySpacing_;    // 5.6
-  double xBotEnc_;     // 5.6
-  double yBotEnc_;     // 5.6
-  double xTopEnc_;     // 5.6
-  double yTopEnc_;     // 5.6
-  int numRows_;        // 5.6
-  int numCols_;        // 5.6
-  double xOffset_;     // 5.6
-  double yOffset_;     // 5.6
-  double xBotOs_;      // 5.6
-  double yBotOs_;      // 5.6
-  double xTopOs_;      // 5.6
-  double yTopOs_;      // 5.6
-  char* cutPattern_;   // 5.6
+  char* viaRuleName_{nullptr};  // 5.6
+  double xSize_{0.0};           // 5.6
+  double ySize_{0.0};           // 5.6
+  char* botLayer_{nullptr};     // 5.6
+  char* cutLayer_{nullptr};     // 5.6
+  char* topLayer_{nullptr};     // 5.6
+  double xSpacing_{0.0};        // 5.6
+  double ySpacing_{0.0};        // 5.6
+  double xBotEnc_{0.0};         // 5.6
+  double yBotEnc_{0.0};         // 5.6
+  double xTopEnc_{0.0};         // 5.6
+  double yTopEnc_{0.0};         // 5.6
+  int numRows_{0};              // 5.6
+  int numCols_{0};              // 5.6
+  double xOffset_{0.0};         // 5.6
+  double yOffset_{0.0};         // 5.6
+  double xBotOs_{0.0};          // 5.6
+  double yBotOs_{0.0};          // 5.6
+  double xTopOs_{0.0};          // 5.6
+  double yTopOs_{0.0};          // 5.6
+  char* cutPattern_{nullptr};   // 5.6
 };
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

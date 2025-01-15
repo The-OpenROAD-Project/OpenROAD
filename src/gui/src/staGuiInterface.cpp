@@ -35,6 +35,8 @@
 
 #include "staGuiInterface.h"
 
+#include <vector>
+
 #include "db_sta/dbNetwork.hh"
 #include "odb/dbTransform.h"
 #include "sta/ArcDelayCalc.hh"
@@ -128,9 +130,8 @@ const odb::Rect TimingPathNode::getPinBBox() const
 {
   if (isPinITerm()) {
     return getPinAsITerm()->getBBox();
-  } else {
-    return getPinAsBTerm()->getBBox();
   }
+  return getPinAsBTerm()->getBBox();
 }
 
 const odb::Rect TimingPathNode::getPinLargestBox() const
@@ -152,20 +153,19 @@ const odb::Rect TimingPathNode::getPinLargestBox() const
     }
 
     return pin_rect;
-  } else {
-    auto* bterm = getPinAsBTerm();
+  }
+  auto* bterm = getPinAsBTerm();
 
-    odb::Rect pin_rect;
-    for (auto* pin : bterm->getBPins()) {
-      for (auto* box : pin->getBoxes()) {
-        odb::Rect box_rect = box->getBox();
-        if (pin_rect.dx() < box_rect.dx()) {
-          pin_rect = box_rect;
-        }
+  odb::Rect pin_rect;
+  for (auto* pin : bterm->getBPins()) {
+    for (auto* box : pin->getBoxes()) {
+      odb::Rect box_rect = box->getBox();
+      if (pin_rect.dx() < box_rect.dx()) {
+        pin_rect = box_rect;
       }
     }
-    return pin_rect;
   }
+  return pin_rect;
 }
 
 /////////
@@ -724,9 +724,8 @@ sta::Net* ClockTree::getNet(const sta::Pin* pin) const
   sta::Term* term = network_->term(pin);
   if (term != nullptr) {
     return network_->net(term);
-  } else {
-    return network_->net(pin);
   }
+  return network_->net(pin);
 }
 
 bool ClockTree::isLeaf(const sta::Pin* pin) const
@@ -741,14 +740,13 @@ bool ClockTree::addVertex(sta::Vertex* vertex, sta::Delay delay)
   if (isLeaf(pin)) {
     leaves_[pin] = delay;
     return false;
-  } else {
-    if (vertex->isDriver(network_)) {
-      drivers_[pin] = delay;
-    } else {
-      child_sinks_[pin] = delay;
-    }
-    return true;
   }
+  if (vertex->isDriver(network_)) {
+    drivers_[pin] = delay;
+  } else {
+    child_sinks_[pin] = delay;
+  }
+  return true;
 }
 
 std::pair<const sta::Pin*, sta::Delay> ClockTree::getPairedSink(

@@ -33,6 +33,8 @@
 
 #include "SACoreSoftMacro.h"
 
+#include <vector>
+
 #include "Mpl2Observer.h"
 #include "utl/Logger.h"
 
@@ -654,8 +656,8 @@ void SACoreSoftMacro::calNotchPenalty()
         if (grids[j][i] != -1) {
           flag = false;  // we cannot extend the current cluster
           break;
-        }           // end if
-      }             // end y
+        }  // end if
+      }  // end y
       if (!flag) {  // extension done
         break;
       }
@@ -671,8 +673,8 @@ void SACoreSoftMacro::calNotchPenalty()
         if (grids[j][i] != -1) {
           flag = false;  // we cannot extend the current cluster
           break;
-        }           // end if
-      }             // end y
+        }  // end if
+      }  // end y
       if (!flag) {  // extension done
         break;
       }
@@ -688,8 +690,8 @@ void SACoreSoftMacro::calNotchPenalty()
         if (grids[j][i] != -1) {
           flag = false;  // we cannot extend the current cluster
           break;
-        }           // end if
-      }             // end y
+        }  // end if
+      }  // end y
       if (!flag) {  // extension done
         break;
       }
@@ -705,8 +707,8 @@ void SACoreSoftMacro::calNotchPenalty()
         if (grids[j][i] != -1) {
           flag = false;  // we cannot extend the current cluster
           break;
-        }           // end if
-      }             // end y
+        }  // end if
+      }  // end y
       if (!flag) {  // extension done
         break;
       }
@@ -1019,8 +1021,8 @@ void SACoreSoftMacro::fillDeadSpace()
           if (grids[j][i] != -1) {
             flag = false;  // we cannot extend the current cluster
             break;
-          }           // end if
-        }             // end y
+          }  // end if
+        }  // end y
         if (!flag) {  // extension done
           break;
         }
@@ -1037,8 +1039,8 @@ void SACoreSoftMacro::fillDeadSpace()
           if (grids[j][i] != -1) {
             flag = false;  // we cannot extend the current cluster
             break;
-          }           // end if
-        }             // end y
+          }  // end if
+        }  // end y
         if (!flag) {  // extension done
           break;
         }
@@ -1055,8 +1057,8 @@ void SACoreSoftMacro::fillDeadSpace()
           if (grids[j][i] != -1) {
             flag = false;  // we cannot extend the current cluster
             break;
-          }           // end if
-        }             // end y
+          }  // end if
+        }  // end y
         if (!flag) {  // extension done
           break;
         }
@@ -1073,8 +1075,8 @@ void SACoreSoftMacro::fillDeadSpace()
           if (grids[j][i] != -1) {
             flag = false;  // we cannot extend the current cluster
             break;
-          }           // end if
-        }             // end y
+          }  // end if
+        }  // end y
         if (!flag) {  // extension done
           break;
         }

@@ -37,6 +37,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <vector>
 
 #include "rsz/Resizer.hh"
 // Use spdlog fmt::format until c++20 that supports std::format.

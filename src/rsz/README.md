@@ -147,6 +147,22 @@ The `unset_dont_use` command reverses the `set_dont_use` command.
 unset_dont_use lib_cells
 ```
 
+### Reset Don't Use
+
+The `reset_dont_use` restores the default dont use list.
+
+```tcl
+reset_dont_use
+```
+
+### Report Don't Use
+
+The `report_dont_use` reports all the cells that are marked as dont use.
+
+```tcl
+report_dont_use
+```
+
 ### Set Don't Touch
 
 The `set_dont_touch` command prevents the resizer commands from
@@ -162,6 +178,14 @@ The `unset_dont_touch` command reverse the `set_dont_touch` command.
 
 ```tcl
 unset_dont_touch instances_nets
+```
+
+### Report Don't Touch
+
+The `report_dont_touch` reports all the instances and nets that are marked as dont touch.
+
+```tcl
+report_dont_touch
 ```
 
 ### Buffer Ports

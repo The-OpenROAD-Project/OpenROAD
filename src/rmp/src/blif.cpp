@@ -280,7 +280,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
 
     if (cell->hasSequentials() && currentClocks.size() != 1)
       continue;
-    else if (cell->hasSequentials())
+    if (cell->hasSequentials())
       currentGate += " " + currentClock;
 
     subckts[instIndex++] = std::move(currentGate);

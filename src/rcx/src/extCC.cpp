@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <algorithm>
+#include <vector>
 
 #include "rcx/gseq.h"
 #include "wire.h"

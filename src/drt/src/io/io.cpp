@@ -32,6 +32,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 #include "db/tech/frConstraint.h"
 #include "frProfileTask.h"
@@ -125,7 +126,7 @@ void io::Parser::setTracks(odb::dbBlock* block)
 void io::Parser::setInst(odb::dbInst* inst)
 {
   frMaster* master = getDesign()->name2master_.at(inst->getMaster()->getName());
-  auto uInst = std::make_unique<frInst>(inst->getName(), master);
+  auto uInst = std::make_unique<frInst>(inst->getName(), master, inst);
   auto tmpInst = uInst.get();
 
   int x, y;
@@ -980,6 +981,7 @@ void io::Parser::setNets(odb::dbBlock* block)
 frNet* io::Parser::addNet(odb::dbNet* db_net)
 {
   bool is_special = db_net->isSpecial();
+  bool has_jumpers = db_net->hasJumpers();
   if (!is_special && db_net->getSigType().isSupply()) {
     logger_->error(DRT,
                    305,
@@ -1000,6 +1002,9 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
   }
   if (is_special) {
     uNetIn->setIsSpecial(true);
+  }
+  if (has_jumpers) {
+    uNetIn->setHasJumpers(has_jumpers);
   }
   updateNetRouting(netIn, db_net);
   netIn->setType(db_net->getSigType());
@@ -1171,10 +1176,8 @@ odb::Rect io::Parser::getViaBoxForTermAboveMaxLayer(odb::dbBTerm* term,
                       ->getLayerNum();
             if (layerNum == router_cfg_->TOP_ROUTING_LAYER) {
               odb::Rect viaBox = vbox->getBox();
-              odb::dbTransform xform;
               odb::Point path_origin = pshape.point;
-              xform.setOffset({path_origin.x(), path_origin.y()});
-              xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
+              odb::dbTransform xform(path_origin);
               xform.apply(viaBox);
               if (bbox.intersects(viaBox)) {
                 bbox = viaBox;
@@ -3464,7 +3467,7 @@ void io::Writer::fillConnFigs(bool isTA, int verbose)
 
 void io::Writer::writeViaDefToODB(odb::dbBlock* block,
                                   odb::dbTech* db_tech,
-                                  frViaDef* via)
+                                  const frViaDef* via)
 {
   if (!via->isAddedByRouter()) {
     return;
@@ -3982,7 +3985,7 @@ void io::TopLayerBTermHandler::stackVias(odb::dbBTerm* bterm,
   for (auto layer : tech->getLayers()) {
     if (layer->getType() == odb::dbTechLayerType::CUT) {
       frLayer* fr_layer = fr_tech->getLayer(layer->getName());
-      frViaDef* via_def = fr_layer->getDefaultViaDef();
+      const frViaDef* via_def = fr_layer->getDefaultViaDef();
       if (via_def == nullptr) {
         logger_->warn(utl::DRT,
                       204,

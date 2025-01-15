@@ -35,6 +35,8 @@
 
 #include "utl/Metrics.h"
 
+#include <vector>
+
 #include "spdlog/fmt/fmt.h"
 #include "spdlog/fmt/ostr.h"
 #include "spdlog/spdlog.h"
@@ -65,10 +67,11 @@ MetricsPolicy::MetricsPolicy(const std::string& key_pattern,
 
 bool MetricsPolicy::matching(std::string key)
 {
-  if (repeating_use_regex_)
+  if (repeating_use_regex_) {
     return std::regex_match(key, pattern_regex_);
-  else
-    return pattern_.compare(key) == 0;
+  }
+
+  return pattern_.compare(key) == 0;
 }
 
 void MetricsPolicy::applyPolicy(std::list<MetricsEntry>& entries)

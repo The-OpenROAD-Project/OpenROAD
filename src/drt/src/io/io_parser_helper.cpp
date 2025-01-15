@@ -33,6 +33,7 @@
 #include <iostream>
 #include <set>
 #include <sstream>
+#include <vector>
 
 #include "frBaseTypes.h"
 #include "frProfileTask.h"
@@ -103,9 +104,10 @@ void io::Parser::initDefaultVias()
       continue;
     }
     // Check whether viaDefs set is empty
-    std::set<frViaDef*> viaDefs = layer->getViaDefs();
+    std::set<const frViaDef*> viaDefs = layer->getViaDefs();
     if (!viaDefs.empty()) {
-      std::map<int, std::map<viaRawPriorityTuple, frViaDef*>> cuts2ViaDefs;
+      std::map<int, std::map<viaRawPriorityTuple, const frViaDef*>>
+          cuts2ViaDefs;
       for (auto& viaDef : viaDefs) {
         int cutNum = int(viaDef->getCutFigs().size());
         viaRawPriorityTuple priority;
@@ -280,9 +282,10 @@ void io::Parser::initSecondaryVias()
     if (!has_default_viadef || !has_max_spacing_constraints) {
       continue;
     }
-    std::set<frViaDef*> viadefs = layer->getViaDefs();
+    std::set<const frViaDef*> viadefs = layer->getViaDefs();
     if (!viadefs.empty()) {
-      std::map<int, std::map<viaRawPriorityTuple, frViaDef*>> cuts_to_viadefs;
+      std::map<int, std::map<viaRawPriorityTuple, const frViaDef*>>
+          cuts_to_viadefs;
       for (auto& viadef : viadefs) {
         int cut_num = int(viadef->getCutFigs().size());
         viaRawPriorityTuple priority;
@@ -486,7 +489,7 @@ void io::Parser::initCutLayerWidth()
   }
 }
 
-void io::Parser::getViaRawPriority(frViaDef* viaDef,
+void io::Parser::getViaRawPriority(const frViaDef* viaDef,
                                    viaRawPriorityTuple& priority)
 {
   bool isNotDefaultVia = !(viaDef->getDefault());
@@ -669,11 +672,11 @@ void io::Parser::convertLef58MinCutConstraints()
           = std::make_unique<frMinimumcutConstraint>();
       auto rptr = static_cast<frMinimumcutConstraint*>(uCon.get());
       if (dbRule->isPerCutClass()) {
-        frViaDef* viaDefBelow = nullptr;
+        const frViaDef* viaDefBelow = nullptr;
         if (lNum > bottomLayerNum) {
           viaDefBelow = getTech()->getLayer(lNum - 1)->getDefaultViaDef();
         }
-        frViaDef* viaDefAbove = nullptr;
+        const frViaDef* viaDefAbove = nullptr;
         if (lNum < topLayerNum) {
           viaDefAbove = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
         }
@@ -852,12 +855,11 @@ void io::Parser::checkPins()
     foundTracks = false;
     foundCenterTracks = false;
     hasPolys = false;
-    dbTransform xform;
     for (auto& pin : bTerm->getPins()) {
       for (auto& uFig : pin->getFigs()) {
         checkFig(uFig.get(),
                  bTerm->getName(),
-                 xform,
+                 dbTransform(),
                  foundTracks,
                  foundCenterTracks,
                  hasPolys);
@@ -878,7 +880,7 @@ void io::Parser::checkPins()
     if (!inst->getMaster()->getMasterType().isBlock()) {
       continue;
     }
-    dbTransform xform = inst->getUpdatedXform();
+    dbTransform xform = inst->getDBTransform();
     for (auto& iTerm : inst->getInstTerms()) {
       if (!iTerm->hasNet() || iTerm->getNet()->isSpecial()) {
         continue;

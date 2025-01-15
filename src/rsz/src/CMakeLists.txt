@@ -93,7 +93,7 @@ target_link_libraries(rsz
     grt
     gui
     rcx
-    utl
+    utl_lib
 )
 
 messages(

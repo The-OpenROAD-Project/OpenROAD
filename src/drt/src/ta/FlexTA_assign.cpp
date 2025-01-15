@@ -27,6 +27,7 @@
  */
 
 #include <cmath>
+#include <vector>
 
 #include "ta/FlexTA.h"
 
@@ -89,13 +90,12 @@ void FlexTAWorker::modMinSpacingCostPlanar(
               idx2);
 
   Rect box2(-halfwidth2, -halfwidth2, halfwidth2, halfwidth2);
-  dbTransform xform;
   frCoord dx, dy;
   auto& trackLocs = getTrackLocs(lNum);
   auto& workerRegionQuery = getWorkerRegionQuery();
   for (int i = idx1; i <= idx2; i++) {
     auto trackLoc = trackLocs[i];
-    xform.setOffset(Point(boxLeft, trackLoc));
+    dbTransform xform(Point(boxLeft, trackLoc));
     xform.apply(box2);
     box2boxDistSquare(box1, box2, dx, dy);
     if (dy >= bloatDist) {
@@ -145,7 +145,7 @@ void FlexTAWorker::modMinSpacingCostVia(
   frCoord length1 = box.maxDXDY();
   // obj2 = other obj
   // default via dimension
-  frViaDef* viaDef = nullptr;
+  const frViaDef* viaDef = nullptr;
   frLayerNum cutLNum = 0;
   if (isUpperVia) {
     viaDef
@@ -327,7 +327,8 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
   // obj1 = curr obj
   // obj2 = other obj
   // default via dimension
-  frViaDef* viaDef = getDesign()->getTech()->getLayer(lNum)->getDefaultViaDef();
+  const frViaDef* viaDef
+      = getDesign()->getTech()->getLayer(lNum)->getDefaultViaDef();
   frVia via(viaDef);
   Rect viaBox = via.getCutBBox();
 
@@ -562,9 +563,8 @@ void FlexTAWorker::modCost(taPinFig* fig,
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, true, false, pinS);
     modMinSpacingCostVia(box, layerNum, obj, isAddCost, false, false, pinS);
 
-    dbTransform xform;
     Point pt = obj->getOrigin();
-    xform.setOffset(pt);
+    dbTransform xform(pt);
     for (auto& uFig : obj->getViaDef()->getCutFigs()) {
       auto rect = static_cast<frRect*>(uFig.get());
       box = rect->getBBox();
@@ -592,7 +592,7 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
   coordHigh--;  // to avoid higher track == guide top/right
   if (getTech()->getLayer(lNum)->isUnidirectional()) {
     const Rect& dieBx = design_->getTopBlock()->getDieBox();
-    frViaDef* via = nullptr;
+    const frViaDef* via = nullptr;
     Rect testBox;
     if (lNum + 1 <= getTech()->getTopLayerNum()) {
       via = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
@@ -660,11 +660,10 @@ frUInt4 FlexTAWorker::assignIroute_getNextIrouteDirCost(taPin* iroute,
   }
   if (nextIrouteDirCost < 0) {
     double dbu = getDesign()->getTopBlock()->getDBUPerUU();
-    std::cout << "Error: nextIrouteDirCost < 0"
-              << ", trackLoc@" << trackLoc / dbu << " box ("
-              << endBox.xMin() / dbu << ", " << endBox.yMin() / dbu << ") ("
-              << endBox.xMax() / dbu << ", " << endBox.yMax() / dbu << ")"
-              << std::endl;
+    std::cout << "Error: nextIrouteDirCost < 0" << ", trackLoc@"
+              << trackLoc / dbu << " box (" << endBox.xMin() / dbu << ", "
+              << endBox.yMin() / dbu << ") (" << endBox.xMax() / dbu << ", "
+              << endBox.yMax() / dbu << ")" << std::endl;
     return (frUInt4) 0;
   }
   return (frUInt4) nextIrouteDirCost;

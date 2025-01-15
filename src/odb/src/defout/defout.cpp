@@ -32,7 +32,7 @@
 
 #include "odb/defout.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "defout_impl.h"
 #include "odb/db.h"

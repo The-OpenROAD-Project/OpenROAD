@@ -33,6 +33,7 @@
 #include "domain.h"
 
 #include <set>
+#include <vector>
 
 #include "grid.h"
 #include "odb/db.h"

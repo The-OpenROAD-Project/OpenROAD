@@ -36,12 +36,13 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <vector>
 
 #include "Node.h"
 
 namespace parquetfp {
 class Nets;
-typedef std::vector<Node>::iterator itNode;
+using itNode = std::vector<Node>::iterator;
 
 class Nodes
 {

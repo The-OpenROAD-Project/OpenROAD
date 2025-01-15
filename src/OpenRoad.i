@@ -36,8 +36,6 @@
 %{
 
 #include "odb/db.h"
-#include "odb/lefin.h"
-#include "odb/defin.h"
 #include "odb/defout.h"
 #include "sta/Report.hh"
 #include "sta/Network.hh"
@@ -321,12 +319,6 @@ const bool
 openroad_gui_compiled()
 {
   return ord::OpenRoad::getGUICompileOption();
-}
-
-const bool
-openroad_charts_compiled()
-{
-  return ord::OpenRoad::getChartsCompileOption();
 }
 
 void

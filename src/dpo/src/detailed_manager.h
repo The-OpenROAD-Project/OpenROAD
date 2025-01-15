@@ -361,7 +361,7 @@ class DetailedMgr
   // Target displacement limits.
   int maxDispX_;
   int maxDispY_;
-  bool disallowOneSiteGaps_;
+  bool disallowOneSiteGaps_{false};
   std::vector<Node*> fixedCells_;  // Fixed; filler, macros, temporary, etc.
 
   // Blockages and segments.

@@ -253,6 +253,20 @@ gui::show
 | `script` | TCL script to evaluate in the GUI. |
 | `interactive` | Boolean if true, the GUI should open in an interactive session (default), or if false that the GUI would execute the script and return to the terminal.|
 
+### Set GUI Title
+
+To set the title of the main GUI window:
+
+```tcl
+gui::set_title title
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+| `title` | window title to use for the main GUI window |
+
 ### Hide GUI
 
 To close the GUI and return to the command-line:
@@ -628,6 +642,7 @@ gui::show_help
 To control the settings in the heat maps:
 
 The currently availble heat maps are:
+- ``Pin``
 - ``Power``
 - ``Routing``
 - ``Placement``
@@ -802,6 +817,28 @@ gui::hide_widget
 | ---- | ---- |
 | `name` | of the widget. For example, the display controls would be "Display Control". |
 
+### Select chart
+
+To select a specific chart in the charts widget:
+
+```tcl
+gui::select_chart
+    name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+| `name` | of the chart. For example, "Endpoint Slack". |
+
+### Update timing report
+
+Update the paths in the Timing Report widget:
+
+```tcl
+gui::update_timing_report
+```
 
 ## License
 

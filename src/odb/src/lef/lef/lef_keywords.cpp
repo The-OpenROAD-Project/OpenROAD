@@ -27,9 +27,9 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
 
 #include "crypt.hpp"
 #include "lefiDebug.hpp"
@@ -48,7 +48,7 @@
 
 #include "lefrData.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 #include "lef_parser.hpp"
 
@@ -75,10 +75,10 @@ inline int lefGetKeyword(const char* name, int* result)
       = lefSettings->Keyword_set.find(name);
   if (search != lefSettings->Keyword_set.end()) {
     *result = search->second;
-    return TRUE;
+    return true;
   }
 
-  return FALSE;
+  return false;
 }
 
 inline int lefGetStringDefine(const char* name, const char** value)
@@ -88,9 +88,9 @@ inline int lefGetStringDefine(const char* name, const char** value)
 
   if (search != lefData->defines_set.end()) {
     *value = search->second.c_str();
-    return TRUE;
+    return true;
   }
-  return FALSE;
+  return false;
 }
 
 inline int lefGetIntDefine(const char* name, int* value)
@@ -100,9 +100,9 @@ inline int lefGetIntDefine(const char* name, int* value)
 
   if (search != lefData->defineb_set.end()) {
     *value = search->second;
-    return TRUE;
+    return true;
   }
-  return FALSE;
+  return false;
 }
 
 inline int lefGetDoubleDefine(const char* name, double* value)
@@ -112,9 +112,9 @@ inline int lefGetDoubleDefine(const char* name, double* value)
 
   if (search != lefData->define_set.end()) {
     *value = search->second;
-    return TRUE;
+    return true;
   }
-  return FALSE;
+  return false;
 }
 
 inline int lefGetAlias(const char* name, const char** value)
@@ -124,9 +124,9 @@ inline int lefGetAlias(const char* name, const char** value)
 
   if (search != lefData->alias_set.end()) {
     *value = search->second.c_str();
-    return TRUE;
+    return true;
   }
-  return FALSE;
+  return false;
 }
 
 #define yyparse lefyyparse
@@ -165,12 +165,12 @@ void lefReloadBuffer()
       if ((nb = (*lefSettings->ReadFunction)(
                lefData->lefrFile, lefData->current_buffer, 4))
           != 4) {
-        lefData->next = NULL;
+        lefData->next = nullptr;
         return;
       }
     } else {
       if ((nb = fread(lefData->current_buffer, 1, 4, lefData->lefrFile)) != 4) {
-        lefData->next = NULL;
+        lefData->next = nullptr;
         return;
       }
     }
@@ -205,7 +205,7 @@ void lefReloadBuffer()
   }
 
   if (nb <= 0) {
-    lefData->next = NULL;
+    lefData->next = nullptr;
   } else {
     lefData->next = lefData->current_buffer;
     lefData->last = lefData->current_buffer + nb - 1;
@@ -225,7 +225,7 @@ int lefGetc()
   for (;;) {
     if (lefData->next > lefData->last)
       lefReloadBuffer();
-    if (lefData->next == NULL)
+    if (lefData->next == nullptr)
       return EOF;
 
     int ch = *lefData->next++;
@@ -281,12 +281,12 @@ char* qStrCopy(char* string)
 
 void lefAddStringDefine(const char* token, const char* str)
 {
-  std::string tmpStr((lefData->lefDefIf == TRUE) ? "" : "\"");
+  std::string tmpStr((lefData->lefDefIf == true) ? "" : "\"");
 
   tmpStr += str;
 
   lefData->defines_set[strip_case(token)] = tmpStr;
-  lefData->lefDefIf = FALSE;
+  lefData->lefDefIf = false;
   lefData->inDefine = 0;
 }
 
@@ -302,9 +302,9 @@ void lefAddNumDefine(const char* token, double val)
 
 static int GetTokenFromStack(char* s)
 {
-  const char* ch;    // utility variable
-  char* prS = NULL;  // pointing to the previous char or s
-  char* save = s;    // for debug printing
+  const char* ch;       // utility variable
+  char* prS = nullptr;  // pointing to the previous char or s
+  char* save = s;       // for debug printing
 
   while (lefData->input_level >= 0) {
     for (ch = lefData->current_stack[lefData->input_level]; *ch != 0;
@@ -319,7 +319,7 @@ static int GetTokenFromStack(char* s)
       *s = 0;
       if (lefData->lefDebug[11])
         printf("Stack[%d] Newline token\n", lefData->input_level);
-      return TRUE;
+      return true;
     } else {  // we found something
       for (;; ch++) {
         if (*ch == ' ' || *ch == '\t' || *ch == '\n' || *ch == 0) {
@@ -336,7 +336,7 @@ static int GetTokenFromStack(char* s)
                    lefData->input_level,
                    save,
                    lefData->lefDumbMode);
-          return TRUE;
+          return true;
         }
         /* 10/10/2000 - Wanda da Rosa, pcr 341032
         ** Save the location of the previous s
@@ -346,7 +346,7 @@ static int GetTokenFromStack(char* s)
       }
     }
   }
-  return FALSE;  // if we get here, we ran out of input levels
+  return false;  // if we get here, we ran out of input levels
 }
 
 // Increment current position of buffer pointer.
@@ -383,8 +383,8 @@ static int GetToken(char** buffer, int* bufferSize)
 
   if (lefData->input_level >= 0) {  // if we are expanding an alias
     if (GetTokenFromStack(s))       // try to get a token from it
-      return TRUE;                  // if we get one, return it
-  }                                 // but if not, continue
+      return true;                  // if we get one, return it
+  }  // but if not, continue
 
   // skip blanks and count lines
   while ((ch = lefGetc()) != EOF) {
@@ -399,7 +399,7 @@ static int GetToken(char** buffer, int* bufferSize)
   }
 
   if (ch == EOF)
-    return FALSE;
+    return false;
 
   if (ch == '\n') {
     *s = ch;
@@ -408,7 +408,7 @@ static int GetToken(char** buffer, int* bufferSize)
     *s = '\0';
     if (lefData->lefDebug[11])
       printf("Newline token\n");
-    return TRUE;
+    return true;
   }
 
   // now get the token
@@ -439,7 +439,7 @@ static int GetToken(char** buffer, int* bufferSize)
             *s = '\0';
             lefError(6015, "Unexpected end of the LEF file.");
             lefData->hasFatalError = 1;
-            return FALSE;
+            return false;
           }
         }
       }
@@ -454,7 +454,7 @@ static int GetToken(char** buffer, int* bufferSize)
 
       // 7/23/2003 - pcr 606558 - do not allow \n in a string instead
       // of ;
-      if ((ch == '\n')) {
+      if (ch == '\n') {
         print_nlines(++lefData->lef_nlines);
         // 2/2/2007 - PCR 909714, allow string to go more than 1 line
         //            continue to parse
@@ -464,7 +464,7 @@ static int GetToken(char** buffer, int* bufferSize)
         *s = '\0';
         lefError(6015, "Unexpected end of the LEF file.");
         lefData->hasFatalError = 1;
-        return FALSE;
+        return false;
       }
     } while (ch != '"');
     *s = '\0';
@@ -477,11 +477,11 @@ static int GetToken(char** buffer, int* bufferSize)
       if (ch != ' ' && ch != EOF) {
         UNlefGetc(ch);
         lefData->spaceMissing = 1;
-        return FALSE;
+        return false;
       }
       UNlefGetc(ch);
     }
-    return TRUE;
+    return true;
   }
 
   if (lefData->namesCaseSensitive) {
@@ -539,7 +539,7 @@ static int GetToken(char** buffer, int* bufferSize)
   *s = '\0';
   if (ch != EOF)  // shouldn't ungetc an EOF
     UNlefGetc(ch);
-  return TRUE;
+  return true;
 }
 
 // creates an upper case copy of an array
@@ -569,7 +569,7 @@ void lefStoreAlias()
     lefError(1000, "Expecting '='");
 
   /* now keep getting lines till we get one that contains &ENDALIAS */
-  for (char* p = NULL; p == NULL;) {
+  for (char* p = nullptr; p == nullptr;) {
     int i;
     char* s = line;
     for (i = 0; i < tokenSize - 1; i++) {
@@ -591,7 +591,7 @@ void lefStoreAlias()
     lefuc_array(line, uc_line);        // make upper case copy
     p = strstr(uc_line, "&ENDALIAS");  // look for END_ALIAS
 
-    if (p != NULL)                  // if we find it
+    if (p != nullptr)               // if we find it
       *(line + (p - uc_line)) = 0;  // remove it from the line
 
     so_far += line;
@@ -763,10 +763,10 @@ int lefsublex()
     yylval.dval = strtod(lefData->current_token, &ch);
     if (lefData->lefNoNum < 0 && *ch == '\0') {  // did we use the whole string?
       return NUMBER;
-    } else {  // failed integer conversion, try floating point
-      yylval.string = ringCopy(lefData->current_token);  // NO, it's a string
-      return T_STRING;
     }
+    // failed integer conversion, try floating point
+    yylval.string = ringCopy(lefData->current_token);  // NO, it's a string
+    return T_STRING;
   }
 
   // 5/17/2004 - Special checking for nondefaultrule
@@ -774,12 +774,11 @@ int lefsublex()
     if (strcmp(lefData->current_token, lefData->ndName) == 0) {
       yylval.string = ringCopy(lefData->current_token);  // a nd rule name
       return T_STRING;
-    } else {
-      // Can be NONDEFAULTRULE END without name, this case, string
-      // should be a reserve word  or name is incorrect
-      // lefData->first check if it is a reserve word
-      lefData->lefDumbMode = -1;
     }
+    // Can be NONDEFAULTRULE END without name, this case, string
+    // should be a reserve word  or name is incorrect
+    // lefData->first check if it is a reserve word
+    lefData->lefDumbMode = -1;
   }
   // if we are dumb mode, all we return is punctuation and strings & numbers
   // until we see the lefData->next '+' or ';' token
@@ -799,11 +798,9 @@ int lefsublex()
     if (lefData->lefNdRule) {
       if (strcmp(lefData->current_token, lefData->ndName) == 0)
         return T_STRING;
-      else {
-        // Can be NONDEFAULTRULE END without name, this case, string
-        // should be a reserve word  or name is incorrect
-        // lefData->first check if it is a reserve word
-      }
+      // Can be NONDEFAULTRULE END without name, this case, string
+      // should be a reserve word  or name is incorrect
+      // lefData->first check if it is a reserve word
     }
     return T_STRING;
   }
@@ -906,11 +903,12 @@ int lefsublex()
               if (begQuote)
                 lefError(1006, "Ending \" is missing");
               break;
-            } else if (histTextSize >= 11
-                       && memcmp(&lefData->Hist_text[histTextSize - 11],
-                                 "END LIBRARY",
-                                 11)
-                              == 0) {
+            }
+            if (histTextSize >= 11
+                && memcmp(&lefData->Hist_text[histTextSize - 11],
+                          "END LIBRARY",
+                          11)
+                       == 0) {
               lefError(1007, "ENDEXT is missing");
               return 1;
             }
@@ -919,44 +917,44 @@ int lefsublex()
         lefData->Hist_text.push_back('\0');
       }
       return result;  // YES, return its value
-    } else {          // we don't have a keyword.
-      if (fc == '&')
-        return lefamper_lookup(lefData->current_token);
-      yylval.string = ringCopy(lefData->current_token);  // NO, it's a string
+    }
+    if (fc == '&')
+      return lefamper_lookup(lefData->current_token);
+    yylval.string = ringCopy(lefData->current_token);  // NO, it's a string
+    return T_STRING;
+  }
+  // it should be a punctuation character
+  if (lefData->current_token[1] != '\0') {
+    if (strcmp(lefData->current_token, ">=") == 0)
+      return K_GE;
+    if (strcmp(lefData->current_token, "<=") == 0)
+      return K_LE;
+    if (strcmp(lefData->current_token, "<>") == 0)
+      return K_NE;
+    if (lefData->current_token[0]
+        == ';') {  // we got ';TOKEN' which is not allowed by
+      //';' cannot be attached to other tokens.
+      lefError(1009, "Symbol ';' should be separated by space(s).");
+      return 0;
+      // strcpy(saved_token, &token[1]); // the standard syntax, but
+      // stack[++lefData->input_level] = saved_token; // C3 and GE support.
+    }
+    if (lefData->current_token[0]
+        == '_') {  // name starts with _, return as T_STRING
+      yylval.string = ringCopy(lefData->current_token);
       return T_STRING;
     }
-  } else {  // it should be a punctuation character
-    if (lefData->current_token[1] != '\0') {
-      if (strcmp(lefData->current_token, ">=") == 0)
-        return K_GE;
-      if (strcmp(lefData->current_token, "<=") == 0)
-        return K_LE;
-      if (strcmp(lefData->current_token, "<>") == 0)
-        return K_NE;
-      if (lefData->current_token[0]
-          == ';') {  // we got ';TOKEN' which is not allowed by
-        //';' cannot be attached to other tokens.
-        lefError(1009, "Symbol ';' should be separated by space(s).");
-        return 0;
-        // strcpy(saved_token, &token[1]); // the standard syntax, but
-        // stack[++lefData->input_level] = saved_token; // C3 and GE support.
-      } else if (lefData->current_token[0]
-                 == '_') {  // name starts with _, return as T_STRING
-        yylval.string = ringCopy(lefData->current_token);
-        return T_STRING;
-      } else {
-        lefError(6016, "Odd punctuation found.");
-        lefData->hasFatalError = 1;
-        return 0;
-      }
-    } else if (strlen(lefData->current_token) > 2
-               || strlen(lefData->current_token) == 0) {
-      lefError(6016, "Odd punctuation found.");
-      lefData->hasFatalError = 1;
-      return 0;
-    }
-    return (int) lefData->current_token[0];
+    lefError(6016, "Odd punctuation found.");
+    lefData->hasFatalError = 1;
+    return 0;
   }
+  if (strlen(lefData->current_token) > 2
+      || strlen(lefData->current_token) == 0) {
+    lefError(6016, "Odd punctuation found.");
+    lefData->hasFatalError = 1;
+    return 0;
+  }
+  return (int) lefData->current_token[0];
 }
 
 /* We have found a token beginning with '&'.  If it has been previously
@@ -974,7 +972,7 @@ int lefamper_lookup(char* tkn)
     yylval.dval = dptr;
     return NUMBER;
   }
-  // &defineb returns TRUE or FALSE, encoded as K_TRUE or K_FALSE
+  // &defineb returns true or false, encoded as K_TRUE or K_FALSE
   if (lefGetIntDefine(tkn, &result))
     return result;
   // &defines returns a T_STRING
@@ -1152,7 +1150,8 @@ void lefInfo(int msgNum, const char* s)
             msgNum);
     lefWarning(2502, msgStr);
     return;
-  } else if (disableStatus == 2) {
+  }
+  if (disableStatus == 2) {
     return;
   }
 
@@ -1198,11 +1197,11 @@ void lefInfo(int msgNum, const char* s)
             lefData->lef_nlines);
   } else {
     if (!lefData->hasOpenedLogFile) {
-      if ((lefData->lefrLog = fopen("lefRWarning.log", "w")) == 0) {
+      if ((lefData->lefrLog = fopen("lefRWarning.log", "w")) == nullptr) {
         printf(
             "WARNING (LEFPARS-3500): Unable to open the file lefRWarning.log "
             "in %s.\n",
-            getcwd(NULL, 64));
+            getcwd(nullptr, 64));
         printf("Info messages will not be printed.\n");
       } else {
         lefData->hasOpenedLogFile = 1;
@@ -1216,11 +1215,11 @@ void lefInfo(int msgNum, const char* s)
                 lefData->lef_nlines);
       }
     } else {
-      if ((lefData->lefrLog = fopen("lefRWarning.log", "a")) == 0) {
+      if ((lefData->lefrLog = fopen("lefRWarning.log", "a")) == nullptr) {
         printf(
             "WARNING (LEFPARS-3500): Unable to open the file lefRWarning.log "
             "in %s.\n",
-            getcwd(NULL, 64));
+            getcwd(nullptr, 64));
         printf("Info messages will not be printed.\n");
       } else {
         fprintf(lefData->lefrLog,
@@ -1254,7 +1253,8 @@ void lefWarning(int msgNum, const char* s)
               msgNum);
       lefWarning(2502, msgStr);
       return;
-    } else if (disableStatus == 2) {
+    }
+    if (disableStatus == 2) {
       return;
     }
   }
@@ -1301,11 +1301,11 @@ void lefWarning(int msgNum, const char* s)
             lefData->lef_nlines);
   } else {
     if (!lefData->hasOpenedLogFile) {
-      if ((lefData->lefrLog = fopen("lefRWarning.log", "w")) == 0) {
+      if ((lefData->lefrLog = fopen("lefRWarning.log", "w")) == nullptr) {
         printf(
             "WARNING (LEFPARS-2500): Unable to open the file lefRWarning.log "
             "in %s.\n",
-            getcwd(NULL, 64));
+            getcwd(nullptr, 64));
         printf("Warning messages will not be printed.\n");
       } else {
         lefData->hasOpenedLogFile = 1;
@@ -1320,11 +1320,11 @@ void lefWarning(int msgNum, const char* s)
                 lefData->lef_nlines);
       }
     } else {
-      if ((lefData->lefrLog = fopen("lefRWarning.log", "a")) == 0) {
+      if ((lefData->lefrLog = fopen("lefRWarning.log", "a")) == nullptr) {
         printf(
             "WARNING (LEFPARS-2501): Unable to open the file lefRWarning.log "
             "in %s.\n",
-            getcwd(NULL, 64));
+            getcwd(nullptr, 64));
         printf("Warning messages will not be printed.\n");
       } else {
         fprintf(lefData->lefrLog,
@@ -1348,23 +1348,22 @@ void* lefMalloc(size_t lef_size)
 
   if (lefSettings->MallocFunction)
     return (*lefSettings->MallocFunction)(lef_size);
-  else {
-    mallocVar = (void*) malloc(lef_size);
-    if (!mallocVar) {
-      fprintf(stderr,
-              "ERROR (LEFPARS-1009): Not enough memory, stop parsing!\n");
-      exit(1);
-    }
-    return mallocVar;
+
+  mallocVar = (void*) malloc(lef_size);
+  if (!mallocVar) {
+    fprintf(stderr, "ERROR (LEFPARS-1009): Not enough memory, stop parsing!\n");
+    exit(1);
   }
+  return mallocVar;
 }
 
 void* lefRealloc(void* name, size_t lef_size)
 {
-  if (lefSettings->ReallocFunction)
+  if (lefSettings->ReallocFunction) {
     return (*lefSettings->ReallocFunction)(name, lef_size);
-  else
-    return (void*) realloc(name, lef_size);
+  }
+
+  return realloc(name, lef_size);
 }
 
 void lefFree(void* name)
@@ -2207,4 +2206,4 @@ char* lef_kywd(int num)
   return a;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

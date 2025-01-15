@@ -1,0 +1,164 @@
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
+//
+// Copyright (c) 2024, Dimitris Fotakis
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
+# Author: Dimitris K. Fotakis
+# Version: v1.0
+# Date: 11/05/2024
+
+# ------------------------------------------------------------------------------------------------
+Summary of New Capabilities in v2 Extraction flow: -version 2.0
+# ------------------------------------------------------------------------------------------------
+
+	Field Solver and FasterCap Integration - see FasterCap_integration.README
+	Via resistance modeling 
+	New capacitance modeling patterns 
+	Multi-corner extraction 
+	New fast geometry Search Engine 
+	Python scripts to understand and visualize errors
+	Comprehensive Regression Test suite 
+	Miscellaneous commands 
+	New Comprehensive Pattern Set for Benchmarking
+
+#------------------------------------------------------------------------------------------------
+Field Solver and FasterCap Integration
+
+	Full end-to-end model generation using FasterCap Field Solver (open source)
+	Use 3d wire patterns
+	Remove the dependency on commercial Extractors for Model generation
+
+#------------------------------------------------------------------------------------------------
+New Miscellaneous Commands and Options
+
+	Introduce options for memory management, especially in large designs:
+		maximum resistance 
+		minimum coupling capacitance 
+
+	-overcell -- Over-the-cell extraction using obstruction and pin shapes as crossoverlap context
+		Note: Big source of error in STA
+
+	-lefRC – Fast extraction using resistance vnd capacitance alues from LEF (good for testing) 
+		Note 1: no model file is required
+		Note 2: Quick wire connectivity checker;
+
+	-get_process_corners - List of corner names in model file 
+	
+#------------------------------------------------------------------------------------------------
+Via Resistance Modeling 
+
+	Existing Accuracy Problems: -version 1.0
+		Via Resistance in OpenRCX was taken directly from LEF file for ONLY one corner
+		Via Resistance in LEF was inaccurate vs. from ICB C-tool Extraction Technology File ○ 
+		Via Resistance can be quite big and can very significantly in different Process Corners
+
+	Existing Flow Problems: -version 1.0 
+		No automatic way to transfer Via Resistance values from Extraction Technology File
+		Impossible to run multi-corner extraction with one LEF file for resistance per corner 
+
+	Solution in version 2.0
+		New DEF patterns to measure Via Resistance in the DEF Pattern Generation flow
+		Added Via values in RCX Model file, one set per corner 
+
+#------------------------------------------------------------------------------------------------
+Wire Resistance Modeling 
+
+	Better Accuracy: -version 2.0
+		Resistance is dependent on distance to the neighbors of both sides asymmetrically Solution 
+		New DEF patterns to measure Via Resistance create wires and vias at different side distances
+
+#------------------------------------------------------------------------------------------------
+New Capacitance Extraction Models -version 2.0
+
+	precise measurements of single wires (or infinite neighbors)
+	Open ended Fringe on 2 line pattern 
+	Asymmetric 3-line capacitance (different coupling distance)
+	Improved Diagonal Coupling (nonplanar couplings)
+
+#------------------------------------------------------------------------------------------------
+Multi-corner Extraction 
+
+	Available in -version 1.0 and 2.0 and model files
+	Extract any number of corners simultaneously 
+	DEF model generation using multiple SPEF files for different corners
+	Write/Read SPEF with multiple corners 
+	Diff SPEF command to compare different SPEFs
+
+#------------------------------------------------------------------------------------------------
+New Fast Geometry Search -version 2.0
+
+	Implemented in fall 2023 to significantly improve performance big designs
+	Recognize Coupling wires on same and different routing levels
+	Fast and efficient in memory 
+	Required for asymmetric coupling measurements of either neighbor of a wire
+	Faster resistance extraction from existing -version 1.0 (default)
+	Cleaner and faster for capacitance modeling for lateral and diagonal coupling
+
+#------------------------------------------------------------------------------------------------
+Python Scripts for visualization of errors 
+
+	For debugging and benchmarking based on command diff_spef, using diff_spef.out file
+		
+	rcx/test/rcx_v2/scripts/diff_stats.py Breaks down errors vs. a reference SPEF file per:
+		Total Net Resistance 
+		Total Net Capacitance 
+		Net Length 
+		R/C Value
+		Usage: python3 net_diff_files.py -h
+
+	rcx/test/rcx_v2/scripts/net_diff_files.py
+		Breaks down errors vs. a reference SPEF file of a design and 
+		provides 9 cells as bucket ranges for either value or wire length
+		Usage: python3 net_diff_files.py -h
+
+
+#------------------------------------------------------------------------------------------------
+New Regression Test Suite 
+
+	Pattern generation for modeling 
+	Model Generation, single corner and multi-corner 
+	Extraction of def patterns 
+	Extraction of gcd
+
+#------------------------------------------------------------------------------------------------
+New Comprehensive Pattern Set for for Comprehensive Benchmarking
+
+	Wires with variable width, distance, length 
+	Cross over wires with variable width, distance, length 
+	Lateral Wires on multiple routing levels  
+	Important for Diagonal Coupling 
+	New set will drive new capacitance extraction methods to improve accuracy
+	Patterns implemented, but not integrated to model generation
+	Pattern generation completed and working (1-2 orders of magnitude more patterns)
+	Vehicle to improve extraction accuracy
+		Variable-width, Variable-distance Lateral Coupling with  multi-level crossovers
+		Variable-width, Variable-distance Diagonal Coupling with Crossover Lines
+
+
