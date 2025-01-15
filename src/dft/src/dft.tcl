@@ -146,6 +146,6 @@ proc create_dft_test_mode { args } {
 
   if { [info exists keys(-test_mode)] } {
     set test_mode $keys(-test_mode)
-    dft::create_dft_test_mode $test_mode;
+    dft::create_dft_test_mode $test_mode
   }
 }
