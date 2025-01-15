@@ -513,12 +513,14 @@ Point<double> HTreeBuilder::findBestLegalLocation(
     double y1,
     double x2,
     double y2,
-    int scalingFactor)
+    int scalingFactor,
+    odb::Direction2D direction)
 {
   Point<double> best(0.0, 0.0);
   double minDiff = std::numeric_limits<double>::max();
   for (const Point<double>& loc : legalLocations) {
     double dist = computeDist(loc, parentPoint);
+    dist += computeDist(loc, branchPoint);
     double diff = abs(dist - targetDist);
     // clang-format off
     if (logger_->debugCheck(utl::CTS, "legalizer", 3)) {
@@ -534,7 +536,7 @@ Point<double> HTreeBuilder::findBestLegalLocation(
   }
 
   return adjustBestLegalLocation(
-      targetDist, best, parentPoint, sinks, x1, y1, x2, y2, scalingFactor);
+      targetDist, best, parentPoint, sinks,x1, y1, x2, y2, scalingFactor, direction);
 }
 
 // Adjust buffer location in two steps:
@@ -694,7 +696,8 @@ Point<double> HTreeBuilder::adjustBeyondBlockage(
     const Point<double>& parentPoint,
     double targetDist,
     const std::vector<Point<double>>& sinks,
-    int scalingFactor)
+    int scalingFactor,
+    odb::Direction2D direction)
 {
   double px = parentPoint.getX();
   double py = parentPoint.getY();
@@ -710,69 +713,91 @@ Point<double> HTreeBuilder::adjustBeyondBlockage(
   //         p14             p11
   //           p7           p6
   //              p13 p3 p12
-  addCandidatePoint(px, py + targetDist, point, candidates);  // p1
-  addCandidatePoint(px + targetDist, py, point, candidates);  // p2
-  addCandidatePoint(px, py - targetDist, point, candidates);  // p3
-  addCandidatePoint(px - targetDist, py, point, candidates);  // p4
-
   double leng50 = targetDist * 0.5;
-  addCandidatePoint(px + leng50, py + leng50, point, candidates);  // p5
-  addCandidatePoint(px + leng50, py - leng50, point, candidates);  // p6
-  addCandidatePoint(px - leng50, py - leng50, point, candidates);  // p7
-  addCandidatePoint(px - leng50, py + leng50, point, candidates);  // p8
-
   double leng25 = targetDist * 0.25;
   double leng75 = targetDist * 0.75;
-  addCandidatePoint(px + leng25, py + leng75, point, candidates);  // p9
-  addCandidatePoint(px + leng75, py + leng25, point, candidates);  // p10
-  addCandidatePoint(px + leng75, py - leng25, point, candidates);  // p11
-  addCandidatePoint(px + leng25, py - leng75, point, candidates);  // p12
-  addCandidatePoint(px - leng25, py - leng75, point, candidates);  // p13
-  addCandidatePoint(px - leng75, py - leng25, point, candidates);  // p14
-  addCandidatePoint(px - leng75, py + leng25, point, candidates);  // p15
-  addCandidatePoint(px - leng25, py + leng75, point, candidates);  // p16
+  switch (direction) {
+    case odb::Direction2D::North:
+      addCandidatePoint(px, py + targetDist, point, candidates);       // p1
+      addCandidatePoint(px + leng50, py + leng50, point, candidates);  // p5
+      addCandidatePoint(px - leng50, py + leng50, point, candidates);  // p8
+      addCandidatePoint(px + leng25, py + leng75, point, candidates);  // p9
+      addCandidatePoint(px - leng25, py + leng75, point, candidates);  // p16
+      break;
+    case odb::Direction2D::East:
+      addCandidatePoint(px + targetDist, py, point, candidates);       // p2
+      addCandidatePoint(px + leng50, py + leng50, point, candidates);  // p5
+      addCandidatePoint(px + leng50, py - leng50, point, candidates);  // p6
+      addCandidatePoint(px + leng75, py + leng25, point, candidates);  // p10
+      addCandidatePoint(px + leng75, py - leng25, point, candidates);  // p11
+      break;
+    case odb::Direction2D::South:
+      addCandidatePoint(px, py - targetDist, point, candidates);       // p3
+      addCandidatePoint(px + leng50, py - leng50, point, candidates);  // p6
+      addCandidatePoint(px - leng50, py - leng50, point, candidates);  // p7
+      addCandidatePoint(px + leng25, py - leng75, point, candidates);  // p12
+      addCandidatePoint(px - leng25, py - leng75, point, candidates);  // p13
+      break;
+    default:
+      addCandidatePoint(px - targetDist, py, point, candidates);       // p4
+      addCandidatePoint(px - leng50, py - leng50, point, candidates);  // p7
+      addCandidatePoint(px - leng50, py + leng50, point, candidates);  // p8
+      addCandidatePoint(px - leng75, py - leng25, point, candidates);  // p14
+      addCandidatePoint(px - leng75, py + leng25, point, candidates);  // p15
+      // odb::Direction2D::West
+      break;
+  }
 
   // check if any corners of Manhanttan square are inside some blockage
   // if so add candidate points that intersect blockage and Manhattan square
   // p1 is top corner
-  point.setX(px);
-  point.setY(py + targetDist);
-  addCandidatePointsAlongBlockage(point,
-                                  parentPoint,
-                                  targetDist,
-                                  scalingFactor,
-                                  candidates,
-                                  odb::Direction2D::North);
+
+  if(direction == odb::Direction2D(odb::Direction2D::North)) {
+    point.setX(px);
+    point.setY(py + targetDist);
+    addCandidatePointsAlongBlockage(point,
+                                    parentPoint,
+                                    targetDist,
+                                    scalingFactor,
+                                    candidates,
+                                    odb::Direction2D::North);
+  }
 
   // p2 is right corner
-  point.setX(px + targetDist);
-  point.setY(py);
-  addCandidatePointsAlongBlockage(point,
-                                  parentPoint,
-                                  targetDist,
-                                  scalingFactor,
-                                  candidates,
-                                  odb::Direction2D::East);
+  if(direction == odb::Direction2D(odb::Direction2D::East)) {
+    point.setX(px + targetDist);
+    point.setY(py);
+    addCandidatePointsAlongBlockage(point,
+                                    parentPoint,
+                                    targetDist,
+                                    scalingFactor,
+                                    candidates,
+                                    odb::Direction2D::East);
+  }
 
   // p3 is bottom corner
-  point.setX(px);
-  point.setY(py - targetDist);
-  addCandidatePointsAlongBlockage(point,
-                                  parentPoint,
-                                  targetDist,
-                                  scalingFactor,
-                                  candidates,
-                                  odb::Direction2D::South);
+  if(direction == odb::Direction2D(odb::Direction2D::South)) {
+    point.setX(px);
+    point.setY(py - targetDist);
+    addCandidatePointsAlongBlockage(point,
+                                    parentPoint,
+                                    targetDist,
+                                    scalingFactor,
+                                    candidates,
+                                    odb::Direction2D::South);
+  }
 
   // p4 is left corner
-  point.setX(px - targetDist);
-  point.setY(py);
-  addCandidatePointsAlongBlockage(point,
-                                  parentPoint,
-                                  targetDist,
-                                  scalingFactor,
-                                  candidates,
-                                  odb::Direction2D::West);
+  if(direction == odb::Direction2D(odb::Direction2D::West)) {
+    point.setX(px - targetDist);
+    point.setY(py);
+    addCandidatePointsAlongBlockage(point,
+                                    parentPoint,
+                                    targetDist,
+                                    scalingFactor,
+                                    candidates,
+                                    odb::Direction2D::West);
+  }
 
   // try moving cell along x or y, with some offset
   double bx = branchPoint.getX();
@@ -792,38 +817,54 @@ Point<double> HTreeBuilder::adjustBeyondBlockage(
   double newY = py - targetDist + abs(px - newX);
   newLoc.setX(newX);
   newLoc.setY(newY);
-  candidates.emplace_back(newLoc);  // trial x#1
+  if(direction == odb::Direction2D(odb::Direction2D::South)) {
+    candidates.emplace_back(newLoc);  // trial x#1
+  }
 
   newLoc.setY(py + targetDist - abs(px - newX));
-  candidates.emplace_back(newLoc);  // trial x#2
+  if(direction == odb::Direction2D(odb::Direction2D::North)) {
+    candidates.emplace_back(newLoc);  // trial x#2
+  }
 
   newX = bx - minX;
   newY = py - targetDist + abs(px - newX);
   newLoc.setX(newX);
   newLoc.setY(newY);
-  candidates.emplace_back(newLoc);  // trial x#3
+  if(direction == odb::Direction2D(odb::Direction2D::South)) {
+    candidates.emplace_back(newLoc);  // trial x#3
+  }
 
   newLoc.setY(py + targetDist - abs(px - newX));
-  candidates.emplace_back(newLoc);  // trial x#4
+  if(direction == odb::Direction2D(odb::Direction2D::North)) {
+    candidates.emplace_back(newLoc);  // trial x#4
+  }
 
   // try small offset in y direction
   newY = by + minY;
   newX = px - targetDist + abs(py - newY);
   newLoc.setX(newX);
   newLoc.setY(newY);
-  candidates.emplace_back(newLoc);  // trial y#1
+  if(direction == odb::Direction2D(odb::Direction2D::West)) {
+    candidates.emplace_back(newLoc);  // trial y#1
+  }
 
   newLoc.setX(px + targetDist - abs(py - newY));
-  candidates.emplace_back(newLoc);  // trial y#2
+  if(direction == odb::Direction2D(odb::Direction2D::East)) {
+    candidates.emplace_back(newLoc);  // trial y#2
+  }
 
   newY = by - minY;
   newX = px - targetDist + abs(py - newY);
   newLoc.setX(newX);
   newLoc.setY(newY);
-  candidates.emplace_back(newLoc);  // trial y#3
+  if(direction == odb::Direction2D(odb::Direction2D::West)) {
+    candidates.emplace_back(newLoc);  // trial y#3
+  }
 
   newLoc.setX(px + targetDist - abs(py - newY));
-  candidates.emplace_back(newLoc);  // trial y#4
+  if(direction == odb::Direction2D(odb::Direction2D::East)) {
+    candidates.emplace_back(newLoc);  // trial y#4
+  }
 
   for (const Point<double>& candidate : candidates) {
     checkLegalityAndCost(branchPoint,
@@ -998,7 +1039,8 @@ void HTreeBuilder::legalizeDummy()
                                                  y2,
                                                  x2,
                                                  y2,
-                                                 scalingFactor);
+                                                 scalingFactor,
+                                                 odb::Direction2D::North);
         double d = computeDist(legalBranchPoint, parentPoint);
         // clang-format off
         debugPrint(logger_, CTS, "legalizer", 1,
@@ -1045,6 +1087,21 @@ void HTreeBuilder::legalize()
                 : topologyForEachLevel_[levelIdx - 1].getBranchingPoint(
                       parentIdx);
 
+      odb::Direction2D::Value branch_point_dir; 
+      if(isHorizontal(levelIdx+1)) {
+        if(branchPoint.getX() - parentPoint.getX() > 0) {
+          branch_point_dir = odb::Direction2D::East;
+        } else {
+          branch_point_dir = odb::Direction2D::West;
+        }
+      } else {
+        if(branchPoint.getY() - parentPoint.getY() > 0) {
+          branch_point_dir = odb::Direction2D::North;
+        } else {
+          branch_point_dir = odb::Direction2D::South;
+        }
+      }
+
       const std::vector<Point<double>>& sinks
           = topology.getBranchSinksLocations(bufferIdx);
 
@@ -1075,7 +1132,8 @@ void HTreeBuilder::legalize()
                                                  y1,
                                                  x2,
                                                  y2,
-                                                 scalingFactor);
+                                                 scalingFactor,
+                                                 branch_point_dir);
         // clang-format off
 	debugPrint(logger_, CTS, "legalizer", 1,
 		   "findBestLegalLocation branchPt:{}=>{} parentPt:{} new "
@@ -1096,7 +1154,8 @@ void HTreeBuilder::legalize()
                                            parentPoint,
                                            topology.getLength(),
                                            sinks,
-                                           scalingFactor);
+                                           scalingFactor,
+                                           branch_point_dir);
         // clang-format off
 	debugPrint(logger_, CTS, "legalizer", 3,
 		   "adjustBeyondBlockage applied to legal branchPt:{}=>{} "
@@ -1794,7 +1853,8 @@ void HTreeBuilder::createClockSubNets()
       return;
     }
     Point<double> legalBranchPoint
-        = legalizeOneBuffer(branchPoint, options_->getRootBuffer());
+        = legalizeOneBuffer(branchPoint,
+                            options_->getRootBuffer());
     commitMoveLoc(branchPoint, legalBranchPoint);
 
     // clang-format off
@@ -1851,7 +1911,8 @@ void HTreeBuilder::createClockSubNets()
       Point<double> parentPoint = parentTopology.getBranchingPoint(parentIdx);
 
       Point<double> legalBranchPoint
-          = legalizeOneBuffer(branchPoint, options_->getRootBuffer());
+          = legalizeOneBuffer(branchPoint,
+                              options_->getRootBuffer());
       commitMoveLoc(branchPoint, legalBranchPoint);
 
       // clang-format off
