@@ -1729,17 +1729,6 @@ class dbBlock : public dbObject
                          char hier_delimeter = 0);
 
   ///
-  /// duplicate - Make a duplicate of the specified "child" block. If name ==
-  /// nullptr, the name of the block is also duplicated. If the duplicated block
-  /// does not have a unique name, then "findChild" may return an incorrect
-  /// block. UNIQUE child-block-names are not enforced! (This should be fixed)!
-  ///
-  /// A top-block can not be duplicated. This methods returns nullptr if the
-  /// specified block has not parent.
-  ///
-  static dbBlock* duplicate(dbBlock* block, const char* name = nullptr);
-
-  ///
   /// Translate a database-id back to a pointer.
   ///
   static dbBlock* getBlock(dbChip* chip, uint oid);
