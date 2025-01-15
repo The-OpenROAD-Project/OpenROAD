@@ -97,7 +97,7 @@ target_link_libraries(stt_lib
 
 target_link_libraries(stt
     stt_lib
-    utl
+    utl_lib
     gui
     OpenSTA
 )

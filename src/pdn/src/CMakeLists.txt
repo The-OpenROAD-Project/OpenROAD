@@ -72,7 +72,7 @@ target_include_directories(pdn
 target_link_libraries(pdn
   PRIVATE
     odb
-    utl
+    utl_lib
     gui
     Boost::boost
 )

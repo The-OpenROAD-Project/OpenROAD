@@ -501,11 +501,7 @@ uint extMain::benchWires(extMainOptions* opt)
   }
   extRCModel* m = _modelTable->get(0);
 
-  m->setOptions(opt->_topDir,
-                opt->_name,
-                opt->_write_to_solver,
-                opt->_read_from_solver,
-                opt->_run_solver);
+  m->setOptions(opt->_topDir, opt->_name);
 
   opt->_tech = _tech;
 
@@ -518,7 +514,7 @@ uint extMain::benchWires(extMainOptions* opt)
     _block->setBusDelimeters('[', ']');
     _block->setDefUnits(1000);
     m->setExtMain(this);
-    setupMapping(0);
+    setupMapping();
     _noModelRC = true;
     _cornerCnt = 1;
     _extDbCnt = 1;
@@ -548,6 +544,14 @@ uint extMain::benchWires(extMainOptions* opt)
     m->linesOverUnderBench(opt);
     m->linesUnderBench(opt);
     m->linesDiagUnderBench(opt);
+
+    /* TODO for v1 vs. v12 patterns
+    int LL[2]= {opt->_ur[0], 0};
+    int UR[2]= {opt->_ur[0], 0};
+     m->ViaRulePat(opt, opt->_len, LL, UR, false, false, opt->_overDist); //
+    over
+    */
+
   } else {
     if (opt->_over) {
       m->linesOverBench(opt);
@@ -570,16 +574,6 @@ uint extMain::benchWires(extMainOptions* opt)
 
   return 0;
 }
-
-uint extMain::runSolver(extMainOptions* opt, uint netId, int shapeId)
-{
-  extRCModel* m = new extRCModel("TYPICAL", logger_);
-  m->setExtMain(this);
-  m->setOptions(opt->_topDir, "nets", false, false, true);
-  uint shapeCnt = m->runWiresSolver(netId, shapeId);
-  return shapeCnt;
-}
-
 uint extMeasure::getRSeg(dbNet* net, uint shapeId)
 {
   dbWire* w = net->getWire();
@@ -590,13 +584,4 @@ uint extMeasure::getRSeg(dbNet* net, uint shapeId)
   }
   return 0;
 }
-
-uint extRCModel::runWiresSolver(uint netId, int shapeId)
-{
-  sprintf(_wireDirName, "%s/%d/%d", _topDir, netId, shapeId);
-  strcpy(_wireFileName, "net_wires");
-  runSolver("rc3 -n -x");
-  return 0;
-}
-
 }  // namespace rcx

@@ -1892,7 +1892,7 @@ void MBFF::KMeansDecomp(const std::vector<Flop>& flops,
     k_means_ret[i].pop_back();
   }
 
-  // naive implementation of DSU
+  // naive implementation of Disjoint Set Union
   std::vector<int> id(best_k);
   std::vector<int> sz(best_k);
 

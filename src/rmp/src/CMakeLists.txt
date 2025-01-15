@@ -69,7 +69,7 @@ target_link_libraries(rmp
     dbSta
     OpenSTA
     rsz
-    utl
+    utl_lib
     ${ABC_LIBRARY}
  )
 

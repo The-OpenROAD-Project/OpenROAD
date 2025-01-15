@@ -54,23 +54,49 @@ add_library(rcx_lib
   grids.cpp
   gs.cpp
   dbUtil.cpp
+  process_ext.cpp
+  extRCmodel_process.cpp
+  extRCmodel_solver.cpp
+  extSolverGen.cpp
+  extModelGen.cpp
+extFlow_v2.cpp
+extmeasure_diag.cpp
+extSegment.cpp
+findsegments.cpp
+extmeasure_couple.cpp
+extmeasure_dist.cpp
+extmeasure_flow.cpp
+extmeasure_print.cpp
+extmeasure_calc.cpp
+extmeasure_rc_flow.cpp
+extRCmodel_process.cpp
+extRCmodel_solver.cpp
+extDefPatterns.cpp
+extDefPatternsVia.cpp
+extPatterns.cpp
+extRulesVia.cpp
+extmeasure_print.cpp
+  extmeasure_res_v2.cpp
+			extmain_v2.cpp
+extmeasure_diag_opt.cpp
 )
 
 target_include_directories(rcx_lib
   PUBLIC
     ../include
+    ../include/rcx
 )
 
 target_link_libraries(rcx_lib
   PUBLIC
     odb
-    utl
+    utl_lib
 )
 
 swig_lib(NAME      rcx
          NAMESPACE rcx
          I_FILE    ext.i
-         SCRIPTS   OpenRCX.tcl
+         SCRIPTS   OpenRCX.tcl OpenRCX_process.tcl
 )
 
 target_sources(rcx
@@ -81,12 +107,13 @@ target_sources(rcx
 target_include_directories(rcx
   PUBLIC
     ../include
+    ../include/rcx
 )
 
 target_link_libraries(rcx
   PUBLIC
     rcx_lib
-    utl
+    utl_lib
   PRIVATE
     OpenSTA
 )
