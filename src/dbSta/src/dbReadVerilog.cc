@@ -145,6 +145,15 @@ void dbReadVerilog(const char* filename, dbVerilogNetwork* verilog_network)
   sta::readVerilogFile(filename, verilog_network);
 }
 
+bool dbVerilogNetwork::isBlackBox(ConcreteCell* cell)
+{
+  std::string value = cell->getAttribute("black_box");
+  if (value == "true") {
+    return true;
+  }
+  return false;
+}
+
 ////////////////////////////////////////////////////////////////
 
 class Verilog2db
@@ -1010,7 +1019,8 @@ void Verilog2db::processUnusedCells(const char* top_cell_name,
     sta::ConcreteLibraryCellIterator* lib_cell_iter = lib->cellIterator();
     while (lib_cell_iter->hasNext()) {
       sta::ConcreteCell* curr_cell = lib_cell_iter->next();
-      if (!(block_->findModule(curr_cell->name()))) {
+      if (!block_->findModule(curr_cell->name())
+          && !verilog_network->isBlackBox(curr_cell)) {
         unused_cells_.emplace_back(curr_cell);
         debugPrint(logger_,
                    utl::ODB,
@@ -1049,13 +1059,16 @@ void Verilog2db::processUnusedCells(const char* top_cell_name,
       out_file.close();
     }
   }
-  restoreTopBlock(top_cell_name);
-  if (logger_->debugCheck(utl::ODB, "dbReadVerilog", 1)) {
-    std::stringstream sstr;
-    block_->printContent(sstr);
-    std::ofstream out_file("top_block.txt");
-    out_file << sstr.str();
-    out_file.close();
+
+  if (unused_cells_.size() > 0) {
+    restoreTopBlock(top_cell_name);
+    if (logger_->debugCheck(utl::ODB, "dbReadVerilog", 1)) {
+      std::stringstream sstr;
+      block_->printContent(sstr);
+      std::ofstream out_file("top_block.txt");
+      out_file << sstr.str();
+      out_file.close();
+    }
   }
 }
 

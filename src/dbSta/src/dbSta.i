@@ -167,7 +167,7 @@ db_network_defined()
 void
 report_cell_usage_cmd(odb::dbModule* mod, const bool verbose)
 {
-  cmdLinkedNetwork();
+  // cmdLinkedNetwork();
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
   sta->report_cell_usage(mod, verbose);

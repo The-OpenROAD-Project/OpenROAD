@@ -3,5 +3,3 @@
 [WARNING STA-0198] read_verilog6.v line 11, module AND2_X10 not found. Creating black box for u2.
 [WARNING ORD-2011] LEF master BUF_X10 has no liberty cell.
 [WARNING ORD-2013] instance u2 LEF master AND2_X10 not found.
-[ERROR STA-1398] AND2_X10 is not a verilog module.
-Error: read_verilog6.tcl, 9 STA-1398
