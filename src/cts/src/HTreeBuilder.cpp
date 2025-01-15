@@ -554,7 +554,8 @@ Point<double> HTreeBuilder::adjustBestLegalLocation(
     double y1,
     double x2,
     double y2,
-    int scalingFactor)
+    int scalingFactor,
+    odb::Direction2D direction)
 {
   if (fuzzyEqual(targetDist, computeDist(currLoc, parentPoint))) {
     return currLoc;
