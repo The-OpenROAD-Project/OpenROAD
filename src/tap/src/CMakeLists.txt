@@ -57,7 +57,7 @@ target_include_directories(tap
 
 target_link_libraries(tap
   PRIVATE
-    utl
+    utl_lib
     odb
     OpenSTA
     Boost::boost

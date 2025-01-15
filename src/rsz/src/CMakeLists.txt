@@ -91,7 +91,7 @@ target_link_libraries(rsz
     dbSta
     grt
     gui
-    utl
+    utl_lib
 )
 
 messages(

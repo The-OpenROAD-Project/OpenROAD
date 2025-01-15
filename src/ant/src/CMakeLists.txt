@@ -66,7 +66,7 @@ target_link_libraries(ant
   PUBLIC
     ant_lib
     grt_lib
-    utl
+    utl_lib
     OpenMP::OpenMP_CXX
 )
 
@@ -96,7 +96,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       odb
       OpenSTA
       grt
-      utl
+      utl_lib
   )
 
 endif()
