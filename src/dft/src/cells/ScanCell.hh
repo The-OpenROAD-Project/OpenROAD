@@ -64,6 +64,7 @@ class ScanCell
   virtual void connectScanEnable(const ScanDriver& driver) const = 0;
   virtual void connectScanIn(const ScanDriver& driver) const = 0;
   virtual void connectScanOut(const ScanLoad& load) const = 0;
+  virtual ScanLoad getScanIn() const = 0;
   virtual ScanDriver getScanOut() const = 0;
 
   const ClockDomain& getClockDomain() const;
@@ -127,8 +128,16 @@ class ScanCell
 
     odb::dbNet* driver_net = driver->getNet();
     if (!driver_net) {
-      driver_net = odb::dbNet::create(driver->getBlock(), GetTermName(driver));
+      driver_net
+          = odb::dbNet::create(driver->getBlock(), driver->getName().c_str());
+      if (!driver_net) {
+        logger_->error(utl::DFT,
+                       30,
+                       "Failed to create driver net named '{}'",
+                       driver->getName());
+      }
       driver_net->setSigType(odb::dbSigType::SCAN);
+      driver->connect(driver_net);
     }
     debugPrint(logger_,
                utl::DFT,

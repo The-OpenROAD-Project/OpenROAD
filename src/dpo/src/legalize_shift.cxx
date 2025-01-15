@@ -41,6 +41,8 @@
 //////////////////////////////////////////////////////////////////////////////
 #include "legalize_shift.h"
 
+#include <vector>
+
 #include "architecture.h"
 #include "detailed_manager.h"
 #include "detailed_segment.h"

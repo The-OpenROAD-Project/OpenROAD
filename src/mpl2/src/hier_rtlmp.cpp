@@ -38,6 +38,7 @@
 #include <iostream>
 #include <queue>
 #include <thread>
+#include <vector>
 
 #include "Mpl2Observer.h"
 #include "SACoreHardMacro.h"
@@ -4653,54 +4654,42 @@ void Snapper::attemptSnapToExtraLayers(
     const LayerParameters& snap_layer_params,
     const odb::dbTechLayerDir& target_direction)
 {
-  const int total_number_of_layers
-      = static_cast<int>(layers_data.layer_to_pin.size());
-  const int total_attempts = 5;
-  int remaining_attempts = total_attempts;
+  // Calculate LCM from the layers pitches to define the search
+  // range
+  int lcm = 1;
+  for (const auto& [layer, params] : layers_data.layer_to_params) {
+    lcm = std::lcm(lcm, params.pitch);
+  }
+  const int pitch = snap_layer_params.pitch;
+  const int total_attempts = lcm / snap_layer_params.pitch;
+
+  const int total_layers = static_cast<int>(layers_data.layer_to_pin.size());
 
   int best_origin = origin;
-  int best_number_of_snapped_layers = 1;
-  int new_origin = origin;
-  bool all_layers_snapped = false;
+  int best_snapped_layers = 1;
 
-  while (remaining_attempts > 0) {
-    const bool is_first_attempt = remaining_attempts == total_attempts;
-    // The pins may already be aligned for all extra layers (in that case,
-    // we don't need to move the macro at all), hence, we use the first
-    // attempt to check if there are in fact any extra layers to snap.
-    if (!is_first_attempt) {
-      // Move one track ahead.
-      new_origin += snap_layer_params.pitch;
-      setOrigin(new_origin, target_direction);
-    }
+  for (int i = 0; i <= total_attempts; i++) {
+    // Alternates steps from positive to negative incrementally
+    int steps = (i % 2 == 1) ? (i + 1) / 2 : -(i / 2);
 
-    int curr_number_of_snapped_layers = 1;
-    for (const auto [layer, pin] : layers_data.layer_to_pin) {
-      if (layer == layers_data.snap_layer) {
-        continue;
-      }
-
+    setOrigin(origin + (pitch * steps), target_direction);
+    int snapped_layers = 0;
+    for (const auto& [layer, pin] : layers_data.layer_to_pin) {
       if (pinsAreAlignedWithTrackGrid(
               pin, layers_data.layer_to_params.at(layer), target_direction)) {
-        ++curr_number_of_snapped_layers;
+        ++snapped_layers;
       }
+    }
 
-      if (curr_number_of_snapped_layers == total_number_of_layers) {
-        all_layers_snapped = true;
+    if (snapped_layers > best_snapped_layers) {
+      best_snapped_layers = snapped_layers;
+      best_origin = origin + (pitch * steps);
+
+      // Stop search if all layers are snapped
+      if (total_layers == best_snapped_layers) {
         break;
       }
     }
-
-    if (all_layers_snapped) {
-      return;
-    }
-
-    if (curr_number_of_snapped_layers > best_number_of_snapped_layers) {
-      best_number_of_snapped_layers = curr_number_of_snapped_layers;
-      best_origin = new_origin;
-    }
-
-    --remaining_attempts;
   }
 
   setOrigin(best_origin, target_direction);

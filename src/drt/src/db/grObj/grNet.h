@@ -29,6 +29,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "db/grObj/grBlockObject.h"
 #include "db/grObj/grNode.h"

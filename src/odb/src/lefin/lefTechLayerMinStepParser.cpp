@@ -39,41 +39,43 @@ void lefTechLayerMinStepParser::createSubRule(odb::dbTechLayer* layer)
   curRule = odb::dbTechLayerMinStepRule::create(layer);
 }
 void lefTechLayerMinStepParser::setMinAdjacentLength1(double length,
-                                                      odb::lefin* l)
+                                                      odb::lefinReader* l)
 {
   curRule->setMinAdjLength1(l->dbdist(length));
   curRule->setMinAdjLength1Valid(true);
 }
 void lefTechLayerMinStepParser::setMinAdjacentLength2(double length,
-                                                      odb::lefin* l)
+                                                      odb::lefinReader* l)
 {
   curRule->setMinAdjLength2(l->dbdist(length));
   curRule->setMinAdjLength2Valid(true);
 }
 void lefTechLayerMinStepParser::minBetweenLengthParser(double length,
-                                                       odb::lefin* l)
+                                                       odb::lefinReader* l)
 {
   curRule->setMinBetweenLength(l->dbdist(length));
   curRule->setMinBetweenLengthValid(true);
 }
-void lefTechLayerMinStepParser::noBetweenEolParser(double width, odb::lefin* l)
+void lefTechLayerMinStepParser::noBetweenEolParser(double width,
+                                                   odb::lefinReader* l)
 {
   curRule->setEolWidth(l->dbdist(width));
   curRule->setNoBetweenEol(true);
 }
 
-void lefTechLayerMinStepParser::noAdjacentEolParser(double width, odb::lefin* l)
+void lefTechLayerMinStepParser::noAdjacentEolParser(double width,
+                                                    odb::lefinReader* l)
 {
   curRule->setEolWidth(l->dbdist(width));
   curRule->setNoAdjacentEol(true);
 }
 
 void lefTechLayerMinStepParser::minStepLengthParser(double length,
-                                                    odb::lefin* l)
+                                                    odb::lefinReader* l)
 {
   curRule->setMinStepLength(l->dbdist(length));
 }
-void lefTechLayerMinStepParser::maxEdgesParser(int edges, odb::lefin* l)
+void lefTechLayerMinStepParser::maxEdgesParser(int edges, odb::lefinReader* l)
 {
   curRule->setMaxEdges(edges);
   curRule->setMaxEdgesValid(true);
@@ -101,7 +103,7 @@ void lefTechLayerMinStepParser::setExceptSameCorners()
 
 bool lefTechLayerMinStepParser::parse(std::string s,
                                       dbTechLayer* layer,
-                                      odb::lefin* l)
+                                      odb::lefinReader* l)
 {
   qi::rule<std::string::iterator, space_type> convexConcaveRule
       = (string("CONVEXCORNER")[boost::bind(

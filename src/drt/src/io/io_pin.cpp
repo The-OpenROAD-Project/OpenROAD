@@ -26,6 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <vector>
+
 #include "io.h"
 
 namespace drt {
@@ -126,7 +128,6 @@ void io::Parser::instAnalysis()
   }
 
   cnt = 0;
-  frString orientName;
   for (auto& [master, orientMap] : trackOffsetMap_) {
     for (auto& [orient, offsetMap] : orientMap) {
       cnt += offsetMap.size();

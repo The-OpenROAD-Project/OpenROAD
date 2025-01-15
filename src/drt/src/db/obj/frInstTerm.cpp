@@ -28,6 +28,8 @@
 
 #include "db/obj/frInstTerm.h"
 
+#include <vector>
+
 #include "db/obj/frInst.h"
 
 namespace drt {

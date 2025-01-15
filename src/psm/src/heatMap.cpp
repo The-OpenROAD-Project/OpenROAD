@@ -32,6 +32,8 @@
 
 #include "heatMap.h"
 
+#include <vector>
+
 #include "psm/pdnsim.h"
 #include "sta/Corner.hh"
 #include "sta/Sta.hh"

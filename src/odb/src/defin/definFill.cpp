@@ -35,6 +35,7 @@
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
+#include <vector>
 
 #include "odb/db.h"
 #include "odb/dbShape.h"

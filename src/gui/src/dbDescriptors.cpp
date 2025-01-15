@@ -40,6 +40,7 @@
 #include <queue>
 #include <regex>
 #include <sstream>
+#include <vector>
 
 #include "bufferTreeDescriptor.h"
 #include "db_sta/dbNetwork.hh"

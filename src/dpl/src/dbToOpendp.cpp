@@ -48,8 +48,6 @@ namespace dpl {
 using std::string;
 using std::vector;
 
-using utl::DPL;
-
 using odb::dbBox;
 using odb::dbMaster;
 using odb::dbOrientType;

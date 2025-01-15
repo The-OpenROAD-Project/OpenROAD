@@ -36,6 +36,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "Clock.h"
 #include "CtsObserver.h"

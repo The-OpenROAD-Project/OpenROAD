@@ -42,7 +42,7 @@ void addCutClassRule(
                           boost::optional<int>,
                           boost::optional<std::string>>& params,
     odb::dbTechLayer* layer,
-    odb::lefin* lefin)
+    odb::lefinReader* lefin)
 {
   std::string name = at_c<0>(params);
   auto rule = odb::dbTechLayerCutClassRule::create(layer, name.c_str());
@@ -69,7 +69,7 @@ void addCutClassRule(
 namespace odb {
 bool lefTechLayerCutClassParser::parse(std::string s,
                                        dbTechLayer* layer,
-                                       odb::lefin* lefin)
+                                       odb::lefinReader* lefin)
 {
   auto first = s.begin();
   auto last = s.end();

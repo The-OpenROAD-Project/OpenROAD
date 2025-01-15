@@ -35,6 +35,7 @@ constexpr int GRFRACSIZE = 1;
 
 #include <iostream>
 #include <map>
+#include <vector>
 
 #include "db/grObj/grPin.h"
 #include "dr/FlexMazeTypes.h"

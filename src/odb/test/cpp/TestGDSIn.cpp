@@ -4,6 +4,7 @@
 #include <boost/test/included/unit_test.hpp>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "helper/env.h"
 #include "odb/gdsin.h"

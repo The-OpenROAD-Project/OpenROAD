@@ -34,6 +34,7 @@
 
 #include <boost/geometry.hpp>
 #include <boost/polygon/polygon.hpp>
+#include <vector>
 
 #include "node.h"
 #include "odb/geom_boost.h"

@@ -38,6 +38,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "definBlockage.h"
 #include "definComponent.h"

@@ -31,6 +31,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <vector>
 
 #include "dr/FlexDR.h"
 

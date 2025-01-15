@@ -35,6 +35,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "gui/gui.h"
 
 namespace stt {

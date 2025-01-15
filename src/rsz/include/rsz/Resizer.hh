@@ -39,6 +39,7 @@
 #include <optional>
 #include <string>
 
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
 #include "rsz/OdbCallBack.hh"
@@ -81,6 +82,7 @@ using sta::ArcDelay;
 using sta::Cell;
 using sta::Corner;
 using sta::dbNetwork;
+using sta::dbNetworkObserver;
 using sta::dbSta;
 using sta::dbStaState;
 using sta::DcalcAnalysisPt;
@@ -183,7 +185,7 @@ struct BufferData
 
 class OdbCallBack;
 
-class Resizer : public dbStaState
+class Resizer : public dbStaState, public dbNetworkObserver
 {
  public:
   Resizer();
@@ -261,7 +263,8 @@ class Resizer : public dbStaState
   double maxArea() const;
 
   void setDontUse(LibertyCell* cell, bool dont_use);
-  bool dontUse(LibertyCell* cell);
+  void resetDontUse();
+  bool dontUse(const LibertyCell* cell);
   void reportDontUse() const;
   void setDontTouch(const Instance* inst, bool dont_touch);
   bool dontTouch(const Instance* inst);
@@ -274,6 +277,9 @@ class Resizer : public dbStaState
   void removeBuffers(InstanceSeq insts, bool recordJournal = false);
   void bufferInputs();
   void bufferOutputs();
+
+  // from sta::dbNetworkObserver callbacks
+  void postReadLiberty() override;
 
   // Balance the usage of hybrid rows
   void balanceRowUsage();
@@ -440,6 +446,7 @@ class Resizer : public dbStaState
   bool hasTristateOrDontTouchDriver(const Net* net);
   bool isTristateDriver(const Pin* pin);
   void checkLibertyForAllCorners();
+  void copyDontUseFromLiberty();
   void findBuffers();
   bool isLinkCell(LibertyCell* cell) const;
   void findTargetLoads();

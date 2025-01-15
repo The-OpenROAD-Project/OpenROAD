@@ -18,6 +18,7 @@ or_integration_tests(
     fanin_fanout1
     gain_buffering1
     gcd_resize
+    liberty_dont_use
     make_parasitics1
     make_parasitics2
     make_parasitics3

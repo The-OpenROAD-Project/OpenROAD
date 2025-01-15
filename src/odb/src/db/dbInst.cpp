@@ -33,6 +33,7 @@
 #include "dbInst.h"
 
 #include <algorithm>
+#include <vector>
 
 #include "dbAccessPoint.h"
 #include "dbArrayTable.h"
@@ -127,7 +128,7 @@ _dbInst::_dbInst(_dbDatabase*)
   _x = 0;
   _y = 0;
   _weight = 0;
-  pin_access_idx_ = 0;
+  pin_access_idx_ = -1;
 }
 
 _dbInst::_dbInst(_dbDatabase*, const _dbInst& i)
@@ -1578,14 +1579,16 @@ void dbInst::destroy(dbInst* inst_)
     _dbITerm* _iterm = block->_iterm_tbl->getPtr(id);
     dbITerm* iterm = (dbITerm*) _iterm;
     iterm->disconnect();
-    for (auto [pin, aps] : iterm->getAccessPoints()) {
-      for (auto ap : aps) {
-        _dbAccessPoint* _ap = (_dbAccessPoint*) ap;
-        _ap->iterms_.erase(
-            std::remove_if(_ap->iterms_.begin(),
-                           _ap->iterms_.end(),
-                           [id](const auto& id_in) { return id_in == id; }),
-            _ap->iterms_.end());
+    if (inst_->getPinAccessIdx() >= 0) {
+      for (auto [pin, aps] : iterm->getAccessPoints()) {
+        for (auto ap : aps) {
+          _dbAccessPoint* _ap = (_dbAccessPoint*) ap;
+          _ap->iterms_.erase(
+              std::remove_if(_ap->iterms_.begin(),
+                             _ap->iterms_.end(),
+                             [id](const auto& id_in) { return id_in == id; }),
+              _ap->iterms_.end());
+        }
       }
     }
 

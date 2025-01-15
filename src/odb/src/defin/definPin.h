@@ -33,6 +33,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "definBase.h"
 #include "definPolygon.h"
