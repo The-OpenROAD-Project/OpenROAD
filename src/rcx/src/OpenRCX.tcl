@@ -374,8 +374,8 @@ sta::define_cmd_args "gen_rcx_model" {
 
 proc gen_rcx_model { args } {
   sta::parse_key_args "gen_rcx_model" args \
-  keys { -spef_file_list -corner_list -out_file -comment -version -pattern } \
-  flags {}
+    keys { -spef_file_list -corner_list -out_file -comment -version -pattern } \
+    flags {}
 
   set spef_file_list ""
   if { [info exists keys(-spef_file_list)] } {
