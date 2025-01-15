@@ -256,7 +256,7 @@ class ClusteringEngine
   void printPhysicalHierarchyTree(Cluster* parent, int level);
   float computeMicronArea(odb::dbInst* inst);
 
-  static bool isIgnoredMaster(odb::dbMaster* master);
+  static bool isIgnoredInst(odb::dbInst* inst);
 
   odb::dbBlock* block_;
   sta::dbNetwork* network_;

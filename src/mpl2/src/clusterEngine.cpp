@@ -183,14 +183,13 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
   float macro_area = 0.0;
 
   for (odb::dbInst* inst : module->getInsts()) {
-    odb::dbMaster* master = inst->getMaster();
-    if (isIgnoredMaster(master)) {
+    if (isIgnoredInst(inst)) {
       continue;
     }
 
     float inst_area = computeMicronArea(inst);
 
-    if (master->isBlock()) {  // a macro
+    if (inst->isBlock()) {  // a macro
       num_macro += 1;
       macro_area += inst_area;
 
@@ -571,8 +570,7 @@ void ClusteringEngine::createDataFlow()
 bool ClusteringEngine::stdCellsHaveLiberty()
 {
   for (odb::dbInst* inst : block_->getInsts()) {
-    odb::dbMaster* master = inst->getMaster();
-    if (isIgnoredMaster(master) || master->isBlock()) {
+    if (isIgnoredInst(inst) || inst->isBlock()) {
       continue;
     }
 
@@ -615,8 +613,7 @@ void ClusteringEngine::computeIOVertices(VerticesMaps& vertices_maps)
 void ClusteringEngine::computeStdCellVertices(VerticesMaps& vertices_maps)
 {
   for (odb::dbInst* inst : block_->getInsts()) {
-    odb::dbMaster* master = inst->getMaster();
-    if (isIgnoredMaster(master) || master->isBlock()) {
+    if (isIgnoredInst(inst) || inst->isBlock()) {
       continue;
     }
 
@@ -672,14 +669,13 @@ DataFlowHypergraph ClusteringEngine::computeHypergraph(
     bool ignore = false;
     for (odb::dbITerm* iterm : net->getITerms()) {
       odb::dbInst* inst = iterm->getInst();
-      odb::dbMaster* master = inst->getMaster();
-      if (isIgnoredMaster(master)) {
+      if (isIgnoredInst(inst)) {
         ignore = true;
         break;
       }
 
       int vertex_id = -1;
-      if (master->isBlock()) {
+      if (inst->isBlock()) {
         vertex_id = odb::dbIntProperty::find(iterm, "vertex_id")->getValue();
       } else {
         odb::dbIntProperty* int_prop
@@ -738,10 +734,19 @@ DataFlowHypergraph ClusteringEngine::computeHypergraph(
 }
 
 /* static */
-bool ClusteringEngine::isIgnoredMaster(odb::dbMaster* master)
+// Instances that should not be touched i.e., have their location
+// altered by the macro placer.
+//
+// Obs:
+// - IO corners are sometimes marked as end caps.
+// - Markers used in designs with IO Pads are FIRM
+//   at this point and they should not be touched.
+bool ClusteringEngine::isIgnoredInst(odb::dbInst* inst)
 {
-  // IO corners are sometimes marked as end caps
-  return master->isPad() || master->isCover() || master->isEndCap();
+  odb::dbMaster* master = inst->getMaster();
+
+  return master->isPad() || master->isCover() || master->isEndCap()
+         || inst->getPlacementStatus() == odb::dbPlacementStatus::FIRM;
 }
 
 // Forward or Backward DFS search to find sequential paths from/to IO pins based
@@ -949,12 +954,11 @@ void ClusteringEngine::treatEachMacroAsSingleCluster()
 {
   odb::dbModule* module = block_->getTopModule();
   for (odb::dbInst* inst : module->getInsts()) {
-    odb::dbMaster* master = inst->getMaster();
-    if (isIgnoredMaster(master)) {
+    if (isIgnoredInst(inst)) {
       continue;
     }
 
-    if (master->isBlock()) {
+    if (inst->isBlock()) {
       const std::string cluster_name = inst->getName();
       auto cluster = std::make_unique<Cluster>(id_, cluster_name, logger_);
       cluster->addLeafMacro(inst);
@@ -1027,8 +1031,7 @@ void ClusteringEngine::updateInstancesAssociation(odb::dbModule* module,
     }
   } else {  // only consider standard cells
     for (odb::dbInst* inst : module->getInsts()) {
-      odb::dbMaster* master = inst->getMaster();
-      if (isIgnoredMaster(master) || master->isBlock()) {
+      if (isIgnoredInst(inst) || inst->isBlock()) {
         continue;
       }
 
@@ -1267,8 +1270,7 @@ void ClusteringEngine::addModuleLeafInstsToCluster(Cluster* cluster,
                                                    odb::dbModule* module)
 {
   for (odb::dbInst* inst : module->getInsts()) {
-    odb::dbMaster* master = inst->getMaster();
-    if (isIgnoredMaster(master)) {
+    if (isIgnoredInst(inst)) {
       continue;
     }
     cluster->addLeafInst(inst);
@@ -1395,8 +1397,7 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
     bool ignore = false;
     for (odb::dbITerm* iterm : net->getITerms()) {
       odb::dbInst* inst = iterm->getInst();
-      odb::dbMaster* master = inst->getMaster();
-      if (isIgnoredMaster(master)) {
+      if (isIgnoredInst(inst)) {
         ignore = true;
         break;
       }
@@ -1721,8 +1722,7 @@ void ClusteringEngine::updateConnections()
 
     for (odb::dbITerm* iterm : net->getITerms()) {
       odb::dbInst* inst = iterm->getInst();
-      odb::dbMaster* master = inst->getMaster();
-      if (isIgnoredMaster(master)) {
+      if (isIgnoredInst(inst)) {
         net_has_pad_or_cover = true;
         break;
       }
@@ -1919,13 +1919,11 @@ void ClusteringEngine::getHardMacros(odb::dbModule* module,
                                      std::vector<HardMacro*>& hard_macros)
 {
   for (odb::dbInst* inst : module->getInsts()) {
-    odb::dbMaster* master = inst->getMaster();
-
-    if (isIgnoredMaster(master)) {
+    if (isIgnoredInst(inst)) {
       continue;
     }
 
-    if (master->isBlock()) {
+    if (inst->isBlock()) {
       hard_macros.push_back(tree_->maps.inst_to_hard.at(inst).get());
     }
   }
