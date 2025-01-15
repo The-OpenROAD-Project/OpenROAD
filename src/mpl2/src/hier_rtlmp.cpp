@@ -3995,7 +3995,7 @@ void HierRTLMP::flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip)
 void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
 {
   for (odb::dbInst* inst : block_->getInsts()) {
-    if (!inst->isBlock()) {
+    if (!inst->isBlock() || ClusteringEngine::isIgnoredInst(inst)) {
       continue;
     }
 

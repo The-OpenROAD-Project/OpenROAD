@@ -170,6 +170,8 @@ class ClusteringEngine
                                std::set<odb::dbMaster*>& masters);
   void clearTempMacroClusterMapping(const UniqueClusterVector& macro_clusters);
 
+  static bool isIgnoredInst(odb::dbInst* inst);
+
  private:
   using UniqueClusterQueue = std::queue<std::unique_ptr<Cluster>>;
 
@@ -255,8 +257,6 @@ class ClusteringEngine
 
   void printPhysicalHierarchyTree(Cluster* parent, int level);
   float computeMicronArea(odb::dbInst* inst);
-
-  static bool isIgnoredInst(odb::dbInst* inst);
 
   odb::dbBlock* block_;
   sta::dbNetwork* network_;
