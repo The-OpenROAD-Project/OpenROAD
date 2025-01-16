@@ -1,5 +1,4 @@
 record_tests {
-  set_bothost1
-  set_consent1
+  ora_init1
   askbot1
 }

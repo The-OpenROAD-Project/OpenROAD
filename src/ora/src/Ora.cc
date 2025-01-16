@@ -147,7 +147,7 @@ void Ora::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger)
     }
   } catch (const std::exception& e) {
     logger_->warn(utl::ORA,
-                  122,
+                  101,
                   "Failed to read ORAssistant local host. Exception: {}",
                   e.what());
   }
@@ -158,12 +158,12 @@ void Ora::checkLocalDir()
   std::ifstream localDir(localDirPath);
 
   if (!localDir) {
-    logger_->info(utl::ORA, 112, "Creating ~/.local/share/openroad directory.");
+    logger_->info(utl::ORA, 102, "Creating ~/.local/share/openroad directory.");
     try {
       std::filesystem::create_directories(localDirPath);
     } catch (const std::exception& e) {
       logger_->warn(
-          utl::ORA, 113, "Failed to create ~/.local/share/openroad directory.");
+          utl::ORA, 103, "Failed to create ~/.local/share/openroad directory.");
     }
   }
 }
@@ -173,7 +173,7 @@ void Ora::askbot(const char* query)
   if (!checkConsent()) {
     logger_->warn(
         utl::ORA,
-        197,
+        104,
         "To use the ORAssistant, please provide consent by running the "
         "`ora_init {consent} {hostURL}` command."
         "Only the query you type in will be sent outside the application—no "
@@ -195,7 +195,7 @@ void Ora::askbot(const char* query)
     hostUrl = localHostUrl;
   }
 
-  logger_->info(utl::ORA, 101, "Sending POST request to {}", hostUrl);
+  logger_->info(utl::ORA, 105, "Sending POST request to {}", hostUrl);
 
   std::stringstream jsonDataStream;
   jsonDataStream << R"({
@@ -210,7 +210,7 @@ void Ora::askbot(const char* query)
   std::string postResponse = sendPostRequest(hostUrl, jsonData);
 
   if (postResponse.empty()) {
-    logger_->warn(utl::ORA, 102, "No response received from API.");
+    logger_->warn(utl::ORA, 106, "No response received from API.");
     return;
   }
 
@@ -229,24 +229,24 @@ void Ora::askbot(const char* query)
           sources += "\n";
         }
         logger_->info(utl::ORA,
-                      103,
+                      107,
                       "ORAssistant Response: \n\n{}\nSources:\n{}",
                       response,
                       sources);
       } else {
         logger_->info(
-            utl::ORA, 104, "ORAssistant Response: \n\n{}\n", response);
+            utl::ORA, 108, "ORAssistant Response: \n\n{}\n", response);
       }
     } else {
       logger_->warn(utl::ORA,
-                    106,
+                    109,
                     "API response does not contain 'response' field or it is "
                     "not a string.");
-      logger_->warn(utl::ORA, 107, "API response: {}", postResponse);
+      logger_->warn(utl::ORA, 110, "API response: {}", postResponse);
     }
   } catch (const boost::json::system_error& e) {
     logger_->warn(utl::ORA,
-                  105,
+                  111,
                   "JSON Parsing Error: {}\nPlease check if you have access to "
                   "ORAssistant's API.",
                   e.what());
@@ -260,8 +260,8 @@ void Ora::setSourceFlag(bool sourceFlag)
 
 void Ora::setBotHost(const char* host)
 {
-  localHostUrl = host;
-  logger_->info(utl::ORA, 116, "Setting ORAssistant host to {}", hostUrl);
+  hostUrl = host;
+  logger_->info(utl::ORA, 112, "Setting ORAssistant host to {}", localHostUrl);
 
   checkLocalDir();
   std::string hostFilePath = localDirPath + "/orassistant_host.txt";
@@ -271,11 +271,11 @@ void Ora::setBotHost(const char* host)
     hostUrlFile << hostUrl;
     hostUrlFile.close();
     logger_->info(utl::ORA,
-                  109,
+                  113,
                   "ORAssistant host saved to "
                   "~/.local/share/openroad/orassistant_host.txt");
   } else {
-    logger_->warn(utl::ORA, 108, "Failed to write ORAssistant host to file.");
+    logger_->warn(utl::ORA, 114, "Failed to write ORAssistant host to file.");
   }
 }
 
@@ -288,7 +288,7 @@ void Ora::setConsent(const char* consent)
   // check if consent is y or n
   if (std::string(consent) != "y" && std::string(consent) != "n") {
     logger_->error(
-        utl::ORA, 117, "{} : Invalid consent value. Use 'y' or 'n'.", consent);
+        utl::ORA, 115, "{} : Invalid consent value. Use 'y' or 'n'.", consent);
     return;
   }
 
@@ -297,23 +297,23 @@ void Ora::setConsent(const char* consent)
     consentFile.close();
     logger_->info(
         utl::ORA,
-        114,
+        116,
         "Consent saved to ~/.local/share/openroad/orassistant_consent.txt");
   } else {
-    logger_->warn(utl::ORA, 115, "Failed to write consent to file.");
+    logger_->warn(utl::ORA, 117, "Failed to write consent to file.");
   }
 
   if (std::string(consent) == "y") {
     cloudConsent_ = true;
     logger_->info(utl::ORA,
-                  198,
+                  118,
                   "{}\nConsent granted for using a cloud hosted ORAssistant. "
                   "Please run `ora_init n` to remove your consent.",
                   consentMessage);
   } else if (std::string(consent) == "n") {
     cloudConsent_ = false;
     logger_->info(
-        utl::ORA, 199, "Consent removed for using a cloud hosted ORAssistant.");
+        utl::ORA, 119, "Consent removed for using a cloud hosted ORAssistant.");
   }
 }
 
