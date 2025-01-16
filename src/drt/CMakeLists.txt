@@ -152,7 +152,7 @@ target_link_libraries(drt
     odb
     stt
     OpenSTA
-    utl
+    utl_lib
     dst
     dbSta
     Threads::Threads

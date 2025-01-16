@@ -60,7 +60,7 @@ target_link_libraries(ifp
     odb
     dbSta
     OpenSTA
-    utl
+    utl_lib
     upf_lib
 )
 

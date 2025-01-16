@@ -13,7 +13,7 @@ proc setUp {} {
     set parent_mod [odb::dbModule_create $block "parent_mod"]
     set i1 [odb::dbModInst_create $parent_mod $master_mod "i1"]
     set inst1 [$block findInst "inst"]
-    return [list $db $lib $i1 $master_mod $parent_mod $inst1]
+    return [list $db $block $i1 $master_mod $parent_mod $inst1]
 }
 
 proc tearDown {db} {
@@ -22,20 +22,20 @@ proc tearDown {db} {
 
 proc test_default {} {
     lassign [setUp] db block i1 master_mod parent_mod inst1
-    assert {[$master_mod getName] == "master_mod"}
-    assert {[[$block findModule "parent_mod"] getName] == "parent_mod"}
-    assert {[$i1 getName] == "i1"}
-    assert {[[$i1 getParent] getName] == "parent_mod"}
-    assert {[[$i1 getMaster] getName] == "master_mod"}
-    assert {[[$master_mod getModInst] getName] == "i1"}
-    assert {[[lindex [$parent_mod getChildren] 0] getName] == "i1"}
-    assert {[[lindex [$block getModInsts] 0] getName] == "i1"}
+    assertStringEq [$master_mod getName] "master_mod"
+    assertStringEq [[$block findModule "parent_mod"] getName] "parent_mod"
+    assertStringEq [$i1 getName] "i1"
+    assertStringEq [[$i1 getParent] getName] "parent_mod"
+    assertStringEq [[$i1 getMaster] getName] "master_mod"
+    assertStringEq [[$master_mod getModInst] getName] "i1"
+    assertStringEq [[lindex [$parent_mod getChildren] 0] getName] "i1"
+    assertStringEq [[lindex [$block getModInsts] 0] getName] "i1"
     $parent_mod addInst $inst1
-    assert {[[lindex [$parent_mod getInsts] 0] getName] == "inst"}
-    assert {[[$inst1 getModule] getName] == "parent_mod"}
+    assertStringEq [[lindex [$parent_mod getInsts] 0] getName] "inst"
+    assertStringEq [[$inst1 getModule] getName] "parent_mod"
     odb::dbInst_destroy $inst1
-    assert {[$parent_mod findModInst "inst"] == "NULL"}
-    assert {[[$parent_mod findModInst "i1"] getName] == "i1"}
+    assertObjIsNull [$parent_mod findModInst "inst"]
+    assertStringEq [[$parent_mod findModInst "i1"] getName] "i1"
     odb::dbModInst_destroy $i1
     odb::dbModule_destroy $parent_mod
     tearDown $db

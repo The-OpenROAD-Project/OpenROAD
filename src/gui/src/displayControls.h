@@ -309,6 +309,10 @@ class DisplayControls : public QDockWidget,
     ModelRow power;
     ModelRow ground;
     ModelRow clock;
+    ModelRow reset;
+    ModelRow tieoff;
+    ModelRow scan;
+    ModelRow analog;
   };
 
   struct LayerModels

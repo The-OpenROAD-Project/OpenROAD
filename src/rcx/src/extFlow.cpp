@@ -380,6 +380,7 @@ uint extMain::initSearchForNets(int* X1,
 
   _search = new Ath__gridTable(&maxRect, 2, layerCnt, W, pitchTable, S, X1, Y1);
   _search->setBlock(_block);
+
   return layerCnt;
 }
 
@@ -1140,10 +1141,8 @@ uint extMain::fill_gs4(int dir,
     if (!((net->getSigType().isSupply()))) {
       continue;
     }
-
     pcnt += addNetSboxesGs(net, rotatedGs, !dir, gs_dir);
   }
-
   uint scnt = 0;
 
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
@@ -1152,10 +1151,30 @@ uint extMain::fill_gs4(int dir,
     if ((net->getSigType().isSupply())) {
       continue;
     }
-
     scnt += addNetShapesGs(net, rotatedGs, !dir, gs_dir);
   }
+  if (_v2 && _overCell) {
+    Ath__array1D<uint> instGsTable(nets.size());
+    Ath__array1D<uint> tmpNetIdTable(nets.size());
 
+    dbSet<dbInst> insts = _block->getInsts();
+    dbSet<dbInst>::iterator inst_itr;
+    for (inst_itr = insts.begin(); inst_itr != insts.end(); ++inst_itr) {
+      dbInst* inst = *inst_itr;
+
+      dbBox* R = inst->getBBox();
+
+      int R_ll[2] = {R->xMin(), R->yMin()};
+      int R_ur[2] = {R->xMax(), R->yMax()};
+
+      if ((R_ur[dir] < lo_gs[dir]) || (R_ll[dir] > hi_gs[dir]))
+        continue;
+
+      instGsTable.add(inst->getId());
+    }
+    if (instGsTable.getCnt() > 0)
+      addInstsGs(&instGsTable, &tmpNetIdTable, dir);
+  }
   return pcnt + scnt;
 }
 
@@ -1293,6 +1312,8 @@ uint extMain::couplingFlow(Rect& extRect,
       lo_gs[dir] = gs_limit;
       hi_gs[dir] = hiXY;
 
+      getPeakMemory("Start fill_gs4");
+
       fill_gs4(dir,
                ll,
                ur,
@@ -1302,9 +1323,12 @@ uint extMain::couplingFlow(Rect& extRect,
                dirTable,
                pitchTable,
                widthTable);
+      getPeakMemory("End fill_gs4");
 
       m->_rotatedGs = getRotatedFlag();
       m->_pixelTable = _geomSeq;
+
+      getPeakMemory("Start Search");
 
       // add wires onto search such that    loX<=loX<=hiX
       hi_sdb[dir] = hiXY;
@@ -1312,6 +1336,9 @@ uint extMain::couplingFlow(Rect& extRect,
       uint processWireCnt = 0;
       processWireCnt += addPowerNets(dir, lo_sdb, hi_sdb, pwrtype);
       processWireCnt += addSignalNets(dir, lo_sdb, hi_sdb, sigtype);
+      getPeakMemory("End Search");
+
+      getPeakMemory("Start couplingCaps");
 
       uint extractedWireCnt = 0;
       int extractLimit = hiXY - ccDist * maxPitch;
@@ -1335,7 +1362,10 @@ uint extMain::couplingFlow(Rect& extRect,
                 minExtracted,
                 deallocLimit);
       }
+      getPeakMemory("End couplingCaps");
+
       _search->dealloc(dir, deallocLimit);
+      getPeakMemory("End dealloc couplingCaps");
 
       lo_sdb[dir] = hiXY;
       gs_limit = minExtracted - (ccDist + 2) * maxPitch;
@@ -1370,6 +1400,8 @@ uint extMain::couplingFlow(Rect& extRect,
     delete[] limitArray[jj];
   }
   delete[] limitArray;
+
+  getPeakMemory("End couplingFlow");
 
   return 0;
 }

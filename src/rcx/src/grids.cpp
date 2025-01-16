@@ -280,8 +280,13 @@ void Ath__wire::reset()
   _boxId = 0;
   _srcId = 0;
   _otherId = 0;
-  _track = nullptr;
-  _next = nullptr;
+  _track = NULL;
+  _next = NULL;
+  _upNext = NULL;
+  _downNext = NULL;
+  _aboveNext = NULL;
+  _belowNext = NULL;
+  _ouLen = 0;
 
   _xy = 0;  // offset from track start
   _len = 0;
@@ -292,7 +297,6 @@ void Ath__wire::reset()
                // 0=wire, 1=obs, 2=pin, 3=power
   _dir = 0;
   _ext = 0;
-  _ouLen = 0;
 }
 bool Ath__wire::isTilePin()
 {
@@ -3063,6 +3067,57 @@ void Ath__gridTable::setExtControl(dbBlock* block,
   _dgContextTrackBase = dgContextTrackBase;
   _seqPool = seqPool;
 }
+void Ath__gridTable::setExtControl_v2(dbBlock* block,
+                                      bool useDbSdb,
+                                      uint adj,
+                                      uint npsrc,
+                                      uint nptgt,
+                                      uint ccUp,
+                                      bool allNet,
+                                      uint contextDepth,
+                                      Ath__array1D<int>** contextArray,
+                                      uint* contextLength,
+                                      Ath__array1D<SEQ*>*** dgContextArray,
+                                      uint* dgContextDepth,
+                                      uint* dgContextPlanes,
+                                      uint* dgContextTracks,
+                                      uint* dgContextBaseLvl,
+                                      int* dgContextLowLvl,
+                                      int* dgContextHiLvl,
+                                      uint* dgContextBaseTrack,
+                                      int* dgContextLowTrack,
+                                      int* dgContextHiTrack,
+                                      int** dgContextTrackBase,
+                                      AthPool<SEQ>* seqPool)
+{
+  _block = block;
+  _useDbSdb = useDbSdb;
+  _overlapAdjust = adj;
+  _noPowerSource = npsrc;
+  _noPowerTarget = nptgt;
+  _CCtargetHighTracks = ccUp;
+  if (ccUp == 2)
+    _CCtargetHighMarkedNet = 1;
+  else
+    _CCtargetHighMarkedNet = 0;
+  _targetTrackReversed = false;
+  _ccContextDepth = contextDepth;
+  _ccContextArray = contextArray;
+  _ccContextLength = contextLength;
+  _allNet = allNet;
+  _dgContextArray = dgContextArray;
+  _dgContextDepth = dgContextDepth;
+  _dgContextPlanes = dgContextPlanes;
+  _dgContextTracks = dgContextTracks;
+  _dgContextBaseLvl = dgContextBaseLvl;
+  _dgContextLowLvl = dgContextLowLvl;
+  _dgContextHiLvl = dgContextHiLvl;
+  _dgContextBaseTrack = dgContextBaseTrack;
+  _dgContextLowTrack = dgContextLowTrack;
+  _dgContextHiTrack = dgContextHiTrack;
+  _dgContextTrackBase = dgContextTrackBase;
+  _seqPool = seqPool;
+}
 void Ath__gridTable::reverseTargetTrack()
 {
   _CCtargetHighTracks = _CCtargetHighTracks == 2 ? 0 : 2;
@@ -3112,7 +3167,8 @@ uint Ath__gridTable::addBox(int x1,
   bb.setType(wireType);
 
   uint dir = bb.getDir();
-  uint trackNum = getGrid(dir, level)->placeWire(&bb);
+  uint trackNum = !_v2 ? getGrid(dir, level)->placeWire(&bb)
+                       : getGrid(dir, level)->placeWire_v2(&bb);
   _wireCnt++;
   return trackNum;
 }

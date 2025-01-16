@@ -1,0 +1,126 @@
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
+//
+// Copyright (c) 2024, Dimitris Fotakis
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
+# Author: Dimitris K. Fotakis
+# Doc Version: v1.0
+# Date: 11/05/2024
+
+# Model Generation Flow for rcx using Open Source Field Solver FasterCap
+
+        Create Wire patterns that can be used by field solvers to simulate and analyze electrical properties, 
+	starting with a full process stack conductors and dielectrics.
+	These patterns contain the conductors and dielectrics for a full simulation
+	Since the dielectric and conductor dimensions and constant dielectric epsilon values are dependent on the process stack
+	the wire pattern needs to be generate for each process
+
+# --------------------------------------------------------------------------------------------
+# DEPENDENCY: clone FasterCap and build the executable FasterCap
+# repository: https://github.com/george-goudroumanis/FasterCAP_v2.git        
+# --------------------------------------------------------------------------------------------
+
+# --------------------------------------------------------------------------
+# THIS IS STEP BY STEP process. 
+# Work under way to create fully automatic flow
+# --------------------------------------------------------------------------
+
+
+
+# flow Steps
+
+# ---------------------------------------------------------------------------
+# A. Generate 3d layout patterns
+
+  	- Description: 
+		rcx generates many wire and via patterns to model various types 
+		of capacitance and resistance geometric configurations.
+
+  	- Input: Process Stak (heights, widths of conductors and dielectrics, epsilon values)
+  	- Output: one file (called wires) per family of patterns and per width and distance to next wire
+	- openroad Command:
+		gen_solver_patterns -process_file process_file -wire_cnt <1, 2, 3, 5> -version <1 for full stack, 2 for normalized>
+
+	Recommended flow: 
+		
+		create a Makefile like in: 
+			rcx/test/rcx_v2/FasterCapModel
+		copy scripts:
+			rcx/test/rcx_v2/FasterCapModel/scripts
+		Run the following:
+			make 1v1
+			make 2v1
+			make 2v5
+		prerequisites: copy executables for openroad and fasterCap into bin (same level as Makefile)
+
+# ---------------------------------------------------------------------------
+# B. Run fasterCap
+
+  	- Description: 
+		bash script (rcx/test/rcx_v2/FasterCapModel/scripts/run_fasterCap.bash) runs all family patterns: over, under, overOnder, diag 
+		invoking automatically the following scripts per wires file generated in the previous step:
+			Python script <UniversalFormat2FasterCap_923> converts RCX solver format (previous step) to FasterCap format
+			then calls FasterCap executable with converted fasterCap format
+    		Above bash script can run for hours so it includes 2 important capabilities:
+			it can restart any time from the last pattern that was interrupted or stopped
+			it kills FasterCap after a time limit
+    		
+  	- Input: wires (file generated in previous step)
+  	- Output: wires.log
+
+# ---------------------------------------------------------------------------
+# C. Parse fasterCap Output files
+
+  	- Description: 
+		Extract Wire Capacitance and Resistance Values from fasterCap Output in a simple format:
+			one row per wire with clear identification of width, distance, context and family of pattern (over, under, etc)
+    		
+  	- Input: wires.log
+  	- Output: patterns.spef
+  	- Script: rcx/test/rcx_v2/FasterCapModel/scripts/fasterCapParse.python
+
+# ---------------------------------------------------------------------------
+# C. Generate Model File
+
+  	- Description: 
+		NOTE: openroad(rcx) reads multiple parsed fasterCap files and create a model file
+
+  	- Input: Tech LEF, Layout Patterns DEF, one SPEF file per corner
+  	- Output: model file
+  	- Sample Script: 
+			init_rcx_model -corner_names "TYP MIN" -met_cnt 7
+			read_rcx_tables -corner TYP -file  fasterCap_3v2.standard.20.0.0.UnderDiag3.GOLD.caps
+			read_rcx_tables -corner MIN -file  fasterCap_3v2.standard.20.0.0.OverUnder3.GOLD.caps
+			read_rcx_tables -corner TYP -file  fasterCap_3v1.normalized.20.20.20.M1uM3.GOLD.caps
+			read_rcx_tables -corner TYP -file  1v2_fc.standard.20.20.20.ALL.caps
+			read_rcx_tables -corner TYP -file  resistance.TYP
+			write_rcx_model -file rcx.model
+
+

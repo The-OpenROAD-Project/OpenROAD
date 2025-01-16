@@ -35,7 +35,10 @@
 #include <functional>
 #include <memory>
 
+#include "extPattern.h"
 #include "extRCap.h"
+#include "ext_options.h"
+#include "rcx/extModelGen.h"
 
 namespace utl {
 class Logger;
@@ -57,68 +60,49 @@ class Ext
             const std::function<void()>& rcx_init);
   void setLogger(Logger* logger);
 
-  void write_rules(const std::string& name,
-                   const std::string& dir,
-                   const std::string& file,
-                   int pattern);
-  void bench_verilog(const std::string& file);
+  void bench_wires_gen(const PatternOptions& opt);
 
-  struct BenchWiresOptions
-  {
-    const char* block = "blk";
-    int over_dist = 100;
-    int under_dist = 100;
-    int met_cnt = 1000;
-    int met = -1;
-    int over_met = -1;
-    int under_met = -1;
-    int len = 200;
-    int cnt = 5;
-    const char* w = "1";
-    const char* s = "1";
-    const char* th = "1";
-    const char* d = "0.0";
-    const char* w_list = "1";
-    const char* s_list = "1 2 2.5 3 3.5 4 4.5 5 6 8 10 12";
-    const char* th_list = "0 1 2 2.5 3 3.5 4 4.5 5 6 8 10 12";
-    const char* grid_list = "";
-    bool default_lef_rules = false;
-    bool nondefault_lef_rules = false;
-    const char* dir = "./Bench";
-    bool Over = false;
-    bool db_only = false;
-    bool ddd = false;
-    bool multiple_widths = false;
-    bool write_to_solver = false;
-    bool read_from_solver = false;
-    bool run_solver = false;
-    bool diag = false;
-    bool over_under = false;
-    bool gen_def_patterns = false;
-    bool resPatterns = false;
-  };
+  bool gen_rcx_model(const std::string& spef_file_list,
+                     const std::string& corner_list,
+                     const std::string& out_file,
+                     const std::string& comment,
+                     const std::string& version,
+                     int pattern);
+  bool define_rcx_corners(const std::string& corner_list);
+  static bool get_model_corners(const std::string& ext_model_file,
+                                Logger* logger);
+  bool rc_estimate(const std::string& ext_model_file,
+                   const std::string& out_file_prefix);
+
+  // ---------------------------- dkf 092524 ---------------------------------
+  bool gen_solver_patterns(const char* process_file,
+                           const char* process_name,
+                           int version,
+                           int wire_cnt,
+                           int len,
+                           int over_dist,
+                           int under_dist,
+                           const char* w_list,
+                           const char* s_list);
+
+  // ---------------------------- dkf 092024 ---------------------------------
+  bool init_rcx_model(const char* corner_names, int metal_cnt);
+  bool read_rcx_tables(const char* corner,
+                       const char* filename,
+                       int wire,
+                       bool over,
+                       bool under,
+                       bool over_under,
+                       bool diag);
+  bool write_rcx_model(const char* filename);
+  void write_rules(const std::string& name, const std::string& file);
+  void bench_verilog(const std::string& file);
 
   void bench_wires(const BenchWiresOptions& bwo);
   void write_spef_nets(odb::dbObject* block,
                        bool flatten,
                        bool parallel,
                        int corner);
-
-  struct ExtractOptions
-  {
-    const char* debug_net = nullptr;
-    const char* ext_model_file = nullptr;
-    const char* net = nullptr;
-    static constexpr int cc_up = 2;
-    int corner_cnt = 1;
-    double max_res = 50.0;
-    bool no_merge_via_res = false;
-    float coupling_threshold = 0.1;
-    int context_depth = 5;
-    int cc_model = 10;
-    bool lef_res = false;
-  };
-
   void extract(ExtractOptions options);
 
   void define_process_corner(int ext_model_index, const std::string& name);
@@ -132,89 +116,9 @@ class Ext
   void delete_corners();
   void adjust_rc(float res_factor, float cc_factor, float gndc_factor);
 
-  struct SpefOptions
-  {
-    const char* nets = nullptr;
-    int net_id = 0;
-    const char* ext_corner_name = nullptr;
-    const int corner = -1;
-    const int debug = 0;
-    const bool parallel = false;
-    const bool init = false;
-    const bool end = false;
-    const bool use_ids = false;
-    const bool no_name_map = false;
-    const char* N = nullptr;
-    const bool term_junction_xy = false;
-    const bool single_pi = false;
-    const char* file = nullptr;
-    const bool gz = false;
-    const bool stop_after_map = false;
-    const bool w_clock = false;
-    const bool w_conn = false;
-    const bool w_cap = false;
-    const bool w_cc_cap = false;
-    const bool w_res = false;
-    const bool no_c_num = false;
-    const bool no_backslash = false;
-    const char* cap_units = "PF";
-    const char* res_units = "OHM";
-  };
   void write_spef(const SpefOptions& options);
 
-  struct ReadSpefOpts
-  {
-    const char* file = nullptr;
-    const char* net = nullptr;
-    bool force = false;
-    bool use_ids = false;
-    bool keep_loaded_corner = false;
-    bool stamp_wire = false;
-    int test_parsing = 0;
-    const char* N = nullptr;
-    bool r_conn = false;
-    bool r_cap = false;
-    bool r_cc_cap = false;
-    bool r_res = false;
-    float cc_threshold = -0.5;
-    float cc_ground_factor = 0;
-    int app_print_limit = 0;
-    int corner = -1;
-    const char* db_corner_name = nullptr;
-    const char* calibrate_base_corner = nullptr;
-    int spef_corner = -1;
-    bool m_map = false;
-    bool more_to_read = false;
-    float length_unit = 1;
-    int fix_loop = 0;
-    bool no_cap_num_collapse = false;
-    const char* cap_node_map_file = nullptr;
-    bool log = false;
-  };
-
   void read_spef(ReadSpefOpts& opt);
-
-  struct DiffOptions
-  {
-    const char* net = nullptr;
-    bool use_ids = false;
-    bool test_parsing = false;
-    const char* file = nullptr;
-    const char* db_corner_name = nullptr;
-    int spef_corner = -1;
-    const char* exclude_net_subword = nullptr;
-    const char* net_subword = nullptr;
-    const char* rc_stats_file = nullptr;
-    bool r_conn = false;
-    bool r_cap = false;
-    bool r_cc_cap = false;
-    bool r_res = false;
-    int ext_corner = -1;
-    float low_guard = 1;
-    float upper_guard = -1;
-    bool m_map = false;
-    bool log = false;
-  };
 
   void diff_spef(const DiffOptions& opt);
   void calibrate(const std::string& spef_file,
@@ -227,7 +131,8 @@ class Ext
 
  private:
   odb::dbDatabase* _db = nullptr;
-  std::unique_ptr<extMain> _ext;
+  // ::unique_ptr<extMain> _ext;
+  extMain* _ext = nullptr;
   Logger* logger_ = nullptr;
   const char* spef_version_ = nullptr;
 };  // namespace rcx

@@ -23,7 +23,7 @@ proc tearDown {db} {
 
 proc test_idle {} {
     lassign [setUp] db lib block iterm_a and2 inst
-    assert {[$iterm_a getNet] == "NULL"}
+    assertObjIsNull [$iterm_a getNet]
     tearDown $db
 }
 
@@ -32,19 +32,19 @@ proc test_connection_from_iterm {} {
     # Create net and Connect
     set n [odb::dbNet_create $block "n1"]
     assert {[$n getITermCount] == 0}
-    assert {[lequal [$n getITerms] []]}
+    assert {[llength [$n getITerms] == 0]}
     $iterm_a connect $n
     $iterm_a setConnected 
-    assert {[[$iterm_a getNet] getName] == "n1"}
+    assertStringEq [[$iterm_a getNet] getName] "n1"
     assert {[$n getITermCount] == 1}
-    assert {[[[lindex [$n getITerms] 0] getMTerm] getName] == "a"}
+    assertStringEq [[[lindex [$n getITerms] 0] getMTerm] getName] "a"
     assert {[$iterm_a isConnected] == 1}
     # disconnect
     $iterm_a disconnect
     $iterm_a clearConnected
     assert {[$n getITermCount] == 0}
-    assert {[lequal [$n getITerms] []]}
-    assert {[$iterm_a getNet] == "NULL"}
+    assert {[llength [$n getITerms] == 0]}
+    assertObjIsNull [$iterm_a getNet]
     assert {[$iterm_a isConnected] == 0}
     tearDown $db
 }
@@ -54,19 +54,19 @@ proc test_connection_from_inst {} {
     # Create net and Connect
     set n [odb::dbNet_create $block "n1"]
     assert {[$n getITermCount] == 0}
-    assert {[lequal [$n getITerms] []]}
+    assert {[llength [$n getITerms]] == 0}
     $iterm_a connect $n
     $iterm_a setConnected 
-    assert {[[$iterm_a getNet] getName] == "n1"}
+    assertStringEq [[$iterm_a getNet] getName] "n1"
     assert {[$n getITermCount] == 1}
-    assert {[[[lindex [$n getITerms] 0] getMTerm] getName] == "a"}
+    assertStringEq [[[lindex [$n getITerms] 0] getMTerm] getName] "a"
     assert {[$iterm_a isConnected] == 1}
     # disconnect
     $iterm_a disconnect
     $iterm_a clearConnected
     assert {[$n getITermCount] == 0}
-    assert {[lequal [$n getITerms] []]}
-    assert {[$iterm_a getNet] == "NULL"}
+    assert {[llength [$n getITerms] == 0}
+    assertObjIsNull [$iterm_a getNet]
     assert {[$iterm_a isConnected] == 0}
     tearDown $db
 }

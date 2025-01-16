@@ -35,30 +35,31 @@ proc tearDown {db} {
 proc test_find {} {
     lassign [setUp] db lib block parentBlock
     # bterm
-    assert {[[$block findBTerm "IN1"] getName] == "IN1"}
-    assert {[$block findBTerm "in1"] == "NULL"}
+    assertStringEq [[$block findBTerm "IN1"] getName] "IN1"
+    assertObjIsNull [$block findBTerm "in1"]
     # child
-    assert {[[$parentBlock findChild "2LevelBlock"] getName] == "2LevelBlock"}
-    assert {[$parentBlock findChild "1LevelBlock"] == "NULL"}
+    assertStringEq [[$parentBlock findChild "2LevelBlock"] getName] "2LevelBlock"
+    assertObjIsNull [$parentBlock findChild "1LevelBlock"]
     # inst
-    assert {[[$block findInst "i3"] getName] == "i3"}
-    assert {[$parentBlock findInst "i3"] == "NULL"}
+    assertStringEq [[$block findInst "i3"] getName] "i3"
+    assertObjIsNull [$parentBlock findInst "i3"]
     # net
-    assert {[[$block findNet "n2"] getName] == "n2"}
-    assert {[$block findNet "a"] == "NULL"}
+    assertStringEq [[$block findNet "n2"] getName] "n2"
+    assertObjIsNull [$block findNet "a"]
     # iterm
-    set iterm [$block findITerm "i1o"]
-    assert {[[$iterm getInst] getName] == "i1"}
-    assert {[[$iterm getMTerm] getName] == "o"}
-    assert {[$block findITerm "i1\o"] == "NULL"}
+    set iterm [$block findITerm "i1,o"]
+    assertObjIsNotNull $iterm "iterm i1.o is null"
+    assertStringEq [[$iterm getInst] getName] "i1"
+    assertStringEq [[$iterm getMTerm] getName] "o"
+    assertObjIsNull [$block findITerm "i1\o"]
     # extcornerblock
-    assert {[[$block findExtCornerBlock 1] getName] == "extCornerBlock__1"}
-    assert {[$block findExtCornerBlock 0] == "NULL"}
+    assertStringEq [[$block findExtCornerBlock 1] getName] "extCornerBlock__1"
+    assertObjIsNull [$block findExtCornerBlock 0]
     # nondefaultrule
-    assert {[[$block findNonDefaultRule "non_default_1"] getName] == "non_default_1"}
-    assert {[$block findNonDefaultRule "non_default_2"] == "NULL"}
+    assertStringEq [[$block findNonDefaultRule "non_default_1"] getName] "non_default_1"
+    assertObjIsNull [$block findNonDefaultRule "non_default_2"]
     # region
-    assert {[[$block findRegion "parentRegion"] getName] == "parentRegion"}
+    assertStringEq [[$block findRegion "parentRegion"] getName] "parentRegion"
     tearDown $db
 }
 

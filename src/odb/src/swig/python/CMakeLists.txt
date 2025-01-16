@@ -17,7 +17,7 @@ target_include_directories(odb_py
 target_link_libraries(odb_py
     PUBLIC
         odb
-        utl
+        utl_lib
         ${TCL_LIBRARY}
         cdl
         odb_swig_common

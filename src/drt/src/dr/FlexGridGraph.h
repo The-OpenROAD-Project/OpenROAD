@@ -97,6 +97,7 @@ class FlexGridGraph
   {
     return nodes_[getIdx(x, y, z)].hasSpecialVia;
   }
+  bool isSVia(frMIdx idx) const { return nodes_[idx].hasSpecialVia; }
   // unsafe access, no check
   bool hasGridCostE(frMIdx x, frMIdx y, frMIdx z) const
   {
@@ -524,27 +525,27 @@ class FlexGridGraph
       }
     }
   }
-  void addRouteShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z, bool ndr = false)
+  void addRouteShapeCostPlanar(frMIdx idx, bool ndr = false)
   {
-    auto& node = nodes_[getIdx(x, y, z)];
+    auto& node = nodes_[idx];
     if (ndr) {
       node.routeShapeCostPlanarNDR = addToByte(node.routeShapeCostPlanarNDR, 1);
     } else {
       node.routeShapeCostPlanar = addToByte(node.routeShapeCostPlanar, 1);
     }
   }
-  void addRouteShapeCostVia(frMIdx x, frMIdx y, frMIdx z, bool ndr = false)
+  void addRouteShapeCostVia(frMIdx idx, bool ndr = false)
   {
-    auto& node = nodes_[getIdx(x, y, z)];
+    auto& node = nodes_[idx];
     if (ndr) {
       node.routeShapeCostViaNDR = addToByte(node.routeShapeCostViaNDR, 1);
     } else {
       node.routeShapeCostVia = addToByte(node.routeShapeCostVia, 1);
     }
   }
-  void subRouteShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z, bool ndr = false)
+  void subRouteShapeCostPlanar(frMIdx idx, bool ndr = false)
   {
-    auto& node = nodes_[getIdx(x, y, z)];
+    auto& node = nodes_[idx];
     if (ndr) {
       node.routeShapeCostPlanarNDR
           = subFromByte(node.routeShapeCostPlanarNDR, 1);
@@ -552,22 +553,22 @@ class FlexGridGraph
       node.routeShapeCostPlanar = subFromByte(node.routeShapeCostPlanar, 1);
     }
   }
-  void subRouteShapeCostVia(frMIdx x, frMIdx y, frMIdx z, bool ndr = false)
+  void subRouteShapeCostVia(frMIdx idx, bool ndr = false)
   {
-    auto& node = nodes_[getIdx(x, y, z)];
+    auto& node = nodes_[idx];
     if (ndr) {
       node.routeShapeCostViaNDR = subFromByte(node.routeShapeCostViaNDR, 1);
     } else {
       node.routeShapeCostVia = subFromByte(node.routeShapeCostVia, 1);
     }
   }
-  void resetRouteShapeCostVia(frMIdx x, frMIdx y, frMIdx z, bool ndr = false)
+  void resetRouteShapeCostVia(frMIdx idx, bool ndr = false)
   {
-    auto idx = getIdx(x, y, z);
+    auto& node = nodes_[idx];
     if (ndr) {
-      nodes_[idx].routeShapeCostViaNDR = 0;
+      node.routeShapeCostViaNDR = 0;
     } else {
-      nodes_[idx].routeShapeCostVia = 0;
+      node.routeShapeCostVia = 0;
     }
   }
   void addMarkerCostPlanar(frMIdx x, frMIdx y, frMIdx z)
@@ -664,105 +665,79 @@ class FlexGridGraph
     }
     return (currCost == 0);
   }
-  void addFixedShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z, bool ndr = false)
+  void addFixedShapeCostPlanar(frMIdx idx, bool ndr = false)
   {
-    if (isValid(x, y, z)) {
-      auto& node = nodes_[getIdx(x, y, z)];
-      if (ndr) {
-        node.fixedShapeCostPlanarHorzNDR
-            = addToByte(node.fixedShapeCostPlanarHorzNDR, 1);
-        node.fixedShapeCostPlanarVertNDR
-            = addToByte(node.fixedShapeCostPlanarVertNDR, 1);
-      } else {
-        node.fixedShapeCostPlanarHorz
-            = addToByte(node.fixedShapeCostPlanarHorz, 1);
-        node.fixedShapeCostPlanarVert
-            = addToByte(node.fixedShapeCostPlanarVert, 1);
-      }
+    auto& node = nodes_[idx];
+    if (ndr) {
+      node.fixedShapeCostPlanarHorzNDR
+          = addToByte(node.fixedShapeCostPlanarHorzNDR, 1);
+      node.fixedShapeCostPlanarVertNDR
+          = addToByte(node.fixedShapeCostPlanarVertNDR, 1);
+    } else {
+      node.fixedShapeCostPlanarHorz
+          = addToByte(node.fixedShapeCostPlanarHorz, 1);
+      node.fixedShapeCostPlanarVert
+          = addToByte(node.fixedShapeCostPlanarVert, 1);
     }
   }
-  void setFixedShapeCostPlanarVert(frMIdx x,
-                                   frMIdx y,
-                                   frMIdx z,
-                                   frUInt4 c,
-                                   bool ndr = false)
+  void setFixedShapeCostPlanarVert(frMIdx idx, frUInt4 c, bool ndr = false)
   {
-    if (isValid(x, y, z)) {
-      auto& node = nodes_[getIdx(x, y, z)];
-      if (ndr) {
-        node.fixedShapeCostPlanarVertNDR = c;
-      } else {
-        node.fixedShapeCostPlanarVert = c;
-      }
+    auto& node = nodes_[idx];
+    if (ndr) {
+      node.fixedShapeCostPlanarVertNDR = c;
+    } else {
+      node.fixedShapeCostPlanarVert = c;
     }
   }
-  void setFixedShapeCostPlanarHorz(frMIdx x,
-                                   frMIdx y,
-                                   frMIdx z,
-                                   frUInt4 c,
-                                   bool ndr = false)
+  void setFixedShapeCostPlanarHorz(frMIdx idx, frUInt4 c, bool ndr = false)
   {
-    if (isValid(x, y, z)) {
-      auto& node = nodes_[getIdx(x, y, z)];
-      if (ndr) {
-        node.fixedShapeCostPlanarHorzNDR = c;
-      } else {
-        node.fixedShapeCostPlanarHorz = c;
-      }
+    auto& node = nodes_[idx];
+    if (ndr) {
+      node.fixedShapeCostPlanarHorzNDR = c;
+    } else {
+      node.fixedShapeCostPlanarHorz = c;
     }
   }
-  void addFixedShapeCostVia(frMIdx x, frMIdx y, frMIdx z, bool ndr = false)
+  void addFixedShapeCostVia(frMIdx idx, bool ndr = false)
   {
-    if (isValid(x, y, z)) {
-      auto& node = nodes_[getIdx(x, y, z)];
-      if (ndr) {
-        node.fixedShapeCostViaNDR = addToByte(node.fixedShapeCostViaNDR, 1);
-      } else {
-        node.fixedShapeCostVia = addToByte(node.fixedShapeCostVia, 1);
-      }
+    auto& node = nodes_[idx];
+    if (ndr) {
+      node.fixedShapeCostViaNDR = addToByte(node.fixedShapeCostViaNDR, 1);
+    } else {
+      node.fixedShapeCostVia = addToByte(node.fixedShapeCostVia, 1);
     }
   }
-  void setFixedShapeCostVia(frMIdx x,
-                            frMIdx y,
-                            frMIdx z,
-                            frUInt4 c,
-                            bool ndr = false)
+  void setFixedShapeCostVia(frMIdx idx, frUInt4 c, bool ndr = false)
   {
-    if (isValid(x, y, z)) {
-      auto& node = nodes_[getIdx(x, y, z)];
-      if (ndr) {
-        node.fixedShapeCostViaNDR = c;
-      } else {
-        node.fixedShapeCostVia = c;
-      }
+    auto& node = nodes_[idx];
+    if (ndr) {
+      node.fixedShapeCostViaNDR = c;
+    } else {
+      node.fixedShapeCostVia = c;
     }
   }
-  void subFixedShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z, bool ndr = false)
+  void subFixedShapeCostPlanar(frMIdx idx, bool ndr = false)
   {
-    if (isValid(x, y, z)) {
-      auto& node = nodes_[getIdx(x, y, z)];
-      if (ndr) {
-        node.fixedShapeCostPlanarHorzNDR
-            = subFromByte(node.fixedShapeCostPlanarHorzNDR, 1);
-        node.fixedShapeCostPlanarVertNDR
-            = subFromByte(node.fixedShapeCostPlanarVertNDR, 1);
-      } else {
-        node.fixedShapeCostPlanarHorz
-            = subFromByte(node.fixedShapeCostPlanarHorz, 1);
-        node.fixedShapeCostPlanarVert
-            = subFromByte(node.fixedShapeCostPlanarVert, 1);
-      }
+    auto& node = nodes_[idx];
+    if (ndr) {
+      node.fixedShapeCostPlanarHorzNDR
+          = subFromByte(node.fixedShapeCostPlanarHorzNDR, 1);
+      node.fixedShapeCostPlanarVertNDR
+          = subFromByte(node.fixedShapeCostPlanarVertNDR, 1);
+    } else {
+      node.fixedShapeCostPlanarHorz
+          = subFromByte(node.fixedShapeCostPlanarHorz, 1);
+      node.fixedShapeCostPlanarVert
+          = subFromByte(node.fixedShapeCostPlanarVert, 1);
     }
   }
-  void subFixedShapeCostVia(frMIdx x, frMIdx y, frMIdx z, bool ndr = false)
+  void subFixedShapeCostVia(frMIdx idx, bool ndr = false)
   {
-    if (isValid(x, y, z)) {
-      auto& node = nodes_[getIdx(x, y, z)];
-      if (ndr) {
-        node.fixedShapeCostViaNDR = subFromByte(node.fixedShapeCostViaNDR, 1);
-      } else {
-        node.fixedShapeCostVia = subFromByte(node.fixedShapeCostVia, 1);
-      }
+    auto& node = nodes_[idx];
+    if (ndr) {
+      node.fixedShapeCostViaNDR = subFromByte(node.fixedShapeCostViaNDR, 1);
+    } else {
+      node.fixedShapeCostVia = subFromByte(node.fixedShapeCostVia, 1);
     }
   }
 

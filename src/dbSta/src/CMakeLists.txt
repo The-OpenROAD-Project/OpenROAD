@@ -116,7 +116,7 @@ target_link_libraries(dbSta
     OpenSTA
     odb
     gui
-    utl
+    utl_lib
     dbSta_lib
 )
 
