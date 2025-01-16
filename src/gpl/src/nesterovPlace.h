@@ -77,7 +77,7 @@ class NesterovPlace
 
   void updateWireLengthCoef(float overflow);
 
-  void updateNextIter(int iter);
+  bool updateNextIter(int iter);
 
   void updateDb();
 
@@ -115,8 +115,10 @@ class NesterovPlace
 
   float total_sum_overflow_ = 0;
   float total_sum_overflow_unscaled_ = 0;
+  // The average here is between regions (NB objects)
   float average_overflow_ = 0;
   float average_overflow_unscaled_ = 0;
+  float min_average_overflow_unscaled_ = 1e30;
 
   // densityPenalty stor
   std::vector<float> densityPenaltyStor_;

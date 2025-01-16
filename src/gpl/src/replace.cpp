@@ -369,13 +369,21 @@ bool Replace::initNesterovPlace(int threads)
 
 int Replace::doNesterovPlace(int threads, int start_iter)
 {
+  auto start = std::chrono::high_resolution_clock::now();
+
   if (!initNesterovPlace(threads)) {
     return 0;
   }
   if (timingDrivenMode_) {
     rs_->resizeSlackPreamble();
   }
-  return np_->doNesterovPlace(start_iter);
+
+  int return_do_nesterov = np_->doNesterovPlace(start_iter);
+
+  auto end = std::chrono::high_resolution_clock::now();  
+  std::chrono::duration<double> elapsed = end - start;
+  log_->report("NP->doNesterovPlace() runtime: {} seconds ", elapsed.count());
+  return return_do_nesterov;
 }
 
 void Replace::setInitialPlaceMaxIter(int iter)

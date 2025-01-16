@@ -319,11 +319,12 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   }
 
   // snapshot saving detection
-  bool isSnapshotSaved = false;
+  bool is_routability_snapshot_saved = false;
+  bool is_min_average_overflow = false;
 
   // snapshot info
-  float snapshotA = 0;
-  float snapshotWlCoefX = 0, snapshotWlCoefY = 0;
+  float route_snapshotA = 0;
+  float route_snapshotWlCoefX = 0, route_snapshotWlCoefY = 0;
   bool isDivergeTriedRevert = false;
 
   // backTracking variable.
@@ -342,7 +343,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
     // here, prevA is a_(k), curA is a_(k+1)
     // See, the ePlace-MS paper's Algorithm 1
-    //
     curA = (1.0 + sqrt(4.0 * prevA * prevA + 1.0)) * 0.5;
 
     // coeff is (a_k - 1) / ( a_(k+1) ) in paper.
@@ -410,11 +410,21 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       break;
     }
 
-    updateNextIter(iter);
+    //TODO make sure this does not interfeer with routability
+    is_min_average_overflow = updateNextIter(iter);
+    if(is_min_average_overflow){
+      route_snapshotWlCoefX = wireLengthCoefX_;
+      route_snapshotWlCoefY = wireLengthCoefY_;
+      route_snapshotA = curA;
+      is_routability_snapshot_saved = true;
+      for (auto& nb : nbVec_) {
+        nb->snapshot();
+      }
+      // log_->report("[Divergence   ] Snapshot for divergence saved at iter = {}", iter);
+    }
 
     // For JPEG Saving
     // debug
-
     const int debug_start_iter = npVars_.debug_start_iter;
     if (graphics_ && (debug_start_iter == 0 || iter + 1 >= debug_start_iter)) {
       bool update
@@ -531,13 +541,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       if (!isDivergeTriedRevert && rb_->numCall() >= 1) {
         // get back to the working rc size
         rb_->revertGCellSizeToMinRc();
-
-        curA = snapshotA;
-        wireLengthCoefX_ = snapshotWlCoefX;
-        wireLengthCoefY_ = snapshotWlCoefY;
-
+        curA = route_snapshotA;
+        wireLengthCoefX_ = route_snapshotWlCoefX;
+        wireLengthCoefY_ = route_snapshotWlCoefY;
         nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
-
         for (auto& nb : nbVec_) {
           nb->revertDivergence();
         }
@@ -549,23 +556,33 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         // turn off the RD forcely
         isRoutabilityNeed_ = false;
       } else {
-        // no way to revert
+        // In case diverged and not in routability mode, finish with min overflow
+        log_->report("no routaiblity mode + divergence!");
+        
+        curA = route_snapshotA;
+        wireLengthCoefX_ = route_snapshotWlCoefX;
+        wireLengthCoefY_ = route_snapshotWlCoefY;
+        nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
+        for (auto& nb : nbVec_) {
+          nb->revertDivergence();
+        }
+        isDiverged_ = false;
         break;
       }
     }
 
-    if (!isSnapshotSaved && npVars_.routabilityDrivenMode
+    if (!is_routability_snapshot_saved && npVars_.routabilityDrivenMode
         && 0.6 >= average_overflow_unscaled_) {
-      snapshotWlCoefX = wireLengthCoefX_;
-      snapshotWlCoefY = wireLengthCoefY_;
-      snapshotA = curA;
-      isSnapshotSaved = true;
+      route_snapshotWlCoefX = wireLengthCoefX_;
+      route_snapshotWlCoefY = wireLengthCoefY_;
+      route_snapshotA = curA;
+      is_routability_snapshot_saved = true;
 
       for (auto& nb : nbVec_) {
         nb->snapshot();
       }
 
-      log_->report("[NesterovSolve] Snapshot saved at iter = {}", iter);
+      log_->report("[Routability  ] Snapshot saved at iter = {}", iter);
     }
 
     // check routability using GR
@@ -582,9 +599,9 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         // cutFillerCoordinates();
 
         // revert back the current density penality
-        curA = snapshotA;
-        wireLengthCoefX_ = snapshotWlCoefX;
-        wireLengthCoefY_ = snapshotWlCoefY;
+        curA = route_snapshotA;
+        wireLengthCoefX_ = route_snapshotWlCoefX;
+        wireLengthCoefY_ = route_snapshotWlCoefY;
 
         nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
@@ -592,7 +609,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           nb->revertDivergence();
           nb->resetMinSumOverflow();
         }
-        log_->report("[NesterovSolve] Revert back to snapshot coordi");
+        log_->report("[Routability  ] Revert back to snapshot coordi");
       }
     }
 
@@ -642,7 +659,7 @@ void NesterovPlace::updateWireLengthCoef(float overflow)
   debugPrint(log_, GPL, "np", 1, "NewWireLengthCoef: {:g}", wireLengthCoefX_);
 }
 
-void NesterovPlace::updateNextIter(const int iter)
+bool NesterovPlace::updateNextIter(const int iter)
 {
   total_sum_overflow_ = 0;
   total_sum_overflow_unscaled_ = 0;
@@ -656,8 +673,12 @@ void NesterovPlace::updateNextIter(const int iter)
   average_overflow_ = total_sum_overflow_ / nbVec_.size();
   average_overflow_unscaled_ = total_sum_overflow_unscaled_ / nbVec_.size();
 
+  if(average_overflow_unscaled_ < min_average_overflow_unscaled_ && average_overflow_unscaled_ <= 0.3) {
+    return true;
+  }
   // For coefficient, using average regions' overflow
   updateWireLengthCoef(average_overflow_);
+  return false;
 }
 
 void NesterovPlace::updateDb()
