@@ -535,8 +535,16 @@ Point<double> HTreeBuilder::findBestLegalLocation(
     }
   }
 
-  return adjustBestLegalLocation(
-      targetDist, best, parentPoint, sinks,x1, y1, x2, y2, scalingFactor, direction);
+  return adjustBestLegalLocation(targetDist,
+                                 best,
+                                 parentPoint,
+                                 sinks,
+                                 x1,
+                                 y1,
+                                 x2,
+                                 y2,
+                                 scalingFactor,
+                                 direction);
 }
 
 // Adjust buffer location in two steps:
@@ -753,7 +761,7 @@ Point<double> HTreeBuilder::adjustBeyondBlockage(
   // if so add candidate points that intersect blockage and Manhattan square
   // p1 is top corner
 
-  if(direction == odb::Direction2D(odb::Direction2D::North)) {
+  if (direction == odb::Direction2D(odb::Direction2D::North)) {
     point.setX(px);
     point.setY(py + targetDist);
     addCandidatePointsAlongBlockage(point,
@@ -765,7 +773,7 @@ Point<double> HTreeBuilder::adjustBeyondBlockage(
   }
 
   // p2 is right corner
-  if(direction == odb::Direction2D(odb::Direction2D::East)) {
+  if (direction == odb::Direction2D(odb::Direction2D::East)) {
     point.setX(px + targetDist);
     point.setY(py);
     addCandidatePointsAlongBlockage(point,
@@ -777,7 +785,7 @@ Point<double> HTreeBuilder::adjustBeyondBlockage(
   }
 
   // p3 is bottom corner
-  if(direction == odb::Direction2D(odb::Direction2D::South)) {
+  if (direction == odb::Direction2D(odb::Direction2D::South)) {
     point.setX(px);
     point.setY(py - targetDist);
     addCandidatePointsAlongBlockage(point,
@@ -789,7 +797,7 @@ Point<double> HTreeBuilder::adjustBeyondBlockage(
   }
 
   // p4 is left corner
-  if(direction == odb::Direction2D(odb::Direction2D::West)) {
+  if (direction == odb::Direction2D(odb::Direction2D::West)) {
     point.setX(px - targetDist);
     point.setY(py);
     addCandidatePointsAlongBlockage(point,
@@ -818,12 +826,12 @@ Point<double> HTreeBuilder::adjustBeyondBlockage(
   double newY = py - targetDist + abs(px - newX);
   newLoc.setX(newX);
   newLoc.setY(newY);
-  if(direction == odb::Direction2D(odb::Direction2D::South)) {
+  if (direction == odb::Direction2D(odb::Direction2D::South)) {
     candidates.emplace_back(newLoc);  // trial x#1
   }
 
   newLoc.setY(py + targetDist - abs(px - newX));
-  if(direction == odb::Direction2D(odb::Direction2D::North)) {
+  if (direction == odb::Direction2D(odb::Direction2D::North)) {
     candidates.emplace_back(newLoc);  // trial x#2
   }
 
@@ -831,12 +839,12 @@ Point<double> HTreeBuilder::adjustBeyondBlockage(
   newY = py - targetDist + abs(px - newX);
   newLoc.setX(newX);
   newLoc.setY(newY);
-  if(direction == odb::Direction2D(odb::Direction2D::South)) {
+  if (direction == odb::Direction2D(odb::Direction2D::South)) {
     candidates.emplace_back(newLoc);  // trial x#3
   }
 
   newLoc.setY(py + targetDist - abs(px - newX));
-  if(direction == odb::Direction2D(odb::Direction2D::North)) {
+  if (direction == odb::Direction2D(odb::Direction2D::North)) {
     candidates.emplace_back(newLoc);  // trial x#4
   }
 
@@ -845,12 +853,12 @@ Point<double> HTreeBuilder::adjustBeyondBlockage(
   newX = px - targetDist + abs(py - newY);
   newLoc.setX(newX);
   newLoc.setY(newY);
-  if(direction == odb::Direction2D(odb::Direction2D::West)) {
+  if (direction == odb::Direction2D(odb::Direction2D::West)) {
     candidates.emplace_back(newLoc);  // trial y#1
   }
 
   newLoc.setX(px + targetDist - abs(py - newY));
-  if(direction == odb::Direction2D(odb::Direction2D::East)) {
+  if (direction == odb::Direction2D(odb::Direction2D::East)) {
     candidates.emplace_back(newLoc);  // trial y#2
   }
 
@@ -858,12 +866,12 @@ Point<double> HTreeBuilder::adjustBeyondBlockage(
   newX = px - targetDist + abs(py - newY);
   newLoc.setX(newX);
   newLoc.setY(newY);
-  if(direction == odb::Direction2D(odb::Direction2D::West)) {
+  if (direction == odb::Direction2D(odb::Direction2D::West)) {
     candidates.emplace_back(newLoc);  // trial y#3
   }
 
   newLoc.setX(px + targetDist - abs(py - newY));
-  if(direction == odb::Direction2D(odb::Direction2D::East)) {
+  if (direction == odb::Direction2D(odb::Direction2D::East)) {
     candidates.emplace_back(newLoc);  // trial y#4
   }
 
@@ -1088,15 +1096,15 @@ void HTreeBuilder::legalize()
                 : topologyForEachLevel_[levelIdx - 1].getBranchingPoint(
                       parentIdx);
 
-      odb::Direction2D::Value branch_point_dir; 
-      if(isHorizontal(levelIdx+1)) {
-        if(branchPoint.getX() - parentPoint.getX() > 0) {
+      odb::Direction2D::Value branch_point_dir;
+      if (isHorizontal(levelIdx + 1)) {
+        if (branchPoint.getX() - parentPoint.getX() > 0) {
           branch_point_dir = odb::Direction2D::East;
         } else {
           branch_point_dir = odb::Direction2D::West;
         }
       } else {
-        if(branchPoint.getY() - parentPoint.getY() > 0) {
+        if (branchPoint.getY() - parentPoint.getY() > 0) {
           branch_point_dir = odb::Direction2D::North;
         } else {
           branch_point_dir = odb::Direction2D::South;
@@ -1854,8 +1862,7 @@ void HTreeBuilder::createClockSubNets()
       return;
     }
     Point<double> legalBranchPoint
-        = legalizeOneBuffer(branchPoint,
-                            options_->getRootBuffer());
+        = legalizeOneBuffer(branchPoint, options_->getRootBuffer());
     commitMoveLoc(branchPoint, legalBranchPoint);
 
     // clang-format off
@@ -1912,8 +1919,7 @@ void HTreeBuilder::createClockSubNets()
       Point<double> parentPoint = parentTopology.getBranchingPoint(parentIdx);
 
       Point<double> legalBranchPoint
-          = legalizeOneBuffer(branchPoint,
-                              options_->getRootBuffer());
+          = legalizeOneBuffer(branchPoint, options_->getRootBuffer());
       commitMoveLoc(branchPoint, legalBranchPoint);
 
       // clang-format off
