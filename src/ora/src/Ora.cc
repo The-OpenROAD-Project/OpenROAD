@@ -58,6 +58,11 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
   return size * nmemb;
 }
 
+std::string getLocalDirPath()
+{
+  return std::string(getenv("HOME")) + "/.local/share/openroad";
+};
+
 bool checkConsent()
 {
   std::string folderPath = getLocalDirPath();
@@ -73,7 +78,7 @@ bool checkConsent()
     std::string consent;
     std::getline(consentFile, consent);
     consentFile.close();
-    return consent == "y";
+    return true;
   }
 
   return false;
@@ -114,11 +119,6 @@ std::string sendPostRequest(const std::string& url, const std::string& jsonData)
   return response;
 }
 
-std::string getLocalDirPath()
-{
-  return std::string(getenv("HOME")) + "/.local/share/openroad";
-};
-
 void Ora::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger)
 {
   db_ = db;
@@ -127,28 +127,36 @@ void Ora::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger)
   Ora_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::ora_tcl_inits);
 
-  hostUrl
+  localDirPath = getLocalDirPath();
+  cloudHostUrl
       = "https://bursting-stallion-friendly.ngrok-free.app/graphs/"
         "agent-retriever";
-
-  localDirPath = getLocalDirPath();
+  consentMessage
+      = "The ORAssistant app collects and processes your data in accordance "
+        "with the General Data Protection Regulation (GDPR). By using the "
+        "cloud-hosted version of this app, you consent to the collection and "
+        "processing of your queries and the subsequently generated answers. "
+        "Give consent to use the application by using the `ora_init {consent} "
+        "{hostURL}`  command.";
 
   try {
-    std::ifstream hostUrlFile(localDirPath + "/orassistant_host.txt");
-    if (hostUrlFile.is_open()) {
-      std::getline(hostUrlFile, hostUrl);
-      hostUrlFile.close();
+    std::ifstream localHostUrlFile(getLocalDirPath() + "/orassistant_host.txt");
+    if (localHostUrlFile.is_open()) {
+      std::getline(localHostUrlFile, localHostUrl);
+      localHostUrlFile.close();
     }
   } catch (const std::exception& e) {
-    logger_->warn(utl::ORA, 111, "Failed to read ORAssistant host from file.");
+    logger_->warn(utl::ORA,
+                  122,
+                  "Failed to read ORAssistant local host. Exception: {}",
+                  e.what());
   }
-
-  sourceFlag_ = true;
 }
 
 void Ora::checkLocalDir()
 {
   std::ifstream localDir(localDirPath);
+
   if (!localDir) {
     logger_->info(utl::ORA, 112, "Creating ~/.local/share/openroad directory.");
     try {
@@ -163,20 +171,30 @@ void Ora::checkLocalDir()
 void Ora::askbot(const char* query)
 {
   if (!checkConsent()) {
-    logger_->info(
+    logger_->warn(
         utl::ORA,
-        110,
-        "The ORAssistant app collects and processes your data in accordance "
-        "with "
-        "the General Data Protection Regulation(GDPR). By using the cloud "
-        "hosted "
-        "version of this app, you consent to the collection and processing of "
-        "your "
-        "queries and the subsequently generated answers. Give consent to use "
-        "the application by using the set_consent command.");
-
+        197,
+        "To use the ORAssistant, please provide consent by running the "
+        "`ora_init {consent} {hostURL}` command."
+        "Only the query you type in will be sent outside the application—no "
+        "other "
+        "user or design data will be shared. "
+        "For instructions on setting up a locally hosted copy, refer to the "
+        "documentation in https://github.com/The-OpenROAD-Project/ORAssistant. "
+        "Note: Consent must be set to y only for the web-hosted ORAssistant. "
+        "Please set it to n and provide a hostURL if you choose to use a "
+        "locally hosted version.");
     return;
   }
+
+  if (cloudConsent_) {
+    hostUrl = cloudHostUrl;
+  }
+  else
+  {
+    hostUrl = localHostUrl;
+  }
+
   logger_->info(utl::ORA, 101, "Sending POST request to {}", hostUrl);
 
   std::stringstream jsonDataStream;
@@ -242,7 +260,7 @@ void Ora::setSourceFlag(bool sourceFlag)
 
 void Ora::setBotHost(const char* host)
 {
-  hostUrl = host;
+  localHostUrl = host;
   logger_->info(utl::ORA, 116, "Setting ORAssistant host to {}", hostUrl);
 
   checkLocalDir();
@@ -269,7 +287,8 @@ void Ora::setConsent(const char* consent)
 
   // check if consent is y or n
   if (std::string(consent) != "y" && std::string(consent) != "n") {
-    logger_->warn(utl::ORA, 117, "Invalid consent value. Use 'y' or 'n'.");
+    logger_->error(
+        utl::ORA, 117, "{} : Invalid consent value. Use 'y' or 'n'.", consent);
     return;
   }
 
@@ -282,6 +301,19 @@ void Ora::setConsent(const char* consent)
         "Consent saved to ~/.local/share/openroad/orassistant_consent.txt");
   } else {
     logger_->warn(utl::ORA, 115, "Failed to write consent to file.");
+  }
+
+  if (std::string(consent) == "y") {
+    cloudConsent_ = true;
+    logger_->info(utl::ORA,
+                  198,
+                  "{}\nConsent granted for using a cloud hosted ORAssistant. "
+                  "Please run `ora_init n` to remove your consent.",
+                  consentMessage);
+  } else if (std::string(consent) == "n") {
+    cloudConsent_ = false;
+    logger_->info(
+        utl::ORA, 199, "Consent removed for using a cloud hosted ORAssistant.");
   }
 }
 

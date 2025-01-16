@@ -43,7 +43,11 @@ class Ora
  private:
   odb::dbDatabase* db_;
   bool sourceFlag_;
+  bool cloudConsent_;
   std::string hostUrl;
+  std::string localHostUrl;
+  std::string cloudHostUrl;
+  std::string consentMessage;
   std::string localDirPath;
   void checkLocalDir();
 
