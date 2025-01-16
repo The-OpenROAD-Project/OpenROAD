@@ -8,5 +8,4 @@ create_clock -period 5 clk
 
 clock_tree_synthesis -root_buf CLKBUF_X3 \
                      -buf_list CLKBUF_X3 \
-                     -wire_unit 20 \
-                     -obstruction_aware    
+                     -wire_unit 20
