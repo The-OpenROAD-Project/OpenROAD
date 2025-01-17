@@ -325,7 +325,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   bool isDivergeTriedRevert = false;
 
   // divergence snapshot info
-  bool is_min_hpwl = false;
   float diverge_snapshotA = 0;
   float diverge_snapshotWlCoefX = 0, diverge_snapshotWlCoefY = 0;
 
@@ -412,16 +411,19 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       break;
     }
 
-    is_min_hpwl = updateNextIter(iter);
-    if (is_min_hpwl) {
-      diverge_snapshotWlCoefX = wireLengthCoefX_;
-      diverge_snapshotWlCoefY = wireLengthCoefY_;
-      diverge_snapshotA = curA;
-      for (auto& nb : nbVec_) {
-        nb->snapshot();
+    updateNextIter(iter);
+
+    if (npVars_.allowRevertIfDiverge) {
+      if (is_min_hpwl_) {
+        diverge_snapshotWlCoefX = wireLengthCoefX_;
+        diverge_snapshotWlCoefY = wireLengthCoefY_;
+        diverge_snapshotA = curA;
+        for (auto& nb : nbVec_) {
+          nb->snapshot();
+        }
+        // log_->report("[NesterovSolve] Snapshot for divergence saved at iter =
+        // {}", iter);
       }
-      // log_->report("[NesterovSolve] Snapshot for divergence saved at iter =
-      // {}", iter);
     }
 
     // For JPEG Saving
@@ -556,7 +558,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         isDivergeTriedRevert = true;
         // turn off the RD forcely
         isRoutabilityNeed_ = false;
-      } else {
+      } else if (npVars_.allowRevertIfDiverge) {
         // In case diverged and not in routability mode, finish with min hpwl
         // stored since overflow below 0.25
         log_->warn(GPL,
@@ -576,6 +578,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           nb->revertDivergence();
         }
         isDiverged_ = false;
+        break;
+      } else {
         break;
       }
     }
@@ -668,7 +672,7 @@ void NesterovPlace::updateWireLengthCoef(float overflow)
   debugPrint(log_, GPL, "np", 1, "NewWireLengthCoef: {:g}", wireLengthCoefX_);
 }
 
-bool NesterovPlace::updateNextIter(const int iter)
+void NesterovPlace::updateNextIter(const int iter)
 {
   total_sum_overflow_ = 0;
   total_sum_overflow_unscaled_ = 0;
@@ -686,14 +690,17 @@ bool NesterovPlace::updateNextIter(const int iter)
   updateWireLengthCoef(average_overflow_);
 
   // Update divergence snapshot
-  int64_t hpwl = nbc_->getHpwl();
-  if (hpwl < min_hpwl_ && average_overflow_unscaled_ <= 0.25) {
-    min_hpwl_ = hpwl;
-    diverge_snapshot_average_overflow_unscaled_ = average_overflow_unscaled_;
-    diverge_snapshot_iter_ = iter;
-    return true;
+  if (npVars_.allowRevertIfDiverge) {
+    int64_t hpwl = nbc_->getHpwl();
+    if (hpwl < min_hpwl_ && average_overflow_unscaled_ <= 0.25) {
+      min_hpwl_ = hpwl;
+      diverge_snapshot_average_overflow_unscaled_ = average_overflow_unscaled_;
+      diverge_snapshot_iter_ = iter;
+      is_min_hpwl_ = true;
+    } else {
+      is_min_hpwl_ = false;
+    }
   }
-  return false;
 }
 
 void NesterovPlace::updateDb()

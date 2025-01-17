@@ -64,6 +64,7 @@ sta::define_cmd_args "global_placement" {\
     [-timing_driven_nets_percentage timing_driven_nets_percentage]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
+    [-allow_revert_if_diverge]\
 }
 
 proc global_placement { args } {
@@ -92,7 +93,8 @@ proc global_placement { args } {
       -disable_timing_driven \
       -disable_routability_driven \
       -skip_io \
-      -incremental}
+      -incremental\
+      -allow_revert_if_diverge}
 
   # flow control for initial_place
   if { [info exists flags(-skip_initial_place)] } {
@@ -326,6 +328,14 @@ proc global_placement { args } {
     gpl::replace_reset_cmd
   } else {
     utl::error GPL 130 "No rows defined in design. Use initialize_floorplan to add rows."
+  }
+
+  # Revert to saved snapshot if a divergence is detected.
+  set allow_revert_if_diverge [info exists flags(-allow_revert_if_diverge)]
+  gpl::set_allow_revert_if_diverge $allow_revert_if_diverge
+  if { $allow_revert_if_diverge } {
+    utl::warn "GPL" 153 \
+      "Allow revert to saved snapshot if a divergence is detected."
   }
 }
 
