@@ -96,8 +96,8 @@ proc set_dft_config { args } {
   if { [info exists keys(-test_mode)] } {
     set test_mode $keys(-max_length)
   } else {
-    # all commands are by default applied to the "default" test mode
-    set test_mode "default"
+    # all commands are by default applied to the "internal_scan" test mode
+    set test_mode "internal_scan"
   }
 
   if { [info exists keys(-max_length)] } {
@@ -147,5 +147,7 @@ proc create_dft_test_mode { args } {
   if { [info exists keys(-test_mode)] } {
     set test_mode $keys(-test_mode)
     dft::create_dft_test_mode $test_mode
+  } else {
+    utl::error DFT 42 "No test mode specified, -test_mode required"
   }
 }

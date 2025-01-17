@@ -58,7 +58,7 @@ utl::Logger* getLogger()
 void withTestMode(std::string_view test_mode, std::function<void(dft::TestModeConfig*)> fn) {
   dft::TestModeConfig* test_mode_config = getDft()
     ->getMutableDftConfig()
-    ->getOrDefaultMutableTestModeConfig(std::string(test_mode));
+    ->getOrDefaultMutableTestModeConfig(std::string(test_mode), getLogger());
   if (!test_mode_config) {
     getLogger()->error(utl::DFT, 41, "Test mode {} not defiend", test_mode); 
     return;
@@ -177,7 +177,7 @@ void report_dft_config() {
 }
 
 void create_dft_test_mode(const char* test_mode) {
-  getDft()->getMutableDftConfig()->createTestMode(test_mode);
+  getDft()->getMutableDftConfig()->createTestMode(test_mode, getLogger());
 }
 
 %}  // inline

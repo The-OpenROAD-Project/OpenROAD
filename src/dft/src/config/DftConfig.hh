@@ -48,8 +48,9 @@ class DftConfig
   DftConfig(const DftConfig&) = delete;
   DftConfig& operator=(const DftConfig&) = delete;
 
-  TestModeConfig* createTestMode(const std::string& name);
-  TestModeConfig* getOrDefaultMutableTestModeConfig(const std::string& name);
+  TestModeConfig* createTestMode(const std::string& name, utl::Logger* logger);
+  TestModeConfig* getOrDefaultMutableTestModeConfig(const std::string& name,
+                                                    utl::Logger* logger);
   const std::unordered_map<std::string, TestModeConfig>& getTestModesConfig()
       const;
 

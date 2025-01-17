@@ -35,7 +35,9 @@
 namespace dft {
 
 namespace {
-constexpr std::string_view kDefaultTestModeName = "default";
+// Internal scan is the scan mode where each scan chain is connected to a top
+// level scan in , scan enable and scan out.
+constexpr std::string_view kDefaultTestModeName = "internal_scan";
 }  // namespace
 
 void DftConfig::report(utl::Logger* logger) const
@@ -51,19 +53,26 @@ void DftConfig::report(utl::Logger* logger) const
   logger->report("***************************");
 }
 
-TestModeConfig* DftConfig::createTestMode(const std::string& name)
+TestModeConfig* DftConfig::createTestMode(const std::string& name,
+                                          utl::Logger* logger)
 {
+  if (test_modes_config_.size() >= 1) {
+    logger->error(utl::DFT, 43, "Multiple test modes not supported");
+    return nullptr;
+  }
+
   auto pair = test_modes_config_.try_emplace(name, name);
   return &pair.first->second;
 }
 
 TestModeConfig* DftConfig::getOrDefaultMutableTestModeConfig(
-    const std::string& name)
+    const std::string& name,
+    utl::Logger* logger)
 {
   auto found = test_modes_config_.find(name);
   if (found == test_modes_config_.end()) {
     if (name == kDefaultTestModeName) {
-      return createTestMode(name);
+      return createTestMode(name, logger);
     }
     return nullptr;
   }
