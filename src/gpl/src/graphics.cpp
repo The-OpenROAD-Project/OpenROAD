@@ -72,7 +72,8 @@ Graphics::Graphics(utl::Logger* logger,
                    std::vector<std::shared_ptr<PlacerBase>>& pbVec,
                    std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                    bool draw_bins,
-                   odb::dbInst* inst)
+                   odb::dbInst* inst,
+                   int start_iter)
     : HeatMapDataSource(logger, "gpl", "gpl"),
       pbc_(std::move(pbc)),
       nbc_(std::move(nbc)),
