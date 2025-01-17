@@ -74,7 +74,7 @@ target_link_libraries(dpo
   PRIVATE
     odb
     OpenSTA
-    utl
+    utl_lib
     dpl_lib
 )
 
