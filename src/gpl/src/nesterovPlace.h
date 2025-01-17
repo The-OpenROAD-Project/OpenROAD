@@ -118,7 +118,9 @@ class NesterovPlace
   // The average here is between regions (NB objects)
   float average_overflow_ = 0;
   float average_overflow_unscaled_ = 0;
-  float min_average_overflow_unscaled_ = 1e30;
+  float diverge_snapshot_average_overflow_unscaled_ = 0;
+  int64_t min_hpwl_ = INT64_MAX;
+  int diverge_snapshot_iter_ = 0;
 
   // densityPenalty stor
   std::vector<float> densityPenaltyStor_;

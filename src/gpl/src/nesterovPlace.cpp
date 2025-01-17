@@ -318,14 +318,16 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     graphics_->cellPlot(true);
   }
 
-  // snapshot saving detection
+  // routability snapshot info
   bool is_routability_snapshot_saved = false;
-  bool is_min_average_overflow = false;
-
-  // snapshot info
   float route_snapshotA = 0;
   float route_snapshotWlCoefX = 0, route_snapshotWlCoefY = 0;
   bool isDivergeTriedRevert = false;
+
+  // divergence snapshot info
+  bool is_min_hpwl = false;
+  float diverge_snapshotA = 0;
+  float diverge_snapshotWlCoefX = 0, diverge_snapshotWlCoefY = 0;
 
   // backTracking variable.
   float curA = 1.0;
@@ -410,17 +412,16 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       break;
     }
 
-    //TODO make sure this does not interfeer with routability
-    is_min_average_overflow = updateNextIter(iter);
-    if(is_min_average_overflow){
-      route_snapshotWlCoefX = wireLengthCoefX_;
-      route_snapshotWlCoefY = wireLengthCoefY_;
-      route_snapshotA = curA;
-      is_routability_snapshot_saved = true;
+    is_min_hpwl = updateNextIter(iter);
+    if (is_min_hpwl) {
+      diverge_snapshotWlCoefX = wireLengthCoefX_;
+      diverge_snapshotWlCoefY = wireLengthCoefY_;
+      diverge_snapshotA = curA;
       for (auto& nb : nbVec_) {
         nb->snapshot();
       }
-      // log_->report("[Divergence   ] Snapshot for divergence saved at iter = {}", iter);
+      // log_->report("[NesterovSolve] Snapshot for divergence saved at iter =
+      // {}", iter);
     }
 
     // For JPEG Saving
@@ -556,12 +557,20 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         // turn off the RD forcely
         isRoutabilityNeed_ = false;
       } else {
-        // In case diverged and not in routability mode, finish with min overflow
-        log_->report("no routaiblity mode + divergence!");
-        
-        curA = route_snapshotA;
-        wireLengthCoefX_ = route_snapshotWlCoefX;
-        wireLengthCoefY_ = route_snapshotWlCoefY;
+        // In case diverged and not in routability mode, finish with min hpwl
+        // stored since overflow below 0.25
+        log_->warn(GPL,
+                   90,
+                   "Divergence detected, reverting to snapshot with min hpwl.");
+        log_->warn(GPL,
+                   91,
+                   "Revert to iter: {:4d} overflow: {:.3f} HPWL: {}",
+                   diverge_snapshot_iter_,
+                   diverge_snapshot_average_overflow_unscaled_,
+                   min_hpwl_);
+        curA = diverge_snapshotA;
+        wireLengthCoefX_ = diverge_snapshotWlCoefX;
+        wireLengthCoefY_ = diverge_snapshotWlCoefY;
         nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
         for (auto& nb : nbVec_) {
           nb->revertDivergence();
@@ -582,10 +591,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         nb->snapshot();
       }
 
-      log_->report("[Routability  ] Snapshot saved at iter = {}", iter);
+      log_->info(GPL, 88, "Routability snapshot saved at iter = {}", iter);
     }
 
-    // check routability using GR
+    // check routability using RUDY or GR
     if (npVars_.routabilityDrivenMode && isRoutabilityNeed_
         && npVars_.routabilityCheckOverflow >= average_overflow_unscaled_) {
       // recover the densityPenalty values
@@ -609,7 +618,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           nb->revertDivergence();
           nb->resetMinSumOverflow();
         }
-        log_->report("[Routability  ] Revert back to snapshot coordi");
+        log_->info(GPL, 89, "Routability: revert back to snapshot");
       }
     }
 
@@ -673,11 +682,17 @@ bool NesterovPlace::updateNextIter(const int iter)
   average_overflow_ = total_sum_overflow_ / nbVec_.size();
   average_overflow_unscaled_ = total_sum_overflow_unscaled_ / nbVec_.size();
 
-  if(average_overflow_unscaled_ < min_average_overflow_unscaled_ && average_overflow_unscaled_ <= 0.3) {
-    return true;
-  }
   // For coefficient, using average regions' overflow
   updateWireLengthCoef(average_overflow_);
+
+  // Update divergence snapshot
+  int64_t hpwl = nbc_->getHpwl();
+  if (hpwl < min_hpwl_ && average_overflow_unscaled_ <= 0.25) {
+    min_hpwl_ = hpwl;
+    diverge_snapshot_average_overflow_unscaled_ = average_overflow_unscaled_;
+    diverge_snapshot_iter_ = iter;
+    return true;
+  }
   return false;
 }
 
