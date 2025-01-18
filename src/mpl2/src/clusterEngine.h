@@ -117,6 +117,8 @@ struct PhysicalHierarchy
   float halo_width{0.0f};
   float halo_height{0.0f};
   float macro_with_halo_area{0.0f};
+  Rect global_fence;
+  Rect floorplan_shape;
 
   bool has_io_clusters{true};
   bool has_only_macros{false};
@@ -176,9 +178,11 @@ class ClusteringEngine
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
   std::vector<odb::dbInst*> getUnfixedMacros();
+  void setFloorplanShape();
+  void searchForFixedInstsInsideFloorplanShape();
   float computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
-  void reportDesignData(float core_area);
+  void reportDesignData();
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();

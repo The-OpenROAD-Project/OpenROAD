@@ -112,41 +112,23 @@ void ClusteringEngine::init()
     return;
   }
 
+  setFloorplanShape();
+  searchForFixedInstsInsideFloorplanShape();
+
   tree_->macro_with_halo_area = computeMacroWithHaloArea(unfixed_macros);
-
-  const odb::Rect die = block_->getDieArea();
-  const odb::Rect core_box = block_->getCoreArea();
-
-  const float core_lx = block_->dbuToMicrons(core_box.xMin());
-  const float core_ly = block_->dbuToMicrons(core_box.yMin());
-  const float core_ux = block_->dbuToMicrons(core_box.xMax());
-  const float core_uy = block_->dbuToMicrons(core_box.yMax());
-
-  const float core_area = (core_ux - core_lx) * (core_uy - core_ly);
   const float inst_area_with_halos
       = tree_->macro_with_halo_area + design_metrics_->getStdCellArea();
 
-  if (inst_area_with_halos > core_area) {
+  if (inst_area_with_halos > tree_->floorplan_shape.getArea()) {
     logger_->error(MPL,
                    16,
                    "The instance area considering the macros' halos {} exceeds "
-                   "the core area {}",
+                   "the floorplan area {}",
                    inst_area_with_halos,
-                   core_area);
+                   tree_->floorplan_shape.getArea());
   }
 
-  logger_->report(
-      "Floorplan Outline: ({}, {}) ({}, {}),  Core Outline: ({}, {}) ({}, {})",
-      block_->dbuToMicrons(die.xMin()),
-      block_->dbuToMicrons(die.yMin()),
-      block_->dbuToMicrons(die.xMax()),
-      block_->dbuToMicrons(die.yMax()),
-      core_lx,
-      core_ly,
-      core_ux,
-      core_uy);
-
-  reportDesignData(core_area);
+  reportDesignData();
 }
 
 float ClusteringEngine::computeMacroWithHaloArea(
@@ -173,6 +155,39 @@ std::vector<odb::dbInst*> ClusteringEngine::getUnfixedMacros()
     }
   }
   return unfixed_macros;
+}
+
+void ClusteringEngine::setFloorplanShape()
+{
+  const odb::Rect& core_box = block_->getCoreArea();
+  const float core_lx = block_->dbuToMicrons(core_box.xMin());
+  const float core_ly = block_->dbuToMicrons(core_box.yMin());
+  const float core_ux = block_->dbuToMicrons(core_box.xMax());
+  const float core_uy = block_->dbuToMicrons(core_box.yMax());
+
+  tree_->floorplan_shape = Rect(std::max(core_lx, tree_->global_fence.xMin()),
+                                std::max(core_ly, tree_->global_fence.yMin()),
+                                std::min(core_ux, tree_->global_fence.xMax()),
+                                std::min(core_uy, tree_->global_fence.yMax()));
+}
+
+void ClusteringEngine::searchForFixedInstsInsideFloorplanShape()
+{
+  odb::Rect floorplan_shape(
+      block_->micronsToDbu(tree_->floorplan_shape.xMin()),
+      block_->micronsToDbu(tree_->floorplan_shape.yMin()),
+      block_->micronsToDbu(tree_->floorplan_shape.xMax()),
+      block_->micronsToDbu(tree_->floorplan_shape.yMax()));
+
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->isFixed()
+        && inst->getBBox()->getBox().overlaps(floorplan_shape)) {
+      logger_->error(MPL,
+                     50,
+                     "Found fixed instance {} inside the floorplan area.",
+                     inst->getName());
+    }
+  }
 }
 
 Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
@@ -218,14 +233,26 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
   return tree_->maps.module_to_metrics[module].get();
 }
 
-void ClusteringEngine::reportDesignData(const float core_area)
+void ClusteringEngine::reportDesignData()
 {
+  const odb::Rect& die = block_->getDieArea();
+  logger_->report(
+      "Die Area: ({}, {}) ({}, {}),  Floorplan Area: ({}, {}) ({}, {})",
+      block_->dbuToMicrons(die.xMin()),
+      block_->dbuToMicrons(die.yMin()),
+      block_->dbuToMicrons(die.xMax()),
+      block_->dbuToMicrons(die.yMax()),
+      tree_->floorplan_shape.xMin(),
+      tree_->floorplan_shape.yMin(),
+      tree_->floorplan_shape.xMax(),
+      tree_->floorplan_shape.yMax());
+
   float util
       = (design_metrics_->getStdCellArea() + design_metrics_->getMacroArea())
-        / core_area;
-  float core_util = design_metrics_->getStdCellArea()
-                    / (core_area - design_metrics_->getMacroArea());
-
+        / tree_->floorplan_shape.getArea();
+  float floorplan_util
+      = design_metrics_->getStdCellArea()
+        / (tree_->floorplan_shape.getArea() - design_metrics_->getMacroArea());
   logger_->report(
       "\tNumber of std cell instances: {}\n"
       "\tArea of std cell instances: {:.2f}\n"
@@ -235,9 +262,9 @@ void ClusteringEngine::reportDesignData(const float core_area)
       "\tHalo height: {:.2f}\n"
       "\tArea of macros with halos: {:.2f}\n"
       "\tArea of std cell instances + Area of macros: {:.2f}\n"
-      "\tCore area: {:.2f}\n"
+      "\tFloorplan area: {:.2f}\n"
       "\tDesign Utilization: {:.2f}\n"
-      "\tCore Utilization: {:.2f}\n"
+      "\tFloorplan Utilization: {:.2f}\n"
       "\tManufacturing Grid: {}\n",
       design_metrics_->getNumStdCell(),
       design_metrics_->getStdCellArea(),
@@ -247,9 +274,9 @@ void ClusteringEngine::reportDesignData(const float core_area)
       tree_->halo_height,
       tree_->macro_with_halo_area,
       design_metrics_->getStdCellArea() + design_metrics_->getMacroArea(),
-      core_area,
+      tree_->floorplan_shape.getArea(),
       util,
-      core_util,
+      floorplan_util,
       block_->getTech()->getManufacturingGrid());
 }
 
