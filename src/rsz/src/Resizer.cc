@@ -188,7 +188,6 @@ double Resizer::coreArea() const
 
 double Resizer::utilization()
 {
-  initBlock();
   initDesignArea();
   double core_area = coreArea();
   if (core_area > 0.0) {
@@ -244,10 +243,9 @@ void Resizer::initBlock()
 
 void Resizer::init()
 {
-  initBlock();
+  initDesignArea();
   sta_->ensureLevelized();
   graph_ = sta_->graph();
-  initDesignArea();
 }
 
 // remove all buffers if no buffers are specified
@@ -2138,7 +2136,6 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
                               double separation,  // meters
                               bool verbose)
 {
-  initBlock();
   initDesignArea();
   Instance* top_inst = network_->topInstance();
   LibertyCell* tie_cell = tie_port->libertyCell();
@@ -2942,6 +2939,7 @@ void Resizer::makeWireParasitic(Net* net,
 
 double Resizer::designArea()
 {
+  initBlock();
   initDesignArea();
   return design_area_;
 }
@@ -2953,6 +2951,7 @@ void Resizer::designAreaIncr(float delta)
 
 void Resizer::initDesignArea()
 {
+  initBlock();
   design_area_ = 0.0;
   for (dbInst* inst : block_->getInsts()) {
     dbMaster* master = inst->getMaster();
@@ -3023,7 +3022,6 @@ void Resizer::repairClkNets(double max_wire_length)
 // each register they drive.
 void Resizer::repairClkInverters()
 {
-  initBlock();
   initDesignArea();
   sta_->ensureLevelized();
   graph_ = sta_->graph();
