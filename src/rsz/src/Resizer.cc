@@ -1441,7 +1441,7 @@ bool Resizer::getCin(const LibertyCell *cell, float& cin)
 
 int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
 {
-  const float max_cap_ratio = 4.0f;
+  float max_cap_ratio = 4.0f;
   Instance* inst = network_->instance(drvr_pin);
   LibertyCell* cell = inst ? network_->libertyCell(inst) : nullptr;
   if (!network_->isTopLevelPort(drvr_pin) && inst && !dontTouch(inst) && cell
@@ -1453,6 +1453,11 @@ int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
     load_cap = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_dcalc_ap_);
     if (load_cap > 0.0 && getCin(cell, cin)) {
       bool is_buf_inv = cell->isBuffer() || cell->isInverter();
+
+      if (cell->isBuffer()) {
+        max_cap_ratio = 9.0f;
+      }
+
       LibertyCellSeq* equiv_cells = cell->isBuffer() ?
                                     &buffer_fast_sizes_ :
                                     sta_->equivCells(cell);
