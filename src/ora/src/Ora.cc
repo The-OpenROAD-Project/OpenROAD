@@ -261,7 +261,7 @@ void Ora::setSourceFlag(bool sourceFlag)
 void Ora::setBotHost(const char* host)
 {
   hostUrl = host;
-  logger_->info(utl::ORA, 112, "Setting ORAssistant host to {}", localHostUrl);
+  logger_->info(utl::ORA, 112, "Setting ORAssistant host to {}", hostUrl);
 
   checkLocalDir();
   std::string hostFilePath = localDirPath + "/orassistant_host.txt";

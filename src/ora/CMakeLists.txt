@@ -53,6 +53,10 @@ target_link_libraries(ora
     Boost::json
 )
 
+if (ENABLE_TESTS)
+    add_subdirectory(test)
+endif()
+
 messages(
   TARGET ora
 )

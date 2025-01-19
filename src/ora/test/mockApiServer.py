@@ -33,7 +33,7 @@ def start_server():
     print(f"Mock API Server started at port {port}")
  
     def stop_server():
-        time.sleep(15)
+        time.sleep(5)
         print("Stopping server after 15 seconds")
         server.shutdown()
  
@@ -42,3 +42,5 @@ def start_server():
  
 if __name__ == "__main__":
     start_server()
+
+   

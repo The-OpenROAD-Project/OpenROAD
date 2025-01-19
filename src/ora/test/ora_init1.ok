@@ -3,5 +3,5 @@ Setting ORAssistant consent to n
 [INFO ORA-0116] Consent saved to ~/.local/share/openroad/orassistant_consent.txt
 [INFO ORA-0119] Consent removed for using a cloud hosted ORAssistant.
 Setting ORAssistant host to http://0.0.0.0:8080/mock
-[INFO ORA-0112] Setting ORAssistant host to 
+[INFO ORA-0112] Setting ORAssistant host to http://0.0.0.0:8080/mock
 [INFO ORA-0113] ORAssistant host saved to ~/.local/share/openroad/orassistant_host.txt
