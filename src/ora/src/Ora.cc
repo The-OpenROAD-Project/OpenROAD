@@ -136,8 +136,8 @@ void Ora::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger)
         "with the General Data Protection Regulation (GDPR). By using the "
         "cloud-hosted version of this app, you consent to the collection and "
         "processing of your queries and the subsequently generated answers. "
-        "Give consent to use the application by using the `ora_init {consent} "
-        "{hostURL}`  command.";
+        "Give consent to use the application by using the `ora_init consent "
+        "hostURL`  command.";
 
   try {
     std::ifstream localHostUrlFile(getLocalDirPath() + "/orassistant_host.txt");
@@ -174,24 +174,21 @@ void Ora::askbot(const char* query)
     logger_->warn(
         utl::ORA,
         104,
-        "To use the ORAssistant, please provide consent by running the "
-        "`ora_init {consent} {hostURL}` command."
-        "Only the query you type in will be sent outside the application—no "
-        "other "
-        "user or design data will be shared. "
+        "To use the ORAssistant, please provide consent by running `ora_init "
+        "consent hostURL` command. Only the query you type in will be sent "
+        "outside the application—no other user or design data will be shared. "
         "For instructions on setting up a locally hosted copy, refer to the "
         "documentation in https://github.com/The-OpenROAD-Project/ORAssistant. "
         "Note: Consent must be set to y only for the web-hosted ORAssistant. "
         "Please set it to n and provide a hostURL if you choose to use a "
         "locally hosted version.");
+
     return;
   }
 
   if (cloudConsent_) {
     hostUrl = cloudHostUrl;
-  }
-  else
-  {
+  } else {
     hostUrl = localHostUrl;
   }
 
