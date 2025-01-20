@@ -34,8 +34,6 @@
 #pragma once
 
 #include "dbCore.h"
-#include "dbScanPin.h"
-#include "dbVector.h"
 #include "odb/odb.h"
 
 namespace odb {
@@ -43,44 +41,34 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class dbScanPartition;
-class _dbScanPartition;
-template <class T>
-class dbTable;
-class dbScanPin;
 
-class _dbScanChain : public _dbObject
+class _dbMasterEdgeType : public _dbObject
 {
  public:
-  _dbScanChain(_dbDatabase*, const _dbScanChain& r);
-  _dbScanChain(_dbDatabase*);
+  _dbMasterEdgeType(_dbDatabase*, const _dbMasterEdgeType& r);
+  _dbMasterEdgeType(_dbDatabase*);
 
-  ~_dbScanChain();
+  ~_dbMasterEdgeType() = default;
 
-  bool operator==(const _dbScanChain& rhs) const;
-  bool operator!=(const _dbScanChain& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbScanChain& rhs) const;
+  bool operator==(const _dbMasterEdgeType& rhs) const;
+  bool operator!=(const _dbMasterEdgeType& rhs) const
+  {
+    return !operator==(rhs);
+  }
+  bool operator<(const _dbMasterEdgeType& rhs) const;
   void differences(dbDiff& diff,
                    const char* field,
-                   const _dbScanChain& rhs) const;
+                   const _dbMasterEdgeType& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  dbObjectTable* getObjectTable(dbObjectType type);
-  // User Code Begin Methods
-  std::variant<dbBTerm*, dbITerm*> getPin(const dbId<dbScanPin>& scan_pin_id);
-  void setPin(dbId<dbScanPin> _dbScanChain::* field, dbBTerm* pin);
-  void setPin(dbId<dbScanPin> _dbScanChain::* field, dbITerm* pin);
-  // User Code End Methods
 
-  std::string name_;
-  dbId<dbScanPin> scan_in_;
-  dbId<dbScanPin> scan_out_;
-  dbId<dbScanPin> scan_enable_;
-  dbId<dbScanPin> test_mode_;
-  std::string test_mode_name_;
-
-  dbTable<_dbScanPartition>* scan_partitions_;
+  uint edge_dir_;
+  std::string edge_type_;
+  int cell_row_;
+  int half_row_;
+  int range_begin_;
+  int range_end_;
 };
-dbIStream& operator>>(dbIStream& stream, _dbScanChain& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbScanChain& obj);
+dbIStream& operator>>(dbIStream& stream, _dbMasterEdgeType& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbMasterEdgeType& obj);
 }  // namespace odb
    // Generator Code End Header

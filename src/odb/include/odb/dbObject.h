@@ -106,6 +106,7 @@ enum dbObjectType
   dbLogicPortObj,
   dbMarkerObj,
   dbMarkerCategoryObj,
+  dbMasterEdgeTypeObj,
   dbMetalWidthViaMapObj,
   dbModBTermObj,
   dbModInstObj,
