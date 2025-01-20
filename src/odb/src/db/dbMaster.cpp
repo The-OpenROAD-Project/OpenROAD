@@ -437,7 +437,9 @@ dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
     stream >> *master._poly_box_tbl;
   }
   stream >> *master._antenna_pin_model_tbl;
-  stream >> *master.edge_types_tbl_;
+  if (db->isSchema(db_schema_master_edge_type)) {
+    stream >> *master.edge_types_tbl_;
+  }
   return stream;
 }
 

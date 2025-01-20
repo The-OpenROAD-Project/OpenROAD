@@ -51,7 +51,6 @@ class lefMacroEdgeTypeParser
  private:
   dbMaster* master_;
   lefinReader* lefin_;
-
   dbMasterEdgeType* edge_type_{nullptr};
 };
 }  // namespace odb
