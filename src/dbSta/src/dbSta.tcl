@@ -79,25 +79,27 @@ proc highlight_path { args } {
   }
 }
 
-define_cmd_args "report_cell_usage" {[-verbose] [module_inst]}
+define_cmd_args "report_cell_usage" {\
+	                             [-verbose] \
+	                             [-module]
+	                            }
 
 proc report_cell_usage { args } {
-  parse_key_args "highlight_path" args keys {} \
+  parse_key_args "highlight_path" args keys {-module} \
     flags {-verbose} 0
-
-  check_argc_eq0or1 "report_cell_usage" $args
 
   if { [ord::get_db_block] == "NULL" } {
     sta_error 1001 "No design block found."
   }
 
   set module [[ord::get_db_block] getTopModule]
-  if { $args != "" } {
-    set modinst [[ord::get_db_block] findModInst $args]
-    if { $modinst == "NULL" } {
-      sta_error 1002 "Unable to find $args"
+  if { [info exists keys(-module)] } {
+    set module_inst_name $keys(-module)
+    set module_inst [[ord::get_db_block] findModInst $module_inst_name ]
+    if { $module_inst == "NULL" } {
+      sta_error 1002 "Unable to find $module_inst_name"
     }
-    set module [$modinst getMaster]
+    set module [$module_inst getMaster]
   }
 
   report_cell_usage_cmd $module [info exists flags(-verbose)]

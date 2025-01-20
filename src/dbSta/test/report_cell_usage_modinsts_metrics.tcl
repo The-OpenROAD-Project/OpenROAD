@@ -12,8 +12,8 @@ utl::open_metrics $metrics
 
 report_cell_usage -verbose
 
-report_cell_usage -verbose b1
-report_cell_usage -verbose b2
+report_cell_usage -verbose -module b1
+report_cell_usage -verbose -module b2
 
 utl::close_metrics $metrics
 
