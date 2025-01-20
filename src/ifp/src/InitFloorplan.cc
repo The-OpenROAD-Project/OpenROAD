@@ -166,6 +166,10 @@ void InitFloorplan::initFloorplan(
     RowParity row_parity,
     const std::set<odb::dbSite*>& flipped_sites)
 {
+  if (!die.contains(core)) {
+    logger_->error(IFP, 55, "Die area must contain the core area.");
+  }
+
   Rect die_area(snapToMfgGrid(die.xMin()),
                 snapToMfgGrid(die.yMin()),
                 snapToMfgGrid(die.xMax()),
