@@ -3158,34 +3158,6 @@ dbBlock* dbBlock::create(dbBlock* parent_,
   return (dbBlock*) child;
 }
 
-dbBlock* dbBlock::duplicate(dbBlock* child_, const char* name_)
-{
-  _dbBlock* child = (_dbBlock*) child_;
-
-  // must be a child block
-  if (child->_parent == 0) {
-    return nullptr;
-  }
-
-  _dbBlock* parent = (_dbBlock*) child_->getParent();
-  _dbChip* chip = (_dbChip*) child->getOwner();
-
-  // make a copy
-  _dbBlock* dup = chip->_block_tbl->duplicate(child);
-
-  // link child-to-parent
-  parent->_children.push_back(dup->getOID());
-  dup->_parent = parent->getOID();
-
-  if (name_ && dup->_name) {
-    free((void*) dup->_name);
-    dup->_name = strdup(name_);
-    ZALLOCATED(dup->_name);
-  }
-
-  return (dbBlock*) dup;
-}
-
 dbBlock* dbBlock::getBlock(dbChip* chip_, uint dbid_)
 {
   _dbChip* chip = (_dbChip*) chip_;

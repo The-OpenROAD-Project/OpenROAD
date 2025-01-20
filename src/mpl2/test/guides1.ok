@@ -13,7 +13,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO PPL-0003] Number of I/O w/sink      0
 [INFO PPL-0004] Number of I/O w/o sink    3
 [INFO PPL-0012] I/O nets HPWL: 0.00 um.
-Floorplan Outline: (0, 0) (150, 125),  Core Outline: (0, 0) (149.91, 124.6)
+Die Area: (0, 0) (150, 125),  Floorplan Area: (0, 0) (149.91, 124.6)
 	Number of std cell instances: 400
 	Area of std cell instances: 1808.79
 	Number of macros: 1
@@ -22,9 +22,9 @@ Floorplan Outline: (0, 0) (150, 125),  Core Outline: (0, 0) (149.91, 124.6)
 	Halo height: 4.00
 	Area of macros with halos: 11664.00
 	Area of std cell instances + Area of macros: 11808.79
-	Core area: 18678.79
+	Floorplan area: 18678.79
 	Design Utilization: 0.63
-	Core Utilization: 0.21
+	Floorplan Utilization: 0.21
 	Manufacturing Grid: 10
 
 [WARNING MPL-0014] No Liberty data found for std cells. Continuing without dataflow.
