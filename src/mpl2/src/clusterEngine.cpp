@@ -734,19 +734,18 @@ DataFlowHypergraph ClusteringEngine::computeHypergraph(
 }
 
 /* static */
-// Instances that should not be touched i.e., have their location
+// Instance that should not be touched i.e., have its location
 // altered by the macro placer.
-//
-// Obs:
-// - IO corners are sometimes marked as end caps.
-// - Markers used in designs with IO Pads are FIRM
-//   at this point and they should not be touched.
+// Note: This function also takes into account the placement status
+// of the instance, because, if it is placed outside the area that is
+// used for the macro placement, it can be safely ignored as there's
+// no risk to generate overlap.
 bool ClusteringEngine::isIgnoredInst(odb::dbInst* inst)
 {
   odb::dbMaster* master = inst->getMaster();
 
   return master->isPad() || master->isCover() || master->isEndCap()
-         || inst->getPlacementStatus() == odb::dbPlacementStatus::FIRM;
+         || inst->isFixed();
 }
 
 // Forward or Backward DFS search to find sequential paths from/to IO pins based
