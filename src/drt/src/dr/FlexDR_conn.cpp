@@ -67,18 +67,7 @@ void FlexDRConnectivityChecker::pin2epMap_helper(
   frRegionQuery::Objects<frBlockObject> result;
   Rect query_box(pt.x(), pt.y(), pt.x(), pt.y());
   regionQuery->query(query_box, lNum, result);
-  if (net->getName() == "_031547_")
-    logger_->report(
-        "[OSAMA] The different transforms will result in a divergence here:");
   for (auto& [bx, rqObj] : result) {
-    if (net->getName() == "_031547_") {
-      logger_->report("[OSAMA] box=({},{}) ({},{}) rqObj={}",
-                      bx.ll().getX(),
-                      bx.ll().getY(),
-                      bx.ur().getX(),
-                      bx.ur().getY(),
-                      rqObj->getId());
-    }
     switch (rqObj->typeId()) {
       case frcInstTerm: {
         auto instTerm = static_cast<frInstTerm*>(rqObj);
@@ -301,7 +290,6 @@ void FlexDRConnectivityChecker::nodeMap_pin(
   }
 }
 
-// Bookmark, this function is building the node map weirdly
 void FlexDRConnectivityChecker::buildNodeMap(
     const frNet* net,
     const NetRouteObjs& netRouteObjs,
@@ -1295,7 +1283,6 @@ void FlexDRConnectivityChecker::check(int iter)
         auto& adjPrevIdx = aAdjPrevIdx[i];
         netRouteObjs.clear();
         initRouteObjs(net, netRouteObjs);
-        // Bookmark, this is actually wrong
         buildPin2epMap(net, netRouteObjs, pin2epMap);
         buildNodeMap(net, netRouteObjs, netPins, pin2epMap, nodeMap);
 

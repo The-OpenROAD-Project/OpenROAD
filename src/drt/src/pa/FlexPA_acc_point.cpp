@@ -298,12 +298,6 @@ void FlexPA::gen_createAccessPoint(
       } else if (ps.getEndPoint() == end) {
         ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
       }
-      auto [bp, ep] = ps.getPoints();  // Only for printing
-      logger_->report("[OSAMA] Adding a nearbygrid PathSeg at ({},{}) ({},{})",
-                      bp.getX(),
-                      bp.getY(),
-                      ep.getX(),
-                      ep.getY());
       ap->addPathSeg(ps);
       if (!(e == end)) {
         fpt = e;
@@ -313,13 +307,6 @@ void FlexPA::gen_createAccessPoint(
         } else {
           ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
         }
-        auto [bp, ep] = ps.getPoints();  // Only for printing
-        logger_->report(
-            "[OSAMA] Adding a nearbygrid PathSeg at ({},{}) ({},{})",
-            bp.getX(),
-            bp.getY(),
-            ep.getX(),
-            ep.getY());
         ap->addPathSeg(ps);
       }
     }
@@ -1492,14 +1479,6 @@ void FlexPA::initAllAccessPoints()
 void FlexPA::revertAccessPoints()
 {
   const auto& unique = unique_insts_.getUnique();
-  logger_->report(
-      "[OSAMA] PathSeg coordinates will be inverted to relative coordinates.");
-  logger_->report(
-      "[OSAMA] The path segment is the same in both cases relative to the "
-      "instance");
-  logger_->report(
-      "[OSAMA] Using old_transform gives different results (wrong), using the "
-      "new gives the same");
   for (auto& inst : unique) {
     dbTransform revert_transform;
     inst->getTransform().invert(revert_transform);
