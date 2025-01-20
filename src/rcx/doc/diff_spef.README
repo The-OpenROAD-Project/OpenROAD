@@ -1,0 +1,89 @@
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
+//
+// Copyright (c) 2024, Dimitris Fotakis
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
+# Author: Dimitris K. Fotakis
+# Version: v1.0
+# Date: 11/05/2024
+
+Documentation of output file: diff_spef.out
+
+This file is to provide documentation on the format of diff_spef.out file which is generated when running command: 
+	diff_spef
+
+Note: C++ function is in file extSpefIn.cpp: extSpef::printDiff
+this is meant to provide imprtant stats, one line per net per type of R and C total values.
+by running (grep netRes diff_spef.out | sort) it is easy to gauge range of %error (positive to negative) andby doing <awk> specific columns you can focus on insigts on error (big nets, nets with many vias, etc)
+
+here is the description of the coluns:
+
+column 1: % diff of db value wrt to ref value (which is parsed from the file in the diff_spef command)
+column 2: db_value
+column 3: D
+column 4: [OK,HI,LO] depending on db_value being withing the range of bounds [lo,hi], greater than hi bound, lower than lo bound; bound values are in columns right after keyword: bounds:
+column 5: % difference of db_value wrt hi value of bounds
+column 6: ref
+column 7: ref_value which is the value parsed from the file in command diff_spef
+column 8: R
+column 9: [OK,HI,LO] depending on ref_value being withing the range of bounds [lo,hi], greater than hi bound, lower than lo bound; bound values are in columns right after keyword: bounds:
+column 10: % difference of ref_value wrt hi value of bounds
+column 11: bounds:
+column 12: lo_bound
+column 13: hi_bound
+
+if column 22 == netRes
+        column 14: VR
+        column 15: total_via_res
+        column 16: V
+        column 17: total_via_cnt
+        column 18: L
+        column 19: net_wire_length
+        column 20: WC
+        column 21: Wire (segment) Count (per DEF)
+        column 22: [netRes] for (total net resistance)
+        column 23: corner
+        column 24: corner_index
+        column 25: comma list with total_wire_length on every metal
+        column 26: net_id
+        column 27: net_name
+else
+        column 14: L
+        column 15: net_wire_length
+        column 16: WC
+        column 17: Wire (segment) Count (per DEF)
+        column 18: V
+        column 19: total_via_cnt
+        column 22: [netCap,gndNetCap,netCcap] for (total net capacitance, total ground capacitance, total coupling capacitance)
+        column 23: corner
+        column 24: corner_index
+        column 25: comma list with total_wire_length on every metal
+        column 26: net_id
+        column 27: net_name

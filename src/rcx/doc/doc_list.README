@@ -1,0 +1,13 @@
+Documents Organization
+
+feature_list_v2.README - latest features for version 2.0
+userOptions.README - user options
+run_extraction.README -  extract_parasitics command
+Architecture.README - Architectural elements
+extractionFlow.README - main flow for extraction version 2.0
+FasterCap_integration.README - using fasterCap for model generation
+FasterCap_model_generation.README - step-by-step fasterCap model generation
+def_model_generation.README - def based model generation
+diff_spef.README - column definition of diff_spef.out
+regression_tests.README - list of regression tests under rcx/test/rcx_v2
+

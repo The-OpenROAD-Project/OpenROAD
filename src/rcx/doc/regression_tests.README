@@ -1,0 +1,98 @@
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
+//
+// Copyright (c) 2024, Dimitris Fotakis
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
+# Author: Dimitris K. Fotakis
+# Doc Version: v1.0
+# Date: 11/05/2024
+
+#----------------------------------------------------------------------------------------------
+NOTES:
+#----------------------------------------------------------------------------------------------
+	model_file:v1 is the existing model file in  rcx/test/ext_pattern.rules
+	model_file:v2 is the v2 model file: 
+
+	IMPORTANT: in Makefile set TOP_DIR=OpenRoad_clone_dir
+
+#----------------------------------------------------------------------------------------------
+# directory: rcx/test/rcx_v2/flow -- Makefile
+#----------------------------------------------------------------------------------------------
+
+gcd_flow_v2_model_v1_no_via_merge : design: gcd, version: 2.0, model_file:v1 options: -no_via_merge_res
+gcd_v2_v1_max_res_0               : design: gcd, version: 2.0, model_file:v1 options: -max_res 0
+gcd_v2_v1_max_res_0_no_via_merge  : design: gcd, version: 2.0, model_file:v1 options: -no_via_merge_res  -max_res 0
+gcd_v2_v1_max_res_10              : design: gcd, version: 2.0, model_file:v1 options: -max_res 10
+gcd_v2_v1_max_res_500             : design: gcd, version: 2.0, model_file:v1 options: -max_res 500
+gcd_v2_lef_rc_max_res_0           : design: gcd, version: 2.0,               options: -max_res 0 -lef_rc
+gcd_v2_v1_lef_rc_max_res_0        : design: gcd, version: 2.0, model_file:v1 options: -max_res 0 -lef_rc
+gcd_flow_v2_model_v1              : design: gcd, version: 2.0, model_file:v1 
+gcd_flow_v2_model_v2              : design: gcd, version: 2.0, model_file:v2
+gcd_flow_v1_model_v2              : design: gcd, version: 1.0, model_file:v2
+ext_patterns_flow_v2_model_v2     : design: ext_patterns, version: 2.0, model_file:v2
+
+#----------------------------------------------------------------------------------------------
+directory: rcx/test/rcx_v2/model -- Makefile 
+#----------------------------------------------------------------------------------------------
+
+v1_patterns    : LEF: test/sky130hs/sky130hs.tlef options: -all
+v12_patterns   : LEF: test/sky130hs/sky130hs.tlef options: -all -v1  -- note: v2 comprehensive pattern set
+gen_model_3 TODO
+
+#----------------------------------------------------------------------------------------------
+directory: rcx/test/rcx_v2/flow/corners -- Makefile
+#----------------------------------------------------------------------------------------------
+
+gcd_3corners             : design: gcd, version: 2.0, 3 defined corners individually
+gcd_3corners_define_list : design: gcd, version: 2.0, 3 defined corners as a list
+gcd_3corners_undefined   : design: gcd, version: 2.0, 3 defined corners as a list
+gcd_corners_0            : design: gcd, version: 2.0, corner index 0
+gcd_corners_0_2          : design: gcd, version: 2.0, corner order 0, 2
+gcd_corners_1            : design: gcd, version: 2.0, corner index 1
+gcd_corners_2            : design: gcd, version: 2.0, corner index 2
+gcd_corners_2_1          : design: gcd, version: 2.0, corner order 2, 1
+
+#----------------------------------------------------------------------------------------------
+directory: rcx/test/rcx_v2/flow/rcx_v2/FasterCapModel -- Makefile
+#----------------------------------------------------------------------------------------------
+
+		NOTE: FasterCap and openroad executables need to be present in bin dir
+1v1 : 1-wire patterns version 1 (full height stack)
+2v1 : 2-wire patterns version 1 (full height stack)
+3v1 : 3-wire patterns version 1 (full height stack)
+5v1 : 5-wire patterns version 1 (full height stack)
+1v2 : 1-wire patterns version 2 (normalized height stack)
+2v2 : 2-wire patterns version 2 (normalized height stack)
+3v2 : 3-wire patterns version 2 (normalized height stack)
+5v2 : 5-wire patterns version 2 (normalized height stack)
+6v2 : 6-wire patterns version 2 (normalized height stack)
+
+gen924 : create model file with multiple parsed resistance and cap files
+

@@ -42,8 +42,7 @@ std::function<size_t(const ClockDomain&)> GetClockDomainHashFn(
     // For NoMix, every clock domain is different
     case ScanArchitectConfig::ClockMixing::NoMix:
       return [](const ClockDomain& clock_domain) {
-        return std::hash<std::string_view>{}(clock_domain.getClockName())
-               ^ std::hash<ClockEdge>{}(clock_domain.getClockEdge());
+        return clock_domain.getClockDomainId();
       };
     case ScanArchitectConfig::ClockMixing::ClockMix:
       return [](const ClockDomain& clock_domain) { return 1; };

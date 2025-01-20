@@ -81,7 +81,7 @@ target_include_directories(gpl
 
 target_link_libraries(gpl
   PRIVATE
-    utl
+    utl_lib
     Eigen3::Eigen
     gui
     odb
@@ -110,7 +110,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
 
   target_link_libraries(gpl_py
     PUBLIC
-      utl
+      utl_lib
       Eigen3::Eigen
       gui
       odb

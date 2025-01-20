@@ -1892,7 +1892,7 @@ void MBFF::KMeansDecomp(const std::vector<Flop>& flops,
     k_means_ret[i].pop_back();
   }
 
-  // naive implementation of DSU
+  // naive implementation of Disjoint Set Union
   std::vector<int> id(best_k);
   std::vector<int> sz(best_k);
 
@@ -2099,9 +2099,9 @@ void MBFF::SetVars(const std::vector<Flop>& flops)
         = std::min(single_bit_height_, master->getHeight() / multiplier_);
     single_bit_width_
         = std::min(single_bit_width_, master->getWidth() / multiplier_);
-    const sta::PowerResult ff_power
+    sta::PowerResult ff_power
         = sta_->power(network_->dbToSta(insts_[flop.idx]), corner_);
-    single_bit_power_ = std::min(single_bit_power_, ff_power.total());
+    single_bit_power_ = std::min(single_bit_power_, ff_power.leakage());
   }
 }
 
@@ -2312,12 +2312,12 @@ void MBFF::ReadLibs()
 
       const float cur_area = (master->getHeight() / multiplier_)
                              * (master->getWidth() / multiplier_);
-      const sta::PowerResult tray_power
+      sta::PowerResult tray_power
           = sta_->power(network_->dbToSta(tmp_tray), corner_);
 
       if (tray_area_[array_mask][idx] > cur_area) {
         tray_area_[array_mask][idx] = cur_area;
-        tray_power_[array_mask][idx] = tray_power.total();
+        tray_power_[array_mask][idx] = tray_power.leakage();
         best_master_[array_mask][idx] = master;
         pin_mappings_[array_mask][idx] = GetPinMapping(tmp_tray);
         tray_width_[array_mask][idx] = master->getWidth() / multiplier_;

@@ -1,0 +1,141 @@
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
+//
+// Copyright (c) 2024, Dimitris Fotakis
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
+# Author: Dimitris K. Fotakis
+# Version: v1.0
+# Date: 11/08/2024
+
+NOTE: this is NOT a comprehensive File Format description, it is an aid to read a model file
+
+
+# ------------------------------------------------------------
+# 			Model File Structure
+# ------------------------------------------------------------
+
+
+# ------------------------------------------------------------
+	A. Header Section
+# ------------------------------------------------------------
+
+
+	Following line are not Used:
+		Extraction Rules for rcx
+		Version 1.2
+		DIAGMODEL ON
+
+LayerCount <num> : number of metal levels
+	example: LayerCount 6
+
+
+DensityRate <corner_cnt> <corner indices list> : number of process corners
+	example: DensityRate 3  0 1 2
+
+Corners <corner_cnt> <corner_name_list> : names of process corners for documentation purposes
+	example: Corners 3 :  max typ min
+
+COMMENT : <any comment in one line> 
+	example: COMMENT : v1 
+
+
+# ------------------------------------------------------------
+	B. Procesll Corner Start
+# ------------------------------------------------------------
+
+DensityModel <process_corner_index>
+	example: DensityModel 0
+
+# ------------------------------------------------------------
+	C. Extraction Pattern Model
+# ------------------------------------------------------------
+
+Metal <num> <model_name> 
+	model_name can be:
+		RESOVER - Distance based Resistance
+		OVER  - metal over sub or other metal
+		OVER0  - metal over sub or other metal - 1-wire model
+		OVER1  - metal over sub or other metal - 2-wire model
+		UNDER - metal over metal under Substrate
+		UNDER0 - metal over metal under Substrate - 1-wire model
+		UNDER1 - metal over metal under Substrate - 2-wire model
+		OVERUNDER - metal over metal under metal
+		OVERUNDER0 - metal over metal under Substrate - 1-wire model
+		OVERUNDER1 - metal over metal under Substrate - 2-wire model
+		DIAGUNDER - metal over metal under metal for diagonal coupling
+
+	example: Metal 1 RESOVER
+	example: Metal 1 OVER
+		
+WIDTH Table <width_count> entries:  <width_list_separated_by_space>
+	example: WIDTH Table 1 entries:  0.16
+
+sections in mentioned order
+
+Metal <metal_level> RESOVER <under_context_metal>
+Metal <metal_level> OVER <under_context_metal>
+Metal <metal_level> OVER0 <under_context_metal>
+Metal <metal_level> OVER1 <under_context_metal>
+Metal <metal_level> UNDER <over_context_metal>
+Metal <metal_level> UNDER0 <over_context_metal>
+Metal <metal_level> UNDER1 <over_context_metal>
+Metal <metal_level> OVER <under_context_metal> UNDER <over_context_metal>
+Metal <metal_level> OVERUNDER0 <over_context_metal>
+Metal <metal_level> OVERUNDER1 <over_context_metal>
+Metal <metal_level> DIAGUNDER <under_context_metal>
+
+	example: Metal 2 OVER 1 UNDER 4
+
+DIST <spacing_count> width <width_from_width_list>
+	example: DIST count 66 width 0.16
+
+# ------------------------------------------------------------
+	D. Spacing (Distance) based coupling, fring(gdn), resistance Tables per pattern
+# ------------------------------------------------------------
+<spacing_neighbor_left> <spacing_neighbor_right> 0 0 <resistance_ohms_per_nm> : for RESOVER model
+	example: 0.16 1.2 0 0.00114457
+
+<spacing_neighbor> <coupling_cap_fF_per_nm> <gnd_cap_fF_per_nm> <resistance_ohms_per_nm> : for OVER,UNDER,OVERUNDER
+	example: 0.16 1.2 0 0.00114457
+
+END DIST
+
+VIARES <via_cnt> Default LEF Vias:
+
+	example: VIARES 46 Default LEF Vias:
+
+<res_in_ohms> <LEF_via_tech_name> cuts <layer_cut_count>  TopMetal <top_metal_level> BotMetal <bottom_metal_level> dx <mn> dy <nm>
+	example: 4.22699 V12_HH cuts 1  TopMetal 2 BotMetal 1 dx 320 dy 200
+
+END VIARES
+
+END DensityModel <process_corner_index>
+
+
