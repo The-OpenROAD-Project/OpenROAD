@@ -629,12 +629,12 @@ struct Rect
   float yMax() const { return uy; }
 
   float getX() const { return (lx + ux) / 2.0; }
-
   float getY() const { return (ly + uy) / 2.0; }
 
   float getWidth() const { return ux - lx; }
-
   float getHeight() const { return uy - ly; }
+
+  float getArea() const { return getWidth() * getHeight(); }
 
   void setLoc(float x,
               float y,
