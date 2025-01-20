@@ -36,7 +36,7 @@
 
 namespace odb {
 
-lefTechLayerAreaRuleParser::lefTechLayerAreaRuleParser(lefin* l)
+lefTechLayerAreaRuleParser::lefTechLayerAreaRuleParser(lefinReader* l)
 {
   lefin_ = l;
 }

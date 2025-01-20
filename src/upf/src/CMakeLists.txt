@@ -50,7 +50,7 @@ target_link_libraries(upf_lib
     OpenSTA
     dbSta
     odb
-    utl
+    utl_lib
 )
 
 swig_lib(NAME      upf
@@ -68,5 +68,5 @@ target_link_libraries(upf
   PRIVATE
     odb
     upf_lib
-    utl
+    utl_lib
 )

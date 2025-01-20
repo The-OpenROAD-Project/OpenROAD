@@ -39,7 +39,6 @@
 
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "odb/lefin.h"
 #include "ord/OpenRoad.hh"
 
 namespace ord {

@@ -44,30 +44,30 @@ namespace odb {
 class lefTechLayerSpacingEolParser
 {
  public:
-  static void parse(const std::string&, dbTechLayer*, lefin*);
+  static void parse(const std::string&, dbTechLayer*, lefinReader*);
 };
 
 class lefTechLayerWrongDirSpacingParser
 {
  public:
-  static void parse(std::string, dbTechLayer*, lefin*);
+  static void parse(std::string, dbTechLayer*, lefinReader*);
 };
 
 class lefTechLayerMinStepParser
 {
  public:
-  bool parse(std::string, dbTechLayer*, lefin*);
+  bool parse(std::string, dbTechLayer*, lefinReader*);
 
  private:
   odb::dbTechLayerMinStepRule* curRule;
   void createSubRule(odb::dbTechLayer* layer);
-  void setMinAdjacentLength1(double length, odb::lefin* l);
-  void setMinAdjacentLength2(double length, odb::lefin* l);
-  void minBetweenLengthParser(double length, odb::lefin* l);
-  void noBetweenEolParser(double width, odb::lefin* l);
-  void noAdjacentEolParser(double width, odb::lefin* l);
-  void minStepLengthParser(double length, odb::lefin* l);
-  void maxEdgesParser(int edges, odb::lefin* l);
+  void setMinAdjacentLength1(double length, odb::lefinReader* l);
+  void setMinAdjacentLength2(double length, odb::lefinReader* l);
+  void minBetweenLengthParser(double length, odb::lefinReader* l);
+  void noBetweenEolParser(double width, odb::lefinReader* l);
+  void noAdjacentEolParser(double width, odb::lefinReader* l);
+  void minStepLengthParser(double length, odb::lefinReader* l);
+  void maxEdgesParser(int edges, odb::lefinReader* l);
   void setConvexCorner();
   void setConcaveCorner();
   void setExceptRectangle();
@@ -77,7 +77,7 @@ class lefTechLayerMinStepParser
 class lefTechLayerCornerSpacingParser
 {
  public:
-  static bool parse(std::string, dbTechLayer*, lefin*);
+  static bool parse(std::string, dbTechLayer*, lefinReader*);
 };
 
 class lefTechLayerSpacingTablePrlParser
@@ -89,31 +89,31 @@ class lefTechLayerSpacingTablePrlParser
   std::map<unsigned int, std::pair<int, int>> within_map;
   std::vector<std::tuple<int, int, int>> influence_tbl;
   int curWidthIdx = -1;
-  bool parse(std::string, dbTechLayer*, lefin*);
+  bool parse(std::string, dbTechLayer*, lefinReader*);
 };
 
 class lefTechLayerRightWayOnGridOnlyParser
 {
  public:
-  static bool parse(std::string, dbTechLayer*, lefin*);
+  static bool parse(std::string, dbTechLayer*, lefinReader*);
 };
 
 class lefTechLayerRectOnlyParser
 {
  public:
-  static bool parse(std::string, dbTechLayer*, lefin*);
+  static bool parse(std::string, dbTechLayer*, lefinReader*);
 };
 
 class lefTechLayerTypeParser
 {
  public:
-  static bool parse(std::string, dbTechLayer*, lefin*);
+  static bool parse(std::string, dbTechLayer*, lefinReader*);
 };
 
 class lefTechLayerCutClassParser
 {
  public:
-  static bool parse(std::string, dbTechLayer*, lefin*);
+  static bool parse(std::string, dbTechLayer*, lefinReader*);
 };
 
 class lefTechLayerCutSpacingParser
@@ -122,7 +122,7 @@ class lefTechLayerCutSpacingParser
   odb::dbTechLayerCutSpacingRule* curRule;
   bool parse(std::string,
              dbTechLayer*,
-             lefin*,
+             lefinReader*,
              std::vector<std::pair<odb::dbObject*, std::string>>&);
 };
 
@@ -133,18 +133,18 @@ class lefTechLayerCutSpacingTableParser
   odb::dbTechLayer* layer;
   lefTechLayerCutSpacingTableParser(odb::dbTechLayer* inly) { layer = inly; };
   bool parse(std::string,
-             lefin*,
+             lefinReader*,
              std::vector<std::pair<odb::dbObject*, std::string>>&);
 };
 
 class lefTechLayerCutEnclosureRuleParser
 {
  public:
-  lefTechLayerCutEnclosureRuleParser(lefin*);
+  lefTechLayerCutEnclosureRuleParser(lefinReader*);
   void parse(const std::string&, odb::dbTechLayer*);
 
  private:
-  lefin* lefin_;
+  lefinReader* lefin_;
   bool parseSubRule(std::string, odb::dbTechLayer* layer);
   void setInt(double val,
               odb::dbTechLayerCutEnclosureRule* rule,
@@ -156,11 +156,11 @@ class lefTechLayerCutEnclosureRuleParser
 class lefTechLayerEolExtensionRuleParser
 {
  public:
-  lefTechLayerEolExtensionRuleParser(lefin*);
+  lefTechLayerEolExtensionRuleParser(lefinReader*);
   void parse(const std::string&, odb::dbTechLayer*);
 
  private:
-  lefin* lefin_;
+  lefinReader* lefin_;
   bool parseSubRule(std::string, odb::dbTechLayer* layer);
   void setInt(double val,
               odb::dbTechLayerEolExtensionRule* rule,
@@ -171,11 +171,11 @@ class lefTechLayerEolExtensionRuleParser
 class lefTechLayerEolKeepOutRuleParser
 {
  public:
-  lefTechLayerEolKeepOutRuleParser(lefin*);
+  lefTechLayerEolKeepOutRuleParser(lefinReader*);
   void parse(const std::string&, odb::dbTechLayer*);
 
  private:
-  lefin* lefin_;
+  lefinReader* lefin_;
   void setExceptWithin(const boost::fusion::vector<double, double>& params,
                        odb::dbTechLayerEolKeepOutRule* rule);
   bool parseSubRule(std::string, odb::dbTechLayer* layer);
@@ -190,13 +190,13 @@ class lefTechLayerEolKeepOutRuleParser
 class lefTechLayerAreaRuleParser
 {
  public:
-  lefTechLayerAreaRuleParser(lefin*);
+  lefTechLayerAreaRuleParser(lefinReader*);
   void parse(const std::string&,
              odb::dbTechLayer*,
              std::vector<std::pair<odb::dbObject*, std::string>>&);
 
  private:
-  lefin* lefin_;
+  lefinReader* lefin_;
   bool parseSubRule(
       std::string,
       odb::dbTechLayer* layer,
@@ -220,7 +220,7 @@ class lefTechLayerAreaRuleParser
 class lefTechLayerPitchRuleParser
 {
  public:
-  lefTechLayerPitchRuleParser(lefin*);
+  lefTechLayerPitchRuleParser(lefinReader*);
   void parse(std::string, odb::dbTechLayer*);
 
  private:
@@ -229,17 +229,17 @@ class lefTechLayerPitchRuleParser
               void (odb::dbTechLayer::*func)(int));
   void setPitchXY(boost::fusion::vector<double, double>& params,
                   odb::dbTechLayer* layer);
-  lefin* lefin_;
+  lefinReader* lefin_;
 };
 
 class lefTechLayerForbiddenSpacingRuleParser
 {
  public:
-  lefTechLayerForbiddenSpacingRuleParser(lefin*);
+  lefTechLayerForbiddenSpacingRuleParser(lefinReader*);
   void parse(std::string, odb::dbTechLayer*);
 
  private:
-  lefin* lefin_;
+  lefinReader* lefin_;
   bool parseSubRule(std::string, odb::dbTechLayer* layer);
   void setInt(double val,
               odb::dbTechLayerForbiddenSpacingRule* rule,
@@ -251,11 +251,11 @@ class lefTechLayerForbiddenSpacingRuleParser
 class lefTechLayerTwoWiresForbiddenSpcRuleParser
 {
  public:
-  lefTechLayerTwoWiresForbiddenSpcRuleParser(lefin*);
+  lefTechLayerTwoWiresForbiddenSpcRuleParser(lefinReader*);
   void parse(std::string, odb::dbTechLayer*);
 
  private:
-  lefin* lefin_;
+  lefinReader* lefin_;
   bool parseSubRule(std::string, odb::dbTechLayer* layer);
   void setInt(double val,
               odb::dbTechLayerTwoWiresForbiddenSpcRule* rule,
@@ -267,8 +267,8 @@ class lefTechLayerTwoWiresForbiddenSpcRuleParser
 class ArraySpacingParser
 {
  public:
-  ArraySpacingParser(dbTechLayer* layer, lefin* lefin)
-      : layer_(layer), lefin_(lefin)
+  ArraySpacingParser(dbTechLayer* layer, lefinReader* lefinReader)
+      : layer_(layer), lefin_(lefinReader)
   {
   }
   bool parse(std::string);
@@ -280,15 +280,15 @@ class ArraySpacingParser
   void setCutSpacing(double spacing);
   void setViaWidth(double width);
   dbTechLayer* layer_;
-  lefin* lefin_;
+  lefinReader* lefin_;
   dbTechLayerArraySpacingRule* rule_{nullptr};
 };
 
 class WidthTableParser
 {
  public:
-  WidthTableParser(dbTechLayer* layer, lefin* lefin)
-      : layer_(layer), lefin_(lefin)
+  WidthTableParser(dbTechLayer* layer, lefinReader* lefinReader)
+      : layer_(layer), lefin_(lefinReader)
   {
   }
   void parse(const std::string&);
@@ -297,14 +297,15 @@ class WidthTableParser
   void addWidth(double width);
   bool parseSubRule(std::string s);
   dbTechLayer* layer_;
-  lefin* lefin_;
+  lefinReader* lefin_;
   dbTechLayerWidthTableRule* rule_{nullptr};
 };
 
 class MinCutParser
 {
  public:
-  MinCutParser(dbTechLayer* layer, lefin* lefin) : layer_(layer), lefin_(lefin)
+  MinCutParser(dbTechLayer* layer, lefinReader* lefinReader)
+      : layer_(layer), lefin_(lefinReader)
   {
   }
   void parse(const std::string&);
@@ -319,7 +320,7 @@ class MinCutParser
   void setArea(double);
   void setAreaWithin(double);
   dbTechLayer* layer_;
-  lefin* lefin_;
+  lefinReader* lefin_;
   dbTechLayerMinCutRule* rule_{nullptr};
 };
 
@@ -328,9 +329,9 @@ class MetalWidthViaMapParser
  public:
   MetalWidthViaMapParser(
       dbTech* tech,
-      lefin* lefin,
+      lefinReader* lefinReader,
       std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
-      : tech_(tech), lefin_(lefin), incomplete_props_(incomplete_props)
+      : tech_(tech), lefin_(lefinReader), incomplete_props_(incomplete_props)
   {
   }
   void parse(const std::string&);
@@ -346,7 +347,7 @@ class MetalWidthViaMapParser
   void setCutClass();
   void setPGVia();
   dbTech* tech_;
-  lefin* lefin_;
+  lefinReader* lefin_;
   bool cut_class_{false};
   std::vector<std::pair<dbObject*, std::string>>& incomplete_props_;
   dbMetalWidthViaMap* via_map{nullptr};
@@ -355,8 +356,8 @@ class MetalWidthViaMapParser
 class KeepOutZoneParser
 {
  public:
-  KeepOutZoneParser(dbTechLayer* layer, lefin* lefin)
-      : layer_(layer), lefin_(lefin)
+  KeepOutZoneParser(dbTechLayer* layer, lefinReader* lefinReader)
+      : layer_(layer), lefin_(lefinReader)
   {
   }
   void parse(const std::string&);
@@ -365,15 +366,15 @@ class KeepOutZoneParser
   bool parseSubRule(std::string);
   void setInt(double val, void (odb::dbTechLayerKeepOutZoneRule::*func)(int));
   dbTechLayer* layer_;
-  lefin* lefin_;
+  lefinReader* lefin_;
   dbTechLayerKeepOutZoneRule* rule_{nullptr};
 };
 
 class MaxSpacingParser
 {
  public:
-  MaxSpacingParser(dbTechLayer* layer, lefin* lefin)
-      : layer_(layer), lefin_(lefin)
+  MaxSpacingParser(dbTechLayer* layer, lefinReader* lefinReader)
+      : layer_(layer), lefin_(lefinReader)
   {
   }
   void parse(std::string);
@@ -381,7 +382,7 @@ class MaxSpacingParser
  private:
   void setMaxSpacing(dbTechLayerMaxSpacingRule*, double);
   dbTechLayer* layer_;
-  lefin* lefin_;
+  lefinReader* lefin_;
 };
 
 }  // namespace odb

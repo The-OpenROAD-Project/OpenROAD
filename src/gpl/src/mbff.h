@@ -251,6 +251,9 @@ class MBFF
   void ReadLibs();
   void SetTrayNames();
 
+  void displayFlopClusters(const char* stage,
+                           std::vector<std::vector<Flop>>& clusters);
+
   // OpenROAD vars
   odb::dbDatabase* db_;
   odb::dbBlock* block_;

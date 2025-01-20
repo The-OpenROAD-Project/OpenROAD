@@ -30,7 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#pragma once
+// #pragma once
+
+#ifndef ADS_WIRE_H
+#define ADS_WIRE_H
 
 #include <cstdio>
 #include <cstdlib>
@@ -41,6 +44,7 @@
 #include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "rcx.h"
 #include "rcx/extRCap.h"
 
 namespace rcx {
@@ -101,6 +105,22 @@ class Ath__searchBox
 
 class Ath__wire
 {
+  // ---------------------------------------- v2
+ public:
+  Ath__wire* _upNext = nullptr;
+  Ath__wire* _downNext = nullptr;
+  Ath__wire* _aboveNext = nullptr;  // vertical
+  Ath__wire* _belowNext = nullptr;  // vertical
+
+  int getLen() { return _len; }
+  int getWidth() { return _width; }
+  int getBase() { return _base; }
+  // void getCoords(int* x1, int* y1, int* x2, int* y2, uint* dir);
+
+  uint getLevel();
+  uint getPitch();  // dkf 10192023
+
+  // ------------------------------------------------------------
  private:
   uint _id;
   uint _srcId;  // TODO-OPTIMIZE
@@ -188,7 +208,7 @@ class Ath__track
   Ath__track* _hiTrack;
   Ath__track* _lowTrack;
 
-  Ath__wire** _marker;
+  // Ath__wire** _marker;
   Ath__wire** _eMarker;
   uint _markerCnt;
   uint _searchMarkerIndex;
@@ -209,6 +229,9 @@ class Ath__track
   bool _ordered;
 
  public:
+  // -------------------------------------------------------- v2
+  Ath__wire** _marker;
+  // --------------------------------------------------------------
   uint getTrackNum() { return _num; };
   void set(Ath__grid* g,
            int x,
@@ -319,6 +342,15 @@ class Ath__gridTable;
 
 class Ath__grid
 {
+  // ------------------------------------------ v2
+ public:
+  int initCouplingCapLoops_v2(uint couplingDist,
+                              bool startSearchTrack = true,
+                              int startXY = 0);
+  uint placeWire_v2(Ath__searchBox* bb);
+
+  int _pitch;
+
  private:
   Ath__gridTable* _gridtable;
   Ath__track** _trackTable;
@@ -335,7 +367,7 @@ class Ath__grid
   int _hi[2];
 
   int _width;
-  int _pitch;
+  //  int _pitch;
   uint _level;
   uint _layer;
   uint _dir;
@@ -523,6 +555,18 @@ class Ath__grid
 
 class Ath__gridTable
 {
+  // -------------------------------------------------------------- v2
+ public:
+  bool _no_sub_tracks = false;
+  bool _v2 = false;
+  void initCouplingCapLoops_v2(uint dir,
+                               uint couplingDist,
+                               int* startXY = nullptr);
+  int initCouplingCapLoops_v2(uint couplingDist,
+                              bool startSearchTrack,
+                              int startXY);
+
+  // ------------------------------------------------------------------------
  private:
   Ath__grid*** _gridTable;
   Ath__box _bbox;
@@ -552,6 +596,9 @@ class Ath__gridTable
   uint _ccFlag;
 
   uint _ccContextDepth;
+
+  // _v2
+  uint* _ccContextLength;
 
   Ath__array1D<int>** _ccContextArray;
 
@@ -584,6 +631,32 @@ class Ath__gridTable
   Ath__array1D<Ath__wire*>* _bandWire;
 
  public:
+  // -------------------------------------------------------- v2
+
+  void setExtControl_v2(dbBlock* block,
+                        bool useDbSdb,
+                        uint adj,
+                        uint npsrc,
+                        uint nptgt,
+                        uint ccUp,
+                        bool allNet,
+                        uint contextDepth,
+                        Ath__array1D<int>** contextArray,
+                        uint* contextLength,
+                        Ath__array1D<SEQ*>*** dgContextArray,
+                        uint* dgContextDepth,
+                        uint* dgContextPlanes,
+                        uint* dgContextTracks,
+                        uint* dgContextBaseLvl,
+                        int* dgContextLowLvl,
+                        int* dgContextHiLvl,
+                        uint* dgContextBaseTrack,
+                        int* dgContextLowTrack,
+                        int* dgContextHiTrack,
+                        int** dgContextTrackBase,
+                        AthPool<SEQ>* seqPool);
+
+  // -------------------------------------------------------------
   Ath__gridTable(Ath__box* bb,
                  uint rowSize,
                  uint colSize,
@@ -720,6 +793,7 @@ class Ath__gridTable
   uint noPowerTarget() { return _noPowerTarget; };
   void setNoPowerTarget(uint npt) { _noPowerTarget = npt; };
   void incrCCshorts() { _CCshorts++; };
+
   void setExtControl(dbBlock* block,
                      bool useDbSdb,
                      uint adj,
@@ -741,6 +815,7 @@ class Ath__gridTable
                      int* dgContextHiTrack,
                      int** dgContextTrackBase,
                      AthPool<SEQ>* seqPool);
+
   bool usingDbSdb() { return _useDbSdb; }
   void reverseTargetTrack();
   bool targetTrackReversed() { return _targetTrackReversed; };
@@ -775,3 +850,5 @@ class Ath__gridTable
 };
 
 }  // namespace rcx
+
+#endif

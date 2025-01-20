@@ -193,6 +193,42 @@ proc assert { condition { message "assertion failed" } } {
 }
 
 #
+# Assertion helper for strings
+#
+proc assertStringEq { val expected_val { message "assertion failed" } } {
+    if {![string equal $val $expected_val]} {
+        error $message
+    }
+}
+
+#
+# Assertion helper for strings
+#
+proc assertStringNotEq { val expected_val { message "assertion failed" } } {
+    if {[string equal $val $expected_val]} {
+        error $message
+    }
+}
+
+#
+# Assertion helper for checking that object is null
+#
+proc assertObjIsNull { val { message "assertion failed" } } {
+    if {![string equal $val "NULL"]} {
+        error $message
+    }
+}
+    
+#
+# Assertion helper for checking that object is non-null
+#
+proc assertObjIsNotNull { val { message "assertion failed" } } {
+    if {[string equal $val "NULL"]} {
+        error $message
+    }
+}
+
+#
 # List comparison helper, since struct::list isn't available
 # returns true if two lists are the same
 #

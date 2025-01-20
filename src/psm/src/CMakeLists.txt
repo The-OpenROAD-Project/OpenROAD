@@ -60,7 +60,7 @@ target_include_directories( psm
 
 target_link_libraries(psm
   PRIVATE
-    utl
+    utl_lib
     odb
     OpenSTA
     dbSta

@@ -88,6 +88,7 @@ using odb::dbInst;
 using odb::dbMaster;
 using odb::dbPlacementStatus;
 
+using sta::ConcreteLibraryCellIterator;
 using sta::FindNetDrvrLoads;
 using sta::FuncExpr;
 using sta::InstancePinIterator;
@@ -174,6 +175,8 @@ void Resizer::init(Logger* logger,
   all_swapped_pin_inst_set_ = InstanceSet(db_network_);
   all_cloned_inst_set_ = InstanceSet(db_network_);
   db_cbk_ = std::make_unique<OdbCallBack>(this, network_, db_network_);
+
+  db_network_->addObserver(this);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -185,7 +188,6 @@ double Resizer::coreArea() const
 
 double Resizer::utilization()
 {
-  initBlock();
   initDesignArea();
   double core_area = coreArea();
   if (core_area > 0.0) {
@@ -241,10 +243,9 @@ void Resizer::initBlock()
 
 void Resizer::init()
 {
-  initBlock();
+  initDesignArea();
   sta_->ensureLevelized();
   graph_ = sta_->graph();
-  initDesignArea();
 }
 
 // remove all buffers if no buffers are specified
@@ -1803,9 +1804,21 @@ void Resizer::setDontUse(LibertyCell* cell, bool dont_use)
   buffer_lowest_drive_ = nullptr;
 }
 
+void Resizer::resetDontUse()
+{
+  dont_use_.clear();
+
+  // Reset buffer set to ensure it honors dont_use_
+  buffer_cells_.clear();
+  buffer_lowest_drive_ = nullptr;
+
+  // recopy in liberty cell dont uses
+  copyDontUseFromLiberty();
+}
+
 bool Resizer::dontUse(const LibertyCell* cell)
 {
-  return cell->dontUse() || dont_use_.hasKey(const_cast<LibertyCell*>(cell));
+  return dont_use_.hasKey(const_cast<LibertyCell*>(cell));
 }
 
 void Resizer::reportDontUse() const
@@ -2123,7 +2136,6 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
                               double separation,  // meters
                               bool verbose)
 {
-  initBlock();
   initDesignArea();
   Instance* top_inst = network_->topInstance();
   LibertyCell* tie_cell = tie_port->libertyCell();
@@ -2927,6 +2939,7 @@ void Resizer::makeWireParasitic(Net* net,
 
 double Resizer::designArea()
 {
+  initBlock();
   initDesignArea();
   return design_area_;
 }
@@ -2938,11 +2951,14 @@ void Resizer::designAreaIncr(float delta)
 
 void Resizer::initDesignArea()
 {
+  initBlock();
   design_area_ = 0.0;
   for (dbInst* inst : block_->getInsts()) {
     dbMaster* master = inst->getMaster();
     // Don't count fillers otherwise you'll always get 100% utilization
-    if (!master->isFiller()) {
+    if (!master->isFiller()
+        && master->getType() != odb::dbMasterType::CORE_WELLTAP
+        && !master->isEndCap()) {
       design_area_ += area(master);
     }
   }
@@ -3008,7 +3024,6 @@ void Resizer::repairClkNets(double max_wire_length)
 // each register they drive.
 void Resizer::repairClkInverters()
 {
-  initBlock();
   initDesignArea();
   sta_->ensureLevelized();
   graph_ = sta_->graph();
@@ -4003,6 +4018,34 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
   logger_->report("Removed {} unused instances and {} unused nets.",
                   remove_inst_count,
                   remove_net_count);
+}
+
+void Resizer::postReadLiberty()
+{
+  copyDontUseFromLiberty();
+}
+
+void Resizer::copyDontUseFromLiberty()
+{
+  std::unique_ptr<LibertyLibraryIterator> itr(
+      db_network_->libertyLibraryIterator());
+
+  while (itr->hasNext()) {
+    sta::LibertyLibrary* lib = itr->next();
+
+    std::unique_ptr<ConcreteLibraryCellIterator> cells(lib->cellIterator());
+
+    while (cells->hasNext()) {
+      LibertyCell* lib_cell = cells->next()->libertyCell();
+      if (lib_cell == nullptr) {
+        continue;
+      }
+
+      if (lib_cell->dontUse()) {
+        setDontUse(lib_cell, true);
+      }
+    }
+  }
 }
 
 }  // namespace rsz
