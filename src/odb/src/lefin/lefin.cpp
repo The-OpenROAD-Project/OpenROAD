@@ -42,6 +42,7 @@
 #include <string>
 #include <vector>
 
+#include "CellEdgeSpacingTableParser.h"
 #include "lefLayerPropParser.h"
 #include "lefMacroPropParser.h"
 #include "lefiDebug.hpp"
@@ -1679,6 +1680,9 @@ void lefinReader::propDef(LefParser::lefiProp* prop)
 {
   if (std::string(prop->propName()) == "LEF58_METALWIDTHVIAMAP") {
     auto parser = MetalWidthViaMapParser(_tech, this, _incomplete_props);
+    parser.parse(prop->string());
+  } else if (std::string(prop->propName()) == "LEF58_CELLEDGESPACINGTABLE") {
+    auto parser = CellEdgeSpacingTableParser(_tech, this);
     parser.parse(prop->string());
   }
 }

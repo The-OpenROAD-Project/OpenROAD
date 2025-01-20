@@ -21,6 +21,7 @@ add_library(lefin
     lefTechLayerTwoWiresForbiddenSpcRuleParser.cpp
     lefMacroClassParser.cpp
     lefMacroEdgeTypeParser.cpp
+    CellEdgeSpacingTableParser.cpp
     ArraySpacingParser.cpp
     WidthTableParser.cpp
     MinCutParser.cpp

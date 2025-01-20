@@ -93,6 +93,7 @@ static const char* name_tbl[] = {"dbDatabase",
                                  // Generator Code Begin ObjectNames
                                  "dbAccessPoint",
                                  "dbBusPort",
+                                 "dbCellEdgeSpacing",
                                  "dbDft",
                                  "dbGCellGrid",
                                  "dbGDSARef",

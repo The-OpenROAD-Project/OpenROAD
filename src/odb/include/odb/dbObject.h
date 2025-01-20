@@ -89,6 +89,7 @@ enum dbObjectType
   // Generator Code Begin DbObjectType
   dbAccessPointObj,
   dbBusPortObj,
+  dbCellEdgeSpacingObj,
   dbDftObj,
   dbGCellGridObj,
   dbGDSARefObj,
