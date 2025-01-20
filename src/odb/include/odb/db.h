@@ -132,6 +132,7 @@ class dbViaParams;
 // Generator Code Begin ClassDeclarations
 class dbAccessPoint;
 class dbBusPort;
+class dbCellEdgeSpacing;
 class dbDft;
 class dbGCellGrid;
 class dbGDSARef;
@@ -6171,6 +6172,11 @@ class dbTech : public dbObject
   dbSet<dbMetalWidthViaMap> getMetalWidthViaMap();
 
   ///
+  /// Get the LEF58_CELLEDGESPACINGTABLE
+  ///
+  dbSet<dbCellEdgeSpacing> getCellEdgeSpacingTable();
+
+  ///
   ///
   ///
   dbTechViaRule* findViaRule(const char* name);
@@ -7278,6 +7284,50 @@ class dbBusPort : public dbObject
                            int to_ix);
 
   // User Code End dbBusPort
+};
+
+class dbCellEdgeSpacing : public dbObject
+{
+ public:
+  void setFirstEdgeType(const std::string& first_edge_type);
+
+  std::string getFirstEdgeType() const;
+
+  void setSecondEdgeType(const std::string& second_edge_type);
+
+  std::string getSecondEdgeType() const;
+
+  void setSpacing(int spacing);
+
+  int getSpacing() const;
+
+  void setExceptAbutted(bool except_abutted);
+
+  bool isExceptAbutted() const;
+
+  void setExceptNonFillerInBetween(bool except_non_filler_in_between);
+
+  bool isExceptNonFillerInBetween() const;
+
+  void setOptional(bool optional);
+
+  bool isOptional() const;
+
+  void setSoft(bool soft);
+
+  bool isSoft() const;
+
+  void setExact(bool exact);
+
+  bool isExact() const;
+
+  // User Code Begin dbCellEdgeSpacing
+
+  static dbCellEdgeSpacing* create(dbTech*);
+
+  static void destroy(dbCellEdgeSpacing*);
+
+  // User Code End dbCellEdgeSpacing
 };
 
 // Top level DFT (Design for Testing) class

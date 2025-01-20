@@ -70,7 +70,10 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 101;  // Current revision number
+const uint db_schema_minor = 102;  // Current revision number
+
+// Revision where support for LEF58_CELLEDGESPACINGTABLE was added
+const uint db_schema_cell_edge_spc_tbl = 102;
 
 // Revision where dbMasterEdgeType was added
 const uint db_schema_master_edge_type = 101;
