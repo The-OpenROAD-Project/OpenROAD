@@ -660,6 +660,16 @@ struct less<odb::dbMarkerCategory*>
 };
 
 template <>
+struct less<odb::dbMasterEdgeType*>
+{
+  bool operator()(const odb::dbMasterEdgeType* lhs,
+                  const odb::dbMasterEdgeType* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
 struct less<odb::dbMetalWidthViaMap*>
 {
   bool operator()(const odb::dbMetalWidthViaMap* lhs,

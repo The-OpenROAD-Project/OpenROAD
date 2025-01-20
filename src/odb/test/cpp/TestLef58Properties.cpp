@@ -37,6 +37,16 @@ BOOST_AUTO_TEST_CASE(lef58_class)
   BOOST_CHECK(endcap);
 
   BOOST_TEST(endcap->getType() == odb::dbMasterType::ENDCAP_LEF58_BOTTOMEDGE);
+  BOOST_TEST(endcap->getEdgeTypes().size() == 2);
+
+  auto edge_type_itr = endcap->getEdgeTypes().begin();
+  BOOST_TEST((*edge_type_itr)->getEdgeDir()
+             == odb::dbMasterEdgeType::EdgeDir::LEFT);
+  BOOST_TEST((*edge_type_itr)->getEdgeType() == "TYPE1");
+  ++edge_type_itr;
+  BOOST_TEST((*edge_type_itr)->getEdgeDir()
+             == odb::dbMasterEdgeType::EdgeDir::RIGHT);
+  BOOST_TEST((*edge_type_itr)->getEdgeType() == "TYPE2");
 }
 
 BOOST_AUTO_TEST_CASE(test_default)

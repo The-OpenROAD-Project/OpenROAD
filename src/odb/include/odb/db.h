@@ -149,6 +149,7 @@ class dbLevelShifter;
 class dbLogicPort;
 class dbMarker;
 class dbMarkerCategory;
+class dbMasterEdgeType;
 class dbMetalWidthViaMap;
 class dbModBTerm;
 class dbModInst;
@@ -5704,6 +5705,11 @@ class dbMaster : public dbObject
   dbSet<dbMTerm> getMTerms();
 
   ///
+  /// Get the LEF58_EDGETYPE properties.
+  ///
+  dbSet<dbMasterEdgeType> getEdgeTypes();
+
+  ///
   /// Find a specific master-terminal
   /// Returns nullptr if the object was not found.
   ///
@@ -7957,6 +7963,49 @@ class dbMarkerCategory : public dbObject
   static void destroy(dbMarkerCategory* category);
 
   // User Code End dbMarkerCategory
+};
+
+class dbMasterEdgeType : public dbObject
+{
+ public:
+  enum EdgeDir
+  {
+    TOP,
+    RIGHT,
+    LEFT,
+    BOTTOM
+  };
+
+  void setEdgeType(const std::string& edge_type);
+
+  std::string getEdgeType() const;
+
+  void setCellRow(int cell_row);
+
+  int getCellRow() const;
+
+  void setHalfRow(int half_row);
+
+  int getHalfRow() const;
+
+  void setRangeBegin(int range_begin);
+
+  int getRangeBegin() const;
+
+  void setRangeEnd(int range_end);
+
+  int getRangeEnd() const;
+
+  // User Code Begin dbMasterEdgeType
+  void setEdgeDir(dbMasterEdgeType::EdgeDir edge_dir);
+
+  dbMasterEdgeType::EdgeDir getEdgeDir() const;
+
+  static dbMasterEdgeType* create(dbMaster* master);
+
+  static void destroy(dbMasterEdgeType* edge_type);
+
+  // User Code End dbMasterEdgeType
 };
 
 class dbMetalWidthViaMap : public dbObject

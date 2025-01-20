@@ -104,6 +104,7 @@ add_library(db
     dbLogicPort.cpp
     dbMarker.cpp
     dbMarkerCategory.cpp
+    dbMasterEdgeType.cpp
     dbMetalWidthViaMap.cpp
     dbModBTerm.cpp
     dbModInst.cpp
