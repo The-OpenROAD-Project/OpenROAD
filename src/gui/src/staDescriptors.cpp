@@ -816,7 +816,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
       clocks.insert(gui->makeSelected(clock));
     }
 
-    auto power = sta_->findClkedActivity(pin);
+    auto power = sta_->activity(pin);
 
     bool is_lib_port = false;
     std::any port_id;
@@ -833,7 +833,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
 
     if (is_lib_port) {
       const std::string freq
-          = Descriptor::convertUnits(power.activity(), false, float_precision_);
+          = Descriptor::convertUnits(power.density(), false, float_precision_);
       const std::string activity_info = fmt::format("{:.2f}% at {}Hz from {}",
                                                     100 * power.duty(),
                                                     freq,
