@@ -13,7 +13,7 @@ target_link_libraries(dft_stitch_lib
     odb
     dbSta
     OpenSTA
-    utl
+    utl_lib
     dft_cells_lib
     dft_architect_lib
     dft_utils_lib

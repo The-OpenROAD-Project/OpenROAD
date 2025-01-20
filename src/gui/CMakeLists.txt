@@ -74,7 +74,7 @@ if (Qt5_FOUND AND BUILD_GUI)
       Qt5::Core
       Qt5::Widgets
       Qt5::Charts
-      utl
+      utl_lib
       Boost::boost
   )
 

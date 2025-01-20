@@ -63,7 +63,7 @@ target_include_directories(dst
 
 target_link_libraries(dst
   PUBLIC
-    utl
+    utl_lib
     OpenSTA
     ${TCL_LIBRARY}
     ${ZLIB_LIBRARIES}

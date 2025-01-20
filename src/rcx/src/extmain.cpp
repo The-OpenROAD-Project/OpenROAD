@@ -109,8 +109,10 @@ uint extMain::getMultiples(uint cnt, uint base)
   return ((cnt / base) + 1) * base;
 }
 
-void extMain::setupMapping(uint itermCnt)
+void extMain::setupMapping(uint itermCnt1)
 {
+  uint itermCnt = 3 * _block->getNets().size();
+
   if (_btermTable) {
     return;
   }
@@ -134,7 +136,6 @@ extMain::extMain()
 {
   _modelTable = new Ath__array1D<extRCModel*>(8);
 }
-
 extMain::~extMain()
 {
   delete _modelTable;
@@ -231,7 +232,6 @@ extRCModel* extMain::getRCmodel(uint n)
 
 uint extMain::getResCapTable()
 {
-  calcMinMaxRC();
   _currentModel = getRCmodel(0);
 
   extMeasure m(logger_);
@@ -243,7 +243,6 @@ uint extMain::getResCapTable()
     if (layer->getRoutingLevel() == 0) {
       continue;
     }
-
     const uint n = layer->getRoutingLevel();
 
     const uint w = layer->getWidth();  // nm
@@ -274,6 +273,8 @@ uint extMain::getResCapTable()
 
       extDistRC* rc = rcModel->getOverFringeRC(&m);
 
+      _capacitanceTable[jj][n] = _minCapTable[n][jj];
+
       if (rc != nullptr) {
         const double r1 = rc->getRes();
         _capacitanceTable[jj][n] = rc->getFringe();
@@ -293,7 +294,6 @@ uint extMain::getResCapTable()
                    r1,
                    resTable[jj]);
       }
-
       if (!_lef_res) {
         _resistanceTable[jj][n] = resTable[jj];
       } else {
@@ -415,25 +415,14 @@ double extMain::getFringe(const uint met,
                           double& areaCap)
 {
   areaCap = 0.0;
-  if (_noModelRC) {
-    return 0.0;
+  if (_noModelRC || _lefRC) {
+    return _capacitanceTable[0][met];
   }
 
   if (width == _minWidthTable[met]) {
     return _capacitanceTable[modelIndex][met];
   }
-
-  // just in case
-
-  extMeasure m(logger_);
-
-  m._met = met;
-  m._width = width;
-  m._underMet = 0;
-  m._ccContextArray = _ccContextArray;
-  m._ccMergedContextArray = _ccMergedContextArray;
-
-  extDistRC* rc = _metRCTable.get(modelIndex)->getOverFringeRC(&m);
+  extDistRC* rc = _metRCTable.get(modelIndex)->getOverFringeRC_last(met, width);
 
   if (rc == nullptr) {
     return 0.0;
