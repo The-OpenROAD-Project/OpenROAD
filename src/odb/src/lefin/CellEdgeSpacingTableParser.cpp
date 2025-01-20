@@ -74,7 +74,7 @@ void CellEdgeSpacingTableParser::setBool(void (dbCellEdgeSpacing::*func)(bool))
 }
 
 void CellEdgeSpacingTableParser::setString(
-    std::string val,
+    const std::string& val,
     void (dbCellEdgeSpacing::*func)(const std::string&))
 {
   (curr_entry_->*func)(val);

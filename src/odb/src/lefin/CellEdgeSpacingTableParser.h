@@ -56,7 +56,7 @@ class CellEdgeSpacingTableParser
   void createEntry();
   void setSpacing(double);
   void setBool(void (dbCellEdgeSpacing::*func)(bool));
-  void setString(std::string val,
+  void setString(const std::string& val,
                  void (dbCellEdgeSpacing::*func)(const std::string&));
   dbTech* tech_;
   lefinReader* lefin_;
