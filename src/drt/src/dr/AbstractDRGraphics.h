@@ -31,13 +31,16 @@
 #include <memory>
 #include <vector>
 
-#include "AbstractDRGraphics.h"
 #include "frBaseTypes.h"
-#include "gui/gui.h"
+
+namespace gui {
+class Painter;
+}
 
 namespace odb {
 class dbDatabase;
 class Point;
+class dbTechLayer;
 }  // namespace odb
 
 namespace drt {
@@ -50,83 +53,48 @@ class frDesign;
 class frBlockObject;
 struct RouterConfiguration;
 
-// This class draws debugging graphics on the layout
-class FlexDRGraphics : public gui::Renderer, public AbstractDRGraphics
+class AbstractDRGraphics
 {
  public:
-  // Debug detailed routing
-  FlexDRGraphics(frDebugSettings* settings,
-                 frDesign* design,
-                 odb::dbDatabase* db,
-                 Logger* logger);
+  virtual void startWorker(FlexDRWorker* worker) = 0;
 
-  void startWorker(FlexDRWorker* worker);
+  virtual void startIter(int iter, RouterConfiguration* router_cfg) = 0;
 
-  void startIter(int iter, RouterConfiguration* router_cfg);
+  virtual void endWorker(int iter) = 0;
 
-  void endWorker(int iter);
+  virtual void startNet(drNet* net) = 0;
 
-  void startNet(drNet* net);
+  virtual void midNet(drNet* net) = 0;
 
-  void midNet(drNet* net);
+  virtual void endNet(drNet* net) = 0;
 
-  void endNet(drNet* net);
-
-  void searchNode(const FlexGridGraph* grid_graph,
-                  const FlexWavefrontGrid& grid);
+  virtual void searchNode(const FlexGridGraph* grid_graph,
+                          const FlexWavefrontGrid& grid)
+      = 0;
 
   // Show a message in the status bar
-  void status(const std::string& message);
+  virtual void status(const std::string& message) = 0;
 
   // From Renderer API
-  void drawObjects(gui::Painter& painter) override;
-  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
-  const char* getDisplayControlGroupName() override;
+  virtual void drawObjects(gui::Painter& painter) = 0;
+  virtual void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) = 0;
+  virtual const char* getDisplayControlGroupName() = 0;
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
 
-  void init() override;
+  virtual void init() = 0;
 
-  void show(bool checkStopConditions);
+  virtual void show(bool checkStopConditions) = 0;
 
-  void update();
+  virtual void update() = 0;
 
-  void pause(drNet* net);
+  virtual void pause(drNet* net) = 0;
 
-  void debugWholeDesign();
+  virtual void debugWholeDesign() = 0;
 
-  void drawObj(frBlockObject* fig, gui::Painter& painter, int layerNum);
-
- private:
-  FlexDRWorker* worker_;
-  const frDesign* design_;
-  drNet* net_;
-  const FlexGridGraph* grid_graph_;
-  frDebugSettings* settings_;
-  int current_iter_;
-  frLayerNum last_pt_layer_;
-  gui::Gui* gui_;
-  Logger* logger_;
-  int dbu_per_uu_;
-  bool drawWholeDesign_ = false;
-  // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
-  std::vector<frLayerNum> layer_map_;
-  std::vector<std::vector<odb::Point>> points_by_layer_;
-
-  // Names for the custom visibility controls in the gui
-  static const char* graph_edges_visible_;
-  static const char* grid_cost_edges_visible_;
-  static const char* blocked_edges_visible_;
-  static const char* route_guides_visible_;
-  static const char* routing_objs_visible_;
-  static const char* route_shape_cost_visible_;
-  static const char* marker_cost_visible_;
-  static const char* fixed_shape_cost_visible_;
-  static const char* maze_search_visible_;
-  static const char* current_net_only_visible_;
-
-  void drawMarker(int xl, int yl, int xh, int yh, gui::Painter& painter);
+  virtual void drawObj(frBlockObject* fig, gui::Painter& painter, int layerNum)
+      = 0;
 };
 
 }  // namespace drt

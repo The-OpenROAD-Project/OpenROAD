@@ -1347,7 +1347,7 @@ FlexDRConnectivityChecker::FlexDRConnectivityChecker(
     drt::TritonRoute* router,
     Logger* logger,
     RouterConfiguration* router_cfg,
-    FlexDRGraphics* graphics,
+    AbstractDRGraphics* graphics,
     bool save_updates)
     : router_(router),
       logger_(logger),

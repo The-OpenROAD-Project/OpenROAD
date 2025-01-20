@@ -39,6 +39,7 @@
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
 #include "db/infra/frTime.h"
+#include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR_graphics.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
@@ -124,12 +125,13 @@ class FlexDR
   void end(bool done = false);
 
   const FlexDRViaData* getViaData() const { return &via_data_; }
+  void setDebug(std::unique_ptr<AbstractDRGraphics> dr_graphics);
   void setDebug(frDebugSettings* settings);
 
   // For post-deserialization update
   void setLogger(Logger* logger) { logger_ = logger; }
   void setDB(odb::dbDatabase* db) { db_ = db; }
-  FlexDRGraphics* getGraphics() { return graphics_.get(); }
+  AbstractDRGraphics* getGraphics() { return graphics_.get(); }
   // distributed
   void setDistributed(dst::Distributed* dist,
                       const std::string& remote_ip,
@@ -164,7 +166,7 @@ class FlexDR
 
   FlexDRViaData via_data_;
   std::vector<int> numViols_;
-  std::unique_ptr<FlexDRGraphics> graphics_;
+  std::unique_ptr<AbstractDRGraphics> graphics_;
   std::string debugNetName_;
   int numWorkUnits_;
 
@@ -379,7 +381,7 @@ class FlexDRWorker
     gcWorker_ = std::move(in);
   }
 
-  void setGraphics(FlexDRGraphics* in)
+  void setGraphics(AbstractDRGraphics* in)
   {
     graphics_ = in;
     gridGraph_.setGraphics(in);
@@ -508,7 +510,7 @@ class FlexDRWorker
   frDesign* design_{nullptr};
   Logger* logger_{nullptr};
   RouterConfiguration* router_cfg_{nullptr};
-  FlexDRGraphics* graphics_{nullptr};  // owned by FlexDR
+  AbstractDRGraphics* graphics_{nullptr};  // owned by FlexDR
   frDebugSettings* debugSettings_{nullptr};
   FlexDRViaData* via_data_{nullptr};
   Rect routeBox_;

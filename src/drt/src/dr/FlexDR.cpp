@@ -45,6 +45,7 @@
 #include "db/infra/frTime.h"
 #include "distributed/RoutingJobDescription.h"
 #include "distributed/frArchive.h"
+#include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR_conn.h"
 #include "dr/FlexDR_graphics.h"
 #include "dst/BalancerJobDescription.h"
@@ -122,6 +123,11 @@ FlexDR::FlexDR(TritonRoute* router,
 }
 
 FlexDR::~FlexDR() = default;
+
+void FlexDR::setDebug(std::unique_ptr<AbstractDRGraphics> dr_graphics)
+{
+  graphics_ = std::move(dr_graphics);
+}
 
 void FlexDR::setDebug(frDebugSettings* settings)
 {

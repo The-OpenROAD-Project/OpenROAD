@@ -30,6 +30,7 @@
 #include <memory>
 #include <vector>
 
+#include "AbstractTAGraphics.h"
 #include "FlexTA.h"
 #include "frBaseTypes.h"
 #include "gui/gui.h"
@@ -45,7 +46,7 @@ class frDesign;
 class frNet;
 
 // This class draws debugging graphics on the layout
-class FlexTAGraphics : public gui::Renderer
+class FlexTAGraphics : public gui::Renderer, public AbstractTAGraphics
 {
  public:
   // Debug track allocation
