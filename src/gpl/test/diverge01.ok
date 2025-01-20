@@ -31,11 +31,11 @@
 [INFO GPL-0028] BinCnt:        16     16
 [INFO GPL-0029] BinSize: (  1.936  1.925 )
 [INFO GPL-0030] NumBins: 256
-[NesterovSolve] Iter:    1 overflow: 0.943 HPWL: 3779352
-[NesterovSolve] Iter:   10 overflow: 0.249 HPWL: 9104801
-[NesterovSolve] Iter:   20 overflow: 0.174 HPWL: 6548218
-[NesterovSolve] Iter:   30 overflow: 0.143 HPWL: 6017806
-[NesterovSolve] Iter:   40 overflow: 0.136 HPWL: 5822817
-[NesterovSolve] Iter:   50 overflow: 0.103 HPWL: 5774941
-[NesterovSolve] Finished with Overflow: 0.098411
+[NesterovSolve] Iter:    1 overflow: 0.943 HPWL: 3779320
+[NesterovSolve] Iter:   10 overflow: 0.220 HPWL: 9232646
+[NesterovSolve] Iter:   20 overflow: 0.192 HPWL: 6467506
+[NesterovSolve] Iter:   30 overflow: 0.156 HPWL: 6110186
+[NesterovSolve] Iter:   40 overflow: 0.134 HPWL: 6000998
+[NesterovSolve] Iter:   50 overflow: 0.115 HPWL: 5932537
+[NesterovSolve] Finished with Overflow: 0.097412
 

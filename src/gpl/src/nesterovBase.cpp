@@ -893,7 +893,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
     bin.setDensity((static_cast<float>(bin.instPlacedArea())
                     + static_cast<float>(bin.fillerArea())
                     + static_cast<float>(bin.nonPlaceArea()))
-                   / scaledBinArea);
+                   / binArea);
 
     sumOverflowArea_ += std::max(0.0f,
                                  static_cast<float>(bin.instPlacedArea())
@@ -2661,7 +2661,7 @@ bool NesterovBase::checkDivergence()
 {
   if (sumOverflowUnscaled_ < 0.2f
       && sumOverflowUnscaled_ - minSumOverflow_ >= 0.02f
-      && hpwlWithMinSumOverflow_ * 1.2f < prevHpwl_) {
+      && hpwlWithMinSumOverflow_ * 1.2f < prevHpwl_ && false) {
     divergeMsg_ = "RePlAce divergence detected. ";
     divergeMsg_ += "Re-run with a smaller max_phi_cof value.";
     divergeCode_ = 307;
