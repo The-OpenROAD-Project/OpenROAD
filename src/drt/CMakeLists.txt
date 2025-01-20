@@ -158,11 +158,8 @@ target_link_libraries(drt_lib
 target_sources(drt
   PRIVATE
     src/dr/FlexDR_graphics.cpp
-    src/ta/FlexTA.cpp
     src/ta/FlexTA_graphics.cpp
-    src/pa/FlexPA.cpp
     src/pa/FlexPA_graphics.cpp
-    src/TritonRoute.cpp
     src/MakeTritonRoute.cpp
 )
 
