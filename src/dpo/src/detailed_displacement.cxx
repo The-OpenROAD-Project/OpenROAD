@@ -44,6 +44,7 @@
 #include <iostream>
 #include <stack>
 #include <utility>
+#include <vector>
 
 #include "detailed_manager.h"
 #include "detailed_orient.h"

@@ -38,6 +38,7 @@
 #include <iostream>
 #include <queue>
 #include <thread>
+#include <vector>
 
 #include "Mpl2Observer.h"
 #include "SACoreHardMacro.h"
@@ -128,10 +129,7 @@ void HierRTLMP::setGlobalFence(float fence_lx,
                                float fence_ux,
                                float fence_uy)
 {
-  global_fence_lx_ = fence_lx;
-  global_fence_ly_ = fence_ly;
-  global_fence_ux_ = fence_ux;
-  global_fence_uy_ = fence_uy;
+  tree_->global_fence = Rect(fence_lx, fence_ly, fence_ux, fence_uy);
 }
 
 void HierRTLMP::setHaloWidth(float halo_width)
@@ -369,31 +367,15 @@ void HierRTLMP::setRootShapes()
 {
   auto root_soft_macro = std::make_unique<SoftMacro>(tree_->root.get());
 
-  const float core_lx
-      = static_cast<float>(block_->dbuToMicrons(block_->getCoreArea().xMin()));
-  const float root_lx = std::max(core_lx, global_fence_lx_);
-
-  const float core_ly
-      = static_cast<float>(block_->dbuToMicrons(block_->getCoreArea().yMin()));
-  const float root_ly = std::max(core_ly, global_fence_ly_);
-
-  const float core_ux
-      = static_cast<float>(block_->dbuToMicrons(block_->getCoreArea().xMax()));
-  const float root_ux = std::min(core_ux, global_fence_ux_);
-
-  const float core_uy
-      = static_cast<float>(block_->dbuToMicrons(block_->getCoreArea().yMax()));
-  const float root_uy = std::min(core_uy, global_fence_uy_);
-
-  const float root_area = (root_ux - root_lx) * (root_uy - root_ly);
-  const float root_width = root_ux - root_lx;
+  const float root_area = tree_->floorplan_shape.getArea();
+  const float root_width = tree_->floorplan_shape.getWidth();
   const std::vector<std::pair<float, float>> root_width_list
       = {std::pair<float, float>(root_width, root_width)};
 
   root_soft_macro->setShapes(root_width_list, root_area);
   root_soft_macro->setWidth(root_width);  // This will set height automatically
-  root_soft_macro->setX(root_lx);
-  root_soft_macro->setY(root_ly);
+  root_soft_macro->setX(tree_->floorplan_shape.xMin());
+  root_soft_macro->setY(tree_->floorplan_shape.yMin());
   tree_->root->setSoftMacro(std::move(root_soft_macro));
 }
 
@@ -1284,6 +1266,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
 
   if (graphics_) {
     graphics_->setGuides(guides);
+    graphics_->setFences(fences);
   }
 
   clustering_engine_->updateConnections();
@@ -2270,6 +2253,7 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
 
   if (graphics_) {
     graphics_->setGuides(guides);
+    graphics_->setFences(fences);
   }
 
   const int num_of_macros_to_place = static_cast<int>(macros.size());
@@ -2770,6 +2754,7 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
 
   if (graphics_) {
     graphics_->setGuides(guides);
+    graphics_->setFences(fences);
   }
 
   const int macros_to_place = static_cast<int>(macros.size());
@@ -3415,6 +3400,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   computeFencesAndGuides(hard_macros, outline, fences, guides);
   if (graphics_) {
     graphics_->setGuides(guides);
+    graphics_->setFences(fences);
   }
 
   clustering_engine_->updateConnections();
@@ -3990,7 +3976,7 @@ void HierRTLMP::flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip)
 void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
 {
   for (odb::dbInst* inst : block_->getInsts()) {
-    if (!inst->isBlock()) {
+    if (!inst->isBlock() || ClusteringEngine::isIgnoredInst(inst)) {
       continue;
     }
 
@@ -4649,54 +4635,42 @@ void Snapper::attemptSnapToExtraLayers(
     const LayerParameters& snap_layer_params,
     const odb::dbTechLayerDir& target_direction)
 {
-  const int total_number_of_layers
-      = static_cast<int>(layers_data.layer_to_pin.size());
-  const int total_attempts = 5;
-  int remaining_attempts = total_attempts;
+  // Calculate LCM from the layers pitches to define the search
+  // range
+  int lcm = 1;
+  for (const auto& [layer, params] : layers_data.layer_to_params) {
+    lcm = std::lcm(lcm, params.pitch);
+  }
+  const int pitch = snap_layer_params.pitch;
+  const int total_attempts = lcm / snap_layer_params.pitch;
+
+  const int total_layers = static_cast<int>(layers_data.layer_to_pin.size());
 
   int best_origin = origin;
-  int best_number_of_snapped_layers = 1;
-  int new_origin = origin;
-  bool all_layers_snapped = false;
+  int best_snapped_layers = 1;
 
-  while (remaining_attempts > 0) {
-    const bool is_first_attempt = remaining_attempts == total_attempts;
-    // The pins may already be aligned for all extra layers (in that case,
-    // we don't need to move the macro at all), hence, we use the first
-    // attempt to check if there are in fact any extra layers to snap.
-    if (!is_first_attempt) {
-      // Move one track ahead.
-      new_origin += snap_layer_params.pitch;
-      setOrigin(new_origin, target_direction);
-    }
+  for (int i = 0; i <= total_attempts; i++) {
+    // Alternates steps from positive to negative incrementally
+    int steps = (i % 2 == 1) ? (i + 1) / 2 : -(i / 2);
 
-    int curr_number_of_snapped_layers = 1;
-    for (const auto [layer, pin] : layers_data.layer_to_pin) {
-      if (layer == layers_data.snap_layer) {
-        continue;
-      }
-
+    setOrigin(origin + (pitch * steps), target_direction);
+    int snapped_layers = 0;
+    for (const auto& [layer, pin] : layers_data.layer_to_pin) {
       if (pinsAreAlignedWithTrackGrid(
               pin, layers_data.layer_to_params.at(layer), target_direction)) {
-        ++curr_number_of_snapped_layers;
+        ++snapped_layers;
       }
+    }
 
-      if (curr_number_of_snapped_layers == total_number_of_layers) {
-        all_layers_snapped = true;
+    if (snapped_layers > best_snapped_layers) {
+      best_snapped_layers = snapped_layers;
+      best_origin = origin + (pitch * steps);
+
+      // Stop search if all layers are snapped
+      if (total_layers == best_snapped_layers) {
         break;
       }
     }
-
-    if (all_layers_snapped) {
-      return;
-    }
-
-    if (curr_number_of_snapped_layers > best_number_of_snapped_layers) {
-      best_number_of_snapped_layers = curr_number_of_snapped_layers;
-      best_origin = new_origin;
-    }
-
-    --remaining_attempts;
   }
 
   setOrigin(best_origin, target_direction);

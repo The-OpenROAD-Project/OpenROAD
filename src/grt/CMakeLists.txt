@@ -95,7 +95,7 @@ target_link_libraries(grt_lib
 
 target_link_libraries(grt
     grt_lib
-    utl
+    utl_lib
     FastRoute4.1
     ant_lib
     dpl_lib
@@ -124,7 +124,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
 
   target_link_libraries(grt_py
     PUBLIC
-      utl
+      utl_lib
       FastRoute4.1
       ant_lib
       dpl_lib

@@ -34,6 +34,7 @@
 #define MIXEDPACKING_H
 
 #include <string>
+#include <vector>
 
 #include "basepacking.h"
 

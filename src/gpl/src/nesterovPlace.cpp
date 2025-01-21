@@ -38,6 +38,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 #include "graphics.h"
 #include "nesterovBase.h"
@@ -85,7 +86,8 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                                            pbVec,
                                            nbVec,
                                            npVars_.debug_draw_bins,
-                                           npVars.debug_inst);
+                                           npVars.debug_inst,
+                                           npVars.debug_start_iter);
   }
   init();
 }
@@ -312,7 +314,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     return 0;
   }
 
-  if (graphics_) {
+  if (graphics_ && npVars_.debug_start_iter == 0) {
     graphics_->cellPlot(true);
   }
 
@@ -413,7 +415,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     // For JPEG Saving
     // debug
 
-    if (graphics_) {
+    const int debug_start_iter = npVars_.debug_start_iter;
+    if (graphics_ && (debug_start_iter == 0 || iter + 1 >= debug_start_iter)) {
       bool update
           = (iter == 0 || (iter + 1) % npVars_.debug_update_iterations == 0);
       if (update) {

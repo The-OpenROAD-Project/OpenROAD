@@ -34,6 +34,8 @@
 
 #include "odb/dbTransform.h"
 
+#include <vector>
+
 #include "odb/dbDiff.h"
 #include "odb/dbStream.h"
 

@@ -34,6 +34,7 @@
 #include <fstream>
 #include <queue>
 #include <random>
+#include <vector>
 
 #include "DataType.h"
 #include "FastRoute.h"

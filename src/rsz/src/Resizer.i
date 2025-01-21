@@ -451,6 +451,14 @@ set_dont_use(LibertyCell *lib_cell,
 }
 
 void
+reset_dont_use()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->resetDontUse();
+}
+
+void
 set_dont_touch_instance(Instance *inst,
                         bool dont_touch)
 {

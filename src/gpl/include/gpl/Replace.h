@@ -83,7 +83,7 @@ class Replace
   void reset();
 
   void doIncrementalPlace(int threads);
-  void doInitialPlace();
+  void doInitialPlace(int threads);
   void runMBFF(int max_sz, float alpha, float beta, int threads, int num_paths);
 
   int doNesterovPlace(int threads, int start_iter = 0);
@@ -141,7 +141,8 @@ class Replace
                 int update_iterations,
                 bool draw_bins,
                 bool initial,
-                odb::dbInst* inst = nullptr);
+                odb::dbInst* inst,
+                int start_iter);
 
  private:
   bool initNesterovPlace(int threads);
@@ -215,5 +216,6 @@ class Replace
   int gui_debug_draw_bins_ = false;
   int gui_debug_initial_ = false;
   odb::dbInst* gui_debug_inst_ = nullptr;
+  int gui_debug_start_iter_ = 0;
 };
 }  // namespace gpl

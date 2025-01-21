@@ -39,6 +39,7 @@
 #include <boost/geometry/geometries/register/point.hpp>
 #include <boost/geometry/geometries/register/ring.hpp>
 #include <boost/polygon/polygon.hpp>
+#include <vector>
 
 #include "odb/geom.h"
 

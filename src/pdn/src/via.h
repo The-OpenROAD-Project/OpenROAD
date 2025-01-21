@@ -39,6 +39,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <vector>
 
 #include "odb/db.h"
 #include "odb/dbTypes.h"
@@ -174,7 +175,8 @@ class DbBaseVia : public DbVia
   virtual odb::Rect getViaRect(bool include_enclosure,
                                bool include_via_shape,
                                bool include_bottom = true,
-                               bool include_top = true) const = 0;
+                               bool include_top = true) const
+      = 0;
 
   int getCount() const { return count_; }
 
@@ -477,7 +479,8 @@ class ViaGenerator
   virtual DbBaseVia* makeBaseVia(int rows,
                                  int row_pitch,
                                  int cols,
-                                 int col_pitch) const = 0;
+                                 int col_pitch) const
+      = 0;
 
   const odb::Rect& getLowerRect() const { return lower_rect_; }
   const odb::Rect& getUpperRect() const { return upper_rect_; }

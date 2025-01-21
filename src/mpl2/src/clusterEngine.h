@@ -34,6 +34,7 @@
 #pragma once
 
 #include <queue>
+#include <vector>
 
 #include "object.h"
 
@@ -116,6 +117,8 @@ struct PhysicalHierarchy
   float halo_width{0.0f};
   float halo_height{0.0f};
   float macro_with_halo_area{0.0f};
+  Rect global_fence;
+  Rect floorplan_shape;
 
   bool has_io_clusters{true};
   bool has_only_macros{false};
@@ -169,15 +172,19 @@ class ClusteringEngine
                                std::set<odb::dbMaster*>& masters);
   void clearTempMacroClusterMapping(const UniqueClusterVector& macro_clusters);
 
+  static bool isIgnoredInst(odb::dbInst* inst);
+
  private:
   using UniqueClusterQueue = std::queue<std::unique_ptr<Cluster>>;
 
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
   std::vector<odb::dbInst*> getUnfixedMacros();
+  void setFloorplanShape();
+  void searchForFixedInstsInsideFloorplanShape();
   float computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
-  void reportDesignData(float core_area);
+  void reportDesignData();
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();
@@ -254,8 +261,6 @@ class ClusteringEngine
 
   void printPhysicalHierarchyTree(Cluster* parent, int level);
   float computeMicronArea(odb::dbInst* inst);
-
-  static bool isIgnoredMaster(odb::dbMaster* master);
 
   odb::dbBlock* block_;
   sta::dbNetwork* network_;

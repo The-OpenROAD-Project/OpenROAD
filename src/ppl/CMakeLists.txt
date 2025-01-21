@@ -70,7 +70,7 @@ target_link_libraries(ppl
     Munkres
     OpenSTA
     odb
-    utl
+    utl_lib
     gui
     Boost::boost
 )

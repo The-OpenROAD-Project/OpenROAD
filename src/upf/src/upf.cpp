@@ -35,6 +35,8 @@
 
 #include "upf/upf.h"
 
+#include <vector>
+
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "sta/FuncExpr.hh"

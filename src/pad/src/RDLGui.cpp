@@ -35,6 +35,8 @@
 
 #include "RDLGui.h"
 
+#include <vector>
+
 #include "RDLRoute.h"
 #include "RDLRouter.h"
 

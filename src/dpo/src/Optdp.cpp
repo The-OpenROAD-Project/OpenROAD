@@ -40,6 +40,7 @@
 #include <iostream>
 #include <limits>
 #include <map>
+#include <vector>
 
 #include "dpl/Opendp.h"
 #include "odb/util.h"

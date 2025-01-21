@@ -38,6 +38,7 @@
 #include "detailed_global.h"
 
 #include <boost/tokenizer.hpp>
+#include <vector>
 
 #include "detailed_hpwl.h"
 #include "detailed_manager.h"

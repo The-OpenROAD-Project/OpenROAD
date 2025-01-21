@@ -31,6 +31,7 @@
 #include <boost/icl/interval_map.hpp>
 #include <boost/icl/interval_set.hpp>
 #include <memory>
+#include <vector>
 
 #include "FlexGRCMap.h"
 #include "db/grObj/grNet.h"

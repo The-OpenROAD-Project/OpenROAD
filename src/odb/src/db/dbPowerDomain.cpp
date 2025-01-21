@@ -46,6 +46,7 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include <cmath>
+#include <vector>
 
 #include "dbGroup.h"
 #include "dbLevelShifter.h"

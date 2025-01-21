@@ -33,8 +33,11 @@
 #pragma once
 
 #include <map>
+#include <vector>
 
 #include "ext2dBox.h"
+#include "extSegment.h"
+#include "extViaModel.h"
 #include "extprocess.h"
 #include "odb/db.h"
 #include "odb/dbExtControl.h"
@@ -42,7 +45,11 @@
 #include "odb/odb.h"
 #include "odb/util.h"
 #include "rcx/dbUtil.h"
+#include "rcx/extPattern.h"
+#include "rcx/extSolverGen.h"
+#include "rcx/ext_options.h"
 #include "rcx/gseq.h"
+#include "util.h"
 
 namespace utl {
 class Logger;
@@ -50,7 +57,10 @@ class Logger;
 
 namespace rcx {
 
+using namespace odb;
+
 class extMeasure;
+class extMeasureRC;
 
 using odb::Ath__array1D;
 using odb::AthPool;
@@ -68,6 +78,17 @@ using CoupleAndCompute = void (*)(CoupleOptions&, void*);
 class extDistRC
 {
  public:
+  // ----------------------------------------------- v2
+  void Reset();
+  void printBound(FILE* fp,
+                  const char* loHi,
+                  const char* layer_name,
+                  uint met,
+                  uint corner,
+                  double res);
+
+  // -----------------------------------------------------------
+
   void setLogger(Logger* logger) { logger_ = logger; }
   void printDebug(const char*,
                   const char*,
@@ -106,10 +127,11 @@ class extDistRC
   void interpolate(uint d, extDistRC* rc1, extDistRC* rc2);
   double interpolate_res(uint d, extDistRC* rc2);
 
- private:
+ public:
   int _sep;
   double _coupling;
   double _fringe;
+  double _fringeW;
   double _diag;
   double _res;
   Logger* logger_;
@@ -122,6 +144,15 @@ class extDistRC
 
 class extDistRCTable
 {
+ public:
+  // -------------------------------------- v2
+  void getFringeTable(Ath__array1D<int>* sTable,
+                      Ath__array1D<double>* rcTable,
+                      bool compute);
+  extDistRC* findRes(int dist1, int dist2, bool compute);
+
+  // -------------------------------------------------------------
+
  public:
   extDistRCTable(uint distCnt);
   ~extDistRCTable();
@@ -196,6 +227,22 @@ class extDistRCTable
 class extDistWidthRCTable
 {
  public:
+  // ---------------------------------------------------------------------- v2
+  // ---------
+  uint readRulesUnder(Ath__parser* parser,
+                      uint widthCnt,
+                      bool bin,
+                      bool ignore,
+                      const char* keyword,
+                      double dbFactor = 1.0);
+  void getFringeTable(uint mou,
+                      uint w,
+                      Ath__array1D<int>* sTable,
+                      Ath__array1D<double>* rcTable,
+                      bool map);
+
+  // ---------------------------------------------------------------------------------------
+
   extDistWidthRCTable(bool dummy, uint met, uint layerCnt, uint width);
   extDistWidthRCTable(bool over,
                       uint met,
@@ -222,6 +269,12 @@ class extDistWidthRCTable
   void addRCw(uint n, uint w, extDistRC* rc);
   void createWidthMap();
   void makeWSmapping();
+
+  // ------------------------------------ DKF 09212024
+  // -------------------------------------
+  uint writeRulesOver(FILE* fp, const char* keyword, bool bin);
+  uint writeRulesUnder(FILE* fp, const char* keyword, bool bin);
+  uint writeRulesOverUnder(FILE* fp, const char* keyword, bool bin);
 
   ~extDistWidthRCTable();
   void setDiagUnderTables(uint met,
@@ -320,8 +373,45 @@ class extDistWidthRCTable
 class extMetRCTable
 {
  public:
+  // -------------------------------------------- v2
+  // ------------------------------
+  void mkWidthAndSpaceMappings(uint ii,
+                               extDistWidthRCTable* table,
+                               const char* keyword);
+  // dkf 12272023
+  bool GetViaRes(Ath__parser* p, Ath__parser* w, dbNet* net, FILE* logFP);
+  extViaModel* addViaModel(char* name,
+                           double R,
+                           uint cCnt,
+                           uint dx,
+                           uint dy,
+                           uint top,
+                           uint bot);
+  extViaModel* getViaModel(char* name);
+  void printViaModels();
+  // dkf 12282023
+  void writeViaRes(FILE* fp);
+  bool ReadRules(Ath__parser* p);
+  // dkf 12302023
+  bool SkipPattern(Ath__parser* p, dbNet* net, FILE* logFP);
+  // dkf 01022024
+  uint SetDefaultTechViaRes(dbTech* tech, bool dbg);
+  // ----------------------------------------------------------------------------------------
   extMetRCTable(uint layerCnt, AthPool<extDistRC>* rcPool, Logger* logger_);
   ~extMetRCTable();
+
+  // ---------------------- DKF 092024 -----------------------------------
+  void allocOverUnderTable(uint met,
+                           bool open,
+                           Ath__array1D<double>* wTable,
+                           double dbFactor);
+  void allocUnderTable(uint met,
+                       bool open,
+                       Ath__array1D<double>* wTable,
+                       double dbFactor);
+  extDistWidthRCTable*** allocTable();
+  void deleteTable(extDistWidthRCTable*** table);
+
   void allocateInitialTables(uint layerCnt,
                              uint widthCnt,
                              bool over,
@@ -363,16 +453,24 @@ class extMetRCTable
 
  public:
   uint _layerCnt;
+  uint _wireCnt;
   char _name[128];
+  extDistWidthRCTable*** _capOver_open;
   extDistWidthRCTable** _resOver;
   extDistWidthRCTable** _capOver;
   extDistWidthRCTable** _capUnder;
+  extDistWidthRCTable*** _capUnder_open;
   extDistWidthRCTable** _capOverUnder;
+  extDistWidthRCTable*** _capOverUnder_open;
   extDistWidthRCTable** _capDiagUnder;
 
   AthPool<extDistRC>* _rcPoolPtr;
   double _rate;
   Logger* logger_;
+
+  // dkf 092024
+  Ath__array1D<extViaModel*> _viaModel;
+  AthHash<int> _viaModelHash;
 };
 
 class extRCTable
@@ -399,6 +497,210 @@ class extMainOptions;
 class extRCModel
 {
  public:
+  //------------------------------------------------------------------------ v2
+  //----------------
+  bool _v2_flow = false;
+
+  extDistRC* getUnderRC(int met, int overMet, int width, int dist);
+  extDistRC* getOverUnderRC(uint met,
+                            uint underMet,
+                            int overMet,
+                            int width,
+                            int dist);
+  bool isRulesFile_v2(char* name, bool bin);
+
+  // --------------------------------------------------------------- v2 CLEANUP
+  // ----------
+  bool readRules_v2(char* name,
+                    bool bin,
+                    bool over,
+                    bool under,
+                    bool overUnder,
+                    bool diag,
+                    double dbFactor);
+  bool createModelProcessTable(uint rulesFileModelCnt, uint cornerCnt);
+  // --------------------------------------------------------------- v2 CLEANUP
+  // ----------
+
+  // dkf 09222023
+  uint readRules_v2(Ath__parser* parser,
+                    uint m,
+                    uint ii,
+                    const char* ouKey,
+                    const char* wKey,
+                    bool over,
+                    bool under,
+                    bool bin,
+                    bool diag,
+                    bool ignore,
+                    double dbFactor = 1.0);
+
+  bool spotModelsInRules(char* name,
+                         bool bin,
+                         bool& res_over,
+                         bool& over,
+                         bool& under,
+                         bool& overUnder,
+                         bool& diag_under,
+                         bool& over0,
+                         bool& over1,
+                         bool& under0,
+                         bool& under1,
+                         bool& overunder0,
+                         bool& overunder1,
+                         bool& via_res);
+  bool readRules(char* name,
+                 bool bin,
+                 bool over,
+                 bool under,
+                 bool overUnder,
+                 bool diag,
+                 uint cornerCnt,
+                 uint* cornerTable,
+                 double dbFactor);
+  // dkf 09242023
+  uint DefWires(extMainOptions* opt);
+  uint OverRulePat(extMainOptions* opt,
+                   int len,
+                   int LL[2],
+                   int UR[2],
+                   bool res,
+                   bool diag,
+                   uint overDist);
+  uint UnderRulePat(extMainOptions* opt,
+                    int len,
+                    int LL[2],
+                    int UR[2],
+                    bool diag,
+                    uint overDist);
+  uint DiagUnderRulePat(extMainOptions* opt, int len, int LL[2], int UR[2]);
+  uint OverUnderRulePat(extMainOptions* opt, int len, int LL[2], int UR[2]);
+
+  // dkf 12182023
+  uint ViaRulePat(extMainOptions* opt,
+                  int len,
+                  int origin[2],
+                  int UR[2],
+                  bool res,
+                  bool diag,
+                  uint overDist);
+
+  //------------------------------------------------------------------------ v2
+  //----------------
+
+  // --------------------------- DKF 092024 -------------------------
+  // dkf 0323204
+
+  // dkf 09172024
+  uint calcMinMaxRC(odb::dbTech* tech, const char* out_file);
+  uint getViaTechRes(dbTech* tech, const char* out_file);
+
+  extMain* get_extMain() { return _extMain; };
+  bool getDiagFlag() { return _diag; };
+
+  static int getMetIndexOverUnder(int met,
+                                  int mUnder,
+                                  int mOver,
+                                  int layerCnt,
+                                  int maxCnt = 1000);
+
+  void clear_corners();
+  bool addCorner(std::string w, int ii);
+  uint initModel(std::list<std::string>& corners, int met_cnt);
+  uint readRCvalues(const char* corner,
+                    const char* filename,
+                    int wire,
+                    bool over,
+                    bool under,
+                    bool over_under,
+                    bool diag);
+  bool getAllowedPatternWireNums(Ath__parser& p,
+                                 extMeasure& m,
+                                 const char* fullPatternName,
+                                 int input_target_wire,
+                                 int& pattern_num);
+  uint defineCorners(std::list<std::string>& corners);
+  uint allocateTables(uint m, uint ii, uint diagModel);
+  static int getMaxMetIndexOverUnder(int met, int layerCnt);
+
+  bool parseMets(Ath__parser& parser, extMeasure& m);
+  double parseWidthDistLen(Ath__parser& parser, extMeasure& m);
+
+  uint writeRulesPattern(uint ou,
+                         uint layer,
+                         int modelIndex,
+                         extDistWidthRCTable* table_m,
+                         extDistWidthRCTable* table_0,
+                         const char* patternKeyword,
+                         FILE* fp,
+                         bool binary);
+  uint getCorners(std::list<std::string>& corners);
+  uint GenExtModel(std::list<std::string>& corner_list,
+                   const char* out_file,
+                   const char* comment,
+                   const char* version,
+                   int pattern);
+
+  // --------------------------- DKF 092024 -------------------------
+
+  // DKF 7/25/2024 -- 3d pattern generation
+  bool _winDirFlat;
+  int _len;
+  int _simVersion;
+  int _maxLevelDist;
+  FILE* _filesFP;
+
+  bool measurePatternVar_3D(extMeasure* m,
+                            double top_width,
+                            double bot_width,
+                            double thickness,
+                            uint wireCnt,
+                            char* wiresNameSuffix,
+                            double res);
+  uint measureWithVar(extMeasure* measure);
+  uint measureDiagWithVar(extMeasure* measure);
+  uint linesOver(uint wireCnt,
+                 uint widthCnt,
+                 uint spaceCnt,
+                 uint dCnt,
+                 uint metLevel = 0);
+  uint linesOverUnder(uint wireCnt,
+                      uint widthCnt,
+                      uint spaceCnt,
+                      uint dCnt,
+                      uint metLevel = 0);
+  uint linesDiagUnder(uint wireCnt,
+                      uint widthCnt,
+                      uint spaceCnt,
+                      uint dCnt,
+                      uint metLevel = 0);
+  uint linesUnder(uint wireCnt,
+                  uint widthCnt,
+                  uint spaceCnt,
+                  uint dCnt,
+                  uint metLevel = 0);
+  void setOptions(const char* topDir,
+                  const char* pattern,
+                  bool keepFile,
+                  uint metLevel);
+  void writeRuleWires(FILE* fp, extMeasure* measure, uint wireCnt);
+  void writeWires2_3D(FILE* fp, extMeasure* measure, uint wireCnt);
+  void writeWires(FILE* fp, extMeasure* measure, uint wireCnt);
+
+  double writeWirePatterns(FILE* fp,
+                           extMeasure* measure,
+                           uint wireCnt,
+                           double height_offset,
+                           double& len,
+                           double& max_x);
+  double writeWirePatterns_w3(FILE* fp,
+                              extMeasure* measure,
+                              uint wireCnt,
+                              double height_offset,
+                              double& len,
+                              double& max_x);
+  // ------------------------------------------------------------------
+
   extMetRCTable* getMetRCTable(uint ii) { return _modelTable[ii]; };
 
   int getModelCnt() { return _modelCnt; };
@@ -463,19 +765,8 @@ class extRCModel
   void mkFileNames(extMeasure* m, char* wiresNameSuffix);
   void writeWires2(FILE* fp, extMeasure* measure, uint wireCnt);
   int writeBenchWires(FILE* fp, extMeasure* measure);
-  void setOptions(const char* topDir,
-                  const char* pattern,
-                  bool writeFiles,
-                  bool readFiles,
-                  bool runSolver);
-  void setOptions(const char* topDir,
-                  const char* pattern,
-                  bool writeFiles,
-                  bool readFiles,
-                  bool runSolver,
-                  bool keepFile);
-  void runSolver(const char* solverOption);
-  bool solverStep(extMeasure* m);
+  void setOptions(const char* topDir, const char* pattern);
+  void setOptions(const char* topDir, const char* pattern, bool keepFile);
   void cleanFiles();
 
   extDistRC* measurePattern(uint met,
@@ -548,6 +839,15 @@ class extRCModel
                  uint cornerCnt = 0,
                  const uint* cornerTable = nullptr,
                  double dbFactor = 1.0);
+  bool readRules_v1(char* name,
+                    bool binary,
+                    bool over,
+                    bool under,
+                    bool overUnder,
+                    bool diag,
+                    uint cornerCnt = 0,
+                    const uint* cornerTable = nullptr,
+                    double dbFactor = 1.0);
   uint readMetalHeader(Ath__parser* parser,
                        uint& met,
                        const char* keyword,
@@ -606,6 +906,13 @@ class extRCModel
   extDistRC* getMaxRC(int met, int width, int dist);
 
  private:
+  // -------------------------------------- DKF 092024
+  // -------------------------------------
+  std::map<std::string, int> _cornerMap;
+  std::vector<std::string> _cornerTable;
+  // -------------------------------------- DKF 092024
+  // -------------------------------------
+
   bool _ouReadReverse;
   uint _layerCnt;
   char _name[128];
@@ -620,7 +927,6 @@ class extRCModel
   bool _verticalDiag;
   bool _maxMinFlag;
   uint _diagModel;
-  bool _keepFile;
   uint _metLevel;
 
   extRCTable* _resOver;
@@ -639,6 +945,7 @@ class extRCModel
 
   FILE* _capLogFP;
   FILE* _logFP;
+  FILE* _dbg_logFP;
 
   bool _writeFiles;
   bool _readSolver;
@@ -652,6 +959,7 @@ class extRCModel
 
   extMain* _extMain;
 
+ protected:
   Logger* logger_;
 };
 
@@ -675,6 +983,95 @@ class extLenOU  // assume cross-section on the z-direction
 class extMeasure
 {
  public:
+  // ------------------------------------------------- v2
+  uint createContextGrid(char* dirName,
+                         int bboxLL[2],
+                         int bboxUR[2],
+                         int met,
+                         int s_layout = -1);
+  uint createContextGrid_dir(char* dirName,
+                             int bboxLL[2],
+                             int bboxUR[2],
+                             int met);
+
+  double _topWidthR;
+  double _botWidthR;
+  double _teffR;
+  double _peffR;
+  bool _skipResCalc = false;
+
+  Ath__gridTable* _search = NULL;
+  bool IsDebugNet1();
+  static int getMetIndexOverUnder(int met,
+                                  int mUnder,
+                                  int mOver,
+                                  int layerCnt,
+                                  int maxCnt = 10000);
+
+  // dkf 09122023
+  int SingleDiagTrackDist_opt(SEQ* s,
+                              Ath__array1D<SEQ*>* dgContext,
+                              bool skipZeroDist,
+                              bool skipNegativeDist,
+                              Ath__array1D<int>* sortedDistTable,
+                              Ath__array1D<SEQ*>* segFilteredTable);
+  // dkf 08022023
+  int SingleDiagTrackDist(SEQ* s,
+                          Ath__array1D<SEQ*>* dgContext,
+                          bool skipZeroDist,
+                          bool skipNegativeDist,
+                          std::vector<int>& distTable,
+                          Ath__array1D<SEQ*>* segFilteredTable);
+  // dkf 08022023
+  int DebugPrint(SEQ* s,
+                 Ath__array1D<SEQ*>* dgContext,
+                 int trackNum,
+                 int plane);
+  // dkf 08022023
+  uint computeResLoop(Ath__array1D<SEQ*>* tmpTable,
+                      Ath__array1D<SEQ*>* dgTable,
+                      uint targetMet,
+                      uint dir,
+                      uint planeIndex,
+                      uint trackn,
+                      Ath__array1D<SEQ*>* residueSeq);
+  uint computeRes(SEQ* s,
+                  Ath__array1D<SEQ*>*,
+                  uint targetMet,
+                  uint dir,
+                  uint planeIndex,
+                  uint trackn,
+                  Ath__array1D<SEQ*>* residueSeq);
+  void DebugRes_calc(FILE* fp,
+                     const char* msg,
+                     int rsegId1,
+                     const char* msg_len,
+                     uint len,
+                     int dist1,
+                     int dist2,
+                     int tgtMet,
+                     double tot,
+                     double R,
+                     double unit,
+                     double prev);
+
+  extDistRC* findRes(int dist1, int dist2, bool compute);
+  bool DebugDiagCoords(int met,
+                       int targetMet,
+                       int len1,
+                       int diagDist,
+                       int ll[2],
+                       int ur[2],
+                       const char* = "");
+
+  // ------------------------------------------------------------
+  // DKF 7/25/2024 -- 3d pattern generation
+  bool _3dFlag;
+  bool _benchFlag;
+  bool _rcValid;
+  int _simVersion;
+  double getCCfringe3D(uint lastNode, uint n, uint start, uint end);
+
   extMeasure(utl::Logger* logger);
   ~extMeasure();
 
@@ -1043,6 +1440,8 @@ class extMeasure
   double _seff;
 
   bool _varFlag;
+  bool _open;
+  bool _over1;
   bool _over;
   bool _res;
   bool _overUnder;
@@ -1096,7 +1495,6 @@ class extMeasure
   uint _layerCnt;
   odb::dbBlock* _block;
   odb::dbTech* _tech;
-  double _capMatrix[100][100];
   uint _idTable[10000];
   uint _mapTable[10000];
   uint _maxCapNodeCnt;
@@ -1175,10 +1573,6 @@ class extMainOptions
   const char* _thTable;
   const char* _dTable;
 
-  bool _write_to_solver;
-  bool _read_from_solver;
-  bool _run_solver;
-
   bool _listsFlag;
   bool _thListFlag;
   bool _wsListFlag;
@@ -1213,6 +1607,7 @@ class extMainOptions
   uint _dir;
   extRCModel* _rcModel;
   uint _layerCnt;
+  bool _v1;
 };
 
 class extCorner
@@ -1229,10 +1624,264 @@ class extCorner
   float _gndFactor;
   extCorner* _extCornerPtr;
 };
+// CLEANUP dkf 10302024
+struct LayerDimensionData
+{
+  uint pitchTable[32];
+  uint widthTable[32];
+  uint dirTable[32];
+  int baseX[32];
+  int baseY[32];
+  uint minRes[2];
+
+  uint maxWidth;
+  uint minPitch;
+};
+
+struct BoundaryData
+{
+  int ll[2];  // lower left
+  int ur[2];  // upper right
+  int lo_gs[2];
+  int hi_gs[2];
+  int lo_search[2];
+  int hi_search[2];
+  uint maxCouplingTracks;
+  uint diag_met_limit;
+  uint minPitch;
+  uint maxPitch;
+  uint iterationIncrement;
+  uint maxExtractBuffer;
+  int extractLimitXY;
+  int releaseMemoryLimitXY;
+
+  int lo_search_limit;
+  int lo_gs_limit;
+
+  void setBBox(const Rect& extRect)
+  {
+    ll[0] = extRect.xMin();
+    ll[1] = extRect.yMin();
+    ur[0] = extRect.xMax();
+    ur[1] = extRect.yMax();
+  }
+
+  bool update(uint dir)
+  {
+    // get wires for coupling
+    lo_search_limit = hi_search[dir];
+    lo_search[dir] = lo_search_limit;
+    hi_search[dir] = lo_search_limit + iterationIncrement;
+
+    bool lastIteration = lo_search_limit + iterationIncrement - ur[dir] > 0;
+    if (lastIteration) {
+      hi_search[dir] = ur[dir] + 5 * maxExtractBuffer;
+    }
+
+    // Wires should be present for up coupling
+    extractLimitXY = hi_search[dir] - maxExtractBuffer;
+
+    // Wires should be present for down coupling
+    releaseMemoryLimitXY = extractLimitXY - maxExtractBuffer;
+
+    // get wires for context
+    lo_gs_limit = lo_search[dir] - maxExtractBuffer;
+    lo_gs[dir] = lo_gs_limit;
+    hi_gs[dir] = hi_search[dir] + maxExtractBuffer;
+
+    return lastIteration;
+  }
+  uint init(uint ccTrackDist,
+            uint diag_limit,
+            uint pitch1,
+            uint pitch2,
+            uint maxWidth,
+            uint iterationTrackCount)
+  {
+    maxCouplingTracks = ccTrackDist;
+    diag_met_limit = diag_limit;
+
+    minPitch = pitch1;
+    maxPitch = pitch2;
+    maxExtractBuffer = ccTrackDist * pitch2;
+
+    iterationIncrement = iterationTrackCount * minPitch;
+    if (maxWidth > maxCouplingTracks * maxPitch)
+      iterationIncrement = std::max(ur[1] - ll[1], ur[0] - ll[0]);
+
+    for (uint dir = 0; dir < 2; dir++) {
+      lo_gs[dir] = ll[dir];
+      hi_gs[dir] = ll[dir];
+      lo_search[dir] = ll[dir];
+      hi_search[dir] = ll[dir];
+    }
+    return iterationIncrement;
+  }
+};
 
 class extMain
 {
+  // --------------------- dkf 092024 ------------------------
  public:
+  extSolverGen* _currentSolverGen;
+
+  // v2 -----------------------------------------------------
+
+  uint getPeakMemory(const char* msg, int n = -1);
+
+  void setupBoundaries(BoundaryData& bounds, const Rect& extRect);
+  void updateBoundaries(BoundaryData& bounds,
+                        uint dir,
+                        uint ccDist,
+                        uint maxPitch);
+  void initializeLayerTables(LayerDimensionData& tables);
+  int initSearch(LayerDimensionData& tables, Rect& extRect, uint& totWireCnt);
+
+  // CLEANUP dkf 10242024 ----------------------------------
+  void makeBlockRCsegs_v2(const char* netNames, const char* extRules);
+  bool markNetsToExtract_v2(const char* netNames, std::vector<dbNet*>& inets);
+
+  bool makeRCNetwork_v2();
+  bool couplingExtEnd_v2();
+  void update_wireAltered_v2(std::vector<dbNet*>& inets);
+  void initSomeValues_v2();
+  bool SetCornersAndReadModels_v2(const char* extRules);
+  double getDbFactor_v2();
+  bool ReadModels_v2(const char* rulesFileName,
+                     extRCModel* m,
+                     uint extDbCnt,
+                     uint* cornerTable);
+
+  void setExtractionOptions_v2(ExtractOptions options);
+  uint makeNetRCsegs_v2(dbNet* net, bool skipStartWarning = false);
+  uint resetMapNodes_v2(dbWire* wire);
+
+  uint getCapNodeId_v2(dbITerm* iterm, const uint junction);
+  uint getCapNodeId_v2(dbBTerm* bterm, const uint junction);
+  uint getCapNodeId_v2(dbNet* net, const int junction, const bool branch);
+  uint getCapNodeId_v2(dbNet* net,
+                       dbWirePath& path,
+                       const uint junction,
+                       bool branch);
+  uint getCapNodeId_v2(dbNet* net,
+                       const dbWirePathShape& pshape,
+                       int junct_id,
+                       bool branch);
+  void initJunctionIdMaps(dbNet* net);
+
+  void print_debug(const bool branch,
+                   const uint junction,
+                   uint capId,
+                   const char* old_new);
+  dbRSeg* addRSeg_v2(dbNet* net,
+                     uint& srcId,
+                     Point& prevPoint,
+                     const dbWirePath& path,
+                     const dbWirePathShape& pshape,
+                     const bool isBranch,
+                     const double* restbl = nullptr,
+                     const double* captbl = nullptr);
+
+  void loopWarning(dbNet* net, const dbWirePathShape& pshape);
+  void getShapeRC_v2(dbNet* net,
+                     const dbShape& s,
+                     Point& prevPoint,
+                     const dbWirePathShape& pshape);
+  void getShapeRC_v3(dbNet* net,
+                     const dbShape& s,
+                     Point& prevPoint,
+                     const dbWirePathShape& pshape);
+  double getViaRes_v2(dbNet* net, dbTechVia* tvia);
+  double getDbViaRes_v2(dbNet* net, const dbShape& s);
+  double getMetalRes_v2(dbNet* net,
+                        const dbShape& s,
+                        const dbWirePathShape& pshape);
+  void setResAndCap_v2(dbRSeg* rc, const double* restbl, const double* captbl);
+  extRCModel* createCornerMap(const char* rulesFileName);
+
+  uint getResCapTable_lefRC_v2();
+  void infoBeforeCouplingExt();
+  void setExtControl_v2(AthPool<SEQ>* seqPool);
+
+  // --------------------- dkf 092024 ------------------------
+  extRCModel* getCurrentModel() { return _currentModel; }
+  void setCurrentModel(extRCModel* m) { _currentModel = m; }
+  uint GenExtModel(std::list<std::string> spef_file_list,
+                   std::list<std::string> corner_list,
+                   const char* out_file,
+                   const char* comment,
+                   const char* version,
+                   int pattern);
+  // CLEANUP dkf 10242024 ----------------------------------
+
+  uint benchVerilog_bterms(FILE* fp,
+                           odb::dbIoType iotype,
+                           const char* prefix,
+                           const char* postfix,
+                           bool v = false);
+  bool modelExists(const char* extRules);
+
+  uint addInstsGs(Ath__array1D<uint>* instTable,
+                  Ath__array1D<uint>* tmpInstIdTable,
+                  uint dir);
+  uint addObsShapesOnPlanes(odb::dbInst* inst,
+                            bool rotatedFlag,
+                            bool swap_coords);
+  uint addItermShapesOnPlanes(odb::dbInst* inst,
+                              bool rotatedFlag,
+                              bool swap_coords);
+  uint addShapeOnGs(dbShape* s, bool swap_coords);
+
+  void initRunEnv(extMeasureRC& m);
+  uint _ccContextDepth = 0;
+
+  bool _lefRC = false;
+  uint _dbgOption = 0;
+
+  bool _overCell = true;
+
+  uint* _ccContextLength = nullptr;
+  //  uint* _ccContextLength= nullptr;
+
+  bool _skip_via_wires;
+  float _version;                       // dkf: 06242024
+  int _metal_flag_22;                   // dkf: 06242024
+  uint _wire_extracted_progress_count;  // dkf: 06242024
+
+  bool _v2;  // new flow dkf: 10302023
+
+  void skip_via_wires(bool v) { _skip_via_wires = v; };
+  void printUpdateCoup(uint netId1,
+                       uint netId2,
+                       double v,
+                       double org,
+                       double totCC);
+  uint DefWires(extMainOptions* opt);
+
+ public:
+  // v2 ------------------------------------------------------------
+  uint _debug_net_id = 0;
+
+  uint couplingFlow_v2_opt(Rect& extRect, uint ccFlag, extMeasure* m);
+  uint couplingFlow_v2(Rect& extRect, uint ccFlag, extMeasure* m);
+  void setBranchCapNodeId(dbNet* net, uint junction);
+  void markPathHeadTerm(dbWirePath& path);
+
+  extSolverGen* getCurrentSolverGen() { return _currentSolverGen; }
+  void setCurrentSolverGen(extSolverGen* p) { _currentSolverGen = p; }
+
+  // --------------------- dkf 092024 ------------------------
+  // DKF 07/25/24 -- 3d pattern generation
+  uint rulesGen(const char* name,
+                const char* topDir,
+                const char* rulesFile,
+                int pattern,
+                bool keepFile,
+                int wLen,
+                int version,
+                bool win);
+  uint readProcess(const char* name, const char* filename);
+
   void init(odb::dbDatabase* db, Logger* logger);
   double getTotalCouplingCap(odb::dbNet* net,
                              const char* filterNet,
@@ -1368,7 +2017,6 @@ class extMain
                           const int* bb_ur);
 
   uint makeTree(uint netId);
-  uint runSolver(extMainOptions* opt, uint netId, int shapeId);
 
   void resetSumRCtable();
   void addToSumRCtable();
@@ -1423,7 +2071,7 @@ class extMain
 
   uint getExtBbox(int* x1, int* y1, int* x2, int* y2);
 
-  void setupMapping(uint itermCnt);
+  void setupMapping(uint itermCnt = 0);
   uint getMultiples(uint cnt, uint base);
   uint getExtLayerCnt(odb::dbTech* tech);
 
@@ -1479,7 +2127,7 @@ class extMain
 
   void getShapeRC(odb::dbNet* net,
                   const odb::dbShape& s,
-                  const odb::Point& prevPoint,
+                  odb::Point& prevPoint,
                   const odb::dbWirePathShape& pshape);
   void setResAndCap(odb::dbRSeg* rc,
                     const double* restbl,
@@ -1578,14 +2226,11 @@ class extMain
   void initDgContextArray();
   void removeDgContextArray();
 
-  // ruLESgeN
+  // ruLESgeNf
   bool getFirstShape(odb::dbNet* net, odb::dbShape& shape);
-  uint writeRules(const char* name,
-                  const char* topDir,
-                  const char* rulesFile,
-                  int pattern);
+  uint writeRules(const char* name, const char* rulesFile);
   uint benchWires(extMainOptions* options);
-  uint genExtRules(const char* rulesFileName, int pattern);
+  uint GenExtRules(const char* rulesFileName);
   int getExtCornerIndex(odb::dbBlock* block, const char* cornerName);
 
   void initExtractedCorners(odb::dbBlock* block);
@@ -1984,15 +2629,17 @@ class extMain
                        odb::dbNet* pNet);
 
   uint benchVerilog(FILE* fp);
-  uint benchVerilog_bterms(FILE* fp,
+  /* v2 up uint benchVerilog_bterms(FILE* fp,
                            const odb::dbIoType& iotype,
                            const char* prefix,
                            const char* postfix,
-                           bool skip_postfix_last = false);
+                           bool skip_postfix_last = false); */
   uint benchVerilog_assign(FILE* fp);
 
   void setMinRC(uint ii, uint jj, extDistRC* rc);
   void setMaxRC(uint ii, uint jj, extDistRC* rc);
+
+  Logger* getLogger() { return logger_; }
 
  private:
   Logger* logger_;
@@ -2010,8 +2657,8 @@ class extMain
   uint _minDistTable[20];
   double _tmpCapTable[20];
   double _tmpSumCapTable[20];
-  double _tmpResTable[20];
-  double _tmpSumResTable[20];
+  double* _tmpResTable = new double[10];
+  double* _tmpSumResTable = new double[10];
   int _sumUpdated;
   int _minModelIndex;  // TO_TEST
   int _typModelIndex;  //
@@ -2041,7 +2688,7 @@ class extMain
   uint _ccUp = 0;
   uint _couplingFlag = 0;
   bool _rotatedGs = false;
-  uint _ccContextDepth = 0;
+  // uint _ccContextDepth = 0;
   int _ccMinX;
   int _ccMinY;
   int _ccMaxX;
@@ -2211,7 +2858,7 @@ class extMain
   std::vector<odb::Rect*> _multiViaTable[20];
   std::vector<odb::dbBox*> _multiViaBoxTable[20];
 
-  uint _debug_net_id = 0;
+  // v2 uint _debug_net_id = 0;
   float _previous_percent_extracted = 0;
 
   double _minCapTable[64][64];
@@ -2227,6 +2874,19 @@ class extMain
   int _last_node_xy[2];
   bool _wireInfra;
   odb::Rect _extMaxRect;
+
+  // ----------------------------------------- 060623
+  uint benchPatternsGen(const PatternOptions& opt);
+  uint overPatterns(const PatternOptions& opt,
+                    int origin[2],
+                    dbCreateNetUtil* db_net_util);  // 060823
+  uint UnderPatterns(const PatternOptions& opt,
+                     int origin[2],
+                     dbCreateNetUtil* db_net_util);  // 061123
+  uint OverUnderPatterns(const PatternOptions& opt,
+                         int origin[2],
+                         dbCreateNetUtil* db_net_util);  // 061123
+  // ---------------------------------------------------------
 };
 
 }  // namespace rcx

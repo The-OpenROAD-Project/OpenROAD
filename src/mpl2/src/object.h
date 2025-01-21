@@ -475,12 +475,7 @@ class SoftMacro
   // Create a SoftMacro with specified size
   // Create a SoftMacro representing the blockage
   SoftMacro(float width, float height, const std::string& name);
-  // Create a SoftMacro representing fixed hard macro or blockage
-  SoftMacro(float width,
-            float height,
-            const std::string& name,
-            float lx,
-            float ly);
+
   // Create a SoftMacro representing the IO cluster
   SoftMacro(const std::pair<float, float>& pos,
             const std::string& name,
@@ -634,12 +629,12 @@ struct Rect
   float yMax() const { return uy; }
 
   float getX() const { return (lx + ux) / 2.0; }
-
   float getY() const { return (ly + uy) / 2.0; }
 
   float getWidth() const { return ux - lx; }
-
   float getHeight() const { return uy - ly; }
+
+  float getArea() const { return getWidth() * getHeight(); }
 
   void setLoc(float x,
               float y,
@@ -728,9 +723,8 @@ struct Rect
     if (lx < core_lx - 1.0 || ly < core_ly - 1.0 || ux > core_ux + 1.0
         || uy > core_uy + 1.0) {
       std::cout << "Error !!!\n"
-                << "core_lx =  " << core_lx << "  "
-                << "core_ly =  " << core_ly << "  "
-                << "core_ux =  " << core_ux << "  "
+                << "core_lx =  " << core_lx << "  " << "core_ly =  " << core_ly
+                << "  " << "core_ux =  " << core_ux << "  "
                 << "core_uy =  " << core_uy << std::endl;
     }
   }

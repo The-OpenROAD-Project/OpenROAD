@@ -14,12 +14,28 @@ COMPONENTS 4 ;
 END COMPONENTS
 
 PINS 1 ;
-- clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 1000 1000 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+- clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 0 ) N + LAYER M1 ( 0 0 ) ( 180 180 ) ;
+- d1 + NET d1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 360 0 ) N + LAYER M1 ( 0 0 ) ( 180 180 ) ;
+- d2 + NET d2 + DIRECTION INPUT + USE SIGNAL + FIXED ( 540 0 ) N + LAYER M1 ( 0 0 ) ( 180 180 ) ;
+- d3 + NET d3 + DIRECTION INPUT + USE SIGNAL + FIXED ( 720 0 ) N + LAYER M1 ( 0 0 ) ( 180 180 ) ;
+- d4 + NET d4 + DIRECTION INPUT + USE SIGNAL + FIXED ( 900 0 ) N + LAYER M1 ( 0 0 ) ( 180 180 ) ;
+- o1 + NET o1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 360 10000 ) N + LAYER M1 ( 0 0 ) ( 180 180 ) ;
+- o2 + NET o2 + DIRECTION INPUT + USE SIGNAL + FIXED ( 540 10000 ) N + LAYER M1 ( 0 0 ) ( 180 180 ) ;
+- o3 + NET o3 + DIRECTION INPUT + USE SIGNAL + FIXED ( 720 10000 ) N + LAYER M1 ( 0 0 ) ( 180 180 ) ;
+- o4 + NET o4 + DIRECTION INPUT + USE SIGNAL + FIXED ( 900 10000 ) N + LAYER M1 ( 0 0 ) ( 180 180 ) ;
 END PINS
 
 
 NETS 1 ;
 - clk1 ( PIN clk1 ) ( ff1 CLK ) ( ff2 CLK ) ( ff3 CLK ) ( ff4 CLK ) + USE SIGNAL ;
+- d1 ( PIN d1 ) ( ff1 D ) + USE SIGNAL ;
+- d2 ( PIN d2 ) ( ff2 D ) + USE SIGNAL ;
+- d3 ( PIN d3 ) ( ff3 D ) + USE SIGNAL ;
+- d4 ( PIN d4 ) ( ff4 D ) + USE SIGNAL ;
+- o1 ( PIN o1 ) ( ff1 QN ) + USE SIGNAL ;
+- o2 ( PIN o2 ) ( ff2 QN ) + USE SIGNAL ;
+- o3 ( PIN o3 ) ( ff3 QN ) + USE SIGNAL ;
+- o4 ( PIN o4 ) ( ff4 QN ) + USE SIGNAL ;
 END NETS
 
 END DESIGN

@@ -33,6 +33,7 @@
 #pragma once
 
 #include <map>
+#include <vector>
 
 #include "extRCap.h"
 #include "odb/array1.h"

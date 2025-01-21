@@ -32,6 +32,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <vector>
 
 #include "gui/gui.h"
 #include "ir_network.h"

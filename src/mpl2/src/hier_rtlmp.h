@@ -37,6 +37,7 @@
 
 #include <limits>
 #include <string>
+#include <vector>
 
 #include "Mpl2Observer.h"
 #include "clusterEngine.h"
@@ -270,12 +271,6 @@ class HierRTLMP
   // Parameters related to macro placement
   std::string report_directory_;
   std::string macro_placement_file_;
-
-  // User can specify a global region for some designs
-  float global_fence_lx_ = std::numeric_limits<float>::max();
-  float global_fence_ly_ = std::numeric_limits<float>::max();
-  float global_fence_ux_ = 0.0;
-  float global_fence_uy_ = 0.0;
 
   const int num_runs_ = 10;    // number of runs for SA
   int num_threads_ = 10;       // number of threads

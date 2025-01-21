@@ -44,6 +44,7 @@
 #include <QSplitter>
 #include <QTableView>
 #include <memory>
+#include <vector>
 
 #include "gui/gui.h"
 #include "odb/db.h"

@@ -39,7 +39,7 @@ template <typename Iterator>
 bool parse(Iterator first,
            Iterator last,
            odb::dbTechLayer* layer,
-           odb::lefin* lefin)
+           odb::lefinReader* lefinReader)
 {
   qi::rule<std::string::iterator, space_type> rightWayOnGridOnlyRule
       = (lit("RECTONLY")[boost::bind(
@@ -58,7 +58,7 @@ namespace odb {
 
 bool lefTechLayerRectOnlyParser::parse(std::string s,
                                        dbTechLayer* layer,
-                                       odb::lefin* l)
+                                       odb::lefinReader* l)
 {
   return lefTechLayerRectOnly::parse(s.begin(), s.end(), layer, l);
 }

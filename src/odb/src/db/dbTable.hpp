@@ -34,6 +34,7 @@
 
 #include <cstring>
 #include <new>
+#include <vector>
 
 #include "dbDatabase.h"
 #include "dbTable.h"

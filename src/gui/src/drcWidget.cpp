@@ -42,6 +42,7 @@
 #include <array>
 #include <iomanip>
 #include <map>
+#include <vector>
 
 #include "dbDescriptors.h"
 #include "utl/Logger.h"

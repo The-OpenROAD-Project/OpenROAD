@@ -33,6 +33,7 @@
 #include "color.h"
 
 #include <algorithm>
+#include <vector>
 
 namespace dpo {
 
