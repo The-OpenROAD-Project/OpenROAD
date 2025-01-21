@@ -15,6 +15,7 @@ u2/A                                    1.50    1.81   -0.31 (VIOLATED)
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0038] Inserted 2 buffers in 1 nets.
+[INFO RSZ-0039] Resized 1 instances.
 max slew
 
 Pin                                    Limit    Slew   Slack
