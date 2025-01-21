@@ -860,7 +860,6 @@ void RepairDesign::repairNet(Net* net,
         repaired_net = true;
       }
       if (resizer_->resizeToCapRatio(drvr_pin, false)) {
-        // if (resizer_->resizeToTargetSlew(drvr_pin)) {
         repaired_net = true;
         resize_count_ += 1;
       }
@@ -892,7 +891,6 @@ void RepairDesign::repairNet(Net* net,
     // limit violations.
     if (parasitics_src_ == ParasiticsSrc::placement && resize_drvr) {
       resize_count_ += resizer_->resizeToCapRatio(drvr_pin, false);
-      // resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
     }
 
     float max_cap = INF;
