@@ -1,0 +1,47 @@
+{
+  "name": "dbCellEdgeSpacing",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "bool",
+      "name": "except_abutted_",
+      "bits": 1
+    },
+    {
+      "type": "bool",
+      "name": "except_non_filler_in_between_",
+      "bits": 1
+    },
+    {
+      "type": "bool",
+      "name": "optional_",
+      "bits": 1
+    },
+    {
+      "type": "bool",
+      "name": "soft_",
+      "bits": 1
+    },
+    {
+      "type": "bool",
+      "name": "exact_",
+      "bits": 1
+    },
+    {
+      "type": "std::string",
+      "name": "first_edge_type_"
+    },
+    {
+      "type": "std::string",
+      "name": "second_edge_type_"
+    },
+    {
+      "type": "int",
+      "name": "spacing",
+      "default" : -1
+    }
+  ],
+  "cpp_includes": [
+    "dbTech.h"
+  ]
+}
