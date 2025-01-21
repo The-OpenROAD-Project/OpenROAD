@@ -42,6 +42,7 @@
 #include <boost/polygon/polygon.hpp>
 #include <cmath>
 #include <limits>
+#include <vector>
 
 #include "Objects.h"
 #include "Padding.h"

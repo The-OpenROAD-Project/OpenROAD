@@ -33,6 +33,8 @@
 
 #include "SACoreHardMacro.h"
 
+#include <vector>
+
 #include "Mpl2Observer.h"
 #include "utl/Logger.h"
 

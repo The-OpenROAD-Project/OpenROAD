@@ -19,6 +19,7 @@ TAGS
 .cache
 Makefile
 __pycache__
+venv/
 
 include/ord/Version.hh
 
@@ -40,6 +41,8 @@ coverage-output
 .metals/
 
 etc/openroad_deps_prefixes.txt
+etc/run-clang-tidy-cached
+OpenROAD_clang-tidy.*
 
 *debhelper*
 debian/changelog

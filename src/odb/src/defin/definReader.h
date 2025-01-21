@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "definBase.h"
 #include "defrReader.hpp"
 #include "odb/odb.h"

@@ -35,6 +35,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "Netlist.h"
 
 namespace ppl {

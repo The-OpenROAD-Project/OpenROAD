@@ -36,6 +36,7 @@
 #include <algorithm>
 #include <cmath>
 #include <utility>
+#include <vector>
 
 #include "nesterovBase.h"
 #include "placerBase.h"

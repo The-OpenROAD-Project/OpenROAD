@@ -34,6 +34,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "odb/db.h"
 #include "utl/Logger.h"

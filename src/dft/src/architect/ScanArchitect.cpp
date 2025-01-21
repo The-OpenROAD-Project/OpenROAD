@@ -32,6 +32,8 @@
 
 #include "ScanArchitect.hh"
 
+#include <vector>
+
 #include "ClockDomain.hh"
 #include "ClockDomainHash.hh"
 #include "ScanArchitectHeuristic.hh"
@@ -61,7 +63,7 @@ bool CompareScanCells(const std::unique_ptr<ScanCell>& lhs,
 
 void SortScanCells(std::vector<std::unique_ptr<ScanCell>>& scan_cells)
 {
-  std::sort(scan_cells.begin(), scan_cells.end(), CompareScanCells);
+  std::stable_sort(scan_cells.begin(), scan_cells.end(), CompareScanCells);
 }
 
 }  // namespace
@@ -69,6 +71,21 @@ void SortScanCells(std::vector<std::unique_ptr<ScanCell>>& scan_cells)
 ScanCellsBucket::ScanCellsBucket(utl::Logger* logger) : logger_(logger)
 {
 }
+
+namespace {
+void showBuckets(
+    utl::Logger* logger,
+    const std::unordered_map<size_t, std::vector<std::unique_ptr<ScanCell>>>&
+        buckets)
+{
+  for (auto& bucket : buckets) {
+    debugPrint(logger, utl::DFT, "buckets", 2, "Bucket {}", bucket.first);
+    for (auto& scan_cell : bucket.second) {
+      debugPrint(logger, utl::DFT, "buckets", 2, "\t{}", scan_cell->getName());
+    }
+  }
+}
+};  // namespace
 
 void ScanCellsBucket::init(const ScanArchitectConfig& config,
                            std::vector<std::unique_ptr<ScanCell>>& scan_cells)
@@ -83,6 +100,8 @@ void ScanCellsBucket::init(const ScanArchitectConfig& config,
   for (auto& [hash_domain, scan_cells] : buckets_) {
     SortScanCells(scan_cells);
   }
+
+  showBuckets(logger_, buckets_);
 }
 
 std::unordered_map<size_t, uint64_t>

@@ -34,6 +34,7 @@
 
 #include <boost/polygon/polygon.hpp>
 #include <map>
+#include <vector>
 
 #include "connect.h"
 #include "grid.h"

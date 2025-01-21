@@ -62,6 +62,7 @@ or_integration_tests(
     test_iterm
     test_module
     test_net
+    test_wire_codec
 )
 
 # Skipped

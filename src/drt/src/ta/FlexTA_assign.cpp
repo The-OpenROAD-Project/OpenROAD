@@ -27,6 +27,7 @@
  */
 
 #include <cmath>
+#include <vector>
 
 #include "ta/FlexTA.h"
 
@@ -659,11 +660,10 @@ frUInt4 FlexTAWorker::assignIroute_getNextIrouteDirCost(taPin* iroute,
   }
   if (nextIrouteDirCost < 0) {
     double dbu = getDesign()->getTopBlock()->getDBUPerUU();
-    std::cout << "Error: nextIrouteDirCost < 0"
-              << ", trackLoc@" << trackLoc / dbu << " box ("
-              << endBox.xMin() / dbu << ", " << endBox.yMin() / dbu << ") ("
-              << endBox.xMax() / dbu << ", " << endBox.yMax() / dbu << ")"
-              << std::endl;
+    std::cout << "Error: nextIrouteDirCost < 0" << ", trackLoc@"
+              << trackLoc / dbu << " box (" << endBox.xMin() / dbu << ", "
+              << endBox.yMin() / dbu << ") (" << endBox.xMax() / dbu << ", "
+              << endBox.yMax() / dbu << ")" << std::endl;
     return (frUInt4) 0;
   }
   return (frUInt4) nextIrouteDirCost;

@@ -35,6 +35,8 @@
 
 #include "SimulatedAnnealing.h"
 
+#include <vector>
+
 #include "AbstractIOPlacerRenderer.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"

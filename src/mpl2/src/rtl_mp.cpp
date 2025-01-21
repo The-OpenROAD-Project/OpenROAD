@@ -33,14 +33,14 @@
 
 #include "mpl2/rtl_mp.h"
 
+#include <vector>
+
 #include "Mpl2Observer.h"
 #include "hier_rtlmp.h"
 #include "object.h"
 
 namespace mpl2 {
-using odb::dbDatabase;
 using std::string;
-using utl::Logger;
 using utl::MPL;
 
 MacroPlacer2::MacroPlacer2() = default;

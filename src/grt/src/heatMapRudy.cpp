@@ -32,6 +32,8 @@
 
 #include "heatMapRudy.h"
 
+#include <vector>
+
 #include "odb/db.h"
 
 namespace grt {

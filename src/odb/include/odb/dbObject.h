@@ -89,6 +89,7 @@ enum dbObjectType
   // Generator Code Begin DbObjectType
   dbAccessPointObj,
   dbBusPortObj,
+  dbCellEdgeSpacingObj,
   dbDftObj,
   dbGCellGridObj,
   dbGDSARefObj,
@@ -106,6 +107,7 @@ enum dbObjectType
   dbLogicPortObj,
   dbMarkerObj,
   dbMarkerCategoryObj,
+  dbMasterEdgeTypeObj,
   dbMetalWidthViaMapObj,
   dbModBTermObj,
   dbModInstObj,
@@ -151,7 +153,6 @@ enum dbObjectType
   dbMasterObj,
   dbMPinObj,
   dbMTermObj,
-  dbTargetObj,
   dbTechAntennaPinModelObj,
 
   // Tech Objects

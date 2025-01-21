@@ -38,6 +38,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "detailed_hpwl.h"
 
+#include <vector>
+
 #include "detailed_orient.h"
 
 namespace dpo {

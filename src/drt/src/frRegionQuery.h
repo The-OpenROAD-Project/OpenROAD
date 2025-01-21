@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "frBaseTypes.h"
 
 namespace odb {

@@ -35,6 +35,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 #include "Mpl2Observer.h"
 #include "object.h"

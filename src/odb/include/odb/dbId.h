@@ -36,13 +36,6 @@
 
 namespace odb {
 
-class dbIdValidation
-{
- public:
-  static uint invalidId() { return 0; }
-  static bool isId(const char* inid);
-};
-
 //
 // April 2006 twg -
 //

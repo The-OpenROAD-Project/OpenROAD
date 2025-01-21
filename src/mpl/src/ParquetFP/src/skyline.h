@@ -2,6 +2,7 @@
 #define __SKYLINE_CONTOUR__ 0
 
 #include <iostream>
+#include <vector>
 
 #include "btree.h"
 

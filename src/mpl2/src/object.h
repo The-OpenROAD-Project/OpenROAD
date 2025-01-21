@@ -654,6 +654,7 @@ struct Rect
   float getHeight() const { return uy - ly; }
 
   float getPerimeter() const { return 2 * getWidth() + 2 * getHeight(); }
+  float getArea() const { return getWidth() * getHeight(); }
 
   void setLoc(float x,
               float y,

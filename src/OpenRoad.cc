@@ -39,6 +39,7 @@
 #include <fstream>
 #include <iostream>
 #include <thread>
+#include <vector>
 
 #include "ord/Version.hh"
 #ifdef ENABLE_PYTHON3
@@ -106,7 +107,6 @@ using odb::dbChip;
 using odb::dbDatabase;
 using odb::dbLib;
 using odb::dbTech;
-using odb::Rect;
 
 using sta::evalTclInit;
 

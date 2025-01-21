@@ -34,6 +34,7 @@
 
 #include <map>
 #include <set>
+#include <vector>
 
 #include "odb/db.h"
 #include "odb/dbTypes.h"

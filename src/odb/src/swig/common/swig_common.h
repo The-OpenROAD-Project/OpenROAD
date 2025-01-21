@@ -26,6 +26,7 @@
  */
 
 #include <boost/polygon/polygon.hpp>
+#include <vector>
 
 #include "odb/db.h"
 #include "odb/defout.h"

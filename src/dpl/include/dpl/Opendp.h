@@ -163,6 +163,12 @@ class Opendp
   void addDecapMaster(dbMaster* decap_master, double decap_cap);
   void insertDecapCells(double target, IRDropByPoint& psm_ir_drops);
 
+  // Get the instance adjacent to the left or right of a given instance
+  dbInst* getAdjacentInstance(dbInst* inst, bool left) const;
+
+  // Find a cluster of instances that are touching each other
+  std::vector<dbInst*> getAdjacentInstancesCluster(dbInst* inst) const;
+
  private:
   using bgPoint
       = boost::geometry::model::d2::point_xy<int,

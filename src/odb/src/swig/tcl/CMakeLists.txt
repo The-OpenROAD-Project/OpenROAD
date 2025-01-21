@@ -15,7 +15,7 @@ target_include_directories(odbtcl
 target_link_libraries(odbtcl
     PUBLIC
         odb
-        utl
+        utl_lib
         cdl
         odb_swig_common
         Boost::boost

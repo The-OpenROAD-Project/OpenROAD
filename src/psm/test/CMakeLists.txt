@@ -17,6 +17,7 @@ or_integration_tests(
     gcd_all_vss
     gcd_em_test_vdd
     gcd_no_vsrc
+    gcd_no_vsrc_reuse
     gcd_sky130_vdd
     gcd_test_assign_power
     gcd_test_vdd

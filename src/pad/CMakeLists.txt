@@ -62,7 +62,7 @@ target_include_directories(pad
 target_link_libraries(pad
   PRIVATE
     OpenSTA
-    utl
+    utl_lib
     odb
     gui
     Boost::boost

@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "dbCore.h"
 #include "dbTechLayer.h"
 #include "odb/dbTypes.h"
@@ -198,7 +200,7 @@ class _dbTechAntennaAreaElement
  private:
   _dbTechAntennaAreaElement() = default;
   double _area{-1.0};
-  dbId<_dbTechLayer> _lyidx{dbIdValidation::invalidId()};
+  dbId<_dbTechLayer> _lyidx;
 };
 
 //

@@ -1,0 +1,140 @@
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
+//
+// Copyright (c) 2024, Dimitris Fotakis
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
+# Author: Dimitris K. Fotakis
+# Version: v1.0 
+# Date: 11052024
+
+# Version: v1.1 
+# Date: 11212024
+
+List of OpenRCX User Commands with brief documentation
+
+extract_parasitics
+
+	-ext_model_file     : File with Distance Based Resistance/Capacitance for Wires and Via Resistance
+	-max_res            : Maximum Resistance per resistor segment to merge in series wire and via resistors, default=50 Ohms
+	-no_via_merge_res   : Create Via Resistors, defalut=False
+	-lefRC              : Use Resistance and Capacitance values from Technology LEF; No need for Model File
+	-lef_res            : Use Resistance values (wire and via) from Technology LEF
+	-skip_over_cell     : Not using obstructions and pin shapes from MACRO cells
+	-coupling_threshold : coupling caps less than this threshold will be grounded; default=0.1 FF
+	-cc_model           : controls how far in tracks coupling neighbors are found; default=10
+	-context_depth      : controls low and upper bound of metal levels for cross ovelaps; default=5
+	-version            : 1.0 running the existing flow; 2.0 running the improved flow
+	-dbg                : if 1 shows memory usage on main components; if > 1 creates files for coupling extraction; default=0
+
+bench_wires -- Generate DEF patterns
+
+	-met_cnt	: Number of metal levels; default is the number of Routing Layers in LEF
+	-cnt		: Number of wires per pattern; default is 5
+	-len		: Wire length in microns; default is 100
+	-over		: Over pattern family
+	-diag		: Diagonal pattern family
+	-all		: All pattern families
+	-db_only	: Create DB
+	-v1		: Version 1.2 patterns
+	-under_met	: Under metal level when -over option is used; default is all
+	-w_list		: Min layer Width multiplier list; default is 1
+	-s_list		: Min layer spacing multiplier list: default is "1 2 2.5 3 3.5 4 4.5 5 6 8 10 12"`
+	-over_dist	: Max number of levels for Under patterns; default is 100
+	-under_dist	: Max number of levels for Over patterns; default is 100
+
+write_rules -- Write model (rules) file
+
+	-file		: filename
+    	-name 		: name for the rules to be written as a header in the file
+
+#----------------------------------------------------------------------
+# Field Solver Integration User Commands
+
+gen_solver_patterns -- generate 3D wire patterns not targeting any particular Field Solver
+
+	-process_file	: file that contains full process stack with conductor and dielctric dimensions
+	-process_name	: Name of the process
+	-version	: 2 if normalized wires, 1 not normalized; deafult is 1
+	-wire_cnt	: number of wires; default is 3
+	-len		: wire length in microns; default is 10
+	-w_list		: Min layer Width multiplier list; default is 1
+	-s_list		: Min layer spacing multiplier list: default is "1.0 1.5 2.0 3 5"
+	-over_dist	: Max number of levels for Under patterns; default is 4
+	-under_dist	: Max number of levels for Over patterns; default is 4
+
+init_rcx_model -- Initialization for creating the model file
+
+	-corner_names	: list of corner names
+	-met_cnt	: number of metal levels
+
+read_rcx_tables -- Read Capacitance and Resistance Tables from Field Solver Output
+
+	-corner_name	: corner_name
+	-file		: input file name
+	-wire_index	: target wire index; not required
+	-over		: Over pattern family only
+	-under		: Under pattern family only
+	-over_under	: OverUnder pattern family only
+	-diag		: Diag pattern family only
+
+write_rcx_model -- Write model file after reading Cap/Res Tables from Field Solver
+
+	-file		: output file name
+
+#----------------------------------------------------------------------
+# Benchmarking only user commands
+
+bench_wires_gen -- Comprehensive Benchmarking patterns (not for model generation)
+
+	-len		:  length_in_min_widths 
+	-met	  	:  target metal	 
+	-mlist	  	:  target metal_list	 
+	-width	  	:  multiplier_width_list	 
+	-spacing	:  multiplier_spacing_list	 
+	-couple_width	:  multiplier_coupling_width_list	 
+	-couple_spacing	:  multiplier_coupling_spacing_list	 
+	-over_width	:  multiplier_over_width_list	 
+	-over_spacing	:  multiplier_over_spacing_list	 
+	-under_width	:  multiplier_under_width_list	 
+	-under_spacing	:  multiplier_under_spacing_list	 
+	-over2_width	:  multiplier_over2_width_list	 
+	-over2_spacing	:  multiplier_over2_spacing_list	 
+	-under2_width	:  multiplier_under2_width_list	 
+	-under2_spacing	:  multiplier_under2_spacing_list	 
+	-dbg	  	:  dbg_flag	 
+	-wire_cnt	:  wire_count	 
+	-offset_over	:  offset_over	 
+	-offset_under	:  offset_under	  
+	-under_dist	:  max_dist_to_under_met	  
+	-over_dist	:  max_dist_to_over_met	  
+	-diag 		:  Diag pattern family only
+	-over 		:  Over pattern family only
+	-under 		:  Under pattern family only
+	-over_under	:  OverUnder pattern family only

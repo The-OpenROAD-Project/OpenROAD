@@ -34,6 +34,7 @@
 
 #include <iostream>
 #include <optional>
+#include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "odb/dbTransform.h"
@@ -145,6 +146,44 @@ std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm)
   }
 
   return std::nullopt;
+}
+
+bool IsScanCell(const sta::LibertyCell* libertyCell)
+{
+  const sta::TestCell* test_cell = libertyCell->testCell();
+  if (test_cell) {
+    return getLibertyScanIn(test_cell) != nullptr
+           && getLibertyScanEnable(test_cell) != nullptr;
+  }
+  return false;
+}
+
+odb::dbBTerm* CreateNewPort(odb::dbBlock* block,
+                            const std::string& port_name,
+                            utl::Logger* logger,
+                            odb::dbNet* net)
+{
+  if (!net) {
+    net = odb::dbNet::create(block, port_name.c_str());
+    if (!net) {
+      logger->error(utl::DFT,
+                    31,
+                    "Error while attempting to create new port {}: an "
+                    "unrelated net with the same name already exists",
+                    port_name);
+    }
+    net->setSigType(odb::dbSigType::SCAN);
+  }
+  auto port = odb::dbBTerm::create(net, port_name.c_str());
+  if (port == nullptr) {
+    logger->error(utl::DFT,
+                  18,
+                  "Failed to create port: a port named '{}' already exists",
+                  port_name);
+  }
+  port->setSigType(odb::dbSigType::SCAN);
+
+  return port;
 }
 
 }  // namespace dft::utils

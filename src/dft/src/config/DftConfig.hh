@@ -32,6 +32,7 @@
 #pragma once
 
 #include "ScanArchitectConfig.hh"
+#include "ScanStitchConfig.hh"
 #include "utl/Logger.h"
 
 namespace dft {
@@ -49,11 +50,15 @@ class DftConfig
   ScanArchitectConfig* getMutableScanArchitectConfig();
   const ScanArchitectConfig& getScanArchitectConfig() const;
 
+  ScanStitchConfig* getMutableScanStitchConfig();
+  const ScanStitchConfig& getScanStitchConfig() const;
+
   // Prints the information currently being used by DFT for config
   void report(utl::Logger* logger) const;
 
  private:
   ScanArchitectConfig scan_architect_config_;
+  ScanStitchConfig scan_stitch_config_;
 };
 
 }  // namespace dft

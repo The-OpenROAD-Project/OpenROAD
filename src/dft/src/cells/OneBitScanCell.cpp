@@ -83,6 +83,11 @@ ScanDriver OneBitScanCell::getScanOut() const
   return ScanDriver(findITerm(getLibertyScanOut(test_cell_)));
 }
 
+ScanLoad OneBitScanCell::getScanIn() const
+{
+  return ScanLoad(findITerm(getLibertyScanIn(test_cell_)));
+}
+
 odb::dbITerm* OneBitScanCell::findITerm(sta::LibertyPort* liberty_port) const
 {
   odb::dbMTerm* mterm = db_network_->staToDb(liberty_port);

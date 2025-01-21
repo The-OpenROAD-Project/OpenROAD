@@ -29,6 +29,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "db/obj/frFig.h"
 #include "frBaseTypes.h"

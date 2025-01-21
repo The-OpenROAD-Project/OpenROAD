@@ -34,6 +34,7 @@
 #define BTREECOMPACT_H
 
 #include <algorithm>
+#include <vector>
 
 #include "btree.h"
 

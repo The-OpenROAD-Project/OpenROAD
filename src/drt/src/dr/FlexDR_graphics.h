@@ -29,6 +29,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "frBaseTypes.h"
 #include "gui/gui.h"
