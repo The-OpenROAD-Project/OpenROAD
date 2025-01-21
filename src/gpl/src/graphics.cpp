@@ -102,7 +102,9 @@ void Graphics::initHeatmap()
   addMultipleChoiceSetting(
       "Type",
       "Type:",
-      []() { return std::vector<std::string>{"Density", "Overflow"}; },
+      []() {
+        return std::vector<std::string>{"Density", "Overflow"};
+      },
       [this]() -> std::string {
         switch (heatmap_type_) {
           case Density:
@@ -491,7 +493,7 @@ void Graphics::populateXYGrid()
     x_grid_set.push_back(bin[x].ux());
   }
   for (int y = 0; y < y_grid; y++) {
-    y_grid_set.push_back(bin[y*x_grid].uy());
+    y_grid_set.push_back(bin[y * x_grid].uy());
   }
   setXYMapGrid(x_grid_set, y_grid_set);
 }
