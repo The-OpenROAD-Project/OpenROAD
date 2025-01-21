@@ -499,6 +499,16 @@ struct less<odb::dbBusPort*>
 };
 
 template <>
+struct less<odb::dbCellEdgeSpacing*>
+{
+  bool operator()(const odb::dbCellEdgeSpacing* lhs,
+                  const odb::dbCellEdgeSpacing* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
 struct less<odb::dbDft*>
 {
   bool operator()(const odb::dbDft* lhs, const odb::dbDft* rhs) const
@@ -654,6 +664,16 @@ struct less<odb::dbMarkerCategory*>
 {
   bool operator()(const odb::dbMarkerCategory* lhs,
                   const odb::dbMarkerCategory* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbMasterEdgeType*>
+{
+  bool operator()(const odb::dbMasterEdgeType* lhs,
+                  const odb::dbMasterEdgeType* rhs) const
   {
     return odb::compare_by_id(lhs, rhs);
   }
