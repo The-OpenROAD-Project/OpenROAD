@@ -369,7 +369,6 @@ void dbModInst::RemoveUnusedPortsAndPins()
   dbModule* module = this->getMaster();
   dbSet<dbModITerm> moditerms = getModITerms();
   dbSet<dbModBTerm> modbterms = module->getModBTerms();
-  bool in_scope_of_bus = false;
   int bus_ix = 0;
 
   // traverse in modbterm order so we can skip over
@@ -379,18 +378,19 @@ void dbModInst::RemoveUnusedPortsAndPins()
     dbModNet* mod_net = nullptr;
 
     // Avoid removing unused ports from a bus
-    if (in_scope_of_bus) {
-      bus_ix = bus_ix - 1;
-      if (bus_ix == 0) {
-        in_scope_of_bus = false;
-      } else {
-        continue;
-      }
-    }
+    // when we hit a bus port, we count down from the size
+    // skipping the bus elements
+    // Layout:
+    // mod_bterm (head_element describing size)
+    // mod_bterm[size-1],...mod_bterm[0] -- bus elements
+    //
     if (mod_bterm->isBusPort()) {
-      in_scope_of_bus = true;
       dbBusPort* bus_port = mod_bterm->getBusPort();
       bus_ix = bus_port->getSize();  // count down
+      continue;
+    }
+    if (bus_ix != 0) {
+      bus_ix = bus_ix - 1;
       continue;
     }
 
@@ -402,9 +402,7 @@ void dbModInst::RemoveUnusedPortsAndPins()
       dbSet<dbITerm> dest_iterms = mod_net->getITerms();
       if (dest_mod_iterms.size() == 0 && dest_bterms.size() == 0
           && dest_iterms.size() == 0) {
-        if (!in_scope_of_bus) {
-          kill_set.insert(mod_iterm);
-        }
+        kill_set.insert(mod_iterm);
       }
     }
   }
