@@ -3497,7 +3497,13 @@ int GlobalRouter::getTileSize() const
 
 void GlobalRouter::initClockNets()
 {
-  std::set<odb::dbNet*> clock_nets = sta_->findClkNets();
+  std::set<odb::dbNet*> clock_nets;
+
+  auto db_network = sta_->getDbNetwork();
+  if (db_network != nullptr && db_network->isLinked()
+      && db_network->defaultLibertyLibrary() != nullptr) {
+    clock_nets = sta_->findClkNets();
+  }
 
   if (verbose_)
     logger_->info(GRT, 19, "Found {} clock nets.", clock_nets.size());
