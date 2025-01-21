@@ -129,10 +129,7 @@ void HierRTLMP::setGlobalFence(float fence_lx,
                                float fence_ux,
                                float fence_uy)
 {
-  global_fence_lx_ = fence_lx;
-  global_fence_ly_ = fence_ly;
-  global_fence_ux_ = fence_ux;
-  global_fence_uy_ = fence_uy;
+  tree_->global_fence = Rect(fence_lx, fence_ly, fence_ux, fence_uy);
 }
 
 void HierRTLMP::setHaloWidth(float halo_width)
@@ -370,31 +367,15 @@ void HierRTLMP::setRootShapes()
 {
   auto root_soft_macro = std::make_unique<SoftMacro>(tree_->root.get());
 
-  const float core_lx
-      = static_cast<float>(block_->dbuToMicrons(block_->getCoreArea().xMin()));
-  const float root_lx = std::max(core_lx, global_fence_lx_);
-
-  const float core_ly
-      = static_cast<float>(block_->dbuToMicrons(block_->getCoreArea().yMin()));
-  const float root_ly = std::max(core_ly, global_fence_ly_);
-
-  const float core_ux
-      = static_cast<float>(block_->dbuToMicrons(block_->getCoreArea().xMax()));
-  const float root_ux = std::min(core_ux, global_fence_ux_);
-
-  const float core_uy
-      = static_cast<float>(block_->dbuToMicrons(block_->getCoreArea().yMax()));
-  const float root_uy = std::min(core_uy, global_fence_uy_);
-
-  const float root_area = (root_ux - root_lx) * (root_uy - root_ly);
-  const float root_width = root_ux - root_lx;
+  const float root_area = tree_->floorplan_shape.getArea();
+  const float root_width = tree_->floorplan_shape.getWidth();
   const std::vector<std::pair<float, float>> root_width_list
       = {std::pair<float, float>(root_width, root_width)};
 
   root_soft_macro->setShapes(root_width_list, root_area);
   root_soft_macro->setWidth(root_width);  // This will set height automatically
-  root_soft_macro->setX(root_lx);
-  root_soft_macro->setY(root_ly);
+  root_soft_macro->setX(tree_->floorplan_shape.xMin());
+  root_soft_macro->setY(tree_->floorplan_shape.yMin());
   tree_->root->setSoftMacro(std::move(root_soft_macro));
 }
 
@@ -3995,7 +3976,7 @@ void HierRTLMP::flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip)
 void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
 {
   for (odb::dbInst* inst : block_->getInsts()) {
-    if (!inst->isBlock()) {
+    if (!inst->isBlock() || ClusteringEngine::isIgnoredInst(inst)) {
       continue;
     }
 

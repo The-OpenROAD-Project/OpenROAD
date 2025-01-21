@@ -37,6 +37,16 @@ BOOST_AUTO_TEST_CASE(lef58_class)
   BOOST_CHECK(endcap);
 
   BOOST_TEST(endcap->getType() == odb::dbMasterType::ENDCAP_LEF58_BOTTOMEDGE);
+  BOOST_TEST(endcap->getEdgeTypes().size() == 2);
+
+  auto edge_type_itr = endcap->getEdgeTypes().begin();
+  BOOST_TEST((*edge_type_itr)->getEdgeDir()
+             == odb::dbMasterEdgeType::EdgeDir::LEFT);
+  BOOST_TEST((*edge_type_itr)->getEdgeType() == "TYPE1");
+  ++edge_type_itr;
+  BOOST_TEST((*edge_type_itr)->getEdgeDir()
+             == odb::dbMasterEdgeType::EdgeDir::RIGHT);
+  BOOST_TEST((*edge_type_itr)->getEdgeType() == "TYPE2");
 }
 
 BOOST_AUTO_TEST_CASE(test_default)
@@ -508,6 +518,39 @@ BOOST_AUTO_TEST_CASE(test_default)
     }
     c++;
   }
+
+  // LEF58_CELLEDGESPACINGTABLE
+  auto cell_edge_spacing_tbl = dbTech->getCellEdgeSpacingTable();
+  BOOST_TEST(cell_edge_spacing_tbl.size() == 4);
+  auto edge_spc_it = cell_edge_spacing_tbl.begin();
+  auto edge_spc = *edge_spc_it;
+  BOOST_TEST(edge_spc->getFirstEdgeType() == "GROUP1");
+  BOOST_TEST(edge_spc->getSecondEdgeType() == "GROUP2");
+  BOOST_TEST(edge_spc->getSpacing() == 0.1 * 2000);
+  BOOST_TEST((!edge_spc->isExact() && edge_spc->isExceptAbutted()
+              && !edge_spc->isExceptNonFillerInBetween()
+              && !edge_spc->isOptional() && !edge_spc->isSoft()));
+  edge_spc = *(++edge_spc_it);
+  BOOST_TEST(edge_spc->getFirstEdgeType() == "GROUP1");
+  BOOST_TEST(edge_spc->getSecondEdgeType() == "GROUP1");
+  BOOST_TEST(edge_spc->getSpacing() == 0.2 * 2000);
+  BOOST_TEST((!edge_spc->isExact() && !edge_spc->isExceptAbutted()
+              && !edge_spc->isExceptNonFillerInBetween()
+              && edge_spc->isOptional() && !edge_spc->isSoft()));
+  edge_spc = *(++edge_spc_it);
+  BOOST_TEST(edge_spc->getFirstEdgeType() == "GROUP2");
+  BOOST_TEST(edge_spc->getSecondEdgeType() == "DEFAULT");
+  BOOST_TEST(edge_spc->getSpacing() == 0.3 * 2000);
+  BOOST_TEST((edge_spc->isExact() && !edge_spc->isExceptAbutted()
+              && !edge_spc->isExceptNonFillerInBetween()
+              && !edge_spc->isOptional() && !edge_spc->isSoft()));
+  edge_spc = *(++edge_spc_it);
+  BOOST_TEST(edge_spc->getFirstEdgeType() == "GROUP2");
+  BOOST_TEST(edge_spc->getSecondEdgeType() == "GROUP2");
+  BOOST_TEST(edge_spc->getSpacing() == 0.4 * 2000);
+  BOOST_TEST((!edge_spc->isExact() && !edge_spc->isExceptAbutted()
+              && !edge_spc->isExceptNonFillerInBetween()
+              && !edge_spc->isOptional() && !edge_spc->isSoft()));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
