@@ -502,7 +502,7 @@ void Replace::setDebug(int pause_iterations,
 
 void Replace::setAllowRevertIfDiverge(bool mode)
 {
-  allowRevertIfDiverge_ = !mode;
+  allowRevertIfDiverge_ = mode;
 }
 
 void Replace::setSkipIoMode(bool mode)
