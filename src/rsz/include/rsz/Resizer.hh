@@ -447,7 +447,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool isTristateDriver(const Pin* pin);
   void checkLibertyForAllCorners();
   void copyDontUseFromLiberty();
-  bool bufferSizeOutmatched(LibertyCell *worse, LibertyCell *better, float max_drive_resist);
+  bool bufferSizeOutmatched(LibertyCell* worse,
+                            LibertyCell* better,
+                            float max_drive_resist);
   void findBuffers();
   void findFastBuffers();
   bool isLinkCell(LibertyCell* cell) const;
@@ -493,14 +495,14 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool areCellsSwappable(LibertyCell* existing, LibertyCell* replacement);
   LibertyCellSeq getSwappableCells(LibertyCell* source_cell);
 
-  bool getCin(const LibertyCell *cell, float& cin);
+  bool getCin(const LibertyCell* cell, float& cin);
   // Resize drvr_pin instance to target slew.
   // Return 1 if resized.
   int resizeToTargetSlew(const Pin* drvr_pin);
 
   // Resize drvr_pin instance to target cap ratio.
   // Return 1 if resized.
-  int resizeToCapRatio(const Pin *drvr_pin, bool upsize_only);
+  int resizeToCapRatio(const Pin* drvr_pin, bool upsize_only);
 
   ////////////////////////////////////////////////////////////////
 

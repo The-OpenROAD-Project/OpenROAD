@@ -137,8 +137,9 @@ void RepairDesign::repairDesign(double max_wire_length,
   }
 }
 
-void RepairDesign::performEarlySizingRound(float gate_gain, float buffer_gain,
-                                           int &repaired_net_count)
+void RepairDesign::performEarlySizingRound(float gate_gain,
+                                           float buffer_gain,
+                                           int& repaired_net_count)
 {
   // keep track of user annotations so we don't remove them
   std::set<std::pair<Vertex*, int>> slew_user_annotated;
@@ -176,7 +177,6 @@ void RepairDesign::performEarlySizingRound(float gate_gain, float buffer_gain,
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
         && !drvr->isConstant()) {
-
       float fanout, max_fanout, fanout_slack;
       sta_->checkFanout(drvr_pin, max_, fanout, max_fanout, fanout_slack);
       max_fanout = 10.0f;
@@ -613,7 +613,7 @@ bool RepairDesign::performGainBuffering(Net* net,
 
   float cin;
   float has_driver_cin = getLargestSizeCin(drvr_pin, cin);
-  static float gate_gain = 4.0f; // use a fanout-of-4 rule for gates
+  static float gate_gain = 4.0f;  // use a fanout-of-4 rule for gates
   bool repaired_net = false;
 
   float load = 0.0;
@@ -624,7 +624,8 @@ bool RepairDesign::performGainBuffering(Net* net,
 
   // Iterate until we satisfy both the gain condition and max_fanout
   // on drvr_pin
-  while (sinks.size() > max_fanout || (has_driver_cin && load > cin * gate_gain)) {
+  while (sinks.size() > max_fanout
+         || (has_driver_cin && load > cin * gate_gain)) {
     float load_acc = 0;
     auto it = sinks.begin();
     for (; it != sinks.end(); it++) {
@@ -694,8 +695,8 @@ bool RepairDesign::performGainBuffering(Net* net,
 
     Pin* new_input_pin = network_->findPin(inst, size_in);
 
-    Delay buffer_delay = resizer_->bufferDelay(
-        *size, load_acc, resizer_->tgt_slew_dcalc_ap_);
+    Delay buffer_delay
+        = resizer_->bufferDelay(*size, load_acc, resizer_->tgt_slew_dcalc_ap_);
 
     auto new_pin = EnqueuedPin{new_input_pin,
                                (group_end - 1)->required_path,
@@ -859,7 +860,7 @@ void RepairDesign::repairNet(Net* net,
         repaired_net = true;
       }
       if (resizer_->resizeToCapRatio(drvr_pin, false)) {
-      //if (resizer_->resizeToTargetSlew(drvr_pin)) {
+        // if (resizer_->resizeToTargetSlew(drvr_pin)) {
         repaired_net = true;
         resize_count_ += 1;
       }
@@ -891,7 +892,7 @@ void RepairDesign::repairNet(Net* net,
     // limit violations.
     if (parasitics_src_ == ParasiticsSrc::placement && resize_drvr) {
       resize_count_ += resizer_->resizeToCapRatio(drvr_pin, false);
-      //resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
+      // resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
     }
 
     float max_cap = INF;

@@ -115,7 +115,9 @@ class RepairDesign : dbStaState
   bool getLargestSizeCin(const Pin* drvr_pin, float& cin);
   void findBufferSizes();
   bool performGainBuffering(Net* net, const Pin* drvr_pin, int max_fanout);
-  void performEarlySizingRound(float gate_gain, float buffer_gain, int &repaired_net_count);
+  void performEarlySizingRound(float gate_gain,
+                               float buffer_gain,
+                               int& repaired_net_count);
 
   void checkDriverArcSlew(const Corner* corner,
                           const Instance* inst,
