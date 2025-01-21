@@ -10,11 +10,11 @@
 Net              : VDD
 Corner           : min
 Supply voltage   : 1.10e+00 V
-Worstcase voltage: 8.77e-01 V
-Average voltage  : 8.92e-01 V
-Average IR drop  : 2.08e-01 V
-Worstcase IR drop: 2.23e-01 V
-Percentage drop  : 20.31 %
+Worstcase voltage: 8.74e-01 V
+Average voltage  : 8.90e-01 V
+Average IR drop  : 2.10e-01 V
+Worstcase IR drop: 2.26e-01 V
+Percentage drop  : 20.52 %
 ######################################
 [INFO PSM-0040] All shapes on net VDD are connected.
 [INFO PSM-0015] Reading location of sources from: Vsrc_gcd_vdd.loc.
@@ -22,9 +22,9 @@ Percentage drop  : 20.31 %
 Net              : VDD
 Corner           : max
 Supply voltage   : 1.10e+00 V
-Worstcase voltage: 2.54e-01 V
-Average voltage  : 5.88e-01 V
-Average IR drop  : 5.12e-01 V
-Worstcase IR drop: 8.46e-01 V
-Percentage drop  : 76.94 %
+Worstcase voltage: 2.51e-01 V
+Average voltage  : 5.86e-01 V
+Average IR drop  : 5.14e-01 V
+Worstcase IR drop: 8.49e-01 V
+Percentage drop  : 77.17 %
 ######################################
