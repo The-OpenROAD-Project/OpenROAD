@@ -49,6 +49,7 @@ class _dbMPin;
 class _dbSite;
 class _dbDatabase;
 class _dbTechAntennaPinModel;
+class _dbMasterEdgeType;
 class dbBoxItr;
 class dbPolygonItr;
 class dbMPinItr;
@@ -94,6 +95,7 @@ class _dbMaster : public _dbObject
   dbTable<_dbBox>* _box_tbl;
   dbTable<_dbPolygon>* _poly_box_tbl;
   dbTable<_dbTechAntennaPinModel>* _antenna_pin_model_tbl;
+  dbTable<_dbMasterEdgeType>* edge_types_tbl_;
 
   void* _sta_cell;  // not saved
 

@@ -87,6 +87,7 @@ add_library(db
     # Generator Code Begin cpp
     dbAccessPoint.cpp
     dbBusPort.cpp
+    dbCellEdgeSpacing.cpp
     dbDft.cpp
     dbGCellGrid.cpp
     dbGDSARef.cpp
@@ -104,6 +105,7 @@ add_library(db
     dbLogicPort.cpp
     dbMarker.cpp
     dbMarkerCategory.cpp
+    dbMasterEdgeType.cpp
     dbMetalWidthViaMap.cpp
     dbModBTerm.cpp
     dbModInst.cpp
