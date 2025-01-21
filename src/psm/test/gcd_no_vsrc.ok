@@ -12,8 +12,8 @@ Corner           : default
 Supply voltage   : 1.50e+00 V
 Worstcase voltage: 1.50e+00 V
 Average voltage  : 1.50e+00 V
-Average IR drop  : 1.87e-04 V
-Worstcase IR drop: 3.28e-04 V
+Average IR drop  : 1.90e-04 V
+Worstcase IR drop: 3.34e-04 V
 Percentage drop  : 0.02 %
 ######################################
 [INFO PSM-0040] All shapes on net VSS are connected.
@@ -22,9 +22,9 @@ Percentage drop  : 0.02 %
 Net              : VSS
 Corner           : default
 Supply voltage   : 0.00e+00 V
-Worstcase voltage: 1.49e-03 V
-Average voltage  : 9.19e-04 V
-Average IR drop  : 9.19e-04 V
-Worstcase IR drop: 1.49e-03 V
+Worstcase voltage: 1.51e-03 V
+Average voltage  : 9.31e-04 V
+Average IR drop  : 9.31e-04 V
+Worstcase IR drop: 1.51e-03 V
 Percentage drop  : 0.10 %
 ######################################
