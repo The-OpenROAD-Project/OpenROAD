@@ -562,6 +562,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-skip_last_gasp]\
                                         [-repair_tns tns_end_percent]\
                                         [-max_passes passes]\
+                                        [-max_passes_per_iter passes_per_iter]\
                                         [-max_buffer_percent buffer_percent]\
                                         [-max_utilization util] \
                                         [-match_cell_footprint] \
@@ -571,7 +572,7 @@ proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent \
-            -recover_power -repair_tns -max_passes} \
+            -recover_power -repair_tns -max_passes -max_passes_per_iter} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
            -skip_buffering -skip_buffer_removal -skip_last_gasp -match_cell_footprint \
            -verbose}
@@ -637,6 +638,11 @@ proc repair_timing { args } {
     set max_passes $keys(-max_passes)
   }
 
+  set max_passes_per_iter 20
+  if { [info exists keys(-max_passes_per_iter)] } {
+    set max_passes_per_iter $keys(-max_passes_per_iter)
+  }
+
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
   if { [design_is_routed] } {
     rsz::set_parasitics_src "detailed_routing"
@@ -652,8 +658,8 @@ proc repair_timing { args } {
     set recovered_power [rsz::recover_power $recover_power_percent $match_cell_footprint]
   } else {
     if { $setup } {
-      set repaired_setup [rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
-        $match_cell_footprint $verbose \
+      set repaired_setup [rsz::repair_setup $setup_margin $repair_tns_end_percent \
+        $max_passes_per_iter $match_cell_footprint $verbose \
         $skip_pin_swap $skip_gate_cloning $skip_buffering \
         $skip_buffer_removal $skip_last_gasp]
     }

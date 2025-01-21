@@ -14,5 +14,6 @@ set slew_margin 30
 set cap_margin 25
 
 set global_place_density 0.5
+set max_passes_per_iter 1000
 
 source -echo "flow.tcl"

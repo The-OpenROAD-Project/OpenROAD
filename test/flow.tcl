@@ -163,7 +163,13 @@ if { $repair_timing_use_grt_parasitics } {
   estimate_parasitics -placement
 }
 
-repair_timing -skip_gate_cloning
+set repair_timing_args ""
+if {[info exists max_passes_per_iter]} {
+  lappend repair_timing_args "-max_passes_per_iter"
+  lappend repair_timing_args $max_passes_per_iter
+}
+puts $repair_timing_args
+repair_timing -skip_gate_cloning {*}$repair_timing_args
 
 # Post timing repair.
 report_worst_slack -min -digits 3

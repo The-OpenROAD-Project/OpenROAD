@@ -11,5 +11,6 @@ set die_area {0 0 2000 2000}
 set core_area {30 30 1770 1770}
 
 set slew_margin 20
+set max_passes_per_iter 1000
 
 source -echo "flow.tcl"

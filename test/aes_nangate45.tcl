@@ -11,5 +11,6 @@ set die_area {0 0 1020 920.8}
 set core_area {10 12 1010 911.2}
 
 set cap_margin 20
+set max_passes_per_iter 1000
 
 source -echo "flow.tcl"

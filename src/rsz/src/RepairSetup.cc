@@ -60,6 +60,7 @@ namespace rsz {
 
 using std::max;
 using std::pair;
+using std::set;
 using std::string;
 using std::vector;
 using utl::RSZ;
@@ -87,9 +88,21 @@ void RepairSetup::init()
   db_network_ = resizer_->db_network_;
 }
 
+struct SlackVertexPairComp
+{
+  bool operator()(const pair<Vertex*, Slack>& end_slack1,
+                  const pair<Vertex*, Slack>& end_slack2) const
+  {
+    return end_slack1.second < end_slack2.second
+           || (end_slack1.second == end_slack2.second
+               && end_slack1.first->objectIdx()
+                      < end_slack2.first->objectIdx());
+  }
+};
+
 bool RepairSetup::repairSetup(const float setup_slack_margin,
                               const double repair_tns_end_percent,
-                              const int max_passes,
+                              const int max_passes_per_iter,
                               const bool verbose,
                               const bool skip_pin_swap,
                               const bool skip_gate_cloning,
@@ -110,7 +123,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 
   // Sort failing endpoints by slack.
   const VertexSet* endpoints = sta_->endpoints();
-  vector<pair<Vertex*, Slack>> violating_ends;
+  set<pair<Vertex*, Slack>, SlackVertexPairComp> violating_ends;
   // logger_->setDebugLevel(RSZ, "repair_setup", 2);
   // Should check here whether we can figure out the clock domain for each
   // vertex. This may be the place where we can do some round robin fun to
@@ -119,14 +132,9 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   for (Vertex* end : *endpoints) {
     const Slack end_slack = sta_->vertexSlack(end, max_);
     if (end_slack < setup_slack_margin) {
-      violating_ends.emplace_back(end, end_slack);
+      violating_ends.emplace(end, end_slack);
     }
   }
-  std::stable_sort(violating_ends.begin(),
-                   violating_ends.end(),
-                   [](const auto& end_slack1, const auto& end_slack2) {
-                     return end_slack1.second < end_slack2.second;
-                   });
   debugPrint(logger_,
              RSZ,
              "repair_setup",
@@ -174,8 +182,9 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     printProgress(opto_iteration, false, false, false, num_viols);
   }
   float fix_rate_threshold = inc_fix_rate_threshold_;
-  for (const auto& end_original_slack : violating_ends) {
-    Vertex* end = end_original_slack.first;
+  while (num_viols > 0 && !violating_ends.empty()) {
+    Vertex* end = violating_ends.begin()->first;
+    violating_ends.erase(violating_ends.begin());
     Slack end_slack = sta_->vertexSlack(end, max_);
     Slack worst_slack;
     Vertex* worst_vertex;
@@ -202,14 +211,14 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                  " max_end_count {}", end->name(network_), end_index,
                  max_end_count);
       // clang-format on
-      break;
+      continue;
     }
     Slack prev_end_slack = end_slack;
     Slack prev_worst_slack = worst_slack;
     int pass = 1;
     int decreasing_slack_passes = 0;
     resizer_->journalBegin();
-    while (pass <= max_passes) {
+    while (pass <= max_passes_per_iter) {
       opto_iteration++;
       if (verbose) {
         printProgress(opto_iteration, false, false, false, num_viols);
@@ -328,7 +337,8 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         // Allow slack to increase to get out of local minima.
         // Do not update prev_end_slack so it saves the high water mark.
         decreasing_slack_passes++;
-        if (decreasing_slack_passes > decreasing_slack_max_passes_) {
+        if (decreasing_slack_passes > decreasing_slack_max_passes_
+            || pass == max_passes_per_iter) {
           // Undo changes that reduced slack.
           debugPrint(logger_,
                      RSZ,
@@ -350,9 +360,10 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                                    removed_buffer_count_);
           // clang-format off
           debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out {} decreasing"
-                     " passes {} > decreasig pass limit {}", end->name(network_),
-                     decreasing_slack_passes, decreasing_slack_max_passes_);
+                     " passes {} > decreasig pass limit {} or pass {} > max passes per iteration {}", end->name(network_),
+                     decreasing_slack_passes, decreasing_slack_max_passes_, pass, max_passes_per_iter);
           // clang-format on
+          ++pass;
           break;
         }
       }
@@ -370,6 +381,10 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
       }
       pass++;
     }  // while pass <= max_passes
+    if (pass == max_passes_per_iter + 1) {
+      // If violation was not fixed, placed it back to the queue
+      violating_ends.emplace(end, worst_slack);
+    }
     if (verbose) {
       printProgress(opto_iteration, true, false, false, num_viols);
     }
