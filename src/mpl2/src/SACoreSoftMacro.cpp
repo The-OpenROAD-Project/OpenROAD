@@ -45,7 +45,7 @@ using utl::MPL;
 // Class SACoreSoftMacro
 // constructors
 SACoreSoftMacro::SACoreSoftMacro(
-    Cluster* root,
+    PhysicalHierarchy* tree,
     const Rect& outline,
     const std::vector<SoftMacro>& macros,
     // weight for different penalty
@@ -73,7 +73,8 @@ SACoreSoftMacro::SACoreSoftMacro(
     unsigned seed,
     Mpl2Observer* graphics,
     utl::Logger* logger)
-    : SimulatedAnnealingCore<SoftMacro>(outline,
+    : SimulatedAnnealingCore<SoftMacro>(tree,
+                                        outline,
                                         macros,
                                         area_weight,
                                         outline_weight,
@@ -90,7 +91,7 @@ SACoreSoftMacro::SACoreSoftMacro(
                                         seed,
                                         graphics,
                                         logger),
-      root_(root)
+      root_(tree->root.get())
 {
   boundary_weight_ = boundary_weight;
   macro_blockage_weight_ = macro_blockage_weight;

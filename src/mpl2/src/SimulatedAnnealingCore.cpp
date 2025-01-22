@@ -49,6 +49,7 @@ using std::string;
 // Class SimulatedAnnealingCore
 template <class T>
 SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
+    PhysicalHierarchy* tree,
     const Rect& outline,           // boundary constraints
     const std::vector<T>& macros,  // macros (T = HardMacro or T = SoftMacro)
     // weight for different penalty
@@ -69,7 +70,9 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
     unsigned seed,
     Mpl2Observer* graphics,
     utl::Logger* logger)
-    : outline_(outline), graphics_(graphics)
+    : outline_(outline),
+      blocked_boundaries_(tree->blocked_boundaries),
+      graphics_(graphics)
 {
   area_weight_ = area_weight;
   outline_weight_ = outline_weight;
@@ -94,6 +97,28 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
 
   logger_ = logger;
   macros_ = macros;
+
+  setBlockedBoundariesForIOs();
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::setBlockedBoundariesForIOs()
+{
+  if (blocked_boundaries_.find(Boundary::L) != blocked_boundaries_.end()) {
+    left_is_blocked_ = true;
+  }
+
+  if (blocked_boundaries_.find(Boundary::R) != blocked_boundaries_.end()) {
+    right_is_blocked_ = true;
+  }
+
+  if (blocked_boundaries_.find(Boundary::B) != blocked_boundaries_.end()) {
+    bottom_is_blocked_ = true;
+  }
+
+  if (blocked_boundaries_.find(Boundary::T) != blocked_boundaries_.end()) {
+    top_is_blocked_ = true;
+  }
 }
 
 template <class T>
@@ -274,10 +299,18 @@ void SimulatedAnnealingCore<T>::calWirelength()
   }
 
   for (const auto& net : nets_) {
-    const float x1 = macros_[net.terminals.first].getPinX();
-    const float y1 = macros_[net.terminals.first].getPinY();
-    const float x2 = macros_[net.terminals.second].getPinX();
-    const float y2 = macros_[net.terminals.second].getPinY();
+    T& source = macros_[net.terminals.first];
+    T& target = macros_[net.terminals.second];
+
+    if (target.isIOCluster()) {
+      addBoundaryDistToWirelength(source, target, net.weight);
+      continue;
+    }
+
+    const float x1 = source.getPinX();
+    const float y1 = source.getPinY();
+    const float x2 = target.getPinX();
+    const float y2 = target.getPinY();
     wirelength_ += net.weight * (std::abs(x2 - x1) + std::abs(y2 - y1));
   }
 
@@ -289,6 +322,71 @@ void SimulatedAnnealingCore<T>::calWirelength()
     graphics_->setWirelengthPenalty(
         {wirelength_weight_, wirelength_ / norm_wirelength_});
   }
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
+    const T& macro,
+    const T& io,
+    const float net_weight)
+{
+  Cluster* io_cluster = io.getCluster();
+  const Rect die = io_cluster->getBBox();
+  const float die_hpwl = die.getWidth() + die.getHeight();
+
+  if (isOutsideTheOutline(macro)) {
+    wirelength_ += net_weight * die_hpwl;
+    return;
+  }
+
+  const float x1 = macro.getPinX();
+  const float y1 = macro.getPinY();
+
+  Boundary constraint_boundary = io_cluster->getConstraintBoundary();
+
+  if (constraint_boundary == NONE) {
+    float dist_to_left = die_hpwl;
+    if (!left_is_blocked_) {
+      dist_to_left = std::abs(x1 - die.xMin());
+    }
+
+    float dist_to_right = die_hpwl;
+    if (!right_is_blocked_) {
+      dist_to_right = std::abs(x1 - die.xMax());
+    }
+
+    float dist_to_bottom = die_hpwl;
+    if (!bottom_is_blocked_) {
+      dist_to_right = std::abs(y1 - die.yMin());
+    }
+
+    float dist_to_top = die_hpwl;
+    if (!top_is_blocked_) {
+      dist_to_top = std::abs(y1 - die.yMax());
+    }
+
+    wirelength_
+        += net_weight
+           * std::min(
+               {dist_to_left, dist_to_right, dist_to_bottom, dist_to_top});
+  } else if (constraint_boundary == Boundary::L
+             || constraint_boundary == Boundary::R) {
+    const float x2 = io.getPinX();
+    wirelength_ += net_weight * std::abs(x2 - x1);
+  } else if (constraint_boundary == Boundary::T
+             || constraint_boundary == Boundary::B) {
+    const float y2 = io.getPinY();
+    wirelength_ += net_weight * std::abs(y2 - y1);
+  }
+}
+
+// We consider the macro outside the outline based on the location of
+// the pin to avoid too many checks.
+template <class T>
+bool SimulatedAnnealingCore<T>::isOutsideTheOutline(const T& macro) const
+{
+  return macro.getPinX() > outline_.getWidth()
+         || macro.getPinY() > outline_.getHeight();
 }
 
 template <class T>
