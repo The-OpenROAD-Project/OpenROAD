@@ -583,9 +583,6 @@ TEST_F(AbcTest, ResynthesisStrategyDoesNotThrow)
 {
   LoadVerilog("aes_nangate45.v", /*top=*/"aes_cipher_top");
 
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::CellSeq empty;
-
   ZeroSlackStrategy zero_slack;
   EXPECT_NO_THROW(zero_slack.OptimizeDesign(sta_.get(), &logger_));
 }
