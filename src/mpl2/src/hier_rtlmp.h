@@ -118,7 +118,6 @@ class HierRTLMP
   void setGuidanceRegions(const std::map<odb::dbInst*, Rect>& guidance_regions);
 
   // Clustering Related Options
-  void setNumBundledIOsPerBoundary(int num_bundled_ios);
   void setClusterSize(int max_num_macro,
                       int min_num_macro,
                       int max_num_inst,
@@ -157,7 +156,6 @@ class HierRTLMP
  private:
   using SoftSAVector = std::vector<std::unique_ptr<SACoreSoftMacro>>;
   using HardSAVector = std::vector<std::unique_ptr<SACoreHardMacro>>;
-  using IOSpans = std::map<Boundary, std::pair<float, float>>;
 
   void runMultilevelAutoclustering();
   void runHierarchicalMacroPlacement();
@@ -180,9 +178,13 @@ class HierRTLMP
   void calculateChildrenTilings(Cluster* parent);
   void calculateMacroTilings(Cluster* cluster);
   void setTightPackingTilings(Cluster* macro_array);
-  void setIOClustersBlockages();
-  IOSpans computeIOSpans();
-  float computeIOBlockagesDepth(const IOSpans& io_spans);
+  void setPinAccessBlockages();
+  std::vector<Cluster*> getIOClusters();
+  float computePinAccessBlockagesDepth(const std::vector<Cluster*>& io_clusters,
+                                       const Rect& die);
+  void createPinAccessBlockage(Boundary constraint_boundary,
+                               float depth,
+                               const Rect& die);
   void setPlacementBlockages();
 
   // Fine Shaping
@@ -238,6 +240,10 @@ class HierRTLMP
 
   void correctAllMacrosOrientation();
   float calculateRealMacroWirelength(odb::dbInst* macro);
+  Boundary getClosestBoundary(const odb::Point& from,
+                              const std::set<Boundary>& boundaries);
+  int getDistanceToBoundary(const odb::Point& from, Boundary boundary);
+  odb::Point getClosestBoundaryPoint(const odb::Point& from, Boundary boundary);
   void adjustRealMacroOrientation(const bool& is_vertical_flip);
   void flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip);
 
@@ -248,6 +254,7 @@ class HierRTLMP
 
   // Aux for conversion
   odb::Rect micronsToDbu(const Rect& micron_rect);
+  Rect dbuToMicrons(const odb::Rect& dbu_rect);
 
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
