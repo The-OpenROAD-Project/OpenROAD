@@ -868,6 +868,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
   int max = vertical_pin ? ub_x : ub_y;
 
   corner_avoidance_ = parms_->getCornerAvoidance();
+  logger_->report("corner avoid 1: {}", parms_->getCornerAvoidance());
   bool dist_in_tracks = parms_->getMinDistanceInTracks();
   for (int layer : layers) {
     int curr_x, curr_y, start_idx, end_idx;
@@ -907,7 +908,8 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 
     half_width *= thickness_multiplier;
 
-    int num_tracks_offset = std::ceil(corner_avoidance_ / min_dst_pins);
+    int num_tracks_offset
+        = std::ceil(static_cast<double>(corner_avoidance_) / min_dst_pins);
 
     start_idx
         = std::max(0.0,
