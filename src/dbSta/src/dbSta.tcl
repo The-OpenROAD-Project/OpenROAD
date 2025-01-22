@@ -88,6 +88,8 @@ proc report_cell_usage { args } {
   parse_key_args "highlight_path" args keys {-module} \
     flags {-verbose} 0
 
+  check_argc_eq0or1 "report_cell_usage" $args
+
   if { [ord::get_db_block] == "NULL" } {
     sta_error 1001 "No design block found."
   }
