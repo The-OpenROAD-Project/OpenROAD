@@ -82,7 +82,7 @@ class HTreeBuilder;
 class TritonCTS
 {
  public:
-  TritonCTS() = default;
+  TritonCTS();
   ~TritonCTS();
 
   void init(utl::Logger* logger,
@@ -94,7 +94,7 @@ class TritonCTS
   void runTritonCts();
   void reportCtsMetrics();
   CtsOptions* getParms() { return options_; }
-  TechChar* getCharacterization() { return techChar_; }
+  TechChar* getCharacterization() { return techChar_.get(); }
   int setClockNets(const char* names);
   void setBufferList(const char* buffers);
   void inferBufferList(std::vector<std::string>& buffers);
@@ -107,7 +107,7 @@ class TritonCTS
                                      float totalCap);
 
  private:
-  void addBuilder(TreeBuilder* builder);
+  void addBuilder(std::shared_ptr<TreeBuilder> builder);
   void forEachBuilder(
       const std::function<void(const TreeBuilder*)>& func) const;
 
@@ -121,7 +121,7 @@ class TritonCTS
   // db functions
   bool masterExists(const std::string& master) const;
   void populateTritonCTS();
-  void writeClockNetsToDb(TreeBuilder* builder,
+  void writeClockNetsToDb(std::shared_ptr<TreeBuilder> builder,
                           std::set<odb::dbNet*>& clkLeafNets);
   void writeClockNDRsToDb(const std::set<odb::dbNet*>& clkLeafNets);
   void incrementNumClocks() { ++numberOfClocks_; }
@@ -130,32 +130,33 @@ class TritonCTS
   void initOneClockTree(odb::dbNet* driverNet,
                         odb::dbNet* clkInputNet,
                         const std::string& sdcClockName,
-                        TreeBuilder* parent);
-  TreeBuilder* initClock(odb::dbNet* firstNet,
-                         odb::dbNet* clkInputNet,
-                         const std::string& sdcClock,
-                         TreeBuilder* parentBuilder);
+                        std::shared_ptr<TreeBuilder> parent);
+  std::shared_ptr<TreeBuilder> initClock(
+      odb::dbNet* firstNet,
+      odb::dbNet* clkInputNet,
+      const std::string& sdcClock,
+      std::shared_ptr<TreeBuilder> parentBuilder);
   void disconnectAllSinksFromNet(odb::dbNet* net);
   void disconnectAllPinsFromNet(odb::dbNet* net);
   void checkUpstreamConnections(odb::dbNet* net);
   void createClockBuffers(Clock& clockNet, odb::dbModule* parent);
-  HTreeBuilder* initClockTreeForMacrosAndRegs(
+  std::shared_ptr<TreeBuilder> initClockTreeForMacrosAndRegs(
       odb::dbNet*& firstNet,
       odb::dbNet* clkInputNet,
       const std::unordered_set<odb::dbMaster*>& buffer_masters,
       Clock& ClockNet,
-      TreeBuilder* parentBuilder);
+      std::shared_ptr<TreeBuilder> parentBuilder);
   bool separateMacroRegSinks(
       odb::dbNet*& net,
       Clock& clockNet,
       const std::unordered_set<odb::dbMaster*>& buffer_masters,
       std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& registerSinks,
       std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& macroSinks);
-  HTreeBuilder* addClockSinks(
+  std::shared_ptr<TreeBuilder> addClockSinks(
       Clock& clockNet,
       odb::dbNet* physicalNet,
       const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& sinks,
-      HTreeBuilder* parentBuilder,
+      std::shared_ptr<TreeBuilder> parentBuilder,
       const std::string& macrosOrRegs);
   Clock forkRegisterClockNetwork(
       Clock& clockNet,
@@ -164,7 +165,7 @@ class TritonCTS
       odb::dbNet*& secondNet,
       std::string& topBufferName);
   void computeITermPosition(odb::dbITerm* term, int& x, int& y) const;
-  void countSinksPostDbWrite(TreeBuilder* builder,
+  void countSinksPostDbWrite(std::shared_ptr<TreeBuilder> builder,
                              odb::dbNet* net,
                              unsigned& sinks_cnt,
                              unsigned& leafSinks,
@@ -210,14 +211,16 @@ class TritonCTS
   float getVertexClkArrival(sta::Vertex* sinkVertex,
                             odb::dbNet* topNet,
                             odb::dbITerm* iterm);
-  void computeAveSinkArrivals(TreeBuilder* builder, sta::Graph* graph);
+  void computeAveSinkArrivals(std::shared_ptr<TreeBuilder> builder,
+                              sta::Graph* graph);
   void computeSinkArrivalRecur(odb::dbNet* topClokcNet,
                                odb::dbITerm* iterm,
                                float& sumArrivals,
                                unsigned& numSinks,
                                sta::Graph* graph);
-  void adjustLatencies(TreeBuilder* macroBuilder, TreeBuilder* registerBuilder);
-  void computeTopBufferDelay(TreeBuilder* builder);
+  void adjustLatencies(std::shared_ptr<TreeBuilder> macroBuilder,
+                       std::shared_ptr<TreeBuilder> registerBuilder);
+  void computeTopBufferDelay(std::shared_ptr<TreeBuilder> builder);
   odb::dbInst* insertDelayBuffer(odb::dbInst* driver,
                                  const std::string& clockName,
                                  int locX,
@@ -227,9 +230,9 @@ class TritonCTS
   sta::dbNetwork* network_;
   Logger* logger_;
   CtsOptions* options_;
-  TechChar* techChar_;
+  std::unique_ptr<TechChar> techChar_;
   rsz::Resizer* resizer_;
-  std::vector<TreeBuilder*>* builders_;
+  std::vector<std::shared_ptr<TreeBuilder>> builders_;
   std::set<odb::dbNet*> staClockNets_;
   std::set<odb::dbNet*> visitedClockNets_;
   std::map<odb::dbInst*, ClockInst*> inst2clkbuf_;

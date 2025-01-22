@@ -89,7 +89,7 @@ class HTreeBuilder : public TreeBuilder
    public:
     static constexpr unsigned NO_PARENT = std::numeric_limits<unsigned>::max();
 
-    explicit LevelTopology(double length) : length_(length){};
+    explicit LevelTopology(double length) : length_(length) {};
 
     void addWireSegment(unsigned idx) { wireSegments_.push_back(idx); }
 
@@ -173,7 +173,7 @@ class HTreeBuilder : public TreeBuilder
  public:
   HTreeBuilder(CtsOptions* options,
                Clock& net,
-               TreeBuilder* parent,
+               std::shared_ptr<TreeBuilder> parent,
                utl::Logger* logger,
                odb::dbDatabase* db)
       : TreeBuilder(options, net, parent, logger, db)

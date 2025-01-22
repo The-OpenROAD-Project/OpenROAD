@@ -84,23 +84,35 @@ void TritonCTS::init(utl::Logger* logger,
   resizer_ = resizer;
 
   options_ = new CtsOptions(logger_, st_builder);
-  techChar_ = new TechChar(options_, db_, openSta_, resizer, network_, logger_);
-  builders_ = new std::vector<TreeBuilder*>;
 }
+
+TritonCTS::TritonCTS() = default;
 
 TritonCTS::~TritonCTS()
 {
   delete options_;
-  delete techChar_;
-  delete builders_;
 }
 
 void TritonCTS::runTritonCts()
 {
+  // reset
+  techChar_.reset();
+  builders_.clear();
+  staClockNets_.clear();
+  visitedClockNets_.clear();
+  inst2clkbuf_.clear();
+  driver2subnet_.clear();
+  numberOfClocks_ = 0;
+  numClkNets_ = 0;
+  numFixedNets_ = 0;
+  dummyLoadIndex_ = 0;
+  regTreeRootBufIndex_ = 0;
+  delayBufIndex_ = 0;
+
   setupCharacterization();
   findClockRoots();
   populateTritonCTS();
-  if (builders_->empty()) {
+  if (builders_.empty()) {
     logger_->warn(CTS, 82, "No valid clock nets in the design.");
   } else {
     checkCharacterization();
@@ -110,9 +122,9 @@ void TritonCTS::runTritonCts()
   }
 }
 
-void TritonCTS::addBuilder(TreeBuilder* builder)
+void TritonCTS::addBuilder(std::shared_ptr<TreeBuilder> builder)
 {
-  builders_->push_back(builder);
+  builders_.push_back(builder);
 }
 
 int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
@@ -208,6 +220,8 @@ void TritonCTS::setupCharacterization()
   }
 
   // A new characteriztion is always created.
+  techChar_ = std::make_unique<TechChar>(
+      options_, db_, openSta_, resizer_, network_, logger_);
   techChar_->create();
 
   // Also resets metrics everytime the setup is done
@@ -251,7 +265,7 @@ void TritonCTS::findClockRoots()
 
 void TritonCTS::buildClockTrees()
 {
-  for (TreeBuilder* builder : *builders_) {
+  for (auto& builder : builders_) {
     builder->setTechChar(*techChar_);
     builder->setDb(db_);
     builder->setLogger(logger_);
@@ -260,13 +274,13 @@ void TritonCTS::buildClockTrees()
   }
 
   if (options_->getBalanceLevels()) {
-    for (TreeBuilder* builder : *builders_) {
+    for (auto& builder : builders_) {
       if (!builder->getParent()
           && !builder->getChildren().empty()
           // don't balance levels for macro cell tree
           && builder->getTreeType() != TreeType::MacroTree) {
         LevelBalancer balancer(
-            builder, options_, logger_, techChar_->getLengthUnit());
+            builder.get(), options_, logger_, techChar_->getLengthUnit());
         balancer.run();
       }
     }
@@ -276,9 +290,9 @@ void TritonCTS::buildClockTrees()
 void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
                                  odb::dbNet* clkInputNet,
                                  const std::string& sdcClockName,
-                                 TreeBuilder* parent)
+                                 std::shared_ptr<TreeBuilder> parent)
 {
-  TreeBuilder* clockBuilder = nullptr;
+  std::shared_ptr<TreeBuilder> clockBuilder;
   if (driverNet->isSpecial()) {
     logger_->info(
         CTS, 116, "Special net \"{}\" skipped.", driverNet->getName());
@@ -310,7 +324,7 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
 }
 
 void TritonCTS::countSinksPostDbWrite(
-    TreeBuilder* builder,
+    std::shared_ptr<TreeBuilder> builder,
     odb::dbNet* net,
     unsigned& sinks_cnt,
     unsigned& leafSinks,
@@ -460,7 +474,7 @@ void TritonCTS::writeDataToDb()
   std::set<odb::dbNet*> clkLeafNets;
   std::unordered_set<odb::dbInst*> clkDummies;
 
-  for (TreeBuilder* builder : *builders_) {
+  for (auto& builder : builders_) {
     writeClockNetsToDb(builder, clkLeafNets);
     if (options_->applyNDR()) {
       writeClockNDRsToDb(clkLeafNets);
@@ -470,7 +484,7 @@ void TritonCTS::writeDataToDb()
     }
   }
 
-  for (TreeBuilder* builder : *builders_) {
+  for (auto& builder : builders_) {
     odb::dbNet* topClockNet = builder->getClock().getNetObj();
     unsigned sinkCount = 0;
     unsigned leafSinks = 0;
@@ -520,8 +534,8 @@ void TritonCTS::writeDataToDb()
 void TritonCTS::forEachBuilder(
     const std::function<void(const TreeBuilder*)>& func) const
 {
-  for (const TreeBuilder* builder : *builders_) {
-    func(builder);
+  for (const auto& builder : builders_) {
+    func(builder.get());
   }
 }
 
@@ -975,10 +989,11 @@ void TritonCTS::populateTritonCTS()
   options_->setNumClockRoots(getNumClocks());
 }
 
-TreeBuilder* TritonCTS::initClock(odb::dbNet* firstNet,
-                                  odb::dbNet* clkInputNet,
-                                  const std::string& sdcClock,
-                                  TreeBuilder* parentBuilder)
+std::shared_ptr<TreeBuilder> TritonCTS::initClock(
+    odb::dbNet* firstNet,
+    odb::dbNet* clkInputNet,
+    const std::string& sdcClock,
+    std::shared_ptr<TreeBuilder> parentBuilder)
 {
   std::string driver;
   odb::dbITerm* iterm = firstNet->getFirstOutput();
@@ -1031,7 +1046,7 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* firstNet,
 
   // Build a clock tree to drive macro cells with insertion delays
   // separated from registers or leaves without insertion delays
-  HTreeBuilder* builder = initClockTreeForMacrosAndRegs(
+  std::shared_ptr<TreeBuilder> builder = initClockTreeForMacrosAndRegs(
       firstNet, clkInputNet, buffer_masters, clockNet, parentBuilder);
   return builder;
 }
@@ -1053,12 +1068,12 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* firstNet,
 //                      |        |   |
 //               new buffer secondNet|---|>----[]
 //
-HTreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
+std::shared_ptr<TreeBuilder> TritonCTS::initClockTreeForMacrosAndRegs(
     odb::dbNet*& firstNet,
     odb::dbNet* clkInputNet,
     const std::unordered_set<odb::dbMaster*>& buffer_masters,
     Clock& clockNet,
-    TreeBuilder* parentBuilder)
+    std::shared_ptr<TreeBuilder> parentBuilder)
 {
   // Separate sinks into two buckets: one with insertion delays and another
   // without
@@ -1101,19 +1116,15 @@ HTreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
     options_->setNumSinks(totalSinks);
     incrementNumClocks();
     clockNet.setNetObj(firstNet);
-    HTreeBuilder* builder
-        = new HTreeBuilder(options_, clockNet, parentBuilder, logger_, db_);
+    auto builder = std::make_shared<HTreeBuilder>(
+        options_, clockNet, parentBuilder, logger_, db_);
     addBuilder(builder);
     return builder;
   }
 
   // add macro sinks to existing firstNet
-  HTreeBuilder* firstBuilder
-      = addClockSinks(clockNet,
-                      firstNet,
-                      macroSinks,
-                      dynamic_cast<HTreeBuilder*>(parentBuilder),
-                      "macros");
+  std::shared_ptr<TreeBuilder> firstBuilder
+      = addClockSinks(clockNet, firstNet, macroSinks, parentBuilder, "macros");
   if (firstBuilder) {
     firstBuilder->setTreeType(TreeType::MacroTree);
     firstBuilder->setTopInputNet(clkInputNet);
@@ -1126,12 +1137,12 @@ HTreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
       clockNet, registerSinks, firstNet, secondNet, topBufferName);
 
   // add register sinks to secondNet
-  HTreeBuilder* secondBuilder = addClockSinks(
-      clockNet2,
-      secondNet,
-      registerSinks,
-      firstBuilder ? firstBuilder : dynamic_cast<HTreeBuilder*>(parentBuilder),
-      "registers");
+  std::shared_ptr<TreeBuilder> secondBuilder
+      = addClockSinks(clockNet2,
+                      secondNet,
+                      registerSinks,
+                      firstBuilder ? firstBuilder : parentBuilder,
+                      "registers");
   if (secondBuilder) {
     secondBuilder->setTreeType(TreeType::RegisterTree);
     secondBuilder->setTopBufferName(topBufferName);
@@ -1176,11 +1187,11 @@ bool TritonCTS::separateMacroRegSinks(
   return true;
 }
 
-HTreeBuilder* TritonCTS::addClockSinks(
+std::shared_ptr<TreeBuilder> TritonCTS::addClockSinks(
     Clock& clockNet,
     odb::dbNet* physicalNet,
     const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& sinks,
-    HTreeBuilder* parentBuilder,
+    std::shared_ptr<TreeBuilder> parentBuilder,
     const std::string& macrosOrRegs)
 {
   for (auto elem : sinks) {
@@ -1204,8 +1215,8 @@ HTreeBuilder* TritonCTS::addClockSinks(
   options_->setNumSinks(totalSinks);
   incrementNumClocks();
   clockNet.setNetObj(physicalNet);
-  HTreeBuilder* builder
-      = new HTreeBuilder(options_, clockNet, parentBuilder, logger_, db_);
+  auto builder = std::make_shared<HTreeBuilder>(
+      options_, clockNet, parentBuilder, logger_, db_);
   addBuilder(builder);
   return builder;
 }
@@ -1291,7 +1302,7 @@ void TritonCTS::computeITermPosition(odb::dbITerm* term, int& x, int& y) const
   }
 };
 
-void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
+void TritonCTS::writeClockNetsToDb(std::shared_ptr<TreeBuilder> builder,
                                    std::set<odb::dbNet*>& clkLeafNets)
 {
   Clock& clockNet = builder->getClock();
@@ -2082,10 +2093,10 @@ void TritonCTS::balanceMacroRegisterLatencies()
   openSta_->searchPreamble();
   openSta_->ensureClkNetwork();
   sta::Graph* graph = openSta_->graph();
-  for (auto iter = builders_->rbegin(); iter != builders_->rend(); ++iter) {
-    TreeBuilder* registerBuilder = *iter;
+  for (auto iter = builders_.rbegin(); iter != builders_.rend(); ++iter) {
+    std::shared_ptr<TreeBuilder> registerBuilder = *iter;
     if (registerBuilder->getTreeType() == TreeType::RegisterTree) {
-      TreeBuilder* macroBuilder = registerBuilder->getParent();
+      std::shared_ptr<TreeBuilder> macroBuilder = registerBuilder->getParent();
       if (macroBuilder) {
         // Update graph information after possible buffers inserted
         openSta_->updateTiming(false);
@@ -2143,7 +2154,8 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex,
   return clkPathArrival;
 }
 
-void TritonCTS::computeAveSinkArrivals(TreeBuilder* builder, sta::Graph* graph)
+void TritonCTS::computeAveSinkArrivals(std::shared_ptr<TreeBuilder> builder,
+                                       sta::Graph* graph)
 {
   Clock clock = builder->getClock();
   odb::dbNet* topInputClockNet = clock.getNetObj();
@@ -2232,8 +2244,8 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
 
 // Balance latencies between macro tree and register tree
 // by adding delay buffers to one tree
-void TritonCTS::adjustLatencies(TreeBuilder* macroBuilder,
-                                TreeBuilder* registerBuilder)
+void TritonCTS::adjustLatencies(std::shared_ptr<TreeBuilder> macroBuilder,
+                                std::shared_ptr<TreeBuilder> registerBuilder)
 {
   // compute top buffer delays
   computeTopBufferDelay(registerBuilder);
@@ -2242,7 +2254,7 @@ void TritonCTS::adjustLatencies(TreeBuilder* macroBuilder,
   float latencyDiff = macroBuilder->getAveSinkArrival()
                       - registerBuilder->getAveSinkArrival();
   int numBuffers = 0;
-  TreeBuilder* builder = nullptr;
+  std::shared_ptr<TreeBuilder> builder;
   if (latencyDiff > 0) {
     // add buffers to register tree
     numBuffers = (int) (latencyDiff / registerBuilder->getTopBufferDelay());
@@ -2306,7 +2318,7 @@ void TritonCTS::adjustLatencies(TreeBuilder* macroBuilder,
   driverOutputTerm->connect(outputNet);
 }
 
-void TritonCTS::computeTopBufferDelay(TreeBuilder* builder)
+void TritonCTS::computeTopBufferDelay(std::shared_ptr<TreeBuilder> builder)
 {
   Clock clock = builder->getClock();
   std::string topBufferName;

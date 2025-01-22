@@ -85,7 +85,7 @@ class TreeBuilder
  public:
   TreeBuilder(CtsOptions* options,
               Clock& clk,
-              TreeBuilder* parent,
+              std::shared_ptr<TreeBuilder> parent,
               utl::Logger* logger,
               odb::dbDatabase* db = nullptr)
       : options_(options),
@@ -106,7 +106,7 @@ class TreeBuilder
   Clock& getClock() { return clock_; }
   void addChild(TreeBuilder* child) { children_.emplace_back(child); }
   std::vector<TreeBuilder*> getChildren() const { return children_; }
-  TreeBuilder* getParent() const { return parent_; }
+  std::shared_ptr<TreeBuilder> getParent() const { return parent_; }
   unsigned getTreeBufLevels() const { return treeBufLevels_; }
   void addFirstLevelSinkDriver(ClockInst* inst)
   {
@@ -258,7 +258,7 @@ class TreeBuilder
   CtsOptions* options_ = nullptr;
   Clock clock_;
   TechChar* techChar_ = nullptr;
-  TreeBuilder* parent_;
+  std::shared_ptr<TreeBuilder> parent_;
   std::vector<TreeBuilder*> children_;
   // Tree buffer levels. Number of buffers inserted in first leg of the HTree
   // is buffer levels (depth) of tree in all legs.
