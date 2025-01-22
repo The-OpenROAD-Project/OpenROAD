@@ -77,8 +77,6 @@ class Graphics : public gui::Renderer, public Mpl2Observer
 
   void setMacroBlockages(
       const std::vector<mpl2::Rect>& macro_blockages) override;
-  void setPlacementBlockages(
-      const std::vector<mpl2::Rect>& placement_blockages) override;
   void setBundledNets(const std::vector<BundledNet>& bundled_nets) override;
   void setShowBundledNets(bool show_bundled_nets) override;
   void setShowClustersIds(bool show_clusters_ids) override;
@@ -119,7 +117,6 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   std::vector<SoftMacro> soft_macros_;
   std::vector<HardMacro> hard_macros_;
   std::vector<mpl2::Rect> macro_blockages_;
-  std::vector<mpl2::Rect> placement_blockages_;
   std::vector<BundledNet> bundled_nets_;
   odb::Rect outline_;
   int target_cluster_id_{-1};
