@@ -21,9 +21,9 @@
 Net              : VDD
 Corner           : default
 Supply voltage   : 7.00e-01 V
-Worstcase voltage: 7.00e-01 V
-Average voltage  : 7.00e-01 V
-Average IR drop  : 3.11e-06 V
-Worstcase IR drop: 7.80e-06 V
-Percentage drop  : 0.00 %
+Worstcase voltage: 6.93e-01 V
+Average voltage  : 6.97e-01 V
+Average IR drop  : 2.65e-03 V
+Worstcase IR drop: 6.60e-03 V
+Percentage drop  : 0.94 %
 ######################################
