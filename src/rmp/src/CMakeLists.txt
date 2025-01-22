@@ -78,6 +78,7 @@ add_library(rmp_abc_library
   logic_extractor.cpp
   logic_cut.cpp
   delay_optimization_strategy.cpp
+  zero_slack_strategy.cpp
 )
 
 target_include_directories(rmp_abc_library
