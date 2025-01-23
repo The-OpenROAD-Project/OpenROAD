@@ -97,20 +97,6 @@ TritonCTS::~TritonCTS()
 
 void TritonCTS::runTritonCts()
 {
-  // reset
-  techChar_.reset();
-  builders_->clear();
-  staClockNets_.clear();
-  visitedClockNets_.clear();
-  inst2clkbuf_.clear();
-  driver2subnet_.clear();
-  numberOfClocks_ = 0;
-  numClkNets_ = 0;
-  numFixedNets_ = 0;
-  dummyLoadIndex_ = 0;
-  regTreeRootBufIndex_ = 0;
-  delayBufIndex_ = 0;
-
   setupCharacterization();
   findClockRoots();
   populateTritonCTS();
@@ -122,6 +108,22 @@ void TritonCTS::runTritonCts()
     writeDataToDb();
     balanceMacroRegisterLatencies();
   }
+
+  // reset
+  techChar_.reset();
+  builders_->clear();
+  staClockNets_.clear();
+  visitedClockNets_.clear();
+  inst2clkbuf_.clear();
+  driver2subnet_.clear();
+  numberOfClocks_ = 0;
+  numClkNets_ = 0;
+  numFixedNets_ = 0;
+  dummyLoadIndex_ = 0;
+  rootBuffers_.clear();
+  sinkBuffers_.clear();
+  regTreeRootBufIndex_ = 0;
+  delayBufIndex_ = 0;
 }
 
 void TritonCTS::addBuilder(TreeBuilder* builder)
