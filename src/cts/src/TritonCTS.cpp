@@ -467,8 +467,8 @@ void TritonCTS::countSinksPostDbWrite(
 
 ClockInst* TritonCTS::getClockFromInst(odb::dbInst* inst)
 {
-  return (inst2clkbuf_.find(inst) != inst2clkbuf_.end()) ? inst2clkbuf_[inst]
-                                                         : nullptr;
+  auto it = inst2clkbuf_.find(inst);
+  return it != inst2clkbuf_.end() ? it->second : nullptr;
 }
 
 void TritonCTS::writeDataToDb()
