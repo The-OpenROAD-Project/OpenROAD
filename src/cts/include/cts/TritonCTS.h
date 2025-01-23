@@ -97,16 +97,16 @@ class TritonCTS
   TechChar* getCharacterization() { return techChar_.get(); }
   int setClockNets(const char* names);
   void setBufferList(const char* buffers);
-  void inferBufferList(std::vector<std::string>& buffers);
-  bool isClockCellCandidate(sta::LibertyCell* cell);
   void setRootBuffer(const char* buffers);
-  std::string selectRootBuffer(std::vector<std::string>& buffers);
   void setSinkBuffer(const char* buffers);
+
+ private:
+  bool isClockCellCandidate(sta::LibertyCell* cell);
+  std::string selectRootBuffer(std::vector<std::string>& buffers);
   std::string selectSinkBuffer(std::vector<std::string>& buffers);
   std::string selectBestMaxCapBuffer(const std::vector<std::string>& buffers,
                                      float totalCap);
-
- private:
+  void inferBufferList(std::vector<std::string>& buffers);
   void addBuilder(TreeBuilder* builder);
   void forEachBuilder(
       const std::function<void(const TreeBuilder*)>& func) const;
