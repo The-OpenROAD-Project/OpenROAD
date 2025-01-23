@@ -334,7 +334,7 @@ proc global_placement { args } {
   set allow_revert_if_diverge [info exists flags(-allow_revert_if_diverge)]
   gpl::set_allow_revert_if_diverge $allow_revert_if_diverge
   if { $allow_revert_if_diverge } {
-    utl::warn "GPL" 153 \
+    utl::info "GPL" 153 \
       "Allow revert to saved snapshot if a divergence is detected."
   }
 }

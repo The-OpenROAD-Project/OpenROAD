@@ -199,7 +199,7 @@ void Replace::doIncrementalPlace(int threads)
   int iter = doNesterovPlace(threads);
   setNesterovPlaceMaxIter(previous_max_iter);
 
-  // Finish' the overflow resolution from the rough placement
+  // Finish the overflow resolution from the rough placement
   log_->info(GPL, 133, "Unlocked instances");
   for (auto& pb : pbVec_) {
     pb->unlockAll();

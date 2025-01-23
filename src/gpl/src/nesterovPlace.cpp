@@ -421,8 +421,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         for (auto& nb : nbVec_) {
           nb->snapshot();
         }
-        // log_->report("[NesterovSolve] Snapshot for divergence saved at iter =
-        // {}", iter);
       }
     }
 
