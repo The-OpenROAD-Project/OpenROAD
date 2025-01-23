@@ -229,7 +229,7 @@ class TritonCTS
   CtsOptions* options_;
   std::unique_ptr<TechChar> techChar_;
   rsz::Resizer* resizer_;
-  std::vector<TreeBuilder*>* builders_;
+  std::vector<TreeBuilder*> builders_;
   std::set<odb::dbNet*> staClockNets_;
   std::set<odb::dbNet*> visitedClockNets_;
   std::map<odb::dbInst*, ClockInst*> inst2clkbuf_;

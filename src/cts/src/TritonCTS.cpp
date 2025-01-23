@@ -84,7 +84,6 @@ void TritonCTS::init(utl::Logger* logger,
   resizer_ = resizer;
 
   options_ = new CtsOptions(logger_, st_builder);
-  builders_ = new std::vector<TreeBuilder*>;
 }
 
 TritonCTS::TritonCTS() = default;
@@ -92,7 +91,6 @@ TritonCTS::TritonCTS() = default;
 TritonCTS::~TritonCTS()
 {
   delete options_;
-  delete builders_;
 }
 
 void TritonCTS::runTritonCts()
@@ -100,7 +98,7 @@ void TritonCTS::runTritonCts()
   setupCharacterization();
   findClockRoots();
   populateTritonCTS();
-  if (builders_->empty()) {
+  if (builders_.empty()) {
     logger_->warn(CTS, 82, "No valid clock nets in the design.");
   } else {
     checkCharacterization();
@@ -111,7 +109,7 @@ void TritonCTS::runTritonCts()
 
   // reset
   techChar_.reset();
-  builders_->clear();
+  builders_.clear();
   staClockNets_.clear();
   visitedClockNets_.clear();
   inst2clkbuf_.clear();
@@ -128,7 +126,7 @@ void TritonCTS::runTritonCts()
 
 void TritonCTS::addBuilder(TreeBuilder* builder)
 {
-  builders_->push_back(builder);
+  builders_.push_back(builder);
 }
 
 int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
@@ -269,7 +267,7 @@ void TritonCTS::findClockRoots()
 
 void TritonCTS::buildClockTrees()
 {
-  for (TreeBuilder* builder : *builders_) {
+  for (TreeBuilder* builder : builders_) {
     builder->setTechChar(*techChar_);
     builder->setDb(db_);
     builder->setLogger(logger_);
@@ -278,7 +276,7 @@ void TritonCTS::buildClockTrees()
   }
 
   if (options_->getBalanceLevels()) {
-    for (TreeBuilder* builder : *builders_) {
+    for (TreeBuilder* builder : builders_) {
       if (!builder->getParent()
           && !builder->getChildren().empty()
           // don't balance levels for macro cell tree
@@ -478,7 +476,7 @@ void TritonCTS::writeDataToDb()
   std::set<odb::dbNet*> clkLeafNets;
   std::unordered_set<odb::dbInst*> clkDummies;
 
-  for (TreeBuilder* builder : *builders_) {
+  for (TreeBuilder* builder : builders_) {
     writeClockNetsToDb(builder, clkLeafNets);
     if (options_->applyNDR()) {
       writeClockNDRsToDb(clkLeafNets);
@@ -488,7 +486,7 @@ void TritonCTS::writeDataToDb()
     }
   }
 
-  for (TreeBuilder* builder : *builders_) {
+  for (TreeBuilder* builder : builders_) {
     odb::dbNet* topClockNet = builder->getClock().getNetObj();
     unsigned sinkCount = 0;
     unsigned leafSinks = 0;
@@ -538,7 +536,7 @@ void TritonCTS::writeDataToDb()
 void TritonCTS::forEachBuilder(
     const std::function<void(const TreeBuilder*)>& func) const
 {
-  for (const TreeBuilder* builder : *builders_) {
+  for (const TreeBuilder* builder : builders_) {
     func(builder);
   }
 }
@@ -2100,7 +2098,7 @@ void TritonCTS::balanceMacroRegisterLatencies()
   openSta_->searchPreamble();
   openSta_->ensureClkNetwork();
   sta::Graph* graph = openSta_->graph();
-  for (auto iter = builders_->rbegin(); iter != builders_->rend(); ++iter) {
+  for (auto iter = builders_.rbegin(); iter != builders_.rend(); ++iter) {
     TreeBuilder* registerBuilder = *iter;
     if (registerBuilder->getTreeType() == TreeType::RegisterTree) {
       TreeBuilder* macroBuilder = registerBuilder->getParent();
