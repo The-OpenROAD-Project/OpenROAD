@@ -1,6 +1,6 @@
-include("openroad")
-
-set(TEST_NAMES
+or_integration_tests(
+  "pdn"
+  TESTS
     asap7_failed_macro_grid
     asap7_no_via_generate
     asap7_no_via_generate_v1_snapped
