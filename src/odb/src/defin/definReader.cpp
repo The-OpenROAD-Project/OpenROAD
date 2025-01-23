@@ -1456,10 +1456,16 @@ int definReader::scanchainsCallback(
   auto scan_out_pin = findScanTerm(reader, block, stop_pin_name);
   if (!scan_in_pin.has_value()) {
     reader->error(fmt::format("Can't parse SCANIN pin"));
+    if (reader->_continue_on_errors) {
+      return PARSE_OK;
+    }
     return PARSE_ERROR;
   }
   if (!scan_out_pin.has_value()) {
     reader->error(fmt::format("Can't parse SCANOUT pin"));
+    if (reader->_continue_on_errors) {
+      return PARSE_OK;
+    }
     return PARSE_ERROR;
   }
 
