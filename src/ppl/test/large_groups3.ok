@@ -8,17 +8,7 @@
 [INFO PPL-0048] Restrict pins [ pin300 pin301 pin302 pin303 pin304 ... ] to region 0.00u-100.13u at the TOP edge.
 [INFO PPL-0044] Pin group: [ pin300 pin301 pin302 pin303 pin304 ... ]
 Found 0 macro blocks.
-[INFO PPL-0001] Number of slots           1754
-[INFO PPL-0002] Number of I/O             400
-[INFO PPL-0003] Number of I/O w/sink      400
-[INFO PPL-0004] Number of I/O w/o sink    0
-[INFO PPL-0006] Number of I/O Groups    2
-[INFO PPL-0005] Slots per section         200
-[INFO PPL-0100] Group of size 300 placed during fallback mode.
-[WARNING PPL-0078] Not enough available positions (36) in section (47.215, 100.8)-(14.915, 100.8) at edge TOP to place the pin group of size 71.
-[WARNING PPL-0078] Not enough available positions (35) in section (85.215, 100.8)-(47.405, 100.8) at edge TOP to place the pin group of size 71.
-[WARNING PPL-0042] Unsuccessfully assigned I/O groups.
-[WARNING PPL-0097] The max contiguous slots (35) is smaller than the group size (71).
-[WARNING PPL-0097] The max contiguous slots (35) is smaller than the group size (71).
-[ERROR PPL-0093] Pin group of size 71 does not fit in the constrained region 0.00-100.13 at TOP edge on a single metal layer. First pin of the group is pin300.
-PPL-0093
+[WARNING PPL-0110] Constraint has 371 pins, but only 369 available slots.
+Increase the region 0.00um-100.13um on the TOP edge to 14.64um-100.13um.
+[ERROR PPL-0111] 1 constraint(s) does not have available slots for the pins.
+PPL-0111
