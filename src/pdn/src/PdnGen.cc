@@ -568,7 +568,8 @@ void PdnGen::makeRing(Grid* grid,
                       const std::array<int, 4>& pad_offset,
                       bool extend,
                       const std::vector<odb::dbTechLayer*>& pad_pin_layers,
-                      const std::vector<odb::dbNet*>& nets)
+                      const std::vector<odb::dbNet*>& nets,
+                      bool allow_out_of_die)
 {
   std::array<Rings::Layer, 2> layers{Rings::Layer{layer0, width0, spacing0},
                                      Rings::Layer{layer1, width1, spacing1}};
@@ -581,6 +582,9 @@ void PdnGen::makeRing(Grid* grid,
   ring->setExtendToBoundary(extend);
   if (starts_with != GRID) {
     ring->setStartWithPower(starts_with == POWER);
+  }
+  if (allow_out_of_die) {
+    ring->setAllowOutsideDieArea();
   }
   ring->setNets(nets);
   grid->addRing(std::move(ring));

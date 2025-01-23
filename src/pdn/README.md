@@ -304,6 +304,7 @@ add_pdn_ring
     [-nets list_of_nets]
     [-pad_offsets offset_value]
     [-starts_with POWER|GROUND]
+    [-allow_out_of_die]
 
 ```
 
@@ -323,6 +324,7 @@ add_pdn_ring
 | `[-nets]` | Limit straps to just this list of nets. |
 | `[-pad_offsets]` | When defining a power grid for the top level of an SoC, can be used to define the offset of ring from the pad cells. |
 | `[-starts_with]` | Specifies whether the first strap placed will be POWER or GROUND (Default: grid setting). |
+| `[-allow_out_of_die]` | If specified, the ring shapes are allowed to be outside the die boundary. This should be used with caution. |
 
 ### Add PDN Connect
 
