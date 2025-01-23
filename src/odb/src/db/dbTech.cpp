@@ -36,6 +36,7 @@
 
 #include "dbBox.h"
 #include "dbBoxItr.h"
+#include "dbCellEdgeSpacing.h"
 #include "dbDatabase.h"
 #include "dbMetalWidthViaMap.h"
 #include "dbNameCache.h"
@@ -198,6 +199,10 @@ bool _dbTech::operator==(const _dbTech& rhs) const
     return false;
   }
 
+  if (*cell_edge_spacing_tbl_ != *rhs.cell_edge_spacing_tbl_) {
+    return false;
+  }
+
   if (*_name_cache != *rhs._name_cache) {
     return false;
   }
@@ -251,6 +256,7 @@ void _dbTech::differences(dbDiff& diff,
   DIFF_TABLE_NO_DEEP(_via_generate_rule_tbl);
   DIFF_TABLE_NO_DEEP(_prop_tbl);
   DIFF_TABLE_NO_DEEP(_metal_width_via_map_tbl);
+  DIFF_TABLE_NO_DEEP(cell_edge_spacing_tbl_);
   DIFF_NAME_CACHE(_name_cache);
   DIFF_END
 }
@@ -295,6 +301,7 @@ void _dbTech::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE_NO_DEEP(_via_generate_rule_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_prop_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_metal_width_via_map_tbl);
+  DIFF_OUT_TABLE_NO_DEEP(cell_edge_spacing_tbl_);
   DIFF_OUT_NAME_CACHE(_name_cache);
   DIFF_END
 }
@@ -396,6 +403,9 @@ _dbTech::_dbTech(_dbDatabase* db)
   _metal_width_via_map_tbl = new dbTable<_dbMetalWidthViaMap>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbMetalWidthViaMapObj);
 
+  cell_edge_spacing_tbl_ = new dbTable<_dbCellEdgeSpacing>(
+      db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbCellEdgeSpacingObj);
+
   _via_hash.setTable(_via_tbl);
 
   _name_cache
@@ -455,6 +465,9 @@ _dbTech::_dbTech(_dbDatabase* db, const _dbTech& t)
   _metal_width_via_map_tbl
       = new dbTable<_dbMetalWidthViaMap>(db, this, *t._metal_width_via_map_tbl);
 
+  cell_edge_spacing_tbl_
+      = new dbTable<_dbCellEdgeSpacing>(db, this, *t.cell_edge_spacing_tbl_);
+
   _via_hash.setTable(_via_tbl);
 
   _name_cache = new _dbNameCache(db, this, *t._name_cache);
@@ -480,6 +493,7 @@ _dbTech::~_dbTech()
   delete _via_generate_rule_tbl;
   delete _prop_tbl;
   delete _metal_width_via_map_tbl;
+  delete cell_edge_spacing_tbl_;
   delete _name_cache;
   delete _layer_itr;
   delete _box_itr;
@@ -519,6 +533,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)
   stream << NamedTable("prop_tbl", tech._prop_tbl);
   stream << NamedTable("metal_width_via_map_tbl",
                        tech._metal_width_via_map_tbl);
+  stream << NamedTable("cell_edge_spacing_tbl_", tech.cell_edge_spacing_tbl_);
   stream << *tech._name_cache;
   stream << tech._via_hash;
   return stream;
@@ -563,6 +578,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
   stream >> *tech._via_generate_rule_tbl;
   stream >> *tech._prop_tbl;
   stream >> *tech._metal_width_via_map_tbl;
+  if (tech.getDatabase()->isSchema(db_schema_cell_edge_spc_tbl)) {
+    stream >> *tech.cell_edge_spacing_tbl_;
+  }
   stream >> *tech._name_cache;
   stream >> tech._via_hash;
 
@@ -630,6 +648,8 @@ dbObjectTable* _dbTech::getObjectTable(dbObjectType type)
       return _prop_tbl;
     case dbMetalWidthViaMapObj:
       return _metal_width_via_map_tbl;
+    case dbCellEdgeSpacingObj:
+      return cell_edge_spacing_tbl_;
     default:
       break;  // WAll
   }
@@ -948,6 +968,12 @@ dbSet<dbMetalWidthViaMap> dbTech::getMetalWidthViaMap()
 {
   _dbTech* tech = (_dbTech*) this;
   return dbSet<dbMetalWidthViaMap>(tech, tech->_metal_width_via_map_tbl);
+}
+
+dbSet<dbCellEdgeSpacing> dbTech::getCellEdgeSpacingTable()
+{
+  _dbTech* tech = (_dbTech*) this;
+  return dbSet<dbCellEdgeSpacing>(tech, tech->cell_edge_spacing_tbl_);
 }
 
 dbTechViaRule* dbTech::findViaRule(const char* name)

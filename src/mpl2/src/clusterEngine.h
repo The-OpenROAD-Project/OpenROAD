@@ -114,9 +114,15 @@ struct PhysicalHierarchy
   std::unique_ptr<Cluster> root;
   PhysicalHierarchyMaps maps;
 
+  // This is set according to the ppl -exclude constraints
+  std::set<Boundary> blocked_boundaries;
+  std::set<Boundary> unblocked_boundaries;  // For orientation improvement.
+
   float halo_width{0.0f};
   float halo_height{0.0f};
   float macro_with_halo_area{0.0f};
+  Rect global_fence;
+  Rect floorplan_shape;
 
   bool has_io_clusters{true};
   bool has_only_macros{false};
@@ -129,7 +135,6 @@ struct PhysicalHierarchy
   int base_min_std_cell{0};
 
   int max_level{0};
-  int bundled_ios_per_edge{0};
   int large_net_threshold{0};  // used to ignore global nets
   int min_net_count_for_connection{0};
   float cluster_size_ratio{0.0f};
@@ -170,18 +175,36 @@ class ClusteringEngine
                                std::set<odb::dbMaster*>& masters);
   void clearTempMacroClusterMapping(const UniqueClusterVector& macro_clusters);
 
+  static bool isIgnoredInst(odb::dbInst* inst);
+
  private:
   using UniqueClusterQueue = std::queue<std::unique_ptr<Cluster>>;
 
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
   std::vector<odb::dbInst*> getUnfixedMacros();
+  void setFloorplanShape();
+  void searchForFixedInstsInsideFloorplanShape();
   float computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
-  void reportDesignData(float core_area);
+  void reportDesignData();
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();
+  void classifyBoundariesStateForIOs();
+  std::map<Boundary, float> computeBlockageExtensionMap();
+  Boundary getConstraintBoundary(const odb::Rect& die,
+                                 const odb::Rect& constraint_region);
+  void createIOCluster(const odb::Rect& die,
+                       Boundary constraint_boundary,
+                       std::map<Boundary, Cluster*>& boundary_to_cluster,
+                       odb::dbBTerm* bterm);
+  void setIOClusterDimensions(const odb::Rect& die,
+                              Boundary boundary,
+                              int& x,
+                              int& y,
+                              int& width,
+                              int& height);
   void mapIOPads();
   void treatEachMacroAsSingleCluster();
   void incorporateNewCluster(std::unique_ptr<Cluster> cluster, Cluster* parent);
@@ -255,8 +278,6 @@ class ClusteringEngine
 
   void printPhysicalHierarchyTree(Cluster* parent, int level);
   float computeMicronArea(odb::dbInst* inst);
-
-  static bool isIgnoredMaster(odb::dbMaster* master);
 
   odb::dbBlock* block_;
   sta::dbNetwork* network_;

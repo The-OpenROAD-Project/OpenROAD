@@ -42,6 +42,7 @@
 #include <string>
 #include <vector>
 
+#include "CellEdgeSpacingTableParser.h"
 #include "lefLayerPropParser.h"
 #include "lefMacroPropParser.h"
 #include "lefiDebug.hpp"
@@ -1197,6 +1198,8 @@ void lefinReader::macro(LefParser::lefiMacro* macro)
     bool valid = true;
     if (!strcmp(macro->propName(i), "LEF58_CLASS")) {
       valid = lefMacroClassTypeParser::parse(macro->propValue(i), _master);
+    } else if (!strcmp(macro->propName(i), "LEF58_EDGETYPE")) {
+      lefMacroEdgeTypeParser(_master, this).parse(macro->propValue(i));
     } else {
       dbStringProperty::create(
           _master, macro->propName(i), macro->propValue(i));
@@ -1677,6 +1680,9 @@ void lefinReader::propDef(LefParser::lefiProp* prop)
 {
   if (std::string(prop->propName()) == "LEF58_METALWIDTHVIAMAP") {
     auto parser = MetalWidthViaMapParser(_tech, this, _incomplete_props);
+    parser.parse(prop->string());
+  } else if (std::string(prop->propName()) == "LEF58_CELLEDGESPACINGTABLE") {
+    auto parser = CellEdgeSpacingTableParser(_tech, this);
     parser.parse(prop->string());
   }
 }

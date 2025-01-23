@@ -106,6 +106,12 @@ void metric_float(const char* metric, const double value)
   logger->metric(metric, value);
 }
 
+void metric_float(const char* metric, const char* value)
+{
+  Logger* logger = getLogger();
+  logger->metric(metric, std::stod(value));
+}
+
 void set_metrics_stage(const char* fmt)
 {
   Logger* logger = getLogger();
