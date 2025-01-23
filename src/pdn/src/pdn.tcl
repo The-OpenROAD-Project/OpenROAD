@@ -410,14 +410,15 @@ sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
                                      [-starts_with (POWER|GROUND)] \
                                      [-add_connect] \
                                      [-extend_to_boundary] \
-                                     [-connect_to_pads]
+                                     [-connect_to_pads]\
+                                     [-allow_out_of_die]
                                      } ;#checker off
 
 proc add_pdn_ring { args } {
   sta::parse_key_args "add_pdn_ring" args \
     keys {-grid -layers -widths -spacings -core_offsets -pad_offsets -connect_to_pad_layers \
       -power_pads -ground_pads -nets -starts_with} \
-    flags {-add_connect -extend_to_boundary -connect_to_pads}
+    flags {-add_connect -extend_to_boundary -connect_to_pads -allow_out_of_die}
 
   sta::check_argc_eq0 "add_pdn_ring" $args
 
@@ -530,6 +531,8 @@ proc add_pdn_ring { args } {
     }
   }
 
+  set allow_out_of_die [info exists flags(-allow_out_of_die)]
+
   pdn::make_ring \
     $grid \
     $l0 \
@@ -544,7 +547,8 @@ proc add_pdn_ring { args } {
     {*}$pad_offsets \
     [info exists flags(-extend_to_boundary)] \
     $connect_to_pad_layers \
-    $nets
+    $nets \
+    $allow_out_of_die
 
   if { [info exists flags(-add_connect)] } {
     add_pdn_connect -grid $grid -layers $keys(-layers)

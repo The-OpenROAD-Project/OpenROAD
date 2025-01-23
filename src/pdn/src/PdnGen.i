@@ -179,7 +179,8 @@ void make_ring(const char* grid_name,
                int pad_offset_y1, 
                bool extend,
                const std::vector<odb::dbTechLayer*>& pad_pin_layers,
-               const std::vector<odb::dbNet*>& nets)
+               const std::vector<odb::dbNet*>& nets,
+               bool allow_outside_of_die)
 {
   PdnGen* pdngen = ord::getPdnGen();
   StartsWith starts_with = GRID;
@@ -199,7 +200,8 @@ void make_ring(const char* grid_name,
                      {pad_offset_x0, pad_offset_y0, pad_offset_x1, pad_offset_y1},
                      extend,
                      pad_pin_layers,
-                     nets);
+                     nets,
+                     allow_outside_of_die);
   }
 }
 
