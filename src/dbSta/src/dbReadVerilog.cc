@@ -81,6 +81,8 @@ using sta::Cell;
 using sta::CellPortBitIterator;
 using sta::CellPortIterator;
 using sta::ConcreteCell;
+using sta::ConcreteCellPortIterator;
+using sta::ConcretePort;
 using sta::ConnectedPinIterator;
 using sta::dbNetwork;
 using sta::deleteVerilogReader;
@@ -146,13 +148,17 @@ void dbReadVerilog(const char* filename, dbVerilogNetwork* verilog_network)
   sta::readVerilogFile(filename, verilog_network);
 }
 
+// Cell is a black box if all the ports have unknown port directions
 bool dbVerilogNetwork::isBlackBox(ConcreteCell* cell)
 {
-  std::string value = cell->getAttribute("black_box");
-  if (value == "true") {
-    return true;
+  ConcreteCellPortIterator* port_iter = cell->portIterator();
+  while (port_iter->hasNext()) {
+    ConcretePort* port = port_iter->next();
+    if (port->direction() != PortDirection::unknown()) {
+      return false;
+    }
   }
-  return false;
+  return true;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -234,7 +240,7 @@ void dbLinkDesign(const char* top_cell_name,
       logger, utl::ODB, "dbReadVerilog", 1, "dbLinkDesign {}", top_cell_name);
   bool link_make_black_boxes = true;
   bool success = verilog_network->linkNetwork(
-      top_cell_name, link_make_black_boxes, verilog_network->report(), false);
+      top_cell_name, link_make_black_boxes, verilog_network->report());
   if (success) {
     Verilog2db v2db(verilog_network, db, logger, hierarchy);
     v2db.makeBlock();
@@ -1044,10 +1050,8 @@ void Verilog2db::processUnusedCells(const char* top_cell_name,
                "Linking unused cell {}",
                cell->name());
     // It is important to use actual top cell name as top module name
-    (void) verilog_network->linkNetwork(cell->name(),
-                                        link_make_black_boxes,
-                                        verilog_network->report(),
-                                        /* use_top_cell_name */ true);
+    (void) verilog_network->linkNetwork(
+        cell->name(), link_make_black_boxes, verilog_network->report());
 
     makeUnusedDbNetlist();
     if (logger_->debugCheck(utl::ODB, "dbReadVerilog", 1)) {

@@ -1855,8 +1855,7 @@ bool dbNetwork::isLinked() const
 
 bool dbNetwork::linkNetwork(const char*,
                             bool make_black_boxes,
-                            Report* report,
-                            bool use_top_cell_name)
+                            Report* report)
 {
   // Not called.
   return true;
