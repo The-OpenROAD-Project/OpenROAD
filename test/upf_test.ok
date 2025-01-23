@@ -4,7 +4,7 @@
 [INFO IFP-0001] Added 39 rows of 235 site unithd.
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
-[INFO PPL-0001] Number of slots           406
+[INFO PPL-0001] Number of slots           398
 [INFO PPL-0002] Number of I/O             7
 [INFO PPL-0003] Number of I/O w/sink      7
 [INFO PPL-0004] Number of I/O w/o sink    0
