@@ -527,7 +527,8 @@ void Resizer::balanceRowUsage()
 // Inspect the timing arcs on a buffer size to find the capacitance
 // points on the piecewise linear delay model
 static void populateBufferCapTestPoints(LibertyCell* cell,
-                                        LibertyPort *in, LibertyPort *out,
+                                        LibertyPort* in,
+                                        LibertyPort* out,
                                         std::vector<float>& points)
 {
   for (TimingArcSet* arc_set : cell->timingArcSets()) {
@@ -660,6 +661,33 @@ void Resizer::findFastBuffers()
   }
 
   buffer_fast_sizes_ = fast_buffers;
+}
+
+void Resizer::reportFastBufferSizes()
+{
+  resizePreamble();
+
+  logger_->report(
+      "  Name                    |   Area  | Input cap | Intrin delay | Driver "
+      "resist");
+  logger_->report(
+      "------------------------------------------------------------------------"
+      "--------");
+
+  for (auto size : buffer_fast_sizes_) {
+    LibertyPort *in, *out;
+    size->bufferPorts(in, out);
+    logger_->report(
+        "  {: <23s} | {: >7s} | {: >9s} | {: >12s} | {: >13s}",
+        size->name(),
+        units_->scalarUnit()->asString(size->area(), 3),
+        units_->capacitanceUnit()->asString(in->capacitance(), 3),
+        delayAsString(out->intrinsicDelay(sta_), sta_, 3),
+        units_->resistanceUnit()->asString(out->driveResistance(), 3));
+  }
+  logger_->report(
+      "------------------------------------------------------------------------"
+      "--------");
 }
 
 void Resizer::findBuffers()

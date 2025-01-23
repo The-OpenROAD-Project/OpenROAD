@@ -859,6 +859,13 @@ eliminate_dead_logic_cmd(bool clean_nets)
   resizer->eliminateDeadLogic(clean_nets);
 }
 
+void
+report_fast_buffer_sizes()
+{
+  Resizer *resizer = getResizer();
+  resizer->reportFastBufferSizes();
+}
+
 } // namespace
 
 %} // inline
