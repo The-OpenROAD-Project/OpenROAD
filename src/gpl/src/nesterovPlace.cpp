@@ -412,7 +412,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
     updateNextIter(iter);
 
-    if (npVars_.allowRevertIfDiverge) {
+    if (npVars_.disableRevertIfDiverge) {
       if (is_min_hpwl_) {
         diverge_snapshotWlCoefX = wireLengthCoefX_;
         diverge_snapshotWlCoefY = wireLengthCoefY_;
@@ -554,7 +554,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         isDivergeTriedRevert = true;
         // turn off the RD forcely
         isRoutabilityNeed_ = false;
-      } else if (npVars_.allowRevertIfDiverge) {
+      } else if (npVars_.disableRevertIfDiverge) {
         // In case diverged and not in routability mode, finish with min hpwl
         // stored since overflow below 0.25
         log_->warn(GPL,
@@ -685,7 +685,7 @@ void NesterovPlace::updateNextIter(const int iter)
   updateWireLengthCoef(average_overflow_);
 
   // Update divergence snapshot
-  if (npVars_.allowRevertIfDiverge) {
+  if (npVars_.disableRevertIfDiverge) {
     int64_t hpwl = nbc_->getHpwl();
     if (hpwl < min_hpwl_ && average_overflow_unscaled_ <= 0.25) {
       min_hpwl_ = hpwl;

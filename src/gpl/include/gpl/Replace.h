@@ -119,7 +119,7 @@ class Replace
   void setTimingDrivenMode(bool mode);
 
   void setSkipIoMode(bool mode);
-  void setAllowRevertIfDiverge(bool mode);
+  void setDisableRevertIfDiverge(bool mode);
 
   void setRoutabilityDrivenMode(bool mode);
   void setRoutabilityUseGrt(bool mode);
@@ -202,7 +202,7 @@ class Replace
   bool routabilityUseRudy_ = true;
   bool uniformTargetDensityMode_ = false;
   bool skipIoMode_ = false;
-  bool allowRevertIfDiverge_ = false;
+  bool disableRevertIfDiverge_ = false;
 
   std::vector<int> timingNetWeightOverflows_;
 

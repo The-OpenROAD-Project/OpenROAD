@@ -251,10 +251,10 @@ set_skip_io_mode_cmd(bool mode)
 }
 
 void
-  set_allow_revert_if_diverge(bool allow_revert_if_diverge)
+set_disable_revert_if_diverge(bool disable_revert_if_diverge)
 {
   Replace* replace = getReplace();
-  replace->setAllowRevertIfDiverge(allow_revert_if_diverge);
+  replace->setDisableRevertIfDiverge(disable_revert_if_diverge);
 }
 
 float

@@ -102,7 +102,9 @@ void Graphics::initHeatmap()
   addMultipleChoiceSetting(
       "Type",
       "Type:",
-      []() { return std::vector<std::string>{"Density", "Overflow"}; },
+      []() {
+        return std::vector<std::string>{"Density", "Overflow"};
+      },
       [this]() -> std::string {
         switch (heatmap_type_) {
           case Density:

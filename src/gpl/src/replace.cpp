@@ -118,7 +118,7 @@ void Replace::reset()
   routabilityUseRudy_ = true;
   uniformTargetDensityMode_ = false;
   skipIoMode_ = false;
-  allowRevertIfDiverge_ = false;
+  disableRevertIfDiverge_ = false;
 
   padLeft_ = padRight_ = 0;
 
@@ -355,7 +355,7 @@ bool Replace::initNesterovPlace(int threads)
     npVars.debug_draw_bins = gui_debug_draw_bins_;
     npVars.debug_inst = gui_debug_inst_;
     npVars.debug_start_iter = gui_debug_start_iter_;
-    npVars.allowRevertIfDiverge = allowRevertIfDiverge_;
+    npVars.disableRevertIfDiverge = disableRevertIfDiverge_;
 
     for (const auto& nb : nbVec_) {
       nb->setNpVars(&npVars);
@@ -500,9 +500,9 @@ void Replace::setDebug(int pause_iterations,
   gui_debug_start_iter_ = start_iter;
 }
 
-void Replace::setAllowRevertIfDiverge(bool mode)
+void Replace::setDisableRevertIfDiverge(bool mode)
 {
-  allowRevertIfDiverge_ = mode;
+  disableRevertIfDiverge_ = mode;
 }
 
 void Replace::setSkipIoMode(bool mode)
