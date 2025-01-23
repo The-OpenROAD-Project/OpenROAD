@@ -97,7 +97,7 @@ global_placement
     [-timing_driven_net_weight_max]
     [-timing_driven_nets_percentage]
     [-keep_resize_below_overflow]
-    [-allow_revert_if_diverge]
+    [-disable_revert_if_diverge]
 ```
 
 #### Options
@@ -120,7 +120,7 @@ global_placement
 | `-pad_left` | Set left padding in terms of number of sites. The default value is 0, and the allowed values are integers `[1, MAX_INT]` |
 | `-pad_right` | Set right padding in terms of number of sites. The default value is 0, and the allowed values are integers `[1, MAX_INT]` |
 | `-skip_io` | Flag to ignore the IO ports when computing wirelength during placement. The default value is False, allowed values are boolean. |
-| `-allow_revert_if_diverge` | Flag to make gpl store the placement state along iterations, if a divergence is detected, gpl reverts to the snapshot state. The default value is disabled. |
+| `-disable_revert_if_diverge` | Flag to make gpl store the placement state along iterations, if a divergence is detected, gpl reverts to the snapshot state. The default value is disabled. |
 
 #### Routability-Driven Arguments
 
