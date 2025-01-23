@@ -182,7 +182,7 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
       fanout = std::min(fanout, (int) tempFanout);
     }
   }
-  return (int) fanout;
+  return fanout;
 }
 
 void TritonCTS::setupCharacterization()
