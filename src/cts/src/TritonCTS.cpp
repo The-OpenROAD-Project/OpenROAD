@@ -124,9 +124,16 @@ void TritonCTS::runTritonCts()
   delayBufIndex_ = 0;
 }
 
-void TritonCTS::addBuilder(TreeBuilder* builder)
+TreeBuilder* TritonCTS::addBuilder(CtsOptions* options,
+                                   Clock& net,
+                                   TreeBuilder* parent,
+                                   utl::Logger* logger,
+                                   odb::dbDatabase* db)
 {
-  builders_.push_back(builder);
+  auto builder
+      = std::make_unique<HTreeBuilder>(options, net, parent, logger, db);
+  builders_.emplace_back(std::move(builder));
+  return builders_.back().get();
 }
 
 int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
@@ -267,7 +274,7 @@ void TritonCTS::findClockRoots()
 
 void TritonCTS::buildClockTrees()
 {
-  for (TreeBuilder* builder : builders_) {
+  for (auto& builder : builders_) {
     builder->setTechChar(*techChar_);
     builder->setDb(db_);
     builder->setLogger(logger_);
@@ -276,13 +283,13 @@ void TritonCTS::buildClockTrees()
   }
 
   if (options_->getBalanceLevels()) {
-    for (TreeBuilder* builder : builders_) {
+    for (auto& builder : builders_) {
       if (!builder->getParent()
           && !builder->getChildren().empty()
           // don't balance levels for macro cell tree
           && builder->getTreeType() != TreeType::MacroTree) {
         LevelBalancer balancer(
-            builder, options_, logger_, techChar_->getLengthUnit());
+            builder.get(), options_, logger_, techChar_->getLengthUnit());
         balancer.run();
       }
     }
@@ -476,8 +483,8 @@ void TritonCTS::writeDataToDb()
   std::set<odb::dbNet*> clkLeafNets;
   std::unordered_set<odb::dbInst*> clkDummies;
 
-  for (TreeBuilder* builder : builders_) {
-    writeClockNetsToDb(builder, clkLeafNets);
+  for (auto& builder : builders_) {
+    writeClockNetsToDb(builder.get(), clkLeafNets);
     if (options_->applyNDR()) {
       writeClockNDRsToDb(clkLeafNets);
     }
@@ -486,7 +493,7 @@ void TritonCTS::writeDataToDb()
     }
   }
 
-  for (TreeBuilder* builder : builders_) {
+  for (auto& builder : builders_) {
     odb::dbNet* topClockNet = builder->getClock().getNetObj();
     unsigned sinkCount = 0;
     unsigned leafSinks = 0;
@@ -506,7 +513,7 @@ void TritonCTS::writeDataToDb()
           CTS, 124, "Clock net \"{}\"", builder->getClock().getName());
       logger_->info(CTS, 125, " Sinks {}", sinks.size());
     } else {
-      countSinksPostDbWrite(builder,
+      countSinksPostDbWrite(builder.get(),
                             topClockNet,
                             sinkCount,
                             leafSinks,
@@ -536,8 +543,8 @@ void TritonCTS::writeDataToDb()
 void TritonCTS::forEachBuilder(
     const std::function<void(const TreeBuilder*)>& func) const
 {
-  for (const TreeBuilder* builder : builders_) {
-    func(builder);
+  for (const auto& builder : builders_) {
+    func(builder.get());
   }
 }
 
@@ -1047,7 +1054,7 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* firstNet,
 
   // Build a clock tree to drive macro cells with insertion delays
   // separated from registers or leaves without insertion delays
-  HTreeBuilder* builder = initClockTreeForMacrosAndRegs(
+  TreeBuilder* builder = initClockTreeForMacrosAndRegs(
       firstNet, clkInputNet, buffer_masters, clockNet, parentBuilder);
   return builder;
 }
@@ -1069,7 +1076,7 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* firstNet,
 //                      |        |   |
 //               new buffer secondNet|---|>----[]
 //
-HTreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
+TreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
     odb::dbNet*& firstNet,
     odb::dbNet* clkInputNet,
     const std::unordered_set<odb::dbMaster*>& buffer_masters,
@@ -1117,19 +1124,12 @@ HTreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
     options_->setNumSinks(totalSinks);
     incrementNumClocks();
     clockNet.setNetObj(firstNet);
-    HTreeBuilder* builder
-        = new HTreeBuilder(options_, clockNet, parentBuilder, logger_, db_);
-    addBuilder(builder);
-    return builder;
+    return addBuilder(options_, clockNet, parentBuilder, logger_, db_);
   }
 
   // add macro sinks to existing firstNet
-  HTreeBuilder* firstBuilder
-      = addClockSinks(clockNet,
-                      firstNet,
-                      macroSinks,
-                      dynamic_cast<HTreeBuilder*>(parentBuilder),
-                      "macros");
+  TreeBuilder* firstBuilder
+      = addClockSinks(clockNet, firstNet, macroSinks, parentBuilder, "macros");
   if (firstBuilder) {
     firstBuilder->setTreeType(TreeType::MacroTree);
     firstBuilder->setTopInputNet(clkInputNet);
@@ -1142,12 +1142,12 @@ HTreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
       clockNet, registerSinks, firstNet, secondNet, topBufferName);
 
   // add register sinks to secondNet
-  HTreeBuilder* secondBuilder = addClockSinks(
-      clockNet2,
-      secondNet,
-      registerSinks,
-      firstBuilder ? firstBuilder : dynamic_cast<HTreeBuilder*>(parentBuilder),
-      "registers");
+  TreeBuilder* secondBuilder
+      = addClockSinks(clockNet2,
+                      secondNet,
+                      registerSinks,
+                      firstBuilder ? firstBuilder : parentBuilder,
+                      "registers");
   if (secondBuilder) {
     secondBuilder->setTreeType(TreeType::RegisterTree);
     secondBuilder->setTopBufferName(topBufferName);
@@ -1192,11 +1192,11 @@ bool TritonCTS::separateMacroRegSinks(
   return true;
 }
 
-HTreeBuilder* TritonCTS::addClockSinks(
+TreeBuilder* TritonCTS::addClockSinks(
     Clock& clockNet,
     odb::dbNet* physicalNet,
     const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& sinks,
-    HTreeBuilder* parentBuilder,
+    TreeBuilder* parentBuilder,
     const std::string& macrosOrRegs)
 {
   for (auto elem : sinks) {
@@ -1220,10 +1220,7 @@ HTreeBuilder* TritonCTS::addClockSinks(
   options_->setNumSinks(totalSinks);
   incrementNumClocks();
   clockNet.setNetObj(physicalNet);
-  HTreeBuilder* builder
-      = new HTreeBuilder(options_, clockNet, parentBuilder, logger_, db_);
-  addBuilder(builder);
-  return builder;
+  return addBuilder(options_, clockNet, parentBuilder, logger_, db_);
 }
 
 Clock TritonCTS::forkRegisterClockNetwork(
@@ -2099,7 +2096,7 @@ void TritonCTS::balanceMacroRegisterLatencies()
   openSta_->ensureClkNetwork();
   sta::Graph* graph = openSta_->graph();
   for (auto iter = builders_.rbegin(); iter != builders_.rend(); ++iter) {
-    TreeBuilder* registerBuilder = *iter;
+    TreeBuilder* registerBuilder = iter->get();
     if (registerBuilder->getTreeType() == TreeType::RegisterTree) {
       TreeBuilder* macroBuilder = registerBuilder->getParent();
       if (macroBuilder) {
