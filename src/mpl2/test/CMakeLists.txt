@@ -5,6 +5,8 @@ or_integration_tests(
     no_unfixed_macros
     guides1
     guides2
+    io_constraints1
+    io_constraints2
 )
 
 # Skipped

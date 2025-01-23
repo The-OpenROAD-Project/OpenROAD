@@ -202,8 +202,11 @@ class Cluster
   // Position must be specified when setting an IO cluster
   void setAsIOCluster(const std::pair<float, float>& pos,
                       float width,
-                      float height);
+                      float height,
+                      Boundary constraint_boundary);
   bool isIOCluster() const;
+  Boundary getConstraintBoundary() const { return constraint_boundary_; }
+
   void setAsArrayOfInterconnectedMacros();
   bool isArrayOfInterconnectedMacros() const;
   bool isEmpty() const;
@@ -297,9 +300,11 @@ class Cluster
   // all the macros in the cluster
   std::vector<HardMacro*> hard_macros_;
 
-  // We model bundled IOS (Pads) as a cluster with no area
+  // We model pads as clusters with no area
   // The position be the center of IOs
   bool is_io_cluster_ = false;
+  Boundary constraint_boundary_ = NONE;
+
   bool is_array_of_interconnected_macros = false;
 
   // Each cluster uses metrics to store its statistics
@@ -343,7 +348,9 @@ class HardMacro
  public:
   // Create a macro with specified size
   // Model fixed terminals
-  HardMacro(std::pair<float, float> loc, const std::string& name);
+  HardMacro(std::pair<float, float> loc,
+            const std::string& name,
+            Cluster* cluster = nullptr);
 
   // In this case, we model the pin position at the center of the macro
   HardMacro(float width, float height, const std::string& name);
@@ -355,6 +362,10 @@ class HardMacro
   // based on area, width, height order
   bool operator<(const HardMacro& macro) const;
   bool operator==(const HardMacro& macro) const;
+
+  void setCluster(Cluster* cluster) { cluster_ = cluster; }
+  Cluster* getCluster() const { return cluster_; }
+  bool isIOCluster() const;
 
   // Get Physical Information
   // Note that the default X and Y include halo_width
@@ -444,6 +455,8 @@ class HardMacro
 
   odb::dbInst* inst_ = nullptr;
   odb::dbBlock* block_ = nullptr;
+
+  Cluster* cluster_ = nullptr;
 };
 
 // We have three types of SoftMacros
@@ -526,6 +539,7 @@ class SoftMacro
   bool isMacroCluster() const;
   bool isStdCellCluster() const;
   bool isMixedCluster() const;
+  bool isIOCluster() const;
   void setLocationF(float x, float y);
   void setShapeF(float width, float height);
   int getNumMacro() const;
@@ -628,12 +642,18 @@ struct Rect
   float xMax() const { return ux; }
   float yMax() const { return uy; }
 
+  void setXMin(float lx) { this->lx = lx; }
+  void setYMin(float ly) { this->ly = ly; }
+  void setXMax(float ux) { this->ux = ux; }
+  void setYMax(float uy) { this->uy = uy; }
+
   float getX() const { return (lx + ux) / 2.0; }
   float getY() const { return (ly + uy) / 2.0; }
 
   float getWidth() const { return ux - lx; }
   float getHeight() const { return uy - ly; }
 
+  float getPerimeter() const { return 2 * getWidth() + 2 * getHeight(); }
   float getArea() const { return getWidth() * getHeight(); }
 
   void setLoc(float x,
