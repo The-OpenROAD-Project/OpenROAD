@@ -568,7 +568,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                    diverge_snapshot_iter_,
                    diverge_snapshot_average_overflow_unscaled_,
                    min_hpwl_);
-        curA = diverge_snapshotA;
         wireLengthCoefX_ = diverge_snapshotWlCoefX;
         wireLengthCoefY_ = diverge_snapshotWlCoefY;
         nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
