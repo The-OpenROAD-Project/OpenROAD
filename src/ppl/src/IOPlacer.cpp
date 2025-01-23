@@ -889,7 +889,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
                        : core_->getNumTracksY().at(layer);
 
     std::vector<Point> slots;
-    int min_dst_pins;
+    int min_dst_pins = 0;
     for (int l = 0; l < layer_min_distances.size(); l++) {
       int curr_x, curr_y, start_idx, end_idx;
       int tech_min_dst = layer_min_distances[l];
@@ -964,19 +964,27 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
                 return p1.getY() < p2.getY();
               });
 
+    // Remove slots that violates the min distance before reversing the vector.
+    // This ensures that mirrored positions will exists for every slot.
+    Point last = slots[0];
+    for (auto it = slots.begin(); it != slots.end();) {
+      Point pos = *it;
+      if (pos != last && std::abs(last.getX() - pos.getX()) < min_dst_pins
+          && std::abs(last.getY() - pos.getY()) < min_dst_pins) {
+        it = slots.erase(it);
+      } else {
+        last = pos;
+        ++it;
+      }
+    }
+
     if (edge == Edge::top || edge == Edge::left) {
       std::reverse(slots.begin(), slots.end());
     }
 
-    Point last_pos = slots[0];
     for (const Point& pos : slots) {
       bool blocked = checkBlocked(edge, pos, layer);
-      if (pos == last_pos
-          || std::abs(last_pos.getX() - pos.getX()) >= min_dst_pins
-          || std::abs(last_pos.getY() - pos.getY()) >= min_dst_pins) {
-        slots_.push_back({blocked, false, pos, layer, edge});
-        last_pos = pos;
-      }
+      slots_.push_back({blocked, false, pos, layer, edge});
     }
   }
 }
