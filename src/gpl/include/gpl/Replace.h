@@ -193,7 +193,7 @@ class Replace
   float routabilityRcK2_ = 1.0;
   float routabilityRcK3_ = 0.0;
   float routabilityRcK4_ = 0.0;
-W
+
   int routabilityMaxInflationIter_ = 4;
 
   float timingNetWeightMax_ = 1.9;
