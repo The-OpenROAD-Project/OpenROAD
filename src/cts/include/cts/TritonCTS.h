@@ -82,7 +82,7 @@ class HTreeBuilder;
 class TritonCTS
 {
  public:
-  TritonCTS() = default;
+  TritonCTS();
   ~TritonCTS();
 
   void init(utl::Logger* logger,
@@ -94,7 +94,7 @@ class TritonCTS
   void runTritonCts();
   void reportCtsMetrics();
   CtsOptions* getParms() { return options_; }
-  TechChar* getCharacterization() { return techChar_; }
+  TechChar* getCharacterization() { return techChar_.get(); }
   int setClockNets(const char* names);
   void setBufferList(const char* buffers);
   void inferBufferList(std::vector<std::string>& buffers);
@@ -227,7 +227,7 @@ class TritonCTS
   sta::dbNetwork* network_;
   Logger* logger_;
   CtsOptions* options_;
-  TechChar* techChar_;
+  std::unique_ptr<TechChar> techChar_;
   rsz::Resizer* resizer_;
   std::vector<TreeBuilder*>* builders_;
   std::set<odb::dbNet*> staClockNets_;

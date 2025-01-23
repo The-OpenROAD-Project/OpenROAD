@@ -84,19 +84,33 @@ void TritonCTS::init(utl::Logger* logger,
   resizer_ = resizer;
 
   options_ = new CtsOptions(logger_, st_builder);
-  techChar_ = new TechChar(options_, db_, openSta_, resizer, network_, logger_);
   builders_ = new std::vector<TreeBuilder*>;
 }
+
+TritonCTS::TritonCTS() = default;
 
 TritonCTS::~TritonCTS()
 {
   delete options_;
-  delete techChar_;
   delete builders_;
 }
 
 void TritonCTS::runTritonCts()
 {
+  // reset
+  techChar_.reset();
+  builders_->clear();
+  staClockNets_.clear();
+  visitedClockNets_.clear();
+  inst2clkbuf_.clear();
+  driver2subnet_.clear();
+  numberOfClocks_ = 0;
+  numClkNets_ = 0;
+  numFixedNets_ = 0;
+  dummyLoadIndex_ = 0;
+  regTreeRootBufIndex_ = 0;
+  delayBufIndex_ = 0;
+
   setupCharacterization();
   findClockRoots();
   populateTritonCTS();
@@ -208,6 +222,8 @@ void TritonCTS::setupCharacterization()
   }
 
   // A new characteriztion is always created.
+  techChar_ = std::make_unique<TechChar>(
+      options_, db_, openSta_, resizer_, network_, logger_);
   techChar_->create();
 
   // Also resets metrics everytime the setup is done
