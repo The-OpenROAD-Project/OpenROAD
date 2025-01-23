@@ -524,6 +524,36 @@ void Resizer::balanceRowUsage()
 
 ////////////////////////////////////////////////////////////////
 
+// Inspect the timing arcs on a buffer size to find the capacitance
+// points on the piecewise linear delay model
+static void populateBufferCapTestPoints(LibertyCell* cell,
+                                        LibertyPort *in, LibertyPort *out,
+                                        std::vector<float>& points)
+{
+  for (TimingArcSet* arc_set : cell->timingArcSets()) {
+    TimingRole* role = arc_set->role();
+    if (role == TimingRole::combinational() && arc_set->from() == in
+        && arc_set->to() == out) {
+      for (TimingArc* arc : arc_set->arcs()) {
+        auto model = dynamic_cast<sta::GateTableModel*>(arc->model());
+        if (model) {
+          auto dm = model->delayModel();
+          for (const sta::TableAxis* axis :
+               {dm->axis1(), dm->axis2(), dm->axis3()}) {
+            if (axis
+                && axis->variable()
+                       == sta::TableAxisVariable::
+                           total_output_net_capacitance) {
+              points.insert(
+                  points.end(), axis->values()->begin(), axis->values()->end());
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 bool Resizer::bufferSizeOutmatched(LibertyCell* worse,
                                    LibertyCell* better,
                                    float max_drive_resist)
@@ -535,73 +565,23 @@ bool Resizer::bufferSizeOutmatched(LibertyCell* worse,
   float extra_input_cap
       = std::max(bin->capacitance() - win->capacitance(), 0.0f);
   float delay_penalty = max_drive_resist * extra_input_cap;
+  float wlimit = maxLoad(network_->cell(worse));
 
-  float wlimit = maxLoad(network_->cell(worse)),
-        blimit = maxLoad(network_->cell(better));
-#if 0
-  if (/* blimit exists */ blimit > 0 && wlimit > blimit) {
-    return false;
-  }
-#endif
+  std::vector<float> test_points;
+  populateBufferCapTestPoints(worse, win, wout, test_points);
+  populateBufferCapTestPoints(better, bin, bout, test_points);
 
-  std::vector<float> cap_test_points;
-
-  // TODO: factor out
-  for (TimingArcSet* arc_set : worse->timingArcSets()) {
-    TimingRole* role = arc_set->role();
-    if (role->combinational() && arc_set->from() == win
-        && arc_set->to() == wout) {
-      for (TimingArc* arc : arc_set->arcs()) {
-        auto model = dynamic_cast<sta::GateTableModel*>(arc->model());
-        if (model) {
-          auto dm = model->delayModel();
-          for (const sta::TableAxis* axis :
-               {dm->axis1(), dm->axis2(), dm->axis3()}) {
-            if (axis
-                && axis->variable()
-                       == sta::TableAxisVariable::
-                           total_output_net_capacitance) {
-              cap_test_points.insert(cap_test_points.end(),
-                                     axis->values()->begin(),
-                                     axis->values()->end());
-            }
-          }
-        }
-      }
-    }
-  }
-
-  for (TimingArcSet* arc_set : better->timingArcSets()) {
-    TimingRole* role = arc_set->role();
-    if (role->combinational() && arc_set->from() == bin
-        && arc_set->to() == bout) {
-      for (TimingArc* arc : arc_set->arcs()) {
-        auto model = dynamic_cast<sta::GateTableModel*>(arc->model());
-        if (model) {
-          auto dm = model->delayModel();
-          for (const sta::TableAxis* axis :
-               {dm->axis1(), dm->axis2(), dm->axis3()}) {
-            if (axis
-                && axis->variable()
-                       == sta::TableAxisVariable::
-                           total_output_net_capacitance) {
-              cap_test_points.insert(cap_test_points.end(),
-                                     axis->values()->begin(),
-                                     axis->values()->end());
-            }
-          }
-        }
-      }
-    }
-  }
-
-  if (cap_test_points.empty()) {
+  if (test_points.empty()) {
     return false;
   }
 
-  for (auto p : cap_test_points) {
+  std::sort(test_points.begin(), test_points.end());
+  auto last = std::unique(test_points.begin(), test_points.end());
+  test_points.erase(last, test_points.end());
+
+  for (auto p : test_points) {
     if ((wlimit == 0 || p <= wlimit) &&
-        /* ignore high C_load/C_in */ p
+        /* ignore high C_load/C_in region */ p
             < std::min(bin->capacitance(), win->capacitance()) * 20.0f) {
       float bd = bufferDelay(better, p, tgt_slew_dcalc_ap_);
       float wd = bufferDelay(worse, p, tgt_slew_dcalc_ap_);
@@ -637,7 +617,7 @@ void Resizer::findFastBuffers()
   LibertyCellSeq sizes_by_inp_cap;
   sizes_by_inp_cap = buffer_cells_;
   sort(sizes_by_inp_cap,
-       [this](const LibertyCell* buffer1, const LibertyCell* buffer2) {
+       [](const LibertyCell* buffer1, const LibertyCell* buffer2) {
          LibertyPort *port1, *port2, *scratch;
          buffer1->bufferPorts(port1, scratch);
          buffer2->bufferPorts(port2, scratch);
@@ -1463,6 +1443,7 @@ bool Resizer::getCin(const LibertyCell* cell, float& cin)
 {
   sta::LibertyCellPortIterator port_iter(cell);
   int nports = 0;
+  cin = 0;
   while (port_iter.hasNext()) {
     const LibertyPort* port = port_iter.next();
     if (port->direction() == sta::PortDirection::input()) {
@@ -1490,8 +1471,6 @@ int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
     // Includes net parasitic capacitance.
     load_cap = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_dcalc_ap_);
     if (load_cap > 0.0 && getCin(cell, cin)) {
-      bool is_buf_inv = cell->isBuffer() || cell->isInverter();
-
       if (cell->isBuffer()) {
         max_cap_ratio = 9.0f;
       }

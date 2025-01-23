@@ -227,7 +227,6 @@ void RepairDesign::repairDesign(
   slew_margin_ = slew_margin;
   cap_margin_ = cap_margin;
   buffer_gain_ = buffer_gain;
-  bool gain_buffering = (buffer_gain_ != 0.0);
 
   slew_violations = 0;
   cap_violations = 0;
@@ -475,8 +474,9 @@ bool RepairDesign::getLargestSizeCin(const Pin* drvr_pin, float& cin)
         return false;
       }
       size_cin /= nports;
-      if (size_cin > cin)
+      if (size_cin > cin) {
         cin = size_cin;
+      }
     }
     return true;
   }
