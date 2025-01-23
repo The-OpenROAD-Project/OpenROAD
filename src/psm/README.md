@@ -60,6 +60,7 @@ check_power_grid
     -net net_name
     [-floorplanning]
     [-error_file error_file]
+    [-require_terminals]
 ```
 
 #### Options
@@ -69,6 +70,7 @@ check_power_grid
 | `-net` | Name of the net to analyze. Must be a power or ground net name. |
 | `-floorplanning` | Ignore non-fixed instances in the power grid, this is useful during floorplanning analysis when instances may not be properly placed. |
 | `-error_file` | File to write power grid errors to. |
+| `-require_terminals` | If specified, this will check of there are terminals on the net. |
 
 ### Write Spice Power Grid
 
