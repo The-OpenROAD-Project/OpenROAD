@@ -98,6 +98,7 @@ class TreeBuilder
       parent->children_.emplace_back(this);
     }
   }
+  virtual ~TreeBuilder() = default;
 
   virtual void run() = 0;
   void initBlockages();
