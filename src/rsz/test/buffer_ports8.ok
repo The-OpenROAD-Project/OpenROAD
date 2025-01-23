@@ -21,11 +21,11 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0019] Util:                     0.072 %
 [INFO GPL-0020] StdInstsArea:             4.522 um^2
 [INFO GPL-0021] MacroInstsArea:           0.000 um^2
-[InitialPlace]  Iter: 1 CG residual: 0.00000008 HPWL: 587850
-[InitialPlace]  Iter: 2 CG residual: 0.00000008 HPWL: 622912
-[InitialPlace]  Iter: 3 CG residual: 0.00000008 HPWL: 596715
-[InitialPlace]  Iter: 4 CG residual: 0.00000008 HPWL: 579151
-[InitialPlace]  Iter: 5 CG residual: 0.00000008 HPWL: 568782
+[InitialPlace]  Iter: 1 CG residual: 0.00000008 HPWL: 587290
+[InitialPlace]  Iter: 2 CG residual: 0.00000008 HPWL: 621160
+[InitialPlace]  Iter: 3 CG residual: 0.00000008 HPWL: 595065
+[InitialPlace]  Iter: 4 CG residual: 0.00000008 HPWL: 577570
+[InitialPlace]  Iter: 5 CG residual: 0.00000008 HPWL: 567244
 [INFO GPL-0031] FillerInit:NumGCells:       968
 [INFO GPL-0032] FillerInit:NumGNets:          3
 [INFO GPL-0033] FillerInit:NumGPins:          7
@@ -37,10 +37,8 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] BinCnt:        16     16
 [INFO GPL-0029] BinSize: (  4.987  4.900 )
 [INFO GPL-0030] NumBins: 256
-[NesterovSolve] Iter:    1 overflow: 0.000 HPWL: 565193
+[NesterovSolve] Iter:    1 overflow: 0.000 HPWL: 563313
 [NesterovSolve] Finished with Overflow: 0.000000
 [INFO RSZ-0027] Inserted 2 input buffers.
 [INFO RSZ-0028] Inserted 2 output buffers.
-Differences found at line 5.
-UNITS DISTANCE MICRONS 1000 ;
-UNITS DISTANCE MICRONS 2000 ;
+No differences found.
