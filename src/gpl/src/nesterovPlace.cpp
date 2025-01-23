@@ -325,7 +325,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   bool isDivergeTriedRevert = false;
 
   // divergence snapshot info
-  float diverge_snapshotA = 0;
   float diverge_snapshotWlCoefX = 0, diverge_snapshotWlCoefY = 0;
 
   // backTracking variable.
@@ -417,7 +416,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       if (is_min_hpwl_) {
         diverge_snapshotWlCoefX = wireLengthCoefX_;
         diverge_snapshotWlCoefY = wireLengthCoefY_;
-        diverge_snapshotA = curA;
         for (auto& nb : nbVec_) {
           nb->snapshot();
         }
