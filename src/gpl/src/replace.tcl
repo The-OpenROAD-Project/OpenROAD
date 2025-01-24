@@ -178,6 +178,14 @@ proc global_placement { args } {
     }
   }
 
+  # Disable revert to saved snapshot if a divergence is detected.
+  set disable_revert_if_diverge [info exists flags(-disable_revert_if_diverge)]
+  gpl::set_disable_revert_if_diverge $disable_revert_if_diverge
+  if { $disable_revert_if_diverge } {
+    utl::info "GPL" 153 \
+      "Revert-to-snapshot on divergence detection is disabled."
+  }
+
   if { [info exists keys(-initial_place_max_fanout)] } {
     set initial_place_max_fanout $keys(-initial_place_max_fanout)
     sta::check_positive_integer "-initial_place_max_fanout" $initial_place_max_fanout
@@ -331,13 +339,7 @@ proc global_placement { args } {
   }
 }
 
-  # Revert to saved snapshot if a divergence is detected.
-  set disable_revert_if_diverge [info exists flags(-disable_revert_if_diverge)]
-  gpl::set_disable_revert_if_diverge $disable_revert_if_diverge
-  if { $disable_revert_if_diverge } {
-    utl::info "GPL" 153 \
-      "Disable revert to saved snapshot if a divergence is detected."
-  }
+
 
 
 sta::define_cmd_args "cluster_flops" {\
