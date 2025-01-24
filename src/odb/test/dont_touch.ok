@@ -18,8 +18,8 @@
 [ERROR ODB-0374] Attempt to destroy bterm on dont_touch net inp0
 [ERROR ODB-0376] Attempt to create bterm on dont_touch net inp0
 [ERROR ODB-0373] Attempt to connect iterm to dont_touch net inp0
-[ERROR ODB-0372] Attempt to disconnect iterm of dont_touch net inp0
+[ERROR ODB-0372] Attempt to disconnect iterm _g2_/A of dont_touch net inp0
 [ERROR ODB-0362] Attempt to destroy dont_touch instance _g2_
-[ERROR ODB-0370] Attempt to disconnect iterm of dont_touch instance _g2_
+[ERROR ODB-0370] Attempt to disconnect term A of dont_touch instance _g2_
 [ERROR ODB-0368] Attempt to change master of dont_touch instance _g2_
 pass

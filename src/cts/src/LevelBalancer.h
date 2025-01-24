@@ -98,7 +98,7 @@ class LevelBalancer
 
   void run();
   void addBufferLevels(TreeBuilder* builder,
-                       std::vector<ClockInst*> cluster,
+                       const std::vector<ClockInst*>& cluster,
                        ClockSubNet* driverNet,
                        unsigned bufLevels,
                        const std::string& nameSuffix);

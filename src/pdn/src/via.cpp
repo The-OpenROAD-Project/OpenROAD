@@ -2953,12 +2953,13 @@ void Via::writeToDb(odb::dbSWire* wire,
           Shape::getRectText(new_shape, layer->getTech()->getLefUnits()));
       bool valid_change = shape->isModifiable();
       if (!shape->allowsNonPreferredDirectionChange()) {
-        if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+        if (shape->getLayerDirection() == odb::dbTechLayerDir::HORIZONTAL) {
           if (new_shape.yMin() != rect.yMin()
               || new_shape.yMax() != rect.yMax()) {
             valid_change = false;
           }
-        } else if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+        } else if (shape->getLayerDirection()
+                   == odb::dbTechLayerDir::VERTICAL) {
           if (new_shape.xMin() != rect.xMin()
               || new_shape.xMax() != rect.xMax()) {
             valid_change = false;

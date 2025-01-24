@@ -66,11 +66,13 @@ using utl::CTS;
 struct Sink
 {
   Sink(const float x, const float y, const unsigned idx)
-      : x(x), y(y), cluster_idx(-1), sink_idx(idx){};
+      : x(x), y(y), sink_idx(idx)
+  {
+  }
 
   // location
   const float x, y;
-  int cluster_idx;
+  int cluster_idx{-1};
   const unsigned sink_idx;  // index in sinks_
 };
 

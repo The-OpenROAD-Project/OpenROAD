@@ -151,6 +151,8 @@ class Shape
   bool isSquare() const { return rect_.dx() == rect_.dy(); }
   bool isVertical() const { return rect_.dx() < rect_.dy(); }
 
+  virtual odb::dbTechLayerDir getLayerDirection() const;
+
   // true if shape can be removed by trimming
   virtual bool isRemovable() const;
   // true if shape can be modified (cut or shortened) by trimming
@@ -292,6 +294,8 @@ class FollowPinShape : public Shape
   bool isRemovable() const override { return false; }
 
   void setAllowsNonPreferredDirectionChange() override {}
+
+  odb::dbTechLayerDir getLayerDirection() const override;
 
   bool cut(const ObstructionTree& obstructions,
            const Grid* ignore_grid,
