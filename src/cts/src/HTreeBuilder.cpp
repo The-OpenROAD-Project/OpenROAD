@@ -193,7 +193,6 @@ void HTreeBuilder::preSinkClustering(
       std::vector<ClockInst*> clusterClockInsts;  // sink clock insts
       float xSum = 0;
       float ySum = 0;
-      double insDelay = 0.0;
       for (auto point_idx : cluster) {
         const std::pair<double, double>& point = points[point_idx];
         const Point<double> mapPoint(point.first, point.second);
