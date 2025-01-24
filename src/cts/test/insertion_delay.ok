@@ -18,7 +18,7 @@
 [INFO CTS-0201] 1 placed hard macros will be treated like blockages.
 [INFO CTS-0027] Generating H-Tree topology for net clk.
 [INFO CTS-0028]  Total number of sinks: 1.
-[INFO CTS-0029]  Sinks will be clustered in groups of up to 10 and with maximum cluster diameter of 60.0 um.
+[INFO CTS-0029]  Sinks will be clustered in groups of up to 4 and with maximum cluster diameter of 30.0 um.
 [INFO CTS-0030]  Number of static layers: 1.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
 [INFO CTS-0021]  Distance between buffers: 7 units (100 um).
