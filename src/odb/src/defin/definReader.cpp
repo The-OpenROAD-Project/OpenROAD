@@ -103,7 +103,7 @@ dbITerm* findScanITerm(definReader* reader,
   if (!pin_name) {
     if (!common_pin) {
       reader->error(
-          fmt::format("SCANDEF is missing either component pin or a "
+          fmt::format("SCANCHAIN is missing either component pin or a "
                       "COMMONSCANPINS for instance {}",
                       inst->getName()));
       return nullptr;
@@ -114,20 +114,34 @@ dbITerm* findScanITerm(definReader* reader,
   return inst->findITerm(pin_name);
 }
 
-std::optional<std::variant<dbBTerm*, dbITerm*>>
-findScanTerm(definReader* reader, dbBlock* block, const char* pin_name)
+std::optional<std::variant<dbBTerm*, dbITerm*>> findScanTerm(
+    definReader* reader,
+    dbBlock* block,
+    const char* type,
+    const char* inst_name,
+    const char* pin_name)
 {
-  dbBTerm* bterm = block->findBTerm(pin_name);
-  if (bterm) {
-    return bterm;
+  if (inst_name && strcmp(inst_name, "PIN") != 0) {
+    dbInst* inst = block->findInst(inst_name);
+    if (inst) {
+      dbITerm* iterm = inst->findITerm(pin_name);
+      if (iterm) {
+        return iterm;
+      }
+    }
+  } else {
+    dbBTerm* bterm = block->findBTerm(pin_name);
+    if (bterm) {
+      return bterm;
+    }
   }
-
-  dbITerm* iterm = block->findITerm(pin_name);
-  if (iterm) {
-    return iterm;
+  std::string name;
+  if (inst_name) {
+    name = fmt::format("{}/{}", inst_name, pin_name);
+  } else {
+    name = pin_name;
   }
-  reader->error(
-      fmt::format("SCANDEF START/STOP pin {} does not exist", pin_name));
+  reader->error(fmt::format("SCANCHAIN {} pin {} does not exist", type, name));
   return std::nullopt;
 }
 
@@ -142,7 +156,7 @@ void populateScanInst(definReader* reader,
 {
   dbInst* inst = block->findInst(inst_name);
   if (!inst) {
-    reader->error(fmt::format("SCANDEF Inst {} does not exist", inst_name));
+    reader->error(fmt::format("SCANCHAIN Inst {} does not exist", inst_name));
     return;
   }
 
@@ -151,14 +165,15 @@ void populateScanInst(definReader* reader,
   dbITerm* scan_in
       = findScanITerm(reader, inst, in_pin_name, scan_chain->commonInPin());
   if (!scan_in) {
-    reader->error(fmt::format(
-        "SCANDEF IN pin {} does not exist in cell {}", in_pin_name, inst_name));
+    reader->error(fmt::format("SCANCHAIN IN pin {} does not exist in cell {}",
+                              in_pin_name,
+                              inst_name));
   }
 
   dbITerm* scan_out
       = findScanITerm(reader, inst, out_pin_name, scan_chain->commonOutPin());
   if (!scan_out) {
-    reader->error(fmt::format("SCANDEF OUT pin {} does not exist in cell {}",
+    reader->error(fmt::format("SCANCHAIN OUT pin {} does not exist in cell {}",
                               out_pin_name,
                               inst_name));
   }
@@ -1446,20 +1461,21 @@ int definReader::scanchainsCallback(
   dbScanPartition* db_scan_partition = dbScanPartition::create(db_scan_chain);
   db_scan_partition->setName(scan_chain->partitionName());
 
-  char* unused;
+  char* start_inst_name;
+  char* stop_inst_name;
   char* start_pin_name;
   char* stop_pin_name;
-  scan_chain->start(&unused, &start_pin_name);
-  scan_chain->stop(&unused, &stop_pin_name);
+  scan_chain->start(&start_inst_name, &start_pin_name);
+  scan_chain->stop(&stop_inst_name, &stop_pin_name);
 
-  auto scan_in_pin = findScanTerm(reader, block, start_pin_name);
-  auto scan_out_pin = findScanTerm(reader, block, stop_pin_name);
-  if (!scan_in_pin.has_value()) {
-    reader->error(fmt::format("Can't parse SCANIN pin"));
-    return PARSE_ERROR;
-  }
-  if (!scan_out_pin.has_value()) {
-    reader->error(fmt::format("Can't parse SCANOUT pin"));
+  auto scan_in_pin
+      = findScanTerm(reader, block, "START", start_inst_name, start_pin_name);
+  auto scan_out_pin
+      = findScanTerm(reader, block, "STOP", stop_inst_name, stop_pin_name);
+  if (!scan_in_pin.has_value() || !scan_out_pin.has_value()) {
+    if (reader->_continue_on_errors) {
+      return PARSE_OK;
+    }
     return PARSE_ERROR;
   }
 

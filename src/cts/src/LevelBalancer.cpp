@@ -83,7 +83,7 @@ unsigned LevelBalancer::computeMaxTreeDepth(TreeBuilder* parent)
 }
 
 void LevelBalancer::addBufferLevels(TreeBuilder* builder,
-                                    const std::vector<ClockInst*> cluster,
+                                    const std::vector<ClockInst*>& cluster,
                                     ClockSubNet* driverNet,
                                     const unsigned bufLevels,
                                     const std::string& nameSuffix)

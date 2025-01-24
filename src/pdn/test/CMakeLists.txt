@@ -42,6 +42,8 @@ or_integration_tests(
     core_grid_with_fixed_pins
     core_grid_with_rings
     core_grid_with_rings_connect
+    core_grid_with_rings_outside_die
+    core_grid_with_rings_outside_die_allowed
     core_grid_with_rings_with_limit_straps
     core_grid_with_rings_with_straps
     core_grid_with_rings_with_straps_rings_over_core
