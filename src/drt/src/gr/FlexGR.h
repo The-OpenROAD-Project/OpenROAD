@@ -31,6 +31,7 @@
 #include <boost/icl/interval_map.hpp>
 #include <boost/icl/interval_set.hpp>
 #include <memory>
+#include <vector>
 
 #include "FlexGRCMap.h"
 #include "db/grObj/grNet.h"
@@ -53,13 +54,15 @@ class FlexGR
   // constructors
   FlexGR(frDesign* designIn,
          Logger* logger,
-         stt::SteinerTreeBuilder* stt_builder)
+         stt::SteinerTreeBuilder* stt_builder,
+         RouterConfiguration* router_cfg)
       : db_(nullptr),
         design_(designIn),
         cmap_(nullptr),
         cmap2D_(nullptr),
         logger_(logger),
-        stt_builder_(stt_builder)
+        stt_builder_(stt_builder),
+        router_cfg_(router_cfg)
   {
   }
 
@@ -85,6 +88,7 @@ class FlexGR
   std::unique_ptr<FlexGRCMap> cmap2D_;
   Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
+  RouterConfiguration* router_cfg_;
   std::map<frNet*,
            std::map<std::pair<int, int>, std::vector<frNode*>>,
            frBlockObjectComp>
@@ -282,10 +286,10 @@ class FlexGRWorker
 {
  public:
   // constructors
-  FlexGRWorker(FlexGR* grIn)
+  FlexGRWorker(FlexGR* grIn, RouterConfiguration* router_cfg)
       : design_(grIn->getDesign()),
         gr_(grIn),
-        gridGraph_(grIn->getDesign(), this),
+        gridGraph_(grIn->getDesign(), this, router_cfg),
         rq_(this)
   {
   }

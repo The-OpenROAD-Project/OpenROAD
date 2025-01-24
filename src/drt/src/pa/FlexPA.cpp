@@ -36,6 +36,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 #include "FlexPA_graphics.h"
 #include "db/infra/frTime.h"
@@ -52,11 +53,15 @@ BOOST_CLASS_EXPORT(drt::PinAccessJobDescription)
 
 namespace drt {
 
-FlexPA::FlexPA(frDesign* in, Logger* logger, dst::Distributed* dist)
+FlexPA::FlexPA(frDesign* in,
+               Logger* logger,
+               dst::Distributed* dist,
+               RouterConfiguration* router_cfg)
     : design_(in),
       logger_(logger),
       dist_(dist),
-      unique_insts_(design_, target_insts_, logger_)
+      router_cfg_(router_cfg),
+      unique_insts_(design_, target_insts_, logger_, router_cfg)
 {
 }
 
@@ -66,10 +71,10 @@ FlexPA::~FlexPA() = default;
 void FlexPA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
 {
   const bool on = settings->debugPA;
-  graphics_
-      = on && FlexPAGraphics::guiActive()
-            ? std::make_unique<FlexPAGraphics>(settings, design_, db, logger_)
-            : nullptr;
+  graphics_ = on && FlexPAGraphics::guiActive()
+                  ? std::make_unique<FlexPAGraphics>(
+                        settings, design_, db, logger_, router_cfg_)
+                  : nullptr;
 }
 
 void FlexPA::init()
@@ -109,7 +114,7 @@ void FlexPA::applyPatternsFile(const char* file_path)
 void FlexPA::prep()
 {
   ProfileTask profile("PA:prep");
-  initAllAccessPoints();
+  genAllAccessPoints();
   revertAccessPoints();
   if (isDistributed()) {
     std::vector<paUpdate> updates;
@@ -172,12 +177,55 @@ void FlexPA::setDistributed(const std::string& rhost,
   cloud_sz_ = cloud_sz;
 }
 
+// Skip power pins, pins connected to special nets, and dangling pins
+// (since we won't route these).
+//
+// Checks only this inst_term and not an equivalent ones.  This
+// is a helper to isSkipInstTerm and initSkipInstTerm.
+bool FlexPA::isSkipInstTermLocal(frInstTerm* in)
+{
+  auto term = in->getTerm();
+  if (term->getType().isSupply()) {
+    return true;
+  }
+  auto in_net = in->getNet();
+  if (in_net && !in_net->isSpecial()) {
+    return false;
+  }
+  return true;
+}
+
+bool FlexPA::isSkipInstTerm(frInstTerm* in)
+{
+  auto inst_class = unique_insts_.getClass(in->getInst());
+  if (inst_class == nullptr) {
+    return isSkipInstTermLocal(in);
+  }
+
+  // This should be already computed in initSkipInstTerm()
+  return skip_unique_inst_term_.at({inst_class, in->getTerm()});
+}
+
+// TODO there should be a better way to get this info by getting the master
+// terms from OpenDB
+bool FlexPA::isStdCell(frInst* inst)
+{
+  return inst->getMaster()->getMasterType().isCore();
+}
+
+bool FlexPA::isMacroCell(frInst* inst)
+{
+  dbMasterType masterType = inst->getMaster()->getMasterType();
+  return (masterType.isBlock() || masterType.isPad()
+          || masterType == dbMasterType::RING);
+}
+
 int FlexPA::main()
 {
   ProfileTask profile("PA:main");
 
   frTime t;
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 165, "Start pin access.");
   }
 
@@ -199,7 +247,7 @@ int FlexPA::main()
     }
   }
 
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     unique_insts_.report();
     //clang-format off
     logger_->report("#stdCellGenAp          = {}", std_cell_pin_gen_ap_cnt_);
@@ -219,7 +267,7 @@ int FlexPA::main()
     //clang-format on
   }
 
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 166, "Complete pin access.");
     t.print(logger_);
   }

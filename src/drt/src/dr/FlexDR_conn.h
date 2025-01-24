@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "dr/FlexDR_graphics.h"
 #include "frDesign.h"
 
@@ -46,6 +48,7 @@ class FlexDRConnectivityChecker
  public:
   FlexDRConnectivityChecker(drt::TritonRoute* router,
                             Logger* logger,
+                            RouterConfiguration* router_cfg,
                             FlexDRGraphics* graphics,
                             bool save_updates = false);
   void check(int iter = -1);
@@ -68,6 +71,12 @@ class FlexDRConnectivityChecker
   };
   using SpansByLayerAndTrackId = std::vector<std::vector<std::vector<Span>>>;
 
+  /**
+   * Fills the netRouteObjs with the net's shapes(segments and vias)
+   *
+   * The function filters the list of net's shapes from patches and adds only
+   * the segments and vias to the list netRouteObjs.
+   */
   void initRouteObjs(const frNet* net, NetRouteObjs& netRouteObjs);
   void buildPin2epMap(const frNet* net,
                       const NetRouteObjs& netRouteObjs,
@@ -112,6 +121,16 @@ class FlexDRConnectivityChecker
                      std::set<std::pair<Point, frLayerNum>>,
                      frBlockObjectComp>& pin2epMap,
       std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap);
+  /**
+   * Maps the net's segments to track indices.
+   *
+   * The function iterates over all the net's segments from the netRouteObjs
+   * list and fills the horzPathSegs and vertPathSegs list. The lists are
+   * indexed by the layerNum. Each entry in the list is a track-indexed map that
+   * represents. The map key is a track coordinate on the layer and a list of
+   * segment indices that lie on that track. P.S. The segment indices refer to
+   * their location in the netRouteObjs list.
+   */
   void organizePathSegsByLayerAndTrack(const frNet* net,
                                        const NetRouteObjs& netRouteObjs,
                                        PathSegsByLayerAndTrack& horzPathSegs,
@@ -176,6 +195,7 @@ class FlexDRConnectivityChecker
   frDesign* getDesign() const;
   drt::TritonRoute* router_;
   Logger* logger_;
+  RouterConfiguration* router_cfg_;
   FlexDRGraphics* graphics_;
   bool save_updates_;
 };

@@ -32,6 +32,8 @@
 
 #include "grid_component.h"
 
+#include <vector>
+
 #include "connect.h"
 #include "grid.h"
 #include "odb/db.h"

@@ -70,11 +70,9 @@ class definBase
   void setMode(defin::MODE mode);
   virtual void init();
 
-  int dbdist(int value) { return (int) (value * _dist_factor); }
+  int dbdist(int value) { return value * _dist_factor; }
 
   int dbdist(double value) { return lround(value * _dist_factor); }
-
-  int round(double value) { return lround(value); }
 
   void translate(const std::vector<defPoint>& defpoints,
                  std::vector<Point>& points)
@@ -89,7 +87,8 @@ class definBase
     }
   }
 
-  void translate(const defiPoints& defpoints, std::vector<Point>& points)
+  void translate(const DefParser::defiPoints& defpoints,
+                 std::vector<Point>& points)
   {
     points.clear();
 

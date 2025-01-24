@@ -354,6 +354,13 @@ proc unset_dont_use { args } {
   set_dont_use_cmd "unset_dont_use" $args 0
 }
 
+sta::define_cmd_args "reset_dont_use" {}
+
+proc reset_dont_use { args } {
+  sta::parse_key_args "reset_dont_use" args keys {} flags {}
+  rsz::reset_dont_use
+}
+
 proc set_dont_use_cmd { cmd cmd_args dont_use } {
   sta::check_argc_eq1 $cmd $cmd_args
   foreach lib_cell [sta::get_lib_cells_arg $cmd [lindex $cmd_args 0] sta::sta_warn] {
@@ -384,6 +391,24 @@ proc set_dont_touch_cmd { cmd cmd_args dont_touch } {
   foreach net $nets {
     rsz::set_dont_touch_net $net $dont_touch
   }
+}
+
+sta::define_cmd_args "report_dont_use" {}
+
+proc report_dont_use { args } {
+  sta::parse_key_args "report_dont_use" args keys {} flags {}
+  sta::check_argc_eq0 "report_dont_use" $args
+
+  rsz::report_dont_use
+}
+
+sta::define_cmd_args "report_dont_touch" {}
+
+proc report_dont_touch { args } {
+  sta::parse_key_args "report_dont_touch" args keys {} flags {}
+  sta::check_argc_eq0 "report_dont_touch" $args
+
+  rsz::report_dont_touch
 }
 
 sta::define_cmd_args "buffer_ports" {[-inputs] [-outputs]\
@@ -613,24 +638,33 @@ proc repair_timing { args } {
   }
 
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
+  if { [design_is_routed] } {
+    rsz::set_parasitics_src "detailed_routing"
+  }
 
   sta::check_argc_eq0 "repair_timing" $args
   rsz::check_parasitics
+
+  set recovered_power 0
+  set repaired_setup 0
+  set repaired_hold 0
   if { $recover_power_percent >= 0 } {
-    rsz::recover_power $recover_power_percent $match_cell_footprint
+    set recovered_power [rsz::recover_power $recover_power_percent $match_cell_footprint]
   } else {
     if { $setup } {
-      rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
+      set repaired_setup [rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
         $match_cell_footprint $verbose \
         $skip_pin_swap $skip_gate_cloning $skip_buffering \
-        $skip_buffer_removal $skip_last_gasp
+        $skip_buffer_removal $skip_last_gasp]
     }
     if { $hold } {
-      rsz::repair_hold $setup_margin $hold_margin \
+      set repaired_hold [rsz::repair_hold $setup_margin $hold_margin \
         $allow_setup_violations $max_buffer_percent $max_passes \
-        $match_cell_footprint $verbose
+        $match_cell_footprint $verbose]
     }
   }
+
+  return [expr $recovered_power || $repaired_setup || $repaired_hold]
 }
 
 ################################################################
@@ -690,6 +724,11 @@ sta::proc_redirect report_long_wires {
   sta::check_argc_eq1 "report_long_wires" $args
   set count [lindex $args 0]
   rsz::report_long_wires_cmd $count $digits
+}
+
+sta::define_cmd_args "eliminate_dead_logic" {}
+proc eliminate_dead_logic { } {
+  rsz::eliminate_dead_logic_cmd 1
 }
 
 namespace eval rsz {

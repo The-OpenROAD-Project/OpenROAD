@@ -29,6 +29,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frInst.h"
@@ -65,9 +66,8 @@ class frInstTerm : public frBlockObject
   frBlockObjectEnum typeId() const override { return frcInstTerm; }
   frAccessPoint* getAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
   bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
-  void getShapes(std::vector<frRect>& outShapes,
-                 bool updatedTransform = false) const;
-  Rect getBBox(bool updatedTransform) const;
+  void getShapes(std::vector<frRect>& outShapes) const;
+  Rect getBBox() const;
   void setIndexInOwner(int in) { index_in_owner_ = in; }
   int getIndexInOwner() const { return index_in_owner_; }
 

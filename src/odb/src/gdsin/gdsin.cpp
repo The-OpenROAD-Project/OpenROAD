@@ -33,6 +33,7 @@
 #include "odb/gdsin.h"
 
 #include <iostream>
+#include <vector>
 
 namespace odb ::gds {
 
@@ -58,7 +59,6 @@ dbGDSLib* GDSReader::read_gds(const std::string& filename, dbDatabase* db)
   }
   _db = nullptr;
 
-  bindAllSRefs();
   return _lib;
 }
 
@@ -163,26 +163,6 @@ bool GDSReader::processLib()
         "Corrupted GDS, BGNLIB record length is not 28 bytes");
   }
 
-  std::tm lastMT;
-  lastMT.tm_year = _r.data16[0];
-  lastMT.tm_mon = _r.data16[1];
-  lastMT.tm_mday = _r.data16[2];
-  lastMT.tm_hour = _r.data16[3];
-  lastMT.tm_min = _r.data16[4];
-  lastMT.tm_sec = _r.data16[5];
-
-  _lib->set_lastModified(lastMT);
-
-  std::tm lastAT;
-  lastAT.tm_year = _r.data16[6];
-  lastAT.tm_mon = _r.data16[7];
-  lastAT.tm_mday = _r.data16[8];
-  lastAT.tm_hour = _r.data16[9];
-  lastAT.tm_min = _r.data16[10];
-  lastAT.tm_sec = _r.data16[11];
-
-  _lib->set_lastAccessed(lastAT);
-
   readRecord();
   checkRType(RecordType::LIBNAME);
   _lib->setLibname(_r.data8);
@@ -214,17 +194,21 @@ bool GDSReader::processStruct()
 
   const std::string name(_r.data8.begin(), _r.data8.end());
 
-  if (_lib->findGDSStructure(name.c_str()) != nullptr) {
-    throw std::runtime_error("Corrupted GDS, Duplicate structure name");
+  dbGDSStructure* structure = _lib->findGDSStructure(name.c_str());
+  if (structure) {
+    if (_defined.find(structure) != _defined.end()) {
+      throw std::runtime_error("Corrupted GDS, Duplicate structure name");
+    }
+  } else {
+    structure = dbGDSStructure::create(_lib, name.c_str());
   }
-
-  dbGDSStructure* str = dbGDSStructure::create(_lib, name.c_str());
+  _defined.insert(structure);
 
   while (readRecord()) {
     if (_r.type == RecordType::ENDSTR) {
       return true;
     }
-    if (!processElement(str)) {
+    if (!processElement(structure)) {
       break;
     }
   }
@@ -232,8 +216,7 @@ bool GDSReader::processStruct()
   return false;
 }
 
-template <typename T>
-bool GDSReader::processXY(T* elem)
+std::vector<Point> GDSReader::processXY()
 {
   checkRType(RecordType::XY);
   if (_r.data32.size() % 2 != 0) {
@@ -244,8 +227,7 @@ bool GDSReader::processXY(T* elem)
   for (int i = 0; i < _r.data32.size(); i += 2) {
     xy.emplace_back(_r.data32[i], _r.data32[i + 1]);
   }
-  elem->setXy(xy);
-  return true;
+  return xy;
 }
 
 template <typename T>
@@ -263,7 +245,9 @@ void GDSReader::processPropAttr(T* elem)
     checkRType(RecordType::PROPVALUE);
     const std::string value = _r.data8;
 
-    elem->getPropattr().emplace_back(attr, value);
+    if (elem) {
+      elem->getPropattr().emplace_back(attr, value);
+    }
   }
 }
 
@@ -275,9 +259,13 @@ bool GDSReader::processElement(dbGDSStructure* structure)
       processPropAttr(el);
       break;
     }
-    case RecordType::SREF:
-    case RecordType::AREF: {
+    case RecordType::SREF: {
       auto el = processSRef(structure);
+      processPropAttr(el);
+      break;
+    }
+    case RecordType::AREF: {
+      auto el = processARef(structure);
       processPropAttr(el);
       break;
     }
@@ -297,8 +285,9 @@ bool GDSReader::processElement(dbGDSStructure* structure)
       break;
     }
     case RecordType::NODE: {
-      auto el = processNode(structure);
-      processPropAttr(el);
+      // Ignored - parse and discard
+      processNode();
+      processPropAttr<dbGDSBox>(nullptr);
       break;
     }
     default: {
@@ -328,20 +317,16 @@ dbGDSPath* GDSReader::processPath(dbGDSStructure* structure)
 
   readRecord();
   if (_r.type == RecordType::PATHTYPE) {
-    path->set_pathType(_r.data16[0]);
+    path->setPathType(_r.data16[0]);
     readRecord();
-  } else {
-    path->set_pathType(0);
   }
 
   if (_r.type == RecordType::WIDTH) {
     path->setWidth(_r.data32[0]);
     readRecord();
-  } else {
-    path->setWidth(0);
   }
 
-  processXY(path);
+  path->setXy(processXY());
 
   return path;
 }
@@ -359,34 +344,68 @@ dbGDSBoundary* GDSReader::processBoundary(dbGDSStructure* structure)
   bdy->setDatatype(_r.data16[0]);
 
   readRecord();
-  processXY(bdy);
+  bdy->setXy(processXY());
 
   return bdy;
 }
 
 dbGDSSRef* GDSReader::processSRef(dbGDSStructure* structure)
 {
-  auto* sref = dbGDSSRef::create(structure);
-
   readRecord();
   checkRType(RecordType::SNAME);
-  sref->set_sName(std::string(_r.data8.begin(), _r.data8.end()));
+
+  const std::string name(_r.data8.begin(), _r.data8.end());
+
+  dbGDSStructure* referenced = _lib->findGDSStructure(name.c_str());
+  if (!referenced) {
+    // Empty structure just to reference not yet defined.
+    referenced = dbGDSStructure::create(_lib, name.c_str());
+  }
+
+  auto* sref = dbGDSSRef::create(structure, referenced);
 
   readRecord();
   if (_r.type == RecordType::STRANS) {
     sref->setTransform(processSTrans());
   }
 
-  if (_r.type == RecordType::COLROW) {
-    sref->set_colRow({_r.data16[0], _r.data16[1]});
-    readRecord();
-  } else {
-    sref->set_colRow({1, 1});
-  }
-
-  processXY(sref);
+  sref->setOrigin(processXY().at(0));
 
   return sref;
+}
+
+dbGDSARef* GDSReader::processARef(dbGDSStructure* structure)
+{
+  readRecord();
+  checkRType(RecordType::SNAME);
+
+  const std::string name(_r.data8.begin(), _r.data8.end());
+
+  dbGDSStructure* referenced = _lib->findGDSStructure(name.c_str());
+  if (!referenced) {
+    // Empty structure just to reference not yet defined.
+    referenced = dbGDSStructure::create(_lib, name.c_str());
+  }
+
+  auto* aref = dbGDSARef::create(structure, referenced);
+
+  readRecord();
+  if (_r.type == RecordType::STRANS) {
+    aref->setTransform(processSTrans());
+  }
+
+  if (_r.type == RecordType::COLROW) {
+    aref->setNumColumns(_r.data16[0]);
+    aref->setNumRows(_r.data16[1]);
+    readRecord();
+  }
+
+  std::vector<Point> points = processXY();
+  aref->setOrigin(points.at(0));
+  aref->setLr(points.at(1));
+  aref->setUl(points.at(2));
+
+  return aref;
 }
 
 dbGDSText* GDSReader::processText(dbGDSStructure* structure)
@@ -412,7 +431,7 @@ dbGDSText* GDSReader::processText(dbGDSStructure* structure)
   }
 
   if (_r.type == RecordType::WIDTH) {
-    text->setWidth(_r.data32[0]);
+    // ignored
     readRecord();
   }
 
@@ -420,7 +439,7 @@ dbGDSText* GDSReader::processText(dbGDSStructure* structure)
     text->setTransform(processSTrans());
   }
 
-  processXY(text);
+  text->setOrigin(processXY().at(0));
 
   readRecord();
   checkRType(RecordType::STRING);
@@ -442,27 +461,27 @@ dbGDSBox* GDSReader::processBox(dbGDSStructure* structure)
   box->setDatatype(_r.data16[0]);
 
   readRecord();
-  processXY(box);
+  std::vector<Point> points = processXY();
+  Rect bounds;
+  bounds.mergeInit();
+  for (const Point& point : points) {
+    bounds.merge(point);
+  }
+  box->setBounds(bounds);
 
   return box;
 }
 
-dbGDSNode* GDSReader::processNode(dbGDSStructure* structure)
+void GDSReader::processNode()
 {
-  auto* elem = dbGDSNode::create(structure);
-
   readRecord();
   checkRType(RecordType::LAYER);
-  elem->setLayer(_r.data16[0]);
 
   readRecord();
   checkRType(RecordType::NODETYPE);
-  elem->setDatatype(_r.data16[0]);
 
   readRecord();
-  processXY(elem);
-
-  return elem;
+  processXY();
 }
 
 dbGDSSTrans GDSReader::processSTrans()
@@ -470,8 +489,7 @@ dbGDSSTrans GDSReader::processSTrans()
   checkRType(RecordType::STRANS);
 
   const bool flipX = _r.data8[0] & 0x80;
-  const bool absMag = _r.data8[1] & 0x04;
-  const bool absAngle = _r.data8[1] & 0x02;
+  // absolute magnification and angle are obsolete and ignored
 
   readRecord();
 
@@ -486,7 +504,7 @@ dbGDSSTrans GDSReader::processSTrans()
     readRecord();
   }
 
-  return dbGDSSTrans(flipX, absMag, absAngle, mag, angle);
+  return dbGDSSTrans(flipX, mag, angle);
 }
 
 dbGDSTextPres GDSReader::processTextPres()
@@ -497,19 +515,6 @@ dbGDSTextPres GDSReader::processTextPres()
 
   return dbGDSTextPres((dbGDSTextPres::VPres) vpres,
                        (dbGDSTextPres::HPres) hpres);
-}
-
-void GDSReader::bindAllSRefs()
-{
-  for (auto str : _lib->getGDSStructures()) {
-    for (auto sref : str->getGDSSRefs()) {
-      dbGDSStructure* ref = _lib->findGDSStructure(sref->get_sName().c_str());
-      if (ref == nullptr) {
-        throw std::runtime_error("Corrupted GDS, SRef to non-existent struct");
-      }
-      sref->setStructure(ref);
-    }
-  }
 }
 
 }  // namespace odb::gds

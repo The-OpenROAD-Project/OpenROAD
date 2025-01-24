@@ -27,14 +27,20 @@
 
 #include "FlexPA_unique.h"
 
+#include <vector>
+
 #include "distributed/frArchive.h"
 
 namespace drt {
 
 UniqueInsts::UniqueInsts(frDesign* design,
                          const frCollection<odb::dbInst*>& target_insts,
-                         Logger* logger)
-    : design_(design), target_insts_(target_insts), logger_(logger)
+                         Logger* logger,
+                         RouterConfiguration* router_cfg)
+    : design_(design),
+      target_insts_(target_insts),
+      logger_(logger),
+      router_cfg_(router_cfg)
 {
 }
 
@@ -148,7 +154,7 @@ void UniqueInsts::computeUnique(
         && target_frinsts.find(inst.get()) == target_frinsts.end()) {
       continue;
     }
-    if (!AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
+    if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
       ndr_insts.push_back(inst.get());
       continue;
     }
@@ -250,7 +256,7 @@ void UniqueInsts::checkFigsOnGrid(const frMPin* pin)
   }
 }
 
-void UniqueInsts::initPinAccess()
+void UniqueInsts::genPinAccess()
 {
   for (auto& inst : unique_) {
     for (auto& inst_term : inst->getInstTerms()) {
@@ -258,7 +264,7 @@ void UniqueInsts::initPinAccess()
         if (unique_to_pa_idx_.find(inst) == unique_to_pa_idx_.end()) {
           unique_to_pa_idx_[inst] = pin->getNumPinAccess();
         } else if (unique_to_pa_idx_[inst] != pin->getNumPinAccess()) {
-          logger_->error(DRT, 69, "initPinAccess error.");
+          logger_->error(DRT, 69, "genPinAccess error.");
         }
         checkFigsOnGrid(pin.get());
         auto pa = std::make_unique<frPinAccess>();
@@ -285,7 +291,7 @@ void UniqueInsts::initPinAccess()
 void UniqueInsts::init()
 {
   initUniqueInstance();
-  initPinAccess();
+  genPinAccess();
 }
 
 void UniqueInsts::report() const

@@ -39,16 +39,20 @@
 
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "odb/lefin.h"
 #include "ord/OpenRoad.hh"
 
 namespace ord {
 
-Tech::Tech() : app_(new OpenRoad())
+Tech::Tech(Tcl_Interp* interp,
+           const char* log_filename,
+           const char* metrics_filename)
+    : app_(new OpenRoad())
 {
-  auto* interp = Tcl_CreateInterp();
-  Tcl_Init(interp);
-  app_->init(interp);
+  if (!interp) {
+    interp = Tcl_CreateInterp();
+    Tcl_Init(interp);
+    app_->init(interp, log_filename, metrics_filename);
+  }
 }
 
 Tech::~Tech()

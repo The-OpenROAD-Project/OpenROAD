@@ -1,0 +1,11 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/fake_macros.lef, created 10 library cells
+[WARNING IFP-0028] Core area lower left (5.000, 5.000) snapped to (5.130, 5.600).
+[INFO IFP-0001] Added 346 rows of 2551 site FreePDK45_38x28_10R_NP_162NW_34O.
+[ERROR ORD-0062] No origin or location specified for test2.
+ORD-0062
+[ERROR ORD-0063] origin and location specified for test2, only one is supported.
+ORD-0063
+[ERROR ORD-0063] Instance test2 not in the design, -cell must be specified to create a new instance.
+ORD-0063
+No differences found.

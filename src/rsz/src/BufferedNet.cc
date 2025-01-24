@@ -37,6 +37,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <vector>
 
 #include "rsz/Resizer.hh"
 // Use spdlog fmt::format until c++20 that supports std::format.
@@ -375,6 +376,7 @@ BufferedNetPtr Resizer::makeBufferedNet(const Pin* drvr_pin,
     case ParasiticsSrc::placement:
       return makeBufferedNetSteiner(drvr_pin, corner);
     case ParasiticsSrc::global_routing:
+    case ParasiticsSrc::detailed_routing:
       return makeBufferedNetGroute(drvr_pin, corner);
     case ParasiticsSrc::none:
       return nullptr;

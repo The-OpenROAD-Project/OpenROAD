@@ -41,7 +41,10 @@
 #include <variant>
 #include <vector>
 
+#include "dbBlockSet.h"
+#include "dbCCSegSet.h"
 #include "dbMatrix.h"
+#include "dbNetSet.h"
 #include "dbObject.h"
 #include "dbSet.h"
 #include "dbTypes.h"
@@ -49,7 +52,7 @@
 #include "geom.h"
 #include "odb.h"
 
-#define ADS_MAX_CORNER 10
+constexpr int ADS_MAX_CORNER = 10;
 
 namespace utl {
 class Logger;
@@ -108,7 +111,6 @@ class dbSite;
 class dbMaster;
 class dbMTerm;
 class dbMPin;
-class dbTarget;
 class dbGDSLib;
 
 // Tech objects
@@ -130,11 +132,12 @@ class dbViaParams;
 // Generator Code Begin ClassDeclarations
 class dbAccessPoint;
 class dbBusPort;
+class dbCellEdgeSpacing;
 class dbDft;
 class dbGCellGrid;
+class dbGDSARef;
 class dbGDSBoundary;
 class dbGDSBox;
-class dbGDSNode;
 class dbGDSPath;
 class dbGDSSRef;
 class dbGDSStructure;
@@ -147,6 +150,7 @@ class dbLevelShifter;
 class dbLogicPort;
 class dbMarker;
 class dbMarkerCategory;
+class dbMasterEdgeType;
 class dbMetalWidthViaMap;
 class dbModBTerm;
 class dbModInst;
@@ -1227,7 +1231,7 @@ class dbBlock : public dbObject
   ///
   /// Convert an area from database units squared (DBU^2) to square microns.
   ///
-  double dbuAreaToMicrons(const int64_t dbu_area);
+  double dbuAreaToMicrons(int64_t dbu_area);
 
   ///
   /// Convert a length from microns to database units (DBUs).
@@ -1237,7 +1241,7 @@ class dbBlock : public dbObject
   ///
   /// Convert an area from square microns to database units squared (DBU^2).
   ///
-  int64_t micronsAreaToDbu(const double micronsArea);
+  int64_t micronsAreaToDbu(double micronsArea);
 
   ///
   /// Get the hierarchy delimeter.
@@ -1727,17 +1731,6 @@ class dbBlock : public dbObject
                          char hier_delimeter = 0);
 
   ///
-  /// duplicate - Make a duplicate of the specified "child" block. If name ==
-  /// nullptr, the name of the block is also duplicated. If the duplicated block
-  /// does not have a unique name, then "findChild" may return an incorrect
-  /// block. UNIQUE child-block-names are not enforced! (This should be fixed)!
-  ///
-  /// A top-block can not be duplicated. This methods returns nullptr if the
-  /// specified block has not parent.
-  ///
-  static dbBlock* duplicate(dbBlock* block, const char* name = nullptr);
-
-  ///
   /// Translate a database-id back to a pointer.
   ///
   static dbBlock* getBlock(dbChip* chip, uint oid);
@@ -2113,6 +2106,10 @@ class dbNet : public dbObject
   /// Returns false if a net with the same name already exists.
   ///
   bool rename(const char* name);
+
+  ///
+  /// Swaps the current db net name with the source db net
+  void swapNetNames(dbNet* source, bool journal = true);
 
   ///
   /// RC netowork disconnect
@@ -2879,6 +2876,10 @@ class dbNet : public dbObject
   dbSet<dbNetTrack> getTracks() const;
 
   void clearTracks();
+
+  bool hasJumpers();
+
+  void setJumpers(bool has_jumpers);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3072,7 +3073,7 @@ class dbInst : public dbObject
   /// Set the transform of this instance.
   /// Equivalent to setOrient() and setOrigin()
   ///
-  void setTransform(dbTransform& t);
+  void setTransform(const dbTransform& t);
 
   ///
   /// Get the hierarchical transform of this instance.
@@ -3636,7 +3637,8 @@ class dbITerm : public dbObject
   ///
   /// Returns all geometries of all dbMPin associated with
   /// the dbMTerm.
-  std::vector<Rect> getGeometries() const;
+  ///
+  std::vector<std::pair<dbTechLayer*, Rect>> getGeometries() const;
 
   void setAccessPoint(dbMPin* pin, dbAccessPoint* ap);
 
@@ -3912,7 +3914,7 @@ class dbWire : public dbObject
   ///
   /// Get the total path length contained in this wire.
   ///
-  uint64 getLength();
+  uint64_t getLength();
 
   ///
   /// Get the number of entries contained in this wire.
@@ -4095,12 +4097,20 @@ class dbTrackGrid : public dbObject
   ///
   /// Add a "X" grid pattern.
   ///
-  void addGridPatternX(int origin_x, int line_count, int step);
+  void addGridPatternX(int origin_x,
+                       int line_count,
+                       int step,
+                       int first_mask = 0,
+                       bool samemask = false);
 
   ///
   /// Add a "Y" grid pattern.
   ///
-  void addGridPatternY(int origin_y, int line_count, int step);
+  void addGridPatternY(int origin_y,
+                       int line_count,
+                       int step,
+                       int first_mask = 0,
+                       bool samemask = false);
 
   ///
   /// Get the number of "X" grid patterns.
@@ -4116,11 +4126,23 @@ class dbTrackGrid : public dbObject
   /// Get the "ith" "X" grid pattern.
   ///
   void getGridPatternX(int i, int& origin_x, int& line_count, int& step);
+  void getGridPatternX(int i,
+                       int& origin_x,
+                       int& line_count,
+                       int& step,
+                       int& first_mask,
+                       bool& samemask);
 
   ///
   /// Get the "ith" "Y" grid pattern.
   ///
   void getGridPatternY(int i, int& origin_y, int& line_count, int& step);
+  void getGridPatternY(int i,
+                       int& origin_y,
+                       int& line_count,
+                       int& step,
+                       int& first_mask,
+                       bool& samemask);
   ///
   /// Create an empty Track grid.
   /// Returns nullptr if a the grid for this layer already exists.
@@ -5684,6 +5706,11 @@ class dbMaster : public dbObject
   dbSet<dbMTerm> getMTerms();
 
   ///
+  /// Get the LEF58_EDGETYPE properties.
+  ///
+  dbSet<dbMasterEdgeType> getEdgeTypes();
+
+  ///
   /// Find a specific master-terminal
   /// Returns nullptr if the object was not found.
   ///
@@ -5798,22 +5825,6 @@ class dbGDSLib : public dbObject
 
   std::string getLibname() const;
 
-  void set_lastAccessed(std::tm lastAccessed);
-
-  std::tm get_lastAccessed() const;
-
-  void set_lastModified(std::tm lastModified);
-
-  std::tm get_lastModified() const;
-
-  void set_libDirSize(int16_t libDirSize);
-
-  int16_t get_libDirSize() const;
-
-  void set_srfName(std::string srfName);
-
-  std::string get_srfName() const;
-
   void setUnits(double uu_per_dbu, double dbu_per_meter);
 
   std::pair<double, double> getUnits() const;
@@ -5889,11 +5900,6 @@ class dbMTerm : public dbObject
   /// Get bbox of this term (ie the bbox of the getMPins())
   ///
   Rect getBBox();
-
-  ///
-  /// Get the target points of this terminal.
-  ///
-  dbSet<dbTarget> getTargets();
 
   ///
   /// Add antenna info that is not specific to an oxide model.
@@ -5991,56 +5997,6 @@ class dbMPin : public dbObject
   /// Translate a database-id back to a pointer.
   ///
   static dbMPin* getMPin(dbMaster* master, uint oid);
-};
-
-///////////////////////////////////////////////////////////////////////////////
-///
-/// A Target is the element that represents a physical target point on a MTerm.
-///
-///////////////////////////////////////////////////////////////////////////////
-class dbTarget : public dbObject
-{
- public:
-  ///
-  /// Get the master this target belongs too.
-  ///
-  dbMaster* getMaster();
-
-  ///
-  /// Get the mterm this target
-  ///
-  dbMTerm* getMTerm();
-
-  ///
-  /// Get the tech-layer this target
-  ///
-  dbTechLayer* getTechLayer();
-
-  ///
-  /// Get the target point of this target.
-  ///
-  Point getPoint();
-
-  ///
-  /// Create a new master terminal.
-  /// Returns nullptr if a master terminal with this name already exists
-  ///
-  static dbTarget* create(dbMTerm* mterm, dbTechLayer* layer, Point point);
-
-  ///
-  /// Destroy a target
-  ///
-  static void destroy(dbTarget* t);
-
-  ///
-  /// Destroy a target
-  ///
-  static dbSet<dbTarget>::iterator destroy(dbSet<dbTarget>::iterator& itr);
-
-  ///
-  /// Translate a database-id back to a pointer.
-  ///
-  static dbTarget* getTarget(dbMaster* master, uint oid);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -6214,6 +6170,11 @@ class dbTech : public dbObject
   ///
   ///
   dbSet<dbMetalWidthViaMap> getMetalWidthViaMap();
+
+  ///
+  /// Get the LEF58_CELLEDGESPACINGTABLE
+  ///
+  dbSet<dbCellEdgeSpacing> getCellEdgeSpacingTable();
 
   ///
   ///
@@ -7325,6 +7286,50 @@ class dbBusPort : public dbObject
   // User Code End dbBusPort
 };
 
+class dbCellEdgeSpacing : public dbObject
+{
+ public:
+  void setFirstEdgeType(const std::string& first_edge_type);
+
+  std::string getFirstEdgeType() const;
+
+  void setSecondEdgeType(const std::string& second_edge_type);
+
+  std::string getSecondEdgeType() const;
+
+  void setSpacing(int spacing);
+
+  int getSpacing() const;
+
+  void setExceptAbutted(bool except_abutted);
+
+  bool isExceptAbutted() const;
+
+  void setExceptNonFillerInBetween(bool except_non_filler_in_between);
+
+  bool isExceptNonFillerInBetween() const;
+
+  void setOptional(bool optional);
+
+  bool isOptional() const;
+
+  void setSoft(bool soft);
+
+  bool isSoft() const;
+
+  void setExact(bool exact);
+
+  bool isExact() const;
+
+  // User Code Begin dbCellEdgeSpacing
+
+  static dbCellEdgeSpacing* create(dbTech*);
+
+  static void destroy(dbCellEdgeSpacing*);
+
+  // User Code End dbCellEdgeSpacing
+};
+
 // Top level DFT (Design for Testing) class
 class dbDft : public dbObject
 {
@@ -7428,6 +7433,42 @@ class dbGCellGrid : public dbObject
   // User Code End dbGCellGrid
 };
 
+class dbGDSARef : public dbObject
+{
+ public:
+  void setOrigin(Point origin);
+
+  Point getOrigin() const;
+
+  void setLr(Point lr);
+
+  Point getLr() const;
+
+  void setUl(Point ul);
+
+  Point getUl() const;
+
+  void setTransform(dbGDSSTrans transform);
+
+  dbGDSSTrans getTransform() const;
+
+  void setNumRows(int16_t num_rows);
+
+  int16_t getNumRows() const;
+
+  void setNumColumns(int16_t num_columns);
+
+  int16_t getNumColumns() const;
+
+  // User Code Begin dbGDSARef
+  dbGDSStructure* getStructure() const;
+  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+
+  static dbGDSARef* create(dbGDSStructure* parent, dbGDSStructure* child);
+  static void destroy(dbGDSARef* aref);
+  // User Code End dbGDSARef
+};
+
 class dbGDSBoundary : public dbObject
 {
  public:
@@ -7463,41 +7504,16 @@ class dbGDSBox : public dbObject
 
   int16_t getDatatype() const;
 
-  void setXy(const std::vector<Point>& xy);
+  void setBounds(Rect bounds);
 
-  void getXy(std::vector<Point>& tbl) const;
+  Rect getBounds() const;
 
   // User Code Begin dbGDSBox
-  const std::vector<Point>& getXY();
   std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
 
   static dbGDSBox* create(dbGDSStructure* structure);
   static void destroy(dbGDSBox* box);
   // User Code End dbGDSBox
-};
-
-class dbGDSNode : public dbObject
-{
- public:
-  void setLayer(int16_t layer);
-
-  int16_t getLayer() const;
-
-  void setDatatype(int16_t datatype);
-
-  int16_t getDatatype() const;
-
-  void setXy(const std::vector<Point>& xy);
-
-  void getXy(std::vector<Point>& tbl) const;
-
-  // User Code Begin dbGDSNode
-  const std::vector<Point>& getXY();
-  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
-
-  static dbGDSNode* create(dbGDSStructure* structure);
-  static void destroy(dbGDSNode* node);
-  // User Code End dbGDSNode
 };
 
 class dbGDSPath : public dbObject
@@ -7519,9 +7535,9 @@ class dbGDSPath : public dbObject
 
   int getWidth() const;
 
-  void set_pathType(int16_t pathType);
+  void setPathType(int16_t path_type);
 
-  int16_t get_pathType() const;
+  int16_t getPathType() const;
 
   // User Code Begin dbGDSPath
   const std::vector<Point>& getXY();
@@ -7535,38 +7551,19 @@ class dbGDSPath : public dbObject
 class dbGDSSRef : public dbObject
 {
  public:
-  void setLayer(int16_t layer);
+  void setOrigin(Point origin);
 
-  int16_t getLayer() const;
-
-  void setDatatype(int16_t datatype);
-
-  int16_t getDatatype() const;
-
-  void setXy(const std::vector<Point>& xy);
-
-  void getXy(std::vector<Point>& tbl) const;
-
-  void set_sName(const std::string& sName);
-
-  std::string get_sName() const;
+  Point getOrigin() const;
 
   void setTransform(dbGDSSTrans transform);
 
   dbGDSSTrans getTransform() const;
 
-  void set_colRow(const std::pair<int16_t, int16_t>& colRow);
-
-  std::pair<int16_t, int16_t> get_colRow() const;
-
   // User Code Begin dbGDSSRef
-  const std::vector<Point>& getXY();
+  dbGDSStructure* getStructure() const;
   std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
 
-  dbGDSStructure* getStructure() const;
-  void setStructure(dbGDSStructure* structure) const;
-
-  static dbGDSSRef* create(dbGDSStructure* structure);
+  static dbGDSSRef* create(dbGDSStructure* parent, dbGDSStructure* child);
   static void destroy(dbGDSSRef* sref);
   // User Code End dbGDSSRef
 };
@@ -7580,11 +7577,11 @@ class dbGDSStructure : public dbObject
 
   dbSet<dbGDSBox> getGDSBoxs() const;
 
-  dbSet<dbGDSNode> getGDSNodes() const;
-
   dbSet<dbGDSPath> getGDSPaths() const;
 
   dbSet<dbGDSSRef> getGDSSRefs() const;
+
+  dbSet<dbGDSARef> getGDSARefs() const;
 
   dbSet<dbGDSText> getGDSTexts() const;
 
@@ -7609,17 +7606,13 @@ class dbGDSText : public dbObject
 
   int16_t getDatatype() const;
 
-  void setXy(const std::vector<Point>& xy);
+  void setOrigin(Point origin);
 
-  void getXy(std::vector<Point>& tbl) const;
+  Point getOrigin() const;
 
   void setPresentation(dbGDSTextPres presentation);
 
   dbGDSTextPres getPresentation() const;
-
-  void setWidth(int width);
-
-  int getWidth() const;
 
   void setTransform(dbGDSSTrans transform);
 
@@ -7630,7 +7623,6 @@ class dbGDSText : public dbObject
   std::string getText() const;
 
   // User Code Begin dbGDSText
-  const std::vector<Point>& getXY();
   std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
 
   static dbGDSText* create(dbGDSStructure* structure);
@@ -7660,6 +7652,10 @@ class dbGlobalConnect : public dbObject
                                  const std::string& pin_pattern);
 
   static void destroy(dbGlobalConnect* global_connect);
+
+  static dbSet<dbGlobalConnect>::iterator destroy(
+      dbSet<dbGlobalConnect>::iterator& itr);
+
   // User Code End dbGlobalConnect
 };
 
@@ -7732,16 +7728,23 @@ class dbGuide : public dbObject
 
   dbTechLayer* getViaLayer() const;
 
+  bool isCongested() const;
+
   static dbGuide* create(dbNet* net,
                          dbTechLayer* layer,
                          dbTechLayer* via_layer,
-                         Rect box);
+                         Rect box,
+                         bool is_congested);
 
   static dbGuide* getGuide(dbBlock* block, uint dbid);
 
   static void destroy(dbGuide* guide);
 
   static dbSet<dbGuide>::iterator destroy(dbSet<dbGuide>::iterator& itr);
+
+  bool isJumper();
+
+  void setIsJumper(bool jumper);
 
   // User Code End dbGuide
 };
@@ -8012,6 +8015,49 @@ class dbMarkerCategory : public dbObject
   // User Code End dbMarkerCategory
 };
 
+class dbMasterEdgeType : public dbObject
+{
+ public:
+  enum EdgeDir
+  {
+    TOP,
+    RIGHT,
+    LEFT,
+    BOTTOM
+  };
+
+  void setEdgeType(const std::string& edge_type);
+
+  std::string getEdgeType() const;
+
+  void setCellRow(int cell_row);
+
+  int getCellRow() const;
+
+  void setHalfRow(int half_row);
+
+  int getHalfRow() const;
+
+  void setRangeBegin(int range_begin);
+
+  int getRangeBegin() const;
+
+  void setRangeEnd(int range_end);
+
+  int getRangeEnd() const;
+
+  // User Code Begin dbMasterEdgeType
+  void setEdgeDir(dbMasterEdgeType::EdgeDir edge_dir);
+
+  dbMasterEdgeType::EdgeDir getEdgeDir() const;
+
+  static dbMasterEdgeType* create(dbMaster* master);
+
+  static void destroy(dbMasterEdgeType* edge_type);
+
+  // User Code End dbMasterEdgeType
+};
+
 class dbMetalWidthViaMap : public dbObject
 {
  public:
@@ -8082,6 +8128,7 @@ class dbModBTerm : public dbObject
   dbBusPort* getBusPort() const;
   static dbModBTerm* create(dbModule* parentModule, const char* name);
   static void destroy(dbModBTerm*);
+  static dbModBTerm* getModBTerm(dbBlock* block, uint dbid);
 
  private:
   // User Code End dbModBTerm
@@ -8118,6 +8165,9 @@ class dbModInst : public dbObject
 
   static dbModInst* getModInst(dbBlock* block_, uint dbid_);
 
+  /// Swap the module of this instance.
+  /// Returns true if the operations succeeds.
+  bool swapMaster(dbModule* module);
   // User Code End dbModInst
 };
 
@@ -8137,6 +8187,7 @@ class dbModITerm : public dbObject
   void disconnect();
   static dbModITerm* create(dbModInst* parentInstance, const char* name);
   static void destroy(dbModITerm*);
+  static dbModITerm* getModITerm(dbBlock* block, uint dbid);
   // User Code End dbModITerm
 };
 
@@ -8152,8 +8203,11 @@ class dbModNet : public dbObject
   dbSet<dbBTerm> getBTerms();
 
   const char* getName() const;
+  void rename(const char* new_name);
+  static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* name);
   static void destroy(dbModNet*);
+
   // User Code End dbModNet
 };
 
@@ -8204,6 +8258,29 @@ class dbModule : public dbObject
   static void destroy(dbModule* module);
 
   static dbModule* getModule(dbBlock* block_, uint dbid_);
+
+  static dbModule* makeUniqueDbModule(const char* cell_name,
+                                      const char* inst_name,
+                                      dbBlock* block);
+
+  // Copy and uniquify a given module based on current instance
+  static void copy(dbModule* old_module,
+                   dbModule* new_module,
+                   dbModInst* new_mod_inst);
+  static void copyModulePorts(dbModule* old_module,
+                              dbModule* new_module,
+                              modBTMap& mod_bt_map);
+  static void copyModuleInsts(dbModule* old_module,
+                              dbModule* new_module,
+                              dbModInst* new_mod_inst,
+                              ITMap& it_map);
+  static void copyModuleModNets(dbModule* old_module,
+                                dbModule* new_module,
+                                modBTMap& mod_bt_map,
+                                ITMap& it_map);
+  static void copyModuleBoundaryIO(dbModule* old_module,
+                                   dbModule* new_module,
+                                   dbModInst* new_mod_inst);
 
   // User Code End dbModule
 };

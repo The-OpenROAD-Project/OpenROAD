@@ -33,13 +33,13 @@
 #include "odb/db.h"
 #include "odb/lefin.h"
 
-namespace lefTechLayerType {
+namespace odb::lefTechLayerType {
 
 template <typename Iterator>
 bool parse(Iterator first,
            Iterator last,
            odb::dbTechLayer* layer,
-           odb::lefin* lefin)
+           odb::lefinReader* lefinReader)
 {
   qi::rule<std::string::iterator, space_type> TypeRule
       = (lit("TYPE")
@@ -117,13 +117,13 @@ bool parse(Iterator first,
 
   return valid && first == last;
 }
-}  // namespace lefTechLayerType
+}  // namespace odb::lefTechLayerType
 
 namespace odb {
 
 bool lefTechLayerTypeParser::parse(std::string s,
                                    dbTechLayer* layer,
-                                   odb::lefin* l)
+                                   odb::lefinReader* l)
 {
   return lefTechLayerType::parse(s.begin(), s.end(), layer, l);
 }

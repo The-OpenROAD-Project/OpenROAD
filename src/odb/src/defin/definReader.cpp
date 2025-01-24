@@ -32,11 +32,13 @@
 
 #include "definReader.h"
 
+#include <boost/algorithm/string/replace.hpp>
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "definBlockage.h"
 #include "definComponent.h"
@@ -101,7 +103,7 @@ dbITerm* findScanITerm(definReader* reader,
   if (!pin_name) {
     if (!common_pin) {
       reader->error(
-          fmt::format("SCANDEF is missing either component pin or a "
+          fmt::format("SCANCHAIN is missing either component pin or a "
                       "COMMONSCANPINS for instance {}",
                       inst->getName()));
       return nullptr;
@@ -112,26 +114,40 @@ dbITerm* findScanITerm(definReader* reader,
   return inst->findITerm(pin_name);
 }
 
-std::optional<std::variant<dbBTerm*, dbITerm*>>
-findScanTerm(definReader* reader, dbBlock* block, const char* pin_name)
+std::optional<std::variant<dbBTerm*, dbITerm*>> findScanTerm(
+    definReader* reader,
+    dbBlock* block,
+    const char* type,
+    const char* inst_name,
+    const char* pin_name)
 {
-  dbBTerm* bterm = block->findBTerm(pin_name);
-  if (bterm) {
-    return bterm;
+  if (inst_name && strcmp(inst_name, "PIN") != 0) {
+    dbInst* inst = block->findInst(inst_name);
+    if (inst) {
+      dbITerm* iterm = inst->findITerm(pin_name);
+      if (iterm) {
+        return iterm;
+      }
+    }
+  } else {
+    dbBTerm* bterm = block->findBTerm(pin_name);
+    if (bterm) {
+      return bterm;
+    }
   }
-
-  dbITerm* iterm = block->findITerm(pin_name);
-  if (iterm) {
-    return iterm;
+  std::string name;
+  if (inst_name) {
+    name = fmt::format("{}/{}", inst_name, pin_name);
+  } else {
+    name = pin_name;
   }
-  reader->error(
-      fmt::format("SCANDEF START/STOP pin {} does not exist", pin_name));
+  reader->error(fmt::format("SCANCHAIN {} pin {} does not exist", type, name));
   return std::nullopt;
 }
 
 void populateScanInst(definReader* reader,
                       dbBlock* block,
-                      defiScanchain* scan_chain,
+                      DefParser::defiScanchain* scan_chain,
                       dbScanList* db_scan_list,
                       const char* inst_name,
                       const char* in_pin_name,
@@ -140,7 +156,7 @@ void populateScanInst(definReader* reader,
 {
   dbInst* inst = block->findInst(inst_name);
   if (!inst) {
-    reader->error(fmt::format("SCANDEF Inst {} does not exist", inst_name));
+    reader->error(fmt::format("SCANCHAIN Inst {} does not exist", inst_name));
     return;
   }
 
@@ -149,14 +165,15 @@ void populateScanInst(definReader* reader,
   dbITerm* scan_in
       = findScanITerm(reader, inst, in_pin_name, scan_chain->commonInPin());
   if (!scan_in) {
-    reader->error(fmt::format(
-        "SCANDEF IN pin {} does not exist in cell {}", in_pin_name, inst_name));
+    reader->error(fmt::format("SCANCHAIN IN pin {} does not exist in cell {}",
+                              in_pin_name,
+                              inst_name));
   }
 
   dbITerm* scan_out
       = findScanITerm(reader, inst, out_pin_name, scan_chain->commonOutPin());
   if (!scan_out) {
-    reader->error(fmt::format("SCANDEF OUT pin {} does not exist in cell {}",
+    reader->error(fmt::format("SCANCHAIN OUT pin {} does not exist in cell {}",
                               out_pin_name,
                               inst_name));
   }
@@ -374,18 +391,20 @@ static std::string renameBlock(dbBlock* parent, const char* old_name)
   }
 }
 
-int definReader::versionCallback(defrCallbackType_e /* unused: type */,
-                                 const char* value,
-                                 defiUserData data)
+int definReader::versionCallback(
+    DefParser::defrCallbackType_e type /* unused: type */,
+    const char* value,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   reader->version_ = value;
   return PARSE_OK;
 }
 
-int definReader::divideCharCallback(defrCallbackType_e /* unused: type */,
-                                    const char* value,
-                                    defiUserData data)
+int definReader::divideCharCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    const char* value,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   reader->hier_delimeter_ = value[0];
@@ -395,9 +414,10 @@ int definReader::divideCharCallback(defrCallbackType_e /* unused: type */,
   }
   return PARSE_OK;
 }
-int definReader::busBitCallback(defrCallbackType_e /* unused: type */,
-                                const char* value,
-                                defiUserData data)
+int definReader::busBitCallback(
+    DefParser::defrCallbackType_e type /* unused: type */,
+    const char* value,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   reader->left_bus_delimeter_ = value[0];
@@ -409,9 +429,10 @@ int definReader::busBitCallback(defrCallbackType_e /* unused: type */,
   }
   return PARSE_OK;
 }
-int definReader::designCallback(defrCallbackType_e /* unused: type */,
-                                const char* design,
-                                defiUserData data)
+int definReader::designCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    const char* design,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   std::string block_name;
@@ -462,9 +483,10 @@ int definReader::designCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::blockageCallback(defrCallbackType_e /* unused: type */,
-                                  defiBlockage* blockage,
-                                  defiUserData data)
+int definReader::blockageCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defiBlockage* blockage,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -512,7 +534,7 @@ int definReader::blockageCallback(defrCallbackType_e /* unused: type */,
     }
 
     for (int i = 0; i < blockage->numPolygons(); ++i) {
-      defiPoints defPoints = blockage->getPolygon(i);
+      DefParser::defiPoints defPoints = blockage->getPolygon(i);
       std::vector<Point> points;
       reader->translate(defPoints, points);
       blockageR->blockageRoutingPolygon(points);
@@ -550,23 +572,31 @@ int definReader::blockageCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::componentsCallback(defrCallbackType_e /* unused: type */,
-                                    defiComponent* comp,
-                                    defiUserData data)
+int definReader::componentsCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defiComponent* comp,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
   definComponent* componentR = reader->_componentR;
-  if (reader->_mode != defin::DEFAULT
-      && reader->_block->findInst(comp->id()) == nullptr) {
-    std::string modeStr
-        = reader->_mode == defin::FLOORPLAN ? "FLOORPLAN" : "INCREMENTAL";
-    reader->_logger->warn(utl::ODB,
-                          248,
-                          "skipping undefined comp {} encountered in {} DEF",
-                          comp->id(),
-                          modeStr);
-    return PARSE_OK;
+  std::string id = comp->id();
+  if (reader->_mode != defin::DEFAULT) {
+    if (reader->_block->findInst(id.c_str()) == nullptr) {
+      // Try escaping the hierarchy and see if that matches
+      boost::replace_all(id, "/", "\\/");
+      if (reader->_block->findInst(id.c_str()) == nullptr) {
+        std::string modeStr
+            = reader->_mode == defin::FLOORPLAN ? "FLOORPLAN" : "INCREMENTAL";
+        reader->_logger->warn(
+            utl::ODB,
+            248,
+            "skipping undefined comp {} encountered in {} DEF",
+            comp->id(),
+            modeStr);
+        return PARSE_OK;
+      }
+    }
   }
 
   if (comp->hasEEQ()) {
@@ -581,7 +611,7 @@ int definReader::componentsCallback(defrCallbackType_e /* unused: type */,
     UNSUPPORTED("ROUTEHALO on component is unsupported");
   }
 
-  componentR->begin(comp->id(), comp->name());
+  componentR->begin(id.c_str(), comp->name());
   if (comp->hasSource()) {
     componentR->source(dbSourceType(comp->source()));
   }
@@ -610,9 +640,9 @@ int definReader::componentsCallback(defrCallbackType_e /* unused: type */,
 }
 
 int definReader::componentMaskShiftCallback(
-    defrCallbackType_e /* unused: type */,
-    defiComponentMaskShiftLayer* shiftLayers,
-    defiUserData data)
+    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defiComponentMaskShiftLayer* shiftLayers,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   for (int i = 0; i < shiftLayers->numMaskShiftLayers(); i++) {
@@ -624,13 +654,14 @@ int definReader::componentMaskShiftCallback(
   return PARSE_OK;
 }
 
-int definReader::dieAreaCallback(defrCallbackType_e /* unused: type */,
-                                 defiBox* box,
-                                 defiUserData data)
+int definReader::dieAreaCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defiBox* box,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
-  const defiPoints points = box->getPoint();
+  const DefParser::defiPoints points = box->getPoint();
 
   if (reader->_mode == defin::DEFAULT || reader->_mode == defin::FLOORPLAN) {
     std::vector<Point> P;
@@ -686,25 +717,26 @@ int definReader::dieAreaCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::extensionCallback(defrCallbackType_e /* unused: type */,
-                                   const char* /* unused: extension */,
-                                   defiUserData data)
+int definReader::extensionCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    const char* /* unused: extension */,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   UNSUPPORTED("Syntax extensions (BEGINEXT/ENDEXT) are unsupported");
   return PARSE_OK;
 }
 
-int definReader::fillsCallback(defrCallbackType_e /* unused: type */,
+int definReader::fillsCallback(DefParser::defrCallbackType_e /* unused: type */,
                                int /* unused: count */,
-                               defiUserData data)
+                               DefParser::defiUserData data)
 {
   return PARSE_OK;
 }
 
-int definReader::fillCallback(defrCallbackType_e /* unused: type */,
-                              defiFill* fill,
-                              defiUserData data)
+int definReader::fillCallback(DefParser::defrCallbackType_e /* unused: type */,
+                              DefParser::defiFill* fill,
+                              DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -727,7 +759,7 @@ int definReader::fillCallback(defrCallbackType_e /* unused: type */,
   }
 
   for (int i = 0; i < fill->numPolygons(); ++i) {
-    defiPoints defPoints = fill->getPolygon(i);
+    DefParser::defiPoints defPoints = fill->getPolygon(i);
     std::vector<Point> points;
     reader->translate(defPoints, points);
 
@@ -739,9 +771,10 @@ int definReader::fillCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::gcellGridCallback(defrCallbackType_e /* unused: type */,
-                                   defiGcellGrid* grid,
-                                   defiUserData data)
+int definReader::gcellGridCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defiGcellGrid* grid,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   defDirection dir = (grid->macro()[0] == 'X') ? DEF_X : DEF_Y;
@@ -751,9 +784,10 @@ int definReader::gcellGridCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::groupNameCallback(defrCallbackType_e /* unused: type */,
-                                   const char* name,
-                                   defiUserData data)
+int definReader::groupNameCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    const char* name,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -761,9 +795,10 @@ int definReader::groupNameCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::groupMemberCallback(defrCallbackType_e /* unused: type */,
-                                     const char* member,
-                                     defiUserData data)
+int definReader::groupMemberCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    const char* member,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -771,9 +806,9 @@ int definReader::groupMemberCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::groupCallback(defrCallbackType_e /* unused: type */,
-                               defiGroup* group,
-                               defiUserData data)
+int definReader::groupCallback(DefParser::defrCallbackType_e /* unused: type */,
+                               DefParser::defiGroup* group,
+                               DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -787,18 +822,19 @@ int definReader::groupCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::historyCallback(defrCallbackType_e /* unused: type */,
-                                 const char* /* unused: extension */,
-                                 defiUserData data)
+int definReader::historyCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    const char* /* unused: extension */,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   UNSUPPORTED("HISTORY is unsupported");
   return PARSE_OK;
 }
 
-int definReader::netCallback(defrCallbackType_e /* unused: type */,
-                             defiNet* net,
-                             defiUserData data)
+int definReader::netCallback(DefParser::defrCallbackType_e /* unused: type */,
+                             DefParser::defiNet* net,
+                             DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -879,24 +915,24 @@ int definReader::netCallback(defrCallbackType_e /* unused: type */,
   }
 
   for (int i = 0; i < net->numWires(); ++i) {
-    defiWire* wire = net->wire(i);
+    DefParser::defiWire* wire = net->wire(i);
     netR->wire(wire->wireType());
 
     for (int j = 0; j < wire->numPaths(); ++j) {
-      defiPath* path = wire->path(j);
+      DefParser::defiPath* path = wire->path(j);
 
       path->initTraverse();
 
       int pathId;
-      while ((pathId = path->next()) != DEFIPATH_DONE) {
+      while ((pathId = path->next()) != DefParser::DEFIPATH_DONE) {
         switch (pathId) {
-          case DEFIPATH_LAYER: {
+          case DefParser::DEFIPATH_LAYER: {
             // We need to peek ahead to see if there is a taper next
             const char* layer = path->getLayer();
             int nextId = path->next();
-            if (nextId == DEFIPATH_TAPER) {
+            if (nextId == DefParser::DEFIPATH_TAPER) {
               netR->pathTaper(layer);
-            } else if (nextId == DEFIPATH_TAPERRULE) {
+            } else if (nextId == DefParser::DEFIPATH_TAPERRULE) {
               netR->pathTaperRule(layer, path->getTaperRule());
             } else {
               netR->path(layer);
@@ -905,11 +941,11 @@ int definReader::netCallback(defrCallbackType_e /* unused: type */,
             break;
           }
 
-          case DEFIPATH_VIA: {
+          case DefParser::DEFIPATH_VIA: {
             // We need to peek ahead to see if there is a rotation next
             const char* viaName = path->getVia();
             int nextId = path->next();
-            if (nextId == DEFIPATH_VIAROTATION) {
+            if (nextId == DefParser::DEFIPATH_VIAROTATION) {
               netR->pathVia(viaName,
                             translate_orientation(path->getViaRotation()));
             } else {
@@ -919,7 +955,7 @@ int definReader::netCallback(defrCallbackType_e /* unused: type */,
             break;
           }
 
-          case DEFIPATH_POINT: {
+          case DefParser::DEFIPATH_POINT: {
             int x;
             int y;
             path->getPoint(&x, &y);
@@ -927,7 +963,7 @@ int definReader::netCallback(defrCallbackType_e /* unused: type */,
             break;
           }
 
-          case DEFIPATH_FLUSHPOINT: {
+          case DefParser::DEFIPATH_FLUSHPOINT: {
             int x;
             int y;
             int ext;
@@ -936,11 +972,11 @@ int definReader::netCallback(defrCallbackType_e /* unused: type */,
             break;
           }
 
-          case DEFIPATH_STYLE:
+          case DefParser::DEFIPATH_STYLE:
             UNSUPPORTED("styles are not supported on wires");
             break;
 
-          case DEFIPATH_RECT: {
+          case DefParser::DEFIPATH_RECT: {
             int deltaX1;
             int deltaY1;
             int deltaX2;
@@ -950,15 +986,15 @@ int definReader::netCallback(defrCallbackType_e /* unused: type */,
             break;
           }
 
-          case DEFIPATH_VIRTUALPOINT:
+          case DefParser::DEFIPATH_VIRTUALPOINT:
             UNSUPPORTED("VIRTUAL in net's routing is unsupported");
             break;
 
-          case DEFIPATH_MASK:
+          case DefParser::DEFIPATH_MASK:
             netR->pathColor(path->getMask());
             break;
 
-          case DEFIPATH_VIAMASK:
+          case DefParser::DEFIPATH_VIAMASK:
             netR->pathViaColor(path->getViaBottomMask(),
                                path->getViaCutMask(),
                                path->getViaTopMask());
@@ -982,9 +1018,10 @@ int definReader::netCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::nonDefaultRuleCallback(defrCallbackType_e /* unused: type */,
-                                        defiNonDefault* rule,
-                                        defiUserData data)
+int definReader::nonDefaultRuleCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defiNonDefault* rule,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -1033,9 +1070,9 @@ int definReader::nonDefaultRuleCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::pinCallback(defrCallbackType_e /* unused: type */,
-                             defiPin* pin,
-                             defiUserData data)
+int definReader::pinCallback(DefParser::defrCallbackType_e /* unused: type */,
+                             DefParser::defiPin* pin,
+                             DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -1084,10 +1121,13 @@ int definReader::pinCallback(defrCallbackType_e /* unused: type */,
 
   if (pin->hasDirection()) {
     if (reader->_mode == defin::FLOORPLAN) {
-      reader->_logger->warn(
-          utl::ODB,
-          437,
-          "Pin directions are ignored from floorplan DEF files.");
+      if (!pinR->checkPinDirection(pin->direction())) {
+        reader->_logger->warn(
+            utl::ODB,
+            437,
+            "Mismatched pin direction between verilog netlist and floorplan "
+            "DEF, ignoring floorplan DEF direction.");
+      }
     } else {
       pinR->pinDirection(pin->direction());
     }
@@ -1105,7 +1145,7 @@ int definReader::pinCallback(defrCallbackType_e /* unused: type */,
   if (pin->hasPort()) {
     // 5.7 .. Multiple ports each with multiple boxes/shapes
     for (int i = 0; i < pin->numPorts(); ++i) {
-      defiPinPort* port = pin->pinPort(i);
+      DefParser::defiPinPort* port = pin->pinPort(i);
       pinR->portBegin();
 
       // Configure placement for port
@@ -1191,18 +1231,20 @@ int definReader::pinCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::pinsEndCallback(defrCallbackType_e /* unused: type */,
-                                 void* /* unused: v */,
-                                 defiUserData data)
+int definReader::pinsEndCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    void* /* unused: v */,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   reader->_pinR->pinsEnd();
   return PARSE_OK;
 }
 
-int definReader::pinPropCallback(defrCallbackType_e /* unused: type */,
-                                 defiPinProp* prop,
-                                 defiUserData data)
+int definReader::pinPropCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defiPinProp* prop,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   definPinProps* propR = reader->_pin_propsR;
@@ -1214,9 +1256,10 @@ int definReader::pinPropCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::pinsStartCallback(defrCallbackType_e /* unused: type */,
-                                   int number,
-                                   defiUserData data)
+int definReader::pinsStartCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    int number,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -1224,9 +1267,9 @@ int definReader::pinsStartCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::propCallback(defrCallbackType_e /* unused: type */,
-                              defiProp* prop,
-                              defiUserData data)
+int definReader::propCallback(DefParser::defrCallbackType_e /* unused: type */,
+                              DefParser::defiProp* prop,
+                              DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -1292,18 +1335,20 @@ int definReader::propCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::propEndCallback(defrCallbackType_e /* unused: type */,
-                                 void* /* unused: v */,
-                                 defiUserData data)
+int definReader::propEndCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    void* /* unused: v */,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   reader->_prop_defsR->endDefinitions();
   return PARSE_OK;
 }
 
-int definReader::propStartCallback(defrCallbackType_e /* unused: type */,
-                                   void* /* unused: v */,
-                                   defiUserData data)
+int definReader::propStartCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    void* /* unused: v */,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -1311,9 +1356,10 @@ int definReader::propStartCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::regionCallback(defrCallbackType_e /* unused: type */,
-                                defiRegion* region,
-                                defiUserData data)
+int definReader::regionCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defiRegion* region,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -1343,9 +1389,9 @@ int definReader::regionCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::rowCallback(defrCallbackType_e /* unused: type */,
-                             defiRow* row,
-                             defiUserData data)
+int definReader::rowCallback(DefParser::defrCallbackType_e /* unused: type */,
+                             DefParser::defiRow* row,
+                             DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -1387,9 +1433,10 @@ int definReader::rowCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::scanchainsStartCallback(defrCallbackType_e /* unused: type */,
-                                         int chain_count,
-                                         defiUserData data)
+int definReader::scanchainsStartCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    int chain_count,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -1397,9 +1444,10 @@ int definReader::scanchainsStartCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::scanchainsCallback(defrCallbackType_e /* unused: type */,
-                                    LefDefParser::defiScanchain* scan_chain,
-                                    defiUserData data)
+int definReader::scanchainsCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defiScanchain* scan_chain,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -1413,20 +1461,21 @@ int definReader::scanchainsCallback(defrCallbackType_e /* unused: type */,
   dbScanPartition* db_scan_partition = dbScanPartition::create(db_scan_chain);
   db_scan_partition->setName(scan_chain->partitionName());
 
-  char* unused;
+  char* start_inst_name;
+  char* stop_inst_name;
   char* start_pin_name;
   char* stop_pin_name;
-  scan_chain->start(&unused, &start_pin_name);
-  scan_chain->stop(&unused, &stop_pin_name);
+  scan_chain->start(&start_inst_name, &start_pin_name);
+  scan_chain->stop(&stop_inst_name, &stop_pin_name);
 
-  auto scan_in_pin = findScanTerm(reader, block, start_pin_name);
-  auto scan_out_pin = findScanTerm(reader, block, stop_pin_name);
-  if (!scan_in_pin.has_value()) {
-    reader->error(fmt::format("Can't parse SCANIN pin"));
-    return PARSE_ERROR;
-  }
-  if (!scan_out_pin.has_value()) {
-    reader->error(fmt::format("Can't parse SCANOUT pin"));
+  auto scan_in_pin
+      = findScanTerm(reader, block, "START", start_inst_name, start_pin_name);
+  auto scan_out_pin
+      = findScanTerm(reader, block, "STOP", stop_inst_name, stop_pin_name);
+  if (!scan_in_pin.has_value() || !scan_out_pin.has_value()) {
+    if (reader->_continue_on_errors) {
+      return PARSE_OK;
+    }
     return PARSE_ERROR;
   }
 
@@ -1497,45 +1546,49 @@ int definReader::scanchainsCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::slotsCallback(defrCallbackType_e /* unused: type */,
+int definReader::slotsCallback(DefParser::defrCallbackType_e /* unused: type */,
                                int /* unused: count */,
-                               defiUserData data)
+                               DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   UNSUPPORTED("SLOTS are unsupported");
   return PARSE_OK;
 }
 
-int definReader::stylesCallback(defrCallbackType_e /* unused: type */,
-                                int /* unused: count */,
-                                defiUserData data)
+int definReader::stylesCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    int /* unused: count */,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   UNSUPPORTED("STYLES are unsupported");
   return PARSE_OK;
 }
 
-int definReader::technologyCallback(defrCallbackType_e /* unused: type */,
-                                    const char* /* unused: name */,
-                                    defiUserData data)
+int definReader::technologyCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    const char* /* unused: name */,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   reader->_logger->warn(utl::ODB, 293, "TECHNOLOGY is ignored");
   return PARSE_OK;
 }
 
-int definReader::trackCallback(defrCallbackType_e /* unused: type */,
-                               defiTrack* track,
-                               defiUserData data)
+int definReader::trackCallback(DefParser::defrCallbackType_e /* unused: type */,
+                               DefParser::defiTrack* track,
+                               DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
-  if (track->firstTrackMask() != 0) {
-    UNSUPPORTED("MASK on track is unsupported");
-  }
 
   defDirection dir = track->macro()[0] == 'X' ? DEF_X : DEF_Y;
-  reader->_tracksR->tracksBegin(dir, track->x(), track->xNum(), track->xStep());
+  reader->_tracksR->tracksBegin(dir,
+                                track->x(),
+                                track->xNum(),
+                                track->xStep(),
+                                track->firstTrackMask(),
+                                track->sameMask() == 1);
 
   for (int i = 0; i < track->numLayers(); ++i) {
     reader->_tracksR->tracksLayer(track->layer(i));
@@ -1545,7 +1598,9 @@ int definReader::trackCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::unitsCallback(defrCallbackType_e, double d, defiUserData data)
+int definReader::unitsCallback(DefParser::defrCallbackType_e type,
+                               double d,
+                               DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
 
@@ -1572,9 +1627,9 @@ int definReader::unitsCallback(defrCallbackType_e, double d, defiUserData data)
   return PARSE_OK;
 }
 
-int definReader::viaCallback(defrCallbackType_e /* unused: type */,
-                             defiVia* via,
-                             defiUserData data)
+int definReader::viaCallback(DefParser::defrCallbackType_e /* unused: type */,
+                             DefParser::defiVia* via,
+                             DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -1668,9 +1723,10 @@ int definReader::viaCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
-                                    defiNet* net,
-                                    defiUserData data)
+int definReader::specialNetCallback(
+    DefParser::defrCallbackType_e /* unused: type */,
+    DefParser::defiNet* net,
+    DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
@@ -1751,11 +1807,11 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
   }
 
   for (int i = 0; i < net->numWires(); ++i) {
-    defiWire* wire = net->wire(i);
+    DefParser::defiWire* wire = net->wire(i);
     snetR->wire(wire->wireType(), wire->wireShieldNetName());
 
     for (int j = 0; j < wire->numPaths(); ++j) {
-      defiPath* path = wire->path(j);
+      DefParser::defiPath* path = wire->path(j);
 
       path->initTraverse();
 
@@ -1766,22 +1822,22 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
       uint next_via_bottom_mask = 0;
       uint next_via_cut_mask = 0;
       uint next_via_top_mask = 0;
-      while ((pathId = path->next()) != DEFIPATH_DONE) {
+      while ((pathId = path->next()) != DefParser::DEFIPATH_DONE) {
         switch (pathId) {
-          case DEFIPATH_LAYER:
+          case DefParser::DEFIPATH_LAYER:
             layerName = path->getLayer();
             break;
 
-          case DEFIPATH_VIA: {
+          case DefParser::DEFIPATH_VIA: {
             // We need to peek ahead to see if there is a rotation next
             const char* viaName = path->getVia();
             int nextId = path->next();
-            if (nextId == DEFIPATH_VIAROTATION) {
+            if (nextId == DefParser::DEFIPATH_VIAROTATION) {
               UNSUPPORTED("Rotated via in special net is unsupported");
               // TODO: Make this take and store rotation
               // snetR->pathVia(viaName,
               //                translate_orientation(path->getViaRotation()));
-            } else if (nextId == DEFIPATH_VIADATA) {
+            } else if (nextId == DefParser::DEFIPATH_VIADATA) {
               int numX, numY, stepX, stepY;
               path->getViaData(&numX, &numY, &stepX, &stepY);
               snetR->pathViaArray(viaName, numX, numY, stepX, stepY);
@@ -1795,12 +1851,12 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
             break;
           }
 
-          case DEFIPATH_WIDTH:
+          case DefParser::DEFIPATH_WIDTH:
             assert(!layerName.empty());  // always "layerName routeWidth"
             snetR->path(layerName.c_str(), path->getWidth());
             break;
 
-          case DEFIPATH_POINT: {
+          case DefParser::DEFIPATH_POINT: {
             int x;
             int y;
             path->getPoint(&x, &y);
@@ -1808,7 +1864,7 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
             break;
           }
 
-          case DEFIPATH_FLUSHPOINT: {
+          case DefParser::DEFIPATH_FLUSHPOINT: {
             int x;
             int y;
             int ext;
@@ -1817,19 +1873,19 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
             break;
           }
 
-          case DEFIPATH_SHAPE:
+          case DefParser::DEFIPATH_SHAPE:
             snetR->pathShape(path->getShape());
             break;
 
-          case DEFIPATH_STYLE:
+          case DefParser::DEFIPATH_STYLE:
             UNSUPPORTED("styles are not supported on wires");
             break;
 
-          case DEFIPATH_MASK:
+          case DefParser::DEFIPATH_MASK:
             next_mask = path->getMask();
             break;
 
-          case DEFIPATH_VIAMASK:
+          case DefParser::DEFIPATH_VIAMASK:
             next_via_bottom_mask = path->getViaBottomMask();
             next_via_cut_mask = path->getViaCutMask();
             next_via_top_mask = path->getViaTopMask();
@@ -1839,10 +1895,10 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
             UNSUPPORTED(
                 "Unknown construct in special net's routing is unsupported");
         }
-        if (pathId != DEFIPATH_MASK) {
+        if (pathId != DefParser::DEFIPATH_MASK) {
           next_mask = 0;
         }
-        if (pathId != DEFIPATH_VIAMASK) {
+        if (pathId != DefParser::DEFIPATH_VIAMASK) {
           next_via_bottom_mask = 0;
           next_via_cut_mask = 0;
           next_via_top_mask = 0;
@@ -1861,7 +1917,8 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
-void definReader::contextLogFunctionCallback(defiUserData data, const char* msg)
+void definReader::contextLogFunctionCallback(DefParser::defiUserData data,
+                                             const char* msg)
 {
   definReader* reader = (definReader*) data;
   reader->_logger->warn(utl::ODB, 1003, msg);
@@ -2045,10 +2102,10 @@ static inline bool hasSuffix(const std::string& str, const std::string& suffix)
 
 bool definReader::createBlock(const char* file)
 {
-  defrInit();
-  defrReset();
+  DefParser::defrInit();
+  DefParser::defrReset();
 
-  defrInitSession();
+  DefParser::defrInitSession();
   // FOR DEFAULT || FLOORPLAN || INCREMENTAL
   defrSetVersionStrCbk(versionCallback);
   defrSetBusBitCbk(busBitCallback);
@@ -2060,7 +2117,7 @@ bool definReader::createBlock(const char* file)
   defrSetPinCbk(pinCallback);
   defrSetPinEndCbk(pinsEndCallback);
   defrSetPinPropCbk(pinPropCallback);
-  defrSetContextLogFunction(contextLogFunctionCallback);
+  DefParser::defrSetContextLogFunction(contextLogFunctionCallback);
 
   if (_mode == defin::DEFAULT || _mode == defin::FLOORPLAN) {
     defrSetDieAreaCbk(dieAreaCallback);
@@ -2072,7 +2129,7 @@ bool definReader::createBlock(const char* file)
     defrSetBlockageCbk(blockageCallback);
     defrSetNonDefaultCbk(nonDefaultRuleCallback);
 
-    defrSetAddPathToNet();
+    DefParser::defrSetAddPathToNet();
   }
 
   if (_mode == defin::DEFAULT) {
@@ -2110,18 +2167,19 @@ bool definReader::createBlock(const char* file)
       _logger->warn(utl::ODB, 148, "error: Cannot open DEF file {}", file);
       return false;
     }
-    res = defrRead(f, file, (defiUserData) this, /* case sensitive */ 1);
+    res = DefParser::defrRead(
+        f, file, (DefParser::defiUserData) this, /* case sensitive */ 1);
     fclose(f);
   } else {
-    defrSetGZipReadFunction();
-    defGZFile f = defrGZipOpen(file, "r");
+    DefParser::defrSetGZipReadFunction();
+    DefParser::defGZFile f = DefParser::defrGZipOpen(file, "r");
     if (f == nullptr) {
       _logger->warn(
           utl::ODB, 271, "error: Cannot open zipped DEF file {}", file);
       return false;
     }
-    res = defrReadGZip(f, file, (defiUserData) this);
-    defGZipClose(f);
+    res = DefParser::defrReadGZip(f, file, (DefParser::defiUserData) this);
+    DefParser::defGZipClose(f);
   }
 
   if (res != 0 || errors() != 0) {
@@ -2132,7 +2190,7 @@ bool definReader::createBlock(const char* file)
     }
   }
 
-  defrClear();
+  DefParser::defrClear();
 
   return true;
   // 1220 return errors() == 0;
@@ -2149,17 +2207,18 @@ bool definReader::replaceWires(const char* file)
 
   replaceWires();
 
-  defrInit();
-  defrReset();
+  DefParser::defrInit();
+  DefParser::defrReset();
 
-  defrInitSession();
+  DefParser::defrInitSession();
 
   defrSetNetCbk(netCallback);
   defrSetSNetCbk(specialNetCallback);
 
-  defrSetAddPathToNet();
+  DefParser::defrSetAddPathToNet();
 
-  int res = defrRead(f, file, (defiUserData) this, /* case sensitive */ 1);
+  int res = DefParser::defrRead(
+      f, file, (DefParser::defiUserData) this, /* case sensitive */ 1);
   if (res != 0) {
     if (!_continue_on_errors) {
       _logger->error(utl::ODB, 422, "DEF parser returns an error!");
@@ -2168,7 +2227,7 @@ bool definReader::replaceWires(const char* file)
     }
   }
 
-  defrClear();
+  DefParser::defrClear();
 
   return true;
 }

@@ -97,9 +97,7 @@ static void add_limit(Descriptor::Properties& props,
 
 //////////////////////////////////////////////////
 
-LibertyLibraryDescriptor::LibertyLibraryDescriptor(odb::dbDatabase* db,
-                                                   sta::dbSta* sta)
-    : db_(db), sta_(sta)
+LibertyLibraryDescriptor::LibertyLibraryDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
@@ -255,9 +253,7 @@ bool LibertyLibraryDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-LibertyCellDescriptor::LibertyCellDescriptor(odb::dbDatabase* db,
-                                             sta::dbSta* sta)
-    : db_(db), sta_(sta)
+LibertyCellDescriptor::LibertyCellDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
@@ -397,9 +393,7 @@ bool LibertyCellDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-LibertyPortDescriptor::LibertyPortDescriptor(odb::dbDatabase* db,
-                                             sta::dbSta* sta)
-    : db_(db), sta_(sta)
+LibertyPortDescriptor::LibertyPortDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
@@ -592,9 +586,7 @@ static const char* typeNameStr(sta::LibertyPgPort::PgType type)
   return "<unexpected>";
 }
 
-LibertyPgPortDescriptor::LibertyPgPortDescriptor(odb::dbDatabase* db,
-                                                 sta::dbSta* sta)
-    : db_(db), sta_(sta)
+LibertyPgPortDescriptor::LibertyPgPortDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
@@ -689,8 +681,7 @@ odb::dbMTerm* LibertyPgPortDescriptor::getMTerm(const std::any& object) const
   return mterm;
 }
 
-CornerDescriptor::CornerDescriptor(odb::dbDatabase* db, sta::dbSta* sta)
-    : db_(db), sta_(sta)
+CornerDescriptor::CornerDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
@@ -756,9 +747,7 @@ bool CornerDescriptor::getAllObjects(SelectionSet& objects) const
   return true;
 }
 
-StaInstanceDescriptor::StaInstanceDescriptor(odb::dbDatabase* db,
-                                             sta::dbSta* sta)
-    : db_(db), sta_(sta)
+StaInstanceDescriptor::StaInstanceDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
@@ -827,7 +816,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
       clocks.insert(gui->makeSelected(clock));
     }
 
-    auto power = sta_->findClkedActivity(pin);
+    auto power = sta_->activity(pin);
 
     bool is_lib_port = false;
     std::any port_id;
@@ -844,7 +833,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
 
     if (is_lib_port) {
       const std::string freq
-          = Descriptor::convertUnits(power.activity(), false, float_precision_);
+          = Descriptor::convertUnits(power.density(), false, float_precision_);
       const std::string activity_info = fmt::format("{:.2f}% at {}Hz from {}",
                                                     100 * power.duty(),
                                                     freq,
@@ -858,9 +847,9 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
           = is_inf(setup_arrival)
                 ? "None"
                 : fmt::format(
-                    "{} {}",
-                    timeunit->asString(setup_arrival, float_precision_),
-                    timeunit->scaledSuffix());
+                      "{} {}",
+                      timeunit->asString(setup_arrival, float_precision_),
+                      timeunit->scaledSuffix());
       port_arrival_setup.push_back({port_id, setup_text});
       const auto hold_arrival
           = sta_->pinArrival(pin, nullptr, sta::MinMax::min());
@@ -868,9 +857,9 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
           = is_inf(hold_arrival)
                 ? "None"
                 : fmt::format(
-                    "{} {}",
-                    timeunit->asString(hold_arrival, float_precision_),
-                    timeunit->scaledSuffix());
+                      "{} {}",
+                      timeunit->asString(hold_arrival, float_precision_),
+                      timeunit->scaledSuffix());
       port_arrival_hold.push_back({port_id, hold_text});
     }
   }
@@ -924,8 +913,7 @@ bool StaInstanceDescriptor::getAllObjects(SelectionSet& objects) const
   return true;
 }
 
-ClockDescriptor::ClockDescriptor(odb::dbDatabase* db, sta::dbSta* sta)
-    : db_(db), sta_(sta)
+ClockDescriptor::ClockDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 

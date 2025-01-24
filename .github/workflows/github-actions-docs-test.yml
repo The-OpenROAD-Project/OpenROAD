@@ -2,6 +2,7 @@ name: Docs Tester
 
 on:
   push:
+  pull_request:
 
 jobs:
   docs-test-job:

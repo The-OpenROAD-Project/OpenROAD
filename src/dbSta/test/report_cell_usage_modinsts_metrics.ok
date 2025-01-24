@@ -1,0 +1,30 @@
+[INFO ODB-0227] LEF file: liberty1.lef, created 2 layers, 6 library cells
+Cell type report:                       Count       Area
+  Buffer                                    4    4000.00
+  Sequential cell                           2    2000.00
+  Total                                     6    6000.00
+
+Cell instance report:
+  snl_bufx1                                 4    4000.00
+  snl_ffqx1                                 2    2000.00
+Cell type report for b1 (block1)
+Cell type report:                       Count       Area
+  Buffer                                    2    2000.00
+  Sequential cell                           1    1000.00
+  Total                                     3    3000.00
+
+Cell instance report:
+  snl_bufx1                                 2    2000.00
+  snl_ffqx1                                 1    1000.00
+Cell type report for b2 (block1_b2)
+Cell type report:                       Count       Area
+  Buffer                                    2    2000.00
+  Sequential cell                           1    1000.00
+  Total                                     3    3000.00
+
+Cell instance report:
+  snl_bufx1                                 2    2000.00
+  snl_ffqx1                                 1    1000.00
+Differences found at line 14.
+	"design__instance__count__class:buffer__in_module:block1.b2": 2,
+	"design__instance__count__class:buffer__in_module:block1_b2": 2,

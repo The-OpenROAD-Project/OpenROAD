@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <limits>
+#include <vector>
 
 #include "../gc/FlexGC.h"
 #include "FlexDR.h"
@@ -185,7 +186,7 @@ gui::Descriptor::Properties GridGraphDescriptor::getProperties(
     costs.push_back(
         {name + " total cost",
          graph->getCosts(
-             x, y, z, dir, layer, data.graph->getNDR() != nullptr)});
+             x, y, z, dir, layer, data.graph->getNDR() != nullptr, false)});
   }
   props.insert(props.end(), costs.begin(), costs.end());
   return props;
@@ -755,13 +756,13 @@ void FlexDRGraphics::endNet(drNet* net)
   net_ = nullptr;
 }
 
-void FlexDRGraphics::startIter(int iter)
+void FlexDRGraphics::startIter(int iter, RouterConfiguration* router_cfg)
 {
   current_iter_ = iter;
   if (iter >= settings_->iter) {
-    if (MAX_THREADS > 1) {
+    if (router_cfg->MAX_THREADS > 1) {
       logger_->info(DRT, 207, "Setting MAX_THREADS=1 for use with the DR GUI.");
-      MAX_THREADS = 1;
+      router_cfg->MAX_THREADS = 1;
     }
 
     status("Start iter: " + std::to_string(iter));

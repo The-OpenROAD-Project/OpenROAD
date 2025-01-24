@@ -39,6 +39,7 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
 #include <random>
+#include <vector>
 
 #include "Core.h"
 #include "Netlist.h"

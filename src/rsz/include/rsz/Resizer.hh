@@ -39,6 +39,7 @@
 #include <optional>
 #include <string>
 
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
 #include "rsz/OdbCallBack.hh"
@@ -81,6 +82,7 @@ using sta::ArcDelay;
 using sta::Cell;
 using sta::Corner;
 using sta::dbNetwork;
+using sta::dbNetworkObserver;
 using sta::dbSta;
 using sta::dbStaState;
 using sta::DcalcAnalysisPt;
@@ -152,7 +154,8 @@ enum class ParasiticsSrc
 {
   none,
   placement,
-  global_routing
+  global_routing,
+  detailed_routing
 };
 
 struct ParasiticsResistance
@@ -182,7 +185,7 @@ struct BufferData
 
 class OdbCallBack;
 
-class Resizer : public dbStaState
+class Resizer : public dbStaState, public dbNetworkObserver
 {
  public:
   Resizer();
@@ -260,17 +263,23 @@ class Resizer : public dbStaState
   double maxArea() const;
 
   void setDontUse(LibertyCell* cell, bool dont_use);
-  bool dontUse(LibertyCell* cell);
+  void resetDontUse();
+  bool dontUse(const LibertyCell* cell);
+  void reportDontUse() const;
   void setDontTouch(const Instance* inst, bool dont_touch);
   bool dontTouch(const Instance* inst);
   void setDontTouch(const Net* net, bool dont_touch);
   bool dontTouch(const Net* net);
+  void reportDontTouch();
 
   void setMaxUtilization(double max_utilization);
   // Remove all or selected buffers from the netlist.
   void removeBuffers(InstanceSeq insts, bool recordJournal = false);
   void bufferInputs();
   void bufferOutputs();
+
+  // from sta::dbNetworkObserver callbacks
+  void postReadLiberty() override;
 
   // Balance the usage of hybrid rows
   void balanceRowUsage();
@@ -283,7 +292,7 @@ class Resizer : public dbStaState
   float targetLoadCap(LibertyCell* cell);
 
   ////////////////////////////////////////////////////////////////
-  void repairSetup(double setup_margin,
+  bool repairSetup(double setup_margin,
                    double repair_tns_end_percent,
                    int max_passes,
                    bool match_cell_footprint,
@@ -303,7 +312,7 @@ class Resizer : public dbStaState
 
   ////////////////////////////////////////////////////////////////
 
-  void repairHold(double setup_margin,
+  bool repairHold(double setup_margin,
                   double hold_margin,
                   bool allow_setup_violations,
                   // Max buffer count as percent of design instance count.
@@ -320,7 +329,7 @@ class Resizer : public dbStaState
   int holdBufferCount() const;
 
   ////////////////////////////////////////////////////////////////
-  void recoverPower(float recover_power_percent, bool match_cell_footprint);
+  bool recoverPower(float recover_power_percent, bool match_cell_footprint);
 
   ////////////////////////////////////////////////////////////////
   // Area of the design in meter^2.
@@ -394,7 +403,7 @@ class Resizer : public dbStaState
   //  restore resized gates
   // resizeSlackPreamble must be called before the first findResizeSlacks.
   void resizeSlackPreamble();
-  void findResizeSlacks();
+  void findResizeSlacks(bool run_journal_restore);
   // Return nets with worst slack.
   NetSeq& resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).
@@ -413,6 +422,7 @@ class Resizer : public dbStaState
 
   dbNetwork* getDbNetwork() { return db_network_; }
   ParasiticsSrc getParasiticsSrc() { return parasitics_src_; }
+  void setParasiticsSrc(ParasiticsSrc src) { parasitics_src_ = src; }
   dbBlock* getDbBlock() { return block_; };
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
@@ -425,6 +435,7 @@ class Resizer : public dbStaState
   Logger* logger() const { return logger_; }
   void invalidateParasitics(const Pin* pin, const Net* net);
   void eraseParasitics(const Net* net);
+  void eliminateDeadLogic(bool clean_nets);
 
  protected:
   void init();
@@ -435,8 +446,9 @@ class Resizer : public dbStaState
   bool hasTristateOrDontTouchDriver(const Net* net);
   bool isTristateDriver(const Pin* pin);
   void checkLibertyForAllCorners();
+  void copyDontUseFromLiberty();
   void findBuffers();
-  bool isLinkCell(LibertyCell* cell);
+  bool isLinkCell(LibertyCell* cell) const;
   void findTargetLoads();
   void balanceBin(const vector<odb::dbInst*>& bin,
                   const std::set<odb::dbSite*>& base_sites);
@@ -477,7 +489,6 @@ class Resizer : public dbStaState
 
   void resizePreamble();
   LibertyCellSeq getSwappableCells(LibertyCell* source_cell);
-  bool footprintsMatch(LibertyCell* source, LibertyCell* target);
 
   // Resize drvr_pin instance to target slew.
   // Return 1 if resized.
@@ -583,6 +594,7 @@ class Resizer : public dbStaState
   bool hasPins(Net* net);
   void getPins(Net* net, PinVector& pins) const;
   void getPins(Instance* inst, PinVector& pins) const;
+  void SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from);
   Point tieLocation(const Pin* load, int separation);
   bool hasFanout(Vertex* drvr);
   InstanceSeq findClkInverters();

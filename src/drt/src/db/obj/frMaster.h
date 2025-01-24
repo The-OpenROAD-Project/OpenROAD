@@ -28,6 +28,7 @@
 #pragma once
 
 #include <algorithm>
+#include <vector>
 
 #include "db/obj/frBlockage.h"
 #include "db/obj/frBoundary.h"
@@ -142,7 +143,7 @@ class frMaster : public frBlockObject
   std::vector<frBoundary> boundaries_;
   Rect dieBox_;
   frString name_;
-  dbMasterType masterType_{dbMasterType::NONE};
+  dbMasterType masterType_{dbMasterType::CORE};
 
   friend class io::Parser;
 };

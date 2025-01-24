@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <vector>
+
 #include "name.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
@@ -47,7 +49,6 @@ using odb::dbNet;
 using odb::dbRSeg;
 using odb::dbSet;
 using odb::dbShape;
-using odb::dbSigType;
 using odb::dbWire;
 using odb::dbWirePath;
 using odb::dbWirePathItr;
@@ -524,6 +525,8 @@ uint extSpef::getCapNodeId(const char* nodeWord,
 
       if (!_testParsing && !_diff) {
         capId = getCapIdFromCapTable(nodeWord);
+        if (capId == 0 && cornerNet == NULL)
+          return 0;
 
         if (capId > 0) {
           cap = dbCapNode::getCapNode(_cornerBlock, capId);

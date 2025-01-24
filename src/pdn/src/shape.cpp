@@ -33,6 +33,7 @@
 #include "shape.h"
 
 #include <boost/polygon/polygon.hpp>
+#include <vector>
 
 #include "grid.h"
 #include "grid_component.h"
@@ -645,6 +646,11 @@ Shape::ObstructionTreeMap Shape::convertVectorToObstructionTree(
   return trees;
 }
 
+odb::dbTechLayerDir Shape::getLayerDirection() const
+{
+  return layer_->getDirection();
+}
+
 /////////
 
 FollowPinShape::FollowPinShape(odb::dbTechLayer* layer,
@@ -735,6 +741,19 @@ bool FollowPinShape::cut(const ObstructionTree& obstructions,
         // not estimated obstructions
         return other->shapeType() != GRID_OBS;
       });
+}
+
+odb::dbTechLayerDir FollowPinShape::getLayerDirection() const
+{
+  if (isSquare()) {
+    return getLayer()->getDirection();
+  }
+
+  if (isHorizontal()) {
+    return odb::dbTechLayerDir::HORIZONTAL;
+  }
+
+  return odb::dbTechLayerDir::VERTICAL;
 }
 
 /////////////////////////////////////

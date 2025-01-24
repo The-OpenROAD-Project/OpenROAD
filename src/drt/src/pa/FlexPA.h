@@ -30,6 +30,7 @@
 
 #include <boost/polygon/polygon.hpp>
 #include <cstdint>
+#include <vector>
 
 #include "FlexPA_unique.h"
 #include "frDesign.h"
@@ -66,7 +67,10 @@ class FlexPA
     Commit
   };
 
-  FlexPA(frDesign* in, Logger* logger, dst::Distributed* dist);
+  FlexPA(frDesign* in,
+         Logger* logger,
+         dst::Distributed* dist,
+         RouterConfiguration* router_cfg);
   ~FlexPA();
 
   void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
@@ -82,6 +86,7 @@ class FlexPA
   frDesign* design_;
   Logger* logger_;
   dst::Distributed* dist_;
+  RouterConfiguration* router_cfg_;
 
   std::unique_ptr<FlexPAGraphics> graphics_;
   std::string debugPinName_;
@@ -104,7 +109,8 @@ class FlexPA
 
   // helper structures
   std::vector<std::map<frCoord, frAccessPointEnum>> track_coords_;
-  std::map<frLayerNum, std::map<int, std::map<ViaRawPriorityTuple, frViaDef*>>>
+  std::map<frLayerNum,
+           std::map<int, std::map<ViaRawPriorityTuple, const frViaDef*>>>
       layer_num_to_via_defs_;
   frCollection<odb::dbInst*> target_insts_;
 
@@ -122,7 +128,7 @@ class FlexPA
     unique_insts_.setDesign(in);
   }
   void applyPatternsFile(const char* file_path);
-  ViaRawPriorityTuple getViaRawPriority(frViaDef* via_def);
+  ViaRawPriorityTuple getViaRawPriority(const frViaDef* via_def);
   bool isSkipInstTermLocal(frInstTerm* in);
   bool isSkipInstTerm(frInstTerm* in);
   bool isDistributed() const { return !remote_host_.empty(); }
@@ -137,25 +143,21 @@ class FlexPA
 
   bool isStdCell(frInst* inst);
   bool isMacroCell(frInst* inst);
+
   /**
-   * @brief initializes all access points of a single unique instance
+   * @brief generates all access points of a single unique instance
    *
    * @param inst the unique instance
    */
-  void initInstAccessPoints(frInst* inst);
+  void genInstAccessPoints(frInst* inst);
 
   /**
-   * @brief initializes all access points of all unique instances
+   * @brief generates all access points of all unique instances
    */
-  void initAllAccessPoints();
-  void getViasFromMetalWidthMap(
-      const Point& pt,
-      frLayerNum layer_num,
-      const gtl::polygon_90_set_data<frCoord>& polyset,
-      std::vector<std::pair<int, frViaDef*>>& via_defs);
+  void genAllAccessPoints();
 
   /**
-   * @brief fully initializes a pin's access points
+   * @brief fully generates a pin's access points
    *
    * @param pin the pin (frBPin)
    * @param inst_term terminal related to the pin
@@ -163,7 +165,37 @@ class FlexPA
    * @return the number of access points generated
    */
   template <typename T>
-  int initPinAccess(T* pin, frInstTerm* inst_term = nullptr);
+  int genPinAccess(T* pin, frInstTerm* inst_term = nullptr);
+
+  /**
+   * @brief initializes the pin accesses of a given pin only considering a given
+   * cost for both the lower and upper layer.
+   *
+   * @param aps access points of the pin
+   * @param apset data of the access points (auxilary)
+   * @param pin_shapes shapes of the pin
+   * @param pin the pin
+   * @param inst_term terminal
+   * @param lower_type lower layer access type
+   * @param upper_type upper layer access type
+   *
+   * @return if the initialization was sucessful
+   */
+  template <typename T>
+  bool genPinAccessCostBounded(
+      std::vector<std::unique_ptr<frAccessPoint>>& aps,
+      std::set<std::pair<Point, frLayerNum>>& apset,
+      std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+      T* pin,
+      frInstTerm* inst_term,
+      frAccessPointEnum lower_type,
+      frAccessPointEnum upper_type);
+
+  void getViasFromMetalWidthMap(
+      const Point& pt,
+      frLayerNum layer_num,
+      const gtl::polygon_90_set_data<frCoord>& polyset,
+      std::vector<std::pair<int, const frViaDef*>>& via_defs);
 
   /**
    * @brief Contructs a vector with all pin figures in each layer
@@ -177,6 +209,7 @@ class FlexPA
   template <typename T>
   std::vector<gtl::polygon_90_set_data<frCoord>>
   mergePinShapes(T* pin, frInstTerm* inst_term, bool is_shrink = false);
+
   // type 0 -- on-grid; 1 -- half-grid; 2 -- center; 3 -- via-enc-opt
   /**
    * @brief Generates all necessary access points from all pin_shapes (pin)
@@ -186,8 +219,8 @@ class FlexPA
    * @param pin pin object
    * @param inst_term instance terminal, owner of the access points
    * @param pin_shapes vector of pin shapes in every layer
-   * @param lower_type lowest access cost considered
-   * @param upper_type highest access cost considered
+   * @param lower_type lowest access type considered
+   * @param upper_type highest access type considered
    */
   template <typename T>
   void genAPsFromPinShapes(
@@ -208,8 +241,8 @@ class FlexPA
    * @param layer_shapes pin shapes on that layer
    * @param layer_num layer in which the shapes exists
    * @param allow_via if via access is allowed
-   * @param lower_type lowest access cost considered
-   * @param upper_type highest access cost considered
+   * @param lower_type lowest access type considered
+   * @param upper_type highest access type considered
    */
   void genAPsFromLayerShapes(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
@@ -221,9 +254,6 @@ class FlexPA
       frAccessPointEnum lower_type,
       frAccessPointEnum upper_type);
 
-  bool enclosesOnTrackPlanarAccess(const gtl::rectangle_data<frCoord>& rect,
-                                   frLayerNum layer_num);
-
   /**
    * @brief Generates all necessary access points from a rectangle shape (pin
    * fig)
@@ -233,9 +263,9 @@ class FlexPA
    * @param layer_num layer in which the rectangle exists
    * @param allow_planar if planar access is allowed
    * @param allow_via if via access is allowed
-   * @param lower_type lowest access cost considered
-   * @param upper_type highest access cost considered
-   * @param is_macro_cell_pin TODO: not sure
+   * @param lower_type lowest access type considered
+   * @param upper_type highest access type considered
+   * @param is_macro_cell_pin if the pin belongs to a macro
    */
   void genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
                       std::set<std::pair<Point, frLayerNum>>& apset,
@@ -284,7 +314,6 @@ class FlexPA
    * @param rect pin rectangle to which via is bounded
    * @param layer_num number of the layer
    */
-
   void genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
                              const gtl::rectangle_data<frCoord>& rect,
                              frLayerNum layer_num,
@@ -312,7 +341,21 @@ class FlexPA
                    bool is_curr_layer_horz,
                    int offset = 0);
 
-  void gen_initializeAccessPoints(
+  /**
+   * @brief Creates multiple access points from the coordinates
+   *
+   * @param aps Vector contaning the access points
+   * @param apset Set containing access points data (auxilary)
+   * @param rec Rect limiting where the point can be
+   * @param layer_num access point layer
+   * @param allow_planar if the access point allows planar access
+   * @param allow_via if the access point allows via access
+   * @param x_coords map of access point x coords
+   * @param y_coords map of access point y coords
+   * @param lower_type access cost of the lower layer
+   * @param upper_type access cost of the upper layer
+   */
+  void createMultipleAccessPoints(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       const gtl::rectangle_data<frCoord>& rect,
@@ -326,8 +369,8 @@ class FlexPA
       frAccessPointEnum upper_type);
 
   /**
-   * @brief Created an access point from x,y and layer num and adds it to aps
-   * and apset. Also sets its accesses
+   * @brief Creates an access point object from x,y and layer num and adds it to
+   * aps and apset. Also sets its initial accesses which will be filtered later
    *
    * @param aps Vector containing the access points
    * @param apset Set containing access points data (auxilary)
@@ -337,22 +380,28 @@ class FlexPA
    * @param layer_num access point layer
    * @param allow_planar if the access point allows planar access
    * @param allow_via if the access point allows via access
-   * @param low_cost lowest access cost considered
-   * @param high_cost highest access cost considered
+   * @param lower_type lowest access cost considered
+   * @param upper_type highest access cost considered
    */
-  void gen_createAccessPoint(std::vector<std::unique_ptr<frAccessPoint>>& aps,
-                             std::set<std::pair<Point, frLayerNum>>& apset,
-                             const gtl::rectangle_data<frCoord>& maxrect,
-                             frCoord x,
-                             frCoord y,
-                             frLayerNum layer_num,
-                             bool allow_planar,
-                             bool allow_via,
-                             frAccessPointEnum low_cost,
-                             frAccessPointEnum high_cost);
+  void createSingleAccessPoint(std::vector<std::unique_ptr<frAccessPoint>>& aps,
+                               std::set<std::pair<Point, frLayerNum>>& apset,
+                               const gtl::rectangle_data<frCoord>& maxrect,
+                               frCoord x,
+                               frCoord y,
+                               frLayerNum layer_num,
+                               bool allow_planar,
+                               bool allow_via,
+                               frAccessPointEnum lower_type,
+                               frAccessPointEnum upper_type);
 
   /**
-   * @brief Sets the allowed accesses of the access points of a given pin.
+   * @brief Filters the accesses of all access points
+   *
+   * @details Receives every access point with their default
+   * accesses to every direction. It will check if any access set as true is
+   * valid, e.g. not cause DRVs. If it finds it to be invalid it will set that
+   * access as false. If all accesses of an access point are found to be false
+   * it will be deleted/disconsidered by the function that calls this.
    *
    * @param aps vector of access points of the pin
    * @param pin_shapes vector of pin shapes of the pin
@@ -361,7 +410,7 @@ class FlexPA
    * @param is_std_cell_pin if the pin if from a standard cell
    */
   template <typename T>
-  void check_setAPsAccesses(
+  void filterMultipleAPAccesses(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
       T* pin,
@@ -369,7 +418,7 @@ class FlexPA
       const bool& is_std_cell_pin);
 
   /**
-   * @brief Adds accesses to the access point
+   * @brief Filters the accesses of a single access point
    *
    * @param ap access point
    * @param polyset polys auxilary set (same information as polys)
@@ -379,15 +428,16 @@ class FlexPA
    * @param deep_search TODO: not sure
    */
   template <typename T>
-  void check_addAccess(frAccessPoint* ap,
-                       const gtl::polygon_90_set_data<frCoord>& polyset,
-                       const std::vector<gtl::polygon_90_data<frCoord>>& polys,
-                       T* pin,
-                       frInstTerm* inst_term,
-                       bool deep_search = false);
+  void filterSingleAPAccesses(
+      frAccessPoint* ap,
+      const gtl::polygon_90_set_data<frCoord>& polyset,
+      const std::vector<gtl::polygon_90_data<frCoord>>& polys,
+      T* pin,
+      frInstTerm* inst_term,
+      bool deep_search = false);
 
   /**
-   * @brief Tries to add a planar access to in the direction.
+   * @brief Filters access in a given planar direction.
    *
    * @param ap access point
    * @param layer_polys vector of pin polygons on every layer
@@ -396,13 +446,22 @@ class FlexPA
    * @param inst_term terminal
    */
   template <typename T>
-  void check_addPlanarAccess(
+  void filterPlanarAccess(
       frAccessPoint* ap,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       frDirEnum dir,
       T* pin,
       frInstTerm* inst_term);
 
+  /**
+   * @brief Determines if an access on the given direction would cause a DRV.
+   *
+   * @param ap access point
+   * @param pin access pin
+   * @param ps virtual path segment that would need to exist for this access
+   * @param point access point coordinates
+   * @param layer access layer
+   */
   template <typename T>
   bool isPlanarViolationFree(frAccessPoint* ap,
                              T* pin,
@@ -439,18 +498,32 @@ class FlexPA
       const Point& point,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys);
 
+  /**
+   * @brief Filters access through via on the access point
+   *
+   * @details Besides checking if the via can even exist, this will also check
+   * later if a planar access can be done on upper layer to reach the via.
+   * Access through only 1 of the cardinal directions is enough.
+   *
+   * @param ap access point
+   * @param layer_polys Pin Polygons on the layer (used for a check)
+   * @param polyset polys auxilary set (same information as polys)
+   * @param pin access pin
+   * @param inst_term instance terminal
+   * @param deep_search TODO: I understand one of its uses but not why "deep
+   * search"
+   */
   template <typename T>
-  void check_addViaAccess(
+  void filterViaAccess(
       frAccessPoint* ap,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       const gtl::polygon_90_set_data<frCoord>& polyset,
-      frDirEnum dir,
       T* pin,
       frInstTerm* inst_term,
       bool deep_search = false);
 
   /**
-   * @brief Checks if a Via Access Point is legal
+   * @brief Checks if a Via has at least one valid planar access
    *
    * @param ap Access Point
    * @param via Via checked
@@ -461,7 +534,7 @@ class FlexPA
    * @return If the Via Access Point is legal
    */
   template <typename T>
-  bool checkViaAccess(
+  bool checkViaPlanarAccess(
       frAccessPoint* ap,
       frVia* via,
       T* pin,
@@ -469,8 +542,7 @@ class FlexPA
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys);
 
   /**
-   * @brief Checks if a the Via Access can be subsequently accesses from the
-   * given dir
+   * @brief Checks if a the Via Access can be accessed from a given dir
    *
    * @param ap Access Point
    * @param via Via checked
@@ -490,6 +562,9 @@ class FlexPA
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       frDirEnum dir);
 
+  /**
+   * @brief Determines if a Via would cause a DRV.
+   */
   template <typename T>
   bool isViaViolationFree(frAccessPoint* ap,
                           frVia* via,
@@ -498,6 +573,9 @@ class FlexPA
                           frInstTerm* inst_term,
                           Point point);
 
+  /**
+   * @brief Serially updates some of general pin stats
+   */
   template <typename T>
   void updatePinStats(
       const std::vector<std::unique_ptr<frAccessPoint>>& tmp_aps,
@@ -505,54 +583,22 @@ class FlexPA
       frInstTerm* inst_term);
 
   /**
-   * @brief initializes the accesses of a given pin but only considered
-   * acccesses costed bounded between lower and upper cost.
+   * @brief Adjusts the coordinates for all access points
    *
-   * @param aps access points of the pin
-   * @param apset data of the access points (auxilary)
-   * @param pin_shapes shapes of the pin
-   * @param pin the pin
-   * @param inst_term terminal
-   * @param lower_type lower bound cost
-   * @param upper_type upper bound cost
-   *
-   * @return if the initialization was sucessful
+   * @details access points are created with their coordinates relative to the
+   * chip. They have to have their coordinates altered to be relative to their
+   * instances, including rotation.
    */
-
-  /**
-   * @brief initializes the accesses of a given pin but only considered
-   * acccesses costed bounded between lower and upper cost.
-   *
-   * @param aps access points of the pin
-   * @param apset data of the access points (auxilary)
-   * @param pin_shapes shapes of the pin
-   * @param pin the pin
-   * @param inst_term terminal
-   * @param lower_type lower bound cost
-   * @param upper_type upper bound cost
-   *
-   * @return if the initialization was sucessful
-   */
-  template <typename T>
-  bool initPinAccessCostBounded(
-      std::vector<std::unique_ptr<frAccessPoint>>& aps,
-      std::set<std::pair<Point, frLayerNum>>& apset,
-      std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
-      T* pin,
-      frInstTerm* inst_term,
-      frAccessPointEnum lower_type,
-      frAccessPointEnum upper_type);
+  void revertAccessPoints();
 
   void prepPattern();
-
-  void prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows);
 
   int prepPatternInst(frInst* inst, int curr_unique_inst_idx, double x_weight);
 
   int genPatterns(const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                   int curr_unique_inst_idx);
 
-  int genPatterns_helper(
+  int genPatternsHelper(
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::set<std::vector<int>>& inst_access_patterns,
       std::set<std::pair<int, int>>& used_access_points,
@@ -560,20 +606,30 @@ class FlexPA
       int curr_unique_inst_idx,
       int max_access_point_size);
 
-  void genPatternsInit(std::vector<FlexDPNode>& nodes,
-                       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
-                       std::set<std::vector<int>>& inst_access_patterns,
-                       std::set<std::pair<int, int>>& used_access_points,
-                       std::set<std::pair<int, int>>& viol_access_points,
-                       int max_access_point_size);
-
-  void genPatterns_reset(
-      std::vector<FlexDPNode>& nodes,
+  /**
+   * @brief Initializes the nodes' data structures that will be used to solve
+   * the DP problem
+   */
+  void genPatternsInit(
+      std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
-      int max_access_point_size);
+      std::set<std::vector<int>>& inst_access_patterns,
+      std::set<std::pair<int, int>>& used_access_points,
+      std::set<std::pair<int, int>>& viol_access_points);
 
-  void genPatterns_perform(
-      std::vector<FlexDPNode>& nodes,
+  /**
+   * @brief Resets the nodes' data structures that will be used to solve the
+   * DP problem
+   */
+  void genPatternsReset(
+      std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
+      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins);
+
+  /**
+   * @brief Determines the value of all the paths of the DP problem
+   */
+  void genPatternsPerform(
+      std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::vector<int>& vio_edges,
       const std::set<std::pair<int, int>>& used_access_points,
@@ -581,9 +637,11 @@ class FlexPA
       int curr_unique_inst_idx,
       int max_access_point_size);
 
-  int getEdgeCost(int prev_node_idx,
-                  int curr_node_idx,
-                  const std::vector<FlexDPNode>& nodes,
+  /**
+   * @brief Determines the edge cost between two DP nodes
+   */
+  int getEdgeCost(FlexDPNode* prev_node,
+                  FlexDPNode* curr_node,
                   const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                   std::vector<int>& vio_edges,
                   const std::set<std::pair<int, int>>& used_access_points,
@@ -591,8 +649,27 @@ class FlexPA
                   int curr_unique_inst_idx,
                   int max_access_point_size);
 
-  bool genPatterns_commit(
-      const std::vector<FlexDPNode>& nodes,
+  /**
+   * @brief Extracts the access patterns given the graph nodes composing the
+   * access points relationship
+   *
+   * @param nodes {pin,access_point} nodes of the access pattern graph
+   * @param pins vector of pins of the unique instance
+   * @param used_access_points a set of all used access points
+   *
+   * @returns a vector of ints representing the access pattern in the form:
+   * access_pattern[pin_idx] = access_point_idx of the pin
+   */
+  std::vector<int> extractAccessPatternFromNodes(
+      const std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
+      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
+      std::set<std::pair<int, int>>& used_access_points);
+
+  /**
+   * @brief Commits to the best path (solution) on the DP graph
+   */
+  bool genPatternsCommit(
+      const std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       bool& is_valid,
       std::set<std::vector<int>>& inst_access_patterns,
@@ -601,26 +678,34 @@ class FlexPA
       int curr_unique_inst_idx,
       int max_access_point_size);
 
+  /**
+   * @brief Auxilary function for debugging
+   */
   void genPatternsPrintDebug(
-      std::vector<FlexDPNode>& nodes,
-      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
-      int max_access_point_size);
+      std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
+      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins);
 
-  void genPatterns_print(
-      std::vector<FlexDPNode>& nodes,
-      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
-      int max_access_point_size);
+  /**
+   * @brief Auxilary function for debugging
+   */
+  void genPatternsPrint(
+      std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
+      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins);
 
-  int getFlatIdx(int idx_1, int idx_2, int idx_2_dim);
-
-  void getNestedIdx(int flat_idx, int& idx_1, int& idx_2, int idx_2_dim);
-
+  /**
+   * @brief Converts a nested indexing system of edges to a flat one
+   */
   int getFlatEdgeIdx(int prev_idx_1,
                      int prev_idx_2,
                      int curr_idx_2,
                      int idx_2_dim);
 
-  bool genPatterns_gc(
+  /**
+   * @brief Checks for any DRVs.
+   *
+   * @returns false if any DRVs.
+   */
+  bool genPatternsGC(
       const std::set<frBlockObject*>& target_objs,
       const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
       PatternType pattern_type,
@@ -628,27 +713,75 @@ class FlexPA
 
   void getInsts(std::vector<frInst*>& insts);
 
+  void prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows);
+
+  /**
+   * @brief determines the access patterns for all the instances on a row
+   *
+   * @details uses the DP graph approach described in TAO of PAO paper to
+   * determine the access patters.
+   *
+   * @param insts instances on the row
+   */
   void genInstRowPattern(std::vector<frInst*>& insts);
 
-  void genInstRowPatternInit(std::vector<FlexDPNode>& nodes,
-                             const std::vector<frInst*>& insts);
+  /**
+   * @brief initializes the nodes data strucutes that will be used to solve the
+   * DP problem
+   *
+   * @param nodes the empy nodes data structure
+   * @param insts instances on the row
+   */
+  void genInstRowPatternInit(
+      std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
+      const std::vector<frInst*>& insts);
 
-  void genInstRowPatternPerform(std::vector<FlexDPNode>& nodes,
-                                const std::vector<frInst*>& insts);
+  /**
+   * @brief Determines the value of all the paths of the DP problem
+   *
+   * @param nodes the nodes data structure
+   * @param insts instances on the row
+   */
+  void genInstRowPatternPerform(
+      std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
+      const std::vector<frInst*>& insts);
 
-  void genInstRowPattern_commit(std::vector<FlexDPNode>& nodes,
-                                const std::vector<frInst*>& insts);
+  /**
+   * @brief Commits to the best path (solution) on the DP graph
+   *
+   * @param nodes the nodes data structure
+   * @param insts instances on the row
+   */
+  void genInstRowPatternCommit(
+      std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
+      const std::vector<frInst*>& insts);
 
-  void genInstRowPattern_print(std::vector<FlexDPNode>& nodes,
-                               const std::vector<frInst*>& insts);
+  /**
+   * @brief Auxilary function for debugging
+   *
+   * @param nodes the nodes data structure
+   * @param insts instances on the row
+   */
+  void genInstRowPatternPrint(
+      std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
+      const std::vector<frInst*>& insts);
 
-  int getEdgeCost(int prev_node_idx,
-                  int curr_node_idx,
-                  const std::vector<FlexDPNode>& nodes,
+  /**
+   * @brief Determines the edge cost between two nodes
+   */
+  int getEdgeCost(FlexDPNode* prev_node,
+                  FlexDPNode* curr_node,
                   const std::vector<frInst*>& insts);
 
-  void revertAccessPoints();
-
+  /**
+   * @brief Auxilary to determine DRVs.
+   *
+   * @param inst unique instance
+   * @param access_pattern access pattern
+   * @param objs TODO: not sure why this is a parameter at all
+   * @param vias TODO: ditto
+   * @param isPrev whether this is the previous or current node
+   */
   void addAccessPatternObj(
       frInst* inst,
       FlexPinAccessPattern* access_pattern,
@@ -706,16 +839,30 @@ class FlexDPNode
   // getters
   int getPathCost() const { return pathCost_; }
   int getNodeCost() const { return nodeCost_; }
-  int getPrevNodeIdx() const { return prev_node_idx_; }
+  FlexDPNode* getPrevNode() const { return prev_node_; }
+  std::pair<int, int> getIdx() const { return idx_; }
+  bool isSource() const { return virtual_source_; }
+  bool isSink() const { return virtual_sink_; }
+  bool isVirtual() const { return (virtual_source_ || virtual_sink_); }
 
   // setters
   void setPathCost(int in) { pathCost_ = in; }
   void setNodeCost(int in) { nodeCost_ = in; }
-  void setPrevNodeIdx(int in) { prev_node_idx_ = in; }
+  void setPrevNode(FlexDPNode* in) { prev_node_ = in; }
+  void setIdx(std::pair<int, int> in) { idx_ = std::move(in); }
+  void setAsSource() { virtual_source_ = true; }
+  void setAsSink() { virtual_sink_ = true; }
+
+  bool hasPrevNode() const { return prev_node_ != nullptr; }
 
  private:
+  bool virtual_source_ = false;
+  bool virtual_sink_ = false;
   int pathCost_ = std::numeric_limits<int>::max();
   int nodeCost_ = std::numeric_limits<int>::max();
-  int prev_node_idx_ = -1;
+  /*either {pin_idx, acc_point_idx} or {inst_idx, acc_pattern_idx} depending on
+   * context*/
+  std::pair<int, int> idx_ = {-1, -1};
+  FlexDPNode* prev_node_ = nullptr;
 };
 }  // namespace drt

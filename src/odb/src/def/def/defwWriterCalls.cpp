@@ -47,14 +47,14 @@
 
 #include "defwWriterCalls.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
 #include "defwWriter.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 #define MAXCBS 33
 
@@ -119,8 +119,8 @@ DEFI_WARNING_LOG_FUNCTION defwWarningLogFunction;
 //
 /////////////////////////////////////
 
-defiUserData defwUserData = 0;
-static char* defwFileName = 0;
+defiUserData defwUserData = nullptr;
+static char* defwFileName = nullptr;
 static int defwRegisterUnused = 0;
 
 extern FILE* defwFile;
@@ -134,40 +134,40 @@ extern FILE* defwFile;
 /////////////////////////////////////
 // The callback routines
 defwVoidCbkFnType defwCallbacksSeq[MAXCBS] = {
-    0,  // defwVersionCbk
-    0,  // defwCaseSensitiveCbk
-    0,  // defwDividerCbk
-    0,  // defwBusBitCbk
-    0,  // defwDesignCbk
-    0,  // defwTechCbk
-    0,  // defwArrayCbk
-    0,  // defwFloorPlanCbk
-    0,  // defwUnitsCbk
-    0,  // defwHistoryCbk
-    0,  // defwPropDefCbk
-    0,  // defwDieAreaCbk
-    0,  // defwRowCbk
-    0,  // defwTrackCbk
-    0,  // defwGcellGridCbk
-    0,  // defwDefaultCapCbk
-    0,  // defwCanplaceCbk
-    0,  // defwCannotOccupyCbk
-    0,  // defwViaCbk
-    0,  // defwRegionCbk
-    0,  // defwComponentCbk
-    0,  // defwPinCbk
-    0,  // defwPinPropCbk
-    0,  // defwSNetCbk
-    0,  // defwNetCbk
-    0,  // defwIOTimingCbk
-    0,  // defwScanchainCbk
-    0,  // defwConstraintCbk
-    0,  // defwAssertionCbk pre 5.2
-    0,  // defwGroupCbk
-    0,  // defwBlockageCbk 5.4
-    0,  // defwExtCbk
-    0,  // defwDesignEndCbk
-        // Add NEW CALLBACK here
+    nullptr,  // defwVersionCbk
+    nullptr,  // defwCaseSensitiveCbk
+    nullptr,  // defwDividerCbk
+    nullptr,  // defwBusBitCbk
+    nullptr,  // defwDesignCbk
+    nullptr,  // defwTechCbk
+    nullptr,  // defwArrayCbk
+    nullptr,  // defwFloorPlanCbk
+    nullptr,  // defwUnitsCbk
+    nullptr,  // defwHistoryCbk
+    nullptr,  // defwPropDefCbk
+    nullptr,  // defwDieAreaCbk
+    nullptr,  // defwRowCbk
+    nullptr,  // defwTrackCbk
+    nullptr,  // defwGcellGridCbk
+    nullptr,  // defwDefaultCapCbk
+    nullptr,  // defwCanplaceCbk
+    nullptr,  // defwCannotOccupyCbk
+    nullptr,  // defwViaCbk
+    nullptr,  // defwRegionCbk
+    nullptr,  // defwComponentCbk
+    nullptr,  // defwPinCbk
+    nullptr,  // defwPinPropCbk
+    nullptr,  // defwSNetCbk
+    nullptr,  // defwNetCbk
+    nullptr,  // defwIOTimingCbk
+    nullptr,  // defwScanchainCbk
+    nullptr,  // defwConstraintCbk
+    nullptr,  // defwAssertionCbk pre 5.2
+    nullptr,  // defwGroupCbk
+    nullptr,  // defwBlockageCbk 5.4
+    nullptr,  // defwExtCbk
+    nullptr,  // defwDesignEndCbk
+              // Add NEW CALLBACK here
 };
 
 // the optional and required callbacks and
@@ -304,7 +304,7 @@ int defwWrite(FILE* f, const char* fName, defiUserData uData)
   // callback routines if any are set
 
   for (i = 0; i < MAXCBS; i++) {
-    if (defwCallbacksSeq[i] != 0) {  // user has set a callback function
+    if (defwCallbacksSeq[i] != nullptr) {  // user has set a callback function
       WRITER_CALLBACK(defwCallbacksSeq[i], defwCallbacksType[i]);
     } else if ((defwCallbacksReq[i][0]) && (defwCallbacksReq[i][1] == 0)) {
       // it is required but user hasn't set up callback and there isn't a
@@ -327,7 +327,7 @@ void defwSetUnusedCallbacks(defwVoidCbkFnType func)
   int i;
 
   for (i = 0; i < MAXCBS; i++) {
-    if (defwCallbacksSeq[i] == 0)
+    if (defwCallbacksSeq[i] == nullptr)
       defwCallbacksSeq[i] = (defwVoidCbkFnType) func;
   }
 }
@@ -673,4 +673,4 @@ void defwSetWarningLogFunction(DEFI_WARNING_LOG_FUNCTION f)
 {
   defwWarningLogFunction = f;
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

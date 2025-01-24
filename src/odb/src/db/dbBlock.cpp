@@ -32,13 +32,14 @@
 
 #include "dbBlock.h"
 
-#include <errno.h>
 #include <unistd.h>
 
+#include <cerrno>
 #include <fstream>
 #include <memory>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "dbAccessPoint.h"
 #include "dbArrayTable.h"
@@ -178,8 +179,8 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _right_bus_delimeter = 0;
   _num_ext_corners = 0;
   _corners_per_block = 0;
-  _corner_name_list = 0;
-  _name = 0;
+  _corner_name_list = nullptr;
+  _name = nullptr;
   _maxCapNodeId = 0;
   _maxRSegId = 0;
   _maxCCSegId = 0;
@@ -3157,34 +3158,6 @@ dbBlock* dbBlock::create(dbBlock* parent_,
   return (dbBlock*) child;
 }
 
-dbBlock* dbBlock::duplicate(dbBlock* child_, const char* name_)
-{
-  _dbBlock* child = (_dbBlock*) child_;
-
-  // must be a child block
-  if (child->_parent == 0) {
-    return nullptr;
-  }
-
-  _dbBlock* parent = (_dbBlock*) child_->getParent();
-  _dbChip* chip = (_dbChip*) child->getOwner();
-
-  // make a copy
-  _dbBlock* dup = chip->_block_tbl->duplicate(child);
-
-  // link child-to-parent
-  parent->_children.push_back(dup->getOID());
-  dup->_parent = parent->getOID();
-
-  if (name_ && dup->_name) {
-    free((void*) dup->_name);
-    dup->_name = strdup(name_);
-    ZALLOCATED(dup->_name);
-  }
-
-  return (dbBlock*) dup;
-}
-
 dbBlock* dbBlock::getBlock(dbChip* chip_, uint dbid_)
 {
   _dbChip* chip = (_dbChip*) chip_;
@@ -3799,7 +3772,7 @@ uint dbBlock::levelizeFromPrimaryInputs()
     return 0;
   }
 
-  while (1) {
+  while (true) {
     std::vector<dbInst*> startingInsts = instsToBeLeveled;
     instsToBeLeveled.clear();
 
@@ -3829,7 +3802,7 @@ uint dbBlock::levelizeFromSequential()
     return 0;
   }
 
-  while (1) {
+  while (true) {
     std::vector<dbInst*> startingInsts = instsToBeLeveled;
     instsToBeLeveled.clear();
 
@@ -3865,7 +3838,7 @@ int dbBlock::markBackwardsUser2(dbInst* firstInst,
     return 0;
   }
 
-  while (1) {
+  while (true) {
     std::vector<dbInst*> startingInsts = instsToBeMarked;
     instsToBeMarked.clear();
 
@@ -4029,7 +4002,7 @@ int dbBlock::markBackwardsUser2(dbNet* net,
     return -1;
   }
 
-  while (1) {
+  while (true) {
     std::vector<dbInst*> startingInsts = instsToBeMarked;
     instsToBeMarked.clear();
 
@@ -4088,6 +4061,7 @@ void dbBlock::clearUserInstFlags()
     inst->clearUserFlag3();
   }
 }
+
 void dbBlock::setDrivingItermsforNets()
 {
   dbSet<dbNet> nets = getNets();

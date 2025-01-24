@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "ZException.h"
 #include "dbObject.h"
 #include "dbSet.h"
@@ -607,7 +609,7 @@ inline uint dbShape::getDY() const
 
 inline int dbShape::getLength() const
 {
-  return std::abs((int) (_rect.dx() - _rect.dy()));
+  return std::abs(_rect.dx() - _rect.dy());
 }
 
 inline void dbShape::setSegment(int prev_x,

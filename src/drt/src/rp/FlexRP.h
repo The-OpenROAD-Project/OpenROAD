@@ -36,21 +36,11 @@ namespace drt {
 class FlexRP
 {
  public:
-  // constructor
-  FlexRP(frDesign* designIn, frTechObject* techIn, Logger* logger)
-      : design_(designIn), tech_(techIn), logger_(logger)
-  {
-  }
-
-  frDesign* getDesign() const { return design_; }
+  FlexRP(frDesign* design, Logger* logger, RouterConfiguration* router_cfg);
 
   void main();
 
  private:
-  frDesign* design_;
-  frTechObject* tech_;
-  Logger* logger_;
-
   // init
   void init();
 
@@ -60,17 +50,17 @@ class FlexRP
   // functions
   void prep_viaForbiddenThrough();
   void prep_minStepViasCheck();
-  bool hasMinStepViol(Rect& r1, Rect& r2, frLayerNum lNum);
+  bool hasMinStepViol(const Rect& r1, const Rect& r2, frLayerNum lNum);
   void prep_viaForbiddenThrough_helper(const frLayerNum& lNum,
                                        const int& tableLayerIdx,
                                        const int& tableEntryIdx,
-                                       frViaDef* viaDef,
+                                       const frViaDef* viaDef,
                                        bool isCurrDirX);
   bool prep_viaForbiddenThrough_minStep(const frLayerNum& lNum,
-                                        frViaDef* viaDef,
+                                        const frViaDef* viaDef,
                                         bool isCurrDirX);
   void prep_lineForbiddenLen();
-  void prep_eolForbiddenLen_helper(frLayer* layer,
+  void prep_eolForbiddenLen_helper(const frLayer* layer,
                                    frCoord eolWidth,
                                    frCoord& eolSpace,
                                    frCoord& eolWithin);
@@ -89,21 +79,21 @@ class FlexRP
   void prep_viaForbiddenPlanarLen_helper(const frLayerNum& lNum,
                                          const int& tableLayerIdx,
                                          const int& tableEntryIdx,
-                                         frViaDef* viaDef,
+                                         const frViaDef* viaDef,
                                          bool isCurrDirX);
   void prep_viaForbiddenPlanarLen_minStep(const frLayerNum& lNum,
-                                          frViaDef* viaDef,
+                                          const frViaDef* viaDef,
                                           bool isCurrDirX,
                                           ForbiddenRanges& forbiddenRanges);
   void prep_viaForbiddenTurnLen(frNonDefaultRule* ndr = nullptr);
   void prep_viaForbiddenTurnLen_helper(const frLayerNum& lNum,
                                        const int& tableLayerIdx,
                                        const int& tableEntryIdx,
-                                       frViaDef* viaDef,
+                                       const frViaDef* viaDef,
                                        bool isCurrDirX,
                                        frNonDefaultRule* ndr = nullptr);
   void prep_viaForbiddenTurnLen_minSpc(const frLayerNum& lNum,
-                                       frViaDef* viaDef,
+                                       const frViaDef* viaDef,
                                        bool isCurrDirX,
                                        ForbiddenRanges& forbiddenRanges,
                                        frNonDefaultRule* ndr = nullptr);
@@ -111,18 +101,18 @@ class FlexRP
   void prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
                                        const int& tableLayerIdx,
                                        const int& tableEntryIdx,
-                                       frViaDef* viaDef1,
-                                       frViaDef* viaDef2,
+                                       const frViaDef* viaDef1,
+                                       const frViaDef* viaDef2,
                                        bool isHorizontal,
                                        frNonDefaultRule* ndr = nullptr);
   void prep_via2viaForbiddenLen_minStep(const frLayerNum& lNum,
-                                        frViaDef* viaDef1,
-                                        frViaDef* viaDef2,
+                                        const frViaDef* viaDef1,
+                                        const frViaDef* viaDef2,
                                         bool isVertical,
                                         ForbiddenRanges& forbiddenRanges);
   void prep_via2viaForbiddenLen_minimumCut(const frLayerNum& lNum,
-                                           frViaDef* viaDef1,
-                                           frViaDef* viaDef2,
+                                           const frViaDef* viaDef1,
+                                           const frViaDef* viaDef2,
                                            bool isCurrDirX,
                                            ForbiddenRanges& forbiddenRanges);
   void prep_via2viaForbiddenLen_widthViaMap(const frLayerNum& lNum,
@@ -131,31 +121,31 @@ class FlexRP
                                             bool isCurrDirX,
                                             ForbiddenRanges& forbiddenRanges);
   void prep_via2viaForbiddenLen_cutSpc(const frLayerNum& lNum,
-                                       frViaDef* viaDef1,
-                                       frViaDef* viaDef2,
+                                       const frViaDef* viaDef1,
+                                       const frViaDef* viaDef2,
                                        bool isCurrDirX,
                                        ForbiddenRanges& forbiddenRanges);
   void prep_via2viaForbiddenLen_minSpc(frLayerNum lNum,
-                                       frViaDef* viaDef1,
-                                       frViaDef* viaDef2,
+                                       const frViaDef* viaDef1,
+                                       const frViaDef* viaDef2,
                                        bool isCurrDirX,
                                        ForbiddenRanges& forbiddenRanges,
                                        frNonDefaultRule* ndr = nullptr);
   void prep_via2viaPRL(frLayerNum lNum,
-                       frViaDef* viaDef1,
-                       frViaDef* viaDef2,
+                       const frViaDef* viaDef1,
+                       const frViaDef* viaDef2,
                        bool isCurrDirX,
                        frCoord& prl);
   void prep_via2viaForbiddenLen_lef58CutSpc(const frLayerNum& lNum,
-                                            frViaDef* viaDef1,
-                                            frViaDef* viaDef2,
+                                            const frViaDef* viaDef1,
+                                            const frViaDef* viaDef2,
                                             bool isCurrDirX,
                                             ForbiddenRanges& forbiddenRanges);
 
   void prep_via2viaForbiddenLen_lef58CutSpcTbl(
       const frLayerNum& lNum,
-      frViaDef* viaDef1,
-      frViaDef* viaDef2,
+      const frViaDef* viaDef1,
+      const frViaDef* viaDef2,
       bool isCurrDirX,
       ForbiddenRanges& forbiddenRanges);
 
@@ -165,5 +155,10 @@ class FlexRP
       const Rect& cutBox,
       frCoord reqSpcVal,
       std::pair<frCoord, frCoord>& range);
+
+  frDesign* design_;
+  frTechObject* tech_;
+  Logger* logger_;
+  RouterConfiguration* router_cfg_;
 };
 }  // namespace drt

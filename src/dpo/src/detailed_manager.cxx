@@ -46,6 +46,7 @@
 #include <set>
 #include <stack>
 #include <utility>
+#include <vector>
 
 #include "architecture.h"
 #include "detailed_orient.h"
@@ -67,7 +68,7 @@ namespace dpo {
 DetailedMgr::DetailedMgr(Architecture* arch,
                          Network* network,
                          RoutingParams* rt)
-    : arch_(arch), network_(network), rt_(rt), disallowOneSiteGaps_(false)
+    : arch_(arch), network_(network), rt_(rt)
 {
   singleRowHeight_ = arch_->getRow(0)->getHeight();
   numSingleHeightRows_ = arch_->getNumRows();
@@ -551,9 +552,7 @@ void DetailedMgr::findSegments()
     int originX = arch_->getRow(rowId)->getLeft();
     int siteSpacing = arch_->getRow(rowId)->getSiteSpacing();
 
-    int ix;
-
-    ix = (int) ((segment->getMinX() - originX) / siteSpacing);
+    int ix = (segment->getMinX() - originX) / siteSpacing;
     if (originX + ix * siteSpacing < segment->getMinX()) {
       ++ix;
     }
@@ -562,7 +561,7 @@ void DetailedMgr::findSegments()
       segment->setMinX(originX + ix * siteSpacing);
     }
 
-    ix = (int) ((segment->getMaxX() - originX) / siteSpacing);
+    ix = (segment->getMaxX() - originX) / siteSpacing;
     if (originX + ix * siteSpacing != segment->getMaxX()) {
       segment->setMaxX(originX + ix * siteSpacing);
     }
@@ -2912,16 +2911,11 @@ bool DetailedMgr::tryMove3(Node* ndi,
   // of the cell which should also correspond to the row in which the
   // segment is found.
   int rb = segments_[sj]->getRowId();
-  if (std::abs(yj - arch_->getRow(rb)->getBottom()) != 0) {
-    // Weird.
-    yj = arch_->getRow(rb)->getBottom();
-  }
   while (rb + spanned >= arch_->getRows().size()) {
     --rb;
   }
   // We might need to adjust the target position if we needed to move
   // the rows "down"...
-  yj = arch_->getRow(rb)->getBottom();
   const int rt = rb + spanned - 1;  // Cell would occupy rows [rb,rt].
 
   bool flip = false;

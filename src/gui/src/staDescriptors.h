@@ -51,7 +51,7 @@ namespace gui {
 class LibertyLibraryDescriptor : public Descriptor
 {
  public:
-  LibertyLibraryDescriptor(odb::dbDatabase* db, sta::dbSta* sta);
+  LibertyLibraryDescriptor(sta::dbSta* sta);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
@@ -66,14 +66,13 @@ class LibertyLibraryDescriptor : public Descriptor
   bool getAllObjects(SelectionSet& objects) const override;
 
  private:
-  odb::dbDatabase* db_;
   sta::dbSta* sta_;
 };
 
 class LibertyCellDescriptor : public Descriptor
 {
  public:
-  LibertyCellDescriptor(odb::dbDatabase* db, sta::dbSta* sta);
+  LibertyCellDescriptor(sta::dbSta* sta);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
@@ -88,14 +87,13 @@ class LibertyCellDescriptor : public Descriptor
   bool getAllObjects(SelectionSet& objects) const override;
 
  private:
-  odb::dbDatabase* db_;
   sta::dbSta* sta_;
 };
 
 class LibertyPortDescriptor : public Descriptor
 {
  public:
-  LibertyPortDescriptor(odb::dbDatabase* db, sta::dbSta* sta);
+  LibertyPortDescriptor(sta::dbSta* sta);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
@@ -110,14 +108,13 @@ class LibertyPortDescriptor : public Descriptor
   bool getAllObjects(SelectionSet& objects) const override;
 
  private:
-  odb::dbDatabase* db_;
   sta::dbSta* sta_;
 };
 
 class LibertyPgPortDescriptor : public Descriptor
 {
  public:
-  LibertyPgPortDescriptor(odb::dbDatabase* db, sta::dbSta* sta);
+  LibertyPgPortDescriptor(sta::dbSta* sta);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
@@ -132,16 +129,15 @@ class LibertyPgPortDescriptor : public Descriptor
   bool getAllObjects(SelectionSet& objects) const override;
 
  private:
-  odb::dbDatabase* db_;
-  sta::dbSta* sta_;
-
   odb::dbMTerm* getMTerm(const std::any& object) const;
+
+  sta::dbSta* sta_;
 };
 
 class CornerDescriptor : public Descriptor
 {
  public:
-  CornerDescriptor(odb::dbDatabase* db, sta::dbSta* sta);
+  CornerDescriptor(sta::dbSta* sta);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
@@ -156,14 +152,13 @@ class CornerDescriptor : public Descriptor
   bool getAllObjects(SelectionSet& objects) const override;
 
  private:
-  odb::dbDatabase* db_;
   sta::dbSta* sta_;
 };
 
 class StaInstanceDescriptor : public Descriptor
 {
  public:
-  StaInstanceDescriptor(odb::dbDatabase* db, sta::dbSta* sta);
+  StaInstanceDescriptor(sta::dbSta* sta);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
@@ -178,7 +173,6 @@ class StaInstanceDescriptor : public Descriptor
   bool getAllObjects(SelectionSet& objects) const override;
 
  private:
-  odb::dbDatabase* db_;
   sta::dbSta* sta_;
 
   static constexpr int float_precision_ = 2;
@@ -187,7 +181,7 @@ class StaInstanceDescriptor : public Descriptor
 class ClockDescriptor : public Descriptor
 {
  public:
-  ClockDescriptor(odb::dbDatabase* db, sta::dbSta* sta);
+  ClockDescriptor(sta::dbSta* sta);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
@@ -202,7 +196,6 @@ class ClockDescriptor : public Descriptor
   bool getAllObjects(SelectionSet& objects) const override;
 
  private:
-  odb::dbDatabase* db_;
   sta::dbSta* sta_;
 
   std::set<const sta::Pin*> getClockPins(sta::Clock* clock) const;

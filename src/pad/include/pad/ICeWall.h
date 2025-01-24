@@ -122,6 +122,7 @@ class ICeWall
                 float turn_penalty = 2.0,
                 int max_iterations = 10);
   void routeRDLDebugGUI(bool enable);
+  void routeRDLDebugNet(const char* net);
 
   void connectByAbutment();
 
@@ -158,13 +159,13 @@ class ICeWall
   std::string getRowName(const std::string& name, int ring_index) const;
   odb::Direction2D::Value getRowEdge(odb::dbRow* row) const;
 
-  odb::int64 estimateWirelengths(odb::dbInst* inst,
-                                 const std::set<odb::dbITerm*>& iterms) const;
-  odb::int64 computePadBumpDistance(odb::dbInst* inst,
-                                    int inst_width,
-                                    odb::dbITerm* bump,
-                                    odb::dbRow* row,
-                                    int center_pos) const;
+  int64_t estimateWirelengths(odb::dbInst* inst,
+                              const std::set<odb::dbITerm*>& iterms) const;
+  int64_t computePadBumpDistance(odb::dbInst* inst,
+                                 int inst_width,
+                                 odb::dbITerm* bump,
+                                 odb::dbRow* row,
+                                 int center_pos) const;
   void placePadsUniform(const std::vector<odb::dbInst*>& insts,
                         odb::dbRow* row,
                         const std::map<odb::dbInst*, int>& inst_widths,
@@ -200,6 +201,7 @@ class ICeWall
 
   std::unique_ptr<RDLRouter> router_;
   std::unique_ptr<RDLGui> router_gui_;
+  odb::dbNet* rdl_net_debug_ = nullptr;
 
   constexpr static const char* fake_library_name_ = "FAKE_IO";
   constexpr static const char* row_north_ = "IO_NORTH";

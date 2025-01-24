@@ -28,6 +28,7 @@
 
 #include <deque>
 #include <iostream>
+#include <vector>
 
 #include "FlexGR.h"
 #include "FlexGRCMap.h"
@@ -82,8 +83,8 @@ void FlexGR::initLayerPitch()
     }
 
     // calculate line-2-via pitch
-    frViaDef* downVia = nullptr;
-    frViaDef* upVia = nullptr;
+    const frViaDef* downVia = nullptr;
+    const frViaDef* upVia = nullptr;
     if (getDesign()->getTech()->getBottomLayerNum() <= lNum - 1) {
       downVia = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
     }
@@ -258,12 +259,12 @@ void FlexGR::initGCell()
 void FlexGR::initCMap()
 {
   std::cout << std::endl << "initializing congestion map...\n";
-  auto cmap = std::make_unique<FlexGRCMap>(design_);
+  auto cmap = std::make_unique<FlexGRCMap>(design_, router_cfg_);
   cmap->setLayerTrackPitches(trackPitches_);
   cmap->setLayerLine2ViaPitches(line2ViaPitches_);
   cmap->setLayerPitches(layerPitches_);
   cmap->init();
-  auto cmap2D = std::make_unique<FlexGRCMap>(design_);
+  auto cmap2D = std::make_unique<FlexGRCMap>(design_, router_cfg_);
   cmap2D->initFrom3D(cmap.get());
   // cmap->print2D(true);
   // cmap->print();

@@ -75,5 +75,5 @@
         }
     ],
     "constructors":[],
-    "cpp_includes":["dbBlock.h","dbModule.h","dbModNet.h","dbHashTable.hpp","dbModITerm.h","dbBusPort.h"]
+    "cpp_includes":["dbBlock.h","dbModule.h","dbModNet.h","dbHashTable.hpp","dbModITerm.h","dbBusPort.h","dbJournal.h"]
 }

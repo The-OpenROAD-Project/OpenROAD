@@ -40,12 +40,12 @@
 #include <queue>
 #include <regex>
 #include <sstream>
+#include <vector>
 
 #include "bufferTreeDescriptor.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "odb/dbCompare.h"
 #include "odb/dbShape.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
@@ -57,6 +57,8 @@ static void populateODBProperties(Descriptor::Properties& props,
                                   odb::dbObject* object,
                                   const std::string& prefix = "")
 {
+  std::optional<int> src_file_id;
+  std::optional<int> src_file_line;
   Descriptor::PropertyList prop_list;
   for (const auto prop : odb::dbProperty::getProperties(object)) {
     std::any value;
@@ -88,7 +90,26 @@ static void populateODBProperties(Descriptor::Properties& props,
         value = static_cast<odb::dbDoubleProperty*>(prop)->getValue();
         break;
     }
-    prop_list.emplace_back(prop->getName(), value);
+    // Look for the file name properties from Verilog2db::storeLineInfo
+    if (prop->getName() == "src_file_id") {
+      src_file_id = std::any_cast<int>(value);
+    } else if (prop->getName() == "src_file_line") {
+      src_file_line = std::any_cast<int>(value);
+    } else {
+      prop_list.emplace_back(prop->getName(), value);
+    }
+  }
+
+  if (src_file_id && src_file_line) {
+    auto block = object->getDb()->getChip()->getBlock();
+    const auto src_file = fmt::format("src_file_{}", src_file_id.value());
+    const auto file_name_prop
+        = odb::dbStringProperty::find(block, src_file.c_str());
+    if (file_name_prop) {
+      const auto info = fmt::format(
+          "{}:{}", file_name_prop->getValue(), src_file_line.value());
+      prop_list.emplace_back("Source", info);
+    }
   }
 
   if (!prop_list.empty()) {
@@ -137,6 +158,9 @@ std::string Descriptor::convertUnits(const double value,
   } else if (log_units <= 6) {
     unit_scale = 1e-6;
     unit = "M";
+  } else if (log_units <= 9) {
+    unit_scale = 1e-9;
+    unit = "G";
   }
   if (area) {
     unit_scale *= unit_scale;
@@ -1573,6 +1597,13 @@ Selected DbNetDescriptor::makeSelected(std::any object) const
   return Selected();
 }
 
+bool DbNetDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_net = getObject(l);
+  auto r_net = getObject(r);
+  return BaseDbDescriptor::lessThan(l_net, r_net);
+}
+
 bool DbNetDescriptor::getAllObjects(SelectionSet& objects) const
 {
   auto* chip = db_->getChip();
@@ -1610,9 +1641,8 @@ odb::dbObject* DbNetDescriptor::getSink(const std::any& object) const
 
 //////////////////////////////////////////////////
 
-DbITermDescriptor::DbITermDescriptor(
-    odb::dbDatabase* db,
-    std::function<bool(void)> usingPolyDecompView)
+DbITermDescriptor::DbITermDescriptor(odb::dbDatabase* db,
+                                     std::function<bool()> usingPolyDecompView)
     : BaseDbDescriptor<odb::dbITerm>(db),
       usingPolyDecompView_(std::move(usingPolyDecompView))
 {
@@ -1924,9 +1954,8 @@ bool DbBPinDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbMTermDescriptor::DbMTermDescriptor(
-    odb::dbDatabase* db,
-    std::function<bool(void)> usingPolyDecompView)
+DbMTermDescriptor::DbMTermDescriptor(odb::dbDatabase* db,
+                                     std::function<bool()> usingPolyDecompView)
     : BaseDbDescriptor<odb::dbMTerm>(db),
       usingPolyDecompView_(std::move(usingPolyDecompView))
 {

@@ -34,6 +34,7 @@
 
 #include <iostream>
 #include <limits>
+#include <vector>
 
 #include "Utils.hh"
 #include "db_sta/dbNetwork.hh"
@@ -45,18 +46,6 @@
 namespace dft {
 
 namespace {
-
-// Checks if the given LibertyCell is really a Scan Cell with a Scan In and a
-// Scan Enable
-bool IsScanCell(const sta::LibertyCell* libertyCell)
-{
-  const sta::TestCell* test_cell = libertyCell->testCell();
-  if (test_cell) {
-    return test_cell->scanIn() != nullptr && test_cell->scanEnable() != nullptr;
-  }
-  return false;
-}
-
 // Checks the ports
 sta::LibertyPort* FindEquivalentPortInScanCell(
     const sta::LibertyPort* non_scan_cell_port,
@@ -115,6 +104,7 @@ bool IsScanEquivalent(
     const sta::LibertyCell* scan_cell,
     std::unordered_map<std::string, std::string>& port_mapping)
 {
+  std::set<sta::LibertyPort*> seen_on_scan_cell;
   sta::LibertyCellPortIterator non_scan_cell_ports_iter(non_scan_cell);
   while (non_scan_cell_ports_iter.hasNext()) {
     sta::LibertyPort* non_scan_cell_port = non_scan_cell_ports_iter.next();
@@ -125,6 +115,7 @@ bool IsScanEquivalent(
     }
 
     port_mapping.insert({non_scan_cell_port->name(), scan_equiv_port->name()});
+    seen_on_scan_cell.insert(scan_equiv_port);
   }
 
   sta::LibertyCellPgPortIterator non_scan_cell_pg_ports_iter(non_scan_cell);
@@ -141,6 +132,29 @@ bool IsScanEquivalent(
         {non_scan_cell_pg_port->name(), scan_equiv_port->name()});
   }
 
+  // Check there are no extra signals on the scan flop not present
+  // on the non-scan flop (e.g. preset, clear, or enable)
+  sta::TestCell* test_cell = scan_cell->testCell();
+  sta::LibertyCellPortIterator scan_cell_ports_iter(scan_cell);
+  while (scan_cell_ports_iter.hasNext()) {
+    sta::LibertyPort* scan_cell_port = scan_cell_ports_iter.next();
+    if (seen_on_scan_cell.find(scan_cell_port) != seen_on_scan_cell.end()) {
+      continue;
+    }
+    // Extra scan related pins are ok
+    if (test_cell) {
+      sta::LibertyPort* test_port
+          = test_cell->findLibertyPort(scan_cell_port->name());
+      if (!test_port) {
+        return false;
+      }
+
+      if (test_port->scanSignalType() != sta::ScanSignalType::none) {
+        continue;
+      }
+    }
+    return false;
+  }
   return true;
 }
 
@@ -260,16 +274,16 @@ void ScanReplace::collectScanCellAvailable()
   // Let's collect scan lib cells and non-scan lib cells availables
   for (odb::dbLib* lib : db_->getLibs()) {
     for (odb::dbMaster* master : lib->getMasters()) {
-      // We only care about sequential cells in DFT
-      if (!master->isSequential()) {
-        continue;
-      }
-
       sta::Cell* master_cell = db_network->dbToSta(master);
       sta::LibertyCell* liberty_cell = db_network->libertyCell(master_cell);
 
       if (!liberty_cell) {
         // Without info about the cell we can't do any replacement
+        continue;
+      }
+
+      // We only care about sequential cells in DFT
+      if (!liberty_cell->hasSequentials()) {
         continue;
       }
 
@@ -283,7 +297,7 @@ void ScanReplace::collectScanCellAvailable()
         continue;
       }
 
-      if (IsScanCell(liberty_cell)) {
+      if (utils::IsScanCell(liberty_cell)) {
         available_scan_lib_cells_.insert(liberty_cell);
       } else {
         non_scan_cells.push_back(liberty_cell);
@@ -380,7 +394,8 @@ void ScanReplace::scanReplace(odb::dbBlock* block)
       continue;
     }
 
-    if (!from_liberty_cell->hasSequentials()) {
+    if (!from_liberty_cell->hasSequentials()
+        || from_liberty_cell->isClockGate()) {
       // If the cell is not sequential, then there is nothing to replace
       continue;
     }

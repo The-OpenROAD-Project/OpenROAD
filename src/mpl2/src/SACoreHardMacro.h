@@ -49,7 +49,8 @@ namespace mpl2 {
 class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
 {
  public:
-  SACoreHardMacro(const Rect& outline,
+  SACoreHardMacro(PhysicalHierarchy* tree,
+                  const Rect& outline,
                   const std::vector<HardMacro>& macros,
                   // weight for different penalty
                   float area_weight,
@@ -71,6 +72,8 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
                   unsigned seed,
                   Mpl2Observer* graphics,
                   utl::Logger* logger);
+
+  void run() override;
 
   void setWeights(const SACoreWeights& weights);
 

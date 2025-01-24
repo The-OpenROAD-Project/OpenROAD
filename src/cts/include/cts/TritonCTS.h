@@ -58,6 +58,8 @@ class Clock;
 class dbNetwork;
 class Unit;
 class LibertyCell;
+class Vertex;
+class Graph;
 }  // namespace sta
 
 namespace stt {
@@ -80,7 +82,7 @@ class HTreeBuilder;
 class TritonCTS
 {
  public:
-  TritonCTS() = default;
+  TritonCTS();
   ~TritonCTS();
 
   void init(utl::Logger* logger,
@@ -92,20 +94,24 @@ class TritonCTS
   void runTritonCts();
   void reportCtsMetrics();
   CtsOptions* getParms() { return options_; }
-  TechChar* getCharacterization() { return techChar_; }
+  TechChar* getCharacterization() { return techChar_.get(); }
   int setClockNets(const char* names);
   void setBufferList(const char* buffers);
-  void inferBufferList(std::vector<std::string>& buffers);
-  bool isClockCellCandidate(sta::LibertyCell* cell);
   void setRootBuffer(const char* buffers);
-  std::string selectRootBuffer(std::vector<std::string>& buffers);
   void setSinkBuffer(const char* buffers);
+
+ private:
+  bool isClockCellCandidate(sta::LibertyCell* cell);
+  std::string selectRootBuffer(std::vector<std::string>& buffers);
   std::string selectSinkBuffer(std::vector<std::string>& buffers);
   std::string selectBestMaxCapBuffer(const std::vector<std::string>& buffers,
                                      float totalCap);
-
- private:
-  void addBuilder(TreeBuilder* builder);
+  void inferBufferList(std::vector<std::string>& buffers);
+  TreeBuilder* addBuilder(CtsOptions* options,
+                          Clock& net,
+                          TreeBuilder* parent,
+                          utl::Logger* logger,
+                          odb::dbDatabase* db);
   void forEachBuilder(
       const std::function<void(const TreeBuilder*)>& func) const;
 
@@ -119,23 +125,27 @@ class TritonCTS
   // db functions
   bool masterExists(const std::string& master) const;
   void populateTritonCTS();
-  void writeClockNetsToDb(Clock& clockNet, std::set<odb::dbNet*>& clkLeafNets);
+  void writeClockNetsToDb(TreeBuilder* builder,
+                          std::set<odb::dbNet*>& clkLeafNets);
   void writeClockNDRsToDb(const std::set<odb::dbNet*>& clkLeafNets);
   void incrementNumClocks() { ++numberOfClocks_; }
   void clearNumClocks() { numberOfClocks_ = 0; }
   unsigned getNumClocks() const { return numberOfClocks_; }
   void initOneClockTree(odb::dbNet* driverNet,
+                        odb::dbNet* clkInputNet,
                         const std::string& sdcClockName,
                         TreeBuilder* parent);
-  TreeBuilder* initClock(odb::dbNet* net,
+  TreeBuilder* initClock(odb::dbNet* firstNet,
+                         odb::dbNet* clkInputNet,
                          const std::string& sdcClock,
                          TreeBuilder* parentBuilder);
   void disconnectAllSinksFromNet(odb::dbNet* net);
   void disconnectAllPinsFromNet(odb::dbNet* net);
   void checkUpstreamConnections(odb::dbNet* net);
   void createClockBuffers(Clock& clockNet, odb::dbModule* parent);
-  HTreeBuilder* initClockTreeForMacrosAndRegs(
-      odb::dbNet*& net,
+  TreeBuilder* initClockTreeForMacrosAndRegs(
+      odb::dbNet*& firstNet,
+      odb::dbNet* clkInputNet,
       const std::unordered_set<odb::dbMaster*>& buffer_masters,
       Clock& ClockNet,
       TreeBuilder* parentBuilder);
@@ -145,17 +155,18 @@ class TritonCTS
       const std::unordered_set<odb::dbMaster*>& buffer_masters,
       std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& registerSinks,
       std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& macroSinks);
-  HTreeBuilder* addClockSinks(
+  TreeBuilder* addClockSinks(
       Clock& clockNet,
       odb::dbNet* physicalNet,
       const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& sinks,
-      HTreeBuilder* parentBuilder,
+      TreeBuilder* parentBuilder,
       const std::string& macrosOrRegs);
   Clock forkRegisterClockNetwork(
       Clock& clockNet,
       const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& registerSinks,
       odb::dbNet*& firstNet,
-      odb::dbNet*& secondNet);
+      odb::dbNet*& secondNet,
+      std::string& topBufferName);
   void computeITermPosition(odb::dbITerm* term, int& x, int& y) const;
   void countSinksPostDbWrite(TreeBuilder* builder,
                              odb::dbNet* net,
@@ -200,11 +211,18 @@ class TritonCTS
                         ClockInst& dummyClock);
   void printClockNetwork(const Clock& clockNet) const;
   void balanceMacroRegisterLatencies();
-  void computeAveSinkArrivals(TreeBuilder* builder);
+  float getVertexClkArrival(sta::Vertex* sinkVertex,
+                            odb::dbNet* topNet,
+                            odb::dbITerm* iterm);
+  void computeAveSinkArrivals(TreeBuilder* builder, sta::Graph* graph);
+  void computeSinkArrivalRecur(odb::dbNet* topClokcNet,
+                               odb::dbITerm* iterm,
+                               float& sumArrivals,
+                               unsigned& numSinks,
+                               sta::Graph* graph);
   void adjustLatencies(TreeBuilder* macroBuilder, TreeBuilder* registerBuilder);
   void computeTopBufferDelay(TreeBuilder* builder);
   odb::dbInst* insertDelayBuffer(odb::dbInst* driver,
-                                 int index,
                                  const std::string& clockName,
                                  int locX,
                                  int locY);
@@ -213,9 +231,9 @@ class TritonCTS
   sta::dbNetwork* network_;
   Logger* logger_;
   CtsOptions* options_;
-  TechChar* techChar_;
+  std::unique_ptr<TechChar> techChar_;
   rsz::Resizer* resizer_;
-  std::vector<TreeBuilder*>* builders_;
+  std::vector<std::unique_ptr<TreeBuilder>> builders_;
   std::set<odb::dbNet*> staClockNets_;
   std::set<odb::dbNet*> visitedClockNets_;
   std::map<odb::dbInst*, ClockInst*> inst2clkbuf_;
@@ -232,6 +250,11 @@ class TritonCTS
   // root buffer and sink bufer candidates
   std::vector<std::string> rootBuffers_;
   std::vector<std::string> sinkBuffers_;
+
+  // register tree root buffer indices
+  unsigned regTreeRootBufIndex_ = 0;
+  // index for delay buffer added for latency adjustment
+  unsigned delayBufIndex_ = 0;
 };
 
 }  // namespace cts

@@ -1,0 +1,75 @@
+VERSION 5.7 ;
+NAMESCASESENSITIVE ON ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+PROPERTYDEFINITIONS
+END PROPERTYDEFINITIONS
+
+UNITS
+    DATABASE MICRONS 2000 ;
+END UNITS
+MANUFACTURINGGRID 0.005 ;
+
+LAYER metal1
+    TYPE ROUTING ;
+    PITCH 0.8 ;
+    WIDTH 0.4 ;
+    MAXWIDTH 5 ;
+    SPACING 0.4  ;
+    DIRECTION HORIZONTAL ;
+END metal1
+
+LAYER via1
+    TYPE CUT ;
+    WIDTH 0.2 ;
+    SPACING 0.2  ;
+END via1
+
+LAYER metal2
+    TYPE ROUTING ;
+    PITCH 0.8 ;
+    WIDTH 0.4 ;
+    MAXWIDTH 5 ;
+    SPACING 0.4  ;
+    DIRECTION VERTICAL ;
+END metal2
+
+LAYER via2
+    TYPE CUT ;
+    WIDTH 0.2 ;
+    SPACING 0.2  ;
+END via2
+
+LAYER topmetal
+    TYPE ROUTING ;
+    PITCH 0.8 ;
+    WIDTH 0.4 ;
+    MAXWIDTH 5 ;
+    SPACING 0.4  ;
+    DIRECTION HORIZONTAL ;
+END topmetal
+
+VIA VIA1_1 DEFAULT
+    LAYER via1 ;
+      RECT  -0.1 -0.1 0.1 0.1 ;
+    LAYER metal1 ;
+      RECT  -0.3 -0.3 0.3 0.3 ;
+    LAYER metal2 ;
+      RECT  -0.3 -0.3 0.3 0.3 ;
+END VIA1_1
+
+VIA VIA2_1 DEFAULT
+    LAYER via2 ;
+      RECT  -0.1 -0.1 0.1 0.1 ;
+    LAYER metal2 ;
+      RECT  -0.3 -0.3 0.3 0.3 ;
+    LAYER topmetal ;
+      RECT  -0.3 -0.3 0.3 0.3 ;
+END VIA2_1
+SITE dummy_site
+    CLASS CORE ;
+    SYMMETRY X Y ;
+    SIZE 1 BY 1 ;
+END dummy_site
+END LIBRARY

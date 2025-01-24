@@ -54,9 +54,11 @@ struct GSegment
   int final_x;
   int final_y;
   int final_layer;
+  bool is_jumper;
   GSegment() = default;
-  GSegment(int x0, int y0, int l0, int x1, int y1, int l1);
+  GSegment(int x0, int y0, int l0, int x1, int y1, int l1, bool jumper = false);
   bool isVia() const { return (init_x == final_x && init_y == final_y); }
+  bool isJumper() const { return is_jumper; }
   int length() const
   {
     return std::abs(init_x - final_x) + std::abs(init_y - final_y);
@@ -67,26 +69,6 @@ struct GSegment
 struct GSegmentHash
 {
   std::size_t operator()(const GSegment& seg) const;
-};
-
-class Capacities
-{
- public:
-  Capacities() = default;
-  CapacitiesVec& getHorCapacities() { return hor_capacities_; }
-  CapacitiesVec& getVerCapacities() { return ver_capacities_; }
-  void setHorCapacities(CapacitiesVec capacities)
-  {
-    hor_capacities_ = capacities;
-  }
-  void setVerCapacities(CapacitiesVec capacities)
-  {
-    ver_capacities_ = capacities;
-  }
-
- private:
-  CapacitiesVec hor_capacities_;
-  CapacitiesVec ver_capacities_;
 };
 
 struct TileCongestion

@@ -1,0 +1,43 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[WARNING GPL-0001] clk toplevel port is not placed!
+       Replace will regard clk is placed in (0, 0)
+[INFO GPL-0006] NumInstances:                17
+[INFO GPL-0007] NumPlaceInstances:           17
+[INFO GPL-0008] NumFixedInstances:            0
+[INFO GPL-0009] NumDummyInstances:            0
+[INFO GPL-0010] NumNets:                      7
+[INFO GPL-0011] NumPins:                     30
+[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] CoreArea:             47872.020 um^2
+[INFO GPL-0017] NonPlaceInstsArea:        0.000 um^2
+[INFO GPL-0018] PlaceInstsArea:          58.254 um^2
+[INFO GPL-0019] Util:                     0.122 %
+[INFO GPL-0020] StdInstsArea:            58.254 um^2
+[INFO GPL-0021] MacroInstsArea:           0.000 um^2
+[InitialPlace]  Iter: 1 CG residual: 0.00000001 HPWL: 43540
+[InitialPlace]  Iter: 2 CG residual: 0.00000007 HPWL: 54961
+[InitialPlace]  Iter: 3 CG residual: 0.00000007 HPWL: 51394
+[InitialPlace]  Iter: 4 CG residual: 0.00000001 HPWL: 51065
+[InitialPlace]  Iter: 5 CG residual: 0.00000004 HPWL: 50646
+Placement Analysis
+---------------------------------
+total displacement        129.5 u
+average displacement        7.6 u
+max displacement           12.0 u
+original HPWL               4.7 u
+legalized HPWL             57.6 u
+delta HPWL                 1136 %
+
+worst slack -0.56
+tns -1.578
+[INFO RSZ-0094] Found 6 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 6 out of 6 (100.00%) violating endpoints...
+[INFO RSZ-0040] Inserted 1 buffers.
+[INFO RSZ-0041] Resized 2 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+No differences found.

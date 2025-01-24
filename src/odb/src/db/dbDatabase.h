@@ -70,7 +70,25 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 96;  // Current revision number
+const uint db_schema_minor = 102;  // Current revision number
+
+// Revision where support for LEF58_CELLEDGESPACINGTABLE was added
+const uint db_schema_cell_edge_spc_tbl = 102;
+
+// Revision where dbMasterEdgeType was added
+const uint db_schema_master_edge_type = 101;
+
+// Revision where dbTarget was removed
+const uint db_rm_target = 100;
+
+// Revision where mask information was added to track grids
+const uint db_track_mask = 99;
+
+// Revision where the jumper insertion flag is added to dbNet
+const uint db_schema_has_jumpers = 98;
+
+// Revision where the is_congested flag was added to dbGuide
+const uint db_schema_db_guide_congested = 97;
 
 // Revision where the dbMarkerGroup/Categories were added to dbBlock
 const uint db_schema_dbmarkergroup = 96;

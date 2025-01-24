@@ -155,7 +155,7 @@ ant::AntennaChecker* Design::getAntennaChecker()
   return getOpenRoad()->getAntennaChecker();
 }
 
-const std::string Design::evalTclString(const std::string& cmd)
+std::string Design::evalTclString(const std::string& cmd)
 {
   const std::lock_guard<std::mutex> lock(interp_mutex);
   auto openroad = getOpenRoad();

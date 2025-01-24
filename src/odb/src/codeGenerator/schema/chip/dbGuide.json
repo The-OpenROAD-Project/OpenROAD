@@ -35,6 +35,24 @@
         "type":"dbId<_dbGuide>",
         "flags":["no-get","no-set"],
         "parent":"dbBlock"
+      },
+      {
+      "name":"is_congested_",
+      "type":"bool",
+      "schema":"db_schema_db_guide_congested",
+      "default":"false",
+      "flags": [
+        "private"
+      ]
+      },
+      {
+      "name":"is_jumper_",
+      "type":"bool",
+      "schema":"db_schema_has_jumpers",
+      "default":"false",
+      "flags": [
+        "private"
+      ]
       }
     ],
     "cpp_includes": [

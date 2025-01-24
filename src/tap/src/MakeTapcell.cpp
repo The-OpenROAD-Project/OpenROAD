@@ -39,10 +39,6 @@
 #include "sta/StaMain.hh"
 #include "tap/tapcell.h"
 
-using std::max;
-using std::min;
-using std::vector;
-
 namespace sta {
 // Tcl files encoded into strings.
 extern const char* tap_tcl_inits[];

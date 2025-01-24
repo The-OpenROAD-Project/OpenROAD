@@ -33,6 +33,7 @@
 #include "dbBPin.h"
 
 #include <iostream>
+#include <vector>
 
 #include "dbAccessPoint.h"
 #include "dbBTerm.h"
@@ -67,10 +68,6 @@ _dbBPin::_dbBPin(_dbDatabase*, const _dbBPin& p)
       _min_spacing(p._min_spacing),
       _effective_width(p._effective_width),
       aps_(p.aps_)
-{
-}
-
-_dbBPin::~_dbBPin()
 {
 }
 
@@ -315,6 +312,10 @@ void dbBPin::destroy(dbBPin* bpin_)
     dbProperty::destroyProperties(b);
     block->remove_rect(b->_shape._rect);
     block->_box_tbl->destroy(b);
+  }
+
+  for (auto ap : bpin_->getAccessPoints()) {
+    odb::dbAccessPoint::destroy(ap);
   }
 
   dbProperty::destroyProperties(bpin);

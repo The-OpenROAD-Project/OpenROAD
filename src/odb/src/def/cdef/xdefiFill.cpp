@@ -38,111 +38,111 @@
 
 union udefiPoints
 {
-  LefDefParser::defiPoints cpp;
+  DefParser::defiPoints cpp;
   ::defiPoints c;
 };
 
 // Wrappers definitions.
 int defiFill_hasLayer(const ::defiFill* obj)
 {
-  return ((LefDefParser::defiFill*) obj)->hasLayer();
+  return ((DefParser::defiFill*) obj)->hasLayer();
 }
 
 const char* defiFill_layerName(const ::defiFill* obj)
 {
-  return ((const LefDefParser::defiFill*) obj)->layerName();
+  return ((const DefParser::defiFill*) obj)->layerName();
 }
 
 int defiFill_hasLayerOpc(const ::defiFill* obj)
 {
-  return ((LefDefParser::defiFill*) obj)->hasLayerOpc();
+  return ((DefParser::defiFill*) obj)->hasLayerOpc();
 }
 
 int defiFill_layerMask(const ::defiFill* obj)
 {
-  return ((LefDefParser::defiFill*) obj)->layerMask();
+  return ((DefParser::defiFill*) obj)->layerMask();
 }
 
 int defiFill_viaTopMask(const ::defiFill* obj)
 {
-  return ((LefDefParser::defiFill*) obj)->viaTopMask();
+  return ((DefParser::defiFill*) obj)->viaTopMask();
 }
 
 int defiFill_viaCutMask(const ::defiFill* obj)
 {
-  return ((LefDefParser::defiFill*) obj)->viaCutMask();
+  return ((DefParser::defiFill*) obj)->viaCutMask();
 }
 
 int defiFill_viaBottomMask(const ::defiFill* obj)
 {
-  return ((LefDefParser::defiFill*) obj)->viaBottomMask();
+  return ((DefParser::defiFill*) obj)->viaBottomMask();
 }
 
 int defiFill_numRectangles(const ::defiFill* obj)
 {
-  return ((LefDefParser::defiFill*) obj)->numRectangles();
+  return ((DefParser::defiFill*) obj)->numRectangles();
 }
 
 int defiFill_xl(const ::defiFill* obj, int index)
 {
-  return ((LefDefParser::defiFill*) obj)->xl(index);
+  return ((DefParser::defiFill*) obj)->xl(index);
 }
 
 int defiFill_yl(const ::defiFill* obj, int index)
 {
-  return ((LefDefParser::defiFill*) obj)->yl(index);
+  return ((DefParser::defiFill*) obj)->yl(index);
 }
 
 int defiFill_xh(const ::defiFill* obj, int index)
 {
-  return ((LefDefParser::defiFill*) obj)->xh(index);
+  return ((DefParser::defiFill*) obj)->xh(index);
 }
 
 int defiFill_yh(const ::defiFill* obj, int index)
 {
-  return ((LefDefParser::defiFill*) obj)->yh(index);
+  return ((DefParser::defiFill*) obj)->yh(index);
 }
 
 int defiFill_numPolygons(const ::defiFill* obj)
 {
-  return ((LefDefParser::defiFill*) obj)->numPolygons();
+  return ((DefParser::defiFill*) obj)->numPolygons();
 }
 
 ::defiPoints defiFill_getPolygon(const ::defiFill* obj, int index)
 {
   udefiPoints tmp;
-  tmp.cpp = ((LefDefParser::defiFill*) obj)->getPolygon(index);
+  tmp.cpp = ((DefParser::defiFill*) obj)->getPolygon(index);
   return tmp.c;
 }
 
 int defiFill_hasVia(const ::defiFill* obj)
 {
-  return ((LefDefParser::defiFill*) obj)->hasVia();
+  return ((DefParser::defiFill*) obj)->hasVia();
 }
 
 const char* defiFill_viaName(const ::defiFill* obj)
 {
-  return ((const LefDefParser::defiFill*) obj)->viaName();
+  return ((const DefParser::defiFill*) obj)->viaName();
 }
 
 int defiFill_hasViaOpc(const ::defiFill* obj)
 {
-  return ((LefDefParser::defiFill*) obj)->hasViaOpc();
+  return ((DefParser::defiFill*) obj)->hasViaOpc();
 }
 
 int defiFill_numViaPts(const ::defiFill* obj)
 {
-  return ((LefDefParser::defiFill*) obj)->numViaPts();
+  return ((DefParser::defiFill*) obj)->numViaPts();
 }
 
 ::defiPoints defiFill_getViaPts(const ::defiFill* obj, int index)
 {
   udefiPoints tmp;
-  tmp.cpp = ((LefDefParser::defiFill*) obj)->getViaPts(index);
+  tmp.cpp = ((DefParser::defiFill*) obj)->getViaPts(index);
   return tmp.c;
 }
 
 void defiFill_print(const ::defiFill* obj, FILE* f)
 {
-  ((LefDefParser::defiFill*) obj)->print(f);
+  ((DefParser::defiFill*) obj)->print(f);
 }

@@ -39,6 +39,7 @@
 #include <QShortcut>
 #include <QToolBar>
 #include <memory>
+#include <vector>
 
 #include "findDialog.h"
 #include "gotoDialog.h"
@@ -53,11 +54,11 @@ class dbDatabase;
 namespace utl {
 class Logger;
 }
-#ifdef ENABLE_CHARTS
+
 namespace sta {
 class Pin;
 }
-#endif
+
 namespace gui {
 
 class LayoutViewer;
@@ -72,6 +73,7 @@ class DRCWidget;
 class ClockWidget;
 class BrowserWidget;
 class ChartsWidget;
+class HelpWidget;
 
 // This is the main window for the GUI.  Currently we use a single
 // instance of this class.
@@ -81,17 +83,17 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
 
  public:
   MainWindow(bool load_settings = true, QWidget* parent = nullptr);
-  ~MainWindow();
+  ~MainWindow() override;
 
   void setDatabase(odb::dbDatabase* db);
-  void init(sta::dbSta* sta);
+  void init(sta::dbSta* sta, const std::string& help_path);
 
   odb::dbDatabase* getDb() const { return db_; }
 
   // From ord::OpenRoad::Observer
-  virtual void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
-  virtual void postReadDef(odb::dbBlock* block) override;
-  virtual void postReadDb(odb::dbDatabase* db) override;
+  void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
+  void postReadDef(odb::dbBlock* block) override;
+  void postReadDb(odb::dbDatabase* db) override;
 
   // Capture logger messages into the script widget output
   void setLogger(utl::Logger* logger);
@@ -106,8 +108,13 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   ClockWidget* getClockViewer() const { return clock_viewer_; }
   ScriptWidget* getScriptWidget() const { return script_; }
   Inspector* getInspector() const { return inspector_; }
+  HelpWidget* getHelpViewer() const { return help_widget_; }
+  ChartsWidget* getChartsWidget() const { return charts_widget_; }
+  TimingWidget* getTimingWidget() const { return timing_widget_; }
 
   std::vector<std::string> getRestoreTclCommands();
+
+  void setTitle(const std::string& title);
 
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
@@ -268,10 +275,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   void showGlobalConnect();
   void openDesign();
   void saveDesign();
-#ifdef ENABLE_CHARTS
   void reportSlackHistogramPaths(const std::set<const sta::Pin*>& report_pins,
                                  const std::string& path_group_name);
-#endif
   void enableDeveloper();
 
  protected:
@@ -298,6 +303,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   std::string convertDBUToString(int value, bool add_units) const;
   int convertStringToDBU(const std::string& value, bool* ok) const;
 
+  void updateTitle();
+
   odb::dbDatabase* db_;
   utl::Logger* logger_;
   SelectionSet selected_;
@@ -318,9 +325,12 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   ClockWidget* clock_viewer_;
   BrowserWidget* hierarchy_widget_;
   ChartsWidget* charts_widget_;
+  HelpWidget* help_widget_;
 
   FindObjectDialog* find_dialog_;
   GotoLocationDialog* goto_dialog_;
+
+  std::string window_title_;
 
   QMenu* file_menu_;
   QMenu* view_menu_;
@@ -363,8 +373,6 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
 
   // heat map actions
   std::map<HeatMapDataSource*, QAction*> heatmap_actions_;
-
-  static constexpr const char* window_title_ = "OpenROAD";
 };
 
 }  // namespace gui

@@ -130,12 +130,11 @@ class dbGDSSTrans
 {
  public:
   bool _flipX;
-  bool _absMag, _absAngle;
   double _mag, _angle;
 
   dbGDSSTrans();
 
-  dbGDSSTrans(bool flipX, bool absMag, bool absAngle, double mag, double angle);
+  dbGDSSTrans(bool flipX, double mag, double angle);
 
   bool operator==(const dbGDSSTrans& rhs) const;
 
@@ -436,7 +435,6 @@ class dbMasterType
  public:
   enum Value
   {
-    NONE,                           /** */
     COVER,                          /** */
     COVER_BUMP,                     /** */
     RING,                           /** */
@@ -1279,13 +1277,13 @@ class dbSourceType
   Value _value;
 };
 
-constexpr uint64 MAX_UINT64 = 0xffffffffffffffffLL;
-constexpr uint64 MIN_UINT64 = 0;
+constexpr uint64_t MAX_UINT64 = 0xffffffffffffffffLL;
+constexpr uint64_t MIN_UINT64 = 0;
 constexpr uint MAX_UINT = 0xffffffff;
 constexpr uint MIN_UINT = 0;
 
-constexpr int64 MAX_INT64 = 0x7fffffffffffffffLL;
-constexpr int64 MIN_INT64 = 0x8000000000000000LL;
+constexpr int64_t MAX_INT64 = 0x7fffffffffffffffLL;
+constexpr int64_t MIN_INT64 = 0x8000000000000000LL;
 constexpr int MAX_INT = 0x7fffffff;
 constexpr int MIN_INT = 0x80000000;
 

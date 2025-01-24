@@ -34,13 +34,14 @@
 
 #include <spdlog/fmt/ostr.h>
 
+#include <vector>
+
 #include "dbDatabase.h"
 #include "dbLib.h"
 #include "dbMPinItr.h"
 #include "dbMaster.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbTargetItr.h"
 #include "dbTechLayerAntennaRule.h"
 #include "odb/db.h"
 #include "odb/lefout.h"
@@ -377,13 +378,6 @@ Rect dbMTerm::getBBox()
     bbox.merge(pin->getBBox());
   }
   return bbox;
-}
-
-dbSet<dbTarget> dbMTerm::getTargets()
-{
-  _dbMTerm* mterm = (_dbMTerm*) this;
-  _dbMaster* master = (_dbMaster*) mterm->getOwner();
-  return dbSet<dbTarget>(mterm, master->_target_itr);
 }
 
 void* dbMTerm::staPort()

@@ -32,13 +32,14 @@
 
 #include "definTracks.h"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
 
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
+
 namespace odb {
 
 definTracks::definTracks()
@@ -54,12 +55,19 @@ void definTracks::init()
   definBase::init();
 }
 
-void definTracks::tracksBegin(defDirection dir, int orig, int count, int step)
+void definTracks::tracksBegin(defDirection dir,
+                              int orig,
+                              int count,
+                              int step,
+                              int first_mask,
+                              bool samemask)
 {
   _track._dir = dir;
   _track._orig = dbdist(orig);
   _track._step = dbdist(step);
   _track._count = count;
+  _track._first_mask = first_mask;
+  _track._samemask = samemask;
 }
 
 void definTracks::tracksLayer(const char* layer_name)
@@ -80,9 +88,17 @@ void definTracks::tracksLayer(const char* layer_name)
   }
 
   if (_track._dir == DEF_X) {
-    grid->addGridPatternX(_track._orig, _track._count, _track._step);
+    grid->addGridPatternX(_track._orig,
+                          _track._count,
+                          _track._step,
+                          _track._first_mask,
+                          _track._samemask);
   } else {
-    grid->addGridPatternY(_track._orig, _track._count, _track._step);
+    grid->addGridPatternY(_track._orig,
+                          _track._count,
+                          _track._step,
+                          _track._first_mask,
+                          _track._samemask);
   }
 }
 

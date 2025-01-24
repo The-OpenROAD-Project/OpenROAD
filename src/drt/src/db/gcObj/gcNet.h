@@ -29,6 +29,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "db/gcObj/gcBlockObject.h"
 #include "db/gcObj/gcPin.h"

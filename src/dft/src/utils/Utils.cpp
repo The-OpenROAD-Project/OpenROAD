@@ -34,8 +34,10 @@
 
 #include <iostream>
 #include <optional>
+#include <vector>
 
 #include "db_sta/dbNetwork.hh"
+#include "odb/dbTransform.h"
 
 namespace dft::utils {
 
@@ -84,9 +86,29 @@ odb::dbInst* ReplaceCell(
   std::vector<std::tuple<std::string, odb::dbNet*>> port_name_to_net;
   PopulatePortNameToNet(old_instance, port_name_to_net);
 
-  odb::dbInst* new_instance
-      = odb::dbInst::create(top_block, new_master, /*name=*/"tmp_scan_flop");
-  std::string old_cell_name = old_instance->getName();
+  const std::string cell_name = old_instance->getName();
+  const odb::dbPlacementStatus placement_status
+      = old_instance->getPlacementStatus();
+  const odb::dbSourceType source_type = old_instance->getSourceType();
+  odb::dbRegion* region = old_instance->getRegion();
+  odb::dbGroup* group = old_instance->getGroup();
+  odb::dbModule* module = old_instance->getModule();
+
+  odb::dbInst* new_instance = odb::dbInst::create(top_block,
+                                                  new_master,
+                                                  /*name=*/"tmp_scan_flop",
+                                                  /*physical_only=*/false,
+                                                  module);
+
+  new_instance->setTransform(old_instance->getTransform());
+  new_instance->setPlacementStatus(placement_status);
+  new_instance->setSourceType(source_type);
+  if (region) {
+    region->addInst(new_instance);
+  }
+  if (group) {
+    group->addInst(new_instance);
+  }
 
   // Delete the old cell
   odb::dbInst::destroy(old_instance);
@@ -95,7 +117,7 @@ odb::dbInst* ReplaceCell(
   ConnectPinsToNets(new_instance, port_name_to_net, port_mapping);
 
   // Rename as the old cell
-  new_instance->rename(old_cell_name.c_str());
+  new_instance->rename(cell_name.c_str());
 
   return new_instance;
 }
@@ -124,6 +146,44 @@ std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm)
   }
 
   return std::nullopt;
+}
+
+bool IsScanCell(const sta::LibertyCell* libertyCell)
+{
+  const sta::TestCell* test_cell = libertyCell->testCell();
+  if (test_cell) {
+    return getLibertyScanIn(test_cell) != nullptr
+           && getLibertyScanEnable(test_cell) != nullptr;
+  }
+  return false;
+}
+
+odb::dbBTerm* CreateNewPort(odb::dbBlock* block,
+                            const std::string& port_name,
+                            utl::Logger* logger,
+                            odb::dbNet* net)
+{
+  if (!net) {
+    net = odb::dbNet::create(block, port_name.c_str());
+    if (!net) {
+      logger->error(utl::DFT,
+                    31,
+                    "Error while attempting to create new port {}: an "
+                    "unrelated net with the same name already exists",
+                    port_name);
+    }
+    net->setSigType(odb::dbSigType::SCAN);
+  }
+  auto port = odb::dbBTerm::create(net, port_name.c_str());
+  if (port == nullptr) {
+    logger->error(utl::DFT,
+                  18,
+                  "Failed to create port: a port named '{}' already exists",
+                  port_name);
+  }
+  port->setSigType(odb::dbSigType::SCAN);
+
+  return port;
 }
 
 }  // namespace dft::utils

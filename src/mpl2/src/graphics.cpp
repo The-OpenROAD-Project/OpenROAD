@@ -34,6 +34,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "graphics.h"
 
+#include <vector>
+
 #include "object.h"
 #include "utl/Logger.h"
 
@@ -46,6 +48,7 @@ Graphics::Graphics(bool coarse,
     : coarse_(coarse),
       fine_(fine),
       show_bundled_nets_(false),
+      show_clusters_ids_(false),
       skip_steps_(false),
       is_skipping_(false),
       only_final_result_(false),
@@ -71,7 +74,11 @@ void Graphics::startSA()
     return;
   }
 
-  if (only_final_result_ || skip_steps_) {
+  if (skip_steps_) {
+    return;
+  }
+
+  if (target_cluster_id_ != -1 && !isTargetCluster()) {
     return;
   }
 
@@ -86,7 +93,11 @@ void Graphics::endSA(const float norm_cost)
     return;
   }
 
-  if (only_final_result_ || skip_steps_) {
+  if (skip_steps_) {
+    return;
+  }
+
+  if (target_cluster_id_ != -1 && !isTargetCluster()) {
     return;
   }
 
@@ -98,12 +109,13 @@ void Graphics::endSA(const float norm_cost)
   gui::Gui::get()->pause();
 }
 
+bool Graphics::isTargetCluster()
+{
+  return current_cluster_->getId() == target_cluster_id_;
+}
+
 void Graphics::saStep(const std::vector<SoftMacro>& macros)
 {
-  if (only_final_result_) {
-    return;
-  }
-
   resetPenalties();
   soft_macros_ = macros;
   hard_macros_.clear();
@@ -111,10 +123,6 @@ void Graphics::saStep(const std::vector<SoftMacro>& macros)
 
 void Graphics::saStep(const std::vector<HardMacro>& macros)
 {
-  if (only_final_result_) {
-    return;
-  }
-
   resetPenalties();
   hard_macros_ = macros;
   soft_macros_.clear();
@@ -149,10 +157,6 @@ void Graphics::report(const float norm_cost)
 
 void Graphics::drawResult()
 {
-  if (!only_final_result_) {
-    return;
-  }
-
   if (max_level_) {
     std::vector<std::vector<odb::Rect>> outlines(max_level_.value() + 1);
     int level = 0;
@@ -170,11 +174,6 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
                                 std::vector<std::vector<odb::Rect>>& outlines,
                                 int level)
 {
-  auto& children = parent->getChildren();
-  if (children.empty()) {
-    return;
-  }
-
   Rect outline = parent->getBBox();
   odb::Rect dbu_outline(block_->micronsToDbu(outline.xMin()),
                         block_->micronsToDbu(outline.yMin()),
@@ -182,7 +181,7 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
                         block_->micronsToDbu(outline.yMax()));
   outlines[level].push_back(dbu_outline);
 
-  for (auto& child : children) {
+  for (auto& child : parent->getChildren()) {
     switch (child->getClusterType()) {
       case HardMacroCluster: {
         std::vector<mpl2::HardMacro*> hard_macros = child->getHardMacros();
@@ -191,9 +190,14 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
         }
         break;
       }
-      case StdCellCluster:
-        soft.push_back(*child->getSoftMacro());
+      case StdCellCluster: {
+        if (child->isLeaf()) {
+          soft.push_back(*child->getSoftMacro());
+        } else {
+          fetchSoftAndHard(child.get(), hard, soft, outlines, (level + 1));
+        }
         break;
+      }
       case MixedCluster: {
         fetchSoftAndHard(child.get(), hard, soft, outlines, (level + 1));
         break;
@@ -208,11 +212,11 @@ void Graphics::penaltyCalculated(float norm_cost)
     return;
   }
 
-  if (only_final_result_) {
+  if (is_skipping_) {
     return;
   }
 
-  if (is_skipping_) {
+  if (target_cluster_id_ != -1 && !isTargetCluster()) {
     return;
   }
 
@@ -300,9 +304,46 @@ void Graphics::setMaxLevel(const int max_level)
   max_level_ = max_level;
 }
 
-void Graphics::finishedClustering(Cluster* root)
+void Graphics::finishedClustering(PhysicalHierarchy* tree)
 {
-  root_ = root;
+  root_ = tree->root.get();
+  setXMarksSizeAndPosition(tree->blocked_boundaries);
+}
+
+void Graphics::setXMarksSizeAndPosition(
+    const std::set<Boundary>& blocked_boundaries)
+{
+  const odb::Rect die = block_->getDieArea();
+
+  // Not too big/small
+  x_mark_size_ = (die.dx() + die.dy()) * 0.03;
+
+  for (Boundary boundary : blocked_boundaries) {
+    odb::Point x_mark_point;
+
+    switch (boundary) {
+      case L: {
+        x_mark_point = odb::Point(die.xMin(), die.yCenter());
+        break;
+      }
+      case R: {
+        x_mark_point = odb::Point(die.xMax(), die.yCenter());
+        break;
+      }
+      case B: {
+        x_mark_point = odb::Point(die.xCenter(), die.yMin());
+        break;
+      }
+      case T: {
+        x_mark_point = odb::Point(die.xCenter(), die.yMax());
+        break;
+      }
+      case NONE:
+        break;
+    }
+
+    blocked_boundary_to_mark_[boundary] = x_mark_point;
+  }
 }
 
 void Graphics::drawCluster(Cluster* cluster, gui::Painter& painter)
@@ -327,7 +368,7 @@ void Graphics::drawAllBlockages(gui::Painter& painter)
     painter.setBrush(gui::Painter::gray, gui::Painter::DIAGONAL);
 
     for (const auto& blockage : macro_blockages_) {
-      drawBlockage(blockage, painter);
+      drawOffsetRect(blockage, "", painter);
     }
   }
 
@@ -336,22 +377,46 @@ void Graphics::drawAllBlockages(gui::Painter& painter)
     painter.setBrush(gui::Painter::green, gui::Painter::DIAGONAL);
 
     for (const auto& blockage : placement_blockages_) {
-      drawBlockage(blockage, painter);
+      drawOffsetRect(blockage, "", painter);
     }
   }
 }
 
-void Graphics::drawBlockage(const Rect& blockage, gui::Painter& painter)
+void Graphics::drawFences(gui::Painter& painter)
 {
-  const int lx = block_->micronsToDbu(blockage.xMin());
-  const int ly = block_->micronsToDbu(blockage.yMin());
-  const int ux = block_->micronsToDbu(blockage.xMax());
-  const int uy = block_->micronsToDbu(blockage.yMax());
+  if (fences_.empty()) {
+    return;
+  }
 
-  odb::Rect blockage_bbox(lx, ly, ux, uy);
-  blockage_bbox.moveDelta(outline_.xMin(), outline_.yMin());
+  // slightly transparent dark yellow
+  painter.setBrush(gui::Painter::Color(0x80, 0x80, 0x00, 150),
+                   gui::Painter::DIAGONAL);
+  painter.setPen(gui::Painter::dark_yellow, true);
 
-  painter.drawRect(blockage_bbox);
+  for (const auto& [macro_id, fence] : fences_) {
+    drawOffsetRect(fence, std::to_string(macro_id), painter);
+  }
+}
+
+void Graphics::drawOffsetRect(const Rect& rect,
+                              const std::string& center_text,
+                              gui::Painter& painter)
+{
+  const int lx = block_->micronsToDbu(rect.xMin());
+  const int ly = block_->micronsToDbu(rect.yMin());
+  const int ux = block_->micronsToDbu(rect.xMax());
+  const int uy = block_->micronsToDbu(rect.yMax());
+
+  odb::Rect rect_bbox(lx, ly, ux, uy);
+  rect_bbox.moveDelta(outline_.xMin(), outline_.yMin());
+  painter.drawRect(rect_bbox);
+
+  if (!center_text.empty()) {
+    painter.drawString(rect_bbox.xCenter(),
+                       rect_bbox.yCenter(),
+                       gui::Painter::CENTER,
+                       center_text);
+  }
 }
 
 // We draw the shapes of SoftMacros, HardMacros and blockages based
@@ -373,6 +438,16 @@ void Graphics::drawObjects(gui::Painter& painter)
 
   int i = 0;
   for (const auto& macro : soft_macros_) {
+    Cluster* cluster = macro.getCluster();
+
+    if (!cluster) {  // fixed terminals
+      continue;
+    }
+
+    if (cluster->isIOCluster()) {
+      continue;
+    }
+
     setSoftMacroBrush(painter, macro);
 
     const int lx = block_->micronsToDbu(macro.getX());
@@ -383,11 +458,20 @@ void Graphics::drawObjects(gui::Painter& painter)
 
     bbox.moveDelta(outline_.xMin(), outline_.yMin());
 
+    std::string cluster_id_string;
+    if (show_clusters_ids_) {
+      Cluster* cluster = macro.getCluster();
+      cluster_id_string = cluster ? std::to_string(cluster->getId()) : "fixed";
+    } else {
+      // Use the ID of the sequence pair itself.
+      cluster_id_string = std::to_string(i++);
+    }
+
     painter.drawRect(bbox);
     painter.drawString(bbox.xCenter(),
                        bbox.yCenter(),
                        gui::Painter::CENTER,
-                       std::to_string(i++));
+                       cluster_id_string);
   }
 
   painter.setPen(gui::Painter::white, true);
@@ -459,6 +543,8 @@ void Graphics::drawObjects(gui::Painter& painter)
     }
   }
 
+  drawBlockedBoundariesIndication(painter);
+
   painter.setBrush(gui::Painter::transparent);
   if (only_final_result_) {
     // Draw all outlines. Same level outlines have the same color.
@@ -476,6 +562,40 @@ void Graphics::drawObjects(gui::Painter& painter)
     // Hightlight current outline so we see where SA is working
     painter.setPen(gui::Painter::cyan, true);
     painter.drawRect(outline_);
+
+    drawGuides(painter);
+    drawFences(painter);
+  }
+}
+
+// Draw guidance regions for macros.
+void Graphics::drawGuides(gui::Painter& painter)
+{
+  painter.setPen(gui::Painter::green, true);
+
+  for (const auto& [macro_id, guidance_region] : guides_) {
+    odb::Rect guide(block_->micronsToDbu(guidance_region.xMin()),
+                    block_->micronsToDbu(guidance_region.yMin()),
+                    block_->micronsToDbu(guidance_region.xMax()),
+                    block_->micronsToDbu(guidance_region.yMax()));
+    guide.moveDelta(outline_.xMin(), outline_.yMin());
+
+    painter.drawRect(guide);
+    painter.drawString(guide.xCenter(),
+                       guide.yCenter(),
+                       gui::Painter::Anchor::CENTER,
+                       std::to_string(macro_id),
+                       false /* rotate 90 */);
+  }
+}
+
+void Graphics::drawBlockedBoundariesIndication(gui::Painter& painter)
+{
+  painter.setPen(gui::Painter::red, true);
+  painter.setBrush(gui::Painter::transparent);
+
+  for (const auto [boundary, x_mark_point] : blocked_boundary_to_mark_) {
+    painter.drawX(x_mark_point.getX(), x_mark_point.getY(), x_mark_size_);
   }
 }
 
@@ -484,25 +604,167 @@ void Graphics::drawBundledNets(gui::Painter& painter,
                                const std::vector<T>& macros)
 {
   for (const auto& bundled_net : bundled_nets_) {
-    const int x1
-        = block_->micronsToDbu(macros[bundled_net.terminals.first].getPinX());
-    const int y1
-        = block_->micronsToDbu(macros[bundled_net.terminals.first].getPinY());
+    const T& source = macros[bundled_net.terminals.first];
+    const T& target = macros[bundled_net.terminals.second];
+
+    if (target.isIOCluster()) {
+      drawDistToIoConstraintBoundary(painter, source, target);
+      continue;
+    }
+
+    const int x1 = block_->micronsToDbu(source.getPinX());
+    const int y1 = block_->micronsToDbu(source.getPinY());
     odb::Point from(x1, y1);
 
-    const int x2
-        = block_->micronsToDbu(macros[bundled_net.terminals.second].getPinX());
-    const int y2
-        = block_->micronsToDbu(macros[bundled_net.terminals.second].getPinY());
+    const int x2 = block_->micronsToDbu(target.getPinX());
+    const int y2 = block_->micronsToDbu(target.getPinY());
     odb::Point to(x2, y2);
 
-    from.addX(outline_.xMin());
-    from.addY(outline_.yMin());
-    to.addX(outline_.xMin());
-    to.addY(outline_.yMin());
-
+    addOutlineOffsetToLine(from, to);
     painter.drawLine(from, to);
   }
+}
+
+template <typename T>
+void Graphics::drawDistToIoConstraintBoundary(gui::Painter& painter,
+                                              const T& macro,
+                                              const T& io)
+{
+  if (isOutsideTheOutline(macro)) {
+    return;
+  }
+
+  Cluster* io_cluster = io.getCluster();
+
+  const int x1 = block_->micronsToDbu(macro.getPinX());
+  const int y1 = block_->micronsToDbu(macro.getPinY());
+  odb::Point from(x1, y1);
+
+  odb::Point to;
+  Boundary constraint_boundary = io_cluster->getConstraintBoundary();
+
+  if (constraint_boundary == Boundary::L
+      || constraint_boundary == Boundary::R) {
+    const int x2 = block_->micronsToDbu(io.getPinX());
+    const int y2 = block_->micronsToDbu(macro.getPinY());
+    to.setX(x2);
+    to.setY(y2);
+  } else if (constraint_boundary == Boundary::B
+             || constraint_boundary == Boundary::T) {
+    const int x2 = block_->micronsToDbu(macro.getPinX());
+    const int y2 = block_->micronsToDbu(io.getPinY());
+    to.setX(x2);
+    to.setY(y2);
+  } else {
+    // For NONE, the shape of the io cluster is the die area.
+    const Rect die = io_cluster->getBBox();
+    Boundary closest_unblocked_boundary
+        = getClosestUnblockedBoundary(macro, die);
+
+    to = getClosestBoundaryPoint(macro, die, closest_unblocked_boundary);
+  }
+
+  addOutlineOffsetToLine(from, to);
+
+  painter.drawLine(from, to);
+  painter.drawString(to.getX(),
+                     to.getY(),
+                     gui::Painter::CENTER,
+                     toString(constraint_boundary));
+}
+
+template <typename T>
+bool Graphics::isOutsideTheOutline(const T& macro) const
+{
+  return block_->micronsToDbu(macro.getPinX()) > outline_.dx()
+         || block_->micronsToDbu(macro.getPinY()) > outline_.dy();
+}
+
+// Here, we have to manually decompensate the offset of the
+// coordinates that come from the cluster.
+template <typename T>
+odb::Point Graphics::getClosestBoundaryPoint(const T& macro,
+                                             const Rect& die,
+                                             Boundary closest_boundary)
+{
+  odb::Point to;
+
+  if (closest_boundary == Boundary::L) {
+    to.setX(block_->micronsToDbu(die.xMin()));
+    to.setY(block_->micronsToDbu(macro.getPinY()));
+    to.addX(-outline_.xMin());
+  } else if (closest_boundary == Boundary::R) {
+    to.setX(block_->micronsToDbu(die.xMax()));
+    to.setY(block_->micronsToDbu(macro.getPinY()));
+    to.addX(-outline_.xMin());
+  } else if (closest_boundary == Boundary::B) {
+    to.setX(block_->micronsToDbu(macro.getPinX()));
+    to.setY(block_->micronsToDbu(die.yMin()));
+    to.addY(-outline_.yMin());
+  } else {  // Top
+    to.setX(block_->micronsToDbu(macro.getPinX()));
+    to.setY(block_->micronsToDbu(die.yMax()));
+    to.addY(-outline_.yMin());
+  }
+
+  return to;
+}
+
+void Graphics::addOutlineOffsetToLine(odb::Point& from, odb::Point& to)
+{
+  from.addX(outline_.xMin());
+  from.addY(outline_.yMin());
+  to.addX(outline_.xMin());
+  to.addY(outline_.yMin());
+}
+
+template <typename T>
+Boundary Graphics::getClosestUnblockedBoundary(const T& macro, const Rect& die)
+{
+  const float macro_x = macro.getPinX();
+  const float macro_y = macro.getPinY();
+
+  float shortest_distance = std::numeric_limits<float>::max();
+  Boundary closest_boundary = Boundary::NONE;
+
+  if (!isBlockedBoundary(Boundary::L)) {
+    const float dist_to_left = std::abs(macro_x - die.xMin());
+    if (dist_to_left < shortest_distance) {
+      shortest_distance = dist_to_left;
+      closest_boundary = Boundary::L;
+    }
+  }
+
+  if (!isBlockedBoundary(Boundary::R)) {
+    const float dist_to_right = std::abs(macro_x - die.xMax());
+    if (dist_to_right < shortest_distance) {
+      shortest_distance = dist_to_right;
+      closest_boundary = Boundary::R;
+    }
+  }
+
+  if (!isBlockedBoundary(Boundary::B)) {
+    const float dist_to_bottom = std::abs(macro_y - die.yMin());
+    if (dist_to_bottom < shortest_distance) {
+      shortest_distance = dist_to_bottom;
+      closest_boundary = Boundary::B;
+    }
+  }
+
+  if (!isBlockedBoundary(Boundary::T)) {
+    const float dist_to_top = std::abs(macro_y - die.yMax());
+    if (dist_to_top < shortest_distance) {
+      closest_boundary = Boundary::T;
+    }
+  }
+
+  return closest_boundary;
+}
+
+bool Graphics::isBlockedBoundary(Boundary boundary)
+{
+  return blocked_boundary_to_mark_.find(boundary)
+         != blocked_boundary_to_mark_.end();
 }
 
 // Give some transparency to mixed and hard so we can see overlap with
@@ -510,10 +772,6 @@ void Graphics::drawBundledNets(gui::Painter& painter,
 void Graphics::setSoftMacroBrush(gui::Painter& painter,
                                  const SoftMacro& soft_macro)
 {
-  if (soft_macro.getCluster() == nullptr) {  // fixed terminals
-    return;
-  }
-
   if (soft_macro.getCluster()->getClusterType() == StdCellCluster) {
     painter.setBrush(gui::Painter::dark_blue);
   } else if (soft_macro.getCluster()->getClusterType() == HardMacroCluster) {
@@ -539,6 +797,11 @@ void Graphics::setPlacementBlockages(
 void Graphics::setShowBundledNets(bool show_bundled_nets)
 {
   show_bundled_nets_ = show_bundled_nets;
+}
+
+void Graphics::setShowClustersIds(bool show_clusters_ids)
+{
+  show_clusters_ids_ = show_clusters_ids;
 }
 
 void Graphics::setSkipSteps(bool skip_steps)
@@ -567,13 +830,29 @@ void Graphics::setBundledNets(const std::vector<BundledNet>& bundled_nets)
   bundled_nets_ = bundled_nets;
 }
 
+void Graphics::setTargetClusterId(const int target_cluster_id)
+{
+  target_cluster_id_ = target_cluster_id;
+}
+
 void Graphics::setOutline(const odb::Rect& outline)
 {
-  if (only_final_result_) {
-    return;
-  }
-
   outline_ = outline;
+}
+
+void Graphics::setCurrentCluster(Cluster* current_cluster)
+{
+  current_cluster_ = current_cluster;
+}
+
+void Graphics::setGuides(const std::map<int, Rect>& guides)
+{
+  guides_ = guides;
+}
+
+void Graphics::setFences(const std::map<int, Rect>& fences)
+{
+  fences_ = fences;
 }
 
 void Graphics::eraseDrawing()
@@ -588,6 +867,8 @@ void Graphics::eraseDrawing()
   bundled_nets_.clear();
   outline_.reset(0, 0, 0, 0);
   outlines_.clear();
+  blocked_boundary_to_mark_.clear();
+  guides_.clear();
 }
 
 }  // namespace mpl2

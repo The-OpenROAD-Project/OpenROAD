@@ -1,0 +1,14 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/fakeram45_64x7.lef, created 1 library cells
+[INFO ODB-0128] Design: mem2
+[INFO ODB-0130]     Created 15 pins.
+[INFO ODB-0131]     Created 2 components and 64 component-terminals.
+[INFO ODB-0133]     Created 15 nets and 16 connections.
+[INFO MPL-0101] Found 2 macros.
+[INFO MPL-0102] West pins 7.
+[INFO MPL-0102] East pins 5.
+[INFO MPL-0102] North pins 1.
+[INFO MPL-0102] South pins 2.
+[INFO MPL-0067] Initial weighted wire length 911.416.
+[INFO MPL-0068] Placed weighted wire length 857.51.
+No differences found.

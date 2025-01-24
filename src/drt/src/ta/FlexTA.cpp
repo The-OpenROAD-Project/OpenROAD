@@ -48,7 +48,7 @@ int FlexTAWorker::main_mt()
   ProfileTask profile("TA:main_mt");
   using std::chrono::high_resolution_clock;
   auto t0 = high_resolution_clock::now();
-  if (VERBOSE > 1) {
+  if (router_cfg_->VERBOSE > 1) {
     std::stringstream ss;
     ss << std::endl
        << "start TA worker (BOX) ("
@@ -89,7 +89,7 @@ int FlexTAWorker::main_mt()
   auto time_span1 = duration_cast<duration<double>>(t2 - t1);
   auto time_span2 = duration_cast<duration<double>>(t3 - t2);
 
-  if (VERBOSE > 1) {
+  if (router_cfg_->VERBOSE > 1) {
     std::stringstream ss;
     ss << "time (INIT/ASSIGN/POST) " << time_span0.count() << " "
        << time_span1.count() << " " << time_span2.count() << " " << std::endl;
@@ -98,10 +98,14 @@ int FlexTAWorker::main_mt()
   return 0;
 }
 
-FlexTA::FlexTA(frDesign* in, Logger* logger, bool save_updates)
+FlexTA::FlexTA(frDesign* in,
+               Logger* logger,
+               RouterConfiguration* router_cfg,
+               bool save_updates)
     : tech_(in->getTech()),
       design_(in),
       logger_(logger),
+      router_cfg_(router_cfg),
       save_updates_(save_updates)
 {
 }
@@ -122,8 +126,8 @@ int FlexTA::initTA_helper(int iter,
   std::vector<std::vector<std::unique_ptr<FlexTAWorker>>> workers;
   if (isH) {
     for (int i = offset; i < (int) ygp.getCount(); i += size) {
-      auto uworker
-          = std::make_unique<FlexTAWorker>(getDesign(), logger_, save_updates_);
+      auto uworker = std::make_unique<FlexTAWorker>(
+          getDesign(), logger_, router_cfg_, save_updates_);
       auto& worker = *(uworker.get());
       Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(0, i));
       Rect endBox = getDesign()->getTopBlock()->getGCellBox(
@@ -137,15 +141,16 @@ int FlexTA::initTA_helper(int iter,
       worker.setExtBox(extBox);
       worker.setDir(dbTechLayerDir::HORIZONTAL);
       worker.setTAIter(iter);
-      if (workers.empty() || (int) workers.back().size() >= BATCHSIZETA) {
+      if (workers.empty()
+          || (int) workers.back().size() >= router_cfg_->BATCHSIZETA) {
         workers.emplace_back(std::vector<std::unique_ptr<FlexTAWorker>>());
       }
       workers.back().emplace_back(std::move(uworker));
     }
   } else {
     for (int i = offset; i < (int) xgp.getCount(); i += size) {
-      auto uworker
-          = std::make_unique<FlexTAWorker>(getDesign(), logger_, save_updates_);
+      auto uworker = std::make_unique<FlexTAWorker>(
+          getDesign(), logger_, router_cfg_, save_updates_);
       auto& worker = *(uworker.get());
       Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(i, 0));
       Rect endBox = getDesign()->getTopBlock()->getGCellBox(
@@ -159,14 +164,15 @@ int FlexTA::initTA_helper(int iter,
       worker.setExtBox(extBox);
       worker.setDir(dbTechLayerDir::VERTICAL);
       worker.setTAIter(iter);
-      if (workers.empty() || (int) workers.back().size() >= BATCHSIZETA) {
+      if (workers.empty()
+          || (int) workers.back().size() >= router_cfg_->BATCHSIZETA) {
         workers.emplace_back(std::vector<std::unique_ptr<FlexTAWorker>>());
       }
       workers.back().push_back(std::move(uworker));
     }
   }
 
-  omp_set_num_threads(std::min(8, MAX_THREADS));
+  omp_set_num_threads(std::min(8, router_cfg_->MAX_THREADS));
   // parallel execution
   // multi thread
   for (auto& workerBatch : workers) {
@@ -199,7 +205,7 @@ void FlexTA::initTA(int size)
   ProfileTask profile("TA:init");
   frTime t;
 
-  if (VERBOSE > 1) {
+  if (router_cfg_->VERBOSE > 1) {
     std::cout << std::endl << "start initial track assignment ..." << std::endl;
   }
 
@@ -219,7 +225,7 @@ void FlexTA::initTA(int size)
     int numPanelsV;
     int numAssignedV = initTA_helper(0, size, 0, false, numPanelsV);
 
-    if (VERBOSE > 0) {
+    if (router_cfg_->VERBOSE > 0) {
       logger_->info(DRT,
                     183,
                     "Done with {} horizontal wires in {} frboxes and "
@@ -237,7 +243,7 @@ void FlexTA::initTA(int size)
     int numPanelsH;
     int numAssignedH = initTA_helper(0, size, 0, true, numPanelsH);
 
-    if (VERBOSE > 0) {
+    if (router_cfg_->VERBOSE > 0) {
       logger_->info(DRT,
                     184,
                     "Done with {} vertical wires in {} frboxes and "
@@ -255,7 +261,7 @@ void FlexTA::searchRepair(int iter, int size, int offset)
   ProfileTask profile("TA:searchRepair");
   frTime t;
 
-  if (VERBOSE > 1) {
+  if (router_cfg_->VERBOSE > 1) {
     std::cout << std::endl << "start " << iter;
     std::string suffix;
     if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
@@ -285,7 +291,7 @@ void FlexTA::searchRepair(int iter, int size, int offset)
     int numPanelsV;
     int numAssignedV = initTA_helper(iter, size, offset, false, numPanelsV);
 
-    if (VERBOSE > 0) {
+    if (router_cfg_->VERBOSE > 0) {
       logger_->info(DRT,
                     268,
                     "Done with {} horizontal wires in {} frboxes and "
@@ -303,7 +309,7 @@ void FlexTA::searchRepair(int iter, int size, int offset)
     int numPanelsH;
     int numAssignedH = initTA_helper(iter, size, offset, true, numPanelsH);
 
-    if (VERBOSE > 0) {
+    if (router_cfg_->VERBOSE > 0) {
       logger_->info(DRT,
                     186,
                     "Done with {} vertical wires in {} frboxes and "
@@ -329,7 +335,7 @@ int FlexTA::main()
   ProfileTask profile("TA:main");
 
   frTime t;
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 181, "Start track assignment.");
   }
   initTA(50);
@@ -342,10 +348,10 @@ int FlexTA::main()
     graphics_->endIter(1);
   }
 
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 182, "Complete track assignment.");
   }
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     t.print(logger_);
   }
   return 0;

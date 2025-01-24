@@ -24,6 +24,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include <vector>
+
 #include "gc/FlexGC_impl.h"
 
 namespace drt {
@@ -88,6 +90,10 @@ void FlexGCWorker::Impl::checkForbiddenSpc_main(
   workerRegionQuery.queryMaxRectangle(markerRect, rect1->getLayerNum(), result);
   for (auto& [objBox, ptr] : result) {
     if (ptr == rect1 || ptr == rect2) {
+      continue;
+    }
+    if (gtl::intersects(*ptr, *rect1) || gtl::intersects(*ptr, *rect2)) {
+      // same metal or short
       continue;
     }
     gtl::polygon_90_set_data<frCoord> tmpPoly;

@@ -33,6 +33,7 @@
 #include "renderThread.h"
 
 #include <QPainterPath>
+#include <vector>
 
 #include "layoutViewer.h"
 #include "odb/dbShape.h"
@@ -41,6 +42,8 @@
 #include "utl/timer.h"
 
 namespace gui {
+
+namespace bg = boost::geometry;
 
 using odb::dbBlock;
 using odb::dbInst;
@@ -313,6 +316,11 @@ void RenderThread::drawTracks(dbTechLayer* layer,
   }
   const Rect draw_bounds = block_bounds.intersect(bounds);
   const int min_resolution = viewer_->shapeSizeLimit();
+
+  QPen pen(getColor(layer));
+  pen.setCosmetic(true);
+  painter->setPen(pen);
+  painter->setBrush(Qt::NoBrush);
 
   bool is_horizontal = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
   std::vector<int> grids;
@@ -994,10 +1002,9 @@ void RenderThread::drawLayer(QPainter* painter,
 
     // Now draw the fills
     if (viewer_->options_->areFillsVisible()) {
-      QColor color = getColor(layer).lighter(50);
-      Qt::BrushStyle brush_pattern = getPattern(layer);
-      painter->setBrush(QBrush(color, brush_pattern));
-      painter->setPen(QPen(color, 0));
+      QColor fill_color = getColor(layer).lighter(50);
+      painter->setBrush(QBrush(fill_color, brush_pattern));
+      painter->setPen(QPen(fill_color, 0));
       auto iter = viewer_->search_.searchFills(block,
                                                layer,
                                                bounds.xMin(),
@@ -1017,6 +1024,9 @@ void RenderThread::drawLayer(QPainter* painter,
       }
     }
   }
+
+  painter->setBrush(QBrush(color, brush_pattern));
+  painter->setPen(QPen(color, 0));
 
   if (draw_shapes) {
     if (viewer_->options_->areIOPinsVisible()) {

@@ -32,26 +32,9 @@
 
 #include "ClockDomain.hh"
 
-namespace dft {
+#include <cstdint>
 
-std::function<size_t(const ClockDomain&)> GetClockDomainHashFn(
-    const ScanArchitectConfig& config,
-    utl::Logger* logger)
-{
-  switch (config.getClockMixing()) {
-    // For NoMix, every clock domain is different
-    case ScanArchitectConfig::ClockMixing::NoMix:
-      return [](const ClockDomain& clock_domain) {
-        return std::hash<std::string_view>{}(clock_domain.getClockName())
-               ^ std::hash<ClockEdge>{}(clock_domain.getClockEdge());
-      };
-    case ScanArchitectConfig::ClockMixing::ClockMix:
-      return [](const ClockDomain& clock_domain) { return 1; };
-    default:
-      // Not implemented
-      logger->error(utl::DFT, 4, "Clock mix config requested is not supported");
-  }
-}
+namespace dft {
 
 ClockDomain::ClockDomain(const std::string& clock_name, ClockEdge clock_edge)
     : clock_name_(clock_name), clock_edge_(clock_edge)
@@ -82,10 +65,22 @@ std::string_view ClockDomain::getClockEdgeName() const
   return "Unknown clock edge";
 }
 
+namespace {
+size_t FNV1a(const uint8_t* data, size_t length)
+{
+  size_t hash = 0xcbf29ce484222325;
+  for (size_t i = 0; i < length; i += 1) {
+    hash ^= data[i];
+    hash *= 0x00000100000001b3;
+  }
+  return hash;
+}
+};  // namespace
+
 size_t ClockDomain::getClockDomainId() const
 {
-  return std::hash<std::string_view>{}(clock_name_)
-         ^ std::hash<ClockEdge>{}(clock_edge_);
+  return FNV1a((uint8_t*) clock_name_.data(), clock_name_.length())
+         ^ FNV1a((uint8_t*) &clock_edge_, sizeof(ClockEdge));
 }
 
 }  // namespace dft

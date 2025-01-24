@@ -16,6 +16,7 @@
 #include <cmath>   // for fabs()
 #include <cstdlib>
 #include <limits>
+#include <vector>
 
 //********************************************************//
 // A single function wrapper for solving assignment problem.

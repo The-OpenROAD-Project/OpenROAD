@@ -1,0 +1,46 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/fakeram45_64x7.lef, created 1 library cells
+[INFO ODB-0128] Design: mem2
+[INFO ODB-0130]     Created 15 pins.
+[INFO ODB-0131]     Created 2 components and 64 component-terminals.
+[INFO ODB-0133]     Created 15 nets and 16 connections.
+[INFO MPL-0101] Found 2 macros.
+[INFO MPL-0102] West pins 7.
+[INFO MPL-0102] East pins 5.
+[INFO MPL-0102] North pins 1.
+[INFO MPL-0102] South pins 2.
+[INFO MPL-0069] Initial weighted wire length 1023.28.
+Begin one level partition.
+[INFO MPL-0076] Partition 2 macros.
+[INFO MPL-0077] Using 2 cut lines.
+[INFO MPL-0079] Cut line 50.35.
+[INFO MPL-0079] Cut line 105.83.
+End one level partition.
+Begin horizontal partition.
+Begin east partition.
+[INFO MPL-0076] Partition 0 macros.
+[INFO MPL-0077] Using 0 cut lines.
+End east partition.
+Begin west partition.
+[INFO MPL-0076] Partition 2 macros.
+[INFO MPL-0077] Using 1 cut lines.
+[INFO MPL-0079] Cut line 32.20.
+End west partition.
+End horizontal partition.
+Begin horizontal partition.
+Begin east partition.
+[INFO MPL-0076] Partition 1 macros.
+[INFO MPL-0077] Using 1 cut lines.
+[INFO MPL-0079] Cut line 32.20.
+End east partition.
+Begin west partition.
+[INFO MPL-0076] Partition 1 macros.
+[INFO MPL-0077] Using 1 cut lines.
+[INFO MPL-0079] Cut line 32.20.
+End west partition.
+End horizontal partition.
+[INFO MPL-0070] Using 2 partition sets.
+[INFO MPL-0071] Solution 1 weighted wire length 1805.16.
+[INFO MPL-0071] Solution 2 weighted wire length 721.777.
+[INFO MPL-0073] Best weighted wire length 1805.16.
+No differences found.

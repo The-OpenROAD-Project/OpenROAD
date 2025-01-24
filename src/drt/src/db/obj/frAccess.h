@@ -29,6 +29,7 @@
 #pragma once
 
 #include <iostream>
+#include <vector>
 
 #include "db/infra/frPoint.h"
 #include "db/obj/frBlockObject.h"
@@ -111,15 +112,15 @@ class frAccessPoint : public frBlockObject
   // e.g., getViaDefs()     --> get all one-cut viadefs
   // e.g., getViaDefs(1)    --> get all one-cut viadefs
   // e.g., getViaDefs(2)    --> get all two-cut viadefs
-  const std::vector<frViaDef*>& getViaDefs(int numCut = 1) const
+  const std::vector<const frViaDef*>& getViaDefs(int numCut = 1) const
   {
     return viaDefs_[numCut - 1];
   }
-  std::vector<frViaDef*>& getViaDefs(int numCut = 1)
+  std::vector<const frViaDef*>& getViaDefs(int numCut = 1)
   {
     return viaDefs_[numCut - 1];
   }
-  const std::vector<std::vector<frViaDef*>>& getAllViaDefs() const
+  const std::vector<std::vector<const frViaDef*>>& getAllViaDefs() const
   {
     return viaDefs_;
   }
@@ -127,7 +128,7 @@ class frAccessPoint : public frBlockObject
   // e.g., getViaDef(1)    --> get best one-cut viadef
   // e.g., getViaDef(2)    --> get best two-cut viadef
   // e.g., getViaDef(1, 1) --> get 1st alternative one-cut viadef
-  frViaDef* getViaDef(int numCut = 1, int idx = 0) const
+  const frViaDef* getViaDef(int numCut = 1, int idx = 0) const
   {
     return viaDefs_[numCut - 1][idx];
   }
@@ -176,7 +177,7 @@ class frAccessPoint : public frBlockObject
       setAccess(dirArray[i], isValid);
     }
   }
-  void addViaDef(frViaDef* in);
+  void addViaDef(const frViaDef* in);
   void addToPinAccess(frPinAccess* in) { aps_ = in; }
   void setType(frAccessPointEnum in, bool isL = true)
   {
@@ -201,7 +202,7 @@ class frAccessPoint : public frBlockObject
   // 0 = E, 1 = S, 2 = W, 3 = N, 4 = U, 5 = D
   std::vector<bool> accesses_ = std::vector<bool>(6, false);
   // cut number -> up-via access map
-  std::vector<std::vector<frViaDef*>> viaDefs_;
+  std::vector<std::vector<const frViaDef*>> viaDefs_;
   frAccessPointEnum typeL_{frAccessPointEnum::OnGrid};
   frAccessPointEnum typeH_{frAccessPointEnum::OnGrid};
   frPinAccess* aps_{nullptr};

@@ -1,0 +1,43 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[WARNING GPL-0001] clk toplevel port is not placed!
+       Replace will regard clk is placed in (0, 0)
+[INFO GPL-0006] NumInstances:                47
+[INFO GPL-0007] NumPlaceInstances:           47
+[INFO GPL-0008] NumFixedInstances:            0
+[INFO GPL-0009] NumDummyInstances:            0
+[INFO GPL-0010] NumNets:                     22
+[INFO GPL-0011] NumPins:                     90
+[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] CoreArea:             47872.020 um^2
+[INFO GPL-0017] NonPlaceInstsArea:        0.000 um^2
+[INFO GPL-0018] PlaceInstsArea:         138.054 um^2
+[INFO GPL-0019] Util:                     0.288 %
+[INFO GPL-0020] StdInstsArea:           138.054 um^2
+[INFO GPL-0021] MacroInstsArea:           0.000 um^2
+[InitialPlace]  Iter: 1 CG residual: 0.00000001 HPWL: 182440
+[InitialPlace]  Iter: 2 CG residual: 0.00000005 HPWL: 200075
+[InitialPlace]  Iter: 3 CG residual: 0.00000011 HPWL: 195901
+[InitialPlace]  Iter: 4 CG residual: 0.00000010 HPWL: 194848
+[InitialPlace]  Iter: 5 CG residual: 0.00000009 HPWL: 194513
+Placement Analysis
+---------------------------------
+total displacement        590.5 u
+average displacement       12.6 u
+max displacement           18.0 u
+original HPWL               5.0 u
+legalized HPWL            257.2 u
+delta HPWL                 5035 %
+
+worst slack -0.59
+tns -7.917
+[INFO RSZ-0094] Found 21 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 21 out of 21 (100.00%) violating endpoints...
+[INFO RSZ-0045] Inserted 11 buffers, 1 to split loads.
+[INFO RSZ-0041] Resized 51 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+No differences found.

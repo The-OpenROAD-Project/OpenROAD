@@ -110,10 +110,10 @@ void Replace::reset()
   routabilityMaxInflationRatio_ = 8;
   routabilityRcK1_ = routabilityRcK2_ = 1.0;
   routabilityRcK3_ = routabilityRcK4_ = 0.0;
-  routabilityMaxBloatIter_ = 1;
   routabilityMaxInflationIter_ = 4;
 
   timingDrivenMode_ = true;
+  keepResizeBelowOverflow_ = 0.3;
   routabilityDrivenMode_ = true;
   routabilityUseRudy_ = true;
   uniformTargetDensityMode_ = false;
@@ -190,7 +190,7 @@ void Replace::doIncrementalPlace(int threads)
   constexpr float rough_oveflow = 0.2f;
   float previous_overflow = overflow_;
   setTargetOverflow(std::max(rough_oveflow, overflow_));
-  doInitialPlace();
+  doInitialPlace(threads);
 
   int previous_max_iter = nesterovPlaceMaxIter_;
   initNesterovPlace(threads);
@@ -210,7 +210,7 @@ void Replace::doIncrementalPlace(int threads)
   }
 }
 
-void Replace::doInitialPlace()
+void Replace::doInitialPlace(int threads)
 {
   if (pbc_ == nullptr) {
     PlacerBaseVars pbVars;
@@ -250,7 +250,7 @@ void Replace::doInitialPlace()
   std::unique_ptr<InitialPlace> ip(
       new InitialPlace(ipVars, pbc_, pbVec_, log_));
   ip_ = std::move(ip);
-  ip_->doBicgstabPlace();
+  ip_->doBicgstabPlace(threads);
 }
 
 void Replace::runMBFF(int max_sz,
@@ -259,7 +259,7 @@ void Replace::runMBFF(int max_sz,
                       int threads,
                       int num_paths)
 {
-  MBFF pntset(db_, sta_, log_, threads, 20, num_paths, gui_debug_);
+  MBFF pntset(db_, sta_, log_, rs_, threads, 20, num_paths, gui_debug_);
   pntset.Run(max_sz, alpha, beta);
 }
 
@@ -316,7 +316,6 @@ bool Replace::initNesterovPlace(int threads)
     RouteBaseVars rbVars;
     rbVars.useRudy = routabilityUseRudy_;
     rbVars.maxDensity = routabilityMaxDensity_;
-    rbVars.maxBloatIter = routabilityMaxBloatIter_;
     rbVars.maxInflationIter = routabilityMaxInflationIter_;
     rbVars.targetRC = routabilityTargetRcMetric_;
     rbVars.inflationRatioCoef = routabilityInflationRatioCoef_;
@@ -342,6 +341,7 @@ bool Replace::initNesterovPlace(int threads)
     npVars.maxPhiCoef = maxPhiCoef_;
     npVars.referenceHpwl = referenceHpwl_;
     npVars.routabilityCheckOverflow = routabilityCheckOverflow_;
+    npVars.keepResizeBelowOverflow = keepResizeBelowOverflow_;
     npVars.initDensityPenalty = initDensityPenalityFactor_;
     npVars.initWireLengthCoef = initWireLengthCoef_;
     npVars.targetOverflow = overflow_;
@@ -353,6 +353,7 @@ bool Replace::initNesterovPlace(int threads)
     npVars.debug_update_iterations = gui_debug_update_iterations_;
     npVars.debug_draw_bins = gui_debug_draw_bins_;
     npVars.debug_inst = gui_debug_inst_;
+    npVars.debug_start_iter = gui_debug_start_iter_;
 
     for (const auto& nb : nbVec_) {
       nb->setNpVars(&npVars);
@@ -472,7 +473,8 @@ void Replace::setDebug(int pause_iterations,
                        int update_iterations,
                        bool draw_bins,
                        bool initial,
-                       odb::dbInst* inst)
+                       odb::dbInst* inst,
+                       int start_iter)
 {
   gui_debug_ = true;
   gui_debug_pause_iterations_ = pause_iterations;
@@ -480,6 +482,7 @@ void Replace::setDebug(int pause_iterations,
   gui_debug_draw_bins_ = draw_bins;
   gui_debug_initial_ = initial;
   gui_debug_inst_ = inst;
+  gui_debug_start_iter_ = start_iter;
 }
 
 void Replace::setSkipIoMode(bool mode)
@@ -507,14 +510,14 @@ void Replace::setRoutabilityCheckOverflow(float overflow)
   routabilityCheckOverflow_ = overflow;
 }
 
+void Replace::setKeepResizeBelowOverflow(float overflow)
+{
+  keepResizeBelowOverflow_ = overflow;
+}
+
 void Replace::setRoutabilityMaxDensity(float density)
 {
   routabilityMaxDensity_ = density;
-}
-
-void Replace::setRoutabilityMaxBloatIter(int iter)
-{
-  routabilityMaxBloatIter_ = iter;
 }
 
 void Replace::setRoutabilityMaxInflationIter(int iter)

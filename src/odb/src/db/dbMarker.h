@@ -40,6 +40,7 @@
 #include <fstream>
 #include <set>
 #include <variant>
+#include <vector>
 
 #include "dbMarkerCategory.h"
 #include "odb/db.h"

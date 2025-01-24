@@ -38,6 +38,7 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbWireCodec.h"
+#include "tmg_conn_g.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -115,6 +116,17 @@ tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
   _first_for_clear = nullptr;
   _preserveSWire = false;
   _swireNetCnt = 0;
+}
+
+tmg_conn::~tmg_conn()
+{
+  free(_termV);
+  free(_tstackV);
+  free(_csNV);
+  free(_shortV);
+
+  delete _search;
+  delete _graph;
 }
 
 int tmg_conn::ptDist(const int fr, const int to) const

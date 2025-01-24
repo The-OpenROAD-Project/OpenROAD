@@ -13,7 +13,7 @@ link_design gcd
 create_power_domain PD_TOP \
   -elements {.}
 
-initialize_floorplan -utilization 10 -site unithd -additional_site unithddbl
+initialize_floorplan -utilization 10 -core_space 0.0 -site unithd -additional_site unithddbl
 tapcell \
   -distance 14 \
   -tapcell_master "sky130_fd_sc_hd__tapvpwrvgnd_1"

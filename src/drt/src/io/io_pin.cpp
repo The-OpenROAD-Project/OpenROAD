@@ -26,13 +26,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <vector>
+
 #include "io.h"
 
 namespace drt {
 
 void io::Parser::instAnalysis()
 {
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 162, "Library cell analysis.");
   }
   trackOffsetMap_.clear();
@@ -78,7 +80,7 @@ void io::Parser::instAnalysis()
   }
   // std::cout <<"  master pin layer range done" <<std::endl;
 
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 163, "Instance analysis.");
   }
 
@@ -112,7 +114,7 @@ void io::Parser::instAnalysis()
     }
     trackOffsetMap_[inst->getMaster()][orient][offset].insert(inst.get());
     cnt++;
-    if (VERBOSE > 0) {
+    if (router_cfg_->VERBOSE > 0) {
       if (cnt < 1000000) {
         if (cnt % 100000 == 0) {
           logger_->report("  Complete {} instances.", cnt);
@@ -126,13 +128,12 @@ void io::Parser::instAnalysis()
   }
 
   cnt = 0;
-  frString orientName;
   for (auto& [master, orientMap] : trackOffsetMap_) {
     for (auto& [orient, offsetMap] : orientMap) {
       cnt += offsetMap.size();
     }
   }
-  if (VERBOSE > 0) {
+  if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 164, "Number of unique instances = {}.", cnt);
   }
 }

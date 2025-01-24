@@ -15,7 +15,7 @@ target_include_directories(odbtcl
 target_link_libraries(odbtcl
     PUBLIC
         odb
-        utl
+        utl_lib
         cdl
         odb_swig_common
         Boost::boost
@@ -25,16 +25,20 @@ target_link_libraries(odbtcl
 # Executable
 add_executable(odbtcl-bin
     main.cpp
+    stub.cpp
 )
 
 target_include_directories(odbtcl-bin
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include/odb
+    PRIVATE
+        ${OPENROAD_HOME}/include
 )
 
 target_link_libraries(odbtcl-bin
     PUBLIC
         odbtcl
+        dl
 )
 
 set_target_properties(odbtcl-bin

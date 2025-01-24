@@ -264,6 +264,10 @@ proc report_design_area_metrics { args } {
   utl::metric_float "design__instance__area__stdcell" $stdcell_area
   utl::metric_int "design__instance__count__macros" $num_macros
   utl::metric_float "design__instance__area__macros" $macro_area
+  utl::metric_int "design__instance__count__padcells" $num_padcells
+  utl::metric_float "design__instance__area__padcells" $padcell_area
+  utl::metric_int "design__instance__count__cover" $num_cover
+  utl::metric_float "design__instance__area__cover" $cover_area
   utl::metric_float "design__instance__utilization" $core_util
   utl::metric_float "design__instance__utilization__stdcell" $stdcell_util
 

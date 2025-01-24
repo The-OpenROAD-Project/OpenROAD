@@ -39,57 +39,57 @@
 // Wrappers definitions.
 const char* defiFPC_name(const ::defiFPC* obj)
 {
-  return ((const LefDefParser::defiFPC*) obj)->name();
+  return ((const DefParser::defiFPC*) obj)->name();
 }
 
 int defiFPC_isVertical(const ::defiFPC* obj)
 {
-  return ((LefDefParser::defiFPC*) obj)->isVertical();
+  return ((DefParser::defiFPC*) obj)->isVertical();
 }
 
 int defiFPC_isHorizontal(const ::defiFPC* obj)
 {
-  return ((LefDefParser::defiFPC*) obj)->isHorizontal();
+  return ((DefParser::defiFPC*) obj)->isHorizontal();
 }
 
 int defiFPC_hasAlign(const ::defiFPC* obj)
 {
-  return ((LefDefParser::defiFPC*) obj)->hasAlign();
+  return ((DefParser::defiFPC*) obj)->hasAlign();
 }
 
 int defiFPC_hasMax(const ::defiFPC* obj)
 {
-  return ((LefDefParser::defiFPC*) obj)->hasMax();
+  return ((DefParser::defiFPC*) obj)->hasMax();
 }
 
 int defiFPC_hasMin(const ::defiFPC* obj)
 {
-  return ((LefDefParser::defiFPC*) obj)->hasMin();
+  return ((DefParser::defiFPC*) obj)->hasMin();
 }
 
 int defiFPC_hasEqual(const ::defiFPC* obj)
 {
-  return ((LefDefParser::defiFPC*) obj)->hasEqual();
+  return ((DefParser::defiFPC*) obj)->hasEqual();
 }
 
 double defiFPC_alignMax(const ::defiFPC* obj)
 {
-  return ((LefDefParser::defiFPC*) obj)->alignMax();
+  return ((DefParser::defiFPC*) obj)->alignMax();
 }
 
 double defiFPC_alignMin(const ::defiFPC* obj)
 {
-  return ((LefDefParser::defiFPC*) obj)->alignMin();
+  return ((DefParser::defiFPC*) obj)->alignMin();
 }
 
 double defiFPC_equal(const ::defiFPC* obj)
 {
-  return ((LefDefParser::defiFPC*) obj)->equal();
+  return ((DefParser::defiFPC*) obj)->equal();
 }
 
 int defiFPC_numParts(const ::defiFPC* obj)
 {
-  return ((LefDefParser::defiFPC*) obj)->numParts();
+  return ((DefParser::defiFPC*) obj)->numParts();
 }
 
 void defiFPC_getPart(const ::defiFPC* obj,
@@ -98,10 +98,10 @@ void defiFPC_getPart(const ::defiFPC* obj,
                      int* typ,
                      char** name)
 {
-  ((LefDefParser::defiFPC*) obj)->getPart(index, corner, typ, name);
+  ((DefParser::defiFPC*) obj)->getPart(index, corner, typ, name);
 }
 
 void defiFPC_print(const ::defiFPC* obj, FILE* f)
 {
-  ((LefDefParser::defiFPC*) obj)->print(f);
+  ((DefParser::defiFPC*) obj)->print(f);
 }

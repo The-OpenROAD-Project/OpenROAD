@@ -32,6 +32,8 @@
 
 #pragma once
 
+// IWYU pragma: private, include "db.h"
+
 // Provide overloads of std::less for all instantiable, dbObject-derived types.
 // This avoids pointer comparison which is a frequent source of non-determinism.
 //
@@ -339,15 +341,6 @@ struct less<odb::dbMPin*>
 };
 
 template <>
-struct less<odb::dbTarget*>
-{
-  bool operator()(const odb::dbTarget* lhs, const odb::dbTarget* rhs) const
-  {
-    return odb::compare_by_id(lhs, rhs);
-  }
-};
-
-template <>
 struct less<odb::dbTech*>
 {
   bool operator()(const odb::dbTech* lhs, const odb::dbTech* rhs) const
@@ -506,6 +499,16 @@ struct less<odb::dbBusPort*>
 };
 
 template <>
+struct less<odb::dbCellEdgeSpacing*>
+{
+  bool operator()(const odb::dbCellEdgeSpacing* lhs,
+                  const odb::dbCellEdgeSpacing* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
 struct less<odb::dbDft*>
 {
   bool operator()(const odb::dbDft* lhs, const odb::dbDft* rhs) const
@@ -525,6 +528,15 @@ struct less<odb::dbGCellGrid*>
 };
 
 template <>
+struct less<odb::dbGDSARef*>
+{
+  bool operator()(const odb::dbGDSARef* lhs, const odb::dbGDSARef* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
 struct less<odb::dbGDSBoundary*>
 {
   bool operator()(const odb::dbGDSBoundary* lhs,
@@ -538,15 +550,6 @@ template <>
 struct less<odb::dbGDSBox*>
 {
   bool operator()(const odb::dbGDSBox* lhs, const odb::dbGDSBox* rhs) const
-  {
-    return odb::compare_by_id(lhs, rhs);
-  }
-};
-
-template <>
-struct less<odb::dbGDSNode*>
-{
-  bool operator()(const odb::dbGDSNode* lhs, const odb::dbGDSNode* rhs) const
   {
     return odb::compare_by_id(lhs, rhs);
   }
@@ -661,6 +664,16 @@ struct less<odb::dbMarkerCategory*>
 {
   bool operator()(const odb::dbMarkerCategory* lhs,
                   const odb::dbMarkerCategory* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbMasterEdgeType*>
+{
+  bool operator()(const odb::dbMasterEdgeType* lhs,
+                  const odb::dbMasterEdgeType* rhs) const
   {
     return odb::compare_by_id(lhs, rhs);
   }

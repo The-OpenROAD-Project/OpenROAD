@@ -27,6 +27,7 @@
  */
 
 #include <cmath>
+#include <vector>
 
 #include "gr/FlexGR.h"
 #include "gr/FlexGRGridGraph.h"
@@ -400,9 +401,9 @@ frCost FlexGRGridGraph::getNextPathCost(const FlexGRWavefrontGrid& currGrid,
                            * getHistoryCost(gridX, gridY, gridZ)
                            * getEdgeLength(gridX, gridY, gridZ, dir)
                      : 0)
-         + (blockCost
-                ? BLOCKCOST * getEdgeLength(gridX, gridY, gridZ, dir) * 100
-                : 0)
+         + (blockCost ? router_cfg_->BLOCKCOST
+                            * getEdgeLength(gridX, gridY, gridZ, dir) * 100
+                      : 0)
          + (overflowCost ? 128 * getEdgeLength(gridX, gridY, gridZ, dir) : 0);
   return nextPathCost;
 }

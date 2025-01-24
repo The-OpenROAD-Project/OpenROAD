@@ -34,6 +34,7 @@
 
 #include <array>
 #include <set>
+#include <vector>
 
 #include "grid_component.h"
 #include "odb/db.h"

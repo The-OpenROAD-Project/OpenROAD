@@ -162,18 +162,7 @@ std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(
 dbGDSLib* createEmptyGDSLib(dbDatabase* db, const std::string& libname)
 {
   dbGDSLib* lib = dbGDSLib::create(db, libname);
-  stampGDSLib(lib, true);
   return lib;
-}
-
-void stampGDSLib(dbGDSLib* lib, bool modified)
-{
-  const time_t now = std::time(nullptr);
-  const std::tm now_tm = *std::localtime(&now);
-  lib->set_lastAccessed(now_tm);
-  if (modified) {
-    lib->set_lastModified(now_tm);
-  }
 }
 
 }  // namespace odb::gds

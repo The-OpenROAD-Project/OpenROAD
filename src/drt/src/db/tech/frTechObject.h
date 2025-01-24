@@ -267,12 +267,12 @@ class frTechObject
     }
   }
 
-  void printDefaultVias(Logger* logger)
+  void printDefaultVias(Logger* logger, RouterConfiguration* router_cfg)
   {
     logger->info(DRT, 167, "List of default vias:");
     for (auto& layer : layers_) {
       if (layer->getType() == dbTechLayerType::CUT
-          && layer->getLayerNum() >= BOTTOM_ROUTING_LAYER) {
+          && layer->getLayerNum() >= router_cfg->BOTTOM_ROUTING_LAYER) {
         logger->report("  Layer {}", layer->getName());
         if (layer->getDefaultViaDef() != nullptr) {
           logger->report("    default via: {}",

@@ -8,5 +8,7 @@ fi
 cat > debian/changelog <<EOF
 openroad ($1) UNRELEASED; urgency=low
 
-$(git log -1 --pretty=format:"-- %an <%ae> on %ad")
+  * Automated release
+
+$(git log --date=rfc -1 --pretty=format:" -- %an <%ae>  %ad")
 EOF

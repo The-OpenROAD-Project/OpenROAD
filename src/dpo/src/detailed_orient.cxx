@@ -38,6 +38,7 @@
 #include "detailed_orient.h"
 
 #include <boost/tokenizer.hpp>
+#include <vector>
 
 #include "architecture.h"
 #include "detailed_manager.h"

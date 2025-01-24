@@ -1,10 +1,10 @@
-include("openroad")
-
-set(TEST_NAMES
-    read_part
+or_integration_tests(
+  "par"
+  TESTS
     partition_gcd
+    read_part
 )
 
-foreach(TEST_NAME IN LISTS TEST_NAMES)
-    or_integration_test("par" ${TEST_NAME}  ${CMAKE_CURRENT_SOURCE_DIR}/regression)
-endforeach()
+# Skipped
+#par_man_tcl_check
+#par_readme_msgs_check

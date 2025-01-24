@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "db/drObj/drAccessPattern.h"
 #include "db/drObj/drBlockObject.h"
 #include "db/obj/frBTerm.h"

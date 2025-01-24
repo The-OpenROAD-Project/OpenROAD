@@ -42,6 +42,7 @@
 #include <array>
 #include <iomanip>
 #include <map>
+#include <vector>
 
 #include "dbDescriptors.h"
 #include "utl/Logger.h"
@@ -225,6 +226,7 @@ void DRCWidget::clicked(const QModelIndex& index)
     } else {
       Selected t = Gui::get()->makeSelected(marker);
       emit selectDRC(t);
+      focusIndex(index);
     }
   } else {
     if (item->hasChildren()) {

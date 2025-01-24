@@ -413,26 +413,6 @@ dbRSeg* extMeasure::getFirstDbRseg(uint netId)
   return rseg;
 }
 
-double extMeasure::getCCfringe(uint lastNode, uint n, uint start, uint end)
-{
-  double ccFr = 0.0;
-  for (uint ii = start; ii <= end; ii++) {
-    int d = n - ii;
-    int u = n + ii;
-
-    if (n + ii > lastNode) {
-      break;
-    }
-
-    if (d > 0) {
-      ccFr += _capMatrix[d][n];
-    }
-
-    ccFr += _capMatrix[n][u];
-  }
-  return ccFr;
-}
-
 void extMeasure::printBox(FILE* fp)
 {
   fprintf(fp, "( %8d %8d ) ( %8d %8d )\n", _ll[0], _ll[1], _ur[0], _ur[1]);
@@ -1354,7 +1334,6 @@ uint extMeasure::computeDiag(SEQ* s,
     uint tgWidth = tgt->_ur[_dir] - tgt->_ll[_dir];
     uint len1 = getLength(tgt, !_dir);
 
-    DebugDiagCoords(_met, targetMet, len1, diagDist, tgt->_ll, tgt->_ur);
     len += len1;
     bool skip_high_acc = true;
     bool verticalOverlap = false;
@@ -2078,14 +2057,8 @@ void extMeasure::calcDiagRC(int rsegId1,
 
 void extMeasure::createCap(int rsegId1, uint rsegId2, double* capTable)
 {
-  dbRSeg* rseg1 = nullptr;
-  dbRSeg* rseg2 = nullptr;
-  if (rsegId1 > 0) {
-    rseg1 = dbRSeg::getRSeg(_block, rsegId1);
-  }
-  if (rsegId2 > 0) {
-    rseg2 = dbRSeg::getRSeg(_block, rsegId2);
-  }
+  dbRSeg* rseg1 = rsegId1 > 0 ? dbRSeg::getRSeg(_block, rsegId1) : nullptr;
+  dbRSeg* rseg2 = rsegId2 > 0 ? dbRSeg::getRSeg(_block, rsegId2) : nullptr;
 
   dbCCSeg* ccCap = makeCcap(rseg1, rseg2, capTable[_minModelIndex]);
 
@@ -2096,6 +2069,8 @@ void extMeasure::createCap(int rsegId1, uint rsegId2, double* capTable)
     } else {
       _rc[model]->_diag += capTable[model];
       addFringe(nullptr, rseg2, capTable[model], model);
+      // FIXME IMPORTANT-TEST-FIRST addFringe(rseg1, rseg2, capTable[model],
+      // model);
     }
   }
 }

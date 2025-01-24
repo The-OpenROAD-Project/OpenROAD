@@ -222,8 +222,15 @@ report_global_connect
 The `report_cell_usage` command is used to print out the usage of cells for each type of cell.
 
 ```
-report_cell_usage
+report_cell_usage [-verbose] [module instance]
 ```
+
+##### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-verbose` | Add information about all leaf instances. |
+| `module instance` | Report cell usage for a specified module instance. |
 
 ## TCL functions
 
@@ -233,6 +240,29 @@ Get the die and core areas as a list in microns: `llx lly urx ury`
 ord::get_die_area
 ord::get_core_area
 ```
+
+The `place_inst` command is used to place an instance.  If -cell is
+given then a new instance may be created as well as placed.
+
+```
+place_inst -name inst_name \
+           (-origin xy_origin | -location xy_location) \
+           [-orientation orientation] \
+           [-cell library_cell] \
+           [-status status]
+```
+
+##### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-name` | The name of the instance |
+| `-orientaton` | The orientation of the instance. Default is R0 |
+| `-origin` | The x and y coordinates for where the origin of the instance is placed. |
+| `-location` | The x and y coordinates for where the instance is placed. |
+| `-cell` | Required if a new instance is to be created. |
+| `-status` | The placement status of the instance. Default is PLACED |
+
 
 ## FAQs
 

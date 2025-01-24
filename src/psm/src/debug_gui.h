@@ -32,6 +32,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <vector>
 
 #include "gui/gui.h"
 #include "ir_network.h"
@@ -52,7 +53,6 @@ class SolverDescriptor : public gui::Descriptor
  public:
   SolverDescriptor(
       const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers);
-  virtual ~SolverDescriptor() = default;
 
  protected:
   IRSolver* getSolver(Node* node) const;

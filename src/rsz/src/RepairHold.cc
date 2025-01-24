@@ -35,6 +35,8 @@
 
 #include "RepairHold.hh"
 
+#include <vector>
+
 #include "RepairDesign.hh"
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
@@ -83,7 +85,7 @@ void RepairHold::init()
   db_network_ = resizer_->db_network_;
 }
 
-void RepairHold::repairHold(
+bool RepairHold::repairHold(
     const double setup_margin,
     const double hold_margin,
     const bool allow_setup_violations,
@@ -92,6 +94,7 @@ void RepairHold::repairHold(
     const int max_passes,
     const bool verbose)
 {
+  bool repaired = false;
   init();
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
@@ -109,18 +112,20 @@ void RepairHold::repairHold(
   // Prevent it from being too small on trivial designs
   max_buffer_count = std::max(max_buffer_count, 100);
   resizer_->incrementalParasiticsBegin();
-  repairHold(ends1,
-             buffer_cell,
-             setup_margin,
-             hold_margin,
-             allow_setup_violations,
-             max_buffer_count,
-             max_passes,
-             verbose);
+  repaired = repairHold(ends1,
+                        buffer_cell,
+                        setup_margin,
+                        hold_margin,
+                        allow_setup_violations,
+                        max_buffer_count,
+                        max_passes,
+                        verbose);
 
   // Leave the parasitices up to date.
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
+
+  return repaired;
 }
 
 // For testing/debug.
@@ -236,7 +241,7 @@ void RepairHold::bufferHoldDelays(LibertyCell* buffer,
   }
 }
 
-void RepairHold::repairHold(VertexSeq& ends,
+bool RepairHold::repairHold(VertexSeq& ends,
                             LibertyCell* buffer_cell,
                             const double setup_margin,
                             const double hold_margin,
@@ -245,6 +250,7 @@ void RepairHold::repairHold(VertexSeq& ends,
                             const int max_passes,
                             const bool verbose)
 {
+  bool repaired = false;
   // Find endpoints with hold violations.
   VertexSeq hold_failures;
   Slack worst_slack;
@@ -302,6 +308,7 @@ void RepairHold::repairHold(VertexSeq& ends,
     }
 
     if (inserted_buffer_count_ > 0) {
+      repaired = true;
       logger_->info(
           RSZ, 32, "Inserted {} hold buffers.", inserted_buffer_count_);
       resizer_->level_drvr_vertices_valid_ = false;
@@ -313,10 +320,13 @@ void RepairHold::repairHold(VertexSeq& ends,
       logger_->error(RSZ, 50, "Max utilization reached.");
     }
   } else {
+    repaired = false;
     logger_->info(RSZ, 33, "No hold violations found.");
   }
   logger_->metric("design__instance__count__hold_buffer",
                   inserted_buffer_count_);
+
+  return repaired;
 }
 
 void RepairHold::findHoldViolations(VertexSeq& ends,

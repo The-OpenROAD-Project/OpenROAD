@@ -90,10 +90,9 @@ TclCmdInputWidget::~TclCmdInputWidget()
   Tcl_Eval(interp_, exit_rename.c_str());
 }
 
-void TclCmdInputWidget::setTclInterp(
-    Tcl_Interp* interp,
-    bool do_init_openroad,
-    const std::function<void(void)>& post_or_init)
+void TclCmdInputWidget::setTclInterp(Tcl_Interp* interp,
+                                     bool do_init_openroad,
+                                     const std::function<void()>& post_or_init)
 {
   interp_ = interp;
 
@@ -108,7 +107,7 @@ void TclCmdInputWidget::setTclInterp(
     // OpenRoad is not initialized
     emit commandAboutToExecute();
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-    const bool setup_tcl_result = ord::tclAppInit(interp_) == TCL_OK;
+    const bool setup_tcl_result = ord::tclInit(interp_) == TCL_OK;
     post_or_init();
     processTclResult(setup_tcl_result);
     emit commandFinishedExecuting(setup_tcl_result);

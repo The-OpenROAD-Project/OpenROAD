@@ -51,15 +51,15 @@ namespace pad {
 class RDLRoute
 {
  public:
-  RDLRoute(odb::dbITerm* source,
-           const std::vector<odb::dbITerm*>& dests,
-           const std::map<grid_vertex, odb::Point>& vertex_point_map);
+  RDLRoute(odb::dbITerm* source, const std::vector<odb::dbITerm*>& dests);
 
-  void setRoute(
-      const std::vector<grid_vertex>& vertex,
-      const std::set<std::tuple<odb::Point, odb::Point, float>>& removed_edges,
-      const RouteTarget* source,
-      const RouteTarget* target);
+  void setRoute(const std::map<grid_vertex, odb::Point>& vertex_point_map,
+                const std::vector<grid_vertex>& vertex,
+                const std::vector<RDLRouter::GridEdge>& removed_edges,
+                const RouteTarget* source,
+                const RouteTarget* target,
+                const RDLRouter::TerminalAccess& access_source,
+                const RDLRouter::TerminalAccess& access_dest);
   void resetRoute();
 
   bool isRouted() const { return !route_vertex_.empty(); }
@@ -93,15 +93,25 @@ class RDLRoute
   {
     return route_vertex_;
   }
-  const std::set<std::tuple<odb::Point, odb::Point, float>>& getRouteEdges()
-      const
+  const std::vector<odb::Point>& getRoutePoints() const { return route_pts_; }
+  const std::vector<RDLRouter::GridEdge>& getRouteEdges() const
   {
     return route_edges_;
   }
   const RouteTarget* getRouteTargetSource() const { return route_source_; }
   const RouteTarget* getRouteTargetDestination() const { return route_dest_; }
+  const RDLRouter::TerminalAccess& getTerminalAccessSource() const
+  {
+    return access_source_;
+  }
+  const RDLRouter::TerminalAccess& getTerminalAccessDestination() const
+  {
+    return access_dest_;
+  }
 
   bool isIntersecting(RDLRoute* other, int extent) const;
+  bool isIntersecting(const odb::Line& line, int extent) const;
+  bool isIntersecting(const odb::Point& point, int extent) const;
 
  private:
   odb::dbITerm* iterm_;
@@ -109,15 +119,19 @@ class RDLRoute
 
   bool route_pending_;
 
-  const std::map<grid_vertex, odb::Point>& vertex_point_map_;
-
   std::vector<odb::dbITerm*> terminals_;
   std::vector<odb::dbITerm*>::iterator next_;
 
   std::vector<grid_vertex> route_vertex_;
-  std::set<std::tuple<odb::Point, odb::Point, float>> route_edges_;
+  std::vector<odb::Point> route_pts_;
+  std::vector<RDLRouter::GridEdge> route_edges_;
   const RouteTarget* route_source_;
   const RouteTarget* route_dest_;
+
+  RDLRouter::TerminalAccess access_source_;
+  RDLRouter::TerminalAccess access_dest_;
+
+  bool contains(const odb::Point& pt) const;
 };
 
 }  // namespace pad

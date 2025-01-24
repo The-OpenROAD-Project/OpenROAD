@@ -46,6 +46,7 @@
 #include <typeinfo>
 #include <unordered_map>
 #include <variant>
+#include <vector>
 
 #include "odb/db.h"
 
@@ -57,6 +58,7 @@ class Logger;
 
 namespace gui {
 class HeatMapDataSource;
+class PinDensityDataSource;
 class PlacementDensityDataSource;
 class Painter;
 class Selected;
@@ -296,7 +298,7 @@ class Descriptor
 
   // An action is a name and a callback function, the function should return
   // the next object to select (when deleting the object just return Selected())
-  using ActionCallback = std::function<Selected(void)>;
+  using ActionCallback = std::function<Selected()>;
   struct Action
   {
     std::string name;
@@ -357,7 +359,7 @@ class Selected
 {
  public:
   // Null case
-  Selected() : object_({}), descriptor_(nullptr) {}
+  Selected() = default;
 
   Selected(std::any object, const Descriptor* descriptor)
       : object_(std::move(object)), descriptor_(descriptor)
@@ -429,7 +431,7 @@ class Selected
 
  private:
   std::any object_;
-  const Descriptor* descriptor_;
+  const Descriptor* descriptor_{nullptr};
 };
 
 // This is an interface for classes that wish to be called to render
@@ -470,7 +472,7 @@ class Renderer
   // Used to register display controls for this renderer.
   // DisplayControls is a map with the name of the control and the initial
   // setting for the control
-  using DisplayControlCallback = std::function<void(void)>;
+  using DisplayControlCallback = std::function<void()>;
   struct DisplayControl
   {
     bool visibility;
@@ -708,6 +710,8 @@ class Gui
   void showGui(const std::string& cmds = "",
                bool interactive = true,
                bool load_settings = true);
+  void minimize();
+  void unminimize();
 
   // set the system logger
   void setLogger(utl::Logger* logger);
@@ -728,6 +732,13 @@ class Gui
   Renderer::Setting getHeatMapSetting(const std::string& name,
                                       const std::string& option);
   void dumpHeatMap(const std::string& name, const std::string& file);
+
+  void setMainWindowTitle(const std::string& title);
+  std::string getMainWindowTitle();
+
+  void selectHelp(const std::string& item);
+  void selectChart(const std::string& name);
+  void updateTimingReport();
 
   // accessors for to add and remove commands needed to restore the state of the
   // gui
@@ -803,9 +814,12 @@ class Gui
 
   std::set<Renderer*> renderers_;
 
+  std::unique_ptr<PinDensityDataSource> pin_density_heat_map_;
   std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map_;
 
   static Gui* singleton_;
+
+  std::string main_window_title_ = "OpenROAD";
 };
 
 // The main entry point
@@ -814,6 +828,7 @@ int startGui(int& argc,
              Tcl_Interp* interp,
              const std::string& script = "",
              bool interactive = true,
-             bool load_settings = true);
+             bool load_settings = true,
+             bool minimize = false);
 
 }  // namespace gui

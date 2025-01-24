@@ -36,8 +36,6 @@
 %{
 
 #include "odb/db.h"
-#include "odb/lefin.h"
-#include "odb/defin.h"
 #include "odb/defout.h"
 #include "sta/Report.hh"
 #include "sta/Network.hh"
@@ -250,6 +248,8 @@ using odb::dbTech;
 //
 ////////////////////////////////////////////////////////////////
 
+%include <std_string.i>
+
 #ifdef SWIGTCL
 %include "Exception.i"
 
@@ -312,12 +312,6 @@ const bool
 openroad_gui_compiled()
 {
   return ord::OpenRoad::getGUICompileOption();
-}
-
-const bool
-openroad_charts_compiled()
-{
-  return ord::OpenRoad::getChartsCompileOption();
 }
 
 void
@@ -605,6 +599,18 @@ void design_created()
 {
   OpenRoad *ord = getOpenRoad();
   ord->designCreated();
+}
+
+std::string get_exe_path()
+{
+  OpenRoad *ord = getOpenRoad();
+  return ord->getExePath();
+}
+
+std::string get_docs_path()
+{
+  OpenRoad *ord = getOpenRoad();
+  return ord->getDocsPath();
 }
 
 }

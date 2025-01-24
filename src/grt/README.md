@@ -25,8 +25,6 @@ global_route
     [-grid_origin {x y}]
     [-critical_nets_percentage percent]
     [-allow_congestion]
-    [-allow_overflow]
-    [-overflow_iterations]
     [-verbose]
     [-start_incremental]
     [-end_incremental]
@@ -118,7 +116,7 @@ set_global_routing_layer_adjustment layer adjustment
 
 | Argument Name | Description | 
 | ----- | ----- |
-| `layer` | Integer for the layer number (e.g. for M1 you would use 1). |
+| `layer` | String for the layer name. |
 | `adjustment` | Float indicating the percentage reduction of each edge in the specified layer. |
 
 
@@ -139,7 +137,7 @@ set_global_routing_region_adjustment
 | Switch Name | Description |
 | ----- | ----- |
 | `lower_left_x`, `lower_left_y`, `upper_right_x` , `upper_right_y` | Bounding box to consider. |
-| `-layer` | Integer for the layer number (e.g. for M1 you would use 1). |
+| `-layer` | String for the layer name. |
 | `-adjustment` | Float indicating the percentage reduction of each edge in the specified layer. |
 
 ### Set Global Routing Randomness
@@ -409,7 +407,7 @@ command. (See `GlobalRouter.h` for a complete list)
 ```python
 gr.setGridOrigin(x, y)                     # int, default 0,0
 gr.setCongestionReportFile(file_name)      # string
-gr.setOverflowIterations(n)                # int, default 50
+gr.setCongestionIterations(n)                # int, default 50
 gr.setAllowCongestion(allowCongestion)     # boolean, default False
 gr.setCriticalNetsPercentage(percentage)   # float
 gr.setMinRoutingLayer(minLayer)            # int

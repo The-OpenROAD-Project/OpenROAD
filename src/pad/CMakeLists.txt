@@ -42,8 +42,6 @@ swig_lib(NAME      pad
                        ${ODB_HOME}/src/swig/tcl
                        ${ODB_HOME}/include
          SCRIPTS   src/pad.tcl
-                   src/PdnGen.tcl
-                   src/ICeWall.tcl
 )
 
 target_sources(pad
@@ -64,7 +62,7 @@ target_include_directories(pad
 target_link_libraries(pad
   PRIVATE
     OpenSTA
-    utl
+    utl_lib
     odb
     gui
     Boost::boost

@@ -47,8 +47,6 @@ add_library(db
     dbCCSegItr.cpp 
     dbWireShapeItr.cpp 
     dbWirePathItr.cpp 
-    dbTarget.cpp 
-    dbTargetItr.cpp 
     dbTechNonDefaultRule.cpp 
     dbTechLayerRule.cpp 
     dbCapNode.cpp 
@@ -89,11 +87,12 @@ add_library(db
     # Generator Code Begin cpp
     dbAccessPoint.cpp
     dbBusPort.cpp
+    dbCellEdgeSpacing.cpp
     dbDft.cpp
     dbGCellGrid.cpp
+    dbGDSARef.cpp
     dbGDSBoundary.cpp
     dbGDSBox.cpp
-    dbGDSNode.cpp
     dbGDSPath.cpp
     dbGDSSRef.cpp
     dbGDSStructure.cpp
@@ -106,6 +105,7 @@ add_library(db
     dbLogicPort.cpp
     dbMarker.cpp
     dbMarkerCategory.cpp
+    dbMasterEdgeType.cpp
     dbMetalWidthViaMap.cpp
     dbModBTerm.cpp
     dbModInst.cpp

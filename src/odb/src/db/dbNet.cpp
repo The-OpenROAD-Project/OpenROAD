@@ -33,6 +33,7 @@
 #include "dbNet.h"
 
 #include <algorithm>
+#include <vector>
 
 #include "dbBTerm.h"
 #include "dbBTermItr.h"
@@ -132,7 +133,8 @@ _dbNet::_dbNet(_dbDatabase* db)
   _flags._source = dbSourceType::NONE;
   _flags._rc_disconnected = 0;
   _flags._block_rule = 0;
-  _name = 0;
+  _flags._has_jumpers = 0;
+  _name = nullptr;
   _gndc_calibration_factor = 1.0;
   _cc_calibration_factor = 1.0;
   _weight = 1;
@@ -724,6 +726,40 @@ bool dbNet::rename(const char* name)
   block->_net_hash.insert(net);
 
   return true;
+}
+
+void dbNet::swapNetNames(dbNet* source, bool ok_to_journal)
+{
+  _dbNet* dest_net = (_dbNet*) this;
+  _dbNet* source_net = (_dbNet*) source;
+  _dbBlock* block = (_dbBlock*) source_net->getOwner();
+
+  char* dest_name_ptr = dest_net->_name;
+  char* source_name_ptr = source_net->_name;
+
+  // allow undo..
+  if (block->_journal && ok_to_journal) {
+    block->_journal->beginAction(dbJournal::SWAP_OBJECT);
+    // a name
+    block->_journal->pushParam(dbNameObj);
+    // the type of name swap
+    block->_journal->pushParam(dbNetObj);
+    // stash the source and dest in that order,
+    // let undo reorder
+    block->_journal->pushParam(source_net->getId());
+    block->_journal->pushParam(dest_net->getId());
+    block->_journal->endAction();
+  }
+
+  block->_net_hash.remove(dest_net);
+  block->_net_hash.remove(source_net);
+
+  // swap names without copy, just swap the pointers
+  dest_net->_name = source_name_ptr;
+  source_net->_name = dest_name_ptr;
+
+  block->_net_hash.insert(dest_net);
+  block->_net_hash.insert(source_net);
 }
 
 bool dbNet::isRCDisconnected()
@@ -2054,7 +2090,6 @@ dbRSeg* dbNet::findRSeg(uint srcn, uint tgtn)
   return nullptr;
 }
 
-int ttttsv = 0;
 void dbNet::createZeroRc(bool foreign)
 {
   dbCapNode* cap1 = dbCapNode::create(this, 1, foreign);
@@ -2063,10 +2098,6 @@ void dbNet::createZeroRc(bool foreign)
   cap1->setNode(iterm->getId());
   dbCapNode* cap2 = dbCapNode::create(this, 2, foreign);
   cap2->setInternalFlag();
-  if (ttttsv) {
-    cap1->setCapacitance(0.0001, 0);
-    cap2->setCapacitance(0.0001, 0);
-  }
   dbRSeg* rseg1 = dbRSeg::create(
       this, 0 /*x*/, 0 /*y*/, 0 /*path_dir*/, !foreign /*allocate_cap*/);
   dbRSeg* rseg0 = dbRSeg::create(
@@ -2075,10 +2106,6 @@ void dbNet::createZeroRc(bool foreign)
   rseg0->setTargetNode(cap1->getId());
   rseg1->setSourceNode(cap1->getId());
   rseg1->setTargetNode(cap2->getId());
-  if (ttttsv) {
-    rseg1->setResistance(1.0, 0);
-  }
-  // rseg1->setCapacitance(0.0001, 0);
 }
 
 void dbNet::set1stRSegId(uint rid)
@@ -3107,6 +3134,7 @@ void dbNet::destroy(dbNet* net_)
 {
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) net->getOwner();
+  dbBlock* dbblock = (dbBlock*) block;
 
   if (net->_flags._dont_touch) {
     net->getLogger()->error(
@@ -3145,6 +3173,15 @@ void dbNet::destroy(dbNet* net_)
   dbSet<dbGuide> guides = net_->getGuides();
   for (auto gitr = guides.begin(); gitr != guides.end();) {
     gitr = dbGuide::destroy(gitr);
+  }
+
+  dbSet<dbGlobalConnect> connects = dbblock->getGlobalConnects();
+  for (auto gitr = connects.begin(); gitr != connects.end();) {
+    if (gitr->getNet()->getId() == net_->getId()) {
+      gitr = dbGlobalConnect::destroy(gitr);
+    } else {
+      gitr++;
+    }
   }
 
   if (block->_journal) {
@@ -3310,6 +3347,26 @@ void dbNet::clearTracks()
   while (itr != tracks.end()) {
     auto curTrack = *itr++;
     dbNetTrack::destroy(curTrack);
+  }
+}
+
+bool dbNet::hasJumpers()
+{
+  bool has_jumpers = false;
+  _dbNet* net = (_dbNet*) this;
+  _dbDatabase* db = net->getImpl()->getDatabase();
+  if (db->isSchema(db_schema_has_jumpers)) {
+    has_jumpers = net->_flags._has_jumpers == 1;
+  }
+  return has_jumpers;
+}
+
+void dbNet::setJumpers(bool has_jumpers)
+{
+  _dbNet* net = (_dbNet*) this;
+  _dbDatabase* db = net->getImpl()->getDatabase();
+  if (db->isSchema(db_schema_has_jumpers)) {
+    net->_flags._has_jumpers = has_jumpers ? 1 : 0;
   }
 }
 

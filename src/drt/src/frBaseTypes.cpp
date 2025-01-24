@@ -303,8 +303,31 @@ std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type)
       return os << "frcLef58MaxSpacingConstraint";
     case frConstraintTypeEnum::frcSpacingTableOrth:
       return os << "frcSpacingTableOrth";
+    case frConstraintTypeEnum::frcLef58WidthTableOrth:
+      return os << "frcLef58WidthTableOrth";
   }
   return os << "Bad frConstraintTypeEnum";
+}
+
+std::ostream& operator<<(std::ostream& os, frDirEnum dir)
+{
+  switch (dir) {
+    case frDirEnum::UNKNOWN:
+      return os << "Unknown";
+    case frDirEnum::D:
+      return os << 'D';
+    case frDirEnum::S:
+      return os << 'S';
+    case frDirEnum::W:
+      return os << 'W';
+    case frDirEnum::E:
+      return os << 'E';
+    case frDirEnum::N:
+      return os << 'N';
+    case frDirEnum::U:
+      return os << 'U';
+  }
+  return os << "Bad frDirEnum";
 }
 
 }  // namespace drt

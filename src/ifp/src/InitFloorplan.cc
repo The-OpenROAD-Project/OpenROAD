@@ -39,6 +39,7 @@
 #include <fstream>
 #include <iostream>
 #include <set>
+#include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
@@ -55,14 +56,12 @@
 
 namespace ifp {
 
-using std::abs;
 using std::ceil;
 using std::map;
 using std::round;
 using std::set;
 using std::string;
 
-using sta::dbNetwork;
 using sta::StringVector;
 
 using utl::IFP;
@@ -79,10 +78,8 @@ using odb::dbOrientType;
 using odb::dbRegion;
 using odb::dbRow;
 using odb::dbRowDir;
-using odb::dbSet;
 using odb::dbSite;
 using odb::dbTech;
-using odb::dbTechLayer;
 using odb::dbTechLayerDir;
 using odb::dbTechLayerType;
 using odb::dbTrackGrid;
@@ -112,10 +109,14 @@ void InitFloorplan::initFloorplan(
 {
   utl::Validator v(logger_, IFP);
   v.check_non_negative("utilization", utilization, 12);
-  v.check_non_negative("core_space_bottom", core_space_bottom, 32);
-  v.check_non_negative("core_space_top", core_space_top, 33);
-  v.check_non_negative("core_space_left", core_space_left, 34);
-  v.check_non_negative("core_space_right", core_space_right, 35);
+  v.check_non_negative(
+      "core_space_bottom (um) ", block_->dbuToMicrons(core_space_bottom), 32);
+  v.check_non_negative(
+      "core_space_top (um) ", block_->dbuToMicrons(core_space_top), 33);
+  v.check_non_negative(
+      "core_space_left (um) ", block_->dbuToMicrons(core_space_left), 34);
+  v.check_non_negative(
+      "core_space_right (um) ", block_->dbuToMicrons(core_space_right), 35);
   v.check_positive("aspect_ratio", aspect_ratio, 36);
 
   utilization /= 100;
@@ -165,6 +166,10 @@ void InitFloorplan::initFloorplan(
     RowParity row_parity,
     const std::set<odb::dbSite*>& flipped_sites)
 {
+  if (!die.contains(core)) {
+    logger_->error(IFP, 55, "Die area must contain the core area.");
+  }
+
   Rect die_area(snapToMfgGrid(die.xMin()),
                 snapToMfgGrid(die.yMin()),
                 snapToMfgGrid(die.xMax()),
@@ -225,7 +230,7 @@ void InitFloorplan::initFloorplan(
       if (row_parity != RowParity::NONE) {
         logger_->error(
             IFP,
-            41,
+            51,
             "Constraining row parity is not supported for hybrid rows.");
       }
       makeHybridRows(base_site, sites_by_name, snapped_core);
@@ -320,7 +325,7 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
           int lcr_xMax = domain_xMin - power_domain_y_space * site_dy;
           // in case there is at least one valid site width on the left, create
           // left core rows
-          if (lcr_xMax > core_lx + static_cast<int>(site_dx)) {
+          if (lcr_xMax > core_lx + site_dx) {
             string lcr_name = row_name + "_1";
             // warning message since tap cells might not be inserted
             if (lcr_xMax < core_lx + 10 * site_dx) {
@@ -352,7 +357,7 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
 
           // in case there is at least one valid site width on the right, create
           // right core rows
-          if (rcr_xMin + static_cast<int>(site_dx) < core_ux) {
+          if (rcr_xMin + site_dx < core_ux) {
             string rcr_name = row_name + "_2";
             if (rcr_xMin + 10 * site_dx > core_ux) {
               logger_->warn(IFP,
@@ -408,7 +413,7 @@ void InitFloorplan::addUsedSites(
         }
       } else {
         logger_->warn(IFP,
-                      43,
+                      52,
                       "No site found for instance {} in block {}.",
                       inst->getName(),
                       block_->getName());
@@ -475,12 +480,12 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
     if (site->getHeight() % base_site->getHeight() != 0) {
       logger_->error(
           IFP,
-          40,
-          "Site {} height {} of  is not a multiple of site {} height {}.",
+          54,
+          "Site {} height {}um of  is not a multiple of site {} height {}um.",
           site->getName(),
-          site->getHeight(),
+          block_->dbuToMicrons(site->getHeight()),
           base_site->getName(),
-          base_site->getHeight());
+          block_->dbuToMicrons(base_site->getHeight()));
     }
     make_rows(site);
   }
@@ -644,7 +649,7 @@ void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term,
   auto* lib_port = network_->libertyPort(port);
   if (!lib_port) {
     logger_->error(utl::IFP,
-                   39,
+                   53,
                    "Liberty cell or port {}/{} not found.",
                    master->getName(),
                    tie_term->getName());
@@ -722,11 +727,21 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
                                int y_pitch)
 {
   utl::Validator v(logger_, IFP);
+  string layer_inform = "On layer " + layer->getName() + ": ";
+
   v.check_non_null("layer", layer, 38);
-  v.check_non_negative("x_offset", x_offset, 39);
-  v.check_positive("x_pitch", x_pitch, 40);
-  v.check_non_negative("y_offset", y_offset, 41);
-  v.check_positive("y_pitch", y_pitch, 42);
+  v.check_non_negative((layer_inform + "x_offset (um)").c_str(),
+                       block_->dbuToMicrons(x_offset),
+                       39);
+  v.check_positive((layer_inform + "x_pitch (um)").c_str(),
+                   block_->dbuToMicrons(x_pitch),
+                   40);
+  v.check_non_negative((layer_inform + "y_offset (um)").c_str(),
+                       block_->dbuToMicrons(y_offset),
+                       41);
+  v.check_positive((layer_inform + "y_pitch (um)").c_str(),
+                   block_->dbuToMicrons(y_pitch),
+                   42);
 
   Rect die_area = block_->getDieArea();
 
@@ -761,7 +776,7 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
 
   int layer_min_width = layer->getMinWidth();
 
-  auto x_track_count = int((die_area.dx() - x_offset) / x_pitch) + 1;
+  int x_track_count = (die_area.dx() - x_offset) / x_pitch + 1;
   int origin_x = die_area.xMin() + x_offset;
   // Check if the track origin is not usable during routing
 
@@ -778,7 +793,7 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
 
   grid->addGridPatternX(origin_x, x_track_count, x_pitch);
 
-  auto y_track_count = int((die_area.dy() - y_offset) / y_pitch) + 1;
+  int y_track_count = (die_area.dy() - y_offset) / y_pitch + 1;
   int origin_y = die_area.yMin() + y_offset;
   // Check if the track origin is not usable during routing
   if (origin_y - layer_min_width / 2 < die_area.yMin()) {
@@ -821,8 +836,7 @@ void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
   }
   Rect die_area = block_->getDieArea();
 
-  auto y_track_count
-      = int((cell_row_height - 2 * first_last_pitch) / y_pitch) + 1;
+  int y_track_count = (cell_row_height - 2 * first_last_pitch) / y_pitch + 1;
   int origin_y = die_area.yMin() + first_last_pitch;
   for (int i = 0; i < y_track_count; i++) {
     makeTracks(layer, x_offset, x_pitch, origin_y, cell_row_height);

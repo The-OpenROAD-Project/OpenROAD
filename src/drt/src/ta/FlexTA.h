@@ -30,6 +30,7 @@
 
 #include <memory>
 #include <set>
+#include <vector>
 
 #include "db/obj/frVia.h"
 #include "db/taObj/taPin.h"
@@ -42,7 +43,10 @@ class FlexTA
 {
  public:
   // constructors
-  FlexTA(frDesign* in, Logger* logger, bool save_updates_);
+  FlexTA(frDesign* in,
+         Logger* logger,
+         RouterConfiguration* router_cfg,
+         bool save_updates_);
   ~FlexTA();
   // getters
   frTechObject* getTech() const { return tech_; }
@@ -55,6 +59,7 @@ class FlexTA
   frTechObject* tech_;
   frDesign* design_;
   Logger* logger_;
+  RouterConfiguration* router_cfg_;
   bool save_updates_;
   std::unique_ptr<FlexTAGraphics> graphics_;
   // others
@@ -117,9 +122,13 @@ class FlexTAWorker
 {
  public:
   // constructors
-  FlexTAWorker(frDesign* designIn, Logger* logger, bool save_updates)
+  FlexTAWorker(frDesign* designIn,
+               Logger* logger,
+               RouterConfiguration* router_cfg,
+               bool save_updates)
       : design_(designIn),
         logger_(logger),
+        router_cfg_(router_cfg),
         save_updates_(save_updates),
         dir_(dbTechLayerDir::NONE),
         taIter_(0),
@@ -127,7 +136,9 @@ class FlexTAWorker
         numAssigned_(0),
         totCost_(0),
         maxRetry_(1),
-        hardIroutesMode(false){};
+        hardIroutesMode(false)
+  {
+  }
   // setters
   void setRouteBox(const Rect& boxIn) { routeBox_ = boxIn; }
   void setExtBox(const Rect& boxIn) { extBox_ = boxIn; }
@@ -196,6 +207,7 @@ class FlexTAWorker
  private:
   frDesign* design_;
   Logger* logger_;
+  RouterConfiguration* router_cfg_;
   bool save_updates_;
   Rect routeBox_;
   Rect extBox_;
@@ -219,7 +231,7 @@ class FlexTAWorker
   frCoord initFixedObjs_calcBloatDist(frBlockObject* obj,
                                       frLayerNum lNum,
                                       const Rect& box);
-  frCoord initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
+  frCoord initFixedObjs_calcOBSBloatDistVia(const frViaDef* viaDef,
                                             frLayerNum lNum,
                                             const Rect& box,
                                             bool isOBS = true);

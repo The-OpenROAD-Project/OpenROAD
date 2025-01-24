@@ -32,7 +32,7 @@
 #include "odb/db.h"
 #include "odb/lefin.h"
 
-namespace lefMacroClassType {
+namespace odb::lefMacroClassType {
 
 /**
  * Convient function to encapsulate endcap types.
@@ -137,7 +137,7 @@ bool parse(Iterator first, Iterator last, odb::dbMaster* master)
 
   return valid && first == last;
 }
-}  // namespace lefMacroClassType
+}  // namespace odb::lefMacroClassType
 
 namespace odb {
 

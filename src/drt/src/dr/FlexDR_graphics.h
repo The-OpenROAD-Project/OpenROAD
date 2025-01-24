@@ -29,6 +29,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "frBaseTypes.h"
 #include "gui/gui.h"
@@ -46,6 +47,7 @@ class FlexDRWorker;
 class drNet;
 class frDesign;
 class frBlockObject;
+struct RouterConfiguration;
 
 // This class draws debugging graphics on the layout
 class FlexDRGraphics : public gui::Renderer
@@ -59,7 +61,7 @@ class FlexDRGraphics : public gui::Renderer
 
   void startWorker(FlexDRWorker* worker);
 
-  void startIter(int iter);
+  void startIter(int iter, RouterConfiguration* router_cfg);
 
   void endWorker(int iter);
 

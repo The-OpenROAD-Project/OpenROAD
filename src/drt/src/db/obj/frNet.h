@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"
 #include "db/obj/frBlockObject.h"
@@ -49,7 +51,10 @@ class frNet : public frBlockObject
 {
  public:
   // constructors
-  frNet(const frString& in) : name_(in) {}
+  frNet(const frString& in, RouterConfiguration* router_cfg)
+      : name_(in), router_cfg_(router_cfg)
+  {
+  }
   // getters
   const frString& getName() const { return name_; }
   const std::vector<frInstTerm*>& getInstTerms() const { return instTerms_; }
@@ -224,10 +229,10 @@ class frNet : public frBlockObject
   {
     int max = absPriorityLvl;
     if (hasNDR()) {
-      max = std::max(max, NDR_NETS_ABS_PRIORITY);
+      max = std::max(max, router_cfg_->NDR_NETS_ABS_PRIORITY);
     }
     if (isClock()) {
-      max = std::max(max, CLOCK_NETS_ABS_PRIORITY);
+      max = std::max(max, router_cfg_->CLOCK_NETS_ABS_PRIORITY);
     }
     absPriorityLvl = max;
   }
@@ -239,9 +244,12 @@ class frNet : public frBlockObject
     orig_guides_ = guides;
   }
   const std::vector<frRect>& getOrigGuides() const { return orig_guides_; }
+  void setHasJumpers(bool has_jumpers) { has_jumpers_ = has_jumpers; }
+  bool hasJumpers() { return has_jumpers_; }
 
  protected:
   frString name_;
+  RouterConfiguration* router_cfg_;
   std::vector<frInstTerm*> instTerms_;
   std::vector<frBTerm*> bterms_;
   // dr
@@ -272,6 +280,9 @@ class frNet : public frBlockObject
   bool hasInitialRouting_{false};
   bool isFixed_{false};
 
+  // Flag to mark when a frNet has a jumper, which is a special route guide used
+  // to prevent antenna violations
+  bool has_jumpers_{false};
   std::vector<frPinFig*> all_pinfigs_;
 };
 }  // namespace drt

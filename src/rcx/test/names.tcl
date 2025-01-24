@@ -11,7 +11,7 @@ read_liberty $liberty_file
 read_verilog names.v
 link_design top
 
-initialize_floorplan -site $site -utilization 10
+initialize_floorplan -site $site -utilization 10 -core_space 0.0
 
 source $tracks_file
 

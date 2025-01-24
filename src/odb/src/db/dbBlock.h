@@ -290,6 +290,8 @@ class _dbBlock : public _dbObject
   dbPropertyItr* _prop_itr;
   dbBlockSearch* _searchDb;
 
+  std::map<std::string, int> _module_name_id_map;
+
   unsigned char _num_ext_dbs;
 
   std::list<dbBlockCallBackObj*> _callbacks;

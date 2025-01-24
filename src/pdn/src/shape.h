@@ -50,7 +50,6 @@ class Logger;
 
 namespace pdn {
 
-namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
 
 class Shape;
@@ -151,6 +150,8 @@ class Shape
   bool isHorizontal() const { return rect_.dx() > rect_.dy(); }
   bool isSquare() const { return rect_.dx() == rect_.dy(); }
   bool isVertical() const { return rect_.dx() < rect_.dy(); }
+
+  virtual odb::dbTechLayerDir getLayerDirection() const;
 
   // true if shape can be removed by trimming
   virtual bool isRemovable() const;
@@ -293,6 +294,8 @@ class FollowPinShape : public Shape
   bool isRemovable() const override { return false; }
 
   void setAllowsNonPreferredDirectionChange() override {}
+
+  odb::dbTechLayerDir getLayerDirection() const override;
 
   bool cut(const ObstructionTree& obstructions,
            const Grid* ignore_grid,

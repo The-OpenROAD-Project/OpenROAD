@@ -32,7 +32,7 @@
 
 #include "lefiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 // Set flag
 extern void lefiSetDebug(int num, int value);
@@ -45,8 +45,6 @@ extern void lefiError(int check, int msgNum, const char* msg);
 
 extern const char* CASE(const char* x);
 
-END_LEFDEF_PARSER_NAMESPACE
-
-USE_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

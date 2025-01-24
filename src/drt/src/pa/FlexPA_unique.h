@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "frDesign.h"
 
 namespace drt {
@@ -49,7 +51,8 @@ class UniqueInsts
   // those instances.
   UniqueInsts(frDesign* design,
               const frCollection<odb::dbInst*>& target_insts,
-              Logger* logger);
+              Logger* logger,
+              RouterConfiguration* router_cfg_);
 
   /**
    * @brief Initializes Unique Instances and Pin Acess data.
@@ -115,7 +118,7 @@ class UniqueInsts
    * @brief Initializes pin access structures
    * Fills unique_to_pa_idx_adds pin access unique points to pins
    */
-  void initPinAccess();
+  void genPinAccess();
 
   /**
    * @brief Creates a map from Master instance to LayerRanges.
@@ -150,6 +153,7 @@ class UniqueInsts
   frDesign* design_;
   const frCollection<odb::dbInst*>& target_insts_;
   Logger* logger_;
+  RouterConfiguration* router_cfg_;
 
   // All the unique instances
   std::vector<frInst*> unique_;

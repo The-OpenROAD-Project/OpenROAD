@@ -32,6 +32,8 @@
 
 #include "dbCapNode.h"
 
+#include <vector>
+
 #include "dbBlock.h"
 #include "dbCCSeg.h"
 #include "dbCCSegItr.h"
@@ -537,7 +539,8 @@ bool dbCapNode::isSourceTerm(dbBlock* mblock)
       return true;
     }
     return false;
-  } else if (seg->_flags._bterm) {
+  }
+  if (seg->_flags._bterm) {
     dbBTerm* bterm = dbBTerm::getBTerm(block, seg->_node_num);
     iotype = bterm->getIoType();
     if (bterm->getIoType() == dbIoType::INPUT) {
@@ -557,7 +560,8 @@ bool dbCapNode::isInoutTerm(dbBlock* mblock)
       return true;
     }
     return false;
-  } else if (seg->_flags._bterm) {
+  }
+  if (seg->_flags._bterm) {
     dbBTerm* bterm = dbBTerm::getBTerm(block, seg->_node_num);
     if (bterm->getIoType() == dbIoType::INOUT) {
       return true;
@@ -871,12 +875,11 @@ uint dbCapNode::getShapeId()
     if (!iterm->getNet() || !iterm->getNet()->getWire())
       return 0;
     return iterm->getNet()->getWire()->getTermJid(iterm->getId());
-  } else {
-    dbBTerm* bterm = dbBTerm::getBTerm(block, seg->_node_num);
-    if (!bterm->getNet() || !bterm->getNet()->getWire())
-      return 0;
-    return bterm->getNet()->getWire()->getTermJid(-bterm->getId());
   }
+  dbBTerm* bterm = dbBTerm::getBTerm(block, seg->_node_num);
+  if (!bterm->getNet() || !bterm->getNet()->getWire())
+    return 0;
+  return bterm->getNet()->getWire()->getTermJid(-bterm->getId());
 }
 
 void dbCapNode::setSortIndex(uint idx)
@@ -918,9 +921,8 @@ bool dbCapNode::getTermCoords(int& x, int& y, dbBlock* mblock)
   if (seg->_flags._bterm > 0) {
     dbBTerm* bterm = dbBTerm::getBTerm(block, seg->_node_num);
     return (bterm->getFirstPinLocation(x, y));
-  } else
-    return false;
-  return true;
+  }
+  return false;
 }
 
 dbSet<dbCCSeg> dbCapNode::getCCSegs()

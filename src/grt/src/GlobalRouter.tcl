@@ -103,8 +103,10 @@ proc set_global_routing_region_adjustment { args } {
     sta::check_positive_float "lower_left_y" $lower_y
     sta::check_positive_float "upper_right_x" $upper_x
     sta::check_positive_float "upper_right_y" $upper_y
-    sta::check_positive_integer "-layer" $layer
     sta::check_positive_float "-adjustment" $adjustment
+
+    set layer_idx [grt::parse_layer_name $layer]
+    grt::check_routing_layer $layer_idx
 
     set lower_x [expr { int($lower_x * $lef_units) }]
     set lower_y [expr { int($lower_y * $lef_units) }]
@@ -113,7 +115,7 @@ proc set_global_routing_region_adjustment { args } {
 
     grt::check_region $lower_x $lower_y $upper_x $upper_y
 
-    grt::add_region_adjustment $lower_x $lower_y $upper_x $upper_y $layer $adjustment
+    grt::add_region_adjustment $lower_x $lower_y $upper_x $upper_y $layer_idx $adjustment
   } else {
     utl::error GRT 50 \
       "Command set_global_routing_region_adjustment needs four arguments\
@@ -177,8 +179,6 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-grid_origin origin] \
                                   [-critical_nets_percentage percent] \
                                   [-allow_congestion] \
-                                  [-allow_overflow] \
-                                  [-overflow_iterations iterations] \
                                   [-verbose] \
                                   [-start_incremental] \
                                   [-end_incremental]
@@ -187,9 +187,9 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -congestion_iterations -congestion_report_file \
-          -overflow_iterations -grid_origin -critical_nets_percentage -congestion_report_iter_step
+          -grid_origin -critical_nets_percentage -congestion_report_iter_step
          } \
-    flags {-allow_congestion -allow_overflow -verbose -start_incremental -end_incremental}
+    flags {-allow_congestion -verbose -start_incremental -end_incremental}
 
   sta::check_argc_eq0 "global_route" $args
 
@@ -218,9 +218,9 @@ proc global_route { args } {
   if { [info exists keys(-congestion_iterations)] } {
     set iterations $keys(-congestion_iterations)
     sta::check_positive_integer "-congestion_iterations" $iterations
-    grt::set_overflow_iterations $iterations
+    grt::set_congestion_iterations $iterations
   } else {
-    grt::set_overflow_iterations 50
+    grt::set_congestion_iterations 50
   }
 
   if { [info exists keys(-congestion_report_file)] } {
@@ -235,25 +235,13 @@ proc global_route { args } {
     grt::set_congestion_report_iter_step 0
   }
 
-  if { [info exists keys(-overflow_iterations)] } {
-    utl::war GRT 147 "Argument -overflow_iterations is deprecated. Use -congestion_iterations."
-    set iterations $keys(-overflow_iterations)
-    sta::check_positive_integer "-overflow_iterations" $iterations
-    grt::set_overflow_iterations $iterations
-  }
-
   if { [info exists keys(-critical_nets_percentage)] } {
     set percentage $keys(-critical_nets_percentage)
     sta::check_percent "-critical_nets_percentage" $percentage
     grt::set_critical_nets_percentage $percentage
   }
 
-  if { [info exists flags(-allow_overflow)] } {
-    utl::warn GRT 146 "Argument -allow_overflow is deprecated. Use -allow_congestion."
-  }
-
-  set allow_congestion [expr [info exists flags(-allow_congestion)] \
-    || [info exists flags(-allow_overflow)]]
+  set allow_congestion [info exists flags(-allow_congestion)]
   grt::set_allow_congestion $allow_congestion
 
   set start_incremental [info exists flags(-start_incremental)]
@@ -424,16 +412,19 @@ proc global_route_debug { args } {
   set tree2D [info exists flags(-tree2D)]
   set tree3D [info exists flags(-tree3D)]
   set db_block [ord::get_db_block]
-  set net [$db_block findNet $keys(-net)]
 
-  if { [info exists keys(-net)] && $net != "NULL" } {
+  if { [info exists keys(-net)] } {
+    set net [$db_block findNet $keys(-net)]
+    if { $net == "NULL" } {
+      utl::error GRT 231 "Net name not found."
+    }
     grt::set_global_route_debug_cmd $net $st $rst $tree2D $tree3D
     if { [info exists keys(-saveSttInput)] } {
       set file_name $keys(-saveSttInput)
       grt::set_global_route_debug_stt_input_filename $file_name
     }
   } else {
-    utl::error GRT 231 "Net name not found."
+    utl::error GRT 269 "-net argument is required."
   }
 }
 

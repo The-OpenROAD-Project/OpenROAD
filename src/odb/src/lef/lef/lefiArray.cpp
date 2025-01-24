@@ -29,14 +29,14 @@
 
 #include "lefiArray.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "lefiDebug.hpp"
 #include "lefiMisc.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 // *****************************************************************************
 // lefiArrayFloorPlan
 // *****************************************************************************
@@ -59,11 +59,11 @@ void lefiArrayFloorPlan::Destroy()
   for (i = 0; i < numPatterns_; i++) {
     s = patterns_[i];
     s->Destroy();
-    lefFree((char*) s);
-    lefFree((char*) (types_[i]));
+    lefFree(s);
+    lefFree(types_[i]);
   }
-  lefFree((char*) (types_));
-  lefFree((char*) (patterns_));
+  lefFree(types_);
+  lefFree(patterns_);
   lefFree(name_);
 }
 
@@ -87,8 +87,8 @@ void lefiArrayFloorPlan::addSitePattern(const char* typ, lefiSitePattern* s)
       nc[i] = types_[i];
       np[i] = patterns_[i];
     }
-    lefFree((char*) (types_));
-    lefFree((char*) (patterns_));
+    lefFree(types_);
+    lefFree(patterns_);
     types_ = nc;
     patterns_ = np;
   }
@@ -122,32 +122,6 @@ const char* lefiArrayFloorPlan::name() const
 // lefiArray
 // *****************************************************************************
 lefiArray::lefiArray()
-    : nameSize_(0),
-      name_(NULL),
-      patternsAllocated_(0),
-      numPatterns_(0),
-      pattern_(NULL),
-      canAllocated_(0),
-      numCan_(0),
-      canPlace_(NULL),
-      cannotAllocated_(0),
-      numCannot_(0),
-      cannotOccupy_(NULL),
-      tracksAllocated_(0),
-      numTracks_(0),
-      track_(NULL),
-      gAllocated_(0),
-      numG_(0),
-      gcell_(NULL),
-      hasDefault_(0),
-      tableSize_(0),
-      numDefault_(0),
-      defaultAllocated_(0),
-      minPins_(NULL),
-      caps_(NULL),
-      numFloorPlans_(0),
-      floorPlansAllocated_(0),
-      floors_(0)
 {
   Init();
 }
@@ -191,15 +165,15 @@ void lefiArray::Destroy()
 {
   clear();
 
-  lefFree((char*) (name_));
-  lefFree((char*) (caps_));
-  lefFree((char*) (minPins_));
-  lefFree((char*) (floors_));
-  lefFree((char*) (track_));
-  lefFree((char*) (gcell_));
-  lefFree((char*) (cannotOccupy_));
-  lefFree((char*) (canPlace_));
-  lefFree((char*) (pattern_));
+  lefFree(name_);
+  lefFree(caps_);
+  lefFree(minPins_);
+  lefFree(floors_);
+  lefFree(track_);
+  lefFree(gcell_);
+  lefFree(cannotOccupy_);
+  lefFree(canPlace_);
+  lefFree(pattern_);
 }
 
 lefiArray::~lefiArray()
@@ -228,7 +202,7 @@ void lefiArray::addSitePattern(lefiSitePattern* s)
       tpattern[i] = pattern_[i];
     }
     if (pattern_)
-      lefFree((char*) (pattern_));
+      lefFree(pattern_);
     pattern_ = tpattern;
     /*
         bump((void***)(&(pattern_)), numPatterns_,
@@ -277,8 +251,8 @@ void lefiArray::addDefaultCap(int minPins, double cap)
       nc[i] = caps_[i];
       np[i] = minPins_[i];
     }
-    lefFree((char*) (caps_));
-    lefFree((char*) (minPins_));
+    lefFree(caps_);
+    lefFree(minPins_);
     caps_ = nc;
     minPins_ = np;
   }
@@ -303,7 +277,7 @@ void lefiArray::addCanPlace(lefiSitePattern* s)
       cplace[i] = canPlace_[i];
     }
     if (canPlace_)
-      lefFree((char*) (canPlace_));
+      lefFree(canPlace_);
     canPlace_ = cplace;
   }
   /*
@@ -329,7 +303,7 @@ void lefiArray::addCannotOccupy(lefiSitePattern* s)
       cnplace[i] = cannotOccupy_[i];
     }
     if (cannotOccupy_)
-      lefFree((char*) (cannotOccupy_));
+      lefFree(cannotOccupy_);
     cannotOccupy_ = cnplace;
   }
   /*
@@ -357,7 +331,7 @@ void lefiArray::addTrack(lefiTrackPattern* t)
       tracks[i] = track_[i];
     }
     if (track_)
-      lefFree((char*) (track_));
+      lefFree(track_);
     track_ = tracks;
   }
   /*
@@ -384,7 +358,7 @@ void lefiArray::addGcell(lefiGcellPattern* g)
       cells[i] = gcell_[i];
     }
     if (gcell_)
-      lefFree((char*) (gcell_));
+      lefFree(gcell_);
     gcell_ = cells;
   }
   /*
@@ -412,7 +386,7 @@ void lefiArray::addFloorPlan(const char* name)
       tf[i] = floors_[i];
     }
     if (floors_)
-      lefFree((char*) (floors_));
+      lefFree(floors_);
     floors_ = tf;
   }
   /*
@@ -447,7 +421,7 @@ void lefiArray::bump(void*** arr, int used, int* allocated)
   }
 
   if (*arr)
-    lefFree((char*) (*arr));
+    lefFree(*arr);
   *allocated = size;
   *arr = newa;
 }
@@ -463,35 +437,35 @@ void lefiArray::clear()
   for (i = 0; i < numPatterns_; i++) {
     p = pattern_[i];
     p->Destroy();
-    lefFree((char*) p);
+    lefFree(p);
   }
   numPatterns_ = 0;
 
   for (i = 0; i < numCan_; i++) {
     p = canPlace_[i];
     p->Destroy();
-    lefFree((char*) p);
+    lefFree(p);
   }
   numCan_ = 0;
 
   for (i = 0; i < numCannot_; i++) {
     p = cannotOccupy_[i];
     p->Destroy();
-    lefFree((char*) p);
+    lefFree(p);
   }
   numCannot_ = 0;
 
   for (i = 0; i < numTracks_; i++) {
     t = track_[i];
     t->Destroy();
-    lefFree((char*) t);
+    lefFree(t);
   }
   numTracks_ = 0;
 
   for (i = 0; i < numG_; i++) {
     g = gcell_[i];
     g->Destroy();
-    lefFree((char*) g);
+    lefFree(g);
   }
   numG_ = 0;
 
@@ -502,7 +476,7 @@ void lefiArray::clear()
   for (i = 0; i < numFloorPlans_; i++) {
     f = floors_[i];
     f->Destroy();
-    lefFree((char*) f);
+    lefFree(f);
   }
   numFloorPlans_ = 0;
 }
@@ -621,4 +595,4 @@ void lefiArray::print(FILE* f) const
   fprintf(f, "ARRAY %s\n", name());
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

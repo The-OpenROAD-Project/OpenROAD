@@ -144,7 +144,7 @@ class ActionLayout : public QLayout
 
  public:
   ActionLayout(QWidget* parent = nullptr);
-  ~ActionLayout();
+  ~ActionLayout() override;
 
   void clear();
 

@@ -40,6 +40,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <vector>
 
 #include "Clustering.h"
 #include "SinkClustering.h"
@@ -957,7 +958,7 @@ void HTreeBuilder::legalizeDummy()
           = (levelIdx == 0)
                 ? topLevelBufferLoc
                 : topologyForEachLevel_[levelIdx - 1].getBranchingPoint(
-                    parentIdx);
+                      parentIdx);
 
       const std::vector<Point<double>>& sinks
           = topology.getBranchSinksLocations(idx);
@@ -1042,7 +1043,7 @@ void HTreeBuilder::legalize()
           = (levelIdx == 0)
                 ? newTopBufferLoc
                 : topologyForEachLevel_[levelIdx - 1].getBranchingPoint(
-                    parentIdx);
+                      parentIdx);
 
       const std::vector<Point<double>>& sinks
           = topology.getBranchSinksLocations(bufferIdx);
@@ -1238,7 +1239,7 @@ std::string HTreeBuilder::plotHTree()
               = (levelIdx == 0)
                     ? topLevelBufferLoc
                     : topologyForEachLevel_[levelIdx - 1].getBranchingPoint(
-                        parentIdx);
+                          parentIdx);
 
           const std::vector<Point<double>>& sinks
               = topology.getBranchSinksLocations(idx);
@@ -1954,8 +1955,7 @@ void HTreeBuilder::createSingleBufferClockNet()
 
 void HTreeBuilder::plotSolution()
 {
-  static int cnt = 0;
-  auto name = std::string("plot") + std::to_string(cnt++) + ".py";
+  auto name = std::string("plot_") + clock_.getName() + ".py";
   std::ofstream file(name);
   file << "import numpy as np\n";
   file << "import matplotlib.pyplot as plt\n";
@@ -2029,7 +2029,7 @@ void HTreeBuilder::printHTree()
           = (levelIdx == 0)
                 ? topLevelBufferLoc
                 : topologyForEachLevel_[levelIdx - 1].getBranchingPoint(
-                    parentIdx);
+                      parentIdx);
 
       const std::vector<Point<double>>& sinks
           = topology.getBranchSinksLocations(idx);

@@ -38,6 +38,7 @@
 #include <optional>
 #include <vector>
 
+#include "clusterEngine.h"
 #include "object.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
@@ -68,7 +69,7 @@ class Mpl2Observer
   virtual void endSA(float norm_cost) {}
   virtual void drawResult() {}
 
-  virtual void finishedClustering(Cluster* root) {}
+  virtual void finishedClustering(PhysicalHierarchy* tree) {}
 
   virtual void setMaxLevel(int max_level) {}
   virtual void setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages)
@@ -80,10 +81,16 @@ class Mpl2Observer
   }
   virtual void setBundledNets(const std::vector<BundledNet>& bundled_nets) {}
   virtual void setShowBundledNets(bool show_bundled_nets) {}
+  virtual void setShowClustersIds(bool show_clusters_ids) {}
   virtual void setSkipSteps(bool skip_steps) {}
   virtual void doNotSkip() {}
   virtual void setOnlyFinalResult(bool skip_to_end) {}
+  virtual void setTargetClusterId(int target_cluster_id) {}
+  virtual void setCurrentCluster(Cluster* current_cluster) {}
+
   virtual void setOutline(const odb::Rect& outline) {}
+  virtual void setGuides(const std::map<int, Rect>& guides) {}
+  virtual void setFences(const std::map<int, Rect>& fences) {}
 
   virtual void setAreaPenalty(const Penalty& penalty) {}
   virtual void setBoundaryPenalty(const Penalty& penalty) {}

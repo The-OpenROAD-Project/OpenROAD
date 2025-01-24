@@ -38,6 +38,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <vector>
 
 #include "Clock.h"
 #include "CtsOptions.h"

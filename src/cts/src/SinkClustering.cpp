@@ -42,6 +42,7 @@
 #include <map>
 #include <string>
 #include <tuple>
+#include <vector>
 
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"

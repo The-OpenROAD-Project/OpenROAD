@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "Clock.h"
 
 namespace cts {
