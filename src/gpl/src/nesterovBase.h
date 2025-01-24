@@ -782,6 +782,7 @@ class NesterovPlaceVars
   bool timingDrivenMode = true;
   int timingDrivenIterCounter = 0;
   bool routabilityDrivenMode = true;
+  bool disableRevertIfDiverge = false;
 
   bool debug = false;
   int debug_pause_iterations = 10;
