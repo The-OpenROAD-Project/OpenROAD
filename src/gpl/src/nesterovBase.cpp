@@ -893,7 +893,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
     bin.setDensity((static_cast<float>(bin.instPlacedArea())
                     + static_cast<float>(bin.fillerArea())
                     + static_cast<float>(bin.nonPlaceArea()))
-                   / binArea);
+                   / scaledBinArea);
 
     sumOverflowArea_ += std::max(0.0f,
                                  static_cast<float>(bin.instPlacedArea())
