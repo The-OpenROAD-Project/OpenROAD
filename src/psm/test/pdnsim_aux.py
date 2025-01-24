@@ -89,7 +89,9 @@ def check_power_grid(design, *, net=None, error_file=None, require_bterm=False):
     if not error_file:
         error_file = ""
 
-    res = pdnsim.checkConnectivity(design.getBlock().findNet(net), False, error_file, require_bterm)
+    res = pdnsim.checkConnectivity(
+        design.getBlock().findNet(net), False, error_file, require_bterm
+    )
     if res == 0:
         utl.error(utl.PSM, 169, "Check connectivity failed.")
     return res
