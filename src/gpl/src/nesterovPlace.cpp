@@ -321,11 +321,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   // routability snapshot info
   bool is_routability_snapshot_saved = false;
   float route_snapshotA = 0;
-  float route_snapshotWlCoefX = 0, route_snapshotWlCoefY = 0;
+  float route_snapshot_WlCoefX = 0, route_snapshot_WlCoefY = 0;
   bool isDivergeTriedRevert = false;
 
   // divergence snapshot info
-  float diverge_snapshotWlCoefX = 0, diverge_snapshotWlCoefY = 0;
+  float diverge_snapshot_WlCoefX = 0, diverge_snapshot_WlCoefY = 0;
 
   // backTracking variable.
   float curA = 1.0;
@@ -414,8 +414,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
     if (!npVars_.disableRevertIfDiverge) {
       if (is_min_hpwl_) {
-        diverge_snapshotWlCoefX = wireLengthCoefX_;
-        diverge_snapshotWlCoefY = wireLengthCoefY_;
+        diverge_snapshot_WlCoefX = wireLengthCoefX_;
+        diverge_snapshot_WlCoefY = wireLengthCoefY_;
         for (auto& nb : nbVec_) {
           nb->snapshot();
         }
@@ -541,8 +541,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         // get back to the working rc size
         rb_->revertGCellSizeToMinRc();
         curA = route_snapshotA;
-        wireLengthCoefX_ = route_snapshotWlCoefX;
-        wireLengthCoefY_ = route_snapshotWlCoefY;
+        wireLengthCoefX_ = route_snapshot_WlCoefX;
+        wireLengthCoefY_ = route_snapshot_WlCoefY;
         nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
         for (auto& nb : nbVec_) {
           nb->revertDivergence();
@@ -566,8 +566,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                    diverge_snapshot_iter_,
                    diverge_snapshot_average_overflow_unscaled_,
                    min_hpwl_);
-        wireLengthCoefX_ = diverge_snapshotWlCoefX;
-        wireLengthCoefY_ = diverge_snapshotWlCoefY;
+        wireLengthCoefX_ = diverge_snapshot_WlCoefX;
+        wireLengthCoefY_ = diverge_snapshot_WlCoefY;
         nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
         for (auto& nb : nbVec_) {
           nb->revertDivergence();
@@ -581,8 +581,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
     if (!is_routability_snapshot_saved && npVars_.routabilityDrivenMode
         && 0.6 >= average_overflow_unscaled_) {
-      route_snapshotWlCoefX = wireLengthCoefX_;
-      route_snapshotWlCoefY = wireLengthCoefY_;
+      route_snapshot_WlCoefX = wireLengthCoefX_;
+      route_snapshot_WlCoefY = wireLengthCoefY_;
       route_snapshotA = curA;
       is_routability_snapshot_saved = true;
 
@@ -608,8 +608,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
         // revert back the current density penality
         curA = route_snapshotA;
-        wireLengthCoefX_ = route_snapshotWlCoefX;
-        wireLengthCoefY_ = route_snapshotWlCoefY;
+        wireLengthCoefX_ = route_snapshot_WlCoefX;
+        wireLengthCoefY_ = route_snapshot_WlCoefY;
 
         nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 

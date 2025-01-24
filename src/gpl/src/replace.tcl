@@ -340,8 +340,6 @@ proc global_placement { args } {
 }
 
 
-
-
 sta::define_cmd_args "cluster_flops" {\
     [-tray_weight tray_weight]\
     [-timing_weight timing_weight]\
