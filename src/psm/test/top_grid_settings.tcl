@@ -4,7 +4,7 @@ read_def Nangate45_data/aes.def
 read_liberty Nangate45/Nangate45_typ.lib
 read_sdc Nangate45_data/aes.sdc
 
-check_power_grid -net VDD
+check_power_grid -net VDD -dont_require_terminals
 set_pdnsim_source_settings -bump_dx 45 -bump_dy 45 -bump_size 25 -bump_interval 2
 analyze_power_grid -net VDD -source_type BUMPS
 set_pdnsim_source_settings -bump_dx 65 -bump_dy 65 -bump_size 25 -bump_interval 4
