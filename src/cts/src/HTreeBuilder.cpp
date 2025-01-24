@@ -64,8 +64,8 @@ void HTreeBuilder::preSinkClustering(
                                        (float) inst.getY() / wireSegmentUnit_);
       mapLocationToSink_[normLocation] = &inst;
       if (!fuzzyEqual(inst.getInsertionDelay(), 0.0, 1e-6)) {
-        setSinkInsertionDelay(
-            normLocation, (double) inst.getInsertionDelay() / wireSegmentUnit_);
+        setSinkInsertionDelay(normLocation,
+                              inst.getInsertionDelay() / wireSegmentUnit_);
         // clang-format off
 	debugPrint(logger_, CTS, "clustering", 1, "sink {} has insDelay {} at {}",
 		   inst.getName(), getSinkInsertionDelay(normLocation),
@@ -358,7 +358,7 @@ void plotBlockage(std::ofstream& file, odb::dbDatabase* db_, int scalingFactor)
     int h = bbox->yMax() / scalingFactor - bbox->yMin() / scalingFactor;
     file << i++ << " " << x << " " << y << " " << w << " " << h
          << " block  scalingFactor=";
-    file << scalingFactor << " " << blockage->getId() << std::endl;
+    file << scalingFactor << " " << blockage->getId() << '\n';
   }
 }
 
@@ -385,7 +385,7 @@ void plotSinks(std::ofstream& file, const std::vector<Point<double>>& sinks)
     double h = 1;
     auto name = "sink_";
     file << cnt++ << " " << x << " " << y << " " << w << " " << h;
-    file << " " << name << " " << std::endl;
+    file << " " << name << '\n';
   }
 }
 
@@ -1252,7 +1252,7 @@ std::string HTreeBuilder::plotHTree()
           double y2 = branchPoint.getY();
           std::string name = "buffer";
           file << levelIdx << " " << x1 << " " << y1 << " " << x2 << " " << y2;
-          file << " " << name << std::endl;
+          file << " " << name << '\n';
         });
   }
 
@@ -1271,7 +1271,7 @@ std::string HTreeBuilder::plotHTree()
 
           file << numSinks << " " << loc.getX() << " " << loc.getY();
           file << " " << px << " " << py << " leafbuffer " << name2;
-          file << " z=" << wireSegmentUnit_ << std::endl;
+          file << " z=" << wireSegmentUnit_ << '\n';
           ++numSinks;
         }
       });
