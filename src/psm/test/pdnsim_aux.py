@@ -81,7 +81,7 @@ def analyze_power_grid(
     )
 
 
-def check_power_grid(design, *, net=None, error_file=None, require_bterm=False):
+def check_power_grid(design, *, net=None, error_file=None, require_bterm=True):
     pdnsim = design.getPDNSim()
     if not net:
         utl.error(utl.PSM, 157, "Argument 'net' not specified to check_power_grid.")

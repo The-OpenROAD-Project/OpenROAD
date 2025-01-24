@@ -37,13 +37,13 @@ sta::define_cmd_args "check_power_grid" {
   -net power_net
   [-error_file error_file]
   [-floorplanning]
-  [-require_terminals]
+  [-dont_require_terminals]
 }
 
 proc check_power_grid { args } {
   sta::parse_key_args "check_power_grid" args \
     keys {-net -error_file} \
-    flags {-floorplanning -require_terminals}
+    flags {-floorplanning -dont_require_terminals}
 
   if { ![info exists keys(-net)] } {
     utl::error PSM 57 "Argument -net not specified."
@@ -55,13 +55,13 @@ proc check_power_grid { args } {
   }
 
   set floorplanning [info exists flags(-floorplanning)]
-  set require_bterm [info exists flags(-require_terminals)]
+  set dont_require_bterm [info exists flags(-dont_require_terminals)]
 
   psm::check_connectivity_cmd \
     [psm::find_net $keys(-net)] \
     $floorplanning \
     $error_file \
-    $require_bterm
+    $dont_require_bterm
 }
 
 sta::define_cmd_args "analyze_power_grid" {
