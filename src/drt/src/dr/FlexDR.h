@@ -40,7 +40,6 @@
 #include "db/drObj/drNet.h"
 #include "db/infra/frTime.h"
 #include "dr/AbstractDRGraphics.h"
-#include "dr/FlexDR_graphics.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
 #include "dst/JobMessage.h"
@@ -126,7 +125,6 @@ class FlexDR
 
   const FlexDRViaData* getViaData() const { return &via_data_; }
   void setDebug(std::unique_ptr<AbstractDRGraphics> dr_graphics);
-  void setDebug(frDebugSettings* settings);
 
   // For post-deserialization update
   void setLogger(Logger* logger) { logger_ = logger; }

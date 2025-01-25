@@ -40,12 +40,6 @@
 #include <cstring>
 #include "ord/OpenRoad.hh"
 #include "triton_route/TritonRoute.h"
-#include "ta/AbstractTAGraphics.h"
-#include "pa/AbstractPAGraphics.h"
-#include "dr/AbstractDRGraphics.h"
-#include "ta/FlexTA_graphics.h"
-#include "pa/FlexPA_graphics.h"
-#include "dr/FlexDR_graphics.h"
 #include "utl/Logger.h"
 %}
 
@@ -131,11 +125,6 @@ void detailed_route_cmd(const char* outputMazeFile,
                     minAccessPoints,
                     saveGuideUpdates,
                     repairPDNLayerName});
-  std::unique_ptr<drt::AbstractTAGraphics> ta_graphics = nullptr;
-  if (drt::FlexTAGraphics::guiActive()) {
-    ta_graphics
-        = std::make_unique<drt::FlexTAGraphics>(router->getDebugSettings(), router->getDesign(), router->getDb());
-  }
   router->main();
   router->setDistributed(false);
 }
