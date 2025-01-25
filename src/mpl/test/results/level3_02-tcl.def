@@ -1,0 +1,670 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN gcd_mem3 ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 400000 500000 ) ;
+ROW ROW_0 FreePDK45_38x28_10R_NP_162NW_34O 10260 11200 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_1 FreePDK45_38x28_10R_NP_162NW_34O 10260 14000 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_2 FreePDK45_38x28_10R_NP_162NW_34O 10260 16800 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_3 FreePDK45_38x28_10R_NP_162NW_34O 10260 19600 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_4 FreePDK45_38x28_10R_NP_162NW_34O 10260 22400 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_5 FreePDK45_38x28_10R_NP_162NW_34O 10260 25200 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_6 FreePDK45_38x28_10R_NP_162NW_34O 10260 28000 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_7 FreePDK45_38x28_10R_NP_162NW_34O 10260 30800 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_8 FreePDK45_38x28_10R_NP_162NW_34O 10260 33600 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_9 FreePDK45_38x28_10R_NP_162NW_34O 10260 36400 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_10 FreePDK45_38x28_10R_NP_162NW_34O 10260 39200 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_11 FreePDK45_38x28_10R_NP_162NW_34O 10260 42000 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_12 FreePDK45_38x28_10R_NP_162NW_34O 10260 44800 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_13 FreePDK45_38x28_10R_NP_162NW_34O 10260 47600 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_14 FreePDK45_38x28_10R_NP_162NW_34O 10260 50400 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_15 FreePDK45_38x28_10R_NP_162NW_34O 10260 53200 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_16 FreePDK45_38x28_10R_NP_162NW_34O 10260 56000 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_17 FreePDK45_38x28_10R_NP_162NW_34O 10260 58800 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_18 FreePDK45_38x28_10R_NP_162NW_34O 10260 61600 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_19 FreePDK45_38x28_10R_NP_162NW_34O 10260 64400 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_20 FreePDK45_38x28_10R_NP_162NW_34O 10260 67200 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_21 FreePDK45_38x28_10R_NP_162NW_34O 10260 70000 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_22 FreePDK45_38x28_10R_NP_162NW_34O 10260 72800 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_23 FreePDK45_38x28_10R_NP_162NW_34O 10260 75600 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_24 FreePDK45_38x28_10R_NP_162NW_34O 10260 78400 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_25 FreePDK45_38x28_10R_NP_162NW_34O 10260 81200 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_26 FreePDK45_38x28_10R_NP_162NW_34O 10260 84000 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_27 FreePDK45_38x28_10R_NP_162NW_34O 10260 86800 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_28 FreePDK45_38x28_10R_NP_162NW_34O 10260 89600 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_29 FreePDK45_38x28_10R_NP_162NW_34O 10260 92400 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_30 FreePDK45_38x28_10R_NP_162NW_34O 10260 95200 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_31 FreePDK45_38x28_10R_NP_162NW_34O 10260 98000 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_32 FreePDK45_38x28_10R_NP_162NW_34O 10260 100800 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_33 FreePDK45_38x28_10R_NP_162NW_34O 10260 103600 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_34 FreePDK45_38x28_10R_NP_162NW_34O 10260 106400 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_35 FreePDK45_38x28_10R_NP_162NW_34O 10260 109200 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_36 FreePDK45_38x28_10R_NP_162NW_34O 10260 112000 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_37 FreePDK45_38x28_10R_NP_162NW_34O 10260 114800 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_38 FreePDK45_38x28_10R_NP_162NW_34O 10260 117600 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_39 FreePDK45_38x28_10R_NP_162NW_34O 10260 120400 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_40 FreePDK45_38x28_10R_NP_162NW_34O 10260 123200 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_41 FreePDK45_38x28_10R_NP_162NW_34O 10260 126000 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_42 FreePDK45_38x28_10R_NP_162NW_34O 10260 128800 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_43 FreePDK45_38x28_10R_NP_162NW_34O 10260 131600 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_44 FreePDK45_38x28_10R_NP_162NW_34O 10260 134400 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_45 FreePDK45_38x28_10R_NP_162NW_34O 10260 137200 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_46 FreePDK45_38x28_10R_NP_162NW_34O 10260 140000 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_47 FreePDK45_38x28_10R_NP_162NW_34O 10260 142800 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_48 FreePDK45_38x28_10R_NP_162NW_34O 10260 145600 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_49 FreePDK45_38x28_10R_NP_162NW_34O 10260 148400 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_50 FreePDK45_38x28_10R_NP_162NW_34O 10260 151200 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_51 FreePDK45_38x28_10R_NP_162NW_34O 10260 154000 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_52 FreePDK45_38x28_10R_NP_162NW_34O 10260 156800 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_53 FreePDK45_38x28_10R_NP_162NW_34O 10260 159600 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_54 FreePDK45_38x28_10R_NP_162NW_34O 10260 162400 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_55 FreePDK45_38x28_10R_NP_162NW_34O 10260 165200 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_56 FreePDK45_38x28_10R_NP_162NW_34O 10260 168000 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_57 FreePDK45_38x28_10R_NP_162NW_34O 10260 170800 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_58 FreePDK45_38x28_10R_NP_162NW_34O 10260 173600 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_59 FreePDK45_38x28_10R_NP_162NW_34O 10260 176400 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_60 FreePDK45_38x28_10R_NP_162NW_34O 10260 179200 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_61 FreePDK45_38x28_10R_NP_162NW_34O 10260 182000 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_62 FreePDK45_38x28_10R_NP_162NW_34O 10260 184800 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_63 FreePDK45_38x28_10R_NP_162NW_34O 10260 187600 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_64 FreePDK45_38x28_10R_NP_162NW_34O 10260 190400 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_65 FreePDK45_38x28_10R_NP_162NW_34O 10260 193200 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_66 FreePDK45_38x28_10R_NP_162NW_34O 10260 196000 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_67 FreePDK45_38x28_10R_NP_162NW_34O 10260 198800 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_68 FreePDK45_38x28_10R_NP_162NW_34O 10260 201600 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_69 FreePDK45_38x28_10R_NP_162NW_34O 10260 204400 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_70 FreePDK45_38x28_10R_NP_162NW_34O 10260 207200 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_71 FreePDK45_38x28_10R_NP_162NW_34O 10260 210000 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_72 FreePDK45_38x28_10R_NP_162NW_34O 10260 212800 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_73 FreePDK45_38x28_10R_NP_162NW_34O 10260 215600 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_74 FreePDK45_38x28_10R_NP_162NW_34O 10260 218400 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_75 FreePDK45_38x28_10R_NP_162NW_34O 10260 221200 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_76 FreePDK45_38x28_10R_NP_162NW_34O 10260 224000 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_77 FreePDK45_38x28_10R_NP_162NW_34O 10260 226800 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_78 FreePDK45_38x28_10R_NP_162NW_34O 10260 229600 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_79 FreePDK45_38x28_10R_NP_162NW_34O 10260 232400 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_80 FreePDK45_38x28_10R_NP_162NW_34O 10260 235200 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_81 FreePDK45_38x28_10R_NP_162NW_34O 10260 238000 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_82 FreePDK45_38x28_10R_NP_162NW_34O 10260 240800 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_83 FreePDK45_38x28_10R_NP_162NW_34O 10260 243600 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_84 FreePDK45_38x28_10R_NP_162NW_34O 10260 246400 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_85 FreePDK45_38x28_10R_NP_162NW_34O 10260 249200 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_86 FreePDK45_38x28_10R_NP_162NW_34O 10260 252000 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_87 FreePDK45_38x28_10R_NP_162NW_34O 10260 254800 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_88 FreePDK45_38x28_10R_NP_162NW_34O 10260 257600 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_89 FreePDK45_38x28_10R_NP_162NW_34O 10260 260400 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_90 FreePDK45_38x28_10R_NP_162NW_34O 10260 263200 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_91 FreePDK45_38x28_10R_NP_162NW_34O 10260 266000 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_92 FreePDK45_38x28_10R_NP_162NW_34O 10260 268800 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_93 FreePDK45_38x28_10R_NP_162NW_34O 10260 271600 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_94 FreePDK45_38x28_10R_NP_162NW_34O 10260 274400 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_95 FreePDK45_38x28_10R_NP_162NW_34O 10260 277200 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_96 FreePDK45_38x28_10R_NP_162NW_34O 10260 280000 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_97 FreePDK45_38x28_10R_NP_162NW_34O 10260 282800 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_98 FreePDK45_38x28_10R_NP_162NW_34O 10260 285600 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_99 FreePDK45_38x28_10R_NP_162NW_34O 10260 288400 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_100 FreePDK45_38x28_10R_NP_162NW_34O 10260 291200 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_101 FreePDK45_38x28_10R_NP_162NW_34O 10260 294000 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_102 FreePDK45_38x28_10R_NP_162NW_34O 10260 296800 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_103 FreePDK45_38x28_10R_NP_162NW_34O 10260 299600 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_104 FreePDK45_38x28_10R_NP_162NW_34O 10260 302400 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_105 FreePDK45_38x28_10R_NP_162NW_34O 10260 305200 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_106 FreePDK45_38x28_10R_NP_162NW_34O 10260 308000 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_107 FreePDK45_38x28_10R_NP_162NW_34O 10260 310800 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_108 FreePDK45_38x28_10R_NP_162NW_34O 10260 313600 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_109 FreePDK45_38x28_10R_NP_162NW_34O 10260 316400 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_110 FreePDK45_38x28_10R_NP_162NW_34O 10260 319200 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_111 FreePDK45_38x28_10R_NP_162NW_34O 10260 322000 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_112 FreePDK45_38x28_10R_NP_162NW_34O 10260 324800 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_113 FreePDK45_38x28_10R_NP_162NW_34O 10260 327600 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_114 FreePDK45_38x28_10R_NP_162NW_34O 10260 330400 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_115 FreePDK45_38x28_10R_NP_162NW_34O 10260 333200 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_116 FreePDK45_38x28_10R_NP_162NW_34O 10260 336000 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_117 FreePDK45_38x28_10R_NP_162NW_34O 10260 338800 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_118 FreePDK45_38x28_10R_NP_162NW_34O 10260 341600 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_119 FreePDK45_38x28_10R_NP_162NW_34O 10260 344400 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_120 FreePDK45_38x28_10R_NP_162NW_34O 10260 347200 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_121 FreePDK45_38x28_10R_NP_162NW_34O 10260 350000 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_122 FreePDK45_38x28_10R_NP_162NW_34O 10260 352800 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_123 FreePDK45_38x28_10R_NP_162NW_34O 10260 355600 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_124 FreePDK45_38x28_10R_NP_162NW_34O 10260 358400 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_125 FreePDK45_38x28_10R_NP_162NW_34O 10260 361200 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_126 FreePDK45_38x28_10R_NP_162NW_34O 10260 364000 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_127 FreePDK45_38x28_10R_NP_162NW_34O 10260 366800 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_128 FreePDK45_38x28_10R_NP_162NW_34O 10260 369600 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_129 FreePDK45_38x28_10R_NP_162NW_34O 10260 372400 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_130 FreePDK45_38x28_10R_NP_162NW_34O 10260 375200 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_131 FreePDK45_38x28_10R_NP_162NW_34O 10260 378000 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_132 FreePDK45_38x28_10R_NP_162NW_34O 10260 380800 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_133 FreePDK45_38x28_10R_NP_162NW_34O 10260 383600 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_134 FreePDK45_38x28_10R_NP_162NW_34O 10260 386400 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_135 FreePDK45_38x28_10R_NP_162NW_34O 10260 389200 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_136 FreePDK45_38x28_10R_NP_162NW_34O 10260 392000 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_137 FreePDK45_38x28_10R_NP_162NW_34O 10260 394800 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_138 FreePDK45_38x28_10R_NP_162NW_34O 10260 397600 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_139 FreePDK45_38x28_10R_NP_162NW_34O 10260 400400 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_140 FreePDK45_38x28_10R_NP_162NW_34O 10260 403200 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_141 FreePDK45_38x28_10R_NP_162NW_34O 10260 406000 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_142 FreePDK45_38x28_10R_NP_162NW_34O 10260 408800 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_143 FreePDK45_38x28_10R_NP_162NW_34O 10260 411600 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_144 FreePDK45_38x28_10R_NP_162NW_34O 10260 414400 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_145 FreePDK45_38x28_10R_NP_162NW_34O 10260 417200 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_146 FreePDK45_38x28_10R_NP_162NW_34O 10260 420000 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_147 FreePDK45_38x28_10R_NP_162NW_34O 10260 422800 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_148 FreePDK45_38x28_10R_NP_162NW_34O 10260 425600 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_149 FreePDK45_38x28_10R_NP_162NW_34O 10260 428400 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_150 FreePDK45_38x28_10R_NP_162NW_34O 10260 431200 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_151 FreePDK45_38x28_10R_NP_162NW_34O 10260 434000 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_152 FreePDK45_38x28_10R_NP_162NW_34O 10260 436800 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_153 FreePDK45_38x28_10R_NP_162NW_34O 10260 439600 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_154 FreePDK45_38x28_10R_NP_162NW_34O 10260 442400 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_155 FreePDK45_38x28_10R_NP_162NW_34O 10260 445200 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_156 FreePDK45_38x28_10R_NP_162NW_34O 10260 448000 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_157 FreePDK45_38x28_10R_NP_162NW_34O 10260 450800 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_158 FreePDK45_38x28_10R_NP_162NW_34O 10260 453600 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_159 FreePDK45_38x28_10R_NP_162NW_34O 10260 456400 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_160 FreePDK45_38x28_10R_NP_162NW_34O 10260 459200 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_161 FreePDK45_38x28_10R_NP_162NW_34O 10260 462000 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_162 FreePDK45_38x28_10R_NP_162NW_34O 10260 464800 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_163 FreePDK45_38x28_10R_NP_162NW_34O 10260 467600 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_164 FreePDK45_38x28_10R_NP_162NW_34O 10260 470400 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_165 FreePDK45_38x28_10R_NP_162NW_34O 10260 473200 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_166 FreePDK45_38x28_10R_NP_162NW_34O 10260 476000 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_167 FreePDK45_38x28_10R_NP_162NW_34O 10260 478800 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_168 FreePDK45_38x28_10R_NP_162NW_34O 10260 481600 N DO 999 BY 1 STEP 380 0 ;
+ROW ROW_169 FreePDK45_38x28_10R_NP_162NW_34O 10260 484400 FS DO 999 BY 1 STEP 380 0 ;
+ROW ROW_170 FreePDK45_38x28_10R_NP_162NW_34O 10260 487200 N DO 999 BY 1 STEP 380 0 ;
+TRACKS X 190 DO 1053 STEP 380 LAYER metal1 ;
+TRACKS Y 140 DO 1786 STEP 280 LAYER metal1 ;
+TRACKS X 190 DO 1053 STEP 380 LAYER metal2 ;
+TRACKS Y 140 DO 1786 STEP 280 LAYER metal2 ;
+TRACKS X 190 DO 1053 STEP 380 LAYER metal3 ;
+TRACKS Y 140 DO 1786 STEP 280 LAYER metal3 ;
+TRACKS X 190 DO 714 STEP 560 LAYER metal4 ;
+TRACKS Y 140 DO 893 STEP 560 LAYER metal4 ;
+TRACKS X 190 DO 714 STEP 560 LAYER metal5 ;
+TRACKS Y 140 DO 893 STEP 560 LAYER metal5 ;
+TRACKS X 190 DO 714 STEP 560 LAYER metal6 ;
+TRACKS Y 140 DO 893 STEP 560 LAYER metal6 ;
+TRACKS X 190 DO 250 STEP 1600 LAYER metal7 ;
+TRACKS Y 140 DO 313 STEP 1600 LAYER metal7 ;
+TRACKS X 190 DO 250 STEP 1600 LAYER metal8 ;
+TRACKS Y 140 DO 313 STEP 1600 LAYER metal8 ;
+TRACKS X 190 DO 125 STEP 3200 LAYER metal9 ;
+TRACKS Y 140 DO 157 STEP 3200 LAYER metal9 ;
+TRACKS X 190 DO 125 STEP 3200 LAYER metal10 ;
+TRACKS Y 140 DO 157 STEP 3200 LAYER metal10 ;
+COMPONENTS 24 ;
+    - mem0 fakeram45_64x7 + FIXED ( 120960 12320 ) N ;
+    - mem1 fakeram45_64x7 + FIXED ( 11200 12320 ) N ;
+    - mem2 fakeram45_64x7 + FIXED ( 11200 126000 ) N ;
+    - r10 DFF_X1 + PLACED ( 271943 237755 ) N ;
+    - r11 DFF_X1 + PLACED ( 272620 167794 ) N ;
+    - r12 DFF_X1 + PLACED ( 271233 279956 ) N ;
+    - r13 DFF_X1 + PLACED ( 272574 186112 ) N ;
+    - r14 DFF_X1 + PLACED ( 249426 281046 ) N ;
+    - r15 DFF_X1 + PLACED ( 257303 283908 ) N ;
+    - r16 DFF_X1 + PLACED ( 247770 185936 ) N ;
+    - r20 DFF_X1 + PLACED ( 280236 213431 ) N ;
+    - r21 DFF_X1 + PLACED ( 280718 168590 ) N ;
+    - r22 DFF_X1 + PLACED ( 279560 242458 ) N ;
+    - r23 DFF_X1 + PLACED ( 280538 183269 ) N ;
+    - r24 DFF_X1 + PLACED ( 258939 246700 ) N ;
+    - r25 DFF_X1 + PLACED ( 256782 249421 ) N ;
+    - r26 DFF_X1 + PLACED ( 258228 186053 ) N ;
+    - r30 DFF_X1 + PLACED ( 272784 189680 ) N ;
+    - r31 DFF_X1 + PLACED ( 273077 168741 ) N ;
+    - r32 DFF_X1 + PLACED ( 272483 207243 ) N ;
+    - r33 DFF_X1 + PLACED ( 273107 179251 ) N ;
+    - r34 DFF_X1 + PLACED ( 269393 212886 ) N ;
+    - r35 DFF_X1 + PLACED ( 274628 215881 ) N ;
+    - r36 DFF_X1 + PLACED ( 269094 186256 ) N ;
+END COMPONENTS
+PINS 75 ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 43260 ) N ;
+    - mem_out0[0] + NET mem_out0[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 256620 ) N ;
+    - mem_out0[1] + NET mem_out0[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 24780 ) N ;
+    - mem_out0[2] + NET mem_out0[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 361900 ) N ;
+    - mem_out0[3] + NET mem_out0[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 172060 ) N ;
+    - mem_out0[4] + NET mem_out0[4] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 464380 ) N ;
+    - mem_out0[5] + NET mem_out0[5] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 241110 499930 ) N ;
+    - mem_out0[6] + NET mem_out0[6] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 201590 70 ) N ;
+    - mem_out1[0] + NET mem_out1[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 66780 ) N ;
+    - mem_out1[1] + NET mem_out1[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 338380 ) N ;
+    - mem_out1[2] + NET mem_out1[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 383990 499930 ) N ;
+    - mem_out1[3] + NET mem_out1[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 144590 70 ) N ;
+    - mem_out1[4] + NET mem_out1[4] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 148540 ) N ;
+    - mem_out1[5] + NET mem_out1[5] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 193340 ) N ;
+    - mem_out1[6] + NET mem_out1[6] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 340620 ) N ;
+    - mem_out2[0] + NET mem_out2[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 403900 ) N ;
+    - mem_out2[1] + NET mem_out2[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 317100 ) N ;
+    - mem_out2[2] + NET mem_out2[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 425180 ) N ;
+    - mem_out2[3] + NET mem_out2[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 315590 70 ) N ;
+    - mem_out2[4] + NET mem_out2[4] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 214620 ) N ;
+    - mem_out2[5] + NET mem_out2[5] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 295820 ) N ;
+    - mem_out2[6] + NET mem_out2[6] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 212230 499930 ) N ;
+    - req_msg[0] + NET req_msg[0] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 383180 ) N ;
+    - req_msg[10] + NET req_msg[10] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 3500 ) N ;
+    - req_msg[11] + NET req_msg[11] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 108780 ) N ;
+    - req_msg[12] + NET req_msg[12] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 58710 70 ) N ;
+    - req_msg[13] + NET req_msg[13] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 344470 70 ) N ;
+    - req_msg[14] + NET req_msg[14] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 253820 ) N ;
+    - req_msg[15] + NET req_msg[15] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 422380 ) N ;
+    - req_msg[16] + NET req_msg[16] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 211820 ) N ;
+    - req_msg[17] + NET req_msg[17] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 258590 70 ) N ;
+    - req_msg[18] + NET req_msg[18] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 63980 ) N ;
+    - req_msg[19] + NET req_msg[19] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 115710 70 ) N ;
+    - req_msg[1] + NET req_msg[1] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 40470 499930 ) N ;
+    - req_msg[20] + NET req_msg[20] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 401100 ) N ;
+    - req_msg[21] + NET req_msg[21] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 88060 ) N ;
+    - req_msg[22] + NET req_msg[22] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 97470 499930 ) N ;
+    - req_msg[23] + NET req_msg[23] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 355110 499930 ) N ;
+    - req_msg[24] + NET req_msg[24] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 46060 ) N ;
+    - req_msg[25] + NET req_msg[25] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 126350 499930 ) N ;
+    - req_msg[26] + NET req_msg[26] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 151340 ) N ;
+    - req_msg[27] + NET req_msg[27] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 235340 ) N ;
+    - req_msg[28] + NET req_msg[28] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 85260 ) N ;
+    - req_msg[29] + NET req_msg[29] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 277340 ) N ;
+    - req_msg[2] + NET req_msg[2] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 69350 499930 ) N ;
+    - req_msg[30] + NET req_msg[30] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 183350 499930 ) N ;
+    - req_msg[31] + NET req_msg[31] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 380380 ) N ;
+    - req_msg[3] + NET req_msg[3] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 1710 70 ) N ;
+    - req_msg[4] + NET req_msg[4] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 232540 ) N ;
+    - req_msg[5] + NET req_msg[5] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 155230 499930 ) N ;
+    - req_msg[6] + NET req_msg[6] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 269230 499930 ) N ;
+    - req_msg[7] + NET req_msg[7] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 488460 ) N ;
+    - req_msg[8] + NET req_msg[8] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 106540 ) N ;
+    - req_msg[9] + NET req_msg[9] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 275100 ) N ;
+    - req_rdy + NET req_rdy + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 29830 70 ) N ;
+    - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 467180 ) N ;
+    - reset + NET reset + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 169820 ) N ;
+    - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 230470 70 ) N ;
+    - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 445900 ) N ;
+    - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 130060 ) N ;
+    - resp_msg[12] + NET resp_msg[12] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 485660 ) N ;
+    - resp_msg[13] + NET resp_msg[13] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 21980 ) N ;
+    - resp_msg[14] + NET resp_msg[14] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 86830 70 ) N ;
+    - resp_msg[15] + NET resp_msg[15] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 172710 70 ) N ;
+    - resp_msg[1] + NET resp_msg[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 190540 ) N ;
+    - resp_msg[2] + NET resp_msg[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 319900 ) N ;
+    - resp_msg[3] + NET resp_msg[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 287470 70 ) N ;
+    - resp_msg[4] + NET resp_msg[4] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 326230 499930 ) N ;
+    - resp_msg[5] + NET resp_msg[5] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 298110 499930 ) N ;
+    - resp_msg[6] + NET resp_msg[6] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 443660 ) N ;
+    - resp_msg[7] + NET resp_msg[7] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 12350 499930 ) N ;
+    - resp_msg[8] + NET resp_msg[8] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 373350 70 ) N ;
+    - resp_msg[9] + NET resp_msg[9] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 127260 ) N ;
+    - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 359100 ) N ;
+    - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 399930 298620 ) N ;
+END PINS
+NETS 139 ;
+    - _003_ ( mem1 w_mask_in[0] ) + USE SIGNAL ;
+    - _006_ ( mem0 we_in ) + USE SIGNAL ;
+    - _007_ ( mem0 ce_in ) + USE SIGNAL ;
+    - _008_ ( mem0 addr_in[5] ) + USE SIGNAL ;
+    - _009_ ( mem0 addr_in[4] ) + USE SIGNAL ;
+    - _010_ ( mem0 addr_in[3] ) + USE SIGNAL ;
+    - _011_ ( mem0 addr_in[2] ) + USE SIGNAL ;
+    - _012_ ( mem2 we_in ) ( mem0 addr_in[1] ) + USE SIGNAL ;
+    - _013_ ( mem2 ce_in ) ( mem0 addr_in[0] ) + USE SIGNAL ;
+    - _014_ ( mem2 addr_in[5] ) ( mem0 wd_in[6] ) + USE SIGNAL ;
+    - _015_ ( mem2 addr_in[4] ) ( mem0 wd_in[5] ) + USE SIGNAL ;
+    - _016_ ( mem2 addr_in[3] ) ( mem0 wd_in[4] ) + USE SIGNAL ;
+    - _017_ ( mem2 addr_in[2] ) ( mem0 wd_in[3] ) + USE SIGNAL ;
+    - _018_ ( mem2 addr_in[1] ) ( mem0 wd_in[2] ) + USE SIGNAL ;
+    - _019_ ( mem2 addr_in[0] ) ( mem0 wd_in[1] ) + USE SIGNAL ;
+    - _020_ ( mem2 wd_in[6] ) ( mem0 wd_in[0] ) + USE SIGNAL ;
+    - _021_ ( mem2 wd_in[5] ) ( mem0 w_mask_in[6] ) + USE SIGNAL ;
+    - _054_ ( mem1 w_mask_in[3] ) + USE SIGNAL ;
+    - _055_ ( mem1 w_mask_in[2] ) + USE SIGNAL ;
+    - _056_ ( mem1 w_mask_in[1] ) + USE SIGNAL ;
+    - _076_ ( mem2 wd_in[4] ) ( mem0 w_mask_in[5] ) + USE SIGNAL ;
+    - _077_ ( mem2 wd_in[3] ) ( mem0 w_mask_in[4] ) + USE SIGNAL ;
+    - _078_ ( mem2 wd_in[2] ) ( mem0 w_mask_in[3] ) + USE SIGNAL ;
+    - _079_ ( mem2 wd_in[1] ) ( mem0 w_mask_in[2] ) + USE SIGNAL ;
+    - _080_ ( mem2 wd_in[0] ) ( mem0 w_mask_in[1] ) + USE SIGNAL ;
+    - _081_ ( mem2 w_mask_in[6] ) ( mem0 w_mask_in[0] ) + USE SIGNAL ;
+    - _082_ ( mem2 w_mask_in[5] ) + USE SIGNAL ;
+    - _083_ ( mem2 w_mask_in[4] ) + USE SIGNAL ;
+    - _084_ ( mem2 w_mask_in[3] ) + USE SIGNAL ;
+    - _085_ ( mem2 w_mask_in[2] ) + USE SIGNAL ;
+    - _086_ ( mem2 w_mask_in[1] ) + USE SIGNAL ;
+    - _087_ ( mem2 w_mask_in[0] ) + USE SIGNAL ;
+    - _090_ ( mem1 we_in ) + USE SIGNAL ;
+    - _091_ ( mem1 ce_in ) + USE SIGNAL ;
+    - _092_ ( mem1 addr_in[5] ) + USE SIGNAL ;
+    - _093_ ( mem1 addr_in[4] ) + USE SIGNAL ;
+    - _094_ ( mem1 addr_in[3] ) + USE SIGNAL ;
+    - _095_ ( mem1 addr_in[2] ) + USE SIGNAL ;
+    - _096_ ( mem1 addr_in[1] ) + USE SIGNAL ;
+    - _097_ ( mem1 addr_in[0] ) + USE SIGNAL ;
+    - _105_ ( mem1 w_mask_in[6] ) + USE SIGNAL ;
+    - _106_ ( mem1 w_mask_in[5] ) + USE SIGNAL ;
+    - _107_ ( mem1 w_mask_in[4] ) + USE SIGNAL ;
+    - clk ( PIN clk ) ( r36 CK ) ( r35 CK ) ( r34 CK ) ( r33 CK ) ( r32 CK ) ( r31 CK )
+      ( r30 CK ) ( r26 CK ) ( r25 CK ) ( r24 CK ) ( r23 CK ) ( r22 CK ) ( r21 CK ) ( r20 CK )
+      ( r16 CK ) ( r15 CK ) ( r14 CK ) ( r13 CK ) ( r12 CK ) ( r11 CK ) ( r10 CK ) ( mem2 clk )
+      ( mem1 clk ) ( mem0 clk ) + USE SIGNAL ;
+    - l1[0] ( r20 D ) ( r10 Q ) + USE SIGNAL ;
+    - l1[1] ( r21 D ) ( r11 Q ) + USE SIGNAL ;
+    - l1[2] ( r22 D ) ( r12 Q ) + USE SIGNAL ;
+    - l1[3] ( r23 D ) ( r13 Q ) + USE SIGNAL ;
+    - l1[4] ( r24 D ) ( r14 Q ) + USE SIGNAL ;
+    - l1[5] ( r25 D ) ( r15 Q ) + USE SIGNAL ;
+    - l1[6] ( r26 D ) ( r16 Q ) + USE SIGNAL ;
+    - l2[0] ( r30 D ) ( r20 Q ) + USE SIGNAL ;
+    - l2[1] ( r31 D ) ( r21 Q ) + USE SIGNAL ;
+    - l2[2] ( r32 D ) ( r22 Q ) + USE SIGNAL ;
+    - l2[3] ( r33 D ) ( r23 Q ) + USE SIGNAL ;
+    - l2[4] ( r34 D ) ( r24 Q ) + USE SIGNAL ;
+    - l2[5] ( r35 D ) ( r25 Q ) + USE SIGNAL ;
+    - l2[6] ( r36 D ) ( r26 Q ) + USE SIGNAL ;
+    - l3[0] ( r30 Q ) ( mem1 wd_in[0] ) + USE SIGNAL ;
+    - l3[1] ( r31 Q ) ( mem1 wd_in[1] ) + USE SIGNAL ;
+    - l3[2] ( r32 Q ) ( mem1 wd_in[2] ) + USE SIGNAL ;
+    - l3[3] ( r33 Q ) ( mem1 wd_in[3] ) + USE SIGNAL ;
+    - l3[4] ( r34 Q ) ( mem1 wd_in[4] ) + USE SIGNAL ;
+    - l3[5] ( r35 Q ) ( mem1 wd_in[5] ) + USE SIGNAL ;
+    - l3[6] ( r36 Q ) ( mem1 wd_in[6] ) + USE SIGNAL ;
+    - mem_out0[0] ( PIN mem_out0[0] ) ( r10 D ) ( mem0 rd_out[0] ) + USE SIGNAL ;
+    - mem_out0[1] ( PIN mem_out0[1] ) ( r11 D ) ( mem0 rd_out[1] ) + USE SIGNAL ;
+    - mem_out0[2] ( PIN mem_out0[2] ) ( r12 D ) ( mem0 rd_out[2] ) + USE SIGNAL ;
+    - mem_out0[3] ( PIN mem_out0[3] ) ( r13 D ) ( mem0 rd_out[3] ) + USE SIGNAL ;
+    - mem_out0[4] ( PIN mem_out0[4] ) ( r14 D ) ( mem0 rd_out[4] ) + USE SIGNAL ;
+    - mem_out0[5] ( PIN mem_out0[5] ) ( r15 D ) ( mem0 rd_out[5] ) + USE SIGNAL ;
+    - mem_out0[6] ( PIN mem_out0[6] ) ( r16 D ) ( mem0 rd_out[6] ) + USE SIGNAL ;
+    - mem_out1[0] ( PIN mem_out1[0] ) ( mem1 rd_out[0] ) + USE SIGNAL ;
+    - mem_out1[1] ( PIN mem_out1[1] ) ( mem1 rd_out[1] ) + USE SIGNAL ;
+    - mem_out1[2] ( PIN mem_out1[2] ) ( mem1 rd_out[2] ) + USE SIGNAL ;
+    - mem_out1[3] ( PIN mem_out1[3] ) ( mem1 rd_out[3] ) + USE SIGNAL ;
+    - mem_out1[4] ( PIN mem_out1[4] ) ( mem1 rd_out[4] ) + USE SIGNAL ;
+    - mem_out1[5] ( PIN mem_out1[5] ) ( mem1 rd_out[5] ) + USE SIGNAL ;
+    - mem_out1[6] ( PIN mem_out1[6] ) ( mem1 rd_out[6] ) + USE SIGNAL ;
+    - mem_out2[0] ( PIN mem_out2[0] ) ( mem2 rd_out[0] ) + USE SIGNAL ;
+    - mem_out2[1] ( PIN mem_out2[1] ) ( mem2 rd_out[1] ) + USE SIGNAL ;
+    - mem_out2[2] ( PIN mem_out2[2] ) ( mem2 rd_out[2] ) + USE SIGNAL ;
+    - mem_out2[3] ( PIN mem_out2[3] ) ( mem2 rd_out[3] ) + USE SIGNAL ;
+    - mem_out2[4] ( PIN mem_out2[4] ) ( mem2 rd_out[4] ) + USE SIGNAL ;
+    - mem_out2[5] ( PIN mem_out2[5] ) ( mem2 rd_out[5] ) + USE SIGNAL ;
+    - mem_out2[6] ( PIN mem_out2[6] ) ( mem2 rd_out[6] ) + USE SIGNAL ;
+    - req_msg[0] ( PIN req_msg[0] ) + USE SIGNAL ;
+    - req_msg[10] ( PIN req_msg[10] ) + USE SIGNAL ;
+    - req_msg[11] ( PIN req_msg[11] ) + USE SIGNAL ;
+    - req_msg[12] ( PIN req_msg[12] ) + USE SIGNAL ;
+    - req_msg[13] ( PIN req_msg[13] ) + USE SIGNAL ;
+    - req_msg[14] ( PIN req_msg[14] ) + USE SIGNAL ;
+    - req_msg[15] ( PIN req_msg[15] ) + USE SIGNAL ;
+    - req_msg[16] ( PIN req_msg[16] ) + USE SIGNAL ;
+    - req_msg[17] ( PIN req_msg[17] ) + USE SIGNAL ;
+    - req_msg[18] ( PIN req_msg[18] ) + USE SIGNAL ;
+    - req_msg[19] ( PIN req_msg[19] ) + USE SIGNAL ;
+    - req_msg[1] ( PIN req_msg[1] ) + USE SIGNAL ;
+    - req_msg[20] ( PIN req_msg[20] ) + USE SIGNAL ;
+    - req_msg[21] ( PIN req_msg[21] ) + USE SIGNAL ;
+    - req_msg[22] ( PIN req_msg[22] ) + USE SIGNAL ;
+    - req_msg[23] ( PIN req_msg[23] ) + USE SIGNAL ;
+    - req_msg[24] ( PIN req_msg[24] ) + USE SIGNAL ;
+    - req_msg[25] ( PIN req_msg[25] ) + USE SIGNAL ;
+    - req_msg[26] ( PIN req_msg[26] ) + USE SIGNAL ;
+    - req_msg[27] ( PIN req_msg[27] ) + USE SIGNAL ;
+    - req_msg[28] ( PIN req_msg[28] ) + USE SIGNAL ;
+    - req_msg[29] ( PIN req_msg[29] ) + USE SIGNAL ;
+    - req_msg[2] ( PIN req_msg[2] ) + USE SIGNAL ;
+    - req_msg[30] ( PIN req_msg[30] ) + USE SIGNAL ;
+    - req_msg[31] ( PIN req_msg[31] ) + USE SIGNAL ;
+    - req_msg[3] ( PIN req_msg[3] ) + USE SIGNAL ;
+    - req_msg[4] ( PIN req_msg[4] ) + USE SIGNAL ;
+    - req_msg[5] ( PIN req_msg[5] ) + USE SIGNAL ;
+    - req_msg[6] ( PIN req_msg[6] ) + USE SIGNAL ;
+    - req_msg[7] ( PIN req_msg[7] ) + USE SIGNAL ;
+    - req_msg[8] ( PIN req_msg[8] ) + USE SIGNAL ;
+    - req_msg[9] ( PIN req_msg[9] ) + USE SIGNAL ;
+    - req_rdy ( PIN req_rdy ) + USE SIGNAL ;
+    - req_val ( PIN req_val ) + USE SIGNAL ;
+    - reset ( PIN reset ) + USE SIGNAL ;
+    - resp_msg[0] ( PIN resp_msg[0] ) + USE SIGNAL ;
+    - resp_msg[10] ( PIN resp_msg[10] ) + USE SIGNAL ;
+    - resp_msg[11] ( PIN resp_msg[11] ) + USE SIGNAL ;
+    - resp_msg[12] ( PIN resp_msg[12] ) + USE SIGNAL ;
+    - resp_msg[13] ( PIN resp_msg[13] ) + USE SIGNAL ;
+    - resp_msg[14] ( PIN resp_msg[14] ) + USE SIGNAL ;
+    - resp_msg[15] ( PIN resp_msg[15] ) + USE SIGNAL ;
+    - resp_msg[1] ( PIN resp_msg[1] ) + USE SIGNAL ;
+    - resp_msg[2] ( PIN resp_msg[2] ) + USE SIGNAL ;
+    - resp_msg[3] ( PIN resp_msg[3] ) + USE SIGNAL ;
+    - resp_msg[4] ( PIN resp_msg[4] ) + USE SIGNAL ;
+    - resp_msg[5] ( PIN resp_msg[5] ) + USE SIGNAL ;
+    - resp_msg[6] ( PIN resp_msg[6] ) + USE SIGNAL ;
+    - resp_msg[7] ( PIN resp_msg[7] ) + USE SIGNAL ;
+    - resp_msg[8] ( PIN resp_msg[8] ) + USE SIGNAL ;
+    - resp_msg[9] ( PIN resp_msg[9] ) + USE SIGNAL ;
+    - resp_rdy ( PIN resp_rdy ) + USE SIGNAL ;
+    - resp_val ( PIN resp_val ) + USE SIGNAL ;
+END NETS
+END DESIGN

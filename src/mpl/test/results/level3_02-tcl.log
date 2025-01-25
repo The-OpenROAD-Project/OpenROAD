@@ -1,0 +1,87 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/fakeram45_64x7.lef, created 1 library cells
+[INFO ODB-0128] Design: gcd_mem3
+[INFO ODB-0130]     Created 75 pins.
+[INFO ODB-0131]     Created 24 components and 222 component-terminals.
+[INFO ODB-0133]     Created 139 nets and 153 connections.
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: (  5.130  5.600 ) ( 194.940 245.000 ) um
+[INFO GPL-0006] NumInstances:                24
+[INFO GPL-0007] NumPlaceInstances:           24
+[INFO GPL-0008] NumFixedInstances:            0
+[INFO GPL-0009] NumDummyInstances:            0
+[INFO GPL-0010] NumNets:                    139
+[INFO GPL-0011] NumPins:                    228
+[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 200.000 250.000 ) um
+[INFO GPL-0013] CoreBBox: (  5.130  5.600 ) ( 194.940 245.000 ) um
+[INFO GPL-0016] CoreArea:             45440.514 um^2
+[INFO GPL-0017] NonPlaceInstsArea:        0.000 um^2
+[INFO GPL-0018] PlaceInstsArea:        9128.322 um^2
+[INFO GPL-0019] Util:                    20.089 %
+[INFO GPL-0020] StdInstsArea:            94.962 um^2
+[INFO GPL-0021] MacroInstsArea:        9033.360 um^2
+[InitialPlace]  Iter: 1 CG residual: 0.00000009 HPWL: 21592182
+[InitialPlace]  Iter: 2 CG residual: 0.00000004 HPWL: 20919637
+[InitialPlace]  Iter: 3 CG residual: 0.00000007 HPWL: 20817286
+[InitialPlace]  Iter: 4 CG residual: 0.00000008 HPWL: 20768809
+[InitialPlace]  Iter: 5 CG residual: 0.00000009 HPWL: 20764722
+[INFO GPL-0031] FillerInit:NumGCells:      1150
+[INFO GPL-0032] FillerInit:NumGNets:        139
+[INFO GPL-0033] FillerInit:NumGPins:        228
+[INFO GPL-0023] TargetDensity:            0.700
+[INFO GPL-0024] AvrgPlaceInstArea:      380.347 um^2
+[INFO GPL-0025] IdealBinArea:           543.353 um^2
+[INFO GPL-0026] IdealBinCnt:                 83
+[INFO GPL-0027] TotalBinArea:         45440.514 um^2
+[INFO GPL-0028] BinCnt:         8      8
+[INFO GPL-0029] BinSize: ( 23.727 29.925 )
+[INFO GPL-0030] NumBins: 64
+[NesterovSolve] Iter:    1 overflow: 0.398 HPWL: 7410672
+[NesterovSolve] Iter:   10 overflow: 0.376 HPWL: 7433283
+[NesterovSolve] Iter:   20 overflow: 0.386 HPWL: 7431963
+[NesterovSolve] Iter:   30 overflow: 0.383 HPWL: 7431378
+[NesterovSolve] Iter:   40 overflow: 0.384 HPWL: 7435211
+[NesterovSolve] Iter:   50 overflow: 0.384 HPWL: 7433865
+[NesterovSolve] Iter:   60 overflow: 0.383 HPWL: 7433471
+[NesterovSolve] Iter:   70 overflow: 0.383 HPWL: 7432435
+[NesterovSolve] Iter:   80 overflow: 0.383 HPWL: 7430935
+[NesterovSolve] Iter:   90 overflow: 0.383 HPWL: 7428619
+[NesterovSolve] Iter:  100 overflow: 0.382 HPWL: 7425063
+[NesterovSolve] Iter:  110 overflow: 0.382 HPWL: 7419775
+[NesterovSolve] Iter:  120 overflow: 0.381 HPWL: 7416047
+[NesterovSolve] Iter:  130 overflow: 0.380 HPWL: 7415706
+[NesterovSolve] Iter:  140 overflow: 0.377 HPWL: 7417568
+[NesterovSolve] Iter:  150 overflow: 0.374 HPWL: 7426705
+[NesterovSolve] Iter:  160 overflow: 0.370 HPWL: 7441687
+[NesterovSolve] Iter:  170 overflow: 0.366 HPWL: 7459936
+[NesterovSolve] Iter:  180 overflow: 0.362 HPWL: 7477805
+[NesterovSolve] Iter:  190 overflow: 0.360 HPWL: 7489113
+[NesterovSolve] Iter:  200 overflow: 0.359 HPWL: 7478203
+[NesterovSolve] Iter:  210 overflow: 0.358 HPWL: 7448550
+[NesterovSolve] Iter:  220 overflow: 0.353 HPWL: 7440154
+[NesterovSolve] Iter:  230 overflow: 0.345 HPWL: 7441557
+[NesterovSolve] Iter:  240 overflow: 0.339 HPWL: 7413070
+[NesterovSolve] Iter:  250 overflow: 0.327 HPWL: 7410081
+[NesterovSolve] Iter:  260 overflow: 0.312 HPWL: 7391901
+[NesterovSolve] Iter:  270 overflow: 0.291 HPWL: 7413584
+[NesterovSolve] Iter:  280 overflow: 0.263 HPWL: 7410839
+[NesterovSolve] Iter:  290 overflow: 0.228 HPWL: 7407697
+[NesterovSolve] Iter:  300 overflow: 0.197 HPWL: 7387747
+[NesterovSolve] Iter:  310 overflow: 0.185 HPWL: 7387967
+[NesterovSolve] Iter:  320 overflow: 0.162 HPWL: 7408639
+[NesterovSolve] Iter:  330 overflow: 0.150 HPWL: 7438422
+[NesterovSolve] Iter:  340 overflow: 0.149 HPWL: 7481553
+[NesterovSolve] Iter:  350 overflow: 0.146 HPWL: 7541164
+[NesterovSolve] Iter:  360 overflow: 0.136 HPWL: 7595990
+[NesterovSolve] Iter:  370 overflow: 0.122 HPWL: 7630448
+[NesterovSolve] Iter:  380 overflow: 0.105 HPWL: 7727198
+[NesterovSolve] Finished with Overflow: 0.098313
+[INFO MPL-0101] Found 3 macros.
+[INFO MPL-0102] West pins 24.
+[INFO MPL-0102] East pins 23.
+[INFO MPL-0102] North pins 14.
+[INFO MPL-0102] South pins 14.
+[INFO MPL-0067] Initial weighted wire length 2566.13.
+[INFO MPL-0068] Placed weighted wire length 3185.
+No differences found.
