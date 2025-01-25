@@ -47,7 +47,6 @@
 #include "distributed/frArchive.h"
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR_conn.h"
-#include "dr/FlexDR_graphics.h"
 #include "dst/BalancerJobDescription.h"
 #include "dst/Distributed.h"
 #include "frProfileTask.h"
@@ -127,15 +126,6 @@ FlexDR::~FlexDR() = default;
 void FlexDR::setDebug(std::unique_ptr<AbstractDRGraphics> dr_graphics)
 {
   graphics_ = std::move(dr_graphics);
-}
-
-void FlexDR::setDebug(frDebugSettings* settings)
-{
-  bool on = settings->debugDR;
-  graphics_
-      = on && FlexDRGraphics::guiActive()
-            ? std::make_unique<FlexDRGraphics>(settings, design_, db_, logger_)
-            : nullptr;
 }
 
 std::string FlexDRWorker::reloadedMain()

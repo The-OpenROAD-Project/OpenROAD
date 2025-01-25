@@ -631,7 +631,7 @@ void TritonRoute::dr()
   num_drvs_ = -1;
   dr_ = std::make_unique<FlexDR>(
       this, getDesign(), logger_, db_, router_cfg_.get());
-  dr_->setDebug(debug_.get());
+  dr_->setDebug(std::move(dr_graphics_));
   if (distributed_) {
     dr_->setDistributed(dist_, dist_ip_, dist_port_, shared_volume_);
   }
