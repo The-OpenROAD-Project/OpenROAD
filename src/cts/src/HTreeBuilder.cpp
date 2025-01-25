@@ -193,28 +193,14 @@ void HTreeBuilder::preSinkClustering(
       std::vector<ClockInst*> clusterClockInsts;  // sink clock insts
       float xSum = 0;
       float ySum = 0;
-      double insDelay = 0.0;
       for (auto point_idx : cluster) {
         const std::pair<double, double>& point = points[point_idx];
         const Point<double> mapPoint(point.first, point.second);
         if (mapLocationToSink_.find(mapPoint) == mapLocationToSink_.end()) {
           logger_->error(CTS, 79, "Sink not found.");
         }
-        // add 4 points to account for insertion delay
-        if (sinkHasInsertionDelay(mapPoint)) {
-          insDelay = getSinkInsertionDelay(mapPoint);
-          xSum += point.first + insDelay;
-          xSum += point.first - insDelay;
-          ySum += point.second + insDelay;
-          ySum += point.second - insDelay;
-          // clang-format off
-          debugPrint(logger_, CTS, "clustering", 1, "added extra ins delay weights "
-                     "at sink {}: {:0.3f}", mapPoint, insDelay);
-          // clang-format on
-        } else {
-          xSum += point.first;
-          ySum += point.second;
-        }
+        xSum += point.first;
+        ySum += point.second;
         clusterClockInsts.push_back(mapLocationToSink_[mapPoint]);
         // clock inst needs to be added to the new subnet
       }
