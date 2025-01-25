@@ -240,7 +240,7 @@ class TritonCTS
   std::map<ClockInst*, ClockSubNet*> driver2subnet_;
 
   // db vars
-  odb::dbDatabase* db_;
+  odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   unsigned numberOfClocks_ = 0;
   unsigned numClkNets_ = 0;
