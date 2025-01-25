@@ -88,15 +88,17 @@ class FlexDRGraphics : public gui::Renderer, public AbstractDRGraphics
 
   void init() override;
 
-  void show(bool checkStopConditions);
+  void show(bool checkStopConditions) override;
 
-  void update();
+  void update() override;
 
-  void pause(drNet* net);
+  void pause(drNet* net) override;
 
-  void debugWholeDesign();
+  void debugWholeDesign() override;
 
-  void drawObj(frBlockObject* fig, gui::Painter& painter, int layerNum);
+  void drawObj(frBlockObject* fig,
+               gui::Painter& painter,
+               int layerNum) override;
 
  private:
   FlexDRWorker* worker_;
