@@ -70,6 +70,7 @@ using sta::LibertyCellSeq;
 using sta::LibertyCell;
 using sta::Instance;
 using sta::InstanceSeq;
+using sta::InstanceSet;
 using sta::Net;
 using sta::NetSeq;
 using sta::Pin;
@@ -301,31 +302,17 @@ have_estimated_parasitics()
   return resizer->haveEstimatedParasitics();
 }
 
-InstanceSeq*
-init_insts_cmd()
-{
-  InstanceSeq* insts = new InstanceSeq;
-  return insts;
-}
-
 void
-add_to_insts_cmd(Instance* inst, InstanceSeq* insts)
-{
-  insts->emplace_back(inst);
-}
-
-void
-delete_insts_cmd(InstanceSeq* insts)
-{
-  delete insts;
-}
-
-void
-remove_buffers_cmd(InstanceSeq insts)
+remove_buffers_cmd(InstanceSeq *insts)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->removeBuffers(std::move(insts));
+  if (insts) {
+    resizer->removeBuffers(*insts);
+    delete insts;
+  } else {
+    resizer->removeBuffers({});
+  }
 }
 
 void
