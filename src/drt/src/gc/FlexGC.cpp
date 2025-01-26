@@ -27,6 +27,7 @@
  */
 
 #include <iostream>
+#include <vector>
 
 #include "gc/FlexGC_impl.h"
 
@@ -37,7 +38,7 @@ FlexGCWorker::FlexGCWorker(frTechObject* techIn,
                            RouterConfiguration* router_cfg,
                            FlexDRWorker* drWorkerIn)
     : impl_(
-        std::make_unique<Impl>(techIn, logger, router_cfg, drWorkerIn, this))
+          std::make_unique<Impl>(techIn, logger, router_cfg, drWorkerIn, this))
 {
 }
 

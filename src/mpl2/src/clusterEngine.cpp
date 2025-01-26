@@ -33,6 +33,8 @@
 
 #include "clusterEngine.h"
 
+#include <vector>
+
 #include "db_sta/dbNetwork.hh"
 #include "par/PartitionMgr.h"
 #include "sta/Liberty.hh"
@@ -64,6 +66,8 @@ void ClusteringEngine::run()
   setBaseThresholds();
 
   createIOClusters();
+  classifyBoundariesStateForIOs();
+
   createDataFlow();
 
   if (design_metrics_->getNumStdCell() == 0) {
@@ -110,41 +114,23 @@ void ClusteringEngine::init()
     return;
   }
 
+  setFloorplanShape();
+  searchForFixedInstsInsideFloorplanShape();
+
   tree_->macro_with_halo_area = computeMacroWithHaloArea(unfixed_macros);
-
-  const odb::Rect die = block_->getDieArea();
-  const odb::Rect core_box = block_->getCoreArea();
-
-  const float core_lx = block_->dbuToMicrons(core_box.xMin());
-  const float core_ly = block_->dbuToMicrons(core_box.yMin());
-  const float core_ux = block_->dbuToMicrons(core_box.xMax());
-  const float core_uy = block_->dbuToMicrons(core_box.yMax());
-
-  const float core_area = (core_ux - core_lx) * (core_uy - core_ly);
   const float inst_area_with_halos
       = tree_->macro_with_halo_area + design_metrics_->getStdCellArea();
 
-  if (inst_area_with_halos > core_area) {
+  if (inst_area_with_halos > tree_->floorplan_shape.getArea()) {
     logger_->error(MPL,
                    16,
                    "The instance area considering the macros' halos {} exceeds "
-                   "the core area {}",
+                   "the floorplan area {}",
                    inst_area_with_halos,
-                   core_area);
+                   tree_->floorplan_shape.getArea());
   }
 
-  logger_->report(
-      "Floorplan Outline: ({}, {}) ({}, {}),  Core Outline: ({}, {}) ({}, {})",
-      block_->dbuToMicrons(die.xMin()),
-      block_->dbuToMicrons(die.yMin()),
-      block_->dbuToMicrons(die.xMax()),
-      block_->dbuToMicrons(die.yMax()),
-      core_lx,
-      core_ly,
-      core_ux,
-      core_uy);
-
-  reportDesignData(core_area);
+  reportDesignData();
 }
 
 float ClusteringEngine::computeMacroWithHaloArea(
@@ -173,6 +159,39 @@ std::vector<odb::dbInst*> ClusteringEngine::getUnfixedMacros()
   return unfixed_macros;
 }
 
+void ClusteringEngine::setFloorplanShape()
+{
+  const odb::Rect& core_box = block_->getCoreArea();
+  const float core_lx = block_->dbuToMicrons(core_box.xMin());
+  const float core_ly = block_->dbuToMicrons(core_box.yMin());
+  const float core_ux = block_->dbuToMicrons(core_box.xMax());
+  const float core_uy = block_->dbuToMicrons(core_box.yMax());
+
+  tree_->floorplan_shape = Rect(std::max(core_lx, tree_->global_fence.xMin()),
+                                std::max(core_ly, tree_->global_fence.yMin()),
+                                std::min(core_ux, tree_->global_fence.xMax()),
+                                std::min(core_uy, tree_->global_fence.yMax()));
+}
+
+void ClusteringEngine::searchForFixedInstsInsideFloorplanShape()
+{
+  odb::Rect floorplan_shape(
+      block_->micronsToDbu(tree_->floorplan_shape.xMin()),
+      block_->micronsToDbu(tree_->floorplan_shape.yMin()),
+      block_->micronsToDbu(tree_->floorplan_shape.xMax()),
+      block_->micronsToDbu(tree_->floorplan_shape.yMax()));
+
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->isFixed()
+        && inst->getBBox()->getBox().overlaps(floorplan_shape)) {
+      logger_->error(MPL,
+                     50,
+                     "Found fixed instance {} inside the floorplan area.",
+                     inst->getName());
+    }
+  }
+}
+
 Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
 {
   unsigned int num_std_cell = 0;
@@ -181,14 +200,13 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
   float macro_area = 0.0;
 
   for (odb::dbInst* inst : module->getInsts()) {
-    odb::dbMaster* master = inst->getMaster();
-    if (isIgnoredMaster(master)) {
+    if (isIgnoredInst(inst)) {
       continue;
     }
 
     float inst_area = computeMicronArea(inst);
 
-    if (master->isBlock()) {  // a macro
+    if (inst->isBlock()) {  // a macro
       num_macro += 1;
       macro_area += inst_area;
 
@@ -216,14 +234,26 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
   return tree_->maps.module_to_metrics[module].get();
 }
 
-void ClusteringEngine::reportDesignData(const float core_area)
+void ClusteringEngine::reportDesignData()
 {
+  const odb::Rect& die = block_->getDieArea();
+  logger_->report(
+      "Die Area: ({}, {}) ({}, {}),  Floorplan Area: ({}, {}) ({}, {})",
+      block_->dbuToMicrons(die.xMin()),
+      block_->dbuToMicrons(die.yMin()),
+      block_->dbuToMicrons(die.xMax()),
+      block_->dbuToMicrons(die.yMax()),
+      tree_->floorplan_shape.xMin(),
+      tree_->floorplan_shape.yMin(),
+      tree_->floorplan_shape.xMax(),
+      tree_->floorplan_shape.yMax());
+
   float util
       = (design_metrics_->getStdCellArea() + design_metrics_->getMacroArea())
-        / core_area;
-  float core_util = design_metrics_->getStdCellArea()
-                    / (core_area - design_metrics_->getMacroArea());
-
+        / tree_->floorplan_shape.getArea();
+  float floorplan_util
+      = design_metrics_->getStdCellArea()
+        / (tree_->floorplan_shape.getArea() - design_metrics_->getMacroArea());
   logger_->report(
       "\tNumber of std cell instances: {}\n"
       "\tArea of std cell instances: {:.2f}\n"
@@ -233,9 +263,9 @@ void ClusteringEngine::reportDesignData(const float core_area)
       "\tHalo height: {:.2f}\n"
       "\tArea of macros with halos: {:.2f}\n"
       "\tArea of std cell instances + Area of macros: {:.2f}\n"
-      "\tCore area: {:.2f}\n"
+      "\tFloorplan area: {:.2f}\n"
       "\tDesign Utilization: {:.2f}\n"
-      "\tCore Utilization: {:.2f}\n"
+      "\tFloorplan Utilization: {:.2f}\n"
       "\tManufacturing Grid: {}\n",
       design_metrics_->getNumStdCell(),
       design_metrics_->getStdCellArea(),
@@ -245,9 +275,9 @@ void ClusteringEngine::reportDesignData(const float core_area)
       tree_->halo_height,
       tree_->macro_with_halo_area,
       design_metrics_->getStdCellArea() + design_metrics_->getMacroArea(),
-      core_area,
+      tree_->floorplan_shape.getArea(),
       util,
-      core_util,
+      floorplan_util,
       block_->getTech()->getManufacturingGrid());
 }
 
@@ -327,165 +357,158 @@ void ClusteringEngine::setBaseThresholds()
       tree_->base_min_std_cell);
 }
 
+// Group IOs with the same constraints:
+// 1. If an IO has a constraint region in a certain boundary,
+//    it is constrained to that entire boundary.
+// 2. If an IO has no constraints, it is constrained to all boundaries.
 void ClusteringEngine::createIOClusters()
 {
   mapIOPads();
-  debugPrint(logger_,
-             MPL,
-             "multilevel_autoclustering",
-             1,
-             "Creating bundledIO clusters...");
 
-  // Get the floorplan information and get the range of bundled IO regions
+  // Boundary with constrained IOs -> cluster
+  std::map<Boundary, Cluster*> boundary_to_cluster;
   const odb::Rect die = block_->getDieArea();
-  const odb::Rect core = block_->getCoreArea();
-  const int x_base = (die.xMax() - die.xMin()) / tree_->bundled_ios_per_edge;
-  const int y_base = (die.yMax() - die.yMin()) / tree_->bundled_ios_per_edge;
-  const int cluster_id_base = id_;
 
-  // Map all the BTerms / Pads to Bundled IOs (cluster)
-  std::vector<std::string> prefix_vec;
-  prefix_vec.emplace_back("L");
-  prefix_vec.emplace_back("T");
-  prefix_vec.emplace_back("R");
-  prefix_vec.emplace_back("B");
-  std::map<int, bool> cluster_io_map;
-  for (int i = 0; i < 4;
-       i++) {  // four boundaries (Left, Top, Right and Bottom in order)
-    for (int j = 0; j < tree_->bundled_ios_per_edge; j++) {
-      const std::string cluster_name = prefix_vec[i] + std::to_string(j);
-      auto cluster = std::make_unique<Cluster>(id_, cluster_name, logger_);
-      cluster->setParent(tree_->root.get());
-      cluster_io_map[id_] = false;
-      tree_->maps.id_to_cluster[id_++] = cluster.get();
-      int x = 0.0;
-      int y = 0.0;
-      int width = 0;
-      int height = 0;
-      if (i == 0) {  // Left boundary
-        x = die.xMin();
-        y = die.yMin() + y_base * j;
-        height = y_base;
-      } else if (i == 1) {  // Top boundary
-        x = die.xMin() + x_base * j;
-        y = die.yMax();
-        width = x_base;
-      } else if (i == 2) {  // Right boundary
-        x = die.xMax();
-        y = die.yMax() - y_base * (j + 1);
-        height = y_base;
-      } else {  // Bottom boundary
-        x = die.xMax() - x_base * (j + 1);
-        y = die.yMin();
-        width = x_base;
-      }
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    Boundary constraint_boundary = NONE;
 
-      // set the cluster to a IO cluster
-      cluster->setAsIOCluster(std::pair<float, float>(block_->dbuToMicrons(x),
-                                                      block_->dbuToMicrons(y)),
-                              block_->dbuToMicrons(width),
-                              block_->dbuToMicrons(height));
-      tree_->root->addChild(std::move(cluster));
-    }
-  }
-
-  // Map all the BTerms to bundled IOs
-  for (auto term : block_->getBTerms()) {
-    int lx = std::numeric_limits<int>::max();
-    int ly = std::numeric_limits<int>::max();
-    int ux = 0;
-    int uy = 0;
-    // If the design has IO pads, these block terms
-    // will not have block pins.
-    // Otherwise, the design will have IO pins.
-    for (const auto pin : term->getBPins()) {
-      for (const auto box : pin->getBoxes()) {
-        lx = std::min(lx, box->xMin());
-        ly = std::min(ly, box->yMin());
-        ux = std::max(ux, box->xMax());
-        uy = std::max(uy, box->yMax());
-      }
-    }
-    // remove power pins
-    if (term->getSigType().isSupply()) {
-      continue;
+    auto constraint_region = bterm->getConstraintRegion();
+    if (constraint_region) {
+      constraint_boundary
+          = getConstraintBoundary(die, constraint_region.value());
     }
 
-    // If the term has a connected pad, get the bbox from the pad inst
-    if (tree_->maps.bterm_to_inst.find(term)
-        != tree_->maps.bterm_to_inst.end()) {
-      lx = tree_->maps.bterm_to_inst[term]->getBBox()->xMin();
-      ly = tree_->maps.bterm_to_inst[term]->getBBox()->yMin();
-      ux = tree_->maps.bterm_to_inst[term]->getBBox()->xMax();
-      uy = tree_->maps.bterm_to_inst[term]->getBBox()->yMax();
-      if (lx <= core.xMin()) {
-        lx = die.xMin();
-      }
-      if (ly <= core.yMin()) {
-        ly = die.yMin();
-      }
-      if (ux >= core.xMax()) {
-        ux = die.xMax();
-      }
-      if (uy >= core.yMax()) {
-        uy = die.yMax();
-      }
-    }
-    // calculate cluster id based on the location of IO Pins / Pads
-    int cluster_id = -1;
-    if (lx <= die.xMin()) {
-      // The IO is on the left boundary
-      cluster_id = cluster_id_base
-                   + std::floor(((ly + uy) / 2.0 - die.yMin()) / y_base);
-    } else if (uy >= die.yMax()) {
-      // The IO is on the top boundary
-      cluster_id = cluster_id_base + tree_->bundled_ios_per_edge
-                   + std::floor(((lx + ux) / 2.0 - die.xMin()) / x_base);
-    } else if (ux >= die.xMax()) {
-      // The IO is on the right boundary
-      cluster_id = cluster_id_base + tree_->bundled_ios_per_edge * 2
-                   + std::floor((die.yMax() - (ly + uy) / 2.0) / y_base);
-    } else if (ly <= die.yMin()) {
-      // The IO is on the bottom boundary
-      cluster_id = cluster_id_base + tree_->bundled_ios_per_edge * 3
-                   + std::floor((die.xMax() - (lx + ux) / 2.0) / x_base);
-    }
-
-    // Check if the IO pins / Pads exist
-    if (cluster_id == -1) {
-      logger_->error(
-          MPL,
-          2,
-          "Floorplan has not been initialized? Pin location error for {}.",
-          term->getName());
+    const auto itr = boundary_to_cluster.find(constraint_boundary);
+    if (itr != boundary_to_cluster.end()) {
+      Cluster* io_cluster = itr->second;
+      tree_->maps.bterm_to_cluster_id[bterm] = io_cluster->getId();
     } else {
-      tree_->maps.bterm_to_cluster_id[term] = cluster_id;
-    }
-
-    cluster_io_map[cluster_id] = true;
-  }
-
-  // delete the IO clusters that do not have any pins assigned to them
-  for (auto& [cluster_id, flag] : cluster_io_map) {
-    if (!flag) {
-      debugPrint(logger_,
-                 MPL,
-                 "multilevel_autoclustering",
-                 1,
-                 "Remove IO Cluster with no pins: {}, id: {}",
-                 tree_->maps.id_to_cluster[cluster_id]->getName(),
-                 cluster_id);
-      std::unique_ptr<Cluster> released_bundled_io
-          = tree_->maps.id_to_cluster[cluster_id]->getParent()->releaseChild(
-              tree_->maps.id_to_cluster[cluster_id]);
-      tree_->maps.id_to_cluster.erase(cluster_id);
+      createIOCluster(die, constraint_boundary, boundary_to_cluster, bterm);
     }
   }
 
-  // At this point the cluster map has only the root (id = 0) and bundledIOs
   if (tree_->maps.id_to_cluster.size() == 1) {
     logger_->warn(MPL, 26, "Design has no IO pins!");
     tree_->has_io_clusters = false;
+  }
+}
+
+Boundary ClusteringEngine::getConstraintBoundary(
+    const odb::Rect& die,
+    const odb::Rect& constraint_region)
+{
+  Boundary constraint_boundary = NONE;
+  if (constraint_region.xMin() == constraint_region.xMax()) {
+    if (constraint_region.xMin() == die.xMin()) {
+      constraint_boundary = L;
+    } else {
+      constraint_boundary = R;
+    }
+  } else {
+    if (constraint_region.yMin() == die.yMin()) {
+      constraint_boundary = B;
+    } else {
+      constraint_boundary = T;
+    }
+  }
+  return constraint_boundary;
+}
+
+void ClusteringEngine::createIOCluster(
+    const odb::Rect& die,
+    const Boundary constraint_boundary,
+    std::map<Boundary, Cluster*>& boundary_to_cluster,
+    odb::dbBTerm* bterm)
+{
+  auto cluster
+      = std::make_unique<Cluster>(id_, toString(constraint_boundary), logger_);
+  tree_->maps.bterm_to_cluster_id[bterm] = id_;
+  tree_->maps.id_to_cluster[id_++] = cluster.get();
+
+  boundary_to_cluster[constraint_boundary] = cluster.get();
+
+  int x = die.xMin(), y = die.yMin();
+  int width = die.dx(), height = die.dy();
+
+  if (constraint_boundary != NONE) {
+    setIOClusterDimensions(die, constraint_boundary, x, y, width, height);
+  }
+
+  cluster->setAsIOCluster(
+      std::pair<float, float>(block_->dbuToMicrons(x), block_->dbuToMicrons(y)),
+      block_->dbuToMicrons(width),
+      block_->dbuToMicrons(height),
+      constraint_boundary);
+  tree_->root->addChild(std::move(cluster));
+}
+
+void ClusteringEngine::classifyBoundariesStateForIOs()
+{
+  const float blocked_boundary_threshold = 0.7;
+  std::map<Boundary, float> blockage_extension_map
+      = computeBlockageExtensionMap();
+
+  for (const auto [boundary, blockage_extension] : blockage_extension_map) {
+    if (blockage_extension >= blocked_boundary_threshold) {
+      tree_->blocked_boundaries.insert(boundary);
+    } else {
+      tree_->unblocked_boundaries.insert(boundary);
+    }
+  }
+}
+
+// Computes how much blocked each boundary is for IOs base on PPL exclude
+// contraints.
+std::map<Boundary, float> ClusteringEngine::computeBlockageExtensionMap()
+{
+  std::map<Boundary, float> blockage_extension_map;
+
+  blockage_extension_map[L] = 0.0;
+  blockage_extension_map[R] = 0.0;
+  blockage_extension_map[B] = 0.0;
+  blockage_extension_map[T] = 0.0;
+
+  const odb::Rect die = block_->getDieArea();
+  for (const odb::Rect& blocked_region : block_->getBlockedRegionsForPins()) {
+    Boundary blocked_region_boundary
+        = getConstraintBoundary(die, blocked_region);
+    float blockage_extension = 0.0;
+
+    if (blocked_region_boundary == L || blocked_region_boundary == R) {
+      blockage_extension = blocked_region.dy() / static_cast<float>(die.dy());
+    } else if (blocked_region_boundary == B || blocked_region_boundary == T) {
+      blockage_extension = blocked_region.dx() / static_cast<float>(die.dx());
+    }
+
+    blockage_extension_map[blocked_region_boundary] += blockage_extension;
+  }
+
+  return blockage_extension_map;
+}
+
+void ClusteringEngine::setIOClusterDimensions(const odb::Rect& die,
+                                              const Boundary boundary,
+                                              int& x,
+                                              int& y,
+                                              int& width,
+                                              int& height)
+{
+  if (boundary == L) {
+    x = die.xMin();
+    y = die.yMin();
+    width = 0;
+  } else if (boundary == T) {
+    x = die.xMin();
+    y = die.yMax();
+    height = 0;
+  } else if (boundary == R) {
+    x = die.xMax();
+    y = die.yMin();
+    width = 0;
+  } else {  // Bottom
+    x = die.xMin();
+    y = die.yMin();
+    height = 0;
   }
 }
 
@@ -569,8 +592,7 @@ void ClusteringEngine::createDataFlow()
 bool ClusteringEngine::stdCellsHaveLiberty()
 {
   for (odb::dbInst* inst : block_->getInsts()) {
-    odb::dbMaster* master = inst->getMaster();
-    if (isIgnoredMaster(master) || master->isBlock()) {
+    if (isIgnoredInst(inst) || inst->isBlock()) {
       continue;
     }
 
@@ -613,8 +635,7 @@ void ClusteringEngine::computeIOVertices(VerticesMaps& vertices_maps)
 void ClusteringEngine::computeStdCellVertices(VerticesMaps& vertices_maps)
 {
   for (odb::dbInst* inst : block_->getInsts()) {
-    odb::dbMaster* master = inst->getMaster();
-    if (isIgnoredMaster(master) || master->isBlock()) {
+    if (isIgnoredInst(inst) || inst->isBlock()) {
       continue;
     }
 
@@ -670,14 +691,13 @@ DataFlowHypergraph ClusteringEngine::computeHypergraph(
     bool ignore = false;
     for (odb::dbITerm* iterm : net->getITerms()) {
       odb::dbInst* inst = iterm->getInst();
-      odb::dbMaster* master = inst->getMaster();
-      if (isIgnoredMaster(master)) {
+      if (isIgnoredInst(inst)) {
         ignore = true;
         break;
       }
 
       int vertex_id = -1;
-      if (master->isBlock()) {
+      if (inst->isBlock()) {
         vertex_id = odb::dbIntProperty::find(iterm, "vertex_id")->getValue();
       } else {
         odb::dbIntProperty* int_prop
@@ -736,10 +756,18 @@ DataFlowHypergraph ClusteringEngine::computeHypergraph(
 }
 
 /* static */
-bool ClusteringEngine::isIgnoredMaster(odb::dbMaster* master)
+// Instance that should not be touched i.e., have its location
+// altered by the macro placer.
+// Note: This function also takes into account the placement status
+// of the instance, because, if it is placed outside the area that is
+// used for the macro placement, it can be safely ignored as there's
+// no risk to generate overlap.
+bool ClusteringEngine::isIgnoredInst(odb::dbInst* inst)
 {
-  // IO corners are sometimes marked as end caps
-  return master->isPad() || master->isCover() || master->isEndCap();
+  odb::dbMaster* master = inst->getMaster();
+
+  return master->isPad() || master->isCover() || master->isEndCap()
+         || inst->isFixed();
 }
 
 // Forward or Backward DFS search to find sequential paths from/to IO pins based
@@ -878,12 +906,12 @@ void ClusteringEngine::updateDataFlow()
 
   // bterm, macros or ffs
   for (const auto& [bterm, insts] : data_connections_.io_and_regs) {
-    if (tree_->maps.bterm_to_cluster_id.find(bterm)
-        == tree_->maps.bterm_to_cluster_id.end()) {
+    const auto itr = tree_->maps.bterm_to_cluster_id.find(bterm);
+    if (itr == tree_->maps.bterm_to_cluster_id.end()) {
       continue;
     }
 
-    const int driver_id = tree_->maps.bterm_to_cluster_id.at(bterm);
+    const int driver_id = itr->second;
 
     for (int hops = 0; hops < max_num_of_hops_; hops++) {
       std::set<int> sink_clusters = computeSinks(insts[hops]);
@@ -947,12 +975,11 @@ void ClusteringEngine::treatEachMacroAsSingleCluster()
 {
   odb::dbModule* module = block_->getTopModule();
   for (odb::dbInst* inst : module->getInsts()) {
-    odb::dbMaster* master = inst->getMaster();
-    if (isIgnoredMaster(master)) {
+    if (isIgnoredInst(inst)) {
       continue;
     }
 
-    if (master->isBlock()) {
+    if (inst->isBlock()) {
       const std::string cluster_name = inst->getName();
       auto cluster = std::make_unique<Cluster>(id_, cluster_name, logger_);
       cluster->addLeafMacro(inst);
@@ -1025,8 +1052,7 @@ void ClusteringEngine::updateInstancesAssociation(odb::dbModule* module,
     }
   } else {  // only consider standard cells
     for (odb::dbInst* inst : module->getInsts()) {
-      odb::dbMaster* master = inst->getMaster();
-      if (isIgnoredMaster(master) || master->isBlock()) {
+      if (isIgnoredInst(inst) || inst->isBlock()) {
         continue;
       }
 
@@ -1265,8 +1291,7 @@ void ClusteringEngine::addModuleLeafInstsToCluster(Cluster* cluster,
                                                    odb::dbModule* module)
 {
   for (odb::dbInst* inst : module->getInsts()) {
-    odb::dbMaster* master = inst->getMaster();
-    if (isIgnoredMaster(master)) {
+    if (isIgnoredInst(inst)) {
       continue;
     }
     cluster->addLeafInst(inst);
@@ -1393,8 +1418,7 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
     bool ignore = false;
     for (odb::dbITerm* iterm : net->getITerms()) {
       odb::dbInst* inst = iterm->getInst();
-      odb::dbMaster* master = inst->getMaster();
-      if (isIgnoredMaster(master)) {
+      if (isIgnoredInst(inst)) {
         ignore = true;
         break;
       }
@@ -1719,8 +1743,7 @@ void ClusteringEngine::updateConnections()
 
     for (odb::dbITerm* iterm : net->getITerms()) {
       odb::dbInst* inst = iterm->getInst();
-      odb::dbMaster* master = inst->getMaster();
-      if (isIgnoredMaster(master)) {
+      if (isIgnoredInst(inst)) {
         net_has_pad_or_cover = true;
         break;
       }
@@ -1739,7 +1762,6 @@ void ClusteringEngine::updateConnections()
     }
 
     bool net_has_io_pin = false;
-
     for (odb::dbBTerm* bterm : net->getBTerms()) {
       const int cluster_id = tree_->maps.bterm_to_cluster_id.at(bterm);
       net_has_io_pin = true;
@@ -1910,6 +1932,10 @@ void ClusteringEngine::mapMacroInCluster2HardMacro(Cluster* cluster)
     getHardMacros(module, hard_macros);
   }
   cluster->specifyHardMacros(hard_macros);
+
+  for (HardMacro* hard_macro : hard_macros) {
+    hard_macro->setCluster(cluster);
+  }
 }
 
 // Get all the hard macros in a logical module
@@ -1917,13 +1943,11 @@ void ClusteringEngine::getHardMacros(odb::dbModule* module,
                                      std::vector<HardMacro*>& hard_macros)
 {
   for (odb::dbInst* inst : module->getInsts()) {
-    odb::dbMaster* master = inst->getMaster();
-
-    if (isIgnoredMaster(master)) {
+    if (isIgnoredInst(inst)) {
       continue;
     }
 
-    if (master->isBlock()) {
+    if (inst->isBlock()) {
       hard_macros.push_back(tree_->maps.inst_to_hard.at(inst).get());
     }
   }
@@ -2132,17 +2156,30 @@ void ClusteringEngine::printPhysicalHierarchyTree(Cluster* parent, int level)
   for (int i = 0; i < level; i++) {
     line += "+---";
   }
-  line += fmt::format(
-      "{}  ({})  num_macro :  {}   num_std_cell :  {}"
-      "  macro_area :  {}  std_cell_area : {}  cluster type: {} {}",
-      parent->getName(),
-      parent->getId(),
-      parent->getNumMacro(),
-      parent->getNumStdCell(),
-      parent->getMacroArea(),
-      parent->getStdCellArea(),
-      parent->getIsLeafString(),
-      parent->getClusterTypeString());
+
+  line += fmt::format("{}  ({}) Type: {}",
+                      parent->getName(),
+                      parent->getId(),
+                      parent->getClusterTypeString());
+
+  if (parent->isIOCluster()) {
+    int number_of_pins = 0;
+    for (const auto [pin, cluster_id] : tree_->maps.bterm_to_cluster_id) {
+      if (cluster_id == parent->getId()) {
+        ++number_of_pins;
+      }
+    }
+
+    line += fmt::format(" Pins: {}", number_of_pins);
+  } else {
+    line += fmt::format(" {}, StdCells: {} ({} μ²), Macros: {} ({} μ²)",
+                        parent->getIsLeafString(),
+                        parent->getNumStdCell(),
+                        parent->getStdCellArea(),
+                        parent->getNumMacro(),
+                        parent->getMacroArea());
+  }
+
   logger_->report("{}", line);
 
   for (auto& cluster : parent->getChildren()) {

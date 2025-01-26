@@ -34,6 +34,7 @@
 
 #include <boost/polygon/polygon.hpp>
 #include <set>
+#include <vector>
 
 #include "grid.h"
 #include "odb/db.h"

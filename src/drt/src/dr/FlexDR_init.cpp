@@ -27,6 +27,7 @@
  */
 
 #include <algorithm>
+#include <vector>
 
 #include "dr/FlexDR.h"
 #include "frRTree.h"
@@ -2112,19 +2113,16 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
                 }
                 case frcInstBlockage: {
                   frInst* inst = (static_cast<frInstBlockage*>(src))->getInst();
-                  std::cout << inst->getName() << "/OBS"
-                            << " ";
+                  std::cout << inst->getName() << "/OBS" << " ";
                   break;
                 }
                 case frcInst: {
                   frInst* inst = (static_cast<frInst*>(src));
-                  std::cout << inst->getName() << "/OBS"
-                            << " ";
+                  std::cout << inst->getName() << "/OBS" << " ";
                   break;
                 }
                 case frcBlockage: {
-                  std::cout << "PIN/OBS"
-                            << " ";
+                  std::cout << "PIN/OBS" << " ";
                   break;
                 }
                 default:;
@@ -2308,6 +2306,9 @@ void FlexDRWorker::route_queue_init_queue(
     std::vector<drNet*> ripupNets;
     ripupNets.reserve(nets_.size());
     for (auto& net : nets_) {
+      if (net->getPins().size() <= 1) {
+        continue;
+      }
       ripupNets.push_back(net.get());
     }
     // sort nets
@@ -2575,7 +2576,7 @@ void FlexDRWorker::route_queue_update_from_marker(
     }
   }
   for (drNet* dNet : avoidRipupCandidates) {
-    if (allowAvoidRipup) {
+    if (dNet->getPins().size() <= 1 || allowAvoidRipup) {
       dNet->incNRipupAvoids();
       checks.push_back({dNet, -1, false, checkingObj});
     } else {

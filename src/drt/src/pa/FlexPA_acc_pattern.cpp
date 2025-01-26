@@ -284,29 +284,29 @@ int FlexPA::genPatterns(
   std::set<std::pair<int, int>> viol_access_points;
   int num_valid_pattern = 0;
 
-  num_valid_pattern += FlexPA::genPatterns_helper(pins,
-                                                  inst_access_patterns,
-                                                  used_access_points,
-                                                  viol_access_points,
-                                                  curr_unique_inst_idx,
-                                                  max_access_point_size);
+  num_valid_pattern += FlexPA::genPatternsHelper(pins,
+                                                 inst_access_patterns,
+                                                 used_access_points,
+                                                 viol_access_points,
+                                                 curr_unique_inst_idx,
+                                                 max_access_point_size);
   // try reverse order if no valid pattern
   if (num_valid_pattern == 0) {
     auto reversed_pins = pins;
     reverse(reversed_pins.begin(), reversed_pins.end());
 
-    num_valid_pattern += FlexPA::genPatterns_helper(reversed_pins,
-                                                    inst_access_patterns,
-                                                    used_access_points,
-                                                    viol_access_points,
-                                                    curr_unique_inst_idx,
-                                                    max_access_point_size);
+    num_valid_pattern += FlexPA::genPatternsHelper(reversed_pins,
+                                                   inst_access_patterns,
+                                                   used_access_points,
+                                                   viol_access_points,
+                                                   curr_unique_inst_idx,
+                                                   max_access_point_size);
   }
 
   return num_valid_pattern;
 }
 
-int FlexPA::genPatterns_helper(
+int FlexPA::genPatternsHelper(
     const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
     std::set<std::vector<int>>& inst_access_patterns,
     std::set<std::pair<int, int>>& used_access_points,
@@ -328,23 +328,23 @@ int FlexPA::genPatterns_helper(
                   viol_access_points);
 
   for (int i = 0; i < router_cfg_->ACCESS_PATTERN_END_ITERATION_NUM; i++) {
-    genPatterns_reset(nodes, pins);
-    genPatterns_perform(nodes,
-                        pins,
-                        vio_edge,
-                        used_access_points,
-                        viol_access_points,
-                        curr_unique_inst_idx,
-                        max_access_point_size);
+    genPatternsReset(nodes, pins);
+    genPatternsPerform(nodes,
+                       pins,
+                       vio_edge,
+                       used_access_points,
+                       viol_access_points,
+                       curr_unique_inst_idx,
+                       max_access_point_size);
     bool is_valid = false;
-    if (genPatterns_commit(nodes,
-                           pins,
-                           is_valid,
-                           inst_access_patterns,
-                           used_access_points,
-                           viol_access_points,
-                           curr_unique_inst_idx,
-                           max_access_point_size)) {
+    if (genPatternsCommit(nodes,
+                          pins,
+                          is_valid,
+                          inst_access_patterns,
+                          used_access_points,
+                          viol_access_points,
+                          curr_unique_inst_idx,
+                          max_access_point_size)) {
       if (is_valid) {
         num_valid_pattern++;
       } else {
@@ -405,7 +405,7 @@ void FlexPA::genPatternsInit(
   }
 }
 
-void FlexPA::genPatterns_reset(
+void FlexPA::genPatternsReset(
     std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
     const std::vector<std::pair<frMPin*, frInstTerm*>>& pins)
 {
@@ -424,7 +424,7 @@ void FlexPA::genPatterns_reset(
   sink_node->setNodeCost(0);
 }
 
-bool FlexPA::genPatterns_gc(
+bool FlexPA::genPatternsGC(
     const std::set<frBlockObject*>& target_objs,
     const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
     const PatternType pattern_type,
@@ -484,7 +484,7 @@ bool FlexPA::genPatterns_gc(
   return no_drv;
 }
 
-void FlexPA::genPatterns_perform(
+void FlexPA::genPatternsPerform(
     std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
     const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
     std::vector<int>& vio_edges,
@@ -596,7 +596,7 @@ int FlexPA::getEdgeCost(
       }
     }
 
-    has_vio = !genPatterns_gc({target_obj}, objs, Edge);
+    has_vio = !genPatternsGC({target_obj}, objs, Edge);
     vio_edges[edge_idx] = has_vio;
 
     // look back for GN14
@@ -625,7 +625,7 @@ int FlexPA::getEdgeCost(
             }
           }
 
-          has_vio = !genPatterns_gc({target_obj}, objs, Edge);
+          has_vio = !genPatternsGC({target_obj}, objs, Edge);
         }
       }
     }
@@ -686,7 +686,7 @@ std::vector<int> FlexPA::extractAccessPatternFromNodes(
   return access_pattern;
 }
 
-bool FlexPA::genPatterns_commit(
+bool FlexPA::genPatternsCommit(
     const std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
     const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
     bool& is_valid,
@@ -782,11 +782,11 @@ bool FlexPA::genPatterns_commit(
 
   std::set<frBlockObject*> owners;
   if (target_obj != nullptr
-      && genPatterns_gc({target_obj}, objs, Commit, &owners)) {
+      && genPatternsGC({target_obj}, objs, Commit, &owners)) {
     pin_access_pattern->updateCost();
     unique_inst_patterns_[curr_unique_inst_idx].push_back(
         std::move(pin_access_pattern));
-    // genPatterns_print(nodes, pins);
+    // genPatternsPrint(nodes, pins);
     is_valid = true;
   } else {
     for (int idx_1 = 0; idx_1 < (int) pins.size(); idx_1++) {
@@ -849,7 +849,7 @@ void FlexPA::genPatternsPrintDebug(
   }
 }
 
-void FlexPA::genPatterns_print(
+void FlexPA::genPatternsPrint(
     std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
     const std::vector<std::pair<frMPin*, frInstTerm*>>& pins)
 {

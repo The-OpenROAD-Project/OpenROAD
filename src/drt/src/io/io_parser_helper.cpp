@@ -33,6 +33,7 @@
 #include <iostream>
 #include <set>
 #include <sstream>
+#include <vector>
 
 #include "frBaseTypes.h"
 #include "frProfileTask.h"

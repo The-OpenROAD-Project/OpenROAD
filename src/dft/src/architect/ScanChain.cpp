@@ -32,6 +32,8 @@
 
 #include "ScanChain.hh"
 
+#include <vector>
+
 #include "ClockDomain.hh"
 
 namespace dft {
@@ -117,6 +119,32 @@ void ScanChain::report(utl::Logger* logger, bool verbose) const
 const std::string& ScanChain::getName() const
 {
   return name_;
+}
+
+std::optional<ScanDriver> ScanChain::getScanIn() const
+{
+  return scan_in_;
+}
+std::optional<ScanDriver> ScanChain::getScanEnable() const
+{
+  return scan_enable_;
+}
+std::optional<ScanLoad> ScanChain::getScanOut() const
+{
+  return scan_out_;
+}
+
+void ScanChain::setScanIn(const std::optional<ScanDriver>& signal)
+{
+  scan_in_ = signal;
+}
+void ScanChain::setScanEnable(const std::optional<ScanDriver>& signal)
+{
+  scan_enable_ = signal;
+}
+void ScanChain::setScanOut(const std::optional<ScanLoad>& signal)
+{
+  scan_out_ = signal;
 }
 
 }  // namespace dft

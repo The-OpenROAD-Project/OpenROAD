@@ -37,28 +37,28 @@ namespace odb::lefTechLayerWrongDirSpacing {
 
 void wrongDirParser(double value,
                     odb::dbTechLayerWrongDirSpacingRule* sc,
-                    odb::lefin* l)
+                    odb::lefinReader* l)
 {
   sc->setWrongdirSpace(l->dbdist(value));
 }
 
 void noneolWidthParser(double value,
                        odb::dbTechLayerWrongDirSpacingRule* sc,
-                       odb::lefin* l)
+                       odb::lefinReader* l)
 {
   sc->setNoneolWidth(l->dbdist(value));
 }
 
 void prlLengthParser(double value,
                      odb::dbTechLayerWrongDirSpacingRule* sc,
-                     odb::lefin* l)
+                     odb::lefinReader* l)
 {
   sc->setPrlLength(l->dbdist(value));
 }
 
 void lengthParser(double value,
                   odb::dbTechLayerWrongDirSpacingRule* sc,
-                  odb::lefin* l)
+                  odb::lefinReader* l)
 {
   sc->setLength(l->dbdist(value));
 }
@@ -67,7 +67,7 @@ template <typename Iterator>
 bool parse(Iterator first,
            Iterator last,
            odb::dbTechLayer* layer,
-           odb::lefin* l)
+           odb::lefinReader* l)
 {
   odb::dbTechLayerWrongDirSpacingRule* sc
       = odb::dbTechLayerWrongDirSpacingRule::create(layer);
@@ -101,7 +101,7 @@ namespace odb {
 
 void lefTechLayerWrongDirSpacingParser::parse(std::string s,
                                               dbTechLayer* layer,
-                                              odb::lefin* l)
+                                              odb::lefinReader* l)
 {
   if (!lefTechLayerWrongDirSpacing::parse(s.begin(), s.end(), layer, l)) {
     l->warning(355,

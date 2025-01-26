@@ -39,6 +39,7 @@
 
 #include <boost/tokenizer.hpp>
 #include <stack>
+#include <vector>
 
 #include "utility.h"
 #include "utl/Logger.h"

@@ -33,6 +33,8 @@
 
 #include "SACoreSoftMacro.h"
 
+#include <vector>
+
 #include "Mpl2Observer.h"
 #include "utl/Logger.h"
 
@@ -43,7 +45,7 @@ using utl::MPL;
 // Class SACoreSoftMacro
 // constructors
 SACoreSoftMacro::SACoreSoftMacro(
-    Cluster* root,
+    PhysicalHierarchy* tree,
     const Rect& outline,
     const std::vector<SoftMacro>& macros,
     // weight for different penalty
@@ -71,7 +73,8 @@ SACoreSoftMacro::SACoreSoftMacro(
     unsigned seed,
     Mpl2Observer* graphics,
     utl::Logger* logger)
-    : SimulatedAnnealingCore<SoftMacro>(outline,
+    : SimulatedAnnealingCore<SoftMacro>(tree,
+                                        outline,
                                         macros,
                                         area_weight,
                                         outline_weight,
@@ -88,7 +91,7 @@ SACoreSoftMacro::SACoreSoftMacro(
                                         seed,
                                         graphics,
                                         logger),
-      root_(root)
+      root_(tree->root.get())
 {
   boundary_weight_ = boundary_weight;
   macro_blockage_weight_ = macro_blockage_weight;
@@ -654,8 +657,8 @@ void SACoreSoftMacro::calNotchPenalty()
         if (grids[j][i] != -1) {
           flag = false;  // we cannot extend the current cluster
           break;
-        }           // end if
-      }             // end y
+        }  // end if
+      }  // end y
       if (!flag) {  // extension done
         break;
       }
@@ -671,8 +674,8 @@ void SACoreSoftMacro::calNotchPenalty()
         if (grids[j][i] != -1) {
           flag = false;  // we cannot extend the current cluster
           break;
-        }           // end if
-      }             // end y
+        }  // end if
+      }  // end y
       if (!flag) {  // extension done
         break;
       }
@@ -688,8 +691,8 @@ void SACoreSoftMacro::calNotchPenalty()
         if (grids[j][i] != -1) {
           flag = false;  // we cannot extend the current cluster
           break;
-        }           // end if
-      }             // end y
+        }  // end if
+      }  // end y
       if (!flag) {  // extension done
         break;
       }
@@ -705,8 +708,8 @@ void SACoreSoftMacro::calNotchPenalty()
         if (grids[j][i] != -1) {
           flag = false;  // we cannot extend the current cluster
           break;
-        }           // end if
-      }             // end y
+        }  // end if
+      }  // end y
       if (!flag) {  // extension done
         break;
       }
@@ -1019,8 +1022,8 @@ void SACoreSoftMacro::fillDeadSpace()
           if (grids[j][i] != -1) {
             flag = false;  // we cannot extend the current cluster
             break;
-          }           // end if
-        }             // end y
+          }  // end if
+        }  // end y
         if (!flag) {  // extension done
           break;
         }
@@ -1037,8 +1040,8 @@ void SACoreSoftMacro::fillDeadSpace()
           if (grids[j][i] != -1) {
             flag = false;  // we cannot extend the current cluster
             break;
-          }           // end if
-        }             // end y
+          }  // end if
+        }  // end y
         if (!flag) {  // extension done
           break;
         }
@@ -1055,8 +1058,8 @@ void SACoreSoftMacro::fillDeadSpace()
           if (grids[j][i] != -1) {
             flag = false;  // we cannot extend the current cluster
             break;
-          }           // end if
-        }             // end y
+          }  // end if
+        }  // end y
         if (!flag) {  // extension done
           break;
         }
@@ -1073,8 +1076,8 @@ void SACoreSoftMacro::fillDeadSpace()
           if (grids[j][i] != -1) {
             flag = false;  // we cannot extend the current cluster
             break;
-          }           // end if
-        }             // end y
+          }  // end if
+        }  // end y
         if (!flag) {  // extension done
           break;
         }

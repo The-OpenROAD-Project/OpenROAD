@@ -36,6 +36,7 @@
 #include "Netlist.h"
 
 #include <algorithm>
+#include <vector>
 
 #include "Slots.h"
 #include "iostream"

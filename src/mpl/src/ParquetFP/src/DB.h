@@ -37,6 +37,7 @@
 #include <cfloat>
 #include <cmath>
 #include <cstdlib>
+#include <vector>
 
 #include "FPcommon.h"
 #include "Nets.h"

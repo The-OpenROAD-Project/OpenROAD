@@ -32,11 +32,13 @@
 
 #include "definReader.h"
 
+#include <boost/algorithm/string/replace.hpp>
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "definBlockage.h"
 #include "definComponent.h"
@@ -101,7 +103,7 @@ dbITerm* findScanITerm(definReader* reader,
   if (!pin_name) {
     if (!common_pin) {
       reader->error(
-          fmt::format("SCANDEF is missing either component pin or a "
+          fmt::format("SCANCHAIN is missing either component pin or a "
                       "COMMONSCANPINS for instance {}",
                       inst->getName()));
       return nullptr;
@@ -112,20 +114,34 @@ dbITerm* findScanITerm(definReader* reader,
   return inst->findITerm(pin_name);
 }
 
-std::optional<std::variant<dbBTerm*, dbITerm*>>
-findScanTerm(definReader* reader, dbBlock* block, const char* pin_name)
+std::optional<std::variant<dbBTerm*, dbITerm*>> findScanTerm(
+    definReader* reader,
+    dbBlock* block,
+    const char* type,
+    const char* inst_name,
+    const char* pin_name)
 {
-  dbBTerm* bterm = block->findBTerm(pin_name);
-  if (bterm) {
-    return bterm;
+  if (inst_name && strcmp(inst_name, "PIN") != 0) {
+    dbInst* inst = block->findInst(inst_name);
+    if (inst) {
+      dbITerm* iterm = inst->findITerm(pin_name);
+      if (iterm) {
+        return iterm;
+      }
+    }
+  } else {
+    dbBTerm* bterm = block->findBTerm(pin_name);
+    if (bterm) {
+      return bterm;
+    }
   }
-
-  dbITerm* iterm = block->findITerm(pin_name);
-  if (iterm) {
-    return iterm;
+  std::string name;
+  if (inst_name) {
+    name = fmt::format("{}/{}", inst_name, pin_name);
+  } else {
+    name = pin_name;
   }
-  reader->error(
-      fmt::format("SCANDEF START/STOP pin {} does not exist", pin_name));
+  reader->error(fmt::format("SCANCHAIN {} pin {} does not exist", type, name));
   return std::nullopt;
 }
 
@@ -140,7 +156,7 @@ void populateScanInst(definReader* reader,
 {
   dbInst* inst = block->findInst(inst_name);
   if (!inst) {
-    reader->error(fmt::format("SCANDEF Inst {} does not exist", inst_name));
+    reader->error(fmt::format("SCANCHAIN Inst {} does not exist", inst_name));
     return;
   }
 
@@ -149,14 +165,15 @@ void populateScanInst(definReader* reader,
   dbITerm* scan_in
       = findScanITerm(reader, inst, in_pin_name, scan_chain->commonInPin());
   if (!scan_in) {
-    reader->error(fmt::format(
-        "SCANDEF IN pin {} does not exist in cell {}", in_pin_name, inst_name));
+    reader->error(fmt::format("SCANCHAIN IN pin {} does not exist in cell {}",
+                              in_pin_name,
+                              inst_name));
   }
 
   dbITerm* scan_out
       = findScanITerm(reader, inst, out_pin_name, scan_chain->commonOutPin());
   if (!scan_out) {
-    reader->error(fmt::format("SCANDEF OUT pin {} does not exist in cell {}",
+    reader->error(fmt::format("SCANCHAIN OUT pin {} does not exist in cell {}",
                               out_pin_name,
                               inst_name));
   }
@@ -563,16 +580,23 @@ int definReader::componentsCallback(
   definReader* reader = (definReader*) data;
   CHECKBLOCK
   definComponent* componentR = reader->_componentR;
-  if (reader->_mode != defin::DEFAULT
-      && reader->_block->findInst(comp->id()) == nullptr) {
-    std::string modeStr
-        = reader->_mode == defin::FLOORPLAN ? "FLOORPLAN" : "INCREMENTAL";
-    reader->_logger->warn(utl::ODB,
-                          248,
-                          "skipping undefined comp {} encountered in {} DEF",
-                          comp->id(),
-                          modeStr);
-    return PARSE_OK;
+  std::string id = comp->id();
+  if (reader->_mode != defin::DEFAULT) {
+    if (reader->_block->findInst(id.c_str()) == nullptr) {
+      // Try escaping the hierarchy and see if that matches
+      boost::replace_all(id, "/", "\\/");
+      if (reader->_block->findInst(id.c_str()) == nullptr) {
+        std::string modeStr
+            = reader->_mode == defin::FLOORPLAN ? "FLOORPLAN" : "INCREMENTAL";
+        reader->_logger->warn(
+            utl::ODB,
+            248,
+            "skipping undefined comp {} encountered in {} DEF",
+            comp->id(),
+            modeStr);
+        return PARSE_OK;
+      }
+    }
   }
 
   if (comp->hasEEQ()) {
@@ -587,7 +611,7 @@ int definReader::componentsCallback(
     UNSUPPORTED("ROUTEHALO on component is unsupported");
   }
 
-  componentR->begin(comp->id(), comp->name());
+  componentR->begin(id.c_str(), comp->name());
   if (comp->hasSource()) {
     componentR->source(dbSourceType(comp->source()));
   }
@@ -1097,10 +1121,13 @@ int definReader::pinCallback(DefParser::defrCallbackType_e /* unused: type */,
 
   if (pin->hasDirection()) {
     if (reader->_mode == defin::FLOORPLAN) {
-      reader->_logger->warn(
-          utl::ODB,
-          437,
-          "Pin directions are ignored from floorplan DEF files.");
+      if (!pinR->checkPinDirection(pin->direction())) {
+        reader->_logger->warn(
+            utl::ODB,
+            437,
+            "Mismatched pin direction between verilog netlist and floorplan "
+            "DEF, ignoring floorplan DEF direction.");
+      }
     } else {
       pinR->pinDirection(pin->direction());
     }
@@ -1434,20 +1461,21 @@ int definReader::scanchainsCallback(
   dbScanPartition* db_scan_partition = dbScanPartition::create(db_scan_chain);
   db_scan_partition->setName(scan_chain->partitionName());
 
-  char* unused;
+  char* start_inst_name;
+  char* stop_inst_name;
   char* start_pin_name;
   char* stop_pin_name;
-  scan_chain->start(&unused, &start_pin_name);
-  scan_chain->stop(&unused, &stop_pin_name);
+  scan_chain->start(&start_inst_name, &start_pin_name);
+  scan_chain->stop(&stop_inst_name, &stop_pin_name);
 
-  auto scan_in_pin = findScanTerm(reader, block, start_pin_name);
-  auto scan_out_pin = findScanTerm(reader, block, stop_pin_name);
-  if (!scan_in_pin.has_value()) {
-    reader->error(fmt::format("Can't parse SCANIN pin"));
-    return PARSE_ERROR;
-  }
-  if (!scan_out_pin.has_value()) {
-    reader->error(fmt::format("Can't parse SCANOUT pin"));
+  auto scan_in_pin
+      = findScanTerm(reader, block, "START", start_inst_name, start_pin_name);
+  auto scan_out_pin
+      = findScanTerm(reader, block, "STOP", stop_inst_name, stop_pin_name);
+  if (!scan_in_pin.has_value() || !scan_out_pin.has_value()) {
+    if (reader->_continue_on_errors) {
+      return PARSE_OK;
+    }
     return PARSE_ERROR;
   }
 

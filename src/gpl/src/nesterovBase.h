@@ -782,12 +782,14 @@ class NesterovPlaceVars
   bool timingDrivenMode = true;
   int timingDrivenIterCounter = 0;
   bool routabilityDrivenMode = true;
+  bool disableRevertIfDiverge = false;
 
   bool debug = false;
   int debug_pause_iterations = 10;
   int debug_update_iterations = 10;
   bool debug_draw_bins = true;
   odb::dbInst* debug_inst = nullptr;
+  int debug_start_iter = 0;
 
   void reset();
 };

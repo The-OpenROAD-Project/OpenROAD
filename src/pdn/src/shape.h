@@ -151,8 +151,10 @@ class Shape
   bool isSquare() const { return rect_.dx() == rect_.dy(); }
   bool isVertical() const { return rect_.dx() < rect_.dy(); }
 
+  virtual odb::dbTechLayerDir getLayerDirection() const;
+
   // true if shape can be removed by trimming
-  virtual bool isRemovable() const;
+  virtual bool isRemovable(bool assume_bterm) const;
   // true if shape can be modified (cut or shortened) by trimming
   virtual bool isModifiable() const;
 
@@ -289,9 +291,11 @@ class FollowPinShape : public Shape
   void updateTermConnections() override;
 
   // followpins cannot be removed
-  bool isRemovable() const override { return false; }
+  bool isRemovable(bool assume_bterm) const override { return false; }
 
   void setAllowsNonPreferredDirectionChange() override {}
+
+  odb::dbTechLayerDir getLayerDirection() const override;
 
   bool cut(const ObstructionTree& obstructions,
            const Grid* ignore_grid,

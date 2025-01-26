@@ -42,6 +42,7 @@ def analyze_power_grid(
     vsrc=None,
     outfile=None,
     error_file=None,
+    allow_reuse=False,
     enable_em=False,
     em_outfile=None,
     net=None,
@@ -76,11 +77,11 @@ def analyze_power_grid(
         em_outfile = ""
 
     pdnsim.analyzePowerGrid(
-        net, corner, 2, outfile, enable_em, em_outfile, error_file, vsrc
+        net, corner, 2, outfile, allow_reuse, enable_em, em_outfile, error_file, vsrc
     )
 
 
-def check_power_grid(design, *, net=None, error_file=None):
+def check_power_grid(design, *, net=None, error_file=None, require_bterm=True):
     pdnsim = design.getPDNSim()
     if not net:
         utl.error(utl.PSM, 157, "Argument 'net' not specified to check_power_grid.")
@@ -88,7 +89,9 @@ def check_power_grid(design, *, net=None, error_file=None):
     if not error_file:
         error_file = ""
 
-    res = pdnsim.checkConnectivity(design.getBlock().findNet(net), False, error_file)
+    res = pdnsim.checkConnectivity(
+        design.getBlock().findNet(net), False, error_file, require_bterm
+    )
     if res == 0:
         utl.error(utl.PSM, 169, "Check connectivity failed.")
     return res

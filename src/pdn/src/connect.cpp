@@ -34,6 +34,7 @@
 
 #include <cmath>
 #include <regex>
+#include <vector>
 
 #include "grid.h"
 #include "odb/db.h"

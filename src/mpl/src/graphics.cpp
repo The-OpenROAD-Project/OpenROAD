@@ -33,6 +33,8 @@
 
 #include "graphics.h"
 
+#include <vector>
+
 #include "utl/Logger.h"
 
 namespace mpl {

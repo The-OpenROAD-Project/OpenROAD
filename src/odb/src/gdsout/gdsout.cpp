@@ -33,6 +33,7 @@
 #include "odb/gdsout.h"
 
 #include <iostream>
+#include <vector>
 
 namespace odb::gds {
 

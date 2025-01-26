@@ -369,6 +369,43 @@ void dbModInst::RemoveUnusedPortsAndPins()
   dbModule* module = this->getMaster();
   dbSet<dbModITerm> moditerms = getModITerms();
   dbSet<dbModBTerm> modbterms = module->getModBTerms();
+  int bus_ix = 0;
+
+  // traverse in modbterm order so we can skip over
+  // any unused pins in a bus.
+
+  for (dbModBTerm* mod_bterm : modbterms) {
+    dbModNet* mod_net = nullptr;
+
+    // Avoid removing unused ports from a bus
+    // when we hit a bus port, we count down from the size
+    // skipping the bus elements
+    // Layout:
+    // mod_bterm (head_element describing size)
+    // mod_bterm[size-1],...mod_bterm[0] -- bus elements
+    //
+    if (mod_bterm->isBusPort()) {
+      dbBusPort* bus_port = mod_bterm->getBusPort();
+      bus_ix = bus_port->getSize();  // count down
+      continue;
+    }
+    if (bus_ix != 0) {
+      bus_ix = bus_ix - 1;
+      continue;
+    }
+
+    dbModITerm* mod_iterm = mod_bterm->getParentModITerm();
+    mod_net = mod_bterm->getModNet();
+    if (mod_net) {
+      dbSet<dbModITerm> dest_mod_iterms = mod_net->getModITerms();
+      dbSet<dbBTerm> dest_bterms = mod_net->getBTerms();
+      dbSet<dbITerm> dest_iterms = mod_net->getITerms();
+      if (dest_mod_iterms.size() == 0 && dest_bterms.size() == 0
+          && dest_iterms.size() == 0) {
+        kill_set.insert(mod_iterm);
+      }
+    }
+  }
 
   for (dbModITerm* mod_iterm : moditerms) {
     dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
@@ -381,6 +418,7 @@ void dbModInst::RemoveUnusedPortsAndPins()
       kill_set.insert(mod_iterm);
     }
   }
+
   moditerms = getModITerms();
   modbterms = module->getModBTerms();
   for (auto mod_iterm : kill_set) {

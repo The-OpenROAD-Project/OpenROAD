@@ -56,6 +56,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "detailed_abu.h"
 
+#include <vector>
+
 #include "detailed_orient.h"
 #include "utl/Logger.h"
 

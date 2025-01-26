@@ -271,7 +271,7 @@ void _dbGlobalConnect::testRegex(utl::Logger* logger,
                                  const std::string& type)
 {
   try {
-    auto test = std::regex(pattern);
+    std::regex test(pattern);  // NOLINT(*-unused-local-non-trivial-variable)
   } catch (const std::regex_error&) {
     logger->error(utl::ODB,
                   384,

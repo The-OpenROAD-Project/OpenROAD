@@ -33,6 +33,7 @@
 #pragma once
 
 #include <list>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -65,7 +66,6 @@ class lefiObstruction;
 class lefiGeometries;
 struct lefiGeomPolygon;
 }  // namespace LefParser
-
 namespace odb {
 
 class dbObject;
@@ -77,7 +77,7 @@ class dbDatabase;
 class dbTechLayer;
 class dbSite;
 
-class lefin
+class lefinReader
 {
   dbDatabase* _db;
   dbTech* _tech;
@@ -196,8 +196,10 @@ class lefin
   }
   void lineNumber(int lineNo);
 
-  lefin(dbDatabase* db, utl::Logger* logger, bool ignore_non_routing_layers);
-  ~lefin();
+  lefinReader(dbDatabase* db,
+              utl::Logger* logger,
+              bool ignore_non_routing_layers);
+  ~lefinReader() = default;
 
   // Skip macro-obstructions in the lef file.
   void skipObstructions() { _skip_obstructions = true; }
@@ -239,6 +241,42 @@ class lefin
 
   // Add macros to this library and the technology of this library
   bool updateTechAndLib(dbLib* lib, const char* lef_file);
+};
+
+class lefin
+{
+ public:
+  lefin(dbDatabase* db, utl::Logger* logger, bool ignore_non_routing_layers);
+  ~lefin();
+
+  // convert distance value to db-units
+  int dbdist(double value);
+
+  // Create a technology from the tech-data of this LEF file.
+  dbTech* createTech(const char* name, const char* lef_file);
+
+  // Create a library from the library-data of this LEF file.
+  dbLib* createLib(dbTech* tech, const char* name, const char* lef_file);
+
+  // Create a technology and library from the MACRO's in this LEF file.
+  dbLib* createTechAndLib(const char* tech_name,
+                          const char* lib_name,
+                          const char* lef_file);
+
+  // Add macros to this library
+  bool updateLib(dbLib* lib, const char* lef_file);
+
+  // Update a technology from the tech-data of this LEF file.
+  bool updateTech(dbTech* tech, const char* lef_file);
+
+  // Add macros to this library and the technology of this library
+  bool updateTechAndLib(dbLib* lib, const char* lef_file);
+
+ private:
+  lefinReader* _reader;
+
+  // Protects the LefParser namespace that has static variables
+  static std::mutex _lef_mutex;
 };
 
 }  // namespace odb

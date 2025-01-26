@@ -396,7 +396,6 @@ void definNet::pathBegin(const char* layer_name)
 
     if (_taper_rule == nullptr) {
       std::string lyr_name = _cur_layer->getName();
-      std::string rule_name = _non_default_rule->getName();
       _logger->warn(utl::ODB,
                     105,
                     "error: RULE ({}) referenced for layer ({})",

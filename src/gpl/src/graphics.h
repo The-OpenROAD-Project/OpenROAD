@@ -34,6 +34,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "gui/gui.h"
 #include "gui/heatMap.h"
@@ -76,13 +77,15 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
            std::vector<std::shared_ptr<PlacerBase>>& pbVec,
            std::vector<std::shared_ptr<NesterovBase>>& nbVec,
            bool draw_bins,
-           odb::dbInst* inst);
+           odb::dbInst* inst,
+           int start_iter);
 
   // Draw the graphics; optionally pausing afterwards
   void cellPlot(bool pause = false);
 
   // Draw the MBFF mapping
-  void mbff_mapping(const LineSegs& segs);
+  void mbffMapping(const LineSegs& segs);
+  void mbffFlopClusters(const std::vector<odb::dbInst*>& ffs);
 
   // Show a message in the status bar
   void status(const std::string& message);
@@ -137,7 +140,9 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
   utl::Logger* logger_ = nullptr;
   HeatMapType heatmap_type_ = Density;
   LineSegs mbff_edges_;
+  std::vector<odb::dbInst*> mbff_cluster_;
   Mode mode_;
+  int start_iter_ = 0;
 
   void initHeatmap();
   void drawNesterov(gui::Painter& painter);

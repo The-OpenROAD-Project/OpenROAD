@@ -37,6 +37,7 @@
 
 #include <cmath>
 #include <limits>
+#include <vector>
 
 #include "CtsObserver.h"
 #include "CtsOptions.h"
@@ -88,7 +89,7 @@ class HTreeBuilder : public TreeBuilder
    public:
     static constexpr unsigned NO_PARENT = std::numeric_limits<unsigned>::max();
 
-    explicit LevelTopology(double length) : length_(length){};
+    explicit LevelTopology(double length) : length_(length) {}
 
     void addWireSegment(unsigned idx) { wireSegments_.push_back(idx); }
 
@@ -217,7 +218,8 @@ class HTreeBuilder : public TreeBuilder
       double y1,
       double x2,
       double y2,
-      int scalingFactor);
+      int scalingFactor,
+      odb::Direction2D direction);
   Point<double> adjustBestLegalLocation(double targetDist,
                                         const Point<double>& currLoc,
                                         const Point<double>& parentPoint,
@@ -226,7 +228,8 @@ class HTreeBuilder : public TreeBuilder
                                         double y1,
                                         double x2,
                                         double y2,
-                                        int scalingFactor);
+                                        int scalingFactor,
+                                        odb::Direction2D direction);
   void checkLegalityAndCostSpecial(const Point<double>& oldLoc,
                                    const Point<double>& newLoc,
                                    const Point<double>& parentPoint,
@@ -254,7 +257,8 @@ class HTreeBuilder : public TreeBuilder
                                      const Point<double>& parentPoint,
                                      double targetDist,
                                      const std::vector<Point<double>>& sinks,
-                                     int scalingFactor);
+                                     int scalingFactor,
+                                     odb::Direction2D direction);
   void checkLegalityAndCost(const Point<double>& oldLoc,
                             const Point<double>& newLoc,
                             const Point<double>& parentPoint,

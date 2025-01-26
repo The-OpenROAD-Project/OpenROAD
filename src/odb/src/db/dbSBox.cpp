@@ -32,6 +32,8 @@
 
 #include "dbSBox.h"
 
+#include <vector>
+
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbDatabase.h"

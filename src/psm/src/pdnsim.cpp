@@ -105,18 +105,23 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
                               sta::Corner* corner,
                               GeneratedSourceType source_type,
                               const std::string& voltage_file,
+                              bool use_prev_solution,
                               bool enable_em,
                               const std::string& em_file,
                               const std::string& error_file,
                               const std::string& voltage_source_file)
 {
-  if (!checkConnectivity(net, false, error_file)) {
+  if (!checkConnectivity(net, false, error_file, false)) {
     return;
   }
 
   last_corner_ = corner;
   auto* solver = getIRSolver(net, false);
-  solver->solve(corner, source_type, voltage_source_file);
+  if (!use_prev_solution || !solver->hasSolution(corner)) {
+    solver->solve(corner, source_type, voltage_source_file);
+  } else {
+    logger_->info(utl::PSM, 11, "Reusing previous solution");
+  }
   solver->report(corner);
 
   heatmap_->setNet(net);
@@ -133,10 +138,11 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
 
 bool PDNSim::checkConnectivity(odb::dbNet* net,
                                bool floorplanning,
-                               const std::string& error_file)
+                               const std::string& error_file,
+                               bool require_bterm)
 {
   auto* solver = getIRSolver(net, floorplanning);
-  const bool check = solver->check();
+  const bool check = solver->check(require_bterm);
   solver->writeErrorFile(error_file);
 
   if (debug_gui_enabled_) {

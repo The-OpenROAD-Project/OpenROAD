@@ -60,7 +60,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void saStep(const std::vector<HardMacro>& macros) override;
   void endSA(float norm_cost) override;
   void drawResult() override;
-  void finishedClustering(Cluster* root) override;
+  void finishedClustering(PhysicalHierarchy* tree) override;
 
   void setMaxLevel(int max_level) override;
   void setAreaPenalty(const Penalty& penalty) override;
@@ -89,17 +89,37 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void setOutline(const odb::Rect& outline) override;
   void setCurrentCluster(Cluster* current_cluster) override;
   void setGuides(const std::map<int, Rect>& guides) override;
+  void setFences(const std::map<int, Rect>& fences) override;
 
   void eraseDrawing() override;
 
  private:
+  void setXMarksSizeAndPosition(const std::set<Boundary>& blocked_boundaries);
   void resetPenalties();
   void drawCluster(Cluster* cluster, gui::Painter& painter);
+  void drawBlockedBoundariesIndication(gui::Painter& painter);
   void drawAllBlockages(gui::Painter& painter);
-  void drawBlockage(const Rect& blockage, gui::Painter& painter);
+  void drawOffsetRect(const Rect& rect,
+                      const std::string& center_text,
+                      gui::Painter& painter);
+  void drawFences(gui::Painter& painter);
   void drawGuides(gui::Painter& painter);
   template <typename T>
   void drawBundledNets(gui::Painter& painter, const std::vector<T>& macros);
+  template <typename T>
+  void drawDistToIoConstraintBoundary(gui::Painter& painter,
+                                      const T& macro,
+                                      const T& io);
+  template <typename T>
+  bool isOutsideTheOutline(const T& macro) const;
+  template <typename T>
+  odb::Point getClosestBoundaryPoint(const T& macro,
+                                     const Rect& die,
+                                     Boundary closest_boundary);
+  template <typename T>
+  Boundary getClosestUnblockedBoundary(const T& macro, const Rect& die);
+  bool isBlockedBoundary(Boundary boundary);
+  void addOutlineOffsetToLine(odb::Point& from, odb::Point& to);
   void setSoftMacroBrush(gui::Painter& painter, const SoftMacro& soft_macro);
   void fetchSoftAndHard(Cluster* parent,
                         std::vector<HardMacro>& hard,
@@ -120,10 +140,15 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   odb::Rect outline_;
   int target_cluster_id_{-1};
   std::vector<std::vector<odb::Rect>> outlines_;
+  std::map<Boundary, odb::Point> blocked_boundary_to_mark_;
+
   // In Soft SA, we're shaping/placing the children of a certain parent,
   // so for this case, the current cluster is actually the current parent.
   Cluster* current_cluster_{nullptr};
   std::map<int, Rect> guides_;  // Id -> Guidance Region
+  std::map<int, Rect> fences_;  // Id -> Fence
+
+  int x_mark_size_{0};  // For blocked boundaries.
 
   bool active_ = true;
   bool coarse_;

@@ -41,13 +41,12 @@
 #include "dbMPin.h"
 #include "dbMPinItr.h"
 #include "dbMTerm.h"
+#include "dbMasterEdgeType.h"
 #include "dbPolygon.h"
 #include "dbPolygonItr.h"
 #include "dbSite.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbTarget.h"
-#include "dbTargetItr.h"
 #include "dbTechLayerAntennaRule.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -154,10 +153,6 @@ bool _dbMaster::operator==(const _dbMaster& rhs) const
     return false;
   }
 
-  if (*_target_tbl != *rhs._target_tbl) {
-    return false;
-  }
-
   if (*_box_tbl != *rhs._box_tbl) {
     return false;
   }
@@ -167,6 +162,10 @@ bool _dbMaster::operator==(const _dbMaster& rhs) const
   }
 
   if (*_antenna_pin_model_tbl != *rhs._antenna_pin_model_tbl) {
+    return false;
+  }
+
+  if (*edge_types_tbl_ != *rhs.edge_types_tbl_) {
     return false;
   }
 
@@ -200,10 +199,10 @@ void _dbMaster::differences(dbDiff& diff,
   DIFF_HASH_TABLE(_mterm_hash);
   DIFF_TABLE_NO_DEEP(_mterm_tbl);
   DIFF_TABLE_NO_DEEP(_mpin_tbl);
-  DIFF_TABLE_NO_DEEP(_target_tbl);
   DIFF_TABLE_NO_DEEP(_box_tbl);
   DIFF_TABLE_NO_DEEP(_poly_box_tbl);
   DIFF_TABLE_NO_DEEP(_antenna_pin_model_tbl);
+  DIFF_TABLE_NO_DEEP(edge_types_tbl_);
   DIFF_END
 }
 
@@ -232,10 +231,10 @@ void _dbMaster::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_HASH_TABLE(_mterm_hash);
   DIFF_OUT_TABLE_NO_DEEP(_mterm_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_mpin_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_target_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_box_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_poly_box_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_antenna_pin_model_tbl);
+  DIFF_OUT_TABLE_NO_DEEP(edge_types_tbl_);
   DIFF_END
 }
 
@@ -270,9 +269,6 @@ _dbMaster::_dbMaster(_dbDatabase* db)
   _mpin_tbl = new dbTable<_dbMPin>(
       db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbMPinObj, 4, 2);
 
-  _target_tbl = new dbTable<_dbTarget>(
-      db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbTargetObj, 4, 2);
-
   _box_tbl = new dbTable<_dbBox>(
       db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbBoxObj, 8, 3);
 
@@ -286,6 +282,13 @@ _dbMaster::_dbMaster(_dbDatabase* db)
       dbTechAntennaPinModelObj,
       8,
       3);
+  edge_types_tbl_
+      = new dbTable<_dbMasterEdgeType>(db,
+                                       this,
+                                       (GetObjTbl_t) &_dbMaster::getObjectTable,
+                                       dbMasterEdgeTypeObj,
+                                       8,
+                                       3);
 
   _box_itr = new dbBoxItr(_box_tbl, _poly_box_tbl, true);
 
@@ -294,8 +297,6 @@ _dbMaster::_dbMaster(_dbDatabase* db)
   _pbox_box_itr = new dbBoxItr(_box_tbl, _poly_box_tbl, false);
 
   _mpin_itr = new dbMPinItr(_mpin_tbl);
-
-  _target_itr = new dbTargetItr(_target_tbl);
 
   _mterm_hash.setTable(_mterm_tbl);
 
@@ -330,14 +331,15 @@ _dbMaster::_dbMaster(_dbDatabase* db, const _dbMaster& m)
 
   _mpin_tbl = new dbTable<_dbMPin>(db, this, *m._mpin_tbl);
 
-  _target_tbl = new dbTable<_dbTarget>(db, this, *m._target_tbl);
-
   _box_tbl = new dbTable<_dbBox>(db, this, *m._box_tbl);
 
   _poly_box_tbl = new dbTable<_dbPolygon>(db, this, *m._poly_box_tbl);
 
   _antenna_pin_model_tbl = new dbTable<_dbTechAntennaPinModel>(
       db, this, *m._antenna_pin_model_tbl);
+
+  edge_types_tbl_
+      = new dbTable<_dbMasterEdgeType>(db, this, *m.edge_types_tbl_);
 
   _box_itr = new dbBoxItr(_box_tbl, _poly_box_tbl, true);
 
@@ -347,8 +349,6 @@ _dbMaster::_dbMaster(_dbDatabase* db, const _dbMaster& m)
 
   _mpin_itr = new dbMPinItr(_mpin_tbl);
 
-  _target_itr = new dbTargetItr(_target_tbl);
-
   _mterm_hash.setTable(_mterm_tbl);
 }
 
@@ -356,15 +356,14 @@ _dbMaster::~_dbMaster()
 {
   delete _mterm_tbl;
   delete _mpin_tbl;
-  delete _target_tbl;
   delete _box_tbl;
   delete _poly_box_tbl;
   delete _antenna_pin_model_tbl;
+  delete edge_types_tbl_;
   delete _box_itr;
   delete _pbox_itr;
   delete _pbox_box_itr;
   delete _mpin_itr;
-  delete _target_itr;
 
   if (_name) {
     free((void*) _name);
@@ -392,10 +391,10 @@ dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
   stream << master._mterm_hash;
   stream << *master._mterm_tbl;
   stream << *master._mpin_tbl;
-  stream << *master._target_tbl;
   stream << *master._box_tbl;
   stream << *master._poly_box_tbl;
   stream << *master._antenna_pin_model_tbl;
+  stream << *master.edge_types_tbl_;
   return stream;
 }
 
@@ -428,12 +427,19 @@ dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
   stream >> master._mterm_hash;
   stream >> *master._mterm_tbl;
   stream >> *master._mpin_tbl;
-  stream >> *master._target_tbl;
+  if (!db->isSchema(db_rm_target)) {
+    // obsolete table is always unpopulated so type/values unimportant
+    dbTable<_dbMaster> dummy(nullptr, nullptr, nullptr, dbDatabaseObj);
+    stream >> dummy;
+  }
   stream >> *master._box_tbl;
   if (db->isSchema(db_schema_polygon)) {
     stream >> *master._poly_box_tbl;
   }
   stream >> *master._antenna_pin_model_tbl;
+  if (db->isSchema(db_schema_master_edge_type)) {
+    stream >> *master.edge_types_tbl_;
+  }
   return stream;
 }
 
@@ -444,14 +450,14 @@ dbObjectTable* _dbMaster::getObjectTable(dbObjectType type)
       return _mterm_tbl;
     case dbMPinObj:
       return _mpin_tbl;
-    case dbTargetObj:
-      return _target_tbl;
     case dbBoxObj:
       return _box_tbl;
     case dbPolygonObj:
       return _poly_box_tbl;
     case dbTechAntennaPinModelObj:
       return _antenna_pin_model_tbl;
+    case dbMasterEdgeTypeObj:
+      return edge_types_tbl_;
     default:
       break;  // DIMITRIS_COMP_WARN
   }
@@ -583,6 +589,12 @@ dbSet<dbMTerm> dbMaster::getMTerms()
 {
   _dbMaster* master = (_dbMaster*) this;
   return dbSet<dbMTerm>(master, master->_mterm_tbl);
+}
+
+dbSet<dbMasterEdgeType> dbMaster::getEdgeTypes()
+{
+  _dbMaster* master = (_dbMaster*) this;
+  return dbSet<dbMasterEdgeType>(master, master->edge_types_tbl_);
 }
 
 dbMTerm* dbMaster::findMTerm(const char* name)

@@ -34,6 +34,7 @@
 #define BTREEANNEAL_H
 
 #include <cfloat>
+#include <vector>
 
 #include "allparquet.h"
 #include "baseannealer.h"

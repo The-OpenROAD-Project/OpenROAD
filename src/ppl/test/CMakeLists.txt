@@ -73,8 +73,9 @@ or_integration_tests(
     macro_not_placed_random
     min_dist_in_tracks1
     min_dist_in_tracks2
-    multi_layers
     multiple_calls
+    multi_layers
+    multi_track_pattern
     no_instance_pins
     no_pins
     no_tracks

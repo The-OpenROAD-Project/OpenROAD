@@ -34,6 +34,8 @@
 
 #include <spdlog/fmt/ostr.h>
 
+#include <vector>
+
 #include "dbDatabase.h"
 #include "dbMaster.h"
 #include "dbTable.h"
@@ -914,7 +916,7 @@ void _dbTechAntennaAreaElement::writeLef(const char* header,
                                          lefout& writer) const
 {
   fmt::print(writer.out(), "        {} {:g} ", header, _area);
-  if (_lyidx != dbIdValidation::invalidId()) {
+  if (_lyidx.isValid()) {
     fmt::print(writer.out(),
                "LAYER {} ",
                dbTechLayer::getTechLayer(tech, _lyidx)->getName().c_str());

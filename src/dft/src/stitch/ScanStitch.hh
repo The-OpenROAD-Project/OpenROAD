@@ -36,6 +36,8 @@
 #include <vector>
 
 #include "ScanChain.hh"
+#include "ScanStitchConfig.hh"
+#include "Utils.hh"
 #include "odb/db.h"
 
 namespace dft {
@@ -49,49 +51,53 @@ inline constexpr bool always_false_v = false;
 class ScanStitch
 {
  public:
-  explicit ScanStitch(odb::dbDatabase* db);
+  explicit ScanStitch(odb::dbDatabase* db,
+                      utl::Logger* logger,
+                      const ScanStitchConfig& config);
+
+  // Stitch one or more scan chains.
+  void Stitch(const std::vector<std::unique_ptr<ScanChain>>& scan_chains);
 
   // Stitch all the cells inside each one of the scan chains together.
-  void Stitch(const std::vector<std::unique_ptr<ScanChain>>& scan_chains);
-  void Stitch(odb::dbBlock* block,
-              const ScanChain& scan_chain,
-              const ScanDriver& scan_enable);
+  // - Ordinals are used with scan in/out/enable name patterns to produce the
+  // - final name for the signal(s) in question. Enable ordinal is different
+  // - to account for whether you're using global or per-chain enable.
+  void Stitch(odb::dbBlock* block, ScanChain& scan_chain, size_t ordinal = 0);
 
  private:
-  ScanDriver FindOrCreateScanEnable(odb::dbBlock* block);
-  ScanDriver FindOrCreateScanIn(odb::dbBlock* block);
+  ScanDriver FindOrCreateDriver(std::string_view kind,
+                                odb::dbBlock* block,
+                                const std::string& with_name);
+  ScanDriver FindOrCreateScanEnable(odb::dbBlock* block,
+                                    const std::string& with_name);
+  ScanDriver FindOrCreateScanIn(odb::dbBlock* block,
+                                const std::string& with_name);
   ScanLoad FindOrCreateScanOut(odb::dbBlock* block,
-                               const ScanDriver& cell_scan_out);
+                               const ScanDriver& cell_scan_out,
+                               const std::string& with_name);
 
   // Typesafe function to create Ports for the scan chains.
   template <typename Port>
-  Port CreateNewPort(odb::dbBlock* block, std::string_view name_pattern)
+  inline Port CreateNewPort(odb::dbBlock* block,
+                            const std::string& port_name,
+                            odb::dbNet* net = nullptr)
   {
-    for (int port_number = 1;; ++port_number) {
-      std::string port_name
-          = fmt::format(FMT_RUNTIME(name_pattern), port_number);
-      odb::dbBTerm* port = block->findBTerm(port_name.c_str());
-      if (!port) {
-        odb::dbNet* net = odb::dbNet::create(block, port_name.c_str());
-        net->setSigType(odb::dbSigType::SCAN);
-        port = odb::dbBTerm::create(net, port_name.c_str());
-        port->setSigType(odb::dbSigType::SCAN);
+    auto port = dft::utils::CreateNewPort(block, port_name, logger_, net);
 
-        if constexpr (std::is_same_v<Port, ScanLoad>) {
-          port->setIoType(odb::dbIoType::OUTPUT);
-        } else if constexpr (std::is_same_v<Port, ScanDriver>) {
-          port->setIoType(odb::dbIoType::INPUT);
-        } else {
-          static_assert(always_false_v<Port>,
-                        "Non-exhaustive cases for Port Type");
-        }
-
-        return Port(port);
-      }
+    if constexpr (std::is_same_v<Port, ScanLoad>) {
+      port->setIoType(odb::dbIoType::OUTPUT);
+    } else if constexpr (std::is_same_v<Port, ScanDriver>) {
+      port->setIoType(odb::dbIoType::INPUT);
+    } else {
+      static_assert(always_false_v<Port>, "Non-exhaustive cases for Port Type");
     }
+
+    return Port(port);
   }
 
+  const ScanStitchConfig& config_;
   odb::dbDatabase* db_;
+  utl::Logger* logger_;
   odb::dbBlock* top_block_;
 };
 

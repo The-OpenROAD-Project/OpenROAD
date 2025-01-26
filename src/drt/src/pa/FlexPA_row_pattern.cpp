@@ -174,7 +174,7 @@ void FlexPA::genInstRowPattern(std::vector<frInst*>& insts)
 
   genInstRowPatternInit(nodes, insts);
   genInstRowPatternPerform(nodes, insts);
-  genInstRowPattern_commit(nodes, insts);
+  genInstRowPatternCommit(nodes, insts);
 }
 
 // init dp node array for valid access patterns
@@ -252,7 +252,7 @@ void FlexPA::genInstRowPatternPerform(
   }
 }
 
-void FlexPA::genInstRowPattern_commit(
+void FlexPA::genInstRowPatternCommit(
     std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
     const std::vector<frInst*>& insts)
 {
@@ -306,11 +306,11 @@ void FlexPA::genInstRowPattern_commit(
   }
 
   if (is_debug_mode) {
-    genInstRowPattern_print(nodes, insts);
+    genInstRowPatternPrint(nodes, insts);
   }
 }
 
-void FlexPA::genInstRowPattern_print(
+void FlexPA::genInstRowPatternPrint(
     std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
     const std::vector<frInst*>& insts)
 {
@@ -396,7 +396,7 @@ int FlexPA::getEdgeCost(FlexDPNode* prev_node,
   addAccessPatternObj(
       curr_inst, curr_pin_access_pattern, objs, temp_vias, false);
 
-  const bool has_vio = !genPatterns_gc({prev_inst, curr_inst}, objs, Edge);
+  const bool has_vio = !genPatternsGC({prev_inst, curr_inst}, objs, Edge);
   if (!has_vio) {
     const int prev_node_cost = prev_node->getNodeCost();
     const int curr_node_cost = curr_node->getNodeCost();

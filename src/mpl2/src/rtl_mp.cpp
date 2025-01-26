@@ -33,14 +33,14 @@
 
 #include "mpl2/rtl_mp.h"
 
+#include <vector>
+
 #include "Mpl2Observer.h"
 #include "hier_rtlmp.h"
 #include "object.h"
 
 namespace mpl2 {
-using odb::dbDatabase;
 using std::string;
-using utl::Logger;
 using utl::MPL;
 
 MacroPlacer2::MacroPlacer2() = default;
@@ -67,7 +67,6 @@ bool MacroPlacer2::place(const int num_threads,
                          const float tolerance,
                          const int max_num_level,
                          const float coarsening_ratio,
-                         const int num_bundled_ios,
                          const int large_net_threshold,
                          const int signature_net_threshold,
                          const float halo_width,
@@ -97,7 +96,6 @@ bool MacroPlacer2::place(const int num_threads,
   hier_rtlmp_->setClusterSizeTolerance(tolerance);
   hier_rtlmp_->setMaxNumLevel(max_num_level);
   hier_rtlmp_->setClusterSizeRatioPerLevel(coarsening_ratio);
-  hier_rtlmp_->setNumBundledIOsPerBoundary(num_bundled_ios);
   hier_rtlmp_->setLargeNetThreshold(large_net_threshold);
   hier_rtlmp_->setSignatureNetThreshold(signature_net_threshold);
   hier_rtlmp_->setHaloWidth(halo_width);

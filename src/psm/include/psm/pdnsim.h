@@ -105,6 +105,7 @@ class PDNSim : public odb::dbBlockCallBackObj
                         sta::Corner* corner,
                         GeneratedSourceType source_type,
                         const std::string& voltage_file,
+                        bool use_prev_solution,
                         bool enable_em,
                         const std::string& em_file,
                         const std::string& error_file,
@@ -120,7 +121,8 @@ class PDNSim : public odb::dbBlockCallBackObj
                          IRDropByPoint& ir_drop) const;
   bool checkConnectivity(odb::dbNet* net,
                          bool floorplanning,
-                         const std::string& error_file);
+                         const std::string& error_file,
+                         bool require_bterm);
   void setDebugGui(bool enable);
 
   void clearSolvers();

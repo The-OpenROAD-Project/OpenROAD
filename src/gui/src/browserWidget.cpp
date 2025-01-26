@@ -41,6 +41,7 @@
 #include <QLocale>
 #include <QMouseEvent>
 #include <QString>
+#include <vector>
 
 #include "dbDescriptors.h"
 #include "db_sta/dbSta.hh"

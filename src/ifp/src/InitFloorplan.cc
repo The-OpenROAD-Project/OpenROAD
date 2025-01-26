@@ -39,6 +39,7 @@
 #include <fstream>
 #include <iostream>
 #include <set>
+#include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
@@ -55,14 +56,12 @@
 
 namespace ifp {
 
-using std::abs;
 using std::ceil;
 using std::map;
 using std::round;
 using std::set;
 using std::string;
 
-using sta::dbNetwork;
 using sta::StringVector;
 
 using utl::IFP;
@@ -79,10 +78,8 @@ using odb::dbOrientType;
 using odb::dbRegion;
 using odb::dbRow;
 using odb::dbRowDir;
-using odb::dbSet;
 using odb::dbSite;
 using odb::dbTech;
-using odb::dbTechLayer;
 using odb::dbTechLayerDir;
 using odb::dbTechLayerType;
 using odb::dbTrackGrid;
@@ -169,6 +166,10 @@ void InitFloorplan::initFloorplan(
     RowParity row_parity,
     const std::set<odb::dbSite*>& flipped_sites)
 {
+  if (!die.contains(core)) {
+    logger_->error(IFP, 55, "Die area must contain the core area.");
+  }
+
   Rect die_area(snapToMfgGrid(die.xMin()),
                 snapToMfgGrid(die.yMin()),
                 snapToMfgGrid(die.xMax()),

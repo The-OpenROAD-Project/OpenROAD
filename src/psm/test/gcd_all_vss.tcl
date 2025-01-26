@@ -9,7 +9,7 @@ set voltage_file [make_result_file gcd_all_vss-voltage.rpt]
 set em_file [make_result_file gcd_all_vss-em.rpt]
 set spice_file [make_result_file gcd_all_vss-spice.sp]
 
-check_power_grid -net VSS
+check_power_grid -net VSS -dont_require_terminals
 analyze_power_grid -vsrc Vsrc_gcd_vss.loc -voltage_file $voltage_file -net VSS \
   -enable_em -em_outfile $em_file
 
