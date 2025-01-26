@@ -441,7 +441,7 @@ sta::define_cmd_args "remove_buffers" { instances }
 
 proc remove_buffers { args } {
   sta::parse_key_args "remove_buffers" args keys {} flags {}
-  rsz::remove_buffers_cmd [ get_cells $args ]
+  rsz::remove_buffers_cmd [get_cells $args]
 }
 
 sta::define_cmd_args "balance_row_usage" {}
