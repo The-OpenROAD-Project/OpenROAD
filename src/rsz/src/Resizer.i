@@ -57,6 +57,9 @@ ensureLinked();
 
 namespace sta {
 
+// The aliases are created to attach different conversion rules:
+// TmpNetSeq, TmpPinSet pointers are freed when crossing into Tcl,
+// NetSeq, PinSet pointers are not
 using TmpNetSeq = NetSeq;
 using TmpPinSet = PinSet;
 
