@@ -41,9 +41,24 @@ namespace dpl {
 using odb::dbOrientType;
 using odb::dbSite;
 
+struct Edge
+{
+  Edge(const std::string& type, const odb::Rect& box)
+      : edge_type_(type), bbox_(box)
+  {
+  }
+  const std::string& getEdgeType() const { return edge_type_; }
+  const odb::Rect& getBBox() const { return bbox_; }
+
+ private:
+  std::string edge_type_;
+  odb::Rect bbox_;
+};
+
 struct Master
 {
   bool is_multi_row = false;
+  std::vector<Edge> edges_;
 };
 
 struct Cell

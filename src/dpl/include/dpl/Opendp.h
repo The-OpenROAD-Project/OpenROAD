@@ -240,6 +240,10 @@ class Opendp
                    GridY y,
                    GridX x_end,
                    GridY y_end) const;
+  bool checkEdgeSpacing(const Cell* cell,
+                        const GridX x,
+                        const GridY y,
+                        const odb::dbOrientType& orient) const;
   void shiftMove(Cell* cell);
   bool mapMove(Cell* cell);
   bool mapMove(Cell* cell, const GridPt& grid_pt);
@@ -300,7 +304,8 @@ class Opendp
                     const vector<Cell*>& one_site_gap_failures,
                     const vector<Cell*>& site_align_failures,
                     const vector<Cell*>& region_placement_failures,
-                    const vector<Cell*>& placement_failures);
+                    const vector<Cell*>& placement_failures,
+                    const vector<Cell*>& edge_spacing_failures);
   void writeJsonReport(const string& filename);
 
   void rectDist(const Cell* cell,

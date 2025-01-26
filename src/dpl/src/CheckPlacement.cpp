@@ -63,6 +63,7 @@ void Opendp::checkPlacement(const bool verbose,
   vector<Cell*> one_site_gap_failures;
   vector<Cell*> site_align_failures;
   vector<Cell*> region_placement_failures;
+  vector<Cell*> edge_spacing_failures;
 
   initGrid();
   groupAssignCellRegions();
@@ -91,6 +92,13 @@ void Opendp::checkPlacement(const bool verbose,
     if (checkOverlap(cell)) {
       overlap_failures.push_back(&cell);
     }
+    // EdgeSpacing check
+    if (!checkEdgeSpacing(&cell,
+                          grid_->gridX(&cell),
+                          grid_->gridSnapDownY(&cell),
+                          cell.orient_)) {
+      edge_spacing_failures.emplace_back(&cell);
+    }
   }
   // This loop is separate because it needs to be done after the overlap check
   // The overlap check assigns the overlap cell to its pixel
@@ -111,7 +119,8 @@ void Opendp::checkPlacement(const bool verbose,
                one_site_gap_failures,
                site_align_failures,
                region_placement_failures,
-               {});
+               {},
+               edge_spacing_failures);
   if (!report_file_name.empty()) {
     writeJsonReport(report_file_name);
   }
@@ -124,6 +133,8 @@ void Opendp::checkPlacement(const bool verbose,
   reportFailures(site_align_failures, 6, "Site aligned", verbose);
   reportFailures(one_site_gap_failures, 7, "One site gap", verbose);
   reportFailures(region_placement_failures, 8, "Region placement", verbose);
+  reportFailures(
+      edge_spacing_failures, 9, "LEF58_CELLEDGESPACINGTABLE", verbose);
 
   logger_->metric("design__violations",
                   placed_failures.size() + in_rows_failures.size()
@@ -132,7 +143,7 @@ void Opendp::checkPlacement(const bool verbose,
   if (placed_failures.size() + in_rows_failures.size() + overlap_failures.size()
           + site_align_failures.size()
           + (disallow_one_site_gaps ? one_site_gap_failures.size() : 0)
-          + region_placement_failures.size()
+          + region_placement_failures.size() + edge_spacing_failures.size()
       > 0) {
     logger_->error(DPL, 33, "detailed placement checks failed.");
   }
@@ -191,12 +202,13 @@ void Opendp::saveFailures(const vector<Cell*>& placed_failures,
                           const vector<Cell*>& one_site_gap_failures,
                           const vector<Cell*>& site_align_failures,
                           const vector<Cell*>& region_placement_failures,
-                          const vector<Cell*>& placement_failures)
+                          const vector<Cell*>& placement_failures,
+                          const vector<Cell*>& edge_spacing_failures)
 {
   if (placed_failures.empty() && in_rows_failures.empty()
       && overlap_failures.empty() && one_site_gap_failures.empty()
       && site_align_failures.empty() && region_placement_failures.empty()
-      && placement_failures.empty()) {
+      && placement_failures.empty() && edge_spacing_failures.empty()) {
     return;
   }
 
@@ -246,6 +258,13 @@ void Opendp::saveFailures(const vector<Cell*>& placed_failures,
         tool_category, "Placement_failures");
     category->setDescription("Cells that DPL failed to place.");
     saveViolations(placement_failures, category);
+  }
+  if (!edge_spacing_failures.empty()) {
+    auto category = odb::dbMarkerCategory::createOrReplace(
+        tool_category, "Cell_edge_spacing_failyres");
+    category->setDescription(
+        "Cells that violate the LEF58_CELLEDGESPACINGTABLE.");
+    saveViolations(edge_spacing_failures, category);
   }
 }
 

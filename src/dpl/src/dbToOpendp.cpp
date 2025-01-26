@@ -110,6 +110,51 @@ void Opendp::makeMacros()
 void Opendp::makeMaster(Master* master, dbMaster* db_master)
 {
   master->is_multi_row = grid_->isMultiHeight(db_master);
+  master->edges_.clear();
+  Rect bbox;
+  db_master->getPlacementBoundary(bbox);
+  int num_rows = grid_->gridHeight(db_master).v;
+  for (auto edge : db_master->getEdgeTypes()) {
+    auto dir = edge->getEdgeDir();
+    Rect edge_rect(bbox);
+    switch (dir) {
+      case odb::dbMasterEdgeType::RIGHT:
+        edge_rect.set_xlo(bbox.xMax());
+        break;
+      case odb::dbMasterEdgeType::LEFT:
+        edge_rect.set_xhi(bbox.xMin());
+        break;
+      case odb::dbMasterEdgeType::TOP:
+        edge_rect.set_ylo(bbox.yMax());
+        break;
+      case odb::dbMasterEdgeType::BOTTOM:
+        edge_rect.set_yhi(bbox.yMin());
+        break;
+    }
+    if (dir == odb::dbMasterEdgeType::TOP
+        || dir == odb::dbMasterEdgeType::BOTTOM) {
+      if (edge->getRangeBegin() != -1) {
+        edge_rect.set_xlo(edge_rect.xMin() + edge->getRangeBegin());
+        edge_rect.set_xhi(edge_rect.xMin() + edge->getRangeEnd());
+      }
+    } else {
+      auto dy = edge_rect.dy();
+      auto row_height = dy / num_rows;
+      auto half_row_height = row_height / 2;
+      if (edge->getCellRow() != -1) {
+        edge_rect.set_ylo(edge_rect.yMin()
+                          + (edge->getCellRow() - 1) * row_height);
+        edge_rect.set_yhi(
+            std::min(edge_rect.yMax(), edge_rect.yMin() + row_height));
+      } else if (edge->getHalfRow() != -1) {
+        edge_rect.set_ylo(edge_rect.yMin()
+                          + (edge->getHalfRow() - 1) * half_row_height);
+        edge_rect.set_yhi(
+            std::min(edge_rect.yMax(), edge_rect.yMin() + half_row_height));
+      }
+    }
+    master->edges_.emplace_back(edge->getEdgeType(), edge_rect);
+  }
 }
 
 void Opendp::makeCells()

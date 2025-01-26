@@ -72,6 +72,7 @@ or_integration_tests(
     simple08
     simple09
     simple10
+    edge_spacing
 )
 
 # Skipped
