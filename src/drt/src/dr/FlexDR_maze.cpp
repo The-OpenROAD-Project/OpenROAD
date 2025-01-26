@@ -2762,7 +2762,7 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net)
   if (ap->getPathSegs().empty()) {
     return false;
   }
-  for (auto& ps : ap->getPathSegs()) {
+  for (frPathSeg ps : ap->getPathSegs()) {
     std::unique_ptr<drPathSeg> drPs = std::make_unique<drPathSeg>();
     drPs->setApPathSeg({x, y});
     if (inst) {

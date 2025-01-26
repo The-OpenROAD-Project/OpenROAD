@@ -118,7 +118,7 @@ class FlexGCWorker::Impl
     mapMarkers_.clear();
     markers_.clear();
   }
-  void addPAObj(frConnFig* obj, frBlockObject* owner);
+  void addPAObj(const frConnFig* obj, frBlockObject* owner);
   // getters
   frTechObject* getTech() const { return tech_; }
   FlexDRWorker* getDRWorker() const { return drWorker_; }

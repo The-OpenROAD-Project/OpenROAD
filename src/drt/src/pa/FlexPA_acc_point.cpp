@@ -723,7 +723,7 @@ bool FlexPA::isPlanarViolationFree(frAccessPoint* ap,
     }
   }
   design_rule_checker.addPAObj(ps, owner);
-  for (auto& apPs : ap->getPathSegs()) {
+  for (const auto& apPs : ap->getPathSegs()) {
     design_rule_checker.addPAObj(&apPs, owner);
   }
   design_rule_checker.initPA1();
@@ -1033,7 +1033,7 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
   }
   design_rule_checker.addPAObj(ps, owner);
   design_rule_checker.addPAObj(via, owner);
-  for (auto& apPs : ap->getPathSegs()) {
+  for (const auto& apPs : ap->getPathSegs()) {
     design_rule_checker.addPAObj(&apPs, owner);
   }
   design_rule_checker.initPA1();
@@ -1495,9 +1495,7 @@ void FlexPA::revertAccessPoints()
           Point unique_AP_point(access_point->getPoint());
           revert_transform.apply(unique_AP_point);
           access_point->setPoint(unique_AP_point);
-          for (auto& ps : access_point->getPathSegs()) {
-            ps.transform(revert_transform);
-          }
+          access_point->transformPathSegs(revert_transform);
         }
       }
     }

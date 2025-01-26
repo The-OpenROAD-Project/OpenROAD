@@ -43,6 +43,12 @@ void frAccessPoint::addViaDef(const frViaDef* in)
   }
   viaDefs_[numCutIdx].push_back(in);
 }
+void frAccessPoint::transformPathSegs(const odb::dbTransform& transform)
+{
+  for (auto& ps : pathSegs_) {
+    ps.transform(transform);
+  }
+}
 
 template <class Archive>
 void frAccessPoint::serialize(Archive& ar, const unsigned int version)
