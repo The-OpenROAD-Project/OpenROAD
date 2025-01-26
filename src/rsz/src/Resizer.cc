@@ -287,6 +287,41 @@ void Resizer::removeBuffers(sta::InstanceSeq insts, bool recordJournal)
   logger_->info(RSZ, 26, "Removed {} buffers.", remove_count);
 }
 
+void Resizer::unbufferNet(Net *net)
+{
+  sta::InstanceSeq insts;
+  std::vector<Net *> queue = {net};
+
+  while (!queue.empty()) {
+    Net *net_ = queue.back();
+    sta::NetConnectedPinIterator *pin_iter =
+        network_->connectedPinIterator(net_);
+    queue.pop_back();
+
+    while (pin_iter->hasNext()) {
+      const Pin *pin = pin_iter->next();
+      const LibertyPort *port;
+      if ((port = network_->libertyPort(pin)) &&
+          port->libertyCell()->isBuffer()) {
+        LibertyPort *in, *out;
+        port->libertyCell()->bufferPorts(in, out);
+
+        if (port == in) {
+          const Instance *inst = network_->instance(pin);
+          insts.push_back(inst);
+          const Pin *out_pin = network_->findPin(inst, out);
+          if (out_pin)
+            queue.push_back(network_->net(out_pin));
+        }
+      }
+    }
+
+    delete pin_iter;
+  }
+
+  removeBuffers(insts);
+}
+
 bool Resizer::bufferBetweenPorts(Instance* buffer)
 {
   LibertyCell* lib_cell = network_->libertyCell(buffer);

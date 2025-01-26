@@ -318,6 +318,15 @@ remove_buffers_cmd(InstanceSeq *insts)
   }
 }
 
+// Unbuffer net fully (for testing)
+void
+unbuffer_net_cmd(Net *net)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->unbufferNet(net);
+}
+
 void
 balance_row_usage_cmd()
 {
