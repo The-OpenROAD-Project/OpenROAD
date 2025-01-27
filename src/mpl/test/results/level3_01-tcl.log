@@ -1,0 +1,36 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/fakeram45_64x7.lef, created 1 library cells
+[INFO ODB-0128] Design: gcd_mem3
+[INFO ODB-0130]     Created 75 pins.
+[INFO ODB-0131]     Created 24 components and 222 component-terminals.
+[INFO ODB-0133]     Created 139 nets and 153 connections.
+[INFO MPL-0101] Found 3 macros.
+[INFO MPL-0102] West pins 24.
+[INFO MPL-0102] East pins 23.
+[INFO MPL-0102] North pins 14.
+[INFO MPL-0102] South pins 14.
+[INFO MPL-0069] Initial weighted wire length 2565.97.
+Begin one level partition.
+[INFO MPL-0076] Partition 3 macros.
+[INFO MPL-0077] Using 1 cut lines.
+[INFO MPL-0079] Cut line 132.43.
+End one level partition.
+Begin horizontal partition.
+Begin east partition.
+[INFO MPL-0076] Partition 0 macros.
+[INFO MPL-0077] Using 0 cut lines.
+End east partition.
+Begin west partition.
+[INFO MPL-0076] Partition 3 macros.
+[INFO MPL-0077] Using 3 cut lines.
+[INFO MPL-0079] Cut line 61.60.
+[INFO MPL-0079] Cut line 120.40.
+[INFO MPL-0079] Cut line 142.80.
+End west partition.
+End horizontal partition.
+[INFO MPL-0070] Using 3 partition sets.
+[INFO MPL-0071] Solution 1 weighted wire length 2645.83.
+[INFO MPL-0071] Solution 2 weighted wire length 3704.35.
+[WARNING MPL-0061] Parquet area 54.77 x 114 exceeds the partition area 62.51 x 102.2.
+[INFO MPL-0073] Best weighted wire length 3704.35.
+No differences found.
