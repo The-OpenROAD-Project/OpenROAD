@@ -55,4 +55,9 @@ void set_consent(const char *consent)
   getOra()->setConsent(consent);
 }
 
+void set_mode(const char *mode)
+{
+  getOra()->setMode(mode);
+}
+
 %} // inline

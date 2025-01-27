@@ -63,27 +63,6 @@ std::string getLocalDirPath()
   return std::string(getenv("HOME")) + "/.local/share/openroad";
 };
 
-bool checkConsent()
-{
-  std::string folderPath = getLocalDirPath();
-  std::ifstream folderFile(folderPath);
-  if (!folderFile) {
-    return false;
-  }
-
-  std::string consentFilePath = folderPath + "/orassistant_consent.txt";
-  std::ifstream consentFile(consentFilePath);
-
-  if (consentFile.is_open()) {
-    std::string consent;
-    std::getline(consentFile, consent);
-    consentFile.close();
-    return true;
-  }
-
-  return false;
-}
-
 std::string sendPostRequest(const std::string& url, const std::string& jsonData)
 {
   CURL* curl;
@@ -136,8 +115,28 @@ void Ora::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger)
         "with the General Data Protection Regulation (GDPR). By using the "
         "cloud-hosted version of this app, you consent to the collection and "
         "processing of your queries and the subsequently generated answers. "
-        "Give consent to use the application by using the `ora_init consent "
-        "hostURL`  command.";
+        "If you wish to remove your consent, please run `ora_init n`.";
+  consentVersion = "1.0";
+
+  try {
+    std::ifstream consentFile(getLocalDirPath() + "/orassistant_consent.txt");
+    if (consentFile.is_open()) {
+      std::string line;
+      while (std::getline(consentFile, line)) {
+        if (line.find("consent: ") == 0) {
+          givenConsent = line.substr(9);
+        } else if (line.find("consent_version: ") == 0) {
+          givenConsentVersion = line.substr(17);
+        }
+      }
+      consentFile.close();
+    }
+  } catch (const std::exception& e) {
+    logger_->warn(utl::ORA,
+                  121,
+                  "Failed to read ORAssistant consent file. Exception: {}",
+                  e.what());
+  }
 
   try {
     std::ifstream localHostUrlFile(getLocalDirPath() + "/orassistant_host.txt");
@@ -149,6 +148,19 @@ void Ora::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger)
     logger_->warn(utl::ORA,
                   101,
                   "Failed to read ORAssistant local host. Exception: {}",
+                  e.what());
+  }
+
+  try {
+    std::ifstream modeFile(getLocalDirPath() + "/orassistant_mode.txt");
+    if (modeFile.is_open()) {
+      std::getline(modeFile, mode_);
+      modeFile.close();
+    }
+  } catch (const std::exception& e) {
+    logger_->warn(utl::ORA,
+                  125,
+                  "Failed to read ORAssistant mode. Exception: {}",
                   e.what());
   }
 }
@@ -170,24 +182,32 @@ void Ora::checkLocalDir()
 
 void Ora::askbot(const char* query)
 {
-  if (!checkConsent()) {
+  if (mode_.empty()) {
     logger_->warn(
         utl::ORA,
         104,
-        "To use the ORAssistant, please provide consent by running `ora_init "
-        "consent hostURL` command. Only the query you type in will be sent "
+        "To use ORAssistant, please configure the tool by running "
+        "`ora_init "
+        "mode consent hostURL` command. Only the query you type in will be "
+        "sent "
         "outside the application—no other user or design data will be shared. "
         "For instructions on setting up a locally hosted copy, refer to the "
         "documentation in https://github.com/The-OpenROAD-Project/ORAssistant. "
         "Note: Consent must be set to y only for the web-hosted ORAssistant. "
         "Please set it to n and provide a hostURL if you choose to use a "
         "locally hosted version.");
-
     return;
   }
-
-  if (cloudConsent_) {
+  if (givenConsent == "y") {
     hostUrl = cloudHostUrl;
+    if (givenConsentVersion != consentVersion) {
+      logger_->warn(
+          utl::ORA,
+          120,
+          "The consent messaage has been updated since your last use. Please "
+          "run `ora_init y` to provide consent again.");
+      return;
+    }
   } else {
     hostUrl = localHostUrl;
   }
@@ -290,7 +310,8 @@ void Ora::setConsent(const char* consent)
   }
 
   if (consentFile.is_open()) {
-    consentFile << consent;
+    consentFile << "consent: " << consent << "\n";
+    consentFile << "consent_version: " << consentVersion << "\n";
     consentFile.close();
     logger_->info(
         utl::ORA,
@@ -301,16 +322,38 @@ void Ora::setConsent(const char* consent)
   }
 
   if (std::string(consent) == "y") {
-    cloudConsent_ = true;
-    logger_->info(utl::ORA,
-                  118,
-                  "{}\nConsent granted for using a cloud hosted ORAssistant. "
-                  "Please run `ora_init n` to remove your consent.",
-                  consentMessage);
+    logger_->info(utl::ORA, 118, consentMessage);
   } else if (std::string(consent) == "n") {
-    cloudConsent_ = false;
     logger_->info(
         utl::ORA, 119, "Consent removed for using a cloud hosted ORAssistant.");
+  }
+
+  givenConsent = std::string(consent);
+  givenConsentVersion = consentVersion;
+}
+
+void Ora::setMode(const char* mode)
+{
+  checkLocalDir();
+  std::string modeFilePath = localDirPath + "/orassistant_mode.txt";
+  std::ofstream modeFile(modeFilePath);
+
+  if (std::string(mode) != "local" && std::string(mode) != "cloud") {
+    logger_->error(utl::ORA,
+                   122,
+                   "{} : Invalid mode value. Use 'local' or 'cloud'.",
+                   mode);
+    return;
+  }
+
+  if (modeFile.is_open()) {
+    modeFile << mode;
+    modeFile.close();
+    logger_->info(utl::ORA,
+                  123,
+                  "Mode saved to ~/.local/share/openroad/orassistant_mode.txt");
+  } else {
+    logger_->warn(utl::ORA, 124, "Failed to write mode to file.");
   }
 }
 

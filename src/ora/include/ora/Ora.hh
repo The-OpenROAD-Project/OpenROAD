@@ -36,6 +36,7 @@ class Ora
   ~Ora();
   void init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger);
   void askbot(const char* pos_arg1);
+  void setMode(const char* mode);
   void setBotHost(const char* host);
   void setSourceFlag(bool sourceFlag);
   void setConsent(const char* consent);
@@ -43,12 +44,15 @@ class Ora
  private:
   odb::dbDatabase* db_;
   bool sourceFlag_;
-  bool cloudConsent_;
+  std::string mode_;
   std::string hostUrl;
   std::string localHostUrl;
   std::string cloudHostUrl;
   std::string consentMessage;
+  std::string consentVersion;
   std::string localDirPath;
+  std::string givenConsent;
+  std::string givenConsentVersion;
   void checkLocalDir();
 
   Logger* logger_ = nullptr;

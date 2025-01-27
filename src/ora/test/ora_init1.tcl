@@ -1,1 +1,1 @@
-ora_init n "http://0.0.0.0:8080/mock"
+ora_init local "http://0.0.0.0:8080/mock"

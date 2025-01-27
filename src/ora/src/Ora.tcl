@@ -25,17 +25,15 @@ proc askbot { args } {
   ora::askbot [lindex $args 0]
 }
 
-proc ora_init {consent {hostUrl ""}} {
-  puts "Setting ORAssistant consent to $consent"
-  ora::set_consent $consent
 
-  if {[string tolower $consent] eq "y"} {
-    set hostUrl ""
+proc ora_init {arg1 {arg2 ""}} {
+  ora::set_mode $arg1
+
+  if {$arg1 eq "cloud"} {
+    ora::set_consent $arg2
+  } elseif {$arg1 eq "local"} {
+    ora::set_bothost $arg2
   } else {
-    if {$hostUrl ne ""} {
-      puts "Setting ORAssistant host to $hostUrl"
-      sta::check_argc_eq1 "set_bothost" $hostUrl
-      ora::set_bothost $hostUrl
-    }
+    puts "Invalid mode: $arg1"
   }
 }
