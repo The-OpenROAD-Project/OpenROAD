@@ -274,7 +274,6 @@ BufferedNetSeq RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
               = fuzzyLess(p->required(sta_), q->required(sta_)) ? p : q;
           BufferedNetPtr junc = make_shared<BufferedNet>(
               BufferedNetType::junction, bnet->location(), p, q, resizer_);
-          junc->setCapacitance(p->cap() + q->cap());
           junc->setRequiredPath(min_req->requiredPath());
           junc->setRequiredDelay(min_req->requiredDelay());
           slacks[junc.get()] = slackPenalized(junc);
@@ -325,7 +324,6 @@ BufferedNetSeq RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
       const DcalcAnalysisPt* dcalc_ap = req_path.isNull()
                                             ? resizer_->tgt_slew_dcalc_ap_
                                             : req_path.dcalcAnalysisPt(sta_);
-      bnet->setCapacitance(resizer_->pinCapacitance(load_pin, dcalc_ap));
       bnet->setRequiredPath(req_path);
       debugPrint(logger_,
                  RSZ,
@@ -370,7 +368,6 @@ BufferedNetSeq RepairSetup::addWireAndBuffer(const BufferedNetSeq& Z,
     BufferedNetPtr z = make_shared<BufferedNet>(
         BufferedNetType::wire, wire_end, wire_layer, p, corner, resizer_);
     // account for wire load
-    z->setCapacitance(p->cap() + wire_cap);
     z->setRequiredPath(req_path);
     // account for wire delay
     z->setRequiredDelay(p->requiredDelay() + wire_delay);
@@ -437,7 +434,6 @@ BufferedNetSeq RepairSetup::addWireAndBuffer(const BufferedNetSeq& Z,
               best_option,
               corner_,
               resizer_);
-          z->setCapacitance(buffer_cap);
           z->setRequiredPath(req_path);
           z->setRequiredDelay(best_option->requiredDelay() + buffer_delay);
           debugPrint(logger_,
