@@ -46,6 +46,7 @@
 #include <typeinfo>
 #include <unordered_map>
 #include <variant>
+#include <vector>
 
 #include "odb/db.h"
 

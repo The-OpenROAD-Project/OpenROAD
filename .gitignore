@@ -19,6 +19,7 @@ TAGS
 .cache
 Makefile
 __pycache__
+venv/
 
 include/ord/Version.hh
 
@@ -29,6 +30,7 @@ flow
 docs/main
 README2.md
 messages.txt
+messages.checked
 Messages.md
 MessagesFinal.md
 
@@ -40,6 +42,8 @@ coverage-output
 .metals/
 
 etc/openroad_deps_prefixes.txt
+etc/run-clang-tidy-cached
+OpenROAD_clang-tidy.*
 
 *debhelper*
 debian/changelog

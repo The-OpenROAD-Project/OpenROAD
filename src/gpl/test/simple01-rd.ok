@@ -59,7 +59,7 @@
 [NesterovSolve] Iter:  190 overflow: 0.683 HPWL: 4375212
 [NesterovSolve] Iter:  200 overflow: 0.661 HPWL: 4447293
 [NesterovSolve] Iter:  210 overflow: 0.625 HPWL: 4516566
-[NesterovSolve] Snapshot saved at iter = 216
+[INFO GPL-0088] Routability snapshot saved at iter = 216
 [NesterovSolve] Iter:  220 overflow: 0.586 HPWL: 4589913
 [NesterovSolve] Iter:  230 overflow: 0.547 HPWL: 4672006
 [NesterovSolve] Iter:  240 overflow: 0.494 HPWL: 4711101

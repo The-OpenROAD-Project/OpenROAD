@@ -31,14 +31,14 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/make_shared.hpp>
 
-namespace asio = boost::asio;
-namespace ip = asio::ip;
-using asio::ip::tcp;
-
 namespace utl {
 class Logger;
 }
 namespace dst {
+
+namespace asio = boost::asio;
+using asio::ip::tcp;
+
 class LoadBalancer;
 
 class BalancerConnection

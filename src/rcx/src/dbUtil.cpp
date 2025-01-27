@@ -32,6 +32,8 @@
 
 #include "rcx/dbUtil.h"
 
+#include <vector>
+
 #include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
@@ -40,11 +42,8 @@
 
 namespace rcx {
 
-using odb::Ath__array1D;
 using odb::dbBPin;
-using odb::dbIntProperty;
 using odb::dbIoType;
-using odb::dbMaster;
 using odb::dbPlacementStatus;
 using odb::dbSet;
 using odb::dbSigType;
@@ -209,7 +208,6 @@ dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
                 rule_name,
                 routingLayer,
                 width);
-
   int i;
   for (i = 1; i <= _tech->getRoutingLayerCount(); i++) {
     dbTechLayer* layer = _routingLayers[i];

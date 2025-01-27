@@ -2220,7 +2220,7 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
 
   // TODO: This OpenMP parallel section is causing non-determinism. Consider
   // revisiting this in the future to restore determinism.
-  //#pragma omp parallel for num_threads(nbc_->getNumThreads()) reduction(+ :
+  // #pragma omp parallel for num_threads(nbc_->getNumThreads()) reduction(+ :
   // wireLengthGradSum_, densityGradSum_, gradSum)
   for (size_t i = 0; i < gCells_.size(); i++) {
     GCell* gCell = gCells_.at(i);

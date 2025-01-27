@@ -38,6 +38,7 @@
 #include <iostream>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "grt/GlobalRouter.h"
 #include "grt/Rudy.h"
@@ -46,9 +47,7 @@
 #include "utl/Logger.h"
 
 using odb::dbBlock;
-using std::make_pair;
 using std::pair;
-using std::sort;
 using std::string;
 using std::vector;
 

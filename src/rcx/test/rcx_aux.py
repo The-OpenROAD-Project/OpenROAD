@@ -14,26 +14,41 @@ def extract_parasitics(
     *,
     ext_model_file=None,
     corner_cnt=1,
+    corner=-1,
     max_res=50.0,
     coupling_threshold=0.1,
     debug_net_id="",
     lef_res=False,
     cc_model=10,
     context_depth=5,
-    no_merge_via_res=False
+    no_merge_via_res=False,
+    lef_rc=False,
+    skip_over_cell=False,
+    version=1.0,
+    dbg=0
 ):
 
     opts = rcx.ExtractOptions()
 
     opts.ext_model_file = ext_model_file
     opts.corner_cnt = corner_cnt
+    opts.corner = corner
     opts.max_res = max_res
     opts.coupling_threshold = coupling_threshold
+    opts.signal_table = 3
     opts.cc_model = cc_model
     opts.context_depth = context_depth
     opts.lef_res = lef_res
+    opts.lef_rc = lef_rc
     opts.debug_net = debug_net_id
     opts.no_merge_via_res = no_merge_via_res
+    opts.over_cell = not skip_over_cell
+
+    if version >= 2.0:
+        opts._v2 = true
+    opts._version = version
+
+    opts._dbg = dbg
 
     design.getOpenRCX().extract(opts)
 
@@ -67,7 +82,8 @@ def bench_wires(
     w_list="1",
     s_list="1 2 2.5 3 3.5 4 4.5 5 6 8 10 12",
     over_dist=100,
-    under_dist=100
+    under_dist=100,
+    v1=False
 ):
     opts = rcx.BenchWiresOptions()
     opts.w_list = w_list
@@ -82,6 +98,7 @@ def bench_wires(
     opts.db_only = db_only
     opts.over_dist = over_dist
     opts.under_dist = under_dist
+    opts.v1 = v1
     design.getOpenRCX().bench_wires(opts)
 
 

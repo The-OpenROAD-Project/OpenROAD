@@ -33,6 +33,7 @@
 #include "shape.h"
 
 #include <boost/polygon/polygon.hpp>
+#include <vector>
 
 #include "grid.h"
 #include "grid_component.h"
@@ -536,13 +537,18 @@ std::string Shape::getDisplayText() const
   return text;
 }
 
-bool Shape::isRemovable() const
+bool Shape::isRemovable(bool assume_bterm) const
 {
   if (!isModifiable()) {
     return false;
   }
 
-  if (getNumberOfConnections() < 2) {
+  int min_conns = 2;
+  if (assume_bterm) {
+    min_conns = 1;
+  }
+
+  if (getNumberOfConnections() < min_conns) {
     // floating shape with one or zero connections
     return true;
   }
@@ -645,6 +651,11 @@ Shape::ObstructionTreeMap Shape::convertVectorToObstructionTree(
   return trees;
 }
 
+odb::dbTechLayerDir Shape::getLayerDirection() const
+{
+  return layer_->getDirection();
+}
+
 /////////
 
 FollowPinShape::FollowPinShape(odb::dbTechLayer* layer,
@@ -735,6 +746,19 @@ bool FollowPinShape::cut(const ObstructionTree& obstructions,
         // not estimated obstructions
         return other->shapeType() != GRID_OBS;
       });
+}
+
+odb::dbTechLayerDir FollowPinShape::getLayerDirection() const
+{
+  if (isSquare()) {
+    return getLayer()->getDirection();
+  }
+
+  if (isHorizontal()) {
+    return odb::dbTechLayerDir::HORIZONTAL;
+  }
+
+  return odb::dbTechLayerDir::VERTICAL;
 }
 
 /////////////////////////////////////

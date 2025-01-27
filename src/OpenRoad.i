@@ -36,8 +36,6 @@
 %{
 
 #include "odb/db.h"
-#include "odb/lefin.h"
-#include "odb/defin.h"
 #include "odb/defout.h"
 #include "sta/Report.hh"
 #include "sta/Network.hh"
@@ -131,13 +129,6 @@ getTritonCts()
 {
   OpenRoad *openroad = getOpenRoad();
   return openroad->getTritonCts();
-}
-
-mpl::MacroPlacer *
-getMacroPlacer()
-{
-  OpenRoad *openroad = getOpenRoad();
-  return openroad->getMacroPlacer();
 }
 
 mpl2::MacroPlacer2 *

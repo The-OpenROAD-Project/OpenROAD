@@ -272,7 +272,7 @@ Tool namespaces are usually three-lettered lowercase letters.
 - Metal fill insertion ([fin](../main/src/fin/README.md))
 - Design for Test ([dft](../main/src/dft/README.md))
 - OpenRCX Parasitic Extraction ([rcx](../main/src/rcx/README.md))
-- OpenSTA timing/power analyzer ([sta](https://github.com/The-OpenROAD-Project/OpenSTA/blob/master/README.md)
+- OpenSTA timing/power analyzer ([sta](https://github.com/The-OpenROAD-Project/OpenSTA/blob/master/README.md))
 - Graphical User Interface ([gui](../main/src/gui/README.md))
 - Static IR analyzer ([psm](../main/src/psm/README.md))
 

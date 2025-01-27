@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "ZException.h"
 #include "dbMap.h"
 

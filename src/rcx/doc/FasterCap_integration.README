@@ -1,0 +1,72 @@
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
+//
+// Copyright (c) 2024, Dimitris Fotakis
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
+# Author: Dimitris K. Fotakis
+# Version: v1.0
+# Date: 11/05/2024
+
+Relevant Document: FasterCap_model_generation.README
+
+# Model Generation Flow for rcx using Open Source Field Solver FasterCap
+
+        Create Wire patterns that can be used by field solvers to simulate and analyze electrical properties, 
+	starting with a full process stack conductors and dielectrics.
+	These patterns contain the conductors and dielectrics for a full simulation
+	Since the dielectric and conductor dimensions and constant dielectric epsilon values are dependent on the process stack
+	the wire pattern needs to be generate for each process
+
+	The following scripts make the process automatic
+
+	Field Solver Conversion: UniversalFormat2FasterCap_923.py 
+
+        	Development of a conversion tool that translates RCX output into formats readable by FasterCap, 
+			streamlining the integration of various field solver tools.
+
+	Wrapper Script to run FasterCap for Pattern Sets: run_fasterCap.bash
+
+        	Run FasterCap for Pattern Sets
+        	Automating the process of running FasterCap for generated patterns through a unified script, 
+			reducing manual intervention and allow for targeting group of patterns, optionally.
+		Incremental since FasterCap can run for hours and can be interupted
+		Includes time limit mechanism for long FasterCap runs
+
+	FasterCap to RC Converter: fasterCapParse.py
+
+        	Develop a conversion tool that translates FasterCap results back into RCX row fformat, ensuring compatibility with existing RCX flows.
+
+
+        Model File Generation in RCX
+
+		Tcl commands can read results from the fasterCap Parser and create the model
+		see doc: FasterCap_model_generation.README
+
+

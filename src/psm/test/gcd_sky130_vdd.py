@@ -11,4 +11,4 @@ design = helpers.make_design(tech)
 design.readDef("sky130hd_data/gcd_sky130hd_floorplan.def")
 design.evalTclString("read_sdc sky130hd_data/gcd_sky130hd_floorplan.sdc")
 
-pdnsim_aux.check_power_grid(design, net="VDD")
+pdnsim_aux.check_power_grid(design, net="VDD", require_bterm=False)

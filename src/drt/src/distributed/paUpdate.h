@@ -28,6 +28,7 @@
 
 #pragma once
 #include <boost/serialization/access.hpp>
+#include <vector>
 
 #include "db/obj/frAccess.h"
 namespace drt {

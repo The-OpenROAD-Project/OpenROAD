@@ -41,6 +41,7 @@
 #include <iostream>
 #include <limits>
 #include <sstream>
+#include <vector>
 
 #include "sta/ParseBus.hh"
 #include "utl/Logger.h"
@@ -105,7 +106,7 @@ Box<int> Clock::computeSinkRegion()
 }
 
 Box<double> Clock::computeSinkRegionClustered(
-    std::vector<std::pair<float, float>> sinks)
+    const std::vector<std::pair<float, float>>& sinks)
 {
   auto xMin = std::numeric_limits<float>::max();
   auto xMax = std::numeric_limits<float>::lowest();

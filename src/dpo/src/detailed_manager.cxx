@@ -46,6 +46,7 @@
 #include <set>
 #include <stack>
 #include <utility>
+#include <vector>
 
 #include "architecture.h"
 #include "detailed_orient.h"

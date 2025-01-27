@@ -28,6 +28,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "db/obj/frBPin.h"
 #include "db/obj/frTerm.h"

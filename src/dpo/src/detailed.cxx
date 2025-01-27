@@ -37,6 +37,7 @@
 #include <iostream>
 #include <stack>
 #include <utility>
+#include <vector>
 
 #include "utility.h"
 #include "utl/Logger.h"

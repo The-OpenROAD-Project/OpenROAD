@@ -49,22 +49,17 @@ target_link_libraries(TestMaster ${TEST_LIBS})
 target_link_libraries(TestGDSIn gdsin odb_test_helper)
 #target_link_libraries(TestXML gdsin odb_test_helper)
 
-# FAILING TARGETS
-# add_test(NAME TestLef58Properties COMMAND TestLef58Properties)
-# add_test(NAME TestJournal COMMAND TestJournal)
-# add_test(NAME TestAccessPoint COMMAND TestAccessPoint)
-
+# Skip the tests from being registered here, since they are called via
+# cpp_tests.tcl and don't need to be executed twice. The cpp_tests.tcl
+# invocation is preferred for TestLef58Properties, TestJournal, and
+# TestAccessPoint, since they all write/read from the disk and calling them with
+# BASE_DIR set allows us to write to the results dir. Running them outside of
+# cpp_tests.tcl results in the output files being written in the current working
+# directory.
 gtest_discover_tests(OdbGTests
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+    TEST_FILTER "-TestAccessPoint.*,-TestCallBacks.*,-TestGCellGrid.*,-TestGeom.*,-TestGroup.*,-TestGuide.*,-TestJournal.*-TestLef58Properties.*,-TestMaster.*,-TestModule.*,-TestNetTrack.*"
 )
-add_test(NAME odb.TestCallBacks COMMAND TestCallBacks)
-add_test(NAME odb.TestGeom COMMAND TestGeom)
-add_test(NAME odb.TestModule COMMAND TestModule)
-add_test(NAME odb.TestGroup COMMAND TestGroup)
-add_test(NAME odb.TestGCellGrid COMMAND TestGCellGrid)
-add_test(NAME odb.TestGuide COMMAND TestGuide)
-add_test(NAME odb.TestNetTrack COMMAND TestNetTrack)
-add_test(NAME odb.TestMaster COMMAND TestMaster)
 
 add_dependencies(build_and_test 
         TestCallBacks 

@@ -32,6 +32,7 @@
 
 #include <functional>
 #include <string>
+#include <vector>
 
 #include "boostParser.h"
 #include "lefLayerPropParser.h"
@@ -41,7 +42,7 @@
 namespace odb {
 
 lefTechLayerForbiddenSpacingRuleParser::lefTechLayerForbiddenSpacingRuleParser(
-    lefin* l)
+    lefinReader* l)
 {
   lefin_ = l;
 }

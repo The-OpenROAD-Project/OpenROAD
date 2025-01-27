@@ -33,6 +33,7 @@
 #pragma once
 
 #include <QPainter>
+#include <vector>
 
 #include "gui/gui.h"
 #include "odb/geom.h"

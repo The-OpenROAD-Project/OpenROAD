@@ -38,7 +38,6 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -tolerance      tolerance     \
                                           -max_num_level  max_num_level \
                                           -coarsening_ratio coarsening_ratio \
-                                          -num_bundled_ios  num_bundled_ios  \
                                           -large_net_threshold large_net_threshold \
                                           -signature_net_threshold signature_net_threshold \
                                           -halo_width halo_width \
@@ -67,7 +66,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
 proc rtl_macro_placer { args } {
   sta::parse_key_args "rtl_macro_placer" args \
     keys {-max_num_macro  -min_num_macro -max_num_inst  -min_num_inst  -tolerance   \
-         -max_num_level  -coarsening_ratio  -num_bundled_ios  -large_net_threshold \
+         -max_num_level  -coarsening_ratio -large_net_threshold \
          -signature_net_threshold -halo_width -halo_height \
          -fence_lx   -fence_ly  -fence_ux   -fence_uy  \
          -area_weight  -outline_weight -wirelength_weight -guidance_weight -fence_weight \
@@ -95,7 +94,6 @@ proc rtl_macro_placer { args } {
   set tolerance 0.1
   set max_num_level 2
   set coarsening_ratio 10.0
-  set num_bundled_ios 3
   set large_net_threshold 50
   set signature_net_threshold 50
   set halo_width 0.0
@@ -142,9 +140,6 @@ proc rtl_macro_placer { args } {
   }
   if { [info exists keys(-coarsening_ratio)] } {
     set coarsening_ratio $keys(-coarsening_ratio)
-  }
-  if { [info exists keys(-num_bundled_ios)] } {
-    set num_bundled_ios $keys(-num_bundled_ios)
   }
   if { [info exists keys(-large_net_threshold)] } {
     set large_net_threshold $keys(-large_net_threshold)
@@ -233,7 +228,6 @@ proc rtl_macro_placer { args } {
       $tolerance \
       $max_num_level \
       $coarsening_ratio \
-      $num_bundled_ios \
       $large_net_threshold \
       $signature_net_threshold \
       $halo_width \

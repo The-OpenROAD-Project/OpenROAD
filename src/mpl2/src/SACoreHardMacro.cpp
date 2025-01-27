@@ -33,6 +33,8 @@
 
 #include "SACoreHardMacro.h"
 
+#include <vector>
+
 #include "Mpl2Observer.h"
 #include "utl/Logger.h"
 
@@ -43,6 +45,7 @@ using utl::MPL;
 // Class SACoreHardMacro
 // constructors
 SACoreHardMacro::SACoreHardMacro(
+    PhysicalHierarchy* tree,
     const Rect& outline,
     const std::vector<HardMacro>& macros,
     // weight for different penalty
@@ -64,7 +67,8 @@ SACoreHardMacro::SACoreHardMacro(
     unsigned seed,
     Mpl2Observer* graphics,
     utl::Logger* logger)
-    : SimulatedAnnealingCore<HardMacro>(outline,
+    : SimulatedAnnealingCore<HardMacro>(tree,
+                                        outline,
                                         macros,
                                         area_weight,
                                         outline_weight,

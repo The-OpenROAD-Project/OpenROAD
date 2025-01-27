@@ -2,6 +2,7 @@ add_library(dft_config_lib
   # Keep sorted
   DftConfig.cpp
   ScanArchitectConfig.cpp
+  ScanStitchConfig.cpp
 )
 
 target_include_directories(dft_config_lib

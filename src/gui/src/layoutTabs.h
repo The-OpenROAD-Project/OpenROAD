@@ -35,6 +35,7 @@
 #include <QTabWidget>
 #include <functional>
 #include <memory>
+#include <vector>
 
 #include "gui/gui.h"
 #include "layoutViewer.h"

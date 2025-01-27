@@ -27,6 +27,7 @@
  */
 
 #include <iostream>
+#include <vector>
 
 #include "db/drObj/drNet.h"
 #include "dr/FlexDR.h"

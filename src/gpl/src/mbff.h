@@ -97,8 +97,8 @@ class MBFF
   // get the respective q/qn pins for a d pin
   struct FlopOutputs
   {
-    sta::LibertyPort* q;
-    sta::LibertyPort* qn;
+    const sta::LibertyPort* q;
+    const sta::LibertyPort* qn;
   };
   struct Mask
   {
@@ -113,11 +113,11 @@ class MBFF
     std::string to_string() const;
     bool operator<(const Mask& rhs) const;
   };
-  using DataToOutputsMap = std::map<sta::LibertyPort*, FlopOutputs>;
+  using DataToOutputsMap = std::map<const sta::LibertyPort*, FlopOutputs>;
   DataToOutputsMap GetPinMapping(odb::dbInst* tray);
 
   // MBFF functions
-  sta::LibertyCell* getLibertyCell(sta::Cell* cell);
+  const sta::LibertyCell* getLibertyCell(const sta::Cell* cell);
   float GetDist(const Point& a, const Point& b);
   float GetDistAR(const Point& a, const Point& b, float AR);
   int GetRows(int slot_cnt, const Mask& array_mask);
@@ -157,12 +157,14 @@ class MBFF
   bool IsValidTray(odb::dbInst* tray);
 
   // (MB)FF funcs
-  PortName PortType(sta::LibertyPort* lib_port, odb::dbInst* inst);
-  bool IsSame(sta::FuncExpr* expr1,
+  PortName PortType(const sta::LibertyPort* lib_port, odb::dbInst* inst);
+  bool IsSame(const sta::FuncExpr* expr1,
               odb::dbInst* inst1,
-              sta::FuncExpr* expr2,
+              const sta::FuncExpr* expr2,
               odb::dbInst* inst2);
-  int GetMatchingFunc(sta::FuncExpr* expr, odb::dbInst* inst, bool create_new);
+  int GetMatchingFunc(const sta::FuncExpr* expr,
+                      odb::dbInst* inst,
+                      bool create_new);
   Mask GetArrayMask(odb::dbInst* inst, bool isTray);
 
   Tray GetOneBit(const Point& pt);
@@ -195,7 +197,7 @@ class MBFF
   void KMeans(const std::vector<Flop>& flops,
               int knn,
               std::vector<std::vector<Flop>>& clusters,
-              std::vector<int>& rand_nums);
+              const std::vector<int>& rand_nums);
   float GetKSilh(const std::vector<std::vector<Flop>>& clusters,
                  const std::vector<Point>& centers);
   void KMeansDecomp(const std::vector<Flop>& flops,
@@ -249,6 +251,9 @@ class MBFF
   void ReadLibs();
   void SetTrayNames();
 
+  void displayFlopClusters(const char* stage,
+                           std::vector<std::vector<Flop>>& clusters);
+
   // OpenROAD vars
   odb::dbDatabase* db_;
   odb::dbBlock* block_;
@@ -298,6 +303,6 @@ class MBFF
   // ind of last test tray
   int test_idx_;
   // all MBFF next_states
-  std::vector<std::pair<sta::FuncExpr*, odb::dbInst*>> funcs_;
+  std::vector<std::pair<const sta::FuncExpr*, odb::dbInst*>> funcs_;
 };
 }  // namespace gpl

@@ -37,6 +37,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "AbstractSteinerRenderer.h"
 #include "db_sta/dbNetwork.hh"

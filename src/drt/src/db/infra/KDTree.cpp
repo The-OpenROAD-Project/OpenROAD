@@ -35,6 +35,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <vector>
 using odb::horizontal;
 namespace drt {
 KDTree::KDTree(const std::vector<Point>& points)

@@ -18,6 +18,7 @@ or_integration_tests(
     fanin_fanout1
     gain_buffering1
     gcd_resize
+    liberty_dont_use
     make_parasitics1
     make_parasitics2
     make_parasitics3
@@ -104,6 +105,7 @@ or_integration_tests(
     repair_tie6
     repair_tie7
     repair_tie8
+    repair_tie9
     repair_wire1
     repair_wire2
     repair_wire3

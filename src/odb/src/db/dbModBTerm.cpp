@@ -345,7 +345,6 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
   _dbModule* module = (_dbModule*) parentModule;
   _dbBlock* block = (_dbBlock*) module->getOwner();
 
-  std::string str_name(name);
   _dbModBTerm* modbterm = block->_modbterm_tbl->create();
   // defaults
   modbterm->_flags = 0U;

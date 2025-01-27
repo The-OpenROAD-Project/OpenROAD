@@ -250,6 +250,13 @@ set_skip_io_mode_cmd(bool mode)
   replace->setSkipIoMode(mode);
 }
 
+void
+set_disable_revert_if_diverge(bool disable_revert_if_diverge)
+{
+  Replace* replace = getReplace();
+  replace->setDisableRevertIfDiverge(disable_revert_if_diverge);
+}
+
 float
 get_global_placement_uniform_density_cmd() 
 {
@@ -279,7 +286,8 @@ set_debug_cmd(int pause_iterations,
               int update_iterations,
               bool draw_bins,
               bool initial,
-              const char* inst_name)
+              const char* inst_name,
+              int start_iter)
 {
   Replace* replace = getReplace();
   odb::dbInst* inst = nullptr;
@@ -288,7 +296,7 @@ set_debug_cmd(int pause_iterations,
     inst = block->findInst(inst_name);
   }
   replace->setDebug(pause_iterations, update_iterations, draw_bins,
-                    initial, inst);
+                    initial, inst, start_iter);
 }
 
 %} // inline

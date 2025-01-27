@@ -44,6 +44,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "cmdInputWidget.h"
 #include "tclCmdHighlighter.h"

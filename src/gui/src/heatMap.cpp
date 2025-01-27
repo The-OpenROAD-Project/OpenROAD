@@ -38,6 +38,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <vector>
 
 #include "heatMapSetup.h"
 #include "utl/Logger.h"
