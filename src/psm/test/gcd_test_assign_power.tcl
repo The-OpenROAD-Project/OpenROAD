@@ -10,5 +10,5 @@ set voltage_file [make_result_file gcd_test_vdd-voltage.rpt]
 set_pdnsim_inst_power -inst _440_ -power 1e-5
 set_pdnsim_inst_power -inst _829_ -power 1e-5
 
-check_power_grid -net VDD
+check_power_grid -net VDD -dont_require_terminals
 analyze_power_grid -vsrc Vsrc_gcd_vdd.loc -net VDD

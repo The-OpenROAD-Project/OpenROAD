@@ -17,7 +17,6 @@ try:
         root_buf="CLKBUF_X3",
         buf_list="CLKBUF_X3",
         wire_unit=20,
-        obstruction_aware=True,
     )
 except Exception as inst:
     print(inst.args[0])

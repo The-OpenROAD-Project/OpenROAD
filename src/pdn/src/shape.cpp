@@ -537,13 +537,18 @@ std::string Shape::getDisplayText() const
   return text;
 }
 
-bool Shape::isRemovable() const
+bool Shape::isRemovable(bool assume_bterm) const
 {
   if (!isModifiable()) {
     return false;
   }
 
-  if (getNumberOfConnections() < 2) {
+  int min_conns = 2;
+  if (assume_bterm) {
+    min_conns = 1;
+  }
+
+  if (getNumberOfConnections() < min_conns) {
     // floating shape with one or zero connections
     return true;
   }
