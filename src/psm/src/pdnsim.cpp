@@ -111,7 +111,7 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
                               const std::string& error_file,
                               const std::string& voltage_source_file)
 {
-  if (!checkConnectivity(net, false, error_file)) {
+  if (!checkConnectivity(net, false, error_file, false)) {
     return;
   }
 
@@ -138,10 +138,11 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
 
 bool PDNSim::checkConnectivity(odb::dbNet* net,
                                bool floorplanning,
-                               const std::string& error_file)
+                               const std::string& error_file,
+                               bool require_bterm)
 {
   auto* solver = getIRSolver(net, floorplanning);
-  const bool check = solver->check();
+  const bool check = solver->check(require_bterm);
   solver->writeErrorFile(error_file);
 
   if (debug_gui_enabled_) {

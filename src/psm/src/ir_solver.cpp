@@ -128,7 +128,7 @@ PDNSim::IRDropByPoint IRSolver::getIRDrop(odb::dbTechLayer* layer,
   return ir_drop;
 }
 
-bool IRSolver::check()
+bool IRSolver::check(bool check_bterms)
 {
   const utl::DebugScopedTimer timer(logger_, utl::PSM, "timer", 1, "Check: {}");
   if (connected_.has_value()) {
@@ -137,6 +137,10 @@ bool IRSolver::check()
 
   // set to true and unset if it failed
   connected_ = true;
+  if (check_bterms && !checkBTerms()) {
+    reportMissingBTerm();
+    connected_ = false;
+  }
   if (!checkOpen()) {
     reportUnconnectedNodes();
     connected_ = false;
@@ -226,6 +230,28 @@ bool IRSolver::checkOpen()
   }
 
   return true;
+}
+
+bool IRSolver::checkBTerms() const
+{
+  const utl::DebugScopedTimer timer(
+      logger_, utl::PSM, "timer", 1, "Check bterm: {}");
+
+  for (odb::dbBTerm* bterm : net_->getBTerms()) {
+    for (odb::dbBPin* bpin : bterm->getBPins()) {
+      if (bpin->getPlacementStatus().isPlaced()) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+void IRSolver::reportMissingBTerm() const
+{
+  logger_->error(
+      utl::PSM, 25, "{} does not contain any terminals", net_->getName());
 }
 
 IRSolver::ConnectivityResults IRSolver::getConnectivityResults() const

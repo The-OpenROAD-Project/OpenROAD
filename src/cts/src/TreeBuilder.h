@@ -185,6 +185,7 @@ class TreeBuilder
                     double& y2);
   Point<double> legalizeOneBuffer(Point<double> bufferLoc,
                                   const std::string& bufferName);
+
   inline void addCandidatePoint(double x,
                                 double y,
                                 Point<double>& point,

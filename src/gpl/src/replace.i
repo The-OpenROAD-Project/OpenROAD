@@ -250,6 +250,13 @@ set_skip_io_mode_cmd(bool mode)
   replace->setSkipIoMode(mode);
 }
 
+void
+set_disable_revert_if_diverge(bool disable_revert_if_diverge)
+{
+  Replace* replace = getReplace();
+  replace->setDisableRevertIfDiverge(disable_revert_if_diverge);
+}
+
 float
 get_global_placement_uniform_density_cmd() 
 {

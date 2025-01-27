@@ -924,8 +924,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 
       half_width *= thickness_multiplier;
 
-      int num_tracks_offset
-          = std::ceil(static_cast<double>(corner_avoidance_) / min_dst_pins);
+      int num_tracks_offset = std::ceil(corner_avoidance_ / min_dst_pins);
 
       start_idx
           = std::max(0.0,

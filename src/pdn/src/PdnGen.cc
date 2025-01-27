@@ -246,7 +246,7 @@ void PdnGen::trimShapes()
 
         auto* component = shape->getGridComponent();
         if (new_shape == nullptr) {
-          if (shape->isRemovable()) {
+          if (shape->isRemovable(is_pin_layer)) {
             component->removeShape(shape.get());
           }
         } else {
