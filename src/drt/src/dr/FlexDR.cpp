@@ -1445,9 +1445,8 @@ void FlexDR::end(bool done)
       msg << "-";
     }
     msg << std::endl;
-    msg << " " << std::setw(nameLen)
-        << "    " << std::setw((int) std::to_string(totSCut).length())
-        << totSCut;
+    msg << " " << std::setw(nameLen) << "    "
+        << std::setw((int) std::to_string(totSCut).length()) << totSCut;
     if (totMCut) {
       msg << " (" << std::setw(5)
           << (double) ((totSCut + totMCut)
