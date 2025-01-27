@@ -10,7 +10,7 @@ create_clock -name clk1 -period 2.0 -waveform {0.0 1.0} [get_pins U2/clk_i]
 create_clock -name clk2 -period 4.0 -waveform {0.0 2.0} [get_pins U3/clk_i]
 
 
-report_checks -path_delay min -fields {slew cap input nets fanout} -format full_clock_expanded
+report_checks -path_delay min -fields {slew cap input net fanout} -format full_clock_expanded
 
 set v_file [make_result_file hierclock_out.v]
 write_verilog $v_file

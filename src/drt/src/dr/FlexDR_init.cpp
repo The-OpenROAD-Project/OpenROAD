@@ -2309,6 +2309,9 @@ void FlexDRWorker::route_queue_init_queue(
     std::vector<drNet*> ripupNets;
     ripupNets.reserve(nets_.size());
     for (auto& net : nets_) {
+      if (net->getPins().size() <= 1) {
+        continue;
+      }
       ripupNets.push_back(net.get());
     }
     // sort nets
@@ -2576,7 +2579,7 @@ void FlexDRWorker::route_queue_update_from_marker(
     }
   }
   for (drNet* dNet : avoidRipupCandidates) {
-    if (allowAvoidRipup) {
+    if (dNet->getPins().size() <= 1 || allowAvoidRipup) {
       dNet->incNRipupAvoids();
       checks.push_back({dNet, -1, false, checkingObj});
     } else {

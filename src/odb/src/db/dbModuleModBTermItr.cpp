@@ -60,15 +60,15 @@ void dbModuleModBTermItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbModule* module = (_dbModule*) parent;
-  uint next = module->_modbterms;
-  uint prev = 0;
+  uint id = module->_modbterms;
   uint list = 0;
-  while (next != 0) {
-    list = next;
-    _dbModBTerm* modbterm = _modbterm_tbl->getPtr(next);
-    next = modbterm->_next_entry;
-    modbterm->_next_entry = prev;
-    prev = list;
+  while (id != 0) {
+    _dbModBTerm* modbterm = _modbterm_tbl->getPtr(id);
+    uint n = modbterm->_next_entry;
+    modbterm->_next_entry = list;
+    modbterm->_prev_entry = n;
+    list = id;
+    id = n;
   }
   module->_modbterms = list;
   // User Code End reverse

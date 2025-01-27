@@ -55,10 +55,10 @@ VIAS 4 ;
     - via5_6_1600_1600_1_1_1600_1600 + VIARULE M4M5_PR + CUTSIZE 800 800  + LAYERS met4 via4 met5  + CUTSPACING 800 800  + ENCLOSURE 400 190 310 400  ;
 END VIAS
 COMPONENTS 542 ;
-    - DECAP_0 sky130_fd_sc_hd__decap_3 + SOURCE DIST + PLACED ( 6440 29920 ) N ;
-    - DECAP_1 sky130_fd_sc_hd__decap_3 + SOURCE DIST + PLACED ( 7820 29920 ) N ;
-    - DECAP_2 sky130_fd_sc_hd__decap_3 + SOURCE DIST + PLACED ( 9200 29920 ) N ;
-    - DECAP_3 sky130_fd_sc_hd__decap_3 + SOURCE DIST + PLACED ( 10580 29920 ) N ;
+    - DECAP_0 sky130_fd_sc_hd__decap_3 + SOURCE DIST + PLACED ( 13800 19040 ) N ;
+    - DECAP_1 sky130_fd_sc_hd__decap_3 + SOURCE DIST + PLACED ( 8740 21760 ) FS ;
+    - DECAP_2 sky130_fd_sc_hd__decap_3 + SOURCE DIST + PLACED ( 11960 21760 ) FS ;
+    - DECAP_3 sky130_fd_sc_hd__decap_3 + SOURCE DIST + PLACED ( 15640 21760 ) FS ;
     - TAP_TAPCELL_ROW_0_0 sky130_fd_sc_hd__tapvpwrvgnd_1 + SOURCE DIST + FIXED ( 15180 2720 ) N ;
     - TAP_TAPCELL_ROW_0_1 sky130_fd_sc_hd__tapvpwrvgnd_1 + SOURCE DIST + FIXED ( 28980 2720 ) N ;
     - TAP_TAPCELL_ROW_0_2 sky130_fd_sc_hd__tapvpwrvgnd_1 + SOURCE DIST + FIXED ( 42780 2720 ) N ;

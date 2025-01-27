@@ -596,6 +596,7 @@ def add_pdn_ring(
     add_connect=False,
     extend_to_boundary=False,
     connect_to_pads=False,
+    allow_outside_of_die=False,
 ):
     pdngen = design.getPdnGen()
     check_design_state(design, "add_pdn_ring")
@@ -695,6 +696,7 @@ def add_pdn_ring(
             extend_to_boundary,
             connect_to_pad_layers,
             nets_list,
+            allow_outside_of_die,
         )
 
     if bool(add_connect):

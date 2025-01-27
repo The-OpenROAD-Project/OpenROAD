@@ -19,12 +19,4 @@ jobs:
           config_file: '.clang-tidy'
           exclude: "*/codeGenerator/templates/*"
           split_workflow: true
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: clang-tidy-review
-          path: |
-            clang-tidy-review-output.json
-            clang-tidy-review-metadata.json
-
       - uses: The-OpenROAD-Project/clang-tidy-review/upload@master

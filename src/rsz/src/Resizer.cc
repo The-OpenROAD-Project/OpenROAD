@@ -188,7 +188,6 @@ double Resizer::coreArea() const
 
 double Resizer::utilization()
 {
-  initBlock();
   initDesignArea();
   double core_area = coreArea();
   if (core_area > 0.0) {
@@ -244,10 +243,9 @@ void Resizer::initBlock()
 
 void Resizer::init()
 {
-  initBlock();
+  initDesignArea();
   sta_->ensureLevelized();
   graph_ = sta_->graph();
-  initDesignArea();
 }
 
 // remove all buffers if no buffers are specified
@@ -1851,7 +1849,7 @@ bool Resizer::dontTouch(const Instance* inst)
   if (!db_inst) {
     return false;
   }
-  return db_inst->isDoNotTouch() || db_inst->isPad();
+  return db_inst->isDoNotTouch();
 }
 
 void Resizer::setDontTouch(const Net* net, bool dont_touch)
@@ -2138,7 +2136,6 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
                               double separation,  // meters
                               bool verbose)
 {
-  initBlock();
   initDesignArea();
   Instance* top_inst = network_->topInstance();
   LibertyCell* tie_cell = tie_port->libertyCell();
@@ -2154,12 +2151,15 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
         if (net && !dontTouch(net)) {
           NetConnectedPinIterator* pin_iter
               = network_->connectedPinIterator(net);
+          bool keep_tie = false;
           while (pin_iter->hasNext()) {
             const Pin* load = pin_iter->next();
-            if (load != drvr_pin) {
+            Instance* load_inst = network_->instance(load);
+            if (dontTouch(load_inst)) {
+              keep_tie = true;
+            } else if (load != drvr_pin) {
               // Make tie inst.
               Point tie_loc = tieLocation(load, separation_dbu);
-              Instance* load_inst = network_->instance(load);
               const char* inst_name = network_->name(load_inst);
               string tie_name = makeUniqueInstName(inst_name, true);
               Instance* tie
@@ -2189,6 +2189,10 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
             }
           }
           delete pin_iter;
+
+          if (keep_tie) {
+            continue;
+          }
 
           // Delete inst output net.
           Pin* tie_pin = network_->findPin(inst, tie_port);
@@ -2942,6 +2946,7 @@ void Resizer::makeWireParasitic(Net* net,
 
 double Resizer::designArea()
 {
+  initBlock();
   initDesignArea();
   return design_area_;
 }
@@ -2953,11 +2958,14 @@ void Resizer::designAreaIncr(float delta)
 
 void Resizer::initDesignArea()
 {
+  initBlock();
   design_area_ = 0.0;
   for (dbInst* inst : block_->getInsts()) {
     dbMaster* master = inst->getMaster();
     // Don't count fillers otherwise you'll always get 100% utilization
-    if (!master->isFiller()) {
+    if (!master->isFiller()
+        && master->getType() != odb::dbMasterType::CORE_WELLTAP
+        && !master->isEndCap()) {
       design_area_ += area(master);
     }
   }
@@ -3023,7 +3031,6 @@ void Resizer::repairClkNets(double max_wire_length)
 // each register they drive.
 void Resizer::repairClkInverters()
 {
-  initBlock();
   initDesignArea();
   sta_->ensureLevelized();
   graph_ = sta_->graph();
