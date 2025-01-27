@@ -40,7 +40,7 @@
 #include <thread>
 #include <vector>
 
-#include "Mpl2Observer.h"
+#include "MplObserver.h"
 #include "SACoreHardMacro.h"
 #include "SACoreSoftMacro.h"
 #include "bus_synthesis.h"
@@ -52,7 +52,7 @@
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
-namespace mpl2 {
+namespace mpl {
 
 using std::string;
 
@@ -247,7 +247,7 @@ void HierRTLMP::run()
     resetSAParameters();
   }
 
-  std::unique_ptr<Mpl2Observer> save_graphics;
+  std::unique_ptr<MplObserver> save_graphics;
   if (is_debug_only_final_result_) {
     save_graphics = std::move(graphics_);
   }
@@ -4075,7 +4075,7 @@ void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
 
     // Flipping is done by mirroring the macro about the "Y" or "X" axis,
     // so, after flipping, we must manually set the location (lower-left corner)
-    // again to move the macro back to the the position choosen by mpl2.
+    // again to move the macro back to the the position choosen by mpl.
     flipRealMacro(inst, is_vertical_flip);
     inst->setLocation(macro_location.getX(), macro_location.getY());
     const float new_wirelength = calculateRealMacroWirelength(inst);
@@ -4183,7 +4183,7 @@ void HierRTLMP::setBusPlanningOn(bool bus_planning_on)
   bus_planning_on_ = bus_planning_on;
 }
 
-void HierRTLMP::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
+void HierRTLMP::setDebug(std::unique_ptr<MplObserver>& graphics)
 {
   graphics_ = std::move(graphics);
 }
@@ -4793,4 +4793,4 @@ void Snapper::alignWithManufacturingGrid(int& origin)
   origin = std::round(origin / manufacturing_grid) * manufacturing_grid;
 }
 
-}  // namespace mpl2
+}  // namespace mpl

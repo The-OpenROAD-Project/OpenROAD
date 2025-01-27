@@ -131,11 +131,11 @@ getTritonCts()
   return openroad->getTritonCts();
 }
 
-mpl2::MacroPlacer2 *
-getMacroPlacer2()
+mpl::MacroPlacer *
+getMacroPlacer()
 {
   OpenRoad *openroad = getOpenRoad();
-  return openroad->getMacroPlacer2();
+  return openroad->getMacroPlacer();
 }
 
 gpl::Replace*

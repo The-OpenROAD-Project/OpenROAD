@@ -217,11 +217,11 @@ proc rtl_macro_placer { args } {
   file mkdir $report_directory
 
   if { [info exists keys(-write_macro_placement)] } {
-    mpl2::set_macro_placement_file $keys(-write_macro_placement)
+    mpl::set_macro_placement_file $keys(-write_macro_placement)
   }
 
   if {
-    ![mpl2::rtl_macro_placer_cmd $max_num_macro \
+    ![mpl::rtl_macro_placer_cmd $max_num_macro \
       $min_num_macro \
       $max_num_inst \
       $min_num_inst \
@@ -268,7 +268,7 @@ proc place_macro { args } {
     utl::error MPL 19 "-macro_name is required."
   }
 
-  set macro [mpl2::parse_macro_name "place_macro" $macro_name]
+  set macro [mpl::parse_macro_name "place_macro" $macro_name]
 
   if { [info exists keys(-location)] } {
     set location $keys(-location)
@@ -291,7 +291,7 @@ proc place_macro { args } {
   set exact [info exists flags(-exact)]
   set allow_overlap [info exists flags(-allow_overlap)]
 
-  mpl2::place_macro $macro $x_origin $y_origin $orientation $exact $allow_overlap
+  mpl::place_macro $macro $x_origin $y_origin $orientation $exact $allow_overlap
 }
 
 sta::define_cmd_args "set_macro_guidance_region" { -macro_name macro_name \
@@ -308,7 +308,7 @@ proc set_macro_guidance_region { args } {
     utl::error MPL 43 "-macro_name is required."
   }
 
-  set macro [mpl2::parse_macro_name "set_macro_guidance_region" $macro_name]
+  set macro [mpl::parse_macro_name "set_macro_guidance_region" $macro_name]
 
   if { [info exists keys(-region)] } {
     set region $keys(-region)
@@ -331,10 +331,10 @@ proc set_macro_guidance_region { args } {
     utl::error MPL 33 "Invalid region: y1 > y2."
   }
 
-  mpl2::add_guidance_region $macro $x1 $y1 $x2 $y2
+  mpl::add_guidance_region $macro $x1 $y1 $x2 $y2
 }
 
-namespace eval mpl2 {
+namespace eval mpl {
 proc parse_macro_name { cmd macro_name } {
   set block [ord::get_db_block]
   set inst [$block findInst "$macro_name"]
@@ -368,7 +368,7 @@ proc mpl_debug { args } {
     set target_cluster_id $keys(-target_cluster_id)
   }
 
-  mpl2::set_debug_cmd $block \
+  mpl::set_debug_cmd $block \
     $coarse \
     $fine \
     [info exists flags(-show_bundled_nets)] \

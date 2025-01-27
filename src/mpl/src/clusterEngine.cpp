@@ -39,7 +39,7 @@
 #include "par/PartitionMgr.h"
 #include "sta/Liberty.hh"
 
-namespace mpl2 {
+namespace mpl {
 using utl::MPL;
 
 ClusteringEngine::ClusteringEngine(odb::dbBlock* block,
@@ -2228,4 +2228,4 @@ void ClusteringEngine::clearTempMacroClusterMapping(
   }
 }
 
-}  // namespace mpl2
+}  // namespace mpl

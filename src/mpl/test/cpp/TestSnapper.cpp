@@ -1,12 +1,12 @@
 #include "../../src/hier_rtlmp.h"
 #include "gtest/gtest.h"
-#include "mpl2/rtl_mp.h"
+#include "mpl/rtl_mp.h"
 #include "odb/db.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
 
-namespace mpl2 {
-class Mpl2SnapperTest : public ::testing::Test
+namespace mpl {
+class MplSnapperTest : public ::testing::Test
 {
  protected:
   template <class T>
@@ -29,7 +29,7 @@ class Mpl2SnapperTest : public ::testing::Test
   OdbUniquePtr<odb::dbBlock> block_{nullptr, &odb::dbBlock::destroy};
 };
 
-TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
+TEST_F(MplSnapperTest, CanSetMacroForEmptyInstances)
 {
   // create a simple block and then add 3 instances to that block
   // without any further configuration to each instance,
@@ -69,4 +69,4 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
   snapper.setMacro(inst3);
 }
 
-}  // namespace mpl2
+}  // namespace mpl

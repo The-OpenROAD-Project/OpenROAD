@@ -306,7 +306,7 @@ add_subdirectory(utl)
 add_subdirectory(dst)
 add_subdirectory(pdn)
 add_subdirectory(dft)
-add_subdirectory(mpl2)
+add_subdirectory(mpl)
 add_subdirectory(par)
 
 ################################################################
@@ -368,7 +368,7 @@ target_link_libraries(openroad
   utl
   pdn
   dft
-  mpl2
+  mpl
   par
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}

@@ -1,5 +1,5 @@
 or_integration_tests(
-  "mpl2"
+  "mpl"
   TESTS
     macro_only
     no_unfixed_macros
@@ -10,7 +10,7 @@ or_integration_tests(
 )
 
 # Skipped
-#mpl2_man_tcl_check
-#mpl2_readme_msgs_check
+#mpl_man_tcl_check
+#mpl_readme_msgs_check
 
 add_subdirectory(cpp)

@@ -37,7 +37,7 @@ include("openroad")
 
 find_package(ortools REQUIRED)
 
-add_library(mpl2_lib
+add_library(mpl_lib
   src/rtl_mp.cpp
   src/hier_rtlmp.cpp
   src/object.cpp
@@ -48,12 +48,12 @@ add_library(mpl2_lib
   src/clusterEngine.cpp
 )
 
-target_include_directories(mpl2_lib
+target_include_directories(mpl_lib
   PUBLIC
     include
 )
 
-target_link_libraries(mpl2_lib
+target_link_libraries(mpl_lib
     utl_lib
     dbSta_lib
     OpenSTA
@@ -63,31 +63,31 @@ target_link_libraries(mpl2_lib
     par_lib
 )
 
-swig_lib(NAME      mpl2
-         NAMESPACE mpl2
+swig_lib(NAME      mpl
+         NAMESPACE mpl
          I_FILE    src/mpl.i
          SCRIPTS   src/mpl.tcl
 )
 
-target_sources(mpl2
+target_sources(mpl
   PRIVATE
     src/MakeMacroPlacer.cpp
     src/graphics.cpp
 )
 
 messages(
-  TARGET mpl2
+  TARGET mpl
 )
 
-target_include_directories(mpl2
+target_include_directories(mpl
   PUBLIC
     include
   PRIVATE
     src
 )
 
-target_link_libraries(mpl2
-    mpl2_lib
+target_link_libraries(mpl
+    mpl_lib
     gui
 )
 

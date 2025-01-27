@@ -37,14 +37,14 @@
 #include <random>
 #include <vector>
 
-#include "Mpl2Observer.h"
+#include "MplObserver.h"
 #include "clusterEngine.h"
 
 namespace utl {
 class Logger;
 }
 
-namespace mpl2 {
+namespace mpl {
 
 struct BundledNet;
 struct Rect;
@@ -88,7 +88,7 @@ class SimulatedAnnealingCore
       int max_num_step,
       int num_perturb_per_step,
       unsigned seed,
-      Mpl2Observer* graphics,
+      MplObserver* graphics,
       utl::Logger* logger);
 
   virtual ~SimulatedAnnealingCore() = default;
@@ -248,7 +248,7 @@ class SimulatedAnnealingCore
   float exchange_prob_ = 0.0;
 
   utl::Logger* logger_ = nullptr;
-  Mpl2Observer* graphics_ = nullptr;
+  MplObserver* graphics_ = nullptr;
 
   Result best_valid_result_;
 
@@ -277,4 +277,4 @@ void runSA(T* sa_core)
   sa_core->run();
 }
 
-}  // namespace mpl2
+}  // namespace mpl

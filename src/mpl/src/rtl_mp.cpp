@@ -31,65 +31,65 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "mpl2/rtl_mp.h"
+#include "mpl/rtl_mp.h"
 
 #include <vector>
 
-#include "Mpl2Observer.h"
+#include "MplObserver.h"
 #include "hier_rtlmp.h"
 #include "object.h"
 
-namespace mpl2 {
+namespace mpl {
 using std::string;
 using utl::MPL;
 
-MacroPlacer2::MacroPlacer2() = default;
-MacroPlacer2::~MacroPlacer2() = default;
+MacroPlacer::MacroPlacer() = default;
+MacroPlacer::~MacroPlacer() = default;
 
 class Snapper;
 
-void MacroPlacer2::init(sta::dbNetwork* network,
-                        odb::dbDatabase* db,
-                        sta::dbSta* sta,
-                        utl::Logger* logger,
-                        par::PartitionMgr* tritonpart)
+void MacroPlacer::init(sta::dbNetwork* network,
+                       odb::dbDatabase* db,
+                       sta::dbSta* sta,
+                       utl::Logger* logger,
+                       par::PartitionMgr* tritonpart)
 {
   hier_rtlmp_ = std::make_unique<HierRTLMP>(network, db, logger, tritonpart);
   logger_ = logger;
   db_ = db;
 }
 
-bool MacroPlacer2::place(const int num_threads,
-                         const int max_num_macro,
-                         const int min_num_macro,
-                         const int max_num_inst,
-                         const int min_num_inst,
-                         const float tolerance,
-                         const int max_num_level,
-                         const float coarsening_ratio,
-                         const int large_net_threshold,
-                         const int signature_net_threshold,
-                         const float halo_width,
-                         const float halo_height,
-                         const float fence_lx,
-                         const float fence_ly,
-                         const float fence_ux,
-                         const float fence_uy,
-                         const float area_weight,
-                         const float outline_weight,
-                         const float wirelength_weight,
-                         const float guidance_weight,
-                         const float fence_weight,
-                         const float boundary_weight,
-                         const float notch_weight,
-                         const float macro_blockage_weight,
-                         const float pin_access_th,
-                         const float target_util,
-                         const float target_dead_space,
-                         const float min_ar,
-                         const int snap_layer,
-                         const bool bus_planning_on,
-                         const char* report_directory)
+bool MacroPlacer::place(const int num_threads,
+                        const int max_num_macro,
+                        const int min_num_macro,
+                        const int max_num_inst,
+                        const int min_num_inst,
+                        const float tolerance,
+                        const int max_num_level,
+                        const float coarsening_ratio,
+                        const int large_net_threshold,
+                        const int signature_net_threshold,
+                        const float halo_width,
+                        const float halo_height,
+                        const float fence_lx,
+                        const float fence_ly,
+                        const float fence_ux,
+                        const float fence_uy,
+                        const float area_weight,
+                        const float outline_weight,
+                        const float wirelength_weight,
+                        const float guidance_weight,
+                        const float fence_weight,
+                        const float boundary_weight,
+                        const float notch_weight,
+                        const float macro_blockage_weight,
+                        const float pin_access_th,
+                        const float target_util,
+                        const float target_dead_space,
+                        const float min_ar,
+                        const int snap_layer,
+                        const bool bus_planning_on,
+                        const char* report_directory)
 {
   hier_rtlmp_->setClusterSize(
       max_num_macro, min_num_macro, max_num_inst, min_num_inst);
@@ -126,12 +126,12 @@ bool MacroPlacer2::place(const int num_threads,
   return true;
 }
 
-void MacroPlacer2::placeMacro(odb::dbInst* inst,
-                              const float& x_origin,
-                              const float& y_origin,
-                              const odb::dbOrientType& orientation,
-                              const bool exact,
-                              const bool allow_overlap)
+void MacroPlacer::placeMacro(odb::dbInst* inst,
+                             const float& x_origin,
+                             const float& y_origin,
+                             const odb::dbOrientType& orientation,
+                             const bool exact,
+                             const bool allow_overlap)
 {
   odb::dbBlock* block = inst->getBlock();
 
@@ -207,7 +207,7 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
                 orientation.getString());
 }
 
-std::vector<odb::dbInst*> MacroPlacer2::findOverlappedMacros(odb::dbInst* macro)
+std::vector<odb::dbInst*> MacroPlacer::findOverlappedMacros(odb::dbInst* macro)
 {
   std::vector<odb::dbInst*> overlapped_macros;
   odb::dbBlock* block = macro->getBlock();
@@ -227,7 +227,7 @@ std::vector<odb::dbInst*> MacroPlacer2::findOverlappedMacros(odb::dbInst* macro)
   return overlapped_macros;
 }
 
-void MacroPlacer2::addGuidanceRegion(odb::dbInst* macro, const Rect& region)
+void MacroPlacer::addGuidanceRegion(odb::dbInst* macro, const Rect& region)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   const odb::Rect& core = block->getCoreArea();
@@ -260,38 +260,38 @@ void MacroPlacer2::addGuidanceRegion(odb::dbInst* macro, const Rect& region)
   guidance_regions_[macro] = region;
 }
 
-void MacroPlacer2::setMacroPlacementFile(const std::string& file_name)
+void MacroPlacer::setMacroPlacementFile(const std::string& file_name)
 {
   hier_rtlmp_->setMacroPlacementFile(file_name);
 }
 
-void MacroPlacer2::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
+void MacroPlacer::setDebug(std::unique_ptr<MplObserver>& graphics)
 {
   hier_rtlmp_->setDebug(graphics);
 }
 
-void MacroPlacer2::setDebugShowBundledNets(bool show_bundled_nets)
+void MacroPlacer::setDebugShowBundledNets(bool show_bundled_nets)
 {
   hier_rtlmp_->setDebugShowBundledNets(show_bundled_nets);
 }
-void MacroPlacer2::setDebugShowClustersIds(bool show_clusters_ids)
+void MacroPlacer::setDebugShowClustersIds(bool show_clusters_ids)
 {
   hier_rtlmp_->setDebugShowClustersIds(show_clusters_ids);
 }
 
-void MacroPlacer2::setDebugSkipSteps(bool skip_steps)
+void MacroPlacer::setDebugSkipSteps(bool skip_steps)
 {
   hier_rtlmp_->setDebugSkipSteps(skip_steps);
 }
 
-void MacroPlacer2::setDebugOnlyFinalResult(bool only_final_result)
+void MacroPlacer::setDebugOnlyFinalResult(bool only_final_result)
 {
   hier_rtlmp_->setDebugOnlyFinalResult(only_final_result);
 }
 
-void MacroPlacer2::setDebugTargetClusterId(const int target_cluster_id)
+void MacroPlacer::setDebugTargetClusterId(const int target_cluster_id)
 {
   hier_rtlmp_->setDebugTargetClusterId(target_cluster_id);
 }
 
-}  // namespace mpl2
+}  // namespace mpl

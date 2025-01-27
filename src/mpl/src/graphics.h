@@ -38,14 +38,14 @@
 #include <optional>
 #include <vector>
 
-#include "Mpl2Observer.h"
+#include "MplObserver.h"
 #include "gui/gui.h"
 
-namespace mpl2 {
+namespace mpl {
 class SoftMacro;
 class HardMacro;
 
-class Graphics : public gui::Renderer, public Mpl2Observer
+class Graphics : public gui::Renderer, public MplObserver
 {
  public:
   Graphics(bool coarse, bool fine, odb::dbBlock* block, utl::Logger* logger);
@@ -76,9 +76,9 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void drawObjects(gui::Painter& painter) override;
 
   void setMacroBlockages(
-      const std::vector<mpl2::Rect>& macro_blockages) override;
+      const std::vector<mpl::Rect>& macro_blockages) override;
   void setPlacementBlockages(
-      const std::vector<mpl2::Rect>& placement_blockages) override;
+      const std::vector<mpl::Rect>& placement_blockages) override;
   void setBundledNets(const std::vector<BundledNet>& bundled_nets) override;
   void setShowBundledNets(bool show_bundled_nets) override;
   void setShowClustersIds(bool show_clusters_ids) override;
@@ -134,8 +134,8 @@ class Graphics : public gui::Renderer, public Mpl2Observer
 
   std::vector<SoftMacro> soft_macros_;
   std::vector<HardMacro> hard_macros_;
-  std::vector<mpl2::Rect> macro_blockages_;
-  std::vector<mpl2::Rect> placement_blockages_;
+  std::vector<mpl::Rect> macro_blockages_;
+  std::vector<mpl::Rect> placement_blockages_;
   std::vector<BundledNet> bundled_nets_;
   odb::Rect outline_;
   int target_cluster_id_{-1};
@@ -177,4 +177,4 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   Cluster* root_ = nullptr;
 };
 
-}  // namespace mpl2
+}  // namespace mpl

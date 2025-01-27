@@ -50,7 +50,7 @@ namespace sta {
 class dbNetwork;
 }
 
-namespace mpl2 {
+namespace mpl {
 
 using InstToHardMap = std::map<odb::dbInst*, std::unique_ptr<HardMacro>>;
 using ModuleToMetricsMap = std::map<odb::dbModule*, std::unique_ptr<Metrics>>;
@@ -305,4 +305,4 @@ class ClusteringEngine
   const int max_num_of_hops_ = 5;
 };
 
-}  // namespace mpl2
+}  // namespace mpl

@@ -62,7 +62,7 @@ namespace utl {
 class Logger;
 }
 
-namespace mpl2 {
+namespace mpl {
 struct Rect;
 class HardMacro;
 class SoftMacro;
@@ -856,4 +856,4 @@ struct SequencePair
   std::vector<int> neg_sequence;
 };
 
-}  // namespace mpl2
+}  // namespace mpl

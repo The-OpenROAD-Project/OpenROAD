@@ -43,11 +43,11 @@
 #include "odb/geom.h"
 #include "utl/Logger.h"
 
-namespace mpl2 {
+namespace mpl {
 
 class Cluster;
 
-class Mpl2Observer
+class MplObserver
 {
  public:
   // The final cost is norm_penalty * weight
@@ -57,8 +57,8 @@ class Mpl2Observer
     float norm_penalty;
   };
 
-  Mpl2Observer() = default;
-  virtual ~Mpl2Observer() = default;
+  MplObserver() = default;
+  virtual ~MplObserver() = default;
 
   virtual void startCoarse() {}
   virtual void startFine() {}
@@ -72,11 +72,11 @@ class Mpl2Observer
   virtual void finishedClustering(PhysicalHierarchy* tree) {}
 
   virtual void setMaxLevel(int max_level) {}
-  virtual void setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages)
+  virtual void setMacroBlockages(const std::vector<mpl::Rect>& macro_blockages)
   {
   }
   virtual void setPlacementBlockages(
-      const std::vector<mpl2::Rect>& placement_blockages)
+      const std::vector<mpl::Rect>& placement_blockages)
   {
   }
   virtual void setBundledNets(const std::vector<BundledNet>& bundled_nets) {}
@@ -105,4 +105,4 @@ class Mpl2Observer
   virtual void eraseDrawing() {}
 };
 
-}  // namespace mpl2
+}  // namespace mpl

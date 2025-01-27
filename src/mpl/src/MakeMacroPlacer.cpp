@@ -31,42 +31,42 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "mpl2/MakeMacroPlacer.h"
+#include "mpl/MakeMacroPlacer.h"
 
 #include <tcl.h>
 
-#include "mpl2/rtl_mp.h"
+#include "mpl/rtl_mp.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
 namespace sta {
-extern const char* mpl2_tcl_inits[];
+extern const char* mpl_tcl_inits[];
 }
 
 extern "C" {
-extern int Mpl2_Init(Tcl_Interp* interp);
+extern int Mpl_Init(Tcl_Interp* interp);
 }
 
 namespace ord {
 
-mpl2::MacroPlacer2* makeMacroPlacer2()
+mpl::MacroPlacer* makeMacroPlacer()
 {
-  return new mpl2::MacroPlacer2;
+  return new mpl::MacroPlacer;
 }
 
-void initMacroPlacer2(OpenRoad* openroad)
+void initMacroPlacer(OpenRoad* openroad)
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
-  Mpl2_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::mpl2_tcl_inits);
-  openroad->getMacroPlacer2()->init(openroad->getDbNetwork(),
-                                    openroad->getDb(),
-                                    openroad->getSta(),
-                                    openroad->getLogger(),
-                                    openroad->getPartitionMgr());
+  Mpl_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::mpl_tcl_inits);
+  openroad->getMacroPlacer()->init(openroad->getDbNetwork(),
+                                   openroad->getDb(),
+                                   openroad->getSta(),
+                                   openroad->getLogger(),
+                                   openroad->getPartitionMgr());
 }
 
-void deleteMacroPlacer2(mpl2::MacroPlacer2* macro_placer)
+void deleteMacroPlacer(mpl::MacroPlacer* macro_placer)
 {
   delete macro_placer;
 }

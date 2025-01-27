@@ -61,7 +61,6 @@ tools = [
     "gui",
     "ifp",
     "mpl",
-    "mpl2",
     "odb",
     "pad",
     "par",

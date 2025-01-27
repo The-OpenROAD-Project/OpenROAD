@@ -33,18 +33,18 @@
 
 #pragma once
 
-namespace mpl2 {
-class MacroPlacer2;
+namespace mpl {
+class MacroPlacer;
 }
 
 namespace ord {
 
 class OpenRoad;
 
-mpl2::MacroPlacer2* makeMacroPlacer2();
+mpl::MacroPlacer* makeMacroPlacer();
 
-void initMacroPlacer2(OpenRoad* openroad);
+void initMacroPlacer(OpenRoad* openroad);
 
-void deleteMacroPlacer2(mpl2::MacroPlacer2* macro_placer);
+void deleteMacroPlacer(mpl::MacroPlacer* macro_placer);
 
 }  // namespace ord

@@ -39,7 +39,7 @@
 #include "object.h"
 #include "utl/Logger.h"
 
-namespace mpl2 {
+namespace mpl {
 
 Graphics::Graphics(bool coarse,
                    bool fine,
@@ -184,7 +184,7 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
   for (auto& child : parent->getChildren()) {
     switch (child->getClusterType()) {
       case HardMacroCluster: {
-        std::vector<mpl2::HardMacro*> hard_macros = child->getHardMacros();
+        std::vector<mpl::HardMacro*> hard_macros = child->getHardMacros();
         for (HardMacro* hard_macro : hard_macros) {
           hard.push_back(*hard_macro);
         }
@@ -783,13 +783,13 @@ void Graphics::setSoftMacroBrush(gui::Painter& painter,
   }
 }
 
-void Graphics::setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages)
+void Graphics::setMacroBlockages(const std::vector<mpl::Rect>& macro_blockages)
 {
   macro_blockages_ = macro_blockages;
 }
 
 void Graphics::setPlacementBlockages(
-    const std::vector<mpl2::Rect>& placement_blockages)
+    const std::vector<mpl::Rect>& placement_blockages)
 {
   placement_blockages_ = placement_blockages;
 }
@@ -871,4 +871,4 @@ void Graphics::eraseDrawing()
   guides_.clear();
 }
 
-}  // namespace mpl2
+}  // namespace mpl

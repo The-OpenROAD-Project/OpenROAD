@@ -37,11 +37,11 @@
 #include <iostream>
 #include <vector>
 
-#include "Mpl2Observer.h"
+#include "MplObserver.h"
 #include "object.h"
 #include "utl/Logger.h"
 
-namespace mpl2 {
+namespace mpl {
 
 using std::string;
 
@@ -68,7 +68,7 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
     int max_num_step,
     int num_perturb_per_step,
     unsigned seed,
-    Mpl2Observer* graphics,
+    MplObserver* graphics,
     utl::Logger* logger)
     : outline_(outline),
       blocked_boundaries_(tree->blocked_boundaries),
@@ -801,4 +801,4 @@ void SimulatedAnnealingCore<T>::writeCostFile(
 template class SimulatedAnnealingCore<SoftMacro>;
 template class SimulatedAnnealingCore<HardMacro>;
 
-}  // namespace mpl2
+}  // namespace mpl

@@ -39,7 +39,7 @@
 
 #include "utl/Logger.h"
 
-namespace mpl2 {
+namespace mpl {
 using utl::MPL;
 
 ///////////////////////////////////////////////////////////////////////
@@ -1373,4 +1373,4 @@ void SoftMacro::setShapeF(float width, float height)
   area_ = width * height;
 }
 
-}  // namespace mpl2
+}  // namespace mpl

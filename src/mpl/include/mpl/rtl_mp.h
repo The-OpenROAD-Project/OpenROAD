@@ -54,17 +54,17 @@ namespace par {
 class PartitionMgr;
 }
 
-namespace mpl2 {
+namespace mpl {
 
 class HierRTLMP;
-class Mpl2Observer;
+class MplObserver;
 struct Rect;
 
-class MacroPlacer2
+class MacroPlacer
 {
  public:
-  MacroPlacer2();
-  ~MacroPlacer2();
+  MacroPlacer();
+  ~MacroPlacer();
 
   void init(sta::dbNetwork* network,
             odb::dbDatabase* db,
@@ -115,7 +115,7 @@ class MacroPlacer2
   void setMacroPlacementFile(const std::string& file_name);
   void addGuidanceRegion(odb::dbInst* macro, const Rect& region);
 
-  void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
+  void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
   void setDebugShowClustersIds(bool show_clusters_ids);
   void setDebugSkipSteps(bool skip_steps);
@@ -130,4 +130,4 @@ class MacroPlacer2
   std::map<odb::dbInst*, Rect> guidance_regions_;
 };
 
-}  // namespace mpl2
+}  // namespace mpl

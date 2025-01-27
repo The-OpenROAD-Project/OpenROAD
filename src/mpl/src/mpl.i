@@ -33,20 +33,20 @@
 
 %{
 #include "ord/OpenRoad.hh"
-#include "mpl2/rtl_mp.h"
-#include "Mpl2Observer.h"
+#include "mpl/rtl_mp.h"
+#include "MplObserver.h"
 #include "graphics.h"
 #include "odb/db.h"
 
 namespace ord {
 // Defined in OpenRoad.i
-mpl2::MacroPlacer2*
-getMacroPlacer2();
+mpl::MacroPlacer*
+getMacroPlacer();
 utl::Logger* getLogger();
 }
 
 using utl::MPL;
-using ord::getMacroPlacer2;
+using ord::getMacroPlacer;
 %}
 
 %include "../../Exception.i"
@@ -54,7 +54,7 @@ using ord::getMacroPlacer2;
 
 %inline %{
 
-namespace mpl2 {
+namespace mpl {
 
 bool rtl_macro_placer_cmd(const int max_num_macro,
                           const int min_num_macro,
@@ -87,7 +87,7 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const bool bus_planning_on,
                           const char* report_directory) {
 
-  auto macro_placer = getMacroPlacer2();
+  auto macro_placer = getMacroPlacer();
   const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
   return macro_placer->place(num_threads,
                              max_num_macro,
@@ -131,8 +131,8 @@ void set_debug_cmd(odb::dbBlock* block,
                    bool only_final_result,
                    int target_cluster_id)
 {
-  auto macro_placer = getMacroPlacer2();
-  std::unique_ptr<Mpl2Observer> graphics
+  auto macro_placer = getMacroPlacer();
+  std::unique_ptr<MplObserver> graphics
     = std::make_unique<Graphics>(coarse, fine, block, ord::getLogger());
   macro_placer->setDebug(graphics);
   macro_placer->setDebugShowBundledNets(show_bundled_nets);
@@ -152,7 +152,7 @@ place_macro(odb::dbInst* inst,
 {
   odb::dbOrientType orientation(orientation_string.c_str());
 
-  getMacroPlacer2()->placeMacro(
+  getMacroPlacer()->placeMacro(
     inst, x_origin, y_origin, orientation, exact, allow_overlap);
 }
 
@@ -163,14 +163,14 @@ add_guidance_region(odb::dbInst* macro,
                     float x2,
                     float y2)
 {
-  getMacroPlacer2()->addGuidanceRegion(macro, Rect(x1, y1, x2, y2));
+  getMacroPlacer()->addGuidanceRegion(macro, Rect(x1, y1, x2, y2));
 }
 
 
 void
 set_macro_placement_file(std::string file_name)
 {
-  getMacroPlacer2()->setMacroPlacementFile(file_name);
+  getMacroPlacer()->setMacroPlacementFile(file_name);
 }
 
 } // namespace

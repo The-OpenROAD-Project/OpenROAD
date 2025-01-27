@@ -47,7 +47,7 @@
 #include "object.h"
 #include "utl/Logger.h"
 
-namespace mpl2 {
+namespace mpl {
 using utl::MPL;
 
 using operations_research::MPConstraint;
@@ -170,8 +170,8 @@ void Graph::calShortPathParentVertices(int root)
       } else if (dist[edge.dest] == dist[vertex_dist.vertex] + edge.weight) {
         parent[edge.dest].push_back(vertex_dist.vertex);
       }
-    }                                  // done edge traversal
-  }                                    // done forward propagation
+    }  // done edge traversal
+  }  // done forward propagation
   parents_[root] = std::move(parent);  // update parents map
 };
 
@@ -248,7 +248,7 @@ void Graph::calEdgePaths(
       edge_paths.push_back(edge_path);
       path_hash_set.insert(hash_value);
     }  // done edge_path
-  }    // done edge_paths
+  }  // done edge_paths
 }
 
 // Calculate shortest pathes in terms of boundary edges
@@ -808,7 +808,7 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
         edge.pin_access = T;
       }
     }  // update crossing edge
-  }    // update edge weight
+  }  // update edge weight
 
   int num_edges = edge_list.size();
   for (int i = 0; i < num_edges; i++) {
@@ -1222,4 +1222,4 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
   return true;
 }
 
-}  // namespace mpl2
+}  // namespace mpl

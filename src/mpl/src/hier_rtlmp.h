@@ -39,7 +39,7 @@
 #include <string>
 #include <vector>
 
-#include "Mpl2Observer.h"
+#include "MplObserver.h"
 #include "clusterEngine.h"
 
 namespace odb {
@@ -62,7 +62,7 @@ namespace par {
 class PartitionMgr;
 }
 
-namespace mpl2 {
+namespace mpl {
 struct BundledNet;
 class Cluster;
 class HardMacro;
@@ -141,7 +141,7 @@ class HierRTLMP
   void setMinAR(float min_ar);
   void setSnapLayer(int snap_layer);
   void setReportDirectory(const char* report_directory);
-  void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
+  void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
   void setDebugShowClustersIds(bool show_clusters_ids);
   void setDebugSkipSteps(bool skip_steps);
@@ -345,7 +345,7 @@ class HierRTLMP
 
   bool skip_macro_placement_ = false;
 
-  std::unique_ptr<Mpl2Observer> graphics_;
+  std::unique_ptr<MplObserver> graphics_;
   bool is_debug_only_final_result_{false};
 };
 
@@ -434,4 +434,4 @@ class Snapper
   odb::dbInst* inst_;
 };
 
-}  // namespace mpl2
+}  // namespace mpl

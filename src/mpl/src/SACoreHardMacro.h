@@ -35,7 +35,7 @@
 
 #include <vector>
 
-#include "Mpl2Observer.h"
+#include "MplObserver.h"
 #include "SimulatedAnnealingCore.h"
 #include "object.h"
 
@@ -43,7 +43,7 @@ namespace utl {
 class Logger;
 }
 
-namespace mpl2 {
+namespace mpl {
 
 // SA for hard macros.  It will be called by ShapeEngine and PinAlignEngine
 class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
@@ -70,7 +70,7 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
                   int max_num_step,
                   int num_perturb_per_step,
                   unsigned seed,
-                  Mpl2Observer* graphics,
+                  MplObserver* graphics,
                   utl::Logger* logger);
 
   void run() override;
@@ -97,4 +97,4 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
   float flip_prob_ = 0.0;
 };
 
-}  // namespace mpl2
+}  // namespace mpl

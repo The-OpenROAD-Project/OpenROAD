@@ -35,7 +35,7 @@
 
 #include <vector>
 
-#include "Mpl2Observer.h"
+#include "MplObserver.h"
 #include "SimulatedAnnealingCore.h"
 #include "object.h"
 
@@ -43,7 +43,7 @@ namespace utl {
 class Logger;
 }
 
-namespace mpl2 {
+namespace mpl {
 class Graphics;
 
 // SA for soft macros.  It will be called by MacroPlaceEngine
@@ -77,7 +77,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                   int max_num_step,
                   int num_perturb_per_step,
                   unsigned seed,
-                  Mpl2Observer* graphics,
+                  MplObserver* graphics,
                   utl::Logger* logger);
 
   void run() override;
@@ -170,4 +170,4 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   bool centralization_was_reverted_ = false;
 };
 
-}  // namespace mpl2
+}  // namespace mpl

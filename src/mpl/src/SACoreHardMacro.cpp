@@ -35,10 +35,10 @@
 
 #include <vector>
 
-#include "Mpl2Observer.h"
+#include "MplObserver.h"
 #include "utl/Logger.h"
 
-namespace mpl2 {
+namespace mpl {
 using utl::MPL;
 
 //////////////////////////////////////////////////////////////////
@@ -65,7 +65,7 @@ SACoreHardMacro::SACoreHardMacro(
     int max_num_step,
     int num_perturb_per_step,
     unsigned seed,
-    Mpl2Observer* graphics,
+    MplObserver* graphics,
     utl::Logger* logger)
     : SimulatedAnnealingCore<HardMacro>(tree,
                                         outline,
@@ -237,7 +237,7 @@ void SACoreHardMacro::initialize()
   std::vector<float> height_list;
 
   // We don't want to stop in the normalization factor setup
-  Mpl2Observer* save_graphics = graphics_;
+  MplObserver* save_graphics = graphics_;
   graphics_ = nullptr;
 
   for (int i = 0; i < num_perturb_per_step_; i++) {
@@ -382,4 +382,4 @@ void SACoreHardMacro::printResults()
              getNormCost());
 }
 
-}  // namespace mpl2
+}  // namespace mpl

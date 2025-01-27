@@ -45,7 +45,7 @@ OpenRoad::OpenRoad()
       opendp_(nullptr),
       optdp_(nullptr),
       finale_(nullptr),
-      macro_placer2_(nullptr),
+      macro_placer_(nullptr),
       global_router_(nullptr),
       restructure_(nullptr),
       tritonCts_(nullptr),
