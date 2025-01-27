@@ -535,8 +535,6 @@ void TritonRoute::init(odb::dbDatabase* db,
   if (dr_graphics) {
     dr_graphics->init();
   }
-  ta_ = std::make_unique<FlexTA>(
-      getDesign(), logger_, router_cfg_.get(), distributed_);
   dr_graphics_ = std::move(dr_graphics);
   pa_graphics_ = std::move(pa_graphics);
   ta_graphics_ = std::move(ta_graphics);
@@ -620,10 +618,12 @@ void TritonRoute::gr()
 
 void TritonRoute::ta()
 {
+  std::unique_ptr<FlexTA> ta = std::make_unique<FlexTA>(
+      getDesign(), logger_, router_cfg_.get(), distributed_);
   if (debug_->debugTA) {
-    ta_->setDebug(std::move(ta_graphics_));
+    ta->setDebug(std::move(ta_graphics_));
   }
-  ta_->main();
+  ta->main();
 }
 
 void TritonRoute::dr()
