@@ -60,28 +60,28 @@ class FlexDRGraphics : public gui::Renderer, public AbstractDRGraphics
                  odb::dbDatabase* db,
                  Logger* logger);
 
-  void startWorker(FlexDRWorker* worker);
+  void startWorker(FlexDRWorker* worker) override;
 
-  void startIter(int iter, RouterConfiguration* router_cfg);
+  void startIter(int iter, RouterConfiguration* router_cfg) override;
 
-  void endWorker(int iter);
+  void endWorker(int iter) override;
 
-  void startNet(drNet* net);
+  void startNet(drNet* net) override;
 
-  void midNet(drNet* net);
+  void midNet(drNet* net) override;
 
-  void endNet(drNet* net);
+  void endNet(drNet* net) override;
 
   void searchNode(const FlexGridGraph* grid_graph,
-                  const FlexWavefrontGrid& grid);
+                  const FlexWavefrontGrid& grid) override;
 
   // Show a message in the status bar
   void status(const std::string& message);
 
   // From Renderer API
-  void drawObjects(gui::Painter& painter) override;
-  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
-  const char* getDisplayControlGroupName() override;
+  void drawObjects(gui::Painter& painter);
+  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter);
+  const char* getDisplayControlGroupName();
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
@@ -90,15 +90,13 @@ class FlexDRGraphics : public gui::Renderer, public AbstractDRGraphics
 
   void show(bool checkStopConditions) override;
 
-  void update() override;
+  void update();
 
-  void pause(drNet* net) override;
+  void pause(drNet* net);
 
   void debugWholeDesign() override;
 
-  void drawObj(frBlockObject* fig,
-               gui::Painter& painter,
-               int layerNum) override;
+  void drawObj(frBlockObject* fig, gui::Painter& painter, int layerNum);
 
  private:
   FlexDRWorker* worker_;
