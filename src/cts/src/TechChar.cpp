@@ -1628,6 +1628,11 @@ void TechChar::create()
                  masterNames_.size(), solution.instVector.size(),
                  buffersUpdate, topologiesCreated);
       // clang-format on
+
+      if (buffersUpdate == 0) {
+        continue;
+      }
+
       do {
         // For each possible load.
         for (float load : loadsToTest_) {
