@@ -92,6 +92,9 @@ class frInst : public frRef
   {
     return db_inst_->getTransform().getOffset();
   }
+  Rect getBoundaryBBox() const;
+  // Returns the lower left point of the bounding box
+  Point getLocation() const { return getBoundaryBBox().ll(); }
   odb::dbInst* getDBInst() const { return db_inst_; }
   dbTransform getTransform() const override { return db_inst_->getTransform(); }
 
@@ -131,7 +134,6 @@ class frInst : public frRef
   void move(const dbTransform& xform) override { ; }
   bool intersects(const Rect& box) const override { return false; }
   // others
-  Rect getBoundaryBBox() const;
 
   frInstTerm* getInstTerm(int index);
 

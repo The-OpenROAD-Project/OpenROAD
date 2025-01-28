@@ -174,8 +174,8 @@ void FlexPA::prepPattern()
   std::vector<frInst*> row_insts;
 
   auto instLocComp = [](frInst* const& a, frInst* const& b) {
-    const Point originA = a->getOrigin();
-    const Point originB = b->getOrigin();
+    const Point originA = a->getLocation();
+    const Point originB = b->getLocation();
     if (originA.y() == originB.y()) {
       return (originA.x() < originB.x());
     }
@@ -189,7 +189,7 @@ void FlexPA::prepPattern()
   int prev_y_coord = INT_MIN;
   int prev_x_end_coord = INT_MIN;
   for (auto inst : insts) {
-    Point origin = inst->getOrigin();
+    Point origin = inst->getLocation();
     if (origin.y() != prev_y_coord || origin.x() > prev_x_end_coord) {
       if (!row_insts.empty()) {
         inst_rows.push_back(row_insts);
