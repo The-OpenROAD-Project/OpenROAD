@@ -78,7 +78,6 @@ using sta::CellPortBitIterator;
 using sta::CellPortIterator;
 using sta::ConnectedPinIterator;
 using sta::dbNetwork;
-using sta::deleteVerilogReader;
 using sta::Instance;
 using sta::InstanceChildIterator;
 using sta::InstancePinIterator;
@@ -138,7 +137,8 @@ Cell* dbVerilogNetwork::findAnyCell(const char* name)
 
 void dbReadVerilog(const char* filename, dbVerilogNetwork* verilog_network)
 {
-  sta::readVerilogFile(filename, verilog_network);
+  sta::VerilogReader* verilog_reader = new sta::VerilogReader(verilog_network);
+  verilog_reader->read(filename);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -214,7 +214,6 @@ void dbLinkDesign(const char* top_cell_name,
     Verilog2db v2db(verilog_network, db, logger, hierarchy);
     v2db.makeBlock();
     v2db.makeDbNetlist();
-    deleteVerilogReader();
   }
 }
 
