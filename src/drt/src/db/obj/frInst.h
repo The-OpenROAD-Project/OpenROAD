@@ -95,20 +95,6 @@ class frInst : public frRef
   odb::dbInst* getDBInst() const { return db_inst_; }
   dbTransform getTransform() const override { return db_inst_->getTransform(); }
 
-  // This function is only used for transforming the PathSeg
-  // The intended behaviour is for "use_old_transform" to be set to false
-  // If this is possible the overall issue is solved
-  // Use old transform uses the old version of the transformation
-  dbTransform getBadTransform() const
-  {
-    const bool use_old_transform = false;
-    if (!use_old_transform)
-      return getTransform();
-    int x, y;
-    db_inst_->getLocation(x, y);
-    return dbTransform(Point(x, y));
-  }
-
   /* from frPinFig
    * hasPin
    * getPin
