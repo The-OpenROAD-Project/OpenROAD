@@ -924,8 +924,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 
       half_width *= thickness_multiplier;
 
-      int num_tracks_offset
-          = std::ceil(static_cast<double>(corner_avoidance_) / min_dst_pins);
+      int num_tracks_offset = std::ceil(corner_avoidance_ / min_dst_pins);
 
       start_idx
           = std::max(0.0,
@@ -2753,7 +2752,7 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
   for (int ver_layer_idx : ver_layer_idxs) {
     odb::dbTechLayer* ver_layer = getTech()->findRoutingLayer(ver_layer_idx);
     odb::dbTrackGrid* ver_track_grid = getBlock()->findTrackGrid(ver_layer);
-    const int track_patterns_count = ver_track_grid->getNumGridPatternsY();
+    const int track_patterns_count = ver_track_grid->getNumGridPatternsX();
 
     std::vector<int> init_track_x(track_patterns_count, 0);
     std::vector<int> num_track_x(track_patterns_count, 0);

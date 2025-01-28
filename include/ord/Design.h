@@ -79,8 +79,8 @@ namespace dpl {
 class Opendp;
 }
 
-namespace mpl2 {
-class MacroPlacer2;
+namespace mpl {
+class MacroPlacer;
 }
 
 namespace ppl {
@@ -198,7 +198,7 @@ class Design
   gpl::Replace* getReplace();
   grt::GlobalRouter* getGlobalRouter();
   ifp::InitFloorplan getFloorplan();
-  mpl2::MacroPlacer2* getMacroPlacer2();
+  mpl::MacroPlacer* getMacroPlacer();
   odb::dbDatabase* getDb();
   pad::ICeWall* getICeWall();
   par::PartitionMgr* getPartitionMgr();
