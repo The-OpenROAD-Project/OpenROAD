@@ -79,9 +79,9 @@ class FlexDRGraphics : public gui::Renderer, public AbstractDRGraphics
   void status(const std::string& message);
 
   // From Renderer API
-  void drawObjects(gui::Painter& painter);
-  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter);
-  const char* getDisplayControlGroupName();
+  void drawObjects(gui::Painter& painter) override;
+  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
+  const char* getDisplayControlGroupName() override;
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
