@@ -104,6 +104,7 @@ class AbcTest : public ::testing::Test
                       db_.get(),
                       &logger_,
                       /*hierarchy = */ false);
+    verilog_reader = nullptr;
 
     sta_->postReadDb(db_.get());
 
