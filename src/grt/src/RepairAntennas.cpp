@@ -1701,6 +1701,10 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
 {
   jumper_position = -1;
   const GSegment& seg = route[seg_node.seg_id];
+  // Ignore small segments
+  if (seg.length() < 5 * tile_size_) {
+    return false;
+  }
   // Get init and final position of segment
   const int seg_init_x = seg.init_x;
   const int seg_init_y = seg.init_y;
@@ -1737,10 +1741,10 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
   while (pos_x <= seg_final_x && pos_y <= seg_final_y) {
     // check if the position has resources available
     has_available_resources = grouter_->hasAvailableResources(
-        is_horizontal, pos_x, pos_y, seg.init_layer + 2);
+        is_horizontal, pos_x, pos_y, layer_level + 2);
     // If the position has vias or does not have resources
-    if ((is_horizontal && via_pos.find(pos_y) != via_pos.end())
-        || (!is_horizontal && via_pos.find(pos_x) != via_pos.end())
+    if ((is_horizontal && via_pos.find(pos_x) != via_pos.end())
+        || (!is_horizontal && via_pos.find(pos_y) != via_pos.end())
         || !has_available_resources) {
       // get size from last vias to the position
       const int free_via_size
@@ -1946,9 +1950,6 @@ void RepairAntennas::jumperInsertion2(NetRouteMap& routing,
       required_jumper_by_net = segments_to_repair.size();
     }
     if (required_jumper_by_net > 0) {
-      // printf("Inserting %d jumper in net %s\n",
-      //      jumper_by_net,
-      //    db_net->getConstName());
       // printf("Net %s is repaired by jumper insertion\n",
       //      db_net->getConstName());
       jumper_by_net = 0;
@@ -1977,6 +1978,9 @@ void RepairAntennas::jumperInsertion2(NetRouteMap& routing,
         }
       }
       if (jumper_by_net > 0) {
+        // printf("Inserting %d jumper in net %s\n",
+        // jumper_by_net,
+        // db_net->getConstName());
         db_net->setJumpers(true);
         net_with_jumpers++;
         total_jumpers += jumper_by_net;
