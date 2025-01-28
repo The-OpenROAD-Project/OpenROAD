@@ -2742,11 +2742,11 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
     min_area_y = hor_layer->getArea() * database_unit * database_unit;
     min_width_y = hor_layer->getWidth();
 
-    min_spacings_y[hor_layer_idx] = min_spacing_y;
-    init_tracks_y[hor_layer_idx] = init_track_y;
-    min_areas_y[hor_layer_idx] = min_area_y;
-    min_widths_y[hor_layer_idx] = min_width_y;
-    num_tracks_y[hor_layer_idx] = num_track_y;
+    min_spacings_y[hor_layer_idx] = std::move(min_spacing_y);
+    init_tracks_y[hor_layer_idx] = std::move(init_track_y);
+    min_areas_y[hor_layer_idx] = std::move(min_area_y);
+    min_widths_y[hor_layer_idx] = std::move(min_width_y);
+    num_tracks_y[hor_layer_idx] = std::move(num_track_y);
   }
 
   for (int ver_layer_idx : ver_layer_idxs) {
@@ -2768,11 +2768,11 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
     min_area_x = ver_layer->getArea() * database_unit * database_unit;
     min_width_x = ver_layer->getWidth();
 
-    min_spacings_x[ver_layer_idx] = min_spacing_x;
-    init_tracks_x[ver_layer_idx] = init_track_x;
-    min_areas_x[ver_layer_idx] = min_area_x;
-    min_widths_x[ver_layer_idx] = min_width_x;
-    num_tracks_x[ver_layer_idx] = num_track_x;
+    min_spacings_x[ver_layer_idx] = std::move(min_spacing_x);
+    init_tracks_x[ver_layer_idx] = std::move(init_track_x);
+    min_areas_x[ver_layer_idx] = std::move(min_area_x);
+    min_widths_x[ver_layer_idx] = std::move(min_width_x);
+    num_tracks_x[ver_layer_idx] = std::move(num_track_x);
   }
 
   *core_ = Core(boundary,
