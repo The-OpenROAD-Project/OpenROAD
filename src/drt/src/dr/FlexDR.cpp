@@ -1434,8 +1434,7 @@ void FlexDR::end(bool done)
               << (double) ((sCut[i] + mCut[i])
                                ? mCut[i] * 100.0 / (sCut[i] + mCut[i])
                                : 0.0)
-              << "%)"
-              << "    "
+              << "%)    "
               << std::setw((int) std::to_string(totSCut + totMCut).length())
               << sCut[i] + mCut[i];
         }
@@ -1446,9 +1445,8 @@ void FlexDR::end(bool done)
       msg << "-";
     }
     msg << std::endl;
-    msg << " " << std::setw(nameLen) << ""
-        << "    " << std::setw((int) std::to_string(totSCut).length())
-        << totSCut;
+    msg << " " << std::setw(nameLen) << "    "
+        << std::setw((int) std::to_string(totSCut).length()) << totSCut;
     if (totMCut) {
       msg << " (" << std::setw(5)
           << (double) ((totSCut + totMCut)
@@ -1460,8 +1458,7 @@ void FlexDR::end(bool done)
           << (double) ((totSCut + totMCut)
                            ? totMCut * 100.0 / (totSCut + totMCut)
                            : 0.0)
-          << "%)"
-          << "    "
+          << "%)    "
           << std::setw((int) std::to_string(totSCut + totMCut).length())
           << totSCut + totMCut;
     }
