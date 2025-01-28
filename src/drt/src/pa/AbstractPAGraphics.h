@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-//
+//////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2022, The Regents of the University of California
+// Copyright (c) 2025, Precision Innovations Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,18 +29,52 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
 
-%ignore drt::TritonRoute::init;
+#pragma once
 
-%{
+#include <memory>
+#include <vector>
 
-#include "ord/OpenRoad.hh"
-#include "triton_route/TritonRoute.h"
-#include "utl/Logger.h"
-%}
+#include "FlexPA.h"
+#include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
 
-%include <std_string.i>
-%include "../../Exception-py.i"
-%include "triton_route/TritonRoute.h"
+namespace drt {
+
+class AbstractPAGraphics
+{
+ public:
+  virtual void startPin(frBPin* pin,
+                        frInstTerm* inst_term,
+                        std::set<frInst*, frBlockObjectComp>* inst_class)
+      = 0;
+
+  virtual void startPin(frMPin* pin,
+                        frInstTerm* inst_term,
+                        std::set<frInst*, frBlockObjectComp>* inst_class)
+      = 0;
+
+  virtual void setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps,
+                      frAccessPointEnum lower_type,
+                      frAccessPointEnum upper_type)
+      = 0;
+
+  virtual void setViaAP(const frAccessPoint* ap,
+                        const frVia* via,
+                        const std::vector<std::unique_ptr<frMarker>>& markers)
+      = 0;
+
+  virtual void setPlanarAP(
+      const frAccessPoint* ap,
+      const frPathSeg* seg,
+      const std::vector<std::unique_ptr<frMarker>>& markers)
+      = 0;
+
+  virtual void setObjsAndMakers(
+      const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
+      const std::vector<std::unique_ptr<frMarker>>& markers,
+      FlexPA::PatternType type)
+      = 0;
+};
+
+}  // namespace drt

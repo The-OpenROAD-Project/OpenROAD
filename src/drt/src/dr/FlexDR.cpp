@@ -45,8 +45,8 @@
 #include "db/infra/frTime.h"
 #include "distributed/RoutingJobDescription.h"
 #include "distributed/frArchive.h"
+#include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR_conn.h"
-#include "dr/FlexDR_graphics.h"
 #include "dst/BalancerJobDescription.h"
 #include "dst/Distributed.h"
 #include "frProfileTask.h"
@@ -123,13 +123,9 @@ FlexDR::FlexDR(TritonRoute* router,
 
 FlexDR::~FlexDR() = default;
 
-void FlexDR::setDebug(frDebugSettings* settings)
+void FlexDR::setDebug(std::unique_ptr<AbstractDRGraphics> dr_graphics)
 {
-  bool on = settings->debugDR;
-  graphics_
-      = on && FlexDRGraphics::guiActive()
-            ? std::make_unique<FlexDRGraphics>(settings, design_, db_, logger_)
-            : nullptr;
+  graphics_ = std::move(dr_graphics);
 }
 
 std::string FlexDRWorker::reloadedMain()
@@ -1438,8 +1434,7 @@ void FlexDR::end(bool done)
               << (double) ((sCut[i] + mCut[i])
                                ? mCut[i] * 100.0 / (sCut[i] + mCut[i])
                                : 0.0)
-              << "%)"
-              << "    "
+              << "%)    "
               << std::setw((int) std::to_string(totSCut + totMCut).length())
               << sCut[i] + mCut[i];
         }
@@ -1450,9 +1445,8 @@ void FlexDR::end(bool done)
       msg << "-";
     }
     msg << std::endl;
-    msg << " " << std::setw(nameLen) << ""
-        << "    " << std::setw((int) std::to_string(totSCut).length())
-        << totSCut;
+    msg << " " << std::setw(nameLen) << "    "
+        << std::setw((int) std::to_string(totSCut).length()) << totSCut;
     if (totMCut) {
       msg << " (" << std::setw(5)
           << (double) ((totSCut + totMCut)
@@ -1464,8 +1458,7 @@ void FlexDR::end(bool done)
           << (double) ((totSCut + totMCut)
                            ? totMCut * 100.0 / (totSCut + totMCut)
                            : 0.0)
-          << "%)"
-          << "    "
+          << "%)    "
           << std::setw((int) std::to_string(totSCut + totMCut).length())
           << totSCut + totMCut;
     }

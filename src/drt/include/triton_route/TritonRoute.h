@@ -69,13 +69,17 @@ namespace drt {
 class frDesign;
 class DesignCallBack;
 class FlexDR;
+class FlexPA;
+class FlexTA;
 class FlexDRWorker;
 class drUpdate;
 struct frDebugSettings;
-class FlexDR;
 struct FlexDRViaData;
 class frMarker;
 struct RouterConfiguration;
+class AbstractPAGraphics;
+class AbstractTAGraphics;
+class AbstractDRGraphics;
 
 struct ParamStruct
 {
@@ -107,13 +111,16 @@ class TritonRoute
  public:
   TritonRoute();
   ~TritonRoute();
-  void init(Tcl_Interp* tcl_interp,
-            odb::dbDatabase* db,
+  void init(odb::dbDatabase* db,
             utl::Logger* logger,
             dst::Distributed* dist,
-            stt::SteinerTreeBuilder* stt_builder);
+            stt::SteinerTreeBuilder* stt_builder,
+            std::unique_ptr<AbstractDRGraphics> dr_graphics,
+            std::unique_ptr<AbstractPAGraphics> pa_graphics,
+            std::unique_ptr<AbstractTAGraphics> ta_graphics);
 
   frDesign* getDesign() const { return design_.get(); }
+  utl::Logger* getLogger() const { return logger_; }
   RouterConfiguration* getRouterConfiguration() const
   {
     return router_cfg_.get();
@@ -221,6 +228,10 @@ class TritonRoute
   int results_sz_{0};
   unsigned int cloud_sz_{0};
   std::optional<boost::asio::thread_pool> dist_pool_;
+  std::unique_ptr<FlexPA> pa_{nullptr};
+  std::unique_ptr<AbstractDRGraphics> dr_graphics_{nullptr};
+  std::unique_ptr<AbstractPAGraphics> pa_graphics_{nullptr};
+  std::unique_ptr<AbstractTAGraphics> ta_graphics_{nullptr};
 
   void initDesign();
   void gr();

@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-//
+//////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2022, The Regents of the University of California
+// Copyright (c) 2025, Precision Innovations Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,18 +29,46 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
 
-%ignore drt::TritonRoute::init;
+#pragma once
 
-%{
+#include <memory>
+#include <vector>
 
-#include "ord/OpenRoad.hh"
-#include "triton_route/TritonRoute.h"
-#include "utl/Logger.h"
-%}
+#include "frBaseTypes.h"
 
-%include <std_string.i>
-%include "../../Exception-py.i"
-%include "triton_route/TritonRoute.h"
+namespace drt {
+
+class FlexGridGraph;
+class FlexWavefrontGrid;
+class FlexDRWorker;
+class drNet;
+struct RouterConfiguration;
+
+class AbstractDRGraphics
+{
+ public:
+  virtual void startWorker(FlexDRWorker* worker) = 0;
+
+  virtual void startIter(int iter, RouterConfiguration* router_cfg) = 0;
+
+  virtual void endWorker(int iter) = 0;
+
+  virtual void startNet(drNet* net) = 0;
+
+  virtual void midNet(drNet* net) = 0;
+
+  virtual void endNet(drNet* net) = 0;
+
+  virtual void searchNode(const FlexGridGraph* grid_graph,
+                          const FlexWavefrontGrid& grid)
+      = 0;
+
+  virtual void init() = 0;
+
+  virtual void show(bool checkStopConditions) = 0;
+
+  virtual void debugWholeDesign() = 0;
+};
+
+}  // namespace drt

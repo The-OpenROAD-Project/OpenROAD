@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-//
+//////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2022, The Regents of the University of California
+// Copyright (c) 2025, Precision Innovations Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,18 +29,22 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
 
-%ignore drt::TritonRoute::init;
+#pragma once
 
-%{
+#include <memory>
+#include <vector>
 
-#include "ord/OpenRoad.hh"
-#include "triton_route/TritonRoute.h"
-#include "utl/Logger.h"
-%}
+#include "FlexTA.h"
+#include "db/obj/frBlockObject.h"
+#include "frBaseTypes.h"
 
-%include <std_string.i>
-%include "../../Exception-py.i"
-%include "triton_route/TritonRoute.h"
+namespace drt {
+class AbstractTAGraphics
+{
+ public:
+  // Update status and optionally pause
+  virtual void endIter(int iter) = 0;
+};
+
+}  // namespace drt

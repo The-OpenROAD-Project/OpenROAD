@@ -52,7 +52,7 @@ using frLayerCoordTrackPatternMap = boost::container::
 using frLayerDirMap = boost::container::flat_map<frLayerNum, dbTechLayerDir>;
 
 class FlexDRWorker;
-class FlexDRGraphics;
+class AbstractDRGraphics;
 class FlexGridGraph
 {
  public:
@@ -892,7 +892,7 @@ class FlexGridGraph
         break;
     }
   }
-  void setGraphics(FlexDRGraphics* g) { graphics_ = g; }
+  void setGraphics(AbstractDRGraphics* g) { graphics_ = g; }
 
   void setNDR(frNonDefaultRule* ndr) { ndr_ = ndr; }
 
@@ -1009,8 +1009,8 @@ class FlexGridGraph
   Logger* logger_ = nullptr;
   FlexDRWorker* drWorker_ = nullptr;
   RouterConfiguration* router_cfg_;
-  FlexDRGraphics* graphics_;  // owned by FlexDR
-                              //
+  AbstractDRGraphics* graphics_;  // owned by FlexDR
+                                  //
 #ifdef DEBUG_DRT_UNDERFLOW
   static constexpr int cost_bits = 16;
 #else
