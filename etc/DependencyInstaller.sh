@@ -333,6 +333,7 @@ _installUbuntuPackages() {
         groff \
         lcov \
         libffi-dev \
+        libfl-dev \
         libgomp1 \
         libomp-dev \
         libpcre2-dev \
@@ -564,6 +565,7 @@ _installDebianPackages() {
         groff \
         lcov \
         libffi-dev \
+        libfl-dev \
         libgomp1 \
         libomp-dev \
         libpcre2-dev \
