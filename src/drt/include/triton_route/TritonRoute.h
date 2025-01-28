@@ -228,11 +228,10 @@ class TritonRoute
   int results_sz_{0};
   unsigned int cloud_sz_{0};
   std::optional<boost::asio::thread_pool> dist_pool_;
-  std::unique_ptr<drt::FlexPA> pa_{nullptr};
-  std::unique_ptr<drt::FlexTA> ta_{nullptr};
-  std::unique_ptr<drt::AbstractDRGraphics> dr_graphics_{nullptr};
-  std::unique_ptr<drt::AbstractPAGraphics> pa_graphics_{nullptr};
-  std::unique_ptr<drt::AbstractTAGraphics> ta_graphics_{nullptr};
+  std::unique_ptr<FlexPA> pa_{nullptr};
+  std::unique_ptr<AbstractDRGraphics> dr_graphics_{nullptr};
+  std::unique_ptr<AbstractPAGraphics> pa_graphics_{nullptr};
+  std::unique_ptr<AbstractTAGraphics> ta_graphics_{nullptr};
 
   void initDesign();
   void gr();

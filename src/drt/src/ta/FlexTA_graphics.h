@@ -63,10 +63,10 @@ class FlexTAGraphics : public gui::Renderer, public AbstractTAGraphics
                        gui::Painter& painter);
 
   // From Renderer API
-  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
+  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter);
 
   // Update status and optionally pause
-  void endIter(int iter);
+  void endIter(int iter) override;
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();

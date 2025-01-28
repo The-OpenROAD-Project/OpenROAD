@@ -95,10 +95,10 @@ class FlexPAGraphics : public gui::Renderer, public AbstractPAGraphics
       FlexPA::PatternType type) override;
 
   // Show a message in the status bar
-  void status(const std::string& message) override;
+  void status(const std::string& message);
 
   // From Renderer API
-  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
+  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter);
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
