@@ -99,10 +99,6 @@ namespace mpl {
 class MacroPlacer;
 }
 
-namespace mpl2 {
-class MacroPlacer2;
-}
-
 namespace gpl {
 class Replace;
 }
@@ -184,7 +180,6 @@ class OpenRoad
   fin::Finale* getFinale() { return finale_; }
   tap::Tapcell* getTapcell() { return tapcell_; }
   mpl::MacroPlacer* getMacroPlacer() { return macro_placer_; }
-  mpl2::MacroPlacer2* getMacroPlacer2() { return macro_placer2_; }
   rcx::Ext* getOpenRCX() { return extractor_; }
   drt::TritonRoute* getTritonRoute() { return detailed_router_; }
   gpl::Replace* getReplace() { return replace_; }
@@ -278,7 +273,6 @@ class OpenRoad
   dpo::Optdp* optdp_ = nullptr;
   fin::Finale* finale_ = nullptr;
   mpl::MacroPlacer* macro_placer_ = nullptr;
-  mpl2::MacroPlacer2* macro_placer2_ = nullptr;
   grt::GlobalRouter* global_router_ = nullptr;
   rmp::Restructure* restructure_ = nullptr;
   cts::TritonCTS* tritonCts_ = nullptr;

@@ -64,6 +64,7 @@ sta::define_cmd_args "global_placement" {\
     [-timing_driven_nets_percentage timing_driven_nets_percentage]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
+    [-disable_revert_if_diverge]\
 }
 
 proc global_placement { args } {
@@ -92,7 +93,8 @@ proc global_placement { args } {
       -disable_timing_driven \
       -disable_routability_driven \
       -skip_io \
-      -incremental}
+      -incremental\
+      -disable_revert_if_diverge}
 
   # flow control for initial_place
   if { [info exists flags(-skip_initial_place)] } {
@@ -174,6 +176,14 @@ proc global_placement { args } {
       utl::warn "GPL" 152 \
         "Using GRT FastRoute instead of default RUDY for congestion in routability driven."
     }
+  }
+
+  # Disable revert to saved snapshot if a divergence is detected.
+  set disable_revert_if_diverge [info exists flags(-disable_revert_if_diverge)]
+  gpl::set_disable_revert_if_diverge $disable_revert_if_diverge
+  if { $disable_revert_if_diverge } {
+    utl::info "GPL" 153 \
+      "Revert-to-snapshot on divergence detection is disabled."
   }
 
   if { [info exists keys(-initial_place_max_fanout)] } {

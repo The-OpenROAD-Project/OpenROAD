@@ -118,6 +118,7 @@ void Replace::reset()
   routabilityUseRudy_ = true;
   uniformTargetDensityMode_ = false;
   skipIoMode_ = false;
+  disableRevertIfDiverge_ = false;
 
   padLeft_ = padRight_ = 0;
 
@@ -354,6 +355,7 @@ bool Replace::initNesterovPlace(int threads)
     npVars.debug_draw_bins = gui_debug_draw_bins_;
     npVars.debug_inst = gui_debug_inst_;
     npVars.debug_start_iter = gui_debug_start_iter_;
+    npVars.disableRevertIfDiverge = disableRevertIfDiverge_;
 
     for (const auto& nb : nbVec_) {
       nb->setNpVars(&npVars);
@@ -375,7 +377,20 @@ int Replace::doNesterovPlace(int threads, int start_iter)
   if (timingDrivenMode_) {
     rs_->resizeSlackPreamble();
   }
-  return np_->doNesterovPlace(start_iter);
+
+  auto start = std::chrono::high_resolution_clock::now();
+
+  int return_do_nesterov = np_->doNesterovPlace(start_iter);
+
+  auto end = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> elapsed = end - start;
+  debugPrint(log_,
+             GPL,
+             "runtime",
+             1,
+             "NP->doNesterovPlace() runtime: {} seconds ",
+             elapsed.count());
+  return return_do_nesterov;
 }
 
 void Replace::setInitialPlaceMaxIter(int iter)
@@ -483,6 +498,11 @@ void Replace::setDebug(int pause_iterations,
   gui_debug_initial_ = initial;
   gui_debug_inst_ = inst;
   gui_debug_start_iter_ = start_iter;
+}
+
+void Replace::setDisableRevertIfDiverge(bool mode)
+{
+  disableRevertIfDiverge_ = mode;
 }
 
 void Replace::setSkipIoMode(bool mode)

@@ -278,11 +278,6 @@ dpl::Opendp* Design::getOpendp()
   return getOpenRoad()->getOpendp();
 }
 
-mpl2::MacroPlacer2* Design::getMacroPlacer2()
-{
-  return getOpenRoad()->getMacroPlacer2();
-}
-
 mpl::MacroPlacer* Design::getMacroPlacer()
 {
   return getOpenRoad()->getMacroPlacer();
