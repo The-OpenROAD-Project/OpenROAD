@@ -1,3 +1,4 @@
+[INFO ORA-0102] Creating ~/.local/share/openroad directory.
 [INFO ORA-0123] Mode saved to ~/.local/share/openroad/orassistant_mode.txt
 [INFO ORA-0112] Setting ORAssistant host to http://0.0.0.0:8080/mock
 [INFO ORA-0113] ORAssistant host saved to ~/.local/share/openroad/orassistant_host.txt
