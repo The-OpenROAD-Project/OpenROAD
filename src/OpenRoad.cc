@@ -542,13 +542,14 @@ void OpenRoad::diffDbs(const char* filename1,
 void OpenRoad::readVerilog(const char* filename)
 {
   verilog_network_->deleteTopInstance();
-  dbReadVerilog(filename, verilog_network_);
+  dbReadVerilog(filename, verilog_network_, verilog_reader_);
 }
 
 void OpenRoad::linkDesign(const char* design_name, bool hierarchy)
 
 {
-  dbLinkDesign(design_name, verilog_network_, db_, logger_, hierarchy);
+  dbLinkDesign(
+      design_name, verilog_network_, verilog_reader_, db_, logger_, hierarchy);
   if (hierarchy) {
     sta::dbSta* sta = getSta();
     sta->getDbNetwork()->setHierarchy();
