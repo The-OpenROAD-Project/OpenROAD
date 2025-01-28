@@ -1959,7 +1959,7 @@ void RepairAntennas::jumperInsertion2(NetRouteMap& routing,
         for (const auto& pos_it : seg_it.second) {
           // printf("Debug position of jumper %d\n", pos_it);
           const int seg_len = routing[db_net][seg_it.first].length();
-          if (seg_len < (6 * tile_size_)) {
+          if (seg_len < (5 * tile_size_)) {
             break;
           }
           if (last_pos_aux != -1) {
