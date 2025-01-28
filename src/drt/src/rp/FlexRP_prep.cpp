@@ -1459,9 +1459,9 @@ void FlexRP::prep_via2viaForbiddenLen_cutSpc(const frLayerNum& lNum,
 
   // same layer (use samenet rule if exist, otherwise use diffnet rule)
   if (viaDef1->getCutLayerNum() == viaDef2->getCutLayerNum()) {
-    const auto samenetCons
+    const auto& samenetCons
         = tech_->getLayer(viaDef1->getCutLayerNum())->getCutSpacing(true);
-    const auto diffnetCons
+    const auto& diffnetCons
         = tech_->getLayer(viaDef1->getCutLayerNum())->getCutSpacing(false);
     if (!samenetCons.empty()) {
       // check samenet spacing rule if exists
