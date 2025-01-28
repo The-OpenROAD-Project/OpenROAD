@@ -1,6 +1,6 @@
 #############################################################################
 ##
-## Copyright (c) 2019, The Regents of the University of California
+## Copyright (c) 2019, OpenROAD
 ## All rights reserved.
 ##
 ## BSD 3-Clause License
@@ -33,59 +33,64 @@
 
 include("openroad")
 
-add_subdirectory(src/ParquetFP)
 
-swig_lib(NAME      mpl
-         NAMESPACE mpl
-         I_FILE    src/MacroPlacer.i
-         SCRIPTS   src/MacroPlacer.tcl
+
+find_package(ortools REQUIRED)
+
+add_library(mpl_lib
+  src/rtl_mp.cpp
+  src/hier_rtlmp.cpp
+  src/object.cpp
+  src/SimulatedAnnealingCore.cpp
+  src/SACoreHardMacro.cpp
+  src/SACoreSoftMacro.cpp
+  src/bus_synthesis.cpp
+  src/clusterEngine.cpp
 )
 
-target_sources(mpl
-  PRIVATE
-    src/Partition.cpp
-    src/MacroPlacer.cpp
-    src/MakeMacroPlacer.cpp
-    src/graphics.cpp
-)
-
-target_include_directories(mpl
+target_include_directories(mpl_lib
   PUBLIC
     include
 )
 
-target_link_libraries(mpl
-  PRIVATE
-    ParquetFP
-    dbSta
+target_link_libraries(mpl_lib
+    utl_lib
+    dbSta_lib
     OpenSTA
     odb
-    utl_lib
-    gui
+    ortools::ortools
+    dl
+    par_lib
+)
+
+swig_lib(NAME      mpl
+         NAMESPACE mpl
+         I_FILE    src/mpl.i
+         SCRIPTS   src/mpl.tcl
+)
+
+target_sources(mpl
+  PRIVATE
+    src/MakeMacroPlacer.cpp
+    src/graphics.cpp
 )
 
 messages(
   TARGET mpl
 )
 
-if (Python3_FOUND AND BUILD_PYTHON)
-  swig_lib(NAME          mpl_py
-           NAMESPACE     mpl
-           LANGUAGE      python
-           I_FILE        src/MacroPlacer-py.i
-           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/mpl
-                         ${ODB_HOME}/src/swig/common
-                         ${ODB_HOME}/src/swig/python
-           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/mpl_py.py
-  )
+target_include_directories(mpl
+  PUBLIC
+    include
+  PRIVATE
+    src
+)
 
-  target_link_libraries(mpl_py
-    PUBLIC
-      mpl
-      OpenSTA
-      odb
-  )
+target_link_libraries(mpl
+    mpl_lib
+    gui
+)
 
+if(ENABLE_TESTS)
+  add_subdirectory(test)
 endif()
-
-add_subdirectory(test)
