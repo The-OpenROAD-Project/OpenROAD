@@ -67,6 +67,7 @@ void Opendp::importDb()
   makeMacros();
   makeCells();
   makeGroups();
+  makeCellEdgeSpacingTable();
 }
 
 void Opendp::importClear()
@@ -153,8 +154,69 @@ void Opendp::makeMaster(Master* master, dbMaster* db_master)
             std::min(edge_rect.yMax(), edge_rect.yMin() + half_row_height));
       }
     }
-    master->edges_.emplace_back(edge->getEdgeType(), edge_rect);
+    edge_types_indices_.try_emplace(edge->getEdgeType(),
+                                    edge_types_indices_.size());
+    master->edges_.emplace_back(edge_types_indices_[edge->getEdgeType()],
+                                edge_rect);
   }
+}
+
+void Opendp::makeCellEdgeSpacingTable()
+{
+  auto spacing_rules = db_->getTech()->getCellEdgeSpacingTable();
+  if (spacing_rules.empty()) {
+    return;
+  }
+  // Resize
+  const size_t size = edge_types_indices_.size();
+  edge_spacing_table_.resize(size);
+  for (size_t i = 0; i < size; i++) {
+    edge_spacing_table_[i].resize(size, EdgeSpacingEntry(0, false, false));
+  }
+  // Fill Table
+  for (auto rule : spacing_rules) {
+    std::string first_edge = rule->getFirstEdgeType();
+    std::string second_edge = rule->getSecondEdgeType();
+    const int spc = rule->getSpacing();
+    const bool exact = rule->isExact();
+    const bool except_abutted = rule->isExceptAbutted();
+    const EdgeSpacingEntry entry(spc, exact, except_abutted);
+    if (first_edge == "DEFAULT" && second_edge == "DEFAULT") {
+      for (auto& row : edge_spacing_table_) {
+        std::fill(row.begin(), row.end(), entry);
+      }
+      continue;
+    }
+    if (first_edge == "DEFAULT") {
+      // first edge never default.
+      first_edge.swap(second_edge);
+    }
+    const int idx1 = edge_types_indices_[first_edge];
+    if (second_edge == "DEFAULT") {
+      auto& row = edge_spacing_table_[idx1];
+      std::fill(row.begin(), row.end(), entry);
+      for (auto& row : edge_spacing_table_) {
+        row[idx1] = entry;
+      }
+      continue;
+    }
+
+    const int idx2 = edge_types_indices_[second_edge];
+    edge_spacing_table_[idx1][idx2] = entry;
+    edge_spacing_table_[idx2][idx1] = entry;
+  }
+}
+
+bool Opendp::hasCellEdgeSpacingTable() const
+{
+  return !edge_spacing_table_.empty();
+}
+
+int Opendp::getMaxSpacing(int edge_idx) const
+{
+  return std::max_element(edge_spacing_table_[edge_idx].begin(),
+                          edge_spacing_table_[edge_idx].end())
+      ->spc;
 }
 
 void Opendp::makeCells()

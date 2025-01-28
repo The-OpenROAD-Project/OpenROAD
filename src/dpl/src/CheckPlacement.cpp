@@ -261,7 +261,7 @@ void Opendp::saveFailures(const vector<Cell*>& placed_failures,
   }
   if (!edge_spacing_failures.empty()) {
     auto category = odb::dbMarkerCategory::createOrReplace(
-        tool_category, "Cell_edge_spacing_failyres");
+        tool_category, "Cell_edge_spacing_failures");
     category->setDescription(
         "Cells that violate the LEF58_CELLEDGESPACINGTABLE.");
     saveViolations(edge_spacing_failures, category);
