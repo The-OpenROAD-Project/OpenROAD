@@ -100,6 +100,8 @@ void Opendp::checkOneSiteDbMaster()
 
 void Opendp::makeMacros()
 {
+  edge_types_indices_.clear();
+  edge_types_indices_["DEFAULT"] = 0;
   vector<dbMaster*> masters;
   block_->getMasters(masters);
   for (auto db_master : masters) {
@@ -108,30 +110,121 @@ void Opendp::makeMacros()
   }
 }
 
+namespace edge_calc {
+/**
+ * @brief Calculates the difference between the passed parent_segment and the
+ * vector segs The parent segment containts all the segments in the segs vector.
+ * This function computes the difference between the parent segment and the
+ * child segments. It first sorts the segs vector and merges intersecting ones.
+ * Then it calculates the difference and returns a list of segments.
+ */
+std::vector<Rect> difference(const Rect& parent_segment,
+                             const std::vector<Rect>& segs)
+{
+  if (segs.empty()) {
+    return {parent_segment};
+  }
+  bool is_horizontal = parent_segment.yMin() == parent_segment.yMax();
+  std::vector<Rect> sorted_segs = segs;
+  // Sort segments by start coordinate
+  std::sort(
+      sorted_segs.begin(),
+      sorted_segs.end(),
+      [is_horizontal](const Rect& a, const Rect& b) {
+        return (is_horizontal ? a.xMin() < b.xMin() : a.yMin() < b.yMin());
+      });
+  // Merge overlapping segments
+  auto prev_seg = sorted_segs.begin();
+  auto curr_seg = prev_seg;
+  for (++curr_seg; curr_seg != sorted_segs.end();) {
+    if (curr_seg->intersects(*prev_seg)) {
+      prev_seg->merge(*curr_seg);
+      curr_seg = sorted_segs.erase(curr_seg);
+    } else {
+      prev_seg = curr_seg++;
+    }
+  }
+  // Get the difference
+  const int start
+      = is_horizontal ? parent_segment.xMin() : parent_segment.yMin();
+  const int end = is_horizontal ? parent_segment.xMax() : parent_segment.yMax();
+  int current_pos = start;
+  std::vector<Rect> result;
+  for (const Rect& seg : sorted_segs) {
+    int seg_start = is_horizontal ? seg.xMin() : seg.yMin();
+    int seg_end = is_horizontal ? seg.xMax() : seg.yMax();
+    if (seg_end <= current_pos)
+      continue;
+    if (seg_start > current_pos) {
+      if (is_horizontal) {
+        result.emplace_back(current_pos,
+                            parent_segment.yMin(),
+                            seg_start,
+                            parent_segment.yMax());
+      } else {
+        result.emplace_back(parent_segment.xMin(),
+                            current_pos,
+                            parent_segment.xMax(),
+                            seg_start);
+      }
+    }
+    current_pos = seg_end;
+  }
+  // Add the remaining end segment if it exists
+  if (current_pos < end) {
+    if (is_horizontal) {
+      result.emplace_back(
+          current_pos, parent_segment.yMin(), end, parent_segment.yMax());
+    } else {
+      result.emplace_back(
+          parent_segment.xMin(), current_pos, parent_segment.xMax(), end);
+    }
+  }
+
+  return result;
+}
+
+Rect getBoundarySegment(const Rect& bbox,
+                        const odb::dbMasterEdgeType::EdgeDir dir)
+{
+  Rect segment(bbox);
+  switch (dir) {
+    case odb::dbMasterEdgeType::RIGHT:
+      segment.set_xlo(bbox.xMax());
+      break;
+    case odb::dbMasterEdgeType::LEFT:
+      segment.set_xhi(bbox.xMin());
+      break;
+    case odb::dbMasterEdgeType::TOP:
+      segment.set_ylo(bbox.yMax());
+      break;
+    case odb::dbMasterEdgeType::BOTTOM:
+      segment.set_yhi(bbox.yMin());
+      break;
+  }
+  return segment;
+}
+
+}  // namespace edge_calc
+
 void Opendp::makeMaster(Master* master, dbMaster* db_master)
 {
   master->is_multi_row = grid_->isMultiHeight(db_master);
   master->edges_.clear();
+  if (db_->getTech()->getCellEdgeSpacingTable().empty()) {
+    return;
+  }
+  if (db_master->getType()
+      == odb::dbMasterType::CORE_SPACER) {  // Skip fillcells
+    return;
+  }
   Rect bbox;
   db_master->getPlacementBoundary(bbox);
+  std::map<odb::dbMasterEdgeType::EdgeDir, std::vector<Rect>> typed_segs;
   int num_rows = grid_->gridHeight(db_master).v;
   for (auto edge : db_master->getEdgeTypes()) {
     auto dir = edge->getEdgeDir();
-    Rect edge_rect(bbox);
-    switch (dir) {
-      case odb::dbMasterEdgeType::RIGHT:
-        edge_rect.set_xlo(bbox.xMax());
-        break;
-      case odb::dbMasterEdgeType::LEFT:
-        edge_rect.set_xhi(bbox.xMin());
-        break;
-      case odb::dbMasterEdgeType::TOP:
-        edge_rect.set_ylo(bbox.yMax());
-        break;
-      case odb::dbMasterEdgeType::BOTTOM:
-        edge_rect.set_yhi(bbox.yMin());
-        break;
-    }
+    Rect edge_rect = edge_calc::getBoundarySegment(bbox, dir);
     if (dir == odb::dbMasterEdgeType::TOP
         || dir == odb::dbMasterEdgeType::BOTTOM) {
       if (edge->getRangeBegin() != -1) {
@@ -154,10 +247,21 @@ void Opendp::makeMaster(Master* master, dbMaster* db_master)
             std::min(edge_rect.yMax(), edge_rect.yMin() + half_row_height));
       }
     }
+    typed_segs[dir].push_back(edge_rect);
     edge_types_indices_.try_emplace(edge->getEdgeType(),
                                     edge_types_indices_.size());
     master->edges_.emplace_back(edge_types_indices_[edge->getEdgeType()],
                                 edge_rect);
+  }
+  // Add the remaining DEFAULT un-typed segments
+  for (size_t dir_idx = 0; dir_idx <= 3; dir_idx++) {
+    const auto dir = (odb::dbMasterEdgeType::EdgeDir) dir_idx;
+    const auto parent_seg = edge_calc::getBoundarySegment(bbox, dir);
+    const auto default_segs
+        = edge_calc::difference(parent_seg, typed_segs[dir]);
+    for (const auto& seg : default_segs) {
+      master->edges_.emplace_back(0, seg);
+    }
   }
 }
 
@@ -181,26 +285,7 @@ void Opendp::makeCellEdgeSpacingTable()
     const bool exact = rule->isExact();
     const bool except_abutted = rule->isExceptAbutted();
     const EdgeSpacingEntry entry(spc, exact, except_abutted);
-    if (first_edge == "DEFAULT" && second_edge == "DEFAULT") {
-      for (auto& row : edge_spacing_table_) {
-        std::fill(row.begin(), row.end(), entry);
-      }
-      continue;
-    }
-    if (first_edge == "DEFAULT") {
-      // first edge never default.
-      first_edge.swap(second_edge);
-    }
     const int idx1 = edge_types_indices_[first_edge];
-    if (second_edge == "DEFAULT") {
-      auto& row = edge_spacing_table_[idx1];
-      std::fill(row.begin(), row.end(), entry);
-      for (auto& row : edge_spacing_table_) {
-        row[idx1] = entry;
-      }
-      continue;
-    }
-
     const int idx2 = edge_types_indices_[second_edge];
     edge_spacing_table_[idx1][idx2] = entry;
     edge_spacing_table_[idx2][idx1] = entry;
