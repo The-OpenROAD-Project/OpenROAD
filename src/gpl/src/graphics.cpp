@@ -487,10 +487,10 @@ void Graphics::populateXYGrid()
   x_grid_set.push_back(bin[0].lx());
   y_grid_set.push_back(bin[0].ly());
 
-  for (int x = 0; x < x_grid; x++) {
+  for (std::vector<Bin>::size_type x = 0; x < x_grid; x++) {
     x_grid_set.push_back(bin[x].ux());
   }
-  for (int y = 0; y < y_grid; y++) {
+  for (std::vector<Bin>::size_type y = 0; y < y_grid; y++) {
     y_grid_set.push_back(bin[y * x_grid].uy());
   }
   setXYMapGrid(x_grid_set, y_grid_set);
