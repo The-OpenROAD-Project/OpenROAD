@@ -91,13 +91,9 @@ void dct_2d_fft(const int M,
   });
 
   Kokkos::DefaultExecutionSpace exec;
-  Kokkos::View<float**, Kokkos::DefaultExecutionSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> pre2d(pre.data(), M, N);
-  Kokkos::View<Kokkos::complex<float>**, Kokkos::DefaultExecutionSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> fft2d(fft.data(), M, (N / 2) + 1);
-#ifdef KOKKOS_ENABLE_CUDA
-    KokkosFFT::rfft2(exec, pre2d, fft2d, KokkosFFT::Normalization::none, {-1, -2});
-#else
-    KokkosFFT::rfft2(exec, pre2d, fft2d, KokkosFFT::Normalization::none, {-2, -1});
-#endif
+  Kokkos::View<float**, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> pre2d(pre.data(), M, N);
+  Kokkos::View<Kokkos::complex<float>**, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> fft2d(fft.data(), M, (N / 2) + 1);
+  KokkosFFT::rfft2(exec, pre2d, fft2d, KokkosFFT::Normalization::none);
 
   auto halfM = M / 2;
   auto two_over_MN = 2.0 / (M * N), four_over_MN = 4.0 / (M * N);
@@ -307,13 +303,9 @@ void idct_2d_fft(const int M,
   });
 
   Kokkos::DefaultExecutionSpace exec;
-  Kokkos::View<Kokkos::complex<float>**, Kokkos::DefaultExecutionSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> pre2d(pre.data(), M, (N / 2) + 1);
-  Kokkos::View<float**, Kokkos::DefaultExecutionSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> ifft2d(ifft.data(), M, N);
-#ifdef KOKKOS_ENABLE_CUDA
-    KokkosFFT::irfft2(exec, pre2d, ifft2d, KokkosFFT::Normalization::none, {-1, -2});
-#else
-    KokkosFFT::irfft2(exec, pre2d, ifft2d, KokkosFFT::Normalization::none, {-2, -1});
-#endif
+  Kokkos::View<Kokkos::complex<float>**, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> pre2d(pre.data(), M, (N / 2) + 1);
+  Kokkos::View<float**, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> ifft2d(ifft.data(), M, N);
+  KokkosFFT::irfft2(exec, pre2d, ifft2d, KokkosFFT::Normalization::none);
 
   Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {N, M}),
   KOKKOS_LAMBDA (const int wid, const int hid) {
