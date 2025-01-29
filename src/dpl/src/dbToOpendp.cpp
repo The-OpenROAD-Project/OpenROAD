@@ -153,8 +153,9 @@ std::vector<Rect> difference(const Rect& parent_segment,
   for (const Rect& seg : sorted_segs) {
     int seg_start = is_horizontal ? seg.xMin() : seg.yMin();
     int seg_end = is_horizontal ? seg.xMax() : seg.yMax();
-    if (seg_end <= current_pos)
+    if (seg_end <= current_pos) {
       continue;
+    }
     if (seg_start > current_pos) {
       if (is_horizontal) {
         result.emplace_back(current_pos,

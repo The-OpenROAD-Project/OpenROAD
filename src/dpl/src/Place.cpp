@@ -973,10 +973,12 @@ bool Opendp::checkEdgeSpacing(const Cell* cell,
     return true;
   }
   const auto& master = db_master_map_.at(cell->db_inst_->getMaster());
+  // Get the real grid coordinates from the grid indices.
   DbuX x_real = gridToDbu(x, grid_->getSiteWidth());
   DbuY y_real = grid_->gridYToDbu(y);
   for (const auto& edge1 : master.edges_) {
-    int max_spc = getMaxSpacing(edge1.getEdgeType());
+    int max_spc = getMaxSpacing(edge1.getEdgeType())
+                  + 1;  // +1 to account for EXACT rules
     Rect edge1_box = cell_edges::transformEdgeRect(
         edge1.getBBox(), cell, x_real, y_real, orient);
     bool is_vertical_edge = edge1_box.getDir() == 0;
@@ -985,13 +987,22 @@ bool Opendp::checkEdgeSpacing(const Cell* cell,
     GridX xMax = grid_->gridEndX(DbuX(query_rect.xMax()));
     GridY yMin = grid_->gridEndY(DbuY(query_rect.yMin())) - 1;
     GridY yMax = grid_->gridEndY(DbuY(query_rect.yMax()));
+    std::set<Cell*> checked_cells;
+    // Loop over the area covered by queryRect to find neighboring edges and
+    // check violations.
     for (GridY y1 = yMin; y1 <= yMax; y1++) {
       for (GridX x1 = xMin; x1 <= xMax; x1++) {
         const Pixel* pixel = grid_->gridPixel(x1, y1);
         if (pixel == nullptr || pixel->cell == nullptr || pixel->cell == cell) {
+          // Skip if pixel is empty or occupied only by the current cell.
           continue;
         }
         auto cell2 = pixel->cell;
+        if (checked_cells.find(cell2) != checked_cells.end()) {
+          // Skip if cell was already checked
+          continue;
+        }
+        checked_cells.insert(cell2);
         auto master2 = db_master_map_.at(cell2->db_inst_->getMaster());
         for (const auto& edge2 : master2.edges_) {
           auto spc_entry
@@ -1003,18 +1014,24 @@ bool Opendp::checkEdgeSpacing(const Cell* cell,
                                                          pixel->cell->y_,
                                                          pixel->cell->orient_);
           if (edge1_box.getDir() != edge2_box.getDir()) {
+            // Skip if edges are not parallel.
             continue;
           }
           if (!query_rect.overlaps(edge2_box)) {
+            // Skip if there is no PRL between the edges.
             continue;
           }
           Rect test_rect(edge1_box);
+          // Generalized intersection between the two edges.
           test_rect.merge(edge2_box);
           int dist = is_vertical_edge ? test_rect.dx() : test_rect.dy();
-          if (spc_entry.is_exact && dist == spc) {
-            return false;
-          }
-          if (!spc_entry.is_exact && dist < spc) {
+          if (spc_entry.is_exact) {
+            if (dist == spc) {
+              // Violation only if the distance between the edges is exactly the
+              // specified spacing.
+              return false;
+            }
+          } else if (dist < spc) {
             return false;
           }
         }

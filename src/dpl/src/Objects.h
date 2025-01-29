@@ -47,7 +47,7 @@ struct Edge
       : edge_type_idx_(type), bbox_(box)
   {
   }
-  const unsigned int getEdgeType() const { return edge_type_idx_; }
+  unsigned int getEdgeType() const { return edge_type_idx_; }
   const odb::Rect& getBBox() const { return bbox_; }
 
  private:
@@ -63,10 +63,7 @@ struct EdgeSpacingEntry
       : spc(spc_in), is_exact(is_exact_in), except_abutted(except_abutted_in)
   {
   }
-  const bool operator<(const EdgeSpacingEntry& rhs) const
-  {
-    return spc < rhs.spc;
-  }
+  bool operator<(const EdgeSpacingEntry& rhs) const { return spc < rhs.spc; }
   int spc;
   bool is_exact;
   bool except_abutted;
