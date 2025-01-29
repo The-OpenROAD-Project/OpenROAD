@@ -169,7 +169,8 @@ void Restructure::runABC()
              "Constants before remap {}",
              countConsts(block_));
 
-  Blif blif_(logger_, open_sta_, locell_, loport_, hicell_, hiport_);
+  Blif blif_(
+      logger_, open_sta_, locell_, loport_, hicell_, hiport_, ++blif_call_id_);
   blif_.setReplaceableInstances(path_insts_);
   blif_.writeBlif(input_blif_file_name_.c_str(), !is_area_mode_);
   debugPrint(
