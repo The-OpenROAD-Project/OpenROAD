@@ -132,7 +132,7 @@ class Restructure
 
   Mode opt_mode_;
   bool is_area_mode_;
-  int blif_call_id_ {0};
+  int blif_call_id_{0};
 };
 
 }  // namespace rmp
