@@ -62,22 +62,21 @@ using utl::RMP;
 
 namespace rmp {
 
-int Blif::call_id_ = 0;
-
 Blif::Blif(Logger* logger,
            sta::dbSta* sta,
            const std::string& const0_cell,
            const std::string& const0_cell_port,
            const std::string& const1_cell,
-           const std::string& const1_cell_port)
+           const std::string& const1_cell_port,
+           const int call_id_)
     : const0_cell_(const0_cell),
       const0_cell_port_(const0_cell_port),
       const1_cell_(const1_cell),
-      const1_cell_port_(const1_cell_port)
+      const1_cell_port_(const1_cell_port),
+      call_id_(call_id_)
 {
   logger_ = logger;
   open_sta_ = sta;
-  call_id_++;
 }
 
 void Blif::setReplaceableInstances(std::set<odb::dbInst*>& insts)
