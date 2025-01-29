@@ -138,13 +138,6 @@ getMacroPlacer()
   return openroad->getMacroPlacer();
 }
 
-mpl2::MacroPlacer2 *
-getMacroPlacer2()
-{
-  OpenRoad *openroad = getOpenRoad();
-  return openroad->getMacroPlacer2();
-}
-
 gpl::Replace*
 getReplace()
 {

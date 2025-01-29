@@ -12,6 +12,8 @@ or_integration_tests(
     check_power_grid_floorplanning
     check_power_grid_macros
     check_power_grid_ok_disconnected
+    check_power_grid_require_bterms_fail
+    check_power_grid_require_bterms_pass
     corners
     corners_assign_power
     gcd_all_vss

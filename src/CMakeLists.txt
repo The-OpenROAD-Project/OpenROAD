@@ -296,7 +296,6 @@ add_subdirectory(rmp)
 add_subdirectory(cts)
 add_subdirectory(grt)
 add_subdirectory(tap)
-add_subdirectory(mpl)
 add_subdirectory(rcx)
 add_subdirectory(psm)
 add_subdirectory(ant)
@@ -307,7 +306,7 @@ add_subdirectory(utl)
 add_subdirectory(dst)
 add_subdirectory(pdn)
 add_subdirectory(dft)
-add_subdirectory(mpl2)
+add_subdirectory(mpl)
 add_subdirectory(par)
 
 ################################################################
@@ -363,14 +362,13 @@ target_link_libraries(openroad
   gui
   drt
   dst
-  mpl
   psm
   ant
   upf
   utl
   pdn
   dft
-  mpl2
+  mpl
   par
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}
@@ -434,7 +432,6 @@ if (Python3_FOUND AND BUILD_PYTHON)
     grt_py
     gpl_py
     dpl_py
-    mpl_py
     ppl_py
     tap_py
     cts_py

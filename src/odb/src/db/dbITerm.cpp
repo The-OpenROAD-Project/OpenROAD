@@ -545,17 +545,20 @@ void dbITerm::disconnect()
     inst->getLogger()->error(
         utl::ODB,
         370,
-        "Attempt to disconnect iterm of dont_touch instance {}",
+        "Attempt to disconnect term {} of dont_touch instance {}",
+        getMTerm()->getName(),
         inst->_name);
   }
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
   _dbNet* net = block->_net_tbl->getPtr(iterm->_net);
 
   if (net->_flags._dont_touch) {
-    inst->getLogger()->error(utl::ODB,
-                             372,
-                             "Attempt to disconnect iterm of dont_touch net {}",
-                             net->_name);
+    inst->getLogger()->error(
+        utl::ODB,
+        372,
+        "Attempt to disconnect iterm {} of dont_touch net {}",
+        getName(),
+        net->_name);
   }
 
   for (auto callback : block->_callbacks) {

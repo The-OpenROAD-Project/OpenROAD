@@ -14,6 +14,5 @@ create_clock -name clk -period 10 clk1
 
 set_wire_rc -clock -layer metal5
 
-clock_tree_synthesis -buf_list "BUF_X1" \
-                     -obstruction_aware    
+clock_tree_synthesis -buf_list "BUF_X1"
 

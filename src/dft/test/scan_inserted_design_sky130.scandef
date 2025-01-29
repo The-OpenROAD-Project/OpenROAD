@@ -17,21 +17,21 @@ SCANCHAINS 9 ;
 + STOP PIN output1 ;
 
 - chain_1_0
-+ START PIN ff10_clk2_falling/SCD
++ START ff10_clk2_falling SCD
 + FLOATING
   ff10_clk2_falling ( IN SCD ) ( OUT Q )
   ff4_clk2_falling ( IN SCD ) ( OUT Q )
 + PARTITION main_clock_falling
-+ STOP PIN ff4_clk2_falling/Q ;
++ STOP ff4_clk2_falling Q ;
 
 - chain_1_1
-+ START PIN ff10_clk2_rising/SCD
++ START ff10_clk2_rising SCD
 + FLOATING ff10_clk2_rising ( IN SCD ) ( OUT Q )
 + PARTITION main_clock_rising
-+ STOP PIN ff10_clk2_rising/Q ;
++ STOP ff10_clk2_rising Q ;
 
 - chain_2
-+ START PIN ff8_clk2_rising/SCD
++ START ff8_clk2_rising SCD
 + FLOATING
   ff8_clk2_rising ( IN SCD ) ( OUT Q )
   ff2_clk2_rising ( IN SCD ) ( OUT Q )
@@ -39,49 +39,49 @@ SCANCHAINS 9 ;
   iso ( IN A ) ( OUT X )
   ff6_clk2_rising ( IN SCD ) ( OUT Q )
 + PARTITION main_clock_rising
-+ STOP PIN ff6_clk2_rising/SCD ;
++ STOP ff6_clk2_rising SCD ;
 
 - chain_3_0 
 + COMMONSCANPINS ( IN SCD ) ( OUT Q )
-+ START PIN ff1_clk1_falling/SCD
++ START ff1_clk1_falling SCD
 + FLOATING
   ff1_clk1_falling
   ff3_clk1_falling
 + PARTITION main_clock_falling
-+ STOP PIN ff3_clk1_falling/SCD ;
++ STOP ff3_clk1_falling SCD ;
 
 - chain_3_1
-+ START PIN ff4_clk2_rising/SCD
++ START ff4_clk2_rising SCD
 + FLOATING ff4_clk2_rising ( IN SCD ) ( OUT Q )
 + PARTITION main_clock_rising
-+ STOP PIN ff4_clk2_rising/Q ;
++ STOP ff4_clk2_rising Q ;
 
 - chain_4
-+ START PIN ff7_clk1_falling/SCD
++ START ff7_clk1_falling SCD
 + FLOATING
   ff7_clk1_falling ( IN SCD ) ( OUT Q )
   ff9_clk1_falling ( IN SCD ) ( OUT Q )
   ff5_clk1_falling ( IN SCD ) ( OUT Q )
 + PARTITION main_clock_falling
-+ STOP PIN ff5_clk1_falling/Q ;
++ STOP ff5_clk1_falling Q ;
 
 - chain_5
-+ START PIN ff3_clk1_rising/SCD
++ START ff3_clk1_rising SCD
 + COMMONSCANPINS ( IN SCD ) ( OUT Q )
 + FLOATING
   ff3_clk1_rising
   ff5_clk1_rising
   ff7_clk1_rising
 + PARTITION main_clock_rising
-+ STOP PIN ff7_clk1_rising/Q ;
++ STOP ff7_clk1_rising Q ;
 
 - chain_6
-+ START PIN ff1_clk1_rising/SCD
++ START ff1_clk1_rising SCD
 + FLOATING
   ff1_clk1_rising ( IN SCD ) ( OUT Q )
   ff9_clk1_rising ( IN SCD ) ( OUT Q )
 + PARTITION main_clock_rising
-+ STOP PIN ff9_clk1_rising/Q ;
++ STOP ff9_clk1_rising Q ;
 
 
 END SCANCHAINS

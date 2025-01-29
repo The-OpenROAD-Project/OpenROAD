@@ -99,10 +99,10 @@ insert_decap_cmd(const float target, const char* net_name)
 }
 
 bool
-check_connectivity_cmd(odb::dbNet* net, bool floorplanning, const char* error_file)
+check_connectivity_cmd(odb::dbNet* net, bool floorplanning, const char* error_file, bool dont_require_bterm)
 {
   PDNSim* pdnsim = getPDNSim();
-  return pdnsim->checkConnectivity(net, floorplanning, error_file);
+  return pdnsim->checkConnectivity(net, floorplanning, error_file, !dont_require_bterm);
 }
 
 void

@@ -106,33 +106,33 @@
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 225
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 9141.90 um
+[INFO CTS-0101]  Average sink wire length 9153.89 um
 [INFO CTS-0102]  Path depth 18 - 18
 [INFO CTS-0207]  Leaf load cells 4
 [INFO CTS-0098] Clock net "clk_regs"
 [INFO CTS-0099]  Sinks 2254
 [INFO CTS-0100]  Leaf buffers 227
-[INFO CTS-0101]  Average sink wire length 4904.58 um
+[INFO CTS-0101]  Average sink wire length 4785.28 um
 [INFO CTS-0102]  Path depth 17 - 17
 [INFO CTS-0207]  Leaf load cells 4
 [INFO RSZ-0058] Using max wire length 693um.
-[INFO RSZ-0047] Found 56 long wires.
-[INFO RSZ-0048] Inserted 115 buffers in 56 nets.
+[INFO RSZ-0047] Found 50 long wires.
+[INFO RSZ-0048] Inserted 108 buffers in 50 nets.
 Placement Analysis
 ---------------------------------
-total displacement       4529.0 u
+total displacement       4686.3 u
 average displacement        1.5 u
 max displacement          153.0 u
-original HPWL          185796.5 u
-legalized HPWL         186460.1 u
+original HPWL          182322.8 u
+legalized HPWL         183136.4 u
 delta HPWL                    0 %
 
 Clock clk
-   1.24 source latency inst_8_12/clk ^
-  -1.09 target latency inst_10_12/clk ^
+   1.25 source latency inst_1_0/clk ^
+  -1.15 target latency inst_2_0/clk ^
    0.00 CRPR
 --------------
-   0.15 setup skew
+   0.10 setup skew
 
 Startpoint: inst_1_1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: inst_2_1 (rising edge-triggered flip-flop clocked by clk)
@@ -157,24 +157,24 @@ Path Type: max
    0.03    0.55 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
    0.03    0.59 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
    0.03    0.62 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
-   0.04    0.66 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
-   0.03    0.69 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
-   0.03    0.73 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
-   0.03    0.76 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
-   0.03    0.80 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
-   0.04    0.83 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
+   0.03    0.65 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
+   0.03    0.68 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
+   0.03    0.72 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
+   0.03    0.75 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.03    0.79 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
+   0.04    0.82 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
    0.03    0.86 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
-   0.03    0.90 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
-   0.04    0.94 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
-   0.03    0.97 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
-   0.03    1.00 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
-   0.05    1.04 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
-   0.04    1.09 ^ clkbuf_5_0_0_clk/Z (BUF_X4)
-   0.03    1.12 ^ max_length8/Z (BUF_X8)
-   0.04    1.15 ^ inst_1_1/clk (array_tile)
-   0.21    1.36 ^ inst_1_1/e_out (array_tile)
-   0.00    1.36 ^ inst_2_1/w_in (array_tile)
-           1.36   data arrival time
+   0.03    0.89 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
+   0.03    0.92 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
+   0.03    0.96 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
+   0.03    0.99 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
+   0.03    1.02 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
+   0.03    1.06 ^ clkbuf_5_0_0_clk/Z (BUF_X4)
+   0.08    1.14 ^ max_length9/Z (BUF_X8)
+   0.04    1.18 ^ inst_1_1/clk (array_tile)
+   0.21    1.39 ^ inst_1_1/e_out (array_tile)
+   0.00    1.39 ^ inst_2_1/w_in (array_tile)
+           1.39   data arrival time
 
    5.00    5.00   clock clk (rise edge)
    0.00    5.00   clock source latency
@@ -192,33 +192,33 @@ Path Type: max
    0.03    5.55 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
    0.03    5.59 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
    0.03    5.62 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
-   0.04    5.66 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
-   0.03    5.69 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
-   0.03    5.73 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
-   0.03    5.76 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
-   0.03    5.80 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
-   0.04    5.83 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
+   0.03    5.65 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
+   0.03    5.68 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
+   0.03    5.72 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
+   0.03    5.75 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.03    5.79 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
+   0.04    5.82 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
    0.03    5.86 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
-   0.03    5.90 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
-   0.04    5.94 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
-   0.03    5.97 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
-   0.03    6.00 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
-   0.05    6.04 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
-   0.04    6.09 ^ clkbuf_5_1_0_clk/Z (BUF_X4)
-   0.03    6.11 ^ max_length13/Z (BUF_X8)
-   0.04    6.15 ^ inst_2_1/clk (array_tile)
-   0.00    6.15   clock reconvergence pessimism
-  -0.05    6.10   library setup time
-           6.10   data required time
+   0.03    5.89 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
+   0.03    5.92 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
+   0.03    5.96 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
+   0.03    5.99 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
+   0.03    6.02 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
+   0.04    6.07 ^ clkbuf_5_1_0_clk/Z (BUF_X4)
+   0.03    6.10 ^ max_length12/Z (BUF_X8)
+   0.04    6.14 ^ inst_2_1/clk (array_tile)
+   0.00    6.14   clock reconvergence pessimism
+  -0.05    6.09   library setup time
+           6.09   data required time
 ---------------------------------------------------------
-           6.10   data required time
-          -1.36   data arrival time
+           6.09   data required time
+          -1.39   data arrival time
 ---------------------------------------------------------
-           4.74   slack (MET)
+           4.70   slack (MET)
 
 
 Startpoint: inst_2_1 (rising edge-triggered flip-flop clocked by clk)
-Endpoint: inst_1_1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: inst_3_1 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
 Path Type: max
 
@@ -240,24 +240,24 @@ Path Type: max
    0.03    0.55 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
    0.03    0.59 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
    0.03    0.62 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
-   0.04    0.66 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
-   0.03    0.69 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
-   0.03    0.73 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
-   0.03    0.76 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
-   0.03    0.80 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
-   0.04    0.83 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
+   0.03    0.65 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
+   0.03    0.68 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
+   0.03    0.72 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
+   0.03    0.75 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.03    0.79 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
+   0.04    0.82 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
    0.03    0.86 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
-   0.03    0.90 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
-   0.04    0.94 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
-   0.03    0.97 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
-   0.03    1.00 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
-   0.05    1.04 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
-   0.04    1.09 ^ clkbuf_5_1_0_clk/Z (BUF_X4)
-   0.03    1.11 ^ max_length13/Z (BUF_X8)
-   0.04    1.15 ^ inst_2_1/clk (array_tile)
-   0.21    1.37 ^ inst_2_1/w_out (array_tile)
-   0.00    1.37 ^ inst_1_1/e_in (array_tile)
-           1.37   data arrival time
+   0.03    0.89 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
+   0.03    0.92 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
+   0.03    0.96 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
+   0.03    0.99 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
+   0.03    1.02 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
+   0.04    1.07 ^ clkbuf_5_1_0_clk/Z (BUF_X4)
+   0.03    1.10 ^ max_length12/Z (BUF_X8)
+   0.04    1.14 ^ inst_2_1/clk (array_tile)
+   0.21    1.35 ^ inst_2_1/e_out (array_tile)
+   0.00    1.35 ^ inst_3_1/w_in (array_tile)
+           1.35   data arrival time
 
    5.00    5.00   clock clk (rise edge)
    0.00    5.00   clock source latency
@@ -275,28 +275,28 @@ Path Type: max
    0.03    5.55 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
    0.03    5.59 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
    0.03    5.62 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
-   0.04    5.66 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
-   0.03    5.69 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
-   0.03    5.73 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
-   0.03    5.76 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
-   0.03    5.80 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
-   0.04    5.83 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
+   0.03    5.65 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
+   0.03    5.68 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
+   0.03    5.72 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
+   0.03    5.75 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.03    5.79 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
+   0.04    5.82 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
    0.03    5.86 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
-   0.03    5.90 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
-   0.04    5.94 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
-   0.03    5.97 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
-   0.03    6.00 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
-   0.05    6.04 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
-   0.04    6.09 ^ clkbuf_5_0_0_clk/Z (BUF_X4)
-   0.03    6.12 ^ max_length8/Z (BUF_X8)
-   0.04    6.15 ^ inst_1_1/clk (array_tile)
+   0.03    5.89 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
+   0.03    5.92 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
+   0.03    5.96 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
+   0.03    5.99 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
+   0.03    6.02 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
+   0.04    6.07 ^ clkbuf_5_1_0_clk/Z (BUF_X4)
+   0.04    6.11 ^ wire11/Z (BUF_X8)
+   0.04    6.15 ^ inst_3_1/clk (array_tile)
    0.00    6.15   clock reconvergence pessimism
   -0.05    6.10   library setup time
            6.10   data required time
 ---------------------------------------------------------
            6.10   data required time
-          -1.37   data arrival time
+          -1.35   data arrival time
 ---------------------------------------------------------
-           4.74   slack (MET)
+           4.75   slack (MET)
 
 
