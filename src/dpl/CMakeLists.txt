@@ -40,12 +40,6 @@ include("openroad")
 find_package(TCL)
 find_package(Boost)
 
-swig_lib(NAME         dpl
-         NAMESPACE    dpl
-         I_FILE       src/Opendp.i
-         SCRIPTS      src/Opendp.tcl
-)
-
 add_library(dpl_lib
   src/Opendp.cpp
   src/dbToOpendp.cpp
@@ -67,9 +61,16 @@ target_link_libraries(dpl_lib
     utl_lib
 )
 
+
 target_include_directories(dpl_lib
   PUBLIC
     include
+)
+
+swig_lib(NAME         dpl
+         NAMESPACE    dpl
+         I_FILE       src/Opendp.i
+         SCRIPTS      src/Opendp.tcl
 )
 
 target_sources(dpl
@@ -89,7 +90,9 @@ target_include_directories(dpl
 target_link_libraries(dpl
   PRIVATE
     ${TCL_LIBRARY}
+    odb
     dpl_lib
+    OpenSTA
     gui
 )
 

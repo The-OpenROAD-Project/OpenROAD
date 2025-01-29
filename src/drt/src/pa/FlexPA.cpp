@@ -38,7 +38,7 @@
 #include <sstream>
 #include <vector>
 
-#include "AbstractPAGraphics.h"
+#include "FlexPA_graphics.h"
 #include "db/infra/frTime.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/frArchive.h"
@@ -68,9 +68,13 @@ FlexPA::FlexPA(frDesign* in,
 // must be out-of-line due to the unique_ptr
 FlexPA::~FlexPA() = default;
 
-void FlexPA::setDebug(std::unique_ptr<AbstractPAGraphics> pa_graphics)
+void FlexPA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
 {
-  graphics_ = std::move(pa_graphics);
+  const bool on = settings->debugPA;
+  graphics_ = on && FlexPAGraphics::guiActive()
+                  ? std::make_unique<FlexPAGraphics>(
+                        settings, design_, db, logger_, router_cfg_)
+                  : nullptr;
 }
 
 void FlexPA::init()

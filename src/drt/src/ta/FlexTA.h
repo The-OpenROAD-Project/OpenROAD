@@ -38,7 +38,6 @@
 
 namespace drt {
 class FlexTAGraphics;
-class AbstractTAGraphics;
 
 class FlexTA
 {
@@ -54,7 +53,7 @@ class FlexTA
   frDesign* getDesign() const { return design_; }
   // others
   int main();
-  void setDebug(std::unique_ptr<AbstractTAGraphics> ta_graphics);
+  void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
 
  private:
   frTechObject* tech_;
@@ -62,7 +61,7 @@ class FlexTA
   Logger* logger_;
   RouterConfiguration* router_cfg_;
   bool save_updates_;
-  std::unique_ptr<AbstractTAGraphics> graphics_;
+  std::unique_ptr<FlexTAGraphics> graphics_;
   // others
   void main_helper(frLayerNum lNum, int maxOffsetIter, int panelWidth);
   void initTA(int size);

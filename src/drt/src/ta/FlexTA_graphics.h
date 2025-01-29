@@ -30,7 +30,6 @@
 #include <memory>
 #include <vector>
 
-#include "AbstractTAGraphics.h"
 #include "FlexTA.h"
 #include "frBaseTypes.h"
 #include "gui/gui.h"
@@ -46,7 +45,7 @@ class frDesign;
 class frNet;
 
 // This class draws debugging graphics on the layout
-class FlexTAGraphics : public gui::Renderer, public AbstractTAGraphics
+class FlexTAGraphics : public gui::Renderer
 {
  public:
   // Debug track allocation
@@ -66,7 +65,7 @@ class FlexTAGraphics : public gui::Renderer, public AbstractTAGraphics
   void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
 
   // Update status and optionally pause
-  void endIter(int iter) override;
+  void endIter(int iter);
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();

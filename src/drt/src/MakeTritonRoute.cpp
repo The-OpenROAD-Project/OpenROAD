@@ -33,21 +33,8 @@
 
 #include "triton_route/MakeTritonRoute.h"
 
-#include "dr/FlexDR_graphics.h"
 #include "ord/OpenRoad.hh"
-#include "pa/FlexPA_graphics.h"
-#include "sta/StaMain.hh"
-#include "ta/FlexTA_graphics.h"
 #include "triton_route/TritonRoute.h"
-
-namespace sta {
-// Tcl files encoded into strings.
-extern const char* drt_tcl_inits[];
-}  // namespace sta
-
-extern "C" {
-extern int Drt_Init(Tcl_Interp* interp);
-}
 
 namespace ord {
 
@@ -63,41 +50,11 @@ void deleteTritonRoute(drt::TritonRoute* router)
 
 void initTritonRoute(OpenRoad* openroad)
 {
-  // Define swig TCL commands.
-  auto tcl_interp = openroad->tclInterp();
-  Drt_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::drt_tcl_inits);
-
-  drt::TritonRoute* router = openroad->getTritonRoute();
-  std::unique_ptr<drt::FlexDRGraphics> dr_graphics = nullptr;
-  std::unique_ptr<drt::FlexPAGraphics> pa_graphics = nullptr;
-  std::unique_ptr<drt::FlexTAGraphics> ta_graphics = nullptr;
-
-  if (drt::FlexDRGraphics::guiActive()) {
-    dr_graphics
-        = std::make_unique<drt::FlexDRGraphics>(router->getDebugSettings(),
-                                                router->getDesign(),
-                                                router->getDb(),
-                                                router->getLogger());
-
-    pa_graphics = std::make_unique<drt::FlexPAGraphics>(
-        router->getDebugSettings(),
-        router->getDesign(),
-        router->getDb(),
-        router->getLogger(),
-        router->getRouterConfiguration());
-
-    ta_graphics = std::make_unique<drt::FlexTAGraphics>(
-        router->getDebugSettings(), router->getDesign(), router->getDb());
-  }
-
-  router->init(openroad->getDb(),
-               openroad->getLogger(),
-               openroad->getDistributed(),
-               openroad->getSteinerTreeBuilder(),
-               std::move(dr_graphics),
-               std::move(pa_graphics),
-               std::move(ta_graphics));
+  openroad->getTritonRoute()->init(openroad->tclInterp(),
+                                   openroad->getDb(),
+                                   openroad->getLogger(),
+                                   openroad->getDistributed(),
+                                   openroad->getSteinerTreeBuilder());
 }
 
 }  // namespace ord
