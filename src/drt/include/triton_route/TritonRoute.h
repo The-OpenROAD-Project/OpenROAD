@@ -77,9 +77,7 @@ struct frDebugSettings;
 struct FlexDRViaData;
 class frMarker;
 struct RouterConfiguration;
-class AbstractPAGraphics;
-class AbstractTAGraphics;
-class AbstractDRGraphics;
+class AbstractGraphicsFactory;
 
 struct ParamStruct
 {
@@ -115,9 +113,7 @@ class TritonRoute
             utl::Logger* logger,
             dst::Distributed* dist,
             stt::SteinerTreeBuilder* stt_builder,
-            std::unique_ptr<AbstractDRGraphics> dr_graphics,
-            std::unique_ptr<AbstractPAGraphics> pa_graphics,
-            std::unique_ptr<AbstractTAGraphics> ta_graphics);
+            std::unique_ptr<AbstractGraphicsFactory> graphics_factory);
 
   frDesign* getDesign() const { return design_.get(); }
   utl::Logger* getLogger() const { return logger_; }
@@ -229,11 +225,10 @@ class TritonRoute
   unsigned int cloud_sz_{0};
   std::optional<boost::asio::thread_pool> dist_pool_;
   std::unique_ptr<FlexPA> pa_{nullptr};
-  std::unique_ptr<AbstractDRGraphics> dr_graphics_{nullptr};
-  std::unique_ptr<AbstractPAGraphics> pa_graphics_{nullptr};
-  std::unique_ptr<AbstractTAGraphics> ta_graphics_{nullptr};
+  std::unique_ptr<AbstractGraphicsFactory> graphics_factory_{nullptr};
 
   void initDesign();
+  void initGraphics();
   void gr();
   void ta();
   void dr();

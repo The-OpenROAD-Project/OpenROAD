@@ -35,48 +35,30 @@
 #include <memory>
 #include <vector>
 
-#include "FlexPA.h"
 #include "db/obj/frBlockObject.h"
+#include "dr/AbstractDRGraphics.h"
 #include "frBaseTypes.h"
+#include "pa/AbstractPAGraphics.h"
+#include "ta/AbstractTAGraphics.h"
 
 namespace drt {
-
-class AbstractPAGraphics
+class AbstractGraphicsFactory
 {
  public:
-  virtual ~AbstractPAGraphics() = default;
-
-  virtual void startPin(frBPin* pin,
-                        frInstTerm* inst_term,
-                        std::set<frInst*, frBlockObjectComp>* inst_class)
+  virtual ~AbstractGraphicsFactory() = default;
+  virtual void reset(frDebugSettings* settings,
+                     frDesign* design,
+                     odb::dbDatabase* db,
+                     Logger* logger,
+                     RouterConfiguration* router_cfg)
       = 0;
-
-  virtual void startPin(frMPin* pin,
-                        frInstTerm* inst_term,
-                        std::set<frInst*, frBlockObjectComp>* inst_class)
-      = 0;
-
-  virtual void setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps,
-                      frAccessPointEnum lower_type,
-                      frAccessPointEnum upper_type)
-      = 0;
-
-  virtual void setViaAP(const frAccessPoint* ap,
-                        const frVia* via,
-                        const std::vector<std::unique_ptr<frMarker>>& markers)
-      = 0;
-
-  virtual void setPlanarAP(
-      const frAccessPoint* ap,
-      const frPathSeg* seg,
-      const std::vector<std::unique_ptr<frMarker>>& markers)
-      = 0;
-
-  virtual void setObjsAndMakers(
-      const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
-      const std::vector<std::unique_ptr<frMarker>>& markers,
-      FlexPA::PatternType type)
-      = 0;
+  virtual bool guiActive() = 0;
+  virtual AbstractDRGraphics* getDRGraphics() = 0;
+  virtual AbstractTAGraphics* getTAGraphics() = 0;
+  virtual AbstractPAGraphics* getPAGraphics() = 0;
+  virtual std::unique_ptr<AbstractDRGraphics> makeUniqueDRGraphics() = 0;
+  virtual std::unique_ptr<AbstractTAGraphics> makeUniqueTAGraphics() = 0;
+  virtual std::unique_ptr<AbstractPAGraphics> makeUniquePAGraphics() = 0;
 };
 
 }  // namespace drt

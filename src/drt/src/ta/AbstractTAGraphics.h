@@ -43,6 +43,8 @@ namespace drt {
 class AbstractTAGraphics
 {
  public:
+  virtual ~AbstractTAGraphics() = default;
+
   // Update status and optionally pause
   virtual void endIter(int iter) = 0;
 };

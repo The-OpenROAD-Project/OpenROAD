@@ -33,6 +33,7 @@
 
 #include "triton_route/MakeTritonRoute.h"
 
+#include "GraphicsFactory.h"
 #include "dr/FlexDR_graphics.h"
 #include "ord/OpenRoad.hh"
 #include "pa/FlexPA_graphics.h"
@@ -69,35 +70,14 @@ void initTritonRoute(OpenRoad* openroad)
   sta::evalTclInit(tcl_interp, sta::drt_tcl_inits);
 
   drt::TritonRoute* router = openroad->getTritonRoute();
-  std::unique_ptr<drt::FlexDRGraphics> dr_graphics = nullptr;
-  std::unique_ptr<drt::FlexPAGraphics> pa_graphics = nullptr;
-  std::unique_ptr<drt::FlexTAGraphics> ta_graphics = nullptr;
-
-  if (drt::FlexDRGraphics::guiActive()) {
-    dr_graphics
-        = std::make_unique<drt::FlexDRGraphics>(router->getDebugSettings(),
-                                                router->getDesign(),
-                                                router->getDb(),
-                                                router->getLogger());
-
-    pa_graphics = std::make_unique<drt::FlexPAGraphics>(
-        router->getDebugSettings(),
-        router->getDesign(),
-        router->getDb(),
-        router->getLogger(),
-        router->getRouterConfiguration());
-
-    ta_graphics = std::make_unique<drt::FlexTAGraphics>(
-        router->getDebugSettings(), router->getDesign(), router->getDb());
-  }
+  std::unique_ptr<drt::AbstractGraphicsFactory> graphics_factory
+      = std::make_unique<drt::GraphicsFactory>();
 
   router->init(openroad->getDb(),
                openroad->getLogger(),
                openroad->getDistributed(),
                openroad->getSteinerTreeBuilder(),
-               std::move(dr_graphics),
-               std::move(pa_graphics),
-               std::move(ta_graphics));
+               std::move(graphics_factory));
 }
 
 }  // namespace ord

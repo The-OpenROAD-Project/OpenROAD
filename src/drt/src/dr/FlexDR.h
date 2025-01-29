@@ -164,7 +164,7 @@ class FlexDR
 
   FlexDRViaData via_data_;
   std::vector<int> numViols_;
-  std::unique_ptr<AbstractDRGraphics> graphics_;
+  std::unique_ptr<AbstractDRGraphics> graphics_{nullptr};
   std::string debugNetName_;
   int numWorkUnits_;
 

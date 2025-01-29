@@ -35,48 +35,42 @@
 #include <memory>
 #include <vector>
 
-#include "FlexPA.h"
+#include "AbstractGraphicsFactory.h"
 #include "db/obj/frBlockObject.h"
+#include "dr/FlexDR_graphics.h"
 #include "frBaseTypes.h"
+#include "gui/gui.h"
+#include "pa/FlexPA_graphics.h"
+#include "ta/FlexTA_graphics.h"
 
 namespace drt {
-
-class AbstractPAGraphics
+class GraphicsFactory : public AbstractGraphicsFactory
 {
  public:
-  virtual ~AbstractPAGraphics() = default;
+  GraphicsFactory();
+  ~GraphicsFactory();
+  void reset(frDebugSettings* settings,
+             frDesign* design,
+             odb::dbDatabase* db,
+             Logger* logger,
+             RouterConfiguration* router_cfg) override;
+  bool guiActive() override;
+  AbstractDRGraphics* getDRGraphics() override;
+  AbstractTAGraphics* getTAGraphics() override;
+  AbstractPAGraphics* getPAGraphics() override;
+  std::unique_ptr<AbstractDRGraphics> makeUniqueDRGraphics() override;
+  std::unique_ptr<AbstractTAGraphics> makeUniqueTAGraphics() override;
+  std::unique_ptr<AbstractPAGraphics> makeUniquePAGraphics() override;
 
-  virtual void startPin(frBPin* pin,
-                        frInstTerm* inst_term,
-                        std::set<frInst*, frBlockObjectComp>* inst_class)
-      = 0;
-
-  virtual void startPin(frMPin* pin,
-                        frInstTerm* inst_term,
-                        std::set<frInst*, frBlockObjectComp>* inst_class)
-      = 0;
-
-  virtual void setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps,
-                      frAccessPointEnum lower_type,
-                      frAccessPointEnum upper_type)
-      = 0;
-
-  virtual void setViaAP(const frAccessPoint* ap,
-                        const frVia* via,
-                        const std::vector<std::unique_ptr<frMarker>>& markers)
-      = 0;
-
-  virtual void setPlanarAP(
-      const frAccessPoint* ap,
-      const frPathSeg* seg,
-      const std::vector<std::unique_ptr<frMarker>>& markers)
-      = 0;
-
-  virtual void setObjsAndMakers(
-      const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
-      const std::vector<std::unique_ptr<frMarker>>& markers,
-      FlexPA::PatternType type)
-      = 0;
+ private:
+  frDebugSettings* settings_;
+  frDesign* design_;
+  odb::dbDatabase* db_;
+  Logger* logger_;
+  RouterConfiguration* router_cfg_;
+  std::unique_ptr<AbstractDRGraphics> dr_graphics_;
+  std::unique_ptr<AbstractPAGraphics> pa_graphics_;
+  std::unique_ptr<AbstractTAGraphics> ta_graphics_;
 };
 
 }  // namespace drt

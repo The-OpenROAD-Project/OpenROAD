@@ -37,17 +37,29 @@
 
 #include "frBaseTypes.h"
 
+namespace odb {
+class dbDatabase;
+}
+
+namespace utl {
+class Logger;
+}
+
 namespace drt {
 
 class FlexGridGraph;
 class FlexWavefrontGrid;
 class FlexDRWorker;
 class drNet;
+class frDebugSettings;
+class frDesign;
 struct RouterConfiguration;
 
 class AbstractDRGraphics
 {
  public:
+  virtual ~AbstractDRGraphics() = default;
+
   virtual void startWorker(FlexDRWorker* worker) = 0;
 
   virtual void startIter(int iter, RouterConfiguration* router_cfg) = 0;
