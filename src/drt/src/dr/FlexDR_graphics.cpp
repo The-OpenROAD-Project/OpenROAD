@@ -800,6 +800,7 @@ bool FlexDRGraphics::guiActive()
   return gui::Gui::enabled();
 }
 
+/* static */
 void FlexDRGraphics::init()
 {
   if (guiActive()) {

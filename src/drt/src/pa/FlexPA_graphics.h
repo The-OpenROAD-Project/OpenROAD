@@ -31,7 +31,6 @@
 #include <memory>
 #include <vector>
 
-#include "AbstractPAGraphics.h"
 #include "FlexPA.h"
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
@@ -58,7 +57,7 @@ class frPathSeg;
 class frConnFig;
 
 // This class draws debugging graphics on the layout
-class FlexPAGraphics : public gui::Renderer, public AbstractPAGraphics
+class FlexPAGraphics : public gui::Renderer
 {
  public:
   // Debug pin access
@@ -70,29 +69,28 @@ class FlexPAGraphics : public gui::Renderer, public AbstractPAGraphics
 
   void startPin(frBPin* pin,
                 frInstTerm* inst_term,
-                std::set<frInst*, frBlockObjectComp>* inst_class) override;
+                std::set<frInst*, frBlockObjectComp>* inst_class);
 
   void startPin(frMPin* pin,
                 frInstTerm* inst_term,
-                std::set<frInst*, frBlockObjectComp>* inst_class) override;
+                std::set<frInst*, frBlockObjectComp>* inst_class);
 
   void setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps,
               frAccessPointEnum lower_type,
-              frAccessPointEnum upper_type) override;
+              frAccessPointEnum upper_type);
 
   void setViaAP(const frAccessPoint* ap,
                 const frVia* via,
-                const std::vector<std::unique_ptr<frMarker>>& markers) override;
+                const std::vector<std::unique_ptr<frMarker>>& markers);
 
-  void setPlanarAP(
-      const frAccessPoint* ap,
-      const frPathSeg* seg,
-      const std::vector<std::unique_ptr<frMarker>>& markers) override;
+  void setPlanarAP(const frAccessPoint* ap,
+                   const frPathSeg* seg,
+                   const std::vector<std::unique_ptr<frMarker>>& markers);
 
   void setObjsAndMakers(
       const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
       const std::vector<std::unique_ptr<frMarker>>& markers,
-      FlexPA::PatternType type) override;
+      FlexPA::PatternType type);
 
   // Show a message in the status bar
   void status(const std::string& message);
