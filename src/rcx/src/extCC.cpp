@@ -688,7 +688,6 @@ void Ath__track::buildDgContext(Ath__array1D<SEQ*>* dgContext,
 void Ath__grid::buildDgContext(int gridn, int base)
 {
   std::vector<Ath__wire*> allCtxwire;
-  //allCtxwire.resize(4096);
   
   uint btrackN = getMinMaxTrackNum(base);
   uint dgContextTrackRange = _gridtable->getCcFlag();
