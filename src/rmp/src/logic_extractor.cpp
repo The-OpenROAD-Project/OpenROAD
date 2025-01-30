@@ -89,7 +89,7 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryInputs(
 
     bool is_primary_input = true;
     sta::PinSet* pin_set = network->drivers(vertex->pin());
-    if (pin_set->size() == 0) {
+    if (pin_set->empty()) {
       continue;
     }
 

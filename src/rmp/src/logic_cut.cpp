@@ -270,6 +270,24 @@ void CreateNets(
   }
 }
 
+void AssertAbcNetworkHasNoZeroFanoutNodes(abc::Abc_Ntk_t* abc_network,
+                                          utl::Logger* logger)
+{
+  for (int i = 0; i < abc::Vec_PtrSize(abc_network->vObjs); i++) {
+    abc::Abc_Obj_t* obj = abc::Abc_NtkObj(abc_network, i);
+    if (obj == nullptr || !abc::Abc_ObjIsNode(obj)) {
+      continue;
+    }
+
+    if (abc::Abc_ObjFanoutNum(obj) == 0) {
+      logger->error(utl::RMP,
+                    1025,
+                    "Zero fanout node emitted from ABC. Please report this "
+                    "internal error.");
+    }
+  }
+}
+
 utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> LogicCut::BuildMappedAbcNetwork(
     AbcLibrary& abc_library,
     sta::dbNetwork* network,
@@ -309,6 +327,8 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> LogicCut::BuildMappedAbcNetwork(
              network,
              mio_library,
              logger);
+
+  AssertAbcNetworkHasNoZeroFanoutNodes(abc_network.get(), logger);
 
   return abc_network;
 }

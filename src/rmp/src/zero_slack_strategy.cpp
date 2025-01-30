@@ -6,7 +6,7 @@
 
 #include "zero_slack_strategy.h"
 
-#include <iostream>
+#include <vector>
 
 #include "abc_library_factory.h"
 #include "db_sta/dbNetwork.hh"
@@ -24,7 +24,7 @@
 
 namespace rmp {
 
-std::vector<sta::Vertex*> GetNegativeVertices(sta::dbSta* sta)
+std::vector<sta::Vertex*> GetNegativeEndpoints(sta::dbSta* sta)
 {
   std::vector<sta::Vertex*> result;
 
@@ -35,7 +35,7 @@ std::vector<sta::Vertex*> GetNegativeVertices(sta::dbSta* sta)
       continue;
     }
 
-    sta::Slack slack = sta->vertexSlack(vertex, sta::MinMax::max());
+    const sta::Slack slack = sta->vertexSlack(vertex, sta::MinMax::max());
 
     if (slack > 0.0) {
       continue;
@@ -46,8 +46,7 @@ std::vector<sta::Vertex*> GetNegativeVertices(sta::dbSta* sta)
   return result;
 }
 
-OptimizationResult ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta,
-                                                     utl::Logger* logger)
+void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta, utl::Logger* logger)
 {
   sta->ensureGraph();
   sta->ensureLevelized();
@@ -60,39 +59,23 @@ OptimizationResult ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta,
   factory.AddDbSta(sta);
   AbcLibrary abc_library = factory.Build();
 
-  std::vector<sta::Vertex*> candidate_vertices = GetNegativeVertices(sta);
+  std::vector<sta::Vertex*> candidate_vertices = GetNegativeEndpoints(sta);
 
   rmp::UniqueName unique_name;
-  for (sta::Vertex* negative_vertices : candidate_vertices) {
+  for (sta::Vertex* negative_endpoint : candidate_vertices) {
     LogicExtractorFactory logic_extractor(sta, logger);
-    logic_extractor.AppendEndpoint(negative_vertices);
+    logic_extractor.AppendEndpoint(negative_endpoint);
     LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
 
     utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> mapped_abc_network
         = cut.BuildMappedAbcNetwork(abc_library, network, logger);
 
-    for (int i = 0; i < abc::Vec_PtrSize(mapped_abc_network->vObjs); i++) {
-      abc::Abc_Obj_t* obj = abc::Abc_NtkObj(mapped_abc_network.get(), i);
-      if (obj == nullptr || !abc::Abc_ObjIsNode(obj)) {
-        continue;
-      }
-
-      if (abc::Abc_ObjFanoutNum(obj) == 0) {
-        logger->error(utl::RMP,
-                      1025,
-                      "Zero fanout node emitted from ABC. Please report this "
-                      "internal error.");
-      }
-    }
-
-    DelayOptimizationStrategy strat(sta);
+    DelayOptimizationStrategy strategy(sta);
     utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> remapped
-        = strat.Optimize(mapped_abc_network.get(), logger);
+        = strategy.Optimize(mapped_abc_network.get(), logger);
 
     cut.InsertMappedAbcNetwork(
         remapped.get(), abc_library, network, unique_name, logger);
   }
-
-  return {};
 }
 }  // namespace rmp

@@ -15,10 +15,7 @@ namespace rmp {
 class ZeroSlackStrategy : public ResynthesisStrategy
 {
  public:
-  ZeroSlackStrategy() {};
-  ~ZeroSlackStrategy() override = default;
-  OptimizationResult OptimizeDesign(sta::dbSta* sta,
-                                    utl::Logger* logger) override;
+  void OptimizeDesign(sta::dbSta* sta, utl::Logger* logger) override;
 };
 
 }  // namespace rmp

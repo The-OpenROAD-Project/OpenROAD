@@ -11,22 +11,10 @@
 
 namespace rmp {
 
-struct OptimizationResult
-{
-  double initial_area;
-  double final_area;
-  double initial_wns;
-  double final_wns;
-  double initial_tns;
-  double final_tns;
-};
-
 class ResynthesisStrategy
 {
  public:
   virtual ~ResynthesisStrategy() = default;
-  virtual OptimizationResult OptimizeDesign(sta::dbSta* sta,
-                                            utl::Logger* logger)
-      = 0;
+  virtual void OptimizeDesign(sta::dbSta* sta, utl::Logger* logger) = 0;
 };
 }  // namespace rmp
