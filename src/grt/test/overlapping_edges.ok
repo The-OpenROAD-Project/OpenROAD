@@ -20,6 +20,9 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GRT-0088] Layer met3    Track-Pitch = 0.6800  line-2-Via Pitch: 0.6150
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9200  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.4000  line-2-Via Pitch: 3.1100
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0043] No OR_DEFAULT vias defined.
+[INFO GRT-0004] Blockages: 30338
 [INFO GRT-0019] Found 0 clock nets.
 [WARNING GRT-0036] Pin app_clk is outside die area.
 [WARNING GRT-0036] Pin cfg_cska_uart[0] is outside die area.
@@ -117,9 +120,6 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [WARNING GRT-0036] Pin wbd_clk_uart is outside die area.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 282
-[INFO GRT-0003] Macros: 0
-[INFO GRT-0043] No OR_DEFAULT vias defined.
-[INFO GRT-0004] Blockages: 30338
 
 [INFO GRT-0053] Routing resources analysis:
           Routing      Original      Derated      Resource
