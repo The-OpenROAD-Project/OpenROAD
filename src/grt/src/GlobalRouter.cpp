@@ -183,12 +183,13 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   initCoreGrid(max_routing_layer);
   setCapacities(min_routing_layer, max_routing_layer);
 
+  applyAdjustments(min_routing_layer, max_routing_layer);
+  perturbCapacities();
+
   std::vector<Net*> nets = findNets();
   checkPinPlacement();
   initNetlist(nets);
 
-  applyAdjustments(min_routing_layer, max_routing_layer);
-  perturbCapacities();
   initialized_ = true;
   return nets;
 }
