@@ -1659,11 +1659,18 @@ bool GlobalRouter::hasAvailableResources(bool is_horizontal,
   return cap > 0;
 }
 
+// Find the position of the middle of a GCell closest to the position
 odb::Point GlobalRouter::getPositionOnGrid(const odb::Point& real_position)
 {
-  int grid_x = (int) ((real_position.x() - grid_->getXMin()) / grid_->getTileSize());
+  // Get x grid position
+  int grid_x
+      = (int) ((real_position.x() - grid_->getXMin()) / grid_->getTileSize());
+  // Get x real position
   int new_x = grid_->getTileSize() * (grid_x + 0.5) + grid_->getXMin();
-  int grid_y = (int) ((real_position.y() - grid_->getYMin()) / grid_->getTileSize());
+  // Get y grid position
+  int grid_y
+      = (int) ((real_position.y() - grid_->getYMin()) / grid_->getTileSize());
+  // Get y real position
   int new_y = grid_->getTileSize() * (grid_y + 0.5) + grid_->getYMin();
   return odb::Point(new_x, new_y);
 }
@@ -2458,7 +2465,7 @@ void GlobalRouter::saveGuides()
               db_net, layer, layer, box, guide_is_congested);
           if (is_jumper) {
             guide->setIsJumper(true);
-	    jumper_count++;
+            jumper_count++;
           }
         }
       }
@@ -2471,7 +2478,13 @@ void GlobalRouter::saveGuides()
     if (dbGuides.orderReversed() && dbGuides.reversible())
       dbGuides.reverse();
   }
-  printf("Remaining jumpers %d in %d repaired nets\n", total_jumpers, net_with_jumpers);
+  debugPrint(logger_,
+             GRT,
+             "jumper_insertion",
+             2,
+             "Remaining jumpers {} in {} repaired nets after GRT",
+             total_jumpers,
+             net_with_jumpers);
 }
 
 void GlobalRouter::writeSegments(const char* file_name)
@@ -4847,18 +4860,12 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
           updateDirtyNets(dirty_nets);
           for (auto& it : dirty_nets) {
             congestion_nets.insert(it->getDbNet());
-	    //if (it->getDbNet()->hasJumpers()) {
-              //printf("Net %s is routed to congestion release\n", it->getDbNet()->getConstName());
-	    //}
           }
         }
         // Copy the nets from the set to the vector of dirty nets
         dirty_nets.clear();
         for (odb::dbNet* db_net : congestion_nets) {
           dirty_nets.push_back(db_net_map_[db_net]);
-	  //if (db_net->hasJumpers()) {
-            //printf("Net %s is routed to congestion release\n", db_net->getConstName());
-	  //}
         }
         // The dirty nets are initialized and then routed
         initFastRouteIncr(dirty_nets);
