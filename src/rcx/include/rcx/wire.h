@@ -301,9 +301,7 @@ class Ath__track
   void findNeighborWire(Ath__wire*, Ath__array1D<Ath__wire*>*, bool);
   void getTrackWires(std::vector<Ath__wire*>& ctxwire);
   void buildDgContext(Ath__array1D<SEQ*>* dgContext,
-                      Ath__wire**& allWire,
-                      int& awcnt,
-                      int& awsize);
+                      std::vector<Ath__wire*>& allWire);
   int getBandWires(Ath__array1D<Ath__wire*>* bandWire);
   uint couplingCaps(Ath__grid* ccGrid,
                     uint srcTrack,

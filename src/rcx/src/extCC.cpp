@@ -638,9 +638,7 @@ class compareAthWire
 
 // FIXME MATT
 void Ath__track::buildDgContext(Ath__array1D<SEQ*>* dgContext,
-                                Ath__wire**& allWire,
-                                int& awcnt,
-                                int& awsize)
+                                std::vector<Ath__wire*>& allWire)
 {
   std::vector<Ath__wire*> ctxwire;
   Ath__track* track = nullptr;
@@ -666,12 +664,8 @@ void Ath__track::buildDgContext(Ath__array1D<SEQ*>* dgContext,
   SEQ* seq;
   int rsegid;
   for (jj = 0; jj < ctxsize; jj++) {
-    if (awcnt == awsize) {
-      awsize += 1024;
-      allWire = (Ath__wire**) realloc(allWire, sizeof(Ath__wire*) * awsize);
-    }
     nwire = ctxwire[jj];
-    allWire[awcnt++] = nwire;
+    allWire.push_back(nwire);
     seq = seqPool->alloc();
     lidx = _grid->getDir() == 1 ? xidx : yidx;
     bidx = _grid->getDir() == 1 ? yidx : xidx;
@@ -693,14 +687,9 @@ void Ath__track::buildDgContext(Ath__array1D<SEQ*>* dgContext,
 
 void Ath__grid::buildDgContext(int gridn, int base)
 {
-  static Ath__wire** allCtxwire = nullptr;
-  static int awcnt;
-  static int awsize;
-  if (allCtxwire == nullptr) {
-    allCtxwire = (Ath__wire**) calloc(sizeof(Ath__wire*), 4096);
-    awsize = 4096;
-  }
-  awcnt = 0;
+  std::vector<Ath__wire*> allCtxwire;
+  //allCtxwire.resize(4096);
+  
   uint btrackN = getMinMaxTrackNum(base);
   uint dgContextTrackRange = _gridtable->getCcFlag();
   int lowtrack
@@ -721,10 +710,10 @@ void Ath__grid::buildDgContext(int gridn, int base)
     }
     _gridtable->dgContextTrackBase()[gridn][dgContextTrackRange + tt]
         = ttrack->getBase();
-    ttrack->buildDgContext(dgContext, allCtxwire, awcnt, awsize);
+    ttrack->buildDgContext(dgContext, allCtxwire);
   }
-  int jj;
-  for (jj = 0; jj < awcnt; jj++) {
+  std::vector<Ath__wire*>::size_type jj;
+  for (jj = 0; jj < allCtxwire.size(); jj++) {
     allCtxwire[jj]->_ext = 0;
   }
 }
