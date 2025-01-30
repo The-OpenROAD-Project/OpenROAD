@@ -42,9 +42,3 @@ foreach(TEST_NAME IN ITEMS askbot1)
     FIXTURES_REQUIRED "mockapi_fixture;ora_init_fixture"
   )
 endforeach()
-
-foreach(TEST_NAME IN ITEMS ora_init1 askbot1)
-  set_tests_properties("ora.${TEST_NAME}.tcl" PROPERTIES
-    FIXTURES_REQUIRED "mockapi_fixture"
-  )
-endforeach()
