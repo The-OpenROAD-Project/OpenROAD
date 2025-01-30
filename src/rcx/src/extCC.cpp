@@ -36,9 +36,6 @@
 #include "rcx/gseq.h"
 #include "wire.h"
 
-namespace rcx {
-CoupleOptions coupleOptionsNull{};
-};
 
 namespace rcx {
 
@@ -562,7 +559,8 @@ uint Ath__grid::couplingCaps(Ath__grid* resGrid,
     int base = btrack->getBase();
     _gridtable->buildDgContext(base, _level, _dir);
     if (!ttttGetDgOverlap) {
-      coupleAndCompute(rcx::coupleOptionsNull, compPtr);  // try print dgContext
+      CoupleOptions coupleOptionsNull{};
+      coupleAndCompute(coupleOptionsNull, compPtr);  // try print dgContext
     }
 
     Ath__track* track = nullptr;
@@ -859,7 +857,8 @@ int Ath__grid::couplingCaps(int hiXY,
     int base = btrack->getBase();
     _gridtable->buildDgContext(base, _level, _dir);
     if (!ttttGetDgOverlap) {
-      coupleAndCompute(rcx::coupleOptionsNull, compPtr);  // try print dgContext
+      CoupleOptions coupleOptionsNull{};
+      coupleAndCompute(coupleOptionsNull, compPtr);  // try print dgContext
     }
 
     Ath__track* track = nullptr;

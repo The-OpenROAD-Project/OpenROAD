@@ -719,7 +719,7 @@ void extMain::measureRC(CoupleOptions& options)
   ccReportProgress();
 }
 
-extern CoupleOptions coupleOptionsNull;
+const CoupleOptions coupleOptionsNull{};
 
 void extCompute1(CoupleOptions& options, void* computePtr)
 {
