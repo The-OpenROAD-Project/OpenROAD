@@ -1,7 +1,8 @@
-///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2021, The Regents of the University of California
+// Copyright (c) 2020, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -21,57 +22,159 @@
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-#include <memory>
+#include <optional>
 #include <vector>
 
+#include "MplObserver.h"
 #include "gui/gui.h"
-#include "mpl/MacroPlacer.h"
-
-namespace utl {
-class Logger;
-}
-
-namespace odb {
-class dbDatabase;
-}
 
 namespace mpl {
+class SoftMacro;
+class HardMacro;
 
-// This class draws debugging graphics on the layout
-class Graphics : public gui::Renderer
+class Graphics : public gui::Renderer, public MplObserver
 {
  public:
-  Graphics(odb::dbDatabase* db);
+  Graphics(bool coarse, bool fine, odb::dbBlock* block, utl::Logger* logger);
 
-  // Draw the partition
-  void set_partitions(const std::vector<Partition>& partitions,
-                      bool relative_coords);
+  ~Graphics() override = default;
 
-  // Show a message in the status bar
-  void status(const std::string& message);
+  void startCoarse() override;
+  void startFine() override;
 
-  // From Renderer API
+  void startSA() override;
+  void saStep(const std::vector<SoftMacro>& macros) override;
+  void saStep(const std::vector<HardMacro>& macros) override;
+  void endSA(float norm_cost) override;
+  void drawResult() override;
+  void finishedClustering(PhysicalHierarchy* tree) override;
+
+  void setMaxLevel(int max_level) override;
+  void setAreaPenalty(const Penalty& penalty) override;
+  void setBoundaryPenalty(const Penalty& penalty) override;
+  void setFencePenalty(const Penalty& penalty) override;
+  void setGuidancePenalty(const Penalty& penalty) override;
+  void setMacroBlockagePenalty(const Penalty& penalty) override;
+  void setNotchPenalty(const Penalty& penalty) override;
+  void setOutlinePenalty(const Penalty& penalty) override;
+  void setWirelengthPenalty(const Penalty& penalty) override;
+  void penaltyCalculated(float norm_cost) override;
+
   void drawObjects(gui::Painter& painter) override;
 
-  // Is the GUI being displayed (true) or are we in batch mode (false)
-  static bool guiActive();
+  void setMacroBlockages(
+      const std::vector<mpl::Rect>& macro_blockages) override;
+  void setPlacementBlockages(
+      const std::vector<mpl::Rect>& placement_blockages) override;
+  void setBundledNets(const std::vector<BundledNet>& bundled_nets) override;
+  void setShowBundledNets(bool show_bundled_nets) override;
+  void setShowClustersIds(bool show_clusters_ids) override;
+  void setSkipSteps(bool skip_steps) override;
+  void doNotSkip() override;
+  void setOnlyFinalResult(bool only_final_result) override;
+  void setTargetClusterId(int target_cluster_id) override;
+  void setOutline(const odb::Rect& outline) override;
+  void setCurrentCluster(Cluster* current_cluster) override;
+  void setGuides(const std::map<int, Rect>& guides) override;
+  void setFences(const std::map<int, Rect>& fences) override;
+
+  void eraseDrawing() override;
 
  private:
-  std::vector<Partition> partitions_;
-  bool partition_relative_coords_;
-  odb::dbDatabase* db_;
+  void setXMarksSizeAndPosition(const std::set<Boundary>& blocked_boundaries);
+  void resetPenalties();
+  void drawCluster(Cluster* cluster, gui::Painter& painter);
+  void drawBlockedBoundariesIndication(gui::Painter& painter);
+  void drawAllBlockages(gui::Painter& painter);
+  void drawOffsetRect(const Rect& rect,
+                      const std::string& center_text,
+                      gui::Painter& painter);
+  void drawFences(gui::Painter& painter);
+  void drawGuides(gui::Painter& painter);
+  template <typename T>
+  void drawBundledNets(gui::Painter& painter, const std::vector<T>& macros);
+  template <typename T>
+  void drawDistToIoConstraintBoundary(gui::Painter& painter,
+                                      const T& macro,
+                                      const T& io);
+  template <typename T>
+  bool isOutsideTheOutline(const T& macro) const;
+  template <typename T>
+  odb::Point getClosestBoundaryPoint(const T& macro,
+                                     const Rect& die,
+                                     Boundary closest_boundary);
+  template <typename T>
+  Boundary getClosestUnblockedBoundary(const T& macro, const Rect& die);
+  bool isBlockedBoundary(Boundary boundary);
+  void addOutlineOffsetToLine(odb::Point& from, odb::Point& to);
+  void setSoftMacroBrush(gui::Painter& painter, const SoftMacro& soft_macro);
+  void fetchSoftAndHard(Cluster* parent,
+                        std::vector<HardMacro>& hard,
+                        std::vector<SoftMacro>& soft,
+                        std::vector<std::vector<odb::Rect>>& outlines,
+                        int level);
+  bool isTargetCluster();
+
+  template <typename T>
+  void report(const char* name, const std::optional<T>& value);
+  void report(float norm_cost);
+
+  std::vector<SoftMacro> soft_macros_;
+  std::vector<HardMacro> hard_macros_;
+  std::vector<mpl::Rect> macro_blockages_;
+  std::vector<mpl::Rect> placement_blockages_;
+  std::vector<BundledNet> bundled_nets_;
+  odb::Rect outline_;
+  int target_cluster_id_{-1};
+  std::vector<std::vector<odb::Rect>> outlines_;
+  std::map<Boundary, odb::Point> blocked_boundary_to_mark_;
+
+  // In Soft SA, we're shaping/placing the children of a certain parent,
+  // so for this case, the current cluster is actually the current parent.
+  Cluster* current_cluster_{nullptr};
+  std::map<int, Rect> guides_;  // Id -> Guidance Region
+  std::map<int, Rect> fences_;  // Id -> Fence
+
+  int x_mark_size_{0};  // For blocked boundaries.
+
+  bool active_ = true;
+  bool coarse_;
+  bool fine_;
+  bool show_bundled_nets_;
+  bool show_clusters_ids_;
+  bool skip_steps_;
+  bool is_skipping_;
+  bool only_final_result_;
+  odb::dbBlock* block_;
+  utl::Logger* logger_;
+
+  std::optional<int> max_level_;
+  std::optional<Penalty> outline_penalty_;
+  std::optional<Penalty> fence_penalty_;
+  std::optional<Penalty> wirelength_penalty_;
+  std::optional<Penalty> guidance_penalty_;
+  std::optional<Penalty> boundary_penalty_;
+  std::optional<Penalty> macro_blockage_penalty_;
+  std::optional<Penalty> notch_penalty_;
+  std::optional<Penalty> area_penalty_;
+
+  float best_norm_cost_ = 0;
+  int skipped_ = 0;
+
+  Cluster* root_ = nullptr;
 };
 
 }  // namespace mpl

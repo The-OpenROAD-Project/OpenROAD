@@ -24,7 +24,7 @@ add_pdn_stripe -followpins -layer met1 -width 0.48 -extend_to_core_ring
 add_pdn_stripe -layer met4 -width 1.6 -pitch 50.0 -offset 13.570 -extend_to_core_ring
 add_pdn_stripe -layer met5 -width 1.6 -pitch 27.2 -offset 13.600 -extend_to_core_ring
 
-add_pdn_ring -grid "Core" -layers {met4 met5} -widths 5.0 -spacings 2.0 -core_offsets 4.5
+add_pdn_ring -grid "Core" -layers {met4 met5} -widths 5.0 -spacings 2.0 -core_offsets 4.0
 
 add_pdn_connect -grid "Core" -layers {met1 met4}
 add_pdn_connect -grid "Core" -layers {met4 met5}

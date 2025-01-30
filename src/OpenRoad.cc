@@ -63,7 +63,6 @@
 #include "gui/MakeGui.h"
 #include "ifp//MakeInitFloorplan.hh"
 #include "mpl/MakeMacroPlacer.h"
-#include "mpl2/MakeMacroPlacer.h"
 #include "odb/cdl.h"
 #include "odb/db.h"
 #include "odb/defin.h"
@@ -134,7 +133,6 @@ OpenRoad::~OpenRoad()
   deleteTritonCts(tritonCts_);
   deleteTapcell(tapcell_);
   deleteMacroPlacer(macro_placer_);
-  deleteMacroPlacer2(macro_placer2_);
   deleteOpenRCX(extractor_);
   deleteTritonRoute(detailed_router_);
   deleteReplace(replace_);
@@ -201,7 +199,6 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   tritonCts_ = makeTritonCts();
   tapcell_ = makeTapcell();
   macro_placer_ = makeMacroPlacer();
-  macro_placer2_ = makeMacroPlacer2();
   extractor_ = makeOpenRCX();
   detailed_router_ = makeTritonRoute();
   replace_ = makeReplace();
@@ -237,7 +234,6 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   initTritonCts(this);
   initTapcell(this);
   initMacroPlacer(this);
-  initMacroPlacer2(this);
   initOpenRCX(this);
   initICeWall(this);
   initRestructure(this);

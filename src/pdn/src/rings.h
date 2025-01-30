@@ -61,6 +61,7 @@ class Rings : public GridComponent
   void setPadOffset(const std::array<int, 4>& offset);
 
   void setExtendToBoundary(bool value);
+  void setAllowOutsideDieArea() { allow_outside_die_ = true; }
 
   // generate the rings
   void makeShapes(const Shape::ShapeTreeMap& other_shapes) override;
@@ -86,6 +87,7 @@ class Rings : public GridComponent
   std::array<Layer, 2> layers_;
   std::array<int, 4> offset_ = {0, 0, 0, 0};
   bool extend_to_boundary_ = false;
+  bool allow_outside_die_ = false;
 
   void checkDieArea() const;
 

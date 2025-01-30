@@ -76,9 +76,14 @@ void Rings::checkDieArea() const
   ring_outline.set_ylo(ring_outline.yMin() - ver_width);
   ring_outline.set_yhi(ring_outline.yMax() + ver_width);
 
-  if (ring_outline.contains(getBlock()->getDieArea())) {
-    getLogger()->warn(
-        utl::PDN, 239, "Core ring shape falls outside the die bounds.");
+  if (!getBlock()->getDieArea().contains(ring_outline)) {
+    if (allow_outside_die_) {
+      getLogger()->warn(
+          utl::PDN, 239, "Ring shape falls outside the die bounds.");
+    } else {
+      getLogger()->error(
+          utl::PDN, 351, "Ring shape falls outside the die bounds.");
+    }
   }
 }
 

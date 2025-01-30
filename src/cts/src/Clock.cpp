@@ -106,7 +106,7 @@ Box<int> Clock::computeSinkRegion()
 }
 
 Box<double> Clock::computeSinkRegionClustered(
-    std::vector<std::pair<float, float>> sinks)
+    const std::vector<std::pair<float, float>>& sinks)
 {
   auto xMin = std::numeric_limits<float>::max();
   auto xMax = std::numeric_limits<float>::lowest();

@@ -811,16 +811,24 @@ void IOPlacer::computeRegionIncrease(const Interval& interval,
   int min_dist = std::numeric_limits<int>::min();
 
   if (interval.getLayer() != -1) {
-    min_dist = vertical_pin ? core_->getMinDstPinsX()[interval.getLayer()]
-                            : core_->getMinDstPinsY()[interval.getLayer()];
+    const std::vector<int>& min_distances
+        = vertical_pin ? core_->getMinDstPinsX().at(interval.getLayer())
+                       : core_->getMinDstPinsY().at(interval.getLayer());
+    min_dist = *(std::max_element(min_distances.begin(), min_distances.end()));
   } else if (vertical_pin) {
     for (int layer_idx : ver_layers_) {
-      const int layer_min_dist = core_->getMinDstPinsX()[layer_idx];
+      std::vector<int> layer_min_distances
+          = core_->getMinDstPinsX().at(layer_idx);
+      const int layer_min_dist = *(std::max_element(layer_min_distances.begin(),
+                                                    layer_min_distances.end()));
       min_dist = std::max(layer_min_dist, min_dist);
     }
   } else {
     for (int layer_idx : hor_layers_) {
-      const int layer_min_dist = core_->getMinDstPinsY()[layer_idx];
+      std::vector<int> layer_min_distances
+          = core_->getMinDstPinsY().at(layer_idx);
+      const int layer_min_dist = *(std::max_element(layer_min_distances.begin(),
+                                                    layer_min_distances.end()));
       min_dist = std::max(layer_min_dist, min_dist);
     }
   }
@@ -870,70 +878,104 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
   corner_avoidance_ = parms_->getCornerAvoidance();
   bool dist_in_tracks = parms_->getMinDistanceInTracks();
   for (int layer : layers) {
-    int curr_x, curr_y, start_idx, end_idx;
-    // get the on grid min distance
-    int tech_min_dst = vertical_pin ? core_->getMinDstPinsX()[layer]
-                                    : core_->getMinDstPinsY()[layer];
-    int min_dst_pins
-        = dist_in_tracks
-              ? tech_min_dst * parms_->getMinDistance()
-              : tech_min_dst
-                    * std::ceil(static_cast<float>(parms_->getMinDistance())
-                                / tech_min_dst);
+    const std::vector<int>& layer_min_distances
+        = vertical_pin ? core_->getMinDstPinsX().at(layer)
+                       : core_->getMinDstPinsY().at(layer);
+    const std::vector<int>& layer_init_tracks
+        = vertical_pin ? core_->getInitTracksX().at(layer)
+                       : core_->getInitTracksY().at(layer);
+    const std::vector<int>& layer_num_tracks
+        = vertical_pin ? core_->getNumTracksX().at(layer)
+                       : core_->getNumTracksY().at(layer);
 
-    min_dst_pins
-        = (min_dst_pins == 0) ? default_min_dist_ * tech_min_dst : min_dst_pins;
+    std::vector<Point> slots;
+    int min_dst_pins = 0;
+    for (int l = 0; l < layer_min_distances.size(); l++) {
+      int curr_x, curr_y, start_idx, end_idx;
+      int tech_min_dst = layer_min_distances[l];
+      min_dst_pins
+          = dist_in_tracks
+                ? tech_min_dst * parms_->getMinDistance()
+                : tech_min_dst
+                      * std::ceil(static_cast<float>(parms_->getMinDistance())
+                                  / tech_min_dst);
 
-    if (corner_avoidance_ == -1) {
-      corner_avoidance_ = num_tracks_offset_ * tech_min_dst;
-      // limit default offset to 1um
-      if (corner_avoidance_ > getBlock()->micronsToDbu(1.0)) {
-        corner_avoidance_ = getBlock()->micronsToDbu(1.0);
+      min_dst_pins = (min_dst_pins == 0) ? default_min_dist_ * tech_min_dst
+                                         : min_dst_pins;
+
+      if (corner_avoidance_ == -1) {
+        corner_avoidance_ = num_tracks_offset_ * tech_min_dst;
+        // limit default offset to 1um
+        if (corner_avoidance_ > getBlock()->micronsToDbu(1.0)) {
+          corner_avoidance_ = getBlock()->micronsToDbu(1.0);
+        }
+      }
+
+      int init_tracks = layer_init_tracks[l];
+      int num_tracks = layer_num_tracks[l];
+
+      float thickness_multiplier
+          = vertical_pin ? parms_->getVerticalThicknessMultiplier()
+                         : parms_->getHorizontalThicknessMultiplier();
+
+      int half_width = vertical_pin
+                           ? int(ceil(core_->getMinWidthX()[layer] / 2.0))
+                           : int(ceil(core_->getMinWidthY()[layer] / 2.0));
+
+      half_width *= thickness_multiplier;
+
+      int num_tracks_offset
+          = std::ceil(static_cast<double>(corner_avoidance_) / min_dst_pins);
+
+      start_idx
+          = std::max(0.0,
+                     ceil(static_cast<double>((min + half_width - init_tracks))
+                          / min_dst_pins))
+            + num_tracks_offset;
+      end_idx = std::min((num_tracks - 1),
+                         static_cast<int>((max - half_width - init_tracks)
+                                          / min_dst_pins))
+                - num_tracks_offset;
+      if (vertical_pin) {
+        curr_x = init_tracks + start_idx * min_dst_pins;
+        curr_y = (edge == Edge::bottom) ? lb_y : ub_y;
+      } else {
+        curr_y = init_tracks + start_idx * min_dst_pins;
+        curr_x = (edge == Edge::left) ? lb_x : ub_x;
+      }
+
+      for (int i = start_idx; i <= end_idx; ++i) {
+        odb::Point pos(curr_x, curr_y);
+        slots.push_back(pos);
+        if (vertical_pin) {
+          curr_x += min_dst_pins;
+        } else {
+          curr_y += min_dst_pins;
+        }
       }
     }
 
-    int init_tracks = vertical_pin ? core_->getInitTracksX()[layer]
-                                   : core_->getInitTracksY()[layer];
-    int num_tracks = vertical_pin ? core_->getNumTracksX()[layer]
-                                  : core_->getNumTracksY()[layer];
+    std::sort(slots.begin(),
+              slots.end(),
+              [&](const odb::Point& p1, const odb::Point& p2) {
+                if (vertical_pin) {
+                  return p1.getX() < p2.getX();
+                }
 
-    float thickness_multiplier
-        = vertical_pin ? parms_->getVerticalThicknessMultiplier()
-                       : parms_->getHorizontalThicknessMultiplier();
+                return p1.getY() < p2.getY();
+              });
 
-    int half_width = vertical_pin
-                         ? int(ceil(core_->getMinWidthX()[layer] / 2.0))
-                         : int(ceil(core_->getMinWidthY()[layer] / 2.0));
-
-    half_width *= thickness_multiplier;
-
-    int num_tracks_offset = std::ceil(corner_avoidance_ / min_dst_pins);
-
-    start_idx
-        = std::max(0.0,
-                   ceil(static_cast<double>((min + half_width - init_tracks))
-                        / min_dst_pins))
-          + num_tracks_offset;
-    end_idx = std::min((num_tracks - 1),
-                       static_cast<int>(floor((max - half_width - init_tracks)
-                                              / min_dst_pins)))
-              - num_tracks_offset;
-    if (vertical_pin) {
-      curr_x = init_tracks + start_idx * min_dst_pins;
-      curr_y = (edge == Edge::bottom) ? lb_y : ub_y;
-    } else {
-      curr_y = init_tracks + start_idx * min_dst_pins;
-      curr_x = (edge == Edge::left) ? lb_x : ub_x;
-    }
-
-    std::vector<Point> slots;
-    for (int i = start_idx; i <= end_idx; ++i) {
-      Point pos(curr_x, curr_y);
-      slots.push_back(pos);
-      if (vertical_pin) {
-        curr_x += min_dst_pins;
+    // Remove slots that violates the min distance before reversing the vector.
+    // This ensures that mirrored positions will exists for every slot.
+    Point last = slots[0];
+    for (auto it = slots.begin(); it != slots.end();) {
+      Point pos = *it;
+      if (pos != last && std::abs(last.getX() - pos.getX()) < min_dst_pins
+          && std::abs(last.getY() - pos.getY()) < min_dst_pins) {
+        it = slots.erase(it);
       } else {
-        curr_y += min_dst_pins;
+        last = pos;
+        ++it;
       }
     }
 
@@ -992,11 +1034,17 @@ void IOPlacer::defineSlots()
   if (regular_pin_count > slots_.size()) {
     int min_dist = std::numeric_limits<int>::min();
     for (int layer_idx : ver_layers_) {
-      const int layer_min_dist = core_->getMinDstPinsX()[layer_idx];
+      std::vector<int> layer_min_distances
+          = core_->getMinDstPinsX().at(layer_idx);
+      const int layer_min_dist = *(std::max_element(layer_min_distances.begin(),
+                                                    layer_min_distances.end()));
       min_dist = std::max(layer_min_dist, min_dist);
     }
     for (int layer_idx : hor_layers_) {
-      const int layer_min_dist = core_->getMinDstPinsY()[layer_idx];
+      std::vector<int> layer_min_distances
+          = core_->getMinDstPinsY().at(layer_idx);
+      const int layer_min_dist = *(std::max_element(layer_min_distances.begin(),
+                                                    layer_min_distances.end()));
       min_dist = std::max(layer_min_dist, min_dist);
     }
 
@@ -2665,59 +2713,67 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
 
   Rect boundary = getBlock()->getDieArea();
 
-  std::map<int, int> min_spacings_x;
-  std::map<int, int> min_spacings_y;
-  std::map<int, int> init_tracks_x;
-  std::map<int, int> init_tracks_y;
+  LayerToVector min_spacings_x;
+  LayerToVector min_spacings_y;
+  LayerToVector init_tracks_x;
+  LayerToVector init_tracks_y;
+  LayerToVector num_tracks_x;
+  LayerToVector num_tracks_y;
   std::map<int, int> min_areas_x;
   std::map<int, int> min_areas_y;
   std::map<int, int> min_widths_x;
   std::map<int, int> min_widths_y;
-  std::map<int, int> num_tracks_x;
-  std::map<int, int> num_tracks_y;
 
   for (int hor_layer_idx : hor_layer_idxs) {
-    int min_spacing_y = 0;
-    int init_track_y = 0;
-    int min_area_y = 0;
-    int min_width_y = 0;
-    int num_track_y = 0;
-
     odb::dbTechLayer* hor_layer = getTech()->findRoutingLayer(hor_layer_idx);
     odb::dbTrackGrid* hor_track_grid = getBlock()->findTrackGrid(hor_layer);
-    hor_track_grid->getGridPatternY(
-        0, init_track_y, num_track_y, min_spacing_y);
+    const int track_patterns_count = hor_track_grid->getNumGridPatternsY();
+
+    std::vector<int> init_track_y(track_patterns_count, 0);
+    std::vector<int> num_track_y(track_patterns_count, 0);
+    std::vector<int> min_spacing_y(track_patterns_count, 0);
+    int min_area_y;
+    int min_width_y;
+
+    for (int i = 0; i < hor_track_grid->getNumGridPatternsY(); i++) {
+      hor_track_grid->getGridPatternY(
+          i, init_track_y[i], num_track_y[i], min_spacing_y[i]);
+    }
 
     min_area_y = hor_layer->getArea() * database_unit * database_unit;
     min_width_y = hor_layer->getWidth();
 
-    min_spacings_y[hor_layer_idx] = min_spacing_y;
-    init_tracks_y[hor_layer_idx] = init_track_y;
+    min_spacings_y[hor_layer_idx] = std::move(min_spacing_y);
+    init_tracks_y[hor_layer_idx] = std::move(init_track_y);
     min_areas_y[hor_layer_idx] = min_area_y;
     min_widths_y[hor_layer_idx] = min_width_y;
-    num_tracks_y[hor_layer_idx] = num_track_y;
+    num_tracks_y[hor_layer_idx] = std::move(num_track_y);
   }
 
   for (int ver_layer_idx : ver_layer_idxs) {
-    int min_spacing_x = 0;
-    int init_track_x = 0;
-    int min_area_x = 0;
-    int min_width_x = 0;
-    int num_track_x = 0;
-
     odb::dbTechLayer* ver_layer = getTech()->findRoutingLayer(ver_layer_idx);
     odb::dbTrackGrid* ver_track_grid = getBlock()->findTrackGrid(ver_layer);
-    ver_track_grid->getGridPatternX(
-        0, init_track_x, num_track_x, min_spacing_x);
+    const int track_patterns_count = ver_track_grid->getNumGridPatternsX();
+
+    std::vector<int> init_track_x(track_patterns_count, 0);
+    std::vector<int> num_track_x(track_patterns_count, 0);
+    std::vector<int> min_spacing_x(track_patterns_count, 0);
+    int min_area_x;
+    int min_width_x;
+
+    for (int i = 0; i < ver_track_grid->getNumGridPatternsX(); i++) {
+      ver_track_grid->getGridPatternX(
+          i, init_track_x[i], num_track_x[i], min_spacing_x[i]);
+    }
 
     min_area_x = ver_layer->getArea() * database_unit * database_unit;
     min_width_x = ver_layer->getWidth();
 
-    min_spacings_x[ver_layer_idx] = min_spacing_x;
-    init_tracks_x[ver_layer_idx] = init_track_x;
+    min_spacings_x[ver_layer_idx] = std::move(min_spacing_x);
+    init_tracks_x[ver_layer_idx] = std::move(init_track_x);
     min_areas_x[ver_layer_idx] = min_area_x;
     min_widths_x[ver_layer_idx] = min_width_x;
-    num_tracks_x[ver_layer_idx] = num_track_x;
+    num_tracks_x[ver_layer_idx] = std::move(num_track_x);
   }
 
   *core_ = Core(boundary,

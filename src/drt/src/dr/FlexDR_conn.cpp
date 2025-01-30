@@ -819,14 +819,12 @@ void FlexDRConnectivityChecker::handleOverlaps_perform(
     if (isHorz) {
       segSpans.push_back({{bp.x(), ep.x()}, idx});
       if (bp.x() >= ep.x()) {
-        std::cout << "Error1: bp.x() >= ep.x()" << bp << " "
-                  << " " << ep << "\n";
+        std::cout << "Error1: bp.x() >= ep.x()" << bp << "  " << ep << "\n";
       }
     } else {
       segSpans.push_back({{bp.y(), ep.y()}, idx});
       if (bp.y() >= ep.y()) {
-        std::cout << "Error2: bp.y() >= ep.y()" << bp << " "
-                  << " " << ep << "\n";
+        std::cout << "Error2: bp.y() >= ep.y()" << bp << "  " << ep << "\n";
       }
     }
   }
