@@ -170,7 +170,6 @@ void Ora::checkLocalDir()
   std::ifstream localDir(localDirPath);
 
   if (!localDir) {
-    logger_->info(utl::ORA, 102, "Creating ~/.local/share/openroad directory.");
     try {
       std::filesystem::create_directories(localDirPath);
     } catch (const std::exception& e) {
