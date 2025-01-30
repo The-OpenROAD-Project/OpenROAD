@@ -1,6 +1,7 @@
 or_integration_tests(
   "pdn"
   TESTS
+    add_double_global_connection
     asap7_failed_macro_grid
     asap7_no_via_generate
     asap7_no_via_generate_v1_snapped
