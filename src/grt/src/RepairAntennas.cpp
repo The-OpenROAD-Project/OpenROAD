@@ -522,8 +522,6 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
       // Diode insertion deletes the jumpers in guides
       db_net->setJumpers(false);
       grouter_->addDirtyNet(db_net);
-      // printf("Net %s is repaired by diode insertion\n",
-      // db_net->getConstName());
     }
   }
   if (repair_failures) {
@@ -879,7 +877,7 @@ void RepairAntennas::addJumperAndVias(GRoute& route,
                                       const int& final_y,
                                       const int& layer_level)
 {
-  // create vias (at the start and end of the jumper)
+  // Create vias (at the start and end of the jumper)
   for (int layer = layer_level; layer < layer_level + 2; layer++) {
     route.push_back(GSegment(init_x, init_y, layer, init_x, init_y, layer + 1));
     route.push_back(
@@ -900,8 +898,8 @@ void RepairAntennas::addJumperAndVias(GRoute& route,
       init_x, init_y, final_x, final_y, layer_level + 2, 1);
 }
 
-void RepairAntennas::addJumperHorizontal(const int& seg_id,
-                                         GRoute& route,
+void RepairAntennas::addJumperHorizontal(GRoute& route,
+                                         const int& seg_id,
                                          const int& bridge_init_x,
                                          const int& bridge_final_x,
                                          const int& layer_level)
@@ -927,8 +925,8 @@ void RepairAntennas::addJumperHorizontal(const int& seg_id,
   route[seg_id].init_x = bridge_final_x;
 }
 
-void RepairAntennas::addJumperVertical(const int& seg_id,
-                                       GRoute& route,
+void RepairAntennas::addJumperVertical(GRoute& route,
+                                       const int& seg_id,
                                        const int& bridge_init_y,
                                        const int& bridge_final_y,
                                        const int& layer_level)
@@ -955,27 +953,27 @@ void RepairAntennas::addJumperVertical(const int& seg_id,
 }
 
 bool RepairAntennas::addJumper(GRoute& route,
-                                const int& segment_id,
-                                const int& jumper_pos)
+                               const int& segment_id,
+                               const int& jumper_pos)
 {
   odb::dbTech* tech = db_->getTech();
   const int segment_layer_level = route[segment_id].init_layer;
   odb::dbTechLayer* segment_layer = tech->findRoutingLayer(segment_layer_level);
-  bool is_horizontal
+  const bool is_horizontal
       = segment_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
 
   if (is_horizontal) {
-    // get jumper position
-    int jumper_init_x = jumper_pos;
-    const int jumper_final_x = jumper_init_x + jumper_size_;
+    // Get start and final X position of jumper
+    const int jumper_start_x = jumper_pos;
+    const int jumper_final_x = jumper_start_x + jumper_size_;
     addJumperHorizontal(
-        segment_id, route, jumper_init_x, jumper_final_x, segment_layer_level);
+        route, segment_id, jumper_start_x, jumper_final_x, segment_layer_level);
   } else {
-    // Get jumper position
-    int jumper_init_y = jumper_pos;
-    const int jumper_final_y = jumper_init_y + jumper_size_;
+    // Get start and final Y position jumper
+    const int jumper_start_y = jumper_pos;
+    const int jumper_final_y = jumper_start_y + jumper_size_;
     addJumperVertical(
-        segment_id, route, jumper_init_y, jumper_final_y, segment_layer_level);
+        route, segment_id, jumper_start_y, jumper_final_y, segment_layer_level);
   }
   return true;
 }
@@ -987,18 +985,18 @@ int RepairAntennas::getSegmentByLayer(
 {
   int added_seg_count = 0;
   odb::dbTech* tech = db_->getTech();
-  int seg_pos = 0;
+  int seg_id = 0;
   for (const GSegment& seg : route) {
-    // add only segments in lower layer of violation layer
+    // Add only segments in lower layer of violation layer
     const int seg_min_layer = std::min(seg.final_layer, seg.init_layer);
     if (seg_min_layer <= max_layer) {
-      // get min layer of segment
+      // Get min layer of segment
       odb::dbTechLayer* tech_layer = tech->findRoutingLayer(seg_min_layer);
       if (seg.isVia()) {
-        // add segment in via layer
+        // Add segment node in via layer
         segment_by_layer[tech_layer->getUpperLayer()].push_back(SegmentNode(
-            added_seg_count++, seg_pos, grouter_->globalRoutingToBox(seg)));
-        // add one segment in upper and lower layer (to connect stacked vias)
+            added_seg_count++, seg_id, grouter_->globalRoutingToBox(seg)));
+        // Add one segment node in upper & lower layer (to connect stacked vias)
         segment_by_layer[tech->findRoutingLayer(seg.init_layer)].push_back(
             SegmentNode(
                 added_seg_count++, -1, grouter_->globalRoutingToBox(seg)));
@@ -1006,24 +1004,25 @@ int RepairAntennas::getSegmentByLayer(
             SegmentNode(
                 added_seg_count++, -1, grouter_->globalRoutingToBox(seg)));
       } else {
+        // Add segment node in route layer
         segment_by_layer[tech_layer].push_back(SegmentNode(
-            added_seg_count++, seg_pos, grouter_->globalRoutingToBox(seg)));
+            added_seg_count++, seg_id, grouter_->globalRoutingToBox(seg)));
       }
     }
-    seg_pos++;
+    seg_id++;
   }
   return added_seg_count;
 }
 
 void getSegmentsWithOverlap(SegmentNode& seg_info,
-                             const std::vector<SegmentNode>& segs,
-                             odb::dbTechLayer* layer)
+                            const std::vector<SegmentNode>& segs,
+                            odb::dbTechLayer* layer)
 {
   int index = 0;
   // Iterate all segment vector to find overlap
   for (const SegmentNode& seg_it : segs) {
     if (seg_info.rect.overlaps(seg_it.rect)) {
-      seg_info.adjs.push_back({layer, index});
+      seg_info.adjs.push_back(std::make_pair(layer, index));
     }
     index++;
   }
@@ -1035,26 +1034,33 @@ void RepairAntennas::setAdjacentSegments(
   // Set adjacents segments (neighbor)
   for (auto& layer_it : segment_by_layer) {
     odb::dbTechLayer* tech_layer = layer_it.first;
-    // find segments in same layer that touch segment
-    for (SegmentNode& seg_it : layer_it.second) {
-      getSegmentsWithOverlap(seg_it, segment_by_layer[tech_layer], tech_layer);
-    }
-    // find segments in lower layer
+    // Find segment nodess in lower layer
     odb::dbTechLayer* lower_layer = tech_layer->getLowerLayer();
+    std::vector<SegmentNode> lower_segments;
     if (lower_layer
         && segment_by_layer.find(lower_layer) != segment_by_layer.end()) {
-      for (SegmentNode& seg_it : layer_it.second) {
-        getSegmentsWithOverlap(
-            seg_it, segment_by_layer[lower_layer], lower_layer);
-      }
+      lower_segments = segment_by_layer[lower_layer];
     }
-    // find segments in upper layer
+    // Find the segment nodes in upper layer
     odb::dbTechLayer* upper_layer = tech_layer->getUpperLayer();
+    std::vector<SegmentNode> upper_segments;
     if (upper_layer
         && segment_by_layer.find(upper_layer) != segment_by_layer.end()) {
-      for (SegmentNode& seg_it : layer_it.second) {
-        getSegmentsWithOverlap(
-            seg_it, segment_by_layer[upper_layer], upper_layer);
+      upper_segments = segment_by_layer[upper_layer];
+    }
+    // Get segments node of current layer
+    auto& current_segments = layer_it.second;
+    for (SegmentNode& seg_it : current_segments) {
+      // Find segments in current layer that touch the segment node
+      getSegmentsWithOverlap(seg_it, current_segments, tech_layer);
+
+      // Find segment nodes in lower layer that touch the segment node
+      if (!lower_segments.empty()) {
+        getSegmentsWithOverlap(seg_it, lower_segments, lower_layer);
+      }
+      // Find segment nodes in upper layer that touch the segment node
+      if (!upper_segments.empty()) {
+        getSegmentsWithOverlap(seg_it, upper_segments, upper_layer);
       }
     }
   }
@@ -1066,7 +1072,7 @@ int RepairAntennas::buildSegmentGraph(const GRoute& route,
 {
   // Create nodes by each segment
   int seg_count = getSegmentByLayer(route, max_layer, graph);
-  // Create conection between nodes on graph
+  // Create conections between nodes on graph
   setAdjacentSegments(graph);
 
   return seg_count;
@@ -1089,22 +1095,24 @@ void RepairAntennas::getSegmentsConnectedToPin(
 
       odb::Rect pin_rect = box->getBox();
       transform.apply(pin_rect);
-      // get segments in same layer
-      int pos = 0;
+      // Iterate segment nodes in the same layer
+      int seg_id = 0;
       for (const SegmentNode& it : segment_by_layer[tech_layer]) {
         // Check if pin has overlap with segment
         if (it.rect.overlaps(pin_rect)) {
-          seg_connected_to_pin[tech_layer].insert(pos);
+          seg_connected_to_pin[tech_layer].insert(seg_id);
         }
-        pos++;
+        seg_id++;
       }
     }
   }
 }
 
-int RepairAntennas::findPosition(const int& init_pos,
-                                 const int& final_pos,
-                                 const int& target_pos)
+// Find jumper position between a init and final position seeking to leave the
+// segment with minimum size connected to the target
+int RepairAntennas::getJumperPosition(const int& init_pos,
+                                      const int& final_pos,
+                                      const int& target_pos)
 {
   int position;
   if (target_pos < init_pos) {
@@ -1117,6 +1125,77 @@ int RepairAntennas::findPosition(const int& init_pos,
     position = target_pos + tile_size_;
   }
   return position;
+}
+
+void RepairAntennas::checkSegmentPosition(const int& init_x,
+                                          const int& init_y,
+                                          const int& final_x,
+                                          const int& final_y,
+                                          const odb::Point& parent_pos,
+                                          const bool& is_horizontal,
+                                          std::vector<int>& position_cand)
+{
+  // One tile size of distance from init or segment end
+  const int jumper_dist = 1;
+  // Get size from last vias to the position
+  const int free_via_size
+      = std::abs(final_x - init_x) + std::abs(final_y - init_y);
+  // Check if the jumper can be added in the sub segment
+  if (free_via_size > 0
+      && free_via_size >= jumper_size_ + (2 * jumper_dist * tile_size_)) {
+    // Calculate the final jumper position
+    if (is_horizontal) {
+      position_cand.push_back(
+          getJumperPosition(init_x, final_x, parent_pos.x()));
+    } else {
+      position_cand.push_back(
+          getJumperPosition(init_y, final_y, parent_pos.y()));
+    }
+  }
+}
+
+void getViaPosition(LayerToSegmentNodeVector& segment_graph,
+                    const GRoute& route,
+                    const SegmentNode& seg_node,
+                    std::unordered_set<int>& via_pos)
+{
+  const GSegment& seg = route[seg_node.seg_id];
+  const int layer_level = seg.init_layer;
+  const bool is_horizontal = (seg.init_x != seg.final_x);
+  // Get via positions from adjacent segment nodes
+  for (const auto& adj_it : seg_node.adjs) {
+    int adj_layer_level = adj_it.first->getRoutingLevel();
+    if (adj_layer_level != layer_level) {
+      int adj_seg_id = segment_graph[adj_it.first][adj_it.second].seg_id;
+      if (is_horizontal) {
+        via_pos.insert(route[adj_seg_id].init_x);
+      } else {
+        via_pos.insert(route[adj_seg_id].init_y);
+      }
+    }
+  }
+}
+
+int RepairAntennas::getBestPosition(const std::vector<int>& position_cand,
+                                    const bool& is_horizontal,
+                                    const odb::Point& parent_pos)
+{
+  int jumper_position = -1;
+  // Find best position of the position candidates
+  int min_dist = -1, dist;
+  for (const int& pos : position_cand) {
+    // Get distance
+    if (is_horizontal) {
+      dist = std::abs((pos + tile_size_) - parent_pos.x());
+    } else {
+      dist = std::abs((pos + tile_size_) - parent_pos.y());
+    }
+    if (min_dist == -1 || dist < min_dist) {
+      min_dist = dist;
+      jumper_position = pos;
+    }
+  }
+  return jumper_position;
 }
 
 bool RepairAntennas::findPosToJumper(const GRoute& route,
@@ -1137,7 +1216,6 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
   const int seg_final_x = seg.final_x;
   const int seg_final_y = seg.final_y;
   const int step = tile_size_;
-  const int jumper_dist = 1;  // one tile size from vias or segment end
 
   int pos_x = seg_init_x;
   int pos_y = seg_init_y;
@@ -1149,44 +1227,26 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
   const bool is_horizontal = (seg.init_x != seg.final_x);
   // Get map of pair with vias pos, horizontal save X and vertical save Y
   std::unordered_set<int> via_pos;
-  for (const auto& adj_it : seg_node.adjs) {
-    int adj_layer_level = adj_it.first->getRoutingLevel();
-    if (adj_layer_level != layer_level) {
-      int adj_seg_id = segment_graph[adj_it.first][adj_it.second].seg_id;
-      if (is_horizontal) {
-        via_pos.insert(route[adj_seg_id].init_x);
-      } else {
-        via_pos.insert(route[adj_seg_id].init_y);
-      }
-    }
-  }
+  getViaPosition(segment_graph, route, seg_node, via_pos);
 
   // Save best positions to add jumper
   std::vector<int> position_cand;
-  // iterate all position of segment
+  // Iterate all position of segment
   while (pos_x <= seg_final_x && pos_y <= seg_final_y) {
-    // check if the position has resources available
+    // Check if the position has resources available
     has_available_resources = grouter_->hasAvailableResources(
         is_horizontal, pos_x, pos_y, layer_level + 2);
     // If the position has vias or does not have resources
     if ((is_horizontal && via_pos.find(pos_x) != via_pos.end())
         || (!is_horizontal && via_pos.find(pos_y) != via_pos.end())
         || !has_available_resources) {
-      // get size from last vias to the position
-      const int free_via_size
-          = std::abs(pos_x - last_block_x) + std::abs(pos_y - last_block_y);
-      // check if the jumper can be added in the sub segment
-      if (free_via_size > 0
-          && free_via_size >= jumper_size_ + (2 * jumper_dist * tile_size_)) {
-        // calculate the size from init position to add jumper
-        if (is_horizontal) {
-          position_cand.push_back(
-              findPosition(last_block_x, pos_x, parent_pos.x()));
-        } else {
-          position_cand.push_back(
-              findPosition(last_block_y, pos_y, parent_pos.y()));
-        }
-      }
+      checkSegmentPosition(last_block_x,
+                           last_block_y,
+                           pos_x,
+                           pos_y,
+                           parent_pos,
+                           is_horizontal,
+                           position_cand);
       last_block_x = pos_x;
       last_block_y = pos_y;
     }
@@ -1196,48 +1256,29 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
       pos_y += step;
     }
   }
-  // if the segment has no vias in the end, verify last sub segment
+  // If the segment has no vias in the end, verify last sub segment
   if (last_block_x != seg_final_x || last_block_y != seg_final_y) {
-    const int free_via_size = std::abs(seg_final_x - last_block_x)
-                              + std::abs(seg_final_y - last_block_y);
-    if (free_via_size > 0
-        && free_via_size >= jumper_size_ + (2 * jumper_dist * tile_size_)) {
-      // calculate the size from init position to add jumper
-      if (is_horizontal) {
-        position_cand.push_back(
-            findPosition(last_block_x, seg_final_x, parent_pos.x()));
-      } else {
-        position_cand.push_back(
-            findPosition(last_block_y, seg_final_y, parent_pos.y()));
-      }
-    }
+    checkSegmentPosition(last_block_x,
+                         last_block_y,
+                         seg_final_x,
+                         seg_final_y,
+                         parent_pos,
+                         is_horizontal,
+                         position_cand);
   }
-  // find best position of the position candidates
-  int min_dist = -1, dist;
-  for (const int& pos : position_cand) {
-    // Get distance
-    if (is_horizontal) {
-      dist = std::abs((pos + tile_size_) - parent_pos.x());
-    } else {
-      dist = std::abs((pos + tile_size_) - parent_pos.y());
-    }
-    if (min_dist == -1 || dist < min_dist) {
-      min_dist = dist;
-      jumper_position = pos;
-    }
-  }
+  jumper_position = getBestPosition(position_cand, is_horizontal, parent_pos);
   return (jumper_position != -1);
 }
 
 odb::Point findSegmentPos(const GSegment& seg)
 {
+  // Get the middle position of the segment
   int x = (seg.init_x + seg.final_x) / 2;
   int y = (seg.init_y + seg.final_y) / 2;
-  odb::Point point(x, y);
-  return point;
+  return odb::Point(x, y);
 }
 
-// use DFS to find segment in layer violations connect with pin
+// Use DFS to find segment in layer violations connect with pin
 void RepairAntennas::findSegments(const GRoute& route,
                                   odb::dbITerm* iterm,
                                   const SegmentNodeIds& segment_ids,
@@ -1246,7 +1287,7 @@ void RepairAntennas::findSegments(const GRoute& route,
                                   const int& violation_layer,
                                   SegmentToJumperPos& segments_to_repair)
 {
-  // init stack and vector of visited and parent position
+  // Init stack and vector of visited and parent position
   std::stack<std::pair<odb::dbTechLayer*, SegmentNode>> node_stack;
   std::vector<bool> visited(num_nodes, false);
   std::vector<odb::Point> parent_pos(num_nodes);
@@ -1255,9 +1296,9 @@ void RepairAntennas::findSegments(const GRoute& route,
   odb::dbInst* sink_inst = iterm->getInst();
   odb::Rect sink_bbox = getInstRect(sink_inst, iterm);
   odb::Point gate_pos(sink_bbox.xCenter(), sink_bbox.yCenter());
-  // convert position --> move pos on tile middle
+  // Convert position --> move pos on GCell middle
   gate_pos = grouter_->getPositionOnGrid(gate_pos);
-  // insert init segments to stack
+  // Insert init segments to stack
   for (const auto& layer_it : segment_ids) {
     for (const auto& node_it : layer_it.second) {
       node_stack.push({layer_it.first, segment_graph[layer_it.first][node_it]});
@@ -1272,7 +1313,7 @@ void RepairAntennas::findSegments(const GRoute& route,
     cur_layer = node_stack.top().first;
     cur_node = node_stack.top().second;
     node_stack.pop();
-    // if node was visited
+    // If node was visited
     if (visited[cur_node.node_id])
       continue;
 
@@ -1280,9 +1321,9 @@ void RepairAntennas::findSegments(const GRoute& route,
 
     int layer_level = cur_layer->getRoutingLevel();
     if (layer_level == violation_layer && cur_node.seg_id != -1) {
-      // candidate to add jumper - find pos checking len and capacity
+      // Candidate to add jumper - find pos checking len and capacity
       int jumper_pos;
-      // convert position --> move pos on tile middle
+      // Convert position --> move pos on tile middle
       parent_pos[cur_node.node_id]
           = grouter_->getPositionOnGrid(parent_pos[cur_node.node_id]);
       bool is_found = findPosToJumper(route,
@@ -1290,20 +1331,21 @@ void RepairAntennas::findSegments(const GRoute& route,
                                       cur_node,
                                       parent_pos[cur_node.node_id],
                                       jumper_pos);
-      // if jumper wasnt added, then continue DFS?
+      // If jumper wasnt added, then explore adjacent segment nodes
       if (is_found) {
         segments_to_repair[cur_node.seg_id].insert(jumper_pos);
         continue;
       }
     }
 
-    // Get all adjs to node
+    // Get all adjs from cur segment node
     for (const auto& adj_it : cur_node.adjs) {
+      // Only segment nodes with layer below the violation layer or vias
       if (layer_level == 0
           || (layer_level != 0 && layer_level <= violation_layer)) {
         adj_node = segment_graph[adj_it.first][adj_it.second];
         node_stack.push({adj_it.first, adj_node});
-        // update parent position (x, y)
+        // Update parent position (x, y)
         if (cur_node.seg_id != -1) {
           parent_pos[adj_node.node_id] = findSegmentPos(route[cur_node.seg_id]);
         }
@@ -1312,44 +1354,85 @@ void RepairAntennas::findSegments(const GRoute& route,
   }
 }
 
+void RepairAntennas::getViolations(
+    const std::vector<ant::Violation>& violations,
+    const int& max_routing_layer,
+    std::vector<int>& violation_id_to_repair,
+    int& max_layer_to_repair)
+{
+  odb::dbTech* tech = db_->getTech();
+  int violation_id = 0;
+  // Iterate all layers with violaions to check if jumper can be added
+  for (const auto& violation : violations) {
+    odb::dbTechLayer* violation_layer
+        = tech->findRoutingLayer(violation.routing_level);
+    odb::dbTechLayer* upper_layer
+        = tech->findRoutingLayer(violation.routing_level + 2);
+    // Check if the violation layer is valid and if it has layer + 2
+    if (upper_layer && upper_layer->getRoutingLevel() <= max_routing_layer
+        && violation_layer->getType() == odb::dbTechLayerType::ROUTING) {
+      violation_id_to_repair.push_back(violation_id);
+      max_layer_to_repair
+          = std::max(max_layer_to_repair, violation.routing_level);
+    }
+    violation_id++;
+  }
+}
+
+int RepairAntennas::addJumperOnSegments(
+    const SegmentToJumperPos& segments_to_repair,
+    GRoute& route)
+{
+  int jumper_by_net = 0;
+  // Iterate all jumper positions on segments
+  for (const auto& seg_it : segments_to_repair) {
+    int last_pos_aux = -1;
+    for (const auto& pos_it : seg_it.second) {
+      const int seg_len = route[seg_it.first].length();
+      if (seg_len < (0 * tile_size_)) {
+        break;
+      }
+      if (last_pos_aux != -1) {
+        // Avoid overlap with last jumper position
+        const int dist = abs(last_pos_aux - pos_it);
+        if (dist > jumper_size_) {
+          jumper_by_net += addJumper(route, seg_it.first, pos_it);
+        }
+      } else {
+        jumper_by_net += addJumper(route, seg_it.first, pos_it);
+      }
+      last_pos_aux = pos_it;
+    }
+  }
+  return jumper_by_net;
+}
+
 void RepairAntennas::jumperInsertion(NetRouteMap& routing,
-                                      const int& tile_size,
-                                      const int& max_routing_layer)
+                                     const int& tile_size,
+                                     const int& max_routing_layer)
 {
   // Init jumper size
   tile_size_ = tile_size;
   jumper_size_ = 2 * tile_size_;
-  odb::dbTech* tech = db_->getTech();
   int total_jumpers = 0;
   int jumper_by_net, required_jumper_by_net;
   int net_with_jumpers = 0;
-  // Iterate each violation found
+  // Iterate the antenna violations
   for (const auto& net_violations : antenna_violations_) {
     odb::dbNet* db_net = net_violations.first;
     const auto& violations = net_violations.second;
     std::vector<int> violation_id_to_repair;
 
-    // Iterate all layers with violaions to check if jumper can be added
-    int violation_position = 0;
+    // Get available violations to add jumper
     int max_layer_to_repair = -1;
-    for (const auto& violation : violations) {
-      odb::dbTechLayer* violation_layer
-          = tech->findRoutingLayer(violation.routing_level);
-      odb::dbTechLayer* upper_layer
-          = tech->findRoutingLayer(violation.routing_level + 2);
-      // check if the violation layer is valid and if it has layer + 2
-      if (upper_layer && upper_layer->getRoutingLevel() <= max_routing_layer
-          && violation_layer->getType() == odb::dbTechLayerType::ROUTING) {
-        violation_id_to_repair.push_back(violation_position);
-        max_layer_to_repair
-            = std::max(max_layer_to_repair, violation.routing_level);
-      }
-      violation_position++;
-    }
+    getViolations(violations,
+                  max_routing_layer,
+                  violation_id_to_repair,
+                  max_layer_to_repair);
 
     SegmentToJumperPos segments_to_repair;
     required_jumper_by_net = 0;
-    // check if has violation to repair with jumpers
+    // Check if has violation to repair with jumpers
     if (!violation_id_to_repair.empty()) {
       // Build graph of segments
       LayerToSegmentNodeVector segment_graph;
@@ -1357,9 +1440,9 @@ void RepairAntennas::jumperInsertion(NetRouteMap& routing,
           routing[db_net], max_layer_to_repair, segment_graph);
 
       // Iterate all valid violations
-      for (const auto& violation_id : violation_id_to_repair) {
+      for (const int& violation_id : violation_id_to_repair) {
         const int layer_level = violations[violation_id].routing_level;
-        // iterate all pins in this violation
+        // Iterate all pins in this violation
         for (const auto& iterm : violations[violation_id].gates) {
           SegmentNodeIds connected_seg_ids;
           // Get segments connect to pin with violations
@@ -1376,37 +1459,9 @@ void RepairAntennas::jumperInsertion(NetRouteMap& routing,
       required_jumper_by_net = segments_to_repair.size();
     }
     if (required_jumper_by_net > 0) {
-      // printf("Net %s is repaired by jumper insertion\n",
-      //      db_net->getConstName());
-      jumper_by_net = 0;
-      // Iterate all jumper positions on segments
-      // printf("Debug net %s\n", db_net->getConstName());
-      for (const auto& seg_it : segments_to_repair) {
-        int last_pos_aux = -1;
-        for (const auto& pos_it : seg_it.second) {
-          // printf("Debug position of jumper %d\n", pos_it);
-          const int seg_len = routing[db_net][seg_it.first].length();
-          if (seg_len < (0 * tile_size_)) {
-            break;
-          }
-          if (last_pos_aux != -1) {
-            int d = abs(last_pos_aux - pos_it);
-            if (d <= jumper_size_) {
-              printf("Net %s has jumper overlapped\n", db_net->getConstName());
-            } else {
-              jumper_by_net
-                  += addJumper(routing[db_net], seg_it.first, pos_it);
-            }
-          } else {
-            jumper_by_net += addJumper(routing[db_net], seg_it.first, pos_it);
-          }
-          last_pos_aux = pos_it;
-        }
-      }
+      // Add jumper in found segment positions
+      jumper_by_net = addJumperOnSegments(segments_to_repair, routing[db_net]);
       if (jumper_by_net > 0) {
-        // printf("Inserting %d jumper in net %s\n",
-        // jumper_by_net,
-        // db_net->getConstName());
         db_net->setJumpers(true);
         net_with_jumpers++;
         total_jumpers += jumper_by_net;

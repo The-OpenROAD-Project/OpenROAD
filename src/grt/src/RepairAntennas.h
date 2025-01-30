@@ -136,13 +136,13 @@ class RepairAntennas
                         const int& final_x,
                         const int& final_y,
                         const int& layer_level);
-  void addJumperHorizontal(const int& seg_id,
-                           GRoute& route,
+  void addJumperHorizontal(GRoute& route,
+                           const int& seg_id,
                            const int& bridge_init_x,
                            const int& bridge_final_x,
                            const int& layer_level);
-  void addJumperVertical(const int& seg_id,
-                         GRoute& route,
+  void addJumperVertical(GRoute& route,
+                         const int& seg_id,
                          const int& bridge_init_y,
                          const int& bridge_final_y,
                          const int& layer_level);
@@ -166,8 +166,9 @@ class RepairAntennas
   double diffArea(odb::dbMTerm* mterm);
   bool hasNewViolations() { return has_new_violations_; }
   void jumperInsertion(NetRouteMap& routing,
-                        const int& tile_size,
-                        const int& max_routing_layer);
+                       const int& tile_size,
+                       const int& max_routing_layer);
+
  private:
   using coord_type = int;
   using coord_sys_type = bg::cs::cartesian;
@@ -188,20 +189,36 @@ class RepairAntennas
                        const SegmentNode& seg_node,
                        const odb::Point& parent_pos,
                        int& jumper_position);
-  int findPosition(const int& init_pos,
-                   const int& final_pos,
-                   const int& target_pos);
+  int getJumperPosition(const int& init_pos,
+                        const int& final_pos,
+                        const int& target_pos);
   void getSegmentsConnectedToPin(const odb::dbITerm* iterm,
-                                  LayerToSegmentNodeVector& segment_by_layer,
-                                  SegmentNodeIds& seg_connected_to_pin);
+                                 LayerToSegmentNodeVector& segment_by_layer,
+                                 SegmentNodeIds& seg_connected_to_pin);
   int buildSegmentGraph(const GRoute& route,
                         const int& max_layer,
                         LayerToSegmentNodeVector& graph);
   void setAdjacentSegments(LayerToSegmentNodeVector& segment_by_layer);
   int getSegmentByLayer(const GRoute& route,
-                         const int& max_layer,
-                         LayerToSegmentNodeVector& segment_by_layer);
+                        const int& max_layer,
+                        LayerToSegmentNodeVector& segment_by_layer);
   bool addJumper(GRoute& route, const int& segment_id, const int& jumper_pos);
+  void checkSegmentPosition(const int& init_x,
+                            const int& init_y,
+                            const int& final_x,
+                            const int& final_y,
+                            const odb::Point& parent_pos,
+                            const bool& is_horizontal,
+                            std::vector<int>& position_cand);
+  int getBestPosition(const std::vector<int>& position_cand,
+                      const bool& is_horizontal,
+                      const odb::Point& parent_pos);
+  void getViolations(const std::vector<ant::Violation>& violations,
+                     const int& max_routing_layer,
+                     std::vector<int>& violation_id_to_repair,
+                     int& max_layer_to_repair);
+  int addJumperOnSegments(const SegmentToJumperPos& segments_to_repair,
+                          GRoute& route);
   void insertDiode(odb::dbNet* net,
                    odb::dbMTerm* diode_mterm,
                    odb::dbITerm* sink_iterm,
