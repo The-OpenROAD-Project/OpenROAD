@@ -240,6 +240,23 @@ dbGlobalConnect* dbGlobalConnect::create(dbNet* net,
 
   gc->setupRegex();
 
+  // check if global connect is identical to another
+  for (const dbGlobalConnect* check_gc :
+       ((dbBlock*) block)->getGlobalConnects()) {
+    const _dbGlobalConnect* db_check_gc = (const _dbGlobalConnect*) check_gc;
+
+    if (db_check_gc->getOID() == gc->getOID()) {
+      // dont compare with self
+      continue;
+    }
+
+    if (*db_check_gc == *gc) {
+      destroy((dbGlobalConnect*) gc);
+      gc = nullptr;
+      break;
+    }
+  }
+
   return ((dbGlobalConnect*) gc);
 }
 
