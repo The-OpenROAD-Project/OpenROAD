@@ -167,8 +167,8 @@ struct TreeNode
   // heights and eID arrays size were increased after using PD
   // to create the tree topologies.
   static constexpr int max_connections = 10;
-  int16_t heights[max_connections];
-  int eID[max_connections];
+  int16_t heights[max_connections] = {0};
+  int eID[max_connections] = {0};
 
   int16_t x, y;  // position in the grid graph
   int nbr_count = 0;
