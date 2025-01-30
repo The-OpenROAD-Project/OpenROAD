@@ -980,13 +980,24 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(
     const std::vector<odb::Rect>& pin_boxes = pin.getBoxes().at(conn_layer);
     for (const odb::Rect& pin_box : pin_boxes) {
       odb::Point rect_middle = getRectMiddle(pin_box);
-      const int box_length = std::max(pin_box.dx(), pin_box.dy());
+      const int pin_box_length = std::max(pin_box.dx(), pin_box.dy());
+
+      // if a macro/pad pin crosses multiple gcells, ensure the position closest
+      // to the macro/pad boundary will be selected as its on grid position.
       if (pin.getEdge() != PinEdge::none
-          && box_length >= grid_->getTileSize()) {
+          && pin_box_length >= grid_->getTileSize()) {
         pos_on_grid = grid_->getPositionOnGrid(
             pin.getPositionNearInstEdge(pin_box, rect_middle));
       } else {
         pos_on_grid = grid_->getPositionOnGrid(rect_middle);
+        // if a macro/pad pin is unreachable due to not having enough resources
+        // at its on grid position, get the position closest to the macro/pad
+        // boundary to ensure routability
+        if (pin.isConnectedToPadOrMacro()
+            && !isPinReachable(pin, pos_on_grid)) {
+          pos_on_grid = grid_->getPositionOnGrid(
+              pin.getPositionNearInstEdge(pin_box, rect_middle));
+        }
       }
       positions_on_grid.push_back(pos_on_grid);
     }
@@ -1787,6 +1798,34 @@ void GlobalRouter::addResourcesForPinAccess()
       }
     }
   }
+}
+
+bool GlobalRouter::isPinReachable(const Pin& pin, const odb::Point& pos_on_grid)
+{
+  odb::dbTech* tech = db_->getTech();
+  const int layer = pin.getConnectionLayer();
+  int pin_x
+      = (int) ((pos_on_grid.x() - grid_->getXMin()) / grid_->getTileSize());
+  int pin_y
+      = (int) ((pos_on_grid.y() - grid_->getYMin()) / grid_->getTileSize());
+  odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
+
+  // pins on the east and north edges of macros will always have enough
+  // resources due to the function addResourcesForPinAccess.
+  if (pin.getEdge() == PinEdge::east || pin.getEdge() == PinEdge::north) {
+    return true;
+  }
+
+  int edge_cap = 0;
+  if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+    edge_cap
+        = fastroute_->getEdgeCapacity(pin_x, pin_y - 1, pin_x, pin_y, layer);
+  } else {
+    edge_cap
+        = fastroute_->getEdgeCapacity(pin_x - 1, pin_y, pin_x, pin_y, layer);
+  }
+
+  return edge_cap > 0;
 }
 
 void GlobalRouter::setAdjustment(const float adjustment)
