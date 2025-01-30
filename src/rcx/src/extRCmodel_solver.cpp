@@ -416,12 +416,24 @@ void extMetRCTable::allocOverUnderTable(uint met,
 
   int n = extRCModel::getMaxMetIndexOverUnder(met, _layerCnt);
   if (!open)
-    _capOverUnder[met] = new extDistWidthRCTable(
-        false, met, _layerCnt, n + 1, wTable, _rcPoolPtr, _OUREVERSEORDER, dbFactor);
+    _capOverUnder[met] = new extDistWidthRCTable(false,
+                                                 met,
+                                                 _layerCnt,
+                                                 n + 1,
+                                                 wTable,
+                                                 _rcPoolPtr,
+                                                 _OUREVERSEORDER,
+                                                 dbFactor);
   else {
     for (uint ii = 0; ii < _wireCnt; ii++)
-      _capOverUnder_open[met][ii] = new extDistWidthRCTable(
-          false, met, _layerCnt, n + 1, wTable, _rcPoolPtr, _OUREVERSEORDER, dbFactor);
+      _capOverUnder_open[met][ii] = new extDistWidthRCTable(false,
+                                                            met,
+                                                            _layerCnt,
+                                                            n + 1,
+                                                            wTable,
+                                                            _rcPoolPtr,
+                                                            _OUREVERSEORDER,
+                                                            dbFactor);
   }
 }
 void extMetRCTable::allocOverTable(uint met,
@@ -433,8 +445,14 @@ void extMetRCTable::allocOverTable(uint met,
   _resOver[met] = new extDistWidthRCTable(
       true, met, _layerCnt, met, wTable, _rcPoolPtr, _OUREVERSEORDER, dbFactor);
   for (uint ii = 0; ii < _wireCnt; ii++)
-    _capOver_open[met][ii] = new extDistWidthRCTable(
-        true, met, _layerCnt, met, wTable, _rcPoolPtr, _OUREVERSEORDER, dbFactor);
+    _capOver_open[met][ii] = new extDistWidthRCTable(true,
+                                                     met,
+                                                     _layerCnt,
+                                                     met,
+                                                     wTable,
+                                                     _rcPoolPtr,
+                                                     _OUREVERSEORDER,
+                                                     dbFactor);
 }
 void extMetRCTable::allocUnderTable(uint met,
                                     bool open,

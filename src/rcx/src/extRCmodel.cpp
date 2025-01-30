@@ -1563,16 +1563,28 @@ void extMetRCTable::allocDiagUnderTable(uint met,
                                         Ath__array1D<double>* wTable,
                                         double dbFactor)
 {
-  _capDiagUnder[met] = new extDistWidthRCTable(
-      false, met, _layerCnt, _layerCnt - met - 1, wTable, _rcPoolPtr, _OUREVERSEORDER, dbFactor);
+  _capDiagUnder[met] = new extDistWidthRCTable(false,
+                                               met,
+                                               _layerCnt,
+                                               _layerCnt - met - 1,
+                                               wTable,
+                                               _rcPoolPtr,
+                                               _OUREVERSEORDER,
+                                               dbFactor);
 }
 
 void extMetRCTable::allocUnderTable(uint met,
                                     Ath__array1D<double>* wTable,
                                     double dbFactor)
 {
-  _capUnder[met] = new extDistWidthRCTable(
-      false, met, _layerCnt, _layerCnt - met - 1, wTable, _rcPoolPtr, _OUREVERSEORDER, dbFactor);
+  _capUnder[met] = new extDistWidthRCTable(false,
+                                           met,
+                                           _layerCnt,
+                                           _layerCnt - met - 1,
+                                           wTable,
+                                           _rcPoolPtr,
+                                           _OUREVERSEORDER,
+                                           dbFactor);
 }
 
 void extMetRCTable::allocOverUnderTable(uint met,
@@ -1584,8 +1596,14 @@ void extMetRCTable::allocOverUnderTable(uint met,
   }
 
   int n = extRCModel::getMaxMetIndexOverUnder(met, _layerCnt);
-  _capOverUnder[met] = new extDistWidthRCTable(
-      false, met, _layerCnt, n + 1, wTable, _rcPoolPtr, _OUREVERSEORDER, dbFactor);
+  _capOverUnder[met] = new extDistWidthRCTable(false,
+                                               met,
+                                               _layerCnt,
+                                               n + 1,
+                                               wTable,
+                                               _rcPoolPtr,
+                                               _OUREVERSEORDER,
+                                               dbFactor);
 }
 
 extRCTable::extRCTable(bool over, uint layerCnt)
@@ -2215,7 +2233,8 @@ void extRCModel::createModelTable(uint n, uint layerCnt)
   _dataRateTable = new Ath__array1D<double>(_modelCnt);
   _modelTable = new extMetRCTable*[_modelCnt];
   for (uint jj = 0; jj < _modelCnt; jj++) {
-    _modelTable[jj] = new extMetRCTable(_layerCnt, _rcPoolPtr, logger_, _OUREVERSEORDER);
+    _modelTable[jj]
+        = new extMetRCTable(_layerCnt, _rcPoolPtr, logger_, _OUREVERSEORDER);
   }
 }
 
@@ -3396,15 +3415,30 @@ void extMetRCTable::allocateInitialTables(uint layerCnt,
             true, met, layerCnt, met, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
     }
     if (under) {
-      _capUnder[met] = new extDistWidthRCTable(
-          false, met, layerCnt, _layerCnt - met - 1, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
+      _capUnder[met] = new extDistWidthRCTable(false,
+                                               met,
+                                               layerCnt,
+                                               _layerCnt - met - 1,
+                                               widthCnt,
+                                               _rcPoolPtr,
+                                               _OUREVERSEORDER);
       for (uint jj = 0; jj < _wireCnt; jj++)
-        _capUnder_open[met][jj] = new extDistWidthRCTable(
-            false, met, layerCnt, _layerCnt - met - 1, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
+        _capUnder_open[met][jj] = new extDistWidthRCTable(false,
+                                                          met,
+                                                          layerCnt,
+                                                          _layerCnt - met - 1,
+                                                          widthCnt,
+                                                          _rcPoolPtr,
+                                                          _OUREVERSEORDER);
     }
     if (diag) {
-      _capDiagUnder[met] = new extDistWidthRCTable(
-          false, met, layerCnt, _layerCnt - met - 1, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
+      _capDiagUnder[met] = new extDistWidthRCTable(false,
+                                                   met,
+                                                   layerCnt,
+                                                   _layerCnt - met - 1,
+                                                   widthCnt,
+                                                   _rcPoolPtr,
+                                                   _OUREVERSEORDER);
     }
   }
 }
@@ -3452,7 +3486,8 @@ uint extRCModel::readRules(Ath__parser* parser,
 
   extDistWidthRCTable* dummy = nullptr;
   if (ignore) {
-    dummy = new extDistWidthRCTable(true, met, _layerCnt, widthCnt, _OUREVERSEORDER);
+    dummy = new extDistWidthRCTable(
+        true, met, _layerCnt, widthCnt, _OUREVERSEORDER);
   }
 
   uint diagWidthCnt = 0;

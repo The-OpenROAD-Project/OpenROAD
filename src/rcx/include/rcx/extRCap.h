@@ -243,7 +243,11 @@ class extDistWidthRCTable
 
   // ---------------------------------------------------------------------------------------
 
-  extDistWidthRCTable(bool dummy, uint met, uint layerCnt, uint width, bool OUREVERSEORDER);
+  extDistWidthRCTable(bool dummy,
+                      uint met,
+                      uint layerCnt,
+                      uint width,
+                      bool OUREVERSEORDER);
   extDistWidthRCTable(bool over,
                       uint met,
                       uint layerCnt,
@@ -400,7 +404,10 @@ class extMetRCTable
   // dkf 01022024
   uint SetDefaultTechViaRes(dbTech* tech, bool dbg);
   // ----------------------------------------------------------------------------------------
-  extMetRCTable(uint layerCnt, AthPool<extDistRC>* rcPool, Logger* logger_, bool OUREVERSEORDER);
+  extMetRCTable(uint layerCnt,
+                AthPool<extDistRC>* rcPool,
+                Logger* logger_,
+                bool OUREVERSEORDER);
   ~extMetRCTable();
 
   // ---------------------- DKF 092024 -----------------------------------
@@ -965,7 +972,7 @@ class extRCModel
 
   extMain* _extMain;
 
-  bool _OUREVERSEORDER {false};
+  bool _OUREVERSEORDER{false};
 
  protected:
   Logger* logger_;

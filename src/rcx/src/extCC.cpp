@@ -36,7 +36,6 @@
 #include "rcx/gseq.h"
 #include "wire.h"
 
-
 namespace rcx {
 
 static uint ttttGetDgOverlap;
@@ -688,7 +687,7 @@ void Ath__track::buildDgContext(Ath__array1D<SEQ*>* dgContext,
 void Ath__grid::buildDgContext(int gridn, int base)
 {
   std::vector<Ath__wire*> allCtxwire;
-  
+
   uint btrackN = getMinMaxTrackNum(base);
   uint dgContextTrackRange = _gridtable->getCcFlag();
   int lowtrack
