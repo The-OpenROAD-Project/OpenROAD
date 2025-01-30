@@ -1150,7 +1150,7 @@ TreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
                       "registers");
   if (secondBuilder) {
     secondBuilder->setTreeType(TreeType::RegisterTree);
-    secondBuilder->setTopBufferName(topBufferName);
+    secondBuilder->setTopBufferName(std::move(topBufferName));
     secondBuilder->setDrivingNet(firstNet);
     secondBuilder->setTopInputNet(clkInputNet);
   }

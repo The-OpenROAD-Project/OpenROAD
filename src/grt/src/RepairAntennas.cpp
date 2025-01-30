@@ -66,6 +66,7 @@ RepairAntennas::RepairAntennas(GlobalRouter* grouter,
       logger_(logger),
       unique_diode_index_(1),
       illegal_diode_placement_count_(0),
+      has_new_violations_(false),
       routing_source_(RoutingSource::None)
 {
   block_ = db_->getChip()->getBlock();

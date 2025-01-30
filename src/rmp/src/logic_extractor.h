@@ -70,6 +70,9 @@ class LogicExtractorFactory
   void RemovePrimaryOutputInstances(
       std::unordered_set<sta::Instance*>& cut_instances,
       std::vector<sta::Pin*>& primary_output_pins);
+  std::vector<sta::Vertex*> AddMissingVertices(
+      std::vector<sta::Vertex*>& cut_vertices,
+      AbcLibrary& abc_library);
 
   std::vector<sta::Vertex*> endpoints_;
   sta::dbSta* open_sta_;
