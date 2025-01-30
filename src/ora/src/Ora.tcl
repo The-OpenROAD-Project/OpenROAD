@@ -27,8 +27,13 @@ proc askbot { args } {
 
 
 proc ora_init {arg1 {arg2 ""}} {
-  ora::set_mode $arg1
+  if {$arg1 ni {"local" "cloud"}} {
+    puts "ERROR: Invalid mode '$arg1'. Use 'local' or 'cloud'."
+    return;
+  }
 
+  ora::set_mode $arg1
+  
   if {$arg1 eq "cloud"} {
     ora::set_consent $arg2
   } elseif {$arg1 eq "local"} {

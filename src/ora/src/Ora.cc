@@ -337,14 +337,6 @@ void Ora::setMode(const char* mode)
   std::string modeFilePath = localDirPath + "/orassistant_mode.txt";
   std::ofstream modeFile(modeFilePath);
 
-  if (std::string(mode) != "local" && std::string(mode) != "cloud") {
-    logger_->error(utl::ORA,
-                   122,
-                   "{} : Invalid mode value. Use 'local' or 'cloud'.",
-                   mode);
-    return;
-  }
-
   if (modeFile.is_open()) {
     modeFile << mode;
     modeFile.close();
