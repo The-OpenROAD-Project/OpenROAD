@@ -211,8 +211,6 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
                              region_adjustment.getLayer(),
                              region_adjustment.getAdjustment());
   }
-  addResourcesForPinAccess();
-  fastroute_->initAuxVar();
 }
 
 // If file name is specified, save congestion report file.
@@ -1145,6 +1143,11 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets)
     logger_->info(GRT, 1, "Minimum degree: {}", min_degree);
     logger_->info(GRT, 2, "Maximum degree: {}", max_degree);
   }
+
+  // add resources for pin access in macro/pad pins after defining their on grid
+  // position
+  addResourcesForPinAccess();
+  fastroute_->initAuxVar();
 }
 
 bool GlobalRouter::pinPositionsChanged(Net* net)
