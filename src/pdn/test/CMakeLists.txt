@@ -1,6 +1,7 @@
 or_integration_tests(
   "pdn"
   TESTS
+    add_double_global_connection
     asap7_failed_macro_grid
     asap7_no_via_generate
     asap7_no_via_generate_v1_snapped
@@ -21,6 +22,7 @@ or_integration_tests(
     core_grid_auto_domain
     core_grid_auto_domain_multiple_nets
     core_grid_bad_metal_specs
+    core_grid_check_connect_layers
     core_grid_cut_pitch
     core_grid_dual_followpins
     core_grid_dual_followpins_error
