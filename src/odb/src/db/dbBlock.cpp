@@ -4208,7 +4208,7 @@ int dbBlock::addGlobalConnect(dbRegion* region,
   dbGlobalConnect* gc
       = odb::dbGlobalConnect::create(net, region, instPattern, pinPattern);
 
-  if (do_connect) {
+  if (gc != nullptr && do_connect) {
     return globalConnect(gc);
   }
   return 0;
