@@ -153,6 +153,39 @@ double InitFloorplan::designArea()
   return design_area;
 }
 
+void InitFloorplan::checkInstanceDimensions(const odb::Rect& core) const
+{
+  for (dbInst* inst : block_->getInsts()) {
+    dbMaster* master = inst->getMaster();
+
+    if (master->isPad() || master->isCover()) {
+      continue;
+    }
+
+    bool fails = false;
+    if (master->getSymmetryR90()) {
+      fails
+          = std::max(master->getWidth(), master->getHeight()) > core.maxDXDY();
+    } else {
+      fails = master->getWidth() > core.dx() || master->getHeight() > core.dy();
+    }
+
+    if (fails) {
+      logger_->error(utl::IFP,
+                     2,
+                     "{} ({:.3f}um, {:.3f}um) does not fit in the core area: "
+                     "({:.3f}um, {:.3f}um) - ({:.3f}um, {:.3f}um)",
+                     inst->getName(),
+                     block_->dbuToMicrons(master->getWidth()),
+                     block_->dbuToMicrons(master->getHeight()),
+                     block_->dbuToMicrons(core.xMin()),
+                     block_->dbuToMicrons(core.yMin()),
+                     block_->dbuToMicrons(core.xMax()),
+                     block_->dbuToMicrons(core.yMax()));
+    }
+  }
+}
+
 static int divCeil(int dividend, int divisor)
 {
   return ceil(static_cast<double>(dividend) / divisor);
@@ -169,6 +202,8 @@ void InitFloorplan::initFloorplan(
   if (!die.contains(core)) {
     logger_->error(IFP, 55, "Die area must contain the core area.");
   }
+
+  checkInstanceDimensions(core);
 
   Rect die_area(snapToMfgGrid(die.xMin()),
                 snapToMfgGrid(die.yMin()),
