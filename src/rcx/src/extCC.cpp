@@ -534,67 +534,6 @@ uint Ath__track::couplingCaps(Ath__grid* ccGrid,
   return wireCnt;
 }
 
-uint Ath__grid::couplingCaps(Ath__grid* resGrid,
-                             uint couplingDist,
-                             Ath__array1D<uint>* ccTable,
-                             rcx::CoupleAndCompute coupleAndCompute,
-                             void* compPtr)
-{
-  uint coupleTrackNum = couplingDist;  // EXT-OPTIMIZE
-  uint ccThreshold = coupleTrackNum * _pitch;
-  uint TargetHighMarkedNet = _gridtable->targetHighMarkedNet();
-  bool allNet = _gridtable->allNet();
-
-  uint domainAdjust = allNet || !TargetHighMarkedNet ? 0 : couplingDist;
-  initContextGrids();
-  setSearchDomain(domainAdjust);
-  uint cnt = 0;
-  for (uint ii = _searchLowTrack; ii <= _searchHiTrack; ii++) {
-    Ath__track* btrack = _trackTable[ii];
-    if (btrack == nullptr) {
-      continue;
-    }
-
-    int base = btrack->getBase();
-    _gridtable->buildDgContext(base, _level, _dir);
-    if (!ttttGetDgOverlap) {
-      CoupleOptions coupleOptionsNull{};
-      coupleAndCompute(coupleOptionsNull, compPtr);  // try print dgContext
-    }
-
-    Ath__track* track = nullptr;
-    bool tohi = true;
-    while ((track = btrack->getNextSubTrack(track, tohi))) {
-      _gridtable->setHandleEmptyOnly(false);
-      uint cnt1 = track->couplingCaps(resGrid,
-                                      ii,
-                                      coupleTrackNum,
-                                      ccThreshold,
-                                      ccTable,
-                                      _level,
-                                      coupleAndCompute,
-                                      compPtr);
-      cnt += cnt1;
-      if (allNet || TargetHighMarkedNet) {
-        _gridtable->setHandleEmptyOnly(true);
-      }
-      _gridtable->reverseTargetTrack();
-      cnt1 = track->couplingCaps(resGrid,
-                                 ii,
-                                 coupleTrackNum,
-                                 ccThreshold,
-                                 ccTable,
-                                 _level,
-                                 coupleAndCompute,
-                                 compPtr);
-      cnt += cnt1;
-      _gridtable->reverseTargetTrack();
-    }
-  }
-
-  return cnt;
-}
-
 void Ath__gridTable::setDefaultWireType(uint v)
 {
   for (uint ii = 0; ii < _rowCnt; ii++) {
@@ -759,43 +698,6 @@ void Ath__gridTable::buildDgContext(int base, uint level, uint dir)
       renewDgContext(*_dgContextDepth + jj, dgContextTrackRange + tt);
     }
   }
-}
-
-uint Ath__gridTable::couplingCaps(Ath__gridTable* resGridTable,
-                                  uint couplingDist,
-                                  Ath__array1D<uint>* ccTable,
-                                  rcx::CoupleAndCompute coupleAndCompute,
-                                  void* compPtr)
-{
-  ttttGetDgOverlap = 1;
-  setCCFlag(couplingDist);
-  _CCshorts = 0;
-  uint cnt = 0;
-  for (uint jj = 0; jj < _colCnt; jj++) {
-    for (int ii = _rowCnt - 1; ii >= 0; ii--) {
-      Ath__grid* resGrid = nullptr;
-      if (resGridTable != nullptr) {
-        resGrid = resGridTable->getGrid(ii, jj);
-      }
-
-      Ath__grid* netGrid = _gridTable[ii][jj];
-      if (netGrid == nullptr) {
-        continue;
-      }
-
-      cnt += netGrid->couplingCaps(
-          resGrid, couplingDist, ccTable, coupleAndCompute, compPtr);
-    }
-  }
-  return cnt;
-}
-
-uint Ath__gridTable::couplingCaps(uint row,
-                                  uint col,
-                                  Ath__grid* resGrid,
-                                  uint couplingDist)
-{
-  return 0;
 }
 
 int Ath__grid::couplingCaps(int hiXY,

@@ -517,11 +517,6 @@ class Ath__grid
                    uint& wireCnt,
                    Ath__array1D<Ath__wire*>* bandWire,
                    int* limitArray);
-  uint couplingCaps(Ath__grid* resGrid,
-                    uint couplingDist,
-                    Ath__array1D<uint>* ccTable,
-                    CoupleAndCompute coupleAndCompute,
-                    void* compPtr);
   AthPool<Ath__wire>* getWirePoolPtr();
   uint placeWire(Ath__wire* w);
   uint defaultWireType();
@@ -742,12 +737,6 @@ class Ath__gridTable
   void setDefaultWireType(uint v);
   void buildDgContext(int base, uint level, uint dir);
   Ath__array1D<SEQ*>* renewDgContext(uint gridn, uint trackn);
-  uint couplingCaps(Ath__gridTable* resGridTable,
-                    uint couplingDist,
-                    Ath__array1D<uint>* ccTable,
-                    CoupleAndCompute coupleAndCompute,
-                    void* compPtr);
-  uint couplingCaps(uint row, uint col, Ath__grid* resGrid, uint couplingDist);
   void getBox(uint wid,
               int* x1,
               int* y1,
