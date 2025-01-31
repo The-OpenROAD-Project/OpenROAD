@@ -1208,7 +1208,7 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
   jumper_position = -1;
   const GSegment& seg = route[seg_node.seg_id];
   // Ignore small segments
-  if (seg.length() < 0 * tile_size_) {
+  if (seg.length() < 5 * tile_size_) {
     return false;
   }
   // Get init and final position of segment
@@ -1390,7 +1390,7 @@ int RepairAntennas::addJumperOnSegments(
     int last_pos_aux = -1;
     for (const auto& pos_it : seg_it.second) {
       const int seg_len = route[seg_it.first].length();
-      if (seg_len < (0 * tile_size_)) {
+      if (seg_len < (5 * tile_size_)) {
         break;
       }
       if (last_pos_aux != -1) {
