@@ -919,7 +919,7 @@ int Ath__gridTable::couplingCaps(int hiXY,
                                  bool getBandWire,
                                  int** limitArray)
 {
-  _ttttGetDgOverlap = 1;
+  _ttttGetDgOverlap = true;
   setCCFlag(couplingDist);
 
   if (getBandWire) {
@@ -990,7 +990,7 @@ void Ath__gridTable::initCouplingCapLoops(
     void* compPtr,
     int* startXY)
 {
-  _ttttGetDgOverlap = 1;
+  _ttttGetDgOverlap = true;
   setCCFlag(couplingDist);
 
   for (uint jj = 1; jj < _colCnt; jj++) {
