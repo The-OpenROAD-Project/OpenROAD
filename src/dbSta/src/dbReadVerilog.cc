@@ -64,7 +64,6 @@ using odb::dbDatabase;
 using odb::dbInst;
 using odb::dbIoType;
 using odb::dbITerm;
-using odb::dbLib;
 using odb::dbMaster;
 using odb::dbModBTerm;
 using odb::dbModInst;
@@ -73,7 +72,6 @@ using odb::dbModNet;
 using odb::dbModule;
 using odb::dbMTerm;
 using odb::dbNet;
-using odb::dbSet;
 using odb::dbTech;
 using utl::ORD;
 
@@ -1065,7 +1063,7 @@ void Verilog2db::processUnusedCells(const char* top_cell_name,
     }
   }
 
-  if (unused_cells_.size() > 0) {
+  if (!unused_cells_.empty()) {
     restoreTopBlock(top_cell_name);
     if (logger_->debugCheck(utl::ODB, "dbReadVerilog", 1)) {
       std::stringstream sstr;
