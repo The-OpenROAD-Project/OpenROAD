@@ -72,20 +72,20 @@ Path Type: max
    0.00    1.76 v _551_/_76_/A2 (sky130_fd_sc_hd__o21bai_1)
    0.13    1.89 ^ _551_/_76_/Y (sky130_fd_sc_hd__o21bai_1)
    0.00    1.89 ^ _551_/_173_/A (sky130_fd_sc_hd__buf_4)
-   0.12    2.01 ^ _551_/_173_/X (sky130_fd_sc_hd__buf_4)
-   0.00    2.01 ^ _carry_out_and_/C (sky130_fd_sc_hd__and4_1)
-   0.14    2.15 ^ _carry_out_and_/X (sky130_fd_sc_hd__and4_1)
-   0.00    2.15 ^ carry_out (out)
-           2.15   data arrival time
+   0.14    2.02 ^ _551_/_173_/X (sky130_fd_sc_hd__buf_4)
+   0.00    2.02 ^ _carry_out_and_/C (sky130_fd_sc_hd__and4_1)
+   0.14    2.16 ^ _carry_out_and_/X (sky130_fd_sc_hd__and4_1)
+   0.00    2.16 ^ carry_out (out)
+           2.16   data arrival time
 
    1.00    1.00   max_delay
    0.00    1.00   output external delay
            1.00   data required time
 ---------------------------------------------------------
            1.00   data required time
-          -2.15   data arrival time
+          -2.16   data arrival time
 ---------------------------------------------------------
-          -1.15   slack (VIOLATED)
+          -1.16   slack (VIOLATED)
 
 
 Cell type report for _551_ (LCU_16_KOGGE_STONE__551_)
