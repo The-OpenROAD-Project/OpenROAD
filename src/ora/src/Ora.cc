@@ -301,13 +301,7 @@ void Ora::setConsent(const char* consent)
   std::string consentFilePath = localDirPath + "/orassistant_consent.txt";
   std::ofstream consentFile(consentFilePath);
 
-  // check if consent is y or n
-  if (std::string(consent) != "y" && std::string(consent) != "n") {
-    logger_->error(
-        utl::ORA, 115, "{} : Invalid consent value. Use 'y' or 'n'.", consent);
-    return;
-  }
-
+  // the consent string is validated in Ora.i
   if (consentFile.is_open()) {
     consentFile << "consent: " << consent << "\n";
     consentFile << "consent_version: " << consentVersion << "\n";
@@ -337,6 +331,7 @@ void Ora::setMode(const char* mode)
   std::string modeFilePath = localDirPath + "/orassistant_mode.txt";
   std::ofstream modeFile(modeFilePath);
 
+  // the mode is validated in Ora.i
   if (modeFile.is_open()) {
     modeFile << mode;
     modeFile.close();

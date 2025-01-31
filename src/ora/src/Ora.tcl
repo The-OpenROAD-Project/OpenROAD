@@ -25,20 +25,21 @@ proc askbot { args } {
   ora::askbot [lindex $args 0]
 }
 
-
 proc ora_init {arg1 {arg2 ""}} {
   if {$arg1 ni {"local" "cloud"}} {
     puts "ERROR: Invalid mode '$arg1'. Use 'local' or 'cloud'."
-    return;
+    return
   }
 
   ora::set_mode $arg1
-  
+
   if {$arg1 eq "cloud"} {
+    if {$arg2 ni {"y" "n"}} {
+      puts "ERROR: Invalid consent value '$arg2'. Use 'y' or 'n'."
+      return
+    }
     ora::set_consent $arg2
   } elseif {$arg1 eq "local"} {
     ora::set_bothost $arg2
-  } else {
-    puts "Invalid mode: $arg1"
   }
 }
