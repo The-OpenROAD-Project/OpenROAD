@@ -310,7 +310,8 @@ class Ath__track
                     Ath__array1D<uint>* ccIdTable,
                     uint met,
                     CoupleAndCompute coupleAndCompute,
-                    void* compPtr);
+                    void* compPtr,
+                    bool ttttGetDgOverlap);
 
   uint findOverlap(Ath__wire* origWire,
                    uint ccThreshold,
@@ -541,7 +542,8 @@ class Ath__grid
                    uint& wireCnt,
                    CoupleAndCompute coupleAndCompute,
                    void* compPtr,
-                   int* limitArray);
+                   int* limitArray,
+                   bool ttttGetDgOverlap);
   int dealloc(int hiXY);
   void dealloc();
 };
@@ -622,6 +624,8 @@ class Ath__gridTable
   uint _wireCnt;
 
   Ath__array1D<Ath__wire*>* _bandWire;
+
+  bool _ttttGetDgOverlap{false};
 
  public:
   // -------------------------------------------------------- v2

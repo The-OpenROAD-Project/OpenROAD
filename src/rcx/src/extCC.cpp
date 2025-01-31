@@ -38,8 +38,6 @@
 
 namespace rcx {
 
-static uint ttttGetDgOverlap;
-
 uint Ath__track::trackContextOn(int orig,
                                 int end,
                                 int base,
@@ -349,7 +347,8 @@ uint Ath__track::couplingCaps(Ath__grid* ccGrid,
                               Ath__array1D<uint>* ccIdTable,
                               uint met,
                               CoupleAndCompute coupleAndCompute,
-                              void* compPtr)
+                              void* compPtr,
+                              bool ttttGetDgOverlap)
 {
   Ath__track* tstrack;
   bool tohi = _grid->getGridTable()->targetHighTracks() > 0 ? true : false;
@@ -705,7 +704,8 @@ int Ath__grid::couplingCaps(int hiXY,
                             uint& wireCnt,
                             rcx::CoupleAndCompute coupleAndCompute,
                             void* compPtr,
-                            int* limitArray)
+                            int* limitArray,
+                            bool ttttGetDgOverlap)
 {
   uint coupleTrackNum = couplingDist;  // EXT-OPTIMIZE
   uint ccThreshold = coupleTrackNum * _pitch;
@@ -761,7 +761,8 @@ int Ath__grid::couplingCaps(int hiXY,
                                       nullptr,
                                       _level,
                                       coupleAndCompute,
-                                      compPtr);
+                                      compPtr,
+                                      ttttGetDgOverlap);
       wireCnt += cnt1;
       if (allNet || TargetHighMarkedNet) {
         _gridtable->setHandleEmptyOnly(true);
@@ -774,7 +775,8 @@ int Ath__grid::couplingCaps(int hiXY,
                                  nullptr,
                                  _level,
                                  coupleAndCompute,
-                                 compPtr);
+                                 compPtr,
+                                 ttttGetDgOverlap);
       wireCnt += cnt1;
       _gridtable->reverseTargetTrack();
     }
@@ -917,7 +919,7 @@ int Ath__gridTable::couplingCaps(int hiXY,
                                  bool getBandWire,
                                  int** limitArray)
 {
-  ttttGetDgOverlap = 1;
+  _ttttGetDgOverlap = 1;
   setCCFlag(couplingDist);
 
   if (getBandWire) {
@@ -947,7 +949,8 @@ int Ath__gridTable::couplingCaps(int hiXY,
                                              wireCnt,
                                              coupleAndCompute,
                                              compPtr,
-                                             limitArray[jj]);
+                                             limitArray[jj],
+                                             _ttttGetDgOverlap);
     }
 
     if (minExtracted > lastExtracted1) {
@@ -987,7 +990,7 @@ void Ath__gridTable::initCouplingCapLoops(
     void* compPtr,
     int* startXY)
 {
-  ttttGetDgOverlap = 1;
+  _ttttGetDgOverlap = 1;
   setCCFlag(couplingDist);
 
   for (uint jj = 1; jj < _colCnt; jj++) {
