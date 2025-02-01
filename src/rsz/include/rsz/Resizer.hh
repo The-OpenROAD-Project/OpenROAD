@@ -564,7 +564,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
                          double wire_length,  // meters
                          const Corner* corner,
                          Parasitics* parasitics);
-  string makeUniqueNetName();
+  string makeUniqueNetName(Instance* parent = nullptr);
   Net* makeUniqueNet();
   string makeUniqueInstName(const char* base_name);
   string makeUniqueInstName(const char* base_name, bool underscore);
