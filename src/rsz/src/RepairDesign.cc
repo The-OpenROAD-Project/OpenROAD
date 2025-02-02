@@ -1787,6 +1787,7 @@ void RepairDesign::makeRepeater(const char* reason,
   LibertyPort *buffer_input_port, *buffer_output_port;
   buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
   string buffer_name = resizer_->makeUniqueInstName(reason);
+
   debugPrint(logger_,
              RSZ,
              "repair_net",
@@ -1843,7 +1844,7 @@ void RepairDesign::makeRepeater(const char* reason,
   // Make the buffer in the root module in case or primary input connections
 
   Instance* parent = nullptr;
-  if (top_primary_input || top_primary_output) {
+  if (top_primary_input || top_primary_output || !db_network_->hasHierarchy()) {
     parent = db_network_->topInstance();
   } else {
     odb::dbModule* parent_module = db_network_->getNetDriverParentModule(net);
@@ -1863,10 +1864,6 @@ void RepairDesign::makeRepeater(const char* reason,
   Instance* buffer
       = resizer_->makeBuffer(buffer_cell, buffer_name.c_str(), parent, buf_loc);
   inserted_buffer_count_++;
-
-  Pin* buffer_ip_pin = nullptr;
-  Pin* buffer_op_pin = nullptr;
-  resizer_->getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
 
   // make sure any nets created are scoped within hierarchy
   // backwards compatible. new naming only used for hierarchy code.
@@ -1896,7 +1893,7 @@ void RepairDesign::makeRepeater(const char* reason,
     dbNet* ip_net_db = db_network_->staToDb(net);
     dbNet* op_net_db = db_network_->staToDb(new_net);
     op_net_db->setSigType(ip_net_db->getSigType());
-    Net* op_net = new_net;
+    out_net = new_net;
 
     buffer_op_net = new_net;
     buffer_ip_net = net;
@@ -1904,17 +1901,21 @@ void RepairDesign::makeRepeater(const char* reason,
     for (const Pin* pin : load_pins) {
       Port* port = network_->port(pin);
       Instance* inst = network_->instance(pin);
+      if (resizer_->dontTouch(inst)) {
+        continue;
+      }
       // preserve any hierarchical connection
       odb::dbModNet* mod_net = db_network_->hierNet(pin);
       sta_->disconnectPin(const_cast<Pin*>(pin));
-      sta_->connectPin(inst, port, op_net);
+      sta_->connectPin(inst, port, buffer_op_net);
+
       if (mod_net) {
         db_network_->connectPin(const_cast<Pin*>(pin),
                                 db_network_->dbToSta(mod_net));
       }
     }
-    db_network_->connectPin(buffer_ip_pin, buffer_ip_net);
-    db_network_->connectPin(buffer_op_pin, buffer_op_net);
+    sta_->connectPin(buffer, buffer_input_port, buffer_ip_net);
+    sta_->connectPin(buffer, buffer_output_port, buffer_op_net);
   } else {
     //
     // case 2. One of the loads is a primary output
@@ -1926,12 +1927,11 @@ void RepairDesign::makeRepeater(const char* reason,
     //
     // Copy signal type to new net.
     //
-    Net* op_net = net;
+    out_net = net;
+    Net* ip_net = new_net;
     dbNet* op_net_db = db_network_->staToDb(net);
     dbNet* ip_net_db = db_network_->staToDb(new_net);
     ip_net_db->setSigType(op_net_db->getSigType());
-
-    Net* ip_net = new_net;
 
     buffer_ip_net = new_net;
     buffer_op_net = net;
@@ -1943,7 +1943,7 @@ void RepairDesign::makeRepeater(const char* reason,
 
     // put non repeater loads from op net onto ip net, preserving
     // any hierarchical connection
-    NetPinIterator* pin_iter = network_->pinIterator(op_net);
+    NetPinIterator* pin_iter = network_->pinIterator(net);
     while (pin_iter->hasNext()) {
       const Pin* pin = pin_iter->next();
       if (!repeater_load_pins.hasKey(pin)) {
@@ -1959,8 +1959,8 @@ void RepairDesign::makeRepeater(const char* reason,
         }
       }
     }
-    db_network_->connectPin(buffer_ip_pin, buffer_ip_net);
-    db_network_->connectPin(buffer_op_pin, buffer_op_net);
+    sta_->connectPin(buffer, buffer_input_port, buffer_ip_net);
+    sta_->connectPin(buffer, buffer_output_port, buffer_op_net);
   }
 
   resizer_->parasiticsInvalid(buffer_ip_net);
