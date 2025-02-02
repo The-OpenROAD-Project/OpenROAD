@@ -2450,11 +2450,11 @@ string Resizer::makeUniqueNetName(Instance* parent_scope)
   Instance* top_inst = parent_scope ? parent_scope : network_->topInstance();
   std::string net_name = "net{}";
   std::string parent_name = parent_scope ? network_->name(parent_scope) : "";
-  std::string prefixed_name
+  const std::string prefixed_name
       = parent_scope ? parent_name + "/" + net_name : net_name;
   do {
     // sta::stringPrint can lead to string overflow and fatal
-    node_name = fmt::format(prefixed_name.c_str(), unique_net_index_++);
+    node_name = fmt::format(prefixed_name, unique_net_index_++);
   } while (network_->findNet(top_inst, node_name.c_str()));
   return node_name;
 }
