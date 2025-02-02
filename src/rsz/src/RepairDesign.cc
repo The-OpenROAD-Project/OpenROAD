@@ -1813,29 +1813,20 @@ void RepairDesign::makeRepeater(const char* reason,
   bool preserve_outputs = false;
   bool top_primary_input = false;
   bool top_primary_output = false;
-  Pin* driver_pin = nullptr;
 
   for (const Pin* pin : load_pins) {
-    if (network_->direction(pin)->isAnyOutput()) {
-      driver_pin = const_cast<Pin*>(pin);
-    }
     if (network_->isTopLevelPort(pin)) {
       net = network_->net(network_->term(pin));
       if (network_->direction(pin)->isAnyOutput()) {
         preserve_outputs = true;
         top_primary_output = true;
-        driver_pin = const_cast<Pin*>(pin);
         break;
       }
       if (network_->direction(pin)->isInput()) {
         top_primary_input = true;
-        driver_pin = const_cast<Pin*>(pin);
       }
     } else {
       net = network_->net(pin);
-      if (network_->direction(pin)->isAnyOutput()) {
-        driver_pin = const_cast<Pin*>(pin);
-      }
       Instance* inst = network_->instance(pin);
       if (resizer_->dontTouch(inst)) {
         preserve_outputs = true;
@@ -1846,14 +1837,6 @@ void RepairDesign::makeRepeater(const char* reason,
 
   if (hasInputPort(net)) {
     top_primary_input = true;
-  }
-
-  if (!driver_pin) {
-    PinSet* driver_pins = network_->drivers(net);
-    PinSet::Iterator pinset_iter(driver_pins);
-    if (pinset_iter.hasNext()) {
-      driver_pin = const_cast<Pin*>(pinset_iter.next());
-    }
   }
 
   // Determine parent to put buffer (and net) in

@@ -182,7 +182,7 @@ class dbNetwork : public ConcreteNetwork
   ObjectId id(const Cell* cell) const override;
 
   // generic connect pin -> net, supports all pin/net types
-  void connectPin(Pin* pin, Net* net);
+  void connectPin(Pin* pin, Net* net) override;
   // hierarchical support functions
   dbModule* getNetDriverParentModule(Net* net);
   Instance* getOwningInstanceParent(Pin* pin);
