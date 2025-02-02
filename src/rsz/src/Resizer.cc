@@ -2454,7 +2454,7 @@ string Resizer::makeUniqueNetName(Instance* parent_scope)
       = parent_scope ? parent_name + "/" + net_name : net_name;
   do {
     // sta::stringPrint can lead to string overflow and fatal
-    node_name = fmt::format(prefixed_name, unique_net_index_++);
+    node_name = fmt::format(prefixed_name.c_str(), unique_net_index_++);
   } while (network_->findNet(top_inst, node_name.c_str()));
   return node_name;
 }
