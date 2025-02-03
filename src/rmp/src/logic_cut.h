@@ -58,6 +58,7 @@ class LogicCut
       utl::Logger* logger);
 
   void InsertMappedAbcNetwork(abc::Abc_Ntk_t* abc_network,
+                              AbcLibrary& abc_library,
                               sta::dbNetwork* network,
                               UniqueName& unique_name,
                               utl::Logger* logger);
