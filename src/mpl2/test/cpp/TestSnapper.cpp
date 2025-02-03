@@ -1,72 +1,118 @@
-#include "../../src/hier_rtlmp.h"
-#include "gtest/gtest.h"
-#include "mpl2/rtl_mp.h"
-#include "odb/db.h"
-#include "odb/util.h"
-#include "utl/Logger.h"
+#include "MplTest.h"
 
 namespace mpl2 {
-class Mpl2SnapperTest : public ::testing::Test
+namespace {
+
+class TestSnapper : public MplTest
 {
  protected:
-  template <class T>
-  using OdbUniquePtr = std::unique_ptr<T, void (*)(T*)>;
-
   void SetUp() override
   {
-    db_ = OdbUniquePtr<odb::dbDatabase>(odb::dbDatabase::create(),
-                                        &odb::dbDatabase::destroy);
-    chip_ = OdbUniquePtr<odb::dbChip>(odb::dbChip::create(db_.get()),
-                                      &odb::dbChip::destroy);
-    block_
-        = OdbUniquePtr<odb::dbBlock>(chip_->getBlock(), &odb::dbBlock::destroy);
+    MplTest::SetUp();
+    snapper_ = std::make_unique<Snapper>(&logger_);
   }
 
-  utl::Logger logger_;
-  OdbUniquePtr<odb::dbDatabase> db_{nullptr, &odb::dbDatabase::destroy};
-  OdbUniquePtr<odb::dbLib> lib_{nullptr, &odb::dbLib::destroy};
-  OdbUniquePtr<odb::dbChip> chip_{nullptr, &odb::dbChip::destroy};
-  OdbUniquePtr<odb::dbBlock> block_{nullptr, &odb::dbBlock::destroy};
+  std::unique_ptr<Snapper> snapper_;
 };
 
-TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
+TEST_F(TestSnapper, ManufacturingGrid)
 {
-  // create a simple block and then add 3 instances to that block
-  // without any further configuration to each instance,
-  // and then run setMacro(inst) on each instance
+  tech_->setManufacturingGrid(10);
 
-  utl::Logger* logger = new utl::Logger();
-  odb::dbDatabase* db_ = odb::dbDatabase::create();
-  db_->setLogger(logger);
-
-  odb::dbTech* tech_ = odb::dbTech::create(db_, "tech");
-  odb::dbLib* lib_ = odb::dbLib::create(db_, "lib", tech_, ',');
-  odb::dbTechLayer::create(tech_, "L1", odb::dbTechLayerType::MASTERSLICE);
-  odb::dbChip* chip_ = odb::dbChip::create(db_);
-
-  odb::dbMaster* master_ = odb::dbMaster::create(lib_, "simple_master");
-  master_->setWidth(1000);
-  master_->setHeight(1000);
-  master_->setType(odb::dbMasterType::CORE);
-  odb::dbMTerm::create(
-      master_, "in", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
-  odb::dbMTerm::create(
-      master_, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
-  master_->setFrozen();
-
-  odb::dbBlock* block_ = odb::dbBlock::create(chip_, "simple_block");
-  block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
-
-  odb::dbDatabase::beginEco(block_);
-  odb::dbInst* inst1 = odb::dbInst::create(block_, master_, "cells_1");
-  odb::dbInst* inst2 = odb::dbInst::create(block_, master_, "cells_2");
-  odb::dbInst* inst3 = odb::dbInst::create(block_, master_, "cells_3");
-  odb::dbDatabase::endEco(block_);
-
-  Snapper snapper(logger);
-  snapper.setMacro(inst1);
-  snapper.setMacro(inst2);
-  snapper.setMacro(inst3);
+  odb::dbInst* inst
+      = odb::dbInst::create(block_.get(), master_.get(), "macro1");
+  inst->setOrigin(14, 19);
+  snapper_->setMacro(inst);
+  snapper_->snapMacro();
+  EXPECT_EQ(inst->getOrigin().x(), 10);
+  EXPECT_EQ(inst->getOrigin().y(), 20);
 }
 
+TEST_F(TestSnapper, SingleLayer)
+{
+  tech_->setManufacturingGrid(5);
+
+  odb::dbTechLayer* h1 = odb::dbTechLayer::create(
+      tech_.get(), "H1", odb::dbTechLayerType::DEFAULT);
+  h1->setDirection(odb::dbTechLayerDir::HORIZONTAL);
+  odb::dbTrackGrid* track1 = odb::dbTrackGrid::create(block_.get(), h1);
+  track1->addGridPatternY(0, 100, 10);
+
+  odb::dbMaster* master1 = odb::dbMaster::create(lib_.get(), "master1");
+  master1->setHeight(100);
+  master1->setWidth(100);
+  master1->setType(odb::dbMasterType::BLOCK);
+
+  odb::dbMTerm* mterm = odb::dbMTerm::create(
+      master1, "pin", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  odb::dbMPin* mpin = odb::dbMPin::create(mterm);
+  odb::dbBox::create(mpin, h1, 0, 0, 10, 10);
+
+  master1->setFrozen();
+
+  odb::dbInst* inst = odb::dbInst::create(block_.get(), master1, "macro1");
+  inst->setOrigin(9, 119);
+
+  snapper_->setMacro(inst);
+  snapper_->snapMacro();
+
+  EXPECT_EQ(inst->getOrigin().x(), 10);
+  EXPECT_EQ(inst->getOrigin().y(), 115);
+}
+
+TEST_F(TestSnapper, MultiLayer)
+{
+  tech_->setManufacturingGrid(1);
+
+  odb::dbTechLayer* h1 = odb::dbTechLayer::create(
+      tech_.get(), "H1", odb::dbTechLayerType::DEFAULT);
+  h1->setDirection(odb::dbTechLayerDir::HORIZONTAL);
+  odb::dbTrackGrid* track1 = odb::dbTrackGrid::create(block_.get(), h1);
+  track1->addGridPatternY(0, 1000 / 5, 5);
+
+  odb::dbTechLayer* h2 = odb::dbTechLayer::create(
+      tech_.get(), "H2", odb::dbTechLayerType::DEFAULT);
+  h2->setDirection(odb::dbTechLayerDir::HORIZONTAL);
+  odb::dbTrackGrid* track2 = odb::dbTrackGrid::create(block_.get(), h2);
+  track2->addGridPatternY(0, 1000 / 7, 7);
+
+  odb::dbTechLayer* h3 = odb::dbTechLayer::create(
+      tech_.get(), "H3", odb::dbTechLayerType::DEFAULT);
+  h3->setDirection(odb::dbTechLayerDir::HORIZONTAL);
+  odb::dbTrackGrid* track3 = odb::dbTrackGrid::create(block_.get(), h3);
+  track3->addGridPatternY(0, 1000 / 11, 11);
+
+  odb::dbMaster* master1 = odb::dbMaster::create(lib_.get(), "master1");
+  master1->setHeight(100);
+  master1->setWidth(100);
+  master1->setType(odb::dbMasterType::BLOCK);
+
+  odb::dbMTerm* mterm1 = odb::dbMTerm::create(
+      master1, "pin1", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  odb::dbMPin* mpin1 = odb::dbMPin::create(mterm1);
+  odb::dbBox::create(mpin1, h1, 0, 0, 10, 10);
+
+  odb::dbMTerm* mterm2 = odb::dbMTerm::create(
+      master1, "pin2", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  odb::dbMPin* mpin2 = odb::dbMPin::create(mterm2);
+  odb::dbBox::create(mpin2, h2, 0, 10, 10, 20);
+
+  odb::dbMTerm* mterm3 = odb::dbMTerm::create(
+      master1, "pin3", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  odb::dbMPin* mpin3 = odb::dbMPin::create(mterm3);
+  odb::dbBox::create(mpin3, h3, 0, 20, 10, 30);
+
+  master1->setFrozen();
+
+  odb::dbInst* inst = odb::dbInst::create(block_.get(), master1, "macro1");
+  inst->setOrigin(10, 119);
+
+  snapper_->setMacro(inst);
+  snapper_->snapMacro();
+
+  EXPECT_EQ(inst->getOrigin().x(), 10);
+  EXPECT_EQ(inst->getOrigin().y(), 195);
+}
+
+}  // namespace
 }  // namespace mpl2
