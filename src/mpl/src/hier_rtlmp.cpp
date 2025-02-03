@@ -4749,8 +4749,7 @@ void Snapper::attemptSnapToExtraLayers(
 
   for (int i = 0; i <= total_attempts; i++) {
     // Alternates steps from positive to negative incrementally
-    // int steps = (i % 2 == 1) ? (i + 1) / 2 : -(i / 2);
-    int steps = i;
+    int steps = (i % 2 == 1) ? (i + 1) / 2 : -(i / 2);
 
     setOrigin(origin + (pitch * steps), target_direction);
     int snapped_layers = 0;
