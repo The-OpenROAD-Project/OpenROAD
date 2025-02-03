@@ -95,7 +95,7 @@ struct SegmentNode
     seg_id = seg_id_;
     rect = rect_;
   }
-  SegmentNode() {}
+  SegmentNode() = default;
 };
 
 using LayerToSegmentNodeVector
@@ -296,6 +296,7 @@ class RepairAntennas
   //////////////////////////////////////////
   int tile_size_;
   int jumper_size_;
+  int smaller_seg_size_;
   //////////////////////////////////////////
 };
 

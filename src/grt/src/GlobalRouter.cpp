@@ -456,6 +456,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                                      diode_mterm,
                                                      ratio_margin,
                                                      num_threads);
+      updateDbCongestion();
     }
     if (violations) {
       IncrementalGRoute incr_groute(this, block_);
@@ -1677,17 +1678,7 @@ bool GlobalRouter::hasAvailableResources(bool is_horizontal,
 // Find the position of the middle of a GCell closest to the position
 odb::Point GlobalRouter::getPositionOnGrid(const odb::Point& real_position)
 {
-  // Get x grid position
-  int grid_x
-      = (int) ((real_position.x() - grid_->getXMin()) / grid_->getTileSize());
-  // Get x real position
-  int new_x = grid_->getTileSize() * (grid_x + 0.5) + grid_->getXMin();
-  // Get y grid position
-  int grid_y
-      = (int) ((real_position.y() - grid_->getYMin()) / grid_->getTileSize());
-  // Get y real position
-  int new_y = grid_->getTileSize() * (grid_y + 0.5) + grid_->getYMin();
-  return odb::Point(new_x, new_y);
+  return grid_->getPositionOnGrid(real_position);
 }
 
 void GlobalRouter::updateResources(const int& init_x,

@@ -1116,9 +1116,9 @@ int RepairAntennas::getJumperPosition(const int& init_pos,
                                       const int& target_pos)
 {
   int position;
-  if (target_pos < init_pos) {
+  if (target_pos <= init_pos) {
     position = init_pos + tile_size_;
-  } else if (target_pos > final_pos) {
+  } else if (target_pos >= final_pos) {
     position = final_pos - tile_size_ - jumper_size_;
   } else if ((target_pos - init_pos) > (final_pos - target_pos)) {
     position = target_pos - tile_size_ - jumper_size_;
@@ -1208,7 +1208,7 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
   jumper_position = -1;
   const GSegment& seg = route[seg_node.seg_id];
   // Ignore small segments
-  if (seg.length() < 5 * tile_size_) {
+  if (seg.length() < smaller_seg_size_) {
     return false;
   }
   // Get init and final position of segment
@@ -1222,7 +1222,7 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
   int pos_y = seg_init_y;
   int last_block_x = pos_x;
   int last_block_y = pos_y;
-  bool has_available_resources;
+  bool has_available_resources, is_via;
 
   const int layer_level = seg.init_layer;
   const bool is_horizontal = (seg.init_x != seg.final_x);
@@ -1237,10 +1237,10 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
     // Check if the position has resources available
     has_available_resources = grouter_->hasAvailableResources(
         is_horizontal, pos_x, pos_y, layer_level + 2);
+    is_via = (is_horizontal && via_pos.find(pos_x) != via_pos.end())
+             || (!is_horizontal && via_pos.find(pos_y) != via_pos.end());
     // If the position has vias or does not have resources
-    if ((is_horizontal && via_pos.find(pos_x) != via_pos.end())
-        || (!is_horizontal && via_pos.find(pos_y) != via_pos.end())
-        || !has_available_resources) {
+    if (is_via || !has_available_resources) {
       checkSegmentPosition(last_block_x,
                            last_block_y,
                            pos_x,
@@ -1315,8 +1315,9 @@ void RepairAntennas::findSegments(const GRoute& route,
     cur_node = node_stack.top().second;
     node_stack.pop();
     // If node was visited
-    if (visited[cur_node.node_id])
+    if (visited[cur_node.node_id]) {
       continue;
+    }
 
     visited[cur_node.node_id] = true;
 
@@ -1390,7 +1391,7 @@ int RepairAntennas::addJumperOnSegments(
     int last_pos_aux = -1;
     for (const auto& pos_it : seg_it.second) {
       const int seg_len = route[seg_it.first].length();
-      if (seg_len < (5 * tile_size_)) {
+      if (seg_len < smaller_seg_size_) {
         break;
       }
       if (last_pos_aux != -1) {
@@ -1415,6 +1416,7 @@ void RepairAntennas::jumperInsertion(NetRouteMap& routing,
   // Init jumper size
   tile_size_ = tile_size;
   jumper_size_ = 2 * tile_size_;
+  smaller_seg_size_ = 5 * tile_size_;
   int total_jumpers = 0;
   int jumper_by_net, required_jumper_by_net;
   int net_with_jumpers = 0;
