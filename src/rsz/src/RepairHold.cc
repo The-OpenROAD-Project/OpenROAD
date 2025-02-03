@@ -405,11 +405,13 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
         const PathRef* path = expanded.path(i);
         Vertex* path_vertex = path->vertex(sta_);
         Pin* path_pin = path_vertex->pin();
+        Instance* path_inst = network_->instance(path_pin);
         Net* path_net = network_->isTopLevelPort(path_pin)
                             ? network_->net(network_->term(path_pin))
                             : network_->net(path_pin);
         dbNet* db_path_net = db_network_->staToDb(path_net);
         if (path_vertex->isDriver(network_) && !resizer_->dontTouch(path_net)
+            && !resizer_->dontTouch(path_inst)
             && !db_path_net->isConnectedByAbutment()) {
           PinSeq load_pins;
           Slacks slacks;
@@ -440,7 +442,16 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
               }
             }
           }
-          if (!load_pins.empty()) {
+          // check for dont touch loads
+          bool dont_touch = false;
+          for (auto* pin : load_pins) {
+            Instance* load_inst = network_->instance(pin);
+            if (resizer_->dontTouch(load_inst)) {
+              dont_touch = true;
+              break;
+            }
+          }
+          if (!load_pins.empty() && !dont_touch) {
             debugPrint(logger_,
                        RSZ,
                        "repair_hold",
