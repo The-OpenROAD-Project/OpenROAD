@@ -301,9 +301,7 @@ class Ath__track
   void findNeighborWire(Ath__wire*, Ath__array1D<Ath__wire*>*, bool);
   void getTrackWires(std::vector<Ath__wire*>& ctxwire);
   void buildDgContext(Ath__array1D<SEQ*>* dgContext,
-                      Ath__wire**& allWire,
-                      int& awcnt,
-                      int& awsize);
+                      std::vector<Ath__wire*>& allWire);
   int getBandWires(Ath__array1D<Ath__wire*>* bandWire);
   uint couplingCaps(Ath__grid* ccGrid,
                     uint srcTrack,
@@ -312,7 +310,8 @@ class Ath__track
                     Ath__array1D<uint>* ccIdTable,
                     uint met,
                     CoupleAndCompute coupleAndCompute,
-                    void* compPtr);
+                    void* compPtr,
+                    bool ttttGetDgOverlap);
 
   uint findOverlap(Ath__wire* origWire,
                    uint ccThreshold,
@@ -519,11 +518,6 @@ class Ath__grid
                    uint& wireCnt,
                    Ath__array1D<Ath__wire*>* bandWire,
                    int* limitArray);
-  uint couplingCaps(Ath__grid* resGrid,
-                    uint couplingDist,
-                    Ath__array1D<uint>* ccTable,
-                    CoupleAndCompute coupleAndCompute,
-                    void* compPtr);
   AthPool<Ath__wire>* getWirePoolPtr();
   uint placeWire(Ath__wire* w);
   uint defaultWireType();
@@ -548,7 +542,8 @@ class Ath__grid
                    uint& wireCnt,
                    CoupleAndCompute coupleAndCompute,
                    void* compPtr,
-                   int* limitArray);
+                   int* limitArray,
+                   bool ttttGetDgOverlap);
   int dealloc(int hiXY);
   void dealloc();
 };
@@ -629,6 +624,8 @@ class Ath__gridTable
   uint _wireCnt;
 
   Ath__array1D<Ath__wire*>* _bandWire;
+
+  bool _ttttGetDgOverlap{false};
 
  public:
   // -------------------------------------------------------- v2
@@ -744,12 +741,6 @@ class Ath__gridTable
   void setDefaultWireType(uint v);
   void buildDgContext(int base, uint level, uint dir);
   Ath__array1D<SEQ*>* renewDgContext(uint gridn, uint trackn);
-  uint couplingCaps(Ath__gridTable* resGridTable,
-                    uint couplingDist,
-                    Ath__array1D<uint>* ccTable,
-                    CoupleAndCompute coupleAndCompute,
-                    void* compPtr);
-  uint couplingCaps(uint row, uint col, Ath__grid* resGrid, uint couplingDist);
   void getBox(uint wid,
               int* x1,
               int* y1,
