@@ -4584,9 +4584,9 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
     // offset with regards to (0,0) and, then, compensate the offset
     // of the pins themselves so that the lines of the grid cross
     // their center.
-    origin
-        = std::round(origin / snap_layer_params.pitch) * snap_layer_params.pitch
-          + snap_layer_params.offset - snap_layer_params.pin_offset;
+    origin = std::round(origin / static_cast<double>(snap_layer_params.pitch))
+                 * snap_layer_params.pitch
+             + snap_layer_params.offset - snap_layer_params.pin_offset;
 
     alignWithManufacturingGrid(origin);
     setOrigin(origin, target_direction);
@@ -4749,7 +4749,8 @@ void Snapper::attemptSnapToExtraLayers(
 
   for (int i = 0; i <= total_attempts; i++) {
     // Alternates steps from positive to negative incrementally
-    int steps = (i % 2 == 1) ? (i + 1) / 2 : -(i / 2);
+    // int steps = (i % 2 == 1) ? (i + 1) / 2 : -(i / 2);
+    int steps = i;
 
     setOrigin(origin + (pitch * steps), target_direction);
     int snapped_layers = 0;
@@ -4790,7 +4791,8 @@ void Snapper::alignWithManufacturingGrid(int& origin)
   const int manufacturing_grid
       = inst_->getDb()->getTech()->getManufacturingGrid();
 
-  origin = std::round(origin / manufacturing_grid) * manufacturing_grid;
+  origin = std::round(origin / static_cast<double>(manufacturing_grid))
+           * manufacturing_grid;
 }
 
 }  // namespace mpl
