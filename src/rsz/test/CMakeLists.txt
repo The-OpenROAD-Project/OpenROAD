@@ -68,6 +68,7 @@ or_integration_tests(
     repair_hold13
     repair_hold14
     repair_hold15
+    repair_hold16
     repair_setup1
     repair_setup2
     repair_setup3
