@@ -88,7 +88,12 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryInputs(
     }
 
     bool is_primary_input = true;
-    for (const sta::Pin* pin : *network->drivers(vertex->pin())) {
+    sta::PinSet* pin_set = network->drivers(vertex->pin());
+    if (pin_set->empty()) {
+      continue;
+    }
+
+    for (const sta::Pin* pin : *pin_set) {
       // If a driver pin of the pin under consideration is not in the cut
       // vertices, then it is a primary input.
       if (pins.find(pin) != pins.end()) {
@@ -103,6 +108,114 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryInputs(
   }
 
   return primary_inputs;
+}
+
+// Returns the vertex of a constant 1 or 0 cell if the driver of the input
+// pin is a constant 0 or 1 cell. Otherwise return nullptr.
+sta::Vertex* GetConstantVertexIfExists(sta::dbNetwork* network,
+                                       sta::Vertex* input_vertex,
+                                       AbcLibrary& abc_library,
+                                       utl::Logger* logger)
+{
+  sta::Graph* graph = network->graph();
+  // If it's constant add the driving pin. If we have multiple drivers
+  // bad things are happening.
+  sta::PinSet* constant_driver = network->drivers(input_vertex->pin());
+  if (constant_driver->size() != 1) {
+    logger->error(
+        utl::RMP,
+        1028,
+        "constant vertex: {} should have exactly one constant driver. "
+        "Has {}, please report this internal error.",
+        input_vertex->name(network),
+        constant_driver->size());
+  }
+
+  const sta::Pin* constant_pin = *constant_driver->begin();
+  sta::Instance* instance = network->instance(constant_pin);
+  if (!instance) {
+    return nullptr;
+  }
+  // Okay if the cell we're looking for is actually a const cell add it.
+  sta::LibertyCell* liberty_cell = network->libertyCell(instance);
+  if (!abc_library.IsConstCell(liberty_cell->name())) {
+    return nullptr;
+  }
+  sta::Vertex* constant_vertex = graph->vertex(network->vertexId(constant_pin));
+
+  return constant_vertex;
+}
+
+// Annoyingly STA does not include input pins that are filtered out in the
+// search. for example constant inputs, or disabled timing paths. We need to
+// loop through all the instances attached to the vertices to make sure we
+// grabbed all the input pins.
+//
+// Some vertices can be const even if they're not constant cells themselves
+// for example an AND gate with one of its inputs set to 0. The output will
+// be marked as constant, and thus not included.
+//
+// If OpenSTA offers a search predicate that allows constant cells to be
+// included remove the while loop below.
+std::vector<sta::Vertex*> LogicExtractorFactory::AddMissingVertices(
+    std::vector<sta::Vertex*>& cut_vertices,
+    AbcLibrary& abc_library)
+{
+  std::vector<sta::Vertex*> result(cut_vertices.begin(), cut_vertices.end());
+  sta::dbNetwork* network = open_sta_->getDbNetwork();
+  std::unordered_set<sta::Vertex*> endpoint_set(endpoints_.begin(),
+                                                endpoints_.end());
+  std::unordered_set<sta::Vertex*> cut_vertex_set(cut_vertices.begin(),
+                                                  cut_vertices.end());
+
+  for (sta::Vertex* vertex : cut_vertices) {
+    // Skip over DFFs and other primary outs. We don't actually
+    // want to add vertices from these cells. We really just
+    // want the ones in the fan-in set who are filtered by STA
+    // for one reason or another.
+    if (endpoint_set.find(vertex) != endpoint_set.end()) {
+      continue;
+    }
+
+    sta::Instance* instance = network->instance(vertex->pin());
+    std::unique_ptr<sta::InstancePinIterator> iter(
+        network->pinIterator(instance));
+    sta::Graph* graph = network->graph();
+    while (iter->hasNext()) {
+      sta::Pin* pin = iter->next();
+      sta::Vertex* vertex = graph->vertex(network->vertexId(pin));
+      // Don't want any duplicate entries
+      if (cut_vertex_set.find(vertex) != cut_vertex_set.end()) {
+        continue;
+      }
+      // Don't want any non-inputs.
+      sta::PortDirection* direction = network->direction(pin);
+      if (!direction->isInput()) {
+        continue;
+      }
+      // Found a vertex who should be in the cut set, but isn't;
+      // add it. The output of this instance is not constant( or is disabled for
+      // some reason), but one of its inputs is. We need to add this pin, and
+      // possibly its driver.
+      result.push_back(vertex);
+      cut_vertex_set.insert(vertex);
+
+      // Figure out if we should add the driver.
+      if (!vertex->isConstant()) {
+        continue;
+      }
+
+      sta::Vertex* constant_vertex
+          = GetConstantVertexIfExists(network, vertex, abc_library, logger_);
+      if (!constant_vertex) {
+        continue;
+      }
+
+      result.push_back(constant_vertex);
+      cut_vertex_set.insert(constant_vertex);
+    }
+  }
+  return result;
 }
 
 std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryOutputs(
@@ -244,6 +357,9 @@ LogicCut LogicExtractorFactory::BuildLogicCut(AbcLibrary& abc_network)
   open_sta_->ensureLevelized();
 
   std::vector<sta::Vertex*> cut_vertices = GetCutVertices(abc_network);
+  // Dealing with constant cells 1/0 and disabled timing paths.
+  cut_vertices = AddMissingVertices(cut_vertices, abc_network);
+
   std::vector<sta::Pin*> primary_inputs = GetPrimaryInputs(cut_vertices);
   std::vector<sta::Pin*> primary_outputs = GetPrimaryOutputs(cut_vertices);
   std::unordered_set<sta::Instance*> cut_instances

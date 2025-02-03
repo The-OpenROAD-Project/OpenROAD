@@ -71,11 +71,10 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> BufferNetwork(
   buffer_parameters.fVerbose = true;
   buffer_parameters.fVeryVerbose = false;
 
-  utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> buffered_network(
-      abc::Abc_SclBufferingPerform(
-          ntk, abc_sc_library.abc_library(), &buffer_parameters),
-      &abc::Abc_NtkDelete);
-  return buffered_network;
+  utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> current_network
+      = WrapUnique(abc::Abc_SclBufferingPerform(
+          ntk, abc_sc_library.abc_library(), &buffer_parameters));
+  return current_network;
 }
 
 utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> DelayOptimizationStrategy::Optimize(
@@ -110,7 +109,7 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> DelayOptimizationStrategy::Optimize(
                                                nullptr,
                                                /*DelayTarget=*/-1.0,
                                                /*AreaMulti=*/0.0,
-                                               /*DelayMulti=*/6.0,
+                                               /*DelayMulti=*/1.0,
                                                /*LogFan=*/10.0,
                                                /*Slew=*/0.0,
                                                /*Gain=*/250.0,
@@ -120,7 +119,9 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> DelayOptimizationStrategy::Optimize(
                                                /*fSkipFanout=*/false,
                                                /*fUseProfile=*/false,
                                                /*fUseBuffs=*/true,
-                                               /*fVerbose=*/true));
+                                               /*fVerbose=*/false));
+
+  abc::Abc_NtkCleanup(current_network.get(), /*fVerbose=*/false);
 
   current_network = BufferNetwork(current_network.get(), abc_sc_library);
 

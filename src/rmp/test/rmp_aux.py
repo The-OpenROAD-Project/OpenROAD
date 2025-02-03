@@ -65,10 +65,10 @@ def restructure(
     )
 
 
-def create_blif(design, *, hicell="", hiport="", locell="", loport=""):
+def create_blif(design, *, hicell="", hiport="", locell="", loport="", call_id=1):
     logger = design.getLogger()
     sta = design.getTech().getSta()
-    return rmp.Blif(logger, sta, locell, loport, hicell, hiport)
+    return rmp.Blif(logger, sta, locell, loport, hicell, hiport, call_id)
 
 
 def blif_read(design, blif, filename):

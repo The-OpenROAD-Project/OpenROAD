@@ -20,4 +20,4 @@ buffer_ports -inputs -outputs
 
 set def_file [make_result_file buffer_ports8.def]
 write_def $def_file
-diff_files buffer_ports1.defok $def_file
+diff_files buffer_ports8.defok $def_file

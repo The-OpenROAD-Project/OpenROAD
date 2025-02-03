@@ -1303,7 +1303,8 @@ uint extRCModel::readRules_v2(Ath__parser* parser,
 
   extDistWidthRCTable* dummy = NULL;
   if (ignore)
-    dummy = new extDistWidthRCTable(true, met, _layerCnt, widthCnt);
+    dummy = new extDistWidthRCTable(
+        true, met, _layerCnt, widthCnt, _OUREVERSEORDER);
 
   uint diagWidthCnt = 0;
   uint diagDistCnt = 0;
