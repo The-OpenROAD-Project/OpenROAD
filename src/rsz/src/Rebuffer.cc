@@ -250,7 +250,10 @@ BufferedNetSeq RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
   switch (bnet->type()) {
     case BufferedNetType::wire: {
       BufferedNetSeq Z = rebufferBottomUp(bnet->ref(), level + 1);
-      return addWireAndBuffer(Z, bnet, level);
+      for (BufferedNetPtr& z : Z)
+        z = addWire(z, bnet->location(), bnet->layer(), level);
+      addBuffers(Z, level);
+      return Z;
     }
     case BufferedNetType::junction: {
       const BufferedNetSeq& Z1 = rebufferBottomUp(bnet->ref(), level + 1);
@@ -343,45 +346,45 @@ BufferedNetSeq RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
   return BufferedNetSeq();
 }
 
-BufferedNetSeq RepairSetup::addWireAndBuffer(const BufferedNetSeq& Z,
-                                             const BufferedNetPtr& bnet_wire,
-                                             int level)
+BufferedNetPtr RepairSetup::addWire(const BufferedNetPtr& p,
+                                    Point wire_end,
+                                    int wire_layer,
+                                    int level)
 {
-  BufferedNetSeq Z1;
-  Z1.reserve(Z.size());
-  Point wire_end = bnet_wire->location();
-  for (const BufferedNetPtr& p : Z) {
-    Point p_loc = p->location();
-    int wire_length_dbu
-        = abs(wire_end.x() - p_loc.x()) + abs(wire_end.y() - p_loc.y());
-    double wire_length = resizer_->dbuToMeters(wire_length_dbu);
-    const PathRef& req_path = p->requiredPath();
-    const Corner* corner = req_path.isNull()
-                               ? sta_->cmdCorner()
-                               : req_path.dcalcAnalysisPt(sta_)->corner();
-    int wire_layer = bnet_wire->layer();
-    double layer_res, layer_cap;
-    bnet_wire->wireRC(corner, resizer_, layer_res, layer_cap);
-    double wire_res = wire_length * layer_res;
-    double wire_cap = wire_length * layer_cap;
-    double wire_delay = wire_res * wire_cap;
-    BufferedNetPtr z = make_shared<BufferedNet>(
-        BufferedNetType::wire, wire_end, wire_layer, p, corner, resizer_);
-    // account for wire load
-    z->setRequiredPath(req_path);
-    // account for wire delay
-    z->setRequiredDelay(p->requiredDelay() + wire_delay);
-    debugPrint(logger_,
-               RSZ,
-               "rebuffer",
-               4,
-               "{:{}s}wire wl {} {}",
-               "",
-               level,
-               wire_length_dbu,
-               z->to_string(resizer_));
-    Z1.push_back(z);
-  }
+  const PathRef& req_path = p->requiredPath();
+  const Corner* corner = req_path.isNull()
+                             ? sta_->cmdCorner()
+                             : req_path.dcalcAnalysisPt(sta_)->corner();
+
+  BufferedNetPtr z = make_shared<BufferedNet>(
+      BufferedNetType::wire, wire_end, wire_layer, p, corner, resizer_);
+
+  double layer_res, layer_cap;
+  z->wireRC(corner, resizer_, layer_res, layer_cap);
+  double wire_length = resizer_->dbuToMeters(z->length());
+  double wire_res = wire_length * layer_res;
+  double wire_cap = wire_length * layer_cap;
+  double wire_delay = wire_res * (wire_cap / 2 + p->cap());
+
+  z->setRequiredPath(req_path);
+  // account for wire delay
+  z->setRequiredDelay(p->requiredDelay() + wire_delay);
+
+  debugPrint(logger_,
+             RSZ,
+             "rebuffer",
+             4,
+             "{:{}s}wire wl {} {}",
+             "",
+             level,
+             z->length(),
+             z->to_string(resizer_));
+
+  return z;
+}
+
+void RepairSetup::addBuffers(BufferedNetSeq& Z1, int level)
+{
   if (!Z1.empty()) {
     BufferedNetSeq buffered_options;
     for (LibertyCell* buffer_cell : resizer_->buffer_cells_) {
@@ -429,7 +432,7 @@ BufferedNetSeq RepairSetup::addWireAndBuffer(const BufferedNetSeq& Z,
           BufferedNetPtr z = make_shared<BufferedNet>(
               BufferedNetType::buffer,
               // Locate buffer at opposite end of wire.
-              wire_end,
+              best_option->location(),
               buffer_cell,
               best_option,
               corner_,
@@ -454,7 +457,6 @@ BufferedNetSeq RepairSetup::addWireAndBuffer(const BufferedNetSeq& Z,
       Z1.push_back(z);
     }
   }
-  return Z1;
 }
 
 float RepairSetup::bufferInputCapacitance(LibertyCell* buffer_cell,

@@ -214,9 +214,11 @@ class RepairSetup : public sta::dbStaState
                       Instance* parent,
                       odb::dbITerm* mod_net_drvr,
                       odb::dbModNet* mod_net);
-  BufferedNetSeq addWireAndBuffer(const BufferedNetSeq& Z,
-                                  const BufferedNetPtr& bnet_wire,
-                                  int level);
+  BufferedNetPtr addWire(const BufferedNetPtr& p,
+                         Point wire_end,
+                         int wire_layer,
+                         int level);
+  void addBuffers(BufferedNetSeq& Z1, int level);
   float bufferInputCapacitance(LibertyCell* buffer_cell,
                                const DcalcAnalysisPt* dcalc_ap);
   Slack slackPenalized(const BufferedNetPtr& bnet);
