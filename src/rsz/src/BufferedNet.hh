@@ -166,6 +166,8 @@ class BufferedNet
   // Downstream buffer count.
   int bufferCount() const;
 
+  float area() const { return area_; }
+
   static constexpr int null_layer = -1;
 
  private:
@@ -194,6 +196,8 @@ class BufferedNet
   PathRef arrival_path_;
   // Max delay from here to the loads.
   Delay required_delay_;
+  // Area of buffers on the buffer tree looking dowsmtrem from here.
+  float area_;
 
  protected:
   friend class RepairSetup;

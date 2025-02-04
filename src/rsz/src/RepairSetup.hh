@@ -207,7 +207,12 @@ class RepairSetup : public sta::dbStaState
   bool hasTopLevelOutputPort(Net* net);
 
   int rebuffer(const Pin* drvr_pin);
-  BufferedNetSeq rebufferBottomUp(const BufferedNetPtr& bnet, int level);
+
+  BufferedNetPtr rebufferForTiming(BufferedNetPtr bnet);
+  BufferedNetPtr recoverArea(BufferedNetPtr bnet,
+                             sta::Delay slack_target,
+                             float alpha);
+
   int rebufferTopDown(const BufferedNetPtr& choice,
                       Net* net,
                       int level,
@@ -218,7 +223,10 @@ class RepairSetup : public sta::dbStaState
                          Point wire_end,
                          int wire_layer,
                          int level);
-  void addBuffers(BufferedNetSeq& Z1, int level);
+  void addBuffers(BufferedNetSeq& Z1,
+                  int level,
+                  bool area_oriented = false,
+                  sta::Delay threshold = 0);
   float bufferInputCapacitance(LibertyCell* buffer_cell,
                                const DcalcAnalysisPt* dcalc_ap);
   Slack slackAtDriverPin(const BufferedNetPtr& bnet);

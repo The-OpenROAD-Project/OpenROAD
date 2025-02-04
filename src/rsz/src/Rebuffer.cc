@@ -60,6 +60,37 @@ using sta::INF;
 using sta::NetConnectedPinIterator;
 using sta::PinSeq;
 
+// Template magic to make it easier to write algorithms descending
+// over the buffer tree in the form of lambdas; it allows recursive
+// lambda calling and it keeps track of the level number which is important
+// for good debug prints
+//
+// https://stackoverflow.com/questions/2067988/how-to-make-a-recursive-lambda
+template <class F>
+struct visitor
+{
+  F f;
+  int level = 0;
+  template <class... Args>
+  decltype(auto) operator()(Args&&... args)
+  {
+    level++;
+    decltype(auto) ret = f(*this, level, std::forward<Args>(args)...);
+    level--;
+    return ret;
+  }
+
+  // delete the copy constructor
+  visitor(const visitor&) = delete;
+  visitor& operator=(const visitor&) = delete;
+};
+template <typename F, class... Args>
+decltype(auto) visitTree(F&& f, Args&&... args)
+{
+  visitor<std::decay_t<F>> v{std::forward<F>(f)};
+  return v(std::forward<Args>(args)...);
+}
+
 void pruneCapVsSlackOptions(StaState* sta, BufferedNetSeq& Z)
 {
   // Prune the options if there exists another option with
@@ -108,6 +139,316 @@ void pruneCapVsSlackOptions(StaState* sta, BufferedNetSeq& Z)
   Z.resize(si);
 }
 
+void pruneCapVsAreaOptions(StaState* sta, BufferedNetSeq& Z)
+{
+  sort(Z.begin(),
+       Z.end(),
+       [](const BufferedNetPtr& option1, const BufferedNetPtr& option2) {
+         if (option1->area() != option2->area()) {
+           return option1->area() < option2->area();
+         }
+
+         return option1->cap() < option2->cap();
+       });
+
+  if (Z.empty())
+    return;
+
+  float Lsmall = Z[0]->cap();
+  size_t si = 1;
+  for (size_t pi = si; pi < Z.size(); pi++) {
+    const BufferedNetPtr& p = Z[pi];
+    float Lp = p->cap();
+    // If Lp is the same or worse than Lsmall, remove solution p.
+    if (fuzzyLess(Lp, Lsmall)) {
+      // Otherwise copy the survivor down.
+      Z[si++] = p;
+      Lsmall = Lp;
+    }
+  }
+  Z.resize(si);
+}
+
+// Find initial timing-optimized rebuffering choice
+BufferedNetPtr RepairSetup::rebufferForTiming(BufferedNetPtr bnet)
+{
+  using BnetType = BufferedNetType;
+  using BnetSeq = BufferedNetSeq;
+  using BnetPtr = BufferedNetPtr;
+
+  const BnetSeq Z = visitTree(
+      [this](auto& recurse, int level, BnetPtr bnet) -> BnetSeq {
+        switch (bnet->type()) {
+          case BnetType::wire: {
+            BnetSeq Z = recurse(bnet->ref());
+            for (BnetPtr& z : Z)
+              z = addWire(z, bnet->location(), bnet->layer(), level);
+            addBuffers(Z, level);
+            return Z;
+          }
+
+          case BnetType::junction: {
+            const BnetSeq& Z1 = recurse(bnet->ref());
+            const BnetSeq& Z2 = recurse(bnet->ref2());
+            BnetSeq Z;
+            Z.reserve(Z1.size() * Z2.size());
+
+            // Combine the options from both branches.
+            for (const BnetPtr& p : Z1) {
+              for (const BnetPtr& q : Z2) {
+                const BufferedNetPtr& min_req
+                    = fuzzyLess(p->slack(sta_), q->slack(sta_)) ? p : q;
+                BufferedNetPtr junc
+                    = make_shared<BufferedNet>(BufferedNetType::junction,
+                                               bnet->location(),
+                                               p,
+                                               q,
+                                               resizer_);
+                junc->setArrivalPath(min_req->arrivalPath());
+                junc->setRequiredPath(min_req->requiredPath());
+                junc->setRequiredDelay(min_req->requiredDelay());
+                Z.push_back(std::move(junc));
+              }
+            }
+
+            pruneCapVsSlackOptions(sta_, Z);
+            return Z;
+          }
+
+          case BufferedNetType::load: {
+            const Pin* load_pin = bnet->loadPin();
+            Vertex* vertex = graph_->pinLoadVertex(load_pin);
+            PathRef req_path = sta_->vertexWorstSlackPath(vertex, max_);
+            PathRef arrival_path;
+            TimingArc* arc;
+            req_path.prevPath(sta_, arrival_path, arc);
+            bnet->setArrivalPath(arrival_path);
+            bnet->setRequiredPath(req_path);
+            debugPrint(logger_,
+                       RSZ,
+                       "rebuffer",
+                       4,
+                       "{:{}s}{}",
+                       "",
+                       level,
+                       bnet->to_string(resizer_));
+            BufferedNetSeq Z;
+            Z.push_back(bnet);
+            return Z;
+          }
+          case BufferedNetType::buffer:
+            logger_->critical(RSZ, 71, "unhandled BufferedNet type");
+        }
+      },
+      bnet);
+
+  debugPrint(logger_, RSZ, "rebuffer", 2, "timing-optimized options");
+
+  Delay best_slack = -INF;
+  BufferedNetPtr best_option = nullptr;
+  int best_index = 0;
+  int i = 1;
+  for (const BufferedNetPtr& p : Z) {
+    // Find slack for drvr_pin into option.
+    const PathRef& req_path = p->requiredPath();
+    if (!req_path.isNull()) {
+      Slack slack = slackAtDriverPin(p, i);
+      if (best_option == nullptr || fuzzyGreater(slack, best_slack)) {
+        best_slack = slack;
+        best_option = p;
+        best_index = i;
+      }
+      i++;
+    }
+  }
+
+  if (best_option) {
+    debugPrint(logger_, RSZ, "rebuffer", 2, "best option {}", best_index);
+  } else {
+    debugPrint(logger_, RSZ, "rebuffer", 2, "no available option");
+  }
+
+  return best_option;
+}
+
+// Recover area on a rebuffering choice without regressing timing
+BufferedNetPtr RepairSetup::recoverArea(BufferedNetPtr bnet,
+                                        Delay slack_target,
+                                        float alpha)
+{
+  using BnetType = BufferedNetType;
+  using BnetSeq = BufferedNetSeq;
+  using BnetPtr = BufferedNetPtr;
+
+  Delay drvr_delay = bnet->slack(sta_) - slackAtDriverPin(bnet);
+
+  // spread down arrival delay
+  visitTree(
+      [](auto& recurse, int level, BufferedNetPtr bnet, Delay arrival) -> int {
+        bnet->arrival_delay_ = arrival;
+        switch (bnet->type()) {
+          case BnetType::wire:
+          case BnetType::buffer:
+            recurse(bnet->ref(), arrival + bnet->delay_);
+            break;
+          case BnetType::junction:
+            recurse(bnet->ref(), arrival);
+            recurse(bnet->ref2(), arrival);
+            break;
+          case BnetType::load:
+            break;
+        }
+        return 0;
+      },
+      bnet,
+      drvr_delay);
+
+  BnetSeq Z = visitTree(
+      [&](auto& recurse, int level, BufferedNetPtr bnet) -> BufferedNetSeq {
+        switch (bnet->type()) {
+          case BnetType::buffer: {
+            assert(bnet->ref()->type == BnetType::wire);
+            BnetSeq Z = recurse(bnet->ref()->ref());
+            for (BnetPtr& z : Z)
+              z = addWire(z, bnet->location(), bnet->ref()->layer(), level);
+            addBuffers(Z,
+                       level,
+                       true,
+                       (slack_target + bnet->arrival_delay_) * alpha
+                           + bnet->slack(sta_) * (1.0 - alpha));
+            return Z;
+          }
+          case BnetType::wire: {
+            BnetSeq Z = recurse(bnet->ref());
+            for (BnetPtr& z : Z)
+              z = addWire(z, bnet->location(), bnet->layer(), level);
+            addBuffers(Z,
+                       level,
+                       true,
+                       (slack_target + bnet->arrival_delay_) * alpha
+                           + bnet->slack(sta_) * (1.0 - alpha));
+            return Z;
+          }
+          case BnetType::junction: {
+            const BnetSeq& Z1 = recurse(bnet->ref());
+            const BnetSeq& Z2 = recurse(bnet->ref2());
+            BnetSeq Z;
+            Z.reserve(Z1.size() * Z2.size());
+
+            Delay threshold = (slack_target + bnet->arrival_delay_) * alpha
+                              + bnet->slack(sta_) * (1.0 - alpha);
+
+            Delay last_resort_slack = -INF;
+            const BnetPtr *last_resort_p, *last_resort_q;
+
+            // Combine the options from both branches.
+            for (const BnetPtr& p : Z1) {
+              for (const BnetPtr& q : Z2) {
+                const BnetPtr& min_req
+                    = fuzzyLess(p->slack(sta_), q->slack(sta_)) ? p : q;
+
+                if (Z.empty() && min_req->slack(sta_) > last_resort_slack) {
+                  last_resort_p = &p;
+                  last_resort_q = &q;
+                }
+
+                if (fuzzyLess(min_req->slack(sta_), threshold)) {
+                  // Filter out an option that doesn't meet local timing
+                  // threshold
+                  continue;
+                }
+
+                auto junc = make_shared<BufferedNet>(
+                    BnetType::junction, bnet->location(), p, q, resizer_);
+                junc->setArrivalPath(min_req->arrivalPath());
+                junc->setRequiredPath(min_req->requiredPath());
+                junc->setRequiredDelay(min_req->requiredDelay());
+                Z.push_back(std::move(junc));
+              }
+            }
+
+            if (Z.empty() && last_resort_p && last_resort_q) {
+              // No option met the timing threshold (probably due to rounding
+              // errors), pick at least what came closest
+              const BnetPtr &p = *last_resort_p, &q = *last_resort_q;
+              const BnetPtr& min_req
+                  = fuzzyLess(p->slack(sta_), q->slack(sta_)) ? p : q;
+              auto junc = make_shared<BufferedNet>(
+                  BnetType::junction, bnet->location(), p, q, resizer_);
+              junc->setArrivalPath(min_req->arrivalPath());
+              junc->setRequiredPath(min_req->requiredPath());
+              junc->setRequiredDelay(min_req->requiredDelay());
+              Z.push_back(std::move(junc));
+            }
+
+            pruneCapVsAreaOptions(sta_, Z);
+            return Z;
+          }
+          case BnetType::load: {
+            debugPrint(logger_,
+                       RSZ,
+                       "rebuffer",
+                       3,
+                       "{:{}s}{}",
+                       "",
+                       level,
+                       bnet->to_string(resizer_));
+            return {bnet};
+          }
+          default: {
+            logger_->critical(RSZ, 144, "unhandled BufferedNet type");
+          }
+        }
+      },
+      bnet);
+
+  Delay best_slack = -INF;
+  float best_area = std::numeric_limits<float>::max();
+  BufferedNetPtr best_slack_option = nullptr, best_area_option = nullptr;
+  int best_slack_index = 0, best_area_index = 0;
+  int i = 1;
+  for (const BufferedNetPtr& p : Z) {
+    // Find slack for drvr_pin into option.
+    const PathRef& req_path = p->requiredPath();
+    if (!req_path.isNull()) {
+      Slack slack = slackAtDriverPin(p, i);
+      if (best_slack_option == nullptr || fuzzyGreater(slack, best_slack)) {
+        best_slack = slack;
+        best_slack_option = p;
+        best_slack_index = i;
+      }
+      if (fuzzyGreaterEqual(slack, slack_target)
+          && (best_area_option == nullptr || fuzzyLess(p->area(), best_area))) {
+        best_area = p->area();
+        best_area_option = p;
+        best_area_index = i;
+      }
+      i++;
+    }
+  }
+
+  if (best_area_option) {
+    debugPrint(logger_,
+               RSZ,
+               "rebuffer",
+               2,
+               "best option {} (area optimized)",
+               best_area_index);
+    return best_area_option;
+  } else if (best_slack_option) {
+    debugPrint(logger_,
+               RSZ,
+               "rebuffer",
+               2,
+               "best option {} (closest to meeting timing)",
+               best_slack_index);
+    return best_slack_option;
+  } else {
+    debugPrint(logger_, RSZ, "rebuffer", 2, "no available option");
+    return nullptr;
+  }
+}
+
 // Return inserted buffer count.
 int RepairSetup::rebuffer(const Pin* drvr_pin)
 {
@@ -152,27 +493,28 @@ int RepairSetup::rebuffer(const Pin* drvr_pin)
                  "driver {}",
                  sdc_network_->pathName(drvr_pin));
       sta_->findRequireds();
-      const BufferedNetSeq& Z = rebufferBottomUp(bnet, 1);
-      Required best_slack = -INF;
-      BufferedNetPtr best_option = nullptr;
-      int best_index = 0;
-      int i = 1;
-      for (const BufferedNetPtr& p : Z) {
-        // Find slack for drvr_pin into option.
-        const PathRef& req_path = p->requiredPath();
-        if (!req_path.isNull()) {
-          Slack slack = slackAtDriverPin(p, i);
-          if (best_option == nullptr || fuzzyGreater(slack, best_slack)) {
-            best_slack = slack;
-            best_option = p;
-            best_index = i;
-          }
-          i++;
+
+      BufferedNetPtr best_option = rebufferForTiming(bnet);
+
+      if (best_option) {
+        Delay target = slackAtDriverPin(best_option)
+                       - best_option->requiredDelay() * 0.1;
+
+        for (int i = 0; i < 5 && best_option; i++) {
+          best_option
+              = recoverArea(best_option, target, ((float) (1 + i)) / 5);
+        }
+
+        if (!best_option) {
+          logger_->warn(
+              RSZ,
+              145,
+              "area recovery lost the ball in rebuffering for driver {}",
+              network_->pathName(drvr_pin));
         }
       }
-      if (best_option) {
-        debugPrint(logger_, RSZ, "rebuffer", 2, "best option {}", best_index);
 
+      if (best_option) {
         //
         // get the modnet driver
         //
@@ -299,77 +641,6 @@ bool RepairSetup::hasTopLevelOutputPort(Net* net)
   return false;
 }
 
-BufferedNetSeq RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
-                                             const int level)
-{
-  switch (bnet->type()) {
-    case BufferedNetType::wire: {
-      BufferedNetSeq Z = rebufferBottomUp(bnet->ref(), level + 1);
-      for (BufferedNetPtr& z : Z)
-        z = addWire(z, bnet->location(), bnet->layer(), level);
-      addBuffers(Z, level);
-      return Z;
-    }
-    case BufferedNetType::junction: {
-      const BufferedNetSeq& Z1 = rebufferBottomUp(bnet->ref(), level + 1);
-      const BufferedNetSeq& Z2 = rebufferBottomUp(bnet->ref2(), level + 1);
-      BufferedNetSeq Z;
-
-      size_t size = Z1.size() * Z2.size();
-      // This assumption is used only in the final loop
-      // but we can quit as early as we know there's nothing to do here.
-      if (size == 0) {
-        return Z;
-      }
-      Z.reserve(size);
-
-      // Combine the options from both branches.
-      for (const BufferedNetPtr& p : Z1) {
-        for (const BufferedNetPtr& q : Z2) {
-          const BufferedNetPtr& min_req
-              = fuzzyLess(p->slack(sta_), q->slack(sta_)) ? p : q;
-          BufferedNetPtr junc = make_shared<BufferedNet>(
-              BufferedNetType::junction, bnet->location(), p, q, resizer_);
-          junc->setArrivalPath(min_req->arrivalPath());
-          junc->setRequiredPath(min_req->requiredPath());
-          junc->setRequiredDelay(min_req->requiredDelay());
-          Z.push_back(std::move(junc));
-        }
-      }
-
-      pruneCapVsSlackOptions(sta_, Z);
-      return Z;
-    }
-    case BufferedNetType::load: {
-      const Pin* load_pin = bnet->loadPin();
-      Vertex* vertex = graph_->pinLoadVertex(load_pin);
-      PathRef req_path = sta_->vertexWorstSlackPath(vertex, max_);
-      const DcalcAnalysisPt* dcalc_ap = req_path.isNull()
-                                            ? resizer_->tgt_slew_dcalc_ap_
-                                            : req_path.dcalcAnalysisPt(sta_);
-      PathRef arrival_path;
-      TimingArc* arc;
-      req_path.prevPath(sta_, arrival_path, arc);
-      bnet->setArrivalPath(arrival_path);
-      bnet->setRequiredPath(req_path);
-      debugPrint(logger_,
-                 RSZ,
-                 "rebuffer",
-                 4,
-                 "{:{}s}{}",
-                 "",
-                 level,
-                 bnet->to_string(resizer_));
-      BufferedNetSeq Z;
-      Z.push_back(bnet);
-      return Z;
-    }
-    case BufferedNetType::buffer:
-      logger_->critical(RSZ, 71, "unhandled BufferedNet type");
-  }
-  return BufferedNetSeq();
-}
-
 BufferedNetPtr RepairSetup::addWire(const BufferedNetPtr& p,
                                     Point wire_end,
                                     int wire_layer,
@@ -409,27 +680,51 @@ BufferedNetPtr RepairSetup::addWire(const BufferedNetPtr& p,
   return z;
 }
 
-void RepairSetup::addBuffers(BufferedNetSeq& Z1, int level)
+void RepairSetup::addBuffers(
+    BufferedNetSeq& Z1,
+    int level,
+    bool area_oriented /*=false*/,
+    Delay slack_threshold /*=0; used for area mode only*/)
 {
   if (!Z1.empty()) {
     BufferedNetSeq buffered_options;
     for (LibertyCell* buffer_cell : resizer_->buffer_cells_) {
-      Required best_slack = -INF;
-      BufferedNetPtr best_option = nullptr;
+      LibertyPort *in, *out;
+      buffer_cell->bufferPorts(in, out);
+      Delay best_slack = -INF;
+      float best_area = std::numeric_limits<float>::max();
+      BufferedNetPtr best_option = nullptr, best_area_option = nullptr;
+
       for (const BufferedNetPtr& z : Z1) {
         PathRef req_path = z->requiredPath();
         // Do not buffer unconstrained paths.
         if (!req_path.isNull()) {
           const DcalcAnalysisPt* dcalc_ap = req_path.dcalcAnalysisPt(sta_);
           Delay buffer_delay = resizer_->bufferDelay(
-              buffer_cell, req_path.transition(sta_), z->cap(), dcalc_ap);
+              buffer_cell, req_path.transition(sta_), z->cap() + out->capacitance(), dcalc_ap);
           Delay slack = z->slack(sta_) - buffer_delay;
           if (fuzzyGreater(slack, best_slack)) {
             best_slack = slack;
             best_option = z;
           }
+
+          if (area_oriented) {
+            float buffered_area = z->area() + buffer_cell->area();
+            if (fuzzyGreaterEqual(slack, slack_threshold)
+                && buffered_area < best_area) {
+              best_area = buffered_area;
+              best_area_option = z;
+            }
+          }
         }
       }
+
+      if (area_oriented) {
+        // In area-oriented mode, anything which meets the slack threshold
+        // is OK timing-wise, we can select good area instead
+        best_option = best_area_option;
+      }
+
       if (best_option) {
         Required slack = INF;
         PathRef req_path = best_option->requiredPath();
@@ -440,18 +735,30 @@ void RepairSetup::addBuffers(BufferedNetSeq& Z1, int level)
           buffer_cap = bufferInputCapacitance(buffer_cell, dcalc_ap);
           buffer_delay = resizer_->bufferDelay(buffer_cell,
                                                req_path.transition(sta_),
-                                               best_option->cap(),
+                                               best_option->cap() + out->capacitance(),
                                                dcalc_ap);
           slack = req_path.slack(sta_) - buffer_delay;
         }
-        // Don't add this buffer option if it has worse input cap and req than
-        // another existing buffer option.
         bool prune = false;
-        for (const BufferedNetPtr& buffer_option : buffered_options) {
-          if (fuzzyLessEqual(buffer_option->cap(), buffer_cap)
-              && fuzzyGreaterEqual(buffer_option->slack(sta_), slack)) {
-            prune = true;
-            break;
+        if (!area_oriented) {
+          // Don't add this buffer option if it has worse input cap and req than
+          // another existing buffer option.
+          for (const BufferedNetPtr& buffer_option : buffered_options) {
+            if (fuzzyLessEqual(buffer_option->cap(), buffer_cap)
+                && fuzzyGreaterEqual(buffer_option->slack(sta_), slack)) {
+              prune = true;
+              break;
+            }
+          }
+        } else {
+          // Ditto for cap vs area
+          float buffered_area = best_option->area() + buffer_cell->area();
+          for (const BufferedNetPtr& buffer_option : buffered_options) {
+            if (fuzzyLessEqual(buffer_option->cap(), buffer_cap)
+                && fuzzyLessEqual(buffer_option->area(), buffered_area)) {
+              prune = true;
+              break;
+            }
           }
         }
         if (!prune) {

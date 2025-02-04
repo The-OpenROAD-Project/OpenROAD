@@ -102,6 +102,8 @@ BufferedNet::BufferedNet(const BufferedNetType type,
 
   required_path_.init();
   required_delay_ = 0.0;
+
+  area_ = 0;
 }
 
 // junc
@@ -129,6 +131,8 @@ BufferedNet::BufferedNet(const BufferedNetType type,
 
   required_path_.init();
   required_delay_ = 0.0;
+
+  area_ = ref->area() + ref2->area();
 }
 
 // wire
@@ -159,6 +163,8 @@ BufferedNet::BufferedNet(const BufferedNetType type,
 
   required_path_.init();
   required_delay_ = 0.0;
+
+  area_ = ref->area();
 }
 
 // buffer
@@ -189,6 +195,8 @@ BufferedNet::BufferedNet(const BufferedNetType type,
 
   required_path_.init();
   required_delay_ = 0.0;
+
+  area_ = ref->area() + buffer_cell->area();
 }
 
 void BufferedNet::reportTree(const Resizer* resizer) const
