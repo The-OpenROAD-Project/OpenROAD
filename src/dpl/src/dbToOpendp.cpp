@@ -64,10 +64,10 @@ void Opendp::importDb()
   importClear();
   grid_->examineRows(block_);
   checkOneSiteDbMaster();
+  makeCellEdgeSpacingTable();
   makeMacros();
   makeCells();
   makeGroups();
-  makeCellEdgeSpacingTable();
 }
 
 void Opendp::importClear()
@@ -100,8 +100,6 @@ void Opendp::checkOneSiteDbMaster()
 
 void Opendp::makeMacros()
 {
-  edge_types_indices_.clear();
-  edge_types_indices_["DEFAULT"] = 0;
   vector<dbMaster*> masters;
   block_->getMasters(masters);
   for (auto db_master : masters) {
@@ -153,9 +151,6 @@ std::vector<Rect> difference(const Rect& parent_segment,
   for (const Rect& seg : sorted_segs) {
     int seg_start = is_horizontal ? seg.xMin() : seg.yMin();
     int seg_end = is_horizontal ? seg.xMax() : seg.yMax();
-    if (seg_end <= current_pos) {
-      continue;
-    }
     if (seg_start > current_pos) {
       if (is_horizontal) {
         result.emplace_back(current_pos,
@@ -212,7 +207,7 @@ void Opendp::makeMaster(Master* master, dbMaster* db_master)
 {
   master->is_multi_row = grid_->isMultiHeight(db_master);
   master->edges_.clear();
-  if (db_->getTech()->getCellEdgeSpacingTable().empty()) {
+  if (edge_spacing_table_.empty()) {
     return;
   }
   if (db_master->getType()
@@ -249,10 +244,15 @@ void Opendp::makeMaster(Master* master, dbMaster* db_master)
       }
     }
     typed_segs[dir].push_back(edge_rect);
-    edge_types_indices_.try_emplace(edge->getEdgeType(),
-                                    edge_types_indices_.size());
-    master->edges_.emplace_back(edge_types_indices_[edge->getEdgeType()],
-                                edge_rect);
+    if (edge_types_indices_.find(edge->getEdgeType())
+        != edge_types_indices_.end()) {
+      // consider only edge types defined in the spacing table
+      master->edges_.emplace_back(edge_types_indices_[edge->getEdgeType()],
+                                  edge_rect);
+    }
+  }
+  if (edge_types_indices_.find("DEFAULT") == edge_types_indices_.end()) {
+    return;
   }
   // Add the remaining DEFAULT un-typed segments
   for (size_t dir_idx = 0; dir_idx <= 3; dir_idx++) {
@@ -271,6 +271,12 @@ void Opendp::makeCellEdgeSpacingTable()
   auto spacing_rules = db_->getTech()->getCellEdgeSpacingTable();
   if (spacing_rules.empty()) {
     return;
+  }
+  for (auto rule : spacing_rules) {
+    edge_types_indices_.try_emplace(rule->getFirstEdgeType(),
+                                    edge_types_indices_.size());
+    edge_types_indices_.try_emplace(rule->getSecondEdgeType(),
+                                    edge_types_indices_.size());
   }
   // Resize
   const size_t size = edge_types_indices_.size();
