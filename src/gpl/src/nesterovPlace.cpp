@@ -439,7 +439,9 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     // if virtual, do reweight on timing-critical nets,
     // otherwise keep all modifications by rsz.
     if (npVars_.timingDrivenMode
-        && tb_->isTimingNetWeightOverflow(average_overflow_)) {
+        && tb_->isTimingNetWeightOverflow(average_overflow_)
+        && (average_overflow_ > 0.60
+            || (average_overflow_ < 0.30 && !isRoutabilityNeed_))) {
       // update db's instance location from current density coordinates
       updateDb();
 
