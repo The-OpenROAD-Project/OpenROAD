@@ -3059,7 +3059,24 @@ Instance* dbNetwork::getOwningInstanceParent(Pin* drvr_pin)
   return topInstance();
 }
 
-dbModule* dbNetwork::getNetDriverParentModule(Net* net)
+/*
+Get the dbModule during a net.
+
+Sometimes when inserting a buffer we simply want to stop at the current
+owning module boundary. Other times we want to go right the way to
+the module which owns the leaf driver.
+
+
+If hier is true, go right the way through the hierarchy and return
+the dbModule owning the driver.
+
+In non-hier mode, stop at the module boundaries
+
+*/
+
+dbModule* dbNetwork::getNetDriverParentModule(Net* net,
+                                              Pin*& driver_pin,
+                                              bool hier)
 {
   if (hasHierarchy()) {
     dbNet* dnet;
@@ -3073,6 +3090,7 @@ dbModule* dbNetwork::getNetDriverParentModule(Net* net)
       if (drivers && !drivers->empty()) {
         PinSet::Iterator drvr_iter(drivers);
         const Pin* drvr_pin = drvr_iter.next();
+        driver_pin = const_cast<Pin*>(drvr_pin);
         odb::dbITerm* iterm;
         odb::dbBTerm* bterm;
         odb::dbModITerm* mod_iterm;
@@ -3089,8 +3107,34 @@ dbModule* dbNetwork::getNetDriverParentModule(Net* net)
           }
         }
       }
-    } else {
-      return modnet->getParent();
+    } else if (modnet) {
+      // in hier mode, go right the way through the hierarchy
+      // and return the dbModule owning the instance doing the
+      // driving
+      Net* sta_net = dbToSta(modnet);
+      PinSet* drivers = this->drivers(sta_net);
+      for (auto pin : *drivers) {
+        dbITerm* iterm = nullptr;
+        dbBTerm* bterm = nullptr;
+        dbModITerm* moditerm = nullptr;
+        dbModBTerm* modbterm = nullptr;
+        staToDb(pin, iterm, bterm, moditerm, modbterm);
+        driver_pin = const_cast<Pin*>(pin);
+        if (hier == false) {
+          return modnet->getParent();
+        }
+        (void) modbterm;
+        if (bterm) {
+          return block_->getTopModule();
+        } else if (iterm) {
+          // return the dbmodule containing the driving instance
+          dbInst* dinst = iterm->getInst();
+          return dinst->getModule();
+        } else if (moditerm) {
+          // return the dbmodule containing the driving instance
+          return moditerm->getParent()->getParent();
+        }
+      }
     }
   }
   // default to top module

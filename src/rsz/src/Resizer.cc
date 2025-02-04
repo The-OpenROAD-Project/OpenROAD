@@ -2434,22 +2434,16 @@ PinSet* Resizer::findFloatingPins()
 
 ////////////////////////////////////////////////////////////////
 
-//
-// Todo update this to apply over whole design
-// There is  a latent bug here. Note that we could
-// be inserting a new net somewhere deep in the hierarchy
-// which might, possibly, have a net called (say) net10 it in
-// which would clash with net10 in the top level. The fix
-// is to have another makeUniqueNetName which takes in a scope
-// prefix.
-//
-
 string Resizer::makeUniqueNetName(Instance* parent_scope)
 {
   string node_name;
-  Instance* top_inst = parent_scope ? parent_scope : network_->topInstance();
+  bool prefix_name = false;
+  if (parent_scope && parent_scope != network_->topInstance()) {
+    prefix_name = true;
+  }
+  Instance* top_inst = prefix_name ? parent_scope : network_->topInstance();
   do {
-    if (parent_scope) {
+    if (prefix_name) {
       std::string parent_name = network_->name(parent_scope);
       node_name = fmt::format("{}/net{}", parent_name, unique_net_index_++);
     } else {

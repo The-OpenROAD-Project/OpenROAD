@@ -184,7 +184,9 @@ class dbNetwork : public ConcreteNetwork
   // generic connect pin -> net, supports all pin/net types
   void connectPin(Pin* pin, Net* net) override;
   // hierarchical support functions
-  dbModule* getNetDriverParentModule(Net* net);
+  dbModule* getNetDriverParentModule(Net* net,
+                                     Pin*& drvr_pin,
+                                     bool hier = false);
   Instance* getOwningInstanceParent(Pin* pin);
 
   bool ConnectionToModuleExists(dbITerm* source_pin,
