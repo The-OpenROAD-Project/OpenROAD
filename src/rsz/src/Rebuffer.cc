@@ -60,6 +60,54 @@ using sta::INF;
 using sta::NetConnectedPinIterator;
 using sta::PinSeq;
 
+void pruneCapVsSlackOptions(StaState* sta, BufferedNetSeq& Z)
+{
+  // Prune the options if there exists another option with
+  // larger required and smaller capacitance.
+  // This is fanout*log(fanout) if options are
+  // presorted to hit better options sooner.
+  std::unordered_map<BufferedNet*, Slack> slacks;
+
+  for (const BufferedNetPtr& p : Z) {
+    slacks[p.get()] = p->required(sta);
+  }
+
+  sort(Z.begin(),
+       Z.end(),
+       [&slacks](const BufferedNetPtr& option1, const BufferedNetPtr& option2) {
+         const Slack slack1 = slacks[option1.get()];
+         const Slack slack2 = slacks[option2.get()];
+
+         if (slack1 != slack2) {
+           return slack1 > slack2;
+         }
+
+         return option1->cap() < option2->cap();
+       });
+
+  if (Z.empty())
+    return;
+
+  float Lsmall = Z[0]->cap();
+  size_t si = 1;
+  // Remove options by shifting down with index si.
+  // Because the options are sorted we don't have to look
+  // beyond the first option. We also know that slack
+  // is nonincreasing, so we can remove everything that has
+  // higher capacitance than the lowest found so far.
+  for (size_t pi = si; pi < Z.size(); pi++) {
+    const BufferedNetPtr& p = Z[pi];
+    float Lp = p->cap();
+    // If Lp is the same or worse than Lsmall, remove solution p.
+    if (fuzzyLess(Lp, Lsmall)) {
+      // Otherwise copy the survivor down.
+      Z[si++] = p;
+      Lsmall = Lp;
+    }
+  }
+  Z.resize(si);
+}
+
 // Return inserted buffer count.
 int RepairSetup::rebuffer(const Pin* drvr_pin)
 {
@@ -283,41 +331,8 @@ BufferedNetSeq RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
           Z.push_back(std::move(junc));
         }
       }
-      // Prune the options if there exists another option with
-      // larger required and smaller capacitance.
-      // This is fanout*log(fanout) if options are
-      // presorted to hit better options sooner.
-      sort(Z.begin(),
-           Z.end(),
-           [&slacks](const BufferedNetPtr& option1,
-                     const BufferedNetPtr& option2) {
-             const Slack slack1 = slacks[option1.get()];
-             const Slack slack2 = slacks[option2.get()];
 
-             if (slack1 != slack2) {
-               return slack1 > slack2;
-             }
-
-             return option1->cap() < option2->cap();
-           });
-      float Lsmall = Z[0]->cap();
-      size_t si = 1;
-      // Remove options by shifting down with index si.
-      // Because the options are sorted we don't have to look
-      // beyond the first option. We also know that slack
-      // is nonincreasing, so we can remove everything that has
-      // higher capacitance than the lowest found so far.
-      for (size_t pi = si; pi < size; pi++) {
-        const BufferedNetPtr& p = Z[pi];
-        float Lp = p->cap();
-        // If Lp is the same or worse than Lsmall, remove solution p.
-        if (fuzzyLess(Lp, Lsmall)) {
-          // Otherwise copy the survivor down.
-          Z[si++] = p;
-          Lsmall = Lp;
-        }
-      }
-      Z.resize(si);
+      pruneCapVsSlackOptions(sta_, Z);
       return Z;
     }
     case BufferedNetType::load: {
