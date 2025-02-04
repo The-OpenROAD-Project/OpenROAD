@@ -637,14 +637,13 @@ void printIterationProgress(Logger* logger,
                             const int num_markers,
                             const int max_perc = 90)
 {
-  iter_prog.cnt_done_workers++;
-  if ((iter_prog.cnt_done_workers * 1.0 / iter_prog.total_num_workers)
-          >= (iter_prog.last_reported_perc / 100.0 + 0.1)
-      && iter_prog.last_reported_perc < max_perc) {
-    iter_prog.last_reported_perc += 10;
-    logger->report("    Completing {}% with {} violations.",
-                   iter_prog.last_reported_perc,
-                   num_markers);
+  int progress
+      = (++iter_prog.cnt_done_workers * 100) / iter_prog.total_num_workers;
+  progress = (progress / 10) * 10;  // clip it to multiples of 10%
+  if (progress > iter_prog.last_reported_perc && progress <= max_perc) {
+    iter_prog.last_reported_perc = progress;
+    logger->report(
+        "    Completing {}% with {} violations.", progress, num_markers);
     logger->report("    {}.", iter_prog.time);
   }
 }
