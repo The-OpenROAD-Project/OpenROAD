@@ -388,6 +388,22 @@ GridX Grid::gridPaddedWidth(const Cell* cell) const
   return GridX{divCeil(padding_->paddedWidth(cell).v, getSiteWidth().v)};
 }
 
+GridY Grid::gridHeight(odb::dbMaster* master) const
+{
+  Rect bbox;
+  master->getPlacementBoundary(bbox);
+  if (uniform_row_height_) {
+    DbuY row_height = uniform_row_height_.value();
+    return GridY{max(1, divCeil(bbox.dy(), row_height.v))};
+  }
+  auto site = master->getSite();
+  if (!site->hasRowPattern()) {
+    return GridY{1};
+  }
+
+  return GridY{static_cast<int>(site->getRowPattern().size())};
+}
+
 GridY Grid::gridHeight(const Cell* cell) const
 {
   if (uniform_row_height_) {
