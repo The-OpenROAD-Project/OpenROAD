@@ -221,8 +221,8 @@ class RepairSetup : public sta::dbStaState
   void addBuffers(BufferedNetSeq& Z1, int level);
   float bufferInputCapacitance(LibertyCell* buffer_cell,
                                const DcalcAnalysisPt* dcalc_ap);
-  Slack slackPenalized(const BufferedNetPtr& bnet);
-  Slack slackPenalized(const BufferedNetPtr& bnet, int index);
+  Slack slackAtDriverPin(const BufferedNetPtr& bnet);
+  Slack slackAtDriverPin(const BufferedNetPtr& bnet, int index);
 
   void printProgress(int iteration,
                      bool force,
@@ -262,7 +262,6 @@ class RepairSetup : public sta::dbStaState
   static constexpr int decreasing_slack_max_passes_ = 50;
   static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr int split_load_min_fanout_ = 8;
-  static constexpr double rebuffer_buffer_penalty_ = .01;
   static constexpr int print_interval_ = 10;
   static constexpr int opto_small_interval_ = 100;
   static constexpr int opto_large_interval_ = 1000;
