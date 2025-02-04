@@ -435,17 +435,18 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
     }
 
+    // timing driven feature
+    // if virtual, do reweight on timing-critical nets,
+    // otherwise keep all modifications by rsz.
     bool is_before_routability = average_overflow_ > routability_save_snapshot_;
     bool is_after_routability
         = (average_overflow_ < npVars_.routability_end_overflow
            && !is_routability_need_);
-    // timing driven feature
-    // if virtual, do reweight on timing-critical nets,
-    // otherwise keep all modifications by rsz.
     if (npVars_.timingDrivenMode
-        && tb_->isTimingNetWeightOverflow(average_overflow_)
-        && (is_before_routability || is_after_routability
-            || !npVars_.routability_driven_mode)) {
+        && tb_->isTimingNetWeightOverflow(average_overflow_) &&
+        // do not execute timing-driven if routability is under execution
+        (is_before_routability || is_after_routability
+         || !npVars_.routability_driven_mode)) {
       // update db's instance location from current density coordinates
       updateDb();
 
