@@ -778,9 +778,19 @@ void BinGrid::initBins()
       const int bin_ly = ly_ + std::lround(idxY * binSizeY_);
       const int bin_ux = lx_ + std::lround((idxX + 1) * binSizeX_);
       const int bin_uy = ly_ + std::lround((idxY + 1) * binSizeY_);
-
-      bins_[idxY * binCntX_ + idxX]
+      const int bin_index = idxY * binCntX_ + idxX;
+      bins_[bin_index]
           = Bin(idxX, idxY, bin_lx, bin_ly, bin_ux, bin_uy, targetDensity_);
+      auto& bin = bins_[bin_index];
+      if (bin.dx() < 0 || bin.dy() < 0)
+        log_->warn(GPL,
+                   34,
+                   "Bin (center: {},{}, index: {}) has negative size: {}, {}",
+                   bin.cx(),
+                   bin.cy(),
+                   bin_index,
+                   bin.dx(),
+                   bin.dy());
     }
   }
 
