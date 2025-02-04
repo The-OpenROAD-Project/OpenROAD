@@ -296,7 +296,7 @@ void NesterovPlace::reset()
   wireLengthCoefX_ = wireLengthCoefY_ = 0;
   prevHpwl_ = 0;
   isDiverged_ = false;
-  isRoutabilityNeed_ = true;
+  is_routability_need_ = true;
 
   divergeMsg_ = "";
   divergeCode_ = 0;
@@ -435,13 +435,17 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
     }
 
+    bool is_before_routability = average_overflow_ > routability_save_snapshot_;
+    bool is_after_routability
+        = (average_overflow_ < npVars_.routability_end_overflow
+           && !is_routability_need_);
     // timing driven feature
     // if virtual, do reweight on timing-critical nets,
     // otherwise keep all modifications by rsz.
     if (npVars_.timingDrivenMode
         && tb_->isTimingNetWeightOverflow(average_overflow_)
-        && (average_overflow_ > 0.60
-            || (average_overflow_ < 0.30 && !isRoutabilityNeed_))) {
+        && (is_before_routability || is_after_routability
+            || !npVars_.routability_driven_mode)) {
       // update db's instance location from current density coordinates
       updateDb();
 
@@ -555,7 +559,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         divergeMsg_ = "";
         isDivergeTriedRevert = true;
         // turn off the RD forcely
-        isRoutabilityNeed_ = false;
+        is_routability_need_ = false;
       } else if (!npVars_.disableRevertIfDiverge) {
         // In case diverged and not in routability mode, finish with min hpwl
         // stored since overflow below 0.25
@@ -581,8 +585,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
     }
 
-    if (!is_routability_snapshot_saved && npVars_.routabilityDrivenMode
-        && 0.6 >= average_overflow_unscaled_) {
+    if (!is_routability_snapshot_saved && npVars_.routability_driven_mode
+        && routability_save_snapshot_ >= average_overflow_unscaled_) {
       route_snapshot_WlCoefX = wireLengthCoefX_;
       route_snapshot_WlCoefY = wireLengthCoefY_;
       route_snapshotA = curA;
@@ -596,16 +600,16 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
 
     // check routability using RUDY or GR
-    if (npVars_.routabilityDrivenMode && isRoutabilityNeed_
-        && npVars_.routabilityCheckOverflow >= average_overflow_unscaled_) {
+    if (npVars_.routability_driven_mode && is_routability_need_
+        && npVars_.routability_end_overflow >= average_overflow_unscaled_) {
       // recover the densityPenalty values
       // if further routability-driven is needed
       std::pair<bool, bool> result = rb_->routability();
-      isRoutabilityNeed_ = result.first;
+      is_routability_need_ = result.first;
       bool isRevertInitNeeded = result.second;
 
       // if routability is needed
-      if (isRoutabilityNeed_ || isRevertInitNeeded) {
+      if (is_routability_need_ || isRevertInitNeeded) {
         // cutFillerCoordinates();
 
         // revert back the current density penality

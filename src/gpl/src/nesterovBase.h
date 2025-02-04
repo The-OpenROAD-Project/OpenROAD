@@ -773,7 +773,7 @@ class NesterovPlaceVars
   float minPreconditioner = 1.0;            // MIN_PRE
   float initialPrevCoordiUpdateCoef = 100;  // z_ref_alpha
   float referenceHpwl = 446000000;          // refDeltaHpwl
-  float routabilityCheckOverflow = 0.30;
+  float routability_end_overflow = 0.30;
   float keepResizeBelowOverflow = 0.3;
 
   static const int maxRecursionWlCoef = 10;
@@ -781,7 +781,7 @@ class NesterovPlaceVars
 
   bool timingDrivenMode = true;
   int timingDrivenIterCounter = 0;
-  bool routabilityDrivenMode = true;
+  bool routability_driven_mode = true;
   bool disableRevertIfDiverge = false;
 
   bool debug = false;
