@@ -80,6 +80,7 @@ struct Cell;
 struct Group;
 struct Master;
 struct Pixel;
+struct EdgeSpacingEntry;
 
 class DplObserver;
 class Grid;
@@ -208,6 +209,11 @@ class Opendp
   void makeMaster(Master* master, dbMaster* db_master);
 
   void initGrid();
+
+  void makeCellEdgeSpacingTable();
+  bool hasCellEdgeSpacingTable() const;
+  int getMaxSpacing(int edge_idx) const;
+
   std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox);
   void detailedPlacement();
   DbuPt nearestPt(const Cell* cell, const DbuRect& rect) const;
@@ -240,6 +246,10 @@ class Opendp
                    GridY y,
                    GridX x_end,
                    GridY y_end) const;
+  bool checkEdgeSpacing(const Cell* cell,
+                        GridX x,
+                        GridY y,
+                        const odb::dbOrientType& orient) const;
   void shiftMove(Cell* cell);
   bool mapMove(Cell* cell);
   bool mapMove(Cell* cell, const GridPt& grid_pt);
@@ -300,7 +310,8 @@ class Opendp
                     const vector<Cell*>& one_site_gap_failures,
                     const vector<Cell*>& site_align_failures,
                     const vector<Cell*>& region_placement_failures,
-                    const vector<Cell*>& placement_failures);
+                    const vector<Cell*>& placement_failures,
+                    const vector<Cell*>& edge_spacing_failures);
   void writeJsonReport(const string& filename);
 
   void rectDist(const Cell* cell,
@@ -388,6 +399,10 @@ class Opendp
 
   std::unique_ptr<DplObserver> debug_observer_;
   std::unique_ptr<Cell> dummy_cell_;
+
+  // LEF58_EDGETYPE
+  std::map<std::string, int> edge_types_indices_;
+  std::vector<std::vector<EdgeSpacingEntry>> edge_spacing_table_;
 
   // Magic numbers
   static constexpr int bin_search_width_ = 10;
