@@ -51,8 +51,6 @@ class FlexGridGraph;
 class FlexWavefrontGrid;
 class FlexDRWorker;
 class drNet;
-class frDebugSettings;
-class frDesign;
 struct RouterConfiguration;
 
 class AbstractDRGraphics

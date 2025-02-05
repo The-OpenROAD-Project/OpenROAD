@@ -62,11 +62,13 @@ class RoutingCallBack : public dst::JobCallBack
  public:
   RoutingCallBack(TritonRoute* router,
                   dst::Distributed* dist,
-                  utl::Logger* logger)
+                  utl::Logger* logger,
+                  int thread_count)
       : router_(router),
         dist_(dist),
         logger_(logger),
         init_(true),
+        thread_count_(thread_count),
         pa_(router->getDesign(),
             logger,
             nullptr,
@@ -264,6 +266,7 @@ class RoutingCallBack : public dst::JobCallBack
   std::string router_cfg_path_;
   bool init_;
   FlexDRViaData via_data_;
+  int thread_count_;
   FlexPA pa_;
 };
 

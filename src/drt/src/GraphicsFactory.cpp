@@ -34,12 +34,8 @@
 
 namespace drt {
 
-GraphicsFactory::GraphicsFactory()
-{
-}
-GraphicsFactory::~GraphicsFactory()
-{
-}
+GraphicsFactory::GraphicsFactory() = default;
+GraphicsFactory::~GraphicsFactory() = default;
 
 void GraphicsFactory::reset(frDebugSettings* settings,
                             frDesign* design,
