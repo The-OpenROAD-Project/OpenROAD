@@ -486,8 +486,6 @@ bool Graphics::populateMap()
       min_value = std::min(min_value, value);
       max_value = std::max(max_value, value);
     }
-
-    logger_->report("Overflow min: {}, max: {}", min_value, max_value);
   }
 
   for (const Bin& bin : grid.bins()) {
