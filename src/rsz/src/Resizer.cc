@@ -300,9 +300,8 @@ void Resizer::unbufferNet(Net *net)
 
     while (pin_iter->hasNext()) {
       const Pin *pin = pin_iter->next();
-      const LibertyPort *port;
-      if ((port = network_->libertyPort(pin)) &&
-          port->libertyCell()->isBuffer()) {
+      const LibertyPort *port = network_->libertyPort(pin);
+      if (port && port->libertyCell()->isBuffer()) {
         LibertyPort *in, *out;
         port->libertyCell()->bufferPorts(in, out);
 
@@ -310,8 +309,9 @@ void Resizer::unbufferNet(Net *net)
           const Instance *inst = network_->instance(pin);
           insts.push_back(inst);
           const Pin *out_pin = network_->findPin(inst, out);
-          if (out_pin)
+          if (out_pin) {
             queue.push_back(network_->net(out_pin));
+          }
         }
       }
     }
