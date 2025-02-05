@@ -52,7 +52,6 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "io/io.h"
-#include "ord/OpenRoad.hh"
 #include "serialization.h"
 #include "utl/exception.h"
 
@@ -105,19 +104,23 @@ FlexDR::FlexDR(TritonRoute* router,
                frDesign* designIn,
                Logger* loggerIn,
                odb::dbDatabase* dbIn,
-               RouterConfiguration* router_cfg)
+               RouterConfiguration* router_cfg,
+               AbstractORDBInterface* or_db_interface,
+               int num_threads)
     : router_(router),
       design_(designIn),
       logger_(loggerIn),
       db_(dbIn),
       router_cfg_(router_cfg),
+      or_db_interface_(or_db_interface),
       numWorkUnits_(0),
       dist_(nullptr),
       dist_on_(false),
       dist_port_(0),
       increaseClipsize_(false),
       clipSizeInc_(0),
-      iter_(0)
+      iter_(0),
+      num_threads_(num_threads)
 {
 }
 
@@ -1782,7 +1785,7 @@ std::vector<frVia*> FlexDR::getLonelyVias(frLayer* layer,
   std::vector<std::atomic_bool> visited(via_positions.size());
   std::fill(visited.begin(), visited.end(), false);
   std::set<int> isolated_via_nodes;
-  omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
+  omp_set_num_threads(num_threads_);
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < via_positions.size(); i++) {
     if (visited[i].load()) {
@@ -1875,8 +1878,7 @@ int FlexDR::main()
     if (logger_->debugCheck(DRT, "snapshot", 1)) {
       io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, router_cfg_, false, true);
-      ord::OpenRoad::openRoad()->writeDb(
-          fmt::format("drt_iter{}.odb", iter_).c_str());
+      or_db_interface_->writeDb(fmt::format("drt_iter{}.odb", iter_).c_str());
     }
     ++iter_;
   }

@@ -84,7 +84,7 @@ class RoutingCallBack : public dst::JobCallBack
         = static_cast<RoutingJobDescription*>(msg.getJobDescription());
     if (init_) {
       init_ = false;
-      omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
+      omp_set_num_threads(thread_count_);
     }
     auto workers = desc->getWorkers();
     int size = workers.size();
@@ -190,7 +190,7 @@ class RoutingCallBack : public dst::JobCallBack
         break;
       case PinAccessJobDescription::INST_ROWS: {
         auto instRows = deserializeInstRows(desc->getPath());
-        omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
+        omp_set_num_threads(thread_count_);
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < instRows.size(); i++) {  // NOLINT
           pa_.genInstRowPattern(instRows.at(i));
