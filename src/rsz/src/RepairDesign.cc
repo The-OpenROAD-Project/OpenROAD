@@ -1821,11 +1821,21 @@ void RepairDesign::makeRepeater(const char* reason,
   // Determine the type of the load
   // primary input/ primary output/ dont touch
 
+  int number_of_valid_loads = 0;
+
   for (const Pin* pin : load_pins) {
     load_db_net = db_network_->flatNet(pin);
     load_mod_net = db_network_->hierNet(pin);
+
+    Instance* inst = network_->instance(pin);
+    if (resizer_->dontTouch(inst)) {
+      continue;
+    }
+    number_of_valid_loads++;
+
     if (network_->isTopLevelPort(pin)) {
       load_net = network_->net(network_->term(pin));
+      db_network_->staToDb(load_net, load_db_net, load_mod_net);
       if (network_->direction(pin)->isAnyOutput()) {
         preserve_outputs = true;
         top_primary_output = true;
@@ -1845,17 +1855,23 @@ void RepairDesign::makeRepeater(const char* reason,
     }
   }
 
-  Pin* driver_pin = nullptr;
+  // it is possible we have no valid loads to process (everything is a don't
+  // touch) so just return in that case.
+
+  if (number_of_valid_loads == 0) {
+    return;
+  }
 
   // Determine parent to put buffer (and net)
   // Determine the driver pin
   // Make the buffer in the root module in case or primary input connections
 
   Instance* parent = nullptr;
+  Pin* driver_pin = nullptr;
+
   if (top_primary_input || top_primary_output || !db_network_->hasHierarchy()) {
     (void) (db_network_->getNetDriverParentModule(load_net, driver_pin, true));
     parent = db_network_->topInstance();
-
   } else {
     odb::dbModule* parent_module
         = db_network_->getNetDriverParentModule(load_net, driver_pin, true);
@@ -1907,13 +1923,16 @@ void RepairDesign::makeRepeater(const char* reason,
     //
     // Copy signal type to new net.
     //
-    dbNet* ip_net_db = db_network_->staToDb(load_net);
+    dbNet* ip_net_db = load_db_net;
     dbNet* op_net_db = db_network_->staToDb(new_net);
     op_net_db->setSigType(ip_net_db->getSigType());
     out_net = new_net;
+
     buffer_op_net = new_net;
+    buffer_ip_net = db_network_->dbToSta(ip_net_db);
 
     for (const Pin* pin : load_pins) {
+      Port* port = network_->port(pin);
       Instance* inst = network_->instance(pin);
       if (resizer_->dontTouch(inst)) {
         continue;
@@ -1923,15 +1942,18 @@ void RepairDesign::makeRepeater(const char* reason,
       load_mod_net = db_network_->hierNet(pin);
       load_db_net = db_network_->flatNet(pin);
 
-      db_network_->disconnectPin(const_cast<Pin*>(pin));
-      db_network_->connectPin(const_cast<Pin*>(pin), buffer_op_net);
+      sta_->disconnectPin(const_cast<Pin*>(pin));
+      sta_->connectPin(inst, port, buffer_op_net);
+
       if (load_mod_net) {
         db_network_->connectPin(const_cast<Pin*>(pin),
                                 db_network_->dbToSta(load_mod_net));
       }
     }
+
     sta_->connectPin(
         buffer, buffer_input_port, db_network_->dbToSta(load_db_net));
+
     sta_->connectPin(buffer, buffer_output_port, buffer_op_net);
 
     // Preserve any driver pin hierarchical mod net connection
