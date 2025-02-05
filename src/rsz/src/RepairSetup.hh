@@ -208,8 +208,8 @@ class RepairSetup : public sta::dbStaState
 
   int rebuffer(const Pin* drvr_pin);
 
-  BufferedNetPtr rebufferForTiming(BufferedNetPtr bnet);
-  BufferedNetPtr recoverArea(BufferedNetPtr bnet,
+  BufferedNetPtr rebufferForTiming(const BufferedNetPtr& bnet);
+  BufferedNetPtr recoverArea(const BufferedNetPtr& bnet,
                              sta::Delay slack_target,
                              float alpha);
 

@@ -116,8 +116,9 @@ void pruneCapVsSlackOptions(StaState* sta, BufferedNetSeq& Z)
          return option1->cap() < option2->cap();
        });
 
-  if (Z.empty())
+  if (Z.empty()) {
     return;
+  }
 
   float Lsmall = Z[0]->cap();
   size_t si = 1;
@@ -151,8 +152,9 @@ void pruneCapVsAreaOptions(StaState* sta, BufferedNetSeq& Z)
          return option1->cap() < option2->cap();
        });
 
-  if (Z.empty())
+  if (Z.empty()) {
     return;
+  }
 
   float Lsmall = Z[0]->cap();
   size_t si = 1;
@@ -170,19 +172,20 @@ void pruneCapVsAreaOptions(StaState* sta, BufferedNetSeq& Z)
 }
 
 // Find initial timing-optimized rebuffering choice
-BufferedNetPtr RepairSetup::rebufferForTiming(BufferedNetPtr bnet)
+BufferedNetPtr RepairSetup::rebufferForTiming(const BufferedNetPtr& bnet)
 {
   using BnetType = BufferedNetType;
   using BnetSeq = BufferedNetSeq;
   using BnetPtr = BufferedNetPtr;
 
   const BnetSeq Z = visitTree(
-      [this](auto& recurse, int level, BnetPtr bnet) -> BnetSeq {
+      [this](auto& recurse, int level, const BnetPtr& bnet) -> BnetSeq {
         switch (bnet->type()) {
           case BnetType::wire: {
             BnetSeq Z = recurse(bnet->ref());
-            for (BnetPtr& z : Z)
+            for (BnetPtr& z : Z) {
               z = addWire(z, bnet->location(), bnet->layer(), level);
+            }
             addBuffers(Z, level);
             return Z;
           }
@@ -272,7 +275,7 @@ BufferedNetPtr RepairSetup::rebufferForTiming(BufferedNetPtr bnet)
 }
 
 // Recover area on a rebuffering choice without regressing timing
-BufferedNetPtr RepairSetup::recoverArea(BufferedNetPtr bnet,
+BufferedNetPtr RepairSetup::recoverArea(const BufferedNetPtr& bnet,
                                         Delay slack_target,
                                         float alpha)
 {
@@ -284,7 +287,7 @@ BufferedNetPtr RepairSetup::recoverArea(BufferedNetPtr bnet,
 
   // spread down arrival delay
   visitTree(
-      [](auto& recurse, int level, BufferedNetPtr bnet, Delay arrival) -> int {
+      [](auto& recurse, int level, const BnetPtr& bnet, Delay arrival) -> int {
         bnet->arrival_delay_ = arrival;
         switch (bnet->type()) {
           case BnetType::wire:
@@ -304,13 +307,14 @@ BufferedNetPtr RepairSetup::recoverArea(BufferedNetPtr bnet,
       drvr_delay);
 
   BnetSeq Z = visitTree(
-      [&](auto& recurse, int level, BufferedNetPtr bnet) -> BufferedNetSeq {
+      [&](auto& recurse, int level, const BnetPtr& bnet) -> BufferedNetSeq {
         switch (bnet->type()) {
           case BnetType::buffer: {
             assert(bnet->ref()->type == BnetType::wire);
             BnetSeq Z = recurse(bnet->ref()->ref());
-            for (BnetPtr& z : Z)
+            for (BnetPtr& z : Z) {
               z = addWire(z, bnet->location(), bnet->ref()->layer(), level);
+            }
             addBuffers(Z,
                        level,
                        true,
@@ -320,8 +324,9 @@ BufferedNetPtr RepairSetup::recoverArea(BufferedNetPtr bnet,
           }
           case BnetType::wire: {
             BnetSeq Z = recurse(bnet->ref());
-            for (BnetPtr& z : Z)
+            for (BnetPtr& z : Z) {
               z = addWire(z, bnet->location(), bnet->layer(), level);
+            }
             addBuffers(Z,
                        level,
                        true,
@@ -455,7 +460,8 @@ BufferedNetPtr RepairSetup::recoverArea(BufferedNetPtr bnet,
                "best option {} (area optimized)",
                best_area_index);
     return best_area_option;
-  } else if (best_slack_option) {
+  }
+  if (best_slack_option) {
     debugPrint(logger_,
                RSZ,
                "rebuffer",
@@ -463,10 +469,9 @@ BufferedNetPtr RepairSetup::recoverArea(BufferedNetPtr bnet,
                "best option {} (closest to meeting timing)",
                best_slack_index);
     return best_slack_option;
-  } else {
-    debugPrint(logger_, RSZ, "rebuffer", 2, "no available option");
-    return nullptr;
   }
+  debugPrint(logger_, RSZ, "rebuffer", 2, "no available option");
+  return nullptr;
 }
 
 // Return inserted buffer count.
