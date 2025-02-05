@@ -74,53 +74,47 @@ it can be uploaded in the "Relevant log output" section of OpenROAD
 
 You may follow our helper script to install dependencies as follows:
 ``` shell
-sudo ./etc/DependencyInstaller.sh
+sudo ./etc/DependencyInstaller.sh -base
+./etc/DependencyInstaller.sh -common -local
 ```
 
 ```{warning}
-`etc/DependencyInstaller.sh` defaults to installing system 
-packages and requires sudo access. These packages can affect
-your environment.
+`sudo ./etc/DependencyInstaller.sh [-all|-common]` defaults to
+installing packages on /usr/local.
+To avoid this bahavior use -local flag or -prefix <PATH> argument.
 ```
 
 ### Compiling OpenROAD Manually
 
 ``` shell
-mkdir build && cd build
-cmake ..
-make
-sudo make install 
+./etc/Build.sh
+sudo make install
 ```
 
 The default install directory is `/usr/local`.
 To install in a different directory with CMake use:
 
 ``` shell
-cmake .. -DCMAKE_INSTALL_PREFIX=<prefix_path>
+./etc/Build.sh -cmake="-DCMAKE_INSTALL_PREFIX=<prefix_path>"
 ```
 
 Alternatively, you can use the `DESTDIR` variable with make.
 
 ``` shell
-make DESTDIR=<prefix_path> install
+make -C build DESTDIR=<prefix_path> install
 ```
 
-### Build using support script
+### Build with debug symbols or custom paths
+
+To build with debug option enabled and if the Tcl library is not on the default path.
 
 ``` shell
-./etc/Build.sh
-# To build with debug option enabled and if the Tcl library is not on the default path
 ./etc/Build.sh -cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
-
-# To build manpages
-./etc/Build.sh -build-man
 ```
 
-The default install directory is `/usr/local`.
-To install in a different directory use:
-
+To build the `manpages`:
 ``` shell
-./etc/Build.sh -cmake="-DCMAKE_INSTALL_PREFIX=<prefix_path>"
+./etc/Build.sh -build-man
 ```
 
 ### LTO Options
