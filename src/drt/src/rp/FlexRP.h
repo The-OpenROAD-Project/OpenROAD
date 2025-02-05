@@ -162,6 +162,6 @@ class FlexRP
   frTechObject* tech_;
   Logger* logger_;
   RouterConfiguration* router_cfg_;
-  Arena<gcSegment> segment_arena_;
+  Arena<gcSegment> arena_;
 };
 }  // namespace drt

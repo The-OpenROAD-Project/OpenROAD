@@ -114,7 +114,7 @@ void FlexRP::prep_minStepViasCheck()
         prev = cur;
         first = false;
       } else {
-        auto edge = segment_arena_.make();
+        auto edge = arena_.make<gcSegment>();
         edge->setLayerNum(lNum);
         edge->addToPin(testPin);
         edge->addToNet(testNet);
@@ -128,7 +128,7 @@ void FlexRP::prep_minStepViasCheck()
       }
     }
     // last edge
-    auto edge = segment_arena_.make();
+    auto edge = arena_.make<gcSegment>();
     edge->setLayerNum(lNum);
     edge->addToPin(testPin);
     edge->addToNet(testNet);
@@ -785,7 +785,7 @@ bool FlexRP::hasMinStepViol(const Rect& r1,
       prev = cur;
       first = false;
     } else {
-      auto edge = segment_arena_.make();
+      auto edge = arena_.make<gcSegment>();
       edge->setLayerNum(lNum);
       edge->addToPin(testPin);
       edge->addToNet(testNet);
@@ -799,7 +799,7 @@ bool FlexRP::hasMinStepViol(const Rect& r1,
     }
   }
   // last edge
-  auto edge = segment_arena_.make();
+  auto edge = arena_.make<gcSegment>();
   edge->setLayerNum(lNum);
   edge->addToPin(testPin);
   edge->addToNet(testNet);

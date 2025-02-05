@@ -75,7 +75,7 @@ class gcNet : public gcBlockObject
       routeRectangles_[layerNum].push_back(rect);
     }
   }
-  void addPin(Arena<gcPin>& pinArena,
+  void addPin(TypedArena<gcPin>& pinArena,
               const gtl::polygon_90_with_holes_data<frCoord>& shape,
               frLayerNum layerNum)
   {
@@ -83,7 +83,7 @@ class gcNet : public gcBlockObject
     pin->setId(pins_[layerNum].size());
     pins_[layerNum].push_back(pin);
   }
-  void addPin(Arena<gcPin>& pinArena,
+  void addPin(TypedArena<gcPin>& pinArena,
               const gtl::rectangle_data<frCoord>& rect,
               frLayerNum layerNum)
   {
@@ -208,7 +208,7 @@ class gcNet : public gcBlockObject
   {
     return nonTaperedRects[z];
   }
-  void addSpecialSpcRect(Arena<gcRect>& rectArena,
+  void addSpecialSpcRect(TypedArena<gcRect>& rectArena,
                          const Rect& bx,
                          frLayerNum lNum,
                          gcPin* pin,

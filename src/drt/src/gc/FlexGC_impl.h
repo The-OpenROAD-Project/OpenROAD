@@ -40,6 +40,7 @@ class dbTechLayerCutSpacingTableDefRule;
 }
 
 namespace drt {
+using gcArena = Arena<gcNet, gcPin, gcRect, gcSegment, gcCorner>;
 class FlexGCWorkerRegionQuery
 {
  public:
@@ -104,7 +105,7 @@ class FlexGCWorker::Impl
   }
   gcNet* addNet(frBlockObject* owner = nullptr)
   {
-    auto net = netArena_.make(getTech()->getLayers().size());
+    auto net = gcArena_.make<gcNet>(getTech()->getLayers().size());
     net->setOwner(owner);
     net->setId(nets_.size());
     nets_.push_back(net);
@@ -139,11 +140,7 @@ class FlexGCWorker::Impl
   Logger* logger_;
   RouterConfiguration* router_cfg_;
   FlexDRWorker* drWorker_;
-  Arena<gcNet> netArena_;
-  Arena<gcPin> pinArena_;
-  Arena<gcRect> rectArena_;
-  Arena<gcSegment> segmentArena_;
-  Arena<gcCorner> cornerArena_;
+  gcArena gcArena_;
 
   Rect extBox_;
   Rect drcBox_;

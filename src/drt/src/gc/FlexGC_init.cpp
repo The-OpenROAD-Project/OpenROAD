@@ -468,16 +468,16 @@ void FlexGCWorker::Impl::initNet_pins_polygon(gcNet* net)
     layerPolys[i] += net->getPolygons(i, true);
     layerPolys[i].get(polys);
     for (auto& poly : polys) {
-      net->addPin(pinArena_, poly, i);
+      net->addPin(gcArena_, poly, i);
     }
   }
   // init pin from rectangles
   for (int i = 0; i < numLayers; i++) {
     for (auto& rect : net->getRectangles(i, false)) {
-      net->addPin(pinArena_, rect, i);
+      net->addPin(gcArena_, rect, i);
     }
     for (auto& rect : net->getRectangles(i, true)) {
-      net->addPin(pinArena_, rect, i);
+      net->addPin(gcArena_, rect, i);
     }
   }
 }
@@ -566,7 +566,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_outer(
   for (; outerIt != poly->end(); outerIt++) {
     ep = {(*outerIt).x(), (*outerIt).y()};
     ep1 = *outerIt;
-    auto edge = segmentArena_.make();
+    auto edge = gcArena_.make<gcSegment>();
     edge->setLayerNum(i);
     edge->addToPin(pin);
     edge->addToNet(net);
@@ -592,7 +592,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_outer(
     // cntOuter++;
   }
   // last edge
-  auto edge = segmentArena_.make();
+  auto edge = gcArena_.make<gcSegment>();
   edge->setLayerNum(i);
   edge->addToPin(pin);
   edge->addToNet(net);
@@ -640,7 +640,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_inner(
   for (; innerIt != hole_poly.end(); innerIt++) {
     ep = {(*innerIt).x(), (*innerIt).y()};
     ep1 = *innerIt;
-    auto edge = segmentArena_.make();
+    auto edge = gcArena_.make<gcSegment>();
     edge->setLayerNum(i);
     edge->addToPin(pin);
     edge->addToNet(net);
@@ -665,7 +665,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_inner(
     bp1 = ep1;
     // cntInner++;
   }
-  auto edge = segmentArena_.make();
+  auto edge = gcArena_.make<gcSegment>();
   edge->setLayerNum(i);
   edge->addToPin(pin);
   edge->addToNet(net);
@@ -750,7 +750,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
     auto layerNum = prevEdge->getLayerNum();
     gcCorner* prevCorner = nullptr;
     for (auto nextEdge : edges) {
-      auto currCorner = cornerArena_.make();
+      auto currCorner = gcArena_.make<gcCorner>();
       tmpCorners.push_back(currCorner);
       // set edge attributes
       prevEdge->setHighCorner(currCorner);
@@ -877,7 +877,7 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles_helper(
     frLayerNum i,
     const std::vector<std::set<std::pair<Point, Point>>>& fixedMaxRectangles)
 {
-  auto rectangle = rectArena_.make();
+  auto rectangle = gcArena_.make<gcRect>();
   rectangle->setRect(rect);
   rectangle->setLayerNum(i);
   rectangle->addToPin(pin);
@@ -900,7 +900,7 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles_helper(
         for (auto& nt : net->getNonTaperedRects(k)) {
           if (rectangle->intersects(nt)) {
             net->addSpecialSpcRect(
-                rectArena_, nt, i, rectangle->getPin(), rectangle->getNet());
+                gcArena_, nt, i, rectangle->getPin(), rectangle->getNet());
           }
         }
         break;

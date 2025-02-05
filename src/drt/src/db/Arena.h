@@ -24,18 +24,18 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 #pragma once
 
 #include <vector>
 
 template <typename T>
-struct Arena
+class TypedArena
 {
+ public:
   static const auto BLOCK_SIZE = (std::size_t) 64 * 1024;
 
-  Arena() = default;
-  Arena(const Arena&) = delete;
+  TypedArena() = default;
+  TypedArena(const TypedArena&) = delete;
 
   template <typename... Args>
   T* make(Args&&... args)
@@ -48,5 +48,30 @@ struct Arena
     return &data_.back().back();
   }
 
+ private:
   std::vector<std::vector<T>> data_;
+};
+
+template <typename... Ts>
+class Arena
+{
+};
+
+template <typename T, typename... Ts>
+class Arena<T, Ts...> : public TypedArena<T>, public Arena<Ts...>
+{
+ public:
+  Arena() = default;
+  Arena(const Arena&) = delete;
+
+  template <typename U, typename... Args>
+  U* make(Args&&... args)
+  {
+    return TypedArena<U>::make(args...);
+  }
+};
+
+template <>
+class Arena<>
+{
 };
