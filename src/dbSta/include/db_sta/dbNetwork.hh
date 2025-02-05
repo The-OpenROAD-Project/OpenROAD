@@ -185,7 +185,7 @@ class dbNetwork : public ConcreteNetwork
   void connectPin(Pin* pin, Net* net) override;
   // hierarchical support functions
   dbModule* getNetDriverParentModule(Net* net,
-                                     Pin*& drvr_pin,
+                                     Pin*& driver_pin,
                                      bool hier = false);
   Instance* getOwningInstanceParent(Pin* pin);
 

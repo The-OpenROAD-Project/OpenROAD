@@ -1960,7 +1960,6 @@ void RepairDesign::makeRepeater(const char* reason,
     // push to the output of the buffer. Rename the mod net.
     // to prevent a name clash (recall the primary port net
     // names need to be preserved, so we rename the mod net).
-
     if (driver_pin_mod_net) {
       dbNet* flat_net = db_network_->flatNet(driver_pin);
       if (!strcmp(flat_net->getName().c_str(), driver_pin_mod_net->getName())) {
@@ -1970,11 +1969,15 @@ void RepairDesign::makeRepeater(const char* reason,
             = resizer_->makeUniqueNetName(owning_instance);
         driver_pin_mod_net->rename(new_mod_net_name.c_str());
       }
-      db_network_->disconnectPin(driver_pin);
-      // connect the original flat net
-      db_network_->connectPin(const_cast<Pin*>(driver_pin),
-                              db_network_->dbToSta(flat_net));
+      // Note how we use the sta interface for disconnect/connect
+      // of flat nets (ie dbNet*), so we get the side effects for the timing
+      // analyzer
+      sta_->disconnectPin(driver_pin);
+      Port* port = network_->port(driver_pin);
+      Instance* inst = network_->instance(driver_pin);
+      sta_->connectPin(inst, port, db_network_->dbToSta(flat_net));
       // connect the propagated hierarchical net to the buffer output
+      // use the db interface
       db_network_->connectPin(buffer_op_pin,
                               db_network_->dbToSta(driver_pin_mod_net));
     }

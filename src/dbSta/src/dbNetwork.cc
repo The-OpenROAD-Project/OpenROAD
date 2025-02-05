@@ -3126,11 +3126,13 @@ dbModule* dbNetwork::getNetDriverParentModule(Net* net,
         (void) modbterm;
         if (bterm) {
           return block_->getTopModule();
-        } else if (iterm) {
+        }
+        if (iterm) {
           // return the dbmodule containing the driving instance
           dbInst* dinst = iterm->getInst();
           return dinst->getModule();
-        } else if (moditerm) {
+        }
+        if (moditerm) {
           // return the dbmodule containing the driving instance
           return moditerm->getParent()->getParent();
         }
