@@ -229,6 +229,7 @@ class RepairSetup : public sta::dbStaState
                   sta::Delay threshold = 0);
   float bufferInputCapacitance(LibertyCell* buffer_cell,
                                const DcalcAnalysisPt* dcalc_ap);
+  std::tuple<PathRef, sta::Delay> drvrPinTiming(const BufferedNetPtr& bnet);
   Slack slackAtDriverPin(const BufferedNetPtr& bnet);
   Slack slackAtDriverPin(const BufferedNetPtr& bnet, int index);
 
@@ -277,6 +278,7 @@ class RepairSetup : public sta::dbStaState
   static constexpr float inc_fix_rate_threshold_
       = 0.0001;  // default fix rate threshold = 0.01%
   static constexpr int max_last_gasp_passes_ = 10;
+  static constexpr float rebuffer_relaxation_factor_ = 0.03;
 };
 
 }  // namespace rsz

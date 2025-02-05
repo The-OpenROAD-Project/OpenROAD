@@ -363,6 +363,16 @@ BufferedNetPtr RepairSetup::recoverArea(BufferedNetPtr bnet,
                 junc->setArrivalPath(min_req->arrivalPath());
                 junc->setRequiredPath(min_req->requiredPath());
                 junc->setRequiredDelay(min_req->requiredDelay());
+
+                debugPrint(logger_,
+                           RSZ,
+                           "rebuffer",
+                           4,
+                           "{:{}s}junc {}",
+                           "",
+                           level,
+                           junc->to_string(resizer_));
+
                 Z.push_back(std::move(junc));
               }
             }
@@ -378,6 +388,16 @@ BufferedNetPtr RepairSetup::recoverArea(BufferedNetPtr bnet,
               junc->setArrivalPath(min_req->arrivalPath());
               junc->setRequiredPath(min_req->requiredPath());
               junc->setRequiredDelay(min_req->requiredDelay());
+
+              debugPrint(logger_,
+                         RSZ,
+                         "rebuffer",
+                         4,
+                         "{:{}s}last resort junc {}",
+                         "",
+                         level,
+                         junc->to_string(resizer_));
+
               Z.push_back(std::move(junc));
             }
 
@@ -497,12 +517,15 @@ int RepairSetup::rebuffer(const Pin* drvr_pin)
       BufferedNetPtr best_option = rebufferForTiming(bnet);
 
       if (best_option) {
+        Delay drvr_gate_delay;
+        std::tie(std::ignore, drvr_gate_delay) = drvrPinTiming(best_option);
+
         Delay target = slackAtDriverPin(best_option)
-                       - best_option->requiredDelay() * 0.1;
+                       - (drvr_gate_delay + best_option->requiredDelay())
+                             * rebuffer_relaxation_factor_;
 
         for (int i = 0; i < 5 && best_option; i++) {
-          best_option
-              = recoverArea(best_option, target, ((float) (1 + i)) / 5);
+          best_option = recoverArea(best_option, target, ((float) (1 + i)) / 5);
         }
 
         if (!best_option) {
@@ -571,9 +594,8 @@ Slack RepairSetup::slackAtDriverPin(const BufferedNetPtr& bnet)
   return slackAtDriverPin(bnet, -1);
 }
 
-Slack RepairSetup::slackAtDriverPin(const BufferedNetPtr& bnet,
-                                    // Only used for debug print.
-                                    int index)
+std::tuple<PathRef, Delay> RepairSetup::drvrPinTiming(
+    const BufferedNetPtr& bnet)
 {
   const PathRef& req_path = bnet->requiredPath();
   if (!req_path.isNull()) {
@@ -588,16 +610,32 @@ Slack RepairSetup::slackAtDriverPin(const BufferedNetPtr& bnet,
     Slew slew = graph_->slew(driver_path.vertex(sta_),
                              driver_arc->fromEdge()->asRiseFall(),
                              dcalc_ap->index());
-    auto dcalc_result = arc_delay_calc_->gateDelay(nullptr,
-                                                   driver_arc,
-                                                   slew,
-                                                   bnet->cap(),
-                                                   nullptr,
-                                                   load_pin_index_map,
-                                                   dcalc_ap);
+    auto dcalc_result
+        = arc_delay_calc_->gateDelay(nullptr,
+                                     driver_arc,
+                                     slew,
+                                     bnet->cap() + drvr_port_->capacitance(),
+                                     nullptr,
+                                     load_pin_index_map,
+                                     dcalc_ap);
+
+    return {driver_path, dcalc_result.gateDelay()};
+  }
+  return {PathRef{}, 0};
+}
+
+Slack RepairSetup::slackAtDriverPin(const BufferedNetPtr& bnet,
+                                    // Only used for debug print.
+                                    int index)
+{
+  const PathRef& req_path = bnet->requiredPath();
+  if (!req_path.isNull()) {
+    PathRef drvr_path;
+    Delay drvr_gate_delay;
+    std::tie(drvr_path, drvr_gate_delay) = drvrPinTiming(bnet);
 
     Delay slack = req_path.required(sta_) - bnet->requiredDelay()
-                  - dcalc_result.gateDelay() - driver_path.arrival(sta_);
+                  - drvr_gate_delay - drvr_path.arrival(sta_);
 
     if (index >= 0) {
       debugPrint(logger_,
@@ -700,8 +738,11 @@ void RepairSetup::addBuffers(
         // Do not buffer unconstrained paths.
         if (!req_path.isNull()) {
           const DcalcAnalysisPt* dcalc_ap = req_path.dcalcAnalysisPt(sta_);
-          Delay buffer_delay = resizer_->bufferDelay(
-              buffer_cell, req_path.transition(sta_), z->cap() + out->capacitance(), dcalc_ap);
+          Delay buffer_delay
+              = resizer_->bufferDelay(buffer_cell,
+                                      req_path.transition(sta_),
+                                      z->cap() + out->capacitance(),
+                                      dcalc_ap);
           Delay slack = z->slack(sta_) - buffer_delay;
           if (fuzzyGreater(slack, best_slack)) {
             best_slack = slack;
@@ -733,10 +774,11 @@ void RepairSetup::addBuffers(
         if (!req_path.isNull()) {
           const DcalcAnalysisPt* dcalc_ap = req_path.dcalcAnalysisPt(sta_);
           buffer_cap = bufferInputCapacitance(buffer_cell, dcalc_ap);
-          buffer_delay = resizer_->bufferDelay(buffer_cell,
-                                               req_path.transition(sta_),
-                                               best_option->cap() + out->capacitance(),
-                                               dcalc_ap);
+          buffer_delay
+              = resizer_->bufferDelay(buffer_cell,
+                                      req_path.transition(sta_),
+                                      best_option->cap() + out->capacitance(),
+                                      dcalc_ap);
           slack = req_path.slack(sta_) - buffer_delay;
         }
         bool prune = false;
