@@ -2,7 +2,8 @@ or_integration_tests(
   "rsz"
   TESTS
     repair_fanout1_hier
-    repair_fanout2_hier  
+    repair_fanout2_hier
+    repair_fanout3_hier      
     buffer_ports1
     buffer_ports3
     buffer_ports4

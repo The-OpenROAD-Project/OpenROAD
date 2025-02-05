@@ -1836,6 +1836,7 @@ void RepairDesign::makeRepeater(const char* reason,
     if (network_->isTopLevelPort(pin)) {
       load_net = network_->net(network_->term(pin));
       db_network_->staToDb(load_net, load_db_net, load_mod_net);
+      load_db_net = db_network_->flatNet(pin);
       if (network_->direction(pin)->isAnyOutput()) {
         preserve_outputs = true;
         top_primary_output = true;
@@ -1989,9 +1990,6 @@ void RepairDesign::makeRepeater(const char* reason,
     // the output net as is. Transfer non repeater loads
     // to input side
 
-    //
-    // Copy signal type to new net.
-    //
     out_net = load_net;
     Net* ip_net = new_net;
     dbNet* op_net_db = load_db_net;
@@ -1999,7 +1997,7 @@ void RepairDesign::makeRepeater(const char* reason,
     ip_net_db->setSigType(op_net_db->getSigType());
 
     buffer_ip_net = new_net;
-    buffer_op_net = load_net;
+    buffer_op_net = db_network_->dbToSta(load_db_net);
 
     PinSet repeater_load_pins(db_network_);
     for (const Pin* pin : load_pins) {
