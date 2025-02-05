@@ -84,10 +84,54 @@ installing packages on /usr/local.
 To avoid this bahavior use -local flag or -prefix <PATH> argument.
 ```
 
-### Compiling OpenROAD Manually
+### Build OpenROAD
+
+To build with the default options in release mode:
 
 ``` shell
 ./etc/Build.sh
+```
+
+#### Custom Library Path
+
+To build with debug option enabled and if the Tcl library is not on the default path.
+
+``` shell
+./etc/Build.sh -cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
+```
+
+#### Enable `manpages`
+
+To build the `manpages`:
+``` shell
+./etc/Build.sh -build-man
+```
+
+#### LTO Options
+
+By default, OpenROAD is built with link time optimizations enabled.
+This adds about 1 minute to compile times and improves the runtime
+by about 11%. If you would like to disable LTO pass
+`-DLINK_TIME_OPTIMIZATION=OFF` when generating a build.
+
+#### Build with Address Sanitizer
+
+To enable building with Address Sanitizer, use the argument `-DASAN=ON`.
+Setting the `ASAN` variable to `ON` adds necessary compile and link options
+for using Address Sanitizer.
+
+```{note}
+Address Sanitizer adds instrumentation for detecting memory errors.
+Enabling this option will cause OpenROAD to run slower and consume more RAM.
+```
+
+#### System wide OpenROAD Install
+
+```{warning}
+Only use the following instructions if you know what you are doing.
+```
+
+``` shell
 sudo make install
 ```
 
@@ -102,33 +146,4 @@ Alternatively, you can use the `DESTDIR` variable with make.
 
 ``` shell
 make -C build DESTDIR=<prefix_path> install
-```
-
-### Build with debug symbols or custom paths
-
-To build with debug option enabled and if the Tcl library is not on the default path.
-
-``` shell
-./etc/Build.sh -cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
-```
-
-To build the `manpages`:
-``` shell
-./etc/Build.sh -build-man
-```
-
-### LTO Options
-By default, OpenROAD is built with link time optimizations enabled.
-This adds about 1 minute to compile times and improves the runtime
-by about 11%. If you would like to disable LTO pass 
-`-DLINK_TIME_OPTIMIZATION=OFF` when generating a build.
-
-### Build with Address Sanitizer
-To enable building with Address Sanitizer, use the argument `-DASAN=ON`.
-Setting the `ASAN` variable to `ON` adds necessary compile and link options
-for using Address Sanitizer.
-
-```{note}
-Address Sanitizer adds instrumentation for detecting memory errors.
-Enabling this option will cause OpenROAD to run slower and consume more RAM.
 ```
