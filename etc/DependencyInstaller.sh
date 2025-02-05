@@ -725,7 +725,7 @@ EOF
 
 # Default values
 PREFIX=""
-option="all"
+option="none"
 isLocal="false"
 equivalenceDeps="no"
 CI="no"
@@ -745,14 +745,20 @@ while [ "$#" -gt 0 ]; do
         -dev|-development)
             echo "The use of this flag is deprecated and will be removed soon."
             ;;
+        -all)
+            if [[ "${option}" != "none" ]]; then
+                echo "WARNING: previous argument -${option} will be overwritten with -all." >&2
+            fi
+            option="all"
+            ;;
         -base)
-            if [[ "${option}" != "all" ]]; then
+            if [[ "${option}" != "none" ]]; then
                 echo "WARNING: previous argument -${option} will be overwritten with -base." >&2
             fi
             option="base"
             ;;
         -common)
-            if [[ "${option}" != "all" ]]; then
+            if [[ "${option}" != "none" ]]; then
                 echo "WARNING: previous argument -${option} will be overwritten with -common." >&2
             fi
             option="common"
@@ -807,6 +813,11 @@ while [ "$#" -gt 0 ]; do
     esac
     shift 1
 done
+
+if [[ "${option}" == "none" ]]; then
+    echo "You must use one of: -all|-base|-common" >&2
+    _help
+fi
 
 if [[ -z "${saveDepsPrefixes}" ]]; then
     DIR="$(dirname $(readlink -f $0))"
