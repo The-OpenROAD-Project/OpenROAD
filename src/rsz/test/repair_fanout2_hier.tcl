@@ -21,7 +21,7 @@ set_wire_rc -layer metal1
 estimate_parasitics -placement
 
 report_check_types -max_fanout
-write_verilog noise.v
+
 repair_design
 report_check_types -max_fanout
 set verilog_file [make_result_file repair_fanout2_hier_out.v]
