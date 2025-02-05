@@ -303,7 +303,7 @@ void MultilevelPartitioner::InitialPartition(
              "Running Initial Partitioning...");
   std::mt19937 gen;
   gen.seed(seed_);
-  std::uniform_real_distribution<> dist(0.0, 1.0);
+  std::uniform_int_distribution<> dist(0, std::numeric_limits<int>::max());
   std::vector<float> initial_solutions_cost;
   std::vector<bool>
       initial_solutions_flag;  // if the solutions statisfy balance constraint
@@ -319,7 +319,7 @@ void MultilevelPartitioner::InitialPartition(
   k_way_fm_refiner_->SetMaxMove(hgraph->GetNumVertices());
   // generate random seed
   for (int i = 0; i < num_initial_random_solutions_; ++i) {
-    const int seed = std::numeric_limits<int>::max() * dist(gen);
+    const int seed = dist(gen);
     auto& solution = initial_solutions[i];
     // call random partitioning
     partitioner_->SetRandomSeed(seed);
@@ -347,7 +347,7 @@ void MultilevelPartitioner::InitialPartition(
   }
   // generate random vile solution
   for (int i = 0; i < num_initial_random_solutions_; ++i) {
-    const int seed = std::numeric_limits<int>::max() * dist(gen);
+    const int seed = dist(gen);
     auto& solution = initial_solutions[i + num_initial_random_solutions_];
     // call random partitioning
     partitioner_->SetRandomSeed(seed);

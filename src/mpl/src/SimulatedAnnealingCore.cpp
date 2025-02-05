@@ -642,11 +642,13 @@ void SimulatedAnnealingCore<T>::exchangeMacros()
 template <class T>
 void SimulatedAnnealingCore<T>::generateRandomIndices(int& index1, int& index2)
 {
-  index1 = (int) (std::floor(distribution_(generator_) * pos_seq_.size()));
-  index2 = (int) (std::floor(distribution_(generator_) * pos_seq_.size()));
+  std::uniform_int_distribution<> index_distribution(0, pos_seq_.size() - 1);
+
+  index1 = index_distribution(generator_);
+  index2 = index_distribution(generator_);
 
   while (index1 == index2) {
-    index2 = (int) (std::floor(distribution_(generator_) * pos_seq_.size()));
+    index2 = index_distribution(generator_);
   }
 }
 
