@@ -1194,6 +1194,11 @@ void lefinReader::macro(LefParser::lefiMacro* macro)
   if (_master == nullptr)
     return;
 
+  if (macro->hasClass()) {
+    dbMasterType type(macro->macroClass());
+    _master->setType(type);
+  }
+
   for (int i = 0; i < macro->numProperties(); i++) {
     bool valid = true;
     if (!strcmp(macro->propName(i), "LEF58_CLASS")) {
@@ -1212,11 +1217,6 @@ void lefinReader::macro(LefParser::lefiMacro* macro)
                     macro->propName(i),
                     macro->propValue(i));
     }
-  }
-
-  if (macro->hasClass()) {
-    dbMasterType type(macro->macroClass());
-    _master->setType(type);
   }
 
   if (macro->hasEEQ()) {
