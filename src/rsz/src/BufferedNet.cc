@@ -196,7 +196,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   required_path_.init();
   required_delay_ = 0.0;
 
-  area_ = ref->area() + buffer_cell->area();
+  area_ = ref->area() + 1;
 }
 
 void BufferedNet::reportTree(const Resizer* resizer) const

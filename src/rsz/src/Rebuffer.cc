@@ -750,7 +750,7 @@ void RepairSetup::addBuffers(
           }
 
           if (area_oriented) {
-            float buffered_area = z->area() + buffer_cell->area();
+            float buffered_area = z->area() + 1;
             if (fuzzyGreaterEqual(slack, slack_threshold)
                 && buffered_area < best_area) {
               best_area = buffered_area;
@@ -794,7 +794,7 @@ void RepairSetup::addBuffers(
           }
         } else {
           // Ditto for cap vs area
-          float buffered_area = best_option->area() + buffer_cell->area();
+          float buffered_area = best_option->area() + 1;
           for (const BufferedNetPtr& buffer_option : buffered_options) {
             if (fuzzyLessEqual(buffer_option->cap(), buffer_cap)
                 && fuzzyLessEqual(buffer_option->area(), buffered_area)) {
