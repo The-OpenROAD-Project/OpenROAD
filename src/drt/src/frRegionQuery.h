@@ -143,7 +143,6 @@ class frRegionQuery
  private:
   struct Impl;
   std::unique_ptr<Impl> impl_;
-  bool verbose_;
 
   frRegionQuery();
   std::vector<std::pair<frBlockObject*, Rect>> getVias(frLayerNum layer_num);

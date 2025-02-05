@@ -11,8 +11,7 @@ _versionCompare() {
 }
 
 _equivalenceDeps() {
-    yosysVersion=0.47
-    eqyYosysVersion=yosys-0.47
+    yosysVersion=v0.49
 
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}
@@ -30,7 +29,7 @@ _equivalenceDeps() {
     eqyPrefix=${PREFIX:-"/usr/local"}
     if ! command -v eqy &> /dev/null; then (
         cd "${baseDir}"
-        git clone --depth=1 -b "${eqyYosysVersion}" https://github.com/YosysHQ/eqy
+        git clone --depth=1 -b "${yosysVersion}" https://github.com/YosysHQ/eqy
         cd eqy
         export PATH="${yosysPrefix}/bin:${PATH}"
         make -j $(nproc) PREFIX="${eqyPrefix}"
@@ -42,7 +41,7 @@ _equivalenceDeps() {
     sbyPrefix=${PREFIX:-"/usr/local"}
     if ! command -v sby &> /dev/null; then (
         cd "${baseDir}"
-        git clone --depth=1 -b "${eqyYosysVersion}" --recursive https://github.com/YosysHQ/sby
+        git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/sby
         cd sby
         export PATH="${eqyPrefix}/bin:${PATH}"
         make -j $(nproc) PREFIX="${sbyPrefix}" install
@@ -75,7 +74,8 @@ _installCommonDev() {
     spdlogVersion=1.15.0
     gtestVersion=1.13.0
     gtestChecksum="a1279c6fb5bf7d4a5e0d0b2a4adb39ac"
-
+    bisonVersion=3.8.2
+    bisonChecksum="1e541a097cda9eca675d29dd2832921f"
 
     rm -rf "${baseDir}"
     mkdir -p "${baseDir}"
@@ -95,6 +95,25 @@ _installCommonDev() {
     else
         echo "CMake already installed."
     fi
+
+    # bison
+    bisonInstalledVersion="none"
+    bisonPrefix=${PREFIX:-"/usr"}
+    if [ -f ${bisonPrefix}/bin/bison ]; then
+        bisonInstalledVersion=$(${bisonPrefix}/bin/bison --version | awk 'NR==1 {print $NF}')
+    fi
+    if [ ${bisonInstalledVersion} != ${bisonVersion} ]; then
+        eval wget https://ftp.gnu.org/gnu/bison/bison-${bisonVersion}.tar.gz
+        md5sum -c <(echo "${bisonChecksum} bison-${bisonVersion}.tar.gz") || exit 1
+        tar xf bison-${bisonVersion}.tar.gz
+        cd bison-${bisonVersion}
+        ./configure
+        make -j install
+        echo "bison ${bisonVersion} installed (from ${bisonInstalledVersion})."
+    else
+        echo "bison ${bisonVersion} already installed."
+    fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D bison_ROOT=$(realpath ${bisonPrefix}) "
 
     # SWIG
     swigPrefix=${PREFIX:-"/usr/local"}
@@ -192,17 +211,17 @@ _installCommonDev() {
 
     # spdlog
     spdlogPrefix=${PREFIX:-"/usr/local"}
-    installed_version="none"
+    spdlogInstalledVersion="none"
     if [ -d ${spdlogPrefix}/include/spdlog ]; then
-        installed_version=`grep "#define SPDLOG_VER_" ${spdlogPrefix}/include/spdlog/version.h | sed 's/.*\s//' | tr '\n' '.' | sed 's/\.$//'`
+        spdlogInstalledVersion=$(grep "#define SPDLOG_VER_" ${spdlogPrefix}/include/spdlog/version.h | sed 's/.*\s//' | tr '\n' '.' | sed 's/\.$//')
     fi
-    if [ ${installed_version} != ${spdlogVersion} ]; then
+    if [ ${spdlogInstalledVersion} != ${spdlogVersion} ]; then
         cd "${baseDir}"
         git clone --depth=1 -b "v${spdlogVersion}" https://github.com/gabime/spdlog.git
         cd spdlog
         ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${spdlogPrefix}" -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DSPDLOG_BUILD_EXAMPLE=OFF -B build .
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
-        echo "spdlog ${spdlogVersion} installed (from ${installed_version})."
+        echo "spdlog ${spdlogVersion} installed (from ${spdlogInstalledVersion})."
     else
         echo "spdlog ${spdlogVersion} already installed."
     fi
@@ -333,6 +352,7 @@ _installUbuntuPackages() {
         groff \
         lcov \
         libffi-dev \
+        libfl-dev \
         libgomp1 \
         libomp-dev \
         libpcre2-dev \
@@ -427,7 +447,6 @@ _installRHELPackages() {
         zlib-devel
 
     yum install -y \
-        https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/bison-3.7.4-5.el9.x86_64.rpm \
         https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/flex-2.6.4-9.el9.x86_64.rpm \
         https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/readline-devel-8.1-4.el9.x86_64.rpm \
         https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/tcl-devel-8.6.10-7.el9.x86_64.rpm
@@ -520,7 +539,7 @@ Run the following command to install them:
   xcode-select --install
 Then, rerun this script.
 EOF
-    exit 1
+        exit 1
     fi
     brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pyqt5 python spdlog tcl-tk zlib
 
@@ -564,6 +583,7 @@ _installDebianPackages() {
         groff \
         lcov \
         libffi-dev \
+        libfl-dev \
         libgomp1 \
         libomp-dev \
         libpcre2-dev \

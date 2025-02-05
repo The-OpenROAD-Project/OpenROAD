@@ -78,7 +78,6 @@ using sta::CellPortBitIterator;
 using sta::CellPortIterator;
 using sta::ConnectedPinIterator;
 using sta::dbNetwork;
-using sta::deleteVerilogReader;
 using sta::Instance;
 using sta::InstanceChildIterator;
 using sta::InstancePinIterator;
@@ -136,9 +135,14 @@ Cell* dbVerilogNetwork::findAnyCell(const char* name)
   return cell;
 }
 
-void dbReadVerilog(const char* filename, dbVerilogNetwork* verilog_network)
+void dbReadVerilog(const char* filename,
+                   dbVerilogNetwork* verilog_network,
+                   sta::VerilogReader* verilog_reader)
 {
-  sta::readVerilogFile(filename, verilog_network);
+  if (verilog_reader == nullptr) {
+    verilog_reader = new sta::VerilogReader(verilog_network);
+  }
+  verilog_reader->read(filename);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -203,6 +207,7 @@ const std::regex Verilog2db::line_info_re("^(.*):(\\d+)\\.\\d+-\\d+\\.\\d+$");
 
 void dbLinkDesign(const char* top_cell_name,
                   dbVerilogNetwork* verilog_network,
+                  sta::VerilogReader* verilog_reader,
                   dbDatabase* db,
                   Logger* logger,
                   bool hierarchy)
@@ -214,7 +219,7 @@ void dbLinkDesign(const char* top_cell_name,
     Verilog2db v2db(verilog_network, db, logger, hierarchy);
     v2db.makeBlock();
     v2db.makeDbNetlist();
-    deleteVerilogReader();
+    delete verilog_reader;
   }
 }
 

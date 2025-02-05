@@ -637,14 +637,13 @@ void printIterationProgress(Logger* logger,
                             const int num_markers,
                             const int max_perc = 90)
 {
-  iter_prog.cnt_done_workers++;
-  if ((iter_prog.cnt_done_workers * 1.0 / iter_prog.total_num_workers)
-          >= (iter_prog.last_reported_perc / 100.0 + 0.1)
-      && iter_prog.last_reported_perc < max_perc) {
-    iter_prog.last_reported_perc += 10;
-    logger->report("    Completing {}% with {} violations.",
-                   iter_prog.last_reported_perc,
-                   num_markers);
+  int progress
+      = (++iter_prog.cnt_done_workers * 100) / iter_prog.total_num_workers;
+  progress = (progress / 10) * 10;  // clip it to multiples of 10%
+  if (progress > iter_prog.last_reported_perc && progress <= max_perc) {
+    iter_prog.last_reported_perc = progress;
+    logger->report(
+        "    Completing {}% with {} violations.", progress, num_markers);
     logger->report("    {}.", iter_prog.time);
   }
 }
@@ -1438,8 +1437,7 @@ void FlexDR::end(bool done)
               << (double) ((sCut[i] + mCut[i])
                                ? mCut[i] * 100.0 / (sCut[i] + mCut[i])
                                : 0.0)
-              << "%)"
-              << "    "
+              << "%)    "
               << std::setw((int) std::to_string(totSCut + totMCut).length())
               << sCut[i] + mCut[i];
         }
@@ -1450,9 +1448,8 @@ void FlexDR::end(bool done)
       msg << "-";
     }
     msg << std::endl;
-    msg << " " << std::setw(nameLen) << ""
-        << "    " << std::setw((int) std::to_string(totSCut).length())
-        << totSCut;
+    msg << " " << std::setw(nameLen) << "    "
+        << std::setw((int) std::to_string(totSCut).length()) << totSCut;
     if (totMCut) {
       msg << " (" << std::setw(5)
           << (double) ((totSCut + totMCut)
@@ -1464,8 +1461,7 @@ void FlexDR::end(bool done)
           << (double) ((totSCut + totMCut)
                            ? totMCut * 100.0 / (totSCut + totMCut)
                            : 0.0)
-          << "%)"
-          << "    "
+          << "%)    "
           << std::setw((int) std::to_string(totSCut + totMCut).length())
           << totSCut + totMCut;
     }

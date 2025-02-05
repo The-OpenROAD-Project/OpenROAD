@@ -8,7 +8,7 @@
 [INFO PPL-0060] Restrict pins [ clk req_rdy req_val reset resp_rdy ... ] to region (0.00u, 0.00u)-(279.96u, 280.13u) at routing layer met5.
 Found 1 macro blocks.
 Using 2 tracks default min distance between IO pins.
-[INFO PPL-0001] Number of slots           1016
+[INFO PPL-0001] Number of slots           1008
 [INFO PPL-0062] Number of top layer slots 900
 [INFO PPL-0002] Number of I/O             54
 [INFO PPL-0003] Number of I/O w/sink      54

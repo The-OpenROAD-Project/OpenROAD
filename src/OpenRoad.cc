@@ -62,7 +62,7 @@
 #include "grt/MakeGlobalRouter.h"
 #include "gui/MakeGui.h"
 #include "ifp//MakeInitFloorplan.hh"
-#include "mpl2/MakeMacroPlacer.h"
+#include "mpl/MakeMacroPlacer.h"
 #include "odb/cdl.h"
 #include "odb/db.h"
 #include "odb/defin.h"
@@ -132,7 +132,7 @@ OpenRoad::~OpenRoad()
   deleteRestructure(restructure_);
   deleteTritonCts(tritonCts_);
   deleteTapcell(tapcell_);
-  deleteMacroPlacer2(macro_placer2_);
+  deleteMacroPlacer(macro_placer_);
   deleteOpenRCX(extractor_);
   deleteTritonRoute(detailed_router_);
   deleteReplace(replace_);
@@ -198,7 +198,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   restructure_ = makeRestructure();
   tritonCts_ = makeTritonCts();
   tapcell_ = makeTapcell();
-  macro_placer2_ = makeMacroPlacer2();
+  macro_placer_ = makeMacroPlacer();
   extractor_ = makeOpenRCX();
   detailed_router_ = makeTritonRoute();
   replace_ = makeReplace();
@@ -233,7 +233,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   initGlobalRouter(this);
   initTritonCts(this);
   initTapcell(this);
-  initMacroPlacer2(this);
+  initMacroPlacer(this);
   initOpenRCX(this);
   initICeWall(this);
   initRestructure(this);
@@ -542,13 +542,14 @@ void OpenRoad::diffDbs(const char* filename1,
 void OpenRoad::readVerilog(const char* filename)
 {
   verilog_network_->deleteTopInstance();
-  dbReadVerilog(filename, verilog_network_);
+  dbReadVerilog(filename, verilog_network_, verilog_reader_);
 }
 
 void OpenRoad::linkDesign(const char* design_name, bool hierarchy)
 
 {
-  dbLinkDesign(design_name, verilog_network_, db_, logger_, hierarchy);
+  dbLinkDesign(
+      design_name, verilog_network_, verilog_reader_, db_, logger_, hierarchy);
   if (hierarchy) {
     sta::dbSta* sta = getSta();
     sta->getDbNetwork()->setHierarchy();

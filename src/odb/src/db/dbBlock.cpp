@@ -4208,7 +4208,7 @@ int dbBlock::addGlobalConnect(dbRegion* region,
   dbGlobalConnect* gc
       = odb::dbGlobalConnect::create(net, region, instPattern, pinPattern);
 
-  if (do_connect) {
+  if (gc != nullptr && do_connect) {
     return globalConnect(gc);
   }
   return 0;
@@ -4261,7 +4261,13 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
                 insts.end());
 
     inst_map[inst_pattern] = insts;
-    donottouchinsts.insert(remove_insts.begin(), remove_insts.end());
+
+    _dbGlobalConnect* connect_rule = (_dbGlobalConnect*) connect;
+    for (dbInst* inst : remove_insts) {
+      if (connect_rule->needsModification(inst)) {
+        donottouchinsts.insert(inst);
+      }
+    }
   }
 
   if (!donottouchinsts.empty()) {

@@ -700,7 +700,7 @@ void ClockTree::addPath(sta::PathExpanded& path,
 
 void ClockTree::addPath(sta::PathExpanded& path, const sta::StaState* sta)
 {
-  sta::PathRef* start = path.startPath();
+  const sta::PathRef* start = path.startPath();
   if (start->clkEdge(sta)->transition() != sta::RiseFall::rise()) {
     // only populate with rising edges
     return;
