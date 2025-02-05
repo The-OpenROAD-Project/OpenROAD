@@ -1,6 +1,6 @@
 #include "MplTest.h"
 
-namespace mpl2 {
+namespace mpl {
 namespace {
 
 class TestSnapper : public MplTest
@@ -115,4 +115,4 @@ TEST_F(TestSnapper, MultiLayer)
 }
 
 }  // namespace
-}  // namespace mpl2
+}  // namespace mpl

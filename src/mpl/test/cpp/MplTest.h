@@ -1,12 +1,12 @@
 #include "../../src/hier_rtlmp.h"
 #include "gtest/gtest.h"
-#include "mpl2/rtl_mp.h"
+#include "mpl/rtl_mp.h"
 #include "odb/db.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
-namespace mpl2 {
+namespace mpl {
 namespace {
 
 class MplTest : public ::testing::Test
@@ -51,4 +51,4 @@ class MplTest : public ::testing::Test
 };
 
 }  // namespace
-}  // namespace mpl2
+}  // namespace mpl
