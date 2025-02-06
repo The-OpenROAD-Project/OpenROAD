@@ -189,6 +189,8 @@ std::vector<dbInst*> dbGlobalConnect::getInsts() const
   dbBlock* block = (dbBlock*) getImpl()->getOwner();
   _dbGlobalConnect* obj = (_dbGlobalConnect*) this;
 
+  const auto mterm_mapping = obj->getMTermMapping();
+
   std::vector<dbInst*> insts;
   for (dbInst* inst : block->getInsts()) {
     if (obj->appliesTo(inst)) {
@@ -307,12 +309,7 @@ std::map<dbMaster*, std::set<dbMTerm*>> _dbGlobalConnect::getMTermMapping()
   dbDatabase* db = (dbDatabase*) getImpl()->getDatabase();
   for (dbLib* lib : db->getLibs()) {
     for (dbMaster* master : lib->getMasters()) {
-      std::set<dbMTerm*> mterms;
-      for (dbMTerm* mterm : master->getMTerms()) {
-        if (std::regex_match(mterm->getConstName(), pin_regex)) {
-          mterms.insert(mterm);
-        }
-      }
+      std::set<dbMTerm*> mterms = getMTermMapping(master, pin_regex);
 
       if (!mterms.empty()) {
         mapping[master] = mterms;
@@ -321,6 +318,20 @@ std::map<dbMaster*, std::set<dbMTerm*>> _dbGlobalConnect::getMTermMapping()
   }
 
   return mapping;
+}
+
+std::set<dbMTerm*> _dbGlobalConnect::getMTermMapping(
+    dbMaster* master,
+    const std::regex& pin_regex) const
+{
+  std::set<dbMTerm*> mterms;
+  for (dbMTerm* mterm : master->getMTerms()) {
+    if (std::regex_match(mterm->getConstName(), pin_regex)) {
+      mterms.insert(mterm);
+    }
+  }
+
+  return mterms;
 }
 
 std::set<dbITerm*> _dbGlobalConnect::connect(const std::vector<dbInst*>& insts)
@@ -384,6 +395,22 @@ std::set<dbITerm*> _dbGlobalConnect::connect(const std::vector<dbInst*>& insts)
 bool _dbGlobalConnect::appliesTo(dbInst* inst) const
 {
   return std::regex_match(inst->getConstName(), inst_regex_);
+}
+
+bool _dbGlobalConnect::needsModification(dbInst* inst) const
+{
+  dbBlock* block = (dbBlock*) getImpl()->getOwner();
+  dbNet* net = odb::dbNet::getNet(block, net_);
+
+  for (dbMTerm* mterm :
+       getMTermMapping(inst->getMaster(), std::regex(pin_pattern_))) {
+    auto* iterm = inst->getITerm(mterm);
+
+    if (iterm->getNet() != net) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // User Code End dbGlobalConnectPublicMethods

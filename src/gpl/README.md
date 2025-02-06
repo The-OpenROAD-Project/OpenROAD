@@ -131,8 +131,8 @@ global_placement
 | `-routability_check_overflow` | Set overflow threshold for routability mode. The default value is `0.3`, and the allowed values are floats `[0, 1]`. |
 | `-routability_max_density` | Set density threshold for routability mode. The default value is `0.99`, and the allowed values are floats `[0, 1]`. |
 | `-routability_max_inflation_iter` | Set inflation iteration threshold for routability mode. The default value is `4`, and the allowed values are integers `[1, MAX_INT]`. |
-| `-routability_inflation_ratio_coef` | Set inflation ratio coefficient for routability mode. The default value is `5`, and the allowed values are floats. |
-| `-routability_max_inflation_ratio` | Set inflation ratio threshold for routability mode to prevent overly aggressive adjustments. The default value is `8`, and the allowed values are floats. |
+| `-routability_inflation_ratio_coef` | Set inflation ratio coefficient for routability mode. The default value is `3`, and the allowed values are floats. |
+| `-routability_max_inflation_ratio` | Set inflation ratio threshold for routability mode to prevent overly aggressive adjustments. The default value is `6`, and the allowed values are floats. |
 | `-routability_rc_coefficients` | Set routability RC coefficients for calculating the final RC. They relate to the 0.5%, 1%, 2%, and 5% most congested tiles. It comes in the form of a Tcl List `{k1, k2, k3, k4}`. The default value for each coefficient is `{1.0, 1.0, 0.0, 0.0}` respectively, and the allowed values are floats. |
 
 #### Timing-Driven Arguments
@@ -142,7 +142,7 @@ global_placement
 | `-timing_driven_net_reweight_overflow` | Set overflow threshold for timing-driven net reweighting. Allowed value is a Tcl list of integers where each number is `[0, 100]`. Default values are [79, 64, 49, 29, 21, 15] |
 | `-timing_driven_net_weight_max` | Set the multiplier for the most timing-critical nets. The default value is `1.9`, and the allowed values are floats. |
 | `-timing_driven_nets_percentage` | Set the reweighted percentage of nets in timing-driven mode. The default value is 10. Allowed values are floats `[0, 100]`. |
-| `-keep_resize_below_overflow` | When the overflow is below the set value, timing-driven iterations will retain the resizer changes instead of reverting them. The default value is 0. Allowed values are floats `[0, 1]`. |
+| `-keep_resize_below_overflow` | When the overflow is below the set value, timing-driven iterations will retain the resizer changes instead of reverting them. The default value is 0.3. Allowed values are floats `[0, 1]`. |
 
 ### Cluster Flops
 

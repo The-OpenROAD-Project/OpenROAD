@@ -83,7 +83,6 @@ using sta::ConcreteCellPortIterator;
 using sta::ConcretePort;
 using sta::ConnectedPinIterator;
 using sta::dbNetwork;
-using sta::deleteVerilogReader;
 using sta::Instance;
 using sta::InstanceChildIterator;
 using sta::InstancePinIterator;
@@ -141,9 +140,14 @@ Cell* dbVerilogNetwork::findAnyCell(const char* name)
   return cell;
 }
 
-void dbReadVerilog(const char* filename, dbVerilogNetwork* verilog_network)
+void dbReadVerilog(const char* filename,
+                   dbVerilogNetwork* verilog_network,
+                   sta::VerilogReader* verilog_reader)
 {
-  sta::readVerilogFile(filename, verilog_network);
+  if (verilog_reader == nullptr) {
+    verilog_reader = new sta::VerilogReader(verilog_network);
+  }
+  verilog_reader->read(filename);
 }
 
 // Cell is a black box if all the ports have unknown port directions
@@ -230,6 +234,7 @@ const std::regex Verilog2db::line_info_re("^(.*):(\\d+)\\.\\d+-\\d+\\.\\d+$");
 
 void dbLinkDesign(const char* top_cell_name,
                   dbVerilogNetwork* verilog_network,
+                  sta::VerilogReader* verilog_reader,
                   dbDatabase* db,
                   Logger* logger,
                   bool hierarchy)
@@ -246,7 +251,7 @@ void dbLinkDesign(const char* top_cell_name,
     // Link unused modules in case if we want to swap to such modules later
     v2db.processUnusedCells(
         top_cell_name, verilog_network, link_make_black_boxes);
-    deleteVerilogReader();
+    delete verilog_reader;
   }
 }
 

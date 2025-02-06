@@ -57,6 +57,7 @@ class Rect;
 namespace sta {
 class dbSta;
 class dbNetwork;
+class VerilogReader;
 }  // namespace sta
 
 namespace rsz {
@@ -266,6 +267,7 @@ class OpenRoad
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   dbVerilogNetwork* verilog_network_ = nullptr;
+  sta::VerilogReader* verilog_reader_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   rsz::Resizer* resizer_ = nullptr;
   ppl::IOPlacer* ioPlacer_ = nullptr;

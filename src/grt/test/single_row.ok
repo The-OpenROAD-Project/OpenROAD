@@ -11,14 +11,14 @@
 [INFO GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0088] Layer li1     Track-Pitch = 0.4800  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3250
-[INFO GRT-0019] Found 0 clock nets.
-[INFO GRT-0001] Minimum degree: 2147483647
-[INFO GRT-0002] Maximum degree: 1
 [WARNING GRT-0038] Found blockage outside die area in instance buffer.
 [WARNING GRT-0038] Found blockage outside die area in instance buffer.
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0004] Blockages: 11
+[INFO GRT-0019] Found 0 clock nets.
+[INFO GRT-0001] Minimum degree: 2147483647
+[INFO GRT-0002] Maximum degree: 1
 
 [INFO GRT-0053] Routing resources analysis:
           Routing      Original      Derated      Resource

@@ -93,7 +93,7 @@ proc report_cell_usage { args } {
 
   set module [[ord::get_db_block] getTopModule]
   if { $args != "" } {
-    set modinst [[ord::get_db_block] findModInst $args]
+    set modinst [[ord::get_db_block] findModInst [lindex $args 0]]
     if { $modinst == "NULL" } {
       sta_error 1002 "Unable to find $args"
     }

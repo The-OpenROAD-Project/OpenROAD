@@ -7,8 +7,6 @@
 [INFO ODB-0133]     Created 269 nets and 0 connections.
 [WARNING ODB-0383] dcache.data.data_arrays_0.data_arrays_0_ext.mem is marked do not touch and will be skipped in global connections.
 [WARNING ODB-0383] dcache.data.data_arrays_0.data_arrays_0_ext.mem is marked do not touch and will be skipped in global connections.
-[WARNING ODB-0383] dcache.data.data_arrays_0.data_arrays_0_ext.mem is marked do not touch and will be skipped in global connections.
-[WARNING ODB-0383] dcache.data.data_arrays_0.data_arrays_0_ext.mem is marked do not touch and will be skipped in global connections.
 [WARNING ODB-0380] PHY_0/VSS is connected to VSS which is marked do not touch, this connection will not be modified.
 [WARNING ODB-0380] PHY_1/VSS is connected to VSS which is marked do not touch, this connection will not be modified.
 [WARNING ODB-0380] PHY_10/VSS is connected to VSS which is marked do not touch, this connection will not be modified.
@@ -555,5 +553,4 @@
 [WARNING ODB-0380] TAP_543/VSS is connected to VSS which is marked do not touch, this connection will not be modified.
 [WARNING ODB-0380] TAP_544/VSS is connected to VSS which is marked do not touch, this connection will not be modified.
 [WARNING ODB-0380] frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem/VSS is connected to VSS which is marked do not touch, this connection will not be modified.
-[WARNING ODB-0383] dcache.data.data_arrays_0.data_arrays_0_ext.mem is marked do not touch and will be skipped in global connections.
 No differences found.

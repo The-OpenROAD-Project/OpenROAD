@@ -12,6 +12,7 @@ or_integration_tests(
     init_floorplan7
     init_floorplan8
     init_floorplan9
+    init_floorplan10
     init_floorplan_even_rows
     init_floorplan_flip_sites
     init_floorplan_odd_rows
