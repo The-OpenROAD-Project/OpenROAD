@@ -333,11 +333,9 @@ void Cluster::copyInstances(const Cluster& cluster)
 
 void Cluster::setAsClusterOfUnplacedIOPins(const std::pair<float, float>& pos,
                                            const float width,
-                                           const float height,
-                                           const Boundary constraint_boundary)
+                                           const float height)
 {
   is_cluster_of_unplaced_io_pins_ = true;
-  constraint_boundary_ = constraint_boundary;
   soft_macro_ = std::make_unique<SoftMacro>(pos, name_, width, height, this);
 }
 
@@ -352,6 +350,21 @@ void Cluster::setAsIOPadCluster(const std::pair<float, float>& pos,
 bool Cluster::isIOCluster() const
 {
   return is_cluster_of_unplaced_io_pins_ || is_io_pad_cluster_;
+}
+
+void Cluster::setAsClusterOfUnconstrainedIOPins()
+{
+  is_cluster_of_unconstrained_io_pins_ = true;
+}
+
+bool Cluster::isClusterOfUnconstrainedIOPins() const
+{
+  return is_cluster_of_unconstrained_io_pins_;
+}
+
+bool Cluster::isClusterOfUnplacedIOPins() const
+{
+  return is_cluster_of_unplaced_io_pins_;
 }
 
 void Cluster::setAsArrayOfInterconnectedMacros()

@@ -87,6 +87,7 @@ struct LayerParameters
 
 using LayersWithPinsMap = std::map<odb::dbTechLayer*, odb::dbITerm*>;
 using LayerParametersMap = std::map<odb::dbTechLayer*, LayerParameters>;
+using BoundaryToRegionsMap = std::map<Boundary, std::queue<odb::Rect>>;
 
 // Hierarchical RTL-MP
 // Support Multi-Level Clustering.
@@ -177,13 +178,16 @@ class HierRTLMP
   void calculateChildrenTilings(Cluster* parent);
   void calculateMacroTilings(Cluster* cluster);
   void setTightPackingTilings(Cluster* macro_array);
-  void setPinAccessBlockages();
+  void createPinAccessBlockages();
   std::vector<Cluster*> getClustersOfUnplacedIOPins();
-  float computePinAccessBlockagesDepth(const std::vector<Cluster*>& io_clusters,
-                                       const Rect& die);
-  void createPinAccessBlockage(Boundary constraint_boundary,
-                               float depth,
-                               const Rect& die);
+  void createPinAccessBlockage(const Rect& micron_region, const float depth);
+  float computePinAccessBaseDepth(const float io_span);
+  BoundaryToRegionsMap getBoundaryToBlockedRegionsMap();
+  std::vector<odb::Rect> computeAvailableRegions(
+      BoundaryToRegionsMap& boundary_to_blocked_regions);
+  void createBlockagesForAvailableRegions();
+  void createBlockagesForConstraintRegions();
+  Boundary getRegionBoundary(const odb::Rect& constraint_region);
   void setPlacementBlockages();
 
   // Fine Shaping
@@ -251,6 +255,11 @@ class HierRTLMP
   odb::Rect micronsToDbu(const Rect& micron_rect);
   Rect dbuToMicrons(const odb::Rect& dbu_rect);
 
+  odb::Rect getRect(Boundary boundary);
+  bool isHorizontal(Boundary boundary);
+  std::vector<odb::Rect> subtractOverlapRegion(const odb::Rect& base,
+                                               const odb::Rect& overlay);
+
   // For debugging
   template <typename SACore>
   void printPlacementResult(Cluster* parent,
@@ -315,6 +324,7 @@ class HierRTLMP
   std::map<odb::dbInst*, Rect> guides_;  // Macro -> Guidance Region
   std::vector<Rect> placement_blockages_;
   std::vector<Rect> macro_blockages_;
+  std::vector<Rect> io_blockages_;
   std::map<Boundary, Rect> boundary_to_io_blockage_;
 
   // Fast SA hyperparameter

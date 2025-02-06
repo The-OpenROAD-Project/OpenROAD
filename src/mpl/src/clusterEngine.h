@@ -113,8 +113,8 @@ struct PhysicalHierarchy
   std::unique_ptr<Cluster> root;
   PhysicalHierarchyMaps maps;
 
-  // This is set according to the ppl -exclude constraints
-  std::set<Boundary> blocked_boundaries;
+  std::vector<odb::Rect> blocked_regions_for_pins;
+  std::set<Boundary> blocked_boundaries;    // TODO: remove
   std::set<Boundary> unblocked_boundaries;  // For orientation improvement.
 
   float halo_width{0.0f};
@@ -124,6 +124,7 @@ struct PhysicalHierarchy
   Rect floorplan_shape;
 
   bool has_io_clusters{true};
+  bool has_only_unconstrained_ios{false};
   bool has_only_macros{false};
   bool has_std_cells{true};
   bool has_unfixed_macros{true};
@@ -174,10 +175,13 @@ class ClusteringEngine
                                std::set<odb::dbMaster*>& masters);
   void clearTempMacroClusterMapping(const UniqueClusterVector& macro_clusters);
 
+  int getNumberOfIOs(Cluster* target);
+
   static bool isIgnoredInst(odb::dbInst* inst);
 
  private:
   using UniqueClusterQueue = std::queue<std::unique_ptr<Cluster>>;
+  using IOClusterAndRegion = std::pair<Cluster*, odb::Rect>;
 
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
@@ -190,22 +194,12 @@ class ClusteringEngine
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();
+  void createIOCluster(std::vector<IOClusterAndRegion>& cluster_and_region_list,
+                       odb::dbBTerm* bterm,
+                       const odb::Rect& bterm_constraint);
   void createIOPadClusters();
   void createIOPadCluster(odb::dbInst* pad, odb::dbBTerm* bterm);
-  void classifyBoundariesStateForIOs();
-  std::map<Boundary, float> computeBlockageExtensionMap();
-  Boundary getConstraintBoundary(const odb::Rect& die,
-                                 const odb::Rect& constraint_region);
-  void createIOCluster(const odb::Rect& die,
-                       Boundary constraint_boundary,
-                       std::map<Boundary, Cluster*>& boundary_to_cluster,
-                       odb::dbBTerm* bterm);
-  void setIOClusterDimensions(const odb::Rect& die,
-                              Boundary boundary,
-                              int& x,
-                              int& y,
-                              int& width,
-                              int& height);
+  void setBlockedRegionsForPins();
   void mapIOPinsAndPads();
   void treatEachMacroAsSingleCluster();
   void incorporateNewCluster(std::unique_ptr<Cluster> cluster, Cluster* parent);

@@ -1,5 +1,6 @@
-# Test if pin access blockage is generated correctly for a case
-# with pins in a single boundary.
+# Test if pin access blockages are generated correctly for a case
+# with pins with different constraint regions. Both regions are
+# in the same boundary, but have different densities.
 source "helpers.tcl"
 
 # We're not interested in the connections, so don't include the lib.
@@ -12,15 +13,16 @@ read_verilog "./testcases/io_constraints1.v"
 link_design "io_constraints1"
 read_def "./testcases/io_constraints1.def" -floorplan_initialize
 
-set_io_pin_constraint -direction INPUT -region left:*
+set_io_pin_constraint -pin_names {io_1 io_2} -region right:70-90
+set_io_pin_constraint -pin_names {io_3} -region right:10-50
 
 # Run random PPL to incorporate the constraints into ODB
 place_pins -annealing -random -hor_layers metal5 -ver_layer metal6
 
 set_thread_count 0
-rtl_macro_placer -report_directory results/io_constraints1 -halo_width 4.0
+rtl_macro_placer -report_directory results/io_constraints5 -halo_width 4.0
 
-set def_file [make_result_file io_constraints1.def]
+set def_file [make_result_file io_constraints5.def]
 write_def $def_file
 
-diff_files io_constraints1.defok $def_file
+diff_files io_constraints5.defok $def_file

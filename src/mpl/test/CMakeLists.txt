@@ -7,6 +7,9 @@ or_integration_tests(
     guides2
     io_constraints1
     io_constraints2
+    io_constraints3
+    io_constraints4
+    io_constraints5
     io_pads1
     orientation_improve1
     orientation_improve2

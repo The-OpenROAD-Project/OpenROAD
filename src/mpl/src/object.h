@@ -202,15 +202,14 @@ class Cluster
 
   bool isIOCluster() const;
 
-  bool isClusterOfUnplacedIOPins() const
-  {
-    return is_cluster_of_unplaced_io_pins_;
-  }
+  // The cluster of unplaced IOs with unconstrained pins.
+  void setAsClusterOfUnconstrainedIOPins();
+  bool isClusterOfUnconstrainedIOPins() const;
+
+  bool isClusterOfUnplacedIOPins() const;
   void setAsClusterOfUnplacedIOPins(const std::pair<float, float>& pos,
                                     float width,
-                                    float height,
-                                    Boundary constraint_boundary);
-  Boundary getConstraintBoundary() const { return constraint_boundary_; }
+                                    float height);
 
   bool isIOPadCluster() const { return is_io_pad_cluster_; }
   void setAsIOPadCluster(const std::pair<float, float>& pos,
@@ -298,9 +297,10 @@ class Cluster
   // all the macros in the cluster
   std::vector<HardMacro*> hard_macros_;
 
+  int io_pins_count_{0};
   bool is_cluster_of_unplaced_io_pins_{false};
+  bool is_cluster_of_unconstrained_io_pins_{false};
   bool is_io_pad_cluster_{false};
-  Boundary constraint_boundary_ = NONE;
 
   bool is_array_of_interconnected_macros = false;
 

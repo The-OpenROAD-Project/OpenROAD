@@ -633,47 +633,47 @@ void Graphics::drawDistToIoConstraintBoundary(gui::Painter& painter,
                                               const T& macro,
                                               const T& io)
 {
-  if (isOutsideTheOutline(macro)) {
-    return;
-  }
+  // if (isOutsideTheOutline(macro)) {
+  //   return;
+  // }
 
-  Cluster* io_cluster = io.getCluster();
+  // Cluster* io_cluster = io.getCluster();
 
-  const int x1 = block_->micronsToDbu(macro.getPinX());
-  const int y1 = block_->micronsToDbu(macro.getPinY());
-  odb::Point from(x1, y1);
+  // const int x1 = block_->micronsToDbu(macro.getPinX());
+  // const int y1 = block_->micronsToDbu(macro.getPinY());
+  // odb::Point from(x1, y1);
 
-  odb::Point to;
-  Boundary constraint_boundary = io_cluster->getConstraintBoundary();
+  // odb::Point to;
+  // Boundary constraint_boundary = io_cluster->getConstraintBoundary();
 
-  if (constraint_boundary == Boundary::L
-      || constraint_boundary == Boundary::R) {
-    const int x2 = block_->micronsToDbu(io.getPinX());
-    const int y2 = block_->micronsToDbu(macro.getPinY());
-    to.setX(x2);
-    to.setY(y2);
-  } else if (constraint_boundary == Boundary::B
-             || constraint_boundary == Boundary::T) {
-    const int x2 = block_->micronsToDbu(macro.getPinX());
-    const int y2 = block_->micronsToDbu(io.getPinY());
-    to.setX(x2);
-    to.setY(y2);
-  } else {
-    // For NONE, the shape of the io cluster is the die area.
-    const Rect die = io_cluster->getBBox();
-    Boundary closest_unblocked_boundary
-        = getClosestUnblockedBoundary(macro, die);
+  // if (constraint_boundary == Boundary::L
+  //     || constraint_boundary == Boundary::R) {
+  //   const int x2 = block_->micronsToDbu(io.getPinX());
+  //   const int y2 = block_->micronsToDbu(macro.getPinY());
+  //   to.setX(x2);
+  //   to.setY(y2);
+  // } else if (constraint_boundary == Boundary::B
+  //            || constraint_boundary == Boundary::T) {
+  //   const int x2 = block_->micronsToDbu(macro.getPinX());
+  //   const int y2 = block_->micronsToDbu(io.getPinY());
+  //   to.setX(x2);
+  //   to.setY(y2);
+  // } else {
+  //   // For NONE, the shape of the io cluster is the die area.
+  //   const Rect die = io_cluster->getBBox();
+  //   Boundary closest_unblocked_boundary
+  //       = getClosestUnblockedBoundary(macro, die);
 
-    to = getClosestBoundaryPoint(macro, die, closest_unblocked_boundary);
-  }
+  //   to = getClosestBoundaryPoint(macro, die, closest_unblocked_boundary);
+  // }
 
-  addOutlineOffsetToLine(from, to);
+  // addOutlineOffsetToLine(from, to);
 
-  painter.drawLine(from, to);
-  painter.drawString(to.getX(),
-                     to.getY(),
-                     gui::Painter::CENTER,
-                     toString(constraint_boundary));
+  // painter.drawLine(from, to);
+  // painter.drawString(to.getX(),
+  //                    to.getY(),
+  //                    gui::Painter::CENTER,
+  //                    toString(constraint_boundary));
 }
 
 template <typename T>
