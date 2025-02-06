@@ -113,9 +113,8 @@ struct PhysicalHierarchy
   std::unique_ptr<Cluster> root;
   PhysicalHierarchyMaps maps;
 
-  std::vector<odb::Rect> blocked_regions_for_pins;
   std::set<Boundary> blocked_boundaries;    // TODO: remove
-  std::set<Boundary> unblocked_boundaries;  // For orientation improvement.
+  std::set<Boundary> unblocked_boundaries;  // TODO: remove
 
   float halo_width{0.0f};
   float halo_height{0.0f};
@@ -199,7 +198,6 @@ class ClusteringEngine
                        const odb::Rect& bterm_constraint);
   void createIOPadClusters();
   void createIOPadCluster(odb::dbInst* pad, odb::dbBTerm* bterm);
-  void setBlockedRegionsForPins();
   void mapIOPinsAndPads();
   void treatEachMacroAsSingleCluster();
   void incorporateNewCluster(std::unique_ptr<Cluster> cluster, Cluster* parent);

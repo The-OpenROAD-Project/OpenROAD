@@ -67,9 +67,7 @@ void ClusteringEngine::run()
 
   mapIOPinsAndPads();
   createDataFlow();
-
   createIOClusters();
-  setBlockedRegionsForPins();
 
   if (design_metrics_->getNumStdCell() == 0) {
     logger_->warn(MPL, 25, "Design has no standard cells!");
@@ -437,11 +435,6 @@ void ClusteringEngine::createIOCluster(
   tree_->maps.bterm_to_cluster_id[bterm] = id_;
   tree_->maps.id_to_cluster[id_++] = cluster.get();
   tree_->root->addChild(std::move(cluster));
-}
-
-void ClusteringEngine::setBlockedRegionsForPins()
-{
-  tree_->blocked_regions_for_pins = block_->getBlockedRegionsForPins();
 }
 
 void ClusteringEngine::mapIOPinsAndPads()

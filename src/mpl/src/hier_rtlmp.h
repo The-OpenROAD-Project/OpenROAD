@@ -182,7 +182,8 @@ class HierRTLMP
   std::vector<Cluster*> getClustersOfUnplacedIOPins();
   void createPinAccessBlockage(const Rect& micron_region, const float depth);
   float computePinAccessBaseDepth(const float io_span);
-  BoundaryToRegionsMap getBoundaryToBlockedRegionsMap();
+  BoundaryToRegionsMap getBoundaryToBlockedRegionsMap(
+      const std::vector<odb::Rect>& blocked_regions_for_pins);
   std::vector<odb::Rect> computeAvailableRegions(
       BoundaryToRegionsMap& boundary_to_blocked_regions);
   void createBlockagesForAvailableRegions();
@@ -325,7 +326,8 @@ class HierRTLMP
   std::vector<Rect> placement_blockages_;
   std::vector<Rect> macro_blockages_;
   std::vector<Rect> io_blockages_;
-  std::map<Boundary, Rect> boundary_to_io_blockage_;
+  std::vector<odb::Rect> available_regions_for_pins_;
+  std::map<Boundary, Rect> boundary_to_io_blockage_; // TODO: remove
 
   // Fast SA hyperparameter
   float init_prob_ = 0.9;
@@ -387,7 +389,7 @@ class Pusher
   odb::dbBlock* block_;
   odb::Rect core_;
 
-  std::map<Boundary, odb::Rect> boundary_to_io_blockage_;
+  std::map<Boundary, odb::Rect> boundary_to_io_blockage_; // TODO: remove
   std::vector<HardMacro*> hard_macros_;
 };
 
