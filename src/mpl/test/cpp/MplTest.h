@@ -35,9 +35,9 @@ class MplTest : public ::testing::Test
     block_ = utl::UniquePtrWithDeleter<odb::dbBlock>(
         odb::dbBlock::create(chip_.get(), "block"), block_destroy);
 
-    block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
-    master_->setWidth(1000);
-    master_->setHeight(1000);
+    block_->setDieArea(odb::Rect(0, 0, dimension_, dimension_));
+    master_->setWidth(dimension_);
+    master_->setHeight(dimension_);
     master_->setFrozen();
   }
 
@@ -48,6 +48,7 @@ class MplTest : public ::testing::Test
   utl::UniquePtrWithDeleter<odb::dbChip> chip_;
   utl::UniquePtrWithDeleter<odb::dbBlock> block_;
   utl::Logger logger_;
+  unsigned int dimension_ = 500000;
 };
 
 }  // namespace
