@@ -103,6 +103,7 @@ _installCommonDev() {
         bisonInstalledVersion=$(${bisonPrefix}/bin/bison --version | awk 'NR==1 {print $NF}')
     fi
     if [ ${bisonInstalledVersion} != ${bisonVersion} ]; then
+        cd "${baseDir}"
         eval wget https://ftp.gnu.org/gnu/bison/bison-${bisonVersion}.tar.gz
         md5sum -c <(echo "${bisonChecksum} bison-${bisonVersion}.tar.gz") || exit 1
         tar xf bison-${bisonVersion}.tar.gz
