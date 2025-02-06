@@ -2434,6 +2434,16 @@ PinSet* Resizer::findFloatingPins()
 
 ////////////////////////////////////////////////////////////////
 
+// TODO:
+//----
+// when making a unique net name search within the scope of the
+// containing module only (parent scope module)which is passed in.
+// This requires scoping nets in the module in hierarchical mode
+//(as was done with dbInsts) and will require changing the
+// method: dbNetwork::name).
+// Currently all nets are scoped within a dbBlock.
+//
+
 string Resizer::makeUniqueNetName(Instance* parent_scope)
 {
   string node_name;
@@ -2475,6 +2485,14 @@ string Resizer::makeUniqueInstName(const char* base_name, bool underscore)
     } else {
       inst_name = fmt::format("{}{}", base_name, unique_inst_index_++);
     }
+    //
+    // NOTE: TODO: The scoping should be within
+    // the dbModule scope for the instance, not the whole network.
+    // dbInsts are already scoped within a dbModule
+    // To get the dbModule for a dbInst used inst -> getModule
+    // then search within that scope. That way the instance name
+    // does not have to be some massive string like root/X/Y/U1.
+    //
   } while (network_->findInstance(inst_name.c_str()));
   return inst_name;
 }
