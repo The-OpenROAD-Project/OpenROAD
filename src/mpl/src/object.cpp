@@ -35,6 +35,7 @@
 
 #include "object.h"
 
+#include <boost/random/uniform_int_distribution.hpp>
 #include <vector>
 
 #include "utl/Logger.h"
@@ -1299,7 +1300,8 @@ void SoftMacro::resizeRandomly(
     return;
   }
 
-  std::uniform_int_distribution<> index_distribution(0, width_list_.size() - 1);
+  boost::random::uniform_int_distribution<> index_distribution(
+      0, width_list_.size() - 1);
   const int idx = index_distribution(generator);
 
   const float min_width = width_list_[idx].first;

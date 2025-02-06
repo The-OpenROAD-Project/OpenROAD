@@ -33,6 +33,7 @@
 
 #include "SACoreSoftMacro.h"
 
+#include <boost/random/uniform_int_distribution.hpp>
 #include <vector>
 
 #include "MplObserver.h"
@@ -755,7 +756,8 @@ void SACoreSoftMacro::resizeOneCluster()
         "Position sequence array is empty, please report this internal error");
   }
 
-  std::uniform_int_distribution<> index_distribution(0, pos_seq_.size() - 1);
+  boost::random::uniform_int_distribution<> index_distribution(
+      0, pos_seq_.size() - 1);
   const int idx = index_distribution(generator_);
 
   macro_id_ = idx;

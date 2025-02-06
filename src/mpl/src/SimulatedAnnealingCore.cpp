@@ -33,6 +33,7 @@
 
 #include "SimulatedAnnealingCore.h"
 
+#include <boost/random/uniform_int_distribution.hpp>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -642,7 +643,8 @@ void SimulatedAnnealingCore<T>::exchangeMacros()
 template <class T>
 void SimulatedAnnealingCore<T>::generateRandomIndices(int& index1, int& index2)
 {
-  std::uniform_int_distribution<> index_distribution(0, pos_seq_.size() - 1);
+  boost::random::uniform_int_distribution<> index_distribution(
+      0, pos_seq_.size() - 1);
 
   index1 = index_distribution(generator_);
   index2 = index_distribution(generator_);

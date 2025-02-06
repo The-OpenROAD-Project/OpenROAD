@@ -36,6 +36,7 @@
 #include "Multilevel.h"
 
 #include <algorithm>
+#include <boost/random/uniform_int_distribution.hpp>
 #include <boost/range/iterator_range_core.hpp>
 #include <functional>
 #include <limits>
@@ -303,7 +304,8 @@ void MultilevelPartitioner::InitialPartition(
              "Running Initial Partitioning...");
   std::mt19937 gen;
   gen.seed(seed_);
-  std::uniform_int_distribution<> dist(0, std::numeric_limits<int>::max());
+  boost::random::uniform_int_distribution<> dist(
+      0, std::numeric_limits<int>::max());
   std::vector<float> initial_solutions_cost;
   std::vector<bool>
       initial_solutions_flag;  // if the solutions statisfy balance constraint
