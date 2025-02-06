@@ -7,7 +7,6 @@
 #include "utl/deleter.h"
 
 namespace mpl {
-namespace {
 
 class MplTest : public ::testing::Test
 {
@@ -51,5 +50,4 @@ class MplTest : public ::testing::Test
   unsigned int dimension_ = 500000;
 };
 
-}  // namespace
 }  // namespace mpl
