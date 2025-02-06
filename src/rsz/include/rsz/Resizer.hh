@@ -270,6 +270,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool dontTouch(const Instance* inst);
   void setDontTouch(const Net* net, bool dont_touch);
   bool dontTouch(const Net* net);
+  bool dontTouch(const Pin* pin);
   void reportDontTouch();
 
   void setMaxUtilization(double max_utilization);
