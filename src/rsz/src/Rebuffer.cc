@@ -223,8 +223,10 @@ BufferedNetPtr RepairSetup::rebufferForTiming(const BufferedNetPtr& bnet)
             Vertex* vertex = graph_->pinLoadVertex(load_pin);
             PathRef req_path = sta_->vertexWorstSlackPath(vertex, max_);
             PathRef arrival_path;
-            TimingArc* arc;
-            req_path.prevPath(sta_, arrival_path, arc);
+            if (!req_path.isNull()) {
+              TimingArc* arc;
+              req_path.prevPath(sta_, arrival_path, arc);
+            }
             bnet->setArrivalPath(arrival_path);
             bnet->setRequiredPath(req_path);
             debugPrint(logger_,
