@@ -104,7 +104,7 @@ void Graphics::initHeatmap()
       "Type:",
       []() {
         return std::vector<std::string>{
-            "Density", "Overflow", "OverflowMinMax"};
+            "Density", "Overflow", "Overflow Normalized"};
       },
       [this]() -> std::string {
         switch (heatmap_type_) {
@@ -113,7 +113,7 @@ void Graphics::initHeatmap()
           case Overflow:
             return "Overflow";
           case OverflowMinMax:
-            return "OverflowMinMax";
+            return "Overflow Normalized";
         }
         return "Density";
       },
@@ -122,7 +122,7 @@ void Graphics::initHeatmap()
           heatmap_type_ = Density;
         } else if (value == "Overflow") {
           heatmap_type_ = Overflow;
-        } else if (value == "OverflowMinMax") {
+        } else if (value == "Overflow Normalized") {
           heatmap_type_ = OverflowMinMax;
         } else {
           heatmap_type_ = Density;
