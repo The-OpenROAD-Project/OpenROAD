@@ -55,7 +55,7 @@ tapcell
 | ----- | ----- |
 | `[-cnrcap_nwin_master]` | Macro cell placed at the corners the core area according the row orientation. |
 | `[-cnrcap_nwout_master]` | Macro cell placed at the corners the core area according the row orientation. |
-| `[-disallow_one_site_gaps]` | KIV. |
+| `[-disallow_one_site_gaps]` | Do not leave 1 site gaps when placing tapcells. |
 | `[-distance]` | Distance (in microns) between each tapcell in the checkerboard. |
 | `[-endcap_cpp]` | Option is deprecated. |
 | `[-endcap_master]` | Master used as an endcap. |
@@ -155,6 +155,7 @@ This command is used for tapcell placement only.
 place_tapcells
     -distance dist
     -master tapcell_master
+    [-disallow_one_site_gaps]
 ```
 
 #### Options
@@ -163,6 +164,7 @@ place_tapcells
 | ----- | ----- |
 | `-distance` | Distance between tapcells. |
 | `-master` | Master to use for the tapcells. |
+| `-disallow_one_site_gaps` | Do not leave 1 site gaps when placing tapcells. |
 
 
 ### Remove Tapcells/Endcaps

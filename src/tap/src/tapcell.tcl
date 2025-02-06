@@ -379,13 +379,14 @@ proc place_endcaps { args } {
 
 sta::define_cmd_args "place_tapcells" {
   -master tapcell_master \
-  -distance dist
+  -distance dist \
+  [-disallow_one_site_gaps]
 }
 
 proc place_tapcells { args } {
   sta::parse_key_args "place_tapcells" args \
     keys {-master -distance} \
-    flags {}
+    flags {-disallow_one_site_gaps}
 
   sta::check_argc_eq0 "place_tapcells" $args
 
@@ -398,7 +399,10 @@ proc place_tapcells { args } {
     set master [tap::find_master $keys(-master)]
   }
 
-  tap::insert_tapcells $master $dist
+  tap::insert_tapcells \
+    $master \
+    $dist \
+    [info exists flags(-disallow_one_site_gaps)]
 }
 
 namespace eval tap {

@@ -178,11 +178,13 @@
 
   void insert_tapcells(
     odb::dbMaster* master,
-    int distance)
+    int distance,
+    bool disallow_one_site_gaps)
   {
     Options options;
     options.dist = distance;
     options.tapcell_master = master;
+    options.disallow_one_site_gaps = disallow_one_site_gaps;
   
     getTapcell()->placeTapcells(options);
   }
