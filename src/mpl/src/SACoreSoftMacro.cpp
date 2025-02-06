@@ -752,7 +752,7 @@ void SACoreSoftMacro::resizeOneCluster()
     logger_->error(
         utl::MPL,
         51,
-        "position sequence array is empty, please report this internal error");
+        "Position sequence array is empty, please report this internal error");
   }
 
   std::uniform_int_distribution<> index_distribution(0, pos_seq_.size() - 1);
