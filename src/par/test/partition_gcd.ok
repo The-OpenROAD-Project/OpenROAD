@@ -3,7 +3,7 @@
 [INFO PAR-0004] Partitioning netlist.
 Netlist Partitioning Parameters
 	Number of partitions = 2
-	UBfactor = 1.0
+	UBfactor = 1
 	Seed = 1
 	Vertex dimensions = 1
 	Hyperedge dimensions = 1
@@ -21,7 +21,7 @@ Display Timing Path Cuts Statistics
 	Total number of timing-critical paths = 1
 	Total number of timing-noncritical paths = 51
 	The worst number of cuts on timing-critical paths = 1
-	The average number of cuts on timing-critical paths = 1.0
+	The average number of cuts on timing-critical paths = 1
 	Total number of timing-noncritical to timing critical paths = 32
 	The worst number of cuts on timing-non2critical paths = 2
 	The average number of cuts on timing-non2critical paths = 1.28125
