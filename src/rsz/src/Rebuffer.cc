@@ -489,6 +489,8 @@ int RepairSetup::rebuffer(const Pin* drvr_pin)
 
   if (network_->isTopLevelPort(drvr_pin)) {
     net = network_->net(network_->term(drvr_pin));
+    db_network_->staToDb(net, db_net, db_modnet);
+
     LibertyCell* buffer_cell = resizer_->buffer_lowest_drive_;
     // Should use sdc external driver here.
     LibertyPort* input;
@@ -610,23 +612,24 @@ std::tuple<PathRef, Delay> RepairSetup::drvrPinTiming(
     PathRef driver_path;
     TimingArc* driver_arc;
     arrival_path.prevPath(sta_, driver_path, driver_arc);
-    assert(driver_arc && !driver_arc->isWire() && driver_arc->isTimingCheck());
-    const DcalcAnalysisPt* dcalc_ap = arrival_path.dcalcAnalysisPt(sta_);
+    if (!driver_path.isNull()) {
+      const DcalcAnalysisPt* dcalc_ap = arrival_path.dcalcAnalysisPt(sta_);
+      sta::LoadPinIndexMap load_pin_index_map(network_);
+      Slew slew = graph_->slew(driver_path.vertex(sta_),
+                               driver_arc->fromEdge()->asRiseFall(),
+                               dcalc_ap->index());
+      auto dcalc_result
+          = arc_delay_calc_->gateDelay(nullptr,
+                                       driver_arc,
+                                       slew,
+                                       bnet->cap() + drvr_port_->capacitance(),
+                                       nullptr,
+                                       load_pin_index_map,
+                                       dcalc_ap);
+      return {driver_path, dcalc_result.gateDelay()};
+    }
 
-    sta::LoadPinIndexMap load_pin_index_map(network_);
-    Slew slew = graph_->slew(driver_path.vertex(sta_),
-                             driver_arc->fromEdge()->asRiseFall(),
-                             dcalc_ap->index());
-    auto dcalc_result
-        = arc_delay_calc_->gateDelay(nullptr,
-                                     driver_arc,
-                                     slew,
-                                     bnet->cap() + drvr_port_->capacitance(),
-                                     nullptr,
-                                     load_pin_index_map,
-                                     dcalc_ap);
-
-    return {driver_path, dcalc_result.gateDelay()};
+    return {arrival_path, 0};
   }
   return {PathRef{}, 0};
 }

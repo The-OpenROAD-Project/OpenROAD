@@ -79,6 +79,7 @@ or_integration_tests(
     repair_setup6
     repair_setup7
     repair_setup8
+    repair_setup9
     repair_setup_undo
     repair_slew1
     repair_slew2
