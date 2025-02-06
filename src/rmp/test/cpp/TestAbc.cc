@@ -35,6 +35,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
+#include "sta/VerilogReader.hh"
 #include "sta/VerilogWriter.hh"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
@@ -96,13 +97,16 @@ class AbcTest : public ::testing::Test
     // Assumes module name is "top" and clock name is "clk"
     sta::dbNetwork* network = sta_->getDbNetwork();
     ord::dbVerilogNetwork verilog_network;
+    sta::VerilogReader* verilog_reader = nullptr;
     verilog_network.init(network);
-    ord::dbReadVerilog(file_name.c_str(), &verilog_network);
+    ord::dbReadVerilog(file_name.c_str(), &verilog_network, verilog_reader);
     ord::dbLinkDesign(top.c_str(),
                       &verilog_network,
+                      verilog_reader,
                       db_.get(),
                       &logger_,
                       /*hierarchy = */ false);
+    verilog_reader = nullptr;
 
     sta_->postReadDb(db_.get());
 

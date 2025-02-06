@@ -54,6 +54,8 @@ or_integration_tests(
     core_grid_with_single_layer_rings
     design_width
     existing
+    global_connect_with_dont_touch
+    global_connect_with_dont_touch_warning
     macros
     macros_add_twice
     macros_cells

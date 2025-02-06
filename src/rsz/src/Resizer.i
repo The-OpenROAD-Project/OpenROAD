@@ -123,8 +123,13 @@ using rsz::ParasiticsSrc;
   else if (stringEq(arg, "detailed_routing"))
     $1 = ParasiticsSrc::detailed_routing;
   else {
-    Tcl_SetResult(interp,const_cast<char*>("Error: parasitics source."), TCL_STATIC);
-    return TCL_ERROR;
+    Logger* logger = ord::getLogger();
+    try {
+      logger->error(utl::RSZ, 19, "Unknown parasitics source '{}'.", arg);
+    } catch (const std::exception &e) {
+      Tcl_SetResult(interp, const_cast<char*>(e.what()), TCL_STATIC);
+      return TCL_ERROR;
+    }
   }
 }
 

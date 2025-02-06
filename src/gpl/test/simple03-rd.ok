@@ -72,11 +72,11 @@
 [INFO GPL-0040] NumTiles: 196
 [INFO GPL-0081] TotalRouteOverflow: 0.0000
 [INFO GPL-0082] OverflowTileCnt: 0
-[INFO GPL-0083] 0.5%RC: 0.4881
-[INFO GPL-0084] 1.0%RC: 0.4751
-[INFO GPL-0085] 2.0%RC: 0.4543
-[INFO GPL-0086] 5.0%RC: 0.4248
-[INFO GPL-0087] FinalRC: 0.4816316
+[INFO GPL-0083] 0.5%RC: 0.5573
+[INFO GPL-0084] 1.0%RC: 0.5410
+[INFO GPL-0085] 2.0%RC: 0.5147
+[INFO GPL-0086] 5.0%RC: 0.4776
+[INFO GPL-0087] FinalRC: 0.54914284
 [INFO GPL-0077] FinalRC lower than targetRC(1.2500), routability not needed.
 [NesterovSolve] Iter:  290 overflow: 0.267 HPWL: 4778698
 [NesterovSolve] Iter:  300 overflow: 0.233 HPWL: 4810713

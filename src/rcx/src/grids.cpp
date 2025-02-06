@@ -1075,7 +1075,7 @@ bool Ath__track::place2(Ath__wire* w, int mark1, int mark2)
 
   return status;
 }
-int SdbPlaceWireNoTouchCheckForOverlap = 0;
+
 void Ath__track::linkWire(Ath__wire*& w1, Ath__wire*& w2)
 {
   Ath__overlapAdjust adj
