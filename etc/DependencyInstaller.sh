@@ -107,7 +107,7 @@ _installCommonDev() {
         md5sum -c <(echo "${bisonChecksum} bison-${bisonVersion}.tar.gz") || exit 1
         tar xf bison-${bisonVersion}.tar.gz
         cd bison-${bisonVersion}
-        ./configure
+        ./configure --prefix=${bisonPrefix}
         make -j install
         echo "bison ${bisonVersion} installed (from ${bisonInstalledVersion})."
     else
