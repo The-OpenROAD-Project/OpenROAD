@@ -303,9 +303,19 @@ _installOrTools() {
     done
 
     orToolsPath=${PREFIX:-"/opt/or-tools"}
+    orToolsVersion="none"
+    if [ -f ${orToolsPath}/Makefile ]; then
+        orToolsVersion=$(make -C ${orToolsPath} detect | grep VERSION | awk '{print $3}')
+    fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=$(realpath $orToolsPath) "
+    if [ ${orToolsVersion} == ${orToolsVersionSmall} ]; then
+        return
+    else
+        rm -rf ${orToolsPath}
+    fi
     if [ "$(uname -m)" == "aarch64" ]; then
-        echo "OR-TOOLS NOT FOUND"
-        echo "Installing  OR-Tools for aarch64..."
+        echo "Installing or-tools for aarch64"
+        cd "${baseDir}"
         git clone --depth=1 -b "v${orToolsVersionBig}" https://github.com/google/or-tools.git
         cd or-tools
         ${cmakePrefix}/bin/cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_SAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_INSTALL_PREFIX=${orToolsPath} -DCMAKE_CXX_FLAGS="-w" -DCMAKE_C_FLAGS="-w"
@@ -314,6 +324,7 @@ _installOrTools() {
         if [[ $osVersion == rodete ]]; then
             osVersion=11
         fi
+        cd "${baseDir}"
         orToolsFile=or-tools_${arch}_${os}-${osVersion}_cpp_v${orToolsVersionSmall}.tar.gz
         eval wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
         if command -v brew &> /dev/null; then
@@ -321,9 +332,7 @@ _installOrTools() {
         fi
         mkdir -p ${orToolsPath}
         tar --strip 1 --dir ${orToolsPath} -xf ${orToolsFile}
-        rm -rf ${baseDir}
     fi
-    CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=$(realpath $orToolsPath) "
 }
 
 _installUbuntuCleanUp() {
