@@ -130,22 +130,6 @@ class RepairAntennas
                           odb::dbMTerm* diode_mterm,
                           float ratio_margin);
   void repairAntennas(odb::dbMTerm* diode_mterm);
-  void addJumperAndVias(GRoute& route,
-                        const int& init_x,
-                        const int& init_y,
-                        const int& final_x,
-                        const int& final_y,
-                        const int& layer_level);
-  void addJumperHorizontal(GRoute& route,
-                           const int& seg_id,
-                           const int& bridge_init_x,
-                           const int& bridge_final_x,
-                           const int& layer_level);
-  void addJumperVertical(GRoute& route,
-                         const int& seg_id,
-                         const int& bridge_init_y,
-                         const int& bridge_final_y,
-                         const int& layer_level);
   int illegalDiodePlacementCount() const
   {
     return illegal_diode_placement_count_;
@@ -177,6 +161,17 @@ class RepairAntennas
   using value = std::pair<box, int>;
   using r_tree = bgi::rtree<value, bgi::quadratic<8, 4>>;
 
+  void addJumperAndVias(GRoute& route,
+                        const int& init_x,
+                        const int& init_y,
+                        const int& final_x,
+                        const int& final_y,
+                        const int& layer_level);
+  void addJumperToRoute(GRoute& route,
+                        const int& seg_id,
+                        const int& jumper_init_pos,
+                        const int& jumper_final_pos,
+                        const int& layer_level);
   void findSegments(const GRoute& route,
                     odb::dbITerm* iterm,
                     const SegmentNodeIds& segment_ids,
@@ -199,18 +194,18 @@ class RepairAntennas
                         const int& max_layer,
                         LayerToSegmentNodeVector& graph);
   void setAdjacentSegments(LayerToSegmentNodeVector& segment_by_layer);
-  int getSegmentByLayer(const GRoute& route,
-                        const int& max_layer,
-                        LayerToSegmentNodeVector& segment_by_layer);
-  bool addJumper(GRoute& route, const int& segment_id, const int& jumper_pos);
+  int getSegmentsPerLayer(const GRoute& route,
+                          const int& max_layer,
+                          LayerToSegmentNodeVector& segment_by_layer);
+  void addJumper(GRoute& route, const int& segment_id, const int& jumper_pos);
   void checkSegmentPosition(const int& init_x,
                             const int& init_y,
                             const int& final_x,
                             const int& final_y,
                             const odb::Point& parent_pos,
                             const bool& is_horizontal,
-                            std::vector<int>& position_cand);
-  int getBestPosition(const std::vector<int>& position_cand,
+                            std::vector<int>& candidate_positions);
+  int getBestPosition(const std::vector<int>& candidate_positions,
                       const bool& is_horizontal,
                       const odb::Point& parent_pos);
   void getViolations(const std::vector<ant::Violation>& violations,

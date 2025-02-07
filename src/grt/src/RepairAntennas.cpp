@@ -899,61 +899,50 @@ void RepairAntennas::addJumperAndVias(GRoute& route,
       init_x, init_y, final_x, final_y, layer_level + 2, 1);
 }
 
-void RepairAntennas::addJumperHorizontal(GRoute& route,
-                                         const int& seg_id,
-                                         const int& bridge_init_x,
-                                         const int& bridge_final_x,
-                                         const int& layer_level)
+void RepairAntennas::addJumperToRoute(GRoute& route,
+                                      const int& seg_id,
+                                      const int& jumper_init_pos,
+                                      const int& jumper_final_pos,
+                                      const int& layer_level)
 {
   const int seg_init_x = route[seg_id].init_x;
   const int seg_init_y = route[seg_id].init_y;
-  const int seg_final_y = route[seg_id].final_y;
+  const bool is_horizontal = (seg_init_x != route[seg_id].final_x);
+
+  int jumper_init_x;
+  int jumper_init_y;
+  int jumper_final_x;
+  int jumper_final_y;
+
+  if (is_horizontal) {
+    jumper_init_x = jumper_init_pos;
+    jumper_final_x = jumper_final_pos;
+    jumper_init_y = jumper_final_y = seg_init_y;
+  } else {
+    jumper_init_y = jumper_init_pos;
+    jumper_final_y = jumper_final_pos;
+    jumper_init_x = jumper_final_x = seg_init_x;
+  }
   // Add vias and jumper in the position
   addJumperAndVias(route,
-                   bridge_init_x,
-                   seg_init_y,
-                   bridge_final_x,
-                   seg_final_y,
+                   jumper_init_x,
+                   jumper_init_y,
+                   jumper_final_x,
+                   jumper_final_y,
                    layer_level);
   // Divide segment (new segment is added before jumper insertion)
   route.push_back(GSegment(seg_init_x,
                            seg_init_y,
                            layer_level,
-                           bridge_init_x,
-                           seg_init_y,
+                           jumper_init_x,
+                           jumper_init_y,
                            layer_level));
   // old segment is reduced (after jumper)
-  route[seg_id].init_x = bridge_final_x;
+  route[seg_id].init_x = jumper_final_x;
+  route[seg_id].init_y = jumper_final_y;
 }
 
-void RepairAntennas::addJumperVertical(GRoute& route,
-                                       const int& seg_id,
-                                       const int& bridge_init_y,
-                                       const int& bridge_final_y,
-                                       const int& layer_level)
-{
-  const int seg_init_x = route[seg_id].init_x;
-  const int seg_final_x = route[seg_id].final_x;
-  const int seg_init_y = route[seg_id].init_y;
-  // Add vias and jumper in the position
-  addJumperAndVias(route,
-                   seg_init_x,
-                   bridge_init_y,
-                   seg_final_x,
-                   bridge_final_y,
-                   layer_level);
-  // Divide segment (new segment is added before jumper insertion)
-  route.push_back(GSegment(seg_init_x,
-                           seg_init_y,
-                           layer_level,
-                           seg_init_x,
-                           bridge_init_y,
-                           layer_level));
-  // old segment is reduced (after jumper)
-  route[seg_id].init_y = bridge_final_y;
-}
-
-bool RepairAntennas::addJumper(GRoute& route,
+void RepairAntennas::addJumper(GRoute& route,
                                const int& segment_id,
                                const int& jumper_pos)
 {
@@ -967,19 +956,18 @@ bool RepairAntennas::addJumper(GRoute& route,
     // Get start and final X position of jumper
     const int jumper_start_x = jumper_pos;
     const int jumper_final_x = jumper_start_x + jumper_size_;
-    addJumperHorizontal(
+    addJumperToRoute(
         route, segment_id, jumper_start_x, jumper_final_x, segment_layer_level);
   } else {
     // Get start and final Y position jumper
     const int jumper_start_y = jumper_pos;
     const int jumper_final_y = jumper_start_y + jumper_size_;
-    addJumperVertical(
+    addJumperToRoute(
         route, segment_id, jumper_start_y, jumper_final_y, segment_layer_level);
   }
-  return true;
 }
 
-int RepairAntennas::getSegmentByLayer(
+int RepairAntennas::getSegmentsPerLayer(
     const GRoute& route,
     const int& max_layer,
     LayerToSegmentNodeVector& segment_by_layer)
@@ -1072,7 +1060,7 @@ int RepairAntennas::buildSegmentGraph(const GRoute& route,
                                       LayerToSegmentNodeVector& graph)
 {
   // Create nodes by each segment
-  int seg_count = getSegmentByLayer(route, max_layer, graph);
+  int seg_count = getSegmentsPerLayer(route, max_layer, graph);
   // Create conections between nodes on graph
   setAdjacentSegments(graph);
 
@@ -1134,7 +1122,7 @@ void RepairAntennas::checkSegmentPosition(const int& init_x,
                                           const int& final_y,
                                           const odb::Point& parent_pos,
                                           const bool& is_horizontal,
-                                          std::vector<int>& position_cand)
+                                          std::vector<int>& candidate_positions)
 {
   // One tile size of distance from init or segment end
   const int jumper_dist = 1;
@@ -1146,10 +1134,10 @@ void RepairAntennas::checkSegmentPosition(const int& init_x,
       && free_via_size >= jumper_size_ + (2 * jumper_dist * tile_size_)) {
     // Calculate the final jumper position
     if (is_horizontal) {
-      position_cand.push_back(
+      candidate_positions.push_back(
           getJumperPosition(init_x, final_x, parent_pos.x()));
     } else {
-      position_cand.push_back(
+      candidate_positions.push_back(
           getJumperPosition(init_y, final_y, parent_pos.y()));
     }
   }
@@ -1177,14 +1165,14 @@ void getViaPosition(LayerToSegmentNodeVector& segment_graph,
   }
 }
 
-int RepairAntennas::getBestPosition(const std::vector<int>& position_cand,
+int RepairAntennas::getBestPosition(const std::vector<int>& candidate_positions,
                                     const bool& is_horizontal,
                                     const odb::Point& parent_pos)
 {
   int jumper_position = -1;
   // Find best position of the position candidates
   int min_dist = -1, dist;
-  for (const int& pos : position_cand) {
+  for (const int& pos : candidate_positions) {
     // Get distance
     if (is_horizontal) {
       dist = std::abs((pos + tile_size_) - parent_pos.x());
@@ -1222,7 +1210,8 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
   int pos_y = seg_init_y;
   int last_block_x = pos_x;
   int last_block_y = pos_y;
-  bool has_available_resources, is_via;
+  bool has_available_resources;
+  bool is_via;
 
   const int layer_level = seg.init_layer;
   const bool is_horizontal = (seg.init_x != seg.final_x);
@@ -1231,7 +1220,7 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
   getViaPosition(segment_graph, route, seg_node, via_pos);
 
   // Save best positions to add jumper
-  std::vector<int> position_cand;
+  std::vector<int> candidate_positions;
   // Iterate all position of segment
   while (pos_x <= seg_final_x && pos_y <= seg_final_y) {
     // Check if the position has resources available
@@ -1247,7 +1236,7 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
                            pos_y,
                            parent_pos,
                            is_horizontal,
-                           position_cand);
+                           candidate_positions);
       last_block_x = pos_x;
       last_block_y = pos_y;
     }
@@ -1265,9 +1254,10 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
                          seg_final_y,
                          parent_pos,
                          is_horizontal,
-                         position_cand);
+                         candidate_positions);
   }
-  jumper_position = getBestPosition(position_cand, is_horizontal, parent_pos);
+  jumper_position
+      = getBestPosition(candidate_positions, is_horizontal, parent_pos);
   return (jumper_position != -1);
 }
 
@@ -1398,10 +1388,12 @@ int RepairAntennas::addJumperOnSegments(
         // Avoid overlap with last jumper position
         const int dist = abs(last_pos_aux - pos_it);
         if (dist > jumper_size_) {
-          jumper_by_net += addJumper(route, seg_it.first, pos_it);
+          addJumper(route, seg_it.first, pos_it);
+          jumper_by_net++;
         }
       } else {
-        jumper_by_net += addJumper(route, seg_it.first, pos_it);
+        addJumper(route, seg_it.first, pos_it);
+        jumper_by_net++;
       }
       last_pos_aux = pos_it;
     }
