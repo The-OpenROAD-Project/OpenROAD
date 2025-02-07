@@ -58,6 +58,7 @@ class OpenRoad;
 using odb::dbDatabase;
 
 using sta::Cell;
+using sta::ConcreteCell;
 using sta::ConcreteNetwork;
 using sta::dbNetwork;
 
@@ -70,6 +71,7 @@ class dbVerilogNetwork : public ConcreteNetwork
   dbVerilogNetwork();
   Cell* findAnyCell(const char* name) override;
   void init(dbNetwork* db_network);
+  bool isBlackBox(ConcreteCell* cell);
 
  private:
   NetworkReader* db_network_ = nullptr;
