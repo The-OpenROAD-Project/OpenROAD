@@ -199,13 +199,22 @@ class Cluster
   void clearHardMacros();
   void copyInstances(const Cluster& cluster);  // only based on cluster type
 
-  // Position must be specified when setting an IO cluster
-  void setAsIOCluster(const std::pair<float, float>& pos,
-                      float width,
-                      float height,
-                      Boundary constraint_boundary);
   bool isIOCluster() const;
+
+  bool isClusterOfUnplacedIOPins() const
+  {
+    return is_cluster_of_unplaced_io_pins_;
+  }
+  void setAsClusterOfUnplacedIOPins(const std::pair<float, float>& pos,
+                                    float width,
+                                    float height,
+                                    Boundary constraint_boundary);
   Boundary getConstraintBoundary() const { return constraint_boundary_; }
+
+  bool isIOPadCluster() const { return is_io_pad_cluster_; }
+  void setAsIOPadCluster(const std::pair<float, float>& pos,
+                         float width,
+                         float height);
 
   void setAsArrayOfInterconnectedMacros();
   bool isArrayOfInterconnectedMacros() const;
@@ -300,9 +309,8 @@ class Cluster
   // all the macros in the cluster
   std::vector<HardMacro*> hard_macros_;
 
-  // We model pads as clusters with no area
-  // The position be the center of IOs
-  bool is_io_cluster_ = false;
+  bool is_cluster_of_unplaced_io_pins_{false};
+  bool is_io_pad_cluster_{false};
   Boundary constraint_boundary_ = NONE;
 
   bool is_array_of_interconnected_macros = false;
@@ -365,7 +373,7 @@ class HardMacro
 
   void setCluster(Cluster* cluster) { cluster_ = cluster; }
   Cluster* getCluster() const { return cluster_; }
-  bool isIOCluster() const;
+  bool isClusterOfUnplacedIOPins() const;
 
   // Get Physical Information
   // Note that the default X and Y include halo_width
@@ -539,7 +547,7 @@ class SoftMacro
   bool isMacroCluster() const;
   bool isStdCellCluster() const;
   bool isMixedCluster() const;
-  bool isIOCluster() const;
+  bool isClusterOfUnplacedIOPins() const;
   void setLocationF(float x, float y);
   void setShapeF(float width, float height);
   int getNumMacro() const;

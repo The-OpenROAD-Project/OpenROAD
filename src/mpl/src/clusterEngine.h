@@ -54,6 +54,7 @@ namespace mpl {
 
 using InstToHardMap = std::map<odb::dbInst*, std::unique_ptr<HardMacro>>;
 using ModuleToMetricsMap = std::map<odb::dbModule*, std::unique_ptr<Metrics>>;
+using PathInsts = std::vector<std::set<odb::dbInst*>>;
 
 struct DataFlowHypergraph
 {
@@ -80,20 +81,17 @@ struct DataFlow
 
   // Macro Pins --> Registers
   // Registers --> Macro Pins
-  std::vector<std::pair<odb::dbITerm*, std::vector<std::set<odb::dbInst*>>>>
-      macro_pins_and_regs;
+  std::vector<std::pair<odb::dbITerm*, PathInsts>> macro_pins_and_regs;
 
   // IO --> Register
   // Register --> IO
   // IO --> Macro Pin
   // Macro Pin --> IO
-  std::vector<std::pair<odb::dbBTerm*, std::vector<std::set<odb::dbInst*>>>>
-      io_and_regs;
+  std::vector<std::pair<odb::dbBTerm*, PathInsts>> io_and_regs;
 
   // Macro Pin --> Macros
   // Macros --> Macro Pin
-  std::vector<std::pair<odb::dbITerm*, std::vector<std::set<odb::dbInst*>>>>
-      macro_pins_and_macros;
+  std::vector<std::pair<odb::dbITerm*, PathInsts>> macro_pins_and_macros;
 };
 
 struct PhysicalHierarchyMaps
@@ -106,7 +104,8 @@ struct PhysicalHierarchyMaps
   ModuleToMetricsMap module_to_metrics;
 
   // Only for designs with IO Pads
-  std::map<odb::dbBTerm*, odb::dbInst*> bterm_to_inst;
+  std::map<odb::dbInst*, odb::dbBTerm*> pad_to_bterm;
+  std::map<odb::dbBTerm*, odb::dbInst*> bterm_to_pad;
 };
 
 struct PhysicalHierarchy
@@ -191,6 +190,8 @@ class ClusteringEngine
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();
+  void createIOPadClusters();
+  void createIOPadCluster(odb::dbInst* pad, odb::dbBTerm* bterm);
   void classifyBoundariesStateForIOs();
   std::map<Boundary, float> computeBlockageExtensionMap();
   Boundary getConstraintBoundary(const odb::Rect& die,
@@ -205,7 +206,7 @@ class ClusteringEngine
                               int& y,
                               int& width,
                               int& height);
-  void mapIOPads();
+  void mapIOPinsAndPads();
   void treatEachMacroAsSingleCluster();
   void incorporateNewCluster(std::unique_ptr<Cluster> cluster, Cluster* parent);
   void setClusterMetrics(Cluster* cluster);
@@ -278,6 +279,8 @@ class ClusteringEngine
 
   void printPhysicalHierarchyTree(Cluster* parent, int level);
   float computeMicronArea(odb::dbInst* inst);
+
+  bool isValidNet(odb::dbNet* net);
 
   odb::dbBlock* block_;
   sta::dbNetwork* network_;
