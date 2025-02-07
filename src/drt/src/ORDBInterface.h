@@ -40,9 +40,10 @@ class ORDBInterface : public AbstractORDBInterface
 {
  public:
   ORDBInterface() = default;
-  ~ORDBInterface() = default;
+  ~ORDBInterface() override = default;
   void readDb(const char* file_name) override;
   void writeDb(const char* file_name) override;
+  int getThreadCount() override;
 };
 
 }  // namespace drt

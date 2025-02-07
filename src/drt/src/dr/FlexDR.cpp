@@ -1155,7 +1155,7 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
     }
   }
   bool changed = false;
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
+  omp_set_num_threads(or_db_interface_->getThreadCount());
   for (auto& batch : workers_batches) {
     processWorkersBatch(batch, iter_prog);
     std::map<int, FlexDRWorker*>
@@ -1225,7 +1225,7 @@ void FlexDR::optimizationFlow(const SearchRepairArgs& args,
     xIdx++;
   }
 
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
+  omp_set_num_threads(or_db_interface_->getThreadCount());
   int version = 0;
   increaseClipsize_ = false;
   numWorkUnits_ = 0;
@@ -1564,7 +1564,7 @@ void FlexDR::reportGuideCoverage()
   std::vector<uint64_t> totalCoveredAreaByLayerNum(numLayers, 0);
   std::map<frNet*, std::vector<float>> netsCoverage;
   const auto& nets = getDesign()->getTopBlock()->getNets();
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
+  omp_set_num_threads(or_db_interface_->getThreadCount());
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < nets.size(); i++) {  // NOLINT
     const auto& net = nets.at(i);
@@ -1741,7 +1741,7 @@ void FlexDR::fixMaxSpacing()
     }
   }
   // create drWorkers for the final regions
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
+  omp_set_num_threads(or_db_interface_->getThreadCount());
 #pragma omp parallel for schedule(dynamic)
   for (size_t i = 0; i < merged_regions.size(); i++) {
     auto route_box = merged_regions.at(i);

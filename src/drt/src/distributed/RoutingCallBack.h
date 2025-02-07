@@ -62,13 +62,11 @@ class RoutingCallBack : public dst::JobCallBack
  public:
   RoutingCallBack(TritonRoute* router,
                   dst::Distributed* dist,
-                  utl::Logger* logger,
-                  int thread_count)
+                  utl::Logger* logger)
       : router_(router),
         dist_(dist),
         logger_(logger),
         init_(true),
-        thread_count_(thread_count),
         pa_(router->getDesign(),
             logger,
             nullptr,
@@ -84,7 +82,7 @@ class RoutingCallBack : public dst::JobCallBack
         = static_cast<RoutingJobDescription*>(msg.getJobDescription());
     if (init_) {
       init_ = false;
-      omp_set_num_threads(thread_count_);
+      omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
     }
     auto workers = desc->getWorkers();
     int size = workers.size();
@@ -140,7 +138,8 @@ class RoutingCallBack : public dst::JobCallBack
       frTime t;
       logger_->report("Design Update");
       if (desc->isDesignUpdate()) {
-        router_->updateDesign(desc->getUpdates());
+        router_->updateDesign(desc->getUpdates(),
+                              ord::OpenRoad::openRoad()->getThreadCount());
       } else {
         router_->resetDb(desc->getDesignPath().c_str());
       }
@@ -190,7 +189,7 @@ class RoutingCallBack : public dst::JobCallBack
         break;
       case PinAccessJobDescription::INST_ROWS: {
         auto instRows = deserializeInstRows(desc->getPath());
-        omp_set_num_threads(thread_count_);
+        omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < instRows.size(); i++) {  // NOLINT
           pa_.genInstRowPattern(instRows.at(i));
@@ -266,7 +265,6 @@ class RoutingCallBack : public dst::JobCallBack
   std::string router_cfg_path_;
   bool init_;
   FlexDRViaData via_data_;
-  int thread_count_;
   FlexPA pa_;
 };
 

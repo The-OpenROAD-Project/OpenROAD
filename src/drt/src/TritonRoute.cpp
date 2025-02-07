@@ -342,9 +342,10 @@ static void deserializeUpdates(frDesign* design,
   file.close();
 }
 
-void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
+void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs,
+                               int num_threads)
 {
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
+  omp_set_num_threads(num_threads);
   std::vector<std::vector<drUpdate>> updates(updatesStrs.size());
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < updatesStrs.size(); i++) {
@@ -353,9 +354,9 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
   applyUpdates(updates);
 }
 
-void TritonRoute::updateDesign(const std::string& path)
+void TritonRoute::updateDesign(const std::string& path, int num_threads)
 {
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
+  omp_set_num_threads(num_threads);
   std::vector<std::vector<drUpdate>> updates;
   deserializeUpdates(design_.get(), path, updates);
   applyUpdates(updates);
@@ -523,18 +524,16 @@ void TritonRoute::init(
     dst::Distributed* dist,
     stt::SteinerTreeBuilder* stt_builder,
     std::unique_ptr<AbstractGraphicsFactory> graphics_factory,
-    std::unique_ptr<AbstractORDBInterface> or_db_interface,
-    int num_threads)
+    std::unique_ptr<AbstractORDBInterface> or_db_interface)
 {
   db_ = db;
   logger_ = logger;
   dist_ = dist;
   stt_builder_ = stt_builder;
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
-  dist->addCallBack(new RoutingCallBack(this, dist, logger, num_threads));
+  dist->addCallBack(new RoutingCallBack(this, dist, logger));
   graphics_factory_ = std::move(graphics_factory);
   or_db_interface_ = std::move(or_db_interface);
-  router_cfg_->MAX_THREADS = num_threads;
 }
 
 bool TritonRoute::initGuide()
@@ -639,7 +638,7 @@ void TritonRoute::dr()
                                  db_,
                                  router_cfg_.get(),
                                  or_db_interface_.get(),
-                                 router_cfg_->MAX_THREADS);
+                                 or_db_interface_->getThreadCount());
   if (debug_->debugDR) {
     dr_->setDebug(graphics_factory_->makeUniqueDRGraphics());
   }
@@ -905,7 +904,7 @@ void TritonRoute::sendDesignUpdates(const std::string& router_cfg_path)
     serializeTask = std::make_unique<ProfileTask>("DIST: SERIALIZE_UPDATES");
   }
   const auto& designUpdates = design_->getUpdates();
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
+  omp_set_num_threads(or_db_interface_->getThreadCount());
   std::vector<std::string> updates(designUpdates.size());
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < designUpdates.size(); i++) {
@@ -953,6 +952,7 @@ int TritonRoute::main()
         = fmt::format("{}/init_router_cfg.bin", debug_->dumpDir);
     writeGlobals(router_cfg_path);
   }
+  router_cfg_->MAX_THREADS = or_db_interface_->getThreadCount();
   if (distributed_) {
     if (router_cfg_->DO_PA) {
       asio::post(pa_pool, [this]() {
@@ -1074,7 +1074,7 @@ void TritonRoute::fixMaxSpacing()
                                  db_,
                                  router_cfg_.get(),
                                  or_db_interface_.get(),
-                                 router_cfg_->MAX_THREADS);
+                                 or_db_interface_->getThreadCount());
   dr_->init();
   dr_->fixMaxSpacing();
   io::Writer writer(getDesign(), logger_);
@@ -1118,7 +1118,7 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
     }
   }
   std::map<MarkerId, frMarker*> mapMarkers;
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
+  omp_set_num_threads(or_db_interface_->getThreadCount());
   for (auto& workers : workersBatches) {
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < workers.size(); i++) {  // NOLINT

@@ -109,8 +109,7 @@ class TritonRoute
             dst::Distributed* dist,
             stt::SteinerTreeBuilder* stt_builder,
             std::unique_ptr<AbstractGraphicsFactory> graphics_factory,
-            std::unique_ptr<AbstractORDBInterface> or_db_interface,
-            int num_threads);
+            std::unique_ptr<AbstractORDBInterface> or_db_interface);
 
   frDesign* getDesign() const { return design_.get(); }
   utl::Logger* getLogger() const { return logger_; }
@@ -174,8 +173,8 @@ class TritonRoute
   void updateGlobals(const char* file_name);
   void resetDb(const char* file_name);
   void clearDesign();
-  void updateDesign(const std::vector<std::string>& updates);
-  void updateDesign(const std::string& path);
+  void updateDesign(const std::vector<std::string>& updates, int num_threads);
+  void updateDesign(const std::string& path, int num_threads);
   void addWorkerResults(
       const std::vector<std::pair<int, std::string>>& results);
   bool getWorkerResults(std::vector<std::pair<int, std::string>>& results);

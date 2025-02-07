@@ -83,8 +83,7 @@ void initTritonRoute(OpenRoad* openroad)
                openroad->getDistributed(),
                openroad->getSteinerTreeBuilder(),
                std::move(graphics_factory),
-               std::move(or_db_interface),
-               ord::OpenRoad::openRoad()->getThreadCount());
+               std::move(or_db_interface));
 }
 
 }  // namespace ord

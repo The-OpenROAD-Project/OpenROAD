@@ -40,6 +40,7 @@ class AbstractORDBInterface
   virtual ~AbstractORDBInterface() = default;
   virtual void readDb(const char* file_name) = 0;
   virtual void writeDb(const char* file_name) = 0;
+  virtual int getThreadCount() = 0;
 };
 
 }  // namespace drt
