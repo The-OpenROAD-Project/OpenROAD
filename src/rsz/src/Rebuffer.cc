@@ -241,8 +241,9 @@ BufferedNetPtr RepairSetup::rebufferForTiming(const BufferedNetPtr& bnet)
             Z.push_back(bnet);
             return Z;
           }
-          case BufferedNetType::buffer:
+          default: {
             logger_->critical(RSZ, 71, "unhandled BufferedNet type");
+          }
         }
       },
       bnet);
