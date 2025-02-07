@@ -1759,7 +1759,10 @@ class dbBlock : public dbObject
                           FILE* out,
                           int indent_per_level = 4);
 
-  void printContent(std::stringstream& str_db);
+  //
+  // For debugging only.  Print block content to an ostream.
+  //
+  void debugPrintContent(std::ostream& str_db);
 
  private:
   void ComputeBBox();

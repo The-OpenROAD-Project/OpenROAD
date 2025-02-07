@@ -539,7 +539,7 @@ bool dbModInst::swapMaster(dbModule* new_module)
 
   if (logger->debugCheck(utl::ODB, "replace_design", 1)) {
     std::stringstream sstr;
-    getMaster()->getOwner()->printContent(sstr);
+    getMaster()->getOwner()->debugPrintContent(sstr);
     std::ofstream outfile("before.txt");
     outfile << sstr.str();
     outfile.close();
@@ -672,7 +672,7 @@ bool dbModInst::swapMaster(dbModule* new_module)
 
   if (logger->debugCheck(utl::ODB, "replace_design", 1)) {
     std::stringstream sstr;
-    getMaster()->getOwner()->printContent(sstr);
+    getMaster()->getOwner()->debugPrintContent(sstr);
     std::ofstream outfile("after_replace.txt");
     outfile << sstr.str();
     outfile.close();

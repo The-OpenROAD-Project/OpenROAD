@@ -1059,7 +1059,7 @@ void Verilog2db::processUnusedCells(const char* top_cell_name,
     makeUnusedDbNetlist();
     if (logger_->debugCheck(utl::ODB, "dbReadVerilog", 1)) {
       std::stringstream sstr;
-      block_->printContent(sstr);
+      block_->debugPrintContent(sstr);
       std::string out_file_name
           = "child_block_" + std::string(cell->name()) + ".txt";
       std::ofstream out_file(out_file_name.c_str());
@@ -1072,7 +1072,7 @@ void Verilog2db::processUnusedCells(const char* top_cell_name,
     restoreTopBlock(top_cell_name);
     if (logger_->debugCheck(utl::ODB, "dbReadVerilog", 1)) {
       std::stringstream sstr;
-      block_->printContent(sstr);
+      block_->debugPrintContent(sstr);
       std::ofstream out_file("top_block.txt");
       out_file << sstr.str();
       out_file.close();
