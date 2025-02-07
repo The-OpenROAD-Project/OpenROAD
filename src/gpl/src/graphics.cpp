@@ -102,13 +102,18 @@ void Graphics::initHeatmap()
   addMultipleChoiceSetting(
       "Type",
       "Type:",
-      []() { return std::vector<std::string>{"Density", "Overflow"}; },
+      []() {
+        return std::vector<std::string>{
+            "Density", "Overflow", "Overflow Normalized"};
+      },
       [this]() -> std::string {
         switch (heatmap_type_) {
           case Density:
             return "Density";
           case Overflow:
             return "Overflow";
+          case OverflowMinMax:
+            return "Overflow Normalized";
         }
         return "Density";
       },
@@ -117,6 +122,8 @@ void Graphics::initHeatmap()
           heatmap_type_ = Density;
         } else if (value == "Overflow") {
           heatmap_type_ = Overflow;
+        } else if (value == "Overflow Normalized") {
+          heatmap_type_ = OverflowMinMax;
         } else {
           heatmap_type_ = Density;
         }
@@ -188,6 +195,14 @@ void Graphics::drawForce(gui::Painter& painter)
 
       painter.setPen(gui::Painter::red, true);
       painter.drawLine(cx, cy, cx + dx, cy + dy);
+
+      // Draw a circle at the outer end of the line
+      int circle_x = static_cast<int>(cx + dx);
+      int circle_y = static_cast<int>(cy + dy);
+      float bin_area = bin.dx() * bin.dy();
+      int circle_radius = static_cast<int>(0.05 * std::sqrt(bin_area / M_PI));
+      painter.setPen(gui::Painter::red, true);
+      painter.drawCircle(circle_x, circle_y, circle_radius);
     }
   }
 }
@@ -451,15 +466,13 @@ odb::Rect Graphics::getBounds() const
 bool Graphics::populateMap()
 {
   BinGrid& grid = nbVec_[0]->getBinGrid();
-  for (const Bin& bin : grid.bins()) {
-    odb::Rect box(bin.lx(), bin.ly(), bin.ux(), bin.uy());
-    if (heatmap_type_ == Density) {
-      const double value = bin.density() * 100.0;
-      addToMap(box, value);
-    } else {
-      // Overflow isn't stored per bin so we recompute it here
-      // (see BinGrid::updateBinsGCellDensityArea).
+  odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
 
+  double min_value = std::numeric_limits<double>::max();
+  double max_value = std::numeric_limits<double>::lowest();
+
+  if (heatmap_type_ == OverflowMinMax) {
+    for (const Bin& bin : grid.bins()) {
       int64_t binArea = bin.binArea();
       const float scaledBinArea
           = static_cast<float>(binArea * bin.targetDensity());
@@ -468,9 +481,38 @@ bool Graphics::populateMap()
           0.0f,
           static_cast<float>(bin.instPlacedAreaUnscaled())
               + static_cast<float>(bin.nonPlaceAreaUnscaled()) - scaledBinArea);
-      odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
-      addToMap(box, block->dbuAreaToMicrons(value));
+      value = block->dbuAreaToMicrons(value);
+
+      min_value = std::min(min_value, value);
+      max_value = std::max(max_value, value);
     }
+  }
+
+  for (const Bin& bin : grid.bins()) {
+    odb::Rect box(bin.lx(), bin.ly(), bin.ux(), bin.uy());
+    double value = 0.0;
+
+    if (heatmap_type_ == Density) {
+      value = bin.density() * 100.0;
+    } else if (heatmap_type_ == Overflow || heatmap_type_ == OverflowMinMax) {
+      int64_t binArea = bin.binArea();
+      const float scaledBinArea
+          = static_cast<float>(binArea * bin.targetDensity());
+
+      double raw_value = std::max(
+          0.0f,
+          static_cast<float>(bin.instPlacedAreaUnscaled())
+              + static_cast<float>(bin.nonPlaceAreaUnscaled()) - scaledBinArea);
+      raw_value = block->dbuAreaToMicrons(raw_value);
+
+      if (heatmap_type_ == OverflowMinMax && max_value > min_value) {
+        value = (raw_value - min_value) / (max_value - min_value) * 100.0;
+      } else {
+        value = raw_value;
+      }
+    }
+
+    addToMap(box, value);
   }
 
   return true;
