@@ -93,7 +93,15 @@ void dct_2d_fft(const int M,
   Kokkos::DefaultExecutionSpace exec;
   Kokkos::View<float**, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> pre2d(pre.data(), M, N);
   Kokkos::View<Kokkos::complex<float>**, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> fft2d(fft.data(), M, (N / 2) + 1);
-  KokkosFFT::rfft2(exec, pre2d, fft2d, KokkosFFT::Normalization::none);
+
+  // For consistency we always calculate FFT on CPU (as Kokkos uses a different implementation for GPU)
+  Kokkos::DefaultHostExecutionSpace hostSpace;
+  auto hPre2d = Kokkos::create_mirror_view_and_copy(hostSpace, pre2d);
+  auto hFft2d = Kokkos::create_mirror_view(hostSpace, fft2d);
+
+  KokkosFFT::rfft2(hostSpace, hPre2d, hFft2d, KokkosFFT::Normalization::none);
+
+  Kokkos::deep_copy(fft2d, hFft2d);
 
   auto halfM = M / 2;
   auto two_over_MN = 2.0 / (M * N), four_over_MN = 4.0 / (M * N);
@@ -302,10 +310,17 @@ void idct_2d_fft(const int M,
     }
   });
 
-  Kokkos::DefaultExecutionSpace exec;
   Kokkos::View<Kokkos::complex<float>**, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> pre2d(pre.data(), M, (N / 2) + 1);
   Kokkos::View<float**, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> ifft2d(ifft.data(), M, N);
-  KokkosFFT::irfft2(exec, pre2d, ifft2d, KokkosFFT::Normalization::none);
+
+  // For consistency we always calculate iFFT on CPU (as Kokkos uses a different implementation for GPU)
+  Kokkos::DefaultHostExecutionSpace hostSpace;
+  auto hPre2d = Kokkos::create_mirror_view_and_copy(hostSpace, pre2d);
+  auto hIfft2d = Kokkos::create_mirror_view(hostSpace, ifft2d);
+
+  KokkosFFT::irfft2(hostSpace, hPre2d, hIfft2d, KokkosFFT::Normalization::none);
+
+  Kokkos::deep_copy(ifft2d, hIfft2d);
 
   Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {N, M}),
   KOKKOS_LAMBDA (const int wid, const int hid) {
