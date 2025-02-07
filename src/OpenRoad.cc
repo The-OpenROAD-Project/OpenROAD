@@ -79,8 +79,8 @@
 #include "rmp/MakeRestructure.h"
 #include "rsz/MakeResizer.hh"
 #include "sta/StaMain.hh"
-#include "sta/VerilogWriter.hh"
 #include "sta/VerilogReader.hh"
+#include "sta/VerilogWriter.hh"
 #include "stt/MakeSteinerTreeBuilder.h"
 #include "tap/MakeTapcell.h"
 #include "triton_route/MakeTritonRoute.h"
@@ -554,8 +554,8 @@ void OpenRoad::readVerilog(const char* filename)
 void OpenRoad::linkDesign(const char* design_name, bool hierarchy)
 
 {
-  bool success = dbLinkDesign(
-      design_name, verilog_network_, db_, logger_, hierarchy);
+  bool success
+      = dbLinkDesign(design_name, verilog_network_, db_, logger_, hierarchy);
 
   if (success) {
     delete verilog_reader_;
