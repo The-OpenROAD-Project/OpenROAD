@@ -148,7 +148,7 @@ char* tmpStringCopy(const char* str)
 ObjectId dbNetwork::getDbNwkObjectId(dbObjectType typ, ObjectId db_id) const
 {
   if (db_id > (std::numeric_limits<ObjectId>::max() >> DBIDTAG_WIDTH)) {
-    logger_->error(ORD, 2019, "Error: database id exceeds capacity");
+    logger_->error(ORD, 2019, "Database id exceeds capacity");
   }
 
   switch (typ) {
@@ -181,9 +181,7 @@ ObjectId dbNetwork::getDbNwkObjectId(dbObjectType typ, ObjectId db_id) const
     } break;
     default:
       logger_->error(
-          ORD,
-          2017,
-          "Error: unknown database type passed into unique id generation");
+          ORD, 2017, "Unknown database type passed into unique id generation");
       // note the default "exception undefined case" in database is 0.
       // so we reasonably expect upstream tools to handle this.
       return 0;
@@ -723,7 +721,7 @@ const char* dbNetwork::busName(const Port* port) const
       return modbterm->getName();
     }
   }
-  logger_->error(ORD, 2020, "Error: database badly formed bus name");
+  logger_->error(ORD, 2020, "Database badly formed bus name");
   return nullptr;
 }
 
@@ -1853,7 +1851,7 @@ bool dbNetwork::isLinked() const
   return top_cell_ != nullptr;
 }
 
-bool dbNetwork::linkNetwork(const char*, bool, Report*)
+bool dbNetwork::linkNetwork(const char*, bool make_black_boxes, Report* report)
 {
   // Not called.
   return true;
@@ -2861,7 +2859,7 @@ int dbNetwork::fromIndex(const Port* port) const
     return modbterm->getBusPort()->getFrom();
   }
 
-  logger_->error(ORD, 2021, "Error: bad bus from_index defintion");
+  logger_->error(ORD, 2021, "Bad bus from_index defintion");
   return 0;
 }
 
@@ -2881,7 +2879,7 @@ int dbNetwork::toIndex(const Port* port) const
     }
     return (start_ix - (modbterm->getBusPort()->getSize() - 1));
   }
-  logger_->error(ORD, 2022, "Error: bad bus to_index defintion");
+  logger_->error(ORD, 2022, "Bad bus to_index defintion");
   return 0;
 }
 

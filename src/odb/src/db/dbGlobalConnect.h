@@ -84,8 +84,11 @@ class _dbGlobalConnect : public _dbObject
                         const std::string& pattern,
                         const std::string& type);
   std::map<dbMaster*, std::set<dbMTerm*>> getMTermMapping();
+  std::set<dbMTerm*> getMTermMapping(dbMaster* master,
+                                     const std::regex& pin_regex) const;
   std::set<dbITerm*> connect(const std::vector<dbInst*>& insts);
   bool appliesTo(dbInst* inst) const;
+  bool needsModification(dbInst* inst) const;
   // User Code End Methods
 
   dbId<_dbRegion> region_;

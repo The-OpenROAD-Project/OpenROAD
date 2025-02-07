@@ -4261,7 +4261,13 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
                 insts.end());
 
     inst_map[inst_pattern] = insts;
-    donottouchinsts.insert(remove_insts.begin(), remove_insts.end());
+
+    _dbGlobalConnect* connect_rule = (_dbGlobalConnect*) connect;
+    for (dbInst* inst : remove_insts) {
+      if (connect_rule->needsModification(inst)) {
+        donottouchinsts.insert(inst);
+      }
+    }
   }
 
   if (!donottouchinsts.empty()) {
@@ -4334,6 +4340,148 @@ void dbBlock::writeMarkerCategories(std::ofstream& report)
   }
 
   _dbMarkerCategory::writeJSON(report, groups);
+}
+
+void dbBlock::debugPrintContent(std::ostream& str_db)
+{
+  str_db << fmt::format("Debug: Data base tables for block at {}:\n",
+                        getName());
+
+  str_db << "Db nets (The Flat db view)\n";
+
+  for (auto dbnet : getNets()) {
+    str_db << fmt::format(
+        "dbNet {} (id {})\n", dbnet->getName(), dbnet->getId());
+
+    for (auto db_iterm : dbnet->getITerms()) {
+      str_db << fmt::format(
+          "\t-> dbIterm {} ({})\n", db_iterm->getId(), db_iterm->getName());
+    }
+    for (auto db_bterm : dbnet->getBTerms()) {
+      str_db << fmt::format("\t-> dbBterm {}\n", db_bterm->getId());
+    }
+  }
+
+  str_db << "Block ports\n";
+  // got through the ports and their owner
+  str_db << "\t\tBTerm Ports +++\n";
+  for (auto bt : getBTerms()) {
+    str_db << fmt::format("\t\tBterm ({}) {} Net {} ({})  Mod Net {} ({}) \n",
+                          bt->getId(),
+                          bt->getName().c_str(),
+                          bt->getNet() ? bt->getNet()->getName().c_str() : "",
+                          bt->getNet() ? bt->getNet()->getId() : 0,
+                          bt->getModNet() ? bt->getModNet()->getName() : "",
+                          bt->getModNet() ? bt->getModNet()->getId() : 0);
+  }
+  str_db << "\t\tBTerm Ports ---\n";
+
+  str_db << "The hierarchical db view:\n";
+  dbSet<dbModule> block_modules = getModules();
+  str_db << fmt::format("Content size {} modules\n", block_modules.size());
+  for (auto mi : block_modules) {
+    dbModule* cur_obj = mi;
+    if (cur_obj == getTopModule()) {
+      str_db << "Top Module\n";
+    }
+    str_db << fmt::format("\tModule {} {}\n",
+                          (cur_obj == getTopModule()) ? "(Top Module)" : "",
+                          ((dbModule*) cur_obj)->getName());
+    // in case of top level, care as the bterms double up as pins
+    if (cur_obj == getTopModule()) {
+      for (auto bterm : getBTerms()) {
+        str_db << fmt::format(
+            "Top dbBTerm {} dbNet {} ({}) dbModNet {} ({})\n",
+            bterm->getName(),
+            bterm->getNet() ? bterm->getNet()->getName() : "",
+            bterm->getNet() ? bterm->getNet()->getId() : -1,
+            bterm->getModNet() ? bterm->getModNet()->getName() : "",
+            bterm->getModNet() ? bterm->getModNet()->getId() : -1);
+      }
+    }
+    // got through the module ports and their owner
+    str_db << "\t\tModBTerm Ports +++\n";
+
+    for (auto module_port : cur_obj->getModBTerms()) {
+      str_db << fmt::format(
+          "\t\tPort {} Net {} ({})\n",
+          module_port->getName(),
+          (module_port->getModNet()) ? (module_port->getModNet()->getName())
+                                     : "No-modnet",
+          (module_port->getModNet()) ? module_port->getModNet()->getId() : -1);
+
+      str_db << fmt::format("\t\tPort parent {}\n\n",
+                            module_port->getParent()->getName());
+    }
+    str_db << "\t\tModBTermPorts ---\n";
+
+    str_db << "\t\tModule instances +++\n";
+    for (auto module_inst : mi->getModInsts()) {
+      str_db << fmt::format("\t\tMod inst {} ", module_inst->getName());
+      dbModule* master = module_inst->getMaster();
+      str_db << fmt::format("\t\tMaster {}\n\n",
+                            module_inst->getMaster()->getName());
+      dbBlock* owner = master->getOwner();
+      if (owner != this) {
+        str_db << "\t\t\tMaster owner in wrong block\n";
+      }
+      str_db << "\t\tConnections\n";
+      for (dbModITerm* miterm_pin : module_inst->getModITerms()) {
+        str_db << fmt::format(
+            "\t\t\tModIterm : {} ({}) Mod Net {} ({}) \n",
+            miterm_pin->getName(),
+            miterm_pin->getId(),
+            miterm_pin->getModNet() ? (miterm_pin->getModNet()->getName())
+                                    : "No-net",
+            miterm_pin->getModNet() ? miterm_pin->getModNet()->getId() : 0);
+      }
+    }
+    str_db << "\t\tModule instances ---\n";
+    str_db << "\t\tDb instances +++\n";
+    for (dbInst* db_inst : cur_obj->getInsts()) {
+      str_db << fmt::format("\t\tdb inst {}\n", db_inst->getName());
+      str_db << "\t\tdb iterms:\n";
+      for (dbITerm* iterm : db_inst->getITerms()) {
+        dbMTerm* mterm = iterm->getMTerm();
+        str_db << fmt::format(
+            "\t\t\t\t iterm: {} ({}) Net: {} Mod net : {} ({})\n",
+            mterm->getName(),
+            iterm->getId(),
+            iterm->getNet() ? iterm->getNet()->getName() : "unk-dbnet",
+            iterm->getModNet() ? iterm->getModNet()->getName() : "unk-modnet",
+            iterm->getModNet() ? iterm->getModNet()->getId() : -1);
+      }
+    }
+    str_db << "\t\tDb instances ---\n";
+    str_db << "\tModule nets (modnets) +++ \n";
+    str_db << fmt::format("\t# mod nets {} in {}\n",
+                          cur_obj->getModNets().size(),
+                          cur_obj->getName());
+
+    for (auto mod_net : cur_obj->getModNets()) {
+      str_db << fmt::format(
+          "\t\tNet: {} ({})\n", mod_net->getName(), mod_net->getId());
+      str_db << "\t\tConnections -> modIterms/modbterms/bterms/iterms:\n";
+      str_db << fmt::format("\t\t -> {} moditerms\n",
+                            mod_net->getModITerms().size());
+      for (dbModITerm* modi_term : mod_net->getModITerms()) {
+        str_db << fmt::format("\t\t\t{}\n", modi_term->getName());
+      }
+      str_db << fmt::format("\t\t -> {} modbterms\n",
+                            mod_net->getModBTerms().size());
+      for (dbModBTerm* modb_term : mod_net->getModBTerms()) {
+        str_db << fmt::format("\t\t\t{}\n", modb_term->getName());
+      }
+      str_db << fmt::format("\t\t -> {} iterms\n", mod_net->getITerms().size());
+      for (dbITerm* db_iterm : mod_net->getITerms()) {
+        str_db << fmt::format("\t\t\t{}\n", db_iterm->getName().c_str());
+      }
+      str_db << fmt::format("\t\t -> {} bterms\n", mod_net->getBTerms().size());
+      for (dbBTerm* db_bterm : mod_net->getBTerms()) {
+        str_db << fmt::format("\t\t\t{}\n", db_bterm->getName().c_str());
+      }
+    }
+  }
 }
 
 }  // namespace odb
