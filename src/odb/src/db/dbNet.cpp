@@ -3260,17 +3260,10 @@ bool dbNet::mergeNet(dbNet* in_net)
   }
 
   for (dbITerm* iterm : iterms) {
-    iterm->disconnect();
     iterm->connect(this);
   }
 
-  std::vector<dbBTerm*> bterms;
   for (dbBTerm* bterm : in_net->getBTerms()) {
-    bterm->disconnect();
-    bterms.push_back(bterm);
-  }
-
-  for (dbBTerm* bterm : bterms) {
     bterm->connect(this);
   }
 
