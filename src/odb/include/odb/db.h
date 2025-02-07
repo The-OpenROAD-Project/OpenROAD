@@ -2867,7 +2867,7 @@ class dbNet : public dbObject
   ///
   /// Merge the iterms and bterms of the in_net with this net
   ///
-  void mergeNet(dbNet* in_net);
+  bool mergeNet(dbNet* in_net);
 
   dbSet<dbGuide> getGuides() const;
 
