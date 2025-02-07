@@ -21,9 +21,9 @@ Instance drvr
 [INFO RSZ-0058] Using max wire length 530um.
 [INFO RSZ-0039] Resized 1 instances.
 Instance drvr
- Cell: DFF_X2
+ Cell: DFF_X1
  Library: Nangate45
- Path cells: DFF_X2
+ Path cells: DFF_X1
  Input pins:
   D input (unconnected)
   CK input clk1
