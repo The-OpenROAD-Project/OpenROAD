@@ -3429,13 +3429,6 @@ class dbInst : public dbObject
                         const char* name);
 
   ///
-  /// Create a new instance for a hierarchical module based on inst_name
-  ///
-  static dbInst* makeUniqueInst(const char* inst_name,
-                                dbMaster* master,
-                                dbModule* module,
-                                dbBlock* block);
-  ///
   /// Delete the instance from the block.
   ///
   static void destroy(dbInst* inst);
