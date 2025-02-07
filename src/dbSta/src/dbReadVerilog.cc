@@ -135,20 +135,6 @@ Cell* dbVerilogNetwork::findAnyCell(const char* name)
   return cell;
 }
 
-void dbReadVerilog(const char* filename,
-                   dbVerilogNetwork* verilog_network,
-                   sta::VerilogReader* verilog_reader)
-{
-  if (verilog_reader != nullptr) {
-    verilog_reader->read(filename);
-    return;
-  }
-
-  auto verilog_reader_uniq
-      = std::make_unique<sta::VerilogReader>(verilog_network);
-  verilog_reader_uniq->read(filename);
-}
-
 ////////////////////////////////////////////////////////////////
 
 class Verilog2db
@@ -209,9 +195,8 @@ class Verilog2db
 // Example: "./designs/src/gcd/gcd.v:571.3-577.6"
 const std::regex Verilog2db::line_info_re("^(.*):(\\d+)\\.\\d+-\\d+\\.\\d+$");
 
-void dbLinkDesign(const char* top_cell_name,
+bool dbLinkDesign(const char* top_cell_name,
                   dbVerilogNetwork* verilog_network,
-                  sta::VerilogReader* verilog_reader,
                   dbDatabase* db,
                   Logger* logger,
                   bool hierarchy)
@@ -223,8 +208,9 @@ void dbLinkDesign(const char* top_cell_name,
     Verilog2db v2db(verilog_network, db, logger, hierarchy);
     v2db.makeBlock();
     v2db.makeDbNetlist();
-    delete verilog_reader;
   }
+
+  return success;
 }
 
 Verilog2db::Verilog2db(Network* network,

@@ -85,13 +85,8 @@ void deleteDbVerilogNetwork(dbVerilogNetwork* verilog_network);
 // objects. The hierarchical network is elaborated/flattened by the
 // link_design command and OpenDB objects are created from the flattened
 // network.
-void dbReadVerilog(const char* filename,
-                   dbVerilogNetwork* verilog_network,
-                   sta::VerilogReader* verilog_reader);
-
-void dbLinkDesign(const char* top_cell_name,
+bool dbLinkDesign(const char* top_cell_name,
                   dbVerilogNetwork* verilog_network,
-                  sta::VerilogReader* verilog_reader,
                   dbDatabase* db,
                   utl::Logger* logger,
                   bool hierarchy);
