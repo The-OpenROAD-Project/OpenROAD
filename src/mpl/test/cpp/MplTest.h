@@ -1,8 +1,6 @@
 #include "../../src/hier_rtlmp.h"
 #include "gtest/gtest.h"
-#include "mpl/rtl_mp.h"
 #include "odb/db.h"
-#include "odb/util.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
@@ -13,41 +11,28 @@ class MplTest : public ::testing::Test
  protected:
   void SetUp() override
   {
+    logger_ = std::make_unique<utl::Logger>();
     db_ = utl::UniquePtrWithDeleter<odb::dbDatabase>(odb::dbDatabase::create(),
                                                      &odb::dbDatabase::destroy);
-    db_->setLogger(&logger_);
+    db_->setLogger(logger_.get());
 
-    tech_ = utl::UniquePtrWithDeleter<odb::dbTech>(
-        odb::dbTech::create(db_.get(), "tech"), &odb::dbTech::destroy);
-    lib_ = utl::UniquePtrWithDeleter<odb::dbLib>(
-        odb::dbLib::create(db_.get(), "lib", tech_.get(), ','),
-        &odb::dbLib::destroy);
-    master_ = utl::UniquePtrWithDeleter<odb::dbMaster>(
-        odb::dbMaster::create(lib_.get(), "master"), &odb::dbMaster::destroy);
-    master_->setType(odb::dbMasterType::CORE);
+    tech_ = odb::dbTech::create(db_.get(), "tech");
+    lib_ = odb::dbLib::create(db_.get(), "lib", tech_, ',');
 
-    chip_ = utl::UniquePtrWithDeleter<odb::dbChip>(
-        odb::dbChip::create(db_.get()), &odb::dbChip::destroy);
-    // odb::dbBlock::destroy has overloads, so we need to specify which one we
-    // are using
-    void (*block_destroy)(odb::dbBlock*) = &odb::dbBlock::destroy;
-    block_ = utl::UniquePtrWithDeleter<odb::dbBlock>(
-        odb::dbBlock::create(chip_.get(), "block"), block_destroy);
+    chip_ = odb::dbChip::create(db_.get());
 
-    block_->setDieArea(odb::Rect(0, 0, dimension_, dimension_));
-    master_->setWidth(dimension_);
-    master_->setHeight(dimension_);
-    master_->setFrozen();
+    block_ = odb::dbBlock::create(chip_, "block");
+    block_->setDieArea(odb::Rect(0, 0, die_width_, die_height_));
   }
 
+  std::unique_ptr<utl::Logger> logger_;
   utl::UniquePtrWithDeleter<odb::dbDatabase> db_;
-  utl::UniquePtrWithDeleter<odb::dbTech> tech_;
-  utl::UniquePtrWithDeleter<odb::dbLib> lib_;
-  utl::UniquePtrWithDeleter<odb::dbMaster> master_;
-  utl::UniquePtrWithDeleter<odb::dbChip> chip_;
-  utl::UniquePtrWithDeleter<odb::dbBlock> block_;
-  utl::Logger logger_;
-  unsigned int dimension_ = 500000;
+  odb::dbTech* tech_;
+  odb::dbLib* lib_;
+  odb::dbChip* chip_;
+  odb::dbBlock* block_;
+  const int die_width_ = 500000;
+  const int die_height_ = 500000;
 };
 
 }  // namespace mpl
