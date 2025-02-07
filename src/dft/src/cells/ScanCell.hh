@@ -38,6 +38,7 @@
 #include "ScanPin.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
+#include "Macros.hh"
 
 namespace dft {
 class ClockDomain;
@@ -51,14 +52,12 @@ class ClockDomain;
 // in the future black boxes or CTLs (Core Test Language)
 class ScanCell
 {
+ DISABLE_COPY_AND_MOVE(ScanCell);
  public:
   ScanCell(const std::string& name,
            std::unique_ptr<ClockDomain> clock_domain,
            utl::Logger* logger);
   virtual ~ScanCell() = default;
-  // Not copyable or movable
-  ScanCell(const ScanCell&) = delete;
-  ScanCell& operator=(const ScanCell&) = delete;
 
   virtual uint64_t getBits() const = 0;
   virtual void connectScanEnable(const ScanDriver& driver) const = 0;

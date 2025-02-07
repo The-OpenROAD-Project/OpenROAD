@@ -35,11 +35,13 @@
 #include <optional>
 
 #include "utl/Logger.h"
+#include "Macros.hh"
 
 namespace dft {
 
 class ScanArchitectConfig
 {
+ DISABLE_COPY_AND_MOVE(ScanArchitectConfig);
  public:
   // TODO Add suport for mix_edges, mix_clocks, mix_clocks_not_edges
   enum class ClockMixing

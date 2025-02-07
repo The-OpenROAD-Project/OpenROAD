@@ -33,17 +33,16 @@
 
 #include "ScanArchitectConfig.hh"
 #include "ScanStitchConfig.hh"
+#include "Macros.hh"
 
 namespace dft {
 
 // Holds the config of this particular test mode.
 class TestModeConfig
 {
+ DISABLE_COPY_AND_MOVE(TestModeConfig);
  public:
   TestModeConfig(const std::string& name) : name_(name) {}
-  // Not copyable or movable.
-  TestModeConfig(const TestModeConfig&) = delete;
-  TestModeConfig& operator=(const TestModeConfig&) = delete;
 
   ScanArchitectConfig* getMutableScanArchitectConfig();
   const ScanArchitectConfig& getScanArchitectConfig() const;

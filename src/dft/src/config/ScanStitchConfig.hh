@@ -32,12 +32,16 @@
 #pragma once
 
 #include "utl/Logger.h"
+#include "Macros.hh"
 
 namespace dft {
 
 class ScanStitchConfig
 {
+ DISABLE_COPY_AND_MOVE(ScanStitchConfig);
  public:
+  ScanStitchConfig() = default;
+
   void setEnableNamePattern(std::string_view enable_name_pattern);
   std::string_view getEnableNamePattern() const;
 

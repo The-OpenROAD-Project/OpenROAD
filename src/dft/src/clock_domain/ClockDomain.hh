@@ -32,6 +32,7 @@
 #pragma once
 
 #include <string>
+#include "Macros.hh"
 
 namespace dft {
 
@@ -44,11 +45,9 @@ enum class ClockEdge
 // The clock domain of the scan cells based on the clock name and the edge.
 class ClockDomain
 {
+ DISABLE_COPY_AND_MOVE(ClockDomain);
  public:
   ClockDomain(const std::string& clock_name, ClockEdge clock_edge);
-  // Allow move, copy is implicitly deleted
-  ClockDomain(ClockDomain&& other) = default;
-  ClockDomain& operator=(ClockDomain&& other) = default;
 
   std::string_view getClockName() const;
   ClockEdge getClockEdge() const;

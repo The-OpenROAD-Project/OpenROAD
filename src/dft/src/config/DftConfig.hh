@@ -35,6 +35,7 @@
 
 #include "TestModeConfig.hh"
 #include "utl/Logger.h"
+#include "Macros.hh"
 
 namespace dft {
 
@@ -42,11 +43,9 @@ namespace dft {
 // Pass this object by reference to other functions
 class DftConfig
 {
+ DISABLE_COPY_AND_MOVE(DftConfig);
  public:
   DftConfig() = default;
-  // Not copyable or movable.
-  DftConfig(const DftConfig&) = delete;
-  DftConfig& operator=(const DftConfig&) = delete;
 
   TestModeConfig* createTestMode(const std::string& name, utl::Logger* logger);
   TestModeConfig* getOrDefaultMutableTestModeConfig(const std::string& name,

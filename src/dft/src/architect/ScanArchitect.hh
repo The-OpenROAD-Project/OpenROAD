@@ -40,6 +40,7 @@
 #include "ScanCell.hh"
 #include "ScanChain.hh"
 #include "utl/Logger.h"
+#include "Macros.hh"
 
 namespace dft {
 
@@ -47,11 +48,9 @@ namespace dft {
 // on the hash domain.
 class ScanCellsBucket
 {
+ DISABLE_COPY_AND_MOVE(ScanCellsBucket);
  public:
   explicit ScanCellsBucket(utl::Logger* logger);
-  // Not copyable or movable
-  ScanCellsBucket(const ScanCellsBucket&) = delete;
-  ScanCellsBucket& operator=(const ScanCellsBucket&) = delete;
 
   // Gets the next scan cell of the given hash domain
   std::unique_ptr<ScanCell> pop(size_t hash_domain);
@@ -74,6 +73,7 @@ class ScanCellsBucket
 // The Scan Architect. We can implement different algorithms to architect
 class ScanArchitect
 {
+ DISABLE_COPY_AND_MOVE(ScanArchitect);
  public:
   // The limits of a hash domain.
   struct HashDomainLimits
@@ -85,9 +85,6 @@ class ScanArchitect
 
   ScanArchitect(const ScanArchitectConfig& config,
                 std::unique_ptr<ScanCellsBucket> scan_cells_bucket);
-  // Not copyable or movable
-  ScanArchitect(const ScanArchitect&) = delete;
-  ScanArchitect& operator=(const ScanArchitect&) = delete;
   virtual ~ScanArchitect() = default;
 
   // Init the Scan Architect

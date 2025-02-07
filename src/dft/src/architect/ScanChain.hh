@@ -36,6 +36,7 @@
 
 #include "ScanCell.hh"
 #include "utl/Logger.h"
+#include "Macros.hh"
 
 namespace dft {
 
@@ -50,11 +51,9 @@ namespace dft {
 //  - Find the scan enable of the chain
 class ScanChain
 {
+ DISABLE_COPY_AND_MOVE(ScanChain);
  public:
   explicit ScanChain(const std::string& name);
-  // Not copyable or movable
-  ScanChain(const ScanChain&) = delete;
-  ScanChain& operator=(const ScanChain&) = delete;
 
   // Adds a scan cell to the chain. Depending on the edge of the cell, we will
   // move the cell to rising or falling vectors.

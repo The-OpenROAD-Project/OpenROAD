@@ -36,12 +36,14 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "sta/Liberty.hh"
+#include "Macros.hh"
 
 namespace dft {
 
 // A simple single cell with just one bit. Usually one scan FF
 class OneBitScanCell : public ScanCell
 {
+ DISABLE_COPY_AND_MOVE(OneBitScanCell);
  public:
   OneBitScanCell(const std::string& name,
                  std::unique_ptr<ClockDomain> clock_domain,
@@ -49,9 +51,6 @@ class OneBitScanCell : public ScanCell
                  sta::TestCell* test_cell,
                  sta::dbNetwork* db_network,
                  utl::Logger* logger);
-  // Not copyable or movable
-  OneBitScanCell(const OneBitScanCell&) = delete;
-  OneBitScanCell& operator=(const OneBitScanCell&) = delete;
 
   uint64_t getBits() const override;
   void connectScanEnable(const ScanDriver& driver) const override;

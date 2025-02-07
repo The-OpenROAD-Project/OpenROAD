@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2023, Google LLC
+// Copyright (c) 2025, Google LLC
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -31,28 +31,10 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include "ScanArchitect.hh"
-#include "utl/Logger.h"
-#include "Macros.hh"
-
-namespace dft {
-
-// An heuristic algorithm to solve the bin packing problem for the creation of
-// scan chains. The idea is to sort the scan cells from the biggest (bits) to
-// the smallest and start adding the biggest cells to each scan chain.
-class ScanArchitectHeuristic : public ScanArchitect
-{
- DISABLE_COPY_AND_MOVE(ScanArchitectHeuristic);
- public:
-  ScanArchitectHeuristic(const ScanArchitectConfig& config,
-                         std::unique_ptr<ScanCellsBucket> scan_cells_bucket,
-                         utl::Logger* logger);
-
-  void architect() override;
-
-  utl::Logger* logger_;
-
- private:
-};
-
-}  // namespace dft
+// Used inside a class of ClassName, will disable all copies and moves
+#define DISABLE_COPY_AND_MOVE(ClassName) \
+  private: \
+   ClassName(const ClassName&) = delete; \
+   ClassName& operator=(const ClassName&) = delete; \
+   ClassName(ClassName&&) = delete; \
+   ClassName& operator=(ClassName&&) = delete;

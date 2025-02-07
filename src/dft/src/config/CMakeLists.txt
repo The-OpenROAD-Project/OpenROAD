@@ -16,4 +16,5 @@ target_link_libraries(dft_config_lib
     odb
     utl_lib
     dft_utils_formatting_lib
+    dft_utils_macros_lib
 )
