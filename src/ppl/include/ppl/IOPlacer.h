@@ -192,6 +192,7 @@ class IOPlacer
   void randomPlacement();
   void randomPlacement(std::vector<int> pin_indices,
                        std::vector<int> slot_indices,
+                       const Edge edge,
                        bool top_layer,
                        bool is_group);
   int placeFallbackPins(bool random);
