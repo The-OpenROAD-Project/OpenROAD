@@ -139,10 +139,14 @@ void dbReadVerilog(const char* filename,
                    dbVerilogNetwork* verilog_network,
                    sta::VerilogReader* verilog_reader)
 {
-  if (verilog_reader == nullptr) {
-    verilog_reader = new sta::VerilogReader(verilog_network);
+  if (verilog_reader != nullptr) {
+    verilog_reader->read(filename);
+    return;
   }
-  verilog_reader->read(filename);
+
+  auto verilog_reader_uniq
+      = std::make_unique<sta::VerilogReader>(verilog_network);
+  verilog_reader_uniq->read(filename);
 }
 
 ////////////////////////////////////////////////////////////////

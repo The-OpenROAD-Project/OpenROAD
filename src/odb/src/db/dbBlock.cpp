@@ -665,6 +665,7 @@ _dbBlock::~_dbBlock()
   delete _modbterm_tbl;
   delete _moditerm_tbl;
   delete _modnet_tbl;
+  delete _busport_tbl;
   delete _powerdomain_tbl;
   delete _logicport_tbl;
   delete _powerswitch_tbl;
