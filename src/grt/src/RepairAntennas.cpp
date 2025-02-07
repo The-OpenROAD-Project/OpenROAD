@@ -1118,13 +1118,14 @@ int RepairAntennas::getJumperPosition(const int& init_pos,
   return position;
 }
 
-void RepairAntennas::checkSegmentPosition(const int& init_x,
-                                          const int& init_y,
-                                          const int& final_x,
-                                          const int& final_y,
-                                          const odb::Point& parent_pos,
-                                          const bool& is_horizontal,
-                                          std::vector<int>& candidate_positions)
+void RepairAntennas::findJumperCandidatePositions(
+    const int& init_x,
+    const int& init_y,
+    const int& final_x,
+    const int& final_y,
+    const odb::Point& parent_pos,
+    const bool& is_horizontal,
+    std::vector<int>& candidate_positions)
 {
   // One tile size of distance from init or segment end
   const int jumper_dist = 1;
@@ -1232,13 +1233,13 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
              || (!is_horizontal && via_pos.find(pos_y) != via_pos.end());
     // If the position has vias or does not have resources
     if (is_via || !has_available_resources) {
-      checkSegmentPosition(last_block_x,
-                           last_block_y,
-                           pos_x,
-                           pos_y,
-                           parent_pos,
-                           is_horizontal,
-                           candidate_positions);
+      findJumperCandidatePositions(last_block_x,
+                                   last_block_y,
+                                   pos_x,
+                                   pos_y,
+                                   parent_pos,
+                                   is_horizontal,
+                                   candidate_positions);
       last_block_x = pos_x;
       last_block_y = pos_y;
     }
@@ -1250,13 +1251,13 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
   }
   // If the segment has no vias in the end, verify last sub segment
   if (last_block_x != seg_final_x || last_block_y != seg_final_y) {
-    checkSegmentPosition(last_block_x,
-                         last_block_y,
-                         seg_final_x,
-                         seg_final_y,
-                         parent_pos,
-                         is_horizontal,
-                         candidate_positions);
+    findJumperCandidatePositions(last_block_x,
+                                 last_block_y,
+                                 seg_final_x,
+                                 seg_final_y,
+                                 parent_pos,
+                                 is_horizontal,
+                                 candidate_positions);
   }
   jumper_position
       = getBestPosition(candidate_positions, is_horizontal, parent_pos);

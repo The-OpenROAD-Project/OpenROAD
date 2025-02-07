@@ -198,13 +198,13 @@ class RepairAntennas
                           const int& max_layer,
                           LayerToSegmentNodeVector& segment_by_layer);
   void addJumper(GRoute& route, const int& segment_id, const int& jumper_pos);
-  void checkSegmentPosition(const int& init_x,
-                            const int& init_y,
-                            const int& final_x,
-                            const int& final_y,
-                            const odb::Point& parent_pos,
-                            const bool& is_horizontal,
-                            std::vector<int>& candidate_positions);
+  void findJumperCandidatePositions(const int& init_x,
+                                    const int& init_y,
+                                    const int& final_x,
+                                    const int& final_y,
+                                    const odb::Point& parent_pos,
+                                    const bool& is_horizontal,
+                                    std::vector<int>& candidate_positions);
   int getBestPosition(const std::vector<int>& candidate_positions,
                       const bool& is_horizontal,
                       const odb::Point& parent_pos);
