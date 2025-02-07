@@ -83,7 +83,8 @@ sta::TestCell* GetTestCell(odb::dbMaster* master,
 TypeOfCell IdentifyCell(odb::dbInst* inst, sta::dbSta* sta)
 {
   sta::dbNetwork* db_network = sta->getDbNetwork();
-  sta::LibertyCell* liberty_cell = GetLibertyCell(inst->getMaster(), db_network);
+  sta::LibertyCell* liberty_cell
+      = GetLibertyCell(inst->getMaster(), db_network);
   if (liberty_cell->hasSequentials() && !inst->getMaster()->isBlock()) {
     // we assume that we are only dealing with one bit cells, but in the future
     // we could deal with multibit cells too
@@ -118,14 +119,15 @@ std::unique_ptr<ClockDomain> GetClockDomainFromClock(
 }
 
 std::unique_ptr<ClockDomain> FindOneBitCellClockDomain(odb::dbInst* inst,
-                                                       sta::dbSta* sta, utl::Logger* logger)
+                                                       sta::dbSta* sta,
+                                                       utl::Logger* logger)
 {
   std::vector<odb::dbITerm*> clock_pins = utils::GetClockPin(inst);
   if (clock_pins.empty()) {
     logger->warn(utl::DFT,
-                  49,
-                  "Can't find a clock pin for cell '{:s}'",
-                  inst->getName());
+                 49,
+                 "Can't find a clock pin for cell '{:s}'",
+                 inst->getName());
     return nullptr;
   }
   sta::dbNetwork* db_network = sta->getDbNetwork();
