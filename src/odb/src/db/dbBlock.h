@@ -291,6 +291,7 @@ class _dbBlock : public _dbObject
   dbBlockSearch* _searchDb;
 
   std::map<std::string, int> _module_name_id_map;
+  std::map<std::string, int> _inst_name_id_map;
 
   unsigned char _num_ext_dbs;
 
