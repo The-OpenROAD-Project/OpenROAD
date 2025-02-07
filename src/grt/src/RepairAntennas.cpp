@@ -917,11 +917,13 @@ void RepairAntennas::addJumperToRoute(GRoute& route,
   if (is_horizontal) {
     jumper_init_x = jumper_init_pos;
     jumper_final_x = jumper_final_pos;
-    jumper_init_y = jumper_final_y = seg_init_y;
+    jumper_init_y = seg_init_y;
+    jumper_final_y = seg_init_y;
   } else {
     jumper_init_y = jumper_init_pos;
     jumper_final_y = jumper_final_pos;
-    jumper_init_x = jumper_final_x = seg_init_x;
+    jumper_init_x = seg_init_x;
+    jumper_final_x = seg_init_x;
   }
   // Add vias and jumper in the position
   addJumperAndVias(route,
