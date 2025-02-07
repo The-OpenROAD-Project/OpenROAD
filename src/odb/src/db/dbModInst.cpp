@@ -538,11 +538,8 @@ bool dbModInst::swapMaster(dbModule* new_module)
   }
 
   if (logger->debugCheck(utl::ODB, "replace_design", 1)) {
-    std::stringstream sstr;
-    getMaster()->getOwner()->debugPrintContent(sstr);
     std::ofstream outfile("before.txt");
-    outfile << sstr.str();
-    outfile.close();
+    getMaster()->getOwner()->debugPrintContent(outfile);
   }
 
   dbModule* new_module_copy = dbModule::makeUniqueDbModule(
@@ -671,11 +668,8 @@ bool dbModInst::swapMaster(dbModule* new_module)
   }
 
   if (logger->debugCheck(utl::ODB, "replace_design", 1)) {
-    std::stringstream sstr;
-    getMaster()->getOwner()->debugPrintContent(sstr);
     std::ofstream outfile("after_replace.txt");
-    outfile << sstr.str();
-    outfile.close();
+    getMaster()->getOwner()->debugPrintContent(outfile);
   }
 
   // TODO: remove old module insts without destroying old module itself
