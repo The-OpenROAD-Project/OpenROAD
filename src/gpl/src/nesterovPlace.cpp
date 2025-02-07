@@ -325,6 +325,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   bool isDivergeTriedRevert = false;
 
   // divergence snapshot info
+  bool is_diverge_snapshot_saved = false;
   float diverge_snapshot_WlCoefX = 0, diverge_snapshot_WlCoefY = 0;
 
   // backTracking variable.
@@ -419,6 +420,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         for (auto& nb : nbVec_) {
           nb->snapshot();
         }
+        is_diverge_snapshot_saved = true;
       }
     }
 
@@ -537,31 +539,29 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
 
     if (numDiverge > 0) {
-      divergeMsg_ = "RePlAce divergence detected. ";
-      divergeMsg_ += "Re-run with a smaller max_phi_cof value.";
-      divergeCode_ = 307;
-      isDiverged_ = true;
+      log_->report("Divergence occured in {} regions.", numDiverge);
 
-      // revert back to the original rb solutions
-      // one more opportunity
-      if (!isDivergeTriedRevert && rb_->numCall() >= 1) {
-        // get back to the working rc size
-        rb_->revertGCellSizeToMinRc();
-        curA = route_snapshotA;
-        wireLengthCoefX_ = route_snapshot_WlCoefX;
-        wireLengthCoefY_ = route_snapshot_WlCoefY;
-        nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
-        for (auto& nb : nbVec_) {
-          nb->revertDivergence();
-        }
+      // // revert back to the original rb solutions
+      // // one more opportunity
+      // if (!isDivergeTriedRevert && rb_->numCall() >= 1) {
+      //   // get back to the working rc size
+      //   rb_->revertGCellSizeToMinRc();
+      //   curA = route_snapshotA;
+      //   wireLengthCoefX_ = route_snapshot_WlCoefX;
+      //   wireLengthCoefY_ = route_snapshot_WlCoefY;
+      //   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
+      //   for (auto& nb : nbVec_) {
+      //     nb->revertDivergence();
+      //   }
 
-        isDiverged_ = false;
-        divergeCode_ = 0;
-        divergeMsg_ = "";
-        isDivergeTriedRevert = true;
-        // turn off the RD forcely
-        is_routability_need_ = false;
-      } else if (!npVars_.disableRevertIfDiverge) {
+      //   isDiverged_ = false;
+      //   divergeCode_ = 0;
+      //   divergeMsg_ = "";
+      //   isDivergeTriedRevert = true;
+      //   // turn off the RD forcely
+      //   is_routability_need_ = false;
+      // } else 
+      if (!npVars_.disableRevertIfDiverge && is_diverge_snapshot_saved) {
         // In case diverged and not in routability mode, finish with min hpwl
         // stored since overflow below 0.25
         log_->warn(GPL,
