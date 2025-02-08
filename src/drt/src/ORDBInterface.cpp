@@ -36,6 +36,11 @@
 
 namespace drt {
 
+std::unique_ptr<AbstractORDBInterface> ORDBInterface::makeUnique()
+{
+  return std::make_unique<ORDBInterface>();
+}
+
 void ORDBInterface::readDb(const char* file_name)
 {
   ord::OpenRoad::openRoad()->readDb(file_name);

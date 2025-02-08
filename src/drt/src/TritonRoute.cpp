@@ -531,7 +531,8 @@ void TritonRoute::init(
   dist_ = dist;
   stt_builder_ = stt_builder;
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
-  dist->addCallBack(new RoutingCallBack(this, dist, logger));
+  dist->addCallBack(
+      new RoutingCallBack(this, dist, logger, or_db_interface->makeUnique()));
   graphics_factory_ = std::move(graphics_factory);
   or_db_interface_ = std::move(or_db_interface);
 }

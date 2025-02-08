@@ -41,6 +41,7 @@ class ORDBInterface : public AbstractORDBInterface
  public:
   ORDBInterface() = default;
   ~ORDBInterface() override = default;
+  std::unique_ptr<AbstractORDBInterface> makeUnique() override;
   void readDb(const char* file_name) override;
   void writeDb(const char* file_name) override;
   int getThreadCount() override;
