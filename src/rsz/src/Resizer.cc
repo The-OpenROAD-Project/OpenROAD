@@ -1862,7 +1862,15 @@ void Resizer::setDontTouch(const Net* net, bool dont_touch)
 bool Resizer::dontTouch(const Net* net)
 {
   dbNet* db_net = db_network_->staToDb(net);
+  if (db_net == nullptr) {
+    return false;
+  }
   return db_net->isDoNotTouch();
+}
+
+bool Resizer::dontTouch(const Pin* pin)
+{
+  return dontTouch(network_->instance(pin)) || dontTouch(network_->net(pin));
 }
 
 void Resizer::reportDontTouch()
