@@ -31,16 +31,17 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
+#include "Macros.hh"
 #include "ScanArchitectConfig.hh"
 #include "ScanStitchConfig.hh"
-#include "Macros.hh"
 
 namespace dft {
 
 // Holds the config of this particular test mode.
 class TestModeConfig
 {
- DISABLE_COPY_AND_MOVE(TestModeConfig);
+  DISABLE_COPY_AND_MOVE(TestModeConfig);
+
  public:
   TestModeConfig(const std::string& name) : name_(name) {}
 

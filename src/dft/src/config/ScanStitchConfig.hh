@@ -33,14 +33,15 @@
 
 #include <optional>
 
-#include "utl/Logger.h"
 #include "Macros.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 
 class ScanStitchConfig
 {
- DISABLE_COPY_AND_MOVE(ScanStitchConfig);
+  DISABLE_COPY_AND_MOVE(ScanStitchConfig);
+
  public:
   ScanStitchConfig() = default;
 

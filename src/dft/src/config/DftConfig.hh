@@ -33,9 +33,9 @@
 
 #include <unordered_map>
 
+#include "Macros.hh"
 #include "TestModeConfig.hh"
 #include "utl/Logger.h"
-#include "Macros.hh"
 
 namespace dft {
 
@@ -43,7 +43,8 @@ namespace dft {
 // Pass this object by reference to other functions
 class DftConfig
 {
- DISABLE_COPY_AND_MOVE(DftConfig);
+  DISABLE_COPY_AND_MOVE(DftConfig);
+
  public:
   DftConfig() = default;
 
