@@ -31,6 +31,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
+#include <optional>
+
 #include "utl/Logger.h"
 #include "Macros.hh"
 
@@ -53,6 +55,11 @@ class ScanStitchConfig
 
   // Prints using logger->report the config used by Scan Stitch
   void report(utl::Logger* logger) const;
+
+  // Checks that the config is in a valid state. Reports issues in the logger
+  // TODO: For ScanStitchConfig we don't have anything to validate now, it
+  // always returns std::nullopt
+  void validate(utl::Logger* logger) const;
 
  private:
   std::string enable_name_pattern_ = "scan_enable_{}";

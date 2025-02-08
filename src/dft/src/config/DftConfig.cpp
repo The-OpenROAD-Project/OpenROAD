@@ -32,6 +32,8 @@
 
 #include "DftConfig.hh"
 
+#include <iostream>
+
 namespace dft {
 
 namespace {
@@ -83,6 +85,13 @@ const std::unordered_map<std::string, TestModeConfig>&
 DftConfig::getTestModesConfig() const
 {
   return test_modes_config_;
+}
+
+void DftConfig::validate(utl::Logger* logger) const
+{
+  for (const auto& [test_mode_name, test_mode_config] : test_modes_config_) {
+    test_mode_config.validate(logger);
+  }
 }
 
 }  // namespace dft

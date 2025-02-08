@@ -56,6 +56,9 @@ class DftConfig
   // Prints the information currently being used by DFT for config
   void report(utl::Logger* logger) const;
 
+  // Checks that the config is in a valid state. Reports issues in the logger
+  void validate(utl::Logger* logger) const;
+
  private:
   // A DFT config can have multiple test modes. If no test mode was defined by
   // the user, then we use the "default" test mode.

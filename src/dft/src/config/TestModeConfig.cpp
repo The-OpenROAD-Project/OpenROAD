@@ -65,4 +65,10 @@ const std::string& TestModeConfig::getName() const
   return name_;
 }
 
+void TestModeConfig::validate(utl::Logger* logger) const
+{
+  scan_architect_config_.validate(logger);
+  scan_stitch_config_.validate(logger);
+}
+
 }  // namespace dft

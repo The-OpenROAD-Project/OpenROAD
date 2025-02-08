@@ -84,6 +84,8 @@ void Dft::pre_dft()
 
 void Dft::previewDft(bool verbose)
 {
+  dft_config_->validate(logger_);
+
   for (const auto& [test_mode, test_mode_config] :
        dft_config_->getTestModesConfig()) {
     previewDft(test_mode_config, verbose);
@@ -124,6 +126,8 @@ void Dft::scanReplace()
 
 void Dft::insertDft()
 {
+  dft_config_->validate(logger_);
+
   // iterate and call per test mode
   for (const auto& [_, test_mode_config] : dft_config_->getTestModesConfig()) {
     insertDft(test_mode_config);

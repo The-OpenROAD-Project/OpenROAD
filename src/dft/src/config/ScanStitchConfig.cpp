@@ -72,4 +72,9 @@ void ScanStitchConfig::report(utl::Logger* logger) const
   logger->report("- Scan Out Name Pattern: '{}'", out_name_pattern_);
 }
 
+void ScanStitchConfig::validate(utl::Logger* logger) const
+{
+  // TODO: For ScanStitchConfig we don't have anything to validate now
+}
+
 }  // namespace dft

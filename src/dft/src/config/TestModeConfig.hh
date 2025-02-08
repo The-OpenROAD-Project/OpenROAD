@@ -54,6 +54,9 @@ class TestModeConfig
 
   const std::string& getName() const;
 
+  // Checks that the config is in a valid state. Reports issues in the logger
+  void validate(utl::Logger* logger) const;
+
  private:
   std::string name_;
   ScanArchitectConfig scan_architect_config_;

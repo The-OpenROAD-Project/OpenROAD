@@ -67,6 +67,9 @@ class ScanArchitectConfig
   // Prints using logger->report the config used by Scan Architect
   void report(utl::Logger* logger) const;
 
+  // Checks that the config is in a valid state. Reports issues in the logger
+  void validate(utl::Logger* logger) const;
+
   static std::string ClockMixingName(ClockMixing clock_mixing);
 
  private:
