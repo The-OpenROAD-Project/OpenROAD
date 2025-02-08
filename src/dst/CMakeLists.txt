@@ -39,21 +39,42 @@ find_package(TCL)
 project(dst
   LANGUAGES CXX
 )
+
 find_package(Boost REQUIRED COMPONENTS serialization system thread)
 swig_lib(NAME      dst
          NAMESPACE dst
          I_FILE    src/Distributed.i
          SCRIPTS   src/Distributed.tcl
 )
-target_sources(dst
-  PRIVATE
+
+add_library(dst_lib
   src/JobMessage.cc
   src/Worker.cc
   src/LoadBalancer.cc
   src/WorkerConnection.cc
   src/BalancerConnection.cc
-  src/MakeDistributed.cc
   src/Distributed.cc
+)
+
+target_include_directories(dst_lib
+  PUBLIC
+    include
+)
+
+target_link_libraries(dst_lib
+  PUBLIC
+    utl_lib
+    OpenSTA
+    ${TCL_LIBRARY}
+    ${ZLIB_LIBRARIES}
+    Boost::serialization
+    Boost::system
+    Boost::thread
+)
+
+target_sources(dst
+  PRIVATE
+  src/MakeDistributed.cc
 )
 
 target_include_directories(dst
@@ -63,13 +84,7 @@ target_include_directories(dst
 
 target_link_libraries(dst
   PUBLIC
-    utl_lib
-    OpenSTA
-    ${TCL_LIBRARY}
-    ${ZLIB_LIBRARIES}
-    Boost::serialization
-    Boost::system
-    Boost::thread
+    dst_lib
 )
 
 messages(
