@@ -914,17 +914,20 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
 
 void HierRTLMP::setPinAccessBlockages()
 {
-  if (!tree_->maps.bterm_to_inst.empty()) {
+  if (!tree_->maps.pad_to_bterm.empty()) {
     return;
   }
 
-  std::vector<Cluster*> io_clusters = getIOClusters();
+  std::vector<Cluster*> clusters_of_unplaced_io_pins
+      = getClustersOfUnplacedIOPins();
   const Rect die = dbuToMicrons(block_->getDieArea());
 
-  const float depth = computePinAccessBlockagesDepth(io_clusters, die);
+  const float depth
+      = computePinAccessBlockagesDepth(clusters_of_unplaced_io_pins, die);
 
-  for (Cluster* io_cluster : io_clusters) {
-    Boundary constraint_boundary = io_cluster->getConstraintBoundary();
+  for (Cluster* cluster_of_unplaced_io_pins : clusters_of_unplaced_io_pins) {
+    Boundary constraint_boundary
+        = cluster_of_unplaced_io_pins->getConstraintBoundary();
     if (constraint_boundary != NONE) {
       createPinAccessBlockage(constraint_boundary, depth, die);
     }
@@ -978,17 +981,17 @@ void HierRTLMP::createPinAccessBlockage(Boundary constraint_boundary,
   macro_blockages_.push_back(blockage);
 }
 
-std::vector<Cluster*> HierRTLMP::getIOClusters()
+std::vector<Cluster*> HierRTLMP::getClustersOfUnplacedIOPins()
 {
-  std::vector<Cluster*> io_clusters;
+  std::vector<Cluster*> clusters_of_unplaced_io_pins;
 
   for (const auto& child : tree_->root->getChildren()) {
-    if (child->isIOCluster()) {
-      io_clusters.push_back(child.get());
+    if (child->isClusterOfUnplacedIOPins()) {
+      clusters_of_unplaced_io_pins.push_back(child.get());
     }
   }
 
-  return io_clusters;
+  return clusters_of_unplaced_io_pins;
 }
 
 // The depth of pin access blockages is computed based on:
@@ -2268,10 +2271,11 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
               cluster->getName(),
               0.0,
               0.0,
-              // The information of whether or not a cluster is an IO cluster is
-              // needed inside the SA Core, so if a fixed terminal corresponds
-              // to an IO Cluster it needs to contains that cluster data.
-              cluster->isIOCluster() ? cluster.get() : nullptr);
+              // The information of whether or not a cluster is a group of
+              // unplaced IO pins is needed inside the SA Core, so if a fixed
+              // terminal corresponds to a cluster of unplaced IO pins it needs
+              // to contain that cluster data.
+              cluster->isClusterOfUnplacedIOPins() ? cluster.get() : nullptr);
           debugPrint(
               logger_,
               MPL,
@@ -2772,10 +2776,11 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
               cluster->getName(),
               0.0,
               0.0,
-              // The information of whether or not a cluster is an IO cluster is
-              // needed inside the SA Core, so if a fixed terminal corresponds
-              // to an IO Cluster it needs to contains that cluster data.
-              cluster->isIOCluster() ? cluster.get() : nullptr);
+              // The information of whether or not a cluster is a group of
+              // unplaced IO pins is needed inside the SA Core, so if a fixed
+              // terminal corresponds to a cluster of unplaced IO pins it needs
+              // to contain that cluster data.
+              cluster->isClusterOfUnplacedIOPins() ? cluster.get() : nullptr);
           debugPrint(
               logger_,
               MPL,
@@ -3171,7 +3176,7 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
 
   for (auto& cluster : parent->getChildren()) {
     if (cluster->isIOCluster()) {
-      continue;  // IO clusters have no area
+      continue;
     }
     if (cluster->getClusterType() == StdCellCluster) {
       std_cell_cluster_area += cluster->getStdCellArea();
@@ -3250,7 +3255,7 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
   // set the shape for each macro
   for (auto& cluster : parent->getChildren()) {
     if (cluster->isIOCluster()) {
-      continue;  // the area of IO cluster is 0.0
+      continue;
     }
     if (cluster->getClusterType() == StdCellCluster) {
       float area = cluster->getArea();
@@ -3638,10 +3643,11 @@ void HierRTLMP::createFixedTerminals(const Rect& outline,
             temp_cluster->getY() + temp_cluster->getHeight() / 2.0
                 - outline.yMin()),
         temp_cluster->getName(),
-        // The information of whether or not a cluster is an IO cluster is
-        // needed inside the SA Core, so if a fixed terminal corresponds
-        // to an IO Cluster it needs to contains that cluster data.
-        temp_cluster->isIOCluster() ? temp_cluster : nullptr);
+        // The information of whether or not a cluster is a group of
+        // unplaced IO pins is needed inside the SA Core, so if a fixed
+        // terminal corresponds to a cluster of unplaced IO pins it needs
+        // to contain that cluster data.
+        temp_cluster->isClusterOfUnplacedIOPins() ? temp_cluster : nullptr);
   }
 }
 
@@ -4584,9 +4590,9 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
     // offset with regards to (0,0) and, then, compensate the offset
     // of the pins themselves so that the lines of the grid cross
     // their center.
-    origin
-        = std::round(origin / snap_layer_params.pitch) * snap_layer_params.pitch
-          + snap_layer_params.offset - snap_layer_params.pin_offset;
+    origin = std::round(origin / static_cast<double>(snap_layer_params.pitch))
+                 * snap_layer_params.pitch
+             + snap_layer_params.offset - snap_layer_params.pin_offset;
 
     alignWithManufacturingGrid(origin);
     setOrigin(origin, target_direction);
@@ -4790,7 +4796,8 @@ void Snapper::alignWithManufacturingGrid(int& origin)
   const int manufacturing_grid
       = inst_->getDb()->getTech()->getManufacturingGrid();
 
-  origin = std::round(origin / manufacturing_grid) * manufacturing_grid;
+  origin = std::round(origin / static_cast<double>(manufacturing_grid))
+           * manufacturing_grid;
 }
 
 }  // namespace mpl
