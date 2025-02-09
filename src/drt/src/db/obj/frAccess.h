@@ -36,7 +36,7 @@
 #include "frShape.h"
 
 namespace odb {
-  class dbTransform;
+class dbTransform;
 }
 
 namespace drt {
