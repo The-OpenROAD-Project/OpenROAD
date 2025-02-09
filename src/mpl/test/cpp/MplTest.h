@@ -16,21 +16,18 @@ class MplTest : public ::testing::Test
                                                      &odb::dbDatabase::destroy);
     db_->setLogger(logger_.get());
 
-    tech_ = odb::dbTech::create(db_.get(), "tech");
-    lib_ = odb::dbLib::create(db_.get(), "lib", tech_, ',');
+    odb::dbTech::create(db_.get(), "tech");
+    odb::dbLib::create(db_.get(), "lib", db_->getTech(), ',');
 
-    chip_ = odb::dbChip::create(db_.get());
+    odb::dbChip::create(db_.get());
 
-    block_ = odb::dbBlock::create(chip_, "block");
-    block_->setDieArea(odb::Rect(0, 0, die_width_, die_height_));
+    odb::dbBlock::create(db_->getChip(), "block");
+    db_->getChip()->getBlock()->setDieArea(
+        odb::Rect(0, 0, die_width_, die_height_));
   }
 
   std::unique_ptr<utl::Logger> logger_;
   utl::UniquePtrWithDeleter<odb::dbDatabase> db_;
-  odb::dbTech* tech_;
-  odb::dbLib* lib_;
-  odb::dbChip* chip_;
-  odb::dbBlock* block_;
   const int die_width_ = 500000;
   const int die_height_ = 500000;
 };
