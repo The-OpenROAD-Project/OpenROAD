@@ -143,7 +143,7 @@ Cell* dbVerilogNetwork::findAnyCell(const char* name)
 // Cell is a black box if all the ports have unknown port directions
 bool dbVerilogNetwork::isBlackBox(ConcreteCell* cell)
 {
-  ConcreteCellPortIterator* port_iter = cell->portIterator();
+  std::unique_ptr<ConcreteCellPortIterator> port_iter{cell->portIterator()};
   while (port_iter->hasNext()) {
     ConcretePort* port = port_iter->next();
     if (port->direction() != PortDirection::unknown()) {
@@ -1010,11 +1010,13 @@ void Verilog2db::processUnusedCells(const char* top_cell_name,
                                     bool link_make_black_boxes)
 {
   // Collect all unused modules
-  sta::LibraryIterator* libraryIterator = network_->libraryIterator();
+  std::unique_ptr<sta::LibraryIterator> libraryIterator{
+      network_->libraryIterator()};
   while (libraryIterator->hasNext()) {
     sta::ConcreteLibrary* lib
         = (sta::ConcreteLibrary*) (libraryIterator->next());
-    sta::ConcreteLibraryCellIterator* lib_cell_iter = lib->cellIterator();
+    std::unique_ptr<sta::ConcreteLibraryCellIterator> lib_cell_iter{
+        lib->cellIterator()};
     while (lib_cell_iter->hasNext()) {
       sta::ConcreteCell* curr_cell = lib_cell_iter->next();
       if (!block_->findModule(curr_cell->name())
