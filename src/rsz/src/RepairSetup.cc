@@ -1365,6 +1365,7 @@ bool RepairSetup::cloneDriver(const PathRef* drvr_path,
     }
   }
   resizer_->parasiticsInvalid(out_net);
+  resizer_->parasiticsInvalid(network_->net(drvr_pin));
   return true;
 }
 

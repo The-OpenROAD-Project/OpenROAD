@@ -1759,6 +1759,11 @@ class dbBlock : public dbObject
                           FILE* out,
                           int indent_per_level = 4);
 
+  //
+  // For debugging only.  Print block content to an ostream.
+  //
+  void debugPrintContent(std::ostream& str_db);
+
  private:
   void ComputeBBox();
 };
@@ -2867,7 +2872,7 @@ class dbNet : public dbObject
   ///
   /// Merge the iterms and bterms of the in_net with this net
   ///
-  void mergeNet(dbNet* in_net);
+  bool mergeNet(dbNet* in_net);
 
   dbSet<dbGuide> getGuides() const;
 

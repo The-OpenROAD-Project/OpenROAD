@@ -444,7 +444,7 @@ void Graphics::drawObjects(gui::Painter& painter)
       continue;
     }
 
-    if (cluster->isIOCluster()) {
+    if (cluster->isClusterOfUnplacedIOPins()) {
       continue;
     }
 
@@ -607,7 +607,7 @@ void Graphics::drawBundledNets(gui::Painter& painter,
     const T& source = macros[bundled_net.terminals.first];
     const T& target = macros[bundled_net.terminals.second];
 
-    if (target.isIOCluster()) {
+    if (target.isClusterOfUnplacedIOPins()) {
       drawDistToIoConstraintBoundary(painter, source, target);
       continue;
     }

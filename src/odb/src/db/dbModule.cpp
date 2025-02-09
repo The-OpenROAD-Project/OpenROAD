@@ -605,80 +605,104 @@ void dbModule::copyModulePorts(dbModule* old_module,
   for (port_iter = old_ports.begin(); port_iter != old_ports.end();
        ++port_iter) {
     dbModBTerm* old_port = *port_iter;
-    dbModBTerm* new_port = dbModBTerm::create(new_module, old_port->getName());
-    if (new_port) {
+    dbModBTerm* new_port = nullptr;
+    if (mod_bt_map.count(old_port) > 0) {
+      new_port = mod_bt_map[old_port];
       debugPrint(logger,
                  utl::ODB,
                  "replace_design",
                  1,
-                 "Created module port {} for old port {}",
+                 "Module port {} already exists for old port {}",
                  new_port->getName(),
                  old_port->getName());
-      mod_bt_map[old_port] = new_port;
-      new_port->setIoType(old_port->getIoType());
     } else {
-      logger->error(utl::ODB,
-                    456,
-                    "Module port {} cannot be created",
-                    old_port->getName());
-    }
-
-    if (old_port->isBusPort()) {
-      dbBusPort* old_bus_port = old_port->getBusPort();
-      dbBusPort* new_bus_port = dbBusPort::create(
-          new_module, new_port, old_bus_port->getFrom(), old_bus_port->getTo());
-      if (new_bus_port) {
+      new_port = dbModBTerm::create(new_module, old_port->getName());
+      if (new_port) {
         debugPrint(logger,
                    utl::ODB,
                    "replace_design",
                    1,
-                   "Created module bus port {}",
-                   new_port->getName());
+                   "Created module port {} for old port {}",
+                   new_port->getName(),
+                   old_port->getName());
+        mod_bt_map[old_port] = new_port;
+        new_port->setIoType(old_port->getIoType());
       } else {
         logger->error(utl::ODB,
-                      457,
-                      "Module bus port {} cannot be created",
-                      new_port->getName());
+                      456,
+                      "Module port {} cannot be created",
+                      old_port->getName());
       }
-      new_port->setBusPort(new_bus_port);
-
-      // create bus members
-      int from_index = old_bus_port->getFrom();
-      int to_index = old_bus_port->getTo();
-      bool updown = (from_index <= to_index) ? true : false;
-      int size = updown ? to_index - from_index + 1 : from_index - to_index + 1;
-      for (int i = 0; i < size; i++) {
-        int ix = updown ? from_index + i : from_index - i;
-        std::string bus_bit_name = std::string(old_port->getName())
-                                   + std::string("[") + std::to_string(ix)
-                                   + std::string("]");
-        dbModBTerm* old_bus_bit = old_bus_port->getBusIndexedElement(i);
-        dbModBTerm* new_bus_bit
-            = dbModBTerm::create(new_module, bus_bit_name.c_str());
-        mod_bt_map[old_bus_bit] = new_bus_bit;
-        if (new_bus_bit) {
+      if (old_port->isBusPort()) {
+        dbBusPort* old_bus_port = old_port->getBusPort();
+        dbBusPort* new_bus_port = dbBusPort::create(new_module,
+                                                    new_port,
+                                                    old_bus_port->getFrom(),
+                                                    old_bus_port->getTo());
+        if (new_bus_port) {
           debugPrint(logger,
                      utl::ODB,
                      "replace_design",
                      1,
-                     "Created module bus bit {}",
-                     bus_bit_name);
+                     "Created module bus port {}[{}:{}]",
+                     new_port->getName(),
+                     old_bus_port->getFrom(),
+                     old_bus_port->getTo());
         } else {
           logger->error(utl::ODB,
-                        458,
-                        "Module bus bit {} cannot be created",
-                        bus_bit_name);
+                        457,
+                        "Module bus port {} cannot be created",
+                        new_port->getName());
         }
-        if (i == 0) {
-          new_bus_port->setMembers(new_bus_bit);
-        }
-        if (i == size - 1) {
-          new_bus_port->setLast(new_bus_bit);
-        }
-        new_bus_bit->setIoType(old_port->getIoType());
+        new_port->setBusPort(new_bus_port);
+
+        // create bus members
+        int from_index = old_bus_port->getFrom();
+        int to_index = old_bus_port->getTo();
+        bool updown = from_index <= to_index;
+        int size
+            = updown ? to_index - from_index + 1 : from_index - to_index + 1;
+        for (int i = 0; i < size; i++) {
+          int ix = updown ? from_index + i : from_index - i;
+          dbModBTerm* old_bus_bit = old_bus_port->getBusIndexedElement(ix);
+          if (old_bus_bit == nullptr) {
+            logger->error(utl::ODB,
+                          468,
+                          "Module bus bit {}[{}] does not exist",
+                          old_port->getName(),
+                          ix);
+          }
+          std::string bus_bit_name = std::string(old_port->getName())
+                                     + std::string("[") + std::to_string(ix)
+                                     + std::string("]");
+          dbModBTerm* new_bus_bit
+              = dbModBTerm::create(new_module, bus_bit_name.c_str());
+          if (new_bus_bit == nullptr) {
+            logger->error(utl::ODB,
+                          458,
+                          "Module bus bit {} cannot be created",
+                          bus_bit_name);
+          }
+          if (i == 0) {
+            new_bus_port->setMembers(new_bus_bit);
+          }
+          if (i == size - 1) {
+            new_bus_port->setLast(new_bus_bit);
+          }
+          new_bus_bit->setIoType(old_port->getIoType());
+          mod_bt_map[old_bus_bit] = new_bus_bit;
+          debugPrint(logger,
+                     utl::ODB,
+                     "replace_design",
+                     1,
+                     "Created module bus bit {} for {}",
+                     new_bus_bit->getName(),
+                     old_bus_bit->getName());
+        }  // end of bus port handling
       }
-    }  // end of bus port handling
+    }
   }
+
   new_module->getModBTerms().reverse();
 
   debugPrint(logger,
@@ -704,10 +728,16 @@ void dbModule::copyModuleInsts(dbModule* old_module,
     // Change unique instance name from old_inst/leaf to new_inst/leaf
     std::string old_inst_name = old_inst->getName();
     size_t first_idx = old_inst_name.find_first_of('/');
-    assert(first_idx != std::string::npos);
-    std::string old_leaf_name = old_inst_name.substr(first_idx);
-    std::string new_inst_name = new_mod_inst->getName() + old_leaf_name;
-    dbInst* new_inst = dbInst::create(old_module->getOwner(),
+    std::string new_inst_name;
+    if (first_idx != std::string::npos) {
+      new_inst_name = std::string(new_mod_inst->getName()) + '/'
+                      + old_inst_name.substr(first_idx + 1);
+    } else {
+      // old module was not instantiated so there is no hier divider
+      new_inst_name
+          = std::string(new_mod_inst->getName()) + '/' + old_inst_name;
+    }
+    dbInst* new_inst = dbInst::create(new_module->getOwner(),
                                       old_inst->getMaster(),
                                       new_inst_name.c_str(),
                                       /* phyical only */ false,
@@ -749,32 +779,34 @@ void dbModule::copyModuleInsts(dbModule* old_module,
         // Create a local net only if it connects to iterms inside this module
         std::string net_name = old_net->getName();
         size_t first_idx = net_name.find_first_of('/');
+        std::string new_net_name;
         if (first_idx != std::string::npos) {
-          std::string new_net_name
-              = new_mod_inst->getName() + net_name.substr(first_idx);
-          dbNet* new_net
-              = old_module->getOwner()->findNet(new_net_name.c_str());
-          if (new_net) {
-            new_iterm->connect(new_net);
-            debugPrint(logger,
-                       utl::ODB,
-                       "replace_design",
-                       1,
-                       "  connected iterm {} to existing local net {}",
-                       new_iterm->getName(),
-                       new_net->getName());
-          } else {
-            new_net
-                = dbNet::create(old_module->getOwner(), new_net_name.c_str());
-            new_iterm->connect(new_net);
-            debugPrint(logger,
-                       utl::ODB,
-                       "replace_design",
-                       1,
-                       "  Connected iterm {} to new local net {}",
-                       new_iterm->getName(),
-                       new_net->getName());
-          }
+          new_net_name = std::string(new_mod_inst->getName()) + '/'
+                         + net_name.substr(first_idx + 1);
+        } else {
+          // old module was not instantiated so there is no hier divider
+          new_net_name = std::string(new_mod_inst->getName()) + '/' + net_name;
+        }
+        dbNet* new_net = new_module->getOwner()->findNet(new_net_name.c_str());
+        if (new_net) {
+          new_iterm->connect(new_net);
+          debugPrint(logger,
+                     utl::ODB,
+                     "replace_design",
+                     1,
+                     "  connected iterm {} to existing local net {}",
+                     new_iterm->getName(),
+                     new_net->getName());
+        } else {
+          new_net = dbNet::create(new_module->getOwner(), new_net_name.c_str());
+          new_iterm->connect(new_net);
+          debugPrint(logger,
+                     utl::ODB,
+                     "replace_design",
+                     1,
+                     "  Connected iterm {} to new local net {}",
+                     new_iterm->getName(),
+                     new_net->getName());
         }
       }
     }
@@ -824,16 +856,21 @@ void dbModule::copyModuleModNets(dbModule* old_module,
     dbSet<dbModBTerm>::iterator mb_iter;
     for (mb_iter = mbterms.begin(); mb_iter != mbterms.end(); ++mb_iter) {
       dbModBTerm* old_mbterm = *mb_iter;
-      dbModBTerm* new_mbterm = mod_bt_map[old_mbterm];
+      dbModBTerm* new_mbterm = nullptr;
+      if (mod_bt_map.count(old_mbterm) > 0) {
+        new_mbterm = mod_bt_map[old_mbterm];
+      }
       if (new_mbterm) {
         new_mbterm->connect(new_net);
         debugPrint(logger,
                    utl::ODB,
                    "replace_design",
                    1,
-                   "  connected port {} to mod net {}",
+                   "  connected new port {} to mod net {} because old port "
+                   "{} maps to new port",
                    new_mbterm->getName(),
-                   new_net->getName());
+                   new_net->getName(),
+                   old_mbterm->getName());
       } else {
         logger->error(utl::ODB,
                       461,
@@ -849,7 +886,10 @@ void dbModule::copyModuleModNets(dbModule* old_module,
     dbSet<dbITerm>::iterator it_iter;
     for (it_iter = iterms.begin(); it_iter != iterms.end(); ++it_iter) {
       dbITerm* old_iterm = *it_iter;
-      dbITerm* new_iterm = it_map[old_iterm];
+      dbITerm* new_iterm = nullptr;
+      if (it_map.count(old_iterm) > 0) {
+        new_iterm = it_map[old_iterm];
+      }
       if (new_iterm) {
         new_iterm->connect(new_net);
         debugPrint(logger,
