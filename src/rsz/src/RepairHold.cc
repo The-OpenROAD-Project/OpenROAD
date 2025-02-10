@@ -409,7 +409,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                             ? network_->net(network_->term(path_pin))
                             : network_->net(path_pin);
         dbNet* db_path_net = db_network_->staToDb(path_net);
-        if (path_vertex->isDriver(network_) && !resizer_->dontTouch(path_net)
+        if (path_vertex->isDriver(network_) && !resizer_->dontTouch(path_pin)
             && !db_path_net->isConnectedByAbutment()) {
           PinSeq load_pins;
           Slacks slacks;
@@ -671,6 +671,10 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
 
   // hook up loads to buffer
   for (const Pin* load_pin : load_pins) {
+    if (resizer_->dontTouch(load_pin)) {
+      continue;
+    }
+
     Net* load_net = network_->isTopLevelPort(load_pin)
                         ? network_->net(network_->term(load_pin))
                         : network_->net(load_pin);

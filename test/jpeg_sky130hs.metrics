@@ -107,7 +107,7 @@
 	"drt__repair_antennas__iter_3__antenna__violating__pins": 0,
 	"drt__antenna__violating__nets": 0,
 	"drt__antenna__violating__pins": 0,
-	"DRT::ANT::errors": "0",
+	"DRT::ANT::errors": "1",
 	"design__violations": 0,
 	"timing__drv__floating__nets": 0,
 	"timing__drv__floating__pins": 0,
