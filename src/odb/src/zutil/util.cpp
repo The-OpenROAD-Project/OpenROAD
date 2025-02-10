@@ -275,6 +275,19 @@ std::string generateMacroPlacementString(dbBlock* block)
   return macro_placement;
 }
 
+bool hasOneSiteMaster(dbDatabase* db)
+{
+  for (dbLib* lib : db->getLibs()) {
+    for (dbMaster* master : lib->getMasters()) {
+      if (master->getSite()->getWidth() == master->getWidth()) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 int64_t WireLengthEvaluator::hpwl() const
 {
   int64_t hpwl_sum = 0;

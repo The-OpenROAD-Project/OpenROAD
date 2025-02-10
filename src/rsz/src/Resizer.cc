@@ -416,23 +416,31 @@ void Resizer::removeBuffer(Instance* buffer, bool recordJournal)
   if (recordJournal) {
     journalRemoveBuffer(buffer);
   }
-  debugPrint(
-      logger_, RSZ, "remove_buffer", 1, "remove {}", db_network_->name(buffer));
+  if (!sdc_->isConstrained(in_pin) && !sdc_->isConstrained(out_pin)
+      && !sdc_->isConstrained(removed) && !sdc_->isConstrained(buffer)) {
+    debugPrint(logger_,
+               RSZ,
+               "remove_buffer",
+               1,
+               "remove {}",
+               db_network_->name(buffer));
 
-  if (removed) {
-    odb::dbNet* db_survivor = db_network_->staToDb(survivor);
-    odb::dbNet* db_removed = db_network_->staToDb(removed);
-    db_survivor->mergeNet(db_removed);
+    if (removed) {
+      odb::dbNet* db_survivor = db_network_->staToDb(survivor);
+      odb::dbNet* db_removed = db_network_->staToDb(removed);
+      if (db_survivor->mergeNet(db_removed)) {
+        sta_->disconnectPin(in_pin);
+        sta_->disconnectPin(out_pin);
+        sta_->deleteInstance(buffer);
 
-    sta_->disconnectPin(in_pin);
-    sta_->disconnectPin(out_pin);
-    sta_->deleteInstance(buffer);
+        sta_->deleteNet(removed);
+        parasitics_invalid_.erase(removed);
 
-    sta_->deleteNet(removed);
-    parasitics_invalid_.erase(removed);
+        parasiticsInvalid(survivor);
+        updateParasitics();
+      }
+    }
   }
-  parasiticsInvalid(survivor);
-  updateParasitics();
 }
 
 void Resizer::ensureLevelDrvrVertices()
@@ -1892,7 +1900,15 @@ void Resizer::setDontTouch(const Net* net, bool dont_touch)
 bool Resizer::dontTouch(const Net* net)
 {
   dbNet* db_net = db_network_->staToDb(net);
+  if (db_net == nullptr) {
+    return false;
+  }
   return db_net->isDoNotTouch();
+}
+
+bool Resizer::dontTouch(const Pin* pin)
+{
+  return dontTouch(network_->instance(pin)) || dontTouch(network_->net(pin));
 }
 
 void Resizer::reportDontTouch()

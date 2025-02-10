@@ -30,14 +30,15 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin Cpp
-#include "dbModInst.h"
+#include <fstream>
 
+// Generator Code Begin Cpp
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbModITerm.h"
+#include "dbModInst.h"
 #include "dbModule.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -448,8 +449,7 @@ void dbModInst::RemoveUnusedPortsAndPins()
 // Two modules must have identical number of ports and port names need to match.
 // Functional equivalence is not required.
 // New module is not allowed to have multiple levels of hierarchy for now.
-// Newly instantiated modules are uniquified and old module instances are
-// deleted.
+// Newly instantiated modules are uniquified.
 bool dbModInst::swapMaster(dbModule* new_module)
 {
   _dbModInst* inst = (_dbModInst*) this;
@@ -537,6 +537,11 @@ bool dbModInst::swapMaster(dbModule* new_module)
     return false;
   }
 
+  if (logger->debugCheck(utl::ODB, "replace_design", 1)) {
+    std::ofstream outfile("before.txt");
+    getMaster()->getOwner()->debugPrintContent(outfile);
+  }
+
   dbModule* new_module_copy = dbModule::makeUniqueDbModule(
       new_module->getName(), this->getName(), getMaster()->getOwner());
   if (new_module_copy) {
@@ -544,8 +549,9 @@ bool dbModInst::swapMaster(dbModule* new_module)
                utl::ODB,
                "replace_design",
                1,
-               "Created uniquified module {}",
-               new_module_copy->getName());
+               "Created uniquified module {} in block {}",
+               new_module_copy->getName(),
+               new_module_copy->getOwner()->getName());
   } else {
     logger->error(utl::ODB,
                   455,
@@ -659,6 +665,11 @@ bool dbModInst::swapMaster(dbModule* new_module)
                    old_mod_net->getName());
       }
     }
+  }
+
+  if (logger->debugCheck(utl::ODB, "replace_design", 1)) {
+    std::ofstream outfile("after_replace.txt");
+    getMaster()->getOwner()->debugPrintContent(outfile);
   }
 
   // TODO: remove old module insts without destroying old module itself

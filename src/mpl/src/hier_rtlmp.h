@@ -179,7 +179,7 @@ class HierRTLMP
   void calculateMacroTilings(Cluster* cluster);
   void setTightPackingTilings(Cluster* macro_array);
   void setPinAccessBlockages();
-  std::vector<Cluster*> getIOClusters();
+  std::vector<Cluster*> getClustersOfUnplacedIOPins();
   float computePinAccessBlockagesDepth(const std::vector<Cluster*>& io_clusters,
                                        const Rect& die);
   void createPinAccessBlockage(Boundary constraint_boundary,
