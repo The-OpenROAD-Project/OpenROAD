@@ -261,7 +261,8 @@ void Resizer::removeBuffers(sta::InstanceSeq insts, bool recordJournal)
     // remove all the buffers
     for (dbInst* db_inst : block_->getInsts()) {
       Instance* buffer = db_network_->dbToSta(db_inst);
-      if (removeBuffer(buffer, /* honor dont touch */ true, recordJournal)) {
+      if (removeBufferIfPossible(
+              buffer, /* honor dont touch */ true, recordJournal)) {
         remove_count++;
       }
     }
@@ -270,7 +271,7 @@ void Resizer::removeBuffers(sta::InstanceSeq insts, bool recordJournal)
     InstanceSeq::Iterator inst_iter(insts);
     while (inst_iter.hasNext()) {
       Instance* buffer = const_cast<Instance*>(inst_iter.next());
-      if (removeBuffer(
+      if (removeBufferIfPossible(
               buffer, /* don't honor dont touch */ false, recordJournal)) {
         remove_count++;
       } else {
@@ -299,6 +300,17 @@ bool Resizer::bufferBetweenPorts(Instance* buffer)
   return hasPort(in_net) && hasPort(out_net);
 }
 
+bool Resizer::removeBufferIfPossible(Instance* buffer,
+                                     bool honorDontTouchFixed,
+                                     bool recordJournal)
+{
+  if (canRemoveBuffer(buffer, honorDontTouchFixed)) {
+    removeBuffer(buffer, recordJournal);
+    return true;
+  }
+  return false;
+}
+
 // There are two buffer removal modes: auto and manual:
 // 1) auto mode: this happens during setup fixing, power recovery, buffer
 // removal
@@ -306,9 +318,7 @@ bool Resizer::bufferBetweenPorts(Instance* buffer)
 // 2) manual mode: this happens during manual buffer removal during ECO
 //      This ignores dont-touch and fixed cell (boundary buffer constraints are
 //      still honored)
-bool Resizer::removeBuffer(Instance* buffer,
-                           bool honorDontTouchFixed,
-                           bool recordJournal)
+bool Resizer::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
 {
   LibertyCell* lib_cell = network_->libertyCell(buffer);
   if (!lib_cell || !lib_cell->isBuffer()) {
@@ -372,37 +382,54 @@ bool Resizer::removeBuffer(Instance* buffer,
     removed = out_net;
   }
 
+  if (!sdc_->isConstrained(in_pin) && !sdc_->isConstrained(out_pin)
+      && !sdc_->isConstrained(removed) && !sdc_->isConstrained(buffer)) {
+    odb::dbNet* db_survivor = db_network_->staToDb(survivor);
+    odb::dbNet* db_removed = db_network_->staToDb(removed);
+    return db_survivor->canMergeNet(db_removed);
+  }
+  return false;
+}
+
+void Resizer::removeBuffer(Instance* buffer, bool recordJournal)
+{
+  LibertyCell* lib_cell = network_->libertyCell(buffer);
+  LibertyPort *in_port, *out_port;
+  lib_cell->bufferPorts(in_port, out_port);
+  Pin* in_pin = db_network_->findPin(buffer, in_port);
+  Pin* out_pin = db_network_->findPin(buffer, out_port);
+  Net* in_net = db_network_->net(in_pin);
+  Net* out_net = db_network_->net(out_pin);
+  bool out_net_ports = hasPort(out_net);
+  Net *survivor, *removed;
+  if (out_net_ports) {
+    survivor = out_net;
+    removed = in_net;
+  } else {
+    // default or out_net_ports
+    // Default to in_net surviving so drivers (cached in dbNetwork)
+    // do not change.
+    survivor = in_net;
+    removed = out_net;
+  }
+
   if (recordJournal) {
     journalRemoveBuffer(buffer);
   }
-  bool buffer_removed = false;
-  if (!sdc_->isConstrained(in_pin) && !sdc_->isConstrained(out_pin)
-      && !sdc_->isConstrained(removed) && !sdc_->isConstrained(buffer)) {
-    debugPrint(logger_,
-               RSZ,
-               "remove_buffer",
-               1,
-               "remove {}",
-               db_network_->name(buffer));
 
-    if (removed) {
-      odb::dbNet* db_survivor = db_network_->staToDb(survivor);
-      odb::dbNet* db_removed = db_network_->staToDb(removed);
-      if (db_survivor->mergeNet(db_removed)) {
-        buffer_removed = true;
-        sta_->disconnectPin(in_pin);
-        sta_->disconnectPin(out_pin);
-        sta_->deleteInstance(buffer);
+  debugPrint(
+      logger_, RSZ, "remove_buffer", 1, "remove {}", db_network_->name(buffer));
 
-        sta_->deleteNet(removed);
-        parasitics_invalid_.erase(removed);
-
-        parasiticsInvalid(survivor);
-        updateParasitics();
-      }
-    }
-  }
-  return buffer_removed;
+  odb::dbNet* db_survivor = db_network_->staToDb(survivor);
+  odb::dbNet* db_removed = db_network_->staToDb(removed);
+  db_survivor->mergeNet(db_removed);
+  sta_->disconnectPin(in_pin);
+  sta_->disconnectPin(out_pin);
+  sta_->deleteInstance(buffer);
+  sta_->deleteNet(removed);
+  parasitics_invalid_.erase(removed);
+  parasiticsInvalid(survivor);
+  updateParasitics();
 }
 
 void Resizer::ensureLevelDrvrVertices()
@@ -3147,6 +3174,7 @@ void Resizer::cloneClkInverter(Instance* inv)
 bool Resizer::repairSetup(double setup_margin,
                           double repair_tns_end_percent,
                           int max_passes,
+                          int max_repairs_per_pass,
                           bool match_cell_footprint,
                           bool verbose,
                           bool skip_pin_swap,
@@ -3165,6 +3193,7 @@ bool Resizer::repairSetup(double setup_margin,
   return repair_setup_->repairSetup(setup_margin,
                                     repair_tns_end_percent,
                                     max_passes,
+                                    max_repairs_per_pass,
                                     verbose,
                                     skip_pin_swap,
                                     skip_gate_cloning,
