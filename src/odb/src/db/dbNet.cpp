@@ -3238,21 +3238,29 @@ dbNet* dbNet::getValidNet(dbBlock* block_, uint dbid_)
   return (dbNet*) block->_net_tbl->getPtr(dbid_);
 }
 
-bool dbNet::mergeNet(dbNet* in_net)
+bool dbNet::canMergeNet(dbNet* in_net)
 {
-  _dbNet* net = (_dbNet*) this;
-  _dbBlock* block = (_dbBlock*) net->getOwner();
-
   if (isDoNotTouch() || in_net->isDoNotTouch()) {
     return false;
   }
 
-  std::vector<dbITerm*> iterms;
   for (dbITerm* iterm : in_net->getITerms()) {
-    iterms.push_back(iterm);
     if (iterm->getInst()->isDoNotTouch()) {
       return false;
     }
+  }
+
+  return true;
+}
+
+void dbNet::mergeNet(dbNet* in_net)
+{
+  _dbNet* net = (_dbNet*) this;
+  _dbBlock* block = (_dbBlock*) net->getOwner();
+
+  std::vector<dbITerm*> iterms;
+  for (dbITerm* iterm : in_net->getITerms()) {
+    iterms.push_back(iterm);
   }
 
   for (auto callback : block->_callbacks) {
@@ -3266,8 +3274,6 @@ bool dbNet::mergeNet(dbNet* in_net)
   for (dbBTerm* bterm : in_net->getBTerms()) {
     bterm->connect(this);
   }
-
-  return true;
 }
 
 void dbNet::markNets(std::vector<dbNet*>& nets, dbBlock* block, bool mk)
