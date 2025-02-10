@@ -559,14 +559,14 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-max_buffer_percent buffer_percent]\
                                         [-max_utilization util] \
                                         [-match_cell_footprint] \
-                                        [-max_repairs_per_iter max_repairs_per_iter]\
+                                        [-max_repairs_per_pass max_repairs_per_pass]\
                                         [-verbose]}
 
 proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent \
-            -recover_power -repair_tns -max_passes -max_repairs_per_iter} \
+            -recover_power -repair_tns -max_passes -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
            -skip_buffering -skip_buffer_removal -skip_last_gasp -match_cell_footprint \
            -verbose}
@@ -637,9 +637,9 @@ proc repair_timing { args } {
     rsz::set_parasitics_src "detailed_routing"
   }
 
-  set max_repairs_per_iter 1
-  if { [info exists keys(-max_repairs_per_iter)] } {
-    set max_repairs_per_iter $keys(-max_repairs_per_iter)
+  set max_repairs_per_pass 1
+  if { [info exists keys(-max_repairs_per_pass)] } {
+    set max_repairs_per_pass $keys(-max_repairs_per_pass)
   }
 
   sta::check_argc_eq0 "repair_timing" $args
@@ -653,7 +653,7 @@ proc repair_timing { args } {
   } else {
     if { $setup } {
       set repaired_setup [rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
-        $max_repairs_per_iter $match_cell_footprint $verbose \
+        $max_repairs_per_pass $match_cell_footprint $verbose \
         $skip_pin_swap $skip_gate_cloning $skip_buffering \
         $skip_buffer_removal $skip_last_gasp]
     }

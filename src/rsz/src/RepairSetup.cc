@@ -90,7 +90,7 @@ void RepairSetup::init()
 bool RepairSetup::repairSetup(const float setup_slack_margin,
                               const double repair_tns_end_percent,
                               const int max_passes,
-                              const int max_repairs_per_iter,
+                              const int max_repairs_per_pass,
                               const bool verbose,
                               const bool skip_pin_swap,
                               const bool skip_gate_cloning,
@@ -101,7 +101,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   bool repaired = false;
   init();
   constexpr int digits = 3;
-  max_repairs_per_iter_ = max_repairs_per_iter;
+  max_repairs_per_pass_ = max_repairs_per_pass;
   inserted_buffer_count_ = 0;
   split_load_buffer_count_ = 0;
   resize_count_ = 0;
@@ -447,7 +447,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 void RepairSetup::repairSetup(const Pin* end_pin)
 {
   init();
-  max_repairs_per_iter_ = 1;
+  max_repairs_per_pass_ = 1;
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
   swap_pin_count_ = 0;
@@ -546,14 +546,14 @@ bool RepairSetup::repairPath(PathRef& path,
                  || (pair1.second == pair2.second && pair1.first > pair2.first);
         });
     // Attack gates with largest load delays first.
-    int repairs_per_iter = 1;
+    int repairs_per_pass = 1;
     if (max_viol_ - min_viol_ != 0.0) {
-      repairs_per_iter
-          += std::round((max_repairs_per_iter_ - 1) * (-path_slack - min_viol_)
+      repairs_per_pass
+          += std::round((max_repairs_per_pass_ - 1) * (-path_slack - min_viol_)
                         / (max_viol_ - min_viol_));
     }
     if (fallback_) {
-      repairs_per_iter = 1;
+      repairs_per_pass = 1;
     }
     debugPrint(logger_,
                RSZ,
@@ -561,9 +561,9 @@ bool RepairSetup::repairPath(PathRef& path,
                3,
                "Path slack: {}, repairs: {}",
                delayAsString(path_slack, sta_, 3),
-               repairs_per_iter);
+               repairs_per_pass);
     for (const auto& [drvr_index, ignored] : load_delays) {
-      if (changed >= repairs_per_iter) {
+      if (changed >= repairs_per_pass) {
         break;
       }
       const PathRef* drvr_path = expanded.path(drvr_index);

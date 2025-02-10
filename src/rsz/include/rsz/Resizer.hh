@@ -296,7 +296,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool repairSetup(double setup_margin,
                    double repair_tns_end_percent,
                    int max_passes,
-                   int max_repairs_per_iter,
+                   int max_repairs_per_pass,
                    bool match_cell_footprint,
                    bool verbose,
                    bool skip_pin_swap,
