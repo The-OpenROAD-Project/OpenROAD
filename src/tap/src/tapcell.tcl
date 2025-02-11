@@ -81,6 +81,10 @@ proc tapcell { args } {
     utl::warn TAP 14 "endcap_cpp option is deprecated."
   }
 
+  if { [info exists flags(-disallow_one_site_gaps)] } {
+    utl::warn TAP 17 "disallow_one_site_gaps option is deprecated."
+  }
+
   set dist -1
   if { [info exists keys(-distance)] } {
     set dist $keys(-distance)
@@ -198,7 +202,7 @@ proc tapcell { args } {
     $cnrcap_nwout_master $tap_nwintie_master $tap_nwin2_master \
     $tap_nwin3_master $tap_nwouttie_master $tap_nwout2_master \
     $tap_nwout3_master $incnrcap_nwin_master $incnrcap_nwout_master \
-    $tapcell_master $dist $disallow_one_site_gaps
+    $tapcell_master $dist
 }
 
 sta::define_cmd_args "cut_rows" {[-endcap_master endcap_master]\
@@ -379,14 +383,13 @@ proc place_endcaps { args } {
 
 sta::define_cmd_args "place_tapcells" {
   -master tapcell_master \
-  -distance dist \
-  [-disallow_one_site_gaps]
+  -distance dist
 }
 
 proc place_tapcells { args } {
   sta::parse_key_args "place_tapcells" args \
     keys {-master -distance} \
-    flags {-disallow_one_site_gaps}
+    flags {}
 
   sta::check_argc_eq0 "place_tapcells" $args
 
@@ -401,8 +404,7 @@ proc place_tapcells { args } {
 
   tap::insert_tapcells \
     $master \
-    $dist \
-    [info exists flags(-disallow_one_site_gaps)]
+    $dist
 }
 
 namespace eval tap {
