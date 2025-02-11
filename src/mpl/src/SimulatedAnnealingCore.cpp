@@ -330,9 +330,16 @@ void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
     const T& io,
     const float net_weight)
 {
-  Cluster* io_cluster = io.getCluster();
-  const Rect die = io_cluster->getBBox();
-  const float die_hpwl = die.getWidth() + die.getHeight();
+  // Important!
+  // We need to use the bbox of the SoftMacro and NOT the Cluster to
+  // get shape of the cluster of unconstrained IOs - which is has the
+  // shape of the die but it's offset based on the current outline.
+  // Reminder:
+  // - The SoftMacro bbox is the bbox w.r.t to the current outline.
+  // - The Cluster bbox is the bbox w.r.t. to the origin of the actual
+  //   die area.
+  const Rect offset_die = io.getBBox();
+  const float die_hpwl = offset_die.getWidth() + offset_die.getHeight();
 
   if (isOutsideTheOutline(macro)) {
     wirelength_ += net_weight * die_hpwl;
@@ -342,27 +349,27 @@ void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
   const float x1 = macro.getPinX();
   const float y1 = macro.getPinY();
 
-  Boundary constraint_boundary = io_cluster->getConstraintBoundary();
+  Boundary constraint_boundary = io.getCluster()->getConstraintBoundary();
 
   if (constraint_boundary == NONE) {
     float dist_to_left = die_hpwl;
     if (!left_is_blocked_) {
-      dist_to_left = std::abs(x1 - die.xMin());
+      dist_to_left = std::abs(x1 - offset_die.xMin());
     }
 
     float dist_to_right = die_hpwl;
     if (!right_is_blocked_) {
-      dist_to_right = std::abs(x1 - die.xMax());
+      dist_to_right = std::abs(x1 - offset_die.xMax());
     }
 
     float dist_to_bottom = die_hpwl;
     if (!bottom_is_blocked_) {
-      dist_to_right = std::abs(y1 - die.yMin());
+      dist_to_right = std::abs(y1 - offset_die.yMin());
     }
 
     float dist_to_top = die_hpwl;
     if (!top_is_blocked_) {
-      dist_to_top = std::abs(y1 - die.yMax());
+      dist_to_top = std::abs(y1 - offset_die.yMax());
     }
 
     wirelength_

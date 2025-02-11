@@ -3081,26 +3081,8 @@ void HierRTLMP::createFixedTerminals(
     Cluster* grandparent = frontwave->getParent();
     for (auto& cluster : grandparent->getChildren()) {
       if (cluster->getId() != frontwave->getId()) {
-        const int fixed_terminal_id = static_cast<int>(soft_macros.size());
-        const std::string fixed_terminal_name = cluster->getName();
-        soft_macro_id_map[fixed_terminal_name] = fixed_terminal_id;
-
-        Point location = cluster->getCenter();
-        location.first -= outline.xMin();
-        location.second -= outline.yMin();
-
-        // The information of whether or not a cluster is a group of
-        // unplaced IO pins is needed inside the SA Core, so if a fixed
-        // terminal corresponds to a cluster of unplaced IO pins it needs
-        // to contain that cluster data.
-        Cluster* fixed_terminal_cluster
-            = cluster->isClusterOfUnplacedIOPins() ? cluster.get() : nullptr;
-
-        soft_macros.emplace_back(location,
-                                 fixed_terminal_name,
-                                 0.0f /* width */,
-                                 0.0f /* height */,
-                                 fixed_terminal_cluster);
+        createFixedTerminal(
+            cluster.get(), outline, soft_macro_id_map, soft_macros);
       }
     }
 
@@ -3108,6 +3090,39 @@ void HierRTLMP::createFixedTerminals(
       parents.push(frontwave->getParent());
     }
   }
+}
+
+void HierRTLMP::createFixedTerminal(
+    Cluster* cluster,
+    const Rect& outline,
+    std::map<std::string, int>& soft_macro_id_map,
+    std::vector<SoftMacro>& soft_macros)
+{
+  const int id = static_cast<int>(soft_macros.size());
+  const std::string name = cluster->getName();
+  soft_macro_id_map[name] = id;
+
+  // A conventional fixed terminal is just a point without
+  // the cluster data.
+  Point location = cluster->getCenter();
+  float width = 0.0f;
+  float height = 0.0f;
+  Cluster* terminal_cluster = nullptr;
+
+  if (cluster->isClusterOfUnplacedIOPins()) {
+    // Clusters of unplaced IOs are not treated as conventional
+    // fixed terminals. As they correspond to regions, we need
+    // both their actual shape and their cluster data inside SA.
+    location = {cluster->getX(), cluster->getY()};
+    width = cluster->getWidth();
+    height = cluster->getHeight();
+    terminal_cluster = cluster;
+  }
+
+  location.first -= outline.xMin();
+  location.second -= outline.yMin();
+
+  soft_macros.emplace_back(location, name, width, height, terminal_cluster);
 }
 
 // Determine the shape of each cluster based on target utilization

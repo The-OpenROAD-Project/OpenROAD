@@ -892,6 +892,11 @@ bool HardMacro::isClusterOfUnplacedIOPins() const
   return cluster_->isClusterOfUnplacedIOPins();
 }
 
+Rect HardMacro::getBBox() const
+{
+  return Rect(x_, y_, x_ + width_, y_ + height_);
+}
+
 // Get Physical Information
 // Note that the default X and Y include halo_width
 void HardMacro::setLocation(const std::pair<float, float>& location)

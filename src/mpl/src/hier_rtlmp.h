@@ -210,6 +210,10 @@ class HierRTLMP
   void createFixedTerminals(Cluster* parent,
                             std::map<std::string, int>& soft_macro_id_map,
                             std::vector<SoftMacro>& soft_macros);
+  void createFixedTerminal(Cluster* cluster,
+                           const Rect& outline,
+                           std::map<std::string, int>& soft_macro_id_map,
+                           std::vector<SoftMacro>& soft_macros);
   void updateChildrenShapesAndLocations(
       Cluster* parent,
       const std::vector<SoftMacro>& shaped_macros,
