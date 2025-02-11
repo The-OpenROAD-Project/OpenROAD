@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 88 components and 422 component-terminals.
+[INFO ODB-0133]     Created 54 nets and 88 connections.
+[INFO PPL-0067] Restrict INPUT pins to region 0u-100.8u, in the RIGHT edge.
+[INFO PPL-0048] Restrict pins [ req_rdy resp_val ] to region 4.00u-18.00u at the BOTTOM edge.
+[INFO PPL-0048] Restrict pins [ resp_msg[15] resp_msg[14] ] to region 7.00u-21.00u at the TOP edge.
+No differences found.
