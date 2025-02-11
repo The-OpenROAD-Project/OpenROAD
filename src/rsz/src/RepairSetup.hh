@@ -129,6 +129,7 @@ class RepairSetup : public sta::dbStaState
                    // reduce tns (0.0-1.0).
                    double repair_tns_end_percent,
                    int max_passes,
+                   int max_repairs_per_pass,
                    bool verbose,
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
@@ -235,12 +236,17 @@ class RepairSetup : public sta::dbStaState
                          int num_endpts);
   void repairSetupLastGasp(const OptoParams& params, int& num_viols);
 
+  std::vector<Instance*> buf_to_remove_;
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
   const Corner* corner_ = nullptr;
   LibertyPort* drvr_port_ = nullptr;
 
+  bool fallback_ = false;
+  float min_viol_ = 0.0;
+  float max_viol_ = 0.0;
+  int max_repairs_per_pass_ = 1;
   int resize_count_ = 0;
   int inserted_buffer_count_ = 0;
   int split_load_buffer_count_ = 0;

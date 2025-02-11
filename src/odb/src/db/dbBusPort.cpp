@@ -269,8 +269,6 @@ dbModule* dbBusPort::getParent() const
  */
 dbModBTerm* dbBusPort::getBusIndexedElement(int index)
 {
-  _dbBusPort* obj = (_dbBusPort*) this;
-  _dbBlock* block_ = (_dbBlock*) obj->getOwner();
   int offset;
   if (getUpdown()) {
     offset = index - getFrom();
@@ -286,10 +284,14 @@ dbModBTerm* dbBusPort::getBusIndexedElement(int index)
     // count on the order of the modbterms (eg
     // if some have been deleted or added in non-linear way).
     //
+    /* This leads to wrong bus member access outside bus port
     if (obj->_flags == 0U) {
+      _dbBlock* block_ = (_dbBlock*) obj->getOwner();
+      _dbBusPort* obj = (_dbBusPort*) this;
       return (dbModBTerm*) (block_->_modbterm_tbl->getPtr(obj->getId() + offset
                                                           + 1));
     }
+    */
     int i = 0;
     dbSet<dbModBTerm> busport_members = getBusPortMembers();
     for (auto cur : busport_members) {

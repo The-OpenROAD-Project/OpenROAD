@@ -270,6 +270,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool dontTouch(const Instance* inst);
   void setDontTouch(const Net* net, bool dont_touch);
   bool dontTouch(const Net* net);
+  bool dontTouch(const Pin* pin);
   void reportDontTouch();
 
   void setMaxUtilization(double max_utilization);
@@ -295,6 +296,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool repairSetup(double setup_margin,
                    double repair_tns_end_percent,
                    int max_passes,
+                   int max_repairs_per_pass,
                    bool match_cell_footprint,
                    bool verbose,
                    bool skip_pin_swap,
@@ -629,9 +631,11 @@ class Resizer : public dbStaState, public dbNetworkObserver
                    bool journal);
 
   void findResizeSlacks1();
-  bool removeBuffer(Instance* buffer,
-                    bool honorDontTouchFixed = true,
-                    bool recordJournal = false);
+  bool removeBufferIfPossible(Instance* buffer,
+                              bool honorDontTouchFixed = true,
+                              bool recordJournal = false);
+  bool canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed = true);
+  void removeBuffer(Instance* buffer, bool recordJournal = false);
   Instance* makeInstance(LibertyCell* cell,
                          const char* name,
                          Instance* parent,
