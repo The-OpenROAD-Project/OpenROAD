@@ -175,6 +175,8 @@ class IOPlacer
 
   void writePinPlacement(const char* file_name, bool placed);
 
+  void writePinConstraints(const char* file_name);
+
   static Direction getDirection(const std::string& direction);
   static Edge getEdge(const std::string& edge);
 

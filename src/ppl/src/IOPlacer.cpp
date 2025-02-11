@@ -789,6 +789,30 @@ void IOPlacer::writePinPlacement(const char* file_name, const bool placed)
   }
 }
 
+void IOPlacer::writePinConstraints(const char* file_name)
+{
+  std::string filename = file_name;
+  if (filename.empty()) {
+    return;
+  }
+
+  std::ofstream out(filename);
+
+  if (!out) {
+    logger_->error(PPL, 37, "Cannot open file {}.", filename);
+  }
+
+  for (odb::dbBTerm* bterm : getBlock()->getBTerms()) {
+    auto constraint_region = bterm->getConstraintRegion();
+    if (constraint_region) {
+      odb::Rect region = constraint_region.value();
+      out << bterm->getName() << " constraint region: (" << region.xMin()
+          << ", " << region.yMin() << ") (" << region.xMax() << ", "
+          << region.yMax() << ")\n";
+    }
+  }
+}
+
 Edge IOPlacer::getMirroredEdge(const Edge& edge)
 {
   Edge mirrored_edge = Edge::invalid;
