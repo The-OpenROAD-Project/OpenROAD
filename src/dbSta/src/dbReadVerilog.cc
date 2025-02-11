@@ -164,11 +164,9 @@ bool dbVerilogNetwork::isBlackBox(ConcreteCell* cell)
   while (port_iter->hasNext()) {
     ConcretePort* port = port_iter->next();
     if (port->direction() != PortDirection::unknown()) {
-      port_iter.reset();  // to avoid bogus Coverity memory leak
       return false;
     }
   }
-  port_iter.reset();  // to avoid bogus Coverity memory leak
   return true;
 }
 
@@ -1049,9 +1047,7 @@ void Verilog2db::processUnusedCells(const char* top_cell_name,
                    curr_cell->name());
       }
     }
-    lib_cell_iter.reset();  // to avoid bogus Coverity memory leak
   }
-  libraryIterator.reset();  // to avoid bogus Coverity memory leak
 
   // Link each unused module and populate content in a separate child block.
   // There will one child block for each unused module.
