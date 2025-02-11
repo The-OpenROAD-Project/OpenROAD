@@ -3081,8 +3081,9 @@ void HierRTLMP::createFixedTerminals(
     Cluster* grandparent = frontwave->getParent();
     for (auto& cluster : grandparent->getChildren()) {
       if (cluster->getId() != frontwave->getId()) {
-        createFixedTerminal(
-            cluster.get(), outline, soft_macro_id_map, soft_macros);
+        const int id = static_cast<int>(soft_macros.size());
+        soft_macro_id_map[cluster->getName()] = id;
+        createFixedTerminal(cluster.get(), outline, soft_macros);
       }
     }
 
@@ -3092,16 +3093,11 @@ void HierRTLMP::createFixedTerminals(
   }
 }
 
-void HierRTLMP::createFixedTerminal(
-    Cluster* cluster,
-    const Rect& outline,
-    std::map<std::string, int>& soft_macro_id_map,
-    std::vector<SoftMacro>& soft_macros)
+template <typename Macro>
+void HierRTLMP::createFixedTerminal(Cluster* cluster,
+                                    const Rect& outline,
+                                    std::vector<Macro>& macros)
 {
-  const int id = static_cast<int>(soft_macros.size());
-  const std::string name = cluster->getName();
-  soft_macro_id_map[name] = id;
-
   // A conventional fixed terminal is just a point without
   // the cluster data.
   Point location = cluster->getCenter();
@@ -3122,7 +3118,8 @@ void HierRTLMP::createFixedTerminal(
   location.first -= outline.xMin();
   location.second -= outline.yMin();
 
-  soft_macros.emplace_back(location, name, width, height, terminal_cluster);
+  macros.emplace_back(
+      location, cluster->getName(), width, height, terminal_cluster);
 }
 
 // Determine the shape of each cluster based on target utilization
@@ -3598,6 +3595,7 @@ void HierRTLMP::computeFencesAndGuides(
   }
 }
 
+// Create terminals for macro placement (Hard) annealing.
 void HierRTLMP::createFixedTerminals(const Rect& outline,
                                      const UniqueClusterVector& macro_clusters,
                                      std::map<int, int>& cluster_to_macro,
@@ -3615,22 +3613,12 @@ void HierRTLMP::createFixedTerminals(const Rect& outline,
     if (cluster_to_macro.find(cluster_id) != cluster_to_macro.end()) {
       continue;
     }
-    auto& temp_cluster = tree_->maps.id_to_cluster[cluster_id];
 
-    // model other cluster as a fixed macro with zero size
-    cluster_to_macro[cluster_id] = sa_macros.size();
-    sa_macros.emplace_back(
-        std::pair<float, float>(
-            temp_cluster->getX() + temp_cluster->getWidth() / 2.0
-                - outline.xMin(),
-            temp_cluster->getY() + temp_cluster->getHeight() / 2.0
-                - outline.yMin()),
-        temp_cluster->getName(),
-        // The information of whether or not a cluster is a group of
-        // unplaced IO pins is needed inside the SA Core, so if a fixed
-        // terminal corresponds to a cluster of unplaced IO pins it needs
-        // to contain that cluster data.
-        temp_cluster->isClusterOfUnplacedIOPins() ? temp_cluster : nullptr);
+    Cluster* temp_cluster = tree_->maps.id_to_cluster[cluster_id];
+    const int terminal_id = static_cast<int>(sa_macros.size());
+
+    cluster_to_macro[cluster_id] = terminal_id;
+    createFixedTerminal(temp_cluster, outline, sa_macros);
   }
 }
 

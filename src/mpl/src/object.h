@@ -358,9 +358,11 @@ class HardMacro
  public:
   // Create a macro with specified size
   // Model fixed terminals
-  HardMacro(std::pair<float, float> loc,
+  HardMacro(std::pair<float, float> location,
             const std::string& name,
-            Cluster* cluster = nullptr);
+            float width,
+            float height,
+            Cluster* cluster);
 
   // In this case, we model the pin position at the center of the macro
   HardMacro(float width, float height, const std::string& name);

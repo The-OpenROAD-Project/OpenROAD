@@ -210,10 +210,6 @@ class HierRTLMP
   void createFixedTerminals(Cluster* parent,
                             std::map<std::string, int>& soft_macro_id_map,
                             std::vector<SoftMacro>& soft_macros);
-  void createFixedTerminal(Cluster* cluster,
-                           const Rect& outline,
-                           std::map<std::string, int>& soft_macro_id_map,
-                           std::vector<SoftMacro>& soft_macros);
   void updateChildrenShapesAndLocations(
       Cluster* parent,
       const std::vector<SoftMacro>& shaped_macros,
@@ -262,6 +258,11 @@ class HierRTLMP
   // Aux for conversion
   odb::Rect micronsToDbu(const Rect& micron_rect);
   Rect dbuToMicrons(const odb::Rect& dbu_rect);
+
+  template <typename Macro>
+  void createFixedTerminal(Cluster* cluster,
+                           const Rect& outline,
+                           std::vector<Macro>& macros);
 
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
