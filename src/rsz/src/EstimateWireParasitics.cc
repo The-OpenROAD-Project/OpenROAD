@@ -207,10 +207,7 @@ double Resizer::wireClkResistance(const Corner* corner) const
   if (wire_clk_res_.empty()) {
     return 0.0;
   }
-  double h_clk_res = wire_clk_res_[corner->index()].h_res;
-  if (h_clk_res > 0.0) {
-    return h_clk_res;
-  }
+
   return (wire_clk_res_[corner->index()].h_res
           + wire_clk_res_[corner->index()].v_res)
          / 2;

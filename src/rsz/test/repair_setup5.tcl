@@ -1,5 +1,6 @@
 # buffer chain with set_max_delay
 source "helpers.tcl"
+if {[expr {![info exists repair_args]}]} { set repair_args {} }
 read_liberty sky130hd/sky130hd_tt.lib
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130hd_std_cell.lef
@@ -14,6 +15,6 @@ report_worst_slack -max
 
 # Get information so we can setup the test outputs correctly
 write_verilog_for_eqy repair_setup5 before "None"
-repair_timing -setup -repair_tns 100
+repair_timing -setup -repair_tns 100 {*}$repair_args
 run_equivalence_test repair_setup5 ./sky130hd/work_around_yosys/ "None"
 report_worst_slack -max
