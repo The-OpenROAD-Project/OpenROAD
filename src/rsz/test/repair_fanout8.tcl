@@ -2,7 +2,10 @@
 source "helpers.tcl"
 source "hi_fanout.tcl"
 
-set def_filename [make_result_file "repair_fanout8.def"]
+if {[expr {![info exists def_filename]}]} {
+    set def_filename [make_result_file "repair_fanout8.def"]
+}
+if {[expr {![info exists repair_args]}]} { set repair_args {} }
 # Gates we want to eventually NAND2_X4, NAND3_X4, NAND4_X4
 
 write_clone_test_def $def_filename NAND2_X4 150
@@ -32,7 +35,7 @@ estimate_parasitics -placement
 
 report_worst_slack -max
 write_verilog_for_eqy repair_fanout8 before "None"
-repair_timing -setup -repair_tns 100 -skip_gate_cloning -verbose
+repair_timing -setup -repair_tns 100 -skip_gate_cloning -verbose {*}$repair_args
 run_equivalence_test repair_fanout8 ./Nangate45/work_around_yosys/ "None"
 report_worst_slack -max
 

@@ -137,6 +137,15 @@ or_integration_tests(
     set_dont_touch1
     set_dont_use1
     split_load_hier
+    repair_fanout6_multi
+    repair_fanout7_multi
+    repair_fanout8_multi
+    repair_setup1_multi
+    repair_setup2_multi
+    repair_setup3_multi
+    repair_setup4_multi
+    repair_setup6_multi
+    repair_setup7_multi
   PASSFAIL_TESTS
     cpp_tests
 )

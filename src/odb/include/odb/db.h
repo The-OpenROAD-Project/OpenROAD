@@ -1759,6 +1759,11 @@ class dbBlock : public dbObject
                           FILE* out,
                           int indent_per_level = 4);
 
+  //
+  // For debugging only.  Print block content to an ostream.
+  //
+  void debugPrintContent(std::ostream& str_db);
+
  private:
   void ComputeBBox();
 };
@@ -2863,6 +2868,11 @@ class dbNet : public dbObject
   /// Translate a valid database-id back to a pointer.
   ///
   static dbNet* getValidNet(dbBlock* block, uint oid);
+
+  ///
+  /// True if can merge the iterms and bterms of the in_net with this net
+  ///
+  bool canMergeNet(dbNet* in_net);
 
   ///
   /// Merge the iterms and bterms of the in_net with this net
