@@ -34,9 +34,9 @@
 #include <memory>
 #include <vector>
 
+#include "Macros.hh"
 #include "ScanCell.hh"
 #include "utl/Logger.h"
-#include "Macros.hh"
 
 namespace dft {
 
@@ -51,7 +51,8 @@ namespace dft {
 //  - Find the scan enable of the chain
 class ScanChain
 {
- DISABLE_COPY_AND_MOVE(ScanChain);
+  DISABLE_COPY_AND_MOVE(ScanChain);
+
  public:
   explicit ScanChain(const std::string& name);
 

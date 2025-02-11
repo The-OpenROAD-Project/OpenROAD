@@ -32,9 +32,9 @@
 #pragma once
 
 // Used inside a class of ClassName, will disable all copies and moves
-#define DISABLE_COPY_AND_MOVE(ClassName) \
-  private: \
-   ClassName(const ClassName&) = delete; \
-   ClassName& operator=(const ClassName&) = delete; \
-   ClassName(ClassName&&) = delete; \
-   ClassName& operator=(ClassName&&) = delete;
+#define DISABLE_COPY_AND_MOVE(ClassName)           \
+ private:                                          \
+  ClassName(const ClassName&) = delete;            \
+  ClassName& operator=(const ClassName&) = delete; \
+  ClassName(ClassName&&) = delete;                 \
+  ClassName& operator=(ClassName&&) = delete;

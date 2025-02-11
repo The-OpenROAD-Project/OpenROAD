@@ -31,19 +31,20 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
+#include "Macros.hh"
 #include "ScanCell.hh"
 #include "ScanPin.hh"
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "sta/Liberty.hh"
-#include "Macros.hh"
 
 namespace dft {
 
 // A simple single cell with just one bit. Usually one scan FF
 class OneBitScanCell : public ScanCell
 {
- DISABLE_COPY_AND_MOVE(OneBitScanCell);
+  DISABLE_COPY_AND_MOVE(OneBitScanCell);
+
  public:
   OneBitScanCell(const std::string& name,
                  std::unique_ptr<ClockDomain> clock_domain,

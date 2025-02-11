@@ -35,11 +35,11 @@
 #include <type_traits>
 #include <vector>
 
+#include "Macros.hh"
 #include "ScanChain.hh"
 #include "ScanStitchConfig.hh"
 #include "Utils.hh"
 #include "odb/db.h"
-#include "Macros.hh"
 
 namespace dft {
 
@@ -51,7 +51,8 @@ inline constexpr bool always_false_v = false;
 // are going to share the same scan_enable
 class ScanStitch
 {
- DISABLE_COPY_AND_MOVE(ScanStitch);
+  DISABLE_COPY_AND_MOVE(ScanStitch);
+
  public:
   explicit ScanStitch(odb::dbDatabase* db,
                       utl::Logger* logger,

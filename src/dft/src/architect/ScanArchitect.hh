@@ -36,11 +36,11 @@
 #include <memory>
 #include <vector>
 
+#include "Macros.hh"
 #include "ScanArchitectConfig.hh"
 #include "ScanCell.hh"
 #include "ScanChain.hh"
 #include "utl/Logger.h"
-#include "Macros.hh"
 
 namespace dft {
 
@@ -48,7 +48,8 @@ namespace dft {
 // on the hash domain.
 class ScanCellsBucket
 {
- DISABLE_COPY_AND_MOVE(ScanCellsBucket);
+  DISABLE_COPY_AND_MOVE(ScanCellsBucket);
+
  public:
   explicit ScanCellsBucket(utl::Logger* logger);
 
@@ -73,7 +74,8 @@ class ScanCellsBucket
 // The Scan Architect. We can implement different algorithms to architect
 class ScanArchitect
 {
- DISABLE_COPY_AND_MOVE(ScanArchitect);
+  DISABLE_COPY_AND_MOVE(ScanArchitect);
+
  public:
   // The limits of a hash domain.
   struct HashDomainLimits
