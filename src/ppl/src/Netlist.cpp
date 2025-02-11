@@ -47,6 +47,7 @@ namespace ppl {
 Netlist::Netlist()
 {
   net_pointer_.push_back(0);
+  initialized_ = false;
 }
 
 void Netlist::addIONet(const IOPin& io_pin,
