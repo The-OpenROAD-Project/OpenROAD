@@ -279,7 +279,8 @@ bool hasOneSiteMaster(dbDatabase* db)
 {
   for (dbLib* lib : db->getLibs()) {
     for (dbMaster* master : lib->getMasters()) {
-      if (master->getSite()->getWidth() == master->getWidth()) {
+      dbSite* site = master->getSite();
+      if (site && site->getWidth() == master->getWidth()) {
         return true;
       }
     }
