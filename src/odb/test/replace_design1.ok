@@ -26,12 +26,12 @@
 [InitialPlace]  Iter: 5 CG residual: 0.00000008 HPWL: 83747
 Placement Analysis
 ---------------------------------
-total displacement        173.3 u
-average displacement        8.3 u
-max displacement           12.3 u
+total displacement        169.9 u
+average displacement        8.1 u
+max displacement           11.0 u
 original HPWL               4.6 u
-legalized HPWL            127.3 u
-delta HPWL                 2659 %
+legalized HPWL             90.9 u
+delta HPWL                 1870 %
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
