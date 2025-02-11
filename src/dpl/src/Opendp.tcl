@@ -66,7 +66,7 @@ proc detailed_placement { args } {
 
   sta::check_argc_eq0 "detailed_placement" $args
 
-  if {[info exists flags(-disallow_one_site_gaps)]} {
+  if { [info exists flags(-disallow_one_site_gaps)] } {
     utl::warn DPL 3 "-disallow_one_site_gaps is deprecated"
   }
 
@@ -168,7 +168,7 @@ proc check_placement { args } {
   if { [info exists keys(-report_file_name)] } {
     set file_name $keys(-report_file_name)
   }
-  if {[info exists flags(-disallow_one_site_gaps)]} {
+  if { [info exists flags(-disallow_one_site_gaps)] } {
     utl::warn DPL 4 "-disallow_one_site_gaps is deprecated"
   }
   dpl::check_placement_cmd $verbose $file_name

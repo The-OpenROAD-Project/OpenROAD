@@ -28,9 +28,7 @@ def detailed_placement(
         site = design.getBlock().getRows()[0].getSite()
         max_disp_x = int(design.micronToDBU(max_disp_x) / site.getWidth())
         max_disp_y = int(design.micronToDBU(max_disp_y) / site.getHeight())
-        dpl.detailedPlacement(
-            max_disp_x, max_disp_y, report_file_name
-        )
+        dpl.detailedPlacement(max_disp_x, max_disp_y, report_file_name)
         if not suppress:
             dpl.reportLegalizationStats()
     else:
