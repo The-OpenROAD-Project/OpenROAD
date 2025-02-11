@@ -3064,7 +3064,7 @@ Instance* dbNetwork::getOwningInstanceParent(Pin* drvr_pin)
 }
 
 /*
-Get the dbModule during a net.
+Get the dbModule driving a net.
 
 Sometimes when inserting a buffer we simply want to stop at the current
 owning module boundary. Other times we want to go right the way to
