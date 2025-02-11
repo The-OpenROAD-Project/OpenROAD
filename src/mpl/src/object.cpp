@@ -1038,15 +1038,15 @@ SoftMacro::SoftMacro(float width, float height, const std::string& name)
 }
 
 // Create a SoftMacro representing a cluster of unplaced IOs or fixed terminals
-SoftMacro::SoftMacro(const std::pair<float, float>& pos,
+SoftMacro::SoftMacro(const std::pair<float, float>& location,
                      const std::string& name,
                      float width,
                      float height,
                      Cluster* cluster)
 {
   name_ = name;
-  x_ = pos.first;
-  y_ = pos.second;
+  x_ = location.first;
+  y_ = location.second;
   width_ = width;
   height_ = height;
 
