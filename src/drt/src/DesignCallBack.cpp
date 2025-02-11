@@ -56,19 +56,13 @@ void DesignCallBack::inDbPreMoveInst(odb::dbInst* db_inst)
 void DesignCallBack::inDbPostMoveInst(odb::dbInst* db_inst)
 {
   auto design = router_->getDesign();
-  if (design != nullptr && design->getTopBlock() != nullptr) {
+  if (design != nullptr && design->getTopBlock() != nullptr
+      && design->getRegionQuery() != nullptr) {
     auto inst = design->getTopBlock()->getInst(db_inst->getName());
     if (inst == nullptr) {
       return;
     }
-    int x, y;
-    db_inst->getLocation(x, y);
-    auto block = db_inst->getBlock();
-    x = defdist(block, x);
-    y = defdist(block, y);
-    if (design->getRegionQuery() != nullptr) {
-      design->getRegionQuery()->addBlockObj(inst);
-    }
+    design->getRegionQuery()->addBlockObj(inst);
   }
 }
 
