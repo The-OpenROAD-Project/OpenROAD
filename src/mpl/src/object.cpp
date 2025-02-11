@@ -491,6 +491,11 @@ Rect Cluster::getBBox() const
   return soft_macro_->getBBox();
 }
 
+Point Cluster::getCenter() const
+{
+  return {getX() + getWidth() / 2.0, getY() + getHeight() / 2.0};
+}
+
 // Hierarchy Support
 void Cluster::setParent(Cluster* parent)
 {

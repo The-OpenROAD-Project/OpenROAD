@@ -3075,18 +3075,19 @@ void HierRTLMP::createFixedTerminals(
   parents.push(parent);
 
   while (!parents.empty()) {
-    auto frontwave = parents.front();
+    Cluster* frontwave = parents.front();
     parents.pop();
 
     Cluster* grandparent = frontwave->getParent();
     for (auto& cluster : grandparent->getChildren()) {
       if (cluster->getId() != frontwave->getId()) {
-        soft_macro_id_map[cluster->getName()]
-            = static_cast<int>(soft_macros.size());
+        const int fixed_terminal_id = static_cast<int>(soft_macros.size());
+        const std::string fixed_terminal_name = cluster->getName();
+        soft_macro_id_map[fixed_terminal_name] = fixed_terminal_id;
 
-        const float center_x = cluster->getX() + cluster->getWidth() / 2.0;
-        const float center_y = cluster->getY() + cluster->getHeight() / 2.0;
-        Point location = {center_x - outline.xMin(), center_y - outline.yMin()};
+        Point location = cluster->getCenter();
+        location.first -= outline.xMin();
+        location.second -= outline.yMin();
 
         // The information of whether or not a cluster is a group of
         // unplaced IO pins is needed inside the SA Core, so if a fixed
@@ -3095,16 +3096,15 @@ void HierRTLMP::createFixedTerminals(
         Cluster* fixed_terminal_cluster
             = cluster->isClusterOfUnplacedIOPins() ? cluster.get() : nullptr;
 
-        // Note that a fixed terminal is just a point.
         soft_macros.emplace_back(location,
-                                 cluster->getName(),
+                                 fixed_terminal_name,
                                  0.0f /* width */,
                                  0.0f /* height */,
                                  fixed_terminal_cluster);
       }
     }
 
-    if (frontwave->getParent()->getParent() != nullptr) {
+    if (frontwave->getParent()->getParent()) {
       parents.push(frontwave->getParent());
     }
   }

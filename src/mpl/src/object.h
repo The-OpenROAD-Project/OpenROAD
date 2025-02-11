@@ -69,6 +69,7 @@ class SoftMacro;
 class Cluster;
 
 using UniqueClusterVector = std::vector<std::unique_ptr<Cluster>>;
+using Point = std::pair<float, float>;
 
 // ****************************************************************************
 // This file includes the basic functions and basic classes for the HierRTLMP
@@ -239,6 +240,7 @@ class Cluster
   void setY(float y);
   const std::pair<float, float> getLocation() const;
   Rect getBBox() const;
+  Point getCenter() const;
 
   // Hierarchy Support
   void setParent(Cluster* parent);
