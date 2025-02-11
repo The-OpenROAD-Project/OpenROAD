@@ -37,9 +37,26 @@ include("openroad")
 
 option(DEBUG_DRT_UNDERFLOW "Check for underflow in drt cost calculations" OFF)
 
-project(drt
-  LANGUAGES CXX
-)
+project(drt LANGUAGES CXX CUDA)
+
+# compilation for cuda12.2
+set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
+set(CMAKE_CUDA_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+# Set CUDA architecture to 80 for A100 GPU
+set(CMAKE_CUDA_ARCHITECTURES 80)
+# Set CUDA flags
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda --expt-relaxed-constexpr -Wno-redundant-decls")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=-Wno-redundant-decls")
+# Enable relocatable device code (RDC) for dynamic parallelism
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -rdc=true -DCUDA_FORCE_CDP1_IF_SUPPORTED")
+# Enable separable compilation
+set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
+#set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -rdc=true -DCUDA_FORCE_CDP1_IF_SUPPORTED")
+# Ensure correct device linking when using relocatable device code
+set(CMAKE_CUDA_LINK_EXECUTABLE "<CMAKE_CUDA_COMPILER> <FLAGS> <CMAKE_CUDA_LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+
+
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -49,6 +66,8 @@ check_ipo_supported(RESULT ipo_supported OUTPUT error)
 find_package(Boost REQUIRED COMPONENTS serialization)
 find_package(OpenMP REQUIRED)
 find_package(VTune)
+find_package(CUDAToolkit REQUIRED) #add CUDA
+
 
 swig_lib(NAME      drt
          NAMESPACE drt
@@ -63,8 +82,10 @@ target_sources(drt
     src/gr/FlexGRCMap.cpp
     src/gr/FlexGR.cpp
     src/gr/FlexGR_end.cpp
+    src/gr/FlexGR_update.cpp
     src/gr/FlexGRGridGraph.cpp
     src/gr/FlexGRGridGraph_maze.cpp
+    src/gr/FlexGR_2DMazeRoute.cu
     src/gr/FlexGR_init.cpp
     src/gr/FlexGR_maze.cpp
     src/gr/FlexGR_rq.cpp
@@ -137,6 +158,32 @@ target_sources(drt
     src/frBaseTypes.cpp
     src/DesignCallBack.cpp
 )
+
+
+############################################################
+# CUDA
+# Display message indicating GPU is enabled
+message(STATUS "GPU is enabled and CUDA is found")
+# Find the CUDA device runtime library
+find_library(CUDA_CUDADEVRT_LIBRARY cudadevrt PATHS /usr/local/cuda-12.2/lib64)
+# Check if the library was found
+if(NOT CUDA_CUDADEVRT_LIBRARY)
+  message(FATAL_ERROR "Failed to find the CUDA device runtime library (cudadevrt).")
+endif()
+target_link_libraries(drt
+  PRIVATE
+    CUDA::cudart
+    CUDA::cublas
+    CUDA::cusolver
+    CUDA::cusparse
+    ${CUDA_CUDADEVRT_LIBRARY}  # Ensure the device runtime is linked
+)
+# Set properties for CUDA
+set_target_properties(drt PROPERTIES CUDA_SEPARABLE_COMPILATION ON CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+# Ensure proper device linking when building the final executable
+set(CMAKE_CUDA_LINK_EXECUTABLE "<CMAKE_CUDA_COMPILER> <FLAGS> <CMAKE_CUDA_LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+############################################################
+
 
 target_include_directories(drt
   PUBLIC

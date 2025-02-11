@@ -32,6 +32,99 @@
 
 namespace drt {
 
+// ----------------------------------------------------------------------------
+// updated for GPU acceleration
+void FlexGRWorker::routePrep_update(
+  std::vector<grNet*> &rerouteNets, 
+  int iter)
+{
+  if (iter == 0) {
+    init_pinGCellIdxs();
+  }  
+  
+  if (ripupMode_ == RipUpMode::DRC) {
+    route_addHistCost();
+  }
+  
+  route_mazeIterInit();
+  std::vector<grNet*> nets;
+  route_getRerouteNets(nets);
+
+  for (auto net : nets) {
+    if (ripupMode_ == RipUpMode::DRC || (ripupMode_ == RipUpMode::ALL && mazeNetHasCong(net))) {
+      //mazeNetInit(net);
+      rerouteNets.push_back(net);  
+    }
+  }
+}
+
+
+void FlexGRWorker::route(std::vector<grNet*> &nets)
+{
+  for (auto net : nets) {
+    if (net->getCPUFlag() == false) {
+      continue;
+    }
+
+    mazeNetInit(net);
+    routeNet(net);
+  }
+}
+
+void FlexGRWorker::route_addHistCost_update()
+{
+  if (ripupMode_ == RipUpMode::DRC) {
+    route_addHistCost();
+  }
+}
+
+void FlexGRWorker::route_decayHistCost_update()
+{
+ if (ripupMode_ == RipUpMode::ALL) {
+    route_decayHistCost();
+  }
+}
+
+
+void FlexGRWorker::init_pinGCellIdxs()
+{
+  for (auto &net : nets_) {
+    net->clearPinGCellIdxs();
+    for (auto pinGCellNode : net->getPinGCellNodes()) {
+      auto loc = pinGCellNode->getLoc();
+      auto lNum = pinGCellNode->getLayerNum();
+      FlexMazeIdx mi;
+      gridGraph_.getMazeIdx(loc, lNum, mi);
+      net->addPinGCellIdx(mi);
+    }
+
+    // Check if the net is a feedthrough net
+    const std::vector<FlexMazeIdx>& pinGCellIdxs = net->getPinGCellIdxs();
+    if (pinGCellIdxs.size() == 2 && (pinGCellIdxs[0].x() == pinGCellIdxs[1].x() || pinGCellIdxs[0].y() == pinGCellIdxs[1].y())) {
+      net->setFeedThrough(true);
+    } else {
+      net->setFeedThrough(false);
+    }
+
+    // Set the bounding box
+    FlexMazeIdx ll(std::numeric_limits<frMIdx>::max(), std::numeric_limits<frMIdx>::max(), std::numeric_limits<frMIdx>::max());
+    FlexMazeIdx ur(std::numeric_limits<frMIdx>::min(), std::numeric_limits<frMIdx>::min(), std::numeric_limits<frMIdx>::min());
+    for (auto &idx : pinGCellIdxs) {
+      ll.set(std::min(ll.x(), idx.x()), std::min(ll.y(), idx.y()), std::min(ll.z(), idx.z()));
+      ur.set(std::max(ur.x(), idx.x()), std::max(ur.y(), idx.y()), std::max(ur.z(), idx.z()));
+    }
+    net->setRouteBBox(Rect(ll.x(), ur.x(), ll.y(), ur.y()));
+
+    // Set the routed wirelength as HPWL
+    int hpwl = (ur.x() - ll.x()) + (ur.y() - ll.y());
+    net->setHPWL(hpwl);
+    net->setCPUFlag(true);
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Original Functions
+// ----------------------------------------------------------------------------
 void FlexGRWorker::route()
 {
   std::vector<grNet*> rerouteNets;

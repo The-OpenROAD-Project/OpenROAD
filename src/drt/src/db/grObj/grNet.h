@@ -36,9 +36,23 @@
 #include "db/grObj/grPin.h"
 #include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"
+#include "db/grObj/grPin.h"
+#include "dr/FlexMazeTypes.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class frNet;
+
+
+// For each grNet, we classify the grNet into two types:
+// feedthrough net and non-feedthrough net.
+// We also give many attributes when we initialize the grNet:
+// #number of pinGCellNodes
+// #locations for pinGCellNodes (in terms of gcell grids) FlexMazeIdx
+// Bounding box
+// routed_wl (routed wirelength)
+// All these features are used in the GPU-accelerated maze routing 
+
 class grNet : public grBlockObject
 {
  public:
@@ -207,6 +221,60 @@ class grNet : public grBlockObject
                : (numOverConGCells > b.numOverConGCells);
   }
 
+  // used for GPU-accelerated maze routing
+  void setFeedThrough(bool in) { feedThroughFlag = in; }
+  bool isFeedThrough() const { return feedThroughFlag; }
+  
+  void setRouteBBox(const Rect& in) { routeBBox = in; }
+  Rect getRouteBBox() const { return routeBBox; }
+
+  void setRoutedWL(int in) { routedWL = in; }
+  int getRoutedWL() const { return routedWL; }
+
+  void setHPWL(int in) { hpwl = in; }
+  int getHPWL() const { return hpwl; }
+
+  void addPinGCellIdx(const FlexMazeIdx& in) { pinGCellIdxs.push_back(in); }
+  void clearPinGCellIdxs() { pinGCellIdxs.clear(); }
+  const std::vector<FlexMazeIdx>& getPinGCellIdxs() const
+  {
+    return pinGCellIdxs;
+  }
+
+  void setWorkerId(int id) { workerId = id; }
+  int getWorkerId() const { return workerId; }
+
+  void setNetId(int id) { netId = id; }
+  int getNetId() const { return netId; }
+
+  // If the net is going to be handled by CPU
+  void setCPUFlag(bool in) { cpuFlag = in; }
+  bool getCPUFlag() const { return cpuFlag; }
+
+  void updateAbsGridCoords(Point llx) {
+    int x = llx.x();
+    int y = llx.y();
+    pinGCellAbsIdxs.clear();
+    for (auto& idx : pinGCellIdxs) {
+      pinGCellAbsIdxs.push_back(FlexMazeIdx(x + idx.x(), y + idx.y(), idx.z()));
+    }
+
+    routeAbsBBox = Rect(x + routeBBox.xMin(), 
+      y + routeBBox.yMin(), 
+      x + routeBBox.xMax(),
+      y + routeBBox.yMax());
+  }
+
+  const std::vector<FlexMazeIdx>& getPinGCellAbsIdxs() const
+  {
+    return pinGCellAbsIdxs;
+  }
+
+  const Rect& getRouteAbsBBox() const
+  {
+    return routeAbsBBox;
+  }
+
  protected:
   std::vector<std::unique_ptr<grPin>> pins;
   std::vector<std::unique_ptr<grConnFig>> extConnFigs;
@@ -237,5 +305,17 @@ class grNet : public grBlockObject
   bool inQueue{false};
   bool routed{false};
   bool trivial{false};
+
+  // used for GPU-accelerated maze routing
+  int workerId{-1};
+  int netId{-1};
+  bool feedThroughFlag{false};
+  Rect routeBBox;
+  int routedWL{0};
+  int hpwl{0};
+  bool cpuFlag{true};
+  std::vector<FlexMazeIdx> pinGCellIdxs;
+  std::vector<FlexMazeIdx> pinGCellAbsIdxs;
+  Rect routeAbsBBox;
 };
 }  // namespace drt

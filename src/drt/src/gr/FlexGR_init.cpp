@@ -1174,4 +1174,56 @@ void FlexGRWorker::initGridGraph_fromCMap()
   }
 }
 
+
+
+// copy back to global cmap
+void FlexGRWorker::initGridGraph_back2CMap()
+{
+  auto cmap = getCMap();
+  Point gcellIdxLL = getRouteGCellIdxLL();
+  Point gcellIdxUR = getRouteGCellIdxUR();
+  int idxLLX = gcellIdxLL.x();
+  int idxLLY = gcellIdxLL.y();
+  int idxURX = gcellIdxUR.x();
+  int idxURY = gcellIdxUR.y();
+
+  for (int zIdx = 0; zIdx < (int) cmap->getZMap().size(); zIdx++) {
+    for (int xIdx = 0; xIdx <= (idxURX - idxLLX); xIdx++) {
+      int cmapXIdx = xIdx + idxLLX;
+      for (int yIdx = 0; yIdx <= (idxURY - idxLLY); yIdx++) {
+        int cmapYIdx = yIdx + idxLLY;
+        cmap->setHistoryCost(
+          cmapXIdx, cmapYIdx, zIdx, gridGraph_.getHistoryCost(xIdx, yIdx, zIdx));
+        // copy raw demand
+        cmap->setRawDemand(
+          cmapXIdx,
+          cmapYIdx,
+          zIdx, 
+          frDirEnum::E, 
+          gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::E));
+        cmap->setRawDemand(
+          cmapXIdx,
+          cmapYIdx,
+          zIdx, 
+          frDirEnum::N, 
+          gridGraph_.getRawDemand(xIdx, yIdx, zIdx, frDirEnum::N));
+        // copy supply
+        cmap->setSupply(
+          cmapXIdx,
+          cmapYIdx,
+          zIdx, 
+          frDirEnum::E, 
+          gridGraph_.getSupply(xIdx, yIdx, zIdx, frDirEnum::E));
+        cmap->setSupply(
+          cmapXIdx,
+          cmapYIdx,
+          zIdx, 
+          frDirEnum::N, 
+          gridGraph_.getSupply(xIdx, yIdx, zIdx, frDirEnum::N));
+      }
+    }
+  }
+}
+
+
 }  // namespace drt

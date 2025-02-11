@@ -56,6 +56,11 @@ void FlexGR::main(odb::dbDatabase* db)
   FlexGRCMap baseCMap(cmap_.get(), router_cfg_);
   FlexGRCMap baseCMap2D(cmap2D_.get(), router_cfg_);
 
+  // Reserve the nets for the batch generation
+  // Only once
+  nets2Ripup_.clear();
+  nets2Ripup_.reserve(design_->getTopBlock()->getNets().size());
+
   // gen topology + pattern route for 2D connectivty
   initGR();
   // populate region query for 2D
@@ -275,6 +280,19 @@ void FlexGR::searchRepair(int iter,
                           RipUpMode mode,
                           bool TEST)
 {
+  if (gpuFlag_ == true) {
+    searchRepair_update(iter,
+                        size,
+                        offset,
+                        mazeEndIter,
+                        workerCongCost,
+                        workerHistCost,
+                        congThresh,
+                        is2DRouting,
+                        mode);
+    return;
+  }
+  
   frTime t;
 
   if (router_cfg_->VERBOSE > 0) {

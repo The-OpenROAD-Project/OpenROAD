@@ -610,6 +610,17 @@ class FlexGRGridGraph
     zDirs_.shrink_to_fit();
   }
 
+  // For GPU-accelerated GR
+  std::vector<uint64_t>& getBits() { return bits_; }  
+
+  frMIdx getIdx(frMIdx xIdx, frMIdx yIdx, frMIdx zIdx) const
+  {
+    return (getZDir(zIdx)) ? (xIdx + yIdx * xCoords_.size()
+                              + zIdx * xCoords_.size() * yCoords_.size())
+                           : (yIdx + xIdx * yCoords_.size()
+                              + zIdx * xCoords_.size() * yCoords_.size());
+  }
+
  private:
   frDesign* design_{nullptr};
   FlexGRWorker* grWorker_{nullptr};
@@ -671,13 +682,7 @@ class FlexGRGridGraph
   }
   frCoord getZHeight(frMIdx in) const { return zHeights_[in]; }
   bool getZDir(frMIdx in) const { return zDirs_[in]; }
-  frMIdx getIdx(frMIdx xIdx, frMIdx yIdx, frMIdx zIdx) const
-  {
-    return (getZDir(zIdx)) ? (xIdx + yIdx * xCoords_.size()
-                              + zIdx * xCoords_.size() * yCoords_.size())
-                           : (yIdx + xIdx * yCoords_.size()
-                              + zIdx * xCoords_.size() * yCoords_.size());
-  }
+ 
 
   // internal setters
   void setBit(frMIdx idx, frMIdx pos) { bits_[idx] |= 1 << pos; }

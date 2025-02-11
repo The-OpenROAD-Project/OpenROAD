@@ -243,6 +243,34 @@ class FlexGR
   void writeToGuide();
   void updateDb();
   void getBatchInfo(int& batchStepX, int& batchStepY);
+
+
+  // For GPU-accelerated GGR-TR
+  bool gpuFlag_ = true;
+  void searchRepair_update(
+    int iter,
+    int size,
+    int offset,
+    int mazeEndIter,
+    unsigned workerCongCost,
+    unsigned workerHistCost,
+    double congThresh,
+    bool is2DRouting,
+    RipUpMode mode);
+
+  void batchGenerationMIS(
+    std::vector<std::vector<grNet*>> &rerouteNets,
+    std::vector<std::vector<grNet*>> &batches,
+    std::vector<int>& validBatchIds,
+    int iter);
+
+  void GPUAccelerated2DMazeRoute(
+    std::vector<grNet*>& nets,
+    std::vector<uint64_t>& h_costMap,
+    int xDim, int yDim);
+
+  int validBatchThreshold_ = 50;
+  std::vector<grNet*> nets2Ripup_;
 };
 
 class FlexGRWorker;
@@ -345,6 +373,25 @@ class FlexGRWorker
   void end();
   void cleanup();
 
+  // for GPU-accelerated Router
+  int getWorkerId() const { return workerId_; }
+  void setWorkerId(int id) { workerId_ = id; }
+
+  // updated functions for GPU-accelerated Router
+  void routePrep_update(std::vector<grNet*> &rerouteNets, int iter);
+
+  // init
+  void init();
+  void route(std::vector<grNet*> &nets);
+  void route_addHistCost_update();
+  void route_decayHistCost_update();
+
+  void initGridGraph_fromCMap();  // copy from the cmap
+  void initGridGraph_back2CMap(); // copy back to the cmap
+
+  bool routeNet(grNet* net);
+  void mazeNetInit(grNet* net);
+
  private:
   frDesign* design_{nullptr};
   FlexGR* gr_{nullptr};
@@ -359,6 +406,7 @@ class FlexGRWorker
   double congThresh_{1.0};
   bool is2DRouting_{false};
   RipUpMode ripupMode_{RipUpMode::DRC};
+  int workerId_{0};
 
   // local storage
   std::vector<std::unique_ptr<grNet>> nets_;
@@ -377,8 +425,7 @@ class FlexGRWorker
                                           frNode* parent,
                                           const Point& breakPt);
 
-  // init
-  void init();
+ 
   void initNets();
   void initNets_roots(
       std::set<frNet*, frBlockObjectComp>& nets,
@@ -403,7 +450,7 @@ class FlexGRWorker
   void initNet_addNet(std::unique_ptr<grNet>& in);
   void initNets_regionQuery();
   void initGridGraph();
-  void initGridGraph_fromCMap();
+ 
 
   // debug
   void initNets_printNets();
@@ -417,14 +464,14 @@ class FlexGRWorker
   void route_addHistCost();
   void route_mazeIterInit();
   void route_getRerouteNets(std::vector<grNet*>& rerouteNets);
-  void mazeNetInit(grNet* net);
+ 
   bool mazeNetHasCong(grNet* net);
   void mazeNetInit_addHistCost(grNet* net);
   void mazeNetInit_decayHistCost(grNet* net);
   void mazeNetInit_removeNetObjs(grNet* net);
   void modCong_pathSeg(grPathSeg* pathSeg, bool isAdd);
   void mazeNetInit_removeNetNodes(grNet* net);
-  bool routeNet(grNet* net);
+ 
   void routeNet_prep(grNet* net,
                      std::set<grNode*, frBlockObjectComp>& unConnPinGCellNodes,
                      std::map<FlexMazeIdx, grNode*>& mazeIdx2unConnPinGCellNode,
@@ -478,6 +525,21 @@ class FlexGRWorker
   Point getBoundaryPinGCellNodeLoc(const Point& boundaryPinLoc);
 
   // debug
-  void routeNet_printNet(grNet* net);
+  void routeNet_printNet(grNet* net); 
+
+  // For GPU-accelerated GGR-TR
+  void init_pinGCellIdxs();
 };
+
+
+// GPU-accelerated maze routing
+
+
+
+
+
+
+
+
+
 }  // namespace drt

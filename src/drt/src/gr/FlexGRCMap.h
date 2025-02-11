@@ -516,6 +516,23 @@ class FlexGRCMap
     bits_.shrink_to_fit();
   }
 
+
+  // for GPU-accelerated routing
+  unsigned getIdx(unsigned xIdx, unsigned yIdx, unsigned zIdx) const
+  {
+    return (xIdx + yIdx * xgp_->getCount()
+            + zIdx * xgp_->getCount() * ygp_->getCount());
+  }
+
+  std::vector<uint64_t>& getBits() { return bits_; }
+  
+  void getDim(int& xDim, int& yDim, int& zDim) const
+  {
+    xDim = xgp_->getCount();
+    yDim = ygp_->getCount();
+    zDim = zMap_.size();
+  }  
+
  private:
   frDesign* design_;
   const frGCellPattern* xgp_;
@@ -545,11 +562,7 @@ class FlexGRCMap
     auto tmp = bits_[idx] & (((1ull << length) - 1) << pos);
     return tmp >> pos;
   }
-  unsigned getIdx(unsigned xIdx, unsigned yIdx, unsigned zIdx) const
-  {
-    return (xIdx + yIdx * xgp_->getCount()
-            + zIdx * xgp_->getCount() * ygp_->getCount());
-  }
+ 
 
   // internal setters
   void setBit(unsigned idx, unsigned pos) { bits_[idx] |= 1 << pos; }
