@@ -282,11 +282,14 @@ class IOPlacer
                             const Rect& constraint_box,
                             Rect& region);
   void commitConstraintsToDB();
+  void commitPinConstraintToDB(odb::dbBTerm* bterm,
+                               const Constraint& constraint);
   void commitIOPlacementToDB(std::vector<IOPin>& assignment);
   void commitIOPinToDB(const IOPin& pin);
   void initCore(const std::set<int>& hor_layer_idxs,
                 const std::set<int>& ver_layer_idxs);
   void initNetlist();
+  Direction getBTermDirection(odb::dbBTerm* bterm);
   void initTracks();
   odb::dbBlock* getBlock() const;
   odb::dbTech* getTech() const;

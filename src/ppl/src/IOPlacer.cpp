@@ -1775,6 +1775,11 @@ void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
   if (!inserted) {
     constraints_.emplace_back(*pins, Direction::invalid, interval);
   }
+
+  Constraint constraint(*pins, Direction::invalid, interval);
+  for (odb::dbBTerm* bterm : *pins) {
+    commitPinConstraintToDB(bterm, constraint);
+  }
 }
 
 void IOPlacer::addDirectionConstraint(Direction direction,
@@ -1793,6 +1798,12 @@ void IOPlacer::addDirectionConstraint(Direction direction,
 
   Constraint constraint(PinSet(), direction, interval);
   constraints_.push_back(constraint);
+  for (odb::dbBTerm* bterm : getBlock()->getBTerms()) {
+    Direction dir = getBTermDirection(bterm);
+    if (dir == direction) {
+      commitPinConstraintToDB(bterm, constraint);
+    }
+  }
 }
 
 void IOPlacer::addTopLayerConstraint(PinSet* pins, const odb::Rect& region)
@@ -1815,6 +1826,7 @@ void IOPlacer::addTopLayerConstraint(PinSet* pins, const odb::Rect& region)
   for (odb::dbBTerm* bterm : *pins) {
     if (!bterm->getFirstPinPlacementStatus().isFixed()) {
       top_layer_pins_count_++;
+      commitPinConstraintToDB(bterm, constraint);
     }
   }
 }
@@ -3006,17 +3018,7 @@ void IOPlacer::initNetlist()
       continue;
     }
 
-    Direction dir = Direction::inout;
-    switch (bterm->getIoType().getValue()) {
-      case odb::dbIoType::INPUT:
-        dir = Direction::input;
-        break;
-      case odb::dbIoType::OUTPUT:
-        dir = Direction::output;
-        break;
-      default:
-        dir = Direction::inout;
-    }
+    Direction dir = getBTermDirection(bterm);
 
     Point bounds(0, 0);
     IOPin io_pin(bterm,
@@ -3061,6 +3063,24 @@ void IOPlacer::initNetlist()
     }
     group_idx++;
   }
+  netlist_->setInitialized(true);
+}
+
+Direction IOPlacer::getBTermDirection(odb::dbBTerm* bterm)
+{
+  Direction dir = Direction::inout;
+  switch (bterm->getIoType().getValue()) {
+    case odb::dbIoType::INPUT:
+      dir = Direction::input;
+      break;
+    case odb::dbIoType::OUTPUT:
+      dir = Direction::output;
+      break;
+    default:
+      dir = Direction::inout;
+  }
+
+  return dir;
 }
 
 void IOPlacer::findConstraintRegion(const Interval& interval,
@@ -3119,6 +3139,37 @@ void IOPlacer::commitConstraintsToDB()
         mirrored_bterm->setConstraintRegion(mirrored_constraint_region);
       }
     }
+  }
+}
+
+void IOPlacer::commitPinConstraintToDB(odb::dbBTerm* bterm,
+                                       const Constraint& constraint)
+{
+  if (!netlist_->isInitialized()) {
+    initNetlist();
+  }
+  initMirroredPins();
+
+  int pin_idx = netlist_->getIoPinIdx(bterm);
+  IOPin& io_pin = netlist_->getIoPin(pin_idx);
+  Rect constraint_region;
+  const Interval& interval = constraint.interval;
+  findConstraintRegion(interval, constraint.box, constraint_region);
+  bterm->setConstraintRegion(constraint_region);
+
+  if (io_pin.isMirrored()) {
+    IOPin& mirrored_pin = netlist_->getIoPin(io_pin.getMirrorPinIdx());
+    odb::dbBTerm* mirrored_bterm
+        = getBlock()->findBTerm(mirrored_pin.getName().c_str());
+    Edge mirrored_edge = getMirroredEdge(interval.getEdge());
+    Rect mirrored_constraint_region;
+    Interval mirrored_interval(mirrored_edge,
+                               interval.getBegin(),
+                               interval.getEnd(),
+                               interval.getLayer());
+    findConstraintRegion(
+        mirrored_interval, constraint.box, mirrored_constraint_region);
+    mirrored_bterm->setConstraintRegion(mirrored_constraint_region);
   }
 }
 
