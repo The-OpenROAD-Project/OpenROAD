@@ -2,6 +2,7 @@ or_integration_tests(
   "tap"
   TESTS
     aes_gf180
+    allow_one_site_gaps
     avoid_overlap
     boundary_macros
     boundary_macros_auto_select
