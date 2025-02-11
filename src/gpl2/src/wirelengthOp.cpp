@@ -376,44 +376,54 @@ void computeBCPosNegKernel(int numNets,
                                       const Kokkos::View<float*>& dNetCPosY,
                                       const Kokkos::View<float*>& dNetCNegY)
 {
-  Kokkos::parallel_for(numNets, KOKKOS_LAMBDA (const int netId) {
+  using team_policy = Kokkos::TeamPolicy<>;
+  using team_member = typename team_policy::member_type;
+
+  Kokkos::parallel_for("ComputeBCPosNeg", team_policy(numNets, Kokkos::AUTO), KOKKOS_LAMBDA(const team_member& team) {
+    const int netId = team.league_rank();
     const int pinStart = dNetPinPos[netId];
     const int pinEnd = dNetPinPos[netId + 1];
-    float bPosX = 0.0;
-    float bNegX = 0.0;
-    float bPosY = 0.0;
-    float bNegY = 0.0;
 
-    float cPosX = 0.0;
-    float cNegX = 0.0;
-    float cPosY = 0.0;
-    float cNegY = 0.0;
+    float bPosX, bNegX, bPosY, bNegY;
+    float cPosX, cNegX, cPosY, cNegY;
 
-    for (int pinId = pinStart; pinId < pinEnd; ++pinId) {
+
+    Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, pinStart, pinEnd), KOKKOS_LAMBDA (
+      const int pinId,
+      float& localBPosX,
+      float& localBNegX,
+      float& localBPosY,
+      float& localBNegY,
+      float& localCPosX,
+      float& localCNegX,
+      float& localCPosY,
+      float& localCNegY
+    ) {
       const int pinIdx = dNetPinIdx[pinId];
-      bPosX += dPinAPosX[pinIdx];
-      bNegX += dPinANegX[pinIdx];
-      bPosY += dPinAPosY[pinIdx];
-      bNegY += dPinANegY[pinIdx];
+      localBPosX += dPinAPosX[pinIdx];
+      localBNegX += dPinANegX[pinIdx];
+      localBPosY += dPinAPosY[pinIdx];
+      localBNegY += dPinANegY[pinIdx];
 
-      cPosX += dPinX[pinIdx] * dPinAPosX[pinIdx];
-      cNegX += dPinX[pinIdx] * dPinANegX[pinIdx];
-      cPosY += dPinY[pinIdx] * dPinAPosY[pinIdx];
-      cNegY += dPinY[pinIdx] * dPinANegY[pinIdx];
-    }
+      localCPosX += dPinX[pinIdx] * dPinAPosX[pinIdx];
+      localCNegX += dPinX[pinIdx] * dPinANegX[pinIdx];
+      localCPosY += dPinY[pinIdx] * dPinAPosY[pinIdx];
+      localCNegY += dPinY[pinIdx] * dPinANegY[pinIdx];
+    }, bPosX, bNegX, bPosY, bNegY, cPosX, cNegX, cPosY, cNegY);
 
-    dNetBPosX[netId] = bPosX;
-    dNetBNegX[netId] = bNegX;
-    dNetBPosY[netId] = bPosY;
-    dNetBNegY[netId] = bNegY;
+    Kokkos::single(Kokkos::PerTeam(team), [&]() {
+      dNetBPosX[netId] = bPosX;
+      dNetBNegX[netId] = bNegX;
+      dNetBPosY[netId] = bPosY;
+      dNetBNegY[netId] = bNegY;
 
-    dNetCPosX[netId] = cPosX;
-    dNetCNegX[netId] = cNegX;
-    dNetCPosY[netId] = cPosY;
-    dNetCNegY[netId] = cNegY;
+      dNetCPosX[netId] = cPosX;
+      dNetCNegX[netId] = cNegX;
+      dNetCPosY[netId] = cPosY;
+      dNetCNegY[netId] = cNegY;
+    });
   });
 }
-
 void computePinWAGradKernel(const int numPins,
                                        const float wlCoeffX,
                                        const float wlCoeffY,
