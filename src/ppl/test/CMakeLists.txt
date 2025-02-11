@@ -48,6 +48,7 @@ or_integration_tests(
     annealing_mirrored5
     blocked_region
     cells_not_placed
+    check_pin_constraints1
     exclude1
     exclude2
     exclude3
