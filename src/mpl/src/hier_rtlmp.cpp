@@ -2252,48 +2252,7 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
         io_cluster);
   }
 
-  // model other clusters as fixed terminals
-  if (parent->getParent() != nullptr) {
-    std::queue<Cluster*> parents;
-    parents.push(parent);
-    while (parents.empty() == false) {
-      auto frontwave = parents.front();
-      parents.pop();
-      for (auto& cluster : frontwave->getParent()->getChildren()) {
-        if (cluster->getId() != frontwave->getId()) {
-          // model this as a fixed softmacro
-          soft_macro_id_map[cluster->getName()] = macros.size();
-          macros.emplace_back(
-              std::pair<float, float>(
-                  cluster->getX() + cluster->getWidth() / 2.0 - outline.xMin(),
-                  cluster->getY() + cluster->getHeight() / 2.0
-                      - outline.yMin()),
-              cluster->getName(),
-              0.0,
-              0.0,
-              // The information of whether or not a cluster is a group of
-              // unplaced IO pins is needed inside the SA Core, so if a fixed
-              // terminal corresponds to a cluster of unplaced IO pins it needs
-              // to contain that cluster data.
-              cluster->isClusterOfUnplacedIOPins() ? cluster.get() : nullptr);
-          debugPrint(
-              logger_,
-              MPL,
-              "hierarchical_macro_placement",
-              1,
-              "fixed cluster : {}, lx = {}, ly = {}, width = {}, height = {}",
-              cluster->getName(),
-              cluster->getX(),
-              cluster->getY(),
-              cluster->getWidth(),
-              cluster->getHeight());
-        }
-      }
-      if (frontwave->getParent()->getParent() != nullptr) {
-        parents.push(frontwave->getParent());
-      }
-    }
-  }
+  createFixedTerminals(parent, soft_macro_id_map, macros);
 
   // update the connnection
   clustering_engine_->updateConnections();
@@ -2757,48 +2716,7 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
         io_cluster);
   }
 
-  // model other clusters as fixed terminals
-  if (parent->getParent() != nullptr) {
-    std::queue<Cluster*> parents;
-    parents.push(parent);
-    while (parents.empty() == false) {
-      auto frontwave = parents.front();
-      parents.pop();
-      for (auto& cluster : frontwave->getParent()->getChildren()) {
-        if (cluster->getId() != frontwave->getId()) {
-          // model this as a fixed softmacro
-          soft_macro_id_map[cluster->getName()] = macros.size();
-          macros.emplace_back(
-              std::pair<float, float>(
-                  cluster->getX() + cluster->getWidth() / 2.0 - outline.xMin(),
-                  cluster->getY() + cluster->getHeight() / 2.0
-                      - outline.yMin()),
-              cluster->getName(),
-              0.0,
-              0.0,
-              // The information of whether or not a cluster is a group of
-              // unplaced IO pins is needed inside the SA Core, so if a fixed
-              // terminal corresponds to a cluster of unplaced IO pins it needs
-              // to contain that cluster data.
-              cluster->isClusterOfUnplacedIOPins() ? cluster.get() : nullptr);
-          debugPrint(
-              logger_,
-              MPL,
-              "hierarchical_macro_placement",
-              1,
-              "fixed cluster : {}, lx = {}, ly = {}, width = {}, height = {}",
-              cluster->getName(),
-              cluster->getX(),
-              cluster->getY(),
-              cluster->getWidth(),
-              cluster->getHeight());
-        }
-      }
-      if (frontwave->getParent()->getParent() != nullptr) {
-        parents.push(frontwave->getParent());
-      }
-    }
-  }
+  createFixedTerminals(parent, soft_macro_id_map, macros);
 
   // update the connnection
   clustering_engine_->updateConnections();
@@ -3139,6 +3057,56 @@ void HierRTLMP::computeBlockageOverlap(std::vector<Rect>& overlapping_blockages,
                                        b_ly - outline.yMin(),
                                        b_ux - outline.xMin(),
                                        b_uy - outline.yMin());
+  }
+}
+
+// Create terminals for cluster placement (Soft) annealing.
+void HierRTLMP::createFixedTerminals(
+    Cluster* parent,
+    std::map<std::string, int>& soft_macro_id_map,
+    std::vector<SoftMacro>& soft_macros)
+{
+  if (!parent->getParent()) {
+    return;
+  }
+
+  Rect outline = parent->getBBox();
+  std::queue<Cluster*> parents;
+  parents.push(parent);
+
+  while (!parents.empty()) {
+    auto frontwave = parents.front();
+    parents.pop();
+
+    Cluster* grandparent = frontwave->getParent();
+    for (auto& cluster : grandparent->getChildren()) {
+      if (cluster->getId() != frontwave->getId()) {
+        soft_macro_id_map[cluster->getName()]
+            = static_cast<int>(soft_macros.size());
+
+        const float center_x = cluster->getX() + cluster->getWidth() / 2.0;
+        const float center_y = cluster->getY() + cluster->getHeight() / 2.0;
+        Point location = {center_x - outline.xMin(), center_y - outline.yMin()};
+
+        // The information of whether or not a cluster is a group of
+        // unplaced IO pins is needed inside the SA Core, so if a fixed
+        // terminal corresponds to a cluster of unplaced IO pins it needs
+        // to contain that cluster data.
+        Cluster* fixed_terminal_cluster
+            = cluster->isClusterOfUnplacedIOPins() ? cluster.get() : nullptr;
+
+        // Note that a fixed terminal is just a point.
+        soft_macros.emplace_back(location,
+                                 cluster->getName(),
+                                 0.0f /* width */,
+                                 0.0f /* height */,
+                                 fixed_terminal_cluster);
+      }
+    }
+
+    if (frontwave->getParent()->getParent() != nullptr) {
+      parents.push(frontwave->getParent());
+    }
   }
 }
 
