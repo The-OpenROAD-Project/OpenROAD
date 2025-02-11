@@ -1037,7 +1037,7 @@ SoftMacro::SoftMacro(float width, float height, const std::string& name)
   cluster_ = nullptr;
 }
 
-// Create a SoftMacro representing the IO cluster or fixed terminals
+// Create a SoftMacro representing a cluster of unplaced IOs or fixed terminals
 SoftMacro::SoftMacro(const std::pair<float, float>& pos,
                      const std::string& name,
                      float width,
@@ -1049,7 +1049,13 @@ SoftMacro::SoftMacro(const std::pair<float, float>& pos,
   y_ = pos.second;
   width_ = width;
   height_ = height;
-  area_ = 0.0;  // width_ * height_ = 0.0 for this case
+
+  // Even though clusters of unplaced IOs have shapes, i.e., are not
+  // just points, their area should be zero, because we use the area
+  // to check whether or not a SoftMacro if a fixed terminal or cluster
+  // of unplaced IOs inside SA. Ideally we should check the fixed flag.
+  area_ = 0.0f;
+
   cluster_ = cluster;
   fixed_ = true;
 }

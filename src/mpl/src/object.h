@@ -502,12 +502,11 @@ class SoftMacro
   // Create a SoftMacro representing the blockage
   SoftMacro(float width, float height, const std::string& name);
 
-  // Create a SoftMacro representing the IO cluster
-  SoftMacro(const std::pair<float, float>& pos,
+  SoftMacro(const std::pair<float, float>& location,
             const std::string& name,
-            float width = 0.0,
-            float height = 0.0,
-            Cluster* cluster = nullptr);
+            float width,
+            float height,
+            Cluster* cluster);
 
   // create a SoftMacro from a cluster
   SoftMacro(Cluster* cluster);

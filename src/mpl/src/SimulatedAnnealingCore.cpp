@@ -332,7 +332,7 @@ void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
 {
   // Important!
   // We need to use the bbox of the SoftMacro and NOT the Cluster to
-  // get shape of the cluster of unconstrained IOs - which is has the
+  // get shape of the cluster of unconstrained IOs - which has the
   // shape of the die but it's offset based on the current outline.
   // Reminder:
   // - The SoftMacro bbox is the bbox w.r.t to the current outline.
