@@ -1822,9 +1822,11 @@ bool GlobalRouter::isPinReachable(const Pin& pin, const odb::Point& pos_on_grid)
 
   int edge_cap = 0;
   if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-    edge_cap
-        = fastroute_->getEdgeCapacity(pin_x, pin_y - 1, pin_x, pin_y, layer);
-  } else {
+    if (pin_y != 0) {
+      edge_cap
+          = fastroute_->getEdgeCapacity(pin_x, pin_y - 1, pin_x, pin_y, layer);
+    }
+  } else if (pin_x != 0) {
     edge_cap
         = fastroute_->getEdgeCapacity(pin_x - 1, pin_y, pin_x, pin_y, layer);
   }
