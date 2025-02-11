@@ -2234,7 +2234,7 @@ void dbNetwork::connectPin(Pin* pin, Net* net)
   } else {
     logger_->error(
         ORD,
-        2023,
+        2024,
         "Illegal net/pin combination. Modnets can only be hooked to iterm, "
         "bterm, moditerm, modbterm, dbNets can only be hooked to iterm, bterm");
   }
