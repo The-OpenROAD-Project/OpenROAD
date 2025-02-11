@@ -222,20 +222,11 @@ class Opendp
   bool checkOverlap(const Cell* cell, const DbuRect& rect) const;
   static bool isInside(const Rect& cell, const Rect& box);
   bool isInside(const Cell* cell, const Rect& rect) const;
-  PixelPt diamondSearch(const Cell* cell, GridX x, GridY y) const;
-  void diamondSearchSide(const Cell* cell,
-                         GridX x,
-                         GridY y,
-                         GridX x_min,
-                         GridY y_min,
-                         GridX x_max,
-                         GridY y_max,
-                         int x_offset,
-                         int y_offset,
-                         // Return values
-                         PixelPt& best_pt,
-                         int& best_dist) const;
-  PixelPt binSearch(GridX x, const Cell* cell, GridX bin_x, GridY bin_y) const;
+  PixelPt searchNearestSite(const Cell* cell, GridX x, GridY y) const;
+  int calcDist(const GridPt p0, const GridPt p1) const;
+  bool canBePlaced(const Cell* cell,
+                   const GridX bin_x,
+                   const GridY bin_y) const;
   bool checkRegionOverlap(const Cell* cell,
                           GridX x,
                           GridY y,
@@ -405,7 +396,6 @@ class Opendp
   std::vector<std::vector<EdgeSpacingEntry>> edge_spacing_table_;
 
   // Magic numbers
-  static constexpr int bin_search_width_ = 10;
   static constexpr double group_refine_percent_ = .05;
   static constexpr double refine_percent_ = .02;
   static constexpr int rand_seed_ = 777;
