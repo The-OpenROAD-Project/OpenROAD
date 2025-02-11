@@ -58,7 +58,7 @@ void DftConfig::report(utl::Logger* logger) const
 TestModeConfig* DftConfig::createTestMode(const std::string& name,
                                           utl::Logger* logger)
 {
-  if (test_modes_config_.size() >= 1) {
+  if (test_modes_config_.size() > 1) {
     logger->error(utl::DFT, 43, "Multiple test modes not supported");
     return nullptr;
   }
