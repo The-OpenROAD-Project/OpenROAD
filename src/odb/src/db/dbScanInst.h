@@ -63,6 +63,7 @@ class _dbScanInst : public _dbObject
                    const char* field,
                    const _dbScanInst& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   uint bits_;
   std::pair<dbId<dbScanPin>, dbId<dbScanPin>> access_pins_;

@@ -106,6 +106,7 @@ class _dbTechLayerCutSpacingRule : public _dbObject
                    const char* field,
                    const _dbTechLayerCutSpacingRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerCutSpacingRuleFlags flags_;
   int cut_spacing_;

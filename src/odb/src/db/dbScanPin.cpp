@@ -122,6 +122,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbScanPin& obj)
   return stream;
 }
 
+void _dbScanPin::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbScanPin - Methods

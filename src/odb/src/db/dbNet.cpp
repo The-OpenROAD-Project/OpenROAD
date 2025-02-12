@@ -3373,4 +3373,13 @@ void dbNet::setJumpers(bool has_jumpers)
   }
 }
 
+void _dbNet::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["groups"].add(_groups);
+}
+
 }  // namespace odb

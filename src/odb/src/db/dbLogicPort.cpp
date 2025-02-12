@@ -116,6 +116,17 @@ dbOStream& operator<<(dbOStream& stream, const _dbLogicPort& obj)
   return stream;
 }
 
+void _dbLogicPort::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  info.children_["direction"].add(direction);
+  // User Code End collectMemInfo
+}
+
 _dbLogicPort::~_dbLogicPort()
 {
   if (_name) {

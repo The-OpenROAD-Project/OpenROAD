@@ -1096,4 +1096,32 @@ void dbTech::destroy(dbTech* tech_)
   db->_tech_tbl->destroy(tech);
 }
 
+void _dbTech::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["samenet_rules"].add(_samenet_rules);
+  info.children_["samenet_matrix"].add(_samenet_matrix);
+  info.children_["via_hash"].add(_via_hash);
+
+  _layer_tbl->collectMemInfo(info.children_["layer"]);
+  _via_tbl->collectMemInfo(info.children_["via"]);
+  _non_default_rule_tbl->collectMemInfo(info.children_["non_default_rule"]);
+  _layer_rule_tbl->collectMemInfo(info.children_["layer_rule"]);
+  _box_tbl->collectMemInfo(info.children_["box"]);
+  _samenet_rule_tbl->collectMemInfo(info.children_["samenet_rule"]);
+  _antenna_rule_tbl->collectMemInfo(info.children_["antenna_rule"]);
+  _via_rule_tbl->collectMemInfo(info.children_["via_rule"]);
+  _via_layer_rule_tbl->collectMemInfo(info.children_["via_layer_rule"]);
+  _via_generate_rule_tbl->collectMemInfo(info.children_["via_generate_rule"]);
+  _prop_tbl->collectMemInfo(info.children_["prop"]);
+  _metal_width_via_map_tbl->collectMemInfo(
+      info.children_["metal_width_via_map"]);
+  cell_edge_spacing_tbl_->collectMemInfo(info.children_["cell_edge_spacing"]);
+
+  _name_cache->collectMemInfo(info.children_["name_cache"]);
+}
+
 }  // namespace odb

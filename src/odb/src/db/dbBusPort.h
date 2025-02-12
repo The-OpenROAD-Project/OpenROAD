@@ -64,6 +64,7 @@ class _dbBusPort : public _dbObject
                    const char* field,
                    const _dbBusPort& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   uint _flags;
   int _from;

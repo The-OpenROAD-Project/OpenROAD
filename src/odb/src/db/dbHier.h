@@ -64,6 +64,7 @@ class _dbHier : public _dbObject
   bool operator!=(const _dbHier& rhs) const { return !operator==(rhs); }
   void differences(dbDiff& diff, const char* field, const _dbHier& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   static _dbHier* create(dbInst* inst, dbBlock* child);
   static void destroy(_dbHier* hdr);

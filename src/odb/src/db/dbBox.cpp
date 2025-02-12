@@ -1147,4 +1147,10 @@ void dbBox::setVisited(bool value)
   box->_flags._visited = (value == true) ? 1 : 0;
 }
 
+void _dbBox::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 }  // namespace odb
