@@ -37,22 +37,12 @@
 #include "Worker.h"
 #include "dst/JobCallBack.h"
 #include "dst/JobMessage.h"
-#include "sta/StaMain.hh"
 #include "utl/Logger.h"
 namespace dst {
 const int MAX_TRIES = 5;
 }
 
 using namespace dst;
-
-namespace sta {
-// Tcl files encoded into strings.
-extern const char* dst_tcl_inits[];
-}  // namespace sta
-
-extern "C" {
-extern int Dst_Init(Tcl_Interp* interp);
-}
 
 Distributed::Distributed(utl::Logger* logger) : logger_(logger)
 {
@@ -66,12 +56,9 @@ Distributed::~Distributed()
   callbacks_.clear();
 }
 
-void Distributed::init(Tcl_Interp* tcl_interp, utl::Logger* logger)
+void Distributed::init(utl::Logger* logger)
 {
   logger_ = logger;
-  // Define swig TCL commands.
-  Dst_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::dst_tcl_inits);
 }
 
 void Distributed::runWorker(const char* ip,

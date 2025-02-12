@@ -65,6 +65,7 @@ class _dbScanPin : public _dbObject
                    const char* field,
                    const _dbScanPin& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   std::variant<dbId<_dbBTerm>, dbId<_dbITerm>> pin_;
 };

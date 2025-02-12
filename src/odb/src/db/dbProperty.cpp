@@ -692,6 +692,16 @@ std::string dbProperty::writeProperties(dbObject* object)
   return out.str();
 }
 
+void _dbProperty::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  if (_flags._type == DB_STRING_PROP) {
+    info.children_["string"].add(std::get<std::string>(_value));
+  }
+}
+
 /* Sample Code to access dbTechLayer properties
 void dbProperty::writeProperties( dbTechLayer * object, FILE *out )
 {

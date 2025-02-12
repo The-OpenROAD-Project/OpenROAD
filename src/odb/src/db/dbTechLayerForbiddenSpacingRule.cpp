@@ -133,6 +133,12 @@ dbOStream& operator<<(dbOStream& stream,
   return stream;
 }
 
+void _dbTechLayerForbiddenSpacingRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerForbiddenSpacingRule - Methods

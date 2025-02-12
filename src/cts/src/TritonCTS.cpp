@@ -2118,7 +2118,12 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex,
   float clkPathArrival = 0.0;
   while (pathIter.hasNext()) {
     sta::Path* path = pathIter.next();
-    if (path->clkEdge(openSta_)->transition() != sta::RiseFall::rise()) {
+    const sta::ClockEdge* clock_edge = path->clkEdge(openSta_);
+    if (clock_edge == nullptr) {
+      continue;
+    }
+
+    if (clock_edge->transition() != sta::RiseFall::rise()) {
       // only populate with rising edges
       continue;
     }

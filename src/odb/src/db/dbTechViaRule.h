@@ -77,6 +77,7 @@ class _dbTechViaRule : public _dbObject
                    const char* field,
                    const _dbTechViaRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechViaRule& v);

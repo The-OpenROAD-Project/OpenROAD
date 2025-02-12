@@ -253,6 +253,7 @@ class RepairDesign : dbStaState
   PreChecks* pre_checks_ = nullptr;
   Resizer* resizer_;
   int dbu_ = 0;
+  double initial_design_area_ = 0;
   ParasiticsSrc parasitics_src_ = ParasiticsSrc::none;
 
   // Gain buffering

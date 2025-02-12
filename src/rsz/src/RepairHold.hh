@@ -133,6 +133,7 @@ class RepairHold : public sta::dbStaState
   int cloned_gate_count_ = 0;
   int swap_pin_count_ = 0;
   int removed_buffer_count_ = 0;
+  double initial_design_area_ = 0;
   const MinMax* min_ = MinMax::min();
   const MinMax* max_ = MinMax::max();
   const int min_index_ = MinMax::minIndex();

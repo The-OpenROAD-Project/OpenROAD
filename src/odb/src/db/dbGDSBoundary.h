@@ -58,6 +58,7 @@ class _dbGDSBoundary : public _dbObject
                    const char* field,
                    const _dbGDSBoundary& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   int16_t _layer;
   int16_t _datatype;

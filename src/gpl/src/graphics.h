@@ -115,7 +115,8 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
   enum HeatMapType
   {
     Density,
-    Overflow
+    Overflow,
+    OverflowMinMax
   };
 
   enum Mode

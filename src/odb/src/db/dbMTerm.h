@@ -90,6 +90,7 @@ class _dbMTerm : public _dbObject
   bool operator!=(const _dbMTerm& rhs) const { return !operator==(rhs); }
   void differences(dbDiff& diff, const char* field, const _dbMTerm& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 inline _dbMTerm::_dbMTerm(_dbDatabase*)

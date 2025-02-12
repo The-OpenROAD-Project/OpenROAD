@@ -71,6 +71,7 @@ class _dbTechLayerWrongDirSpacingRule : public _dbObject
                    const char* field,
                    const _dbTechLayerWrongDirSpacingRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerWrongDirSpacingRuleFlags flags_;
   int wrongdir_space_;

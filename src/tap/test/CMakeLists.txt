@@ -2,6 +2,7 @@ or_integration_tests(
   "tap"
   TESTS
     aes_gf180
+    allow_one_site_gaps
     avoid_overlap
     boundary_macros
     boundary_macros_auto_select
@@ -11,6 +12,7 @@ or_integration_tests(
     cut_rows_min_width
     cut_rows_with_endcaps
     disallow_one_site_gaps
+    disallow_one_site_gaps2
     gcd_asap7
     gcd_fakeram
     gcd_nangate45

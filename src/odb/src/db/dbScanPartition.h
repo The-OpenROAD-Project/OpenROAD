@@ -65,6 +65,7 @@ class _dbScanPartition : public _dbObject
                    const _dbScanPartition& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
 
   std::string name_;
 

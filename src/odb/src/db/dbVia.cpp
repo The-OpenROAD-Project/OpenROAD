@@ -699,4 +699,13 @@ void create_via_boxes(_dbVia* via, const dbViaParams& P)
       (dbVia*) via, P.getBottomLayer(), bot_minX, bot_minY, bot_maxX, bot_maxY);
 }
 
+void _dbVia::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["pattern"].add(_pattern);
+}
+
 }  // namespace odb

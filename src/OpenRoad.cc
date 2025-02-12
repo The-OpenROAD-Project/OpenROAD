@@ -79,6 +79,7 @@
 #include "rmp/MakeRestructure.h"
 #include "rsz/MakeResizer.hh"
 #include "sta/StaMain.hh"
+#include "sta/VerilogReader.hh"
 #include "sta/VerilogWriter.hh"
 #include "stt/MakeSteinerTreeBuilder.h"
 #include "tap/MakeTapcell.h"
@@ -146,6 +147,7 @@ OpenRoad::~OpenRoad()
   deleteSteinerTreeBuilder(stt_builder_);
   dft::deleteDft(dft_);
   delete logger_;
+  delete verilog_reader_;
 }
 
 sta::dbNetwork* OpenRoad::getDbNetwork()
@@ -542,14 +544,24 @@ void OpenRoad::diffDbs(const char* filename1,
 void OpenRoad::readVerilog(const char* filename)
 {
   verilog_network_->deleteTopInstance();
-  dbReadVerilog(filename, verilog_network_, verilog_reader_);
+
+  if (verilog_reader_ == nullptr) {
+    verilog_reader_ = new sta::VerilogReader(verilog_network_);
+  }
+  verilog_reader_->read(filename);
 }
 
 void OpenRoad::linkDesign(const char* design_name, bool hierarchy)
 
 {
-  dbLinkDesign(
-      design_name, verilog_network_, verilog_reader_, db_, logger_, hierarchy);
+  bool success
+      = dbLinkDesign(design_name, verilog_network_, db_, logger_, hierarchy);
+
+  if (success) {
+    delete verilog_reader_;
+    verilog_reader_ = nullptr;
+  }
+
   if (hierarchy) {
     sta::dbSta* sta = getSta();
     sta->getDbNetwork()->setHierarchy();

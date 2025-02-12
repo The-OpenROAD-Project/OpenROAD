@@ -47,6 +47,18 @@ namespace odb {
 template class dbTable<_dbTechLayerSpacingRule>;
 template class dbTable<_dbTechV55InfluenceEntry>;
 
+void _dbTechLayerSpacingRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
+void _dbTechV55InfluenceEntry::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 bool _dbTechLayerSpacingRule::operator==(
     const _dbTechLayerSpacingRule& rhs) const
 {

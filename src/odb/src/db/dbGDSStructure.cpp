@@ -195,6 +195,27 @@ dbObjectTable* _dbGDSStructure::getObjectTable(dbObjectType type)
   }
   return getTable()->getObjectTable(type);
 }
+void _dbGDSStructure::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  boundaries_->collectMemInfo(info.children_["boundaries_"]);
+
+  boxes_->collectMemInfo(info.children_["boxes_"]);
+
+  paths_->collectMemInfo(info.children_["paths_"]);
+
+  srefs_->collectMemInfo(info.children_["srefs_"]);
+
+  arefs_->collectMemInfo(info.children_["arefs_"]);
+
+  texts_->collectMemInfo(info.children_["texts_"]);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  // User Code End collectMemInfo
+}
 
 _dbGDSStructure::~_dbGDSStructure()
 {

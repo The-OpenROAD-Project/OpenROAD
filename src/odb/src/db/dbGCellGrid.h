@@ -75,6 +75,7 @@ class _dbGCellGrid : public _dbObject
                    const char* field,
                    const _dbGCellGrid& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
   dbMatrix<dbGCellGrid::GCellData>& get(const dbId<_dbTechLayer>& lid);
   dbTechLayer* getLayer(const dbId<_dbTechLayer>& lid) const;

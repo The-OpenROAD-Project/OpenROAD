@@ -89,6 +89,7 @@ class _dbProperty : public _dbObject
                    const char* field,
                    const _dbProperty& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   static dbTable<_dbProperty>* getPropTable(dbObject* object);
   static _dbNameCache* getNameCache(dbObject* object);

@@ -118,6 +118,13 @@ dbObjectTable* _dbScanPartition::getObjectTable(dbObjectType type)
   }
   return getTable()->getObjectTable(type);
 }
+void _dbScanPartition::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  scan_lists_->collectMemInfo(info.children_["scan_lists_"]);
+}
 
 _dbScanPartition::~_dbScanPartition()
 {

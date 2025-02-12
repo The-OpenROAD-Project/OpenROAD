@@ -44,6 +44,8 @@
 ///  dbTablePage
 ///
 
+#include <set>
+
 #include "dbAttrTable.h"
 #include "odb/dbId.h"
 #include "odb/dbObject.h"
@@ -56,11 +58,116 @@ namespace odb {
 class _dbDatabase;
 class _dbProperty;
 class dbObjectTable;
+template <typename T>
+class dbHashTable;
+template <typename T>
+class dbIntHashTable;
+template <typename T>
+class dbMatrix;
+template <class T, const uint P, const uint S>
+class dbPagedVector;
 
 #define DB_ALLOC_BIT 0x80000000
 #define DB_OFFSET_MASK (~DB_ALLOC_BIT)
 
 using GetObjTbl_t = dbObjectTable* (dbObject::*) (dbObjectType);
+
+struct MemInfo
+{
+  std::map<const char*, MemInfo> children_;
+  int cnt{0};
+  uint64_t size{0};
+
+  void add(const char* str)
+  {
+    if (str) {
+      cnt++;
+      size += strlen(str);
+    }
+  }
+
+  void add(const std::string& str) { add(str.c_str()); }
+
+  template <typename T>
+  void add(const std::vector<T>& vec)
+  {
+    cnt += 1;
+    size += vec.size() * sizeof(T);
+  }
+
+  template <class T, const uint P, const uint S>
+  void add(const dbPagedVector<T, P, S>& vec)
+  {
+    cnt += 1;
+    size += vec.size() * sizeof(T);
+  }
+
+  template <typename T>
+  void add(const dbHashTable<T>& table)
+  {
+    cnt += 1;
+    size += table._hash_tbl.size() * sizeof(dbId<T>);
+  }
+
+  template <typename T>
+  void add(const dbIntHashTable<T>& table)
+  {
+    cnt += 1;
+    size += table._hash_tbl.size() * sizeof(dbId<T>);
+  }
+
+  template <typename T>
+  void add(const dbMatrix<T>& matrix)
+  {
+    cnt += 1;
+    size += matrix.numElems() * sizeof(T);
+  }
+
+  template <typename Key, typename T>
+  void add(const std::map<Key, T>& map)
+  {
+    cnt += 1;
+    size += map.size() * (sizeof(Key) + sizeof(T));
+  }
+
+  template <typename T>
+  void add(const std::map<std::string, T>& map)
+  {
+    cnt += 1;
+    size += map.size() * (sizeof(std::string) + sizeof(T));
+    MemInfo& key_info = children_["key"];
+    for (const auto& [key, value] : map) {
+      key_info.cnt += 1;
+      key_info.size += key.size();
+    }
+  }
+
+  template <typename Key, typename T>
+  void add(const std::unordered_map<Key, T>& map)
+  {
+    cnt += 1;
+    size += map.size() * (sizeof(Key) + sizeof(T));
+  }
+
+  template <typename T>
+  void add(const std::unordered_map<std::string, T>& map)
+  {
+    cnt += 1;
+    size += map.size() * (sizeof(std::string) + sizeof(T));
+    MemInfo& key_info = children_["key"];
+    for (const auto& [key, value] : map) {
+      key_info.cnt += 1;
+      key_info.size += key.size();
+    }
+  }
+
+  template <typename T>
+  void add(const std::set<T>& set)
+  {
+    cnt += 1;
+    size += set.size() * sizeof(T);
+  }
+};
 
 ///////////////////////////////////////////////////////////////
 /// _dbObject definition

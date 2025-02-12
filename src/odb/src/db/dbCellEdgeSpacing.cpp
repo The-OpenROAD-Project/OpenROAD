@@ -156,6 +156,17 @@ dbOStream& operator<<(dbOStream& stream, const _dbCellEdgeSpacing& obj)
   return stream;
 }
 
+void _dbCellEdgeSpacing::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["first_edge_type"].add(first_edge_type_);
+  info.children_["second_edge_type"].add(second_edge_type_);
+  // User Code End collectMemInfo
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbCellEdgeSpacing - Methods

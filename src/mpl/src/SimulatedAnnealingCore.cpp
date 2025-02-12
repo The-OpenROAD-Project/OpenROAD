@@ -302,7 +302,7 @@ void SimulatedAnnealingCore<T>::calWirelength()
     T& source = macros_[net.terminals.first];
     T& target = macros_[net.terminals.second];
 
-    if (target.isIOCluster()) {
+    if (target.isClusterOfUnplacedIOPins()) {
       addBoundaryDistToWirelength(source, target, net.weight);
       continue;
     }

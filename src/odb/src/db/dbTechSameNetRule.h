@@ -75,6 +75,7 @@ class _dbTechSameNetRule : public _dbObject
                    const char* field,
                    const _dbTechSameNetRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 inline _dbTechSameNetRule::_dbTechSameNetRule(_dbDatabase*,

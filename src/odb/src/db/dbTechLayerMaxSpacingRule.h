@@ -60,6 +60,7 @@ class _dbTechLayerMaxSpacingRule : public _dbObject
                    const char* field,
                    const _dbTechLayerMaxSpacingRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   std::string cut_class_;
   int max_spacing_;

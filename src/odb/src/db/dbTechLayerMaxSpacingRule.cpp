@@ -110,6 +110,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMaxSpacingRule& obj)
   return stream;
 }
 
+void _dbTechLayerMaxSpacingRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["cut_class"].add(cut_class_);
+  // User Code End collectMemInfo
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerMaxSpacingRule - Methods

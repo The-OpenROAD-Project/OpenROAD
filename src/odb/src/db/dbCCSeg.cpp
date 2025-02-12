@@ -816,4 +816,10 @@ dbCCSeg* dbCCSeg::getCCSeg(dbBlock* block_, uint dbid_)
   return (dbCCSeg*) block->_cc_seg_tbl->getPtr(dbid_);
 }
 
+void _dbCCSeg::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 }  // namespace odb

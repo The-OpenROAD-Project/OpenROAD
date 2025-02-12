@@ -109,6 +109,7 @@ class _dbTechLayerSpacingEolRule : public _dbObject
                    const char* field,
                    const _dbTechLayerSpacingEolRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerSpacingEolRuleFlags flags_;
   int eol_space_;

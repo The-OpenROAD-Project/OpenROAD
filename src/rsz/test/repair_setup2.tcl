@@ -1,5 +1,6 @@
 # repair_timing -setup combinational path
 source "helpers.tcl"
+if {[expr {![info exists repair_args]}]} { set repair_args {} }
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_def repair_setup2.def
@@ -13,6 +14,6 @@ estimate_parasitics -placement
 report_worst_slack
 write_verilog_for_eqy repair_setup2 before "None"
 repair_design
-repair_timing -setup -verbose
+repair_timing -setup -verbose {*}$repair_args
 run_equivalence_test repair_setup2 ./Nangate45/work_around_yosys/ "None"
 report_worst_slack

@@ -264,8 +264,12 @@ std::string Cluster::getClusterTypeString() const
 {
   std::string cluster_type;
 
-  if (is_io_cluster_) {
-    return "IO";
+  if (is_cluster_of_unplaced_io_pins_) {
+    return "Unplaced IO Pins";
+  }
+
+  if (is_io_pad_cluster_) {
+    return "IO Pad";
   }
 
   switch (type_) {
@@ -287,7 +291,7 @@ std::string Cluster::getIsLeafString() const
 {
   std::string is_leaf_string;
 
-  if (!is_io_cluster_ && children_.empty()) {
+  if (!isIOCluster() && children_.empty()) {
     is_leaf_string = "Leaf";
   }
 
@@ -327,19 +331,27 @@ void Cluster::copyInstances(const Cluster& cluster)
   }
 }
 
-void Cluster::setAsIOCluster(const std::pair<float, float>& pos,
-                             const float width,
-                             const float height,
-                             const Boundary constraint_boundary)
+void Cluster::setAsClusterOfUnplacedIOPins(const std::pair<float, float>& pos,
+                                           const float width,
+                                           const float height,
+                                           const Boundary constraint_boundary)
 {
-  is_io_cluster_ = true;
+  is_cluster_of_unplaced_io_pins_ = true;
   constraint_boundary_ = constraint_boundary;
+  soft_macro_ = std::make_unique<SoftMacro>(pos, name_, width, height, this);
+}
+
+void Cluster::setAsIOPadCluster(const std::pair<float, float>& pos,
+                                float width,
+                                float height)
+{
+  is_io_pad_cluster_ = true;
   soft_macro_ = std::make_unique<SoftMacro>(pos, name_, width, height, this);
 }
 
 bool Cluster::isIOCluster() const
 {
-  return is_io_cluster_;
+  return is_cluster_of_unplaced_io_pins_ || is_io_pad_cluster_;
 }
 
 void Cluster::setAsArrayOfInterconnectedMacros()
@@ -865,14 +877,14 @@ bool HardMacro::operator==(const HardMacro& macro) const
 }
 
 // Cluster support to identify if a fixed terminal correponds
-// to an IO cluster when running HardMacro SA.
-bool HardMacro::isIOCluster() const
+// to a cluster of unplaced IO pins when running HardMacro SA.
+bool HardMacro::isClusterOfUnplacedIOPins() const
 {
   if (!cluster_) {
     return false;
   }
 
-  return cluster_->isIOCluster();
+  return cluster_->isClusterOfUnplacedIOPins();
 }
 
 // Get Physical Information
@@ -1351,13 +1363,13 @@ bool SoftMacro::isMixedCluster() const
   return (cluster_->getClusterType() == MixedCluster);
 }
 
-bool SoftMacro::isIOCluster() const
+bool SoftMacro::isClusterOfUnplacedIOPins() const
 {
   if (!cluster_) {
     return false;
   }
 
-  return cluster_->isIOCluster();
+  return cluster_->isClusterOfUnplacedIOPins();
 }
 
 void SoftMacro::setLocationF(float x, float y)

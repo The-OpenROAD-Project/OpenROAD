@@ -330,4 +330,10 @@ dbSWire* dbSWire::getSWire(dbBlock* block_, uint dbid_)
   return (dbSWire*) block->_swire_tbl->getPtr(dbid_);
 }
 
+void _dbSWire::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 }  // namespace odb

@@ -71,6 +71,7 @@ class _dbMarkerCategory : public _dbObject
                    const _dbMarkerCategory& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
   using PropertyTree = boost::property_tree::ptree;
   bool isTopCategory() const;

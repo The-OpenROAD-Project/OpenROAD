@@ -67,6 +67,7 @@ class _dbTechLayerCutClassRule : public _dbObject
                    const char* field,
                    const _dbTechLayerCutClassRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerCutClassRuleFlags flags_;
   char* _name;

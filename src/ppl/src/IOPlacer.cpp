@@ -192,7 +192,8 @@ std::vector<int> IOPlacer::findValidSlots(const Constraint& constraint,
 void IOPlacer::randomPlacement()
 {
   for (Constraint& constraint : constraints_) {
-    bool top_layer = constraint.interval.getEdge() == Edge::invalid;
+    const Edge edge = constraint.interval.getEdge();
+    bool top_layer = edge == Edge::invalid;
     for (auto& io_group : netlist_->getIOGroups()) {
       const PinSet& pin_list = constraint.pin_list;
       IOPin& io_pin = netlist_->getIoPin(io_group.pin_indices[0]);
@@ -203,8 +204,11 @@ void IOPlacer::randomPlacement()
       if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm())
           != pin_list.end()) {
         std::vector<int> valid_slots = findValidSlots(constraint, top_layer);
-        randomPlacement(
-            io_group.pin_indices, std::move(valid_slots), top_layer, true);
+        randomPlacement(io_group.pin_indices,
+                        std::move(valid_slots),
+                        edge,
+                        top_layer,
+                        true);
       }
     }
 
@@ -216,7 +220,7 @@ void IOPlacer::randomPlacement()
       pin_indices.insert(pin_indices.end(), indices.begin(), indices.end());
     }
     randomPlacement(
-        std::move(pin_indices), std::move(valid_slots), top_layer, false);
+        std::move(pin_indices), std::move(valid_slots), edge, top_layer, false);
   }
 
   for (auto& io_group : netlist_->getIOGroups()) {
@@ -226,7 +230,11 @@ void IOPlacer::randomPlacement()
     }
     std::vector<int> valid_slots = getValidSlots(0, slots_.size() - 1, false);
 
-    randomPlacement(io_group.pin_indices, std::move(valid_slots), false, true);
+    randomPlacement(io_group.pin_indices,
+                    std::move(valid_slots),
+                    Edge::invalid,
+                    false,
+                    true);
   }
 
   std::vector<int> valid_slots = getValidSlots(0, slots_.size() - 1, false);
@@ -239,12 +247,17 @@ void IOPlacer::randomPlacement()
     }
   }
 
-  randomPlacement(std::move(pin_indices), std::move(valid_slots), false, false);
+  randomPlacement(std::move(pin_indices),
+                  std::move(valid_slots),
+                  Edge::invalid,
+                  false,
+                  false);
   placeFallbackPins(true);
 }
 
 void IOPlacer::randomPlacement(std::vector<int> pin_indices,
                                std::vector<int> slot_indices,
+                               const Edge edge,
                                bool top_layer,
                                bool is_group)
 {
@@ -258,11 +271,23 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
       addGroupToFallback(pin_indices, false);
       return;
     }
+
+    std::string slots_location;
+    if (top_layer) {
+      slots_location = "top layer grid";
+    } else if (edge != Edge::invalid) {
+      slots_location = getEdgeString(edge) + " edge";
+    } else {
+      slots_location = "die boundaries.";
+    }
+
     logger_->error(PPL,
                    72,
-                   "Number of pins ({}) exceed number of valid positions ({}).",
+                   "The number of pins ({}) exceeds the number of valid "
+                   "positions ({}) in the {}.",
                    pin_indices.size(),
-                   slot_indices.size());
+                   slot_indices.size(),
+                   slots_location);
   }
 
   const auto seed = parms_->getRandSeed();

@@ -156,6 +156,12 @@ dbOStream& operator<<(dbOStream& stream,
   return stream;
 }
 
+void _dbTechLayerWrongDirSpacingRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerWrongDirSpacingRule - Methods

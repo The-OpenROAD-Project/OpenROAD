@@ -847,4 +847,14 @@ void dbTable<T>::getObjects(std::vector<T*>& objects)
   }
 }
 
+template <class T>
+void dbTable<T>::collectMemInfo(MemInfo& info)
+{
+  for (int i = _bottom_idx; i <= _top_idx; ++i) {
+    if (validId(i)) {
+      getPtr(i)->collectMemInfo(info);
+    }
+  }
+}
+
 }  // namespace odb

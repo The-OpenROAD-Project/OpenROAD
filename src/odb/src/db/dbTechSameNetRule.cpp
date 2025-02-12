@@ -196,4 +196,10 @@ dbTechSameNetRule* dbTechSameNetRule::getTechSameNetRule(dbTech* tech_,
   return (dbTechSameNetRule*) tech->_samenet_rule_tbl->getPtr(dbid_);
 }
 
+void _dbTechSameNetRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 }  // namespace odb

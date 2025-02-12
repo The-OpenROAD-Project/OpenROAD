@@ -304,4 +304,10 @@ dbBlockage* dbBlockage::getBlockage(dbBlock* block_, uint dbid_)
   return (dbBlockage*) block->_blockage_tbl->getPtr(dbid_);
 }
 
+void _dbBlockage::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 }  // namespace odb

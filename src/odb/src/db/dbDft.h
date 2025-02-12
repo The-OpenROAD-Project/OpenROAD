@@ -61,6 +61,7 @@ class _dbDft : public _dbObject
   void differences(dbDiff& diff, const char* field, const _dbDft& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
   void initialize();
   // User Code End Methods

@@ -61,6 +61,7 @@ class _dbScanList : public _dbObject
                    const _dbScanList& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
 
   dbTable<_dbScanInst>* scan_insts_;
 };

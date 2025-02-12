@@ -39,6 +39,7 @@ or_integration_tests(
     replace_design1
     replace_design2
     replace_design3
+#    replace_design4
     rounding
     row_settings
     sky130hd_multi_patterned

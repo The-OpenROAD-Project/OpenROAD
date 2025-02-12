@@ -74,6 +74,7 @@ class _dbTechLayerMinCutRule : public _dbObject
                    const char* field,
                    const _dbTechLayerMinCutRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerMinCutRuleFlags flags_;
   int num_cuts_;

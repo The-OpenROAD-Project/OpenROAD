@@ -75,6 +75,7 @@ class _dbTechLayerMinStepRule : public _dbObject
                    const char* field,
                    const _dbTechLayerMinStepRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerMinStepRuleFlags flags_;
   int min_step_length_;

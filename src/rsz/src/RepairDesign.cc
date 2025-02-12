@@ -84,6 +84,7 @@ void RepairDesign::init()
   dbu_ = resizer_->dbu_;
   pre_checks_ = new PreChecks(resizer_);
   parasitics_src_ = resizer_->getParasiticsSrc();
+  initial_design_area_ = resizer_->computeDesignArea();
 }
 
 // Repair long wires, max slew, max capacitance, max fanout violations
@@ -671,7 +672,9 @@ void RepairDesign::repairNet(Net* net,
     const Corner* corner = sta_->cmdCorner();
     bool repaired_net = false;
 
-    if (buffer_gain_ != 0.0) {
+    const bool can_repair = !resizer_->dontTouch(drvr_pin);
+
+    if (can_repair && buffer_gain_ != 0.0) {
       float fanout, max_fanout, fanout_slack;
       sta_->checkFanout(drvr_pin, max_, fanout, max_fanout, fanout_slack);
 
@@ -709,7 +712,8 @@ void RepairDesign::repairNet(Net* net,
     }
 
     // Resize the driver to normalize slews before repairing limit violations.
-    if (parasitics_src_ == ParasiticsSrc::placement && resize_drvr) {
+    if (can_repair && parasitics_src_ == ParasiticsSrc::placement
+        && resize_drvr) {
       resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
     }
     // For tristate nets all we can do is resize the driver.
@@ -734,7 +738,9 @@ void RepairDesign::repairNet(Net* net,
 
         if (need_repair) {
           if (parasitics_src_ == ParasiticsSrc::global_routing && resize_drvr) {
-            resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
+            if (can_repair) {
+              resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
+            }
             wire_length = bnet->maxLoadWireLength();
             need_repair = needRepair(drvr_pin,
                                      corner,
@@ -764,7 +770,7 @@ void RepairDesign::repairNet(Net* net,
             repairNet(bnet, drvr_pin, max_cap, max_length, corner);
             repaired_net = true;
 
-            if (resize_drvr) {
+            if (can_repair && resize_drvr) {
               resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
             }
           }
@@ -1855,6 +1861,12 @@ void RepairDesign::makeRepeater(const char* reason,
       if (!load_pins1.hasKey(pin)) {
         Port* port = network_->port(pin);
         Instance* inst = network_->instance(pin);
+
+        // do not disconnect/reconnect don't touch instances
+        if (resizer_->dontTouch(inst)) {
+          continue;
+        }
+
         sta_->disconnectPin(const_cast<Pin*>(pin));
         sta_->connectPin(inst, port, in_net);
       }
@@ -1962,9 +1974,9 @@ void RepairDesign::printProgress(int iteration,
 
   if (start && !end) {
     logger_->report(
-        "Iteration | Resized | Buffers | Nets repaired | Remaining");
+        "Iteration |  Area   | Resized | Buffers | Nets repaired | Remaining");
     logger_->report(
-        "---------------------------------------------------------");
+        "-------------------------------------------------------------------");
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
@@ -1974,18 +1986,22 @@ void RepairDesign::printProgress(int iteration,
     if (end) {
       itr_field = "final";
     }
+    const double design_area = resizer_->computeDesignArea();
+    const double area_growth = design_area - initial_design_area_;
 
-    logger_->report("{: >9s} | {: >7d} | {: >7d} | {: >13d} | {: >9d}",
-                    itr_field,
-                    resize_count_,
-                    inserted_buffer_count_,
-                    repaired_net_count,
-                    nets_left);
+    logger_->report(
+        "{: >9s} | {: >+8.1f}% | {: >7d} | {: >7d} | {: >13d} | {: >9d}",
+        itr_field,
+        area_growth / initial_design_area_ * 1e3,
+        resize_count_,
+        inserted_buffer_count_,
+        repaired_net_count,
+        nets_left);
   }
 
   if (end) {
     logger_->report(
-        "---------------------------------------------------------");
+        "-------------------------------------------------------------------");
   }
 }
 

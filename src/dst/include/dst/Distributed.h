@@ -28,8 +28,6 @@
 
 #pragma once
 
-#include <tcl.h>
-
 #include <boost/asio.hpp>
 #include <memory>
 #include <string>
@@ -53,7 +51,7 @@ class Distributed
  public:
   Distributed(utl::Logger* logger = nullptr);
   ~Distributed();
-  void init(Tcl_Interp* tcl_interp, utl::Logger* logger);
+  void init(utl::Logger* logger);
   void runWorker(const char* ip, unsigned short port, bool interactive);
   void runLoadBalancer(const char* ip,
                        unsigned short port,

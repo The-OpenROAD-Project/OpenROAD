@@ -1225,9 +1225,9 @@ void FlexDRWorker::initNet_term_helper(const frDesign* design,
                                        const std::string& name,
                                        const dbTransform& shiftXform)
 {
+  dNet->addFrNetTerm(term);
   auto dPin = std::make_unique<drPin>();
   dPin->setFrTerm(term);
-
   int pinIdx = 0;
   const int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : 0;
   for (auto& pin : trueTerm->getPins()) {
@@ -2116,16 +2116,16 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
                 }
                 case frcInstBlockage: {
                   frInst* inst = (static_cast<frInstBlockage*>(src))->getInst();
-                  std::cout << inst->getName() << "/OBS" << " ";
+                  std::cout << inst->getName() << "/OBS ";
                   break;
                 }
                 case frcInst: {
                   frInst* inst = (static_cast<frInst*>(src));
-                  std::cout << inst->getName() << "/OBS" << " ";
+                  std::cout << inst->getName() << "/OBS ";
                   break;
                 }
                 case frcBlockage: {
-                  std::cout << "PIN/OBS" << " ";
+                  std::cout << "PIN/OBS ";
                   break;
                 }
                 default:;
@@ -2805,14 +2805,7 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
     }
   }
 
-  // assign terms to each subnet
   for (auto& [net, objs] : frNet2Terms) {
-    if (net != nullptr && !net->isSpecial()
-        && owner2nets_.find(net) != owner2nets_.end()) {
-      for (auto dNet : owner2nets_.at(net)) {
-        dNet->setFrNetTerms(objs);
-      }
-    }
     initMazeCost_terms(objs, true);
   }
 }

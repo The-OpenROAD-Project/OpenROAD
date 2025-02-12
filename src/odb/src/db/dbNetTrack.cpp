@@ -122,6 +122,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbNetTrack& obj)
   return stream;
 }
 
+void _dbNetTrack::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbNetTrack - Methods

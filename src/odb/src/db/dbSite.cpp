@@ -344,6 +344,15 @@ dbSite* dbSite::getSite(dbLib* lib, uint oid)
   return (dbSite*) lib_impl->_site_tbl->getPtr(oid);
 }
 
+void _dbSite::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["row_pattern"].add(_row_pattern);
+}
+
 dbOStream& operator<<(dbOStream& stream, const _dbSite& site)
 {
   uint* bit_field = (uint*) &site._flags;

@@ -61,6 +61,7 @@ class _dbModBTerm : public _dbObject
                    const char* field,
                    const _dbModBTerm& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   char* _name;
   uint _flags;

@@ -1852,4 +1852,13 @@ void dbWire::destroy(dbWire* wire_)
   block->_wire_tbl->destroy(wire);
 }
 
+void _dbWire::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["data"].add(_data);
+  info.children_["opcodes"].add(_opcodes);
+}
+
 }  // namespace odb

@@ -4,6 +4,10 @@
 # Required
 version: 2
 
+submodules:
+    include:
+      - src/sta
+
 # Set the OS, Python version and other tools you might need
 build:
   os: ubuntu-22.04
@@ -22,7 +26,7 @@ sphinx:
   configuration: docs/conf.py
 
 formats:
-  - pdf 
+  - pdf
 
 # Optional but recommended, declare the Python requirements required
 # to build your documentation

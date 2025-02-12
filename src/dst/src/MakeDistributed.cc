@@ -28,8 +28,20 @@
 
 #include "dst/MakeDistributed.h"
 
+#include <tcl.h>
+
 #include "dst/Distributed.h"
 #include "ord/OpenRoad.hh"
+#include "sta/StaMain.hh"
+
+namespace sta {
+// Tcl files encoded into strings.
+extern const char* dst_tcl_inits[];
+}  // namespace sta
+
+extern "C" {
+extern int Dst_Init(Tcl_Interp* interp);
+}
 
 namespace ord {
 
@@ -45,8 +57,11 @@ void deleteDistributed(dst::Distributed* dstr)
 
 void initDistributed(OpenRoad* openroad)
 {
-  openroad->getDistributed()->init(openroad->tclInterp(),
-                                   openroad->getLogger());
+  // Define swig TCL commands.
+  auto tcl_interp = openroad->tclInterp();
+  Dst_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::dst_tcl_inits);
+  openroad->getDistributed()->init(openroad->getLogger());
 }
 
 }  // namespace ord

@@ -380,7 +380,21 @@ void dbTrackGrid::destroy(dbTrackGrid* grid_)
   block->_track_grid_tbl->destroy(grid);
 }
 
-// User Code Begin PrivateMethods
+void _dbTrackGrid::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["x_origin"].add(_x_origin);
+  info.children_["x_count"].add(_x_count);
+  info.children_["x_step"].add(_x_step);
+  info.children_["y_origin"].add(_y_origin);
+  info.children_["y_count"].add(_y_count);
+  info.children_["y_step"].add(_y_step);
+  info.children_["first_mask"].add(_first_mask);
+  info.children_["samemask"].add(_samemask);
+}
+
 void _dbTrackGrid::getAverageTrackPattern(bool is_x,
                                           int& track_init,
                                           int& num_tracks,
@@ -398,6 +412,5 @@ void _dbTrackGrid::getAverageTrackPattern(bool is_x,
   track_step = std::ceil((float) span / coordinates.size());
   num_tracks = coordinates.size();
 }
-// User Code End PrivateMethods
 
 }  // namespace odb

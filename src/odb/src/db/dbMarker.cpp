@@ -260,6 +260,18 @@ dbOStream& operator<<(dbOStream& stream, const _dbMarker& obj)
   return stream;
 }
 
+void _dbMarker::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["comment"].add(comment_);
+  info.children_["sources"].add(sources_);
+  info.children_["shapes"].add(shapes_);
+  // User Code End collectMemInfo
+}
+
 // User Code Begin PrivateMethods
 
 _dbBlock* _dbMarker::getBlock() const

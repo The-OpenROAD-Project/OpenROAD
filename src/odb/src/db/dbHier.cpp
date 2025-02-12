@@ -198,4 +198,12 @@ void _dbHier::destroy(_dbHier* hier)
   parent->_hier_tbl->destroy(hier);
 }
 
+void _dbHier::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["child_bterms"].add(_child_bterms);
+}
+
 }  // namespace odb

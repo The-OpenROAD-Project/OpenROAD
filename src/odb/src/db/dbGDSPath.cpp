@@ -127,6 +127,20 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSPath& obj)
   return stream;
 }
 
+void _dbGDSPath::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["xy"].add(_xy);
+  info.children_["propattr"].add(_propattr);
+  for (auto& [i, s] : _propattr) {
+    info.children_["propattr"].add(s);
+  }
+  // User Code End collectMemInfo
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbGDSPath - Methods

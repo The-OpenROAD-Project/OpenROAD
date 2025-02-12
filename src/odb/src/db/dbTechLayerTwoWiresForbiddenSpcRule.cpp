@@ -166,6 +166,12 @@ dbOStream& operator<<(dbOStream& stream,
   return stream;
 }
 
+void _dbTechLayerTwoWiresForbiddenSpcRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerTwoWiresForbiddenSpcRule - Methods

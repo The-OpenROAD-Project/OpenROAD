@@ -69,6 +69,7 @@ class _dbGDSStructure : public _dbObject
                    const _dbGDSStructure& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
 
   char* _name;
   dbId<_dbGDSStructure> _next_entry;

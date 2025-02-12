@@ -59,6 +59,7 @@ class _dbNetTrack : public _dbObject
                    const char* field,
                    const _dbNetTrack& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbId<_dbNet> net_;
   Rect box_;

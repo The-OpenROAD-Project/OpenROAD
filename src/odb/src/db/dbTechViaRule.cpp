@@ -213,4 +213,14 @@ dbTechViaRule* dbTechViaRule::getTechViaRule(dbTech* tech_, uint dbid_)
   return (dbTechViaRule*) tech->_via_rule_tbl->getPtr(dbid_);
 }
 
+void _dbTechViaRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["layer_rules"].add(_layer_rules);
+  info.children_["vias"].add(_vias);
+}
+
 }  // namespace odb

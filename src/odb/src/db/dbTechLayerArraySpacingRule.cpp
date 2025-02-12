@@ -178,6 +178,16 @@ dbOStream& operator<<(dbOStream& stream,
   return stream;
 }
 
+void _dbTechLayerArraySpacingRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["array_spacing_map"].add(array_spacing_map_);
+  // User Code End collectMemInfo
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerArraySpacingRule - Methods
