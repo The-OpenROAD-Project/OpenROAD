@@ -49,6 +49,9 @@ or_integration_tests(
     blocked_region
     cells_not_placed
     check_pin_constraints1
+    check_pin_constraints2
+    check_pin_constraints3
+    check_pin_constraints4
     exclude1
     exclude2
     exclude3
