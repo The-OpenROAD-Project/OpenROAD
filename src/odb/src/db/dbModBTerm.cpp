@@ -224,6 +224,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbModBTerm& obj)
   return stream;
 }
 
+void _dbModBTerm::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  // User Code End collectMemInfo
+}
+
 _dbModBTerm::~_dbModBTerm()
 {
   if (_name) {

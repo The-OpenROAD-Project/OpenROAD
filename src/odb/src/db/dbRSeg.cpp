@@ -1039,4 +1039,10 @@ void dbRSeg::mergeRCs(std::vector<dbRSeg*>& mrsegs)
   }
 }
 
+void _dbRSeg::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 }  // namespace odb

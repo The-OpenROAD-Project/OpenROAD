@@ -171,6 +171,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerAreaRule& obj)
   return stream;
 }
 
+void _dbTechLayerAreaRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerAreaRule - Methods

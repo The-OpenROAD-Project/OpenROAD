@@ -1,0 +1,17 @@
+name: Run Repo stats
+
+on: 
+  schedule:
+    - cron: "0 23 * * *"
+  workflow_dispatch:
+
+jobs:
+  j1:
+    name: repostats-for-nice-project
+    runs-on: ubuntu-latest
+    steps:
+      - name: run-ghrs
+        uses: jgehrcke/github-repo-stats@v1.4.2
+        with:
+          databranch: repo-stats
+          ghtoken: ${{ secrets.GITHUB_TOKEN }}

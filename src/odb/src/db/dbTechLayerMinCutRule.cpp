@@ -222,6 +222,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinCutRule& obj)
   return stream;
 }
 
+void _dbTechLayerMinCutRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["cut_class_cuts_map"].add(cut_class_cuts_map_);
+  // User Code End collectMemInfo
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerMinCutRule - Methods

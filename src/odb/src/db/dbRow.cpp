@@ -343,4 +343,12 @@ dbRow* dbRow::getRow(dbBlock* block_, uint dbid_)
   return (dbRow*) block->_row_tbl->getPtr(dbid_);
 }
 
+void _dbRow::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+}
+
 }  // namespace odb

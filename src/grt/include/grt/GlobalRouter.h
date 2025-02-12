@@ -220,6 +220,7 @@ class GlobalRouter : public ant::GlobalRouteSource
                              const int& pos_x,
                              const int& pos_y,
                              const int& layer_level);
+  odb::Point getPositionOnGrid(const odb::Point& real_position);
   int repairAntennas(odb::dbMTerm* diode_mterm,
                      int iterations,
                      float ratio_margin,

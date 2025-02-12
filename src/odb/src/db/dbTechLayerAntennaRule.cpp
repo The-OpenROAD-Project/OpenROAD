@@ -1093,4 +1093,29 @@ dbTechAntennaPinModel* dbTechAntennaPinModel::getAntennaPinModel(
   return (dbTechAntennaPinModel*) master->_antenna_pin_model_tbl->getPtr(dbid);
 }
 
+void _dbTechLayerAntennaRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
+void _dbTechAntennaPinModel::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["_gate_area"].add(_gate_area);
+  info.children_["_gate_area"].size
+      += _gate_area.size() * sizeof(_dbTechAntennaAreaElement);
+  info.children_["_max_area_car"].add(_max_area_car);
+  info.children_["_max_area_car"].size
+      += _max_area_car.size() * sizeof(_dbTechAntennaAreaElement);
+  info.children_["_max_sidearea_car"].add(_max_sidearea_car);
+  info.children_["_max_sidearea_car"].size
+      += _max_sidearea_car.size() * sizeof(_dbTechAntennaAreaElement);
+  info.children_["_max_cut_car"].add(_max_cut_car);
+  info.children_["_max_cut_car"].size
+      += _max_cut_car.size() * sizeof(_dbTechAntennaAreaElement);
+}
+
 }  // namespace odb

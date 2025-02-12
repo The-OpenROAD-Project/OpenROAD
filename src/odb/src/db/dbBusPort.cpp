@@ -181,6 +181,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbBusPort& obj)
   return stream;
 }
 
+void _dbBusPort::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 _dbBusPort::~_dbBusPort()
 {
 }

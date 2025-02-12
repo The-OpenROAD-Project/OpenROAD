@@ -1480,7 +1480,7 @@ void dumpDecoder4Net(dbNet* innet)
         break;
       }
     }  // switch opcode
-  }    // while
+  }  // while
 }
 
 void dumpDecoder(dbBlock* inblk, const char* net_name_or_id)

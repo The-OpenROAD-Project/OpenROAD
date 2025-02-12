@@ -336,4 +336,12 @@ dbBPin* dbBPin::getBPin(dbBlock* block_, uint dbid_)
   return (dbBPin*) block->_bpin_tbl->getPtr(dbid_);
 }
 
+void _dbBPin::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["ap"].add(aps_);
+}
+
 }  // namespace odb

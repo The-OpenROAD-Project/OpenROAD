@@ -1732,4 +1732,13 @@ dbITerm* dbInst::getFirstOutput()
   return nullptr;
 }
 
+void _dbInst::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["iterms"].add(_iterms);
+}
+
 }  // namespace odb

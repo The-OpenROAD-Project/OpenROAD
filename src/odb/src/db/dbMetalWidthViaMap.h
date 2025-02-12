@@ -66,6 +66,7 @@ class _dbMetalWidthViaMap : public _dbObject
                    const char* field,
                    const _dbMetalWidthViaMap& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   bool via_cut_class_;
   dbId<_dbTechLayer> cut_layer_;

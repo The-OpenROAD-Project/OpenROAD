@@ -605,4 +605,13 @@ void create_via_boxes(_dbTechVia* via, const dbViaParams& P)
                 bot_maxY);
 }
 
+void _dbTechVia::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["pattern"].add(_pattern);
+}
+
 }  // namespace odb

@@ -113,6 +113,7 @@ class _dbMaster : public _dbObject
   void differences(dbDiff& diff, const char* field, const _dbMaster& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbMaster& master);

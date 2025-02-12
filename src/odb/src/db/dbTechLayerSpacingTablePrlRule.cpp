@@ -149,6 +149,23 @@ dbOStream& operator<<(dbOStream& stream,
   return stream;
 }
 
+void _dbTechLayerSpacingTablePrlRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["length_tbl"].add(length_tbl_);
+  info.children_["width_tbl"].add(width_tbl_);
+  MemInfo& spacing_info = info.children_["spacing_tbl"];
+  for (const auto& s : spacing_tbl_) {
+    spacing_info.add(s);
+  }
+  info.children_["influence_tbl"].add(influence_tbl_);
+  info.children_["within_tbl"].add(_within_tbl);
+  // User Code End collectMemInfo
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerSpacingTablePrlRule - Methods

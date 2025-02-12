@@ -165,6 +165,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbPolygon& obj)
   return stream;
 }
 
+void _dbPolygon::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["polygon"].add(polygon_.getPoints());
+  // User Code End collectMemInfo
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbPolygon - Methods

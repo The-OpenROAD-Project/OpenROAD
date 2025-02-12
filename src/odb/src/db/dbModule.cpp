@@ -177,6 +177,20 @@ dbOStream& operator<<(dbOStream& stream, const _dbModule& obj)
   return stream;
 }
 
+void _dbModule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  info.children_["_dbinst_hash"].add(_dbinst_hash);
+  info.children_["_modinst_hash"].add(_modinst_hash);
+  info.children_["_modbterm_hash"].add(_modbterm_hash);
+  info.children_["_modnet_hash"].add(_modnet_hash);
+  // User Code End collectMemInfo
+}
+
 _dbModule::~_dbModule()
 {
   if (_name) {

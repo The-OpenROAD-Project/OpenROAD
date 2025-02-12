@@ -69,6 +69,7 @@ class _dbTechLayerTwoWiresForbiddenSpcRule : public _dbObject
                    const char* field,
                    const _dbTechLayerTwoWiresForbiddenSpcRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerTwoWiresForbiddenSpcRuleFlags flags_;
   int min_spacing_;

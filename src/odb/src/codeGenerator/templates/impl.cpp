@@ -258,6 +258,20 @@ namespace odb {
     return getTable()->getObjectTable(type);
   }
   {% endif %}
+  void _{{klass.name}}::collectMemInfo(MemInfo& info)
+  {
+    info.cnt++;
+    info.size += sizeof(*this);
+
+    {% for field in klass.fields %}
+      {% if field.table %} 
+        {{field.name}}->collectMemInfo(info.children_["{{field.name}}"]);
+      {% endif %}
+    {% endfor %}
+
+    //User Code Begin collectMemInfo
+    //User Code End collectMemInfo
+  }
 
   {% if klass.needs_non_default_destructor %}
     _{{klass.name}}::~_{{klass.name}}()

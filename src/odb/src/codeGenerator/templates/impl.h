@@ -105,6 +105,7 @@ namespace odb {
     {% if klass.hasTables %}
     dbObjectTable* getObjectTable(dbObjectType type);
     {% endif %}
+    void collectMemInfo(MemInfo& info);
     // User Code Begin Methods
     // User Code End Methods
 

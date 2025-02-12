@@ -68,6 +68,7 @@ class _dbAccessPoint : public _dbObject
                    const char* field,
                    const _dbAccessPoint& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
   void setMPin(_dbMPin* mpin);
   // User Code End Methods

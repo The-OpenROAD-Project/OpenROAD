@@ -113,6 +113,7 @@ class _dbTechLayer : public _dbObject
                    const _dbTechLayer& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
   uint getV55RowIdx(const int& rowVal) const;
   uint getV55ColIdx(const int& colVal) const;

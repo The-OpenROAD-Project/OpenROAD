@@ -254,6 +254,7 @@ class RepairSetup : public sta::dbStaState
   int cloned_gate_count_ = 0;
   int swap_pin_count_ = 0;
   int removed_buffer_count_ = 0;
+  double initial_design_area_ = 0;
   // Map to block pins from being swapped more than twice for the
   // same instance.
   std::unordered_set<const sta::Instance*> swap_pin_inst_set_;

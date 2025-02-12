@@ -55,7 +55,7 @@ tapcell
 | ----- | ----- |
 | `[-cnrcap_nwin_master]` | Macro cell placed at the corners the core area according the row orientation. |
 | `[-cnrcap_nwout_master]` | Macro cell placed at the corners the core area according the row orientation. |
-| `[-disallow_one_site_gaps]` | KIV. |
+| `[-disallow_one_site_gaps]` | Option is deprecated. |
 | `[-distance]` | Distance (in microns) between each tapcell in the checkerboard. |
 | `[-endcap_cpp]` | Option is deprecated. |
 | `[-endcap_master]` | Master used as an endcap. |

@@ -63,6 +63,7 @@ class _dbTechLayerCutSpacingTableOrthRule : public _dbObject
                    const char* field,
                    const _dbTechLayerCutSpacingTableOrthRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   //{cutWithin, orthoSpacing}
   dbVector<std::pair<int, int>> spacing_tbl_;

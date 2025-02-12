@@ -83,6 +83,7 @@ class _dbTechMinCutRule : public _dbObject
                    const char* field,
                    const _dbTechMinCutRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 inline _dbTechMinCutRule::_dbTechMinCutRule(_dbDatabase* /* unused: db */,
@@ -141,6 +142,7 @@ class _dbTechMinEncRule : public _dbObject
                    const char* field,
                    const _dbTechMinEncRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 inline _dbTechMinEncRule::_dbTechMinEncRule(_dbDatabase* /* unused: db */,

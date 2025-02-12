@@ -60,6 +60,7 @@ class _dbModITerm : public _dbObject
                    const char* field,
                    const _dbModITerm& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   char* _name;
   dbId<_dbModInst> _parent;

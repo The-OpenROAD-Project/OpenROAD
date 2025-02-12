@@ -143,6 +143,19 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSARef& obj)
   return stream;
 }
 
+void _dbGDSARef::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["propattr"].add(_propattr);
+  for (auto& [i, s] : _propattr) {
+    info.children_["propattr"].add(s);
+  }
+  // User Code End collectMemInfo
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbGDSARef - Methods

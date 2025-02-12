@@ -61,6 +61,7 @@ class _dbModNet : public _dbObject
   bool operator<(const _dbModNet& rhs) const;
   void differences(dbDiff& diff, const char* field, const _dbModNet& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   char* _name;
   dbId<_dbModule> _parent;

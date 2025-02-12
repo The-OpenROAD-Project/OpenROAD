@@ -69,6 +69,7 @@ class _dbMPin : public _dbObject
   bool operator!=(const _dbMPin& rhs) const { return !operator==(rhs); }
   void differences(dbDiff& diff, const char* field, const _dbMPin& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
   void addAccessPoint(uint idx, _dbAccessPoint* ap);
 };
 

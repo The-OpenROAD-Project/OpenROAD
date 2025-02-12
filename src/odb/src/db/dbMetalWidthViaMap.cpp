@@ -160,6 +160,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbMetalWidthViaMap& obj)
   return stream;
 }
 
+void _dbMetalWidthViaMap::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["via_name"].add(via_name_);
+  // User Code End collectMemInfo
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbMetalWidthViaMap - Methods

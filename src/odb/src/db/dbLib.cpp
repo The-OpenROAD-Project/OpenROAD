@@ -422,4 +422,18 @@ void dbLib::destroy(dbLib* lib_)
   db->_lib_tbl->destroy(lib);
 }
 
+void _dbLib::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["master_hash"].add(_master_hash);
+  info.children_["site_hash"].add(_site_hash);
+  _master_tbl->collectMemInfo(info.children_["master"]);
+  _site_tbl->collectMemInfo(info.children_["site"]);
+  _prop_tbl->collectMemInfo(info.children_["prop"]);
+  _name_cache->collectMemInfo(info.children_["name_cache"]);
+}
+
 }  // namespace odb

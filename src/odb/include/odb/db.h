@@ -479,6 +479,12 @@ class dbDatabase : public dbObject
   void clear();
 
   ///
+  /// Generates a report of memory usage.
+  ///   Not perfectly byte accurate.  Intended for developers.
+  ///
+  void report();
+
+  ///
   /// Create an instance of a database
   ///
   static dbDatabase* create();

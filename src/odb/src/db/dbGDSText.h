@@ -58,6 +58,7 @@ class _dbGDSText : public _dbObject
                    const char* field,
                    const _dbGDSText& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   int16_t _layer;
   int16_t _datatype;

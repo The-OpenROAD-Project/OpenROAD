@@ -134,6 +134,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbScanInst& obj)
   return stream;
 }
 
+void _dbScanInst::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbScanInst - Methods

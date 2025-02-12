@@ -95,6 +95,7 @@ class _dbITerm : public _dbObject
   bool operator<(const _dbITerm& rhs) const;
   void differences(dbDiff& diff, const char* field, const _dbITerm& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   _dbMTerm* getMTerm() const;
   _dbInst* getInst() const;

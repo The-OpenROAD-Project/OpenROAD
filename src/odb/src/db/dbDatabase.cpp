@@ -743,4 +743,45 @@ bool dbDatabase::diff(dbDatabase* db0_,
   return diff.hasDifferences();
 }
 
+void _dbDatabase::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  _tech_tbl->collectMemInfo(info.children_["tech"]);
+  _lib_tbl->collectMemInfo(info.children_["lib"]);
+  _chip_tbl->collectMemInfo(info.children_["chip"]);
+  _gds_lib_tbl->collectMemInfo(info.children_["gds_lib"]);
+  _prop_tbl->collectMemInfo(info.children_["prop"]);
+  _name_cache->collectMemInfo(info.children_["name_cache"]);
+}
+
+void dbDatabase::report()
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  MemInfo root;
+  db->collectMemInfo(root);
+  utl::Logger* logger = db->getLogger();
+  std::function<int64_t(MemInfo&, const std::string&, int)> print =
+      [&](MemInfo& info, const std::string& name, int depth) {
+        double avg_size = 0;
+        int64_t total_size = info.size;
+        if (info.cnt > 0) {
+          avg_size = info.size / static_cast<double>(info.cnt);
+        }
+
+        logger->report("{:40s} cnt={:10d} size={:12d} (avg elem={:12.1f})",
+                       name.c_str(),
+                       info.cnt,
+                       info.size,
+                       avg_size);
+        for (auto [name, child] : info.children_) {
+          total_size += print(child, std::string(depth, ' ') + name, depth + 1);
+        }
+        return total_size;
+      };
+  auto total_size = print(root, "dbDatabase", 1);
+  logger->report("Total size = {}", total_size);
+}
+
 }  // namespace odb

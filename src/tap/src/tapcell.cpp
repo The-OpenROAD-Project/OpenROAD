@@ -123,10 +123,10 @@ void Tapcell::run(const Options& options)
   placeTapcells(options);
 }
 
-int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
-                           const int dist,
-                           const bool disallow_one_site_gaps)
+int Tapcell::placeTapcells(odb::dbMaster* tapcell_master, const int dist)
 {
+  const bool disallow_one_site_gaps = !odb::hasOneSiteMaster(db_);
+
   std::vector<Edge> edges;
 
   // Collect edges
@@ -1504,7 +1504,7 @@ void Tapcell::placeTapcells(const Options& options)
 
   const int dist = options.dist >= 0 ? options.dist : defaultDistance();
 
-  placeTapcells(options.tapcell_master, dist, options.disallow_one_site_gaps);
+  placeTapcells(options.tapcell_master, dist);
 }
 
 odb::dbBlock* Tapcell::getBlock() const

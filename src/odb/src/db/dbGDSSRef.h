@@ -59,6 +59,7 @@ class _dbGDSSRef : public _dbObject
                    const char* field,
                    const _dbGDSSRef& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   Point _origin;
   std::vector<std::pair<std::int16_t, std::string>> _propattr;

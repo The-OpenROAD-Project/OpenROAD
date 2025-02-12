@@ -166,6 +166,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj)
   return stream;
 }
 
+void _dbTechLayerCutClassRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  // User Code End collectMemInfo
+}
+
 _dbTechLayerCutClassRule::~_dbTechLayerCutClassRule()
 {
   if (_name) {

@@ -71,6 +71,7 @@ class _dbTechLayerKeepOutZoneRule : public _dbObject
                    const char* field,
                    const _dbTechLayerKeepOutZoneRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerKeepOutZoneRuleFlags flags_;
   std::string first_cut_class_;

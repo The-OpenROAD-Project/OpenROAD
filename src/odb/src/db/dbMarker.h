@@ -91,6 +91,7 @@ class _dbMarker : public _dbObject
   bool operator<(const _dbMarker& rhs) const;
   void differences(dbDiff& diff, const char* field, const _dbMarker& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
   _dbBlock* getBlock() const;
 

@@ -441,6 +441,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
  protected:
   void init();
+  double computeDesignArea();
   void initDesignArea();
   void ensureLevelDrvrVertices();
   Instance* bufferInput(const Pin* top_pin, LibertyCell* buffer_cell);
