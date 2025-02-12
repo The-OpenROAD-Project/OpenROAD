@@ -129,6 +129,15 @@ dbObjectTable* _dbDft::getObjectTable(dbObjectType type)
   }
   return getTable()->getObjectTable(type);
 }
+void _dbDft::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  scan_pins_->collectMemInfo(info.children_["scan_pins_"]);
+
+  scan_chains_->collectMemInfo(info.children_["scan_chains_"]);
+}
 
 _dbDft::~_dbDft()
 {

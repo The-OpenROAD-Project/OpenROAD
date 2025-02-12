@@ -74,6 +74,7 @@ class _dbBlockage : public _dbObject
                    const char* field,
                    const _dbBlockage& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 inline _dbBlockage::_dbBlockage(_dbDatabase*)

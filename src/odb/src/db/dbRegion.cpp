@@ -427,4 +427,12 @@ dbRegion* dbRegion::getRegion(dbBlock* block_, uint dbid_)
   return (dbRegion*) block->_region_tbl->getPtr(dbid_);
 }
 
+void _dbRegion::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+}
+
 }  // namespace odb

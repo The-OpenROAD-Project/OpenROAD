@@ -477,4 +477,9 @@ dbObstruction* dbObstruction::getObstruction(dbBlock* block_, uint dbid_)
   return (dbObstruction*) block->_obstruction_tbl->getPtr(dbid_);
 }
 
+void _dbObstruction::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
 }  // namespace odb

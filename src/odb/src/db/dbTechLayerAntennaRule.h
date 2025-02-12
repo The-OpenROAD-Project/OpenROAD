@@ -158,6 +158,7 @@ class _dbTechLayerAntennaRule : public _dbObject
                    const char* field,
                    const _dbTechLayerAntennaRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerAntennaRule& inrule);
@@ -228,6 +229,7 @@ class _dbTechAntennaPinModel : public _dbObject
                    const char* field,
                    const _dbTechAntennaPinModel& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   static void getAntennaValues(
       _dbDatabase* db,

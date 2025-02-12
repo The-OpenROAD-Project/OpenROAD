@@ -68,6 +68,7 @@ class _dbTechLayerWidthTableRule : public _dbObject
                    const char* field,
                    const _dbTechLayerWidthTableRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerWidthTableRuleFlags flags_;
   dbVector<int> width_tbl_;

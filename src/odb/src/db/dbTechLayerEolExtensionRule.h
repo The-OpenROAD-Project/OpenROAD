@@ -68,6 +68,7 @@ class _dbTechLayerEolExtensionRule : public _dbObject
                    const char* field,
                    const _dbTechLayerEolExtensionRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerEolExtensionRuleFlags flags_;
   int spacing_;

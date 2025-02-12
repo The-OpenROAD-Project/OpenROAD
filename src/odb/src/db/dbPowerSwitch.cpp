@@ -233,6 +233,21 @@ dbOStream& operator<<(dbOStream& stream, const _dbPowerSwitch& obj)
   return stream;
 }
 
+void _dbPowerSwitch::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  info.children_["in_supply_port"].add(_in_supply_port);
+  info.children_["control_port"].add(_control_port);
+  info.children_["acknowledge_port"].add(_acknowledge_port);
+  info.children_["on_state"].add(_on_state);
+  info.children_["port_map"].add(_port_map);
+  // User Code End collectMemInfo
+}
+
 _dbPowerSwitch::~_dbPowerSwitch()
 {
   if (_name) {
