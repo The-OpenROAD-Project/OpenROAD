@@ -50,6 +50,7 @@ namespace ppl {
 class Interval
 {
  public:
+  Interval() = default;
   Interval(Edge edge, int begin, int end, int layer = -1)
       : edge_(edge), begin_(begin), end_(end), layer_(layer)
   {
