@@ -1,4 +1,5 @@
 # Nangate45_tech.lef + Nangate45_stdcell.lef
+# Copy of Nangate45.lef with site modified to be half width
 # 05/24/2020 cherry fix FILLCELL_X2 size
 # 
 # ******************************************************************************
