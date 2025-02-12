@@ -1974,9 +1974,11 @@ void RepairDesign::printProgress(int iteration,
 
   if (start && !end) {
     logger_->report(
-        "Iteration |  Area   | Resized | Buffers | Nets repaired | Remaining");
+        "Iteration |   Area    | Resized | Buffers | Nets repaired | "
+        "Remaining");
     logger_->report(
-        "-------------------------------------------------------------------");
+        "--------------------------------------------------------------------"
+        "-");
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
@@ -2001,7 +2003,8 @@ void RepairDesign::printProgress(int iteration,
 
   if (end) {
     logger_->report(
-        "-------------------------------------------------------------------");
+        "--------------------------------------------------------------------"
+        "-");
   }
 }
 
