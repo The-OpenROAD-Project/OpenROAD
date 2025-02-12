@@ -975,4 +975,19 @@ bool dbMaster::isCoreAutoPlaceable()
   return false;
 }
 
+void _dbMaster::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["mterm_hash"].add(_mterm_hash);
+  _mterm_tbl->collectMemInfo(info.children_["mterm"]);
+  _mpin_tbl->collectMemInfo(info.children_["mpin"]);
+  _box_tbl->collectMemInfo(info.children_["box"]);
+  _poly_box_tbl->collectMemInfo(info.children_["poly_box"]);
+  _antenna_pin_model_tbl->collectMemInfo(info.children_["antenna_pin_model"]);
+  edge_types_tbl_->collectMemInfo(info.children_["edge_types"]);
+}
+
 }  // namespace odb

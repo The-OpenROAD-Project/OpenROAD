@@ -68,6 +68,7 @@ class _dbTechLayerAreaRule : public _dbObject
                    const char* field,
                    const _dbTechLayerAreaRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerAreaRuleFlags flags_;
   int area_;

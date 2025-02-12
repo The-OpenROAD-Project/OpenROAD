@@ -62,6 +62,7 @@ class _dbPowerDomain : public _dbObject
                    const char* field,
                    const _dbPowerDomain& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   char* _name;
   dbId<_dbPowerDomain> _next_entry;

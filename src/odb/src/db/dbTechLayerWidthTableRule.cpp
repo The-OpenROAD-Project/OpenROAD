@@ -120,6 +120,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerWidthTableRule& obj)
   return stream;
 }
 
+void _dbTechLayerWidthTableRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["width_tbl"].add(width_tbl_);
+  // User Code End collectMemInfo
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerWidthTableRule - Methods

@@ -920,6 +920,14 @@ void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
   _mnet = 0;
 }
 
+void _dbBTerm::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+}
+
 dbSet<dbBTerm>::iterator dbBTerm::destroy(dbSet<dbBTerm>::iterator& itr)
 {
   dbBTerm* bt = *itr;

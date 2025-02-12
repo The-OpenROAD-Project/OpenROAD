@@ -1,9 +1,10 @@
-[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[INFO ODB-0227] LEF file: Nangate45/fake_macros.lef, created 10 library cells
+[INFO ODB-0227] LEF file: Nangate45_data/Nangate45.lef, created 22 layers, 27 vias, 2 library cells
+[INFO ODB-0227] LEF file: Nangate45_data/fake_macros.lef, created 3 library cells
 [INFO ODB-0128] Design: top
 [INFO ODB-0130]     Created 6 pins.
 [INFO ODB-0131]     Created 3 components and 15 component-terminals.
 [INFO ODB-0133]     Created 6 nets and 0 connections.
+[WARNING DPL-0003] -disallow_one_site_gaps is deprecated
 Placement Analysis
 ---------------------------------
 total displacement          0.2 u

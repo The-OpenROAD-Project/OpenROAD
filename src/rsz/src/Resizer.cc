@@ -2992,19 +2992,25 @@ void Resizer::designAreaIncr(float delta)
   design_area_ += delta;
 }
 
-void Resizer::initDesignArea()
+double Resizer::computeDesignArea()
 {
-  initBlock();
-  design_area_ = 0.0;
+  double design_area = 0.0;
   for (dbInst* inst : block_->getInsts()) {
     dbMaster* master = inst->getMaster();
     // Don't count fillers otherwise you'll always get 100% utilization
     if (!master->isFiller()
         && master->getType() != odb::dbMasterType::CORE_WELLTAP
         && !master->isEndCap()) {
-      design_area_ += area(master);
+      design_area += area(master);
     }
   }
+  return design_area;
+}
+
+void Resizer::initDesignArea()
+{
+  initBlock();
+  design_area_ = computeDesignArea();
 }
 
 bool Resizer::isFuncOneZero(const Pin* drvr_pin)

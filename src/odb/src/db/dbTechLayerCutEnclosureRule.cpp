@@ -413,6 +413,12 @@ dbOStream& operator<<(dbOStream& stream,
   return stream;
 }
 
+void _dbTechLayerCutEnclosureRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerCutEnclosureRule - Methods

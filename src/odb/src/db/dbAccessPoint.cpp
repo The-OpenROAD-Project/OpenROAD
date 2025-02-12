@@ -201,6 +201,21 @@ dbOStream& operator<<(dbOStream& stream, const _dbAccessPoint& obj)
   return stream;
 }
 
+void _dbAccessPoint::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["iterms"].add(iterms_);
+  MemInfo& via_info = info.children_["vias"];
+  for (const auto& v : vias_) {
+    via_info.add(v);
+  }
+  info.children_["path_segs"].add(path_segs_);
+  // User Code End collectMemInfo
+}
+
 // User Code Begin PrivateMethods
 void _dbAccessPoint::setMPin(_dbMPin* mpin)
 {

@@ -232,6 +232,18 @@ dbOStream& operator<<(dbOStream& stream, const _dbGroup& obj)
   return stream;
 }
 
+void _dbGroup::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  info.children_["power_nets"].add(_power_nets);
+  info.children_["ground_nets"].add(_ground_nets);
+  // User Code End collectMemInfo
+}
+
 _dbGroup::~_dbGroup()
 {
   if (_name) {

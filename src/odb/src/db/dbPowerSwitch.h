@@ -64,6 +64,7 @@ class _dbPowerSwitch : public _dbObject
                    const char* field,
                    const _dbPowerSwitch& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   char* _name;
   dbId<_dbPowerSwitch> _next_entry;

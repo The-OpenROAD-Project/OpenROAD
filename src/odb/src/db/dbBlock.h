@@ -323,6 +323,7 @@ class _dbBlock : public _dbObject
   _dbTech* getTech();
 
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbBlock& block);
