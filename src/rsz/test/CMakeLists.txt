@@ -32,6 +32,7 @@ or_integration_tests(
     pin_swap1
     pinswap_flat
     pinswap_hier
+    recover_power_verbose
     remove_buffers1
     remove_buffers2
     remove_buffers3

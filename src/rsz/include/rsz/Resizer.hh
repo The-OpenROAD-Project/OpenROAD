@@ -331,7 +331,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   int holdBufferCount() const;
 
   ////////////////////////////////////////////////////////////////
-  bool recoverPower(float recover_power_percent, bool match_cell_footprint);
+  bool recoverPower(float recover_power_percent,
+                    bool match_cell_footprint,
+                    bool verbose);
 
   ////////////////////////////////////////////////////////////////
   // Area of the design in meter^2.
