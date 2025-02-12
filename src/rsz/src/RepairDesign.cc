@@ -84,6 +84,7 @@ void RepairDesign::init()
   dbu_ = resizer_->dbu_;
   pre_checks_ = new PreChecks(resizer_);
   parasitics_src_ = resizer_->getParasiticsSrc();
+  initial_design_area_ = resizer_->computeDesignArea();
 }
 
 // Repair long wires, max slew, max capacitance, max fanout violations
@@ -1973,9 +1974,9 @@ void RepairDesign::printProgress(int iteration,
 
   if (start && !end) {
     logger_->report(
-        "Iteration | Resized | Buffers | Nets repaired | Remaining");
+        "Iteration |  Area   | Resized | Buffers | Nets repaired | Remaining");
     logger_->report(
-        "---------------------------------------------------------");
+        "-------------------------------------------------------------------");
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
@@ -1985,18 +1986,22 @@ void RepairDesign::printProgress(int iteration,
     if (end) {
       itr_field = "final";
     }
+    const double design_area = resizer_->computeDesignArea();
+    const double area_growth = design_area - initial_design_area_;
 
-    logger_->report("{: >9s} | {: >7d} | {: >7d} | {: >13d} | {: >9d}",
-                    itr_field,
-                    resize_count_,
-                    inserted_buffer_count_,
-                    repaired_net_count,
-                    nets_left);
+    logger_->report(
+        "{: >9s} | {: >+8.1f}% | {: >7d} | {: >7d} | {: >13d} | {: >9d}",
+        itr_field,
+        area_growth / initial_design_area_ * 1e3,
+        resize_count_,
+        inserted_buffer_count_,
+        repaired_net_count,
+        nets_left);
   }
 
   if (end) {
     logger_->report(
-        "---------------------------------------------------------");
+        "-------------------------------------------------------------------");
   }
 }
 
