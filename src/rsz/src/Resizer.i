@@ -521,9 +521,12 @@ repair_setup(double setup_margin,
              double repair_tns_end_percent,
              int max_passes,
              int max_repairs_per_pass,
-             bool match_cell_footprint, bool verbose,
-             bool skip_pin_swap, bool skip_gate_cloning,
-             bool skip_buffering, bool skip_buffer_removal,
+             bool match_cell_footprint,
+             bool verbose,
+             bool skip_pin_swap,
+             bool skip_gate_cloning,
+             bool skip_buffering,
+             bool skip_buffer_removal,
              bool skip_last_gasp)
 {
   ensureLinked();
