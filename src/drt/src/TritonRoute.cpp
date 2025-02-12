@@ -217,8 +217,9 @@ std::string TritonRoute::runDRWorker(const std::string& workerStr,
   worker->setSharedVolume(shared_volume_);
   worker->setDebugSettings(debug_.get());
   if (graphics_factory_->guiActive() && debug_->debugDR) {
-    AbstractDRGraphics* dr_graphics = graphics_factory_->getDRGraphics();
-    worker->setGraphics(dr_graphics);
+    std::unique_ptr<AbstractDRGraphics> dr_graphics
+        = graphics_factory_->makeUniqueDRGraphics();
+    worker->setGraphics(dr_graphics.get());
     dr_graphics->startIter(worker->getDRIter(), router_cfg_.get());
   }
   std::string result = worker->reloadedMain();
@@ -245,9 +246,9 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
   workerFile.close();
   auto worker = FlexDRWorker::load(
       workerStr, &viaData, design_.get(), logger_, router_cfg_.get());
-  AbstractDRGraphics* graphics
-      = debug_->debugDR ? graphics_factory_->getDRGraphics() : nullptr;
-  worker->setGraphics(graphics);
+  std::unique_ptr<AbstractDRGraphics> graphics
+      = debug_->debugDR ? graphics_factory_->makeUniqueDRGraphics() : nullptr;
+  worker->setGraphics(graphics.get());
   if (debug_->mazeEndIter != -1) {
     worker->setMazeEndIter(debug_->mazeEndIter);
   }
