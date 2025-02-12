@@ -134,6 +134,7 @@ class RecoverPower : public sta::dbStaState
 
   sta::VertexSet bad_vertices_;
 
+  double initial_design_area_ = 0;
   int print_interval_ = 0;
 
   static constexpr int decreasing_slack_max_passes_ = 50;

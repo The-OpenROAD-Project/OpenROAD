@@ -76,6 +76,7 @@ void RecoverPower::init()
   logger_ = resizer_->logger_;
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
+  initial_design_area_ = resizer_->computeDesignArea();
 }
 
 bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
@@ -492,8 +493,8 @@ void RecoverPower::printProgress(int iteration, bool force, bool end) const
   const bool start = iteration == 0;
 
   if (start && !end) {
-    logger_->report("Iteration |  Resized |   WNS    | Endpt");
-    logger_->report("---------------------------------------");
+    logger_->report("Iteration |   Area    |  Resized |   WNS    | Endpt");
+    logger_->report("---------------------------------------------------");
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
@@ -506,16 +507,20 @@ void RecoverPower::printProgress(int iteration, bool force, bool end) const
       itr_field = "final";
     }
 
+    const double design_area = resizer_->computeDesignArea();
+    const double area_growth = design_area - initial_design_area_;
+
     logger_->report(
-        "{: >9s} | {: >8d} | {: >8s} | {}",
+        "{: >9s} | {: >+8.1f}% | {: >8d} | {: >8s} | {}",
         itr_field,
+        area_growth / initial_design_area_ * 1e3,
         resize_count_,
         delayAsString(wns, sta_, 3),
         worst_vertex != nullptr ? worst_vertex->name(network_) : "");
   }
 
   if (end) {
-    logger_->report("---------------------------------------");
+    logger_->report("---------------------------------------------------");
   }
 }
 
