@@ -308,7 +308,7 @@ void FlexGR::searchRepair_update(int iter,
         }
         
         h_costMap = uworkers[0]->getCMap()->getBits();
-        GPUAccelerated2DMazeRoute(curBatch, h_costMap, xDim, yDim);
+        GPUAccelerated2DMazeRoute(curBatch, h_costMap, router_cfg_, xDim, yDim);
 
         // Copy the cost map to the grid graph
         for (int i = 0; i < (int) uworkers.size(); i++) {

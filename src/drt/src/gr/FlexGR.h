@@ -267,6 +267,7 @@ class FlexGR
   void GPUAccelerated2DMazeRoute(
     std::vector<grNet*>& nets,
     std::vector<uint64_t>& h_costMap,
+    RouterConfiguration* router_cfg,
     int xDim, int yDim);
 
   int validBatchThreshold_ = 50;
