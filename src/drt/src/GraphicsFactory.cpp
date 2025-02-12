@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-//
+//////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2022, The Regents of the University of California
+// Copyright (c) 2025, Precision Innovations Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,18 +29,58 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
 
-%ignore drt::TritonRoute::init;
+#include "GraphicsFactory.h"
 
-%{
+namespace drt {
 
-#include "ord/OpenRoad.hh"
-#include "triton_route/TritonRoute.h"
-#include "utl/Logger.h"
-%}
+GraphicsFactory::GraphicsFactory() = default;
+GraphicsFactory::~GraphicsFactory() = default;
 
-%include <std_string.i>
-%include "../../Exception-py.i"
-%include "triton_route/TritonRoute.h"
+void GraphicsFactory::reset(frDebugSettings* settings,
+                            frDesign* design,
+                            odb::dbDatabase* db,
+                            Logger* logger,
+                            RouterConfiguration* router_cfg)
+{
+  settings_ = settings;
+  design_ = design;
+  db_ = db;
+  logger_ = logger;
+  router_cfg_ = router_cfg;
+}
+
+bool GraphicsFactory::guiActive()
+{
+  return gui::Gui::enabled();
+}
+
+std::unique_ptr<AbstractDRGraphics> GraphicsFactory::makeUniqueDRGraphics()
+{
+  if (!guiActive()) {
+    return nullptr;
+  }
+  auto dr_graphics
+      = std::make_unique<FlexDRGraphics>(settings_, design_, db_, logger_);
+  dr_graphics->init();
+  return std::move(dr_graphics);
+}
+
+std::unique_ptr<AbstractTAGraphics> GraphicsFactory::makeUniqueTAGraphics()
+{
+  if (!guiActive()) {
+    return nullptr;
+  }
+  return std::make_unique<FlexTAGraphics>(settings_, design_, db_);
+}
+
+std::unique_ptr<AbstractPAGraphics> GraphicsFactory::makeUniquePAGraphics()
+{
+  if (!guiActive()) {
+    return nullptr;
+  }
+  return std::make_unique<FlexPAGraphics>(
+      settings_, design_, db_, logger_, router_cfg_);
+}
+
+}  // namespace drt

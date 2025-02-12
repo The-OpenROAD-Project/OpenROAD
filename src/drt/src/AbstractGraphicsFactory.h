@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-//
+//////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2022, The Regents of the University of California
+// Copyright (c) 2025, Precision Innovations Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,18 +29,33 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
 
-%ignore drt::TritonRoute::init;
+#pragma once
 
-%{
+#include <memory>
+#include <vector>
 
-#include "ord/OpenRoad.hh"
-#include "triton_route/TritonRoute.h"
-#include "utl/Logger.h"
-%}
+#include "db/obj/frBlockObject.h"
+#include "dr/AbstractDRGraphics.h"
+#include "frBaseTypes.h"
+#include "pa/AbstractPAGraphics.h"
+#include "ta/AbstractTAGraphics.h"
 
-%include <std_string.i>
-%include "../../Exception-py.i"
-%include "triton_route/TritonRoute.h"
+namespace drt {
+class AbstractGraphicsFactory
+{
+ public:
+  virtual ~AbstractGraphicsFactory() = default;
+  virtual void reset(frDebugSettings* settings,
+                     frDesign* design,
+                     odb::dbDatabase* db,
+                     Logger* logger,
+                     RouterConfiguration* router_cfg)
+      = 0;
+  virtual bool guiActive() = 0;
+  virtual std::unique_ptr<AbstractDRGraphics> makeUniqueDRGraphics() = 0;
+  virtual std::unique_ptr<AbstractTAGraphics> makeUniqueTAGraphics() = 0;
+  virtual std::unique_ptr<AbstractPAGraphics> makeUniquePAGraphics() = 0;
+};
+
+}  // namespace drt

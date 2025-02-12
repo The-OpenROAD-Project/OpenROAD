@@ -36,7 +36,6 @@
 #include "db/gcObj/gcNet.h"
 #include "db/gcObj/gcPin.h"
 #include "dr/FlexDR.h"
-#include "dr/FlexDR_graphics.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 
