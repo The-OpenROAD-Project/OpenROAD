@@ -789,16 +789,14 @@ PixelPt Opendp::searchNearestSite(const Cell* cell,
   return PixelPt();
 }
 
-int Opendp::calcDist(const GridPt p0, const GridPt p1) const
+int Opendp::calcDist(GridPt p0, GridPt p1) const
 {
   DbuY y_dist = abs(grid_->gridYToDbu(p0.y) - grid_->gridYToDbu(p1.y));
   DbuX x_dist = gridToDbu(abs(p0.x - p1.x), grid_->getSiteWidth());
   return sumXY(x_dist, y_dist);
 }
 
-bool Opendp::canBePlaced(const Cell* cell,
-                         const GridX bin_x,
-                         const GridY bin_y) const
+bool Opendp::canBePlaced(const Cell* cell, GridX bin_x, GridY bin_y) const
 {
   debugPrint(logger_,
              DPL,
