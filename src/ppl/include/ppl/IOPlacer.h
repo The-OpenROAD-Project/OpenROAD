@@ -138,7 +138,8 @@ class IOPlacer
                               int end);
   void addTopLayerConstraint(PinSet* pins, const odb::Rect& region);
   void addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2);
-  void applyMirroredConstraint(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2);
+  void applyMirroredConstraint(odb::dbBTerm* constrained_bterm,
+                               odb::dbBTerm* mirrored_bterm);
   Edge getRegionEdge(const odb::Rect& region);
   void addHorLayer(odb::dbTechLayer* layer);
   void addVerLayer(odb::dbTechLayer* layer);
