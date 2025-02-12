@@ -1875,10 +1875,13 @@ void IOPlacer::addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2)
   }
 }
 
-void IOPlacer::applyMirroredConstraint(odb::dbBTerm* bterm1,
-                                       odb::dbBTerm* bterm2)
+void IOPlacer::applyMirroredConstraint(odb::dbBTerm* constrained_bterm,
+                                       odb::dbBTerm* mirrored_bterm)
 {
-  auto constraint_region = bterm1->getConstraintRegion();
+  auto constraint_region = constrained_bterm->getConstraintRegion();
+  if (constraint_region == std::nullopt) {
+    logger_->critical(utl::PPL, 41, "Pin {} must have a constraint.");
+  }
   const odb::Rect& region = constraint_region.value();
 
   Edge edge = getRegionEdge(region);
@@ -1902,7 +1905,7 @@ void IOPlacer::applyMirroredConstraint(odb::dbBTerm* bterm1,
                              interval.getLayer());
 
   findConstraintRegion(mirrored_interval, region, mirrored_constraint_region);
-  bterm2->setConstraintRegion(mirrored_constraint_region);
+  mirrored_bterm->setConstraintRegion(mirrored_constraint_region);
 }
 
 Edge IOPlacer::getRegionEdge(const odb::Rect& region)
@@ -1911,15 +1914,13 @@ Edge IOPlacer::getRegionEdge(const odb::Rect& region)
   if (region.xMin() == region.xMax()) {
     if (region.xMin() == die_boundary.xMin()) {
       return Edge::left;
-    } else {
-      return Edge::right;
     }
+    return Edge::right;
   } else if (region.yMin() == region.yMax()) {
     if (region.yMin() == die_boundary.yMin()) {
       return Edge::bottom;
-    } else {
-      return Edge::top;
     }
+    return Edge::top;
   }
 
   return Edge::invalid;
