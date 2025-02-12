@@ -68,3 +68,16 @@ KOKKOS_INLINE_FUNCTION Kokkos::complex<float> complexMulConj(const Kokkos::compl
   return res;
 }
 
+// Device and host may use different implementations of math functions giving different results which is not desirable in OpenROAD
+// The consistent* functions are meant to fix that.
+KOKKOS_INLINE_FUNCTION float consistentSinf(float x) {
+  return sin((double) x);
+}
+
+KOKKOS_INLINE_FUNCTION float consistentCosf(float x) {
+  return cos((double) x);
+}
+
+KOKKOS_INLINE_FUNCTION float consistentExpf(float x) {
+  return exp((double) x);
+}

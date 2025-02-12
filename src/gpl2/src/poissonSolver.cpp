@@ -44,7 +44,7 @@
 #include "poissonSolver.h"
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_MathematicalFunctions.hpp>
+#include "kokkosUtil.h"
 
 #include <cstdio>
 
@@ -242,14 +242,14 @@ void PoissonSolver::initBackend()
   Kokkos::parallel_for(std::max(binCntX_, binCntY_), KOKKOS_LAMBDA (const int tID) {
     if (tID <= M / 2) {
       int hID = tID;
-      Kokkos::complex<float> W_h_4M = Kokkos::complex<float>(Kokkos::cosf((float) FFT_PI * hID / (2 * M)),
-                                        -Kokkos::sinf((float) FFT_PI * hID / (M * 2)));
+      Kokkos::complex<float> W_h_4M = Kokkos::complex<float>(consistentCosf((float) FFT_PI * hID / (2 * M)),
+                                        -consistentSinf((float) FFT_PI * hID / (M * 2)));
       expkM[hID] = W_h_4M;
     }
     if (tID <= N / 2) {
       int wid = tID;
-      Kokkos::complex<float> W_w_4N = Kokkos::complex<float>(Kokkos::cosf((float) FFT_PI * wid / (2 * N)),
-                                        -Kokkos::sinf((float) FFT_PI * wid / (N * 2)));
+      Kokkos::complex<float> W_w_4N = Kokkos::complex<float>(consistentCosf((float) FFT_PI * wid / (2 * N)),
+                                        -consistentSinf((float) FFT_PI * wid / (N * 2)));
       expkN[wid] = W_w_4N;
     }
   });
@@ -259,30 +259,30 @@ void PoissonSolver::initBackend()
   Kokkos::parallel_for(std::max(binCntX_, binCntY_), KOKKOS_LAMBDA (const int tid) {
       if (tid < M) {
       int hid = tid;
-      Kokkos::complex<float> W_h_4M = Kokkos::complex<float>(Kokkos::cosf((float) FFT_PI * hid / (2 * M)),
-                                        -Kokkos::sinf((float) FFT_PI * hid / (M * 2)));
+      Kokkos::complex<float> W_h_4M = Kokkos::complex<float>(consistentCosf((float) FFT_PI * hid / (2 * M)),
+                                        -consistentSinf((float) FFT_PI * hid / (M * 2)));
       expkMForInverse[hid] = W_h_4M;
       // expkMN_1
       Kokkos::complex<float> W_h_4M_offset
-          = Kokkos::complex<float>(Kokkos::cosf((float) FFT_PI * (hid + M) / (2 * M)),
-                        -Kokkos::sinf((float) FFT_PI * (hid + M) / (M * 2)));
+          = Kokkos::complex<float>(consistentCosf((float) FFT_PI * (hid + M) / (2 * M)),
+                        -consistentSinf((float) FFT_PI * (hid + M) / (M * 2)));
       expkMN_1[hid] = W_h_4M;
       expkMN_1[hid + M] = W_h_4M_offset;
 
       // expkMN_2
-      W_h_4M = Kokkos::complex<float>(-Kokkos::sinf((float) FFT_PI * (hid - (N - 1)) / (M * 2)),
-                           -Kokkos::cosf((float) FFT_PI * (hid - (N - 1)) / (2 * M)));
+      W_h_4M = Kokkos::complex<float>(-consistentSinf((float) FFT_PI * (hid - (N - 1)) / (M * 2)),
+                           -consistentCosf((float) FFT_PI * (hid - (N - 1)) / (2 * M)));
 
       W_h_4M_offset
-          = Kokkos::complex<float>(-Kokkos::sinf((float) FFT_PI * (hid - (N - 1) + M) / (M * 2)),
-                        -Kokkos::cosf((float) FFT_PI * (hid - (N - 1) + M) / (2 * M)));
+          = Kokkos::complex<float>(-consistentSinf((float) FFT_PI * (hid - (N - 1) + M) / (M * 2)),
+                        -consistentCosf((float) FFT_PI * (hid - (N - 1) + M) / (2 * M)));
       expkMN_2[hid] = W_h_4M;
       expkMN_2[hid + M] = W_h_4M_offset;
     }
     if (tid <= N / 2) {
       int wid = tid;
-      Kokkos::complex<float> W_w_4N = Kokkos::complex<float>(Kokkos::cosf((float) FFT_PI * wid / (2 * N)),
-                                        -Kokkos::sinf((float) FFT_PI * wid / (N * 2)));
+      Kokkos::complex<float> W_w_4N = Kokkos::complex<float>(consistentCosf((float) FFT_PI * wid / (2 * N)),
+                                        -consistentSinf((float) FFT_PI * wid / (N * 2)));
       expkNForInverse[wid] = W_w_4N;
     }
   });

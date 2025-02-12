@@ -368,12 +368,12 @@ void computeAPosNegKernel(const int numPins,
 {
   Kokkos::parallel_for(numPins, KOKKOS_LAMBDA (const int pinId) {
     const int netId = dPinNetId[pinId];
-    dPinAPosX[pinId] = expf(wlCoeffX * (dPinX[pinId] - dNetUx[netId]));
+    dPinAPosX[pinId] = consistentExpf(wlCoeffX * (dPinX[pinId] - dNetUx[netId]));
     dPinANegX[pinId]
-        = expf(-1.0 * wlCoeffX * (dPinX[pinId] - dNetLx[netId]));
-    dPinAPosY[pinId] = expf(wlCoeffY * (dPinY[pinId] - dNetUy[netId]));
+        = consistentExpf(-1.0 * wlCoeffX * (dPinX[pinId] - dNetLx[netId]));
+    dPinAPosY[pinId] = consistentExpf(wlCoeffY * (dPinY[pinId] - dNetUy[netId]));
     dPinANegY[pinId]
-        = expf(-1.0 * wlCoeffY * (dPinY[pinId] - dNetLy[netId]));
+        = consistentExpf(-1.0 * wlCoeffY * (dPinY[pinId] - dNetLy[netId]));
 
   });
   Kokkos::parallel_for(numPins, KOKKOS_LAMBDA (const int pinId){
