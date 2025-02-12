@@ -78,7 +78,7 @@ void RecoverPower::init()
   db_network_ = resizer_->db_network_;
 }
 
-bool RecoverPower::recoverPower(const float recover_power_percent)
+bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
 {
   bool recovered = false;
   init();
@@ -118,6 +118,16 @@ bool RecoverPower::recoverPower(const float recover_power_percent)
   Vertex* worst_vertex;
   sta_->worstSlack(max_, worst_slack_before, worst_vertex);
 
+  if (max_end_count > 5 * max_print_interval_) {
+    print_interval_ = max_print_interval_;
+  } else {
+    print_interval_ = min_print_interval_;
+  }
+
+  if (verbose) {
+    printProgress(0, false, false);
+  }
+
   int end_index = 0;
   int failed_move_threshold = 0;
   for (Vertex* end : ends_with_slack) {
@@ -131,9 +141,13 @@ bool RecoverPower::recoverPower(const float recover_power_percent)
                RSZ,
                "recover_power",
                2,
-               "Doing {} /{}",
+               "Doing {} / {}",
                end_index,
                max_end_count);
+    if (verbose) {
+      printProgress(end_index, false, false);
+    }
+
     if (end_index > max_end_count) {
       resizer_->journalEnd();
       break;
@@ -217,6 +231,11 @@ bool RecoverPower::recoverPower(const float recover_power_percent)
       }
     }
   }
+
+  if (verbose) {
+    printProgress(end_index, true, true);
+  }
+
   bad_vertices_.clear();
 
   // TODO: Add the appropriate metric here
@@ -466,6 +485,38 @@ int RecoverPower::fanout(Vertex* vertex)
     fanout++;
   }
   return fanout;
+}
+
+void RecoverPower::printProgress(int iteration, bool force, bool end) const
+{
+  const bool start = iteration == 0;
+
+  if (start && !end) {
+    logger_->report("Iteration |  Resized |   WNS    | Endpt");
+    logger_->report("---------------------------------------");
+  }
+
+  if (iteration % print_interval_ == 0 || force || end) {
+    Slack wns;
+    Vertex* worst_vertex;
+    sta_->worstSlack(max_, wns, worst_vertex);
+
+    std::string itr_field = fmt::format("{}", iteration);
+    if (end) {
+      itr_field = "final";
+    }
+
+    logger_->report(
+        "{: >9s} | {: >8d} | {: >8s} | {}",
+        itr_field,
+        resize_count_,
+        delayAsString(wns, sta_, 3),
+        worst_vertex != nullptr ? worst_vertex->name(network_) : "");
+  }
+
+  if (end) {
+    logger_->report("---------------------------------------");
+  }
 }
 
 }  // namespace rsz

@@ -3289,7 +3289,8 @@ int Resizer::holdBufferCount() const
 
 ////////////////////////////////////////////////////////////////
 bool Resizer::recoverPower(float recover_power_percent,
-                           bool match_cell_footprint)
+                           bool match_cell_footprint,
+                           bool verbose)
 {
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
@@ -3298,7 +3299,7 @@ bool Resizer::recoverPower(float recover_power_percent,
       || parasitics_src_ == ParasiticsSrc::detailed_routing) {
     opendp_->initMacrosAndGrid();
   }
-  return recover_power_->recoverPower(recover_power_percent);
+  return recover_power_->recoverPower(recover_power_percent, verbose);
 }
 ////////////////////////////////////////////////////////////////
 // Journal to roll back changes
