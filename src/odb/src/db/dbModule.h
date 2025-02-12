@@ -67,6 +67,7 @@ class _dbModule : public _dbObject
   bool operator<(const _dbModule& rhs) const;
   void differences(dbDiff& diff, const char* field, const _dbModule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
 
   // This is only used when destroying an inst

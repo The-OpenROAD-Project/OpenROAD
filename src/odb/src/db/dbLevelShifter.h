@@ -59,6 +59,7 @@ class _dbLevelShifter : public _dbObject
                    const char* field,
                    const _dbLevelShifter& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   char* _name;
   dbId<_dbLevelShifter> _next_entry;

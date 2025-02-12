@@ -126,6 +126,20 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSText& obj)
   return stream;
 }
 
+void _dbGDSText::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["propattr"].add(_propattr);
+  for (auto& [i, s] : _propattr) {
+    info.children_["propattr"].add(s);
+  }
+  info.children_["text"].add(_text);
+  // User Code End collectMemInfo
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbGDSText - Methods

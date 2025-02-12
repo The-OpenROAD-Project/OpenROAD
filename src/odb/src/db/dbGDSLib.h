@@ -66,6 +66,7 @@ class _dbGDSLib : public _dbObject
   void differences(dbDiff& diff, const char* field, const _dbGDSLib& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
 
   _dbGDSStructure* findStructure(const char* name);
 };

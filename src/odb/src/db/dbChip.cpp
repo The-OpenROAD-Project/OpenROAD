@@ -211,4 +211,14 @@ void dbChip::destroy(dbChip* chip_)
   db->_chip = 0;
 }
 
+void _dbChip::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  _block_tbl->collectMemInfo(info.children_["block"]);
+  _prop_tbl->collectMemInfo(info.children_["prop"]);
+  _name_cache->collectMemInfo(info.children_["name_cache"]);
+}
+
 }  // namespace odb

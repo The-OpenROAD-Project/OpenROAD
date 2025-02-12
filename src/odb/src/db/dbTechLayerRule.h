@@ -97,6 +97,7 @@ class _dbTechLayerRule : public _dbObject
                    const char* field,
                    const _dbTechLayerRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerRule& rule);

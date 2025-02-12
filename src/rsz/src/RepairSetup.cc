@@ -85,6 +85,7 @@ void RepairSetup::init()
   logger_ = resizer_->logger_;
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
+  initial_design_area_ = resizer_->computeDesignArea();
 }
 
 bool RepairSetup::repairSetup(const float setup_slack_margin,
@@ -1809,13 +1810,13 @@ void RepairSetup::printProgress(const int iteration,
   if (start && !end) {
     logger_->report(
         "   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |"
-        "    WNS   |   TNS      |  Viol  | Worst");
+        "   Area   |    WNS   |   TNS      |  Viol  | Worst");
     logger_->report(
         "          | Buffers |  Gates  | Buffers  |  Gates | Swaps |"
-        "          |            | Endpts | Endpt");
+        "          |          |            | Endpts | Endpt");
     logger_->report(
         "-----------------------------------------------------------"
-        "----------------------------------------");
+        "---------------------------------------------------");
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
@@ -1830,15 +1831,19 @@ void RepairSetup::printProgress(const int iteration,
       itr_field = "final";
     }
 
+    const double design_area = resizer_->computeDesignArea();
+    const double area_growth = design_area - initial_design_area_;
+
     logger_->report(
-        "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} | {: >8s} "
-        "| {: >10s} | {: >6d} | {}",
+        "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} "
+        "| {: >+7.1f}% | {: >8s} | {: >10s} | {: >6d} | {}",
         itr_field,
         removed_buffer_count_,
         resize_count_,
         inserted_buffer_count_ + split_load_buffer_count_ + rebuffer_net_count_,
         cloned_gate_count_,
         swap_pin_count_,
+        area_growth / initial_design_area_ * 1e3,
         delayAsString(wns, sta_, 3),
         delayAsString(tns, sta_, 1),
         max(0, num_viols),
@@ -1848,7 +1853,7 @@ void RepairSetup::printProgress(const int iteration,
   if (end) {
     logger_->report(
         "-----------------------------------------------------------"
-        "----------------------------------------");
+        "---------------------------------------------------");
   }
 }
 
