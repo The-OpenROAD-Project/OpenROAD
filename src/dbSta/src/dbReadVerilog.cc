@@ -140,20 +140,10 @@ Cell* dbVerilogNetwork::findAnyCell(const char* name)
   return cell;
 }
 
-void dbReadVerilog(const char* filename,
-                   dbVerilogNetwork* verilog_network,
-                   sta::VerilogReader* verilog_reader)
-{
-  if (verilog_reader == nullptr) {
-    verilog_reader = new sta::VerilogReader(verilog_network);
-  }
-  verilog_reader->read(filename);
-}
-
 // Cell is a black box if all the ports have unknown port directions
 bool dbVerilogNetwork::isBlackBox(ConcreteCell* cell)
 {
-  ConcreteCellPortIterator* port_iter = cell->portIterator();
+  std::unique_ptr<ConcreteCellPortIterator> port_iter{cell->portIterator()};
   while (port_iter->hasNext()) {
     ConcretePort* port = port_iter->next();
     if (port->direction() != PortDirection::unknown()) {
@@ -162,8 +152,6 @@ bool dbVerilogNetwork::isBlackBox(ConcreteCell* cell)
   }
   return true;
 }
-
-////////////////////////////////////////////////////////////////
 
 class Verilog2db
 {
@@ -232,9 +220,8 @@ class Verilog2db
 // Example: "./designs/src/gcd/gcd.v:571.3-577.6"
 const std::regex Verilog2db::line_info_re("^(.*):(\\d+)\\.\\d+-\\d+\\.\\d+$");
 
-void dbLinkDesign(const char* top_cell_name,
+bool dbLinkDesign(const char* top_cell_name,
                   dbVerilogNetwork* verilog_network,
-                  sta::VerilogReader* verilog_reader,
                   dbDatabase* db,
                   Logger* logger,
                   bool hierarchy)
@@ -251,8 +238,9 @@ void dbLinkDesign(const char* top_cell_name,
     // Link unused modules in case if we want to swap to such modules later
     v2db.processUnusedCells(
         top_cell_name, verilog_network, link_make_black_boxes);
-    delete verilog_reader;
   }
+
+  return success;
 }
 
 Verilog2db::Verilog2db(Network* network,
@@ -1022,11 +1010,13 @@ void Verilog2db::processUnusedCells(const char* top_cell_name,
                                     bool link_make_black_boxes)
 {
   // Collect all unused modules
-  sta::LibraryIterator* libraryIterator = network_->libraryIterator();
+  std::unique_ptr<sta::LibraryIterator> libraryIterator{
+      network_->libraryIterator()};
   while (libraryIterator->hasNext()) {
     sta::ConcreteLibrary* lib
         = (sta::ConcreteLibrary*) (libraryIterator->next());
-    sta::ConcreteLibraryCellIterator* lib_cell_iter = lib->cellIterator();
+    std::unique_ptr<sta::ConcreteLibraryCellIterator> lib_cell_iter{
+        lib->cellIterator()};
     while (lib_cell_iter->hasNext()) {
       sta::ConcreteCell* curr_cell = lib_cell_iter->next();
       if (!block_->findModule(curr_cell->name())

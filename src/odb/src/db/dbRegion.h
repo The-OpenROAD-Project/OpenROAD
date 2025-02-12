@@ -75,6 +75,7 @@ class _dbRegion : public _dbObject
 
   void differences(dbDiff& diff, const char* field, const _dbRegion& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbRegion& r);

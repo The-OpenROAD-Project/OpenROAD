@@ -18,18 +18,6 @@ add_executable(TestSnapper TestSnapper.cpp)
 target_link_libraries(TestSnapper ${TEST_LIBS})
 gtest_discover_tests(TestSnapper WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(mpl_test mpl_test.cc)
-target_link_libraries(mpl_test
-    GTest::gtest
-    GTest::gtest_main
-    mpl_lib
-)
-gtest_discover_tests(mpl_test
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
-)
-
 add_dependencies(build_and_test
-    mpl_test
-    TestSnapper
+  TestSnapper
 )
-

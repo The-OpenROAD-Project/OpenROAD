@@ -70,6 +70,7 @@ class _dbCellEdgeSpacing : public _dbObject
                    const char* field,
                    const _dbCellEdgeSpacing& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbCellEdgeSpacingFlags flags_;
   std::string first_edge_type_;

@@ -467,4 +467,10 @@ dbTechViaLayerRule* dbTechViaLayerRule::getTechViaLayerRule(dbTech* tech_,
   return (dbTechViaLayerRule*) tech->_via_layer_rule_tbl->getPtr(dbid_);
 }
 
+void _dbTechViaLayerRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 }  // namespace odb

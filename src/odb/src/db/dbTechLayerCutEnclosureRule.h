@@ -91,6 +91,7 @@ class _dbTechLayerCutEnclosureRule : public _dbObject
                    const char* field,
                    const _dbTechLayerCutEnclosureRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerCutEnclosureRuleFlags flags_;
   dbId<_dbTechLayerCutClassRule> cut_class_;

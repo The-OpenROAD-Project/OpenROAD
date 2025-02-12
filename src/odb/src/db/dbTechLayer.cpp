@@ -1104,6 +1104,82 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
   }
   return getTable()->getObjectTable(type);
 }
+void _dbTechLayer::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  cut_class_rules_tbl_->collectMemInfo(info.children_["cut_class_rules_tbl_"]);
+
+  spacing_eol_rules_tbl_->collectMemInfo(
+      info.children_["spacing_eol_rules_tbl_"]);
+
+  cut_spacing_rules_tbl_->collectMemInfo(
+      info.children_["cut_spacing_rules_tbl_"]);
+
+  minstep_rules_tbl_->collectMemInfo(info.children_["minstep_rules_tbl_"]);
+
+  corner_spacing_rules_tbl_->collectMemInfo(
+      info.children_["corner_spacing_rules_tbl_"]);
+
+  spacing_table_prl_rules_tbl_->collectMemInfo(
+      info.children_["spacing_table_prl_rules_tbl_"]);
+
+  cut_spacing_table_orth_tbl_->collectMemInfo(
+      info.children_["cut_spacing_table_orth_tbl_"]);
+
+  cut_spacing_table_def_tbl_->collectMemInfo(
+      info.children_["cut_spacing_table_def_tbl_"]);
+
+  cut_enc_rules_tbl_->collectMemInfo(info.children_["cut_enc_rules_tbl_"]);
+
+  eol_ext_rules_tbl_->collectMemInfo(info.children_["eol_ext_rules_tbl_"]);
+
+  array_spacing_rules_tbl_->collectMemInfo(
+      info.children_["array_spacing_rules_tbl_"]);
+
+  eol_keep_out_rules_tbl_->collectMemInfo(
+      info.children_["eol_keep_out_rules_tbl_"]);
+
+  max_spacing_rules_tbl_->collectMemInfo(
+      info.children_["max_spacing_rules_tbl_"]);
+
+  width_table_rules_tbl_->collectMemInfo(
+      info.children_["width_table_rules_tbl_"]);
+
+  min_cuts_rules_tbl_->collectMemInfo(info.children_["min_cuts_rules_tbl_"]);
+
+  area_rules_tbl_->collectMemInfo(info.children_["area_rules_tbl_"]);
+
+  forbidden_spacing_rules_tbl_->collectMemInfo(
+      info.children_["forbidden_spacing_rules_tbl_"]);
+
+  keepout_zone_rules_tbl_->collectMemInfo(
+      info.children_["keepout_zone_rules_tbl_"]);
+
+  wrongdir_spacing_rules_tbl_->collectMemInfo(
+      info.children_["wrongdir_spacing_rules_tbl_"]);
+
+  two_wires_forbidden_spc_rules_tbl_->collectMemInfo(
+      info.children_["two_wires_forbidden_spc_rules_tbl_"]);
+
+  // User Code Begin collectMemInfo
+  info.children_["orth_spacing"].add(orth_spacing_tbl_);
+  info.children_["cut_class_rules_hash"].add(cut_class_rules_hash_);
+  info.children_["name"].add(_name);
+  info.children_["alias"].add(_alias);
+  _spacing_rules_tbl->collectMemInfo(info.children_["spacing_rules_tbl"]);
+  _min_cut_rules_tbl->collectMemInfo(info.children_["min_cut_rules_tbl"]);
+  _min_enc_rules_tbl->collectMemInfo(info.children_["min_enc_rules_tbl"]);
+  _v55inf_tbl->collectMemInfo(info.children_["v55inf_tbl"]);
+  info.children_["v55sp_length_idx"].add(_v55sp_length_idx);
+  info.children_["v55sp_width_idx"].add(_v55sp_width_idx);
+  info.children_["v55sp_spacing"].add(_v55sp_spacing);
+  info.children_["two_widths_sp_idx"].add(_two_widths_sp_idx);
+  info.children_["two_widths_sp_prl"].add(_two_widths_sp_prl);
+  info.children_["two_widths_sp_spacing"].add(_two_widths_sp_spacing);
+  // User Code End collectMemInfo
+}
 
 _dbTechLayer::~_dbTechLayer()
 {

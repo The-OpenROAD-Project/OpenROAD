@@ -171,6 +171,7 @@ class dbTable : public dbObjectTable, public dbIterator
   dbObject* getObject(uint id, ...) override;
   bool validObject(uint id, ...) override { return validId(id); }
   void getObjects(std::vector<T*>& objects);
+  void collectMemInfo(MemInfo& info);
 
  private:
   void copy_pages(const dbTable<T>&);

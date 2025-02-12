@@ -315,6 +315,27 @@ dbOStream& operator<<(dbOStream& stream,
   return stream;
 }
 
+void _dbTechLayerCutSpacingTableDefRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["prl_for_aligned_cut_tbl_"].add(prl_for_aligned_cut_tbl_);
+  info.children_["center_to_center_tbl_"].add(center_to_center_tbl_);
+  info.children_["center_and_edge_tbl_"].add(center_and_edge_tbl_);
+  info.children_["prl_tbl_"].add(prl_tbl_);
+  info.children_["end_extension_tbl_"].add(end_extension_tbl_);
+  info.children_["side_extension_tbl_"].add(side_extension_tbl_);
+  info.children_["exact_aligned_spacing_tbl_"].add(exact_aligned_spacing_tbl_);
+  info.children_["non_opp_enc_spacing_tbl_"].add(non_opp_enc_spacing_tbl_);
+  info.children_["opp_enc_spacing_tbl_"].add(opp_enc_spacing_tbl_);
+  info.children_["spacing_tbl_"].add(spacing_tbl_);
+  info.children_["row_map_"].add(row_map_);
+  info.children_["col_map_"].add(col_map_);
+  // User Code End collectMemInfo
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerCutSpacingTableDefRule - Methods

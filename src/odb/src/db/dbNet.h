@@ -140,6 +140,7 @@ class _dbNet : public _dbObject
   bool operator<(const _dbNet& rhs) const;
   void differences(dbDiff& diff, const char* field, const _dbNet& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
   dbObjectTable* getObjectTable(dbObjectType type);
 };
 

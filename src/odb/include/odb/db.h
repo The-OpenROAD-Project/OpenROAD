@@ -479,6 +479,12 @@ class dbDatabase : public dbObject
   void clear();
 
   ///
+  /// Generates a report of memory usage.
+  ///   Not perfectly byte accurate.  Intended for developers.
+  ///
+  void report();
+
+  ///
   /// Create an instance of a database
   ///
   static dbDatabase* create();
@@ -2868,6 +2874,11 @@ class dbNet : public dbObject
   /// Translate a valid database-id back to a pointer.
   ///
   static dbNet* getValidNet(dbBlock* block, uint oid);
+
+  ///
+  /// True if can merge the iterms and bterms of the in_net with this net
+  ///
+  bool canMergeNet(dbNet* in_net);
 
   ///
   /// Merge the iterms and bterms of the in_net with this net

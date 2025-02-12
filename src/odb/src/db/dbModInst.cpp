@@ -193,6 +193,17 @@ dbOStream& operator<<(dbOStream& stream, const _dbModInst& obj)
   return stream;
 }
 
+void _dbModInst::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  info.children_["moditerm_hash"].add(_moditerm_hash);
+  // User Code End collectMemInfo
+}
+
 _dbModInst::~_dbModInst()
 {
   if (_name) {

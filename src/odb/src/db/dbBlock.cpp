@@ -665,6 +665,7 @@ _dbBlock::~_dbBlock()
   delete _modbterm_tbl;
   delete _moditerm_tbl;
   delete _modnet_tbl;
+  delete _busport_tbl;
   delete _powerdomain_tbl;
   delete _logicport_tbl;
   delete _powerswitch_tbl;
@@ -4482,6 +4483,85 @@ void dbBlock::debugPrintContent(std::ostream& str_db)
       }
     }
   }
+}
+
+void _dbBlock::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["corner_name"].add(_corner_name_list);
+  info.children_["blocked_regions_for_pins"].add(_blocked_regions_for_pins);
+
+  info.children_["net_hash"].add(_net_hash);
+  info.children_["inst_hash"].add(_inst_hash);
+  info.children_["module_hash"].add(_module_hash);
+  info.children_["modinst_hash"].add(_modinst_hash);
+  info.children_["powerdomain_hash"].add(_powerdomain_hash);
+  info.children_["logicport_hash"].add(_logicport_hash);
+  info.children_["powerswitch_hash"].add(_powerswitch_hash);
+  info.children_["isolation_hash"].add(_isolation_hash);
+  info.children_["marker_category_hash"].add(_marker_category_hash);
+  info.children_["levelshifter_hash"].add(_levelshifter_hash);
+  info.children_["group_hash"].add(_group_hash);
+  info.children_["inst_hdr_hash"].add(_inst_hdr_hash);
+  info.children_["bterm_hash"].add(_bterm_hash);
+
+  info.children_["children"].add(_children);
+  info.children_["component_mask_shift"].add(_component_mask_shift);
+
+  _bterm_tbl->collectMemInfo(info.children_["bterm"]);
+  _iterm_tbl->collectMemInfo(info.children_["iterm"]);
+  _net_tbl->collectMemInfo(info.children_["net"]);
+  _inst_hdr_tbl->collectMemInfo(info.children_["inst_hdr"]);
+  _inst_tbl->collectMemInfo(info.children_["inst"]);
+  _box_tbl->collectMemInfo(info.children_["box"]);
+  _via_tbl->collectMemInfo(info.children_["via"]);
+  _gcell_grid_tbl->collectMemInfo(info.children_["gcell_grid"]);
+  _track_grid_tbl->collectMemInfo(info.children_["track_grid"]);
+  _obstruction_tbl->collectMemInfo(info.children_["obstruction"]);
+  _blockage_tbl->collectMemInfo(info.children_["blockage"]);
+  _wire_tbl->collectMemInfo(info.children_["wire"]);
+  _swire_tbl->collectMemInfo(info.children_["swire"]);
+  _sbox_tbl->collectMemInfo(info.children_["sbox"]);
+  _row_tbl->collectMemInfo(info.children_["row"]);
+  _fill_tbl->collectMemInfo(info.children_["fill"]);
+  _region_tbl->collectMemInfo(info.children_["region"]);
+  _hier_tbl->collectMemInfo(info.children_["hier"]);
+  _bpin_tbl->collectMemInfo(info.children_["bpin"]);
+  _non_default_rule_tbl->collectMemInfo(info.children_["non_default_rule"]);
+  _layer_rule_tbl->collectMemInfo(info.children_["layer_rule"]);
+  _prop_tbl->collectMemInfo(info.children_["prop"]);
+  _module_tbl->collectMemInfo(info.children_["module"]);
+  _powerdomain_tbl->collectMemInfo(info.children_["powerdomain"]);
+  _logicport_tbl->collectMemInfo(info.children_["logicport"]);
+  _powerswitch_tbl->collectMemInfo(info.children_["powerswitch"]);
+  _isolation_tbl->collectMemInfo(info.children_["isolation"]);
+  _levelshifter_tbl->collectMemInfo(info.children_["levelshifter"]);
+  _modinst_tbl->collectMemInfo(info.children_["modinst"]);
+  _group_tbl->collectMemInfo(info.children_["group"]);
+  ap_tbl_->collectMemInfo(info.children_["ap"]);
+  global_connect_tbl_->collectMemInfo(info.children_["global_connect"]);
+  _guide_tbl->collectMemInfo(info.children_["guide"]);
+  _net_tracks_tbl->collectMemInfo(info.children_["net_tracks"]);
+  _dft_tbl->collectMemInfo(info.children_["dft"]);
+  _marker_categories_tbl->collectMemInfo(info.children_["marker_categories"]);
+  _modbterm_tbl->collectMemInfo(info.children_["modbterm"]);
+  _moditerm_tbl->collectMemInfo(info.children_["moditerm"]);
+  _modnet_tbl->collectMemInfo(info.children_["modnet"]);
+  _busport_tbl->collectMemInfo(info.children_["busport"]);
+  _cap_node_tbl->collectMemInfo(info.children_["cap_node"]);
+  _r_seg_tbl->collectMemInfo(info.children_["r_seg"]);
+  _cc_seg_tbl->collectMemInfo(info.children_["cc_seg"]);
+
+  _name_cache->collectMemInfo(info.children_["name_cache"]);
+  info.children_["r_val"].add(*_r_val_tbl);
+  info.children_["c_val"].add(*_c_val_tbl);
+  info.children_["cc_val"].add(*_cc_val_tbl);
+
+  info.children_["module_name_id_map"].add(_module_name_id_map);
+  info.children_["inst_name_id_map"].add(_inst_name_id_map);
 }
 
 }  // namespace odb
