@@ -1007,7 +1007,8 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   nbVars_ = nbVars;
   pbc_ = std::move(pbc);
   log_ = log;
-  deltaArea_ = 0;
+  delta_area_ = 0;
+  new_gcells_count_ = 0;
 
   // gCellStor init
   gCellStor_.reserve(pbc_->placeInsts().size());
@@ -1035,13 +1036,13 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   }
 
   // gCell ptr init
-  gCells_.reserve(gCellStor_.size());
+  nbc_gCells_.reserve(gCellStor_.size());
   for (size_t i = 0; i < gCellStor_.size(); ++i) {
     GCell& gCell = gCellStor_[i];
     if (!gCell.isInstance()) {
       continue;
     }
-    gCells_.push_back(&gCell);
+    nbc_gCells_.push_back(&gCell);
     gCellMap_[gCell.instance()] = &gCell;
     db_inst_map_[gCell.instance()->dbInst()] = i;
   }
@@ -1369,7 +1370,7 @@ void NesterovBaseCommon::updateDbGCells()
   }
   assert(omp_get_thread_num() == 0);
 #pragma omp parallel for num_threads(num_threads_)
-  for (auto it = gCells().begin(); it < gCells().end(); ++it) {
+  for (auto it = getNbcGCells().begin(); it < getNbcGCells().end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
     if (gCell->isInstance()) {
       odb::dbInst* inst = gCell->instance()->dbInst();
@@ -1415,16 +1416,16 @@ GCell* NesterovBaseCommon::getGCellByIndex(size_t i)
 //
 void NesterovBaseCommon::fixPointers()
 {
-  gCells_.clear();
+  nbc_gCells_.clear();
   gCellMap_.clear();
   db_inst_map_.clear();
-  gCells_.reserve(gCellStor_.size());
+  nbc_gCells_.reserve(gCellStor_.size());
   for (size_t i = 0; i < gCellStor_.size(); ++i) {
     GCell& gCell = gCellStor_[i];
     if (!gCell.isInstance()) {
       continue;
     }
-    gCells_.push_back(&gCell);
+    nbc_gCells_.push_back(&gCell);
     gCellMap_[gCell.instance()] = &gCell;
     db_inst_map_[gCell.instance()->dbInst()] = i;
   }
@@ -2731,7 +2732,7 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
   int64_t newCellArea
       = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
   int64_t areaChange = newCellArea - prevCellArea;
-  deltaArea_ += areaChange;
+  delta_area_ += areaChange;
 }
 
 void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
@@ -2872,7 +2873,8 @@ size_t NesterovBaseCommon::createGCell(odb::dbInst* db_inst)
 
   int64_t areaChange = static_cast<int64_t>(gcell_ptr->dx())
                        * static_cast<int64_t>(gcell_ptr->dy());
-  deltaArea_ += areaChange;
+  delta_area_ += areaChange;
+  new_gcells_count_++;
   return gCellStor_.size() - 1;
 }
 

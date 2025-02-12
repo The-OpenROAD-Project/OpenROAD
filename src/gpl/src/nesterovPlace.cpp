@@ -472,7 +472,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
 
       auto block = pbc_->db()->getChip()->getBlock();
-      bool shouldTdProceed = tb_->updateGNetWeights(virtual_td_iter);
+      uint total_gcells_before_td = nbc_->getNbcGCells().size();
+      bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
 
       if (!virtual_td_iter) {
         for (auto& nesterov : nbVec_) {
@@ -501,11 +502,25 @@ int NesterovPlace::doNesterovPlace(int start_iter)
               "Timing-driven: repair_design delta area: {:.3f} um^2 ({:+.2f}%)",
               rsz_delta_area_microns,
               rsz_delta_area_percentage);
+          
+          float new_gcells_percentage = (nbc_->getNewGcellsCount() / static_cast<float>(total_gcells_before_td)) * 100.0f;
+          log_->info(
+              GPL,
+              108,
+              "Timing-driven: repair_design gpl GCells created: {} ({:+.2f}%)",
+              nbc_->getNewGcellsCount(),
+              new_gcells_percentage);
+
+          log_->info(
+                GPL,
+                109,
+                "Timing-driven: inserted buffers as reported by repair_design: {}", tb_->repairDesignBufferCount());
           log_->info(GPL,
-                     108,
+                     110,
                      "Timing-driven: new target density: {}",
                      nesterov->targetDensity());
           nbc_->resetDeltaArea();
+          nbc_->resetNewGcellsCount();
           nesterov->updateAreas();
           nesterov->updateDensitySize();
         }
