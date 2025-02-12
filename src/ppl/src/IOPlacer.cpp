@@ -1865,6 +1865,64 @@ void IOPlacer::addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2)
              bterm1->getName(),
              bterm2->getName());
   mirrored_pins_[bterm1] = bterm2;
+
+  auto constraint_region1 = bterm1->getConstraintRegion();
+  auto constraint_region2 = bterm2->getConstraintRegion();
+  if (constraint_region1 && constraint_region2 == std::nullopt) {
+    applyMirroredConstraint(bterm1, bterm2);
+  } else if (constraint_region2 && constraint_region1 == std::nullopt) {
+    applyMirroredConstraint(bterm2, bterm1);
+  }
+}
+
+void IOPlacer::applyMirroredConstraint(odb::dbBTerm* bterm1,
+                                       odb::dbBTerm* bterm2)
+{
+  auto constraint_region = bterm1->getConstraintRegion();
+  const odb::Rect& region = constraint_region.value();
+
+  Edge edge = getRegionEdge(region);
+  if (edge == Edge::invalid) {
+    logger_->error(
+        utl::PPL, 10, "Attempt to mirror pins assigned to the top layer grid.");
+  }
+
+  Interval interval;
+  if (edge == Edge::bottom || edge == Edge::top) {
+    interval = Interval(edge, region.xMin(), region.xMax());
+  } else {
+    interval = Interval(edge, region.yMin(), region.yMax());
+  }
+
+  Edge mirrored_edge = getMirroredEdge(interval.getEdge());
+  Rect mirrored_constraint_region;
+  Interval mirrored_interval(mirrored_edge,
+                             interval.getBegin(),
+                             interval.getEnd(),
+                             interval.getLayer());
+
+  findConstraintRegion(mirrored_interval, region, mirrored_constraint_region);
+  bterm2->setConstraintRegion(mirrored_constraint_region);
+}
+
+Edge IOPlacer::getRegionEdge(const odb::Rect& region)
+{
+  Rect die_boundary = getBlock()->getDieArea();
+  if (region.xMin() == region.xMax()) {
+    if (region.xMin() == die_boundary.xMin()) {
+      return Edge::left;
+    } else {
+      return Edge::right;
+    }
+  } else if (region.yMin() == region.yMax()) {
+    if (region.yMin() == die_boundary.yMin()) {
+      return Edge::bottom;
+    } else {
+      return Edge::top;
+    }
+  }
+
+  return Edge::invalid;
 }
 
 void IOPlacer::addHorLayer(odb::dbTechLayer* layer)
