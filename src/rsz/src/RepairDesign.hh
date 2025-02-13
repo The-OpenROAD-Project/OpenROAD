@@ -94,7 +94,7 @@ class RepairDesign : dbStaState
                     double slew_margin,
                     double cap_margin,
                     double buffer_gain,
-                    bool verbose,
+                    int verbose,
                     int& repaired_net_count,
                     int& slew_violations,
                     int& cap_violations,

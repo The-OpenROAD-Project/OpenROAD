@@ -139,7 +139,7 @@ void RepairDesign::repairDesign(
     double slew_margin,
     double cap_margin,
     double buffer_gain,
-    bool verbose,
+    int verbose,
     int& repaired_net_count,
     int& slew_violations,
     int& cap_violations,
@@ -197,13 +197,13 @@ void RepairDesign::repairDesign(
   } else {
     print_interval_ = min_print_interval_;
   }
-  if (verbose) {
+  if (verbose >= 1) {
     printProgress(print_iteration, false, false, repaired_net_count);
   }
   int max_length = resizer_->metersToDbu(max_wire_length);
   for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
     print_iteration++;
-    if (verbose) {
+    if (verbose >= 2 || verbose == 1 && (print_iteration == 1)) {
       printProgress(print_iteration, false, false, repaired_net_count);
     }
     Vertex* drvr = resizer_->level_drvr_vertices_[i];
@@ -255,7 +255,7 @@ void RepairDesign::repairDesign(
     }
   }
   resizer_->updateParasitics();
-  if (verbose) {
+  if (verbose >= 1) {
     printProgress(print_iteration, true, true, repaired_net_count);
   }
   resizer_->incrementalParasiticsEnd();
