@@ -53,7 +53,6 @@ NesterovPlace::NesterovPlace()
       log_(nullptr),
       rb_(nullptr),
       tb_(nullptr),
-      npVars_(),
       baseWireLengthCoef_(0),
       wireLengthCoefX_(0),
       wireLengthCoefY_(0),

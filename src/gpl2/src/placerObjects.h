@@ -103,7 +103,7 @@ class Instance
   void dbSetLocation();
   // Some partical blocked sited need to be fully blocked
   void snapOutward(const odb::Point& origin, int step_x, int step_y);
-  void dbSetPlacementStatus(odb::dbPlacementStatus ps);
+  void dbSetPlacementStatus(const odb::dbPlacementStatus& ps);
 
   float wireLengthPreconditioner() const { return numPins(); }
   float densityPreconditioner() const
