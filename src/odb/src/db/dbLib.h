@@ -83,6 +83,7 @@ class _dbLib : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
   _dbTech* getTech();
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbLib& lib);

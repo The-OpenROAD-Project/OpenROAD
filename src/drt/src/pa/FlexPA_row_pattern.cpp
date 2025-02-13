@@ -35,7 +35,6 @@
 #include <sstream>
 
 #include "FlexPA.h"
-#include "FlexPA_graphics.h"
 #include "db/infra/frTime.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/frArchive.h"

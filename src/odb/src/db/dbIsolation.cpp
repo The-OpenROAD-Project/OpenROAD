@@ -157,6 +157,22 @@ dbOStream& operator<<(dbOStream& stream, const _dbIsolation& obj)
   return stream;
 }
 
+void _dbIsolation::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  info.children_["applies_to"].add(_applies_to);
+  info.children_["clamp_value"].add(_clamp_value);
+  info.children_["isolation_signal"].add(_isolation_signal);
+  info.children_["isolation_sense"].add(_isolation_sense);
+  info.children_["location"].add(_location);
+  info.children_["isolation_cells"].add(_isolation_cells);
+  // User Code End collectMemInfo
+}
+
 _dbIsolation::~_dbIsolation()
 {
   if (_name) {

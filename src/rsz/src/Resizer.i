@@ -521,9 +521,12 @@ repair_setup(double setup_margin,
              double repair_tns_end_percent,
              int max_passes,
              int max_repairs_per_pass,
-             bool match_cell_footprint, bool verbose,
-             bool skip_pin_swap, bool skip_gate_cloning,
-             bool skip_buffering, bool skip_buffer_removal,
+             bool match_cell_footprint,
+             bool verbose,
+             bool skip_pin_swap,
+             bool skip_gate_cloning,
+             bool skip_buffering,
+             bool skip_buffer_removal,
              bool skip_last_gasp)
 {
   ensureLinked();
@@ -593,11 +596,11 @@ hold_buffer_count()
 
 ////////////////////////////////////////////////////////////////
 bool
-recover_power(float recover_power_percent, bool match_cell_footprint)
+recover_power(float recover_power_percent, bool match_cell_footprint, bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->recoverPower(recover_power_percent, match_cell_footprint);
+  return resizer->recoverPower(recover_power_percent, match_cell_footprint, verbose);
 }
 
 ////////////////////////////////////////////////////////////////

@@ -45,6 +45,18 @@ namespace odb {
 template class dbTable<_dbTechMinCutRule>;
 template class dbTable<_dbTechMinEncRule>;
 
+void _dbTechMinCutRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
+void _dbTechMinEncRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 bool _dbTechMinCutRule::operator==(const _dbTechMinCutRule& rhs) const
 {
   if (_flags._rule != rhs._flags._rule) {

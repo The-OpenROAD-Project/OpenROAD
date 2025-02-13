@@ -822,4 +822,12 @@ std::vector<std::pair<dbTechLayer*, Rect>> dbITerm::getGeometries() const
   return geometries;
 }
 
+void _dbITerm::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["aps"].add(aps_);
+}
+
 }  // namespace odb

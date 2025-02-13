@@ -50,92 +50,118 @@ find_package(Boost REQUIRED COMPONENTS serialization)
 find_package(OpenMP REQUIRED)
 find_package(VTune)
 
+set(FLEXROUTE_HOME ${PROJECT_SOURCE_DIR})
+
 swig_lib(NAME      drt
          NAMESPACE drt
          I_FILE    src/TritonRoute.i
          SCRIPTS   src/TritonRoute.tcl
 )
 
-set(FLEXROUTE_HOME ${PROJECT_SOURCE_DIR})
+add_library(drt_lib
+  src/gr/FlexGRCMap.cpp
+  src/gr/FlexGR.cpp
+  src/gr/FlexGR_end.cpp
+  src/gr/FlexGRGridGraph.cpp
+  src/gr/FlexGRGridGraph_maze.cpp
+  src/gr/FlexGR_init.cpp
+  src/gr/FlexGR_maze.cpp
+  src/gr/FlexGR_rq.cpp
+  src/gr/FlexGR_topo.cpp
+  src/dr/FlexDR_conn.cpp
+  src/dr/FlexDR_init.cpp
+  src/dr/FlexDR.cpp
+  src/db/drObj/drNet.cpp
+  src/dr/FlexDR_maze.cpp
+  src/dr/FlexGridGraph_maze.cpp
+  src/dr/FlexGridGraph.cpp
+  src/dr/FlexDR_rq.cpp
+  src/dr/FlexDR_end.cpp
+  src/ta/FlexTA_end.cpp
+  src/ta/FlexTA_init.cpp
+  src/ta/FlexTA_rq.cpp
+  src/ta/FlexTA_assign.cpp
+  src/ta/FlexTA.cpp
+  src/global.cpp
+  src/gc/FlexGC_end.cpp
+  src/gc/FlexGC_rq.cpp
+  src/gc/FlexGC.cpp
+  src/gc/FlexGC_init.cpp
+  src/gc/FlexGC_main.cpp
+  src/gc/FlexGC_eol.cpp
+  src/gc/FlexGC_inf.cpp
+  src/gc/FlexGC_cut.cpp
+  src/gc/FlexGC_metspc.cpp
+  src/db/drObj/drAccessPattern.cpp
+  src/db/drObj/drPin.cpp
+  src/db/drObj/drShape.cpp
+  src/db/drObj/drVia.cpp
+  src/db/infra/frTime_helper.cpp
+  src/db/infra/frTime.cpp
+  src/db/infra/KDTree.cpp
+  src/db/taObj/taShape.cpp
+  src/db/obj/frShape.cpp
+  src/db/obj/frInst.cpp
+  src/db/obj/frVia.cpp
+  src/db/obj/frAccess.cpp
+  src/db/obj/frRPin.cpp
+  src/db/obj/frNode.cpp
+  src/db/obj/frInstTerm.cpp
+  src/db/obj/frNet.cpp
+  src/db/tech/frConstraint.cc
+  src/db/obj/frMarker.cpp
+  src/db/tech/frLayer.cc
+  src/frRegionQuery.cpp
+  src/io/io_pin.cpp
+  src/io/io.cpp
+  src/io/GuideProcessor.cpp
+  src/io/io_parser_helper.cpp
+  src/pa/FlexPA_init.cpp
+  src/pa/FlexPA.cpp
+  src/pa/FlexPA_acc_point.cpp
+  src/pa/FlexPA_acc_pattern.cpp
+  src/pa/FlexPA_row_pattern.cpp
+  src/pa/FlexPA_unique.cpp
+  src/rp/FlexRP_init.cpp
+  src/rp/FlexRP.cpp
+  src/rp/FlexRP_prep.cpp
+  src/distributed/frArchive.cpp
+  src/distributed/drUpdate.cpp
+  src/distributed/paUpdate.cpp
+  src/TritonRoute.cpp
+  src/frBaseTypes.cpp
+  src/DesignCallBack.cpp
+)
+
+target_include_directories(drt_lib
+  PUBLIC
+    include
+
+  PRIVATE
+    src
+)
+
+target_link_libraries(drt_lib
+  PUBLIC
+    odb
+    stt
+    OpenSTA
+    utl_lib
+    dst
+    dbSta
+    Threads::Threads
+    OpenMP::OpenMP_CXX
+    ${Boost_LIBRARIES}
+    ZLIB::ZLIB
+)
 
 target_sources(drt
   PRIVATE
-    src/gr/FlexGRCMap.cpp
-    src/gr/FlexGR.cpp
-    src/gr/FlexGR_end.cpp
-    src/gr/FlexGRGridGraph.cpp
-    src/gr/FlexGRGridGraph_maze.cpp
-    src/gr/FlexGR_init.cpp
-    src/gr/FlexGR_maze.cpp
-    src/gr/FlexGR_rq.cpp
-    src/gr/FlexGR_topo.cpp
-    src/dr/FlexDR_conn.cpp
-    src/dr/FlexDR_init.cpp
-    src/dr/FlexDR.cpp
-    src/db/drObj/drNet.cpp
-    src/dr/FlexDR_maze.cpp
-    src/dr/FlexGridGraph_maze.cpp
-    src/dr/FlexGridGraph.cpp
-    src/dr/FlexDR_rq.cpp
-    src/dr/FlexDR_end.cpp
     src/dr/FlexDR_graphics.cpp
-    src/ta/FlexTA_end.cpp
-    src/ta/FlexTA_init.cpp
-    src/ta/FlexTA_rq.cpp
-    src/ta/FlexTA_assign.cpp
-    src/ta/FlexTA.cpp
     src/ta/FlexTA_graphics.cpp
-    src/global.cpp
-    src/gc/FlexGC_end.cpp
-    src/gc/FlexGC_rq.cpp
-    src/gc/FlexGC.cpp
-    src/gc/FlexGC_init.cpp
-    src/gc/FlexGC_main.cpp
-    src/gc/FlexGC_eol.cpp
-    src/gc/FlexGC_inf.cpp
-    src/gc/FlexGC_cut.cpp
-    src/gc/FlexGC_metspc.cpp
-    src/db/drObj/drAccessPattern.cpp
-    src/db/drObj/drPin.cpp
-    src/db/drObj/drShape.cpp
-    src/db/drObj/drVia.cpp
-    src/db/infra/frTime_helper.cpp
-    src/db/infra/frTime.cpp
-    src/db/infra/KDTree.cpp
-    src/db/taObj/taShape.cpp
-    src/db/obj/frShape.cpp
-    src/db/obj/frInst.cpp
-    src/db/obj/frVia.cpp
-    src/db/obj/frAccess.cpp
-    src/db/obj/frRPin.cpp
-    src/db/obj/frNode.cpp
-    src/db/obj/frInstTerm.cpp
-    src/db/obj/frNet.cpp
-    src/db/tech/frConstraint.cc
-    src/db/obj/frMarker.cpp
-    src/db/tech/frLayer.cc
-    src/frRegionQuery.cpp
-    src/io/io_pin.cpp
-    src/io/io.cpp
-    src/io/GuideProcessor.cpp
-    src/io/io_parser_helper.cpp
-    src/pa/FlexPA_init.cpp
-    src/pa/FlexPA.cpp
-    src/pa/FlexPA_acc_point.cpp
-    src/pa/FlexPA_acc_pattern.cpp
-    src/pa/FlexPA_row_pattern.cpp
-    src/pa/FlexPA_unique.cpp
     src/pa/FlexPA_graphics.cpp
-    src/rp/FlexRP_init.cpp
-    src/rp/FlexRP.cpp
-    src/rp/FlexRP_prep.cpp
-    src/distributed/frArchive.cpp
-    src/distributed/drUpdate.cpp
-    src/distributed/paUpdate.cpp
-    src/TritonRoute.cpp
     src/MakeTritonRoute.cpp
-    src/frBaseTypes.cpp
-    src/DesignCallBack.cpp
+    src/GraphicsFactory.cpp
 )
 
 target_include_directories(drt
@@ -148,17 +174,8 @@ target_include_directories(drt
 
 target_link_libraries(drt
   PUBLIC
+    drt_lib
     gui
-    odb
-    stt
-    OpenSTA
-    utl_lib
-    dst
-    dbSta
-    Threads::Threads
-    OpenMP::OpenMP_CXX
-    ${Boost_LIBRARIES}
-    ZLIB::ZLIB
 )
 
 messages(

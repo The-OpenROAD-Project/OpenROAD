@@ -275,6 +275,33 @@ dbOStream& operator<<(dbOStream& stream, const _dbLevelShifter& obj)
   return stream;
 }
 
+void _dbLevelShifter::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  info.children_["_elements"].add(_elements);
+  info.children_["_exclude_elements"].add(_exclude_elements);
+  info.children_["_source"].add(_source);
+  info.children_["_sink"].add(_sink);
+  info.children_["_applies_to"].add(_applies_to);
+  info.children_["_applies_to_boundary"].add(_applies_to_boundary);
+  info.children_["_rule"].add(_rule);
+  info.children_["_location"].add(_location);
+  info.children_["_input_supply"].add(_input_supply);
+  info.children_["_output_supply"].add(_output_supply);
+  info.children_["_internal_supply"].add(_internal_supply);
+  info.children_["_name_prefix"].add(_name_prefix);
+  info.children_["_name_suffix"].add(_name_suffix);
+  info.children_["_instances"].add(_instances);
+  info.children_["_cell_name"].add(_cell_name);
+  info.children_["_cell_input"].add(_cell_input);
+  info.children_["_cell_output"].add(_cell_output);
+  // User Code End collectMemInfo
+}
+
 _dbLevelShifter::~_dbLevelShifter()
 {
   if (_name) {

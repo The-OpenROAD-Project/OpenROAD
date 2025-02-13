@@ -199,4 +199,13 @@ dbTechViaGenerateRule* dbTechViaGenerateRule::getTechViaGenerateRule(
   return (dbTechViaGenerateRule*) tech->_via_generate_rule_tbl->getPtr(dbid_);
 }
 
+void _dbTechViaGenerateRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["layer_rules"].add(_layer_rules);
+}
+
 }  // namespace odb

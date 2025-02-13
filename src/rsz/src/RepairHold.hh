@@ -107,7 +107,9 @@ class RepairHold : public sta::dbStaState
                       double setup_margin,
                       double hold_margin,
                       bool allow_setup_violations,
-                      int max_buffer_count);
+                      int max_buffer_count,
+                      bool verbose,
+                      int& pass);
   void repairEndHold(Vertex* end_vertex,
                      LibertyCell* buffer_cell,
                      double setup_margin,
@@ -133,6 +135,7 @@ class RepairHold : public sta::dbStaState
   int cloned_gate_count_ = 0;
   int swap_pin_count_ = 0;
   int removed_buffer_count_ = 0;
+  double initial_design_area_ = 0;
   const MinMax* min_ = MinMax::min();
   const MinMax* max_ = MinMax::max();
   const int min_index_ = MinMax::minIndex();
