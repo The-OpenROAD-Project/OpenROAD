@@ -44,9 +44,7 @@ proc improve_placement { args } {
     utl::error DPO 2 "No design block found."
   }
 
-  if { [info exists flags(-disallow_one_site_gaps)] } {
-    utl::warn DPO 3 "-disallow_one_site_gaps is deprecated"
-  }
+  set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
   set seed 1
   if { [info exists keys(-random_seed)] } {
     set seed $keys(-random_seed)
@@ -71,7 +69,7 @@ proc improve_placement { args } {
   }
 
   sta::check_argc_eq0 "improve_placement" $args
-  dpo::improve_placement_cmd $seed $max_displacement_x $max_displacement_y
+  dpo::improve_placement_cmd $seed $max_displacement_x $max_displacement_y $disallow_one_site_gaps
 }
 
 namespace eval dpo {
