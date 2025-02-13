@@ -454,6 +454,14 @@ find_floating_pins()
   return resizer->findFloatingPins();
 }
 
+TmpNetSeq *
+find_overdriven_nets()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->findOverdrivenNets();
+}
+
 void
 repair_tie_fanout_cmd(LibertyPort *tie_port,
                       double separation, // meters
