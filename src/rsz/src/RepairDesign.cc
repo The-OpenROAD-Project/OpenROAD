@@ -1854,6 +1854,30 @@ bool RepairDesign::makeRepeater(
     }
   }
 
+  if (!hasInputPort(load_net) && preserve_outputs) {
+    // check if driving port is dont touch and reject
+    bool driving_pin_dont_touch = false;
+    std::unique_ptr<NetPinIterator> pin_iter(network_->pinIterator(load_net));
+    while (pin_iter->hasNext()) {
+      const Pin* pin = pin_iter->next();
+      if (network_->direction(pin)->isAnyOutput() && resizer_->dontTouch(pin)) {
+        driving_pin_dont_touch = true;
+        break;
+      }
+    }
+
+    if (driving_pin_dont_touch) {
+      debugPrint(
+          logger_,
+          utl::RSZ,
+          "repair_net",
+          3,
+          "Cannot create repeater due to driving pin on {} being dont_touch",
+          network_->name(load_net));
+      return false;
+    }
+  }
+
   // Determine parent to put buffer (and net)
   // Determine the driver pin
   // Make the buffer in the root module in case or primary input connections
@@ -1899,6 +1923,8 @@ bool RepairDesign::makeRepeater(
   Net* buffer_ip_net = nullptr;
   Net* buffer_op_net = nullptr;
 
+  bool connections_modified = false;
+
   if (hasInputPort(load_net) || !preserve_outputs) {
     //
     // Case 1
@@ -1935,6 +1961,7 @@ bool RepairDesign::makeRepeater(
       load_mod_net = db_network_->hierNet(pin);
       load_db_net = db_network_->flatNet(pin);
 
+      connections_modified = true;
       sta_->disconnectPin(const_cast<Pin*>(pin));
       sta_->connectPin(inst, port, buffer_op_net);
 
@@ -1998,7 +2025,7 @@ bool RepairDesign::makeRepeater(
     }
     // put non repeater loads from op net onto ip net, preserving
     // any hierarchical connection
-    NetPinIterator* pin_iter = network_->pinIterator(load_net);
+    std::unique_ptr<NetPinIterator> pin_iter(network_->pinIterator(load_net));
     while (pin_iter->hasNext()) {
       const Pin* pin = pin_iter->next();
       if (!repeater_load_pins.hasKey(pin)) {
@@ -2010,6 +2037,7 @@ bool RepairDesign::makeRepeater(
         }
         // preserve any hierarchical connection
         odb::dbModNet* mod_net = db_network_->hierNet(pin);
+        connections_modified = true;
         sta_->disconnectPin(const_cast<Pin*>(pin));
         sta_->connectPin(inst, port, ip_net);
         if (mod_net) {
@@ -2022,6 +2050,27 @@ bool RepairDesign::makeRepeater(
     sta_->connectPin(buffer, buffer_input_port, buffer_ip_net);
     sta_->connectPin(buffer, buffer_output_port, buffer_op_net);
   }  // case 2
+
+  if (!connections_modified) {
+    debugPrint(logger_,
+               utl::RSZ,
+               "repair_net",
+               3,
+               "New buffer was not connected to anything on {}, so removing "
+               "buffer and net.",
+               network_->name(load_net));
+
+    // no connections change, so this buffer is left floating
+    db_network_->deleteNet(new_net);
+    db_network_->deleteInstance(buffer);
+    inserted_buffer_count_--;
+
+    repeater_cap = 0;
+    repeater_fanout = 0;
+    repeater_max_slew = 0;
+
+    return false;
+  }
 
   resizer_->parasiticsInvalid(buffer_ip_net);
   resizer_->parasiticsInvalid(buffer_op_net);
